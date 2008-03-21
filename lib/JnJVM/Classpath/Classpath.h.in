@@ -1,0 +1,14 @@
+//===-------- Classpath.h - Configuration for classpath -------------------===//
+//
+//                              JnJVM
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+
+
+char* GNUClasspathLibs  =  "@classpathlibs@";
+char* GNUClasspathGlibj =  "@classpathglibj@";
+char* GNUClasspathVersion = "@gnuclasspathversion@";
+

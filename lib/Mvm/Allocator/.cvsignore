@@ -1,0 +1,14 @@
+allocator
+*.d
+Makefile
+Makefile.in
+.deps
+.libs
+*.a
+*.o
+*.la
+*.lo
+*.class
+*.stamp
+
+mainuvm_alloc

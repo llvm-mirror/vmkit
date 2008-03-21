@@ -1,0 +1,4 @@
+Patch on getVirtualField
+Patch on newLookup
+
+Stubs are currently GC roots, make them isolate-objects
