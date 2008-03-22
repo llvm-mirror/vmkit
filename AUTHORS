@@ -19,11 +19,11 @@ W: http://www-src.lip6.fr/homepages/Nicolas.Geoffray/
 D: Port of JnJVM to LLVM
 D: Architect of N3
 
+N: Sylvain Marechal
+E: sylvain.marechal@lip6.fr
+D: Original autoconf support
+
 N: Gael Thomas
 E: gael.thomas@lip6.fr
 W: http://www-src.lip6.fr/homepages/Gael.Thomas/
 D: Primary architect of JnJVM
-
-N: Sylvain Marechal
-E: sylvain.marechal@lip6.fr
-D: Original autoconf support
