@@ -1,4 +1,3 @@
-# $Id: Makefile.am,v 1.7 2008/03/21 11:12:38 varth Exp $
 EXTRA_DIST = OpcodeNames.def
 lib_LTLIBRARIES = libJnJVM.la
 

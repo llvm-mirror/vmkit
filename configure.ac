@@ -87,37 +87,85 @@ dnl Checks for header files.
 dnl **************************************************************************
 AC_HEADER_STDC
 
-AC_ARG_WITH(readline,
-  [AS_HELP_STRING([--without-readline],
-    [disable readline support])],
-    [with_readline=$enableval],[with_readline=yes]
+dnl **************************************************************************
+dnl Checks for header files.
+dnl **************************************************************************
+AC_HEADER_STDC
+
+case $target_os in
+  *linux*)
+  dnl libiberty, libopcode and libbfd are part of binutils
+  AC_CHECK_HEADER([bfd.h], [], \
+    AC_MSG_ERROR([You need to install the binutils devel package (bfd.h).])
+  )
+  AC_CHECK_HEADER([dis-asm.h], [], \
+    AC_MSG_ERROR([You need to install the binutils devel package (dis-asm.h).])
+  )
+  ;;
+esac
+
+AC_CHECK_HEADER([zlib.h], [], \
+  AC_MSG_ERROR([You need to install the zlib devel package (zlib.h).])
 )
 
-AS_IF([test "x$with_readline" = xyes],
-  [AC_CHECK_HEADER([readline/readline.h],
-	  [AC_DEFINE(HAVE_READLINE_H,1,[readline found])],
-	  [AC_MSG_WARN(readline NOT found)])
-    AC_CHECK_LIB(readline, history_truncate_file, [],
-     [AC_MSG_ERROR([You need to install readline version 5.])])
-    ]
+dnl **************************************************************************
+dnl Checks for libraries    
+dnl **************************************************************************
+case $target_os in
+  *darwin*)
+    rdynamic=""
+    ;;
+  *linux*)
+    AC_CHECK_LIB(iberty, xexit, [], \
+      [AC_MSG_ERROR([You need to install the binutils package (iberty).])]
+    )
+    AC_CHECK_LIB(bfd, bfd_get_arch, [], \
+      [AC_MSG_ERROR([You need to install the binutils package (bfd).])],
+    -liberty
+    )
+    AC_CHECK_LIB(opcodes, disassembler, [], \
+      [AC_MSG_ERROR([You need to install the binutils package (opcodes).])],
+    -lbfd -liberty
+    )
+    
+    rdynamic="-rdynamic"
+    AC_DEFINE([HAVE_DISASSEMBLER], [1], [Using libopcodes])
+
+    ;;
+  *) AC_MSG_ERROR([$target_os target is not supported.]);;
+esac
+
+AC_CHECK_LIB(z, inflate, [], \
+  [AC_MSG_ERROR([You need to install the zlib package (z).])]
 )
 
-AC_ARG_WITH(bare,
-  [AS_HELP_STRING([--with-bare], [bare VVMos support])],
-    [with_bare=$enableval],[with_bare=no]
-)
-
-bare_header=""
-AM_CONDITIONAL([BARE], [test "x$vvmthreadtype" != "xno"])
-if test "x$with_bare" != xno; then
-  AC_DEFINE([BARE], [1], [bare VVMos support])
-  bare_header=-I$PWD/../bare/include/
-fi
-
-AC_SUBST([bare_header])
-AC_SUBST([mksyms])
 AC_SUBST([rdynamic])
 AC_SUBST([LLVMDYLIB])
+
+dnl **************************************************************************
+dnl VVM thread type
+dnl **************************************************************************
+AC_ARG_WITH(vvm-thread-type,
+       [AS_HELP_STRING(--with-vvm-thread-type=something,
+           [VVM Thread type ('common' or 'no')])],
+       [vvmthreadtype=$withval],[vvmthreadtype=common]
+)
+
+AS_IF([test "x$vvmthreadtype" != "xno"],
+  [AC_CHECK_HEADER([pthread.h],,
+    [AC_MSG_WARN(phtread include NOT found)])
+  AC_CHECK_LIB(pthread, pthread_create, [], 
+     [AC_MSG_ERROR([pthread library not found])])
+  ]
+)
+
+AM_CONDITIONAL([HAVE_PTHREAD], [test "x$vvmthreadtype" != "xno"])
+if test "x$vvmthreadtype" = xcommon; then
+  AC_DEFINE([HAVE_PTHREAD], [1], [Using pthread library])
+fi
+
+AC_SUBST([vvmthreadtype])
+GCTHREAD_SUBDIRS="$GCTHREAD_SUBDIRS $vvmthreadtype-thread"
 
 
 dnl **************************************************************************
@@ -133,36 +181,11 @@ AM_PROG_LIBTOOL
 
 
 dnl **************************************************************************
-dnl VVM thread type
-dnl **************************************************************************
-AC_ARG_WITH(vvm-thread-type,
-       [AS_HELP_STRING(--with-vvm-thread-type=something,
-           [VVM Thread type ('common' or 'no')])],
-       [vvmthreadtype=$withval],[vvmthreadtype=common]
-)
-
-AS_IF([test "x$vvmthreadtype" != "xno"],
-  [AC_CHECK_HEADER([pthread.h],,
-    [AC_MSG_WARN(phtread include NOT found)])
-  AC_CHECK_LIB(pthread, pthread_create, [],
-     [AC_MSG_ERROR([pthread library not found])])
-  ]
-)
-
-AM_CONDITIONAL([HAVE_PTHREAD], [test "x$vvmthreadtype" != "xno"])
-if test "x$vvmthreadtype" = xcommon; then
-  AC_DEFINE([HAVE_PTHREAD], [1], [Using pthread library])
-fi
-
-AC_SUBST([vvmthreadtype])
-GCTHREAD_SUBDIRS="$GCTHREAD_SUBDIRS $vvmthreadtype-thread"
-
-dnl **************************************************************************
 dnl VVM GC type 
 dnl **************************************************************************
 AC_ARG_WITH(vvm-gc-type,
        [AS_HELP_STRING(--with-vvm-gc-type=something,
-           [VVM GC type ('gen2', 'mmap2' or 'simple2')])],
+           [VVM GC type ('mmap2' or 'boehm')])],
        [[vvmgctype=$withval]],
        [[ echo Using mmap2 as vvm gc type.
         	vvmgctype=mmap2

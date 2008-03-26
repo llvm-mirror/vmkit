@@ -1,4 +1,3 @@
-# $Id: Makefile.am,v 1.6 2008/03/21 11:12:38 varth Exp $
 lib_LTLIBRARIES = libClasspath.la
 
 THREADDIR=../../Mvm/CommonThread
@@ -8,7 +7,6 @@ INCLUDEDIRS=-I@srcdir@/$(THREADDIR) -I@srcdir@/$(ALLOCDIR) -I@srcdir@/$(GCDIR)\
 	    -I../VMCore
 
 PREFIX=@prefix@
-LIBSUVM=$(LIBLLVM) $(LIBGC) $(LIBALLOC) $(LIBTHREAD)
 
 libClasspath_la_SOURCES = \
 	ClasspathVMSystem.cpp ClasspathVMSystem.h Classpath.cpp \

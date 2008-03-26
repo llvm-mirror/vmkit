@@ -12,14 +12,13 @@ INCLUDEDIRS=-I@srcdir@/$(THREADDIR) -I@srcdir@/$(ALLOCDIR) -I@srcdir@/$(GCDIR)
 LIBTHREAD=$(THREADDIR)/libuvm_@vvmthreadtype@_thread.a
 LIBALLOC=$(ALLOCDIR)/libuvm_alloc.a
 LIBGC=$(GCDIR)/libuvm_gc_@vvmgctype@.a @GC_LIBS@
-PREFIX=@prefix@
-LIBSUVM=$(LIBLLVM) $(LIBGC) $(LIBALLOC) $(LIBTHREAD)
+LIBSUVM=$(LIBGC) $(LIBALLOC) $(LIBTHREAD)
 
 main_SOURCES = ../Mvm/Object.cc ../Mvm/Sigsegv.cc Main.cpp ../Mvm/MvmMemoryManager.cpp ../Mvm/JIT.cc ../Mvm/EscapeAnalysis.cpp
 
 
 main_CXXFLAGS = $(libJnJVM_la_CXXFLAGS)
-main_LDADD = VMCore/.libs/libJnJVM.a Classpath/.libs/libClasspath.a $(LIBSUVM) @LLVMDYLIB@ -lopcodes -lbfd -liberty -lz
+main_LDADD = VMCore/.libs/libJnJVM.a Classpath/.libs/libClasspath.a $(LIBSUVM) @LLVMDYLIB@
 main_LDFLAGS = @rdynamic@
 
 libjnjvm.la:

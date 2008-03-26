@@ -7,17 +7,16 @@ uvmdatadir=$(pkgdatadir)/lib
 THREADDIR=CommonThread
 ALLOCDIR=Allocator
 GCDIR=GCMmap2
-INCLUDEDIRS=-I@srcdir@/$(THREADDIR) -I@srcdir@/$(ALLOCDIR) -I@srcdir@/$(GCDIR)\
-	    @bare_header@
+INCLUDEDIRS=-I@srcdir@/$(THREADDIR) -I@srcdir@/$(ALLOCDIR) -I@srcdir@/$(GCDIR)
 
 LIBTHREAD=$(THREADDIR)/libuvm_@vvmthreadtype@_thread.a
 LIBALLOC=$(ALLOCDIR)/libuvm_alloc.a
 LIBGC=$(GCDIR)/libuvm_gc_@vvmgctype@.a @GC_LIBS@
 MAIN_O=main-main.o
-LIBSUVM=$(LIBLLVM) $(LIBGC) $(LIBALLOC) $(LIBTHREAD)
+LIBSUVM=$(LIBGC) $(LIBALLOC) $(LIBTHREAD)
 PREFIX=@prefix@
 
-main_SOURCES = Main.cc Object.cc Sigsegv.cc JIT.cc CommandLine.cpp CommandLine.h MvmMemoryManager.h MvmMemoryManager.cpp EscapeAnalysis.cpp
+main_SOURCES = Main.cc Object.cc Sigsegv.cc JIT.cc CommandLine.cpp CommandLine.h MvmMemoryManager.h MvmMemoryManager.cpp EscapeAnalysis.cpp Disassembler.cc
 main_CXXFLAGS = $(INCLUDEDIRS) -DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused-parameter -pedantic -Wno-long-long -fno-omit-frame-pointer -O2 -g
 main_LDFLAGS=@rdynamic@
-main_LDADD = $(LIBSUVM) @LLVMDYLIB@ -lopcodes -lbfd -liberty
+main_LDADD = $(LIBSUVM) @LLVMDYLIB@

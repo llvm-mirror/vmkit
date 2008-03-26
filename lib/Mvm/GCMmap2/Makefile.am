@@ -1,4 +1,3 @@
-# $Id: Makefile.am,v 1.3 2008/03/21 16:25:31 varth Exp $
 noinst_LIBRARIES = libuvm_gc_mmap2.a
 noinst_PROGRAMS = mainuvm_gc_mmap2
 

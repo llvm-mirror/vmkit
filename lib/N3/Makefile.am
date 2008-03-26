@@ -10,11 +10,10 @@ LIBTHREAD=$(THREADDIR)/libuvm_@vvmthreadtype@_thread.a
 LIBALLOC=$(ALLOCDIR)/libuvm_alloc.a
 LIBGC=$(GCDIR)/libuvm_gc_@vvmgctype@.a @GC_LIBS@
 PREFIX=@prefix@
-LIBSUVM=$(LIBLLVM) $(LIBGC) $(LIBALLOC) $(LIBTHREAD)
+LIBSUVM=$(LIBGC) $(LIBALLOC) $(LIBTHREAD)
 
 main_SOURCES = ../Mvm/Object.cc ../Mvm/Sigsegv.cc Main.cpp ../Mvm/MvmMemoryManager.cpp ../Mvm/JIT.cc ../Mvm/EscapeAnalysis.cpp
 
-
-main_CXXFLAGS = $(libJnJVM_la_CXXFLAGS)
-main_LDADD = VMCore/.libs/libN3.a $(LIBSUVM) @LLVMDYLIB@ -lopcodes -lbfd -liberty
+main_CXXFLAGS = $(INCLUDEDIRS) -DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused-parameter -Wno-long-long -Wno-unused-function -fno-omit-frame-pointer -g -Werror -O2
+main_LDADD = VMCore/.libs/libN3.a $(LIBSUVM) @LLVMDYLIB@
 main_LDFLAGS = @rdynamic@

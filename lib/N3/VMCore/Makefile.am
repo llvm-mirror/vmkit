@@ -1,4 +1,3 @@
-# $Id: Makefile.am,v 1.4 2008/03/21 11:12:39 varth Exp $
 EXTRA_DIST = SignatureNames.def OpcodeNames.def
 lib_LTLIBRARIES = libN3.la
 

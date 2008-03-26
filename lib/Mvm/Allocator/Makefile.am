@@ -1,4 +1,3 @@
-# $Id: Makefile.am,v 1.2 2008/03/21 11:12:38 varth Exp $
 noinst_LIBRARIES = libuvm_alloc.a
 noinst_PROGRAMS = mainuvm_alloc
 

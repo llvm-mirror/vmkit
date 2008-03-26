@@ -156,6 +156,7 @@ extern void unprotectTypes();
 
 extern void protectConstants();
 extern void unprotectConstants();
+extern int disassemble(unsigned int* addr);
 
 
 } // end namespace jit
