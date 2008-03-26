@@ -30,8 +30,6 @@ namespace jnjvm {
 
 class JavaObject;
 class Jnjvm;
-class llvm::Function;
-class llvm::GlobalVariable;
 
 template<class Key, class Container, class Compare>
 class LockedMap : public mvm::Object {

@@ -103,7 +103,7 @@ JNIEnv *env,
                                                                 jclass clazz,
 #endif
                                                                 jobject obj) {
-  return (jint)obj;
+  return (jint)(intptr_t)obj;
 }
 
 }

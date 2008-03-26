@@ -63,14 +63,14 @@ void ClArgumentsInfo::javaAgent(char* cur) {
   assert(0 && "implement me");
 }
 
-extern "C" int strnstr(char *haystack, char *needle) {
+extern "C" int strnstr(const char *haystack, const char *needle) {
   char * res = strstr(haystack, needle);
-  if (res) return (int)res - (int)haystack;
+  if (res) return res - haystack;
   else return -1; 
 }
 
 
-static char* findInformation(ArrayUInt8* manifest, char* entry, uint32 len) {
+static char* findInformation(ArrayUInt8* manifest, const char* entry, uint32 len) {
   uint8* ptr = manifest->elements;
   sint32 index = strnstr((char*)ptr, entry);
   if (index != -1) {

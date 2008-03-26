@@ -38,8 +38,8 @@ void GCHashSet::hash(GCPage *d, void *base, size_t nbb, size_t nbb_map, unsigned
 }
 
 void GCHash::hash_unprotected(GCPage *desc, void *base, unsigned int nbb, unsigned int nbb_map) {
- 	unsigned int	entry = GCHashConst::set_entry(base);
- 	unsigned int	cur_sz = GCHashConst::set_entry_2_ptr(entry + 1) - (unsigned int)base;	/* taille restante */
+ 	uintptr_t	entry = GCHashConst::set_entry(base);
+ 	uintptr_t	cur_sz = GCHashConst::set_entry_2_ptr(entry + 1) - (uintptr_t)base;	/* taille restante */
  	cur_sz = ((cur_sz < nbb) ? cur_sz : nbb);													/* on prends le min avec nbb   */
 	
 	//	printf("Hash %p (%p %p %d) in entry %d with %d/%d\n", desc, desc->area(), base, desc->nbb(), entry, cur_sz, nbb_map);
@@ -54,7 +54,7 @@ void GCHash::hash_unprotected(GCPage *desc, void *base, unsigned int nbb, unsign
 			sets[entry] = &empty;
 		}
 		entry++;
-		base = (void *)((unsigned int)base + cur_sz);
+		base = (void *)((uintptr_t)base + cur_sz);
 		nbb -= cur_sz;
 		nbb_map = (nbb_map < cur_sz) ? 0 : nbb_map - cur_sz;
 		cur_sz = (nbb < GCHashConst::set_nbb) ? nbb : GCHashConst::set_nbb;

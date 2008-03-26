@@ -113,7 +113,7 @@ public:
 
   inline PrintBuffer *writePtr(void *p) {
     char buf[32];
-    sprintf(buf, "%08x", (int)p);
+    sprintf(buf, "%p", p);
     return write(buf);
   }
 

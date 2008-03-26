@@ -86,6 +86,8 @@ static void *get_curr_fp(void)
 #   endif
 #  elif defined(__i386__)
 			"		movl	%%ebp, %0	"
+# elif defined(__amd64__)
+			"               movq    %%rbp, %0       "
 #  else
 #   error:
 #   error: I do not know how to read the frame pointer on this machine

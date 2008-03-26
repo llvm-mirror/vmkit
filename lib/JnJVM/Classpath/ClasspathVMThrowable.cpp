@@ -72,7 +72,7 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   bool native = isNative(meth->access);
 
   JavaObject* res = (*Classpath::newStackTraceElement)();
-  Classpath::initStackTraceElement->invokeIntSpecial(res, sourceName, (int)ip, className, methodName, native);
+  Classpath::initStackTraceElement->invokeIntSpecial(res, sourceName, (uint32)ip, className, methodName, native);
   return res;
 }
 

@@ -8,40 +8,42 @@
 //===----------------------------------------------------------------------===//
 
 #include "gcalloc.h"
+#include "types.h"
 
-GCChunkNode *GCAllocator::alloc_headers(size_t headers_nbb, void *base, size_t depl, size_t filled) {
+GCChunkNode *GCAllocator::alloc_headers(uintptr_t headers_nbb, void *base,  
+                                        uintptr_t depl, uintptr_t filled) {
 	GCChunkNode *headers;
-	size_t rounded = GCMappedArea::round(headers_nbb);
+	uintptr_t rounded = GCMappedArea::round(headers_nbb);
 	
 	if(headers_nbb == rounded)
 		headers = (GCChunkNode *)(new GCMappedArea(&headers_area, rounded))->area();
 	else {
 		headers = used_headers;
-		used_headers = (GCChunkNode *)((unsigned int)used_headers + headers_nbb);
+		used_headers = (GCChunkNode *)((uintptr_t)used_headers + headers_nbb);
 		if(used_headers >= max_headers) {
 			headers = (GCChunkNode *)(new GCMappedArea(&headers_area, used_headers_nbb))->area();
-			used_headers = (GCChunkNode *)((unsigned int)headers + headers_nbb);
-			max_headers = (GCChunkNode *)((unsigned int)headers + used_headers_nbb);
+			used_headers = (GCChunkNode *)((uintptr_t)headers + headers_nbb);
+			max_headers = (GCChunkNode *)((uintptr_t)headers + used_headers_nbb);
 		}
 	}
 
 	register GCChunkNode *cur = headers;
-	register GCChunkNode *lim = (GCChunkNode *)((unsigned int)headers + headers_nbb);
+	register GCChunkNode *lim = (GCChunkNode *)((uintptr_t)headers + headers_nbb);
 	register GCChunkNode *max = lim - (1 + filled);
 	for(;cur<max; cur++) {
 		cur->initialise(cur+1, base);
-		base = (void *)((unsigned int)base + depl);
+		base = (void *)((uintptr_t)base + depl);
 	}
 	for(;cur<lim; cur++) {
  		cur->initialise(0, base);
-		base = (void *)((unsigned int)base + depl);
+		base = (void *)((uintptr_t)base + depl);
  	}
 	return headers;
 }
 
-GCChunkNode	*GCAllocator::alloc_list(GCFreeList *fl, size_t n) {
+GCChunkNode	*GCAllocator::alloc_list(GCFreeList *fl, uintptr_t n) {
  	GCChunkNode	  *headers;
- 	size_t				area_nbb;
+ 	uintptr_t				area_nbb;
  	void          *area_ptr;
  	GCPage       	*page;
 
@@ -54,7 +56,7 @@ GCChunkNode	*GCAllocator::alloc_list(GCFreeList *fl, size_t n) {
 
  		headers = page->headers();
   	} else {
-  		size_t chunk_nbb = fl->chunk_nbb();
+  		uintptr_t chunk_nbb = fl->chunk_nbb();
 
 			/* on alloue un Descripteur */
 			page = new GCPage(&normal_area, area_nbb = fl->area_nbb(), chunk_nbb);
@@ -122,8 +124,8 @@ GCAllocator::~GCAllocator() {
 	GCHash::unlink();
 }
 
-void *GCAllocator::operator new(size_t req) {
-	size_t nbb = GCMappedArea::round(req);
+void *GCAllocator::operator new(uintptr_t req) {
+	uintptr_t nbb = GCMappedArea::round(req);
 	GCAllocator *res = (GCAllocator *)GCMappedArea::do_mmap(nbb);
 	res->my_size = nbb;
 	return res;

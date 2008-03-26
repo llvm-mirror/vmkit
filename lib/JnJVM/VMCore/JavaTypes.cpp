@@ -199,14 +199,14 @@ void AssessorDesc::analyseIntern(const UTF8* name, uint32 pos,
       pos++;
     } else {
       AssessorDesc * typeIntern = dTab;
-      while (name->at(++pos) == I_TAB);
+      while (name->at(++pos) == I_TAB) {}
       analyseIntern(name, pos, 1, typeIntern, pos);
     }
     ass = dTab;
     ret = pos;
   } else if (cur == I_REF) {
     if (meth != 2) {
-      while (name->at(++pos) != I_END_REF);
+      while (name->at(++pos) != I_END_REF) {}
     }
     ass = dRef;
     ret = pos + 1;

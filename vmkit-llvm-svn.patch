@@ -87,8 +87,8 @@ Index: include/llvm/CodeGen/SizeEmitter.h
 +    initConstantPool(F.getConstantPool());
 +    initJumpTableInfo(F.getJumpTableInfo());
 +   
-+    ConstantPoolBase  = (void*)(((unsigned) ConstantPoolBase) + CurBufferPtr);
-+    JumpTableBase     = (void*)(((unsigned) JumpTableBase) + CurBufferPtr);
++    ConstantPoolBase  = (void*)(((uintptr_t) ConstantPoolBase) + CurBufferPtr);
++    JumpTableBase     = (void*)(((uintptr_t) JumpTableBase) + CurBufferPtr);
 +  }
 +
 +  virtual bool finishFunction(MachineFunction &F) { 

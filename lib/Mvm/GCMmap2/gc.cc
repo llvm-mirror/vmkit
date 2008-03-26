@@ -87,8 +87,8 @@ gc *gc::begOf(const void *obj) {
 }
 
 int gc::byteOffset(void *obj) {
-	int beg = (int)GCCollector::begOf(obj);
-  int off = (int)obj;
+	int beg = (intptr_t)GCCollector::begOf(obj);
+  intptr_t off = (intptr_t)obj;
   return (off-beg);
 }
 

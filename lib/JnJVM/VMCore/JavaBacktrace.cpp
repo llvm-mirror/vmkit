@@ -125,15 +125,15 @@ extern "C" void debug_backtrace(int **fp) {
         mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);
       if (glob) {
         if (llvm::isa<llvm::Function>(glob)) {
-          printf("; 0x%08x in %s\n", (uint32) ip, 
+          printf("; 0x%p in %s\n",  ip, 
                  ((llvm::Function*)glob)->getNameStr().c_str());
         } else JavaThread::get()->isolate->unknownError("in global variable?");
-      } else printf("; 0x%08x in stub\n", (uint32) ip);
+      } else printf("; 0x%p in stub\n",  ip);
     } else {
       Dl_info info;
       int res = dladdr(begIp, &info);
       if (res != 0) {
-        printf("; 0x%08x in %s\n", (uint32) ip, info.dli_fname);
+        printf("; 0x%p in %s\n", ip, info.dli_fname);
       }
     }
     fp = debug_frame_caller_fp(fp);
@@ -156,18 +156,18 @@ void JavaJIT::printBacktrace() {
           mvm::Method* m = c->method();
           JavaMethod* meth = (JavaMethod*)m->definition();
           if (meth) 
-            printf("; 0x%08x in %s\n", (uint32) ips[n - 1], meth->printString());
+            printf("; 0x%p in %s\n",  ips[n - 1], meth->printString());
           else
-            printf("; 0x%08x in %s\n", (uint32) ips[n - 1], ((llvm::Function*)glob)->getNameStr().c_str());
+            printf("; 0x%p in %s\n",  ips[n - 1], ((llvm::Function*)glob)->getNameStr().c_str());
         } else JavaThread::get()->isolate->unknownError("in global variable?");
-      } else printf("; 0x%08x in stub\n", (uint32) ips[n - 1]);
+      } else printf("; 0x%p in stub\n", ips[n - 1]);
     } else {
       Dl_info info;
       int res = dladdr(begIp, &info);
       if (res != 0) {
-        printf("; 0x%08x in %s\n", (uint32) ips[n - 1], info.dli_fname);
+        printf("; 0x%p in %s\n",  ips[n - 1], info.dli_fname);
       } else {
-        printf("; 0x%08x in Unknown\n", (uint32) ips[n - 1]);
+        printf("; 0x%p in Unknown\n", ips[n - 1]);
       }
     }
   }

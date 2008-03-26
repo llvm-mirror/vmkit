@@ -37,7 +37,7 @@ ZipArchive* ZipArchive::singleArchive(char* archname) {
   return 0;
 }
 
-ZipFile* ZipArchive::getFile(char* filename) {
+ZipFile* ZipArchive::getFile(const char* filename) {
   ZipFile* res = filetable->lookup(filename);
   return res;
 }

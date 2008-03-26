@@ -59,7 +59,7 @@ public:
 
   static ZipArchive* hashedArchive(char* archname);
   static ZipArchive* singleArchive(char* archname);
-  ZipFile* getFile(char* filename);
+  ZipFile* getFile(const char* filename);
   int readFile(ArrayUInt8* array, const ZipFile* file);
   void remove();
 

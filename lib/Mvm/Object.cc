@@ -132,12 +132,12 @@ PrintBuffer *PrintBuffer::writeObj(const Object *obj) {
 			write("<In Object [");
 			beg->print(this);
 			write("] -- offset ");
-			writeS4((int)obj - (int)beg);
+			writeS4((intptr_t)obj - (intptr_t)beg);
 			write(">");
 		}
 	} else {
 		write("<DirectValue: ");
-		writeS4((int)obj);
+		writeS4((intptr_t)obj);
 		write(">");
 	}
 	return this;

@@ -13,18 +13,19 @@
 #include <string.h> /* memset */
 
 #include "gcchunk.h"
+#include "types.h"
 
 class GCFreeList {
  	GCChunkNode 	 *_list;
- 	size_t					_chunk_nbb;
- 	size_t					_area_nbb;
- 	size_t					_nb_chunks;
- 	size_t					_headers_nbb;
- 	size_t          _filled;
+ 	uintptr_t					_chunk_nbb;
+ 	uintptr_t					_area_nbb;
+ 	uintptr_t					_nb_chunks;
+ 	uintptr_t					_headers_nbb;
+ 	uintptr_t          _filled;
 public:
  	inline GCFreeList() { _chunk_nbb = 0; _nb_chunks = 1; }
 
- 	inline void			initialise(size_t n, size_t area) {
+ 	inline void			initialise(uintptr_t n, uintptr_t area) {
  		_list					= 0;
  		_chunk_nbb		= n; 
  		_area_nbb			= GCMappedArea::round(area); /* taille en pages utilisée pour une free-list */
@@ -37,11 +38,11 @@ public:
 
  	inline GCChunkNode    *list() { return _list; }
  	inline void						list(GCChunkNode *l) { _list = l; }
- 	inline size_t					nb_chunks()		{ return _nb_chunks; }
- 	inline size_t					chunk_nbb()		{ return _chunk_nbb; }
- 	inline size_t					area_nbb()		{ return _area_nbb; }
- 	inline size_t					headers_nbb() { return _headers_nbb; }
- 	inline size_t         filled()      { return _filled; }
+ 	inline uintptr_t					nb_chunks()		{ return _nb_chunks; }
+ 	inline uintptr_t					chunk_nbb()		{ return _chunk_nbb; }
+ 	inline uintptr_t					area_nbb()		{ return _area_nbb; }
+ 	inline uintptr_t					headers_nbb() { return _headers_nbb; }
+ 	inline uintptr_t         filled()      { return _filled; }
 
  	inline void reject(GCChunkNode *header) {
  		header->next(_list);
@@ -66,13 +67,13 @@ class GCFreeListFinder {
  	GCFreeList		lin_lists[nb_lin];
  	GCFreeList		mmap_list;
 
- 	inline size_t linEntry(size_t n) { return (n - max_exp - 1)>>lin_step_log; }
+ 	inline uintptr_t linEntry(uintptr_t n) { return (n - max_exp - 1)>>lin_step_log; }
 public:
  	GCFreeListFinder();
 
- 	static inline bool		isMmaped(size_t n) { return n>max_lin; }
+ 	static inline bool		isMmaped(uintptr_t n) { return n>max_lin; }
 
- 	inline GCFreeList *find(size_t n) {
+ 	inline GCFreeList *find(uintptr_t n) {
  		return isMmaped(n) ? &mmap_list : (n>max_exp) ? lin_lists + linEntry(n) : exp_lists[n]; 
  	}
 };
@@ -80,7 +81,7 @@ public:
 class GCAllocator {
  	static const unsigned int		used_headers_nbb = (PAGE_SIZE + (4096*sizeof(GCChunkNode)) - 1) & -PAGE_SIZE;
 
-	size_t    my_size;
+	uintptr_t    my_size;
  	GCFreeListFinder	undefined_finder;
  	GCFreeListFinder	zero_filled_finder;
 
@@ -90,18 +91,18 @@ class GCAllocator {
 	GCChunkNode		  *used_headers;  /* une liste de headers pour les prochaines alloc_list */
 	GCChunkNode		  *max_headers;   /* la limite */
 
-	GCChunkNode     *alloc_headers(size_t, void *, size_t, size_t);
-	GCChunkNode     *alloc_list(GCFreeList *, size_t);
+	GCChunkNode     *alloc_headers(uintptr_t, void *, uintptr_t, uintptr_t);
+	GCChunkNode     *alloc_list(GCFreeList *, uintptr_t);
 public:
 	GCAllocator();
  	~GCAllocator();
 
-	void *operator new(size_t);
+	void *operator new(uintptr_t);
 	void operator delete(void *);
 
  	inline GCPage        *o2page(void *ptr) { return GCHash::get(ptr); }
 
- 	inline GCChunkNode *alloc_chunk(size_t n, bool isCol, unsigned int m) {
+ 	inline GCChunkNode *alloc_chunk(uintptr_t n, bool isCol, unsigned int m) {
 		GCFreeList			     *fl = undefined_finder.find(n);
 		register GCChunkNode *res = fl->list();
 		
@@ -133,32 +134,32 @@ public:
  		reject_chunk(o2page(header->chunk()), header);
  	}
 	
- 	inline GCChunkNode *stupid_realloc_chunk(GCChunkNode *old_header, size_t new_nbb) {
+ 	inline GCChunkNode *stupid_realloc_chunk(GCChunkNode *old_header, uintptr_t new_nbb) {
  		GCChunkNode *new_header = alloc_chunk(new_nbb, old_header->isCollectable(), old_header->mark());
- 		size_t old = old_header->nbb();
- 		size_t nbb = old < new_nbb ? old : new_nbb;
+ 		uintptr_t old = old_header->nbb();
+ 		uintptr_t nbb = old < new_nbb ? old : new_nbb;
  		memcpy(new_header->chunk(), old_header->chunk(), nbb);
  		return new_header;
  	}
 	
- 	inline GCChunkNode *realloc_chunk(GCPage *page, GCChunkNode *old_header, size_t new_nbb) {
+ 	inline GCChunkNode *realloc_chunk(GCPage *page, GCChunkNode *old_header, uintptr_t new_nbb) {
  		GCChunkNode *new_header = old_header;
- 		size_t	     max_nbb = page->chunk_nbb();
+ 		uintptr_t	     max_nbb = page->chunk_nbb();
 		
  		if(GCFreeListFinder::isMmaped(max_nbb))
  			if(GCFreeListFinder::isMmaped(new_nbb)) {
  				/* le plus compliqué, on essaye de faire un mremap d'un petit bout... */
- 				size_t							rounded = GCMappedArea::round(new_nbb);
-				size_t              old_nbb = page->nbb();
+ 				uintptr_t							rounded = GCMappedArea::round(new_nbb);
+				uintptr_t              old_nbb = page->nbb();
  				signed int					depl = rounded - page->nbb();
  				if(depl)
  					if(page->mremap(rounded) == -1) /* perdu */
  						return new_header = stupid_realloc_chunk(old_header, new_nbb);
  					else {
  						if(depl > 0)
- 							GCHash::hash_unprotected(page, (void *)((unsigned int)page->area() + old_nbb), depl, depl);
+ 							GCHash::hash_unprotected(page, (void *)((uintptr_t)page->area() + old_nbb), depl, depl);
  						else
- 							GCHash::hash_unprotected(page, (void *)((unsigned int)page->area() + rounded), -depl, 0);
+ 							GCHash::hash_unprotected(page, (void *)((uintptr_t)page->area() + rounded), -depl, 0);
  					}
 				page->chunk_nbb(rounded);
  				old_header->nbb(new_nbb);
@@ -172,7 +173,7 @@ public:
  		return new_header;
  	}
 
- 	inline void *alloc(size_t sz) { return alloc_chunk(sz, 0, 0)->chunk(); }
+ 	inline void *alloc(uintptr_t sz) { return alloc_chunk(sz, 0, 0)->chunk(); }
 	
  	inline void free(void *ptr) {
  		GCPage     	*page = o2page(ptr);
@@ -184,7 +185,7 @@ public:
  		reject_chunk(page, header);
  	}
 
- 	inline void *realloc(void *ptr, size_t nbb) {
+ 	inline void *realloc(void *ptr, uintptr_t nbb) {
  		GCPage      	*page = o2page(ptr);
  		GCChunkNode   *header = page->o2node(ptr, GCChunkNode::maskNotCollectable);
 		

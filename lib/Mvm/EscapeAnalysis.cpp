@@ -37,7 +37,6 @@ namespace {
   };
   char EscapeAnalysis::ID = 0;
   RegisterPass<EscapeAnalysis> X("EscapeAnalysis", "Escape Analysis Pass");
-}
 
 bool EscapeAnalysis::runOnFunction(Function& F) {
   bool Changed = false;
@@ -61,13 +60,8 @@ bool EscapeAnalysis::runOnFunction(Function& F) {
   return Changed;
 }
 
-namespace mvm {
 
-EscapeAnalysis* createEscapeAnalysisPass(Function* alloc, Function* init) {
-  return new EscapeAnalysis(alloc, init);
-}
 
-}
 
 static bool escapes(Instruction* Ins, std::map<AllocaInst*, bool>& visited) {
   for (Value::use_iterator I = Ins->use_begin(), E = Ins->use_end(); 
@@ -141,4 +135,12 @@ bool EscapeAnalysis::processMalloc(Instruction* I) {
     return true;
   }
   return false;
+}
+}
+
+namespace mvm {
+FunctionPass* createEscapeAnalysisPass(llvm::Function* alloc, llvm::Function* init) {
+
+  return new EscapeAnalysis(alloc, init);
+}
 }

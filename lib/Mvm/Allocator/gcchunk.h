@@ -11,6 +11,7 @@
 #define _GC_CHUNK_H_
 
 #include "gcmapper.h"
+#include "types.h"
 
 class gc;        /* object collectable */
 class gc_header; /* entete locale */
@@ -20,7 +21,7 @@ class GCChunkNode {
  	GCChunkNode *_prev;     /* bit 0-1: l'age, les autres: le previous */
  	GCChunkNode	*_next;
  	void *       _chunk;
- 	size_t			 _nbb_mark;	/* nbb = 0 <=> ce chunk est libre */
+ 	uintptr_t			 _nbb_mark;	/* nbb = 0 <=> ce chunk est libre */
 	                        /* bit 0-2: la marque */
 	                        /* bit 3: est-on collectable */
 
@@ -41,9 +42,9 @@ public:
 
  	inline void						free() { _nbb_mark = 0; }
 
- 	inline void						nbb(size_t n, bool isCol, int m) { _nbb_mark = (n << 4) | ((isCol & 0x1) << 3) | m; }
- 	inline void						nbb(size_t n)					        	 { _nbb_mark = (n << 4) | (_nbb_mark & 0xf); }
- 	inline size_t					nbb()                            { return _nbb_mark >> 4; }
+ 	inline void						nbb(uintptr_t n, bool isCol, int m) { _nbb_mark = (n << 4) | ((isCol & 0x1) << 3) | m; }
+ 	inline void						nbb(uintptr_t n)					        	 { _nbb_mark = (n << 4) | (_nbb_mark & 0xf); }
+ 	inline uintptr_t					nbb()                            { return _nbb_mark >> 4; }
 
 	/* pas de verification de debordement!!!! */
  	inline void						_mark(unsigned int m)             { _nbb_mark = m | (_nbb_mark & -8); }
@@ -101,7 +102,7 @@ class GCPage : public GCMappedArea {
  	static GCChunkNode empty;
 
  	GCChunkNode	*_headers;
- 	size_t			 _chunk_nbb;
+ 	uintptr_t			 _chunk_nbb;
 public:
  	static void initialise();
 
@@ -111,30 +112,30 @@ public:
  		_chunk_nbb = ((unsigned int)-1) >> 1;		/* on évite le /0 */
  	}
 
- 	inline GCPage(GCMappedArea *p, size_t mapped_nbb, size_t cnbb)
+ 	inline GCPage(GCMappedArea *p, uintptr_t mapped_nbb, uintptr_t cnbb)
  		: GCMappedArea(p, mapped_nbb) {
  		_chunk_nbb = cnbb;
  	}
 
  	inline ~GCPage() {}     /* FAIRE LE UNMAP A LA MAIN!!!!! */
 
- 	inline size_t					chunk_nbb()		        { return _chunk_nbb; }
- 	inline void 					chunk_nbb(size_t n)		{ _chunk_nbb = n; }
+ 	inline uintptr_t					chunk_nbb()		        { return _chunk_nbb; }
+ 	inline void 					chunk_nbb(uintptr_t n)		{ _chunk_nbb = n; }
  	inline GCChunkNode   *headers()			        { return _headers; }
  	inline void headers(GCChunkNode *h)         { _headers = h;; }
 
  	inline GCChunkNode *o2node(void *ptr, signed int mask) {
- 		register unsigned int entry = ((unsigned int)ptr - (unsigned int)area())/_chunk_nbb;
+ 		register uintptr_t entry = ((uintptr_t)ptr - (uintptr_t)area())/_chunk_nbb;
  		register GCChunkNode *res = _headers + entry;
- 		return ((unsigned int)ptr - (unsigned int)res->chunk() < res->nbb())
+ 		return ((uintptr_t)ptr - (uintptr_t)res->chunk() < res->nbb())
  			&& (res->isCollectable() == mask)
  			? res : 0;
  	}
 	
  	inline gc_header *o2header(void *ptr, signed int mask) {
- 		register unsigned int entry = ((unsigned int)ptr - (unsigned int)area())/_chunk_nbb;
+ 		register uintptr_t entry = ((uintptr_t)ptr - (uintptr_t)area())/_chunk_nbb;
  		register GCChunkNode *res = _headers + entry;
- 		return ((unsigned int)ptr - (unsigned int)res->chunk() < res->nbb())
+ 		return ((uintptr_t)ptr - (uintptr_t)res->chunk() < res->nbb())
  			&& (res->isCollectable() == mask)
  			? res->chunk() : 0;
  	}
@@ -143,7 +144,7 @@ public:
 class GCDescriptorMappedChunk : public GCPage {
 	GCChunkNode	header;
 public:
-	inline GCDescriptorMappedChunk(GCMappedArea *p, size_t mapped_nbb, size_t cnbb) 
+	inline GCDescriptorMappedChunk(GCMappedArea *p, uintptr_t mapped_nbb, uintptr_t cnbb) 
 		: GCPage(p, mapped_nbb, cnbb) {
 		header.initialise(0, area());
 		headers(&header);
@@ -159,9 +160,9 @@ public:
  	static const unsigned int		nb_set_per_hash = 1 << hash_bits;
  	static const unsigned int		set_nbb = 1 << (set_bits + desc_bits);
 
- 	static unsigned int	desc_entry(void * ptr) { return ((unsigned int)ptr >> desc_bits) & (( 1 << set_bits) - 1); }
- 	static unsigned int	set_entry(void *ptr) { return (unsigned int)ptr >> (set_bits + desc_bits); }
- 	static unsigned int	set_entry_2_ptr(unsigned int entry) { return entry << (set_bits + desc_bits); }
+ 	static uintptr_t	desc_entry(void * ptr) { return ((uintptr_t)ptr >> desc_bits) & (( 1 << set_bits) - 1); }
+ 	static uintptr_t	set_entry(void *ptr) { return (uintptr_t)ptr >> (set_bits + desc_bits); }
+ 	static uintptr_t	set_entry_2_ptr(uintptr_t entry) { return entry << (set_bits + desc_bits); }
 };
 
 class GCHashSet {
@@ -169,12 +170,12 @@ class GCHashSet {
 
  	GCPage		*pages[GCHashConst::nb_desc_per_set];
 public:
- 	void *operator new(size_t);
- 	void operator delete(void *, size_t);
+ 	void *operator new(uintptr_t);
+ 	void operator delete(void *, uintptr_t);
 	
  	GCHashSet();
 
- 	void hash(GCPage *, void *, size_t, size_t, unsigned int *);
+ 	void hash(GCPage *, void *, uintptr_t, uintptr_t, unsigned int *);
 
  	inline GCPage *get(void *ptr) { return pages[GCHashConst::desc_entry(ptr)]; }
 };
@@ -184,7 +185,7 @@ class GCHash {
  	static unsigned int		used[GCHashConst::nb_set_per_hash];
  	static GCHashSet	    empty;
 	static bool           inited;
-	static size_t         nb_link;
+	static uintptr_t         nb_link;
 
 public:
 	static void unlink() { nb_link--; }

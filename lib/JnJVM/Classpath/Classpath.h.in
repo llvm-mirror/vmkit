@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 
-char* GNUClasspathLibs  =  "@classpathlibs@";
-char* GNUClasspathGlibj =  "@classpathglibj@";
-char* GNUClasspathVersion = "@gnuclasspathversion@";
+const char* GNUClasspathLibs  =  "@classpathlibs@";
+const char* GNUClasspathGlibj =  "@classpathglibj@";
+const char* GNUClasspathVersion = "@gnuclasspathversion@";
 

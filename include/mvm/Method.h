@@ -47,11 +47,11 @@ public:
 
   inline Method *method(Method *m, size_t nbb) {
     return 
-      (Method *)gcset((gc **)((unsigned int)this + nbb + 4 - sizeof(Method *)), m);
+      (Method *)gcset((gc **)((uintptr_t)this + nbb), m);
   }
 
   inline Method *method(size_t nbb) {
-    return ((Method **)((unsigned int)this + nbb + 4 - sizeof(Method *)))[0];
+    return ((Method **)((uintptr_t)this + nbb))[0];
   }
     
   inline Method *method(Method *m) { return method(m, objectSize()); }
@@ -68,12 +68,12 @@ public:
 
   inline void *frameRegister(void *m, size_t nbb) {
     return 
-      (void *)gcset((gc **)((unsigned int)this + nbb + 4 - sizeof(void *)), 
+      (void *)gcset((gc **)((uintptr_t)this + nbb), 
                             (Object*)m);
   }
 
   inline void *frameRegister(size_t nbb) {
-    return ((void **)((unsigned int)this + nbb + 4 - sizeof(void *)))[0];
+    return ((void **)((uintptr_t)this + nbb))[0];
   }
     
   inline void *frameRegister(void *m) { return frameRegister(m, objectSize()); }

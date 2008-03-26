@@ -12,6 +12,7 @@
 
 #include <assert.h>
 
+#include "types.h"
 #include "mvm/GC/GC.h"
 
 namespace mvm {
@@ -56,7 +57,7 @@ public:
   virtual void    destroyer(size_t) {}
   virtual void    tracer(size_t) {}
   virtual void    print(PrintBuffer *buf) const;
-  virtual int     hashCode(){ return (int)this;}
+  virtual intptr_t     hashCode(){ return (intptr_t)this;}
 
 protected:
   static Object **rootTable;

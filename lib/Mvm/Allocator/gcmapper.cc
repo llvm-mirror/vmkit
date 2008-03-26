@@ -82,7 +82,7 @@ int GCMappedArea::mremap(size_t n) {
 	void *res = ::mremap(_mapped_area, _mapped_nbb, n, 0);
 #endif
   
-	if((int)res == -1)
+	if((intptr_t)res == -1)
 		return -1;
 	_mapped_area = res;
 	_mapped_nbb = n;
@@ -97,13 +97,13 @@ void *GCMinAlloc::alloc_area(GCMinAllocStack *s) {
 		/* pbm : on n'a vraiment plus rien :) */
 		area = (GCMappedArea *)::do_mmap(PAGE_SIZE);
 		area->initialise(area, PAGE_SIZE);
-		area_stack->fill((unsigned int)(area + 1), PAGE_SIZE - sizeof(GCMappedArea));
+		area_stack->fill((uintptr_t)(area + 1), PAGE_SIZE - sizeof(GCMappedArea));
 		area->append(&base_area);
 		area = (GCMappedArea *)area_stack->alloc();
 	}
 	area->mmap(PAGE_SIZE);
 	area->append(&base_area);
-	s->fill((unsigned int)area->area(), area->nbb());
+	s->fill((uintptr_t)area->area(), area->nbb());
 
 	return s->alloc();
 }

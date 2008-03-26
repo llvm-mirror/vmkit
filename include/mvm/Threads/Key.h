@@ -20,7 +20,7 @@ namespace mvm {
 
 class ThreadKey {
 public:
-  void * val;
+  pthread_key_t val;
   
   ThreadKey(void (*_destr)(void *));
   ThreadKey();
