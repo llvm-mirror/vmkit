@@ -17,6 +17,8 @@
 #include "mvm/GC/GC.h"
 #include "mvm/Threads/Locks.h"
 
+#include <cstdlib>
+
 namespace mvm {
 
 class Cond {
@@ -27,7 +29,7 @@ public:
   static Cond *allocCond(void);
   void broadcast(void);
   void wait(Lock *l);
-  int timed_wait(Lock *l, struct timeval *tv);
+  int timed_wait(Lock *l, timeval *tv);
   void signal(void);
 };
 

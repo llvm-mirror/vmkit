@@ -14,6 +14,8 @@
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/Debug.h"
 
+#include <map>
+
 using namespace llvm;
 
 namespace {

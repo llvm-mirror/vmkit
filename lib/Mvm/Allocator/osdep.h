@@ -17,24 +17,8 @@
 #define PAGE_SHIFT		12
 #define PAGE_SIZE			(1 << PAGE_SHIFT)
 
-/* stdio.h */
-#include <stdio.h>
-
-__BEGIN_DECLS
-
-/* stdio.h */
-extern int   printf(const char *, ...);
-extern int   fprintf(FILE *, const char *, ...);
-extern int   vfprintf(FILE *, const char *, va_list);
-
-
-/* stdlib.h */
-extern void exit(int) throw ();
-
-/* string.h */
-extern void *memcpy(void *, const void *, size_t) throw ();
-//extern void  bzero(void *, size_t);
-
-__END_DECLS
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #endif

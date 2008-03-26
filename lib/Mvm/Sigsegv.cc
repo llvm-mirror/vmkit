@@ -38,17 +38,15 @@ void sigsegv_handler(int n, siginfo_t *_info, void *context) {
 	void *caller_ip = caller->ip; 
 
 # if defined(__MACH__)
-  //.gregs[REG_EIP]; /* comme si c'était lui qui était sur la pile... */
-	caller->ip = (void *)((ucontext_t*)context)->uc_mcontext->ss.eip;
+  //.gregs[REG_EIP]; /* just like it's on the stack.. */
+	caller->ip = (void *)((ucontext_t*)context)->uc_mcontext->__ss.__eip;
 # else
   /* comme si c'était lui qui était sur la pile... */
 	caller->ip = (void *)((ucontext_t*)context)->uc_mcontext.gregs[REG_EIP]; 
 # endif
 #endif
 	
-	/* Il faut libérer le gc si il s'est planté tout seul pendant une collection.
-	   Ca le laisse dans un état TRES instable, c'est à dire que plus aucune
-     collection n'est possible */
+	/* Free the GC if it sisgegv'd. No other collection is possible */
 	gc::die_if_sigsegv_occured_during_collection(addr);
 	
 	//	sys_exit(0);
@@ -58,7 +56,7 @@ void sigsegv_handler(int n, siginfo_t *_info, void *context) {
 		signal(SIGSEGV, SIG_DFL);
 	
 #if defined(__i386__)
-	caller->ip = caller_ip; /* restaure the caller ip */
+	caller->ip = caller_ip; /* restore the caller ip */
 #endif
 }
 
