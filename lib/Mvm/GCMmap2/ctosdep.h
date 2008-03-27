@@ -11,14 +11,8 @@
 #define _CT_OSDEP_H_
 
 #include <sys/types.h>
-
-__BEGIN_DECLS
-
-extern void *				malloc(size_t);
-extern void					free(void *);
-extern int 					printf(const char *, ...);
-
-__END_DECLS
+#include <cstdio>
+#include <cstdlib>
 
 #define tmalloc					malloc
 #define tfree						free

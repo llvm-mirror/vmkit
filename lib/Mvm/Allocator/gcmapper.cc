@@ -127,7 +127,7 @@ void GCMinAlloc::destroy() {
 
  	for(nb_area=0, cur=base_area.next(); cur!=&base_area; cur=cur->next(), nb_area++);
 
- 	GCMappedArea	areas[nb_area];
+ 	GCMappedArea* areas = (GCMappedArea*)alloca(sizeof(GCMappedArea) * nb_area);
 
  	for(i=0, cur=base_area.next(); cur!=&base_area; cur=cur->next(), i++)
  		areas[i] = *cur;

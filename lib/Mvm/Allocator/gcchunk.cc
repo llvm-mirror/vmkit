@@ -91,7 +91,7 @@ void GCHash::initialise() {
 void GCHash::destroy() {
 	if(inited) {
 		if(nb_link)
-			gcwarning("Can't destroy GC hash map: you have clients connected on it\n");
+			gcwarning2("Can't destroy GC hash map: you have clients connected on it\n");
 		else {
 			inited = 0;
 			unsigned int i;

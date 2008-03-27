@@ -12,7 +12,7 @@ libuvm_gc_mmap2_a_SOURCES = gc.cc gccollector.cc gcinit.cc gccollector.h
 if HAVE_PTHREAD
 libuvm_gc_mmap2_a_SOURCES += gcthread.cc
 endif
-libuvm_gc_mmap2_a_CXXFLAGS =$(INCLUDEDIRS) -O2
+libuvm_gc_mmap2_a_CXXFLAGS =$(INCLUDEDIRS) -O2 -W -Wall -ansi -pedantic -Wno-unused-parameter -Wno-variadic-macros
 
 mainuvm_gc_mmap2_SOURCES = main.cc
 mainuvm_gc_mmap2_CXXFLAGS = -O2

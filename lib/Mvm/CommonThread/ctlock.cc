@@ -52,7 +52,7 @@ inline int atomic_test_and_pass(unsigned int *ptr) {
 # endif
 
   return result;
-#else
+#elif defined(__i386__)
 	// asm ("bts $1, %1; sbbl %0, %0":"=r" (result):"m" (*ptr):"memory");
 	unsigned int old;
 	int c=0;
@@ -64,6 +64,8 @@ inline int atomic_test_and_pass(unsigned int *ptr) {
 		if(!(++c & 0xf))
 			Thread::yield();
 	} while(1);
+#else
+#error "I do not know  how to do an atomic test and pass on your machine"
 #endif
 }
 

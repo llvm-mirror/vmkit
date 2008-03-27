@@ -27,6 +27,12 @@ extern void (*onMemoryError)(unsigned int sz);
                                   printf(msg, ##args); \
                                 } while(0)
 
+#define gcwarning2(msg)         do { \
+                                  printf("In %s (%s line %d):\n\t", __PRETTY_FUNCTION__, __FILE__, __LINE__); \
+                                  printf(msg); \
+                                } while(0)
+
+
 #endif
 
 

@@ -2,7 +2,6 @@ SUBDIRS = CommonThread Allocator GCMmap2
 DIST_SUBDIRS = CommonThread Allocator GCMmap2
 
 bin_PROGRAMS = main
-uvmdatadir=$(pkgdatadir)/lib
 
 THREADDIR=CommonThread
 ALLOCDIR=Allocator
@@ -12,7 +11,6 @@ INCLUDEDIRS=-I@srcdir@/$(THREADDIR) -I@srcdir@/$(ALLOCDIR) -I@srcdir@/$(GCDIR)
 LIBTHREAD=$(THREADDIR)/libuvm_@vvmthreadtype@_thread.a
 LIBALLOC=$(ALLOCDIR)/libuvm_alloc.a
 LIBGC=$(GCDIR)/libuvm_gc_@vvmgctype@.a @GC_LIBS@
-MAIN_O=main-main.o
 LIBSUVM=$(LIBGC) $(LIBALLOC) $(LIBTHREAD)
 PREFIX=@prefix@
 
