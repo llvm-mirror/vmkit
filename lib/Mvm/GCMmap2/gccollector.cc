@@ -44,7 +44,7 @@ void GCCollector::siggc_handler(int) {
 
 	threads->stackLock();
 	
- 	if(!loc) /* arrive lorsqu'on est en train de détruire une clé */		
+ 	if(!loc) /* a key is being destroyed */	
  		threads->another_mark();
  	else if(loc->current_mark() != cm) {
  		register unsigned int	**cur = (unsigned int **)&cur;
@@ -101,7 +101,7 @@ void GCCollector::do_collect() {
 	threads->collectionFinished();
 #endif
 	
- 	/* on tue tout le monde */
+ 	/* kill everyone */
  	GCChunkNode *next;
 
  	for(cur=finalizable.next(); cur!=&finalizable; cur=next) {
@@ -114,10 +114,6 @@ void GCCollector::do_collect() {
  		allocator->reject_chunk(cur);
  	}
 
-	//	printf(" collection finished\n");
-// 	/* voilà, c'est fini :) */
-// 	stacklock_fini.broadcast();
-// 	//	printf("---- End collect\n");
 }
 
 void GCCollector::collect_unprotect() {
@@ -136,10 +132,10 @@ void GCCollector::die_if_sigsegv_occured_during_collection(void *addr) {
 		printf("; but the collector is DEAD and will never collect again ;\n");
 		printf("; ****************************************************** ;\n");
 		
-		status = stat_broken;               /* indique que la collection est terminée + empeche toute nouvelle collection */
-		threads->cancel();                   /* emule une collection complete pour débloquer (synchro) les mutateurs */
-		used_nodes->eat(unused_nodes);      /* tous les noeuds sont utilisés... Domage pour les finalize, ils seront perdus! */
-		unlock_dont_recovery();             /* débloque le sémaphore du gc */
+		status = stat_broken;                 /* Collection is finished and no other collection will happend */
+		threads->cancel();                    /* Emulates a full collection to unlock mutators */
+		used_nodes->eat(unused_nodes);        /* All nodes are uses. Finalized are lost */
+		unlock_dont_recovery();               /* Unlocks the GC lock */
 		//gcfatal("SIGSEGV occured during collection at %p", addr);
 	}
 }
