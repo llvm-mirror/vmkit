@@ -69,7 +69,7 @@ ARRAYCLASS(ArraySInt32, sint32, 4)
 ARRAYCLASS(ArrayLong,   sint64, 8)
 ARRAYCLASS(ArrayFloat,  float, 4)
 ARRAYCLASS(ArrayDouble, double, 8)
-ARRAYCLASS(UTF8, uint16, 4)
+ARRAYCLASS(UTF8, uint16, 2)
 
 AT(ArrayObject, JavaObject*)
 
