@@ -26,6 +26,7 @@
 #include "types.h"
 
 #include "mvm/Object.h"
+#include "mvm/PrintBuffer.h"
 
 namespace jnjvm {
 
