@@ -38,10 +38,9 @@ bool LowerArrayLength::runOnFunction(Function& F) {
   bool Changed = false;
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
-
-    for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE; 
-         II++) {
+    for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
       Instruction *I = II;
+      II++;
       if (CallInst *CI = dyn_cast<CallInst>(I)) {
         if (CI->getOperand(0) == jnjvm::JavaJIT::arrayLengthLLVM) {
           Changed = true;
