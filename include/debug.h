@@ -49,16 +49,16 @@
   #ifdef WITH_COLOR
     #define PRINT_DEBUG(symb, level, color, fmt, args...) \
       if (symb > level) { \
-          sys_printf("%s%s%s", ESC, color, END); \
-          sys_printf(fmt, ##args); \
-          sys_printf("%s%s%s", ESC, COLOR_NORMAL, END); \
-          sys_fflush(stdout); \
+          printf("%s%s%s", ESC, color, END); \
+          printf(fmt, ##args); \
+          printf("%s%s%s", ESC, COLOR_NORMAL, END); \
+          fflush(stdout); \
       }
   #else
     #define PRINT_DEBUG(symb, level, color, fmt, args...) \
       if (symb > level) { \
-        sys_printf(fmt, ##args); \
-        sys_fflush(stdout); \
+        printf(fmt, ##args); \
+        fflush(stdout); \
       }
   #endif
 
