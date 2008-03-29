@@ -124,6 +124,17 @@ public:
   static const UTF8* readerConstruct(Jnjvm *vm, uint16* buf, uint32 n);
 
   const UTF8* extract(Jnjvm *vm, uint32 start, uint32 len) const;
+
+#ifdef SINGLE_VM
+  bool equals(const UTF8* other) const {
+    return this == other;
+  }
+#else
+  bool equals(const UTF8* other) const {
+    if (size != other->size) return false;
+    else return !memcmp(elements, other->elements, size * sizeof(uint16));
+  }
+#endif
 };
 
 } // end namespace jnjvm

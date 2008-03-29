@@ -34,6 +34,9 @@
 #include "Jnjvm.h"
 #include "LockedMap.h"
 #include "Reader.h"
+#ifdef SERVICE_VM
+#include "ServiceDomain.h"
+#endif
 #include "Zip.h"
 
 using namespace jnjvm;
@@ -222,7 +225,7 @@ void Jnjvm::readClass(Class* cl) {
   const UTF8* thisClassName = 
     ctpInfo->resolveClassName(reader->readU2());
   
-  if (thisClassName != cl->name) {
+  if (!(thisClassName->equals(cl->name))) {
     error(ClassFormatError, "try to load %s and found class named %s",
           cl->printString(), thisClassName->printString());
   }
@@ -292,7 +295,7 @@ start:
 
 #ifndef SINGLE_VM
       std::pair<uint8, JavaObject*>* val = 0;
-      if (this == bootstrapVM) {
+      if (this == bootstrapVM && !AssessorDesc::bogusClassToPrimitive(cl) && !cl->isArray) {
         JavaObject* staticVar = ((Class*)cl)->createStaticInstance();
         val = new std::pair<uint8, JavaObject*>(0, staticVar);
         JavaThread::get()->isolate->statics->hash((Class*)cl, val);
@@ -319,7 +322,7 @@ start:
 
       cl->status = ready;
 #ifndef SINGLE_VM
-      if (this == bootstrapVM) {
+      if (this == bootstrapVM && !AssessorDesc::bogusClassToPrimitive(cl) && !cl->isArray) {
         val->first = 1;
       }
 #endif
@@ -381,16 +384,6 @@ CommonClass* Jnjvm::loadName(const UTF8* name, JavaObject* loader,
 
   CommonClass* cl = lookupClass(name, loader);
   const UTF8* bootstrapName = name;
-#ifndef SINGLE_VM
-  if (!loader) {
-    bootstrapName = bootstrapVM->readerConstructUTF8(name->elements, 
-                                                     name->size);
-    if (bootstrapName != name) {
-      JavaThread::get()->isolate->hashUTF8->replace(name, bootstrapName);
-    }
-    cl = lookupClass(bootstrapName, loader);
-  }
-#endif
   
   if (!cl || cl->status == hashed) {
     if (!loader) { // I have to load it
@@ -626,7 +619,7 @@ CommonClass* Jnjvm::lookupClass(const UTF8* utf8, JavaObject* loader) {
     ServiceDomain* vm = 
       (ServiceDomain*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
     if (!vm) {
-      vm = ServiceDomain::allocate();
+      vm = ServiceDomain::allocateService(Jnjvm::bootstrapVM);
       (*Classpath::vmdataClassLoader)(loader, (JavaObject*)vm);
     }
     map = vm->classes;
@@ -676,7 +669,7 @@ ClassArray* Jnjvm::constructArray(const UTF8* name, JavaObject* loader) {
     ServiceDomain* vm = 
       (ServiceDomain*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
     if (!vm) {
-      vm = ServiceDomain::allocate();
+      vm = ServiceDomain::allocateService(Jnjvm::bootstrapVM);
       (*Classpath::vmdataClassLoader)(loader, (JavaObject*)vm);
     }
     map = vm->classes;
@@ -718,7 +711,7 @@ Class* Jnjvm::constructClass(const UTF8* name, JavaObject* loader) {
     ServiceDomain* vm = 
       (ServiceDomain*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
     if (!vm) {
-      vm = ServiceDomain::allocate();
+      vm = ServiceDomain::allocateService(Jnjvm::bootstrapVM);
       (*Classpath::vmdataClassLoader)(loader, (JavaObject*)vm);
     }
     map = vm->classes;

@@ -426,19 +426,12 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   
   isolate->analyseClasspathEnv(isolate->bootClasspathEnv);
 
-#ifndef SINGLE_VM
   isolate->functions = FunctionMap::allocate();
   isolate->module = new llvm::Module("Isolate JnJVM");
   isolate->protectModule = mvm::Lock::allocNormal();
   isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->module, 
                                                        isolate->functions);  
   JavaJIT::initialiseJITIsolateVM(isolate);
-#else
-  isolate->protectModule = callingVM->protectModule;
-  isolate->functions = callingVM->functions;
-  isolate->module = callingVM->module;
-  isolate->TheModuleProvider = callingVM->TheModuleProvider;
-#endif
   
   isolate->bootstrapThread = JavaThread::allocate(0, isolate);
   JavaThread::threadKey->set(isolate->bootstrapThread);
@@ -449,7 +442,8 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   isolate->appClassLoader = 0;
   isolate->jniEnv = &JNI_JNIEnvTable;
   isolate->javavmEnv = &JNI_JavaVMTable;
-#ifndef SINGLE_VM
+  
+  // We copy so that bootstrap utf8 such as "<init>" are unique
   isolate->hashUTF8 = bootstrapVM->hashUTF8->copy();
   isolate->hashStr = StringMap::allocate();
   isolate->bootstrapClasses = callingVM->bootstrapClasses;
@@ -459,15 +453,6 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   isolate->globalRefsLock = mvm::Lock::allocNormal();
   isolate->statics = StaticInstanceMap::allocate();  
   isolate->delegatees = DelegateeMap::allocate(); 
-#else
-  isolate->hashUTF8 = callingVM->hashUTF8;
-  isolate->hashStr = callingVM->hashStr;
-  isolate->bootstrapClasses = callingVM->bootstrapClasses;
-  isolate->loadedMethods = callingVM->loadedMethods;
-  isolate->loadedFields = callingVM->loadedFields;
-  isolate->javaTypes = callingVM->javaTypes;
-  isolate->globalRefsLock = callingVM->globalRefsLock;
-#endif
 
   return isolate;
 }

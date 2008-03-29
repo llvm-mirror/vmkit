@@ -31,6 +31,24 @@ namespace jnjvm {
 class JavaObject;
 class Jnjvm;
 
+struct ltutf8
+{
+#ifndef SINGLE_VM
+  bool operator()(const UTF8* s1, const UTF8* s2) const
+  {
+    if (s1->size < s2->size) return true;
+    else if (s1->size > s2->size) return false;
+    else return memcmp((const char*)s1->elements, (const char*)s2->elements, 
+                       s1->size * sizeof(uint16)) < 0;
+  }
+#else
+  bool operator()(const UTF8* s1, const UTF8* s2) const
+  {
+    return s1 < s2;
+  }
+#endif
+};
+
 template<class Key, class Container, class Compare>
 class LockedMap : public mvm::Object {
 public:
@@ -136,7 +154,7 @@ public:
 };
 
 class ClassMap : 
-    public LockedMap<const UTF8*, CommonClass*, std::less<const UTF8*> > {
+    public LockedMap<const UTF8*, CommonClass*, ltutf8 > {
 public:
   static VirtualTable* VT;
   static ClassMap* allocate() {
@@ -197,6 +215,7 @@ struct ltstr
   }
 };
 
+
 class ZipFileMap : public LockedMap<const char*, ZipFile*, ltstr> {
 public:
   static VirtualTable* VT;
@@ -215,7 +234,7 @@ public:
 };
 
 class StringMap :
-    public LockedMap<const UTF8*, JavaString*, std::less<const UTF8*> > {
+    public LockedMap<const UTF8*, JavaString*, ltutf8 > {
 public:
   static VirtualTable* VT;
   static StringMap* allocate() {
@@ -269,7 +288,7 @@ public:
 };
 
 class TypeMap :
-    public LockedMap<const UTF8*, Typedef*, std::less<const UTF8*> > {
+    public LockedMap<const UTF8*, Typedef*, ltutf8 > {
 public:
   static VirtualTable* VT;
   
@@ -308,6 +327,8 @@ public:
     //lock->markAndTrace();
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
       i->first->markAndTrace();
+      printf("i->second = %p\n", i->second);
+      printf("second again = %p\n", i->second->second);
       i->second->second->markAndTrace();
     }
   }

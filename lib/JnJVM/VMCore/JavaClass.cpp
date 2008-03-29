@@ -58,7 +58,7 @@ Attribut* Attribut::lookup(const std::vector<Attribut*>* vec,
   
   for (uint32 i = 0; i < vec->size(); i++) {
     Attribut* cur = vec->at(i);
-    if (cur->name == key) return cur;
+    if (cur->name->equals(key)) return cur;
   }
 
   return 0;
@@ -248,15 +248,6 @@ void JavaField::print(mvm::PrintBuffer* buf) const {
 JavaMethod* CommonClass::lookupMethodDontThrow(const UTF8* name,
                                                const UTF8* type, bool isStatic,
                                                bool recurse) {
-#ifndef SINGLE_VM
-  if (isolate == Jnjvm::bootstrapVM) {
-    name = Jnjvm::bootstrapVM->readerConstructUTF8(name->elements, 
-                                                   name->size);
-    type = Jnjvm::bootstrapVM->readerConstructUTF8(type->elements, 
-                                                   type->size);
-
-  }
-#endif
   
   std::vector<JavaMethod*>* meths = (isStatic? &staticMethods : 
                                                &virtualMethods);
@@ -267,7 +258,7 @@ JavaMethod* CommonClass::lookupMethodDontThrow(const UTF8* name,
 
   while (!res && i < nbm) {
     cur = meths->at(i);
-    if (cur->name == name && cur->type == type) {
+    if (cur->name->equals(name) && cur->type->equals(type)) {
       return cur;
     }
     ++i;
@@ -305,16 +296,6 @@ JavaField* CommonClass::lookupFieldDontThrow(const UTF8* name,
                                              const UTF8* type, bool isStatic,
                                              bool recurse) {
 
-#ifndef SINGLE_VM
-  if (isolate == Jnjvm::bootstrapVM) {
-    name = Jnjvm::bootstrapVM->readerConstructUTF8(name->elements, 
-                                                   name->size);
-    type = Jnjvm::bootstrapVM->readerConstructUTF8(type->elements, 
-                                                   type->size);
-
-  }
-#endif
-  
   std::vector<JavaField*>* fields = (isStatic? &staticFields : &virtualFields);
   
   JavaField *cur, *res = 0;
@@ -323,7 +304,7 @@ JavaField* CommonClass::lookupFieldDontThrow(const UTF8* name,
 
   while (!res && i < nbm) {
     cur = fields->at(i);
-    if (cur->name == name && cur->type == type) {
+    if (cur->name->equals(name) && cur->type->equals(type)) {
       return cur;
     }
     ++i;
@@ -387,7 +368,7 @@ JavaObject* Class::doNewIsolate() {
 #endif
 
 bool CommonClass::inheritName(const UTF8* Tname) {
-  if (name == Tname) {
+  if (name->equals(Tname)) {
     return true;
   } else  if (AssessorDesc::bogusClassToPrimitive(this)) {
     return true;
@@ -527,7 +508,8 @@ static void resolveStaticFields(Class* cl) {
   mvm::jit::unprotectConstants();//->unlock();
   
   mvm::jit::protectTypes();//->lock();
-  cl->staticType = llvm::PointerType::getUnqual(llvm::StructType::get(fields, false));
+  cl->staticType = 
+    llvm::PointerType::getUnqual(llvm::StructType::get(fields, false));
   mvm::jit::unprotectTypes();//->unlock();
 
   VirtualTable* VT = JavaJIT::makeVT(cl, true);
@@ -570,7 +552,8 @@ static void resolveVirtualFields(Class* cl) {
   mvm::jit::unprotectConstants();//->unlock();
   
   mvm::jit::protectTypes();//->lock();
-  cl->virtualType = llvm::PointerType::getUnqual(llvm::StructType::get(fields, false));
+  cl->virtualType = 
+    llvm::PointerType::getUnqual(llvm::StructType::get(fields, false));
   mvm::jit::unprotectTypes();//->unlock();
 
   VirtualTable* VT = JavaJIT::makeVT(cl, false);
@@ -614,7 +597,8 @@ void Class::setStaticInstance(JavaObject* val) {
 JavaObject* Class::staticInstance() {
   if (isolate == Jnjvm::bootstrapVM) {
     Class* cl = this;
-    std::pair<uint8, JavaObject*>* val = JavaThread::get()->isolate->statics->lookup(cl);
+    std::pair<uint8, JavaObject*>* val = 
+      JavaThread::get()->isolate->statics->lookup(cl);
     assert(val);
     return val->second;
   } else {
@@ -634,9 +618,11 @@ JavaObject* Class::createStaticInstance() {
 }
 
 bool CommonClass::isReady() {
-  if (isolate == Jnjvm::bootstrapVM) {
-    Class* cl = this;
-    std::pair<uint8, JavaObject*>* val = JavaThread::get()->isolate->statics->lookup(cl);
+  if (isolate == Jnjvm::bootstrapVM && !this->isArray && 
+      !AssessorDesc::bogusClassToPrimitive(this)) {
+    Class* cl = (Class*)this;
+    std::pair<uint8, JavaObject*>* val = 
+      JavaThread::get()->isolate->statics->lookup(cl);
     return val && val->first;
   } else {
     return status == ready;

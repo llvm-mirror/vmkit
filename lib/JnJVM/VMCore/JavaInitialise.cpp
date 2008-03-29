@@ -353,7 +353,11 @@ extern "C" int boot() {
 }
 
 extern "C" int start_app(int argc, char** argv) {
+#if defined(SINGLE_VM) || defined(SERVICE_VM)
+  JavaIsolate* vm = (JavaIsolate*)JavaIsolate::bootstrapVM;
+#else
   JavaIsolate* vm = JavaIsolate::allocateIsolate(JavaIsolate::bootstrapVM);
+#endif
   vm->runMain(argc, argv);
   return 0;
 }

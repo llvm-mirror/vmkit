@@ -22,6 +22,9 @@
 #include "Jnjvm.h"
 #include "LockedMap.h"
 #include "Reader.h"
+#ifdef SERVICE_VM
+#include "ServiceDomain.h"
+#endif
 #include "Zip.h"
 
 using namespace jnjvm;
@@ -77,6 +80,9 @@ using namespace jnjvm;
   INIT(CacheNode);
   INIT(Enveloppe);
   INIT(DelegateeMap);
+#ifdef SERVICE_VM
+  INIT(ServiceDomain);
+#endif
 
 #undef INIT
 
@@ -297,3 +303,9 @@ void Enveloppe::tracer(size_t sz) {
   ctpInfo->markAndTrace();
   //cacheLock->markAndTrace();
 }
+
+#ifdef SERVICE_VM
+void ServiceDomain::tracer(size_t sz) {
+  Jnjvm::tracer(sz);
+}
+#endif
