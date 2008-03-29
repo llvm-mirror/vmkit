@@ -451,8 +451,10 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   isolate->loadedFields = FieldMap::allocate();
   isolate->javaTypes = jnjvm::TypeMap::allocate(); 
   isolate->globalRefsLock = mvm::Lock::allocNormal();
+#ifndef SINGLE_VM
   isolate->statics = StaticInstanceMap::allocate();  
   isolate->delegatees = DelegateeMap::allocate(); 
+#endif
 
   return isolate;
 }
@@ -499,6 +501,8 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
 #ifndef SINGLE_VM
   isolate->statics = StaticInstanceMap::allocate();  
   isolate->delegatees = DelegateeMap::allocate(); 
+#else
+  isolate->threadSystem = ThreadSystem::allocateThreadSystem();
 #endif
   
   return isolate;
