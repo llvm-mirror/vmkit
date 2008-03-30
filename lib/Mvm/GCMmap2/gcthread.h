@@ -34,9 +34,10 @@ public:
 		_tid = t;
 	}
 
-	/* cette fonction n'est appelée que dans deux cas: soit parsqu'un thread quit */
-	/* dans ce cas, tout est déjà fait */
-	/* soit parce que le collecteur quitte et dans ce cas, toute la mémoire est bien libérée */
+	/* This function is only called in two cases:
+	 *   1) When a thread quits, in which case everything is already done.
+	*    2) When the collectors, in which case all memory is freed.
+	*/
  	inline 	~GCThreadCollector() {}
 	
  	inline int					tid()						{ return _tid; }
