@@ -105,10 +105,10 @@ extern "C" int startApp(thread_arg_t* arg) {
   char** argv = arg->argv;
   vmlet_main_t func = arg->func;
   free(arg);
-  gc::inject_my_thread(&argc);
+  Collector::inject_my_thread(&argc);
   func(argc, argv);
-  gc::remove_my_thread();
-  gc::collect();
+  Collector::remove_my_thread();
+  Collector::collect();
   return 0;
 }
 
@@ -150,7 +150,7 @@ void CommandLine::executeInstr() {
       Thread::start(&tid, (int (*)(void *))startApp, thread_arg);
 #else
       func(argc, argv);
-      gc::collect();
+      Collector::collect();
 #endif
     }
   }

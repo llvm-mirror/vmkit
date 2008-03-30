@@ -35,7 +35,7 @@ void CLIJit::printBacktrace() {
   int real_size = backtrace((void**)(void*)ips, 100);
   int n = 0;
   while (n < real_size) {
-    int *begIp = (int*)gc::begOf(ips[n++]);
+    int *begIp = (int*)Collector::begOf(ips[n++]);
     if (begIp) {
       const llvm::GlobalValue * glob = 
         mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);
@@ -70,7 +70,7 @@ Assembly* Assembly::getExecutingAssembly() {
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    int *begIp = (int*)gc::begOf(ips[n++]);
+    int *begIp = (int*)Collector::begOf(ips[n++]);
     if (begIp) {
       const llvm::GlobalValue * glob = 
         mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);
@@ -99,7 +99,7 @@ Assembly* Assembly::getCallingAssembly() {
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    int *begIp = (int*)gc::begOf(ips[n++]);
+    int *begIp = (int*)Collector::begOf(ips[n++]);
     if (begIp) {
       const llvm::GlobalValue * glob = 
         mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);

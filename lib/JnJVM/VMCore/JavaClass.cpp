@@ -212,7 +212,7 @@ void* JavaMethod::compiledPtr() {
       }
       // We can compile it, since if we're here, it's for a  good reason
       void* val = mvm::jit::executionEngine->getPointerToGlobal(methPtr);
-      if (gc::isObject(val)) {
+      if (Collector::isObject(val)) {
         mvm::Code* temp = (mvm::Code*)((unsigned*)val - 1);
         temp->method()->definition(this);
       }
@@ -520,7 +520,7 @@ static void resolveStaticFields(Class* cl) {
   cl->staticVT = VT;
   if (cl->isolate != Jnjvm::bootstrapVM) {
 #endif
-  JavaObject* val = (JavaObject*)mvm::Object::gcmalloc(size, VT);
+  JavaObject* val = (JavaObject*)gc::operator new(size, VT);
   cl->setStaticInstance(val);
   val->initialise(cl);
   for (std::vector<JavaField*>::iterator i = cl->staticFields.begin(),
@@ -561,12 +561,12 @@ static void resolveVirtualFields(Class* cl) {
   uint64 size = mvm::jit::getTypeSize(cl->virtualType->getContainedType(0));
   cl->virtualSize = size;
   cl->virtualVT = VT;
-  cl->virtualInstance = (JavaObject*)mvm::Object::gcmalloc(size, VT);
+  cl->virtualInstance = (JavaObject*)gc::operator new(size, VT);
   cl->virtualInstance->initialise(cl);
 
   for (std::vector<JavaField*>::iterator i = cl->virtualFields.begin(),
             e = cl->virtualFields.end(); i!= e; ++i) {
-    //  Virtual fields apparenty do not have inititizalizers, which is good
+    //  Virtual fields apparenty do not have initializers, which is good
     //  for isolates. I should not have to do this, but just to make sure.
     (*i)->initField(cl->virtualInstance);
   }

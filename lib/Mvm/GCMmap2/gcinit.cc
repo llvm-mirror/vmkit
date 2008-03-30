@@ -25,7 +25,7 @@ int GCCollector::siggc() {
 	return SIGGC;
 }
 
-void GCCollector::initialise(gc::markerFn marker) {
+void GCCollector::initialise(Collector::markerFn marker) {
 	
   used_nodes = new GCChunkNode();
   unused_nodes = new GCChunkNode();

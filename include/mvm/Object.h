@@ -38,26 +38,25 @@ class Object;
 class Object : public gc {
 public:
   static VirtualTable* VT; 
-  bool    isObject() const;
-  Object *begOf() const;
-  size_t  objectSize() const;
-  VirtualTable* getVirtualTable() {
+  
+  VirtualTable* getVirtualTable() const {
     return ((VirtualTable**)(this))[0];
+  }
+  
+  void setVirtualTable(VirtualTable* VT) {
+    ((VirtualTable**)(this))[0] = VT;
   }
 
   char *printString(void) const;
-  static char * printStatic(const Object *); 
 
 #if !defined(GC_GEN)
   inline gc *gcset(void *ptr, gc *src) { return *((gc **)ptr) = src; }
 #endif
   
-
-
-  virtual void    destroyer(size_t) {}
-  virtual void    tracer(size_t) {}
-  virtual void    print(PrintBuffer *buf) const;
-  virtual intptr_t     hashCode(){ return (intptr_t)this;}
+  virtual void      destroyer(size_t) {}
+  virtual void      tracer(size_t) {}
+  virtual void      print(PrintBuffer *buf) const;
+  virtual intptr_t  hashCode(){ return (intptr_t)this;}
 
 protected:
   static Object **rootTable;
@@ -88,7 +87,6 @@ public:
   }
 
   static void markAndTraceRoots(void);
-  static Object *gcmalloc(size_t sz, VirtualTable* VT);
   static void initialise(void *sp);
 
 };

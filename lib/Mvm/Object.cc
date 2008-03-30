@@ -9,21 +9,10 @@
 
 #include <stdlib.h>
 
-#include "mvm/CollectableArea.h"
 #include "mvm/Method.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/GC/GC.h"
-#include "mvm/Threads/Cond.h"
-#include "mvm/Threads/Key.h"
-#include "mvm/Threads/Locks.h"
-#include "mvm/VMLet.h"
-
-
-#include "llvm/DerivedTypes.h"
-#include "llvm/Module.h"
-#include "llvm/Type.h"
-
 
 using namespace mvm;
 
@@ -33,11 +22,6 @@ VirtualTable *Code::VT = 0;
 VirtualTable *ExceptionTable::VT = 0;
 VirtualTable *NativeString::VT = 0;
 VirtualTable *PrintBuffer::VT = 0;
-//VirtualTable *Lock::VT = 0;
-//VirtualTable *LockNormal::VT = 0;
-//VirtualTable *LockRecursive::VT = 0;
-//VirtualTable *ThreadKey::VT = 0;
-//VirtualTable *Cond::VT = 0;
 
 
 Object **Object::rootTable= 0;
@@ -62,22 +46,6 @@ void Object::markAndTraceRoots(void) {
     rootTable[i]->markAndTrace();
 }
 
-size_t Object::objectSize(void) const {
-  return gc::objectSize();
-}
-
-bool Object::isObject() const { 
-  return gc::isObject(this); 
-}
-
-Object *Object::begOf() const { 
-  return (Object *)gc::begOf(this);
-}
-
-Object *Object::gcmalloc(size_t sz, VirtualTable* VT) {
-  return (Object *)operator new(sz, VT);
-}
-
 void Object::initialise(void *b_sp) {
 # define INIT(X) { \
   X fake; \
@@ -88,16 +56,11 @@ void Object::initialise(void *b_sp) {
   INIT(Code);
   INIT(NativeString);
   INIT(PrintBuffer);
-  //INIT(Lock);
-  //INIT(LockNormal);
-  //INIT(LockRecursive);
-  //INIT(ThreadKey);
-  //INIT(Cond);
   INIT(ExceptionTable);
   
 #undef INIT
 
-  gc::initialise(Object::markAndTraceRoots, b_sp);
+  Collector::initialise(Object::markAndTraceRoots, b_sp);
 }
 
 void Code::tracer(size_t sz) {
@@ -123,7 +86,7 @@ PrintBuffer *PrintBuffer::alloc(void) {
 
 
 PrintBuffer *PrintBuffer::writeObj(const Object *obj) {
-	Object *beg = obj->begOf();
+	Object *beg = (Object*)Collector::begOf(obj);
 	
 	if(beg) {
 		if(beg == obj)
@@ -159,10 +122,6 @@ char *Object::printString(void) const {
   PrintBuffer *buf= PrintBuffer::alloc();
 	buf->writeObj(this);
   return buf->contents()->cString();
-}
-
-char * Object::printStatic(const Object * obj) {
-  return obj->printString();
 }
 
 void Object::print(PrintBuffer *buf) const {
@@ -212,4 +171,4 @@ void NativeString::print(PrintBuffer *buf) const {
   buf->write("\"");
 }
 
-NativeString      *PrintBuffer::getContents() { return contents(); }
+NativeString *PrintBuffer::getContents() { return contents(); }

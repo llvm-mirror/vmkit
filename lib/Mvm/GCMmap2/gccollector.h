@@ -26,7 +26,7 @@ class GCCollector {
 #endif
 	static GCAllocator  *allocator;      /* la machine à allouer de la mémoire */
 
- 	static gc::markerFn  _marker;        /* la fonction qui marque les racines */
+ 	static Collector::markerFn  _marker;        /* la fonction qui marque les racines */
 
  	static GCChunkNode  *used_nodes;     /* les noeuds mémoires utilisés */
 	static GCChunkNode  *unused_nodes;   /* les noeuds inutilisés */
@@ -79,7 +79,7 @@ public:
     lock();
   }
 
-	static void	initialise(gc::markerFn marker);
+	static void	initialise(Collector::markerFn marker);
 	static void	destroy();
 
 	static int	siggc();

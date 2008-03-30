@@ -265,7 +265,7 @@ void VMClass::resolveStaticFields() {
   VirtualTable* VT = CLIJit::makeVT(cl, true);
 
   uint64 size = mvm::jit::getTypeSize(cl->staticType->getContainedType(0));
-  cl->staticInstance = (VMObject*)mvm::Object::gcmalloc(size, VT);
+  cl->staticInstance = (VMObject*)gc::operator new(size, VT);
   cl->staticInstance->initialise(cl);
 
   for (std::vector<VMField*>::iterator i = cl->staticFields.begin(),
@@ -366,7 +366,7 @@ void VMClass::resolveVirtualFields() {
     VirtualTable* VT = CLIJit::makeVT(this, false);
   
     uint64 size = mvm::jit::getTypeSize(cl->virtualType->getContainedType(0));
-    cl->virtualInstance = (VMObject*)mvm::Object::gcmalloc(size, VT);
+    cl->virtualInstance = (VMObject*)gc::operator new(size, VT);
     cl->virtualInstance->initialise(cl);
 
     for (std::vector<VMField*>::iterator i = cl->virtualFields.begin(),

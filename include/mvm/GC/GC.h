@@ -20,30 +20,33 @@ class gc;
 typedef void VirtualTable;
 #define  gc_new(Class)  __gc_new(Class::VT) Class
 
+class gc {
+public:
+  virtual           ~gc() {}
+  virtual void      destroyer(size_t) {}
+  virtual void      tracer(size_t) {}
+
+	void	  markAndTrace() const;
+	size_t	objectSize() const;
+	void *  operator new(size_t sz, VirtualTable *VT);
+	void    operator delete(void *);
+	void *  realloc(size_t n);
+
+};
+
 class gc_header {
 public:
   VirtualTable *_XXX_vt;
 	inline gc *_2gc() { return (gc *)this; }
 };
 
-class gc {
+class Collector {
 public:
 
 	typedef void (*markerFn)(void);
-	inline gc() {}
-	virtual ~gc() {}
-
-	static void	initialise(markerFn mark, void *base_sp);
+	
+  static void	initialise(markerFn mark, void *base_sp);
 	static void	destroy();
-  void setVT(VirtualTable* VT) {
-    ((void**)this)[0] = VT;
-  }
-
-	void	markAndTrace() const;
-	size_t	objectSize() const;
-	void *  operator new(size_t sz, VirtualTable *VT);
-	void    operator delete(void *);
-	void *  realloc(size_t n);
 
 	static void           die_if_sigsegv_occured_during_collection(void *addr);
 	static int            isStable(gc_lock_recovery_fct_t, int, int, int, int,
@@ -65,9 +68,6 @@ public:
         static int      getTotalMemory(void);
         static void     setMaxMemory(size_t);
         static void     setMinMemory(size_t);
-	
-  virtual void					destroyer(size_t sz) {} ;
-	virtual void					tracer(size_t sz) {};
 };
 
 #define __gc_new new

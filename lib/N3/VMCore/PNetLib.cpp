@@ -1137,7 +1137,7 @@ extern "C" sint32 System_String_InternalOrdinal(CLIString *strA, sint32 indexA, 
 }
 
 extern "C" void System_GC_Collect() {
-  gc::collect();
+  Collector::collect();
 }
 
 

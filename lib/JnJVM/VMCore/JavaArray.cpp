@@ -87,7 +87,7 @@ ArrayObject *ArrayObject::acons(sint32 n, ClassArray* atype) {
   res->initialise(atype);
   res->size = n;
   memset(res->elements, 0, sizeof(JavaObject*) * n);
-  res->setVT(ArrayObject::VT);
+  res->setVirtualTable(ArrayObject::VT);
   return res;
 }
 

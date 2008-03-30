@@ -23,9 +23,9 @@ void marker(void) {
 }
 
 int main(int argc, char **argv) {
-	gc::initialise(marker, 0);
+  Collector::initialise(marker, 0);
 
-	gc::destroy();
+	Collector::destroy();
  	return 0;
 }
 

@@ -20,7 +20,7 @@ using namespace llvm;
 unsigned char* MvmMemoryManager::startFunctionBody(const Function* F, 
                                                    uintptr_t &ActualSize) {
   size_t nbb = ((ActualSize - 1) & -4) + 4 + sizeof(Method *);
-  Code *res = (Code *)Object::gcmalloc(nbb, Code::VT);
+  Code *res = (Code *)gc::operator new(nbb, Code::VT);
   
   Method* meth = gc_new(Method)(res, ActualSize);
   res->method(meth);
@@ -31,7 +31,7 @@ unsigned char* MvmMemoryManager::startFunctionBody(const Function* F,
 unsigned char *MvmMemoryManager::allocateStub(unsigned StubSize, 
                                               unsigned Alignment) {
   size_t nbb = ((StubSize - 1) & -4) + 4 + sizeof(Method *);
-  Code *res = (Code *)Object::gcmalloc(nbb, Code::VT); 
+  Code *res = (Code *)gc::operator new(nbb, Code::VT); 
   Method* meth = gc_new(Method)(res, StubSize);
   res->method(meth);
   Object::pushRoot(meth);
@@ -59,7 +59,7 @@ unsigned char *MvmMemoryManager::getGOTBase() const {
 
 unsigned char *MvmMemoryManager::startExceptionTable(const Function* F, 
                                                      uintptr_t &ActualSize) {
-  ExceptionTable *res = (ExceptionTable*)Object::gcmalloc(ActualSize + 4, 
+  ExceptionTable *res = (ExceptionTable*)gc::operator new(ActualSize + 4, 
                                                           ExceptionTable::VT);
   currentMethod->exceptionTable(res);
   return (unsigned char*)(res + 1);

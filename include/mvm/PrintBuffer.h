@@ -33,7 +33,7 @@ public:
 	}
 
 	static inline NativeString *alloc(size_t len) {
-		return (NativeString *)Object::gcmalloc(len, VT);
+		return (NativeString *)gc::operator new(len, VT);
 	}
 
 	inline NativeString *realloc(size_t len) {

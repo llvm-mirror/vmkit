@@ -119,7 +119,7 @@ extern "C" void debug_backtrace(int **fp) {
   fp = debug_frame_caller_from_first_fp(fp);
   while ((!frame_end(fp)) && (debug_frame_ip(fp) != 0)) {
     int * ip = debug_frame_ip(fp);
-    int *begIp = (int*)gc::begOf(ip);
+    int *begIp = (int*)Collector::begOf(ip);
     if (begIp) {
       const llvm::GlobalValue * glob = 
         mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);
@@ -146,7 +146,7 @@ void JavaJIT::printBacktrace() {
   int real_size = backtrace((void**)(void*)ips, 100);
   int n = 0;
   while (n < real_size) {
-    int *begIp = (int*)gc::begOf(ips[n++]);
+    int *begIp = (int*)Collector::begOf(ips[n++]);
     if (begIp) {
       const llvm::GlobalValue * glob = 
         mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);
@@ -182,7 +182,7 @@ Class* JavaJIT::getCallingClass() {
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    int *begIp = (int*)gc::begOf(ips[n++]);
+    int *begIp = (int*)Collector::begOf(ips[n++]);
     if (begIp) {
       const llvm::GlobalValue * glob = 
         mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);
@@ -208,7 +208,7 @@ Class* JavaJIT::getCallingClassWalker() {
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    int *begIp = (int*)gc::begOf(ips[n++]);
+    int *begIp = (int*)Collector::begOf(ips[n++]);
     if (begIp) {
       const llvm::GlobalValue * glob = 
         mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);

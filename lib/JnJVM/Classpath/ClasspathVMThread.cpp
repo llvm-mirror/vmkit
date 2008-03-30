@@ -46,7 +46,7 @@ typedef struct arg_thread_t {
 
 static void start(arg_thread_t* arg) {
   int argc;
-  gc::inject_my_thread(&argc);
+  Collector::inject_my_thread(&argc);
   JavaObject* vmThread = arg->vmThread;
   JavaThread* intern = arg->intern;
   delete arg;
@@ -74,7 +74,7 @@ static void start(arg_thread_t* arg) {
       ts->nonDaemonVar->signal();
     ts->nonDaemonLock->unlock();
   }
-  gc::remove_my_thread();
+  Collector::remove_my_thread();
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMThread_start(

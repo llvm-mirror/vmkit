@@ -34,7 +34,7 @@ public:
 
   static inline CollectableArea *alloc(size_t cap, size_t st, size_t e) {
     CollectableArea *res = 
-      (CollectableArea *)Object::gcmalloc(sizeof(CollectableArea) + cap<<2, VT);
+      (CollectableArea *)gc::operator new(sizeof(CollectableArea) + cap<<2, VT);
     res->firstIndex = st;
     res->lastIndex = e;
     res->capacity = cap;

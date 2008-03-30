@@ -38,23 +38,23 @@ void *gc::realloc(size_t n) {
  	return GCCollector::gcrealloc(this, n);
 }
 
-unsigned int gc::enable(unsigned int n) {
+unsigned int Collector::enable(unsigned int n) {
  	return GCCollector::enable(n);
 }
 
-int gc::isStable(gc_lock_recovery_fct_t fct, int a0, int a1, int a2, int a3, int a4, int a5, int a6, int a7) {
+int Collector::isStable(gc_lock_recovery_fct_t fct, int a0, int a1, int a2, int a3, int a4, int a5, int a6, int a7) {
 	return GCCollector::isStable(fct, a0, a1, a2, a3, a4, a5, a6, a7);
 }
 
-void gc::die_if_sigsegv_occured_during_collection(void *addr) {
+void Collector::die_if_sigsegv_occured_during_collection(void *addr) {
 	GCCollector::die_if_sigsegv_occured_during_collection(addr);
 }
 
-void gc::gcStats(size_t &no, size_t &nbb) {
+void Collector::gcStats(size_t &no, size_t &nbb) {
 	GCCollector::gcStats(&no, &nbb);
 }
 
-void gc::initialise(markerFn marker, void *base_sp) {
+void Collector::initialise(markerFn marker, void *base_sp) {
 #ifdef HAVE_PTHREAD
 	Thread::initialise();
 #endif
@@ -64,64 +64,64 @@ void gc::initialise(markerFn marker, void *base_sp) {
 #endif
 }
 
-void gc::destroy() {
+void Collector::destroy() {
 	GCCollector::destroy();
 }
 
-void gc::inject_my_thread(void *base_sp) {
+void Collector::inject_my_thread(void *base_sp) {
 #ifdef HAVE_PTHREAD
 	GCCollector::inject_my_thread(base_sp);
 #endif
 }
 
-void gc::maybeCollect() {
+void Collector::maybeCollect() {
  	GCCollector::maybeCollect();
 }
 
-void gc::collect(void) {
+void Collector::collect(void) {
  	GCCollector::collect();
 }
 
-gc *gc::begOf(const void *obj) {
+gc *Collector::begOf(const void *obj) {
 	return GCCollector::begOf((void*)obj);
 }
 
-int gc::byteOffset(void *obj) {
+int Collector::byteOffset(void *obj) {
 	int beg = (intptr_t)GCCollector::begOf(obj);
   intptr_t off = (intptr_t)obj;
   return (off-beg);
 }
 
 
-void gc::applyFunc(void (*func)(gc *o, void *data), void *data){
+void Collector::applyFunc(void (*func)(gc *o, void *data), void *data){
   return GCCollector::applyFunc(func, data);
 }
 
-int gc::getMaxMemory(void){
+int Collector::getMaxMemory(void){
   return 0;
 }
 
-int gc::getFreeMemory(void){
+int Collector::getFreeMemory(void){
   return 0;
 }
 
-int gc::getTotalMemory(void){
+int Collector::getTotalMemory(void){
   return 0;
 }
 
-void gc::setMaxMemory(size_t sz){
+void Collector::setMaxMemory(size_t sz){
 }
 
-void gc::setMinMemory(size_t sz){
+void Collector::setMinMemory(size_t sz){
 }
 
-void gc::registerMemoryError(void (*func)(unsigned int)){
+void Collector::registerMemoryError(void (*func)(unsigned int)){
   GCCollector::internMemoryError = func;
   onMemoryError = &GCCollector::defaultMemoryError;
   
 }
 
-void gc::remove_my_thread() {
+void Collector::remove_my_thread() {
 #ifdef HAVE_PTHREAD
   GCCollector::remove_thread(GCCollector::threads->myloc());
 #endif

@@ -1409,7 +1409,7 @@ extern "C" void indexOutOfBounds() {
 
 
 extern "C" bool isInCode(void* value) {
-  mvm::Object* obj = (mvm::Object*)gc::begOf(value);
+  mvm::Object* obj = (mvm::Object*)Collector::begOf(value);
   if (obj && obj->getVirtualTable() == mvm::Code::VT) {
     return true;
   } else {

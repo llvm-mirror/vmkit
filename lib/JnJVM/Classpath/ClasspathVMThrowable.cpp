@@ -78,7 +78,7 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
 
 ArrayObject* recGetStackTrace(int** stack, uint32 size, uint32 first, uint32 rec) {
   if (size != first) {
-    int *begIp = (int*)gc::begOf(stack[first]);
+    int *begIp = (int*)Collector::begOf(stack[first]);
     JavaMethod* meth = ip_to_meth(begIp);
     if (meth) {
       ArrayObject* res = recGetStackTrace(stack, size, first + 1, rec + 1);
@@ -104,7 +104,7 @@ jobject vmthrow, jobject throwable) {
   sint32 i = 0;
   
   while (i < array->size) {
-    int *begIp = (int*)gc::begOf((void*)stack[i++]);
+    int *begIp = (int*)Collector::begOf((void*)stack[i++]);
     JavaMethod* meth = ip_to_meth(begIp);
     if (meth && meth->classDef == cl) {
       first = i;

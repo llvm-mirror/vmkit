@@ -47,7 +47,7 @@ void sigsegv_handler(int n, siginfo_t *_info, void *context) {
 #endif
 	
 	/* Free the GC if it sisgegv'd. No other collection is possible */
-	gc::die_if_sigsegv_occured_during_collection(addr);
+	Collector::die_if_sigsegv_occured_during_collection(addr);
 	
 	//	sys_exit(0);
 	if(client_sigsegv_handler)

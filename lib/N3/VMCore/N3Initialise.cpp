@@ -226,7 +226,7 @@ static void loadStringClass(N3* vm) {
 
   uint64 size = mvm::jit::getTypeSize(type->virtualType->getContainedType(0)) + sizeof(const UTF8*) + sizeof(llvm::GlobalVariable*);
   type->virtualInstance = 
-    (VMObject*)mvm::Object::gcmalloc(size, type->virtualInstance->getVirtualTable());
+    (VMObject*)gc::operator new(size, type->virtualInstance->getVirtualTable());
   type->virtualInstance->initialise(type);
 }
 

@@ -88,7 +88,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
-  gc::collect();
+  Collector::collect();
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMRuntime_runFinalization(
@@ -129,7 +129,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
-  return (jlong)512*1000;//gc::getFreeMemory();
+  return (jlong)Collector::getFreeMemory();
 }
 
 JNIEXPORT jlong Java_java_lang_VMRuntime_totalMemory(
@@ -138,7 +138,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
-  return (jlong)512*1000;//gc::getTotalMemory();
+  return (jlong)Collector::getTotalMemory();
 }
 
 JNIEXPORT jlong Java_java_lang_VMRuntime_maxMemory(
@@ -147,7 +147,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
-  return (jlong)512*1000;//gc::getMaxMemory();
+  return (jlong)Collector::getMaxMemory();
 }
 
 }

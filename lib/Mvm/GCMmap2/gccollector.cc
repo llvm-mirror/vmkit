@@ -17,7 +17,7 @@ GCAllocator   *GCCollector::allocator = 0;
 GCThread      *GCCollector::threads;
 #endif
 
-gc::markerFn   GCCollector::_marker;
+Collector::markerFn   GCCollector::_marker;
 
 int  GCCollector::_collect_freq_auto;
 int  GCCollector::_collect_freq_maybe;

@@ -31,7 +31,7 @@ extern "C" {
 
 ArrayObject* recGetClassContext(int** stack, uint32 size, uint32 first, uint32 rec) {
   if (size != first) {
-    int *begIp = (int*)gc::begOf(stack[first]);
+    int *begIp = (int*)Collector::begOf(stack[first]);
     JavaMethod* meth = ip_to_meth(begIp);
     if (meth) {
       ArrayObject* res = recGetClassContext(stack, size, first + 1, rec + 1); 
@@ -58,7 +58,7 @@ jclass clazz,
   CommonClass* cl = Classpath::vmStackWalker; 
 
   while (i < real_size) {
-    int *begIp = (int*)gc::begOf(ips[i++]);
+    int *begIp = (int*)Collector::begOf(ips[i++]);
     JavaMethod* meth = ip_to_meth(begIp);
     if (meth && meth->classDef == cl) {
       first = i;
@@ -87,7 +87,7 @@ extern "C" JavaObject* getCallingClass() {
   int i = 0;
   
   while (i < real_size) {
-    int *begIp = (int*)gc::begOf(ips[i++]);
+    int *begIp = (int*)Collector::begOf(ips[i++]);
     JavaMethod* meth = ip_to_meth(begIp);
     if (meth) {
       ++n;
@@ -105,7 +105,7 @@ extern "C" JavaObject* getCallingClassLoader() {
   int i = 0;
   
   while (i < real_size) {
-    int *begIp = (int*)gc::begOf(ips[i++]);
+    int *begIp = (int*)Collector::begOf(ips[i++]);
     JavaMethod* meth = ip_to_meth(begIp);
     if (meth) {
       ++n;
