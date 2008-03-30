@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script
 
 AC_INIT([micro-vm],[0.0.1])
 AC_PREREQ([2.59])
-AC_CONFIG_SRCDIR([lib/Mvm/Main.cc])
+AC_CONFIG_SRCDIR([lib/Mvm/Main.cpp])
 
 
 dnl **************************************************************************
