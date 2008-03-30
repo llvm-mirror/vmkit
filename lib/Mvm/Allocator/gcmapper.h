@@ -37,7 +37,7 @@ public:
  	GCMappedArea	*next() { return _next; }
 	
  	inline GCMappedArea() { _prev = _next = this; }
- 	inline GCMappedArea(uintptr_t n) { _prev = _next = this; mmap(n); }
+ 	inline explicit GCMappedArea(uintptr_t n) { _prev = _next = this; mmap(n); }
  	inline GCMappedArea(GCMappedArea *p, uintptr_t n) { append(p); mmap(n); }
 
  	inline void		initialise(void *p, uintptr_t n) { _mapped_area = p; _mapped_nbb = n; }
