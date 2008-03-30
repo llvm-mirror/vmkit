@@ -37,7 +37,7 @@ void GCCollector::initialise(Collector::markerFn marker) {
 	sigset_t mask;
 
 #ifdef HAVE_PTHREAD
-	on_fatal = unlock_dont_recovery;
+	//on_fatal = unlock_dont_recovery;
 #endif
 
 	sigaction(SIGGC, 0, &sa);

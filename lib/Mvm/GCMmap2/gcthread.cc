@@ -11,34 +11,11 @@
 
 using namespace mvm;
 
-void *GCThreadCollector::operator new(size_t sz)   { 
-	return GCCollector::allocate_unprotected(sz); 
-}
-
-void GCThreadCollector::operator delete(void *ptr) { 
-	//printf("DELETE %p\n", ptr);
-	GCCollector::free_unprotected(ptr); 
-}
-
-void GCThreadCollector::destroy_Key(void *ptr) {
-	GCCollector::remove_thread((GCThreadCollector *)ptr);
-}
-
 void GCThread::waitStacks() {
 	_stackLock.lock();
 	while(_nb_collected < _nb_threads)
 		_stackCond.wait(&_stackLock);
 	_stackLock.unlock();
-}
-
-void GCThread::waitCollection() {
-	unsigned int cm = GCCollector::current_mark;
-
-	if(Thread::self() != collector_tid) {
-		collectorGo();
-		while((GCCollector::current_mark == cm) && (GCCollector::status == GCCollector::stat_collect))
-			_collectionCond.wait(&_stackLock);
-	}
 }
 
 void GCThread::synchronize() {

@@ -12,63 +12,6 @@
 
 using namespace mvm;
 
-GCAllocator   *GCCollector::allocator = 0;
-#ifdef HAVE_PTHREAD
-GCThread      *GCCollector::threads;
-#endif
-
-Collector::markerFn   GCCollector::_marker;
-
-int  GCCollector::_collect_freq_auto;
-int  GCCollector::_collect_freq_maybe;
-int  GCCollector::_since_last_collection;
-
-bool GCCollector::_enable_auto;
-bool GCCollector::_enable_maybe;
-bool GCCollector::_enable_collection;
-
-int					  GCCollector::status;
-
-GCChunkNode    *GCCollector::used_nodes;
-GCChunkNode    *GCCollector::unused_nodes;
-
-unsigned int   GCCollector::current_mark;
-
-#ifdef HAVE_PTHREAD
-void GCCollector::siggc_handler(int) {
- 	GCThreadCollector     *loc = threads->myloc();
- 	register unsigned int cm = current_mark;
-	//	jmp_buf buf;
-
-	//	setjmp(buf);
-
-	threads->stackLock();
-	
- 	if(!loc) /* a key is being destroyed */	
- 		threads->another_mark();
- 	else if(loc->current_mark() != cm) {
- 		register unsigned int	**cur = (unsigned int **)&cur;
- 		register unsigned int	**max = loc->base_sp();
-		
- 		GCChunkNode *node;
-		
- 		for(; cur<max; cur++) {
- 			if((node = o2node(*cur)) && (!isMarked(node))) {
- 				node->remove();
- 				node->append(used_nodes);
- 				mark(node);
- 			}
- 		}
-		
- 		loc->current_mark(cm);
- 		threads->another_mark();
-		
-		threads->waitCollection();
-	}
-	threads->stackUnlock();
-}
-#endif
-
 void GCCollector::do_collect() {
 	//printf("----- do collect -----\n");
 	jmp_buf   buf;

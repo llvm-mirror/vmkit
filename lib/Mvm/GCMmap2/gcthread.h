@@ -10,8 +10,6 @@
 #ifndef _GC_THREAD_H_
 #define _GC_THREAD_H_
 
-//#include "gcalloc.h"
-//#include "ctlock.h"
 #include "ctcircular.h"
 #include "mvm/GC/GC.h"
 #include "mvm/Threads/Cond.h"
@@ -29,10 +27,6 @@ class GCThreadCollector : public CircularBase {
  	int								_tid;
 	
 public:
- 	static void initialise_Key(void *) {}
- 	static void duplicate_for_thread(void *, void *) {}
- 	static void destroy_Key(void *ptr);
-
 	inline GCThreadCollector() {}
  	inline GCThreadCollector(GCThreadCollector *pred, int t, void *p, int m) : CircularBase(pred) {
 		_base_sp = p;
@@ -45,9 +39,6 @@ public:
 	/* soit parce que le collecteur quitte et dans ce cas, toute la mémoire est bien libérée */
  	inline 	~GCThreadCollector() {}
 	
- 	void *operator new(size_t sz);
- 	void operator delete(void *ptr);
-
  	inline int					tid()						{ return _tid; }
  	inline unsigned int current_mark()	{ return _cur_mark; }
  	inline void					current_mark(unsigned int m)	{ _cur_mark = m; }
