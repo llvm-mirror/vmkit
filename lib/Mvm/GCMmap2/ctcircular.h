@@ -24,7 +24,7 @@ public:
 	inline void prev(CircularBase *p) { _prev = p; }
 
 	inline CircularBase() { alone(); }
-	inline CircularBase(CircularBase *p) { append(p); }
+	inline explicit CircularBase(CircularBase *p) { append(p); }
 
 	inline void remove() { 
 		_prev->_next = _next; 
