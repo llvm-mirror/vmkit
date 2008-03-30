@@ -81,13 +81,13 @@ public:
 class GCThread {
  	Key<GCThreadCollector>	_loc;
  	GCThreadCollector				base;
-	GCLockRecovery         _globalLock;    /* lock global pour gcmalloc */
-	LockNormal              _stackLock;     /* lock de la pile pour la syncro */
-	Cond                    _stackCond;     /* condition pour déverouiller les autres taches (write protect) */
-	Cond                    _collectionCond;/* condition pour débloquer le collecteur */
- 	unsigned int						_nb_threads;    /* nombre de threads actifs */
- 	unsigned int						_nb_collected;  /* nombre de threads ayant collecté */
-	int                     collector_tid;  /* il ne faut pas le synchroniser celui là */
+	GCLockRecovery         _globalLock;     /* global lock for gcmalloc */
+	LockNormal              _stackLock;     /* stack lock for synchronization */
+	Cond                    _stackCond;     /* condition for unlocking other tasks (write protect) */
+	Cond                    _collectionCond;/* condition for unblocking the collecter */
+ 	unsigned int						_nb_threads;    /* number of active threads */
+ 	unsigned int						_nb_collected;  /* number of threads collected */
+	int                     collector_tid;  /* don't synchonize this one */
 
 public:
 
