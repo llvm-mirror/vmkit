@@ -34,9 +34,6 @@ public:
 		_tid = t;
 	}
 
-	/* cette fonction n'est appelée que dans deux cas: soit parsqu'un thread quit */
-	/* dans ce cas, tout est déjà fait */
-	/* soit parce que le collecteur quitte et dans ce cas, toute la mémoire est bien libérée */
 	/* This function is only called in two cases:
 	 *   1) When a thread quits, in which case everything is already done.
 	*    2) When the collector quits, in which case all memory is freed.
@@ -107,9 +104,9 @@ public:
 	inline void collectorGo() { _stackCond.broadcast(); }
 
 	inline void cancel() { 
-		_nb_collected = _nb_threads;  /* toutes les piles sont collectées */
-		collectorGo();                /* débloque les autres threads sur la phase de collection de pile */
-		collectionFinished();         /* débloque les mutateurs */
+		_nb_collected = _nb_threads;  /* all stacks have been collected */
+		collectorGo();                /* unblock all threads in stack collection */
+		collectionFinished();         /* unblock mutators */
 	}
 
  	inline GCThreadCollector *myloc() { return _loc.get(); }
