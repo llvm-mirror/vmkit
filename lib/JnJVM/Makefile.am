@@ -14,7 +14,7 @@ LIBALLOC=$(ALLOCDIR)/libuvm_alloc.a
 LIBGC=$(GCDIR)/libuvm_gc_@vvmgctype@.a @GC_LIBS@
 LIBSUVM=$(LIBGC) $(LIBALLOC) $(LIBTHREAD)
 
-main_SOURCES = ../Mvm/Object.cc ../Mvm/Sigsegv.cc Main.cpp ../Mvm/MvmMemoryManager.cpp ../Mvm/JIT.cc ../Mvm/EscapeAnalysis.cpp
+main_SOURCES = ../Mvm/Object.cpp ../Mvm/Sigsegv.cpp Main.cpp ../Mvm/MvmMemoryManager.cpp ../Mvm/JIT.cpp ../Mvm/EscapeAnalysis.cpp
 
 
 main_CXXFLAGS = $(libJnJVM_la_CXXFLAGS)

@@ -12,7 +12,7 @@ LIBGC=$(GCDIR)/libuvm_gc_@vvmgctype@.a @GC_LIBS@
 PREFIX=@prefix@
 LIBSUVM=$(LIBGC) $(LIBALLOC) $(LIBTHREAD)
 
-main_SOURCES = ../Mvm/Object.cc ../Mvm/Sigsegv.cc Main.cpp ../Mvm/MvmMemoryManager.cpp ../Mvm/JIT.cc ../Mvm/EscapeAnalysis.cpp
+main_SOURCES = ../Mvm/Object.cpp ../Mvm/Sigsegv.cpp Main.cpp ../Mvm/MvmMemoryManager.cpp ../Mvm/JIT.cpp ../Mvm/EscapeAnalysis.cpp
 
 main_CXXFLAGS = $(INCLUDEDIRS) -DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused-parameter -Wno-long-long -Wno-unused-function -fno-omit-frame-pointer -g -Werror -O2
 main_LDADD = VMCore/.libs/libN3.a $(LIBSUVM) @LLVMDYLIB@
