@@ -12,6 +12,7 @@
 #include "llvm/DerivedTypes.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 
+#include "mvm/JIT.h"
 
 #include "JavaAccess.h"
 #include "JavaClass.h"
@@ -220,11 +221,14 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   // Create getCallingClassLoader
   {
   std::vector<const llvm::Type*> args;
+#ifdef SERVICE_VM
+  args.push_back(mvm::jit::ptrType);  
+#endif
   const llvm::FunctionType* type = 
     llvm::FunctionType::get(JavaObject::llvmType, args, false);
 
   Classpath::getCallingClassLoader->methPtr =
-    new llvm::Function(type, llvm::GlobalValue::ExternalLinkage,
+    llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
                        "_ZN5jnjvm7JavaJIT21getCallingClassLoaderEv",
                        vm->module);
   }
@@ -234,11 +238,14 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   {
   std::vector<const llvm::Type*> args;
   args.push_back(JavaObject::llvmType);
+#ifdef SERVICE_VM
+  args.push_back(mvm::jit::ptrType);  
+#endif
   const llvm::FunctionType* type = 
     llvm::FunctionType::get(JavaObject::llvmType, args, false);
 
   internString->methPtr =
-    new llvm::Function(type, llvm::GlobalValue::ExternalLinkage,
+    llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
                        "internString",
                        vm->module);
   }
@@ -248,11 +255,13 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   {
   std::vector<const llvm::Type*> args;
   args.push_back(JavaObject::llvmType);
+#ifdef SERVICE_VM
+  args.push_back(mvm::jit::ptrType);  
+#endif
   const llvm::FunctionType* type = 
     llvm::FunctionType::get(llvm::Type::Int8Ty, args, false);
-
   isArray->methPtr =
-    new llvm::Function(type, llvm::GlobalValue::ExternalLinkage,
+    llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
                        "isArray",
                        vm->module);
   }
@@ -272,11 +281,14 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   JavaMethod* getCallingClass = UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClass", "()Ljava/lang/Object;", ACC_STATIC);
   {
   std::vector<const llvm::Type*> args;
+#ifdef SERVICE_VM
+  args.push_back(mvm::jit::ptrType);  
+#endif
   const llvm::FunctionType* type = 
     llvm::FunctionType::get(JavaObject::llvmType, args, false);
 
   getCallingClass->methPtr =
-    new llvm::Function(type, llvm::GlobalValue::ExternalLinkage,
+    llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
                        "getCallingClass",
                        vm->module);
   }
@@ -284,11 +296,14 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   JavaMethod* getCallingClassLoader = UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClassLoader", "()Ljava/lang/Object;", ACC_STATIC);
   {
   std::vector<const llvm::Type*> args;
+#ifdef SERVICE_VM
+  args.push_back(mvm::jit::ptrType);  
+#endif
   const llvm::FunctionType* type = 
     llvm::FunctionType::get(JavaObject::llvmType, args, false);
 
   getCallingClassLoader->methPtr =
-    new llvm::Function(type, llvm::GlobalValue::ExternalLinkage,
+    llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
                        "getCallingClassLoader",
                        vm->module);
   }

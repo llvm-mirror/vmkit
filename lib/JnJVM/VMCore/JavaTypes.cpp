@@ -473,7 +473,10 @@ const llvm::FunctionType* Signdef::createVirtualType(
   for (uint32 i = 0; i < size; ++i) {
     llvmArgs.push_back(args->at(i)->funcs->llvmType);
   }
-  
+
+#ifdef SERVICE_VM
+  llvmArgs.push_back(mvm::jit::ptrType); // domain
+#endif
 
   mvm::jit::protectTypes();//->lock();
   llvm::FunctionType* res =  llvm::FunctionType::get(ret->funcs->llvmType,
@@ -493,6 +496,10 @@ const llvm::FunctionType* Signdef::createStaticType(
   for (uint32 i = 0; i < size; ++i) {
     llvmArgs.push_back(args->at(i)->funcs->llvmType);
   }
+
+#ifdef SERVICE_VM
+  llvmArgs.push_back(mvm::jit::ptrType); // domain
+#endif
   
   mvm::jit::protectTypes();//->lock();
   llvm::FunctionType* res =  llvm::FunctionType::get(ret->funcs->llvmType,
@@ -513,6 +520,10 @@ const llvm::FunctionType* Signdef::createNativeType(
   for (uint32 i = 0; i < size; ++i) {
     llvmArgs.push_back(args->at(i)->funcs->llvmType);
   }
+
+#ifdef SERVICE_VM
+  llvmArgs.push_back(mvm::jit::ptrType); // domain
+#endif
   
 
   mvm::jit::protectTypes();//->lock();

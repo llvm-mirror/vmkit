@@ -169,7 +169,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
     args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)i));
     args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
     mvm::jit::unprotectConstants();//->unlock();
-    new CallInst(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
+    CallInst::Create(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
     }
 #endif
 
@@ -1102,11 +1102,11 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                          currentBlock);
         
         BasicBlock* res = createBasicBlock("F2I");
-        PHINode* node = new PHINode(llvm::Type::Int32Ty, "", res);
+        PHINode* node = PHINode::Create(llvm::Type::Int32Ty, "", res);
         node->addIncoming(mvm::jit::constantZero, currentBlock);
         BasicBlock* cont = createBasicBlock("F2I");
 
-        new BranchInst(res, cont, test, currentBlock);
+        BranchInst::Create(res, cont, test, currentBlock);
 
         currentBlock = cont;
         
@@ -1116,7 +1116,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         cont = createBasicBlock("F2I");
 
-        new BranchInst(res, cont, test, currentBlock);
+        BranchInst::Create(res, cont, test, currentBlock);
         node->addIncoming(mvm::jit::constantMaxInt,
                           currentBlock);
 
@@ -1128,13 +1128,13 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         cont = createBasicBlock("F2I");
 
-        new BranchInst(res, cont, test, currentBlock);
+        BranchInst::Create(res, cont, test, currentBlock);
         node->addIncoming(mvm::jit::constantMinInt, currentBlock);
         
         currentBlock = cont;
         llvm::Value* newVal = new FPToSIInst(val, Type::Int32Ty, "",
                                              currentBlock);
-        new BranchInst(res, currentBlock);
+        BranchInst::Create(res, currentBlock);
 
         node->addIncoming(newVal, currentBlock);
 
@@ -1150,11 +1150,11 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                          currentBlock);
         
         BasicBlock* res = createBasicBlock("F2L");
-        PHINode* node = new PHINode(llvm::Type::Int64Ty, "", res);
+        PHINode* node = PHINode::Create(llvm::Type::Int64Ty, "", res);
         node->addIncoming(mvm::jit::constantLongZero, currentBlock);
         BasicBlock* cont = createBasicBlock("F2L");
 
-        new BranchInst(res, cont, test, currentBlock);
+        BranchInst::Create(res, cont, test, currentBlock);
 
         currentBlock = cont;
         
@@ -1164,7 +1164,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         cont = createBasicBlock("F2L");
 
-        new BranchInst(res, cont, test, currentBlock);
+        BranchInst::Create(res, cont, test, currentBlock);
         node->addIncoming(mvm::jit::constantMaxLong, currentBlock);
 
         currentBlock = cont;
@@ -1174,13 +1174,13 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         cont = createBasicBlock("F2L");
 
-        new BranchInst(res, cont, test, currentBlock);
+        BranchInst::Create(res, cont, test, currentBlock);
         node->addIncoming(mvm::jit::constantMinLong, currentBlock);
         
         currentBlock = cont;
         llvm::Value* newVal = new FPToSIInst(val, Type::Int64Ty, "",
                                              currentBlock);
-        new BranchInst(res, currentBlock);
+        BranchInst::Create(res, currentBlock);
 
         node->addIncoming(newVal, currentBlock);
 
@@ -1203,11 +1203,11 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                          currentBlock);
         
         BasicBlock* res = createBasicBlock("D2I");
-        PHINode* node = new PHINode(llvm::Type::Int32Ty, "", res);
+        PHINode* node = PHINode::Create(llvm::Type::Int32Ty, "", res);
         node->addIncoming(mvm::jit::constantZero, currentBlock);
         BasicBlock* cont = createBasicBlock("D2I");
 
-        new BranchInst(res, cont, test, currentBlock);
+        BranchInst::Create(res, cont, test, currentBlock);
 
         currentBlock = cont;
         
@@ -1216,7 +1216,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         cont = createBasicBlock("D2I");
 
-        new BranchInst(res, cont, test, currentBlock);
+        BranchInst::Create(res, cont, test, currentBlock);
         node->addIncoming(mvm::jit::constantMaxInt, currentBlock);
 
         currentBlock = cont;
@@ -1226,13 +1226,13 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         cont = createBasicBlock("D2I");
 
-        new BranchInst(res, cont, test, currentBlock);
+        BranchInst::Create(res, cont, test, currentBlock);
         node->addIncoming(mvm::jit::constantMinInt, currentBlock);
         
         currentBlock = cont;
         llvm::Value* newVal = new FPToSIInst(val, Type::Int32Ty, "",
                                              currentBlock);
-        new BranchInst(res, currentBlock);
+        BranchInst::Create(res, currentBlock);
 
         node->addIncoming(newVal, currentBlock);
 
@@ -1250,11 +1250,11 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                          currentBlock);
         
         BasicBlock* res = createBasicBlock("D2L");
-        PHINode* node = new PHINode(llvm::Type::Int64Ty, "", res);
+        PHINode* node = PHINode::Create(llvm::Type::Int64Ty, "", res);
         node->addIncoming(mvm::jit::constantLongZero, currentBlock);
         BasicBlock* cont = createBasicBlock("D2L");
 
-        new BranchInst(res, cont, test, currentBlock);
+        BranchInst::Create(res, cont, test, currentBlock);
 
         currentBlock = cont;
         
@@ -1263,7 +1263,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         cont = createBasicBlock("D2L");
 
-        new BranchInst(res, cont, test, currentBlock);
+        BranchInst::Create(res, cont, test, currentBlock);
         node->addIncoming(mvm::jit::constantMaxLong, currentBlock);
 
         currentBlock = cont;
@@ -1274,13 +1274,13 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         cont = createBasicBlock("D2L");
 
-        new BranchInst(res, cont, test, currentBlock);
+        BranchInst::Create(res, cont, test, currentBlock);
         node->addIncoming(mvm::jit::constantMinLong, currentBlock);
         
         currentBlock = cont;
         llvm::Value* newVal = new FPToSIInst(val, Type::Int64Ty, "",
                                              currentBlock);
-        new BranchInst(res, currentBlock);
+        BranchInst::Create(res, currentBlock);
 
         node->addIncoming(newVal, currentBlock);
 
@@ -1334,20 +1334,20 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         BasicBlock* cont = createBasicBlock("LCMP");
         BasicBlock* res = createBasicBlock("LCMP");
-        PHINode* node = new PHINode(llvm::Type::Int32Ty, "", res);
+        PHINode* node = PHINode::Create(llvm::Type::Int32Ty, "", res);
         node->addIncoming(mvm::jit::constantZero, currentBlock);
         
-        new BranchInst(res, cont, test, currentBlock);
+        BranchInst::Create(res, cont, test, currentBlock);
         currentBlock = cont;
 
         test = new ICmpInst(ICmpInst::ICMP_SLT, val1, val2, "", currentBlock);
         node->addIncoming(mvm::jit::constantMinusOne, currentBlock);
 
         cont = createBasicBlock("LCMP");
-        new BranchInst(res, cont, test, currentBlock);
+        BranchInst::Create(res, cont, test, currentBlock);
         currentBlock = cont;
         node->addIncoming(mvm::jit::constantOne, currentBlock);
-        new BranchInst(res, currentBlock);
+        BranchInst::Create(res, currentBlock);
         currentBlock = res;
         
         push(node, AssessorDesc::dInt);
@@ -1593,7 +1593,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         mvm::jit::unprotectConstants();//->unlock();
 
         new StoreInst(expr, supplLocal, false, currentBlock);
-        new BranchInst(opcodeInfos[tmp + readS2(bytecodes, i)].newBlock,
+        BranchInst::Create(opcodeInfos[tmp + readS2(bytecodes, i)].newBlock,
                        currentBlock);
         break;
       }
@@ -1602,7 +1602,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint8 local = readU1(bytecodes, i);
         Value* _val = new LoadInst(objectLocals[local], "", currentBlock);
         Value* val = new PtrToIntInst(_val, Type::Int32Ty, "", currentBlock);
-        SwitchInst* inst = new SwitchInst(val, jsrs[0], jsrs.size(),
+        SwitchInst* inst = SwitchInst::Create(val, jsrs[0], jsrs.size(),
                                           currentBlock);
         
         uint32 index = 0;
@@ -1684,33 +1684,33 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         convertValue(val, returnType, currentBlock, 
                      ass == AssessorDesc::dChar || ass == AssessorDesc::dBool);
         endNode->addIncoming(val, currentBlock);
-        new BranchInst(endBlock, currentBlock);
+        BranchInst::Create(endBlock, currentBlock);
         break;
       }
       case LRETURN :
         pop(); // remove the 0 on the stack
         endNode->addIncoming(pop(), currentBlock);
-        new BranchInst(endBlock, currentBlock);
+        BranchInst::Create(endBlock, currentBlock);
         break;
 
       case FRETURN :
         endNode->addIncoming(pop(), currentBlock);
-        new BranchInst(endBlock, currentBlock);
+        BranchInst::Create(endBlock, currentBlock);
         break;
 
       case DRETURN :
         pop(); // remove the 0 on the stack
         endNode->addIncoming(pop(), currentBlock);
-        new BranchInst(endBlock, currentBlock);
+        BranchInst::Create(endBlock, currentBlock);
         break;
       
       case ARETURN :
         endNode->addIncoming(pop(), currentBlock);
-        new BranchInst(endBlock, currentBlock);
+        BranchInst::Create(endBlock, currentBlock);
         break;
       
       case RETURN :
-        new BranchInst(endBlock, currentBlock);
+        BranchInst::Create(endBlock, currentBlock);
         break;
 
       case GETSTATIC : {
@@ -1825,9 +1825,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         std::vector<Value*> args;
         args.push_back(arg);
         if (currentExceptionBlock != endExceptionBlock) {
-          new InvokeInst(throwExceptionLLVM, unifiedUnreachable, currentExceptionBlock, args.begin(), args.end(), "", currentBlock);
+          InvokeInst::Create(throwExceptionLLVM, unifiedUnreachable, currentExceptionBlock, args.begin(), args.end(), "", currentBlock);
         } else {
-          new CallInst(throwExceptionLLVM, args.begin(), args.end(), "", currentBlock);
+          CallInst::Create(throwExceptionLLVM, args.begin(), args.end(), "", currentBlock);
           new UnreachableInst(currentBlock);
         }
         break;
@@ -1847,7 +1847,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         BasicBlock* ifTrue = createBasicBlock("null checkcast");
         BasicBlock* ifFalse = createBasicBlock("non null checkcast");
 
-        new BranchInst(ifTrue, ifFalse, cmp, currentBlock);
+        BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
         currentBlock = ifFalse;
         Value* clVar = 0;
         if (dcl && dcl->isReady()) {
@@ -1858,22 +1858,22 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         std::vector<Value*> args;
         args.push_back(obj);
         args.push_back(clVar);
-        Value* call = new CallInst(instanceOfLLVM, args.begin(), args.end(),
+        Value* call = CallInst::Create(instanceOfLLVM, args.begin(), args.end(),
                                    "", currentBlock);
         
         cmp = new ICmpInst(ICmpInst::ICMP_EQ, call,
                            mvm::jit::constantZero, "", currentBlock);
 
         BasicBlock* ex = createBasicBlock("false checkcast");
-        new BranchInst(ex, ifTrue, cmp, currentBlock);
+        BranchInst::Create(ex, ifTrue, cmp, currentBlock);
 
         std::vector<Value*> exArgs;
         exArgs.push_back(obj);
         exArgs.push_back(clVar);
         if (currentExceptionBlock != endExceptionBlock) {
-          new InvokeInst(classCastExceptionLLVM, unifiedUnreachable, currentExceptionBlock, exArgs.begin(), exArgs.end(), "", ex);
+          InvokeInst::Create(classCastExceptionLLVM, unifiedUnreachable, currentExceptionBlock, exArgs.begin(), exArgs.end(), "", ex);
         } else {
-          new CallInst(classCastExceptionLLVM, exArgs.begin(), exArgs.end(), "", ex);
+          CallInst::Create(classCastExceptionLLVM, exArgs.begin(), exArgs.end(), "", ex);
           new UnreachableInst(ex);
         }
         
@@ -1895,7 +1895,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         std::vector<Value*> args;
         args.push_back(pop());
         args.push_back(clVar);
-        push(new CallInst(instanceOfLLVM, args.begin(), args.end(), "", currentBlock), AssessorDesc::dInt);
+        push(CallInst::Create(instanceOfLLVM, args.begin(), args.end(), "", currentBlock), AssessorDesc::dInt);
         break;
       }
 

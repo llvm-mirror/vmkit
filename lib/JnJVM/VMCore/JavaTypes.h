@@ -161,7 +161,6 @@ public:
   
   llvm::Function* createFunctionCallBuf(bool virt);
   llvm::Function* createFunctionCallAP(bool virt);
-  void createFuncPtrsCalls();
 
   
 

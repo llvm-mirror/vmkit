@@ -49,7 +49,7 @@ bool LowerArrayLength::runOnFunction(Function& F) {
           std::vector<Value*> args; //size=  2
           args.push_back(mvm::jit::constantZero);
           args.push_back(jnjvm::JavaArray::sizeOffset());
-          Value* ptr = new GetElementPtrInst(array, args.begin(), args.end(),
+          Value* ptr = GetElementPtrInst::Create(array, args.begin(), args.end(),
                                          "", CI);
           Value* load = new LoadInst(ptr, "", CI);
           CI->replaceAllUsesWith(load);

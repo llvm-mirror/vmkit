@@ -501,7 +501,8 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
 #ifndef SINGLE_VM
   isolate->statics = StaticInstanceMap::allocate();  
   isolate->delegatees = DelegateeMap::allocate(); 
-#else
+#endif
+#if defined(SINGLE_VM) || defined(SERVICE_VM)
   isolate->threadSystem = ThreadSystem::allocateThreadSystem();
 #endif
   

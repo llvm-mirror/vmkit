@@ -95,19 +95,19 @@ GlobalVariable* Class::staticVar(llvm::Module* compilingModule) {
         release();
         return _staticVar;
       } else {
-      isolate->protectModule->lock();
-      _staticVar = new GlobalVariable(JavaObject::llvmType, false,
-                                      GlobalValue::ExternalLinkage,
-                                      JavaJIT::constantJavaObjectNull, "",
-                                      isolate->module);
-      isolate->protectModule->unlock();
+        isolate->protectModule->lock();
+        _staticVar = new GlobalVariable(JavaObject::llvmType, false,
+                                        GlobalValue::ExternalLinkage,
+                                        JavaJIT::constantJavaObjectNull, "",
+                                        isolate->module);
+        isolate->protectModule->unlock();
     
-      // TODO: put an initializer in here
-      void* ptr = mvm::jit::executionEngine->getPointerToGlobal(_staticVar);
-      GenericValue Val = GenericValue((void*)staticInstance());
-      llvm::GenericValue * Ptr = (llvm::GenericValue*)ptr;
-      mvm::jit::executionEngine->StoreValueToMemory(Val, Ptr, staticType);  
-    }
+        // TODO: put an initializer in here
+        void* ptr = mvm::jit::executionEngine->getPointerToGlobal(_staticVar);
+        GenericValue Val = GenericValue((void*)staticInstance());
+        llvm::GenericValue * Ptr = (llvm::GenericValue*)ptr;
+        mvm::jit::executionEngine->StoreValueToMemory(Val, Ptr, staticType); 
+      }
     }
   release();
   }
@@ -240,21 +240,21 @@ VirtualTable* JavaJIT::makeVT(Class* cl, bool stat) {
   std::vector<JavaField*> &fields = stat ? cl->staticFields : cl->virtualFields;
  
   cl->isolate->protectModule->lock();
-  Function* func = new Function(markAndTraceLLVMType,
-                                GlobalValue::ExternalLinkage,
-                                "markAndTraceObject",
-                                cl->isolate->module);
+  Function* func = Function::Create(markAndTraceLLVMType,
+                                    GlobalValue::ExternalLinkage,
+                                    "markAndTraceObject",
+                                    cl->isolate->module);
   cl->isolate->protectModule->unlock();
 
   Constant* zero = mvm::jit::constantZero;
   Argument* arg = func->arg_begin();
-  BasicBlock* block = new BasicBlock("", func);
+  BasicBlock* block = BasicBlock::Create("", func);
   llvm::Value* realArg = new BitCastInst(arg, type, "", block);
   
   if (stat || cl->super == 0) {
-    new CallInst(javaObjectTracerLLVM, arg, "", block);
+    CallInst::Create(javaObjectTracerLLVM, arg, "", block);
   } else {
-    new CallInst(((Class*)cl->super)->virtualTracer, arg, "", block);
+    CallInst::Create(((Class*)cl->super)->virtualTracer, arg, "", block);
   }
 
   for (std::vector<JavaField*>::iterator i = fields.begin(), 
@@ -263,15 +263,15 @@ VirtualTable* JavaJIT::makeVT(Class* cl, bool stat) {
       std::vector<Value*> args; //size = 2
       args.push_back(zero);
       args.push_back((*i)->offset);
-      Value* ptr = new GetElementPtrInst(realArg, args.begin(), args.end(), "",
+      Value* ptr = GetElementPtrInst::Create(realArg, args.begin(), args.end(), "",
                                          block);
       Value* val = new LoadInst(ptr, "", block);
       Value* valCast = new BitCastInst(val, JavaObject::llvmType, "", block);
-      new CallInst(markAndTraceLLVM, valCast, "", block);
+      CallInst::Create(markAndTraceLLVM, valCast, "", block);
     }
   }
 
-  new ReturnInst(block);
+  ReturnInst::Create(block);
 
   VirtualTable * res = malloc(VT_SIZE);
   memcpy(res, JavaObject::VT, VT_SIZE);
@@ -780,13 +780,13 @@ Function* Signdef::createFunctionCallBuf(bool virt) {
   std::vector<Value*> Args;
 
   isolate->protectModule->lock();
-  Function* res = new llvm::Function(virt ? virtualBufType : staticBufType,
+  Function* res = Function::Create(virt ? virtualBufType : staticBufType,
                                       GlobalValue::ExternalLinkage,
                                       this->printString(),
                                       isolate->module);
   isolate->protectModule->unlock();
   
-  BasicBlock* currentBlock = new BasicBlock("enter", res);
+  BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ptr, *func;
   func = i;
@@ -802,7 +802,7 @@ Function* Signdef::createFunctionCallBuf(bool virt) {
             e = args.end(); i!= e; ++i) {
   
     const AssessorDesc* funcs = (*i)->funcs;
-    ptr = new GetElementPtrInst(ptr, CI, "", currentBlock);
+    ptr = GetElementPtrInst::Create(ptr, CI, "", currentBlock);
     Value* val = new BitCastInst(ptr, funcs->llvmTypePtr, "", currentBlock);
     Value* arg = new LoadInst(val, "", currentBlock);
     Args.push_back(arg);
@@ -812,11 +812,16 @@ Function* Signdef::createFunctionCallBuf(bool virt) {
       CI = mvm::jit::constantOne;
     }
   }
-  Value* val = new CallInst(func, Args.begin(), Args.end(), "", currentBlock);
+
+#ifdef SERVICE_VM
+  Args.push_back(mvm::jit::constantPtrNull);
+#endif
+
+  Value* val = CallInst::Create(func, Args.begin(), Args.end(), "", currentBlock);
   if (ret->funcs != AssessorDesc::dVoid)
-    new ReturnInst(val, currentBlock);
+    ReturnInst::Create(val, currentBlock);
   else
-    new ReturnInst(currentBlock);
+    ReturnInst::Create(currentBlock);
   
   return res;
 }
@@ -826,13 +831,13 @@ Function* Signdef::createFunctionCallAP(bool virt) {
   std::vector<Value*> Args;
 
   isolate->protectModule->lock();
-  Function* res = new llvm::Function(virt ? virtualBufType : staticBufType,
+  Function* res = Function::Create(virt ? virtualBufType : staticBufType,
                                       GlobalValue::ExternalLinkage,
                                       this->printString(),
                                       isolate->module);
   isolate->protectModule->unlock();
   
-  BasicBlock* currentBlock = new BasicBlock("enter", res);
+  BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ap, *func;
   func = i;
@@ -850,26 +855,17 @@ Function* Signdef::createFunctionCallAP(bool virt) {
     Args.push_back(new VAArgInst(ap, (*i)->funcs->llvmType, "", currentBlock));
   }
 
-  Value* val = new CallInst(func, Args.begin(), Args.end(), "", currentBlock);
+#ifdef SERVICE_VM
+  Args.push_back(mvm::jit::constantPtrNull);
+#endif
+
+  Value* val = CallInst::Create(func, Args.begin(), Args.end(), "", currentBlock);
   if (ret->funcs != AssessorDesc::dVoid)
-    new ReturnInst(val, currentBlock);
+    ReturnInst::Create(val, currentBlock);
   else
-    new ReturnInst(currentBlock);
+    ReturnInst::Create(currentBlock);
   
   return res;
-}
-
-void Signdef::createFuncPtrsCalls() {
-  assert(0 && "do not call me");
-  Function* virtBuf = createFunctionCallBuf(true);
-  Function* statBuf = createFunctionCallBuf(false);
-  Function* virtAP = createFunctionCallAP(true);
-  Function* statAP = createFunctionCallAP(false);
-
-  _staticCallBuf = (mvm::Code*)mvm::jit::executionEngine->getPointerToGlobal(statBuf);
-  _virtualCallBuf = (mvm::Code*)mvm::jit::executionEngine->getPointerToGlobal(virtBuf);
-  _staticCallAP = (mvm::Code*)mvm::jit::executionEngine->getPointerToGlobal(statAP);
-  _virtualCallAP = (mvm::Code*)mvm::jit::executionEngine->getPointerToGlobal(virtAP);
 }
 
 void* Signdef::staticCallBuf() {

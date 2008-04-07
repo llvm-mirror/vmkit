@@ -428,9 +428,10 @@ llvm::Function* JavaCtpInfo::infoOfStaticOrSpecialMethod(
     } else {
       type = sign->virtualType;
     }
-    llvm::Function* func = new llvm::Function(type, 
-                                            llvm::GlobalValue::GhostLinkage,
-                                            "callback", classDef->isolate->module);
+    llvm::Function* func = llvm::Function::Create(type, 
+                                                llvm::GlobalValue::GhostLinkage,
+                                                "callback",
+                                                classDef->isolate->module);
     classDef->isolate->TheModuleProvider->functions->hash(func, 
                   new std::pair<Class*, uint32>(classDef, index));
     ctpRes[index] = func;

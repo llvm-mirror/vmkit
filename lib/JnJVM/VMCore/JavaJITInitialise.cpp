@@ -176,7 +176,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   std::vector<const Type*> args;
   args.push_back(JavaObject::llvmType);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-  javaObjectTracerLLVM = new Function(type,
+  javaObjectTracerLLVM = Function::Create(type,
                                       GlobalValue::ExternalLinkage,
                                       "_ZN5jnjvm10JavaObject6tracerEj",
                                       module);
@@ -193,7 +193,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type =
     FunctionType::get(mvm::jit::ptrType, args, false);
 
-  virtualLookupLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  virtualLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "virtualLookup",
                      module);
   }
@@ -205,7 +205,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
                                                false);
 
-  doNewLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  doNewLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm5Class5doNewEv",
                      module);
   }
@@ -217,7 +217,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
                                                false);
 
-  doNewUnknownLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  doNewUnknownLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm5Class12doNewUnknownEv",
                      module);
   }
@@ -230,7 +230,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
                                                false);
 
-  initialiseObjectLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  initialiseObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm5Class16initialiseObjectEPNS_10JavaObjectE",
                      module);
   PAListPtr func_toto_PAL;
@@ -248,7 +248,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   args.push_back(JavaObject::llvmType);
   const FunctionType* type = FunctionType::get(Type::Int32Ty, args, false);
 
-  arrayLengthLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  arrayLengthLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "arrayLength",
                      module);
   PAListPtr func_toto_PAL;
@@ -269,7 +269,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(mvm::jit::ptrType, args,
                                                false);
 
-  newLookupLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  newLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "newLookup",
                      module);
   }
@@ -282,7 +282,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
                                                false);
 
-  doNewIsolateLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  doNewIsolateLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm5Class12doNewIsolateEv",
                      module);
   }
@@ -301,7 +301,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
     FunctionType::get(mvm::jit::ptrType, args,
                       false);
 
-  fieldLookupLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  fieldLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "fieldLookup",
                      module);
   }
@@ -311,7 +311,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   std::vector<const Type*> args;
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  nullPointerExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  nullPointerExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "nullPointerException",
                      module);
   }
@@ -323,7 +323,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   args.push_back(mvm::jit::ptrType);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  classCastExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  classCastExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "classCastException",
                      module);
   }
@@ -335,7 +335,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   args.push_back(Type::Int32Ty);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  indexOutOfBoundsExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  indexOutOfBoundsExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "indexOutOfBoundsException",
                      module);
   }
@@ -345,7 +345,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   std::vector<const Type*> args;
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  jniProceedPendingExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  jniProceedPendingExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "jniProceedPendingException",
                      module);
   }
@@ -358,7 +358,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   args.push_back(Type::Int32Ty);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  printExecutionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  printExecutionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "printExecution",
                      module);
   }
@@ -369,7 +369,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   args.push_back(Type::Int32Ty);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  printMethodStartLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  printMethodStartLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "printMethodStart",
                      module);
   }
@@ -380,7 +380,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   args.push_back(Type::Int32Ty);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  printMethodEndLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  printMethodEndLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "printMethodEnd",
                      module);
   }
@@ -391,7 +391,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   args.push_back(JavaObject::llvmType);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  throwExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  throwExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm10JavaThread14throwExceptionEPNS_10JavaObjectE",
                      module);
   }
@@ -401,7 +401,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   std::vector<const Type*> args;
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  clearExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  clearExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm10JavaThread14clearExceptionEv",
                      module);
   }
@@ -414,7 +414,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(mvm::jit::ptrType, 
                                                args, false);
 
-  getExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  getExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm10JavaThread12getExceptionEv",
                      module);
   }
@@ -425,7 +425,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(JavaObject::llvmType, 
                                                args, false);
 
-  getJavaExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  getJavaExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm10JavaThread16getJavaExceptionEv",
                      module);
   }
@@ -436,7 +436,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   args.push_back(mvm::jit::ptrType);
   const FunctionType* type = FunctionType::get(Type::Int1Ty, args, false);
 
-  compareExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  compareExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm10JavaThread16compareExceptionEPNS_5ClassE",
                      module);
   }
@@ -447,7 +447,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   args.push_back(mvm::jit::ptrType);
   const FunctionType* type = FunctionType::get(JavaObject::llvmType, args, false);
 
-  getStaticInstanceLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  getStaticInstanceLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "getStaticInstance",
                      module);
   }
@@ -458,7 +458,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   args.push_back(mvm::jit::ptrType);
   const FunctionType* type = FunctionType::get(JavaObject::llvmType, args, false);
 
-  getClassDelegateeLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  getClassDelegateeLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "getClassDelegatee",
                      module);
   }
@@ -470,7 +470,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   args.push_back(mvm::jit::ptrType);
   const FunctionType* type = FunctionType::get(Type::Int32Ty, args, false);
 
-  instanceOfLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  instanceOfLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm10JavaObject10instanceOfEPNS_11CommonClassE",
                      module);
   }
@@ -481,7 +481,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   args.push_back(JavaObject::llvmType);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  aquireObjectLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  aquireObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm10JavaObject6aquireEv",
                      module);
   }
@@ -492,7 +492,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   args.push_back(JavaObject::llvmType);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  releaseObjectLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  releaseObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm10JavaObject6unlockEv",
                      module);
   }
@@ -505,7 +505,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
                                                true);
 
-  multiCallNewLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  multiCallNewLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm9JavaArray12multiCallNewEPNS_10ClassArrayEjz",
                      module);
   }
@@ -520,35 +520,35 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
                                                false);
 
-  FloatAconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  FloatAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm10ArrayFloat5aconsEiPNS_10ClassArrayE",
                      module);
   
-  Int8AconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  Int8AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm10ArraySInt85aconsEiPNS_10ClassArrayE",
                      module);
   
-  DoubleAconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  DoubleAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm11ArrayDouble5aconsEiPNS_10ClassArrayE",
                      module);
    
-  Int16AconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  Int16AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm11ArraySInt165aconsEiPNS_10ClassArrayE",
                      module);
   
-  Int32AconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  Int32AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm11ArraySInt325aconsEiPNS_10ClassArrayE",
                      module);
   
-  UTF8AconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  UTF8AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm4UTF85aconsEiPNS_10ClassArrayE",
                      module);
   
-  LongAconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  LongAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm9ArrayLong5aconsEiPNS_10ClassArrayE",
                      module);
   
-  ObjectAconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  ObjectAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm11ArrayObject5aconsEiPNS_10ClassArrayE",
                      module);
   }
@@ -560,7 +560,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
       /*Result=*/JavaObject::llvmType,
       /*Params=*/args,
       /*isVarArg=*/false);
-    runtimeUTF8ToStrLLVM = new Function(FuncTy, GlobalValue::ExternalLinkage,
+    runtimeUTF8ToStrLLVM = Function::Create(FuncTy, GlobalValue::ExternalLinkage,
       "runtimeUTF8ToStr", module);
   }
 
@@ -571,7 +571,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
     const FunctionType* type = FunctionType::get(mvm::jit::ptrType, args,
                                                false);
 
-    getSJLJBufferLLVM = new Function(type, GlobalValue::ExternalLinkage,
+    getSJLJBufferLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "getSJLJBuffer",
                      module);
     
@@ -583,7 +583,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   std::vector<const Type*> args;
   args.push_back(JavaObject::llvmType);
   markAndTraceLLVMType = FunctionType::get(llvm::Type::VoidTy, args, false);
-  markAndTraceLLVM = new Function(markAndTraceLLVMType,
+  markAndTraceLLVM = Function::Create(markAndTraceLLVMType,
                                   GlobalValue::ExternalLinkage,
                                   "_ZNK2gc12markAndTraceEv",
                                   module);

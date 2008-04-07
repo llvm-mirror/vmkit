@@ -607,7 +607,7 @@ JavaObject* Class::staticInstance() {
 }
 
 JavaObject* Class::createStaticInstance() {
-  JavaObject* val = (JavaObject*)mvm::Object::gcmalloc(staticSize, staticVT);
+  JavaObject* val = (JavaObject*)gc::operator new(staticSize, staticVT);
   val->initialise(this);
   for (std::vector<JavaField*>::iterator i = this->staticFields.begin(),
             e = this->staticFields.end(); i!= e; ++i) {

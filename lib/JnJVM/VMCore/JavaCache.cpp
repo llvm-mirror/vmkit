@@ -80,7 +80,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   BasicBlock* endBlock = createBasicBlock("end virtual invoke");
   PHINode * node = 0;
   if (retType != Type::VoidTy) {
-    node = new PHINode(retType, "", endBlock);
+    node = PHINode::Create(retType, "", endBlock);
   }
 
   // ok now the cache
@@ -103,14 +103,14 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   std::vector<Value*> args1;
   args1.push_back(zero);
   args1.push_back(one);
-  Value* cachePtr = new GetElementPtrInst(llvmEnv, args1.begin(), args1.end(),
+  Value* cachePtr = GetElementPtrInst::Create(llvmEnv, args1.begin(), args1.end(),
                                           "", currentBlock);
   Value* cache = new LoadInst(cachePtr, "", currentBlock);
 
   std::vector<Value*> args2;
   args2.push_back(zero);
   args2.push_back(JavaObject::classOffset());
-  Value* classPtr = new GetElementPtrInst(args[0], args2.begin(),
+  Value* classPtr = GetElementPtrInst::Create(args[0], args2.begin(),
                                           args2.end(), "",
                                           currentBlock);
 
@@ -118,7 +118,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   std::vector<Value*> args3;
   args3.push_back(zero);
   args3.push_back(two);
-  Value* lastCiblePtr = new GetElementPtrInst(cache, args3.begin(), args3.end(),
+  Value* lastCiblePtr = GetElementPtrInst::Create(cache, args3.begin(), args3.end(),
                                               "", currentBlock);
   Value* lastCible = new LoadInst(lastCiblePtr, "", currentBlock);
 
@@ -126,7 +126,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   
   BasicBlock* ifTrue = createBasicBlock("cache ok");
   BasicBlock* ifFalse = createBasicBlock("cache not ok");
-  new BranchInst(ifTrue, ifFalse, cmp, currentBlock);
+  BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
   
   currentBlock = ifFalse;
   Value* _meth = invoke(virtualLookupLLVM, cache, args[0], "", ifFalse);
@@ -136,18 +136,18 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   if (node) {
     node->addIncoming(ret, currentBlock);
   }
-  new BranchInst(endBlock, currentBlock);
+  BranchInst::Create(endBlock, currentBlock);
 
   currentBlock = ifTrue;
 
-  Value* methPtr = new GetElementPtrInst(cache, args1.begin(), args1.end(),
+  Value* methPtr = GetElementPtrInst::Create(cache, args1.begin(), args1.end(),
                                          "", currentBlock);
 
   _meth = new LoadInst(methPtr, "", currentBlock);
   meth = new BitCastInst(_meth, signature->virtualTypePtr, "", currentBlock);
   
   ret = invoke(meth, args, "", currentBlock);
-  new BranchInst(endBlock, currentBlock);
+  BranchInst::Create(endBlock, currentBlock);
 
   if (node) {
     node->addIncoming(ret, currentBlock);
