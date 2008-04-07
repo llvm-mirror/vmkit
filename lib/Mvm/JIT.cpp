@@ -337,7 +337,7 @@ void VMLet::initialise() {
     arg_types.insert (arg_types.begin (), llvm::PointerType::getUnqual(ptrType));
     
     llvm::FunctionType *mtype = llvm::FunctionType::get (llvm::Type::VoidTy, arg_types, false);
-    new llvm::Function(mtype,  llvm::GlobalValue::ExternalLinkage, "llvm.va_start", module);
+    llvm::Function::Create(mtype,  llvm::GlobalValue::ExternalLinkage, "llvm.va_start", module);
   }
 
   {
@@ -345,7 +345,7 @@ void VMLet::initialise() {
     arg_types.insert (arg_types.begin (), llvm::Type::Int32Ty);
   
     llvm::FunctionType *mtype = llvm::FunctionType::get (ptrType, arg_types, false);
-    new llvm::Function(mtype,  llvm::GlobalValue::ExternalLinkage, "llvm.frameaddress", module);
+    llvm::Function::Create(mtype,  llvm::GlobalValue::ExternalLinkage, "llvm.frameaddress", module);
   }
 
   {
@@ -353,7 +353,7 @@ void VMLet::initialise() {
      // Prototype malloc as "char* malloc(...)", because we don't know in
      // doInitialization whether size_t is int or long.
      FunctionType *FT = FunctionType::get(BPTy, std::vector<const llvm::Type*>(), true);
-     new llvm::Function(FT, llvm::GlobalValue::ExternalLinkage, "_ZN2gcnwEjP5gc_vt", module); 
+     llvm::Function::Create(FT, llvm::GlobalValue::ExternalLinkage, "_ZN2gcnwEjP5gc_vt", module); 
   }
 
 
@@ -363,7 +363,7 @@ void VMLet::initialise() {
   args.push_back(Type::FloatTy);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  printFloatLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  printFloatLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "printFloat",
                      module);
   }
@@ -374,7 +374,7 @@ void VMLet::initialise() {
   args.push_back(Type::DoubleTy);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  printDoubleLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  printDoubleLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "printDouble",
                      module);
   }
@@ -385,7 +385,7 @@ void VMLet::initialise() {
   args.push_back(Type::Int64Ty);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  printLongLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  printLongLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "printLong",
                      module);
   }
@@ -396,7 +396,7 @@ void VMLet::initialise() {
   args.push_back(Type::Int32Ty);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  printIntLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  printIntLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "printInt",
                      module);
   }
@@ -407,7 +407,7 @@ void VMLet::initialise() {
   args.push_back(ptrType);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  printObjectLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  printObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "printObject",
                      module);
   }
@@ -439,7 +439,7 @@ void VMLet::initialise() {
     /*Params=*/FuncTy_11_args,
     /*isVarArg=*/false);
 
-  llvmGetException = new Function(
+  llvmGetException = Function::Create(
     /*Type=*/FuncTy_11,
     /*Linkage=*/GlobalValue::ExternalLinkage,
     /*Name=*/"llvm.eh.exception", module); // (external, no body)
@@ -453,12 +453,12 @@ void VMLet::initialise() {
     /*isVarArg=*/true);
 
   if (sizeof(void*) == 4) {
-    exceptionSelector = new Function(
+    exceptionSelector = Function::Create(
     /*Type=*/FuncTy_13,
     /*Linkage=*/GlobalValue::ExternalLinkage,
     /*Name=*/"llvm.eh.selector.i32", module); // (external, no body)
   } else {
-    exceptionSelector = new Function(
+    exceptionSelector = Function::Create(
     /*Type=*/FuncTy_13,
     /*Linkage=*/GlobalValue::ExternalLinkage,
     /*Name=*/"llvm.eh.selector.i64", module); // (external, no body)
@@ -470,12 +470,12 @@ void VMLet::initialise() {
     /*Params=*/FuncTy_19_args,
     /*isVarArg=*/false);
 
-  personality = new Function(
+  personality = Function::Create(
     /*Type=*/FuncTy_19,
     /*Linkage=*/GlobalValue::ExternalLinkage,
     /*Name=*/"__gxx_personality_v0", module); // (external, no body)
   
-  unwindResume = new Function(
+  unwindResume = Function::Create(
     /*Type=*/FuncTy_9,
     /*Linkage=*/GlobalValue::ExternalLinkage,
     /*Name=*/"_Unwind_Resume_or_Rethrow", module); // (external, no body)
@@ -488,12 +488,12 @@ void VMLet::initialise() {
     /*Params=*/FuncTy_17_args,
     /*isVarArg=*/false);
 
-  exceptionBeginCatch = new Function(
+  exceptionBeginCatch = Function::Create(
     /*Type=*/FuncTy_17,
     /*Linkage=*/GlobalValue::ExternalLinkage,
     /*Name=*/"__cxa_begin_catch", module); // (external, no body)
   
-  exceptionEndCatch = new Function(
+  exceptionEndCatch = Function::Create(
     /*Type=*/FuncTy_19,
     /*Linkage=*/GlobalValue::ExternalLinkage,
     /*Name=*/"__cxa_end_catch", module); // (external, no body)
@@ -508,25 +508,25 @@ void VMLet::initialise() {
       /*Params=*/args1,
       /*isVarArg=*/false);
     
-    func_llvm_sqrt_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "llvm.sqrt.f64", module);
-    func_llvm_sin_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "llvm.sin.f64", module);
-    func_llvm_cos_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "llvm.cos.f64", module);
-    func_llvm_tan_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "tan", module);
-    func_llvm_asin_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "asin", module);
-    func_llvm_acos_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "acos", module);
-    func_llvm_atan_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "atan", module);
-    func_llvm_exp_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "exp", module);
-    func_llvm_log_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "log", module);
-    func_llvm_ceil_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "ceil", module);
-    func_llvm_floor_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "floor", module);
-    func_llvm_cbrt_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "cbrt", module);
-    func_llvm_cosh_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "cosh", module);
-    func_llvm_expm1_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "expm1", module);
-    func_llvm_log10_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "log10", module);
-    func_llvm_log1p_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "log1p", module);
-    func_llvm_sinh_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "sinh", module);
-    func_llvm_tanh_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "tanh", module);
-    func_llvm_fabs_f64 = new Function(FuncTy, GlobalValue::ExternalLinkage, "fabs", module);
+    func_llvm_sqrt_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "llvm.sqrt.f64", module);
+    func_llvm_sin_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "llvm.sin.f64", module);
+    func_llvm_cos_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "llvm.cos.f64", module);
+    func_llvm_tan_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "tan", module);
+    func_llvm_asin_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "asin", module);
+    func_llvm_acos_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "acos", module);
+    func_llvm_atan_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "atan", module);
+    func_llvm_exp_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "exp", module);
+    func_llvm_log_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "log", module);
+    func_llvm_ceil_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "ceil", module);
+    func_llvm_floor_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "floor", module);
+    func_llvm_cbrt_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "cbrt", module);
+    func_llvm_cosh_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "cosh", module);
+    func_llvm_expm1_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "expm1", module);
+    func_llvm_log10_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "log10", module);
+    func_llvm_log1p_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "log1p", module);
+    func_llvm_sinh_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "sinh", module);
+    func_llvm_tanh_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "tanh", module);
+    func_llvm_fabs_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "fabs", module);
     
     std::vector<const Type*>args2;
     args2.push_back(Type::DoubleTy);
@@ -536,10 +536,10 @@ void VMLet::initialise() {
       /*Params=*/args2,
       /*isVarArg=*/false);
   
-    func_llvm_hypot_f64 = new Function(FuncTy2, GlobalValue::ExternalLinkage, "hypot", module);
-    //func_llvm_pow_f64 = new Function(FuncTy2, GlobalValue::ExternalLinkage, "llvm.pow.f64", module);
-    func_llvm_pow_f64 = new Function(FuncTy2, GlobalValue::ExternalLinkage, "pow", module);
-    func_llvm_atan2_f64 = new Function(FuncTy2, GlobalValue::ExternalLinkage, "atan2", module);
+    func_llvm_hypot_f64 = Function::Create(FuncTy2, GlobalValue::ExternalLinkage, "hypot", module);
+    //func_llvm_pow_f64 = Function::Create(FuncTy2, GlobalValue::ExternalLinkage, "llvm.pow.f64", module);
+    func_llvm_pow_f64 = Function::Create(FuncTy2, GlobalValue::ExternalLinkage, "pow", module);
+    func_llvm_atan2_f64 = Function::Create(FuncTy2, GlobalValue::ExternalLinkage, "atan2", module);
     
     std::vector<const Type*>args3;
     args3.push_back(Type::DoubleTy);
@@ -548,7 +548,7 @@ void VMLet::initialise() {
       /*Params=*/args3,
       /*isVarArg=*/false);
     
-    func_llvm_rint_f64 = new Function(FuncTy3, GlobalValue::ExternalLinkage, "rint", module);
+    func_llvm_rint_f64 = Function::Create(FuncTy3, GlobalValue::ExternalLinkage, "rint", module);
     
     std::vector<const Type*>args4;
     args4.push_back(Type::FloatTy);
@@ -557,7 +557,7 @@ void VMLet::initialise() {
       /*Params=*/args4,
       /*isVarArg=*/false);
     
-    func_llvm_fabs_f32 = new Function(FuncTyF, GlobalValue::ExternalLinkage, "fabsf", module);
+    func_llvm_fabs_f32 = Function::Create(FuncTyF, GlobalValue::ExternalLinkage, "fabsf", module);
 
   }
 
@@ -568,7 +568,7 @@ void VMLet::initialise() {
     const FunctionType* type = FunctionType::get(Type::Int32Ty, args,
                                                false);
 
-    setjmpLLVM = new Function(type, GlobalValue::ExternalLinkage,
+    setjmpLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "setjmp",
                      module);
     
@@ -586,7 +586,7 @@ void VMLet::initialise() {
       /*Result=*/Type::VoidTy,
       /*Params=*/FuncTy_4_args,
       /*isVarArg=*/false);
-    llvm_memcpy_i32 = new Function(
+    llvm_memcpy_i32 = Function::Create(
       /*Type=*/FuncTy_4,
       /*Linkage=*/GlobalValue::ExternalLinkage,
       /*Name=*/"llvm.memcpy.i32", module); // (external, no body)
@@ -604,7 +604,7 @@ void VMLet::initialise() {
       /*Result=*/Type::VoidTy,
       /*Params=*/FuncTy_4_args,
       /*isVarArg=*/false);
-    llvm_memset_i32 = new Function(
+    llvm_memset_i32 = Function::Create(
       /*Type=*/FuncTy_4,
       /*Linkage=*/GlobalValue::ExternalLinkage,
       /*Name=*/"llvm.memset.i32", module); // (external, no body)

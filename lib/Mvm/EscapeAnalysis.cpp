@@ -123,9 +123,9 @@ bool EscapeAnalysis::processMalloc(Instruction* I) {
     Args.push_back(BI);
     Instruction* CI;
     if (isa<CallInst>(Alloc)) {
-      CI = new CallInst(Initialize, Args.begin(), Args.end(), "", Alloc);
+      CI = CallInst::Create(Initialize, Args.begin(), Args.end(), "", Alloc);
     } else {
-      CI = new InvokeInst(Initialize, ((InvokeInst*)Alloc)->getNormalDest(), 
+      CI = InvokeInst::Create(Initialize, ((InvokeInst*)Alloc)->getNormalDest(), 
                           ((InvokeInst*)Alloc)->getUnwindDest(), Args.begin(), 
                           Args.end(), "", Alloc->getParent());
     }
