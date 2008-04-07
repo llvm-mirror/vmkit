@@ -74,7 +74,7 @@ void CLIJit::invokeInterfaceOrVirtual(uint32 value) {
   makeArgs(funcType, args, origMeth->structReturn);
 
   BasicBlock* callBlock = createBasicBlock("call virtual invoke");
-  PHINode* node = new PHINode(CacheNode::llvmType, "", callBlock);
+  PHINode* node = PHINode::Create(CacheNode::llvmType, "", callBlock);
   
   Value* argObj = args[0];
   if (argObj->getType() != VMObject::llvmType) {
@@ -100,14 +100,14 @@ void CLIJit::invokeInterfaceOrVirtual(uint32 value) {
   std::vector<Value*> args1;
   args1.push_back(zero);
   args1.push_back(one);
-  Value* cachePtr = new GetElementPtrInst(llvmEnv, args1.begin(), args1.end(),
+  Value* cachePtr = GetElementPtrInst::Create(llvmEnv, args1.begin(), args1.end(),
                                           "", currentBlock);
   Value* cache = new LoadInst(cachePtr, "", currentBlock);
 
   std::vector<Value*> args2;
   args2.push_back(zero);
   args2.push_back(VMObject::classOffset());
-  Value* classPtr = new GetElementPtrInst(argObj, args2.begin(),
+  Value* classPtr = GetElementPtrInst::Create(argObj, args2.begin(),
                                           args2.end(), "",
                                           currentBlock);
 
@@ -115,23 +115,23 @@ void CLIJit::invokeInterfaceOrVirtual(uint32 value) {
   std::vector<Value*> args3;
   args3.push_back(zero);
   args3.push_back(two);
-  Value* lastCiblePtr = new GetElementPtrInst(cache, args3.begin(), args3.end(),
+  Value* lastCiblePtr = GetElementPtrInst::Create(cache, args3.begin(), args3.end(),
                                               "", currentBlock);
   Value* lastCible = new LoadInst(lastCiblePtr, "", currentBlock);
 
   Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, cl, lastCible, "", currentBlock);
   
   BasicBlock* ifFalse = createBasicBlock("cache not ok");
-  new BranchInst(callBlock, ifFalse, cmp, currentBlock);
+  BranchInst::Create(callBlock, ifFalse, cmp, currentBlock);
   node->addIncoming(cache, currentBlock);
   
   currentBlock = ifFalse;
   Value* newCache = invoke(virtualLookupLLVM, cache, argObj, "", ifFalse, false);
   node->addIncoming(newCache, currentBlock);
-  new BranchInst(callBlock, currentBlock);
+  BranchInst::Create(callBlock, currentBlock);
 
   currentBlock = callBlock;
-  Value* methPtr = new GetElementPtrInst(node, args1.begin(), args1.end(),
+  Value* methPtr = GetElementPtrInst::Create(node, args1.begin(), args1.end(),
                                          "", currentBlock);
 
   Value* _meth = new LoadInst(methPtr, "", currentBlock);
@@ -142,13 +142,13 @@ void CLIJit::invokeInterfaceOrVirtual(uint32 value) {
   std::vector<Value*> args4;
   args4.push_back(zero);
   args4.push_back(five);
-  Value* boxedptr = new GetElementPtrInst(node, args4.begin(), args4.end(), "", currentBlock);
+  Value* boxedptr = GetElementPtrInst::Create(node, args4.begin(), args4.end(), "", currentBlock);
   Value* boxed = new LoadInst(boxedptr, "", currentBlock);
   /* I put VMArray::llvmType here, but in should be something else... */
   Value* unboxed = new BitCastInst(args[0], VMArray::llvmType, "", currentBlock);
-  Value* unboxedptr = new GetElementPtrInst(unboxed, args1.begin(), args1.end(), "", currentBlock);
+  Value* unboxedptr = GetElementPtrInst::Create(unboxed, args1.begin(), args1.end(), "", currentBlock);
   Value* fakeunboxedptr = new BitCastInst(unboxedptr, args[0]->getType(), "", currentBlock);
-  args[0] = new SelectInst(boxed, fakeunboxedptr, args[0], "", currentBlock);
+  args[0] = SelectInst::Create(boxed, fakeunboxedptr, args[0], "", currentBlock);
   
 
   Value* ret = invoke(meth, args, "", currentBlock, origMeth->structReturn);

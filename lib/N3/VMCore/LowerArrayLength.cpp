@@ -49,8 +49,8 @@ bool LowerArrayLength::runOnFunction(Function& F) {
           std::vector<Value*> args; //size=  2
           args.push_back(mvm::jit::constantZero);
           args.push_back(n3::VMArray::sizeOffset());
-          Value* ptr = new GetElementPtrInst(val, args.begin(), args.end(),
-                                         "", CI);
+          Value* ptr = GetElementPtrInst::Create(val, args.begin(), args.end(),
+                                                 "", CI);
           Value* load = new LoadInst(ptr, "", CI);
           CI->replaceAllUsesWith(load);
           CI->eraseFromParent();

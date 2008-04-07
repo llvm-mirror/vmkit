@@ -14,59 +14,21 @@
 #include "debug.h"
 #include "types.h"
 
-#include <llvm/Type.h>
-#include <llvm/Support/CFG.h>
-#include <llvm/Module.h>
 #include <llvm/Constants.h>
-#include <llvm/Type.h>
 #include <llvm/DerivedTypes.h>
 #include <llvm/Function.h>
 #include <llvm/Instructions.h>
-#include <llvm/ModuleProvider.h>
-#include <llvm/ExecutionEngine/JIT.h>
-#include <llvm/ExecutionEngine/GenericValue.h>
-#include <llvm/PassManager.h>
-#include <llvm/Analysis/Verifier.h>
-#include <llvm/Transforms/Scalar.h>
-#include <llvm/Target/TargetData.h>
-#include <llvm/Assembly/PrintModulePass.h>
-#include <llvm/Target/TargetOptions.h>
-#include <llvm/CodeGen/MachineCodeEmitter.h>
-#include <llvm/CodeGen/MachineBasicBlock.h>
-#include "llvm/Constants.h"
-#include "llvm/DerivedTypes.h"
-#include "llvm/Module.h"
-#include "llvm/ModuleProvider.h"
-#include "llvm/PassManager.h"
-#include "llvm/ValueSymbolTable.h"
-#include "llvm/Analysis/LoadValueNumbering.h"
-#include "llvm/Analysis/LoopPass.h"
-#include "llvm/Analysis/Verifier.h"
-#include "llvm/Assembly/Writer.h"
-#include "llvm/Assembly/PrintModulePass.h"
-#include "llvm/Bitcode/ReaderWriter.h"
-#include "llvm/CodeGen/RegAllocRegistry.h"
-#include "llvm/CodeGen/SchedulerRegistry.h"
-#include "llvm/CodeGen/ScheduleDAG.h"
-#include "llvm/Target/SubtargetFeature.h"
-#include "llvm/Target/TargetData.h"
-#include "llvm/Target/TargetLowering.h"
-#include "llvm/Target/TargetMachine.h"
-#include "llvm/Target/TargetMachineRegistry.h"
-#include "llvm/Transforms/Scalar.h"
-#include "llvm/Transforms/IPO.h"
-#include "llvm/ADT/StringExtras.h"
-#include "llvm/ADT/StringMap.h"
-#include "llvm/Support/Streams.h"
-#include "llvm/Support/ManagedStatic.h"
-#include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/MutexGuard.h"
+#include <llvm/LinkAllPasses.h>
+#include <llvm/Module.h>
+#include <llvm/Type.h>
+#include <llvm/Analysis/LoopPass.h>
+#include <llvm/Support/CFG.h>
+#include <llvm/Support/MutexGuard.h>
 
-#include <llvm/Transforms/IPO.h>
+
 
 #include "mvm/JIT.h"
 #include "mvm/Method.h"
-#include "mvm/VMLet.h"
 
 #include "Assembly.h"
 #include "CLIAccess.h"
@@ -98,16 +60,17 @@ static void traceStruct(VMCommonClass* cl, BasicBlock* block, Value* arg) {
     VMField* field = *i;
     if (field->signature->super == N3::pValue) {
       if (!field->signature->isPrimitive) {
-        Value* ptr = new GetElementPtrInst(arg, field->offset, "",
+        Value* ptr = GetElementPtrInst::Create(arg, field->offset, "",
                                            block);
         traceStruct(field->signature, block, ptr);
-      } else if (field->signature == N3::pIntPtr || field->signature == N3::pUIntPtr)  {
+      } else if (field->signature == N3::pIntPtr || 
+                 field->signature == N3::pUIntPtr)  {
         Value* valCast = new BitCastInst(arg, VMObject::llvmType, "", block);
-        new CallInst(CLIJit::markAndTraceLLVM, valCast, "", block);
+        CallInst::Create(CLIJit::markAndTraceLLVM, valCast, "", block);
       }
     } else if (field->signature->super != N3::pEnum) {
       Value* valCast = new BitCastInst(arg, VMObject::llvmType, "", block);
-      new CallInst(CLIJit::markAndTraceLLVM, valCast, "", block);
+      CallInst::Create(CLIJit::markAndTraceLLVM, valCast, "", block);
     }
   }
 }
@@ -131,7 +94,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
       } else {
         args.push_back(field->offset);
       }
-      Value* ptr = new GetElementPtrInst(arg, args.begin(), args.end(), "",
+      Value* ptr = GetElementPtrInst::Create(arg, args.begin(), args.end(), "",
                                          block);
       traceStruct(field->signature, block, ptr);
     } else if (field->signature->super != N3::pEnum) {
@@ -144,17 +107,17 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
       } else {
         args.push_back(field->offset);
       }
-      Value* ptr = new GetElementPtrInst(arg, args.begin(), args.end(), "",
+      Value* ptr = GetElementPtrInst::Create(arg, args.begin(), args.end(), "",
                                          block);
       Value* val = new LoadInst(ptr, "", block);
       Value* valCast = new BitCastInst(val, VMObject::llvmType, "", block);
-      new CallInst(CLIJit::markAndTraceLLVM, valCast, "", block);
+      CallInst::Create(CLIJit::markAndTraceLLVM, valCast, "", block);
     }
   }
 }
 
 VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
-  Function* func = new Function(markAndTraceLLVMType,
+  Function* func = Function::Create(markAndTraceLLVMType,
                                 GlobalValue::ExternalLinkage,
                                 "markAndTraceObject",
                                 cl->vm->module);
@@ -169,9 +132,9 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
   // Function Definitions
   
   {
-    BasicBlock* label_entry = new BasicBlock("entry",func,0);
-    BasicBlock* label_bb = new BasicBlock("bb",func,0);
-    BasicBlock* label_return = new BasicBlock("return",func,0);
+    BasicBlock* label_entry = BasicBlock::Create("entry",func,0);
+    BasicBlock* label_bb = BasicBlock::Create("bb",func,0);
+    BasicBlock* label_return = BasicBlock::Create("return",func,0);
     
     Value* ptr_v = new BitCastInst(arg, cl->naturalType, "", label_entry);
     
@@ -179,14 +142,23 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
     std::vector<Value*> ptr_tmp918_indices;
     ptr_tmp918_indices.push_back(const_int32_8);
     ptr_tmp918_indices.push_back(const_int32_9);
-    Instruction* ptr_tmp918 = new GetElementPtrInst(ptr_v, ptr_tmp918_indices.begin(), ptr_tmp918_indices.end(), "tmp918", label_entry);
-    LoadInst* int32_tmp1019 = new LoadInst(ptr_tmp918, "tmp1019", false, label_entry);
-    ICmpInst* int1_tmp1221 = new ICmpInst(ICmpInst::ICMP_SGT, int32_tmp1019, const_int32_8, "tmp1221", label_entry);
-    new BranchInst(label_bb, label_return, int1_tmp1221, label_entry);
+    Instruction* ptr_tmp918 = 
+      GetElementPtrInst::Create(ptr_v, ptr_tmp918_indices.begin(), 
+                                ptr_tmp918_indices.end(), "tmp918", 
+                                label_entry);
+    LoadInst* int32_tmp1019 = new LoadInst(ptr_tmp918, "tmp1019", false, 
+                                           label_entry);
+
+    ICmpInst* int1_tmp1221 = new ICmpInst(ICmpInst::ICMP_SGT, int32_tmp1019, 
+                                          const_int32_8, "tmp1221",
+                                          label_entry);
+
+    BranchInst::Create(label_bb, label_return, int1_tmp1221, label_entry);
     
     // Block bb (label_bb)
     Argument* fwdref_12 = new Argument(IntegerType::get(32));
-    PHINode* int32_i_015_0 = new PHINode(IntegerType::get(32), "i.015.0", label_bb);
+    PHINode* int32_i_015_0 = PHINode::Create(Type::Int32Ty, "i.015.0", 
+                                             label_bb);
     int32_i_015_0->reserveOperandSpace(2);
     int32_i_015_0->addIncoming(fwdref_12, label_bb);
     int32_i_015_0->addIncoming(const_int32_8, label_entry);
@@ -195,21 +167,27 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
     ptr_tmp3_indices.push_back(const_int32_8);
     ptr_tmp3_indices.push_back(const_int32_10);
     ptr_tmp3_indices.push_back(int32_i_015_0);
-    Instruction* ptr_tmp3 = new GetElementPtrInst(ptr_v, ptr_tmp3_indices.begin(), ptr_tmp3_indices.end(), "tmp3", label_bb);
+    Instruction* ptr_tmp3 = 
+      GetElementPtrInst::Create(ptr_v, ptr_tmp3_indices.begin(), 
+                                ptr_tmp3_indices.end(), "tmp3", label_bb);
+
     if (cl->baseClass->super == N3::pValue) {
       traceStruct(cl->baseClass, label_bb, ptr_tmp3);
     } else if (cl->baseClass->super != N3::pEnum) {
       LoadInst* ptr_tmp4 = new LoadInst(ptr_tmp3, "tmp4", false, label_bb);
       Value* arg = new BitCastInst(ptr_tmp4, VMObject::llvmType, "", label_bb);
-      new CallInst(markAndTraceLLVM, arg, "", label_bb);
+      CallInst::Create(markAndTraceLLVM, arg, "", label_bb);
     }
-    BinaryOperator* int32_tmp6 = BinaryOperator::create(Instruction::Add, int32_i_015_0, const_int32_9, "tmp6", label_bb);
+    BinaryOperator* int32_tmp6 = 
+      BinaryOperator::create(Instruction::Add, int32_i_015_0, const_int32_9,
+                             "tmp6", label_bb);
     LoadInst* int32_tmp10 = new LoadInst(ptr_tmp918, "tmp10", false, label_bb);
-    ICmpInst* int1_tmp12 = new ICmpInst(ICmpInst::ICMP_SGT, int32_tmp10, int32_tmp6, "tmp12", label_bb);
-    new BranchInst(label_bb, label_return, int1_tmp12, label_bb);
+    ICmpInst* int1_tmp12 = new ICmpInst(ICmpInst::ICMP_SGT, int32_tmp10, 
+                                        int32_tmp6, "tmp12", label_bb);
+    BranchInst::Create(label_bb, label_return, int1_tmp12, label_bb);
     
     // Block return (label_return)
-    new ReturnInst(label_return);
+    ReturnInst::Create(label_return);
     
     // Resolve Forward References
     fwdref_12->replaceAllUsesWith(int32_tmp6); delete fwdref_12;
@@ -230,23 +208,23 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
   const Type* type = stat ? cl->staticType : cl->virtualType;
   std::vector<VMField*> &fields = stat ? cl->staticFields : cl->virtualFields;
   
-  Function* func = new Function(markAndTraceLLVMType,
+  Function* func = Function::Create(markAndTraceLLVMType,
                                 GlobalValue::ExternalLinkage,
                                 "markAndTraceObject",
                                 cl->vm->module);
 
   Argument* arg = func->arg_begin();
-  BasicBlock* block = new BasicBlock("", func);
+  BasicBlock* block = BasicBlock::Create("", func);
   llvm::Value* realArg = new BitCastInst(arg, type, "", block);
   
   if (stat || cl->super == 0) {
-    new CallInst(vmObjectTracerLLVM, arg, "", block);
+    CallInst::Create(vmObjectTracerLLVM, arg, "", block);
   } else {
-    new CallInst(((VMClass*)cl->super)->virtualTracer, arg, "", block);
+    CallInst::Create(((VMClass*)cl->super)->virtualTracer, arg, "", block);
   }
   
   traceClass(cl, block, realArg, fields, (cl->super == N3::pValue && !stat));
-  new ReturnInst(block);
+  ReturnInst::Create(block);
 
   VirtualTable * res = malloc(VT_SIZE);
   memcpy(res, VMObject::VT, VT_SIZE);
@@ -265,7 +243,7 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
 }
 
 BasicBlock* CLIJit::createBasicBlock(const char* name) {
-  return new BasicBlock(name, llvmFunction);
+  return BasicBlock::Create(name, llvmFunction);
 }
 
 void CLIJit::setCurrentBlock(BasicBlock* newBlock) {
@@ -292,7 +270,7 @@ static void testPHINodes(BasicBlock* dest, BasicBlock* insert, CLIJit* jit) {
     for (std::vector<Value*>::iterator i = jit->stack.begin(),
             e = jit->stack.end(); i!= e; ++i) {
       Value* cur = (*i);
-      PHINode* node = new PHINode(cur->getType(), "", dest);
+      PHINode* node = PHINode::Create(cur->getType(), "", dest);
       node->addIncoming(cur, insert);
     }
   } else {
@@ -314,14 +292,14 @@ static void testPHINodes(BasicBlock* dest, BasicBlock* insert, CLIJit* jit) {
 
 void CLIJit::branch(llvm::BasicBlock* dest, llvm::BasicBlock* insert) {
   testPHINodes(dest, insert, this);
-  new BranchInst(dest, insert);
+  BranchInst::Create(dest, insert);
 }
 
 void CLIJit::branch(llvm::Value* test, llvm::BasicBlock* ifTrue,
                     llvm::BasicBlock* ifFalse, llvm::BasicBlock* insert) {  
   testPHINodes(ifTrue, insert, this);
   testPHINodes(ifFalse, insert, this);
-  new BranchInst(ifTrue, ifFalse, test, insert);
+  BranchInst::Create(ifTrue, ifFalse, test, insert);
 }
 
 Value* CLIJit::pop() {
@@ -347,7 +325,8 @@ Value* CLIJit::changeType(Value* val, const Type* type) {
       // in cast it's a struct
       val = new LoadInst(val, "", currentBlock);
     }
-    else if (type->getPrimitiveSizeInBits() < valType->getPrimitiveSizeInBits()) {
+    else if (type->getPrimitiveSizeInBits() < 
+             valType->getPrimitiveSizeInBits()) {
       val = new TruncInst(val, type, "", currentBlock);
     } else {
       val = new SExtInst(val, type, "", currentBlock);
@@ -388,21 +367,30 @@ Instruction* CLIJit::lowerMathOps(VMMethod* meth,
                                   std::vector<Value*>& args) {
   
   if (meth->name == N3::sqrt) {
-    return new CallInst(mvm::jit::func_llvm_sqrt_f64, args[0], "tmp1", currentBlock);
+    return CallInst::Create(mvm::jit::func_llvm_sqrt_f64, args[0], "tmp1", 
+                            currentBlock);
   } else if (meth->name == N3::sin) {
-    return new CallInst(mvm::jit::func_llvm_sin_f64, args[0], "tmp1", currentBlock);
+    return CallInst::Create(mvm::jit::func_llvm_sin_f64, args[0], "tmp1",
+                            currentBlock);
   } else if (meth->name == N3::cos) {
-    return new CallInst(mvm::jit::func_llvm_cos_f64, args[0], "tmp1", currentBlock);
+    return CallInst::Create(mvm::jit::func_llvm_cos_f64, args[0], "tmp1",
+                            currentBlock);
   } else if (meth->name == N3::exp) {
-    return new CallInst(mvm::jit::func_llvm_exp_f64, args[0], "tmp1", currentBlock);
+    return CallInst::Create(mvm::jit::func_llvm_exp_f64, args[0], "tmp1",
+                            currentBlock);
   } else if (meth->name == N3::log) {
-    return new CallInst(mvm::jit::func_llvm_log_f64, args[0], "tmp1", currentBlock);
+    return CallInst::Create(mvm::jit::func_llvm_log_f64, args[0], "tmp1",
+                            currentBlock);
   } else if (meth->name == N3::floor) {
-    return new CallInst(mvm::jit::func_llvm_floor_f64, args[0], "tmp1", currentBlock);
+    return CallInst::Create(mvm::jit::func_llvm_floor_f64, args[0], "tmp1",
+                            currentBlock);
   } else if (meth->name == N3::log10) {
-    return new CallInst(mvm::jit::func_llvm_log10_f64, args[0], "tmp1", currentBlock);
+    return CallInst::Create(mvm::jit::func_llvm_log10_f64, args[0], "tmp1",
+                            currentBlock);
   } else if (meth->name == N3::pow) {
-    Instruction* val = new CallInst(mvm::jit::func_llvm_pow_f64, args.begin(), args.end(), "tmp1", currentBlock);
+    Instruction* val = CallInst::Create(mvm::jit::func_llvm_pow_f64, 
+                                        args.begin(), args.end(), "tmp1",
+                                        currentBlock);
     return val;
   }
   return 0;
@@ -430,14 +418,15 @@ void CLIJit::invoke(uint32 value) {
 
   if (meth->classDef->isArray) {
     uint8 func = 0;
-    if (meth->name == VMThread::get()->vm->asciizConstructUTF8("Set")) {
+    VirtualMachine* vm = VMThread::get()->vm;
+    if (meth->name == vm->asciizConstructUTF8("Set")) {
       func = 0;
-    } else if (meth->name == VMThread::get()->vm->asciizConstructUTF8("Get")) {
+    } else if (meth->name == vm->asciizConstructUTF8("Get")) {
       func = 1;
-    } else if (meth->name == VMThread::get()->vm->asciizConstructUTF8("Address")) {
+    } else if (meth->name == vm->asciizConstructUTF8("Address")) {
       func = 2;
     } else {
-      VMThread::get()->vm->error("implement me %s", meth->name->printString());
+      vm->error("implement me %s", meth->name->printString());
     }
       
     VMClassArray* type = (VMClassArray*)meth->classDef;
@@ -478,50 +467,63 @@ void CLIJit::invoke(uint32 value) {
   const llvm::FunctionType* type = meth->getSignature();
   makeArgs(type, Args, meth->structReturn);
   
-  if (meth->classDef->nameSpace == N3::system && meth->classDef->name == N3::math) {
+  if (meth->classDef->nameSpace == N3::system && 
+      meth->classDef->name == N3::math) {
     Value* val = lowerMathOps(meth, Args); 
     if (val) {
       push(val);
       return;
     }
-  } else if (meth->classDef->nameSpace == N3::system && meth->classDef->name == N3::doubleName) {
+  } else if (meth->classDef->nameSpace == N3::system && 
+             meth->classDef->name == N3::doubleName) {
     if (meth->name == N3::isNan) {
-      push(new FCmpInst(FCmpInst::FCMP_UNO, Args[0], mvm::jit::constantDoubleZero, "tmp1", currentBlock));
+      push(new FCmpInst(FCmpInst::FCMP_UNO, Args[0], 
+                        mvm::jit::constantDoubleZero, "tmp1", currentBlock));
       return;
     } else if (meth->name == N3::testInfinity) {
       BasicBlock* endBlock = createBasicBlock("end test infinity");
       BasicBlock* minusInfinity = createBasicBlock("- infinity");
       BasicBlock* noInfinity = createBasicBlock("no infinity");
-      PHINode* node = new PHINode(Type::Int32Ty, "", endBlock);
+      PHINode* node = PHINode::Create(Type::Int32Ty, "", endBlock);
       node->addIncoming(mvm::jit::constantOne, currentBlock);
       node->addIncoming(mvm::jit::constantMinusOne, minusInfinity);
       node->addIncoming(mvm::jit::constantZero, noInfinity);
-      Value* val1 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0], mvm::jit::constantDoubleInfinity, "tmp1", currentBlock); 
-      new BranchInst(endBlock, minusInfinity, val1, currentBlock);
-      Value* val2 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0], mvm::jit::constantDoubleMinusInfinity, "tmp1", minusInfinity); 
-      new BranchInst(endBlock, noInfinity, val2, minusInfinity);
-      new BranchInst(endBlock, noInfinity);
+      Value* val1 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0],
+                                 mvm::jit::constantDoubleInfinity, "tmp1",
+                                 currentBlock); 
+      BranchInst::Create(endBlock, minusInfinity, val1, currentBlock);
+      Value* val2 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0], 
+                                 mvm::jit::constantDoubleMinusInfinity, "tmp1",
+                                 minusInfinity); 
+      BranchInst::Create(endBlock, noInfinity, val2, minusInfinity);
+      BranchInst::Create(endBlock, noInfinity);
       currentBlock = endBlock; 
       push(node);
       return;
     }
-  } else if (meth->classDef->nameSpace == N3::system && meth->classDef->name == N3::floatName) {
+  } else if (meth->classDef->nameSpace == N3::system && 
+             meth->classDef->name == N3::floatName) {
     if (meth->name == N3::isNan) {
-      push(new FCmpInst(FCmpInst::FCMP_UNO, Args[0], mvm::jit::constantFloatZero, "tmp1", currentBlock));
+      push(new FCmpInst(FCmpInst::FCMP_UNO, Args[0], 
+                        mvm::jit::constantFloatZero, "tmp1", currentBlock));
       return;
     } else if (meth->name == N3::testInfinity) {
       BasicBlock* endBlock = createBasicBlock("end test infinity");
       BasicBlock* minusInfinity = createBasicBlock("- infinity");
       BasicBlock* noInfinity = createBasicBlock("no infinity");
-      PHINode* node = new PHINode(Type::Int32Ty, "", endBlock);
+      PHINode* node = PHINode::Create(Type::Int32Ty, "", endBlock);
       node->addIncoming(mvm::jit::constantOne, currentBlock);
       node->addIncoming(mvm::jit::constantMinusOne, minusInfinity);
       node->addIncoming(mvm::jit::constantZero, noInfinity);
-      Value* val1 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0], mvm::jit::constantFloatInfinity, "tmp1", currentBlock); 
-      new BranchInst(endBlock, minusInfinity, val1, currentBlock);
-      Value* val2 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0], mvm::jit::constantFloatMinusInfinity, "tmp1", minusInfinity); 
-      new BranchInst(endBlock, noInfinity, val2, minusInfinity);
-      new BranchInst(endBlock, noInfinity);
+      Value* val1 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0], 
+                                 mvm::jit::constantFloatInfinity, "tmp1",
+                                 currentBlock);
+      BranchInst::Create(endBlock, minusInfinity, val1, currentBlock);
+      Value* val2 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0], 
+                                 mvm::jit::constantFloatMinusInfinity, "tmp1",
+                                 minusInfinity);
+      BranchInst::Create(endBlock, noInfinity, val2, minusInfinity);
+      BranchInst::Create(endBlock, noInfinity);
       currentBlock = endBlock; 
       push(node);
       return;
@@ -578,10 +580,11 @@ void CLIJit::invokeNew(uint32 value) {
     params.push_back(ConstantInt::get(Type::Int32Ty, size));
     mvm::jit::unprotectConstants();
     params.push_back(mvm::jit::constantZero);
-    new CallInst(mvm::jit::llvm_memset_i32, params.begin(), params.end(), "", currentBlock);
+    CallInst::Create(mvm::jit::llvm_memset_i32, params.begin(), params.end(),
+                     "", currentBlock);
   } else {
     Value* var = new LoadInst(type->llvmVar(), "", currentBlock);
-    Value* val = new CallInst(objConsLLVM, var, "", currentBlock);
+    Value* val = CallInst::Create(objConsLLVM, var, "", currentBlock);
     obj = new BitCastInst(val, type->naturalType, "", currentBlock);
   }
   
@@ -601,7 +604,8 @@ void CLIJit::invokeNew(uint32 value) {
     invoke(func, Args, "", currentBlock, meth->structReturn);
   }
     
-  if ((type->super == N3::pValue || type->super == N3::pEnum) && type->virtualFields.size() == 1) {
+  if ((type->super == N3::pValue || type->super == N3::pEnum) &&
+      type->virtualFields.size() == 1) {
     push(new LoadInst(obj, "", currentBlock));
   } else {
     push(obj);
@@ -617,14 +621,16 @@ llvm::Value* CLIJit::getVirtualField(uint32 value) {
     // struct!
     return obj;
   } else {
-    if (field->classDef->super != N3::pValue && field->classDef->super != N3::pEnum) {
-      obj = new BitCastInst(obj, field->classDef->naturalType, "", currentBlock);
+    if (field->classDef->super != N3::pValue && 
+        field->classDef->super != N3::pEnum) {
+      obj = new BitCastInst(obj, field->classDef->naturalType, "",
+                            currentBlock);
     }
     std::vector<Value*> args;
     args.push_back(mvm::jit::constantZero);
     args.push_back(field->offset);
-    Value* ptr = new GetElementPtrInst(obj, args.begin(), args.end(), "", 
-                                       currentBlock);
+    Value* ptr = GetElementPtrInst::Create(obj, args.begin(), args.end(), "", 
+                                           currentBlock);
     return ptr;
   }
 }
@@ -640,8 +646,8 @@ llvm::Value* CLIJit::getStaticField(uint32 value) {
   std::vector<Value*> args;
   args.push_back(mvm::jit::constantZero);
   args.push_back(field->offset);
-  Value* ptr = new GetElementPtrInst(staticCl, args.begin(), args.end(), "",
-                                     currentBlock);
+  Value* ptr = GetElementPtrInst::Create(staticCl, args.begin(), args.end(), "",
+                                         currentBlock);
   
   return ptr;
 
@@ -661,13 +667,14 @@ void CLIJit::setVirtualField(uint32 value) {
     // struct!
     ptr = obj;
   } else {
-    if (field->classDef->super != N3::pValue && field->classDef->super != N3::pEnum) {
+    if (field->classDef->super != N3::pValue &&
+        field->classDef->super != N3::pEnum) {
       obj = new BitCastInst(obj, field->classDef->naturalType, "", currentBlock);
     }
     std::vector<Value*> args;
     args.push_back(mvm::jit::constantZero);
     args.push_back(field->offset);
-    ptr = new GetElementPtrInst(obj, args.begin(), args.end(), "",
+    ptr = GetElementPtrInst::Create(obj, args.begin(), args.end(), "",
                                 currentBlock);
   }
 
@@ -694,7 +701,7 @@ void CLIJit::setStaticField(uint32 value) {
   std::vector<Value*> args;
   args.push_back(mvm::jit::constantZero);
   args.push_back(field->offset);
-  Value* ptr = new GetElementPtrInst(staticCl, args.begin(), args.end(), "",
+  Value* ptr = GetElementPtrInst::Create(staticCl, args.begin(), args.end(), "",
                                      currentBlock);
   Value* val = pop();
   const Type* type = field->signature->naturalType;
@@ -720,15 +727,15 @@ void CLIJit::JITVerifyNull(Value* obj) {
   BasicBlock* exit = jit->createBasicBlock("verifyNullExit");
   BasicBlock* cont = jit->createBasicBlock("verifyNullCont");
 
-  new BranchInst(exit, cont, test, jit->currentBlock);
+  BranchInst::Create(exit, cont, test, jit->currentBlock);
   
   std::vector<Value*> args;
   if (currentExceptionBlock != endExceptionBlock) {
-    new InvokeInst(CLIJit::nullPointerExceptionLLVM, unifiedUnreachable,
+    InvokeInst::Create(CLIJit::nullPointerExceptionLLVM, unifiedUnreachable,
                    currentExceptionBlock, args.begin(),
                    args.end(), "", exit);
   } else {
-    new CallInst(CLIJit::nullPointerExceptionLLVM, args.begin(),
+    CallInst::Create(CLIJit::nullPointerExceptionLLVM, args.begin(),
                  args.end(), "", exit);
     new UnreachableInst(exit);
   }
@@ -749,7 +756,8 @@ llvm::Value* CLIJit::verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
   if (true) {
     Value* size = arraySize(obj);
     
-    Value* cmp = new ICmpInst(ICmpInst::ICMP_SLT, index, size, "", currentBlock);
+    Value* cmp = new ICmpInst(ICmpInst::ICMP_SLT, index, size, "",
+                              currentBlock);
 
     BasicBlock* ifTrue =  createBasicBlock("true verifyAndComputePtr");
     BasicBlock* ifFalse = createBasicBlock("false verifyAndComputePtr");
@@ -760,11 +768,12 @@ llvm::Value* CLIJit::verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
     args.push_back(new BitCastInst(obj, VMObject::llvmType, "", ifFalse));
     args.push_back(index);
     if (currentExceptionBlock != endExceptionBlock) {
-      new InvokeInst(CLIJit::indexOutOfBoundsExceptionLLVM, unifiedUnreachable,
-                     currentExceptionBlock, args.begin(),
-                     args.end(), "", ifFalse);
+      InvokeInst::Create(CLIJit::indexOutOfBoundsExceptionLLVM,
+                         unifiedUnreachable,
+                         currentExceptionBlock, args.begin(),
+                         args.end(), "", ifFalse);
     } else {
-      new CallInst(CLIJit::indexOutOfBoundsExceptionLLVM, args.begin(),
+      CallInst::Create(CLIJit::indexOutOfBoundsExceptionLLVM, args.begin(),
                    args.end(), "", ifFalse);
       new UnreachableInst(ifFalse);
     }
@@ -779,8 +788,8 @@ llvm::Value* CLIJit::verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
   indexes.push_back(zero);
   indexes.push_back(VMArray::elementsOffset());
   indexes.push_back(index);
-  Value* ptr = new GetElementPtrInst(val, indexes.begin(), indexes.end(), 
-                                     "", currentBlock);
+  Value* ptr = GetElementPtrInst::Create(val, indexes.begin(), indexes.end(), 
+                                         "", currentBlock);
 
   return ptr;
 
@@ -798,12 +807,12 @@ Value* CLIJit::arraySize(Value* array) {
   if (array->getType() != VMArray::llvmType) {
     array = new BitCastInst(array, VMArray::llvmType, "", currentBlock);
   }
-  return new CallInst(arrayLengthLLVM, array, "", currentBlock);
+  return CallInst::Create(arrayLengthLLVM, array, "", currentBlock);
   /*
   std::vector<Value*> args; //size=  2
   args.push_back(mvm::jit::constantZero);
   args.push_back(VMArray::sizeOffset());
-  Value* ptr = new GetElementPtrInst(array, args.begin(), args.end(),
+  Value* ptr = GetElementPtrInst::Create(array, args.begin(), args.end(),
                                      "", currentBlock);
   return new LoadInst(ptr, "", currentBlock);*/
 }
@@ -821,16 +830,17 @@ Function* CLIJit::createDelegate() {
   std::vector<Value*> elts;
   elts.push_back(mvm::jit::constantZero);
   elts.push_back(mvm::jit::constantOne);
-  Value* targetPtr = new GetElementPtrInst(obj, elts.begin(), elts.end(), "",
-                                           entry);
+  Value* targetPtr = GetElementPtrInst::Create(obj, elts.begin(), elts.end(),
+                                               "", entry);
   
   elts.pop_back();
   elts.push_back(mvm::jit::constantTwo);
-  Value* handlePtr = new GetElementPtrInst(obj, elts.begin(), elts.end(), "",
-                                           entry);
+  Value* handlePtr = GetElementPtrInst::Create(obj, elts.begin(), elts.end(),
+                                               "", entry);
+
   new StoreInst(target, targetPtr, false, entry); 
   new StoreInst(handle, handlePtr, false, entry);
-  new ReturnInst(entry);
+  ReturnInst::Create(entry);
   
   return func;
 }
@@ -849,7 +859,8 @@ Function* CLIJit::compileIntern() {
     else if (name == N3::invokeName) return invokeDelegate();
     else VMThread::get()->vm->error("implement me");
   } else {
-    VMThread::get()->vm->error("implement me %s", compilingClass->printString());
+    VMThread::get()->vm->error("implement me %s",
+                               compilingClass->printString());
   }
   return 0;
 }
@@ -884,13 +895,14 @@ Function* CLIJit::compileNative() {
                               PointerType::getUnqual(funcType));
   mvm::jit::unprotectConstants();
   
-  Value* result = new CallInst(valPtr, nativeArgs.begin(), nativeArgs.end(), "", currentBlock);
+  Value* result = CallInst::Create(valPtr, nativeArgs.begin(),
+                                   nativeArgs.end(), "", currentBlock);
   
   
   if (result->getType() != Type::VoidTy)
-    new ReturnInst(result, currentBlock);
+    ReturnInst::Create(result, currentBlock);
   else
-    new ReturnInst(currentBlock);
+    ReturnInst::Create(currentBlock);
   
   
   return llvmFunction;
@@ -936,7 +948,8 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat) {
     }
     
     if (!(opcodeInfos[ex->handlerOffset].newBlock)) {
-      opcodeInfos[ex->handlerOffset].newBlock = createBasicBlock("handlerException");
+      opcodeInfos[ex->handlerOffset].newBlock = 
+                              createBasicBlock("handlerException");
     }
     
     ex->handler = opcodeInfos[ex->handlerOffset].newBlock;
@@ -999,7 +1012,8 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat) {
     if (i + 1 != e) {
       next = *(i + 1);
       if (cur->tryOffset >= next->tryOffset && 
-          cur->tryOffset + cur->tryLength <= next->tryOffset + next->tryLength) {
+          cur->tryOffset + cur->tryLength <=
+            next->tryOffset + next->tryLength) {
         bbNext = realEndExceptionBlock;
       } else {
         bbNext = next->realTest;
@@ -1011,30 +1025,38 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat) {
     if (cur->realTest != cur->test) {
       const PointerType* PointerTy_0 = mvm::jit::ptrType;
       std::vector<Value*> int32_eh_select_params;
-      Instruction* ptr_eh_ptr = new CallInst(mvm::jit::llvmGetException, "eh_ptr", cur->test);
+      Instruction* ptr_eh_ptr = CallInst::Create(mvm::jit::llvmGetException,
+                                                 "eh_ptr", cur->test);
       int32_eh_select_params.push_back(ptr_eh_ptr);
       mvm::jit::protectConstants();
-      int32_eh_select_params.push_back(ConstantExpr::getCast(Instruction::BitCast, mvm::jit::personality, PointerTy_0));
+      Constant* C = ConstantExpr::getCast(Instruction::BitCast,
+                                          mvm::jit::personality, PointerTy_0);
+      int32_eh_select_params.push_back(C);
       mvm::jit::unprotectConstants();
       int32_eh_select_params.push_back(mvm::jit::constantPtrNull);
-      new CallInst(mvm::jit::exceptionSelector, int32_eh_select_params.begin(), int32_eh_select_params.end(), "eh_select", cur->test);
-      new BranchInst(cur->realTest, cur->test);
+      CallInst::Create(mvm::jit::exceptionSelector,
+                       int32_eh_select_params.begin(),
+                       int32_eh_select_params.end(), "eh_select", cur->test);
+      BranchInst::Create(cur->realTest, cur->test);
     } 
 
     Value* cl = new LoadInst(cur->catchClass->llvmVar(), "", cur->realTest);
-    Value* cmp = new CallInst(compareExceptionLLVM, cl, "", cur->realTest);
-    new BranchInst(cur->handler, bbNext, cmp, cur->realTest);
+    Value* cmp = CallInst::Create(compareExceptionLLVM, cl, "", cur->realTest);
+    BranchInst::Create(cur->handler, bbNext, cmp, cur->realTest);
     
     if (cur->handler->empty()) {
-      Value* cpp = new CallInst(getCppExceptionLLVM, "", cur->handler);
-      Value* exc = new CallInst(getCLIExceptionLLVM, "", cur->handler);
-      new CallInst(clearExceptionLLVM, "", cur->handler);
-      new CallInst(mvm::jit::exceptionBeginCatch, cpp, "tmp8", cur->handler);
+      Value* cpp = CallInst::Create(getCppExceptionLLVM, "", cur->handler);
+      Value* exc = CallInst::Create(getCLIExceptionLLVM, "", cur->handler);
+      CallInst::Create(clearExceptionLLVM, "", cur->handler);
+      CallInst::Create(mvm::jit::exceptionBeginCatch, cpp, "tmp8",
+                       cur->handler);
       std::vector<Value*> void_28_params;
-      new CallInst(mvm::jit::exceptionEndCatch, void_28_params.begin(), void_28_params.end(), "", cur->handler);
+      CallInst::Create(mvm::jit::exceptionEndCatch, void_28_params.begin(),
+                       void_28_params.end(), "", cur->handler);
       new StoreInst(exc, supplLocal, false, cur->handler);
       
-      for (uint16 i = cur->tryOffset; i < cur->tryOffset + cur->tryLength; ++i) {
+      for (uint16 i = cur->tryOffset; i < cur->tryOffset + cur->tryLength;
+           ++i) {
         opcodeInfos[i].exception = exc;
       }  
     } 
@@ -1045,7 +1067,6 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat) {
 
 }
 
-#include <iostream>  
 Function* CLIJit::compileFatOrTiny() {
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "tiny or fat compile %s\n",
               compilingMethod->printString());
@@ -1132,13 +1153,15 @@ Function* CLIJit::compileFatOrTiny() {
         uint64 size = mvm::jit::getTypeSize(cl->naturalType);
         
         std::vector<Value*> params;
-        params.push_back(new BitCastInst(alloc, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
+        params.push_back(new BitCastInst(alloc, mvm::jit::ptrType, "",
+                                         currentBlock));
         params.push_back(mvm::jit::constantInt8Zero);
         mvm::jit::protectConstants();
         params.push_back(ConstantInt::get(Type::Int32Ty, size));
         mvm::jit::unprotectConstants();
         params.push_back(mvm::jit::constantZero);
-        new CallInst(mvm::jit::llvm_memset_i32, params.begin(), params.end(), "", currentBlock);
+        CallInst::Create(mvm::jit::llvm_memset_i32, params.begin(),
+                         params.end(), "", currentBlock);
 
       }
       locals.push_back(alloc);
@@ -1151,11 +1174,11 @@ Function* CLIJit::compileFatOrTiny() {
 
   const Type* endType = funcType->getReturnType(); 
   if (endType != Type::VoidTy) {
-    endNode = new PHINode(endType, "", endBlock);
+    endNode = PHINode::Create(endType, "", endBlock);
   } else if (compilingMethod->structReturn) {
     const Type* lastType = 
       funcType->getContainedType(funcType->getNumContainedTypes() - 1);
-    endNode = new PHINode(lastType, "", endBlock);
+    endNode = PHINode::Create(lastType, "", endBlock);
   }
 
   compileOpcodes(&compilingClass->assembly->bytes->elements[offset], codeLen);
@@ -1167,23 +1190,26 @@ Function* CLIJit::compileFatOrTiny() {
     endBlock->eraseFromParent();
   } else {
     if (endType != Type::VoidTy) {
-      new ReturnInst(endNode, endBlock);
+      ReturnInst::Create(endNode, endBlock);
     } else if (compilingMethod->structReturn) {
       const Type* lastType = 
         funcType->getContainedType(funcType->getNumContainedTypes() - 1);
       uint64 size = mvm::jit::getTypeSize(lastType->getContainedType(0));
       Value* obj = --llvmFunction->arg_end();
       std::vector<Value*> params;
-      params.push_back(new BitCastInst(obj, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-      params.push_back(new BitCastInst(endNode, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
+      params.push_back(new BitCastInst(obj, mvm::jit::ptrType, "",
+                                       currentBlock));
+      params.push_back(new BitCastInst(endNode, mvm::jit::ptrType, "",
+                                       currentBlock));
       mvm::jit::protectConstants();
       params.push_back(ConstantInt::get(Type::Int32Ty, size));
       mvm::jit::unprotectConstants();
       params.push_back(mvm::jit::constantFour);
-      new CallInst(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
-      new ReturnInst(currentBlock);
+      CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(),
+                       "", currentBlock);
+      ReturnInst::Create(currentBlock);
     } else {
-      new ReturnInst(endBlock);
+      ReturnInst::Create(endBlock);
     }
   }
   
@@ -1192,9 +1218,9 @@ Function* CLIJit::compileFatOrTiny() {
   if (PI == PE) {
     endExceptionBlock->eraseFromParent();
   } else {
-    CallInst* ptr_eh_ptr = new CallInst(getCppExceptionLLVM, "eh_ptr", 
+    CallInst* ptr_eh_ptr = CallInst::Create(getCppExceptionLLVM, "eh_ptr", 
                                         endExceptionBlock);
-    new CallInst(mvm::jit::unwindResume, ptr_eh_ptr, "", endExceptionBlock);
+    CallInst::Create(mvm::jit::unwindResume, ptr_eh_ptr, "", endExceptionBlock);
     new UnreachableInst(endExceptionBlock);
   }
   
@@ -1305,13 +1331,15 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
         uint64 size = mvm::jit::getTypeSize(cl->naturalType);
         
         std::vector<Value*> params;
-        params.push_back(new BitCastInst(alloc, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
+        params.push_back(new BitCastInst(alloc, mvm::jit::ptrType, "",
+                                         currentBlock));
         params.push_back(mvm::jit::constantInt8Zero);
         mvm::jit::protectConstants();
         params.push_back(ConstantInt::get(Type::Int32Ty, size));
         mvm::jit::unprotectConstants();
         params.push_back(mvm::jit::constantZero);
-        new CallInst(mvm::jit::llvm_memset_i32, params.begin(), params.end(), "", currentBlock);
+        CallInst::Create(mvm::jit::llvm_memset_i32, params.begin(),
+                         params.end(), "", currentBlock);
 
       }
       locals.push_back(alloc);
@@ -1324,18 +1352,19 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
 
   const Type* endType = funcType->getReturnType(); 
   if (endType != Type::VoidTy) {
-    endNode = new PHINode(endType, "", endBlock);
+    endNode = PHINode::Create(endType, "", endBlock);
   } else if (compilingMethod->structReturn) {
     const Type* lastType = 
       funcType->getContainedType(funcType->getNumContainedTypes() - 1);
-    endNode = new PHINode(lastType, "", endBlock);
+    endNode = PHINode::Create(lastType, "", endBlock);
   }
 
   compileOpcodes(&compilingClass->assembly->bytes->elements[offset], codeLen);
   
   curBB = endBlock;
   
-  PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "end tiny or fat inline compile %s\n",
+  PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL,
+              "end tiny or fat inline compile %s\n",
               compilingMethod->printString());
   
   return endNode;
@@ -1362,7 +1391,7 @@ llvm::Function *VMMethod::compiledPtr() {
   else {
     classDef->aquire();
     if (methPtr == 0) {
-      methPtr = new llvm::Function(getSignature(), GlobalValue::GhostLinkage,
+      methPtr = Function::Create(getSignature(), GlobalValue::GhostLinkage,
                                    printString(), classDef->vm->module);
       classDef->vm->functions->hash(methPtr, this);
     }
@@ -1442,10 +1471,10 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
 
   {
     std::vector<const llvm::Type *> arg_types;
-    arg_types.insert (arg_types.begin (), llvm::PointerType::getUnqual(llvm::PointerType::getUnqual(llvm::Type::Int8Ty)));
+    arg_types.insert (arg_types.begin (), llvm::PointerType::getUnqual(mvm::jit::ptrType));
     
     llvm::FunctionType *mtype = llvm::FunctionType::get (llvm::Type::VoidTy, arg_types, false);
-    new llvm::Function(mtype,  llvm::GlobalValue::ExternalLinkage, "llvm.va_start", module);
+    Function::Create(mtype,  llvm::GlobalValue::ExternalLinkage, "llvm.va_start", module);
   }
 
   {
@@ -1453,7 +1482,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
     arg_types.insert (arg_types.begin (), llvm::Type::Int32Ty);
   
     llvm::FunctionType *mtype = llvm::FunctionType::get (llvm::PointerType::getUnqual(llvm::Type::Int8Ty), arg_types, false);
-    new llvm::Function(mtype,  llvm::GlobalValue::ExternalLinkage, "llvm.frameaddress", module);
+    Function::Create(mtype,  llvm::GlobalValue::ExternalLinkage, "llvm.frameaddress", module);
   }
 
   
@@ -1462,7 +1491,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
      // Prototype malloc as "char* malloc(...)", because we don't know in
      // doInitialization whether size_t is int or long.
      FunctionType *FT = FunctionType::get(BPTy, std::vector<const llvm::Type*>(), true);
-     new llvm::Function(FT, llvm::GlobalValue::ExternalLinkage, "_ZN2gcnwEjP5gc_vt", module); 
+     Function::Create(FT, llvm::GlobalValue::ExternalLinkage, "_ZN2gcnwEjP5gc_vt", module); 
   }
 
 
@@ -1546,7 +1575,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   std::vector<const Type*> args;
   args.push_back(VMObject::llvmType);
   markAndTraceLLVMType = FunctionType::get(llvm::Type::VoidTy, args, false);
-  markAndTraceLLVM = new Function(markAndTraceLLVMType,
+  markAndTraceLLVM = Function::Create(markAndTraceLLVMType,
                                   GlobalValue::ExternalLinkage,
                                   "_ZNK2gc12markAndTraceEv",
                                   module);
@@ -1557,7 +1586,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   std::vector<const Type*> args;
   args.push_back(VMObject::llvmType);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-  vmObjectTracerLLVM = new Function(type,
+  vmObjectTracerLLVM = Function::Create(type,
                                     GlobalValue::ExternalLinkage,
                                     "_ZN2n38VMObject6tracerEj",
                                     module);
@@ -1568,7 +1597,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   std::vector<const Type*> args;
   args.push_back(PointerType::getUnqual(Type::Int8Ty));
   const FunctionType* type = FunctionType::get(VMObject::llvmType, args, false);
-  initialiseClassLLVM = new Function(type,
+  initialiseClassLLVM = Function::Create(type,
                                      GlobalValue::ExternalLinkage,
                                      "initialiseClass",
                                      module);
@@ -1583,7 +1612,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   args.push_back(llvm::Type::Int32Ty);
   const FunctionType* type = FunctionType::get(VMObject::llvmType, args,
                                                false);
-  stringLookupLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  stringLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                 "_ZN5n37CLIJit12stringLookupEPKNS_4UTF8EPNS_5ClassEj",
                 module);
   }*/
@@ -1597,7 +1626,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
     FunctionType::get(llvm::PointerType::getUnqual(llvm::Type::Int8Ty), args,
                       false);
 
-  staticLookupLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  staticLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5n37CLIJit12staticLookupEPNS_5ClassEj",
                      module);
   }*/
@@ -1613,11 +1642,11 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   const FunctionType* type =
     FunctionType::get(CacheNode::llvmType, args, false);
 
-  virtualLookupLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  virtualLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                                    "virtualLookup", module);
 
 /*
-  virtualLookupLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  virtualLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5n37CLIJit13virtualLookupEPNS_10VMObjectEPNS_5ClassEj",
                      module);
 */
@@ -1631,7 +1660,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   const FunctionType* type = FunctionType::get(VMObject::llvmType, args,
                                                false);
 
-  newLookupLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  newLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5n37CLIJit9newLookupEPNS_5ClassEj",
                      module);
   }*/
@@ -1644,7 +1673,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   const FunctionType* type = FunctionType::get(VMObject::llvmType, args,
                                                false);
 
-  arrayConsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  arrayConsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN2n312VMClassArray5doNewEj",
                      module);
   }
@@ -1656,7 +1685,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   const FunctionType* type = FunctionType::get(VMObject::llvmType, args,
                                                false);
 
-  objConsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  objConsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN2n37VMClass5doNewEv",
                      module);
   }
@@ -1669,7 +1698,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   const FunctionType* type = FunctionType::get(VMObject::llvmType, args,
                                                false);
 
-  objInitLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  objInitLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN2n37VMClass16initialiseObjectEPNS_8VMObjectE",
                      module);
   PAListPtr func_toto_PAL;
@@ -1687,7 +1716,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   args.push_back(VMArray::llvmType);
   const FunctionType* type = FunctionType::get(Type::Int32Ty, args, false);
 
-  arrayLengthLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  arrayLengthLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "arrayLength",
                      module);
   PAListPtr func_toto_PAL;
@@ -1705,7 +1734,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   std::vector<const Type*> args;
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  nullPointerExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  nullPointerExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "nullPointerException",
                      module);
   }
@@ -1715,7 +1744,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   std::vector<const Type*> args;
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  classCastExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  classCastExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "classCastException",
                      module);
   }
@@ -1727,7 +1756,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   args.push_back(Type::Int32Ty);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  indexOutOfBoundsExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  indexOutOfBoundsExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "indexOutOfBounds",
                      module);
   }
@@ -1737,7 +1766,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   std::vector<const Type*> args;
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  jniProceedPendingExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  jniProceedPendingExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5n37CLIJit26jniProceedPendingExceptionEv",
                      module);
   }*/
@@ -1749,7 +1778,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   args.push_back(Type::Int32Ty);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  printExecutionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  printExecutionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN2n36CLIJit14printExecutionEPcPNS_8VMMethodE",
                      module);
   }
@@ -1760,7 +1789,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   args.push_back(VMObject::llvmType);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  throwExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  throwExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN2n38VMThread14throwExceptionEPNS_8VMObjectE",
                      module);
   }
@@ -1770,7 +1799,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   std::vector<const Type*> args;
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  clearExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  clearExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN2n38VMThread14clearExceptionEv",
                      module);
   }
@@ -1782,7 +1811,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   args.push_back(PointerType::getUnqual(Type::Int8Ty));
   const FunctionType* type = FunctionType::get(Type::Int1Ty, args, false);
 
-  compareExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  compareExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN2n38VMThread16compareExceptionEPNS_7VMClassE",
                      module);
   }
@@ -1794,7 +1823,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   args.push_back(PointerType::getUnqual(Type::Int8Ty));
   const FunctionType* type = FunctionType::get(Type::Int32Ty, args, false);
 
-  instanceOfLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  instanceOfLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN2n38VMObject10instanceOfEPNS_13VMCommonClassE",
                      module);
   }
@@ -1805,7 +1834,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   args.push_back(VMObject::llvmType);
   const FunctionType* type = FunctionType::get(Type::Int1Ty, args, false);
 
-  isInCodeLLVM = new Function(type, GlobalValue::ExternalLinkage, "isInCode",
+  isInCodeLLVM = Function::Create(type, GlobalValue::ExternalLinkage, "isInCode",
                               module);
   }
   
@@ -1816,7 +1845,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   const FunctionType* type = FunctionType::get(VMObject::llvmType, args,
                                                true);
 
-  arrayMultiConsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  arrayMultiConsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "doMultiNew",
                      module);
   }
@@ -1828,7 +1857,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   args.push_back(VMObject::llvmType);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  aquireObjectLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  aquireObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5n310VMObject6aquireEv",
                      module);
   }
@@ -1839,7 +1868,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   args.push_back(VMObject::llvmType);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
-  releaseObjectLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  releaseObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5n310VMObject6unlockEv",
                      module);
   }
@@ -1855,35 +1884,35 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   const FunctionType* type = FunctionType::get(VMObject::llvmType, args,
                                                false);
 
-  FloatAconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  FloatAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5n310ArrayFloat5aconsEiPNS_10VMClassArrayE",
                      module);
   
-  Int8AconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  Int8AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5n310ArraySInt85aconsEiPNS_10VMClassArrayE",
                      module);
   
-  DoubleAconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  DoubleAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5n311ArrayDouble5aconsEiPNS_10VMClassArrayE",
                      module);
    
-  Int16AconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  Int16AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5n311ArraySInt165aconsEiPNS_10VMClassArrayE",
                      module);
   
-  Int32AconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  Int32AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5n311ArraySInt325aconsEiPNS_10VMClassArrayE",
                      module);
   
-  UTF8AconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  UTF8AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5n34UTF85aconsEiPNS_10VMClassArrayE",
                      module);
   
-  LongAconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  LongAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5n39ArrayLong5aconsEiPNS_10VMClassArrayE",
                      module);
   
-  ObjectAconsLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  ObjectAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5n311ArrayObject5aconsEiPNS_10VMClassArrayE",
                      module);
   }*/
@@ -1894,7 +1923,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   const FunctionType* type = FunctionType::get(mvm::jit::ptrType, 
                                                args, false);
 
-  getCppExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  getCppExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN2n38VMThread15getCppExceptionEv",
                      module);
   }
@@ -1905,7 +1934,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   const FunctionType* type = FunctionType::get(VMObject::llvmType, 
                                                args, false);
 
-  getCLIExceptionLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  getCLIExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN2n38VMThread15getCLIExceptionEv",
                      module);
   }
@@ -1917,7 +1946,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   const FunctionType* type = FunctionType::get(VMObject::llvmType, 
                                                args, false);
 
-  newStringLLVM = new Function(type, GlobalValue::ExternalLinkage,
+  newStringLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "newString",
                      module);
   }
@@ -1935,17 +1964,17 @@ static void printArgs(std::vector<llvm::Value*> args, BasicBlock* insertAt) {
     llvm::Value* arg = *i;
     const llvm::Type* type = arg->getType();
     if (type == Type::Int8Ty || type == Type::Int16Ty || type == Type::Int1Ty) {
-      new CallInst(mvm::jit::printIntLLVM, new ZExtInst(arg, Type::Int32Ty, "", insertAt), "", insertAt);
+      CallInst::Create(mvm::jit::printIntLLVM, new ZExtInst(arg, Type::Int32Ty, "", insertAt), "", insertAt);
     } else if (type == Type::Int32Ty) {
-      new CallInst(mvm::jit::printIntLLVM, arg, "", insertAt);
+      CallInst::Create(mvm::jit::printIntLLVM, arg, "", insertAt);
     } else if (type == Type::Int64Ty) {
-      new CallInst(mvm::jit::printLongLLVM, arg, "", insertAt);
+      CallInst::Create(mvm::jit::printLongLLVM, arg, "", insertAt);
     } else if (type == Type::FloatTy) {
-      new CallInst(mvm::jit::printFloatLLVM, arg, "", insertAt);
+      CallInst::Create(mvm::jit::printFloatLLVM, arg, "", insertAt);
     } else if (type == Type::DoubleTy) {
-      new CallInst(mvm::jit::printDoubleLLVM, arg, "", insertAt);
+      CallInst::Create(mvm::jit::printDoubleLLVM, arg, "", insertAt);
     } else {
-      new CallInst(mvm::jit::printObjectLLVM, new BitCastInst(arg, VMObject::llvmType, "", insertAt), "", insertAt);
+      CallInst::Create(mvm::jit::printObjectLLVM, new BitCastInst(arg, VMObject::llvmType, "", insertAt), "", insertAt);
     }
   }
 
@@ -1973,10 +2002,10 @@ Value* CLIJit::invoke(Value *F, std::vector<llvm::Value*> args,
   if (currentExceptionBlock != endExceptionBlock) {
     BasicBlock* ifNormal = createBasicBlock("no exception block");
     currentBlock = ifNormal;
-    val = new InvokeInst(F, ifNormal, currentExceptionBlock, args.begin(), 
+    val = InvokeInst::Create(F, ifNormal, currentExceptionBlock, args.begin(), 
                          args.end(), Name, InsertAtEnd);
   } else {
-    val = new CallInst(F, args.begin(), args.end(), Name, InsertAtEnd);
+    val = CallInst::Create(F, args.begin(), args.end(), Name, InsertAtEnd);
   }
   if (ret) return ret;
   else return val;
@@ -2006,10 +2035,10 @@ Value* CLIJit::invoke(Value *F, Value* arg1, const char* Name,
   if (currentExceptionBlock != endExceptionBlock) {
     BasicBlock* ifNormal = createBasicBlock("no exception block");
     currentBlock = ifNormal;
-    val = new InvokeInst(F, ifNormal, currentExceptionBlock, args.begin(),
+    val = InvokeInst::Create(F, ifNormal, currentExceptionBlock, args.begin(),
                                 args.end(), Name, InsertAtEnd);
   } else {
-    val = new CallInst(F, args.begin(), args.end(), Name, InsertAtEnd);
+    val = CallInst::Create(F, args.begin(), args.end(), Name, InsertAtEnd);
   }
   
   if (ret) return ret;
@@ -2043,10 +2072,10 @@ Value* CLIJit::invoke(Value *F, Value* arg1, Value* arg2,
   if (currentExceptionBlock != endExceptionBlock) {
     BasicBlock* ifNormal = createBasicBlock("no exception block");
     currentBlock = ifNormal;
-    val = new InvokeInst(F, ifNormal, currentExceptionBlock, args.begin(),
+    val = InvokeInst::Create(F, ifNormal, currentExceptionBlock, args.begin(),
                          args.end(), Name, InsertAtEnd);
   } else {
-    val = new CallInst(F, args.begin(), args.end(), Name, InsertAtEnd);
+    val = CallInst::Create(F, args.begin(), args.end(), Name, InsertAtEnd);
   }
   if (ret) return ret;
   else return val; 
@@ -2072,10 +2101,10 @@ Value* CLIJit::invoke(Value *F, const char* Name,
   if (currentExceptionBlock != endExceptionBlock) {
     BasicBlock* ifNormal = createBasicBlock("no exception block");
     currentBlock = ifNormal;
-    val = new InvokeInst(F, ifNormal, currentExceptionBlock, args.begin(),
+    val = InvokeInst::Create(F, ifNormal, currentExceptionBlock, args.begin(),
                          args.end(), Name, InsertAtEnd);
   } else {
-    val = new CallInst(F, args.begin(), args.end(), Name, InsertAtEnd);
+    val = CallInst::Create(F, args.begin(), args.end(), Name, InsertAtEnd);
   }
   if (ret) return ret;
   else return val; 

@@ -190,7 +190,7 @@ static void store(Value* val, Value* local, bool vol,
     params.push_back(ConstantInt::get(Type::Int32Ty, size));
     mvm::jit::unprotectConstants();
     params.push_back(mvm::jit::constantZero);
-    new CallInst(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
+    CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
   }
 }
 
@@ -208,7 +208,7 @@ static Value* load(Value* val, const char* name, BasicBlock* currentBlock) {
     params.push_back(ConstantInt::get(Type::Int32Ty, size));
     mvm::jit::unprotectConstants();
     params.push_back(mvm::jit::constantZero);
-    new CallInst(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
+    CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
     return ret;
   }
 }
@@ -242,12 +242,12 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
     std::vector<llvm::Value*> args;
     args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)OpcodeNames[bytecodes[i]]));
     args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
-    new CallInst(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
+    CallInst::Create(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
     if (bytecodes[i] == 0xFE) {
       std::vector<llvm::Value*> args;
       args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)OpcodeNamesFE[bytecodes[i + 1]]));
       args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
-      new CallInst(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
+      CallInst::Create(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
     }
     mvm::jit::unprotectConstants();
 #endif
@@ -695,13 +695,13 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case ENDFINALLY : {
         Value* val = new LoadInst(supplLocal, "", currentBlock);
-        /*Value* call = new CallInst(isInCodeLLVM, val, "", currentBlock);
+        /*Value* call = CallInst::Create(isInCodeLLVM, val, "", currentBlock);
         BasicBlock* bb1 = createBasicBlock("end finally");
         BasicBlock* bb2 = createBasicBlock("no end finally");
-        new BranchInst(bb1, bb2, call, currentBlock);
+        BranchInst::Create(bb1, bb2, call, currentBlock);
         currentBlock = bb1;*/
         val = new PtrToIntInst(val, Type::Int32Ty, "", currentBlock);
-        SwitchInst* inst = new SwitchInst(val, leaves[0], 
+        SwitchInst* inst = SwitchInst::Create(val, leaves[0], 
                                           leaves.size(), currentBlock);
      
         uint32 index = 0; 
@@ -1089,7 +1089,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         } else if (compilingMethod->structReturn) {
           endNode->addIncoming(pop(), currentBlock);
         }
-        new BranchInst(endBlock, currentBlock);
+        BranchInst::Create(endBlock, currentBlock);
         break;
       }
       
@@ -1273,7 +1273,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         assert(type);
 
         Value* var = new LoadInst(type->llvmVar(), "", currentBlock);
-        Value* obj = new CallInst(objConsLLVM, var, "", currentBlock);
+        Value* obj = CallInst::Create(objConsLLVM, var, "", currentBlock);
         Value* val = pop();
         obj = new BitCastInst(obj, type->virtualType, "", currentBlock);
     
@@ -1281,7 +1281,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         std::vector<Value*> ptrs;
         ptrs.push_back(mvm::jit::constantZero);
         ptrs.push_back(mvm::jit::constantOne);
-        Value* ptr = new GetElementPtrInst(obj, ptrs.begin(), ptrs.end(), "", 
+        Value* ptr = GetElementPtrInst::Create(obj, ptrs.begin(), ptrs.end(), "", 
                                            currentBlock);
 
         if (val->getType()->getTypeID() != Type::PointerTyID) {
@@ -1301,7 +1301,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         params.push_back(ConstantInt::get(Type::Int32Ty, size));
         mvm::jit::unprotectConstants();
         params.push_back(mvm::jit::constantZero);
-        new CallInst(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
+        CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
         
 
         push(obj);
@@ -1335,7 +1335,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         std::vector<Value*> args;
         args.push_back(obj);
         args.push_back(clVar);
-        Value* call = new CallInst(instanceOfLLVM, args.begin(), args.end(),
+        Value* call = CallInst::Create(instanceOfLLVM, args.begin(), args.end(),
                                    "", ifFalse);
      
         cmp = new ICmpInst(ICmpInst::ICMP_EQ, call,
@@ -1346,9 +1346,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         std::vector<Value*> exArgs;
         if (currentExceptionBlock != endExceptionBlock) {
-          new InvokeInst(classCastExceptionLLVM, unifiedUnreachable, currentExceptionBlock, exArgs.begin(), exArgs.end(), "", ex);
+          InvokeInst::Create(classCastExceptionLLVM, unifiedUnreachable, currentExceptionBlock, exArgs.begin(), exArgs.end(), "", ex);
         } else {
-          new CallInst(classCastExceptionLLVM, exArgs.begin(), exArgs.end(), "", ex);
+          CallInst::Create(classCastExceptionLLVM, exArgs.begin(), exArgs.end(), "", ex);
           new UnreachableInst(ex);
         }
 
@@ -1380,21 +1380,21 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
      
         BasicBlock* isInstEndBlock = createBasicBlock("end isinst");
-        PHINode* node = new PHINode(dcl->virtualType, "", isInstEndBlock);
+        PHINode* node = PHINode::Create(dcl->virtualType, "", isInstEndBlock);
 
         BasicBlock* ifFalse = createBasicBlock("non null isinst");
         BasicBlock* ifTrue = createBasicBlock("null isinst");
         
-        new BranchInst(ifTrue, ifFalse, cmp, currentBlock);
+        BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
         node->addIncoming(nullVirtual, ifTrue);
-        new BranchInst(isInstEndBlock, ifTrue);
+        BranchInst::Create(isInstEndBlock, ifTrue);
 
 
         Value* clVar = new LoadInst(dcl->llvmVar(), "", ifFalse);
         std::vector<Value*> args;
         args.push_back(new BitCastInst(obj, VMObject::llvmType, "", ifFalse));
         args.push_back(clVar);
-        Value* call = new CallInst(instanceOfLLVM, args.begin(), args.end(),
+        Value* call = CallInst::Create(instanceOfLLVM, args.begin(), args.end(),
                                    "", ifFalse);
      
         cmp = new ICmpInst(ICmpInst::ICMP_EQ, call,
@@ -1402,13 +1402,13 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         BasicBlock* falseInst = createBasicBlock("false isinst");
         BasicBlock* trueInst = createBasicBlock("true isinst");
-        new BranchInst(falseInst, trueInst, cmp, ifFalse);
+        BranchInst::Create(falseInst, trueInst, cmp, ifFalse);
 
         node->addIncoming(new BitCastInst(obj, dcl->virtualType, "", trueInst), trueInst);
-        new BranchInst(isInstEndBlock, trueInst);
+        BranchInst::Create(isInstEndBlock, trueInst);
         
         node->addIncoming(nullVirtual, falseInst);
-        new BranchInst(isInstEndBlock, falseInst);
+        BranchInst::Create(isInstEndBlock, falseInst);
        
         currentBlock = isInstEndBlock;
         push(node);
@@ -1571,7 +1571,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* val = ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, (int64_t)utf8),
                                                mvm::jit::ptrType);
         mvm::jit::unprotectConstants();
-        Value* res = new CallInst(newStringLLVM, val, "", currentBlock);
+        Value* res = CallInst::Create(newStringLLVM, val, "", currentBlock);
         /*CLIString * str = 
           (CLIString*)(((N3*)VMThread::get()->vm)->UTF8ToStr(utf8));
         GlobalVariable* gv = str->llvmVar();
@@ -1644,7 +1644,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         std::vector<Value*> args;
         args.push_back(var);
         args.push_back(pop());
-        Value* val = new CallInst(arrayConsLLVM, args.begin(), args.end(), "",
+        Value* val = CallInst::Create(arrayConsLLVM, args.begin(), args.end(), "",
                                   currentBlock);
         push(new BitCastInst(val, type->naturalType, "", currentBlock));
         break;
@@ -1764,9 +1764,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         std::vector<Value*> args;
         args.push_back(arg);
         if (currentExceptionBlock != endExceptionBlock) {
-          new InvokeInst(throwExceptionLLVM, unifiedUnreachable, currentExceptionBlock, args.begin(), args.end(), "", currentBlock);
+          InvokeInst::Create(throwExceptionLLVM, unifiedUnreachable, currentExceptionBlock, args.begin(), args.end(), "", currentBlock);
         } else {
-          new CallInst(throwExceptionLLVM, args.begin(), args.end(), "", currentBlock);
+          CallInst::Create(throwExceptionLLVM, args.begin(), args.end(), "", currentBlock);
           new UnreachableInst(currentBlock);
         }
         break;
@@ -1790,7 +1790,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         std::vector<Value*> ptrs;
         ptrs.push_back(mvm::jit::constantZero);
         ptrs.push_back(mvm::jit::constantOne);
-        Value* ptr = new GetElementPtrInst(obj, ptrs.begin(), ptrs.end(), "", 
+        Value* ptr = GetElementPtrInst::Create(obj, ptrs.begin(), ptrs.end(), "", 
                                            currentBlock);
 
         uint64 size = mvm::jit::getTypeSize(type->naturalType);
@@ -1802,7 +1802,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         params.push_back(ConstantInt::get(Type::Int32Ty, size));
         mvm::jit::unprotectConstants();
         params.push_back(mvm::jit::constantZero);
-        new CallInst(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
+        CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
         
 
         push(val);
@@ -1853,7 +1853,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             args.push_back(one);
             args.push_back(two);
             args.push_back(three);
-            new CallInst(mvm::jit::llvm_memcpy_i32,
+            CallInst::Create(mvm::jit::llvm_memcpy_i32,
                          args.begin(), args.end(), "", currentBlock);
             break;
           }
@@ -1899,7 +1899,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             args.push_back(one);
             args.push_back(two);
             args.push_back(three);
-            new CallInst(mvm::jit::llvm_memset_i32,
+            CallInst::Create(mvm::jit::llvm_memset_i32,
                          args.begin(), args.end(), "", currentBlock);
             break;
           }
@@ -1959,9 +1959,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
               args.push_back(CLIJit::constantVMObjectNull);
             }
             if (currentExceptionBlock != endExceptionBlock) {
-              new InvokeInst(throwExceptionLLVM, unifiedUnreachable, currentExceptionBlock, args.begin(), args.end(), "", currentBlock);
+              InvokeInst::Create(throwExceptionLLVM, unifiedUnreachable, currentExceptionBlock, args.begin(), args.end(), "", currentBlock);
             } else {
-              new CallInst(throwExceptionLLVM, args.begin(), args.end(), "", currentBlock);
+              CallInst::Create(throwExceptionLLVM, args.begin(), args.end(), "", currentBlock);
               new UnreachableInst(currentBlock);
             }
             break;
