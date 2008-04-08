@@ -18,6 +18,7 @@
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Key.h"
 #include "mvm/Threads/Locks.h"
+#include "mvm/Threads/Thread.h"
 
 namespace jnjvm {
 
@@ -25,7 +26,7 @@ class Class;
 class JavaObject;
 class Jnjvm;
 
-class JavaThread : public mvm::Object {
+class JavaThread : public mvm::Thread {
 public:
   static VirtualTable *VT;
   JavaObject* javaThread;
@@ -50,10 +51,8 @@ public:
   virtual void tracer(size_t sz);
   virtual void destroyer(size_t sz);
   
-  static mvm::Key<JavaThread>* threadKey;
-
+  void initialise(JavaObject* thread, Jnjvm* isolate);
   static JavaThread* get();
-  static JavaThread* allocate(JavaObject* thread, Jnjvm* isolate);
   static JavaObject* currentThread();
   
   static void* getException();

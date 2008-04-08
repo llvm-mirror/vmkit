@@ -40,25 +40,24 @@ void JavaThread::destroyer(size_t sz) {
 }
 
 JavaThread* JavaThread::get() {
-  return threadKey->get();
+  return (JavaThread*)Thread::threadKey->get();
 }
 
 extern void AddStandardCompilePasses(llvm::FunctionPassManager*);
 
-JavaThread* JavaThread::allocate(JavaObject* thread, Jnjvm* isolate) {
-  JavaThread* key = gc_new(JavaThread)();
-  key->javaThread = thread;
-  key->isolate = isolate;
-  key->lock = mvm::Lock::allocNormal();
-  key->varcond = mvm::Cond::allocCond();
-  key->interruptFlag = 0;
-  key->state = StateRunning;
-  key->self = mvm::Thread::self();
-  key->pendingException = 0;
-  key->perFunctionPasses = new llvm::FunctionPassManager(isolate->TheModuleProvider);
-  key->perFunctionPasses->add(new llvm::TargetData(isolate->module)); 
-  AddStandardCompilePasses(key->perFunctionPasses);
-  return key;
+void JavaThread::initialise(JavaObject* thread, Jnjvm* isolate) {
+  this->javaThread = thread;
+  this->isolate = isolate;
+  this->lock = mvm::Lock::allocNormal();
+  this->varcond = mvm::Cond::allocCond();
+  this->interruptFlag = 0;
+  this->state = StateRunning;
+  this->self = mvm::Thread::self();
+  this->pendingException = 0;
+  ModuleProvider* MP = isolate->TheModuleProvider;
+  this->perFunctionPasses = new llvm::FunctionPassManager(MP);
+  this->perFunctionPasses->add(new llvm::TargetData(isolate->module));
+  AddStandardCompilePasses(this->perFunctionPasses);
 }
 
 JavaObject* JavaThread::currentThread() {

@@ -19,7 +19,7 @@
 
 namespace mvm {
 
-class GCCollector {
+class GCCollector : public Collector {
 #ifdef HAVE_PTHREAD
   friend class GCThread;
 #endif

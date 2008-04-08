@@ -18,6 +18,8 @@
 
 using namespace jnjvm;
 
+mvm::Lock* JavaObject::globalLock = 0;
+
 JavaCond* JavaCond::allocate() {
   return gc_new(JavaCond)();
 }

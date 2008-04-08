@@ -8,10 +8,9 @@
 //===----------------------------------------------------------------------===//
 
 #include "mvm/GC/GC.h"
+#include "mvm/JIT.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Thread.h"
-#include "mvm/Sigsegv.h"
-#include "mvm/VMLet.h"
 
 
 #include <dlfcn.h>
@@ -44,14 +43,15 @@ int main(int argc, char **argv, char **envp) {
   int base;
   llvm::cl::ParseCommandLineOptions(argc, argv,
                                     " VMKit: a virtual machine launcher\n");
-  Object::initialise(&base);
-  VMLet::initialise();
+  jit::initialise();
+  Object::initialise();
+  Collector::initialise(Object::markAndTraceRoots, &base);
   
   CommandLine cl;
   cl.start();
    
   clearSignals();
-	Thread::exit(0);
+  Thread::exit(0);
     
   return 0;
 }

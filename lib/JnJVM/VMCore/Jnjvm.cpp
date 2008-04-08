@@ -7,12 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-// realpath
-#include <limits.h>
-#include <stdlib.h>
-
 #include <float.h>
-
+#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,6 +36,44 @@
 #include "Zip.h"
 
 using namespace jnjvm;
+
+Jnjvm* Jnjvm::bootstrapVM = 0;
+
+#define DEF_UTF8(var) \
+  const UTF8* Jnjvm::var = 0;
+  
+  DEF_UTF8(initName);
+  DEF_UTF8(clinitName);
+  DEF_UTF8(clinitType);
+  DEF_UTF8(runName);
+  DEF_UTF8(prelib);
+  DEF_UTF8(postlib);
+  DEF_UTF8(mathName);
+  DEF_UTF8(abs);
+  DEF_UTF8(sqrt);
+  DEF_UTF8(sin);
+  DEF_UTF8(cos);
+  DEF_UTF8(tan);
+  DEF_UTF8(asin);
+  DEF_UTF8(acos);
+  DEF_UTF8(atan);
+  DEF_UTF8(atan2);
+  DEF_UTF8(exp);
+  DEF_UTF8(log);
+  DEF_UTF8(pow);
+  DEF_UTF8(ceil);
+  DEF_UTF8(floor);
+  DEF_UTF8(rint);
+  DEF_UTF8(cbrt);
+  DEF_UTF8(cosh);
+  DEF_UTF8(expm1);
+  DEF_UTF8(hypot);
+  DEF_UTF8(log10);
+  DEF_UTF8(log1p);
+  DEF_UTF8(sinh);
+  DEF_UTF8(tanh);
+
+#undef DEF_UTF8
 
 const char* Jnjvm::dirSeparator = "/";
 const char* Jnjvm::envSeparator = ":";
@@ -265,17 +299,15 @@ ArrayUInt8* Jnjvm::openName(const UTF8* utf8) {
 typedef void (*clinit_t)(void);
 
 void Jnjvm::initialiseClass(CommonClass* cl) {
-start:
-  if (!((Class*)cl)->isReady()) {
+  if (cl->isArray || AssessorDesc::bogusClassToPrimitive(cl)) {
+    cl->status = ready;
+  } else if (!(cl->isReady())) {
     cl->aquire();
     int status = cl->status;
-#ifdef SINGLE_VM
-    if (status == ready) {
-#else
-    if (((Class*)cl)->isReady()) {
-#endif
+    if (cl->isReady()) {
       cl->release();
-    } else if (status >= resolved && status != clinitParent && status != inClinit) {
+    } else if (status >= resolved && status != clinitParent &&
+               status != inClinit) {
       cl->status = clinitParent;
       cl->release();
       if (cl->super) {
@@ -292,15 +324,9 @@ start:
       PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ");
       PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s::%s\n", printString(),
                   cl->printString());
-
-#ifndef SINGLE_VM
-      std::pair<uint8, JavaObject*>* val = 0;
-      if (this == bootstrapVM && !AssessorDesc::bogusClassToPrimitive(cl) && !cl->isArray) {
-        JavaObject* staticVar = ((Class*)cl)->createStaticInstance();
-        val = new std::pair<uint8, JavaObject*>(0, staticVar);
-        JavaThread::get()->isolate->statics->hash((Class*)cl, val);
-      }
-#endif
+      
+      ((Class*)cl)->createStaticInstance();
+      
       if (meth) {
         JavaObject* exc = 0;
         try{
@@ -319,13 +345,8 @@ start:
           }
         }
       }
-
-      cl->status = ready;
-#ifndef SINGLE_VM
-      if (this == bootstrapVM && !AssessorDesc::bogusClassToPrimitive(cl) && !cl->isArray) {
-        val->first = 1;
-      }
-#endif
+      
+      cl->setReady();
       cl->broadcastClass();
     } else if (status < resolved) {
       cl->release();
@@ -334,7 +355,7 @@ start:
       if (!cl->ownerClass()) {
         while (status < ready) cl->waitClass();
         cl->release();
-        goto start;
+        initialiseClass(cl);
       } 
       cl->release();
     }
@@ -770,22 +791,10 @@ JavaMethod* Jnjvm::constructMethod(Class* cl, const UTF8* name,
 }
 
 const UTF8* Jnjvm::asciizConstructUTF8(const char* asciiz) {
-#ifndef SINGLE_VM
-  if (this != bootstrapVM) {
-    const UTF8* existing = bootstrapVM->hashUTF8->lookupAsciiz(asciiz);
-    if (existing) return existing;
-  }
-#endif
   return hashUTF8->lookupOrCreateAsciiz(asciiz);
 }
 
 const UTF8* Jnjvm::readerConstructUTF8(const uint16* buf, uint32 size) {
-#ifndef SINGLE_VM
-  if (this != bootstrapVM) {
-    const UTF8* existing = bootstrapVM->hashUTF8->lookupReader(buf, size);
-    if (existing) return existing;
-  }
-#endif
   return hashUTF8->lookupOrCreateReader(buf, size);
 }
 
@@ -803,18 +812,13 @@ Typedef* Jnjvm::constructType(const UTF8* name) {
 }
 
 CommonClass* Jnjvm::loadInClassLoader(const UTF8* name, JavaObject* loader) {
+  JavaString* str = this->UTF8ToStr(name);
   JavaObject* obj = (JavaObject*)
-    Classpath::loadInClassLoader->invokeJavaObjectVirtual(loader, this->UTF8ToStr(name));
+    Classpath::loadInClassLoader->invokeJavaObjectVirtual(loader, str);
   return (CommonClass*)((*Classpath::vmdataClass)(obj).PointerVal);
 }
 
 JavaString* Jnjvm::UTF8ToStr(const UTF8* utf8) { 
-#ifndef SINGLE_VM
-  if (this != bootstrapVM) {
-    JavaString* existing = bootstrapVM->hashStr->lookup(utf8);
-    if (existing) return existing;
-  }
-#endif
   JavaString* res = hashStr->lookupOrCreate(utf8, this, JavaString::stringDup);
   return res;
 }
@@ -828,7 +832,7 @@ void Jnjvm::addProperty(char* key, char* value) {
   postProperties.push_back(std::make_pair(key, value));
 }
 
-#ifdef SINGLE_VM
+#ifndef MULTIPLE_VM
 JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
   if (!(cl->delegatee)) {
     JavaObject* delegatee = (*Classpath::newClass)();
@@ -838,7 +842,8 @@ JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
     JavaObject* pd = cl->delegatee;
     JavaObject* delegatee = (*Classpath::newClass)();
     cl->delegatee = delegatee;;
-    Classpath::initClassWithProtectionDomain->invokeIntSpecial(delegatee, cl, pd);
+    Classpath::initClassWithProtectionDomain->invokeIntSpecial(delegatee, cl,
+                                                               pd);
   }
   return cl->delegatee;
 }

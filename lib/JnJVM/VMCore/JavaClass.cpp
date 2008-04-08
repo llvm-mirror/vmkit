@@ -35,6 +35,22 @@ using namespace jnjvm;
 
 const int CommonClass::MaxDisplay = 6;
 
+const UTF8* Attribut::codeAttribut = 0;
+const UTF8* Attribut::exceptionsAttribut = 0;
+const UTF8* Attribut::constantAttribut = 0;
+const UTF8* Attribut::lineNumberTableAttribut = 0;
+const UTF8* Attribut::innerClassesAttribut = 0;
+const UTF8* Attribut::sourceFileAttribut = 0;
+
+JavaObject* CommonClass::jnjvmClassLoader = 0;
+
+CommonClass* ClassArray::SuperArray = 0;
+std::vector<Class*> ClassArray::InterfacesArray;
+std::vector<JavaMethod*> ClassArray::VirtualMethodsArray;
+std::vector<JavaMethod*> ClassArray::StaticMethodsArray;
+std::vector<JavaField*> ClassArray::VirtualFieldsArray;
+std::vector<JavaField*> ClassArray::StaticFieldsArray;
+
 void Attribut::print(mvm::PrintBuffer* buf) const {
   buf->write("Attribut<");
   buf->writeObj(name);
@@ -116,7 +132,7 @@ void CommonClass::initialise(Jnjvm* isolate, bool isArray) {
   this->dim = -1;
   this->isArray = isArray;
   this->_llvmVar = 0;
-#ifdef SINGLE_VM
+#ifndef MULTIPLE_VM
   this->_llvmDelegatee = 0;
   this->delegatee = 0;
 #endif
@@ -357,16 +373,6 @@ JavaObject* Class::initialiseObject(JavaObject* res) {
   return res;
 }
 
-#ifndef SINGLE_VM
-JavaObject* Class::doNewIsolate() {
-  if (!isReady())
-    initialiseClass();
-  JavaObject* res = (JavaObject*)gc::operator new(virtualSize, virtualVT);
-  memcpy(res, virtualInstance, virtualSize);  
-  return res;
-}
-#endif
-
 bool CommonClass::inheritName(const UTF8* Tname) {
   if (name->equals(Tname)) {
     return true;
@@ -515,21 +521,19 @@ static void resolveStaticFields(Class* cl) {
   VirtualTable* VT = JavaJIT::makeVT(cl, true);
 
   uint64 size = mvm::jit::getTypeSize(cl->staticType->getContainedType(0));
-#ifndef SINGLE_VM
   cl->staticSize = size;
   cl->staticVT = VT;
-  if (cl->isolate != Jnjvm::bootstrapVM) {
-#endif
-  JavaObject* val = (JavaObject*)gc::operator new(size, VT);
-  cl->setStaticInstance(val);
+
+#ifndef MULTIPLE_VM
+  JavaObject* val = (JavaObject*)gc::operator new(cl->staticSize, cl->staticVT);
   val->initialise(cl);
   for (std::vector<JavaField*>::iterator i = cl->staticFields.begin(),
             e = cl->staticFields.end(); i!= e; ++i) {
     
     (*i)->initField(val);
   }
-#ifndef SINGLE_VM
-  }
+  
+  cl->_staticInstance = val;
 #endif
 }
 
@@ -589,11 +593,7 @@ void CommonClass::initialiseClass() {
   return isolate->initialiseClass(this);
 }
 
-#ifndef SINGLE_VM
-void Class::setStaticInstance(JavaObject* val) {
-  _staticInstance = val;
-}
-
+#ifdef MULTIPLE_VM
 JavaObject* Class::staticInstance() {
   if (isolate == Jnjvm::bootstrapVM) {
     Class* cl = this;
@@ -606,7 +606,7 @@ JavaObject* Class::staticInstance() {
   }
 }
 
-JavaObject* Class::createStaticInstance() {
+void Class::createStaticInstance() {
   JavaObject* val = (JavaObject*)gc::operator new(staticSize, staticVT);
   val->initialise(this);
   for (std::vector<JavaField*>::iterator i = this->staticFields.begin(),
@@ -614,7 +614,13 @@ JavaObject* Class::createStaticInstance() {
     
     (*i)->initField(val);
   }
-  return val;
+  if (isolate == Jnjvm::bootstrapVM) {
+    std::pair<uint8, JavaObject*>* v = 
+      new std::pair<uint8, JavaObject*>(0, val);
+    JavaThread::get()->isolate->statics->hash(this, v);
+  } else {
+    _staticInstance = val;
+  }
 }
 
 bool CommonClass::isReady() {
@@ -629,4 +635,14 @@ bool CommonClass::isReady() {
   }
 }
 
+void CommonClass::setReady() {
+  if (isolate == Jnjvm::bootstrapVM && !this->isArray &&
+      !AssessorDesc::bogusClassToPrimitive(this)) {
+    std::pair<uint8, JavaObject*>* val = 
+      JavaThread::get()->isolate->statics->lookup((Class*)this);
+    val->first = 1;
+  } else {
+    status = ready;
+  }
+}
 #endif

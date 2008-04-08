@@ -50,7 +50,7 @@ static void start(arg_thread_t* arg) {
   JavaObject* vmThread = arg->vmThread;
   JavaThread* intern = arg->intern;
   delete arg;
-  JavaThread::threadKey->set(intern);
+  mvm::Thread::threadKey->set(intern);
   CommonClass* vmthClass = vmThread->classOf;
   JavaObject* thread = (JavaObject*)((*ClasspathThread::assocThread)(vmThread).PointerVal);
   JavaIsolate* isolate = (JavaIsolate*)(intern->isolate);
@@ -86,7 +86,8 @@ jobject _vmThread, sint64 stackSize) {
   JavaObject* javaThread = (JavaObject*)(*ClasspathThread::assocThread)(vmThread).PointerVal;
   assert(javaThread);
 
-  JavaThread* th = JavaThread::allocate(javaThread, JavaThread::get()->isolate);
+  JavaThread* th = gc_new(JavaThread)();
+  th->initialise(javaThread, JavaThread::get()->isolate);
   (*ClasspathThread::vmdata)(vmThread, (JavaObject*)th);
   int tid = 0;
   arg_thread_t* arg = (arg_thread_t*)malloc(sizeof(arg_thread_t));

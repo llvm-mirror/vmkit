@@ -87,7 +87,7 @@ public:
   }
 
   static void markAndTraceRoots(void);
-  static void initialise(void *sp);
+  static void initialise();
 
 };
 

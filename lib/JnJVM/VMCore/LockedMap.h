@@ -33,7 +33,7 @@ class Jnjvm;
 
 struct ltutf8
 {
-#ifndef SINGLE_VM
+#ifdef MULTIPLE_VM
   bool operator()(const UTF8* s1, const UTF8* s2) const
   {
     if (s1->size < s2->size) return true;
@@ -327,8 +327,6 @@ public:
     //lock->markAndTrace();
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
       i->first->markAndTrace();
-      printf("i->second = %p\n", i->second);
-      printf("second again = %p\n", i->second->second);
       i->second->second->markAndTrace();
     }
   }

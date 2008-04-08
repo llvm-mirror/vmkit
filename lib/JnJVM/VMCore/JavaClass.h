@@ -76,7 +76,7 @@ public:
 class CommonClass : public mvm::Object {
 private:
   llvm::GlobalVariable* _llvmVar;
-#ifdef SINGLE_VM
+#ifndef MULTIPLE_VM
   llvm::GlobalVariable* _llvmDelegatee;
 #endif
 public:
@@ -95,7 +95,7 @@ public:
   std::vector<JavaField*>  virtualFields;
   std::vector<JavaField*>  staticFields;
   JavaObject* classLoader;
-#ifdef SINGLE_VM
+#ifndef MULTIPLE_VM
   JavaObject* delegatee;
 #endif
   std::vector<CommonClass*> display;
@@ -111,9 +111,8 @@ public:
   static JavaObject* jnjvmClassLoader;
 
   llvm::GlobalVariable* llvmVar(llvm::Module* compilingModule);
-#ifdef SINGLE_VM
-  llvm::GlobalVariable* llvmDelegatee();
-#endif
+  llvm::Value* llvmDelegatee(llvm::Module* M, llvm::BasicBlock* BB);
+  
   static void printClassName(const UTF8* name, mvm::PrintBuffer* buf);
   void initialise(Jnjvm* isolate, bool array);
   void aquire(); 
@@ -148,12 +147,16 @@ public:
   void initialiseClass();
   void resolveClass(bool doClinit);
 
-#ifdef SINGLE_VM
+#ifndef MULTIPLE_VM
   bool isReady() {
     return status == ready;
   }
+  void setReady() {
+    status = ready;
+  }
 #else
   bool isReady();
+  void setReady();
 #endif
 
 };
@@ -181,15 +184,12 @@ public:
   bool innerOuterResolved;
   
   void resolveFields();
-  llvm::GlobalVariable* staticVar(llvm::Module* compilingModule);
+  llvm::Value* staticVar(llvm::Module* compilingModule, llvm::BasicBlock* BB);
   
   uint64 virtualSize;
   VirtualTable* virtualVT;
-#ifndef SINGLE_VM
   uint64 staticSize;
   VirtualTable* staticVT;
-  JavaObject* doNewIsolate();
-#endif
   JavaObject* doNew();
   JavaObject* doNewUnknown();
   JavaObject* initialiseObject(JavaObject* obj);
@@ -198,17 +198,14 @@ public:
 
   JavaObject* operator()();
 
-#ifdef SINGLE_VM
-  void setStaticInstance(JavaObject* val) {
-    _staticInstance = val;
-  }
+#ifndef MULTIPLE_VM
   JavaObject* staticInstance() {
     return _staticInstance;
   }
+  void createStaticInstance() { }
 #else
-  void setStaticInstance(JavaObject* val);
   JavaObject* staticInstance();
-  JavaObject* createStaticInstance();
+  void createStaticInstance();
 #endif
 
 };

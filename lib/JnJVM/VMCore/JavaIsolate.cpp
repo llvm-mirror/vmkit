@@ -433,7 +433,9 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
                                                        isolate->functions);  
   JavaJIT::initialiseJITIsolateVM(isolate);
   
-  isolate->bootstrapThread = JavaThread::allocate(0, isolate);
+
+  isolate->bootstrapThread = gc_new(JavaThread)();
+  isolate->bootstrapThread->initialise(0, isolate);
   JavaThread::threadKey->set(isolate->bootstrapThread);
 
   
@@ -451,7 +453,7 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   isolate->loadedFields = FieldMap::allocate();
   isolate->javaTypes = jnjvm::TypeMap::allocate(); 
   isolate->globalRefsLock = mvm::Lock::allocNormal();
-#ifndef SINGLE_VM
+#ifdef MULTIPLE_VM
   isolate->statics = StaticInstanceMap::allocate();  
   isolate->delegatees = DelegateeMap::allocate(); 
 #endif
@@ -484,7 +486,8 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
                                                        isolate->functions);  
   JavaJIT::initialiseJITBootstrapVM(isolate);
   
-  isolate->bootstrapThread = JavaThread::allocate(0, isolate);
+  isolate->bootstrapThread = gc_new(JavaThread)();
+  isolate->bootstrapThread->initialise(0, isolate);
   JavaThread::threadKey->set(isolate->bootstrapThread);
 
   isolate->name = "bootstrapVM";
@@ -498,11 +501,13 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   isolate->javavmEnv = &JNI_JavaVMTable;
   isolate->globalRefsLock = mvm::Lock::allocNormal();
   isolate->javaTypes = jnjvm::TypeMap::allocate();  
-#ifndef SINGLE_VM
+
+#ifdef MULTIPLE_VM
   isolate->statics = StaticInstanceMap::allocate();  
   isolate->delegatees = DelegateeMap::allocate(); 
 #endif
-#if defined(SINGLE_VM) || defined(SERVICE_VM)
+
+#if defined(SERVICE_VM) || !defined(MULTIPLE_VM)
   isolate->threadSystem = ThreadSystem::allocateThreadSystem();
 #endif
   

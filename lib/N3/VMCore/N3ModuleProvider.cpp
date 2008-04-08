@@ -11,7 +11,6 @@
 #include <llvm/ModuleProvider.h>
 
 #include "mvm/JIT.h"
-#include "mvm/VMLet.h"
 
 #include "Assembly.h"
 #include "CLIJit.h"

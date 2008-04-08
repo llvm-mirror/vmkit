@@ -241,7 +241,7 @@ public:
   MethodMap* loadedMethods;
   FieldMap* loadedFields;
   TypeMap* javaTypes;
-#ifndef SINGLE_VM
+#ifdef MULTIPLE_VM
   StaticInstanceMap* statics;
   DelegateeMap* delegatees;
 #endif

@@ -7,62 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llvm/Type.h>
-#include <llvm/Support/CFG.h>
-#include <llvm/Module.h>
-#include <llvm/Constants.h>
-#include <llvm/Type.h>
-#include <llvm/DerivedTypes.h>
-#include <llvm/Function.h>
-#include <llvm/Instructions.h>
-#include <llvm/ModuleProvider.h>
-#include <llvm/ExecutionEngine/JIT.h>
-#include <llvm/ExecutionEngine/GenericValue.h>
-#include <llvm/PassManager.h>
-#include <llvm/Analysis/Verifier.h>
-#include <llvm/Transforms/Scalar.h>
-#include <llvm/Target/TargetData.h>
-#include <llvm/Assembly/PrintModulePass.h>
-#include <llvm/Target/TargetOptions.h>
-#include <llvm/CodeGen/MachineCodeEmitter.h>
-#include <llvm/CodeGen/MachineBasicBlock.h>
-#include "llvm/Constants.h"
-#include "llvm/DerivedTypes.h"
+#include "llvm/Instructions.h"
+#include "llvm/LinkAllPasses.h"
 #include "llvm/Module.h"
-#include "llvm/ModuleProvider.h"
-#include "llvm/ParameterAttributes.h"
-#include "llvm/PassManager.h"
-#include "llvm/ValueSymbolTable.h"
-#include "llvm/Analysis/LoadValueNumbering.h"
 #include "llvm/Analysis/LoopPass.h"
-#include "llvm/Analysis/Verifier.h"
-#include "llvm/Assembly/Writer.h"
-#include "llvm/Assembly/PrintModulePass.h"
-#include "llvm/Bitcode/ReaderWriter.h"
-#include "llvm/CodeGen/RegAllocRegistry.h"
-#include "llvm/CodeGen/SchedulerRegistry.h"
-#include "llvm/CodeGen/ScheduleDAG.h"
-#include "llvm/Target/SubtargetFeature.h"
-#include "llvm/Target/TargetData.h"
-#include "llvm/Target/TargetLowering.h"
-#include "llvm/Target/TargetMachine.h"
-#include "llvm/Target/TargetMachineRegistry.h"
-#include "llvm/Transforms/Scalar.h"
-#include "llvm/Transforms/IPO.h"
-#include "llvm/ADT/StringExtras.h"
-#include "llvm/ADT/StringMap.h"
-#include "llvm/Support/Streams.h"
-#include "llvm/Support/ManagedStatic.h"
-#include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/MutexGuard.h"
 
-#include <llvm/Transforms/IPO.h>
-
-#include <setjmp.h>
 
 #include "mvm/JIT.h"
 #include "mvm/Method.h"
-#include "mvm/VMLet.h"
 
 #include "JavaArray.h"
 #include "JavaCache.h"
@@ -75,9 +28,23 @@
 using namespace jnjvm;
 using namespace llvm;
 
-void JavaJIT::initialise() {
-  runtimeInitialise();
-}
+const llvm::FunctionType* JavaJIT::markAndTraceLLVMType = 0;
+
+const llvm::Type* JavaObject::llvmType = 0;
+const llvm::Type* JavaArray::llvmType = 0;
+const llvm::Type* ArrayUInt8::llvmType = 0;
+const llvm::Type* ArraySInt8::llvmType = 0;
+const llvm::Type* ArrayUInt16::llvmType = 0;
+const llvm::Type* ArraySInt16::llvmType = 0;
+const llvm::Type* ArrayUInt32::llvmType = 0;
+const llvm::Type* ArraySInt32::llvmType = 0;
+const llvm::Type* ArrayFloat::llvmType = 0;
+const llvm::Type* ArrayDouble::llvmType = 0;
+const llvm::Type* ArrayLong::llvmType = 0;
+const llvm::Type* ArrayObject::llvmType = 0;
+const llvm::Type* UTF8::llvmType = 0;
+const llvm::Type* CacheNode::llvmType = 0;
+const llvm::Type* Enveloppe::llvmType = 0;
 
 void JavaJIT::initialiseJITIsolateVM(Jnjvm* vm) {
   mvm::jit::protectEngine->lock();
@@ -274,20 +241,6 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                      module);
   }
 
-#ifndef SINGLE_VM
-  // Create doNewIsolateLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
-                                               false);
-
-  doNewIsolateLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm5Class12doNewIsolateEv",
-                     module);
-  }
-#endif
-  
   // Create fieldLookupLLVM
   {
   std::vector<const Type*> args;

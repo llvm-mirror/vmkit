@@ -115,7 +115,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jint par1) {
-#ifdef SINGLE_VM
+#ifndef MULTIPLE_VM
   exit(par1);
 #else
   // TODO: do a longjmp

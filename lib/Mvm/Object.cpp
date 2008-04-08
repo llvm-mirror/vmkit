@@ -13,6 +13,8 @@
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/GC/GC.h"
+#include "mvm/Threads/Key.h"
+#include "mvm/Threads/Thread.h"
 
 using namespace mvm;
 
@@ -23,10 +25,12 @@ VirtualTable *ExceptionTable::VT = 0;
 VirtualTable *NativeString::VT = 0;
 VirtualTable *PrintBuffer::VT = 0;
 
+mvm::Key<mvm::Thread>* mvm::Thread::threadKey = 0;
+
 
 Object **Object::rootTable= 0;
-int	  Object::rootTableSize= 0;
-int	  Object::rootTableLimit= 0;
+int    Object::rootTableSize= 0;
+int    Object::rootTableLimit= 0;
 
 void Object::growRootTable(void) {
   if (rootTableLimit != 0) {
@@ -46,7 +50,7 @@ void Object::markAndTraceRoots(void) {
     rootTable[i]->markAndTrace();
 }
 
-void Object::initialise(void *b_sp) {
+void Object::initialise() {
 # define INIT(X) { \
   X fake; \
   X::VT = ((void**)(void*)(&fake))[0]; }
@@ -59,16 +63,15 @@ void Object::initialise(void *b_sp) {
   INIT(ExceptionTable);
   
 #undef INIT
-
-  Collector::initialise(Object::markAndTraceRoots, b_sp);
+  Thread::threadKey = new mvm::Key<Thread>();
 }
 
 void Code::tracer(size_t sz) {
-	((Code *)this)->method(sz)->markAndTrace();
+  this->method(sz)->markAndTrace();
 }
 
 void Method::tracer(size_t sz) {
-	Method *const self= (Method *)this;
+  Method *const self= (Method *)this;
   self->definition()->markAndTrace();
   self->literals()->markAndTrace();
   self->name()->markAndTrace();
@@ -77,7 +80,7 @@ void Method::tracer(size_t sz) {
 }
 
 void PrintBuffer::tracer(size_t sz) {
-	((PrintBuffer *)this)->contents()->markAndTrace();
+  ((PrintBuffer *)this)->contents()->markAndTrace();
 }
 
 PrintBuffer *PrintBuffer::alloc(void) {
@@ -86,24 +89,24 @@ PrintBuffer *PrintBuffer::alloc(void) {
 
 
 PrintBuffer *PrintBuffer::writeObj(const Object *obj) {
-	Object *beg = (Object*)Collector::begOf(obj);
-	
-	if(beg) {
-		if(beg == obj)
-			obj->print((mvm::PrintBuffer*)this);
-		else {
-			write("<In Object [");
-			beg->print(this);
-			write("] -- offset ");
-			writeS4((intptr_t)obj - (intptr_t)beg);
-			write(">");
-		}
-	} else {
-		write("<DirectValue: ");
-		writeS4((intptr_t)obj);
-		write(">");
-	}
-	return this;
+  Object *beg = (Object*)Collector::begOf(obj);
+  
+  if(beg) {
+    if(beg == obj) {
+      obj->print((mvm::PrintBuffer*)this);
+    } else {
+      write("<In Object [");
+      beg->print(this);
+      write("] -- offset ");
+      writeS4((intptr_t)obj - (intptr_t)beg);
+      write(">");
+    }
+  } else {
+    write("<DirectValue: ");
+    writeS4((intptr_t)obj);
+    write(">");
+  }
+  return this;
 }
 
 extern "C" void write_ptr(PrintBuffer* buf, void* obj) {
@@ -120,30 +123,30 @@ extern "C" void write_str(PrintBuffer* buf, char* a) {
 
 char *Object::printString(void) const {
   PrintBuffer *buf= PrintBuffer::alloc();
-	buf->writeObj(this);
+  buf->writeObj(this);
   return buf->contents()->cString();
 }
 
 void Object::print(PrintBuffer *buf) const {
-	buf->write("<Object@");
-	buf->writePtr((void*)this);
+  buf->write("<Object@");
+  buf->writePtr((void*)this);
   buf->write(">");
 }
 
 void Code::print(PrintBuffer *buf) const {
-	buf->write("Code<");
-	buf->write(">");
+  buf->write("Code<");
+  buf->write(">");
 }
 
 void Method::print(PrintBuffer *buf) const {
   Method *const self= (Method *)this;
-	buf->write("Method<");
+  buf->write("Method<");
   if (self->name()) {
-	  self->name()->print(buf);
+    self->name()->print(buf);
   } else {
     buf->write("lambda");
   }
-	buf->write(">");
+  buf->write(">");
 }
 
 void NativeString::print(PrintBuffer *buf) const {
@@ -152,23 +155,27 @@ void NativeString::print(PrintBuffer *buf) const {
   for (size_t i= 0; i < strlen(self->cString()); ++i) {
     int c= self->cString()[i];
     switch (c) {
-	    case '\b': buf->write("\\b"); break;
-	    case '\f': buf->write("\\f"); break;
-	    case '\n': buf->write("\\n"); break;
-	    case '\r': buf->write("\\r"); break;
-	    case '\t': buf->write("\\t"); break;
-	    case '"':  buf->write("\\\""); break;
-	    default: {
-	      char esc[32];
-	      if (c < 32)
-	        sprintf(esc, "\\x%02x", c);
-	      else
-	        sprintf(esc, "%c", c);
-	      buf->write(esc);
-	    }
-	  }
+      case '\b': buf->write("\\b"); break;
+      case '\f': buf->write("\\f"); break;
+      case '\n': buf->write("\\n"); break;
+      case '\r': buf->write("\\r"); break;
+      case '\t': buf->write("\\t"); break;
+      case '"':  buf->write("\\\""); break;
+      default: {
+        char esc[32];
+        if (c < 32)
+          sprintf(esc, "\\x%02x", c);
+        else
+          sprintf(esc, "%c", c);
+        buf->write(esc);
+      }
+    }
   }
   buf->write("\"");
 }
 
 NativeString *PrintBuffer::getContents() { return contents(); }
+
+Thread* Thread::get() {
+  return (Thread*)Thread::threadKey->get();
+}

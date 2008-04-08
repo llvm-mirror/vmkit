@@ -30,6 +30,17 @@ const unsigned int JavaArray::T_SHORT = 9;
 const unsigned int JavaArray::T_INT = 10;
 const unsigned int JavaArray::T_LONG = 11;
 
+ClassArray* JavaArray::ofByte = 0;
+ClassArray* JavaArray::ofChar = 0;
+ClassArray* JavaArray::ofInt = 0;
+ClassArray* JavaArray::ofShort = 0;
+ClassArray* JavaArray::ofBool = 0;
+ClassArray* JavaArray::ofLong = 0;
+ClassArray* JavaArray::ofFloat = 0;
+ClassArray* JavaArray::ofDouble = 0;
+ClassArray* JavaArray::ofString = 0;
+ClassArray* JavaArray::ofObject = 0;
+
 #define ACONS(name, elmt, primSize)                                         \
   name *name::acons(sint32 n, ClassArray* atype) {                          \
     if (n < 0)                                                              \

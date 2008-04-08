@@ -13,27 +13,12 @@
 
 #include <string.h>
 
-#include <llvm/Type.h>
-#include <llvm/Module.h>
 #include <llvm/Constants.h>
-#include <llvm/Type.h>
 #include <llvm/DerivedTypes.h>
 #include <llvm/Function.h>
 #include <llvm/Instructions.h>
-#include <llvm/ModuleProvider.h>
-#include <llvm/ExecutionEngine/JIT.h>
-#include <llvm/ExecutionEngine/GenericValue.h>
-#include <llvm/PassManager.h>
-#include <llvm/Analysis/Verifier.h>
-#include <llvm/Transforms/Scalar.h>
-#include <llvm/Target/TargetData.h>
-#include <llvm/Assembly/PrintModulePass.h>
-#include <llvm/Target/TargetOptions.h>
-#include <llvm/CodeGen/MachineCodeEmitter.h>
-#include <llvm/CodeGen/MachineBasicBlock.h>
-
-#include <llvm/Transforms/IPO.h>
-
+#include <llvm/Module.h>
+#include <llvm/Type.h>
 
 #include "mvm/JIT.h"
 #include "mvm/Method.h"
@@ -48,7 +33,6 @@
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
-#include "Reader.h"
 
 #include "OpcodeNames.def"
 

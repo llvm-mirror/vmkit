@@ -26,6 +26,44 @@
 
 using namespace jnjvm;
 
+llvm::Function* JavaJIT::getSJLJBufferLLVM = 0;
+llvm::Function* JavaJIT::throwExceptionLLVM = 0;
+llvm::Function* JavaJIT::getExceptionLLVM = 0;
+llvm::Function* JavaJIT::getJavaExceptionLLVM = 0;
+llvm::Function* JavaJIT::clearExceptionLLVM = 0;
+llvm::Function* JavaJIT::compareExceptionLLVM = 0;
+llvm::Function* JavaJIT::nullPointerExceptionLLVM = 0;
+llvm::Function* JavaJIT::classCastExceptionLLVM = 0;
+llvm::Function* JavaJIT::indexOutOfBoundsExceptionLLVM = 0;
+llvm::Function* JavaJIT::markAndTraceLLVM = 0;
+llvm::Function* JavaJIT::javaObjectTracerLLVM = 0;
+llvm::Function* JavaJIT::virtualLookupLLVM = 0;
+llvm::Function* JavaJIT::fieldLookupLLVM = 0;
+llvm::Function* JavaJIT::UTF8AconsLLVM = 0;
+llvm::Function* JavaJIT::Int8AconsLLVM = 0;
+llvm::Function* JavaJIT::Int32AconsLLVM = 0;
+llvm::Function* JavaJIT::Int16AconsLLVM = 0;
+llvm::Function* JavaJIT::FloatAconsLLVM = 0;
+llvm::Function* JavaJIT::DoubleAconsLLVM = 0;
+llvm::Function* JavaJIT::LongAconsLLVM = 0;
+llvm::Function* JavaJIT::ObjectAconsLLVM = 0;
+llvm::Function* JavaJIT::printExecutionLLVM = 0;
+llvm::Function* JavaJIT::printMethodStartLLVM = 0;
+llvm::Function* JavaJIT::printMethodEndLLVM = 0;
+llvm::Function* JavaJIT::jniProceedPendingExceptionLLVM = 0;
+llvm::Function* JavaJIT::doNewLLVM = 0;
+llvm::Function* JavaJIT::doNewUnknownLLVM = 0;
+llvm::Function* JavaJIT::initialiseObjectLLVM = 0;
+llvm::Function* JavaJIT::newLookupLLVM = 0;
+llvm::Function* JavaJIT::instanceOfLLVM = 0;
+llvm::Function* JavaJIT::aquireObjectLLVM = 0;
+llvm::Function* JavaJIT::releaseObjectLLVM = 0;
+llvm::Function* JavaJIT::multiCallNewLLVM = 0;
+llvm::Function* JavaJIT::runtimeUTF8ToStrLLVM = 0;
+llvm::Function* JavaJIT::getStaticInstanceLLVM = 0;
+llvm::Function* JavaJIT::getClassDelegateeLLVM = 0;
+llvm::Function* JavaJIT::arrayLengthLLVM = 0;
+
 extern "C" JavaString* runtimeUTF8ToStr(const UTF8* val) {
   Jnjvm* vm = JavaThread::get()->isolate;
   return vm->UTF8ToStr(val);
@@ -161,7 +199,7 @@ extern "C" void indexOutOfBoundsException(JavaObject* obj, sint32 index) {
   JavaThread::get()->isolate->indexOutOfBounds(obj, index);
 }
 
-#ifndef SINGLE_VM
+#ifdef MULTIPLE_VM
 extern "C" JavaObject* getStaticInstance(Class* cl) {
   if (cl->isolate == Jnjvm::bootstrapVM) {
     Jnjvm* vm = JavaThread::get()->isolate;
@@ -182,20 +220,9 @@ extern "C" JavaObject* getClassDelegatee(CommonClass* cl) {
 }
 #endif
 
-void JavaJIT::runtimeInitialise() {
+void JavaJIT::initialise() {
   void* p;
   p = (void*)&runtimeUTF8ToStr;
-  p = (void*)&fieldLookup;
-  p = (void*)&virtualLookup;
-  p = (void*)&printExecution;
-  p = (void*)&jniProceedPendingException;
-  p = (void*)&nullPointerException;
-  p = (void*)&classCastException;
-  p = (void*)&indexOutOfBoundsException;
-#ifndef SINGLE_VM
-  p = (void*)&getStaticInstance;
-  p = (void*)&getClassDelegatee;
-#endif
 }
 
 extern "C" Class* newLookup(Class* caller, uint32 index, Class** toAlloc) { 

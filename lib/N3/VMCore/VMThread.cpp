@@ -40,7 +40,7 @@ void VMThread::destroyer(size_t sz) {
 }
 
 VMThread* VMThread::get() {
-  return threadKey->get();
+  return (VMThread*)threadKey->get();
 }
 
 extern void AddStandardCompilePasses(llvm::FunctionPassManager*);

@@ -268,10 +268,6 @@ public:
   static llvm::Function* getStaticInstanceLLVM;
   static llvm::Function* getClassDelegateeLLVM;
   static llvm::Function* arrayLengthLLVM;
-#ifndef SINGLE_VM
-  static llvm::Function* doNewIsolateLLVM;
-#endif
-  static void runtimeInitialise();
   
 
   static Class* getCallingClass();

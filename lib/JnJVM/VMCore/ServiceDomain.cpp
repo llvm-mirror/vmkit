@@ -53,8 +53,10 @@ ServiceDomain* ServiceDomain::allocateService(Jnjvm* callingVM) {
   service->loadedFields = FieldMap::allocate();
   service->javaTypes = jnjvm::TypeMap::allocate(); 
   service->globalRefsLock = mvm::Lock::allocNormal();
+#ifdef MULTIPLE_VM
   service->statics = StaticInstanceMap::allocate();  
   service->delegatees = DelegateeMap::allocate();  
+#endif
   
   // A service is related to a class loader
   // Here are the classes it loaded

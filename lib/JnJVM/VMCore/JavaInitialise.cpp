@@ -7,10 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-
+#include <signal.h>
 #include <vector>
 
-#include "mvm/VMLet.h"
 #include "mvm/Threads/Locks.h"
 
 #include "JavaArray.h"
@@ -31,142 +30,7 @@
 #include "LockedMap.h"
 #include "Zip.h"
 
-
-
-
 using namespace jnjvm;
-
-ClassArray* JavaArray::ofByte = 0;
-ClassArray* JavaArray::ofChar = 0;
-ClassArray* JavaArray::ofInt = 0;
-ClassArray* JavaArray::ofShort = 0;
-ClassArray* JavaArray::ofBool = 0;
-ClassArray* JavaArray::ofLong = 0;
-ClassArray* JavaArray::ofFloat = 0;
-ClassArray* JavaArray::ofDouble = 0;
-ClassArray* JavaArray::ofString = 0;
-ClassArray* JavaArray::ofObject = 0;
-
-const UTF8* Attribut::codeAttribut = 0;
-const UTF8* Attribut::exceptionsAttribut = 0;
-const UTF8* Attribut::constantAttribut = 0;
-const UTF8* Attribut::lineNumberTableAttribut = 0;
-const UTF8* Attribut::innerClassesAttribut = 0;
-const UTF8* Attribut::sourceFileAttribut = 0;
-
-JavaObject* CommonClass::jnjvmClassLoader = 0;
-
-CommonClass* ClassArray::SuperArray = 0;
-std::vector<Class*> ClassArray::InterfacesArray;
-std::vector<JavaMethod*> ClassArray::VirtualMethodsArray;
-std::vector<JavaMethod*> ClassArray::StaticMethodsArray;
-std::vector<JavaField*> ClassArray::VirtualFieldsArray;
-std::vector<JavaField*> ClassArray::StaticFieldsArray;
-
-
-llvm::Function* JavaJIT::getSJLJBufferLLVM = 0;
-llvm::Function* JavaJIT::throwExceptionLLVM = 0;
-llvm::Function* JavaJIT::getExceptionLLVM = 0;
-llvm::Function* JavaJIT::getJavaExceptionLLVM = 0;
-llvm::Function* JavaJIT::clearExceptionLLVM = 0;
-llvm::Function* JavaJIT::compareExceptionLLVM = 0;
-llvm::Function* JavaJIT::nullPointerExceptionLLVM = 0;
-llvm::Function* JavaJIT::classCastExceptionLLVM = 0;
-llvm::Function* JavaJIT::indexOutOfBoundsExceptionLLVM = 0;
-llvm::Function* JavaJIT::markAndTraceLLVM = 0;
-llvm::Function* JavaJIT::javaObjectTracerLLVM = 0;
-llvm::Function* JavaJIT::virtualLookupLLVM = 0;
-llvm::Function* JavaJIT::fieldLookupLLVM = 0;
-llvm::Function* JavaJIT::UTF8AconsLLVM = 0;
-llvm::Function* JavaJIT::Int8AconsLLVM = 0;
-llvm::Function* JavaJIT::Int32AconsLLVM = 0;
-llvm::Function* JavaJIT::Int16AconsLLVM = 0;
-llvm::Function* JavaJIT::FloatAconsLLVM = 0;
-llvm::Function* JavaJIT::DoubleAconsLLVM = 0;
-llvm::Function* JavaJIT::LongAconsLLVM = 0;
-llvm::Function* JavaJIT::ObjectAconsLLVM = 0;
-llvm::Function* JavaJIT::printExecutionLLVM = 0;
-llvm::Function* JavaJIT::printMethodStartLLVM = 0;
-llvm::Function* JavaJIT::printMethodEndLLVM = 0;
-llvm::Function* JavaJIT::jniProceedPendingExceptionLLVM = 0;
-llvm::Function* JavaJIT::doNewLLVM = 0;
-llvm::Function* JavaJIT::doNewUnknownLLVM = 0;
-llvm::Function* JavaJIT::initialiseObjectLLVM = 0;
-llvm::Function* JavaJIT::newLookupLLVM = 0;
-llvm::Function* JavaJIT::instanceOfLLVM = 0;
-llvm::Function* JavaJIT::aquireObjectLLVM = 0;
-llvm::Function* JavaJIT::releaseObjectLLVM = 0;
-llvm::Function* JavaJIT::multiCallNewLLVM = 0;
-llvm::Function* JavaJIT::runtimeUTF8ToStrLLVM = 0;
-llvm::Function* JavaJIT::getStaticInstanceLLVM = 0;
-llvm::Function* JavaJIT::getClassDelegateeLLVM = 0;
-llvm::Function* JavaJIT::arrayLengthLLVM = 0;
-#ifndef SINGLE_VM
-llvm::Function* JavaJIT::doNewIsolateLLVM = 0;
-#endif
-
-
-const llvm::FunctionType* JavaJIT::markAndTraceLLVMType = 0;
-
-mvm::Lock* JavaObject::globalLock = 0;
-const llvm::Type* JavaObject::llvmType = 0;
-const llvm::Type* JavaArray::llvmType = 0;
-const llvm::Type* ArrayUInt8::llvmType = 0;
-const llvm::Type* ArraySInt8::llvmType = 0;
-const llvm::Type* ArrayUInt16::llvmType = 0;
-const llvm::Type* ArraySInt16::llvmType = 0;
-const llvm::Type* ArrayUInt32::llvmType = 0;
-const llvm::Type* ArraySInt32::llvmType = 0;
-const llvm::Type* ArrayFloat::llvmType = 0;
-const llvm::Type* ArrayDouble::llvmType = 0;
-const llvm::Type* ArrayLong::llvmType = 0;
-const llvm::Type* ArrayObject::llvmType = 0;
-const llvm::Type* UTF8::llvmType = 0;
-const llvm::Type* CacheNode::llvmType = 0;
-const llvm::Type* Enveloppe::llvmType = 0;
-
-
-mvm::Key<JavaThread>* JavaThread::threadKey = 0;
-
-
-Jnjvm* Jnjvm::bootstrapVM = 0;
-const UTF8* Jnjvm::initName = 0;
-const UTF8* Jnjvm::clinitName = 0;
-const UTF8* Jnjvm::clinitType = 0;
-const UTF8* Jnjvm::runName = 0;
-const UTF8* Jnjvm::prelib = 0;
-const UTF8* Jnjvm::postlib = 0;
-const UTF8* Jnjvm::mathName = 0;
-
-#define DEF_UTF8(var) \
-  const UTF8* Jnjvm::var = 0;
-  
-  DEF_UTF8(abs);
-  DEF_UTF8(sqrt);
-  DEF_UTF8(sin);
-  DEF_UTF8(cos);
-  DEF_UTF8(tan);
-  DEF_UTF8(asin);
-  DEF_UTF8(acos);
-  DEF_UTF8(atan);
-  DEF_UTF8(atan2);
-  DEF_UTF8(exp);
-  DEF_UTF8(log);
-  DEF_UTF8(pow);
-  DEF_UTF8(ceil);
-  DEF_UTF8(floor);
-  DEF_UTF8(rint);
-  DEF_UTF8(cbrt);
-  DEF_UTF8(cosh);
-  DEF_UTF8(expm1);
-  DEF_UTF8(hypot);
-  DEF_UTF8(log10);
-  DEF_UTF8(log1p);
-  DEF_UTF8(sinh);
-  DEF_UTF8(tanh);
-
-#undef DEF_UTF8
-
 
 static void initialiseVT() {
 
@@ -199,7 +63,6 @@ static void initialiseVT() {
   INIT(LockObj);
   INIT(JavaObject);
   INIT(JavaThread);
-  //mvm::Key<JavaThread>::VT = mvm::ThreadKey::VT;
   INIT(AssessorDesc);
   INIT(Typedef);
   INIT(Signdef);
@@ -227,10 +90,6 @@ static void initialiseStatics() {
   JavaObject::globalLock = mvm::Lock::allocNormal();
   //mvm::Object::pushRoot((mvm::Object*)JavaObject::globalLock);
 
-  JavaThread::threadKey = new mvm::Key<JavaThread>();
-  //JavaThread::threadKey = gc_new(mvm::Key<JavaThread>);
-  //mvm::Object::pushRoot((mvm::Object*)JavaThread::threadKey);
-  
   Jnjvm* vm = JavaIsolate::bootstrapVM = JavaIsolate::allocateBootstrap();
   mvm::Object::pushRoot((mvm::Object*)JavaIsolate::bootstrapVM);
   
@@ -336,24 +195,43 @@ static void initialiseStatics() {
  
 }
 
-extern "C" void sigsegv_handler(int val, void* addr) {
-  printf("SIGSEGV in JnJVM at %p\n", addr);
+extern "C" void ClasspathBoot();
+
+void handler(int val, siginfo_t* info, void* addr) {
+  printf("Crash in JnJVM at %p\n", addr);
   JavaJIT::printBacktrace();
   assert(0);
 }
 
-
 extern "C" int boot() {
+  struct sigaction sa;
+  
+  sigaction(SIGINT, 0, &sa);
+  sa.sa_sigaction = handler;
+  sa.sa_flags |= (SA_RESTART | SA_SIGINFO | SA_NODEFER);
+  sigaction(SIGINT, &sa, 0);
+  
+  sigaction(SIGILL, 0, &sa);
+  sa.sa_sigaction = handler;
+  sa.sa_flags |= (SA_RESTART | SA_SIGINFO | SA_NODEFER);
+  sigaction(SIGILL, &sa, 0);
+  
+  sigaction(SIGSEGV, 0, &sa);
+  sa.sa_sigaction = handler;
+  sa.sa_flags |= (SA_RESTART | SA_SIGINFO | SA_NODEFER);
+  sigaction(SIGSEGV, &sa, 0);
+  
   JavaJIT::initialise();
   initialiseVT();
   initialiseStatics();
+  
+  ClasspathBoot();
   Classpath::initialiseClasspath(JavaIsolate::bootstrapVM);
-  //mvm::VMLet::register_sigsegv_handler(sigsegv_handler);
   return 0; 
 }
 
 extern "C" int start_app(int argc, char** argv) {
-#if defined(SINGLE_VM) || defined(SERVICE_VM)
+#if defined(SERVICE_VM) || !defined(MULTIPLE_VM)
   JavaIsolate* vm = (JavaIsolate*)JavaIsolate::bootstrapVM;
 #else
   JavaIsolate* vm = JavaIsolate::allocateIsolate(JavaIsolate::bootstrapVM);

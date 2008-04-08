@@ -96,11 +96,10 @@ extern llvm::Function* llvm_memset_i32;
 extern llvm::ExecutionEngine* executionEngine;
 
 extern uint64 getTypeSize(const llvm::Type* type);
-
 extern void AddStandardCompilePasses(llvm::FunctionPassManager*);
-
 extern void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
-extern void* runCompilation(llvm::Function*);
+extern void initialise();
+
 
 //extern mvm::Lock* protectTypes;
 //extern mvm::Lock* protectConstants;

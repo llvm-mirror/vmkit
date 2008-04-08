@@ -32,7 +32,6 @@ using namespace n3;
 
 N3* N3::bootstrapVM = 0;
 mvm::Lock* VMObject::globalLock = 0;
-mvm::Key<VMThread>* VMThread::threadKey = 0;
 
 VMCommonClass* VMClassArray::SuperArray = 0;
 std::vector<VMClass*> VMClassArray::InterfacesArray;
@@ -237,9 +236,6 @@ static void initialiseStatics() {
   VMObject::globalLock = mvm::Lock::allocNormal();
   //mvm::Object::pushRoot((mvm::Object*)VMObject::globalLock);
 
-  VMThread::threadKey = new mvm::Key<VMThread>();
-  //mvm::Object::pushRoot((mvm::Object*)VMThread::threadKey);
-  
   N3* vm = N3::bootstrapVM = N3::allocateBootstrap();
   mvm::Object::pushRoot((mvm::Object*)N3::bootstrapVM);
 

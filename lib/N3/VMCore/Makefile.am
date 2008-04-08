@@ -16,4 +16,4 @@ libN3_la_SOURCES = \
 	Opcodes.cpp NativeUtil.h NativeUtil.cpp PNetLib.cpp N3ModuleProvider.cpp N3ModuleProvider.h \
 	PNetLib.h BackTrace.cpp LowerArrayLength.cpp
 
-libN3_la_CXXFLAGS =$(INCLUDEDIRS) -DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused-parameter -Wno-long-long -Wno-unused-function -fno-omit-frame-pointer -g -O2
+libN3_la_CXXFLAGS =$(INCLUDEDIRS) -DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused-parameter -Wno-long-long -Wno-unused-function -fno-omit-frame-pointer -g -O2 -DSINGLE_VM

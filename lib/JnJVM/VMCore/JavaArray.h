@@ -125,7 +125,7 @@ public:
 
   const UTF8* extract(Jnjvm *vm, uint32 start, uint32 len) const;
 
-#ifdef SINGLE_VM
+#ifndef MULTIPLE_VM
   bool equals(const UTF8* other) const {
     return this == other;
   }

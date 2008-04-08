@@ -138,7 +138,7 @@ void CommonClass::tracer(size_t sz) {
   TRACE_VECTOR(JavaField*, virtualFields);
   TRACE_VECTOR(JavaField*, staticFields);
   classLoader->markAndTrace();
-#ifdef SINGLE_VM
+#ifndef MULTIPLE_VM
   delegatee->markAndTrace();
 #endif
   TRACE_VECTOR(CommonClass*, display);
@@ -263,7 +263,7 @@ void Jnjvm::tracer(size_t sz) {
   TRACE_VECTOR(JavaObject*, globalRefs);
   //globalRefsLock->markAndTrace();
   functions->markAndTrace();
-#ifndef SINGLE_VM
+#ifdef MULTIPLE_VM
   statics->markAndTrace();
   delegatees->markAndTrace();
 #endif

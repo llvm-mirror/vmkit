@@ -100,7 +100,7 @@ jclass clazz,
     if (cl->status == hashed) {
       cl->bytes = (ArrayUInt8*)bytes;
       cl->status = loaded;
-#ifdef SINGLE_VM
+#ifndef MULTIPLE_VM
       cl->delegatee = (JavaObject*)pd;
 #else
       vm->delegatees->hash(cl, (JavaObject*)pd);

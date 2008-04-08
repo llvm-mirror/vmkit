@@ -18,6 +18,7 @@
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Key.h"
 #include "mvm/Threads/Locks.h"
+#include "mvm/Threads/Thread.h"
 
 namespace n3 {
 
@@ -25,7 +26,7 @@ class VirtualMachine;
 class VMClass;
 class VMObject;
 
-class VMThread : public mvm::Object {
+class VMThread : public mvm::Thread {
 public:
   static VirtualTable *VT;
   VMObject* vmThread;
@@ -46,8 +47,6 @@ public:
   virtual void tracer(size_t sz);
   virtual void destroyer(size_t sz);
   
-  static mvm::Key<VMThread>* threadKey;
-
   static VMThread* get();
   static VMThread* allocate(VMObject* thread, VirtualMachine* vm);
   static VMObject* currentThread();

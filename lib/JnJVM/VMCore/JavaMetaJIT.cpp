@@ -7,145 +7,79 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <stdarg.h>
 #include <string.h>
 
-#include <llvm/Type.h>
-#include <llvm/Support/CFG.h>
-#include <llvm/Module.h>
-#include <llvm/Constants.h>
-#include <llvm/Type.h>
-#include <llvm/DerivedTypes.h>
-#include <llvm/Function.h>
+#include <llvm/BasicBlock.h>
+#include <llvm/GlobalVariable.h>
 #include <llvm/Instructions.h>
-#include <llvm/ModuleProvider.h>
-#include <llvm/ExecutionEngine/JIT.h>
-#include <llvm/ExecutionEngine/GenericValue.h>
-#include <llvm/PassManager.h>
-#include <llvm/Analysis/Verifier.h>
-#include <llvm/Transforms/Scalar.h>
-#include <llvm/Target/TargetData.h>
-#include <llvm/Assembly/PrintModulePass.h>
-#include <llvm/Target/TargetOptions.h>
-#include <llvm/CodeGen/MachineCodeEmitter.h>
-#include <llvm/CodeGen/MachineBasicBlock.h>
-#include "llvm/Constants.h"
-#include "llvm/DerivedTypes.h"
-#include "llvm/Module.h"
-#include "llvm/ModuleProvider.h"
-#include "llvm/PassManager.h"
-#include "llvm/ValueSymbolTable.h"
-#include "llvm/Analysis/LoadValueNumbering.h"
-#include "llvm/Analysis/LoopPass.h"
-#include "llvm/Analysis/Verifier.h"
-#include "llvm/Assembly/Writer.h"
-#include "llvm/Assembly/PrintModulePass.h"
-#include "llvm/Bitcode/ReaderWriter.h"
-#include "llvm/CodeGen/RegAllocRegistry.h"
-#include "llvm/CodeGen/SchedulerRegistry.h"
-#include "llvm/CodeGen/ScheduleDAG.h"
-#include "llvm/Target/SubtargetFeature.h"
-#include "llvm/Target/TargetData.h"
-#include "llvm/Target/TargetLowering.h"
-#include "llvm/Target/TargetMachine.h"
-#include "llvm/Target/TargetMachineRegistry.h"
-#include "llvm/Transforms/Scalar.h"
-#include "llvm/Transforms/IPO.h"
-#include "llvm/ADT/StringExtras.h"
-#include "llvm/ADT/StringMap.h"
-#include "llvm/Support/Streams.h"
-#include "llvm/Support/ManagedStatic.h"
-#include "llvm/Support/MemoryBuffer.h"
-
-#include <llvm/Transforms/IPO.h>
-
+#include <llvm/Module.h>
+#include <llvm/Type.h>
+#include "llvm/ExecutionEngine/GenericValue.h"
 
 #include "mvm/JIT.h"
 #include "mvm/Method.h"
 
 #include "debug.h"
 #include "JavaArray.h"
-#include "JavaCache.h"
 #include "JavaClass.h"
-#include "JavaConstantPool.h"
-#include "JavaObject.h"
 #include "JavaJIT.h"
-#include "JavaString.h"
+#include "JavaObject.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
-#include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "JnjvmModuleProvider.h"
-#include "NativeUtil.h"
-#include "Reader.h"
-#include "Zip.h"
-
-#include <iostream>
-
 
 using namespace jnjvm;
 using namespace llvm;
 
-#ifndef SINGLE_VM
-GlobalVariable* Class::staticVar(llvm::Module* compilingModule) {
+Value* Class::staticVar(Module* compilingModule,  BasicBlock* currentBlock) {
+
   if (!_staticVar) {
     aquire();
     if (!_staticVar) {
+#ifdef MULTIPLE_VM
       if (isolate == Jnjvm::bootstrapVM) {
         _staticVar = llvmVar(compilingModule);
-        release();
-        return _staticVar;
       } else {
+#endif
+        JavaObject* obj = staticInstance();
+        mvm::jit::protectConstants();//->lock();
+        Constant* cons = 
+          ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
+                                    uint64_t (obj)), JavaObject::llvmType);
+        mvm::jit::unprotectConstants();//->unlock();
+      
         isolate->protectModule->lock();
-        _staticVar = new GlobalVariable(JavaObject::llvmType, false,
-                                        GlobalValue::ExternalLinkage,
-                                        JavaJIT::constantJavaObjectNull, "",
-                                        isolate->module);
-        isolate->protectModule->unlock();
-    
-        // TODO: put an initializer in here
-        void* ptr = mvm::jit::executionEngine->getPointerToGlobal(_staticVar);
-        GenericValue Val = GenericValue((void*)staticInstance());
-        llvm::GenericValue * Ptr = (llvm::GenericValue*)ptr;
-        mvm::jit::executionEngine->StoreValueToMemory(Val, Ptr, staticType); 
-      }
-    }
-  release();
-  }
-
-  return _staticVar;
-}
-#else
-GlobalVariable* Class::staticVar(llvm::Module* compilingModule) {
-  if (!_staticVar) {
-    aquire();
-    if (!_staticVar) {
-      
-      JavaObject* obj = staticInstance();
-      mvm::jit::protectConstants();//->lock();
-      Constant* cons = 
-        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (obj)),
-                                  JavaObject::llvmType);
-      mvm::jit::unprotectConstants();//->unlock();
-      
-      isolate->protectModule->lock();
-      _staticVar = new GlobalVariable(JavaObject::llvmType, true,
+        _staticVar = new GlobalVariable(JavaObject::llvmType, true,
                                       GlobalValue::ExternalLinkage,
                                       cons, "",
                                       isolate->module);
-      isolate->protectModule->unlock();
-    
+        isolate->protectModule->unlock();
+      }
+#ifdef MULTIPLE_VM
     }
+#endif
     release();
   }
-  return _staticVar;
-}
+
+#ifdef MULTIPLE_VM
+  if (isolate == Jnjvm::bootstrapVM) {
+    Value* ld = new LoadInst(_staticVar, "", currentBlock);
+    return llvm::CallInst::Create(JavaJIT::getStaticInstanceLLVM, ld, "",
+                                  currentBlock);
+  } else {
 #endif
+    return new LoadInst(_staticVar, "", currentBlock);
+#ifdef MULTIPLE_VM
+  }
+#endif
+}
 
 GlobalVariable* CommonClass::llvmVar(llvm::Module* compilingModule) {
   if (!_llvmVar) {
     aquire();
     if (!_llvmVar) {
-#ifndef SINGLE_VM
+#ifdef MULTIPLE_VM
       if (compilingModule == Jnjvm::bootstrapVM->module && isArray && isolate != Jnjvm::bootstrapVM) {
         // We know the array class can belong to bootstrap
         _llvmVar = Jnjvm::bootstrapVM->constructArray(this->name, 0)->llvmVar(compilingModule);
@@ -173,8 +107,8 @@ GlobalVariable* CommonClass::llvmVar(llvm::Module* compilingModule) {
   return _llvmVar;
 }
 
-#ifdef SINGLE_VM
-GlobalVariable* CommonClass::llvmDelegatee() {
+Value* CommonClass::llvmDelegatee(llvm::Module* M, llvm::BasicBlock* BB) {
+#ifndef MULTIPLE_VM
   if (!_llvmDelegatee) {
     aquire();
     if (!_llvmDelegatee) {
@@ -183,7 +117,7 @@ GlobalVariable* CommonClass::llvmDelegatee() {
       JavaObject* obj = getClassDelegatee();
       mvm::jit::protectConstants();//->lock();
       Constant* cons = 
-        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (obj)),
+        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(obj)),
                                     pty);
       mvm::jit::unprotectConstants();//->unlock();
 
@@ -196,9 +130,12 @@ GlobalVariable* CommonClass::llvmDelegatee() {
     }
     release();
   }
-  return _llvmDelegatee;
-}
+  return new LoadInst(_llvmDelegatee, "", BB);
+#else
+  Value* ld = new LoadInst(llvmVar(M), "", BB);
+  return llvm::CallInst::Create(JavaJIT::getClassDelegateeLLVM, ld, "", BB);
 #endif
+}
 
 ConstantInt* JavaObject::classOffset() {
   return mvm::jit::constantOne;

@@ -7,60 +7,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llvm/Type.h>
-#include <llvm/Support/CFG.h>
-#include <llvm/Module.h>
 #include <llvm/Constants.h>
-#include <llvm/Type.h>
 #include <llvm/DerivedTypes.h>
-#include <llvm/Function.h>
-#include <llvm/Instructions.h>
-#include <llvm/ModuleProvider.h>
-#include <llvm/ExecutionEngine/JIT.h>
-#include <llvm/ExecutionEngine/GenericValue.h>
-#include <llvm/PassManager.h>
-#include <llvm/Analysis/Verifier.h>
-#include <llvm/Transforms/Scalar.h>
-#include <llvm/Target/TargetData.h>
-#include <llvm/Assembly/PrintModulePass.h>
-#include <llvm/Target/TargetOptions.h>
-#include <llvm/CodeGen/MachineCodeEmitter.h>
-#include <llvm/CodeGen/MachineBasicBlock.h>
-#include "llvm/Constants.h"
-#include "llvm/DerivedTypes.h"
-#include "llvm/Module.h"
-#include "llvm/ModuleProvider.h"
-#include "llvm/PassManager.h"
-#include "llvm/ValueSymbolTable.h"
-#include "llvm/Analysis/LoopPass.h"
-#include "llvm/Analysis/Verifier.h"
-#include "llvm/Assembly/Writer.h"
-#include "llvm/Assembly/PrintModulePass.h"
-#include "llvm/Bitcode/ReaderWriter.h"
-#include "llvm/CodeGen/RegAllocRegistry.h"
-#include "llvm/CodeGen/SchedulerRegistry.h"
-#include "llvm/CodeGen/ScheduleDAG.h"
-#include "llvm/Target/SubtargetFeature.h"
-#include "llvm/Target/TargetData.h"
-#include "llvm/Target/TargetLowering.h"
-#include "llvm/Target/TargetMachine.h"
-#include "llvm/Target/TargetMachineRegistry.h"
-#include "llvm/Transforms/Scalar.h"
-#include "llvm/Transforms/IPO.h"
-#include "llvm/ADT/StringExtras.h"
-#include "llvm/ADT/StringMap.h"
-#include "llvm/Support/Streams.h"
-#include "llvm/Support/ManagedStatic.h"
-#include "llvm/Support/MemoryBuffer.h"
+#include <llvm/Type.h>
 #include "llvm/Support/MutexGuard.h"
-
-#include <llvm/Transforms/IPO.h>
+#include "llvm/Target/TargetOptions.h"
 
 #include <stdio.h>
 
 #include "mvm/JIT.h"
 #include "mvm/Method.h"
-#include "mvm/VMLet.h"
 
 #include "MvmMemoryManager.h"
 
@@ -88,61 +44,6 @@ extern "C" void printInt(sint32 i) {
 extern "C" void printObject(mvm::Object* obj) {
   printf("%s\n", obj->printString());
 }
-
-static void addPass(FunctionPassManager *PM, Pass *P) {
-  // Add the pass to the pass manager...
-  PM->add(P);
-}
-
-void jit::AddStandardCompilePasses(FunctionPassManager *PM) {
-  llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
-  // LLVM does not allow calling functions from other modules in verifier
-  //PM->add(createVerifierPass());                  // Verify that input is correct
-  
-  addPass(PM, createCFGSimplificationPass());    // Clean up disgusting code
-  addPass(PM, createScalarReplAggregatesPass());// Kill useless allocas
-  addPass(PM, createInstructionCombiningPass()); // Clean up after IPCP & DAE
-  addPass(PM, createCFGSimplificationPass());    // Clean up after IPCP & DAE
-  addPass(PM, createPromoteMemoryToRegisterPass());// Kill useless allocas
-  addPass(PM, createInstructionCombiningPass()); // Clean up after IPCP & DAE
-  addPass(PM, createCFGSimplificationPass());    // Clean up after IPCP & DAE
-  
-  addPass(PM, createTailDuplicationPass());      // Simplify cfg by copying code
-  addPass(PM, createInstructionCombiningPass()); // Cleanup for scalarrepl.
-  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
-  addPass(PM, createScalarReplAggregatesPass()); // Break up aggregate allocas
-  addPass(PM, createInstructionCombiningPass()); // Combine silly seq's
-  addPass(PM, createCondPropagationPass());      // Propagate conditionals
-  
-   
-  addPass(PM, createTailCallEliminationPass());  // Eliminate tail calls
-  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
-  addPass(PM, createReassociatePass());          // Reassociate expressions
-  addPass(PM, createLoopRotatePass());
-  addPass(PM, createLICMPass());                 // Hoist loop invariants
-  addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
-  addPass(PM, createInstructionCombiningPass()); // Clean up after LICM/reassoc
-  addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
-  addPass(PM, createLoopUnrollPass());           // Unroll small loops
-  addPass(PM, createInstructionCombiningPass()); // Clean up after the unroller
-  addPass(PM, createGVNPass());                  // GVN for load instructions
-  addPass(PM, createGCSEPass());                 // Remove common subexprs
-  addPass(PM, createSCCPPass());                 // Constant prop with SCCP
-  
-  
-  // Run instcombine after redundancy elimination to exploit opportunities
-  // opened up by them.
-  addPass(PM, createInstructionCombiningPass());
-  addPass(PM, createCondPropagationPass());      // Propagate conditionals
-
-  addPass(PM, createDeadStoreEliminationPass()); // Delete dead stores
-  addPass(PM, createAggressiveDCEPass());        // SSA based 'Aggressive DCE'
-  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
-  
-}
-
-
-
 
 static void initialiseTypes(llvm::Module* mod) {
   {
@@ -317,7 +218,7 @@ static void initialiseTypes(llvm::Module* mod) {
 
 extern "C" void __register_frame(void*);
 
-void VMLet::initialise() {
+void mvm::jit::initialise() {
   llvm::SizedMemoryCode = true;
   llvm::NoFramePointerElim = true;
   llvm::ExceptionHandling = true;
