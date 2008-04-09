@@ -2,7 +2,7 @@
 SUBDIRS = VMCore Classpath
 EXTRA_DIST = OpcodeNames.def
 bin_PROGRAMS = main
-lib_LTLIBRARIES = libjnjvm.la
+#lib_LTLIBRARIES = libjnjvm.la
 
 THREADDIR=../Mvm/CommonThread
 ALLOCDIR=../Mvm/Allocator
@@ -21,5 +21,5 @@ main_CXXFLAGS = $(INCLUDEDIRS) -DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused
 main_LDADD = VMCore/.libs/libJnJVM.a Classpath/.libs/libClasspath.a $(LIBSUVM) @LLVMDYLIB@
 main_LDFLAGS = @rdynamic@
 
-libjnjvm.la:
-	gcc -shared VMCore/.libs/libJnJVM.so Classpath/.libs/libClasspath.so -o libjnjvm.so
+#libjnjvm.la:
+#	gcc -shared VMCore/.libs/libJnJVM.$(DYLIB_EXTENSION) Classpath/.libs/libClasspath.$(DYLIB_EXTENSION) -o libjnjvm.$(DYLIB_EXTENSION)

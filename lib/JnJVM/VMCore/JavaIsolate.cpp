@@ -63,7 +63,7 @@ void ClArgumentsInfo::javaAgent(char* cur) {
   assert(0 && "implement me");
 }
 
-extern "C" int strnstr(const char *haystack, const char *needle) {
+extern "C" int sys_strnstr(const char *haystack, const char *needle) {
   char * res = strstr(haystack, needle);
   if (res) return res - haystack;
   else return -1; 
@@ -72,10 +72,10 @@ extern "C" int strnstr(const char *haystack, const char *needle) {
 
 static char* findInformation(ArrayUInt8* manifest, const char* entry, uint32 len) {
   uint8* ptr = manifest->elements;
-  sint32 index = strnstr((char*)ptr, entry);
+  sint32 index = sys_strnstr((char*)ptr, entry);
   if (index != -1) {
     index += len;
-    sint32 end = strnstr((char*)&(ptr[index]), "\n");
+    sint32 end = sys_strnstr((char*)&(ptr[index]), "\n");
     if (end == -1) end = manifest->size;
     else end += index;
 

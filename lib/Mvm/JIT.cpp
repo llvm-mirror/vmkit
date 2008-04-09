@@ -513,7 +513,7 @@ void mvm::jit::initialise() {
 
   
     // Constant declaration
-  constantLongMinusOne = ConstantInt::get(Type::Int64Ty, -1);
+  constantLongMinusOne = ConstantInt::get(Type::Int64Ty, (uint64_t)-1);
   constantLongZero = ConstantInt::get(Type::Int64Ty, 0);
   constantLongOne = ConstantInt::get(Type::Int64Ty, 1);
   constantZero = ConstantInt::get(Type::Int32Ty, 0);
@@ -526,7 +526,7 @@ void mvm::jit::initialise() {
   constantSix = ConstantInt::get(Type::Int32Ty, 6);
   constantSeven = ConstantInt::get(Type::Int32Ty, 7);
   constantEight = ConstantInt::get(Type::Int32Ty, 8);
-  constantMinusOne = ConstantInt::get(Type::Int32Ty, -1);
+  constantMinusOne = ConstantInt::get(Type::Int32Ty, (uint64_t)-1);
   constantMinInt = ConstantInt::get(Type::Int32Ty, MinInt);
   constantMaxInt = ConstantInt::get(Type::Int32Ty, MaxInt);
   constantMinLong = ConstantInt::get(Type::Int64Ty, MinLong);

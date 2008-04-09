@@ -678,6 +678,16 @@ extern "C" int64_t Platform_TimeMethods_GetCurrentTime() {
 
 #define ASSEMBLY_VALUE(obj) ((Assembly**)obj)[3]
 
+#if !defined(__GNU__)
+void* memrchr(const void* s, int c, size_t n) {
+  unsigned char* m = (unsigned char*) s;
+  for (;;) {
+    if (!(n--)) return NULL;
+    else if (*m-- == (unsigned char)c) return (void*)(m+1);
+  }
+}
+#endif
+
 extern "C" VMObject* System_Reflection_Assembly_GetType(VMObject* obj, CLIString* str, bool onError, bool ignoreCase) {
   Assembly* ass = ASSEMBLY_VALUE(obj);
   const UTF8* utf8 = str->value;

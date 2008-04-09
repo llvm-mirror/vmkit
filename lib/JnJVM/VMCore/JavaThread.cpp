@@ -112,5 +112,9 @@ bool JavaThread::compareException(Class* cl) {
 
 void JavaThread::returnFromNative() {
   assert(sjlj_buffers.size());
+#if defined(__MACH__)
+  longjmp((int*)sjlj_buffers.back(), 1);
+#else
   longjmp((__jmp_buf_tag*)sjlj_buffers.back(), 1);
+#endif
 }

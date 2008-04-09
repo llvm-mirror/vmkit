@@ -113,6 +113,7 @@ dnl Checks for libraries
 dnl **************************************************************************
 case $target_os in
   *darwin*)
+    DYLIB_EXTENSION="dylib"
     rdynamic=""
     ;;
   *linux*)
@@ -129,6 +130,7 @@ case $target_os in
     )
     
     rdynamic="-rdynamic"
+    DYLIB_EXTENSION="so"
     AC_DEFINE([HAVE_DISASSEMBLER], [1], [Using libopcodes])
 
     ;;
@@ -141,6 +143,7 @@ AC_CHECK_LIB(z, inflate, [], \
 
 AC_SUBST([rdynamic])
 AC_SUBST([LLVMDYLIB])
+AC_SUBST([DYLIB_EXTENSION])
 
 dnl **************************************************************************
 dnl VVM thread type
@@ -245,10 +248,14 @@ if test "x${gnuclasspathlocalprefix}" = x; then
   echo Using ${gnuclasspathinstallationprefix} as GNU CLASSPATH installation prefix;
   classpathglibj=${gnuclasspathinstallationprefix}/share/classpath/glibj.zip;
   classpathlibs=${gnuclasspathinstallationprefix}/lib/classpath/;
+  CFLAGS=$CFLAGS -I$gnuclasspathinstallationprefix/include
+  CXXFLAGS=$CXXFLAGS -I$gnuclasspathinstallationprefix/include
 else
   echo Using ${gnuclasspathlocalprefix} as GNU CLASSPATH local prefix;
   classpathglibj=${gnuclasspathlocalprefix}/lib/;
   classpathlibs=${gnuclasspathlocalprefix}/lib/;
+  CFLAGS="$CFLAGS -I$gnuclasspathlocalprefix/include"
+  CXXFLAGS="$CXXFLAGS -I$gnuclasspathlocalprefix/include"
 fi
 
 
