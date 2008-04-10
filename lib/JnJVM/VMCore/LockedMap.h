@@ -101,8 +101,8 @@ public:
   mvm::Lock* lock;
   std::multimap<uint32, const UTF8*> map;
   static VirtualTable* VT;
-  const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
-  const UTF8* lookupOrCreateReader(const uint16* buf, uint32 size);
+  const UTF8* lookupOrCreateAsciiz(Jnjvm* vm, const char* asciiz); 
+  const UTF8* lookupOrCreateReader(Jnjvm* vm, const uint16* buf, uint32 size);
   const UTF8* lookupAsciiz(const char* asciiz); 
   const UTF8* lookupReader(const uint16* buf, uint32 size);
   
@@ -117,18 +117,14 @@ public:
     buf->write("UTF8 Hashtable<>");
   }
   
-  static UTF8Map* allocate() {
-    UTF8Map* map = gc_new(UTF8Map)();
-    map->lock = mvm::Lock::allocNormal();
-    return map;
+  UTF8Map() {
+    lock = mvm::Lock::allocNormal();
   }
 
-  UTF8Map* copy() {
-    UTF8Map* newMap = allocate();
+  void copy(UTF8Map* newMap) {
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
       newMap->map.insert(*i);
     }
-    return newMap;
   }
   
   void replace(const UTF8* oldUTF8, const UTF8* newUTF8);
@@ -157,10 +153,9 @@ class ClassMap :
     public LockedMap<const UTF8*, CommonClass*, ltutf8 > {
 public:
   static VirtualTable* VT;
-  static ClassMap* allocate() {
-    ClassMap* map = gc_new(ClassMap)();
-    map->lock = mvm::Lock::allocNormal();
-    return map;
+  
+  ClassMap() {
+    lock = mvm::Lock::allocNormal();
   }
   
   virtual void tracer(size_t sz) {
@@ -175,10 +170,9 @@ class FieldMap :
     public LockedMap<FieldCmp, JavaField*, std::less<FieldCmp> > {
 public:
   static VirtualTable* VT;
-  static FieldMap* allocate() {
-    FieldMap* map = gc_new(FieldMap)();
-    map->lock = mvm::Lock::allocNormal();
-    return map;
+  
+  FieldMap() {
+    lock = mvm::Lock::allocNormal();
   }
   
   virtual void tracer(size_t sz) {
@@ -193,10 +187,9 @@ class MethodMap :
     public LockedMap<FieldCmp, JavaMethod*, std::less<FieldCmp> > {
 public:
   static VirtualTable* VT;
-  static MethodMap* allocate() {
-    MethodMap* map = gc_new(MethodMap)();
-    map->lock = mvm::Lock::allocNormal();
-    return map;
+  
+  MethodMap() {
+    lock = mvm::Lock::allocNormal();
   }
   
   virtual void tracer(size_t sz) {
@@ -219,10 +212,9 @@ struct ltstr
 class ZipFileMap : public LockedMap<const char*, ZipFile*, ltstr> {
 public:
   static VirtualTable* VT;
-  static ZipFileMap* allocate() {
-    ZipFileMap* map = gc_new(ZipFileMap)();
-    map->lock = mvm::Lock::allocNormal();
-    return map;
+  
+  ZipFileMap() {
+    lock = mvm::Lock::allocNormal();
   }
   
   virtual void tracer(size_t sz) {
@@ -237,10 +229,9 @@ class StringMap :
     public LockedMap<const UTF8*, JavaString*, ltutf8 > {
 public:
   static VirtualTable* VT;
-  static StringMap* allocate() {
-    StringMap* map = gc_new(StringMap)();
-    map->lock = mvm::Lock::allocRecursive();
-    return map;
+  
+  StringMap() {
+    lock = mvm::Lock::allocRecursive();
   }
   
   virtual void tracer(size_t sz) {
@@ -255,10 +246,9 @@ class FunctionMap :
     public LockedMap<llvm::Function*, std::pair<Class*, uint32>*, std::less<llvm::Function*> > { 
 public:
   static VirtualTable* VT; 
-  static FunctionMap* allocate() {
-    FunctionMap* map = gc_new(FunctionMap)();
-    map->lock = mvm::Lock::allocNormal();
-    return map;
+  
+  FunctionMap() {
+    lock = mvm::Lock::allocNormal();
   }
 
   virtual void tracer(size_t sz) {
@@ -273,10 +263,9 @@ class FunctionDefMap :
     public LockedMap<llvm::Function*, JavaMethod*, std::less<llvm::Function*> > { 
 public:
   static VirtualTable* VT; 
-  static FunctionDefMap* allocate() {
-    FunctionDefMap* map = gc_new(FunctionDefMap)();
-    map->lock = mvm::Lock::allocNormal();
-    return map;
+  
+  FunctionDefMap() {
+    lock = mvm::Lock::allocNormal();
   }
 
   virtual void tracer(size_t sz) {
@@ -297,10 +286,8 @@ public:
     return 0;
   }
   
-  static TypeMap* allocate() {
-    TypeMap* map = gc_new(TypeMap)();
-    map->lock = mvm::Lock::allocRecursive();
-    return map;
+  TypeMap() {
+    lock = mvm::Lock::allocRecursive();
   }
   
   virtual void tracer(size_t sz) {
@@ -317,10 +304,8 @@ class StaticInstanceMap :
 public:
   static VirtualTable* VT;
   
-  static StaticInstanceMap* allocate() {
-    StaticInstanceMap* map = gc_new(StaticInstanceMap)();
-    map->lock = mvm::Lock::allocNormal();
-    return map;
+  StaticInstanceMap() {
+    lock = mvm::Lock::allocNormal();
   }
   
   virtual void tracer(size_t sz) {
@@ -343,10 +328,8 @@ class DelegateeMap :
 public:
   static VirtualTable* VT;
   
-  static DelegateeMap* allocate() {
-    DelegateeMap* map = gc_new(DelegateeMap)();
-    map->lock = mvm::Lock::allocNormal();
-    return map;
+  DelegateeMap() {
+    lock = mvm::Lock::allocNormal();
   }
   
   virtual void tracer(size_t sz) {

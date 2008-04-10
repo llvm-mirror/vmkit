@@ -33,7 +33,7 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void tracer(size_t sz);
 
-  static ThreadSystem* allocateThreadSystem();
+  void initialise();
 };
 
 class JavaIsolate : public Jnjvm {

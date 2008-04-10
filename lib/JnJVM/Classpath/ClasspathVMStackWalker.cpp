@@ -41,7 +41,8 @@ ArrayObject* recGetClassContext(int** stack, uint32 size, uint32 first, uint32 r
       return recGetClassContext(stack, size, first + 1, rec);
     }   
   } else {
-    return ArrayObject::acons(rec, Classpath::classArrayClass);
+    Jnjvm* vm = JavaThread::get()->isolate;
+    return ArrayObject::acons(rec, Classpath::classArrayClass, vm);
   }
 }
 

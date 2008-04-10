@@ -47,17 +47,16 @@ void Enveloppe::print(mvm::PrintBuffer* buf) const {
   buf->write("Enveloppe<>");
 }
 
-CacheNode* CacheNode::allocate() {
-  CacheNode* cache = gc_new(CacheNode)();
-  cache->lastCible = 0;
-  cache->methPtr = 0;
-  cache->next = 0;
-  return cache;
+void CacheNode::initialise() {
+  this->lastCible = 0;
+  this->methPtr = 0;
+  this->next = 0;
 }
 
 Enveloppe* Enveloppe::allocate(JavaCtpInfo* ctp, uint32 index) {
-  Enveloppe* enveloppe = gc_new(Enveloppe)();
-  enveloppe->firstCache = CacheNode::allocate();
+  Enveloppe* enveloppe = vm_new(ctp->classDef->isolate, Enveloppe)();
+  enveloppe->firstCache = vm_new(ctp->classDef->isolate, CacheNode)();
+  enveloppe->firstCache->initialise();
   enveloppe->firstCache->enveloppe = enveloppe;
   enveloppe->cacheLock = mvm::Lock::allocNormal();
   enveloppe->ctpInfo = ctp;
@@ -93,8 +92,9 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   
   mvm::jit::protectConstants();//->lock();
   Value* llvmEnv = 
-    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (enveloppe)),
-                  Enveloppe::llvmType);
+    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
+                              uint64_t (enveloppe)),
+                              Enveloppe::llvmType);
   mvm::jit::unprotectConstants();//->unlock();
   
 

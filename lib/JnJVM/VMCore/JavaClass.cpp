@@ -57,15 +57,13 @@ void Attribut::print(mvm::PrintBuffer* buf) const {
   buf->write(">");
 }
 
-Attribut* Attribut::derive(const UTF8* name, unsigned int length, const Reader*
-                           reader) {
+void Attribut::derive(const UTF8* name, unsigned int length,
+                      const Reader* reader) {
   
-  Attribut* attr = gc_new(Attribut)();
-  attr->start    = reader->cursor;
-  attr->nbb      = length;
-  attr->name     = name;
+  this->start    = reader->cursor;
+  this->nbb      = length;
+  this->name     = name;
 
-  return attr;
 }
 
 // TODO: Optimize
@@ -80,8 +78,8 @@ Attribut* Attribut::lookup(const std::vector<Attribut*>* vec,
   return 0;
 }
 
-Reader* Attribut::toReader(ArrayUInt8* array, Attribut* attr) {
-  return Reader::allocateReader(array, attr->start, attr->nbb);
+Reader* Attribut::toReader(Jnjvm* vm, ArrayUInt8* array, Attribut* attr) {
+  return vm_new(vm, Reader)(array, attr->start, attr->nbb);
 }
 
 
@@ -217,13 +215,13 @@ void* JavaMethod::compiledPtr() {
         llvmType = signature->virtualType;
       }
       if (!methPtr) {
-        JavaJIT* jit = gc_new(JavaJIT)();
-        jit->compilingClass = classDef;
-        jit->compilingMethod = this;
+        JavaJIT jit;
+        jit.compilingClass = classDef;
+        jit.compilingMethod = this;
         if (isNative(access)) {
-          methPtr = jit->nativeCompile();
+          methPtr = jit.nativeCompile();
         } else {
-          methPtr = jit->javaCompile();
+          methPtr = jit.javaCompile();
         }
       }
       // We can compile it, since if we're here, it's for a  good reason
@@ -355,18 +353,33 @@ JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
   return res;
 }
 
-JavaObject* Class::doNew() {
+#ifndef MULTIPLE_VM
+JavaObject* Class::doNew(Jnjvm* vm) {
   JavaObject* res = (JavaObject*)gc::operator new(virtualSize, virtualVT);
   memcpy(res, virtualInstance, virtualSize);  
   return res;
 }
 
 // Copy doNew because LLVM wants two different pointers (for simplicity)
-JavaObject* Class::doNewUnknown() {
+JavaObject* Class::doNewUnknown(Jnjvm* vm) {
   JavaObject* res = (JavaObject*)gc::operator new(virtualSize, virtualVT);
   memcpy(res, virtualInstance, virtualSize);  
   return res;
 }
+#else
+JavaObject* Class::doNew(Jnjvm* vm) {
+  JavaObject* res = (JavaObject*)vm->allocateObject(virtualSize, virtualVT);
+  memcpy(res, virtualInstance, virtualSize);  
+  return res;
+}
+
+// Copy doNew because LLVM wants two different pointers (for simplicity)
+JavaObject* Class::doNewUnknown(Jnjvm* vm) {
+  JavaObject* res = (JavaObject*)vm->allocateObject(virtualSize, virtualVT);
+  memcpy(res, virtualInstance, virtualSize);  
+  return res;
+}
+#endif
 
 JavaObject* Class::initialiseObject(JavaObject* res) {
   memcpy(res, virtualInstance, virtualSize);  
@@ -474,7 +487,8 @@ void JavaField::initField(JavaObject* obj) {
   if (!attribut) {
     JavaJIT::initField(this, obj);
   } else {
-    Reader* reader = attribut->toReader(classDef->bytes, attribut);
+    Reader* reader = attribut->toReader(classDef->isolate,
+                                        classDef->bytes, attribut);
     JavaCtpInfo * ctpInfo = classDef->ctpInfo;
     uint16 idx = reader->readU2();
     if (funcs == AssessorDesc::dLong) {
@@ -525,7 +539,8 @@ static void resolveStaticFields(Class* cl) {
   cl->staticVT = VT;
 
 #ifndef MULTIPLE_VM
-  JavaObject* val = (JavaObject*)gc::operator new(cl->staticSize, cl->staticVT);
+  JavaObject* val = (JavaObject*)cl->isolate->allocateObject(cl->staticSize,
+                                                             cl->staticVT);
   val->initialise(cl);
   for (std::vector<JavaField*>::iterator i = cl->staticFields.begin(),
             e = cl->staticFields.end(); i!= e; ++i) {
@@ -565,7 +580,7 @@ static void resolveVirtualFields(Class* cl) {
   uint64 size = mvm::jit::getTypeSize(cl->virtualType->getContainedType(0));
   cl->virtualSize = size;
   cl->virtualVT = VT;
-  cl->virtualInstance = (JavaObject*)gc::operator new(size, VT);
+  cl->virtualInstance = (JavaObject*)cl->isolate->allocateObject(size, VT);
   cl->virtualInstance->initialise(cl);
 
   for (std::vector<JavaField*>::iterator i = cl->virtualFields.begin(),
@@ -607,7 +622,9 @@ JavaObject* Class::staticInstance() {
 }
 
 void Class::createStaticInstance() {
-  JavaObject* val = (JavaObject*)gc::operator new(staticSize, staticVT);
+  JavaObject* val = 
+    (JavaObject*)JavaThread::get()->isolate->allocateObject(staticSize,
+                                                            staticVT);
   val->initialise(this);
   for (std::vector<JavaField*>::iterator i = this->staticFields.begin(),
             e = this->staticFields.end(); i!= e; ++i) {

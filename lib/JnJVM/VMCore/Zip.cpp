@@ -10,26 +10,28 @@
 #include <zlib.h>
 
 #include "JavaArray.h"
+#include "Jnjvm.h"
 #include "LockedMap.h"
 #include "Reader.h"
 #include "Zip.h"
 
 using namespace jnjvm;
 
-ZipArchive* ZipArchive::hashedArchive(char* archname) {
+ZipArchive* ZipArchive::hashedArchive(Jnjvm* vm, char* archname) {
   assert(0 && "implement hashedArchive");
   return 0;
 }
 
-ZipArchive* ZipArchive::singleArchive(char* archname) {
-  ZipArchive* ar = gc_new(ZipArchive)();
+ZipArchive* ZipArchive::singleArchive(Jnjvm* vm, char* archname) {
+  ZipArchive* ar = vm_new(vm, ZipArchive)();
+  ar->vm = vm;
   ar->name = archname;
-  ArrayUInt8* bytes = Reader::openFile(archname);
+  ArrayUInt8* bytes = Reader::openFile(vm, archname);
   if (bytes != 0) {
-    ar->reader = Reader::allocateReader(bytes);
+    ar->reader = vm_new(vm, Reader)(bytes);
     ar->findOfscd();
     if (ar->ofscd > -1) {
-      ar->filetable = ZipFileMap::allocate();
+      ar->filetable = vm_new(vm, ZipFileMap)();
       ar->addFiles();
       return ar;
     }
@@ -136,7 +138,7 @@ void ZipArchive::addFiles() {
 
   while (true) {
     if (memcmp(&(reader->bytes->elements[temp]), HDR_CENTRAL, 4)) return;
-    ZipFile* ptr = gc_new(ZipFile)();
+    ZipFile* ptr = vm_new(vm, ZipFile)();
     reader->cursor = temp + 4 + C_COMPRESSION_METHOD;
     ptr->compressionMethod = readEndianDep2(reader);
     

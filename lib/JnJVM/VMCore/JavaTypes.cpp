@@ -60,7 +60,7 @@ AssessorDesc* AssessorDesc::allocate(bool dt, char bid, uint32 nb, uint32 nw,
                                      const char* name, Jnjvm* vm,
                                      const llvm::Type* t,
                                      const char* assocName, arrayCtor_t ctor) {
-  AssessorDesc* res = gc_new(AssessorDesc)();
+  AssessorDesc* res = vm_new(vm, AssessorDesc)();
   res->doTrace = dt;
   res->byteId = bid;
   res->nbb = nb;
@@ -474,7 +474,7 @@ const llvm::FunctionType* Signdef::createVirtualType(
     llvmArgs.push_back(args->at(i)->funcs->llvmType);
   }
 
-#ifdef SERVICE_VM
+#ifdef MULTIPLE_VM
   llvmArgs.push_back(mvm::jit::ptrType); // domain
 #endif
 
@@ -497,7 +497,7 @@ const llvm::FunctionType* Signdef::createStaticType(
     llvmArgs.push_back(args->at(i)->funcs->llvmType);
   }
 
-#ifdef SERVICE_VM
+#ifdef MULTIPLE_VM
   llvmArgs.push_back(mvm::jit::ptrType); // domain
 #endif
   
@@ -521,7 +521,7 @@ const llvm::FunctionType* Signdef::createNativeType(
     llvmArgs.push_back(args->at(i)->funcs->llvmType);
   }
 
-#ifdef SERVICE_VM
+#ifdef MULTIPLE_VM
   llvmArgs.push_back(mvm::jit::ptrType); // domain
 #endif
   
@@ -574,7 +574,7 @@ Signdef* Signdef::signDup(const UTF8* name, Jnjvm *vm) {
     typeError(name, 0);
   }
 
-  Signdef* res = gc_new(Signdef)();
+  Signdef* res = vm_new(vm, Signdef)();
   res->args = buf;
   res->ret = vm->constructType(name->extract(vm, pos, pred));
   res->isolate = vm;
@@ -618,7 +618,7 @@ Typedef* Typedef::typeDup(const UTF8* name, Jnjvm *vm) {
   if (funcs == AssessorDesc::dParg) {
     return Signdef::signDup(name, vm);
   } else {
-    Typedef* res = gc_new(Typedef)();
+    Typedef* res = vm_new(vm, Typedef)();
     res->isolate = vm;
     res->keyName = name;
     res->funcs = funcs;

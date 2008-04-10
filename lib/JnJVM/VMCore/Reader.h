@@ -17,6 +17,7 @@
 namespace jnjvm {
 
 class ArrayUInt8;
+class Jnjvm;
 
 class Reader : public mvm::Object {
 public:
@@ -33,8 +34,8 @@ public:
   static const int SeekCur;
   static const int SeekEnd;
 
-  static ArrayUInt8* openFile(char* path);
-  static ArrayUInt8* openZip(char* zipname, char* filename);
+  static ArrayUInt8* openFile(Jnjvm* vm, char* path);
+  static ArrayUInt8* openZip(Jnjvm* vm, char* zipname, char* filename);
   uint8 readU1();
   sint8 readS1();
   uint16 readU2();
@@ -43,10 +44,10 @@ public:
   sint32 readS4();
   uint64 readU8();
   sint64 readS8();
-  static Reader* allocateReader(ArrayUInt8* array, uint32 start = 0,
-                                uint32 end = 0);
+  Reader(ArrayUInt8* array, uint32 start = 0, uint32 end = 0);
+  Reader() {}
   unsigned int tell();
-  Reader* derive(uint32 nbb);
+  Reader* derive(Jnjvm* vm, uint32 nbb);
   void seek(uint32 pos, int from);
 
   virtual void print(mvm::PrintBuffer* buf) const;

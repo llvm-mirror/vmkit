@@ -204,7 +204,7 @@ uint32 JavaCtpInfo::CtpReaderDouble(Jnjvm* vm, uint32 type, uint32 e, Reader* re
 
 void JavaCtpInfo::read(Jnjvm *vm, Class* cl, Reader* reader) {
   uint32 nbCtp = reader->readU2();
-  JavaCtpInfo* res = gc_new(JavaCtpInfo)();
+  JavaCtpInfo* res = vm_new(vm, JavaCtpInfo)();
   
   res->ctpRes   = (void**)malloc(sizeof(void*)*nbCtp);
   res->ctpDef   = (sint32*)malloc(sizeof(sint32)*nbCtp);

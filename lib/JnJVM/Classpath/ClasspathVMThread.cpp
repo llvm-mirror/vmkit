@@ -86,7 +86,7 @@ jobject _vmThread, sint64 stackSize) {
   JavaObject* javaThread = (JavaObject*)(*ClasspathThread::assocThread)(vmThread).PointerVal;
   assert(javaThread);
 
-  JavaThread* th = gc_new(JavaThread)();
+  JavaThread* th = vm_new(JavaThread::get()->isolate, JavaThread)();
   th->initialise(javaThread, JavaThread::get()->isolate);
   (*ClasspathThread::vmdata)(vmThread, (JavaObject*)th);
   int tid = 0;

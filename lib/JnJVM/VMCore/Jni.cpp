@@ -142,7 +142,7 @@ jint ThrowNew(JNIEnv* env, jclass clazz, const char *msg) {
   Jnjvm* vm = th->isolate;
   CommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
   if (cl->isArray) assert(0 && "implement me");
-  JavaObject* res = ((Class*)cl)->doNew();
+  JavaObject* res = ((Class*)cl)->doNew(vm);
   JavaMethod* init =
     cl->lookupMethod(Jnjvm::initName, 
                      vm->asciizConstructUTF8("(Ljava/lang/String;)V"), 0, 1);
@@ -216,7 +216,7 @@ jobject AllocObject(JNIEnv *env, jclass clazz) {
   
   CommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
   if (cl->isArray) JavaThread::get()->isolate->unknownError("implement me");
-  return (jobject)((Class*)cl)->doNew();
+  return (jobject)((Class*)cl)->doNew(JavaThread::get()->isolate);
 
   END_EXCEPTION
   return 0;
@@ -230,7 +230,7 @@ jobject NewObject(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   va_start(ap, methodID);
   JavaMethod* meth = (JavaMethod*)methodID;
   Class* cl = (Class*)NativeUtil::resolvedImplClass(clazz, true);
-  JavaObject* res = cl->doNew();
+  JavaObject* res = cl->doNew(JavaThread::get()->isolate);
   meth->invokeIntSpecialAP(res, ap);
   va_end(ap);
   return (jobject)res;
@@ -1630,7 +1630,7 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass elementClass,
   const UTF8* name = base->name;
   const UTF8* arrayName = AssessorDesc::constructArrayName(vm, 0, 1, name);
   ClassArray* array = vm->constructArray(arrayName, loader);
-  ArrayObject* res = ArrayObject::acons(length, array);
+  ArrayObject* res = ArrayObject::acons(length, array, vm);
   if (initialElement) {
     memset(res->elements, (int)initialElement, 
                length * sizeof(JavaObject*));
@@ -1663,7 +1663,7 @@ jbooleanArray NewBooleanArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayUInt8* res = 0;
-  res = ArrayUInt8::acons(len, JavaArray::ofBool);
+  res = ArrayUInt8::acons(len, JavaArray::ofBool, NativeUtil::myVM(env));
   return (jbooleanArray)res;
 
   END_EXCEPTION
@@ -1676,7 +1676,7 @@ jbyteArray NewByteArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
 
   ArraySInt8* res = 0;
-  res = ArraySInt8::acons(len, JavaArray::ofByte);
+  res = ArraySInt8::acons(len, JavaArray::ofByte, NativeUtil::myVM(env));
   return (jbyteArray) res;
 
   END_EXCEPTION
@@ -1689,7 +1689,7 @@ jcharArray NewCharArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayUInt16* res = 0;
-  res = ArrayUInt16::acons(len, JavaArray::ofChar);
+  res = ArrayUInt16::acons(len, JavaArray::ofChar, NativeUtil::myVM(env));
   return (jcharArray) res;
 
   END_EXCEPTION
@@ -1702,7 +1702,7 @@ jshortArray NewShortArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArraySInt16* res = 0;
-  res = ArraySInt16::acons(len, JavaArray::ofShort);
+  res = ArraySInt16::acons(len, JavaArray::ofShort, NativeUtil::myVM(env));
   return (jshortArray) res;
 
   END_EXCEPTION
@@ -1715,7 +1715,7 @@ jintArray NewIntArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArraySInt32* res = 0;
-  res = ArraySInt32::acons(len, JavaArray::ofInt);
+  res = ArraySInt32::acons(len, JavaArray::ofInt, NativeUtil::myVM(env));
   return (jintArray) res;
 
   END_EXCEPTION
@@ -1728,7 +1728,7 @@ jlongArray NewLongArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayLong* res = 0;
-  res = ArrayLong::acons(len, JavaArray::ofLong);
+  res = ArrayLong::acons(len, JavaArray::ofLong, NativeUtil::myVM(env));
   return (jlongArray) res;
 
   END_EXCEPTION
@@ -1741,7 +1741,7 @@ jfloatArray NewFloatArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayFloat* res = 0;
-  res = ArrayFloat::acons(len, JavaArray::ofFloat);
+  res = ArrayFloat::acons(len, JavaArray::ofFloat, NativeUtil::myVM(env));
   return (jfloatArray) res;
 
   END_EXCEPTION
@@ -1754,7 +1754,7 @@ jdoubleArray NewDoubleArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayDouble* res = 0;
-  res = ArrayDouble::acons(len, JavaArray::ofDouble);
+  res = ArrayDouble::acons(len, JavaArray::ofDouble, NativeUtil::myVM(env));
   return (jdoubleArray) res;
 
   END_EXCEPTION

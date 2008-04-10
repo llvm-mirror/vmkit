@@ -22,6 +22,8 @@
 
 #include "types.h"
 
+#define vm_new(vm, cl) gc_new(cl)
+
 namespace jnjvm {
 
 class ArrayUInt8;
@@ -251,6 +253,16 @@ public:
   llvm::Module* module;
   JnjvmModuleProvider* TheModuleProvider;
   FunctionMap* functions;
+
+#ifndef MULTIPLE_VM
+  void* allocateObject(unsigned int sz, VirtualTable* VT) {
+    return gc::operator new(sz, VT);
+  }
+#else
+  void* allocateObject(unsigned int sz, VirtualTable* VT) {
+    return gc::operator new(sz, VT);
+  }
+#endif
 };
 
 } // end namespace jnjvm

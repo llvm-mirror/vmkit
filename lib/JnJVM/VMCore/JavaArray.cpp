@@ -41,8 +41,9 @@ ClassArray* JavaArray::ofDouble = 0;
 ClassArray* JavaArray::ofString = 0;
 ClassArray* JavaArray::ofObject = 0;
 
+#ifndef MULTIPLE_VM
 #define ACONS(name, elmt, primSize)                                         \
-  name *name::acons(sint32 n, ClassArray* atype) {                          \
+  name *name::acons(sint32 n, ClassArray* atype, Jnjvm* vm) {               \
     if (n < 0)                                                              \
       JavaThread::get()->isolate->negativeArraySizeException(n);            \
     else if (n > JavaArray::MaxArraySize)                                   \
@@ -54,6 +55,21 @@ ClassArray* JavaArray::ofObject = 0;
     memset(res->elements, 0, primSize * n);                                 \
     return res;                                                             \
   }
+#else
+#define ACONS(name, elmt, primSize)                                         \
+  name *name::acons(sint32 n, ClassArray* atype, Jnjvm* vm) {               \
+    if (n < 0)                                                              \
+      JavaThread::get()->isolate->negativeArraySizeException(n);            \
+    else if (n > JavaArray::MaxArraySize)                                   \
+      JavaThread::get()->isolate->outOfMemoryError(n);                      \
+    name* res = (name*)                                                     \
+      (Object*) vm->allocateObject(sizeof(name) + n * primSize, name::VT);        \
+    res->initialise(atype);                                                 \
+    res->size = n;                                                          \
+    memset(res->elements, 0, primSize * n);                                 \
+    return res;                                                             \
+  }
+#endif
 
 #define AT(name, elmt)                                                      \
   elmt name::at(sint32 offset) const {                                      \
@@ -88,13 +104,17 @@ AT(ArrayObject, JavaObject*)
 #undef ACONS
 #undef AT
 
-ArrayObject *ArrayObject::acons(sint32 n, ClassArray* atype) {
+ArrayObject *ArrayObject::acons(sint32 n, ClassArray* atype, Jnjvm* vm) {
   if (n < 0)
     JavaThread::get()->isolate->negativeArraySizeException(n);
   else if (n > JavaArray::MaxArraySize)
     JavaThread::get()->isolate->outOfMemoryError(n);
   ArrayObject* res = (ArrayObject*)
+#ifndef MULTIPLE_VM
     (Object*) operator new(sizeof(ArrayObject) + n * sizeof(JavaObject*), JavaObject::VT);
+#else
+    (Object*) vm->allocateObject(sizeof(ArrayObject) + n * sizeof(JavaObject*), JavaObject::VT);
+#endif
   res->initialise(atype);
   res->size = n;
   memset(res->elements, 0, sizeof(JavaObject*) * n);
@@ -258,9 +278,10 @@ char* UTF8::UTF8ToAsciiz() const {
 
 static JavaArray* multiCallNewIntern(arrayCtor_t ctor, ClassArray* cl,
                                      uint32 len,
-                                     sint32* dims) {
+                                     sint32* dims,
+                                     Jnjvm* vm) {
   if (len <= 0) JavaThread::get()->isolate->unknownError("Can not happen");
-  JavaArray* _res = ctor(dims[0], cl);
+  JavaArray* _res = ctor(dims[0], cl, vm);
   if (len > 1) {
     ArrayObject* res = (ArrayObject*)_res;
     CommonClass* _base = cl->baseClass();
@@ -270,7 +291,8 @@ static JavaArray* multiCallNewIntern(arrayCtor_t ctor, ClassArray* cl,
       arrayCtor_t newCtor = func->arrayCtor;
       if (dims[0] > 0) {
         for (sint32 i = 0; i < dims[0]; ++i) {
-          res->setAt(i, multiCallNewIntern(newCtor, base, (len - 1), &dims[1]));
+          res->setAt(i, multiCallNewIntern(newCtor, base, (len - 1), &dims[1],
+                                           vm));
         }
       } else {
         for (uint32 i = 1; i < len; ++i) {
@@ -292,5 +314,10 @@ JavaArray* JavaArray::multiCallNew(ClassArray* cl, uint32 len, ...) {
   for (uint32 i = 0; i < len; ++i){
     dims[i] = va_arg(ap, int);
   }
-  return multiCallNewIntern((arrayCtor_t)ArrayObject::acons, cl, len, dims);
+#ifdef MULTIPLE_VM
+  Jnjvm* vm = va_arg(ap, Jnjvm*);
+#else
+  Jnjvm* vm = 0;
+#endif
+  return multiCallNewIntern((arrayCtor_t)ArrayObject::acons, cl, len, dims, vm);
 }

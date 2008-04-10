@@ -72,7 +72,6 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void tracer(size_t sz);
   
-  static JavaObject* allocate(CommonClass* cl);
   void aquire();
   void unlock();
   void waitIntern(struct timeval *info, bool timed);

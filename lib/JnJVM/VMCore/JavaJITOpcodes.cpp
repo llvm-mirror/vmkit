@@ -125,6 +125,7 @@ void convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock, bool us
 }
 
 void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
+  wide = false;
   uint32 jsrIndex = 0;
   for(uint32 i = 0; i < codeLength; ++i) {
     
@@ -1771,8 +1772,15 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         llvm::Value* valCl = new LoadInst(cl->llvmVar(vm->module), "", currentBlock);
         llvm::Value* arg1 = popAsInt();
-        
+#ifdef MULTIPLE_VM
+        std::vector<Value*> args;
+        args.push_back(arg1);
+        args.push_back(valCl);
+        args.push_back(isolateLocal);
+        push(invoke(ctr, args, "", currentBlock), AssessorDesc::dRef);
+#else
         push(invoke(ctr, arg1, valCl, "", currentBlock), AssessorDesc::dRef);
+#endif
         break;
       }
 
@@ -1792,8 +1800,15 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         llvm::Value* valCl = new LoadInst(dcl->llvmVar(vm->module), "", currentBlock);
         llvm::Value* arg1 = popAsInt();
-        
+#ifdef MULTIPLE_VM
+        std::vector<Value*> args;
+        args.push_back(arg1);
+        args.push_back(valCl);
+        args.push_back(isolateLocal);
+        push(invoke(ObjectAconsLLVM, args, "", currentBlock), AssessorDesc::dRef);
+#else
         push(invoke(ObjectAconsLLVM, arg1, valCl, "", currentBlock), AssessorDesc::dRef);
+#endif
         break;
       }
 
@@ -1922,6 +1937,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         for (sint32 v = 0; v < dim + 2; ++v) {
           Args.push_back(args[v]);
         }
+#ifdef MULTIPLE_VM
+        Args.push_back(isolateLocal);
+#endif
         push(invoke(multiCallNewLLVM, Args, "", currentBlock), AssessorDesc::dRef);
         break;
       }
@@ -1966,6 +1984,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 }
 
 void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
+  wide = false;
   for(uint32 i = 0; i < codeLength; ++i) {
     
     PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,

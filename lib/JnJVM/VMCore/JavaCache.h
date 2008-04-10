@@ -36,7 +36,7 @@ public:
   Enveloppe* enveloppe;
   static const llvm::Type* llvmType;
 
-  static CacheNode* allocate();
+  void initialise();
 
 };
 

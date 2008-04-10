@@ -277,10 +277,10 @@ void JavaJIT::initField(JavaField* field, JavaObject* obj, float val) {
   ((float*)((uint64)obj + field->ptrOffset))[0] = val;
 }
 
-JavaObject* Class::operator()() {
+JavaObject* Class::operator()(Jnjvm* vm) {
   if (!isReady()) 
     isolate->loadName(name, classLoader, true, true, true);
-  return doNew();
+  return doNew(vm);
 }
 
 void JavaField::operator()(JavaObject* obj, float val) {
@@ -750,7 +750,7 @@ Function* Signdef::createFunctionCallBuf(bool virt) {
     }
   }
 
-#ifdef SERVICE_VM
+#ifdef MULTIPLE_VM
   Args.push_back(mvm::jit::constantPtrNull);
 #endif
 
@@ -792,7 +792,7 @@ Function* Signdef::createFunctionCallAP(bool virt) {
     Args.push_back(new VAArgInst(ap, (*i)->funcs->llvmType, "", currentBlock));
   }
 
-#ifdef SERVICE_VM
+#ifdef MULTIPLE_VM
   Args.push_back(mvm::jit::constantPtrNull);
 #endif
 

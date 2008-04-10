@@ -49,6 +49,7 @@ public:
   ZipFileMap* filetable;
   char* name;
   Reader* reader;
+  Jnjvm* vm;
 
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("ZipArchive<");
@@ -57,8 +58,8 @@ public:
   }
   virtual void tracer(size_t sz);
 
-  static ZipArchive* hashedArchive(char* archname);
-  static ZipArchive* singleArchive(char* archname);
+  static ZipArchive* hashedArchive(Jnjvm* vm, char* archname);
+  static ZipArchive* singleArchive(Jnjvm* vm, char* archname);
   ZipFile* getFile(const char* filename);
   int readFile(ArrayUInt8* array, const ZipFile* file);
   void remove();

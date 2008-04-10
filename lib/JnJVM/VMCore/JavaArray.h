@@ -61,7 +61,7 @@ public:
 
 };
 
-typedef JavaArray* (*arrayCtor_t)(uint32 len, CommonClass* cl);
+typedef JavaArray* (*arrayCtor_t)(uint32 len, CommonClass* cl, Jnjvm* vm);
 
 #define ARRAYCLASS(name, elmt)                                        \
 class name : public JavaArray {                                       \
@@ -69,7 +69,7 @@ public:                                                               \
   static VirtualTable* VT;                                            \
   static const llvm::Type* llvmType;                                  \
   elmt elements[0];                                                   \
-  static name *acons(sint32 n, ClassArray* cl);                       \
+  static name *acons(sint32 n, ClassArray* cl, Jnjvm* vm);            \
   elmt at(sint32) const;                                              \
   void setAt(sint32, elmt);                                           \
   virtual void print(mvm::PrintBuffer* buf) const;                    \
@@ -93,7 +93,7 @@ public:
   static VirtualTable* VT;
   static const llvm::Type* llvmType;
   JavaObject* elements[0];
-  static ArrayObject *acons(sint32 n, ClassArray* cl);
+  static ArrayObject *acons(sint32 n, ClassArray* cl, Jnjvm* vm);
   JavaObject* at(sint32) const;
   void setAt(sint32, JavaObject*);
   virtual void print(mvm::PrintBuffer* buf) const;
@@ -106,7 +106,7 @@ public:
   uint16 elements[0];
 
   static const llvm::Type* llvmType;
-  static UTF8* acons(sint32 n, ClassArray* cl);
+  static UTF8* acons(sint32 n, ClassArray* cl, Jnjvm* vm);
   
   unsigned short int at(sint32) const;
   void setAt(sint32, uint16);

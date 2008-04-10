@@ -46,14 +46,6 @@
 using namespace jnjvm;
 using namespace llvm;
 
-void Exception::print(mvm::PrintBuffer* buf) const {
-  buf->write("Exception<>");
-}
-
-void JavaJIT::print(mvm::PrintBuffer* buf) const {
-  buf->write("JavaJIT<>");
-}
-
 BasicBlock* JavaJIT::createBasicBlock(const char* name) {
   return llvm::BasicBlock::Create(name, llvmFunction);
 }
@@ -258,7 +250,8 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
                      compilingMethod->printString());
   }
 
-  Reader* reader = codeAtt->toReader(compilingClass->bytes, codeAtt);
+  Reader* reader = codeAtt->toReader(compilingClass->isolate,
+                                     compilingClass->bytes, codeAtt);
   maxStack = reader->readU2();
   maxLocals = reader->readU2();
   codeLen = reader->readU4();
@@ -290,7 +283,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   
   uint32 index = 0;
   uint32 count = 0;
-#ifdef SERVICE_VM
+#ifdef MULTIPLE_VM
   uint32 max = args.size() - 1;
 #else
   uint32 max = args.size();
@@ -317,6 +310,20 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
       new StoreInst(*i, objectLocals[index], false, currentBlock);
     }
   }
+
+#if defined(MULTIPLE_VM)
+#if !defined(SERVICE_VM)
+  isolateLocal = args[args.size() - 1];
+#else
+  if (compilingClass->isolate == Jnjvm::bootstrapVM) {
+    isolateLocal = args[args.size() - 1];
+  } else {
+    ServiceDomain* vm = 
+      (ServiceDomain*)(*Classpath::vmdataClassLoader)(compilingClass->classLoader).PointerVal;
+    isolateLocal = new LoadInst(vm->llvmDelegatee(), "", currentBlock);
+  }
+#endif
+#endif
   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
   
@@ -351,7 +358,8 @@ llvm::Function* JavaJIT::javaCompile() {
                      compilingMethod->printString());
   }
 
-  Reader* reader = codeAtt->toReader(compilingClass->bytes, codeAtt);
+  Reader* reader = codeAtt->toReader(compilingClass->isolate,
+                                     compilingClass->bytes, codeAtt);
   maxStack = reader->readU2();
   maxLocals = reader->readU2();
   codeLen = reader->readU4();
@@ -403,13 +411,13 @@ llvm::Function* JavaJIT::javaCompile() {
   
   uint32 index = 0;
   uint32 count = 0;
-#ifdef SERVICE_VM
+#ifdef MULTIPLE_VM
   uint32 max = func->arg_size() - 1;
 #else
   uint32 max = func->arg_size();
 #endif
-  for (Function::arg_iterator i = func->arg_begin(); 
-       count < max; ++i, ++index, ++count) {
+  Function::arg_iterator i = func->arg_begin(); 
+  for (;count < max; ++i, ++index, ++count) {
     
     const Type* cur = i->getType();
 
@@ -430,7 +438,20 @@ llvm::Function* JavaJIT::javaCompile() {
       new StoreInst(i, objectLocals[index], false, currentBlock);
     }
   }
-  
+
+#if defined(MULTIPLE_VM)
+#if !defined(SERVICE_VM)
+  isolateLocal = i;
+#else
+  if (compilingClass->isolate == Jnjvm::bootstrapVM) {
+    isolateLocal = i;
+  } else {
+    ServiceDomain* vm = 
+      (ServiceDomain*)(*Classpath::vmdataClassLoader)(compilingClass->classLoader).PointerVal;
+    isolateLocal = new LoadInst(vm->llvmDelegatee(), "", currentBlock);
+  }
+#endif
+#endif
   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
   
@@ -517,6 +538,7 @@ llvm::Function* JavaJIT::javaCompile() {
 
 unsigned JavaJIT::readExceptionTable(Reader* reader) {
   uint16 nbe = reader->readU2();
+  std::vector<Exception*> exceptions;  
   unsigned sync = isSynchro(compilingMethod->access) ? 1 : 0;
   nbe += sync;
   JavaCtpInfo* ctpInfo = compilingClass->ctpInfo;
@@ -571,7 +593,7 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
   }
 
   for (uint16 i = 0; i < nbe - sync; ++i) {
-    Exception* ex = gc_new(Exception)();
+    Exception* ex = new Exception();
     ex->startpc   = reader->readU2();
     ex->endpc     = reader->readU2();
     ex->handlerpc = reader->readU2();
@@ -695,6 +717,11 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
       ((PHINode*)insn)->addIncoming(cur->exceptionPHI, cur->realTest);
     }
      
+  }
+  
+  for (std::vector<Exception*>::iterator i = exceptions.begin(),
+    e = exceptions.end(); i!= e; ++i) {
+    delete *i;
   }
 
   return nbe;
@@ -967,13 +994,13 @@ void JavaJIT::branch(llvm::Value* test, llvm::BasicBlock* ifTrue,
 
 void JavaJIT::makeArgs(FunctionType::param_iterator it,
                        uint32 index, std::vector<Value*>& Args, uint32 nb) {
-#ifdef SERVICE_VM
+#ifdef MULTIPLE_VM
   nb++;
 #endif
   Args.reserve(nb + 2);
   Value* args[nb];
-#ifdef SERVICE_VM
-  args[nb - 1] = mvm::jit::constantPtrNull;
+#ifdef MULTIPLE_VM
+  args[nb - 1] = isolateLocal;
   sint32 start = nb - 2;
   it--;
 #else
@@ -1121,14 +1148,14 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
 
 Instruction* JavaJIT::invokeInline(JavaMethod* meth, 
                                    std::vector<Value*>& args) {
-  JavaJIT* jit = gc_new(JavaJIT)();
-  jit->compilingClass = meth->classDef; 
-  jit->compilingMethod = meth;
-  jit->unifiedUnreachable = unifiedUnreachable;
-  jit->inlineMethods = inlineMethods;
-  jit->inlineMethods[meth] = true;
-  Instruction* ret = jit->inlineCompile(llvmFunction, currentBlock, 
-                                        currentExceptionBlock, args);
+  JavaJIT jit;
+  jit.compilingClass = meth->classDef; 
+  jit.compilingMethod = meth;
+  jit.unifiedUnreachable = unifiedUnreachable;
+  jit.inlineMethods = inlineMethods;
+  jit.inlineMethods[meth] = true;
+  Instruction* ret = jit.inlineCompile(llvmFunction, currentBlock, 
+                                       currentExceptionBlock, args);
   inlineMethods[meth] = false;
   return ret;
 }
@@ -1262,11 +1289,19 @@ void JavaJIT::invokeNew(uint16 index) {
   Value* val = 0;
   if (!cl || !cl->isReady()) {
     Value* node = getInitializedClass(index);
+#ifndef MULTIPLE_VM
     val = invoke(doNewUnknownLLVM, node, "", currentBlock);
+#else
+    val = invoke(doNewUnknownLLVM, node, isolateLocal, "", currentBlock);
+#endif
   } else {
     Value* load = new LoadInst(cl->llvmVar(compilingClass->isolate->module),
                                "", currentBlock);
+#ifdef MULTIPLE_VM
+    val = invoke(doNewLLVM, load, isolateLocal, "", currentBlock);
+#else
     val = invoke(doNewLLVM, load, "", currentBlock);
+#endif
     // give the real type info, escape analysis uses it
     new BitCastInst(val, cl->virtualType, "", currentBlock);
   }

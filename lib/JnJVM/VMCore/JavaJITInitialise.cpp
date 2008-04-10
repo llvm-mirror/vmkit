@@ -169,11 +169,14 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   {
   std::vector<const Type*> args;
   args.push_back(mvm::jit::ptrType);
+#ifdef MULTIPLE_VM
+  args.push_back(mvm::jit::ptrType);
+#endif
   const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
                                                false);
 
   doNewLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm5Class5doNewEv",
+                     "_ZN5jnjvm5Class5doNewEPNS_5JnjvmE",
                      module);
   }
   
@@ -181,11 +184,76 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   {
   std::vector<const Type*> args;
   args.push_back(mvm::jit::ptrType);
+#ifdef MULTIPLE_VM
+  args.push_back(mvm::jit::ptrType);
+#endif
   const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
                                                false);
 
   doNewUnknownLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm5Class12doNewUnknownEv",
+                     "_ZN5jnjvm5Class12doNewUnknownEPNS_5JnjvmE",
+                     module);
+  }
+  
+  // Create multiCallNewLLVM
+  {
+  std::vector<const Type*> args;
+  args.push_back(mvm::jit::ptrType);
+  args.push_back(Type::Int32Ty);
+#ifdef MULTIPLE_VM
+  args.push_back(mvm::jit::ptrType);
+#endif
+  const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
+                                               true);
+
+  multiCallNewLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "_ZN5jnjvm9JavaArray12multiCallNewEPNS_10ClassArrayEjz",
+                     module);
+  }
+  
+  
+  
+  // Create *AconsLLVM
+  {
+  std::vector<const Type*> args;
+  args.push_back(Type::Int32Ty);
+  args.push_back(mvm::jit::ptrType);
+#ifdef MULTIPLE_VM
+  args.push_back(mvm::jit::ptrType);
+#endif
+  const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
+                                               false);
+
+  FloatAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "_ZN5jnjvm10ArrayFloat5aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
+                     module);
+  
+  Int8AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "_ZN5jnjvm10ArraySInt85aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
+                     module);
+  
+  DoubleAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "_ZN5jnjvm11ArrayDouble5aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
+                     module);
+   
+  Int16AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "_ZN5jnjvm11ArraySInt165aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
+                     module);
+  
+  Int32AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "_ZN5jnjvm11ArraySInt325aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
+                     module);
+  
+  UTF8AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "_ZN5jnjvm4UTF85aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
+                     module);
+  
+  LongAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     " _ZN5jnjvm9ArrayLong5aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
+                     module);
+  
+  ObjectAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "_ZN5jnjvm11ArrayObject5aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
                      module);
   }
   
@@ -450,61 +518,6 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                      module);
   }
   
-  // Create multiCallNewLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  args.push_back(Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
-                                               true);
-
-  multiCallNewLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm9JavaArray12multiCallNewEPNS_10ClassArrayEjz",
-                     module);
-  }
-  
-  
-  
-  // Create *AconsLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(Type::Int32Ty);
-  args.push_back(mvm::jit::ptrType);
-  const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
-                                               false);
-
-  FloatAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm10ArrayFloat5aconsEiPNS_10ClassArrayE",
-                     module);
-  
-  Int8AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm10ArraySInt85aconsEiPNS_10ClassArrayE",
-                     module);
-  
-  DoubleAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm11ArrayDouble5aconsEiPNS_10ClassArrayE",
-                     module);
-   
-  Int16AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm11ArraySInt165aconsEiPNS_10ClassArrayE",
-                     module);
-  
-  Int32AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm11ArraySInt325aconsEiPNS_10ClassArrayE",
-                     module);
-  
-  UTF8AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm4UTF85aconsEiPNS_10ClassArrayE",
-                     module);
-  
-  LongAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm9ArrayLong5aconsEiPNS_10ClassArrayE",
-                     module);
-  
-  ObjectAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm11ArrayObject5aconsEiPNS_10ClassArrayE",
-                     module);
-  }
   
   {
     std::vector<const Type*> args;

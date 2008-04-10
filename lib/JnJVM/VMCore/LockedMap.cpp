@@ -74,7 +74,7 @@ void UTF8Map::replace(const UTF8* oldUTF8, const UTF8* newUTF8) {
 
 }
 
-const UTF8* UTF8Map::lookupOrCreateAsciiz(const char* asciiz) {
+const UTF8* UTF8Map::lookupOrCreateAsciiz(Jnjvm* vm, const char* asciiz) {
   sint32 size = strlen(asciiz);
   uint32 key = asciizHasher(asciiz, size);
   const UTF8* res = 0;
@@ -90,7 +90,7 @@ const UTF8* UTF8Map::lookupOrCreateAsciiz(const char* asciiz) {
   }
 
   if (res == 0) {
-    UTF8* tmp = UTF8::acons(size, JavaArray::ofChar);
+    UTF8* tmp = UTF8::acons(size, JavaArray::ofChar, vm);
     for (sint32 i = 0; i < size; i++) {
       tmp->setAt(i, asciiz[i]);
     }
@@ -102,7 +102,8 @@ const UTF8* UTF8Map::lookupOrCreateAsciiz(const char* asciiz) {
   return res;
 }
 
-const UTF8* UTF8Map::lookupOrCreateReader(const uint16* buf, uint32 len) {
+const UTF8* UTF8Map::lookupOrCreateReader(Jnjvm* vm, const uint16* buf,
+                                          uint32 len) {
   sint32 size = (sint32)len;
   uint32 key = readerHasher(buf, size);
   const UTF8* res = 0;
@@ -118,7 +119,7 @@ const UTF8* UTF8Map::lookupOrCreateReader(const uint16* buf, uint32 len) {
   }
 
   if (res == 0) {
-    UTF8* tmp = UTF8::acons(size, JavaArray::ofChar);
+    UTF8* tmp = UTF8::acons(size, JavaArray::ofChar, vm);
     memcpy(tmp->elements, buf, len * sizeof(uint16));
     res = (const UTF8*)tmp;
     map.insert(std::make_pair(key, res));

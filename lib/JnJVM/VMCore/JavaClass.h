@@ -56,11 +56,10 @@ public:
   unsigned int start;
   unsigned int  nbb;
 
-  static Attribut* derive(const UTF8* name, unsigned int length,
-                          const Reader* reader);
+  void derive(const UTF8* name, unsigned int length, const Reader* reader);
   static Attribut* lookup(const std::vector<Attribut*> * vec,
                           const UTF8* key);
-  Reader* toReader(ArrayUInt8* array, Attribut* attr);
+  Reader* toReader(Jnjvm *vm, ArrayUInt8* array, Attribut* attr);
 
   static const UTF8* codeAttribut;
   static const UTF8* exceptionsAttribut;
@@ -190,13 +189,13 @@ public:
   VirtualTable* virtualVT;
   uint64 staticSize;
   VirtualTable* staticVT;
-  JavaObject* doNew();
-  JavaObject* doNewUnknown();
+  JavaObject* doNew(Jnjvm* vm);
+  JavaObject* doNewUnknown(Jnjvm* vm);
   JavaObject* initialiseObject(JavaObject* obj);
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void tracer(size_t sz);
 
-  JavaObject* operator()();
+  JavaObject* operator()(Jnjvm* vm);
 
 #ifndef MULTIPLE_VM
   JavaObject* staticInstance() {

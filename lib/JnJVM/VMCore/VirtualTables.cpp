@@ -14,7 +14,6 @@
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
 #include "JavaIsolate.h"
-#include "JavaJIT.h"
 #include "JavaObject.h"
 #include "JavaString.h"
 #include "JavaThread.h"
@@ -50,8 +49,6 @@ using namespace jnjvm;
   INIT(JavaMethod);
   INIT(JavaField);
   INIT(JavaCtpInfo);
-  INIT(Exception);
-  INIT(JavaJIT);
   INIT(JavaCond);
   INIT(LockObj);
   INIT(JavaObject);
@@ -76,7 +73,6 @@ using namespace jnjvm;
   INIT(FunctionDefMap);
   INIT(JavaIsolate);
   INIT(JavaString);
-  INIT(Opinfo);
   INIT(CacheNode);
   INIT(Enveloppe);
   INIT(DelegateeMap);
@@ -187,21 +183,6 @@ void JavaCtpInfo::tracer(size_t sz) {
   classDef->markAndTrace();
   // Everything is hashed in the constant pool,
   // do not trace them here
-}
-
-void Exception::tracer(size_t sz) {
-  catchClass->markAndTrace();
-}
-
-void Opinfo::tracer(size_t sz) {
-}
-
-void JavaJIT::tracer(size_t sz) {
-  compilingClass->markAndTrace();
-  compilingMethod->markAndTrace();
-  TRACE_VECTOR(Exception*, exceptions);
-  
-  // Do not trace opinfos: they are allocated in stack
 }
 
 void JavaCond::tracer(size_t sz) {

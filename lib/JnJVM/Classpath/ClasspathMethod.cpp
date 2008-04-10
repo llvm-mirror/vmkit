@@ -130,42 +130,42 @@ JNIEnv *env,
     } else if (retType == AssessorDesc::dBool) {
       uint32 val = 0;
       RUN_METH(Int);
-      res = (*Classpath::boolClass)();
+      res = (*Classpath::boolClass)(vm);
       (*Classpath::boolValue)(res, val);
     } else if (retType == AssessorDesc::dByte) {
       uint32 val = 0;
       RUN_METH(Int);
-      res = (*Classpath::byteClass)();
+      res = (*Classpath::byteClass)(vm);
       (*Classpath::byteValue)(res, val);
     } else if (retType == AssessorDesc::dChar) {
       uint32 val = 0;
       RUN_METH(Int);
-      res = (*Classpath::charClass)();
+      res = (*Classpath::charClass)(vm);
       (*Classpath::charValue)(res, val);
     } else if (retType == AssessorDesc::dShort) {
       uint32 val = 0;
       RUN_METH(Int);
-      res = (*Classpath::shortClass)();
+      res = (*Classpath::shortClass)(vm);
       (*Classpath::shortValue)(res, val);
     } else if (retType == AssessorDesc::dInt) {
       uint32 val = 0;
       RUN_METH(Int);
-      res = (*Classpath::intClass)();
+      res = (*Classpath::intClass)(vm);
       (*Classpath::intValue)(res, val);
     } else if (retType == AssessorDesc::dLong) {
       sint64 val = 0;
       RUN_METH(Long);
-      res = (*Classpath::longClass)();
+      res = (*Classpath::longClass)(vm);
       (*Classpath::longValue)(res, val);
     } else if (retType == AssessorDesc::dFloat) {
       float val = 0;
       RUN_METH(Float);
-      res = (*Classpath::floatClass)();
+      res = (*Classpath::floatClass)(vm);
       (*Classpath::floatValue)(res, val);
     } else if (retType == AssessorDesc::dDouble) {
       double val = 0;
       RUN_METH(Double);
-      res = (*Classpath::doubleClass)();
+      res = (*Classpath::doubleClass)(vm);
       (*Classpath::doubleValue)(res, val);
     } else if (retType == AssessorDesc::dTab || retType == AssessorDesc::dRef) {
       JavaObject* val = 0;

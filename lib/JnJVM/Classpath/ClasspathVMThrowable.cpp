@@ -43,11 +43,12 @@ jclass clazz,
 #endif
                                                                       jobject throwable) {
   //int** fp =  (int**)__builtin_frame_address(0);
+  Jnjvm* vm = JavaThread::get()->isolate;
   int** stack = (int**)alloca(sizeof(int*) * 100);
   int real_size = backtrace((void**)stack, 100);
-  ArrayUInt32* obj = ArrayUInt32::acons(real_size, JavaArray::ofInt);
+  ArrayUInt32* obj = ArrayUInt32::acons(real_size, JavaArray::ofInt, vm);
   memcpy(obj->elements, stack, real_size * sizeof(int));
-  JavaObject* vmThrowable = (*Classpath::newVMThrowable)();
+  JavaObject* vmThrowable = (*Classpath::newVMThrowable)(vm);
   Classpath::initVMThrowable->invokeIntSpecial(vmThrowable);
   (*Classpath::vmDataVMThrowable)(vmThrowable, obj);
   return (jobject)vmThrowable;
@@ -64,19 +65,21 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
                                          Attribut::sourceFileAttribut);
   
   if (sourceAtt) {
-    Reader* reader = sourceAtt->toReader(cl->bytes, sourceAtt);
+    Reader* reader = sourceAtt->toReader(JavaThread::get()->isolate, cl->bytes,
+                                         sourceAtt);
     uint16 index = reader->readU2();
     sourceName = vm->UTF8ToStr(cl->ctpInfo->UTF8At(index));
   }
 
   bool native = isNative(meth->access);
 
-  JavaObject* res = (*Classpath::newStackTraceElement)();
+  JavaObject* res = (*Classpath::newStackTraceElement)(vm);
   Classpath::initStackTraceElement->invokeIntSpecial(res, sourceName, (uint32)ip, className, methodName, native);
   return res;
 }
 
 ArrayObject* recGetStackTrace(int** stack, uint32 size, uint32 first, uint32 rec) {
+  Jnjvm* vm = JavaThread::get()->isolate;
   if (size != first) {
     int *begIp = (int*)Collector::begOf(stack[first]);
     JavaMethod* meth = ip_to_meth(begIp);
@@ -88,7 +91,7 @@ ArrayObject* recGetStackTrace(int** stack, uint32 size, uint32 first, uint32 rec
       return recGetStackTrace(stack, size, first + 1, rec);
     }
   } else {
-    return ArrayObject::acons(rec, JavaArray::ofObject);
+    return ArrayObject::acons(rec, JavaArray::ofObject, vm);
   }
 }
 

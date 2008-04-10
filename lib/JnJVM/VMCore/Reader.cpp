@@ -52,27 +52,27 @@ const int Reader::SeekSet = SEEK_SET;
 const int Reader::SeekCur = SEEK_CUR;
 const int Reader::SeekEnd = SEEK_END;
 
-ArrayUInt8* Reader::openFile(char* path) {
+ArrayUInt8* Reader::openFile(Jnjvm* vm, char* path) {
   FILE* fp = fopen(path, "r");
   ArrayUInt8* res = 0;
   if (fp != 0) {
     fseek(fp, 0, SeekEnd);
     long nbb = ftell(fp);
     fseek(fp, 0, SeekSet);
-    res = ArrayUInt8::acons(nbb, JavaArray::ofByte);
+    res = ArrayUInt8::acons(nbb, JavaArray::ofByte, vm);
     fread(res->elements, nbb, 1, fp);
     fclose(fp);
   }
   return res;
 }
 
-ArrayUInt8* Reader::openZip(char* zipname, char* filename) {
-  ZipArchive* archive = ZipArchive::hashedArchive(zipname);
+ArrayUInt8* Reader::openZip(Jnjvm* vm, char* zipname, char* filename) {
+  ZipArchive* archive = ZipArchive::hashedArchive(vm, zipname);
   ArrayUInt8* ret = 0;
   if (archive != 0) {
     ZipFile* file = archive->getFile(filename);
     if (file != 0) {
-      ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, JavaArray::ofByte);
+      ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, JavaArray::ofByte, vm);
       if (archive->readFile(res, file) != 0) {
         ret = res;
       }
@@ -119,24 +119,20 @@ sint64 Reader::readS8() {
   return tmp | ((sint64)(readS8()));
 }
 
-Reader* Reader::allocateReader(ArrayUInt8* array, uint32 start,
-                               uint32 end) {
-  Reader* reader = gc_new(Reader)();
+Reader::Reader(ArrayUInt8* array, uint32 start, uint32 end) {
   if (!end) end = array->size;
-  reader->bytes = array;
-  reader->cursor = start;
-  reader->min = start;
-  reader->max = start + end;
-  return reader;
-
+  this->bytes = array;
+  this->cursor = start;
+  this->min = start;
+  this->max = start + end;
 }
 
 unsigned int Reader::tell() {
   return cursor - min;
 }
 
-Reader* Reader::derive(uint32 nbb) {
-  return allocateReader(bytes, cursor, nbb);
+Reader* Reader::derive(Jnjvm* vm, uint32 nbb) {
+  return vm_new(vm, Reader)(bytes, cursor, nbb);
 }
 
 void Reader::seek(uint32 pos, int from) {

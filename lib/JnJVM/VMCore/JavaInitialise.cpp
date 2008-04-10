@@ -57,8 +57,6 @@ static void initialiseVT() {
   INIT(JavaMethod);
   INIT(JavaField);
   INIT(JavaCtpInfo);
-  INIT(Exception);
-  INIT(JavaJIT);
   INIT(JavaCond);
   INIT(LockObj);
   INIT(JavaObject);
@@ -204,6 +202,7 @@ void handler(int val, siginfo_t* info, void* addr) {
 }
 
 extern "C" int boot() {
+
   struct sigaction sa;
   
   sigaction(SIGINT, 0, &sa);

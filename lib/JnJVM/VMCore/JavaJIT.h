@@ -43,9 +43,8 @@ class Reader;
 class Signdef;
 class UTF8;
 
-class Exception : public mvm::Object {
+class Exception {
 public:
-  static VirtualTable* VT;
   uint32 startpc;
   uint32 endpc;
   uint32 handlerpc;
@@ -56,29 +55,17 @@ public:
   llvm::BasicBlock* handler;
   llvm::PHINode* exceptionPHI;
   llvm::PHINode* handlerPHI;
-
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
 };
 
-class Opinfo : public mvm::Object {
+class Opinfo {
 public:
-  static VirtualTable* VT;
   llvm::BasicBlock* newBlock;
   bool reqSuppl;
-  llvm::BasicBlock* exceptionBlock;
-  
-  virtual void print(mvm::PrintBuffer* buf) const {
-    buf->write("Opinfo");
-  }
-  virtual void tracer(size_t sz);
+  llvm::BasicBlock* exceptionBlock; 
 };
 
-class JavaJIT : public mvm::Object {
+class JavaJIT {
 public:
-  static VirtualTable* VT;
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz); 
 
   static void invokeOnceVoid(Jnjvm* vm, JavaObject* loader,
                              const char* className,
@@ -139,7 +126,6 @@ public:
   // exception local
   llvm::Value* supplLocal;
   unsigned readExceptionTable(Reader* reader);
-  std::vector<Exception*> exceptions;
   llvm::BasicBlock* endExceptionBlock;
   llvm::BasicBlock* currentExceptionBlock;
   llvm::BasicBlock* unifiedUnreachable;
@@ -223,6 +209,11 @@ public:
   uint16 maxStack;
   uint16 maxLocals;
   uint32 codeLen;
+
+#ifdef MULTIPLE_VM
+  llvm::Value* isolateLocal;
+#endif
+
 
   static const char* OpcodeNames[256];
 

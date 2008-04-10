@@ -198,7 +198,8 @@ void Jnjvm::readAttributs(Class* cl, Reader* reader,
   for (int i = 0; i < nba; i++) {
     const UTF8* attName = ctpInfo->UTF8At(reader->readU2());
     unsigned int attLen = reader->readU4();
-    Attribut* att = Attribut::derive(attName, attLen, reader);
+    Attribut* att = vm_new(this, Attribut);
+    att->derive(attName, attLen, reader);
     attr.push_back(att);
     reader->seek(attLen, Reader::SeekCur);
   }
@@ -245,7 +246,7 @@ void Jnjvm::readClass(Class* cl) {
   PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s::%s\n", printString(),
               cl->printString());
 
-  Reader* reader = Reader::allocateReader(cl->bytes);
+  Reader* reader = vm_new(this, Reader)(cl->bytes);
   uint32 magic = reader->readU4();
   if (magic != Jnjvm::Magic) {
     Jnjvm::error(ClassFormatError, "bad magic number %p", magic);
@@ -284,10 +285,10 @@ ArrayUInt8* Jnjvm::openName(const UTF8* utf8) {
 
     if (str[strLen - 1] == dirSeparator[0]) {
       sprintf(buf, "%s%s.class", str, asciiz);
-      res = Reader::openFile(buf);
+      res = Reader::openFile(this, buf);
     } else {
       sprintf(buf, "%s.class", asciiz);
-      res = Reader::openZip(str, buf);
+      res = Reader::openZip(this, str, buf);
     }
     idx++;
   }
@@ -444,7 +445,7 @@ void Jnjvm::errorWithExcp(const char* className, const JavaObject* excp) {
   Class* cl = (Class*) this->loadName(this->asciizConstructUTF8(className),
                                       CommonClass::jnjvmClassLoader,
                                       true, true, true);
-  JavaObject* obj = (*cl)();
+  JavaObject* obj = (*cl)(this);
   JavaJIT::invokeOnceVoid(this, CommonClass::jnjvmClassLoader, className, "<init>",
                           "(Ljava/lang/Throwable;)V", ACC_VIRTUAL, obj, excp);
   JavaThread::throwException(obj);
@@ -460,7 +461,7 @@ void Jnjvm::error(const char* className, const char* fmt, ...) {
   vsnprintf(tmp, 4096, fmt, ap);
   va_end(ap);
 
-  JavaObject* obj = (*cl)();
+  JavaObject* obj = (*cl)(this);
   JavaJIT::invokeOnceVoid(this, CommonClass::jnjvmClassLoader, className, "<init>",
                           "(Ljava/lang/String;)V", ACC_VIRTUAL, obj, 
                           this->asciizToStr(tmp));
@@ -475,7 +476,7 @@ void Jnjvm::verror(const char* className, const char* fmt, va_list ap) {
                                       true, true, true);
   vsnprintf(tmp, 4096, fmt, ap);
   va_end(ap);
-  JavaObject* obj = (*cl)();
+  JavaObject* obj = (*cl)(this);
   JavaJIT::invokeOnceVoid(this, CommonClass::jnjvmClassLoader, className, "<init>",
                           "(Ljava/lang/String;)V", ACC_VIRTUAL, obj, 
                           this->asciizToStr(tmp));
@@ -632,7 +633,7 @@ CommonClass* Jnjvm::lookupClass(const UTF8* utf8, JavaObject* loader) {
     ClassMap* map = 
       (ClassMap*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
     if (!map) {
-      map = ClassMap::allocate();
+      map = vm_new(this, ClassMap)();
       (*Classpath::vmdataClassLoader)(loader, (JavaObject*)map);
     }
 #else
@@ -652,7 +653,7 @@ CommonClass* Jnjvm::lookupClass(const UTF8* utf8, JavaObject* loader) {
 }
 
 static CommonClass* arrayDup(const UTF8*& name, Jnjvm *vm) {
-  ClassArray* cl = gc_new(ClassArray)();
+  ClassArray* cl = vm_new(vm, ClassArray)();
   cl->initialise(vm, true);
   cl->name = name;
   cl->classLoader = 0;
@@ -681,7 +682,7 @@ ClassArray* Jnjvm::constructArray(const UTF8* name, JavaObject* loader) {
     ClassMap* map = 
       (ClassMap*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
     if (!map) {
-      map = ClassMap::allocate();
+      map = vm_new(this, ClassMap)();
       (*Classpath::vmdataClassLoader)(loader, (JavaObject*)map);
     }
     ClassArray* res = (ClassArray*)map->lookupOrCreate(name, this, arrayDup);
@@ -705,7 +706,7 @@ ClassArray* Jnjvm::constructArray(const UTF8* name, JavaObject* loader) {
 
 
 static CommonClass* classDup(const UTF8*& name, Jnjvm *vm) {
-  Class* cl = gc_new(Class)();
+  Class* cl = vm_new(vm, Class)();
   cl->initialise(vm, false);
   cl->name = name;
   cl->classLoader = 0;
@@ -723,7 +724,7 @@ Class* Jnjvm::constructClass(const UTF8* name, JavaObject* loader) {
     ClassMap* map = 
       (ClassMap*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
     if (!map) {
-      map = ClassMap::allocate();
+      map = vm_new(this, ClassMap)();
       (*Classpath::vmdataClassLoader)(loader, (JavaObject*)map);
     }
     Class* res = (Class*)map->lookupOrCreate(name, this, classDup);
@@ -746,7 +747,7 @@ Class* Jnjvm::constructClass(const UTF8* name, JavaObject* loader) {
 }
 
 static JavaField* fieldDup(FieldCmp & cmp, Jnjvm *vm) {
-  JavaField* field = gc_new(JavaField)();
+  JavaField* field = vm_new(vm, JavaField)();
   field->name = cmp.name;
   field->type = cmp.type;
   field->classDef = (Class*)cmp.classDef;
@@ -772,7 +773,7 @@ JavaField* Jnjvm::lookupField(CommonClass* cl, const UTF8* name,
 }
 
 static JavaMethod* methodDup(FieldCmp & cmp, Jnjvm *vm) {
-  JavaMethod* method = gc_new(JavaMethod)();
+  JavaMethod* method = vm_new(vm, JavaMethod)();
   method->name = cmp.name;
   method->type = cmp.type;
   method->classDef = (Class*)cmp.classDef;
@@ -791,11 +792,11 @@ JavaMethod* Jnjvm::constructMethod(Class* cl, const UTF8* name,
 }
 
 const UTF8* Jnjvm::asciizConstructUTF8(const char* asciiz) {
-  return hashUTF8->lookupOrCreateAsciiz(asciiz);
+  return hashUTF8->lookupOrCreateAsciiz(this, asciiz);
 }
 
 const UTF8* Jnjvm::readerConstructUTF8(const uint16* buf, uint32 size) {
-  return hashUTF8->lookupOrCreateReader(buf, size);
+  return hashUTF8->lookupOrCreateReader(this, buf, size);
 }
 
 Typedef* Jnjvm::constructType(const UTF8* name) {
@@ -835,12 +836,12 @@ void Jnjvm::addProperty(char* key, char* value) {
 #ifndef MULTIPLE_VM
 JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
   if (!(cl->delegatee)) {
-    JavaObject* delegatee = (*Classpath::newClass)();
+    JavaObject* delegatee = (*Classpath::newClass)(this);
     cl->delegatee = delegatee;
     Classpath::initClass->invokeIntSpecial(delegatee, cl);
   } else if (cl->delegatee->classOf != Classpath::newClass) {
     JavaObject* pd = cl->delegatee;
-    JavaObject* delegatee = (*Classpath::newClass)();
+    JavaObject* delegatee = (*Classpath::newClass)(this);
     cl->delegatee = delegatee;;
     Classpath::initClassWithProtectionDomain->invokeIntSpecial(delegatee, cl,
                                                                pd);
@@ -851,12 +852,12 @@ JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
 JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
   JavaObject* val = delegatees->lookup(cl);
   if (!val) {
-    val = (*Classpath::newClass)();
+    val = (*Classpath::newClass)(this);
     delegatees->hash(cl, val);
     Classpath::initClass->invokeIntSpecial(val, cl);
   } else if (val->classOf != Classpath::newClass) {
     JavaObject* pd = val;
-    val = (*Classpath::newClass)();
+    val = (*Classpath::newClass)(this);
     delegatees->hash(cl, val);
     Classpath::initClassWithProtectionDomain->invokeIntSpecial(val, cl, pd);
   }

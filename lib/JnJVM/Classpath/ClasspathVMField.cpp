@@ -163,31 +163,32 @@ jobject Field, jobject _obj) {
   const AssessorDesc* ass = type->funcs;
   JavaObject* obj = (JavaObject*)_obj;
   llvm::GenericValue gv = (*field)(obj);
+  Jnjvm* vm = JavaThread::get()->isolate;
   
   JavaObject* res = 0;
   if (ass == AssessorDesc::dBool) {
-    res = (*Classpath::boolClass)();
+    res = (*Classpath::boolClass)(vm);
     (*Classpath::boolValue)(res, (uint32)gv.IntVal.getBoolValue());
   } else if (ass == AssessorDesc::dByte) {
-    res = (*Classpath::byteClass)();
+    res = (*Classpath::byteClass)(vm);
     (*Classpath::byteValue)(res, (uint32)gv.IntVal.getSExtValue());
   } else if (ass == AssessorDesc::dChar) {
-    res = (*Classpath::charClass)();
+    res = (*Classpath::charClass)(vm);
     (*Classpath::charValue)(res, (uint32)gv.IntVal.getZExtValue());
   } else if (ass == AssessorDesc::dShort) {
-    res = (*Classpath::shortClass)();
+    res = (*Classpath::shortClass)(vm);
     (*Classpath::shortValue)(res, (uint32)gv.IntVal.getSExtValue());
   } else if (ass == AssessorDesc::dInt) {
-    res = (*Classpath::intClass)();
+    res = (*Classpath::intClass)(vm);
     (*Classpath::intValue)(res, (uint32)gv.IntVal.getSExtValue());
   } else if (ass == AssessorDesc::dLong) {
-    res = (*Classpath::longClass)();
+    res = (*Classpath::longClass)(vm);
     (*Classpath::longValue)(res, (sint64)gv.IntVal.getSExtValue());
   } else if (ass == AssessorDesc::dFloat) {
-    res = (*Classpath::floatClass)();
+    res = (*Classpath::floatClass)(vm);
     (*Classpath::floatValue)(res, gv.FloatVal);
   } else if (ass == AssessorDesc::dDouble) {
-    res = (*Classpath::doubleClass)();
+    res = (*Classpath::doubleClass)(vm);
     (*Classpath::doubleValue)(res, gv.DoubleVal);
   } else if (ass == AssessorDesc::dTab || ass == AssessorDesc::dRef) {
     res = (JavaObject*)gv.PointerVal;

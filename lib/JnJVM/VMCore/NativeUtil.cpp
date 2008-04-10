@@ -445,7 +445,8 @@ JavaObject* NativeUtil::getClassType(JavaObject* loader, Typedef* type) {
 
 ArrayObject* NativeUtil::getParameterTypes(JavaObject* loader, JavaMethod* meth) {
   std::vector<Typedef*>& args = meth->signature->args;
-  ArrayObject* res = ArrayObject::acons(args.size(), Classpath::classArrayClass);
+  ArrayObject* res = ArrayObject::acons(args.size(), Classpath::classArrayClass,
+                                        JavaThread::get()->isolate);
 
   sint32 index = 0;
   for (std::vector<Typedef*>::iterator i = args.begin(), e = args.end();
@@ -461,13 +462,16 @@ ArrayObject* NativeUtil::getExceptionTypes(JavaMethod* meth) {
   Attribut* exceptionAtt = Attribut::lookup(&meth->attributs,
                                             Attribut::exceptionsAttribut);
   if (exceptionAtt == 0) {
-    return ArrayObject::acons(0, Classpath::classArrayClass);
+    return ArrayObject::acons(0, Classpath::classArrayClass,
+                              JavaThread::get()->isolate);
   } else {
     Class* cl = meth->classDef;
     JavaCtpInfo* ctp = cl->ctpInfo;
-    Reader* reader = exceptionAtt->toReader(cl->bytes, exceptionAtt);
+    Reader* reader = exceptionAtt->toReader(JavaThread::get()->isolate,
+                                            cl->bytes, exceptionAtt);
     uint16 nbe = reader->readU2();
-    ArrayObject* res = ArrayObject::acons(nbe, Classpath::classArrayClass);
+    ArrayObject* res = ArrayObject::acons(nbe, Classpath::classArrayClass,
+                                          JavaThread::get()->isolate);
 
     for (uint16 i = 0; i < nbe; ++i) {
       uint16 idx = reader->readU2();

@@ -80,9 +80,10 @@ JNIEnv *env,
                                                                          jboolean publicOnly) {
 
   CommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
+  Jnjvm* vm = JavaThread::get()->isolate;
 
   if (cl->isArray || isInterface(cl->access)) {
-    return (jobject)ArrayObject::acons(0, Classpath::constructorArrayClass);
+    return (jobject)ArrayObject::acons(0, Classpath::constructorArrayClass, vm);
   } else {
     std::vector<JavaMethod*> meths = cl->virtualMethods;
     std::vector<JavaMethod*> res;
@@ -93,13 +94,13 @@ JNIEnv *env,
       }
     }
     
-    ArrayObject* ret = ArrayObject::acons(res.size(), Classpath::constructorArrayClass);
+    ArrayObject* ret = ArrayObject::acons(res.size(), Classpath::constructorArrayClass, vm);
     sint32 index = 0;
     for (std::vector<JavaMethod*>::iterator i = res.begin(), e = res.end();
           i != e; ++i, ++index) {
       JavaMethod* meth = *i;
       // TODO: check parameter types
-      JavaObject* tmp = (*Classpath::newConstructor)();
+      JavaObject* tmp = (*Classpath::newConstructor)(vm);
       Classpath::initConstructor->invokeIntSpecial(tmp, Cl, meth);
       ret->setAt(index, tmp);
     }
@@ -120,7 +121,7 @@ JNIEnv *env,
   CommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
 
   if (cl->isArray) {
-    return (jobject)ArrayObject::acons(0, Classpath::methodArrayClass);
+    return (jobject)ArrayObject::acons(0, Classpath::methodArrayClass, vm);
   } else {
     std::vector<JavaMethod*> meths = cl->virtualMethods;
     std::vector<JavaMethod*> res;
@@ -138,13 +139,13 @@ JNIEnv *env,
       }
     }
     
-    ArrayObject* ret = ArrayObject::acons(res.size(), Classpath::methodArrayClass);
+    ArrayObject* ret = ArrayObject::acons(res.size(), Classpath::methodArrayClass, vm);
     sint32 index = 0;
     for (std::vector<JavaMethod*>::iterator i = res.begin(), e = res.end();
           i != e; ++i, ++index) {
       JavaMethod* meth = *i;
       // TODO: check parameter types
-      JavaObject* tmp = (*Classpath::newMethod)();
+      JavaObject* tmp = (*Classpath::newMethod)(vm);
       Classpath::initMethod->invokeIntSpecial(tmp, Cl, vm->UTF8ToStr(meth->name), meth);
       ret->setAt(index, tmp);
     }
@@ -297,7 +298,7 @@ jclass Cl, jboolean publicOnly) {
   CommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
 
   if (cl->isArray) {
-    return (jobject)ArrayObject::acons(0, Classpath::fieldArrayClass);
+    return (jobject)ArrayObject::acons(0, Classpath::fieldArrayClass, vm);
   } else {
     std::vector<JavaField*> fields = cl->virtualFields;
     std::vector<JavaField*> res;
@@ -315,13 +316,13 @@ jclass Cl, jboolean publicOnly) {
       }
     }
     
-    ArrayObject* ret = ArrayObject::acons(res.size(), Classpath::fieldArrayClass);
+    ArrayObject* ret = ArrayObject::acons(res.size(), Classpath::fieldArrayClass, vm);
     sint32 index = 0;
     for (std::vector<JavaField*>::iterator i = res.begin(), e = res.end();
           i != e; ++i, ++index) {
       JavaField* field = *i;
       // TODO: check parameter types
-      JavaObject* tmp = (*Classpath::newField)();
+      JavaObject* tmp = (*Classpath::newField)(vm);
       Classpath::initField->invokeIntSpecial(tmp, Cl, vm->UTF8ToStr(field->name), field);
       ret->setAt(index, tmp);
     }
@@ -338,7 +339,7 @@ jclass Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
   CommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
   std::vector<Class*> & interfaces = cl->interfaces;
-  ArrayObject* ret = ArrayObject::acons(interfaces.size(), Classpath::classArrayClass);
+  ArrayObject* ret = ArrayObject::acons(interfaces.size(), Classpath::classArrayClass, vm);
   sint32 index = 0;
   for (std::vector<Class*>::iterator i = interfaces.begin(), e = interfaces.end();
         i != e; ++i, ++index) {
@@ -352,7 +353,8 @@ static void resolveInnerOuterClasses(Class* cl) {
   Attribut* attribut = Attribut::lookup(&cl->attributs,
                                         Attribut::innerClassesAttribut);
   if (attribut != 0) {
-    Reader* reader = attribut->toReader(cl->bytes, attribut);
+    Reader* reader = attribut->toReader(JavaThread::get()->isolate, cl->bytes,
+                                        attribut);
 
     uint16 nbi = reader->readU2();
     for (uint16 i = 0; i < nbi; ++i) {
@@ -403,7 +405,7 @@ jclass Cl, bool publicOnly) {
   Class* cl = (Class*)NativeUtil::resolvedImplClass(Cl, false);
   if (!(cl->innerOuterResolved))
     resolveInnerOuterClasses(cl);
-  ArrayObject* res = ArrayObject::acons(cl->innerClasses.size(), Classpath::constructorArrayClass);
+  ArrayObject* res = ArrayObject::acons(cl->innerClasses.size(), Classpath::constructorArrayClass, vm);
   uint32 index = 0;
   for (std::vector<Class*>::iterator i = cl->innerClasses.begin(), 
        e = cl->innerClasses.end(); i!= e; i++) {

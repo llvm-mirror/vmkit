@@ -130,7 +130,7 @@ void ClasspathThread::initialise(Jnjvm* vm) {
 }
 
 void ClasspathThread::createInitialThread(Jnjvm* vm, JavaObject* th) {
-  JavaObject* vmth = (*newVMThread)();
+  JavaObject* vmth = (*newVMThread)(vm);
   (*th)(name, (JavaObject*)vm->asciizToStr("main"));
   (*th)(priority, (uint32)1);
   (*th)(daemon, (uint32)0);
@@ -143,7 +143,7 @@ void ClasspathThread::createInitialThread(Jnjvm* vm, JavaObject* th) {
 }
 
 void ClasspathThread::mapInitialThread(Jnjvm* vm) {
-  JavaObject* th = (*newThread)();
+  JavaObject* th = (*newThread)(vm);
   createInitialThread(vm, th);
   JavaThread* myth = JavaThread::get();
   myth->javaThread = th;
@@ -221,7 +221,7 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   // Create getCallingClassLoader
   {
   std::vector<const llvm::Type*> args;
-#ifdef SERVICE_VM
+#ifdef MULTIPLE_VM
   args.push_back(mvm::jit::ptrType);  
 #endif
   const llvm::FunctionType* type = 
@@ -238,7 +238,7 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   {
   std::vector<const llvm::Type*> args;
   args.push_back(JavaObject::llvmType);
-#ifdef SERVICE_VM
+#ifdef MULTIPLE_VM
   args.push_back(mvm::jit::ptrType);  
 #endif
   const llvm::FunctionType* type = 
@@ -255,7 +255,7 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   {
   std::vector<const llvm::Type*> args;
   args.push_back(JavaObject::llvmType);
-#ifdef SERVICE_VM
+#ifdef MULTIPLE_VM
   args.push_back(mvm::jit::ptrType);  
 #endif
   const llvm::FunctionType* type = 
@@ -281,7 +281,7 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   JavaMethod* getCallingClass = UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClass", "()Ljava/lang/Object;", ACC_STATIC);
   {
   std::vector<const llvm::Type*> args;
-#ifdef SERVICE_VM
+#ifdef MULTIPLE_VM
   args.push_back(mvm::jit::ptrType);  
 #endif
   const llvm::FunctionType* type = 
@@ -296,7 +296,7 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   JavaMethod* getCallingClassLoader = UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClassLoader", "()Ljava/lang/Object;", ACC_STATIC);
   {
   std::vector<const llvm::Type*> args;
-#ifdef SERVICE_VM
+#ifdef MULTIPLE_VM
   args.push_back(mvm::jit::ptrType);  
 #endif
   const llvm::FunctionType* type = 

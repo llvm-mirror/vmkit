@@ -32,9 +32,9 @@ void ServiceDomain::print(mvm::PrintBuffer* buf) const {
 }
 
 ServiceDomain* ServiceDomain::allocateService(Jnjvm* callingVM) {
-  ServiceDomain* service = gc_new(ServiceDomain)();
+  ServiceDomain* service = vm_new(callingVM, ServiceDomain)();
   
-  service->functions = FunctionMap::allocate();
+  service->functions = vm_new(service, FunctionMap)();
   service->module = new llvm::Module("Service Domain");
   service->protectModule = mvm::Lock::allocNormal();
   service->TheModuleProvider = new JnjvmModuleProvider(service->module, 
@@ -46,21 +46,22 @@ ServiceDomain* ServiceDomain::allocateService(Jnjvm* callingVM) {
   service->javavmEnv = &JNI_JavaVMTable;
   
   // We copy so that bootstrap utf8 such as "<init>" are unique  
-  service->hashUTF8 = callingVM->hashUTF8->copy();
-  service->hashStr = StringMap::allocate();
+  service->hashUTF8 = vm_new(service, UTF8Map)();
+  callingVM->hashUTF8->copy(service->hashUTF8);
+  service->hashStr = vm_new(service, StringMap)();
   service->bootstrapClasses = callingVM->bootstrapClasses;
-  service->loadedMethods = MethodMap::allocate();
-  service->loadedFields = FieldMap::allocate();
-  service->javaTypes = jnjvm::TypeMap::allocate(); 
+  service->loadedMethods = vm_new(service, MethodMap)();
+  service->loadedFields = vm_new(service, FieldMap)();
+  service->javaTypes = vm_new(service, TypeMap)(); 
   service->globalRefsLock = mvm::Lock::allocNormal();
 #ifdef MULTIPLE_VM
-  service->statics = StaticInstanceMap::allocate();  
-  service->delegatees = DelegateeMap::allocate();  
+  service->statics = vm_new(service, StaticInstanceMap)();  
+  service->delegatees = vm_new(service, DelegateeMap)();  
 #endif
   
   // A service is related to a class loader
   // Here are the classes it loaded
-  service->classes = ClassMap::allocate();
+  service->classes = vm_new(service, ClassMap)();
 
   service->started = 0;
   service->executionTime = 0;

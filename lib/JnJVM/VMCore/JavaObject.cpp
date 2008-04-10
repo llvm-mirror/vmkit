@@ -21,7 +21,8 @@ using namespace jnjvm;
 mvm::Lock* JavaObject::globalLock = 0;
 
 JavaCond* JavaCond::allocate() {
-  return gc_new(JavaCond)();
+  // JavaCond::allocate must on behalf of the executing thread
+  return vm_new(JavaThread::get()->isolate, JavaCond)();
 }
 
 void JavaCond::notify() {
@@ -75,7 +76,7 @@ void LockObj::print(mvm::PrintBuffer* buf) const {
 }
 
 LockObj* LockObj::allocate() {
-  LockObj* res = gc_new(LockObj)();
+  LockObj* res = vm_new(JavaThread::get()->isolate, LockObj)();
   res->lock = mvm::Lock::allocRecursive();
   res->varcond = JavaCond::allocate();
   return res;
@@ -97,12 +98,6 @@ void JavaObject::print(mvm::PrintBuffer* buf) const {
   buf->write("JavaObject<");
   CommonClass::printClassName(classOf->name, buf);
   buf->write(">");
-}
-
-JavaObject* JavaObject::allocate(CommonClass* cl) {
-  JavaObject* res = gc_new(JavaObject)();
-  res->classOf = cl;
-  return res;
 }
 
 static LockObj* myLock(JavaObject* obj) {

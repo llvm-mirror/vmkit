@@ -70,7 +70,7 @@ JNIEnv *env,
       Class* cl = (Class*)_cl;
       cl->initialiseClass();
 
-      JavaObject* res = cl->doNew();
+      JavaObject* res = cl->doNew(vm);
     
       for (std::vector<Typedef*>::iterator i = meth->signature->args.begin(),
            e = meth->signature->args.end(); i != e; ++i, ++index) {
