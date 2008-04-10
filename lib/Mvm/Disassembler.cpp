@@ -49,7 +49,7 @@ extern "C"
 # include <bfd.h>	// bfd types
 # include <dis-asm.h>	// disassemble_info
   int print_insn_i386_att(bfd_vma, disassemble_info *);
-};
+}
 
 
 static struct disassemble_info	info;
