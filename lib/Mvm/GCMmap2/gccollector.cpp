@@ -12,6 +12,31 @@
 
 using namespace mvm;
 
+#ifndef MULTIPLE_VM
+GCAllocator   *GCCollector::allocator = 0;
+#ifdef HAVE_PTHREAD
+GCThread      *GCCollector::threads;
+#endif
+
+GCCollector::markerFn   GCCollector::_marker;
+
+int  GCCollector::_collect_freq_auto;
+int  GCCollector::_collect_freq_maybe;
+int  GCCollector::_since_last_collection;
+
+bool GCCollector::_enable_auto;
+bool GCCollector::_enable_maybe;
+bool GCCollector::_enable_collection;
+
+int           GCCollector::status;
+
+GCChunkNode    *GCCollector::used_nodes;
+GCChunkNode    *GCCollector::unused_nodes;
+
+unsigned int   GCCollector::current_mark;
+#endif
+
+
 void GCCollector::do_collect() {
 	//printf("----- do collect -----\n");
 	jmp_buf   buf;

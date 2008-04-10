@@ -10,14 +10,13 @@
 #ifndef MVM_THREAD_H
 #define MVM_THREAD_H
 
-#include "mvm/Object.h"
 #include "mvm/Threads/Key.h"
 
 class Collector;
 
 namespace mvm {
 
-class Thread : public Object{
+class Thread : public gc {
 public:
   static void yield(void);
   static void yield(unsigned int *);
@@ -28,10 +27,10 @@ public:
   static int start(int *tid, int (*fct)(void *), void *arg);
   
   static mvm::Key<Thread>* threadKey;
-#ifdef MULTIPLE_VM
   Collector* GC;
-#endif
-  static Thread* get();
+  static Thread* get() {
+    return (Thread*)Thread::threadKey->get();
+  }
 
 };
 

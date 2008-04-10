@@ -8,7 +8,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "mvm/GC/GC.h"
+#include "mvm/Threads/Thread.h"
 #include <stdio.h>
+
+mvm::Key<mvm::Thread>* mvm::Thread::threadKey = 0;
 
 void destr(gc *me, size_t sz) {
  	printf("Destroy %p\n", me);
@@ -24,9 +27,8 @@ void marker(void) {
 
 int main(int argc, char **argv) {
   Collector::initialise(marker, 0);
-
-	Collector::destroy();
- 	return 0;
+  Collector::destroy();
+  return 0;
 }
 
 

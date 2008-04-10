@@ -7,20 +7,26 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <stdlib.h>
+
 #include "mvm/GC/GC.h"
 #include "gccollector.h"
 #include "gcerror.h"
 
 using namespace mvm;
 
-static GCCollector TheCollector;
+#ifdef MULTIPLE_VM
+#define COLLECTOR ((GCCollector*)(mvm::Thread::get()->GC))->
+#else
+#define COLLECTOR GCCollector::
+#endif
 
 typedef void (*memoryError_t)(unsigned int);
 
 memoryError_t GCCollector::internMemoryError;
 
 void gc::markAndTrace() const {
- 	TheCollector.markAndTrace((void*)this);
+ 	COLLECTOR markAndTrace((void*)this);
 }
 
 size_t gc::objectSize() const {
@@ -28,7 +34,11 @@ size_t gc::objectSize() const {
 }
 
 void *gc::operator new(size_t sz, VirtualTable *vt) {
- 	return TheCollector.gcmalloc(vt, sz);
+ 	return COLLECTOR gcmalloc(vt, sz);
+}
+
+void *gc::operator new(size_t sz) {
+ 	return malloc(sz);
 }
 
 void gc::operator delete(void *) { 
@@ -36,52 +46,57 @@ void gc::operator delete(void *) {
 }
 
 void *gc::realloc(size_t n) {
- 	return TheCollector.gcrealloc(this, n);
+ 	return COLLECTOR gcrealloc(this, n);
 }
 
 unsigned int Collector::enable(unsigned int n) {
- 	return TheCollector.enable(n);
+ 	return COLLECTOR enable(n);
 }
 
 int Collector::isStable(gc_lock_recovery_fct_t fct, int a0, int a1, int a2, 
                         int a3, int a4, int a5, int a6, int a7) {
-  return TheCollector.isStable(fct, a0, a1, a2, a3, a4, a5, a6, a7);
+  return COLLECTOR isStable(fct, a0, a1, a2, a3, a4, a5, a6, a7);
 }
 
 void Collector::die_if_sigsegv_occured_during_collection(void *addr) {
-  TheCollector.die_if_sigsegv_occured_during_collection(addr);
+  COLLECTOR die_if_sigsegv_occured_during_collection(addr);
 }
 
 void Collector::gcStats(size_t &no, size_t &nbb) {
-	TheCollector.gcStats(&no, &nbb);
+	COLLECTOR gcStats(&no, &nbb);
 }
 
 void Collector::initialise(markerFn marker, void *base_sp) {
 #ifdef HAVE_PTHREAD
-	Thread::initialise();
+  Thread::initialise();
 #endif
-	TheCollector.initialise(marker);
-#ifdef HAVE_PTHREAD
-	TheCollector.inject_my_thread(base_sp);
+#ifdef MULTIPLE_VM
+  GCCollector* GC = new GCCollector();
+  GC->initialise(marker);
+  GC->inject_my_thread(base_sp);
+  mvm::Thread::get()->GC = GC;
+#else
+  GCCollector::initialise(marker);
+  GCCollector::inject_my_thread(base_sp);
 #endif
 }
 
 void Collector::destroy() {
-	TheCollector.destroy();
+	COLLECTOR destroy();
 }
 
 void Collector::inject_my_thread(void *base_sp) {
 #ifdef HAVE_PTHREAD
-	TheCollector.inject_my_thread(base_sp);
+	COLLECTOR inject_my_thread(base_sp);
 #endif
 }
 
 void Collector::maybeCollect() {
- 	TheCollector.maybeCollect();
+ 	COLLECTOR maybeCollect();
 }
 
 void Collector::collect(void) {
- 	TheCollector.collect();
+ 	COLLECTOR collect();
 }
 
 gc *Collector::begOf(const void *obj) {
@@ -96,7 +111,7 @@ int Collector::byteOffset(void *obj) {
 
 
 void Collector::applyFunc(void (*func)(gc *o, void *data), void *data) {
-  return TheCollector.applyFunc(func, data);
+  return COLLECTOR applyFunc(func, data);
 }
 
 int Collector::getMaxMemory(void){
@@ -124,22 +139,22 @@ void Collector::registerMemoryError(void (*func)(unsigned int)){
 
 void Collector::remove_my_thread() {
 #ifdef HAVE_PTHREAD
-  TheCollector.remove_thread(TheCollector.threads->myloc());
+  COLLECTOR remove_thread(COLLECTOR threads->myloc());
 #endif
 }
 
 #ifdef HAVE_PTHREAD
 void GCCollector::siggc_handler(int) {
- 	GCThreadCollector     *loc = TheCollector.threads->myloc();
- 	register unsigned int cm = TheCollector.current_mark;
+ 	GCThreadCollector     *loc = COLLECTOR threads->myloc();
+ 	register unsigned int cm = COLLECTOR current_mark;
 	//	jmp_buf buf;
 
 	//	setjmp(buf);
 
-	TheCollector.threads->stackLock();
+	COLLECTOR threads->stackLock();
 	
  	if(!loc) /* a key is being destroyed */	
- 		TheCollector.threads->another_mark();
+ 		COLLECTOR threads->another_mark();
  	else if(loc->current_mark() != cm) {
  		register unsigned int	**cur = (unsigned int **)&cur;
  		register unsigned int	**max = loc->base_sp();
@@ -147,29 +162,33 @@ void GCCollector::siggc_handler(int) {
  		GCChunkNode *node;
 		
  		for(; cur<max; cur++) {
- 			if((node = o2node(*cur)) && (!TheCollector.isMarked(node))) {
+ 			if((node = o2node(*cur)) && (!COLLECTOR isMarked(node))) {
  				node->remove();
- 				node->append(TheCollector.used_nodes);
- 				TheCollector.mark(node);
+ 				node->append(COLLECTOR used_nodes);
+ 				COLLECTOR mark(node);
  			}
  		}
 		
  		loc->current_mark(cm);
- 		TheCollector.threads->another_mark();
+ 		COLLECTOR threads->another_mark();
 		
-		TheCollector.threads->waitCollection();
+		COLLECTOR threads->waitCollection();
 	}
-	TheCollector.threads->stackUnlock();
+	COLLECTOR threads->stackUnlock();
 }
 #endif
 
 void GCThread::waitCollection() {
-	unsigned int cm = TheCollector.current_mark;
+	unsigned int cm = COLLECTOR current_mark;
 
 	if(Thread::self() != collector_tid) {
 		collectorGo();
-		while((TheCollector.current_mark == cm) && 
-          (TheCollector.status == GCCollector::stat_collect))
+		while((COLLECTOR current_mark == cm) && 
+          (COLLECTOR status == GCCollector::stat_collect))
 			_collectionCond.wait(&_stackLock);
 	}
+}
+
+Collector* Collector::allocate() {
+  return new GCCollector();
 }

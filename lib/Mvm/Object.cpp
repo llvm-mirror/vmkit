@@ -63,7 +63,6 @@ void Object::initialise() {
   INIT(ExceptionTable);
   
 #undef INIT
-  Thread::threadKey = new mvm::Key<Thread>();
 }
 
 void Code::tracer(size_t sz) {
@@ -175,7 +174,3 @@ void NativeString::print(PrintBuffer *buf) const {
 }
 
 NativeString *PrintBuffer::getContents() { return contents(); }
-
-Thread* Thread::get() {
-  return (Thread*)Thread::threadKey->get();
-}

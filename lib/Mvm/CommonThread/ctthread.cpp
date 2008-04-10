@@ -66,6 +66,9 @@ void ThreadKey::initialise() {
 }
 
 void Thread::initialise() {
+  Thread::threadKey = new mvm::Key<Thread>();
+  Thread* th = new Thread();
+  mvm::Thread::threadKey->set(th);
 }
 
 int Thread::start(int *tid, int (*fct)(void *), void *arg) {
