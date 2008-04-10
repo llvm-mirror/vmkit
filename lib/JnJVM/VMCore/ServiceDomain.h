@@ -14,11 +14,22 @@
 
 #include "Jnjvm.h"
 
+namespace llvm {
+  class GlobalVariable;
+}
+
+namespace mvm {
+  class Lock;
+}
+
 namespace jnjvm {
 
 class ClassMap;
 
 class ServiceDomain : public Jnjvm {
+private:
+  llvm::GlobalVariable* _llvmDelegatee;
+  mvm::Lock* lock;
 public:
   static VirtualTable* VT;
 
@@ -27,7 +38,8 @@ public:
   virtual void destroyer(size_t sz);
   void loadBootstrap();
   static ServiceDomain* allocateService(Jnjvm* callingVM);
-
+  llvm::GlobalVariable* llvmDelegatee();
+  
   ClassMap* classes;
   time_t started;
   uint64 executionTime;

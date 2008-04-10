@@ -43,6 +43,10 @@
 #include "Reader.h"
 #include "Zip.h"
 
+#ifdef SERVICE_VM
+#include "ServiceDomain.h"
+#endif
+
 using namespace jnjvm;
 using namespace llvm;
 

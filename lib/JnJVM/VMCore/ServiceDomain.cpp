@@ -13,10 +13,39 @@
 #include "JnjvmModuleProvider.h"
 #include "ServiceDomain.h"
 
+#include <llvm/GlobalVariable.h>
+#include <llvm/Instructions.h>
+
 extern "C" struct JNINativeInterface JNI_JNIEnvTable;
 extern "C" const struct JNIInvokeInterface JNI_JavaVMTable;
 
 using namespace jnjvm;
+
+
+GlobalVariable* ServiceDomain::llvmDelegatee() {
+  if (!_llvmDelegatee) {
+    lock->lock();
+    if (!_llvmDelegatee) {
+      const Type* pty = mvm::jit::ptrType;
+      
+      mvm::jit::protectConstants();//->lock();
+      Constant* cons = 
+        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(this)),
+                                  pty);
+      mvm::jit::unprotectConstants();//->unlock();
+
+      this->protectModule->lock();
+      _llvmDelegatee = new GlobalVariable(pty, true,
+                                    GlobalValue::ExternalLinkage,
+                                    cons, "",
+                                    this->module);
+      this->protectModule->unlock();
+    }
+    lock->unlock();
+  }
+  return _llvmDelegatee;
+}
+
 
 void ServiceDomain::destroyer(size_t sz) {
   mvm::jit::protectEngine->lock();
@@ -70,6 +99,7 @@ ServiceDomain* ServiceDomain::allocateService(Jnjvm* callingVM) {
   service->numThreads = 0;
   
   service->loadBootstrap();
+  service->lock = mvm::Lock::allocNormal();
   return service;
 }
 
