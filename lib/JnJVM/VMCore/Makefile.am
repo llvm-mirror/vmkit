@@ -1,11 +1,6 @@
 EXTRA_DIST = OpcodeNames.def
 lib_LTLIBRARIES = libJnJVM.la
 
-THREADDIR=../../Mvm/CommonThread
-ALLOCDIR=../../Mvm/Allocator
-GCDIR=../../Mvm/GCMmap2
-INCLUDEDIRS=-I@srcdir@/$(THREADDIR) -I@srcdir@/$(ALLOCDIR) -I@srcdir@/$(GCDIR)
-
 PREFIX=@prefix@
 
 libJnJVM_la_SOURCES = \
@@ -20,4 +15,4 @@ libJnJVM_la_SOURCES = \
 	JnjvmModuleProvider.h JnjvmModuleProvider.cpp JavaRuntimeJIT.cpp JavaMetaJIT.cpp JavaJITInitialise.cpp \
 	LowerArrayLength.cpp ServiceDomain.cpp
 
-libJnJVM_la_CXXFLAGS =$(INCLUDEDIRS) -DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused-parameter -Wno-long-long -Wno-unused-function -fno-omit-frame-pointer -g -Werror -O2
+libJnJVM_la_CXXFLAGS =-DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused-parameter -Wno-long-long -Wno-unused-function -fno-omit-frame-pointer -g -Werror -O2

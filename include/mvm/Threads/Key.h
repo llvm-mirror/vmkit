@@ -14,7 +14,7 @@
 #include "config.h"
 #endif
 
-#include "mvm/GC/GC.h"
+#include <pthread.h>
 
 namespace mvm {
 

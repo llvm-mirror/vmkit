@@ -12,7 +12,7 @@
 #include <signal.h>
 #include <stdio.h>
 
-#include "mvm/GC/GC.h"
+#include "MvmGC.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Thread.h"
 #include "mvm/Sigsegv.h"

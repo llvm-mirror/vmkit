@@ -7,9 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "MvmGC.h"
 #include "mvm/JIT.h"
-#include "mvm/GC/GC.h"
 #include "mvm/PrintBuffer.h"
+#include "mvm/Threads/Thread.h"
 
 #include "llvm/Support/ManagedStatic.h"
 
@@ -24,6 +25,7 @@ int main(int argc, char **argv, char **envp) {
   llvm::llvm_shutdown_obj X;  
   int base;
   
+  Thread::initialise();
   jit::initialise();
   Object::initialise();
   Collector::initialise(Object::markAndTraceRoots, &base);

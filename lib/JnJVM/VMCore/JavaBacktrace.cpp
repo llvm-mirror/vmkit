@@ -73,8 +73,9 @@ extern "C" bool frame_end(int **fp) {
     
 extern "C" JavaMethod* ip_to_meth(int* begIp) {
   if (begIp) {
+    unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
     const llvm::GlobalValue * glob = 
-      mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);
+      mvm::jit::executionEngine->getGlobalValueAtAddress(val);
     if (glob) {
       if (llvm::isa<llvm::Function>(glob)) {
         mvm::Code* c = (mvm::Code*)begIp;
@@ -121,8 +122,9 @@ extern "C" void debug_backtrace(int **fp) {
     int * ip = debug_frame_ip(fp);
     int *begIp = (int*)Collector::begOf(ip);
     if (begIp) {
+      unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
       const llvm::GlobalValue * glob = 
-        mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);
+        mvm::jit::executionEngine->getGlobalValueAtAddress(val);
       if (glob) {
         if (llvm::isa<llvm::Function>(glob)) {
           printf("; 0x%p in %s\n",  ip, 
@@ -148,8 +150,9 @@ void JavaJIT::printBacktrace() {
   while (n < real_size) {
     int *begIp = (int*)Collector::begOf(ips[n++]);
     if (begIp) {
+      unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
       const llvm::GlobalValue * glob = 
-        mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);
+        mvm::jit::executionEngine->getGlobalValueAtAddress(val);
       if (glob) {
         if (llvm::isa<llvm::Function>(glob)) {
           mvm::Code* c = (mvm::Code*)begIp;
@@ -158,7 +161,8 @@ void JavaJIT::printBacktrace() {
           if (meth) 
             printf("; 0x%p in %s\n",  ips[n - 1], meth->printString());
           else
-            printf("; 0x%p in %s\n",  ips[n - 1], ((llvm::Function*)glob)->getNameStr().c_str());
+            printf("; 0x%p in %s\n",  ips[n - 1],
+                   ((llvm::Function*)glob)->getNameStr().c_str());
         } else JavaThread::get()->isolate->unknownError("in global variable?");
       } else printf("; 0x%p in stub\n", ips[n - 1]);
     } else {
@@ -184,8 +188,9 @@ Class* JavaJIT::getCallingClass() {
   while (n < real_size) {
     int *begIp = (int*)Collector::begOf(ips[n++]);
     if (begIp) {
+      unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
       const llvm::GlobalValue * glob = 
-        mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);
+        mvm::jit::executionEngine->getGlobalValueAtAddress(val);
       if (glob) {
         if (llvm::isa<llvm::Function>(glob)) {
           mvm::Code* c = (mvm::Code*)begIp;
@@ -210,8 +215,9 @@ Class* JavaJIT::getCallingClassWalker() {
   while (n < real_size) {
     int *begIp = (int*)Collector::begOf(ips[n++]);
     if (begIp) {
+      unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
       const llvm::GlobalValue * glob = 
-        mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);
+        mvm::jit::executionEngine->getGlobalValueAtAddress(val);
       if (glob) {
         if (llvm::isa<llvm::Function>(glob)) {
           mvm::Code* c = (mvm::Code*)begIp;

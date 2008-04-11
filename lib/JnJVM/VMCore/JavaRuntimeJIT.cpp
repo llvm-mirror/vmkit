@@ -26,6 +26,9 @@
 
 using namespace jnjvm;
 
+#ifdef WITH_TRACER
+llvm::Function* JavaJIT::markAndTraceLLVM = 0;
+#endif
 llvm::Function* JavaJIT::getSJLJBufferLLVM = 0;
 llvm::Function* JavaJIT::throwExceptionLLVM = 0;
 llvm::Function* JavaJIT::getExceptionLLVM = 0;
@@ -35,7 +38,6 @@ llvm::Function* JavaJIT::compareExceptionLLVM = 0;
 llvm::Function* JavaJIT::nullPointerExceptionLLVM = 0;
 llvm::Function* JavaJIT::classCastExceptionLLVM = 0;
 llvm::Function* JavaJIT::indexOutOfBoundsExceptionLLVM = 0;
-llvm::Function* JavaJIT::markAndTraceLLVM = 0;
 llvm::Function* JavaJIT::javaObjectTracerLLVM = 0;
 llvm::Function* JavaJIT::virtualLookupLLVM = 0;
 llvm::Function* JavaJIT::fieldLookupLLVM = 0;

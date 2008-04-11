@@ -7,9 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "MvmGC.h"
 #include "mvm/JIT.h"
 #include "mvm/Object.h"
-#include "mvm/GC/GC.h"
+#include "mvm/Threads/Thread.h"
 
 #include "llvm/Support/ManagedStatic.h"
 
@@ -25,6 +26,7 @@ int main(int argc, char **argv, char **envp) {
     
   jit::initialise();
   Object::initialise();
+  Thread::initialise();
   Collector::initialise(Object::markAndTraceRoots, &base);
   boot();
   start_app(argc, argv);

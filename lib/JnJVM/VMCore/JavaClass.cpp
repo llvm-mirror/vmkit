@@ -16,8 +16,6 @@
 
 
 #include "mvm/JIT.h"
-#include "mvm/GC/GC.h"
-
 #include "types.h"
 
 #include "JavaArray.h"
@@ -67,7 +65,8 @@ void Attribut::derive(const UTF8* name, unsigned int length,
 }
 
 // TODO: Optimize
-Attribut* Attribut::lookup(const std::vector<Attribut*>* vec,
+Attribut* Attribut::lookup(const std::vector<Attribut*,
+                                             gc_allocator<Attribut*> >* vec,
                            const UTF8* key ) {
   
   for (uint32 i = 0; i < vec->size(); i++) {
@@ -227,7 +226,7 @@ void* JavaMethod::compiledPtr() {
       // We can compile it, since if we're here, it's for a  good reason
       void* val = mvm::jit::executionEngine->getPointerToGlobal(methPtr);
       if (Collector::isObject(val)) {
-        mvm::Code* temp = (mvm::Code*)((unsigned*)val - 1);
+        mvm::Code* temp = (mvm::Code*)((unsigned*)val - 2);
         temp->method()->definition(this);
       }
       code = (mvm::Code*)val;

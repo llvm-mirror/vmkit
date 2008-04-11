@@ -173,6 +173,10 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JavaObject* loader,
 
 VirtualTable* JavaJIT::makeVT(Class* cl, bool stat) {
   
+  VirtualTable * res = malloc(VT_SIZE);
+  memcpy(res, JavaObject::VT, VT_SIZE);
+ 
+#ifdef WITH_TRACER
   const Type* type = stat ? cl->staticType : cl->virtualType;
   std::vector<JavaField*> &fields = stat ? cl->staticFields : cl->virtualFields;
  
@@ -210,8 +214,6 @@ VirtualTable* JavaJIT::makeVT(Class* cl, bool stat) {
 
   ReturnInst::Create(block);
 
-  VirtualTable * res = malloc(VT_SIZE);
-  memcpy(res, JavaObject::VT, VT_SIZE);
   void* codePtr = mvm::jit::executionEngine->getPointerToGlobal(func);
   ((void**)res)[VT_TRACER_OFFSET] = codePtr;
   
@@ -222,6 +224,7 @@ VirtualTable* JavaJIT::makeVT(Class* cl, bool stat) {
     cl->staticTracer = func;
     cl->codeStaticTracer = (mvm::Code*)((unsigned*)codePtr - 1);
   }
+#endif
   return res;
 }
 

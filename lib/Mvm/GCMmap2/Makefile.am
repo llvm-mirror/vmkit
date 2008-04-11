@@ -5,7 +5,7 @@ THREADDIR=../CommonThread
 ALLOCDIR=../Allocator
 INCLUDEDIRS=-I@srcdir@/$(THREADDIR) -I@srcdir@/$(ALLOCDIR)
 
-LIBTHREAD=$(THREADDIR)/libuvm_@vvmthreadtype@_thread.a
+LIBTHREAD=$(THREADDIR)/libuvm_common_thread.a
 LIBALLOC=$(ALLOCDIR)/libuvm_alloc.a
 
 libuvm_gc_mmap2_a_SOURCES = gc.cpp gccollector.cpp gcinit.cpp gccollector.h

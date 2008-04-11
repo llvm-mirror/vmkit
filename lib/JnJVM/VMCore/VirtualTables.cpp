@@ -116,28 +116,28 @@ void Attribut::tracer(size_t sz) {
   name->markAndTrace();
 }
 
-#define TRACE_VECTOR(type,name) { \
-  for (std::vector<type>::iterator i = name.begin(), e = name.end(); \
-       i!= e; ++i) {                                                    \
+#define TRACE_VECTOR(type,alloc,name) {                             \
+  for (std::vector<type, alloc<type> >::iterator i = name.begin(),  \
+       e = name.end(); i!= e; ++i) {                                \
     (*i)->markAndTrace(); }}
 
 void CommonClass::tracer(size_t sz) {
   name->markAndTrace();
   super->markAndTrace();
   superUTF8->markAndTrace();
-  TRACE_VECTOR(const UTF8*, interfacesUTF8);
-  TRACE_VECTOR(Class*, interfaces);
+  TRACE_VECTOR(const UTF8*, std::allocator, interfacesUTF8);
+  TRACE_VECTOR(Class*, std::allocator, interfaces);
   //lockVar->markAndTrace();
   //condVar->markAndTrace();
-  TRACE_VECTOR(JavaMethod*, virtualMethods);
-  TRACE_VECTOR(JavaMethod*, staticMethods);
-  TRACE_VECTOR(JavaField*, virtualFields);
-  TRACE_VECTOR(JavaField*, staticFields);
+  TRACE_VECTOR(JavaMethod*, std::allocator, virtualMethods);
+  TRACE_VECTOR(JavaMethod*, std::allocator, staticMethods);
+  TRACE_VECTOR(JavaField*, std::allocator, virtualFields);
+  TRACE_VECTOR(JavaField*, std::allocator, staticFields);
   classLoader->markAndTrace();
 #ifndef MULTIPLE_VM
   delegatee->markAndTrace();
 #endif
-  TRACE_VECTOR(CommonClass*, display);
+  TRACE_VECTOR(CommonClass*, std::allocator, display);
   isolate->markAndTrace();
 }
 
@@ -147,8 +147,8 @@ void Class::tracer(size_t sz) {
   _staticInstance->markAndTrace();
   virtualInstance->markAndTrace();
   ctpInfo->markAndTrace();
-  TRACE_VECTOR(Attribut*, attributs);
-  TRACE_VECTOR(Class*, innerClasses);
+  TRACE_VECTOR(Attribut*, gc_allocator, attributs);
+  TRACE_VECTOR(Class*, std::allocator, innerClasses);
   outerClass->markAndTrace();
   codeStaticTracer->markAndTrace();
   codeVirtualTracer->markAndTrace();
@@ -163,8 +163,8 @@ void ClassArray::tracer(size_t sz) {
 
 void JavaMethod::tracer(size_t sz) {
   signature->markAndTrace();
-  TRACE_VECTOR(Attribut*, attributs);
-  TRACE_VECTOR(Enveloppe*, caches);
+  TRACE_VECTOR(Attribut*, gc_allocator, attributs);
+  TRACE_VECTOR(Enveloppe*, gc_allocator, caches);
   classDef->markAndTrace();
   name->markAndTrace();
   type->markAndTrace();
@@ -175,7 +175,7 @@ void JavaField::tracer(size_t sz) {
   name->markAndTrace();
   signature->markAndTrace();
   type->markAndTrace();
-  TRACE_VECTOR(Attribut*, attributs);
+  TRACE_VECTOR(Attribut*, gc_allocator, attributs);
   classDef->markAndTrace();
 }
 
@@ -186,7 +186,7 @@ void JavaCtpInfo::tracer(size_t sz) {
 }
 
 void JavaCond::tracer(size_t sz) {
-  TRACE_VECTOR(JavaThread*, threads);
+  TRACE_VECTOR(JavaThread*, std::allocator, threads);
 }
 
 void LockObj::tracer(size_t sz) {
@@ -220,7 +220,7 @@ void Typedef::tracer(size_t sz) {
 
 void Signdef::tracer(size_t sz) {
   Typedef::tracer(sz);
-  TRACE_VECTOR(Typedef*, args);
+  TRACE_VECTOR(Typedef*, std::allocator, args);
   ret->markAndTrace();
   _staticCallBuf->markAndTrace();
   _virtualCallBuf->markAndTrace();
@@ -241,7 +241,7 @@ void Jnjvm::tracer(size_t sz) {
   loadedMethods->markAndTrace();
   loadedFields->markAndTrace();
   javaTypes->markAndTrace();
-  TRACE_VECTOR(JavaObject*, globalRefs);
+  TRACE_VECTOR(JavaObject*, gc_allocator, globalRefs);
   //globalRefsLock->markAndTrace();
   functions->markAndTrace();
 #ifdef MULTIPLE_VM

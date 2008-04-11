@@ -2103,7 +2103,8 @@ jobject NewGlobalRef(JNIEnv* env, jobject obj) {
 void DeleteGlobalRef(JNIEnv* env, jobject globalRef) {
   Jnjvm* vm = NativeUtil::myVM(env);
   vm->globalRefsLock->lock();
-  for (std::vector<JavaObject*>::iterator i = vm->globalRefs.begin(), 
+  for (std::vector<JavaObject*, gc_allocator<JavaObject*> >::iterator i =
+                                                      vm->globalRefs.begin(),
             e = vm->globalRefs.end(); i!= e; ++i) {
     if ((*i) == (JavaObject*)globalRef) {
       vm->globalRefs.erase(i);

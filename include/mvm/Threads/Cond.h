@@ -14,7 +14,6 @@
 #include "config.h"
 #endif
 
-#include "mvm/GC/GC.h"
 #include "mvm/Threads/Locks.h"
 
 #include <cstdlib>

@@ -9,10 +9,10 @@
 
 #include <stdlib.h>
 
+#include "MvmGC.h"
 #include "mvm/Method.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
-#include "mvm/GC/GC.h"
 #include "mvm/Threads/Key.h"
 #include "mvm/Threads/Thread.h"
 

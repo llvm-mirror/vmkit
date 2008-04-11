@@ -1,11 +1,5 @@
 lib_LTLIBRARIES = libClasspath.la
 
-THREADDIR=../../Mvm/CommonThread
-ALLOCDIR=../../Mvm/Allocator
-GCDIR=../../Mvm/GCMmap2
-INCLUDEDIRS=-I@srcdir@/$(THREADDIR) -I@srcdir@/$(ALLOCDIR) -I@srcdir@/$(GCDIR)\
-	    -I../VMCore
-
 PREFIX=@prefix@
 
 libClasspath_la_SOURCES = \
@@ -17,4 +11,4 @@ libClasspath_la_SOURCES = \
 	ClasspathVMThrowable.h ClasspathVMThrowable.cpp ClasspathMethod.h ClasspathMethod.cpp \
 	ClasspathVMField.h ClasspathVMField.cpp ClasspathVMStackWalker.cpp ClasspathVMStackWalker.h
 
-libClasspath_la_CXXFLAGS =$(INCLUDEDIRS) -DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused-parameter -Wno-long-long -Wno-unused-function -fno-omit-frame-pointer -O2 -g -Werror
+libClasspath_la_CXXFLAGS =-I../VMCore -DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused-parameter -Wno-long-long -Wno-unused-function -fno-omit-frame-pointer -O2 -g -Werror

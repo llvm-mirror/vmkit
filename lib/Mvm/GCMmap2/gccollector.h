@@ -117,7 +117,7 @@ public:
     allocator->free(ptr);
   }
 
-  static inline gc *begOf(void *p) {
+  static inline void *begOf(void *p) {
     GCChunkNode *node = o2node(p);
     if(node)
       return node->chunk()->_2gc();
@@ -144,7 +144,7 @@ public:
       collect(); 
   }
 
-  STATIC inline gc *gcmalloc(VirtualTable *vt, size_t n) {
+  STATIC inline void *gcmalloc(VirtualTable *vt, size_t n) {
     lock();
     register GCChunkNode *header = allocator->alloc_chunk(n + sizeof(gc_header), 1, current_mark & 1);
     
@@ -163,7 +163,7 @@ public:
     return p->_2gc();
   }
 
-  STATIC inline gc *gcrealloc(void *ptr, size_t n) {
+  STATIC inline void *gcrealloc(void *ptr, size_t n) {
     lock();
 
     GCPage      *desc = GCHash::get(ptr);
@@ -221,7 +221,7 @@ public:
     }
   }
 
-  STATIC inline void applyFunc(void (*func)(gc *o, void *data), void *data){
+  STATIC inline void applyFunc(void (*func)(gcRoot *o, void *data), void *data){
     lock(); /* Make sure no one collects or allocates */
     status = stat_collect; /* Forbids collections */
     GCChunkNode *cur=used_nodes->next(); /* Get starter */

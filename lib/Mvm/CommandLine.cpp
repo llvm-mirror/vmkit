@@ -13,7 +13,7 @@
 #include <stdlib.h>
 
 #include "CommandLine.h"
-#include "mvm/GC/GC.h"
+#include "MvmGC.h"
 #include "mvm/Threads/Thread.h"
 
 using namespace mvm;

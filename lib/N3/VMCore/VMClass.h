@@ -62,7 +62,7 @@ public:
   VMObject* delegatee;
   std::vector<VMCommonClass*> display;
   Assembly* assembly;
-  std::vector<Property*> properties;
+  std::vector<Property*, gc_allocator<Property*> > properties;
   
   llvm::Function* virtualTracer;
   llvm::Function* staticTracer;
@@ -196,8 +196,8 @@ public:
 
   VMObject* delegatee;
   VMObject* getMethodDelegatee();
-  std::vector<Param*> params;
-  std::vector<Enveloppe*> caches;
+  std::vector<Param*, gc_allocator<Param*> > params;
+  std::vector<Enveloppe*, gc_allocator<Enveloppe*> > caches;
   std::vector<VMCommonClass*> parameters;
   VMClass* classDef;
   llvm::Function* compiledPtr();

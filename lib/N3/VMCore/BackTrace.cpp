@@ -37,8 +37,9 @@ void CLIJit::printBacktrace() {
   while (n < real_size) {
     int *begIp = (int*)Collector::begOf(ips[n++]);
     if (begIp) {
+      unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
       const llvm::GlobalValue * glob = 
-        mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);
+        mvm::jit::executionEngine->getGlobalValueAtAddress(val);
       if (glob) {
         if (llvm::isa<llvm::Function>(glob)) {
           mvm::Code* c = (mvm::Code*)begIp;
@@ -47,7 +48,8 @@ void CLIJit::printBacktrace() {
           if (meth) 
             printf("; 0x%08x in %s\n", (uint32) ips[n - 1], meth->printString());
           else
-            printf("; 0x%08x in %s\n", (uint32) ips[n - 1], ((llvm::Function*)glob)->getNameStr().c_str());
+            printf("; 0x%08x in %s\n", (uint32) ips[n - 1],
+                   ((llvm::Function*)glob)->getNameStr().c_str());
         } else VMThread::get()->vm->unknownError("in global variable?");
       } else printf("; 0x%08x in stub\n", (uint32) ips[n - 1]);
     } else {
@@ -72,8 +74,9 @@ Assembly* Assembly::getExecutingAssembly() {
   while (n < real_size) {
     int *begIp = (int*)Collector::begOf(ips[n++]);
     if (begIp) {
+      unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
       const llvm::GlobalValue * glob = 
-        mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);
+        mvm::jit::executionEngine->getGlobalValueAtAddress(val);
       if (glob) {
         if (llvm::isa<llvm::Function>(glob)) {
           mvm::Code* c = (mvm::Code*)begIp;
@@ -101,8 +104,9 @@ Assembly* Assembly::getCallingAssembly() {
   while (n < real_size) {
     int *begIp = (int*)Collector::begOf(ips[n++]);
     if (begIp) {
+      unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
       const llvm::GlobalValue * glob = 
-        mvm::jit::executionEngine->getGlobalValueAtAddress(begIp + 1);
+        mvm::jit::executionEngine->getGlobalValueAtAddress(val);
       if (glob) {
         if (llvm::isa<llvm::Function>(glob)) {
           mvm::Code* c = (mvm::Code*)begIp;

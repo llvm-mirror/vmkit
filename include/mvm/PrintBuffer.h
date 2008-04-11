@@ -23,22 +23,22 @@ public:
   
   static VirtualTable* VT;
 
-	inline char *cString() { return (char *)(this + 1); }
+  inline char *cString() { return (char *)(this + 1); }
 
   inline static NativeString *readString(char *cStr) {
-		size_t nbb = strlen(cStr);
-		NativeString * res = alloc(nbb + 1);
-		memcpy(res->cString(), cStr, nbb + 1);
-		return res;
-	}
+    size_t nbb = strlen(cStr);
+    NativeString * res = alloc(nbb + 1);
+    memcpy(res->cString(), cStr, nbb + 1);
+    return res;
+  }
 
-	static inline NativeString *alloc(size_t len) {
-		return (NativeString *)gc::operator new(len, VT);
-	}
+  static inline NativeString *alloc(size_t len) {
+    return (NativeString *)gc::operator new(len, VT);
+  }
 
-	inline NativeString *realloc(size_t len) {
-		return (NativeString *)gc::realloc(len);
-	}
+  inline NativeString *realloc(size_t len) {
+    return (NativeString *)gc::realloc(len);
+  }
 
   inline void setAt(int pos, char c) {
     cString()[pos] = c;
@@ -70,16 +70,16 @@ public:
     PrintBuffer* pbf = gc_new(PrintBuffer)();
     pbf->capacity= 32;
     pbf->writePosition= 0;
-		pbf->contents(NativeString::alloc(pbf->capacity));
+    pbf->contents(NativeString::alloc(pbf->capacity));
     return pbf;
   }
 
   inline PrintBuffer *write(const char *string) {
     size_t len= strlen(string);
     if ((writePosition + len + 1) >= capacity) {
-		  while ((writePosition + len + 1) >= capacity)
-				capacity*= 4;
-			contents(contents()->realloc(capacity));
+      while ((writePosition + len + 1) >= capacity)
+        capacity*= 4;
+      contents(contents()->realloc(capacity));
     }
     strcpy(contents()->cString() + writePosition, string);
     writePosition+= len;
@@ -120,19 +120,19 @@ public:
   inline PrintBuffer *writeBytes(unsigned char *bytes, size_t len) {
     write("[");
     for (size_t idx= 0; idx < len; ++idx) {
-		  if (idx > 0)
-			  write(" ");
-			char buf[32];
-			sprintf(buf, "%d", bytes[idx]);
-			write(buf);
+      if (idx > 0)
+        write(" ");
+      char buf[32];
+      sprintf(buf, "%d", bytes[idx]);
+      write(buf);
     }
     write("]");
     return this;
   }
 
-	PrintBuffer *writeObj(const Object *);
+  PrintBuffer *writeObj(const Object *);
 
-	NativeString      *getContents();
+  NativeString      *getContents();
   
   static PrintBuffer *write_static(PrintBuffer*, char *);
 

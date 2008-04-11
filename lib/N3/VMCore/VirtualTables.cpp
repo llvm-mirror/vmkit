@@ -136,8 +136,8 @@ ARRAYTRACER(ArrayDouble);
 #undef ARRAYTRACER
 
 
-#define TRACE_VECTOR(type,name) { \
-  for (std::vector<type>::iterator i = name.begin(), e = name.end(); \
+#define TRACE_VECTOR(type, name, alloc) { \
+  for (std::vector<type, alloc<type> >::iterator i = name.begin(), e = name.end(); \
        i!= e; ++i) {                                                    \
     (*i)->markAndTrace(); }}
 
@@ -145,20 +145,20 @@ void VMCommonClass::tracer(size_t sz) {
   name->markAndTrace();
   nameSpace->markAndTrace();
   super->markAndTrace();
-  TRACE_VECTOR(VMClass*, interfaces);
+  TRACE_VECTOR(VMClass*, interfaces, std::allocator);
   //lockVar->markAndTrace();
   //condVar->markAndTrace();
-  TRACE_VECTOR(VMMethod*, virtualMethods);
-  TRACE_VECTOR(VMMethod*, staticMethods);
-  TRACE_VECTOR(VMField*, virtualFields);
-  TRACE_VECTOR(VMField*, staticFields);
+  TRACE_VECTOR(VMMethod*, virtualMethods, std::allocator);
+  TRACE_VECTOR(VMMethod*, staticMethods, std::allocator);
+  TRACE_VECTOR(VMField*, virtualFields, std::allocator);
+  TRACE_VECTOR(VMField*, staticFields, std::allocator);
   delegatee->markAndTrace();
-  TRACE_VECTOR(VMCommonClass*, display);
+  TRACE_VECTOR(VMCommonClass*, display, std::allocator);
   vm->markAndTrace();
 
   assembly->markAndTrace();
   //funcs->markAndTrace();
-  TRACE_VECTOR(Property*, properties);
+  TRACE_VECTOR(Property*, properties, gc_allocator);
   codeVirtualTracer->markAndTrace();
   codeStaticTracer->markAndTrace();
 }
@@ -167,7 +167,7 @@ void VMClass::tracer(size_t sz) {
   VMCommonClass::tracer(sz);
   staticInstance->markAndTrace();
   virtualInstance->markAndTrace();
-  TRACE_VECTOR(VMClass*, innerClasses);
+  TRACE_VECTOR(VMClass*, innerClasses, std::allocator);
   outerClass->markAndTrace();
 }
 
@@ -186,8 +186,8 @@ void VMMethod::tracer(size_t sz) {
   delegatee->markAndTrace();
   //signature->markAndTrace();
   classDef->markAndTrace();
-  TRACE_VECTOR(Param*, params);
-  TRACE_VECTOR(Enveloppe*, caches);
+  TRACE_VECTOR(Param*, params, gc_allocator);
+  TRACE_VECTOR(Enveloppe*, caches, gc_allocator);
   name->markAndTrace();
   code->markAndTrace();
 }
@@ -199,7 +199,7 @@ void VMField::tracer(size_t sz) {
 }
 
 void VMCond::tracer(size_t sz) {
-  TRACE_VECTOR(VMThread*, threads);
+  TRACE_VECTOR(VMThread*, threads, std::allocator);
 }
 
 void LockObj::tracer(size_t sz) {
@@ -281,7 +281,7 @@ void Header::tracer(size_t sz) {
   usStream->markAndTrace();
   blobStream->markAndTrace();
   guidStream->markAndTrace();
-  TRACE_VECTOR(Table*, tables);
+  TRACE_VECTOR(Table*, tables, gc_allocator);
 }
 
 void CLIString::tracer(size_t sz) {

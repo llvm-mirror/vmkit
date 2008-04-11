@@ -117,7 +117,7 @@ ArrayUInt8* N3::openAssembly(const UTF8* name, const char* ext) {
     } else {
       sprintf(buf, "%s%s", cur, asciiz);
     }
-
+    
     res = Reader::openFile(buf);
     ++idx;
   }

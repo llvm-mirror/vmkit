@@ -158,8 +158,10 @@ public:
 
   static llvm::Function* compile(VMClass* cl, VMMethod* meth);
 
+#ifdef WITH_TRACER
   static llvm::Function* markAndTraceLLVM;
   static const llvm::FunctionType* markAndTraceLLVMType;
+#endif
   static llvm::Function* vmObjectTracerLLVM;
   static llvm::Function* arrayConsLLVM;
   static llvm::Function* arrayMultiConsLLVM;

@@ -49,7 +49,7 @@ static void start(arg_thread_t* arg) {
   Collector::inject_my_thread(&argc);
   JavaObject* vmThread = arg->vmThread;
   JavaThread* intern = arg->intern;
-  delete arg;
+  free(arg);
   mvm::Thread::threadKey->set(intern);
   CommonClass* vmthClass = vmThread->classOf;
   JavaObject* thread = (JavaObject*)((*ClasspathThread::assocThread)(vmThread).PointerVal);

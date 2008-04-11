@@ -118,12 +118,13 @@ public:
   Stream* usStream;
   Stream* blobStream;
   Stream* guidStream;
-  std::vector<Table*> tables;
+  std::vector<Table*, gc_allocator<Table*> > tables;
   
   void read(Reader* reader, N3* vm);
 };
 
-typedef void (*maskVector_t)(uint32 index, std::vector<Table*>& tables,
+typedef void (*maskVector_t)(uint32 index,
+                             std::vector<Table*, gc_allocator<Table*> >& tables,
                              uint32 heapSizes);
 
 typedef VMCommonClass* (*signatureVector_t)(uint32 op, Assembly* ass,
@@ -562,7 +563,9 @@ public:
 
 
 #define DEF_TABLE_MASK(name, nb, ...) \
-  static void name(uint32 index, std::vector<Table*>& tables, uint32 heapSizes) { \
+  static void name(uint32 index, \
+                   std::vector<Table*, gc_allocator<Table*> >& tables, \
+                   uint32 heapSizes) { \
     Table* table = tables[index]; \
     uint32 rowSize = 0; \
     uint32 bitmask = 0; \

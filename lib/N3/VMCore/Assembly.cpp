@@ -189,7 +189,8 @@ Assembly* Assembly::allocate(const UTF8* name) {
   return ass;
 }
 
-static void unimplemented(uint32 index, std::vector<Table*>& tables,
+static void unimplemented(uint32 index,
+                          std::vector<Table*, gc_allocator<Table*> >& tables,
                           uint32 heapSizes) {
   VMThread::get()->vm->error("Unknown table %x", index);
 }
@@ -523,7 +524,8 @@ void Assembly::readTables(Reader* reader) {
   offset = reader->cursor;
   
   uint32 index = 0;
-  for (std::vector<Table*>::iterator i = CLIHeader->tables.begin(),
+  for (std::vector<Table*, gc_allocator<Table*> >::iterator i = 
+           CLIHeader->tables.begin(),
        e = CLIHeader->tables.end(); i != e; ++i, ++index) {
     Table* table = (*i);
     if (table->rowsNumber) {

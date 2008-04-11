@@ -1,11 +1,6 @@
 EXTRA_DIST = SignatureNames.def OpcodeNames.def
 lib_LTLIBRARIES = libN3.la
 
-THREADDIR=../../Mvm/CommonThread
-ALLOCDIR=../../Mvm/Allocator
-GCDIR=../../Mvm/GCMmap2
-INCLUDEDIRS=-I@srcdir@/$(THREADDIR) -I@srcdir@/$(ALLOCDIR) -I@srcdir@/$(GCDIR)
-
 PREFIX=@prefix@
 
 libN3_la_SOURCES = \
@@ -16,4 +11,4 @@ libN3_la_SOURCES = \
 	Opcodes.cpp NativeUtil.h NativeUtil.cpp PNetLib.cpp N3ModuleProvider.cpp N3ModuleProvider.h \
 	PNetLib.h BackTrace.cpp LowerArrayLength.cpp
 
-libN3_la_CXXFLAGS =$(INCLUDEDIRS) -DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused-parameter -Wno-long-long -Wno-unused-function -fno-omit-frame-pointer -g -O2 -DSINGLE_VM
+libN3_la_CXXFLAGS =-DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused-parameter -Wno-long-long -Wno-unused-function -fno-omit-frame-pointer -g -O2

@@ -186,7 +186,8 @@ public:
 
   void readParents(Class* cl, Reader* reader);
   void loadParents(Class* cl);
-  void readAttributs(Class* cl, Reader* reader, std::vector<Attribut*> & attr);
+  void readAttributs(Class* cl, Reader* reader,
+                     std::vector<Attribut*, gc_allocator<Attribut*> > & attr);
   void readFields(Class* cl, Reader* reader);
   void readMethods(Class* cl, Reader* reader);
   void readClass(Class* cl);
@@ -228,7 +229,7 @@ public:
   const char* classpath;
   const char* libClasspathEnv;
   const char* bootClasspathEnv;
-  std::vector<JavaObject*> globalRefs;
+  std::vector<JavaObject*, gc_allocator<JavaObject*> > globalRefs;
   mvm::Lock* globalRefsLock;
 
   void setClasspath(char* cp) {

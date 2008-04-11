@@ -53,6 +53,7 @@ void Exception::print(mvm::PrintBuffer* buf) const {
   buf->write("Exception<>");
 }
 
+#ifdef WITH_TRACER
 // for structs
 static void traceStruct(VMCommonClass* cl, BasicBlock* block, Value* arg) { 
   for (std::vector<VMField*>::iterator i = cl->virtualFields.begin(), 
@@ -115,8 +116,12 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
     }
   }
 }
+#endif
 
 VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
+  VirtualTable * res = malloc(VT_SIZE);
+  memcpy(res, VMObject::VT, VT_SIZE);
+#ifdef WITH_TRACER  
   Function* func = Function::Create(markAndTraceLLVMType,
                                 GlobalValue::ExternalLinkage,
                                 "markAndTraceObject",
@@ -194,17 +199,19 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
     
   }
   
-  VirtualTable * res = malloc(VT_SIZE);
-  memcpy(res, VMObject::VT, VT_SIZE);
   void* tracer = mvm::jit::executionEngine->getPointerToGlobal(func);
   ((void**)res)[VT_TRACER_OFFSET] = tracer;
   cl->virtualTracer = func;
   cl->codeVirtualTracer = (mvm::Code*)((intptr_t)tracer - sizeof(intptr_t));
+#endif
 
   return res;
 }
 
 VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
+  VirtualTable * res = malloc(VT_SIZE);
+  memcpy(res, VMObject::VT, VT_SIZE);
+#ifdef WITH_TRACER  
   const Type* type = stat ? cl->staticType : cl->virtualType;
   std::vector<VMField*> &fields = stat ? cl->staticFields : cl->virtualFields;
   
@@ -226,8 +233,6 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
   traceClass(cl, block, realArg, fields, (cl->super == N3::pValue && !stat));
   ReturnInst::Create(block);
 
-  VirtualTable * res = malloc(VT_SIZE);
-  memcpy(res, VMObject::VT, VT_SIZE);
   void* tracer = mvm::jit::executionEngine->getPointerToGlobal(func);
   ((void**)res)[VT_TRACER_OFFSET] = tracer;
   
@@ -238,8 +243,8 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
     cl->staticTracer = func;
     cl->codeStaticTracer = (mvm::Code*)((intptr_t)tracer - sizeof(intptr_t));
   }
+#endif
   return res;
-
 }
 
 BasicBlock* CLIJit::createBasicBlock(const char* name) {
@@ -1570,6 +1575,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
     PointerType::getUnqual(StructType::get(arrayFields, false));
   }
 
+#ifdef WITH_TRACER
   // Create markAndTraceLLVM
   {
   std::vector<const Type*> args;
@@ -1580,6 +1586,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
                                   "_ZNK2gc12markAndTraceEv",
                                   module);
   }
+#endif
   
   // Create vmObjectTracerLLVM
   {

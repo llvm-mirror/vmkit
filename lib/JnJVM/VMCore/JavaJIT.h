@@ -265,9 +265,12 @@ public:
   static Class* getCallingClassWalker();
   static JavaObject* getCallingClassLoader();
   static void printBacktrace();
-  
+
+#ifdef WITH_TRACER
   static llvm::Function* markAndTraceLLVM;
   static const llvm::FunctionType* markAndTraceLLVMType;
+#endif
+
   static llvm::Constant*    constantJavaObjectNull;
   static llvm::Constant*    constantUTF8Null;
 };

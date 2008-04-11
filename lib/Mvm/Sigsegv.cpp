@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 
-#include "mvm/GC/GC.h"
+#include "MvmGC.h"
 #include "mvm/Sigsegv.h"
 
 #include <signal.h>

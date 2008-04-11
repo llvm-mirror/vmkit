@@ -43,19 +43,18 @@ class Code : public Object {
 public:
   inline Code() {}
   static VirtualTable* VT;
-  static void *allocate(size_t _nbb, void* metaInfo);
+  Method* meth;
 
   inline Method *method(Method *m, size_t nbb) {
-    return 
-      (Method *)gcset((gc **)((uintptr_t)this + nbb), m);
+    return (meth = m);
   }
 
   inline Method *method(size_t nbb) {
-    return ((Method **)((uintptr_t)this + nbb))[0];
+    return meth;
   }
     
-  inline Method *method(Method *m) { return method(m, objectSize()); }
-  inline Method *method() { return method(objectSize()); }
+  inline Method *method(Method *m) { return meth = m; }
+  inline Method *method() { return meth; }
 
   virtual void print(PrintBuffer *buf) const;
   virtual void tracer(size_t sz);
@@ -65,19 +64,18 @@ class ExceptionTable : public Object {
 public:
   inline ExceptionTable() {}
   static VirtualTable* VT;
+  void* framePtr;
 
   inline void *frameRegister(void *m, size_t nbb) {
-    return 
-      (void *)gcset((gc **)((uintptr_t)this + nbb), 
-                            (Object*)m);
+    return (framePtr = m);
   }
 
   inline void *frameRegister(size_t nbb) {
-    return ((void **)((uintptr_t)this + nbb))[0];
+    return framePtr;
   }
     
-  inline void *frameRegister(void *m) { return frameRegister(m, objectSize()); }
-  inline void *frameRegister() { return frameRegister(objectSize()); }
+  inline void *frameRegister(void *m) { return (framePtr = m); }
+  inline void *frameRegister() { return framePtr; }
   
   virtual void destroyer(size_t sz);
 };

@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/GC/GC.h"
+#include "MvmGC.h"
 #include "mvm/JIT.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Thread.h"
@@ -45,6 +45,7 @@ int main(int argc, char **argv, char **envp) {
                                     " VMKit: a virtual machine launcher\n");
   jit::initialise();
   Object::initialise();
+  Thread::initialise();
   Collector::initialise(Object::markAndTraceRoots, &base);
   
   CommandLine cl;

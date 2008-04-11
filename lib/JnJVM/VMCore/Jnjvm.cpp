@@ -191,7 +191,8 @@ void Jnjvm::loadParents(Class* cl) {
 }
 
 void Jnjvm::readAttributs(Class* cl, Reader* reader,
-                           std::vector<Attribut*>& attr) {
+                           std::vector<Attribut*,
+                                       gc_allocator<Attribut*> >& attr) {
   JavaCtpInfo* ctpInfo = cl->ctpInfo;
   unsigned short int nba = reader->readU2();
   

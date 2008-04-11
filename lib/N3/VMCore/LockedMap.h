@@ -44,7 +44,8 @@ public:
   typedef Container* (*funcCreate)(Key& V, Upcall* ass);
 
   mvm::Lock* lock;
-  std::map<Key, Container*, Compare> map;
+  std::map<Key, Container*, Compare,
+           gc_allocator<std::pair<Key, Container*> > > map;
   
   inline Container* lookupOrCreate(Key& V, Upcall* ass, funcCreate func) {
     lock->lock();
@@ -203,7 +204,8 @@ public:
   typedef std::multimap<uint32, const UTF8*>::iterator iterator;
   
   mvm::Lock* lock;
-  std::multimap<uint32, const UTF8*> map;
+  std::multimap<uint32, const UTF8*, std::less<uint32>,
+                gc_allocator<std::pair<uint32, const UTF8*> > > map;
   static VirtualTable* VT;
   const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
   const UTF8* lookupOrCreateReader(const uint16* buf, uint32 size);

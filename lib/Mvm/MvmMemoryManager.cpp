@@ -25,7 +25,7 @@ unsigned char* MvmMemoryManager::startFunctionBody(const Function* F,
   Method* meth = gc_new(Method)(res, ActualSize);
   res->method(meth);
   currentMethod = meth;
-  return (unsigned char*) (res + 1);
+  return (unsigned char*)((unsigned int*)res + 2);
 }
 
 unsigned char *MvmMemoryManager::allocateStub(unsigned StubSize, 
@@ -35,7 +35,7 @@ unsigned char *MvmMemoryManager::allocateStub(unsigned StubSize,
   Method* meth = gc_new(Method)(res, StubSize);
   res->method(meth);
   Object::pushRoot(meth);
-  return (unsigned char*) (res + 1); 
+  return (unsigned char*)((unsigned int*)res + 2);
 }
 
 void MvmMemoryManager::endFunctionBody(const Function *F, 
@@ -62,7 +62,7 @@ unsigned char *MvmMemoryManager::startExceptionTable(const Function* F,
   ExceptionTable *res = (ExceptionTable*)gc::operator new(ActualSize + 4, 
                                                           ExceptionTable::VT);
   currentMethod->exceptionTable(res);
-  return (unsigned char*)(res + 1);
+  return (unsigned char*)((unsigned int*)res + 2);
 }                                                     
 
 void MvmMemoryManager::endExceptionTable(const Function *F, 

@@ -678,21 +678,19 @@ extern "C" int64_t Platform_TimeMethods_GetCurrentTime() {
 
 #define ASSEMBLY_VALUE(obj) ((Assembly**)obj)[3]
 
-#if !defined(__GNU__)
-void* memrchr(const void* s, int c, size_t n) {
-  unsigned char* m = (unsigned char*) s;
+void* sys_memrchr(const void* s, int c, size_t n) {
+  unsigned char* m = (unsigned char*) s + n;
   for (;;) {
     if (!(n--)) return NULL;
     else if (*m-- == (unsigned char)c) return (void*)(m+1);
   }
 }
-#endif
 
 extern "C" VMObject* System_Reflection_Assembly_GetType(VMObject* obj, CLIString* str, bool onError, bool ignoreCase) {
   Assembly* ass = ASSEMBLY_VALUE(obj);
   const UTF8* utf8 = str->value;
   char* asciiz = utf8->UTF8ToAsciiz();
-  char* index = (char*)memrchr(asciiz, '.', strlen(asciiz));
+  char* index = (char*)sys_memrchr(asciiz, '.', strlen(asciiz));
   N3* vm = ass->vm;
   
   index[0] = 0;
@@ -717,9 +715,10 @@ extern "C" VMObject* System_Reflection_ClrType_GetMemberImpl(VMObject* Type, CLI
   VMCommonClass* type = (VMCommonClass*)((*N3::typeClrType)(Type).PointerVal);
   const UTF8* name = str->value;
   if (memberTypes == MEMBER_TYPES_PROPERTY) {
-    std::vector<Property*> properties = type->properties;
+    std::vector<Property*, gc_allocator<Property*> > properties = 
+                                                    type->properties;
     Property *res = 0;
-    for (std::vector<Property*>::iterator i = properties.begin(), 
+    for (std::vector<Property*, gc_allocator<Property*> >::iterator i = properties.begin(), 
             e = properties.end(); i!= e; ++i) {
       if ((*i)->name == name) {
         res = *i; 

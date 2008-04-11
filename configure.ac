@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script
 
-AC_INIT([micro-vm],[0.0.1])
+AC_INIT([vmkit],[0.0.1])
 AC_PREREQ([2.59])
 AC_CONFIG_SRCDIR([lib/Mvm/Main.cpp])
 
@@ -27,17 +27,6 @@ case $host in
         *) is_linux=false;;
 esac
 AM_CONDITIONAL(IS_LINUX,      [test x$is_linux = xtrue])
-
-echo $host
-dnl **************************************************************************
-dnl Check system name
-dnl **************************************************************************
-case $host in
-	*linux*) dlsyms_name='dlsyms';;
-	*darwin*) dlsyms_name='dlsyms';;
-	*) dlsyms_name='dlsyms-unknow';;
-esac
-AC_SUBST([dlsyms_name])
 
 dnl **************************************************************************
 dnl Initialize automake with a package version 
@@ -148,13 +137,13 @@ AC_SUBST([DYLIB_EXTENSION])
 dnl **************************************************************************
 dnl VVM thread type
 dnl **************************************************************************
-AC_ARG_WITH(vvm-thread-type,
-       [AS_HELP_STRING(--with-vvm-thread-type=something,
-           [VVM Thread type ('common' or 'no')])],
-       [vvmthreadtype=$withval],[vvmthreadtype=common]
+AC_ARG_WITH(thread,
+       [AS_HELP_STRING(--with-thread=something,
+           [Thread type ('common' or 'no')])],
+       [thread=$withval],[thread=common]
 )
 
-AS_IF([test "x$vvmthreadtype" != "xno"],
+AS_IF([test "x$thread" != "xno"],
   [AC_CHECK_HEADER([pthread.h],,
     [AC_MSG_WARN(phtread include NOT found)])
   AC_CHECK_LIB(pthread, pthread_create, [], 
@@ -162,13 +151,13 @@ AS_IF([test "x$vvmthreadtype" != "xno"],
   ]
 )
 
-AM_CONDITIONAL([HAVE_PTHREAD], [test "x$vvmthreadtype" != "xno"])
-if test "x$vvmthreadtype" = xcommon; then
+AM_CONDITIONAL([HAVE_PTHREAD], [test "x$thread" != "xno"])
+if test "x$thread" = xcommon; then
   AC_DEFINE([HAVE_PTHREAD], [1], [Using pthread library])
 fi
 
-AC_SUBST([vvmthreadtype])
-GCTHREAD_SUBDIRS="$GCTHREAD_SUBDIRS $vvmthreadtype-thread"
+GCTHREAD_LIBS="$PWD/lib/Mvm/CommonThread/libuvm_common_thread.a"
+AC_SUBST([GCTHREAD_LIBS])
 
 
 dnl **************************************************************************
@@ -186,28 +175,41 @@ AM_PROG_LIBTOOL
 dnl **************************************************************************
 dnl VVM GC type 
 dnl **************************************************************************
-AC_ARG_WITH(vvm-gc-type,
-       [AS_HELP_STRING(--with-vvm-gc-type=something,
-           [VVM GC type ('mmap2' or 'boehm')])],
-       [[vvmgctype=$withval]],
+AC_ARG_WITH(gc,
+       [AS_HELP_STRING(--with-gc=something,
+           [GC type ('mmap2' or 'boehm')])],
+       [[gc=$withval]],
        [[ echo Using mmap2 as vvm gc type.
-        	vvmgctype=mmap2
+                gc=mmap2
        ]]
 )
-AC_SUBST([vvmgctype])
-GCTHREAD_SUBDIRS="$GCTHREAD_SUBDIRS gc-$vvmgctype"
-AC_SUBST([GCTHREAD_SUBDIRS])
-
-GC_DEFINE=""
-GC_LIBS=""
 
 dnl TODO find the libgc.a
-if test "x$vvmgctype" = "xboehm";  then
-  GC_DEFINE="-DGC_BOEHM"
-  GC_LIBS="/usr/lib/libgc.a"
+if test "x$gc" = "xboehm";  then
+  AC_CHECK_LIB(gccpp, GC_malloc, [], \
+    [AC_MSG_ERROR([You need to install the boehm-gc package (gccpp).])]
+  )
+  AC_CHECK_HEADER([gc/gc.h], [], \
+    AC_MSG_ERROR([You need to install the boehm-gc devel package (gc/gc.h).])
+  )
+  GC_LIBS="-lgccpp -gc"
+  CFLAGS="$CFLAGS -I$PWD/lib/Mvm/BoehmGC -DGC_THREADS"
+  CXXFLAGS="$CXXFLAGS -I$PWD/lib/Mvm/BoehmGC -DGC_THREADS"
+  AC_DEFINE([USE_GC_BOEHM], [1], [Using the boehm gc])
+  case $target_os in
+    *linux*)
+      CFLAGS="-DGC_LINUX_THREADS"
+      CXXFLAGS="$CXXFLAGS -DGC_LINUX_THREADS"
+    ;;
+  esac
+else
+  GC_LIBS="$PWD/lib/Mvm/GCMmap2/libuvm_gc_mmap2.a \
+           $PWD/lib/Mvm/Allocator/libuvm_alloc.a"
+  CFLAGS="$CFLAGS -I$PWD/lib/Mvm/GCMmap2 -DWITH_TRACER"
+  CXXFLAGS="$CXXFLAGS -I$PWD/lib/Mvm/GCMmap2 -DWITH_TRACER"
+  AC_DEFINE([USE_GC_MMAP2], [1], [Using the gcmmap2])
 fi
 
-AC_SUBST([GC_DEFINE])
 AC_SUBST([GC_LIBS])
 
 dnl **************************************************************************
@@ -248,8 +250,8 @@ if test "x${gnuclasspathlocalprefix}" = x; then
   echo Using ${gnuclasspathinstallationprefix} as GNU CLASSPATH installation prefix;
   classpathglibj=${gnuclasspathinstallationprefix}/share/classpath/glibj.zip;
   classpathlibs=${gnuclasspathinstallationprefix}/lib/classpath/;
-  CFLAGS=$CFLAGS -I$gnuclasspathinstallationprefix/include
-  CXXFLAGS=$CXXFLAGS -I$gnuclasspathinstallationprefix/include
+  CFLAGS="$CFLAGS -I$gnuclasspathinstallationprefix/include"
+  CXXFLAGS="$CXXFLAGS -I$gnuclasspathinstallationprefix/include"
 else
   echo Using ${gnuclasspathlocalprefix} as GNU CLASSPATH local prefix;
   classpathglibj=${gnuclasspathlocalprefix}/lib/;

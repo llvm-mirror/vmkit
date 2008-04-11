@@ -13,7 +13,7 @@
 #include <assert.h>
 
 #include "types.h"
-#include "mvm/GC/GC.h"
+#include "MvmGC.h"
 
 namespace mvm {
 

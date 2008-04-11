@@ -128,8 +128,10 @@ llvm::Function* CLIJit::clearExceptionLLVM;
 llvm::Function* CLIJit::compareExceptionLLVM;
 llvm::Function* CLIJit::arrayLengthLLVM;
 
+#ifdef WITH_TRACER
 llvm::Function* CLIJit::markAndTraceLLVM;
 const llvm::FunctionType* CLIJit::markAndTraceLLVMType;
+#endif
 llvm::Function* CLIJit::vmObjectTracerLLVM;
 llvm::Function* CLIJit::initialiseClassLLVM;
 llvm::Function* CLIJit::virtualLookupLLVM;
@@ -251,7 +253,7 @@ static void initialiseStatics() {
   const UTF8* mscorlib = vm->asciizConstructUTF8("mscorlib");
   Assembly* ass = vm->loadAssembly(mscorlib, "dll");
   if (ass == 0)
-    VMThread::get()->vm->error("can not find mscorlib.dll. Abort");
+    VMThread::get()->vm->error("can not load mscorlib.dll. Abort");
 
   vm->coreAssembly = ass;
 

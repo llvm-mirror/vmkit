@@ -10,7 +10,7 @@
 #include <dlfcn.h>
 #include <string.h>
 
-#include "mvm/GC/GC.h"
+#include "MvmGC.h"
 
 #include "llvm/Type.h"
 

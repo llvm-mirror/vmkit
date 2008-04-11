@@ -28,7 +28,9 @@
 using namespace jnjvm;
 using namespace llvm;
 
+#ifdef WITH_TRACER
 const llvm::FunctionType* JavaJIT::markAndTraceLLVMType = 0;
+#endif
 
 const llvm::Type* JavaObject::llvmType = 0;
 const llvm::Type* JavaArray::llvmType = 0;
@@ -543,8 +545,9 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
     
   }
 
-    
-      // Create markAndTraceLLVM
+
+#ifdef WITH_TRACER
+  // Create markAndTraceLLVM
   {
   std::vector<const Type*> args;
   args.push_back(JavaObject::llvmType);
@@ -553,7 +556,8 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                                   GlobalValue::ExternalLinkage,
                                   "_ZNK2gc12markAndTraceEv",
                                   module);
-  } 
+  }
+#endif
   mvm::jit::unprotectTypes();//->unlock();
   mvm::jit::protectConstants();//->lock();
   constantUTF8Null = Constant::getNullValue(UTF8::llvmType); 

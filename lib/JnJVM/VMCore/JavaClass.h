@@ -57,7 +57,7 @@ public:
   unsigned int  nbb;
 
   void derive(const UTF8* name, unsigned int length, const Reader* reader);
-  static Attribut* lookup(const std::vector<Attribut*> * vec,
+  static Attribut* lookup(const std::vector<Attribut*, gc_allocator<Attribut*> > * vec,
                           const UTF8* key);
   Reader* toReader(Jnjvm *vm, ArrayUInt8* array, Attribut* attr);
 
@@ -176,7 +176,7 @@ public:
   mvm::Code* codeVirtualTracer;
   mvm::Code* codeStaticTracer;
   JavaCtpInfo* ctpInfo;
-  std::vector<Attribut*> attributs;
+  std::vector<Attribut*, gc_allocator<Attribut*> > attributs;
   std::vector<Class*> innerClasses;
   Class* outerClass;
   uint32 innerAccess;
@@ -241,8 +241,8 @@ public:
   llvm::Function* methPtr;
   unsigned int access;
   Signdef* signature;
-  std::vector<Attribut*> attributs;
-  std::vector<Enveloppe*> caches;
+  std::vector<Attribut*, gc_allocator<Attribut*> > attributs;
+  std::vector<Enveloppe*, gc_allocator<Enveloppe*> > caches;
   Class* classDef;
   const UTF8* name;
   const UTF8* type;
@@ -318,7 +318,7 @@ public:
   const UTF8* name;
   Typedef* signature;
   const UTF8* type;
-  std::vector<Attribut*> attributs;
+  std::vector<Attribut*, gc_allocator<Attribut*> > attributs;
   Class* classDef;
   uint64 ptrOffset;
 

@@ -10,7 +10,9 @@
 #ifndef MVM_THREAD_H
 #define MVM_THREAD_H
 
+#include "MvmGC.h"
 #include "mvm/Threads/Key.h"
+
 
 class Collector;
 
