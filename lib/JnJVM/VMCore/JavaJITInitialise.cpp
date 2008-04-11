@@ -249,7 +249,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                      module);
   
   LongAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     " _ZN5jnjvm9ArrayLong5aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
+                     "_ZN5jnjvm9ArrayLong5aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
                      module);
   
   ObjectAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
