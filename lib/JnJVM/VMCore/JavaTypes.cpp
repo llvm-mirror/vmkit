@@ -595,11 +595,13 @@ Signdef* Signdef::signDup(const UTF8* name, Jnjvm *vm) {
   res->nativeTypePtr  = llvm::PointerType::getUnqual(res->nativeType);
   
   std::vector<const llvm::Type*> Args;
+  Args.push_back(mvm::jit::ptrType); // vm
   Args.push_back(res->staticTypePtr);
   Args.push_back(llvm::PointerType::getUnqual(llvm::Type::Int32Ty));
   res->staticBufType = llvm::FunctionType::get(res->ret->funcs->llvmType, Args, false);
   
   std::vector<const llvm::Type*> Args2;
+  Args2.push_back(mvm::jit::ptrType); // vm
   Args2.push_back(res->virtualTypePtr);
   Args2.push_back(JavaObject::llvmType);
   Args2.push_back(llvm::PointerType::getUnqual(llvm::Type::Int32Ty));

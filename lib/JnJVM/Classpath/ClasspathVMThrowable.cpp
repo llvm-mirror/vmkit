@@ -49,7 +49,7 @@ jclass clazz,
   ArrayUInt32* obj = ArrayUInt32::acons(real_size, JavaArray::ofInt, vm);
   memcpy(obj->elements, stack, real_size * sizeof(int));
   JavaObject* vmThrowable = (*Classpath::newVMThrowable)(vm);
-  Classpath::initVMThrowable->invokeIntSpecial(vmThrowable);
+  Classpath::initVMThrowable->invokeIntSpecial(vm, vmThrowable);
   (*Classpath::vmDataVMThrowable)(vmThrowable, obj);
   return (jobject)vmThrowable;
 }
@@ -74,7 +74,9 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   bool native = isNative(meth->access);
 
   JavaObject* res = (*Classpath::newStackTraceElement)(vm);
-  Classpath::initStackTraceElement->invokeIntSpecial(res, sourceName, (uint32)ip, className, methodName, native);
+  Classpath::initStackTraceElement->invokeIntSpecial(vm, res, sourceName,
+                                                     (uint32)ip, className,
+                                                     methodName, native);
   return res;
 }
 

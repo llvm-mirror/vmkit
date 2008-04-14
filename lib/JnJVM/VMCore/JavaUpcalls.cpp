@@ -139,7 +139,7 @@ void ClasspathThread::createInitialThread(Jnjvm* vm, JavaObject* th) {
   (*vmth)(running, (uint32)1);
   (*rootGroup)();
   (*th)(group, (JavaObject*)((*rootGroup)().PointerVal));
-  groupAddThread->invokeIntSpecial((JavaObject*)((*rootGroup)().PointerVal), th);
+  groupAddThread->invokeIntSpecial(vm, (JavaObject*)((*rootGroup)().PointerVal), th);
 }
 
 void ClasspathThread::mapInitialThread(Jnjvm* vm) {
@@ -149,7 +149,7 @@ void ClasspathThread::mapInitialThread(Jnjvm* vm) {
   myth->javaThread = th;
   JavaObject* vmth = (JavaObject*)((*th)(vmThread).PointerVal);
   (*vmth)(vmdata, (JavaObject*)myth);
-  finaliseCreateInitialThread->invokeIntStatic(th);
+  finaliseCreateInitialThread->invokeIntStatic(vm, th);
 }
 
 void Classpath::initialiseClasspath(Jnjvm* vm) {

@@ -101,7 +101,7 @@ JNIEnv *env,
       JavaMethod* meth = *i;
       // TODO: check parameter types
       JavaObject* tmp = (*Classpath::newConstructor)(vm);
-      Classpath::initConstructor->invokeIntSpecial(tmp, Cl, meth);
+      Classpath::initConstructor->invokeIntSpecial(vm, tmp, Cl, meth);
       ret->setAt(index, tmp);
     }
     return (jobject)ret;
@@ -146,7 +146,8 @@ JNIEnv *env,
       JavaMethod* meth = *i;
       // TODO: check parameter types
       JavaObject* tmp = (*Classpath::newMethod)(vm);
-      Classpath::initMethod->invokeIntSpecial(tmp, Cl, vm->UTF8ToStr(meth->name), meth);
+      Classpath::initMethod->invokeIntSpecial(vm, tmp, Cl,
+                                              vm->UTF8ToStr(meth->name), meth);
       ret->setAt(index, tmp);
     }
     return (jobject)ret;
@@ -316,14 +317,16 @@ jclass Cl, jboolean publicOnly) {
       }
     }
     
-    ArrayObject* ret = ArrayObject::acons(res.size(), Classpath::fieldArrayClass, vm);
+    ArrayObject* ret = ArrayObject::acons(res.size(),
+                                          Classpath::fieldArrayClass, vm);
     sint32 index = 0;
     for (std::vector<JavaField*>::iterator i = res.begin(), e = res.end();
           i != e; ++i, ++index) {
       JavaField* field = *i;
       // TODO: check parameter types
       JavaObject* tmp = (*Classpath::newField)(vm);
-      Classpath::initField->invokeIntSpecial(tmp, Cl, vm->UTF8ToStr(field->name), field);
+      Classpath::initField->invokeIntSpecial(vm, tmp, Cl,
+                                             vm->UTF8ToStr(field->name), field);
       ret->setAt(index, tmp);
     }
     return (jobject)ret;

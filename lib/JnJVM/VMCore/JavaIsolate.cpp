@@ -304,7 +304,7 @@ void ThreadSystem::initialise() {
 
 JavaObject* JavaIsolate::loadAppClassLoader() {
   if (appClassLoader == 0) {
-    appClassLoader = Classpath::getSystemClassLoader->invokeJavaObjectStatic();
+    appClassLoader = Classpath::getSystemClassLoader->invokeJavaObjectStatic(this);
   }
   return appClassLoader;
 }
@@ -316,7 +316,8 @@ void JavaIsolate::mapInitialThread() {
 void JavaIsolate::loadBootstrap() {
   mapInitialThread();
   loadAppClassLoader();
-  Classpath::setContextClassLoader->invokeIntSpecial(JavaThread::currentThread(), appClassLoader);
+  JavaObject* obj = JavaThread::currentThread();
+  Classpath::setContextClassLoader->invokeIntSpecial(this, obj, appClassLoader);
   // load and initialise math since it is responsible for dlopen'ing 
   // libjavalang.so and we are optimizing some math operations
   loadName(asciizConstructUTF8("java/lang/Math"), 
@@ -334,9 +335,11 @@ void JavaIsolate::executeClass(const char* className, ArrayObject* args) {
   if (exc) {
     JavaThread::clearException();
     JavaObject* obj = JavaThread::currentThread();
-    JavaObject* group = (JavaObject*)((*obj)(ClasspathThread::group)).PointerVal;
+    JavaObject* group = 
+      (JavaObject*)((*obj)(ClasspathThread::group)).PointerVal;
     try{
-      ClasspathThread::uncaughtException->invokeIntSpecial(group, obj, exc);
+      ClasspathThread::uncaughtException->invokeIntSpecial(this, group, obj, 
+                                                           exc);
     }catch(...) {
       printf("Even uncaught exception throwed an exception!\n");
       assert(0);

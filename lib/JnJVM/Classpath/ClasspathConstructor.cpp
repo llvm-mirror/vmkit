@@ -79,7 +79,7 @@ JNIEnv *env,
       
       JavaObject* excp = 0;
       try {
-        meth->invokeIntSpecialBuf(res, _buf);
+        meth->invokeIntSpecialBuf(vm, res, _buf);
       }catch(...) {
         excp = JavaThread::getJavaException();
         JavaThread::clearException();

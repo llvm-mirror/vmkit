@@ -146,7 +146,7 @@ jint ThrowNew(JNIEnv* env, jclass clazz, const char *msg) {
   JavaMethod* init =
     cl->lookupMethod(Jnjvm::initName, 
                      vm->asciizConstructUTF8("(Ljava/lang/String;)V"), 0, 1);
-  init->invokeIntSpecial(res, vm->asciizToStr(msg));
+  init->invokeIntSpecial(vm, res, vm->asciizToStr(msg));
   th->pendingException = res;
   th->returnFromNative();
   return 1;
@@ -230,8 +230,9 @@ jobject NewObject(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   va_start(ap, methodID);
   JavaMethod* meth = (JavaMethod*)methodID;
   Class* cl = (Class*)NativeUtil::resolvedImplClass(clazz, true);
-  JavaObject* res = cl->doNew(JavaThread::get()->isolate);
-  meth->invokeIntSpecialAP(res, ap);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaObject* res = cl->doNew(vm);
+  meth->invokeIntSpecialAP(vm, res, ap);
   va_end(ap);
   return (jobject)res;
   
@@ -320,7 +321,8 @@ jobject CallObjectMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
   va_start(ap, methodID);
   JavaObject* self = (JavaObject*)obj;
   JavaMethod* meth = (JavaMethod*)methodID;
-  JavaObject* res = meth->invokeJavaObjectVirtualAP(self, ap);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaObject* res = meth->invokeJavaObjectVirtualAP(vm, self, ap);
   va_end(ap);
   return (jobject)res;
 
@@ -351,7 +353,8 @@ jboolean CallBooleanMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   va_start(ap, methodID);
   JavaObject* self = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
-  uint32 res = meth->invokeIntVirtualAP(self, ap);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  uint32 res = meth->invokeIntVirtualAP(vm, self, ap);
   va_end(ap);
   return res;
 
@@ -442,7 +445,8 @@ jint CallIntMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   va_start(ap, methodID);
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
-  uint32 res = meth->invokeIntVirtualAP(obj, ap);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  uint32 res = meth->invokeIntVirtualAP(vm, obj, ap);
   va_end(ap);
   return res;
 
@@ -495,7 +499,8 @@ jfloat CallFloatMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   va_start(ap, methodID);
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
-  jfloat res = meth->invokeFloatVirtualAP(obj, ap);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  jfloat res = meth->invokeFloatVirtualAP(vm, obj, ap);
   va_end(ap);
   return res;
 
@@ -527,7 +532,8 @@ jdouble CallDoubleMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   va_start(ap, methodID);
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
-  jdouble res = meth->invokeDoubleVirtualAP(obj, ap);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  jdouble res = meth->invokeDoubleVirtualAP(vm, obj, ap);
   va_end(ap);
   return res;
 
@@ -543,7 +549,8 @@ jdouble CallDoubleMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
-  return meth->invokeDoubleVirtualAP(obj, args);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  return meth->invokeDoubleVirtualAP(vm, obj, args);
 
   END_EXCEPTION
   return 0.0;
@@ -567,7 +574,8 @@ void CallVoidMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   va_start(ap, methodID);
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
-  meth->invokeIntVirtualAP(obj, ap);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  meth->invokeIntVirtualAP(vm, obj, ap);
   va_end(ap);
 
   END_EXCEPTION
@@ -581,7 +589,8 @@ void CallVoidMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
-  meth->invokeIntVirtualAP(obj, args);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  meth->invokeIntVirtualAP(vm, obj, args);
 
   END_EXCEPTION
 }
@@ -800,7 +809,8 @@ void CallNonvirtualVoidMethod(JNIEnv *env, jobject _obj, jclass clazz,
   va_start(ap, methodID);
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
-  meth->invokeIntSpecialAP(obj, ap);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  meth->invokeIntSpecialAP(vm, obj, ap);
   va_end(ap);
 
   END_EXCEPTION
@@ -1110,7 +1120,8 @@ jboolean CallStaticBooleanMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
   va_list ap;
   va_start(ap, methodID);
   JavaMethod* meth = (JavaMethod*)methodID;
-  uint32 res = meth->invokeIntStaticAP(ap);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  uint32 res = meth->invokeIntStaticAP(vm, ap);
   va_end(ap);
   return res;
 
@@ -1284,7 +1295,8 @@ void CallStaticVoidMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   va_list ap;
   va_start(ap, methodID);
   JavaMethod* meth = (JavaMethod*)methodID;
-  meth->invokeIntStaticAP(ap);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  meth->invokeIntStaticAP(vm, ap);
   va_end(ap);
 
   END_EXCEPTION
@@ -1297,7 +1309,8 @@ void CallStaticVoidMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
   BEGIN_EXCEPTION
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  meth->invokeIntStaticAP(args);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  meth->invokeIntStaticAP(vm, args);
 
   END_EXCEPTION
 }

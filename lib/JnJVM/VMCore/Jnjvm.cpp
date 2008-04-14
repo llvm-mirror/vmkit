@@ -298,7 +298,7 @@ ArrayUInt8* Jnjvm::openName(const UTF8* utf8) {
 }
 
 
-typedef void (*clinit_t)(void);
+typedef void (*clinit_t)(Jnjvm* vm);
 
 void Jnjvm::initialiseClass(CommonClass* cl) {
   if (cl->isArray || AssessorDesc::bogusClassToPrimitive(cl)) {
@@ -333,7 +333,7 @@ void Jnjvm::initialiseClass(CommonClass* cl) {
         JavaObject* exc = 0;
         try{
           clinit_t pred = (clinit_t)meth->compiledPtr();
-          pred();
+          pred(this);
         } catch(...) {
           exc = JavaThread::getJavaException();
           assert(exc && "no exception?");
@@ -816,7 +816,7 @@ Typedef* Jnjvm::constructType(const UTF8* name) {
 CommonClass* Jnjvm::loadInClassLoader(const UTF8* name, JavaObject* loader) {
   JavaString* str = this->UTF8ToStr(name);
   JavaObject* obj = (JavaObject*)
-    Classpath::loadInClassLoader->invokeJavaObjectVirtual(loader, str);
+    Classpath::loadInClassLoader->invokeJavaObjectVirtual(this, loader, str);
   return (CommonClass*)((*Classpath::vmdataClass)(obj).PointerVal);
 }
 
@@ -839,13 +839,13 @@ JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
   if (!(cl->delegatee)) {
     JavaObject* delegatee = (*Classpath::newClass)(this);
     cl->delegatee = delegatee;
-    Classpath::initClass->invokeIntSpecial(delegatee, cl);
+    Classpath::initClass->invokeIntSpecial(this, delegatee, cl);
   } else if (cl->delegatee->classOf != Classpath::newClass) {
     JavaObject* pd = cl->delegatee;
     JavaObject* delegatee = (*Classpath::newClass)(this);
     cl->delegatee = delegatee;;
-    Classpath::initClassWithProtectionDomain->invokeIntSpecial(delegatee, cl,
-                                                               pd);
+    Classpath::initClassWithProtectionDomain->invokeIntSpecial(this, delegatee,
+                                                               cl, pd);
   }
   return cl->delegatee;
 }
@@ -855,12 +855,13 @@ JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
   if (!val) {
     val = (*Classpath::newClass)(this);
     delegatees->hash(cl, val);
-    Classpath::initClass->invokeIntSpecial(val, cl);
+    Classpath::initClass->invokeIntSpecial(this, val, cl);
   } else if (val->classOf != Classpath::newClass) {
     JavaObject* pd = val;
     val = (*Classpath::newClass)(this);
     delegatees->hash(cl, val);
-    Classpath::initClassWithProtectionDomain->invokeIntSpecial(val, cl, pd);
+    Classpath::initClassWithProtectionDomain->invokeIntSpecial(this, val, cl,
+                                                               pd);
   }
   return val;
 }

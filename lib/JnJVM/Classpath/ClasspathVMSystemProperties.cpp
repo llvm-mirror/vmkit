@@ -30,7 +30,8 @@ extern "C" {
 
 static void setProperty(Jnjvm* vm, JavaObject* prop, const char* key,
                         const char* val) {
-  Classpath::setProperty->invokeIntSpecial(prop, vm->asciizToStr(key), vm->asciizToStr(val));
+  Classpath::setProperty->invokeIntSpecial(vm, prop, vm->asciizToStr(key),
+                                           vm->asciizToStr(val));
 }
 
 static void setUnameProp(Jnjvm* vm, JavaObject* prop) {

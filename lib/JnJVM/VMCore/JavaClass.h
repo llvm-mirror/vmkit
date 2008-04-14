@@ -255,59 +255,59 @@ public:
   void* compiledPtr();
   const llvm::FunctionType* llvmType;
 
-  uint32 invokeIntSpecialAP(JavaObject* obj, va_list ap);
-  float invokeFloatSpecialAP(JavaObject* obj, va_list ap);
-  double invokeDoubleSpecialAP(JavaObject* obj, va_list ap);
-  sint64 invokeLongSpecialAP(JavaObject* obj, va_list ap);
-  JavaObject* invokeJavaObjectSpecialAP(JavaObject* obj, va_list ap);
+  uint32 invokeIntSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
+  float invokeFloatSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
+  double invokeDoubleSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
+  sint64 invokeLongSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
+  JavaObject* invokeJavaObjectSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
   
-  uint32 invokeIntVirtualAP(JavaObject* obj, va_list ap);
-  float invokeFloatVirtualAP(JavaObject* obj, va_list ap);
-  double invokeDoubleVirtualAP(JavaObject* obj, va_list ap);
-  sint64 invokeLongVirtualAP(JavaObject* obj, va_list ap);
-  JavaObject* invokeJavaObjectVirtualAP(JavaObject* obj, va_list ap);
+  uint32 invokeIntVirtualAP(Jnjvm* vm, JavaObject* obj, va_list ap);
+  float invokeFloatVirtualAP(Jnjvm* vm, JavaObject* obj, va_list ap);
+  double invokeDoubleVirtualAP(Jnjvm* vm, JavaObject* obj, va_list ap);
+  sint64 invokeLongVirtualAP(Jnjvm* vm, JavaObject* obj, va_list ap);
+  JavaObject* invokeJavaObjectVirtualAP(Jnjvm* vm, JavaObject* obj, va_list ap);
   
-  uint32 invokeIntStaticAP(va_list ap);
-  float invokeFloatStaticAP(va_list ap);
-  double invokeDoubleStaticAP(va_list ap);
-  sint64 invokeLongStaticAP(va_list ap);
-  JavaObject* invokeJavaObjectStaticAP(va_list ap);
+  uint32 invokeIntStaticAP(Jnjvm* vm, va_list ap);
+  float invokeFloatStaticAP(Jnjvm* vm, va_list ap);
+  double invokeDoubleStaticAP(Jnjvm* vm, va_list ap);
+  sint64 invokeLongStaticAP(Jnjvm* vm, va_list ap);
+  JavaObject* invokeJavaObjectStaticAP(Jnjvm* vm, va_list ap);
   
-  uint32 invokeIntSpecialBuf(JavaObject* obj, void* buf);
-  float invokeFloatSpecialBuf(JavaObject* obj, void* buf);
-  double invokeDoubleSpecialBuf(JavaObject* obj, void* buf);
-  sint64 invokeLongSpecialBuf(JavaObject* obj, void* buf);
-  JavaObject* invokeJavaObjectSpecialBuf(JavaObject* obj, void* buf);
+  uint32 invokeIntSpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf);
+  float invokeFloatSpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf);
+  double invokeDoubleSpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf);
+  sint64 invokeLongSpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf);
+  JavaObject* invokeJavaObjectSpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf);
   
-  uint32 invokeIntVirtualBuf(JavaObject* obj, void* buf);
-  float invokeFloatVirtualBuf(JavaObject* obj, void* buf);
-  double invokeDoubleVirtualBuf(JavaObject* obj, void* buf);
-  sint64 invokeLongVirtualBuf(JavaObject* obj, void* buf);
-  JavaObject* invokeJavaObjectVirtualBuf(JavaObject* obj, void* buf);
+  uint32 invokeIntVirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf);
+  float invokeFloatVirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf);
+  double invokeDoubleVirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf);
+  sint64 invokeLongVirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf);
+  JavaObject* invokeJavaObjectVirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf);
   
-  uint32 invokeIntStaticBuf(void* buf);
-  float invokeFloatStaticBuf(void* buf);
-  double invokeDoubleStaticBuf(void* buf);
-  sint64 invokeLongStaticBuf(void* buf);
-  JavaObject* invokeJavaObjectStaticBuf(void* buf);
+  uint32 invokeIntStaticBuf(Jnjvm* vm, void* buf);
+  float invokeFloatStaticBuf(Jnjvm* vm, void* buf);
+  double invokeDoubleStaticBuf(Jnjvm* vm, void* buf);
+  sint64 invokeLongStaticBuf(Jnjvm* vm, void* buf);
+  JavaObject* invokeJavaObjectStaticBuf(Jnjvm* vm, void* buf);
   
-  uint32 invokeIntSpecial(JavaObject* obj, ...);
-  float invokeFloatSpecial(JavaObject* obj, ...);
-  double invokeDoubleSpecial(JavaObject* obj, ...);
-  sint64 invokeLongSpecial(JavaObject* obj, ...);
-  JavaObject* invokeJavaObjectSpecial(JavaObject* obj, ...);
+  uint32 invokeIntSpecial(Jnjvm* vm, JavaObject* obj, ...);
+  float invokeFloatSpecial(Jnjvm* vm, JavaObject* obj, ...);
+  double invokeDoubleSpecial(Jnjvm* vm, JavaObject* obj, ...);
+  sint64 invokeLongSpecial(Jnjvm* vm, JavaObject* obj, ...);
+  JavaObject* invokeJavaObjectSpecial(Jnjvm* vm, JavaObject* obj, ...);
   
-  uint32 invokeIntVirtual(JavaObject* obj, ...);
-  float invokeFloatVirtual(JavaObject* obj, ...);
-  double invokeDoubleVirtual(JavaObject* obj, ...);
-  sint64 invokeLongVirtual(JavaObject* obj, ...);
-  JavaObject* invokeJavaObjectVirtual(JavaObject* obj, ...);
+  uint32 invokeIntVirtual(Jnjvm* vm, JavaObject* obj, ...);
+  float invokeFloatVirtual(Jnjvm* vm, JavaObject* obj, ...);
+  double invokeDoubleVirtual(Jnjvm* vm, JavaObject* obj, ...);
+  sint64 invokeLongVirtual(Jnjvm* vm, JavaObject* obj, ...);
+  JavaObject* invokeJavaObjectVirtual(Jnjvm* vm, JavaObject* obj, ...);
   
-  uint32 invokeIntStatic(...);
-  float invokeFloatStatic(...);
-  double invokeDoubleStatic(...);
-  sint64 invokeLongStatic(...);
-  JavaObject* invokeJavaObjectStatic(...);
+  uint32 invokeIntStatic(Jnjvm* vm, ...);
+  float invokeFloatStatic(Jnjvm* vm, ...);
+  double invokeDoubleStatic(Jnjvm* vm, ...);
+  sint64 invokeLongStatic(Jnjvm* vm, ...);
+  JavaObject* invokeJavaObjectStatic(Jnjvm* vm, ...);
 };
 
 class JavaField : public mvm::Object {
