@@ -17,8 +17,7 @@
 
 #include "mvm/JIT.h"
 #include "mvm/Method.h"
-
-#include "MvmMemoryManager.h"
+#include "mvm/MvmMemoryManager.h"
 
 using namespace mvm;
 using namespace mvm::jit;
@@ -658,7 +657,7 @@ const llvm::Type* mvm::jit::arrayPtrType;
 
 llvm::Module *mvm::jit::globalModule;
 llvm::ExistingModuleProvider *mvm::jit::globalModuleProvider;
-llvm::JITMemoryManager *mvm::jit::memoryManager;
+mvm::MvmMemoryManager *mvm::jit::memoryManager;
 
 
 uint64 mvm::jit::getTypeSize(const llvm::Type* type) {

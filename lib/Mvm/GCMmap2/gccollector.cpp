@@ -12,7 +12,7 @@
 
 using namespace mvm;
 
-#ifndef MULTIPLE_VM
+#ifndef MULTIPLE_GC
 GCAllocator   *GCCollector::allocator = 0;
 #ifdef HAVE_PTHREAD
 GCThread      *GCCollector::threads;

@@ -17,7 +17,7 @@
 #endif
 #include "mvm/GC/GC.h"
 
-#ifdef MULTIPLE_VM
+#ifdef MULTIPLE_GC
 #define STATIC
 #else
 #define STATIC static

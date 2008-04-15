@@ -88,7 +88,7 @@ PrintBuffer *PrintBuffer::alloc(void) {
 
 
 PrintBuffer *PrintBuffer::writeObj(const Object *obj) {
-  Object *beg = (Object*)Collector::begOf(obj);
+  Object *beg = (Object*)mvm::Thread::get()->GC->begOf(obj);
   
   if(beg) {
     if(beg == obj) {

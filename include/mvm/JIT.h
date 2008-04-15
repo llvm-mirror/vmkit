@@ -26,6 +26,7 @@
 #include "types.h"
 
 #include "mvm/Threads/Locks.h"
+#include "mvm/MvmMemoryManager.h"
 
 namespace mvm {
 
@@ -148,7 +149,7 @@ extern const llvm::Type* arrayPtrType;
 
 extern llvm::Module *globalModule;
 extern llvm::ExistingModuleProvider *globalModuleProvider;
-extern llvm::JITMemoryManager *memoryManager;
+extern mvm::MvmMemoryManager *memoryManager;
 
 extern void protectTypes();
 extern void unprotectTypes();

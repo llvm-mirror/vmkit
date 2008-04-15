@@ -75,17 +75,23 @@ public:
 };
 
 class GCThread {
-   Key<GCThreadCollector>  _loc;
-   GCThreadCollector        base;
+  GCThreadCollector        base;
   GCLockRecovery         _globalLock;     /* global lock for gcmalloc */
   LockNormal              _stackLock;     /* stack lock for synchronization */
   Cond                    _stackCond;     /* condition for unlocking other tasks (write protect) */
   Cond                    _collectionCond;/* condition for unblocking the collecter */
-   unsigned int            _nb_threads;    /* number of active threads */
-   unsigned int            _nb_collected;  /* number of threads collected */
+  unsigned int            _nb_threads;    /* number of active threads */
+  unsigned int            _nb_collected;  /* number of threads collected */
   int                     collector_tid;  /* don't synchonize this one */
 
+  
 public:
+  Key<GCThreadCollector>  _loc;
+  GCThread() {
+    _nb_threads = 0;
+    _nb_collected = 0;
+    collector_tid = 0;
+  }
 
   inline void lock()   { _globalLock.lock(); }
   inline void unlock() { _globalLock.unlock(); }
@@ -108,9 +114,9 @@ public:
     collectionFinished();         /* unblock mutators */
   }
 
-   inline GCThreadCollector *myloc() { return _loc.get(); }
+  inline GCThreadCollector *myloc() { return _loc.get(); }
 
-   inline void another_mark() { _nb_collected++; }
+  inline void another_mark() { _nb_collected++; }
 
   void synchronize();
 

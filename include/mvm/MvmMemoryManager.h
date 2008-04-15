@@ -11,6 +11,11 @@
 #ifndef MVM_MEMORY_MANAGER_H
 #define MVM_MEMORY_MANAGER_H
 
+#include <map>
+
+#include "MvmGC.h"
+#include "mvm/Threads/Locks.h"
+#include "llvm/Module.h"
 #include <llvm/ExecutionEngine/JITMemoryManager.h>
 
 using namespace llvm;
@@ -23,11 +28,34 @@ class Object;
 class MvmMemoryManager : public JITMemoryManager {
   Method* currentMethod;       // Current method being compiled
   unsigned char *GOTBase;      // Target Specific reserved memory
+#ifdef MULTIPLE_GC
+  std::map<Module*, Collector*> GCMap;
+  mvm::Lock* lock;
+#endif
 public:
   
-  MvmMemoryManager() : JITMemoryManager() { GOTBase = 0; }
-   ~MvmMemoryManager() { delete[] GOTBase; }     
-  /// startFunctionBody - When we start JITing a function, the JIT calls this 
+  MvmMemoryManager() : JITMemoryManager() { 
+      GOTBase = 0; 
+#ifdef MULTIPLE_GC
+      lock = mvm::Lock::allocNormal();
+#endif
+  }
+   ~MvmMemoryManager() { 
+      delete[] GOTBase;
+#ifdef MULTIPLE_GC
+      delete lock;
+#endif
+  }
+
+#ifdef MULTIPLE_GC 
+   void addGCForModule(Module* M, Collector* GC){
+      lock->lock();
+      GCMap[M] = GC;
+      lock->unlock();
+   }
+#endif
+
+   /// startFunctionBody - When we start JITing a function, the JIT calls this 
   /// method to allocate a block of free RWX memory, which returns a pointer to
   /// it.  The JIT doesn't know ahead of time how much space it will need to
   /// emit the function, so it doesn't pass in the size.  Instead, this method

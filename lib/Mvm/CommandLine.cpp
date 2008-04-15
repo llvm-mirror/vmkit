@@ -105,10 +105,18 @@ extern "C" int startApp(thread_arg_t* arg) {
   char** argv = arg->argv;
   vmlet_main_t func = arg->func;
   free(arg);
+#ifndef MULTIPLE_GC
   Collector::inject_my_thread(&argc);
   func(argc, argv);
   Collector::remove_my_thread();
   Collector::collect();
+#else
+  Collector* GC = Collector::allocate();
+  GC->inject_my_thread(&argc);
+  func(argc, argv);
+  GC->remove_my_thread();
+  GC->collect();
+#endif
   return 0;
 }
 
@@ -150,7 +158,6 @@ void CommandLine::executeInstr() {
       Thread::start(&tid, (int (*)(void *))startApp, thread_arg);
 #else
       func(argc, argv);
-      Collector::collect();
 #endif
     }
   }

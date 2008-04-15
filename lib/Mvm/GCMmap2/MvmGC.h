@@ -18,6 +18,8 @@
 #define gc_new(Class)  __gc_new(Class::VT) Class
 #define __gc_new new
 
+class Collector;
+
 class gc : public gcRoot {
 public:
   
@@ -28,7 +30,23 @@ public:
   void    operator delete(void *);
   void *  realloc(size_t n);
 
+#ifdef MULTIPLE_GC
+#define collector_new(Class, Collector) __gc_new(Class::VT, Collector) Class
+  void    markAndTrace(Collector* GC) const;
+  size_t  objectSize(Collector* GC) const;
+  void *  operator new(size_t sz, VirtualTable *VT, Collector* GC);
+  void *  operator new(size_t sz, Collector* GC);
+  void    operator delete(void *, Collector* GC);
+  void *  realloc(size_t n, Collector* GC);
+#endif
+
 };
+
+#ifdef MULTIPLE_GC
+#define STATIC
+#else
+#define STATIC static
+#endif
 
 class Collector {
 public:
@@ -36,29 +54,29 @@ public:
   typedef void (*markerFn)(void);
   
   static void  initialise(markerFn mark, void *base_sp);
-  static void  destroy();
+  STATIC void  destroy();
 
-  static void           die_if_sigsegv_occured_during_collection(void *addr);
-  static int            isStable(gc_lock_recovery_fct_t, int, int, int, int,
+  STATIC void           die_if_sigsegv_occured_during_collection(void *addr);
+  STATIC int            isStable(gc_lock_recovery_fct_t, int, int, int, int,
                                  int, int, int, int);
-  static unsigned int   enable(unsigned int n);
-  static void           gcStats(size_t &no, size_t &nbb);
-  static void           maybeCollect();
-  static void           collect(void);
-  static void           inject_my_thread(void *sp);
-  static void           remove_my_thread();
+  STATIC unsigned int   enable(unsigned int n);
+  STATIC void           gcStats(size_t &no, size_t &nbb);
+  STATIC void           maybeCollect();
+  STATIC void           collect(void);
+  STATIC void           inject_my_thread(void *sp);
+  STATIC void           remove_my_thread();
   static Collector*     allocate();
 
-  static gc             *begOf(const void *o);
-  static int            byteOffset(void *o);
-  inline static bool    isObject(const void *o) { return begOf((void*)o); }
-        static void     applyFunc(void (*func)(gcRoot *o, void *data), void *data);
-        static void     registerMemoryError(void (*func)(unsigned int));
-        static int      getMaxMemory(void);
-        static int      getFreeMemory(void);
-        static int      getTotalMemory(void);
-        static void     setMaxMemory(size_t);
-        static void     setMinMemory(size_t);
+  STATIC gc             *begOf(const void *o);
+  STATIC int            byteOffset(void *o);
+  inline STATIC bool    isObject(const void *o) { return begOf((void*)o); }
+        STATIC void     applyFunc(void (*func)(gcRoot *o, void *data), void *data);
+        STATIC void     registerMemoryError(void (*func)(unsigned int));
+        STATIC int      getMaxMemory(void);
+        STATIC int      getFreeMemory(void);
+        STATIC int      getTotalMemory(void);
+        STATIC void     setMaxMemory(size_t);
+        STATIC void     setMinMemory(size_t);
 };
 
 

@@ -26,8 +26,13 @@ void marker(void) {
 }
 
 int main(int argc, char **argv) {
+  mvm::Thread::initialise();
   Collector::initialise(marker, 0);
+#ifdef MULTIPLE_GC
+  mvm::Thread::get()->GC->destroy();
+#else
   Collector::destroy();
+#endif
   return 0;
 }
 
