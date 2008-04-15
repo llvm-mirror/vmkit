@@ -22,7 +22,11 @@
 
 #include "types.h"
 
+#ifdef MULTIPLE_GC
+#define vm_new(vm, cl) collector_new(cl, vm->GC)
+#else
 #define vm_new(vm, cl) gc_new(cl)
+#endif
 
 namespace jnjvm {
 
@@ -218,6 +222,8 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("Jnjvm<>");
   }
+  
+  virtual void destroyer();
 
   void addProperty(char* key, char* value);
  
@@ -249,6 +255,9 @@ public:
   DelegateeMap* delegatees;
 #endif
 
+#ifdef MULTIPLE_GC
+  Collector* GC;
+#endif
   
   mvm::Lock* protectModule;
   llvm::Module* module;

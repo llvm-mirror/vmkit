@@ -15,6 +15,7 @@
 #include "llvm/Target/TargetData.h"
 
 #include "mvm/JIT.h"
+#include "mvm/MvmMemoryManager.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Cond.h"
 
@@ -411,7 +412,10 @@ extern const char* GNUClasspathLibs;
 
 JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   JavaIsolate *isolate= vm_new(callingVM, JavaIsolate)();
-  
+
+#ifdef MULTIPLE_GC
+  isolate->GC = Collector::allocate();
+#endif 
   isolate->classpath = getenv("CLASSPATH");
   if (!(isolate->classpath)) {
     isolate->classpath = ".";
@@ -437,10 +441,14 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
 
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
+#ifndef MULTIPLE_GC
   mvm::Thread* th = mvm::Thread::get();
   isolate->bootstrapThread->GC = th->GC;
+#else
+  isolate->bootstrapThread->GC = isolate->GC;
+  mvm::jit::memoryManager->addGCForModule(isolate->module, isolate->GC);
+#endif 
   JavaThread::threadKey->set(isolate->bootstrapThread);
-
   
   isolate->threadSystem = vm_new(isolate, ThreadSystem)();
   isolate->threadSystem->initialise();
@@ -469,6 +477,10 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
 JavaIsolate* JavaIsolate::allocateBootstrap() {
   JavaIsolate *isolate= gc_new(JavaIsolate)();
   
+#ifdef MULTIPLE_GC
+  isolate->GC = Collector::allocate();
+#endif 
+  
   isolate->classpath = getenv("CLASSPATH");
   if (!(isolate->classpath)) {
     isolate->classpath = ".";
@@ -493,8 +505,13 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
+#ifndef MULTIPLE_GC
   mvm::Thread* th = mvm::Thread::get();
   isolate->bootstrapThread->GC = th->GC;
+#else
+  isolate->bootstrapThread->GC = isolate->GC;
+  mvm::jit::memoryManager->addGCForModule(isolate->module, isolate->GC);
+#endif 
   JavaThread::threadKey->set(isolate->bootstrapThread);
 
   isolate->name = "bootstrapVM";
@@ -515,7 +532,7 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
 #endif
 
 #if defined(SERVICE_VM) || !defined(MULTIPLE_VM)
-  isolate->threadSystem = vm_new(this, ThreadSystem)();
+  isolate->threadSystem = vm_new(isolate, ThreadSystem)();
   isolate->threadSystem->initialise();
 #endif
   
@@ -523,9 +540,5 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
 }
 
 void JavaIsolate::destroyer(size_t sz) {
-  mvm::jit::protectEngine->lock();
-  mvm::jit::executionEngine->removeModuleProvider(TheModuleProvider);
-  mvm::jit::protectEngine->unlock();
-  delete TheModuleProvider;
-  delete module;
+  Jnjvm::destroyer();
 }

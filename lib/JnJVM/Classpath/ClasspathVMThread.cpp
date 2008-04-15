@@ -46,11 +46,15 @@ typedef struct arg_thread_t {
 
 static void start(arg_thread_t* arg) {
   int argc;
-  Collector::inject_my_thread(&argc);
   JavaObject* vmThread = arg->vmThread;
   JavaThread* intern = arg->intern;
   free(arg);
   mvm::Thread::threadKey->set(intern);
+#ifdef MULTIPLE_GC
+  intern->GC->inject_my_thread(&argc);
+#else
+  Collector::inject_my_thread(&argc);
+#endif
   CommonClass* vmthClass = vmThread->classOf;
   JavaObject* thread = (JavaObject*)((*ClasspathThread::assocThread)(vmThread).PointerVal);
   JavaIsolate* isolate = (JavaIsolate*)(intern->isolate);
@@ -74,7 +78,12 @@ static void start(arg_thread_t* arg) {
       ts->nonDaemonVar->signal();
     ts->nonDaemonLock->unlock();
   }
+
+#ifdef MULTIPLE_GC
+  intern->GC->remove_my_thread();
+#else
   Collector::remove_my_thread();
+#endif
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMThread_start(
@@ -93,6 +102,9 @@ jobject _vmThread, sint64 stackSize) {
   arg_thread_t* arg = (arg_thread_t*)malloc(sizeof(arg_thread_t));
   arg->intern = th;
   arg->vmThread = vmThread;
+#ifdef MULTIPLE_GC
+  th->GC = mvm::Thread::get()->GC;
+#endif
   mvm::Thread::start(&tid, (int (*)(void *))start, (void*)arg);
 }
 

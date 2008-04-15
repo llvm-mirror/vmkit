@@ -120,7 +120,11 @@ extern "C" void debug_backtrace(int **fp) {
   fp = debug_frame_caller_from_first_fp(fp);
   while ((!frame_end(fp)) && (debug_frame_ip(fp) != 0)) {
     int * ip = debug_frame_ip(fp);
+#ifdef MULTIPLE_GC
+    int *begIp = (int*)mvm::Thread::get()->GC->begOf(ip);
+#else
     int *begIp = (int*)Collector::begOf(ip);
+#endif
     if (begIp) {
       unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
       const llvm::GlobalValue * glob = 
@@ -148,7 +152,11 @@ void JavaJIT::printBacktrace() {
   int real_size = backtrace((void**)(void*)ips, 100);
   int n = 0;
   while (n < real_size) {
+#ifdef MULTIPLE_GC
+    int *begIp = (int*)mvm::Thread::get()->GC->begOf(ips[n++]);
+#else
     int *begIp = (int*)Collector::begOf(ips[n++]);
+#endif
     if (begIp) {
       unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
       const llvm::GlobalValue * glob = 
@@ -186,7 +194,11 @@ Class* JavaJIT::getCallingClass() {
   int n = 0;
   int i = 0;
   while (n < real_size) {
+#ifdef MULTIPLE_GC
+    int *begIp = (int*)mvm::Thread::get()->GC->begOf(ips[n++]);
+#else
     int *begIp = (int*)Collector::begOf(ips[n++]);
+#endif
     if (begIp) {
       unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
       const llvm::GlobalValue * glob = 
@@ -213,7 +225,11 @@ Class* JavaJIT::getCallingClassWalker() {
   int n = 0;
   int i = 0;
   while (n < real_size) {
+#ifdef MULTIPLE_GC
+    int *begIp = (int*)mvm::Thread::get()->GC->begOf(ips[n++]);
+#else
     int *begIp = (int*)Collector::begOf(ips[n++]);
+#endif
     if (begIp) {
       unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
       const llvm::GlobalValue * glob = 

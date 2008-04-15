@@ -225,7 +225,11 @@ void* JavaMethod::compiledPtr() {
       }
       // We can compile it, since if we're here, it's for a  good reason
       void* val = mvm::jit::executionEngine->getPointerToGlobal(methPtr);
+#ifndef MULTIPLE_GC
       if (Collector::isObject(val)) {
+#else
+      if (classDef->isolate->GC->isObject(val)) {
+#endif
         mvm::Code* temp = (mvm::Code*)((unsigned*)val - 2);
         temp->method()->definition(this);
       }

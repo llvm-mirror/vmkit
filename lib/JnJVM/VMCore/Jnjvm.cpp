@@ -28,6 +28,7 @@
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
 #include "Reader.h"
 #ifdef SERVICE_VM
@@ -866,3 +867,17 @@ JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
   return val;
 }
 #endif
+
+void Jnjvm::destroyer() {
+#ifdef MULTIPLE_GC
+  GC->destroy();
+  delete GC;
+#endif
+  mvm::jit::protectEngine->lock();
+  mvm::jit::executionEngine->removeModuleProvider(TheModuleProvider);
+  mvm::jit::protectEngine->unlock();
+  delete globalRefsLock;
+  delete protectModule;
+  delete TheModuleProvider;
+  delete module;
+}

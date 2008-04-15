@@ -88,7 +88,11 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
+#ifdef MULTIPLE_GC
+    mvm::Thread::get()->GC->collect();
+#else
   Collector::collect();
+#endif
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMRuntime_runFinalization(
@@ -129,7 +133,11 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
+#ifdef MULTIPLE_GC
+  return (jlong)mvm::Thread::get()->GC->getFreeMemory();
+#else
   return (jlong)Collector::getFreeMemory();
+#endif
 }
 
 JNIEXPORT jlong Java_java_lang_VMRuntime_totalMemory(
@@ -138,7 +146,11 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
+#ifdef MULTIPLE_GC
+  return (jlong)mvm::Thread::get()->GC->getTotalMemory();
+#else
   return (jlong)Collector::getTotalMemory();
+#endif
 }
 
 JNIEXPORT jlong Java_java_lang_VMRuntime_maxMemory(
@@ -147,7 +159,11 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
+#ifdef MULTIPLE_GC
+  return (jlong)mvm::Thread::get()->GC->getMaxMemory();
+#else
   return (jlong)Collector::getMaxMemory();
+#endif
 }
 
 }
