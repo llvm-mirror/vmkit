@@ -1021,13 +1021,7 @@ extern "C" VMObject* System_String_Replace(CLIString* str, uint16 c1, uint16 c2)
   return vm->UTF8ToStr(res);
 }
 
-// LLVM Bug
-#if defined (__PPC__) && !defined (__MACH__)
-extern "C" uint32 System_Reflection_ClrResourceStream_ResourceRead(Assembly* assembly, uint32 position1, uint32 position2, ArrayUInt8* buffer, uint32 offset, uint32 count) {
-  uint64 position = position1 << 32 + position2;
-#else
 extern "C" uint32 System_Reflection_ClrResourceStream_ResourceRead(Assembly* assembly, uint64 position, ArrayUInt8* buffer, uint32 offset, uint32 count) {
-#endif
   uint32 resRva = assembly->resRva;
   ArrayUInt8* bytes = assembly->bytes;
   Section* textSection = assembly->textSection;
@@ -1146,7 +1140,11 @@ extern "C" sint32 System_String_InternalOrdinal(CLIString *strA, sint32 indexA, 
 }
 
 extern "C" void System_GC_Collect() {
+#ifdef MULTIPLE_GC
+  mvm::Thread::get()->GC->collect();
+#else
   Collector::collect();
+#endif
 }
 
 

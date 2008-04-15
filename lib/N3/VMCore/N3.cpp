@@ -11,6 +11,8 @@
 #include "llvm/Module.h"
 #include "llvm/Support/CommandLine.h"
 
+#include "mvm/JIT.h"
+
 #include "types.h"
 #include "Assembly.h"
 #include "CLIJit.h"
@@ -56,6 +58,10 @@ Assembly* N3::lookupAssembly(const UTF8* name) {
 
 N3* N3::allocateBootstrap() {
   N3 *vm= gc_new(N3)();
+
+#ifdef MULTIPLE_GC
+  Collector* GC = Collector::allocate();
+#endif 
   
   vm->module = new llvm::Module("Bootstrap N3");
   vm->protectModule = mvm::Lock::allocNormal();
@@ -63,9 +69,13 @@ N3* N3::allocateBootstrap() {
   vm->TheModuleProvider = new N3ModuleProvider(vm->module, vm->functions);
   CLIJit::initialiseBootstrapVM(vm);
   
-  
   vm->bootstrapThread = VMThread::allocate(0, vm);
+#ifdef MULTIPLE_GC
+  vm->bootstrapThread->GC = GC;
+  mvm::jit::memoryManager->addGCForModule(vm->module, GC);
+#endif
   VMThread::threadKey->set(vm->bootstrapThread);
+
   vm->name = "bootstrapN3";
   vm->hashUTF8 = UTF8Map::allocate();
   vm->hashStr = StringMap::allocate();
@@ -79,6 +89,10 @@ N3* N3::allocateBootstrap() {
 N3* N3::allocate(char* name, N3* parent) {
   N3 *vm= gc_new(N3)();
   
+#ifdef MULTIPLE_GC
+  Collector* GC = Collector::allocate();
+#endif 
+  
   vm->module = new llvm::Module("App Domain");
   vm->protectModule = mvm::Lock::allocNormal();
   vm->functions = FunctionMap::allocate();
@@ -86,7 +100,12 @@ N3* N3::allocate(char* name, N3* parent) {
   CLIJit::initialiseAppDomain(vm);
 
   vm->bootstrapThread = VMThread::allocate(0, vm);
+#ifdef MULTIPLE_GC
+  vm->bootstrapThread->GC = GC;
+  mvm::jit::memoryManager->addGCForModule(vm->module, GC);
+#endif
   VMThread::threadKey->set(vm->bootstrapThread);
+  
   vm->threadSystem = ThreadSystem::allocateThreadSystem();
   vm->name = name;
   vm->hashUTF8 = parent->hashUTF8;
@@ -95,7 +114,6 @@ N3* N3::allocate(char* name, N3* parent) {
   vm->assemblyPath = parent->assemblyPath;
   vm->coreAssembly = parent->coreAssembly;
   vm->loadedAssemblies->hash(parent->coreAssembly->name, parent->coreAssembly);
-  
   
   return vm; 
 }

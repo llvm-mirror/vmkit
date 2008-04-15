@@ -35,7 +35,11 @@ void CLIJit::printBacktrace() {
   int real_size = backtrace((void**)(void*)ips, 100);
   int n = 0;
   while (n < real_size) {
+#ifdef MULTIPLE_GC
+    int *begIp = (int*)mvm::Thread::get()->GC->begOf(ips[n++]);
+#else
     int *begIp = (int*)Collector::begOf(ips[n++]);
+#endif
     if (begIp) {
       unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
       const llvm::GlobalValue * glob = 
@@ -72,7 +76,11 @@ Assembly* Assembly::getExecutingAssembly() {
   int n = 0;
   int i = 0;
   while (n < real_size) {
+#ifdef MULTIPLE_GC
+    int *begIp = (int*)mvm::Thread::get()->GC->begOf(ips[n++]);
+#else
     int *begIp = (int*)Collector::begOf(ips[n++]);
+#endif
     if (begIp) {
       unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
       const llvm::GlobalValue * glob = 
@@ -102,7 +110,11 @@ Assembly* Assembly::getCallingAssembly() {
   int n = 0;
   int i = 0;
   while (n < real_size) {
+#ifdef MULTIPLE_GC
+    int *begIp = (int*)mvm::Thread::get()->GC->begOf(ips[n++]);
+#else
     int *begIp = (int*)Collector::begOf(ips[n++]);
+#endif
     if (begIp) {
       unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
       const llvm::GlobalValue * glob = 

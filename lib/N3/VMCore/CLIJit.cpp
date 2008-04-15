@@ -1443,7 +1443,11 @@ extern "C" void indexOutOfBounds() {
 
 
 extern "C" bool isInCode(void* value) {
+#ifdef MULTIPLE_GC
+  mvm::Object* obj = (mvm::Object*)mvm::Thread::get()->GC->begOf(value);
+#else
   mvm::Object* obj = (mvm::Object*)Collector::begOf(value);
+#endif
   if (obj && obj->getVirtualTable() == mvm::Code::VT) {
     return true;
   } else {
