@@ -50,7 +50,7 @@ public:
   static const uint32 ConstantNameAndType;
   
   virtual void print(mvm::PrintBuffer* buf);
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   static ctpReader funcsReader[16];
 

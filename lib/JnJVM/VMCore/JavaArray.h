@@ -57,7 +57,7 @@ public:
   static llvm::ConstantInt* elementsOffset();
   static JavaArray* multiCallNew(ClassArray* cl, uint32 len, ...);
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
 };
 
@@ -73,7 +73,7 @@ public:                                                               \
   elmt at(sint32) const;                                              \
   void setAt(sint32, elmt);                                           \
   virtual void print(mvm::PrintBuffer* buf) const;                    \
-  virtual void tracer(size_t sz);                                     \
+  virtual void TRACER;                                                \
 }
 
 ARRAYCLASS(ArrayUInt8,  uint8);
@@ -97,7 +97,7 @@ public:
   JavaObject* at(sint32) const;
   void setAt(sint32, JavaObject*);
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 };
 
 class UTF8 : public JavaArray {

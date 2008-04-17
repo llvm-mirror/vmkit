@@ -553,17 +553,8 @@ void mvm::jit::initialise() {
 
   constantPtrNull = Constant::getNullValue(ptrType); 
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::Int8Ty, 0));
-  
 
-  //mvm::jit::protectTypes = mvm::Lock::allocNormal();
-  //mvm::Object::pushRoot((mvm::Object*)mvm::jit::protectTypes);
-  
-  //mvm::jit::protectConstants = mvm::Lock::allocNormal();
-  //mvm::Object::pushRoot((mvm::Object*)mvm::jit::protectConstants);
-  
   mvm::jit::protectEngine = mvm::Lock::allocNormal();
-  mvm::Object::pushRoot((mvm::Object*)mvm::jit::protectEngine);
-
 }
 
 llvm::Function* mvm::jit::llvm_memcpy_i32;

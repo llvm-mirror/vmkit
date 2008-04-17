@@ -82,7 +82,7 @@ public:
   
 
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   static void analyseIntern(const UTF8* name, uint32 pos,
                             uint32 meth, AssessorDesc*& ass,
@@ -118,7 +118,7 @@ public:
   Jnjvm* isolate;
 
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   
   CommonClass* assocClass(JavaObject* loader);
   void typePrint(mvm::PrintBuffer* buf);
@@ -148,7 +148,7 @@ public:
   uint32 nbIn;
   
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   static const llvm::FunctionType* createVirtualType(
                         const std::vector<Typedef*>*, Typedef*);

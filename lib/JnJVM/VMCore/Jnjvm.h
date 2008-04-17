@@ -218,12 +218,12 @@ public:
   JavaObject* getClassDelegatee(CommonClass*);
   CommonClass* loadInClassLoader(const UTF8* utf8, JavaObject* loader);
 
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("Jnjvm<>");
   }
   
-  virtual void destroyer();
+  virtual void destroyer(size_t sz);
 
   void addProperty(char* key, char* value);
  
@@ -264,13 +264,13 @@ public:
   JnjvmModuleProvider* TheModuleProvider;
   FunctionMap* functions;
 
-#ifndef MULTIPLE_VM
+#ifndef MULTIPLE_GC
   void* allocateObject(unsigned int sz, VirtualTable* VT) {
     return gc::operator new(sz, VT);
   }
 #else
   void* allocateObject(unsigned int sz, VirtualTable* VT) {
-    return gc::operator new(sz, VT);
+    return gc::operator new(sz, VT, GC);
   }
 #endif
 };

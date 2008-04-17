@@ -82,20 +82,20 @@ using namespace jnjvm;
 
 #undef INIT
 
-void JavaArray::tracer(size_t sz) {
-  JavaObject::tracer(sz);
+void JavaArray::TRACER {
+  JavaObject::PARENT_TRACER;
 }
 
-void ArrayObject::tracer(size_t sz) {
-  JavaObject::tracer(sz);
+void ArrayObject::TRACER {
+  JavaObject::PARENT_TRACER;
   for (sint32 i = 0; i < size; i++) {
-    elements[i]->markAndTrace();
+    elements[i]->MARK_AND_TRACE;
   }
 }
 
 #define ARRAYTRACER(name)         \
-  void name::tracer(size_t sz) {  \
-    JavaObject::tracer(sz);       \
+  void name::TRACER {             \
+    JavaObject::PARENT_TRACER;    \
   }
   
 
@@ -112,181 +112,250 @@ ARRAYTRACER(ArrayDouble);
 #undef ARRAYTRACER
 
 
-void Attribut::tracer(size_t sz) {
-  name->markAndTrace();
+void Attribut::TRACER {
+  name->MARK_AND_TRACE;
 }
 
 #define TRACE_VECTOR(type,alloc,name) {                             \
   for (std::vector<type, alloc<type> >::iterator i = name.begin(),  \
        e = name.end(); i!= e; ++i) {                                \
-    (*i)->markAndTrace(); }}
+    (*i)->MARK_AND_TRACE; }}
 
-void CommonClass::tracer(size_t sz) {
-  name->markAndTrace();
-  super->markAndTrace();
-  superUTF8->markAndTrace();
+void CommonClass::TRACER {
+  name->MARK_AND_TRACE;
+  super->MARK_AND_TRACE;
+  superUTF8->MARK_AND_TRACE;
   TRACE_VECTOR(const UTF8*, std::allocator, interfacesUTF8);
   TRACE_VECTOR(Class*, std::allocator, interfaces);
-  //lockVar->markAndTrace();
-  //condVar->markAndTrace();
+  //lockVar->MARK_AND_TRACE;
+  //condVar->MARK_AND_TRACE;
   TRACE_VECTOR(JavaMethod*, std::allocator, virtualMethods);
   TRACE_VECTOR(JavaMethod*, std::allocator, staticMethods);
   TRACE_VECTOR(JavaField*, std::allocator, virtualFields);
   TRACE_VECTOR(JavaField*, std::allocator, staticFields);
-  classLoader->markAndTrace();
+  classLoader->MARK_AND_TRACE;
 #ifndef MULTIPLE_VM
-  delegatee->markAndTrace();
+  delegatee->MARK_AND_TRACE;
 #endif
   TRACE_VECTOR(CommonClass*, std::allocator, display);
-  isolate->markAndTrace();
+  isolate->MARK_AND_TRACE;
 }
 
-void Class::tracer(size_t sz) {
-  CommonClass::tracer(sz);
-  bytes->markAndTrace();
-  _staticInstance->markAndTrace();
-  virtualInstance->markAndTrace();
-  ctpInfo->markAndTrace();
+void Class::TRACER {
+  CommonClass::PARENT_TRACER;
+  bytes->MARK_AND_TRACE;
+  _staticInstance->MARK_AND_TRACE;
+  virtualInstance->MARK_AND_TRACE;
+  ctpInfo->MARK_AND_TRACE;
   TRACE_VECTOR(Attribut*, gc_allocator, attributs);
   TRACE_VECTOR(Class*, std::allocator, innerClasses);
-  outerClass->markAndTrace();
-  codeStaticTracer->markAndTrace();
-  codeVirtualTracer->markAndTrace();
+  outerClass->MARK_AND_TRACE;
+  codeStaticTracer->MARK_AND_TRACE;
+  codeVirtualTracer->MARK_AND_TRACE;
 }
 
-void ClassArray::tracer(size_t sz) {
-  CommonClass::tracer(sz);
-  _baseClass->markAndTrace();
-  _funcs->markAndTrace();
+void ClassArray::TRACER {
+  CommonClass::PARENT_TRACER;
+  _baseClass->MARK_AND_TRACE;
+  _funcs->MARK_AND_TRACE;
 
 }
 
-void JavaMethod::tracer(size_t sz) {
-  signature->markAndTrace();
+void JavaMethod::TRACER {
+  signature->MARK_AND_TRACE;
   TRACE_VECTOR(Attribut*, gc_allocator, attributs);
   TRACE_VECTOR(Enveloppe*, gc_allocator, caches);
-  classDef->markAndTrace();
-  name->markAndTrace();
-  type->markAndTrace();
-  code->markAndTrace();
+  classDef->MARK_AND_TRACE;
+  name->MARK_AND_TRACE;
+  type->MARK_AND_TRACE;
+  code->MARK_AND_TRACE;
 }
 
-void JavaField::tracer(size_t sz) {
-  name->markAndTrace();
-  signature->markAndTrace();
-  type->markAndTrace();
+void JavaField::TRACER {
+  name->MARK_AND_TRACE;
+  signature->MARK_AND_TRACE;
+  type->MARK_AND_TRACE;
   TRACE_VECTOR(Attribut*, gc_allocator, attributs);
-  classDef->markAndTrace();
+  classDef->MARK_AND_TRACE;
 }
 
-void JavaCtpInfo::tracer(size_t sz) {
-  classDef->markAndTrace();
+void JavaCtpInfo::TRACER {
+  classDef->MARK_AND_TRACE;
   // Everything is hashed in the constant pool,
   // do not trace them here
 }
 
-void JavaCond::tracer(size_t sz) {
+void JavaCond::TRACER {
   TRACE_VECTOR(JavaThread*, std::allocator, threads);
 }
 
-void LockObj::tracer(size_t sz) {
-  //lock->markAndTrace();
-  varcond->markAndTrace();
+void LockObj::TRACER {
+  //lock->MARK_AND_TRACE;
+  varcond->MARK_AND_TRACE;
 }
 
-void JavaObject::tracer(size_t sz) {
-  classOf->markAndTrace();
-  lockObj->markAndTrace();
+void JavaObject::TRACER {
+  classOf->MARK_AND_TRACE;
+  lockObj->MARK_AND_TRACE;
 }
 
-void JavaThread::tracer(size_t sz) {
-  javaThread->markAndTrace();
-  isolate->markAndTrace();
-  //lock->markAndTrace();
-  //varcond->markAndTrace();
-  pendingException->markAndTrace();
+void JavaThread::TRACER {
+  javaThread->MARK_AND_TRACE;
+  isolate->MARK_AND_TRACE;
+  //lock->MARK_AND_TRACE;
+  //varcond->MARK_AND_TRACE;
+  pendingException->MARK_AND_TRACE;
 }
 
-void AssessorDesc::tracer(size_t sz) {
-  classType->markAndTrace();
+void AssessorDesc::TRACER {
+  classType->MARK_AND_TRACE;
 }
 
-void Typedef::tracer(size_t sz) {
-  keyName->markAndTrace();
-  pseudoAssocClassName->markAndTrace();
-  funcs->markAndTrace();
-  isolate->markAndTrace();
+void Typedef::TRACER {
+  keyName->MARK_AND_TRACE;
+  pseudoAssocClassName->MARK_AND_TRACE;
+  funcs->MARK_AND_TRACE;
+  isolate->MARK_AND_TRACE;
 }
 
-void Signdef::tracer(size_t sz) {
-  Typedef::tracer(sz);
+void Signdef::TRACER {
+  Typedef::PARENT_TRACER;
   TRACE_VECTOR(Typedef*, std::allocator, args);
-  ret->markAndTrace();
-  _staticCallBuf->markAndTrace();
-  _virtualCallBuf->markAndTrace();
-  _staticCallAP->markAndTrace();
-  _virtualCallAP->markAndTrace();
+  ret->MARK_AND_TRACE;
+  _staticCallBuf->MARK_AND_TRACE;
+  _virtualCallBuf->MARK_AND_TRACE;
+  _staticCallAP->MARK_AND_TRACE;
+  _virtualCallAP->MARK_AND_TRACE;
 }
 
-void ThreadSystem::tracer(size_t sz) {
-  //nonDaemonLock->markAndTrace();
-  //nonDaemonVar->markAndTrace();
+void ThreadSystem::TRACER {
+  //nonDaemonLock->MARK_AND_TRACE;
+  //nonDaemonVar->MARK_AND_TRACE;
 }
 
-void Jnjvm::tracer(size_t sz) {
-  appClassLoader->markAndTrace();
-  hashUTF8->markAndTrace();
-  hashStr->markAndTrace();
-  bootstrapClasses->markAndTrace();
-  loadedMethods->markAndTrace();
-  loadedFields->markAndTrace();
-  javaTypes->markAndTrace();
+void Jnjvm::TRACER {
+  appClassLoader->MARK_AND_TRACE;
+  hashUTF8->MARK_AND_TRACE;
+  hashStr->MARK_AND_TRACE;
+  bootstrapClasses->MARK_AND_TRACE;
+  loadedMethods->MARK_AND_TRACE;
+  loadedFields->MARK_AND_TRACE;
+  javaTypes->MARK_AND_TRACE;
   TRACE_VECTOR(JavaObject*, gc_allocator, globalRefs);
-  //globalRefsLock->markAndTrace();
-  functions->markAndTrace();
+  //globalRefsLock->MARK_AND_TRACE;
+  functions->MARK_AND_TRACE;
 #ifdef MULTIPLE_VM
-  statics->markAndTrace();
-  delegatees->markAndTrace();
+  statics->MARK_AND_TRACE;
+  delegatees->MARK_AND_TRACE;
 #endif
-  //protectModule->markAndTrace();
+  //protectModule->MARK_AND_TRACE;
 }
 
-void Reader::tracer(size_t sz) {
-  bytes->markAndTrace();
+void Reader::TRACER {
+  bytes->MARK_AND_TRACE;
 }
 
-void ZipFile::tracer(size_t sz) {
+void ZipFile::TRACER {
 }
 
-void ZipArchive::tracer(size_t sz) {
-  reader->markAndTrace();
-  filetable->markAndTrace();
+void ZipArchive::TRACER {
+  reader->MARK_AND_TRACE;
+  filetable->MARK_AND_TRACE;
 }
 
-void JavaIsolate::tracer(size_t sz) {
-  Jnjvm::tracer(sz);
-  threadSystem->markAndTrace();
-  bootstrapThread->markAndTrace();
+void JavaIsolate::TRACER {
+  Jnjvm::PARENT_TRACER;
+  threadSystem->MARK_AND_TRACE;
+  bootstrapThread->MARK_AND_TRACE;
 }
 
-void JavaString::tracer(size_t sz) {
+void JavaString::TRACER {
 }
 
-void CacheNode::tracer(size_t sz) {
-  ((mvm::Object*)methPtr)->markAndTrace();
-  lastCible->markAndTrace();
-  next->markAndTrace();
-  enveloppe->markAndTrace();
+void CacheNode::TRACER {
+  ((mvm::Object*)methPtr)->MARK_AND_TRACE;
+  lastCible->MARK_AND_TRACE;
+  next->MARK_AND_TRACE;
+  enveloppe->MARK_AND_TRACE;
 }
 
-void Enveloppe::tracer(size_t sz) {
-  firstCache->markAndTrace();
-  ctpInfo->markAndTrace();
-  //cacheLock->markAndTrace();
+void Enveloppe::TRACER {
+  firstCache->MARK_AND_TRACE;
+  ctpInfo->MARK_AND_TRACE;
+  //cacheLock->MARK_AND_TRACE;
+}
+
+void UTF8Map::TRACER {
+  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+    i->second->MARK_AND_TRACE;
+  }
+}
+
+void ClassMap::TRACER {
+  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+    i->second->MARK_AND_TRACE;
+  }
+}
+
+void FieldMap::TRACER {
+  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+    i->second->MARK_AND_TRACE;
+  }
+}
+
+  
+void MethodMap::TRACER {
+  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+    i->second->MARK_AND_TRACE;
+  }
+}
+
+void ZipFileMap::TRACER {
+  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+    i->second->MARK_AND_TRACE;
+  }
+}
+
+void StringMap::TRACER {
+  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+    i->second->MARK_AND_TRACE;
+  }
+}
+
+void FunctionMap::TRACER {
+  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+    i->second->first->MARK_AND_TRACE;
+  }
+}
+
+void FunctionDefMap::TRACER {
+  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+    i->second->MARK_AND_TRACE;
+  }
+}
+
+void TypeMap::TRACER {
+  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+    i->second->MARK_AND_TRACE;
+  }
+}
+
+void StaticInstanceMap::TRACER {
+  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+    i->first->MARK_AND_TRACE;
+    i->second->second->MARK_AND_TRACE;
+  }
+}
+
+void DelegateeMap::TRACER {
+  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+    i->first->MARK_AND_TRACE;
+    i->second->MARK_AND_TRACE;
+  }
 }
 
 #ifdef SERVICE_VM
-void ServiceDomain::tracer(size_t sz) {
-  Jnjvm::tracer(sz);
+void ServiceDomain::TRACER {
+  JavaIsolate::PARENT_TRACER;
 }
 #endif

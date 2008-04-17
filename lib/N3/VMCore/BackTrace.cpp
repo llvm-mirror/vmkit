@@ -35,34 +35,25 @@ void CLIJit::printBacktrace() {
   int real_size = backtrace((void**)(void*)ips, 100);
   int n = 0;
   while (n < real_size) {
-#ifdef MULTIPLE_GC
-    int *begIp = (int*)mvm::Thread::get()->GC->begOf(ips[n++]);
-#else
-    int *begIp = (int*)Collector::begOf(ips[n++]);
-#endif
-    if (begIp) {
-      unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
-      const llvm::GlobalValue * glob = 
-        mvm::jit::executionEngine->getGlobalValueAtAddress(val);
-      if (glob) {
-        if (llvm::isa<llvm::Function>(glob)) {
-          mvm::Code* c = (mvm::Code*)begIp;
-          mvm::Method* m = c->method();
-          VMMethod* meth = (VMMethod*)m->definition();
-          if (meth) 
-            printf("; 0x%08x in %s\n", (uint32) ips[n - 1], meth->printString());
-          else
-            printf("; 0x%08x in %s\n", (uint32) ips[n - 1],
-                   ((llvm::Function*)glob)->getNameStr().c_str());
-        } else VMThread::get()->vm->unknownError("in global variable?");
-      } else printf("; 0x%08x in stub\n", (uint32) ips[n - 1]);
+    mvm::Code* code = mvm::Code::getCodeFromPointer(ips[n++]);
+    if (code) {
+      mvm::Method* m = code->method();
+      mvm::Object* meth = m->definition();
+      if (meth && meth->getVirtualTable() == VMMethod::VT) {
+        printf("; %p in %s\n",  ips[n - 1], meth->printString());
+      } else if (m->llvmFunction) {
+        printf("; %p in %s\n",  ips[n - 1],
+                   m->llvmFunction->getNameStr().c_str());
+      } else {
+        printf("; %p in %s\n",  ips[n - 1], "stub (probably)");
+      }
     } else {
       Dl_info info;
-      int res = dladdr(begIp, &info);
+      int res = dladdr(ips[n++], &info);
       if (res != 0) {
-        printf("; 0x%08x in %s\n", (uint32) ips[n - 1], info.dli_fname);
+        printf("; %p in %s\n",  ips[n - 1], info.dli_sname);
       } else {
-        printf("; 0x%08x in Unknown\n", (uint32) ips[n - 1]);
+        printf("; %p in Unknown\n", ips[n - 1]);
       }
     }
   }
@@ -74,30 +65,13 @@ Assembly* Assembly::getExecutingAssembly() {
   int* ips[10];
   int real_size = backtrace((void**)(void*)ips, 10);
   int n = 0;
-  int i = 0;
   while (n < real_size) {
-#ifdef MULTIPLE_GC
-    int *begIp = (int*)mvm::Thread::get()->GC->begOf(ips[n++]);
-#else
-    int *begIp = (int*)Collector::begOf(ips[n++]);
-#endif
-    if (begIp) {
-      unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
-      const llvm::GlobalValue * glob = 
-        mvm::jit::executionEngine->getGlobalValueAtAddress(val);
-      if (glob) {
-        if (llvm::isa<llvm::Function>(glob)) {
-          mvm::Code* c = (mvm::Code*)begIp;
-          mvm::Method* m = c->method();
-          VMMethod* meth = (VMMethod*)m->definition();
-          if (meth && meth->getVirtualTable() == VMMethod::VT) {
-            return meth->classDef->assembly;
-          } else {
-            ++i;
-          }
-        } else {
-          VMThread::get()->vm->unknownError("in global variable?");
-        }
+    mvm::Code* code = mvm::Code::getCodeFromPointer(ips[n++]);
+    if (code) {
+      mvm::Method* m = code->method();
+      mvm::Object* meth = m->definition();
+      if (meth && meth->getVirtualTable() == VMMethod::VT) {
+        return ((VMMethod*)meth)->classDef->assembly;
       }
     }
   }
@@ -110,28 +84,14 @@ Assembly* Assembly::getCallingAssembly() {
   int n = 0;
   int i = 0;
   while (n < real_size) {
-#ifdef MULTIPLE_GC
-    int *begIp = (int*)mvm::Thread::get()->GC->begOf(ips[n++]);
-#else
-    int *begIp = (int*)Collector::begOf(ips[n++]);
-#endif
-    if (begIp) {
-      unsigned char* val = (unsigned char*)begIp + sizeof(mvm::Code);
-      const llvm::GlobalValue * glob = 
-        mvm::jit::executionEngine->getGlobalValueAtAddress(val);
-      if (glob) {
-        if (llvm::isa<llvm::Function>(glob)) {
-          mvm::Code* c = (mvm::Code*)begIp;
-          mvm::Method* m = c->method();
-          VMMethod* meth = (VMMethod*)m->definition();
-          if (meth && i >= 1 && meth->getVirtualTable() == VMMethod::VT) {
-            return meth->classDef->assembly;
-          } else {
-            ++i;
-          }
-        } else {
-          VMThread::get()->vm->unknownError("in global variable?");
-        }
+    mvm::Code* code = mvm::Code::getCodeFromPointer(ips[n++]);
+    if (code) {
+      mvm::Method* m = code->method();
+      mvm::Object* meth = m->definition();
+      if (meth && i >= 1 && meth->getVirtualTable() == VMMethod::VT) {
+        return ((VMMethod*)meth)->classDef->assembly;
+      } else {
+        ++i;
       }
     }
   }

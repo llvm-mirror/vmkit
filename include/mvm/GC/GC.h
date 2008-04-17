@@ -21,7 +21,11 @@ class gcRoot {
 public:
   virtual           ~gcRoot() {}
   virtual void      destroyer(size_t) {}
-  virtual void      tracer(size_t) {}
+#ifdef MULTIPLE_GC
+  virtual void      tracer(void* GC) {}
+#else
+  virtual void      tracer(void) {}
+#endif
 };
 
 class gc_header {

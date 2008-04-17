@@ -59,7 +59,7 @@ public:
   }
 
 
-  virtual void tracer(size_t sz) {
+  virtual void TRACER {
     CollectableArea *const self= (CollectableArea *)this;
     register T **e = self->elements();
     size_t lim= self->lastIndex;
@@ -67,7 +67,7 @@ public:
     lim = ((lim << 2) < sz) ? lim : 0;
     idx = ((idx << 2) < sz) ? idx : (sz >> 2); 
     for (; idx < lim; ++idx)
-      e[idx]->markAndTrace();
+      e[idx]->MARK_AND_TRACE;
   }
 };
 

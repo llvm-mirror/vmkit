@@ -67,6 +67,9 @@ static void start(arg_thread_t* arg) {
     ts->nonDaemonLock->unlock();
   }
   
+#ifdef SERVICE_DOMAIN
+  ((ServiceDomain*)isolate)->numThreads++;
+#endif
   JavaMethod* method = vmthClass->lookupMethod(Jnjvm::runName, Jnjvm::clinitType, ACC_VIRTUAL, true);
   method->invokeIntSpecial(isolate, vmThread);
 
@@ -78,6 +81,10 @@ static void start(arg_thread_t* arg) {
       ts->nonDaemonVar->signal();
     ts->nonDaemonLock->unlock();
   }
+
+#ifdef SERVICE_DOMAIN
+  ((ServiceDomain*)isolate)->numThreads--;
+#endif
 
 #ifdef MULTIPLE_GC
   intern->GC->remove_my_thread();
@@ -94,9 +101,10 @@ jobject _vmThread, sint64 stackSize) {
   JavaObject* vmThread = (JavaObject*)_vmThread;
   JavaObject* javaThread = (JavaObject*)(*ClasspathThread::assocThread)(vmThread).PointerVal;
   assert(javaThread);
+  Jnjvm* vm = JavaThread::get()->isolate;
 
-  JavaThread* th = vm_new(JavaThread::get()->isolate, JavaThread)();
-  th->initialise(javaThread, JavaThread::get()->isolate);
+  JavaThread* th = vm_new(vm, JavaThread)();
+  th->initialise(javaThread, vm);
   (*ClasspathThread::vmdata)(vmThread, (JavaObject*)th);
   int tid = 0;
   arg_thread_t* arg = (arg_thread_t*)malloc(sizeof(arg_thread_t));
@@ -105,6 +113,7 @@ jobject _vmThread, sint64 stackSize) {
 #ifdef MULTIPLE_GC
   th->GC = mvm::Thread::get()->GC;
 #endif
+
   mvm::Thread::start(&tid, (int (*)(void *))start, (void*)arg);
 }
 

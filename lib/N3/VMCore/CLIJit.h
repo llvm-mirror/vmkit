@@ -50,7 +50,7 @@ public:
   llvm::BasicBlock* handler;
 
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 };
 
 class Opinfo : public mvm::Object {
@@ -64,7 +64,7 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("Opinfo");
   }
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 };
 
 
@@ -75,7 +75,7 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("CLIJit");
   }
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   
   
   static const char* OpcodeNames[0xE1];

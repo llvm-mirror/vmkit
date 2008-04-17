@@ -26,9 +26,15 @@ typedef void (*memoryError_t)(unsigned int);
 
 memoryError_t GCCollector::internMemoryError;
 
-void gc::markAndTrace() const {
-  COLLECTOR markAndTrace((void*)this);
+#ifdef MULTIPLE_GC
+void gc::markAndTrace(Collector* GC) const {
+  ((GCCollector*)GC)->markAndTrace((void*)this);
 }
+#else
+void gc::markAndTrace() const {
+  GCCollector::markAndTrace((void*)this);
+}
+#endif
 
 size_t gc::objectSize() const {
   return COLLECTOR objectSize((gc*)this);
@@ -52,9 +58,6 @@ void *gc::realloc(size_t n) {
 
 
 #ifdef MULTIPLE_GC
-void gc::markAndTrace(Collector* GC) const {
-  ((GCCollector*)GC)->markAndTrace((void*)this);
-}
 
 size_t gc::objectSize(Collector* GC) const {
   return ((GCCollector*)GC)->objectSize((gc*)this);
@@ -104,6 +107,7 @@ void Collector::gcStats(size_t &no, size_t &nbb) {
 void Collector::initialise(markerFn marker, void *base_sp) {
 #ifdef MULTIPLE_GC
   GCCollector* GC = new GCCollector();
+  GCCollector::bootstrapGC = GC;
   mvm::Thread::get()->GC = GC;
   GC->initialise(marker);
   GC->inject_my_thread(base_sp);
@@ -190,8 +194,12 @@ void GCThread::waitCollection() {
 
 #undef COLLECTOR
 void GCCollector::siggc_handler(int) {
-#ifdef MULTIPLE_GC
+#if defined(MULTIPLE_GC)
+#if defined(SERVICE_GC)
+  GCCollector* GC = collectingGC;
+#else
   GCCollector* GC = ((GCCollector*)mvm::Thread::get()->GC);
+#endif
 #define COLLECTOR GC->
 #else
 #define COLLECTOR GCCollector::
@@ -227,12 +235,12 @@ void GCCollector::siggc_handler(int) {
   COLLECTOR threads->stackUnlock();
 #undef COLLECTOR
 }
-#endif
+#endif // HAVE_PTHREAD
 
-
+#ifdef MULTIPLE_GC
 Collector* Collector::allocate() {
   GCCollector* GC = new GCCollector();
-  GC->initialise(0);
+  GC->initialise(GCCollector::bootstrapGC->_marker);
   return GC;
 }
-
+#endif // MULTIPLE_GC

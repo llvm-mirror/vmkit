@@ -25,7 +25,7 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("Java string");
   }
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   // CLASSPATH FIELDS!!
   const UTF8* value;

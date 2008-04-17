@@ -63,7 +63,7 @@ ClassArray* JavaArray::ofObject = 0;
     else if (n > JavaArray::MaxArraySize)                                   \
       JavaThread::get()->isolate->outOfMemoryError(n);                      \
     name* res = (name*)                                                     \
-      (Object*) vm->allocateObject(sizeof(name) + n * primSize, name::VT);        \
+      (Object*) vm->allocateObject(sizeof(name) + n * primSize, name::VT);  \
     res->initialise(atype);                                                 \
     res->size = n;                                                          \
     memset(res->elements, 0, primSize * n);                                 \

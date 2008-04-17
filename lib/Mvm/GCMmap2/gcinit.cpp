@@ -30,7 +30,14 @@ void GCCollector::initialise(Collector::markerFn marker) {
   used_nodes = new GCChunkNode();
   unused_nodes = new GCChunkNode();
 #ifdef HAVE_PTHREAD
+#ifdef SERVICE_GC
+  if (this != bootstrapGC)
+    threads = bootstrapGC->threads;
+  else
+    threads = new GCThread();
+#else
   threads = new GCThread();
+#endif
 #endif
   
   struct sigaction sa;

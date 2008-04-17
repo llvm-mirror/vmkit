@@ -48,7 +48,7 @@ public:
   JavaObject* cacheObject; // cache for allocations patching
 
   virtual void print(mvm::PrintBuffer *buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   virtual void destroyer(size_t sz);
   
   void initialise(JavaObject* thread, Jnjvm* isolate);
@@ -62,6 +62,9 @@ public:
   static bool compareException(Class*);
   static JavaObject* getJavaException();
   void returnFromNative();
+#ifdef SERVICE_VM
+  time_t executionTime;
+#endif
 };
 
 } // end namespace jnjvm

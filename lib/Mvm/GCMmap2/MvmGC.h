@@ -18,12 +18,25 @@
 #define gc_new(Class)  __gc_new(Class::VT) Class
 #define __gc_new new
 
+
+#ifdef MULTIPLE_GC
+#define TRACER tracer(void* GC)
+#define PARENT_TRACER tracer(GC)
+#define MARK_AND_TRACE markAndTrace((Collector*)GC)
+#else
+#define TRACER tracer()
+#define PARENT_TRACER tracer()
+#define MARK_AND_TRACE markAndTrace()
+#endif
+
 class Collector;
 
 class gc : public gcRoot {
 public:
-  
+ 
+#ifndef MULTIPLE_GC
   void    markAndTrace() const;
+#endif
   size_t  objectSize() const;
   void *  operator new(size_t sz, VirtualTable *VT);
   void *  operator new(size_t sz);
@@ -65,7 +78,9 @@ public:
   STATIC void           collect(void);
   STATIC void           inject_my_thread(void *sp);
   STATIC void           remove_my_thread();
+#ifdef MULTIPLE_GC
   static Collector*     allocate();
+#endif
 
   STATIC gc             *begOf(const void *o);
   STATIC int            byteOffset(void *o);

@@ -54,7 +54,7 @@ public:
 #endif
   
   virtual void      destroyer(size_t) {}
-  virtual void      tracer(size_t) {}
+  virtual void      TRACER {}
   virtual void      print(PrintBuffer *buf) const;
   virtual intptr_t  hashCode(){ return (intptr_t)this;}
 

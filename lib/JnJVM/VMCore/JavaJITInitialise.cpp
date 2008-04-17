@@ -24,6 +24,9 @@
 #include "JavaThread.h"
 #include "Jnjvm.h"
 #include "JnjvmModuleProvider.h"
+#ifdef SERVICE_VM
+#include "ServiceDomain.h"
+#endif
 
 using namespace jnjvm;
 using namespace llvm;
@@ -144,10 +147,17 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   {
   std::vector<const Type*> args;
   args.push_back(JavaObject::llvmType);
+#ifdef MULTIPLE_GC
+  args.push_back(mvm::jit::ptrType);
+#endif
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
   javaObjectTracerLLVM = Function::Create(type,
                                       GlobalValue::ExternalLinkage,
-                                      "_ZN5jnjvm10JavaObject6tracerEj",
+#ifdef MULTIPLE_GC
+                                      "_ZN5jnjvm10JavaObject6tracerEPv",
+#else
+                                      "_ZN5jnjvm10JavaObject6tracerEv",
+#endif
                                       module);
   }
   
@@ -545,17 +555,39 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
     
   }
 
-
 #ifdef WITH_TRACER
   // Create markAndTraceLLVM
   {
   std::vector<const Type*> args;
   args.push_back(JavaObject::llvmType);
+#ifdef MULTIPLE_GC
+  args.push_back(mvm::jit::ptrType);
+#endif
   markAndTraceLLVMType = FunctionType::get(llvm::Type::VoidTy, args, false);
   markAndTraceLLVM = Function::Create(markAndTraceLLVMType,
                                   GlobalValue::ExternalLinkage,
+#ifdef MULTIPLE_GC
+                                  "_ZNK2gc12markAndTraceEP9Collector",
+#else
                                   "_ZNK2gc12markAndTraceEv",
+#endif
                                   module);
+  }
+#endif
+#ifdef SERVICE_VM
+  // Create serviceCallStart/Stop
+  {
+  std::vector<const Type*> args;
+  args.push_back(mvm::jit::ptrType);
+  args.push_back(mvm::jit::ptrType);
+  const FunctionType* type = FunctionType::get(llvm::Type::VoidTy, args, false);
+  ServiceDomain::serviceCallStartLLVM = 
+    Function::Create(type, GlobalValue::ExternalLinkage, "serviceCallStart",
+                     module);
+  
+  ServiceDomain::serviceCallStopLLVM = 
+    Function::Create(type, GlobalValue::ExternalLinkage, "serviceCallStop",
+                     module);
   }
 #endif
   mvm::jit::unprotectTypes();//->unlock();

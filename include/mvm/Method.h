@@ -11,6 +11,11 @@
 #define MVM_METHOD_H
 
 #include "mvm/Object.h"
+#include "mvm/Threads/Thread.h"
+
+namespace llvm {
+  class Function;
+}
 
 namespace mvm {
 
@@ -26,6 +31,7 @@ public:
   GC_defass(Object, definition);
   GC_defass(Object, literals);
   GC_defass(ExceptionTable, exceptionTable);
+  const llvm::Function* llvmFunction;
   size_t  codeSize;
 
   /* use this constructor to map a function which is compiled by llvm  */
@@ -35,7 +41,7 @@ public:
   }
 
   virtual void print(PrintBuffer *buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 };
 
 
@@ -57,7 +63,15 @@ public:
   inline Method *method() { return meth; }
 
   virtual void print(PrintBuffer *buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
+
+  static Code* getCodeFromPointer(void* ptr) {
+#ifdef MULTIPLE_GC
+    return (mvm::Code*)mvm::Thread::get()->GC->begOf(ptr);
+#else
+    return (mvm::Code*)Collector::begOf(ptr);
+#endif
+  }
 };
 
 class ExceptionTable : public Object {

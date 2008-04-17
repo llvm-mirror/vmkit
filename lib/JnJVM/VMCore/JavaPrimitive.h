@@ -43,7 +43,7 @@ public:
   static JavaPrimitive* funcsToPrimitive(AssessorDesc* funcs);
 
   virtual void print(mvm::PrintBuffer* buf);
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 };
 
 } // end namespace jnjvm

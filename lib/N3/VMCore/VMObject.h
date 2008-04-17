@@ -41,7 +41,7 @@ public:
   void wait(VMThread* th);
   void remove(VMThread* th);
 
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 };
 
 
@@ -52,7 +52,7 @@ public:
   VMCond* varcond;
 
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   static LockObj* allocate();
   void aquire();
@@ -72,7 +72,7 @@ public:
   static const llvm::Type* llvmType;
   
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   
   static VMObject* allocate(VMCommonClass* cl);
   void aquire();

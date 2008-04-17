@@ -45,7 +45,7 @@ class VMCommonClass : public mvm::Object {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   std::vector<VMMethod*> virtualMethods;
   std::vector<VMMethod*> staticMethods;
@@ -130,7 +130,7 @@ class VMClass : public VMCommonClass {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   
   void resolveFields();
   void resolveStaticFields();
@@ -153,7 +153,7 @@ class VMClassArray : public VMCommonClass {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   uint32 dims;
   VMCommonClass* baseClass;
@@ -175,7 +175,7 @@ class VMClassPointer : public VMCommonClass {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   uint32 dims;
   VMCommonClass* baseClass;
@@ -187,7 +187,7 @@ class VMMethod : public mvm::Object {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   
   uint32 flags;
   uint32 offset;
@@ -228,7 +228,7 @@ class VMField : public mvm::Object {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   
   uint32 flags;
   llvm::ConstantInt* offset;
@@ -261,7 +261,7 @@ class Param : public mvm::Object {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   uint32 flags;
   uint32 sequence;
@@ -273,7 +273,7 @@ class Property : public mvm::Object {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   
   std::vector<VMCommonClass*> parameters;
   VMCommonClass* type;

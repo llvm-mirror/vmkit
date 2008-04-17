@@ -36,7 +36,7 @@ class N3 : public VirtualMachine {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   VMObject*     asciizToStr(const char* asciiz);
   VMObject*     UTF8ToStr(const UTF8* utf8);

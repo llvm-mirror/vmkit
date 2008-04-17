@@ -73,6 +73,12 @@ public:
       return ((Container)(I->second));
     }
   }
+  
+  inline void remove(Key V) {
+    lock->lock();
+    map.erase(V);
+    lock->unlock();
+  }
 
   inline Container lookup(Key V) {
     lock->lock();
@@ -108,12 +114,7 @@ public:
   const UTF8* lookupAsciiz(const char* asciiz); 
   const UTF8* lookupReader(const uint16* buf, uint32 size);
   
-  virtual void tracer(size_t sz) {
-    //lock->markAndTrace();
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->second->markAndTrace();
-    }
-  }
+  virtual void TRACER;
 
   virtual void print(mvm::PrintBuffer* buf) {
     buf->write("UTF8 Hashtable<>");
@@ -160,12 +161,7 @@ public:
     lock = mvm::Lock::allocNormal();
   }
   
-  virtual void tracer(size_t sz) {
-    //lock->markAndTrace();
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->second->markAndTrace();
-    }
-  }
+  virtual void TRACER;
 };
 
 class FieldMap :
@@ -177,12 +173,7 @@ public:
     lock = mvm::Lock::allocNormal();
   }
   
-  virtual void tracer(size_t sz) {
-    //lock->markAndTrace();
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->second->markAndTrace();
-    }
-  }
+  virtual void TRACER;
 };
 
 class MethodMap :
@@ -194,12 +185,7 @@ public:
     lock = mvm::Lock::allocNormal();
   }
   
-  virtual void tracer(size_t sz) {
-    //lock->markAndTrace();
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->second->markAndTrace();
-    }
-  }
+  virtual void TRACER;
 };
 
 struct ltstr
@@ -219,12 +205,7 @@ public:
     lock = mvm::Lock::allocNormal();
   }
   
-  virtual void tracer(size_t sz) {
-    //lock->markAndTrace();
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->second->markAndTrace();
-    }
-  }
+  virtual void TRACER;
 };
 
 class StringMap :
@@ -236,12 +217,7 @@ public:
     lock = mvm::Lock::allocRecursive();
   }
   
-  virtual void tracer(size_t sz) {
-    //lock->markAndTrace();
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->second->markAndTrace();
-    }
-  }
+  virtual void TRACER;
 };
 
 class FunctionMap :
@@ -253,12 +229,7 @@ public:
     lock = mvm::Lock::allocNormal();
   }
 
-  virtual void tracer(size_t sz) {
-    //lock->markAndTrace();
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->second->first->markAndTrace();
-    }
-  }
+  virtual void TRACER;
 };
 
 class FunctionDefMap :
@@ -270,12 +241,7 @@ public:
     lock = mvm::Lock::allocNormal();
   }
 
-  virtual void tracer(size_t sz) {
-    //lock->markAndTrace();
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->second->markAndTrace();
-    }
-  }
+  virtual void TRACER;
 };
 
 class TypeMap :
@@ -292,12 +258,7 @@ public:
     lock = mvm::Lock::allocRecursive();
   }
   
-  virtual void tracer(size_t sz) {
-    //lock->markAndTrace();
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->second->markAndTrace();
-    }
-  }
+  virtual void TRACER;
     
 };
 
@@ -310,13 +271,7 @@ public:
     lock = mvm::Lock::allocNormal();
   }
   
-  virtual void tracer(size_t sz) {
-    //lock->markAndTrace();
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->first->markAndTrace();
-      i->second->second->markAndTrace();
-    }
-  }
+  virtual void TRACER;
 
   virtual void destroyer(size_t sz) {
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
@@ -334,13 +289,7 @@ public:
     lock = mvm::Lock::allocNormal();
   }
   
-  virtual void tracer(size_t sz) {
-    //lock->markAndTrace();
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->first->markAndTrace();
-      i->second->markAndTrace();
-    }
-  }
+  virtual void TRACER;
 }; 
 
 } // end namespace jnjvm

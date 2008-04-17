@@ -29,7 +29,7 @@ class MvmMemoryManager : public JITMemoryManager {
   Method* currentMethod;       // Current method being compiled
   unsigned char *GOTBase;      // Target Specific reserved memory
 #ifdef MULTIPLE_GC
-  std::map<Module*, Collector*> GCMap;
+  std::map<const Module*, Collector*> GCMap;
   mvm::Lock* lock;
 #endif
 public:

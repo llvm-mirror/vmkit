@@ -11,11 +11,15 @@
 #define JNJVM_SERVICE_DOMAIN_H
 
 #include <sys/time.h>
+#include <time.h>
 
-#include "Jnjvm.h"
+#include <map>
+
+#include "JavaIsolate.h"
 
 namespace llvm {
   class GlobalVariable;
+  class Function;
 }
 
 namespace mvm {
@@ -26,26 +30,32 @@ namespace jnjvm {
 
 class ClassMap;
 
-class ServiceDomain : public Jnjvm {
+class ServiceDomain : public JavaIsolate {
 private:
   llvm::GlobalVariable* _llvmDelegatee;
-  mvm::Lock* lock;
 public:
   static VirtualTable* VT;
 
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   virtual void destroyer(size_t sz);
   void loadBootstrap();
-  static ServiceDomain* allocateService(Jnjvm* callingVM);
+  static ServiceDomain* allocateService(JavaIsolate* callingVM);
   llvm::GlobalVariable* llvmDelegatee();
+  void serviceError(const char* str);
   
+  mvm::Lock* lock;
   ClassMap* classes;
-  time_t started;
+  struct timeval started;
   uint64 executionTime;
   uint64 memoryUsed;
   uint64 gcTriggered;
   uint64 numThreads;
+  std::map<ServiceDomain*, uint64> interactions;
+
+  static ServiceDomain* getDomainFromLoader(JavaObject* loader);
+  static llvm::Function* serviceCallStartLLVM;
+  static llvm::Function* serviceCallStopLLVM;
 };
 
 } // end namespace jnjvm

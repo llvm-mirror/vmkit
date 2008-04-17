@@ -25,6 +25,8 @@ class Cond {
   unsigned int    go; 
   unsigned int    n_wait;
 public:
+  
+  Cond() : no_barrier(0), go(0), n_wait(0) { }
   static Cond *allocCond(void);
   void broadcast(void);
   void wait(Lock *l);

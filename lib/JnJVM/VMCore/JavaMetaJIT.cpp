@@ -191,13 +191,26 @@ VirtualTable* JavaJIT::makeVT(Class* cl, bool stat) {
   Argument* arg = func->arg_begin();
   BasicBlock* block = BasicBlock::Create("", func);
   llvm::Value* realArg = new BitCastInst(arg, type, "", block);
-  
+
+#ifdef MULTIPLE_GC
+  Value* GC = ++func->arg_begin();
+  std::vector<Value*> Args;
+  Args.push_back(arg);
+  Args.push_back(GC);
+  if (stat || cl->super == 0) {
+    CallInst::Create(javaObjectTracerLLVM, Args.begin(), Args.end(), "", block);
+  } else {
+    CallInst::Create(((Class*)cl->super)->virtualTracer, Args.begin(),
+                     Args.end(), "", block);
+  }
+#else  
   if (stat || cl->super == 0) {
     CallInst::Create(javaObjectTracerLLVM, arg, "", block);
   } else {
     CallInst::Create(((Class*)cl->super)->virtualTracer, arg, "", block);
   }
-
+#endif
+  
   for (std::vector<JavaField*>::iterator i = fields.begin(), 
             e = fields.end(); i!= e; ++i) {
     if ((*i)->signature->funcs->doTrace) {
@@ -208,7 +221,14 @@ VirtualTable* JavaJIT::makeVT(Class* cl, bool stat) {
                                          block);
       Value* val = new LoadInst(ptr, "", block);
       Value* valCast = new BitCastInst(val, JavaObject::llvmType, "", block);
+#ifdef MULTIPLE_GC
+      std::vector<Value*> Args;
+      Args.push_back(valCast);
+      Args.push_back(GC);
+      CallInst::Create(markAndTraceLLVM, Args.begin(), Args.end(), "", block);
+#else
       CallInst::Create(markAndTraceLLVM, valCast, "", block);
+#endif
     }
   }
 

@@ -34,8 +34,13 @@ GCChunkNode    *GCCollector::used_nodes;
 GCChunkNode    *GCCollector::unused_nodes;
 
 unsigned int   GCCollector::current_mark;
+#else
+GCCollector* GCCollector::bootstrapGC;
 #endif
 
+#ifdef SERVICE_GC
+GCCollector* GCCollector::collectingGC;
+#endif
 
 void GCCollector::do_collect() {
 	//printf("----- do collect -----\n");
@@ -47,6 +52,10 @@ void GCCollector::do_collect() {
  	current_mark++;
 
  	unused_nodes->attrape(used_nodes);
+
+#ifdef SERVICE_GC
+  collectingGC = this;
+#endif
 
 #ifdef HAVE_PTHREAD
 	threads->synchronize();
@@ -81,7 +90,7 @@ void GCCollector::do_collect() {
 		//printf("    !!!! reject %p [%p]\n", cur->chunk()->_2gc(), cur);
  		allocator->reject_chunk(cur);
  	}
-
+  used_nodes->alone();
 }
 
 void GCCollector::collect_unprotect() {

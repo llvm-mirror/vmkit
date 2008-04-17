@@ -41,7 +41,7 @@ public:
   void wait(JavaThread* th);
   void remove(JavaThread* th);
 
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 };
 
 
@@ -52,7 +52,7 @@ public:
   JavaCond* varcond;
 
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   static LockObj* allocate();
   void aquire();
@@ -70,7 +70,7 @@ public:
   static const llvm::Type* llvmType;
   
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   
   void aquire();
   void unlock();

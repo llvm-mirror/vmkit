@@ -177,10 +177,10 @@ dnl VVM GC type
 dnl **************************************************************************
 AC_ARG_WITH(gc,
        [AS_HELP_STRING(--with-gc=something,
-           [GC type ('mmap2' or 'boehm')])],
+           [GC type ('single-mmap' 'multi-mmap' or 'boehm')])],
        [[gc=$withval]],
        [[ echo Using mmap2 as vvm gc type.
-                gc=mmap2
+                gc=single-mmap
        ]]
 )
 
@@ -203,6 +203,10 @@ if test "x$gc" = "xboehm";  then
     ;;
   esac
 else
+  if test "x$gc" = "xmulti-mmap"; then
+    CFLAGS="$CFLAGS -I$PWD/lib/Mvm/GCMmap2 -DWITH_TRACER -DMULTIPLE_GC"
+    CXXFLAGS="$CXXFLAGS -I$PWD/lib/Mvm/GCMmap2 -DWITH_TRACER -DMULTIPLE_GC"
+  fi
   GC_LIBS="$PWD/lib/Mvm/GCMmap2/libuvm_gc_mmap2.a \
            $PWD/lib/Mvm/Allocator/libuvm_alloc.a"
   CFLAGS="$CFLAGS -I$PWD/lib/Mvm/GCMmap2 -DWITH_TRACER"

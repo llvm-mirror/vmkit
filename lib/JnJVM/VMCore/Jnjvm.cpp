@@ -643,7 +643,7 @@ CommonClass* Jnjvm::lookupClass(const UTF8* utf8, JavaObject* loader) {
     ServiceDomain* vm = 
       (ServiceDomain*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
     if (!vm) {
-      vm = ServiceDomain::allocateService(Jnjvm::bootstrapVM);
+      vm = ServiceDomain::allocateService((JavaIsolate*)Jnjvm::bootstrapVM);
       (*Classpath::vmdataClassLoader)(loader, (JavaObject*)vm);
     }
     map = vm->classes;
@@ -693,7 +693,7 @@ ClassArray* Jnjvm::constructArray(const UTF8* name, JavaObject* loader) {
     ServiceDomain* vm = 
       (ServiceDomain*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
     if (!vm) {
-      vm = ServiceDomain::allocateService(Jnjvm::bootstrapVM);
+      vm = ServiceDomain::allocateService((JavaIsolate*)Jnjvm::bootstrapVM);
       (*Classpath::vmdataClassLoader)(loader, (JavaObject*)vm);
     }
     map = vm->classes;
@@ -735,7 +735,7 @@ Class* Jnjvm::constructClass(const UTF8* name, JavaObject* loader) {
     ServiceDomain* vm = 
       (ServiceDomain*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
     if (!vm) {
-      vm = ServiceDomain::allocateService(Jnjvm::bootstrapVM);
+      vm = ServiceDomain::allocateService((JavaIsolate*)Jnjvm::bootstrapVM);
       (*Classpath::vmdataClassLoader)(loader, (JavaObject*)vm);
     }
     map = vm->classes;
@@ -837,6 +837,7 @@ void Jnjvm::addProperty(char* key, char* value) {
 
 #ifndef MULTIPLE_VM
 JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
+  cl->aquire();
   if (!(cl->delegatee)) {
     JavaObject* delegatee = (*Classpath::newClass)(this);
     cl->delegatee = delegatee;
@@ -848,10 +849,12 @@ JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
     Classpath::initClassWithProtectionDomain->invokeIntSpecial(this, delegatee,
                                                                cl, pd);
   }
+  cl->release();
   return cl->delegatee;
 }
 #else
 JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
+  cl->aquire();
   JavaObject* val = delegatees->lookup(cl);
   if (!val) {
     val = (*Classpath::newClass)(this);
@@ -860,15 +863,17 @@ JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
   } else if (val->classOf != Classpath::newClass) {
     JavaObject* pd = val;
     val = (*Classpath::newClass)(this);
+    delegatees->remove(cl);
     delegatees->hash(cl, val);
     Classpath::initClassWithProtectionDomain->invokeIntSpecial(this, val, cl,
                                                                pd);
   }
+  cl->release();
   return val;
 }
 #endif
 
-void Jnjvm::destroyer() {
+void Jnjvm::destroyer(size_t sz) {
 #ifdef MULTIPLE_GC
   GC->destroy();
   delete GC;

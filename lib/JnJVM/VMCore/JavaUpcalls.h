@@ -36,6 +36,7 @@ class Jnjvm;
 class JavaField;
 class JavaMethod;
 class Class;
+class ClassArray;
 
 class ClasspathThread {
 public:

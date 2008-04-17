@@ -47,7 +47,11 @@ void Object::growRootTable(void) {
 
 void Object::markAndTraceRoots(void) {
   for (int i= 0; i < rootTableSize; ++i)
-    rootTable[i]->markAndTrace();
+#ifdef MULTIPLE_GC
+    rootTable[i]->markAndTrace(mvm::Thread::get()->GC);
+#else
+    rootTable[i]->markAndTrace();;
+#endif
 }
 
 void Object::initialise() {
@@ -65,21 +69,21 @@ void Object::initialise() {
 #undef INIT
 }
 
-void Code::tracer(size_t sz) {
-  this->method(sz)->markAndTrace();
+void Code::TRACER {
+  this->method()->MARK_AND_TRACE;
 }
 
-void Method::tracer(size_t sz) {
+void Method::TRACER {
   Method *const self= (Method *)this;
-  self->definition()->markAndTrace();
-  self->literals()->markAndTrace();
-  self->name()->markAndTrace();
-  self->code()->markAndTrace();
-  self->exceptionTable()->markAndTrace();
+  self->definition()->MARK_AND_TRACE;
+  self->literals()->MARK_AND_TRACE;
+  self->name()->MARK_AND_TRACE;
+  self->code()->MARK_AND_TRACE;
+  self->exceptionTable()->MARK_AND_TRACE;
 }
 
-void PrintBuffer::tracer(size_t sz) {
-  ((PrintBuffer *)this)->contents()->markAndTrace();
+void PrintBuffer::TRACER {
+  ((PrintBuffer *)this)->contents()->MARK_AND_TRACE;
 }
 
 PrintBuffer *PrintBuffer::alloc(void) {
@@ -88,7 +92,11 @@ PrintBuffer *PrintBuffer::alloc(void) {
 
 
 PrintBuffer *PrintBuffer::writeObj(const Object *obj) {
+#ifdef MULTIPLE_GC
   Object *beg = (Object*)mvm::Thread::get()->GC->begOf(obj);
+#else
+  Object *beg = (Object*)Collector::begOf(obj);
+#endif
   
   if(beg) {
     if(beg == obj) {

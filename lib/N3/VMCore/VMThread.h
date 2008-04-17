@@ -44,7 +44,7 @@ public:
   static const unsigned int StateInterrupted;
 
   virtual void print(mvm::PrintBuffer *buf);
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   virtual void destroyer(size_t sz);
   
   static VMThread* get();

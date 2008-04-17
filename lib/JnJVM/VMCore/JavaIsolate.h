@@ -31,7 +31,7 @@ public:
   mvm::Cond* nonDaemonVar;
 
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   void initialise();
 };
@@ -43,7 +43,7 @@ public:
   JavaThread* bootstrapThread;
   
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   virtual void destroyer(size_t sz);
 
   JavaObject* loadAppClassLoader();

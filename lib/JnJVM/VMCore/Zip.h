@@ -39,7 +39,7 @@ public:
     buf->write(filename);
     buf->write(">");
   }
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 };
 
 class ZipArchive : public mvm::Object {
@@ -56,7 +56,7 @@ public:
     buf->write(name);
     buf->write(">");
   }
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   static ZipArchive* hashedArchive(Jnjvm* vm, char* archname);
   static ZipArchive* singleArchive(Jnjvm* vm, char* archname);

@@ -326,6 +326,9 @@ void JavaIsolate::loadBootstrap() {
 }
 
 void JavaIsolate::executeClass(const char* className, ArrayObject* args) {
+#ifdef SERVICE_VM
+  JavaThread::get()->executionTime = time(0);
+#endif
   try {
     JavaJIT::invokeOnceVoid(this, appClassLoader, className, "main",
                         "([Ljava/lang/String;)V", ACC_STATIC, args);
@@ -438,14 +441,11 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
                                                        isolate->functions);  
   JavaJIT::initialiseJITIsolateVM(isolate);
   
-
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
-#ifndef MULTIPLE_GC
-  mvm::Thread* th = mvm::Thread::get();
-  isolate->bootstrapThread->GC = th->GC;
-#else
+#ifdef MULTIPLE_GC
   isolate->bootstrapThread->GC = isolate->GC;
+  isolate->GC->inject_my_thread(0);
   mvm::jit::memoryManager->addGCForModule(isolate->module, isolate->GC);
 #endif 
   JavaThread::threadKey->set(isolate->bootstrapThread);
@@ -505,11 +505,9 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
-#ifndef MULTIPLE_GC
-  mvm::Thread* th = mvm::Thread::get();
-  isolate->bootstrapThread->GC = th->GC;
-#else
+#ifdef MULTIPLE_GC
   isolate->bootstrapThread->GC = isolate->GC;
+  isolate->GC->inject_my_thread(0);
   mvm::jit::memoryManager->addGCForModule(isolate->module, isolate->GC);
 #endif 
   JavaThread::threadKey->set(isolate->bootstrapThread);
@@ -540,5 +538,5 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
 }
 
 void JavaIsolate::destroyer(size_t sz) {
-  Jnjvm::destroyer();
+  Jnjvm::destroyer(sz);
 }

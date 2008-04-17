@@ -69,7 +69,7 @@ public:
   static const UTF8* sourceFileAttribut;
   
   virtual void print(mvm::PrintBuffer *buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 };
 
 class CommonClass : public mvm::Object {
@@ -134,7 +134,7 @@ public:
 
 
   virtual void print(mvm::PrintBuffer *buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   bool inheritName(const UTF8* Tname);
   bool isOfTypeName(const UTF8* Tname);
@@ -193,7 +193,7 @@ public:
   JavaObject* doNewUnknown(Jnjvm* vm);
   JavaObject* initialiseObject(JavaObject* obj);
   virtual void print(mvm::PrintBuffer *buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   JavaObject* operator()(Jnjvm* vm);
 
@@ -224,7 +224,7 @@ public:
                                  unsigned int end);
 
   virtual void print(mvm::PrintBuffer *buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   static CommonClass* SuperArray;
   static std::vector<Class*>        InterfacesArray;
@@ -250,7 +250,7 @@ public:
   mvm::Code* code;
 
   virtual void print(mvm::PrintBuffer *buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   void* compiledPtr();
   const llvm::FunctionType* llvmType;
@@ -325,7 +325,7 @@ public:
   void initField(JavaObject* obj);
 
   virtual void print(mvm::PrintBuffer *buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   
   llvm::GenericValue operator()(JavaObject* obj = 0);
   void operator()(JavaObject* obj, float val);

@@ -139,7 +139,7 @@ public:
 public:
   static PrintBuffer *alloc(void);
 
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 };
 
 } // end namespace mvm

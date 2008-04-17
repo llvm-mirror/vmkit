@@ -20,8 +20,8 @@ using namespace llvm;
 unsigned char* MvmMemoryManager::startFunctionBody(const Function* F, 
                                                    uintptr_t &ActualSize) {
   size_t nbb = ((ActualSize - 1) & -4) + 4 + sizeof(Method *);
-#ifdef MUTLIPLE_GC
-  Collector* GC = GCMap[F->getModule()];
+#ifdef MULTIPLE_GC
+  Collector* GC = GCMap[F->getParent()];
   assert(GC && "GC not available in a multi-GC environment");
   Code *res = (Code *)gc::operator new(nbb, Code::VT, GC);
   Method* meth = collector_new(Method, GC)(res, ActualSize);
@@ -29,6 +29,7 @@ unsigned char* MvmMemoryManager::startFunctionBody(const Function* F,
   Code *res = (Code *)gc::operator new(nbb, Code::VT);
   Method* meth = gc_new(Method)(res, ActualSize);
 #endif
+  meth->llvmFunction = F;
   res->method(meth);
   currentMethod = meth;
   return (unsigned char*)((unsigned int*)res + 2);
@@ -65,8 +66,8 @@ unsigned char *MvmMemoryManager::getGOTBase() const {
 
 unsigned char *MvmMemoryManager::startExceptionTable(const Function* F, 
                                                      uintptr_t &ActualSize) {
-#ifdef MUTLIPLE_GC
-  Collector* GC = GCMap[F->getModule()];
+#ifdef MULTIPLE_GC
+  Collector* GC = GCMap[F->getParent()];
   assert(GC && "GC not available in a multi-GC environment");
   ExceptionTable *res = (ExceptionTable*)gc::operator new(ActualSize + 4, 
                                                           ExceptionTable::VT,

@@ -10,6 +10,8 @@
 #include "mvm/JIT.h"
 
 #include "JavaJIT.h"
+#include "JavaThread.h"
+#include "JavaUpcalls.h"
 #include "JnjvmModuleProvider.h"
 #include "ServiceDomain.h"
 
@@ -19,7 +21,11 @@
 extern "C" struct JNINativeInterface JNI_JNIEnvTable;
 extern "C" const struct JNIInvokeInterface JNI_JavaVMTable;
 
+
 using namespace jnjvm;
+
+llvm::Function* ServiceDomain::serviceCallStartLLVM;
+llvm::Function* ServiceDomain::serviceCallStopLLVM;
 
 
 GlobalVariable* ServiceDomain::llvmDelegatee() {
@@ -48,11 +54,8 @@ GlobalVariable* ServiceDomain::llvmDelegatee() {
 
 
 void ServiceDomain::destroyer(size_t sz) {
-  mvm::jit::protectEngine->lock();
-  mvm::jit::executionEngine->removeModuleProvider(TheModuleProvider);
-  mvm::jit::protectEngine->unlock();
-  delete TheModuleProvider;
-  delete module;
+  Jnjvm::destroyer(sz);
+  delete lock;
 }
 
 void ServiceDomain::print(mvm::PrintBuffer* buf) const {
@@ -60,9 +63,13 @@ void ServiceDomain::print(mvm::PrintBuffer* buf) const {
   buf->write(name);
 }
 
-ServiceDomain* ServiceDomain::allocateService(Jnjvm* callingVM) {
+ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
   ServiceDomain* service = vm_new(callingVM, ServiceDomain)();
-  
+  service->threadSystem = callingVM->threadSystem;
+#ifdef MULTIPLE_GC
+  service->GC = Collector::allocate();
+#endif
+
   service->functions = vm_new(service, FunctionMap)();
   service->module = new llvm::Module("Service Domain");
   service->protectModule = mvm::Lock::allocNormal();
@@ -92,7 +99,6 @@ ServiceDomain* ServiceDomain::allocateService(Jnjvm* callingVM) {
   // Here are the classes it loaded
   service->classes = vm_new(service, ClassMap)();
 
-  service->started = 0;
   service->executionTime = 0;
   service->memoryUsed = 0;
   service->gcTriggered = 0;
@@ -109,3 +115,41 @@ void ServiceDomain::loadBootstrap() {
   loadName(asciizConstructUTF8("java/lang/Math"), 
            CommonClass::jnjvmClassLoader, true, true, true);
 }
+
+void ServiceDomain::serviceError(const char* str) {
+  fprintf(stderr, str);
+  abort();
+}
+
+ServiceDomain* ServiceDomain::getDomainFromLoader(JavaObject* loader) {
+  ServiceDomain* vm = 
+    (ServiceDomain*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
+  return vm;
+}
+
+#ifdef SERVICE_VM
+extern "C" void ServiceDomainStart(ServiceDomain* caller,
+                                   ServiceDomain* callee) {
+  JavaThread* th = JavaThread::get();
+  th->isolate = callee;
+  time_t t = time(NULL);
+  caller->lock->lock();
+  caller->executionTime += t - th->executionTime;
+  caller->interactions[callee]++;
+  caller->lock->unlock();
+  th->executionTime = t;
+
+}
+
+extern "C" void ServiceDomainStop(ServiceDomain* caller,
+                                  ServiceDomain* callee) {
+  JavaThread* th = JavaThread::get();
+  th->isolate = caller;
+  time_t t = time(NULL);
+  callee->lock->lock();
+  callee->executionTime += t - th->executionTime;
+  callee->lock->unlock();
+  th->executionTime = t;
+}
+
+#endif

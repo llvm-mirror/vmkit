@@ -31,12 +31,7 @@ extern "C" {
 
 ArrayObject* recGetClassContext(int** stack, uint32 size, uint32 first, uint32 rec) {
   if (size != first) {
-#ifdef MULTIPLE_GC
-    int *begIp = (int*)mvm::Thread::get()->GC->begOf(stack[first]);
-#else
-    int *begIp = (int*)Collector::begOf(stack[first]);
-#endif
-    JavaMethod* meth = ip_to_meth(begIp);
+    JavaMethod* meth = ip_to_meth(stack[first]);
     if (meth) {
       ArrayObject* res = recGetClassContext(stack, size, first + 1, rec + 1); 
       res->setAt(rec, meth->classDef->getClassDelegatee());
@@ -63,12 +58,7 @@ jclass clazz,
   CommonClass* cl = Classpath::vmStackWalker; 
 
   while (i < real_size) {
-#ifdef MULTIPLE_GC
-    int *begIp = (int*)mvm::Thread::get()->GC->begOf(ips[i++]);
-#else
-    int *begIp = (int*)Collector::begOf(ips[i++]);
-#endif
-    JavaMethod* meth = ip_to_meth(begIp);
+    JavaMethod* meth = ip_to_meth(ips[i++]);
     if (meth && meth->classDef == cl) {
       first = i;
       break;
@@ -96,12 +86,7 @@ extern "C" JavaObject* getCallingClass() {
   int i = 0;
   
   while (i < real_size) {
-#ifdef MULTIPLE_GC
-    int *begIp = (int*)mvm::Thread::get()->GC->begOf(ips[i++]);
-#else
-    int *begIp = (int*)Collector::begOf(ips[i++]);
-#endif
-    JavaMethod* meth = ip_to_meth(begIp);
+    JavaMethod* meth = ip_to_meth(ips[i++]);
     if (meth) {
       ++n;
       if (n == 1) return meth->classDef->getClassDelegatee();
@@ -118,12 +103,7 @@ extern "C" JavaObject* getCallingClassLoader() {
   int i = 0;
   
   while (i < real_size) {
-#ifdef MULTIPLE_GC
-    int *begIp = (int*)mvm::Thread::get()->GC->begOf(ips[i++]);
-#else
-    int *begIp = (int*)Collector::begOf(ips[i++]);
-#endif
-    JavaMethod* meth = ip_to_meth(begIp);
+    JavaMethod* meth = ip_to_meth(ips[i++]);
     if (meth) {
       ++n;
       if (n == 1) return meth->classDef->classLoader;

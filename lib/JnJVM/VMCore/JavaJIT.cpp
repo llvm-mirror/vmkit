@@ -322,8 +322,8 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   if (compilingClass->isolate == Jnjvm::bootstrapVM) {
     isolateLocal = args[args.size() - 1];
   } else {
-    ServiceDomain* vm = 
-      (ServiceDomain*)(*Classpath::vmdataClassLoader)(compilingClass->classLoader).PointerVal;
+    JavaObject* loader = compilingClass->classLoader;
+    ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
     isolateLocal = new LoadInst(vm->llvmDelegatee(), "", currentBlock);
   }
 #endif
@@ -450,8 +450,8 @@ llvm::Function* JavaJIT::javaCompile() {
   if (compilingClass->isolate == Jnjvm::bootstrapVM) {
     isolateLocal = i;
   } else {
-    ServiceDomain* vm = 
-      (ServiceDomain*)(*Classpath::vmdataClassLoader)(compilingClass->classLoader).PointerVal;
+    JavaObject* loader = compilingClass->classLoader;
+    ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
     isolateLocal = new LoadInst(vm->llvmDelegatee(), "", currentBlock);
   }
 #endif
@@ -1182,9 +1182,24 @@ void JavaJIT::invokeSpecial(uint16 index) {
     val = lowerMathOps(name, args);
   }
 
+
   if (!val) {
     Function* func = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
                                                           signature, meth);
+#ifdef SERVICE_VM
+    bool serviceCall = false;
+    if (meth && meth->classDef->classLoader != compilingClass->classLoader &&
+        meth->classDef->isolate != Jnjvm::bootstrapVM){
+      JavaObject* loader = meth->classDef->classLoader;
+      ServiceDomain* calling = ServiceDomain::getDomainFromLoader(loader);
+      serviceCall = true;
+      std::vector<Value*> Args;
+      Args.push_back(isolateLocal);
+      Args.push_back(calling->llvmDelegatee());
+      CallInst::Create(ServiceDomain::serviceCallStartLLVM, Args.begin(),
+                       Args.end(), "", currentBlock);
+    }
+#endif
 
     if (meth && meth->canBeInlined && meth != compilingMethod && 
         inlineMethods[meth] == 0) {
@@ -1192,6 +1207,19 @@ void JavaJIT::invokeSpecial(uint16 index) {
     } else {
       val = invoke(func, args, "", currentBlock);
     }
+
+#ifdef SERVICE_VM
+    if (serviceCall) {  
+      JavaObject* loader = meth->classDef->classLoader;
+      ServiceDomain* calling = ServiceDomain::getDomainFromLoader(loader);
+      serviceCall = true;
+      std::vector<Value*> Args;
+      Args.push_back(isolateLocal);
+      Args.push_back(calling->llvmDelegatee());
+      CallInst::Create(ServiceDomain::serviceCallStopLLVM, Args.begin(),
+                       Args.end(), "", currentBlock);
+    }
+#endif
   }
   
   const llvm::Type* retType = signature->virtualType->getReturnType();
@@ -1225,6 +1253,21 @@ void JavaJIT::invokeStatic(uint16 index) {
   if (!val) {
     Function* func = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_STATIC,
                                                           signature, meth);
+    
+#ifdef SERVICE_VM
+    bool serviceCall = false;
+    if (meth && meth->classDef->classLoader != compilingClass->classLoader &&
+        meth->classDef->isolate != Jnjvm::bootstrapVM){
+      JavaObject* loader = meth->classDef->classLoader;
+      ServiceDomain* calling = ServiceDomain::getDomainFromLoader(loader);
+      serviceCall = true;
+      std::vector<Value*> Args;
+      Args.push_back(isolateLocal);
+      Args.push_back(calling->llvmDelegatee());
+      CallInst::Create(ServiceDomain::serviceCallStartLLVM, Args.begin(),
+                       Args.end(), "", currentBlock);
+    }
+#endif
 
     if (meth && meth->canBeInlined && meth != compilingMethod && 
         inlineMethods[meth] == 0) {
@@ -1232,6 +1275,18 @@ void JavaJIT::invokeStatic(uint16 index) {
     } else {
       val = invoke(func, args, "", currentBlock);
     }
+
+#ifdef SERVICE_VM
+    if (serviceCall) {  
+      JavaObject* loader = meth->classDef->classLoader;
+      ServiceDomain* calling = ServiceDomain::getDomainFromLoader(loader);
+      std::vector<Value*> Args;
+      Args.push_back(isolateLocal);
+      Args.push_back(calling->llvmDelegatee());
+      CallInst::Create(ServiceDomain::serviceCallStopLLVM, Args.begin(), Args.end(), "",
+                       currentBlock);
+    }
+#endif
   }
 
   const llvm::Type* retType = signature->staticType->getReturnType();
@@ -1290,6 +1345,14 @@ void JavaJIT::invokeNew(uint16 index) {
   ctpInfo->checkInfoOfClass(index);
   
   Class* cl = (Class*)(ctpInfo->getMethodClassIfLoaded(index));
+#ifdef SERVICE_VM
+  if (cl && cl->classLoader != compilingClass->classLoader && 
+      cl->isolate != Jnjvm::bootstrapVM) {
+    ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->isolate;
+    assert(vm->getVirtualTable() == ServiceDomain::VT && "vm not a service?");
+    vm->serviceError("The service called new on another service");
+  }
+#endif
   Value* val = 0;
   if (!cl || !cl->isReady()) {
     Value* node = getInitializedClass(index);

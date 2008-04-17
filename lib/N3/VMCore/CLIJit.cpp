@@ -55,9 +55,14 @@ void Exception::print(mvm::PrintBuffer* buf) const {
 
 #ifdef WITH_TRACER
 // for structs
-static void traceStruct(VMCommonClass* cl, BasicBlock* block, Value* arg) { 
+static void traceStruct(VMCommonClass* cl, BasicBlock* block, Value* arg) {
+#ifdef MULTIPLE_GC
+  Value* GC = ++(block->getParent()->arg_begin());
+#endif
+
   for (std::vector<VMField*>::iterator i = cl->virtualFields.begin(), 
             e = cl->virtualFields.end(); i!= e; ++i) {
+
     VMField* field = *i;
     if (field->signature->super == N3::pValue) {
       if (!field->signature->isPrimitive) {
@@ -67,11 +72,27 @@ static void traceStruct(VMCommonClass* cl, BasicBlock* block, Value* arg) {
       } else if (field->signature == N3::pIntPtr || 
                  field->signature == N3::pUIntPtr)  {
         Value* valCast = new BitCastInst(arg, VMObject::llvmType, "", block);
+#ifdef MULTIPLE_GC
+        std::vector<Value*> Args;
+        Args.push_back(valCast);
+        Args.push_back(GC);
+        CallInst::Create(CLIJit::markAndTraceLLVM, Args.begin(), Args.end(),
+                         "", block);
+#else
         CallInst::Create(CLIJit::markAndTraceLLVM, valCast, "", block);
+#endif
       }
     } else if (field->signature->super != N3::pEnum) {
       Value* valCast = new BitCastInst(arg, VMObject::llvmType, "", block);
+#ifdef MULTIPLE_GC
+      std::vector<Value*> Args;
+      Args.push_back(valCast);
+      Args.push_back(GC);
+      CallInst::Create(CLIJit::markAndTraceLLVM, Args.begin(), Args.end(),
+                       "", block);
+#else
       CallInst::Create(CLIJit::markAndTraceLLVM, valCast, "", block);
+#endif
     }
   }
 }
@@ -80,6 +101,9 @@ static void traceStruct(VMCommonClass* cl, BasicBlock* block, Value* arg) {
 // Always classes
 static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg, 
                        std::vector<VMField*>& fields, bool boxed = false) {
+#ifdef MULTIPLE_GC
+  Value* GC = ++(block->getParent()->arg_begin());
+#endif
   
   Constant* zero = mvm::jit::constantZero;
   for (std::vector<VMField*>::iterator i = fields.begin(), 
@@ -112,7 +136,15 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
                                          block);
       Value* val = new LoadInst(ptr, "", block);
       Value* valCast = new BitCastInst(val, VMObject::llvmType, "", block);
+#ifdef MULTIPLE_GC
+        std::vector<Value*> Args;
+        Args.push_back(valCast);
+        Args.push_back(GC);
+        CallInst::Create(CLIJit::markAndTraceLLVM, Args.begin(), Args.end(),
+                         "", block);
+#else
       CallInst::Create(CLIJit::markAndTraceLLVM, valCast, "", block);
+#endif
     }
   }
 }
@@ -127,7 +159,9 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
                                 "markAndTraceObject",
                                 cl->vm->module);
   Argument* arg = func->arg_begin();
-  
+#ifdef MULTIPLE_GC 
+  Argument* GC = ++(func->arg_begin());
+#endif
     // Constant Definitions
   Constant* const_int32_8 = mvm::jit::constantZero;
   ConstantInt* const_int32_9 = mvm::jit::constantOne;
@@ -181,7 +215,15 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
     } else if (cl->baseClass->super != N3::pEnum) {
       LoadInst* ptr_tmp4 = new LoadInst(ptr_tmp3, "tmp4", false, label_bb);
       Value* arg = new BitCastInst(ptr_tmp4, VMObject::llvmType, "", label_bb);
+#ifdef MULTIPLE_GC
+      std::vector<Value*> Args;
+      Args.push_back(arg);
+      Args.push_back(GC);
+      CallInst::Create(markAndTraceLLVM, Args.begin(), Args.end(), "",
+                       label_bb);
+#else
       CallInst::Create(markAndTraceLLVM, arg, "", label_bb);
+#endif
     }
     BinaryOperator* int32_tmp6 = 
       BinaryOperator::create(Instruction::Add, int32_i_015_0, const_int32_9,
@@ -202,7 +244,7 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
   void* tracer = mvm::jit::executionEngine->getPointerToGlobal(func);
   ((void**)res)[VT_TRACER_OFFSET] = tracer;
   cl->virtualTracer = func;
-  cl->codeVirtualTracer = (mvm::Code*)((intptr_t)tracer - sizeof(intptr_t));
+  cl->codeVirtualTracer = mvm::Code::getCodeFromPointer(tracer);
 #endif
 
   return res;
@@ -221,14 +263,29 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
                                 cl->vm->module);
 
   Argument* arg = func->arg_begin();
+#ifdef MULTIPLE_GC 
+  Argument* GC = ++(func->arg_begin());
+#endif
   BasicBlock* block = BasicBlock::Create("", func);
   llvm::Value* realArg = new BitCastInst(arg, type, "", block);
-  
+ 
+#ifdef MULTIPLE_GC
+  std::vector<Value*> Args;
+  Args.push_back(arg);
+  Args.push_back(GC);
+  if (stat || cl->super == 0) {
+    CallInst::Create(vmObjectTracerLLVM, Args.begin(), Args.end(), "", block);
+  } else {
+    CallInst::Create(((VMClass*)cl->super)->virtualTracer, Args.begin(),
+                     Args.end(), "", block);
+  }
+#else
   if (stat || cl->super == 0) {
     CallInst::Create(vmObjectTracerLLVM, arg, "", block);
   } else {
     CallInst::Create(((VMClass*)cl->super)->virtualTracer, arg, "", block);
   }
+#endif
   
   traceClass(cl, block, realArg, fields, (cl->super == N3::pValue && !stat));
   ReturnInst::Create(block);
@@ -238,10 +295,10 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
   
   if (!stat) {
     cl->virtualTracer = func;
-    cl->codeVirtualTracer = (mvm::Code*)((intptr_t)tracer - sizeof(intptr_t));
+    cl->codeVirtualTracer = mvm::Code::getCodeFromPointer(tracer);
   } else {
     cl->staticTracer = func;
-    cl->codeStaticTracer = (mvm::Code*)((intptr_t)tracer - sizeof(intptr_t));
+    cl->codeStaticTracer = mvm::Code::getCodeFromPointer(tracer);
   }
 #endif
   return res;
@@ -1443,11 +1500,7 @@ extern "C" void indexOutOfBounds() {
 
 
 extern "C" bool isInCode(void* value) {
-#ifdef MULTIPLE_GC
-  mvm::Object* obj = (mvm::Object*)mvm::Thread::get()->GC->begOf(value);
-#else
-  mvm::Object* obj = (mvm::Object*)Collector::begOf(value);
-#endif
+  mvm::Object *obj = mvm::Code::getCodeFromPointer(value);
   if (obj && obj->getVirtualTable() == mvm::Code::VT) {
     return true;
   } else {
@@ -1584,10 +1637,17 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   {
   std::vector<const Type*> args;
   args.push_back(VMObject::llvmType);
+#ifdef MULTIPLE_GC
+  args.push_back(mvm::jit::ptrType);
+#endif
   markAndTraceLLVMType = FunctionType::get(llvm::Type::VoidTy, args, false);
   markAndTraceLLVM = Function::Create(markAndTraceLLVMType,
                                   GlobalValue::ExternalLinkage,
+#ifdef MULTIPLE_GC
+                                  "_ZNK2gc12markAndTraceEP9Collector",
+#else
                                   "_ZNK2gc12markAndTraceEv",
+#endif
                                   module);
   }
 #endif
@@ -1596,10 +1656,17 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   {
   std::vector<const Type*> args;
   args.push_back(VMObject::llvmType);
+#ifdef MULTIPLE_GC
+  args.push_back(mvm::jit::ptrType);
+#endif
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
   vmObjectTracerLLVM = Function::Create(type,
                                     GlobalValue::ExternalLinkage,
-                                    "_ZN2n38VMObject6tracerEj",
+#ifdef MULTIPLE_GC
+                                    "_ZN2n38VMObject6tracerEPv",
+#else
+                                    "_ZN2n38VMObject6tracerEv",
+#endif
                                     module);
   }
 

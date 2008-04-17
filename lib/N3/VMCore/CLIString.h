@@ -28,7 +28,7 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("CLI string");
   }
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   
   // !!! pnetlib layout !!!
   sint32 capacity;

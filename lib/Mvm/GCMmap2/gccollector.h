@@ -31,7 +31,6 @@ class GCCollector : public Collector {
 #endif
   STATIC GCAllocator  *allocator;      /* The allocator */
 
-  STATIC Collector::markerFn  _marker; /* The function which traces roots */
 
   STATIC GCChunkNode  *used_nodes;     /* Used memory nodes */
   STATIC GCChunkNode  *unused_nodes;   /* Unused memory nodes */
@@ -45,7 +44,8 @@ class GCCollector : public Collector {
   STATIC bool _enable_maybe;           /* Collection in maybeCollect()? */
   STATIC bool _enable_collection;      /* collection authorized? */
   STATIC int  status;
-
+  
+  
   enum { stat_collect, stat_finalize, stat_alloc, stat_broken };
 
 #ifdef HAVE_PTHREAD
@@ -72,6 +72,13 @@ class GCCollector : public Collector {
   }
 
 public:
+  STATIC Collector::markerFn  _marker; /* The function which traces roots */
+#ifdef SERVICE_GC
+  static GCCollector* collectingGC;
+#endif
+#ifdef MULTIPLE_GC
+  static GCCollector* bootstrapGC;
+#endif
   STATIC GCThread *threads;        /* le gestionnaire de thread et de synchro */
   static void (*internMemoryError)(unsigned int);
 
@@ -206,7 +213,11 @@ public:
 
   STATIC inline void trace(GCChunkNode *node) {
     gc_header *o = node->chunk();
-    o->_2gc()->tracer(real_nbb(node));
+#ifdef MULTIPLE_GC
+    o->_2gc()->tracer(this);
+#else
+    o->_2gc()->tracer();
+#endif
     markAndTrace(o);
   }
 

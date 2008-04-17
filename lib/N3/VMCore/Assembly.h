@@ -53,7 +53,7 @@ class Section : public mvm::Object {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   
   char* name;
   uint32 virtualSize;
@@ -73,7 +73,7 @@ class Stream : public mvm::Object {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   char* name;
   uint32 realOffset;
@@ -84,7 +84,7 @@ class Table : public mvm::Object {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   uint32 offset;
   uint32 rowsNumber;
@@ -102,7 +102,7 @@ class Header : public mvm::Object {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   uint32 signature;
   uint32 major;
@@ -134,7 +134,7 @@ class Assembly : public mvm::Object {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   VMClassPointer* constructPointer(VMCommonClass* base, uint32 dims);
   VMClassArray* constructArray(VMCommonClass* base, uint32 dims);

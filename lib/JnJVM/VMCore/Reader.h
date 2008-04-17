@@ -51,7 +51,7 @@ public:
   void seek(uint32 pos, int from);
 
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 };
 
 } // end namespace jnjvm

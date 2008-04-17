@@ -28,7 +28,7 @@ class CacheNode : public mvm::Object {
 public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   void* methPtr;
   Class* lastCible;
@@ -43,9 +43,10 @@ public:
 class Enveloppe : public mvm::Object {
 public:
   static VirtualTable* VT;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   virtual void print(mvm::PrintBuffer* buf) const;
-  
+  virtual void destroyer(size_t sz);
+
   CacheNode *firstCache;
   JavaCtpInfo* ctpInfo;
   mvm::Lock* cacheLock;

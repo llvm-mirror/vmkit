@@ -38,7 +38,7 @@ public:
   mvm::Cond* nonDaemonVar;
 
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
 
   static ThreadSystem* allocateThreadSystem();
 };
@@ -110,7 +110,7 @@ public:
   void error(const char* className, const char* fmt, va_list ap);
 
   
-  virtual void tracer(size_t sz);
+  virtual void TRACER;
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("Virtual Machine<>");
   }

@@ -31,6 +31,10 @@
 using namespace jnjvm;
 using namespace llvm;
 
+void Enveloppe::destroyer(size_t sz) {
+  delete cacheLock;
+}
+
 void CacheNode::print(mvm::PrintBuffer* buf) const {
   buf->write("CacheNode<");
   if (lastCible) {

@@ -90,10 +90,10 @@ public:
     lock->unlock();
   }
 
-  virtual void tracer(size_t sz) {
-    //lock->markAndTrace();
+  virtual void TRACER {
+    //lock->MARK_AND_TRACE;
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->second->markAndTrace();
+      i->second->MARK_AND_TRACE;
     }
   }
 
@@ -210,10 +210,10 @@ public:
   const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
   const UTF8* lookupOrCreateReader(const uint16* buf, uint32 size);
   
-  virtual void tracer(size_t sz) {
-    //lock->markAndTrace();
+  virtual void TRACER {
+    //lock->MARK_AND_TRACE;
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->second->markAndTrace();
+      i->second->MARK_AND_TRACE;
     }
   }
 

@@ -76,50 +76,50 @@ using namespace n3;
   
 #undef INIT
 
-void Opinfo::tracer(size_t sz) {
+void Opinfo::TRACER {
 }
 
-void CLIJit::tracer(size_t sz) {
-  compilingMethod->markAndTrace();
-  compilingClass->markAndTrace();
+void CLIJit::TRACER {
+  compilingMethod->MARK_AND_TRACE;
+  compilingClass->MARK_AND_TRACE;
 }
 
-void ThreadSystem::tracer(size_t sz) {
-  //nonDaemonLock->markAndTrace();
-  //nonDaemonVar->markAndTrace();
+void ThreadSystem::TRACER {
+  //nonDaemonLock->MARK_AND_TRACE;
+  //nonDaemonVar->MARK_AND_TRACE;
 }
 
-void Reader::tracer(size_t sz) {
-  bytes->markAndTrace();
+void Reader::TRACER {
+  bytes->MARK_AND_TRACE;
 }
 
-void CacheNode::tracer(size_t sz) {
-  ((mvm::Object*)methPtr)->markAndTrace();
-  lastCible->markAndTrace();
-  next->markAndTrace();
-  enveloppe->markAndTrace();
+void CacheNode::TRACER {
+  ((mvm::Object*)methPtr)->MARK_AND_TRACE;
+  lastCible->MARK_AND_TRACE;
+  next->MARK_AND_TRACE;
+  enveloppe->MARK_AND_TRACE;
 }
 
-void Enveloppe::tracer(size_t sz) {
-  firstCache->markAndTrace();
-  //cacheLock->markAndTrace();
-  originalMethod->markAndTrace();
+void Enveloppe::TRACER {
+  firstCache->MARK_AND_TRACE;
+  //cacheLock->MARK_AND_TRACE;
+  originalMethod->MARK_AND_TRACE;
 }
 
-void VMArray::tracer(size_t sz) {
-  VMObject::tracer(sz);
+void VMArray::TRACER {
+  VMObject::PARENT_TRACER;
 }
 
-void ArrayObject::tracer(size_t sz) {
-  VMObject::tracer(sz);
+void ArrayObject::TRACER {
+  VMObject::PARENT_TRACER;
   for (sint32 i = 0; i < size; i++) {
-    elements[i]->markAndTrace();
+    elements[i]->MARK_AND_TRACE;
   }
 }
 
 #define ARRAYTRACER(name)         \
-  void name::tracer(size_t sz) {  \
-    VMObject::tracer(sz);         \
+  void name::TRACER {             \
+    VMObject::PARENT_TRACER;      \
   }
   
 
@@ -139,154 +139,154 @@ ARRAYTRACER(ArrayDouble);
 #define TRACE_VECTOR(type, name, alloc) { \
   for (std::vector<type, alloc<type> >::iterator i = name.begin(), e = name.end(); \
        i!= e; ++i) {                                                    \
-    (*i)->markAndTrace(); }}
+    (*i)->MARK_AND_TRACE; }}
 
-void VMCommonClass::tracer(size_t sz) {
-  name->markAndTrace();
-  nameSpace->markAndTrace();
-  super->markAndTrace();
+void VMCommonClass::TRACER {
+  name->MARK_AND_TRACE;
+  nameSpace->MARK_AND_TRACE;
+  super->MARK_AND_TRACE;
   TRACE_VECTOR(VMClass*, interfaces, std::allocator);
-  //lockVar->markAndTrace();
-  //condVar->markAndTrace();
+  //lockVar->MARK_AND_TRACE;
+  //condVar->MARK_AND_TRACE;
   TRACE_VECTOR(VMMethod*, virtualMethods, std::allocator);
   TRACE_VECTOR(VMMethod*, staticMethods, std::allocator);
   TRACE_VECTOR(VMField*, virtualFields, std::allocator);
   TRACE_VECTOR(VMField*, staticFields, std::allocator);
-  delegatee->markAndTrace();
+  delegatee->MARK_AND_TRACE;
   TRACE_VECTOR(VMCommonClass*, display, std::allocator);
-  vm->markAndTrace();
+  vm->MARK_AND_TRACE;
 
-  assembly->markAndTrace();
-  //funcs->markAndTrace();
+  assembly->MARK_AND_TRACE;
+  //funcs->MARK_AND_TRACE;
   TRACE_VECTOR(Property*, properties, gc_allocator);
-  codeVirtualTracer->markAndTrace();
-  codeStaticTracer->markAndTrace();
+  codeVirtualTracer->MARK_AND_TRACE;
+  codeStaticTracer->MARK_AND_TRACE;
 }
 
-void VMClass::tracer(size_t sz) {
-  VMCommonClass::tracer(sz);
-  staticInstance->markAndTrace();
-  virtualInstance->markAndTrace();
+void VMClass::TRACER {
+  VMCommonClass::PARENT_TRACER;
+  staticInstance->MARK_AND_TRACE;
+  virtualInstance->MARK_AND_TRACE;
   TRACE_VECTOR(VMClass*, innerClasses, std::allocator);
-  outerClass->markAndTrace();
+  outerClass->MARK_AND_TRACE;
 }
 
-void VMClassArray::tracer(size_t sz) {
-  VMCommonClass::tracer(sz);
-  baseClass->markAndTrace();
+void VMClassArray::TRACER {
+  VMCommonClass::PARENT_TRACER;
+  baseClass->MARK_AND_TRACE;
 }
 
-void VMClassPointer::tracer(size_t sz) {
-  VMCommonClass::tracer(sz);
-  baseClass->markAndTrace();
+void VMClassPointer::TRACER {
+  VMCommonClass::PARENT_TRACER;
+  baseClass->MARK_AND_TRACE;
 }
 
 
-void VMMethod::tracer(size_t sz) {
-  delegatee->markAndTrace();
-  //signature->markAndTrace();
-  classDef->markAndTrace();
+void VMMethod::TRACER {
+  delegatee->MARK_AND_TRACE;
+  //signature->MARK_AND_TRACE;
+  classDef->MARK_AND_TRACE;
   TRACE_VECTOR(Param*, params, gc_allocator);
   TRACE_VECTOR(Enveloppe*, caches, gc_allocator);
-  name->markAndTrace();
-  code->markAndTrace();
+  name->MARK_AND_TRACE;
+  code->MARK_AND_TRACE;
 }
 
-void VMField::tracer(size_t sz) {
-  signature->markAndTrace();
-  classDef->markAndTrace();
-  name->markAndTrace();
+void VMField::TRACER {
+  signature->MARK_AND_TRACE;
+  classDef->MARK_AND_TRACE;
+  name->MARK_AND_TRACE;
 }
 
-void VMCond::tracer(size_t sz) {
+void VMCond::TRACER {
   TRACE_VECTOR(VMThread*, threads, std::allocator);
 }
 
-void LockObj::tracer(size_t sz) {
-  //lock->markAndTrace();
-  varcond->markAndTrace();
+void LockObj::TRACER {
+  //lock->MARK_AND_TRACE;
+  varcond->MARK_AND_TRACE;
 }
 
-void VMObject::tracer(size_t sz) {
-  classOf->markAndTrace();
-  lockObj->markAndTrace();
+void VMObject::TRACER {
+  classOf->MARK_AND_TRACE;
+  lockObj->MARK_AND_TRACE;
 }
 
-void VMThread::tracer(size_t sz) {
-  vmThread->markAndTrace();
-  vm->markAndTrace();
-  //lock->markAndTrace();
-  //varcond->markAndTrace();
-  pendingException->markAndTrace();
+void VMThread::TRACER {
+  vmThread->MARK_AND_TRACE;
+  vm->MARK_AND_TRACE;
+  //lock->MARK_AND_TRACE;
+  //varcond->MARK_AND_TRACE;
+  pendingException->MARK_AND_TRACE;
 }
 
-void VirtualMachine::tracer(size_t sz) {
-  threadSystem->markAndTrace();
-  hashUTF8->markAndTrace();
-  functions->markAndTrace();
-  //protectModule->markAndTrace();
-  bootstrapThread->markAndTrace();
+void VirtualMachine::TRACER {
+  threadSystem->MARK_AND_TRACE;
+  hashUTF8->MARK_AND_TRACE;
+  functions->MARK_AND_TRACE;
+  //protectModule->MARK_AND_TRACE;
+  bootstrapThread->MARK_AND_TRACE;
 }
 
-void Param::tracer(size_t sz) {
-  method->markAndTrace();
-  name->markAndTrace();
+void Param::TRACER {
+  method->MARK_AND_TRACE;
+  name->MARK_AND_TRACE;
 }
 
-void Property::tracer(size_t sz) {
-  type->markAndTrace();
-  //signature->markAndTrace();
-  name->markAndTrace();
-  delegatee->markAndTrace();
+void Property::TRACER {
+  type->MARK_AND_TRACE;
+  //signature->MARK_AND_TRACE;
+  name->MARK_AND_TRACE;
+  delegatee->MARK_AND_TRACE;
 }
 
-void Assembly::tracer(size_t sz) {
-  loadedNameClasses->markAndTrace();
-  loadedTokenClasses->markAndTrace();
-  loadedTokenMethods->markAndTrace();
-  loadedTokenFields->markAndTrace();
-  //lockVar->markAndTrace();
-  //condVar->markAndTrace();
-  name->markAndTrace();
-  bytes->markAndTrace();
-  textSection->markAndTrace();
-  rsrcSection->markAndTrace();
-  relocSection->markAndTrace();
-  CLIHeader->markAndTrace();
-  vm->markAndTrace();
-  delegatee->markAndTrace();
+void Assembly::TRACER {
+  loadedNameClasses->MARK_AND_TRACE;
+  loadedTokenClasses->MARK_AND_TRACE;
+  loadedTokenMethods->MARK_AND_TRACE;
+  loadedTokenFields->MARK_AND_TRACE;
+  //lockVar->MARK_AND_TRACE;
+  //condVar->MARK_AND_TRACE;
+  name->MARK_AND_TRACE;
+  bytes->MARK_AND_TRACE;
+  textSection->MARK_AND_TRACE;
+  rsrcSection->MARK_AND_TRACE;
+  relocSection->MARK_AND_TRACE;
+  CLIHeader->MARK_AND_TRACE;
+  vm->MARK_AND_TRACE;
+  delegatee->MARK_AND_TRACE;
   // TODO trace assembly refs...
 }
 
-void N3::tracer(size_t sz) {
-  VirtualMachine::tracer(sz);
-  hashUTF8->markAndTrace();
-  hashStr->markAndTrace();
-  loadedAssemblies->markAndTrace();
+void N3::TRACER {
+  VirtualMachine::PARENT_TRACER;
+  hashUTF8->MARK_AND_TRACE;
+  hashStr->MARK_AND_TRACE;
+  loadedAssemblies->MARK_AND_TRACE;
 }
 
-void Section::tracer(size_t sz) {
+void Section::TRACER {
 }
 
-void Stream::tracer(size_t sz) {
+void Stream::TRACER {
 }
 
-void Table::tracer(size_t sz) {
+void Table::TRACER {
 }
 
-void Header::tracer(size_t sz) {
-  versionName->markAndTrace();
-  tildStream->markAndTrace();
-  stringStream->markAndTrace();
-  usStream->markAndTrace();
-  blobStream->markAndTrace();
-  guidStream->markAndTrace();
+void Header::TRACER {
+  versionName->MARK_AND_TRACE;
+  tildStream->MARK_AND_TRACE;
+  stringStream->MARK_AND_TRACE;
+  usStream->MARK_AND_TRACE;
+  blobStream->MARK_AND_TRACE;
+  guidStream->MARK_AND_TRACE;
   TRACE_VECTOR(Table*, tables, gc_allocator);
 }
 
-void CLIString::tracer(size_t sz) {
+void CLIString::TRACER {
 }
 
-void Exception::tracer(size_t sz) {
-  catchClass->markAndTrace();
+void Exception::TRACER {
+  catchClass->MARK_AND_TRACE;
 }
