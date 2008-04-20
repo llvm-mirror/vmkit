@@ -58,7 +58,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
     } else {
       JavaMethod* meth = staticLookup(p->first, p->second);
       void* val = meth->compiledPtr();
-      if (!(mvm::jit::executionEngine->getPointerToGlobalIfAvailable(F)))
+      if (F->isDeclaration())
         mvm::jit::executionEngine->updateGlobalMapping(F, val);
       return false;
     }
