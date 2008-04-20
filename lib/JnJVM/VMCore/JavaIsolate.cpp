@@ -507,7 +507,9 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   isolate->bootstrapThread->initialise(0, isolate);
 #ifdef MULTIPLE_GC
   isolate->bootstrapThread->GC = isolate->GC;
+#ifndef SERVICE_VM
   isolate->GC->inject_my_thread(0);
+#endif
   mvm::jit::memoryManager->addGCForModule(isolate->module, isolate->GC);
 #endif 
   JavaThread::threadKey->set(isolate->bootstrapThread);
