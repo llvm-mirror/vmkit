@@ -36,6 +36,7 @@ public:
   
   MvmMemoryManager() : JITMemoryManager() { 
       GOTBase = 0; 
+      SizeRequired = true;
 #ifdef MULTIPLE_GC
       lock = mvm::Lock::allocNormal();
 #endif
@@ -72,7 +73,8 @@ public:
   /// thunk for it.  The stub should be "close" to the current function body,
   /// but should not be included in the 'actualsize' returned by
   /// startFunctionBody.
-  virtual unsigned char *allocateStub(unsigned StubSize, unsigned Alignment);
+  virtual unsigned char *allocateStub(const GlobalValue* GV, unsigned StubSize,
+                                      unsigned Alignment);
   
   /// endFunctionBody - This method is called when the JIT is done codegen'ing
   /// the specified function.  At this point we know the size of the JIT

@@ -218,7 +218,6 @@ static void initialiseTypes(llvm::Module* mod) {
 extern "C" void __register_frame(void*);
 
 void mvm::jit::initialise() {
-  llvm::SizedMemoryCode = true;
   llvm::NoFramePointerElim = true;
   llvm::ExceptionHandling = true;
   llvm::Module *module = jit::globalModule = new llvm::Module ("microvm");

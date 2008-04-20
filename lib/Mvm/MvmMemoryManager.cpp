@@ -35,11 +35,18 @@ unsigned char* MvmMemoryManager::startFunctionBody(const Function* F,
   return (unsigned char*)((unsigned int*)res + 2);
 }
 
-unsigned char *MvmMemoryManager::allocateStub(unsigned StubSize, 
+unsigned char *MvmMemoryManager::allocateStub(const GlobalValue* GV,
+                                              unsigned StubSize, 
                                               unsigned Alignment) {
   size_t nbb = ((StubSize - 1) & -4) + 4 + sizeof(Method *);
+#ifdef MULTIPLE_GC
+  Collector* GC = GCMap[F->getParent()];
+  Code *res = (Code *)gc::operator new(nbb, Code::VT, GC); 
+  Method* meth = collector_new(Method, GC)(res, StubSize);
+#else
   Code *res = (Code *)gc::operator new(nbb, Code::VT); 
   Method* meth = gc_new(Method)(res, StubSize);
+#endif
   res->method(meth);
   Object::pushRoot(meth);
   return (unsigned char*)((unsigned int*)res + 2);
