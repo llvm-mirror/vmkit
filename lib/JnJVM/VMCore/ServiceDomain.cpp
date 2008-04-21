@@ -75,6 +75,10 @@ ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
   service->protectModule = mvm::Lock::allocNormal();
   service->TheModuleProvider = new JnjvmModuleProvider(service->module, 
                                                        service->functions);  
+
+#ifdef MULTIPLE_GC
+  mvm::jit::memoryManager->addGCForModule(service->module, service->GC);
+#endif
   JavaJIT::initialiseJITIsolateVM(service);
   
   service->name = "service";
