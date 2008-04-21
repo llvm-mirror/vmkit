@@ -55,6 +55,10 @@ llvm::Function* JavaJIT::printMethodEndLLVM = 0;
 llvm::Function* JavaJIT::jniProceedPendingExceptionLLVM = 0;
 llvm::Function* JavaJIT::doNewLLVM = 0;
 llvm::Function* JavaJIT::doNewUnknownLLVM = 0;
+#ifdef MULTIPLE_VM
+llvm::Function* JavaJIT::initialisationCheckLLVM = 0;
+llvm::Function* JavaJIT::initialisationCheckCtpLLVM = 0;
+#endif
 llvm::Function* JavaJIT::initialiseObjectLLVM = 0;
 llvm::Function* JavaJIT::newLookupLLVM = 0;
 llvm::Function* JavaJIT::instanceOfLLVM = 0;
@@ -237,3 +241,16 @@ extern "C" Class* newLookup(Class* caller, uint32 index, Class** toAlloc,
   *toAlloc = cl;
   return cl;
 }
+
+#ifdef MULTIPLE_VM
+extern "C" void initialisationCheck(CommonClass* cl) {
+  cl->isolate->initialiseClass(cl);
+}
+
+extern "C" void initialisationCheckCtp(Class* caller, uint16 index) {
+  JavaCtpInfo* ctpInfo = caller->ctpInfo;
+  JavaField* field = (JavaField*)(ctpInfo->ctpRes[index]);
+  assert(field && "checking without resolving?");  
+  field->classDef->isolate->initialiseClass(field->classDef);
+}
+#endif

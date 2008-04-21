@@ -794,7 +794,7 @@ void JavaJIT::_ldc(uint16 index) {
         }
 #endif
         
-        // TODO: put an initializer in here
+        // TODO: put an initialiser in here
         void* ptr = mvm::jit::executionEngine->getPointerToGlobal(gv);
         GenericValue Val = GenericValue(val);
         llvm::GenericValue * Ptr = (llvm::GenericValue*)ptr;
@@ -1351,6 +1351,9 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit) {
 
     llvm::BranchInst::Create(trueCl, currentBlock);
     currentBlock = trueCl;
+#ifdef MULTIPLE_VM
+    invoke(initialisationCheckLLVM, node, "", currentBlock);
+#endif
     
     return node;
 }
@@ -1369,7 +1372,11 @@ void JavaJIT::invokeNew(uint16 index) {
   }
 #endif
   Value* val = 0;
-  if (!cl || !cl->isReady()) {
+  if (!cl || !(cl->isResolved())
+#ifndef MULTIPLE_VM
+      || !cl->isReady()
+#endif
+     ) {
     Value* node = getResolvedClass(index, true);
 #ifndef MULTIPLE_VM
     val = invoke(doNewUnknownLLVM, node, "", currentBlock);
@@ -1380,6 +1387,11 @@ void JavaJIT::invokeNew(uint16 index) {
     Value* load = new LoadInst(cl->llvmVar(compilingClass->isolate->module),
                                "", currentBlock);
 #ifdef MULTIPLE_VM
+    if (cl->isolate == Jnjvm::bootstrapVM) {
+      Module* M = compilingClass->isolate->module;
+      Value* arg = new LoadInst(cl->llvmVar(M), "", currentBlock);
+      invoke(initialisationCheckLLVM, arg, "", currentBlock);
+    }
     val = invoke(doNewLLVM, load, isolateLocal, "", currentBlock);
 #else
     val = invoke(doNewLLVM, load, "", currentBlock);
@@ -1425,12 +1437,21 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
   JavaCtpInfo* info = compilingClass->ctpInfo;
   
   JavaField* field = info->lookupField(index, stat);
-  if (field && field->classDef->isReady()) {
+  if (field && field->classDef->isResolved()
+#ifndef MULTIPLE_VM
+      && field->classDef->isReady()
+#endif
+     ) {
     Module* M = compilingClass->isolate->module;
     if (stat) object = field->classDef->staticVar(M, currentBlock);
     const Type* type = stat ? field->classDef->staticType :
                               field->classDef->virtualType;
-
+#ifdef MULTIPLE_VM
+    if (stat && field->classDef->isolate == Jnjvm::bootstrapVM) {
+      Value* arg = new LoadInst(field->classDef->llvmVar(M), "", currentBlock);
+      invoke(initialisationCheckLLVM, arg, "", currentBlock); 
+    }
+#endif
     return fieldGetter(this, type, object, field->offset);
   } else {
     const Type* Pty = mvm::jit::arrayPtrType;
@@ -1486,7 +1507,8 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     Module* M = compilingClass->isolate->module;
     args.push_back(new LoadInst(compilingClass->llvmVar(M), "", currentBlock));
     mvm::jit::protectConstants();//->lock();
-    args.push_back(ConstantInt::get(Type::Int32Ty, index));
+    Constant* CI = ConstantInt::get(Type::Int32Ty, index);
+    args.push_back(CI);
     mvm::jit::unprotectConstants();//->unlock();
     args.push_back(stat ? mvm::jit::constantOne : mvm::jit::constantZero);
     args.push_back(gvStaticInstance);
@@ -1496,6 +1518,15 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     llvm::BranchInst::Create(endBlock, currentBlock);
     
     currentBlock = endBlock;;
+#ifdef MULTIPLE_VM
+    if (stat) {
+      std::vector<Value*> args;
+      Value* val = new LoadInst(compilingClass->llvmVar(M), "", currentBlock);
+      args.push_back(val);
+      args.push_back(CI);
+      invoke(initialisationCheckCtpLLVM, args, "", currentBlock); 
+    }
+#endif
     return new BitCastInst(node, fieldTypePtr, "", currentBlock);
   }
 }

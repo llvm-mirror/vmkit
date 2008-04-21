@@ -157,7 +157,9 @@ public:
   bool isReady();
   void setReady();
 #endif
-
+  bool isResolved() {
+    return status >= resolved;
+  }
 };
 
 class Class : public CommonClass {

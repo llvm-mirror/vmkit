@@ -222,6 +222,33 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                      "_ZN5jnjvm9JavaArray12multiCallNewEPNS_10ClassArrayEjz",
                      module);
   }
+
+#ifdef MULTIPLE_VM
+  // Create initialisationCheckLLVM
+  {
+  std::vector<const Type*> args;
+  args.push_back(mvm::jit::ptrType);
+  const FunctionType* type = FunctionType::get(Type::VoidTy, args,
+                                               false);
+
+  initialisationCheckLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "initialisationCheck",
+                     module);
+  }
+  
+  // Create initialisationCheckCtpLLVM
+  {
+  std::vector<const Type*> args;
+  args.push_back(mvm::jit::ptrType);
+  args.push_back(Type::Int32Ty);
+  const FunctionType* type = FunctionType::get(Type::VoidTy, args,
+                                               false);
+
+  initialisationCheckCtpLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "initialisationCheckCtp",
+                     module);
+  }
+#endif
   
   
   
