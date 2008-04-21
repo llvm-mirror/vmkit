@@ -217,6 +217,28 @@ fi
 AC_SUBST([GC_LIBS])
 
 dnl **************************************************************************
+dnl Virtual Machine type
+dnl **************************************************************************
+AC_ARG_WITH(vm-type,
+       [AS_HELP_STRING(--with-vm-type=something,
+           [VM type ('single' 'multi' or 'service')])],
+       [[vm=$withval]],
+       [[ echo Using single as vm type.
+                vm-type=single
+       ]]
+)
+
+if test "x${vm-type}" = "xmulti";  then
+  CFLAGS="$CFLAGS -DMULTIPLE_VM"
+  CXXFLAGS="$CXXFLAGS -DMULTIPLE_VM"
+else 
+  if test "x${vm-type}" = "xservice"; then
+    CFLAGS="$CFLAGS -DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM"
+    CXXFLAGS="$CXXFLAGS -DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM"
+  fi
+fi
+  
+dnl **************************************************************************
 dnl GNU CLASSPATH version
 dnl **************************************************************************
 AC_ARG_WITH(gnu-classpath-version,

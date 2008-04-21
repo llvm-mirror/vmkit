@@ -64,7 +64,7 @@ public:
 class Collector {
 public:
 
-  typedef void (*markerFn)(void);
+  typedef void (*markerFn)(void*);
   
   static void  initialise(markerFn mark, void *base_sp);
   STATIC void  destroy();

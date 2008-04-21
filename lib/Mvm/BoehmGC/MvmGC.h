@@ -17,6 +17,10 @@
 //#include "gc/gc_local_alloc.h"
 #include "gc/gc.h"
 
+#define TRACER tracer()
+#define PARENT_TRACER tracer()
+#define MARK_AND_TRACE markAndTrace()
+
 extern "C" void * GC_dlopen(const char *path, int mode) throw ();
 
 #include "mvm/GC/GC.h"
@@ -71,7 +75,7 @@ static int maxMem = 0;
 class Collector {
 public:
 
-  typedef void (*markerFn)(void);
+  typedef void (*markerFn)(void*);
   
   static void initialise(markerFn mark, void *base_sp) {
     GC_INIT();

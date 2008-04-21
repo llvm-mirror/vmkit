@@ -34,8 +34,11 @@ class GCCollector : public Collector {
 
   STATIC GCChunkNode  *used_nodes;     /* Used memory nodes */
   STATIC GCChunkNode  *unused_nodes;   /* Unused memory nodes */
-
+#ifdef SERVICE_GC
+  static unsigned int   current_mark;
+#else
   STATIC unsigned int   current_mark;
+#endif
 
   STATIC int  _collect_freq_auto;      /* Collection frequency in gcmalloc/gcrealloc */
   STATIC int  _collect_freq_maybe;     /* Collection frequency  in maybeCollect */

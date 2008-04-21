@@ -22,14 +22,12 @@ namespace mvm {
 
 class GCThreadCollector : public CircularBase {
    void              *_base_sp;
-   int                _cur_mark;
    int                _tid;
   
 public:
   inline GCThreadCollector() {}
    inline GCThreadCollector(GCThreadCollector *pred, int t, void *p, int m) : CircularBase(pred) {
     _base_sp = p;
-    _cur_mark = m;
     _tid = t;
   }
 
@@ -40,8 +38,6 @@ public:
    inline   ~GCThreadCollector() {}
   
    inline int          tid()            { return _tid; }
-   inline unsigned int current_mark()  { return _cur_mark; }
-   inline void          current_mark(unsigned int m)  { _cur_mark = m; }
    inline unsigned int **base_sp()  { return (unsigned int **)_base_sp; }
 };
 

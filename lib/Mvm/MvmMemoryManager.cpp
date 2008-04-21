@@ -40,9 +40,16 @@ unsigned char *MvmMemoryManager::allocateStub(const GlobalValue* GV,
                                               unsigned Alignment) {
   size_t nbb = ((StubSize - 1) & -4) + 4 + sizeof(Method *);
 #ifdef MULTIPLE_GC
-  Collector* GC = GCMap[F->getParent()];
-  Code *res = (Code *)gc::operator new(nbb, Code::VT, GC); 
-  Method* meth = collector_new(Method, GC)(res, StubSize);
+  Code *res = 0;
+  Method* meth = 0;
+  if (GV) { 
+    Collector* GC = GCMap[GV->getParent()];
+    res = (Code *)gc::operator new(nbb, Code::VT, GC); 
+    meth = collector_new(Method, GC)(res, StubSize);
+  } else {
+    res = (Code *)gc::operator new(nbb, Code::VT); 
+    meth = gc_new(Method)(res, StubSize);
+  }
 #else
   Code *res = (Code *)gc::operator new(nbb, Code::VT); 
   Method* meth = gc_new(Method)(res, StubSize);

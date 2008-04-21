@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <setjmp.h>
 #include <stdlib.h>
 
 #include "mvm/GC/GC.h"
@@ -179,7 +180,18 @@ void Collector::remove_my_thread() {
 #endif
 }
 
+#undef COLLECTOR
 void GCThread::waitCollection() {
+#if defined(MULTIPLE_GC)
+#if defined(SERVICE_GC)
+  GCCollector* GC = GCCollector::collectingGC;
+#else
+  GCCollector* GC = ((GCCollector*)mvm::Thread::get()->GC);
+#endif
+#define COLLECTOR GC->
+#else
+#define COLLECTOR GCCollector::
+#endif
   unsigned int cm = COLLECTOR current_mark;
 
   if(Thread::self() != collector_tid) {
@@ -204,17 +216,16 @@ void GCCollector::siggc_handler(int) {
 #else
 #define COLLECTOR GCCollector::
 #endif
-   GCThreadCollector     *loc = COLLECTOR threads->myloc();
-   register unsigned int cm = COLLECTOR current_mark;
-  //  jmp_buf buf;
-
-  //  setjmp(buf);
+  GCThreadCollector     *loc = COLLECTOR threads->myloc();
+  
+  jmp_buf buf;
+  setjmp(buf);
   
   COLLECTOR threads->stackLock();
   
   if(!loc) /* a key is being destroyed */  
     COLLECTOR threads->another_mark();
-  else if(loc->current_mark() != cm) {
+  else {
      register unsigned int  **cur = (unsigned int **)&cur;
      register unsigned int  **max = loc->base_sp();
     
@@ -228,7 +239,6 @@ void GCCollector::siggc_handler(int) {
        }
      }
     
-     loc->current_mark(cm);
      COLLECTOR threads->another_mark();
     COLLECTOR threads->waitCollection();
   }

@@ -45,13 +45,14 @@ void Object::growRootTable(void) {
 }
 
 
-void Object::markAndTraceRoots(void) {
-  for (int i= 0; i < rootTableSize; ++i)
+void Object::markAndTraceRoots(void* GC) {
+  for (int i= 0; i < rootTableSize; ++i) {
 #ifdef MULTIPLE_GC
-    rootTable[i]->markAndTrace(mvm::Thread::get()->GC);
+    rootTable[i]->markAndTrace((Collector*)GC);
 #else
     rootTable[i]->markAndTrace();;
 #endif
+  }
 }
 
 void Object::initialise() {

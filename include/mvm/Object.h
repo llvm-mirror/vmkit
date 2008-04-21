@@ -86,7 +86,7 @@ public:
     return popRoots(1);
   }
 
-  static void markAndTraceRoots(void);
+  static void markAndTraceRoots(void*);
   static void initialise();
 
 };

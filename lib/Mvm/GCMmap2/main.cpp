@@ -21,7 +21,7 @@ void trace(gc *me, size_t sz) {
 	// 	printf("Trace %p\n", me);
 }
 
-void marker(void) {
+void marker(void*) {
 	//	printf("Marker...\n");
 }
 
