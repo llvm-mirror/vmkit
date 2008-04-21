@@ -7,11 +7,6 @@ VMKit is the composition of three libraries:
 2) JnJVM: a Java Virtual Machine implemented with MVM and LLVM
 3) N3: a CLI implementation with MVM and LLVM
 
-
-You must first patch llvm with vmkit-llvm-svn.patch if you're with SVN, or
-vmkit-llvm-2.2.patch if you're with 2.2. 
-
-
 JnJVM and N3 work on Linux/x86 (note that you may have to disable SSE on some 
 architecture), and mostly work on Linux/PPC (there are some errors with
 floating points). Portage to Darwin has been done some time ago, so it should
@@ -22,6 +17,7 @@ JnJVM and N3 use GCC's unwinding library (libgcc_s.so).
 There are mainly two options in the ./configure script
 --with-gnu-classpath-local-prefix: the local build of GNU classpath
 --with-llvm: the local build of LLVM
+--with-gc: user either boehm or single-mmap
 
 Running make on the root tree will produce three executables:
 1) lib/Mvm/main: a command line tool to load virtual machines dynamically
@@ -32,38 +28,30 @@ JnJVM and N3 have their own README notes. N3 requires to patch pnet-0.7.4.
 
 
 //===---------------------------------------------------------------------===//
-// LLVM patch
+// Target specific LLVM patches (not required)
 //===---------------------------------------------------------------------===//
 
-The patched files are:
-- include/llvm/Target/TargetOptions.h: new option SizedMemoryCode to know
-  before emitting the size of the code
-- include/llvm/CodeGen/SizeEmitter.h: new file
-- include/llvm/CodeGen/MachineCodeEmitter.h: uses virtual methods to implement
-  SizeEmitter
-- lib/CodeGen/LLVMTargetMachine.cpp: enables SizeEmitter if SiedMemoryCode is 
-  true
-- lib/CogeGen/SizeEmitter.cpp: new file
-- lib/Target/PowerPC/PPCInstrInfo.td: being able to load extern symbols (probably
-  a bug fix in LLVM)
-- lib/Target/PowerPC/PPCJITInfo.cpp: adds Dwarf debugging output to callbacks,
-  and makes the patching code thread-safe
-- lib/Target/PowerPC/PPCISelLowering.cpp: lowers external symbol, and comments
-  double word alignment (TODO in TOT)
-- lib/ExecutionEngine/JIT/JITEmitter.cpp: helpers for SizedMemoryCode, make the
-  JIT more thread-safe wrt Java (which can execute code when looking for a 
-  class)
-- lib/ExecutionEngine/ExecutionEngine.cpp: Don't check existing mappings (check
-  if TOT is correct)
-- lib/VMCore/AsmWriter.cpp: enables printing of Ghost functions
-  (for debugging purposes)
-- lib/Target/X86/X86JITInfo.cpp: enables Dwarf debugging output to callbacks
+If you experience problems, you can apply the patches for your corresponding 
+arch. I'd be interested to get some info on your specific problem if the 
+patch fixes it.
+
+Patch for PowerPC:
+- Bugfix for handling some external symbols (FIXME: does this still happen?)
+- Thread safety when doing native code patching (TODO: submit to llvm-dev)
+- CFI instructions for callbacks (TODO: find a correct macro to enable this)
+- Emit a hand-made frame table for stubs (TODO: submit to llvm-dev)
+
+Patch for X86
+- Disable SSE (It can sigsegv on some x86 archs. Having test cases would be 
+  nice)
+- Enable CFI instructions for callbacks (TODO: find a correct macro to enable
+  by default)
+
 
 //===---------------------------------------------------------------------===//
 // TODOs
 //===---------------------------------------------------------------------===//
 
-- Merge LLVM patch with TOT
 - A compiler/system dependency interface
 - A better autoconf support
 - Remove old, historical references and files
