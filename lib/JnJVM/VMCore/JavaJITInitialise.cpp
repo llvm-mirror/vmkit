@@ -313,6 +313,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   args.push_back(mvm::jit::ptrType);
   args.push_back(Type::Int32Ty);
   args.push_back(PointerType::getUnqual(mvm::jit::ptrType));
+  args.push_back(Type::Int32Ty);
   const FunctionType* type = FunctionType::get(mvm::jit::ptrType, args,
                                                false);
 

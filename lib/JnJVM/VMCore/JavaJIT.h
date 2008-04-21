@@ -48,7 +48,7 @@ public:
   uint32 startpc;
   uint32 endpc;
   uint32 handlerpc;
-  uint16 index;
+  uint16 catche;
   Class* catchClass;
   llvm::BasicBlock* test;
   llvm::BasicBlock* realTest;
@@ -171,7 +171,7 @@ public:
   llvm::Value* ldResolved(uint16 index, bool stat, llvm::Value* object,
                           const llvm::Type* fieldType, 
                           const llvm::Type* fieldTypePtr);
-  llvm::Value* getInitializedClass(uint16 index);
+  llvm::Value* getResolvedClass(uint16 index, bool clinit);
   
   // methods invoke
   void makeArgs(llvm::FunctionType::param_iterator it,

@@ -228,10 +228,11 @@ void JavaJIT::initialise() {
   p = (void*)&runtimeUTF8ToStr;
 }
 
-extern "C" Class* newLookup(Class* caller, uint32 index, Class** toAlloc) { 
+extern "C" Class* newLookup(Class* caller, uint32 index, Class** toAlloc,
+                            uint32 clinit) { 
   JavaCtpInfo* ctpInfo = caller->ctpInfo;
   Class* cl = (Class*)ctpInfo->loadClass(index);
-  cl->resolveClass(true);
+  cl->resolveClass(clinit);
   
   *toAlloc = cl;
   return cl;

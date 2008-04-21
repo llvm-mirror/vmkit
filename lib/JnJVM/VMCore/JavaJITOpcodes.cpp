@@ -1852,7 +1852,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         if (dcl && dcl->isReady()) {
           clVar = new LoadInst(dcl->llvmVar(compilingClass->isolate->module), "", ifFalse);
         } else {
-          clVar = getInitializedClass(index);
+          clVar = getResolvedClass(index, false);
         }
         std::vector<Value*> args;
         args.push_back(obj);
@@ -1889,7 +1889,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         if (dcl && dcl->isReady()) {
           clVar = new LoadInst(dcl->llvmVar(compilingClass->isolate->module), "", currentBlock);
         } else {
-          clVar = getInitializedClass(index);
+          clVar = getResolvedClass(index, false);
         }
         std::vector<Value*> args;
         args.push_back(pop());

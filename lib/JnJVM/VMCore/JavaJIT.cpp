@@ -381,7 +381,7 @@ llvm::Function* JavaJIT::javaCompile() {
                            compilingClass->isolate->module);
   compilingClass->isolate->protectModule->unlock();
   
-  currentBlock = createBasicBlock("start");
+  BasicBlock* startBlock = currentBlock = createBasicBlock("start");
   endExceptionBlock = createBasicBlock("endExceptionBlock");
   unifiedUnreachable = createBasicBlock("unifiedUnreachable"); 
 
@@ -404,6 +404,8 @@ llvm::Function* JavaJIT::javaCompile() {
 
   unsigned nbe = readExceptionTable(reader);
   
+  currentBlock = startBlock;
+
   for (int i = 0; i < maxLocals; i++) {
     intLocals.push_back(new AllocaInst(Type::Int32Ty, "", currentBlock));
     doubleLocals.push_back(new AllocaInst(Type::DoubleTy, "", currentBlock));
@@ -602,10 +604,11 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
     ex->endpc     = reader->readU2();
     ex->handlerpc = reader->readU2();
 
-    uint16 catche = reader->readU2();
+    ex->catche = reader->readU2();
 
-    if (catche) {
-      ex->catchClass = (Class*)ctpInfo->loadClass(catche);
+    if (ex->catche) {
+      Class* cl = (Class*)(ctpInfo->getMethodClassIfLoaded(ex->catche));
+      ex->catchClass = cl;
     } else {
       ex->catchClass = Classpath::newThrowable;
     }
@@ -664,6 +667,8 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
     Exception* next = 0;
     BasicBlock* bbNext = 0;
     PHINode* nodeNext = 0;
+    currentExceptionBlock = opcodeInfos[cur->handlerpc].exceptionBlock;
+
     if (i + 1 != e) {
       next = *(i + 1);
       if (!(cur->startpc >= next->startpc && cur->endpc <= next->endpc)) {
@@ -695,17 +700,22 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
     } 
     
     Module* M = compilingClass->isolate->module;
-    Value* cl = new LoadInst(cur->catchClass->llvmVar(M), "", cur->realTest);
+    Value* cl = 0;
+    currentBlock = cur->realTest;
+    if (cur->catchClass)
+      cl = new LoadInst(cur->catchClass->llvmVar(M), "", currentBlock);
+    else
+      cl = getResolvedClass(cur->catche, false);
     Value* cmp = llvm::CallInst::Create(compareExceptionLLVM, cl, "",
-                                        cur->realTest);
-    llvm::BranchInst::Create(cur->handler, bbNext, cmp, cur->realTest);
+                                        currentBlock);
+    llvm::BranchInst::Create(cur->handler, bbNext, cmp, currentBlock);
     if (nodeNext)
-      nodeNext->addIncoming(cur->exceptionPHI, cur->realTest);
+      nodeNext->addIncoming(cur->exceptionPHI, currentBlock);
     
     if (cur->handler->empty()) {
       cur->handlerPHI = llvm::PHINode::Create(mvm::jit::ptrType, "",
                                               cur->handler);
-      cur->handlerPHI->addIncoming(cur->exceptionPHI, cur->realTest);
+      cur->handlerPHI->addIncoming(cur->exceptionPHI, currentBlock);
       Value* exc = llvm::CallInst::Create(getJavaExceptionLLVM, "",
                                           cur->handler);
       llvm::CallInst::Create(clearExceptionLLVM, "", cur->handler);
@@ -718,7 +728,7 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
       new StoreInst(exc, supplLocal, false, cur->handler);
     } else {
       Instruction* insn = cur->handler->begin();
-      ((PHINode*)insn)->addIncoming(cur->exceptionPHI, cur->realTest);
+      ((PHINode*)insn)->addIncoming(cur->exceptionPHI, currentBlock);
     }
      
   }
@@ -1298,7 +1308,7 @@ void JavaJIT::invokeStatic(uint16 index) {
   }
 }
     
-Value* JavaJIT::getInitializedClass(uint16 index) {
+Value* JavaJIT::getResolvedClass(uint16 index, bool clinit) {
     const Type* PtrTy = mvm::jit::ptrType;
     compilingClass->isolate->protectModule->lock();
     GlobalVariable * gv =
@@ -1331,6 +1341,11 @@ Value* JavaJIT::getInitializedClass(uint16 index) {
     mvm::jit::unprotectConstants();
     Args.push_back(CI);
     Args.push_back(gv);
+    if (clinit) {
+      Args.push_back(mvm::jit::constantOne);
+    } else {
+      Args.push_back(mvm::jit::constantZero);
+    }
     Value* res = invoke(newLookupLLVM, Args, "", currentBlock);
     node->addIncoming(res, currentBlock);
 
@@ -1355,7 +1370,7 @@ void JavaJIT::invokeNew(uint16 index) {
 #endif
   Value* val = 0;
   if (!cl || !cl->isReady()) {
-    Value* node = getInitializedClass(index);
+    Value* node = getResolvedClass(index, true);
 #ifndef MULTIPLE_VM
     val = invoke(doNewUnknownLLVM, node, "", currentBlock);
 #else
