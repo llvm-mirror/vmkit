@@ -357,5 +357,6 @@ void DelegateeMap::TRACER {
 #ifdef SERVICE_VM
 void ServiceDomain::TRACER {
   JavaIsolate::PARENT_TRACER;
+  classes->MARK_AND_TRACE;
 }
 #endif
