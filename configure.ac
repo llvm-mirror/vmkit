@@ -222,17 +222,17 @@ dnl **************************************************************************
 AC_ARG_WITH(vm-type,
        [AS_HELP_STRING(--with-vm-type=something,
            [VM type ('single' 'multi' or 'service')])],
-       [[vm=$withval]],
+       [[vmtype=$withval]],
        [[ echo Using single as vm type.
-                vm-type=single
+                vmtype=single
        ]]
 )
 
-if test "x${vm-type}" = "xmulti";  then
+if test "x$vmtype" = "xmulti";  then
   CFLAGS="$CFLAGS -DMULTIPLE_VM"
   CXXFLAGS="$CXXFLAGS -DMULTIPLE_VM"
 else 
-  if test "x${vm-type}" = "xservice"; then
+  if test "x$vmtype" = "xservice"; then
     CFLAGS="$CFLAGS -DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM"
     CXXFLAGS="$CXXFLAGS -DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM"
   fi
