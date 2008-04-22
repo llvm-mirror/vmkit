@@ -212,9 +212,6 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   std::vector<const Type*> args;
   args.push_back(mvm::jit::ptrType);
   args.push_back(Type::Int32Ty);
-#ifdef MULTIPLE_VM
-  args.push_back(mvm::jit::ptrType);
-#endif
   const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
                                                true);
 
