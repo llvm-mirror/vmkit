@@ -53,6 +53,7 @@ class StringMap;
 class TypeMap;
 class FunctionMap;
 class FunctionDefMap;
+class FunctionDefMap;
 class AllocationMap;
 
 
@@ -263,6 +264,7 @@ public:
   llvm::Module* module;
   JnjvmModuleProvider* TheModuleProvider;
   FunctionMap* functions;
+  FunctionDefMap* functionDefs;
 
 #ifndef MULTIPLE_GC
   void* allocateObject(unsigned int sz, VirtualTable* VT) {

@@ -435,10 +435,12 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   isolate->analyseClasspathEnv(isolate->bootClasspathEnv);
 
   isolate->functions = vm_new(isolate, FunctionMap)();
+  isolate->functionDefs = vm_new(isolate, FunctionDefMap)();
   isolate->module = new llvm::Module("Isolate JnJVM");
   isolate->protectModule = mvm::Lock::allocNormal();
   isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->module, 
-                                                       isolate->functions);  
+                                                       isolate->functions,
+                                                       isolate->functionDefs);
   JavaJIT::initialiseJITIsolateVM(isolate);
   
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
@@ -497,10 +499,12 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   isolate->analyseClasspathEnv(isolate->bootClasspathEnv);
   
   isolate->functions = vm_new(isolate, FunctionMap)();
+  isolate->functionDefs = vm_new(isolate, FunctionDefMap)();
   isolate->protectModule = mvm::Lock::allocNormal();
   isolate->module = new llvm::Module("Bootstrap JnJVM");
   isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->module, 
-                                                       isolate->functions);  
+                                                       isolate->functions,
+                                                       isolate->functionDefs); 
   JavaJIT::initialiseJITBootstrapVM(isolate);
   
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();

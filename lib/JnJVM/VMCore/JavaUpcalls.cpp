@@ -227,7 +227,7 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   const llvm::FunctionType* type = 
     llvm::FunctionType::get(JavaObject::llvmType, args, false);
 
-  Classpath::getCallingClassLoader->methPtr =
+  Classpath::getCallingClassLoader->llvmFunction =
     llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
                        "_ZN5jnjvm7JavaJIT21getCallingClassLoaderEv",
                        vm->module);
@@ -244,7 +244,7 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   const llvm::FunctionType* type = 
     llvm::FunctionType::get(JavaObject::llvmType, args, false);
 
-  internString->methPtr =
+  internString->llvmFunction =
     llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
                        "internString",
                        vm->module);
@@ -260,7 +260,7 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
 #endif
   const llvm::FunctionType* type = 
     llvm::FunctionType::get(llvm::Type::Int8Ty, args, false);
-  isArray->methPtr =
+  isArray->llvmFunction =
     llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
                        "isArray",
                        vm->module);
@@ -287,7 +287,7 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   const llvm::FunctionType* type = 
     llvm::FunctionType::get(JavaObject::llvmType, args, false);
 
-  getCallingClass->methPtr =
+  getCallingClass->llvmFunction =
     llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
                        "getCallingClass",
                        vm->module);
@@ -302,7 +302,7 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   const llvm::FunctionType* type = 
     llvm::FunctionType::get(JavaObject::llvmType, args, false);
 
-  getCallingClassLoader->methPtr =
+  getCallingClassLoader->llvmFunction =
     llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
                        "getCallingClassLoader",
                        vm->module);

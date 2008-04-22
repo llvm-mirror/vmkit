@@ -104,7 +104,7 @@ public:
   JavaState status;
   unsigned int access;
   Jnjvm *isolate;
-
+  unsigned int virtualTableSize;
 
   static const int MaxDisplay;
   static JavaObject* jnjvmClassLoader;
@@ -240,7 +240,8 @@ public:
 class JavaMethod : public mvm::Object {
 public:
   static VirtualTable* VT;
-  llvm::Function* methPtr;
+  llvm::Function* llvmFunction;
+  llvm::ConstantInt* offset;
   unsigned int access;
   Signdef* signature;
   std::vector<Attribut*, gc_allocator<Attribut*> > attributs;

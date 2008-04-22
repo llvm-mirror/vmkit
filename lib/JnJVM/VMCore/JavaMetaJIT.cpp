@@ -171,10 +171,50 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JavaObject* loader,
   va_end(ap);
 }
 
+VirtualTable* allocateVT(Class* cl, std::vector<JavaMethod*>::iterator meths) {
+  if (meths == cl->virtualMethods.end()) {
+    uint64 size = cl->virtualTableSize;
+    VirtualTable* VT = (VirtualTable*)malloc(size * sizeof(void*));
+    if (cl->super) {
+      memcpy(VT, cl->super->VT, cl->super->virtualTableSize * sizeof(void*));
+    } else {
+      memcpy(VT, JavaObject::VT, VT_SIZE);
+    }
+    return VT;
+  } else {
+    JavaMethod* meth = *meths;
+    JavaMethod* parent = cl->super? 
+      cl->super->lookupMethodDontThrow(meth->name, meth->type, false, true) : 0;
+
+    uint64_t offset = 0;
+    if (!parent) {
+      offset = cl->virtualTableSize++;
+      mvm::jit::protectConstants();
+      meth->offset = ConstantInt::get(Type::Int32Ty, offset);
+      mvm::jit::unprotectConstants();
+    } else {
+      offset = parent->offset->getZExtValue();
+      meth->offset = parent->offset;
+    }
+    VirtualTable* VT = allocateVT(cl, meths + 1);
+    Function* func = meth->llvmFunction;
+    ExecutionEngine* EE = mvm::jit::executionEngine;
+    ((void**)VT)[offset] = EE->getPointerToFunctionOrStub(func);
+    return VT;
+  }
+}
+
+
+
 VirtualTable* JavaJIT::makeVT(Class* cl, bool stat) {
   
-  VirtualTable * res = malloc(VT_SIZE);
-  memcpy(res, JavaObject::VT, VT_SIZE);
+  VirtualTable* res = 0;
+  if (stat) {
+    res = (VirtualTable*)malloc(VT_SIZE);
+    memcpy(res, JavaObject::VT, VT_SIZE);
+  } else {
+    res = allocateVT(cl, cl->virtualMethods.begin());
+  }
  
 #ifdef WITH_TRACER
   const Type* type = stat ? cl->staticType : cl->virtualType;
@@ -239,10 +279,10 @@ VirtualTable* JavaJIT::makeVT(Class* cl, bool stat) {
   
   if (!stat) {
     cl->virtualTracer = func;
-    cl->codeVirtualTracer = (mvm::Code*)((unsigned*)codePtr - 1);
+    cl->codeVirtualTracer = mvm::Code::getCodeFromPointer(codePtr);
   } else {
     cl->staticTracer = func;
-    cl->codeStaticTracer = (mvm::Code*)((unsigned*)codePtr - 1);
+    cl->codeStaticTracer = mvm::Code::getCodeFromPointer(codePtr);
   }
 #endif
   return res;

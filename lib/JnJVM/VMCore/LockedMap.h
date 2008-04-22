@@ -139,9 +139,10 @@ public:
   const UTF8* name;
   CommonClass* classDef;
   const UTF8* type;
+  uint32_t access;
 
-  FieldCmp(const UTF8* n, CommonClass* c, const UTF8* t) : name(n), classDef(c), 
-    type(t) {}
+  FieldCmp(const UTF8* n, CommonClass* c, const UTF8* t, uint32 a) : name(n), classDef(c), 
+    type(t), access(a) {}
   
   inline bool operator<(const FieldCmp &cmp) const {
     if (name < cmp.name) return true;

@@ -71,10 +71,12 @@ ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
 #endif
 
   service->functions = vm_new(service, FunctionMap)();
+  service->functionDefs = vm_new(service, FunctionDefMap)();
   service->module = new llvm::Module("Service Domain");
   service->protectModule = mvm::Lock::allocNormal();
   service->TheModuleProvider = new JnjvmModuleProvider(service->module, 
-                                                       service->functions);  
+                                                       service->functions,
+                                                       service->functionDefs);  
 
 #ifdef MULTIPLE_GC
   mvm::jit::memoryManager->addGCForModule(service->module, service->GC);

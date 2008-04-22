@@ -40,7 +40,7 @@ static JavaMethod* staticLookup(Class* caller, uint32 index) {
   
   meth->compiledPtr();
 
-  ctpInfo->ctpRes[index] = meth->methPtr;
+  ctpInfo->ctpRes[index] = meth->llvmFunction;
 
   return meth;
 }
@@ -48,21 +48,24 @@ static JavaMethod* staticLookup(Class* caller, uint32 index) {
 
 bool JnjvmModuleProvider::materializeFunction(Function *F, 
                                               std::string *ErrInfo) {
-  std::pair<Class*, uint32> * p = functions->lookup(F);
-  if (!p) {
-    // VT methods
-    return false;
-  } else {
-    if (mvm::jit::executionEngine->getPointerToGlobalIfAvailable(F)) {
-      return false;
-    } else {
-      JavaMethod* meth = staticLookup(p->first, p->second);
-      void* val = meth->compiledPtr();
-      if (F->isDeclaration())
-        mvm::jit::executionEngine->updateGlobalMapping(F, val);
-      return false;
-    }
   
+  if (mvm::jit::executionEngine->getPointerToGlobalIfAvailable(F))
+    return false;
+
+  if (!(F->hasNotBeenReadFromBitcode())) 
+    return false;
+  
+  JavaMethod* meth = functionDefs->lookup(F);
+  
+  if (!meth) {
+    // It's a callback
+    std::pair<Class*, uint32> * p = functions->lookup(F);
+    meth = staticLookup(p->first, p->second); 
   }
+  
+  void* val = meth->compiledPtr();
+  if (F->isDeclaration())
+    mvm::jit::executionEngine->updateGlobalMapping(F, val);
+  return false;
 }
 

@@ -208,23 +208,18 @@ void* JavaMethod::compiledPtr() {
   else {
     classDef->aquire();
     if (code == 0) {
-      if (isStatic(access)) {
-        llvmType = signature->staticType;
-      } else {
-        llvmType = signature->virtualType;
-      }
-      if (!methPtr) {
+      if (llvmFunction->hasNotBeenReadFromBitcode()) {
         JavaJIT jit;
         jit.compilingClass = classDef;
         jit.compilingMethod = this;
         if (isNative(access)) {
-          methPtr = jit.nativeCompile();
+          llvmFunction = jit.nativeCompile();
         } else {
-          methPtr = jit.javaCompile();
+          llvmFunction = jit.javaCompile();
         }
       }
       // We can compile it, since if we're here, it's for a  good reason
-      void* val = mvm::jit::executionEngine->getPointerToGlobal(methPtr);
+      void* val = mvm::jit::executionEngine->getPointerToGlobal(llvmFunction);
 #ifndef MULTIPLE_GC
       mvm::Code* temp = (mvm::Code*)(Collector::begOf(val));
 #else

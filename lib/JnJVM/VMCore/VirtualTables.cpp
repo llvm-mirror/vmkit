@@ -244,6 +244,7 @@ void Jnjvm::TRACER {
   TRACE_VECTOR(JavaObject*, gc_allocator, globalRefs);
   //globalRefsLock->MARK_AND_TRACE;
   functions->MARK_AND_TRACE;
+  functionDefs->MARK_AND_TRACE;
 #ifdef MULTIPLE_VM
   statics->MARK_AND_TRACE;
   delegatees->MARK_AND_TRACE;

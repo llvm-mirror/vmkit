@@ -176,10 +176,12 @@ void Jnjvm::loadParents(Class* cl) {
   if (super == 0) {
     cl->depth = 0;
     cl->display.push_back(cl);
+    cl->virtualTableSize = VT_SIZE;
   } else {
     cl->super = loadName(super, classLoader, true, false, true);
     int depth = cl->super->depth;
     cl->depth = depth + 1;
+    cl->virtualTableSize = cl->super->virtualTableSize;
     for (uint32 i = 0; i < cl->super->display.size(); ++i) {
       cl->display.push_back(cl->super->display[i]);
     }
@@ -760,7 +762,7 @@ static JavaField* fieldDup(FieldCmp & cmp, Jnjvm *vm) {
 
 JavaField* Jnjvm::constructField(Class* cl, const UTF8* name, const UTF8* type,
                                   uint32 access){
-  FieldCmp CC(name, cl, type);
+  FieldCmp CC(name, cl, type, 0);
   JavaField* f = loadedFields->lookupOrCreate(CC, this, fieldDup); 
   f->access = access;
   f->offset = 0;
@@ -769,7 +771,7 @@ JavaField* Jnjvm::constructField(Class* cl, const UTF8* name, const UTF8* type,
 
 JavaField* Jnjvm::lookupField(CommonClass* cl, const UTF8* name, 
                               const UTF8* type) {
-  FieldCmp CC(name, cl, type);
+  FieldCmp CC(name, cl, type, 0);
   JavaField* f = loadedFields->lookup(CC); 
   return f;
 }
@@ -780,16 +782,26 @@ static JavaMethod* methodDup(FieldCmp & cmp, Jnjvm *vm) {
   method->type = cmp.type;
   method->classDef = (Class*)cmp.classDef;
   method->signature = (Signdef*)vm->constructType(method->type);
-  method->methPtr = 0;
   method->code = 0;
+  method->access = cmp.access;
+  if (isStatic(method->access)) {
+    method->llvmType =method->signature->staticType;
+  } else {
+    method->llvmType = method->signature->virtualType;
+  }
+  method->classDef->isolate->protectModule->lock();
+  method->llvmFunction = 
+    llvm::Function::Create(method->llvmType, llvm::GlobalValue::GhostLinkage,
+                           method->printString(),
+                           method->classDef->isolate->module);
+  method->classDef->isolate->protectModule->unlock();
   return method;
 }
 
 JavaMethod* Jnjvm::constructMethod(Class* cl, const UTF8* name,
                                     const UTF8* type, uint32 access) {
-  FieldCmp CC(name, cl, type);
+  FieldCmp CC(name, cl, type, access);
   JavaMethod* f = loadedMethods->lookupOrCreate(CC, this, methodDup);
-  f->access = access;
   return f;
 }
 

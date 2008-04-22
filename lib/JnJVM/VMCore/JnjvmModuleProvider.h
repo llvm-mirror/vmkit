@@ -21,9 +21,11 @@ namespace jnjvm {
 class JnjvmModuleProvider : public ModuleProvider {
 public:
   FunctionMap* functions;
-  JnjvmModuleProvider(Module *m, FunctionMap* fm) {
+  FunctionDefMap* functionDefs;
+  JnjvmModuleProvider(Module *m, FunctionMap* fm, FunctionDefMap* fdm) {
     TheModule = m;
     functions = fm;
+    functionDefs= fdm;
   }
   
   bool materializeFunction(Function *F, std::string *ErrInfo = 0);

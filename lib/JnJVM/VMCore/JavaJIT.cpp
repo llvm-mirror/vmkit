@@ -120,13 +120,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   
   
   
-  compilingClass->isolate->protectModule->lock();
-  Function* func = llvmFunction = 
-    llvm::Function::Create(funcType, GlobalValue::ExternalLinkage,
-                           compilingMethod->printString(),
-                           compilingClass->isolate->module);
-  compilingClass->isolate->protectModule->unlock();
-  
+  Function* func = llvmFunction = compilingMethod->llvmFunction;
   if (jnjvm) {
     mvm::jit::executionEngine->addGlobalMapping(func, natPtr);
     return llvmFunction;
@@ -206,6 +200,8 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "end native compile %s\n",
               compilingMethod->printString());
+  
+  func->setLinkage(GlobalValue::ExternalLinkage);
   
   return llvmFunction;
 }
@@ -374,13 +370,8 @@ llvm::Function* JavaJIT::javaCompile() {
   const FunctionType *funcType = compilingMethod->llvmType;
   returnType = funcType->getReturnType();
   
-  compilingClass->isolate->protectModule->lock();
-  Function* func = llvmFunction = 
-    llvm::Function::Create(funcType, GlobalValue::ExternalLinkage,
-                           compilingMethod->printString(),
-                           compilingClass->isolate->module);
-  compilingClass->isolate->protectModule->unlock();
-  
+  Function* func = llvmFunction = compilingMethod->llvmFunction;
+
   BasicBlock* startBlock = currentBlock = createBasicBlock("start");
   endExceptionBlock = createBasicBlock("endExceptionBlock");
   unifiedUnreachable = createBasicBlock("unifiedUnreachable"); 
@@ -514,6 +505,7 @@ llvm::Function* JavaJIT::javaCompile() {
     new UnreachableInst(unifiedUnreachable);
   }
   
+  func->setLinkage(GlobalValue::ExternalLinkage);
   mvm::jit::runPasses(llvmFunction, JavaThread::get()->perFunctionPasses);
   
   /*

@@ -410,8 +410,11 @@ llvm::Function* JavaCtpInfo::infoOfStaticOrSpecialMethod(
     // lookup the method
     meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access), false);
     if (meth) { // don't throw if no meth, the exception will be thrown just in time  
-      if (meth->methPtr) {
-        ctpRes[index] = (void*)meth->methPtr;
+      if (meth->llvmFunction) {
+        if (meth->llvmFunction->hasNotBeenReadFromBitcode()) {
+          meth->classDef->isolate->functionDefs->hash(meth->llvmFunction, meth);
+        }
+        ctpRes[index] = (void*)meth->llvmFunction;
         return (llvm::Function*)ctpRes[index];
       }
     }
