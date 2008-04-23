@@ -103,7 +103,22 @@ public:
   void operator()(JavaField* field, sint64 val);
   void operator()(JavaField* field, uint32 val);
   void operator()(JavaField* field, JavaObject* val);
-
+ 
+#ifndef WITHOUT_VTABLE
+  // Some of these are final. I could probably remove them from the list.
+  virtual void JavaInit() {}
+  virtual void JavaEquals() {}
+  virtual void JavaHashCode() {}
+  virtual void JavaToString() {}
+  virtual void JavaFinalize() {}
+  virtual void JavaClone() {}
+  virtual void JavaGetClass() {}
+  virtual void JavaNotify() {}
+  virtual void JavaNotifyAll() {}
+  virtual void JavaWait() {}
+  virtual void JavaWait(sint64) {}
+  virtual void JavaWait(sint64, sint32) {}
+#endif
 };
 
 

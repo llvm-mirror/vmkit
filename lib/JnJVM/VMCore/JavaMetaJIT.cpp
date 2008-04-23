@@ -220,6 +220,28 @@ VirtualTable* JavaJIT::makeVT(Class* cl, bool stat) {
   } else {
     res = allocateVT(cl, cl->virtualMethods.begin());
   }
+
+  if (!(cl->super)) {
+    // 12 = number of virtual methods in java/lang/Object (!!!)
+    uint32 size = 12 * sizeof(void*);
+#define COPY(CLASS) \
+    memcpy((void*)((unsigned)res + VT_SIZE), \
+           (void*)((unsigned)CLASS::VT + VT_SIZE), size);
+
+    COPY(ArrayUInt8)
+    COPY(ArraySInt8)
+    COPY(ArrayUInt16)
+    COPY(ArraySInt16)
+    COPY(ArrayUInt32)
+    COPY(ArraySInt32)
+    COPY(ArrayLong)
+    COPY(ArrayFloat)
+    COPY(ArrayDouble)
+    COPY(UTF8)
+    COPY(ArrayObject)
+
+#undef COPY
+  }
 #endif
  
 #ifdef WITH_TRACER
