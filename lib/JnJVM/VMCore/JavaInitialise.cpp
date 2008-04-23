@@ -39,17 +39,6 @@ static void initialiseVT() {
   X::VT = ((void**)(void*)(&fake))[0]; }
 
   INIT(JavaArray);
-  INIT(ArrayUInt8);
-  INIT(ArraySInt8);
-  INIT(ArrayUInt16);
-  INIT(ArraySInt16);
-  INIT(ArrayUInt32);
-  INIT(ArraySInt32);
-  INIT(ArrayLong);
-  INIT(ArrayFloat);
-  INIT(ArrayDouble);
-  INIT(ArrayObject);
-  INIT(UTF8);
   INIT(Attribut);
   INIT(CommonClass);
   INIT(Class);
@@ -82,6 +71,24 @@ static void initialiseVT() {
   INIT(Enveloppe);
 #undef INIT
 
+#define INIT(X) { \
+  X fake; \
+  void* V = ((void**)(void*)(&fake))[0]; \
+  X::VT = (VirtualTable*)malloc(12 * sizeof(void*) + VT_SIZE); \
+  memcpy(X::VT, V, VT_SIZE); }
+
+  INIT(ArrayUInt8);
+  INIT(ArraySInt8);
+  INIT(ArrayUInt16);
+  INIT(ArraySInt16);
+  INIT(ArrayUInt32);
+  INIT(ArraySInt32);
+  INIT(ArrayLong);
+  INIT(ArrayFloat);
+  INIT(ArrayDouble);
+  INIT(ArrayObject);
+  INIT(UTF8);
+#undef INIT
 }
 
 static void initialiseStatics() {
