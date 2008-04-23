@@ -22,7 +22,6 @@
 
 using namespace llvm;
 using namespace jnjvm;
-#include <iostream>
 
 static JavaMethod* staticLookup(Class* caller, uint32 index) { 
   JavaCtpInfo* ctpInfo = caller->ctpInfo;
@@ -66,6 +65,12 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   void* val = meth->compiledPtr();
   if (F->isDeclaration())
     mvm::jit::executionEngine->updateGlobalMapping(F, val);
+  
+  if (meth->offset) {
+    uint64_t offset = meth->offset->getZExtValue();
+    ((void**)meth->classDef->virtualVT)[offset] = val;
+  }
+
   return false;
 }
 

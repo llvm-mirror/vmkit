@@ -99,6 +99,94 @@ uint32 JavaJIT::stackSize() {
   return stack.size();
 }
 
+void JavaJIT::invokeVirtual(uint16 index) {
+  
+  JavaCtpInfo* ctpInfo = compilingClass->ctpInfo;
+  CommonClass* cl = 0;
+  JavaMethod* meth = 0;
+  ctpInfo->infoOfMethod(index, ACC_VIRTUAL, cl, meth);
+  
+  if ((cl && isFinal(cl->access)) || 
+      (meth && (isFinal(meth->access) || isPrivate(meth->access))))
+    return invokeSpecial(index);
+  
+#ifndef WITHOUT_VTABLE
+  Constant* zero = mvm::jit::constantZero;
+  Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index);
+  std::vector<Value*> args; // size = [signature->nbIn + 3];
+
+  FunctionType::param_iterator it  = signature->virtualType->param_end();
+  makeArgs(it, index, args, signature->nbIn + 1);
+  
+  JITVerifyNull(args[0]); 
+    
+  std::vector<Value*> indexes; //[3];
+  indexes.push_back(zero);
+  indexes.push_back(zero);
+  Value* VTPtr = GetElementPtrInst::Create(args[0], indexes.begin(),
+                                           indexes.end(), "", currentBlock);
+    
+  Value* VT = new LoadInst(VTPtr, "", currentBlock);
+  std::vector<Value*> indexes2; //[3];
+  if (meth) {
+    indexes2.push_back(meth->offset);
+  } else {
+    compilingClass->isolate->protectModule->lock();
+    GlobalVariable* gv = 
+      new GlobalVariable(Type::Int32Ty, false, GlobalValue::ExternalLinkage,
+                         zero, "", compilingClass->isolate->module);
+    compilingClass->isolate->protectModule->unlock();
+    
+    // set is volatile
+    Value* val = new LoadInst(gv, "", true, currentBlock);
+    Value * cmp = new ICmpInst(ICmpInst::ICMP_NE, val, zero, "", currentBlock);
+    BasicBlock* ifTrue  = createBasicBlock("true vtable");
+    BasicBlock* ifFalse  = createBasicBlock("false vtable");
+    BasicBlock* endBlock  = createBasicBlock("end vtable");
+    PHINode * node = llvm::PHINode::Create(Type::Int32Ty, "", endBlock);
+    llvm::BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
+    
+    currentBlock = ifTrue;
+    node->addIncoming(val, currentBlock);
+    llvm::BranchInst::Create(endBlock, currentBlock);
+
+    currentBlock = ifFalse;
+    std::vector<Value*> Args;
+    Args.push_back(args[0]);
+    Module* M = compilingClass->isolate->module;
+    Args.push_back(new LoadInst(compilingClass->llvmVar(M), "", currentBlock));
+    mvm::jit::protectConstants();//->lock();
+    Constant* CI = ConstantInt::get(Type::Int32Ty, index);
+    Args.push_back(CI);
+    mvm::jit::unprotectConstants();//->unlock();
+    Args.push_back(gv);
+    val = invoke(vtableLookupLLVM, Args, "", currentBlock);
+    node->addIncoming(val, currentBlock);
+    llvm::BranchInst::Create(endBlock, currentBlock);
+    
+    currentBlock = endBlock;
+    indexes2.push_back(node);
+  }
+  
+  Value* FuncPtr = GetElementPtrInst::Create(VT, indexes2.begin(),
+                                             indexes2.end(), "",
+                                             currentBlock);
+    
+  Value* Func = new LoadInst(FuncPtr, "", currentBlock);
+  Func = new BitCastInst(Func, signature->virtualTypePtr, "", currentBlock);
+  Value* val = invoke(Func, args, "", currentBlock);
+  const llvm::Type* retType = signature->virtualType->getReturnType();
+  if (retType != Type::VoidTy) {
+    push(val, signature->ret->funcs);
+    if (retType == Type::DoubleTy || retType == Type::Int64Ty) {
+      push(mvm::jit::constantZero, AssessorDesc::dInt);
+    }
+  }
+#else
+  return invokeInterfaceOrVirtual(index);
+#endif
+}
+
 std::pair<llvm::Value*, const AssessorDesc*> JavaJIT::popPair() {
   std::pair<Value*, const AssessorDesc*> ret = stack.back();
   stack.pop_back();

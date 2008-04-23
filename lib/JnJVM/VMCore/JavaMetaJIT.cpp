@@ -171,12 +171,14 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JavaObject* loader,
   va_end(ap);
 }
 
+#ifndef WITHOUT_VTABLE
 VirtualTable* allocateVT(Class* cl, std::vector<JavaMethod*>::iterator meths) {
   if (meths == cl->virtualMethods.end()) {
     uint64 size = cl->virtualTableSize;
     VirtualTable* VT = (VirtualTable*)malloc(size * sizeof(void*));
     if (cl->super) {
-      memcpy(VT, cl->super->VT, cl->super->virtualTableSize * sizeof(void*));
+      Class* super = (Class*)cl->super;
+      memcpy(VT, super->virtualVT, cl->super->virtualTableSize * sizeof(void*));
     } else {
       memcpy(VT, JavaObject::VT, VT_SIZE);
     }
@@ -203,18 +205,22 @@ VirtualTable* allocateVT(Class* cl, std::vector<JavaMethod*>::iterator meths) {
     return VT;
   }
 }
-
+#endif
 
 
 VirtualTable* JavaJIT::makeVT(Class* cl, bool stat) {
   
   VirtualTable* res = 0;
+#ifndef WITHOUT_VTABLE
   if (stat) {
+#endif
     res = (VirtualTable*)malloc(VT_SIZE);
     memcpy(res, JavaObject::VT, VT_SIZE);
+#ifndef WITHOUT_VTABLE
   } else {
     res = allocateVT(cl, cl->virtualMethods.begin());
   }
+#endif
  
 #ifdef WITH_TRACER
   const Type* type = stat ? cl->staticType : cl->virtualType;

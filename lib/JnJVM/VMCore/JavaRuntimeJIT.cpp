@@ -41,6 +41,9 @@ llvm::Function* JavaJIT::indexOutOfBoundsExceptionLLVM = 0;
 llvm::Function* JavaJIT::javaObjectTracerLLVM = 0;
 llvm::Function* JavaJIT::virtualLookupLLVM = 0;
 llvm::Function* JavaJIT::fieldLookupLLVM = 0;
+#ifndef WITHOUT_VTABLE
+llvm::Function* JavaJIT::vtableLookupLLVM = 0;
+#endif
 llvm::Function* JavaJIT::UTF8AconsLLVM = 0;
 llvm::Function* JavaJIT::Int8AconsLLVM = 0;
 llvm::Function* JavaJIT::Int32AconsLLVM = 0;
@@ -241,6 +244,27 @@ extern "C" Class* newLookup(Class* caller, uint32 index, Class** toAlloc,
   *toAlloc = cl;
   return cl;
 }
+
+#ifndef WITHOUT_VTABLE
+extern "C" uint32 vtableLookup(JavaObject* obj, Class* caller, uint32 index,
+                               uint32* offset) {
+  CommonClass* cl = 0;
+  const UTF8* utf8 = 0;
+  Signdef* sign = 0;
+  
+  caller->ctpInfo->resolveInterfaceOrMethod(index, cl, utf8, sign);
+  JavaMethod* dmeth = cl->lookupMethodDontThrow(utf8, sign->keyName, false,
+                                                true);
+  if (!dmeth) {
+    // Arg, it should have been an invoke interface.... Perform the lookup
+    // on the object class and do not update offset.
+    dmeth = obj->classOf->lookupMethod(utf8, sign->keyName, false, true);
+    return (uint32)(dmeth->offset->getZExtValue());
+  }
+  *offset = (uint32)(dmeth->offset->getZExtValue());
+  return *offset;
+}
+#endif
 
 #ifdef MULTIPLE_VM
 extern "C" void initialisationCheck(CommonClass* cl) {

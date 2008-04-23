@@ -71,7 +71,8 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const llvm::Type* Pty = mvm::jit::ptrType;
   
   std::vector<const llvm::Type*> objectFields;
-  objectFields.push_back(Pty); // VT
+  objectFields.push_back(
+      PointerType::getUnqual(PointerType::getUnqual(Type::Int32Ty))); // VT
   objectFields.push_back(Pty); // Class
   objectFields.push_back(Pty); // Lock
   JavaObject::llvmType = 
@@ -345,6 +346,21 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                      "newLookup",
                      module);
   }
+ 
+#ifndef WITHOUT_VTABLE
+  // Create vtableLookupLLVM
+  {
+  std::vector<const Type*> args;
+  args.push_back(JavaObject::llvmType); // obj
+  args.push_back(mvm::jit::ptrType); // cl
+  args.push_back(Type::Int32Ty); // index
+  args.push_back(PointerType::getUnqual(Type::Int32Ty)); // vtable index
+  const FunctionType* type = FunctionType::get(Type::Int32Ty, args, false);
+
+  vtableLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                                      "vtableLookup", module);
+  }
+#endif
 
   // Create fieldLookupLLVM
   {

@@ -176,7 +176,7 @@ void Jnjvm::loadParents(Class* cl) {
   if (super == 0) {
     cl->depth = 0;
     cl->display.push_back(cl);
-    cl->virtualTableSize = VT_SIZE;
+    cl->virtualTableSize = VT_SIZE / sizeof(void*);
   } else {
     cl->super = loadName(super, classLoader, true, false, true);
     int depth = cl->super->depth;
@@ -795,6 +795,7 @@ static JavaMethod* methodDup(FieldCmp & cmp, Jnjvm *vm) {
                            method->printString(),
                            method->classDef->isolate->module);
   method->classDef->isolate->protectModule->unlock();
+  method->classDef->isolate->functionDefs->hash(method->llvmFunction, method);
   return method;
 }
 

@@ -176,6 +176,7 @@ public:
   // methods invoke
   void makeArgs(llvm::FunctionType::param_iterator it,
                 uint32 index, std::vector<llvm::Value*>& result, uint32 nb);
+  void invokeVirtual(uint16 index);
   void invokeInterfaceOrVirtual(uint16 index);
   void invokeSpecial(uint16 index);
   void invokeStatic(uint16 index);
@@ -255,6 +256,9 @@ public:
 #endif
   static llvm::Function* initialiseObjectLLVM;
   static llvm::Function* newLookupLLVM;
+#ifndef WITHOUT_VTABLE
+  static llvm::Function* vtableLookupLLVM;
+#endif
   static llvm::Function* instanceOfLLVM;
   static llvm::Function* aquireObjectLLVM;
   static llvm::Function* releaseObjectLLVM;

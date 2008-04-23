@@ -1724,14 +1724,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case INVOKEVIRTUAL : {
         uint16 index = readU2(bytecodes, i);
-        JavaCtpInfo* ctpInfo = compilingClass->ctpInfo;
-        CommonClass* cl = 0;
-        JavaMethod* meth = 0;
-        ctpInfo->infoOfMethod(index, ACC_VIRTUAL, cl, meth);
-        if ((cl && isFinal(cl->access)) || (meth && isFinal(meth->access)))
-          invokeSpecial(index);
-        else
-          invokeInterfaceOrVirtual(index);
+        invokeVirtual(index);
         break;
       }
 
