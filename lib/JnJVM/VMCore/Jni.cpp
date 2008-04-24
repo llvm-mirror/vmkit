@@ -1655,7 +1655,12 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass elementClass,
 
 
 jobject GetObjectArrayElement(JNIEnv *env, jobjectArray array, jsize index) {
-  assert(0 && "implement me");
+  BEGIN_EXCEPTION
+  
+  return (jobject)((ArrayObject*)array)->at(index);
+
+  END_EXCEPTION
+
   return 0;
 }
 
