@@ -57,6 +57,7 @@ public:
   const llvm::Type* llvmTypePtr;
   llvm::Constant* llvmNullConstant;
   const UTF8* assocClassName;
+  const UTF8* UTF8Name;
   arrayCtor_t arrayCtor;
 
   static AssessorDesc* dParg;
@@ -74,9 +75,9 @@ public:
   static AssessorDesc* dRef;
   
   static AssessorDesc* allocate(bool dt, char bid, uint32 nb, uint32 nw,
-                                const char* name, Jnjvm* vm,
-                                const llvm::Type* type, const char* assocName,
-                                arrayCtor_t ctor);
+                                const char* name, const char* className,
+                                Jnjvm* vm, const llvm::Type* type,
+                                const char* assocName, arrayCtor_t ctor);
 
   static void initialise(Jnjvm* vm);
   

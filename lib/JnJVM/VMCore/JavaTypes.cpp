@@ -57,8 +57,8 @@ AssessorDesc* AssessorDesc::dTab = 0;
 AssessorDesc* AssessorDesc::dRef = 0;
 
 AssessorDesc* AssessorDesc::allocate(bool dt, char bid, uint32 nb, uint32 nw,
-                                     const char* name, Jnjvm* vm,
-                                     const llvm::Type* t,
+                                     const char* name, const char* className,
+                                     Jnjvm* vm, const llvm::Type* t,
                                      const char* assocName, arrayCtor_t ctor) {
   AssessorDesc* res = vm_new(vm, AssessorDesc)();
   res->doTrace = dt;
@@ -66,6 +66,7 @@ AssessorDesc* AssessorDesc::allocate(bool dt, char bid, uint32 nb, uint32 nw,
   res->nbb = nb;
   res->nbw = nw;
   res->asciizName = name;
+  res->UTF8Name = vm->asciizConstructUTF8(name);
   res->llvmType = t;
   if (t && t != llvm::Type::VoidTy) {
     res->llvmTypePtr = llvm::PointerType::getUnqual(t);
@@ -78,7 +79,7 @@ AssessorDesc* AssessorDesc::allocate(bool dt, char bid, uint32 nb, uint32 nw,
     res->assocClassName = 0;
   
   if (bid != I_PARG && bid != I_PARD && bid != I_REF && bid != I_TAB) {
-    res->classType = vm->constructClass(vm->asciizConstructUTF8(name),
+    res->classType = vm->constructClass(vm->asciizConstructUTF8(className),
                                         CommonClass::jnjvmClassLoader);
     res->classType->status = ready;
     res->classType->access = ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC;
@@ -90,38 +91,42 @@ AssessorDesc* AssessorDesc::allocate(bool dt, char bid, uint32 nb, uint32 nw,
 
 void AssessorDesc::initialise(Jnjvm* vm) {
 
-  dParg = AssessorDesc::allocate(false, I_PARG, 0, 0, "(", vm, 0, 0, 0);
-  dPard = AssessorDesc::allocate(false, I_PARD, 0, 0, ")", vm, 0, 0, 0);
-  dVoid = AssessorDesc::allocate(false, I_VOID, 0, 0, "void", vm, 
-                                 llvm::Type::VoidTy, "java/lang/Void", 0);
-  dBool = AssessorDesc::allocate(false, I_BOOL, 1, 1, "boolean", vm,
+  dParg = AssessorDesc::allocate(false, I_PARG, 0, 0, "(", "(", vm, 0, 0, 0);
+  dPard = AssessorDesc::allocate(false, I_PARD, 0, 0, ")", ")", vm, 0, 0, 0);
+  dVoid = AssessorDesc::allocate(false, I_VOID, 0, 0, "void", "*** void ***",
+                                 vm, llvm::Type::VoidTy, "java/lang/Void", 0);
+  dBool = AssessorDesc::allocate(false, I_BOOL, 1, 1, "boolean", 
+                                 "*** boolean ***", vm,
                                  llvm::Type::Int8Ty, "java/lang/Boolean", 
                                  (arrayCtor_t)ArrayUInt8::acons);
-  dByte = AssessorDesc::allocate(false, I_BYTE, 1, 1, "byte", vm,
-                                 llvm::Type::Int8Ty, "java/lang/Byte",
+  dByte = AssessorDesc::allocate(false, I_BYTE, 1, 1, "byte", "*** byte ***",
+                                 vm, llvm::Type::Int8Ty, "java/lang/Byte",
                                  (arrayCtor_t)ArraySInt8::acons);
-  dChar = AssessorDesc::allocate(false, I_CHAR, 2, 1, "char", vm,
-                                 llvm::Type::Int16Ty, "java/lang/Character",
+  dChar = AssessorDesc::allocate(false, I_CHAR, 2, 1, "char", "*** char ***",
+                                 vm, llvm::Type::Int16Ty, "java/lang/Character",
                                  (arrayCtor_t)ArrayUInt16::acons);
-  dShort = AssessorDesc::allocate(false, I_SHORT, 2, 1, "short", vm,
-                                  llvm::Type::Int16Ty, "java/lang/Short",
+  dShort = AssessorDesc::allocate(false, I_SHORT, 2, 1, "short", 
+                                  "*** short ***", vm, llvm::Type::Int16Ty,
+                                  "java/lang/Short",
                                   (arrayCtor_t)ArraySInt16::acons);
-  dInt = AssessorDesc::allocate(false, I_INT, 4, 1, "int", vm,
+  dInt = AssessorDesc::allocate(false, I_INT, 4, 1, "int", "*** int ***", vm,
                                 llvm::Type::Int32Ty, "java/lang/Integer",
                                 (arrayCtor_t)ArraySInt32::acons);
-  dFloat = AssessorDesc::allocate(false, I_FLOAT, 4, 1, "float", vm,
+  dFloat = AssessorDesc::allocate(false, I_FLOAT, 4, 1, "float", 
+                                  "*** float ***", vm,
                                   llvm::Type::FloatTy, "java/lang/Float",
                                   (arrayCtor_t)ArrayFloat::acons);
-  dLong = AssessorDesc::allocate(false, I_LONG, 8, 2, "long", vm,
-                                 llvm::Type::Int64Ty, "java/lang/Long",
+  dLong = AssessorDesc::allocate(false, I_LONG, 8, 2, "long", "*** long ***", 
+                                 vm, llvm::Type::Int64Ty, "java/lang/Long",
                                  (arrayCtor_t)ArrayLong::acons);
-  dDouble = AssessorDesc::allocate(false, I_DOUBLE, 8, 2, "double", vm,
+  dDouble = AssessorDesc::allocate(false, I_DOUBLE, 8, 2, "double", 
+                                   "*** double ***", vm,
                                    llvm::Type::DoubleTy, "java/lang/Double",
                                    (arrayCtor_t)ArrayDouble::acons);
-  dTab = AssessorDesc::allocate(true, I_TAB, 4, 1, "array", vm,
+  dTab = AssessorDesc::allocate(true, I_TAB, 4, 1, "array", "array", vm,
                                 JavaObject::llvmType, 0,
                                 (arrayCtor_t)ArrayObject::acons);
-  dRef = AssessorDesc::allocate(true, I_REF, 4, 1, "reference", vm,
+  dRef = AssessorDesc::allocate(true, I_REF, 4, 1, "reference", "reference", vm,
                                 JavaObject::llvmType, 0,
                                 (arrayCtor_t)ArrayObject::acons);
   

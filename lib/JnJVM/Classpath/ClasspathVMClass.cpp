@@ -179,7 +179,7 @@ JNIEnv *env,
   AssessorDesc* ass = AssessorDesc::bogusClassToPrimitive(cl);
   const UTF8* res = 0;
   if (ass) {
-    res = cl->name;
+    res = ass->UTF8Name;
   } else {
     const UTF8* iname = cl->name;
     res = iname->internalToJava(vm, 0, iname->size);
