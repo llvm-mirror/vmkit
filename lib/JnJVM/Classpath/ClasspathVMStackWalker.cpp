@@ -8,20 +8,20 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <execinfo.h>
 #include <string.h>
 
 #include "types.h"
 
 #include "JavaArray.h"
 #include "JavaClass.h"
+#include "JavaJIT.h"
 #include "JavaObject.h"
 #include "JavaTypes.h"
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "NativeUtil.h"
-
-#include <execinfo.h>
 
 using namespace jnjvm;
 
@@ -80,37 +80,13 @@ jclass _Cl) {
 }
 
 extern "C" JavaObject* getCallingClass() {
-  int* ips[10];
-  int real_size = backtrace((void**)(void*)ips, 100);
-  int n = 0;
-  int i = 0;
-  
-  while (i < real_size) {
-    JavaMethod* meth = ip_to_meth(ips[i++]);
-    if (meth) {
-      ++n;
-      if (n == 1) return meth->classDef->getClassDelegatee();
-    }   
-  }
-
+  Class* cl = JavaJIT::getCallingClass();
+  if (cl) return cl->getClassDelegatee();
   return 0;
 }
 
 extern "C" JavaObject* getCallingClassLoader() {
-  int* ips[10];
-  int real_size = backtrace((void**)(void*)ips, 100);
-  int n = 0;
-  int i = 0;
-  
-  while (i < real_size) {
-    JavaMethod* meth = ip_to_meth(ips[i++]);
-    if (meth) {
-      ++n;
-      if (n == 1) return meth->classDef->classLoader;
-    }   
-  }
-
-  return 0;
+  return JavaJIT::getCallingClassLoader();
 }
 
 }

@@ -80,10 +80,12 @@ Class* JavaJIT::getCallingClass() {
     if (code) {
       mvm::Method* m = code->method();
       mvm::Object* meth = m->definition();
-      if (meth && meth->getVirtualTable() == JavaMethod::VT && i == 0) {
-        return ((JavaMethod*)meth)->classDef;
-      } else {
-        ++i;
+      if (meth && meth->getVirtualTable() == JavaMethod::VT) {
+        if (i == 1) {
+          return ((JavaMethod*)meth)->classDef;
+        } else {
+          ++i;
+        }
       }
     }
   }
@@ -100,9 +102,13 @@ Class* JavaJIT::getCallingClassWalker() {
     if (code) {
       mvm::Method* m = code->method();
       mvm::Object* meth = m->definition();
-      if (meth && meth->getVirtualTable() == JavaMethod::VT && i == 1) {
-        return ((JavaMethod*)meth)->classDef;
-      } else ++i;
+      if (meth && meth->getVirtualTable() == JavaMethod::VT) {
+        if (i == 1) {
+          return ((JavaMethod*)meth)->classDef;
+        } else {
+          ++i;
+        }
+      }
     }
   }
   return 0;

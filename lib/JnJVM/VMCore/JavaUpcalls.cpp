@@ -216,54 +216,18 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
 
   loadInClassLoader = UPCALL_METHOD(vm, "java/lang/ClassLoader", "loadClass", "(Ljava/lang/String;Z)Ljava/lang/Class;", ACC_VIRTUAL);
 
-  getCallingClassLoader = UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClassLoader", "()Ljava/lang/ClassLoader;", ACC_STATIC);
-  
-  // Create getCallingClassLoader
-  {
-  std::vector<const llvm::Type*> args;
-#ifdef MULTIPLE_VM
-  args.push_back(mvm::jit::ptrType);  
-#endif
-  const llvm::FunctionType* type = 
-    llvm::FunctionType::get(JavaObject::llvmType, args, false);
-
-  Classpath::getCallingClassLoader->llvmFunction =
-    llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
-                       "_ZN5jnjvm7JavaJIT21getCallingClassLoaderEv",
-                       vm->module);
-  }
-
   JavaMethod* internString = UPCALL_METHOD(vm, "java/lang/VMString", "intern", "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC);
   // Create intern
   {
-  std::vector<const llvm::Type*> args;
-  args.push_back(JavaObject::llvmType);
-#ifdef MULTIPLE_VM
-  args.push_back(mvm::jit::ptrType);  
-#endif
-  const llvm::FunctionType* type = 
-    llvm::FunctionType::get(JavaObject::llvmType, args, false);
-
-  internString->llvmFunction =
-    llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
-                       "internString",
-                       vm->module);
+    internString->llvmFunction->setName("internString");
+    internString->llvmFunction->setLinkage(llvm::GlobalValue::ExternalLinkage);
   }
   
   JavaMethod* isArray = UPCALL_METHOD(vm, "java/lang/Class", "isArray", "()Z", ACC_VIRTUAL);
   // Create intern
   {
-  std::vector<const llvm::Type*> args;
-  args.push_back(JavaObject::llvmType);
-#ifdef MULTIPLE_VM
-  args.push_back(mvm::jit::ptrType);  
-#endif
-  const llvm::FunctionType* type = 
-    llvm::FunctionType::get(llvm::Type::Int8Ty, args, false);
-  isArray->llvmFunction =
-    llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
-                       "isArray",
-                       vm->module);
+    isArray->llvmFunction->setName("isArray");
+    isArray->llvmFunction->setLinkage(llvm::GlobalValue::ExternalLinkage);
   }
 
   ClasspathThread::initialise(vm);
@@ -278,34 +242,16 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
                                          true, false);
   COMPILE_METHODS(object)
   
-  JavaMethod* getCallingClass = UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClass", "()Ljava/lang/Object;", ACC_STATIC);
+  JavaMethod* getCallingClass = UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClass", "()Ljava/lang/Class;", ACC_STATIC);
   {
-  std::vector<const llvm::Type*> args;
-#ifdef MULTIPLE_VM
-  args.push_back(mvm::jit::ptrType);  
-#endif
-  const llvm::FunctionType* type = 
-    llvm::FunctionType::get(JavaObject::llvmType, args, false);
-
-  getCallingClass->llvmFunction =
-    llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
-                       "getCallingClass",
-                       vm->module);
+    getCallingClass->llvmFunction->setName("getCallingClass");
+    getCallingClass->llvmFunction->setLinkage(llvm::GlobalValue::ExternalLinkage);
   }
   
-  JavaMethod* getCallingClassLoader = UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClassLoader", "()Ljava/lang/Object;", ACC_STATIC);
+  JavaMethod* getCallingClassLoader = UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClassLoader", "()Ljava/lang/ClassLoader;", ACC_STATIC);
   {
-  std::vector<const llvm::Type*> args;
-#ifdef MULTIPLE_VM
-  args.push_back(mvm::jit::ptrType);  
-#endif
-  const llvm::FunctionType* type = 
-    llvm::FunctionType::get(JavaObject::llvmType, args, false);
-
-  getCallingClassLoader->llvmFunction =
-    llvm::Function::Create(type, llvm::GlobalValue::ExternalLinkage,
-                       "getCallingClassLoader",
-                       vm->module);
+    getCallingClassLoader->llvmFunction->setName("getCallingClassLoader");
+    getCallingClassLoader->llvmFunction->setLinkage(llvm::GlobalValue::ExternalLinkage);
   }
 }
 
