@@ -571,11 +571,11 @@ CommonClass* Jnjvm::lookupClassFromUTF8(const UTF8* utf8, unsigned int start,
   } else if (name->at(0) == AssessorDesc::I_TAB) {
     
     while (doLoop) {
+      --len;
       if (len == 0) {
         doLoop = false;
       } else {
         ++start;
-        --len;
         if (name->at(start) != AssessorDesc::I_TAB) {
           if (name->at(start) == AssessorDesc::I_REF) {
             uint32 size = (uint32)name->size;
