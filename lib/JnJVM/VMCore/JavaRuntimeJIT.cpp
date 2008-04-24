@@ -223,12 +223,16 @@ extern "C" JavaObject* getStaticInstance(Class* cl) {
     return cl->_staticInstance;
   }
 }
+#endif
 
 extern "C" JavaObject* getClassDelegatee(CommonClass* cl) {
+#ifdef MULTIPLE_VM
   Jnjvm* vm = JavaThread::get()->isolate;
+#else
+  Jnjvm* vm = cl->isolate;
+#endif
   return vm->getClassDelegatee(cl);
 }
-#endif
 
 void JavaJIT::initialise() {
   void* p;

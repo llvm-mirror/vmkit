@@ -921,7 +921,16 @@ void JavaJIT::_ldc(uint16 index) {
          AssessorDesc::dFloat);
     mvm::jit::unprotectConstants();//->unlock();
   } else if (type == JavaCtpInfo::ConstantClass) {
-    assert(0 && "implement ConstantClass in ldc!");
+    if (ctpInfo->ctpRes[index]) {
+      CommonClass* cl = (CommonClass*)(ctpInfo->ctpRes[index]);
+      push(cl->llvmDelegatee(compilingClass->isolate->module, currentBlock),
+           AssessorDesc::dRef);
+    } else {
+      Value* val = getResolvedClass(index, false);
+      Value* res = CallInst::Create(getClassDelegateeLLVM, val, "",
+                                    currentBlock);
+      push(res, AssessorDesc::dRef);
+    }
   } else {
     JavaThread::get()->isolate->unknownError("unknown type %d", type);
   }
