@@ -318,9 +318,7 @@ void Jnjvm::initialiseClass(CommonClass* cl) {
       if (cl->super) {
         cl->super->initialiseClass();
       }
-      for (uint32 i = 0; i < cl->interfaces.size(); i++) {
-        cl->interfaces[i]->initialiseClass();
-      }
+      
       cl->status = inClinit;
       JavaMethod* meth = cl->lookupMethodDontThrow(clinitName, clinitType, true,
                                                    false);
