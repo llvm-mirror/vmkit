@@ -253,6 +253,12 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
     getCallingClassLoader->llvmFunction->setName("getCallingClassLoader");
     getCallingClassLoader->llvmFunction->setLinkage(llvm::GlobalValue::ExternalLinkage);
   }
+  
+  JavaMethod* postProperties = UPCALL_METHOD(vm, "gnu/classpath/VMSystemProperties", "postInit", "(Ljava/util/Properties;)V", ACC_STATIC);
+  {
+    postProperties->llvmFunction->setName("propertiesPostInit");
+    postProperties->llvmFunction->setLinkage(llvm::GlobalValue::ExternalLinkage);
+  }
 }
 
 extern "C" JavaString* internString(JavaString* obj) {

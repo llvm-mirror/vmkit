@@ -198,7 +198,7 @@ void ClArgumentsInfo::readArgs(int argc, char** argv, Jnjvm* vm) {
       else vm->setClasspath(argv[i]);
     } else if (!(strcmp(cur, "-debug"))) {
       nyi();
-    } else if (!(strcmp(cur, "-D"))) {
+    } else if (!(strncmp(cur, "-D", 2))) {
       uint32 len = strlen(cur);
       if (len == 2) {
         printInformation();
