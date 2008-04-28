@@ -217,10 +217,44 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
     mvm::jit::executionEngine->addGlobalMapping(func, natPtr);
     return llvmFunction;
   }
-
+  
+  currentExceptionBlock = endExceptionBlock = 0;
   currentBlock = createBasicBlock("start");
   BasicBlock* executeBlock = createBasicBlock("execute");
   endBlock = createBasicBlock("end block");
+
+#if defined(MULTIPLE_VM)
+  Value* lastArg = 0;
+  for (Function::arg_iterator i = func->arg_begin(), e = func->arg_end();
+       i != e; ++i) {
+    lastArg = i;
+  }
+#if !defined(SERVICE_VM)
+  isolateLocal = lastArg;
+#else
+  if (compilingClass->isolate == Jnjvm::bootstrapVM) {
+    isolateLocal = lastArg;
+  } else {
+    JavaObject* loader = compilingClass->classLoader;
+    ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
+    isolateLocal = new LoadInst(vm->llvmDelegatee(), "", currentBlock);
+    Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, lastArg, 
+                              isolateLocal, "", currentBlock);
+    BasicBlock* ifTrue = createBasicBlock("true service call");
+    BasicBlock* endBlock = createBasicBlock("end check service call");
+    BranchInst::Create(ifTrue, endBlock, cmp, currentBlock);
+    currentBlock = ifTrue;
+    std::vector<Value*> Args;
+    Args.push_back(lastArg);
+    Args.push_back(isolateLocal);
+    CallInst::Create(ServiceDomain::serviceCallStartLLVM, Args.begin(),
+                     Args.end(), "", currentBlock);
+    BranchInst::Create(endBlock, currentBlock);
+    currentBlock = endBlock;
+  }
+#endif
+#endif
+
   if (funcType->getReturnType() != Type::VoidTy)
     endNode = llvm::PHINode::Create(funcType->getReturnType(), "", endBlock);
   
