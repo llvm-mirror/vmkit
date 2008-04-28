@@ -93,3 +93,14 @@ jclass Cl) {
     return false;
 }
 }
+
+extern "C" {
+JNIEXPORT bool JNICALL Java_java_util_concurrent_atomic_AtomicLong_VMSupportsCS8(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+) {
+  return false;
+}
+}
