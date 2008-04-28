@@ -1842,7 +1842,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
         currentBlock = ifFalse;
         Value* clVar = 0;
-        if (dcl && dcl->isReady()) {
+        if (dcl) {
           clVar = new LoadInst(dcl->llvmVar(compilingClass->isolate->module), "", ifFalse);
         } else {
           clVar = getResolvedClass(index, false);
@@ -1879,7 +1879,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           compilingClass->ctpInfo->getMethodClassIfLoaded(index);
         
         Value* clVar = 0;
-        if (dcl && dcl->isReady()) {
+        if (dcl) {
           clVar = new LoadInst(dcl->llvmVar(compilingClass->isolate->module), "", currentBlock);
         } else {
           clVar = getResolvedClass(index, false);
