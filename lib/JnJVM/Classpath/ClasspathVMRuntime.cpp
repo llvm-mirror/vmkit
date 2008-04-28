@@ -66,7 +66,11 @@ jclass clazz,
                                                            jobject _str,
                                                            jobject _loader) {
   JavaString* str = (JavaString*)_str;
+#ifndef SERVICE_VM
   Jnjvm* vm = JavaThread::get()->isolate;
+#else
+  Jnjvm* vm = Jnjvm::bootstrapVM;
+#endif
   
   char* buf = str->strToAsciiz();
   

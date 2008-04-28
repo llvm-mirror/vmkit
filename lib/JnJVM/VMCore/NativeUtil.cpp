@@ -182,7 +182,11 @@ static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth) {
 static void* loadName(char* buf, bool& jnjvm) {
   void* res = dlsym(0, buf);
   if (!res) {
-    Jnjvm *vm = JavaThread::get()->isolate;
+#ifndef SERVICE_VM
+    Jnjvm* vm = JavaThread::get()->isolate;
+#else
+    Jnjvm* vm = Jnjvm::bootstrapVM;
+#endif
     for (std::vector<void*>::iterator i = vm->nativeLibs.begin(), 
               e = vm->nativeLibs.end(); i!= e; ++i) {
       res = dlsym((*i), buf);
