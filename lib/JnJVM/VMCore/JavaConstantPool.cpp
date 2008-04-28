@@ -343,7 +343,7 @@ Typedef* JavaCtpInfo::resolveNameAndType(uint32 index) {
     }
     sint32 entry = ctpDef[index];
     const UTF8* type = UTF8At(entry & 0xFFFF);
-    Typedef* sign = JavaThread::get()->isolate->constructType(type);
+    Typedef* sign = classDef->isolate->constructType(type);
     ctpRes[index] = sign;
     return sign;
   }
