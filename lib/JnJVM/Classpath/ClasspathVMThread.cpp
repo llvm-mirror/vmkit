@@ -26,6 +26,10 @@
 #include "Jnjvm.h"
 #include "NativeUtil.h"
 
+#ifdef SERVICE_VM
+#include "ServiceDomain.h"
+#endif
+
 using namespace jnjvm;
 
 extern "C" {
@@ -67,7 +71,7 @@ static void start(arg_thread_t* arg) {
     ts->nonDaemonLock->unlock();
   }
   
-#ifdef SERVICE_DOMAIN
+#ifdef SERVICE_VM
   ((ServiceDomain*)isolate)->numThreads++;
 #endif
   JavaMethod* method = vmthClass->lookupMethod(Jnjvm::runName, Jnjvm::clinitType, ACC_VIRTUAL, true);
@@ -82,7 +86,7 @@ static void start(arg_thread_t* arg) {
     ts->nonDaemonLock->unlock();
   }
 
-#ifdef SERVICE_DOMAIN
+#ifdef SERVICE_VM
   ((ServiceDomain*)isolate)->numThreads--;
 #endif
 

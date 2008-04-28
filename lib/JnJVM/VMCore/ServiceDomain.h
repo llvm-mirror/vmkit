@@ -39,14 +39,12 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
   virtual void destroyer(size_t sz);
-  void loadBootstrap();
   static ServiceDomain* allocateService(JavaIsolate* callingVM);
   llvm::GlobalVariable* llvmDelegatee();
   void serviceError(const char* str);
   
   mvm::Lock* lock;
   ClassMap* classes;
-  struct timeval started;
   uint64 executionTime;
   uint64 memoryUsed;
   uint64 gcTriggered;

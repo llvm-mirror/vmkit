@@ -330,9 +330,6 @@ void JavaIsolate::loadBootstrap() {
 }
 
 void JavaIsolate::executeClass(const char* className, ArrayObject* args) {
-#ifdef SERVICE_VM
-  JavaThread::get()->executionTime = time(0);
-#endif
   try {
     JavaJIT::invokeOnceVoid(this, appClassLoader, className, "main",
                         "([Ljava/lang/String;)V", ACC_STATIC, args);

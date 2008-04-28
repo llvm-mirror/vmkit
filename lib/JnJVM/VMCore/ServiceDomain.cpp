@@ -115,16 +115,8 @@ ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
   service->gcTriggered = 0;
   service->numThreads = 0;
   
-  service->loadBootstrap();
   service->lock = mvm::Lock::allocNormal();
   return service;
-}
-
-void ServiceDomain::loadBootstrap() {
-  // load and initialise math since it is responsible for dlopen'ing 
-  // libjavalang.so and we are optimizing some math operations
-  //loadName(asciizConstructUTF8("java/lang/Math"), 
-  //         CommonClass::jnjvmClassLoader, true, true, true);
 }
 
 void ServiceDomain::serviceError(const char* str) {
@@ -140,36 +132,28 @@ ServiceDomain* ServiceDomain::getDomainFromLoader(JavaObject* loader) {
 
 extern "C" void serviceCallStart(ServiceDomain* caller,
                                  ServiceDomain* callee) {
-  assert(caller && "No caller in service stop?");
-  assert(callee && "No callee in service stop?");
-  assert(caller->getVirtualTable() == ServiceDomain::VT && "Caller not a service domain?");
-  assert(callee->getVirtualTable() == ServiceDomain::VT && "Callee not a service domain?");
+  assert(caller && "No caller in service start?");
+  assert(callee && "No callee in service start?");
+  assert(caller->getVirtualTable() == ServiceDomain::VT && 
+         "Caller not a service domain?");
+  assert(callee->getVirtualTable() == ServiceDomain::VT && 
+         "Callee not a service domain?");
   JavaThread* th = JavaThread::get();
   th->isolate = callee;
-#ifdef SERVICE_VM
-  time_t t = time(NULL);
   caller->lock->lock();
-  caller->executionTime += t - th->executionTime;
   caller->interactions[callee]++;
   caller->lock->unlock();
-  th->executionTime = t;
-#endif
 }
 
 extern "C" void serviceCallStop(ServiceDomain* caller,
                                 ServiceDomain* callee) {
   assert(caller && "No caller in service stop?");
   assert(callee && "No callee in service stop?");
-  assert(caller->getVirtualTable() == ServiceDomain::VT && "Caller not a service domain?");
-  assert(callee->getVirtualTable() == ServiceDomain::VT && "Callee not a service domain?");
+  assert(caller->getVirtualTable() == ServiceDomain::VT && 
+         "Caller not a service domain?");
+  assert(callee->getVirtualTable() == ServiceDomain::VT && 
+         "Callee not a service domain?");
   JavaThread* th = JavaThread::get();
   th->isolate = caller;
-#ifdef SERVICE_VM
-  time_t t = time(NULL);
-  callee->lock->lock();
-  callee->executionTime += t - th->executionTime;
-  callee->lock->unlock();
-  th->executionTime = t;
-#endif
 }
 

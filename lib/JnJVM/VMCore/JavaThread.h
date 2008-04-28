@@ -45,8 +45,6 @@ public:
   static const unsigned int StateWaiting;
   static const unsigned int StateInterrupted;
 
-  JavaObject* cacheObject; // cache for allocations patching
-
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
   virtual void destroyer(size_t sz);
@@ -62,9 +60,6 @@ public:
   static bool compareException(Class*);
   static JavaObject* getJavaException();
   void returnFromNative();
-#ifdef SERVICE_VM
-  time_t executionTime;
-#endif
 };
 
 } // end namespace jnjvm
