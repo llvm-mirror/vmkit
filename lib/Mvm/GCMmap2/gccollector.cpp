@@ -11,7 +11,7 @@
 
 using namespace mvm;
 
-#ifndef MULTIPLE_GC
+#if !defined(MULTIPLE_GC) || defined(SERVICE_GC)
 GCAllocator   *GCCollector::allocator = 0;
 #ifdef HAVE_PTHREAD
 GCThread      *GCCollector::threads;
@@ -19,13 +19,6 @@ GCThread      *GCCollector::threads;
 
 GCCollector::markerFn   GCCollector::_marker;
 
-int  GCCollector::_collect_freq_auto;
-int  GCCollector::_collect_freq_maybe;
-int  GCCollector::_since_last_collection;
-
-bool GCCollector::_enable_auto;
-bool GCCollector::_enable_maybe;
-bool GCCollector::_enable_collection;
 
 int           GCCollector::status;
 
@@ -33,13 +26,24 @@ GCChunkNode    *GCCollector::used_nodes;
 GCChunkNode    *GCCollector::unused_nodes;
 
 unsigned int   GCCollector::current_mark;
-#else
+#endif
+
+#ifdef MULTIPLE_GC
 GCCollector* GCCollector::bootstrapGC;
 #endif
 
 #ifdef SERVICE_GC
 GCCollector* GCCollector::collectingGC;
-unsigned int   GCCollector::current_mark;
+#endif
+
+#if !defined(SERVICE_GC) && !defined(MULTIPLE_GC)
+int  GCCollector::_collect_freq_auto;
+int  GCCollector::_collect_freq_maybe;
+int  GCCollector::_since_last_collection;
+
+bool GCCollector::_enable_auto;
+bool GCCollector::_enable_maybe;
+bool GCCollector::_enable_collection;
 #endif
 
 void GCCollector::do_collect() {

@@ -26,18 +26,14 @@ int GCCollector::siggc() {
 }
 
 void GCCollector::initialise(Collector::markerFn marker) {
-  
+ 
+#ifdef SERVICE_GC
+  if (this == bootstrapGC) {
+#endif
   used_nodes = new GCChunkNode();
   unused_nodes = new GCChunkNode();
 #ifdef HAVE_PTHREAD
-#ifdef SERVICE_GC
-  if (this != bootstrapGC)
-    threads = bootstrapGC->threads;
-  else
-    threads = new GCThread();
-#else
   threads = new GCThread();
-#endif
 #endif
   
   struct sigaction sa;
@@ -60,10 +56,11 @@ void GCCollector::initialise(Collector::markerFn marker) {
 
   used_nodes->alone();
 
-#ifdef SERVICE_GC
-  if (this == bootstrapGC)
-#endif
   current_mark = 0;
+  status = stat_alloc;
+#ifdef SERVICE_GC
+  }
+#endif
 
   _collect_freq_auto = def_collect_freq_auto;
   _collect_freq_maybe = def_collect_freq_maybe;
@@ -74,7 +71,6 @@ void GCCollector::initialise(Collector::markerFn marker) {
   _enable_collection = 1;
   _enable_maybe = 1;
 
-  status = stat_alloc;
 }
 
 void GCCollector::destroy() {

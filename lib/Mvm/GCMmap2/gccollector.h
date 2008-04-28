@@ -23,30 +23,38 @@
 #define STATIC static
 #endif
 
+#if defined(MULTIPLE_GC) && !defined(SERVICE_GC)
+#define STATIC_FIELD
+#else
+#define STATIC_FIELD static
+#endif
+
+#if defined(MULTIPLE_GC)
+#define STATIC_NO_SERVICE
+#else
+#define STATIC_NO_SERVICE static
+#endif
+
 namespace mvm {
 
 class GCCollector : public Collector {
 #ifdef HAVE_PTHREAD
   friend class GCThread;
 #endif
-  STATIC GCAllocator  *allocator;      /* The allocator */
+  STATIC_FIELD GCAllocator  *allocator;      /* The allocator */
 
 
-  STATIC GCChunkNode  *used_nodes;     /* Used memory nodes */
-  STATIC GCChunkNode  *unused_nodes;   /* Unused memory nodes */
-#ifdef SERVICE_GC
-  static unsigned int   current_mark;
-#else
-  STATIC unsigned int   current_mark;
-#endif
+  STATIC_FIELD GCChunkNode  *used_nodes;     /* Used memory nodes */
+  STATIC_FIELD GCChunkNode  *unused_nodes;   /* Unused memory nodes */
+  STATIC_FIELD unsigned int   current_mark;
 
-  STATIC int  _collect_freq_auto;      /* Collection frequency in gcmalloc/gcrealloc */
-  STATIC int  _collect_freq_maybe;     /* Collection frequency  in maybeCollect */
-  STATIC int  _since_last_collection;  /* Bytes left since last collection */
-  STATIC bool _enable_auto;            /* Automatic collection? */
-  STATIC bool _enable_maybe;           /* Collection in maybeCollect()? */
-  STATIC bool _enable_collection;      /* collection authorized? */
-  STATIC int  status;
+  STATIC_NO_SERVICE int  _collect_freq_auto;      /* Collection frequency in gcmalloc/gcrealloc */
+  STATIC_NO_SERVICE int  _collect_freq_maybe;     /* Collection frequency  in maybeCollect */
+  STATIC_NO_SERVICE int  _since_last_collection;  /* Bytes left since last collection */
+  STATIC_NO_SERVICE bool _enable_auto;            /* Automatic collection? */
+  STATIC_NO_SERVICE bool _enable_maybe;           /* Collection in maybeCollect()? */
+  STATIC_NO_SERVICE bool _enable_collection;      /* collection authorized? */
+  STATIC_FIELD int  status;
   
   
   enum { stat_collect, stat_finalize, stat_alloc, stat_broken };
@@ -75,14 +83,14 @@ class GCCollector : public Collector {
   }
 
 public:
-  STATIC Collector::markerFn  _marker; /* The function which traces roots */
+  STATIC_FIELD Collector::markerFn  _marker; /* The function which traces roots */
 #ifdef SERVICE_GC
   static GCCollector* collectingGC;
 #endif
 #ifdef MULTIPLE_GC
   static GCCollector* bootstrapGC;
 #endif
-  STATIC GCThread *threads;        /* le gestionnaire de thread et de synchro */
+  STATIC_FIELD GCThread *threads;        /* le gestionnaire de thread et de synchro */
   static void (*internMemoryError)(unsigned int);
 
 #ifdef HAVE_PTHREAD
