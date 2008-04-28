@@ -30,6 +30,10 @@
 #include "LockedMap.h"
 #include "Zip.h"
 
+#ifdef SERVICE_VM
+#include "ServiceDomain.h"
+#endif
+
 using namespace jnjvm;
 
 static void initialiseVT() {
@@ -69,6 +73,9 @@ static void initialiseVT() {
   INIT(JavaString);
   INIT(CacheNode);
   INIT(Enveloppe);
+#ifdef SERVICE_VM
+  INIT(ServiceDomain);
+#endif
 #undef INIT
 
 #define INIT(X) { \
@@ -204,7 +211,6 @@ extern "C" void ClasspathBoot();
 
 void handler(int val, siginfo_t* info, void* addr) {
   printf("Crash in JnJVM at %p\n", addr);
-  JavaJIT::printBacktrace();
   assert(0);
 }
 
@@ -237,10 +243,15 @@ extern "C" int boot() {
 }
 
 extern "C" int start_app(int argc, char** argv) {
-#if defined(SERVICE_VM) || !defined(MULTIPLE_VM)
+#if !defined(MULTIPLE_VM)
   JavaIsolate* vm = (JavaIsolate*)JavaIsolate::bootstrapVM;
 #else
+#ifdef SERVICE_VM
+  ServiceDomain* vm = ServiceDomain::allocateService((JavaIsolate*)Jnjvm::bootstrapVM);
+  JavaThread::get()->isolate = vm;
+#else
   JavaIsolate* vm = JavaIsolate::allocateIsolate(JavaIsolate::bootstrapVM);
+#endif
 #endif
   vm->runMain(argc, argv);
   return 0;
