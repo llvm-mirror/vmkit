@@ -1,11 +1,11 @@
 1 - GNU Classpath
-Current version 0.93. Use gcj > 4 or ecj
+Current version 0.97.1. Use ecj to compile Classpath.
 
   a - unzip classpath
-      tar -xzf classpath-0.93
+      tar -xzf classpath-0.97.1
   b - compile classpath
-      cd classpath-0.93
-      ./configure && make
+      cd classpath-0.97.1
+      ./configure --disable-plugin --disable-examples && make
 
 IMPORTANT: for local use
 cd classpath-x.y/lib;

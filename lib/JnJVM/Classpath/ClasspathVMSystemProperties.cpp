@@ -61,11 +61,11 @@ jobject _prop) {
   setProperty(vm, prop, "java.vm.specification.version", "1.0");
   setProperty(vm, prop, "java.vm.specification.vendor", "Sun Microsystems, Inc");
   setProperty(vm, prop, "java.vm.specification.name", "Java Virtual Machine Specification");
-  setProperty(vm, prop, "java.specification.version", "1.4");
+  setProperty(vm, prop, "java.specification.version", "1.5");
   setProperty(vm, prop, "java.specification.vendor", "Sun Microsystems, Inc");
   setProperty(vm, prop, "java.specification.name", "Java Platform API Specification");
-  setProperty(vm, prop, "java.version", "1.4");
-  setProperty(vm, prop, "java.runtime.version", "1.4");
+  setProperty(vm, prop, "java.version", "1.5");
+  setProperty(vm, prop, "java.runtime.version", "1.5");
   setProperty(vm, prop, "java.vendor", "VVM Project");
   setProperty(vm, prop, "java.vendor.url", "http://vvm.lip6.fr");
   
@@ -73,14 +73,14 @@ jobject _prop) {
   if (!tmp) tmp = "";
   setProperty(vm, prop, "java.home", tmp);
 			
-  setProperty(vm, prop, "java.class.version", "48.0");
+  setProperty(vm, prop, "java.class.version", "49.0");
   setProperty(vm, prop, "java.class.path", vm->classpath);
   setProperty(vm, prop, "java.boot.class.path", vm->bootClasspathEnv);
   setProperty(vm, prop, "sun.boot.class.path", vm->bootClasspathEnv);
   setProperty(vm, prop, "java.vm.version", "2.0");
   setProperty(vm, prop, "java.vm.vendor", "VVM Project");
   setProperty(vm, prop, "java.vm.name", "JnJVM");
-  setProperty(vm, prop, "java.specification.version", "1.4");
+  setProperty(vm, prop, "java.specification.version", "1.5");
   setProperty(vm, prop, "java.library.path", vm->libClasspathEnv);
   setProperty(vm, prop, "java.io.tmpdir", "/tmp");
   
@@ -114,6 +114,7 @@ jobject _prop) {
   //setProperty(vm, prop, "gnu.classpath.nio.charset.provider.iconv", "true")
   
   setProperty(vm, prop, "file.encoding", "ISO8859_1");
+  setProperty(vm, prop, "gnu.java.util.zoneinfo.dir", "/usr/share/zoneinfo");
 
 
 }

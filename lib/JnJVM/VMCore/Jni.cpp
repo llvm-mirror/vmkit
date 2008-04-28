@@ -25,8 +25,8 @@
 
 using namespace jnjvm;
 
-extern "C" const struct JNIInvokeInterface JNI_JavaVMTable;
-extern "C" struct JNINativeInterface JNI_JNIEnvTable;
+extern "C" const struct JNIInvokeInterface_ JNI_JavaVMTable;
+extern "C" struct JNINativeInterface_ JNI_JNIEnvTable;
 
 #define BEGIN_EXCEPTION \
   JavaObject* excp = 0; \
@@ -249,7 +249,7 @@ jobject NewObjectV(JNIEnv* env, jclass clazz, jmethodID methodID,
 
 
 jobject NewObjectA(JNIEnv* env, jclass clazz, jmethodID methodID,
-                   jvalue *args) {
+                   const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -339,7 +339,7 @@ jobject CallObjectMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
 
 
 jobject CallObjectMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
-                          jvalue * args) {
+                          const jvalue * args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -371,7 +371,7 @@ jboolean CallBooleanMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
 
 
 jboolean CallBooleanMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
-                            jvalue * args) {
+                            const jvalue * args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -390,7 +390,7 @@ jbyte CallByteMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
 
 
 jbyte CallByteMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
-                      jvalue *args) {
+                      const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -410,7 +410,7 @@ jchar CallCharMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
 
 
 jchar CallCharMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
-                      jvalue *args) {
+                      const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -430,7 +430,7 @@ jshort CallShortMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
 
 
 jshort CallShortMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
-                        jvalue *args) {
+                        const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -463,7 +463,7 @@ jint CallIntMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
 
 
 jint CallIntMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
-                    jvalue *args) {
+                    const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -484,7 +484,7 @@ jlong CallLongMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
 
 
 jlong CallLongMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
-                      jvalue *args) {
+                      const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -517,7 +517,7 @@ jfloat CallFloatMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
 
 
 jfloat CallFloatMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
-                        jvalue *args) {
+                        const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -559,7 +559,7 @@ jdouble CallDoubleMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
 
 
 jdouble CallDoubleMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
-                          jvalue *args) {
+                          const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -597,7 +597,7 @@ void CallVoidMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
 
 
 void CallVoidMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
-                     jvalue *args) {
+                     const jvalue *args) {
   assert(0 && "implement me");
 }
 
@@ -618,7 +618,7 @@ jobject CallNonvirtualObjectMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 
 jobject CallNonvirtualObjectMethodA(JNIEnv *env, jobject obj, jclass clazz,
-                                    jmethodID methodID, jvalue *args) {
+                                    jmethodID methodID, const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -640,7 +640,7 @@ jboolean CallNonvirtualBooleanMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 
 jboolean CallNonvirtualBooleanMethodA(JNIEnv *env, jobject obj, jclass clazz,
-                                      jmethodID methodID, jvalue *args) {
+                                      jmethodID methodID, const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -661,7 +661,7 @@ jbyte CallNonvirtualByteMethodV (JNIEnv *env, jobject obj, jclass clazz,
 
 
 jbyte CallNonvirtualByteMethodA(JNIEnv *env, jobject obj, jclass clazz,
-                                jmethodID methodID, jvalue *args) {
+                                jmethodID methodID, const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -683,7 +683,7 @@ jchar CallNonvirtualCharMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 
 jchar CallNonvirtualCharMethodA(JNIEnv *env, jobject obj, jclass clazz,
-                                jmethodID methodID, jvalue *args) {
+                                jmethodID methodID, const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -705,7 +705,7 @@ jshort CallNonvirtualShortMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 
 jshort CallNonvirtualShortMethodA(JNIEnv *env, jobject obj, jclass clazz,
-                                  jmethodID methodID, jvalue *args) {
+                                  jmethodID methodID, const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -727,7 +727,7 @@ jint CallNonvirtualIntMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 
 jint CallNonvirtualIntMethodA(JNIEnv *env, jobject obj, jclass clazz,
-                              jmethodID methodID, jvalue *args) {
+                              jmethodID methodID, const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -749,7 +749,7 @@ jlong CallNonvirtualLongMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 
 jlong CallNonvirtualLongMethodA(JNIEnv *env, jobject obj, jclass clazz,
-                                jmethodID methodID, jvalue *args) {
+                                jmethodID methodID, const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -771,7 +771,7 @@ jfloat CallNonvirtualFloatMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 
 jfloat CallNonvirtualFloatMethodA(JNIEnv *env, jobject obj, jclass clazz,
-                                  jmethodID methodID, jvalue *args) {
+                                  jmethodID methodID, const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -793,7 +793,7 @@ jdouble CallNonvirtualDoubleMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 
 jdouble CallNonvirtualDoubleMethodA(JNIEnv *env, jobject obj, jclass clazz,
-                                    jmethodID methodID, jvalue *args) {
+                                    jmethodID methodID, const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -824,7 +824,7 @@ void CallNonvirtualVoidMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 
 void CallNonvirtualVoidMethodA(JNIEnv *env, jobject obj, jclass clazz,
-                               jmethodID methodID, jvalue * args) {
+                               jmethodID methodID, const jvalue * args) {
   assert(0 && "implement me");
 }
 
@@ -1106,7 +1106,7 @@ jobject CallStaticObjectMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 
 jobject CallStaticObjectMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
-                                jvalue *args) {
+                                const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -1138,7 +1138,7 @@ jboolean CallStaticBooleanMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 
 jboolean CallStaticBooleanMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
-                                  jvalue *args) {
+                                  const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -1158,7 +1158,7 @@ jbyte CallStaticByteMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 
 jbyte CallStaticByteMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
-                            jvalue *args) {
+                            const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -1178,7 +1178,7 @@ jchar CallStaticCharMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 
 jchar CallStaticCharMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
-                            jvalue *args) {
+                            const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -1199,7 +1199,7 @@ jshort CallStaticShortMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 
 jshort CallStaticShortMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
-                              jvalue *args) {
+                              const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -1219,7 +1219,7 @@ jint CallStaticIntMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 
 jint CallStaticIntMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
-                          jvalue *args) {
+                          const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -1239,7 +1239,7 @@ jlong CallStaticLongMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 
 jlong CallStaticLongMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
-                            jvalue *args) {
+                            const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -1261,7 +1261,7 @@ jfloat CallStaticFloatMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 
 jfloat CallStaticFloatMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
-                              jvalue *args) {
+                              const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -1282,7 +1282,7 @@ jdouble CallStaticDoubleMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 
 jdouble CallStaticDoubleMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
-                                jvalue *args) {
+                                const jvalue *args) {
   assert(0 && "implement me");
   return 0;
 }
@@ -1317,7 +1317,7 @@ void CallStaticVoidMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 
 void CallStaticVoidMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
-                           jvalue * args) {
+                           const jvalue * args) {
   assert(0 && "implement me");
 }
 
@@ -1969,49 +1969,49 @@ void GetDoubleArrayRegion(JNIEnv *env, jdoubleArray array, jsize start,
 
 
 void SetBooleanArrayRegion(JNIEnv *env, jbooleanArray array, jsize start,
-			   jsize len, jboolean *buf) {
+			   jsize len, const jboolean *buf) {
   assert(0 && "implement me");
 }
 
 
 void SetByteArrayRegion(JNIEnv *env, jbyteArray array, jsize start, jsize len,
-			jbyte *buf) {
+			                  const jbyte *buf) {
   assert(0 && "implement me");
 }
 
 
 void SetCharArrayRegion(JNIEnv *env, jcharArray array, jsize start, jsize len,
-			jchar *buf) {
+			                  const jchar *buf) {
   assert(0 && "implement me");
 }
 
 
 void SetShortArrayRegion(JNIEnv *env, jshortArray array, jsize start,
-			 jsize len, jshort *buf) {
+			                   jsize len, const jshort *buf) {
   assert(0 && "implement me");
 }
 
 
 void SetIntArrayRegion(JNIEnv *env, jintArray array, jsize start, jsize len,
-		       jint *buf) {
+		                   const jint *buf) {
   assert(0 && "implement me");
 }
 
 
 void SetLongArrayRegion(JNIEnv* env, jlongArray array, jsize start, jsize len,
-			jlong *buf) {
+			                  const jlong *buf) {
   assert(0 && "implement me");
 }
 
 
 void SetFloatArrayRegion(JNIEnv *env, jfloatArray array, jsize start,
-			 jsize len, jfloat *buf) {
+			                   jsize len, const jfloat *buf) {
   assert(0 && "implement me");
 }
 
 
 void SetDoubleArrayRegion(JNIEnv *env, jdoubleArray array, jsize start,
-			  jsize len, jdouble *buf) {
+			                    jsize len, const jdouble *buf) {
   assert(0 && "implement me");
 }
 
@@ -2168,6 +2168,12 @@ jlong GetDirectBufferCapacity(JNIEnv* env, jobject buf) {
   return 0;
 }
 
+jobjectRefType GetObjectRefType(JNIEnv* env, jobject obj) {
+  assert(0 && "implement me");
+  return (jobjectRefType)0;
+}
+
+
 
 jint DestroyJavaVM(JavaVM *vm) {
   assert(0 && "implement me");
@@ -2213,7 +2219,7 @@ jint AttachCurrentThreadAsDaemon(JavaVM *vm, void **par1, void *par2) {
 }
 
 
-const struct JNIInvokeInterface JNI_JavaVMTable = {
+const struct JNIInvokeInterface_ JNI_JavaVMTable = {
 	NULL,
 	NULL,
 	NULL,
@@ -2226,7 +2232,7 @@ const struct JNIInvokeInterface JNI_JavaVMTable = {
 };
 
 
-struct JNINativeInterface JNI_JNIEnvTable = {
+struct JNINativeInterface_ JNI_JNIEnvTable = {
 	NULL,
 	NULL,
 	NULL,
@@ -2493,5 +2499,8 @@ struct JNINativeInterface JNI_JNIEnvTable = {
 
 	&NewDirectByteBuffer,
 	&GetDirectBufferAddress,
-	&GetDirectBufferCapacity
+	&GetDirectBufferCapacity,
+
+  /* ---- JNI 1.6 functions ---- */
+  &GetObjectRefType
 };

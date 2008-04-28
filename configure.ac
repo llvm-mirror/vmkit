@@ -243,10 +243,10 @@ dnl GNU CLASSPATH version
 dnl **************************************************************************
 AC_ARG_WITH(gnu-classpath-version,
        [AS_HELP_STRING(--with-gnu-classpath-version=something,
-           [GNU CLASSPATH VERSION (default is '0.93')])],
+           [GNU CLASSPATH VERSION (default is '0.97.1')])],
        [[gnuclasspathversion=$withval]],
-       [[       echo Using '0.93' as GNU CLASSPATH version.    
-                                gnuclasspathversion=0.93
+       [[       echo Using '0.97.1' as GNU CLASSPATH version.    
+                                gnuclasspathversion=0.97.1
        ]]
 )
 gnuclasspathversionuvm=`echo $gnuclasspathversion | $SED s/\\\./-/`
