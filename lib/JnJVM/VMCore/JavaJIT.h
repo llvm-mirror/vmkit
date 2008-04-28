@@ -252,7 +252,6 @@ public:
   static llvm::Function* doNewUnknownLLVM;
 #ifdef MULTIPLE_VM
   static llvm::Function* initialisationCheckLLVM;
-  static llvm::Function* initialisationCheckCtpLLVM;
 #endif
   static llvm::Function* initialiseObjectLLVM;
   static llvm::Function* newLookupLLVM;

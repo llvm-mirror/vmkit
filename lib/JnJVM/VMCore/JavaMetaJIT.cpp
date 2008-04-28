@@ -32,16 +32,12 @@
 using namespace jnjvm;
 using namespace llvm;
 
-Value* Class::staticVar(Module* compilingModule,  BasicBlock* currentBlock) {
+Value* Class::staticVar(JavaJIT* jit) {
 
+#ifndef MULTIPLE_VM
   if (!_staticVar) {
     aquire();
     if (!_staticVar) {
-#ifdef MULTIPLE_VM
-      if (isolate == Jnjvm::bootstrapVM) {
-        _staticVar = llvmVar(compilingModule);
-      } else {
-#endif
         JavaObject* obj = staticInstance();
         mvm::jit::protectConstants();//->lock();
         Constant* cons = 
@@ -55,23 +51,18 @@ Value* Class::staticVar(Module* compilingModule,  BasicBlock* currentBlock) {
                                       cons, "",
                                       isolate->module);
         isolate->protectModule->unlock();
-      }
-#ifdef MULTIPLE_VM
     }
-#endif
     release();
   }
 
-#ifdef MULTIPLE_VM
-  if (isolate == Jnjvm::bootstrapVM) {
-    Value* ld = new LoadInst(_staticVar, "", currentBlock);
-    return llvm::CallInst::Create(JavaJIT::getStaticInstanceLLVM, ld, "",
-                                  currentBlock);
-  } else {
-#endif
-    return new LoadInst(_staticVar, "", currentBlock);
-#ifdef MULTIPLE_VM
-  }
+  return new LoadInst(_staticVar, "", jit->currentBlock);
+
+#else
+  Value* var = llvmVar(jit->compilingClass->isolate->module);
+  Value* ld = new LoadInst(var, "", jit->currentBlock);
+  jit->invoke(JavaJIT::initialisationCheckLLVM, ld, "", jit->currentBlock);
+  return jit->invoke(JavaJIT::getStaticInstanceLLVM, ld, jit->isolateLocal, 
+                     "", jit->currentBlock);
 #endif
 }
 

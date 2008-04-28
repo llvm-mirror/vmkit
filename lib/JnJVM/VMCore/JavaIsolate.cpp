@@ -29,6 +29,10 @@
 #include "LockedMap.h"
 #include "Zip.h"
 
+#ifdef SERVICE_VM
+#include "ServiceDomain.h"
+#endif
+
 #define PATH_MANIFEST "META-INF/MANIFEST.MF"
 #define MAIN_CLASS "Main-Class: "
 #define PREMAIN_CLASS "Premain-Class: "
@@ -382,6 +386,9 @@ void JavaIsolate::runMain(int argc, char** argv) {
     argc = argc - pos + 1;
     
     loadBootstrap();
+#ifdef SERVICE_VM
+    (*Classpath::vmdataClassLoader)(appClassLoader, (JavaObject*)this);
+#endif
     
     if (info.agents.size()) {
       assert(0 && "implement me");
@@ -397,7 +404,7 @@ void JavaIsolate::runMain(int argc, char** argv) {
     for (int i = 2; i < argc; ++i) {
       args->setAt(i - 2, (JavaObject*)asciizToStr(argv[i]));
     }
-  
+
     executeClass(info.className, args);
     waitForExit();
   }

@@ -144,7 +144,9 @@ void CommonClass::TRACER {
 void Class::TRACER {
   CommonClass::PARENT_TRACER;
   bytes->MARK_AND_TRACE;
+#ifndef MULTIPLE_VM
   _staticInstance->MARK_AND_TRACE;
+#endif
   virtualInstance->MARK_AND_TRACE;
   ctpInfo->MARK_AND_TRACE;
   TRACE_VECTOR(Attribut*, gc_allocator, attributs);

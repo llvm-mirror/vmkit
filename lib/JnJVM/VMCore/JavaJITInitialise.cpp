@@ -232,20 +232,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   initialisationCheckLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "initialisationCheck",
                      module);
-  }
-  
-  // Create initialisationCheckCtpLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  args.push_back(Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args,
-                                               false);
-
-  initialisationCheckCtpLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "initialisationCheckCtp",
-                     module);
-  }
+  } 
 #endif
   
   
@@ -518,7 +505,8 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   // Create getStaticInstanceLLVM
   {
   std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
+  args.push_back(mvm::jit::ptrType); // cl
+  args.push_back(mvm::jit::ptrType); // vm
   const FunctionType* type = FunctionType::get(JavaObject::llvmType, args, false);
 
   getStaticInstanceLLVM = Function::Create(type, GlobalValue::ExternalLinkage,

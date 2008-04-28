@@ -69,14 +69,18 @@ ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
 #ifdef MULTIPLE_GC
   service->GC = Collector::allocate();
 #endif
-
+  
+  service->classpath = callingVM->classpath;
+  service->bootClasspathEnv = callingVM->bootClasspathEnv;
+  service->libClasspathEnv = callingVM->libClasspathEnv;
+  service->bootClasspath = callingVM->bootClasspath;
   service->functions = vm_new(service, FunctionMap)();
   service->functionDefs = vm_new(service, FunctionDefMap)();
   service->module = new llvm::Module("Service Domain");
   service->protectModule = mvm::Lock::allocNormal();
-  service->TheModuleProvider = new JnjvmModuleProvider(service->module, 
+  service->TheModuleProvider = new JnjvmModuleProvider(service->module,
                                                        service->functions,
-                                                       service->functionDefs);  
+                                                       service->functionDefs); 
 
 #ifdef MULTIPLE_GC
   mvm::jit::memoryManager->addGCForModule(service->module, service->GC);
@@ -86,7 +90,8 @@ ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
   service->name = "service";
   service->jniEnv = &JNI_JNIEnvTable;
   service->javavmEnv = &JNI_JavaVMTable;
-  
+  service->appClassLoader = callingVM->appClassLoader;
+
   // We copy so that bootstrap utf8 such as "<init>" are unique  
   service->hashUTF8 = vm_new(service, UTF8Map)();
   callingVM->hashUTF8->copy(service->hashUTF8);
@@ -118,8 +123,8 @@ ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
 void ServiceDomain::loadBootstrap() {
   // load and initialise math since it is responsible for dlopen'ing 
   // libjavalang.so and we are optimizing some math operations
-  loadName(asciizConstructUTF8("java/lang/Math"), 
-           CommonClass::jnjvmClassLoader, true, true, true);
+  //loadName(asciizConstructUTF8("java/lang/Math"), 
+  //         CommonClass::jnjvmClassLoader, true, true, true);
 }
 
 void ServiceDomain::serviceError(const char* str) {
@@ -133,29 +138,38 @@ ServiceDomain* ServiceDomain::getDomainFromLoader(JavaObject* loader) {
   return vm;
 }
 
-#ifdef SERVICE_VM
-extern "C" void ServiceDomainStart(ServiceDomain* caller,
-                                   ServiceDomain* callee) {
+extern "C" void serviceCallStart(ServiceDomain* caller,
+                                 ServiceDomain* callee) {
+  assert(caller && "No caller in service stop?");
+  assert(callee && "No callee in service stop?");
+  assert(caller->getVirtualTable() == ServiceDomain::VT && "Caller not a service domain?");
+  assert(callee->getVirtualTable() == ServiceDomain::VT && "Callee not a service domain?");
   JavaThread* th = JavaThread::get();
   th->isolate = callee;
+#ifdef SERVICE_VM
   time_t t = time(NULL);
   caller->lock->lock();
   caller->executionTime += t - th->executionTime;
   caller->interactions[callee]++;
   caller->lock->unlock();
   th->executionTime = t;
-
+#endif
 }
 
-extern "C" void ServiceDomainStop(ServiceDomain* caller,
-                                  ServiceDomain* callee) {
+extern "C" void serviceCallStop(ServiceDomain* caller,
+                                ServiceDomain* callee) {
+  assert(caller && "No caller in service stop?");
+  assert(callee && "No callee in service stop?");
+  assert(caller->getVirtualTable() == ServiceDomain::VT && "Caller not a service domain?");
+  assert(callee->getVirtualTable() == ServiceDomain::VT && "Callee not a service domain?");
   JavaThread* th = JavaThread::get();
   th->isolate = caller;
+#ifdef SERVICE_VM
   time_t t = time(NULL);
   callee->lock->lock();
   callee->executionTime += t - th->executionTime;
   callee->lock->unlock();
   th->executionTime = t;
+#endif
 }
 
-#endif

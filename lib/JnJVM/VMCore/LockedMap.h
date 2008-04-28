@@ -264,7 +264,7 @@ public:
 };
 
 class StaticInstanceMap :
-    public LockedMap<Class*, std::pair<uint8, JavaObject*>*, std::less<Class*> > {
+    public LockedMap<Class*, std::pair<JavaState, JavaObject*>*, std::less<Class*> > {
 public:
   static VirtualTable* VT;
   

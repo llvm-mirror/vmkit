@@ -98,7 +98,7 @@ const AssessorDesc* JavaJIT::topFunc() {
 uint32 JavaJIT::stackSize() {
   return stack.size();
 }
-
+  
 void JavaJIT::invokeVirtual(uint16 index) {
   
   JavaCtpInfo* ctpInfo = compilingClass->ctpInfo;
@@ -109,7 +109,8 @@ void JavaJIT::invokeVirtual(uint16 index) {
   if ((cl && isFinal(cl->access)) || 
       (meth && (isFinal(meth->access) || isPrivate(meth->access))))
     return invokeSpecial(index);
-  
+ 
+
 #ifndef WITHOUT_VTABLE
   Constant* zero = mvm::jit::constantZero;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index);
@@ -119,7 +120,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   makeArgs(it, index, args, signature->nbIn + 1);
   
   JITVerifyNull(args[0]); 
-    
+
   std::vector<Value*> indexes; //[3];
   indexes.push_back(zero);
   indexes.push_back(zero);
@@ -174,7 +175,9 @@ void JavaJIT::invokeVirtual(uint16 index) {
     
   Value* Func = new LoadInst(FuncPtr, "", currentBlock);
   Func = new BitCastInst(Func, signature->virtualTypePtr, "", currentBlock);
+
   Value* val = invoke(Func, args, "", currentBlock);
+  
   const llvm::Type* retType = signature->virtualType->getReturnType();
   if (retType != Type::VoidTy) {
     push(val, signature->ret->funcs);
@@ -182,6 +185,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
       push(mvm::jit::constantZero, AssessorDesc::dInt);
     }
   }
+    
 #else
   return invokeInterfaceOrVirtual(index);
 #endif
@@ -299,8 +303,7 @@ void JavaJIT::beginSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     argsSync.push_back(llvmFunction->arg_begin());
   } else {
-    Module* M = compilingClass->isolate->module;
-    Value* arg = compilingClass->staticVar(M, currentBlock);
+    Value* arg = compilingClass->staticVar(this);
     argsSync.push_back(arg);
   }
   llvm::CallInst::Create(aquireObjectLLVM, argsSync.begin(), argsSync.end(),
@@ -312,8 +315,7 @@ void JavaJIT::endSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     argsSync.push_back(llvmFunction->arg_begin());
   } else {
-    Module* M = compilingClass->isolate->module;
-    Value* arg = compilingClass->staticVar(M, currentBlock);
+    Value* arg = compilingClass->staticVar(this);
     argsSync.push_back(arg);
   }
   llvm::CallInst::Create(releaseObjectLLVM, argsSync.begin(), argsSync.end(), "",
@@ -349,6 +351,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   
   const FunctionType *funcType = compilingMethod->llvmType;
   returnType = funcType->getReturnType();
+  endBlock = createBasicBlock("end");
 
   llvmFunction = parentFunction;
   currentBlock = curBB;
@@ -409,13 +412,25 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
     JavaObject* loader = compilingClass->classLoader;
     ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
     isolateLocal = new LoadInst(vm->llvmDelegatee(), "", currentBlock);
+    Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, args[args.size() - 1], 
+                              isolateLocal, "", currentBlock);
+    BasicBlock* ifTrue = createBasicBlock("true service call");
+    BasicBlock* endBlock = createBasicBlock("end check service call");
+    BranchInst::Create(ifTrue, endBlock, cmp, currentBlock);
+    currentBlock = ifTrue;
+    std::vector<Value*> Args;
+    Args.push_back(args[args.size()-  1]);
+    Args.push_back(isolateLocal);
+    CallInst::Create(ServiceDomain::serviceCallStartLLVM, Args.begin(),
+                     Args.end(), "", currentBlock);
+    BranchInst::Create(endBlock, currentBlock);
+    currentBlock = endBlock;
   }
 #endif
 #endif
   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
   
-  endBlock = createBasicBlock("end");
 
   if (returnType != Type::VoidTy) {
     endNode = llvm::PHINode::Create(returnType, "", endBlock);
@@ -425,6 +440,25 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "--> end inline compiling %s\n",
               compilingMethod->printString());
+
+#if defined(SERVICE_VM)
+  if (compilingClass->isolate != Jnjvm::bootstrapVM) {
+    Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, args[args.size() - 1], 
+                              isolateLocal, "", currentBlock);
+    BasicBlock* ifTrue = createBasicBlock("true service call");
+    BasicBlock* newEndBlock = createBasicBlock("end check service call");
+    BranchInst::Create(ifTrue, newEndBlock, cmp, currentBlock);
+    currentBlock = ifTrue;
+    std::vector<Value*> Args;
+    Args.push_back(args[args.size() - 1]);
+    Args.push_back(isolateLocal);
+    CallInst::Create(ServiceDomain::serviceCallStopLLVM, Args.begin(),
+                     Args.end(), "", currentBlock);
+    BranchInst::Create(newEndBlock, currentBlock);
+    currentBlock = newEndBlock;
+    endBlock = currentBlock;
+  }
+#endif
   
   curBB = endBlock;
   return endNode;
@@ -460,7 +494,7 @@ llvm::Function* JavaJIT::javaCompile() {
   
   Function* func = llvmFunction = compilingMethod->llvmFunction;
 
-  BasicBlock* startBlock = currentBlock = createBasicBlock("start");
+  currentBlock = createBasicBlock("start");
   endExceptionBlock = createBasicBlock("endExceptionBlock");
   unifiedUnreachable = createBasicBlock("unifiedUnreachable"); 
 
@@ -481,9 +515,7 @@ llvm::Function* JavaJIT::javaCompile() {
     }
 #endif
 
-  unsigned nbe = readExceptionTable(reader);
   
-  currentBlock = startBlock;
 
   for (int i = 0; i < maxLocals; i++) {
     intLocals.push_back(new AllocaInst(Type::Int32Ty, "", currentBlock));
@@ -534,9 +566,24 @@ llvm::Function* JavaJIT::javaCompile() {
     JavaObject* loader = compilingClass->classLoader;
     ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
     isolateLocal = new LoadInst(vm->llvmDelegatee(), "", currentBlock);
+    Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, i, isolateLocal, "",
+                              currentBlock);
+    BasicBlock* ifTrue = createBasicBlock("true service call");
+    BasicBlock* endBlock = createBasicBlock("end check service call");
+    BranchInst::Create(ifTrue, endBlock, cmp, currentBlock);
+    currentBlock = ifTrue;
+    std::vector<Value*> Args;
+    Args.push_back(i);
+    Args.push_back(isolateLocal);
+    CallInst::Create(ServiceDomain::serviceCallStartLLVM, Args.begin(),
+                     Args.end(), "", currentBlock);
+    BranchInst::Create(endBlock, currentBlock);
+    currentBlock = endBlock;
   }
 #endif
 #endif
+  
+  unsigned nbe = readExceptionTable(reader);
   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
   
@@ -567,11 +614,29 @@ llvm::Function* JavaJIT::javaCompile() {
                            currentBlock);
     }
 #endif
+  
+#if defined(SERVICE_VM)
+  if (compilingClass->isolate != Jnjvm::bootstrapVM) {
+    Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, i, isolateLocal, "",
+                              currentBlock);
+    BasicBlock* ifTrue = createBasicBlock("true service call");
+    BasicBlock* newEndBlock = createBasicBlock("end check service call");
+    BranchInst::Create(ifTrue, newEndBlock, cmp, currentBlock);
+    currentBlock = ifTrue;
+    std::vector<Value*> Args;
+    Args.push_back(i);
+    Args.push_back(isolateLocal);
+    CallInst::Create(ServiceDomain::serviceCallStopLLVM, Args.begin(),
+                     Args.end(), "", currentBlock);
+    BranchInst::Create(newEndBlock, currentBlock);
+    currentBlock = newEndBlock;
+  }
+#endif
 
   if (returnType != Type::VoidTy)
-    llvm::ReturnInst::Create(endNode, endBlock);
+    llvm::ReturnInst::Create(endNode, currentBlock);
   else
-    llvm::ReturnInst::Create(endBlock);
+    llvm::ReturnInst::Create(currentBlock);
 
   pred_iterator PI = pred_begin(endExceptionBlock);
   pred_iterator PE = pred_end(endExceptionBlock);
@@ -623,6 +688,7 @@ llvm::Function* JavaJIT::javaCompile() {
 
 
 unsigned JavaJIT::readExceptionTable(Reader* reader) {
+  BasicBlock* temp = currentBlock;
   uint16 nbe = reader->readU2();
   std::vector<Exception*> exceptions;  
   unsigned sync = isSynchro(compilingMethod->access) ? 1 : 0;
@@ -634,6 +700,7 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
   }
   
   BasicBlock* realEndExceptionBlock = endExceptionBlock;
+  currentExceptionBlock = endExceptionBlock;
   if (sync) {
     BasicBlock* synchronizeExceptionBlock = 
           createBasicBlock("synchronizeExceptionBlock");
@@ -644,8 +711,7 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
     if (isVirtual(compilingMethod->access)) {
       argsSync.push_back(llvmFunction->arg_begin());
     } else {
-      Value* arg = compilingClass->staticVar(compilingClass->isolate->module,
-                                             currentBlock);
+      Value* arg = compilingClass->staticVar(this);
       argsSync.push_back(arg);
     }
     llvm::CallInst::Create(releaseObjectLLVM, argsSync.begin(), argsSync.end(),
@@ -817,7 +883,8 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
     e = exceptions.end(); i!= e; ++i) {
     delete *i;
   }
-
+  
+  currentBlock = temp;
   return nbe;
 
 }
@@ -850,9 +917,7 @@ void JavaJIT::_ldc(uint16 index) {
         const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
         void* val = 0;
         GlobalVariable* gv = 0;
-#ifdef MULTIPLE_VM
-        if (compilingClass->isolate != Jnjvm::bootstrapVM) {
-#endif
+#ifndef MULTIPLE_VM
         val = compilingClass->isolate->UTF8ToStr(utf8);
         compilingClass->isolate->protectModule->lock();
         gv =
@@ -861,8 +926,7 @@ void JavaJIT::_ldc(uint16 index) {
                              constantJavaObjectNull, "",
                              compilingClass->isolate->module);
         compilingClass->isolate->protectModule->unlock();
-#ifdef MULTIPLE_VM
-        } else {
+#else
           val = (void*)utf8;
           compilingClass->isolate->protectModule->lock();
           gv =
@@ -871,7 +935,6 @@ void JavaJIT::_ldc(uint16 index) {
                                constantUTF8Null, "",
                                compilingClass->isolate->module);
           compilingClass->isolate->protectModule->unlock();
-        }
 #endif
         
         // TODO: put an initialiser in here
@@ -893,13 +956,12 @@ void JavaJIT::_ldc(uint16 index) {
                             currentBlock);
     }
 #ifdef MULTIPLE_VM
-    if (compilingClass->isolate == Jnjvm::bootstrapVM) {
-      CallInst* C = llvm::CallInst::Create(runtimeUTF8ToStrLLVM, toPush, "",
-                                           currentBlock);
-      push(C, AssessorDesc::dRef);
-    } else 
-#endif
+    CallInst* C = llvm::CallInst::Create(runtimeUTF8ToStrLLVM, toPush, "",
+                                         currentBlock);
+    push(C, AssessorDesc::dRef);
+#else
     push(toPush, AssessorDesc::dRef);
+#endif
   } else if (type == JavaCtpInfo::ConstantLong) {
     mvm::jit::protectConstants();//->lock();
     push(ConstantInt::get(Type::Int64Ty, ctpInfo->LongAt(index)),
@@ -1285,7 +1347,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
   if (!val) {
     Function* func = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
                                                           signature, meth);
-#ifdef SERVICE_VM
+#if 0//def SERVICE_VM
     bool serviceCall = false;
     if (meth && meth->classDef->classLoader != compilingClass->classLoader &&
         meth->classDef->isolate != Jnjvm::bootstrapVM){
@@ -1294,7 +1356,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
       serviceCall = true;
       std::vector<Value*> Args;
       Args.push_back(isolateLocal);
-      Args.push_back(calling->llvmDelegatee());
+      Args.push_back(new LoadInst(calling->llvmDelegatee(), "", currentBlock));
       CallInst::Create(ServiceDomain::serviceCallStartLLVM, Args.begin(),
                        Args.end(), "", currentBlock);
     }
@@ -1307,14 +1369,14 @@ void JavaJIT::invokeSpecial(uint16 index) {
       val = invoke(func, args, "", currentBlock);
     }
 
-#ifdef SERVICE_VM
+#if 0//def SERVICE_VM
     if (serviceCall) {  
       JavaObject* loader = meth->classDef->classLoader;
       ServiceDomain* calling = ServiceDomain::getDomainFromLoader(loader);
       serviceCall = true;
       std::vector<Value*> Args;
       Args.push_back(isolateLocal);
-      Args.push_back(calling->llvmDelegatee());
+      Args.push_back(new LoadInst(calling->llvmDelegatee(), "", currentBlock));
       CallInst::Create(ServiceDomain::serviceCallStopLLVM, Args.begin(),
                        Args.end(), "", currentBlock);
     }
@@ -1353,7 +1415,7 @@ void JavaJIT::invokeStatic(uint16 index) {
     Function* func = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_STATIC,
                                                           signature, meth);
     
-#ifdef SERVICE_VM
+#if 0//def SERVICE_VM
     bool serviceCall = false;
     if (meth && meth->classDef->classLoader != compilingClass->classLoader &&
         meth->classDef->isolate != Jnjvm::bootstrapVM){
@@ -1362,7 +1424,7 @@ void JavaJIT::invokeStatic(uint16 index) {
       serviceCall = true;
       std::vector<Value*> Args;
       Args.push_back(isolateLocal);
-      Args.push_back(calling->llvmDelegatee());
+      Args.push_back(new LoadInst(calling->llvmDelegatee(), "", currentBlock));
       CallInst::Create(ServiceDomain::serviceCallStartLLVM, Args.begin(),
                        Args.end(), "", currentBlock);
     }
@@ -1375,13 +1437,13 @@ void JavaJIT::invokeStatic(uint16 index) {
       val = invoke(func, args, "", currentBlock);
     }
 
-#ifdef SERVICE_VM
+#if 0//def SERVICE_VM
     if (serviceCall) {  
       JavaObject* loader = meth->classDef->classLoader;
       ServiceDomain* calling = ServiceDomain::getDomainFromLoader(loader);
       std::vector<Value*> Args;
       Args.push_back(isolateLocal);
-      Args.push_back(calling->llvmDelegatee());
+      Args.push_back(new LoadInst(calling->llvmDelegatee(), "", currentBlock));
       CallInst::Create(ServiceDomain::serviceCallStopLLVM, Args.begin(), Args.end(), "",
                        currentBlock);
     }
@@ -1476,11 +1538,9 @@ void JavaJIT::invokeNew(uint16 index) {
     Value* load = new LoadInst(cl->llvmVar(compilingClass->isolate->module),
                                "", currentBlock);
 #ifdef MULTIPLE_VM
-    if (cl->isolate == Jnjvm::bootstrapVM) {
-      Module* M = compilingClass->isolate->module;
-      Value* arg = new LoadInst(cl->llvmVar(M), "", currentBlock);
-      invoke(initialisationCheckLLVM, arg, "", currentBlock);
-    }
+    Module* M = compilingClass->isolate->module;
+    Value* arg = new LoadInst(cl->llvmVar(M), "", currentBlock);
+    invoke(initialisationCheckLLVM, arg, "", currentBlock);
     val = invoke(doNewLLVM, load, isolateLocal, "", currentBlock);
 #else
     val = invoke(doNewLLVM, load, "", currentBlock);
@@ -1531,16 +1591,9 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
       && field->classDef->isReady()
 #endif
      ) {
-    Module* M = compilingClass->isolate->module;
-    if (stat) object = field->classDef->staticVar(M, currentBlock);
+    if (stat) object = field->classDef->staticVar(this);
     const Type* type = stat ? field->classDef->staticType :
                               field->classDef->virtualType;
-#ifdef MULTIPLE_VM
-    if (stat && field->classDef->isolate == Jnjvm::bootstrapVM) {
-      Value* arg = new LoadInst(field->classDef->llvmVar(M), "", currentBlock);
-      invoke(initialisationCheckLLVM, arg, "", currentBlock); 
-    }
-#endif
     return fieldGetter(this, type, object, field->offset);
   } else {
     const Type* Pty = mvm::jit::arrayPtrType;
@@ -1607,15 +1660,6 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     llvm::BranchInst::Create(endBlock, currentBlock);
     
     currentBlock = endBlock;;
-#ifdef MULTIPLE_VM
-    if (stat) {
-      std::vector<Value*> args;
-      Value* val = new LoadInst(compilingClass->llvmVar(M), "", currentBlock);
-      args.push_back(val);
-      args.push_back(CI);
-      invoke(initialisationCheckCtpLLVM, args, "", currentBlock); 
-    }
-#endif
     return new BitCastInst(node, fieldTypePtr, "", currentBlock);
   }
 }

@@ -608,15 +608,10 @@ void CommonClass::initialiseClass() {
 
 #ifdef MULTIPLE_VM
 JavaObject* Class::staticInstance() {
-  if (isolate == Jnjvm::bootstrapVM) {
-    Class* cl = this;
-    std::pair<uint8, JavaObject*>* val = 
-      JavaThread::get()->isolate->statics->lookup(cl);
-    assert(val);
-    return val->second;
-  } else {
-    return _staticInstance;
-  }
+  std::pair<JavaState, JavaObject*>* val = 
+    JavaThread::get()->isolate->statics->lookup(this);
+  assert(val);
+  return val->second;
 }
 
 void Class::createStaticInstance() {
@@ -629,35 +624,28 @@ void Class::createStaticInstance() {
     
     (*i)->initField(val);
   }
-  if (isolate == Jnjvm::bootstrapVM) {
-    std::pair<uint8, JavaObject*>* v = 
-      new std::pair<uint8, JavaObject*>(0, val);
-    JavaThread::get()->isolate->statics->hash(this, v);
-  } else {
-    _staticInstance = val;
-  }
+  
+  Jnjvm* vm = JavaThread::get()->isolate;
+  std::pair<JavaState, JavaObject*>* p = vm->statics->lookup(this);
+  assert(p);
+  assert(!p->second);
+  p->second = val;
 }
 
-bool CommonClass::isReady() {
-  if (isolate == Jnjvm::bootstrapVM && !this->isArray && 
+JavaState* CommonClass::getStatus() {
+  if (!this->isArray && 
       !AssessorDesc::bogusClassToPrimitive(this)) {
     Class* cl = (Class*)this;
-    std::pair<uint8, JavaObject*>* val = 
-      JavaThread::get()->isolate->statics->lookup(cl);
-    return val && val->first;
+    Jnjvm* vm = JavaThread::get()->isolate;
+    std::pair<JavaState, JavaObject*>* val = vm->statics->lookup(cl);
+    if (!val) {
+      val = new std::pair<JavaState, JavaObject*>(status, 0);
+      JavaThread::get()->isolate->statics->hash(cl, val);
+    }
+    if (val->first < status) val->first = status;
+    return (JavaState*)&(val->first);
   } else {
-    return status == ready;
-  }
-}
-
-void CommonClass::setReady() {
-  if (isolate == Jnjvm::bootstrapVM && !this->isArray &&
-      !AssessorDesc::bogusClassToPrimitive(this)) {
-    std::pair<uint8, JavaObject*>* val = 
-      JavaThread::get()->isolate->statics->lookup((Class*)this);
-    val->first = 1;
-  } else {
-    status = ready;
+    return &status;
   }
 }
 #endif

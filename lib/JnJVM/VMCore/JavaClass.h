@@ -35,6 +35,7 @@ class Enveloppe;
 class Class;
 class JavaCtpInfo;
 class JavaField;
+class JavaJIT;
 class JavaMethod;
 class JavaObject;
 class Jnjvm;
@@ -73,6 +74,8 @@ public:
 };
 
 class CommonClass : public mvm::Object {
+public:
+  JavaObject* classLoader;
 private:
   llvm::GlobalVariable* _llvmVar;
 #ifndef MULTIPLE_VM
@@ -93,7 +96,6 @@ public:
   std::vector<JavaMethod*> staticMethods;
   std::vector<JavaField*>  virtualFields;
   std::vector<JavaField*>  staticFields;
-  JavaObject* classLoader;
 #ifndef MULTIPLE_VM
   JavaObject* delegatee;
 #endif
@@ -147,15 +149,17 @@ public:
   void resolveClass(bool doClinit);
 
 #ifndef MULTIPLE_VM
+  JavaState* getStatus() {
+    return &status;
+  }
   bool isReady() {
     return status == ready;
   }
-  void setReady() {
-    status = ready;
-  }
 #else
-  bool isReady();
-  void setReady();
+  JavaState* getStatus();
+  bool isReady() {
+    return *getStatus() == ready;
+  }
 #endif
   bool isResolved() {
     return status >= resolved;
@@ -171,7 +175,6 @@ public:
   unsigned int minor;
   unsigned int major;
   ArrayUInt8* bytes;
-  JavaObject* _staticInstance;
   JavaObject* virtualInstance;
   llvm::Function* virtualTracer;
   llvm::Function* staticTracer;
@@ -185,7 +188,7 @@ public:
   bool innerOuterResolved;
   
   void resolveFields();
-  llvm::Value* staticVar(llvm::Module* compilingModule, llvm::BasicBlock* BB);
+  llvm::Value* staticVar(JavaJIT* jit);
   
   uint64 virtualSize;
   VirtualTable* virtualVT;
@@ -200,6 +203,7 @@ public:
   JavaObject* operator()(Jnjvm* vm);
 
 #ifndef MULTIPLE_VM
+  JavaObject* _staticInstance;
   JavaObject* staticInstance() {
     return _staticInstance;
   }

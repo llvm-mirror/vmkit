@@ -60,7 +60,6 @@ llvm::Function* JavaJIT::doNewLLVM = 0;
 llvm::Function* JavaJIT::doNewUnknownLLVM = 0;
 #ifdef MULTIPLE_VM
 llvm::Function* JavaJIT::initialisationCheckLLVM = 0;
-llvm::Function* JavaJIT::initialisationCheckCtpLLVM = 0;
 #endif
 llvm::Function* JavaJIT::initialiseObjectLLVM = 0;
 llvm::Function* JavaJIT::newLookupLLVM = 0;
@@ -139,8 +138,10 @@ extern "C" void* fieldLookup(JavaObject* obj, Class* caller, uint32 index,
     field->classDef->initialiseClass();
     if (stat) obj = field->classDef->staticInstance();
     void* ptr = (void*)(field->ptrOffset + (uint64)obj);
+#ifndef MULTIPLE_VM
     if (stat) *ifStatic = ptr;
     *offset = (uint32)field->ptrOffset;
+#endif
     return ptr;
   }
   
@@ -157,9 +158,10 @@ extern "C" void* fieldLookup(JavaObject* obj, Class* caller, uint32 index,
   void* ptr = (void*)((uint64)obj + field->ptrOffset);
   
   ctpInfo->ctpRes[index] = field;
-
+#ifndef MULTIPLE_VM
   if (stat) *ifStatic = ptr;
   *offset = (uint32)field->ptrOffset;
+#endif
 
   return ptr;
 }
@@ -210,18 +212,17 @@ extern "C" void indexOutOfBoundsException(JavaObject* obj, sint32 index) {
 }
 
 #ifdef MULTIPLE_VM
-extern "C" JavaObject* getStaticInstance(Class* cl) {
-  if (cl->isolate == Jnjvm::bootstrapVM) {
-    Jnjvm* vm = JavaThread::get()->isolate;
-    std::pair<uint8, JavaObject*>* val = vm->statics->lookup(cl);
-    if (!val) {
-      cl->initialiseClass();
-      val = vm->statics->lookup(cl);
-    }
-    return val->second;
-  } else {
-    return cl->_staticInstance;
+extern "C" JavaObject* getStaticInstance(Class* cl, Jnjvm* vm) {
+  std::pair<JavaState, JavaObject*>* val = vm->statics->lookup(cl);
+  if (!val || !(val->second)) {
+    cl->initialiseClass();
+    val = vm->statics->lookup(cl);
   }
+  return val->second;
+}
+
+extern "C" void initialisationCheck(CommonClass* cl) {
+  cl->isolate->initialiseClass(cl);
 }
 #endif
 
@@ -270,15 +271,3 @@ extern "C" uint32 vtableLookup(JavaObject* obj, Class* caller, uint32 index,
 }
 #endif
 
-#ifdef MULTIPLE_VM
-extern "C" void initialisationCheck(CommonClass* cl) {
-  cl->isolate->initialiseClass(cl);
-}
-
-extern "C" void initialisationCheckCtp(Class* caller, uint16 index) {
-  JavaCtpInfo* ctpInfo = caller->ctpInfo;
-  JavaField* field = (JavaField*)(ctpInfo->ctpRes[index]);
-  assert(field && "checking without resolving?");  
-  field->classDef->isolate->initialiseClass(field->classDef);
-}
-#endif

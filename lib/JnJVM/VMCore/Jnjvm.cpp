@@ -304,22 +304,23 @@ ArrayUInt8* Jnjvm::openName(const UTF8* utf8) {
 typedef void (*clinit_t)(Jnjvm* vm);
 
 void Jnjvm::initialiseClass(CommonClass* cl) {
+  JavaState* status = cl->getStatus();
   if (cl->isArray || AssessorDesc::bogusClassToPrimitive(cl)) {
-    cl->status = ready;
-  } else if (!(cl->isReady())) {
+    *status = ready;
+  } else if (!(*status == ready)) {
     cl->aquire();
-    int status = cl->status;
-    if (cl->isReady()) {
+    JavaState* status = cl->getStatus();
+    if (*status == ready) {
       cl->release();
-    } else if (status >= resolved && status != clinitParent &&
-               status != inClinit) {
-      cl->status = clinitParent;
+    } else if (*status >= resolved && *status != clinitParent &&
+               *status != inClinit) {
+      *status = clinitParent;
       cl->release();
       if (cl->super) {
         cl->super->initialiseClass();
       }
       
-      cl->status = inClinit;
+      *status = inClinit;
       JavaMethod* meth = cl->lookupMethodDontThrow(clinitName, clinitType, true,
                                                    false);
       
@@ -334,7 +335,7 @@ void Jnjvm::initialiseClass(CommonClass* cl) {
         JavaObject* exc = 0;
         try{
           clinit_t pred = (clinit_t)meth->compiledPtr();
-          pred(this);
+          pred(JavaThread::get()->isolate);
         } catch(...) {
           exc = JavaThread::getJavaException();
           assert(exc && "no exception?");
@@ -349,14 +350,14 @@ void Jnjvm::initialiseClass(CommonClass* cl) {
         }
       }
       
-      cl->setReady();
+      *status = ready;
       cl->broadcastClass();
-    } else if (status < resolved) {
+    } else if (*status < resolved) {
       cl->release();
       unknownError("try to clinit a not-readed class...");
     } else {
       if (!cl->ownerClass()) {
-        while (status < ready) cl->waitClass();
+        while (*status < ready) cl->waitClass();
         cl->release();
         initialiseClass(cl);
       } 
@@ -713,7 +714,9 @@ static CommonClass* classDup(const UTF8*& name, Jnjvm *vm) {
   cl->name = name;
   cl->classLoader = 0;
   cl->bytes = 0;
+#ifndef MULTIPLE_VM
   cl->_staticInstance = 0;
+#endif
   cl->virtualInstance = 0;
   cl->super = 0;
   cl->ctpInfo = 0;
