@@ -91,7 +91,6 @@ void GCCollector::do_collect() {
     //printf("    !!!! reject %p [%p]\n", cur->chunk()->_2gc(), cur);
     allocator->reject_chunk(cur);
   }
-  used_nodes->alone();
 }
 
 void GCCollector::collect_unprotect() {
