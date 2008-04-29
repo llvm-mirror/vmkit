@@ -92,9 +92,7 @@ jclass Cl) {
   else
     return false;
 }
-}
 
-extern "C" {
 JNIEXPORT bool JNICALL Java_java_util_concurrent_atomic_AtomicLong_VMSupportsCS8(
 #ifdef NATIVE_JNI
 JNIEnv *env,
@@ -103,4 +101,27 @@ jclass clazz,
 ) {
   return false;
 }
+
+JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapLong(
+#ifdef NATIVE_JNI
+    JNIEnv *env, 
+#endif
+    JavaObject* unsafe, JavaObject* obj, jlong offset, jlong expect, jlong update) {
+
+  jlong *ptr; 
+  jlong  value;
+
+  ptr = (jlong *) (((uint8 *) obj) + offset);
+
+  value = *ptr;
+
+  if (value == expect) {
+    *ptr = update;
+    return true;
+  } else {
+    return false;
+  }
+
+}
+
 }
