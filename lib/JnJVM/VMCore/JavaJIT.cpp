@@ -1560,14 +1560,6 @@ void JavaJIT::invokeNew(uint16 index) {
   ctpInfo->checkInfoOfClass(index);
   
   Class* cl = (Class*)(ctpInfo->getMethodClassIfLoaded(index));
-#ifdef SERVICE_VM
-  if (cl && cl->classLoader != compilingClass->classLoader && 
-      cl->isolate != Jnjvm::bootstrapVM) {
-    ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->isolate;
-    assert(vm->getVirtualTable() == ServiceDomain::VT && "vm not a service?");
-    vm->serviceError("The service called new on another service");
-  }
-#endif
   Value* val = 0;
   if (!cl || !(cl->isResolved())
 #ifndef MULTIPLE_VM
