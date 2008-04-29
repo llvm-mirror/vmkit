@@ -72,6 +72,11 @@ llvm::Function* JavaJIT::getStaticInstanceLLVM = 0;
 llvm::Function* JavaJIT::getClassDelegateeLLVM = 0;
 llvm::Function* JavaJIT::arrayLengthLLVM = 0;
 
+#ifdef SERVICE_VM
+llvm::Function* JavaJIT::aquireObjectInSharedDomainLLVM = 0;
+llvm::Function* JavaJIT::releaseObjectInSharedDomainLLVM = 0;
+#endif
+
 extern "C" JavaString* runtimeUTF8ToStr(const UTF8* val) {
   Jnjvm* vm = JavaThread::get()->isolate;
   return vm->UTF8ToStr(val);

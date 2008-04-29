@@ -16,6 +16,10 @@
 #include "JavaThread.h"
 #include "Jnjvm.h"
 
+#ifdef SERVICE_VM
+#include "ServiceDomain.h"
+#endif
+
 using namespace jnjvm;
 
 mvm::Lock* JavaObject::globalLock = 0;
@@ -113,13 +117,37 @@ static LockObj* myLock(JavaObject* obj) {
 }
 
 void JavaObject::aquire() {
+#ifdef SERVICE_VM
+  ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->isolate;
+  if (!(vm->GC->isMyObject(this))) {
+    vm->serviceError("I'm locking an object I don't own");
+  }
+#endif
   myLock(this)->aquire();
 }
 
+
 void JavaObject::unlock() {
   verifyNull(this);
+#ifdef SERVICE_VM
+  ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->isolate;
+  if (!(vm->GC->isMyObject(this))) {
+    vm->serviceError("I'm unlocking an object I don't own");
+  }
+#endif
   lockObj->release();
 }
+
+#ifdef SERVICE_VM
+extern "C" void aquireObjectInSharedDomain(JavaObject* obj) {
+  myLock(obj)->aquire();
+}
+
+extern "C" void releaseObjectInSharedDomain(JavaObject* obj) {
+  verifyNull(obj);
+  obj->lockObj->release();
+}
+#endif
 
 void JavaObject::waitIntern(struct timeval* info, bool timed) {
   LockObj * l = myLock(this);

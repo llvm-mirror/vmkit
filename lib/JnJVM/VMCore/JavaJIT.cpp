@@ -340,6 +340,12 @@ void JavaJIT::beginSynchronize() {
     Value* arg = compilingClass->staticVar(this);
     argsSync.push_back(arg);
   }
+#ifdef SERVICE_VM
+  if (ServiceDomain::isLockableDomain(compilingClass->isolate))
+    llvm::CallInst::Create(aquireObjectInSharedDomainLLVM, argsSync.begin(),
+                           argsSync.end(), "", currentBlock);
+  else
+#endif
   llvm::CallInst::Create(aquireObjectLLVM, argsSync.begin(), argsSync.end(),
                          "", currentBlock);
 }
@@ -352,6 +358,12 @@ void JavaJIT::endSynchronize() {
     Value* arg = compilingClass->staticVar(this);
     argsSync.push_back(arg);
   }
+#ifdef SERVICE_VM
+  if (ServiceDomain::isLockableDomain(compilingClass->isolate))
+    llvm::CallInst::Create(releaseObjectInSharedDomainLLVM, argsSync.begin(),
+                           argsSync.end(), "", currentBlock);
+  else
+#endif
   llvm::CallInst::Create(releaseObjectLLVM, argsSync.begin(), argsSync.end(), "",
                currentBlock);    
 }

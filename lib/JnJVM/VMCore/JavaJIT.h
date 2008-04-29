@@ -261,6 +261,10 @@ public:
   static llvm::Function* instanceOfLLVM;
   static llvm::Function* aquireObjectLLVM;
   static llvm::Function* releaseObjectLLVM;
+#ifdef SERVICE_VM
+  static llvm::Function* aquireObjectInSharedDomainLLVM;
+  static llvm::Function* releaseObjectInSharedDomainLLVM;
+#endif
   static llvm::Function* multiCallNewLLVM;
   static llvm::Function* runtimeUTF8ToStrLLVM;
   static llvm::Function* getStaticInstanceLLVM;

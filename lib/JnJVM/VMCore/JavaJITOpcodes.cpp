@@ -36,9 +36,9 @@
 
 #include "OpcodeNames.def"
 
-#include <iostream>
-
-
+#ifdef SERVICE_VM
+#include "ServiceDomain.h"
+#endif
 
 using namespace jnjvm;
 using namespace llvm;
@@ -1893,12 +1893,22 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case MONITORENTER : {
         Value* obj = pop();
+#ifdef SERVICE_VM
+        if (ServiceDomain::isLockableDomain(compilingClass->isolate))
+        invoke(aquireObjectInSharedDomainLLVM, obj, "", currentBlock); 
+        else
+#endif
         invoke(aquireObjectLLVM, obj, "", currentBlock); 
         break;
       }
 
       case MONITOREXIT : {
         Value* obj = pop();
+#ifdef SERVICE_VM
+        if (ServiceDomain::isLockableDomain(compilingClass->isolate))
+        invoke(releaseObjectInSharedDomainLLVM, obj, "", currentBlock); 
+        else
+#endif
         invoke(releaseObjectLLVM, obj, "", currentBlock); 
         break;
       }

@@ -70,6 +70,7 @@ ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
   service->GC = Collector::allocate();
 #endif
   
+
   service->classpath = callingVM->classpath;
   service->bootClasspathEnv = callingVM->bootClasspathEnv;
   service->libClasspathEnv = callingVM->libClasspathEnv;
@@ -81,6 +82,7 @@ ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
   service->TheModuleProvider = new JnjvmModuleProvider(service->module,
                                                        service->functions,
                                                        service->functionDefs); 
+  
 
 #ifdef MULTIPLE_GC
   mvm::jit::memoryManager->addGCForModule(service->module, service->GC);
@@ -111,8 +113,6 @@ ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
   service->classes = vm_new(service, ClassMap)();
 
   service->executionTime = 0;
-  service->memoryUsed = 0;
-  service->gcTriggered = 0;
   service->numThreads = 0;
   
   service->lock = mvm::Lock::allocNormal();
@@ -121,6 +121,7 @@ ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
 
 void ServiceDomain::serviceError(const char* str) {
   fprintf(stderr, str);
+  JavaJIT::printBacktrace();
   abort();
 }
 

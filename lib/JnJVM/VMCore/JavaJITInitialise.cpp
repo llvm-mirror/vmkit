@@ -546,6 +546,11 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   aquireObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm10JavaObject6aquireEv",
                      module);
+#ifdef SERVICE_VM
+  aquireObjectInSharedDomainLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "aquireObjectInSharedDomain",
+                     module);
+#endif
   }
   
   // Create releaseObjectLLVM
@@ -557,6 +562,11 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   releaseObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm10JavaObject6unlockEv",
                      module);
+#ifdef SERVICE_VM
+  releaseObjectInSharedDomainLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "releaseObjectInSharedDomain",
+                     module);
+#endif
   }
   
   

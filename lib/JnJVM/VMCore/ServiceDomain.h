@@ -46,14 +46,17 @@ public:
   mvm::Lock* lock;
   ClassMap* classes;
   uint64 executionTime;
-  uint64 memoryUsed;
-  uint64 gcTriggered;
   uint64 numThreads;
   std::map<ServiceDomain*, uint64> interactions;
 
   static ServiceDomain* getDomainFromLoader(JavaObject* loader);
   static llvm::Function* serviceCallStartLLVM;
   static llvm::Function* serviceCallStopLLVM;
+
+  static bool isLockableDomain(Jnjvm* vm) {
+    return (vm == Jnjvm::bootstrapVM || 
+            vm == getDomainFromLoader(Jnjvm::bootstrapVM->appClassLoader));
+  }
 };
 
 } // end namespace jnjvm
