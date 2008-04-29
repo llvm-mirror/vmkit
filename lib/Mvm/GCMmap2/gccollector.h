@@ -38,6 +38,7 @@
 namespace mvm {
 
 class GCCollector : public Collector {
+  friend class Collector;
 #ifdef HAVE_PTHREAD
   friend class GCThread;
 #endif
@@ -165,17 +166,23 @@ public:
   STATIC inline void *gcmalloc(VirtualTable *vt, size_t n) {
     lock();
     register GCChunkNode *header = allocator->alloc_chunk(n + sizeof(gc_header), 1, current_mark & 1);
-    
+#ifdef SERVICE_GC
+    header->meta = this;
+    memoryUsed += n;
+#endif
     header->append(used_nodes);
     //printf("Allocate %d bytes at %p [%p] %d %d\n", n, header->chunk()->_2gc(),
     //       header, header->nbb(), real_nbb(header));
-    
     register struct gc_header *p = header->chunk();
     p->_XXX_vt = vt;
 
     _since_last_collection -= n;
-    if(_enable_auto && (_since_last_collection <= 0))
+    if(_enable_auto && (_since_last_collection <= 0)) {
+#ifdef SERVICE_GC
+      ++gcTriggered;
+#endif
       collect_unprotect();
+    }
 
     unlock();
     return p->_2gc();
@@ -192,6 +199,10 @@ public:
 
     size_t      old_sz = node->nbb();
     GCChunkNode  *res = allocator->realloc_chunk(desc, node, n+sizeof(gc_header));
+#ifdef SERVICE_GC
+    res->meta = this;
+    memoryUsed += (n - old_sz);
+#endif
 
     if(res != node) {
       res->append(used_nodes);
@@ -201,8 +212,12 @@ public:
     gc_header *obj = res->chunk();
      _since_last_collection -= (n - old_sz);
 
-    if(_enable_auto && (_since_last_collection <= 0))
+    if(_enable_auto && (_since_last_collection <= 0)) {
+#ifdef SERVICE_GC
+      ++gcTriggered;
+#endif
       collect_unprotect();
+    }
 
     unlock();
     return obj->_2gc();

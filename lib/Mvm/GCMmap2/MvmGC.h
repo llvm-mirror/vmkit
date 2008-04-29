@@ -13,6 +13,7 @@
 
 #include <sys/types.h>
 #include "mvm/GC/GC.h"
+#include "types.h"
 
 #define gc_allocator std::allocator
 #define gc_new(Class)  __gc_new(Class::VT) Class
@@ -63,7 +64,12 @@ public:
 
 class Collector {
 public:
-
+#ifdef SERVICE_GC
+  uint64 memoryUsed;
+  uint64 gcTriggered;
+  bool isMyObject(const void* o) { return getCollectorFromObject(o) == this; }
+  static Collector* getCollectorFromObject(const void*o);
+#endif
   typedef void (*markerFn)(void*);
   
   static void  initialise(markerFn mark, void *base_sp);

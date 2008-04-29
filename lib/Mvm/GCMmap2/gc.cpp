@@ -254,3 +254,9 @@ Collector* Collector::allocate() {
   return GC;
 }
 #endif // MULTIPLE_GC
+
+#ifdef SERVICE_GC
+Collector* Collector::getCollectorFromObject(const void* o) {
+  return (Collector*)GCCollector::o2node((void*)o)->meta;
+}
+#endif

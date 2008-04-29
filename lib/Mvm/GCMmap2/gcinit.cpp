@@ -28,6 +28,8 @@ int GCCollector::siggc() {
 void GCCollector::initialise(Collector::markerFn marker) {
  
 #ifdef SERVICE_GC
+  gcTriggered = 0;
+  memoryUsed = 0;
   if (this == bootstrapGC) {
 #endif
   used_nodes = new GCChunkNode();

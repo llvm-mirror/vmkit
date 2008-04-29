@@ -87,6 +87,9 @@ void GCCollector::do_collect() {
   GCChunkNode *next;
 
   for(cur=finalizable.next(); cur!=&finalizable; cur=next) {
+#ifdef SERVICE_GC
+    ((Collector*)cur->meta)->memoryUsed -= real_nbb(cur);
+#endif
     register gc_header *c = cur->chunk();
     next = cur->next();
     

@@ -24,8 +24,10 @@ class GCChunkNode {
  	uintptr_t			 _nbb_mark;	/* nbb = 0 <=> ce chunk est libre */
 	                        /* bit 0-2: la marque */
 	                        /* bit 3: est-on collectable */
-
 public:
+#ifdef SERVICE_GC
+  void* meta; // who allocated me
+#endif
  	static const signed int maskCollectable    = 8;
  	static const signed int maskNotCollectable = 0;
 
