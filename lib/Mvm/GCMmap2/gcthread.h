@@ -25,10 +25,16 @@ class GCThreadCollector : public CircularBase {
    int                _tid;
   
 public:
+#ifdef SERVICE_GC
+   void* meta;
+#endif
   inline GCThreadCollector() {}
    inline GCThreadCollector(GCThreadCollector *pred, int t, void *p, int m) : CircularBase(pred) {
     _base_sp = p;
     _tid = t;
+#ifdef SERVICE_GC
+    meta = 0;
+#endif
   }
 
   /* This function is only called in two cases:
@@ -71,7 +77,6 @@ public:
 };
 
 class GCThread {
-  GCThreadCollector        base;
   GCLockRecovery         _globalLock;     /* global lock for gcmalloc */
   LockNormal              _stackLock;     /* stack lock for synchronization */
   Cond                    _stackCond;     /* condition for unlocking other tasks (write protect) */
@@ -82,6 +87,7 @@ class GCThread {
 
   
 public:
+  GCThreadCollector        base;
   Key<GCThreadCollector>  _loc;
   GCThread() {
     _nb_threads = 0;
