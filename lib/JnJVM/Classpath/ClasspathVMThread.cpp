@@ -72,7 +72,10 @@ static void start(arg_thread_t* arg) {
   }
   
 #ifdef SERVICE_VM
-  ((ServiceDomain*)isolate)->numThreads++;
+  ServiceDomain* vm = (ServiceDomain*)isolate;
+  vm->lock->lock();
+  vm->numThreads++;
+  vm->lock->unlock();
 #endif
   JavaMethod* method = vmthClass->lookupMethod(Jnjvm::runName, Jnjvm::clinitType, ACC_VIRTUAL, true);
   method->invokeIntSpecial(isolate, vmThread);
@@ -87,7 +90,9 @@ static void start(arg_thread_t* arg) {
   }
 
 #ifdef SERVICE_VM
-  ((ServiceDomain*)isolate)->numThreads--;
+  vm->lock->lock();
+  vm->numThreads--;
+  vm->lock->unlock();
 #endif
 
 #ifdef MULTIPLE_GC
