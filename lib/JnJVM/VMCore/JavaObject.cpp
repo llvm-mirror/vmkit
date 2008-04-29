@@ -120,7 +120,7 @@ void JavaObject::aquire() {
 #ifdef SERVICE_VM
   ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->isolate;
   if (!(vm->GC->isMyObject(this))) {
-    vm->serviceError("I'm locking an object I don't own");
+    vm->serviceError(vm, "I'm locking an object I don't own");
   }
 #endif
   myLock(this)->aquire();
@@ -132,7 +132,7 @@ void JavaObject::unlock() {
 #ifdef SERVICE_VM
   ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->isolate;
   if (!(vm->GC->isMyObject(this))) {
-    vm->serviceError("I'm unlocking an object I don't own");
+    vm->serviceError(vm, "I'm unlocking an object I don't own");
   }
 #endif
   lockObj->release();

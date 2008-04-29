@@ -30,6 +30,10 @@ namespace jnjvm {
 
 class ClassMap;
 
+typedef enum DomainState {
+  DomainLoaded, DomainUnloading, DomainUnloaded
+}DomainState;
+
 class ServiceDomain : public JavaIsolate {
 private:
   llvm::GlobalVariable* _llvmDelegatee;
@@ -41,22 +45,34 @@ public:
   virtual void destroyer(size_t sz);
   static ServiceDomain* allocateService(JavaIsolate* callingVM);
   llvm::GlobalVariable* llvmDelegatee();
-  void serviceError(const char* str);
-  
+  static void serviceError(ServiceDomain* error, const char* str);
+   
   mvm::Lock* lock;
   ClassMap* classes;
   uint64 executionTime;
   uint64 numThreads;
   std::map<ServiceDomain*, uint64> interactions;
+  DomainState state;
 
   static ServiceDomain* getDomainFromLoader(JavaObject* loader);
   static llvm::Function* serviceCallStartLLVM;
   static llvm::Function* serviceCallStopLLVM;
+  static JavaMethod* ServiceErrorInit;
+  static Class* ServiceErrorClass;
+
+  static ServiceDomain* bootstrapDomain;
 
   static bool isLockableDomain(Jnjvm* vm) {
-    return (vm == Jnjvm::bootstrapVM || 
-            vm == getDomainFromLoader(Jnjvm::bootstrapVM->appClassLoader));
+    return (vm == Jnjvm::bootstrapVM || vm == bootstrapDomain);
   }
+
+  static void initialise(ServiceDomain* boot);
+  void startExecution();
+  
+  // OSGi specific fields
+  static JavaField* OSGiFramework;
+  static JavaMethod* uninstallBundle;
+
 };
 
 } // end namespace jnjvm

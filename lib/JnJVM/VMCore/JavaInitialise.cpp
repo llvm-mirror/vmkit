@@ -233,7 +233,7 @@ extern "C" int boot() {
   sa.sa_sigaction = handler;
   sa.sa_flags |= (SA_RESTART | SA_SIGINFO | SA_NODEFER);
   sigaction(SIGSEGV, &sa, 0);
-  
+
   JavaJIT::initialise();
   initialiseVT();
   initialiseStatics();
@@ -249,7 +249,7 @@ extern "C" int start_app(int argc, char** argv) {
 #else
 #ifdef SERVICE_VM
   ServiceDomain* vm = ServiceDomain::allocateService((JavaIsolate*)Jnjvm::bootstrapVM);
-  JavaThread::get()->isolate = vm;
+  vm->startExecution();
 #else
   JavaIsolate* vm = JavaIsolate::allocateIsolate(JavaIsolate::bootstrapVM);
 #endif

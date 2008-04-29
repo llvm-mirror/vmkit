@@ -27,6 +27,14 @@ using namespace jnjvm;
 llvm::Function* ServiceDomain::serviceCallStartLLVM;
 llvm::Function* ServiceDomain::serviceCallStopLLVM;
 
+JavaMethod* ServiceDomain::ServiceErrorInit;
+Class* ServiceDomain::ServiceErrorClass;
+ServiceDomain* ServiceDomain::bootstrapDomain;
+
+// OSGi specific fields
+JavaField* ServiceDomain::OSGiFramework;
+JavaMethod* ServiceDomain::uninstallBundle;
+
 
 GlobalVariable* ServiceDomain::llvmDelegatee() {
   if (!_llvmDelegatee) {
@@ -116,13 +124,22 @@ ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
   service->numThreads = 0;
   
   service->lock = mvm::Lock::allocNormal();
+  service->state = DomainLoaded;
   return service;
 }
 
-void ServiceDomain::serviceError(const char* str) {
-  fprintf(stderr, str);
-  JavaJIT::printBacktrace();
-  abort();
+void ServiceDomain::serviceError(ServiceDomain* errorDomain,
+                                 const char* str) {
+  if (ServiceErrorClass) {
+    JavaObject* obj = (*ServiceErrorClass)(bootstrapDomain);
+    ServiceErrorInit->invokeIntVirtual(bootstrapDomain, 
+                                       bootstrapDomain->asciizToStr(str),
+                                       errorDomain);
+    JavaThread::throwException(obj);
+  } else {
+    fprintf(stderr, str);
+    abort();
+  }
 }
 
 ServiceDomain* ServiceDomain::getDomainFromLoader(JavaObject* loader) {
@@ -130,6 +147,9 @@ ServiceDomain* ServiceDomain::getDomainFromLoader(JavaObject* loader) {
     (ServiceDomain*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
   return vm;
 }
+
+#include "gccollector.h"
+#include "gcthread.h"
 
 extern "C" void serviceCallStart(ServiceDomain* caller,
                                  ServiceDomain* callee) {
@@ -139,11 +159,16 @@ extern "C" void serviceCallStart(ServiceDomain* caller,
          "Caller not a service domain?");
   assert(callee->getVirtualTable() == ServiceDomain::VT && 
          "Callee not a service domain?");
+  if (callee->state != DomainLoaded) {
+    ServiceDomain::serviceError(callee, "calling a stopped bundle");
+  }
   JavaThread* th = JavaThread::get();
   th->isolate = callee;
   caller->lock->lock();
   caller->interactions[callee]++;
   caller->lock->unlock();
+  mvm::GCThreadCollector* cur = mvm::GCCollector::threads->myloc();
+  cur->meta = callee;
 }
 
 extern "C" void serviceCallStop(ServiceDomain* caller,
@@ -154,7 +179,53 @@ extern "C" void serviceCallStop(ServiceDomain* caller,
          "Caller not a service domain?");
   assert(callee->getVirtualTable() == ServiceDomain::VT && 
          "Callee not a service domain?");
+  if (caller->state != DomainLoaded) {
+    ServiceDomain::serviceError(caller, "Returning to a stopped bundle");
+  }
   JavaThread* th = JavaThread::get();
   th->isolate = caller;
+  mvm::GCThreadCollector* cur = mvm::GCCollector::threads->myloc();
+  cur->meta = caller;
 }
 
+
+static int updateCPUUsage(void* unused) {
+  mvm::GCThreadCollector *cur;
+  while (true) {
+    sleep(1);
+    for(cur=(mvm::GCThreadCollector *)mvm::GCCollector::threads->base.next();
+        cur!=&(mvm::GCCollector::threads->base); 
+        cur=(mvm::GCThreadCollector *)cur->next()) {
+      ServiceDomain* executingDomain = (ServiceDomain*)cur->meta;
+      if (executingDomain)
+        ++executingDomain->executionTime;
+    }
+  }
+}
+
+void ServiceDomain::initialise(ServiceDomain* boot) {
+  ServiceDomain::bootstrapDomain = boot;
+  Jnjvm::bootstrapVM->appClassLoader = boot->appClassLoader;
+  (*Classpath::vmdataClassLoader)(boot->appClassLoader, (JavaObject*)boot);
+  int tid = 0;
+  mvm::Thread::start(&tid, (int (*)(void *))updateCPUUsage, 0);
+  ServiceErrorClass = UPCALL_CLASS(Jnjvm::bootstrapVM, "JnJVMBundleException");
+  ServiceErrorInit = UPCALL_METHOD(Jnjvm::bootstrapVM, "JnjvmBundleException", 
+                                   "<init>", 
+                                   "(Ljava/lang/String;Ljava/lang/Object;)V",
+                                   ACC_VIRTUAL);
+  Class* MainClass = bootstrapDomain->constructClass(bootstrapDomain->asciizConstructUTF8("Main"), 
+                                                     Jnjvm::bootstrapVM->appClassLoader);
+  OSGiFramework = bootstrapDomain->constructField(MainClass, bootstrapDomain->asciizConstructUTF8("m_felix"),
+                                            bootstrapDomain->asciizConstructUTF8("Lorg/apache/felix/framework/Felix;"),
+                                            ACC_STATIC);
+  uninstallBundle = bootstrapDomain->constructMethod(OSGiFramework->classDef, bootstrapDomain->asciizConstructUTF8("uninstallBundle"),
+                                                     bootstrapDomain->asciizConstructUTF8("(Lorg/apache/felix/framework/FelixBundle;)V"),
+                                                     ACC_VIRTUAL);
+}
+
+void ServiceDomain::startExecution() {
+  JavaThread::get()->isolate = this;
+  mvm::GCThreadCollector* cur = mvm::GCCollector::threads->myloc();
+  cur->meta = this;
+}

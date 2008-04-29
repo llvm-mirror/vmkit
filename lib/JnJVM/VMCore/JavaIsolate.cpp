@@ -384,8 +384,7 @@ void JavaIsolate::runMain(int argc, char** argv) {
     
     loadBootstrap();
 #ifdef SERVICE_VM
-    (*Classpath::vmdataClassLoader)(appClassLoader, (JavaObject*)this);
-    Jnjvm::bootstrapVM->appClassLoader = appClassLoader;
+    ServiceDomain::initialise((ServiceDomain*)this);
 #endif
     
     if (info.agents.size()) {
