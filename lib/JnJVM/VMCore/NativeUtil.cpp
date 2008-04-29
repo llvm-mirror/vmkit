@@ -16,6 +16,7 @@
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
+#include "JavaJIT.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
@@ -208,7 +209,9 @@ void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
       buf = jniConsFromMeth3(cl, meth);
       res = loadName(buf, jnjvm);
       if (!res) {
-        printf("error for %s\n", meth->printString());
+        printf("Native function %s not found. Probably "
+               "not implemented by JnJVM?\n", meth->printString());
+        JavaJIT::printBacktrace();
         JavaThread::get()->isolate->unknownError("can not find native method %s",
                                                  meth->printString());
       }

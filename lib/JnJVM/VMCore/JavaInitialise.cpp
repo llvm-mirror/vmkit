@@ -211,6 +211,7 @@ extern "C" void ClasspathBoot();
 
 void handler(int val, siginfo_t* info, void* addr) {
   printf("Crash in JnJVM at %p\n", addr);
+  JavaJIT::printBacktrace();
   assert(0);
 }
 
