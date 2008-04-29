@@ -73,6 +73,7 @@ static void start(arg_thread_t* arg) {
   
 #ifdef SERVICE_VM
   ServiceDomain* vm = (ServiceDomain*)isolate;
+  vm->startExecution();
   vm->lock->lock();
   vm->numThreads++;
   vm->lock->unlock();
