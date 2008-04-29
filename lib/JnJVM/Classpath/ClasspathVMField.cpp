@@ -376,8 +376,8 @@ jobject Field, jobject obj, jdouble val) {
 JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_objectFieldOffset(
 #ifdef NATIVE_JNI
 JNIEnv *env,
-jclass clazz,
-#endif    
+#endif
+JavaObject* Unsafe,
 JavaObject* Field) {
   JavaField* field = (JavaField*)((*Classpath::fieldSlot)((JavaObject*)Field).IntVal.getZExtValue());
   return (jlong)field->ptrOffset;
