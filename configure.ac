@@ -237,6 +237,8 @@ else
     CXXFLAGS="$CXXFLAGS -DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM -I$PWD/lib/Mvm/Allocator"
   fi
 fi
+
+AM_CONDITIONAL([SERVICE_BUILD], [test "x$vmtype" = "xservice"])
   
 dnl **************************************************************************
 dnl GNU CLASSPATH version

@@ -13,6 +13,10 @@ libJnJVM_la_SOURCES = \
 	JavaBacktrace.cpp NativeUtil.h NativeUtil.cpp Jni.cpp \
 	JavaCache.h JavaCache.cpp JavaUpcalls.h JavaUpcalls.cpp \
 	JnjvmModuleProvider.h JnjvmModuleProvider.cpp JavaRuntimeJIT.cpp JavaMetaJIT.cpp JavaJITInitialise.cpp \
-	LowerArrayLength.cpp ServiceDomain.cpp
+	LowerArrayLength.cpp 
+
+if SERVICE_BUILD
+libJnJVM_la_SOURCES += ServiceDomain.cpp
+endif
 
 libJnJVM_la_CXXFLAGS =-DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused-parameter -Wno-long-long -Wno-unused-function -fno-omit-frame-pointer -g -Werror -O2
