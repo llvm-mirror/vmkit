@@ -50,32 +50,50 @@ using namespace n3;
 #define METHOD_SEMANTIC_ATTRIBUTES_FIRE     0x20
 
 
-typedef uint32 (*uint32_void)(void);
-typedef sint32 (*sint32_sint32)(sint32);
-typedef char* (*string_void)(void);
-typedef sint32 (*sint32_ptr_sint32_ptr_sint32)(uint16*, sint32, uint8*, sint32);
-typedef void (*void_ptr_sint32)(void*, sint32);
-typedef char (*char_sint32)(sint32);
-typedef sint64 (*sint64_ptr)(void*);
-typedef uint32 (*uint32_ptr_ptr_uint32)(void*, void*, uint32);
-typedef sint32 (*sint32_ptr_ptr_sint32)(void*, void*, sint32);
+extern "C" {
+extern uint32 ILGetCodePage(void);
+extern uint32 ILGetCultureID(void);
+extern char* ILGetCultureName(void);
+extern sint32 ILAnsiGetMaxByteCount(sint32);
+extern sint32  ILConsoleWriteChar(sint32);
+extern uint32 ILConsoleGetMode(void);
+extern sint32 ILAnsiGetBytes(uint16*, sint32, uint8*, sint32);
+extern void _IL_Stdio_StdFlush(void*, sint32);
+extern char ILGetUnicodeCategory(sint32);
+extern sint64 _IL_TimeMethods_GetCurrentTime(void*);
+extern uint32 ILUnicodeStringToLower(void*, void*, uint32);
+extern sint32 ILUnicodeStringCompareIgnoreCase(void*, void*, sint32);
+extern sint32 ILUnicodeStringCompareNoIgnoreCase(void*, void*, sint32);
 
-static void* pnetLibSupport;
-static void* pnetLibStdio;
-static void* pnetLibTime;
-static uint32_void ILGetCodePage;
-static uint32_void ILGetCultureID;
-static string_void ILGetCultureName;
-static sint32_sint32 ILAnsiGetMaxByteCount;
-static sint32_sint32 ILConsoleWriteChar;
-static uint32_void ILConsoleGetMode;
-static sint32_ptr_sint32_ptr_sint32 ILAnsiGetBytes;
-static void_ptr_sint32 StdFlush;
-static char_sint32 ILGetUnicodeCategory;
-static sint64_ptr ILTimeMethodsGetCurrentTime;
-static uint32_ptr_ptr_uint32 ILUnicodeStringToLower;
-static sint32_ptr_ptr_sint32 ILUnicodeStringCompareIgnoreCase;
-static sint32_ptr_ptr_sint32 ILUnicodeStringCompareNoIgnoreCase;
+// PNET wants this
+void *GC_run_thread(void *(*thread_func)(void *), void *arg){ return 0; }
+#ifndef USE_GC_BOEHM
+int GC_invoke_finalizers (void) { return 0; }
+int GC_should_invoke_finalizers (void) { return 0; }
+void GC_register_finalizer_no_order(void) { return; }
+void GC_gcollect(void) {}
+void GC_malloc_uncollectable(void) {}
+void GC_exclude_static_roots(void) {}
+void GC_free(void) {}
+void GC_malloc_explicitly_typed(void) {}
+void GC_get_heap_size(void) {}
+void GC_register_disappearing_link(void) {}
+void GC_general_register_disappearing_link(void) {}
+void GC_pthread_sigmask(void) {}
+void GC_pthread_detach(void) {}
+void GC_pthread_create(void) {}
+void GC_malloc(void) {}
+void GC_make_descriptor(void) {}
+void GC_unregister_disappearing_link(void) {}
+void GC_finalizer_notifier(void) {}
+void GC_java_finalization(void) {}
+void GC_finalize_on_demand(void) {}
+void GC_set_max_heap_size(void) {}
+void GC_malloc_atomic(void) {}
+#endif
+}
+
+
 
 extern "C" void System_Runtime_CompilerServices_RuntimeHelpers_InitializeArray(
                                                VMArray* array, VMField* field) {
@@ -229,7 +247,7 @@ extern "C" sint32 System_Text_DefaultEncoding_InternalGetBytes(ArrayUInt16* char
 }
 
 extern "C" void Platform_Stdio_StdFlush(sint32 fd) {
-  StdFlush(0, fd);
+  _IL_Stdio_StdFlush(0, fd);
 }
 
 extern "C" void System_Array_InternalCopy(VMArray* src, sint32 sstart, 
@@ -673,7 +691,7 @@ extern "C" void System_String__ctor_3(CLIString* str, uint16 ch, sint32 count) {
 }
 
 extern "C" int64_t Platform_TimeMethods_GetCurrentTime() {
-  return ILTimeMethodsGetCurrentTime(0);
+  return _IL_TimeMethods_GetCurrentTime(0);
 }
 
 #define ASSEMBLY_VALUE(obj) ((Assembly**)obj)[3]
@@ -1153,35 +1171,4 @@ void NativeUtil::initialise() {
   void* p;
   p = (void*)&System_Runtime_CompilerServices_RuntimeHelpers_InitializeArray;
   p = (void*)&System_Type_GetTypeFromHandle;
-  pnetLibSupport  = dlopen("libILSupport.so", RTLD_LAZY | RTLD_GLOBAL);
-  if (!pnetLibSupport) {
-    printf("error = %s\n", dlerror());
-  }
-  pnetLibStdio    = dlopen("libStdio.so", RTLD_LAZY | RTLD_GLOBAL);
-  pnetLibTime  = dlopen("libTime.so", RTLD_LAZY | RTLD_GLOBAL);
-  ILGetCodePage = (uint32_void)dlsym(pnetLibSupport, "ILGetCodePage");
-  assert(ILGetCodePage);
-  ILGetCultureID = (uint32_void)dlsym(pnetLibSupport, "ILGetCultureID");
-  assert(ILGetCultureID);
-  ILGetCultureName = (string_void)dlsym(pnetLibSupport, "ILGetCultureName");
-  assert(ILGetCultureName);
-  ILAnsiGetMaxByteCount = (sint32_sint32)dlsym(pnetLibSupport, "ILAnsiGetMaxByteCount");
-  assert(ILAnsiGetMaxByteCount);
-  ILConsoleGetMode = (uint32_void)dlsym(pnetLibSupport, "ILConsoleGetMode");
-  assert(ILConsoleGetMode);
-  ILConsoleWriteChar = (sint32_sint32)dlsym(pnetLibSupport, "ILConsoleWriteChar");
-  assert(ILConsoleWriteChar);
-  ILUnicodeStringToLower = (uint32_ptr_ptr_uint32)dlsym(pnetLibSupport, "ILUnicodeStringToLower");
-  assert(ILUnicodeStringToLower);
-  ILAnsiGetBytes = (sint32_ptr_sint32_ptr_sint32)dlsym(pnetLibSupport, "ILAnsiGetBytes");
-  assert(ILAnsiGetBytes);
-  StdFlush = (void_ptr_sint32)dlsym(pnetLibStdio, "_IL_Stdio_StdFlush");
-  assert(StdFlush);
-  ILGetUnicodeCategory = (char_sint32)dlsym(pnetLibSupport, "ILGetUnicodeCategory");
-  assert(ILGetUnicodeCategory);
-  ILTimeMethodsGetCurrentTime = (sint64_ptr)dlsym(pnetLibTime, "_IL_TimeMethods_GetCurrentTime");
-  ILUnicodeStringCompareIgnoreCase = (sint32_ptr_ptr_sint32)dlsym(pnetLibSupport, "ILUnicodeStringCompareIgnoreCase");
-  ILUnicodeStringCompareNoIgnoreCase = (sint32_ptr_ptr_sint32)dlsym(pnetLibSupport, "ILUnicodeStringCompareNoIgnoreCase");
-  assert(ILUnicodeStringCompareIgnoreCase);
-  assert(ILUnicodeStringCompareNoIgnoreCase);
 }

@@ -16,6 +16,7 @@ JnJVM and N3 use GCC's unwinding library (libgcc_s.so).
 
 There are mainly two options in the ./configure script
 --with-gnu-classpath-local-prefix: the local build of GNU classpath
+--with-pnet-local-prefix: the local build of PNET
 --with-llvm: the local build of LLVM
 --with-gc: user either boehm or single-mmap
 
@@ -24,7 +25,7 @@ Running make on the root tree will produce three executables:
 2) lib/JnJVM/main: running the JnJVM like any other JVM
 3) lib/N3/main: running N3 like CLR
 
-JnJVM and N3 have their own README notes. N3 requires to patch pnet-0.7.4.
+JnJVM and N3 have their own README notes.
 
 
 //===---------------------------------------------------------------------===//

@@ -292,6 +292,26 @@ fi
 AC_SUBST([classpathglibj])
 AC_SUBST([classpathlibs])
 
+dnl **************************************************************************
+dnl Local PNet directory
+dnl **************************************************************************
+AC_ARG_WITH(pnet-local-prefix,
+       [AS_HELP_STRING(--with-pnet-local-prefix=something,
+           [PNET local prefix (no default)])],
+       [[pnetlocalprefix=$withval]],
+       [[       echo Not using PNETlocal prefix.    
+                                pnetlocalprefix=''
+       ]]
+)
+
+AM_CONDITIONAL([WITH_N3], [test "x$pnetlocalprefix" != "x"])
+if test "x$pnetlocalprefix" != x; then
+  echo Using ${pnetlocalprefix} as PNET local prefix;
+  AC_DEFINE([WITH_N3], [1], [Compiling N3])
+fi
+
+AC_SUBST([pnetlocalprefix])
+
 
 
 AC_CONFIG_FILES([
