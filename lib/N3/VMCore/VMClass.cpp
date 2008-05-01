@@ -384,16 +384,18 @@ void VMClassArray::makeType() {
   arrayFields.push_back(VMObject::llvmType->getContainedType(0));
   arrayFields.push_back(llvm::Type::Int32Ty);
   arrayFields.push_back(llvm::ArrayType::get(baseClass->naturalType, 0));
-  ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(llvm::PointerType::getUnqual(llvm::StructType::get(arrayFields, false)));
-  naturalType = naturalType->getForwardedType();
+  const llvm::Type* type = llvm::PointerType::getUnqual(llvm::StructType::get(arrayFields, false));
+  ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(type);
+  naturalType = type;
   virtualType = naturalType;
   arrayVT = CLIJit::makeArrayVT(this);
 }
 
 void VMClassPointer::makeType() {
   const llvm::Type* type = (baseClass->naturalType == llvm::Type::VoidTy) ? llvm::Type::Int8Ty : baseClass->naturalType;
-  ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(llvm::PointerType::getUnqual(type));
-  naturalType = naturalType->getForwardedType();
+  const llvm::Type* pType = llvm::PointerType::getUnqual(type);
+  ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(pType);
+  naturalType = pType;
 }
 
 void VMCommonClass::resolveType(bool stat, bool clinit) {
