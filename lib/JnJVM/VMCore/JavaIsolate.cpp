@@ -217,6 +217,14 @@ void ClArgumentsInfo::readArgs(int argc, char** argv, Jnjvm* vm) {
           vm->addProperty(key, &value[1]);
         }
       }
+    } else if (!(strncmp(cur, "-Xbootclasspath:", 16))) {
+      uint32 len = strlen(cur);
+      if (len == 16) {
+        printInformation();
+      } else {
+        char* path = &cur[16];
+        vm->analyseClasspathEnv(path);
+      }
     } else if (!(strcmp(cur, "-enableassertions"))) {
       nyi();
     } else if (!(strcmp(cur, "-ea"))) {
