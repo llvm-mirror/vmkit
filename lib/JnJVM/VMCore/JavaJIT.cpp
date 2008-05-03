@@ -425,23 +425,36 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
 #else
   uint32 max = args.size();
 #endif
-  for (std::vector<Value*>::iterator i = args.begin();
-       count < max; ++i, ++index, ++count) {
-    
-    const Type* cur = (*i)->getType();
+  std::vector<Typedef*>::iterator type = 
+    compilingMethod->signature->args.begin();
+  std::vector<Value*>::iterator i = args.begin();
 
-    if (cur == Type::Int64Ty ){
+  if (isVirtual(compilingMethod->access)) {
+    new StoreInst(*i, objectLocals[0], false, currentBlock);
+    ++i;
+    ++index;
+    ++count;
+  }
+  
+  for (;count < max; ++i, ++index, ++count, ++type) {
+    
+    const AssessorDesc* cur = (*type)->funcs;
+
+    if (cur == AssessorDesc::dLong){
       new StoreInst(*i, longLocals[index], false, currentBlock);
       ++index;
-    } else if (cur == Type::Int8Ty || cur == Type::Int16Ty) {
+    } else if (AssessorDesc::dBool || cur == AssessorDesc::dChar) {
       new StoreInst(new ZExtInst(*i, Type::Int32Ty, "", currentBlock),
                     intLocals[index], false, currentBlock);
-    } else if (cur == Type::Int32Ty) {
+    } else if (AssessorDesc::dByte || cur == AssessorDesc::dShort) {
+      new StoreInst(new SExtInst(*i, Type::Int32Ty, "", currentBlock),
+                    intLocals[index], false, currentBlock);
+    } else if (cur == AssessorDesc::dInt) {
       new StoreInst(*i, intLocals[index], false, currentBlock);
-    } else if (cur == Type::DoubleTy) {
+    } else if (cur == AssessorDesc::dDouble) {
       new StoreInst(*i, doubleLocals[index], false, currentBlock);
       ++index;
-    } else if (cur == Type::FloatTy) {
+    } else if (cur == AssessorDesc::dFloat) {
       new StoreInst(*i, floatLocals[index], false, currentBlock);
     } else {
       new StoreInst(*i, objectLocals[index], false, currentBlock);
@@ -580,22 +593,34 @@ llvm::Function* JavaJIT::javaCompile() {
   uint32 max = func->arg_size();
 #endif
   Function::arg_iterator i = func->arg_begin(); 
-  for (;count < max; ++i, ++index, ++count) {
-    
-    const Type* cur = i->getType();
+  std::vector<Typedef*>::iterator type = 
+    compilingMethod->signature->args.begin();
 
-    if (cur == Type::Int64Ty ){
+  if (isVirtual(compilingMethod->access)) {
+    new StoreInst(i, objectLocals[0], false, currentBlock);
+    ++i;
+    ++index;
+    ++count;
+  }
+
+  for (;count < max; ++i, ++index, ++count, ++type) {
+    
+    const AssessorDesc* cur = (*type)->funcs;
+    if (cur == AssessorDesc::dLong){
       new StoreInst(i, longLocals[index], false, currentBlock);
       ++index;
-    } else if (cur == Type::Int8Ty || cur == Type::Int16Ty) {
+    } else if (cur == AssessorDesc::dBool || cur == AssessorDesc::dChar) {
       new StoreInst(new ZExtInst(i, Type::Int32Ty, "", currentBlock),
                     intLocals[index], false, currentBlock);
-    } else if (cur == Type::Int32Ty) {
+    } else if (cur == AssessorDesc::dByte || cur == AssessorDesc::dShort) {
+      new StoreInst(new SExtInst(i, Type::Int32Ty, "", currentBlock),
+                    intLocals[index], false, currentBlock);
+    } else if (cur == AssessorDesc::dInt) {
       new StoreInst(i, intLocals[index], false, currentBlock);
-    } else if (cur == Type::DoubleTy) {
+    } else if (cur == AssessorDesc::dDouble) {
       new StoreInst(i, doubleLocals[index], false, currentBlock);
       ++index;
-    } else if (cur == Type::FloatTy) {
+    } else if (cur == AssessorDesc::dFloat) {
       new StoreInst(i, floatLocals[index], false, currentBlock);
     } else {
       new StoreInst(i, objectLocals[index], false, currentBlock);
