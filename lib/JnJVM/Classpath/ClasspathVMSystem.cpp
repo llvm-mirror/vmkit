@@ -48,9 +48,11 @@ JNIEnv *env,
   
   ClassArray* ts = (ClassArray*)src->classOf;
   ClassArray* td = (ClassArray*)dst->classOf;
-  AssessorDesc* srcFuncs = ts->funcs();
-  AssessorDesc* dstFuncs = ts->funcs();
   CommonClass* dstType = td->baseClass();
+  CommonClass* srcType = ts->baseClass();
+  AssessorDesc* srcPrim = AssessorDesc::bogusClassToPrimitive(srcType);
+  AssessorDesc* dstPrim = AssessorDesc::bogusClassToPrimitive(dstType);
+  AssessorDesc* srcFuncs = ts->funcs();
 
   if (len > src->size) {
     vm->indexOutOfBounds(src, len);
@@ -66,7 +68,7 @@ JNIEnv *env,
     vm->indexOutOfBounds(src, sstart);
   } else if (len < 0) {
     vm->indexOutOfBounds(src, len);
-  } else if (srcFuncs != dstFuncs) {
+  } else if (srcPrim != dstPrim) {
     vm->arrayStoreException();
   }
   
