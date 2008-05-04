@@ -824,7 +824,7 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
     ex->catche = reader->readU2();
 
     if (ex->catche) {
-      Class* cl = (Class*)(ctpInfo->getMethodClassIfLoaded(ex->catche));
+      Class* cl = (Class*)(ctpInfo->loadClass(ex->catche));
       ex->catchClass = cl;
     } else {
       ex->catchClass = Classpath::newThrowable;
@@ -919,10 +919,8 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
     Module* M = compilingClass->isolate->module;
     Value* cl = 0;
     currentBlock = cur->realTest;
-    if (cur->catchClass)
-      cl = new LoadInst(cur->catchClass->llvmVar(M), "", currentBlock);
-    else
-      cl = getResolvedClass(cur->catche, false);
+    assert(cur->catchClass);
+    cl = new LoadInst(cur->catchClass->llvmVar(M), "", currentBlock);
     Value* cmp = llvm::CallInst::Create(compareExceptionLLVM, cl, "",
                                         currentBlock);
     llvm::BranchInst::Create(cur->handler, bbNext, cmp, currentBlock);
