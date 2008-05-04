@@ -824,7 +824,22 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
     ex->catche = reader->readU2();
 
     if (ex->catche) {
-      Class* cl = (Class*)(ctpInfo->loadClass(ex->catche));
+      JavaObject* exc = 0;
+      Class* cl = 0; 
+      try {
+        cl = (Class*)(ctpInfo->loadClass(ex->catche));
+      } catch(...) {
+        compilingClass->release();
+        exc = JavaThread::getJavaException();
+        assert(exc && "no exception?");
+        JavaThread::clearException();
+      }
+      
+      if (exc) {
+        Jnjvm* vm = JavaThread::get()->isolate;
+        vm->errorWithExcp(Jnjvm::NoClassDefFoundError, exc);
+      }
+
       ex->catchClass = cl;
     } else {
       ex->catchClass = Classpath::newThrowable;

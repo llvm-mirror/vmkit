@@ -215,20 +215,7 @@ void* JavaMethod::compiledPtr() {
         if (isNative(access)) {
           llvmFunction = jit.nativeCompile();
         } else {
-          JavaObject* exc = 0;
-          try {
-            llvmFunction = jit.javaCompile();
-          } catch(...) {
-            // Happens when it can not load an exception class
-            classDef->release();
-            exc = JavaThread::getJavaException();
-            assert(exc && "no exception?");
-            JavaThread::clearException();
-          }
-          if (exc) {
-            Jnjvm* vm = JavaThread::get()->isolate;
-            vm->errorWithExcp(Jnjvm::NoClassDefFoundError, exc);
-          }
+          llvmFunction = jit.javaCompile();
         }
       }
       // We can compile it, since if we're here, it's for a  good reason
