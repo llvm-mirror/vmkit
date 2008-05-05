@@ -71,6 +71,8 @@ llvm::Function* JavaJIT::runtimeUTF8ToStrLLVM = 0;
 llvm::Function* JavaJIT::getStaticInstanceLLVM = 0;
 llvm::Function* JavaJIT::getClassDelegateeLLVM = 0;
 llvm::Function* JavaJIT::arrayLengthLLVM = 0;
+llvm::Function* JavaJIT::getVTLLVM = 0;
+llvm::Function* JavaJIT::getClassLLVM = 0;
 
 #ifdef SERVICE_VM
 llvm::Function* JavaJIT::aquireObjectInSharedDomainLLVM = 0;

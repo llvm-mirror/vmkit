@@ -319,6 +319,44 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   arrayLengthLLVM->setParamAttrs(func_toto_PAL);
   }
   
+  // Create getVTLLVM
+  {
+  std::vector<const Type*> args;
+  args.push_back(JavaObject::llvmType);
+  const FunctionType* type = FunctionType::get(
+    PointerType::getUnqual(PointerType::getUnqual(Type::Int32Ty)),
+    args, false);
+
+  getVTLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "getVT",
+                     module);
+  PAListPtr func_toto_PAL;
+  SmallVector<ParamAttrsWithIndex, 4> Attrs;
+  ParamAttrsWithIndex PAWI;
+  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
+  Attrs.push_back(PAWI);
+  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
+  getVTLLVM->setParamAttrs(func_toto_PAL);
+  }
+  
+  // Create getClassLLVM
+  {
+  std::vector<const Type*> args;
+  args.push_back(JavaObject::llvmType);
+  const FunctionType* type = FunctionType::get(mvm::jit::ptrType, args, false);
+
+  getClassLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "getVT",
+                     module);
+  PAListPtr func_toto_PAL;
+  SmallVector<ParamAttrsWithIndex, 4> Attrs;
+  ParamAttrsWithIndex PAWI;
+  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
+  Attrs.push_back(PAWI);
+  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
+  getClassLLVM->setParamAttrs(func_toto_PAL);
+  }
+  
   // Create newLookupLLVM
   {
   std::vector<const Type*> args;
@@ -643,7 +681,7 @@ llvm::Constant*    JavaJIT::constantUTF8Null;
 namespace mvm {
 
 llvm::FunctionPass* createEscapeAnalysisPass(llvm::Function*, llvm::Function*);
-llvm::FunctionPass* createLowerArrayLengthPass();
+llvm::FunctionPass* createLowerConstantCallsPass();
 //llvm::FunctionPass* createArrayChecksPass();
 
 }
@@ -701,6 +739,6 @@ void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, llvm::createDeadStoreEliminationPass()); // Delete dead stores
   addPass(PM, llvm::createAggressiveDCEPass());        // SSA based 'Aggressive DCE'
   addPass(PM, llvm::createCFGSimplificationPass());    // Merge & remove BBs
-  addPass(PM, mvm::createLowerArrayLengthPass());
+  addPass(PM, mvm::createLowerConstantCallsPass());
 }
 

@@ -121,13 +121,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   
   JITVerifyNull(args[0]); 
 
-  std::vector<Value*> indexes; //[3];
-  indexes.push_back(zero);
-  indexes.push_back(zero);
-  Value* VTPtr = GetElementPtrInst::Create(args[0], indexes.begin(),
-                                           indexes.end(), "", currentBlock);
-    
-  Value* VT = new LoadInst(VTPtr, "", currentBlock);
+  Value* VT = CallInst::Create(getVTLLVM, args[0], "", currentBlock);
   std::vector<Value*> indexes2; //[3];
   if (meth) {
     indexes2.push_back(meth->offset);

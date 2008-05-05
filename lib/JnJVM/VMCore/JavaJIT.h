@@ -270,6 +270,8 @@ public:
   static llvm::Function* getStaticInstanceLLVM;
   static llvm::Function* getClassDelegateeLLVM;
   static llvm::Function* arrayLengthLLVM;
+  static llvm::Function* getVTLLVM;
+  static llvm::Function* getClassLLVM;
   
 
   static Class* getCallingClass();

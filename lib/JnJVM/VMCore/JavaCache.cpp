@@ -111,14 +111,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
                                           "", currentBlock);
   Value* cache = new LoadInst(cachePtr, "", currentBlock);
 
-  std::vector<Value*> args2;
-  args2.push_back(zero);
-  args2.push_back(JavaObject::classOffset());
-  Value* classPtr = GetElementPtrInst::Create(args[0], args2.begin(),
-                                          args2.end(), "",
-                                          currentBlock);
-
-  Value* cl = new LoadInst(classPtr, "", currentBlock);
+  Value* cl = CallInst::Create(getClassLLVM, args[0], "", currentBlock);
   std::vector<Value*> args3;
   args3.push_back(zero);
   args3.push_back(two);
