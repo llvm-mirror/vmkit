@@ -1053,7 +1053,7 @@ void JavaJIT::_ldc(uint16 index) {
     mvm::jit::unprotectConstants();//->unlock();
   } else if (type == JavaCtpInfo::ConstantDouble) {
     mvm::jit::protectConstants();//->lock();
-    push(ConstantFP::get(Type::DoubleTy, APFloat(ctpInfo->DoubleAt(index))),
+    push(ConstantFP::get(Type::DoubleTy, ctpInfo->DoubleAt(index)),
          AssessorDesc::dDouble);
     mvm::jit::unprotectConstants();//->unlock();
   } else if (type == JavaCtpInfo::ConstantInteger) {
@@ -1063,7 +1063,7 @@ void JavaJIT::_ldc(uint16 index) {
     mvm::jit::unprotectConstants();//->unlock();
   } else if (type == JavaCtpInfo::ConstantFloat) {
     mvm::jit::protectConstants();//->lock();
-    push(ConstantFP::get(Type::FloatTy, APFloat(ctpInfo->FloatAt(index))),
+    push(ConstantFP::get(Type::FloatTy, ctpInfo->FloatAt(index)),
          AssessorDesc::dFloat);
     mvm::jit::unprotectConstants();//->unlock();
   } else if (type == JavaCtpInfo::ConstantClass) {

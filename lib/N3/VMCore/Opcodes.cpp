@@ -768,14 +768,14 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       
       case LDC_R4 : {
         mvm::jit::protectConstants();
-        push(ConstantFP::get(Type::FloatTy, APFloat(readFloat(bytecodes, i))));
+        push(ConstantFP::get(Type::FloatTy, readFloat(bytecodes, i)));
         mvm::jit::unprotectConstants();
         break;
       }
       
       case LDC_R8 : {
         mvm::jit::protectConstants();
-        push(ConstantFP::get(Type::DoubleTy, APFloat(readDouble(bytecodes, i))));
+        push(ConstantFP::get(Type::DoubleTy, readDouble(bytecodes, i)));
         mvm::jit::unprotectConstants();
         break;
       }
