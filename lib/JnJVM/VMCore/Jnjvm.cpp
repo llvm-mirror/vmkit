@@ -380,7 +380,6 @@ void Jnjvm::resolveClass(CommonClass* cl, bool doClinit) {
         ClassArray* arrayCl = (ClassArray*)cl;
         CommonClass* baseClass =  arrayCl->baseClass();
         baseClass->resolveClass(doClinit);
-        cl->access = cl->access | baseClass->access;
         cl->status = resolved;
       } else {
         readClass((Class*)cl);
