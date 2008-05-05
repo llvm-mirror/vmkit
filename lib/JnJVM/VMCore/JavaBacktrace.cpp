@@ -9,7 +9,6 @@
 
 #include <stdio.h>
 #include <dlfcn.h>
-#include <execinfo.h>
 
 #include "llvm/Function.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
@@ -38,9 +37,26 @@ extern "C" JavaMethod* ip_to_meth(int* begIp) {
   return 0;
 }
 
+#if defined(__MACH__) && !defined(__i386__)
+#define FRAME_IP(fp) (fp[2])
+#else
+#define FRAME_IP(fp) (fp[1])
+#endif
+
+
+int JavaJIT::getBacktrace(void** stack, int size) {
+  void** blah = (void**)__builtin_frame_address(1);
+  int cpt = 0;
+  while (blah && cpt < size) {
+    stack[cpt++] = (void**)FRAME_IP(blah);
+    blah = (void**)blah[0];
+  }
+  return cpt;
+}
+
 void JavaJIT::printBacktrace() {
   int* ips[100];
-  int real_size = backtrace((void**)(void*)ips, 100);
+  int real_size = getBacktrace((void**)(void*)ips, 100);
   int n = 0;
   while (n < real_size) {
     mvm::Code* code = mvm::Code::getCodeFromPointer(ips[n++]);
@@ -72,7 +88,7 @@ void JavaJIT::printBacktrace() {
 
 Class* JavaJIT::getCallingClass() {
   int* ips[10];
-  int real_size = backtrace((void**)(void*)ips, 10);
+  int real_size = getBacktrace((void**)(void*)ips, 10);
   int n = 0;
   int i = 0;
   while (n < real_size) {
@@ -94,7 +110,7 @@ Class* JavaJIT::getCallingClass() {
 
 Class* JavaJIT::getCallingClassWalker() {
   int* ips[10];
-  int real_size = backtrace((void**)(void*)ips, 10);
+  int real_size = getBacktrace((void**)(void*)ips, 10);
   int n = 0;
   int i = 0;
   while (n < real_size) {

@@ -27,11 +27,8 @@
 #include "NativeUtil.h"
 #include "Reader.h"
 
-#include <execinfo.h>
-
 using namespace jnjvm;
 
-extern "C" int backtrace_fp(int** ips, int size, int**);
 extern "C" JavaMethod* ip_to_meth(int* ip);
 
 extern "C" {
@@ -44,13 +41,11 @@ jclass clazz,
                                                                       jobject throwable) {
   //int** fp =  (int**)__builtin_frame_address(0);
   Jnjvm* vm = JavaThread::get()->isolate;
-  int** stack = (int**)alloca(sizeof(int*) * 100);
-  int real_size = backtrace((void**)stack, 100);
-  ArrayUInt32* obj = ArrayUInt32::acons(real_size, JavaArray::ofInt, vm);
-  memcpy(obj->elements, stack, real_size * sizeof(int));
-  JavaObject* vmThrowable = (*Classpath::newVMThrowable)(vm);
-  Classpath::initVMThrowable->invokeIntSpecial(vm, vmThrowable);
-  (*Classpath::vmDataVMThrowable)(vmThrowable, obj);
+  int** stack = (int**)malloc(sizeof(int*) * 100);
+  int real_size = JavaJIT::getBacktrace((void**)stack, 100);
+  stack[real_size] = 0;
+  JavaObject* vmThrowable = Classpath::newVMThrowable->doNew(vm);
+  ((JavaObject**)((uint64)vmThrowable + Classpath::vmDataVMThrowable->ptrOffset))[0] = (JavaObject*)stack;
   return (jobject)vmThrowable;
 }
 
@@ -80,9 +75,9 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   return res;
 }
 
-ArrayObject* recGetStackTrace(int** stack, uint32 size, uint32 first, uint32 rec) {
+ArrayObject* recGetStackTrace(int** stack, uint32 first, uint32 rec) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  if (size != first) {
+  if (stack[first] != 0) {
 #ifdef MULTIPLE_GC
     int *begIp = (int*)mvm::Thread::get()->GC->begOf(stack[first]);
 #else
@@ -90,11 +85,11 @@ ArrayObject* recGetStackTrace(int** stack, uint32 size, uint32 first, uint32 rec
 #endif
     JavaMethod* meth = ip_to_meth(begIp);
     if (meth) {
-      ArrayObject* res = recGetStackTrace(stack, size, first + 1, rec + 1);
+      ArrayObject* res = recGetStackTrace(stack, first + 1, rec + 1);
       res->setAt(rec, consStackElement(meth, stack[first]));
       return res;
     } else {
-      return recGetStackTrace(stack, size, first + 1, rec);
+      return recGetStackTrace(stack, first + 1, rec);
     }
   } else {
     return ArrayObject::acons(rec, JavaArray::ofObject, vm);
@@ -106,13 +101,12 @@ JNIEXPORT jobject JNICALL Java_java_lang_VMThrowable_getStackTrace(
 JNIEnv *env,
 #endif
 jobject vmthrow, jobject throwable) {
-  ArrayUInt32* array = (ArrayUInt32*)(*Classpath::vmDataVMThrowable)((JavaObject*)vmthrow).PointerVal;
-  uint32* stack = array->elements;
+  int** stack = (int**)(ArrayUInt32*)(*Classpath::vmDataVMThrowable)((JavaObject*)vmthrow).PointerVal;
   CommonClass* cl = ((JavaObject*)throwable)->classOf;
   uint32 first = 0;
   sint32 i = 0;
   
-  while (i < array->size) {
+  while (stack[i] != 0) {
 #ifdef MULTIPLE_GC
     int *begIp = (int*)mvm::Thread::get()->GC->begOf((void*)stack[i++]);
 #else
@@ -124,7 +118,8 @@ jobject vmthrow, jobject throwable) {
       break;
     }
   }
-  return (jobject)recGetStackTrace((int**)(uint32**)stack, array->size, first, 0);
+  free(stack);
+  return (jobject)recGetStackTrace((int**)(uint32**)stack, first, 0);
 }
 
 }

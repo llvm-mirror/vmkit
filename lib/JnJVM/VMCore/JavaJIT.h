@@ -276,6 +276,7 @@ public:
   static Class* getCallingClassWalker();
   static JavaObject* getCallingClassLoader();
   static void printBacktrace();
+  static int getBacktrace(void** array, int size);
 
 #ifdef WITH_TRACER
   static llvm::Function* markAndTraceLLVM;

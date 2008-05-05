@@ -8,7 +8,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <execinfo.h>
 #include <string.h>
 
 #include "types.h"
@@ -52,7 +51,7 @@ jclass clazz,
 #endif
 ) {
   int* ips[100];
-  int real_size = backtrace((void**)(void*)ips, 100);
+  int real_size = JavaJIT::getBacktrace((void**)(void*)ips, 100);
   int i = 0;
   int first = 0;
   CommonClass* cl = Classpath::vmStackWalker; 
