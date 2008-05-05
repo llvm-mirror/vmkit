@@ -91,6 +91,41 @@ void GC_finalize_on_demand(void) {}
 void GC_set_max_heap_size(void) {}
 void GC_malloc_atomic(void) {}
 #endif
+
+// Fake termcap symbols
+void tigetstr(void) {
+  abort();
+}
+void tgetstr(void) {
+  abort();
+}
+void setupterm(void) {
+  abort();
+}
+void tigetnum(void) {
+  abort();
+}
+void tgetnum(void) {
+  abort();
+}
+void tigetflag(void) {
+  abort();
+}
+void tparm(void) {
+  abort();
+}
+void tgetent(void) {
+  abort();
+}
+void tputs(void) {
+  abort();
+}
+void tgoto(void) {
+  abort();
+}
+void tgetflag(void) {
+  abort();
+}
 }
 
 
