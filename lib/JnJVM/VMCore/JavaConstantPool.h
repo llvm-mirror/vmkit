@@ -115,6 +115,8 @@ public:
 
   void nameOfStaticOrSpecialMethod(uint32 index, const UTF8*& cl, 
                                    const UTF8*& name, Signdef*& sign);
+  
+  uint32 getClassIndexFromMethod(uint32 index);
 
   CommonClass* getMethodClassIfLoaded(uint32 index);
   void resolveInterfaceOrMethod(uint32 index, CommonClass*& cl,
@@ -123,7 +125,7 @@ public:
                     JavaMethod*& meth); 
   void resolveField(uint32 index, CommonClass*& cl, const UTF8*& utf8,
                     Typedef*& sign);
-
+  
   JavaString* resolveString(const UTF8* utf8, uint16 index);
   
   JavaField* lookupField(uint32 index, bool stat);

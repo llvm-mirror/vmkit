@@ -375,6 +375,12 @@ void JavaCtpInfo::infoOfMethod(uint32 index, uint32 access,
   } 
 }
 
+uint32 JavaCtpInfo::getClassIndexFromMethod(uint32 index) {
+  sint32 entry = ctpDef[index];
+  return (uint32)(entry >> 16);
+}
+
+
 void JavaCtpInfo::nameOfStaticOrSpecialMethod(uint32 index, 
                                               const UTF8*& cl,
                                               const UTF8*& name,

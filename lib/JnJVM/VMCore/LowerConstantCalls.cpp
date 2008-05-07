@@ -79,6 +79,11 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->replaceAllUsesWith(cl);
           CI->eraseFromParent();
         }
+#ifdef MULTIPLE_VM
+        else if (V == jnjvm::JavaJIT::forceInitialisationCheckLLVM) {
+          CI->eraseFromParent();
+        }
+#endif
       }
     }
   }

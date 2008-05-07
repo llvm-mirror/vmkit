@@ -739,8 +739,8 @@ llvm::Function* JavaJIT::javaCompile() {
     }
     printf("\n");
     fflush(stdout);
-  }*/
-  
+  }
+  */
 
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "--> end compiling %s\n",
               compilingMethod->printString());
@@ -1493,6 +1493,18 @@ void JavaJIT::invokeStatic(uint16 index) {
     Function* func = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_STATIC,
                                                           signature, meth);
     
+#ifdef MULTIPLE_VM
+    
+    uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
+    Class* mycl = (Class*)(ctpInfo->getMethodClassIfLoaded(clIndex));
+    if (mycl && mycl->status >= resolved) {
+      Module* M = compilingClass->isolate->module;
+      Value* arg = new LoadInst(mycl->llvmVar(M), "", currentBlock);
+      arg = invoke(initialisationCheckLLVM, arg, "", currentBlock);
+      CallInst::Create(forceInitialisationCheckLLVM, arg, "", currentBlock);
+    }
+
+#endif
 #if 0//def SERVICE_VM
     bool serviceCall = false;
     if (meth && meth->classDef->classLoader != compilingClass->classLoader &&
@@ -1581,9 +1593,10 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit) {
     llvm::BranchInst::Create(trueCl, currentBlock);
     currentBlock = trueCl;
 #ifdef MULTIPLE_VM
-    invoke(initialisationCheckLLVM, node, "", currentBlock);
+    if (clinit)
+      return invoke(initialisationCheckLLVM, node, "", currentBlock);
+    else
 #endif
-    
     return node;
 }
 
@@ -1610,7 +1623,7 @@ void JavaJIT::invokeNew(uint16 index) {
 #ifdef MULTIPLE_VM
     Module* M = compilingClass->isolate->module;
     Value* arg = new LoadInst(cl->llvmVar(M), "", currentBlock);
-    invoke(initialisationCheckLLVM, arg, "", currentBlock);
+    load = invoke(initialisationCheckLLVM, arg, "", currentBlock);
     val = invoke(doNewLLVM, load, isolateLocal, "", currentBlock);
 #else
     val = invoke(doNewLLVM, load, "", currentBlock);

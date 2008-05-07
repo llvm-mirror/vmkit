@@ -226,11 +226,29 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   {
   std::vector<const Type*> args;
   args.push_back(mvm::jit::ptrType);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args,
+  const FunctionType* type = FunctionType::get(mvm::jit::ptrType, args,
                                                false);
 
   initialisationCheckLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "initialisationCheck",
+                     module);
+  PAListPtr func_toto_PAL;
+  SmallVector<ParamAttrsWithIndex, 4> Attrs;
+  ParamAttrsWithIndex PAWI;
+  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
+  Attrs.push_back(PAWI);
+  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
+  initialisationCheckLLVM->setParamAttrs(func_toto_PAL);
+  } 
+  // Create forceInitialisationCheckLLVM
+  {
+  std::vector<const Type*> args;
+  args.push_back(mvm::jit::ptrType);
+  const FunctionType* type = FunctionType::get(Type::VoidTy, args,
+                                               false);
+
+  forceInitialisationCheckLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "forceInitialisationCheck",
                      module);
   } 
 #endif
@@ -370,6 +388,13 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   newLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "newLookup",
                      module);
+  PAListPtr func_toto_PAL;
+  SmallVector<ParamAttrsWithIndex, 4> Attrs;
+  ParamAttrsWithIndex PAWI;
+  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
+  Attrs.push_back(PAWI);
+  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
+  newLookupLLVM->setParamAttrs(func_toto_PAL);
   }
  
 #ifndef WITHOUT_VTABLE
@@ -384,6 +409,13 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
 
   vtableLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                                       "vtableLookup", module);
+  PAListPtr func_toto_PAL;
+  SmallVector<ParamAttrsWithIndex, 4> Attrs;
+  ParamAttrsWithIndex PAWI;
+  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
+  Attrs.push_back(PAWI);
+  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
+  vtableLookupLLVM->setParamAttrs(func_toto_PAL);
   }
 #endif
 
@@ -403,6 +435,13 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   fieldLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "fieldLookup",
                      module);
+  PAListPtr func_toto_PAL;
+  SmallVector<ParamAttrsWithIndex, 4> Attrs;
+  ParamAttrsWithIndex PAWI;
+  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
+  Attrs.push_back(PAWI);
+  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
+  fieldLookupLLVM->setParamAttrs(func_toto_PAL);
   }
   
   // Create nullPointerExceptionLLVM
@@ -550,6 +589,13 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   getStaticInstanceLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "getStaticInstance",
                      module);
+  PAListPtr func_toto_PAL;
+  SmallVector<ParamAttrsWithIndex, 4> Attrs;
+  ParamAttrsWithIndex PAWI;
+  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
+  Attrs.push_back(PAWI);
+  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
+  getStaticInstanceLLVM->setParamAttrs(func_toto_PAL);
   }
   
   // Create getClassDelegateeLLVM
@@ -561,6 +607,13 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   getClassDelegateeLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "getClassDelegatee",
                      module);
+  PAListPtr func_toto_PAL;
+  SmallVector<ParamAttrsWithIndex, 4> Attrs;
+  ParamAttrsWithIndex PAWI;
+  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
+  Attrs.push_back(PAWI);
+  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
+  getClassDelegateeLLVM->setParamAttrs(func_toto_PAL);
   }
   
   // Create instanceOfLLVM
@@ -573,6 +626,13 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   instanceOfLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN5jnjvm10JavaObject10instanceOfEPNS_11CommonClassE",
                      module);
+  PAListPtr func_toto_PAL;
+  SmallVector<ParamAttrsWithIndex, 4> Attrs;
+  ParamAttrsWithIndex PAWI;
+  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
+  Attrs.push_back(PAWI);
+  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
+  instanceOfLLVM->setParamAttrs(func_toto_PAL);
   }
   
   // Create aquireObjectLLVM

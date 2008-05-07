@@ -60,7 +60,7 @@ Value* Class::staticVar(JavaJIT* jit) {
 #else
   Value* var = llvmVar(jit->compilingClass->isolate->module);
   Value* ld = new LoadInst(var, "", jit->currentBlock);
-  jit->invoke(JavaJIT::initialisationCheckLLVM, ld, "", jit->currentBlock);
+  ld = jit->invoke(JavaJIT::initialisationCheckLLVM, ld, "", jit->currentBlock);
   return jit->invoke(JavaJIT::getStaticInstanceLLVM, ld, jit->isolateLocal, 
                      "", jit->currentBlock);
 #endif

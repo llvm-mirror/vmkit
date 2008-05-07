@@ -60,6 +60,7 @@ llvm::Function* JavaJIT::doNewLLVM = 0;
 llvm::Function* JavaJIT::doNewUnknownLLVM = 0;
 #ifdef MULTIPLE_VM
 llvm::Function* JavaJIT::initialisationCheckLLVM = 0;
+llvm::Function* JavaJIT::forceInitialisationCheckLLVM = 0;
 #endif
 llvm::Function* JavaJIT::initialiseObjectLLVM = 0;
 llvm::Function* JavaJIT::newLookupLLVM = 0;
@@ -228,8 +229,9 @@ extern "C" JavaObject* getStaticInstance(Class* cl, Jnjvm* vm) {
   return val->second;
 }
 
-extern "C" void initialisationCheck(CommonClass* cl) {
+extern "C" CommonClass* initialisationCheck(CommonClass* cl) {
   cl->isolate->initialiseClass(cl);
+  return cl;
 }
 #endif
 
