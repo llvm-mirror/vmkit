@@ -52,7 +52,6 @@ ClassArray* JavaArray::ofObject = 0;
       (Object*) operator new(sizeof(name) + n * primSize, name::VT);        \
     res->initialise(atype);                                                 \
     res->size = n;                                                          \
-    memset(res->elements, 0, primSize * n);                                 \
     return res;                                                             \
   }
 #else
@@ -66,7 +65,6 @@ ClassArray* JavaArray::ofObject = 0;
       (Object*) vm->allocateObject(sizeof(name) + n * primSize, name::VT);  \
     res->initialise(atype);                                                 \
     res->size = n;                                                          \
-    memset(res->elements, 0, primSize * n);                                 \
     return res;                                                             \
   }
 #endif
@@ -117,7 +115,6 @@ ArrayObject *ArrayObject::acons(sint32 n, ClassArray* atype, Jnjvm* vm) {
 #endif
   res->initialise(atype);
   res->size = n;
-  memset(res->elements, 0, sizeof(JavaObject*) * n);
   res->setVirtualTable(ArrayObject::VT);
   return res;
 }

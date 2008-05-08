@@ -354,27 +354,27 @@ JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
 #ifndef MULTIPLE_VM
 JavaObject* Class::doNew(Jnjvm* vm) {
   JavaObject* res = (JavaObject*)gc::operator new(virtualSize, virtualVT);
-  memcpy(res, virtualInstance, virtualSize);  
+  res->classOf = this;
   return res;
 }
 
 // Copy doNew because LLVM wants two different pointers (for simplicity)
 JavaObject* Class::doNewUnknown(Jnjvm* vm) {
   JavaObject* res = (JavaObject*)gc::operator new(virtualSize, virtualVT);
-  memcpy(res, virtualInstance, virtualSize);  
+  res->classOf = this;
   return res;
 }
 #else
 JavaObject* Class::doNew(Jnjvm* vm) {
   JavaObject* res = (JavaObject*)vm->allocateObject(virtualSize, virtualVT);
-  memcpy(res, virtualInstance, virtualSize);  
+  res->classOf = this;
   return res;
 }
 
 // Copy doNew because LLVM wants two different pointers (for simplicity)
 JavaObject* Class::doNewUnknown(Jnjvm* vm) {
   JavaObject* res = (JavaObject*)vm->allocateObject(virtualSize, virtualVT);
-  memcpy(res, virtualInstance, virtualSize);  
+  res->classOf = this;
   return res;
 }
 #endif
