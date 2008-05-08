@@ -38,6 +38,9 @@ llvm::Function* JavaJIT::compareExceptionLLVM = 0;
 llvm::Function* JavaJIT::nullPointerExceptionLLVM = 0;
 llvm::Function* JavaJIT::classCastExceptionLLVM = 0;
 llvm::Function* JavaJIT::indexOutOfBoundsExceptionLLVM = 0;
+llvm::Function* JavaJIT::negativeArraySizeExceptionLLVM = 0;
+llvm::Function* JavaJIT::outOfMemoryErrorLLVM = 0;
+llvm::Function* JavaJIT::javaObjectAllocateLLVM = 0;
 llvm::Function* JavaJIT::javaObjectTracerLLVM = 0;
 llvm::Function* JavaJIT::virtualLookupLLVM = 0;
 llvm::Function* JavaJIT::fieldLookupLLVM = 0;
@@ -209,6 +212,14 @@ extern "C" void* getSJLJBuffer() {
 
 extern "C" void nullPointerException() {
   JavaThread::get()->isolate->nullPointerException("null");
+}
+
+extern "C" void negativeArraySizeException(sint32 val) {
+  JavaThread::get()->isolate->negativeArraySizeException(val);
+}
+
+extern "C" void outOfMemoryError(sint32 val) {
+  JavaThread::get()->isolate->outOfMemoryError(val);
 }
 
 extern "C" void classCastException(JavaObject* obj, CommonClass* cl) {

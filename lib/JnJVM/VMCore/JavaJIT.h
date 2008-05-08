@@ -122,6 +122,8 @@ public:
   static llvm::Function* nullPointerExceptionLLVM;
   static llvm::Function* indexOutOfBoundsExceptionLLVM;
   static llvm::Function* classCastExceptionLLVM;
+  static llvm::Function* outOfMemoryErrorLLVM;
+  static llvm::Function* negativeArraySizeExceptionLLVM;
   std::vector<llvm::BasicBlock*> jsrs;
   // exception local
   llvm::Value* supplLocal;
@@ -273,6 +275,8 @@ public:
   static llvm::Function* arrayLengthLLVM;
   static llvm::Function* getVTLLVM;
   static llvm::Function* getClassLLVM;
+  static llvm::Function* getCollectorLLVM;
+  static llvm::Function* javaObjectAllocateLLVM;
   
 
   static Class* getCallingClass();
@@ -288,6 +292,11 @@ public:
 
   static llvm::Constant*    constantJavaObjectNull;
   static llvm::Constant*    constantUTF8Null;
+  static llvm::Constant*    constantMaxArraySize;
+  static llvm::Constant*    constantJavaObjectSize;
+
+  static llvm::GlobalVariable* ArrayObjectVT;
+  static llvm::GlobalVariable* JavaObjectVT;
 };
 
 enum Opcode {

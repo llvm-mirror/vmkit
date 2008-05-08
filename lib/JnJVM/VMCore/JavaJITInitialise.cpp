@@ -69,10 +69,10 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   mvm::jit::protectTypes();//->lock();
   // Create JavaObject::llvmType
   const llvm::Type* Pty = mvm::jit::ptrType;
+  const llvm::Type* VTType = PointerType::getUnqual(PointerType::getUnqual(Type::Int32Ty));
   
   std::vector<const llvm::Type*> objectFields;
-  objectFields.push_back(
-      PointerType::getUnqual(PointerType::getUnqual(Type::Int32Ty))); // VT
+  objectFields.push_back(VTType); // VT
   objectFields.push_back(Pty); // Class
   objectFields.push_back(Pty); // Lock
   JavaObject::llvmType = 
@@ -477,6 +477,35 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                      "indexOutOfBoundsException",
                      module);
   }
+  {
+  std::vector<const Type*> args;
+  args.push_back(Type::Int32Ty);
+  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
+
+
+  negativeArraySizeExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "negativeArraySizeException",
+                     module);
+  
+  outOfMemoryErrorLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "outOfMemoryError",
+                     module);
+  }
+  
+  {
+  std::vector<const Type*> args;
+  args.push_back(Type::Int32Ty);
+  args.push_back(VTType);
+#ifdef MULTIPLE_GC
+  args.push_back(mvm::jit::ptrType);
+#endif
+  const FunctionType* type = FunctionType::get(JavaObject::llvmType, args, false);
+
+
+  javaObjectAllocateLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "gcmalloc",
+                     module);
+  }
   
   // Create proceedPendingExceptionLLVM
   {
@@ -731,11 +760,40 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   mvm::jit::protectConstants();//->lock();
   constantUTF8Null = Constant::getNullValue(UTF8::llvmType); 
   constantJavaObjectNull = Constant::getNullValue(JavaObject::llvmType);
+  constantMaxArraySize = ConstantInt::get(Type::Int32Ty,
+                                          JavaArray::MaxArraySize);
+  constantJavaObjectSize = ConstantInt::get(Type::Int32Ty, sizeof(JavaObject));
+  
+  
+  Constant* cons = 
+    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
+                              uint64_t (JavaObject::VT)), VTType);
+      
+  JavaObjectVT = new GlobalVariable(VTType, true,
+                                    GlobalValue::ExternalLinkage,
+                                    cons, "",
+                                    module);
+  
+  cons = 
+    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
+                              uint64_t (ArrayObject::VT)), VTType);
+  
+  ArrayObjectVT = new GlobalVariable(VTType, true,
+                                    GlobalValue::ExternalLinkage,
+                                    cons, "",
+                                    module);
+  
+      
+  
   mvm::jit::unprotectConstants();//->unlock();
 }
 
 llvm::Constant*    JavaJIT::constantJavaObjectNull;
 llvm::Constant*    JavaJIT::constantUTF8Null;
+llvm::Constant*    JavaJIT::constantMaxArraySize;
+llvm::Constant*    JavaJIT::constantJavaObjectSize;
+llvm::GlobalVariable*    JavaJIT::JavaObjectVT;
+llvm::GlobalVariable*    JavaJIT::ArrayObjectVT;
 
 
 namespace mvm {

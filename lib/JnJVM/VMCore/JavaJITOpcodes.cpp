@@ -1793,15 +1793,90 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         llvm::Value* valCl = new LoadInst(dcl->llvmVar(vm->module), "", currentBlock);
         llvm::Value* arg1 = popAsInt();
-#ifdef MULTIPLE_VM
+
+        Value* cmp = new ICmpInst(ICmpInst::ICMP_SLT, arg1, mvm::jit::constantZero, "", currentBlock);
+
+        BasicBlock* BB1 = createBasicBlock("");
+        BasicBlock* BB2 = createBasicBlock("");
+
+        BranchInst::Create(BB1, BB2, cmp, currentBlock);
+        currentBlock = BB1;
+        std::vector<Value*> exArgs;
+        exArgs.push_back(arg1);
+        if (currentExceptionBlock != endExceptionBlock) {
+          InvokeInst::Create(negativeArraySizeExceptionLLVM, unifiedUnreachable, currentExceptionBlock, exArgs.begin(), exArgs.end(), "", currentBlock);
+        } else {
+          CallInst::Create(negativeArraySizeExceptionLLVM, exArgs.begin(), exArgs.end(), "", currentBlock);
+          new UnreachableInst(currentBlock);
+        }
+        currentBlock = BB2;
+        
+        cmp = new ICmpInst(ICmpInst::ICMP_SGT, arg1, constantMaxArraySize, "", currentBlock);
+
+        BB1 = createBasicBlock("");
+        BB2 = createBasicBlock("");
+
+        BranchInst::Create(BB1, BB2, cmp, currentBlock);
+        currentBlock = BB1;
+        if (currentExceptionBlock != endExceptionBlock) {
+          InvokeInst::Create(outOfMemoryErrorLLVM, unifiedUnreachable, currentExceptionBlock, exArgs.begin(), exArgs.end(), "", currentBlock);
+        } else {
+          CallInst::Create(outOfMemoryErrorLLVM, exArgs.begin(), exArgs.end(), "", currentBlock);
+          new UnreachableInst(currentBlock);
+        }
+        currentBlock = BB2;
+        
+        Value* mult = BinaryOperator::createMul(arg1, mvm::jit::constantPtrSize, "", currentBlock);
+        Value* size = BinaryOperator::createAdd(constantJavaObjectSize, mult, "", currentBlock);
         std::vector<Value*> args;
-        args.push_back(arg1);
-        args.push_back(valCl);
-        args.push_back(isolateLocal);
-        push(invoke(ObjectAconsLLVM, args, "", currentBlock), AssessorDesc::dRef);
-#else
-        push(invoke(ObjectAconsLLVM, arg1, valCl, "", currentBlock), AssessorDesc::dRef);
+        args.push_back(size);
+        args.push_back(new LoadInst(ArrayObjectVT, "", currentBlock));
+#ifdef MULTIPLE_GC
+        args.push_back(CallInst::Create(getCollector, isolateLocal, "", currentBlock));
 #endif
+        Value* res = invoke(javaObjectAllocateLLVM, args, "", currentBlock);
+        Value* cast = new BitCastInst(res, ArrayObject::llvmType, "", currentBlock);
+
+        // Set the size
+        std::vector<Value*> gep4;
+        gep4.push_back(mvm::jit::constantZero);
+        gep4.push_back(JavaArray::sizeOffset());
+        new StoreInst(arg1, GetElementPtrInst::Create(cast, gep4.begin(), gep4.end(), "", currentBlock), currentBlock);
+        
+        /*
+        // Memset 0 to everyone
+        std::vector<Value*> gep5;
+        gep5.push_back(mvm::jit::constantZero);
+        gep5.push_back(JavaArray::elementsOffset());
+        Value* elements = GetElementPtrInst::Create(cast, gep5.begin(), gep5.end(), "", currentBlock);
+        
+        std::vector<Value*> argsM;
+        argsM.push_back(new BitCastInst(elements, mvm::jit::ptrType, "", currentBlock));
+        argsM.push_back(mvm::jit::constantInt8Zero);
+        argsM.push_back(mult);
+        argsM.push_back(mvm::jit::constantFour);
+        CallInst::Create(mvm::jit::llvm_memset_i32, argsM.begin(), argsM.end(), "", currentBlock);
+        */
+        // Set the class
+        std::vector<Value*> gep;
+        gep.push_back(mvm::jit::constantZero);
+        gep.push_back(JavaObject::classOffset());
+        new StoreInst(valCl, GetElementPtrInst::Create(res, gep.begin(), gep.end(), "", currentBlock), currentBlock);
+        /* 
+        // Set the lock to zero
+        std::vector<Value*> gep2;
+        gep2.push_back(mvm::jit::constantZero);
+        gep2.push_back(JavaObject::lockOffset());
+        new StoreInst(mvm::jit::constantPtrNull, GetElementPtrInst::Create(res, gep2.begin(), gep2.end(), "", currentBlock), currentBlock);
+        
+        // Set the real VT
+        std::vector<Value*> gep3;
+        gep3.push_back(mvm::jit::constantZero);
+        gep3.push_back(mvm::jit::constantZero);
+        new StoreInst(new LoadInst(ArrayObjectVT, "", currentBlock), GetElementPtrInst::Create(res, gep3.begin(), gep3.end(), "", currentBlock), currentBlock);
+        */ 
+        push(res, AssessorDesc::dRef);
+
         break;
       }
 
