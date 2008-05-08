@@ -59,7 +59,8 @@ AssessorDesc* AssessorDesc::dRef = 0;
 AssessorDesc* AssessorDesc::allocate(bool dt, char bid, uint32 nb, uint32 nw,
                                      const char* name, const char* className,
                                      Jnjvm* vm, const llvm::Type* t,
-                                     const char* assocName, arrayCtor_t ctor) {
+                                     const char* assocName, ClassArray* cl,
+                                     llvm::ConstantInt* CI, arrayCtor_t ctor) {
   AssessorDesc* res = vm_new(vm, AssessorDesc)();
   res->doTrace = dt;
   res->byteId = bid;
@@ -68,11 +69,13 @@ AssessorDesc* AssessorDesc::allocate(bool dt, char bid, uint32 nb, uint32 nw,
   res->asciizName = name;
   res->UTF8Name = vm->asciizConstructUTF8(name);
   res->llvmType = t;
+  res->sizeInBytesConstant = CI;
+  res->arrayCtor = ctor;
   if (t && t != llvm::Type::VoidTy) {
     res->llvmTypePtr = llvm::PointerType::getUnqual(t);
     res->llvmNullConstant = llvm::Constant::getNullValue(t);
   }
-  res->arrayCtor = ctor;
+  res->arrayClass = cl;
   if (assocName)
     res->assocClassName = vm->asciizConstructUTF8(assocName);
   else
@@ -91,43 +94,56 @@ AssessorDesc* AssessorDesc::allocate(bool dt, char bid, uint32 nb, uint32 nw,
 
 void AssessorDesc::initialise(Jnjvm* vm) {
 
-  dParg = AssessorDesc::allocate(false, I_PARG, 0, 0, "(", "(", vm, 0, 0, 0);
-  dPard = AssessorDesc::allocate(false, I_PARD, 0, 0, ")", ")", vm, 0, 0, 0);
+  dParg = AssessorDesc::allocate(false, I_PARG, 0, 0, "(", "(", vm, 0, 0, 0,
+                                 0, 0);
+  dPard = AssessorDesc::allocate(false, I_PARD, 0, 0, ")", ")", vm, 0, 0, 0,
+                                 0, 0);
   dVoid = AssessorDesc::allocate(false, I_VOID, 0, 0, "void", "*** void ***",
-                                 vm, llvm::Type::VoidTy, "java/lang/Void", 0);
+                                 vm, llvm::Type::VoidTy, "java/lang/Void",
+                                 0, 0, 0);
   dBool = AssessorDesc::allocate(false, I_BOOL, 1, 1, "boolean", 
                                  "*** boolean ***", vm,
                                  llvm::Type::Int8Ty, "java/lang/Boolean", 
+                                 JavaArray::ofBool, mvm::jit::constantOne,
                                  (arrayCtor_t)ArrayUInt8::acons);
   dByte = AssessorDesc::allocate(false, I_BYTE, 1, 1, "byte", "*** byte ***",
                                  vm, llvm::Type::Int8Ty, "java/lang/Byte",
+                                 JavaArray::ofByte, mvm::jit::constantOne,
                                  (arrayCtor_t)ArraySInt8::acons);
   dChar = AssessorDesc::allocate(false, I_CHAR, 2, 1, "char", "*** char ***",
                                  vm, llvm::Type::Int16Ty, "java/lang/Character",
+                                 JavaArray::ofChar, mvm::jit::constantTwo,
                                  (arrayCtor_t)ArrayUInt16::acons);
   dShort = AssessorDesc::allocate(false, I_SHORT, 2, 1, "short", 
                                   "*** short ***", vm, llvm::Type::Int16Ty,
                                   "java/lang/Short",
+                                  JavaArray::ofShort, mvm::jit::constantTwo,
                                   (arrayCtor_t)ArraySInt16::acons);
   dInt = AssessorDesc::allocate(false, I_INT, 4, 1, "int", "*** int ***", vm,
                                 llvm::Type::Int32Ty, "java/lang/Integer",
+                                JavaArray::ofInt, mvm::jit::constantFour,
                                 (arrayCtor_t)ArraySInt32::acons);
   dFloat = AssessorDesc::allocate(false, I_FLOAT, 4, 1, "float", 
                                   "*** float ***", vm,
                                   llvm::Type::FloatTy, "java/lang/Float",
+                                  JavaArray::ofFloat, mvm::jit::constantFour,
                                   (arrayCtor_t)ArrayFloat::acons);
   dLong = AssessorDesc::allocate(false, I_LONG, 8, 2, "long", "*** long ***", 
                                  vm, llvm::Type::Int64Ty, "java/lang/Long",
-                                 (arrayCtor_t)ArrayLong::acons);
+                                 JavaArray::ofLong, mvm::jit::constantEight,
+                                  (arrayCtor_t)ArrayLong::acons);
   dDouble = AssessorDesc::allocate(false, I_DOUBLE, 8, 2, "double", 
                                    "*** double ***", vm,
                                    llvm::Type::DoubleTy, "java/lang/Double",
+                                   JavaArray::ofDouble, mvm::jit::constantEight,
                                    (arrayCtor_t)ArrayDouble::acons);
-  dTab = AssessorDesc::allocate(true, I_TAB, 4, 1, "array", "array", vm,
-                                JavaObject::llvmType, 0,
+  dTab = AssessorDesc::allocate(true, I_TAB, sizeof(void*), 1, "array", "array",
+                                vm, JavaObject::llvmType, 0, 0,
+                                mvm::jit::constantPtrSize,
                                 (arrayCtor_t)ArrayObject::acons);
-  dRef = AssessorDesc::allocate(true, I_REF, 4, 1, "reference", "reference", vm,
-                                JavaObject::llvmType, 0,
+  dRef = AssessorDesc::allocate(true, I_REF, sizeof(void*), 1, "reference",
+                                "reference", vm, JavaObject::llvmType, 0, 0,
+                                mvm::jit::constantPtrSize,
                                 (arrayCtor_t)ArrayObject::acons);
   
   mvm::Object::pushRoot((mvm::Object*)dParg);
@@ -313,43 +329,27 @@ void AssessorDesc::introspectArray(Jnjvm *vm, JavaObject* loader,
   }
 }
 
-static void _arrayType(Jnjvm *vm, unsigned int t, AssessorDesc*& funcs,
-                       llvm::Function*& ctor) {
+AssessorDesc* AssessorDesc::arrayType(unsigned int t) {
   if (t == JavaArray::T_CHAR) {
-    funcs = AssessorDesc::dChar;
-    ctor = JavaJIT::UTF8AconsLLVM;
+    return AssessorDesc::dChar;
   } else if (t == JavaArray::T_BOOLEAN) {
-    funcs = AssessorDesc::dBool;
-    ctor = JavaJIT::Int8AconsLLVM;
+    return AssessorDesc::dBool;
   } else if (t == JavaArray::T_INT) {
-    funcs = AssessorDesc::dInt;
-    ctor = JavaJIT::Int32AconsLLVM;
+    return AssessorDesc::dInt;
   } else if (t == JavaArray::T_SHORT) {
-    funcs = AssessorDesc::dShort;
-    ctor = JavaJIT::Int16AconsLLVM;
+    return AssessorDesc::dShort;
   } else if (t == JavaArray::T_BYTE) {
-    funcs = AssessorDesc::dByte;
-    ctor = JavaJIT::Int8AconsLLVM;
+    return AssessorDesc::dByte;
   } else if (t == JavaArray::T_FLOAT) {
-    funcs = AssessorDesc::dFloat;
-    ctor = JavaJIT::FloatAconsLLVM;
+    return AssessorDesc::dFloat;
   } else if (t == JavaArray::T_LONG) {
-    funcs = AssessorDesc::dLong;
-    ctor = JavaJIT::LongAconsLLVM;
+    return AssessorDesc::dLong;
   } else if (t == JavaArray::T_DOUBLE) {
-    funcs = AssessorDesc::dDouble;
-    ctor = JavaJIT::DoubleAconsLLVM;
+    return AssessorDesc::dDouble;
   } else {
-    vm->unknownError("unknown array type %d\n", t);
+    JavaThread::get()->isolate->unknownError("unknown array type %d\n", t);
+    return 0;
   }
-}
-
-void AssessorDesc::arrayType(Jnjvm *vm, JavaObject* loader, unsigned int t,
-                             ClassArray*& cl, AssessorDesc*& ass, 
-                             llvm::Function*& ctr) {
-  _arrayType(vm, t, ass, ctr);
-  cl = vm->constructArray(constructArrayName(vm, ass, 1, 0), loader);
-  assert(cl);
 }
 
 void Typedef::tPrintBuf(mvm::PrintBuffer* buf) const {

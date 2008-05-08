@@ -99,7 +99,8 @@ uint32 JavaJIT::WCALC(uint32 n) {
   }
 }
 
-void convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock, bool usign) {
+void convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock,
+                  bool usign) {
   const Type* t2 = val->getType();
   if (t1 != t2) {
     if (t1->isInteger() && t2->isInteger()) {
@@ -143,18 +144,22 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       setCurrentBlock(opinfo->newBlock);
     }
     currentExceptionBlock = opinfo->exceptionBlock;
-    if (currentBlock->getTerminator() != 0) { // To prevent a gcj bug with useless goto
+    
+    // To prevent a gcj bug with useless goto
+    if (currentBlock->getTerminator() != 0) { 
       currentBlock = createBasicBlock("gcj bug");
     }
 #if JNJVM_EXECUTE > 1
     {
     std::vector<llvm::Value*> args;
-    mvm::jit::protectConstants();//->lock();
-    args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)OpcodeNames[bytecodes[i]]));
+    mvm::jit::protectConstants();
+    args.push_back(ConstantInt::get(Type::Int32Ty, 
+                                    (int64_t)OpcodeNames[bytecodes[i]]));
     args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)i));
     args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
-    mvm::jit::unprotectConstants();//->unlock();
-    CallInst::Create(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
+    mvm::jit::unprotectConstants();
+    CallInst::Create(printExecutionLLVM, args.begin(), args.end(), "",
+                     currentBlock);
     }
 #endif
 
@@ -301,75 +306,91 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
       
       case LLOAD_0 :
-        push(new LoadInst(longLocals[0], "", currentBlock), AssessorDesc::dLong);
+        push(new LoadInst(longLocals[0], "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
 
       case LLOAD_1 :
-        push(new LoadInst(longLocals[1], "", currentBlock), AssessorDesc::dLong);
+        push(new LoadInst(longLocals[1], "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       
       case LLOAD_2 :
-        push(new LoadInst(longLocals[2], "", currentBlock), AssessorDesc::dLong);
+        push(new LoadInst(longLocals[2], "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       
       case LLOAD_3 :
-        push(new LoadInst(longLocals[3], "", currentBlock), AssessorDesc::dLong);
+        push(new LoadInst(longLocals[3], "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       
       case FLOAD_0 :
-        push(new LoadInst(floatLocals[0], "", currentBlock), AssessorDesc::dFloat);
+        push(new LoadInst(floatLocals[0], "", currentBlock),
+             AssessorDesc::dFloat);
         break;
       
       case FLOAD_1 :
-        push(new LoadInst(floatLocals[1], "", currentBlock), AssessorDesc::dFloat);
+        push(new LoadInst(floatLocals[1], "", currentBlock),
+             AssessorDesc::dFloat);
         break;
 
       case FLOAD_2 :
-        push(new LoadInst(floatLocals[2], "", currentBlock), AssessorDesc::dFloat);
+        push(new LoadInst(floatLocals[2], "", currentBlock),
+             AssessorDesc::dFloat);
         break;
 
       case FLOAD_3 :
-        push(new LoadInst(floatLocals[3], "", currentBlock), AssessorDesc::dFloat);
+        push(new LoadInst(floatLocals[3], "", currentBlock),
+             AssessorDesc::dFloat);
         break;
       
       case DLOAD_0 :
-        push(new LoadInst(doubleLocals[0], "", currentBlock), AssessorDesc::dDouble);
+        push(new LoadInst(doubleLocals[0], "", currentBlock),
+             AssessorDesc::dDouble);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
 
       case DLOAD_1 :
-        push(new LoadInst(doubleLocals[1], "", currentBlock), AssessorDesc::dDouble);
+        push(new LoadInst(doubleLocals[1], "", currentBlock),
+             AssessorDesc::dDouble);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       
       case DLOAD_2 :
-        push(new LoadInst(doubleLocals[2], "", currentBlock), AssessorDesc::dDouble);
+        push(new LoadInst(doubleLocals[2], "", currentBlock),
+             AssessorDesc::dDouble);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       
       case DLOAD_3 :
-        push(new LoadInst(doubleLocals[3], "", currentBlock), AssessorDesc::dDouble);
+        push(new LoadInst(doubleLocals[3], "", currentBlock),
+             AssessorDesc::dDouble);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       
       case ALOAD_0 :
-        push(new LoadInst(objectLocals[0], "", currentBlock), AssessorDesc::dRef);
+        push(new LoadInst(objectLocals[0], "", currentBlock),
+             AssessorDesc::dRef);
         break;
       
       case ALOAD_1 :
-        push(new LoadInst(objectLocals[1], "", currentBlock), AssessorDesc::dRef);
+        push(new LoadInst(objectLocals[1], "", currentBlock),
+             AssessorDesc::dRef);
         break;
 
       case ALOAD_2 :
-        push(new LoadInst(objectLocals[2], "", currentBlock), AssessorDesc::dRef);
+        push(new LoadInst(objectLocals[2], "", currentBlock),
+             AssessorDesc::dRef);
         break;
 
       case ALOAD_3 :
-        push(new LoadInst(objectLocals[3], "", currentBlock), AssessorDesc::dRef);
+        push(new LoadInst(objectLocals[3], "", currentBlock),
+             AssessorDesc::dRef);
         break;
       
       case IALOAD : {
@@ -419,7 +440,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* obj = pop();
         Value* ptr = verifyAndComputePtr(obj, index, ArraySInt8::llvmType);
         Value* val = new LoadInst(ptr, "", currentBlock);
-        push(new SExtInst(val, Type::Int32Ty, "", currentBlock), AssessorDesc::dInt);
+        push(new SExtInst(val, Type::Int32Ty, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -428,7 +450,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* obj = pop();
         Value* ptr = verifyAndComputePtr(obj, index, ArrayUInt16::llvmType);
         Value* val = new LoadInst(ptr, "", currentBlock);
-        push(new ZExtInst(val, Type::Int32Ty, "", currentBlock), AssessorDesc::dInt);
+        push(new ZExtInst(val, Type::Int32Ty, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -437,7 +460,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* obj = pop();
         Value* ptr = verifyAndComputePtr(obj, index, ArraySInt16::llvmType);
         Value* val = new LoadInst(ptr, "", currentBlock);
-        push(new SExtInst(val, Type::Int32Ty, "", currentBlock), AssessorDesc::dInt);
+        push(new SExtInst(val, Type::Int32Ty, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -743,7 +767,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IADD : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createAdd(val1, val2, "", currentBlock), AssessorDesc::dInt);
+        push(BinaryOperator::createAdd(val1, val2, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -752,7 +777,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createAdd(val1, val2, "", currentBlock), AssessorDesc::dLong);
+        push(BinaryOperator::createAdd(val1, val2, "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -760,7 +786,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FADD : {
         Value* val2 = pop();
         Value* val1 = pop();
-        push(BinaryOperator::createAdd(val1, val2, "", currentBlock), AssessorDesc::dFloat);
+        push(BinaryOperator::createAdd(val1, val2, "", currentBlock),
+             AssessorDesc::dFloat);
         break;
       }
 
@@ -769,7 +796,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createAdd(val1, val2, "", currentBlock), AssessorDesc::dDouble);
+        push(BinaryOperator::createAdd(val1, val2, "", currentBlock),
+             AssessorDesc::dDouble);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -777,7 +805,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case ISUB : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createSub(val1, val2, "", currentBlock), AssessorDesc::dInt);
+        push(BinaryOperator::createSub(val1, val2, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
       case LSUB : {
@@ -785,7 +814,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createSub(val1, val2, "", currentBlock), AssessorDesc::dLong);
+        push(BinaryOperator::createSub(val1, val2, "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -793,7 +823,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FSUB : {
         Value* val2 = pop();
         Value* val1 = pop();
-        push(BinaryOperator::createSub(val1, val2, "", currentBlock), AssessorDesc::dFloat);
+        push(BinaryOperator::createSub(val1, val2, "", currentBlock),
+             AssessorDesc::dFloat);
         break;
       }
 
@@ -802,7 +833,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createSub(val1, val2, "", currentBlock), AssessorDesc::dDouble);
+        push(BinaryOperator::createSub(val1, val2, "", currentBlock),
+             AssessorDesc::dDouble);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -810,7 +842,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IMUL : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createMul(val1, val2, "", currentBlock), AssessorDesc::dInt);
+        push(BinaryOperator::createMul(val1, val2, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -819,7 +852,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createMul(val1, val2, "", currentBlock), AssessorDesc::dLong);
+        push(BinaryOperator::createMul(val1, val2, "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -827,7 +861,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FMUL : {
         Value* val2 = pop();
         Value* val1 = pop();
-        push(BinaryOperator::createMul(val1, val2, "", currentBlock), AssessorDesc::dFloat);
+        push(BinaryOperator::createMul(val1, val2, "", currentBlock),
+             AssessorDesc::dFloat);
         break;
       }
 
@@ -836,7 +871,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createMul(val1, val2, "", currentBlock), AssessorDesc::dDouble);
+        push(BinaryOperator::createMul(val1, val2, "", currentBlock),
+             AssessorDesc::dDouble);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -844,7 +880,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IDIV : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createSDiv(val1, val2, "", currentBlock), AssessorDesc::dInt);
+        push(BinaryOperator::createSDiv(val1, val2, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -853,7 +890,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createSDiv(val1, val2, "", currentBlock), AssessorDesc::dLong);
+        push(BinaryOperator::createSDiv(val1, val2, "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -861,7 +899,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FDIV : {
         Value* val2 = pop();
         Value* val1 = pop();
-        push(BinaryOperator::createFDiv(val1, val2, "", currentBlock), AssessorDesc::dFloat);
+        push(BinaryOperator::createFDiv(val1, val2, "", currentBlock),
+             AssessorDesc::dFloat);
         break;
       }
 
@@ -870,7 +909,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createFDiv(val1, val2, "", currentBlock), AssessorDesc::dDouble);
+        push(BinaryOperator::createFDiv(val1, val2, "", currentBlock),
+             AssessorDesc::dDouble);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -878,7 +918,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IREM : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createSRem(val1, val2, "", currentBlock), AssessorDesc::dInt);
+        push(BinaryOperator::createSRem(val1, val2, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -887,7 +928,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createSRem(val1, val2, "", currentBlock), AssessorDesc::dLong);
+        push(BinaryOperator::createSRem(val1, val2, "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -895,7 +937,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FREM : {
         Value* val2 = pop();
         Value* val1 = pop();
-        push(BinaryOperator::createFRem(val1, val2, "", currentBlock), AssessorDesc::dFloat);
+        push(BinaryOperator::createFRem(val1, val2, "", currentBlock),
+             AssessorDesc::dFloat);
         break;
       }
 
@@ -904,7 +947,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createFRem(val1, val2, "", currentBlock), AssessorDesc::dDouble);
+        push(BinaryOperator::createFRem(val1, val2, "", currentBlock),
+             AssessorDesc::dDouble);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -912,7 +956,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case INEG :
         push(BinaryOperator::createSub(
                               mvm::jit::constantZero,
-                              popAsInt(), "", currentBlock), AssessorDesc::dInt);
+                              popAsInt(), "", currentBlock),
+             AssessorDesc::dInt);
         break;
       
       case LNEG : {
@@ -942,7 +987,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case ISHL : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createShl(val1, val2, "", currentBlock), AssessorDesc::dInt);
+        push(BinaryOperator::createShl(val1, val2, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -950,7 +996,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* val2 = new ZExtInst(pop(), Type::Int64Ty, "", currentBlock);
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
-        push(BinaryOperator::createShl(val1, val2, "", currentBlock), AssessorDesc::dLong);
+        push(BinaryOperator::createShl(val1, val2, "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -958,7 +1005,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case ISHR : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createAShr(val1, val2, "", currentBlock), AssessorDesc::dInt);
+        push(BinaryOperator::createAShr(val1, val2, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -966,7 +1014,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* val2 = new ZExtInst(pop(), Type::Int64Ty, "", currentBlock);
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
-        push(BinaryOperator::createAShr(val1, val2, "", currentBlock), AssessorDesc::dLong);
+        push(BinaryOperator::createAShr(val1, val2, "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -974,7 +1023,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IUSHR : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createLShr(val1, val2, "", currentBlock), AssessorDesc::dInt);
+        push(BinaryOperator::createLShr(val1, val2, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -982,7 +1032,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* val2 = new ZExtInst(pop(), Type::Int64Ty, "", currentBlock);
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
-        push(BinaryOperator::createLShr(val1, val2, "", currentBlock), AssessorDesc::dLong);
+        push(BinaryOperator::createLShr(val1, val2, "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -990,7 +1041,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IAND : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createAnd(val1, val2, "", currentBlock), AssessorDesc::dInt);
+        push(BinaryOperator::createAnd(val1, val2, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -999,7 +1051,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* val2 = pop();
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
-        push(BinaryOperator::createAnd(val1, val2, "", currentBlock), AssessorDesc::dLong);
+        push(BinaryOperator::createAnd(val1, val2, "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -1007,7 +1060,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IOR : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createOr(val1, val2, "", currentBlock), AssessorDesc::dInt);
+        push(BinaryOperator::createOr(val1, val2, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -1016,7 +1070,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* val2 = pop();
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
-        push(BinaryOperator::createOr(val1, val2, "", currentBlock), AssessorDesc::dLong);
+        push(BinaryOperator::createOr(val1, val2, "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -1024,7 +1079,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IXOR : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createXor(val1, val2, "", currentBlock), AssessorDesc::dInt);
+        push(BinaryOperator::createXor(val1, val2, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -1033,7 +1089,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* val2 = pop();
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
-        push(BinaryOperator::createXor(val1, val2, "", currentBlock), AssessorDesc::dLong);
+        push(BinaryOperator::createXor(val1, val2, "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       }
@@ -1041,43 +1098,49 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IINC : {
         uint16 idx = WREAD_U1(bytecodes, true, i);
         sint16 val = WREAD_S1(bytecodes, false, i);
-        mvm::jit::protectConstants();//->lock();
+        mvm::jit::protectConstants();
         llvm::Value* add = BinaryOperator::createAdd(
             new LoadInst(intLocals[idx], "", currentBlock), 
             ConstantInt::get(Type::Int32Ty, val), "",
             currentBlock);
-        mvm::jit::unprotectConstants();//->unlock();
+        mvm::jit::unprotectConstants();
         new StoreInst(add, intLocals[idx], false, currentBlock);
         break;
       }
 
       case I2L :
-        push(new SExtInst(pop(), llvm::Type::Int64Ty, "", currentBlock), AssessorDesc::dLong);
+        push(new SExtInst(pop(), llvm::Type::Int64Ty, "", currentBlock),
+             AssessorDesc::dLong);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
 
       case I2F :
-        push(new SIToFPInst(pop(), llvm::Type::FloatTy, "", currentBlock), AssessorDesc::dFloat);
+        push(new SIToFPInst(pop(), llvm::Type::FloatTy, "", currentBlock),
+             AssessorDesc::dFloat);
         break;
         
       case I2D :
-        push(new SIToFPInst(pop(), llvm::Type::DoubleTy, "", currentBlock), AssessorDesc::dDouble);
+        push(new SIToFPInst(pop(), llvm::Type::DoubleTy, "", currentBlock),
+             AssessorDesc::dDouble);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       
       case L2I :
         pop();
-        push(new TruncInst(pop(), llvm::Type::Int32Ty, "", currentBlock), AssessorDesc::dInt);
+        push(new TruncInst(pop(), llvm::Type::Int32Ty, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       
       case L2F :
         pop();
-        push(new SIToFPInst(pop(), llvm::Type::FloatTy, "", currentBlock), AssessorDesc::dFloat);
+        push(new SIToFPInst(pop(), llvm::Type::FloatTy, "", currentBlock),
+             AssessorDesc::dFloat);
         break;
       
       case L2D :
         pop();
-        push(new SIToFPInst(pop(), llvm::Type::DoubleTy, "", currentBlock), AssessorDesc::dDouble);
+        push(new SIToFPInst(pop(), llvm::Type::DoubleTy, "", currentBlock),
+             AssessorDesc::dDouble);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       
@@ -1177,7 +1240,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case F2D :
-        push(new FPExtInst(pop(), llvm::Type::DoubleTy, "", currentBlock), AssessorDesc::dDouble);
+        push(new FPExtInst(pop(), llvm::Type::DoubleTy, "", currentBlock),
+             AssessorDesc::dDouble);
         push(mvm::jit::constantZero, AssessorDesc::dInt);
         break;
       
@@ -1196,7 +1260,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         currentBlock = cont;
         
-        test = new FCmpInst(FCmpInst::FCMP_OGE, val, mvm::jit::constantMaxIntDouble,
+        test = new FCmpInst(FCmpInst::FCMP_OGE, val,
+                            mvm::jit::constantMaxIntDouble,
                             "", currentBlock);
 
         cont = createBasicBlock("D2I");
@@ -1206,7 +1271,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         currentBlock = cont;
 
-        test = new FCmpInst(FCmpInst::FCMP_OLE, val, mvm::jit::constantMinIntDouble,
+        test = new FCmpInst(FCmpInst::FCMP_OLE, val,
+                            mvm::jit::constantMinIntDouble,
                             "", currentBlock);
         
         cont = createBasicBlock("D2I");
@@ -1243,7 +1309,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         currentBlock = cont;
         
-        test = new FCmpInst(FCmpInst::FCMP_OGE, val, mvm::jit::constantMaxLongDouble,
+        test = new FCmpInst(FCmpInst::FCMP_OGE, val,
+                            mvm::jit::constantMaxLongDouble,
                             "", currentBlock);
 
         cont = createBasicBlock("D2L");
@@ -1278,7 +1345,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case D2F :
         pop(); // remove the 0 on the stack
-        push(new FPTruncInst(pop(), llvm::Type::FloatTy, "", currentBlock), AssessorDesc::dFloat);
+        push(new FPTruncInst(pop(), llvm::Type::FloatTy, "", currentBlock),
+             AssessorDesc::dFloat);
         break;
 
       case I2B : {
@@ -1286,7 +1354,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         if (val->getType() == Type::Int32Ty) {
           val = new TruncInst(val, llvm::Type::Int8Ty, "", currentBlock);
         }
-        push(new SExtInst(val, llvm::Type::Int32Ty, "", currentBlock), AssessorDesc::dInt);
+        push(new SExtInst(val, llvm::Type::Int32Ty, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -1295,7 +1364,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         if (val->getType() == Type::Int32Ty) {
           val = new TruncInst(val, llvm::Type::Int16Ty, "", currentBlock);
         }
-        push(new ZExtInst(val, llvm::Type::Int32Ty, "", currentBlock), AssessorDesc::dInt);
+        push(new ZExtInst(val, llvm::Type::Int32Ty, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -1304,7 +1374,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         if (val->getType() == Type::Int32Ty) {
           val = new TruncInst(val, llvm::Type::Int16Ty, "", currentBlock);
         }
-        push(new SExtInst(val, llvm::Type::Int32Ty, "", currentBlock), AssessorDesc::dInt);
+        push(new SExtInst(val, llvm::Type::Int32Ty, "", currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -1570,12 +1641,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       
       case JSR : {
         uint32 tmp = i;
-        mvm::jit::protectConstants();//->lock();
+        mvm::jit::protectConstants();
         Value* expr = ConstantExpr::getIntToPtr(
                                     ConstantInt::get(Type::Int64Ty,
                                                      uint64_t (jsrIndex++)),
                                     JavaObject::llvmType);
-        mvm::jit::unprotectConstants();//->unlock();
+        mvm::jit::unprotectConstants();
 
         new StoreInst(expr, supplLocal, false, currentBlock);
         BranchInst::Create(opcodeInfos[tmp + readS2(bytecodes, i)].newBlock,
@@ -1591,12 +1662,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                           currentBlock);
         
         uint32 index = 0;
-        mvm::jit::protectConstants();//->lock();
+        mvm::jit::protectConstants();
         for (std::vector<BasicBlock*>::iterator i = jsrs.begin(), 
             e = jsrs.end(); i!= e; ++i, ++index) {
           inst->addCase(ConstantInt::get(Type::Int32Ty, index), *i);
         }
-        mvm::jit::unprotectConstants();//->unlock();
+        mvm::jit::unprotectConstants();
 
         break;
       }
@@ -1614,21 +1685,19 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* index = pop(); 
         
         const llvm::Type* type = index->getType();
-        mvm::jit::protectConstants();//->lock();
+        mvm::jit::protectConstants();
         for (uint32 cur = low; cur < high; ++cur) {
           Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ,
                                     ConstantInt::get(type, cur), index,
                                     "", currentBlock);
           BasicBlock* falseBlock = createBasicBlock("continue tableswitch");
-          branch(cmp, opcodeInfos[tmp + readU4(bytecodes, i)].newBlock, falseBlock, currentBlock);
+          branch(cmp, opcodeInfos[tmp + readU4(bytecodes, i)].newBlock,
+                 falseBlock, currentBlock);
           currentBlock = falseBlock;
         }
-        mvm::jit::unprotectConstants();//->unlock();
+        mvm::jit::unprotectConstants();
        
         
-        //Value* cmp = new ICmpInst(ICmpInst::ICMP_SLT, index,
-        //                          ConstantInt::get(Type::Int32Ty, low), "",
-        //                          currentBlock);
         branch(def, currentBlock);
         i = tmp + 12 + filled + ((high - low) << 2); 
 
@@ -1654,7 +1723,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           Value* val = ConstantInt::get(Type::Int32Ty, readU4(bytecodes, i));
           Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, val, key, "", currentBlock);
           BasicBlock* falseBlock = createBasicBlock("continue lookupswitch");
-          branch(cmp, opcodeInfos[tmp + readU4(bytecodes, i)].newBlock, falseBlock, currentBlock);
+          branch(cmp, opcodeInfos[tmp + readU4(bytecodes, i)].newBlock,
+                 falseBlock, currentBlock);
           currentBlock = falseBlock;
         }
         mvm::jit::unprotectConstants();//->unlock();
@@ -1753,48 +1823,39 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
       }
 
-      case NEWARRAY : {
-        
-        Jnjvm* vm = compilingClass->isolate;
-        uint8 id = bytecodes[++i];
-        ClassArray* cl = 0;
-        AssessorDesc* ass = 0;
-        Function* ctr = 0;
-        AssessorDesc::arrayType(vm, compilingClass->classLoader, id, cl, ass,
-                                ctr);
-
-        llvm::Value* valCl = new LoadInst(cl->llvmVar(vm->module), "", currentBlock);
-        llvm::Value* arg1 = popAsInt();
-#ifdef MULTIPLE_VM
-        std::vector<Value*> args;
-        args.push_back(arg1);
-        args.push_back(valCl);
-        args.push_back(isolateLocal);
-        push(invoke(ctr, args, "", currentBlock), AssessorDesc::dRef);
-#else
-        push(invoke(ctr, arg1, valCl, "", currentBlock), AssessorDesc::dRef);
-#endif
-        break;
-      }
-
+      case NEWARRAY :
       case ANEWARRAY : {
         
+        ClassArray* dcl = 0;
+        ConstantInt* sizeElement = 0;
+        GlobalVariable* TheVT = 0;
         Jnjvm* vm = compilingClass->isolate;
-        uint16 index = readU2(bytecodes, i);
-        const UTF8* className = 
-          compilingClass->ctpInfo->resolveClassName(index);
-        
-        const UTF8* arrayName = 
-          AssessorDesc::constructArrayName(vm, 0, 1, className);
-        
-        ClassArray* dcl = 
-          vm->constructArray(arrayName, compilingClass->classLoader);
 
+        if (bytecodes[i] == NEWARRAY) {
+          uint8 id = bytecodes[++i];
+          AssessorDesc* ass = AssessorDesc::arrayType(id);
+          dcl = ass->arrayClass;
+          TheVT = JavaObjectVT;
+          sizeElement = ass->sizeInBytesConstant;
+        } else {
+          uint16 index = readU2(bytecodes, i);
+          const UTF8* className = 
+            compilingClass->ctpInfo->resolveClassName(index);
         
-        llvm::Value* valCl = new LoadInst(dcl->llvmVar(vm->module), "", currentBlock);
+          const UTF8* arrayName = 
+            AssessorDesc::constructArrayName(vm, 0, 1, className);
+        
+          dcl = vm->constructArray(arrayName, compilingClass->classLoader);
+          TheVT = ArrayObjectVT;
+          sizeElement = mvm::jit::constantPtrSize;
+        }
+        
+        llvm::Value* valCl = new LoadInst(dcl->llvmVar(vm->module), "",
+                                          currentBlock);
         llvm::Value* arg1 = popAsInt();
 
-        Value* cmp = new ICmpInst(ICmpInst::ICMP_SLT, arg1, mvm::jit::constantZero, "", currentBlock);
+        Value* cmp = new ICmpInst(ICmpInst::ICMP_SLT, arg1,
+                                  mvm::jit::constantZero, "", currentBlock);
 
         BasicBlock* BB1 = createBasicBlock("");
         BasicBlock* BB2 = createBasicBlock("");
@@ -1804,14 +1865,18 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         std::vector<Value*> exArgs;
         exArgs.push_back(arg1);
         if (currentExceptionBlock != endExceptionBlock) {
-          InvokeInst::Create(negativeArraySizeExceptionLLVM, unifiedUnreachable, currentExceptionBlock, exArgs.begin(), exArgs.end(), "", currentBlock);
+          InvokeInst::Create(negativeArraySizeExceptionLLVM, unifiedUnreachable,
+                             currentExceptionBlock, exArgs.begin(),
+                             exArgs.end(), "", currentBlock);
         } else {
-          CallInst::Create(negativeArraySizeExceptionLLVM, exArgs.begin(), exArgs.end(), "", currentBlock);
+          CallInst::Create(negativeArraySizeExceptionLLVM, exArgs.begin(),
+                           exArgs.end(), "", currentBlock);
           new UnreachableInst(currentBlock);
         }
         currentBlock = BB2;
         
-        cmp = new ICmpInst(ICmpInst::ICMP_SGT, arg1, constantMaxArraySize, "", currentBlock);
+        cmp = new ICmpInst(ICmpInst::ICMP_SGT, arg1, constantMaxArraySize,
+                           "", currentBlock);
 
         BB1 = createBasicBlock("");
         BB2 = createBasicBlock("");
@@ -1819,62 +1884,47 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         BranchInst::Create(BB1, BB2, cmp, currentBlock);
         currentBlock = BB1;
         if (currentExceptionBlock != endExceptionBlock) {
-          InvokeInst::Create(outOfMemoryErrorLLVM, unifiedUnreachable, currentExceptionBlock, exArgs.begin(), exArgs.end(), "", currentBlock);
+          InvokeInst::Create(outOfMemoryErrorLLVM, unifiedUnreachable,
+                             currentExceptionBlock, exArgs.begin(),
+                             exArgs.end(), "", currentBlock);
         } else {
-          CallInst::Create(outOfMemoryErrorLLVM, exArgs.begin(), exArgs.end(), "", currentBlock);
+          CallInst::Create(outOfMemoryErrorLLVM, exArgs.begin(), exArgs.end(),
+                           "", currentBlock);
           new UnreachableInst(currentBlock);
         }
         currentBlock = BB2;
         
-        Value* mult = BinaryOperator::createMul(arg1, mvm::jit::constantPtrSize, "", currentBlock);
-        Value* size = BinaryOperator::createAdd(constantJavaObjectSize, mult, "", currentBlock);
+        Value* mult = BinaryOperator::createMul(arg1, sizeElement, "",
+                                                currentBlock);
+        Value* size = BinaryOperator::createAdd(constantJavaObjectSize, mult,
+                                                "", currentBlock);
         std::vector<Value*> args;
         args.push_back(size);
-        args.push_back(new LoadInst(ArrayObjectVT, "", currentBlock));
+        args.push_back(new LoadInst(TheVT, "", currentBlock));
 #ifdef MULTIPLE_GC
-        args.push_back(CallInst::Create(getCollector, isolateLocal, "", currentBlock));
+        args.push_back(CallInst::Create(getCollector, isolateLocal, "",
+                                        currentBlock));
 #endif
         Value* res = invoke(javaObjectAllocateLLVM, args, "", currentBlock);
-        Value* cast = new BitCastInst(res, ArrayObject::llvmType, "", currentBlock);
+        Value* cast = new BitCastInst(res, JavaArray::llvmType, "",
+                                      currentBlock);
 
         // Set the size
         std::vector<Value*> gep4;
         gep4.push_back(mvm::jit::constantZero);
         gep4.push_back(JavaArray::sizeOffset());
-        new StoreInst(arg1, GetElementPtrInst::Create(cast, gep4.begin(), gep4.end(), "", currentBlock), currentBlock);
+        Value* GEP = GetElementPtrInst::Create(cast, gep4.begin(), gep4.end(),
+                                               "", currentBlock);
+        new StoreInst(arg1, GEP, currentBlock);
         
-        /*
-        // Memset 0 to everyone
-        std::vector<Value*> gep5;
-        gep5.push_back(mvm::jit::constantZero);
-        gep5.push_back(JavaArray::elementsOffset());
-        Value* elements = GetElementPtrInst::Create(cast, gep5.begin(), gep5.end(), "", currentBlock);
-        
-        std::vector<Value*> argsM;
-        argsM.push_back(new BitCastInst(elements, mvm::jit::ptrType, "", currentBlock));
-        argsM.push_back(mvm::jit::constantInt8Zero);
-        argsM.push_back(mult);
-        argsM.push_back(mvm::jit::constantFour);
-        CallInst::Create(mvm::jit::llvm_memset_i32, argsM.begin(), argsM.end(), "", currentBlock);
-        */
         // Set the class
         std::vector<Value*> gep;
         gep.push_back(mvm::jit::constantZero);
         gep.push_back(JavaObject::classOffset());
-        new StoreInst(valCl, GetElementPtrInst::Create(res, gep.begin(), gep.end(), "", currentBlock), currentBlock);
-        /* 
-        // Set the lock to zero
-        std::vector<Value*> gep2;
-        gep2.push_back(mvm::jit::constantZero);
-        gep2.push_back(JavaObject::lockOffset());
-        new StoreInst(mvm::jit::constantPtrNull, GetElementPtrInst::Create(res, gep2.begin(), gep2.end(), "", currentBlock), currentBlock);
+        GEP = GetElementPtrInst::Create(res, gep.begin(), gep.end(), "",
+                                        currentBlock);
+        new StoreInst(valCl, GEP, currentBlock);
         
-        // Set the real VT
-        std::vector<Value*> gep3;
-        gep3.push_back(mvm::jit::constantZero);
-        gep3.push_back(mvm::jit::constantZero);
-        new StoreInst(new LoadInst(ArrayObjectVT, "", currentBlock), GetElementPtrInst::Create(res, gep3.begin(), gep3.end(), "", currentBlock), currentBlock);
-        */ 
         push(res, AssessorDesc::dRef);
 
         break;
@@ -1892,9 +1942,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         std::vector<Value*> args;
         args.push_back(arg);
         if (currentExceptionBlock != endExceptionBlock) {
-          InvokeInst::Create(throwExceptionLLVM, unifiedUnreachable, currentExceptionBlock, args.begin(), args.end(), "", currentBlock);
+          InvokeInst::Create(throwExceptionLLVM, unifiedUnreachable,
+                             currentExceptionBlock, args.begin(), args.end(),
+                             "", currentBlock);
         } else {
-          CallInst::Create(throwExceptionLLVM, args.begin(), args.end(), "", currentBlock);
+          CallInst::Create(throwExceptionLLVM, args.begin(), args.end(), "",
+                           currentBlock);
           new UnreachableInst(currentBlock);
         }
         break;
@@ -1918,7 +1971,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         currentBlock = ifFalse;
         Value* clVar = 0;
         if (dcl) {
-          clVar = new LoadInst(dcl->llvmVar(compilingClass->isolate->module), "", ifFalse);
+          clVar = new LoadInst(dcl->llvmVar(compilingClass->isolate->module),
+                               "", ifFalse);
         } else {
           clVar = getResolvedClass(index, false);
         }
@@ -1926,7 +1980,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         args.push_back(obj);
         args.push_back(clVar);
         Value* call = CallInst::Create(instanceOfLLVM, args.begin(), args.end(),
-                                   "", currentBlock);
+                                       "", currentBlock);
         
         cmp = new ICmpInst(ICmpInst::ICMP_EQ, call,
                            mvm::jit::constantZero, "", currentBlock);
@@ -1938,9 +1992,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         exArgs.push_back(obj);
         exArgs.push_back(clVar);
         if (currentExceptionBlock != endExceptionBlock) {
-          InvokeInst::Create(classCastExceptionLLVM, unifiedUnreachable, currentExceptionBlock, exArgs.begin(), exArgs.end(), "", ex);
+          InvokeInst::Create(classCastExceptionLLVM, unifiedUnreachable,
+                             currentExceptionBlock, exArgs.begin(),
+                             exArgs.end(), "", ex);
         } else {
-          CallInst::Create(classCastExceptionLLVM, exArgs.begin(), exArgs.end(), "", ex);
+          CallInst::Create(classCastExceptionLLVM, exArgs.begin(),
+                           exArgs.end(), "", ex);
           new UnreachableInst(ex);
         }
         
@@ -1955,14 +2012,17 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         Value* clVar = 0;
         if (dcl) {
-          clVar = new LoadInst(dcl->llvmVar(compilingClass->isolate->module), "", currentBlock);
+          clVar = new LoadInst(dcl->llvmVar(compilingClass->isolate->module),
+                               "", currentBlock);
         } else {
           clVar = getResolvedClass(index, false);
         }
         std::vector<Value*> args;
         args.push_back(pop());
         args.push_back(clVar);
-        push(CallInst::Create(instanceOfLLVM, args.begin(), args.end(), "", currentBlock), AssessorDesc::dInt);
+        push(CallInst::Create(instanceOfLLVM, args.begin(), args.end(), "",
+                              currentBlock),
+             AssessorDesc::dInt);
         break;
       }
 
@@ -2018,7 +2078,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 #ifdef MULTIPLE_VM
         Args.push_back(isolateLocal);
 #endif
-        push(invoke(multiCallNewLLVM, Args, "", currentBlock), AssessorDesc::dRef);
+        push(invoke(multiCallNewLLVM, Args, "", currentBlock),
+             AssessorDesc::dRef);
         break;
       }
 

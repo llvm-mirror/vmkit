@@ -56,8 +56,10 @@ public:
   const llvm::Type* llvmType;
   const llvm::Type* llvmTypePtr;
   llvm::Constant* llvmNullConstant;
+  llvm::ConstantInt* sizeInBytesConstant;
   const UTF8* assocClassName;
   const UTF8* UTF8Name;
+  ClassArray* arrayClass;
   arrayCtor_t arrayCtor;
 
   static AssessorDesc* dParg;
@@ -77,7 +79,8 @@ public:
   static AssessorDesc* allocate(bool dt, char bid, uint32 nb, uint32 nw,
                                 const char* name, const char* className,
                                 Jnjvm* vm, const llvm::Type* type,
-                                const char* assocName, arrayCtor_t ctor);
+                                const char* assocName, ClassArray* cl,
+                                llvm::ConstantInt* CI, arrayCtor_t ctor);
 
   static void initialise(Jnjvm* vm);
   
@@ -99,9 +102,7 @@ public:
                               uint32 start, AssessorDesc*& ass,
                               CommonClass*& res);
 
-  static void arrayType(Jnjvm *vm, JavaObject* loader, unsigned int t,
-                        ClassArray*& cl, AssessorDesc*& ass, 
-                        llvm::Function*& ctr);
+  static AssessorDesc* arrayType(unsigned int t);
   
   static AssessorDesc* byteIdToPrimitive(const char id);
   static AssessorDesc* classToPrimitive(CommonClass* cl);

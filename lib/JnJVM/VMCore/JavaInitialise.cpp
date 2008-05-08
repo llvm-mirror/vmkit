@@ -111,7 +111,6 @@ static void initialiseStatics() {
                                          CommonClass::jnjvmClassLoader);
   ((UTF8*)utf8OfChar)->classOf = JavaArray::ofChar;
   
-  AssessorDesc::initialise(vm);
 
 
   
@@ -159,6 +158,8 @@ static void initialiseStatics() {
                                         CommonClass::jnjvmClassLoader);
   
   // End array initialization
+  
+  AssessorDesc::initialise(vm);
 
   Attribut::codeAttribut = vm->asciizConstructUTF8("Code");
   Attribut::exceptionsAttribut = vm->asciizConstructUTF8("Exceptions");
