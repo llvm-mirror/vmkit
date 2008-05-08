@@ -43,11 +43,13 @@ extern "C" JavaMethod* ip_to_meth(int* begIp) {
 #define FRAME_IP(fp) (fp[1])
 #endif
 
+extern void* __libc_stack_end;
 
 int JavaJIT::getBacktrace(void** stack, int size) {
   void** blah = (void**)__builtin_frame_address(1);
   int cpt = 0;
-  while (blah && cpt < size) {
+  while (blah && cpt < size && blah < __libc_stack_end && 
+         !(((long) blah & 3))) {
     stack[cpt++] = (void**)FRAME_IP(blah);
     blah = (void**)blah[0];
   }
