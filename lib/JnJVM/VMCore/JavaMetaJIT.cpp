@@ -132,6 +132,10 @@ ConstantInt* JavaObject::classOffset() {
   return mvm::jit::constantOne;
 }
 
+ConstantInt* JavaObject::lockOffset() {
+  return mvm::jit::constantTwo;
+}
+
 ConstantInt* JavaArray::sizeOffset() {
   return mvm::jit::constantOne; 
 }

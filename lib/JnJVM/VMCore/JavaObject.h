@@ -89,6 +89,7 @@ public:
   bool instanceOf(CommonClass* cl);
 
   static llvm::ConstantInt* classOffset();
+  static llvm::ConstantInt* lockOffset();
 
 #ifdef SIGSEGV_THROW_NULL
   #define verifyNull(obj) {}
