@@ -260,3 +260,14 @@ Collector* Collector::getCollectorFromObject(const void* o) {
   return (Collector*)GCCollector::o2node((void*)o)->meta;
 }
 #endif
+
+#ifdef MULTIPLE_GC
+extern "C" gc* gcmalloc(size_t sz, VirtualTable* VT, Collector* GC) {
+  return (gc*)((GCCollector*)GC)->gcmalloc(VT, sz);
+}
+#else
+extern "C" gc* gcmalloc(size_t sz, VirtualTable* VT) {
+  return (gc*)GCCollector::gcmalloc(VT, sz);
+}
+#endif
+
