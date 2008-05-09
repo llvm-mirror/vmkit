@@ -551,6 +551,7 @@ void mvm::jit::initialise() {
   constantFloatMinusZero = ConstantFP::get(Type::FloatTy, -0.0f);
 
   constantPtrNull = Constant::getNullValue(ptrType); 
+  constantPtrSize = ConstantInt::get(Type::Int32Ty, sizeof(void*));
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::Int8Ty, 0));
 
   mvm::jit::protectEngine = mvm::Lock::allocNormal();
@@ -642,6 +643,7 @@ llvm::ConstantFP*  mvm::jit::constantFloatMinusInfinity;
 llvm::ConstantFP*  mvm::jit::constantFloatMinusZero;
 llvm::ConstantFP*  mvm::jit::constantDoubleMinusZero;
 llvm::Constant*    mvm::jit::constantPtrNull;
+llvm::ConstantInt* mvm::jit::constantPtrSize;
 const llvm::PointerType* mvm::jit::ptrType;
 const llvm::Type* mvm::jit::arrayPtrType;
 

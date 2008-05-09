@@ -143,6 +143,7 @@ extern llvm::ConstantFP*  constantFloatMinusInfinity;
 extern llvm::ConstantFP*  constantFloatMinusZero;
 extern llvm::ConstantFP*  constantDoubleMinusZero;
 extern llvm::Constant*    constantPtrNull;
+extern llvm::ConstantInt* constantPtrSize;
 extern const llvm::PointerType* ptrType;
 extern const llvm::Type* arrayPtrType;
 
