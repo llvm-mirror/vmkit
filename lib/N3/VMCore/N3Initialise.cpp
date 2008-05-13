@@ -247,7 +247,7 @@ static void initialiseStatics() {
   if (assemblyName == 0)
     VMThread::get()->vm->error("can not find mscorlib.dll. Abort");
 
-  vm->assemblyPath.push_back((char*)"");
+  vm->assemblyPath.push_back("");
   vm->assemblyPath.push_back(assemblyName);
   
   const UTF8* mscorlib = vm->asciizConstructUTF8("mscorlib");
@@ -424,7 +424,7 @@ extern "C" int boot(int argc, char **argv, char **envp) {
 }
 
 extern "C" int start_app(int argc, char** argv) {
-  N3* vm = N3::allocate((char*)"", N3::bootstrapVM);
+  N3* vm = N3::allocate("", N3::bootstrapVM);
   vm->runMain(argc, argv);
   return 0; 
 }

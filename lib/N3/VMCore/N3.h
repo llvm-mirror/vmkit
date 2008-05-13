@@ -43,15 +43,15 @@ public:
   Assembly*     constructAssembly(const UTF8* name);
   Assembly*     lookupAssembly(const UTF8* name);
   
-  char* name;
+  const char* name;
   StringMap * hashStr;
   AssemblyMap* loadedAssemblies;
-  std::vector<char*> assemblyPath;
+  std::vector<const char*> assemblyPath;
   Assembly* coreAssembly;
 
 
   static N3* allocateBootstrap();
-  static N3* allocate(char* name, N3* parent);
+  static N3* allocate(const char* name, N3* parent);
   
   ArrayUInt8* openAssembly(const UTF8* name, const char* extension);
  

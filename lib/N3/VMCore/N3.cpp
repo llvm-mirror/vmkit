@@ -80,7 +80,7 @@ N3* N3::allocateBootstrap() {
 #endif
   VMThread::threadKey->set(vm->bootstrapThread);
 
-  vm->name = (char*)"bootstrapN3";
+  vm->name = "bootstrapN3";
   vm->hashUTF8 = UTF8Map::allocate();
   vm->hashStr = StringMap::allocate();
   vm->loadedAssemblies = AssemblyMap::allocate();
@@ -90,7 +90,7 @@ N3* N3::allocateBootstrap() {
 }
 
 
-N3* N3::allocate(char* name, N3* parent) {
+N3* N3::allocate(const char* name, N3* parent) {
   N3 *vm= gc_new(N3)();
   
 #ifdef MULTIPLE_GC
@@ -133,7 +133,7 @@ ArrayUInt8* N3::openAssembly(const UTF8* name, const char* ext) {
   uint32 idx = 0;
 
   while ((res == 0) && (idx < assemblyPath.size())) {
-    char* cur = assemblyPath[idx];
+    const char* cur = assemblyPath[idx];
     uint32 strLen = strlen(cur);
     char* buf = (char*)alloca(strLen + alen + 16);
 
