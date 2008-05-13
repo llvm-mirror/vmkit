@@ -8,7 +8,6 @@
 //===----------------------------------------------------------------------===//
 
 
-#include "ClasspathVMField.h"
 #include "JavaClass.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
