@@ -11,68 +11,26 @@
 
 #include "Classpath.h"
 
-#include "ClasspathConstructor.h"
-#include "ClasspathMethod.h"
-#include "ClasspathVMClass.h"
-#include "ClasspathVMClassLoader.h"
-#include "ClasspathVMField.h"
-#include "ClasspathVMObject.h"
-#include "ClasspathVMRuntime.h"
-#include "ClasspathVMStackWalker.h"
-#include "ClasspathVMSystem.h"
-#include "ClasspathVMSystemProperties.h"
-#include "ClasspathVMThread.h"
-#include "ClasspathVMThrowable.h"
+#include "ClasspathConstructor.cpp"
+#include "ClasspathMethod.cpp"
+#include "ClasspathVMClass.cpp"
+#include "ClasspathVMClassLoader.cpp"
+#include "ClasspathVMField.cpp"
+#include "ClasspathVMObject.cpp"
+#include "ClasspathVMRuntime.cpp"
+#include "ClasspathVMStackWalker.cpp"
+#include "ClasspathVMSystem.cpp"
+#include "ClasspathVMSystemProperties.cpp"
+#include "ClasspathVMThread.cpp"
+#include "ClasspathVMThrowable.cpp"
 
 #include "JavaClass.h"
 #include "Jnjvm.h"
 #include "NativeUtil.h"
 
 
-typedef void (*function_t) (void);
-
-function_t faketable[] = {
-  (function_t)Java_java_lang_VMSystem_arraycopy,
-  (function_t)Java_java_lang_VMSystem_identityHashCode,
-  (function_t)Java_java_lang_VMThread_currentThread,
-  (function_t)Java_java_lang_VMClassLoader_getPrimitiveClass,
-  (function_t)Java_java_lang_VMClass_isArray,
-  (function_t)Java_java_lang_VMClass_getDeclaredConstructors,
-  (function_t)Java_java_lang_VMClass_getDeclaredMethods,
-  (function_t)Java_java_lang_VMClass_forName,
-  (function_t)Java_java_lang_VMClass_getModifiers,
-  (function_t)Java_gnu_classpath_VMSystemProperties_preInit,
-  (function_t)Java_java_lang_VMObject_clone,
-  (function_t)Java_java_lang_VMObject_getClass,
-  (function_t)Java_java_lang_VMRuntime_mapLibraryName,
-  (function_t)Java_java_lang_VMRuntime_nativeLoad,
-  (function_t)Java_java_lang_reflect_Constructor_getParameterTypes,
-  (function_t)Java_java_lang_reflect_Constructor_getModifiersInternal,
-  (function_t)Java_java_lang_reflect_Method_getModifiersInternal,
-  (function_t)Java_java_lang_reflect_Constructor_constructNative,
-  (function_t)Java_java_lang_VMClassLoader_findLoadedClass,
-  (function_t)Java_java_lang_VMClassLoader_loadClass,
-  (function_t)Java_java_lang_VMClass_getName,
-  (function_t)Java_java_lang_VMThrowable_fillInStackTrace,
-  (function_t)Java_java_lang_VMClassLoader_defineClass,
-  (function_t)Java_java_lang_VMClassLoader_resolveClass,
-  (function_t)Java_java_lang_VMClass_isPrimitive,
-  (function_t)Java_java_lang_VMClass_isInterface,
-  (function_t)Java_java_lang_VMClass_getComponentType,
-  (function_t)Java_java_lang_VMRuntime_gc,
-  (function_t)Java_java_lang_VMClass_getClassLoader,
-  (function_t)Java_java_lang_VMClass_isAssignableFrom,
-  (function_t)Java_java_lang_reflect_Field_getModifiersInternal,
-  (function_t)Java_gnu_classpath_VMStackWalker_getClassContext
-};
-
-
-
+// Called by JnJVM to ensure the compiler will link the classpath methods
 extern "C" int ClasspathBoot(int argc, char** argv, char** env) {
-  void* p;
-  p = &faketable;
-  p = &GNUClasspathLibs;
-  p = &GNUClasspathGlibj;
   return 1;
 }
 
