@@ -30,6 +30,7 @@ public:
   
   static mvm::Key<Thread>* threadKey;
   Collector* GC;
+  void* baseSP;
   static Thread* get() {
     return (Thread*)Thread::threadKey->get();
   }
