@@ -18,6 +18,18 @@
 
 using namespace mvm;
 
+
+
+#ifdef USE_GC_BOEHM
+#ifdef MULTIPLE_GC
+extern "C" gc* gcmalloc(size_t sz, VirtualTable* VT, Collector* GC) {
+#else
+extern "C" gc* gcmalloc(size_t sz, VirtualTable* VT) {
+#endif
+  return (gc*)gc::operator new(sz, VT);
+}
+#endif
+
 VirtualTable *Object::VT = 0;
 VirtualTable *Method::VT = 0;
 VirtualTable *Code::VT = 0;
