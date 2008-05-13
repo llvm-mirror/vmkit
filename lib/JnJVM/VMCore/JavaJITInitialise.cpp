@@ -50,7 +50,6 @@ const llvm::Type* ArrayFloat::llvmType = 0;
 const llvm::Type* ArrayDouble::llvmType = 0;
 const llvm::Type* ArrayLong::llvmType = 0;
 const llvm::Type* ArrayObject::llvmType = 0;
-const llvm::Type* UTF8::llvmType = 0;
 const llvm::Type* CacheNode::llvmType = 0;
 const llvm::Type* Enveloppe::llvmType = 0;
 
@@ -112,16 +111,6 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
 
 #undef ARRAY_TYPE
 
-  // Create UTF8::llvmType
-  {
-  std::vector<const llvm::Type*> arrayFields;
-  arrayFields.push_back(JavaObject::llvmType->getContainedType(0));
-  arrayFields.push_back(llvm::Type::Int32Ty);
-  arrayFields.push_back(llvm::ArrayType::get(llvm::Type::Int16Ty, 0));
-  UTF8::llvmType =
-    llvm::PointerType::getUnqual(llvm::StructType::get(arrayFields, false));
-  }
-  
   // Create CacheNode::llvmType
   {
   std::vector<const llvm::Type*> arrayFields;
@@ -664,7 +653,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   
   {
     std::vector<const Type*> args;
-    args.push_back(UTF8::llvmType);
+    args.push_back(ArrayUInt16::llvmType);
     FunctionType* FuncTy = FunctionType::get(
       /*Result=*/JavaObject::llvmType,
       /*Params=*/args,
@@ -723,7 +712,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
 #endif
   mvm::jit::unprotectTypes();//->unlock();
   mvm::jit::protectConstants();//->lock();
-  constantUTF8Null = Constant::getNullValue(UTF8::llvmType); 
+  constantUTF8Null = Constant::getNullValue(ArrayUInt16::llvmType); 
   constantJavaObjectNull = Constant::getNullValue(JavaObject::llvmType);
   constantMaxArraySize = ConstantInt::get(Type::Int32Ty,
                                           JavaArray::MaxArraySize);
@@ -786,46 +775,45 @@ void AddStandardCompilePasses(FunctionPassManager *PM) {
   //PM->add(llvm::createVerifierPass());                  // Verify that input is correct
   
   addPass(PM, llvm::createCFGSimplificationPass());    // Clean up disgusting code
-  addPass(PM, llvm::createScalarReplAggregatesPass());// Kill useless allocas
-  addPass(PM, llvm::createInstructionCombiningPass()); // Clean up after IPCP & DAE
-  addPass(PM, llvm::createCFGSimplificationPass());    // Clean up after IPCP & DAE
   addPass(PM, llvm::createPromoteMemoryToRegisterPass());// Kill useless allocas
   addPass(PM, llvm::createInstructionCombiningPass()); // Clean up after IPCP & DAE
   addPass(PM, llvm::createCFGSimplificationPass());    // Clean up after IPCP & DAE
   
-  addPass(PM, llvm::createTailDuplicationPass());      // Simplify cfg by copying code
-  addPass(PM, llvm::createInstructionCombiningPass()); // Cleanup for scalarrepl.
-  addPass(PM, llvm::createCFGSimplificationPass());    // Merge & remove BBs
-  addPass(PM, llvm::createScalarReplAggregatesPass()); // Break up aggregate allocas
-  addPass(PM, llvm::createInstructionCombiningPass()); // Combine silly seq's
-  addPass(PM, llvm::createCondPropagationPass());      // Propagate conditionals
+  addPass(PM, createTailDuplicationPass());      // Simplify cfg by copying code
+  addPass(PM, createSimplifyLibCallsPass());     // Library Call Optimizations
+  addPass(PM, createInstructionCombiningPass()); // Cleanup for scalarrepl.
+  addPass(PM, createJumpThreadingPass());        // Thread jumps.
+  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+  addPass(PM, createScalarReplAggregatesPass()); // Break up aggregate allocas
+  addPass(PM, createInstructionCombiningPass()); // Combine silly seq's
+  addPass(PM, createCondPropagationPass());      // Propagate conditionals
   
-   
-  addPass(PM, llvm::createTailCallEliminationPass());  // Eliminate tail calls
-  addPass(PM, llvm::createCFGSimplificationPass());    // Merge & remove BBs
-  addPass(PM, llvm::createReassociatePass());          // Reassociate expressions
-  addPass(PM, llvm::createLoopRotatePass());
-  addPass(PM, llvm::createLICMPass());                 // Hoist loop invariants
-  addPass(PM, llvm::createLoopUnswitchPass());         // Unswitch loops.
-  addPass(PM, llvm::createInstructionCombiningPass()); // Clean up after LICM/reassoc
-  addPass(PM, llvm::createIndVarSimplifyPass());       // Canonicalize indvars
-  addPass(PM, llvm::createLoopUnrollPass());           // Unroll small loops
-  addPass(PM, llvm::createInstructionCombiningPass()); // Clean up after the unroller
-  //addPass(PM, mvm::createArrayChecksPass()); 
-  addPass(PM, llvm::createGVNPass());                  // GVN for load instructions
-  addPass(PM, llvm::createGCSEPass());                 // Remove common subexprs
-  addPass(PM, llvm::createSCCPPass());                 // Constant prop with SCCP
-  addPass(PM, llvm::createPredicateSimplifierPass());                
+  addPass(PM, createTailCallEliminationPass());  // Eliminate tail calls
+  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+  addPass(PM, createReassociatePass());          // Reassociate expressions
+  addPass(PM, createLoopRotatePass());
+  addPass(PM, createLICMPass());                 // Hoist loop invariants
+  addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
+  addPass(PM, createLoopIndexSplitPass());       // Index split loops.
+  addPass(PM, createInstructionCombiningPass()); // Clean up after LICM/reassoc
+  addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
+  addPass(PM, createLoopDeletionPass());         // Delete dead loops
+  addPass(PM, createLoopUnrollPass());           // Unroll small loops
+  addPass(PM, createInstructionCombiningPass()); // Clean up after the unroller
+  addPass(PM, createGVNPass());                  // Remove redundancies
+  addPass(PM, createMemCpyOptPass());            // Remove memcpy / form memset
+  addPass(PM, createSCCPPass());                 // Constant prop with SCCP
   
-  
+  addPass(PM, mvm::createLowerConstantCallsPass());
+
   // Run instcombine after redundancy elimination to exploit opportunities
   // opened up by them.
-  addPass(PM, llvm::createInstructionCombiningPass());
-  addPass(PM, llvm::createCondPropagationPass());      // Propagate conditionals
+  addPass(PM, createInstructionCombiningPass());
+  addPass(PM, createCondPropagationPass());      // Propagate conditionals
 
-  addPass(PM, llvm::createDeadStoreEliminationPass()); // Delete dead stores
-  addPass(PM, llvm::createAggressiveDCEPass());        // SSA based 'Aggressive DCE'
-  addPass(PM, llvm::createCFGSimplificationPass());    // Merge & remove BBs
-  addPass(PM, mvm::createLowerConstantCallsPass());
+  addPass(PM, createDeadStoreEliminationPass()); // Delete dead stores
+  addPass(PM, createAggressiveDCEPass());        // SSA based 'Aggressive DCE'
+  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+
 }
 
