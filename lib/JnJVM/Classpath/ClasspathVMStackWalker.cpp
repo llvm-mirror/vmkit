@@ -24,13 +24,11 @@
 
 using namespace jnjvm;
 
-extern "C" JavaMethod* ip_to_meth(int* ip);
-
 extern "C" {
 
 ArrayObject* recGetClassContext(int** stack, uint32 size, uint32 first, uint32 rec) {
   if (size != first) {
-    JavaMethod* meth = ip_to_meth(stack[first]);
+    JavaMethod* meth = JavaJIT::IPToJavaMethod(stack[first]);
     if (meth) {
       ArrayObject* res = recGetClassContext(stack, size, first + 1, rec + 1); 
       res->setAt(rec, meth->classDef->getClassDelegatee());
@@ -57,7 +55,7 @@ jclass clazz,
   CommonClass* cl = Classpath::vmStackWalker; 
 
   while (i < real_size) {
-    JavaMethod* meth = ip_to_meth(ips[i++]);
+    JavaMethod* meth = JavaJIT::IPToJavaMethod(ips[i++]);
     if (meth && meth->classDef == cl) {
       first = i;
       break;

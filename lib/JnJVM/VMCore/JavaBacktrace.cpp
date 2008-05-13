@@ -25,7 +25,7 @@
 
 using namespace jnjvm;
 
-extern "C" JavaMethod* ip_to_meth(int* begIp) {
+JavaMethod* JavaJIT::IPToJavaMethod(void* begIp) {
   mvm::Code* val = mvm::Code::getCodeFromPointer(begIp);
   if (val) {
     mvm::Method* m = val->method();

@@ -29,8 +29,6 @@
 
 using namespace jnjvm;
 
-extern "C" JavaMethod* ip_to_meth(int* ip);
-
 extern "C" {
 
 JNIEXPORT jobject JNICALL Java_java_lang_VMThrowable_fillInStackTrace(
@@ -83,7 +81,7 @@ ArrayObject* recGetStackTrace(int** stack, uint32 first, uint32 rec) {
 #else
     int *begIp = (int*)Collector::begOf(stack[first]);
 #endif
-    JavaMethod* meth = ip_to_meth(begIp);
+    JavaMethod* meth = JavaJIT::IPToJavaMethod(begIp);
     if (meth) {
       ArrayObject* res = recGetStackTrace(stack, first + 1, rec + 1);
       res->setAt(rec, consStackElement(meth, stack[first]));
@@ -112,7 +110,7 @@ jobject vmthrow, jobject throwable) {
 #else
     int *begIp = (int*)Collector::begOf((void*)stack[i++]);
 #endif
-    JavaMethod* meth = ip_to_meth(begIp);
+    JavaMethod* meth = JavaJIT::IPToJavaMethod(begIp);
     if (meth && meth->classDef == cl) {
       first = i;
       break;

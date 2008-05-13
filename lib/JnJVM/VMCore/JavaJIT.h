@@ -277,6 +277,7 @@ public:
   static JavaObject* getCallingClassLoader();
   static void printBacktrace();
   static int getBacktrace(void** array, int size);
+  static JavaMethod* IPToJavaMethod(void* ip);
 
 #ifdef WITH_TRACER
   static llvm::Function* markAndTraceLLVM;
