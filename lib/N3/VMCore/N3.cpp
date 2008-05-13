@@ -63,7 +63,11 @@ N3* N3::allocateBootstrap() {
   Collector* GC = Collector::allocate();
 #endif 
   
+  std::string str = 
+    mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
+
   vm->module = new llvm::Module("Bootstrap N3");
+  vm->module->setDataLayout(str);
   vm->protectModule = mvm::Lock::allocNormal();
   vm->functions = FunctionMap::allocate();
   vm->TheModuleProvider = new N3ModuleProvider(vm->module, vm->functions);
@@ -76,7 +80,7 @@ N3* N3::allocateBootstrap() {
 #endif
   VMThread::threadKey->set(vm->bootstrapThread);
 
-  vm->name = "bootstrapN3";
+  vm->name = (char*)"bootstrapN3";
   vm->hashUTF8 = UTF8Map::allocate();
   vm->hashStr = StringMap::allocate();
   vm->loadedAssemblies = AssemblyMap::allocate();
@@ -93,7 +97,10 @@ N3* N3::allocate(char* name, N3* parent) {
   Collector* GC = Collector::allocate();
 #endif 
   
+  std::string str = 
+    mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
   vm->module = new llvm::Module("App Domain");
+  vm->module->setDataLayout(str);
   vm->protectModule = mvm::Lock::allocNormal();
   vm->functions = FunctionMap::allocate();
   vm->TheModuleProvider = new N3ModuleProvider(vm->module, vm->functions);
