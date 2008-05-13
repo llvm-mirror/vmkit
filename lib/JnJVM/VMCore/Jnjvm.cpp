@@ -125,7 +125,6 @@ void Jnjvm::analyseClasspathEnv(const char* str) {
     char* buf = (char*)alloca(len + 1);
     const char* cur = str;
     int top = 0;
-    char* rp = 0;
     char c = 1;
     while (c != 0) {
       while (((c = cur[top]) != 0) && c != envSeparator[0]) {
@@ -134,8 +133,10 @@ void Jnjvm::analyseClasspathEnv(const char* str) {
       if (top != 0) {
         memcpy(buf, cur, top);
         buf[top] = 0;
+        char* rp = (char*)malloc(4096);
+        memset(rp, 0, 4096);
         rp = realpath(buf, rp);
-        if (rp != 0) {
+        if (rp[4095] == 0 && strlen(rp) != 0) {
           struct stat st;
           stat(rp, &st);
           if ((st.st_mode & S_IFMT) == S_IFDIR) {
@@ -145,9 +146,12 @@ void Jnjvm::analyseClasspathEnv(const char* str) {
             temp[len] = dirSeparator[0];
             temp[len + 1] = 0;
             bootClasspath.push_back(temp);
+            free(rp);
           } else {
             bootClasspath.push_back(rp);
           }
+        } else {
+          free(rp);
         }
       }
       cur = cur + top + 1;
