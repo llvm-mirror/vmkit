@@ -20,7 +20,7 @@
 
 using namespace llvm;
 
-namespace {
+namespace mvm {
 
   class VISIBILITY_HIDDEN LowerArrayLength : public FunctionPass {
   public:
@@ -32,7 +32,6 @@ namespace {
   };
   char LowerArrayLength::ID = 0;
   RegisterPass<LowerArrayLength> X("LowerArrayLength", "Lower Array length");
-}
 
 bool LowerArrayLength::runOnFunction(Function& F) {
   bool Changed = false;
@@ -62,10 +61,9 @@ bool LowerArrayLength::runOnFunction(Function& F) {
   return Changed;
 }
 
-namespace n3 {
-
 LowerArrayLength* createLowerArrayLengthPass() {
   return new LowerArrayLength();
 }
 
 }
+

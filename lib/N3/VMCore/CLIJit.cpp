@@ -2193,12 +2193,9 @@ Value* CLIJit::invoke(Value *F, const char* Name,
 
 namespace mvm {
 llvm::FunctionPass* createEscapeAnalysisPass(llvm::Function*, llvm::Function*);
+llvm::FunctionPass* createLowerArrayLengthPass();
 }
 
-namespace n3 {
-llvm::FunctionPass* createLowerArrayLengthPass();
-//llvm::FunctionPass* createArrayChecksPass();
-}
 
 static void addPass(FunctionPassManager *PM, Pass *P) {
   // Add the pass to the pass manager...
@@ -2252,5 +2249,5 @@ void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, llvm::createDeadStoreEliminationPass()); // Delete dead stores
   addPass(PM, llvm::createAggressiveDCEPass());        // SSA based 'Aggressive DCE'
   addPass(PM, llvm::createCFGSimplificationPass());    // Merge & remove BBs
-  addPass(PM, n3::createLowerArrayLengthPass());
+  addPass(PM, mvm::createLowerArrayLengthPass());
 }
