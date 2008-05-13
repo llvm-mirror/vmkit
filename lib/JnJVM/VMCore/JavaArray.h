@@ -55,7 +55,6 @@ public:
 
   static llvm::ConstantInt* sizeOffset();
   static llvm::ConstantInt* elementsOffset();
-  static JavaArray* multiCallNew(ClassArray* cl, uint32 len, ...);
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 

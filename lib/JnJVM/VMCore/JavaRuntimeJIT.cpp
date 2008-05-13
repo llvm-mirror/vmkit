@@ -286,3 +286,106 @@ extern "C" uint32 vtableLookup(JavaObject* obj, Class* caller, uint32 index,
 }
 #endif
 
+
+static JavaArray* multiCallNewIntern(arrayCtor_t ctor, ClassArray* cl,
+                                     uint32 len,
+                                     sint32* dims,
+                                     Jnjvm* vm) {
+  if (len <= 0) JavaThread::get()->isolate->unknownError("Can not happen");
+  JavaArray* _res = ctor(dims[0], cl, vm);
+  if (len > 1) {
+    ArrayObject* res = (ArrayObject*)_res;
+    CommonClass* _base = cl->baseClass();
+    if (_base->isArray) {
+      ClassArray* base = (ClassArray*)_base;
+      AssessorDesc* func = base->funcs();
+      arrayCtor_t newCtor = func->arrayCtor;
+      if (dims[0] > 0) {
+        for (sint32 i = 0; i < dims[0]; ++i) {
+          res->setAt(i, multiCallNewIntern(newCtor, base, (len - 1), &dims[1],
+                                           vm));
+        }
+      } else {
+        for (uint32 i = 1; i < len; ++i) {
+          sint32 p = dims[i];
+          if (p < 0) JavaThread::get()->isolate->negativeArraySizeException(p);
+        }
+      }
+    } else {
+      JavaThread::get()->isolate->unknownError("Can not happen");
+    }
+  }
+  return _res;
+}
+
+extern "C" JavaArray* multiCallNew(ClassArray* cl, uint32 len, ...) {
+  va_list ap;
+  va_start(ap, len);
+  sint32 dims[len];
+  for (uint32 i = 0; i < len; ++i){
+    dims[i] = va_arg(ap, int);
+  }
+#ifdef MULTIPLE_VM
+  Jnjvm* vm = va_arg(ap, Jnjvm*);
+#else
+  Jnjvm* vm = 0;
+#endif
+  return multiCallNewIntern((arrayCtor_t)ArrayObject::acons, cl, len, dims, vm);
+}
+
+extern "C" void JavaObjectAquire(JavaObject* obj) {
+#ifdef SERVICE_VM
+  ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->isolate;
+  if (!(vm->GC->isMyObject(obj))) {
+    vm->serviceError(vm, "I'm locking an object I don't own");
+  }
+#endif
+  LockObj::myLock(obj)->aquire();
+}
+
+
+extern "C" void JavaObjectRelease(JavaObject* obj) {
+  verifyNull(obj);
+#ifdef SERVICE_VM
+  ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->isolate;
+  if (!(vm->GC->isMyObject(obj))) {
+    vm->serviceError(vm, "I'm unlocking an object I don't own");
+  }
+#endif
+  obj->lockObj->release();
+}
+
+#ifdef SERVICE_VM
+extern "C" void aquireObjectInSharedDomain(JavaObject* obj) {
+  myLock(obj)->aquire();
+}
+
+extern "C" void releaseObjectInSharedDomain(JavaObject* obj) {
+  verifyNull(obj);
+  obj->lockObj->release();
+}
+#endif
+
+extern "C" bool JavaObjectInstanceOf(JavaObject* obj, CommonClass* cl) {
+  return obj->instanceOf(cl);
+}
+
+extern "C" void* JavaThreadGetException() {
+  return JavaThread::getException();
+}
+
+extern "C" void JavaThreadThrowException(JavaObject* obj) {
+  return JavaThread::throwException(obj);
+}
+
+extern "C" JavaObject* JavaThreadGetJavaException() {
+  return JavaThread::getJavaException();
+}
+
+extern "C" bool JavaThreadCompareException(Class* cl) {
+  return JavaThread::compareException(cl);
+}
+
+extern "C" void JavaThreadClearException() {
+  return JavaThread::clearException();
+}

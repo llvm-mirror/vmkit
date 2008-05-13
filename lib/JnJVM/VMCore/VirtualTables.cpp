@@ -172,6 +172,16 @@ void JavaObject::TRACER {
   lockObj->MARK_AND_TRACE;
 }
 
+#ifdef MULTIPLE_GC
+extern "C" void JavaObjectTracer(JavaObject* obj, Collector* GC) {
+#else
+extern "C" void JavaObjectTracer(JavaObject* obj) {
+#endif
+  obj->classOf->MARK_AND_TRACE;
+  obj->lockObj->MARK_AND_TRACE;
+}
+
+
 void JavaThread::TRACER {
   javaThread->MARK_AND_TRACE;
   // FIXME: do I need this?

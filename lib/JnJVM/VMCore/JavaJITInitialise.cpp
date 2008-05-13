@@ -146,11 +146,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
   javaObjectTracerLLVM = Function::Create(type,
                                       GlobalValue::ExternalLinkage,
-#ifdef MULTIPLE_GC
-                                      "_ZN5jnjvm10JavaObject6tracerEPv",
-#else
-                                      "_ZN5jnjvm10JavaObject6tracerEv",
-#endif
+                                      "JavaObjectTracer",
                                       module);
   }
   
@@ -179,7 +175,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                                                true);
 
   multiCallNewLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm9JavaArray12multiCallNewEPNS_10ClassArrayEjz",
+                     "multiCallNew",
                      module);
   }
 
@@ -513,7 +509,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
   throwExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm10JavaThread14throwExceptionEPNS_10JavaObjectE",
+                     "JavaThreadThrowException",
                      module);
   }
   
@@ -523,7 +519,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
   clearExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm10JavaThread14clearExceptionEv",
+                     "JavaThreadClearException",
                      module);
   }
   
@@ -536,7 +532,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                                                args, false);
 
   getExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm10JavaThread12getExceptionEv",
+                     "JavaThreadGetException",
                      module);
   }
   
@@ -547,7 +543,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                                                args, false);
 
   getJavaExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm10JavaThread16getJavaExceptionEv",
+                     "JavaThreadGetJavaException",
                      module);
   }
   
@@ -558,7 +554,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(Type::Int1Ty, args, false);
 
   compareExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm10JavaThread16compareExceptionEPNS_5ClassE",
+                     "JavaThreadCompareException",
                      module);
   }
   
@@ -607,7 +603,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(Type::Int32Ty, args, false);
 
   instanceOfLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm10JavaObject10instanceOfEPNS_11CommonClassE",
+                     "JavaObjectInstanceOf",
                      module);
   PAListPtr func_toto_PAL;
   SmallVector<ParamAttrsWithIndex, 4> Attrs;
@@ -625,7 +621,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
   aquireObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm10JavaObject6aquireEv",
+                     "JavaObjectAquire",
                      module);
 #ifdef SERVICE_VM
   aquireObjectInSharedDomainLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
@@ -641,7 +637,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
   releaseObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm10JavaObject6unlockEv",
+                     "JavaObjectRelease",
                      module);
 #ifdef SERVICE_VM
   releaseObjectInSharedDomainLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
@@ -686,11 +682,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   markAndTraceLLVMType = FunctionType::get(llvm::Type::VoidTy, args, false);
   markAndTraceLLVM = Function::Create(markAndTraceLLVMType,
                                   GlobalValue::ExternalLinkage,
-#ifdef MULTIPLE_GC
-                                  "_ZNK2gc12markAndTraceEP9Collector",
-#else
-                                  "_ZNK2gc12markAndTraceEv",
-#endif
+                                  "MarkAndTrace",
                                   module);
   }
 #endif
@@ -769,7 +761,7 @@ static void addPass(FunctionPassManager *PM, Pass *P) {
   PM->add(P);
 }
 
-void AddStandardCompilePasses(FunctionPassManager *PM) {
+void JavaJIT::AddStandardCompilePasses(FunctionPassManager *PM) {
   llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
   // LLVM does not allow calling functions from other modules in verifier
   //PM->add(llvm::createVerifierPass());                  // Verify that input is correct

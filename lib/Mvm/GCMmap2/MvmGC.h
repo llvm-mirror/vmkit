@@ -100,10 +100,4 @@ public:
         STATIC void     setMinMemory(size_t);
 };
 
-#ifdef MULTIPLE_GC
-extern "C" gc* gcmalloc(size_t sz, VirtualTable* VT, Collector* GC);
-#else
-extern "C" gc* gcmalloc(size_t sz, VirtualTable* VT);
-#endif
-
 #endif

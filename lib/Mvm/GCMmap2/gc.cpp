@@ -31,9 +31,15 @@ memoryError_t GCCollector::internMemoryError;
 void gc::markAndTrace(Collector* GC) const {
   ((GCCollector*)GC)->markAndTrace((void*)this);
 }
+extern "C" void MarkAndTrace(gc* gc, Collector* GC) {
+  ((GCCollector*)GC)->markAndTrace((void*)gc);
+}
 #else
 void gc::markAndTrace() const {
   GCCollector::markAndTrace((void*)this);
+}
+extern "C" void MarkAndTrace(gc* gc) {
+  GCCollector::markAndTrace((void*)gc);
 }
 #endif
 

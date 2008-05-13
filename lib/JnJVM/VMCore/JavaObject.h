@@ -21,9 +21,10 @@
 
 #include "types.h"
 
+#include "JavaClass.h"
+
 namespace jnjvm {
 
-class CommonClass;
 class JavaField;
 class JavaObject;
 class JavaThread;
@@ -55,6 +56,8 @@ public:
   virtual void TRACER;
 
   static LockObj* allocate();
+  static LockObj* myLock(JavaObject* obj);
+
   void aquire();
   void release();
   bool owner();
@@ -72,8 +75,6 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
   
-  void aquire();
-  void unlock();
   void waitIntern(struct timeval *info, bool timed);
   void wait();
   void timedWait(struct timeval &info);
@@ -84,9 +85,15 @@ public:
     this->lockObj = 0;
   }
 
-  bool checkCast(const UTF8* name);
-  bool instanceOfString(const UTF8* name);
-  bool instanceOf(CommonClass* cl);
+  bool instanceOfString(const UTF8* name) {
+    if (!this) return false;
+    else return this->classOf->isOfTypeName(name);
+  }
+
+  bool instanceOf(CommonClass* cl) {
+    if (!this) return false;
+    else return this->classOf->isAssignableFrom(cl);
+  }
 
   static llvm::ConstantInt* classOffset();
   static llvm::ConstantInt* lockOffset();

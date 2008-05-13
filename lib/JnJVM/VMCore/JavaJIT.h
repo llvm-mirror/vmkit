@@ -293,6 +293,8 @@ public:
 
   static llvm::GlobalVariable* ArrayObjectVT;
   static llvm::GlobalVariable* JavaObjectVT;
+
+  static void AddStandardCompilePasses(llvm::FunctionPassManager*);
 };
 
 enum Opcode {

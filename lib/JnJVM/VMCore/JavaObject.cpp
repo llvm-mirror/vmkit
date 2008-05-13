@@ -104,7 +104,7 @@ void JavaObject::print(mvm::PrintBuffer* buf) const {
   buf->write(">");
 }
 
-static LockObj* myLock(JavaObject* obj) {
+LockObj* LockObj::myLock(JavaObject* obj) {
   verifyNull(obj);
   if (obj->lockObj == 0) {
     JavaObject::globalLock->lock();
@@ -116,41 +116,8 @@ static LockObj* myLock(JavaObject* obj) {
   return obj->lockObj;
 }
 
-void JavaObject::aquire() {
-#ifdef SERVICE_VM
-  ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->isolate;
-  if (!(vm->GC->isMyObject(this))) {
-    vm->serviceError(vm, "I'm locking an object I don't own");
-  }
-#endif
-  myLock(this)->aquire();
-}
-
-
-void JavaObject::unlock() {
-  verifyNull(this);
-#ifdef SERVICE_VM
-  ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->isolate;
-  if (!(vm->GC->isMyObject(this))) {
-    vm->serviceError(vm, "I'm unlocking an object I don't own");
-  }
-#endif
-  lockObj->release();
-}
-
-#ifdef SERVICE_VM
-extern "C" void aquireObjectInSharedDomain(JavaObject* obj) {
-  myLock(obj)->aquire();
-}
-
-extern "C" void releaseObjectInSharedDomain(JavaObject* obj) {
-  verifyNull(obj);
-  obj->lockObj->release();
-}
-#endif
-
 void JavaObject::waitIntern(struct timeval* info, bool timed) {
-  LockObj * l = myLock(this);
+  LockObj * l = LockObj::myLock(this);
   bool owner = l->owner();
 
   if (owner) {
@@ -205,7 +172,7 @@ void JavaObject::timedWait(struct timeval& info) {
 }
 
 void JavaObject::notify() {
-  LockObj* l = myLock(this);
+  LockObj* l = LockObj::myLock(this);
   if (l->owner()) {
     l->varcond->notify();
   } else {
@@ -214,29 +181,10 @@ void JavaObject::notify() {
 }
 
 void JavaObject::notifyAll() {
-  LockObj* l = myLock(this);
+  LockObj* l = LockObj::myLock(this);
   if (l->owner()) {
     l->varcond->notifyAll();
   } else {
     JavaThread::get()->isolate->illegalMonitorStateException(this);
   } 
-}
-
-bool JavaObject::instanceOfString(const UTF8* name) {
-  if (!this) return false;
-  else return this->classOf->isOfTypeName(name);
-}
-
-bool JavaObject::checkCast(const UTF8* Tname) {
-  if (!this || this->classOf->isOfTypeName(Tname)) {
-    return true;
-  } else {
-    JavaThread::get()->isolate->classCastException("checkcast"); 
-    return false;
-  }
-}
-
-bool JavaObject::instanceOf(CommonClass* cl) {
-  if (!this) return false;
-  else return this->classOf->isAssignableFrom(cl);
 }

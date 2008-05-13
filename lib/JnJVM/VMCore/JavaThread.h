@@ -20,6 +20,11 @@
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
+#include "JavaObject.h"
+
+extern "C" void* __cxa_allocate_exception(unsigned);
+extern "C" void __cxa_throw(void*, void*, void*);
+
 namespace jnjvm {
 
 class Class;
@@ -53,12 +58,39 @@ public:
   static JavaThread* get();
   static JavaObject* currentThread();
   
-  static void* getException();
-  static void throwException(JavaObject*);
+  static void* getException() {
+    return (void*)
+      ((char*)JavaThread::get()->internalPendingException - 8 * sizeof(void*));
+  }
+  
+  static void throwException(JavaObject* obj) {
+    JavaThread* th = JavaThread::get();
+    assert(th->pendingException == 0 && "pending exception already there?");
+    th->pendingException = obj;
+    void* exc = __cxa_allocate_exception(0);
+    th->internalPendingException = exc;
+    __cxa_throw(exc, 0, 0);
+  }
+
   static void throwPendingException();
-  static void clearException();
-  static bool compareException(Class*);
-  static JavaObject* getJavaException();
+  
+  static void clearException() {
+    JavaThread* th = JavaThread::get();
+    th->pendingException = 0;
+    th->internalPendingException = 0;
+  }
+
+  static bool compareException(Class* cl) {
+    JavaObject* pe = JavaThread::get()->pendingException;
+    assert(pe && "no pending exception?");
+    bool val = pe->classOf->subclassOf(cl);
+    return val;
+  }
+  
+  static JavaObject* getJavaException() {
+    return JavaThread::get()->pendingException;
+  }
+
   void returnFromNative();
 };
 

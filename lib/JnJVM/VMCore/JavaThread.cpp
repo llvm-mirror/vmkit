@@ -43,8 +43,6 @@ JavaThread* JavaThread::get() {
   return (JavaThread*)Thread::threadKey->get();
 }
 
-extern void AddStandardCompilePasses(llvm::FunctionPassManager*);
-
 void JavaThread::initialise(JavaObject* thread, Jnjvm* isolate) {
   this->javaThread = thread;
   this->isolate = isolate;
@@ -57,7 +55,7 @@ void JavaThread::initialise(JavaObject* thread, Jnjvm* isolate) {
   ModuleProvider* MP = isolate->TheModuleProvider;
   this->perFunctionPasses = new llvm::FunctionPassManager(MP);
   this->perFunctionPasses->add(new llvm::TargetData(isolate->module));
-  AddStandardCompilePasses(this->perFunctionPasses);
+  JavaJIT::AddStandardCompilePasses(this->perFunctionPasses);
 }
 
 JavaObject* JavaThread::currentThread() {
@@ -68,46 +66,12 @@ JavaObject* JavaThread::currentThread() {
     return 0;
 }
 
-extern "C" void* __cxa_allocate_exception(unsigned);
-extern "C" void __cxa_throw(void*, void*, void*);
-
-void* JavaThread::getException() {
-  return (void*)((char*)JavaThread::get()->internalPendingException - 8 * sizeof(void*));
-}
-
-JavaObject* JavaThread::getJavaException() {
-  return JavaThread::get()->pendingException;
-}
-
-
-void JavaThread::throwException(JavaObject* obj) {
-  JavaThread* th = JavaThread::get();
-  assert(th->pendingException == 0 && "pending exception already there?");
-  th->pendingException = obj;
-  void* exc = __cxa_allocate_exception(0);
-  th->internalPendingException = exc;
-  __cxa_throw(exc, 0, 0);
-}
-
 void JavaThread::throwPendingException() {
   JavaThread* th = JavaThread::get();
   assert(th->pendingException);
   void* exc = __cxa_allocate_exception(0);
   th->internalPendingException = exc;
   __cxa_throw(exc, 0, 0);
-}
-
-void JavaThread::clearException() {
-  JavaThread* th = JavaThread::get();
-  th->pendingException = 0;
-  th->internalPendingException = 0;
-}
-
-bool JavaThread::compareException(Class* cl) {
-  JavaObject* pe = JavaThread::get()->pendingException;
-  assert(pe && "no pending exception?");
-  bool val = pe->classOf->subclassOf(cl);
-  return val;
 }
 
 void JavaThread::returnFromNative() {
