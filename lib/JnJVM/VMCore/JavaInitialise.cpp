@@ -174,7 +174,11 @@ static void initialiseStatics() {
   Jnjvm::clinitType = vm->asciizConstructUTF8("()V");
   Jnjvm::runName = vm->asciizConstructUTF8("run");
   Jnjvm::prelib = vm->asciizConstructUTF8("lib");
+#if defined(__MACH__)
+  Jnjvm::postlib = vm->asciizConstructUTF8(".dylib");
+#else 
   Jnjvm::postlib = vm->asciizConstructUTF8(".so");
+#endif
   Jnjvm::mathName = vm->asciizConstructUTF8("java/lang/Math");
 
 #define DEF_UTF8(var) \
