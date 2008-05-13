@@ -43,13 +43,11 @@ JavaMethod* JavaJIT::IPToJavaMethod(void* begIp) {
 #define FRAME_IP(fp) (fp[1])
 #endif
 
-extern void* __libc_stack_end;
-
 int JavaJIT::getBacktrace(void** stack, int size) {
   void** blah = (void**)__builtin_frame_address(1);
   int cpt = 0;
-  while (blah && cpt < size && blah < __libc_stack_end && 
-         !(((long) blah & 3))) {
+  void* baseSP = JavaThread::get()->baseSP;
+  while (blah && cpt < size && blah < baseSP) {
     stack[cpt++] = (void**)FRAME_IP(blah);
     blah = (void**)blah[0];
   }

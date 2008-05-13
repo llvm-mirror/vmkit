@@ -78,6 +78,7 @@ public:
   typedef void (*markerFn)(void*);
   
   static void initialise(markerFn mark, void *base_sp) {
+    mvm::Thread::get()->baseSP = base_sp;
     GC_INIT();
   }
   static void destroy() {}
@@ -110,6 +111,7 @@ public:
   }
   
   static void inject_my_thread(void *sp) {
+    mvm::Thread::get()->baseSP = base_sp;
     GC_init();
   }
   

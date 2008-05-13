@@ -460,11 +460,13 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
+  void* baseSP = mvm::Thread::get()->baseSP;
 #ifdef MULTIPLE_GC
   isolate->bootstrapThread->GC = isolate->GC;
-  isolate->GC->inject_my_thread(0);
+  isolate->GC->inject_my_thread(baseSP);
   mvm::jit::memoryManager->addGCForModule(isolate->module, isolate->GC);
 #endif 
+  isolate->bootstrapThread->baseSP = baseSP;
   JavaThread::threadKey->set(isolate->bootstrapThread);
   
   isolate->threadSystem = vm_new(isolate, ThreadSystem)();
@@ -527,13 +529,15 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
+  void* baseSP = mvm::Thread::get()->baseSP;
 #ifdef MULTIPLE_GC
   isolate->bootstrapThread->GC = isolate->GC;
 #ifndef SERVICE_VM
-  isolate->GC->inject_my_thread(0);
+  isolate->GC->inject_my_thread(baseSP);
 #endif
   mvm::jit::memoryManager->addGCForModule(isolate->module, isolate->GC);
 #endif 
+  isolate->bootstrapThread->baseSP = baseSP;
   JavaThread::threadKey->set(isolate->bootstrapThread);
 
   isolate->name = "bootstrapVM";

@@ -116,6 +116,7 @@ void Collector::initialise(markerFn marker, void *base_sp) {
   GCCollector::initialise(marker);
   GCCollector::inject_my_thread(base_sp);
 #endif
+  mvm::Thread::get()->baseSP = base_sp;
 }
 
 void Collector::destroy() {
@@ -126,6 +127,7 @@ void Collector::inject_my_thread(void *base_sp) {
 #ifdef HAVE_PTHREAD
   COLLECTOR inject_my_thread(base_sp);
 #endif
+  mvm::Thread::get()->baseSP = base_sp;
 }
 
 void Collector::maybeCollect() {
