@@ -228,8 +228,11 @@ void mvm::jit::initialise() {
 
   executionEngine = llvm::ExecutionEngine::createJIT(jit::globalModuleProvider, 0, jit::memoryManager);
   executionEngine->InstallExceptionTableRegister(__register_frame);
-  
+  module->setDataLayout(mvm::jit::executionEngine->getTargetData()->getStringRepresentation());
+
   ptrType = PointerType::getUnqual(Type::Int8Ty);
+  ptr32Type = PointerType::getUnqual(Type::Int32Ty);
+  ptrPtrType = PointerType::getUnqual(ptrType);
   
   {
     std::vector<const llvm::Type *> arg_types;
@@ -645,6 +648,8 @@ llvm::ConstantFP*  mvm::jit::constantDoubleMinusZero;
 llvm::Constant*    mvm::jit::constantPtrNull;
 llvm::ConstantInt* mvm::jit::constantPtrSize;
 const llvm::PointerType* mvm::jit::ptrType;
+const llvm::PointerType* mvm::jit::ptr32Type;
+const llvm::PointerType* mvm::jit::ptrPtrType;
 const llvm::Type* mvm::jit::arrayPtrType;
 
 llvm::Module *mvm::jit::globalModule;

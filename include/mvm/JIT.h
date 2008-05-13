@@ -145,6 +145,8 @@ extern llvm::ConstantFP*  constantDoubleMinusZero;
 extern llvm::Constant*    constantPtrNull;
 extern llvm::ConstantInt* constantPtrSize;
 extern const llvm::PointerType* ptrType;
+extern const llvm::PointerType* ptr32Type;
+extern const llvm::PointerType* ptrPtrType;
 extern const llvm::Type* arrayPtrType;
 
 
