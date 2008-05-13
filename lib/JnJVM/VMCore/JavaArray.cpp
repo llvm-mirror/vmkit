@@ -122,15 +122,6 @@ void ArraySInt8::print(mvm::PrintBuffer *buf) const {
   buf->write(">");
 }
 
-void ArrayUInt16::print(mvm::PrintBuffer *buf) const {
-  buf->write("Array<");
-  for (int i = 0; i < size; i++) {
-    buf->writeS4(elements[i]);
-    buf->write(" ");
-  }
-  buf->write(">");
-}
-
 void ArraySInt16::print(mvm::PrintBuffer *buf) const {
   buf->write("Array<");
   for (int i = 0; i < size; i++) {
@@ -195,7 +186,7 @@ void ArrayObject::print(mvm::PrintBuffer *buf) const {
 }
 
 
-void UTF8::print(mvm::PrintBuffer* buf) const {
+void ArrayUInt16::print(mvm::PrintBuffer* buf) const {
   for (int i = 0; i < size; i++)
     buf->writeChar((char)elements[i]);
 }

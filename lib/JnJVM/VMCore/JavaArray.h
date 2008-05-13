@@ -95,8 +95,6 @@ public:
 
   static const llvm::Type* llvmType;
   
-  virtual void print(mvm::PrintBuffer* buf) const;
-
   const UTF8* internalToJava(Jnjvm *vm, unsigned int start,
                              unsigned int len) const;
   
