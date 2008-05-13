@@ -46,7 +46,7 @@ JNIEnv *env,
   sint32 lgPre = vm->prelib->size;
   sint32 lgPost = vm->postlib->size;
 
-  UTF8* res = UTF8::acons(lgPre + lgLib + lgPost, JavaArray::ofChar, vm);
+  UTF8* res = (UTF8*)UTF8::acons(lgPre + lgLib + lgPost, JavaArray::ofChar, vm);
 
   memmove(res->elements, vm->prelib->elements, lgPre * sizeof(uint16));
   memmove(&(res->elements[lgPre]), &(utf8Lib->elements[stLib]), lgLib * sizeof(uint16));

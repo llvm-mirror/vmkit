@@ -1010,7 +1010,7 @@ void JavaJIT::_ldc(uint16 index) {
           val = (void*)utf8;
           compilingClass->isolate->protectModule->lock();
           gv =
-            new GlobalVariable(UTF8::llvmType, false, 
+            new GlobalVariable(ArrayUInt16::llvmType, false, 
                                GlobalValue::ExternalLinkage,
                                constantUTF8Null, "",
                                compilingClass->isolate->module);

@@ -90,7 +90,7 @@ const UTF8* UTF8Map::lookupOrCreateAsciiz(Jnjvm* vm, const char* asciiz) {
   }
 
   if (res == 0) {
-    UTF8* tmp = UTF8::acons(size, JavaArray::ofChar, vm);
+    UTF8* tmp = (UTF8*)UTF8::acons(size, JavaArray::ofChar, vm);
     for (sint32 i = 0; i < size; i++) {
       tmp->setAt(i, asciiz[i]);
     }
@@ -119,7 +119,7 @@ const UTF8* UTF8Map::lookupOrCreateReader(Jnjvm* vm, const uint16* buf,
   }
 
   if (res == 0) {
-    UTF8* tmp = UTF8::acons(size, JavaArray::ofChar, vm);
+    UTF8* tmp = (UTF8*)UTF8::acons(size, JavaArray::ofChar, vm);
     memcpy(tmp->elements, buf, len * sizeof(uint16));
     res = (const UTF8*)tmp;
     map.insert(std::make_pair(key, res));

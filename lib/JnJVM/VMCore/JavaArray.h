@@ -85,31 +85,15 @@ ARRAYCLASS(ArraySInt32, sint32);
 ARRAYCLASS(ArrayLong,   sint64);
 ARRAYCLASS(ArrayFloat,  float);
 ARRAYCLASS(ArrayDouble, double);
+ARRAYCLASS(ArrayObject, JavaObject*);
 
 #undef ARRAYCLASS
 
-class ArrayObject : public JavaArray {
+class UTF8 : public ArrayUInt16 {
 public:
   static VirtualTable* VT;
-  static const llvm::Type* llvmType;
-  JavaObject* elements[0];
-  static ArrayObject *acons(sint32 n, ClassArray* cl, Jnjvm* vm);
-  JavaObject* at(sint32) const;
-  void setAt(sint32, JavaObject*);
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
-};
-
-class UTF8 : public JavaArray {
-public:
-  static VirtualTable* VT;
-  uint16 elements[0];
 
   static const llvm::Type* llvmType;
-  static UTF8* acons(sint32 n, ClassArray* cl, Jnjvm* vm);
-  
-  unsigned short int at(sint32) const;
-  void setAt(sint32, uint16);
   
   virtual void print(mvm::PrintBuffer* buf) const;
 

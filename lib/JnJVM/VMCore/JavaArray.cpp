@@ -94,36 +94,15 @@ ARRAYCLASS(ArraySInt32, sint32, 4)
 ARRAYCLASS(ArrayLong,   sint64, 8)
 ARRAYCLASS(ArrayFloat,  float, 4)
 ARRAYCLASS(ArrayDouble, double, 8)
-ARRAYCLASS(UTF8, uint16, 2)
-
-AT(ArrayObject, JavaObject*)
+ARRAYCLASS(ArrayObject, JavaObject*, sizeof(JavaObject*))
 
 #undef ARRAYCLASS
 #undef ACONS
 #undef AT
 
-ArrayObject *ArrayObject::acons(sint32 n, ClassArray* atype, Jnjvm* vm) {
-  if (n < 0)
-    JavaThread::get()->isolate->negativeArraySizeException(n);
-  else if (n > JavaArray::MaxArraySize)
-    JavaThread::get()->isolate->outOfMemoryError(n);
-  ArrayObject* res = (ArrayObject*)
-#ifndef MULTIPLE_VM
-    (Object*) operator new(sizeof(ArrayObject) + n * sizeof(JavaObject*), JavaObject::VT);
-#else
-    (Object*) vm->allocateObject(sizeof(ArrayObject) + n * sizeof(JavaObject*), JavaObject::VT);
-#endif
-  res->initialise(atype);
-  res->size = n;
-  res->setVirtualTable(ArrayObject::VT);
-  return res;
-}
-
-
 void JavaArray::print(mvm::PrintBuffer *buf) const {
   assert(0 && "should not be here");
 }
-
   
 void ArrayUInt8::print(mvm::PrintBuffer *buf) const {
   buf->write("Array<");
