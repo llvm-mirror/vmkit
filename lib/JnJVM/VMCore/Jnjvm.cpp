@@ -133,10 +133,10 @@ void Jnjvm::analyseClasspathEnv(const char* str) {
       if (top != 0) {
         memcpy(buf, cur, top);
         buf[top] = 0;
-        char* rp = (char*)malloc(4096);
-        memset(rp, 0, 4096);
+        char* rp = (char*)malloc(PATH_MAX);
+        memset(rp, 0, PATH_MAX);
         rp = realpath(buf, rp);
-        if (rp[4095] == 0 && strlen(rp) != 0) {
+        if (rp[PATH_MAX - 1] == 0 && strlen(rp) != 0) {
           struct stat st;
           stat(rp, &st);
           if ((st.st_mode & S_IFMT) == S_IFDIR) {
