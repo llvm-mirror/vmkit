@@ -52,12 +52,12 @@ struct ltutf8
 template<class Key, class Container, class Compare>
 class LockedMap : public mvm::Object {
 public:
-  typedef typename std::map<Key, Container, Compare>::iterator iterator;
+  typedef typename std::map<const Key, Container, Compare>::iterator iterator;
   typedef Container (*funcCreate)(Key& V, Jnjvm *vm);
 
   mvm::Lock* lock;
-  std::map<Key, Container, Compare,
-           gc_allocator<std::pair<Key, Container> > > map;
+  std::map<const Key, Container, Compare,
+           gc_allocator<std::pair<const Key, Container> > > map;
   
   inline Container lookupOrCreate(Key& V, Jnjvm *vm, funcCreate func) {
     lock->lock();
@@ -103,11 +103,11 @@ public:
 
 class UTF8Map : public mvm::Object {
 public:
-  typedef std::multimap<uint32, const UTF8*>::iterator iterator;
+  typedef std::multimap<const uint32, const UTF8*>::iterator iterator;
   
   mvm::Lock* lock;
-  std::multimap<uint32, const UTF8*, std::less<uint32>,
-                gc_allocator< std::pair<uint32, const UTF8*> > > map;
+  std::multimap<const uint32, const UTF8*, std::less<uint32>,
+                gc_allocator< std::pair<const uint32, const UTF8*> > > map;
   static VirtualTable* VT;
   const UTF8* lookupOrCreateAsciiz(Jnjvm* vm, const char* asciiz); 
   const UTF8* lookupOrCreateReader(Jnjvm* vm, const uint16* buf, uint32 size);
