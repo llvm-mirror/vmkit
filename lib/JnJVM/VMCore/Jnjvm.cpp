@@ -716,7 +716,6 @@ static CommonClass* classDup(const UTF8*& name, Jnjvm *vm) {
 #ifndef MULTIPLE_VM
   cl->_staticInstance = 0;
 #endif
-  cl->virtualInstance = 0;
   cl->super = 0;
   cl->ctpInfo = 0;
   return cl;

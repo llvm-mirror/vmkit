@@ -253,7 +253,8 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
     endNode = llvm::PHINode::Create(funcType->getReturnType(), "", endBlock);
   
   Value* buf = llvm::CallInst::Create(getSJLJBufferLLVM, "", currentBlock);
-  Value* test = llvm::CallInst::Create(mvm::jit::setjmpLLVM, buf, "", currentBlock);
+  Value* test = llvm::CallInst::Create(mvm::jit::setjmpLLVM, buf, "",
+                                       currentBlock);
   test = new ICmpInst(ICmpInst::ICMP_EQ, test, mvm::jit::constantZero, "",
                       currentBlock);
   llvm::BranchInst::Create(executeBlock, endBlock, test, currentBlock);
@@ -300,8 +301,8 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
                               valPtrType);
   mvm::jit::unprotectConstants();//->unlock();
 
-  Value* result = llvm::CallInst::Create(valPtr, nativeArgs.begin(), nativeArgs.end(), 
-                               "", currentBlock);
+  Value* result = llvm::CallInst::Create(valPtr, nativeArgs.begin(),
+                                         nativeArgs.end(), "", currentBlock);
 
   if (funcType->getReturnType() != Type::VoidTy)
     endNode->addIncoming(result, currentBlock);
@@ -727,7 +728,8 @@ llvm::Function* JavaJIT::javaCompile() {
   mvm::jit::runPasses(llvmFunction, JavaThread::get()->perFunctionPasses);
   
   /*
-  if (compilingMethod->name == compilingClass->isolate->asciizConstructUTF8("main")) {
+  if (compilingMethod->name == 
+      compilingClass->isolate->asciizConstructUTF8("main")) {
     llvmFunction->print(llvm::cout);
     void* res = mvm::jit::executionEngine->getPointerToGlobal(llvmFunction);
     void* base = res;
@@ -1605,35 +1607,43 @@ void JavaJIT::invokeNew(uint16 index) {
   ctpInfo->checkInfoOfClass(index);
   
   Class* cl = (Class*)(ctpInfo->getMethodClassIfLoaded(index));
-  Value* val = 0;
-  if (!cl || !(cl->isResolved())
-#ifndef MULTIPLE_VM
-      || !cl->isReady()
-#endif
-     ) {
-    Value* node = getResolvedClass(index, true);
-#ifndef MULTIPLE_VM
-    val = invoke(doNewUnknownLLVM, node, "", currentBlock);
-#else
-    val = invoke(doNewUnknownLLVM, node, isolateLocal, "", currentBlock);
-#endif
+  Value* Size = 0;
+  Value* VT = 0;
+  Value* Cl = 0;
+  if (!cl || !cl->isResolved()) {
+    Cl = getResolvedClass(index, true);
+    Size = CallInst::Create(getObjectSizeFromClassLLVM, Cl, "", currentBlock);
+    VT = CallInst::Create(getVTFromClassLLVM, Cl, "", currentBlock);
   } else {
-    Value* load = new LoadInst(cl->llvmVar(compilingClass->isolate->module),
-                               "", currentBlock);
-#ifdef MULTIPLE_VM
     Module* M = compilingClass->isolate->module;
-    Value* arg = new LoadInst(cl->llvmVar(M), "", currentBlock);
-    load = invoke(initialisationCheckLLVM, arg, "", currentBlock);
-    val = invoke(doNewLLVM, load, isolateLocal, "", currentBlock);
-#else
-    val = invoke(doNewLLVM, load, "", currentBlock);
+    Size = cl->virtualSizeLLVM;
+    VT = cl->llvmVT(this);
+    Cl = new LoadInst(cl->llvmVar(M), "", currentBlock);
+#ifndef MULTIPLE_VM
+    if (!cl->isReady())
 #endif
-    // give the real type info, escape analysis uses it
-    new BitCastInst(val, cl->virtualType, "", currentBlock);
+      Cl = invoke(initialisationCheckLLVM, Cl, "", currentBlock);
   }
+  std::vector<Value*> args;
+  args.push_back(Size);
+  args.push_back(VT);
+#ifdef MULTIPLE_GC
+  args.push_back(CallInst::Create(getCollectorLLVM, isolateLocal, "",
+                                  currentBlock));
+#endif
+  Value* val = invoke(javaObjectAllocateLLVM, args, "", currentBlock);
   
-  push(val, AssessorDesc::dRef);
+  // Set the class
+  
+  std::vector<Value*> gep;
+  gep.push_back(mvm::jit::constantZero);
+  gep.push_back(JavaObject::classOffset());
+  Value* GEP = GetElementPtrInst::Create(val, gep.begin(), gep.end(), "",
+                                         currentBlock);
+  new StoreInst(Cl, GEP, currentBlock);
 
+
+  push(val, AssessorDesc::dRef);
 }
 
 Value* JavaJIT::arraySize(Value* val) {

@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <stddef.h>
+
 #include "llvm/Instructions.h"
 #include "llvm/LinkAllPasses.h"
 #include "llvm/Module.h"
@@ -19,6 +21,7 @@
 
 #include "JavaArray.h"
 #include "JavaCache.h"
+#include "JavaClass.h"
 #include "JavaJIT.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
@@ -69,7 +72,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   mvm::jit::protectTypes();//->lock();
   // Create JavaObject::llvmType
   const llvm::Type* Pty = mvm::jit::ptrType;
-  const llvm::Type* VTType = PointerType::getUnqual(PointerType::getUnqual(Type::Int32Ty));
+  VTType = PointerType::getUnqual(PointerType::getUnqual(Type::Int32Ty));
   
   std::vector<const llvm::Type*> objectFields;
   objectFields.push_back(VTType); // VT
@@ -178,36 +181,6 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                      module);
   }
   
-  // Create doNewLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-#ifdef MULTIPLE_VM
-  args.push_back(mvm::jit::ptrType);
-#endif
-  const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
-                                               false);
-
-  doNewLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm5Class5doNewEPNS_5JnjvmE",
-                     module);
-  }
-  
-  // Create doNewUnknownLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-#ifdef MULTIPLE_VM
-  args.push_back(mvm::jit::ptrType);
-#endif
-  const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
-                                               false);
-
-  doNewUnknownLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm5Class12doNewUnknownEPNS_5JnjvmE",
-                     module);
-  }
-  
   // Create multiCallNewLLVM
   {
   std::vector<const Type*> args;
@@ -221,7 +194,6 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                      module);
   }
 
-#ifdef MULTIPLE_VM
   // Create initialisationCheckLLVM
   {
   std::vector<const Type*> args;
@@ -251,73 +223,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                      "forceInitialisationCheck",
                      module);
   } 
-#endif
   
-  
-  
-  // Create *AconsLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(Type::Int32Ty);
-  args.push_back(mvm::jit::ptrType);
-#ifdef MULTIPLE_VM
-  args.push_back(mvm::jit::ptrType);
-#endif
-  const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
-                                               false);
-
-  FloatAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm10ArrayFloat5aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
-                     module);
-  
-  Int8AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm10ArraySInt85aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
-                     module);
-  
-  DoubleAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm11ArrayDouble5aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
-                     module);
-   
-  Int16AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm11ArraySInt165aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
-                     module);
-  
-  Int32AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm11ArraySInt325aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
-                     module);
-  
-  UTF8AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm4UTF85aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
-                     module);
-  
-  LongAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm9ArrayLong5aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
-                     module);
-  
-  ObjectAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm11ArrayObject5aconsEiPNS_10ClassArrayEPNS_5JnjvmE",
-                     module);
-  }
-  
-  // Create initialiseObjectLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  args.push_back(JavaObject::llvmType);
-  const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
-                                               false);
-
-  initialiseObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5jnjvm5Class16initialiseObjectEPNS_10JavaObjectE",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  initialiseObjectLLVM->setParamAttrs(func_toto_PAL);
-  }
   
   // Create arrayLengthLLVM
   {
@@ -364,7 +270,7 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   const FunctionType* type = FunctionType::get(mvm::jit::ptrType, args, false);
 
   getClassLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "getVT",
+                     "getClass",
                      module);
   PAListPtr func_toto_PAL;
   SmallVector<ParamAttrsWithIndex, 4> Attrs;
@@ -395,6 +301,65 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   Attrs.push_back(PAWI);
   func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
   newLookupLLVM->setParamAttrs(func_toto_PAL);
+  }
+ 
+#ifdef MULTIPLE_GC
+  // Create getCollectorLLVM
+  {
+  std::vector<const Type*> args;
+  args.push_back(mvm::jit::ptrType);
+  const FunctionType* type = FunctionType::get(mvm::jit::ptrType, args,
+                                               false);
+
+  getCollectorLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "getCollector",
+                     module);
+  PAListPtr func_toto_PAL;
+  SmallVector<ParamAttrsWithIndex, 4> Attrs;
+  ParamAttrsWithIndex PAWI;
+  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
+  Attrs.push_back(PAWI);
+  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
+  getCollectorLLVM->setParamAttrs(func_toto_PAL);
+  }
+#endif
+  
+  // Create getVTFromClassLLVM
+  {
+  std::vector<const Type*> args;
+  args.push_back(mvm::jit::ptrType);
+  const FunctionType* type = FunctionType::get(VTType, args,
+                                               false);
+
+  getVTFromClassLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "getVTFromClass",
+                     module);
+  PAListPtr func_toto_PAL;
+  SmallVector<ParamAttrsWithIndex, 4> Attrs;
+  ParamAttrsWithIndex PAWI;
+  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
+  Attrs.push_back(PAWI);
+  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
+  getVTFromClassLLVM->setParamAttrs(func_toto_PAL);
+  }
+  
+  // Create getSizeFromClassLLVM
+  {
+  std::vector<const Type*> args;
+  args.push_back(mvm::jit::ptrType);
+  const FunctionType* type = FunctionType::get(Type::Int32Ty, args,
+                                               false);
+
+  getObjectSizeFromClassLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                     "getObjectSizeFromClass",
+                     module);
+  PAListPtr func_toto_PAL;
+  SmallVector<ParamAttrsWithIndex, 4> Attrs;
+  ParamAttrsWithIndex PAWI;
+  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
+  Attrs.push_back(PAWI);
+  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
+  getObjectSizeFromClassLLVM->setParamAttrs(func_toto_PAL);
   }
  
 #ifndef WITHOUT_VTABLE
@@ -782,9 +747,14 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                                     GlobalValue::ExternalLinkage,
                                     cons, "",
                                     module);
-  
-      
-  
+  {
+    Class fake;
+    int offset = (intptr_t)&(fake.virtualSize) - (intptr_t)&fake;
+    constantOffsetObjectSizeInClass = ConstantInt::get(Type::Int32Ty, offset);
+    offset = (intptr_t)&(fake.virtualVT) - (intptr_t)&fake;
+    constantOffsetVTInClass = ConstantInt::get(Type::Int32Ty, offset);
+  }
+
   mvm::jit::unprotectConstants();//->unlock();
 }
 
@@ -794,7 +764,8 @@ llvm::Constant*    JavaJIT::constantMaxArraySize;
 llvm::Constant*    JavaJIT::constantJavaObjectSize;
 llvm::GlobalVariable*    JavaJIT::JavaObjectVT;
 llvm::GlobalVariable*    JavaJIT::ArrayObjectVT;
-
+llvm::ConstantInt* JavaJIT::constantOffsetObjectSizeInClass;
+llvm::ConstantInt* JavaJIT::constantOffsetVTInClass;
 
 namespace mvm {
 
@@ -814,8 +785,6 @@ void AddStandardCompilePasses(FunctionPassManager *PM) {
   // LLVM does not allow calling functions from other modules in verifier
   //PM->add(llvm::createVerifierPass());                  // Verify that input is correct
   
-  // do escape analysis first, because the type is given in the first bitcastinst
-  addPass(PM, mvm::createEscapeAnalysisPass(JavaJIT::doNewLLVM, JavaJIT::initialiseObjectLLVM));
   addPass(PM, llvm::createCFGSimplificationPass());    // Clean up disgusting code
   addPass(PM, llvm::createScalarReplAggregatesPass());// Kill useless allocas
   addPass(PM, llvm::createInstructionCombiningPass()); // Clean up after IPCP & DAE

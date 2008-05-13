@@ -32,7 +32,8 @@ namespace mvm {
   private:
   };
   char LowerConstantCalls::ID = 0;
-  RegisterPass<LowerConstantCalls> X("LowerArrayLength", "Lower Array length");
+  RegisterPass<LowerConstantCalls> X("LowerConstantCalls",
+                                     "Lower Constant calls");
 
 bool LowerConstantCalls::runOnFunction(Function& F) {
   bool Changed = false;
@@ -78,9 +79,46 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* cl = new LoadInst(classPtr, "", CI);
           CI->replaceAllUsesWith(cl);
           CI->eraseFromParent();
+        } else if (V == jnjvm::JavaJIT::getVTFromClassLLVM) {
+          Changed = true;
+          Value* val = CI->getOperand(1); 
+          std::vector<Value*> indexes; 
+          indexes.push_back(jnjvm::JavaJIT::constantOffsetVTInClass);
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
+                                                   indexes.end(), "", CI);
+          VTPtr = new BitCastInst(VTPtr, mvm::jit::ptrPtrType, "", CI);
+          Value* VT = new LoadInst(VTPtr, "", CI);
+          VT = new BitCastInst(VT, jnjvm::JavaJIT::VTType, "", CI);
+          CI->replaceAllUsesWith(VT);
+          CI->eraseFromParent();
+        } else if (V == jnjvm::JavaJIT::getObjectSizeFromClassLLVM) {
+          Changed = true;
+          Value* val = CI->getOperand(1); 
+          std::vector<Value*> indexes; 
+          indexes.push_back(jnjvm::JavaJIT::constantOffsetObjectSizeInClass);
+          Value* SizePtr = GetElementPtrInst::Create(val, indexes.begin(),
+                                                   indexes.end(), "", CI);
+          SizePtr = new BitCastInst(SizePtr, mvm::jit::ptr32Type, "", CI);
+          Value* Size = new LoadInst(SizePtr, "", CI);
+          CI->replaceAllUsesWith(Size);
+          CI->eraseFromParent();
         }
-#ifdef MULTIPLE_VM
         else if (V == jnjvm::JavaJIT::forceInitialisationCheckLLVM) {
+          Changed = true;
+          CI->eraseFromParent();
+        }
+#ifdef MULTIPLE_GC
+        else if (V == jnjvm::JavaJIT::getCollectorLLVM) {
+          Changed = true;
+          Value* val = CI->getOperand(1); 
+          std::vector<Value*> indexes; 
+          indexes.push_back(mvm::jit::constantOne);
+          val = new BitCastInst(val, mvm::jit::ptrPtrType, "", CI);
+          Value* CollectorPtr = GetElementPtrInst::Create(val, indexes.begin(),
+                                                          indexes.end(), "",
+                                                          CI);
+          Value* Collector = new LoadInst(CollectorPtr, "", CI);
+          CI->replaceAllUsesWith(Collector);
           CI->eraseFromParent();
         }
 #endif

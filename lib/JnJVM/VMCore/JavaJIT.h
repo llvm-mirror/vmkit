@@ -229,6 +229,7 @@ public:
   static void initialiseJITIsolateVM(Jnjvm* vm);
 
   
+  static void initField(JavaField* field);
   static void initField(JavaField* field, JavaObject* obj, uint64 val = 0);
   static void initField(JavaField* field, JavaObject* obj, JavaObject* val);
   static void initField(JavaField* field, JavaObject* obj, double val);
@@ -237,26 +238,12 @@ public:
   static llvm::Function* getSJLJBufferLLVM;
   static llvm::Function* virtualLookupLLVM;
   static llvm::Function* fieldLookupLLVM;
-  static llvm::Function* UTF8AconsLLVM;
-  static llvm::Function* Int8AconsLLVM;
-  static llvm::Function* Int32AconsLLVM;
-  static llvm::Function* Int16AconsLLVM;
-  static llvm::Function* FloatAconsLLVM;
-  static llvm::Function* DoubleAconsLLVM;
-  static llvm::Function* LongAconsLLVM;
-  static llvm::Function* ObjectAconsLLVM;
   static llvm::Function* printExecutionLLVM;
   static llvm::Function* printMethodStartLLVM;
   static llvm::Function* printMethodEndLLVM;
   static llvm::Function* jniProceedPendingExceptionLLVM;
-  static llvm::Function* doNewLLVM;
-  // this is when the type is not known at compile time (escape analysis)
-  static llvm::Function* doNewUnknownLLVM;
-#ifdef MULTIPLE_VM
   static llvm::Function* initialisationCheckLLVM;
   static llvm::Function* forceInitialisationCheckLLVM;
-#endif
-  static llvm::Function* initialiseObjectLLVM;
   static llvm::Function* newLookupLLVM;
 #ifndef WITHOUT_VTABLE
   static llvm::Function* vtableLookupLLVM;
@@ -275,8 +262,14 @@ public:
   static llvm::Function* arrayLengthLLVM;
   static llvm::Function* getVTLLVM;
   static llvm::Function* getClassLLVM;
-  static llvm::Function* getCollectorLLVM;
   static llvm::Function* javaObjectAllocateLLVM;
+#ifdef MULTIPLE_GC
+  static llvm::Function* getCollectorLLVM;
+#endif
+  static llvm::Function* getVTFromClassLLVM;
+  static llvm::Function* getObjectSizeFromClassLLVM;
+  static llvm::ConstantInt* constantOffsetObjectSizeInClass;
+  static llvm::ConstantInt* constantOffsetVTInClass;
   
 
   static Class* getCallingClass();
@@ -289,6 +282,8 @@ public:
   static llvm::Function* markAndTraceLLVM;
   static const llvm::FunctionType* markAndTraceLLVMType;
 #endif
+  
+  static const llvm::Type* VTType;
 
   static llvm::Constant*    constantJavaObjectNull;
   static llvm::Constant*    constantUTF8Null;

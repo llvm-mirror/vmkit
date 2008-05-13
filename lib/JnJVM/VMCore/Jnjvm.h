@@ -59,6 +59,9 @@ class AllocationMap;
 
 class Jnjvm : public mvm::Object{
 public:
+#ifdef MULTIPLE_GC
+  Collector* GC;
+#endif
   static VirtualTable* VT;
   static Jnjvm* bootstrapVM;
 
@@ -256,9 +259,6 @@ public:
   DelegateeMap* delegatees;
 #endif
 
-#ifdef MULTIPLE_GC
-  Collector* GC;
-#endif
   
   mvm::Lock* protectModule;
   llvm::Module* module;

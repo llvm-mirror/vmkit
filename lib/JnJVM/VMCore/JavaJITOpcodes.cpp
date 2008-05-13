@@ -1902,7 +1902,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         args.push_back(size);
         args.push_back(new LoadInst(TheVT, "", currentBlock));
 #ifdef MULTIPLE_GC
-        args.push_back(CallInst::Create(getCollector, isolateLocal, "",
+        args.push_back(CallInst::Create(getCollectorLLVM, isolateLocal, "",
                                         currentBlock));
 #endif
         Value* res = invoke(javaObjectAllocateLLVM, args, "", currentBlock);

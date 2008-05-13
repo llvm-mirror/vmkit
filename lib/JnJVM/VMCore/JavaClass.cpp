@@ -351,36 +351,9 @@ JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
   return res;
 }
 
-#ifndef MULTIPLE_VM
-JavaObject* Class::doNew(Jnjvm* vm) {
-  JavaObject* res = (JavaObject*)gc::operator new(virtualSize, virtualVT);
-  res->classOf = this;
-  return res;
-}
-
-// Copy doNew because LLVM wants two different pointers (for simplicity)
-JavaObject* Class::doNewUnknown(Jnjvm* vm) {
-  JavaObject* res = (JavaObject*)gc::operator new(virtualSize, virtualVT);
-  res->classOf = this;
-  return res;
-}
-#else
 JavaObject* Class::doNew(Jnjvm* vm) {
   JavaObject* res = (JavaObject*)vm->allocateObject(virtualSize, virtualVT);
   res->classOf = this;
-  return res;
-}
-
-// Copy doNew because LLVM wants two different pointers (for simplicity)
-JavaObject* Class::doNewUnknown(Jnjvm* vm) {
-  JavaObject* res = (JavaObject*)vm->allocateObject(virtualSize, virtualVT);
-  res->classOf = this;
-  return res;
-}
-#endif
-
-JavaObject* Class::initialiseObject(JavaObject* res) {
-  memcpy(res, virtualInstance, virtualSize);  
   return res;
 }
 
@@ -576,16 +549,15 @@ static void resolveVirtualFields(Class* cl) {
   VirtualTable* VT = JavaJIT::makeVT(cl, false);
   
   uint64 size = mvm::jit::getTypeSize(cl->virtualType->getContainedType(0));
-  cl->virtualSize = size;
+  cl->virtualSize = (uint32)size;
+  mvm::jit::protectConstants();
+  cl->virtualSizeLLVM = llvm::ConstantInt::get(llvm::Type::Int32Ty, size);
+  mvm::jit::unprotectConstants();
   cl->virtualVT = VT;
-  cl->virtualInstance = (JavaObject*)cl->isolate->allocateObject(size, VT);
-  cl->virtualInstance->initialise(cl);
 
   for (std::vector<JavaField*>::iterator i = cl->virtualFields.begin(),
             e = cl->virtualFields.end(); i!= e; ++i) {
-    //  Virtual fields apparenty do not have initializers, which is good
-    //  for isolates. I should not have to do this, but just to make sure.
-    (*i)->initField(cl->virtualInstance);
+    JavaJIT::initField(*i);
   }
 }
 

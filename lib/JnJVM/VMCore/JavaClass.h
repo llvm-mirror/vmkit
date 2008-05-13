@@ -169,13 +169,13 @@ public:
 class Class : public CommonClass {
 private:
   llvm::GlobalVariable* _staticVar;
+  llvm::GlobalVariable* _llvmVT;
 
 public:
   static VirtualTable* VT;
   unsigned int minor;
   unsigned int major;
   ArrayUInt8* bytes;
-  JavaObject* virtualInstance;
   llvm::Function* virtualTracer;
   llvm::Function* staticTracer;
   mvm::Code* codeVirtualTracer;
@@ -189,14 +189,14 @@ public:
   
   void resolveFields();
   llvm::Value* staticVar(JavaJIT* jit);
+  llvm::Value* llvmVT(JavaJIT* jit);
   
-  uint64 virtualSize;
+  llvm::ConstantInt* virtualSizeLLVM;
+  uint32 virtualSize;
   VirtualTable* virtualVT;
-  uint64 staticSize;
+  uint32 staticSize;
   VirtualTable* staticVT;
   JavaObject* doNew(Jnjvm* vm);
-  JavaObject* doNewUnknown(Jnjvm* vm);
-  JavaObject* initialiseObject(JavaObject* obj);
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
 

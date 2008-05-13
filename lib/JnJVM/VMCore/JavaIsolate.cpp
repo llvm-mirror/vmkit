@@ -449,6 +449,9 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   isolate->functions = vm_new(isolate, FunctionMap)();
   isolate->functionDefs = vm_new(isolate, FunctionDefMap)();
   isolate->module = new llvm::Module("Isolate JnJVM");
+  std::string str = 
+    mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
+  isolate->module->setDataLayout(str);
   isolate->protectModule = mvm::Lock::allocNormal();
   isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->module, 
                                                        isolate->functions,
@@ -514,6 +517,9 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   isolate->functionDefs = vm_new(isolate, FunctionDefMap)();
   isolate->protectModule = mvm::Lock::allocNormal();
   isolate->module = new llvm::Module("Bootstrap JnJVM");
+  std::string str = 
+    mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
+  isolate->module->setDataLayout(str);
   isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->module, 
                                                        isolate->functions,
                                                        isolate->functionDefs); 

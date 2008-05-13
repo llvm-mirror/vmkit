@@ -98,6 +98,28 @@ GlobalVariable* CommonClass::llvmVar(llvm::Module* compilingModule) {
   return _llvmVar;
 }
 
+Value* Class::llvmVT(JavaJIT* jit) {
+  if (!_llvmVT) {
+    aquire();
+    if (!_llvmVT) {
+      mvm::jit::protectConstants();//->lock();
+      Constant* cons = 
+        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (virtualVT)),
+                                  JavaJIT::VTType);
+      mvm::jit::unprotectConstants();//->unlock();
+      
+      isolate->protectModule->lock();
+      _llvmVT = new GlobalVariable(JavaJIT::VTType, true,
+                                    GlobalValue::ExternalLinkage,
+                                    cons, "",
+                                    isolate->module);
+      isolate->protectModule->unlock();
+    }
+    release();
+  }
+  return new LoadInst(_llvmVT, "", jit->currentBlock);
+}
+
 Value* CommonClass::llvmDelegatee(llvm::Module* M, llvm::BasicBlock* BB) {
 #ifndef MULTIPLE_VM
   if (!_llvmDelegatee) {
@@ -312,7 +334,7 @@ VirtualTable* JavaJIT::makeVT(Class* cl, bool stat) {
 }
 
 
-static void _initField(JavaField* field) {
+void JavaJIT::initField(JavaField* field) {
   ConstantInt* offset = field->offset;
   const TargetData* targetData = mvm::jit::executionEngine->getTargetData();
   bool stat = isStatic(field->access);
@@ -327,7 +349,7 @@ static void _initField(JavaField* field) {
 }
 
 void JavaJIT::initField(JavaField* field, JavaObject* obj, uint64 val) {
-  _initField(field);
+  initField(field);
   
   const AssessorDesc* funcs = field->signature->funcs;
   if (funcs == AssessorDesc::dLong) {
@@ -349,17 +371,17 @@ void JavaJIT::initField(JavaField* field, JavaObject* obj, uint64 val) {
 }
 
 void JavaJIT::initField(JavaField* field, JavaObject* obj, JavaObject* val) {
-  _initField(field);
+  initField(field);
   ((JavaObject**)((uint64)obj + field->ptrOffset))[0] = val;
 }
 
 void JavaJIT::initField(JavaField* field, JavaObject* obj, double val) {
-  _initField(field);
+  initField(field);
   ((double*)((uint64)obj + field->ptrOffset))[0] = val;
 }
 
 void JavaJIT::initField(JavaField* field, JavaObject* obj, float val) {
-  _initField(field);
+  initField(field);
   ((float*)((uint64)obj + field->ptrOffset))[0] = val;
 }
 
@@ -779,22 +801,22 @@ void JavaObject::operator()(JavaField* field, JavaObject* val) {
 
 void JavaField::operator()(float val) {
   JavaField * field = this;
-  return (*field)(classDef->virtualInstance, val);
+  return (*field)(0, val);
 }
 
 void JavaField::operator()(double val) {
   JavaField * field = this;
-  return (*field)(classDef->virtualInstance, val);
+  return (*field)(0, val);
 }
 
 void JavaField::operator()(sint64 val) {
   JavaField * field = this;
-  return (*field)(classDef->virtualInstance, val);
+  return (*field)(0, val);
 }
 
 void JavaField::operator()(uint32 val) {
   JavaField * field = this;
-  return (*field)(classDef->virtualInstance, val);
+  return (*field)(0, val);
 }
 
 Function* Signdef::createFunctionCallBuf(bool virt) {

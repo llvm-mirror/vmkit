@@ -47,25 +47,12 @@ llvm::Function* JavaJIT::fieldLookupLLVM = 0;
 #ifndef WITHOUT_VTABLE
 llvm::Function* JavaJIT::vtableLookupLLVM = 0;
 #endif
-llvm::Function* JavaJIT::UTF8AconsLLVM = 0;
-llvm::Function* JavaJIT::Int8AconsLLVM = 0;
-llvm::Function* JavaJIT::Int32AconsLLVM = 0;
-llvm::Function* JavaJIT::Int16AconsLLVM = 0;
-llvm::Function* JavaJIT::FloatAconsLLVM = 0;
-llvm::Function* JavaJIT::DoubleAconsLLVM = 0;
-llvm::Function* JavaJIT::LongAconsLLVM = 0;
-llvm::Function* JavaJIT::ObjectAconsLLVM = 0;
 llvm::Function* JavaJIT::printExecutionLLVM = 0;
 llvm::Function* JavaJIT::printMethodStartLLVM = 0;
 llvm::Function* JavaJIT::printMethodEndLLVM = 0;
 llvm::Function* JavaJIT::jniProceedPendingExceptionLLVM = 0;
-llvm::Function* JavaJIT::doNewLLVM = 0;
-llvm::Function* JavaJIT::doNewUnknownLLVM = 0;
-#ifdef MULTIPLE_VM
 llvm::Function* JavaJIT::initialisationCheckLLVM = 0;
 llvm::Function* JavaJIT::forceInitialisationCheckLLVM = 0;
-#endif
-llvm::Function* JavaJIT::initialiseObjectLLVM = 0;
 llvm::Function* JavaJIT::newLookupLLVM = 0;
 llvm::Function* JavaJIT::instanceOfLLVM = 0;
 llvm::Function* JavaJIT::aquireObjectLLVM = 0;
@@ -77,11 +64,19 @@ llvm::Function* JavaJIT::getClassDelegateeLLVM = 0;
 llvm::Function* JavaJIT::arrayLengthLLVM = 0;
 llvm::Function* JavaJIT::getVTLLVM = 0;
 llvm::Function* JavaJIT::getClassLLVM = 0;
+llvm::Function* JavaJIT::getVTFromClassLLVM = 0;
+llvm::Function* JavaJIT::getObjectSizeFromClassLLVM = 0;
+
+#ifdef MULTIPLE_GC
+llvm::Function* JavaJIT::getCollectorLLVM;
+#endif
 
 #ifdef SERVICE_VM
 llvm::Function* JavaJIT::aquireObjectInSharedDomainLLVM = 0;
 llvm::Function* JavaJIT::releaseObjectInSharedDomainLLVM = 0;
 #endif
+
+const llvm::Type* JavaJIT::VTType;
 
 extern "C" JavaString* runtimeUTF8ToStr(const UTF8* val) {
   Jnjvm* vm = JavaThread::get()->isolate;
@@ -239,12 +234,12 @@ extern "C" JavaObject* getStaticInstance(Class* cl, Jnjvm* vm) {
   }
   return val->second;
 }
+#endif
 
 extern "C" CommonClass* initialisationCheck(CommonClass* cl) {
   cl->isolate->initialiseClass(cl);
   return cl;
 }
-#endif
 
 extern "C" JavaObject* getClassDelegatee(CommonClass* cl) {
 #ifdef MULTIPLE_VM
