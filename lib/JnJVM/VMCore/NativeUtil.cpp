@@ -30,6 +30,12 @@ Jnjvm* NativeUtil::myVM(JNIEnv* env) {
   return JavaThread::get()->isolate;
 }
 
+#if defined(__MACH__)
+#define SELF_HANDLE RTLD_DEFAULT
+#else
+#define SELF_HANDLE 0
+#endif
+
 #define PRE "Java_"
 #define PRE_LEN 5
 
@@ -181,7 +187,7 @@ static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth) {
 #undef PRE_LEN
 
 static void* loadName(char* buf, bool& jnjvm) {
-  void* res = dlsym(0, buf);
+  void* res = dlsym(SELF_HANDLE, buf);
   if (!res) {
 #ifndef SERVICE_VM
     Jnjvm* vm = JavaThread::get()->isolate;
