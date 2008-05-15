@@ -37,11 +37,6 @@ void Enveloppe::destroyer(size_t sz) {
 
 void CacheNode::print(mvm::PrintBuffer* buf) const {
   buf->write("CacheNode<");
-  if (lastCible) {
-    lastCible->print(buf);
-    buf->write(" -- ");
-    ((mvm::Object*)((void**)methPtr - 1))->print(buf);
-  }
   buf->write(" in ");
   enveloppe->print(buf);
   buf->write(">");

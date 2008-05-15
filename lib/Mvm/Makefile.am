@@ -1,5 +1,5 @@
-SUBDIRS = CommonThread Allocator GCMmap2
-DIST_SUBDIRS = CommonThread Allocator GCMmap2
+SUBDIRS = CommonThread Allocator GCMmap2 BoehmGC
+DIST_SUBDIRS = CommonThread Allocator GCMmap2 BoehmGC
 
 bin_PROGRAMS = main
 

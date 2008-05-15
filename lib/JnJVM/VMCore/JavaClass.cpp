@@ -126,7 +126,6 @@ void CommonClass::initialise(Jnjvm* isolate, bool isArray) {
   this->condVar = mvm::Cond::allocCond();
   this->status = hashed;
   this->isolate = isolate;
-  this->dim = -1;
   this->isArray = isArray;
   this->_llvmVar = 0;
 #ifndef MULTIPLE_VM

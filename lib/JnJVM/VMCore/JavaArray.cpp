@@ -235,10 +235,16 @@ const UTF8* UTF8::readerConstruct(Jnjvm* vm, uint16* buf, uint32 n) {
 }
 
 char* UTF8::UTF8ToAsciiz() const {
-  mvm::NativeString* buf = mvm::NativeString::alloc(size + 1);
+  /*mvm::NativeString* buf = mvm::NativeString::alloc(size + 1);
   for (sint32 i = 0; i < size; ++i) {
     buf->setAt(i, elements[i]);
   }
   buf->setAt(size, 0);
-  return buf->cString();
+  return buf->cString();*/
+  char* buf = (char*)malloc(size + 1);
+  for (sint32 i = 0; i < size; ++i) {
+    buf[i] =  elements[i];
+  }
+  buf[size] = 0;
+  return buf;
 }

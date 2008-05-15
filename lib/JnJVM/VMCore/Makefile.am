@@ -19,4 +19,4 @@ if SERVICE_BUILD
 libJnJVM_la_SOURCES += ServiceDomain.cpp
 endif
 
-libJnJVM_la_CXXFLAGS =-DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused-parameter -Wno-long-long -Wno-unused-function -fno-omit-frame-pointer -g -Werror -O2
+libJnJVM_la_CXXFLAGS =-DPREFIX=\"$(PREFIX)\" -W -Wall -ansi -Wno-unused-parameter -Wno-long-long -Wno-unused-function -fno-omit-frame-pointer -g -Werror -O2 -I../LLVMRuntime

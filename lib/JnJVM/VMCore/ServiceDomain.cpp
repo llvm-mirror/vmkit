@@ -86,6 +86,9 @@ ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
   service->functions = vm_new(service, FunctionMap)();
   service->functionDefs = vm_new(service, FunctionDefMap)();
   service->module = new llvm::Module("Service Domain");
+  std::string str = 
+    mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
+  service->module->setDataLayout(str);
   service->protectModule = mvm::Lock::allocNormal();
   service->TheModuleProvider = new JnjvmModuleProvider(service->module,
                                                        service->functions,

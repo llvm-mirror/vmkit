@@ -217,7 +217,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   BasicBlock* executeBlock = createBasicBlock("execute");
   endBlock = createBasicBlock("end block");
 
-#if defined(MULTIPLE_VM)
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
   Value* lastArg = 0;
   for (Function::arg_iterator i = func->arg_begin(), e = func->arg_end();
        i != e; ++i) {
@@ -415,7 +415,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   
   uint32 index = 0;
   uint32 count = 0;
-#ifdef MULTIPLE_VM
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
   uint32 max = args.size() - 1;
 #else
   uint32 max = args.size();
@@ -456,7 +456,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
     }
   }
 
-#if defined(MULTIPLE_VM)
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
 #if !defined(SERVICE_VM)
   isolateLocal = args[args.size() - 1];
 #else
@@ -582,7 +582,7 @@ llvm::Function* JavaJIT::javaCompile() {
   
   uint32 index = 0;
   uint32 count = 0;
-#ifdef MULTIPLE_VM
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
   uint32 max = func->arg_size() - 1;
 #else
   uint32 max = func->arg_size();
@@ -622,7 +622,7 @@ llvm::Function* JavaJIT::javaCompile() {
     }
   }
 
-#if defined(MULTIPLE_VM)
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
 #if !defined(SERVICE_VM)
   isolateLocal = i;
 #else
@@ -1239,12 +1239,12 @@ void JavaJIT::branch(llvm::Value* test, llvm::BasicBlock* ifTrue,
 
 void JavaJIT::makeArgs(FunctionType::param_iterator it,
                        uint32 index, std::vector<Value*>& Args, uint32 nb) {
-#ifdef MULTIPLE_VM
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
   nb++;
 #endif
   Args.reserve(nb + 2);
   Value* args[nb];
-#ifdef MULTIPLE_VM
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
   args[nb - 1] = isolateLocal;
   sint32 start = nb - 2;
   it--;
@@ -1427,20 +1427,6 @@ void JavaJIT::invokeSpecial(uint16 index) {
   if (!val) {
     Function* func = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
                                                           signature, meth);
-#if 0//def SERVICE_VM
-    bool serviceCall = false;
-    if (meth && meth->classDef->classLoader != compilingClass->classLoader &&
-        meth->classDef->isolate != Jnjvm::bootstrapVM){
-      JavaObject* loader = meth->classDef->classLoader;
-      ServiceDomain* calling = ServiceDomain::getDomainFromLoader(loader);
-      serviceCall = true;
-      std::vector<Value*> Args;
-      Args.push_back(isolateLocal);
-      Args.push_back(new LoadInst(calling->llvmDelegatee(), "", currentBlock));
-      CallInst::Create(ServiceDomain::serviceCallStartLLVM, Args.begin(),
-                       Args.end(), "", currentBlock);
-    }
-#endif
 
     if (meth && meth->canBeInlined && meth != compilingMethod && 
         inlineMethods[meth] == 0) {
@@ -1449,18 +1435,6 @@ void JavaJIT::invokeSpecial(uint16 index) {
       val = invoke(func, args, "", currentBlock);
     }
 
-#if 0//def SERVICE_VM
-    if (serviceCall) {  
-      JavaObject* loader = meth->classDef->classLoader;
-      ServiceDomain* calling = ServiceDomain::getDomainFromLoader(loader);
-      serviceCall = true;
-      std::vector<Value*> Args;
-      Args.push_back(isolateLocal);
-      Args.push_back(new LoadInst(calling->llvmDelegatee(), "", currentBlock));
-      CallInst::Create(ServiceDomain::serviceCallStopLLVM, Args.begin(),
-                       Args.end(), "", currentBlock);
-    }
-#endif
   }
   
   const llvm::Type* retType = signature->virtualType->getReturnType();
@@ -1507,20 +1481,6 @@ void JavaJIT::invokeStatic(uint16 index) {
     }
 
 #endif
-#if 0//def SERVICE_VM
-    bool serviceCall = false;
-    if (meth && meth->classDef->classLoader != compilingClass->classLoader &&
-        meth->classDef->isolate != Jnjvm::bootstrapVM){
-      JavaObject* loader = meth->classDef->classLoader;
-      ServiceDomain* calling = ServiceDomain::getDomainFromLoader(loader);
-      serviceCall = true;
-      std::vector<Value*> Args;
-      Args.push_back(isolateLocal);
-      Args.push_back(new LoadInst(calling->llvmDelegatee(), "", currentBlock));
-      CallInst::Create(ServiceDomain::serviceCallStartLLVM, Args.begin(),
-                       Args.end(), "", currentBlock);
-    }
-#endif
 
     if (meth && meth->canBeInlined && meth != compilingMethod && 
         inlineMethods[meth] == 0) {
@@ -1529,17 +1489,6 @@ void JavaJIT::invokeStatic(uint16 index) {
       val = invoke(func, args, "", currentBlock);
     }
 
-#if 0//def SERVICE_VM
-    if (serviceCall) {  
-      JavaObject* loader = meth->classDef->classLoader;
-      ServiceDomain* calling = ServiceDomain::getDomainFromLoader(loader);
-      std::vector<Value*> Args;
-      Args.push_back(isolateLocal);
-      Args.push_back(new LoadInst(calling->llvmDelegatee(), "", currentBlock));
-      CallInst::Create(ServiceDomain::serviceCallStopLLVM, Args.begin(), Args.end(), "",
-                       currentBlock);
-    }
-#endif
   }
 
   const llvm::Type* retType = signature->staticType->getReturnType();
@@ -1552,23 +1501,22 @@ void JavaJIT::invokeStatic(uint16 index) {
 }
     
 Value* JavaJIT::getResolvedClass(uint16 index, bool clinit) {
-    const Type* PtrTy = mvm::jit::ptrType;
     compilingClass->isolate->protectModule->lock();
     GlobalVariable * gv =
-      new GlobalVariable(PtrTy, false, 
+      new GlobalVariable(JavaClassType, false, 
                          GlobalValue::ExternalLinkage,
-                         mvm::jit::constantPtrNull, "",
+                         constantJavaClassNull, "",
                          compilingClass->isolate->module);
 
     compilingClass->isolate->protectModule->unlock();
     
     Value* arg1 = new LoadInst(gv, "", false, currentBlock);
     Value* test = new ICmpInst(ICmpInst::ICMP_EQ, arg1, 
-                               mvm::jit::constantPtrNull, "", currentBlock);
+                               constantJavaClassNull, "", currentBlock);
     
     BasicBlock* trueCl = createBasicBlock("Cl OK");
     BasicBlock* falseCl = createBasicBlock("Cl Not OK");
-    PHINode* node = llvm::PHINode::Create(PtrTy, "", trueCl);
+    PHINode* node = llvm::PHINode::Create(JavaClassType, "", trueCl);
     node->addIncoming(arg1, currentBlock);
     llvm::BranchInst::Create(falseCl, trueCl, test, currentBlock);
 

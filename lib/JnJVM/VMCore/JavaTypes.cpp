@@ -479,7 +479,7 @@ const llvm::FunctionType* Signdef::createVirtualType(
     llvmArgs.push_back(args->at(i)->funcs->llvmType);
   }
 
-#ifdef MULTIPLE_VM
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
   llvmArgs.push_back(mvm::jit::ptrType); // domain
 #endif
 
@@ -502,7 +502,7 @@ const llvm::FunctionType* Signdef::createStaticType(
     llvmArgs.push_back(args->at(i)->funcs->llvmType);
   }
 
-#ifdef MULTIPLE_VM
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
   llvmArgs.push_back(mvm::jit::ptrType); // domain
 #endif
   
@@ -526,7 +526,7 @@ const llvm::FunctionType* Signdef::createNativeType(
     llvmArgs.push_back(args->at(i)->funcs->llvmType);
   }
 
-#ifdef MULTIPLE_VM
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
   llvmArgs.push_back(mvm::jit::ptrType); // domain
 #endif
   

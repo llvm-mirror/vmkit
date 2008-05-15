@@ -77,10 +77,7 @@ public:
 
   typedef void (*markerFn)(void*);
   
-  static void initialise(markerFn mark, void *base_sp) {
-    mvm::Thread::get()->baseSP = base_sp;
-    GC_INIT();
-  }
+  static void initialise(markerFn mark, void *base_sp);
   static void destroy() {}
 
   static void die_if_sigsegv_occured_during_collection(void *addr){}
@@ -110,10 +107,7 @@ public:
     GC_gcollect();
   }
   
-  static void inject_my_thread(void *sp) {
-    mvm::Thread::get()->baseSP = base_sp;
-    GC_init();
-  }
+  static void inject_my_thread(void *sp);
   
   static void remove_my_thread() {}
   static Collector* allocate() { return 0; }

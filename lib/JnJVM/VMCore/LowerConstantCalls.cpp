@@ -83,22 +83,21 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Changed = true;
           Value* val = CI->getOperand(1); 
           std::vector<Value*> indexes; 
+          indexes.push_back(mvm::jit::constantZero);
           indexes.push_back(jnjvm::JavaJIT::constantOffsetVTInClass);
           Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                    indexes.end(), "", CI);
-          VTPtr = new BitCastInst(VTPtr, mvm::jit::ptrPtrType, "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
-          VT = new BitCastInst(VT, jnjvm::JavaJIT::VTType, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
         } else if (V == jnjvm::JavaJIT::getObjectSizeFromClassLLVM) {
           Changed = true;
           Value* val = CI->getOperand(1); 
           std::vector<Value*> indexes; 
+          indexes.push_back(mvm::jit::constantZero);
           indexes.push_back(jnjvm::JavaJIT::constantOffsetObjectSizeInClass);
           Value* SizePtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                    indexes.end(), "", CI);
-          SizePtr = new BitCastInst(SizePtr, mvm::jit::ptr32Type, "", CI);
           Value* Size = new LoadInst(SizePtr, "", CI);
           CI->replaceAllUsesWith(Size);
           CI->eraseFromParent();

@@ -9,9 +9,11 @@
 
 #include <stddef.h>
 
+#include "llvm/CallingConv.h"
 #include "llvm/Instructions.h"
 #include "llvm/LinkAllPasses.h"
 #include "llvm/Module.h"
+#include "llvm/ParameterAttributes.h"
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/Support/MutexGuard.h"
 
@@ -59,45 +61,30 @@ void JavaJIT::initialiseJITIsolateVM(Jnjvm* vm) {
   mvm::jit::protectEngine->unlock();
 }
 
+#include "LLVMRuntime.cpp"
+
 void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
-  //llvm::PrintMachineCode = true;
   Module* module = vm->module;
   mvm::jit::protectEngine->lock();
   mvm::jit::executionEngine->addModuleProvider(vm->TheModuleProvider); 
   mvm::jit::protectEngine->unlock();
 
-
-
-  mvm::jit::protectTypes();//->lock();
-  // Create JavaObject::llvmType
-  const llvm::Type* Pty = mvm::jit::ptrType;
-  VTType = PointerType::getUnqual(PointerType::getUnqual(Type::Int32Ty));
+  mvm::jit::protectTypes();
+  makeLLVMModuleContents(module);
   
-  std::vector<const llvm::Type*> objectFields;
-  objectFields.push_back(VTType); // VT
-  objectFields.push_back(Pty); // Class
-  objectFields.push_back(Pty); // Lock
+  VTType = module->getTypeByName("VT");
+  
   JavaObject::llvmType = 
-    llvm::PointerType::getUnqual(llvm::StructType::get(objectFields, false));
+    PointerType::getUnqual(module->getTypeByName("JavaObject"));
 
-  // Create JavaArray::llvmType
-  {
-  std::vector<const llvm::Type*> arrayFields;
-  arrayFields.push_back(JavaObject::llvmType->getContainedType(0));
-  arrayFields.push_back(llvm::Type::Int32Ty);
   JavaArray::llvmType =
-    llvm::PointerType::getUnqual(llvm::StructType::get(arrayFields, false));
-  }
+    PointerType::getUnqual(module->getTypeByName("JavaArray"));
+  
+  JavaClassType =
+    PointerType::getUnqual(module->getTypeByName("JavaClass"));
 
-#define ARRAY_TYPE(name, type)                                            \
-  {                                                                       \
-  std::vector<const Type*> arrayFields;                                   \
-  arrayFields.push_back(JavaObject::llvmType->getContainedType(0));       \
-  arrayFields.push_back(Type::Int32Ty);                                   \
-  arrayFields.push_back(ArrayType::get(type, 0));                         \
-  name::llvmType = PointerType::getUnqual(StructType::get(arrayFields, false)); \
-  }
-
+#define ARRAY_TYPE(name, type) \
+  name::llvmType = PointerType::getUnqual(module->getTypeByName(#name));
   ARRAY_TYPE(ArrayUInt8, Type::Int8Ty);
   ARRAY_TYPE(ArraySInt8, Type::Int8Ty);
   ARRAY_TYPE(ArrayUInt16, Type::Int16Ty);
@@ -108,603 +95,94 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
   ARRAY_TYPE(ArrayDouble, Type::DoubleTy);
   ARRAY_TYPE(ArrayFloat, Type::FloatTy);
   ARRAY_TYPE(ArrayObject, JavaObject::llvmType);
-
 #undef ARRAY_TYPE
 
-  // Create CacheNode::llvmType
-  {
-  std::vector<const llvm::Type*> arrayFields;
-  arrayFields.push_back(mvm::jit::ptrType); // VT
-  arrayFields.push_back(mvm::jit::ptrType); // methPtr
-  arrayFields.push_back(mvm::jit::ptrType); // lastCible
-  arrayFields.push_back(mvm::jit::ptrType); // next
-  arrayFields.push_back(mvm::jit::ptrType); // enveloppe
   CacheNode::llvmType =
-    PointerType::getUnqual(StructType::get(arrayFields, false));
-  }
+    PointerType::getUnqual(module->getTypeByName("CacheNode"));
   
-  // Create Enveloppe::llvmType
-  {
-  std::vector<const llvm::Type*> arrayFields;
-  arrayFields.push_back(mvm::jit::ptrType); // VT
-  arrayFields.push_back(CacheNode::llvmType); // firstCache
-  arrayFields.push_back(mvm::jit::ptrType); // ctpInfo
-  arrayFields.push_back(mvm::jit::ptrType); // cacheLock
-  arrayFields.push_back(Type::Int32Ty); // index
   Enveloppe::llvmType =
-    PointerType::getUnqual(StructType::get(arrayFields, false));
-  }
+    PointerType::getUnqual(module->getTypeByName("Enveloppe"));
 
-  
-  // Create javaObjectTracerLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(JavaObject::llvmType);
-#ifdef MULTIPLE_GC
-  args.push_back(mvm::jit::ptrType);
-#endif
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-  javaObjectTracerLLVM = Function::Create(type,
-                                      GlobalValue::ExternalLinkage,
-                                      "JavaObjectTracer",
-                                      module);
-  }
-  
-  // Create virtualLookupLLVM
-  {
-  std::vector<const Type*> args;
-  //args.push_back(JavaObject::llvmType);
-  //args.push_back(mvm::jit::ptrType);
-  //args.push_back(llvm::Type::Int32Ty);
-  args.push_back(CacheNode::llvmType);
-  args.push_back(JavaObject::llvmType);
-  const FunctionType* type =
-    FunctionType::get(mvm::jit::ptrType, args, false);
+  mvm::jit::unprotectTypes();
 
-  virtualLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "virtualLookup",
-                     module);
-  }
-  
-  // Create multiCallNewLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  args.push_back(Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(JavaObject::llvmType, args,
-                                               true);
+  virtualLookupLLVM = module->getFunction("virtualLookup");
+  multiCallNewLLVM = module->getFunction("multiCallNew");
+  initialisationCheckLLVM = module->getFunction("initialisationCheck");
+  forceInitialisationCheckLLVM = 
+    module->getFunction("forceInitialisationCheck");
 
-  multiCallNewLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "multiCallNew",
-                     module);
-  }
-
-  // Create initialisationCheckLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  const FunctionType* type = FunctionType::get(mvm::jit::ptrType, args,
-                                               false);
-
-  initialisationCheckLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "initialisationCheck",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  initialisationCheckLLVM->setParamAttrs(func_toto_PAL);
-  } 
-  // Create forceInitialisationCheckLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args,
-                                               false);
-
-  forceInitialisationCheckLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "forceInitialisationCheck",
-                     module);
-  } 
-  
-  
-  // Create arrayLengthLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(JavaObject::llvmType);
-  const FunctionType* type = FunctionType::get(Type::Int32Ty, args, false);
-
-  arrayLengthLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "arrayLength",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  arrayLengthLLVM->setParamAttrs(func_toto_PAL);
-  }
-  
-  // Create getVTLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(JavaObject::llvmType);
-  const FunctionType* type = FunctionType::get(
-    PointerType::getUnqual(PointerType::getUnqual(Type::Int32Ty)),
-    args, false);
-
-  getVTLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "getVT",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  getVTLLVM->setParamAttrs(func_toto_PAL);
-  }
-  
-  // Create getClassLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(JavaObject::llvmType);
-  const FunctionType* type = FunctionType::get(mvm::jit::ptrType, args, false);
-
-  getClassLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "getClass",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  getClassLLVM->setParamAttrs(func_toto_PAL);
-  }
-  
-  // Create newLookupLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  args.push_back(Type::Int32Ty);
-  args.push_back(PointerType::getUnqual(mvm::jit::ptrType));
-  args.push_back(Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(mvm::jit::ptrType, args,
-                                               false);
-
-  newLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "newLookup",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  newLookupLLVM->setParamAttrs(func_toto_PAL);
-  }
+  arrayLengthLLVM = module->getFunction("arrayLength");
+  getVTLLVM = module->getFunction("getVT");
+  getClassLLVM = module->getFunction("getClass");
+  newLookupLLVM = module->getFunction("newLookup");
+  getVTFromClassLLVM = module->getFunction("getVTFromClass");
+  getObjectSizeFromClassLLVM = module->getFunction("getObjectSizeFromClass");
  
-#ifdef MULTIPLE_GC
-  // Create getCollectorLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  const FunctionType* type = FunctionType::get(mvm::jit::ptrType, args,
-                                               false);
+  getClassDelegateeLLVM = module->getFunction("getClassDelegatee");
+  instanceOfLLVM = module->getFunction("JavaObjectInstanceOf");
+  aquireObjectLLVM = module->getFunction("JavaObjectAquire");
+  releaseObjectLLVM = module->getFunction("JavaObjectRelease");
 
-  getCollectorLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "getCollector",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  getCollectorLLVM->setParamAttrs(func_toto_PAL);
-  }
+  fieldLookupLLVM = module->getFunction("fieldLookup");
+  
+  getExceptionLLVM = module->getFunction("JavaThreadGetException");
+  getJavaExceptionLLVM = module->getFunction("JavaThreadGetJavaException");
+  compareExceptionLLVM = module->getFunction("JavaThreadCompareException");
+  jniProceedPendingExceptionLLVM = 
+    module->getFunction("jniProceedPendingException");
+  getSJLJBufferLLVM = module->getFunction("getSJLJBuffer");
+  
+  nullPointerExceptionLLVM = module->getFunction("nullPointerException");
+  classCastExceptionLLVM = module->getFunction("classCastException");
+  indexOutOfBoundsExceptionLLVM = 
+    module->getFunction("indexOutOfBoundsException");
+  negativeArraySizeExceptionLLVM = 
+    module->getFunction("negativeArraySizeException");
+  outOfMemoryErrorLLVM = module->getFunction("outOfMemoryError");
+
+  javaObjectAllocateLLVM = module->getFunction("gcmalloc");
+
+  printExecutionLLVM = module->getFunction("printExecution");
+  printMethodStartLLVM = module->getFunction("printMethodStart");
+  printMethodEndLLVM = module->getFunction("printMethodEnd");
+
+  throwExceptionLLVM = module->getFunction("JavaThreadThrowException");
+
+  clearExceptionLLVM = module->getFunction("JavaThreadClearException");
+  
+
+#ifdef MULTIPLE_VM
+  getStaticInstanceLLVM = module->getFunction("getStaticInstance");
+  runtimeUTF8ToStrLLVM = module->getFunction("runtimeUTF8ToStr");
 #endif
   
-  // Create getVTFromClassLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  const FunctionType* type = FunctionType::get(VTType, args,
-                                               false);
-
-  getVTFromClassLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "getVTFromClass",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  getVTFromClassLLVM->setParamAttrs(func_toto_PAL);
-  }
-  
-  // Create getSizeFromClassLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  const FunctionType* type = FunctionType::get(Type::Int32Ty, args,
-                                               false);
-
-  getObjectSizeFromClassLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "getObjectSizeFromClass",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  getObjectSizeFromClassLLVM->setParamAttrs(func_toto_PAL);
-  }
- 
-#ifndef WITHOUT_VTABLE
-  // Create vtableLookupLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(JavaObject::llvmType); // obj
-  args.push_back(mvm::jit::ptrType); // cl
-  args.push_back(Type::Int32Ty); // index
-  args.push_back(PointerType::getUnqual(Type::Int32Ty)); // vtable index
-  const FunctionType* type = FunctionType::get(Type::Int32Ty, args, false);
-
-  vtableLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                                      "vtableLookup", module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  vtableLookupLLVM->setParamAttrs(func_toto_PAL);
-  }
-#endif
-
-  // Create fieldLookupLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(JavaObject::llvmType);
-  args.push_back(mvm::jit::ptrType);
-  args.push_back(llvm::Type::Int32Ty);
-  args.push_back(llvm::Type::Int32Ty);
-  args.push_back(PointerType::getUnqual(mvm::jit::ptrType));
-  args.push_back(PointerType::getUnqual(llvm::Type::Int32Ty));
-  const FunctionType* type =
-    FunctionType::get(mvm::jit::ptrType, args,
-                      false);
-
-  fieldLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "fieldLookup",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  fieldLookupLLVM->setParamAttrs(func_toto_PAL);
-  }
-  
-  // Create nullPointerExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  nullPointerExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "nullPointerException",
-                     module);
-  }
-  
-  // Create classCastExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(JavaObject::llvmType);
-  args.push_back(mvm::jit::ptrType);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  classCastExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "classCastException",
-                     module);
-  }
-  
-  // Create indexOutOfBoundsExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(JavaObject::llvmType);
-  args.push_back(Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  indexOutOfBoundsExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "indexOutOfBoundsException",
-                     module);
-  }
-  {
-  std::vector<const Type*> args;
-  args.push_back(Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-
-  negativeArraySizeExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "negativeArraySizeException",
-                     module);
-  
-  outOfMemoryErrorLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "outOfMemoryError",
-                     module);
-  }
-  
-  {
-  std::vector<const Type*> args;
-  args.push_back(Type::Int32Ty);
-  args.push_back(VTType);
-#ifdef MULTIPLE_GC
-  args.push_back(mvm::jit::ptrType);
-#endif
-  const FunctionType* type = FunctionType::get(JavaObject::llvmType, args, false);
-
-
-  javaObjectAllocateLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "gcmalloc",
-                     module);
-  }
-  
-  // Create proceedPendingExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  jniProceedPendingExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "jniProceedPendingException",
-                     module);
-  }
-  
-  // Create printExecutionLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(Type::Int32Ty);
-  args.push_back(Type::Int32Ty);
-  args.push_back(Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  printExecutionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "printExecution",
-                     module);
-  }
-  
-  // Create printMethodStartLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  printMethodStartLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "printMethodStart",
-                     module);
-  }
-  
-  // Create printMethodEndLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  printMethodEndLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "printMethodEnd",
-                     module);
-  }
-    
-  // Create throwExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(JavaObject::llvmType);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  throwExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "JavaThreadThrowException",
-                     module);
-  }
-  
-  // Create clearExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  clearExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "JavaThreadClearException",
-                     module);
-  }
-  
-  
-  
-  // Create getExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  const FunctionType* type = FunctionType::get(mvm::jit::ptrType, 
-                                               args, false);
-
-  getExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "JavaThreadGetException",
-                     module);
-  }
-  
-  // Create getJavaExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  const FunctionType* type = FunctionType::get(JavaObject::llvmType, 
-                                               args, false);
-
-  getJavaExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "JavaThreadGetJavaException",
-                     module);
-  }
-  
-  // Create compareExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  const FunctionType* type = FunctionType::get(Type::Int1Ty, args, false);
-
-  compareExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "JavaThreadCompareException",
-                     module);
-  }
-  
-  // Create getStaticInstanceLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType); // cl
-  args.push_back(mvm::jit::ptrType); // vm
-  const FunctionType* type = FunctionType::get(JavaObject::llvmType, args, false);
-
-  getStaticInstanceLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "getStaticInstance",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  getStaticInstanceLLVM->setParamAttrs(func_toto_PAL);
-  }
-  
-  // Create getClassDelegateeLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  const FunctionType* type = FunctionType::get(JavaObject::llvmType, args, false);
-
-  getClassDelegateeLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "getClassDelegatee",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  getClassDelegateeLLVM->setParamAttrs(func_toto_PAL);
-  }
-  
-  // Create instanceOfLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(JavaObject::llvmType);
-  args.push_back(mvm::jit::ptrType);
-  const FunctionType* type = FunctionType::get(Type::Int32Ty, args, false);
-
-  instanceOfLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "JavaObjectInstanceOf",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  instanceOfLLVM->setParamAttrs(func_toto_PAL);
-  }
-  
-  // Create aquireObjectLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(JavaObject::llvmType);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  aquireObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "JavaObjectAquire",
-                     module);
 #ifdef SERVICE_VM
-  aquireObjectInSharedDomainLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "aquireObjectInSharedDomain",
-                     module);
+  aquireObjectInSharedDomainLLVM = 
+    module->getFunction("JavaObjectAquireInSharedDomain");
+  releaseObjectInSharedDomainLLVM = 
+    module->getFunction("JavaObjectReleaseInSharedDomain");
+  ServiceDomain::serviceCallStartLLVM = module->getFunction("serviceCallStart");
+  ServiceDomain::serviceCallStopLLVM = module->getFunction("serviceCallStop");
 #endif
-  }
-  
-  // Create releaseObjectLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(JavaObject::llvmType);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  releaseObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "JavaObjectRelease",
-                     module);
-#ifdef SERVICE_VM
-  releaseObjectInSharedDomainLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "releaseObjectInSharedDomain",
-                     module);
-#endif
-  }
-  
-  
-  {
-    std::vector<const Type*> args;
-    args.push_back(ArrayUInt16::llvmType);
-    FunctionType* FuncTy = FunctionType::get(
-      /*Result=*/JavaObject::llvmType,
-      /*Params=*/args,
-      /*isVarArg=*/false);
-    runtimeUTF8ToStrLLVM = Function::Create(FuncTy, GlobalValue::ExternalLinkage,
-      "runtimeUTF8ToStr", module);
-  }
-
-   
-  // Create getSJLJBufferLLVM
-  {
-    std::vector<const Type*> args;
-    const FunctionType* type = FunctionType::get(mvm::jit::ptrType, args,
-                                               false);
-
-    getSJLJBufferLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "getSJLJBuffer",
-                     module);
     
-  }
-
 #ifdef WITH_TRACER
-  // Create markAndTraceLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(JavaObject::llvmType);
+  markAndTraceLLVM = module->getFunction("MarkAndTrace");
+  markAndTraceLLVMType = markAndTraceLLVM->getFunctionType();
+  javaObjectTracerLLVM = module->getFunction("JavaObjectTracer");
+#endif
+
+#ifndef WITHOUT_VTABLE
+  vtableLookupLLVM = module->getFunction("vtableLookup");
+#endif
+
 #ifdef MULTIPLE_GC
-  args.push_back(mvm::jit::ptrType);
+  getCollectorLLVM = module->getFunction("getCollector");
 #endif
-  markAndTraceLLVMType = FunctionType::get(llvm::Type::VoidTy, args, false);
-  markAndTraceLLVM = Function::Create(markAndTraceLLVMType,
-                                  GlobalValue::ExternalLinkage,
-                                  "MarkAndTrace",
-                                  module);
-  }
-#endif
-#ifdef SERVICE_VM
-  // Create serviceCallStart/Stop
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  args.push_back(mvm::jit::ptrType);
-  const FunctionType* type = FunctionType::get(llvm::Type::VoidTy, args, false);
-  ServiceDomain::serviceCallStartLLVM = 
-    Function::Create(type, GlobalValue::ExternalLinkage, "serviceCallStart",
-                     module);
+
   
-  ServiceDomain::serviceCallStopLLVM = 
-    Function::Create(type, GlobalValue::ExternalLinkage, "serviceCallStop",
-                     module);
-  }
-#endif
-  mvm::jit::unprotectTypes();//->unlock();
-  mvm::jit::protectConstants();//->lock();
+  mvm::jit::protectConstants();
   constantUTF8Null = Constant::getNullValue(ArrayUInt16::llvmType); 
+  constantJavaClassNull = Constant::getNullValue(JavaClassType); 
   constantJavaObjectNull = Constant::getNullValue(JavaObject::llvmType);
   constantMaxArraySize = ConstantInt::get(Type::Int32Ty,
                                           JavaArray::MaxArraySize);
@@ -728,25 +206,23 @@ void JavaJIT::initialiseJITBootstrapVM(Jnjvm* vm) {
                                     GlobalValue::ExternalLinkage,
                                     cons, "",
                                     module);
-  {
-    Class fake;
-    int offset = (intptr_t)&(fake.virtualSize) - (intptr_t)&fake;
-    constantOffsetObjectSizeInClass = ConstantInt::get(Type::Int32Ty, offset);
-    offset = (intptr_t)&(fake.virtualVT) - (intptr_t)&fake;
-    constantOffsetVTInClass = ConstantInt::get(Type::Int32Ty, offset);
-  }
-
-  mvm::jit::unprotectConstants();//->unlock();
+  mvm::jit::unprotectConstants();
+  
+  constantOffsetObjectSizeInClass = mvm::jit::constantOne;
+  constantOffsetVTInClass = mvm::jit::constantTwo;
+  
 }
 
 llvm::Constant*    JavaJIT::constantJavaObjectNull;
 llvm::Constant*    JavaJIT::constantUTF8Null;
+llvm::Constant*    JavaJIT::constantJavaClassNull;
 llvm::Constant*    JavaJIT::constantMaxArraySize;
 llvm::Constant*    JavaJIT::constantJavaObjectSize;
 llvm::GlobalVariable*    JavaJIT::JavaObjectVT;
 llvm::GlobalVariable*    JavaJIT::ArrayObjectVT;
 llvm::ConstantInt* JavaJIT::constantOffsetObjectSizeInClass;
 llvm::ConstantInt* JavaJIT::constantOffsetVTInClass;
+const llvm::Type* JavaJIT::JavaClassType;
 
 namespace mvm {
 
@@ -787,7 +263,6 @@ void JavaJIT::AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, createLICMPass());                 // Hoist loop invariants
   addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
   addPass(PM, createLoopIndexSplitPass());       // Index split loops.
-  addPass(PM, createInstructionCombiningPass()); // Clean up after LICM/reassoc
   addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
   addPass(PM, createLoopDeletionPass());         // Delete dead loops
   addPass(PM, createLoopUnrollPass());           // Unroll small loops

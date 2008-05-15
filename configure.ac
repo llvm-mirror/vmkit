@@ -49,6 +49,8 @@ AC_ARG_WITH(llvm,
 )
 LLVMDYLIB="`$llvmprefix/Release/bin/llvm-config --ldflags all` `$llvmprefix/Release/bin/llvm-config --libs all`"
 
+AC_SUBST([llvmprefix])
+
 dnl Force some compilation flags
 CXXFLAGS="$CXXFLAGS -fsigned-char -felide-constructors -fno-keep-static-consts -D_REENTRANT -I$PWD/include -I$llvmprefix/include  -D__STDC_LIMIT_MACROS -rdynamic"
 CFLAGS="$CFLAGS -D_REENTRANT"
@@ -192,7 +194,7 @@ if test "x$gc" = "xboehm";  then
   AC_CHECK_HEADER([gc/gc.h], [], \
     AC_MSG_ERROR([You need to install the boehm-gc devel package (gc/gc.h).])
   )
-  GC_LIBS="-lgccpp -gc"
+  GC_LIBS="-lgccpp -gc $PWD/lib/Mvm/BoehmGC/libuvm_gc_boehm.a"
   CFLAGS="$CFLAGS -I$PWD/lib/Mvm/BoehmGC -DGC_THREADS"
   CXXFLAGS="$CXXFLAGS -I$PWD/lib/Mvm/BoehmGC -DGC_THREADS"
   AC_DEFINE([USE_GC_BOEHM], [1], [Using the boehm gc])
@@ -215,6 +217,10 @@ else
 fi
 
 AC_SUBST([GC_LIBS])
+
+AM_CONDITIONAL([GC_BOEHM], [test "x$gc" = "xboehm"])
+AM_CONDITIONAL([GC_MULTI_MMAP], [test "x$gc" = "xmulti-mmap"])
+AM_CONDITIONAL([GC_SINGLE_MMAP], [test "x$gc" = "xsingle-mmap"])
 
 dnl **************************************************************************
 dnl Virtual Machine type
@@ -239,6 +245,7 @@ else
 fi
 
 AM_CONDITIONAL([SERVICE_BUILD], [test "x$vmtype" = "xservice"])
+AM_CONDITIONAL([ISOLATE_BUILD], [test "x$vmtype" = "xmulti"])
   
 dnl **************************************************************************
 dnl GNU CLASSPATH version
@@ -321,9 +328,11 @@ AC_CONFIG_FILES([
   lib/JnJVM/Makefile
   lib/JnJVM/Classpath/Makefile
   lib/JnJVM/VMCore/Makefile
+  lib/JnJVM/LLVMRuntime/Makefile
   lib/JnJVM/Classpath/Classpath.h
   lib/Mvm/Makefile
   lib/Mvm/GCMmap2/Makefile
+  lib/Mvm/BoehmGC/Makefile
   lib/Mvm/CommonThread/Makefile
   lib/Mvm/Allocator/Makefile
 ])

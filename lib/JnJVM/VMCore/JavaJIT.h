@@ -213,7 +213,7 @@ public:
   uint16 maxLocals;
   uint32 codeLen;
 
-#ifdef MULTIPLE_VM
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
   llvm::Value* isolateLocal;
 #endif
 
@@ -285,6 +285,8 @@ public:
 #endif
   
   static const llvm::Type* VTType;
+  static const llvm::Type* JavaClassType;
+  static llvm::Constant* constantJavaClassNull;
 
   static llvm::Constant*    constantJavaObjectNull;
   static llvm::Constant*    constantUTF8Null;

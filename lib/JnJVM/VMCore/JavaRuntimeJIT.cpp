@@ -24,6 +24,10 @@
 #include "Jnjvm.h"
 #include "LockedMap.h"
 
+#ifdef SERVICE_VM
+#include "ServiceDomain.h"
+#endif
+
 using namespace jnjvm;
 
 #ifdef WITH_TRACER
@@ -94,10 +98,10 @@ extern "C" void* virtualLookup(CacheNode* cache, JavaObject *obj) {
   
   ctpInfo->resolveInterfaceOrMethod(index, cl, utf8, sign);
 
+  enveloppe->cacheLock->lock();
   CacheNode* rcache = 0;
   CacheNode* tmp = enveloppe->firstCache;
   CacheNode* last = tmp;
-  enveloppe->cacheLock->lock();
 
   while (tmp) {
     if (ocl == tmp->lastCible) {
@@ -356,11 +360,11 @@ extern "C" void JavaObjectRelease(JavaObject* obj) {
 }
 
 #ifdef SERVICE_VM
-extern "C" void aquireObjectInSharedDomain(JavaObject* obj) {
-  myLock(obj)->aquire();
+extern "C" void JavaObjectAquireInSharedDomain(JavaObject* obj) {
+  LockObj::myLock(obj)->aquire();
 }
 
-extern "C" void releaseObjectInSharedDomain(JavaObject* obj) {
+extern "C" void JavaObjectReleaseInSharedDomain(JavaObject* obj) {
   verifyNull(obj);
   obj->lockObj->release();
 }

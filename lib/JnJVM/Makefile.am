@@ -1,5 +1,5 @@
 # $Id: Makefile.am,v 1.6 2008/03/21 11:12:38 varth Exp $
-SUBDIRS = VMCore Classpath
+SUBDIRS = LLVMRuntime VMCore Classpath
 EXTRA_DIST = OpcodeNames.def
 bin_PROGRAMS = main
 #lib_LTLIBRARIES = libjnjvm.la

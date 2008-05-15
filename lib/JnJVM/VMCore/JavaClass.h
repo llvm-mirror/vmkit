@@ -75,41 +75,117 @@ public:
 
 class CommonClass : public mvm::Object {
 public:
-  JavaObject* classLoader;
-private:
-  llvm::GlobalVariable* _llvmVar;
-#ifndef MULTIPLE_VM
-  llvm::GlobalVariable* _llvmDelegatee;
-#endif
-public:
-  static VirtualTable* VT;
-  const llvm::Type * virtualType;
-  const llvm::Type * staticType;
+  
+  /// virtualSize - The size of instances of this class.
+  ///
+  uint32 virtualSize;
+
+  /// virtualVT - The virtual table of instances of this class.
+  ///
+  VirtualTable* virtualVT;
+  
+  /// virtualTableSize - The size of the virtual table of this class.
+  ///
+  uint32 virtualTableSize;
+  
+  /// virtualSizeLLVM - The LLVM constant size of instances of this class.
+  ///
+  llvm::ConstantInt* virtualSizeLLVM;
+  
+  /// access - {public, private, protected}.
+  ///
+  uint32 access;
+  
+  /// isArray - Is the class an array class?
+  ///
+  uint8 isArray;
+  
+  /// name - The name of the class.
+  ///
   const UTF8* name;
+  
+  /// isolate - Which isolate defined this class.
+  ///
+  Jnjvm *isolate;
+  
+  /// status - The loading/resolve/initialization state of the class.
+  ///
+  JavaState status;
+  
+  /// super - The parent of this class.
+  ///
   CommonClass * super;
+
+  /// superUTF8 - The name of the parent of this class.
   const UTF8* superUTF8;
-  std::vector<const UTF8*> interfacesUTF8;
+  
+  /// interfaces - The interfaces this class implements.
+  ///
   std::vector<Class*> interfaces;
+
+  /// interfacesUTF8 - The names of the interfaces this class implements.
+  ///
+  std::vector<const UTF8*> interfacesUTF8;
+  
+  /// lockVar - When multiple threads want to load/resolve/initialize a class,
+  /// they must be synchronized so that these steps are only performned once
+  /// for a given class.
   mvm::Lock* lockVar;
+
+  /// condVar - Used to wake threads waiting on the load/resolve/initialize process
+  /// of this class, done by another thread.
   mvm::Cond* condVar;
-  std::vector<JavaMethod*> virtualMethods;
-  std::vector<JavaMethod*> staticMethods;
-  std::vector<JavaField*>  virtualFields;
-  std::vector<JavaField*>  staticFields;
+  
+  /// classLoader - The Java class loader that loaded the class.
+  ///
+  JavaObject* classLoader;
+  
+  /// _llvmVar - The LLVM global variable representing this class.
+  ///
+  llvm::GlobalVariable* _llvmVar;
+
 #ifndef MULTIPLE_VM
+  /// _llvmDelegatee - The LLVM global variable representing the 
+  /// java/lang/Class instance of this class.
+  llvm::GlobalVariable* _llvmDelegatee;
+
+  /// delegatee - The java/lang/Class object representing this class
+  ///
   JavaObject* delegatee;
 #endif
-  std::vector<CommonClass*> display;
-  unsigned int dim;
-  unsigned int depth;
-  bool isArray;
-  JavaState status;
-  unsigned int access;
-  Jnjvm *isolate;
-  unsigned int virtualTableSize;
+  
+  /// virtualMethods - List of all the virtual methods defined by this class.
+  /// This does not contain non-redefined super methods.
+  std::vector<JavaMethod*> virtualMethods;
 
-  static const int MaxDisplay;
-  static JavaObject* jnjvmClassLoader;
+  /// staticMethods - List of all the static methods defined by this class.
+  ///
+  std::vector<JavaMethod*> staticMethods;
+
+  /// virtualFields - List of all the virtual fields defined in this class.
+  /// This does not contain non-redefined super fields.
+  std::vector<JavaField*>  virtualFields;
+
+  /// staticFields - List of all the static fields defined in this class.
+  ///
+  std::vector<JavaField*>  staticFields;
+  
+  /// display - The class hierarchy of supers for this class.
+  ///
+  std::vector<CommonClass*> display;
+
+  /// depth - The depth of this class in its class hierarchy. 
+  /// display[depth - 1] contains the class.
+  uint32 depth;
+  
+  /// virtualType - The LLVM type of instance of this class.
+  ///
+  const llvm::Type * virtualType;
+
+  /// staticType - The LLVM type of the static instance of this class.
+  ///
+  const llvm::Type * staticType;
+
 
   llvm::GlobalVariable* llvmVar(llvm::Module* compilingModule);
   llvm::Value* llvmDelegatee(llvm::Module* M, llvm::BasicBlock* BB);
@@ -164,6 +240,10 @@ public:
   bool isResolved() {
     return status >= resolved;
   }
+  
+  static VirtualTable* VT;
+  static const int MaxDisplay;
+  static JavaObject* jnjvmClassLoader;
 };
 
 class Class : public CommonClass {
@@ -191,9 +271,6 @@ public:
   llvm::Value* staticVar(JavaJIT* jit);
   llvm::Value* llvmVT(JavaJIT* jit);
   
-  llvm::ConstantInt* virtualSizeLLVM;
-  uint32 virtualSize;
-  VirtualTable* virtualVT;
   uint32 staticSize;
   VirtualTable* staticVT;
   JavaObject* doNew(Jnjvm* vm);

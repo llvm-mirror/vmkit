@@ -234,20 +234,20 @@ void GCCollector::siggc_handler(int) {
   if(!loc) /* a key is being destroyed */  
     COLLECTOR threads->another_mark();
   else {
-     register unsigned int  **cur = (unsigned int **)&cur;
-     register unsigned int  **max = loc->base_sp();
+    register unsigned int  **cur = (unsigned int **)&cur;
+    register unsigned int  **max = loc->base_sp();
     
-     GCChunkNode *node;
+    GCChunkNode *node;
     
-     for(; cur<max; cur++) {
-       if((node = o2node(*cur)) && (!COLLECTOR isMarked(node))) {
-         node->remove();
-         node->append(COLLECTOR used_nodes);
-         COLLECTOR mark(node);
-       }
-     }
+    for(; cur<max; cur++) {
+      if((node = o2node(*cur)) && (!COLLECTOR isMarked(node))) {
+        node->remove();
+        node->append(COLLECTOR used_nodes);
+        COLLECTOR mark(node);
+      }
+    }
     
-     COLLECTOR threads->another_mark();
+    COLLECTOR threads->another_mark();
     COLLECTOR threads->waitCollection();
   }
   COLLECTOR threads->stackUnlock();

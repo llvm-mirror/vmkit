@@ -78,16 +78,15 @@ GlobalVariable* CommonClass::llvmVar(llvm::Module* compilingModule) {
         return _llvmVar;
       }
 #endif
-      const Type* pty = mvm::jit::ptrType;
       
       mvm::jit::protectConstants();//->lock();
       Constant* cons = 
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
-                                  pty);
+                                  JavaJIT::JavaClassType);
       mvm::jit::unprotectConstants();//->unlock();
       
       isolate->protectModule->lock();
-      _llvmVar = new GlobalVariable(pty, true,
+      _llvmVar = new GlobalVariable(JavaJIT::JavaClassType, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "",
                                     isolate->module);
@@ -834,7 +833,7 @@ Function* Signdef::createFunctionCallBuf(bool virt) {
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ptr, *func;
-#ifdef MULTIPLE_VM
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
   Value* vm = i;
 #endif
   ++i;
@@ -862,7 +861,7 @@ Function* Signdef::createFunctionCallBuf(bool virt) {
     }
   }
 
-#ifdef MULTIPLE_VM
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
   Args.push_back(vm);
 #endif
 
@@ -889,7 +888,7 @@ Function* Signdef::createFunctionCallAP(bool virt) {
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ap, *func;
-#ifdef MULTIPLE_VM
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
   Value* vm = i;
 #endif
   ++i;
@@ -908,7 +907,7 @@ Function* Signdef::createFunctionCallAP(bool virt) {
     Args.push_back(new VAArgInst(ap, (*i)->funcs->llvmType, "", currentBlock));
   }
 
-#ifdef MULTIPLE_VM
+#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
   Args.push_back(vm);
 #endif
 
