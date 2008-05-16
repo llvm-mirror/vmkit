@@ -14,7 +14,7 @@
 
 #include "types.h"
 
-#include "llvm/Type.h"
+#include "llvm/Function.h"
 
 namespace jnjvm {
 

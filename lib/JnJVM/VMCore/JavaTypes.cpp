@@ -9,8 +9,9 @@
 
 #include <vector>
 
+#include "llvm/Constant.h"
 #include "llvm/DerivedTypes.h"
-#include "llvm/Function.h"
+#include "llvm/Type.h"
 
 #include "mvm/JIT.h"
 
@@ -22,6 +23,7 @@
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
+#include "JnjvmModule.h"
 
 
 using namespace jnjvm;
@@ -138,12 +140,12 @@ void AssessorDesc::initialise(Jnjvm* vm) {
                                    JavaArray::ofDouble, mvm::jit::constantEight,
                                    (arrayCtor_t)ArrayDouble::acons);
   dTab = AssessorDesc::allocate(true, I_TAB, sizeof(void*), 1, "array", "array",
-                                vm, JavaObject::llvmType, 0, 0,
+                                vm, JnjvmModule::JavaObjectType, 0, 0,
                                 mvm::jit::constantPtrSize,
                                 (arrayCtor_t)ArrayObject::acons);
   dRef = AssessorDesc::allocate(true, I_REF, sizeof(void*), 1, "reference",
-                                "reference", vm, JavaObject::llvmType, 0, 0,
-                                mvm::jit::constantPtrSize,
+                                "reference", vm, JnjvmModule::JavaObjectType,
+                                0, 0, mvm::jit::constantPtrSize,
                                 (arrayCtor_t)ArrayObject::acons);
   
   mvm::Object::pushRoot((mvm::Object*)dParg);
@@ -468,77 +470,6 @@ void Signdef::print(mvm::PrintBuffer* buf) const {
   buf->write(">");
 }
 
-const llvm::FunctionType* Signdef::createVirtualType(
-            const std::vector<Typedef*>* args, Typedef* ret) {
-  std::vector<const llvm::Type*> llvmArgs;
-  unsigned int size = args->size();
-
-  llvmArgs.push_back(JavaObject::llvmType);
-
-  for (uint32 i = 0; i < size; ++i) {
-    llvmArgs.push_back(args->at(i)->funcs->llvmType);
-  }
-
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
-  llvmArgs.push_back(mvm::jit::ptrType); // domain
-#endif
-
-  mvm::jit::protectTypes();//->lock();
-  llvm::FunctionType* res =  llvm::FunctionType::get(ret->funcs->llvmType,
-                                                     llvmArgs, false);
-  mvm::jit::unprotectTypes();//->unlock();
-
-  return res;
-
-}
-
-const llvm::FunctionType* Signdef::createStaticType(
-            const std::vector<Typedef*>* args, Typedef* ret) {
-  std::vector<const llvm::Type*> llvmArgs;
-  unsigned int size = args->size();
-
-
-  for (uint32 i = 0; i < size; ++i) {
-    llvmArgs.push_back(args->at(i)->funcs->llvmType);
-  }
-
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
-  llvmArgs.push_back(mvm::jit::ptrType); // domain
-#endif
-  
-  mvm::jit::protectTypes();//->lock();
-  llvm::FunctionType* res =  llvm::FunctionType::get(ret->funcs->llvmType,
-                                                     llvmArgs, false);
-  mvm::jit::unprotectTypes();//->unlock();
-
-  return res;
-}
-
-const llvm::FunctionType* Signdef::createNativeType(
-            const std::vector<Typedef*>* args, Typedef* ret) {
-  std::vector<const llvm::Type*> llvmArgs;
-  unsigned int size = args->size();
-
-  llvmArgs.push_back(mvm::jit::ptrType); // JNIEnv
-  llvmArgs.push_back(JavaObject::llvmType); // Class
-
-  for (uint32 i = 0; i < size; ++i) {
-    llvmArgs.push_back(args->at(i)->funcs->llvmType);
-  }
-
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
-  llvmArgs.push_back(mvm::jit::ptrType); // domain
-#endif
-  
-
-  mvm::jit::protectTypes();//->lock();
-  llvm::FunctionType* res =  llvm::FunctionType::get(ret->funcs->llvmType,
-                                                     llvmArgs, false);
-  mvm::jit::unprotectTypes();//->unlock();
-
-  return res;
-}
-
 void Signdef::printWithSign(CommonClass* cl, const UTF8* name,
                             mvm::PrintBuffer* buf) {
   ret->tPrintBuf(buf);
@@ -591,28 +522,6 @@ Signdef* Signdef::signDup(const UTF8* name, Jnjvm *vm) {
   res->_staticCallBuf = 0;
   res->_virtualCallAP = 0;
   res->_staticCallAP = 0;
-  res->staticType = Signdef::createStaticType(&buf, res->ret);
-  res->virtualType = Signdef::createVirtualType(&buf, res->ret);
-  res->nativeType = Signdef::createNativeType(&buf, res->ret);
-  mvm::jit::protectTypes();//->lock();
-  res->staticTypePtr  = llvm::PointerType::getUnqual(res->staticType);
-  res->virtualTypePtr = llvm::PointerType::getUnqual(res->virtualType);
-  res->nativeTypePtr  = llvm::PointerType::getUnqual(res->nativeType);
-  
-  std::vector<const llvm::Type*> Args;
-  Args.push_back(mvm::jit::ptrType); // vm
-  Args.push_back(res->staticTypePtr);
-  Args.push_back(llvm::PointerType::getUnqual(llvm::Type::Int32Ty));
-  res->staticBufType = llvm::FunctionType::get(res->ret->funcs->llvmType, Args, false);
-  
-  std::vector<const llvm::Type*> Args2;
-  Args2.push_back(mvm::jit::ptrType); // vm
-  Args2.push_back(res->virtualTypePtr);
-  Args2.push_back(JavaObject::llvmType);
-  Args2.push_back(llvm::PointerType::getUnqual(llvm::Type::Int32Ty));
-  res->virtualBufType = llvm::FunctionType::get(res->ret->funcs->llvmType, Args2, false);
-
-  mvm::jit::unprotectTypes();//->unlock();
   return res;
   
 }
@@ -637,4 +546,36 @@ Typedef* Typedef::typeDup(const UTF8* name, Jnjvm *vm) {
     return res;
   }
 
+}
+
+void* Signdef::staticCallBuf() {
+  if (!_staticCallBuf) {
+    LLVMSignatureInfo* LSI = isolate->module->getSignatureInfo(this);
+    LSI->getStaticBuf();
+  }
+  return _staticCallBuf;
+}
+
+void* Signdef::virtualCallBuf() {
+  if (!_virtualCallBuf) {
+    LLVMSignatureInfo* LSI = isolate->module->getSignatureInfo(this);
+    LSI->getVirtualBuf();
+  }
+  return _virtualCallBuf;
+}
+
+void* Signdef::staticCallAP() {
+  if (!_staticCallAP) {
+    LLVMSignatureInfo* LSI = isolate->module->getSignatureInfo(this);
+    LSI->getStaticAP();
+  }
+  return _staticCallAP;
+}
+
+void* Signdef::virtualCallAP() {
+  if (!_virtualCallAP) {
+    LLVMSignatureInfo* LSI = isolate->module->getSignatureInfo(this);
+    LSI->getVirtualAP();
+  }
+  return _virtualCallAP;
 }

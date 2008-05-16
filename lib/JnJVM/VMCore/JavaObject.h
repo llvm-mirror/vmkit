@@ -12,8 +12,6 @@
 
 #include <vector>
 
-#include "llvm/Constants.h"
-#include "llvm/Type.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 
 #include "mvm/Object.h"
@@ -70,7 +68,6 @@ public:
   LockObj* lockObj;
 
   static mvm::Lock* globalLock;
-  static const llvm::Type* llvmType;
   
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
@@ -94,9 +91,6 @@ public:
     if (!this) return false;
     else return this->classOf->isAssignableFrom(cl);
   }
-
-  static llvm::ConstantInt* classOffset();
-  static llvm::ConstantInt* lockOffset();
 
 #ifdef SIGSEGV_THROW_NULL
   #define verifyNull(obj) {}

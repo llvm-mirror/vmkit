@@ -38,6 +38,7 @@ class JavaMethod;
 class JavaObject;
 class JavaString;
 class Jnjvm;
+class JnjvmModule;
 class JnjvmModuleProvider;
 class Reader;
 class Signdef;
@@ -66,6 +67,8 @@ public:
 
 class JavaJIT {
 public:
+  
+  JnjvmModule* module;
 
   static void invokeOnceVoid(Jnjvm* vm, JavaObject* loader,
                              const char* className,
@@ -114,16 +117,6 @@ public:
   uint32 stackSize();
   
   // exceptions
-  static llvm::Function* getExceptionLLVM;
-  static llvm::Function* getJavaExceptionLLVM;
-  static llvm::Function* throwExceptionLLVM;
-  static llvm::Function* clearExceptionLLVM;
-  static llvm::Function* compareExceptionLLVM;
-  static llvm::Function* nullPointerExceptionLLVM;
-  static llvm::Function* indexOutOfBoundsExceptionLLVM;
-  static llvm::Function* classCastExceptionLLVM;
-  static llvm::Function* outOfMemoryErrorLLVM;
-  static llvm::Function* negativeArraySizeExceptionLLVM;
   std::vector<llvm::BasicBlock*> jsrs;
   // exception local
   llvm::Value* supplLocal;
@@ -220,82 +213,13 @@ public:
 
   static const char* OpcodeNames[256];
 
-  static VirtualTable* makeVT(Class* cl, bool stat);
-                              
-  static llvm::Function* javaObjectTracerLLVM;
-
-  static void initialise();
-  static void initialiseJITBootstrapVM(Jnjvm* vm);
-  static void initialiseJITIsolateVM(Jnjvm* vm);
-
-  
-  static void initField(JavaField* field);
-  static void initField(JavaField* field, JavaObject* obj, uint64 val = 0);
-  static void initField(JavaField* field, JavaObject* obj, JavaObject* val);
-  static void initField(JavaField* field, JavaObject* obj, double val);
-  static void initField(JavaField* field, JavaObject* obj, float val);
-
-  static llvm::Function* getSJLJBufferLLVM;
-  static llvm::Function* virtualLookupLLVM;
-  static llvm::Function* fieldLookupLLVM;
-  static llvm::Function* printExecutionLLVM;
-  static llvm::Function* printMethodStartLLVM;
-  static llvm::Function* printMethodEndLLVM;
-  static llvm::Function* jniProceedPendingExceptionLLVM;
-  static llvm::Function* initialisationCheckLLVM;
-  static llvm::Function* forceInitialisationCheckLLVM;
-  static llvm::Function* newLookupLLVM;
-#ifndef WITHOUT_VTABLE
-  static llvm::Function* vtableLookupLLVM;
-#endif
-  static llvm::Function* instanceOfLLVM;
-  static llvm::Function* aquireObjectLLVM;
-  static llvm::Function* releaseObjectLLVM;
-#ifdef SERVICE_VM
-  static llvm::Function* aquireObjectInSharedDomainLLVM;
-  static llvm::Function* releaseObjectInSharedDomainLLVM;
-#endif
-  static llvm::Function* multiCallNewLLVM;
-  static llvm::Function* runtimeUTF8ToStrLLVM;
-  static llvm::Function* getStaticInstanceLLVM;
-  static llvm::Function* getClassDelegateeLLVM;
-  static llvm::Function* arrayLengthLLVM;
-  static llvm::Function* getVTLLVM;
-  static llvm::Function* getClassLLVM;
-  static llvm::Function* javaObjectAllocateLLVM;
-#ifdef MULTIPLE_GC
-  static llvm::Function* getCollectorLLVM;
-#endif
-  static llvm::Function* getVTFromClassLLVM;
-  static llvm::Function* getObjectSizeFromClassLLVM;
-  static llvm::ConstantInt* constantOffsetObjectSizeInClass;
-  static llvm::ConstantInt* constantOffsetVTInClass;
-  
-
   static Class* getCallingClass();
   static Class* getCallingClassWalker();
   static JavaObject* getCallingClassLoader();
   static void printBacktrace();
   static int getBacktrace(void** array, int size);
   static JavaMethod* IPToJavaMethod(void* ip);
-
-#ifdef WITH_TRACER
-  static llvm::Function* markAndTraceLLVM;
-  static const llvm::FunctionType* markAndTraceLLVMType;
-#endif
-  
-  static const llvm::Type* VTType;
-  static const llvm::Type* JavaClassType;
-  static llvm::Constant* constantJavaClassNull;
-
-  static llvm::Constant*    constantJavaObjectNull;
-  static llvm::Constant*    constantUTF8Null;
-  static llvm::Constant*    constantMaxArraySize;
-  static llvm::Constant*    constantJavaObjectSize;
-
-  static llvm::GlobalVariable* ArrayObjectVT;
-  static llvm::GlobalVariable* JavaObjectVT;
-
+  static void initialise();
   static void AddStandardCompilePasses(llvm::FunctionPassManager*);
 };
 

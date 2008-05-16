@@ -39,6 +39,7 @@ class JavaField;
 class JavaMethod;
 class JavaObject;
 class JavaString;
+class JnjvmModule;
 class JnjvmModuleProvider;
 class Reader;
 class Typedef;
@@ -261,7 +262,7 @@ public:
 
   
   mvm::Lock* protectModule;
-  llvm::Module* module;
+  JnjvmModule* module;
   JnjvmModuleProvider* TheModuleProvider;
   FunctionMap* functions;
   FunctionDefMap* functionDefs;

@@ -14,8 +14,6 @@
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Locks.h"
 
-#include "llvm/Type.h"
-
 #include "types.h"
 
 namespace jnjvm {
@@ -34,7 +32,6 @@ public:
   Class* lastCible;
   CacheNode* next;
   Enveloppe* enveloppe;
-  static const llvm::Type* llvmType;
 
   void initialise();
 
@@ -51,7 +48,6 @@ public:
   JavaCtpInfo* ctpInfo;
   mvm::Lock* cacheLock;
   uint32 index;
-  static const llvm::Type* llvmType;
 
   static Enveloppe* allocate(JavaCtpInfo* info, uint32 index);
 

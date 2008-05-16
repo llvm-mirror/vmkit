@@ -22,6 +22,7 @@
 #include "JavaConstantPool.h"
 #include "JavaJIT.h"
 #include "Jnjvm.h"
+#include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
@@ -416,10 +417,11 @@ llvm::Function* JavaCtpInfo::infoOfStaticOrSpecialMethod(
     // lookup the method
     meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access), false);
     if (meth) { // don't throw if no meth, the exception will be thrown just in time  
-      if (meth->llvmFunction) {
-        ctpRes[index] = (void*)meth->llvmFunction;
-        return (llvm::Function*)ctpRes[index];
-      }
+      JnjvmModule* M = classDef->isolate->module;
+      LLVMMethodInfo* LMI = M->getMethodInfo(meth);
+      llvm::Function* F = LMI->getMethod();
+      ctpRes[index] = (void*)F;
+      return F;
     }
   }
   
@@ -429,10 +431,12 @@ llvm::Function* JavaCtpInfo::infoOfStaticOrSpecialMethod(
   } else {
     // Create the callback
     const llvm::FunctionType* type = 0;
+    JnjvmModule* M = classDef->isolate->module;
+    LLVMSignatureInfo* LSI = M->getSignatureInfo(sign);
     if (isStatic(access)) {
-      type = sign->staticType;
+      type = LSI->getStaticType();
     } else {
-      type = sign->virtualType;
+      type = LSI->getVirtualType();
     }
     llvm::Function* func = llvm::Function::Create(type, 
                                                 llvm::GlobalValue::GhostLinkage,

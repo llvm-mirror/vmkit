@@ -8,8 +8,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/Function.h"
-
 #include "mvm/JIT.h"
 #include "mvm/Threads/Thread.h"
 
@@ -22,6 +20,7 @@
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
+#include "JnjvmModule.h"
 #include "LockedMap.h"
 
 #ifdef SERVICE_VM
@@ -29,58 +28,6 @@
 #endif
 
 using namespace jnjvm;
-
-#ifdef WITH_TRACER
-llvm::Function* JavaJIT::markAndTraceLLVM = 0;
-#endif
-llvm::Function* JavaJIT::getSJLJBufferLLVM = 0;
-llvm::Function* JavaJIT::throwExceptionLLVM = 0;
-llvm::Function* JavaJIT::getExceptionLLVM = 0;
-llvm::Function* JavaJIT::getJavaExceptionLLVM = 0;
-llvm::Function* JavaJIT::clearExceptionLLVM = 0;
-llvm::Function* JavaJIT::compareExceptionLLVM = 0;
-llvm::Function* JavaJIT::nullPointerExceptionLLVM = 0;
-llvm::Function* JavaJIT::classCastExceptionLLVM = 0;
-llvm::Function* JavaJIT::indexOutOfBoundsExceptionLLVM = 0;
-llvm::Function* JavaJIT::negativeArraySizeExceptionLLVM = 0;
-llvm::Function* JavaJIT::outOfMemoryErrorLLVM = 0;
-llvm::Function* JavaJIT::javaObjectAllocateLLVM = 0;
-llvm::Function* JavaJIT::javaObjectTracerLLVM = 0;
-llvm::Function* JavaJIT::virtualLookupLLVM = 0;
-llvm::Function* JavaJIT::fieldLookupLLVM = 0;
-#ifndef WITHOUT_VTABLE
-llvm::Function* JavaJIT::vtableLookupLLVM = 0;
-#endif
-llvm::Function* JavaJIT::printExecutionLLVM = 0;
-llvm::Function* JavaJIT::printMethodStartLLVM = 0;
-llvm::Function* JavaJIT::printMethodEndLLVM = 0;
-llvm::Function* JavaJIT::jniProceedPendingExceptionLLVM = 0;
-llvm::Function* JavaJIT::initialisationCheckLLVM = 0;
-llvm::Function* JavaJIT::forceInitialisationCheckLLVM = 0;
-llvm::Function* JavaJIT::newLookupLLVM = 0;
-llvm::Function* JavaJIT::instanceOfLLVM = 0;
-llvm::Function* JavaJIT::aquireObjectLLVM = 0;
-llvm::Function* JavaJIT::releaseObjectLLVM = 0;
-llvm::Function* JavaJIT::multiCallNewLLVM = 0;
-llvm::Function* JavaJIT::runtimeUTF8ToStrLLVM = 0;
-llvm::Function* JavaJIT::getStaticInstanceLLVM = 0;
-llvm::Function* JavaJIT::getClassDelegateeLLVM = 0;
-llvm::Function* JavaJIT::arrayLengthLLVM = 0;
-llvm::Function* JavaJIT::getVTLLVM = 0;
-llvm::Function* JavaJIT::getClassLLVM = 0;
-llvm::Function* JavaJIT::getVTFromClassLLVM = 0;
-llvm::Function* JavaJIT::getObjectSizeFromClassLLVM = 0;
-
-#ifdef MULTIPLE_GC
-llvm::Function* JavaJIT::getCollectorLLVM;
-#endif
-
-#ifdef SERVICE_VM
-llvm::Function* JavaJIT::aquireObjectInSharedDomainLLVM = 0;
-llvm::Function* JavaJIT::releaseObjectInSharedDomainLLVM = 0;
-#endif
-
-const llvm::Type* JavaJIT::VTType;
 
 extern "C" JavaString* runtimeUTF8ToStr(const UTF8* val) {
   Jnjvm* vm = JavaThread::get()->isolate;
@@ -283,9 +230,9 @@ extern "C" uint32 vtableLookup(JavaObject* obj, Class* caller, uint32 index,
     // Arg, it should have been an invoke interface.... Perform the lookup
     // on the object class and do not update offset.
     dmeth = obj->classOf->lookupMethod(utf8, sign->keyName, false, true);
-    return (uint32)(dmeth->offset->getZExtValue());
+    return dmeth->offset;
   }
-  *offset = (uint32)(dmeth->offset->getZExtValue());
+  *offset = dmeth->offset;
   return *offset;
 }
 #endif

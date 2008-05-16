@@ -25,6 +25,7 @@
 #include "JavaString.h"
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
+#include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
 #include "Zip.h"
@@ -448,7 +449,7 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
 
   isolate->functions = vm_new(isolate, FunctionMap)();
   isolate->functionDefs = vm_new(isolate, FunctionDefMap)();
-  isolate->module = new llvm::Module("Isolate JnJVM");
+  isolate->module = new JnjvmModule("Isolate JnJVM");
   std::string str = 
     mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
   isolate->module->setDataLayout(str);
@@ -456,7 +457,9 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->module, 
                                                        isolate->functions,
                                                        isolate->functionDefs);
-  JavaJIT::initialiseJITIsolateVM(isolate);
+  mvm::jit::protectEngine->lock();
+  mvm::jit::executionEngine->addModuleProvider(isolate->TheModuleProvider);
+  mvm::jit::protectEngine->unlock();
   
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
@@ -519,14 +522,17 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   isolate->functions = vm_new(isolate, FunctionMap)();
   isolate->functionDefs = vm_new(isolate, FunctionDefMap)();
   isolate->protectModule = mvm::Lock::allocNormal();
-  isolate->module = new llvm::Module("Bootstrap JnJVM");
+  isolate->module = new JnjvmModule("Bootstrap JnJVM");
   std::string str = 
     mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
   isolate->module->setDataLayout(str);
   isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->module, 
                                                        isolate->functions,
                                                        isolate->functionDefs); 
-  JavaJIT::initialiseJITBootstrapVM(isolate);
+  mvm::jit::protectEngine->lock();
+  mvm::jit::executionEngine->addModuleProvider(isolate->TheModuleProvider);
+  mvm::jit::protectEngine->unlock();
+  isolate->module->initialise();
   
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);

@@ -10,8 +10,9 @@
 #ifndef JNJVM_JAVA_TYPES_H
 #define JNJVM_JAVA_TYPES_H
 
+#include "llvm/Constants.h"
 #include "llvm/DerivedTypes.h"
-#include "llvm/Function.h"
+#include "llvm/Type.h"
 
 #include "mvm/Object.h"
 
@@ -135,14 +136,6 @@ public:
   static VirtualTable *VT;
   std::vector<Typedef*> args;
   Typedef* ret;
-  const llvm::FunctionType* staticType;
-  const llvm::FunctionType* virtualType;
-  const llvm::FunctionType* nativeType;
-  const llvm::FunctionType* virtualBufType;
-  const llvm::FunctionType* staticBufType;
-  const llvm::PointerType* staticTypePtr;
-  const llvm::PointerType* virtualTypePtr;
-  const llvm::PointerType* nativeTypePtr;
   mvm::Code* _staticCallBuf;
   mvm::Code* _virtualCallBuf;
   mvm::Code* _staticCallAP;
@@ -151,20 +144,6 @@ public:
   
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
-
-  static const llvm::FunctionType* createVirtualType(
-                        const std::vector<Typedef*>*, Typedef*);
-  
-  static const llvm::FunctionType* createStaticType(
-                        const std::vector<Typedef*>*, Typedef*);
-  
-  static const llvm::FunctionType* createNativeType(
-                        const std::vector<Typedef*>*, Typedef*);
-  
-  llvm::Function* createFunctionCallBuf(bool virt);
-  llvm::Function* createFunctionCallAP(bool virt);
-
-  
 
   void printWithSign(CommonClass* cl, const UTF8* name, mvm::PrintBuffer* buf);
   unsigned int nbInWithThis(unsigned int flag);

@@ -55,8 +55,6 @@ public:
   DomainState state;
 
   static ServiceDomain* getDomainFromLoader(JavaObject* loader);
-  static llvm::Function* serviceCallStartLLVM;
-  static llvm::Function* serviceCallStopLLVM;
   static JavaMethod* ServiceErrorInit;
   static Class* ServiceErrorClass;
 

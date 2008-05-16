@@ -28,6 +28,7 @@
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
 #include "Reader.h"
@@ -323,6 +324,8 @@ void Jnjvm::initialiseClass(CommonClass* cl) {
       if (cl->super) {
         cl->super->initialiseClass();
       }
+
+      module->resolveStaticClass((Class*)cl);
       
       *status = inClinit;
       JavaMethod* meth = cl->lookupMethodDontThrow(clinitName, clinitType, true,
@@ -390,12 +393,13 @@ void Jnjvm::resolveClass(CommonClass* cl, bool doClinit) {
         cl->status = readed;
         cl->release();
         loadParents((Class*)cl);
-        cl->aquire();
+        cl->aquire(); 
         cl->status = prepared;
-        ((Class*)cl)->resolveFields();
+        module->resolveVirtualClass((Class*)cl);
         cl->status = resolved;
       }
       cl->release();
+      cl->broadcastClass();
     } else {
       while (status < resolved) {
         cl->waitClass();
@@ -768,7 +772,6 @@ JavaField* Jnjvm::constructField(Class* cl, const UTF8* name, const UTF8* type,
   FieldCmp CC(name, cl, type, 0);
   JavaField* f = loadedFields->lookupOrCreate(CC, this, fieldDup); 
   f->access = access;
-  f->offset = 0;
   return f;
 }
 
@@ -787,18 +790,6 @@ static JavaMethod* methodDup(FieldCmp & cmp, Jnjvm *vm) {
   method->signature = (Signdef*)vm->constructType(method->type);
   method->code = 0;
   method->access = cmp.access;
-  if (isStatic(method->access)) {
-    method->llvmType =method->signature->staticType;
-  } else {
-    method->llvmType = method->signature->virtualType;
-  }
-  method->classDef->isolate->protectModule->lock();
-  method->llvmFunction = 
-    llvm::Function::Create(method->llvmType, llvm::GlobalValue::GhostLinkage,
-                           method->printString(),
-                           method->classDef->isolate->module);
-  method->classDef->isolate->protectModule->unlock();
-  method->classDef->isolate->functionDefs->hash(method->llvmFunction, method);
   return method;
 }
 

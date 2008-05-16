@@ -26,6 +26,7 @@
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
+#include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
 #include "Reader.h"
 
@@ -127,9 +128,7 @@ void CommonClass::initialise(Jnjvm* isolate, bool isArray) {
   this->status = hashed;
   this->isolate = isolate;
   this->isArray = isArray;
-  this->_llvmVar = 0;
 #ifndef MULTIPLE_VM
-  this->_llvmDelegatee = 0;
   this->delegatee = 0;
 #endif
 }
@@ -207,18 +206,8 @@ void* JavaMethod::compiledPtr() {
   else {
     classDef->aquire();
     if (code == 0) {
-      if (llvmFunction->hasNotBeenReadFromBitcode()) {
-        JavaJIT jit;
-        jit.compilingClass = classDef;
-        jit.compilingMethod = this;
-        if (isNative(access)) {
-          llvmFunction = jit.nativeCompile();
-        } else {
-          llvmFunction = jit.javaCompile();
-        }
-      }
-      // We can compile it, since if we're here, it's for a  good reason
-      void* val = mvm::jit::executionEngine->getPointerToGlobal(llvmFunction);
+      void* val = 
+        classDef->isolate->TheModuleProvider->materializeFunction(this);
 #ifndef MULTIPLE_GC
       mvm::Code* temp = (mvm::Code*)(Collector::begOf(val));
 #else
@@ -455,114 +444,32 @@ void JavaField::initField(JavaObject* obj) {
                                         Attribut::constantAttribut);
 
   if (!attribut) {
-    JavaJIT::initField(this, obj);
+    JnjvmModule::InitField(this, obj);
   } else {
     Reader* reader = attribut->toReader(classDef->isolate,
                                         classDef->bytes, attribut);
     JavaCtpInfo * ctpInfo = classDef->ctpInfo;
     uint16 idx = reader->readU2();
     if (funcs == AssessorDesc::dLong) {
-      JavaJIT::initField(this, obj, (uint64)ctpInfo->LongAt(idx));
+      JnjvmModule::InitField(this, obj, (uint64)ctpInfo->LongAt(idx));
     } else if (funcs == AssessorDesc::dDouble) {
-      JavaJIT::initField(this, obj, ctpInfo->DoubleAt(idx));
+      JnjvmModule::InitField(this, obj, ctpInfo->DoubleAt(idx));
     } else if (funcs == AssessorDesc::dFloat) {
-      JavaJIT::initField(this, obj, ctpInfo->FloatAt(idx));
+      JnjvmModule::InitField(this, obj, ctpInfo->FloatAt(idx));
     } else if (funcs == AssessorDesc::dRef) {
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
-      JavaJIT::initField(this, obj,
+      JnjvmModule::InitField(this, obj,
                          (JavaObject*)ctpInfo->resolveString(utf8, idx));
     } else if (funcs == AssessorDesc::dInt || funcs == AssessorDesc::dChar ||
                funcs == AssessorDesc::dShort || funcs == AssessorDesc::dByte ||
                funcs == AssessorDesc::dBool) {
-      JavaJIT::initField(this, obj, (uint64)ctpInfo->IntegerAt(idx));
+      JnjvmModule::InitField(this, obj, (uint64)ctpInfo->IntegerAt(idx));
     } else {
       JavaThread::get()->isolate->
         unknownError("unknown constant %c", funcs->byteId);
     }
   }
   
-}
-
-static void resolveStaticFields(Class* cl) {
-  
-  std::vector<const llvm::Type*> fields;
-  fields.push_back(JavaObject::llvmType->getContainedType(0));
-  uint64 offset = 0;
-  mvm::jit::protectConstants();//->lock();
-  for (std::vector<JavaField*>::iterator i = cl->staticFields.begin(),
-            e = cl->staticFields.end(); i!= e; ++i) {
-    // preincrement because 0 is JavaObject
-    (*i)->offset = llvm::ConstantInt::get(llvm::Type::Int32Ty, ++offset); 
-    fields.push_back((*i)->signature->funcs->llvmType);
-  }
-  mvm::jit::unprotectConstants();//->unlock();
-  
-  mvm::jit::protectTypes();//->lock();
-  cl->staticType = 
-    llvm::PointerType::getUnqual(llvm::StructType::get(fields, false));
-  mvm::jit::unprotectTypes();//->unlock();
-
-  VirtualTable* VT = JavaJIT::makeVT(cl, true);
-
-  uint64 size = mvm::jit::getTypeSize(cl->staticType->getContainedType(0));
-  cl->staticSize = size;
-  cl->staticVT = VT;
-
-#ifndef MULTIPLE_VM
-  JavaObject* val = (JavaObject*)cl->isolate->allocateObject(cl->staticSize,
-                                                             cl->staticVT);
-  val->initialise(cl);
-  for (std::vector<JavaField*>::iterator i = cl->staticFields.begin(),
-            e = cl->staticFields.end(); i!= e; ++i) {
-    
-    (*i)->initField(val);
-  }
-  
-  cl->_staticInstance = val;
-#endif
-}
-
-static void resolveVirtualFields(Class* cl) {
-  
-  std::vector<const llvm::Type*> fields;
-  if (cl->super) {
-    fields.push_back(cl->super->virtualType->getContainedType(0));
-  } else {
-    fields.push_back(JavaObject::llvmType->getContainedType(0));
-  }
-  uint64 offset = 0;
-  mvm::jit::protectConstants();//->lock();
-  for (std::vector<JavaField*>::iterator i = cl->virtualFields.begin(),
-            e = cl->virtualFields.end(); i!= e; ++i) {
-    // preincrement because 0 is JavaObject
-    (*i)->offset = llvm::ConstantInt::get(llvm::Type::Int32Ty, ++offset); 
-    fields.push_back((*i)->signature->funcs->llvmType);
-  }
-  mvm::jit::unprotectConstants();//->unlock();
-  
-  mvm::jit::protectTypes();//->lock();
-  cl->virtualType = 
-    llvm::PointerType::getUnqual(llvm::StructType::get(fields, false));
-  mvm::jit::unprotectTypes();//->unlock();
-
-  VirtualTable* VT = JavaJIT::makeVT(cl, false);
-  
-  uint64 size = mvm::jit::getTypeSize(cl->virtualType->getContainedType(0));
-  cl->virtualSize = (uint32)size;
-  mvm::jit::protectConstants();
-  cl->virtualSizeLLVM = llvm::ConstantInt::get(llvm::Type::Int32Ty, size);
-  mvm::jit::unprotectConstants();
-  cl->virtualVT = VT;
-
-  for (std::vector<JavaField*>::iterator i = cl->virtualFields.begin(),
-            e = cl->virtualFields.end(); i!= e; ++i) {
-    JavaJIT::initField(*i);
-  }
-}
-
-void Class::resolveFields() {
-  resolveStaticFields(this);
-  resolveVirtualFields(this);
 }
 
 JavaObject* CommonClass::getClassDelegatee() {

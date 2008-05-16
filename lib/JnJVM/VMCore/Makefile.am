@@ -13,7 +13,7 @@ libJnJVM_la_SOURCES = \
 	JavaBacktrace.cpp NativeUtil.h NativeUtil.cpp Jni.cpp \
 	JavaCache.h JavaCache.cpp JavaUpcalls.h JavaUpcalls.cpp \
 	JnjvmModuleProvider.h JnjvmModuleProvider.cpp JavaRuntimeJIT.cpp JavaMetaJIT.cpp JavaJITInitialise.cpp \
-	LowerConstantCalls.cpp 
+	LowerConstantCalls.cpp JnjvmModule.h JnjvmModule.cpp
 
 if SERVICE_BUILD
 libJnJVM_la_SOURCES += ServiceDomain.cpp

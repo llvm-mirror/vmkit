@@ -12,12 +12,9 @@
 
 #include <vector>
 
-#include "llvm/Constants.h"
-#include "llvm/Function.h"
-#include "llvm/GlobalVariable.h"
-#include "llvm/ExecutionEngine/GenericValue.h"
-
 #include "types.h"
+
+#include "llvm/ExecutionEngine/GenericValue.h"
 
 #include "mvm/Method.h"
 #include "mvm/Object.h"
@@ -88,10 +85,6 @@ public:
   ///
   uint32 virtualTableSize;
   
-  /// virtualSizeLLVM - The LLVM constant size of instances of this class.
-  ///
-  llvm::ConstantInt* virtualSizeLLVM;
-  
   /// access - {public, private, protected}.
   ///
   uint32 access;
@@ -117,6 +110,7 @@ public:
   CommonClass * super;
 
   /// superUTF8 - The name of the parent of this class.
+  ///
   const UTF8* superUTF8;
   
   /// interfaces - The interfaces this class implements.
@@ -140,15 +134,7 @@ public:
   ///
   JavaObject* classLoader;
   
-  /// _llvmVar - The LLVM global variable representing this class.
-  ///
-  llvm::GlobalVariable* _llvmVar;
-
 #ifndef MULTIPLE_VM
-  /// _llvmDelegatee - The LLVM global variable representing the 
-  /// java/lang/Class instance of this class.
-  llvm::GlobalVariable* _llvmDelegatee;
-
   /// delegatee - The java/lang/Class object representing this class
   ///
   JavaObject* delegatee;
@@ -177,18 +163,6 @@ public:
   /// depth - The depth of this class in its class hierarchy. 
   /// display[depth - 1] contains the class.
   uint32 depth;
-  
-  /// virtualType - The LLVM type of instance of this class.
-  ///
-  const llvm::Type * virtualType;
-
-  /// staticType - The LLVM type of the static instance of this class.
-  ///
-  const llvm::Type * staticType;
-
-
-  llvm::GlobalVariable* llvmVar(llvm::Module* compilingModule);
-  llvm::Value* llvmDelegatee(llvm::Module* M, llvm::BasicBlock* BB);
   
   static void printClassName(const UTF8* name, mvm::PrintBuffer* buf);
   void initialise(Jnjvm* isolate, bool array);
@@ -247,17 +221,11 @@ public:
 };
 
 class Class : public CommonClass {
-private:
-  llvm::GlobalVariable* _staticVar;
-  llvm::GlobalVariable* _llvmVT;
-
 public:
   static VirtualTable* VT;
   unsigned int minor;
   unsigned int major;
   ArrayUInt8* bytes;
-  llvm::Function* virtualTracer;
-  llvm::Function* staticTracer;
   mvm::Code* codeVirtualTracer;
   mvm::Code* codeStaticTracer;
   JavaCtpInfo* ctpInfo;
@@ -266,10 +234,6 @@ public:
   Class* outerClass;
   uint32 innerAccess;
   bool innerOuterResolved;
-  
-  void resolveFields();
-  llvm::Value* staticVar(JavaJIT* jit);
-  llvm::Value* llvmVT(JavaJIT* jit);
   
   uint32 staticSize;
   VirtualTable* staticVT;
@@ -321,8 +285,6 @@ public:
 class JavaMethod : public mvm::Object {
 public:
   static VirtualTable* VT;
-  llvm::Function* llvmFunction;
-  llvm::ConstantInt* offset;
   unsigned int access;
   Signdef* signature;
   std::vector<Attribut*, gc_allocator<Attribut*> > attributs;
@@ -332,12 +294,15 @@ public:
   const UTF8* type;
   bool canBeInlined;
   mvm::Code* code;
+  
+  /// offset - The index of the method in the virtual table.
+  ///
+  uint32 offset;
 
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
 
   void* compiledPtr();
-  const llvm::FunctionType* llvmType;
 
   uint32 invokeIntSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
   float invokeFloatSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
@@ -397,7 +362,6 @@ public:
 class JavaField : public mvm::Object {
 public:
   static VirtualTable* VT;
-  llvm::ConstantInt* offset;
   unsigned int access;
   const UTF8* name;
   Typedef* signature;
@@ -405,6 +369,9 @@ public:
   std::vector<Attribut*, gc_allocator<Attribut*> > attributs;
   Class* classDef;
   uint64 ptrOffset;
+  /// num - The index of the field in the field list.
+  ///
+  uint32 num;
 
   void initField(JavaObject* obj);
 

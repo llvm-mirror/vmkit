@@ -18,17 +18,24 @@ using namespace llvm;
 
 namespace jnjvm {
 
+class JnjvmModule;
+
 class JnjvmModuleProvider : public ModuleProvider {
+private:
+  JavaMethod* staticLookup(Class* caller, uint32 index);
+
 public:
   FunctionMap* functions;
   FunctionDefMap* functionDefs;
-  JnjvmModuleProvider(Module *m, FunctionMap* fm, FunctionDefMap* fdm) {
-    TheModule = m;
+  JnjvmModuleProvider(JnjvmModule *m, FunctionMap* fm, FunctionDefMap* fdm) {
+    TheModule = (Module*)m;
     functions = fm;
     functionDefs= fdm;
   }
   
+
   bool materializeFunction(Function *F, std::string *ErrInfo = 0);
+  void* materializeFunction(JavaMethod* meth); 
 
   Module* materializeModule(std::string *ErrInfo = 0) { return TheModule; }
 };

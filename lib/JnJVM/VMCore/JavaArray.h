@@ -12,9 +12,6 @@
 
 #include "mvm/PrintBuffer.h"
 
-#include "llvm/Constants.h"
-#include "llvm/Type.h"
-
 #include "types.h"
 
 #include "JavaObject.h"
@@ -51,10 +48,7 @@ public:
   static ClassArray* ofFloat;
   static ClassArray* ofDouble;
   static ClassArray* ofObject;
-  static const llvm::Type* llvmType;
 
-  static llvm::ConstantInt* sizeOffset();
-  static llvm::ConstantInt* elementsOffset();
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 
@@ -66,7 +60,6 @@ typedef JavaArray* (*arrayCtor_t)(uint32 len, CommonClass* cl, Jnjvm* vm);
 class name : public JavaArray {                                       \
 public:                                                               \
   static VirtualTable* VT;                                            \
-  static const llvm::Type* llvmType;                                  \
   elmt elements[0];                                                   \
   static name *acons(sint32 n, ClassArray* cl, Jnjvm* vm);            \
   elmt at(sint32) const;                                              \
@@ -92,8 +85,6 @@ class UTF8 : public ArrayUInt16 {
 public:
   static VirtualTable* VT;
 
-  static const llvm::Type* llvmType;
-  
   const UTF8* internalToJava(Jnjvm *vm, unsigned int start,
                              unsigned int len) const;
   

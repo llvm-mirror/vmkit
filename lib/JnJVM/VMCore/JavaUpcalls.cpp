@@ -9,8 +9,7 @@
 
 #include <vector>
 
-#include "llvm/DerivedTypes.h"
-#include "llvm/ExecutionEngine/GenericValue.h"
+#include "llvm/Function.h"
 
 #include "mvm/JIT.h"
 
@@ -23,6 +22,7 @@
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "JnjvmModule.h"
 
 #define COMPILE_METHODS(cl) \
   for (std::vector<JavaMethod*>::iterator i = cl->virtualMethods.begin(), \
@@ -219,15 +219,17 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   JavaMethod* internString = UPCALL_METHOD(vm, "java/lang/VMString", "intern", "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC);
   // Create intern
   {
-    internString->llvmFunction->setName("internString");
-    internString->llvmFunction->setLinkage(llvm::GlobalValue::ExternalLinkage);
+    llvm::Function* func = vm->module->getMethodInfo(internString)->getMethod();
+    func->setName("internString");
+    func->setLinkage(llvm::GlobalValue::ExternalLinkage);
   }
   
   JavaMethod* isArray = UPCALL_METHOD(vm, "java/lang/Class", "isArray", "()Z", ACC_VIRTUAL);
   // Create intern
   {
-    isArray->llvmFunction->setName("isArray");
-    isArray->llvmFunction->setLinkage(llvm::GlobalValue::ExternalLinkage);
+    llvm::Function* func = vm->module->getMethodInfo(isArray)->getMethod();
+    func->setName("isArray");
+    func->setLinkage(llvm::GlobalValue::ExternalLinkage);
   }
 
   ClasspathThread::initialise(vm);
@@ -244,20 +246,23 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   
   JavaMethod* getCallingClass = UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClass", "()Ljava/lang/Class;", ACC_STATIC);
   {
-    getCallingClass->llvmFunction->setName("getCallingClass");
-    getCallingClass->llvmFunction->setLinkage(llvm::GlobalValue::ExternalLinkage);
+    llvm::Function* func = vm->module->getMethodInfo(getCallingClass)->getMethod();
+    func->setName("getCallingClass");
+    func->setLinkage(llvm::GlobalValue::ExternalLinkage);
   }
   
   JavaMethod* getCallingClassLoader = UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClassLoader", "()Ljava/lang/ClassLoader;", ACC_STATIC);
   {
-    getCallingClassLoader->llvmFunction->setName("getCallingClassLoader");
-    getCallingClassLoader->llvmFunction->setLinkage(llvm::GlobalValue::ExternalLinkage);
+    llvm::Function* func = vm->module->getMethodInfo(getCallingClassLoader)->getMethod();
+    func->setName("getCallingClassLoader");
+    func->setLinkage(llvm::GlobalValue::ExternalLinkage);
   }
   
   JavaMethod* postProperties = UPCALL_METHOD(vm, "gnu/classpath/VMSystemProperties", "postInit", "(Ljava/util/Properties;)V", ACC_STATIC);
   {
-    postProperties->llvmFunction->setName("propertiesPostInit");
-    postProperties->llvmFunction->setLinkage(llvm::GlobalValue::ExternalLinkage);
+    llvm::Function* func = vm->module->getMethodInfo(postProperties)->getMethod();
+    func->setName("propertiesPostInit");
+    func->setLinkage(llvm::GlobalValue::ExternalLinkage);
   }
 }
 

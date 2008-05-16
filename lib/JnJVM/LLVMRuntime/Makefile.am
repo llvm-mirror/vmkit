@@ -35,4 +35,4 @@ llvmruntimell: $(LL_FILES)
 	cat $(LL_FILES) > LLVMRuntime.ll
 
 clean:
-	rm LLVMRuntime.ll LLVMRuntime.bc LLVMRuntime.cpp
+	rm -f LLVMRuntime.ll LLVMRuntime.bc LLVMRuntime.cpp
