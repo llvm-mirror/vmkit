@@ -1457,7 +1457,11 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 tmp = i;
         BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
         const AssessorDesc* ass = topFunc();
-        llvm::Value* val = ass->llvmNullConstant;
+        
+        uint8 id = ass->numId;
+        LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+        llvm::Value* val = LAI.llvmNullConstant;
+
         Value* op = pop();
         llvm::Value* test = new ICmpInst(ICmpInst::ICMP_EQ, op, val, "",
                                          currentBlock);
@@ -1471,7 +1475,11 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 tmp = i;
         BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
         const AssessorDesc* ass = topFunc();
-        llvm::Value* val = ass->llvmNullConstant;
+        
+        uint8 id = ass->numId;
+        LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+        llvm::Value* val = LAI.llvmNullConstant;
+        
         Value* op = pop();
         llvm::Value* test = new ICmpInst(ICmpInst::ICMP_NE, op, val, "",
                                          currentBlock);
@@ -1485,7 +1493,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 tmp = i;
         BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
         const AssessorDesc* ass = topFunc();
-        llvm::Value* val = ass->llvmNullConstant;
+        uint8 id = ass->numId;
+        LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+        llvm::Value* val = LAI.llvmNullConstant;
         Value* op = pop();
         llvm::Value* test = new ICmpInst(ICmpInst::ICMP_SLT, op, val, "",
                                          currentBlock);
@@ -1499,7 +1509,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 tmp = i;
         BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
         const AssessorDesc* ass = topFunc();
-        llvm::Value* val = ass->llvmNullConstant;
+        uint8 id = ass->numId;
+        LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+        llvm::Value* val = LAI.llvmNullConstant;
         Value* op = pop();
         llvm::Value* test = new ICmpInst(ICmpInst::ICMP_SGE, op, val, "",
                                          currentBlock);
@@ -1513,7 +1525,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 tmp = i;
         BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
         const AssessorDesc* ass = topFunc();
-        llvm::Value* val = ass->llvmNullConstant;
+        uint8 id = ass->numId;
+        LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+        llvm::Value* val = LAI.llvmNullConstant;
         Value* op = pop();
         llvm::Value* test = new ICmpInst(ICmpInst::ICMP_SGT, op, val, "",
                                          currentBlock);
@@ -1527,7 +1541,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 tmp = i;
         BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
         const AssessorDesc* ass = topFunc();
-        llvm::Value* val = ass->llvmNullConstant;
+        uint8 id = ass->numId;
+        LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+        llvm::Value* val = LAI.llvmNullConstant;
         Value* op = pop();
         llvm::Value* test = new ICmpInst(ICmpInst::ICMP_SLE, op, val, "",
                                          currentBlock);
@@ -1837,7 +1853,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           AssessorDesc* ass = AssessorDesc::arrayType(id);
           dcl = ass->arrayClass;
           TheVT = JnjvmModule::JavaObjectVirtualTableGV;
-          sizeElement = ass->sizeInBytesConstant;
+          LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[ass->numId];
+          sizeElement = LAI.sizeInBytesConstant;
         } else {
           uint16 index = readU2(bytecodes, i);
           const UTF8* className = 
@@ -2101,7 +2118,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IFNULL : {
         uint32 tmp = i;
         const AssessorDesc* ass = topFunc();
-        llvm::Value* nil = ass->llvmNullConstant;
+        LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[ass->numId];
+        llvm::Value* nil = LAI.llvmNullConstant;
         llvm::Value* val = pop();
         llvm::Value* test = new ICmpInst(ICmpInst::ICMP_EQ, val, nil, "",
                                          currentBlock);
@@ -2115,7 +2133,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IFNONNULL : {
         uint32 tmp = i;
         const AssessorDesc* ass = topFunc();
-        llvm::Value* nil = ass->llvmNullConstant;
+        LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[ass->numId];
+        llvm::Value* nil = LAI.llvmNullConstant;
         llvm::Value* val = pop();
         llvm::Value* test = new ICmpInst(ICmpInst::ICMP_NE, val, nil, "",
                                          currentBlock);

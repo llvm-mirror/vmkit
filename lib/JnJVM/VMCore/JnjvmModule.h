@@ -9,6 +9,8 @@
 
 #include <map>
 
+#include "JavaTypes.h"
+
 #include "llvm/Constant.h"
 #include "llvm/DerivedTypes.h"
 #include "llvm/Function.h"
@@ -27,6 +29,19 @@ class JavaObject;
 class JavaJIT;
 class JnjvmModule;
 class Signdef;
+
+class LLVMAssessorInfo {
+public:
+  const llvm::Type* llvmType;
+  const llvm::Type* llvmTypePtr;
+  llvm::Constant* llvmNullConstant;
+  llvm::ConstantInt* sizeInBytesConstant;
+  
+  static void initialise();
+  static LLVMAssessorInfo AssessorInfo[NUM_ASSESSORS];
+
+};
+
 
 class LLVMCommonClassInfo {
   

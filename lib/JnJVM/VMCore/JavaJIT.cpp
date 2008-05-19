@@ -82,12 +82,13 @@ Value* JavaJIT::popAsInt() {
 }
 
 void JavaJIT::push(llvm::Value* val, const AssessorDesc* ass) {
-  assert(ass->llvmType == val->getType());
+  assert(LLVMAssessorInfo::AssessorInfo[ass->numId].llvmType == val->getType());
   stack.push_back(std::make_pair(val, ass));
 }
 
 void JavaJIT::push(std::pair<llvm::Value*, const AssessorDesc*> pair) {
-  assert(pair.second->llvmType == pair.first->getType());
+  assert(LLVMAssessorInfo::AssessorInfo[pair.second->numId].llvmType == 
+      pair.first->getType());
   stack.push_back(pair);
 }
 
@@ -263,7 +264,9 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   llvm::BranchInst::Create(executeBlock, endBlock, test, currentBlock);
 
   if (compilingMethod->signature->ret->funcs != AssessorDesc::dVoid) {
-    Constant* C = compilingMethod->signature->ret->funcs->llvmNullConstant;
+    uint8 id = compilingMethod->signature->ret->funcs->numId;
+    LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+    Constant* C = LAI.llvmNullConstant;
     endNode->addIncoming(C, currentBlock);
   }
   
@@ -1711,11 +1714,13 @@ void JavaJIT::setStaticField(uint16 index) {
   const AssessorDesc* ass = topFunc();
   Value* val = pop(); 
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
-  const Type* type = sign->funcs->llvmType;
+  uint8 id = sign->funcs->numId;
+  LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+  const Type* type = LAI.llvmType;
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
     val = pop();
   }
-  Value* ptr = ldResolved(index, true, 0, type, sign->funcs->llvmTypePtr);
+  Value* ptr = ldResolved(index, true, 0, type, LAI.llvmTypePtr);
   
   if (type != val->getType()) { // int1, int8, int16
     convertValue(val, type, currentBlock, 
@@ -1727,10 +1732,12 @@ void JavaJIT::setStaticField(uint16 index) {
 
 void JavaJIT::getStaticField(uint16 index) {
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
-  Value* ptr = ldResolved(index, true, 0, sign->funcs->llvmType, 
-                          sign->funcs->llvmTypePtr);
+  uint8 id = sign->funcs->numId;
+  LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+  Value* ptr = ldResolved(index, true, 0, LAI.llvmType, 
+                          LAI.llvmTypePtr);
   push(new LoadInst(ptr, "", currentBlock), sign->funcs);
-  const Type* type = sign->funcs->llvmType;
+  const Type* type = LAI.llvmType;
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
     push(mvm::jit::constantZero, AssessorDesc::dInt);
   }
@@ -1740,7 +1747,9 @@ void JavaJIT::setVirtualField(uint16 index) {
   const AssessorDesc* ass = topFunc();
   Value* val = pop();
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
-  const Type* type = sign->funcs->llvmType;
+  uint8 id = sign->funcs->numId;
+  LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+  const Type* type = LAI.llvmType;
   
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
     val = pop();
@@ -1749,7 +1758,7 @@ void JavaJIT::setVirtualField(uint16 index) {
   Value* object = pop();
   JITVerifyNull(object);
   Value* ptr = ldResolved(index, false, object, type, 
-                          sign->funcs->llvmTypePtr);
+                          LAI.llvmTypePtr);
 
   if (type != val->getType()) { // int1, int8, int16
     convertValue(val, type, currentBlock, 
@@ -1763,10 +1772,12 @@ void JavaJIT::getVirtualField(uint16 index) {
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
   Value* obj = pop();
   JITVerifyNull(obj);
-  Value* ptr = ldResolved(index, false, obj, sign->funcs->llvmType, 
-                          sign->funcs->llvmTypePtr);
+  uint8 id = sign->funcs->numId;
+  LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+  Value* ptr = ldResolved(index, false, obj, LAI.llvmType, 
+                          LAI.llvmTypePtr);
   push(new LoadInst(ptr, "", currentBlock), sign->funcs);
-  const Type* type = sign->funcs->llvmType;
+  const Type* type = LAI.llvmType;
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
     push(mvm::jit::constantZero, AssessorDesc::dInt);
   }

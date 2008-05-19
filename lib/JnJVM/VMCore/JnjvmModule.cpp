@@ -323,7 +323,9 @@ const Type* LLVMClassInfo::getVirtualType() {
     uint32 index = 0;
     for (std::vector<JavaField*>::iterator i = classDef->virtualFields.begin(),
          e = classDef->virtualFields.end(); i!= e; ++i) {
-      fields.push_back((*i)->signature->funcs->llvmType);
+      uint8 id = (*i)->signature->funcs->numId;
+      LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+      fields.push_back(LAI.llvmType);
       (*i)->num = index++;
     }
     
@@ -359,7 +361,9 @@ const Type* LLVMClassInfo::getStaticType() {
     uint32 index = 0;
     for (std::vector<JavaField*>::iterator i = classDef->staticFields.begin(),
             e = classDef->staticFields.end(); i!= e; ++i) {
-      fields.push_back((*i)->signature->funcs->llvmType);
+      uint8 id = (*i)->signature->funcs->numId;
+      LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+      fields.push_back(LAI.llvmType);
       (*i)->num = index++;
     }
   
@@ -518,15 +522,18 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
     llvmArgs.push_back(JnjvmModule::JavaObjectType);
 
     for (uint32 i = 0; i < size; ++i) {
-      llvmArgs.push_back(signature->args.at(i)->funcs->llvmType);
+      uint8 id = signature->args.at(i)->funcs->numId;
+      LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+      llvmArgs.push_back(LAI.llvmType);
     }
 
 #if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
     llvmArgs.push_back(mvm::jit::ptrType); // domain
 #endif
 
-    virtualType = FunctionType::get(signature->ret->funcs->llvmType,
-                                    llvmArgs, false);
+    uint8 id = signature->ret->funcs->numId;
+    LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+    virtualType = FunctionType::get(LAI.llvmType, llvmArgs, false);
   }
   return virtualType;
 }
@@ -539,15 +546,18 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
     unsigned int size = signature->args.size();
 
     for (uint32 i = 0; i < size; ++i) {
-      llvmArgs.push_back(signature->args.at(i)->funcs->llvmType);
+      uint8 id = signature->args.at(i)->funcs->numId;
+      LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+      llvmArgs.push_back(LAI.llvmType);
     }
 
 #if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
     llvmArgs.push_back(mvm::jit::ptrType); // domain
 #endif
 
-    staticType = FunctionType::get(signature->ret->funcs->llvmType,
-                                   llvmArgs, false);
+    uint8 id = signature->ret->funcs->numId;
+    LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+    staticType = FunctionType::get(LAI.llvmType, llvmArgs, false);
   }
   return staticType;
 }
@@ -563,15 +573,18 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
     llvmArgs.push_back(JnjvmModule::JavaObjectType); // Class
 
     for (uint32 i = 0; i < size; ++i) {
-      llvmArgs.push_back(signature->args.at(i)->funcs->llvmType);
+      uint8 id = signature->args.at(i)->funcs->numId;
+      LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+      llvmArgs.push_back(LAI.llvmType);
     }
 
 #if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
     llvmArgs.push_back(mvm::jit::ptrType); // domain
 #endif
 
-    nativeType = FunctionType::get(signature->ret->funcs->llvmType,
-                                   llvmArgs, false);
+    uint8 id = signature->ret->funcs->numId;
+    LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+    nativeType = FunctionType::get(LAI.llvmType, llvmArgs, false);
   }
   return nativeType;
 }
@@ -609,7 +622,8 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   
     const AssessorDesc* funcs = (*i)->funcs;
     ptr = GetElementPtrInst::Create(ptr, CI, "", currentBlock);
-    Value* val = new BitCastInst(ptr, funcs->llvmTypePtr, "", currentBlock);
+    LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[funcs->numId];
+    Value* val = new BitCastInst(ptr, LAI.llvmTypePtr, "", currentBlock);
     Value* arg = new LoadInst(val, "", currentBlock);
     Args.push_back(arg);
     if (funcs == AssessorDesc::dLong || funcs == AssessorDesc::dDouble) {
@@ -661,7 +675,8 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   for (std::vector<Typedef*>::iterator i = signature->args.begin(), 
        e = signature->args.end(); i!= e; i++) {
 
-    Args.push_back(new VAArgInst(ap, (*i)->funcs->llvmType, "", currentBlock));
+    LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[(*i)->funcs->numId];
+    Args.push_back(new VAArgInst(ap, LAI.llvmType, "", currentBlock));
   }
 
 #if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
@@ -708,8 +723,9 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
     Args2.push_back(getVirtualPtrType());
     Args2.push_back(JnjvmModule::JavaObjectType);
     Args2.push_back(PointerType::getUnqual(Type::Int32Ty));
-    virtualBufType = FunctionType::get(signature->ret->funcs->llvmType,
-                                       Args2, false);
+    uint8 id = signature->ret->funcs->numId;
+    LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+    virtualBufType = FunctionType::get(LAI.llvmType, Args2, false);
   }
   return virtualBufType;
 }
@@ -722,8 +738,9 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
     Args.push_back(mvm::jit::ptrType); // vm
     Args.push_back(getStaticPtrType());
     Args.push_back(PointerType::getUnqual(Type::Int32Ty));
-    staticBufType = FunctionType::get(signature->ret->funcs->llvmType,
-                                      Args, false);
+    uint8 id = signature->ret->funcs->numId;
+    LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+    staticBufType = FunctionType::get(LAI.llvmType, Args, false);
   }
   return staticBufType;
 }
@@ -1016,6 +1033,7 @@ void JnjvmModule::initialise() {
   JavaObjectLockOffsetConstant = mvm::jit::constantTwo;
   JavaObjectClassOffsetConstant = mvm::jit::constantOne;
   
+  LLVMAssessorInfo::initialise();
 }
 
 void JnjvmModule::InitField(JavaField* field, JavaObject* obj, uint64 val) {
@@ -1066,4 +1084,73 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID) : llvm::Module(ModuleID) {
     mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
   setDataLayout(str);
 }
+void LLVMAssessorInfo::initialise() {
+  AssessorInfo[VOID_ID].llvmType = Type::VoidTy;
+  AssessorInfo[VOID_ID].llvmTypePtr = 0;
+  AssessorInfo[VOID_ID].llvmNullConstant = 0;
+  AssessorInfo[VOID_ID].sizeInBytesConstant = 0;
+  
+  AssessorInfo[BOOL_ID].llvmType = Type::Int8Ty;
+  AssessorInfo[BOOL_ID].llvmTypePtr = PointerType::getUnqual(Type::Int8Ty);
+  AssessorInfo[BOOL_ID].llvmNullConstant = 
+    Constant::getNullValue(Type::Int8Ty);
+  AssessorInfo[BOOL_ID].sizeInBytesConstant = mvm::jit::constantOne;
+  
+  AssessorInfo[BYTE_ID].llvmType = Type::Int8Ty;
+  AssessorInfo[BYTE_ID].llvmTypePtr = PointerType::getUnqual(Type::Int8Ty);
+  AssessorInfo[BYTE_ID].llvmNullConstant = 
+    Constant::getNullValue(Type::Int8Ty);
+  AssessorInfo[BYTE_ID].sizeInBytesConstant = mvm::jit::constantOne;
+  
+  AssessorInfo[SHORT_ID].llvmType = Type::Int16Ty;
+  AssessorInfo[SHORT_ID].llvmTypePtr = PointerType::getUnqual(Type::Int16Ty);
+  AssessorInfo[SHORT_ID].llvmNullConstant = 
+    Constant::getNullValue(Type::Int16Ty);
+  AssessorInfo[SHORT_ID].sizeInBytesConstant = mvm::jit::constantTwo;
+  
+  AssessorInfo[CHAR_ID].llvmType = Type::Int16Ty;
+  AssessorInfo[CHAR_ID].llvmTypePtr = PointerType::getUnqual(Type::Int16Ty);
+  AssessorInfo[CHAR_ID].llvmNullConstant = 
+    Constant::getNullValue(Type::Int16Ty);
+  AssessorInfo[CHAR_ID].sizeInBytesConstant = mvm::jit::constantTwo;
+  
+  AssessorInfo[INT_ID].llvmType = Type::Int32Ty;
+  AssessorInfo[INT_ID].llvmTypePtr = PointerType::getUnqual(Type::Int32Ty);
+  AssessorInfo[INT_ID].llvmNullConstant = 
+    Constant::getNullValue(Type::Int32Ty);
+  AssessorInfo[INT_ID].sizeInBytesConstant = mvm::jit::constantFour;
+  
+  AssessorInfo[FLOAT_ID].llvmType = Type::FloatTy;
+  AssessorInfo[FLOAT_ID].llvmTypePtr = PointerType::getUnqual(Type::FloatTy);
+  AssessorInfo[FLOAT_ID].llvmNullConstant = 
+    Constant::getNullValue(Type::FloatTy);
+  AssessorInfo[FLOAT_ID].sizeInBytesConstant = mvm::jit::constantFour;
+  
+  AssessorInfo[LONG_ID].llvmType = Type::Int64Ty;
+  AssessorInfo[LONG_ID].llvmTypePtr = PointerType::getUnqual(Type::Int64Ty);
+  AssessorInfo[LONG_ID].llvmNullConstant = 
+    Constant::getNullValue(Type::Int64Ty);
+  AssessorInfo[LONG_ID].sizeInBytesConstant = mvm::jit::constantEight;
+  
+  AssessorInfo[DOUBLE_ID].llvmType = Type::DoubleTy;
+  AssessorInfo[DOUBLE_ID].llvmTypePtr = PointerType::getUnqual(Type::DoubleTy);
+  AssessorInfo[DOUBLE_ID].llvmNullConstant = 
+    Constant::getNullValue(Type::DoubleTy);
+  AssessorInfo[DOUBLE_ID].sizeInBytesConstant = mvm::jit::constantEight;
+  
+  AssessorInfo[ARRAY_ID].llvmType = JnjvmModule::JavaObjectType;
+  AssessorInfo[ARRAY_ID].llvmTypePtr =
+    PointerType::getUnqual(JnjvmModule::JavaObjectType);
+  AssessorInfo[ARRAY_ID].llvmNullConstant =
+    JnjvmModule::JavaObjectNullConstant;
+  AssessorInfo[ARRAY_ID].sizeInBytesConstant = mvm::jit::constantPtrSize;
+  
+  AssessorInfo[OBJECT_ID].llvmType = JnjvmModule::JavaObjectType;
+  AssessorInfo[OBJECT_ID].llvmTypePtr =
+    PointerType::getUnqual(JnjvmModule::JavaObjectType);
+  AssessorInfo[OBJECT_ID].llvmNullConstant =
+    JnjvmModule::JavaObjectNullConstant;
+  AssessorInfo[OBJECT_ID].sizeInBytesConstant = mvm::jit::constantPtrSize;
+}
 
+LLVMAssessorInfo LLVMAssessorInfo::AssessorInfo[NUM_ASSESSORS];

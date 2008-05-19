@@ -54,8 +54,6 @@ public:
 
 };
 
-typedef JavaArray* (*arrayCtor_t)(uint32 len, CommonClass* cl, Jnjvm* vm);
-
 #define ARRAYCLASS(name, elmt)                                        \
 class name : public JavaArray {                                       \
 public:                                                               \

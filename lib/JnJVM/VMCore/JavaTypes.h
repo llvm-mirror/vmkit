@@ -10,23 +10,38 @@
 #ifndef JNJVM_JAVA_TYPES_H
 #define JNJVM_JAVA_TYPES_H
 
-#include "llvm/Constants.h"
-#include "llvm/DerivedTypes.h"
-#include "llvm/Type.h"
-
 #include "mvm/Object.h"
 
 #include "types.h"
 
-#include "JavaArray.h"
+namespace mvm {
+  class Code;
+}
 
 namespace jnjvm {
 
+class ClassArray;
 class CommonClass;
+class JavaArray;
 class JavaJIT;
 class JavaObject;
 class Jnjvm;
 class UTF8;
+
+#define VOID_ID 0
+#define BOOL_ID 1
+#define BYTE_ID 2
+#define CHAR_ID 3
+#define SHORT_ID 4
+#define INT_ID 5
+#define FLOAT_ID 6
+#define LONG_ID 7
+#define DOUBLE_ID 8
+#define ARRAY_ID 9
+#define OBJECT_ID 10
+#define NUM_ASSESSORS 11
+
+typedef JavaArray* (*arrayCtor_t)(uint32 len, CommonClass* cl, Jnjvm* vm);
 
 class AssessorDesc : public mvm::Object {
 public:
@@ -51,13 +66,10 @@ public:
   char byteId;
   uint32 nbb;
   uint32 nbw;
+  uint8 numId;
 
   const char* asciizName;
   CommonClass* classType;
-  const llvm::Type* llvmType;
-  const llvm::Type* llvmTypePtr;
-  llvm::Constant* llvmNullConstant;
-  llvm::ConstantInt* sizeInBytesConstant;
   const UTF8* assocClassName;
   const UTF8* UTF8Name;
   ClassArray* arrayClass;
@@ -79,9 +91,9 @@ public:
   
   static AssessorDesc* allocate(bool dt, char bid, uint32 nb, uint32 nw,
                                 const char* name, const char* className,
-                                Jnjvm* vm, const llvm::Type* type,
+                                Jnjvm* vm, uint8 nid,
                                 const char* assocName, ClassArray* cl,
-                                llvm::ConstantInt* CI, arrayCtor_t ctor);
+                                arrayCtor_t ctor);
 
   static void initialise(Jnjvm* vm);
   

@@ -9,10 +9,6 @@
 
 #include <vector>
 
-#include "llvm/Constant.h"
-#include "llvm/DerivedTypes.h"
-#include "llvm/Type.h"
-
 #include "mvm/JIT.h"
 
 #include "JavaAccess.h"
@@ -60,23 +56,19 @@ AssessorDesc* AssessorDesc::dRef = 0;
 
 AssessorDesc* AssessorDesc::allocate(bool dt, char bid, uint32 nb, uint32 nw,
                                      const char* name, const char* className,
-                                     Jnjvm* vm, const llvm::Type* t,
+                                     Jnjvm* vm, uint8 nid,
                                      const char* assocName, ClassArray* cl,
-                                     llvm::ConstantInt* CI, arrayCtor_t ctor) {
+                                     arrayCtor_t ctor) {
   AssessorDesc* res = vm_new(vm, AssessorDesc)();
+  res->numId = nid;
   res->doTrace = dt;
   res->byteId = bid;
   res->nbb = nb;
   res->nbw = nw;
   res->asciizName = name;
   res->UTF8Name = vm->asciizConstructUTF8(name);
-  res->llvmType = t;
-  res->sizeInBytesConstant = CI;
   res->arrayCtor = ctor;
-  if (t && t != llvm::Type::VoidTy) {
-    res->llvmTypePtr = llvm::PointerType::getUnqual(t);
-    res->llvmNullConstant = llvm::Constant::getNullValue(t);
-  }
+  
   res->arrayClass = cl;
   if (assocName)
     res->assocClassName = vm->asciizConstructUTF8(assocName);
@@ -96,56 +88,54 @@ AssessorDesc* AssessorDesc::allocate(bool dt, char bid, uint32 nb, uint32 nw,
 
 void AssessorDesc::initialise(Jnjvm* vm) {
 
-  dParg = AssessorDesc::allocate(false, I_PARG, 0, 0, "(", "(", vm, 0, 0, 0,
-                                 0, 0);
-  dPard = AssessorDesc::allocate(false, I_PARD, 0, 0, ")", ")", vm, 0, 0, 0,
-                                 0, 0);
+  dParg = AssessorDesc::allocate(false, I_PARG, 0, 0, "(", "(", vm, -1, 0, 0,
+                                 0);
+  dPard = AssessorDesc::allocate(false, I_PARD, 0, 0, ")", ")", vm, -1, 0, 0,
+                                 0);
   dVoid = AssessorDesc::allocate(false, I_VOID, 0, 0, "void", "*** void ***",
-                                 vm, llvm::Type::VoidTy, "java/lang/Void",
-                                 0, 0, 0);
+                                 vm, VOID_ID, "java/lang/Void", 0, 0);
   dBool = AssessorDesc::allocate(false, I_BOOL, 1, 1, "boolean", 
                                  "*** boolean ***", vm,
-                                 llvm::Type::Int8Ty, "java/lang/Boolean", 
-                                 JavaArray::ofBool, mvm::jit::constantOne,
+                                 BOOL_ID, "java/lang/Boolean", 
+                                 JavaArray::ofBool,
                                  (arrayCtor_t)ArrayUInt8::acons);
   dByte = AssessorDesc::allocate(false, I_BYTE, 1, 1, "byte", "*** byte ***",
-                                 vm, llvm::Type::Int8Ty, "java/lang/Byte",
-                                 JavaArray::ofByte, mvm::jit::constantOne,
+                                 vm, BYTE_ID, "java/lang/Byte",
+                                 JavaArray::ofByte,
                                  (arrayCtor_t)ArraySInt8::acons);
   dChar = AssessorDesc::allocate(false, I_CHAR, 2, 1, "char", "*** char ***",
-                                 vm, llvm::Type::Int16Ty, "java/lang/Character",
-                                 JavaArray::ofChar, mvm::jit::constantTwo,
+                                 vm, CHAR_ID, "java/lang/Character",
+                                 JavaArray::ofChar,
                                  (arrayCtor_t)ArrayUInt16::acons);
   dShort = AssessorDesc::allocate(false, I_SHORT, 2, 1, "short", 
-                                  "*** short ***", vm, llvm::Type::Int16Ty,
+                                  "*** short ***", vm, SHORT_ID,
                                   "java/lang/Short",
-                                  JavaArray::ofShort, mvm::jit::constantTwo,
+                                  JavaArray::ofShort,
                                   (arrayCtor_t)ArraySInt16::acons);
   dInt = AssessorDesc::allocate(false, I_INT, 4, 1, "int", "*** int ***", vm,
-                                llvm::Type::Int32Ty, "java/lang/Integer",
-                                JavaArray::ofInt, mvm::jit::constantFour,
+                                INT_ID, "java/lang/Integer",
+                                JavaArray::ofInt,
                                 (arrayCtor_t)ArraySInt32::acons);
   dFloat = AssessorDesc::allocate(false, I_FLOAT, 4, 1, "float", 
                                   "*** float ***", vm,
-                                  llvm::Type::FloatTy, "java/lang/Float",
-                                  JavaArray::ofFloat, mvm::jit::constantFour,
+                                  FLOAT_ID, "java/lang/Float",
+                                  JavaArray::ofFloat,
                                   (arrayCtor_t)ArrayFloat::acons);
   dLong = AssessorDesc::allocate(false, I_LONG, 8, 2, "long", "*** long ***", 
-                                 vm, llvm::Type::Int64Ty, "java/lang/Long",
-                                 JavaArray::ofLong, mvm::jit::constantEight,
+                                 vm, LONG_ID, "java/lang/Long",
+                                 JavaArray::ofLong,
                                   (arrayCtor_t)ArrayLong::acons);
   dDouble = AssessorDesc::allocate(false, I_DOUBLE, 8, 2, "double", 
                                    "*** double ***", vm,
-                                   llvm::Type::DoubleTy, "java/lang/Double",
-                                   JavaArray::ofDouble, mvm::jit::constantEight,
+                                   DOUBLE_ID, "java/lang/Double",
+                                   JavaArray::ofDouble,
                                    (arrayCtor_t)ArrayDouble::acons);
   dTab = AssessorDesc::allocate(true, I_TAB, sizeof(void*), 1, "array", "array",
-                                vm, JnjvmModule::JavaObjectType, 0, 0,
-                                mvm::jit::constantPtrSize,
+                                vm, ARRAY_ID, 0, 0,
                                 (arrayCtor_t)ArrayObject::acons);
   dRef = AssessorDesc::allocate(true, I_REF, sizeof(void*), 1, "reference",
-                                "reference", vm, JnjvmModule::JavaObjectType,
-                                0, 0, mvm::jit::constantPtrSize,
+                                "reference", vm, OBJECT_ID,
+                                0, 0, 
                                 (arrayCtor_t)ArrayObject::acons);
   
   mvm::Object::pushRoot((mvm::Object*)dParg);
