@@ -120,7 +120,8 @@ Value* LLVMCommonClassInfo::getVar(JavaJIT* jit) {
     if (jit->compilingClass->isolate->module == Jnjvm::bootstrapVM->module &&
         isArray && classDef->isolate != Jnjvm::bootstrapVM) {
       // We know the array class can belong to bootstrap
-      varGV = Jnjvm::bootstrapVM->constructArray(this->name, 0)->llvmVar(compilingModule);
+      CommonClass* cl = Jnjvm::bootstrapVM->constructArray(this->name, 0);
+      return getVar(cl, jit);
     }
 #endif
       
@@ -580,7 +581,8 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   ConstantInt* CI = mvm::jit::constantZero;
   std::vector<Value*> Args;
 
-  Function* res = Function::Create(virt ? getVirtualBufType() : getStaticBufType(),
+  Function* res = Function::Create(virt ? getVirtualBufType() : 
+                                          getStaticBufType(),
                                    GlobalValue::ExternalLinkage,
                                    signature->printString(),
                                    signature->isolate->module);
@@ -633,7 +635,8 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   
   std::vector<Value*> Args;
 
-  Function* res = Function::Create(virt ? getVirtualBufType() : getStaticBufType(),
+  Function* res = Function::Create(virt ? getVirtualBufType() :
+                                          getStaticBufType(),
                                       GlobalValue::ExternalLinkage,
                                       signature->printString(),
                                       signature->isolate->module);
@@ -1020,3 +1023,8 @@ void JnjvmModule::InitField(JavaField* field, JavaObject* obj, float val) {
   ((float*)((uint64)obj + field->ptrOffset))[0] = val;
 }
 
+void JnjvmModule::setMethod(JavaMethod* meth, const char* name) {
+  llvm::Function* func = getMethodInfo(meth)->getMethod();
+  func->setName(name);
+  func->setLinkage(llvm::GlobalValue::ExternalLinkage);
+}
