@@ -12,9 +12,6 @@
 
 #include <vector>
 
-#include "llvm/Function.h"
-#include "llvm/PassManager.h"
-
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Cond.h"

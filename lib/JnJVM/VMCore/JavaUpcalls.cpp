@@ -9,8 +9,6 @@
 
 #include <vector>
 
-#include "llvm/Function.h"
-
 #include "mvm/JIT.h"
 
 #include "JavaAccess.h"
