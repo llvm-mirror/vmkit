@@ -7,10 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/PassManager.h"
-#include "llvm/Analysis/Passes.h"
-#include "llvm/Target/TargetData.h"
-
 #include "mvm/JIT.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Key.h"
@@ -22,8 +18,6 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 #include "Jnjvm.h"
-#include "JnjvmModule.h"
-#include "JnjvmModuleProvider.h"
 
 using namespace jnjvm;
 
@@ -35,9 +29,10 @@ void JavaThread::print(mvm::PrintBuffer* buf) const {
   buf->write("Thread:");
   javaThread->print(buf);
 }
- 
+
 void JavaThread::destroyer(size_t sz) {
-  delete perFunctionPasses;
+  delete lock;
+  delete varcond;
 }
 
 JavaThread* JavaThread::get() {
@@ -53,10 +48,6 @@ void JavaThread::initialise(JavaObject* thread, Jnjvm* isolate) {
   this->state = StateRunning;
   this->self = mvm::Thread::self();
   this->pendingException = 0;
-  ModuleProvider* MP = isolate->TheModuleProvider;
-  this->perFunctionPasses = new llvm::FunctionPassManager(MP);
-  this->perFunctionPasses->add(new llvm::TargetData(isolate->module));
-  JavaJIT::AddStandardCompilePasses(this->perFunctionPasses);
 }
 
 JavaObject* JavaThread::currentThread() {

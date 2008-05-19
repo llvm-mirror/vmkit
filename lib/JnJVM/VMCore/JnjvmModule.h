@@ -236,6 +236,7 @@ private:
 
 
 public:
+  
   static llvm::ConstantInt* JavaArraySizeOffsetConstant;
   static llvm::ConstantInt* JavaArrayElementsOffsetConstant;
   static llvm::ConstantInt* JavaObjectLockOffsetConstant;
@@ -345,7 +346,7 @@ public:
   LLVMServiceInfo* getServiceInfo(ServiceDomain*);
 #endif
 
-  explicit JnjvmModule(const std::string &ModuleID) : llvm::Module(ModuleID) {}
+  explicit JnjvmModule(const std::string &ModuleID);
   void initialise();
 };
 

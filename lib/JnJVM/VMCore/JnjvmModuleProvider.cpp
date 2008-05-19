@@ -7,6 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llvm/LinkAllPasses.h"
+#include "llvm/Analysis/LoopPass.h"
+#include "llvm/Support/MutexGuard.h"
+
 #include "mvm/JIT.h"
 
 #include "JavaAccess.h"
@@ -111,6 +115,7 @@ void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
       jit.nativeCompile();
     } else {
       jit.javaCompile();
+      mvm::jit::runPasses(func, perFunctionPasses);
     }
   }
   
@@ -139,4 +144,71 @@ llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
 
 void JnjvmModuleProvider::addFunction(Function* F, JavaMethod* meth) {
   functions.insert(std::make_pair(F, meth));
+}
+
+
+namespace mvm {
+  llvm::FunctionPass* createEscapeAnalysisPass(llvm::Function*, llvm::Function*);
+  llvm::FunctionPass* createLowerConstantCallsPass();
+}
+
+static void addPass(FunctionPassManager *PM, Pass *P) {
+  // Add the pass to the pass manager...
+  PM->add(P);
+}
+
+static void AddStandardCompilePasses(FunctionPassManager *PM) {
+  llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
+  // LLVM does not allow calling functions from other modules in verifier
+  //PM->add(llvm::createVerifierPass());                  // Verify that input is correct
+  
+  addPass(PM, llvm::createCFGSimplificationPass());    // Clean up disgusting code
+  addPass(PM, llvm::createPromoteMemoryToRegisterPass());// Kill useless allocas
+  addPass(PM, llvm::createInstructionCombiningPass()); // Clean up after IPCP & DAE
+  addPass(PM, llvm::createCFGSimplificationPass());    // Clean up after IPCP & DAE
+  
+  addPass(PM, createTailDuplicationPass());      // Simplify cfg by copying code
+  addPass(PM, createSimplifyLibCallsPass());     // Library Call Optimizations
+  addPass(PM, createInstructionCombiningPass()); // Cleanup for scalarrepl.
+  addPass(PM, createJumpThreadingPass());        // Thread jumps.
+  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+  addPass(PM, createScalarReplAggregatesPass()); // Break up aggregate allocas
+  addPass(PM, createInstructionCombiningPass()); // Combine silly seq's
+  addPass(PM, createCondPropagationPass());      // Propagate conditionals
+  
+  addPass(PM, createTailCallEliminationPass());  // Eliminate tail calls
+  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+  addPass(PM, createReassociatePass());          // Reassociate expressions
+  addPass(PM, createLoopRotatePass());
+  addPass(PM, createLICMPass());                 // Hoist loop invariants
+  addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
+  addPass(PM, createLoopIndexSplitPass());       // Index split loops.
+  addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
+  addPass(PM, createLoopDeletionPass());         // Delete dead loops
+  addPass(PM, createLoopUnrollPass());           // Unroll small loops
+  addPass(PM, createInstructionCombiningPass()); // Clean up after the unroller
+  addPass(PM, createGVNPass());                  // Remove redundancies
+  addPass(PM, createMemCpyOptPass());            // Remove memcpy / form memset
+  addPass(PM, createSCCPPass());                 // Constant prop with SCCP
+  
+  addPass(PM, mvm::createLowerConstantCallsPass());
+
+  // Run instcombine after redundancy elimination to exploit opportunities
+  // opened up by them.
+  addPass(PM, createInstructionCombiningPass());
+  addPass(PM, createCondPropagationPass());      // Propagate conditionals
+
+  addPass(PM, createDeadStoreEliminationPass()); // Delete dead stores
+  addPass(PM, createAggressiveDCEPass());        // SSA based 'Aggressive DCE'
+  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+}
+
+JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
+  TheModule = (Module*)m;
+  mvm::jit::protectEngine->lock();
+  mvm::jit::executionEngine->addModuleProvider(this);
+  mvm::jit::protectEngine->unlock();
+  perFunctionPasses = new llvm::FunctionPassManager(this);
+  perFunctionPasses->add(new llvm::TargetData(m));
+  AddStandardCompilePasses(perFunctionPasses);
 }

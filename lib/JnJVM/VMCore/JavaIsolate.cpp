@@ -9,11 +9,6 @@
 
 #include <jni.h>
 
-#include "llvm/Module.h"
-#include "llvm/PassManager.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Target/TargetData.h"
-
 #include "mvm/JIT.h"
 #include "mvm/MvmMemoryManager.h"
 #include "mvm/Threads/Locks.h"
@@ -448,14 +443,7 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   isolate->analyseClasspathEnv(isolate->bootClasspathEnv);
 
   isolate->module = new JnjvmModule("Isolate JnJVM");
-  std::string str = 
-    mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
-  isolate->module->setDataLayout(str);
-  isolate->protectModule = mvm::Lock::allocNormal();
   isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->module);
-  mvm::jit::protectEngine->lock();
-  mvm::jit::executionEngine->addModuleProvider(isolate->TheModuleProvider);
-  mvm::jit::protectEngine->unlock();
   
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
@@ -517,15 +505,9 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   
   isolate->protectModule = mvm::Lock::allocNormal();
   isolate->module = new JnjvmModule("Bootstrap JnJVM");
-  std::string str = 
-    mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
-  isolate->module->setDataLayout(str);
   isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->module);
-  mvm::jit::protectEngine->lock();
-  mvm::jit::executionEngine->addModuleProvider(isolate->TheModuleProvider);
-  mvm::jit::protectEngine->unlock();
   isolate->module->initialise();
-  
+ 
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
   void* baseSP = mvm::Thread::get()->baseSP;

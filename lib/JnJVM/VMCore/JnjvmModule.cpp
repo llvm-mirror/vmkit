@@ -1060,3 +1060,10 @@ void JnjvmModule::setMethod(JavaMethod* meth, const char* name) {
 void* JnjvmModule::getMethod(JavaMethod* meth) {
   return getMethodInfo(meth)->getMethod();
 }
+
+JnjvmModule::JnjvmModule(const std::string &ModuleID) : llvm::Module(ModuleID) {
+ std::string str = 
+    mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
+  setDataLayout(str);
+}
+

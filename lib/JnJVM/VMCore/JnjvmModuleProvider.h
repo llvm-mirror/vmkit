@@ -20,33 +20,6 @@ namespace jnjvm {
 
 class JnjvmModule;
 
-class FunctionMap :
-    public LockedMap<llvm::Function*, std::pair<Class*, uint32>*,
-                     std::less<llvm::Function*> > { 
-public:
-  static VirtualTable* VT; 
-  
-  FunctionMap() {
-    lock = mvm::Lock::allocNormal();
-  }
-
-  virtual void TRACER;
-};
-
-class FunctionDefMap :
-    public LockedMap<llvm::Function*, JavaMethod*,
-                     std::less<llvm::Function*> > { 
-public:
-  static VirtualTable* VT; 
-  
-  FunctionDefMap() {
-    lock = mvm::Lock::allocNormal();
-  }
-
-  virtual void TRACER;
-};
-
-
 class JnjvmModuleProvider : public ModuleProvider {
 private:
   JavaMethod* staticLookup(Class* caller, uint32 index);
@@ -63,12 +36,11 @@ private:
   typedef std::map<llvm::Function*, std::pair<Class*, uint32> >::iterator
     callback_iterator;  
 
+  llvm::FunctionPassManager* perFunctionPasses;
 
 public:
   
-  JnjvmModuleProvider(JnjvmModule *m) {
-    TheModule = (Module*)m;
-  }
+  JnjvmModuleProvider(JnjvmModule *m);
   
   llvm::Function* addCallback(Class* cl, uint32 index, Signdef* sign,
                               bool stat);

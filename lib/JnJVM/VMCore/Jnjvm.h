@@ -265,6 +265,7 @@ public:
   JnjvmModule* module;
   JnjvmModuleProvider* TheModuleProvider;
 
+
 #ifndef MULTIPLE_GC
   void* allocateObject(unsigned int sz, VirtualTable* VT) {
     return gc::operator new(sz, VT);

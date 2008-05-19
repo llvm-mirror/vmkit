@@ -41,13 +41,17 @@ ClassArray* JavaArray::ofDouble = 0;
 ClassArray* JavaArray::ofString = 0;
 ClassArray* JavaArray::ofObject = 0;
 
+// This will force linking runtime methods
+extern "C" void negativeArraySizeException(sint32 val);
+extern "C" void outOfMemoryError(sint32 val);
+
 #ifndef MULTIPLE_VM
 #define ACONS(name, elmt, primSize)                                         \
   name *name::acons(sint32 n, ClassArray* atype, Jnjvm* vm) {               \
     if (n < 0)                                                              \
-      JavaThread::get()->isolate->negativeArraySizeException(n);            \
+      negativeArraySizeException(n);                                        \
     else if (n > JavaArray::MaxArraySize)                                   \
-      JavaThread::get()->isolate->outOfMemoryError(n);                      \
+      outOfMemoryError(n);                                                  \
     name* res = (name*)                                                     \
       (Object*) operator new(sizeof(name) + n * primSize, name::VT);        \
     res->initialise(atype);                                                 \
@@ -58,9 +62,9 @@ ClassArray* JavaArray::ofObject = 0;
 #define ACONS(name, elmt, primSize)                                         \
   name *name::acons(sint32 n, ClassArray* atype, Jnjvm* vm) {               \
     if (n < 0)                                                              \
-      JavaThread::get()->isolate->negativeArraySizeException(n);            \
+      negativeArraySizeException(n);                                        \
     else if (n > JavaArray::MaxArraySize)                                   \
-      JavaThread::get()->isolate->outOfMemoryError(n);                      \
+      outOfMemoryError(n);                                                  \
     name* res = (name*)                                                     \
       (Object*) vm->allocateObject(sizeof(name) + n * primSize, name::VT);  \
     res->initialise(atype);                                                 \

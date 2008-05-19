@@ -201,11 +201,6 @@ extern "C" JavaObject* getClassDelegatee(CommonClass* cl) {
   return vm->getClassDelegatee(cl);
 }
 
-void JavaJIT::initialise() {
-  void* p;
-  p = (void*)&runtimeUTF8ToStr;
-}
-
 extern "C" Class* newLookup(Class* caller, uint32 index, Class** toAlloc,
                             uint32 clinit) { 
   JavaCtpInfo* ctpInfo = caller->ctpInfo;

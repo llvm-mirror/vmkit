@@ -12,8 +12,6 @@
 
 #include <setjmp.h>
 
-#include "llvm/PassManager.h"
-
 #include "mvm/Object.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Key.h"
@@ -43,7 +41,6 @@ public:
   unsigned int self;
   unsigned int interruptFlag;
   unsigned int state;
-  llvm::FunctionPassManager* perFunctionPasses;
   std::vector<jmp_buf*> sjlj_buffers;
 
   static const unsigned int StateRunning;

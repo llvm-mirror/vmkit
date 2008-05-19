@@ -730,7 +730,6 @@ llvm::Function* JavaJIT::javaCompile() {
   }
   
   func->setLinkage(GlobalValue::ExternalLinkage);
-  mvm::jit::runPasses(llvmFunction, JavaThread::get()->perFunctionPasses);
   
   /*
   if (compilingMethod->name == 

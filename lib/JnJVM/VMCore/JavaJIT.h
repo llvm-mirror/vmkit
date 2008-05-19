@@ -219,8 +219,6 @@ public:
   static void printBacktrace();
   static int getBacktrace(void** array, int size);
   static JavaMethod* IPToJavaMethod(void* ip);
-  static void initialise();
-  static void AddStandardCompilePasses(llvm::FunctionPassManager*);
 };
 
 enum Opcode {

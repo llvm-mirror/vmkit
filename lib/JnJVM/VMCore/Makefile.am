@@ -12,7 +12,7 @@ libJnJVM_la_SOURCES = \
 	JavaIsolate.h JavaIsolate.cpp JavaString.h JavaString.cpp JavaInitialise.cpp JavaJITOpcodes.cpp \
 	JavaBacktrace.cpp NativeUtil.h NativeUtil.cpp Jni.cpp \
 	JavaCache.h JavaCache.cpp JavaUpcalls.h JavaUpcalls.cpp \
-	JnjvmModuleProvider.h JnjvmModuleProvider.cpp JavaRuntimeJIT.cpp JavaMetaJIT.cpp JavaJITInitialise.cpp \
+	JnjvmModuleProvider.h JnjvmModuleProvider.cpp JavaRuntimeJIT.cpp JavaMetaJIT.cpp \
 	LowerConstantCalls.cpp JnjvmModule.h JnjvmModule.cpp
 
 if SERVICE_BUILD
