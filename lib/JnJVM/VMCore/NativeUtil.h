@@ -12,9 +12,6 @@
 
 #include <jni.h>
 
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-
-
 namespace jnjvm {
 
 class ArrayObject;

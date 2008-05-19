@@ -9,8 +9,6 @@
 
 #include <jni.h>
 
-#include "llvm/ExecutionEngine/GenericValue.h"
-
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaJIT.h"

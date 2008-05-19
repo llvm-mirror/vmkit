@@ -221,30 +221,6 @@ public:
   virtual void TRACER;
 };
 
-class FunctionMap :
-    public LockedMap<llvm::Function*, std::pair<Class*, uint32>*, std::less<llvm::Function*> > { 
-public:
-  static VirtualTable* VT; 
-  
-  FunctionMap() {
-    lock = mvm::Lock::allocNormal();
-  }
-
-  virtual void TRACER;
-};
-
-class FunctionDefMap :
-    public LockedMap<llvm::Function*, JavaMethod*, std::less<llvm::Function*> > { 
-public:
-  static VirtualTable* VT; 
-  
-  FunctionDefMap() {
-    lock = mvm::Lock::allocNormal();
-  }
-
-  virtual void TRACER;
-};
-
 class TypeMap :
     public LockedMap<const UTF8*, Typedef*, ltutf8 > {
 public:

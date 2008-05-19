@@ -43,6 +43,26 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
   return meth;
 }
 
+bool JnjvmModuleProvider::lookupCallback(Function* F, std::pair<Class*, uint32>& res) {
+  callback_iterator CI = callbacks.find(F);
+  if (CI != callbacks.end()) {
+    res.first = CI->second.first;
+    res.second = CI->second.second;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool JnjvmModuleProvider::lookupFunction(Function* F, JavaMethod*& meth) {
+  function_iterator CI = functions.find(F);
+  if (CI != functions.end()) {
+    meth = CI->second;
+    return true;
+  } else {
+    return false;
+  }
+}
 
 bool JnjvmModuleProvider::materializeFunction(Function *F, 
                                               std::string *ErrInfo) {
@@ -53,12 +73,14 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   if (!(F->hasNotBeenReadFromBitcode())) 
     return false;
   
-  JavaMethod* meth = functionDefs->lookup(F);
+  JavaMethod* meth = 0;
+  lookupFunction(F, meth);
   
   if (!meth) {
     // It's a callback
-    std::pair<Class*, uint32> * p = functions->lookup(F);
-    meth = staticLookup(p->first, p->second); 
+    std::pair<Class*, uint32> p;
+    lookupCallback(F, p);
+    meth = staticLookup(p.first, p.second); 
   }
   
   void* val = meth->compiledPtr();
@@ -93,4 +115,28 @@ void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
   }
   
   return mvm::jit::executionEngine->getPointerToGlobal(func);
+}
+
+llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
+                                                 Signdef* sign, bool stat) {
+  const llvm::FunctionType* type = 0;
+  JnjvmModule* M = cl->isolate->module;
+  LLVMSignatureInfo* LSI = M->getSignatureInfo(sign);
+  
+  if (stat) {
+    type = LSI->getStaticType();
+  } else {
+    type = LSI->getVirtualType();
+  }
+  Function* func = llvm::Function::Create(type, 
+                                          llvm::GlobalValue::GhostLinkage,
+                                          "callback",
+                                          cl->isolate->module);
+
+  callbacks.insert(std::make_pair(func, std::make_pair(cl, index)));
+  return func;
+}
+
+void JnjvmModuleProvider::addFunction(Function* F, JavaMethod* meth) {
+  functions.insert(std::make_pair(F, meth));
 }

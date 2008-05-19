@@ -15,17 +15,11 @@
 #include "JnjvmModuleProvider.h"
 #include "ServiceDomain.h"
 
-#include <llvm/GlobalVariable.h>
-#include <llvm/Instructions.h>
-
 extern "C" struct JNINativeInterface JNI_JNIEnvTable;
 extern "C" const struct JNIInvokeInterface JNI_JavaVMTable;
 
 
 using namespace jnjvm;
-
-llvm::Function* ServiceDomain::serviceCallStartLLVM;
-llvm::Function* ServiceDomain::serviceCallStopLLVM;
 
 JavaMethod* ServiceDomain::ServiceErrorInit;
 Class* ServiceDomain::ServiceErrorClass;
@@ -34,31 +28,6 @@ ServiceDomain* ServiceDomain::bootstrapDomain;
 // OSGi specific fields
 JavaField* ServiceDomain::OSGiFramework;
 JavaMethod* ServiceDomain::uninstallBundle;
-
-
-GlobalVariable* ServiceDomain::llvmDelegatee() {
-  if (!_llvmDelegatee) {
-    lock->lock();
-    if (!_llvmDelegatee) {
-      const Type* pty = mvm::jit::ptrType;
-      
-      mvm::jit::protectConstants();//->lock();
-      Constant* cons = 
-        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(this)),
-                                  pty);
-      mvm::jit::unprotectConstants();//->unlock();
-
-      this->protectModule->lock();
-      _llvmDelegatee = new GlobalVariable(pty, true,
-                                    GlobalValue::ExternalLinkage,
-                                    cons, "",
-                                    this->module);
-      this->protectModule->unlock();
-    }
-    lock->unlock();
-  }
-  return _llvmDelegatee;
-}
 
 
 void ServiceDomain::destroyer(size_t sz) {
@@ -85,7 +54,7 @@ ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
   service->bootClasspath = callingVM->bootClasspath;
   service->functions = vm_new(service, FunctionMap)();
   service->functionDefs = vm_new(service, FunctionDefMap)();
-  service->module = new llvm::Module("Service Domain");
+  service->module = new JnjvmModule("Service Domain");
   std::string str = 
     mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
   service->module->setDataLayout(str);

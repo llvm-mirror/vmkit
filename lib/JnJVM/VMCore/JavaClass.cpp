@@ -11,10 +11,6 @@
 
 #include <string.h>
 
-#include "llvm/Constants.h"
-#include "llvm/DerivedTypes.h"
-
-
 #include "mvm/JIT.h"
 #include "types.h"
 

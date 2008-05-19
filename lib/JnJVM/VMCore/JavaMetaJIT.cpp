@@ -10,9 +10,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include <llvm/Type.h>
-#include "llvm/ExecutionEngine/GenericValue.h"
-
 #include "mvm/JIT.h"
 #include "mvm/Method.h"
 
@@ -27,7 +24,6 @@
 #include "JnjvmModule.h"
 
 using namespace jnjvm;
-using namespace llvm;
 
 void JavaJIT::invokeOnceVoid(Jnjvm* vm, JavaObject* loader,
                              char const* className, char const* func,

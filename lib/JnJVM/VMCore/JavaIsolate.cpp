@@ -447,16 +447,12 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   
   isolate->analyseClasspathEnv(isolate->bootClasspathEnv);
 
-  isolate->functions = vm_new(isolate, FunctionMap)();
-  isolate->functionDefs = vm_new(isolate, FunctionDefMap)();
   isolate->module = new JnjvmModule("Isolate JnJVM");
   std::string str = 
     mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
   isolate->module->setDataLayout(str);
   isolate->protectModule = mvm::Lock::allocNormal();
-  isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->module, 
-                                                       isolate->functions,
-                                                       isolate->functionDefs);
+  isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->module);
   mvm::jit::protectEngine->lock();
   mvm::jit::executionEngine->addModuleProvider(isolate->TheModuleProvider);
   mvm::jit::protectEngine->unlock();
@@ -519,16 +515,12 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   
   isolate->analyseClasspathEnv(isolate->bootClasspathEnv);
   
-  isolate->functions = vm_new(isolate, FunctionMap)();
-  isolate->functionDefs = vm_new(isolate, FunctionDefMap)();
   isolate->protectModule = mvm::Lock::allocNormal();
   isolate->module = new JnjvmModule("Bootstrap JnJVM");
   std::string str = 
     mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
   isolate->module->setDataLayout(str);
-  isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->module, 
-                                                       isolate->functions,
-                                                       isolate->functionDefs); 
+  isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->module);
   mvm::jit::protectEngine->lock();
   mvm::jit::executionEngine->addModuleProvider(isolate->TheModuleProvider);
   mvm::jit::protectEngine->unlock();

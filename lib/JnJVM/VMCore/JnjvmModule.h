@@ -194,6 +194,17 @@ public:
 
 };
 
+#ifdef SERVICE_VM
+class LLVMServiceInfo {
+private:
+  ServiceDomain* vm;
+  llvm::GlobalVariable* delegateeGV;
+
+public:
+  llvm::Value* getDelegatee(JavaJIT* jit);
+};
+#endif
+
 class JnjvmModule : public llvm::Module {
   friend class LLVMClassInfo;
 private:
@@ -201,6 +212,12 @@ private:
   std::map<const Signdef*, LLVMSignatureInfo*> signatureMap;
   std::map<const JavaField*, LLVMFieldInfo*> fieldMap;
   std::map<const JavaMethod*, LLVMMethodInfo*> methodMap;
+
+#ifdef SERVICE_VM
+  std::map<const ServiceDomain*, LLVMServiceInfo*> serviceMap;
+  typedef std::map<const ServiceDomain*, LLVMServiceInfo*>::iterator
+    class_iterator;
+#endif
   
   typedef std::map<const CommonClass*, LLVMCommonClassInfo*>::iterator
     class_iterator;  
@@ -318,11 +335,15 @@ public:
   void resolveVirtualClass(Class* cl);
   void resolveStaticClass(Class* cl);
   void setMethod(JavaMethod* meth, const char* name);
+  void* getMethod(JavaMethod* meth);
 
   LLVMSignatureInfo* getSignatureInfo(Signdef*);
   LLVMCommonClassInfo* getClassInfo(CommonClass*);
   LLVMFieldInfo* getFieldInfo(JavaField*);
   LLVMMethodInfo* getMethodInfo(JavaMethod*);
+#ifdef SERVICE_VM
+  LLVMServiceInfo* getServiceInfo(ServiceDomain*);
+#endif
 
   explicit JnjvmModule(const std::string &ModuleID) : llvm::Module(ModuleID) {}
   void initialise();

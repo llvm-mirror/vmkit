@@ -18,6 +18,7 @@
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 #include "JnjvmModule.h"
+#include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
 
 
@@ -468,7 +469,7 @@ Function* LLVMMethodInfo::getMethod() {
                                       GlobalValue::GhostLinkage,
                                       methodDef->printString(),
                                       vm->module);
-    vm->functionDefs->hash(methodFunction, methodDef);
+    vm->TheModuleProvider->addFunction(methodFunction, methodDef);
   }
   return methodFunction;
 }
@@ -835,6 +836,33 @@ LLVMSignatureInfo* JnjvmModule::getSignatureInfo(Signdef* sign) {
   }
 }
 
+#ifdef SERVICE_VM
+LLVMServiceInfo* JnjvmModule::getServiceInfo(ServiceDomain* S) {
+  service_iterator SI = serviceMap.find(S);
+  if (SI != serviceMap.end()) {
+    return SI->second;
+  } else {
+    LLVMServiceInfo* LSI = new LLVMServiceInfo(sign);
+    serviceMap.insert(std::make_pair(S, LSI));
+    return LSI;
+  }
+}
+
+Value* LLVMServiceInfo::getDelegatee(JavaJIT* jit) {
+  if (!delegateeGV) {
+    Constant* cons = 
+      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(vm)),
+                                mvm::jit::ptrType);
+    delegateeGV = new GlobalVariable(mvm::jit::ptrType, true,
+                                    GlobalValue::ExternalLinkage,
+                                    cons, "",
+                                    vm->module);
+  }
+  return new LoadInst(delegateeGV, "", jit->currentBlock);
+}
+
+#endif
+
 
 #include "LLVMRuntime.cpp"
 
@@ -1027,4 +1055,8 @@ void JnjvmModule::setMethod(JavaMethod* meth, const char* name) {
   llvm::Function* func = getMethodInfo(meth)->getMethod();
   func->setName(name);
   func->setLinkage(llvm::GlobalValue::ExternalLinkage);
+}
+
+void* JnjvmModule::getMethod(JavaMethod* meth) {
+  return getMethodInfo(meth)->getMethod();
 }

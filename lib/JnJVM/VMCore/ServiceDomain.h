@@ -17,11 +17,6 @@
 
 #include "JavaIsolate.h"
 
-namespace llvm {
-  class GlobalVariable;
-  class Function;
-}
-
 namespace mvm {
   class Lock;
 }
@@ -35,8 +30,6 @@ typedef enum DomainState {
 }DomainState;
 
 class ServiceDomain : public JavaIsolate {
-private:
-  llvm::GlobalVariable* _llvmDelegatee;
 public:
   static VirtualTable* VT;
 
@@ -44,7 +37,6 @@ public:
   virtual void TRACER;
   virtual void destroyer(size_t sz);
   static ServiceDomain* allocateService(JavaIsolate* callingVM);
-  llvm::GlobalVariable* llvmDelegatee();
   static void serviceError(ServiceDomain* error, const char* str);
    
   mvm::Lock* lock;

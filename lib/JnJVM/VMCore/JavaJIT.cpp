@@ -232,7 +232,8 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   } else {
     JavaObject* loader = compilingClass->classLoader;
     ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
-    isolateLocal = new LoadInst(vm->llvmDelegatee(), "", currentBlock);
+    LLVMServiceInfo* LSI = module->getServiceInfo(vm);
+    isolateLocal = LSI->getDelegatee(this);
     Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, lastArg, 
                               isolateLocal, "", currentBlock);
     BasicBlock* ifTrue = createBasicBlock("true service call");
@@ -471,7 +472,8 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   } else {
     JavaObject* loader = compilingClass->classLoader;
     ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
-    isolateLocal = new LoadInst(vm->llvmDelegatee(), "", currentBlock);
+    LLVMServiceInfo* LSI = module->getServiceInfo(vm);
+    isolateLocal = LSI->getDelegatee(this);
     Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, args[args.size() - 1], 
                               isolateLocal, "", currentBlock);
     BasicBlock* ifTrue = createBasicBlock("true service call");
@@ -635,7 +637,8 @@ llvm::Function* JavaJIT::javaCompile() {
   } else {
     JavaObject* loader = compilingClass->classLoader;
     ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
-    isolateLocal = new LoadInst(vm->llvmDelegatee(), "", currentBlock);
+    LLVMServiceInfo* LSI = module->getServiceInfo(vm);
+    isolateLocal = LSI->getDelegatee(this);
     Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, i, isolateLocal, "",
                               currentBlock);
     BasicBlock* ifTrue = createBasicBlock("true service call");
@@ -1420,8 +1423,9 @@ void JavaJIT::invokeSpecial(uint16 index) {
 
 
   if (!val) {
-    Function* func = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
-                                                          signature, meth);
+    Function* func = 
+      (Function*)ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
+                                                      signature, meth);
 
     if (meth && meth->canBeInlined && meth != compilingMethod && 
         inlineMethods[meth] == 0) {
@@ -1463,8 +1467,9 @@ void JavaJIT::invokeStatic(uint16 index) {
   }
 
   if (!val) {
-    Function* func = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_STATIC,
-                                                          signature, meth);
+    Function* func = (Function*)
+      ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_STATIC,
+                                           signature, meth);
     
 #ifdef MULTIPLE_VM
     

@@ -14,8 +14,6 @@
 
 #include "types.h"
 
-#include "llvm/Function.h"
-
 namespace jnjvm {
 
 class Class;
@@ -108,10 +106,10 @@ public:
   Typedef* resolveNameAndType(uint32 index);
   Typedef* infoOfField(uint32 index);
   Signdef* infoOfInterfaceOrVirtualMethod(uint32 index);
-  llvm::Function* infoOfStaticOrSpecialMethod(uint32 index,
-                                              uint32 access,
-                                              Signdef*& sign,
-                                              JavaMethod*& meth);
+  void* infoOfStaticOrSpecialMethod(uint32 index,
+                                    uint32 access,
+                                    Signdef*& sign,
+                                    JavaMethod*& meth);
 
   void nameOfStaticOrSpecialMethod(uint32 index, const UTF8*& cl, 
                                    const UTF8*& name, Signdef*& sign);

@@ -12,8 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "llvm/GlobalValue.h"
-
 #include "debug.h"
 
 #include "JavaAccess.h"
@@ -398,11 +396,10 @@ void JavaCtpInfo::nameOfStaticOrSpecialMethod(uint32 index,
   cl = resolveClassName(entry >> 16);
 }
 
-llvm::Function* JavaCtpInfo::infoOfStaticOrSpecialMethod( 
-                                                uint32 index, 
-                                                uint32 access,
-                                                Signdef*& sign,
-                                                JavaMethod*& meth) {
+void* JavaCtpInfo::infoOfStaticOrSpecialMethod(uint32 index, 
+                                               uint32 access,
+                                               Signdef*& sign,
+                                               JavaMethod*& meth) {
   uint8 id = typeAt(index);
   if (id != ConstantMethodref && id != ConstantInterfaceMethodref)
     JavaThread::get()->isolate->error(Jnjvm::ClassFormatError,
@@ -418,8 +415,7 @@ llvm::Function* JavaCtpInfo::infoOfStaticOrSpecialMethod(
     meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access), false);
     if (meth) { // don't throw if no meth, the exception will be thrown just in time  
       JnjvmModule* M = classDef->isolate->module;
-      LLVMMethodInfo* LMI = M->getMethodInfo(meth);
-      llvm::Function* F = LMI->getMethod();
+      void* F = M->getMethod(meth);
       ctpRes[index] = (void*)F;
       return F;
     }
@@ -427,25 +423,14 @@ llvm::Function* JavaCtpInfo::infoOfStaticOrSpecialMethod(
   
   // Must be a callback
   if (ctpRes[index]) {
-    return (llvm::Function*)ctpRes[index];
+    return ctpRes[index];
   } else {
-    // Create the callback
-    const llvm::FunctionType* type = 0;
-    JnjvmModule* M = classDef->isolate->module;
-    LLVMSignatureInfo* LSI = M->getSignatureInfo(sign);
-    if (isStatic(access)) {
-      type = LSI->getStaticType();
-    } else {
-      type = LSI->getVirtualType();
-    }
-    llvm::Function* func = llvm::Function::Create(type, 
-                                                llvm::GlobalValue::GhostLinkage,
-                                                "callback",
-                                                classDef->isolate->module);
-    classDef->isolate->TheModuleProvider->functions->hash(func, 
-                  new std::pair<Class*, uint32>(classDef, index));
-    ctpRes[index] = func;
-    return func;
+    void* val =
+      classDef->isolate->TheModuleProvider->addCallback(classDef, index, sign,
+                                                        isStatic(access));
+        
+    ctpRes[index] = val;
+    return val;
   }
 }
 

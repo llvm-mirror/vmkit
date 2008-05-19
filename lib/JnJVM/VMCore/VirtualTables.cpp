@@ -69,8 +69,6 @@ using namespace jnjvm;
   INIT(StringMap);
   INIT(TypeMap);
   INIT(StaticInstanceMap);
-  INIT(FunctionMap);
-  INIT(FunctionDefMap);
   INIT(JavaIsolate);
   INIT(JavaString);
   INIT(CacheNode);
@@ -214,14 +212,10 @@ void Jnjvm::TRACER {
   loadedFields->MARK_AND_TRACE;
   javaTypes->MARK_AND_TRACE;
   TRACE_VECTOR(JavaObject*, gc_allocator, globalRefs);
-  //globalRefsLock->MARK_AND_TRACE;
-  functions->MARK_AND_TRACE;
-  functionDefs->MARK_AND_TRACE;
 #ifdef MULTIPLE_VM
   statics->MARK_AND_TRACE;
   delegatees->MARK_AND_TRACE;
 #endif
-  //protectModule->MARK_AND_TRACE;
 }
 
 void Reader::TRACER {
@@ -289,18 +283,6 @@ void ZipFileMap::TRACER {
 }
 
 void StringMap::TRACER {
-  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-    i->second->MARK_AND_TRACE;
-  }
-}
-
-void FunctionMap::TRACER {
-  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-    i->second->first->MARK_AND_TRACE;
-  }
-}
-
-void FunctionDefMap::TRACER {
   for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
     i->second->MARK_AND_TRACE;
   }

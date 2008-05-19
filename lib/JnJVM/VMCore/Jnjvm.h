@@ -264,8 +264,6 @@ public:
   mvm::Lock* protectModule;
   JnjvmModule* module;
   JnjvmModuleProvider* TheModuleProvider;
-  FunctionMap* functions;
-  FunctionDefMap* functionDefs;
 
 #ifndef MULTIPLE_GC
   void* allocateObject(unsigned int sz, VirtualTable* VT) {
