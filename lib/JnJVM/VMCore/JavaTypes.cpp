@@ -550,7 +550,7 @@ Typedef* Typedef::typeDup(const UTF8* name, Jnjvm *vm) {
 
 void* Signdef::staticCallBuf() {
   if (!_staticCallBuf) {
-    LLVMSignatureInfo* LSI = isolate->module->getSignatureInfo(this);
+    LLVMSignatureInfo* LSI = isolate->TheModule->getSignatureInfo(this);
     LSI->getStaticBuf();
   }
   return _staticCallBuf;
@@ -558,7 +558,7 @@ void* Signdef::staticCallBuf() {
 
 void* Signdef::virtualCallBuf() {
   if (!_virtualCallBuf) {
-    LLVMSignatureInfo* LSI = isolate->module->getSignatureInfo(this);
+    LLVMSignatureInfo* LSI = isolate->TheModule->getSignatureInfo(this);
     LSI->getVirtualBuf();
   }
   return _virtualCallBuf;
@@ -566,7 +566,7 @@ void* Signdef::virtualCallBuf() {
 
 void* Signdef::staticCallAP() {
   if (!_staticCallAP) {
-    LLVMSignatureInfo* LSI = isolate->module->getSignatureInfo(this);
+    LLVMSignatureInfo* LSI = isolate->TheModule->getSignatureInfo(this);
     LSI->getStaticAP();
   }
   return _staticCallAP;
@@ -574,7 +574,7 @@ void* Signdef::staticCallAP() {
 
 void* Signdef::virtualCallAP() {
   if (!_virtualCallAP) {
-    LLVMSignatureInfo* LSI = isolate->module->getSignatureInfo(this);
+    LLVMSignatureInfo* LSI = isolate->TheModule->getSignatureInfo(this);
     LSI->getVirtualAP();
   }
   return _virtualCallAP;

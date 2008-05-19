@@ -125,7 +125,7 @@ void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
 llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
                                                  Signdef* sign, bool stat) {
   const llvm::FunctionType* type = 0;
-  JnjvmModule* M = cl->isolate->module;
+  JnjvmModule* M = cl->isolate->TheModule;
   LLVMSignatureInfo* LSI = M->getSignatureInfo(sign);
   
   if (stat) {
@@ -136,7 +136,7 @@ llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
   Function* func = llvm::Function::Create(type, 
                                           llvm::GlobalValue::GhostLinkage,
                                           "callback",
-                                          cl->isolate->module);
+                                          TheModule);
 
   callbacks.insert(std::make_pair(func, std::make_pair(cl, index)));
   return func;
@@ -211,4 +211,11 @@ JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
   perFunctionPasses = new llvm::FunctionPassManager(this);
   perFunctionPasses->add(new llvm::TargetData(m));
   AddStandardCompilePasses(perFunctionPasses);
+}
+
+JnjvmModuleProvider::~JnjvmModuleProvider() {
+  mvm::jit::protectEngine->lock();
+  mvm::jit::executionEngine->removeModuleProvider(this);
+  mvm::jit::protectEngine->unlock();
+  delete TheModule;
 }

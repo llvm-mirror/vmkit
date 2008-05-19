@@ -261,9 +261,8 @@ public:
 #endif
 
   
-  mvm::Lock* protectModule;
-  JnjvmModule* module;
   JnjvmModuleProvider* TheModuleProvider;
+  JnjvmModule*         TheModule;
 
 
 #ifndef MULTIPLE_GC

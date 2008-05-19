@@ -134,7 +134,7 @@ Value* LLVMCommonClassInfo::getVar(JavaJIT* jit) {
     varGV = new GlobalVariable(JnjvmModule::JavaClassType, true,
                                GlobalValue::ExternalLinkage,
                                cons, "",
-                               classDef->isolate->module);
+                               classDef->isolate->TheModule);
   }
   return new LoadInst(varGV, "", jit->currentBlock);
 }
@@ -149,7 +149,7 @@ Value* LLVMCommonClassInfo::getDelegatee(JavaJIT* jit) {
     delegateeGV = new GlobalVariable(JnjvmModule::JavaObjectType, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "",
-                                    classDef->isolate->module);
+                                    classDef->isolate->TheModule);
   }
   return new LoadInst(delegateeGV, "", jit->currentBlock);
 #else
@@ -240,7 +240,7 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
   Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
                                     GlobalValue::ExternalLinkage,
                                     "markAndTraceObject",
-                                    cl->isolate->module);
+                                    cl->isolate->TheModule);
 
   Constant* zero = mvm::jit::constantZero;
   Argument* arg = func->arg_begin();
@@ -409,7 +409,7 @@ Value* LLVMClassInfo::getStaticVar(JavaJIT* jit) {
       staticVarGV = new GlobalVariable(JnjvmModule::JavaObjectType, true,
                                        GlobalValue::ExternalLinkage,
                                        cons, "",
-                                       classDef->isolate->module);
+                                       classDef->isolate->TheModule);
   }
 
   return new LoadInst(staticVarGV, "", jit->currentBlock);
@@ -434,7 +434,7 @@ Value* LLVMClassInfo::getVirtualTable(JavaJIT* jit) {
     virtualTableGV = new GlobalVariable(JnjvmModule::VTType, true,
                                         GlobalValue::ExternalLinkage,
                                         cons, "",
-                                        classDef->isolate->module);
+                                        classDef->isolate->TheModule);
   }
   return new LoadInst(virtualTableGV, "", jit->currentBlock);
 }
@@ -468,7 +468,7 @@ Function* LLVMMethodInfo::getMethod() {
     methodFunction = Function::Create(getFunctionType(), 
                                       GlobalValue::GhostLinkage,
                                       methodDef->printString(),
-                                      vm->module);
+                                      vm->TheModule);
     vm->TheModuleProvider->addFunction(methodFunction, methodDef);
   }
   return methodFunction;
@@ -586,7 +586,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
                                           getStaticBufType(),
                                    GlobalValue::ExternalLinkage,
                                    signature->printString(),
-                                   signature->isolate->module);
+                                   signature->isolate->TheModule);
   
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
@@ -640,7 +640,7 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
                                           getStaticBufType(),
                                       GlobalValue::ExternalLinkage,
                                       signature->printString(),
-                                      signature->isolate->module);
+                                      signature->isolate->TheModule);
   
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();

@@ -41,13 +41,14 @@ private:
 public:
   
   JnjvmModuleProvider(JnjvmModule *m);
+  ~JnjvmModuleProvider();
   
   llvm::Function* addCallback(Class* cl, uint32 index, Signdef* sign,
                               bool stat);
   void addFunction(llvm::Function* F, JavaMethod* meth);
 
   bool materializeFunction(Function *F, std::string *ErrInfo = 0);
-  void* materializeFunction(JavaMethod* meth); 
+  void* materializeFunction(JavaMethod* meth);
 
   Module* materializeModule(std::string *ErrInfo = 0) { return TheModule; }
 };

@@ -132,7 +132,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   } else {
     GlobalVariable* gv = 
       new GlobalVariable(Type::Int32Ty, false, GlobalValue::ExternalLinkage,
-                         zero, "", compilingClass->isolate->module);
+                         zero, "", module);
     
     // set is volatile
     Value* val = new LoadInst(gv, "", true, currentBlock);
@@ -1644,13 +1644,13 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
       new GlobalVariable(mvm::jit::ptrType, false, 
                          GlobalValue::ExternalLinkage,
                          mvm::jit::constantPtrNull, 
-                         "", compilingClass->isolate->module);
+                         "", module);
     
     
     Constant* zero = mvm::jit::constantZero;
     GlobalVariable* gv = 
       new GlobalVariable(Type::Int32Ty, false, GlobalValue::ExternalLinkage,
-                         zero, "", compilingClass->isolate->module);
+                         zero, "", module);
     
     // set is volatile
     Value* val = new LoadInst(gv, "", true, currentBlock);

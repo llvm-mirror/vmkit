@@ -325,7 +325,7 @@ void Jnjvm::initialiseClass(CommonClass* cl) {
         cl->super->initialiseClass();
       }
 
-      module->resolveStaticClass((Class*)cl);
+      TheModule->resolveStaticClass((Class*)cl);
       
       *status = inClinit;
       JavaMethod* meth = cl->lookupMethodDontThrow(clinitName, clinitType, true,
@@ -395,7 +395,7 @@ void Jnjvm::resolveClass(CommonClass* cl, bool doClinit) {
         loadParents((Class*)cl);
         cl->aquire(); 
         cl->status = prepared;
-        module->resolveVirtualClass((Class*)cl);
+        TheModule->resolveVirtualClass((Class*)cl);
         cl->status = resolved;
       }
       cl->release();
@@ -885,11 +885,6 @@ void Jnjvm::destroyer(size_t sz) {
   GC->destroy();
   delete GC;
 #endif
-  mvm::jit::protectEngine->lock();
-  mvm::jit::executionEngine->removeModuleProvider(TheModuleProvider);
-  mvm::jit::protectEngine->unlock();
   delete globalRefsLock;
-  delete protectModule;
   delete TheModuleProvider;
-  delete module;
 }
