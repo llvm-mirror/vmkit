@@ -818,7 +818,11 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
       }
     }
   }
-
+  
+  // We don't need the lock here, and Java requires to load the classes in the
+  // try clause, which may require compilation. Therefore we release the lock
+  // and aquire it after the exception table is read.
+  mvm::jit::executionEngine->lock.release();
   for (uint16 i = 0; i < nbe - sync; ++i) {
     Exception* ex = new Exception();
     ex->startpc   = reader->readU2();
@@ -869,6 +873,7 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
 
     exceptions.push_back(ex);
   }
+  mvm::jit::executionEngine->lock.acquire();
   
   bool first = true;
   for (std::vector<Exception*>::iterator i = exceptions.begin(),

@@ -104,8 +104,8 @@ void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
   LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
   Function* func = LMI->getMethod();
   if (func->hasNotBeenReadFromBitcode()) {
-    // Don't take the JIT lock yet, as Java exceptions in the bytecode must be 
-    // loaded first.
+    // We are jitting. Take the lock.
+    llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     JavaJIT jit;
     jit.compilingClass = meth->classDef;
     jit.compilingMethod = meth;
