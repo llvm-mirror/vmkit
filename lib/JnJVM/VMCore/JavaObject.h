@@ -12,8 +12,6 @@
 
 #include <vector>
 
-#include "llvm/ExecutionEngine/GenericValue.h"
-
 #include "mvm/Object.h"
 #include "mvm/Threads/Locks.h"
 
@@ -99,13 +97,6 @@ public:
     if (obj == 0) JavaThread::get()->isolate->nullPointerException("");
 #endif
   
-  llvm::GenericValue operator()(JavaField* field);
-  void operator()(JavaField* field, float val);
-  void operator()(JavaField* field, double val);
-  void operator()(JavaField* field, sint64 val);
-  void operator()(JavaField* field, uint32 val);
-  void operator()(JavaField* field, JavaObject* val);
- 
 };
 
 

@@ -88,9 +88,9 @@ jmethodID FromReflectedMethod(JNIEnv *env, jobject method) {
   JavaObject* meth = (JavaObject*)method;
   CommonClass* cl = meth->classOf;
   if (cl == Classpath::newConstructor)  {
-    return (jmethodID)(*Classpath::constructorSlot)(meth).IntVal.getZExtValue();
+    return (jmethodID)Classpath::constructorSlot->getVirtualInt32Field(meth);
   } else if (cl == Classpath::newMethod) {
-    return (jmethodID)(*Classpath::methodSlot)(meth).IntVal.getZExtValue();
+    return (jmethodID)Classpath::methodSlot->getVirtualInt32Field(meth);
   } else {
     JavaThread::get()->isolate->unknownError(
                   "%s is not a constructor or a method", 
@@ -852,7 +852,7 @@ jobject GetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (jobject)((*field)(o).PointerVal);
+  return (jobject)field->getVirtualObjectField(o);
 
   END_EXCEPTION
   return 0;
@@ -865,7 +865,7 @@ jboolean GetBooleanField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (uint8)((*field)(o).IntVal.getZExtValue());
+  return (uint8)field->getVirtualInt8Field(o);
 
   END_EXCEPTION
   return 0;
@@ -878,7 +878,7 @@ jbyte GetByteField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (sint8)((*field)(o).IntVal.getSExtValue());
+  return (sint8)field->getVirtualInt8Field(o);
 
   END_EXCEPTION
   return 0;
@@ -891,7 +891,7 @@ jchar GetCharField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (uint16)((*field)(o).IntVal.getZExtValue());
+  return (uint16)field->getVirtualInt16Field(o);
 
   END_EXCEPTION
   return 0;
@@ -904,7 +904,7 @@ jshort GetShortField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (sint16)((*field)(o).IntVal.getSExtValue());
+  return (sint16)field->getVirtualInt16Field(o);
 
   END_EXCEPTION
   return 0;
@@ -917,7 +917,7 @@ jint GetIntField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (sint32)((*field)(o).IntVal.getSExtValue());
+  return (sint32)field->getVirtualInt32Field(o);
 
   END_EXCEPTION
   return 0;
@@ -930,7 +930,7 @@ jlong GetLongField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (sint64)((*field)(o).IntVal.getSExtValue());
+  return (sint64)field->getVirtualLongField(o);
 
   END_EXCEPTION
   return 0;
@@ -943,7 +943,7 @@ jfloat GetFloatField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (*field)(o).FloatVal;
+  return field->getVirtualFloatField(o);
 
   END_EXCEPTION
   return 0;
@@ -956,7 +956,7 @@ jdouble GetDoubleField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (*field)(o).DoubleVal;
+  return (jdouble)field->getVirtualDoubleField(o);
 
   END_EXCEPTION
   return 0;
@@ -969,7 +969,7 @@ void SetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID, jobject value) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  (*field)(o, (JavaObject*)value);
+  field->setVirtualObjectField(o, (JavaObject*)value);
 
   END_EXCEPTION
 }
@@ -982,7 +982,7 @@ void SetBooleanField(JNIEnv *env, jobject obj, jfieldID fieldID,
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  (*field)(o, (uint32)value);
+  field->setVirtualInt8Field(o, (uint8)value);
 
   END_EXCEPTION
 }
@@ -994,7 +994,7 @@ void SetByteField(JNIEnv *env, jobject obj, jfieldID fieldID, jbyte value) {
   
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  (*field)(o, (uint32)value);
+  field->setVirtualInt8Field(o, (uint8)value);
 
   END_EXCEPTION
 }
@@ -1006,7 +1006,7 @@ void SetCharField(JNIEnv *env, jobject obj, jfieldID fieldID, jchar value) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  (*field)(o, (uint32)value);
+  field->setVirtualInt16Field(o, (uint16)value);
   
   END_EXCEPTION
 }
@@ -1018,7 +1018,7 @@ void SetShortField(JNIEnv *env, jobject obj, jfieldID fieldID, jshort value) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  (*field)(o, (uint32)value);
+  field->setVirtualInt16Field(o, (sint16)value);
 
   END_EXCEPTION
 }
@@ -1030,7 +1030,7 @@ void SetIntField(JNIEnv *env, jobject obj, jfieldID fieldID, jint value) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  (*field)(o, (uint32)value);
+  field->setVirtualInt32Field(o, (sint32)value);
 
   END_EXCEPTION
 }
@@ -1042,7 +1042,7 @@ void SetLongField(JNIEnv *env, jobject obj, jfieldID fieldID, jlong value) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  (*field)(o, (sint64)value);
+  field->setVirtualLongField(o, (sint64)value);
 
   END_EXCEPTION
 }
@@ -1054,7 +1054,7 @@ void SetFloatField(JNIEnv *env, jobject obj, jfieldID fieldID, jfloat value) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  (*field)(o, (float)value);
+  field->setVirtualFloatField(o, (float)value);
 
   END_EXCEPTION
 }
@@ -1066,7 +1066,7 @@ void SetDoubleField(JNIEnv *env, jobject obj, jfieldID fieldID, jdouble value) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  (*field)(o, (double)value);
+  field->setVirtualDoubleField(o, (float)value);
 
   END_EXCEPTION
 }
@@ -1343,8 +1343,7 @@ jobject GetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  llvm::GenericValue res = (*field)();
-  return (jobject)res.PointerVal;
+  return (jobject)field->getStaticObjectField();
 
   END_EXCEPTION
   return 0;
@@ -1356,8 +1355,7 @@ jboolean GetStaticBooleanField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  llvm::GenericValue res = (*field)();
-  return (jboolean)res.IntVal.getZExtValue();
+  return (jboolean)field->getStaticInt8Field();
 
   END_EXCEPTION
   return 0;
@@ -1369,8 +1367,7 @@ jbyte GetStaticByteField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  llvm::GenericValue res = (*field)();
-  return (jbyte)res.IntVal.getSExtValue();
+  return (jbyte)field->getStaticInt8Field();
 
   END_EXCEPTION
   return 0;
@@ -1382,8 +1379,7 @@ jchar GetStaticCharField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  llvm::GenericValue res = (*field)();
-  return (jchar)res.IntVal.getZExtValue();
+  return (jchar)field->getStaticInt16Field();
 
   END_EXCEPTION
   return 0;
@@ -1395,8 +1391,7 @@ jshort GetStaticShortField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  llvm::GenericValue res = (*field)();
-  return (jshort)res.IntVal.getSExtValue();
+  return (jshort)field->getStaticInt16Field();
 
   END_EXCEPTION
   return 0;
@@ -1408,8 +1403,7 @@ jint GetStaticIntField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  llvm::GenericValue res = (*field)();
-  return (jint)res.IntVal.getSExtValue();
+  return (jint)field->getStaticInt32Field();
 
   END_EXCEPTION
   return 0;
@@ -1421,8 +1415,7 @@ jlong GetStaticLongField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  llvm::GenericValue res = (*field)();
-  return (jlong)res.IntVal.getZExtValue();
+  return (jlong)field->getStaticLongField();
 
   END_EXCEPTION
   return 0;
@@ -1434,8 +1427,7 @@ jfloat GetStaticFloatField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  llvm::GenericValue res = (*field)();
-  return (jfloat)res.FloatVal;
+  return (jfloat)field->getStaticFloatField();
 
   END_EXCEPTION
   return 0;
@@ -1447,8 +1439,7 @@ jdouble GetStaticDoubleField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  llvm::GenericValue res = (*field)();
-  return (jdouble)res.DoubleVal;
+  return (jdouble)field->getStaticDoubleField();
 
   END_EXCEPTION
   return 0;
@@ -1461,7 +1452,7 @@ void SetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  (*field)((JavaObject*)value);
+  field->setStaticObjectField((JavaObject*)value);
   
   END_EXCEPTION
 }
@@ -1473,7 +1464,7 @@ void SetStaticBooleanField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
   
   JavaField* field = (JavaField*)fieldID;
-  (*field)((uint32)value);
+  field->setStaticInt8Field((uint8)value);
 
   END_EXCEPTION
 }
@@ -1485,7 +1476,7 @@ void SetStaticByteField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  (*field)((uint32)value);
+  field->setStaticInt8Field((sint8)value);
 
   END_EXCEPTION
 }
@@ -1497,7 +1488,7 @@ void SetStaticCharField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  (*field)((uint32)value);
+  field->setStaticInt16Field((uint16)value);
 
   END_EXCEPTION
 }
@@ -1509,7 +1500,7 @@ void SetStaticShortField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  (*field)((uint32)value);
+  field->setStaticInt16Field((sint16)value);
 
   END_EXCEPTION
 }
@@ -1521,7 +1512,7 @@ void SetStaticIntField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  (*field)((uint32)value);
+  field->setStaticInt32Field((sint32)value);
 
   END_EXCEPTION
 }
@@ -1533,7 +1524,7 @@ void SetStaticLongField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  (*field)((sint64)value);
+  field->setStaticLongField((sint64)value);
 
   END_EXCEPTION
 }
@@ -1545,7 +1536,7 @@ void SetStaticFloatField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  (*field)((float)value);
+  field->setStaticFloatField((float)value);
 
   END_EXCEPTION
 }
@@ -1557,7 +1548,7 @@ void SetStaticDoubleField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  (*field)((double)value);
+  field->setStaticDoubleField((double)value);
 
   END_EXCEPTION
 }
@@ -2152,9 +2143,9 @@ void *GetDirectBufferAddress(JNIEnv *env, jobject _buf) {
   BEGIN_EXCEPTION
 
   JavaObject* buf = (JavaObject*)_buf;
-  JavaObject* address = (JavaObject*)((*Classpath::bufferAddress)(buf).PointerVal);
+  JavaObject* address = Classpath::bufferAddress->getVirtualObjectField(buf);
   if (address != 0) {
-    int res = (*Classpath::dataPointer32)(address).IntVal.getZExtValue();
+    int res = Classpath::dataPointer32->getVirtualInt32Field(address);
     return (void*)res;
   } else {
     return 0;

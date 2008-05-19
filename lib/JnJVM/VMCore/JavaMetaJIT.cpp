@@ -59,143 +59,53 @@ JavaObject* Class::operator()(Jnjvm* vm) {
   return doNew(vm);
 }
 
-void JavaField::operator()(JavaObject* obj, float val) {
-  if (!classDef->isReady()) 
-    classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true);
-  
-  bool stat = isStatic(access);
-  if (stat) obj = classDef->staticInstance();
-  void* ptr = (void*)((uint64)obj + ptrOffset);
-  
-  if (signature->funcs->llvmType == Type::FloatTy) {
-    ((float*)ptr)[0] = val;
-  } else {
-    JavaThread::get()->isolate->illegalArgumentException("wrong type in field assignment");
-  }
+#define GETVIRTUALFIELD(TYPE, TYPE_NAME) \
+TYPE JavaField::getVirtual##TYPE_NAME##Field(JavaObject* obj) { \
+  if (!classDef->isReady()) \
+    classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true); \
+  void* ptr = (void*)((uint64)obj + ptrOffset); \
+  return ((TYPE*)ptr)[0]; \
 }
 
-void JavaField::operator()(JavaObject* obj, double val) {
-  if (!classDef->isReady())
-    classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true);
-  
-  bool stat = isStatic(access);
-  if (stat) obj = classDef->staticInstance();
-  void* ptr = (void*)((uint64)obj + ptrOffset);
-  
-  if (signature->funcs->llvmType == Type::DoubleTy) {
-    ((double*)ptr)[0] = val;
-  } else {
-    JavaThread::get()->isolate->illegalArgumentException("wrong type in field assignment");
-  }
+#define GETSTATICFIELD(TYPE, TYPE_NAME) \
+TYPE JavaField::getStatic##TYPE_NAME##Field() { \
+  if (!classDef->isReady()) \
+    classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true); \
+  JavaObject* obj = classDef->staticInstance(); \
+  void* ptr = (void*)((uint64)obj + ptrOffset); \
+  return ((TYPE*)ptr)[0]; \
 }
 
-void JavaField::operator()(JavaObject* obj, sint64 val) {
-  if (!classDef->isReady())
-    classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true);
-  
-  bool stat = isStatic(access);
-  if (stat) obj = classDef->staticInstance();
-  void* ptr = (void*)((uint64)obj + ptrOffset);
-  
-  if (signature->funcs == AssessorDesc::dLong) {
-    ((uint64*)ptr)[0] = val;
-  } else {
-    JavaThread::get()->isolate->illegalArgumentException("wrong type in field assignment");
-  }
+#define SETVIRTUALFIELD(TYPE, TYPE_NAME) \
+void JavaField::setVirtual##TYPE_NAME##Field(JavaObject* obj, TYPE val) { \
+  if (!classDef->isReady()) \
+    classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true); \
+  void* ptr = (void*)((uint64)obj + ptrOffset); \
+  ((TYPE*)ptr)[0] = val; \
 }
 
-void JavaField::operator()(JavaObject* obj, uint32 val) {
-  if (!classDef->isReady())
-    classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true);
-  
-  bool stat = isStatic(access);
-  if (stat) obj = classDef->staticInstance();
-  void* ptr = (void*)((uint64)obj + ptrOffset);
-  
-  if (signature->funcs == AssessorDesc::dInt) {
-    ((sint32*)ptr)[0] = (sint32)val;
-  } else if (signature->funcs == AssessorDesc::dShort) {
-    ((sint16*)ptr)[0] = (sint16)val;
-  } else if (signature->funcs == AssessorDesc::dByte) {
-    ((sint8*)ptr)[0] = (sint8)val;
-  } else if (signature->funcs == AssessorDesc::dBool) {
-    ((uint8*)ptr)[0] = (uint8)val;
-  } else if (signature->funcs == AssessorDesc::dChar) {
-    ((uint16*)ptr)[0] = (uint16)val;
-  } else {
-    JavaThread::get()->isolate->illegalArgumentException("wrong type in field assignment");
-  }
+#define SETSTATICFIELD(TYPE, TYPE_NAME) \
+void JavaField::setStatic##TYPE_NAME##Field(TYPE val) { \
+  if (!classDef->isReady()) \
+    classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true); \
+  JavaObject* obj = classDef->staticInstance(); \
+  void* ptr = (void*)((uint64)obj + ptrOffset); \
+  ((TYPE*)ptr)[0] = val; \
 }
 
-void JavaField::operator()(JavaObject* obj, JavaObject* val) {
-  if (!classDef->isReady())
-    classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true);
-  
-  bool stat = isStatic(access);
-  if (stat) obj = classDef->staticInstance();
-  void* ptr = (void*)((uint64)obj + ptrOffset);
-  
-  if (signature->funcs == AssessorDesc::dRef || 
-      signature->funcs == AssessorDesc::dTab) {
-    ((JavaObject**)ptr)[0] = val;
-  } else {
-    JavaThread::get()->isolate->illegalArgumentException("wrong type in field assignment");
-  }
-}
+#define MK_ASSESSORS(TYPE, TYPE_NAME) \
+  GETVIRTUALFIELD(TYPE, TYPE_NAME) \
+  SETVIRTUALFIELD(TYPE, TYPE_NAME) \
+  GETSTATICFIELD(TYPE, TYPE_NAME) \
+  SETSTATICFIELD(TYPE, TYPE_NAME) \
 
-GenericValue JavaField::operator()(JavaObject* obj) {
-  if (!classDef->isReady())
-    classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true);
-  
-  bool stat = isStatic(access);
-  if (stat) {
-    if (obj != 0) {
-      // Assignment to a static var
-      void* ptr = (void*)((uint64)(classDef->staticInstance()) + ptrOffset);
-      ((JavaObject**)ptr)[0] = obj;
-      return GenericValue(0);
-    } else {
-      // Get a static var
-      obj = classDef->staticInstance();
-    }
-  }
-  
-  assert(obj && "getting a field from a null value");
-  
-  void* ptr = (void*)((uint64)obj + ptrOffset);
-  const Type* type = signature->funcs->llvmType;
-  if (type == Type::Int8Ty) {
-    GenericValue gv;
-    gv.IntVal = APInt(8, ((uint8*)ptr)[0]);
-    return gv;
-  } else if (type == Type::Int16Ty) {
-    GenericValue gv;
-    gv.IntVal = APInt(16, ((uint16*)ptr)[0]);
-    return gv;
-  } else if (type == Type::Int32Ty) {
-    GenericValue gv;
-    gv.IntVal = APInt(32, ((uint32*)ptr)[0]);
-    return gv;
-  } else if (type == Type::Int64Ty) {
-    GenericValue gv;
-    gv.IntVal = APInt(64, ((uint64*)ptr)[0]);
-    return gv;
-  } else if (type == Type::DoubleTy) { 
-    GenericValue gv;
-    gv.DoubleVal = ((double*)ptr)[0];
-    return gv;
-  } else if (type == Type::FloatTy) {
-    GenericValue gv;
-    gv.FloatVal = ((float*)ptr)[0];
-    return gv;
-  } else if (type == JnjvmModule::JavaObjectType) {
-    GenericValue gv(((JavaObject**)ptr)[0]);
-    return gv;
-  } else {
-    assert(0 && "Unknown type!");
-    return GenericValue(0);
-  }
-}
+MK_ASSESSORS(float, Float);
+MK_ASSESSORS(double, Double);
+MK_ASSESSORS(JavaObject*, Object);
+MK_ASSESSORS(uint8, Int8);
+MK_ASSESSORS(uint16, Int16);
+MK_ASSESSORS(uint32, Int32);
+MK_ASSESSORS(sint64, Long);
 
 #define readArgs(buf, signature, ap) \
   for (std::vector<Typedef*>::iterator i = signature->args.begin(), \
@@ -443,47 +353,3 @@ INVOKE(double, Double, double_virtual_ap, double_static_ap, double_virtual_buf, 
 INVOKE(JavaObject*, JavaObject, object_virtual_ap, object_static_ap, object_virtual_buf, object_static_buf)
 
 #undef INVOKE
-
-GenericValue JavaObject::operator()(JavaField* field) {
-  return (*field)(this);
-}
-
-void JavaObject::operator()(JavaField* field, float val) {
-  return (*field)(this, val);
-}
-
-void JavaObject::operator()(JavaField* field, double val) {
-  return (*field)(this, val);
-}
-
-void JavaObject::operator()(JavaField* field, uint32 val) {
-  return (*field)(this, val);
-}
-
-void JavaObject::operator()(JavaField* field, sint64 val) {
-  return (*field)(this, val);
-}
-
-void JavaObject::operator()(JavaField* field, JavaObject* val) {
-  return (*field)(this, val);
-}
-
-void JavaField::operator()(float val) {
-  JavaField * field = this;
-  return (*field)(0, val);
-}
-
-void JavaField::operator()(double val) {
-  JavaField * field = this;
-  return (*field)(0, val);
-}
-
-void JavaField::operator()(sint64 val) {
-  JavaField * field = this;
-  return (*field)(0, val);
-}
-
-void JavaField::operator()(uint32 val) {
-  JavaField * field = this;
-  return (*field)(0, val);
-}

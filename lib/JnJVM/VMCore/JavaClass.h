@@ -14,8 +14,6 @@
 
 #include "types.h"
 
-#include "llvm/ExecutionEngine/GenericValue.h"
-
 #include "mvm/Method.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
@@ -126,8 +124,8 @@ public:
   /// for a given class.
   mvm::Lock* lockVar;
 
-  /// condVar - Used to wake threads waiting on the load/resolve/initialize process
-  /// of this class, done by another thread.
+  /// condVar - Used to wake threads waiting on the load/resolve/initialize
+  /// process of this class, done by another thread.
   mvm::Cond* condVar;
   
   /// classLoader - The Java class loader that loaded the class.
@@ -378,17 +376,37 @@ public:
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
   
-  llvm::GenericValue operator()(JavaObject* obj = 0);
-  void operator()(JavaObject* obj, float val);
-  void operator()(JavaObject* obj, double val);
-  void operator()(JavaObject* obj, uint32 val);
-  void operator()(JavaObject* obj, sint64 val);
-  void operator()(JavaObject* obj, JavaObject* val);
-  void operator()(float val);
-  void operator()(double val);
-  void operator()(uint32 val);
-  void operator()(sint64 val);
+  void setStaticFloatField(float val);
+  void setStaticDoubleField(double val);
+  void setStaticInt8Field(uint8 val);
+  void setStaticInt16Field(uint16 val);
+  void setStaticInt32Field(uint32 val);
+  void setStaticLongField(sint64 val);
+  void setStaticObjectField(JavaObject* val);
+
+  float getStaticFloatField();
+  double getStaticDoubleField();
+  uint8 getStaticInt8Field();
+  uint16 getStaticInt16Field();
+  uint32 getStaticInt32Field();
+  sint64 getStaticLongField();
+  JavaObject* getStaticObjectField();
   
+  void setVirtualFloatField(JavaObject* obj, float val);
+  void setVirtualDoubleField(JavaObject* obj, double val);
+  void setVirtualInt8Field(JavaObject* obj, uint8 val);
+  void setVirtualInt16Field(JavaObject* obj, uint16 val);
+  void setVirtualInt32Field(JavaObject* obj, uint32 val);
+  void setVirtualLongField(JavaObject* obj, sint64 val);
+  void setVirtualObjectField(JavaObject* obj, JavaObject* val);
+  
+  float getVirtualFloatField(JavaObject* obj);
+  double getVirtualDoubleField(JavaObject* obj);
+  uint8  getVirtualInt8Field(JavaObject* obj);
+  uint16 getVirtualInt16Field(JavaObject* obj);
+  uint32 getVirtualInt32Field(JavaObject* obj);
+  sint64 getVirtualLongField(JavaObject* obj);
+  JavaObject* getVirtualObjectField(JavaObject* obj);
   
 };
 

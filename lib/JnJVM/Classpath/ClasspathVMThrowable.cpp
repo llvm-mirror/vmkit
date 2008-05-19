@@ -9,8 +9,6 @@
 
 #include <string.h>
 
-#include "llvm/Type.h"
-
 #include "types.h"
 
 #include "JavaAccess.h"
@@ -99,7 +97,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_VMThrowable_getStackTrace(
 JNIEnv *env,
 #endif
 jobject vmthrow, jobject throwable) {
-  int** stack = (int**)(ArrayUInt32*)(*Classpath::vmDataVMThrowable)((JavaObject*)vmthrow).PointerVal;
+  int** stack = (int**)Classpath::vmDataVMThrowable->getVirtualObjectField((JavaObject*)vmthrow);
   CommonClass* cl = ((JavaObject*)throwable)->classOf;
   uint32 first = 0;
   sint32 i = 0;

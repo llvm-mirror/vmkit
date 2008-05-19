@@ -32,7 +32,7 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Method_getModifiersInternal(
 JNIEnv *env, 
 #endif
  jobject Meth) {
-  JavaMethod* meth = (JavaMethod*)((*Classpath::methodSlot)((JavaObject*)Meth).IntVal.getZExtValue());
+  JavaMethod* meth = (JavaMethod*)Classpath::methodSlot->getVirtualInt32Field((JavaObject*)Meth);
   return meth->access;
 }
 
@@ -41,7 +41,7 @@ JNIEXPORT jclass JNICALL Java_java_lang_reflect_Method_getReturnType(
 JNIEnv *env, 
 #endif
  jobject Meth) {
-  JavaMethod* meth = (JavaMethod*)((*Classpath::methodSlot)((JavaObject*)Meth).IntVal.getZExtValue());
+  JavaMethod* meth = (JavaMethod*)Classpath::methodSlot->getVirtualInt32Field((JavaObject*)Meth);
   JavaObject* loader = meth->classDef->classLoader;
   return (jclass)NativeUtil::getClassType(loader, meth->signature->ret);
 }
@@ -53,7 +53,7 @@ JNIEnv *env,
 #endif
 
                                                                           jobject Meth) {
-  JavaMethod* meth = (JavaMethod*)((*Classpath::methodSlot)((JavaObject*)Meth).IntVal.getZExtValue());
+  JavaMethod* meth = (JavaMethod*)Classpath::methodSlot->getVirtualInt32Field((JavaObject*)Meth);
   JavaObject* loader = meth->classDef->classLoader;
   return (jobject)(NativeUtil::getParameterTypes(loader, meth));
 }
@@ -131,42 +131,42 @@ JNIEnv *env,
       uint32 val = 0;
       RUN_METH(Int);
       res = (*Classpath::boolClass)(vm);
-      (*Classpath::boolValue)(res, val);
+      Classpath::boolValue->setVirtualInt8Field(res, val);
     } else if (retType == AssessorDesc::dByte) {
       uint32 val = 0;
       RUN_METH(Int);
       res = (*Classpath::byteClass)(vm);
-      (*Classpath::byteValue)(res, val);
+      Classpath::byteValue->setVirtualInt8Field(res, val);
     } else if (retType == AssessorDesc::dChar) {
       uint32 val = 0;
       RUN_METH(Int);
       res = (*Classpath::charClass)(vm);
-      (*Classpath::charValue)(res, val);
+      Classpath::charValue->setVirtualInt16Field(res, val);
     } else if (retType == AssessorDesc::dShort) {
       uint32 val = 0;
       RUN_METH(Int);
       res = (*Classpath::shortClass)(vm);
-      (*Classpath::shortValue)(res, val);
+      Classpath::shortValue->setVirtualInt16Field(res, val);
     } else if (retType == AssessorDesc::dInt) {
       uint32 val = 0;
       RUN_METH(Int);
       res = (*Classpath::intClass)(vm);
-      (*Classpath::intValue)(res, val);
+      Classpath::intValue->setVirtualInt32Field(res, val);
     } else if (retType == AssessorDesc::dLong) {
       sint64 val = 0;
       RUN_METH(Long);
       res = (*Classpath::longClass)(vm);
-      (*Classpath::longValue)(res, val);
+      Classpath::longValue->setVirtualLongField(res, val);
     } else if (retType == AssessorDesc::dFloat) {
       float val = 0;
       RUN_METH(Float);
       res = (*Classpath::floatClass)(vm);
-      (*Classpath::floatValue)(res, val);
+      Classpath::floatValue->setVirtualFloatField(res, val);
     } else if (retType == AssessorDesc::dDouble) {
       double val = 0;
       RUN_METH(Double);
       res = (*Classpath::doubleClass)(vm);
-      (*Classpath::doubleValue)(res, val);
+      Classpath::doubleValue->setVirtualDoubleField(res, val);
     } else if (retType == AssessorDesc::dTab || retType == AssessorDesc::dRef) {
       JavaObject* val = 0;
       RUN_METH(JavaObject);
@@ -188,7 +188,7 @@ JNIEnv *env,
 #endif
  jobject _meth) {
   verifyNull(_meth);
-  JavaMethod* meth = (JavaMethod*)(*Classpath::methodSlot)((JavaObject*)_meth).IntVal.getZExtValue();
+  JavaMethod* meth = (JavaMethod*)Classpath::methodSlot->getVirtualInt32Field((JavaObject*)_meth);
   return (jobjectArray)NativeUtil::getExceptionTypes(meth);
 }
 

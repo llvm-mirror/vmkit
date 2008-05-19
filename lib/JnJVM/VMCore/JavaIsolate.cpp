@@ -350,7 +350,7 @@ void JavaIsolate::executeClass(const char* className, ArrayObject* args) {
     JavaThread::clearException();
     JavaObject* obj = JavaThread::currentThread();
     JavaObject* group = 
-      (JavaObject*)((*obj)(ClasspathThread::group)).PointerVal;
+      ClasspathThread::group->getVirtualObjectField(obj);
     try{
       ClasspathThread::uncaughtException->invokeIntSpecial(this, group, obj, 
                                                            exc);

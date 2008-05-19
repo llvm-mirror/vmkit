@@ -72,7 +72,7 @@ jclass clazz,
 #endif
 jclass _Cl) {
   JavaObject* Cl = (JavaObject*)_Cl;
-  CommonClass* cl = (CommonClass*)((*Cl)(Classpath::vmdataClass).PointerVal);
+  CommonClass* cl = (CommonClass*)Classpath::vmdataClass->getVirtualObjectField(Cl);
   return (jobject)cl->classLoader;
 }
 

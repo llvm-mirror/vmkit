@@ -38,7 +38,7 @@ jclass clazz,
 jobject klass) {
 
   CommonClass* cl = 
-    (CommonClass*)(((*Classpath::vmdataClass)((JavaObject*)klass)).PointerVal);
+    (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)klass);
 
   return cl->isArray;
   
@@ -174,7 +174,7 @@ JNIEnv *env,
                                                          jobject Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
   CommonClass* cl = 
-    (CommonClass*)((*Classpath::vmdataClass)((JavaObject*)Cl).PointerVal);
+    (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)Cl);
   
   AssessorDesc* ass = AssessorDesc::bogusClassToPrimitive(cl);
   const UTF8* res = 0;
@@ -194,7 +194,7 @@ JNIEnv *env,
 #endif
                                                               jclass Cl) {
   CommonClass* cl = 
-    (CommonClass*)((*Classpath::vmdataClass)((JavaObject*)Cl).PointerVal);
+    (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)Cl);
   
   AssessorDesc* ass = AssessorDesc::bogusClassToPrimitive(cl);
   if (ass == 0) return false;
@@ -219,7 +219,7 @@ JNIEnv *env,
 #endif
                                                                  jclass Cl) {
   CommonClass* cl = 
-    (CommonClass*)((*Classpath::vmdataClass)((JavaObject*)Cl).PointerVal);
+    (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)Cl);
 
   if (cl->isArray) {
     CommonClass* bc = ((ClassArray*)cl)->baseClass();
@@ -236,7 +236,7 @@ jclass clazz,
 #endif
 jclass Cl) {
   CommonClass* cl = 
-    (CommonClass*)((*Classpath::vmdataClass)((JavaObject*)Cl).PointerVal);
+    (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)Cl);
   return (jobject)cl->classLoader;
 }
 
@@ -247,9 +247,9 @@ jclass clazz,
 #endif
 jclass Cl1, jclass Cl2) {
   CommonClass* cl1 = 
-    (CommonClass*)((*Classpath::vmdataClass)((JavaObject*)Cl1).PointerVal);
+    (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)Cl1);
   CommonClass* cl2 = 
-    (CommonClass*)((*Classpath::vmdataClass)((JavaObject*)Cl2).PointerVal);
+    (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)Cl2);
 
   AssessorDesc* ass = AssessorDesc::bogusClassToPrimitive(cl1);
   if (ass) {
@@ -268,7 +268,7 @@ jclass clazz,
 #endif
 jclass Cl) {
   CommonClass* cl = 
-    (CommonClass*)((*Classpath::vmdataClass)((JavaObject*)Cl).PointerVal);
+    (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)Cl);
   if (isInterface(cl->access))
     return 0;
   else {
@@ -285,7 +285,7 @@ jclass clazz,
 #endif
 jclass Cl, jobject obj) {
   CommonClass* cl = 
-    (CommonClass*)((*Classpath::vmdataClass)((JavaObject*)Cl).PointerVal);
+    (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)Cl);
   return ((JavaObject*)obj)->instanceOf(cl);
 }
 

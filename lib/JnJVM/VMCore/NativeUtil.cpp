@@ -229,7 +229,7 @@ void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
 
 CommonClass* NativeUtil::resolvedImplClass(jclass clazz, bool doClinit) {
   JavaObject *Cl = (JavaObject*)clazz;
-  CommonClass* cl = (CommonClass*)((*Cl)(Classpath::vmdataClass).PointerVal);
+  CommonClass* cl = (CommonClass*)Classpath::vmdataClass->getVirtualObjectField(Cl);
   cl->resolveClass(doClinit);
   return cl;
 }
@@ -258,13 +258,12 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
     
     if (funcs == AssessorDesc::dShort) {
       if (value == AssessorDesc::dShort) {
-        llvm::GenericValue val = (*Classpath::shortValue)(obj);
-        ((uint32*)buf)[0] = (uint32)val.IntVal.getSExtValue();
+        ((uint16*)buf)[0] = Classpath::shortValue->getVirtualInt16Field(obj);
         buf++;
         return;
       } else if (value == AssessorDesc::dByte) {
-        llvm::GenericValue val = (*Classpath::shortValue)(obj);
-        ((uint32*)buf)[0] = (uint32)val.IntVal.getSExtValue();
+        ((sint16*)buf)[0] = 
+          (sint16)Classpath::byteValue->getVirtualInt8Field(obj);
         buf++;
         return;
       } else {
@@ -272,8 +271,7 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
       }
     } else if (funcs == AssessorDesc::dByte) {
       if (value == AssessorDesc::dByte) {
-        llvm::GenericValue val = (*Classpath::byteValue)(obj);
-        ((uint32*)buf)[0] = (uint32)val.IntVal.getSExtValue();
+        ((uint8*)buf)[0] = Classpath::byteValue->getVirtualInt8Field(obj);
         buf++;
         return;
       } else {
@@ -281,170 +279,98 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
       }
     } else if (funcs == AssessorDesc::dBool) {
       if (value == AssessorDesc::dBool) {
-        llvm::GenericValue val = (*Classpath::boolValue)(obj);
-        ((uint32*)buf)[0] = (uint32)val.IntVal.getZExtValue();
+        ((uint8*)buf)[0] = Classpath::boolValue->getVirtualInt8Field(obj);
         buf++;
         return;
       } else {
         vm->illegalArgumentException("");
       }
     } else if (funcs == AssessorDesc::dInt) {
+      sint32 val = 0;
       if (value == AssessorDesc::dInt) {
-        llvm::GenericValue val = (*Classpath::intValue)(obj);
-        ((uint32*)buf)[0] = (uint32)val.IntVal.getSExtValue();
-        buf++;
+        val = Classpath::intValue->getVirtualInt32Field(obj);
       } else if (value == AssessorDesc::dByte) {
-        llvm::GenericValue val = (*Classpath::byteValue)(obj);
-        ((uint32*)buf)[0] = (uint32)val.IntVal.getSExtValue();
-        buf++;
-        return;
+        val = (sint32)Classpath::byteValue->getVirtualInt8Field(obj);
       } else if (value == AssessorDesc::dChar) {
-        llvm::GenericValue val = (*Classpath::charValue)(obj);
-        ((uint32*)buf)[0] = (uint32)val.IntVal.getZExtValue();
-        buf++;
-        return;
+        val = (uint32)Classpath::charValue->getVirtualInt16Field(obj);
       } else if (value == AssessorDesc::dShort) {
-        llvm::GenericValue val = (*Classpath::shortValue)(obj);
-        ((uint32*)buf)[0] = val.IntVal.getSExtValue();
-        buf++;
-        return;
+        val = (sint32)Classpath::shortValue->getVirtualInt16Field(obj);
       } else {
         vm->illegalArgumentException("");
       }
+      ((sint32*)buf)[0] = val;
+      buf++;
+      return;
     } else if (funcs == AssessorDesc::dChar) {
+      uint16 val = 0;
       if (value == AssessorDesc::dChar) {
-        llvm::GenericValue val = (*Classpath::charValue)(obj);
-        ((uint32*)buf)[0] = (uint32)val.IntVal.getZExtValue();
-        buf++;
-        return;
+        val = (uint16)Classpath::charValue->getVirtualInt16Field(obj);
       } else {
         vm->illegalArgumentException("");
       }
+      ((uint16*)buf)[0] = val;
+      buf++;
+      return;
     } else if (funcs == AssessorDesc::dFloat) {
+      float val = 0;
       if (value == AssessorDesc::dFloat) {
-        llvm::GenericValue val = (*Classpath::floatValue)(obj);
-        ((float*)buf)[0] = val.FloatVal;
-        buf++;
-        return;
+        val = (float)Classpath::floatValue->getVirtualFloatField(obj);
       } else if (value == AssessorDesc::dByte) {
-        llvm::GenericValue val = (*Classpath::byteValue)(obj);
-        float res = (float)(val.IntVal.getSExtValue());
-        ((float*)buf)[0] = res;
-        buf++;
-        return;
+        val = (float)(sint32)Classpath::byteValue->getVirtualInt8Field(obj);
       } else if (value == AssessorDesc::dChar) {
-        llvm::GenericValue val = (*Classpath::charValue)(obj);
-        float res = (float)(val.IntVal.getZExtValue());
-        ((float*)buf)[0] = res;
-        buf++;
-        return;
+        val = (float)(uint32)Classpath::charValue->getVirtualInt16Field(obj);
       } else if (value == AssessorDesc::dShort) {
-        llvm::GenericValue val = (*Classpath::shortValue)(obj);
-        float res = (float)(val.IntVal.getSExtValue());
-        ((float*)buf)[0] = res;
-        buf++;
-        return;
+        val = (float)(sint32)Classpath::shortValue->getVirtualInt16Field(obj);
       } else if (value == AssessorDesc::dInt) {
-        llvm::GenericValue val = (*Classpath::intValue)(obj);
-        float res = (float)(val.IntVal.getSExtValue());
-        ((float*)buf)[0] = res;
-        buf++;
-        return;
+        val = (float)(sint32)Classpath::intValue->getVirtualInt32Field(obj);
       } else if (value == AssessorDesc::dLong) {
-        llvm::GenericValue val = (*Classpath::longValue)(obj);
-        float res = (float)(val.IntVal.getSExtValue());
-        ((float*)buf)[0] = res;
-        buf++;
-        return;
+        val = (float)Classpath::longValue->getVirtualLongField(obj);
       } else {
         vm->illegalArgumentException("");
       }
+      ((float*)buf)[0] = val;
+      buf++;
+      return;
     } else if (funcs == AssessorDesc::dDouble) {
+      double val = 0;
       if (value == AssessorDesc::dDouble) {
-        llvm::GenericValue gv = (*Classpath::doubleValue)(obj);
-        ((double*)buf)[0] = gv.DoubleVal;
-        buf++;
-        buf++;
-        return;
+        val = (double)Classpath::doubleValue->getVirtualDoubleField(obj);
       } else if (value == AssessorDesc::dFloat) {
-        llvm::GenericValue val = (*Classpath::floatValue)(obj);
-        double res = (double)(val.FloatVal);
-        ((double*)buf)[0] = res;
-        buf++;
-        buf++;
-        return;
+        val = (double)Classpath::floatValue->getVirtualFloatField(obj);
       } else if (value == AssessorDesc::dByte) {
-        llvm::GenericValue val = (*Classpath::byteValue)(obj);
-        double res = (double)(val.IntVal.getSExtValue());
-        ((double*)buf)[0] = res;
-        buf++;
-        buf++;
-        return;
+        val = (double)(sint64)Classpath::byteValue->getVirtualInt8Field(obj);
       } else if (value == AssessorDesc::dChar) {
-        llvm::GenericValue val = (*Classpath::charValue)(obj);
-        double res  = (double)(val.IntVal.getZExtValue());
-        ((double*)buf)[0] = res;
-        buf++;
-        buf++;
-        return;
+        val = (double)(uint64)Classpath::charValue->getVirtualInt16Field(obj);
       } else if (value == AssessorDesc::dShort) {
-        llvm::GenericValue val = (*Classpath::shortValue)(obj);
-        double res = (double)(val.IntVal.getSExtValue());
-        ((double*)buf)[0] = res;
-        buf++;
-        buf++;
-        return;
+        val = (double)(sint16)Classpath::shortValue->getVirtualInt16Field(obj);
       } else if (value == AssessorDesc::dInt) {
-        llvm::GenericValue val = (*Classpath::intValue)(obj);
-        double res = (double)(val.IntVal.getSExtValue());
-        ((double*)buf)[0] = res;
-        buf++;
-        buf++;
-        return;
+        val = (double)(sint32)Classpath::intValue->getVirtualInt32Field(obj);
       } else if (value == AssessorDesc::dLong) {
-        llvm::GenericValue val = (*Classpath::longValue)(obj);
-        double res = (double)(val.IntVal.getSExtValue());
-        ((double*)buf)[0] = res;
-        buf++;
-        buf++;
-        return;
+        val = (double)(sint64)Classpath::longValue->getVirtualLongField(obj);
       } else {
         vm->illegalArgumentException("");
       }
+      ((double*)buf)[0] = val;
+      buf += 2;
+      return;
     } else if (funcs == AssessorDesc::dLong) {
+      sint64 val = 0;
       if (value == AssessorDesc::dByte) {
-        llvm::GenericValue val = (*Classpath::byteValue)(obj);
-        ((uint64*)buf)[0] = val.IntVal.getSExtValue();
-        buf++;
-        buf++;
-        return;
+        val = (sint64)Classpath::byteValue->getVirtualInt8Field(obj);
       } else if (value == AssessorDesc::dChar) {
-        llvm::GenericValue val = (*Classpath::charValue)(obj);
-        ((uint64*)buf)[0] = val.IntVal.getZExtValue();
-        buf++;
-        buf++;
-        return;
+        val = (sint64)(uint64)Classpath::charValue->getVirtualInt16Field(obj);
       } else if (value == AssessorDesc::dShort) {
-        llvm::GenericValue val = (*Classpath::shortValue)(obj);
-        ((uint64*)buf)[0] = val.IntVal.getSExtValue();
-        buf++;
-        buf++;
-        return;
+        val = (sint64)Classpath::shortValue->getVirtualInt16Field(obj);
       } else if (value == AssessorDesc::dInt) {
-        llvm::GenericValue val = (*Classpath::intValue)(obj);
-        ((uint64*)buf)[0] = val.IntVal.getSExtValue();
-        buf++;
-        buf++;
-        return;
+        val = (sint64)Classpath::intValue->getVirtualInt32Field(obj);
       } else if (value == AssessorDesc::dLong) {
-        llvm::GenericValue val = (*Classpath::longValue)(obj);
-        ((uint64*)buf)[0] = val.IntVal.getSExtValue();
-        buf++;
-        buf++;
-        return;
+        val = (sint64)Classpath::intValue->getVirtualLongField(obj);
       } else {
         vm->illegalArgumentException("");
       }
+      ((sint64*)buf)[0] = val;
+      buf += 2;
+      return;
     }
   }
   // can not be here

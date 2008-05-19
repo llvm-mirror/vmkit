@@ -33,7 +33,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_getParameterTypes(
 JNIEnv *env,
 #endif
 jobject cons) {
-  JavaMethod* meth = (JavaMethod*)((*Classpath::constructorSlot)((JavaObject*)cons).IntVal.getZExtValue());
+  JavaMethod* meth = (JavaMethod*)(Classpath::constructorSlot->getVirtualInt32Field((JavaObject*)cons));
   JavaObject* loader = meth->classDef->classLoader;
   return (jobject)(NativeUtil::getParameterTypes(loader, meth));
 }
@@ -43,7 +43,7 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Constructor_getModifiersInternal(
 JNIEnv *env,
 #endif
 jobject cons) {
-  JavaMethod* meth = (JavaMethod*)((*Classpath::constructorSlot)((JavaObject*)cons).IntVal.getZExtValue());
+  JavaMethod* meth = (JavaMethod*)(Classpath::constructorSlot->getVirtualInt32Field((JavaObject*)cons));
   return meth->access;
 }
 
@@ -105,7 +105,7 @@ JNIEnv *env,
 #endif
 jobject cons) {
   verifyNull(cons);
-  JavaMethod* meth = (JavaMethod*)(*Classpath::constructorSlot)((JavaObject*)cons).IntVal.getZExtValue();
+  JavaMethod* meth = (JavaMethod*)Classpath::constructorSlot->getVirtualInt32Field((JavaObject*)cons);
   return (jobjectArray)NativeUtil::getExceptionTypes(meth);
 }
 

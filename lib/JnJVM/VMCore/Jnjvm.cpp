@@ -641,18 +641,18 @@ CommonClass* Jnjvm::lookupClass(const UTF8* utf8, JavaObject* loader) {
   if (loader) {
 #ifndef SERVICE_VM
     ClassMap* map = 
-      (ClassMap*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
+      (ClassMap*)(Classpath::vmdataClassLoader->getVirtualObjectField(loader));
     if (!map) {
       map = vm_new(this, ClassMap)();
-      (*Classpath::vmdataClassLoader)(loader, (JavaObject*)map);
+      Classpath::vmdataClassLoader->setVirtualObjectField(loader, (JavaObject*)map);
     }
 #else
     ClassMap* map = 0;
     ServiceDomain* vm = 
-      (ServiceDomain*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
+      (ServiceDomain*)(Classpath::vmdataClassLoader->getVirtualObjectField(loader));
     if (!vm) {
       vm = ServiceDomain::allocateService((JavaIsolate*)Jnjvm::bootstrapVM);
-      (*Classpath::vmdataClassLoader)(loader, (JavaObject*)vm);
+      Classpath::vmdataClassLoader->setVirtualObjectField(loader, (JavaObject*)vm);
     }
     map = vm->classes;
 #endif
@@ -690,19 +690,19 @@ ClassArray* Jnjvm::constructArray(const UTF8* name, JavaObject* loader) {
   if (loader) {
 #ifndef SERVICE_VM
     ClassMap* map = 
-      (ClassMap*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
+      (ClassMap*)(Classpath::vmdataClassLoader->getVirtualObjectField(loader));
     if (!map) {
       map = vm_new(this, ClassMap)();
-      (*Classpath::vmdataClassLoader)(loader, (JavaObject*)map);
+      Classpath::vmdataClassLoader->setVirtualObjectField(loader, (JavaObject*)map);
     }
     ClassArray* res = (ClassArray*)map->lookupOrCreate(name, this, arrayDup);
 #else
     ClassMap* map = 0;
     ServiceDomain* vm = 
-      (ServiceDomain*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
+      (ServiceDomain*)(Classpath::vmdataClassLoader->getVirtualObjectField(loader));
     if (!vm) {
       vm = ServiceDomain::allocateService((JavaIsolate*)Jnjvm::bootstrapVM);
-      (*Classpath::vmdataClassLoader)(loader, (JavaObject*)vm);
+      Classpath::vmdataClassLoader->getVirtualObjectField(loader, (JavaObject*)vm);
     }
     map = vm->classes;
     ClassArray* res = (ClassArray*)map->lookupOrCreate(name, vm, arrayDup);
@@ -733,19 +733,19 @@ Class* Jnjvm::constructClass(const UTF8* name, JavaObject* loader) {
   if (loader) {
 #ifndef SERVICE_VM
     ClassMap* map = 
-      (ClassMap*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
+      (ClassMap*)(Classpath::vmdataClassLoader->getVirtualObjectField(loader));
     if (!map) {
       map = vm_new(this, ClassMap)();
-      (*Classpath::vmdataClassLoader)(loader, (JavaObject*)map);
+      (Classpath::vmdataClassLoader->setVirtualObjectField(loader, (JavaObject*)map));
     }
     Class* res = (Class*)map->lookupOrCreate(name, this, classDup);
 #else
     ClassMap* map = 0;
     ServiceDomain* vm = 
-      (ServiceDomain*)(*Classpath::vmdataClassLoader)(loader).PointerVal;
+      (ServiceDomain*)(Classpath::vmdataClassLoader->getVirtualObjectField(loader));
     if (!vm) {
       vm = ServiceDomain::allocateService((JavaIsolate*)Jnjvm::bootstrapVM);
-      (*Classpath::vmdataClassLoader)(loader, (JavaObject*)vm);
+      Classpath::vmdataClassLoader->setVirtualObjectField(loader, (JavaObject*)vm);
     }
     map = vm->classes;
     Class* res = (Class*)map->lookupOrCreate(name, vm, classDup);
@@ -825,7 +825,7 @@ CommonClass* Jnjvm::loadInClassLoader(const UTF8* name, JavaObject* loader) {
   JavaString* str = this->UTF8ToStr(name);
   JavaObject* obj = (JavaObject*)
     Classpath::loadInClassLoader->invokeJavaObjectVirtual(this, loader, str);
-  return (CommonClass*)((*Classpath::vmdataClass)(obj).PointerVal);
+  return (CommonClass*)(Classpath::vmdataClass->getVirtualObjectField(obj));
 }
 
 JavaString* Jnjvm::UTF8ToStr(const UTF8* utf8) { 
