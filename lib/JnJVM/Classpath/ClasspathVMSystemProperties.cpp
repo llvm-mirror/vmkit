@@ -11,8 +11,6 @@
 #include <string.h>
 #include <sys/utsname.h>
 
-#include "llvm/Type.h"
-
 #include "types.h"
 
 #include "JavaArray.h"

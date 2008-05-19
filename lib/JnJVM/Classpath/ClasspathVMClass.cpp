@@ -9,8 +9,6 @@
 
 #include <string.h>
 
-#include "llvm/Type.h"
-
 #include "types.h"
 
 #include "JavaAccess.h"

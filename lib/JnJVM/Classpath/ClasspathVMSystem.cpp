@@ -9,8 +9,6 @@
 
 #include <string.h>
 
-#include "llvm/Type.h"
-
 #include "types.h"
 
 #include "JavaArray.h"
@@ -87,7 +85,7 @@ JNIEnv *env,
     }
   }
   
-  uint32 size = srcFuncs->llvmType->getPrimitiveSizeInBits() / 8;
+  uint32 size = srcFuncs->nbb;
   if (size == 0) size = sizeof(void*);
   void* ptrDst = (void*)((int64_t)(dst->elements) + size * dstart);
   void* ptrSrc = (void*)((int64_t)(src->elements) + size * sstart);
