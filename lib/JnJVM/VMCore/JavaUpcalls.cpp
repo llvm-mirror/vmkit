@@ -227,7 +227,7 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   
   setProperty = 
     UPCALL_METHOD(vm, "java/util/Properties", "setProperty",
-                  "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;";
+                  "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;",
                   ACC_VIRTUAL);
 
   initString =
