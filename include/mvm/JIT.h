@@ -102,8 +102,6 @@ extern void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
 extern void initialise();
 
 
-//extern mvm::Lock* protectTypes;
-//extern mvm::Lock* protectConstants;
 extern mvm::Lock* protectEngine;
 extern llvm::ConstantInt* constantInt8Zero;
 extern llvm::ConstantInt* constantZero;
@@ -154,11 +152,6 @@ extern llvm::Module *globalModule;
 extern llvm::ExistingModuleProvider *globalModuleProvider;
 extern mvm::MvmMemoryManager *memoryManager;
 
-extern void protectTypes();
-extern void unprotectTypes();
-
-extern void protectConstants();
-extern void unprotectConstants();
 extern int disassemble(unsigned int* addr);
 
 

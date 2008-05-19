@@ -365,18 +365,14 @@ GlobalVariable* VMCommonClass::llvmVar() {
     aquire();
     if (!_llvmVar) {
       const Type* pty = mvm::jit::ptrType;
-      mvm::jit::protectConstants();
       Constant* cons = 
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
                                     pty);
-      mvm::jit::unprotectConstants();
 
-      vm->protectModule->lock();
       _llvmVar = new GlobalVariable(pty, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "",
                                     vm->module);
-      vm->protectModule->unlock();
     
     }
     release();
@@ -389,18 +385,14 @@ GlobalVariable* VMField::llvmVar() {
     classDef->aquire();
     if (!_llvmVar) {
       const Type* pty = mvm::jit::ptrType;
-      mvm::jit::protectConstants();
       Constant* cons = 
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
                                   pty);
-      mvm::jit::unprotectConstants();
 
-      classDef->vm->protectModule->lock();
       _llvmVar = new GlobalVariable(pty, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "",
                                     classDef->vm->module);
-      classDef->vm->protectModule->unlock();
     }
     classDef->release();
   }
@@ -412,18 +404,14 @@ GlobalVariable* VMMethod::llvmVar() {
     classDef->aquire();
     if (!_llvmVar) {
       const Type* pty = mvm::jit::ptrType;
-      mvm::jit::protectConstants();
       Constant* cons = 
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
                                   pty);
-      mvm::jit::unprotectConstants();
 
-      classDef->vm->protectModule->lock();
       _llvmVar = new GlobalVariable(pty, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "",
                                     classDef->vm->module);
-      classDef->vm->protectModule->unlock();
     
     }
     classDef->release();
@@ -438,20 +426,16 @@ ConstantInt* VMObject::classOffset() {
 GlobalVariable* CLIString::llvmVar() {
   if (!_llvmVar) {
     VirtualMachine* vm = VMThread::get()->vm;
-    vm->protectModule->lock();
     if (!_llvmVar) {
       const Type* pty = mvm::jit::ptrType;
-      mvm::jit::protectConstants();
       Constant* cons = 
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
                                   pty);
-      mvm::jit::unprotectConstants();
       _llvmVar = new GlobalVariable(pty, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "",
                                     vm->module);
     }
-    vm->protectModule->unlock();
   }
   return _llvmVar;
 }

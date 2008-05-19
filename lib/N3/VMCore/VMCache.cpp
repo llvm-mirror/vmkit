@@ -91,11 +91,9 @@ void CLIJit::invokeInterfaceOrVirtual(uint32 value) {
   Value* two = mvm::jit::constantTwo;
   Value* five = mvm::jit::constantFive;
   
-  mvm::jit::protectConstants();
   Value* llvmEnv = 
     ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (enveloppe)),
                   Enveloppe::llvmType);
-  mvm::jit::unprotectConstants();
   
   std::vector<Value*> args1;
   args1.push_back(zero);

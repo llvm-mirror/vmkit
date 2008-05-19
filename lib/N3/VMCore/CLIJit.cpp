@@ -113,9 +113,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
       std::vector<Value*> args; //size = 2
       args.push_back(zero);
       if (boxed) {
-        mvm::jit::protectConstants();
         args.push_back(ConstantInt::get(field->offset->getValue() + 1));
-        mvm::jit::unprotectConstants();
       } else {
         args.push_back(field->offset);
       }
@@ -126,9 +124,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
       std::vector<Value*> args; //size = 2
       args.push_back(zero);
       if (boxed) {
-        mvm::jit::protectConstants();
         args.push_back(ConstantInt::get(field->offset->getValue() + 1));
-        mvm::jit::unprotectConstants();
       } else {
         args.push_back(field->offset);
       }
@@ -638,9 +634,7 @@ void CLIJit::invokeNew(uint32 value) {
     std::vector<Value*> params;
     params.push_back(new BitCastInst(obj, mvm::jit::ptrType, "", currentBlock));
     params.push_back(mvm::jit::constantInt8Zero);
-    mvm::jit::protectConstants();
     params.push_back(ConstantInt::get(Type::Int32Ty, size));
-    mvm::jit::unprotectConstants();
     params.push_back(mvm::jit::constantZero);
     CallInst::Create(mvm::jit::llvm_memset_i32, params.begin(), params.end(),
                      "", currentBlock);
@@ -742,9 +736,7 @@ void CLIJit::setVirtualField(uint32 value) {
 
   type = field->signature->naturalType;
   if (val == constantVMObjectNull) {
-    mvm::jit::protectConstants();
     val = Constant::getNullValue(type);
-    mvm::jit::unprotectConstants();
   } else if (type != valType) {
     val = changeType(val, type);
   }
@@ -769,9 +761,7 @@ void CLIJit::setStaticField(uint32 value) {
   const Type* type = field->signature->naturalType;
   const Type* valType = val->getType();
   if (val == constantVMObjectNull) {
-    mvm::jit::protectConstants();
     val = Constant::getNullValue(type);
-    mvm::jit::unprotectConstants();
   } else if (type != valType) {
     val = changeType(val, type);
   }
@@ -780,9 +770,7 @@ void CLIJit::setStaticField(uint32 value) {
 
 void CLIJit::JITVerifyNull(Value* obj) {
   CLIJit* jit = this;
-  mvm::jit::protectConstants();
   Constant* zero = Constant::getNullValue(obj->getType());
-  mvm::jit::unprotectConstants();
   Value* test = new ICmpInst(ICmpInst::ICMP_EQ, obj, zero, "",
                              jit->currentBlock);
 
@@ -951,11 +939,9 @@ Function* CLIJit::compileNative() {
 
   void* natPtr = NativeUtil::nativeLookup(compilingClass, compilingMethod);
   
-  mvm::jit::protectConstants();
   Value* valPtr = 
     ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, (uint64)natPtr),
                               PointerType::getUnqual(funcType));
-  mvm::jit::unprotectConstants();
   
   Value* result = CallInst::Create(valPtr, nativeArgs.begin(),
                                    nativeArgs.end(), "", currentBlock);
@@ -1090,11 +1076,9 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat) {
       Instruction* ptr_eh_ptr = CallInst::Create(mvm::jit::llvmGetException,
                                                  "eh_ptr", cur->test);
       int32_eh_select_params.push_back(ptr_eh_ptr);
-      mvm::jit::protectConstants();
       Constant* C = ConstantExpr::getCast(Instruction::BitCast,
                                           mvm::jit::personality, PointerTy_0);
       int32_eh_select_params.push_back(C);
-      mvm::jit::unprotectConstants();
       int32_eh_select_params.push_back(mvm::jit::constantPtrNull);
       CallInst::Create(mvm::jit::exceptionSelector,
                        int32_eh_select_params.begin(),
@@ -1207,10 +1191,8 @@ Function* CLIJit::compileFatOrTiny() {
       cl->resolveType(false, false);
       AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
       if (cl->naturalType->isFirstClassType()) {
-        mvm::jit::protectConstants();
         new StoreInst(Constant::getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
-        mvm::jit::unprotectConstants();
       } else {
         uint64 size = mvm::jit::getTypeSize(cl->naturalType);
         
@@ -1218,9 +1200,7 @@ Function* CLIJit::compileFatOrTiny() {
         params.push_back(new BitCastInst(alloc, mvm::jit::ptrType, "",
                                          currentBlock));
         params.push_back(mvm::jit::constantInt8Zero);
-        mvm::jit::protectConstants();
         params.push_back(ConstantInt::get(Type::Int32Ty, size));
-        mvm::jit::unprotectConstants();
         params.push_back(mvm::jit::constantZero);
         CallInst::Create(mvm::jit::llvm_memset_i32, params.begin(),
                          params.end(), "", currentBlock);
@@ -1263,9 +1243,7 @@ Function* CLIJit::compileFatOrTiny() {
                                        currentBlock));
       params.push_back(new BitCastInst(endNode, mvm::jit::ptrType, "",
                                        currentBlock));
-      mvm::jit::protectConstants();
       params.push_back(ConstantInt::get(Type::Int32Ty, size));
-      mvm::jit::unprotectConstants();
       params.push_back(mvm::jit::constantFour);
       CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(),
                        "", currentBlock);
@@ -1385,10 +1363,8 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
       cl->resolveType(false, false);
       AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
       if (cl->naturalType->isFirstClassType()) {
-        mvm::jit::protectConstants();
         new StoreInst(Constant::getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
-        mvm::jit::unprotectConstants();
       } else {
         uint64 size = mvm::jit::getTypeSize(cl->naturalType);
         
@@ -1396,9 +1372,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
         params.push_back(new BitCastInst(alloc, mvm::jit::ptrType, "",
                                          currentBlock));
         params.push_back(mvm::jit::constantInt8Zero);
-        mvm::jit::protectConstants();
         params.push_back(ConstantInt::get(Type::Int32Ty, size));
-        mvm::jit::unprotectConstants();
         params.push_back(mvm::jit::constantZero);
         CallInst::Create(mvm::jit::llvm_memset_i32, params.begin(),
                          params.end(), "", currentBlock);

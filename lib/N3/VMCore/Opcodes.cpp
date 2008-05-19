@@ -186,9 +186,7 @@ static void store(Value* val, Value* local, bool vol,
     std::vector<Value*> params;
     params.push_back(new BitCastInst(local, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
     params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-    mvm::jit::protectConstants();
     params.push_back(ConstantInt::get(Type::Int32Ty, size));
-    mvm::jit::unprotectConstants();
     params.push_back(mvm::jit::constantZero);
     CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
   }
@@ -204,9 +202,7 @@ static Value* load(Value* val, const char* name, BasicBlock* currentBlock) {
     std::vector<Value*> params;
     params.push_back(new BitCastInst(ret, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
     params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-    mvm::jit::protectConstants();
     params.push_back(ConstantInt::get(Type::Int32Ty, size));
-    mvm::jit::unprotectConstants();
     params.push_back(mvm::jit::constantZero);
     CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
     return ret;
@@ -238,7 +234,6 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
     }
 
 #if N3_EXECUTE > 1
-    mvm::jit::protectConstants();
     std::vector<llvm::Value*> args;
     args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)OpcodeNames[bytecodes[i]]));
     args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
@@ -249,7 +244,6 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
       CallInst::Create(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
     }
-    mvm::jit::unprotectConstants();
 #endif
   
     if (opinfo->reqSuppl) {
@@ -348,9 +342,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 #define TEST(name, read, cmpf, cmpi, offset) case name : { \
         uint32 tmp = i;       \
         Value* val2 = pop();  \
-        mvm::jit::protectConstants(); \
         Value* val1 = Constant::getNullValue(val2->getType());  \
-        mvm::jit::unprotectConstants(); \
         BasicBlock* ifTrue = opcodeInfos[tmp + offset + read(bytecodes, i)].newBlock; \
         Value* test = 0; \
         if (val1->getType()->isFloatingPoint()) { \
@@ -705,12 +697,10 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                           leaves.size(), currentBlock);
      
         uint32 index = 0; 
-        mvm::jit::protectConstants();
         for (std::vector<BasicBlock*>::iterator i = leaves.begin(), 
              e = leaves.end(); i!= e; ++i, ++index) {
           inst->addCase(ConstantInt::get(Type::Int32Ty, index), *i); 
         }
-        mvm::jit::unprotectConstants();
 
         //currentBlock = bb2;
 
@@ -753,30 +743,22 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case LDC_I4 : {
-        mvm::jit::protectConstants();
         push(ConstantInt::get(Type::Int32Ty, readS4(bytecodes, i)));
-        mvm::jit::unprotectConstants();
         break;
       }
       
       case LDC_I8 : {
-        mvm::jit::protectConstants();
         push(ConstantInt::get(Type::Int64Ty, readS8(bytecodes, i)));
-        mvm::jit::unprotectConstants();
         break;
       }
       
       case LDC_R4 : {
-        mvm::jit::protectConstants();
         push(ConstantFP::get(Type::FloatTy, readFloat(bytecodes, i)));
-        mvm::jit::unprotectConstants();
         break;
       }
       
       case LDC_R8 : {
-        mvm::jit::protectConstants();
         push(ConstantFP::get(Type::DoubleTy, readDouble(bytecodes, i)));
-        mvm::jit::unprotectConstants();
         break;
       }
       
@@ -831,9 +813,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
       
       case LDC_I4_S : {
-        mvm::jit::protectConstants();
         push(ConstantInt::get(Type::Int32Ty, readS1(bytecodes, i)));
-        mvm::jit::unprotectConstants();
         break;
       }
  
@@ -955,12 +935,10 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             }
           }
           if (res) {
-            mvm::jit::protectConstants();
             Value* expr = ConstantExpr::getIntToPtr(
                                     ConstantInt::get(Type::Int64Ty,
                                                      uint64_t (leaveIndex++)),
                                     VMObject::llvmType);
-            mvm::jit::unprotectConstants();
 
             new StoreInst(expr, supplLocal, false, currentBlock);
             branch(res->handler, currentBlock);
@@ -989,12 +967,10 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             }
           }
           if (res) {
-            mvm::jit::protectConstants();
             Value* expr = ConstantExpr::getIntToPtr(
                                     ConstantInt::get(Type::Int64Ty,
                                                      uint64_t (leaveIndex++)),
                                     VMObject::llvmType);
-            mvm::jit::unprotectConstants();
 
             new StoreInst(expr, supplLocal, false, currentBlock);
             branch(res->handler, currentBlock);
@@ -1027,11 +1003,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case NEG : {
         Value* val = pop();
-        mvm::jit::protectConstants();
         push(BinaryOperator::createSub(
                               Constant::getNullValue(val->getType()),
                               val, "", currentBlock));
-        mvm::jit::unprotectConstants();
         break;
       }
       
@@ -1297,9 +1271,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         std::vector<Value*> params;
         params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
         params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-        mvm::jit::protectConstants();
         params.push_back(ConstantInt::get(Type::Int32Ty, size));
-        mvm::jit::unprotectConstants();
         params.push_back(mvm::jit::constantZero);
         CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
         
@@ -1371,12 +1343,10 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                                false, true);
         Value* obj = pop();
 
-        mvm::jit::protectConstants();
         Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, obj, 
                                   Constant::getNullValue(obj->getType()),
                                   "", currentBlock);
         Constant* nullVirtual = Constant::getNullValue(dcl->virtualType);
-        mvm::jit::unprotectConstants();
 
      
         BasicBlock* isInstEndBlock = createBasicBlock("end isinst");
@@ -1567,10 +1537,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 value = readU4(bytecodes, i);
         uint32 index = value & 0xfffffff;
         const UTF8* utf8 = compilingClass->assembly->readUserString(index);
-        mvm::jit::protectConstants();
         Value* val = ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, (int64_t)utf8),
                                                mvm::jit::ptrType);
-        mvm::jit::unprotectConstants();
         Value* res = CallInst::Create(newStringLLVM, val, "", currentBlock);
         /*CLIString * str = 
           (CLIString*)(((N3*)VMThread::get()->vm)->UTF8ToStr(utf8));
@@ -1798,9 +1766,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         std::vector<Value*> params;
         params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
         params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-        mvm::jit::protectConstants();
         params.push_back(ConstantInt::get(Type::Int32Ty, size));
-        mvm::jit::unprotectConstants();
         params.push_back(mvm::jit::constantZero);
         CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
         

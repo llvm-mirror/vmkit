@@ -605,8 +605,6 @@ llvm::Function* mvm::jit::func_llvm_tanh_f64;
 
 llvm::ExecutionEngine* mvm::jit::executionEngine;
 
-//mvm::Lock* mvm::jit::protectTypes;
-//mvm::Lock* mvm::jit::protectConstants;
 mvm::Lock* mvm::jit::protectEngine;
 llvm::ConstantInt* mvm::jit::constantInt8Zero;
 llvm::ConstantInt* mvm::jit::constantZero;
@@ -668,22 +666,5 @@ void ExceptionTable::destroyer(size_t sz) {
 }
 
 void mvm::jit::runPasses(llvm::Function* func,  llvm::FunctionPassManager* pm) {
-  llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
   pm->run(*func);
-}
-
-void mvm::jit::protectConstants() {
-  mvm::jit::executionEngine->lock.acquire();
-}
-
-void mvm::jit::unprotectConstants() {
-  mvm::jit::executionEngine->lock.release();
-}
-
-void mvm::jit::protectTypes() {
-  mvm::jit::executionEngine->lock.acquire();
-}
-
-void mvm::jit::unprotectTypes() {
-  mvm::jit::executionEngine->lock.release();
 }

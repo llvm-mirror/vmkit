@@ -247,13 +247,11 @@ void VMClass::resolveStaticFields() {
   std::vector<const llvm::Type*> fields;
   fields.push_back(VMObject::llvmType->getContainedType(0));
   uint64 offset = 0;
-  mvm::jit::protectConstants();
   for (std::vector<VMField*>::iterator i = cl->staticFields.begin(),
             e = cl->staticFields.end(); i!= e; ++i) {
     // preincrement because 0 is VMObject
     (*i)->offset = llvm::ConstantInt::get(llvm::Type::Int32Ty, ++offset);
   }
-  mvm::jit::unprotectConstants();
   for (std::vector<VMField*>::iterator i = cl->staticFields.begin(),
             e = cl->staticFields.end(); i!= e; ++i) {
     (*i)->signature->resolveType(false, false);
@@ -310,14 +308,12 @@ void VMClass::resolveVirtualFields() {
       } else {
         std::vector<const llvm::Type*> Elts;
         uint32 offset = -1;
-        mvm::jit::protectConstants();
         for (std::vector<VMField*>::iterator i = virtualFields.begin(), 
           e = virtualFields.end(); i!= e; ++i) {
           (*i)->offset = llvm::ConstantInt::get(llvm::Type::Int32Ty, ++offset);
           const llvm::Type* type = (*i)->signature->naturalType;
           Elts.push_back(type);
         }
-        mvm::jit::unprotectConstants();
         const llvm::Type* tmp = llvm::StructType::get(Elts);
         ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(tmp);
         naturalType = tmp;
@@ -329,14 +325,12 @@ void VMClass::resolveVirtualFields() {
       std::vector<const llvm::Type*> Elts;
       Elts.push_back(super->naturalType->getContainedType(0));
       uint32 offset = 0;
-      mvm::jit::protectConstants();
       for (std::vector<VMField*>::iterator i = virtualFields.begin(), 
            e = virtualFields.end(); i!= e; ++i) {
         (*i)->offset = llvm::ConstantInt::get(llvm::Type::Int32Ty, ++offset);
         const llvm::Type* type = (*i)->signature->naturalType;
         Elts.push_back(type);
       }
-      mvm::jit::unprotectConstants();
       const llvm::Type* tmp = llvm::PointerType::getUnqual(llvm::StructType::get(Elts));
       ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(tmp);
       naturalType = tmp;
