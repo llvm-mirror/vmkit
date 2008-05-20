@@ -20,7 +20,6 @@
 #include "JavaConstantPool.h"
 #include "JavaJIT.h"
 #include "Jnjvm.h"
-#include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
@@ -225,21 +224,9 @@ void JavaCtpInfo::read(Jnjvm *vm, Class* cl, Reader* reader) {
   }
 }
 
-bool JavaCtpInfo::isAStaticCall(uint32 index) {
-  return (ctpType[index] & 0x80) != 0;
-}
-
-void JavaCtpInfo::markAsStaticCall(uint32 index) {
-  ctpType[index] |= 0x80;
-}
-
-uint8 JavaCtpInfo::typeAt(uint32 index) {
-  return ctpType[index] & 0x7F;
-}
-
 const UTF8* JavaCtpInfo::UTF8At(uint32 entry) {
-  if (! (entry > 0) && (entry < ctpSize) && 
-        typeAt(entry) == ConstantUTF8) {
+  if (! ((entry > 0) && (entry < ctpSize) && 
+        typeAt(entry) == ConstantUTF8)) {
     JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
               "bad constant pool number for utf8 at entry %d", entry);
   }
@@ -247,8 +234,8 @@ const UTF8* JavaCtpInfo::UTF8At(uint32 entry) {
 }
 
 float JavaCtpInfo::FloatAt(uint32 entry) {
-  if (! (entry > 0) && (entry < ctpSize) && 
-        typeAt(entry) == ConstantFloat) {
+  if (! ((entry > 0) && (entry < ctpSize) && 
+        typeAt(entry) == ConstantFloat)) {
     JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
               "bad constant pool number for float at entry %d", entry);
   }
@@ -256,8 +243,8 @@ float JavaCtpInfo::FloatAt(uint32 entry) {
 }
 
 sint32 JavaCtpInfo::IntegerAt(uint32 entry) {
-  if (! (entry > 0) && (entry < ctpSize) && 
-        typeAt(entry) == ConstantInteger) {
+  if (! ((entry > 0) && (entry < ctpSize) && 
+        typeAt(entry) == ConstantInteger)) {
     JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
               "bad constant pool number for integer at entry %d", entry);
   }
@@ -265,8 +252,8 @@ sint32 JavaCtpInfo::IntegerAt(uint32 entry) {
 }
 
 sint64 JavaCtpInfo::LongAt(uint32 entry) {
-  if (! (entry > 0) && (entry < ctpSize) && 
-        typeAt(entry) == ConstantLong) {
+  if (! ((entry > 0) && (entry < ctpSize) && 
+        typeAt(entry) == ConstantLong)) {
     JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
               "bad constant pool number for long at entry %d", entry);
   }
@@ -274,8 +261,8 @@ sint64 JavaCtpInfo::LongAt(uint32 entry) {
 }
 
 double JavaCtpInfo::DoubleAt(uint32 entry) {
-  if (! (entry > 0) && (entry < ctpSize) && 
-        typeAt(entry) == ConstantDouble) {
+  if (! ((entry > 0) && (entry < ctpSize) && 
+        typeAt(entry) == ConstantDouble)) {
     JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
               "bad constant pool number for double at entry %d", entry);
   }
@@ -283,8 +270,8 @@ double JavaCtpInfo::DoubleAt(uint32 entry) {
 }
 
 CommonClass* JavaCtpInfo::isLoadedClassOrClassName(uint32 entry) {
-  if (! (entry > 0) && (entry < ctpSize) && 
-        typeAt(entry) == ConstantClass) {
+  if (! ((entry > 0) && (entry < ctpSize) && 
+        typeAt(entry) == ConstantClass)) {
     JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
               "bad constant pool number for class at entry %d", entry);
   }
@@ -302,7 +289,7 @@ CommonClass* JavaCtpInfo::loadClass(uint32 index) {
   if (!temp) {
     JavaObject* loader = classDef->classLoader;
     const UTF8* name = UTF8At(ctpDef[index]);
-    if (name->at(0) == AssessorDesc::I_TAB) {
+    if (name->elements[0] == AssessorDesc::I_TAB) {
       // Don't put into ctpRes because the class can be isolate specific
       temp = JavaThread::get()->isolate->constructArray(name, loader);
     } else {

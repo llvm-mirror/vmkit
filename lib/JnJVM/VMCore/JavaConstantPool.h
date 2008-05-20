@@ -89,10 +89,18 @@ public:
 
   static void read(Jnjvm *vm, Class* cl, Reader* reader);
 
-  bool isAStaticCall(uint32 index);
-  void markAsStaticCall(uint32 index);
+  bool isAStaticCall(uint32 index) {
+    return (ctpType[index] & 0x80) != 0;    
+  }
 
-  uint8 typeAt(uint32 index);
+  void markAsStaticCall(uint32 index) {
+    ctpType[index] |= 0x80;
+  }
+
+  uint8 typeAt(uint32 index) {
+    return ctpType[index] & 0x7F;    
+  }
+
   const UTF8* UTF8At(uint32 entry);
   float FloatAt(uint32 entry);
   sint32 IntegerAt(uint32 entry);
