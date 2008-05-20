@@ -388,7 +388,7 @@ ArrayObject* NativeUtil::getParameterTypes(JavaObject* loader, JavaMethod* meth)
   sint32 index = 0;
   for (std::vector<Typedef*>::iterator i = args.begin(), e = args.end();
           i != e; ++i, ++index) {
-    res->setAt(index, getClassType(loader, (*i)));
+    res->elements[index] = getClassType(loader, (*i));
   }
 
   return res;

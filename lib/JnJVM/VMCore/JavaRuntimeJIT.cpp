@@ -248,8 +248,8 @@ static JavaArray* multiCallNewIntern(arrayCtor_t ctor, ClassArray* cl,
       arrayCtor_t newCtor = func->arrayCtor;
       if (dims[0] > 0) {
         for (sint32 i = 0; i < dims[0]; ++i) {
-          res->setAt(i, multiCallNewIntern(newCtor, base, (len - 1), &dims[1],
-                                           vm));
+          res->elements[i] = multiCallNewIntern(newCtor, base, (len - 1),
+                                                &dims[1], vm);
         }
       } else {
         for (uint32 i = 1; i < len; ++i) {

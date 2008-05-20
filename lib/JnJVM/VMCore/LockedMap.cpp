@@ -46,7 +46,7 @@ static bool asciizEqual(const UTF8* val, const char* asciiz, sint32 size) {
   if (len != size) return false;
   else {
     for (sint32 i = 0; i < len; i++) {
-      if (asciiz[i] != val->at(i)) return false;
+      if (asciiz[i] != val->elements[i]) return false;
     }
     return true;
   }
@@ -92,7 +92,7 @@ const UTF8* UTF8Map::lookupOrCreateAsciiz(Jnjvm* vm, const char* asciiz) {
   if (res == 0) {
     UTF8* tmp = (UTF8*)UTF8::acons(size, JavaArray::ofChar, vm);
     for (sint32 i = 0; i < size; i++) {
-      tmp->setAt(i, asciiz[i]);
+      tmp->elements[i] = asciiz[i];
     }
     res = (const UTF8*)tmp;
     map.insert(std::make_pair(key, res));

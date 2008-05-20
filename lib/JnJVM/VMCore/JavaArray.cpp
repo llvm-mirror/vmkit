@@ -199,7 +199,7 @@ const UTF8* UTF8::javaToInternal(Jnjvm* vm, unsigned int start,
                                  unsigned int len) const {
   uint16* java = (uint16*) alloca(len * sizeof(uint16));
   for (uint32 i = 0; i < len; i++) {
-    uint16 cur = at(start + i);
+    uint16 cur = elements[start + i];
     if (cur == '.') java[i] = '/';
     else java[i] = cur;
   }
@@ -211,7 +211,7 @@ const UTF8* UTF8::internalToJava(Jnjvm *vm, unsigned int start,
                                  unsigned int len) const {
   uint16* java = (uint16*) alloca(len * sizeof(uint16));
   for (uint32 i = 0; i < len; i++) {
-    uint16 cur = at(start + i);
+    uint16 cur = elements[start + i];
     if (cur == '/') java[i] = '.';
     else java[i] = cur;
   }
@@ -224,7 +224,7 @@ const UTF8* UTF8::extract(Jnjvm *vm, uint32 start, uint32 end) const {
   uint16* buf = (uint16*)alloca(sizeof(uint16) * len);
 
   for (uint32 i = 0; i < len; i++) {
-    buf[i] = at(i + start);
+    buf[i] = elements[i + start];
   }
 
   return readerConstruct(vm, buf, len);

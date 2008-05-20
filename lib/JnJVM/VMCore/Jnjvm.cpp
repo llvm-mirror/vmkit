@@ -28,7 +28,6 @@
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
 #include "Reader.h"
@@ -576,7 +575,7 @@ CommonClass* Jnjvm::lookupClassFromUTF8(const UTF8* utf8, unsigned int start,
 
   if (len == 0) {
     return 0;
-  } else if (name->at(0) == AssessorDesc::I_TAB) {
+  } else if (name->elements[0] == AssessorDesc::I_TAB) {
     
     while (doLoop) {
       --len;
@@ -584,12 +583,12 @@ CommonClass* Jnjvm::lookupClassFromUTF8(const UTF8* utf8, unsigned int start,
         doLoop = false;
       } else {
         ++start;
-        if (name->at(start) != AssessorDesc::I_TAB) {
-          if (name->at(start) == AssessorDesc::I_REF) {
+        if (name->elements[start] != AssessorDesc::I_TAB) {
+          if (name->elements[start] == AssessorDesc::I_REF) {
             uint32 size = (uint32)name->size;
             if ((size == (start + 1)) || (size == (start + 2)) || 
-                 (name->at(start + 1) == AssessorDesc::I_TAB) || 
-                 (utf8->at(origLen - 1) != AssessorDesc::I_END_REF)) {
+                 (name->elements[start + 1] == AssessorDesc::I_TAB) || 
+                 (utf8->elements[origLen - 1] != AssessorDesc::I_END_REF)) {
               doLoop = false; 
             } else {
               const UTF8* componentName = utf8->javaToInternal(this, start + 1,
@@ -604,7 +603,7 @@ CommonClass* Jnjvm::lookupClassFromUTF8(const UTF8* utf8, unsigned int start,
               }
             }
           } else {
-            uint16 cur = name->at(start);
+            uint16 cur = name->elements[start];
             if ((cur == AssessorDesc::I_BOOL || cur == AssessorDesc::I_BYTE ||
                  cur == AssessorDesc::I_CHAR || cur == AssessorDesc::I_SHORT ||
                  cur == AssessorDesc::I_INT || cur == AssessorDesc::I_FLOAT || 
