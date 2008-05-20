@@ -82,7 +82,7 @@ ArrayObject* recGetStackTrace(int** stack, uint32 first, uint32 rec) {
     JavaMethod* meth = JavaJIT::IPToJavaMethod(begIp);
     if (meth) {
       ArrayObject* res = recGetStackTrace(stack, first + 1, rec + 1);
-      res->setAt(rec, consStackElement(meth, stack[first]));
+      res->elements[rec] = consStackElement(meth, stack[first]);
       return res;
     } else {
       return recGetStackTrace(stack, first + 1, rec);

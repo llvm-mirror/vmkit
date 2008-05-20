@@ -31,7 +31,7 @@ ArrayObject* recGetClassContext(int** stack, uint32 size, uint32 first, uint32 r
     JavaMethod* meth = JavaJIT::IPToJavaMethod(stack[first]);
     if (meth) {
       ArrayObject* res = recGetClassContext(stack, size, first + 1, rec + 1); 
-      res->setAt(rec, meth->classDef->getClassDelegatee());
+      res->elements[rec] = meth->classDef->getClassDelegatee();
       return res;
     } else {
       return recGetClassContext(stack, size, first + 1, rec);

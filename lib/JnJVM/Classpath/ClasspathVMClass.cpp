@@ -100,7 +100,7 @@ JNIEnv *env,
       // TODO: check parameter types
       JavaObject* tmp = (*Classpath::newConstructor)(vm);
       Classpath::initConstructor->invokeIntSpecial(vm, tmp, Cl, meth);
-      ret->setAt(index, tmp);
+      ret->elements[index] = tmp;
     }
     return (jobject)ret;
   }
@@ -146,7 +146,7 @@ JNIEnv *env,
       JavaObject* tmp = (*Classpath::newMethod)(vm);
       Classpath::initMethod->invokeIntSpecial(vm, tmp, Cl,
                                               vm->UTF8ToStr(meth->name), meth);
-      ret->setAt(index, tmp);
+      ret->elements[index] = tmp;
     }
     return (jobject)ret;
   }
@@ -325,7 +325,7 @@ jclass Cl, jboolean publicOnly) {
       JavaObject* tmp = (*Classpath::newField)(vm);
       Classpath::initField->invokeIntSpecial(vm, tmp, Cl,
                                              vm->UTF8ToStr(field->name), field);
-      ret->setAt(index, tmp);
+      ret->elements[index] = tmp;
     }
     return (jobject)ret;
   }
@@ -345,7 +345,7 @@ jclass Cl) {
   for (std::vector<Class*>::iterator i = interfaces.begin(), e = interfaces.end();
         i != e; ++i, ++index) {
     Class* klass = *i; 
-    ret->setAt(index, vm->getClassDelegatee(klass));
+    ret->elements[index] = vm->getClassDelegatee(klass);
   }
   return (jobject)ret;
 }
