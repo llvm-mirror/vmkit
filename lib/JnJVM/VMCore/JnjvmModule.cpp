@@ -63,6 +63,7 @@ llvm::ConstantInt*    JnjvmModule::JavaObjectClassOffsetConstant;
 
 #ifdef WITH_TRACER
 llvm::Function* JnjvmModule::MarkAndTraceFunction = 0;
+llvm::Function* JnjvmModule::JavaObjectTracerFunction = 0;
 #endif
 llvm::Function* JnjvmModule::GetSJLJBufferFunction = 0;
 llvm::Function* JnjvmModule::ThrowExceptionFunction = 0;
@@ -76,7 +77,6 @@ llvm::Function* JnjvmModule::IndexOutOfBoundsExceptionFunction = 0;
 llvm::Function* JnjvmModule::NegativeArraySizeExceptionFunction = 0;
 llvm::Function* JnjvmModule::OutOfMemoryErrorFunction = 0;
 llvm::Function* JnjvmModule::JavaObjectAllocateFunction = 0;
-llvm::Function* JnjvmModule::JavaObjectTracerFunction = 0;
 llvm::Function* JnjvmModule::InterfaceLookupFunction = 0;
 llvm::Function* JnjvmModule::FieldLookupFunction = 0;
 #ifndef WITHOUT_VTABLE
