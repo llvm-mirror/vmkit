@@ -7,9 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <map>
+#ifndef JNJVM_MODULE_H
+#define JNJVM_MODULE_H
 
-#include "JavaTypes.h"
+#include <map>
 
 #include "llvm/Constant.h"
 #include "llvm/DerivedTypes.h"
@@ -38,7 +39,7 @@ public:
   llvm::ConstantInt* sizeInBytesConstant;
   
   static void initialise();
-  static LLVMAssessorInfo AssessorInfo[NUM_ASSESSORS];
+  static LLVMAssessorInfo AssessorInfo[];
 
 };
 
@@ -366,3 +367,5 @@ public:
 };
 
 }
+
+#endif
