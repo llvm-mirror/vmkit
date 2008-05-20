@@ -164,11 +164,26 @@ public:
   
   static void printClassName(const UTF8* name, mvm::PrintBuffer* buf);
   void initialise(Jnjvm* isolate, bool array);
-  void aquire(); 
-  void release();
-  void waitClass();
-  void broadcastClass();
-  bool ownerClass();
+  
+  void aquire() {
+    lockVar->lock();
+  }
+  
+  void release() {
+    lockVar->unlock();  
+  }
+
+  void waitClass() {
+    condVar->wait(lockVar);
+  }
+
+  void broadcastClass() {
+    condVar->broadcast();  
+  }
+
+  bool ownerClass() {
+    return mvm::Lock::selfOwner(lockVar);    
+  }
   
   JavaMethod* lookupMethodDontThrow(const UTF8* name, const UTF8* type,
                                     bool isStatic, bool recurse);
@@ -262,8 +277,19 @@ public:
   AssessorDesc* _funcs;
 
   void resolveComponent();
-  CommonClass* baseClass();
-  AssessorDesc* funcs();
+  
+  CommonClass* baseClass() {
+    if (_baseClass == 0)
+      resolveComponent();
+    return _baseClass;
+  }
+
+  AssessorDesc* funcs() {
+    if (_funcs == 0)
+      resolveComponent();
+    return _funcs;
+  }
+
   static JavaObject* arrayLoader(Jnjvm* isolate, const UTF8* name,
                                  JavaObject* loader, unsigned int start,
                                  unsigned int end);
@@ -281,6 +307,8 @@ public:
 
 
 class JavaMethod : public mvm::Object {
+private:
+  void* _compiledPtr();
 public:
   static VirtualTable* VT;
   unsigned int access;
@@ -299,8 +327,12 @@ public:
 
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
+  
 
-  void* compiledPtr();
+  void* compiledPtr() {
+    if (!code) return _compiledPtr();
+    return code;
+  }
 
   uint32 invokeIntSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
   float invokeFloatSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
@@ -376,38 +408,50 @@ public:
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
   
-  void setStaticFloatField(float val);
-  void setStaticDoubleField(double val);
-  void setStaticInt8Field(uint8 val);
-  void setStaticInt16Field(uint16 val);
-  void setStaticInt32Field(uint32 val);
-  void setStaticLongField(sint64 val);
-  void setStaticObjectField(JavaObject* val);
+  #define GETVIRTUALFIELD(TYPE, TYPE_NAME) \
+  TYPE getVirtual##TYPE_NAME##Field(JavaObject* obj) { \
+    assert(classDef->isReady()); \
+    void* ptr = (void*)((uint64)obj + ptrOffset); \
+    return ((TYPE*)ptr)[0]; \
+  }
 
-  float getStaticFloatField();
-  double getStaticDoubleField();
-  uint8 getStaticInt8Field();
-  uint16 getStaticInt16Field();
-  uint32 getStaticInt32Field();
-  sint64 getStaticLongField();
-  JavaObject* getStaticObjectField();
-  
-  void setVirtualFloatField(JavaObject* obj, float val);
-  void setVirtualDoubleField(JavaObject* obj, double val);
-  void setVirtualInt8Field(JavaObject* obj, uint8 val);
-  void setVirtualInt16Field(JavaObject* obj, uint16 val);
-  void setVirtualInt32Field(JavaObject* obj, uint32 val);
-  void setVirtualLongField(JavaObject* obj, sint64 val);
-  void setVirtualObjectField(JavaObject* obj, JavaObject* val);
-  
-  float getVirtualFloatField(JavaObject* obj);
-  double getVirtualDoubleField(JavaObject* obj);
-  uint8  getVirtualInt8Field(JavaObject* obj);
-  uint16 getVirtualInt16Field(JavaObject* obj);
-  uint32 getVirtualInt32Field(JavaObject* obj);
-  sint64 getVirtualLongField(JavaObject* obj);
-  JavaObject* getVirtualObjectField(JavaObject* obj);
-  
+  #define GETSTATICFIELD(TYPE, TYPE_NAME) \
+  TYPE getStatic##TYPE_NAME##Field() { \
+    assert(classDef->isReady()); \
+    JavaObject* obj = classDef->staticInstance(); \
+    void* ptr = (void*)((uint64)obj + ptrOffset); \
+    return ((TYPE*)ptr)[0]; \
+  }
+
+  #define SETVIRTUALFIELD(TYPE, TYPE_NAME) \
+  void setVirtual##TYPE_NAME##Field(JavaObject* obj, TYPE val) { \
+    assert(classDef->isReady()); \
+    void* ptr = (void*)((uint64)obj + ptrOffset); \
+    ((TYPE*)ptr)[0] = val; \
+  }
+
+  #define SETSTATICFIELD(TYPE, TYPE_NAME) \
+  void setStatic##TYPE_NAME##Field(TYPE val) { \
+    assert(classDef->isReady()); \
+    JavaObject* obj = classDef->staticInstance(); \
+    void* ptr = (void*)((uint64)obj + ptrOffset); \
+    ((TYPE*)ptr)[0] = val; \
+  }
+
+  #define MK_ASSESSORS(TYPE, TYPE_NAME) \
+    GETVIRTUALFIELD(TYPE, TYPE_NAME) \
+    SETVIRTUALFIELD(TYPE, TYPE_NAME) \
+    GETSTATICFIELD(TYPE, TYPE_NAME) \
+    SETSTATICFIELD(TYPE, TYPE_NAME) \
+
+  MK_ASSESSORS(float, Float);
+  MK_ASSESSORS(double, Double);
+  MK_ASSESSORS(JavaObject*, Object);
+  MK_ASSESSORS(uint8, Int8);
+  MK_ASSESSORS(uint16, Int16);
+  MK_ASSESSORS(uint32, Int32);
+  MK_ASSESSORS(sint64, Long);
+
 };
 
 

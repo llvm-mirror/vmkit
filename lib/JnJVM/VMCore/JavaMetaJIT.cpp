@@ -50,58 +50,10 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JavaObject* loader,
 
 
 JavaObject* Class::operator()(Jnjvm* vm) {
-  if (!isReady()) 
-    isolate->loadName(name, classLoader, true, true, true);
+  assert(isReady());
   return doNew(vm);
 }
 
-#define GETVIRTUALFIELD(TYPE, TYPE_NAME) \
-TYPE JavaField::getVirtual##TYPE_NAME##Field(JavaObject* obj) { \
-  if (!classDef->isReady()) \
-    classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true); \
-  void* ptr = (void*)((uint64)obj + ptrOffset); \
-  return ((TYPE*)ptr)[0]; \
-}
-
-#define GETSTATICFIELD(TYPE, TYPE_NAME) \
-TYPE JavaField::getStatic##TYPE_NAME##Field() { \
-  if (!classDef->isReady()) \
-    classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true); \
-  JavaObject* obj = classDef->staticInstance(); \
-  void* ptr = (void*)((uint64)obj + ptrOffset); \
-  return ((TYPE*)ptr)[0]; \
-}
-
-#define SETVIRTUALFIELD(TYPE, TYPE_NAME) \
-void JavaField::setVirtual##TYPE_NAME##Field(JavaObject* obj, TYPE val) { \
-  if (!classDef->isReady()) \
-    classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true); \
-  void* ptr = (void*)((uint64)obj + ptrOffset); \
-  ((TYPE*)ptr)[0] = val; \
-}
-
-#define SETSTATICFIELD(TYPE, TYPE_NAME) \
-void JavaField::setStatic##TYPE_NAME##Field(TYPE val) { \
-  if (!classDef->isReady()) \
-    classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true); \
-  JavaObject* obj = classDef->staticInstance(); \
-  void* ptr = (void*)((uint64)obj + ptrOffset); \
-  ((TYPE*)ptr)[0] = val; \
-}
-
-#define MK_ASSESSORS(TYPE, TYPE_NAME) \
-  GETVIRTUALFIELD(TYPE, TYPE_NAME) \
-  SETVIRTUALFIELD(TYPE, TYPE_NAME) \
-  GETSTATICFIELD(TYPE, TYPE_NAME) \
-  SETSTATICFIELD(TYPE, TYPE_NAME) \
-
-MK_ASSESSORS(float, Float);
-MK_ASSESSORS(double, Double);
-MK_ASSESSORS(JavaObject*, Object);
-MK_ASSESSORS(uint8, Int8);
-MK_ASSESSORS(uint16, Int16);
-MK_ASSESSORS(uint32, Int32);
-MK_ASSESSORS(sint64, Long);
 
 #define readArgs(buf, signature, ap) \
   for (std::vector<Typedef*>::iterator i = signature->args.begin(), \
