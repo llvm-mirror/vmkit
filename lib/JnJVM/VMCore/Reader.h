@@ -14,9 +14,10 @@
 
 #include "types.h"
 
+#include "JavaArray.h"
+
 namespace jnjvm {
 
-class ArrayUInt8;
 class Jnjvm;
 
 class Reader : public mvm::Object {
@@ -27,8 +28,34 @@ public:
   uint32 cursor;
   uint32 max;
 
-  static double readDouble(int first, int second);
-  static sint64 readLong(int first, int second);
+  static double readDouble(int first, int second) {
+    int values[2];
+    double res[1];
+#if defined(__PPC__)
+    values[0] = second;
+    values[1] = first;
+#else
+    values[0] = first;
+    values[1] = second;
+#endif
+    memcpy(res, values, 8); 
+    return res[0];
+  }
+
+
+  static sint64 readLong(int first, int second) {
+    int values[2];
+    sint64 res[1];
+#if defined(__PPC__)
+    values[0] = second;
+    values[1] = first;
+#else
+    values[0] = first;
+    values[1] = second;
+#endif
+    memcpy(res, values, 8); 
+    return res[0];
+  }
 
   static const int SeekSet;
   static const int SeekCur;
@@ -36,19 +63,61 @@ public:
 
   static ArrayUInt8* openFile(Jnjvm* vm, char* path);
   static ArrayUInt8* openZip(Jnjvm* vm, char* zipname, char* filename);
-  uint8 readU1();
-  sint8 readS1();
-  uint16 readU2();
-  sint16 readS2();
-  uint32 readU4();
-  sint32 readS4();
-  uint64 readU8();
-  sint64 readS8();
-  Reader(ArrayUInt8* array, uint32 start = 0, uint32 end = 0);
+  
+  uint8 readU1() {
+    return bytes->elements[cursor++];
+  }
+  
+  sint8 readS1() {
+    return bytes->elements[cursor++];
+  }
+  
+  uint16 readU2() {
+    uint16 tmp = ((uint16)(readU1())) << 8;
+    return tmp | ((uint16)(readU1()));
+  }
+  
+  sint16 readS2() {
+    sint16 tmp = ((sint16)(readS1())) << 8;
+    return tmp | ((sint16)(readS1()));
+  }
+  
+  uint32 readU4() {
+    uint32 tmp = ((uint32)(readU2())) << 16;
+    return tmp | ((uint32)(readU2()));
+  }
+  
+  sint32 readS4() {
+    sint32 tmp = ((sint32)(readS2())) << 16;
+    return tmp | ((sint32)(readS2()));
+  }
+
+  uint64 readU8() {
+    uint64 tmp = ((uint64)(readU4())) << 32;
+    return tmp | ((uint64)(readU4()));
+  }
+  
+  sint64 readS8() {
+    sint64 tmp = ((sint64)(readS8())) << 32;
+    return tmp | ((sint64)(readS8()));
+  }
+
+  Reader(ArrayUInt8* array, uint32 start = 0, uint32 end = 0) {
+    if (!end) end = array->size;
+    this->bytes = array;
+    this->cursor = start;
+    this->min = start;
+    this->max = start + end;
+  }
+
   Reader() {}
-  unsigned int tell();
-  Reader* derive(Jnjvm* vm, uint32 nbb);
+  
+  unsigned int tell() {
+    return cursor - min;
+  }
+  
   void seek(uint32 pos, int from);
+  Reader* derive(Jnjvm* vm, uint32 nbb);
 
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
