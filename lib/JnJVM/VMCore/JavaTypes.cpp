@@ -19,8 +19,6 @@
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
-#include "JnjvmModule.h"
-
 
 using namespace jnjvm;
 
@@ -173,58 +171,72 @@ static void typeError(const UTF8* name, short int l) {
 void AssessorDesc::analyseIntern(const UTF8* name, uint32 pos,
                                  uint32 meth, AssessorDesc*& ass,
                                  uint32& ret) {
-  short int cur = name->at(pos);
-  if (cur == I_PARG) {
-    ass = dParg;
-    ret = pos + 1;
-  } else if (cur == I_PARD) {
-    ass = dPard;
-    ret = pos + 1;
-  } else if (cur == I_BOOL) {
-    ass = dBool;
-    ret = pos + 1;
-  } else if (cur == I_BYTE) {
-    ass = dByte;
-    ret = pos + 1;
-  } else if (cur == I_CHAR) {
-    ass = dChar;
-    ret = pos + 1;
-  } else if (cur == I_SHORT) {
-    ass = dShort;
-    ret = pos + 1;
-  } else if (cur == I_INT) {
-    ass = dInt;
-    ret = pos + 1;
-  } else if (cur == I_FLOAT) {
-    ass = dFloat;
-    ret = pos + 1;
-  } else if (cur == I_DOUBLE) {
-    ass = dDouble;
-    ret = pos + 1;
-  } else if (cur == I_LONG) {
-    ass = dLong;
-    ret = pos + 1;
-  } else if (cur == I_VOID) {
-    ass = dVoid;
-    ret = pos + 1;
-  } else if (cur == I_TAB) {
-    if (meth == 1) {
-      pos++;
-    } else {
-      AssessorDesc * typeIntern = dTab;
-      while (name->at(++pos) == I_TAB) {}
-      analyseIntern(name, pos, 1, typeIntern, pos);
-    }
-    ass = dTab;
-    ret = pos;
-  } else if (cur == I_REF) {
-    if (meth != 2) {
-      while (name->at(++pos) != I_END_REF) {}
-    }
-    ass = dRef;
-    ret = pos + 1;
-  } else {
-    typeError(name, cur);
+  short int cur = name->elements[pos];
+  switch (cur) {
+    case I_PARG :
+      ass = dParg;
+      ret = pos + 1;
+      break;
+    case I_PARD :
+      ass = dPard;
+      ret = pos + 1;
+      break;
+    case I_BOOL :
+      ass = dBool;
+      ret = pos + 1;
+      break;
+    case I_BYTE :
+      ass = dByte;
+      ret = pos + 1;
+      break;
+    case I_CHAR :
+      ass = dChar;
+      ret = pos + 1;
+      break;
+    case I_SHORT :
+      ass = dShort;
+      ret = pos + 1;
+      break;
+    case I_INT :
+      ass = dInt;
+      ret = pos + 1;
+      break;
+    case I_FLOAT :
+      ass = dFloat;
+      ret = pos + 1;
+      break;
+    case I_DOUBLE :
+      ass = dDouble;
+      ret = pos + 1;
+      break;
+    case I_LONG :
+      ass = dLong;
+      ret = pos + 1;
+      break;
+    case I_VOID :
+      ass = dVoid;
+      ret = pos + 1;
+      break;
+    case I_TAB :
+      if (meth == 1) {
+        pos++;
+      } else {
+        AssessorDesc * typeIntern = dTab;
+        while (name->elements[++pos] == I_TAB) {}
+        analyseIntern(name, pos, 1, typeIntern, pos);
+      }
+      ass = dTab;
+      ret = pos;
+      break;
+    case I_REF :
+      if (meth != 2) {
+        while (name->elements[++pos] != I_END_REF) {}
+      }
+      ass = dRef;
+      ret = pos + 1;
+      break;
+    default :
+      typeError(name, cur);
   }
 }
 
@@ -241,7 +253,7 @@ const UTF8* AssessorDesc::constructArrayName(Jnjvm *vm, AssessorDesc* ass,
   } else {
     uint32 len = className->size;
     uint32 pos = steps;
-    AssessorDesc * funcs = (className->at(0) == I_TAB ? dTab : dRef);
+    AssessorDesc * funcs = (className->elements[0] == I_TAB ? dTab : dRef);
     uint32 n = steps + len + (funcs == dRef ? 2 : 0);
     uint16* buf = (uint16*)alloca(n * sizeof(uint16));
     
@@ -255,7 +267,7 @@ const UTF8* AssessorDesc::constructArrayName(Jnjvm *vm, AssessorDesc* ass,
     }
 
     for (uint32 i = 0; i < len; i++) {
-      buf[pos + i] = className->at(i);
+      buf[pos + i] = className->elements[i];
     }
 
     if (funcs == dRef) {
@@ -352,26 +364,27 @@ void Typedef::tPrintBuf(mvm::PrintBuffer* buf) const {
 }
 
 AssessorDesc* AssessorDesc::byteIdToPrimitive(char id) {
-  if (id == I_FLOAT) {
-    return dFloat;
-  } else if (id == I_INT) {
-    return dInt;
-  } else if (id == I_SHORT) {
-    return dShort;
-  } else if (id == I_CHAR) {
-    return dChar;
-  } else if (id == I_DOUBLE) {
-    return dDouble;
-  } else if (id == I_BYTE) {
-    return dByte;
-  } else if (id == I_BOOL) {
-    return dBool;
-  } else if (id == I_LONG) {
-    return dLong;
-  } else if (id == I_VOID) {
-    return dVoid;
-  } else {
-    return 0;
+  switch (id) {
+    case I_FLOAT :
+      return dFloat;
+    case I_INT :
+      return dInt;
+    case I_SHORT :
+      return dShort;
+    case I_CHAR :
+      return dChar;
+    case I_DOUBLE :
+      return dDouble;
+    case I_BYTE :
+      return dByte;
+    case I_BOOL :
+      return dBool;
+    case I_LONG :
+      return dLong;
+    case I_VOID :
+      return dVoid;
+    default :
+      return 0;
   }
 }
 
