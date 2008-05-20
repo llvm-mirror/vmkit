@@ -18,9 +18,9 @@
 #include "JavaIsolate.h"
 #include "JavaJIT.h"
 #include "JavaString.h"
+#include "JavaThread.h"
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
-#include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
 #include "Zip.h"
@@ -323,6 +323,16 @@ void JavaIsolate::mapInitialThread() {
 }
 
 void JavaIsolate::loadBootstrap() {
+  loadName(Classpath::newClass->name,
+           CommonClass::jnjvmClassLoader, true, true, true);
+  loadName(Classpath::newConstructor->name,
+           CommonClass::jnjvmClassLoader, true, true, true);
+  loadName(Classpath::newMethod->name,
+           CommonClass::jnjvmClassLoader, true, true, true);
+  loadName(Classpath::newField->name,
+           CommonClass::jnjvmClassLoader, true, true, true);
+  loadName(Classpath::newStackTraceElement->name,
+           CommonClass::jnjvmClassLoader, true, true, true);
   mapInitialThread();
   loadAppClassLoader();
   JavaObject* obj = JavaThread::currentThread();
@@ -403,7 +413,7 @@ void JavaIsolate::runMain(int argc, char** argv) {
 
     ArrayObject* args = ArrayObject::acons(argc - 2, JavaArray::ofString, this);
     for (int i = 2; i < argc; ++i) {
-      args->setAt(i - 2, (JavaObject*)asciizToStr(argv[i]));
+      args->elements[i - 2] = (JavaObject*)asciizToStr(argv[i]);
     }
 
     executeClass(info.className, args);

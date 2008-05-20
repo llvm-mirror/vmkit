@@ -167,6 +167,8 @@ void ClasspathThread::initialise(Jnjvm* vm) {
 }
 
 void ClasspathThread::createInitialThread(Jnjvm* vm, JavaObject* th) {
+  vm->loadName(newVMThread->name, newVMThread->classLoader, true, true, true);
+
   JavaObject* vmth = (*newVMThread)(vm);
   name->setVirtualObjectField(th, (JavaObject*)vm->asciizToStr("main"));
   priority->setVirtualInt32Field(th, (uint32)1);
@@ -174,12 +176,17 @@ void ClasspathThread::createInitialThread(Jnjvm* vm, JavaObject* th) {
   vmThread->setVirtualObjectField(th, vmth);
   assocThread->setVirtualObjectField(vmth, th);
   running->setVirtualInt8Field(vmth, (uint32)1);
+  
+  rootGroup->classDef->isolate->loadName(rootGroup->classDef->name,
+                                         rootGroup->classDef->classLoader,
+                                         true, true, true);
   JavaObject* RG = rootGroup->getStaticObjectField();
   group->setVirtualObjectField(th, RG);
   groupAddThread->invokeIntSpecial(vm, RG, th);
 }
 
 void ClasspathThread::mapInitialThread(Jnjvm* vm) {
+  vm->loadName(newThread->name, newThread->classLoader, true, true, true);
   JavaObject* th = (*newThread)(vm);
   createInitialThread(vm, th);
   JavaThread* myth = JavaThread::get();
