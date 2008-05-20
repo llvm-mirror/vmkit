@@ -17,7 +17,7 @@ using namespace jnjvm;
 
 
 JavaString* JavaString::stringDup(const UTF8*& utf8, Jnjvm* vm) {
-  JavaString* res = (JavaString*)(*Classpath::newString)(vm);
+  JavaString* res = (JavaString*)Classpath::newString->doNew(vm);
   // no need to call the function
   // Classpath::initString->run(res, utf8, 0, utf8->size, true);
   res->value = utf8;
