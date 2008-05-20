@@ -17,11 +17,14 @@
 
 #include "types.h"
 
-#include "JavaArray.h"
-#include "JavaThread.h"
 #include "Jnjvm.h"
 
 namespace jnjvm {
+
+class ArrayObject;
+class JavaThread;
+class JavaObject;
+class ThreadSystem;
 
 class ThreadSystem : public mvm::Object {
 public:
