@@ -33,7 +33,6 @@
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
-#include "JnjvmModule.h"
 
 #include "OpcodeNames.def"
 
@@ -97,32 +96,6 @@ uint32 JavaJIT::WCALC(uint32 n) {
     return n << 1;
   } else {
     return n;
-  }
-}
-
-void convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock,
-                  bool usign) {
-  const Type* t2 = val->getType();
-  if (t1 != t2) {
-    if (t1->isInteger() && t2->isInteger()) {
-      if (t2->getPrimitiveSizeInBits() < t1->getPrimitiveSizeInBits()) {
-        if (usign) {
-          val = new ZExtInst(val, t1, "", currentBlock);
-        } else {
-          val = new SExtInst(val, t1, "", currentBlock);
-        }
-      } else {
-        val = new TruncInst(val, t1, "", currentBlock);
-      }    
-    } else if (t1->isFloatingPoint() && t2->isFloatingPoint()) {
-      if (t2->getPrimitiveSizeInBits() < t1->getPrimitiveSizeInBits()) {
-        val = new FPExtInst(val, t1, "", currentBlock);
-      } else {
-        val = new FPTruncInst(val, t1, "", currentBlock);
-      }    
-    } else if (isa<PointerType>(t1) && isa<PointerType>(t2)) {
-      val = new BitCastInst(val, t1, "", currentBlock);
-    }    
   }
 }
 

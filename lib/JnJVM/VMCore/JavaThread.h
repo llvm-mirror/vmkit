@@ -51,9 +51,27 @@ public:
   virtual void TRACER;
   virtual void destroyer(size_t sz);
   
-  void initialise(JavaObject* thread, Jnjvm* isolate);
-  static JavaThread* get();
-  static JavaObject* currentThread();
+  void initialise(JavaObject* thread, Jnjvm* isolate) {
+    this->javaThread = thread;
+    this->isolate = isolate;
+    this->lock = mvm::Lock::allocNormal();
+    this->varcond = mvm::Cond::allocCond();
+    this->interruptFlag = 0;
+    this->state = StateRunning;
+    this->self = mvm::Thread::self();
+    this->pendingException = 0;
+  }
+
+  static JavaThread* get() {
+    return (JavaThread*)Thread::threadKey->get();
+  }
+  static JavaObject* currentThread() {
+    JavaThread* result = get();
+    if (result != 0)
+      return result->javaThread;
+    else
+      return 0;
+  }
   
   static void* getException() {
     return (void*)
@@ -69,7 +87,13 @@ public:
     __cxa_throw(exc, 0, 0);
   }
 
-  static void throwPendingException();
+  static void throwPendingException() {
+    JavaThread* th = JavaThread::get();
+    assert(th->pendingException);
+    void* exc = __cxa_allocate_exception(0);
+    th->internalPendingException = exc;
+    __cxa_throw(exc, 0, 0);
+  }
   
   static void clearException() {
     JavaThread* th = JavaThread::get();
@@ -88,7 +112,14 @@ public:
     return JavaThread::get()->pendingException;
   }
 
-  void returnFromNative();
+  void returnFromNative() {
+    assert(sjlj_buffers.size());
+#if defined(__MACH__)
+    longjmp((int*)sjlj_buffers.back(), 1);
+#else
+    longjmp((__jmp_buf_tag*)sjlj_buffers.back(), 1);
+#endif
+  }
 };
 
 } // end namespace jnjvm

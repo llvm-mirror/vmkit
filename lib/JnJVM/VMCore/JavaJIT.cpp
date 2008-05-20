@@ -38,7 +38,6 @@
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
 #include "NativeUtil.h"
 #include "Reader.h"
@@ -51,56 +50,6 @@
 using namespace jnjvm;
 using namespace llvm;
 
-BasicBlock* JavaJIT::createBasicBlock(const char* name) {
-  return llvm::BasicBlock::Create(name, llvmFunction);
-}
-
-Value* JavaJIT::top() {
-  return stack.back().first;
-}
-
-Value* JavaJIT::pop() {
-  llvm::Value * ret = top();
-  stack.pop_back();
-  return ret;
-}
-
-Value* JavaJIT::popAsInt() {
-  llvm::Value * ret = top();
-  const AssessorDesc* ass = topFunc();
-  stack.pop_back();
-
-  if (ret->getType() != Type::Int32Ty) {
-    if (ass == AssessorDesc::dChar) {
-      ret = new ZExtInst(ret, Type::Int32Ty, "", currentBlock);
-    } else {
-      ret = new SExtInst(ret, Type::Int32Ty, "", currentBlock);
-    }
-  }
-
-  return ret;
-}
-
-void JavaJIT::push(llvm::Value* val, const AssessorDesc* ass) {
-  assert(LLVMAssessorInfo::AssessorInfo[ass->numId].llvmType == val->getType());
-  stack.push_back(std::make_pair(val, ass));
-}
-
-void JavaJIT::push(std::pair<llvm::Value*, const AssessorDesc*> pair) {
-  assert(LLVMAssessorInfo::AssessorInfo[pair.second->numId].llvmType == 
-      pair.first->getType());
-  stack.push_back(pair);
-}
-
-
-const AssessorDesc* JavaJIT::topFunc() {
-  return stack.back().second;
-}
-
-uint32 JavaJIT::stackSize() {
-  return stack.size();
-}
-  
 void JavaJIT::invokeVirtual(uint16 index) {
   
   JavaCtpInfo* ctpInfo = compilingClass->ctpInfo;
@@ -185,12 +134,6 @@ void JavaJIT::invokeVirtual(uint16 index) {
 #else
   return invokeInterfaceOrVirtual(index);
 #endif
-}
-
-std::pair<llvm::Value*, const AssessorDesc*> JavaJIT::popPair() {
-  std::pair<Value*, const AssessorDesc*> ret = stack.back();
-  stack.pop_back();
-  return ret;
 }
 
 llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
@@ -1711,8 +1654,31 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
   }
 }
 
-extern void convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock,
-                         bool usign);
+void JavaJIT::convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock,
+                           bool usign) {
+  const Type* t2 = val->getType();
+  if (t1 != t2) {
+    if (t1->isInteger() && t2->isInteger()) {
+      if (t2->getPrimitiveSizeInBits() < t1->getPrimitiveSizeInBits()) {
+        if (usign) {
+          val = new ZExtInst(val, t1, "", currentBlock);
+        } else {
+          val = new SExtInst(val, t1, "", currentBlock);
+        }
+      } else {
+        val = new TruncInst(val, t1, "", currentBlock);
+      }    
+    } else if (t1->isFloatingPoint() && t2->isFloatingPoint()) {
+      if (t2->getPrimitiveSizeInBits() < t1->getPrimitiveSizeInBits()) {
+        val = new FPExtInst(val, t1, "", currentBlock);
+      } else {
+        val = new FPTruncInst(val, t1, "", currentBlock);
+      }    
+    } else if (isa<PointerType>(t1) && isa<PointerType>(t2)) {
+      val = new BitCastInst(val, t1, "", currentBlock);
+    }    
+  }
+}
  
 
 void JavaJIT::setStaticField(uint16 index) {

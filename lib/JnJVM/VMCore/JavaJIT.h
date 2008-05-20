@@ -28,9 +28,11 @@
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 
+#include "JavaTypes.h"
+#include "JnjvmModule.h"
+
 namespace jnjvm {
 
-class AssessorDesc;
 class CacheNode;
 class Class;
 class JavaField;
@@ -107,14 +109,58 @@ public:
   
   // stack manipulation
   std::vector< std::pair<llvm::Value*, const AssessorDesc*> > stack;
-  void push(llvm::Value* val, const AssessorDesc* ass);
-  void push(std::pair<llvm::Value*, const AssessorDesc*> pair);
-  llvm::Value* pop();
-  llvm::Value* popAsInt();
-  llvm::Value* top();
-  const AssessorDesc* topFunc();
-  std::pair<llvm::Value*, const AssessorDesc*> popPair();
-  uint32 stackSize();
+  void push(llvm::Value* val, const AssessorDesc* ass) {
+    assert(LLVMAssessorInfo::AssessorInfo[ass->numId].llvmType == 
+        val->getType());
+    stack.push_back(std::make_pair(val, ass));
+  }
+
+  void push(std::pair<llvm::Value*, const AssessorDesc*> pair) {
+    assert(LLVMAssessorInfo::AssessorInfo[pair.second->numId].llvmType == 
+      pair.first->getType());
+    stack.push_back(pair);
+  }
+  
+  llvm::Value* pop() {
+    llvm::Value * ret = top();
+    stack.pop_back();
+    return ret; 
+  }
+
+  llvm::Value* top() {
+    return stack.back().first;
+  }
+  
+  const AssessorDesc* topFunc() {
+    return stack.back().second;  
+  }
+  
+  uint32 stackSize() {
+    return stack.size();    
+  }
+  
+  llvm::Value* popAsInt() {
+    llvm::Value * ret = top();
+    const AssessorDesc* ass = topFunc();
+    stack.pop_back();
+
+    if (ret->getType() != llvm::Type::Int32Ty) {
+      if (ass == AssessorDesc::dChar || ass == AssessorDesc::dBool) {
+        ret = new llvm::ZExtInst(ret, llvm::Type::Int32Ty, "", currentBlock);
+      } else {
+        ret = new llvm::SExtInst(ret, llvm::Type::Int32Ty, "", currentBlock);
+      }
+    }
+
+    return ret;
+
+  }
+
+  std::pair<llvm::Value*, const AssessorDesc*> popPair() {
+    std::pair<llvm::Value*, const AssessorDesc*> ret = stack.back();
+    stack.pop_back();
+    return ret;
+  }
   
   // exceptions
   std::vector<llvm::BasicBlock*> jsrs;
@@ -128,7 +174,9 @@ public:
 
   // block manipulation
   llvm::BasicBlock* currentBlock;
-  llvm::BasicBlock* createBasicBlock(const char* name = "");
+  llvm::BasicBlock* createBasicBlock(const char* name = "") {
+    return llvm::BasicBlock::Create(name, llvmFunction);  
+  }
   void setCurrentBlock(llvm::BasicBlock* block);
 
   // branches
@@ -196,6 +244,10 @@ public:
                             llvm::BasicBlock *InsertAtEnd);
 
   
+  void convertValue(llvm::Value*& val, const llvm::Type* t1,
+                    llvm::BasicBlock* currentBlock, bool usign);
+
+
   // wide status
   bool wide;
   uint32 WREAD_U1(uint8* bytecodes, bool init, uint32 &i);
