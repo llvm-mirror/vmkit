@@ -51,6 +51,125 @@ jclass Cl) {
     return false;
 }
 
+JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setBooleanNative(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+jobject Field, jobject obj, jboolean val) {
+  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
+  field->setVirtualInt8Field((JavaObject*)obj, (uint8)val);
+}
+
+JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setByteNative(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+jobject Field, jobject obj, jbyte val) {
+  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
+  field->setVirtualInt8Field((JavaObject*)obj, (uint8)val);
+}
+
+JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setCharNative(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+jobject Field, jobject obj, jchar val) {
+  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
+  field->setVirtualInt16Field((JavaObject*)obj, (uint16)val);
+}
+
+JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setShortNative(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+jobject Field, jobject obj, jshort val) {
+  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
+  field->setVirtualInt16Field((JavaObject*)obj, (sint16)val);
+}
+
+JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setIntNative(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+jobject Field, jobject obj, jint val) {
+  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
+  field->setVirtualInt32Field((JavaObject*)obj, (sint32)val);
+}
+
+JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setLongNative(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+jobject Field, jobject obj, jlong val) {
+  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
+  field->setVirtualLongField((JavaObject*)obj, (sint64)val);
+}
+
+JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setFloatNative(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+jobject Field, jobject obj, jfloat val) {
+  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
+  field->setVirtualFloatField((JavaObject*)obj, (float)val);
+}
+
+JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setDoubleNative(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+jobject Field, jobject obj, jdouble val) {
+  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
+  field->setVirtualDoubleField((JavaObject*)obj, (double)val);
+}
+
+JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setObjectNative(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+jobject Field, jobject obj, jobject val) {
+  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
+  field->setVirtualObjectField((JavaObject*)obj, (JavaObject*)val);
+}
+
+JNIEXPORT jobject JNICALL Java_java_io_VMObjectInputStream_allocateObject(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+jclass target, jclass constr, jobject cons) {
+  Jnjvm* vm = JavaThread::get()->isolate;
+  Class* cl = (Class*)NativeUtil::resolvedImplClass(target, true);
+  JavaObject* res = cl->doNew(vm);
+  JavaMethod* meth = (JavaMethod*)(Classpath::constructorSlot->getVirtualInt32Field((JavaObject*)cons));
+  meth->invokeIntSpecial(vm, res);
+  return (jobject)res;
+}
+
+JNIEXPORT jobject JNICALL
+Java_java_lang_reflect_VMArray_createObjectArray
+  (
+#ifdef NATIVE_JNI
+   JNIEnv * env,
+   jclass thisClass __attribute__ ((__unused__)),
+#endif
+   jclass arrayType, jint arrayLength)
+{
+  Jnjvm* vm = JavaThread::get()->isolate;
+  ClassArray* cl = (ClassArray*)NativeUtil::resolvedImplClass(arrayType, true);
+  return (jobject) ArrayObject::acons((sint32)arrayLength, cl, vm);
+}
+
+
 JNIEXPORT bool JNICALL Java_java_util_concurrent_atomic_AtomicLong_VMSupportsCS8(
 #ifdef NATIVE_JNI
 JNIEnv *env,
