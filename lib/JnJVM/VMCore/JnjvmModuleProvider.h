@@ -12,8 +12,6 @@
 
 #include <llvm/ModuleProvider.h>
 
-#include "LockedMap.h"
-
 using namespace llvm;
 
 namespace jnjvm {
