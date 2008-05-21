@@ -42,7 +42,6 @@ using namespace jnjvm;
   INIT(ArrayDouble);
   INIT(ArrayObject);
   INIT(UTF8);
-  INIT(Attribut);
   INIT(CommonClass);
   INIT(Class);
   INIT(ClassArray);
@@ -81,11 +80,13 @@ using namespace jnjvm;
 #undef INIT
 
 void JavaArray::TRACER {
-  JavaObject::PARENT_TRACER;
+  classOf->MARK_AND_TRACE;
+  lockObj->MARK_AND_TRACE;
 }
 
 void ArrayObject::TRACER {
-  JavaObject::PARENT_TRACER;
+  classOf->MARK_AND_TRACE;
+  lockObj->MARK_AND_TRACE;
   for (sint32 i = 0; i < size; i++) {
     elements[i]->MARK_AND_TRACE;
   }
@@ -93,7 +94,8 @@ void ArrayObject::TRACER {
 
 #define ARRAYTRACER(name)         \
   void name::TRACER {             \
-    JavaObject::PARENT_TRACER;    \
+    classOf->MARK_AND_TRACE;      \
+    lockObj->MARK_AND_TRACE;      \
   }
   
 
@@ -109,9 +111,6 @@ ARRAYTRACER(ArrayDouble);
 
 #undef ARRAYTRACER
 
-
-void Attribut::TRACER {
-}
 
 #define TRACE_VECTOR(type,alloc,name) {                             \
   for (std::vector<type, alloc<type> >::iterator i = name.begin(),  \
@@ -132,7 +131,6 @@ void Class::TRACER {
   _staticInstance->MARK_AND_TRACE;
 #endif
   ctpInfo->MARK_AND_TRACE;
-  TRACE_VECTOR(Attribut*, gc_allocator, attributs);
   codeStaticTracer->MARK_AND_TRACE;
   codeVirtualTracer->MARK_AND_TRACE;
 }
@@ -142,13 +140,11 @@ void ClassArray::TRACER {
 }
 
 void JavaMethod::TRACER {
-  TRACE_VECTOR(Attribut*, gc_allocator, attributs);
   TRACE_VECTOR(Enveloppe*, gc_allocator, caches);
   code->MARK_AND_TRACE;
 }
 
 void JavaField::TRACER {
-  TRACE_VECTOR(Attribut*, gc_allocator, attributs);
 }
 
 void JavaCtpInfo::TRACER {

@@ -325,8 +325,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
               compilingMethod->printString());
 
 
-  Attribut* codeAtt = Attribut::lookup(&compilingMethod->attributs,
-                                       Attribut::codeAttribut);
+  Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
   
   if (!codeAtt) {
     Jnjvm* vm = JavaThread::get()->isolate;
@@ -479,8 +478,7 @@ llvm::Function* JavaJIT::javaCompile() {
               compilingMethod->printString());
 
 
-  Attribut* codeAtt = Attribut::lookup(&compilingMethod->attributs,
-                                       Attribut::codeAttribut);
+  Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
   
   if (!codeAtt) {
     Jnjvm* vm = JavaThread::get()->isolate;

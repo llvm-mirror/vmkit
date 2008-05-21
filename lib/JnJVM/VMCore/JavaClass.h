@@ -45,16 +45,13 @@ typedef enum JavaState {
 }JavaState;
 
 
-class Attribut : public mvm::Object {
+class Attribut {
 public:
-  static VirtualTable* VT;
   const UTF8* name;
   unsigned int start;
   unsigned int  nbb;
 
   void derive(const UTF8* name, unsigned int length, const Reader* reader);
-  static Attribut* lookup(const std::vector<Attribut*, gc_allocator<Attribut*> > * vec,
-                          const UTF8* key);
   Reader* toReader(Jnjvm *vm, ArrayUInt8* array, Attribut* attr);
 
   static const UTF8* codeAttribut;
@@ -64,8 +61,6 @@ public:
   static const UTF8* innerClassesAttribut;
   static const UTF8* sourceFileAttribut;
   
-  virtual void print(mvm::PrintBuffer *buf) const;
-  virtual void TRACER;
 };
 
 class CommonClass : public mvm::Object {
@@ -242,7 +237,7 @@ public:
   mvm::Code* codeVirtualTracer;
   mvm::Code* codeStaticTracer;
   JavaCtpInfo* ctpInfo;
-  std::vector<Attribut*, gc_allocator<Attribut*> > attributs;
+  std::vector<Attribut*> attributs;
   std::vector<Class*> innerClasses;
   Class* outerClass;
   uint32 innerAccess;
@@ -253,8 +248,11 @@ public:
   JavaObject* doNew(Jnjvm* vm);
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
+  virtual void destroyer(size_t sz);
 
   JavaObject* operator()(Jnjvm* vm);
+  
+  Attribut* lookupAttribut(const UTF8* key);
 
 #ifndef MULTIPLE_VM
   JavaObject* _staticInstance;
@@ -313,7 +311,7 @@ public:
   static VirtualTable* VT;
   unsigned int access;
   Signdef* signature;
-  std::vector<Attribut*, gc_allocator<Attribut*> > attributs;
+  std::vector<Attribut*> attributs;
   std::vector<Enveloppe*, gc_allocator<Enveloppe*> > caches;
   Class* classDef;
   const UTF8* name;
@@ -328,6 +326,7 @@ public:
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
   
+  Attribut* lookupAttribut(const UTF8* key);
 
   void* compiledPtr() {
     if (!code) return _compiledPtr();
@@ -396,7 +395,7 @@ public:
   const UTF8* name;
   Typedef* signature;
   const UTF8* type;
-  std::vector<Attribut*, gc_allocator<Attribut*> > attributs;
+  std::vector<Attribut*> attributs;
   Class* classDef;
   uint64 ptrOffset;
   /// num - The index of the field in the field list.
@@ -404,6 +403,7 @@ public:
   uint32 num;
 
   void initField(JavaObject* obj);
+  Attribut* lookupAttribut(const UTF8* key);
 
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;

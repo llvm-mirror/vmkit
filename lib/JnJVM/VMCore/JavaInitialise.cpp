@@ -43,7 +43,6 @@ static void initialiseVT() {
   X::VT = ((void**)(void*)(&fake))[0]; }
 
   INIT(JavaArray);
-  INIT(Attribut);
   INIT(CommonClass);
   INIT(Class);
   INIT(ClassArray);

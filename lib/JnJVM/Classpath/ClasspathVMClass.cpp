@@ -351,8 +351,7 @@ jclass Cl) {
 }
 
 static void resolveInnerOuterClasses(Class* cl) {
-  Attribut* attribut = Attribut::lookup(&cl->attributs,
-                                        Attribut::innerClassesAttribut);
+  Attribut* attribut = cl->lookupAttribut(Attribut::innerClassesAttribut);
   if (attribut != 0) {
     Reader* reader = attribut->toReader(JavaThread::get()->isolate, cl->bytes,
                                         attribut);

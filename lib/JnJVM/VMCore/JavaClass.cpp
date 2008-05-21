@@ -45,12 +45,6 @@ std::vector<JavaMethod*> ClassArray::StaticMethodsArray;
 std::vector<JavaField*> ClassArray::VirtualFieldsArray;
 std::vector<JavaField*> ClassArray::StaticFieldsArray;
 
-void Attribut::print(mvm::PrintBuffer* buf) const {
-  buf->write("Attribut<");
-  buf->writeObj(name);
-  buf->write(">");
-}
-
 void Attribut::derive(const UTF8* name, unsigned int length,
                       const Reader* reader) {
   
@@ -60,17 +54,43 @@ void Attribut::derive(const UTF8* name, unsigned int length,
 
 }
 
-// TODO: Optimize
-Attribut* Attribut::lookup(const std::vector<Attribut*,
-                                             gc_allocator<Attribut*> >* vec,
-                           const UTF8* key ) {
-  
-  for (uint32 i = 0; i < vec->size(); i++) {
-    Attribut* cur = vec->at(i);
+Attribut* Class::lookupAttribut(const UTF8* key ) {
+  for (std::vector<Attribut*>::iterator i = attributs.begin(), 
+       e = attributs.end(); i!= e; ++i) {
+    Attribut* cur = *i;
     if (cur->name->equals(key)) return cur;
   }
 
   return 0;
+}
+
+Attribut* JavaField::lookupAttribut(const UTF8* key ) {
+  for (std::vector<Attribut*>::iterator i = attributs.begin(), 
+       e = attributs.end(); i!= e;++i) {
+    Attribut* cur = *i;
+    if (cur->name->equals(key)) return cur;
+  }
+
+  return 0;
+}
+
+Attribut* JavaMethod::lookupAttribut(const UTF8* key ) {
+  for (std::vector<Attribut*>::iterator i = attributs.begin(), 
+       e = attributs.end(); i!= e; ++i) {
+    Attribut* cur = *i;
+    if (cur->name->equals(key)) return cur;
+  }
+
+  return 0;
+}
+
+void Class::destroyer(size_t sz) {
+  for (std::vector<Attribut*>::iterator i = attributs.begin(), 
+       e = attributs.end(); i!= e;) {
+    Attribut* cur = *i;
+    delete cur;
+  }
+
 }
 
 Reader* Attribut::toReader(Jnjvm* vm, ArrayUInt8* array, Attribut* attr) {
@@ -398,8 +418,7 @@ bool CommonClass::isAssignableFrom(CommonClass* cl) {
 
 void JavaField::initField(JavaObject* obj) {
   const AssessorDesc* funcs = signature->funcs;
-  Attribut* attribut = Attribut::lookup(&attributs,
-                                        Attribut::constantAttribut);
+  Attribut* attribut = lookupAttribut(Attribut::constantAttribut);
 
   if (!attribut) {
     JnjvmModule::InitField(this, obj);

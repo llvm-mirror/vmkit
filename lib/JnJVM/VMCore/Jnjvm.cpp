@@ -206,7 +206,7 @@ void Jnjvm::readAttributs(Class* cl, Reader* reader,
   for (int i = 0; i < nba; i++) {
     const UTF8* attName = ctpInfo->UTF8At(reader->readU2());
     unsigned int attLen = reader->readU4();
-    Attribut* att = vm_new(this, Attribut);
+    Attribut* att = new Attribut();
     att->derive(attName, attLen, reader);
     attr.push_back(att);
     reader->seek(attLen, Reader::SeekCur);

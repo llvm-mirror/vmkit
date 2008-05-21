@@ -396,8 +396,7 @@ ArrayObject* NativeUtil::getParameterTypes(JavaObject* loader, JavaMethod* meth)
 }
 
 ArrayObject* NativeUtil::getExceptionTypes(JavaMethod* meth) {
-  Attribut* exceptionAtt = Attribut::lookup(&meth->attributs,
-                                            Attribut::exceptionsAttribut);
+  Attribut* exceptionAtt = meth->lookupAttribut(Attribut::exceptionsAttribut);
   if (exceptionAtt == 0) {
     return ArrayObject::acons(0, Classpath::classArrayClass,
                               JavaThread::get()->isolate);
