@@ -30,7 +30,7 @@ JavaMethod* JavaJIT::IPToJavaMethod(void* begIp) {
   if (val) {
     mvm::Method* m = val->method();
     mvm::Object* meth = m->definition();
-    if (meth && meth->getVirtualTable() == JavaMethod::VT) {
+    if (meth) {
       return (JavaMethod*)meth;
     }
   }
@@ -63,7 +63,7 @@ void JavaJIT::printBacktrace() {
     if (code) {
       mvm::Method* m = code->method();
       mvm::Object* meth = m->definition();
-      if (meth && meth->getVirtualTable() == JavaMethod::VT) {
+      if (meth) {
         printf("; %p in %s\n",  ips[n - 1], meth->printString());
       } else if (m->llvmFunction) {
         printf("; %p in %s\n",  ips[n - 1],
@@ -96,7 +96,7 @@ Class* JavaJIT::getCallingClass() {
     if (code) {
       mvm::Method* m = code->method();
       mvm::Object* meth = m->definition();
-      if (meth && meth->getVirtualTable() == JavaMethod::VT) {
+      if (meth) {
         if (i == 1) {
           return ((JavaMethod*)meth)->classDef;
         } else {
@@ -118,7 +118,7 @@ Class* JavaJIT::getCallingClassWalker() {
     if (code) {
       mvm::Method* m = code->method();
       mvm::Object* meth = m->definition();
-      if (meth && meth->getVirtualTable() == JavaMethod::VT) {
+      if (meth) {
         if (i == 1) {
           return ((JavaMethod*)meth)->classDef;
         } else {

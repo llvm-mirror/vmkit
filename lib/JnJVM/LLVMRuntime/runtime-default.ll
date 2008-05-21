@@ -29,11 +29,11 @@
 %ArrayUInt8 = type { %JavaObject, i32, [0 x i8] }
 
 ;;; The CacheNode type. The second field is the last called method
-%CacheNode = type { %VT, i8*, %JavaClass*, %CacheNode*, %Enveloppe* }
+%CacheNode = type { i8*, %JavaClass*, %CacheNode*, %Enveloppe* }
 
 ;;; The Enveloppe type, which contains the first cache and all the info
 ;;; to lookup in the constant pool.
-%Enveloppe = type { %VT, %CacheNode*, i8*, i8*, i32 }
+%Enveloppe = type { %CacheNode*, i8*, i8*, i32 }
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

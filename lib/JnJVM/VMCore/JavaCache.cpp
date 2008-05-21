@@ -26,19 +26,15 @@
 
 using namespace jnjvm;
 
-void Enveloppe::destroyer(size_t sz) {
+Enveloppe::~Enveloppe() {
   delete cacheLock;
-}
-
-void CacheNode::print(mvm::PrintBuffer* buf) const {
-  buf->write("CacheNode<");
-  buf->write(" in ");
-  enveloppe->print(buf);
-  buf->write(">");
-}
-
-void Enveloppe::print(mvm::PrintBuffer* buf) const {
-  buf->write("Enveloppe<>");
+  CacheNode* cache = firstCache;
+  CacheNode* next = firstCache;
+  while(next) {
+    next = cache->next;
+    delete cache;
+    cache = next;
+  }
 }
 
 void CacheNode::initialise() {
@@ -48,8 +44,8 @@ void CacheNode::initialise() {
 }
 
 Enveloppe* Enveloppe::allocate(JavaCtpInfo* ctp, uint32 index) {
-  Enveloppe* enveloppe = vm_new(ctp->classDef->isolate, Enveloppe)();
-  enveloppe->firstCache = vm_new(ctp->classDef->isolate, CacheNode)();
+  Enveloppe* enveloppe = new Enveloppe();
+  enveloppe->firstCache = new CacheNode();
   enveloppe->firstCache->initialise();
   enveloppe->firstCache->enveloppe = enveloppe;
   enveloppe->cacheLock = mvm::Lock::allocNormal();

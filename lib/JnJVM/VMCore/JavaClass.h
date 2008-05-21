@@ -341,15 +341,15 @@ public:
 };
 
 
-class JavaMethod : public mvm::Object {
+class JavaMethod {
 private:
   void* _compiledPtr();
 public:
-  static VirtualTable* VT;
+  ~JavaMethod();
   unsigned int access;
   Signdef* signature;
   std::vector<Attribut*> attributs;
-  std::vector<Enveloppe*, gc_allocator<Enveloppe*> > caches;
+  std::vector<Enveloppe*> caches;
   Class* classDef;
   const UTF8* name;
   const UTF8* type;
@@ -360,9 +360,6 @@ public:
   ///
   uint32 offset;
 
-  virtual void print(mvm::PrintBuffer *buf) const;
-  virtual void TRACER;
-  
   Attribut* lookupAttribut(const UTF8* key);
 
   void* compiledPtr() {
@@ -423,11 +420,13 @@ public:
   double invokeDoubleStatic(Jnjvm* vm, ...);
   sint64 invokeLongStatic(Jnjvm* vm, ...);
   JavaObject* invokeJavaObjectStatic(Jnjvm* vm, ...);
+  
+  const char* printString() const;
 };
 
-class JavaField : public mvm::Object {
+class JavaField  {
 public:
-  static VirtualTable* VT;
+  ~JavaField();
   unsigned int access;
   const UTF8* name;
   Typedef* signature;
@@ -441,10 +440,8 @@ public:
 
   void initField(JavaObject* obj);
   Attribut* lookupAttribut(const UTF8* key);
+  const char* printString() const;
 
-  virtual void print(mvm::PrintBuffer *buf) const;
-  virtual void TRACER;
-  
   #define GETVIRTUALFIELD(TYPE, TYPE_NAME) \
   TYPE getVirtual##TYPE_NAME##Field(JavaObject* obj) { \
     assert(classDef->isReady()); \

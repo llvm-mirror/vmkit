@@ -15,6 +15,7 @@
 #include "types.h"
 
 #include "JavaArray.h"
+#include "JavaCache.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
 #include "JavaJIT.h"
@@ -82,11 +83,59 @@ Attribut* JavaMethod::lookupAttribut(const UTF8* key ) {
 
 void Class::destroyer(size_t sz) {
   for (std::vector<Attribut*>::iterator i = attributs.begin(), 
-       e = attributs.end(); i!= e;) {
+       e = attributs.end(); i!= e; ++i) {
     Attribut* cur = *i;
     delete cur;
   }
+  
+  for (field_iterator i = staticFields.begin(), 
+       e = staticFields.end(); i!= e; ++i) {
+    JavaField* cur = i->second;
+    delete cur;
+  }
+  
+  for (field_iterator i = virtualFields.begin(), 
+       e = virtualFields.end(); i!= e; ++i) {
+    JavaField* cur = i->second;
+    delete cur;
+  }
+  
+  for (method_iterator i = virtualMethods.begin(), 
+       e = virtualMethods.end(); i!= e; ++i) {
+    JavaMethod* cur = i->second;
+    delete cur;
+  }
+  
+  for (method_iterator i = staticMethods.begin(), 
+       e = staticMethods.end(); i!= e; ++i) {
+    JavaMethod* cur = i->second;
+    delete cur;
+  }
+  
   delete ctpInfo;
+}
+
+JavaField::~JavaField() {
+  for (std::vector<Attribut*>::iterator i = attributs.begin(), 
+       e = attributs.end(); i!= e; ++i) {
+    Attribut* cur = *i;
+    delete cur;
+  }
+}
+
+JavaMethod::~JavaMethod() {
+  
+  for (std::vector<Attribut*>::iterator i = attributs.begin(), 
+       e = attributs.end(); i!= e; ++i) {
+    Attribut* cur = *i;
+    delete cur;
+  }
+
+  for (std::vector<Enveloppe*>::iterator i = caches.begin(), 
+       e = caches.end(); i!= e; ++i) {
+    Enveloppe* cur = *i;
+    delete cur;
+  }
 }
 
 Reader* Attribut::toReader(Jnjvm* vm, ArrayUInt8* array, Attribut* attr) {
@@ -191,7 +240,7 @@ void* JavaMethod::_compiledPtr() {
       mvm::Code* temp = (mvm::Code*)(classDef->isolate->GC->begOf(val));
 #endif
       if (temp) {
-        temp->method()->definition(this);
+        temp->method()->definition((mvm::Object*)this);
       }
       code = (mvm::Code*)val;
       classDef->release();
@@ -202,13 +251,16 @@ void* JavaMethod::_compiledPtr() {
   }
 }
 
-void JavaMethod::print(mvm::PrintBuffer* buf) const {
+const char* JavaMethod::printString() const {
+  mvm::PrintBuffer *buf= mvm::PrintBuffer::alloc();
   buf->write("JavaMethod<");
   signature->printWithSign(classDef, name, buf);
   buf->write(">");
+  return buf->contents()->cString();
 }
 
-void JavaField::print(mvm::PrintBuffer* buf) const {
+const char* JavaField::printString() const {
+  mvm::PrintBuffer *buf= mvm::PrintBuffer::alloc();
   buf->write("JavaField<");
   if (isStatic(access))
     buf->write("static ");
@@ -220,6 +272,7 @@ void JavaField::print(mvm::PrintBuffer* buf) const {
   buf->write("::");
   name->print(buf);
   buf->write(">");
+  return buf->contents()->cString();
 }
 
 JavaMethod* CommonClass::lookupMethodDontThrow(const UTF8* name,
@@ -497,13 +550,15 @@ JavaMethod* CommonClass::constructMethod(const UTF8* name,
   method_iterator End = map.end();
   method_iterator I = map.find(CC);
   if (I == End) {
-    JavaMethod* method = vm_new(isolate, JavaMethod)();
+    JavaMethod* method = new JavaMethod();
     method->name = name;
     method->type = type;
     method->classDef = (Class*)this;
     method->signature = (Signdef*)isolate->constructType(type);
     method->code = 0;
     method->access = access;
+    method->canBeInlined = false;
+    method->offset = 0;
     map.insert(std::make_pair(CC, method));
     return method;
   } else {
@@ -518,7 +573,7 @@ JavaField* CommonClass::constructField(const UTF8* name,
   field_iterator End = map.end();
   field_iterator I = map.find(CC);
   if (I == End) {
-    JavaField* field = vm_new(isolate, JavaField)();
+    JavaField* field = new JavaField();
     field->name = name;
     field->type = type;
     field->classDef = (Class*)this;

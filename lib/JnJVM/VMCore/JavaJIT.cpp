@@ -1848,7 +1848,6 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   
   Value* zero = mvm::jit::constantZero;
   Value* one = mvm::jit::constantOne;
-  Value* two = mvm::jit::constantTwo;
   
   Value* llvmEnv = 
     ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
@@ -1860,7 +1859,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
 
   std::vector<Value*> args1;
   args1.push_back(zero);
-  args1.push_back(one);
+  args1.push_back(zero);
   Value* cachePtr = GetElementPtrInst::Create(llvmEnv, args1.begin(), args1.end(),
                                           "", currentBlock);
   Value* cache = new LoadInst(cachePtr, "", currentBlock);
@@ -1869,7 +1868,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
                                currentBlock);
   std::vector<Value*> args3;
   args3.push_back(zero);
-  args3.push_back(two);
+  args3.push_back(one);
   Value* lastCiblePtr = GetElementPtrInst::Create(cache, args3.begin(), 
                                                   args3.end(), "", 
                                                   currentBlock);

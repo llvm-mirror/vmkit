@@ -45,8 +45,6 @@ using namespace jnjvm;
   INIT(CommonClass);
   INIT(Class);
   INIT(ClassArray);
-  INIT(JavaMethod);
-  INIT(JavaField);
   INIT(JavaCond);
   INIT(LockObj);
   INIT(JavaObject);
@@ -67,8 +65,6 @@ using namespace jnjvm;
   INIT(StaticInstanceMap);
   INIT(JavaIsolate);
   INIT(JavaString);
-  INIT(CacheNode);
-  INIT(Enveloppe);
   INIT(DelegateeMap);
 #ifdef SERVICE_VM
   INIT(ServiceDomain);
@@ -120,24 +116,16 @@ void CommonClass::TRACER {
   delegatee->MARK_AND_TRACE;
 #endif
   
-  for (field_iterator i = virtualFields.begin(), e = virtualFields.end();
-       i!= e; ++i) {
-    i->second->MARK_AND_TRACE;
-  }
-  
-  for (field_iterator i = staticFields.begin(), e = staticFields.end();
-       i!= e; ++i) {
-    i->second->MARK_AND_TRACE;
-  }
-  
   for (method_iterator i = staticMethods.begin(), e = staticMethods.end();
        i!= e; ++i) {
-    i->second->MARK_AND_TRACE;
+    mvm::Code* c = i->second->code;
+    if (c) c->MARK_AND_TRACE;
   }
   
   for (method_iterator i = virtualMethods.begin(), e = virtualMethods.end();
        i!= e; ++i) {
-    i->second->MARK_AND_TRACE;
+    mvm::Code* c = i->second->code;
+    if (c) c->MARK_AND_TRACE;
   }
  
 }
@@ -154,14 +142,6 @@ void Class::TRACER {
 
 void ClassArray::TRACER {
   CommonClass::PARENT_TRACER;
-}
-
-void JavaMethod::TRACER {
-  TRACE_VECTOR(Enveloppe*, gc_allocator, caches);
-  code->MARK_AND_TRACE;
-}
-
-void JavaField::TRACER {
 }
 
 void JavaCond::TRACER {
@@ -243,18 +223,6 @@ void JavaIsolate::TRACER {
 }
 
 void JavaString::TRACER {
-}
-
-void CacheNode::TRACER {
-  ((mvm::Object*)methPtr)->MARK_AND_TRACE;
-  lastCible->MARK_AND_TRACE;
-  next->MARK_AND_TRACE;
-  enveloppe->MARK_AND_TRACE;
-}
-
-void Enveloppe::TRACER {
-  firstCache->MARK_AND_TRACE;
-  //cacheLock->MARK_AND_TRACE;
 }
 
 void UTF8Map::TRACER {
