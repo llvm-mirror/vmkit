@@ -165,6 +165,15 @@ public:
 
   STATIC inline void *gcmalloc(VirtualTable *vt, size_t n) {
     lock();
+    
+    _since_last_collection -= n;
+    if(_enable_auto && (_since_last_collection <= 0)) {
+#ifdef SERVICE_GC
+      ++gcTriggered;
+#endif
+      collect_unprotect();
+    }
+    
     register GCChunkNode *header = allocator->alloc_chunk(n + sizeof(gc_header), 1, current_mark & 1);
 #ifdef SERVICE_GC
     header->meta = this;
@@ -176,13 +185,6 @@ public:
     register struct gc_header *p = header->chunk();
     p->_XXX_vt = vt;
 
-    _since_last_collection -= n;
-    if(_enable_auto && (_since_last_collection <= 0)) {
-#ifdef SERVICE_GC
-      ++gcTriggered;
-#endif
-      collect_unprotect();
-    }
 
     unlock();
     return p->_2gc();
@@ -190,7 +192,7 @@ public:
 
   STATIC inline void *gcrealloc(void *ptr, size_t n) {
     lock();
-
+    
     GCPage      *desc = GCHash::get(ptr);
     GCChunkNode  *node = desc->o2node(ptr, GCChunkNode::maskCollectable);
 
@@ -198,6 +200,16 @@ public:
       gcfatal("%p isn't a avalid object", ptr);
 
     size_t      old_sz = node->nbb();
+    
+    _since_last_collection -= (n - old_sz);
+
+    if(_enable_auto && (_since_last_collection <= 0)) {
+#ifdef SERVICE_GC
+      ++gcTriggered;
+#endif
+      collect_unprotect();
+    }
+
     GCChunkNode  *res = allocator->realloc_chunk(desc, node, n+sizeof(gc_header));
 #ifdef SERVICE_GC
     res->meta = this;
@@ -210,14 +222,6 @@ public:
     }
 
     gc_header *obj = res->chunk();
-     _since_last_collection -= (n - old_sz);
-
-    if(_enable_auto && (_since_last_collection <= 0)) {
-#ifdef SERVICE_GC
-      ++gcTriggered;
-#endif
-      collect_unprotect();
-    }
 
     unlock();
     return obj->_2gc();
