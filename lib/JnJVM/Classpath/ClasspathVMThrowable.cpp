@@ -52,8 +52,7 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   JavaObject* className = vm->UTF8ToStr(cl->name->internalToJava(vm, 0, cl->name->size));
   JavaObject* sourceName = 0;
   
-  Attribut* sourceAtt = Attribut::lookup(&cl->attributs,
-                                         Attribut::sourceFileAttribut);
+  Attribut* sourceAtt = cl->lookupAttribut(Attribut::sourceFileAttribut);
   
   if (sourceAtt) {
     Reader* reader = sourceAtt->toReader(JavaThread::get()->isolate, cl->bytes,
