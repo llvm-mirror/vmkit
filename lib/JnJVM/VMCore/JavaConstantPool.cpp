@@ -40,12 +40,6 @@ const uint32 JavaCtpInfo::ConstantInterfaceMethodref = 11;
 const uint32 JavaCtpInfo::ConstantNameAndType = 12;
 
 
-void JavaCtpInfo::print(mvm::PrintBuffer* buf) {
-  buf->write("CtpInfoOf<");
-  classDef->print(buf);
-  buf->write(">");
-}
-
 static uint32 unimplemented(Jnjvm* vm, uint32 type, uint32 e, Reader* reader,
                          sint32* ctpDef, void** ctpRes, uint8* ctpType) {
   JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
@@ -202,7 +196,7 @@ uint32 JavaCtpInfo::CtpReaderDouble(Jnjvm* vm, uint32 type, uint32 e, Reader* re
 
 void JavaCtpInfo::read(Jnjvm *vm, Class* cl, Reader* reader) {
   uint32 nbCtp = reader->readU2();
-  JavaCtpInfo* res = vm_new(vm, JavaCtpInfo)();
+  JavaCtpInfo* res = new JavaCtpInfo();
   
   res->ctpRes   = (void**)malloc(sizeof(void*)*nbCtp);
   res->ctpDef   = (sint32*)malloc(sizeof(sint32)*nbCtp);

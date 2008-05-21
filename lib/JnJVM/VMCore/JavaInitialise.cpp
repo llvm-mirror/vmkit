@@ -48,7 +48,6 @@ static void initialiseVT() {
   INIT(ClassArray);
   INIT(JavaMethod);
   INIT(JavaField);
-  INIT(JavaCtpInfo);
   INIT(JavaCond);
   INIT(LockObj);
   INIT(JavaObject);

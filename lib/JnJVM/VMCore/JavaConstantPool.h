@@ -26,9 +26,8 @@ class UTF8;
 
 typedef uint32 (*ctpReader)(Jnjvm*, uint32, uint32, Reader*, sint32*, void**, uint8*);
 
-class JavaCtpInfo : public mvm::Object {
+class JavaCtpInfo {
 public:
-  static VirtualTable* VT;
   Class*  classDef;
   void**  ctpRes;
   sint32* ctpDef;
@@ -47,9 +46,6 @@ public:
   static const uint32 ConstantInterfaceMethodref;
   static const uint32 ConstantNameAndType;
   
-  virtual void print(mvm::PrintBuffer* buf);
-  virtual void TRACER;
-
   static ctpReader funcsReader[16];
 
   static uint32 CtpReaderClass(Jnjvm* vm, uint32 type, uint32 e, Reader* reader,

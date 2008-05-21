@@ -86,7 +86,7 @@ void Class::destroyer(size_t sz) {
     Attribut* cur = *i;
     delete cur;
   }
-
+  delete ctpInfo;
 }
 
 Reader* Attribut::toReader(Jnjvm* vm, ArrayUInt8* array, Attribut* attr) {
@@ -531,3 +531,4 @@ JavaField* CommonClass::constructField(const UTF8* name,
     return I->second;
   }
 }
+

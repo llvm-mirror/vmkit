@@ -305,7 +305,7 @@ public:
   JavaObject* staticInstance();
   void createStaticInstance();
 #endif
-
+  
 };
 
 

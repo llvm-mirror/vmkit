@@ -47,7 +47,6 @@ using namespace jnjvm;
   INIT(ClassArray);
   INIT(JavaMethod);
   INIT(JavaField);
-  INIT(JavaCtpInfo);
   INIT(JavaCond);
   INIT(LockObj);
   INIT(JavaObject);
@@ -149,7 +148,6 @@ void Class::TRACER {
 #ifndef MULTIPLE_VM
   _staticInstance->MARK_AND_TRACE;
 #endif
-  ctpInfo->MARK_AND_TRACE;
   codeStaticTracer->MARK_AND_TRACE;
   codeVirtualTracer->MARK_AND_TRACE;
 }
@@ -164,11 +162,6 @@ void JavaMethod::TRACER {
 }
 
 void JavaField::TRACER {
-}
-
-void JavaCtpInfo::TRACER {
-  // Everything is hashed in the constant pool,
-  // do not trace them here
 }
 
 void JavaCond::TRACER {
