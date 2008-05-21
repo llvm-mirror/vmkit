@@ -195,7 +195,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, JavaObject* obj, va_lis
   verifyNull(obj); \
   JavaMethod* meth = obj->classOf->lookupMethod(name, type, false, true); \
   \
-  void* func = meth->compiledPtr();\
+  void* func = (((void***)obj)[0])[meth->offset];\
   return ((FUNC_TYPE_VIRTUAL_AP)signature->virtualCallAP())(vm, func, obj, ap);\
 }\
 \
