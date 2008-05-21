@@ -26,17 +26,23 @@ class JavaThread;
 class JavaObject;
 class ThreadSystem;
 
-class ThreadSystem : public mvm::Object {
+class ThreadSystem {
 public:
-  static VirtualTable* VT;
   uint16 nonDaemonThreads;
   mvm::Lock* nonDaemonLock;
   mvm::Cond* nonDaemonVar;
+  
+  ThreadSystem() {
+    nonDaemonThreads = 1;
+    nonDaemonLock = mvm::Lock::allocNormal();
+    nonDaemonVar  = mvm::Cond::allocCond();
+  }
 
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
+  ~ThreadSystem() {
+    delete nonDaemonLock;
+    delete nonDaemonVar;
+  }
 
-  void initialise();
 };
 
 class JavaIsolate : public Jnjvm {

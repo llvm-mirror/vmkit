@@ -52,7 +52,6 @@ static void initialiseVT() {
   INIT(JavaThread);
   INIT(Typedef);
   INIT(Signdef);
-  INIT(ThreadSystem);
   INIT(Jnjvm);
   INIT(Reader);
   INIT(ZipFile);

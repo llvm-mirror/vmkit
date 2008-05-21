@@ -51,7 +51,6 @@ using namespace jnjvm;
   INIT(JavaThread);
   INIT(Typedef);
   INIT(Signdef);
-  INIT(ThreadSystem);
   INIT(Jnjvm);
   INIT(Reader);
   INIT(ZipFile);
@@ -183,9 +182,6 @@ void Signdef::TRACER {
   _virtualCallAP->MARK_AND_TRACE;
 }
 
-void ThreadSystem::TRACER {
-}
-
 void Jnjvm::TRACER {
   appClassLoader->MARK_AND_TRACE;
   hashUTF8->MARK_AND_TRACE;
@@ -213,7 +209,6 @@ void ZipArchive::TRACER {
 
 void JavaIsolate::TRACER {
   Jnjvm::PARENT_TRACER;
-  threadSystem->MARK_AND_TRACE;
   bootstrapThread->MARK_AND_TRACE;
 }
 

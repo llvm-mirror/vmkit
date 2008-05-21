@@ -295,20 +295,10 @@ void ClArgumentsInfo::readArgs(int argc, char** argv, Jnjvm* vm) {
 }
 
 
-void ThreadSystem::print(mvm::PrintBuffer* buf) const {
-  buf->write("ThreadSystem<>");
-}
-
 void JavaIsolate::print(mvm::PrintBuffer* buf) const {
   buf->write("Java isolate: ");
   buf->write(name);
 
-}
-
-void ThreadSystem::initialise() {
-  nonDaemonThreads = 1;
-  nonDaemonLock = mvm::Lock::allocNormal();
-  nonDaemonVar  = mvm::Cond::allocCond();
 }
 
 JavaObject* JavaIsolate::loadAppClassLoader() {
@@ -466,8 +456,7 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   isolate->bootstrapThread->baseSP = baseSP;
   JavaThread::threadKey->set(isolate->bootstrapThread);
   
-  isolate->threadSystem = vm_new(isolate, ThreadSystem)();
-  isolate->threadSystem->initialise();
+  isolate->threadSystem = new ThreadSystem();
   isolate->name = "isolate";
   isolate->appClassLoader = 0;
   isolate->jniEnv = &JNI_JNIEnvTable;
@@ -541,8 +530,7 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
 #endif
 
 #if defined(SERVICE_VM) || !defined(MULTIPLE_VM)
-  isolate->threadSystem = vm_new(isolate, ThreadSystem)();
-  isolate->threadSystem->initialise();
+  isolate->threadSystem = new ThreadSystem();
 #endif
   
   return isolate;
@@ -550,4 +538,5 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
 
 void JavaIsolate::destroyer(size_t sz) {
   Jnjvm::destroyer(sz);
+  delete threadSystem;
 }
