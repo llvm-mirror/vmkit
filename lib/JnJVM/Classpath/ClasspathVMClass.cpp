@@ -83,12 +83,13 @@ JNIEnv *env,
   if (cl->isArray || isInterface(cl->access)) {
     return (jobject)ArrayObject::acons(0, Classpath::constructorArrayClass, vm);
   } else {
-    std::vector<JavaMethod*> meths = cl->virtualMethods;
+    CommonClass::method_map meths = cl->virtualMethods;
     std::vector<JavaMethod*> res;
-    for (std::vector<JavaMethod*>::iterator i = meths.begin(), e = meths.end();
+    for (CommonClass::method_iterator i = meths.begin(), e = meths.end();
           i != e; ++i) {
-      if ((*i)->name == Jnjvm::initName && (!publicOnly || isPublic((*i)->access))) {
-        res.push_back(*i);
+      JavaMethod* meth = i->second;
+      if (meth->name == Jnjvm::initName && (!publicOnly || isPublic(meth->access))) {
+        res.push_back(meth);
       }
     }
     
@@ -121,19 +122,21 @@ JNIEnv *env,
   if (cl->isArray) {
     return (jobject)ArrayObject::acons(0, Classpath::methodArrayClass, vm);
   } else {
-    std::vector<JavaMethod*> meths = cl->virtualMethods;
+    CommonClass::method_map meths = cl->virtualMethods;
     std::vector<JavaMethod*> res;
-    for (std::vector<JavaMethod*>::iterator i = meths.begin(), e = meths.end();
+    for (CommonClass::method_iterator i = meths.begin(), e = meths.end();
           i != e; ++i) {
-      if ((*i)->name != Jnjvm::initName && (!publicOnly || isPublic((*i)->access))) {
-        res.push_back(*i);
+      JavaMethod* meth = i->second;
+      if (meth->name != Jnjvm::initName && (!publicOnly || isPublic(meth->access))) {
+        res.push_back(meth);
       }
     }
     meths = cl->staticMethods; 
-    for (std::vector<JavaMethod*>::iterator i = meths.begin(), e = meths.end();
+    for (CommonClass::method_iterator i = meths.begin(), e = meths.end();
           i != e; ++i) {
-      if ((*i)->name != Jnjvm::clinitName && (!publicOnly || isPublic((*i)->access))) {
-        res.push_back(*i);
+      JavaMethod* meth = i->second;
+      if (meth->name != Jnjvm::clinitName && (!publicOnly || isPublic(meth->access))) {
+        res.push_back(meth);
       }
     }
     
@@ -299,19 +302,21 @@ jclass Cl, jboolean publicOnly) {
   if (cl->isArray) {
     return (jobject)ArrayObject::acons(0, Classpath::fieldArrayClass, vm);
   } else {
-    std::vector<JavaField*> fields = cl->virtualFields;
+    CommonClass::field_map fields = cl->virtualFields;
     std::vector<JavaField*> res;
-    for (std::vector<JavaField*>::iterator i = fields.begin(), e = fields.end();
+    for (CommonClass::field_iterator i = fields.begin(), e = fields.end();
           i != e; ++i) {
-      if (!publicOnly || isPublic((*i)->access)) {
-        res.push_back(*i);
+      JavaField* field = i->second;
+      if (!publicOnly || isPublic(field->access)) {
+        res.push_back(field);
       }
     }
     fields = cl->staticFields; 
-    for (std::vector<JavaField*>::iterator i = fields.begin(), e = fields.end();
+    for (CommonClass::field_iterator i = fields.begin(), e = fields.end();
           i != e; ++i) {
-      if (!publicOnly || isPublic((*i)->access)) {
-        res.push_back(*i);
+      JavaField* field = i->second;
+      if (!publicOnly || isPublic(field->access)) {
+        res.push_back(field);
       }
     }
     

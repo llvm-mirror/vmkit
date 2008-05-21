@@ -62,8 +62,6 @@ using namespace jnjvm;
   INIT(ZipArchive);
   INIT(UTF8Map);
   INIT(ClassMap);
-  INIT(FieldMap);
-  INIT(MethodMap);
   INIT(ZipFileMap);
   INIT(StringMap);
   INIT(TypeMap);
@@ -122,6 +120,27 @@ void CommonClass::TRACER {
 #ifndef MULTIPLE_VM
   delegatee->MARK_AND_TRACE;
 #endif
+  
+  for (field_iterator i = virtualFields.begin(), e = virtualFields.end();
+       i!= e; ++i) {
+    i->second->MARK_AND_TRACE;
+  }
+  
+  for (field_iterator i = staticFields.begin(), e = staticFields.end();
+       i!= e; ++i) {
+    i->second->MARK_AND_TRACE;
+  }
+  
+  for (method_iterator i = staticMethods.begin(), e = staticMethods.end();
+       i!= e; ++i) {
+    i->second->MARK_AND_TRACE;
+  }
+  
+  for (method_iterator i = virtualMethods.begin(), e = virtualMethods.end();
+       i!= e; ++i) {
+    i->second->MARK_AND_TRACE;
+  }
+ 
 }
 
 void Class::TRACER {
@@ -204,8 +223,6 @@ void Jnjvm::TRACER {
   hashUTF8->MARK_AND_TRACE;
   hashStr->MARK_AND_TRACE;
   bootstrapClasses->MARK_AND_TRACE;
-  loadedMethods->MARK_AND_TRACE;
-  loadedFields->MARK_AND_TRACE;
   javaTypes->MARK_AND_TRACE;
   TRACE_VECTOR(JavaObject*, gc_allocator, globalRefs);
 #ifdef MULTIPLE_VM
@@ -254,19 +271,6 @@ void UTF8Map::TRACER {
 }
 
 void ClassMap::TRACER {
-  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-    i->second->MARK_AND_TRACE;
-  }
-}
-
-void FieldMap::TRACER {
-  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-    i->second->MARK_AND_TRACE;
-  }
-}
-
-  
-void MethodMap::TRACER {
   for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
     i->second->MARK_AND_TRACE;
   }

@@ -216,17 +216,17 @@ void Jnjvm::readAttributs(Class* cl, Reader* reader,
 void Jnjvm::readFields(Class* cl, Reader* reader) {
   unsigned short int nbFields = reader->readU2();
   JavaCtpInfo* ctpInfo = cl->ctpInfo;
+  uint32 sindex = 0;
+  uint32 vindex = 0;
   for (int i = 0; i < nbFields; i++) {
-    unsigned short int access = reader->readU2();
+    uint16 access = reader->readU2();
     const UTF8* name = ctpInfo->UTF8At(reader->readU2());
     const UTF8* type = ctpInfo->UTF8At(reader->readU2());
-    JavaField* field = constructField(cl, name, type, access);
+    JavaField* field = cl->constructField(name, type, access);
+    isStatic(access) ?
+      field->num = sindex++ :
+      field->num = vindex++;
     readAttributs(cl, reader, field->attributs);
-    if (isStatic(access)) {
-      cl->staticFields.push_back(field);
-    } else {
-      cl->virtualFields.push_back(field);
-    }
   }
 }
 
@@ -234,17 +234,12 @@ void Jnjvm::readMethods(Class* cl, Reader* reader) {
   unsigned short int nbMethods = reader->readU2();
   JavaCtpInfo* ctpInfo = cl->ctpInfo;
   for (int i = 0; i < nbMethods; i++) {
-    unsigned short int access = reader->readU2();
+    uint16 access = reader->readU2();
     const UTF8* name = ctpInfo->UTF8At(reader->readU2());
     const UTF8* type = ctpInfo->UTF8At(reader->readU2());
-    JavaMethod* meth = constructMethod(cl, name, type, access);
+    JavaMethod* meth = cl->constructMethod(name, type, access);
     readAttributs(cl, reader, meth->attributs);
-    if (isStatic(access)) {
-      cl->staticMethods.push_back(meth);
-    } else {
-      cl->virtualMethods.push_back(meth);
-    }
-  }  
+  }
 }
 
 void Jnjvm::readClass(Class* cl) {
@@ -670,10 +665,6 @@ static CommonClass* arrayDup(const UTF8*& name, Jnjvm *vm) {
   cl->_baseClass = 0;
   cl->super = ClassArray::SuperArray;
   cl->interfaces = ClassArray::InterfacesArray;
-  cl->virtualMethods = ClassArray::VirtualMethodsArray;
-  cl->staticMethods = ClassArray::StaticMethodsArray;
-  cl->virtualFields = ClassArray::VirtualFieldsArray;
-  cl->staticFields = ClassArray::StaticFieldsArray;
   cl->depth = 1;
   cl->display.push_back(ClassArray::SuperArray);
   cl->display.push_back(cl);
@@ -754,49 +745,6 @@ Class* Jnjvm::constructClass(const UTF8* name, JavaObject* loader) {
   } else {
     return (Class*)bootstrapClasses->lookupOrCreate(name, this, classDup);
   }
-}
-
-static JavaField* fieldDup(FieldCmp & cmp, Jnjvm *vm) {
-  JavaField* field = vm_new(vm, JavaField)();
-  field->name = cmp.name;
-  field->type = cmp.type;
-  field->classDef = (Class*)cmp.classDef;
-  field->signature = vm->constructType(field->type);
-  field->ptrOffset = 0;
-  return field;
-}
-
-JavaField* Jnjvm::constructField(Class* cl, const UTF8* name, const UTF8* type,
-                                  uint32 access){
-  FieldCmp CC(name, cl, type, 0);
-  JavaField* f = loadedFields->lookupOrCreate(CC, this, fieldDup); 
-  f->access = access;
-  return f;
-}
-
-JavaField* Jnjvm::lookupField(CommonClass* cl, const UTF8* name, 
-                              const UTF8* type) {
-  FieldCmp CC(name, cl, type, 0);
-  JavaField* f = loadedFields->lookup(CC); 
-  return f;
-}
-
-static JavaMethod* methodDup(FieldCmp & cmp, Jnjvm *vm) {
-  JavaMethod* method = vm_new(vm, JavaMethod)();
-  method->name = cmp.name;
-  method->type = cmp.type;
-  method->classDef = (Class*)cmp.classDef;
-  method->signature = (Signdef*)vm->constructType(method->type);
-  method->code = 0;
-  method->access = cmp.access;
-  return method;
-}
-
-JavaMethod* Jnjvm::constructMethod(Class* cl, const UTF8* name,
-                                    const UTF8* type, uint32 access) {
-  FieldCmp CC(name, cl, type, access);
-  JavaMethod* f = loadedMethods->lookupOrCreate(CC, this, methodDup);
-  return f;
 }
 
 const UTF8* Jnjvm::asciizConstructUTF8(const char* asciiz) {

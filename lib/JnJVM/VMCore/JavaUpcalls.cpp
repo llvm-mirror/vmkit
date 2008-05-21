@@ -23,14 +23,14 @@
 #include "JnjvmModule.h"
 
 #define COMPILE_METHODS(cl) \
-  for (std::vector<JavaMethod*>::iterator i = cl->virtualMethods.begin(), \
+  for (CommonClass::method_iterator i = cl->virtualMethods.begin(), \
             e = cl->virtualMethods.end(); i!= e; ++i) { \
-    (*i)->compiledPtr(); \
+    i->second->compiledPtr(); \
   } \
   \
-  for (std::vector<JavaMethod*>::iterator i = cl->staticMethods.begin(), \
+  for (CommonClass::method_iterator i = cl->staticMethods.begin(), \
             e = cl->staticMethods.end(); i!= e; ++i) { \
-    (*i)->compiledPtr(); \
+    i->second->compiledPtr(); \
   }
 
 

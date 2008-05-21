@@ -161,7 +161,7 @@ Value* LLVMCommonClassInfo::getDelegatee(JavaJIT* jit) {
 
 #ifndef WITHOUT_VTABLE
 VirtualTable* JnjvmModule::allocateVT(Class* cl,
-                                    std::vector<JavaMethod*>::iterator meths) {
+                                      CommonClass::method_iterator meths) {
   if (meths == cl->virtualMethods.end()) {
     uint64 size = cl->virtualTableSize;
     VirtualTable* VT = (VirtualTable*)malloc(size * sizeof(void*));
@@ -173,7 +173,7 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
     }
     return VT;
   } else {
-    JavaMethod* meth = *meths;
+    JavaMethod* meth = meths->second;
     JavaMethod* parent = cl->super? 
       cl->super->lookupMethodDontThrow(meth->name, meth->type, false, true) : 0;
 
@@ -185,7 +185,7 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
       offset = parent->offset;
       meth->offset = parent->offset;
     }
-    VirtualTable* VT = allocateVT(cl, meths + 1);
+    VirtualTable* VT = allocateVT(cl, ++meths);
     LLVMMethodInfo* LMI = getMethodInfo(meth);
     Function* func = LMI->getMethod();
     ExecutionEngine* EE = mvm::jit::executionEngine;
@@ -235,7 +235,7 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
 #ifdef WITH_TRACER
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   const Type* type = stat ? LCI->getStaticType() : LCI->getVirtualType();
-  std::vector<JavaField*> &fields = stat ? cl->staticFields : cl->virtualFields;
+  CommonClass::field_map fields = stat ? cl->staticFields : cl->virtualFields;
  
   Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
                                     GlobalValue::ExternalLinkage,
@@ -268,10 +268,10 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
   }
 #endif
   
-  for (std::vector<JavaField*>::iterator i = fields.begin(), 
-            e = fields.end(); i!= e; ++i) {
-    if ((*i)->signature->funcs->doTrace) {
-      LLVMFieldInfo* LFI = getFieldInfo(*i);
+  for (CommonClass::field_iterator i = fields.begin(), e = fields.end();
+       i!= e; ++i) {
+    if (i->second->signature->funcs->doTrace) {
+      LLVMFieldInfo* LFI = getFieldInfo(i->second);
       std::vector<Value*> args; //size = 2
       args.push_back(zero);
       args.push_back(LFI->getOffset());
@@ -312,6 +312,8 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
 const Type* LLVMClassInfo::getVirtualType() {
   if (!virtualType) {
     std::vector<const llvm::Type*> fields;
+    JavaField* array[classDef->virtualFields.size()];
+    
     if (classDef->super) {
       LLVMClassInfo* CLI = 
         (LLVMClassInfo*)module->getClassInfo(classDef->super);
@@ -320,13 +322,17 @@ const Type* LLVMClassInfo::getVirtualType() {
       fields.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
     }
     
-    uint32 index = 0;
-    for (std::vector<JavaField*>::iterator i = classDef->virtualFields.begin(),
+    for (CommonClass::field_iterator i = classDef->virtualFields.begin(),
          e = classDef->virtualFields.end(); i!= e; ++i) {
-      uint8 id = (*i)->signature->funcs->numId;
+      JavaField* field = i->second;
+      array[field->num] = field;
+    }
+    
+    
+    for (uint32 index = 0; index < classDef->virtualFields.size(); ++index) {
+      uint8 id = array[index]->signature->funcs->numId;
       LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
       fields.push_back(LAI.llvmType);
-      (*i)->num = index++;
     }
     
     StructType* structType = StructType::get(fields, false);
@@ -334,9 +340,10 @@ const Type* LLVMClassInfo::getVirtualType() {
     const TargetData* targetData = mvm::jit::executionEngine->getTargetData();
     const StructLayout* sl = targetData->getStructLayout(structType);
     
-    for (std::vector<JavaField*>::iterator i = classDef->virtualFields.begin(),
+    for (CommonClass::field_iterator i = classDef->virtualFields.begin(),
          e = classDef->virtualFields.end(); i!= e; ++i) {
-      (*i)->ptrOffset = sl->getElementOffset((*i)->num + 1);
+      JavaField* field = i->second;
+      field->ptrOffset = sl->getElementOffset(field->num + 1);
     }
     
     VirtualTable* VT = module->makeVT((Class*)classDef, false);
@@ -356,15 +363,20 @@ const Type* LLVMClassInfo::getStaticType() {
   if (!staticType) {
     Class* cl = (Class*)classDef;
     std::vector<const llvm::Type*> fields;
+    JavaField* array[classDef->staticFields.size() + 1];
     fields.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
 
-    uint32 index = 0;
-    for (std::vector<JavaField*>::iterator i = classDef->staticFields.begin(),
-            e = classDef->staticFields.end(); i!= e; ++i) {
-      uint8 id = (*i)->signature->funcs->numId;
+    for (CommonClass::field_iterator i = classDef->staticFields.begin(),
+         e = classDef->staticFields.end(); i!= e; ++i) {
+      JavaField* field = i->second;
+      array[field->num] = field;
+    }
+
+    for (uint32 index = 0; index < classDef->staticFields.size(); ++index) {
+      JavaField* field = array[index];
+      uint8 id = field->signature->funcs->numId;
       LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
       fields.push_back(LAI.llvmType);
-      (*i)->num = index++;
     }
   
     StructType* structType = StructType::get(fields, false);
@@ -372,9 +384,10 @@ const Type* LLVMClassInfo::getStaticType() {
     const TargetData* targetData = mvm::jit::executionEngine->getTargetData();
     const StructLayout* sl = targetData->getStructLayout(structType);
     
-    for (std::vector<JavaField*>::iterator i = classDef->staticFields.begin(),
+    for (CommonClass::field_iterator i = classDef->staticFields.begin(),
          e = classDef->staticFields.end(); i!= e; ++i) {
-      (*i)->ptrOffset = sl->getElementOffset((*i)->num + 1);
+      JavaField* field = i->second;
+      field->ptrOffset = sl->getElementOffset(field->num + 1);
     }
     
 
@@ -389,10 +402,10 @@ const Type* LLVMClassInfo::getStaticType() {
       (JavaObject*)classDef->isolate->allocateObject(cl->staticSize,
                                                      cl->staticVT);
     val->initialise(classDef);
-    for (std::vector<JavaField*>::iterator i = cl->staticFields.begin(),
+    for (CommonClass::field_iterator i = cl->staticFields.begin(),
          e = cl->staticFields.end(); i!= e; ++i) {
     
-      (*i)->initField(val);
+      i->second->initField(val);
     }
   
     cl->_staticInstance = val;

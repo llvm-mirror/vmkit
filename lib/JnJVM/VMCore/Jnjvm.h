@@ -202,14 +202,9 @@ public:
   ArrayUInt8* openName(const UTF8* utf8);
   
   CommonClass* lookupClass(const UTF8* utf8, JavaObject* loader);
-  JavaField* lookupField(CommonClass* cl, const UTF8* name, const UTF8* type);
 
   ClassArray* constructArray(const UTF8* name, JavaObject* loader);
   Class*      constructClass(const UTF8* name, JavaObject* loader);
-  JavaField*  constructField(Class* cl, const UTF8* name, const UTF8* type,
-                             uint32 access);
-  JavaMethod* constructMethod(Class* cl, const UTF8* name, const UTF8* type,
-                             uint32 access);
   const UTF8* asciizConstructUTF8(const char* asciiz);
   const UTF8* readerConstructUTF8(const uint16* buf, uint32 len);
   JavaString* asciizToStr(const char* asciiz);
@@ -249,8 +244,6 @@ public:
   UTF8Map * hashUTF8;
   StringMap * hashStr;
   ClassMap* bootstrapClasses;
-  MethodMap* loadedMethods;
-  FieldMap* loadedFields;
   TypeMap* javaTypes;
 #ifdef MULTIPLE_VM
   StaticInstanceMap* statics;

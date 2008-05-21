@@ -20,6 +20,8 @@
 #include "llvm/Type.h"
 #include "llvm/Value.h"
 
+#include "JavaClass.h"
+
 namespace jnjvm {
 
 class CommonClass;
@@ -248,7 +250,7 @@ private:
     field_iterator;  
   
   VirtualTable* makeVT(Class* cl, bool stat);
-  VirtualTable* allocateVT(Class* cl, std::vector<JavaMethod*>::iterator meths);
+  VirtualTable* allocateVT(Class* cl, CommonClass::method_iterator meths);
 
 
 public:

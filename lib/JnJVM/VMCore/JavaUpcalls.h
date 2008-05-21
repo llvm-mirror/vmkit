@@ -16,12 +16,12 @@
                      CommonClass::jnjvmClassLoader)
 
 #define UPCALL_FIELD(vm, cl, name, type, acc)                             \
-  vm->constructField(UPCALL_CLASS(vm, cl), vm->asciizConstructUTF8(name), \
-                     vm->asciizConstructUTF8(type), acc)
+  UPCALL_CLASS(vm, cl)->constructField(vm->asciizConstructUTF8(name),     \
+                                       vm->asciizConstructUTF8(type), acc)
 
 #define UPCALL_METHOD(vm, cl, name, type, acc)                             \
-  vm->constructMethod(UPCALL_CLASS(vm, cl), vm->asciizConstructUTF8(name), \
-                      vm->asciizConstructUTF8(type), acc)
+  UPCALL_CLASS(vm, cl)->constructMethod(vm->asciizConstructUTF8(name),     \
+                                        vm->asciizConstructUTF8(type), acc)
 
 #define UPCALL_ARRAY_CLASS(vm, name, depth)                                \
   vm->constructArray(                                                      \

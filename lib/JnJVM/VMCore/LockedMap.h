@@ -134,55 +134,12 @@ public:
   void insert(const UTF8* val);
 };
 
-class FieldCmp {
-public:
-  const UTF8* name;
-  CommonClass* classDef;
-  const UTF8* type;
-  uint32_t access;
-
-  FieldCmp(const UTF8* n, CommonClass* c, const UTF8* t, uint32 a) : name(n), classDef(c), 
-    type(t), access(a) {}
-  
-  inline bool operator<(const FieldCmp &cmp) const {
-    if (name < cmp.name) return true;
-    else if (name > cmp.name) return false;
-    else if (classDef < cmp.classDef) return true;
-    else if (classDef > cmp.classDef) return false;
-    else return type < cmp.type;
-  }
-};
-
 class ClassMap : 
     public LockedMap<const UTF8*, CommonClass*, ltutf8 > {
 public:
   static VirtualTable* VT;
   
   ClassMap() {
-    lock = mvm::Lock::allocNormal();
-  }
-  
-  virtual void TRACER;
-};
-
-class FieldMap :
-    public LockedMap<FieldCmp, JavaField*, std::less<FieldCmp> > {
-public:
-  static VirtualTable* VT;
-  
-  FieldMap() {
-    lock = mvm::Lock::allocNormal();
-  }
-  
-  virtual void TRACER;
-};
-
-class MethodMap :
-    public LockedMap<FieldCmp, JavaMethod*, std::less<FieldCmp> > {
-public:
-  static VirtualTable* VT;
-  
-  MethodMap() {
     lock = mvm::Lock::allocNormal();
   }
   

@@ -10,6 +10,7 @@
 #ifndef JNJVM_JAVA_CLASS_H
 #define JNJVM_JAVA_CLASS_H
 
+#include <map>
 #include <vector>
 
 #include "types.h"
@@ -63,7 +64,24 @@ public:
   
 };
 
+
 class CommonClass : public mvm::Object {
+private:
+
+class FieldCmp {
+public:
+  const UTF8* name;
+  const UTF8* type;
+
+  FieldCmp(const UTF8* n, const UTF8* t) : name(n), type(t) {}
+  
+  inline bool operator<(const FieldCmp &cmp) const {
+    if (name < cmp.name) return true;
+    else if (name > cmp.name) return false;
+    else return type < cmp.type;
+  }
+};
+
 public:
   
   /// virtualSize - The size of instances of this class.
@@ -133,21 +151,38 @@ public:
   JavaObject* delegatee;
 #endif
   
-  /// virtualMethods - List of all the virtual methods defined by this class.
-  /// This does not contain non-redefined super methods.
-  std::vector<JavaMethod*> virtualMethods;
 
-  /// staticMethods - List of all the static methods defined by this class.
-  ///
-  std::vector<JavaMethod*> staticMethods;
-
+  typedef std::map<const FieldCmp, JavaField*, std::less<FieldCmp>,
+                gc_allocator<std::pair<const FieldCmp, JavaField*> > >::iterator
+    field_iterator;
+  
+  typedef std::map<const FieldCmp, JavaField*, std::less<FieldCmp>,
+                gc_allocator<std::pair<const FieldCmp, JavaField*> > > 
+    field_map;
+  
   /// virtualFields - List of all the virtual fields defined in this class.
   /// This does not contain non-redefined super fields.
-  std::vector<JavaField*>  virtualFields;
-
+  field_map virtualFields;
+  
   /// staticFields - List of all the static fields defined in this class.
   ///
-  std::vector<JavaField*>  staticFields;
+  field_map staticFields;
+  
+  typedef std::map<const FieldCmp, JavaMethod*, std::less<FieldCmp>,
+                gc_allocator<std::pair<const FieldCmp, JavaMethod*> > >::iterator
+    method_iterator;
+  
+  typedef std::map<const FieldCmp, JavaMethod*, std::less<FieldCmp>,
+                gc_allocator<std::pair<const FieldCmp, JavaMethod*> > > 
+    method_map;
+  
+  /// virtualMethods - List of all the virtual methods defined by this class.
+  /// This does not contain non-redefined super methods.
+  method_map virtualMethods;
+  
+  /// staticMethods - List of all the static methods defined by this class.
+  ///
+  method_map staticMethods;
   
   /// display - The class hierarchy of supers for this class.
   ///
@@ -157,6 +192,12 @@ public:
   /// display[depth - 1] contains the class.
   uint32 depth;
   
+  JavaMethod* constructMethod(const UTF8* name, const UTF8* type,
+                              uint32 access);
+  
+  JavaField* constructField(const UTF8* name, const UTF8* type,
+                            uint32 access);
+
   static void printClassName(const UTF8* name, mvm::PrintBuffer* buf);
   void initialise(Jnjvm* isolate, bool array);
   
@@ -297,10 +338,6 @@ public:
 
   static CommonClass* SuperArray;
   static std::vector<Class*>        InterfacesArray;
-  static std::vector<JavaMethod*>   VirtualMethodsArray;
-  static std::vector<JavaMethod*>   StaticMethodsArray;
-  static std::vector<JavaField*>    VirtualFieldsArray;
-  static std::vector<JavaField*>    StaticFieldsArray;
 };
 
 

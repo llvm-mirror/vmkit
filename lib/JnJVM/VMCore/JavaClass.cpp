@@ -40,10 +40,6 @@ JavaObject* CommonClass::jnjvmClassLoader = 0;
 
 CommonClass* ClassArray::SuperArray = 0;
 std::vector<Class*> ClassArray::InterfacesArray;
-std::vector<JavaMethod*> ClassArray::VirtualMethodsArray;
-std::vector<JavaMethod*> ClassArray::StaticMethodsArray;
-std::vector<JavaField*> ClassArray::VirtualFieldsArray;
-std::vector<JavaField*> ClassArray::StaticFieldsArray;
 
 void Attribut::derive(const UTF8* name, unsigned int length,
                       const Reader* reader) {
@@ -230,20 +226,14 @@ JavaMethod* CommonClass::lookupMethodDontThrow(const UTF8* name,
                                                const UTF8* type, bool isStatic,
                                                bool recurse) {
   
-  std::vector<JavaMethod*>* meths = (isStatic? &staticMethods : 
-                                               &virtualMethods);
+  FieldCmp CC(name, type);
+  method_map& map = isStatic ? staticMethods : virtualMethods;
+  method_iterator End = map.end();
+  method_iterator I = map.find(CC);
+  if (I != End) return I->second;
   
   JavaMethod *cur = 0;
   
-  for (std::vector<JavaMethod*>::iterator i = meths->begin(),
-       e = meths->end(); i!= e; i++) {
-    cur = *i;
-    if (cur->name->equals(name) && cur->type->equals(type)) {
-      return cur;
-    }
-  }
-  cur = 0;
-
   if (recurse) {
     if (super) cur = super->lookupMethodDontThrow(name, type, isStatic,
                                                   recurse);
@@ -275,19 +265,13 @@ JavaField* CommonClass::lookupFieldDontThrow(const UTF8* name,
                                              const UTF8* type, bool isStatic,
                                              bool recurse) {
 
-  std::vector<JavaField*>* fields = (isStatic? &staticFields : &virtualFields);
+  FieldCmp CC(name, type);
+  field_map& map = isStatic ? staticFields : virtualFields;
+  field_iterator End = map.end();
+  field_iterator I = map.find(CC);
+  if (I != End) return I->second;
   
   JavaField *cur = 0;
-
-  for (std::vector<JavaField*>::iterator i = fields->begin(),
-       e = fields->end(); i!= e; i++) {
-    cur = *i;
-    if (cur->name->equals(name) && cur->type->equals(type)) {
-      return cur;
-    }
-  }
-
-  cur = 0;
 
   if (recurse) {
     if (super) cur = super->lookupFieldDontThrow(name, type, isStatic,
@@ -504,3 +488,46 @@ JavaState* CommonClass::getStatus() {
   }
 }
 #endif
+
+
+JavaMethod* CommonClass::constructMethod(const UTF8* name,
+                                         const UTF8* type, uint32 access) {
+  method_map& map = isStatic(access) ? staticMethods : virtualMethods;
+  FieldCmp CC(name, type);
+  method_iterator End = map.end();
+  method_iterator I = map.find(CC);
+  if (I == End) {
+    JavaMethod* method = vm_new(isolate, JavaMethod)();
+    method->name = name;
+    method->type = type;
+    method->classDef = (Class*)this;
+    method->signature = (Signdef*)isolate->constructType(type);
+    method->code = 0;
+    method->access = access;
+    map.insert(std::make_pair(CC, method));
+    return method;
+  } else {
+    return I->second;
+  }
+}
+
+JavaField* CommonClass::constructField(const UTF8* name,
+                                       const UTF8* type, uint32 access) {
+  field_map& map = isStatic(access) ? staticFields : virtualFields;
+  FieldCmp CC(name, type);
+  field_iterator End = map.end();
+  field_iterator I = map.find(CC);
+  if (I == End) {
+    JavaField* field = vm_new(isolate, JavaField)();
+    field->name = name;
+    field->type = type;
+    field->classDef = (Class*)this;
+    field->signature = isolate->constructType(type);
+    field->ptrOffset = 0;
+    field->access = access;
+    map.insert(std::make_pair(CC, field));
+    return field;
+  } else {
+    return I->second;
+  }
+}

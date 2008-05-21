@@ -63,8 +63,6 @@ static void initialiseVT() {
   INIT(ZipArchive);
   INIT(UTF8Map);
   INIT(ClassMap);
-  INIT(FieldMap);
-  INIT(MethodMap);
   INIT(ZipFileMap);
   INIT(StringMap);
   INIT(jnjvm::TypeMap);
