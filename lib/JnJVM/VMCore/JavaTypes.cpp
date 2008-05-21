@@ -57,7 +57,7 @@ AssessorDesc* AssessorDesc::allocate(bool dt, char bid, uint32 nb, uint32 nw,
                                      Jnjvm* vm, uint8 nid,
                                      const char* assocName, ClassArray* cl,
                                      arrayCtor_t ctor) {
-  AssessorDesc* res = vm_new(vm, AssessorDesc)();
+  AssessorDesc* res = new AssessorDesc();
   res->numId = nid;
   res->doTrace = dt;
   res->byteId = bid;
@@ -136,25 +136,14 @@ void AssessorDesc::initialise(Jnjvm* vm) {
                                 0, 0, 
                                 (arrayCtor_t)ArrayObject::acons);
   
-  mvm::Object::pushRoot((mvm::Object*)dParg);
-  mvm::Object::pushRoot((mvm::Object*)dPard);
-  mvm::Object::pushRoot((mvm::Object*)dVoid);
-  mvm::Object::pushRoot((mvm::Object*)dBool);
-  mvm::Object::pushRoot((mvm::Object*)dByte);
-  mvm::Object::pushRoot((mvm::Object*)dChar);
-  mvm::Object::pushRoot((mvm::Object*)dShort);
-  mvm::Object::pushRoot((mvm::Object*)dInt);
-  mvm::Object::pushRoot((mvm::Object*)dFloat);
-  mvm::Object::pushRoot((mvm::Object*)dLong);
-  mvm::Object::pushRoot((mvm::Object*)dDouble);
-  mvm::Object::pushRoot((mvm::Object*)dTab);
-  mvm::Object::pushRoot((mvm::Object*)dRef);
 }
 
-void AssessorDesc::print(mvm::PrintBuffer* buf) const {
+const char* AssessorDesc::printString() const {
+  mvm::PrintBuffer *buf= mvm::PrintBuffer::alloc();
   buf->write("AssessorDescriptor<");
   buf->write(asciizName);
   buf->write(">");
+  return buf->contents()->cString();
 }
 
 static void typeError(const UTF8* name, short int l) {

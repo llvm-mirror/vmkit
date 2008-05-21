@@ -49,7 +49,6 @@ using namespace jnjvm;
   INIT(LockObj);
   INIT(JavaObject);
   INIT(JavaThread);
-  INIT(AssessorDesc);
   INIT(Typedef);
   INIT(Signdef);
   INIT(ThreadSystem);
@@ -87,7 +86,6 @@ void ArrayObject::TRACER {
 
 #define ARRAYTRACER(name)         \
   void name::TRACER {             \
-    classOf->MARK_AND_TRACE;      \
     lockObj->MARK_AND_TRACE;      \
   }
   
@@ -173,9 +171,6 @@ void JavaThread::TRACER {
   // FIXME: do I need this?
   isolate->MARK_AND_TRACE;
   pendingException->MARK_AND_TRACE;
-}
-
-void AssessorDesc::TRACER {
 }
 
 void Typedef::TRACER {

@@ -43,7 +43,7 @@ class UTF8;
 
 typedef JavaArray* (*arrayCtor_t)(uint32 len, CommonClass* cl, Jnjvm* vm);
 
-class AssessorDesc : public mvm::Object {
+class AssessorDesc {
 public:
   static VirtualTable *VT;
   static const char I_TAB;
@@ -98,8 +98,7 @@ public:
   static void initialise(Jnjvm* vm);
   
 
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
+  const char* printString() const;
 
   static void analyseIntern(const UTF8* name, uint32 pos,
                             uint32 meth, AssessorDesc*& ass,

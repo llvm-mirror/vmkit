@@ -46,13 +46,10 @@ static void initialiseVT() {
   INIT(CommonClass);
   INIT(Class);
   INIT(ClassArray);
-  INIT(JavaMethod);
-  INIT(JavaField);
   INIT(JavaCond);
   INIT(LockObj);
   INIT(JavaObject);
   INIT(JavaThread);
-  INIT(AssessorDesc);
   INIT(Typedef);
   INIT(Signdef);
   INIT(ThreadSystem);
@@ -67,8 +64,6 @@ static void initialiseVT() {
   INIT(jnjvm::TypeMap);
   INIT(JavaIsolate);
   INIT(JavaString);
-  INIT(CacheNode);
-  INIT(Enveloppe);
 #ifdef SERVICE_VM
   INIT(ServiceDomain);
 #endif
