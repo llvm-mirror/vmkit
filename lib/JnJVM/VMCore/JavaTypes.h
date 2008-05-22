@@ -89,11 +89,11 @@ public:
   static AssessorDesc* dTab;
   static AssessorDesc* dRef;
   
-  static AssessorDesc* allocate(bool dt, char bid, uint32 nb, uint32 nw,
-                                const char* name, const char* className,
-                                Jnjvm* vm, uint8 nid,
-                                const char* assocName, ClassArray* cl,
-                                arrayCtor_t ctor);
+  AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
+               const char* name,
+               Jnjvm* vm, uint8 nid,
+               const char* assocName, ClassArray* cl,
+               arrayCtor_t ctor);
 
   static void initialise(Jnjvm* vm);
   

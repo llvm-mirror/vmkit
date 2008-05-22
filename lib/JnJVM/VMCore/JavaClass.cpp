@@ -182,15 +182,40 @@ void CommonClass::print(mvm::PrintBuffer* buf) const {
   buf->write(">");
 }
 
-void CommonClass::initialise(Jnjvm* isolate, bool isArray) {
+CommonClass::CommonClass(Jnjvm* vm, const UTF8* n, bool isArray) {
+  name = n;
   this->lockVar = mvm::Lock::allocRecursive();
   this->condVar = mvm::Cond::allocCond();
   this->status = hashed;
-  this->isolate = isolate;
+  this->isolate = vm;
   this->isArray = isArray;
+  this->isPrimitive = false;
 #ifndef MULTIPLE_VM
   this->delegatee = 0;
 #endif
+}
+
+Class::Class(Jnjvm* vm, const UTF8* n) : CommonClass(vm, n, false) {
+  classLoader = 0;
+  bytes = 0;
+  super = 0;
+  ctpInfo = 0;
+#ifndef MULTIPLE_VM
+  _staticInstance = 0;
+#endif
+}
+
+ClassArray::ClassArray(Jnjvm* vm, const UTF8* n) : CommonClass(vm, n, true) {
+  classLoader = 0;
+  _funcs = 0;
+  _baseClass = 0;
+  super = ClassArray::SuperArray;
+  interfaces = ClassArray::InterfacesArray;
+  depth = 1;
+  display.push_back(ClassArray::SuperArray);
+  display.push_back(this);
+  access = ACC_FINAL | ACC_ABSTRACT;
+  status = loaded;
 }
 
 void Class::print(mvm::PrintBuffer* buf) const {

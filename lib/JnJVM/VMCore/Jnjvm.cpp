@@ -657,19 +657,7 @@ CommonClass* Jnjvm::lookupClass(const UTF8* utf8, JavaObject* loader) {
 }
 
 static CommonClass* arrayDup(const UTF8*& name, Jnjvm *vm) {
-  ClassArray* cl = vm_new(vm, ClassArray)();
-  cl->initialise(vm, true);
-  cl->name = name;
-  cl->classLoader = 0;
-  cl->_funcs = 0;
-  cl->_baseClass = 0;
-  cl->super = ClassArray::SuperArray;
-  cl->interfaces = ClassArray::InterfacesArray;
-  cl->depth = 1;
-  cl->display.push_back(ClassArray::SuperArray);
-  cl->display.push_back(cl);
-  cl->access = ACC_FINAL | ACC_ABSTRACT;
-  cl->status = loaded;
+  ClassArray* cl = vm_new(vm, ClassArray)(vm, name);
   return cl;
 }
 
@@ -706,16 +694,7 @@ ClassArray* Jnjvm::constructArray(const UTF8* name, JavaObject* loader) {
 
 
 static CommonClass* classDup(const UTF8*& name, Jnjvm *vm) {
-  Class* cl = vm_new(vm, Class)();
-  cl->initialise(vm, false);
-  cl->name = name;
-  cl->classLoader = 0;
-  cl->bytes = 0;
-#ifndef MULTIPLE_VM
-  cl->_staticInstance = 0;
-#endif
-  cl->super = 0;
-  cl->ctpInfo = 0;
+  Class* cl = vm_new(vm, Class)(vm, name);
   return cl;
 }
 

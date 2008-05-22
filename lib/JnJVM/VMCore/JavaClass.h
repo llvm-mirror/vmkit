@@ -102,7 +102,11 @@ public:
   
   /// isArray - Is the class an array class?
   ///
-  uint8 isArray;
+  bool isArray;
+  
+  /// isPrimitive - Is the class a primitive class?
+  ///
+  bool isPrimitive;
   
   /// name - The name of the class.
   ///
@@ -199,7 +203,6 @@ public:
                             uint32 access);
 
   static void printClassName(const UTF8* name, mvm::PrintBuffer* buf);
-  void initialise(Jnjvm* isolate, bool array);
   
   void aquire() {
     lockVar->lock();
@@ -264,6 +267,10 @@ public:
     return status >= resolved;
   }
   
+  CommonClass(Jnjvm* vm, const UTF8* name, bool isArray);
+  /// Empty constructor for VT
+  CommonClass() {}
+  
   static VirtualTable* VT;
   static const int MaxDisplay;
   static JavaObject* jnjvmClassLoader;
@@ -306,6 +313,10 @@ public:
   void createStaticInstance();
 #endif
   
+  /// Empty constructor for VT
+  Class() {}
+  Class(Jnjvm* vm, const UTF8* name);
+  
 };
 
 
@@ -328,6 +339,10 @@ public:
       resolveComponent();
     return _funcs;
   }
+  
+  /// Empty constructor for VT
+  ClassArray() {}
+  ClassArray(Jnjvm* vm, const UTF8* name);
 
   static JavaObject* arrayLoader(Jnjvm* isolate, const UTF8* name,
                                  JavaObject* loader, unsigned int start,
