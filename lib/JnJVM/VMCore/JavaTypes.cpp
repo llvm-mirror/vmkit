@@ -64,6 +64,7 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
   res->nbb = nb;
   res->nbw = nw;
   res->asciizName = name;
+  res->UTF8Name = vm->asciizConstructUTF8(name);
   res->arrayCtor = ctor;
   
   res->arrayClass = cl;
