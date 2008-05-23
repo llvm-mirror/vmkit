@@ -1190,7 +1190,7 @@ Function* CLIJit::compileFatOrTiny() {
       VMCommonClass* cl = *i;
       cl->resolveType(false, false);
       AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
-      if (cl->naturalType->isFirstClassType()) {
+      if (cl->naturalType->isSingleValueType()) {
         new StoreInst(Constant::getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
       } else {
@@ -1362,7 +1362,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
       VMCommonClass* cl = *i;
       cl->resolveType(false, false);
       AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
-      if (cl->naturalType->isFirstClassType()) {
+      if (cl->naturalType->isSingleValueType()) {
         new StoreInst(Constant::getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
       } else {

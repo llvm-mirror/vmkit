@@ -175,7 +175,7 @@ void convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock) {
 static void store(Value* val, Value* local, bool vol, 
                   BasicBlock* currentBlock) {
   const Type* contained = local->getType()->getContainedType(0);
-  if (contained->isFirstClassType()) {
+  if (contained->isSingleValueType()) {
     if (val->getType() != contained) {
       convertValue(val, contained, currentBlock);
     }
@@ -194,7 +194,7 @@ static void store(Value* val, Value* local, bool vol,
 
 static Value* load(Value* val, const char* name, BasicBlock* currentBlock) {
   const Type* contained = val->getType()->getContainedType(0);
-  if (contained->isFirstClassType()) {
+  if (contained->isSingleValueType()) {
     return new LoadInst(val, name, currentBlock);
   } else {
     uint64 size = mvm::jit::getTypeSize(contained);

@@ -634,7 +634,7 @@ static void disassembleStruct(std::vector<const llvm::Type*> &args,
   const llvm::StructType* STy = llvm::dyn_cast<llvm::StructType>(arg);
   for (llvm::StructType::element_iterator I = STy->element_begin(),
        E = STy->element_end(); I != E; ++I) {
-    if ((*I)->isFirstClassType()) {
+    if ((*I)->isSingleValueType()) {
       args.push_back(*I);
     } else {
       disassembleStruct(args, *I);
@@ -673,14 +673,14 @@ const llvm::FunctionType* VMMethod::resolveSignature(
       if (cur->naturalType->isAbstract()) {
         cur->resolveType(false, false);
       }
-      if (cur->naturalType->isFirstClassType()) {
+      if (cur->naturalType->isSingleValueType()) {
         args.push_back(cur->naturalType);
       } else {
         args.push_back(llvm::PointerType::getUnqual(cur->naturalType));
       }
     }
 
-    if (!(ret->isFirstClassType()) && ret != llvm::Type::VoidTy) {
+    if (!(ret->isSingleValueType()) && ret != llvm::Type::VoidTy) {
       args.push_back(llvm::PointerType::getUnqual(ret));
       ret = llvm::Type::VoidTy;
       structRet = true;
