@@ -100,13 +100,12 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, JavaObject* obj, va_lis
     classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true); \
   \
   verifyNull(obj); \
-  JavaMethod* meth = obj->classOf->lookupMethod(name, type, false, true); \
-  \
-  void** buf = (void**)alloca(meth->signature->args.size() * sizeof(uint64)); \
+  Signdef* sign = getSignature(); \
+  void** buf = (void**)alloca(sign->args.size() * sizeof(uint64)); \
   void* _buf = (void*)buf; \
-  readArgs(buf, signature, ap); \
-  void* func = meth->compiledPtr();\
-  return ((FUNC_TYPE_VIRTUAL_BUF)signature->virtualCallBuf())(vm, func, obj, _buf);\
+  readArgs(buf, sign, ap); \
+  void* func = (((void***)obj)[0])[offset];\
+  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, func, obj, _buf);\
 }\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap) {\
@@ -114,22 +113,24 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, JavaObject* obj, va_lis
     classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true);\
   \
   verifyNull(obj);\
-  void** buf = (void**)alloca(this->signature->args.size() * sizeof(uint64)); \
+  Signdef* sign = getSignature(); \
+  void** buf = (void**)alloca(sign->args.size() * sizeof(uint64)); \
   void* _buf = (void*)buf; \
-  readArgs(buf, signature, ap); \
+  readArgs(buf, sign, ap); \
   void* func = this->compiledPtr();\
-  return ((FUNC_TYPE_VIRTUAL_BUF)signature->virtualCallBuf())(vm, func, obj, _buf);\
+  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, func, obj, _buf);\
 }\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, va_list ap) {\
   if (!classDef->isReady())\
     classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true);\
   \
-  void** buf = (void**)alloca(this->signature->args.size() * sizeof(uint64)); \
+  Signdef* sign = getSignature(); \
+  void** buf = (void**)alloca(sign->args.size() * sizeof(uint64)); \
   void* _buf = (void*)buf; \
-  readArgs(buf, signature, ap); \
+  readArgs(buf, sign, ap); \
   void* func = this->compiledPtr();\
-  return ((FUNC_TYPE_STATIC_BUF)signature->staticCallBuf())(vm, func, _buf);\
+  return ((FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf())(vm, func, _buf);\
 }\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf) {\
@@ -139,8 +140,9 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, JavaObject* obj, void*
   verifyNull(obj);\
   JavaMethod* meth = obj->classOf->lookupMethod(name, type, false, true);\
   \
+  Signdef* sign = getSignature(); \
   void* func = meth->compiledPtr();\
-  return ((FUNC_TYPE_VIRTUAL_BUF)signature->virtualCallBuf())(vm, func, obj, buf);\
+  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, func, obj, buf);\
 }\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf) {\
@@ -149,7 +151,8 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, JavaObject* obj, void*
   \
   verifyNull(obj);\
   void* func = this->compiledPtr();\
-  return ((FUNC_TYPE_VIRTUAL_BUF)signature->virtualCallBuf())(vm, func, obj, buf);\
+  Signdef* sign = getSignature(); \
+  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, func, obj, buf);\
 }\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, void* buf) {\
@@ -157,7 +160,8 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, void* buf) {\
     classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true);\
   \
   void* func = this->compiledPtr();\
-  return ((FUNC_TYPE_STATIC_BUF)signature->staticCallBuf())(vm, func, buf);\
+  Signdef* sign = getSignature(); \
+  return ((FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf())(vm, func, buf);\
 }\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##Virtual(Jnjvm* vm, JavaObject* obj, ...) { \
@@ -193,10 +197,9 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, JavaObject* obj, va_lis
     classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true); \
   \
   verifyNull(obj); \
-  JavaMethod* meth = obj->classOf->lookupMethod(name, type, false, true); \
-  \
-  void* func = (((void***)obj)[0])[meth->offset];\
-  return ((FUNC_TYPE_VIRTUAL_AP)signature->virtualCallAP())(vm, func, obj, ap);\
+  void* func = (((void***)obj)[0])[offset];\
+  Signdef* sign = getSignature(); \
+  return ((FUNC_TYPE_VIRTUAL_AP)sign->getVirtualCallAP())(vm, func, obj, ap);\
 }\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap) {\
@@ -205,7 +208,8 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, JavaObject* obj, va_lis
   \
   verifyNull(obj);\
   void* func = this->compiledPtr();\
-  return ((FUNC_TYPE_VIRTUAL_AP)signature->virtualCallAP())(vm, func, obj, ap);\
+  Signdef* sign = getSignature(); \
+  return ((FUNC_TYPE_VIRTUAL_AP)sign->getVirtualCallAP())(vm, func, obj, ap);\
 }\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, va_list ap) {\
@@ -213,7 +217,8 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, va_list ap) {\
     classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true);\
   \
   void* func = this->compiledPtr();\
-  return ((FUNC_TYPE_STATIC_AP)signature->staticCallAP())(vm, func, ap);\
+  Signdef* sign = getSignature(); \
+  return ((FUNC_TYPE_STATIC_AP)sign->getStaticCallAP())(vm, func, ap);\
 }\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf) {\
@@ -221,10 +226,9 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, JavaObject* obj, void*
     classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true);\
   \
   verifyNull(obj);\
-  JavaMethod* meth = obj->classOf->lookupMethod(name, type, false, true);\
-  \
-  void* func = meth->compiledPtr();\
-  return ((FUNC_TYPE_VIRTUAL_BUF)signature->virtualCallBuf())(vm, func, obj, buf);\
+  void* func = (((void***)obj)[0])[offset];\
+  Signdef* sign = getSignature(); \
+  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, func, obj, buf);\
 }\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf) {\
@@ -233,7 +237,8 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, JavaObject* obj, void*
   \
   verifyNull(obj);\
   void* func = this->compiledPtr();\
-  return ((FUNC_TYPE_VIRTUAL_BUF)signature->virtualCallBuf())(vm, func, obj, buf);\
+  Signdef* sign = getSignature(); \
+  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, func, obj, buf);\
 }\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, void* buf) {\
@@ -241,7 +246,8 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, void* buf) {\
     classDef->isolate->loadName(classDef->name, classDef->classLoader, true, true, true);\
   \
   void* func = this->compiledPtr();\
-  return ((FUNC_TYPE_STATIC_BUF)signature->staticCallBuf())(vm, func, buf);\
+  Signdef* sign = getSignature(); \
+  return ((FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf())(vm, func, buf);\
 }\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##Virtual(Jnjvm* vm,JavaObject* obj, ...) { \

@@ -35,7 +35,7 @@ JNIEnv *env,
 jobject obj) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)obj);
   JavaObject* loader = field->classDef->classLoader;
-  CommonClass* cl = field->signature->assocClass(loader);
+  CommonClass* cl = field->getSignature()->assocClass(loader);
   return (jclass)cl->getClassDelegatee();
 }
 
@@ -45,7 +45,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -80,7 +80,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -118,7 +118,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -142,7 +142,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -184,7 +184,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -207,7 +207,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -231,7 +231,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -258,7 +258,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -304,7 +304,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject _obj) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  Typedef* type = field->signature;
+  Typedef* type = field->getSignature();
   const AssessorDesc* ass = type->funcs;
   JavaObject* obj = (JavaObject*)_obj;
   Jnjvm* vm = JavaThread::get()->isolate;
@@ -398,9 +398,9 @@ jobject Field, jobject obj, jobject val) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
   void** buf = (void**)alloca(sizeof(uint64));
   void* _buf = (void*)buf;
-  NativeUtil::decapsulePrimitive(JavaThread::get()->isolate, buf, (JavaObject*)val, field->signature);
+  NativeUtil::decapsulePrimitive(JavaThread::get()->isolate, buf, (JavaObject*)val, field->getSignature());
 
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -454,7 +454,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jboolean val) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -476,7 +476,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject _obj, jbyte val) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   JavaObject* obj = (JavaObject*)_obj;
   
   if (isStatic(field->access)) 
@@ -518,7 +518,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jchar val) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -555,7 +555,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jshort val) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -592,7 +592,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jint val) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -625,7 +625,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jlong val) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -654,7 +654,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jfloat val) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);
@@ -679,7 +679,7 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jdouble val) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->signature->funcs;
+  const AssessorDesc* ass = field->getSignature()->funcs;
   
   if (isStatic(field->access)) 
     JavaThread::get()->isolate->initialiseClass(field->classDef);

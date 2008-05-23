@@ -22,6 +22,7 @@
 #include "mvm/Threads/Locks.h"
 
 #include "JavaAccess.h"
+#include "Jnjvm.h"
 
 namespace jnjvm {
 
@@ -156,12 +157,10 @@ public:
 #endif
   
 
-  typedef std::map<const FieldCmp, JavaField*, std::less<FieldCmp>,
-                gc_allocator<std::pair<const FieldCmp, JavaField*> > >::iterator
+  typedef std::map<const FieldCmp, JavaField*, std::less<FieldCmp> >::iterator
     field_iterator;
   
-  typedef std::map<const FieldCmp, JavaField*, std::less<FieldCmp>,
-                gc_allocator<std::pair<const FieldCmp, JavaField*> > > 
+  typedef std::map<const FieldCmp, JavaField*, std::less<FieldCmp> > 
     field_map;
   
   /// virtualFields - List of all the virtual fields defined in this class.
@@ -172,12 +171,10 @@ public:
   ///
   field_map staticFields;
   
-  typedef std::map<const FieldCmp, JavaMethod*, std::less<FieldCmp>,
-                gc_allocator<std::pair<const FieldCmp, JavaMethod*> > >::iterator
+  typedef std::map<const FieldCmp, JavaMethod*, std::less<FieldCmp> >::iterator
     method_iterator;
   
-  typedef std::map<const FieldCmp, JavaMethod*, std::less<FieldCmp>,
-                gc_allocator<std::pair<const FieldCmp, JavaMethod*> > > 
+  typedef std::map<const FieldCmp, JavaMethod*, std::less<FieldCmp> > 
     method_map;
   
   /// virtualMethods - List of all the virtual methods defined by this class.
@@ -357,12 +354,13 @@ public:
 
 
 class JavaMethod {
+  friend class CommonClass;
 private:
   void* _compiledPtr();
+  Signdef* _signature;
 public:
   ~JavaMethod();
   unsigned int access;
-  Signdef* signature;
   std::vector<Attribut*> attributs;
   std::vector<Enveloppe*> caches;
   Class* classDef;
@@ -380,6 +378,12 @@ public:
   void* compiledPtr() {
     if (!code) return _compiledPtr();
     return code;
+  }
+  
+  Signdef* getSignature() {
+    if(!_signature)
+      _signature = (Signdef*) classDef->isolate->constructType(type);
+    return _signature;
   }
 
   uint32 invokeIntSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
@@ -440,11 +444,13 @@ public:
 };
 
 class JavaField  {
+  friend class CommonClass;
+private:
+  Typedef* _signature;
 public:
   ~JavaField();
   unsigned int access;
   const UTF8* name;
-  Typedef* signature;
   const UTF8* type;
   std::vector<Attribut*> attributs;
   Class* classDef;
@@ -452,6 +458,12 @@ public:
   /// num - The index of the field in the field list.
   ///
   uint32 num;
+  
+  Typedef* getSignature() {
+    if(!_signature)
+      _signature = classDef->isolate->constructType(type);
+    return _signature;
+  }
 
   void initField(JavaObject* obj);
   Attribut* lookupAttribut(const UTF8* key);

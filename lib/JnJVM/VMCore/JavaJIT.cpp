@@ -69,7 +69,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   FunctionType::param_iterator it  = virtualType->param_end();
-  makeArgs(it, index, args, signature->nbIn + 1);
+  makeArgs(it, index, args, signature->args.size() + 1);
   
   JITVerifyNull(args[0]); 
 
@@ -206,8 +206,8 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
                       currentBlock);
   llvm::BranchInst::Create(executeBlock, endBlock, test, currentBlock);
 
-  if (compilingMethod->signature->ret->funcs != AssessorDesc::dVoid) {
-    uint8 id = compilingMethod->signature->ret->funcs->numId;
+  if (compilingMethod->getSignature()->ret->funcs != AssessorDesc::dVoid) {
+    uint8 id = compilingMethod->getSignature()->ret->funcs->numId;
     LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
     Constant* C = LAI.llvmNullConstant;
     endNode->addIncoming(C, currentBlock);
@@ -243,7 +243,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   
   
   LLVMSignatureInfo* LSI = 
-    module->getSignatureInfo(compilingMethod->signature);
+    module->getSignatureInfo(compilingMethod->getSignature());
   const llvm::Type* valPtrType = LSI->getNativePtrType();
   Value* valPtr = 
     ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, (uint64)natPtr),
@@ -373,7 +373,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   uint32 max = args.size();
 #endif
   std::vector<Typedef*>::iterator type = 
-    compilingMethod->signature->args.begin();
+    compilingMethod->getSignature()->args.begin();
   std::vector<Value*>::iterator i = args.begin();
 
   if (isVirtual(compilingMethod->access)) {
@@ -539,7 +539,7 @@ llvm::Function* JavaJIT::javaCompile() {
 #endif
   Function::arg_iterator i = func->arg_begin(); 
   std::vector<Typedef*>::iterator type = 
-    compilingMethod->signature->args.begin();
+    compilingMethod->getSignature()->args.begin();
 
   if (isVirtual(compilingMethod->access)) {
     new StoreInst(i, objectLocals[0], false, currentBlock);
@@ -1362,7 +1362,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
   
   std::vector<Value*> args; 
   FunctionType::param_iterator it  = virtualType->param_end();
-  makeArgs(it, index, args, signature->nbIn + 1);
+  makeArgs(it, index, args, signature->args.size() + 1);
   JITVerifyNull(args[0]); 
 
   if (cl == Jnjvm::mathName) {
@@ -1407,7 +1407,7 @@ void JavaJIT::invokeStatic(uint16 index) {
   
   std::vector<Value*> args; // size = [signature->nbIn + 2]; 
   FunctionType::param_iterator it  = staticType->param_end();
-  makeArgs(it, index, args, signature->nbIn);
+  makeArgs(it, index, args, signature->args.size());
   ctpInfo->markAsStaticCall(index);
 
   if (cl == Jnjvm::mathName) {
@@ -1833,7 +1833,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   std::vector<Value*> args; // size = [signature->nbIn + 3];
 
   FunctionType::param_iterator it  = virtualType->param_end();
-  makeArgs(it, index, args, signature->nbIn + 1);
+  makeArgs(it, index, args, signature->args.size() + 1);
   
   const llvm::Type* retType = virtualType->getReturnType();
   BasicBlock* endBlock = createBasicBlock("end virtual invoke");

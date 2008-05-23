@@ -381,7 +381,7 @@ JavaObject* NativeUtil::getClassType(JavaObject* loader, Typedef* type) {
 }
 
 ArrayObject* NativeUtil::getParameterTypes(JavaObject* loader, JavaMethod* meth) {
-  std::vector<Typedef*>& args = meth->signature->args;
+  std::vector<Typedef*>& args = meth->getSignature()->args;
   ArrayObject* res = ArrayObject::acons(args.size(), Classpath::classArrayClass,
                                         JavaThread::get()->isolate);
 

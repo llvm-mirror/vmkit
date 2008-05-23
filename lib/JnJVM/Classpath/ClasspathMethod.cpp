@@ -41,7 +41,7 @@ JNIEnv *env,
  jobject Meth) {
   JavaMethod* meth = (JavaMethod*)Classpath::methodSlot->getVirtualInt32Field((JavaObject*)Meth);
   JavaObject* loader = meth->classDef->classLoader;
-  return (jclass)NativeUtil::getClassType(loader, meth->signature->ret);
+  return (jclass)NativeUtil::getClassType(loader, meth->getSignature()->ret);
 }
 
 
@@ -65,7 +65,7 @@ JNIEnv *env,
   JavaMethod* meth = (JavaMethod*)_meth;
   ArrayObject* args = (ArrayObject*)_args;
   sint32 nbArgs = args ? args->size : 0;
-  sint32 size = meth->signature->args.size();
+  sint32 size = meth->getSignature()->args.size();
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject* obj = (JavaObject*)_obj;
 
@@ -87,8 +87,8 @@ JNIEnv *env,
     }
 
     
-    for (std::vector<Typedef*>::iterator i = meth->signature->args.begin(),
-         e = meth->signature->args.end(); i != e; ++i, ++index) {
+    for (std::vector<Typedef*>::iterator i = meth->getSignature()->args.begin(),
+         e = meth->getSignature()->args.end(); i != e; ++i, ++index) {
       NativeUtil::decapsulePrimitive(vm, buf, args->at(index), *i);
     }
     
@@ -120,7 +120,7 @@ JNIEnv *env,
     } \
     
     JavaObject* res = 0;
-    const AssessorDesc* retType = meth->signature->ret->funcs;
+    const AssessorDesc* retType = meth->getSignature()->ret->funcs;
     if (retType == AssessorDesc::dVoid) {
       res = 0;
       uint32 val = 0;

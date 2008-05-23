@@ -270,7 +270,7 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
   
   for (CommonClass::field_iterator i = fields.begin(), e = fields.end();
        i!= e; ++i) {
-    if (i->second->signature->funcs->doTrace) {
+    if (i->second->getSignature()->funcs->doTrace) {
       LLVMFieldInfo* LFI = getFieldInfo(i->second);
       std::vector<Value*> args; //size = 2
       args.push_back(zero);
@@ -330,7 +330,7 @@ const Type* LLVMClassInfo::getVirtualType() {
     
     
     for (uint32 index = 0; index < classDef->virtualFields.size(); ++index) {
-      uint8 id = array[index]->signature->funcs->numId;
+      uint8 id = array[index]->getSignature()->funcs->numId;
       LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
       fields.push_back(LAI.llvmType);
     }
@@ -374,7 +374,7 @@ const Type* LLVMClassInfo::getStaticType() {
 
     for (uint32 index = 0; index < classDef->staticFields.size(); ++index) {
       JavaField* field = array[index];
-      uint8 id = field->signature->funcs->numId;
+      uint8 id = field->getSignature()->funcs->numId;
       LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
       fields.push_back(LAI.llvmType);
     }
@@ -493,7 +493,7 @@ Function* LLVMMethodInfo::getMethod() {
 
 const FunctionType* LLVMMethodInfo::getFunctionType() {
   if (!functionType) {
-    LLVMSignatureInfo* LSI = module->getSignatureInfo(methodDef->signature);
+    LLVMSignatureInfo* LSI = module->getSignatureInfo(methodDef->getSignature());
     assert(LSI);
     if (isStatic(methodDef->access)) {
       functionType = LSI->getStaticType();
@@ -763,8 +763,8 @@ Function* LLVMSignatureInfo::getVirtualBuf() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     virtualBufFunction = createFunctionCallBuf(true);
-    signature->_virtualCallBuf = (mvm::Code*)
-      mvm::jit::executionEngine->getPointerToGlobal(virtualBufFunction);
+    signature->setVirtualCallBuf((mvm::Code*)
+      mvm::jit::executionEngine->getPointerToGlobal(virtualBufFunction));
   }
   return virtualBufFunction;
 }
@@ -774,8 +774,8 @@ Function* LLVMSignatureInfo::getVirtualAP() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     virtualAPFunction = createFunctionCallAP(true);
-    signature->_virtualCallAP = (mvm::Code*)
-      mvm::jit::executionEngine->getPointerToGlobal(virtualAPFunction);
+    signature->setVirtualCallAP((mvm::Code*)
+      mvm::jit::executionEngine->getPointerToGlobal(virtualAPFunction));
   }
   return virtualAPFunction;
 }
@@ -785,8 +785,8 @@ Function* LLVMSignatureInfo::getStaticBuf() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     staticBufFunction = createFunctionCallBuf(false);
-    signature->_staticCallBuf = (mvm::Code*)
-      mvm::jit::executionEngine->getPointerToGlobal(staticBufFunction);
+    signature->setStaticCallBuf((mvm::Code*)
+      mvm::jit::executionEngine->getPointerToGlobal(staticBufFunction));
   }
   return staticBufFunction;
 }
@@ -796,8 +796,8 @@ Function* LLVMSignatureInfo::getStaticAP() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     staticAPFunction = createFunctionCallAP(false);
-    signature->_staticCallAP = (mvm::Code*)
-      mvm::jit::executionEngine->getPointerToGlobal(staticAPFunction);
+    signature->setStaticCallAP((mvm::Code*)
+      mvm::jit::executionEngine->getPointerToGlobal(staticAPFunction));
   }
   return staticAPFunction;
 }
@@ -1051,7 +1051,7 @@ void JnjvmModule::initialise() {
 
 void JnjvmModule::InitField(JavaField* field, JavaObject* obj, uint64 val) {
   
-  const AssessorDesc* funcs = field->signature->funcs;
+  const AssessorDesc* funcs = field->getSignature()->funcs;
   if (funcs == AssessorDesc::dLong) {
     ((sint64*)((uint64)obj + field->ptrOffset))[0] = val;
   } else if (funcs == AssessorDesc::dInt) {

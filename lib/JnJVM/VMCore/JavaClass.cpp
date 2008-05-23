@@ -279,7 +279,7 @@ void* JavaMethod::_compiledPtr() {
 const char* JavaMethod::printString() const {
   mvm::PrintBuffer *buf= mvm::PrintBuffer::alloc();
   buf->write("JavaMethod<");
-  signature->printWithSign(classDef, name, buf);
+  ((JavaMethod*)this)->getSignature()->printWithSign(classDef, name, buf);
   buf->write(">");
   return buf->contents()->cString();
 }
@@ -291,7 +291,7 @@ const char* JavaField::printString() const {
     buf->write("static ");
   else
     buf->write("virtual ");
-  signature->tPrintBuf(buf);
+  ((JavaMethod*)this)->getSignature()->tPrintBuf(buf);
   buf->write(" ");
   classDef->print(buf);
   buf->write("::");
@@ -479,7 +479,7 @@ bool CommonClass::isAssignableFrom(CommonClass* cl) {
 }
 
 void JavaField::initField(JavaObject* obj) {
-  const AssessorDesc* funcs = signature->funcs;
+  const AssessorDesc* funcs = getSignature()->funcs;
   Attribut* attribut = lookupAttribut(Attribut::constantAttribut);
 
   if (!attribut) {
@@ -579,7 +579,7 @@ JavaMethod* CommonClass::constructMethod(const UTF8* name,
     method->name = name;
     method->type = type;
     method->classDef = (Class*)this;
-    method->signature = (Signdef*)isolate->constructType(type);
+    method->_signature = 0;
     method->code = 0;
     method->access = access;
     method->canBeInlined = false;
@@ -602,7 +602,7 @@ JavaField* CommonClass::constructField(const UTF8* name,
     field->name = name;
     field->type = type;
     field->classDef = (Class*)this;
-    field->signature = isolate->constructType(type);
+    field->_signature = 0;
     field->ptrOffset = 0;
     field->access = access;
     map.insert(std::make_pair(CC, field));

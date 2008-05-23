@@ -143,29 +143,68 @@ public:
 };
 
 class Signdef : public Typedef {
-public:
-  static VirtualTable *VT;
-  std::vector<Typedef*> args;
-  Typedef* ret;
+private:
   mvm::Code* _staticCallBuf;
   mvm::Code* _virtualCallBuf;
   mvm::Code* _staticCallAP;
   mvm::Code* _virtualCallAP;
-  uint32 nbIn;
-  
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
-
-  void printWithSign(CommonClass* cl, const UTF8* name, mvm::PrintBuffer* buf);
-  unsigned int nbInWithThis(unsigned int flag);
-  static Signdef* signDup(const UTF8* name, Jnjvm* vm);
   
   void* staticCallBuf();
   void* virtualCallBuf();
   void* staticCallAP();
   void* virtualCallAP();
 
+public:
+  static VirtualTable *VT;
+  std::vector<Typedef*> args;
+  Typedef* ret;
+  
+  virtual void print(mvm::PrintBuffer* buf) const;
+  virtual void TRACER;
+
+  void printWithSign(CommonClass* cl, const UTF8* name, mvm::PrintBuffer* buf);
+  static Signdef* signDup(const UTF8* name, Jnjvm* vm);
+  
+  
+  void* getStaticCallBuf() {
+    if(!_staticCallBuf) return staticCallBuf();
+    return _staticCallBuf;
+  }
+
+  void* getVirtualCallBuf() {
+    if(!_virtualCallBuf) return virtualCallBuf();
+    return _virtualCallBuf;
+  }
+  
+  void* getStaticCallAP() {
+    if (!_staticCallAP) return staticCallAP();
+    return _staticCallAP;
+  }
+
+  void* getVirtualCallAP() {
+    if (!_virtualCallAP) return virtualCallAP();
+    return _virtualCallAP;
+  }
+  
+  void setStaticCallBuf(mvm::Code* code) {
+    _staticCallBuf = code;
+  }
+
+  void setVirtualCallBuf(mvm::Code* code) {
+    _virtualCallBuf = code;
+  }
+  
+  void setStaticCallAP(mvm::Code* code) {
+    _staticCallAP = code;
+  }
+
+  void setVirtualCallAP(mvm::Code* code) {
+    _virtualCallAP = code;
+  }
+  
+  
 };
+
 
 } // end namespace jnjvm
 

@@ -471,10 +471,6 @@ void Signdef::printWithSign(CommonClass* cl, const UTF8* name,
   humanPrintArgs(&args, buf);
 }
 
-unsigned int Signdef::nbInWithThis(unsigned int flag) {
-  return args.size() + (isStatic(flag) ? 0 : 1);
-}
-
 Signdef* Signdef::signDup(const UTF8* name, Jnjvm *vm) {
   std::vector<Typedef*> buf;
   uint32 len = (uint32)name->size;
@@ -508,7 +504,6 @@ Signdef* Signdef::signDup(const UTF8* name, Jnjvm *vm) {
   res->keyName = name;
   res->pseudoAssocClassName = name;
   res->funcs = 0;
-  res->nbIn = buf.size();
   res->_virtualCallBuf = 0;
   res->_staticCallBuf = 0;
   res->_virtualCallAP = 0;

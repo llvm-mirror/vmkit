@@ -56,7 +56,7 @@ JNIEnv *env,
   JavaMethod* meth = (JavaMethod*)_meth;
   ArrayObject* args = (ArrayObject*)_args;
   sint32 nbArgs = args ? args->size : 0;
-  sint32 size = meth->signature->args.size();
+  sint32 size = meth->getSignature()->args.size();
   Jnjvm* vm = JavaThread::get()->isolate;
 
   void** buf = (void**)alloca(size * sizeof(uint64));
@@ -70,8 +70,8 @@ JNIEnv *env,
 
       JavaObject* res = cl->doNew(vm);
     
-      for (std::vector<Typedef*>::iterator i = meth->signature->args.begin(),
-           e = meth->signature->args.end(); i != e; ++i, ++index) {
+      for (std::vector<Typedef*>::iterator i = meth->getSignature()->args.begin(),
+           e = meth->getSignature()->args.end(); i != e; ++i, ++index) {
         NativeUtil::decapsulePrimitive(vm, buf, args->at(index), *i);
       }
       
