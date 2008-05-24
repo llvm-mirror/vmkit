@@ -52,7 +52,7 @@ static char* jniConsFromMeth(CommonClass* cl, JavaMethod* meth) {
   memcpy(buf, PRE, PRE_LEN);
   
   for (sint32 i =0; i < clen; ++i) {
-    cur = jniConsClName->at(i);
+    cur = jniConsClName->elements[i];
     if (cur == '/') ptr[0] = '_';
     else ptr[0] = (uint8)cur;
     ++ptr;
@@ -62,7 +62,7 @@ static char* jniConsFromMeth(CommonClass* cl, JavaMethod* meth) {
   ++ptr;
   
   for (sint32 i =0; i < mnlen; ++i) {
-    cur = jniConsName->at(i);
+    cur = jniConsName->elements[i];
     if (cur == '/') ptr[0] = '_';
     else ptr[0] = (uint8)cur;
     ++ptr;
@@ -89,7 +89,7 @@ static char* jniConsFromMeth2(CommonClass* cl, JavaMethod* meth) {
   memcpy(buf, PRE, PRE_LEN);
   
   for (sint32 i =0; i < clen; ++i) {
-    cur = jniConsClName->at(i);
+    cur = jniConsClName->elements[i];
     if (cur == '/') ptr[0] = '_';
     else ptr[0] = (uint8)cur;
     ++ptr;
@@ -99,7 +99,7 @@ static char* jniConsFromMeth2(CommonClass* cl, JavaMethod* meth) {
   ++ptr;
   
   for (sint32 i =0; i < mnlen; ++i) {
-    cur = jniConsName->at(i);
+    cur = jniConsName->elements[i];
     if (cur == '/') ptr[0] = '_';
     else if (cur == '_') {
       ptr[0] = '_';
@@ -131,7 +131,7 @@ static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth) {
   memcpy(buf, PRE, PRE_LEN);
   
   for (sint32 i =0; i < clen; ++i) {
-    cur = jniConsClName->at(i);
+    cur = jniConsClName->elements[i];
     if (cur == '/') ptr[0] = '_';
     else ptr[0] = (uint8)cur;
     ++ptr;
@@ -141,7 +141,7 @@ static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth) {
   ++ptr;
 
   for (sint32 i =0; i < mnlen; ++i) {
-    cur = jniConsName->at(i);
+    cur = jniConsName->elements[i];
     if (cur == '/') ptr[0] = '_';
     else ptr[0] = (uint8)cur;
     ++ptr;
@@ -149,7 +149,7 @@ static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth) {
   
   sint32 i = 0;
   while (i < jniConsType->size) {
-    char c = jniConsType->at(i++);
+    char c = jniConsType->elements[i++];
     if (c == AssessorDesc::I_PARG) {
       ptr[0] = '_';
       ptr[1] = '_';
