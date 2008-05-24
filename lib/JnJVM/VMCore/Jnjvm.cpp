@@ -304,7 +304,7 @@ typedef void (*clinit_t)(Jnjvm* vm);
 
 void Jnjvm::initialiseClass(CommonClass* cl) {
   JavaState* status = cl->getStatus();
-  if (cl->isArray || AssessorDesc::bogusClassToPrimitive(cl)) {
+  if (cl->isArray || cl->isPrimitive) {
     *status = ready;
   } else if (!(*status == ready)) {
     cl->aquire();

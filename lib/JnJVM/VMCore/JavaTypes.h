@@ -118,7 +118,6 @@ public:
   
   static AssessorDesc* byteIdToPrimitive(const char id);
   static AssessorDesc* classToPrimitive(CommonClass* cl);
-  static AssessorDesc* bogusClassToPrimitive(CommonClass* cl);
 
 };
 

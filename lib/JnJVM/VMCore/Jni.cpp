@@ -114,11 +114,7 @@ jboolean IsAssignableFrom(JNIEnv *env, jclass sub, jclass sup) {
   CommonClass* cl2 = NativeUtil::resolvedImplClass(sup, false);
   CommonClass* cl1 = NativeUtil::resolvedImplClass(sub, false);
 
-  AssessorDesc* prim = AssessorDesc::bogusClassToPrimitive(cl2);
-  if (prim)
-    return prim == AssessorDesc::bogusClassToPrimitive(cl1);
-  else
-    return cl1->isAssignableFrom(cl2);
+  return cl1->isAssignableFrom(cl2);
   
   END_EXCEPTION
 

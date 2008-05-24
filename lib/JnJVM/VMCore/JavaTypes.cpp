@@ -401,30 +401,6 @@ AssessorDesc* AssessorDesc::classToPrimitive(CommonClass* cl) {
   }
 }
 
-AssessorDesc* AssessorDesc::bogusClassToPrimitive(CommonClass* cl) {
-  if (cl == dFloat->classType) {
-    return dFloat;
-  } else if (cl == dInt->classType) {
-    return dInt;
-  } else if (cl == dShort->classType) {
-    return dShort;
-  } else if (cl == dChar->classType) {
-    return dChar;
-  } else if (cl == dDouble->classType) {
-    return dDouble;
-  } else if (cl == dByte->classType) {
-    return dByte;
-  } else if (cl == dBool->classType) {
-    return dBool;
-  } else if (cl == dLong->classType) {
-    return dLong;
-  } else if (cl == dVoid->classType) {
-    return dVoid;
-  } else {
-    return 0;
-  }
-}
-
 void Typedef::print(mvm::PrintBuffer* buf) const {
   buf->write("Type<");
   tPrintBuf(buf);

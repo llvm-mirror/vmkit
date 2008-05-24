@@ -47,10 +47,10 @@ JNIEnv *env,
   ClassArray* ts = (ClassArray*)src->classOf;
   ClassArray* td = (ClassArray*)dst->classOf;
   CommonClass* dstType = td->baseClass();
-  CommonClass* srcType = ts->baseClass();
-  AssessorDesc* srcPrim = AssessorDesc::bogusClassToPrimitive(srcType);
-  AssessorDesc* dstPrim = AssessorDesc::bogusClassToPrimitive(dstType);
+  AssessorDesc* dstFuncs = td->funcs();
   AssessorDesc* srcFuncs = ts->funcs();
+  CommonClass* srcPrim = srcFuncs->classType;
+  CommonClass* dstPrim = dstFuncs->classType;
 
   if (len > src->size) {
     vm->indexOutOfBounds(src, len);
@@ -72,9 +72,9 @@ JNIEnv *env,
   
   jint i = sstart;
   bool doThrow = false;
-  if (srcFuncs == AssessorDesc::dTab || srcFuncs == AssessorDesc::dRef) {
+  if (srcFuncs->doTrace) {
     while (i < sstart + len && !doThrow) {
-      JavaObject* cur = ((ArrayObject*)src)->at(i);
+      JavaObject* cur = ((ArrayObject*)src)->elements[i];
       if (cur) {
         if (!(cur->classOf->isAssignableFrom(dstType))) {
           doThrow = true;

@@ -177,14 +177,9 @@ JNIEnv *env,
   CommonClass* cl = 
     (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)Cl);
   
-  AssessorDesc* ass = AssessorDesc::bogusClassToPrimitive(cl);
-  const UTF8* res = 0;
-  if (ass) {
-    res = ass->UTF8Name;
-  } else {
-    const UTF8* iname = cl->name;
-    res = iname->internalToJava(vm, 0, iname->size);
-  }
+  const UTF8* iname = cl->name;
+  const UTF8* res = iname->internalToJava(vm, 0, iname->size);
+
   return (jobject)(vm->UTF8ToStr(res));
 }
 
@@ -197,9 +192,7 @@ JNIEnv *env,
   CommonClass* cl = 
     (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)Cl);
   
-  AssessorDesc* ass = AssessorDesc::bogusClassToPrimitive(cl);
-  if (ass == 0) return false;
-  else return true;
+  return cl->isPrimitive;
 }
 
 JNIEXPORT jboolean JNICALL Java_java_lang_VMClass_isInterface(
@@ -252,13 +245,8 @@ jclass Cl1, jclass Cl2) {
   CommonClass* cl2 = 
     (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)Cl2);
 
-  AssessorDesc* ass = AssessorDesc::bogusClassToPrimitive(cl1);
-  if (ass) {
-    return ass == AssessorDesc::bogusClassToPrimitive(cl2);
-  } else {
-    cl2->resolveClass(false);
-    return cl2->isAssignableFrom(cl1);
-  }
+  cl2->resolveClass(false);
+  return cl2->isAssignableFrom(cl1);
 
 }
 

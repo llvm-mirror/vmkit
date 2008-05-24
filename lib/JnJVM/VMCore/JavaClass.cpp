@@ -388,8 +388,8 @@ JavaObject* Class::doNew(Jnjvm* vm) {
 bool CommonClass::inheritName(const UTF8* Tname) {
   if (name->equals(Tname)) {
     return true;
-  } else  if (AssessorDesc::bogusClassToPrimitive(this)) {
-    return true;
+  } else  if (isPrimitive) {
+    return false;
   } else if (super) {
     if (super->inheritName(Tname)) return true;
   }
@@ -551,7 +551,7 @@ void Class::createStaticInstance() {
 
 JavaState* CommonClass::getStatus() {
   if (!this->isArray && 
-      !AssessorDesc::bogusClassToPrimitive(this)) {
+      !this->isPrimitive) {
     Class* cl = (Class*)this;
     Jnjvm* vm = JavaThread::get()->isolate;
     std::pair<JavaState, JavaObject*>* val = vm->statics->lookup(cl);
