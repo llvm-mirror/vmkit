@@ -106,8 +106,7 @@ public:
   typedef std::multimap<const uint32, const UTF8*>::iterator iterator;
   
   mvm::Lock* lock;
-  std::multimap<const uint32, const UTF8*, std::less<uint32>,
-                gc_allocator< std::pair<const uint32, const UTF8*> > > map;
+  std::multimap<const uint32, const UTF8*> map;
   const UTF8* lookupOrCreateAsciiz(Jnjvm* vm, const char* asciiz); 
   const UTF8* lookupOrCreateReader(Jnjvm* vm, const uint16* buf, uint32 size);
   const UTF8* lookupAsciiz(const char* asciiz); 
