@@ -50,8 +50,6 @@ static void initialiseVT() {
   INIT(LockObj);
   INIT(JavaObject);
   INIT(JavaThread);
-  INIT(Typedef);
-  INIT(Signdef);
   INIT(Jnjvm);
   INIT(Reader);
   INIT(ZipFile);
@@ -59,7 +57,6 @@ static void initialiseVT() {
   INIT(ClassMap);
   INIT(ZipFileMap);
   INIT(StringMap);
-  INIT(jnjvm::TypeMap);
   INIT(JavaIsolate);
   INIT(JavaString);
 #ifdef SERVICE_VM

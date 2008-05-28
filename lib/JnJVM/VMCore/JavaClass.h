@@ -279,8 +279,6 @@ public:
   unsigned int minor;
   unsigned int major;
   ArrayUInt8* bytes;
-  mvm::Code* codeVirtualTracer;
-  mvm::Code* codeStaticTracer;
   JavaCtpInfo* ctpInfo;
   std::vector<Attribut*> attributs;
   std::vector<Class*> innerClasses;

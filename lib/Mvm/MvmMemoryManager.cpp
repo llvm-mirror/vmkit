@@ -32,6 +32,7 @@ unsigned char* MvmMemoryManager::startFunctionBody(const Function* F,
   meth->llvmFunction = F;
   res->method(meth);
   currentMethod = meth;
+  Object::pushRoot(meth);
   return (unsigned char*)((unsigned int*)res + 2);
 }
 

@@ -467,7 +467,7 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   bootstrapVM->hashUTF8->copy(isolate->hashUTF8);
   isolate->hashStr = vm_new(isolate, StringMap)();
   isolate->bootstrapClasses = callingVM->bootstrapClasses;
-  isolate->javaTypes = vm_new(isolate, TypeMap)(); 
+  isolate->javaTypes = new TypeMap(); 
   isolate->globalRefsLock = mvm::Lock::allocNormal();
 #ifdef MULTIPLE_VM
   isolate->statics = vm_new(isolate, StaticInstanceMap)();  
@@ -522,7 +522,7 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   isolate->jniEnv = &JNI_JNIEnvTable;
   isolate->javavmEnv = &JNI_JavaVMTable;
   isolate->globalRefsLock = mvm::Lock::allocNormal();
-  isolate->javaTypes = vm_new(isolate, TypeMap)();  
+  isolate->javaTypes = new TypeMap();  
 
 #ifdef MULTIPLE_VM
   isolate->statics = vm_new(isolate, StaticInstanceMap)();  

@@ -48,8 +48,6 @@ using namespace jnjvm;
   INIT(LockObj);
   INIT(JavaObject);
   INIT(JavaThread);
-  INIT(Typedef);
-  INIT(Signdef);
   INIT(Jnjvm);
   INIT(Reader);
   INIT(ZipFile);
@@ -57,7 +55,6 @@ using namespace jnjvm;
   INIT(ClassMap);
   INIT(ZipFileMap);
   INIT(StringMap);
-  INIT(TypeMap);
   INIT(StaticInstanceMap);
   INIT(JavaIsolate);
   INIT(JavaString);
@@ -111,19 +108,6 @@ void CommonClass::TRACER {
 #ifndef MULTIPLE_VM
   delegatee->MARK_AND_TRACE;
 #endif
-  
-  for (method_iterator i = staticMethods.begin(), e = staticMethods.end();
-       i!= e; ++i) {
-    mvm::Code* c = i->second->code;
-    if (c) c->MARK_AND_TRACE;
-  }
-  
-  for (method_iterator i = virtualMethods.begin(), e = virtualMethods.end();
-       i!= e; ++i) {
-    mvm::Code* c = i->second->code;
-    if (c) c->MARK_AND_TRACE;
-  }
- 
 }
 
 void Class::TRACER {
@@ -132,8 +116,6 @@ void Class::TRACER {
 #ifndef MULTIPLE_VM
   _staticInstance->MARK_AND_TRACE;
 #endif
-  codeStaticTracer->MARK_AND_TRACE;
-  codeVirtualTracer->MARK_AND_TRACE;
 }
 
 void ClassArray::TRACER {
@@ -171,21 +153,10 @@ void JavaThread::TRACER {
   if (pendingException) pendingException->MARK_AND_TRACE;
 }
 
-void Typedef::TRACER {
-}
-
-void Signdef::TRACER {
-  _staticCallBuf->MARK_AND_TRACE;
-  _virtualCallBuf->MARK_AND_TRACE;
-  _staticCallAP->MARK_AND_TRACE;
-  _virtualCallAP->MARK_AND_TRACE;
-}
-
 void Jnjvm::TRACER {
   appClassLoader->MARK_AND_TRACE;
   hashStr->MARK_AND_TRACE;
   bootstrapClasses->MARK_AND_TRACE;
-  javaTypes->MARK_AND_TRACE;
   TRACE_VECTOR(JavaObject*, gc_allocator, globalRefs);
 #ifdef MULTIPLE_VM
   statics->MARK_AND_TRACE;
@@ -226,12 +197,6 @@ void ZipFileMap::TRACER {
 }
 
 void StringMap::TRACER {
-  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-    i->second->MARK_AND_TRACE;
-  }
-}
-
-void TypeMap::TRACER {
   for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
     i->second->MARK_AND_TRACE;
   }

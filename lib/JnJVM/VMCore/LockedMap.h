@@ -170,22 +170,31 @@ public:
   virtual void TRACER;
 };
 
-class TypeMap :
-    public LockedMap<const UTF8*, Typedef*, ltutf8 > {
+class TypeMap {
 public:
-  static VirtualTable* VT;
+  mvm::Lock* lock;
   
-  inline Typedef* lookupOrCreate(const UTF8*& V, Jnjvm *vm, funcCreate func) {
-    assert(0);
-    return 0;
+  std::map<const UTF8*, Typedef*, ltutf8> map;
+  typedef std::map<const UTF8*, Typedef*, ltutf8>::iterator iterator;
+  
+  inline Typedef* lookup(const UTF8* V) {
+    lock->lock();
+    iterator End = map.end();
+    iterator I = map.find(V);
+    lock->unlock();
+    return I != End ? I->second : 0; 
+  }
+
+  inline void hash(const UTF8* k, Typedef* c) {
+    lock->lock();
+    map.insert(std::make_pair(k, c));
+    lock->unlock();
   }
   
   TypeMap() {
     lock = mvm::Lock::allocRecursive();
   }
   
-  virtual void TRACER;
-    
 };
 
 class StaticInstanceMap :

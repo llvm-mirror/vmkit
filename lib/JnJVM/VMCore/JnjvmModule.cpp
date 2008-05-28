@@ -299,10 +299,8 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
   
   if (!stat) {
     LCI->virtualTracerFunction = func;
-    cl->codeVirtualTracer = mvm::Code::getCodeFromPointer(codePtr);
   } else {
     LCI->staticTracerFunction = func;
-    cl->codeStaticTracer = mvm::Code::getCodeFromPointer(codePtr);
   }
 #endif
   return res;

@@ -401,10 +401,12 @@ AssessorDesc* AssessorDesc::classToPrimitive(CommonClass* cl) {
   }
 }
 
-void Typedef::print(mvm::PrintBuffer* buf) const {
+const char* Typedef::printString() const {
+  mvm::PrintBuffer *buf= mvm::PrintBuffer::alloc();
   buf->write("Type<");
   tPrintBuf(buf);
   buf->write(">");
+  return buf->contents()->cString();
 }
 
 CommonClass* Typedef::assocClass(JavaObject* loader) {
@@ -429,12 +431,14 @@ void Typedef::humanPrintArgs(const std::vector<Typedef*>* args,
   buf->write(")");
 }
 
-void Signdef::print(mvm::PrintBuffer* buf) const {
+const char* Signdef::printString() const {
+  mvm::PrintBuffer *buf= mvm::PrintBuffer::alloc();
   buf->write("Signature<");
   ret->tPrintBuf(buf);
   buf->write("...");
   Typedef::humanPrintArgs(&args, buf);
   buf->write(">");
+  return buf->contents()->cString();
 }
 
 void Signdef::printWithSign(CommonClass* cl, const UTF8* name,
@@ -473,7 +477,7 @@ Signdef* Signdef::signDup(const UTF8* name, Jnjvm *vm) {
     typeError(name, 0);
   }
 
-  Signdef* res = vm_new(vm, Signdef)();
+  Signdef* res = new Signdef();
   res->args = buf;
   res->ret = vm->constructType(name->extract(vm, pos, pred));
   res->isolate = vm;
@@ -496,7 +500,7 @@ Typedef* Typedef::typeDup(const UTF8* name, Jnjvm *vm) {
   if (funcs == AssessorDesc::dParg) {
     return Signdef::signDup(name, vm);
   } else {
-    Typedef* res = vm_new(vm, Typedef)();
+    Typedef* res = new Typedef();
     res->isolate = vm;
     res->keyName = name;
     res->funcs = funcs;

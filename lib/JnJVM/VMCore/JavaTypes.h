@@ -122,16 +122,14 @@ public:
 };
 
 
-class Typedef : public mvm::Object {
+class Typedef {
 public:
-  static VirtualTable *VT;
   const UTF8* keyName;
   const UTF8* pseudoAssocClassName;
   const AssessorDesc* funcs;
   Jnjvm* isolate;
 
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
+  const char* printString() const;
   
   CommonClass* assocClass(JavaObject* loader);
   void typePrint(mvm::PrintBuffer* buf);
@@ -154,12 +152,10 @@ private:
   void* virtualCallAP();
 
 public:
-  static VirtualTable *VT;
   std::vector<Typedef*> args;
   Typedef* ret;
   
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
+  const char* printString() const;
 
   void printWithSign(CommonClass* cl, const UTF8* name, mvm::PrintBuffer* buf);
   static Signdef* signDup(const UTF8* name, Jnjvm* vm);
