@@ -56,7 +56,6 @@ static void initialiseVT() {
   INIT(Reader);
   INIT(ZipFile);
   INIT(ZipArchive);
-  INIT(UTF8Map);
   INIT(ClassMap);
   INIT(ZipFileMap);
   INIT(StringMap);
@@ -84,7 +83,6 @@ static void initialiseVT() {
   INIT(ArrayFloat);
   INIT(ArrayDouble);
   INIT(ArrayObject);
-  INIT(UTF8);
 #undef INIT
 }
 

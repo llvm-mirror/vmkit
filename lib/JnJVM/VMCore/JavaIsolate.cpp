@@ -463,7 +463,7 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   isolate->javavmEnv = &JNI_JavaVMTable;
   
   // We copy so that bootstrap utf8 such as "<init>" are unique
-  isolate->hashUTF8 = vm_new(isolate, UTF8Map)();
+  isolate->hashUTF8 = new UTF8Map();
   bootstrapVM->hashUTF8->copy(isolate->hashUTF8);
   isolate->hashStr = vm_new(isolate, StringMap)();
   isolate->bootstrapClasses = callingVM->bootstrapClasses;
@@ -516,7 +516,7 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
 
   isolate->name = "bootstrapVM";
   isolate->appClassLoader = 0;
-  isolate->hashUTF8 = vm_new(isolate, UTF8Map)();
+  isolate->hashUTF8 = new UTF8Map();
   isolate->hashStr = vm_new(isolate, StringMap)();
   isolate->bootstrapClasses = vm_new(isolate, ClassMap)();
   isolate->jniEnv = &JNI_JNIEnvTable;

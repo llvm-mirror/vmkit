@@ -81,7 +81,8 @@ ARRAYCLASS(ArrayObject, JavaObject*);
 
 class UTF8 : public ArrayUInt16 {
 public:
-  static VirtualTable* VT;
+  
+  static const UTF8* acons(sint32 n, ClassArray* cl, Jnjvm* vm);
 
   const UTF8* internalToJava(Jnjvm *vm, unsigned int start,
                              unsigned int len) const;

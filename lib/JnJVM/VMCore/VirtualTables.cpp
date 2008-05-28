@@ -41,7 +41,6 @@ using namespace jnjvm;
   INIT(ArrayFloat);
   INIT(ArrayDouble);
   INIT(ArrayObject);
-  INIT(UTF8);
   INIT(CommonClass);
   INIT(Class);
   INIT(ClassArray);
@@ -55,7 +54,6 @@ using namespace jnjvm;
   INIT(Reader);
   INIT(ZipFile);
   INIT(ZipArchive);
-  INIT(UTF8Map);
   INIT(ClassMap);
   INIT(ZipFileMap);
   INIT(StringMap);
@@ -185,7 +183,6 @@ void Signdef::TRACER {
 
 void Jnjvm::TRACER {
   appClassLoader->MARK_AND_TRACE;
-  hashUTF8->MARK_AND_TRACE;
   hashStr->MARK_AND_TRACE;
   bootstrapClasses->MARK_AND_TRACE;
   javaTypes->MARK_AND_TRACE;
@@ -214,12 +211,6 @@ void JavaIsolate::TRACER {
 }
 
 void JavaString::TRACER {
-}
-
-void UTF8Map::TRACER {
-  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-    i->second->MARK_AND_TRACE;
-  }
 }
 
 void ClassMap::TRACER {

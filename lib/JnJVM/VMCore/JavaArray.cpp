@@ -252,3 +252,15 @@ char* UTF8::UTF8ToAsciiz() const {
   buf[size] = 0;
   return buf;
 }
+
+const UTF8* UTF8::acons(sint32 n, ClassArray* cl, Jnjvm* vm) {
+  if (n < 0)
+    negativeArraySizeException(n);                                        
+  else if (n > JavaArray::MaxArraySize)                                   
+    outOfMemoryError(n);                                                  
+  UTF8* res = (UTF8*) malloc(sizeof(UTF8) + n * sizeof(uint16));
+  ((void**)res)[0] = ArrayUInt16::VT;
+  res->initialise(cl);                                               
+  res->size = n;                                                          
+  return (const UTF8*)res;                                                             
+}
