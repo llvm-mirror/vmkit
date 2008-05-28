@@ -43,12 +43,15 @@ JNIEnv *env,
   sint32 lgLib = strLib->count;
   sint32 lgPre = vm->prelib->size;
   sint32 lgPost = vm->postlib->size;
+  
+  uint32 size = (uint32)(lgPre + lgLib + lgPost);
+  uint16* elements = (uint16*)alloca(size * sizeof(uint16));
 
-  UTF8* res = (UTF8*)UTF8::acons(lgPre + lgLib + lgPost, JavaArray::ofChar, vm);
-
-  memmove(res->elements, vm->prelib->elements, lgPre * sizeof(uint16));
-  memmove(&(res->elements[lgPre]), &(utf8Lib->elements[stLib]), lgLib * sizeof(uint16));
-  memmove(&(res->elements[lgPre + lgLib]), vm->postlib->elements, lgPost * sizeof(uint16));
+  memmove(elements, vm->prelib->elements, lgPre * sizeof(uint16));
+  memmove(&(elements[lgPre]), &(utf8Lib->elements[stLib]), lgLib * sizeof(uint16));
+  memmove(&(elements[lgPre + lgLib]), vm->postlib->elements, lgPost * sizeof(uint16));
+  
+  const UTF8* res = vm->readerConstructUTF8(elements, size);
 
   return (jobject)(vm->UTF8ToStr(res));
   
