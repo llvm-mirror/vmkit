@@ -403,14 +403,13 @@ ArrayObject* NativeUtil::getExceptionTypes(JavaMethod* meth) {
   } else {
     Class* cl = meth->classDef;
     JavaCtpInfo* ctp = cl->ctpInfo;
-    Reader* reader = exceptionAtt->toReader(JavaThread::get()->isolate,
-                                            cl->bytes, exceptionAtt);
-    uint16 nbe = reader->readU2();
+    Reader reader(exceptionAtt, cl->bytes);
+    uint16 nbe = reader.readU2();
     ArrayObject* res = ArrayObject::acons(nbe, Classpath::classArrayClass,
                                           JavaThread::get()->isolate);
 
     for (uint16 i = 0; i < nbe; ++i) {
-      uint16 idx = reader->readU2();
+      uint16 idx = reader.readU2();
       CommonClass* cl = ctp->loadClass(idx);
       cl->resolveClass(false);
       JavaObject* obj = cl->getClassDelegatee();

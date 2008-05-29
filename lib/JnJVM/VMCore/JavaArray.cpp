@@ -104,10 +104,6 @@ ARRAYCLASS(ArrayObject, JavaObject*, sizeof(JavaObject*))
 #undef ACONS
 #undef AT
 
-void JavaArray::print(mvm::PrintBuffer *buf) const {
-  assert(0 && "should not be here");
-}
-  
 void ArrayUInt8::print(mvm::PrintBuffer *buf) const {
   buf->write("Array<");
   for (int i = 0; i < size; i++) {

@@ -23,6 +23,7 @@
 #include "JavaUpcalls.h"
 #include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
+#include "Reader.h"
 #include "Zip.h"
 
 #ifdef SERVICE_VM
@@ -98,16 +99,17 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
 
   sprintf(temp, "%s:%s", vm->classpath, jarFile);
   vm->setClasspath(temp);
+  
+  ArrayUInt8* bytes = Reader::openFile(vm, jarFile);
 
-  ZipArchive* archive = ZipArchive::singleArchive(vm, jarFile);
-  if (archive) {
-    ZipFile* file = archive->getFile(PATH_MANIFEST);
+  ZipArchive archive(bytes);
+  if (archive.getOfscd() != -1) {
+    ZipFile* file = archive.getFile(PATH_MANIFEST);
     if (file) {
       ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, JavaArray::ofByte, vm);
-      int ok = archive->readFile(res, file);
+      int ok = archive.readFile(res, file);
       if (ok) {
         char* mainClass = findInformation(res, MAIN_CLASS, LENGTH_MAIN_CLASS);
-        archive->remove();
         if (mainClass) {
           className = mainClass;
         } else {

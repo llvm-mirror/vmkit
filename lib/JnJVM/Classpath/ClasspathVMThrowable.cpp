@@ -55,9 +55,8 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   Attribut* sourceAtt = cl->lookupAttribut(Attribut::sourceFileAttribut);
   
   if (sourceAtt) {
-    Reader* reader = sourceAtt->toReader(JavaThread::get()->isolate, cl->bytes,
-                                         sourceAtt);
-    uint16 index = reader->readU2();
+    Reader reader(sourceAtt, cl->bytes);
+    uint16 index = reader.readU2();
     sourceName = vm->UTF8ToStr(cl->ctpInfo->UTF8At(index));
   }
 
@@ -113,8 +112,9 @@ jobject vmthrow, jobject throwable) {
       break;
     }
   }
+  jobject res = (jobject)recGetStackTrace((int**)(uint32**)stack, first, 0);
   free(stack);
-  return (jobject)recGetStackTrace((int**)(uint32**)stack, first, 0);
+  return res;
 }
 
 }

@@ -21,11 +21,6 @@ class Jnjvm;
 
 class JavaString : public JavaObject {
 public:
-  static VirtualTable* VT;
-  virtual void print(mvm::PrintBuffer* buf) const {
-    buf->write("Java string");
-  }
-  virtual void TRACER;
 
   // CLASSPATH FIELDS!!
   const UTF8* value;

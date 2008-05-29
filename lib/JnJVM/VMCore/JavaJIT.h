@@ -166,7 +166,7 @@ public:
   std::vector<llvm::BasicBlock*> jsrs;
   // exception local
   llvm::Value* supplLocal;
-  unsigned readExceptionTable(Reader* reader);
+  unsigned readExceptionTable(Reader& reader);
   llvm::BasicBlock* endExceptionBlock;
   llvm::BasicBlock* currentExceptionBlock;
   llvm::BasicBlock* unifiedUnreachable;

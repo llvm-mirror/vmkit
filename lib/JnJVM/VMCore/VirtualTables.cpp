@@ -15,22 +15,18 @@
 #include "JavaConstantPool.h"
 #include "JavaIsolate.h"
 #include "JavaObject.h"
-#include "JavaString.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 #include "LockedMap.h"
-#include "Reader.h"
 #ifdef SERVICE_VM
 #include "ServiceDomain.h"
 #endif
-#include "Zip.h"
 
 using namespace jnjvm;
 
 #define INIT(X) VirtualTable* X::VT = 0
 
-  INIT(JavaArray);
   INIT(ArrayUInt8);
   INIT(ArraySInt8);
   INIT(ArrayUInt16);
@@ -48,26 +44,16 @@ using namespace jnjvm;
   INIT(JavaObject);
   INIT(JavaThread);
   INIT(Jnjvm);
-  INIT(Reader);
-  INIT(ZipFile);
-  INIT(ZipArchive);
   INIT(ClassMap);
-  INIT(ZipFileMap);
   INIT(StringMap);
   INIT(StaticInstanceMap);
   INIT(JavaIsolate);
-  INIT(JavaString);
   INIT(DelegateeMap);
 #ifdef SERVICE_VM
   INIT(ServiceDomain);
 #endif
 
 #undef INIT
-
-void JavaArray::TRACER {
-  classOf->MARK_AND_TRACE;
-  if (lockObj) lockObj->MARK_AND_TRACE;
-}
 
 void ArrayObject::TRACER {
   classOf->MARK_AND_TRACE;
@@ -157,33 +143,12 @@ void Jnjvm::TRACER {
 #endif
 }
 
-void Reader::TRACER {
-  bytes->MARK_AND_TRACE;
-}
-
-void ZipFile::TRACER {
-}
-
-void ZipArchive::TRACER {
-  reader->MARK_AND_TRACE;
-  filetable->MARK_AND_TRACE;
-}
-
 void JavaIsolate::TRACER {
   Jnjvm::PARENT_TRACER;
   bootstrapThread->MARK_AND_TRACE;
 }
 
-void JavaString::TRACER {
-}
-
 void ClassMap::TRACER {
-  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-    i->second->MARK_AND_TRACE;
-  }
-}
-
-void ZipFileMap::TRACER {
   for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
     i->second->MARK_AND_TRACE;
   }

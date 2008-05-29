@@ -26,7 +26,6 @@
 #include "Jnjvm.h"
 #include "JnjvmModuleProvider.h"
 #include "NativeUtil.h"
-#include "Reader.h"
 #include "LockedMap.h"
 #include "Zip.h"
 
@@ -42,22 +41,17 @@ static void initialiseVT() {
   X fake; \
   X::VT = ((void**)(void*)(&fake))[0]; }
 
-  INIT(JavaArray);
   INIT(CommonClass);
   INIT(Class);
   INIT(ClassArray);
   INIT(LockObj);
-  INIT(JavaObject);
   INIT(JavaThread);
   INIT(Jnjvm);
-  INIT(Reader);
-  INIT(ZipFile);
-  INIT(ZipArchive);
   INIT(ClassMap);
-  INIT(ZipFileMap);
   INIT(StringMap);
+  INIT(StaticInstanceMap);
+  INIT(DelegateeMap);
   INIT(JavaIsolate);
-  INIT(JavaString);
 #ifdef SERVICE_VM
   INIT(ServiceDomain);
 #endif
@@ -69,6 +63,7 @@ static void initialiseVT() {
   X::VT = (VirtualTable*)malloc(12 * sizeof(void*) + VT_SIZE); \
   memcpy(X::VT, V, VT_SIZE); }
 
+  INIT(JavaObject);
   INIT(ArrayUInt8);
   INIT(ArraySInt8);
   INIT(ArrayUInt16);
@@ -84,10 +79,8 @@ static void initialiseVT() {
 
 static void initialiseStatics() {
   JavaObject::globalLock = mvm::Lock::allocNormal();
-  //mvm::Object::pushRoot((mvm::Object*)JavaObject::globalLock);
 
   Jnjvm* vm = JavaIsolate::bootstrapVM = JavaIsolate::allocateBootstrap();
-  mvm::Object::pushRoot((mvm::Object*)JavaIsolate::bootstrapVM);
   
   // Array initialization
   const UTF8* utf8OfChar = vm->asciizConstructUTF8("[C");

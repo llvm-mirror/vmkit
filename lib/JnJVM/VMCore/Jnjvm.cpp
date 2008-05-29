@@ -160,16 +160,16 @@ void Jnjvm::analyseClasspathEnv(const char* str) {
   }
 }
 
-void Jnjvm::readParents(Class* cl, Reader* reader) {
+void Jnjvm::readParents(Class* cl, Reader& reader) {
   JavaCtpInfo* ctpInfo = cl->ctpInfo;
-  unsigned short int superEntry = reader->readU2();
+  unsigned short int superEntry = reader.readU2();
   const UTF8* super = superEntry ? 
         ctpInfo->resolveClassName(superEntry) : 0;
 
-  unsigned short int nbI = reader->readU2();
+  unsigned short int nbI = reader.readU2();
   cl->superUTF8 = super;
   for (int i = 0; i < nbI; i++)
-    cl->interfacesUTF8.push_back(ctpInfo->resolveClassName(reader->readU2()));
+    cl->interfacesUTF8.push_back(ctpInfo->resolveClassName(reader.readU2()));
 
 }
 
@@ -197,31 +197,29 @@ void Jnjvm::loadParents(Class* cl) {
                                               classLoader, true, false, true));
 }
 
-void Jnjvm::readAttributs(Class* cl, Reader* reader,
-                           std::vector<Attribut*,
-                                       gc_allocator<Attribut*> >& attr) {
+void Jnjvm::readAttributs(Class* cl, Reader& reader,
+                           std::vector<Attribut*>& attr) {
   JavaCtpInfo* ctpInfo = cl->ctpInfo;
-  unsigned short int nba = reader->readU2();
+  unsigned short int nba = reader.readU2();
   
   for (int i = 0; i < nba; i++) {
-    const UTF8* attName = ctpInfo->UTF8At(reader->readU2());
-    unsigned int attLen = reader->readU4();
-    Attribut* att = new Attribut();
-    att->derive(attName, attLen, reader);
+    const UTF8* attName = ctpInfo->UTF8At(reader.readU2());
+    uint32 attLen = reader.readU4();
+    Attribut* att = new Attribut(attName, attLen, reader);
     attr.push_back(att);
-    reader->seek(attLen, Reader::SeekCur);
+    reader.seek(attLen, Reader::SeekCur);
   }
 }
 
-void Jnjvm::readFields(Class* cl, Reader* reader) {
-  unsigned short int nbFields = reader->readU2();
+void Jnjvm::readFields(Class* cl, Reader& reader) {
+  uint16 nbFields = reader.readU2();
   JavaCtpInfo* ctpInfo = cl->ctpInfo;
   uint32 sindex = 0;
   uint32 vindex = 0;
   for (int i = 0; i < nbFields; i++) {
-    uint16 access = reader->readU2();
-    const UTF8* name = ctpInfo->UTF8At(reader->readU2());
-    const UTF8* type = ctpInfo->UTF8At(reader->readU2());
+    uint16 access = reader.readU2();
+    const UTF8* name = ctpInfo->UTF8At(reader.readU2());
+    const UTF8* type = ctpInfo->UTF8At(reader.readU2());
     JavaField* field = cl->constructField(name, type, access);
     isStatic(access) ?
       field->num = sindex++ :
@@ -230,13 +228,13 @@ void Jnjvm::readFields(Class* cl, Reader* reader) {
   }
 }
 
-void Jnjvm::readMethods(Class* cl, Reader* reader) {
-  unsigned short int nbMethods = reader->readU2();
+void Jnjvm::readMethods(Class* cl, Reader& reader) {
+  uint16 nbMethods = reader.readU2();
   JavaCtpInfo* ctpInfo = cl->ctpInfo;
   for (int i = 0; i < nbMethods; i++) {
-    uint16 access = reader->readU2();
-    const UTF8* name = ctpInfo->UTF8At(reader->readU2());
-    const UTF8* type = ctpInfo->UTF8At(reader->readU2());
+    uint16 access = reader.readU2();
+    const UTF8* name = ctpInfo->UTF8At(reader.readU2());
+    const UTF8* type = ctpInfo->UTF8At(reader.readU2());
     JavaMethod* meth = cl->constructMethod(name, type, access);
     readAttributs(cl, reader, meth->attributs);
   }
@@ -249,19 +247,19 @@ void Jnjvm::readClass(Class* cl) {
   PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s::%s\n", printString(),
               cl->printString());
 
-  Reader* reader = vm_new(this, Reader)(cl->bytes);
-  uint32 magic = reader->readU4();
+  Reader reader(cl->bytes);
+  uint32 magic = reader.readU4();
   if (magic != Jnjvm::Magic) {
     Jnjvm::error(ClassFormatError, "bad magic number %p", magic);
   }
-  cl->minor = reader->readU2();
-  cl->major = reader->readU2();
+  cl->minor = reader.readU2();
+  cl->major = reader.readU2();
   JavaCtpInfo::read(this, cl, reader);
   JavaCtpInfo* ctpInfo = cl->ctpInfo;
-  cl->access = reader->readU2();
+  cl->access = reader.readU2();
   
   const UTF8* thisClassName = 
-    ctpInfo->resolveClassName(reader->readU2());
+    ctpInfo->resolveClassName(reader.readU2());
   
   if (!(thisClassName->equals(cl->name))) {
     error(ClassFormatError, "try to load %s and found class named %s",

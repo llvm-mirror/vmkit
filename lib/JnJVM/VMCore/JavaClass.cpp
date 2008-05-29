@@ -42,10 +42,11 @@ JavaObject* CommonClass::jnjvmClassLoader = 0;
 CommonClass* ClassArray::SuperArray = 0;
 std::vector<Class*> ClassArray::InterfacesArray;
 
-void Attribut::derive(const UTF8* name, unsigned int length,
-                      const Reader* reader) {
+
+Attribut::Attribut(const UTF8* name, unsigned int length,
+                   const Reader& reader) {
   
-  this->start    = reader->cursor;
+  this->start    = reader.cursor;
   this->nbb      = length;
   this->name     = name;
 
@@ -137,11 +138,6 @@ JavaMethod::~JavaMethod() {
     delete cur;
   }
 }
-
-Reader* Attribut::toReader(Jnjvm* vm, ArrayUInt8* array, Attribut* attr) {
-  return vm_new(vm, Reader)(array, attr->start, attr->nbb);
-}
-
 
 static void printClassNameIntern(const UTF8* name, unsigned int start,
                                  unsigned int end,  mvm::PrintBuffer* buf) {
@@ -485,10 +481,9 @@ void JavaField::initField(JavaObject* obj) {
   if (!attribut) {
     JnjvmModule::InitField(this, obj);
   } else {
-    Reader* reader = attribut->toReader(classDef->isolate,
-                                        classDef->bytes, attribut);
+    Reader reader(attribut, classDef->bytes);
     JavaCtpInfo * ctpInfo = classDef->ctpInfo;
-    uint16 idx = reader->readU2();
+    uint16 idx = reader.readU2();
     if (funcs == AssessorDesc::dLong) {
       JnjvmModule::InitField(this, obj, (uint64)ctpInfo->LongAt(idx));
     } else if (funcs == AssessorDesc::dDouble) {

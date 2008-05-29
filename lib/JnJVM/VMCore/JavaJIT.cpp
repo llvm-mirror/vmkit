@@ -333,14 +333,13 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
                      compilingMethod->printString());
   }
 
-  Reader* reader = codeAtt->toReader(compilingClass->isolate,
-                                     compilingClass->bytes, codeAtt);
-  maxStack = reader->readU2();
-  maxLocals = reader->readU2();
-  codeLen = reader->readU4();
-  uint32 start = reader->cursor;
+  Reader reader(codeAtt, compilingClass->bytes);
+  maxStack = reader.readU2();
+  maxLocals = reader.readU2();
+  codeLen = reader.readU4();
+  uint32 start = reader.cursor;
   
-  reader->seek(codeLen, Reader::SeekCur);
+  reader.seek(codeLen, Reader::SeekCur);
   
   const FunctionType *funcType = llvmFunction->getFunctionType();
   returnType = funcType->getReturnType();
@@ -486,14 +485,13 @@ llvm::Function* JavaJIT::javaCompile() {
                      compilingMethod->printString());
   }
 
-  Reader* reader = codeAtt->toReader(compilingClass->isolate,
-                                     compilingClass->bytes, codeAtt);
-  maxStack = reader->readU2();
-  maxLocals = reader->readU2();
-  codeLen = reader->readU4();
-  uint32 start = reader->cursor;
+  Reader reader(codeAtt, compilingClass->bytes);
+  maxStack = reader.readU2();
+  maxLocals = reader.readU2();
+  codeLen = reader.readU4();
+  uint32 start = reader.cursor;
   
-  reader->seek(codeLen, Reader::SeekCur);
+  reader.seek(codeLen, Reader::SeekCur);
 
   const FunctionType *funcType = llvmFunction->getFunctionType();
   returnType = funcType->getReturnType();
@@ -702,9 +700,9 @@ llvm::Function* JavaJIT::javaCompile() {
 }
 
 
-unsigned JavaJIT::readExceptionTable(Reader* reader) {
+unsigned JavaJIT::readExceptionTable(Reader& reader) {
   BasicBlock* temp = currentBlock;
-  uint16 nbe = reader->readU2();
+  uint16 nbe = reader.readU2();
   std::vector<Exception*> exceptions;  
   unsigned sync = isSynchro(compilingMethod->access) ? 1 : 0;
   nbe += sync;
@@ -766,11 +764,11 @@ unsigned JavaJIT::readExceptionTable(Reader* reader) {
   mvm::jit::executionEngine->lock.release();
   for (uint16 i = 0; i < nbe - sync; ++i) {
     Exception* ex = new Exception();
-    ex->startpc   = reader->readU2();
-    ex->endpc     = reader->readU2();
-    ex->handlerpc = reader->readU2();
+    ex->startpc   = reader.readU2();
+    ex->endpc     = reader.readU2();
+    ex->handlerpc = reader.readU2();
 
-    ex->catche = reader->readU2();
+    ex->catche = reader.readU2();
 
     if (ex->catche) {
       JavaObject* exc = 0;

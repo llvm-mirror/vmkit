@@ -138,26 +138,6 @@ public:
   virtual void TRACER;
 };
 
-struct ltstr
-{
-  bool operator()(const char* s1, const char* s2) const
-  {
-    return strcmp(s1, s2) < 0;
-  }
-};
-
-
-class ZipFileMap : public LockedMap<const char*, ZipFile*, ltstr> {
-public:
-  static VirtualTable* VT;
-  
-  ZipFileMap() {
-    lock = mvm::Lock::allocNormal();
-  }
-  
-  virtual void TRACER;
-};
-
 class StringMap :
     public LockedMap<const UTF8*, JavaString*, ltutf8 > {
 public:

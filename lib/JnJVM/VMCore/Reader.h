@@ -15,18 +15,32 @@
 #include "types.h"
 
 #include "JavaArray.h"
+#include "JavaClass.h"
 
 namespace jnjvm {
 
 class Jnjvm;
 
-class Reader : public mvm::Object {
+class Reader {
 public:
-  static VirtualTable* VT;
   ArrayUInt8* bytes;
   uint32 min;
   uint32 cursor;
   uint32 max;
+
+  Reader(Attribut* attr, ArrayUInt8* bytes) {
+    this->bytes = bytes;
+    this->cursor = attr->start;
+    this->min = attr->start;
+    this->max = attr->start + attr->nbb;
+  }
+
+  Reader(Reader& r, uint32 nbb) {
+    bytes = r.bytes;
+    cursor = r.cursor;
+    min = r.min;
+    max = min + nbb;
+  }
 
   static double readDouble(int first, int second) {
     int values[2];
@@ -110,17 +124,13 @@ public:
     this->max = start + end;
   }
 
-  Reader() {}
   
   unsigned int tell() {
     return cursor - min;
   }
   
   void seek(uint32 pos, int from);
-  Reader* derive(Jnjvm* vm, uint32 nbb);
 
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
 };
 
 } // end namespace jnjvm

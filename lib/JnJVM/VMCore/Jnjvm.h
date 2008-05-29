@@ -190,12 +190,12 @@ public:
                                          bool doResolve, bool doClinit,
                                          bool doThrow);
 
-  void readParents(Class* cl, Reader* reader);
+  void readParents(Class* cl, Reader& reader);
   void loadParents(Class* cl);
-  void readAttributs(Class* cl, Reader* reader,
+  void readAttributs(Class* cl, Reader& reader,
                      std::vector<Attribut*, gc_allocator<Attribut*> > & attr);
-  void readFields(Class* cl, Reader* reader);
-  void readMethods(Class* cl, Reader* reader);
+  void readFields(Class* cl, Reader& reader);
+  void readMethods(Class* cl, Reader& reader);
   void readClass(Class* cl);
   void initialiseClass(CommonClass* cl);
   void resolveClass(CommonClass* cl, bool doClinit);

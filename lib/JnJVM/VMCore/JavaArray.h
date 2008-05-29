@@ -25,7 +25,6 @@ class Jnjvm;
 
 class JavaArray : public JavaObject {
 public:
-  static VirtualTable* VT;
   sint32 size;
   void* elements[0];
   static const sint32 MaxArraySize;
@@ -48,16 +47,13 @@ public:
   static ClassArray* ofFloat;
   static ClassArray* ofDouble;
   static ClassArray* ofObject;
-
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
-
 };
 
 #define ARRAYCLASS(name, elmt)                                        \
-class name : public JavaArray {                                       \
+class name : public JavaObject {                                      \
 public:                                                               \
   static VirtualTable* VT;                                            \
+  sint32 size;                                                        \
   elmt elements[0];                                                   \
   static name *acons(sint32 n, ClassArray* cl, Jnjvm* vm);            \
   elmt at(sint32) const;                                              \

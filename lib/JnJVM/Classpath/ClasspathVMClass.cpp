@@ -346,16 +346,15 @@ jclass Cl) {
 static void resolveInnerOuterClasses(Class* cl) {
   Attribut* attribut = cl->lookupAttribut(Attribut::innerClassesAttribut);
   if (attribut != 0) {
-    Reader* reader = attribut->toReader(JavaThread::get()->isolate, cl->bytes,
-                                        attribut);
+    Reader reader(attribut, cl->bytes);
 
-    uint16 nbi = reader->readU2();
+    uint16 nbi = reader.readU2();
     for (uint16 i = 0; i < nbi; ++i) {
-      uint16 inner = reader->readU2();
-      uint16 outer = reader->readU2();
+      uint16 inner = reader.readU2();
+      uint16 outer = reader.readU2();
       //uint16 innerName = 
-      reader->readU2();
-      uint16 accessFlags = reader->readU2();
+      reader.readU2();
+      uint16 accessFlags = reader.readU2();
       Class* clInner = (Class*)cl->ctpInfo->loadClass(inner);
       Class* clOuter = (Class*)cl->ctpInfo->loadClass(outer);
 

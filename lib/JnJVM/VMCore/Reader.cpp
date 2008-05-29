@@ -53,10 +53,6 @@ ArrayUInt8* Reader::openZip(Jnjvm* vm, char* zipname, char* filename) {
   return ret;
 }
 
-Reader* Reader::derive(Jnjvm* vm, uint32 nbb) {
-  return vm_new(vm, Reader)(bytes, cursor, nbb);
-}
-
 void Reader::seek(uint32 pos, int from) {
   uint32 n = 0;
   uint32 start = min;
@@ -71,8 +67,4 @@ void Reader::seek(uint32 pos, int from) {
     JavaThread::get()->isolate->unknownError("out of range %d %d", n, end);
 
   cursor = n;
-}
-
-void Reader::print(mvm::PrintBuffer* buf) const {
-  buf->write("Reader<>");
 }

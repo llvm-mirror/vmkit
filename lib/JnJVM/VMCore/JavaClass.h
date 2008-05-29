@@ -35,7 +35,6 @@ class JavaField;
 class JavaJIT;
 class JavaMethod;
 class JavaObject;
-class Jnjvm;
 class Reader;
 class Signdef;
 class Typedef;
@@ -53,8 +52,7 @@ public:
   unsigned int start;
   unsigned int  nbb;
 
-  void derive(const UTF8* name, unsigned int length, const Reader* reader);
-  Reader* toReader(Jnjvm *vm, ArrayUInt8* array, Attribut* attr);
+  Attribut(const UTF8* name, unsigned int length, const Reader& reader);
 
   static const UTF8* codeAttribut;
   static const UTF8* exceptionsAttribut;
