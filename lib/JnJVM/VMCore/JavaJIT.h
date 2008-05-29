@@ -269,7 +269,6 @@ public:
   static Class* getCallingClassWalker();
   static JavaObject* getCallingClassLoader();
   static void printBacktrace();
-  static int getBacktrace(void** array, int size);
   static JavaMethod* IPToJavaMethod(void* ip);
 };
 

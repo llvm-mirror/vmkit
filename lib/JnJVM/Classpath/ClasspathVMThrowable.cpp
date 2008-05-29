@@ -11,6 +11,8 @@
 
 #include "types.h"
 
+#include "mvm/JIT.h"
+
 #include "JavaAccess.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
@@ -38,7 +40,7 @@ jclass clazz,
   //int** fp =  (int**)__builtin_frame_address(0);
   Jnjvm* vm = JavaThread::get()->isolate;
   int** stack = (int**)malloc(sizeof(int*) * 100);
-  int real_size = JavaJIT::getBacktrace((void**)stack, 100);
+  int real_size = mvm::jit::getBacktrace((void**)stack, 100);
   stack[real_size] = 0;
   JavaObject* vmThrowable = Classpath::newVMThrowable->doNew(vm);
   ((JavaObject**)((uint64)vmThrowable + Classpath::vmDataVMThrowable->ptrOffset))[0] = (JavaObject*)stack;
