@@ -24,10 +24,6 @@ using namespace jnjvm;
 
 mvm::Lock* JavaObject::globalLock = 0;
 
-JavaCond* JavaCond::allocate() {
-  return new JavaCond();
-}
-
 void JavaCond::notify() {
   for (std::vector<JavaThread*>::iterator i = threads.begin(), 
             e = threads.end(); i!= e;) {
@@ -81,7 +77,7 @@ void LockObj::print(mvm::PrintBuffer* buf) const {
 LockObj* LockObj::allocate() {
   LockObj* res = vm_new(JavaThread::get()->isolate, LockObj)();
   res->lock = mvm::Lock::allocRecursive();
-  res->varcond = JavaCond::allocate();
+  res->varcond = 0;
   return res;
 }
 
@@ -133,7 +129,8 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
       unsigned int recur = mvm::LockRecursive::recursion_count(l->lock);
       bool timeout = false;
       mvm::LockRecursive::my_unlock_all(l->lock);
-      l->varcond->wait(thread);
+      JavaCond* cond = l->getCond();
+      cond->wait(thread);
       thread->state = JavaThread::StateWaiting;
 
       if (timed) {
@@ -147,7 +144,7 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
       mvm::LockRecursive::my_lock_all(l->lock, recur);
 
       if (interrupted || timeout) {
-        l->varcond->remove(thread);
+        cond->remove(thread);
       }
 
       thread->state = JavaThread::StateRunning;
@@ -173,7 +170,7 @@ void JavaObject::timedWait(struct timeval& info) {
 void JavaObject::notify() {
   LockObj* l = LockObj::myLock(this);
   if (l->owner()) {
-    l->varcond->notify();
+    l->getCond()->notify();
   } else {
     JavaThread::get()->isolate->illegalMonitorStateException(this);
   }
@@ -182,13 +179,13 @@ void JavaObject::notify() {
 void JavaObject::notifyAll() {
   LockObj* l = LockObj::myLock(this);
   if (l->owner()) {
-    l->varcond->notifyAll();
+    l->getCond()->notifyAll();
   } else {
     JavaThread::get()->isolate->illegalMonitorStateException(this);
   } 
 }
 
 void LockObj::destroyer(size_t sz) {
-  delete varcond;
+  if (varcond) delete varcond;
   delete lock;
 }

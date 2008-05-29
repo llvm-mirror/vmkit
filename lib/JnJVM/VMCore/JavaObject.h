@@ -26,63 +26,144 @@ class JavaObject;
 class JavaThread;
 class UTF8;
 
+/// JavaCond - This class maintains a list of threads blocked on a wait. 
+/// notify and notifyAll will change the state of one or more of these threads.
+///
 class JavaCond {
-public:
-  std::vector<JavaThread*> threads;
+private:
   
-  static JavaCond* allocate();
+  /// threads - The list of threads currently waiting.
+  ///
+  std::vector<JavaThread*> threads;
 
+public:
+  
+  /// notify - The Java notify: takes the first thread in the list and wakes
+  /// it up.
   void notify();
+  
+  /// notifyAll - The Java notifyAll: wakes all threads in the list.
+  ///
   void notifyAll();
+
+  /// wait - The Java wait: the thread blocks waiting to be notified.
+  ///
   void wait(JavaThread* th);
+
+  /// remove - Remove the thread from the list. This is called by threads being
+  /// interrupted or timed out on a wait.
   void remove(JavaThread* th);
 };
 
 
+/// LockObj - This class represents a Java monitor.
+///
 class LockObj : public mvm::Object {
 public:
+
   static VirtualTable* VT;
+
+  /// lock - The internal lock of this object lock.
+  ///
   mvm::Lock *lock;
+
+  /// varcond - The condition variable for wait, notify and notifyAll calls.
+  ///
   JavaCond* varcond;
 
+  /// allocate - Allocates a lock object. Only the internal lock is allocated.
+  ///
+  static LockObj* allocate();
+  
+  /// myLock - Returns the lock object of this object, allocating it if
+  /// non-existant. This uses the big lock to make the object lock unique.
+  ///
+  static LockObj* myLock(JavaObject* obj);
+
+  /// aquire - Acquires the lock.
+  ///
+  void aquire();
+
+  /// release - Releases the lock.
+  ///
+  void release();
+
+  /// owner - Returns true if the curren thread is the owner of this lock.
+  bool owner();
+  
+  /// getCond - Returns the conditation variable of this lock, allocating it
+  /// if non-existant.
+  ///
+  JavaCond* getCond() {
+    if (!varcond) varcond = new JavaCond();
+    return varcond;
+  }
+  
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
   virtual void destroyer(size_t sz);
-
-  static LockObj* allocate();
-  static LockObj* myLock(JavaObject* obj);
-
-  void aquire();
-  void release();
-  bool owner();
 };
 
+
+/// JavaObject - This class represents a Java object.
+///
 class JavaObject : public mvm::Object {
+private:
+  
+  /// waitIntern - internal wait on a monitor
+  ///
+  void waitIntern(struct timeval *info, bool timed);
+
 public:
   static VirtualTable* VT;
-  CommonClass* classOf;
-  LockObj* lockObj;
 
+  /// classOf - The class of this object.
+  ///
+  CommonClass* classOf;
+
+  /// lockObj - The monitor of this object. Most of the time null.
+  ///
+  LockObj* lockObj;
+  
+  /// globalLock - The global lock to allocate monitors.
+  ///
   static mvm::Lock* globalLock;
-  
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
-  
-  void waitIntern(struct timeval *info, bool timed);
+   
+  /// wait - Java wait. Makes the current thread waiting on a monitor.
+  ///
   void wait();
+
+  /// timedWait - Java timed wait. Makes the current thread waiting on a
+  /// monitor for the given amount of time.
+  ///
   void timedWait(struct timeval &info);
+  
+  /// notify - Java notify. Notifies a thread from the availability of the
+  /// monitor.
+  ///
   void notify();
+  
+  /// notifyAll - Java notifyAll. Notifies all threads from the availability of
+  /// the monitor.
+  ///
   void notifyAll();
+  
+  /// initialise - Initialises the object.
+  ///
   void initialise(CommonClass* cl) {
     this->classOf = cl; 
     this->lockObj = 0;
   }
 
+  /// instanceOfString - Is this object's class of type the given name?
+  ///
   bool instanceOfString(const UTF8* name) {
     if (!this) return false;
     else return this->classOf->isOfTypeName(name);
   }
 
+  /// instanceOf - Is this object's class of type the given class?
+  ///
   bool instanceOf(CommonClass* cl) {
     if (!this) return false;
     else return this->classOf->isAssignableFrom(cl);
@@ -94,6 +175,9 @@ public:
   #define verifyNull(obj) \
     if (obj == 0) JavaThread::get()->isolate->nullPointerException("");
 #endif
+  
+  virtual void print(mvm::PrintBuffer* buf) const;
+  virtual void TRACER;
   
 };
 
