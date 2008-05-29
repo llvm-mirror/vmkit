@@ -74,6 +74,7 @@ N3* N3::allocateBootstrap() {
   CLIJit::initialiseBootstrapVM(vm);
   
   vm->bootstrapThread = VMThread::allocate(0, vm);
+  vm->bootstrapThread->baseSP = mvm::Thread::get()->baseSP;
 #ifdef MULTIPLE_GC
   vm->bootstrapThread->GC = GC;
   mvm::jit::memoryManager->addGCForModule(vm->module, GC);
@@ -107,6 +108,7 @@ N3* N3::allocate(const char* name, N3* parent) {
   CLIJit::initialiseAppDomain(vm);
 
   vm->bootstrapThread = VMThread::allocate(0, vm);
+  vm->bootstrapThread->baseSP = mvm::Thread::get()->baseSP;
 #ifdef MULTIPLE_GC
   vm->bootstrapThread->GC = GC;
   mvm::jit::memoryManager->addGCForModule(vm->module, GC);

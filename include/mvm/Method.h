@@ -10,88 +10,38 @@
 #ifndef MVM_METHOD_H
 #define MVM_METHOD_H
 
-#include "mvm/Object.h"
-#include "mvm/Threads/Thread.h"
-
-namespace llvm {
-  class Function;
-}
+extern "C" void __deregister_frame(void*);
 
 namespace mvm {
 
-class Code;
-class ExceptionTable;
-
-class Method : public Object {
+class Code {
 public:
-  inline Method() {}
-  static VirtualTable* VT;
-  GC_defass(Object, name);
-  GC_defass(Code, code);
-  GC_defass(Object, definition);
-  GC_defass(Object, literals);
-  GC_defass(ExceptionTable, exceptionTable);
-  const llvm::Function* llvmFunction;
-  size_t  codeSize;
 
-  /* use this constructor to map a function which is compiled by llvm  */
-  inline Method(Code *c, size_t sz) {
-    code(c);
-    codeSize = sz;
+  Code() {
+    stubSize = 0;
+    FunctionStart = 0;
+    FunctionEnd = 0;
+    stub = 0;
+    frameRegister = 0;
+    exceptionTable = 0;
+    metaInfo = 0;
   }
 
-  virtual void print(PrintBuffer *buf) const;
-  virtual void TRACER;
-};
+  unsigned stubSize;
+  unsigned char* FunctionStart;
+  unsigned char* FunctionEnd;
+  unsigned char* stub;
+  unsigned char* frameRegister;
+  unsigned char* exceptionTable;
 
+  void* metaInfo;
 
-class Code : public Object {
-public:
-  inline Code() {}
-  static VirtualTable* VT;
-  Method* meth;
+  void* getMetaInfo() { return metaInfo; }
+  void  setMetaInfo(void* m) { metaInfo = m; }
 
-  inline Method *method(Method *m, size_t nbb) {
-    return (meth = m);
+  inline void unregisterFrame() {
+    __deregister_frame((unsigned char*)frameRegister);
   }
-
-  inline Method *method(size_t nbb) {
-    return meth;
-  }
-    
-  inline Method *method(Method *m) { return meth = m; }
-  inline Method *method() { return meth; }
-
-  virtual void print(PrintBuffer *buf) const;
-  virtual void TRACER;
-
-  static Code* getCodeFromPointer(void* ptr) {
-#ifdef MULTIPLE_GC
-    return (mvm::Code*)mvm::Thread::get()->GC->begOf(ptr);
-#else
-    return (mvm::Code*)Collector::begOf(ptr);
-#endif
-  }
-};
-
-class ExceptionTable : public Object {
-public:
-  inline ExceptionTable() {}
-  static VirtualTable* VT;
-  void* framePtr;
-
-  inline void *frameRegister(void *m, size_t nbb) {
-    return (framePtr = m);
-  }
-
-  inline void *frameRegister(size_t nbb) {
-    return framePtr;
-  }
-    
-  inline void *frameRegister(void *m) { return (framePtr = m); }
-  inline void *frameRegister() { return framePtr; }
-  
-  virtual void destroyer(size_t sz);
 };
 
 } // end namespace mvm

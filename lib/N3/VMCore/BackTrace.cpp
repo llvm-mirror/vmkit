@@ -32,20 +32,16 @@ using namespace n3;
 
 void CLIJit::printBacktrace() {
   int* ips[100];
-  int real_size = backtrace((void**)(void*)ips, 100);
+  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 100);
   int n = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::Code::getCodeFromPointer(ips[n++]);
+    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
     if (code) {
-      mvm::Method* m = code->method();
-      mvm::Object* meth = m->definition();
-      if (meth && meth->getVirtualTable() == VMMethod::VT) {
+      VMMethod* meth = (VMMethod*)code->getMetaInfo();
+      if (meth) {
         printf("; %p in %s\n",  ips[n - 1], meth->printString());
-      } else if (m->llvmFunction) {
-        printf("; %p in %s\n",  ips[n - 1],
-                   m->llvmFunction->getNameStr().c_str());
       } else {
-        printf("; %p in %s\n",  ips[n - 1], "stub (probably)");
+        printf("; %p in %s\n",  ips[n - 1], "unknown");
       }
     } else {
       Dl_info info;
@@ -63,15 +59,14 @@ void CLIJit::printBacktrace() {
 
 Assembly* Assembly::getExecutingAssembly() {
   int* ips[10];
-  int real_size = backtrace((void**)(void*)ips, 10);
+  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
   int n = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::Code::getCodeFromPointer(ips[n++]);
+    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
     if (code) {
-      mvm::Method* m = code->method();
-      mvm::Object* meth = m->definition();
-      if (meth && meth->getVirtualTable() == VMMethod::VT) {
-        return ((VMMethod*)meth)->classDef->assembly;
+      VMMethod* meth = (VMMethod*)code->getMetaInfo();
+      if (meth) {
+        return meth->classDef->assembly;
       }
     }
   }
@@ -80,16 +75,15 @@ Assembly* Assembly::getExecutingAssembly() {
 
 Assembly* Assembly::getCallingAssembly() {
   int* ips[10];
-  int real_size = backtrace((void**)(void*)ips, 10);
+  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::Code::getCodeFromPointer(ips[n++]);
+    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
     if (code) {
-      mvm::Method* m = code->method();
-      mvm::Object* meth = m->definition();
-      if (meth && i >= 1 && meth->getVirtualTable() == VMMethod::VT) {
-        return ((VMMethod*)meth)->classDef->assembly;
+      VMMethod* meth = (VMMethod*)code->getMetaInfo();
+      if (meth && i >= 1) {
+        return meth->classDef->assembly;
       } else {
         ++i;
       }

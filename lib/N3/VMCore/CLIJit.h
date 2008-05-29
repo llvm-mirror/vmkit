@@ -152,7 +152,6 @@ public:
   static llvm::Function* clearExceptionLLVM;
   static llvm::Function* compareExceptionLLVM;
   static llvm::Function* classCastExceptionLLVM;
-  static llvm::Function* isInCodeLLVM;
   static llvm::Function* newStringLLVM;
   static llvm::Function* arrayLengthLLVM;
 

@@ -22,24 +22,24 @@ using namespace llvm;
 
 namespace mvm {
 
-class Method;
-class Object;
+class Code;
 
 class MvmMemoryManager : public JITMemoryManager {
-  Method* currentMethod;       // Current method being compiled
+  Code* currentMethod;       // Current method being compiled
   unsigned char *GOTBase;      // Target Specific reserved memory
 #ifdef MULTIPLE_GC
   std::map<const Module*, Collector*> GCMap;
   mvm::Lock* lock;
 #endif
+  JITMemoryManager* realMemoryManager;
 public:
   
   MvmMemoryManager() : JITMemoryManager() { 
       GOTBase = 0; 
-      SizeRequired = true;
 #ifdef MULTIPLE_GC
       lock = mvm::Lock::allocNormal();
 #endif
+      realMemoryManager= JITMemoryManager::CreateDefaultMemManager();
   }
    ~MvmMemoryManager() { 
       delete[] GOTBase;

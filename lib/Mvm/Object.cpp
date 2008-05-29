@@ -20,9 +20,6 @@ using namespace mvm;
 
 
 VirtualTable *Object::VT = 0;
-VirtualTable *Method::VT = 0;
-VirtualTable *Code::VT = 0;
-VirtualTable *ExceptionTable::VT = 0;
 VirtualTable *NativeString::VT = 0;
 VirtualTable *PrintBuffer::VT = 0;
 
@@ -62,26 +59,10 @@ void Object::initialise() {
   X::VT = ((void**)(void*)(&fake))[0]; }
   
   INIT(Object);
-  INIT(Method);
-  INIT(Code);
   INIT(NativeString);
   INIT(PrintBuffer);
-  INIT(ExceptionTable);
   
 #undef INIT
-}
-
-void Code::TRACER {
-  this->method()->MARK_AND_TRACE;
-}
-
-void Method::TRACER {
-  Method *const self= (Method *)this;
-  self->definition()->MARK_AND_TRACE;
-  self->literals()->MARK_AND_TRACE;
-  self->name()->MARK_AND_TRACE;
-  self->code()->MARK_AND_TRACE;
-  self->exceptionTable()->MARK_AND_TRACE;
 }
 
 void PrintBuffer::TRACER {
@@ -139,22 +120,6 @@ char *Object::printString(void) const {
 void Object::print(PrintBuffer *buf) const {
   buf->write("<Object@");
   buf->writePtr((void*)this);
-  buf->write(">");
-}
-
-void Code::print(PrintBuffer *buf) const {
-  buf->write("Code<");
-  buf->write(">");
-}
-
-void Method::print(PrintBuffer *buf) const {
-  Method *const self= (Method *)this;
-  buf->write("Method<");
-  if (self->name()) {
-    self->name()->print(buf);
-  } else {
-    buf->write("lambda");
-  }
   buf->write(">");
 }
 

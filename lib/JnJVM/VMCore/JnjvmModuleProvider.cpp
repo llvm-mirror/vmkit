@@ -119,7 +119,10 @@ void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
     }
   }
   
-  return mvm::jit::executionEngine->getPointerToGlobal(func);
+  void* res = mvm::jit::executionEngine->getPointerToGlobal(func);
+  mvm::Code* m = mvm::jit::getCodeFromPointer(res);
+  if (m) m->setMetaInfo(meth);
+  return res;
 }
 
 llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
@@ -158,7 +161,7 @@ static void addPass(FunctionPassManager *PM, Pass *P) {
 }
 
 static void AddStandardCompilePasses(FunctionPassManager *PM) {
-  llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
+    llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
   // LLVM does not allow calling functions from other modules in verifier
   //PM->add(llvm::createVerifierPass());                  // Verify that input is correct
   
@@ -179,13 +182,14 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, createTailCallEliminationPass());  // Eliminate tail calls
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
   addPass(PM, createReassociatePass());          // Reassociate expressions
-  addPass(PM, createLoopRotatePass());
+  //addPass(PM, createLoopRotatePass());
   addPass(PM, createLICMPass());                 // Hoist loop invariants
+  /*
   addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
   addPass(PM, createLoopIndexSplitPass());       // Index split loops.
   addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
   addPass(PM, createLoopDeletionPass());         // Delete dead loops
-  addPass(PM, createLoopUnrollPass());           // Unroll small loops
+  addPass(PM, createLoopUnrollPass());           // Unroll small loops*/
   addPass(PM, createInstructionCombiningPass()); // Clean up after the unroller
   addPass(PM, createGVNPass());                  // Remove redundancies
   addPass(PM, createMemCpyOptPass());            // Remove memcpy / form memset
@@ -199,8 +203,9 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, createCondPropagationPass());      // Propagate conditionals
 
   addPass(PM, createDeadStoreEliminationPass()); // Delete dead stores
-  addPass(PM, createAggressiveDCEPass());        // SSA based 'Aggressive DCE'
+  addPass(PM, createAggressiveDCEPass());        // Delete dead instructions
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+  
 }
 
 JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {

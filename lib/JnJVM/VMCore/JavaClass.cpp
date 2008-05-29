@@ -253,21 +253,10 @@ void* JavaMethod::_compiledPtr() {
   else {
     classDef->aquire();
     if (code == 0) {
-      void* val = 
+      code = 
         classDef->isolate->TheModuleProvider->materializeFunction(this);
-#ifndef MULTIPLE_GC
-      mvm::Code* temp = (mvm::Code*)(Collector::begOf(val));
-#else
-      mvm::Code* temp = (mvm::Code*)(classDef->isolate->GC->begOf(val));
-#endif
-      if (temp) {
-        temp->method()->definition((mvm::Object*)this);
-      }
-      code = (mvm::Code*)val;
-      classDef->release();
-    } else {
-      classDef->release();
     }
+    classDef->release();
     return code;
   }
 }

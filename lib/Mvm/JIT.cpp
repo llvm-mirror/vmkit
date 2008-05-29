@@ -18,6 +18,8 @@
 #include "mvm/JIT.h"
 #include "mvm/Method.h"
 #include "mvm/MvmMemoryManager.h"
+#include "mvm/Object.h"
+#include "mvm/Threads/Thread.h"
 
 using namespace mvm;
 using namespace mvm::jit;
@@ -659,12 +661,46 @@ uint64 mvm::jit::getTypeSize(const llvm::Type* type) {
   return executionEngine->getTargetData()->getABITypeSize(type);
 }
 
-extern "C" void __deregister_frame(void*);
-
-void ExceptionTable::destroyer(size_t sz) {
-  __deregister_frame(this->frameRegister());
-}
-
 void mvm::jit::runPasses(llvm::Function* func,  llvm::FunctionPassManager* pm) {
   pm->run(*func);
+}
+
+#if defined(__MACH__) && !defined(__i386__)
+#define FRAME_IP(fp) (fp[2])
+#else
+#define FRAME_IP(fp) (fp[1])
+#endif
+
+int mvm::jit::getBacktrace(void** stack, int size) {
+  void** blah = (void**)__builtin_frame_address(1);
+  int cpt = 0;
+  void* baseSP = mvm::Thread::get()->baseSP;
+  while (blah && cpt < size && blah < baseSP) {
+    stack[cpt++] = (void**)FRAME_IP(blah);
+    blah = (void**)blah[0];
+  }
+  return cpt;
+}
+
+LockNormal lock;
+std::map<void*, Code*> pointerMap;
+
+Code* mvm::jit::getCodeFromPointer(void* Addr) {
+  lock.lock();
+  std::map<void*, Code*>::iterator I =
+    pointerMap.lower_bound(Addr);
+  
+  lock.unlock();
+  if (I != pointerMap.end()) {
+    Code* m = I->second;
+    if (Addr >= m->FunctionStart) return m;
+  }
+
+  return 0;
+}
+
+void mvm::jit::addMethodInfo(void* Addr, Code* C) {
+  lock.lock();
+  pointerMap.insert(std::make_pair(Addr, C));
+  lock.unlock();
 }

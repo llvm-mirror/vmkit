@@ -66,8 +66,6 @@ public:
   
   llvm::Function* virtualTracer;
   llvm::Function* staticTracer;
-  mvm::Code* codeVirtualTracer;
-  mvm::Code* codeStaticTracer;
 
   uint32 superToken;
   uint32 token;
@@ -208,7 +206,7 @@ public:
   bool virt;
   bool canBeInlined;
 
-  mvm::Code* code;
+  void* code;
   
   llvm::GenericValue operator()(...);
   llvm::GenericValue operator()(va_list ap);

@@ -141,7 +141,6 @@ llvm::Function* CLIJit::objConsLLVM;
 llvm::Function* CLIJit::objInitLLVM;
 llvm::Function* CLIJit::throwExceptionLLVM;
 llvm::Function* CLIJit::instanceOfLLVM;
-llvm::Function* CLIJit::isInCodeLLVM;
 llvm::Function* CLIJit::getCLIExceptionLLVM;
 llvm::Function* CLIJit::getCppExceptionLLVM;
 llvm::Function* CLIJit::newStringLLVM;

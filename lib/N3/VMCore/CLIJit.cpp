@@ -240,7 +240,6 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
   void* tracer = mvm::jit::executionEngine->getPointerToGlobal(func);
   ((void**)res)[VT_TRACER_OFFSET] = tracer;
   cl->virtualTracer = func;
-  cl->codeVirtualTracer = mvm::Code::getCodeFromPointer(tracer);
 #endif
 
   return res;
@@ -291,10 +290,8 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
   
   if (!stat) {
     cl->virtualTracer = func;
-    cl->codeVirtualTracer = mvm::Code::getCodeFromPointer(tracer);
   } else {
     cl->staticTracer = func;
-    cl->codeStaticTracer = mvm::Code::getCodeFromPointer(tracer);
   }
 #endif
   return res;
@@ -1473,15 +1470,6 @@ extern "C" void indexOutOfBounds() {
 }
 
 
-extern "C" bool isInCode(void* value) {
-  mvm::Object *obj = mvm::Code::getCodeFromPointer(value);
-  if (obj && obj->getVirtualTable() == mvm::Code::VT) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
 extern "C" VMObject* newString(const UTF8* utf8) {
   CLIString * str = 
     (CLIString*)(((N3*)VMThread::get()->vm)->UTF8ToStr(utf8));
@@ -1878,16 +1866,6 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   instanceOfLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
                      "_ZN2n38VMObject10instanceOfEPNS_13VMCommonClassE",
                      module);
-  }
-  
-  // Create isInCodeLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(VMObject::llvmType);
-  const FunctionType* type = FunctionType::get(Type::Int1Ty, args, false);
-
-  isInCodeLLVM = Function::Create(type, GlobalValue::ExternalLinkage, "isInCode",
-                              module);
   }
   
   // Create arrayMultiConsLLVM

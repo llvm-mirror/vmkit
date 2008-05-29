@@ -20,13 +20,13 @@
 #include "llvm/PassManager.h"
 #include "llvm/Type.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/Target/TargetData.h"
 
 #include "types.h"
 
-#include "mvm/Threads/Locks.h"
+#include "mvm/Method.h"
 #include "mvm/MvmMemoryManager.h"
+#include "mvm/Threads/Locks.h"
 
 namespace mvm {
 
@@ -154,6 +154,9 @@ extern mvm::MvmMemoryManager *memoryManager;
 
 extern int disassemble(unsigned int* addr);
 
+extern int getBacktrace(void** stack, int size);
+extern Code* getCodeFromPointer(void* addr);
+extern void addMethodInfo(void* end, Code* c);
 
 } // end namespace jit
 

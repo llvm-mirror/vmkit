@@ -159,8 +159,6 @@ void VMCommonClass::TRACER {
   assembly->MARK_AND_TRACE;
   //funcs->MARK_AND_TRACE;
   TRACE_VECTOR(Property*, properties, gc_allocator);
-  codeVirtualTracer->MARK_AND_TRACE;
-  codeStaticTracer->MARK_AND_TRACE;
 }
 
 void VMClass::TRACER {
@@ -189,7 +187,6 @@ void VMMethod::TRACER {
   TRACE_VECTOR(Param*, params, gc_allocator);
   TRACE_VECTOR(Enveloppe*, caches, gc_allocator);
   name->MARK_AND_TRACE;
-  code->MARK_AND_TRACE;
 }
 
 void VMField::TRACER {

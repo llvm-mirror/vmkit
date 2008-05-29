@@ -10,9 +10,6 @@
 #include <stdio.h>
 #include <dlfcn.h>
 
-#include "llvm/Function.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-
 #include "mvm/JIT.h"
 #include "mvm/Method.h"
 #include "mvm/Object.h"
@@ -26,50 +23,28 @@
 using namespace jnjvm;
 
 JavaMethod* JavaJIT::IPToJavaMethod(void* begIp) {
-  mvm::Code* val = mvm::Code::getCodeFromPointer(begIp);
-  if (val) {
-    mvm::Method* m = val->method();
-    mvm::Object* meth = m->definition();
+  mvm::Code* code = mvm::jit::getCodeFromPointer(begIp);
+  if (code) {
+    JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
     if (meth) {
-      return (JavaMethod*)meth;
+      return meth;
     }
   }
   return 0;
 }
 
-#if defined(__MACH__) && !defined(__i386__)
-#define FRAME_IP(fp) (fp[2])
-#else
-#define FRAME_IP(fp) (fp[1])
-#endif
-
-int JavaJIT::getBacktrace(void** stack, int size) {
-  void** blah = (void**)__builtin_frame_address(1);
-  int cpt = 0;
-  void* baseSP = JavaThread::get()->baseSP;
-  while (blah && cpt < size && blah < baseSP) {
-    stack[cpt++] = (void**)FRAME_IP(blah);
-    blah = (void**)blah[0];
-  }
-  return cpt;
-}
-
 void JavaJIT::printBacktrace() {
   int* ips[100];
-  int real_size = getBacktrace((void**)(void*)ips, 100);
+  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 100);
   int n = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::Code::getCodeFromPointer(ips[n++]);
+    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
     if (code) {
-      mvm::Method* m = code->method();
-      mvm::Object* meth = m->definition();
+      JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
       if (meth) {
         printf("; %p in %s\n",  ips[n - 1], meth->printString());
-      } else if (m->llvmFunction) {
-        printf("; %p in %s\n",  ips[n - 1],
-                   m->llvmFunction->getNameStr().c_str());
       } else {
-        printf("; %p in %s\n",  ips[n - 1], "stub (probably)");
+        printf("; %p in %s\n",  ips[n - 1], "unknown");
       }
     } else {
       Dl_info info;
@@ -88,17 +63,16 @@ void JavaJIT::printBacktrace() {
 
 Class* JavaJIT::getCallingClass() {
   int* ips[10];
-  int real_size = getBacktrace((void**)(void*)ips, 10);
+  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::Code::getCodeFromPointer(ips[n++]);
+    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
     if (code) {
-      mvm::Method* m = code->method();
-      mvm::Object* meth = m->definition();
+      JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
       if (meth) {
         if (i == 1) {
-          return ((JavaMethod*)meth)->classDef;
+          return meth->classDef;
         } else {
           ++i;
         }
@@ -110,17 +84,16 @@ Class* JavaJIT::getCallingClass() {
 
 Class* JavaJIT::getCallingClassWalker() {
   int* ips[10];
-  int real_size = getBacktrace((void**)(void*)ips, 10);
+  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::Code::getCodeFromPointer(ips[n++]);
+    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
     if (code) {
-      mvm::Method* m = code->method();
-      mvm::Object* meth = m->definition();
+      JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
       if (meth) {
         if (i == 1) {
-          return ((JavaMethod*)meth)->classDef;
+          return meth->classDef;
         } else {
           ++i;
         }

@@ -687,11 +687,6 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case ENDFINALLY : {
         Value* val = new LoadInst(supplLocal, "", currentBlock);
-        /*Value* call = CallInst::Create(isInCodeLLVM, val, "", currentBlock);
-        BasicBlock* bb1 = createBasicBlock("end finally");
-        BasicBlock* bb2 = createBasicBlock("no end finally");
-        BranchInst::Create(bb1, bb2, call, currentBlock);
-        currentBlock = bb1;*/
         val = new PtrToIntInst(val, Type::Int32Ty, "", currentBlock);
         SwitchInst* inst = SwitchInst::Create(val, leaves[0], 
                                           leaves.size(), currentBlock);

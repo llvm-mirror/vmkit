@@ -40,8 +40,9 @@ bool N3ModuleProvider::materializeFunction(Function *F, std::string *ErrInfo) {
       if (res == 0) {
         CLIJit::compile(meth->classDef, meth);
         void* res = mvm::jit::executionEngine->getPointerToGlobal(meth->methPtr);
-        meth->code = mvm::Code::getCodeFromPointer(res);
-        meth->code->method()->definition(meth);
+        meth->code = res;
+        mvm::Code* code = mvm::jit::getCodeFromPointer(res);
+        code->setMetaInfo(meth);
       }
       meth->classDef->release();
       meth->classDef->resolveStatic(true);

@@ -363,7 +363,7 @@ public:
   const UTF8* name;
   const UTF8* type;
   bool canBeInlined;
-  mvm::Code* code;
+  void* code;
   
   /// offset - The index of the method in the virtual table.
   ///
