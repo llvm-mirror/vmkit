@@ -44,7 +44,6 @@ using namespace jnjvm;
   INIT(CommonClass);
   INIT(Class);
   INIT(ClassArray);
-  INIT(JavaCond);
   INIT(LockObj);
   INIT(JavaObject);
   INIT(JavaThread);
@@ -122,13 +121,7 @@ void ClassArray::TRACER {
   CommonClass::PARENT_TRACER;
 }
 
-void JavaCond::TRACER {
-  // FIXME: do I need this?
-  TRACE_VECTOR(JavaThread*, std::allocator, threads);
-}
-
 void LockObj::TRACER {
-  varcond->MARK_AND_TRACE;
 }
 
 void JavaObject::TRACER {

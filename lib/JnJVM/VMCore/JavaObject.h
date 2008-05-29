@@ -26,9 +26,8 @@ class JavaObject;
 class JavaThread;
 class UTF8;
 
-class JavaCond : public mvm::Object {
+class JavaCond {
 public:
-  static VirtualTable* VT;
   std::vector<JavaThread*> threads;
   
   static JavaCond* allocate();
@@ -37,8 +36,6 @@ public:
   void notifyAll();
   void wait(JavaThread* th);
   void remove(JavaThread* th);
-
-  virtual void TRACER;
 };
 
 
@@ -50,6 +47,7 @@ public:
 
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
+  virtual void destroyer(size_t sz);
 
   static LockObj* allocate();
   static LockObj* myLock(JavaObject* obj);

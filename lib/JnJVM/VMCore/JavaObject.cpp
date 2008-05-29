@@ -25,8 +25,7 @@ using namespace jnjvm;
 mvm::Lock* JavaObject::globalLock = 0;
 
 JavaCond* JavaCond::allocate() {
-  // JavaCond::allocate must on behalf of the executing thread
-  return vm_new(JavaThread::get()->isolate, JavaCond)();
+  return new JavaCond();
 }
 
 void JavaCond::notify() {
@@ -187,4 +186,9 @@ void JavaObject::notifyAll() {
   } else {
     JavaThread::get()->isolate->illegalMonitorStateException(this);
   } 
+}
+
+void LockObj::destroyer(size_t sz) {
+  delete varcond;
+  delete lock;
 }
