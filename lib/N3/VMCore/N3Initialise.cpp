@@ -235,10 +235,8 @@ static void initialiseStatics() {
   CLIJit::initialise();
 
   VMObject::globalLock = mvm::Lock::allocNormal();
-  //mvm::Object::pushRoot((mvm::Object*)VMObject::globalLock);
 
   N3* vm = N3::bootstrapVM = N3::allocateBootstrap();
-  mvm::Object::pushRoot((mvm::Object*)N3::bootstrapVM);
 
   
   

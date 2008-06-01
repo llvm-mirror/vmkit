@@ -28,7 +28,7 @@ int main(int argc, char **argv, char **envp) {
   Thread::initialise();
   jit::initialise();
   Object::initialise();
-  Collector::initialise(Object::markAndTraceRoots, &base);
+  Collector::initialise(0, &base);
   boot();
   start_app(argc, argv);
 
