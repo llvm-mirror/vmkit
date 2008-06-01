@@ -1981,11 +1981,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                        args.begin(), args.end(),
                                        "", currentBlock);
         
-        cmp = new ICmpInst(ICmpInst::ICMP_EQ, call,
-                           mvm::jit::constantZero, "", currentBlock);
-
         BasicBlock* ex = createBasicBlock("false checkcast");
-        BranchInst::Create(ex, ifTrue, cmp, currentBlock);
+        BranchInst::Create(ifTrue, ex, call, currentBlock);
 
         std::vector<Value*> exArgs;
         exArgs.push_back(obj);
@@ -2020,8 +2017,10 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         std::vector<Value*> args;
         args.push_back(pop());
         args.push_back(clVar);
-        push(CallInst::Create(JnjvmModule::InstanceOfFunction, args.begin(),
-                              args.end(), "", currentBlock),
+        Value* val = CallInst::Create(JnjvmModule::InstanceOfFunction,
+                                      args.begin(), args.end(), "",
+                                      currentBlock);
+        push(new ZExtInst(val, Type::Int32Ty, "", currentBlock),
              AssessorDesc::dInt);
         break;
       }

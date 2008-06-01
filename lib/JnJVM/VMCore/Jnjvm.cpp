@@ -179,17 +179,17 @@ void Jnjvm::loadParents(Class* cl) {
   JavaObject* classLoader = cl->classLoader;
   if (super == 0) {
     cl->depth = 0;
-    cl->display.push_back(cl);
+    cl->display = (CommonClass**)malloc(sizeof(CommonClass*));
+    cl->display[0] = cl;
     cl->virtualTableSize = VT_SIZE / sizeof(void*);
   } else {
     cl->super = loadName(super, classLoader, true, false, true);
-    int depth = cl->super->depth;
-    cl->depth = depth + 1;
+    int depth = cl->super->depth + 1;
+    cl->depth = depth;
     cl->virtualTableSize = cl->super->virtualTableSize;
-    for (uint32 i = 0; i < cl->super->display.size(); ++i) {
-      cl->display.push_back(cl->super->display[i]);
-    }
-    cl->display.push_back(cl);
+    cl->display = (CommonClass**)malloc((depth + 1) * sizeof(CommonClass*));
+    memcpy(cl->display, cl->super->display, depth * sizeof(CommonClass*));
+    cl->display[cl->depth] = cl;
   }
 
   for (int i = 0; i < nbI; i++)

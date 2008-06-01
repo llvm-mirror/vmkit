@@ -54,6 +54,8 @@ llvm::GlobalVariable* JnjvmModule::JavaObjectVirtualTableGV;
 llvm::GlobalVariable* JnjvmModule::ArrayObjectVirtualTableGV;
 llvm::ConstantInt*    JnjvmModule::OffsetObjectSizeInClassConstant;
 llvm::ConstantInt*    JnjvmModule::OffsetVTInClassConstant;
+llvm::ConstantInt*    JnjvmModule::OffsetDepthInClassConstant;
+llvm::ConstantInt*    JnjvmModule::OffsetDisplayInClassConstant;
 const llvm::Type*     JnjvmModule::JavaClassType;
 const llvm::Type*     JnjvmModule::VTType;
 llvm::ConstantInt*    JnjvmModule::JavaArrayElementsOffsetConstant;
@@ -90,6 +92,12 @@ llvm::Function* JnjvmModule::InitialisationCheckFunction = 0;
 llvm::Function* JnjvmModule::ForceInitialisationCheckFunction = 0;
 llvm::Function* JnjvmModule::ClassLookupFunction = 0;
 llvm::Function* JnjvmModule::InstanceOfFunction = 0;
+llvm::Function* JnjvmModule::IsAssignableFromFunction = 0;
+llvm::Function* JnjvmModule::ImplementsFunction = 0;
+llvm::Function* JnjvmModule::InstantiationOfArrayFunction = 0;
+llvm::Function* JnjvmModule::GetDepthFunction = 0;
+llvm::Function* JnjvmModule::GetDisplayFunction = 0;
+llvm::Function* JnjvmModule::GetClassInDisplayFunction = 0;
 llvm::Function* JnjvmModule::AquireObjectFunction = 0;
 llvm::Function* JnjvmModule::ReleaseObjectFunction = 0;
 llvm::Function* JnjvmModule::MultiCallNewFunction = 0;
@@ -950,7 +958,13 @@ void JnjvmModule::initialise() {
   GetObjectSizeFromClassFunction = module->getFunction("getObjectSizeFromClass");
  
   GetClassDelegateeFunction = module->getFunction("getClassDelegatee");
-  InstanceOfFunction = module->getFunction("JavaObjectInstanceOf");
+  InstanceOfFunction = module->getFunction("instanceOf");
+  IsAssignableFromFunction = module->getFunction("isAssignableFrom");
+  ImplementsFunction = module->getFunction("implements");
+  InstantiationOfArrayFunction = module->getFunction("instantiationOfArray");
+  GetDepthFunction = module->getFunction("getDepth");
+  GetDisplayFunction = module->getFunction("getDisplay");
+  GetClassInDisplayFunction = module->getFunction("getClassInDisplay");
   AquireObjectFunction = module->getFunction("JavaObjectAquire");
   ReleaseObjectFunction = module->getFunction("JavaObjectRelease");
 
@@ -1037,13 +1051,16 @@ void JnjvmModule::initialise() {
                                           cons, "",
                                           module);
   
-  OffsetObjectSizeInClassConstant = mvm::jit::constantOne;
-  OffsetVTInClassConstant = mvm::jit::constantTwo;
   JavaArrayElementsOffsetConstant = mvm::jit::constantTwo;
   JavaArraySizeOffsetConstant = mvm::jit::constantOne;
   JavaObjectLockOffsetConstant = mvm::jit::constantTwo;
-  JavaObjectClassOffsetConstant = mvm::jit::constantOne;
+  JavaObjectClassOffsetConstant = mvm::jit::constantOne; 
   
+  OffsetObjectSizeInClassConstant = mvm::jit::constantOne;
+  OffsetVTInClassConstant = mvm::jit::constantTwo;
+  OffsetDisplayInClassConstant = mvm::jit::constantThree;
+  OffsetDepthInClassConstant = mvm::jit::constantFour;
+
   LLVMAssessorInfo::initialise();
 }
 

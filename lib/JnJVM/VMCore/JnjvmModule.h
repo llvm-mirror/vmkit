@@ -299,6 +299,12 @@ public:
   static llvm::Function* VirtualLookupFunction;
 #endif
   static llvm::Function* InstanceOfFunction;
+  static llvm::Function* IsAssignableFromFunction;
+  static llvm::Function* ImplementsFunction;
+  static llvm::Function* InstantiationOfArrayFunction;
+  static llvm::Function* GetDepthFunction;
+  static llvm::Function* GetClassInDisplayFunction;
+  static llvm::Function* GetDisplayFunction;
   static llvm::Function* AquireObjectFunction;
   static llvm::Function* ReleaseObjectFunction;
 #ifdef SERVICE_VM
@@ -322,6 +328,8 @@ public:
   static llvm::Function* GetObjectSizeFromClassFunction;
   static llvm::ConstantInt* OffsetObjectSizeInClassConstant;
   static llvm::ConstantInt* OffsetVTInClassConstant;
+  static llvm::ConstantInt* OffsetDepthInClassConstant;
+  static llvm::ConstantInt* OffsetDisplayInClassConstant;
 
   static llvm::Constant* JavaClassNullConstant;
 

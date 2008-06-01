@@ -312,8 +312,20 @@ extern "C" void JavaObjectReleaseInSharedDomain(JavaObject* obj) {
 }
 #endif
 
-extern "C" bool JavaObjectInstanceOf(JavaObject* obj, CommonClass* cl) {
+extern "C" bool instanceOf(JavaObject* obj, CommonClass* cl) {
   return obj->instanceOf(cl);
+}
+
+extern "C" bool instantiationOfArray(CommonClass* cl1, ClassArray* cl2) {
+  return cl1->instantiationOfArray(cl2);
+}
+
+extern "C" bool implements(CommonClass* cl1, CommonClass* cl2) {
+  return cl1->implements(cl2);
+}
+
+extern "C" bool isAssignableFrom(CommonClass* cl1, CommonClass* cl2) {
+  return cl1->isAssignableFrom(cl2);
 }
 
 extern "C" void* JavaThreadGetException() {
