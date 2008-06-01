@@ -10,21 +10,30 @@
 #ifndef MVM_PRINTBUFFER_H
 #define MVM_PRINTBUFFER_H
 
-#include <stdio.h>
-#include <string.h>
+#include <stdio.h> // sprintf
+#include <string.h> // memcpy
 
 #include "types.h"
 #include "mvm/Object.h"
 
 namespace mvm {
 
+
+/// NativeString - This class is the equivalent of a char*, but allocated
+/// by the GC, hence has a virtual table.
+///
 class NativeString : public Object {
 public:
   
+  /// VT - The virtual table of this class.
+  ///
   static VirtualTable* VT;
 
+  /// cString - Returns the C equivalent of the NativeString.
+  ///
   inline char *cString() { return (char *)(this + 1); }
 
+  /// readString - Copies the C string to a newly allocated NativeString.
   inline static NativeString *readString(char *cStr) {
     size_t nbb = strlen(cStr);
     NativeString * res = alloc(nbb + 1);
@@ -32,60 +41,86 @@ public:
     return res;
   }
 
+  /// alloc - Allocates a NativeString of size len.
+  ///
   static inline NativeString *alloc(size_t len) {
     return (NativeString *)gc::operator new(len, VT);
   }
 
+  /// realloc - Reallocate a native string of size len.
+  ///
   inline NativeString *realloc(size_t len) {
     return (NativeString *)gc::realloc(len);
   }
 
+  /// setAt - Sets the char c at position pos in the NativeString.
+  ///
   inline void setAt(int pos, char c) {
     cString()[pos] = c;
   }
 
 public:
+  
+  /// print - Just prints the NativeString.
+  ///
   virtual void print(PrintBuffer *buf) const;
 
-  inline bool compare(char *str) {
-    return !strcmp(cString(), str);
-  }
-
-  inline bool compare(char *str, int len) {
-    return ((int)strlen(cString()) == len) && !strncmp(cString(), str, len);
-  }
 };
 
-
+/// PrintBuffer - This class is a buffered string.
+///
 class PrintBuffer : public Object {
+private:
+ 
+  /// _contents - The buffer.
+  ///
+  NativeString* _contents;
+
+  /// capacity - The capacity of the current buffer.
+  ///
+  uint32  capacity;
+
+  /// writePosition - The position in the buffer where the next write will
+  /// happen.
+  ///
+  uint32  writePosition;
+
+
 public:
+  
+  /// VT - The virtual table of this class.
+  ///
   static VirtualTable* VT;
-  size_t  capacity;
-  size_t  writePosition;
-  GC_defass(NativeString, contents);
-
-public:
-
-  static inline PrintBuffer* allocPrintBuffer(void) {
-    PrintBuffer* pbf = gc_new(PrintBuffer)();
-    pbf->capacity= 32;
-    pbf->writePosition= 0;
-    pbf->contents(NativeString::alloc(pbf->capacity));
-    return pbf;
+  
+  
+  /// contents - Returns the buffer.
+  ///
+  NativeString* contents() {
+    return _contents;
   }
 
+  /// setContents - Sets the buffer.
+  ///
+  void setContents(NativeString* n) {
+    _contents = n;
+  }
+
+  /// write - Writes to this PrintBuffer.
+  ///
   inline PrintBuffer *write(const char *string) {
     size_t len= strlen(string);
     if ((writePosition + len + 1) >= capacity) {
       while ((writePosition + len + 1) >= capacity)
         capacity*= 4;
-      contents(contents()->realloc(capacity));
+      setContents(contents()->realloc(capacity));
     }
     strcpy(contents()->cString() + writePosition, string);
     writePosition+= len;
     return this;
   }
   
+
+  /// writeChar - Writes a char.
   inline PrintBuffer *writeChar(char v) {
     char buf[32];
     sprintf(buf, "%c", v);
@@ -93,30 +128,35 @@ public:
   }
   
 
+  /// writeChar - Writes a int32.
   inline PrintBuffer *writeS4(int v) {
     char buf[32];
     sprintf(buf, "%d", v);
     return write(buf);
   }
   
+  /// writes8 - Writes a int64.
   inline PrintBuffer *writeS8(sint64 v) {
     char buf[32];
     sprintf(buf, "%lld", v);
     return write(buf);
   }
   
+  /// writeFP - Writes a double.
   inline PrintBuffer *writeFP(double v) {
     char buf[32];
     sprintf(buf, "%f", v);
     return write(buf);
   }
 
+  /// writePtr - Writes a pointer.
   inline PrintBuffer *writePtr(void *p) {
     char buf[32];
     sprintf(buf, "%p", p);
     return write(buf);
   }
 
+  /// writeBytes - Writes len bytes in the buffer bytes.
   inline PrintBuffer *writeBytes(unsigned char *bytes, size_t len) {
     write("[");
     for (size_t idx= 0; idx < len; ++idx) {
@@ -130,15 +170,24 @@ public:
     return this;
   }
 
+  /// writeObj - Writes an Object to the buffer.
+  ///
   PrintBuffer *writeObj(const Object *);
 
-  NativeString      *getContents();
-  
-  static PrintBuffer *write_static(PrintBuffer*, char *);
-
 public:
-  static PrintBuffer *alloc(void);
+  
+  /// alloc - Allocates a default PrintBuffer.
+  ///
+  static PrintBuffer *alloc(void) {
+    PrintBuffer* pbf = gc_new(PrintBuffer)();
+    pbf->capacity= 32;
+    pbf->writePosition= 0;
+    pbf->setContents(NativeString::alloc(pbf->capacity));
+    return pbf;
+  }
 
+  /// tracer - Traces this PrintBuffer.
+  ///
   virtual void TRACER;
 };
 

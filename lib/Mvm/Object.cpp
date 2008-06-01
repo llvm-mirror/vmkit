@@ -19,46 +19,17 @@
 using namespace mvm;
 
 
-VirtualTable *Object::VT = 0;
 VirtualTable *NativeString::VT = 0;
 VirtualTable *PrintBuffer::VT = 0;
 
 mvm::Key<mvm::Thread>* mvm::Thread::threadKey = 0;
 
 
-Object **Object::rootTable= 0;
-int    Object::rootTableSize= 0;
-int    Object::rootTableLimit= 0;
-
-void Object::growRootTable(void) {
-  if (rootTableLimit != 0) {
-    assert(rootTable != 0);
-    rootTableLimit*= 2;
-    rootTable= (Object **)
-      ::realloc((void *)rootTable, rootTableLimit * sizeof(Object **));
-    return;
-  }
-  rootTableLimit= 32;
-  rootTable= (Object **)malloc(32 * sizeof(Object **));
-}
-
-
-void Object::markAndTraceRoots(void* GC) {
-  for (int i= 0; i < rootTableSize; ++i) {
-#ifdef MULTIPLE_GC
-    rootTable[i]->markAndTrace((Collector*)GC);
-#else
-    rootTable[i]->markAndTrace();;
-#endif
-  }
-}
-
 void Object::initialise() {
 # define INIT(X) { \
   X fake; \
   X::VT = ((void**)(void*)(&fake))[0]; }
   
-  INIT(Object);
   INIT(NativeString);
   INIT(PrintBuffer);
   
@@ -67,10 +38,6 @@ void Object::initialise() {
 
 void PrintBuffer::TRACER {
   ((PrintBuffer *)this)->contents()->MARK_AND_TRACE;
-}
-
-PrintBuffer *PrintBuffer::alloc(void) {
-  return allocPrintBuffer();
 }
 
 
@@ -147,5 +114,3 @@ void NativeString::print(PrintBuffer *buf) const {
   }
   buf->write("\"");
 }
-
-NativeString *PrintBuffer::getContents() { return contents(); }

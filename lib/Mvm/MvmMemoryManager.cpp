@@ -54,13 +54,11 @@ void MvmMemoryManager::deallocateMemForFunction(const Function *F) {
 }
 
 void MvmMemoryManager::AllocateGOT() {
-  assert(GOTBase == 0 && "Cannot allocate the got multiple times");
-  GOTBase = new unsigned char[sizeof(void*) * 8192];
-  HasGOT = true;
+  realMemoryManager->AllocateGOT();
 }
 
 unsigned char *MvmMemoryManager::getGOTBase() const {
-  return GOTBase;
+  return realMemoryManager->getGOTBase();
 }
 
 unsigned char *MvmMemoryManager::startExceptionTable(const Function* F, 

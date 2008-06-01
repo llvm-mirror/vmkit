@@ -1,4 +1,4 @@
-//===-------------- Method.h - Collectable methods ------------------------===//
+//===--------- Method.h - Meta information for methods --------------------===//
 //
 //                     The Micro Virtual Machine
 //
@@ -14,7 +14,16 @@ extern "C" void __deregister_frame(void*);
 
 namespace mvm {
 
+/// Code - This class contains meta information of a dynamicall generated
+/// function.
+///
 class Code {
+private:
+  
+  /// metaInfo - A meta info field to store virtual machine informations.
+  ///
+  void* metaInfo;
+
 public:
 
   Code() {
@@ -26,19 +35,42 @@ public:
     exceptionTable = 0;
     metaInfo = 0;
   }
-
+  
+  /// stubSize - The size of the stub that will generate the function.
+  ///
   unsigned stubSize;
+  
+  /// FunctionStart - The starting address in memory of the generated function.
+  ///
   unsigned char* FunctionStart;
+
+  /// FunctionStart - The ending address in memory of the generated function.
+  ///
   unsigned char* FunctionEnd;
+
+  /// stub - The starting address of the stub.
+  ///
   unsigned char* stub;
-  unsigned char* frameRegister;
+
+  /// exceptionTable - The exception table of this function.
+  ///
   unsigned char* exceptionTable;
+  
+  /// frameRegister - The address where to register and unregister the
+  /// exception table.
+  unsigned char* frameRegister;
 
-  void* metaInfo;
 
+  /// getMetaInfo - Returns the virtual machine information related to this
+  /// method.
   void* getMetaInfo() { return metaInfo; }
+  
+  /// setMetaInfo - Sets the virtual machine information of this method.
+  ///
   void  setMetaInfo(void* m) { metaInfo = m; }
 
+  /// unregisterFrame - Unregisters the exception table of this method.
+  ///
   inline void unregisterFrame() {
     __deregister_frame((unsigned char*)frameRegister);
   }

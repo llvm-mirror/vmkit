@@ -24,69 +24,54 @@ namespace mvm {
 #define VT_TRACER_OFFSET 3
 #define VT_PRINT_OFFSET 4
 #define VT_HASHCODE_OFFSET 5
-#define VT_SIZE 24
+#define VT_SIZE 6 * sizeof(void*)
 
-
-#define GC_defass(TYPE, name)                                  \
-  TYPE    *_hidden_##name;                                     \
-	inline TYPE    *name()        { return _hidden_##name; }     \
-	inline TYPE    *name(TYPE *v) { return _hidden_##name = v; }
 
 class PrintBuffer;
-class Object;
 
+/// Object - Root of all objects. Define default implementations of virtual
+/// methods and some commodity functions.
+///
 class Object : public gc {
 public:
-  static VirtualTable* VT; 
   
+  /// getVirtualTable - Returns the virtual table of this object.
+  ///
   VirtualTable* getVirtualTable() const {
     return ((VirtualTable**)(this))[0];
   }
   
+  /// setVirtualTable - Sets the virtual table of this object.
+  ///
   void setVirtualTable(VirtualTable* VT) {
     ((VirtualTable**)(this))[0] = VT;
   }
 
+  /// printString - Returns a string representation of this object.
+  ///
   char *printString(void) const;
 
-#if !defined(GC_GEN)
-  inline gc *gcset(void *ptr, gc *src) { return *((gc **)ptr) = src; }
-#endif
-  
+  /// destroyer - Default implementation of destroyer. Does nothing.
+  ///
   virtual void      destroyer(size_t) {}
+
+  /// tracer - Default implementation of tracer. Does nothing.
+  ///
   virtual void      TRACER {}
+
+  /// print - Default implementation of print.
+  ///
   virtual void      print(PrintBuffer *buf) const;
+
+  /// hashCode - Default implementation of hashCode. Returns the address
+  /// of this object.
+  ///
   virtual intptr_t  hashCode(){ return (intptr_t)this;}
-
-protected:
-  static Object **rootTable;
-  static int	   rootTableSize, rootTableLimit;
-
-  static void growRootTable(void);
-
-public:
   
-  inline static void pushRoot(Object *obj) {
-    if (rootTableSize >= rootTableLimit)
-      growRootTable();
-    rootTable[rootTableSize++]= obj;
-  }
-
-  inline static void pushRoot(Object &var) {
-    pushRoot(var);
-  }
-
-  inline static Object *popRoots(size_t nRoots) {
-    rootTableSize-= nRoots;
-    assert(rootTableSize >= 0);
-    return rootTable[rootTableSize];
-  }
-
-  inline static Object *popRoot(void) {
-    return popRoots(1);
-  }
-
-  static void markAndTraceRoots(void*);
+  /// initialise - All virtual machines must call Object::initialise to
+  /// property initialise the PrintBuffer and NativeString classes. These
+  /// classes are mainly used for debugging but also for object hashing.
+  ///
   static void initialise();
 
 };
