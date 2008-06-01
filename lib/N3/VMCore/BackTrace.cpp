@@ -11,9 +11,6 @@
 #include <stdio.h>
 #include <dlfcn.h>
 
-#include "llvm/Function.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-
 #include "mvm/JIT.h"
 #include "mvm/Method.h"
 #include "mvm/Object.h"
@@ -25,8 +22,6 @@
 #include "N3ModuleProvider.h"
 #include "VMClass.h"
 #include "VMThread.h"
-
-#include <execinfo.h>
 
 using namespace n3;
 
@@ -58,8 +53,8 @@ void CLIJit::printBacktrace() {
 
 
 Assembly* Assembly::getExecutingAssembly() {
-  int* ips[10];
-  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
+  int* ips[5];
+  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 5);
   int n = 0;
   while (n < real_size) {
     mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
@@ -74,8 +69,8 @@ Assembly* Assembly::getExecutingAssembly() {
 }
 
 Assembly* Assembly::getCallingAssembly() {
-  int* ips[10];
-  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
+  int* ips[5];
+  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 5);
   int n = 0;
   int i = 0;
   while (n < real_size) {
