@@ -6,11 +6,13 @@
 %VT = type i32**
 
 ;;; The type of internal classes. This is not complete, but we only need
-;;; the two first fields for now. 
+;;; the first fields for now. 
 ;;; Field 1 - The VT of a class C++ object.
 ;;; Field 2 - The size of instances of this class.
 ;;; Field 3 - The VT of instances of this class.
-%JavaClass = type { %VT, i32, %VT }
+;;; Field 4 - The list of super classes of this class.
+;;; Field 5 - The depth of the class in its super hierarchy
+%JavaClass = type { %VT, i32, %VT ,%JavaClass**, i32}
 
 ;;; The root of all Java Objects: a VT, a class and a lock.
 %JavaObject = type { %VT, %JavaClass*, i8* }
@@ -61,6 +63,16 @@ declare %VT @getVTFromClass(%JavaClass*) readnone
 ;;; representation.
 declare i32 @getObjectSizeFromClass(%JavaClass*) readnone 
 
+;;; getDisplay - Get the display array of this class.
+declare %JavaClass** @getDisplay(%JavaClass*) readnone 
+
+;;; getClassInDisplay - Get the super class at the given offset.
+declare %JavaClass* @getClassInDisplay(%JavaClass**, i32) readnone 
+
+;;; getDepth - Get the depth of the class.
+declare i32 @getDepth(%JavaClass*) readnone 
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;; Generic Runtime methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -100,8 +112,17 @@ declare void @JavaObjectAquire(%JavaObject*)
 ;;; block or method.
 declare void @JavaObjectRelease(%JavaObject*)
 
-;;; JavaObjectInstanceOf - Returns if a Java object implements the given class.
-declare i32 @JavaObjectInstanceOf(%JavaObject*, %JavaClass*) readnone 
+;;; isAssignableFrom - Returns if the objet's class implements the given class.
+declare i1 @instanceOf(%JavaObject*, %JavaClass*) readnone 
+
+;;; isAssignableFrom - Returns if the class implements the given class.
+declare i1 @isAssignableFrom(%JavaClass*, %JavaClass*) readnone 
+
+;;; implements - Returns if the class implements the given interface.
+declare i1 @implements(%JavaClass*, %JavaClass*) readnone 
+
+;;; instantiationOfArray - Returns if the class implements the given array.
+declare i1 @instantiationOfArray(%JavaClass*, %JavaClass*) readnone 
 
 ;;; getClassDelegatee - Returns the java/lang/Class representation of the
 ;;; class.
