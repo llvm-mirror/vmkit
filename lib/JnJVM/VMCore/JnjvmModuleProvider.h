@@ -14,6 +14,10 @@
 
 using namespace llvm;
 
+namespace llvm {
+class FunctionPassManager;
+}
+
 namespace jnjvm {
 
 class JnjvmModule;
