@@ -74,10 +74,7 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
     res->assocClassName = 0;
   
   if (bid != I_PARG && bid != I_PARD && bid != I_REF && bid != I_TAB) {
-    res->classType = new CommonClass(vm, res->UTF8Name, false);
-    res->classType->status = ready;
-    res->classType->isPrimitive = true;
-    res->classType->access = ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC;
+    res->classType = new ClassPrimitive(vm, res->UTF8Name);
   } else {
     res->classType = 0;
   }

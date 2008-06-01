@@ -28,8 +28,6 @@
 
 using namespace jnjvm;
 
-const int CommonClass::MaxDisplay = 6;
-
 const UTF8* Attribut::codeAttribut = 0;
 const UTF8* Attribut::exceptionsAttribut = 0;
 const UTF8* Attribut::constantAttribut = 0;
@@ -82,7 +80,12 @@ Attribut* JavaMethod::lookupAttribut(const UTF8* key ) {
   return 0;
 }
 
+void CommonClass::destroyer(size_t sz) {
+  free(display);
+}
+
 void Class::destroyer(size_t sz) {
+  CommonClass::destroyer(sz);
   for (std::vector<Attribut*>::iterator i = attributs.begin(), 
        e = attributs.end(); i!= e; ++i) {
     Attribut* cur = *i;
@@ -191,6 +194,16 @@ CommonClass::CommonClass(Jnjvm* vm, const UTF8* n, bool isArray) {
 #endif
 }
 
+ClassPrimitive::ClassPrimitive(Jnjvm* vm, const UTF8* n) : 
+  CommonClass(vm, n, false) {
+  
+  display = (CommonClass**)malloc(sizeof(CommonClass*));
+  display[0] = this;
+  isPrimitive = true;
+  status = ready;
+  access = ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC;
+}
+
 Class::Class(Jnjvm* vm, const UTF8* n) : CommonClass(vm, n, false) {
   classLoader = 0;
   bytes = 0;
@@ -208,8 +221,9 @@ ClassArray::ClassArray(Jnjvm* vm, const UTF8* n) : CommonClass(vm, n, true) {
   super = ClassArray::SuperArray;
   interfaces = ClassArray::InterfacesArray;
   depth = 1;
-  display.push_back(ClassArray::SuperArray);
-  display.push_back(this);
+  display = (CommonClass**)malloc(2 * sizeof(CommonClass*));
+  display[0] = ClassArray::SuperArray;
+  display[1] = this;
   access = ACC_FINAL | ACC_ABSTRACT;
   status = loaded;
 }
@@ -426,10 +440,10 @@ bool CommonClass::implements(CommonClass* cl) {
   return false;
 }
 
-bool CommonClass::instantiationOfArray(CommonClass* cl) {
+bool CommonClass::instantiationOfArray(ClassArray* cl) {
   if (this == cl) return true;
   else {
-    if (isArray && cl->isArray) {
+    if (isArray) {
       CommonClass* baseThis = ((ClassArray*)this)->baseClass();
       CommonClass* baseCl = ((ClassArray*)cl)->baseClass();
 
@@ -444,7 +458,7 @@ bool CommonClass::instantiationOfArray(CommonClass* cl) {
 }
 
 bool CommonClass::subclassOf(CommonClass* cl) {
-  if (cl->depth < display.size()) {
+  if (cl->depth <= depth) {
     return display[cl->depth] == cl;
   } else {
     return false;
@@ -457,7 +471,7 @@ bool CommonClass::isAssignableFrom(CommonClass* cl) {
   } else if (isInterface(cl->access)) {
     return this->implements(cl);
   } else if (cl->isArray) {
-    return this->instantiationOfArray(cl);
+    return this->instantiationOfArray((ClassArray*)cl);
   } else {
     return this->subclassOf(cl);
   }

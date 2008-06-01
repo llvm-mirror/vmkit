@@ -91,10 +91,19 @@ public:
   ///
   VirtualTable* virtualVT;
   
+  /// display - The class hierarchy of supers for this class.
+  ///
+  CommonClass** display;
+  
+  /// depth - The depth of this class in its class hierarchy. 
+  /// display[depth] contains the class.
+  ///
+  uint32 depth;
+  
   /// virtualTableSize - The size of the virtual table of this class.
   ///
   uint32 virtualTableSize;
-  
+   
   /// access - {public, private, protected}.
   ///
   uint32 access;
@@ -183,14 +192,7 @@ public:
   ///
   method_map staticMethods;
   
-  /// display - The class hierarchy of supers for this class.
-  ///
-  std::vector<CommonClass*> display;
 
-  /// depth - The depth of this class in its class hierarchy. 
-  /// display[depth - 1] contains the class.
-  uint32 depth;
-  
   JavaMethod* constructMethod(const UTF8* name, const UTF8* type,
                               uint32 access);
   
@@ -238,7 +240,7 @@ public:
   bool inheritName(const UTF8* Tname);
   bool isOfTypeName(const UTF8* Tname);
   bool implements(CommonClass* cl);
-  bool instantiationOfArray(CommonClass* cl);
+  bool instantiationOfArray(ClassArray* cl);
   bool subclassOf(CommonClass* cl);
   bool isAssignableFrom(CommonClass* cl);
   JavaObject* getClassDelegatee();
@@ -267,8 +269,14 @@ public:
   CommonClass() {}
   
   static VirtualTable* VT;
-  static const int MaxDisplay;
   static JavaObject* jnjvmClassLoader;
+  virtual void destroyer(size_t sz);
+};
+
+class ClassPrimitive : public CommonClass {
+public:
+  static VirtualTable* VT;
+  ClassPrimitive(Jnjvm* vm, const UTF8* name);
 };
 
 class Class : public CommonClass {
