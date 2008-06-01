@@ -17,10 +17,6 @@
 #include "llvm/DerivedTypes.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/GenericValue.h"
-#include "llvm/PassManager.h"
-#include "llvm/Target/TargetData.h"
 #include "llvm/Value.h"
 
 #include "types.h"
@@ -33,21 +29,14 @@
 
 namespace jnjvm {
 
-class CacheNode;
 class Class;
-class JavaField;
 class JavaMethod;
 class JavaObject;
-class JavaString;
 class Jnjvm;
-class JnjvmModule;
-class JnjvmModuleProvider;
 class Reader;
-class Signdef;
 class UTF8;
 
-class Exception {
-public:
+struct Exception {
   uint32 startpc;
   uint32 endpc;
   uint32 handlerpc;
@@ -60,8 +49,7 @@ public:
   llvm::PHINode* handlerPHI;
 };
 
-class Opinfo {
-public:
+struct Opinfo {
   llvm::BasicBlock* newBlock;
   bool reqSuppl;
   llvm::BasicBlock* exceptionBlock; 
