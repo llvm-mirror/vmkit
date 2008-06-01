@@ -184,18 +184,20 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, createReassociatePass());          // Reassociate expressions
   //addPass(PM, createLoopRotatePass());
   addPass(PM, createLICMPass());                 // Hoist loop invariants
-  /*
-  addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
-  addPass(PM, createLoopIndexSplitPass());       // Index split loops.
-  addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
-  addPass(PM, createLoopDeletionPass());         // Delete dead loops
-  addPass(PM, createLoopUnrollPass());           // Unroll small loops*/
+  
+  //addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
+  //addPass(PM, createLoopIndexSplitPass());       // Index split loops.
+  //addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
+  //addPass(PM, createLoopDeletionPass());         // Delete dead loops
+  //addPass(PM, createLoopUnrollPass());           // Unroll small loops*/
   addPass(PM, createInstructionCombiningPass()); // Clean up after the unroller
   addPass(PM, createGVNPass());                  // Remove redundancies
   addPass(PM, createMemCpyOptPass());            // Remove memcpy / form memset
   addPass(PM, createSCCPPass());                 // Constant prop with SCCP
   
   addPass(PM, mvm::createLowerConstantCallsPass());
+  
+  addPass(PM, createGVNPass());                  // Remove redundancies
 
   // Run instcombine after redundancy elimination to exploit opportunities
   // opened up by them.
