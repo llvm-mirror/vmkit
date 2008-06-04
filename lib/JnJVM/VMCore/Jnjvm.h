@@ -192,8 +192,7 @@ public:
 
   void readParents(Class* cl, Reader& reader);
   void loadParents(Class* cl);
-  void readAttributs(Class* cl, Reader& reader,
-                     std::vector<Attribut*, gc_allocator<Attribut*> > & attr);
+  void readAttributs(Class* cl, Reader& reader, std::vector<Attribut*> & attr);
   void readFields(Class* cl, Reader& reader);
   void readMethods(Class* cl, Reader& reader);
   void readClass(Class* cl);
