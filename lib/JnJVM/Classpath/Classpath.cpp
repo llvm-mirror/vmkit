@@ -165,8 +165,14 @@ Java_java_lang_reflect_VMArray_createObjectArray
    jclass arrayType, jint arrayLength)
 {
   Jnjvm* vm = JavaThread::get()->isolate;
-  ClassArray* cl = (ClassArray*)NativeUtil::resolvedImplClass(arrayType, true);
-  return (jobject) ArrayObject::acons((sint32)arrayLength, cl, vm);
+  CommonClass* base = NativeUtil::resolvedImplClass(arrayType, true);
+  JavaObject* loader = base->classLoader;
+  const UTF8* name = base->name;
+  const UTF8* arrayName = AssessorDesc::constructArrayName(vm, 0, 1, name);
+  ClassArray* array = vm->constructArray(arrayName, loader);
+  ArrayObject* res = ArrayObject::acons(arrayLength, array, vm);
+
+  return (jobject) res;
 }
 
 
