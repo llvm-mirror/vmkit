@@ -513,6 +513,23 @@ void mvm::jit::initialise() {
       /*Linkage=*/GlobalValue::ExternalLinkage,
       /*Name=*/"llvm.memset.i32", module); // (external, no body)
   }
+    
+  /* Create atomic cas i32 */
+  {
+    std::vector<const Type*>FuncTy_4_args;
+    FuncTy_4_args.push_back(ptr32Type);
+    FuncTy_4_args.push_back(IntegerType::get(32));
+    FuncTy_4_args.push_back(IntegerType::get(32));
+    FunctionType* FuncTy_4 = FunctionType::get(
+      /*Result=*/Type::Int32Ty,
+      /*Params=*/FuncTy_4_args,
+      /*isVarArg=*/false);
+    llvm_atomic_lcs_i32 = Function::Create(
+      /*Type=*/FuncTy_4,
+      /*Linkage=*/GlobalValue::ExternalLinkage,
+      /*Name=*/"llvm.atomic.lcs.i32", module); // (external, no body)
+  }
+  
 
   
     // Constant declaration
@@ -564,6 +581,8 @@ void mvm::jit::initialise() {
 
 llvm::Function* mvm::jit::llvm_memcpy_i32;
 llvm::Function* mvm::jit::llvm_memset_i32;
+
+llvm::Function* mvm::jit::llvm_atomic_lcs_i32;
 
 llvm::Function* mvm::jit::exceptionEndCatch;
 llvm::Function* mvm::jit::exceptionBeginCatch;

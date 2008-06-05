@@ -193,6 +193,8 @@ public:
   // synchronize
   void beginSynchronize();
   void endSynchronize();
+  void monitorEnter(llvm::Value* obj);
+  void monitorExit(llvm::Value* obj);
 
   // fields invoke
   void getStaticField(uint16 index);

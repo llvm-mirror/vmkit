@@ -15,7 +15,7 @@
 %JavaClass = type { %VT, i32, %VT ,%JavaClass**, i32}
 
 ;;; The root of all Java Objects: a VT, a class and a lock.
-%JavaObject = type { %VT, %JavaClass*, i8* }
+%JavaObject = type { %VT, %JavaClass*, i32 }
 
 ;;; Types for Java arrays. A size of 0 means an undefined size.
 %JavaArray = type { %JavaObject, i32 }
@@ -53,8 +53,11 @@ declare i32 @arrayLength(%JavaObject*) readnone
 ;;; getVT - Get the VT of the object.
 declare %VT @getVT(%JavaObject*) readnone 
 
-;;; getClass - Get the class of an object
+;;; getClass - Get the class of an object.
 declare %JavaClass* @getClass(%JavaObject*) readnone 
+
+;;; getLock - Get the lock of an object.
+declare i32* @getLock(%JavaObject*)
 
 ;;; getVTFromClass - Get the VT of a class from its runtime representation.
 declare %VT @getVTFromClass(%JavaClass*) readnone 
@@ -112,6 +115,10 @@ declare void @JavaObjectAquire(%JavaObject*)
 ;;; block or method.
 declare void @JavaObjectRelease(%JavaObject*)
 
+;;; overflowThinLock - Change a thin lock to a fat lock when the thin lock
+;;; overflows
+declare void @overflowThinLock(%JavaObject*)
+
 ;;; isAssignableFrom - Returns if the objet's class implements the given class.
 declare i1 @instanceOf(%JavaObject*, %JavaClass*) readnone 
 
@@ -127,6 +134,10 @@ declare i1 @instantiationOfArray(%JavaClass*, %JavaClass*) readnone
 ;;; getClassDelegatee - Returns the java/lang/Class representation of the
 ;;; class.
 declare %JavaObject* @getClassDelegatee(%JavaClass*) readnone 
+
+;;; getThreadID - Returns the thread ID of the current thread. Used for thin
+;;; locks.
+declare i32 @getThreadID() readnone
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Exception methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

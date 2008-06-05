@@ -276,44 +276,186 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   return llvmFunction;
 }
 
+void JavaJIT::monitorEnter(Value* obj) {
+  std::vector<Value*> gep;
+  gep.push_back(mvm::jit::constantZero);
+  gep.push_back(JnjvmModule::JavaObjectLockOffsetConstant);
+  Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
+                                             currentBlock);
+  Value* threadId = CallInst::Create(JnjvmModule::GetThreadIDFunction, "",
+                                     currentBlock);
+  std::vector<Value*> atomicArgs;
+  atomicArgs.push_back(lockPtr);
+  atomicArgs.push_back(mvm::jit::constantZero);
+  atomicArgs.push_back(threadId);
+
+  // Do the atomic compare and swap.
+  Value* atomic = CallInst::Create(mvm::jit::llvm_atomic_lcs_i32,
+                                   atomicArgs.begin(), atomicArgs.end(), "",
+                                   currentBlock);
+  
+  Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, atomic, mvm::jit::constantZero, 
+                            "", currentBlock);
+  
+  BasicBlock* OK = createBasicBlock("synchronize passed");
+  BasicBlock* NotOK = createBasicBlock("synchronize did not pass");
+  BasicBlock* FatLockBB = createBasicBlock("fat lock");
+  BasicBlock* ThinLockBB = createBasicBlock("thin lock");
+
+  BranchInst::Create(OK, NotOK, cmp, currentBlock);
+
+  currentBlock = NotOK;
+  
+  // The compare and swap did not pass, look if it's a thin lock
+  Value* thinMask = ConstantInt::get(Type::Int32Ty, 0x80000000);
+  Value* isThin = BinaryOperator::createAnd(atomic, thinMask, "",
+                                            currentBlock);
+  cmp = new ICmpInst(ICmpInst::ICMP_EQ, isThin, mvm::jit::constantZero, "",
+                     currentBlock);
+  
+  BranchInst::Create(ThinLockBB, FatLockBB, cmp, currentBlock);
+
+  // It's a thin lock. Look if we're the owner of this lock.
+  currentBlock = ThinLockBB;
+  Value* idMask = ConstantInt::get(Type::Int32Ty, 0x7FFFFF00);
+  Value* cptMask = ConstantInt::get(Type::Int32Ty, 0xFF);
+  Value* IdInLock = BinaryOperator::createAnd(atomic, idMask, "", currentBlock);
+  Value* owner = new ICmpInst(ICmpInst::ICMP_EQ, threadId, IdInLock, "",
+                              currentBlock);
+
+  BasicBlock* OwnerBB = createBasicBlock("owner thread");
+
+  BranchInst::Create(OwnerBB, FatLockBB, owner, currentBlock);
+  currentBlock = OwnerBB;
+
+  // OK, we are the owner, now check if the counter will overflow.
+  Value* count = BinaryOperator::createAnd(atomic, cptMask, "", currentBlock);
+  cmp = new ICmpInst(ICmpInst::ICMP_ULT, count, cptMask, "", currentBlock);
+
+  BasicBlock* IncCounterBB = createBasicBlock("Increment counter");
+  BasicBlock* OverflowCounterBB = createBasicBlock("Overflow counter");
+
+  BranchInst::Create(IncCounterBB, OverflowCounterBB, cmp, currentBlock);
+  currentBlock = IncCounterBB;
+  
+  // The counter will not overflow, increment it.
+  Value* Add = BinaryOperator::createAdd(mvm::jit::constantOne, atomic, "",
+                                         currentBlock);
+  new StoreInst(Add, lockPtr, "", currentBlock);
+  BranchInst::Create(OK, currentBlock);
+
+  currentBlock = OverflowCounterBB;
+
+  // The counter will overflow, call this function to create a new lock,
+  // lock it 0x101 times, and pass.
+  CallInst::Create(JnjvmModule::OverflowThinLockFunction, obj, "",
+                   currentBlock);
+  BranchInst::Create(OK, currentBlock);
+  
+  currentBlock = FatLockBB;
+
+  // Either it's a fat lock or there is contention.
+  CallInst::Create(JnjvmModule::AquireObjectFunction, obj, "", currentBlock);
+  BranchInst::Create(OK, currentBlock);
+  currentBlock = OK;
+}
+
+void JavaJIT::monitorExit(Value* obj) {
+  std::vector<Value*> gep;
+  gep.push_back(mvm::jit::constantZero);
+  gep.push_back(JnjvmModule::JavaObjectLockOffsetConstant);
+  Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
+                                             currentBlock);
+  Value* lock = new LoadInst(lockPtr, "", currentBlock);
+  Value* threadId = CallInst::Create(JnjvmModule::GetThreadIDFunction, "",
+                                     currentBlock);
+  
+  Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, lock, threadId, "",
+                            currentBlock);
+  
+  
+  BasicBlock* EndUnlock = createBasicBlock("end unlock");
+  BasicBlock* LockedOnceBB = createBasicBlock("desynchronize thin lock");
+  BasicBlock* NotLockedOnceBB = 
+    createBasicBlock("simple desynchronize did not pass");
+  BasicBlock* FatLockBB = createBasicBlock("fat lock");
+  BasicBlock* ThinLockBB = createBasicBlock("thin lock");
+  
+  BranchInst::Create(LockedOnceBB, NotLockedOnceBB, cmp, currentBlock);
+  
+  // Locked once, set zero
+  currentBlock = LockedOnceBB;
+  new StoreInst(mvm::jit::constantZero, lockPtr, currentBlock);
+  BranchInst::Create(EndUnlock, currentBlock);
+
+  currentBlock = NotLockedOnceBB;
+  // Look if the lock is thin.
+  Value* thinMask = ConstantInt::get(Type::Int32Ty, 0x80000000);
+  Value* isThin = BinaryOperator::createAnd(lock, thinMask, "",
+                                            currentBlock);
+  cmp = new ICmpInst(ICmpInst::ICMP_EQ, isThin, mvm::jit::constantZero, "",
+                     currentBlock);
+  
+  BranchInst::Create(ThinLockBB, FatLockBB, cmp, currentBlock);
+  
+  currentBlock = ThinLockBB;
+
+  // Decrement the counter.
+  Value* Sub = BinaryOperator::createSub(lock, mvm::jit::constantOne, "",
+                                         currentBlock);
+  new StoreInst(Sub, lockPtr, currentBlock);
+  BranchInst::Create(EndUnlock, currentBlock);
+
+  currentBlock = FatLockBB;
+
+  // Either it's a fat lock or there is contention.
+  CallInst::Create(JnjvmModule::ReleaseObjectFunction, obj, "", currentBlock);
+  BranchInst::Create(EndUnlock, currentBlock);
+  currentBlock = EndUnlock;
+}
+
 void JavaJIT::beginSynchronize() {
-  std::vector<Value*> argsSync;
+  Value* obj = 0;
   if (isVirtual(compilingMethod->access)) {
-    argsSync.push_back(llvmFunction->arg_begin());
+    obj = llvmFunction->arg_begin();
   } else {
     LLVMClassInfo* LCI = 
       (LLVMClassInfo*)module->getClassInfo(compilingClass);
-    Value* arg = LCI->getStaticVar(this);
-    argsSync.push_back(arg);
+    obj = LCI->getStaticVar(this);
   }
-#ifdef SERVICE_VM
-  if (ServiceDomain::isLockableDomain(compilingClass->isolate))
+#ifndef SERVICE_VM
+  monitorEnter(obj);
+#else
+  if (ServiceDomain::isLockableDomain(compilingClass->isolate)) {
     llvm::CallInst::Create(JnjvmModule::AquireObjectInSharedDomainFunction,
-                           argsSync.begin(), argsSync.end(), "", currentBlock);
-  else
+                           obj, "", currentBlock);
+  } else {
+    llvm::CallInst::Create(JnjvmModule::AquireObjectFunction,
+                           obj, "", currentBlock);
+  }
 #endif
-  llvm::CallInst::Create(JnjvmModule::AquireObjectFunction, argsSync.begin(),
-                         argsSync.end(), "", currentBlock);
 }
 
 void JavaJIT::endSynchronize() {
-  std::vector<Value*> argsSync;
+  Value* obj = 0;
   if (isVirtual(compilingMethod->access)) {
-    argsSync.push_back(llvmFunction->arg_begin());
+    obj = llvmFunction->arg_begin();
   } else {
     LLVMClassInfo* LCI = 
       (LLVMClassInfo*)module->getClassInfo(compilingClass);
-    Value* arg = LCI->getStaticVar(this);
-    argsSync.push_back(arg);
+    obj = LCI->getStaticVar(this);
   }
-#ifdef SERVICE_VM
-  if (ServiceDomain::isLockableDomain(compilingClass->isolate))
+#ifndef SERVICE_VM
+  monitorExit(obj);
+#else
+  if (ServiceDomain::isLockableDomain(compilingClass->isolate)) {
     llvm::CallInst::Create(JnjvmModule::ReleaseObjectInSharedDomainFunction,
                            argsSync.begin(), argsSync.end(), "", currentBlock);
-  else
+  } else {
+    llvm::CallInst::Create(JnjvmModule::ReleaseObjectFunction, argsSync.begin(),
+                           argsSync.end(), "", currentBlock);    
+  }
 #endif
-  llvm::CallInst::Create(JnjvmModule::ReleaseObjectFunction, argsSync.begin(),
-                         argsSync.end(), "", currentBlock);    
 }
 
 

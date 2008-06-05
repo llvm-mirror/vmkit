@@ -93,6 +93,7 @@ extern llvm::Function* func_llvm_tanh_f64;
 
 extern llvm::Function* llvm_memcpy_i32;
 extern llvm::Function* llvm_memset_i32;
+extern llvm::Function* llvm_atomic_lcs_i32;
 
 extern llvm::ExecutionEngine* executionEngine;
 

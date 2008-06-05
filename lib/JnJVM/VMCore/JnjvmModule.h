@@ -326,6 +326,11 @@ public:
 #endif
   static llvm::Function* GetVTFromClassFunction;
   static llvm::Function* GetObjectSizeFromClassFunction;
+
+  static llvm::Function* GetLockFunction;
+  static llvm::Function* GetThreadIDFunction;
+  static llvm::Function* OverflowThinLockFunction;
+
   static llvm::ConstantInt* OffsetObjectSizeInClassConstant;
   static llvm::ConstantInt* OffsetVTInClassConstant;
   static llvm::ConstantInt* OffsetDepthInClassConstant;

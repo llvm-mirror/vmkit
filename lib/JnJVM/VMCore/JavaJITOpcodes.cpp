@@ -2029,11 +2029,15 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* obj = pop();
 #ifdef SERVICE_VM
         if (ServiceDomain::isLockableDomain(compilingClass->isolate))
-        invoke(JnjvmModule::AquireObjectInSharedDomainFunction, obj, "",
-               currentBlock); 
+          invoke(JnjvmModule::AquireObjectInSharedDomainFunction, obj, "",
+                 currentBlock); 
         else
+          invoke(JnjvmModule::AquireObjectFunction, obj, "",
+                 currentBlock); 
+#else
+        JITVerifyNull(obj);
+        monitorEnter(obj);
 #endif
-        invoke(JnjvmModule::AquireObjectFunction, obj, "", currentBlock); 
         break;
       }
 
@@ -2041,11 +2045,15 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* obj = pop();
 #ifdef SERVICE_VM
         if (ServiceDomain::isLockableDomain(compilingClass->isolate))
-        invoke(JnjvmModule::ReleaseObjectInSharedDomainFunction, obj, "",
-               currentBlock); 
+          invoke(JnjvmModule::ReleaseObjectInSharedDomainFunction, obj, "",
+                 currentBlock); 
         else
+          invoke(JnjvmModule::ReleaseObjectFunction, obj, "",
+                 currentBlock); 
+#else
+        JITVerifyNull(obj);
+        monitorExit(obj);
 #endif
-        invoke(JnjvmModule::ReleaseObjectFunction, obj, "", currentBlock); 
         break;
       }
 

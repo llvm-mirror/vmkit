@@ -286,7 +286,7 @@ extern "C" void JavaObjectAquire(JavaObject* obj) {
     vm->serviceError(vm, "I'm locking an object I don't own");
   }
 #endif
-  LockObj::myLock(obj)->aquire();
+  obj->acquire();
 }
 
 
@@ -298,17 +298,18 @@ extern "C" void JavaObjectRelease(JavaObject* obj) {
     vm->serviceError(vm, "I'm unlocking an object I don't own");
   }
 #endif
-  obj->lockObj->release();
+  obj->release();
 }
 
 #ifdef SERVICE_VM
 extern "C" void JavaObjectAquireInSharedDomain(JavaObject* obj) {
-  LockObj::myLock(obj)->aquire();
+  verifyNull(obj);
+  obj->acquire();
 }
 
 extern "C" void JavaObjectReleaseInSharedDomain(JavaObject* obj) {
   verifyNull(obj);
-  obj->lockObj->release();
+  obj->release();
 }
 #endif
 
@@ -346,4 +347,12 @@ extern "C" bool JavaThreadCompareException(Class* cl) {
 
 extern "C" void JavaThreadClearException() {
   return JavaThread::clearException();
+}
+
+extern "C" uint32 getThreadID() {
+  return JavaThread::get()->threadID;
+}
+
+extern "C" void overflowThinLock(JavaObject* obj) {
+  obj->overflowThinlock();
 }

@@ -450,6 +450,8 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
   void* baseSP = mvm::Thread::get()->baseSP;
+  isolate->bootstrapThread->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
+  
 #ifdef MULTIPLE_GC
   isolate->bootstrapThread->GC = isolate->GC;
   isolate->GC->inject_my_thread(baseSP);
@@ -508,6 +510,7 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
   void* baseSP = mvm::Thread::get()->baseSP;
+  isolate->bootstrapThread->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
 #ifdef MULTIPLE_GC
   isolate->bootstrapThread->GC = isolate->GC;
 #endif 

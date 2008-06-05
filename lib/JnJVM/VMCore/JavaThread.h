@@ -38,9 +38,8 @@ public:
   mvm::Cond* varcond;
   JavaObject* pendingException;
   void* internalPendingException;
-  unsigned int self;
-  unsigned int interruptFlag;
-  unsigned int state;
+  uint32 interruptFlag;
+  uint32 state;
   std::vector<jmp_buf*> sjlj_buffers;
 
   static const unsigned int StateRunning;
@@ -58,7 +57,6 @@ public:
     this->varcond = mvm::Cond::allocCond();
     this->interruptFlag = 0;
     this->state = StateRunning;
-    this->self = mvm::Thread::self();
     this->pendingException = 0;
   }
 

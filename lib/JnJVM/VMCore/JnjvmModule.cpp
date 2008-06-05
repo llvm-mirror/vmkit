@@ -111,7 +111,7 @@ llvm::Function* JnjvmModule::GetVTFromClassFunction = 0;
 llvm::Function* JnjvmModule::GetObjectSizeFromClassFunction = 0;
 
 #ifdef MULTIPLE_GC
-llvm::Function* JnjvmModule::FetCollectorFunction = 0;
+llvm::Function* JnjvmModule::GetCollectorFunction = 0;
 #endif
 
 #ifdef SERVICE_VM
@@ -120,6 +120,10 @@ llvm::Function* JnjvmModule::ReleaseObjectInSharedDomainFunction = 0;
 llvm::Function* JnjvmModule::ServiceCallStartFunction = 0;
 llvm::Function* JnjvmModule::ServiceCallStopFunction = 0;
 #endif
+
+llvm::Function* JnjvmModule::GetThreadIDFunction = 0;
+llvm::Function* JnjvmModule::GetLockFunction = 0;
+llvm::Function* JnjvmModule::OverflowThinLockFunction = 0;
 
 
 
@@ -967,6 +971,7 @@ void JnjvmModule::initialise() {
   GetClassInDisplayFunction = module->getFunction("getClassInDisplay");
   AquireObjectFunction = module->getFunction("JavaObjectAquire");
   ReleaseObjectFunction = module->getFunction("JavaObjectRelease");
+  OverflowThinLockFunction = module->getFunction("overflowThinLock");
 
   FieldLookupFunction = module->getFunction("fieldLookup");
   
@@ -1023,7 +1028,9 @@ void JnjvmModule::initialise() {
 #ifdef MULTIPLE_GC
   GetCollectorFunction = module->getFunction("getCollector");
 #endif
-
+  
+  GetThreadIDFunction = module->getFunction("getThreadID");
+  GetLockFunction = module->getFunction("getLock");
   
   UTF8NullConstant = Constant::getNullValue(JavaArrayUInt16Type); 
   JavaClassNullConstant = Constant::getNullValue(JavaClassType); 

@@ -46,7 +46,7 @@ int main(int argc, char **argv, char **envp) {
   jit::initialise();
   Object::initialise();
   Thread::initialise();
-  Collector::initialise(Object::markAndTraceRoots, &base);
+  Collector::initialise(0, &base);
   
   CommandLine cl;
   cl.start();

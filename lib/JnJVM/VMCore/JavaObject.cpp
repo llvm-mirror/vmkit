@@ -22,8 +22,6 @@
 
 using namespace jnjvm;
 
-mvm::Lock* JavaObject::globalLock = 0;
-
 void JavaCond::notify() {
   for (std::vector<JavaThread*>::iterator i = threads.begin(), 
             e = threads.end(); i!= e;) {
@@ -75,22 +73,95 @@ void LockObj::print(mvm::PrintBuffer* buf) const {
 }
 
 LockObj* LockObj::allocate() {
+#ifdef USE_GC_BOEHM
+  LockObj* res = new LockObj();
+#else
   LockObj* res = vm_new(JavaThread::get()->isolate, LockObj)();
+#endif
   res->lock = mvm::Lock::allocRecursive();
   res->varcond = 0;
   return res;
 }
 
-void LockObj::aquire() {
-  lock->lock();
+bool JavaObject::owner() {
+  uint32 id = mvm::Thread::get()->threadID;
+  if (id == lock) return true;
+  if ((lock & 0x7FFFFF00) == id) return true;
+  if (lock & 0x80000000) {
+    LockObj* obj = (LockObj*)(lock << 1);
+    return obj->owner();
+  }
+  return false;
 }
 
-void LockObj::release() {
-  lock->unlock();
+void JavaObject::overflowThinlock() {
+  LockObj* obj = LockObj::allocate();
+  mvm::LockRecursive::my_lock_all(obj->lock, 257);
+  lock = ((uint32)obj >> 1) | 0x80000000;
 }
 
-bool LockObj::owner() {
-  return mvm::Lock::selfOwner(lock);
+void JavaObject::release() {
+  uint32 id = mvm::Thread::get()->threadID;
+  if (lock == id) {
+    lock = 0;
+  } else if (lock & 0x80000000) {
+    LockObj* obj = (LockObj*)(lock << 1);
+    obj->release();
+  } else {
+    lock--;
+  }
+}
+
+void JavaObject::acquire() {
+  uint32 id = mvm::Thread::get()->threadID;
+  uint32 val = __sync_val_compare_and_swap((uint32*)&lock, 0, id);
+  if (val != 0) {
+    //fat!
+    if (!(val & 0x80000000)) {
+      if ((val & 0x7FFFFF00) == id) {
+        if ((val & 0xFF) != 0xFF) {
+          lock++;
+        } else {
+          overflowThinlock();
+        }
+      } else {
+        LockObj* obj = LockObj::allocate();
+        uint32 val = ((uint32)obj >> 1) | 0x80000000;
+loop:
+        uint32 count = 0;
+        while (lock) {
+          if (lock & 0x80000000) {
+#ifdef USE_GC_BOEHM
+            delete obj;
+#endif
+            goto end;
+          }
+          else mvm::Thread::yield(&count);
+        }
+        
+        uint32 test = __sync_val_compare_and_swap((uint32*)&lock, 0, val);
+        if (test) goto loop;
+        obj->acquire();
+      }
+    } else {
+end:
+      LockObj* obj = (LockObj*)(lock << 1);
+      obj->acquire();
+    }
+  }
+}
+
+LockObj* JavaObject::changeToFatlock() {
+  if (!(lock & 0x80000000)) {
+    LockObj* obj = LockObj::allocate();
+    uint32 val = (((uint32) obj) >> 1) | 0x80000000;
+    uint32 count = lock & 0xFF;
+    mvm::LockRecursive::my_lock_all(obj->lock, count + 1);
+    lock = val;
+    return obj;
+  } else {
+    return (LockObj*)(lock << 1);
+  }
 }
 
 void JavaObject::print(mvm::PrintBuffer* buf) const {
@@ -99,23 +170,10 @@ void JavaObject::print(mvm::PrintBuffer* buf) const {
   buf->write(">");
 }
 
-LockObj* LockObj::myLock(JavaObject* obj) {
-  verifyNull(obj);
-  if (obj->lockObj == 0) {
-    JavaObject::globalLock->lock();
-    if (obj->lockObj == 0) {
-      obj->lockObj = LockObj::allocate();
-    }
-    JavaObject::globalLock->unlock();
-  }
-  return obj->lockObj;
-}
-
 void JavaObject::waitIntern(struct timeval* info, bool timed) {
-  LockObj * l = LockObj::myLock(this);
-  bool owner = l->owner();
 
-  if (owner) {
+  if (owner()) {
+    LockObj * l = changeToFatlock();
     JavaThread* thread = JavaThread::get();
     mvm::Lock* mutexThread = thread->lock;
     mvm::Cond* varcondThread = thread->varcond;
@@ -168,8 +226,8 @@ void JavaObject::timedWait(struct timeval& info) {
 }
 
 void JavaObject::notify() {
-  LockObj* l = LockObj::myLock(this);
-  if (l->owner()) {
+  if (owner()) {
+    LockObj * l = changeToFatlock();
     l->getCond()->notify();
   } else {
     JavaThread::get()->isolate->illegalMonitorStateException(this);
@@ -177,8 +235,8 @@ void JavaObject::notify() {
 }
 
 void JavaObject::notifyAll() {
-  LockObj* l = LockObj::myLock(this);
-  if (l->owner()) {
+  if (owner()) {
+    LockObj * l = changeToFatlock();
     l->getCond()->notifyAll();
   } else {
     JavaThread::get()->isolate->illegalMonitorStateException(this);
@@ -189,3 +247,9 @@ void LockObj::destroyer(size_t sz) {
   if (varcond) delete varcond;
   delete lock;
 }
+
+#ifdef USE_GC_BOEHM
+void JavaObject::destroyer(size_t sz) {
+  if (lockObj()) delete lockObj();
+}
+#endif

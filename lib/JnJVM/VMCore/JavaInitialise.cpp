@@ -78,8 +78,7 @@ static void initialiseVT() {
 }
 
 static void initialiseStatics() {
-  JavaObject::globalLock = mvm::Lock::allocNormal();
-
+  
   Jnjvm* vm = JavaIsolate::bootstrapVM = JavaIsolate::allocateBootstrap();
   
   // Array initialization
@@ -192,7 +191,8 @@ static void initialiseStatics() {
 extern "C" void ClasspathBoot();
 
 void handler(int val, siginfo_t* info, void* addr) {
-  printf("Crash in JnJVM at %p\n", addr);
+  printf("[%d] Crash in JnJVM at %p\n", mvm::Thread::self(), addr);
+  JavaJIT::printBacktrace();
   assert(0);
 }
 

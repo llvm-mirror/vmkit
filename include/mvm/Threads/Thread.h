@@ -10,6 +10,8 @@
 #ifndef MVM_THREAD_H
 #define MVM_THREAD_H
 
+#include "types.h"
+
 #include "MvmGC.h"
 #include "mvm/Threads/Key.h"
 
@@ -31,6 +33,7 @@ public:
   static mvm::Key<Thread>* threadKey;
   Collector* GC;
   void* baseSP;
+  uint32 threadID;
   static Thread* get() {
     return (Thread*)Thread::threadKey->get();
   }

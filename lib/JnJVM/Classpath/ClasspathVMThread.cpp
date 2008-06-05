@@ -62,6 +62,8 @@ static void start(arg_thread_t* arg) {
   JavaIsolate* isolate = (JavaIsolate*)(intern->isolate);
   ThreadSystem* ts = isolate->threadSystem;
   bool isDaemon = ClasspathThread::daemon->getVirtualInt8Field(thread);
+  intern->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
+
 
   if (!isDaemon) {
     ts->nonDaemonLock->lock();

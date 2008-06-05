@@ -31,10 +31,11 @@ jclass clazz,
                                                         jobject _src) {
   
   JavaObject* src = (JavaObject*)_src;
-  uint64 size = src->objectSize() + 4; // + VT
+  uint64 size = src->objectSize() + sizeof(void*); // + VT
   JavaObject* res = (JavaObject*)
     JavaThread::get()->isolate->allocateObject(size, src->getVirtualTable());
   memcpy(res, src, size);
+  res->lock = 0;
   return (jobject)res;
 } 
 

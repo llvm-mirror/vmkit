@@ -59,9 +59,11 @@ public:
 /// LockObj - This class represents a Java monitor.
 ///
 class LockObj : public mvm::Object {
-public:
 
-  static VirtualTable* VT;
+  friend class JavaObject;
+
+private:
+
 
   /// lock - The internal lock of this object lock.
   ///
@@ -80,16 +82,23 @@ public:
   ///
   static LockObj* myLock(JavaObject* obj);
 
-  /// aquire - Acquires the lock.
+  /// acquire - Acquires the lock.
   ///
-  void aquire();
+  void acquire() {
+    lock->lock();
+  }
 
   /// release - Releases the lock.
   ///
-  void release();
-
-  /// owner - Returns true if the curren thread is the owner of this lock.
-  bool owner();
+  void release() {
+    lock->unlock();
+  }
+  
+  /// owner - Returns if the current thread owns this lock.
+  ///
+  bool owner() {
+    return mvm::Lock::selfOwner(lock);
+  }
   
   /// getCond - Returns the conditation variable of this lock, allocating it
   /// if non-existant.
@@ -98,7 +107,9 @@ public:
     if (!varcond) varcond = new JavaCond();
     return varcond;
   }
-  
+
+public:
+  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
   virtual void destroyer(size_t sz);
@@ -114,6 +125,7 @@ private:
   ///
   void waitIntern(struct timeval *info, bool timed);
 
+  
 public:
   static VirtualTable* VT;
 
@@ -121,14 +133,10 @@ public:
   ///
   CommonClass* classOf;
 
-  /// lockObj - The monitor of this object. Most of the time null.
+  /// lock - The monitor of this object. Most of the time null.
   ///
-  LockObj* lockObj;
-  
-  /// globalLock - The global lock to allocate monitors.
-  ///
-  static mvm::Lock* globalLock;
-   
+  uint32 lock;
+
   /// wait - Java wait. Makes the current thread waiting on a monitor.
   ///
   void wait();
@@ -152,7 +160,7 @@ public:
   ///
   void initialise(CommonClass* cl) {
     this->classOf = cl; 
-    this->lockObj = 0;
+    this->lock = 0;
   }
 
   /// instanceOfString - Is this object's class of type the given name?
@@ -169,6 +177,24 @@ public:
     else return this->classOf->isAssignableFrom(cl);
   }
 
+  /// acquire - Acquire the lock on this object.
+  void acquire();
+
+  /// release - Release the lock on this object
+  void release();
+
+  /// changeToFatlock - Change the lock of this object to a fat lock. The lock
+  /// may be in thin lock or in fat lock.
+  LockObj* changeToFatlock();
+
+  /// overflowThinlock -Change the lock of this object to a fat lock because
+  /// we have reached 0xFF locks.
+  void overflowThinlock();
+  
+  /// owner - Returns true if the curren thread is the owner of this object's
+  /// lock.
+  bool owner();
+
 #ifdef SIGSEGV_THROW_NULL
   #define verifyNull(obj) {}
 #else
@@ -178,7 +204,18 @@ public:
   
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
-  
+
+#ifdef USE_GC_BOEHM
+  virtual void destroyer(size_t sz);
+#endif
+
+  LockObj* lockObj() {
+    if (lock & 0x80000000) {
+      return (LockObj*)(lock << 1);
+    } else {
+      return 0;
+    }
+  }
 };
 
 
