@@ -74,12 +74,7 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
 ArrayObject* recGetStackTrace(int** stack, uint32 first, uint32 rec) {
   Jnjvm* vm = JavaThread::get()->isolate;
   if (stack[first] != 0) {
-#ifdef MULTIPLE_GC
-    int *begIp = (int*)mvm::Thread::get()->GC->begOf(stack[first]);
-#else
-    int *begIp = (int*)Collector::begOf(stack[first]);
-#endif
-    JavaMethod* meth = JavaJIT::IPToJavaMethod(begIp);
+    JavaMethod* meth = JavaJIT::IPToJavaMethod(stack[first]);
     if (meth) {
       ArrayObject* res = recGetStackTrace(stack, first + 1, rec + 1);
       res->elements[rec] = consStackElement(meth, stack[first]);
