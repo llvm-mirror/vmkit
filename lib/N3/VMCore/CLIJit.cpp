@@ -2004,7 +2004,7 @@ static void printArgs(std::vector<llvm::Value*> args, BasicBlock* insertAt) {
     } else if (type == Type::DoubleTy) {
       CallInst::Create(mvm::jit::printDoubleLLVM, arg, "", insertAt);
     } else {
-      CallInst::Create(mvm::jit::printObjectLLVM, new BitCastInst(arg, VMObject::llvmType, "", insertAt), "", insertAt);
+      CallInst::Create(mvm::jit::printObjectLLVM, new BitCastInst(arg, mvm::jit::ptrType, "", insertAt), "", insertAt);
     }
   }
 
