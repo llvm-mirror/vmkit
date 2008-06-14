@@ -855,6 +855,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
   }
   
   BasicBlock* realEndExceptionBlock = endExceptionBlock;
+  BasicBlock* endExceptionBlockCatcher = endExceptionBlock;
   currentExceptionBlock = endExceptionBlock;
   if (sync) {
     BasicBlock* synchronizeExceptionBlock = 
@@ -862,6 +863,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     BasicBlock* trySynchronizeExceptionBlock = 
           createBasicBlock("trySynchronizeExceptionBlock");
     realEndExceptionBlock = synchronizeExceptionBlock;
+    endExceptionBlockCatcher = trySynchronizeExceptionBlock;
     std::vector<Value*> argsSync;
     if (isVirtual(compilingMethod->access)) {
       argsSync.push_back(llvmFunction->arg_begin());
@@ -939,7 +941,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     // We can do this because readExceptionTable is the first function to be
     // called after creation of Opinfos
     for (uint16 i = ex->startpc; i < ex->endpc; ++i) {
-      if (opcodeInfos[i].exceptionBlock == realEndExceptionBlock) {
+      if (opcodeInfos[i].exceptionBlock == endExceptionBlockCatcher) {
         opcodeInfos[i].exceptionBlock = ex->test;
       }
     }
