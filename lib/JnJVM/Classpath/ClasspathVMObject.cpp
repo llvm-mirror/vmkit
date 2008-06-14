@@ -31,7 +31,14 @@ jclass clazz,
                                                         jobject _src) {
   
   JavaObject* src = (JavaObject*)_src;
-  uint64 size = src->objectSize() + sizeof(void*); // + VT
+  CommonClass* cl = src->classOf;
+  uint64 size = 0;
+  if (cl->isArray) {
+    size = sizeof(JavaArray) + ((JavaArray*)src)->size * 
+            ((ClassArray*)cl)->baseClass()->virtualSize;
+  } else {
+    size = cl->virtualSize;
+  }
   JavaObject* res = (JavaObject*)
     JavaThread::get()->isolate->allocateObject(size, src->getVirtualTable());
   memcpy(res, src, size);
