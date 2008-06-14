@@ -75,6 +75,7 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
   
   if (bid != I_PARG && bid != I_PARD && bid != I_REF && bid != I_TAB) {
     res->classType = new ClassPrimitive(vm, res->UTF8Name);
+    res->classType->virtualSize = nb;
   } else {
     res->classType = 0;
   }
