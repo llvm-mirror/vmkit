@@ -63,7 +63,7 @@ jclass clazz,
     return (jclass)(cl->getClassDelegatee());
   } else {
     vm->error(Jnjvm::ClassNotFoundException, "unable to load %s",
-              ((JavaString*)str)->strToUTF8(vm)->printString());
+              ((JavaString*)str)->strToAsciiz());
     return 0;
   }
 }
