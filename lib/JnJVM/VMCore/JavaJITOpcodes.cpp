@@ -1007,6 +1007,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IUSHR : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
+        Value* mask = ConstantInt::get(Type::Int32Ty, 0x1F);
+        val2 = BinaryOperator::CreateAnd(val2, mask, "", currentBlock);
         push(BinaryOperator::createLShr(val1, val2, "", currentBlock),
              AssessorDesc::dInt);
         break;
@@ -1014,6 +1016,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case LUSHR : {
         Value* val2 = new ZExtInst(pop(), Type::Int64Ty, "", currentBlock);
+        Value* mask = ConstantInt::get(Type::Int64Ty, 0x3F);
+        val2 = BinaryOperator::CreateAnd(val2, mask, "", currentBlock);
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
         push(BinaryOperator::createLShr(val1, val2, "", currentBlock),
