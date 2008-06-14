@@ -227,6 +227,7 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
     memcpy((void*)((unsigned)CLASS::VT + VT_SIZE), \
            (void*)((unsigned)res + VT_SIZE), size);
 
+      COPY(JavaObject)
       COPY(ArrayUInt8)
       COPY(ArraySInt8)
       COPY(ArrayUInt16)
