@@ -93,19 +93,13 @@ JNIEnv *env,
 #endif
 jobject vmthrow, jobject throwable) {
   int** stack = (int**)Classpath::vmDataVMThrowable->getVirtualObjectField((JavaObject*)vmthrow);
-  CommonClass* cl = ((JavaObject*)throwable)->classOf;
   uint32 first = 0;
   sint32 i = 0;
   
   while (stack[i] != 0) {
-#ifdef MULTIPLE_GC
-    int *begIp = (int*)mvm::Thread::get()->GC->begOf((void*)stack[i++]);
-#else
-    int *begIp = (int*)Collector::begOf((void*)stack[i++]);
-#endif
-    JavaMethod* meth = JavaJIT::IPToJavaMethod(begIp);
-    if (meth && meth->classDef == cl) {
-      first = i;
+    JavaMethod* meth = JavaJIT::IPToJavaMethod(stack[i++]);
+    if (meth && !meth->classDef->subclassOf(Classpath::newThrowable)) {
+      first = i - 1;
       break;
     }
   }
