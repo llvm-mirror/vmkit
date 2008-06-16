@@ -526,7 +526,7 @@ jobject Field, jobject obj, jchar val) {
   switch (ass->numId) {
     case CHAR_ID :
       return isStatic(field->access) ? 
-        field->setStaticInt16Field((double)val) :
+        field->setStaticInt16Field((uint16)val) :
         field->setVirtualDoubleField((JavaObject*)obj, (uint16)val);
     case INT_ID :
       return isStatic(field->access) ? 
