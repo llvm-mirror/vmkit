@@ -8,6 +8,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <stdarg.h>
+
 #include "mvm/JIT.h"
 #include "mvm/Threads/Thread.h"
 
