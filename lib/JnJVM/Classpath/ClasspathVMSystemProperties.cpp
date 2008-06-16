@@ -37,7 +37,7 @@ static void setUnameProp(Jnjvm* vm, JavaObject* prop) {
   uname(&infos);
   setProperty(vm, prop, "os.name", infos.sysname);
   setProperty(vm, prop, "os.arch", infos.machine);
-  setProperty(vm, prop, "os.version", infos.version);
+  setProperty(vm, prop, "os.version", infos.release);
   if (!strcmp(infos.machine, "ppc")) {
     setProperty(vm, prop, "gnu.cpu.endian","big");
   } else {
