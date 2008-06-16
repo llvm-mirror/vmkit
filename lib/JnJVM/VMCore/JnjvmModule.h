@@ -376,6 +376,8 @@ public:
 #ifdef SERVICE_VM
   LLVMServiceInfo* getServiceInfo(ServiceDomain*);
 #endif
+  
+  void removeClass(CommonClass*);
 
   explicit JnjvmModule(const std::string &ModuleID);
   void initialise();

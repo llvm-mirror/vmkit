@@ -15,6 +15,7 @@
 #include "mvm/JIT.h"
 
 #include "JavaJIT.h"
+#include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 #include "JnjvmModule.h"
@@ -177,8 +178,12 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
   if (meths == cl->virtualMethods.end()) {
     uint64 size = cl->virtualTableSize;
     VirtualTable* VT = (VirtualTable*)malloc(size * sizeof(void*));
+    if (!VT) JavaThread::get()->isolate->outOfMemoryError(size * sizeof(void*));
     if (cl->super) {
       Class* super = (Class*)cl->super;
+      assert(cl->virtualTableSize >= cl->super->virtualTableSize &&
+        "Super VT bigger than own VT");
+      assert(super->virtualVT && "Super does not have a VT!");
       memcpy(VT, super->virtualVT, cl->super->virtualTableSize * sizeof(void*));
     } else {
       memcpy(VT, JavaObject::VT, VT_SIZE);
@@ -825,6 +830,38 @@ void JnjvmModule::resolveStaticClass(Class* cl) {
   llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   LCI->getStaticType();
+}
+
+void JnjvmModule::removeClass(CommonClass* cl) {
+  // Lock here because we may be called by a finalizer
+  // (even if currently single threaded).
+  llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
+  classMap.erase(cl);
+
+  for (CommonClass::field_iterator i = cl->virtualFields.begin(),
+       e = cl->virtualFields.end(); i!= e; ++i) {
+    JavaField* field = i->second;
+    fieldMap.erase(field);
+  }
+  
+  for (CommonClass::field_iterator i = cl->staticFields.begin(),
+       e = cl->staticFields.end(); i!= e; ++i) {
+    JavaField* field = i->second;
+    fieldMap.erase(field);
+  }
+  
+  for (CommonClass::method_iterator i = cl->virtualMethods.begin(),
+       e = cl->virtualMethods.end(); i!= e; ++i) {
+    JavaMethod* meth = i->second;
+    methodMap.erase(meth);
+  }
+  
+  for (CommonClass::method_iterator i = cl->staticMethods.begin(),
+       e = cl->staticMethods.end(); i!= e; ++i) {
+    JavaMethod* meth = i->second;
+    methodMap.erase(meth);
+  }
+  
 }
 
 LLVMCommonClassInfo* JnjvmModule::getClassInfo(CommonClass* cl) {

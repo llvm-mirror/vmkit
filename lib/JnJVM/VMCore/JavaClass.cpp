@@ -82,6 +82,7 @@ Attribut* JavaMethod::lookupAttribut(const UTF8* key ) {
 
 void CommonClass::destroyer(size_t sz) {
   free(display);
+  isolate->TheModule->removeClass(this);
 }
 
 void Class::destroyer(size_t sz) {
@@ -290,7 +291,7 @@ const char* JavaField::printString() const {
     buf->write("static ");
   else
     buf->write("virtual ");
-  ((JavaMethod*)this)->getSignature()->tPrintBuf(buf);
+  ((JavaField*)this)->getSignature()->tPrintBuf(buf);
   buf->write(" ");
   classDef->print(buf);
   buf->write("::");
