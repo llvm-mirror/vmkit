@@ -50,7 +50,7 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JavaObject* loader,
 
 
 JavaObject* Class::operator()(Jnjvm* vm) {
-  assert(isReady());
+  assert(*getStatus() >= inClinit);
   return doNew(vm);
 }
 

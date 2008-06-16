@@ -475,14 +475,14 @@ public:
 
   #define GETVIRTUALFIELD(TYPE, TYPE_NAME) \
   TYPE getVirtual##TYPE_NAME##Field(JavaObject* obj) { \
-    assert(classDef->isReady()); \
+    assert(*(classDef->getStatus()) >= inClinit); \
     void* ptr = (void*)((uint64)obj + ptrOffset); \
     return ((TYPE*)ptr)[0]; \
   }
 
   #define GETSTATICFIELD(TYPE, TYPE_NAME) \
   TYPE getStatic##TYPE_NAME##Field() { \
-    assert(classDef->isReady()); \
+    assert(*(classDef->getStatus()) >= inClinit); \
     JavaObject* obj = classDef->staticInstance(); \
     void* ptr = (void*)((uint64)obj + ptrOffset); \
     return ((TYPE*)ptr)[0]; \
@@ -490,14 +490,14 @@ public:
 
   #define SETVIRTUALFIELD(TYPE, TYPE_NAME) \
   void setVirtual##TYPE_NAME##Field(JavaObject* obj, TYPE val) { \
-    assert(classDef->isReady()); \
+    assert(*(classDef->getStatus()) >= inClinit); \
     void* ptr = (void*)((uint64)obj + ptrOffset); \
     ((TYPE*)ptr)[0] = val; \
   }
 
   #define SETSTATICFIELD(TYPE, TYPE_NAME) \
   void setStatic##TYPE_NAME##Field(TYPE val) { \
-    assert(classDef->isReady()); \
+    assert(*(classDef->getStatus()) >= inClinit); \
     JavaObject* obj = classDef->staticInstance(); \
     void* ptr = (void*)((uint64)obj + ptrOffset); \
     ((TYPE*)ptr)[0] = val; \
