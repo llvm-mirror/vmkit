@@ -45,7 +45,6 @@ using namespace jnjvm;
   INIT(JavaThread);
   INIT(Jnjvm);
   INIT(ClassMap);
-  INIT(StringMap);
   INIT(StaticInstanceMap);
   INIT(JavaIsolate);
   INIT(DelegateeMap);
@@ -134,7 +133,6 @@ void JavaThread::TRACER {
 
 void Jnjvm::TRACER {
   appClassLoader->MARK_AND_TRACE;
-  hashStr->MARK_AND_TRACE;
   bootstrapClasses->MARK_AND_TRACE;
   TRACE_VECTOR(JavaObject*, gc_allocator, globalRefs);
 #ifdef MULTIPLE_VM
@@ -149,12 +147,6 @@ void JavaIsolate::TRACER {
 }
 
 void ClassMap::TRACER {
-  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-    i->second->MARK_AND_TRACE;
-  }
-}
-
-void StringMap::TRACER {
   for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
     i->second->MARK_AND_TRACE;
   }

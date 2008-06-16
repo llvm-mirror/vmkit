@@ -48,7 +48,6 @@ static void initialiseVT() {
   INIT(JavaThread);
   INIT(Jnjvm);
   INIT(ClassMap);
-  INIT(StringMap);
   INIT(StaticInstanceMap);
   INIT(DelegateeMap);
   INIT(JavaIsolate);

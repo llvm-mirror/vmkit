@@ -116,6 +116,13 @@ public:
     lock = mvm::Lock::allocNormal();
   }
 
+  ~UTF8Map() {
+    delete lock;
+    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+      free((void*)i->second);
+    }
+  }
+
   void copy(UTF8Map* newMap) {
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
       newMap->map.insert(*i);
@@ -134,20 +141,48 @@ public:
   ClassMap() {
     lock = mvm::Lock::allocNormal();
   }
+
+  virtual void destroyer(size_t sz) {
+    delete lock;
+  }
   
   virtual void TRACER;
 };
 
-class StringMap :
-    public LockedMap<const UTF8*, JavaString*, ltutf8 > {
+class StringMap {
 public:
-  static VirtualTable* VT;
+  
+  mvm::Lock* lock;
+  typedef std::map<const UTF8*, JavaString*, ltutf8>::iterator iterator;
+  std::map<const UTF8*, JavaString*, ltutf8 > map;
+  
+  typedef JavaString* (*funcCreate)(const UTF8*& V, Jnjvm *vm);
   
   StringMap() {
-    lock = mvm::Lock::allocRecursive();
+    lock = mvm::Lock::allocNormal();
   }
   
-  virtual void TRACER;
+  ~StringMap() {
+    delete lock;
+    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+      free(i->second);
+    }
+  }
+  
+  inline JavaString* lookupOrCreate(const UTF8*& V, Jnjvm *vm, funcCreate func) {
+    lock->lock();
+    iterator End = map.end();
+    iterator I = map.find(V);
+    if (I == End) {
+      JavaString* res = func(V, vm);
+      map.insert(std::make_pair(V, res));
+      lock->unlock();
+      return res;
+    } else {
+      lock->unlock();
+      return I->second;
+    }
+  } 
 };
 
 class TypeMap {
@@ -175,6 +210,13 @@ public:
     lock = mvm::Lock::allocRecursive();
   }
   
+  ~TypeMap() {
+    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+      delete i->second;
+    }
+    delete lock;
+  }
+  
 };
 
 class StaticInstanceMap :
@@ -192,6 +234,7 @@ public:
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
       delete i->second;
     }
+    delete lock;
   }
 }; 
 
@@ -202,6 +245,10 @@ public:
   
   DelegateeMap() {
     lock = mvm::Lock::allocNormal();
+  }
+  
+  virtual void destroyer(size_t sz) {
+    delete lock;
   }
   
   virtual void TRACER;

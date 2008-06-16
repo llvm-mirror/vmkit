@@ -809,6 +809,11 @@ void Jnjvm::destroyer(size_t sz) {
   GC->destroy();
   delete GC;
 #endif
+  
+  delete hashUTF8;
+  delete hashStr;
+  delete javaTypes;
+  
   delete globalRefsLock;
   delete TheModuleProvider;
 }
