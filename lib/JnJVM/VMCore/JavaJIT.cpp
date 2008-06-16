@@ -761,7 +761,7 @@ llvm::Function* JavaJIT::javaCompile() {
   // not return.
   pred_iterator PI = pred_begin(endBlock);
   pred_iterator PE = pred_end(endBlock);
-  if (PI == PE) {
+  if (PI == PE && returnType != Type::VoidTy) {
     Instruction* I = currentBlock->getTerminator();
     assert(isa<UnreachableInst>(I) && "non terminator before buggy return");
     I->eraseFromParent();
