@@ -207,4 +207,30 @@ JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapLong(
 
 }
 
+JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapInt(
+#ifdef NATIVE_JNI
+    JNIEnv *env, 
+#endif
+    JavaObject* unsafe, JavaObject* obj, jlong offset, jint expect, jint update) {
+
+  jint *ptr; 
+
+  ptr = (jint *) (((uint8 *) obj) + offset);
+
+  return __sync_bool_compare_and_swap(ptr, expect, update);
+}
+
+JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapObject(
+#ifdef NATIVE_JNI
+    JNIEnv *env, 
+#endif
+    JavaObject* unsafe, JavaObject* obj, jlong offset, jobject expect, jobject update) {
+
+  jobject *ptr; 
+
+  ptr = (jobject *) (((uint8 *) obj) + offset);
+
+  return __sync_bool_compare_and_swap(ptr, expect, update);
+}
+
 }
