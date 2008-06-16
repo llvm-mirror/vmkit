@@ -756,6 +756,19 @@ llvm::Function* JavaJIT::javaCompile() {
     beginSynchronize();
 
   compileOpcodes(&compilingClass->bytes->elements[start], codeLen); 
+
+  // Fix a javac(?) bug where a method only throws an exception and des
+  // not return.
+  pred_iterator PI = pred_begin(endBlock);
+  pred_iterator PE = pred_end(endBlock);
+  if (PI == PE) {
+    Instruction* I = currentBlock->getTerminator();
+    assert(isa<UnreachableInst>(I) && "non terminator before buggy return");
+    I->eraseFromParent();
+    BranchInst::Create(endBlock, currentBlock);
+    endNode->addIncoming(Constant::getNullValue(returnType),
+                         currentBlock);
+  }
   currentBlock = endBlock;
 
   if (isSynchro(compilingMethod->access))
@@ -793,8 +806,8 @@ llvm::Function* JavaJIT::javaCompile() {
   else
     llvm::ReturnInst::Create(currentBlock);
 
-  pred_iterator PI = pred_begin(endExceptionBlock);
-  pred_iterator PE = pred_end(endExceptionBlock);
+  PI = pred_begin(endExceptionBlock);
+  PE = pred_end(endExceptionBlock);
   if (PI == PE) {
     endExceptionBlock->eraseFromParent();
   } else {
@@ -1346,15 +1359,8 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
     
     const Type* type = it->get();
     if (tmp->getType() != type) { // int8 or int16
-      if (type == Type::Int32Ty) {
-        if (func == AssessorDesc::dChar) {
-          tmp = new ZExtInst(tmp, type, "", currentBlock);
-        } else {
-          tmp = new SExtInst(tmp, type, "", currentBlock);
-        }
-      } else {
-        tmp = new TruncInst(tmp, type, "", currentBlock);
-      }
+      convertValue(tmp, type, currentBlock,
+                   func == AssessorDesc::dChar || func == AssessorDesc::dBool);
     }
     args[i] = tmp;
 
