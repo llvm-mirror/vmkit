@@ -417,4 +417,15 @@ jobject throwable) {
   JavaThread::throwException((JavaObject*)throwable);
 }
 
+JNIEXPORT jobjectArray Java_java_lang_VMClass_getDeclaredAnnotations(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz, 
+#endif
+jclass Cl) {
+  // TODO implement me
+  Jnjvm* vm = JavaThread::get()->isolate;
+  ArrayObject* res = ArrayObject::acons(0, Classpath::constructorArrayAnnotation, vm);
+  return (jobjectArray)res;
+}
 }

@@ -78,6 +78,7 @@ public:
   static JavaMethod* getCallingClassLoader;
   static JavaMethod* initConstructor;
   static ClassArray* constructorArrayClass;
+  static ClassArray* constructorArrayAnnotation;
   static Class*      newConstructor;
   static JavaField*  constructorSlot;
   static JavaMethod* initMethod;

@@ -67,6 +67,7 @@ JavaMethod* Classpath::getCallingClassLoader;
 JavaMethod* Classpath::initConstructor;
 Class*      Classpath::newConstructor;
 ClassArray* Classpath::constructorArrayClass;
+ClassArray* Classpath::constructorArrayAnnotation;
 JavaField*  Classpath::constructorSlot;
 JavaMethod* Classpath::initMethod;
 JavaMethod* Classpath::initField;
@@ -247,6 +248,9 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
 
   constructorArrayClass =
     UPCALL_ARRAY_CLASS(vm, "java/lang/reflect/Constructor", 1);
+  
+  constructorArrayAnnotation =
+    UPCALL_ARRAY_CLASS(vm, "java/lang/annotation/Annotation", 1);
 
   constructorSlot =
     UPCALL_FIELD(vm, "java/lang/reflect/Constructor", "slot", "I", ACC_VIRTUAL);
