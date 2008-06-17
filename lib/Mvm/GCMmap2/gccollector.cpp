@@ -81,12 +81,11 @@ void GCCollector::do_collect() {
   finalizable.attrape(unused_nodes);
 
   status = stat_alloc;
-#ifdef HAVE_PTHREAD
-  threads->collectionFinished();
-#endif
   
+  unlock();
+
   /* kill everyone */
-  GCChunkNode *next;
+  GCChunkNode *next = 0;
 
   for(cur=finalizable.next(); cur!=&finalizable; cur=next) {
 #ifdef SERVICE_GC
@@ -98,10 +97,20 @@ void GCCollector::do_collect() {
     destructor_t dest = c->getDestructor();
     if (dest)
       dest(c);
-    
+  }
+  
+  next = 0;
+  for(cur=finalizable.next(); cur!=&finalizable; cur=next) {
     //printf("    !!!! reject %p [%p]\n", cur->chunk()->_2gc(), cur);
+    next = cur->next();
     allocator->reject_chunk(cur);
   }
+
+  lock();
+
+#ifdef HAVE_PTHREAD
+  threads->collectionFinished();
+#endif
 }
 
 void GCCollector::collect_unprotect() {
