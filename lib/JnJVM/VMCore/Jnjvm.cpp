@@ -816,7 +816,6 @@ Jnjvm::~Jnjvm() {
   
   delete globalRefsLock;
   delete TheModuleProvider;
-  delete TheModule;
 }
 
 Jnjvm::Jnjvm() {
@@ -828,5 +827,4 @@ Jnjvm::Jnjvm() {
   javaTypes = 0;
   globalRefsLock = 0;
   TheModuleProvider = 0;
-  TheModule = 0;
 }
