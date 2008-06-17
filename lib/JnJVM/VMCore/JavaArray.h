@@ -113,6 +113,7 @@ public:
 #endif
   
   virtual void print(mvm::PrintBuffer* buf) const;
+  void* operator new(size_t sz, sint32 size);
 };
 
 } // end namespace jnjvm

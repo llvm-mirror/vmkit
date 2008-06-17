@@ -119,7 +119,7 @@ public:
   ~UTF8Map() {
     delete lock;
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      free((void*)i->second);
+      delete(i->second);
     }
   }
 
