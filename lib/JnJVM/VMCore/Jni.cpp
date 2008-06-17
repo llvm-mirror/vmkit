@@ -1642,8 +1642,11 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass elementClass,
 jobject GetObjectArrayElement(JNIEnv *env, jobjectArray array, jsize index) {
   BEGIN_EXCEPTION
   
-  return (jobject)((ArrayObject*)array)->at(index);
-
+  ArrayObject* JA = (ArrayObject*)array;
+  if (index >= JA->size)
+    JavaThread::get()->isolate->indexOutOfBounds(JA, index);
+  return (jobject)JA->elements[index];
+  
   END_EXCEPTION
 
   return 0;
@@ -1655,7 +1658,10 @@ void SetObjectArrayElement(JNIEnv *env, jobjectArray array, jsize index,
   
   BEGIN_EXCEPTION
   
-  ((ArrayObject*)array)->setAt(index, (JavaObject*)val);
+  ArrayObject* JA = (ArrayObject*)array;
+  if (index >= JA->size)
+    JavaThread::get()->isolate->indexOutOfBounds(JA, index);
+  JA->elements[index] = (JavaObject*)val;
 
   END_EXCEPTION
 }

@@ -46,147 +46,48 @@ extern "C" void negativeArraySizeException(sint32 val);
 extern "C" void outOfMemoryError(sint32 val);
 
 #ifndef MULTIPLE_VM
-#define ACONS(name, elmt, primSize)                                         \
+#define ACONS(name, elmt, primSize, VT)                                     \
   name *name::acons(sint32 n, ClassArray* atype, Jnjvm* vm) {               \
     if (n < 0)                                                              \
       negativeArraySizeException(n);                                        \
     else if (n > JavaArray::MaxArraySize)                                   \
       outOfMemoryError(n);                                                  \
     name* res = (name*)                                                     \
-      (Object*) operator new(sizeof(name) + n * primSize, name::VT);        \
+      (Object*) operator new(sizeof(name) + n * primSize, VT);              \
     res->initialise(atype);                                                 \
     res->size = n;                                                          \
     return res;                                                             \
   }
 #else
-#define ACONS(name, elmt, primSize)                                         \
+#define ACONS(name, elmt, primSize, VT)                                     \
   name *name::acons(sint32 n, ClassArray* atype, Jnjvm* vm) {               \
     if (n < 0)                                                              \
       negativeArraySizeException(n);                                        \
     else if (n > JavaArray::MaxArraySize)                                   \
       outOfMemoryError(n);                                                  \
     name* res = (name*)                                                     \
-      (Object*) vm->allocateObject(sizeof(name) + n * primSize, name::VT);  \
+      (Object*) vm->allocateObject(sizeof(name) + n * primSize, VT);        \
     res->initialise(atype);                                                 \
     res->size = n;                                                          \
     return res;                                                             \
   }
 #endif
 
-#define AT(name, elmt)                                                      \
-  elmt name::at(sint32 offset) const {                                      \
-    if (offset >= size)                                                     \
-      JavaThread::get()->isolate->indexOutOfBounds(this, offset);           \
-    return elements[offset];                                                \
-  }                                                                         \
-  void name::setAt(sint32 offset, elmt value) {                             \
-    if (offset >= size)                                                     \
-      JavaThread::get()->isolate->indexOutOfBounds(this, offset);           \
-    elements[offset] = value;                                               \
-  }
-
-#define ARRAYCLASS(name, elmt, size)                                        \
-  ACONS(name, elmt, size)                                                   \
-  AT(name, elmt)                                                            \
-
-ARRAYCLASS(ArrayUInt8,  uint8, 1)
-ARRAYCLASS(ArraySInt8,  sint8, 1)
-ARRAYCLASS(ArrayUInt16, uint16, 2)
-ARRAYCLASS(ArraySInt16, sint16, 2)
-ARRAYCLASS(ArrayUInt32, uint32, 4)
-ARRAYCLASS(ArraySInt32, sint32, 4)
-ARRAYCLASS(ArrayLong,   sint64, 8)
-ARRAYCLASS(ArrayFloat,  float, 4)
-ARRAYCLASS(ArrayDouble, double, 8)
-ARRAYCLASS(ArrayObject, JavaObject*, sizeof(JavaObject*))
+ACONS(ArrayUInt8,  uint8, 1, JavaArray::VT)
+ACONS(ArraySInt8,  sint8, 1, JavaArray::VT)
+ACONS(ArrayUInt16, uint16, 2, JavaArray::VT)
+ACONS(ArraySInt16, sint16, 2, JavaArray::VT)
+ACONS(ArrayUInt32, uint32, 4, JavaArray::VT)
+ACONS(ArraySInt32, sint32, 4, JavaArray::VT)
+ACONS(ArrayLong,   sint64, 8, JavaArray::VT)
+ACONS(ArrayFloat,  float, 4, JavaArray::VT)
+ACONS(ArrayDouble, double, 8, JavaArray::VT)
+ACONS(ArrayObject, JavaObject*, sizeof(JavaObject*), ArrayObject::VT)
 
 #undef ARRAYCLASS
 #undef ACONS
-#undef AT
 
-void ArrayUInt8::print(mvm::PrintBuffer *buf) const {
-  buf->write("Array<");
-  for (int i = 0; i < size; i++) {
-    buf->writeS4(elements[i]);
-    buf->write(" ");
-  }
-  buf->write(">");
-}
-
-void ArraySInt8::print(mvm::PrintBuffer *buf) const {
-  buf->write("Array<");
-  for (int i = 0; i < size; i++) {
-    buf->writeS4(elements[i]);
-    buf->write(" ");
-  }
-  buf->write(">");
-}
-
-void ArraySInt16::print(mvm::PrintBuffer *buf) const {
-  buf->write("Array<");
-  for (int i = 0; i < size; i++) {
-    buf->writeS4(elements[i]);
-    buf->write(" ");
-  }
-  buf->write(">");
-}
-
-void ArrayUInt32::print(mvm::PrintBuffer *buf) const {
-  buf->write("Array<");
-  for (int i = 0; i < size; i++) {
-    buf->writeS4(elements[i]);
-    buf->write(" ");
-  }
-  buf->write(">");
-}
-
-void ArraySInt32::print(mvm::PrintBuffer *buf) const {
-  buf->write("Array<");
-  for (int i = 0; i < size; i++) {
-    buf->writeS4(elements[i]);
-    buf->write(" ");
-  }
-  buf->write(">");
-}
-
-void ArrayLong::print(mvm::PrintBuffer *buf) const {
-  buf->write("Array<");
-  for (int i = 0; i < size; i++) {
-    buf->writeS8(elements[i]);
-    buf->write(" ");
-  }
-  buf->write(">");
-}
-
-void ArrayFloat::print(mvm::PrintBuffer *buf) const {
-  buf->write("Array<");
-  for (int i = 0; i < size; i++) {
-    buf->writeFP(elements[i]);
-    buf->write(" ");
-  }
-  buf->write(">");
-}
-
-void ArrayDouble::print(mvm::PrintBuffer *buf) const {
-  buf->write("Array<");
-  for (int i = 0; i < size; i++) {
-    buf->writeFP(elements[i]);
-    buf->write(" ");
-  }
-  buf->write(">");
-}
-
-void ArrayObject::print(mvm::PrintBuffer *buf) const {
-  buf->write("Array<");
-  for (int i = 0; i < size; i++) {
-    buf->writeObj(elements[i]);
-    buf->write(" ");
-  }
-  buf->write(">");
-}
-
-
-void ArrayUInt16::print(mvm::PrintBuffer* buf) const {
+void UTF8::print(mvm::PrintBuffer* buf) const {
   for (int i = 0; i < size; i++)
     buf->writeChar((char)elements[i]);
 }

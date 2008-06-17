@@ -63,7 +63,7 @@ JNIEnv *env,
  jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
 
   JavaMethod* meth = (JavaMethod*)_meth;
-  ArrayObject* args = (ArrayObject*)_args;
+  JavaArray* args = (JavaArray*)_args;
   sint32 nbArgs = args ? args->size : 0;
   sint32 size = meth->getSignature()->args.size();
   Jnjvm* vm = JavaThread::get()->isolate;
@@ -86,10 +86,10 @@ JNIEnv *env,
       cl->initialiseClass();
     }
 
-    
+    JavaObject** ptr = (JavaObject**)(void*)(args->elements);     
     for (std::vector<Typedef*>::iterator i = meth->getSignature()->args.begin(),
          e = meth->getSignature()->args.end(); i != e; ++i, ++index) {
-      NativeUtil::decapsulePrimitive(vm, buf, args->at(index), *i);
+      NativeUtil::decapsulePrimitive(vm, buf, ptr[index], *i);
     }
     
     JavaObject* exc = 0;

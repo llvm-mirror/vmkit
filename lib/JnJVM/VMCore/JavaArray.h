@@ -23,10 +23,17 @@ class CommonClass;
 class JavaObject;
 class Jnjvm;
 
-class JavaArray : public JavaObject {
+template <class T>
+class TJavaArray : public JavaObject {
 public:
   sint32 size;
-  void* elements[0];
+  T elements[0];
+};
+
+class JavaArray : public TJavaArray<void*> {
+public:
+  static VirtualTable *VT;
+
   static const sint32 MaxArraySize;
   static const unsigned int T_BOOLEAN;
   static const unsigned int T_CHAR;
@@ -47,20 +54,16 @@ public:
   static ClassArray* ofFloat;
   static ClassArray* ofDouble;
   static ClassArray* ofObject;
+
+  virtual void TRACER;
+  
 };
 
-#define ARRAYCLASS(name, elmt)                                        \
-class name : public JavaObject {                                      \
-public:                                                               \
-  static VirtualTable* VT;                                            \
-  sint32 size;                                                        \
-  elmt elements[0];                                                   \
-  static name *acons(sint32 n, ClassArray* cl, Jnjvm* vm);            \
-  elmt at(sint32) const;                                              \
-  void setAt(sint32, elmt);                                           \
-  virtual void print(mvm::PrintBuffer* buf) const;                    \
-  virtual void TRACER;                                                \
-}
+#define ARRAYCLASS(name, elmt)                                \
+  class name : public TJavaArray<elmt> {                      \
+  public:                                                     \
+    static name* acons(sint32 n, ClassArray* cl, Jnjvm* vm);  \
+  };
 
 ARRAYCLASS(ArrayUInt8,  uint8);
 ARRAYCLASS(ArraySInt8,  sint8);
@@ -71,9 +74,15 @@ ARRAYCLASS(ArraySInt32, sint32);
 ARRAYCLASS(ArrayLong,   sint64);
 ARRAYCLASS(ArrayFloat,  float);
 ARRAYCLASS(ArrayDouble, double);
-ARRAYCLASS(ArrayObject, JavaObject*);
 
 #undef ARRAYCLASS
+
+class ArrayObject : public TJavaArray<JavaObject*> {
+public:
+  static VirtualTable *VT;
+  static ArrayObject* acons(sint32 n, ClassArray* cl, Jnjvm* vm);
+  virtual void TRACER;
+};
 
 class UTF8 : public ArrayUInt16 {
 public:
@@ -102,6 +111,8 @@ public:
     else return !memcmp(elements, other->elements, size * sizeof(uint16));
   }
 #endif
+  
+  virtual void print(mvm::PrintBuffer* buf) const;
 };
 
 } // end namespace jnjvm

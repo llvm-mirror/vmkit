@@ -12,11 +12,9 @@
 #include "JavaArray.h"
 #include "JavaCache.h"
 #include "JavaClass.h"
-#include "JavaConstantPool.h"
 #include "JavaIsolate.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
-#include "JavaTypes.h"
 #include "Jnjvm.h"
 #include "LockedMap.h"
 #ifdef SERVICE_VM
@@ -27,15 +25,7 @@ using namespace jnjvm;
 
 #define INIT(X) VirtualTable* X::VT = 0
 
-  INIT(ArrayUInt8);
-  INIT(ArraySInt8);
-  INIT(ArrayUInt16);
-  INIT(ArraySInt16);
-  INIT(ArrayUInt32);
-  INIT(ArraySInt32);
-  INIT(ArrayLong);
-  INIT(ArrayFloat);
-  INIT(ArrayDouble);
+  INIT(JavaArray);
   INIT(ArrayObject);
   INIT(CommonClass);
   INIT(Class);
@@ -60,23 +50,7 @@ void ArrayObject::TRACER {
   }
 }
 
-#define ARRAYTRACER(name)         \
-  void name::TRACER {             \
-  }
-  
-
-ARRAYTRACER(ArrayUInt8);
-ARRAYTRACER(ArraySInt8);
-ARRAYTRACER(ArrayUInt16);
-ARRAYTRACER(ArraySInt16);
-ARRAYTRACER(ArrayUInt32);
-ARRAYTRACER(ArraySInt32);
-ARRAYTRACER(ArrayLong);
-ARRAYTRACER(ArrayFloat);
-ARRAYTRACER(ArrayDouble);
-
-#undef ARRAYTRACER
-
+void JavaArray::TRACER {}
 
 #define TRACE_VECTOR(type,alloc,name) {                             \
   for (std::vector<type, alloc<type> >::iterator i = name.begin(),  \

@@ -59,18 +59,11 @@ static void initialiseVT() {
   X fake; \
   void* V = ((void**)(void*)(&fake))[0]; \
   X::VT = (VirtualTable*)malloc(12 * sizeof(void*) + VT_SIZE); \
+  ((void**)X::VT)[0] = 0; \
   memcpy(X::VT, V, VT_SIZE); }
 
   INIT(JavaObject);
-  INIT(ArrayUInt8);
-  INIT(ArraySInt8);
-  INIT(ArrayUInt16);
-  INIT(ArraySInt16);
-  INIT(ArrayUInt32);
-  INIT(ArraySInt32);
-  INIT(ArrayLong);
-  INIT(ArrayFloat);
-  INIT(ArrayDouble);
+  INIT(JavaArray);
   INIT(ArrayObject);
 #undef INIT
 }
