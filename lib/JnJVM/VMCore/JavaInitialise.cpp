@@ -44,7 +44,6 @@ static void initialiseVT() {
   INIT(CommonClass);
   INIT(Class);
   INIT(ClassArray);
-  INIT(LockObj);
   INIT(JavaThread);
   INIT(Jnjvm);
   INIT(ClassMap);

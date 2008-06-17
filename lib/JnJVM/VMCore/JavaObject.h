@@ -58,7 +58,7 @@ public:
 
 /// LockObj - This class represents a Java monitor.
 ///
-class LockObj : public mvm::Object {
+class LockObj {
 
   friend class JavaObject;
 
@@ -109,9 +109,6 @@ private:
   }
 
 public:
-  static VirtualTable* VT;
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
   ~LockObj();
   LockObj();
 };

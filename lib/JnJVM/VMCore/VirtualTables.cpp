@@ -40,7 +40,6 @@ using namespace jnjvm;
   INIT(CommonClass);
   INIT(Class);
   INIT(ClassArray);
-  INIT(LockObj);
   INIT(JavaObject);
   INIT(JavaThread);
   INIT(Jnjvm);
@@ -56,7 +55,6 @@ using namespace jnjvm;
 
 void ArrayObject::TRACER {
   classOf->MARK_AND_TRACE;
-  if (lockObj()) lockObj()->MARK_AND_TRACE;
   for (sint32 i = 0; i < size; i++) {
     if (elements[i]) elements[i]->MARK_AND_TRACE;
   }
@@ -64,8 +62,6 @@ void ArrayObject::TRACER {
 
 #define ARRAYTRACER(name)         \
   void name::TRACER {             \
-    if (lockObj())                \
-      lockObj()->MARK_AND_TRACE;  \
   }
   
 
@@ -104,9 +100,6 @@ void Class::TRACER {
 
 void ClassArray::TRACER {
   CommonClass::PARENT_TRACER;
-}
-
-void LockObj::TRACER {
 }
 
 void JavaObject::TRACER {

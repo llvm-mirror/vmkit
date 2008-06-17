@@ -68,10 +68,6 @@ void JavaCond::remove(JavaThread* th) {
   }
 }
 
-void LockObj::print(mvm::PrintBuffer* buf) const {
-  buf->write("Lock<>");
-}
-
 LockObj* LockObj::allocate() {
   LockObj* res = new LockObj();
   res->lock = mvm::Lock::allocRecursive();
