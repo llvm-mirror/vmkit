@@ -182,6 +182,7 @@ static void initialiseStatics() {
   DEF_UTF8(log1p);
   DEF_UTF8(sinh);
   DEF_UTF8(tanh);
+  DEF_UTF8(finalize);
 
 #undef DEF_UTF8
  

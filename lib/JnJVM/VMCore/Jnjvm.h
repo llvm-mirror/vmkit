@@ -174,6 +174,7 @@ public:
   static const UTF8* log1p;
   static const UTF8* sinh;
   static const UTF8* tanh;
+  static const UTF8* finalize;
 
 
   void analyseClasspathEnv(const char*);

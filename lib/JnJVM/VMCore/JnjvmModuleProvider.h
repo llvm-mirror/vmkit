@@ -51,6 +51,7 @@ public:
 
   bool materializeFunction(Function *F, std::string *ErrInfo = 0);
   void* materializeFunction(JavaMethod* meth);
+  llvm::Function* parseFunction(JavaMethod* meth);
 
   Module* materializeModule(std::string *ErrInfo = 0) { return TheModule; }
 };

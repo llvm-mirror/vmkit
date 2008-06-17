@@ -105,6 +105,15 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
 }
 
 void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
+  Function* func = parseFunction(meth);
+  
+  void* res = mvm::jit::executionEngine->getPointerToGlobal(func);
+  mvm::Code* m = mvm::jit::getCodeFromPointer(res);
+  if (m) m->setMetaInfo(meth);
+  return res;
+}
+
+Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
   LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
   Function* func = LMI->getMethod();
   if (func->hasNotBeenReadFromBitcode()) {
@@ -122,11 +131,7 @@ void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
       mvm::jit::runPasses(func, perFunctionPasses);
     }
   }
-  
-  void* res = mvm::jit::executionEngine->getPointerToGlobal(func);
-  mvm::Code* m = mvm::jit::getCodeFromPointer(res);
-  if (m) m->setMetaInfo(meth);
-  return res;
+  return func;
 }
 
 llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,

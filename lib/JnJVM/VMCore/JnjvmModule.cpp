@@ -191,22 +191,42 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
     return VT;
   } else {
     JavaMethod* meth = meths->second;
-    JavaMethod* parent = cl->super? 
-      cl->super->lookupMethodDontThrow(meth->name, meth->type, false, true) : 0;
-
-    uint64_t offset = 0;
-    if (!parent) {
-      offset = cl->virtualTableSize++;
-      meth->offset = offset;
+    VirtualTable* VT = 0;
+    if (meth->name->equals(Jnjvm::finalize)) {
+      VT = allocateVT(cl, ++meths);
+      meth->offset = 0;
+      Function* func = cl->isolate->TheModuleProvider->parseFunction(meth);
+      if (!cl->super) meth->canBeInlined = true;
+      Function::iterator BB = func->begin();
+      BasicBlock::iterator I = BB->begin();
+      if (isa<ReturnInst>(I)) {
+        ((void**)VT)[0] = 0;
+      } else {
+        ExecutionEngine* EE = mvm::jit::executionEngine;
+        // LLVM does not allow recursive compilation. Create the code now.
+        ((void**)VT)[0] = EE->getPointerToFunction(func);
+      }
     } else {
-      offset = parent->offset;
-      meth->offset = parent->offset;
+    
+      JavaMethod* parent = cl->super? 
+        cl->super->lookupMethodDontThrow(meth->name, meth->type, false, true) :
+        0;
+
+      uint64_t offset = 0;
+      if (!parent) {
+        offset = cl->virtualTableSize++;
+        meth->offset = offset;
+      } else {
+        offset = parent->offset;
+        meth->offset = parent->offset;
+      }
+      VT = allocateVT(cl, ++meths);
+      LLVMMethodInfo* LMI = getMethodInfo(meth);
+      Function* func = LMI->getMethod();
+      ExecutionEngine* EE = mvm::jit::executionEngine;
+      ((void**)VT)[offset] = EE->getPointerToFunctionOrStub(func);
     }
-    VirtualTable* VT = allocateVT(cl, ++meths);
-    LLVMMethodInfo* LMI = getMethodInfo(meth);
-    Function* func = LMI->getMethod();
-    ExecutionEngine* EE = mvm::jit::executionEngine;
-    ((void**)VT)[offset] = EE->getPointerToFunctionOrStub(func);
+
     return VT;
   }
 }
@@ -249,7 +269,9 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
     }
   }
 #endif
- 
+  
+
+
 #ifdef WITH_TRACER
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   const Type* type = stat ? LCI->getStaticType() : LCI->getVirtualType();
