@@ -252,9 +252,3 @@ LockObj::LockObj() {
   varcond = 0;
   lock = 0;
 }
-
-#ifdef USE_GC_BOEHM
-JavaObject::~JavaObject() {
-  if (lockObj()) delete lockObj();
-}
-#endif

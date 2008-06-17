@@ -206,13 +206,6 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 
-#ifdef USE_GC_BOEHM
-  ~JavaObject();
-  JavaObject() {
-    lockObj = 0;
-  }
-#endif
-
   LockObj* lockObj() {
     if (lock & 0x80000000) {
       return (LockObj*)(lock << 1);
