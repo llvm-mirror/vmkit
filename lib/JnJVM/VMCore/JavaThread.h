@@ -48,7 +48,8 @@ public:
 
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
-  virtual void destroyer(size_t sz);
+  ~JavaThread();
+  JavaThread();
   
   void initialise(JavaObject* thread, Jnjvm* isolate) {
     this->javaThread = thread;

@@ -19,12 +19,11 @@ namespace mvm {
 
 
 #define VT_DESTRUCTOR_OFFSET 0
-#define VT_GC_DESTRUCTOR_OFFSET 1
-#define VT_DESTROYER_OFFSET 2
-#define VT_TRACER_OFFSET 3
-#define VT_PRINT_OFFSET 4
-#define VT_HASHCODE_OFFSET 5
-#define VT_SIZE 6 * sizeof(void*)
+#define VT_OPERATOR_DELETE_OFFSET 1
+#define VT_TRACER_OFFSET 2
+#define VT_PRINT_OFFSET 3
+#define VT_HASHCODE_OFFSET 4
+#define VT_SIZE 5 * sizeof(void*)
 
 
 class PrintBuffer;
@@ -50,10 +49,6 @@ public:
   /// printString - Returns a string representation of this object.
   ///
   char *printString(void) const;
-
-  /// destroyer - Default implementation of destroyer. Does nothing.
-  ///
-  virtual void      destroyer(size_t) {}
 
   /// tracer - Default implementation of tracer. Does nothing.
   ///

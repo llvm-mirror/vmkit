@@ -46,6 +46,8 @@ bool GCCollector::_enable_maybe;
 bool GCCollector::_enable_collection;
 #endif
 
+typedef void (*destructor_t)(void*);
+
 void GCCollector::do_collect() {
   //printf("----- do collect -----\n");
   GCChunkNode  *cur;
@@ -93,7 +95,9 @@ void GCCollector::do_collect() {
     register gc_header *c = cur->chunk();
     next = cur->next();
     
-    c->_2gc()->destroyer(real_nbb(cur));
+    destructor_t dest = c->getDestructor();
+    if (dest)
+      dest(c);
     
     //printf("    !!!! reject %p [%p]\n", cur->chunk()->_2gc(), cur);
     allocator->reject_chunk(cur);

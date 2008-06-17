@@ -151,7 +151,12 @@ void VirtualMachine::error(const char* name, const char* fmt, ...) {
   error(name, fmt, ap);
 }
 
-void VirtualMachine::destroyer(size_t sz) {
+VirtualMachine::~VirtualMachine() {
   delete module;
   delete TheModuleProvider;
+}
+
+VirtualMachine::VirtualMachine() {
+  module = 0;
+  TheModuleProvider = 0;
 }

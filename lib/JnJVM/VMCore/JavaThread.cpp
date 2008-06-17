@@ -30,7 +30,12 @@ void JavaThread::print(mvm::PrintBuffer* buf) const {
   javaThread->print(buf);
 }
 
-void JavaThread::destroyer(size_t sz) {
+JavaThread::~JavaThread() {
   delete lock;
   delete varcond;
+}
+
+JavaThread::JavaThread() {
+  lock = 0;
+  varcond = 0;
 }

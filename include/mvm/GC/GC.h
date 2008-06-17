@@ -20,7 +20,6 @@ typedef void VirtualTable;
 class gcRoot {
 public:
   virtual           ~gcRoot() {}
-  virtual void      destroyer(size_t) {}
 #ifdef MULTIPLE_GC
   virtual void      tracer(void* GC) {}
 #else
@@ -28,10 +27,15 @@ public:
 #endif
 };
 
+typedef void (*destructor_t)(void*);
+
 class gc_header {
 public:
   VirtualTable *_XXX_vt;
   inline gcRoot *_2gc() { return (gcRoot *)this; }
+  destructor_t getDestructor() {
+    return ((destructor_t*)(this->_XXX_vt))[0];
+  }
 };
 
 #endif

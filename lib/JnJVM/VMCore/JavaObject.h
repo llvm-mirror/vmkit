@@ -112,7 +112,8 @@ public:
   static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
-  virtual void destroyer(size_t sz);
+  ~LockObj();
+  LockObj();
 };
 
 
@@ -206,7 +207,10 @@ public:
   virtual void TRACER;
 
 #ifdef USE_GC_BOEHM
-  virtual void destroyer(size_t sz);
+  ~JavaObject();
+  JavaObject() {
+    lockObj = 0;
+  }
 #endif
 
   LockObj* lockObj() {

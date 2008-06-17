@@ -243,13 +243,18 @@ void JavaObject::notifyAll() {
   } 
 }
 
-void LockObj::destroyer(size_t sz) {
+LockObj::~LockObj() {
   if (varcond) delete varcond;
   delete lock;
 }
 
+LockObj::LockObj() {
+  varcond = 0;
+  lock = 0;
+}
+
 #ifdef USE_GC_BOEHM
-void JavaObject::destroyer(size_t sz) {
+JavaObject::~JavaObject() {
   if (lockObj()) delete lockObj();
 }
 #endif

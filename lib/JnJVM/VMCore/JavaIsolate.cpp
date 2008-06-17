@@ -539,7 +539,10 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   return isolate;
 }
 
-void JavaIsolate::destroyer(size_t sz) {
-  Jnjvm::destroyer(sz);
+JavaIsolate::~JavaIsolate() {
   delete threadSystem;
+}
+
+JavaIsolate::JavaIsolate() {
+  threadSystem = 0;
 }

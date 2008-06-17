@@ -35,8 +35,12 @@ void VMThread::print(mvm::PrintBuffer* buf) {
   vmThread->print(buf);
 }
 
-void VMThread::destroyer(size_t sz) {
+VMThread::~VMThread() {
   delete perFunctionPasses;
+}
+
+VMThread::VMThread() {
+  perFunctionPasses = 0;
 }
 
 VMThread* VMThread::get() {

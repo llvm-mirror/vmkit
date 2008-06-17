@@ -53,7 +53,8 @@ public:
   
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
-  virtual void destroyer(size_t sz);
+  ~JavaIsolate();
+  JavaIsolate();
 
   JavaObject* loadAppClassLoader();
   void loadBootstrap();

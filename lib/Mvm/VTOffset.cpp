@@ -16,7 +16,6 @@
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Thread.h"
 #include "mvm/Sigsegv.h"
-#include "mvm/VMLet.h"
 
 class Toto : public mvm::Object {
 public:
@@ -38,38 +37,34 @@ public:
     printf("in destroy!\n");
   }
 
-  virtual ~Toto() {
+  ~Toto() {
     printf("in delete Toto!\n");
   }
 };
 
-static void clearSignals(void) {
-  sys_signal(SIGINT,  SIG_DFL);
-  sys_signal(SIGILL,  SIG_DFL);
-#if !defined(WIN32)
-  sys_signal(SIGIOT,  SIG_DFL);
-  sys_signal(SIGBUS,  SIG_DFL);
-#endif 
-  sys_signal(SIGSEGV, SIG_DFL);
-}
-
+class Tata : public Toto {
+  public:
+  static VirtualTable* VT;
+  ~Tata() {
+    printf("in delete Tata!\n");
+  }
+};
 
 VirtualTable* Toto::VT = 0;
 typedef void (*toto_t)(Toto* t);
 
+VirtualTable* Tata::VT = 0;
+typedef void (*tata_t)(Tata* t);
+
 int main(int argc, char **argv, char **envp) {
   int base;
   
-  mvm::VMLet::initialise();
-  mvm::Object::initialise(&base);
-  
-  initialiseVT();
-  initialiseStatics();
+  mvm::Object::initialise();
   
   /*void* handle = sys_dlopen("libLisp.so", RTLD_LAZY | RTLD_GLOBAL);
   boot func = (boot)sys_dlsym(handle, "boot");
   func(argc, argv, envp);*/
-  
+  { 
   Toto t;
   Toto::VT =((void**)(void*)&t)[0];
   toto_t* ptr = (toto_t*)Toto::VT;
@@ -80,8 +75,22 @@ int main(int argc, char **argv, char **envp) {
   ptr[3](&t);
   ptr[4](&t);
   ptr[5](&t);
-
-  clearSignals();
+}
+{
+  Tata t;
+  Tata::VT =((void**)(void*)&t)[0];
+  tata_t* ptr = (tata_t*)Tata::VT;
+  printf("ptr[0] = %d, ptr[1]= %d, ptr[2] = %d ptr[3] = %d ptr[4] = %d ptr[5] = %d\n", ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5]);
+  printf("Call des\n");
+  ptr[0](&t);
+  printf("End\n");
+  //ptr[1](&t); // This should be ~gc
+  ptr[2](&t);
+  ptr[3](&t);
+  ptr[4](&t);
+  ptr[5](&t);
+}
+Tata* t = gc_new(Tata)();
   mvm::Thread::exit(0);
    
   return 0; 

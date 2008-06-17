@@ -142,7 +142,7 @@ public:
     lock = mvm::Lock::allocNormal();
   }
 
-  virtual void destroyer(size_t sz) {
+  ~ClassMap() {
     delete lock;
   }
   
@@ -230,7 +230,7 @@ public:
   
   virtual void TRACER;
 
-  virtual void destroyer(size_t sz) {
+  ~StaticInstanceMap() {
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
       delete i->second;
     }
@@ -247,7 +247,7 @@ public:
     lock = mvm::Lock::allocNormal();
   }
   
-  virtual void destroyer(size_t sz) {
+  ~DelegateeMap() {
     delete lock;
   }
   

@@ -265,17 +265,17 @@ public:
   }
   
   CommonClass(Jnjvm* vm, const UTF8* name, bool isArray);
-  /// Empty constructor for VT
-  CommonClass() {}
   
   static VirtualTable* VT;
   static JavaObject* jnjvmClassLoader;
-  virtual void destroyer(size_t sz);
+  
+  ~CommonClass();
+  CommonClass();
+
 };
 
 class ClassPrimitive : public CommonClass {
 public:
-  static VirtualTable* VT;
   ClassPrimitive(Jnjvm* vm, const UTF8* name);
 };
 
@@ -297,7 +297,9 @@ public:
   JavaObject* doNew(Jnjvm* vm);
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
-  virtual void destroyer(size_t sz);
+  
+  ~Class();
+  Class();
 
   JavaObject* operator()(Jnjvm* vm);
   
@@ -314,8 +316,6 @@ public:
   void createStaticInstance();
 #endif
   
-  /// Empty constructor for VT
-  Class() {}
   Class(Jnjvm* vm, const UTF8* name);
   
 };

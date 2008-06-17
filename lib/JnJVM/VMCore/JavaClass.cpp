@@ -80,13 +80,22 @@ Attribut* JavaMethod::lookupAttribut(const UTF8* key ) {
   return 0;
 }
 
-void CommonClass::destroyer(size_t sz) {
+CommonClass::~CommonClass() {
   free(display);
-  isolate->TheModule->removeClass(this);
+  if (isolate)
+    isolate->TheModule->removeClass(this);
 }
 
-void Class::destroyer(size_t sz) {
-  CommonClass::destroyer(sz);
+CommonClass::CommonClass() {
+  display = 0;
+  isolate = 0;
+}
+
+Class::Class() {
+  ctpInfo = 0;
+}
+
+Class::~Class() {
   for (std::vector<Attribut*>::iterator i = attributs.begin(), 
        e = attributs.end(); i!= e; ++i) {
     Attribut* cur = *i;

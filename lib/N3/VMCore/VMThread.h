@@ -45,7 +45,8 @@ public:
 
   virtual void print(mvm::PrintBuffer *buf);
   virtual void TRACER;
-  virtual void destroyer(size_t sz);
+  ~VMThread();
+  VMThread();
   
   static VMThread* get();
   static VMThread* allocate(VMObject* thread, VirtualMachine* vm);

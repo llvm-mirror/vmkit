@@ -30,8 +30,7 @@ JavaField* ServiceDomain::OSGiFramework;
 JavaMethod* ServiceDomain::uninstallBundle;
 
 
-void ServiceDomain::destroyer(size_t sz) {
-  Jnjvm::destroyer(sz);
+ServiceDomain::~ServiceDomain() {
   delete lock;
 }
 

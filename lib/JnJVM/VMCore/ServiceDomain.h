@@ -35,7 +35,7 @@ public:
 
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
-  virtual void destroyer(size_t sz);
+  ~ServiceDomain();
   static ServiceDomain* allocateService(JavaIsolate* callingVM);
   static void serviceError(ServiceDomain* error, const char* str);
    

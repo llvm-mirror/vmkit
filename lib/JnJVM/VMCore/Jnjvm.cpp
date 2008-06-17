@@ -804,7 +804,7 @@ JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
 }
 #endif
 
-void Jnjvm::destroyer(size_t sz) {
+Jnjvm::~Jnjvm() {
 #ifdef MULTIPLE_GC
   GC->destroy();
   delete GC;
@@ -816,4 +816,17 @@ void Jnjvm::destroyer(size_t sz) {
   
   delete globalRefsLock;
   delete TheModuleProvider;
+  delete TheModule;
+}
+
+Jnjvm::Jnjvm() {
+#ifdef MULTIPLE_GC
+  GC = 0;
+#endif
+  hashUTF8 = 0;
+  hashStr = 0;
+  javaTypes = 0;
+  globalRefsLock = 0;
+  TheModuleProvider = 0;
+  TheModule = 0;
 }

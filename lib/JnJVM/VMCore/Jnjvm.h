@@ -219,7 +219,8 @@ public:
     buf->write("Jnjvm<>");
   }
   
-  virtual void destroyer(size_t sz);
+  ~Jnjvm();
+  Jnjvm();
 
   void addProperty(char* key, char* value);
  

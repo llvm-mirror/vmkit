@@ -115,7 +115,8 @@ public:
     buf->write("Virtual Machine<>");
   }
 
-  virtual void destroyer(size_t sz);
+  ~VirtualMachine();
+  VirtualMachine();
   
   mvm::Lock* protectModule;
   FunctionMap* functions;

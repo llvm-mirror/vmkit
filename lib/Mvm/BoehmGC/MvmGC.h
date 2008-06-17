@@ -38,18 +38,14 @@ public:
     return (GC_size(res) - sizeof(gc_header));
   }
 
-  static void my_destroyer(void * obj, void * unused){
-    gc_header* res = (gc_header*)GC_base(obj);
-    if(res){
-      res->_2gc()->destroyer(GC_size(res));
-   }
-  }
-  
   void *  operator new(size_t sz, VirtualTable *VT) {
     gc_header * res = (gc_header*) GC_MALLOC(sz + sizeof(gc_header));
     res -> _XXX_vt= VT;
-  
-    GC_register_finalizer_no_order(res, my_destroyer, NULL, NULL, NULL); 
+    
+    destructor_t dest = res->getDestructor();
+    if (dest)
+      GC_register_finalizer_no_order(res, (void (*)(void*, void*))dest, NULL,
+                                     NULL, NULL); 
     return res->_2gc();
   }
 
@@ -64,7 +60,6 @@ public:
   void *  realloc(size_t n) {
     void * old = GC_base(this);
     gc_header * res = (gc_header*) GC_REALLOC(old, n + sizeof(gc_header));
-    GC_register_finalizer(old, NULL, NULL, NULL, NULL); 
     return res->_2gc();
   }
 
