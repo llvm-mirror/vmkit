@@ -82,17 +82,24 @@ Attribut* JavaMethod::lookupAttribut(const UTF8* key ) {
 
 CommonClass::~CommonClass() {
   free(display);
+  free(virtualVT);
   if (isolate)
     isolate->TheModule->removeClass(this);
+  delete lockVar;
+  delete condVar;
 }
 
 CommonClass::CommonClass() {
   display = 0;
   isolate = 0;
+  lockVar = 0;
+  condVar = 0;
+  virtualVT = 0;
 }
 
 Class::Class() {
   ctpInfo = 0;
+  staticVT = 0;
 }
 
 Class::~Class() {
@@ -127,6 +134,7 @@ Class::~Class() {
   }
   
   delete ctpInfo;
+  free(staticVT);
 }
 
 JavaField::~JavaField() {
