@@ -114,6 +114,7 @@ public:
   
   virtual void print(mvm::PrintBuffer* buf) const;
   void* operator new(size_t sz, sint32 size);
+  void operator delete(void* obj);
 };
 
 } // end namespace jnjvm

@@ -154,6 +154,10 @@ void* UTF8::operator new(size_t sz, sint32 size) {
   return malloc(sz + size * sizeof(uint16));
 }
 
+void UTF8::operator delete(void* obj) {
+  free(obj);
+}
+
 const UTF8* UTF8::acons(sint32 n, ClassArray* cl, Jnjvm* vm) {
   if (n < 0)
     negativeArraySizeException(n);                                        
