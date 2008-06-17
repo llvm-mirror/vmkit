@@ -111,7 +111,6 @@ void LockObj::TRACER {
 
 void JavaObject::TRACER {
   classOf->MARK_AND_TRACE;
-  if (lockObj()) lockObj()->MARK_AND_TRACE;
 }
 
 #ifdef MULTIPLE_GC
@@ -120,7 +119,6 @@ extern "C" void JavaObjectTracer(JavaObject* obj, Collector* GC) {
 extern "C" void JavaObjectTracer(JavaObject* obj) {
 #endif
   obj->classOf->MARK_AND_TRACE;
-  if (obj->lockObj()) obj->lockObj()->MARK_AND_TRACE;
 }
 
 

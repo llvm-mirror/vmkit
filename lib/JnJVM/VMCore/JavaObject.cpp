@@ -73,11 +73,7 @@ void LockObj::print(mvm::PrintBuffer* buf) const {
 }
 
 LockObj* LockObj::allocate() {
-#ifdef USE_GC_BOEHM
   LockObj* res = new LockObj();
-#else
-  LockObj* res = vm_new(JavaThread::get()->isolate, LockObj)();
-#endif
   res->lock = mvm::Lock::allocRecursive();
   res->varcond = 0;
   return res;
