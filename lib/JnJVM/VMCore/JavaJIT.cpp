@@ -483,14 +483,19 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   
   reader.seek(codeLen, Reader::SeekCur);
   
-  const FunctionType *funcType = llvmFunction->getFunctionType();
+  LLVMMethodInfo* LMI = module->getMethodInfo(compilingMethod);
+  assert(LMI);
+  Function* func = LMI->getMethod();
+  llvmFunction = parentFunction;
+
+  const FunctionType *funcType = func->getFunctionType();
   returnType = funcType->getReturnType();
   endBlock = createBasicBlock("end");
 
   llvmFunction = parentFunction;
   currentBlock = curBB;
   endExceptionBlock = 0;
-  
+
   opcodeInfos = (Opinfo*)alloca(codeLen * sizeof(Opinfo));
   memset(opcodeInfos, 0, codeLen * sizeof(Opinfo));
   for (uint32 i = 0; i < codeLen; ++i) {
@@ -531,10 +536,10 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
     if (cur == AssessorDesc::dLong){
       new StoreInst(*i, longLocals[index], false, currentBlock);
       ++index;
-    } else if (AssessorDesc::dBool || cur == AssessorDesc::dChar) {
+    } else if (cur == AssessorDesc::dBool || cur == AssessorDesc::dChar) {
       new StoreInst(new ZExtInst(*i, Type::Int32Ty, "", currentBlock),
                     intLocals[index], false, currentBlock);
-    } else if (AssessorDesc::dByte || cur == AssessorDesc::dShort) {
+    } else if (cur == AssessorDesc::dByte || cur == AssessorDesc::dShort) {
       new StoreInst(new SExtInst(*i, Type::Int32Ty, "", currentBlock),
                     intLocals[index], false, currentBlock);
     } else if (cur == AssessorDesc::dInt) {
