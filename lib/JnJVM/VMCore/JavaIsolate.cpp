@@ -504,8 +504,8 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   isolate->analyseClasspathEnv(isolate->bootClasspathEnv);
   
   isolate->TheModule = new JnjvmModule("Bootstrap JnJVM");
-  isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->TheModule);
   isolate->TheModule->initialise();
+  isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->TheModule);
  
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);

@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 
+#include "llvm/Constants.h"
 #include "llvm/Pass.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
@@ -16,6 +17,9 @@
 
 #include <map>
 
+#undef DOUT
+#define DOUT llvm::cout
+
 using namespace llvm;
 
 namespace {
@@ -23,17 +27,15 @@ namespace {
   class VISIBILITY_HIDDEN EscapeAnalysis : public FunctionPass {
   public:
     static char ID;
-    EscapeAnalysis(Function* alloc = 0, Function* init = 0) : 
+    EscapeAnalysis(Function* alloc = 0) : 
       FunctionPass((intptr_t)&ID) {
       Allocator = alloc;
-      Initialize = init;
     }
 
     virtual bool runOnFunction(Function &F);
   private:
     Function* Allocator;
-    Function* Initialize;
-    bool processMalloc(Instruction* I);
+    bool processMalloc(Instruction* I, Value* Size, Value* VT);
   };
   char EscapeAnalysis::ID = 0;
   RegisterPass<EscapeAnalysis> X("EscapeAnalysis", "Escape Analysis Pass");
@@ -43,16 +45,16 @@ bool EscapeAnalysis::runOnFunction(Function& F) {
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
 
-    for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE; 
-         II++) {
+    for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
       Instruction *I = II;
+      II++;
       if (CallInst *CI = dyn_cast<CallInst>(I)) {
         if (CI->getOperand(0) == Allocator) {
-          Changed |= processMalloc(CI);
+          Changed |= processMalloc(CI, CI->getOperand(1), CI->getOperand(2));
         }
       } else if (InvokeInst *CI = dyn_cast<InvokeInst>(I)) {
         if (CI->getOperand(0) == Allocator) {
-          Changed |= processMalloc(CI);
+          Changed |= processMalloc(CI, CI->getOperand(3), CI->getOperand(4));
         }
       }
     }
@@ -101,46 +103,33 @@ static bool escapes(Instruction* Ins, std::map<AllocaInst*, bool>& visited) {
   return false;
 }
 
-bool EscapeAnalysis::processMalloc(Instruction* I) {
+bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT) {
   Instruction* Alloc = I;
-  Value::use_iterator UI = I->use_begin(), UE = I->use_end(), Last = I->use_begin();
-  while (UI != UE) { Last = UI; UI++;}
   
-  if (BitCastInst *BCI = dyn_cast<BitCastInst>(Last)) {
-    I = BCI;
-  } 
-  
-  std::map<AllocaInst*, bool> visited;
-  if (!(escapes(Alloc, visited))) {
-    AllocaInst* AI = new AllocaInst(I->getType()->getContainedType(0), "", Alloc);
-    BitCastInst* BI = new BitCastInst(AI, Alloc->getType(), "", Alloc);
-    std::vector<Value*> Args;
-    if (isa<CallInst>(Alloc)) {
-      Args.push_back(Alloc->getOperand(1));
-    } else {
-      Args.push_back(Alloc->getOperand(3)); // skip unwind and normal BB
+  ConstantExpr* CE = dyn_cast<ConstantExpr>(VT);
+  if (CE) {
+    ConstantInt* C = (ConstantInt*)CE->getOperand(0);
+    VirtualTable* Table = (VirtualTable*)C->getZExtValue();
+    // If the class has a finalize method, do not stack allocate the object
+    if (!((void**)Table)[0]) {
+      std::map<AllocaInst*, bool> visited;
+      if (!(escapes(Alloc, visited))) {
+        AllocaInst* AI = new AllocaInst(Type::Int8Ty, Size, "", Alloc);
+        BitCastInst* BI = new BitCastInst(AI, Alloc->getType(), "", Alloc);
+        DOUT << "escape" << Alloc->getParent()->getParent()->getName() << "\n";
+        Alloc->replaceAllUsesWith(BI);
+        Alloc->eraseFromParent();
+        return true;
+      }
     }
-    Args.push_back(BI);
-    Instruction* CI;
-    if (isa<CallInst>(Alloc)) {
-      CI = CallInst::Create(Initialize, Args.begin(), Args.end(), "", Alloc);
-    } else {
-      CI = InvokeInst::Create(Initialize, ((InvokeInst*)Alloc)->getNormalDest(), 
-                          ((InvokeInst*)Alloc)->getUnwindDest(), Args.begin(), 
-                          Args.end(), "", Alloc->getParent());
-    }
-    DOUT << "escape" << Alloc->getParent()->getParent()->getName() << "\n";
-    Alloc->replaceAllUsesWith(CI);
-    Alloc->eraseFromParent();
-    return true;
   }
   return false;
 }
 }
 
 namespace mvm {
-FunctionPass* createEscapeAnalysisPass(llvm::Function* alloc, llvm::Function* init) {
+FunctionPass* createEscapeAnalysisPass(llvm::Function* alloc) {
 
-  return new EscapeAnalysis(alloc, init);
+  return new EscapeAnalysis(alloc);
 }
 }

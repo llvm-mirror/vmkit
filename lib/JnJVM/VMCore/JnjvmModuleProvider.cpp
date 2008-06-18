@@ -160,7 +160,7 @@ void JnjvmModuleProvider::addFunction(Function* F, JavaMethod* meth) {
 
 
 namespace mvm {
-  llvm::FunctionPass* createEscapeAnalysisPass(llvm::Function*, llvm::Function*);
+  llvm::FunctionPass* createEscapeAnalysisPass(llvm::Function*);
   llvm::FunctionPass* createLowerConstantCallsPass();
 }
 
@@ -190,20 +190,22 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   
   addPass(PM, createTailCallEliminationPass());  // Eliminate tail calls
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+  addPass(PM, createPredicateSimplifierPass());
   addPass(PM, createReassociatePass());          // Reassociate expressions
-  //addPass(PM, createLoopRotatePass());
+  addPass(PM, createLoopRotatePass());
   addPass(PM, createLICMPass());                 // Hoist loop invariants
   
-  //addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
-  //addPass(PM, createLoopIndexSplitPass());       // Index split loops.
-  //addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
-  //addPass(PM, createLoopDeletionPass());         // Delete dead loops
-  //addPass(PM, createLoopUnrollPass());           // Unroll small loops*/
+  addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
+  addPass(PM, createLoopIndexSplitPass());       // Index split loops.
+  addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
+  addPass(PM, createLoopDeletionPass());         // Delete dead loops
+  addPass(PM, createLoopUnrollPass());           // Unroll small loops*/
   addPass(PM, createInstructionCombiningPass()); // Clean up after the unroller
   addPass(PM, createGVNPass());                  // Remove redundancies
   addPass(PM, createMemCpyOptPass());            // Remove memcpy / form memset
   addPass(PM, createSCCPPass());                 // Constant prop with SCCP
   
+  addPass(PM, mvm::createEscapeAnalysisPass(JnjvmModule::JavaObjectAllocateFunction));
   addPass(PM, mvm::createLowerConstantCallsPass());
   
   addPass(PM, createGVNPass());                  // Remove redundancies
