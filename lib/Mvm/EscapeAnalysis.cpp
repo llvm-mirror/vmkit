@@ -64,7 +64,7 @@ bool EscapeAnalysis::runOnFunction(Function& F) {
 
 
 
-static bool escapes(Instruction* Ins, std::map<AllocaInst*, bool>& visited) {
+static bool escapes(Instruction* Ins, std::map<Instruction*, bool>& visited) {
   for (Value::use_iterator I = Ins->use_begin(), E = Ins->use_end(); 
        I != E; ++I) {
     if (Instruction* II = dyn_cast<Instruction>(I)) {
@@ -93,7 +93,10 @@ static bool escapes(Instruction* Ins, std::map<AllocaInst*, bool>& visited) {
       }
       else if (dyn_cast<ReturnInst>(II)) return true;
       else if (dyn_cast<PHINode>(II)) {
-        if (escapes(II, visited)) return true;
+        if (!visited[II]) {
+          visited[II] = true;
+          if (escapes(II, visited)) return true;
+        }
       }
     } else {
       return true;
@@ -111,7 +114,7 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT) {
     VirtualTable* Table = (VirtualTable*)C->getZExtValue();
     // If the class has a finalize method, do not stack allocate the object
     if (!((void**)Table)[0]) {
-      std::map<AllocaInst*, bool> visited;
+      std::map<Instruction*, bool> visited;
       if (!(escapes(Alloc, visited))) {
         AllocaInst* AI = new AllocaInst(Type::Int8Ty, Size, "", Alloc);
         BitCastInst* BI = new BitCastInst(AI, Alloc->getType(), "", Alloc);
