@@ -17,6 +17,8 @@
 
 #include <map>
 
+#include "mvm/GC/GC.h"
+
 using namespace llvm;
 
 namespace {
