@@ -17,9 +17,6 @@
 
 #include <map>
 
-#undef DOUT
-#define DOUT llvm::cout
-
 using namespace llvm;
 
 namespace {
