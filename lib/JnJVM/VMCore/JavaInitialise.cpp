@@ -59,8 +59,8 @@ static void initialiseVT() {
   X fake; \
   void* V = ((void**)(void*)(&fake))[0]; \
   X::VT = (VirtualTable*)malloc(12 * sizeof(void*) + VT_SIZE); \
-  ((void**)X::VT)[0] = 0; \
-  memcpy(X::VT, V, VT_SIZE); }
+  memcpy(X::VT, V, VT_SIZE); \
+  ((void**)X::VT)[0] = 0; }
 
   INIT(JavaObject);
   INIT(JavaArray);
