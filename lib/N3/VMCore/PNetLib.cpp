@@ -65,9 +65,10 @@ extern uint32 ILUnicodeStringToLower(void*, void*, uint32);
 extern sint32 ILUnicodeStringCompareIgnoreCase(void*, void*, sint32);
 extern sint32 ILUnicodeStringCompareNoIgnoreCase(void*, void*, sint32);
 
+#include "mvm/Config/config.h"
 // PNET wants this
 void *GC_run_thread(void *(*thread_func)(void *), void *arg){ return 0; }
-#ifndef USE_GC_BOEHM
+#if not(USE_GC_BOEHM)
 int GC_invoke_finalizers (void) { return 0; }
 int GC_should_invoke_finalizers (void) { return 0; }
 void GC_register_finalizer_no_order(void*, void (*)(void*, void*), void*, void (**)(void*, void*), void**) { return; }
@@ -88,7 +89,7 @@ int GC_unregister_disappearing_link(void**) { return 0; }
 void (*GC_finalizer_notifier)(void);
 int GC_java_finalization;
 int GC_finalize_on_demand;
-void GC_set_max_heap_size(GC_word) {}
+void GC_set_max_heap_size(size_t) {}
 void* GC_malloc_atomic(size_t) { return 0; }
 #endif
 
