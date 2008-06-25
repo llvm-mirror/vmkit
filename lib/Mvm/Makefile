@@ -8,7 +8,9 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../..
 
-PARALLEL_DIRS = Allocator BoehmGC CommonThread GCMmap2
+include $(LEVEL)/Makefile.config
+
+PARALLEL_DIRS = Allocator CommonThread $(GCLIB)
 
 LIBRARYNAME = Mvm
 include $(LEVEL)/Makefile.common
