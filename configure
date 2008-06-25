@@ -695,9 +695,9 @@ classpathglibj
 classpathlibs
 classpathinclude
 gnuclasspathversion
-WITH_N3_TRUE
-WITH_N3_FALSE
+WITH_JNJVM
 pnetlocalprefix
+WITH_N3
 CXX
 CXXFLAGS
 ac_ct_CXX
@@ -3988,17 +3988,24 @@ else
 fi
 
 
-if test "x${gnuclasspathlocalprefix}" = x; then
+WITH_JNJVM=0;
+
+if test "x${gnuclasspathinstallationprefix}" != x; then
   echo Using ${gnuclasspathinstallationprefix} as GNU CLASSPATH installation prefix;
   classpathglibj=${gnuclasspathinstallationprefix}/share/classpath/glibj.zip;
   classpathlibs=${gnuclasspathinstallationprefix}/lib/classpath/;
   classpathinclude=${gnuclasspathlocalprefix}/include;
-else
+  WITH_JNJVM=1;
+fi
+
+if test "x${gnuclasspathlocalprefix}" != x; then
   echo Using ${gnuclasspathlocalprefix} as GNU CLASSPATH local prefix;
   classpathglibj=${gnuclasspathlocalprefix}/lib/;
   classpathlibs=${gnuclasspathlocalprefix}/lib/;
   classpathinclude=${gnuclasspathlocalprefix}/include;
+  WITH_JNJVM=1;
 fi
+
 
 
 
@@ -4018,24 +4025,13 @@ else
 fi
 
 
-
-
-if test "x$pnetlocalprefix" != "x"; then
-  WITH_N3_TRUE=
-  WITH_N3_FALSE='#'
-else
-  WITH_N3_TRUE='#'
-  WITH_N3_FALSE=
-fi
-
 if test "x$pnetlocalprefix" != x; then
   echo Using ${pnetlocalprefix} as PNET local prefix;
-
-cat >>confdefs.h <<\_ACEOF
-#define WITH_N3 1
-_ACEOF
-
+  WITH_N3=1;
+else
+  WITH_N3=0;
 fi
+
 
 
 
@@ -7220,13 +7216,6 @@ echo "$as_me: error: conditional \"ISOLATE_BUILD\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${WITH_N3_TRUE}" && test -z "${WITH_N3_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"WITH_N3\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"WITH_N3\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 
 : ${CONFIG_STATUS=./config.status}
 ac_clean_files_save=$ac_clean_files
@@ -7839,9 +7828,9 @@ classpathglibj!$classpathglibj$ac_delim
 classpathlibs!$classpathlibs$ac_delim
 classpathinclude!$classpathinclude$ac_delim
 gnuclasspathversion!$gnuclasspathversion$ac_delim
-WITH_N3_TRUE!$WITH_N3_TRUE$ac_delim
-WITH_N3_FALSE!$WITH_N3_FALSE$ac_delim
+WITH_JNJVM!$WITH_JNJVM$ac_delim
 pnetlocalprefix!$pnetlocalprefix$ac_delim
+WITH_N3!$WITH_N3$ac_delim
 CXX!$CXX$ac_delim
 CXXFLAGS!$CXXFLAGS$ac_delim
 ac_ct_CXX!$ac_ct_CXX$ac_delim

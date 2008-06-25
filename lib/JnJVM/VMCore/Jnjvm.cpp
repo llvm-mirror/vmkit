@@ -245,8 +245,8 @@ void Jnjvm::readMethods(Class* cl, Reader& reader) {
 
 void Jnjvm::readClass(Class* cl) {
 
-  PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ");
-  PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "reading ");
+  PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
+  PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "reading ", 0);
   PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s::%s\n", printString(),
               cl->printString());
 
@@ -326,8 +326,8 @@ void Jnjvm::initialiseClass(CommonClass* cl) {
       JavaMethod* meth = cl->lookupMethodDontThrow(clinitName, clinitType, true,
                                                    false);
       
-      PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ");
-      PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ");
+      PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
+      PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ", 0);
       PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s::%s\n", printString(),
                   cl->printString());
       
@@ -336,7 +336,7 @@ void Jnjvm::initialiseClass(CommonClass* cl) {
       if (meth) {
         JavaObject* exc = 0;
         try{
-          clinit_t pred = (clinit_t)meth->compiledPtr();
+          clinit_t pred = (clinit_t)(intptr_t)meth->compiledPtr();
           pred(JavaThread::get()->isolate);
         } catch(...) {
           exc = JavaThread::getJavaException();

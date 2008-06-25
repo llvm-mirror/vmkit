@@ -8,7 +8,18 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ..
 
-PARALLEL_DIRS = Mvm JnJVM N3
+PARALLEL_DIRS = Mvm
+
+include $(LEVEL)/Makefile.config
+
+ifeq ($(WITH_JNJVM), 1)
+PARALLEL_DIRS += JnJVM
+endif
+
+ifeq ($(WITH_N3), 1)
+PARALLEL_DIRS += N3
+endif
+
 LIBRARYNAME = Main
 
 include $(LEVEL)/Makefile.common

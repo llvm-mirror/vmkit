@@ -1988,6 +1988,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
 Constant* CLIJit::constantVMObjectNull;
 
 
+#if N3_EXECUTE > 1
 static void printArgs(std::vector<llvm::Value*> args, BasicBlock* insertAt) {
   for (std::vector<llvm::Value*>::iterator i = args.begin(),
        e = args.end(); i!= e; ++i) {
@@ -2009,6 +2010,7 @@ static void printArgs(std::vector<llvm::Value*> args, BasicBlock* insertAt) {
   }
 
 }
+#endif
 
 Value* CLIJit::invoke(Value *F, std::vector<llvm::Value*> args,
                        const char* Name,

@@ -217,8 +217,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
                   bytecodes[i]);
       PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "compiling %s::", compilingMethod->printString());
-      PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]]);
-      PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "\n");
+      PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]], 0);
+      PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "\n", 0);
     }
     
     Opinfo* opinfo = &(opcodeInfos[i]);
@@ -1779,8 +1779,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
                     bytecodes[i + 1]);
         PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "compiling %s::", compilingMethod->printString());
-        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNamesFE[bytecodes[i + 1]]);
-        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "\n");
+        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNamesFE[bytecodes[i + 1]], 0);
+        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "\n", 0);
 
         switch (bytecodes[++i]) {
 
@@ -1951,8 +1951,8 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
                   bytecodes[i]);
       PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "exploring %s::", compilingMethod->printString());
-      PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]]);
-      PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "\n");
+      PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]], 0);
+      PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "\n", 0);
     }
     
     switch (bytecodes[i]) {
@@ -2380,9 +2380,9 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       
         PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
                     bytecodes[i + 1]);
-        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "exploring ");
-        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNamesFE[bytecodes[i + 1]]);
-        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "\n");
+        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "exploring ", 0);
+        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNamesFE[bytecodes[i + 1]], 0);
+        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "\n", 0);
       
         switch (bytecodes[++i]) {
 

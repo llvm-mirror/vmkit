@@ -106,9 +106,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
     
     PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
                 bytecodes[i]);
-    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "compiling ");
-    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]]);
-    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "\n");
+    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "compiling ", 0);
+    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]], 0);
+    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "\n", 0);
     
     Opinfo* opinfo = &(opcodeInfos[i]);
     if (opinfo->newBlock) {
@@ -2142,9 +2142,9 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
     
     PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
                 bytecodes[i]);
-    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "exploring ");
-    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]]);
-    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "\n");
+    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "exploring ",0);
+    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]], 0);
+    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "\n", 0);
     
     switch (bytecodes[i]) {
       

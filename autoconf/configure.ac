@@ -256,16 +256,22 @@ AC_ARG_WITH(gnu-classpath-installation-prefix,
        [[gnuclasspathinstallationprefix=/usr/local/classpath]]
 )
 
-if test "x${gnuclasspathlocalprefix}" = x; then
+WITH_JNJVM=0;
+
+if test "x${gnuclasspathinstallationprefix}" != x; then
   echo Using ${gnuclasspathinstallationprefix} as GNU CLASSPATH installation prefix;
   classpathglibj=${gnuclasspathinstallationprefix}/share/classpath/glibj.zip;
   classpathlibs=${gnuclasspathinstallationprefix}/lib/classpath/;
   classpathinclude=${gnuclasspathlocalprefix}/include;
-else
+  WITH_JNJVM=1;
+fi 
+
+if test "x${gnuclasspathlocalprefix}" != x; then
   echo Using ${gnuclasspathlocalprefix} as GNU CLASSPATH local prefix;
   classpathglibj=${gnuclasspathlocalprefix}/lib/;
   classpathlibs=${gnuclasspathlocalprefix}/lib/;
   classpathinclude=${gnuclasspathlocalprefix}/include;
+  WITH_JNJVM=1;
 fi
 
 
@@ -273,6 +279,7 @@ AC_SUBST([classpathglibj])
 AC_SUBST([classpathlibs])
 AC_SUBST([classpathinclude])
 AC_SUBST([gnuclasspathversion])
+AC_SUBST([WITH_JNJVM])
 
 dnl **************************************************************************
 dnl Local PNet directory
@@ -286,13 +293,15 @@ AC_ARG_WITH(pnet-local-prefix,
        ]]
 )
 
-AM_CONDITIONAL([WITH_N3], [test "x$pnetlocalprefix" != "x"])
 if test "x$pnetlocalprefix" != x; then
   echo Using ${pnetlocalprefix} as PNET local prefix;
-  AC_DEFINE([WITH_N3], [1], [Compiling N3])
+  WITH_N3=1;
+else
+  WITH_N3=0;
 fi
 
 AC_SUBST([pnetlocalprefix])
+AC_SUBST([WITH_N3])
 
 dnl===-----------------------------------------------------------------------===
 dnl===

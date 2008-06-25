@@ -215,14 +215,15 @@ void VMCommonClass::clinitClass() {
       VMMethod* meth = cl->lookupMethodDontThrow(N3::clinitName, args,
                                                  true, false);
       
-      PRINT_DEBUG(N3_LOAD, 0, COLOR_NORMAL, "; ");
-      PRINT_DEBUG(N3_LOAD, 0, LIGHT_GREEN, "clinit ");
+      PRINT_DEBUG(N3_LOAD, 0, COLOR_NORMAL, "; ", 0);
+      PRINT_DEBUG(N3_LOAD, 0, LIGHT_GREEN, "clinit ", 0);
       PRINT_DEBUG(N3_LOAD, 0, COLOR_NORMAL, "%s::%s\n", printString(),
                   cl->printString());
       
       if (meth) {
         llvm::Function* pred = meth->compiledPtr();
-        clinit_t res = (clinit_t)mvm::jit::executionEngine->getPointerToGlobal(pred);
+        clinit_t res = (clinit_t)
+          (intptr_t)mvm::jit::executionEngine->getPointerToGlobal(pred);
         res();
       }
 

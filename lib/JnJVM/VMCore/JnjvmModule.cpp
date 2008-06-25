@@ -803,7 +803,7 @@ Function* LLVMSignatureInfo::getVirtualBuf() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     virtualBufFunction = createFunctionCallBuf(true);
-    signature->setVirtualCallBuf((mvm::Code*)
+    signature->setVirtualCallBuf((intptr_t)
       mvm::jit::executionEngine->getPointerToGlobal(virtualBufFunction));
   }
   return virtualBufFunction;
@@ -814,7 +814,7 @@ Function* LLVMSignatureInfo::getVirtualAP() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     virtualAPFunction = createFunctionCallAP(true);
-    signature->setVirtualCallAP((mvm::Code*)
+    signature->setVirtualCallAP((intptr_t)
       mvm::jit::executionEngine->getPointerToGlobal(virtualAPFunction));
   }
   return virtualAPFunction;
@@ -825,7 +825,7 @@ Function* LLVMSignatureInfo::getStaticBuf() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     staticBufFunction = createFunctionCallBuf(false);
-    signature->setStaticCallBuf((mvm::Code*)
+    signature->setStaticCallBuf((intptr_t)
       mvm::jit::executionEngine->getPointerToGlobal(staticBufFunction));
   }
   return staticBufFunction;
@@ -836,7 +836,7 @@ Function* LLVMSignatureInfo::getStaticAP() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     staticAPFunction = createFunctionCallAP(false);
-    signature->setStaticCallAP((mvm::Code*)
+    signature->setStaticCallAP((intptr_t)
       mvm::jit::executionEngine->getPointerToGlobal(staticAPFunction));
   }
   return staticAPFunction;

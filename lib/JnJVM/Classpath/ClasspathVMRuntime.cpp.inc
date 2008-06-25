@@ -78,7 +78,7 @@ jclass clazz,
   void* res = dlopen(buf, RTLD_LAZY | RTLD_LOCAL);
   if (res != 0) {
     vm->nativeLibs.push_back(res);
-    onLoad_t onLoad = (onLoad_t)dlsym(res, "JNI_OnLoad");
+    onLoad_t onLoad = (onLoad_t)(intptr_t)dlsym(res, "JNI_OnLoad");
     if (onLoad) onLoad(&vm->javavmEnv, 0);
     return 1;
   } else {

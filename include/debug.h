@@ -63,7 +63,7 @@
   #endif
 
 #else
-#define PRINT_DEBUG(symb, level, color, fmt, args...)
+#define PRINT_DEBUG(symb, level, color, fmt, args...) do {} while(0);
 #endif
 
 

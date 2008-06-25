@@ -131,7 +131,7 @@ void CommandLine::executeInstr() {
       return;
     }
     
-    boot_t func = (boot_t)dlsym(handle, "boot");
+    boot_t func = (boot_t)(intptr_t)dlsym(handle, "boot");
     
     if (func == 0) {
       fprintf(stderr, "\t Unable to find %s boot method\n", argv[1]);
@@ -140,7 +140,7 @@ void CommandLine::executeInstr() {
     }
     func();
     
-    vmlet_main_t vmlet = (vmlet_main_t)dlsym(handle, "start_app");
+    vmlet_main_t vmlet = (vmlet_main_t)(intptr_t)dlsym(handle, "start_app");
 
     vmlets[argv[1]] = vmlet;
 

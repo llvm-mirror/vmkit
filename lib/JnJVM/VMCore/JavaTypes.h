@@ -141,15 +141,15 @@ public:
 
 class Signdef : public Typedef {
 private:
-  mvm::Code* _staticCallBuf;
-  mvm::Code* _virtualCallBuf;
-  mvm::Code* _staticCallAP;
-  mvm::Code* _virtualCallAP;
+  intptr_t _staticCallBuf;
+  intptr_t _virtualCallBuf;
+  intptr_t _staticCallAP;
+  intptr_t _virtualCallAP;
   
-  void* staticCallBuf();
-  void* virtualCallBuf();
-  void* staticCallAP();
-  void* virtualCallAP();
+  intptr_t staticCallBuf();
+  intptr_t virtualCallBuf();
+  intptr_t staticCallAP();
+  intptr_t virtualCallAP();
 
 public:
   std::vector<Typedef*> args;
@@ -161,39 +161,39 @@ public:
   static Signdef* signDup(const UTF8* name, Jnjvm* vm);
   
   
-  void* getStaticCallBuf() {
+  intptr_t getStaticCallBuf() {
     if(!_staticCallBuf) return staticCallBuf();
     return _staticCallBuf;
   }
 
-  void* getVirtualCallBuf() {
+  intptr_t getVirtualCallBuf() {
     if(!_virtualCallBuf) return virtualCallBuf();
     return _virtualCallBuf;
   }
   
-  void* getStaticCallAP() {
+  intptr_t getStaticCallAP() {
     if (!_staticCallAP) return staticCallAP();
     return _staticCallAP;
   }
 
-  void* getVirtualCallAP() {
+  intptr_t getVirtualCallAP() {
     if (!_virtualCallAP) return virtualCallAP();
     return _virtualCallAP;
   }
   
-  void setStaticCallBuf(mvm::Code* code) {
+  void setStaticCallBuf(intptr_t code) {
     _staticCallBuf = code;
   }
 
-  void setVirtualCallBuf(mvm::Code* code) {
+  void setVirtualCallBuf(intptr_t code) {
     _virtualCallBuf = code;
   }
   
-  void setStaticCallAP(mvm::Code* code) {
+  void setStaticCallAP(intptr_t code) {
     _staticCallAP = code;
   }
 
-  void setVirtualCallAP(mvm::Code* code) {
+  void setVirtualCallAP(intptr_t code) {
     _virtualCallAP = code;
   }
   

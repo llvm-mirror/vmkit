@@ -1204,7 +1204,6 @@ extern "C" void System_GC_Collect() {
 
 
 void NativeUtil::initialise() {
-  void* p;
-  p = (void*)&System_Runtime_CompilerServices_RuntimeHelpers_InitializeArray;
-  p = (void*)&System_Type_GetTypeFromHandle;
+  intptr_t p;
+  p = (intptr_t)&System_Runtime_CompilerServices_RuntimeHelpers_InitializeArray;
 }
