@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#define JNJVM_LOAD 0
+
 #include <float.h>
 #include <limits.h>
 #include <stdarg.h>
