@@ -16,7 +16,6 @@
 
 using namespace mvm;
 
-
 extern "C" int boot();
 extern "C" int start_app(int, char**);
 
