@@ -527,7 +527,7 @@ void mvm::jit::initialise() {
     llvm_atomic_lcs_i32 = Function::Create(
       /*Type=*/FuncTy_4,
       /*Linkage=*/GlobalValue::ExternalLinkage,
-      /*Name=*/"llvm.atomic.lcs.i32", module); // (external, no body)
+      /*Name=*/"llvm.atomic.cmp.swap.i32", module); // (external, no body)
   }
   
 
