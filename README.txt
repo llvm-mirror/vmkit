@@ -14,10 +14,13 @@ do not work.
 
 JnJVM and N3 use GCC's unwinding library (libgcc_s.so).
 
-There are mainly two options in the ./configure script
+These are the options you should pass to the ./configure script
+--with-llvmsrc: the source directory of LLVM
+--with-llvmobj: the object directory of LLVM
 --with-gnu-classpath-local-prefix: the local build of GNU classpath
 --with-pnet-local-prefix: the local build of PNET
---with-llvmsrc: the local build of LLVM
+
+There's also:
 --with-gc: user either boehm or single-mmap
 
 Running make on the root tree will produce two "tools":
