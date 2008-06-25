@@ -70,26 +70,26 @@ void *GC_run_thread(void *(*thread_func)(void *), void *arg){ return 0; }
 #ifndef USE_GC_BOEHM
 int GC_invoke_finalizers (void) { return 0; }
 int GC_should_invoke_finalizers (void) { return 0; }
-void GC_register_finalizer_no_order(void) { return; }
+void GC_register_finalizer_no_order(void*, void (*)(void*, void*), void*, void (**)(void*, void*), void**) { return; }
 void GC_gcollect(void) {}
-void GC_malloc_uncollectable(void) {}
-void GC_exclude_static_roots(void) {}
-void GC_free(void) {}
+void* GC_malloc_uncollectable(size_t) { return 0; }
+void GC_exclude_static_roots(void*, void*) {}
+void GC_free(void*) {}
 void GC_malloc_explicitly_typed(void) {}
-void GC_get_heap_size(void) {}
-void GC_register_disappearing_link(void) {}
-void GC_general_register_disappearing_link(void) {}
-void GC_pthread_sigmask(void) {}
-void GC_pthread_detach(void) {}
-void GC_pthread_create(void) {}
-void GC_malloc(void) {}
+size_t GC_get_heap_size(void) {return 0;}
+int GC_register_disappearing_link(void**) { return 0; }
+int GC_general_register_disappearing_link(void**, void*) { return 0; }
+int GC_pthread_sigmask(int, const sigset_t*, sigset_t*) { return 0; }
+int GC_pthread_detach(pthread_t) { return 0; }
+int GC_pthread_create(pthread_t*, const pthread_attr_t*, void* (*)(void*), void*) { return 0; }
+void* GC_malloc(size_t) { return 0; }
 void GC_make_descriptor(void) {}
-void GC_unregister_disappearing_link(void) {}
-void GC_finalizer_notifier(void) {}
-void GC_java_finalization(void) {}
-void GC_finalize_on_demand(void) {}
-void GC_set_max_heap_size(void) {}
-void GC_malloc_atomic(void) {}
+int GC_unregister_disappearing_link(void**) { return 0; }
+void (*GC_finalizer_notifier)(void);
+int GC_java_finalization;
+int GC_finalize_on_demand;
+void GC_set_max_heap_size(GC_word) {}
+void* GC_malloc_atomic(size_t) { return 0; }
 #endif
 
 // Fake termcap symbols

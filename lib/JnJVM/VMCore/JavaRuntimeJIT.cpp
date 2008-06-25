@@ -269,7 +269,7 @@ static JavaArray* multiCallNewIntern(arrayCtor_t ctor, ClassArray* cl,
 extern "C" JavaArray* multiCallNew(ClassArray* cl, uint32 len, ...) {
   va_list ap;
   va_start(ap, len);
-  sint32 dims[len];
+  sint32* dims = (sint32*)alloca(sizeof(sint32) * len);
   for (uint32 i = 0; i < len; ++i){
     dims[i] = va_arg(ap, int);
   }

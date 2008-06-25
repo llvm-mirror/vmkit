@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#ifdef SERVICE_VM
 #include "mvm/JIT.h"
 
 #include "JavaJIT.h"
@@ -200,3 +201,5 @@ void ServiceDomain::startExecution() {
   mvm::GCThreadCollector* cur = mvm::GCCollector::threads->myloc();
   cur->meta = this;
 }
+
+#endif

@@ -350,7 +350,8 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
 const Type* LLVMClassInfo::getVirtualType() {
   if (!virtualType) {
     std::vector<const llvm::Type*> fields;
-    JavaField* array[classDef->virtualFields.size()];
+    JavaField** array = 
+      (JavaField**)alloca(sizeof(JavaField*) * classDef->virtualFields.size());
     
     if (classDef->super) {
       LLVMClassInfo* CLI = 
@@ -401,7 +402,8 @@ const Type* LLVMClassInfo::getStaticType() {
   if (!staticType) {
     Class* cl = (Class*)classDef;
     std::vector<const llvm::Type*> fields;
-    JavaField* array[classDef->staticFields.size() + 1];
+    JavaField** array = (JavaField**)
+      alloca(sizeof(JavaField*) * (classDef->staticFields.size() + 1));
     fields.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
 
     for (CommonClass::field_iterator i = classDef->staticFields.begin(),

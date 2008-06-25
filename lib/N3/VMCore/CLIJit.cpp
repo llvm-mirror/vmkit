@@ -399,7 +399,7 @@ Value* CLIJit::changeType(Value* val, const Type* type) {
 void CLIJit::makeArgs(const FunctionType* type, std::vector<Value*>& Args,
                       bool structReturn) {
   uint32 size = type->getNumParams();
-  Value* args[size];
+  Value** args = (Value**)alloca(sizeof(Value*) * size);
   sint32 index = size - 1;
   FunctionType::param_iterator e = type->param_end();
   e--;
@@ -486,7 +486,7 @@ void CLIJit::invoke(uint32 value) {
       
     VMClassArray* type = (VMClassArray*)meth->classDef;
     uint32 dims = type->dims;
-    Value* args[dims];
+    Value** args = (Value**)alloca(sizeof(Value*) * dims);
     Value* val = 0;
     if (func == 0) {
       val = pop();
@@ -611,7 +611,7 @@ void CLIJit::invokeNew(uint32 value) {
   } else if (type->isArray) {
     VMClassArray* arrayType = (VMClassArray*)type;
     Value* valCl = new LoadInst(arrayType->llvmVar(), "", currentBlock);
-    Value* args[arrayType->dims + 1];
+    Value** args = (Value**)alloca(sizeof(Value*) * (arrayType->dims + 1));
     args[0] = valCl;
 
     for (int cur = arrayType->dims; cur > 0; --cur)
@@ -2159,7 +2159,6 @@ void AddStandardCompilePasses(FunctionPassManager *PM) {
   // LLVM does not allow calling functions from other modules in verifier
   //PM->add(llvm::createVerifierPass());                  // Verify that input is correct
   
-  addPass(PM, mvm::createEscapeAnalysisPass(CLIJit::objConsLLVM, CLIJit::objInitLLVM));
   addPass(PM, llvm::createCFGSimplificationPass());    // Clean up disgusting code
   addPass(PM, llvm::createScalarReplAggregatesPass());// Kill useless allocas
   addPass(PM, llvm::createInstructionCombiningPass()); // Clean up after IPCP & DAE

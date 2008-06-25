@@ -204,6 +204,7 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, createGVNPass());                  // Remove redundancies
   addPass(PM, createMemCpyOptPass());            // Remove memcpy / form memset
   addPass(PM, createSCCPPass());                 // Constant prop with SCCP
+  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
   
   addPass(PM, mvm::createEscapeAnalysisPass(JnjvmModule::JavaObjectAllocateFunction));
   addPass(PM, mvm::createLowerConstantCallsPass());

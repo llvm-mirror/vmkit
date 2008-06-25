@@ -2076,7 +2076,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         LLVMCommonClassInfo* LCI = module->getClassInfo(dcl);
         Value* valCl = LCI->getVar(this);
-        Value* args[dim + 2];
+        Value** args = (Value**)alloca(sizeof(Value*) * (dim + 2));
         args[0] = valCl;
         args[1] = ConstantInt::get(Type::Int32Ty, dim);
 

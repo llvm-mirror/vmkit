@@ -27,7 +27,7 @@ template <class T>
 class TJavaArray : public JavaObject {
 public:
   sint32 size;
-  T elements[0];
+  T elements[1];
 };
 
 class JavaArray : public TJavaArray<void*> {
@@ -63,7 +63,7 @@ public:
   class name : public TJavaArray<elmt> {                      \
   public:                                                     \
     static name* acons(sint32 n, ClassArray* cl, Jnjvm* vm);  \
-  };
+  }
 
 ARRAYCLASS(ArrayUInt8,  uint8);
 ARRAYCLASS(ArraySInt8,  sint8);

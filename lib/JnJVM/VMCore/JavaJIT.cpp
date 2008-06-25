@@ -341,7 +341,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   // The counter will not overflow, increment it.
   Value* Add = BinaryOperator::createAdd(mvm::jit::constantOne, atomic, "",
                                          currentBlock);
-  new StoreInst(Add, lockPtr, "", currentBlock);
+  new StoreInst(Add, lockPtr, false, currentBlock);
   BranchInst::Create(OK, currentBlock);
 
   currentBlock = OverflowCounterBB;
@@ -385,7 +385,7 @@ void JavaJIT::monitorExit(Value* obj) {
   
   // Locked once, set zero
   currentBlock = LockedOnceBB;
-  new StoreInst(mvm::jit::constantZero, lockPtr, currentBlock);
+  new StoreInst(mvm::jit::constantZero, lockPtr, false, currentBlock);
   BranchInst::Create(EndUnlock, currentBlock);
 
   currentBlock = NotLockedOnceBB;
@@ -403,7 +403,7 @@ void JavaJIT::monitorExit(Value* obj) {
   // Decrement the counter.
   Value* Sub = BinaryOperator::createSub(lock, mvm::jit::constantOne, "",
                                          currentBlock);
-  new StoreInst(Sub, lockPtr, currentBlock);
+  new StoreInst(Sub, lockPtr, false, currentBlock);
   BranchInst::Create(EndUnlock, currentBlock);
 
   currentBlock = FatLockBB;
@@ -833,13 +833,14 @@ llvm::Function* JavaJIT::javaCompile() {
   
   func->setLinkage(GlobalValue::ExternalLinkage);
   
-  /*
+  
   if (compilingMethod->name == 
       compilingClass->isolate->asciizConstructUTF8("main")) {
     llvmFunction->print(llvm::cout);
+    printf("\n");
     void* res = mvm::jit::executionEngine->getPointerToGlobal(llvmFunction);
     void* base = res;
-    while (base <  (void*)((char*)res + ((mvm::Code*)res)->objectSize())) {
+    while (base <  (void*)((char*)res + 100)) {
       printf("%08x\t", (unsigned)base);
       int n= mvm::jit::disassemble((unsigned int *)base);
       printf("\n");
@@ -848,7 +849,7 @@ llvm::Function* JavaJIT::javaCompile() {
     printf("\n");
     fflush(stdout);
   }
-  */
+
 
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "--> end compiling %s\n",
               compilingMethod->printString());
@@ -1346,7 +1347,7 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
   nb++;
 #endif
   Args.reserve(nb + 2);
-  Value* args[nb];
+  Value** args = (Value**)alloca(nb*sizeof(Value*));
 #if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
   args[nb - 1] = isolateLocal;
   sint32 start = nb - 2;

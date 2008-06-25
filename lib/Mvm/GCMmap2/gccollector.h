@@ -10,7 +10,7 @@
 #ifndef _GC_COLLECTOR_H_
 #define _GC_COLLECTOR_H_
 
-#include "config.h"
+#include "mvm/Config/config.h"
 #include "gcalloc.h"
 #ifdef HAVE_PTHREAD
 #include "gcthread.h"

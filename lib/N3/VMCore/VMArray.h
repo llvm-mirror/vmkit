@@ -30,7 +30,7 @@ class VMArray : public VMObject {
 public:
   static VirtualTable* VT;
   sint32 size;
-  void* elements[0];
+  void* elements[1];
   static const sint32 MaxArraySize;
   static const llvm::Type* llvmType;
 
@@ -48,7 +48,7 @@ class name : public VMArray {                                         \
 public:                                                               \
   static VirtualTable* VT;                                            \
   static const llvm::Type* llvmType;                                  \
-  elmt elements[0];                                                   \
+  elmt elements[1];                                                   \
   static name *acons(sint32 n, VMClassArray* cl);                     \
   void initialise(VMCommonClass* atype, sint32 n);                    \
   elmt at(sint32) const;                                              \
@@ -73,7 +73,7 @@ class ArrayObject : public VMArray {
 public:
   static VirtualTable* VT;
   static const llvm::Type* llvmType;
-  VMObject* elements[0];
+  VMObject* elements[1];
   static ArrayObject *acons(sint32 n, VMClassArray* cl);
   void initialise(VMCommonClass* atype, sint32 n);
   VMObject* at(sint32) const;
@@ -85,7 +85,7 @@ public:
 class UTF8 : public VMArray {
 public:
   static VirtualTable* VT;
-  uint16 elements[0];
+  uint16 elements[1];
 
   static const llvm::Type* llvmType;
   static UTF8* acons(sint32 n, VMClassArray* cl);

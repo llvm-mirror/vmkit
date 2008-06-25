@@ -41,7 +41,7 @@ using namespace jnjvm;
 Jnjvm* Jnjvm::bootstrapVM = 0;
 
 #define DEF_UTF8(var) \
-  const UTF8* Jnjvm::var = 0;
+  const UTF8* Jnjvm::var = 0
   
   DEF_UTF8(initName);
   DEF_UTF8(clinitName);

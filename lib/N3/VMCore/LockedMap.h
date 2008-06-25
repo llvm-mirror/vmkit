@@ -97,7 +97,7 @@ public:
     }
   }
 
-  virtual void print(mvm::PrintBuffer* buf) {
+  virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("Hashtable<>");
   }
 
@@ -217,7 +217,7 @@ public:
     }
   }
 
-  virtual void print(mvm::PrintBuffer* buf) {
+  virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("UTF8 Hashtable<>");
   }
   

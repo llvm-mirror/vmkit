@@ -34,17 +34,17 @@ void CLIJit::printBacktrace() {
     if (code) {
       VMMethod* meth = (VMMethod*)code->getMetaInfo();
       if (meth) {
-        printf("; %p in %s\n",  ips[n - 1], meth->printString());
+        printf("; %p in %s\n",  (void*)ips[n - 1], meth->printString());
       } else {
-        printf("; %p in %s\n",  ips[n - 1], "unknown");
+        printf("; %p in %s\n",  (void*)ips[n - 1], "unknown");
       }
     } else {
       Dl_info info;
       int res = dladdr(ips[n++], &info);
       if (res != 0) {
-        printf("; %p in %s\n",  ips[n - 1], info.dli_sname);
+        printf("; %p in %s\n",  (void*)ips[n - 1], info.dli_sname);
       } else {
-        printf("; %p in Unknown\n", ips[n - 1]);
+        printf("; %p in Unknown\n", (void*)ips[n - 1]);
       }
     }
   }
