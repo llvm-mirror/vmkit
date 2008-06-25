@@ -76,7 +76,7 @@ uint32 JavaCtpInfo::CtpReaderFloat(Jnjvm* vm, uint32 type, uint32 e,
                                    void** ctpRes, uint8* ctpType) {
   uint32 val = reader.readU4();
   ctpDef[e] = val;
-  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <class>\tfloat: %p\n", e,
+  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <class>\tfloat: %d\n", e,
               val);
   return 1;
 }
@@ -181,7 +181,7 @@ uint32 JavaCtpInfo::CtpReaderLong(Jnjvm* vm, uint32 type, uint32 e,
   ctpDef[e + 1] = reader.readU4();
   ctpDef[e] = reader.readU4();
   ctpType[e] = ConstantLong;
-  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <long>\%d %d\n", e,
+  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <long>%d %d\n", e,
               ctpDef[e], ctpDef[e + 1]);
   return 2;
 }
@@ -192,7 +192,7 @@ uint32 JavaCtpInfo::CtpReaderDouble(Jnjvm* vm, uint32 type, uint32 e,
   ctpDef[e + 1] = reader.readU4();
   ctpDef[e] = reader.readU4();
   ctpType[e] = ConstantDouble;
-  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <double>\%d %d\n", e,
+  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <double>%d %d\n", e,
               ctpDef[e], ctpDef[e + 1]);
   return 2;
 }
