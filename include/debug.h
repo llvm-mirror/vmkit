@@ -53,23 +53,23 @@
 #if DEBUG > 0
 
   #ifdef WITH_COLOR
-    #define PRINT_DEBUG(symb, level, color, fmt, args...) \
+    #define PRINT_DEBUG(symb, level, color, args...) \
       if (symb > level) { \
           printf("%s%s%s", ESC, color, END); \
-          printf(fmt, ##args); \
+          printf(##args); \
           printf("%s%s%s", ESC, COLOR_NORMAL, END); \
           fflush(stdout); \
       }
   #else
     #define PRINT_DEBUG(symb, level, color, fmt, args...) \
       if (symb > level) { \
-        printf(fmt, ##args); \
+        printf(##args); \
         fflush(stdout); \
       }
   #endif
 
 #else
-#define PRINT_DEBUG(symb, level, color, fmt, args...) do {} while(0);
+#define PRINT_DEBUG(symb, level, color, args...) do {} while(0);
 #endif
 
 
