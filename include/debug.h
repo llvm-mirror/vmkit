@@ -10,6 +10,12 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
+#define DEBUG 0
+#define N3_COMPILE 0 //2
+#define N3_EXECUTE 0
+#define DEBUG_LOAD 0 //2
+#define N3_LOAD 0 //1
+
 #define ESC "\033["
 #define COLOR_NORMAL ""
 #define END "m"

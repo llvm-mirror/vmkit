@@ -40,6 +40,7 @@ using namespace n3;
   INIT(UTF8);
   INIT(VMCommonClass);
   INIT(VMClass);
+  INIT(VMGenericClass);
   INIT(VMClassArray);
   INIT(VMClassPointer);
   INIT(VMMethod);
@@ -167,6 +168,11 @@ void VMClass::TRACER {
   virtualInstance->MARK_AND_TRACE;
   TRACE_VECTOR(VMClass*, innerClasses, std::allocator);
   outerClass->MARK_AND_TRACE;
+}
+
+void VMGenericClass::TRACER {
+  VMClass::PARENT_TRACER;
+  TRACE_VECTOR(VMCommonClass*, genericParams, std::allocator);
 }
 
 void VMClassArray::TRACER {

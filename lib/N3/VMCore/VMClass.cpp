@@ -395,6 +395,7 @@ void VMClassPointer::makeType() {
 
 void VMCommonClass::resolveType(bool stat, bool clinit) {
   VMCommonClass* cl = this;
+  //printf("*** Resolving: %s\n", cl->printString());
   if (cl->status < resolved) {
     cl->aquire();
     int status = cl->status;
@@ -814,4 +815,8 @@ bool VMMethod::signatureEquals(std::vector<VMCommonClass*>& args) {
     }
   }
   return true;
+}
+
+void VMGenericClass::print(mvm::PrintBuffer* buf) const {
+  buf->write("Generic Class");
 }

@@ -147,6 +147,15 @@ public:
   uint32 explicitLayoutSize;
 };
 
+class VMGenericClass : public VMClass {
+public:
+  static VirtualTable* VT;
+  virtual void print(mvm::PrintBuffer* buf) const;
+  virtual void TRACER;
+
+  std::vector<VMCommonClass*> genericParams;
+};
+
 class VMClassArray : public VMCommonClass {
 public:
   static VirtualTable* VT;

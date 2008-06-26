@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG 0
-#define N3_COMPILE 0
-#define N3_EXECUTE 0
+//#define DEBUG 0
+//#define N3_COMPILE 0
+//#define N3_EXECUTE 0
 
 #include <string.h>
 

@@ -215,6 +215,11 @@ DEF_TABLE_MASK(METHOD_File, 3,
   STRING(CONSTANT_FILE_NAME)
   BLOB(CONSTANT_FILE_HASH_VALUE))
 
+DEF_TABLE_MASK(METHOD_GenericParam, 4,
+  INT16(CONSTANT_GENERIC_PARAM_NUMBER)
+  INT16(CONSTANT_GENERIC_PARAM_FLAGS)
+  TYPE_OR_METHODDEF(CONSTANT_GENERIC_PARAM_OWNER)
+  STRING(CONSTANT_GENERIC_PARAM_NAME))
 
 void Header::print(mvm::PrintBuffer* buf) const {
   buf->write("Header<>");
@@ -332,7 +337,52 @@ VMClass* Assembly::constructClass(const UTF8* name,
   VMClass* cl = (VMClass*)loadedNameClasses->lookupOrCreate(CC, this, classDup);
   loadedTokenClasses->lookupOrCreate(token, cl);
   cl->token = token;
-  cl->assembly = this;
+  return cl;
+}
+
+static VMCommonClass* genClassDup(ClassNameCmp &cmp, Assembly* ass) {
+  VMClass* cl = gc_new(VMGenericClass)();
+  cl->initialise(ass->vm, false);
+  cl->name = cmp.name;
+  cl->nameSpace = cmp.nameSpace;
+  cl->virtualTracer = 0;
+  cl->staticInstance = 0;
+  cl->virtualInstance = 0;
+  cl->virtualType = 0;
+  cl->super = 0;
+  cl->status = hashed;
+  cl->assembly = ass;
+  return cl;
+}
+
+VMGenericClass* Assembly::constructGenericClass(const UTF8* name,
+                                         const UTF8* nameSpace, std::vector<VMCommonClass*> genArgs, uint32 token) {
+  uint32 size = name->size + 2;
+  sint32 i = 0;
+  for (std::vector<VMCommonClass*>::iterator it = genArgs.begin(), e = genArgs.end(); it!= e; ++it) {
+    size += (*it)->name->size + 1;
+  }
+  uint16* buf = (uint16*) alloca(sizeof(uint16) * size);
+  for (i = 0; i < name->size; i++) {
+    buf[i] = name->at(i);
+  }
+  buf[i++] = '<';
+  for (std::vector<VMCommonClass*>::iterator it = genArgs.begin(), e = genArgs.end(); it!= e; ++it) {
+    for (int j = 0; j < (*it)->name->size; i++, j++) {
+      buf[i] = (*it)->name->at(j);
+    }
+    buf[i++] = ',';
+  }
+  buf[i] = '>';
+  const UTF8* genName = UTF8::readerConstruct(VMThread::get()->vm, buf, size);
+  printf("%s\n", genName->printString());
+  
+  ClassNameCmp CC(genName, nameSpace);
+  VMGenericClass* cl = (VMGenericClass*) loadedNameClasses->lookupOrCreate(CC, this, genClassDup);
+  
+  cl->genericParams = genArgs; // TODO GC safe?
+  cl->token = token;
+  
   return cl;
 }
 
@@ -377,6 +427,7 @@ Assembly* Assembly::allocate(const UTF8* name) {
   ass->assemblyRefs = 0;
   ass->isRead = false;
   ass->name = name;
+  ass->currGenericClass = 0;
   return ass;
 }
 
@@ -429,7 +480,7 @@ maskVector_t Assembly::maskVector[64] = {
   unimplemented,                // 0x27
   METHOD_ManifestResource,      // 0x28
   METHOD_NestedClass,           // 0x29
-  unimplemented,                // 0x2A
+  METHOD_GenericParam,          // 0x2A
   METHOD_MethodSpec,            // 0x2B
   METHOD_GenericParamConstraint,// 0x2C
   unimplemented,
@@ -496,7 +547,7 @@ const char* Assembly::maskVectorName[64] = {
   "unimplemented",                // 0x27
   "METHOD_ManifestResource",      // 0x28
   "METHOD_NestedClass",           // 0x29
-  "unimplemented",                // 0x2A
+  "METHOD_GenericParam",          // 0x2A
   "METHOD_MethodSpec",            // 0x2B
   "METHOD_GenericParamConstraint", // 0x2C
   "unimplemented",
@@ -909,6 +960,10 @@ VMCommonClass* Assembly::readTypeRef(N3* vm, uint32 index) {
 }
 
 VMClass* Assembly::readTypeDef(N3* vm, uint32 index) {
+  return readTypeDef(vm, index, (std::vector<VMCommonClass*>) 0);
+}
+
+VMClass* Assembly::readTypeDef(N3* vm, uint32 index, std::vector<VMCommonClass*> genArgs) {
   uint32 token = (CONSTANT_TypeDef << 24) + index;
   uint32 stringOffset = CLIHeader->stringStream->realOffset;
 
@@ -929,9 +984,18 @@ VMClass* Assembly::readTypeDef(N3* vm, uint32 index) {
   //Table* methodTable  = CLIHeader->tables[CONSTANT_MethodDef];
   //uint32 methodSize   = methodTable->rowsNumber;
 
-  VMClass* type = constructClass(readString(vm, name + stringOffset),
+  VMClass* type;
+  
+  if (genArgs == (std::vector<VMCommonClass*>) 0) {
+    type = constructClass(readString(vm, name + stringOffset),
+                          readString(vm, nameSpace + stringOffset),
+                          token);
+  } else {
+	// generic type
+	type = constructGenericClass(readString(vm, name + stringOffset),
                                  readString(vm, nameSpace + stringOffset),
-                                 token);
+                                 genArgs, token);
+  }
 
   type->vm = vm;
 
@@ -991,10 +1055,15 @@ void Assembly::getInterfacesFromTokenType(std::vector<uint32>& tokens,
   }
 }
 
+VMCommonClass* Assembly::loadType(N3* vm, uint32 token, bool resolve,
+                            bool resolveStatic, bool clinit, bool dothrow) {
+	return loadType(vm, token, resolve, resolveStatic, clinit, dothrow, (std::vector<VMCommonClass*>) 0);
+}
 
 
 VMCommonClass* Assembly::loadType(N3* vm, uint32 token, bool resolve,
-                            bool resolveStatic, bool clinit, bool dothrow) {
+                            bool resolveStatic, bool clinit, bool dothrow,
+                            std::vector<VMCommonClass*> genArgs) {
   
   VMCommonClass* type = lookupClassFromToken(token);
   if (!type || type->status == hashed) {
@@ -1002,7 +1071,7 @@ VMCommonClass* Assembly::loadType(N3* vm, uint32 token, bool resolve,
     uint32 index = token & 0xffff;
 
     if (table == CONSTANT_TypeDef) {
-      type = readTypeDef(vm, index);
+      type = readTypeDef(vm, index, genArgs);
     } else if (table == CONSTANT_TypeRef) {
       type = readTypeRef(vm, index);
     } else if (table == CONSTANT_TypeSpec) {
@@ -1027,6 +1096,9 @@ VMCommonClass* Assembly::loadType(N3* vm, uint32 token, bool resolve,
 }
 
 void Assembly::readClass(VMCommonClass* cl) {
+  // temporarily store the class being read in case it is a generic class
+  currGenericClass = dynamic_cast<VMGenericClass*>(cl);
+	
   uint32 index = cl->token & 0xffff;
   Table* typeTable = CLIHeader->tables[CONSTANT_TypeDef];
   uint32 typeSize = typeTable->rowsNumber;
@@ -1077,6 +1149,9 @@ void Assembly::readClass(VMCommonClass* cl) {
       }
     }
   }
+  
+  // we have stopped reading a generic class
+  currGenericClass = 0;
 }
 
 void Assembly::readCustomAttributes(uint32 offset, std::vector<llvm::GenericValue>& args, VMMethod* meth) {
@@ -1233,6 +1308,8 @@ VMMethod* Assembly::readMethodDef(uint32 index, VMCommonClass* cl) {
   if (rva) {
     meth->offset = textSection->rawAddress + 
                    (rva - textSection->virtualAddress);
+  } else {
+    meth->offset = 0;
   }
   
   if (paramList && paramTable != 0 && paramList <= paramSize) {
@@ -1580,16 +1657,26 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token) {
     case 3: VMThread::get()->vm->error("implement me %d", table); break;
     case 4: {
       VMClass* type = (VMClass*)readTypeSpec(vm, index);
-      VMMethod* meth = gc_new(VMMethod)();
-      bool virt = extractMethodSignature(offset, type, args);
-      bool structReturn = false;
-      const llvm::FunctionType* signature = VMMethod::resolveSignature(args, virt, structReturn);
-      meth->_signature = signature;
-      meth->classDef = type;
-      meth->name = name;
-      meth->virt = virt;
-      meth->structReturn = structReturn;
-      return meth;
+      
+      VMGenericClass* genClass = dynamic_cast<VMGenericClass*>(type);
+
+      if (genClass) {
+        bool virt = extractMethodSignature(offset, type, args);
+        VMMethod* meth = type->lookupMethod(name, args, !virt, true);
+        return meth;
+      } else {
+	    VMMethod* meth = gc_new(VMMethod)();
+	    bool virt = extractMethodSignature(offset, type, args);
+	    bool structReturn = false;
+	    const llvm::FunctionType* signature = VMMethod::resolveSignature(args, virt, structReturn);
+	    meth->_signature = signature;
+	    meth->classDef = type;
+	    meth->name = name;
+	    meth->virt = virt;
+	    meth->structReturn = structReturn;
+	    meth->parameters = args; // TODO check whether this fix is correct
+	    return meth;
+      }
     }
     default:
       VMThread::get()->vm->error("unknown MemberRefParent tag %d", table);

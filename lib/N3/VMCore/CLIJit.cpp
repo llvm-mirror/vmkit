@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG 0
-#define N3_COMPILE 0
-#define N3_EXECUTE 0
+//#define DEBUG 0
+//#define N3_COMPILE 0
+//#define N3_EXECUTE 0
 
 #include "debug.h"
 #include "types.h"
@@ -458,12 +458,23 @@ Instruction* CLIJit::invokeInline(VMMethod* meth,
   CLIJit* jit = gc_new(CLIJit)();
   jit->compilingClass = meth->classDef; 
   jit->compilingMethod = meth;
+  
+  // save current class in case of recursive calls to compile()
+  VMGenericClass* old = jit->compilingClass->assembly->currGenericClass;
+  // temporarily store the class being compiled in case it is a generic class
+  jit->compilingClass->assembly->currGenericClass = dynamic_cast<VMGenericClass*>(jit->compilingClass);
+  
+  
   jit->unifiedUnreachable = unifiedUnreachable;
   jit->inlineMethods = inlineMethods;
   jit->inlineMethods[meth] = true;
   Instruction* ret = jit->inlineCompile(llvmFunction, currentBlock, 
                                         currentExceptionBlock, args);
   inlineMethods[meth] = false;
+  
+  // restore saved class
+  jit->compilingClass = old;
+  
   return ret;
 }
 
@@ -915,7 +926,7 @@ Function* CLIJit::compileIntern() {
 Function* CLIJit::compileNative() {
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "native compile %s\n",
               compilingMethod->printString());
-  
+    
   const FunctionType *funcType = compilingMethod->getSignature();
   
   Function* func = llvmFunction = compilingMethod->methPtr;
@@ -1409,6 +1420,11 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   jit->compilingClass = cl; 
   jit->compilingMethod = meth;
 
+  // save current class in case of recursive calls to compile()
+  VMGenericClass* old = cl->assembly->currGenericClass;
+  // temporarily store the class being compiled in case it is a generic class
+  cl->assembly->currGenericClass = dynamic_cast<VMGenericClass*>(cl);
+  
   meth->getSignature();
   if (isInternal(meth->implFlags)) {
     return jit->compileNative();
@@ -1417,6 +1433,9 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   } else {
     return jit->compileFatOrTiny();
   }
+  
+  // restore saved class
+  cl->assembly->currGenericClass = old;
 }
 
 llvm::Function *VMMethod::compiledPtr() {

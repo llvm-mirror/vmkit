@@ -136,9 +136,11 @@ static VMCommonClass* METHOD_ElementTypeClass(uint32 op,
 }
 
 static VMCommonClass* METHOD_ElementTypeVar(uint32 op, Assembly* ass, uint32& offset) {
+  uint32 number = ass->uncompressSignature(offset);
+  return ass->currGenericClass->genericParams[number];
   //uint32 type = READ_U4(ass->bytes, offset);
-  VMThread::get()->vm->error("implement me");
-  return 0;
+  //VMThread::get()->vm->error("implement me");
+  //return 0;
 }
 
 static VMCommonClass* METHOD_ElementTypeArray(uint32 op, Assembly* ass, uint32& offset) {
@@ -167,8 +169,54 @@ static VMCommonClass* METHOD_ElementTypeArray(uint32 op, Assembly* ass, uint32& 
 }
 
 static VMCommonClass* METHOD_ElementTypeGenericInst(uint32 op, Assembly* ass, uint32& offset) {
-  VMThread::get()->vm->error("implement me");
-  return 0;
+  // offset points to (CLASS | VALUETYPE) TypeDefOrRefEncoded
+
+  // skip generic type definition
+  offset++; // this is (CLASS | VALUETYPE)
+
+  // save starting offset for later use
+  uint32 genericTypeOffset = offset;
+  
+  ass->uncompressSignature(offset); // TypeDefOrRefEncoded
+
+  //VMCommonClass* cl = ass->exploreType(offset);
+  
+  uint32 argCount = ass->uncompressSignature(offset);
+  
+  std::vector<VMCommonClass*> args;
+  
+  // Get generic arguments.
+  for (uint32 i = 0; i < argCount; ++i) {
+	  args.push_back(ass->exploreType(offset));
+  }
+
+  // save offset
+  uint32 endOffset = offset;
+  // restore starting offset
+  offset = genericTypeOffset;
+  
+  // TypeDefOrRefEncoded
+  uint32 value = ass->uncompressSignature(offset);
+  uint32 table = value & 3;
+  uint32 index = value >> 2;
+  uint32 token = 0;
+
+  switch (table) {
+    case 0: table = CONSTANT_TypeDef; break;
+    case 1: table = CONSTANT_TypeRef; break;
+    case 2: table = CONSTANT_TypeSpec; break;
+    default:
+      VMThread::get()->vm->error("unknown TypeDefOrRefEncoded %d", index);
+      break;
+  }
+
+  token = (table << 24) + index;
+  VMCommonClass* cl = ass->loadType((N3*)(VMThread::get()->vm), token, false, 
+                                    false, false, true, args);
+  // restore endOffset
+  offset = endOffset;
+  
+  return cl;
 }
 
 static VMCommonClass* METHOD_ElementTypeTypedByRef(uint32 op, Assembly* ass, uint32& offset) {

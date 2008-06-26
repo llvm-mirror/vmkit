@@ -42,6 +42,7 @@ class Reader;
 class UTF8;
 class VirtualMachine;
 class VMClass;
+class VMGenericClass;
 class VMClassArray;
 class VMClassPointer;
 class VMCommonClass;
@@ -142,6 +143,10 @@ public:
                                uint32 dims);
   VMClass*      constructClass(const UTF8* name,
                                const UTF8* nameSpace, uint32 token);
+  VMGenericClass* constructGenericClass(const UTF8* name,
+                                        const UTF8* nameSpace,
+                                        std::vector<VMCommonClass*> genArgs,
+                                        uint32 token);
   VMField*      constructField(VMClass* cl, const UTF8* name,
                                VMCommonClass* signature, uint32 token);
   VMMethod*     constructMethod(VMClass* cl, const UTF8* name,
@@ -155,6 +160,9 @@ public:
   ClassTokenMap* loadedTokenClasses;
   MethodTokenMap* loadedTokenMethods;
   FieldTokenMap* loadedTokenFields;
+  
+  // helper which points to the current generic class while it is being read in readClass()
+  VMGenericClass* currGenericClass;
 
   mvm::Lock* lockVar;
   mvm::Cond* condVar;
@@ -202,6 +210,8 @@ public:
   uint32 getTypeDefTokenFromMethod(uint32 token);
   VMCommonClass* loadType(N3* vm, uint32 token, bool resolveFunc, bool resolve,
                           bool clinit, bool dothrow);
+  VMCommonClass* loadType(N3* vm, uint32 token, bool resolveFunc, bool resolve,
+                          bool clinit, bool dothrow, std::vector<VMCommonClass*> genArgs);
   
   VMCommonClass* loadTypeFromName(const UTF8* name, const UTF8* nameSpace, 
                                   bool resolveFunc, bool resolve,
@@ -213,6 +223,7 @@ public:
   VMField* readField(uint32 index, VMCommonClass* cl);
   Param* readParam(uint32 index, VMMethod* meth);
   VMClass* readTypeDef(N3* vm, uint32 index);
+  VMClass* readTypeDef(N3* vm, uint32 index, std::vector<VMCommonClass*> genArgs);
   VMCommonClass* readTypeSpec(N3* vm, uint32 index);
   Assembly* readAssemblyRef(N3* vm, uint32 index);
   VMCommonClass* readTypeRef(N3* vm, uint32 index);
@@ -703,6 +714,11 @@ public:
 #define CONSTANT_FILE_FLAGS 0
 #define CONSTANT_FILE_NAME 1
 #define CONSTANT_FILE_HASH_VALUE 2
+
+#define CONSTANT_GENERIC_PARAM_NUMBER 0
+#define CONSTANT_GENERIC_PARAM_FLAGS 1
+#define CONSTANT_GENERIC_PARAM_OWNER 2
+#define CONSTANT_GENERIC_PARAM_NAME 3
 
 } // end namespace n3
 
