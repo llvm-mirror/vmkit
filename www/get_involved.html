@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+          "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+  <title>VMKit - Get Involved</title>
+  <link type="text/css" rel="stylesheet" href="menu.css" />
+  <link type="text/css" rel="stylesheet" href="content.css" />
+</head>
+<body>
+
+<div id="menu">
+  <div>
+    <a href="http://llvm.org/">LLVM Home</a>
+  </div>
+  
+  <div class="submenu">
+    <label>VMKit Info</label>
+    <a href="index.html">About</a>
+    <a href="get_started.html">Get&nbsp;Started</a>
+    <a href="get_involved.html">Get&nbsp;Involved</a>
+  </div>
+  
+  <div class="submenu">
+    <label>Quick Links</label>
+    <a href="http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev">llvm-dev</a>
+    <a href="http://lists.cs.uiuc.edu/mailman/listinfo/vmkit-commits">vmkit-commits</a>
+    <a href="http://llvm.org/bugs/">Bug Reports</a>
+    <a href="http://llvm.org/svn/llvm-project/vmkit/trunk/">Browse Source</a>
+  </div>
+  
+  <div class="submenu">
+    <label>Events</label>
+    <a href="http://llvm.org/devmtg/">August 1, 2008 - LLVM/Clang Developer Meeting</a>
+  </div>
+
+</div>
+
+<div id="content">
+
+<h1>Getting Involved with the vmkit Project</h1>
+
+<p>Once you have <a href="get_started.html">checked out and built</a> vmkit and
+played around with it, you might be wondering what you can do to make it better
+and contribute to its development.  Alternatively, maybe you just want to follow
+the development of the project to see it progress.
+</p>
+
+<h2>Follow what's going on</h2>
+
+<p>VMKit is a subproject of the <a href="http://llvm.org">LLVM Project</a>, and
+uses llvm dev mailing list for development question and the vmkit-commits
+mailing list for patches:</p>
+
+<ul>
+<li><a href="http://lists.cs.uiuc.edu/mailman/listinfo/vmkit-commits">vmkit-commits
+</a> - This list is for patch submission/discussion.</li>
+
+<li><a href="http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev">llvmdev</a> - 
+This list is for everything else llvm/vmkit related (questions and answers, bug
+reports, etc).</li>
+
+</ul>
+
+<p>The best way to talk with other developers on the project is through the <a
+href="http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev">llvm-dev mailing
+list</a>.  </p>
+
+
+<h2>Open Projects</h2>
+
+<p>Here are a few tasks that are available for newcomers to work on, depending
+on what your interests are.  This list is provided to generate ideas, it is not
+intended to be comprehensive.  Please ask on llvm-dev for more specifics or to
+verify that one of these isn't already completed. :)</p>
+
+<ul>
+<li><b>Write a test-suite and nightly tester for vmkit</b>: vmkit needs it!</li>
+
+<li><b>Port vmkit to new architectures</b>: currently, vmkit runs on linux/x86
+and has some floating point issues on linux/powerpc 
+<a href="http://llvm.org/bugs/show_bug.cgi?id=642">See PR642</a>. A port to
+darwin/x86 would be nice.
+</li>
+
+<li><b>Implement a generational GC in llvm/vmkit</b>: llvm has the interface
+for GC support for static compilation, but not just in time. And since llvm is
+object layout-agnostic, vmkit needs to plug in its object layout somewhere.
+</li>
+
+<li><b>Improve LLVM with non-calls exceptions</b>: This is work-in-progress
+<a href="http://llvm.org/bugs/show_bug.cgi?id=1269">see PR1269</a>.
+</li>
+
+<li><b>Investigate hotspot-ing in llvm/vmkit</b>: vmkit has a compile-only
+approach. This resuts in a high startup penalty.</li>
+
+<li><b>Implement a llvm/clang/vmkit 'libgcc'</b>: vmkit uses the unwinding
+runtime of GCC. So it is strongly dependent on GCC. Implementing the
+unwind functions in llvm will help port vmkit to other compilers.</li>
+
+</ul>
+
+<p>If you hit a bug with vmkit, it is very useful for us if you reduce the code
+that demonstrates the problem down to something small.  There are many ways to
+do this; ask on llvm-dev for advice.</p>
+
+</div>
+</body>
+</html>

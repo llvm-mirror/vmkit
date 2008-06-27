@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+          "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+  <title>VMKit - Getting Started</title>
+  <link type="text/css" rel="stylesheet" href="menu.css" />
+  <link type="text/css" rel="stylesheet" href="content.css" />
+</head>
+<body>
+
+<div id="menu">
+  <div>
+    <a href="http://llvm.org/">LLVM Home</a>
+  </div>
+  
+  <div class="submenu">
+    <label>VMKit Info</label>
+    <a href="index.html">About</a>
+    <a href="get_started.html">Get&nbsp;Started</a>
+    <a href="get_involved.html">Get&nbsp;Involved</a>
+  </div>
+  
+  <div class="submenu">
+    <label>Quick Links</label>
+    <a href="http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev">llvm-dev</a>
+    <a href="http://lists.cs.uiuc.edu/mailman/listinfo/vmkit-commits">vmkit-commits</a>
+    <a href="http://llvm.org/bugs/">Bug Reports</a>
+    <a href="http://llvm.org/svn/llvm-project/vmkit/trunk/">Browse Source</a>
+  </div>
+  
+  <div class="submenu">
+    <label>Events</label>
+    <a href="http://llvm.org/devmtg/">August 1, 2008 - LLVM/Clang Developer Meeting</a>
+  </div>
+
+</div>
+
+<div id="content">
+
+<h1>Getting Started: Building and Running VMKit</h1>
+
+
+<p>This page gives you the shortest path to checking out vmkit and demos a few
+options.  This should get you up and running with the minimum of muss and fuss.
+If you like what you see, please consider <a href="get_involved.html">getting
+involved</a> with the vmkit community.</p>
+
+
+<h2>A word of warning</h2>
+
+<p>While this work aims to provide a fully functional JVM and CLI runtime, it
+is <em>still early work</em> and is under heavy development. 
+Some of the more notable missing pieces in the JVM are:</p>
+
+<ol>
+  <li>Support for JVM object finalization semantics.</li>
+</ol>
+
+<p>Some of the more notable missing pieces in the CLI runtime are:</p>
+
+<ol>
+  <li>Support for generics.</li>
+  <li>Support for arithmetic overflow.</li>
+  <li>Support for CLI object finalization semantics.</li>
+  <li>Thread support.</li>
+</ol>
+
+<p>Some of the common missing pieces in vmkit/llvm are:</p>
+
+<ol>
+  <li>Support for other platforms than linux/x86.</li>
+  <li>Hotspot-like virtual machine (e.g mixed interpretation/compilation).</li>
+</ol>
+
+<h2 id="build">Building vmkit / working with the code</h2>
+
+<p>If you would like to check out and build the project, the current scheme
+is (if you only want the JVM, you can skip the Pnet part. If you only want the CLI
+VM, you can skip the GNU Classpath part):</p>
+
+<ol>
+  <li><a href="http://www.llvm.org/docs/GettingStarted.html#checkout">Checkout
+   and build LLVM</a> from SVN head:</li>
+
+  <ul>
+    <li><tt>svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm</tt></li>
+    <li><tt>cd llvm</tt></li>
+    <li><tt>./configure; make</tt></li>
+  </ul>
+
+  
+  <li><a href="ftp://ftp.gnu.org/gnu/classpath/classpath-0.97.2.tar.gz">Download
+   GNU Classpath 0.97.2</a>:</li>
+
+  <ul>
+    <li><tt>tar zxvf classpath-0.97.2.tar.gz</tt></li>
+    <li><tt>cd classpath-0.97.2</tt></li>
+    <li><tt>./configure --disable-plugin --disable-examples; make</tt></li>
+    <li><tt>cd lib</li></tt>
+    <li><tt>ln -s ../native/jni/gtk-peer/.libs/libgtkpeer.so;</li></tt>
+    <li><tt>ln -s ../native/jni/gconf-peer/.libs/libgconfpeer.so;</li></tt>
+    <li><tt>ln -s ../native/jni/java-io/.libs/libjavaio.so;</li></tt>
+    <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalangreflect.so;</li></tt>
+    <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalang.so;</li></tt>
+    <li><tt>ln -s ../native/jni/java-net/.libs/libjavanet.so;</li></tt>
+    <li><tt>ln -s ../native/jni/java-nio/.libs/libjavanio.so;</li></tt>
+    <li><tt>ln -s ../native/jni/java-util/.libs/libjavautil.so;</li></tt>
+  </ul>
+  
+  <li><a href="http://download.savannah.gnu.org/releases/dotgnu-pnet/pnet-0.8.0.tar.gz">Download
+   PNet 0.8.0</a>:</li>
+   <ul>
+    <li><tt>tar zxvf pnet-0.8.0.tar.gz</tt></li>
+    <li><tt>cd pnet-0.8.0</tt></li>
+    <li><tt>./configure; make</tt></li>
+   </ul>
+  
+  <li><a href="http://download.savannah.gnu.org/releases/dotgnu-pnet/pnetlib-0.8.0.tar.gz">Download
+   PNetlib 0.8.0</a>:</li>
+   <ul>
+    <li><tt>tar zxvf pnetlib-0.8.0.tar.gz</tt></li>
+    <li><tt>cd pnetlib-0.8.0</tt></li>
+    <li><tt>./configure; make</tt></li>
+    <li><tt>export MSCORLIB=$PWD/runtime/mscorlib.dll</tt></li>
+   </ul>
+
+  <li>Checkout vmkit:</li>
+  <ul>
+     <li><tt>svn co http://llvm.org/svn/llvm-project/vmkit/trunk vmkit</tt></li>
+
+  </ul>
+  <li>Configure vmkit:</li>
+  <ul>
+  <li><tt>./configure </tt></li>
+  <dl>
+    <dt><tt>--with-llvmsrc=&lt;directory&gt;</tt></dt>
+    <dd>Tell vmkit where the LLVM source tree is located.</dd>
+    <dt><br/><tt>--with-llvmobj=&lt;directory&gt;</tt></dt>
+    <dd>Tell vmkit where the LLVM object tree is located.</dd>
+    <dt><br/><tt>--with-gnu-classpath-local-prefix=&lt;directory&gt;</tt></dt>
+    <dd>Tell vmkit where GNU Classpath is located.</dd>
+    <dt><br/><tt>--with-pnet-local-prefix=&lt;directory&gt;</tt></dt>
+    <dd>Tell vmkit where PNet is located.</dd>
+  </dl>
+
+  </ul>
+
+  <li>Build vmkit:</li>
+  <ul>
+    <li><tt>cd vmkit</tt></li>
+    <li><tt>make</tt> (this will give you a debug build)</li>
+  </ul>
+
+  <li>Try it out: (assuming that you are in vmkit/Debug/bin)</li>
+  <ul>
+    <li><tt>jnjvm --help</tt></li>
+    <li><tt>jnjvm HelloWorld</tt></li>
+    <li><tt>n3 --help</tt></li>
+    <li><tt>n3 HelloWorld.exe</tt></li>
+  </ul>
+</ol>
+
+</div>
+</body>
+</html>

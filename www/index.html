@@ -1,1 +1,134 @@
-nothing to see here.
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" 
+          "http://www.w3.org/TR/html4/strict.dtd">
+<!-- Material used from: HTML 4.01 specs: http://www.w3.org/TR/html401/ -->
+<html>
+<head>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+  <title>"vmkit" JVM and .Net runtimes for LLVM</title>
+  <link type="text/css" rel="stylesheet" href="menu.css" />
+  <link type="text/css" rel="stylesheet" href="content.css" />
+</head>
+<body>
+<div id="menu">
+  <div>
+    <a href="http://llvm.org/">LLVM Home</a>
+  </div>
+  
+  <div class="submenu">
+    <label>VMKit Info</label>
+    <a href="index.html">About</a>
+    <a href="get_started.html">Get&nbsp;Started</a>
+    <a href="get_involved.html">Get&nbsp;Involved</a>
+  </div>
+  
+  <div class="submenu">
+    <label>Quick Links</label>
+    <a href="http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev">llvm-dev</a>
+    <a href="http://lists.cs.uiuc.edu/mailman/listinfo/vmkit-commits">vmkit-commits</a>
+    <a href="http://llvm.org/bugs/">Bug Reports</a>
+    <a href="http://llvm.org/svn/llvm-project/vmkit/trunk/">Browse Source</a>
+  </div>
+  
+  <div class="submenu">
+    <label>Events</label>
+    <a href="http://llvm.org/devmtg/">August 1, 2008 - LLVM/Clang Developer Meeting</a>
+  </div>
+
+</div>
+
+<div id="content">
+  <!--*********************************************************************-->
+  <h1>vmkit: JVM and .Net runtimes for LLVM</h1>
+  <!--*********************************************************************-->
+  
+  <p>The VMKit project is an implementation of a JVM and CLI virtual machine
+  (.Net is an implementation of the CLI). It translates Java bytecode and
+  MSIL in the LLVM IR and uses the LLVM framework for optimizations and just
+  in time compilation. You can <a href="get_started.html">get and build</a> the
+  source today.</p>
+  
+  <!--=====================================================================-->
+  <h2 id="goals">Features and Goals</h2>
+  <!--=====================================================================-->
+  
+  <p>Some of the goals for the project include the following:</p>
+  
+  <p><b>End-User Features</b>:</p>
+
+  <ul>
+  <li>Virtual machine interoperability</li>
+  <li>Experiment virtual machine technologies with a small code base</li>
+  <li>Very fast on scientific applications</li>
+  </ul>
+
+  <p><b>Utility and Applications</a></b>:</p>
+
+  <ul>
+  <li>Infrastructure for virtual machine development</li>
+  <li>Use the LLVM 'BSD' License</li>
+  </ul>
+
+  <p><b>Internal Design and Implementation</b>:</p>
+
+  <ul>
+  <li>Real-world, production quality virtual machines (the JVM runs Tomcat)</li>
+  <li>A simple and hackable code base</li>
+  <li>Execute virtual machines in the same environment</li>
+  </ul>
+
+  <!--=====================================================================-->
+  <h2>Why?</h2>
+  <!--=====================================================================-->
+  
+  <p>The development of vmkit was started out of a need to factorize virtual
+     machine development. The JVM and CLI virtual machine have many 
+     similarities, but are too high-level to be the basis of a "universal"
+     virtual machine. The LLVM IR on the opposite is low-level enough to be 
+     able to execute these VMs. VMKit is a proof of concept implementation
+     towards that direction.</p>
+     
+  <p>An introduction to vmkit (here called LadyVM because it's a port of the 
+     JVM to the Boehm garbage collector) can be found in the following paper:
+  </p>
+     
+  <ul>
+    <li><a href="ladyvm.html">LadyVM as a port of vmkit to Boehm's GC</a>
+    </li>
+  </ul>
+  
+  <p>For an example of what kind of experimental technologies we can
+     implement in a timely fashion with vmkit:</p>
+  <ul>
+    <li><a href="osgi.html">Isolation in OSGi with vmkit</a>
+    </li>
+  </ul>
+  
+  <!--=====================================================================-->
+  <h2>Current Status</h2>
+  <!--=====================================================================-->
+  
+  <p>VMKit is still in its early development stages. If you are looking to
+     experiment virtual machine technologies, vmkit is probably a great solution
+     for you.  If you want to use it as a drop in JVM or .Net, it is not yet
+     ready.</p>
+
+  <p>VMKit currently has a decent implementation of the JVM. It executes
+     Apache projects (e.g. OSGi Felix and Tomcat) and the SPECJVM98 benchmark.
+     The CLI implementation is still in its early stages, but can execute
+     simple applications.</p>
+  
+  <!--=====================================================================-->
+  <h2>Get it and get involved!</h2>
+  <!--=====================================================================-->
+  
+  <p>Start by <a href="get_started.html">getting the code, building it, and
+     playing with it</a>.  This will show you the sorts of things we can do
+     today.</p>
+  
+  <p>Once you've done that, please consider <a href="get_involved.html">getting
+     involved in the vmkit community</a>. Currently, vmkit is tightly
+     integrated into the llvm community. You can sign up for the llvm mailing
+     list to ask and learn about how the project works.</p>
+</div>
+</body>
+</html>
