@@ -47,17 +47,17 @@
 #if DEBUG > 0
 
   #ifdef WITH_COLOR
-    #define PRINT_DEBUG(symb, level, color, args...) \
+    #define PRINT_DEBUG(symb, level, color, ...) \
       if (symb > level) { \
           printf("%s%s%s", ESC, color, END); \
-          printf(##args); \
+          printf(__VA_ARGS__); \
           printf("%s%s%s", ESC, COLOR_NORMAL, END); \
           fflush(stdout); \
       }
   #else
-    #define PRINT_DEBUG(symb, level, color, fmt, args...) \
+    #define PRINT_DEBUG(symb, level, color, ...) \
       if (symb > level) { \
-        printf(##args); \
+        printf(__VA_ARGS__); \
         fflush(stdout); \
       }
   #endif
