@@ -44,10 +44,11 @@ public:
 typedef VMArray* (*arrayCtor_t)(uint32 len, VMCommonClass* cl);
 
 #define ARRAYCLASS(name, elmt)                                        \
-class name : public VMArray {                                         \
+class name : public VMObject {                                        \
 public:                                                               \
   static VirtualTable* VT;                                            \
   static const llvm::Type* llvmType;                                  \
+  sint32 size;                                                        \
   elmt elements[1];                                                   \
   static name *acons(sint32 n, VMClassArray* cl);                     \
   void initialise(VMCommonClass* atype, sint32 n);                    \
@@ -69,10 +70,11 @@ ARRAYCLASS(ArrayDouble, double);
 
 #undef ARRAYCLASS
 
-class ArrayObject : public VMArray {
+class ArrayObject : public VMObject {
 public:
   static VirtualTable* VT;
   static const llvm::Type* llvmType;
+  sint32 size;
   VMObject* elements[1];
   static ArrayObject *acons(sint32 n, VMClassArray* cl);
   void initialise(VMCommonClass* atype, sint32 n);
@@ -82,9 +84,10 @@ public:
   virtual void TRACER;
 };
 
-class UTF8 : public VMArray {
+class UTF8 : public VMObject {
 public:
   static VirtualTable* VT;
+  sint32 size;
   uint16 elements[1];
 
   static const llvm::Type* llvmType;

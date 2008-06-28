@@ -149,15 +149,15 @@ extern "C" void System_Runtime_CompilerServices_RuntimeHelpers_InitializeArray(
 
   if (bs == N3::pChar) {
     for (uint32 i = 0; i < size; ++i) {
-      ((uint16*)(void*)(array->elements))[i] = READ_U2(bytes, offset);
+      ((ArrayUInt16*)array)->elements[i] = READ_U2(bytes, offset);
     }
   } else if (bs == N3::pSInt32) {
     for (uint32 i = 0; i < size; ++i) {
-      ((sint32*)(void*)(array->elements))[i] = READ_U4(bytes, offset);
+      ((ArraySInt32*)array)->elements[i] = READ_U4(bytes, offset);
     }
   } else if (bs == N3::pDouble) {
     for (uint32 i = 0; i < size; ++i) {
-      ((double*)(void*)(array->elements))[i] = READ_U8(bytes, offset);
+      ((ArrayDouble*)array)->elements[i] = READ_U8(bytes, offset);
     }
   } else {
     VMThread::get()->vm->error("implement me");

@@ -27,7 +27,8 @@ const sint32 VMArray::MaxArraySize = 268435455;
     else if (n > VMArray::MaxArraySize)                                     \
       VMThread::get()->vm->outOfMemoryError(n);                             \
     name* res = (name*)                                                     \
-      gc::operator new(sizeof(name) + n * size, VMObject::VT);              \
+      gc::operator new(sizeof(VMObject) + sizeof(sint32) + n * size,        \
+                              VMObject::VT);                                \
     res->initialise(atype, n);                                              \
     res->setVirtualTable(name::VT);                                         \
     return res;                                                             \
@@ -178,8 +179,8 @@ UTF8* UTF8::acons(sint32 n, VMClassArray* atype) {
     VMThread::get()->vm->negativeArraySizeException(n);
   else if (n > VMArray::MaxArraySize)
     VMThread::get()->vm->outOfMemoryError(n);
-  UTF8* res = (UTF8*)gc::operator new(sizeof(UTF8) + n * sizeof(uint16),
-                                      UTF8::VT);
+  uint32 size = sizeof(VMObject) + sizeof(sint32) + n * sizeof(uint16);
+  UTF8* res = (UTF8*)gc::operator new(size, UTF8::VT);
   res->initialise(atype, n);
   return res;
 }
