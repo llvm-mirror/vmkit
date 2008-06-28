@@ -1420,11 +1420,6 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   jit->compilingClass = cl; 
   jit->compilingMethod = meth;
 
-  // save current class in case of recursive calls to compile()
-  VMGenericClass* old = cl->assembly->currGenericClass;
-  // temporarily store the class being compiled in case it is a generic class
-  cl->assembly->currGenericClass = dynamic_cast<VMGenericClass*>(cl);
-  
   meth->getSignature();
   if (isInternal(meth->implFlags)) {
     return jit->compileNative();
@@ -1433,9 +1428,6 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   } else {
     return jit->compileFatOrTiny();
   }
-  
-  // restore saved class
-  cl->assembly->currGenericClass = old;
 }
 
 llvm::Function *VMMethod::compiledPtr() {
