@@ -152,7 +152,7 @@ public:
  				uintptr_t							rounded = GCMappedArea::round(new_nbb);
 				uintptr_t              old_nbb = page->nbb();
  				signed int					depl = rounded - page->nbb();
- 				if(depl)
+ 				if(depl) {
  					if(page->mremap(rounded) == -1) /* perdu */
  						return new_header = stupid_realloc_chunk(old_header, new_nbb);
  					else {
@@ -161,6 +161,7 @@ public:
  						else
  							GCHash::hash_unprotected(page, (void *)((uintptr_t)page->area() + rounded), -depl, 0);
  					}
+ 				}
 				page->chunk_nbb(rounded);
  				old_header->nbb(new_nbb);
  			} else

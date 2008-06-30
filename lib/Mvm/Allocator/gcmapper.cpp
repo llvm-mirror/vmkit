@@ -47,13 +47,14 @@ static inline void* manual_mremap(void * addr, int old_size, int new_size, int f
 static inline void *do_mmap(size_t sz) {
 	void *res = DO_MMAP(sz);
 	//printf("mmap %d bytes at %d\n", sz, res);
-	if(res == MAP_FAILED)
+	if(res == MAP_FAILED) {
 		if (errno == ENOMEM)
       (*onMemoryError)(sz);
     else
       {
         gcfatal("unable to mmap %d bytes", sz);
       }
+	}
 	return res;
 }
 
@@ -125,7 +126,7 @@ void GCMinAlloc::destroy() {
  	unsigned int nb_area, i;
  	GCMappedArea *cur;
 
- 	for(nb_area=0, cur=base_area.next(); cur!=&base_area; cur=cur->next(), nb_area++);
+ 	for(nb_area=0, cur=base_area.next(); cur!=&base_area; cur=cur->next(), nb_area++) {}
 
  	GCMappedArea* areas = (GCMappedArea*)alloca(sizeof(GCMappedArea) * nb_area);
 

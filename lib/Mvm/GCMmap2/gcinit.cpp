@@ -107,7 +107,7 @@ static void *get_curr_fp(void)
 static void *get_base_sp(void)
 {
   void *fp= 0;
-  for (fp= get_curr_fp();  (*(void **)fp);  fp= *(void **)fp);
+  for (fp= get_curr_fp();  (*(void **)fp);  fp= *(void **)fp) {}
   return fp;
 }
 
