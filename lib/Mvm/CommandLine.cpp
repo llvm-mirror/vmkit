@@ -10,6 +10,7 @@
 
 #include <assert.h>
 #include <dlfcn.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "CommandLine.h"
@@ -22,7 +23,7 @@ typedef struct thread_arg_t {
   int argc;
   char** argv;
   vmlet_main_t func;
-};
+} thread_arg_t;
 
 typedef int (*boot_t)();
 
