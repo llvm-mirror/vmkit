@@ -422,20 +422,3 @@ GlobalVariable* VMMethod::llvmVar() {
 ConstantInt* VMObject::classOffset() {
   return mvm::jit::constantOne;
 }
-
-GlobalVariable* CLIString::llvmVar() {
-  if (!_llvmVar) {
-    VirtualMachine* vm = VMThread::get()->vm;
-    if (!_llvmVar) {
-      const Type* pty = mvm::jit::ptrType;
-      Constant* cons = 
-        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
-                                  pty);
-      _llvmVar = new GlobalVariable(pty, true,
-                                    GlobalValue::ExternalLinkage,
-                                    cons, "",
-                                    vm->module);
-    }
-  }
-  return _llvmVar;
-}

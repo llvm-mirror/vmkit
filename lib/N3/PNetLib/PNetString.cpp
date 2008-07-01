@@ -7,6 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llvm/GlobalVariable.h"
+
+#include "mvm/JIT.h"
+
 #include "CLIString.h"
 #include "MSCorlib.h"
 #include "N3.h"
@@ -16,6 +20,7 @@
 #include "VMThread.h"
 
 using namespace n3;
+using namespace llvm;
 
 
 CLIString* CLIString::stringDup(const UTF8*& utf8, N3* vm) {
@@ -37,4 +42,22 @@ char* CLIString::strToAsciiz() {
 
 const UTF8* CLIString::strToUTF8(N3* vm) {
   return ((PNetString*)this)->value;
+}
+
+GlobalVariable* CLIString::llvmVar() {
+  PNetString* str = (PNetString*)this;
+  if (!str->_llvmVar) {
+    VirtualMachine* vm = VMThread::get()->vm;
+    if (!str->_llvmVar) {
+      const Type* pty = mvm::jit::ptrType;
+      Constant* cons = 
+        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
+                                  pty);
+      str->_llvmVar = new GlobalVariable(pty, true,
+                                    GlobalValue::ExternalLinkage,
+                                    cons, "",
+                                    vm->module);
+    }
+  }
+  return str->_llvmVar;
 }
