@@ -38,16 +38,13 @@ ArrayUInt8* Reader::openFile(Jnjvm* vm, char* path) {
   return res;
 }
 
-ArrayUInt8* Reader::openZip(Jnjvm* vm, char* zipname, char* filename) {
-  ZipArchive* archive = ZipArchive::hashedArchive(vm, zipname);
+ArrayUInt8* Reader::openZip(Jnjvm* vm, ZipArchive* archive, char* filename) {
   ArrayUInt8* ret = 0;
-  if (archive != 0) {
-    ZipFile* file = archive->getFile(filename);
-    if (file != 0) {
-      ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, JavaArray::ofByte, vm);
-      if (archive->readFile(res, file) != 0) {
-        ret = res;
-      }
+  ZipFile* file = archive->getFile(filename);
+  if (file != 0) {
+    ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, JavaArray::ofByte, vm);
+    if (archive->readFile(res, file) != 0) {
+      ret = res;
     }
   }
   return ret;

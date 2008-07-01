@@ -151,7 +151,14 @@ void Jnjvm::analyseClasspathEnv(const char* str) {
             bootClasspath.push_back(temp);
             free(rp);
           } else {
-            bootClasspath.push_back(rp);
+            ArrayUInt8* bytes = Reader::openFile(this, rp);
+            free(rp);
+            if (bytes) {
+              ZipArchive *archive = new ZipArchive(bytes);
+              if (archive) {
+                bootArchives.push_back(archive);
+              }
+            }
           }
         } else {
           free(rp);
@@ -278,26 +285,30 @@ void Jnjvm::readClass(Class* cl) {
 ArrayUInt8* Jnjvm::openName(const UTF8* utf8) {
   char* asciiz = utf8->UTF8ToAsciiz();
   uint32 alen = strlen(asciiz);
-  uint32 nbcp = bootClasspath.size();
-  uint32 idx = 0;
   ArrayUInt8* res = 0;
 
-  while ((res == 0) && (idx < nbcp)) {
-    char* str = bootClasspath[idx];
+  for (std::vector<const char*>::iterator i = bootClasspath.begin(),
+       e = bootClasspath.end(); i != e; ++i) {
+    const char* str = *i;
     unsigned int strLen = strlen(str);
-    char* buf = (char*)alloca(strLen + alen + 16);
+    char* buf = (char*)alloca(strLen + alen + 7);
 
-    if (str[strLen - 1] == dirSeparator[0]) {
-      sprintf(buf, "%s%s.class", str, asciiz);
-      res = Reader::openFile(this, buf);
-    } else {
-      sprintf(buf, "%s.class", asciiz);
-      res = Reader::openZip(this, str, buf);
-    }
-    idx++;
+    sprintf(buf, "%s%s.class", str, asciiz);
+    res = Reader::openFile(this, buf);
+    if (res) return res;
   }
 
-  return res;
+  for (std::vector<ZipArchive*>::iterator i = bootArchives.begin(),
+       e = bootArchives.end(); i != e; ++i) {
+    
+    ZipArchive* archive = *i;
+    char* buf = (char*)alloca(alen + 7);
+    sprintf(buf, "%s.class", asciiz);
+    res = Reader::openZip(this, archive, buf);
+    if (res) return res;
+  }
+
+  return 0;
 }
 
 

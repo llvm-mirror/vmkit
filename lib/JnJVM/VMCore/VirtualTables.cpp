@@ -104,6 +104,12 @@ void Jnjvm::TRACER {
   statics->MARK_AND_TRACE;
   delegatees->MARK_AND_TRACE;
 #endif
+  
+  for (std::vector<ZipArchive*>::iterator i = bootArchives.begin(),
+       e = bootArchives.end(); i != e; ++i) {
+    (*i)->bytes->MARK_AND_TRACE;
+  }
+
 }
 
 void JavaIsolate::TRACER {

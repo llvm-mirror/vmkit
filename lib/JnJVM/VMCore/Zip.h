@@ -15,6 +15,7 @@
 namespace jnjvm {
 
 class ArrayUInt8;
+class Jnjvm;
 
 struct ZipFile {
   char* filename;
@@ -30,6 +31,7 @@ struct ZipFile {
 
 
 class ZipArchive {
+  friend class Jnjvm;
 private:
   
   struct ltstr
@@ -62,7 +64,6 @@ public:
 
   int getOfscd() { return ofscd; }
   ZipArchive(ArrayUInt8* bytes);
-  static ZipArchive* hashedArchive(Jnjvm* vm, const char* archname);
   ZipFile* getFile(const char* filename);
   int readFile(ArrayUInt8* array, const ZipFile* file);
 

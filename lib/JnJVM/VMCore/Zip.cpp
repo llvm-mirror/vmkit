@@ -15,11 +15,6 @@
 
 using namespace jnjvm;
 
-ZipArchive* ZipArchive::hashedArchive(Jnjvm* vm, const char* name) {
-  assert(0 && "implement hashedArchive");
-  return 0;
-}
-
 ZipArchive::ZipArchive(ArrayUInt8* bytes) {
   this->bytes = bytes;
   findOfscd();

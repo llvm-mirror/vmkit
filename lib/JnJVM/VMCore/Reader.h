@@ -20,6 +20,7 @@
 namespace jnjvm {
 
 class Jnjvm;
+class ZipArchive;
 
 class Reader {
 public:
@@ -76,7 +77,7 @@ public:
   static const int SeekEnd;
 
   static ArrayUInt8* openFile(Jnjvm* vm, char* path);
-  static ArrayUInt8* openZip(Jnjvm* vm, char* zipname, char* filename);
+  static ArrayUInt8* openZip(Jnjvm* vm, ZipArchive* archive, char* filename);
   
   uint8 readU1() {
     return bytes->elements[cursor++];

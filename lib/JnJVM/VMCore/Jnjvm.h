@@ -53,7 +53,7 @@ class FunctionMap;
 class FunctionDefMap;
 class FunctionDefMap;
 class AllocationMap;
-
+class ZipArchive;
 
 class Jnjvm : public mvm::Object{
 public:
@@ -228,7 +228,8 @@ public:
   void* jniEnv;
   const void* javavmEnv;
   std::vector< std::pair<char*, char*> > postProperties;
-  std::vector<char*> bootClasspath;
+  std::vector<const char*> bootClasspath;
+  std::vector<ZipArchive*> bootArchives;
   std::vector<void*> nativeLibs;
   const char* classpath;
   const char* libClasspathEnv;
