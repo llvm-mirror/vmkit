@@ -238,47 +238,45 @@ dnl **************************************************************************
 dnl GNU CLASSPATH installation prefix
 dnl **************************************************************************
 
-gnuclasspathversion=0.93;
+classpathversion=0.97.2;
 
-AC_ARG_WITH(gnu-classpath-local-prefix,
-       [AS_HELP_STRING(--with-gnu-classpath-local-prefix=something,
-           [GNU CLASSPATH local prefix (no default)])],
-       [[gnuclasspathlocalprefix=$withval]],
-       [[       echo Not using GNU CLASSPATH local prefix.    
-                                gnuclasspathlocalprefix=''
-       ]]
+AC_ARG_WITH(gnu-classpath-libs,
+       [AS_HELP_STRING(--with-gnu-classpath-libs=something,
+           [GNU CLASSPATH libraries (default is /usr/lib/classpath)])],
+       [[classpathlibs=$withval]],
+       [[classpathlibs=/usr/lib/classpath]]
 )
 
-AC_ARG_WITH(gnu-classpath-installation-prefix,
-       [AS_HELP_STRING(--with-gnu-classpath-installation-prefix=something,
-           [GNU CLASSPATH installation prefix (default is '/usr/local/classpath')])],
-       [[gnuclasspathinstallationprefix=$withval]],
-       [[gnuclasspathinstallationprefix=/usr/local/classpath]]
+AC_ARG_WITH(gnu-classpath-glibj,
+       [AS_HELP_STRING(--with-gnu-classpath-glibj,
+           [Build JnJVM with GNU Classpath install (default is '/usr/share/classpath/glibj.zip')])],
+       [[classpathglibj=$withval]],
+       [[classpathglibj=/usr/share/classpath/glibj.zip]]
 )
 
-WITH_JNJVM=0;
+AC_ARG_WITH(jnjvm,
+       [AS_HELP_STRING(--with-jnjvm=yes|no,
+        [Build JnJVM (default is yes)])],
+       [[WITH_JNJVM=$withval]],
+       [[WITH_JNJVM=yes]]
+)
 
-if test "x${gnuclasspathinstallationprefix}" != x; then
-  echo Using ${gnuclasspathinstallationprefix} as GNU CLASSPATH installation prefix;
-  classpathglibj=${gnuclasspathinstallationprefix}/share/classpath/glibj.zip;
-  classpathlibs=${gnuclasspathinstallationprefix}/lib/classpath/;
-  classpathinclude=${gnuclasspathlocalprefix}/include;
-  WITH_JNJVM=1;
-fi 
-
-if test "x${gnuclasspathlocalprefix}" != x; then
-  echo Using ${gnuclasspathlocalprefix} as GNU CLASSPATH local prefix;
-  classpathglibj=${gnuclasspathlocalprefix}/lib/;
-  classpathlibs=${gnuclasspathlocalprefix}/lib/;
-  classpathinclude=${gnuclasspathlocalprefix}/include;
-  WITH_JNJVM=1;
+if test "x${classpathlibs}"  != "x/usr/lib/classpath"; then
+  classpathinclude=${classpathlibs}/../include:/usr/include/classpath;
+else
+  classpathinclude=/usr/include/classpath;
 fi
 
+if test "x${WITH_JNJVM}" = "xyes"; then
+  WITH_JNJVM=1;
+else
+  WITH_JNJVM=0;
+fi 
 
 AC_SUBST([classpathglibj])
 AC_SUBST([classpathlibs])
 AC_SUBST([classpathinclude])
-AC_SUBST([gnuclasspathversion])
+AC_SUBST([classpathversion])
 AC_SUBST([WITH_JNJVM])
 
 dnl **************************************************************************

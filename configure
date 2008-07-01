@@ -694,7 +694,7 @@ ISOLATE_BUILD_FALSE
 classpathglibj
 classpathlibs
 classpathinclude
-gnuclasspathversion
+classpathversion
 WITH_JNJVM
 pnetlocalprefix
 WITH_N3
@@ -1318,11 +1318,13 @@ Optional Packages:
   --with-gc=something     GC type ('single-mmap' 'multi-mmap' or 'boehm')
   --with-vm-type=something
                           VM type ('single' 'multi' or 'service')
-  --with-gnu-classpath-local-prefix=something
-                          GNU CLASSPATH local prefix (no default)
-  --with-gnu-classpath-installation-prefix=something
-                          GNU CLASSPATH installation prefix (default is
-                          '/usr/local/classpath')
+  --with-gnu-classpath-libs=something
+                          GNU CLASSPATH libraries (default is
+                          /usr/lib/classpath)
+  --with-gnu-classpath-glibj
+                          Build JnJVM with GNU Classpath install (default is
+                          '/usr/share/classpath/glibj.zip')
+  --with-jnjvm=yes|no     Build JnJVM (default is yes)
   --with-pnet-local-prefix=something
                           PNET local prefix (no default)
 
@@ -3964,48 +3966,49 @@ fi
 
 
 
-gnuclasspathversion=0.93;
+classpathversion=0.97.2;
 
 
-# Check whether --with-gnu-classpath-local-prefix was given.
-if test "${with_gnu_classpath_local_prefix+set}" = set; then
-  withval=$with_gnu_classpath_local_prefix; gnuclasspathlocalprefix=$withval
+# Check whether --with-gnu-classpath-libs was given.
+if test "${with_gnu_classpath_libs+set}" = set; then
+  withval=$with_gnu_classpath_libs; classpathlibs=$withval
 else
-         echo Not using GNU CLASSPATH local prefix.
-                                gnuclasspathlocalprefix=''
-
+  classpathlibs=/usr/lib/classpath
 
 fi
 
 
 
-# Check whether --with-gnu-classpath-installation-prefix was given.
-if test "${with_gnu_classpath_installation_prefix+set}" = set; then
-  withval=$with_gnu_classpath_installation_prefix; gnuclasspathinstallationprefix=$withval
+# Check whether --with-gnu-classpath-glibj was given.
+if test "${with_gnu_classpath_glibj+set}" = set; then
+  withval=$with_gnu_classpath_glibj; classpathglibj=$withval
 else
-  gnuclasspathinstallationprefix=/usr/local/classpath
+  classpathglibj=/usr/share/classpath/glibj.zip
 
 fi
 
 
-WITH_JNJVM=0;
 
-if test "x${gnuclasspathinstallationprefix}" != x; then
-  echo Using ${gnuclasspathinstallationprefix} as GNU CLASSPATH installation prefix;
-  classpathglibj=${gnuclasspathinstallationprefix}/share/classpath/glibj.zip;
-  classpathlibs=${gnuclasspathinstallationprefix}/lib/classpath/;
-  classpathinclude=${gnuclasspathlocalprefix}/include;
+# Check whether --with-jnjvm was given.
+if test "${with_jnjvm+set}" = set; then
+  withval=$with_jnjvm; WITH_JNJVM=$withval
+else
+  WITH_JNJVM=yes
+
+fi
+
+
+if test "x${classpathlibs}"  != "x/usr/lib/classpath"; then
+  classpathinclude=${classpathlibs}/../include:/usr/include/classpath;
+else
+  classpathinclude=/usr/include/classpath;
+fi
+
+if test "x${WITH_JNJVM}" = "xyes"; then
   WITH_JNJVM=1;
+else
+  WITH_JNJVM=0;
 fi
-
-if test "x${gnuclasspathlocalprefix}" != x; then
-  echo Using ${gnuclasspathlocalprefix} as GNU CLASSPATH local prefix;
-  classpathglibj=${gnuclasspathlocalprefix}/lib/;
-  classpathlibs=${gnuclasspathlocalprefix}/lib/;
-  classpathinclude=${gnuclasspathlocalprefix}/include;
-  WITH_JNJVM=1;
-fi
-
 
 
 
@@ -7827,7 +7830,7 @@ ISOLATE_BUILD_FALSE!$ISOLATE_BUILD_FALSE$ac_delim
 classpathglibj!$classpathglibj$ac_delim
 classpathlibs!$classpathlibs$ac_delim
 classpathinclude!$classpathinclude$ac_delim
-gnuclasspathversion!$gnuclasspathversion$ac_delim
+classpathversion!$classpathversion$ac_delim
 WITH_JNJVM!$WITH_JNJVM$ac_delim
 pnetlocalprefix!$pnetlocalprefix$ac_delim
 WITH_N3!$WITH_N3$ac_delim

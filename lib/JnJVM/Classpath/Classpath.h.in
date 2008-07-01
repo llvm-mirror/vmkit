@@ -10,5 +10,5 @@
 
 const char* GNUClasspathLibs  =  "@classpathlibs@";
 const char* GNUClasspathGlibj =  "@classpathglibj@";
-const char* GNUClasspathVersion = "@gnuclasspathversion@";
+const char* GNUClasspathVersion = "@classpathversion@";
 
