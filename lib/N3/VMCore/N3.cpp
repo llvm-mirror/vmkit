@@ -18,6 +18,7 @@
 #include "CLIJit.h"
 #include "CLIString.h"
 #include "LockedMap.h"
+#include "MSCorlib.h"
 #include "N3.h"
 #include "N3ModuleProvider.h"
 #include "Reader.h"
@@ -204,9 +205,9 @@ void N3::mapInitialThread() {
                                         true, true, true, true);
   VMObject* th = (*cl)();
   std::vector<VMCommonClass*> args;
-  args.push_back(N3::pVoid);
+  args.push_back(MSCorlib::pVoid);
   args.push_back(cl);
-  args.push_back(N3::pIntPtr);
+  args.push_back(MSCorlib::pIntPtr);
   VMMethod* meth = cl->lookupMethod(asciizConstructUTF8(".ctor"), args, 
                                     false, false);
   VMThread* myth = VMThread::get();
@@ -278,7 +279,7 @@ void N3::runMain(int argc, char** argv) {
     
     loadBootstrap();
     
-    ArrayObject* args = ArrayObject::acons(argc - 2, arrayString);
+    ArrayObject* args = ArrayObject::acons(argc - 2, MSCorlib::arrayString);
     for (int i = 2; i < argc; ++i) {
       args->setAt(i - 2, (VMObject*)asciizToStr(argv[i]));
     }

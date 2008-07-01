@@ -12,6 +12,7 @@
 
 #include "types.h"
 
+#include "MSCorlib.h"
 #include "N3.h"
 #include "VMArray.h"
 #include "VMThread.h"
@@ -58,7 +59,7 @@ ArrayUInt8* Reader::openFile(char* path) {
     fseek(fp, 0, SeekEnd);
     long nbb = ftell(fp);
     fseek(fp, 0, SeekSet);
-    res = ArrayUInt8::acons(nbb, N3::arrayByte);
+    res = ArrayUInt8::acons(nbb, MSCorlib::arrayByte);
     fread(res->elements, nbb, 1, fp);
     fclose(fp);
   }

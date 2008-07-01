@@ -15,7 +15,6 @@
 
 #include "Assembly.h"
 #include "CLIJit.h"
-#include "CLIString.h"
 #include "N3ModuleProvider.h"
 
 #include "VMClass.h"

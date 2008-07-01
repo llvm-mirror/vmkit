@@ -17,8 +17,9 @@
 #include "Assembly.h"
 #include "CLIAccess.h"
 #include "CLIJit.h"
-#include "CLIString.h"
+#include "PNetString.h"
 #include "NativeUtil.h"
+#include "MSCorlib.h"
 #include "N3.h"
 #include "PNetLib.h"
 #include "Reader.h"
@@ -147,15 +148,15 @@ extern "C" void System_Runtime_CompilerServices_RuntimeHelpers_InitializeArray(
   uint32 offset = rsrcSection->rawAddress + (rva - rsrcSection->virtualAddress);
   ArrayUInt8* bytes = ass->bytes;
 
-  if (bs == N3::pChar) {
+  if (bs == MSCorlib::pChar) {
     for (uint32 i = 0; i < size; ++i) {
       ((ArrayUInt16*)array)->elements[i] = READ_U2(bytes, offset);
     }
-  } else if (bs == N3::pSInt32) {
+  } else if (bs == MSCorlib::pSInt32) {
     for (uint32 i = 0; i < size; ++i) {
       ((ArraySInt32*)array)->elements[i] = READ_U4(bytes, offset);
     }
-  } else if (bs == N3::pDouble) {
+  } else if (bs == MSCorlib::pDouble) {
     for (uint32 i = 0; i < size; ++i) {
       ((ArrayDouble*)array)->elements[i] = READ_U8(bytes, offset);
     }
@@ -213,7 +214,7 @@ extern "C" void System_Reflection_Assembly_LoadFromFile() {
   VMThread::get()->vm->error("implement me");
 }
 
-static const UTF8* newBuilder(N3* vm, CLIString* value, uint32 length) {
+static const UTF8* newBuilder(N3* vm, PNetString* value, uint32 length) {
   uint32 valueLength = value ? value->length : 0;
   const UTF8* utf8 = value ? value->value : 0;
   uint32 roundLength = (7 + length) & 0xfffffff8;
@@ -234,10 +235,10 @@ static const UTF8* newBuilder(N3* vm, CLIString* value, uint32 length) {
 
 }
 
-extern "C" VMObject* System_String_NewBuilder(CLIString* value, 
+extern "C" VMObject* System_String_NewBuilder(PNetString* value, 
                                                uint32 length) {
   N3* vm = (N3*)(VMThread::get()->vm);
-  CLIString* str = (CLIString*)vm->UTF8ToStr(newBuilder(vm, value, length));
+  PNetString* str = (PNetString*)vm->UTF8ToStr(newBuilder(vm, value, length));
   return str;
 }
 
@@ -246,7 +247,7 @@ extern "C" VMObject* Platform_SysCharInfo_GetNewLine() {
   return vm->asciizToStr("\n");
 }
 
-extern "C" void System_String_CopyToChecked(CLIString* str, sint32 sstart, 
+extern "C" void System_String_CopyToChecked(PNetString* str, sint32 sstart, 
                                             ArrayUInt16* dest, sint32 dstart,
                                             sint32 count) {
   const UTF8* value = str->value;
@@ -320,9 +321,9 @@ extern "C" void System_Array_InternalCopy(VMArray* src, sint32 sstart,
   
   bool doThrow = false;
   
-  if (srcType->super == N3::pValue && srcType != dstType) {
+  if (srcType->super == MSCorlib::pValue && srcType != dstType) {
     vm->arrayStoreException();
-  } else if (srcType->super != N3::pValue && srcType->super != N3::pEnum) {
+  } else if (srcType->super != MSCorlib::pValue && srcType->super != MSCorlib::pEnum) {
     sint32 i = sstart;
     while (i < sstart + len && !doThrow) {
       VMObject* cur = ((ArrayObject*)src)->at(i);
@@ -378,7 +379,7 @@ extern "C" VMObject* System_Object_GetType(VMObject* obj) {
 }
 
 extern "C" VMObject* System_Reflection_ClrType_GetElementType(VMObject* Klass) {
-  VMCommonClass* cl = (VMCommonClass*)((*Klass)(N3::typeClrType).PointerVal);
+  VMCommonClass* cl = (VMCommonClass*)((*Klass)(MSCorlib::typeClrType).PointerVal);
   if (!cl->isArray) {
     VMThread::get()->vm->error("implement me");
     return 0;
@@ -387,16 +388,16 @@ extern "C" VMObject* System_Reflection_ClrType_GetElementType(VMObject* Klass) {
   }
 }
 
-extern "C" CLIString* System_String_NewString(uint32 size) {
-  CLIString* str = (CLIString*)(N3::pString->doNew());
+extern "C" PNetString* System_String_NewString(uint32 size) {
+  PNetString* str = (PNetString*)(MSCorlib::pString->doNew());
   str->length = size;
   return str;
 }
 
-extern "C" void System_String_Copy_3(CLIString* dest, sint32 pos, 
-                                     CLIString* src) {
+extern "C" void System_String_Copy_3(PNetString* dest, sint32 pos, 
+                                     PNetString* src) {
   ArrayUInt16* arr = ArrayUInt16::acons(pos + src->value->size, 
-                                        (VMClassArray*)N3::pChar);
+                                        (VMClassArray*)MSCorlib::pChar);
   
   for (sint32 i = 0; i < pos; ++i) {
     arr->setAt(i, dest->value->at(i));
@@ -410,8 +411,8 @@ extern "C" void System_String_Copy_3(CLIString* dest, sint32 pos,
   dest->length = dest->value->size;
 }
 
-extern "C" void System_String_Copy_5(CLIString* dest, sint32 destPos, 
-                                     CLIString* src, sint32 srcPos, 
+extern "C" void System_String_Copy_5(PNetString* dest, sint32 destPos, 
+                                     PNetString* src, sint32 srcPos, 
                                      sint32 length) {
   const UTF8* utf8Src = src->value->extract(VMThread::get()->vm, srcPos, 
                                             srcPos + length);
@@ -435,7 +436,7 @@ extern "C" void System_String_Copy_5(CLIString* dest, sint32 destPos,
   }
 }
 
-extern "C" bool System_String_Equals(CLIString* str1, CLIString* str2) {
+extern "C" bool System_String_Equals(PNetString* str1, PNetString* str2) {
   return str1->value == str2->value;
 }
 
@@ -447,11 +448,11 @@ extern "C" sint32 Platform_SysCharInfo_GetUnicodeCategory(char c) {
   return ILGetUnicodeCategory(c);
 }
 
-extern "C" uint16 System_String_GetChar(CLIString* str, sint32 index) {
+extern "C" uint16 System_String_GetChar(PNetString* str, sint32 index) {
   return str->value->at(index);
 }
 
-extern "C" sint32 System_String_IndexOf(CLIString* str, uint16 value, 
+extern "C" sint32 System_String_IndexOf(PNetString* str, uint16 value, 
                                         sint32 startIndex, sint32 count) {
   if (startIndex < 0) {
     VMThread::get()->vm->error("shoud throw arg range");
@@ -471,7 +472,7 @@ extern "C" sint32 System_String_IndexOf(CLIString* str, uint16 value,
   return -1;
 }
 
-extern "C" sint32 System_String_GetHashCode(CLIString* str) {
+extern "C" sint32 System_String_GetHashCode(PNetString* str) {
   sint32 hash = 0;
   const UTF8* utf8 = str->value;
   for (sint32 i = 0; i < utf8->size; ++i) {
@@ -498,7 +499,7 @@ extern "C" VMObject* System_Text_StringBuilder_Insert_System_Text_StringBuilder_
                                                       sint32 index, 
                                                       uint16 value) {
   N3* vm = (N3*)(VMThread::get()->vm);
-  CLIString* buildString = obj->buildString;
+  PNetString* buildString = obj->buildString;
   const UTF8* utf8 = buildString->value;
   sint32 strLength = buildString->length;
   sint32 length = (index + 1) > strLength ? index + 1 : strLength + 1;
@@ -514,7 +515,7 @@ extern "C" VMObject* System_Text_StringBuilder_Insert_System_Text_StringBuilder_
   }
 
   buf[index] = value;
-  CLIString* str = (CLIString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, length));
+  PNetString* str = (PNetString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, length));
   obj->buildString = str;
   
   return obj;
@@ -523,9 +524,9 @@ extern "C" VMObject* System_Text_StringBuilder_Insert_System_Text_StringBuilder_
 extern "C" VMObject* System_Text_StringBuilder_Insert_System_Text_StringBuilder_System_Int32_System_String(
                                                       StringBuilder* obj,
                                                       sint32 index, 
-                                                      CLIString* str) {
+                                                      PNetString* str) {
   N3* vm = (N3*)(VMThread::get()->vm);
-  CLIString* buildString = obj->buildString;
+  PNetString* buildString = obj->buildString;
   const UTF8* strUtf8 = str->value;
   const UTF8* buildUtf8 = buildString->value;
   sint32 strLength = str->length;
@@ -546,7 +547,7 @@ extern "C" VMObject* System_Text_StringBuilder_Insert_System_Text_StringBuilder_
                (buildLength - index) * sizeof(uint16));
   }
 
-  CLIString* val = (CLIString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, length));
+  PNetString* val = (PNetString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, length));
   obj->buildString = val;
 
   return obj;
@@ -556,7 +557,7 @@ extern "C" VMObject* System_Text_StringBuilder_Append_System_Text_StringBuilder_
                                                 StringBuilder* obj,
                                                 uint16 value) {
   N3* vm = (N3*)(VMThread::get()->vm);
-  CLIString* buildString = obj->buildString;
+  PNetString* buildString = obj->buildString;
   const UTF8* utf8 = buildString->value;
   sint32 length = buildString->length;
   uint16* buf = (uint16*)alloca((length + 1) * sizeof(uint16));
@@ -564,7 +565,7 @@ extern "C" VMObject* System_Text_StringBuilder_Append_System_Text_StringBuilder_
   memcpy(buf, utf8->elements, length * sizeof(uint16));
 
   buf[length] = value;
-  CLIString* val = (CLIString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, length + 1));
+  PNetString* val = (PNetString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, length + 1));
   obj->buildString = val;
   return obj;
 }
@@ -572,9 +573,9 @@ extern "C" VMObject* System_Text_StringBuilder_Append_System_Text_StringBuilder_
 
 extern "C" VMObject* System_Text_StringBuilder_Append_System_Text_StringBuilder_System_String(
                                                 StringBuilder* obj,
-                                                CLIString* str) {
+                                                PNetString* str) {
   N3* vm = (N3*)(VMThread::get()->vm);
-  CLIString* buildString = obj->buildString;
+  PNetString* buildString = obj->buildString;
   const UTF8* buildUtf8 = buildString->value;
   const UTF8* strUtf8 = str->value;
   sint32 buildLength = buildString->length;
@@ -585,14 +586,14 @@ extern "C" VMObject* System_Text_StringBuilder_Append_System_Text_StringBuilder_
   memcpy(buf, buildUtf8->elements, buildLength * sizeof(uint16));
   memcpy(&(buf[buildLength]), strUtf8->elements, strLength * sizeof(uint16));
 
-  CLIString* val = (CLIString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, length));
+  PNetString* val = (PNetString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, length));
   obj->buildString = val;
   return obj;
 }
 
-extern "C" sint32 System_String_FindInRange(CLIString* obj, sint32 srcFirst, 
+extern "C" sint32 System_String_FindInRange(PNetString* obj, sint32 srcFirst, 
                                             sint32 srcLast, sint32 step,
-                                            CLIString* dest) {
+                                            PNetString* dest) {
   uint16* buf1 = (uint16*)&(obj->value->elements[srcFirst]);
   uint16* buf2 = (uint16*)(dest->value->elements);
   sint32 destLength = dest->length;
@@ -642,7 +643,7 @@ extern "C" sint32 System_String_FindInRange(CLIString* obj, sint32 srcFirst,
   return -1;
 }
 
-extern "C" VMObject* System_Reflection_Assembly_LoadFromName(CLIString* str, sint32 & error, VMObject* parent) {
+extern "C" VMObject* System_Reflection_Assembly_LoadFromName(PNetString* str, sint32 & error, VMObject* parent) {
   N3* vm = (N3*)(VMThread::get()->vm);
   Assembly* ass = vm->loadAssembly(str->value, "dll");
   if (!ass) vm->error("unfound assembly %s\n", str->value->printString());
@@ -650,7 +651,7 @@ extern "C" VMObject* System_Reflection_Assembly_LoadFromName(CLIString* str, sin
   return ass->getAssemblyDelegatee();
 }
 
-extern "C" CLIString* System_String_Concat_2(CLIString* str1, CLIString* str2) {
+extern "C" PNetString* System_String_Concat_2(PNetString* str1, PNetString* str2) {
   N3* vm = (N3*)(VMThread::get()->vm);
   const UTF8* u1 = str1->value;
   const UTF8* u2 = str2->value;
@@ -661,12 +662,12 @@ extern "C" CLIString* System_String_Concat_2(CLIString* str1, CLIString* str2) {
   memcpy(buf, u1->elements, len1 * sizeof(uint16));
   memcpy(&(buf[len1]), u2->elements, len2 * sizeof(uint16));
   
-  CLIString* val = (CLIString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, len1 + len2));
+  PNetString* val = (PNetString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, len1 + len2));
   
   return val;
 }
 
-extern "C" CLIString* System_String_Concat_3(CLIString* str1, CLIString* str2, CLIString* str3) {
+extern "C" PNetString* System_String_Concat_3(PNetString* str1, PNetString* str2, PNetString* str3) {
   N3* vm = (N3*)(VMThread::get()->vm);
   const UTF8* u1 = str1->value;
   const UTF8* u2 = str2->value;
@@ -680,12 +681,12 @@ extern "C" CLIString* System_String_Concat_3(CLIString* str1, CLIString* str2, C
   memcpy(&(buf[len1]), u2->elements, len2 * sizeof(uint16));
   memcpy(&(buf[len1 + len2]), u3->elements, len3 * sizeof(uint16));
   
-  CLIString* val = (CLIString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, len1 + len2 + len3));
+  PNetString* val = (PNetString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, len1 + len2 + len3));
   
   return val;
 }
 
-extern "C" void System_String_RemoveSpace(CLIString* str, sint32 index, sint32 length) {
+extern "C" void System_String_RemoveSpace(PNetString* str, sint32 index, sint32 length) {
   const UTF8* utf8 = str->value;
   sint32 strLength = str->length;
   uint16* buf = (uint16*)alloca(strLength * sizeof(uint16));
@@ -714,8 +715,8 @@ extern "C" void System_String_RemoveSpace(CLIString* str, sint32 index, sint32 l
   str->length = j;
 }
 
-extern "C" void System_String__ctor_3(CLIString* str, uint16 ch, sint32 count) {
-  ArrayUInt16* array = ArrayUInt16::acons(count, N3::arrayChar);
+extern "C" void System_String__ctor_3(PNetString* str, uint16 ch, sint32 count) {
+  ArrayUInt16* array = ArrayUInt16::acons(count, MSCorlib::arrayChar);
   for (sint32 i = 0; i < count; ++i) {
     array->elements[i] = ch;
   }
@@ -740,7 +741,7 @@ void* sys_memrchr(const void* s, int c, size_t n) {
   }
 }
 
-extern "C" VMObject* System_Reflection_Assembly_GetType(VMObject* obj, CLIString* str, bool onError, bool ignoreCase) {
+extern "C" VMObject* System_Reflection_Assembly_GetType(VMObject* obj, PNetString* str, bool onError, bool ignoreCase) {
   Assembly* ass = ASSEMBLY_VALUE(obj);
   const UTF8* utf8 = str->value;
   char* asciiz = utf8->UTF8ToAsciiz();
@@ -758,15 +759,15 @@ static bool parameterMatch(std::vector<VMCommonClass*> params, ArrayObject* type
   uint32 v = virt ? 1 : 0;
   if (types->size + v + 1 != params.size()) return false;
   for (sint32 i = 0; i < types->size; ++i) {
-    VMCommonClass* cur = (VMCommonClass*)(*N3::typeClrType)(types->elements[i]).PointerVal;
+    VMCommonClass* cur = (VMCommonClass*)(*MSCorlib::typeClrType)(types->elements[i]).PointerVal;
     if (cur != params[i + 1 + v]) return false;
   }
   return true;
 }
 
-extern "C" VMObject* System_Reflection_ClrType_GetMemberImpl(VMObject* Type, CLIString* str, sint32 memberTypes, sint32 bindingFlags, VMObject* binder, 
+extern "C" VMObject* System_Reflection_ClrType_GetMemberImpl(VMObject* Type, PNetString* str, sint32 memberTypes, sint32 bindingFlags, VMObject* binder, 
                                                    sint32 callingConventions, ArrayObject* types, VMObject* modifiers) {
-  VMCommonClass* type = (VMCommonClass*)((*N3::typeClrType)(Type).PointerVal);
+  VMCommonClass* type = (VMCommonClass*)((*MSCorlib::typeClrType)(Type).PointerVal);
   const UTF8* name = str->value;
   if (memberTypes == MEMBER_TYPES_PROPERTY) {
     std::vector<Property*, gc_allocator<Property*> > properties = 
@@ -870,7 +871,7 @@ static void decapsulePrimitive(VMObject* arg, const llvm::Type* type, std::vecto
 }
 
 extern "C" VMObject* System_Reflection_ClrMethod_Invoke(VMObject* Method, VMObject* obj, sint32 invokeAttr, VMObject* binder, ArrayObject* args, VMObject* culture) {
-  VMMethod* meth = (VMMethod*)(*N3::methodMethodType)(Method).PointerVal;
+  VMMethod* meth = (VMMethod*)(*MSCorlib::methodMethodType)(Method).PointerVal;
   meth->getSignature();
   meth->compiledPtr();
   llvm::Function* func = CLIJit::compile(meth->classDef, meth);
@@ -915,52 +916,52 @@ extern "C" VMObject* System_Reflection_ClrMethod_Invoke(VMObject* Method, VMObje
   
   VMObject* res = 0;
   VMCommonClass* retType = meth->parameters[0];
-  if (retType == N3::pVoid) {
-    res = (*N3::pVoid)();
-  } else if (retType == N3::pBoolean) {
-    res = (*N3::pBoolean)();
-    (*N3::ctorBoolean)(res, gv.IntVal.getBoolValue());
-  } else if (retType == N3::pUInt8) {
-    res = (*N3::pUInt8)();
-    (*N3::ctorUInt8)(res, (uint8)gv.IntVal.getZExtValue());
-  } else if (retType == N3::pSInt8) {
-    res = (*N3::pSInt8)();
-    (*N3::ctorSInt8)(res, (uint8)gv.IntVal.getSExtValue());
-  } else if (retType == N3::pChar) {
-    res = (*N3::pChar)();
-    (*N3::ctorChar)(res, (uint16)gv.IntVal.getZExtValue());
-  } else if (retType == N3::pSInt16) {
-    res = (*N3::pSInt16)();
-    (*N3::ctorSInt16)(res, (sint16)gv.IntVal.getSExtValue());
-  } else if (retType == N3::pUInt16) {
-    res = (*N3::pUInt16)();
-    (*N3::ctorUInt16)(res, (uint16)gv.IntVal.getZExtValue());
-  } else if (retType == N3::pSInt32) {
-    res = (*N3::pSInt32)();
-    (*N3::ctorSInt32)(res, (sint32)gv.IntVal.getSExtValue());
-  } else if (retType == N3::pUInt32) {
-    res = (*N3::pUInt32)();
-    (*N3::ctorUInt32)(res, (sint32)gv.IntVal.getZExtValue());
-  } else if (retType == N3::pSInt64) {
-    res = (*N3::pSInt64)();
-    (*N3::ctorSInt64)(res, (sint64)gv.IntVal.getSExtValue());
-  } else if (retType == N3::pUInt64) {
-    res = (*N3::pUInt64)();
-    (*N3::ctorUInt64)(res, (sint64)gv.IntVal.getZExtValue());
-  } else if (retType == N3::pIntPtr) {
-    res = (*N3::pIntPtr)();
-    (*N3::ctorIntPtr)(res, (void*)gv.IntVal.getSExtValue());
-  } else if (retType == N3::pUIntPtr) {
-    res = (*N3::pUIntPtr)();
-    (*N3::ctorUIntPtr)(res, (void*)gv.IntVal.getZExtValue());
-  } else if (retType == N3::pFloat) {
-    res = (*N3::pFloat)();
-    (*N3::ctorFloat)(res, gv.FloatVal);
-  } else if (retType == N3::pDouble) {
-    res = (*N3::pDouble)();
-    (*N3::ctorDouble)(res, gv.DoubleVal);
+  if (retType == MSCorlib::pVoid) {
+    res = (*MSCorlib::pVoid)();
+  } else if (retType == MSCorlib::pBoolean) {
+    res = (*MSCorlib::pBoolean)();
+    (*MSCorlib::ctorBoolean)(res, gv.IntVal.getBoolValue());
+  } else if (retType == MSCorlib::pUInt8) {
+    res = (*MSCorlib::pUInt8)();
+    (*MSCorlib::ctorUInt8)(res, (uint8)gv.IntVal.getZExtValue());
+  } else if (retType == MSCorlib::pSInt8) {
+    res = (*MSCorlib::pSInt8)();
+    (*MSCorlib::ctorSInt8)(res, (uint8)gv.IntVal.getSExtValue());
+  } else if (retType == MSCorlib::pChar) {
+    res = (*MSCorlib::pChar)();
+    (*MSCorlib::ctorChar)(res, (uint16)gv.IntVal.getZExtValue());
+  } else if (retType == MSCorlib::pSInt16) {
+    res = (*MSCorlib::pSInt16)();
+    (*MSCorlib::ctorSInt16)(res, (sint16)gv.IntVal.getSExtValue());
+  } else if (retType == MSCorlib::pUInt16) {
+    res = (*MSCorlib::pUInt16)();
+    (*MSCorlib::ctorUInt16)(res, (uint16)gv.IntVal.getZExtValue());
+  } else if (retType == MSCorlib::pSInt32) {
+    res = (*MSCorlib::pSInt32)();
+    (*MSCorlib::ctorSInt32)(res, (sint32)gv.IntVal.getSExtValue());
+  } else if (retType == MSCorlib::pUInt32) {
+    res = (*MSCorlib::pUInt32)();
+    (*MSCorlib::ctorUInt32)(res, (sint32)gv.IntVal.getZExtValue());
+  } else if (retType == MSCorlib::pSInt64) {
+    res = (*MSCorlib::pSInt64)();
+    (*MSCorlib::ctorSInt64)(res, (sint64)gv.IntVal.getSExtValue());
+  } else if (retType == MSCorlib::pUInt64) {
+    res = (*MSCorlib::pUInt64)();
+    (*MSCorlib::ctorUInt64)(res, (sint64)gv.IntVal.getZExtValue());
+  } else if (retType == MSCorlib::pIntPtr) {
+    res = (*MSCorlib::pIntPtr)();
+    (*MSCorlib::ctorIntPtr)(res, (void*)gv.IntVal.getSExtValue());
+  } else if (retType == MSCorlib::pUIntPtr) {
+    res = (*MSCorlib::pUIntPtr)();
+    (*MSCorlib::ctorUIntPtr)(res, (void*)gv.IntVal.getZExtValue());
+  } else if (retType == MSCorlib::pFloat) {
+    res = (*MSCorlib::pFloat)();
+    (*MSCorlib::ctorFloat)(res, gv.FloatVal);
+  } else if (retType == MSCorlib::pDouble) {
+    res = (*MSCorlib::pDouble)();
+    (*MSCorlib::ctorDouble)(res, gv.DoubleVal);
   } else {
-    if (retType->super == N3::pValue || retType->super == N3::pEnum)
+    if (retType->super == MSCorlib::pValue || retType->super == MSCorlib::pEnum)
       VMThread::get()->vm->error("implement me");
     res = (VMObject*)gv.PointerVal;
   }
@@ -1004,14 +1005,14 @@ static VMObject* createResourceStream(Assembly* ass, sint32 posn) {
   length = reader->readU4();
   if (length > (sectionLen - 4)) return 0;
 
-  VMObject* res = (*N3::resourceStreamType)();
-  (*N3::ctorResourceStreamType)(res, ass, (uint64)start, (uint64)length);
+  VMObject* res = (*MSCorlib::resourceStreamType)();
+  (*MSCorlib::ctorResourceStreamType)(res, ass, (uint64)start, (uint64)length);
 
   return res;
 }
       
-extern "C" VMObject* System_Reflection_Assembly_GetManifestResourceStream(VMObject* Ass, CLIString* str) {
-  Assembly* ass = (Assembly*)(*N3::assemblyAssemblyReflection)(Ass).PointerVal;
+extern "C" VMObject* System_Reflection_Assembly_GetManifestResourceStream(VMObject* Ass, PNetString* str) {
+  Assembly* ass = (Assembly*)(*MSCorlib::assemblyAssemblyReflection)(Ass).PointerVal;
   const UTF8* utf8 = str->value;
   Header* header = ass->CLIHeader;
   uint32 stringOffset = header->stringStream->realOffset;
@@ -1044,7 +1045,7 @@ extern "C" ArrayObject* System_Reflection_ClrHelpers_GetCustomAttributes(Assembl
   return ass->getCustomAttributes(clrTypePrivate->token, clrTypePrivate);
 }
 
-extern "C" VMObject* System_Globalization_TextInfo_ToLower(VMObject* obj, CLIString* str) {
+extern "C" VMObject* System_Globalization_TextInfo_ToLower(VMObject* obj, PNetString* str) {
   verifyNull(str);
   const UTF8* utf8 = str->value;
   uint32 length = str->length;
@@ -1059,7 +1060,7 @@ extern "C" VMObject* System_Globalization_TextInfo_ToLower(VMObject* obj, CLIStr
   return ((N3*)vm)->UTF8ToStr(res);
 }
 
-extern "C" VMObject* System_String_Replace(CLIString* str, uint16 c1, uint16 c2) {
+extern "C" VMObject* System_String_Replace(PNetString* str, uint16 c1, uint16 c2) {
   const UTF8* utf8 = str->value;
   uint32 length = str->length;
   if ((c1 == c2) || length == 0) return str;
@@ -1087,7 +1088,7 @@ extern "C" uint32 System_Reflection_ClrResourceStream_ResourceRead(Assembly* ass
   return count;
 }
 
-extern "C" sint32 System_String_CompareInternal(CLIString* strA, sint32 indexA, sint32 lengthA, CLIString* strB, sint32 indexB, sint32 lengthB, bool ignoreCase) {
+extern "C" sint32 System_String_CompareInternal(PNetString* strA, sint32 indexA, sint32 lengthA, PNetString* strB, sint32 indexB, sint32 lengthB, bool ignoreCase) {
   if (strA == 0) {
     if (strB == 0) {
       return 0;
@@ -1120,7 +1121,7 @@ extern "C" sint32 System_String_CompareInternal(CLIString* strA, sint32 indexA, 
   }
 }
 
-extern "C" void System_String_CharFill(CLIString* str, sint32 start, sint32 count, char ch) {
+extern "C" void System_String_CharFill(PNetString* str, sint32 start, sint32 count, char ch) {
   const UTF8* utf8 = str->value;
   sint32 length = start + count;
   uint16* buf = (uint16*)alloca(length * sizeof(uint16));
@@ -1137,8 +1138,8 @@ extern "C" void System_String_CharFill(CLIString* str, sint32 start, sint32 coun
 }
 
 
-extern "C" sint32 System_String_InternalOrdinal(CLIString *strA, sint32 indexA, sint32 lengthA,
-						CLIString *strB, sint32 indexB, sint32 lengthB) {
+extern "C" sint32 System_String_InternalOrdinal(PNetString *strA, sint32 indexA, sint32 lengthA,
+						PNetString *strB, sint32 indexB, sint32 lengthB) {
 	const uint16 *bufA;
 	const uint16 *bufB;
 

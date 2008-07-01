@@ -44,6 +44,7 @@
 #include "Assembly.h"
 #include "CLIJit.h"
 #include "CLIString.h"
+#include "MSCorlib.h"
 #include "N3.h"
 #include "Reader.h"
 #include "VMArray.h"
@@ -1509,7 +1510,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 token = readU4(bytecodes, i);
         VMCommonClass* cl = assembly->loadType(vm, token, true, false,
                                                false, true);
-        if (!(cl->super == N3::pValue || cl->super == N3::pEnum)) {
+        if (!(cl->super == MSCorlib::pValue || cl->super == MSCorlib::pEnum)) {
           push(new LoadInst(pop(), "", currentBlock));
         }
         break;
@@ -1539,8 +1540,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           (CLIString*)(((N3*)VMThread::get()->vm)->UTF8ToStr(utf8));
         GlobalVariable* gv = str->llvmVar();
         push(new BitCastInst(new LoadInst(gv, "", currentBlock), 
-                             N3::pString->naturalType, "", currentBlock));*/
-        push(new BitCastInst(res, N3::pString->naturalType, "", currentBlock));
+                             MSCorlib::pString->naturalType, "", currentBlock));*/
+        push(new BitCastInst(res, MSCorlib::pString->naturalType, "", currentBlock));
         break;
       }
 

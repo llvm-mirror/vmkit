@@ -30,12 +30,6 @@ public:
   }
   virtual void TRACER;
   
-  // !!! pnetlib layout !!!
-  sint32 capacity;
-  sint32 length;
-  uint8 firstChar;
-  const UTF8* value;
-  llvm::GlobalVariable* _llvmVar;
   llvm::GlobalVariable* llvmVar();
 
   

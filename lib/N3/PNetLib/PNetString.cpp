@@ -1,4 +1,4 @@
-//===---- CLIString.cpp - Internal correspondance with CLI Strings --------===//
+//===--- PNetString.cpp - Implementation of PNet string interface ---------===//
 //
 //                                N3
 //
@@ -8,7 +8,9 @@
 //===----------------------------------------------------------------------===//
 
 #include "CLIString.h"
+#include "MSCorlib.h"
 #include "N3.h"
+#include "PNetString.h"
 #include "VMArray.h"
 #include "VMClass.h"
 #include "VMThread.h"
@@ -17,7 +19,7 @@ using namespace n3;
 
 
 CLIString* CLIString::stringDup(const UTF8*& utf8, N3* vm) {
-  CLIString* obj = (CLIString*)(*N3::pString)();
+  PNetString* obj = (PNetString*)(*MSCorlib::pString)();
   obj->capacity = utf8->size;
   obj->length = utf8->size;
   if (utf8->size == 0) {
@@ -30,9 +32,9 @@ CLIString* CLIString::stringDup(const UTF8*& utf8, N3* vm) {
 }
 
 char* CLIString::strToAsciiz() {
-  return value->UTF8ToAsciiz();
+  return ((PNetString*)this)->value->UTF8ToAsciiz();
 }
 
 const UTF8* CLIString::strToUTF8(N3* vm) {
-  return value;
+  return ((PNetString*)this)->value;
 }

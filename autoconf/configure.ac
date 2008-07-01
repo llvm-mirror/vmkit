@@ -301,6 +301,9 @@ fi
 AC_SUBST([pnetlocalprefix])
 AC_SUBST([WITH_N3])
 
+N3_LIB=PNetLib
+AC_SUBST([N3_LIB])
+
 dnl===-----------------------------------------------------------------------===
 dnl===
 dnl=== SECTION 4: Check for programs we need and that they are the right version

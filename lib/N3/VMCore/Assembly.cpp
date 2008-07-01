@@ -14,8 +14,8 @@
 
 #include "Assembly.h"
 #include "CLIAccess.h"
-#include "CLIString.h"
 #include "LockedMap.h"
+#include "MSCorlib.h"
 #include "N3.h"
 #include "Reader.h"
 #include "VirtualMachine.h"
@@ -1163,7 +1163,7 @@ void Assembly::readCustomAttributes(uint32 offset, std::vector<llvm::GenericValu
   uint32 start = meth->virt ? 1 : 0;
 
   for (uint32 i = start + 1; i < meth->parameters.size(); ++i) {
-    if (meth->parameters[i] == N3::pSInt32) {
+    if (meth->parameters[i] == MSCorlib::pSInt32) {
       llvm::GenericValue gv;
       gv.IntVal = llvm::APInt(32, READ_U4(bytes, offset));
       args.push_back(gv);
@@ -1211,7 +1211,7 @@ ArrayObject* Assembly::getCustomAttributes(uint32 token, VMCommonClass* cl) {
     }
   }
 
-  ArrayObject* res = ArrayObject::acons(vec.size(), N3::arrayObject);
+  ArrayObject* res = ArrayObject::acons(vec.size(), MSCorlib::arrayObject);
   for (uint32 i = 0; i < vec.size(); ++i)
     res->elements[i] = vec[i];
   

@@ -8,8 +8,5 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
-CXX.Flags += -Wno-unused
 LIBRARYNAME = N3
 include $(LEVEL)/Makefile.common
-
-CXX.Flags += -Wno-unused

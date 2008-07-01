@@ -12,7 +12,7 @@ include $(LEVEL)/Makefile.config
 
 TOOLNAME = n3
 LINK_COMPONENTS = engine scalaropts instrumentation ipa ipo
-USEDLIBS = Allocator CommonThread Mvm N3 Main $(GCLIB)
+USEDLIBS = Allocator CommonThread Mvm N3 Main $(GCLIB) $(N3_LIB)
 
 include $(LEVEL)/Makefile.common
 

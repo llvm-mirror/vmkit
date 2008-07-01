@@ -21,7 +21,6 @@
 #include "types.h"
 
 #include "Assembly.h"
-#include "CLIString.h"
 #include "LockedMap.h"
 #include "N3ModuleProvider.h"
 #include "VirtualMachine.h"

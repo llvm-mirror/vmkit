@@ -698,6 +698,7 @@ classpathversion
 WITH_JNJVM
 pnetlocalprefix
 WITH_N3
+N3_LIB
 CXX
 CXXFLAGS
 ac_ct_CXX
@@ -4036,6 +4037,9 @@ else
 fi
 
 
+
+
+N3_LIB=PNetLib
 
 
 
@@ -7834,6 +7838,7 @@ classpathversion!$classpathversion$ac_delim
 WITH_JNJVM!$WITH_JNJVM$ac_delim
 pnetlocalprefix!$pnetlocalprefix$ac_delim
 WITH_N3!$WITH_N3$ac_delim
+N3_LIB!$N3_LIB$ac_delim
 CXX!$CXX$ac_delim
 CXXFLAGS!$CXXFLAGS$ac_delim
 ac_ct_CXX!$ac_ct_CXX$ac_delim
@@ -7850,7 +7855,6 @@ RM!$RM$ac_delim
 SED!$SED$ac_delim
 TAR!$TAR$ac_delim
 BINPWD!$BINPWD$ac_delim
-CAT!$CAT$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -7892,6 +7896,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+CAT!$CAT$ac_delim
 LLVMAS!$LLVMAS$ac_delim
 LLC!$LLC$ac_delim
 INSTALL_PROGRAM!$INSTALL_PROGRAM$ac_delim
@@ -7903,7 +7908,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 9; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 10; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

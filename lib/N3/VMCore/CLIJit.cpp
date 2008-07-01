@@ -33,7 +33,7 @@
 #include "Assembly.h"
 #include "CLIAccess.h"
 #include "CLIJit.h"
-#include "CLIString.h"
+#include "MSCorlib.h"
 #include "NativeUtil.h"
 #include "N3.h"
 #include "N3ModuleProvider.h"
@@ -64,13 +64,13 @@ static void traceStruct(VMCommonClass* cl, BasicBlock* block, Value* arg) {
             e = cl->virtualFields.end(); i!= e; ++i) {
 
     VMField* field = *i;
-    if (field->signature->super == N3::pValue) {
+    if (field->signature->super == MSCorlib::pValue) {
       if (!field->signature->isPrimitive) {
         Value* ptr = GetElementPtrInst::Create(arg, field->offset, "",
                                            block);
         traceStruct(field->signature, block, ptr);
-      } else if (field->signature == N3::pIntPtr || 
-                 field->signature == N3::pUIntPtr)  {
+      } else if (field->signature == MSCorlib::pIntPtr || 
+                 field->signature == MSCorlib::pUIntPtr)  {
         Value* valCast = new BitCastInst(arg, VMObject::llvmType, "", block);
 #ifdef MULTIPLE_GC
         std::vector<Value*> Args;
@@ -82,7 +82,7 @@ static void traceStruct(VMCommonClass* cl, BasicBlock* block, Value* arg) {
         CallInst::Create(CLIJit::markAndTraceLLVM, valCast, "", block);
 #endif
       }
-    } else if (field->signature->super != N3::pEnum) {
+    } else if (field->signature->super != MSCorlib::pEnum) {
       Value* valCast = new BitCastInst(arg, VMObject::llvmType, "", block);
 #ifdef MULTIPLE_GC
       std::vector<Value*> Args;
@@ -109,7 +109,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
   for (std::vector<VMField*>::iterator i = fields.begin(), 
             e = fields.end(); i!= e; ++i) {
     VMField* field = *i;
-    if (field->signature->super == N3::pValue) {
+    if (field->signature->super == MSCorlib::pValue) {
       std::vector<Value*> args; //size = 2
       args.push_back(zero);
       if (boxed) {
@@ -120,7 +120,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
       Value* ptr = GetElementPtrInst::Create(arg, args.begin(), args.end(), "",
                                          block);
       traceStruct(field->signature, block, ptr);
-    } else if (field->signature->super != N3::pEnum) {
+    } else if (field->signature->super != MSCorlib::pEnum) {
       std::vector<Value*> args; //size = 2
       args.push_back(zero);
       if (boxed) {
@@ -206,9 +206,9 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
       GetElementPtrInst::Create(ptr_v, ptr_tmp3_indices.begin(), 
                                 ptr_tmp3_indices.end(), "tmp3", label_bb);
 
-    if (cl->baseClass->super == N3::pValue) {
+    if (cl->baseClass->super == MSCorlib::pValue) {
       traceStruct(cl->baseClass, label_bb, ptr_tmp3);
-    } else if (cl->baseClass->super != N3::pEnum) {
+    } else if (cl->baseClass->super != MSCorlib::pEnum) {
       LoadInst* ptr_tmp4 = new LoadInst(ptr_tmp3, "tmp4", false, label_bb);
       Value* arg = new BitCastInst(ptr_tmp4, VMObject::llvmType, "", label_bb);
 #ifdef MULTIPLE_GC
@@ -282,7 +282,7 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
   }
 #endif
   
-  traceClass(cl, block, realArg, fields, (cl->super == N3::pValue && !stat));
+  traceClass(cl, block, realArg, fields, (cl->super == MSCorlib::pValue && !stat));
   ReturnInst::Create(block);
 
   void* tracer = mvm::jit::executionEngine->getPointerToGlobal(func);
@@ -605,7 +605,7 @@ void CLIJit::invoke(uint32 value) {
     
     res = invoke(func, Args, "", currentBlock, meth->structReturn);
   }
-  if (meth->parameters[0] != N3::pVoid) {
+  if (meth->parameters[0] != MSCorlib::pVoid) {
     push(res);
   }
 }
@@ -635,7 +635,7 @@ void CLIJit::invokeNew(uint32 value) {
     push(invoke(arrayMultiConsLLVM, Args, "", currentBlock, false));
     return;
 
-  } else if (type->super == N3::pValue || type->super == N3::pEnum) {
+  } else if (type->super == MSCorlib::pValue || type->super == MSCorlib::pEnum) {
     obj = new AllocaInst(type->naturalType, "", currentBlock);
     uint64 size = mvm::jit::getTypeSize(type->naturalType);
         
@@ -668,7 +668,7 @@ void CLIJit::invokeNew(uint32 value) {
     invoke(func, Args, "", currentBlock, meth->structReturn);
   }
     
-  if ((type->super == N3::pValue || type->super == N3::pEnum) &&
+  if ((type->super == MSCorlib::pValue || type->super == MSCorlib::pEnum) &&
       type->virtualFields.size() == 1) {
     push(new LoadInst(obj, "", currentBlock));
   } else {
@@ -679,14 +679,14 @@ void CLIJit::invokeNew(uint32 value) {
 llvm::Value* CLIJit::getVirtualField(uint32 value) {
   VMField* field = compilingClass->assembly->getFieldFromToken(value, false);
   Value* obj = pop();
-  if ((field->classDef->super == N3::pValue ||
-      field->classDef->super == N3::pEnum) &&
+  if ((field->classDef->super == MSCorlib::pValue ||
+      field->classDef->super == MSCorlib::pEnum) &&
       field->classDef->virtualFields.size() == 1){
     // struct!
     return obj;
   } else {
-    if (field->classDef->super != N3::pValue && 
-        field->classDef->super != N3::pEnum) {
+    if (field->classDef->super != MSCorlib::pValue && 
+        field->classDef->super != MSCorlib::pEnum) {
       obj = new BitCastInst(obj, field->classDef->naturalType, "",
                             currentBlock);
     }
@@ -725,14 +725,14 @@ void CLIJit::setVirtualField(uint32 value) {
 
   Value* ptr = 0;
   const Type* type = obj->getType();
-  if ((field->classDef->super == N3::pValue ||
-      field->classDef->super == N3::pEnum) &&
+  if ((field->classDef->super == MSCorlib::pValue ||
+      field->classDef->super == MSCorlib::pEnum) &&
       field->classDef->virtualFields.size() == 1){
     // struct!
     ptr = obj;
   } else {
-    if (field->classDef->super != N3::pValue &&
-        field->classDef->super != N3::pEnum) {
+    if (field->classDef->super != MSCorlib::pValue &&
+        field->classDef->super != MSCorlib::pEnum) {
       obj = new BitCastInst(obj, field->classDef->naturalType, "", currentBlock);
     }
     std::vector<Value*> args;
@@ -884,7 +884,7 @@ Function* CLIJit::createDelegate() {
   assert(i == e);
   
   BasicBlock* entry = createBasicBlock("entry");
-  obj = new BitCastInst(obj, N3::pDelegate->virtualType, "", entry);
+  obj = new BitCastInst(obj, MSCorlib::pDelegate->virtualType, "", entry);
   std::vector<Value*> elts;
   elts.push_back(mvm::jit::constantZero);
   elts.push_back(mvm::jit::constantOne);
@@ -911,7 +911,7 @@ Function* CLIJit::compileIntern() {
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "intern compile %s\n",
               compilingMethod->printString());
 
-  if (compilingClass->subclassOf(N3::pDelegate)) {
+  if (compilingClass->subclassOf(MSCorlib::pDelegate)) {
     const UTF8* name = compilingMethod->name;
     if (name == N3::ctorName) return createDelegate();
     else if (name == N3::invokeName) return invokeDelegate();
@@ -1016,7 +1016,7 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat) {
         ex->catchClass = ass->loadType((N3*)VMThread::get()->vm, classToken,
                                        true, false, false, true);
       } else {
-        ex->catchClass = N3::pException;
+        ex->catchClass = MSCorlib::pException;
       }
       opcodeInfos[ex->handlerOffset].reqSuppl = true;
       exceptions.push_back(ex);

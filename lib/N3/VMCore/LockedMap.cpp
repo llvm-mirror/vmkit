@@ -10,8 +10,8 @@
 #include <map>
 
 #include "Assembly.h"
-#include "CLIString.h"
 #include "LockedMap.h"
+#include "MSCorlib.h"
 #include "N3.h"
 #include "VMArray.h"
 #include "VMClass.h"
@@ -75,7 +75,7 @@ const UTF8* UTF8Map::lookupOrCreateAsciiz(const char* asciiz) {
   }
 
   if (res == 0) {
-    UTF8* tmp = UTF8::acons(size, N3::arrayChar);
+    UTF8* tmp = UTF8::acons(size, MSCorlib::arrayChar);
     for (sint32 i = 0; i < size; i++) {
       tmp->setAt(i, asciiz[i]);
     }
@@ -103,7 +103,7 @@ const UTF8* UTF8Map::lookupOrCreateReader(const uint16* buf, uint32 len) {
   }
 
   if (res == 0) {
-    UTF8* tmp = UTF8::acons(size, N3::arrayChar);
+    UTF8* tmp = UTF8::acons(size, MSCorlib::arrayChar);
     memcpy(tmp->elements, buf, len * sizeof(uint16));
     res = (const UTF8*)tmp;
     map.insert(std::make_pair(key, res));

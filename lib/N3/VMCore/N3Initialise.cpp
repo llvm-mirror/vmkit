@@ -18,6 +18,7 @@
 #include "CLIJit.h"
 #include "LockedMap.h"
 #include "NativeUtil.h"
+#include "MSCorlib.h"
 #include "N3.h"
 #include "N3ModuleProvider.h"
 #include "Reader.h"
@@ -40,62 +41,62 @@ std::vector<VMMethod*> VMClassArray::StaticMethodsArray;
 std::vector<VMField*> VMClassArray::VirtualFieldsArray;
 std::vector<VMField*> VMClassArray::StaticFieldsArray;
 
-VMClass* N3::pVoid = 0;
-VMClass* N3::pBoolean= 0;
-VMClass* N3::pChar = 0;
-VMClass* N3::pSInt8 = 0;
-VMClass* N3::pUInt8 = 0;
-VMClass* N3::pSInt16 = 0;
-VMClass* N3::pUInt16 = 0;
-VMClass* N3::pSInt32 = 0;
-VMClass* N3::pUInt32 = 0;
-VMClass* N3::pSInt64 = 0;
-VMClass* N3::pUInt64 = 0;
-VMClass* N3::pFloat = 0;
-VMClass* N3::pDouble = 0;
-VMClass* N3::pIntPtr = 0;
-VMClass* N3::pUIntPtr = 0;
-VMClass* N3::pObject = 0;
-VMClass* N3::pString = 0;
-VMClass* N3::pValue = 0;
-VMClass* N3::pEnum = 0;
-VMClass* N3::pArray = 0;
-VMClass* N3::pDelegate = 0;
-VMClass* N3::pException = 0;
-VMClassArray* N3::arrayChar = 0;
-VMClassArray* N3::arrayString = 0;
-VMClassArray* N3::arrayObject = 0;
-VMClassArray* N3::arrayByte = 0;
-VMMethod* N3::ctorPropertyType;
-VMMethod* N3::ctorMethodType;
-VMMethod* N3::ctorClrType;
-VMClass* N3::clrType;
-VMField* N3::typeClrType;
-VMField* N3::propertyPropertyType;
-VMField* N3::methodMethodType;
-VMMethod* N3::ctorAssemblyReflection;
-VMClass* N3::assemblyReflection;
-VMClass* N3::typedReference;
-VMField* N3::assemblyAssemblyReflection;
-VMClass* N3::propertyType;
-VMClass* N3::methodType;
-VMClass* N3::resourceStreamType;
-VMMethod* N3::ctorResourceStreamType;
+VMClass* MSCorlib::pVoid = 0;
+VMClass* MSCorlib::pBoolean= 0;
+VMClass* MSCorlib::pChar = 0;
+VMClass* MSCorlib::pSInt8 = 0;
+VMClass* MSCorlib::pUInt8 = 0;
+VMClass* MSCorlib::pSInt16 = 0;
+VMClass* MSCorlib::pUInt16 = 0;
+VMClass* MSCorlib::pSInt32 = 0;
+VMClass* MSCorlib::pUInt32 = 0;
+VMClass* MSCorlib::pSInt64 = 0;
+VMClass* MSCorlib::pUInt64 = 0;
+VMClass* MSCorlib::pFloat = 0;
+VMClass* MSCorlib::pDouble = 0;
+VMClass* MSCorlib::pIntPtr = 0;
+VMClass* MSCorlib::pUIntPtr = 0;
+VMClass* MSCorlib::pObject = 0;
+VMClass* MSCorlib::pString = 0;
+VMClass* MSCorlib::pValue = 0;
+VMClass* MSCorlib::pEnum = 0;
+VMClass* MSCorlib::pArray = 0;
+VMClass* MSCorlib::pDelegate = 0;
+VMClass* MSCorlib::pException = 0;
+VMClassArray* MSCorlib::arrayChar = 0;
+VMClassArray* MSCorlib::arrayString = 0;
+VMClassArray* MSCorlib::arrayObject = 0;
+VMClassArray* MSCorlib::arrayByte = 0;
+VMMethod* MSCorlib::ctorPropertyType;
+VMMethod* MSCorlib::ctorMethodType;
+VMMethod* MSCorlib::ctorClrType;
+VMClass* MSCorlib::clrType;
+VMField* MSCorlib::typeClrType;
+VMField* MSCorlib::propertyPropertyType;
+VMField* MSCorlib::methodMethodType;
+VMMethod* MSCorlib::ctorAssemblyReflection;
+VMClass* MSCorlib::assemblyReflection;
+VMClass* MSCorlib::typedReference;
+VMField* MSCorlib::assemblyAssemblyReflection;
+VMClass* MSCorlib::propertyType;
+VMClass* MSCorlib::methodType;
+VMClass* MSCorlib::resourceStreamType;
+VMMethod* MSCorlib::ctorResourceStreamType;
 
-VMField* N3::ctorBoolean;
-VMField* N3::ctorUInt8;
-VMField* N3::ctorSInt8;
-VMField* N3::ctorChar;
-VMField* N3::ctorSInt16;
-VMField* N3::ctorUInt16;
-VMField* N3::ctorSInt32;
-VMField* N3::ctorUInt32;
-VMField* N3::ctorSInt64;
-VMField* N3::ctorUInt64;
-VMField* N3::ctorIntPtr;
-VMField* N3::ctorUIntPtr;
-VMField* N3::ctorDouble;
-VMField* N3::ctorFloat;
+VMField* MSCorlib::ctorBoolean;
+VMField* MSCorlib::ctorUInt8;
+VMField* MSCorlib::ctorSInt8;
+VMField* MSCorlib::ctorChar;
+VMField* MSCorlib::ctorSInt16;
+VMField* MSCorlib::ctorUInt16;
+VMField* MSCorlib::ctorSInt32;
+VMField* MSCorlib::ctorUInt32;
+VMField* MSCorlib::ctorSInt64;
+VMField* MSCorlib::ctorUInt64;
+VMField* MSCorlib::ctorIntPtr;
+VMField* MSCorlib::ctorUIntPtr;
+VMField* MSCorlib::ctorDouble;
+VMField* MSCorlib::ctorFloat;
 
 const UTF8* N3::clinitName = 0;
 const UTF8* N3::ctorName = 0;
@@ -216,19 +217,6 @@ static void initialiseVT() {
 
 }
 
-static void loadStringClass(N3* vm) {
-  VMClass* type = (VMClass*)vm->coreAssembly->loadTypeFromName(
-                                           vm->asciizConstructUTF8("String"),
-                                           vm->asciizConstructUTF8("System"),
-                                           false, false, false, true);
-  N3::pString = type;
-  type->resolveType(false, false);
-
-  uint64 size = mvm::jit::getTypeSize(type->virtualType->getContainedType(0)) + sizeof(const UTF8*) + sizeof(llvm::GlobalVariable*);
-  type->virtualInstance = 
-    (VMObject*)gc::operator new(size, type->virtualInstance->getVirtualTable());
-  type->virtualInstance->initialise(type);
-}
 
 static void initialiseStatics() {
   NativeUtil::initialise();
@@ -258,10 +246,10 @@ static void initialiseStatics() {
   const UTF8* System = vm->asciizConstructUTF8("System");
   const UTF8* utf8OfChar = vm->asciizConstructUTF8("Char");
   
-  N3::arrayChar = ass->constructArray(utf8OfChar, System, 1);
-  ((UTF8*)System)->classOf = N3::arrayChar;
-  ((UTF8*)utf8OfChar)->classOf = N3::arrayChar;
-  ((UTF8*)mscorlib)->classOf = N3::arrayChar;
+  MSCorlib::arrayChar = ass->constructArray(utf8OfChar, System, 1);
+  ((UTF8*)System)->classOf = MSCorlib::arrayChar;
+  ((UTF8*)utf8OfChar)->classOf = MSCorlib::arrayChar;
+  ((UTF8*)mscorlib)->classOf = MSCorlib::arrayChar;
 
 #define INIT(var, nameSpace, name, type, prim) {\
   var = (VMClass*)vm->coreAssembly->loadTypeFromName( \
@@ -274,54 +262,48 @@ static void initialiseStatics() {
     var->virtualType = type;  \
   }}
 
-  INIT(N3::pObject,   "System", "Object", VMObject::llvmType, false);
-  INIT(N3::pValue,    "System", "ValueType", 0, false);
-  INIT(N3::pVoid,     "System", "Void", llvm::Type::VoidTy, true);
-  INIT(N3::pBoolean,  "System", "Boolean", llvm::Type::Int1Ty, true);
-  INIT(N3::pUInt8,    "System", "Byte", llvm::Type::Int8Ty, true);
-  INIT(N3::pSInt8,    "System", "SByte", llvm::Type::Int8Ty, true);
-  INIT(N3::pChar,     "System", "Char", llvm::Type::Int16Ty, true);
-  INIT(N3::pSInt16,   "System", "Int16", llvm::Type::Int16Ty, true);
-  INIT(N3::pUInt16,   "System", "UInt16", llvm::Type::Int16Ty, true);
-  INIT(N3::pSInt32,   "System", "Int32", llvm::Type::Int32Ty, true);
-  INIT(N3::pUInt32,   "System", "UInt32", llvm::Type::Int32Ty, true);
-  INIT(N3::pSInt64,   "System", "Int64", llvm::Type::Int64Ty, true);
-  INIT(N3::pUInt64,   "System", "UInt64", llvm::Type::Int64Ty, true);
-  INIT(N3::pIntPtr,   "System", "IntPtr", llvm::PointerType::getUnqual(llvm::Type::Int8Ty), true);
-  INIT(N3::pUIntPtr,  "System", "UIntPtr", llvm::PointerType::getUnqual(llvm::Type::Int8Ty), true);
-  INIT(N3::pDouble,   "System", "Double", llvm::Type::DoubleTy, true);
-  INIT(N3::pFloat,    "System", "Single", llvm::Type::FloatTy, true);
-  INIT(N3::pEnum,     "System", "Enum", llvm::Type::Int32Ty, true);
-  INIT(N3::pArray,    "System", "Array", 0, true);
-  INIT(N3::pException,"System", "Exception", 0, false);
-  INIT(N3::pDelegate, "System", "Delegate", 0, false);
-  INIT(N3::clrType,   "System.Reflection", "ClrType", 0, false);
-  INIT(N3::assemblyReflection,   "System.Reflection", "Assembly", 0, false);
-  INIT(N3::typedReference,   "System", "TypedReference", 0, false);
-  INIT(N3::propertyType,   "System.Reflection", "ClrProperty", 0, false);
-  INIT(N3::methodType,   "System.Reflection", "ClrMethod", 0, false);
-  INIT(N3::resourceStreamType,   "System.Reflection", "ClrResourceStream", 0, false);
+  INIT(MSCorlib::pObject,   "System", "Object", VMObject::llvmType, false);
+  INIT(MSCorlib::pValue,    "System", "ValueType", 0, false);
+  INIT(MSCorlib::pVoid,     "System", "Void", llvm::Type::VoidTy, true);
+  INIT(MSCorlib::pBoolean,  "System", "Boolean", llvm::Type::Int1Ty, true);
+  INIT(MSCorlib::pUInt8,    "System", "Byte", llvm::Type::Int8Ty, true);
+  INIT(MSCorlib::pSInt8,    "System", "SByte", llvm::Type::Int8Ty, true);
+  INIT(MSCorlib::pChar,     "System", "Char", llvm::Type::Int16Ty, true);
+  INIT(MSCorlib::pSInt16,   "System", "Int16", llvm::Type::Int16Ty, true);
+  INIT(MSCorlib::pUInt16,   "System", "UInt16", llvm::Type::Int16Ty, true);
+  INIT(MSCorlib::pSInt32,   "System", "Int32", llvm::Type::Int32Ty, true);
+  INIT(MSCorlib::pUInt32,   "System", "UInt32", llvm::Type::Int32Ty, true);
+  INIT(MSCorlib::pSInt64,   "System", "Int64", llvm::Type::Int64Ty, true);
+  INIT(MSCorlib::pUInt64,   "System", "UInt64", llvm::Type::Int64Ty, true);
+  INIT(MSCorlib::pIntPtr,   "System", "IntPtr", llvm::PointerType::getUnqual(llvm::Type::Int8Ty), true);
+  INIT(MSCorlib::pUIntPtr,  "System", "UIntPtr", llvm::PointerType::getUnqual(llvm::Type::Int8Ty), true);
+  INIT(MSCorlib::pDouble,   "System", "Double", llvm::Type::DoubleTy, true);
+  INIT(MSCorlib::pFloat,    "System", "Single", llvm::Type::FloatTy, true);
+  INIT(MSCorlib::pEnum,     "System", "Enum", llvm::Type::Int32Ty, true);
+  INIT(MSCorlib::pArray,    "System", "Array", 0, true);
+  INIT(MSCorlib::pException,"System", "Exception", 0, false);
+  INIT(MSCorlib::pDelegate, "System", "Delegate", 0, false);
 
 #undef INIT
   
 
-  N3::arrayChar->baseClass = N3::pChar;
-  VMClassArray::SuperArray = N3::pArray;
-  N3::arrayChar->super = N3::pArray;
+  MSCorlib::arrayChar->baseClass = MSCorlib::pChar;
+  VMClassArray::SuperArray = MSCorlib::pArray;
+  MSCorlib::arrayChar->super = MSCorlib::pArray;
   
-  loadStringClass(vm);
-  
-  N3::arrayString = ass->constructArray(vm->asciizConstructUTF8("String"),
+  MSCorlib::loadStringClass(vm);
+
+  MSCorlib::arrayString = ass->constructArray(vm->asciizConstructUTF8("String"),
                                         System, 1);
-  N3::arrayString->baseClass = N3::pString;
+  MSCorlib::arrayString->baseClass = MSCorlib::pString;
   
-  N3::arrayByte = ass->constructArray(vm->asciizConstructUTF8("Byte"),
+  MSCorlib::arrayByte = ass->constructArray(vm->asciizConstructUTF8("Byte"),
                                         System, 1);
-  N3::arrayByte->baseClass = N3::pUInt8;
+  MSCorlib::arrayByte->baseClass = MSCorlib::pUInt8;
   
-  N3::arrayObject = ass->constructArray(vm->asciizConstructUTF8("Object"),
+  MSCorlib::arrayObject = ass->constructArray(vm->asciizConstructUTF8("Object"),
                                         System, 1);
-  N3::arrayObject->baseClass = N3::pObject;
+  MSCorlib::arrayObject->baseClass = MSCorlib::pObject;
   
 
   N3::clinitName = vm->asciizConstructUTF8(".cctor");
@@ -342,75 +324,9 @@ static void initialiseStatics() {
   N3::doubleName = vm->asciizConstructUTF8("Double");
   N3::testInfinity = vm->asciizConstructUTF8("TestInfinity");
   
-  {
-  N3::clrType->resolveType(false, false);
-  std::vector<VMCommonClass*> args;
-  args.push_back(N3::pVoid);
-  args.push_back(N3::clrType);
-  N3::ctorClrType = N3::clrType->lookupMethod(vm->asciizConstructUTF8(".ctor"), args, false, false);
-  N3::typeClrType = N3::clrType->lookupField(vm->asciizConstructUTF8("privateData"), N3::pIntPtr, false, false);
-  }
 
-  {
-  N3::assemblyReflection->resolveType(false, false);
-  std::vector<VMCommonClass*> args;
-  args.push_back(N3::pVoid);
-  args.push_back(N3::assemblyReflection);
-  N3::ctorAssemblyReflection = N3::assemblyReflection->lookupMethod(vm->asciizConstructUTF8(".ctor"), args, false, false);
-  N3::assemblyAssemblyReflection = N3::assemblyReflection->lookupField(vm->asciizConstructUTF8("privateData"), N3::pIntPtr, false, false);
-  }
-  
-  {
-  N3::propertyType->resolveType(false, false);
-  std::vector<VMCommonClass*> args;
-  args.push_back(N3::pVoid);
-  args.push_back(N3::propertyType);
-  N3::ctorPropertyType = N3::propertyType->lookupMethod(vm->asciizConstructUTF8(".ctor"), args, false, false);
-  N3::propertyPropertyType = N3::propertyType->lookupField(vm->asciizConstructUTF8("privateData"), N3::pIntPtr, false, false);
-  }
-  
-  {
-  N3::methodType->resolveType(false, false);
-  std::vector<VMCommonClass*> args;
-  args.push_back(N3::pVoid);
-  args.push_back(N3::methodType);
-  N3::ctorMethodType = N3::methodType->lookupMethod(vm->asciizConstructUTF8(".ctor"), args, false, false);
-  N3::methodMethodType = N3::methodType->lookupField(vm->asciizConstructUTF8("privateData"), N3::pIntPtr, false, false);
-  }
-  
-  {
-  N3::resourceStreamType->resolveType(false, false);
-  std::vector<VMCommonClass*> args;
-  args.push_back(N3::pVoid);
-  args.push_back(N3::resourceStreamType);
-  args.push_back(N3::pIntPtr);
-  args.push_back(N3::pSInt64);
-  args.push_back(N3::pSInt64);
-  N3::ctorResourceStreamType = N3::resourceStreamType->lookupMethod(vm->asciizConstructUTF8(".ctor"), args, false, false);
-  }
-  
-  VMCommonClass* voidPtr = vm->coreAssembly->constructPointer(N3::pVoid, 1);
-#define INIT(var, cl, type) {\
-    cl->resolveType(false, false); \
-    var = cl->lookupField(vm->asciizConstructUTF8("value_"), type, false, false); \
-  }
-  
-  INIT(N3::ctorBoolean,  N3::pBoolean, N3::pBoolean);
-  INIT(N3::ctorUInt8, N3::pUInt8, N3::pUInt8);
-  INIT(N3::ctorSInt8, N3::pSInt8, N3::pSInt8);
-  INIT(N3::ctorChar,  N3::pChar, N3::pChar);
-  INIT(N3::ctorSInt16, N3::pSInt16, N3::pSInt16);
-  INIT(N3::ctorUInt16, N3::pUInt16, N3::pUInt16);
-  INIT(N3::ctorSInt32, N3::pSInt32, N3::pSInt32);
-  INIT(N3::ctorUInt32, N3::pUInt32, N3::pUInt32);
-  INIT(N3::ctorSInt64, N3::pSInt64, N3::pSInt64);
-  INIT(N3::ctorUInt64, N3::pUInt64, N3::pUInt64);
-  INIT(N3::ctorIntPtr, N3::pIntPtr, voidPtr);
-  INIT(N3::ctorUIntPtr, N3::pUIntPtr, voidPtr);
-  INIT(N3::ctorDouble, N3::pDouble, N3::pDouble);
-  INIT(N3::ctorFloat, N3::pFloat, N3::pFloat);
-
-#undef INIT
+  MSCorlib::initialise(vm);
+   
 }
 
 

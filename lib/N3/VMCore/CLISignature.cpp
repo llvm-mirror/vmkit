@@ -9,6 +9,7 @@
 
 
 #include "Assembly.h"
+#include "MSCorlib.h"
 #include "N3.h"
 #include "Reader.h"
 #include "VMClass.h"
@@ -24,59 +25,59 @@ static VMCommonClass* METHOD_ElementTypeEnd(uint32 op, Assembly* ass, uint32& of
 }
 
 static VMCommonClass* METHOD_ElementTypeVoid(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pVoid;
+  return MSCorlib::pVoid;
 }
 
 static VMCommonClass* METHOD_ElementTypeBoolean(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pBoolean;
+  return MSCorlib::pBoolean;
 }
 
 static VMCommonClass* METHOD_ElementTypeChar(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pChar;
+  return MSCorlib::pChar;
 }
 
 static VMCommonClass* METHOD_ElementTypeI1(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pSInt8;
+  return MSCorlib::pSInt8;
 }
 
 static VMCommonClass* METHOD_ElementTypeU1(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pUInt8;
+  return MSCorlib::pUInt8;
 }
 
 static VMCommonClass* METHOD_ElementTypeI2(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pSInt16;
+  return MSCorlib::pSInt16;
 }
 
 static VMCommonClass* METHOD_ElementTypeU2(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pUInt16;
+  return MSCorlib::pUInt16;
 }
 
 static VMCommonClass* METHOD_ElementTypeI4(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pSInt32;
+  return MSCorlib::pSInt32;
 }
 
 static VMCommonClass* METHOD_ElementTypeU4(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pUInt32;
+  return MSCorlib::pUInt32;
 }
 
 static VMCommonClass* METHOD_ElementTypeI8(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pSInt64;
+  return MSCorlib::pSInt64;
 }
 
 static VMCommonClass* METHOD_ElementTypeU8(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pUInt64;
+  return MSCorlib::pUInt64;
 }
 
 static VMCommonClass* METHOD_ElementTypeR4(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pFloat;
+  return MSCorlib::pFloat;
 }
 
 static VMCommonClass* METHOD_ElementTypeR8(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pDouble;
+  return MSCorlib::pDouble;
 }
 
 static VMCommonClass* METHOD_ElementTypeString(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pString;
+  return MSCorlib::pString;
 }
 
 static VMCommonClass* METHOD_ElementTypePtr(uint32 op, Assembly* ass, uint32& offset) {
@@ -220,15 +221,15 @@ static VMCommonClass* METHOD_ElementTypeGenericInst(uint32 op, Assembly* ass, ui
 }
 
 static VMCommonClass* METHOD_ElementTypeTypedByRef(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::typedReference;
+  return MSCorlib::typedReference;
 }
 
 static VMCommonClass* METHOD_ElementTypeI(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pIntPtr;
+  return MSCorlib::pIntPtr;
 }
 
 static VMCommonClass* METHOD_ElementTypeU(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pUIntPtr;
+  return MSCorlib::pUIntPtr;
 }
 
 static VMCommonClass* METHOD_ElementTypeFnptr(uint32 op, Assembly* ass, uint32& offset) {
@@ -237,7 +238,7 @@ static VMCommonClass* METHOD_ElementTypeFnptr(uint32 op, Assembly* ass, uint32& 
 }
 
 static VMCommonClass* METHOD_ElementTypeObject(uint32 op, Assembly* ass, uint32& offset) {
-  return N3::pObject;
+  return MSCorlib::pObject;
 }
 
 static VMCommonClass* METHOD_ElementTypeSzarray(uint32 op, Assembly* ass, uint32& offset) {

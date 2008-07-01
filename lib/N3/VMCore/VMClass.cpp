@@ -22,6 +22,7 @@
 #include "Assembly.h"
 #include "CLIAccess.h"
 #include "CLIJit.h"
+#include "MSCorlib.h"
 #include "N3.h"
 #include "VirtualMachine.h"
 #include "VMArray.h"
@@ -211,7 +212,7 @@ void VMCommonClass::clinitClass() {
       
       cl->status = inClinit;
       std::vector<VMCommonClass*> args;
-      args.push_back(N3::pVoid);
+      args.push_back(MSCorlib::pVoid);
       VMMethod* meth = cl->lookupMethodDontThrow(N3::clinitName, args,
                                                  true, false);
       
@@ -293,7 +294,7 @@ void VMClass::resolveVirtualFields() {
     ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(type);
     naturalType = type;
   } else if (super != 0) {
-    if (super == N3::pValue) {
+    if (super == MSCorlib::pValue) {
       uint32 size = virtualFields.size();
       if (size == 1) {
         virtualFields[0]->offset = mvm::jit::constantZero;
@@ -319,7 +320,7 @@ void VMClass::resolveVirtualFields() {
         ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(tmp);
         naturalType = tmp;
       }
-    } else if (super == N3::pEnum) {
+    } else if (super == MSCorlib::pEnum) {
       ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(llvm::Type::Int32Ty); // TODO find max
       naturalType = llvm::Type::Int32Ty;
     } else {
@@ -345,7 +346,7 @@ void VMClass::resolveVirtualFields() {
 
   unifyTypes();
   
-  if (super == N3::pValue) {
+  if (super == MSCorlib::pValue) {
     std::vector<const llvm::Type*> Elts;
     Elts.push_back(VMObject::llvmType->getContainedType(0));
     for (std::vector<VMField*>::iterator i = virtualFields.begin(), 
@@ -357,7 +358,7 @@ void VMClass::resolveVirtualFields() {
     virtualType = naturalType;
   }
   
-  if (super != N3::pEnum) {
+  if (super != MSCorlib::pEnum) {
     VirtualTable* VT = CLIJit::makeVT(this, false);
   
     uint64 size = mvm::jit::getTypeSize(cl->virtualType->getContainedType(0));
@@ -663,7 +664,7 @@ const llvm::FunctionType* VMMethod::resolveSignature(
       if (cur->naturalType->isAbstract()) {
         cur->resolveType(false, false);
       }
-      if (cur->super != N3::pValue && cur->super != N3::pEnum) {
+      if (cur->super != MSCorlib::pValue && cur->super != MSCorlib::pEnum) {
         args.push_back(cur->naturalType);
       } else {
         args.push_back(llvm::PointerType::getUnqual(cur->naturalType));
@@ -764,36 +765,36 @@ bool VMCommonClass::isAssignableFrom(VMCommonClass* cl) {
 
 VMObject* Property::getPropertyDelegatee() {
   if (!delegatee) {
-    delegatee = (*N3::propertyType)();
-    (*N3::ctorPropertyType)(delegatee);
-    (*N3::propertyPropertyType)(delegatee, (VMObject*)this);
+    delegatee = (*MSCorlib::propertyType)();
+    (*MSCorlib::ctorPropertyType)(delegatee);
+    (*MSCorlib::propertyPropertyType)(delegatee, (VMObject*)this);
   }
   return delegatee;
 }
 
 VMObject* VMMethod::getMethodDelegatee() {
   if (!delegatee) {
-    delegatee = (*N3::methodType)();
-    (*N3::ctorMethodType)(delegatee);
-    (*N3::methodMethodType)(delegatee, (VMObject*)this);
+    delegatee = (*MSCorlib::methodType)();
+    (*MSCorlib::ctorMethodType)(delegatee);
+    (*MSCorlib::methodMethodType)(delegatee, (VMObject*)this);
   }
   return delegatee;
 }
 
 VMObject* VMCommonClass::getClassDelegatee() {
   if (!delegatee) {
-    delegatee = (*N3::clrType)();
-    (*N3::ctorClrType)(delegatee);
-    (*N3::typeClrType)(delegatee, (VMObject*)this);
+    delegatee = (*MSCorlib::clrType)();
+    (*MSCorlib::ctorClrType)(delegatee);
+    (*MSCorlib::typeClrType)(delegatee, (VMObject*)this);
   }
   return delegatee;
 }
 
 VMObject* Assembly::getAssemblyDelegatee() {
   if (!delegatee) {
-    delegatee = (*N3::assemblyReflection)();
-    (*N3::ctorAssemblyReflection)(delegatee);
-    (*N3::assemblyAssemblyReflection)(delegatee, (VMObject*)this);
+    delegatee = (*MSCorlib::assemblyReflection)();
+    (*MSCorlib::ctorAssemblyReflection)(delegatee);
+    (*MSCorlib::assemblyAssemblyReflection)(delegatee, (VMObject*)this);
   }
   return delegatee;
 }

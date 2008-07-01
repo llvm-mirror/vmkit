@@ -16,11 +16,11 @@
 
 namespace n3 {
 
-class CLIString;
+class PNetString;
 
 class StringBuilder : public VMObject {
 public:
-  CLIString* buildString;
+  PNetString* buildString;
   sint32 maxCapactiy;
   sint32 needsCopy;
 };

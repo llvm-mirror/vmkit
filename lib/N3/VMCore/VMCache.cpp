@@ -20,6 +20,7 @@
 
 #include "Assembly.h"
 #include "CLIJit.h"
+#include "MSCorlib.h"
 #include "N3.h"
 #include "VirtualMachine.h"
 #include "VMArray.h"
@@ -204,7 +205,7 @@ extern "C" CacheNode* virtualLookup(CacheNode* cache, VMObject *obj) {
     Function* func = dmeth->compiledPtr();
     rcache->methPtr = mvm::jit::executionEngine->getPointerToGlobal(func);
     rcache->lastCible = (VMClass*)ocl;
-    rcache->box = (dmeth->classDef->super == N3::pValue);
+    rcache->box = (dmeth->classDef->super == MSCorlib::pValue);
   }
 
   if (enveloppe->firstCache != rcache) {

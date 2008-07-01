@@ -1,4 +1,4 @@
-##===- lib/Makefile ----------------------------------------*- Makefile -*-===##
+##===- lib/N3/PNetLib/Makefile -----------------------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #
@@ -6,10 +6,8 @@
 # License. See LICENSE.TXT for details.
 # 
 ##===----------------------------------------------------------------------===##
-LEVEL = ../..
+LEVEL = ../../..
 
-include $(LEVEL)/Makefile.config
-
-DIRS = VMCore $(N3_LIB)
-
+LIBRARYNAME = PNetLib
 include $(LEVEL)/Makefile.common
+CXX.Flags += -I../VMCore

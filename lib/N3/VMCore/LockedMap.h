@@ -21,12 +21,12 @@
 
 #include "types.h"
 
+#include "CLIString.h"
 #include "VMArray.h"
 
 namespace n3 {
 
 class Assembly;
-class CLIString;
 class N3;
 class VMClass;
 class VMCommonClass;
