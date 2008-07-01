@@ -127,3 +127,38 @@ void MSCorlib::initialise(N3* vm) {
 
 }
 
+VMObject* Property::getPropertyDelegatee() {
+  if (!delegatee) {
+    delegatee = (*MSCorlib::propertyType)();
+    (*MSCorlib::ctorPropertyType)(delegatee);
+    (*MSCorlib::propertyPropertyType)(delegatee, (VMObject*)this);
+  }
+  return delegatee;
+}
+
+VMObject* VMMethod::getMethodDelegatee() {
+  if (!delegatee) {
+    delegatee = (*MSCorlib::methodType)();
+    (*MSCorlib::ctorMethodType)(delegatee);
+    (*MSCorlib::methodMethodType)(delegatee, (VMObject*)this);
+  }
+  return delegatee;
+}
+
+VMObject* VMCommonClass::getClassDelegatee() {
+  if (!delegatee) {
+    delegatee = (*MSCorlib::clrType)();
+    (*MSCorlib::ctorClrType)(delegatee);
+    (*MSCorlib::typeClrType)(delegatee, (VMObject*)this);
+  }
+  return delegatee;
+}
+
+VMObject* Assembly::getAssemblyDelegatee() {
+  if (!delegatee) {
+    delegatee = (*MSCorlib::assemblyReflection)();
+    (*MSCorlib::ctorAssemblyReflection)(delegatee);
+    (*MSCorlib::assemblyAssemblyReflection)(delegatee, (VMObject*)this);
+  }
+  return delegatee;
+}

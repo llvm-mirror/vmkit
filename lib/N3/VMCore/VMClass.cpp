@@ -276,10 +276,19 @@ void VMClass::resolveStaticFields() {
 }
 
 void VMClass::unifyTypes() {
+  printf("in %s\n", this->printString());
+
   for (std::vector<VMField*>::iterator i = virtualFields.begin(), 
        e = virtualFields.end(); i!= e; ++i) {
+    printf("Resolving in %s\n", this->printString());
     (*i)->signature->resolveType(false, false);
+    printf("Now I have\n");
+    naturalType->print(llvm::cout);
+    printf("\n");
   }
+  printf("this = %s\n", this->printString());
+  naturalType->print(llvm::cout);
+  printf("\n");
   if (naturalType->isAbstract())
     naturalType = naturalType->getForwardedType();
   
@@ -763,41 +772,6 @@ bool VMCommonClass::isAssignableFrom(VMCommonClass* cl) {
   }
 }
 
-VMObject* Property::getPropertyDelegatee() {
-  if (!delegatee) {
-    delegatee = (*MSCorlib::propertyType)();
-    (*MSCorlib::ctorPropertyType)(delegatee);
-    (*MSCorlib::propertyPropertyType)(delegatee, (VMObject*)this);
-  }
-  return delegatee;
-}
-
-VMObject* VMMethod::getMethodDelegatee() {
-  if (!delegatee) {
-    delegatee = (*MSCorlib::methodType)();
-    (*MSCorlib::ctorMethodType)(delegatee);
-    (*MSCorlib::methodMethodType)(delegatee, (VMObject*)this);
-  }
-  return delegatee;
-}
-
-VMObject* VMCommonClass::getClassDelegatee() {
-  if (!delegatee) {
-    delegatee = (*MSCorlib::clrType)();
-    (*MSCorlib::ctorClrType)(delegatee);
-    (*MSCorlib::typeClrType)(delegatee, (VMObject*)this);
-  }
-  return delegatee;
-}
-
-VMObject* Assembly::getAssemblyDelegatee() {
-  if (!delegatee) {
-    delegatee = (*MSCorlib::assemblyReflection)();
-    (*MSCorlib::ctorAssemblyReflection)(delegatee);
-    (*MSCorlib::assemblyAssemblyReflection)(delegatee, (VMObject*)this);
-  }
-  return delegatee;
-}
 
 bool VMMethod::signatureEquals(std::vector<VMCommonClass*>& args) {
   bool stat = isStatic(flags);
