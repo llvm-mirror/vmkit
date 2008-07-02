@@ -35,7 +35,6 @@ class VMObject;
 class VMMethod;
 class VMField;
 class UTF8;
-class llvm::Function;
 
 template<class Key, class Container, class Compare, class Upcall>
 class LockedMap : public mvm::Object {

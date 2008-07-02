@@ -718,7 +718,7 @@ const UTF8* Assembly::readUTF8(VirtualMachine* vm, uint32 len,
 const UTF8* Assembly::readString(VirtualMachine* vm, uint32 offset) {
   uint32 end = offset;
   uint32 cur = 0;
-  while ((cur = READ_U1(bytes, end)) != 0);
+  while ((cur = READ_U1(bytes, end)) != 0) {}
   return readUTF8(vm, (end - 1 - offset), bytes, offset);
 }
 
