@@ -276,19 +276,11 @@ void VMClass::resolveStaticFields() {
 }
 
 void VMClass::unifyTypes() {
-  printf("in %s\n", this->printString());
-
   for (std::vector<VMField*>::iterator i = virtualFields.begin(), 
        e = virtualFields.end(); i!= e; ++i) {
-    printf("Resolving in %s\n", this->printString());
     (*i)->signature->resolveType(false, false);
-    printf("Now I have\n");
-    naturalType->print(llvm::cout);
-    printf("\n");
   }
-  printf("this = %s\n", this->printString());
-  naturalType->print(llvm::cout);
-  printf("\n");
+
   if (naturalType->isAbstract())
     naturalType = naturalType->getForwardedType();
   
@@ -296,26 +288,18 @@ void VMClass::unifyTypes() {
 }
 
 void VMClass::resolveVirtualFields() {
-  VMClass* cl = this;
+  const llvm::Type* ResultTy = 0;
   if (hasExplicitLayout(flags)) {
     explicitLayoutSize = assembly->getExplicitLayout(token);
-    const llvm::Type* type = llvm::IntegerType::get(explicitLayoutSize);
-    ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(type);
-    naturalType = type;
+    ResultTy = llvm::IntegerType::get(explicitLayoutSize);
   } else if (super != 0) {
     if (super == MSCorlib::pValue) {
       uint32 size = virtualFields.size();
       if (size == 1) {
         virtualFields[0]->offset = mvm::jit::constantZero;
-        if (naturalType->isAbstract()) {
-          ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(virtualFields[0]->signature->naturalType);
-          naturalType = virtualFields[0]->signature->naturalType;
-        }
+        ResultTy = virtualFields[0]->signature->naturalType;
       } else if (size == 0) {
-        if (naturalType->isAbstract()) {
-          ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(llvm::Type::VoidTy);
-          naturalType = llvm::Type::VoidTy;
-        }
+        ResultTy = Type::VoidTy;
       } else {
         std::vector<const llvm::Type*> Elts;
         uint32 offset = -1;
@@ -325,13 +309,10 @@ void VMClass::resolveVirtualFields() {
           const llvm::Type* type = (*i)->signature->naturalType;
           Elts.push_back(type);
         }
-        const llvm::Type* tmp = llvm::StructType::get(Elts);
-        ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(tmp);
-        naturalType = tmp;
+        ResultTy = llvm::StructType::get(Elts);
       }
     } else if (super == MSCorlib::pEnum) {
-      ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(llvm::Type::Int32Ty); // TODO find max
-      naturalType = llvm::Type::Int32Ty;
+      ResultTy = Type::Int32Ty; // TODO find max
     } else {
       std::vector<const llvm::Type*> Elts;
       Elts.push_back(super->naturalType->getContainedType(0));
@@ -342,19 +323,23 @@ void VMClass::resolveVirtualFields() {
         const llvm::Type* type = (*i)->signature->naturalType;
         Elts.push_back(type);
       }
-      const llvm::Type* tmp = llvm::PointerType::getUnqual(llvm::StructType::get(Elts));
-      ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(tmp);
-      naturalType = tmp;
+      ResultTy = llvm::PointerType::getUnqual(llvm::StructType::get(Elts));
     }
   } else {
-    if (naturalType->isAbstract()) { // interfaces
-      ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(VMObject::llvmType);
-      naturalType = VMObject::llvmType;
-    }
+    ResultTy = VMObject::llvmType;
   }
-
-  unifyTypes();
   
+  
+  if (naturalType->isAbstract()) {
+    const OpaqueType *OldTy = dyn_cast_or_null<OpaqueType>(this->naturalType);
+    if (OldTy) {
+      const_cast<OpaqueType*>(OldTy)->refineAbstractTypeTo(ResultTy);
+    }
+    naturalType = ResultTy;
+  }
+  
+  unifyTypes();
+
   if (super == MSCorlib::pValue) {
     std::vector<const llvm::Type*> Elts;
     Elts.push_back(VMObject::llvmType->getContainedType(0));
@@ -370,14 +355,14 @@ void VMClass::resolveVirtualFields() {
   if (super != MSCorlib::pEnum) {
     VirtualTable* VT = CLIJit::makeVT(this, false);
   
-    uint64 size = mvm::jit::getTypeSize(cl->virtualType->getContainedType(0));
-    cl->virtualInstance = (VMObject*)gc::operator new(size, VT);
-    cl->virtualInstance->initialise(cl);
+    uint64 size = mvm::jit::getTypeSize(this->virtualType->getContainedType(0));
+    virtualInstance = (VMObject*)gc::operator new(size, VT);
+    virtualInstance->initialise(this);
 
-    for (std::vector<VMField*>::iterator i = cl->virtualFields.begin(),
-              e = cl->virtualFields.end(); i!= e; ++i) {
+    for (std::vector<VMField*>::iterator i = virtualFields.begin(),
+              e = virtualFields.end(); i!= e; ++i) {
     
-      (*i)->initField(cl->virtualInstance);
+      (*i)->initField(virtualInstance);
     }
   }
 
