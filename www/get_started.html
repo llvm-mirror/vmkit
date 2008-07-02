@@ -122,7 +122,6 @@ VM, you can skip the GNU Classpath part):</p>
     <li><tt>tar zxvf pnetlib-0.8.0.tar.gz</tt></li>
     <li><tt>cd pnetlib-0.8.0</tt></li>
     <li><tt>./configure; make</tt></li>
-    <li><tt>export MSCORLIB=$PWD/runtime/mscorlib.dll</tt></li>
    </ul>
 
   <li>Checkout vmkit:</li>
@@ -144,6 +143,8 @@ VM, you can skip the GNU Classpath part):</p>
     <dd>Tell vmkit where GNU Classpath libs are located.</dd>
     <dt><br/><tt>--with-pnet-local-prefix=&lt;directory&gt;</tt></dt>
     <dd>Tell vmkit where PNet is located.</dd>
+    <dt><br/><tt>--with-pnetlib=&lt;directory&gt;</tt></dt>
+    <dd>Tell vmkit where pnetlib's mscorlib.dll is located.</dd>
   </dl>
 
   </ul>
@@ -154,12 +155,12 @@ VM, you can skip the GNU Classpath part):</p>
     <li><tt>make</tt> (this will give you a debug build)</li>
   </ul>
 
-  <li>Try it out: (assuming that you are in vmkit/Debug/bin)</li>
+  <li>Try it out: (assuming vmkit/Debug/bin is in your path)</li>
   <ul>
     <li><tt>jnjvm --help</tt></li>
     <li><tt>jnjvm HelloWorld</tt></li>
-    <li><tt>n3 --help</tt></li>
-    <li><tt>n3 HelloWorld.exe</tt></li>
+    <li><tt>n3-pnetlib --help</tt></li>
+    <li><tt>n3-pnetlib HelloWorld.exe</tt></li>
   </ul>
 </ol>
 
