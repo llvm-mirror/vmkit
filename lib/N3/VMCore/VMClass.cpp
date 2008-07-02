@@ -200,7 +200,7 @@ void VMCommonClass::clinitClass() {
     int status = cl->status;
     if (status == ready) {
       cl->release();
-    } else if (status == unified) {
+    } else if (status == static_resolved) {
       cl->status = clinitParent;
       cl->release();
       if (cl->super) {
@@ -230,7 +230,7 @@ void VMCommonClass::clinitClass() {
 
       cl->status = ready;
       cl->broadcastClass();
-    } else if (status < unified) {
+    } else if (status < static_resolved) {
       cl->release();
       VMThread::get()->vm->unknownError("try to clinit a not-readed class...");
     } else {
@@ -276,15 +276,12 @@ void VMClass::resolveStaticFields() {
 }
 
 void VMClass::unifyTypes() {
+  PATypeHolder PA = naturalType;
   for (std::vector<VMField*>::iterator i = virtualFields.begin(), 
        e = virtualFields.end(); i!= e; ++i) {
-    (*i)->signature->resolveType(false, false);
+    (*i)->signature->resolveVirtual();
   }
-
-  if (naturalType->isAbstract())
-    naturalType = naturalType->getForwardedType();
-  
-  assert(naturalType);
+  naturalType = PA.get();
 }
 
 void VMClass::resolveVirtualFields() {
@@ -339,7 +336,7 @@ void VMClass::resolveVirtualFields() {
   }
   
   unifyTypes();
-
+  
   if (super == MSCorlib::pValue) {
     std::vector<const llvm::Type*> Elts;
     Elts.push_back(VMObject::llvmType->getContainedType(0));
@@ -352,19 +349,6 @@ void VMClass::resolveVirtualFields() {
     virtualType = naturalType;
   }
   
-  if (super != MSCorlib::pEnum) {
-    VirtualTable* VT = CLIJit::makeVT(this, false);
-  
-    uint64 size = mvm::jit::getTypeSize(this->virtualType->getContainedType(0));
-    virtualInstance = (VMObject*)gc::operator new(size, VT);
-    virtualInstance->initialise(this);
-
-    for (std::vector<VMField*>::iterator i = virtualFields.begin(),
-              e = virtualFields.end(); i!= e; ++i) {
-    
-      (*i)->initField(virtualInstance);
-    }
-  }
 
 }
 
@@ -378,7 +362,6 @@ void VMClassArray::makeType() {
   ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(type);
   naturalType = type;
   virtualType = naturalType;
-  arrayVT = CLIJit::makeArrayVT(this);
 }
 
 void VMClassPointer::makeType() {
@@ -388,13 +371,13 @@ void VMClassPointer::makeType() {
   naturalType = pType;
 }
 
-void VMCommonClass::resolveType(bool stat, bool clinit) {
+void VMCommonClass::resolveVirtual() {
   VMCommonClass* cl = this;
   //printf("*** Resolving: %s\n", cl->printString());
-  if (cl->status < resolved) {
+  if (cl->status < virtual_resolved) {
     cl->aquire();
     int status = cl->status;
-    if (status >= resolved) {
+    if (status >= virtual_resolved) {
       cl->release();
     } else if (status <  loaded) {
       cl->release();
@@ -405,13 +388,13 @@ void VMCommonClass::resolveType(bool stat, bool clinit) {
         VMCommonClass* baseClass =  arrayCl->baseClass;
         baseClass->resolveType(false, false);
         arrayCl->makeType();
-        cl->status = resolved;
+        cl->status = virtual_resolved;
       } else if (cl->isPointer) {
         VMClassPointer* pointerCl = (VMClassPointer*)cl;
         VMCommonClass* baseClass =  pointerCl->baseClass;
         baseClass->resolveType(false, false);
         pointerCl->makeType();
-        cl->status = resolved;
+        cl->status = virtual_resolved;
       } else {
         cl->release();
         cl->loadParents();
@@ -420,50 +403,105 @@ void VMCommonClass::resolveType(bool stat, bool clinit) {
         assembly->readClass(cl);
         cl->status = readed;
         ((VMClass*)cl)->resolveVirtualFields();
-        cl->status = resolved;
+        cl->status = virtual_resolved;
       }
       cl->release();
     } else {
       if (!(cl->ownerClass())) {
-        while (status < resolved) {
+        while (status < virtual_resolved) {
           cl->waitClass();
         }
       }
       cl->release();
     }
   }
-  if (stat) cl->resolveStatic(clinit);
 }
 
-void VMCommonClass::resolveStatic(bool clinit) {
+void VMCommonClass::resolveVT() {
   VMCommonClass* cl = this;
-  if (cl->status < unified) {
+  //printf("*** Resolving: %s\n", cl->printString());
+  if (cl->status < vt_resolved) {
     cl->aquire();
     int status = cl->status;
-    if (status >= unified) {
+    if (status >= vt_resolved) {
       cl->release();
-    } else if (status < resolved) {
+    } else if (status <  loaded) {
       cl->release();
-      VMThread::get()->vm->unknownError("try to resolve static of a not virtual-resolved class");
-    } else if (status == resolved) {
+      VMThread::get()->vm->unknownError("try to vt-resolve a not-resolved class");
+    } else if (status == virtual_resolved) {
       if (cl->isArray) {
         VMClassArray* arrayCl = (VMClassArray*)cl;
-        VMCommonClass* baseClass =  arrayCl->baseClass;
-        baseClass->resolveStatic(false);
-        cl->status = unified;
+        arrayCl->baseClass->resolveVT();
+        arrayCl->arrayVT = CLIJit::makeArrayVT(arrayCl);
+        cl->status = vt_resolved;
       } else if (cl->isPointer) {
-        VMClassPointer* pointerCl = (VMClassPointer*)cl;
-        VMCommonClass* baseClass =  pointerCl->baseClass;
-        baseClass->resolveStatic(false);
-        cl->status = unified;
+        cl->status = vt_resolved;
       } else {
-        ((VMClass*)cl)->resolveStaticFields();
-        cl->status = unified;
+        VMClass* cl = (VMClass*)this;
+        if (super) super->resolveVT();
+        
+        if (super != MSCorlib::pEnum) {
+          VirtualTable* VT = CLIJit::makeVT(cl, false);
+  
+          uint64 size = mvm::jit::getTypeSize(cl->virtualType->getContainedType(0));
+          cl->virtualInstance = (VMObject*)gc::operator new(size, VT);
+          cl->virtualInstance->initialise(cl);
+
+          for (std::vector<VMField*>::iterator i = cl->virtualFields.begin(),
+               e = cl->virtualFields.end(); i!= e; ++i) {
+    
+            (*i)->initField(cl->virtualInstance);
+          }
+        }
+        cl->status = vt_resolved;
       }
       cl->release();
     } else {
       if (!(cl->ownerClass())) {
-        while (status < unified) {
+        while (status < vt_resolved) {
+          cl->waitClass();
+        }
+      }
+      cl->release();
+    }
+  }
+}
+
+void VMCommonClass::resolveType(bool stat, bool clinit) {
+  resolveVirtual();
+  resolveVT();
+  if (stat) resolveStatic(clinit);
+}
+
+void VMCommonClass::resolveStatic(bool clinit) {
+  VMCommonClass* cl = this;
+  if (cl->status < static_resolved) {
+    cl->aquire();
+    int status = cl->status;
+    if (status >= static_resolved) {
+      cl->release();
+    } else if (status < vt_resolved) {
+      cl->release();
+      VMThread::get()->vm->unknownError("try to resolve static of a not virtual-resolved class");
+    } else if (status == vt_resolved) {
+      if (cl->isArray) {
+        VMClassArray* arrayCl = (VMClassArray*)cl;
+        VMCommonClass* baseClass =  arrayCl->baseClass;
+        baseClass->resolveStatic(false);
+        cl->status = static_resolved;
+      } else if (cl->isPointer) {
+        VMClassPointer* pointerCl = (VMClassPointer*)cl;
+        VMCommonClass* baseClass =  pointerCl->baseClass;
+        baseClass->resolveStatic(false);
+        cl->status = static_resolved;
+      } else {
+        ((VMClass*)cl)->resolveStaticFields();
+        cl->status = static_resolved;
+      }
+      cl->release();
+    } else {
+      if (!(cl->ownerClass())) {
+        while (status < static_resolved) {
           cl->waitClass();
         }
       }
@@ -577,6 +615,7 @@ VMObject* VMClass::initialiseObject(VMObject* obj) {
 }
 
 VMObject* VMClass::doNew() {
+  if (status < inClinit) resolveType(true, true);
   uint64 size = mvm::jit::getTypeSize(virtualType->getContainedType(0));
   VMObject* res = (VMObject*)
     gc::operator new(size, virtualInstance->getVirtualTable());
@@ -585,6 +624,7 @@ VMObject* VMClass::doNew() {
 }
 
 VMObject* VMClassArray::doNew(uint32 nb) {
+  if (status < inClinit) resolveType(true, true);
   uint64 size = mvm::jit::getTypeSize(baseClass->naturalType);
   VMArray* res = (VMArray*)
     gc::operator new(size * nb + sizeof(VMObject) + sizeof(sint32), arrayVT);
