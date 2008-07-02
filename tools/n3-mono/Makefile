@@ -1,4 +1,4 @@
-##===- tools/n3/Makefile -----------------------------------*- Makefile -*-===##
+##===- tools/n3/Mono/Makefile ------------------------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #
@@ -10,12 +10,8 @@ LEVEL = ../..
 
 include $(LEVEL)/Makefile.config
 
-TOOLNAME = n3
+TOOLNAME = n3-mono
 LINK_COMPONENTS = engine scalaropts instrumentation ipa ipo
-USEDLIBS = Allocator CommonThread Mvm N3 Main $(GCLIB) $(N3_LIB)
+USEDLIBS = Allocator CommonThread Mvm N3 Main $(GCLIB) Mono
 
 include $(LEVEL)/Makefile.common
-
-LIBS += $(PNETLIB)/engine/libILEngine.a $(PNETLIB)/image/libILImage.a $(PNETLIB)/support/libILSupport.a \
-	$(PNETLIB)/libffi/.libs/libffi.a $(PNETLIB)//dumpasm/libILDumpAsm.a
-

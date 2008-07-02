@@ -19,6 +19,9 @@
 
 using namespace n3;
 
+// ECMA 335: page 150 23.1.16 Element types used in signatures 
+
+
 static VMCommonClass* METHOD_ElementTypeEnd(uint32 op, Assembly* ass, uint32& offset) {
   VMThread::get()->vm->error("implement me");
   return 0;

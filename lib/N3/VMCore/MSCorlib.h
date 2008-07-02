@@ -22,6 +22,9 @@ class MSCorlib {
 public:
   static void initialise(N3* vm);
   static void loadStringClass(N3* vm);
+  static void loadBootstrap(N3* vm);
+  
+  static const char* libsPath;
 
   static VMMethod* ctorClrType;
   static VMClass* clrType;

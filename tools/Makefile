@@ -16,8 +16,12 @@ ifeq ($(WITH_JNJVM), 1)
   PARALLEL_DIRS += jnjvm
 endif
 
-ifeq ($(WITH_N3), 1) 
-  PARALLEL_DIRS += n3
+ifeq ($(WITH_N3_MONO), 1) 
+  PARALLEL_DIRS += n3-mono
+endif
+
+ifeq ($(WITH_N3_PNETLIB), 1) 
+  PARALLEL_DIRS += n3-pnetlib
 endif
 
 

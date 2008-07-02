@@ -262,7 +262,7 @@ AC_ARG_WITH(jnjvm,
 )
 
 if test "x${classpathlibs}"  != "x/usr/lib/classpath"; then
-  classpathinclude=${classpathlibs}/../include:/usr/include/classpath;
+  classpathinclude=${classpathlibs}/../include;
 else
   classpathinclude=/usr/include/classpath;
 fi
@@ -291,18 +291,43 @@ AC_ARG_WITH(pnet-local-prefix,
        ]]
 )
 
+AC_ARG_WITH(pnetlib,
+       [AS_HELP_STRING(--with-pnetlib=something,
+           [Pnetlib's mscorlib.dll location (default is /usr/lib/cscc/lib/)])],
+       [[pnetlibpath=$withval]],
+       [[pnetlibpath=/usr/lib/cscc/lib/]]
+)
+
 if test "x$pnetlocalprefix" != x; then
   echo Using ${pnetlocalprefix} as PNET local prefix;
-  WITH_N3=1;
+  WITH_N3_PNETLIB=1;
 else
-  WITH_N3=0;
+  WITH_N3_PNETLIB=0;
 fi
 
 AC_SUBST([pnetlocalprefix])
-AC_SUBST([WITH_N3])
+AC_SUBST([WITH_N3_PNETLIB])
 
 N3_LIB=PNetLib
 AC_SUBST([N3_LIB])
+AC_SUBST([pnetlibpath])
+
+AC_ARG_WITH(mono,
+       [AS_HELP_STRING(--with-mono=something,
+         [Mono's mscorlib.dll location (no default)])],
+       [[monopath=$withval]],
+       [[echo Not using Mono]]
+)
+
+if test "x$monopath" != x; then
+  echo Building N3 with Mono;
+  WITH_N3_MONO=1;
+else
+  WITH_N3_MONO=0;
+fi
+
+AC_SUBST([WITH_N3_MONO])
+AC_SUBST([monopath])
 
 dnl===-----------------------------------------------------------------------===
 dnl===
@@ -481,16 +506,12 @@ dnl Configure a common Makefile
 AC_CONFIG_FILES(Makefile.common)
 AC_CONFIG_FILES(Makefile.config)
 AC_CONFIG_FILES([lib/JnJVM/Classpath/Classpath.h])
+AC_CONFIG_FILES([lib/N3/PNetLib/PNetPath.cpp])
+AC_CONFIG_FILES([lib/N3/Mono/MonoPath.cpp])
 
 dnl Do special configuration of Makefiles
 AC_CONFIG_MAKEFILE(Makefile)
 AC_CONFIG_MAKEFILE(lib/Makefile)
 
-
-dnl **************************************************************************
-dnl LLVM Installation Prefix 
-dnl **************************************************************************
-dnl LLVMDYLIB="`$llvmprefix/Release/bin/llvm-config --ldflags all` `$llvmprefix/Release/bin/llvm-config --libs all`"
-dnl AC_SUBST([LLVMDYLIB])
 
 AC_OUTPUT

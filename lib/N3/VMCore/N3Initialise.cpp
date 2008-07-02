@@ -228,12 +228,8 @@ static void initialiseStatics() {
 
   
   
-  char* assemblyName = getenv("MSCORLIB");
-  if (assemblyName == 0)
-    VMThread::get()->vm->error("can not find mscorlib.dll. Abort");
-
   vm->assemblyPath.push_back("");
-  vm->assemblyPath.push_back(assemblyName);
+  vm->assemblyPath.push_back(MSCorlib::libsPath);
   
   const UTF8* mscorlib = vm->asciizConstructUTF8("mscorlib");
   Assembly* ass = vm->loadAssembly(mscorlib, "dll");

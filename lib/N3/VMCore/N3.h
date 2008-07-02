@@ -58,8 +58,6 @@ public:
   Assembly* loadAssembly(const UTF8* name, const char* extension);
   void executeAssembly(const char* name, ArrayObject* args);
   void runMain(int argc, char** argv);
-  void mapInitialThread();
-  void loadBootstrap();
   void waitForExit();
   
   static N3* bootstrapVM;

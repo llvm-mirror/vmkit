@@ -1,4 +1,4 @@
-##===- lib/Makefile ----------------------------------------*- Makefile -*-===##
+##===- lib/N3/Mono/Makefile --------------------------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #
@@ -6,19 +6,8 @@
 # License. See LICENSE.TXT for details.
 # 
 ##===----------------------------------------------------------------------===##
-LEVEL = ..
+LEVEL = ../../..
 
-PARALLEL_DIRS = Mvm
-
-include $(LEVEL)/Makefile.config
-
-ifeq ($(WITH_JNJVM), 1)
-PARALLEL_DIRS += JnJVM
-endif
-
-PARALLEL_DIRS += N3
-
-LIBRARYNAME = Main
-
+LIBRARYNAME = Mono
 include $(LEVEL)/Makefile.common
-
+CXX.Flags += -I../VMCore

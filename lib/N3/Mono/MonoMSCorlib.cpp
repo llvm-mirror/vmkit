@@ -1,4 +1,4 @@
-//===----- PNetMSCorlib.cpp - The Pnet MSCorlib implementation ------------===//
+//===----- MonoMSCorlib.cpp - The Mono MSCorlib implementation ------------===//
 //
 //                              N3
 //
@@ -35,6 +35,9 @@ void MSCorlib::loadStringClass(N3* vm) {
 
 
 void MSCorlib::initialise(N3* vm) {
+  
+  VMClass* runtimeTypeHandle = 0;
+  VMClass* realClrType = 0;
   #define INIT(var, nameSpace, name, type, prim) {\
   var = (VMClass*)vm->coreAssembly->loadTypeFromName( \
                                            vm->asciizConstructUTF8(name),     \
@@ -46,24 +49,23 @@ void MSCorlib::initialise(N3* vm) {
     var->virtualType = type;  \
   }}
 
-  INIT(MSCorlib::clrType,   "System.Reflection", "ClrType", 0, false);
+  INIT(MSCorlib::clrType,   "System", "MonoType", 0, false);
+  INIT(realClrType,   "System", "Type", 0, false);
+  INIT(runtimeTypeHandle,   "System", "RuntimeTypeHandle", 0, false);
+  /*
   INIT(MSCorlib::assemblyReflection,   "System.Reflection", "Assembly", 0, false);
   INIT(MSCorlib::typedReference,   "System", "TypedReference", 0, false);
   INIT(MSCorlib::propertyType,   "System.Reflection", "ClrProperty", 0, false);
   INIT(MSCorlib::methodType,   "System.Reflection", "ClrMethod", 0, false);
-  INIT(MSCorlib::resourceStreamType,   "System.Reflection", "ClrResourceStream", 0, false);
-
+  INIT(MSCorlib::resourceStreamType,   "System.Reflection", "ClrResourceStream", 0, false);*/
 #undef INIT
   
   {
   MSCorlib::clrType->resolveType(false, false);
-  std::vector<VMCommonClass*> args;
-  args.push_back(MSCorlib::pVoid);
-  args.push_back(MSCorlib::clrType);
-  MSCorlib::ctorClrType = MSCorlib::clrType->lookupMethod(vm->asciizConstructUTF8(".ctor"), args, false, false);
-  MSCorlib::typeClrType = MSCorlib::clrType->lookupField(vm->asciizConstructUTF8("privateData"), MSCorlib::pIntPtr, false, false);
+  MSCorlib::typeClrType = realClrType->lookupField(vm->asciizConstructUTF8("_impl"), runtimeTypeHandle, false, false);
   }
 
+/*
   {
   MSCorlib::assemblyReflection->resolveType(false, false);
   std::vector<VMCommonClass*> args;
@@ -125,23 +127,22 @@ void MSCorlib::initialise(N3* vm) {
 
 #undef INIT
 
-
+  */
+}
+#include "NativeUtil.h"
+void NativeUtil::initialise() {
 }
 
 VMObject* Property::getPropertyDelegatee() {
   if (!delegatee) {
-    delegatee = (*MSCorlib::propertyType)();
-    (*MSCorlib::ctorPropertyType)(delegatee);
-    (*MSCorlib::propertyPropertyType)(delegatee, (VMObject*)this);
+    VMThread::get()->vm->error("implement me");  
   }
   return delegatee;
 }
 
 VMObject* VMMethod::getMethodDelegatee() {
   if (!delegatee) {
-    delegatee = (*MSCorlib::methodType)();
-    (*MSCorlib::ctorMethodType)(delegatee);
-    (*MSCorlib::methodMethodType)(delegatee, (VMObject*)this);
+    VMThread::get()->vm->error("implement me");  
   }
   return delegatee;
 }
@@ -149,7 +150,6 @@ VMObject* VMMethod::getMethodDelegatee() {
 VMObject* VMCommonClass::getClassDelegatee() {
   if (!delegatee) {
     delegatee = (*MSCorlib::clrType)();
-    (*MSCorlib::ctorClrType)(delegatee);
     (*MSCorlib::typeClrType)(delegatee, (VMObject*)this);
   }
   return delegatee;
@@ -157,30 +157,10 @@ VMObject* VMCommonClass::getClassDelegatee() {
 
 VMObject* Assembly::getAssemblyDelegatee() {
   if (!delegatee) {
-    delegatee = (*MSCorlib::assemblyReflection)();
-    (*MSCorlib::ctorAssemblyReflection)(delegatee);
-    (*MSCorlib::assemblyAssemblyReflection)(delegatee, (VMObject*)this);
+    VMThread::get()->vm->error("implement me");  
   }
   return delegatee;
 }
 
-static void mapInitialThread(N3* vm) {
-  VMClass* cl = (VMClass*)vm->coreAssembly->loadTypeFromName(
-                                        vm->asciizConstructUTF8("Thread"),
-                                        vm->asciizConstructUTF8("System.Threading"),
-                                        true, true, true, true);
-  VMObject* th = (*cl)();
-  std::vector<VMCommonClass*> args;
-  args.push_back(MSCorlib::pVoid);
-  args.push_back(cl);
-  args.push_back(MSCorlib::pIntPtr);
-  VMMethod* meth = cl->lookupMethod(vm->asciizConstructUTF8(".ctor"), args, 
-                                    false, false);
-  VMThread* myth = VMThread::get();
-  (*meth)(th, myth);
-  myth->vmThread = th;
-}
-
 void MSCorlib::loadBootstrap(N3* vm) {
-  mapInitialThread(vm);
 }

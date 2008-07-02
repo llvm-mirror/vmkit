@@ -198,27 +198,6 @@ void ClArgumentsInfo::readArgs(int argc, char** argv, N3* n3) {
 }
 
 
-void N3::mapInitialThread() {
-  VMClass* cl = (VMClass*)coreAssembly->loadTypeFromName(
-                                        asciizConstructUTF8("Thread"),
-                                        asciizConstructUTF8("System.Threading"),
-                                        true, true, true, true);
-  VMObject* th = (*cl)();
-  std::vector<VMCommonClass*> args;
-  args.push_back(MSCorlib::pVoid);
-  args.push_back(cl);
-  args.push_back(MSCorlib::pIntPtr);
-  VMMethod* meth = cl->lookupMethod(asciizConstructUTF8(".ctor"), args, 
-                                    false, false);
-  VMThread* myth = VMThread::get();
-  (*meth)(th, myth);
-  myth->vmThread = th;
-}
-
-void N3::loadBootstrap() {
-  mapInitialThread();
-}
-
 void N3::waitForExit() { 
   threadSystem->nonDaemonLock->lock();
   --(threadSystem->nonDaemonThreads);
@@ -277,7 +256,7 @@ void N3::runMain(int argc, char** argv) {
     argv = argv + info.appArgumentsPos - 1;
     argc = argc - info.appArgumentsPos + 1;
     
-    loadBootstrap();
+    MSCorlib::loadBootstrap(this);
     
     ArrayObject* args = ArrayObject::acons(argc - 2, MSCorlib::arrayString);
     for (int i = 2; i < argc; ++i) {
