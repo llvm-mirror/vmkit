@@ -6,6 +6,11 @@
 // License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
+//
+// This file defines macros and functions for knowing and checking the access
+// type of Java class, fields or methods.
+//
+//===----------------------------------------------------------------------===//
 
 #ifndef JNJVM_JAVA_ACCESS_H
 #define JNJVM_JAVA_ACCESS_H

@@ -1979,7 +1979,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   }
 
   // ok now the cache
-  Enveloppe* enveloppe = Enveloppe::allocate(compilingClass->ctpInfo, index);
+  Enveloppe* enveloppe = new Enveloppe(compilingClass->ctpInfo, index);
   compilingMethod->caches.push_back(enveloppe);
   
   Value* zero = mvm::jit::constantZero;

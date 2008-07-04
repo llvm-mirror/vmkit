@@ -20,7 +20,10 @@
 
 using namespace jnjvm;
 
+/// This value is the same value than IBM's JVM.
 const sint32 JavaArray::MaxArraySize = 268435455;
+
+/// The JVM defines constants for referencing arrays of primitive types.
 const unsigned int JavaArray::T_BOOLEAN = 4;
 const unsigned int JavaArray::T_CHAR = 5;
 const unsigned int JavaArray::T_FLOAT = 6;
@@ -73,6 +76,7 @@ extern "C" void outOfMemoryError(sint32 val);
   }
 #endif
 
+/// Each array class has its own element size for allocating arrays.
 ACONS(ArrayUInt8,  uint8, 1, JavaArray::VT)
 ACONS(ArraySInt8,  sint8, 1, JavaArray::VT)
 ACONS(ArrayUInt16, uint16, 2, JavaArray::VT)
@@ -82,6 +86,10 @@ ACONS(ArraySInt32, sint32, 4, JavaArray::VT)
 ACONS(ArrayLong,   sint64, 8, JavaArray::VT)
 ACONS(ArrayFloat,  float, 4, JavaArray::VT)
 ACONS(ArrayDouble, double, 8, JavaArray::VT)
+
+/// ArrayObject differs wit arrays of primitive types because its
+/// tracer method traces the objects in the array as well as the class of the
+/// array.
 ACONS(ArrayObject, JavaObject*, sizeof(JavaObject*), ArrayObject::VT)
 
 #undef ARRAYCLASS
@@ -150,6 +158,7 @@ char* UTF8::UTF8ToAsciiz() const {
   return buf;
 }
 
+/// Currently, this uses malloc/free. This should use a custom memory pool.
 void* UTF8::operator new(size_t sz, sint32 size) {
   return malloc(sz + size * sizeof(uint16));
 }

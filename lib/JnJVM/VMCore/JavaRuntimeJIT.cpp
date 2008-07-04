@@ -65,9 +65,7 @@ extern "C" void* virtualLookup(CacheNode* cache, JavaObject *obj) {
   if (!rcache) {
     JavaMethod* dmeth = ocl->lookupMethod(utf8, sign->keyName, false, true);
     if (cache->methPtr) {
-      rcache = new CacheNode();
-      rcache->initialise();
-      rcache->enveloppe = enveloppe;
+      rcache = new CacheNode(enveloppe);
     } else {
       rcache = cache;
     }

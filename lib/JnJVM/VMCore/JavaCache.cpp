@@ -37,20 +37,17 @@ Enveloppe::~Enveloppe() {
   }
 }
 
-void CacheNode::initialise() {
-  this->lastCible = 0;
-  this->methPtr = 0;
-  this->next = 0;
+CacheNode::CacheNode(Enveloppe* E) {
+  lastCible = 0;
+  methPtr = 0;
+  next = 0;
+  enveloppe = E;
 }
 
-Enveloppe* Enveloppe::allocate(JavaCtpInfo* ctp, uint32 index) {
-  Enveloppe* enveloppe = new Enveloppe();
-  enveloppe->firstCache = new CacheNode();
-  enveloppe->firstCache->initialise();
-  enveloppe->firstCache->enveloppe = enveloppe;
-  enveloppe->cacheLock = mvm::Lock::allocNormal();
-  enveloppe->ctpInfo = ctp;
-  enveloppe->index = index;
-  return enveloppe;
+ Enveloppe::Enveloppe(JavaCtpInfo* ctp, uint32 i) {
+  firstCache = new CacheNode(this);
+  cacheLock = mvm::Lock::allocNormal();
+  ctpInfo = ctp;
+  index = i;
 }
 
