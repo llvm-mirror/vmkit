@@ -905,7 +905,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
   
   // We don't need the lock here, and Java requires to load the classes in the
   // try clause, which may require compilation. Therefore we release the lock
-  // and aquire it after the exception table is read.
+  // and acquire it after the exception table is read.
   mvm::jit::executionEngine->lock.release();
   for (uint16 i = 0; i < nbe - sync; ++i) {
     Exception* ex = new Exception();
@@ -1090,7 +1090,7 @@ void JavaJIT::_ldc(uint16 index) {
   if (type == JavaCtpInfo::ConstantString) {
     Value* toPush = 0;
     if (ctpInfo->ctpRes[index] == 0) {
-      compilingClass->aquire();
+      compilingClass->acquire();
       if (ctpInfo->ctpRes[index] == 0) {
         const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
         void* val = 0;

@@ -63,13 +63,25 @@ public:
   
 };
 
-
+/// CommonClass - This class is the root class of all Java classes. It is
+/// currently GC-allocated in JnJVM, but will be permanently allocated when the
+/// class loader finalizer method will be defined.
+///
 class CommonClass : public mvm::Object {
 private:
 
+
+/// FieldCmp - Internal class for field and method lookup in a class.
+///
 class FieldCmp {
 public:
+  
+  /// name - The name of the field/method
+  ///
   const UTF8* name;
+
+  /// type - The type of the field/method.
+  ///
   const UTF8* type;
 
   FieldCmp(const UTF8* n, const UTF8* t) : name(n), type(t) {}
@@ -83,23 +95,44 @@ public:
 
 public:
   
-  /// virtualSize - The size of instances of this class.
-  ///
+//===----------------------------------------------------------------------===//
+//
+// Do not reorder these fields or add new ones! the LLVM runtime assumes that
+// classes have the following beginning layout.
+//
+//===----------------------------------------------------------------------===//
+
+  
+  /// virtualSize - The size of instances of this class. Array classes do
+  /// not need this information, but to simplify accessing this field in
+  /// the JIT, we put this in here.
+  /// 
   uint32 virtualSize;
 
-  /// virtualVT - The virtual table of instances of this class.
+  /// virtualVT - The virtual table of instances of this class. Like the
+  /// virtualSize field, array classes do not need this information. But we
+  /// simplify JIT generation to set it here.
   ///
   VirtualTable* virtualVT;
   
-  /// display - The class hierarchy of supers for this class.
+  /// display - The class hierarchy of supers for this class. Array classes
+  /// do not need it.
   ///
   CommonClass** display;
   
   /// depth - The depth of this class in its class hierarchy. 
-  /// display[depth] contains the class.
+  /// display[depth] contains the class. Array classes do not need it.
   ///
   uint32 depth;
+
+
+//===----------------------------------------------------------------------===//
+//
+// New fields can be added from now, or reordered.
+//
+//===----------------------------------------------------------------------===//
   
+
   /// virtualTableSize - The size of the virtual table of this class.
   ///
   uint32 virtualTableSize;
@@ -192,65 +225,134 @@ public:
   ///
   method_map staticMethods;
   
-
+  /// constructMethod - Add a new method in this class method map.
+  ///
   JavaMethod* constructMethod(const UTF8* name, const UTF8* type,
                               uint32 access);
   
+  /// constructField - Add a new field in this class field map.
+  ///
   JavaField* constructField(const UTF8* name, const UTF8* type,
                             uint32 access);
 
+  /// printClassName - Adds a string representation of this class in the
+  /// given buffer.
+  ///
   static void printClassName(const UTF8* name, mvm::PrintBuffer* buf);
   
-  void aquire() {
+  /// acquire - Acquire this class lock.
+  ///
+  void acquire() {
     lockVar->lock();
   }
   
+  /// release - Release this class lock.
+  ///
   void release() {
     lockVar->unlock();  
   }
 
+  /// waitClass - Wait for the class to be loaded/initialized/resolved.
+  ///
   void waitClass() {
     condVar->wait(lockVar);
   }
-
+  
+  /// broadcastClass - Unblock threads that were waiting on the class being
+  /// loaded/initialized/resolved.
+  ///
   void broadcastClass() {
     condVar->broadcast();  
   }
 
+  /// ownerClass - Is the current thread the owner of this thread?
+  ///
   bool ownerClass() {
     return mvm::Lock::selfOwner(lockVar);    
   }
   
+  /// lookupMethodDontThrow - Lookup a method in the method map of this class.
+  /// Do not throw if the method is not found.
+  ///
   JavaMethod* lookupMethodDontThrow(const UTF8* name, const UTF8* type,
                                     bool isStatic, bool recurse);
   
+  /// lookupMethod - Lookup a method and throw an exception if not found.
+  ///
   JavaMethod* lookupMethod(const UTF8* name, const UTF8* type, bool isStatic,
                            bool recurse);
   
+  /// lookupFieldDontThrow - Lookup a field in the field map of this class. Do
+  /// not throw if the field is not found.
+  ///
   JavaField* lookupFieldDontThrow(const UTF8* name, const UTF8* type,
                                   bool isStatic, bool recurse);
   
+  /// lookupField - Lookup a field and throw an exception if not found.
+  ///
   JavaField* lookupField(const UTF8* name, const UTF8* type, bool isStatic,
                          bool recurse);
 
-
+  /// print - Print the class for debugging purposes.
+  ///
   virtual void print(mvm::PrintBuffer *buf) const;
+  
+  /// tracer - The tracer of this GC-allocated class.
+  ///
   virtual void TRACER;
 
+  /// inheritName - Does this class in its class hierarchy inherits
+  /// the given name? Equality is on the name. This function does not take
+  /// into account array classes.
+  ///
   bool inheritName(const UTF8* Tname);
+
+  /// isOfTypeName - Does this class inherits the given name? Equality is on
+  /// the name. This function takes into account array classes.
+  ///
   bool isOfTypeName(const UTF8* Tname);
+
+  /// implements - Does this class implement the given class? Returns true if
+  /// the class is in the interface class hierarchy.
+  ///
   bool implements(CommonClass* cl);
+  
+  /// instantationOfArray - If this class is an array class, does its subclass
+  /// implements the given array class subclass?
+  ///
   bool instantiationOfArray(ClassArray* cl);
+  
+  /// subclassOf - If this class is a regular class, is it a subclass of the
+  /// given class?
+  ///
   bool subclassOf(CommonClass* cl);
+
+  /// isAssignableFrom - Is this class assignable from the given class? The
+  /// classes may be of any type.
+  ///
   bool isAssignableFrom(CommonClass* cl);
+
+  /// getClassDelegatee - Return the java/lang/Class representation of this
+  /// class.
+  ///
   JavaObject* getClassDelegatee();
+
+  /// initialiseClass - If the class has a static initializer and has not been
+  /// initialized yet, call it.
   void initialiseClass();
+
+  /// resolveClass - If the class has not been resolved yet, resolve it.
+  ///
   void resolveClass(bool doClinit);
 
 #ifndef MULTIPLE_VM
+  /// getStatus - Get the resolution/initialization status of this class.
+  ///
   JavaState* getStatus() {
     return &status;
   }
+  /// isReady - Has this class been initialized?
+  ///
   bool isReady() {
     return status == ready;
   }
@@ -260,16 +362,33 @@ public:
     return *getStatus() == ready;
   }
 #endif
+
+  /// isResolved - Has this class been resolved?
+  ///
   bool isResolved() {
     return status >= resolved;
   }
   
+  /// CommonClass - Create a class with th given name.
+  ///
   CommonClass(Jnjvm* vm, const UTF8* name, bool isArray);
   
+  /// VT - The virtual table of instances of this class (TODO: should be
+  /// removed).
+  ///
   static VirtualTable* VT;
+
+  /// jnjvmClassLoader - The bootstrap class loader (null).
+  ///
   static JavaObject* jnjvmClassLoader;
   
+  /// ~CommonClass - Free memory used by this class, and remove it from
+  /// metadata.
+  ///
   ~CommonClass();
+
+  /// CommonClass - Default constructor.
+  ///
   CommonClass();
 
 };

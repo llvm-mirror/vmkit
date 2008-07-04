@@ -94,7 +94,7 @@ jclass clazz,
   Class* cl = vm->constructClass(name, (JavaObject*)loader);
 
   if (cl->status == hashed) {
-    cl->aquire();
+    cl->acquire();
     if (cl->status == hashed) {
       cl->bytes = (ArrayUInt8*)bytes;
       cl->status = loaded;

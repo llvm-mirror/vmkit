@@ -319,7 +319,7 @@ void Jnjvm::initialiseClass(CommonClass* cl) {
   if (cl->isArray || cl->isPrimitive) {
     *status = ready;
   } else if (!(*status == ready)) {
-    cl->aquire();
+    cl->acquire();
     JavaState* status = cl->getStatus();
     if (*status == ready) {
       cl->release();
@@ -381,7 +381,7 @@ void Jnjvm::initialiseClass(CommonClass* cl) {
 
 void Jnjvm::resolveClass(CommonClass* cl, bool doClinit) {
   if (cl->status < resolved) {
-    cl->aquire();
+    cl->acquire();
     int status = cl->status;
     if (status >= resolved) {
       cl->release();
@@ -399,7 +399,7 @@ void Jnjvm::resolveClass(CommonClass* cl, bool doClinit) {
         cl->status = readed;
         cl->release();
         loadParents((Class*)cl);
-        cl->aquire(); 
+        cl->acquire(); 
         cl->status = prepared;
         TheModule->resolveVirtualClass((Class*)cl);
         cl->status = resolved;
@@ -429,7 +429,7 @@ CommonClass* Jnjvm::loadName(const UTF8* name, JavaObject* loader,
       if (bytes) {
         if (!cl) cl = bootstrapVM->constructClass(bootstrapName, loader);
         if (cl->status == hashed) {
-          cl->aquire();
+          cl->acquire();
           if (cl->status == hashed) {
             cl->status = loaded;
             ((Class*)cl)->bytes = bytes;
@@ -782,7 +782,7 @@ void Jnjvm::addProperty(char* key, char* value) {
 
 #ifndef MULTIPLE_VM
 JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
-  cl->aquire();
+  cl->acquire();
   if (!(cl->delegatee)) {
     JavaObject* delegatee = (*Classpath::newClass)(this);
     cl->delegatee = delegatee;
@@ -799,7 +799,7 @@ JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
 }
 #else
 JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
-  cl->aquire();
+  cl->acquire();
   JavaObject* val = delegatees->lookup(cl);
   if (!val) {
     val = (*Classpath::newClass)(this);

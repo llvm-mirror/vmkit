@@ -283,7 +283,7 @@ JavaObject* ClassArray::arrayLoader(Jnjvm* isolate, const UTF8* name,
 void* JavaMethod::_compiledPtr() {
   if (code != 0) return code;
   else {
-    classDef->aquire();
+    classDef->acquire();
     if (code == 0) {
       code = 
         classDef->isolate->TheModuleProvider->materializeFunction(this);
