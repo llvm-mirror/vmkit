@@ -161,9 +161,6 @@ public:
   MethodTokenMap* loadedTokenMethods;
   FieldTokenMap* loadedTokenFields;
   
-  // helper which points to the current generic class while it is being read in readClass()
-  VMGenericClass* currGenericClass;
-
   mvm::Lock* lockVar;
   mvm::Cond* condVar;
   const UTF8* name;

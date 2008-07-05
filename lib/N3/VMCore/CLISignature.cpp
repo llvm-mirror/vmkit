@@ -1,4 +1,4 @@
-//===--------- CLIsignature.cpp - Reads CLI signatures --------------------===//
+//===--------- CLISignature.cpp - Reads CLI signatures --------------------===//
 //
 //                              N3
 //
@@ -141,10 +141,8 @@ static VMCommonClass* METHOD_ElementTypeClass(uint32 op,
 
 static VMCommonClass* METHOD_ElementTypeVar(uint32 op, Assembly* ass, uint32& offset) {
   uint32 number = ass->uncompressSignature(offset);
-  return ass->currGenericClass->genericParams[number];
-  //uint32 type = READ_U4(ass->bytes, offset);
-  //VMThread::get()->vm->error("implement me");
-  //return 0;
+  
+  return VMThread::get()->currGenericClass->genericParams[number];
 }
 
 static VMCommonClass* METHOD_ElementTypeArray(uint32 op, Assembly* ass, uint32& offset) {
@@ -371,6 +369,7 @@ bool Assembly::extractMethodSignature(uint32& offset, VMCommonClass* cl,
 
   uint32 hasThis = call & CONSTANT_HasThis ? 1 : 0;
   uint32 realCount = paramCount + hasThis;
+  //uint32 generic = call & CONSTANT_Generic ? 1 : 0;
 
   VMCommonClass* ret = exploreType(offset);
   types.push_back(ret);
@@ -410,6 +409,9 @@ VMCommonClass* Assembly::extractFieldSignature(uint32& offset) {
   if (fieldSig != 0x6) {
     VMThread::get()->vm->error("unknown field sig %x", fieldSig);
   }
+  
+  // TODO implement support for custom modifiers
+  //      see ECMA 335 23.2.4, 23.2.7 
 
   return exploreType(offset);
 

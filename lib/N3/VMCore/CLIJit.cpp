@@ -459,10 +459,10 @@ Instruction* CLIJit::invokeInline(VMMethod* meth,
   jit->compilingClass = meth->classDef; 
   jit->compilingMethod = meth;
   
-  // save current class in case of recursive calls to compile()
-  VMGenericClass* old = jit->compilingClass->assembly->currGenericClass;
+  // save previous current generic class to restore it later
+  VMGenericClass* old = VMThread::get()->currGenericClass;
   // temporarily store the class being compiled in case it is a generic class
-  jit->compilingClass->assembly->currGenericClass = dynamic_cast<VMGenericClass*>(jit->compilingClass);
+  VMThread::get()->currGenericClass = dynamic_cast<VMGenericClass*>(jit->compilingClass);
   
   
   jit->unifiedUnreachable = unifiedUnreachable;
@@ -473,7 +473,7 @@ Instruction* CLIJit::invokeInline(VMMethod* meth,
   inlineMethods[meth] = false;
   
   // restore saved class
-  jit->compilingClass = old;
+  VMThread::get()->currGenericClass = old;
   
   return ret;
 }
@@ -1420,14 +1420,28 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   jit->compilingClass = cl; 
   jit->compilingMethod = meth;
 
+  // save previous generic class
+  VMGenericClass* old = VMThread::get()->currGenericClass;
+  
+  // temporarily store the class of the method to be compiled
+  // in case it is a generic class
+  VMThread::get()->currGenericClass = dynamic_cast<VMGenericClass*>(cl);
+  
+  Function* func;
   meth->getSignature();
+  
   if (isInternal(meth->implFlags)) {
-    return jit->compileNative();
+    func = jit->compileNative();
   } else if (meth->offset == 0) {
-    return jit->compileIntern();
+    func = jit->compileIntern();
   } else {
-    return jit->compileFatOrTiny();
+    func = jit->compileFatOrTiny();
   }
+  
+  // restore saved class
+  VMThread::get()->currGenericClass = old;
+  
+  return func;
 }
 
 llvm::Function *VMMethod::compiledPtr() {

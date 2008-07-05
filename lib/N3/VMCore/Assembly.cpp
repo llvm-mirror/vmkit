@@ -375,7 +375,7 @@ VMGenericClass* Assembly::constructGenericClass(const UTF8* name,
   }
   buf[i] = '>';
   const UTF8* genName = UTF8::readerConstruct(VMThread::get()->vm, buf, size);
-  printf("%s\n", genName->printString());
+  //printf("%s\n", genName->printString());
   
   ClassNameCmp CC(genName, nameSpace);
   VMGenericClass* cl = (VMGenericClass*) loadedNameClasses->lookupOrCreate(CC, this, genClassDup);
@@ -395,10 +395,21 @@ static VMField* fieldDup(uint32& key, Assembly* ass) {
 VMField*  Assembly::constructField(VMClass* cl, const UTF8* name,
                                    VMCommonClass* signature,
                                    uint32 token) {
-  VMField* field = loadedTokenFields->lookupOrCreate(token, this, fieldDup);
+  VMField* field; 
+  
+  if (VMThread::get()->currGenericClass == 0) {
+    // we are not reading a generic class 
+    field = loadedTokenFields->lookupOrCreate(token, this, fieldDup);
+  } else {
+    // we are reading a generic class, don't add a reference
+    // to the loadedTokenFields map
+    field = fieldDup(token, this);
+  }
+  
   field->classDef = cl;
   field->signature = signature;
   field->name = name;
+  
   return field;
 }
 
@@ -411,10 +422,21 @@ static VMMethod* methodDup(uint32& key, Assembly* ass) {
 
 VMMethod* Assembly::constructMethod(VMClass* cl, const UTF8* name, 
                                     uint32 token) {
-  VMMethod* meth = loadedTokenMethods->lookupOrCreate(token, this, methodDup);
+  VMMethod* meth;
+  
+  if (VMThread::get()->currGenericClass == 0) {
+    // we are not reading a generic class 
+    meth = loadedTokenMethods->lookupOrCreate(token, this, methodDup);
+  } else {
+    // we are reading a generic class, don't add a reference
+    // to the loadedTokenMethods map
+    meth = methodDup(token, this);
+  }
+  
   meth->classDef = cl;
   meth->_signature = 0;
   meth->name = name;
+  
   return meth;
 }
 
@@ -427,7 +449,6 @@ Assembly* Assembly::allocate(const UTF8* name) {
   ass->assemblyRefs = 0;
   ass->isRead = false;
   ass->name = name;
-  ass->currGenericClass = 0;
   return ass;
 }
 
@@ -1097,7 +1118,8 @@ VMCommonClass* Assembly::loadType(N3* vm, uint32 token, bool resolve,
 
 void Assembly::readClass(VMCommonClass* cl) {
   // temporarily store the class being read in case it is a generic class
-  currGenericClass = dynamic_cast<VMGenericClass*>(cl);
+  VMGenericClass* old = VMThread::get()->currGenericClass;
+  VMThread::get()->currGenericClass = dynamic_cast<VMGenericClass*>(cl);
 	
   uint32 index = cl->token & 0xffff;
   Table* typeTable = CLIHeader->tables[CONSTANT_TypeDef];
@@ -1151,7 +1173,7 @@ void Assembly::readClass(VMCommonClass* cl) {
   }
   
   // we have stopped reading a generic class
-  currGenericClass = 0;
+  VMThread::get()->currGenericClass = old;
 }
 
 void Assembly::readCustomAttributes(uint32 offset, std::vector<llvm::GenericValue>& args, VMMethod* meth) {
@@ -1515,40 +1537,65 @@ VMField* Assembly::readMemberRefAsField(uint32 token, bool stat) {
   const UTF8* name = readString((N3*)(VMThread::get()->vm), stringOffset + 
                                           memberArray[CONSTANT_MEMBERREF_NAME]);
   
-  uint32 offset = blobOffset + memberArray[CONSTANT_MEMBERREF_SIGNATURE];
-  VMCommonClass* signature = extractFieldSignature(offset);
-                                    
 
   uint32 value = memberArray[CONSTANT_MEMBERREF_CLASS];
   uint32 table = value & 7;
   index = value >> 3;
 
+  VMCommonClass* type = 0;
+  
   switch (table) {
     case 0 : {
       uint32 typeToken = index + (CONSTANT_TypeDef << 24);
-      VMCommonClass* type = loadType(((N3*)VMThread::get()->vm), typeToken,
+      type = loadType(((N3*)VMThread::get()->vm), typeToken,
                                      true, false, false, true);
-      VMField* field = type->lookupField(name, signature, stat, true);
-      return field;
+	  break;
     }
 
     case 1 : {
       uint32 typeToken = index + (CONSTANT_TypeRef << 24);
-      VMCommonClass* type = loadType(((N3*)VMThread::get()->vm), typeToken,
+      type = loadType(((N3*)VMThread::get()->vm), typeToken,
                                      true, false, false, true);
-      VMField* field = type->lookupField(name, signature, stat, true);
-      return field;
+      break;
     }
 
     case 2:
-    case 3:
-    case 4: VMThread::get()->vm->error("implement me"); break;
+    case 3: VMThread::get()->vm->error("implement me"); break;
+    case 4: {
+      uint32 typeToken = index + (CONSTANT_TypeSpec << 24);
+      type = loadType(((N3*)VMThread::get()->vm), typeToken,
+                                       true, false, false, true);
+      break;
+    }
     default:
       VMThread::get()->vm->error("unknown MemberRefParent tag %d", table);
       
   }
 
-  return 0;
+  uint32 offset = blobOffset + memberArray[CONSTANT_MEMBERREF_SIGNATURE];
+
+  VMGenericClass* genClass = dynamic_cast<VMGenericClass*>(type);
+  
+  if (genClass) {
+    // save previous generic class
+    VMGenericClass* old = VMThread::get()->currGenericClass;
+    
+    // set generic class this MemberRef is referring to
+	VMThread::get()->currGenericClass = genClass; 
+	
+	VMCommonClass* signature = extractFieldSignature(offset);
+	
+	// restore saved class
+	VMThread::get()->currGenericClass = old;
+	                                    
+	VMField* field = type->lookupField(name, signature, stat, true);
+	return field;
+  } else {
+    VMCommonClass* signature = extractFieldSignature(offset);
+    VMField* field = type->lookupField(name, signature, stat, true);
+    return field;
+  }
+  
 }
 
 

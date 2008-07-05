@@ -24,6 +24,7 @@ namespace n3 {
 
 class VirtualMachine;
 class VMClass;
+class VMGenericClass;
 class VMObject;
 
 class VMThread : public mvm::Thread {
@@ -38,6 +39,9 @@ public:
   unsigned int self;
   unsigned int interruptFlag;
   unsigned int state;
+  
+  // helper which points to the current generic class
+  VMGenericClass* currGenericClass;
 
   static const unsigned int StateRunning;
   static const unsigned int StateWaiting;
