@@ -217,6 +217,7 @@ public:
   void getProperties(VMCommonClass* cl);
   Property* readProperty(uint32 index, VMCommonClass* cl);
   VMMethod* readMethodDef(uint32 index, VMCommonClass* cl);
+  VMMethod* readMethodSpec(uint32 token);
   VMField* readField(uint32 index, VMCommonClass* cl);
   Param* readParam(uint32 index, VMMethod* meth);
   VMClass* readTypeDef(N3* vm, uint32 index);
@@ -230,6 +231,7 @@ public:
   
   bool extractMethodSignature(uint32& offset, VMCommonClass* cl,
                               std::vector<VMCommonClass*> &params);
+  bool isGenericMethod(uint32& offset);
   void localVarSignature(uint32& offset,
                          std::vector<VMCommonClass*>& locals);
   VMCommonClass* extractFieldSignature(uint32& offset);
@@ -530,7 +532,7 @@ public:
   bitmask = bitmask | ((fieldSize - 1) << (offset << 1));     \
 }
 
-// Some encondigs are not used here
+// Some encodings are not used here
 #define CUSTOM_ATTRIBUTE_TYPE(offset) {                   \
   uint32 fieldSize = 0;                                   \
   if (tables[CONSTANT_MethodDef]->rowsNumber < 0x2000 &&  \

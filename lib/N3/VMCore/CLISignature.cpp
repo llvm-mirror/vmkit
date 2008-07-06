@@ -385,6 +385,15 @@ bool Assembly::extractMethodSignature(uint32& offset, VMCommonClass* cl,
   return hasThis != 0;
 }
 
+// checks whether the MethodDefSig at offset contains generic parameters
+bool Assembly::isGenericMethod(uint32& offset) {
+  uncompressSignature(offset); // count
+  
+  uint32 callingConvention = READ_U1(bytes, offset);
+  
+  return callingConvention & CONSTANT_Generic ? true : false;
+}
+
 void Assembly::localVarSignature(uint32& offset,
                                  std::vector<VMCommonClass*>& locals) {
   //uint32 count      = 

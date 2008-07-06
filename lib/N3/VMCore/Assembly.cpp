@@ -1147,10 +1147,13 @@ void Assembly::readClass(VMCommonClass* cl) {
 
     for (uint32 i = 0; i < nbMethods; ++i) {
       VMMethod* meth = readMethodDef(i + methodList, cl);
-      if (isStatic(meth->flags)) {
-        cl->staticMethods.push_back(meth);
-      } else {
-        cl->virtualMethods.push_back(meth);
+      
+      if (meth != NULL) {
+        if (isStatic(meth->flags)) {
+          cl->staticMethods.push_back(meth);
+        } else {
+          cl->virtualMethods.push_back(meth);
+        }
       }
     }
   }
@@ -1320,35 +1323,43 @@ VMMethod* Assembly::readMethodDef(uint32 index, VMCommonClass* cl) {
   uint32 paramList  = methArray[CONSTANT_METHODDEF_PARAMLIST];
   
   uint32 offset = blobOffset + signature;
-  VMMethod* meth = 
-    constructMethod((VMClass*)cl, readString(cl->vm, (name + stringOffset)),
-                    token);
-  meth->virt = extractMethodSignature(offset, cl, meth->parameters);
-  meth->flags = flags;
-  meth->implFlags = implFlags;
   
-  if (rva) {
-    meth->offset = textSection->rawAddress + 
-                   (rva - textSection->virtualAddress);
+  if (isGenericMethod(offset)) {
+    // generic methods are read on instantiation
+    return NULL;
   } else {
-    meth->offset = 0;
-  }
+    offset = blobOffset + signature;
+    
+    VMMethod* meth = 
+      constructMethod((VMClass*)cl, readString(cl->vm, (name + stringOffset)),
+                      token);
+    meth->virt = extractMethodSignature(offset, cl, meth->parameters);
+    meth->flags = flags;
+    meth->implFlags = implFlags;
   
-  if (paramList && paramTable != 0 && paramList <= paramSize) {
-    uint32 endParam = (index == methodSize) ? 
-        paramSize + 1 : 
-        methTable->readIndexInRow(index + 1, CONSTANT_METHODDEF_PARAMLIST,
+    if (rva) {
+      meth->offset = textSection->rawAddress + 
+                     (rva - textSection->virtualAddress);
+    } else {
+      meth->offset = 0;
+    }
+  
+    if (paramList && paramTable != 0 && paramList <= paramSize) {
+      uint32 endParam = (index == methodSize) ? 
+          paramSize + 1 : 
+          methTable->readIndexInRow(index + 1, CONSTANT_METHODDEF_PARAMLIST,
                                   bytes);
 
-    uint32 nbParams = endParam - paramList;
+      uint32 nbParams = endParam - paramList;
 
-    for (uint32 j = 0; j < nbParams; ++j) {
-      meth->params.push_back(readParam(j + paramList, meth));
+      for (uint32 j = 0; j < nbParams; ++j) {
+        meth->params.push_back(readParam(j + paramList, meth));
+      }
+
     }
 
+    return meth;
   }
-
-  return meth;
 }
 
 VMField* Assembly::readField(uint32 index, VMCommonClass* cl) {
@@ -1542,7 +1553,7 @@ VMField* Assembly::readMemberRefAsField(uint32 token, bool stat) {
   uint32 table = value & 7;
   index = value >> 3;
 
-  VMCommonClass* type = 0;
+  VMCommonClass* type = NULL;
   
   switch (table) {
     case 0 : {
@@ -1601,6 +1612,7 @@ VMField* Assembly::readMemberRefAsField(uint32 token, bool stat) {
 
 VMMethod* Assembly::getMethodFromToken(uint32 token) {
   VMMethod* meth = lookupMethodFromToken(token);
+  
   if (!meth) {
     uint32 table = token >> 24;
     switch (table) {
@@ -1628,13 +1640,20 @@ VMMethod* Assembly::getMethodFromToken(uint32 token) {
         meth = readMemberRefAsMethod(token);
         break;
       }
+      
+      case CONSTANT_MethodSpec : {
+        meth = readMethodSpec(token); 
+        break;
+      }
 
       default : {
         VMThread::get()->vm->error("implement me");
       }
     }
   }
+  
   meth->getSignature();
+  
   return meth;
 }
 
@@ -1703,7 +1722,7 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token) {
     case 2:
     case 3: VMThread::get()->vm->error("implement me %d", table); break;
     case 4: {
-      VMClass* type = (VMClass*)readTypeSpec(vm, index);
+      VMClass* type = (VMClass*) readTypeSpec(vm, index);
       
       VMGenericClass* genClass = dynamic_cast<VMGenericClass*>(type);
 
@@ -1731,6 +1750,22 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token) {
   }
 
   return 0;
+}
+
+VMMethod* Assembly::readMethodSpec(uint32 token) {
+  uint32 index = token & 0xffff;
+  
+  Table* methodTable = CLIHeader->tables[CONSTANT_MethodSpec];
+  uint32* methodArray = (uint32*) alloca(sizeof(uint32) * methodTable->rowSize);
+  
+  methodTable->readRow(methodArray, index, bytes);
+  
+  uint32 method = methodArray[CONSTANT_METHOD_SPEC_METHOD];
+  uint32 instantiation = methodArray[CONSTANT_METHOD_SPEC_INSTANTIATION];
+  
+  VMThread::get()->vm->error("MethodSpec");
+//  return NULL;
+  return (VMMethod*) (method ^ instantiation);
 }
 
 const UTF8* Assembly::readUserString(uint32 token) {
