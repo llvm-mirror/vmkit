@@ -41,10 +41,10 @@ CommonClass* ClassArray::SuperArray = 0;
 std::vector<Class*> ClassArray::InterfacesArray;
 
 
-Attribut::Attribut(const UTF8* name, unsigned int length,
-                   const Reader& reader) {
+Attribut::Attribut(const UTF8* name, uint32 length,
+                   uint32 offset) {
   
-  this->start    = reader.cursor;
+  this->start    = offset;
   this->nbb      = length;
   this->name     = name;
 
@@ -280,7 +280,7 @@ JavaObject* ClassArray::arrayLoader(Jnjvm* isolate, const UTF8* name,
   }
 }
 
-void* JavaMethod::_compiledPtr() {
+void* JavaMethod::compiledPtr() {
   if (code != 0) return code;
   else {
     classDef->acquire();

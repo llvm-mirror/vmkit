@@ -99,7 +99,7 @@ JNIEnv *env,
           i != e; ++i, ++index) {
       JavaMethod* meth = *i;
       // TODO: check parameter types
-      JavaObject* tmp = (*Classpath::newConstructor)(vm);
+      JavaObject* tmp = Classpath::newConstructor->doNew(vm);
       Classpath::initConstructor->invokeIntSpecial(vm, tmp, Cl, meth);
       ret->elements[index] = tmp;
     }
@@ -146,7 +146,7 @@ JNIEnv *env,
           i != e; ++i, ++index) {
       JavaMethod* meth = *i;
       // TODO: check parameter types
-      JavaObject* tmp = (*Classpath::newMethod)(vm);
+      JavaObject* tmp = Classpath::newMethod->doNew(vm);
       Classpath::initMethod->invokeIntSpecial(vm, tmp, Cl,
                                               vm->UTF8ToStr(meth->name), meth);
       ret->elements[index] = tmp;
@@ -315,7 +315,7 @@ jclass Cl, jboolean publicOnly) {
           i != e; ++i, ++index) {
       JavaField* field = *i;
       // TODO: check parameter types
-      JavaObject* tmp = (*Classpath::newField)(vm);
+      JavaObject* tmp = Classpath::newField->doNew(vm);
       Classpath::initField->invokeIntSpecial(vm, tmp, Cl,
                                              vm->UTF8ToStr(field->name), field);
       ret->elements[index] = tmp;

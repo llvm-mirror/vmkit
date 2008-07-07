@@ -170,7 +170,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
               BranchInst::Create(ifTrue, notEquals, cmp, ifFalse);
               node->addIncoming(ConstantInt::getTrue(), ifFalse);
               
-              if (cl->status < readed) {
+              if (cl->status < classRead) {
                 std::vector<Value*> args;
                 args.push_back(objCl);
                 args.push_back(CE);

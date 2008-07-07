@@ -354,7 +354,7 @@ void JavaCtpInfo::infoOfMethod(uint32 index, uint32 access,
   sint32 ntIndex = entry & 0xFFFF;
   const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = getMethodClassIfLoaded(entry >> 16);
-  if (cl && cl->status >= readed) {
+  if (cl && cl->status >= classRead) {
     // lookup the method
     meth = 
       cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access), false);
@@ -397,7 +397,7 @@ void* JavaCtpInfo::infoOfStaticOrSpecialMethod(uint32 index,
   sint32 ntIndex = entry & 0xFFFF;
   const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   CommonClass* cl = getMethodClassIfLoaded(entry >> 16);
-  if (cl && cl->status >= readed) {
+  if (cl && cl->status >= classRead) {
     // lookup the method
     meth =
       cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access), false);

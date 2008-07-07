@@ -64,7 +64,7 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
 
   bool native = isNative(meth->access);
 
-  JavaObject* res = (*Classpath::newStackTraceElement)(vm);
+  JavaObject* res = Classpath::newStackTraceElement->doNew(vm);
   Classpath::initStackTraceElement->invokeIntSpecial(vm, res, sourceName,
                                                      (uint32)ip, className,
                                                      methodName, native);
@@ -83,7 +83,7 @@ ArrayObject* recGetStackTrace(int** stack, uint32 first, uint32 rec) {
       return recGetStackTrace(stack, first + 1, rec);
     }
   } else {
-    return ArrayObject::acons(rec, JavaArray::ofObject, vm);
+    return ArrayObject::acons(rec, Classpath::stackTraceArray, vm);
   }
 }
 

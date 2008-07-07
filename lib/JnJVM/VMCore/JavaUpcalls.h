@@ -108,6 +108,7 @@ public:
   static JavaField* doubleValue;
 
   static Class* newStackTraceElement;
+  static ClassArray* stackTraceArray;
   static JavaMethod* initStackTraceElement;
 
   static void initialiseClasspath(Jnjvm* vm);

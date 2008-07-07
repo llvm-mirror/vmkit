@@ -96,6 +96,7 @@ JavaField*  Classpath::floatValue;
 JavaField*  Classpath::doubleValue;
 
 Class*      Classpath::newStackTraceElement;
+ClassArray* Classpath::stackTraceArray;
 JavaMethod* Classpath::initStackTraceElement;
 
 Class* Classpath::voidClass;
@@ -170,7 +171,7 @@ void ClasspathThread::initialise(Jnjvm* vm) {
 void ClasspathThread::createInitialThread(Jnjvm* vm, JavaObject* th) {
   vm->loadName(newVMThread->name, newVMThread->classLoader, true, true, true);
 
-  JavaObject* vmth = (*newVMThread)(vm);
+  JavaObject* vmth = newVMThread->doNew(vm);
   name->setVirtualObjectField(th, (JavaObject*)vm->asciizToStr("main"));
   priority->setVirtualInt32Field(th, (uint32)1);
   daemon->setVirtualInt8Field(th, (uint32)0);
@@ -188,7 +189,7 @@ void ClasspathThread::createInitialThread(Jnjvm* vm, JavaObject* th) {
 
 void ClasspathThread::mapInitialThread(Jnjvm* vm) {
   vm->loadName(newThread->name, newThread->classLoader, true, true, true);
-  JavaObject* th = (*newThread)(vm);
+  JavaObject* th = newThread->doNew(vm);
   createInitialThread(vm, th);
   JavaThread* myth = JavaThread::get();
   myth->javaThread = th;
@@ -308,6 +309,9 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   
   newStackTraceElement =
     UPCALL_CLASS(vm, "java/lang/StackTraceElement");
+  
+  stackTraceArray =
+    UPCALL_ARRAY_CLASS(vm, "java/lang/StackTraceElement", 1);
 
   initStackTraceElement =
     UPCALL_METHOD(vm,  "java/lang/StackTraceElement", "<init>",

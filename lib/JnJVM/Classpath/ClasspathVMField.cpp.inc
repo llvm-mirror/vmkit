@@ -318,7 +318,7 @@ jobject Field, jobject _obj) {
       uint8 val =  (isStatic(field->access) ? 
         field->getStaticInt8Field() :
         field->getVirtualInt8Field(obj));
-      res = (*Classpath::boolClass)(vm);
+      res = Classpath::boolClass->doNew(vm);
       Classpath::boolValue->setVirtualInt8Field(res, val);
       break;
     }
@@ -326,7 +326,7 @@ jobject Field, jobject _obj) {
       sint8 val =  (isStatic(field->access) ? 
         field->getStaticInt8Field() :
         field->getVirtualInt8Field(obj));
-      res = (*Classpath::byteClass)(vm);
+      res = Classpath::byteClass->doNew(vm);
       Classpath::byteValue->setVirtualInt8Field(res, val);
       break;
     }
@@ -334,7 +334,7 @@ jobject Field, jobject _obj) {
       uint16 val =  (isStatic(field->access) ? 
         field->getStaticInt16Field() :
         field->getVirtualInt16Field(obj));
-      res = (*Classpath::charClass)(vm);
+      res = Classpath::charClass->doNew(vm);
       Classpath::charValue->setVirtualInt16Field(res, val);
       break;
     }
@@ -342,7 +342,7 @@ jobject Field, jobject _obj) {
       sint16 val =  (isStatic(field->access) ? 
         field->getStaticInt16Field() :
         field->getVirtualInt16Field(obj));
-      res = (*Classpath::shortClass)(vm);
+      res = Classpath::shortClass->doNew(vm);
       Classpath::shortValue->setVirtualInt16Field(res, val);
       break;
     }
@@ -350,7 +350,7 @@ jobject Field, jobject _obj) {
       sint32 val =  (isStatic(field->access) ? 
         field->getStaticInt32Field() :
         field->getVirtualInt32Field(obj));
-      res = (*Classpath::intClass)(vm);
+      res = Classpath::intClass->doNew(vm);
       Classpath::intValue->setVirtualInt32Field(res, val);
       break;
     }
@@ -358,7 +358,7 @@ jobject Field, jobject _obj) {
       sint64 val =  (isStatic(field->access) ? 
         field->getStaticLongField() :
         field->getVirtualLongField(obj));
-      res = (*Classpath::longClass)(vm);
+      res = Classpath::longClass->doNew(vm);
       Classpath::longValue->setVirtualLongField(res, val);
       break;
     }
@@ -366,7 +366,7 @@ jobject Field, jobject _obj) {
       float val =  (isStatic(field->access) ? 
         field->getStaticFloatField() :
         field->getVirtualFloatField(obj));
-      res = (*Classpath::floatClass)(vm);
+      res = Classpath::floatClass->doNew(vm);
       Classpath::floatValue->setVirtualFloatField(res, val);
       break;
     }
@@ -374,7 +374,7 @@ jobject Field, jobject _obj) {
       double val =  (isStatic(field->access) ? 
         field->getStaticDoubleField() :
         field->getVirtualDoubleField(obj));
-      res = (*Classpath::doubleClass)(vm);
+      res = Classpath::doubleClass->doNew(vm);
       Classpath::doubleValue->setVirtualDoubleField(res, val);
       break;
     }

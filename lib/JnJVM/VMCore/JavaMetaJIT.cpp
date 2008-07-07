@@ -49,11 +49,6 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JavaObject* loader,
 
 
 
-JavaObject* Class::operator()(Jnjvm* vm) {
-  assert(*getStatus() >= inClinit);
-  return doNew(vm);
-}
-
 
 #define readArgs(buf, signature, ap) \
   for (std::vector<Typedef*>::iterator i = signature->args.begin(), \

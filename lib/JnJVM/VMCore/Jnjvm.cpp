@@ -215,7 +215,7 @@ void Jnjvm::readAttributs(Class* cl, Reader& reader,
   for (int i = 0; i < nba; i++) {
     const UTF8* attName = ctpInfo->UTF8At(reader.readU2());
     uint32 attLen = reader.readU4();
-    Attribut* att = new Attribut(attName, attLen, reader);
+    Attribut* att = new Attribut(attName, attLen, reader.cursor);
     attr.push_back(att);
     reader.seek(attLen, Reader::SeekCur);
   }
@@ -367,7 +367,7 @@ void Jnjvm::initialiseClass(CommonClass* cl) {
       cl->broadcastClass();
     } else if (*status < resolved) {
       cl->release();
-      unknownError("try to clinit a not-readed class...");
+      unknownError("try to clinit a not-read class...");
     } else {
       if (!cl->ownerClass()) {
         while (*status < ready) cl->waitClass();
@@ -387,7 +387,7 @@ void Jnjvm::resolveClass(CommonClass* cl, bool doClinit) {
       cl->release();
     } else if (status <  loaded) {
       cl->release();
-      unknownError("try to resolve a not-readed class");
+      unknownError("try to resolve a not-read class");
     } else if (status == loaded || cl->ownerClass()) {
       if (cl->isArray) {
         ClassArray* arrayCl = (ClassArray*)cl;
@@ -396,7 +396,7 @@ void Jnjvm::resolveClass(CommonClass* cl, bool doClinit) {
         cl->status = resolved;
       } else {
         readClass((Class*)cl);
-        cl->status = readed;
+        cl->status = classRead;
         cl->release();
         loadParents((Class*)cl);
         cl->acquire(); 
@@ -461,7 +461,7 @@ void Jnjvm::errorWithExcp(const char* className, const JavaObject* excp) {
   Class* cl = (Class*) this->loadName(this->asciizConstructUTF8(className),
                                       CommonClass::jnjvmClassLoader,
                                       true, true, true);
-  JavaObject* obj = (*cl)(this);
+  JavaObject* obj = cl->doNew(this);
   JavaJIT::invokeOnceVoid(this, CommonClass::jnjvmClassLoader, className, "<init>",
                           "(Ljava/lang/Throwable;)V", ACC_VIRTUAL, obj, excp);
   JavaThread::throwException(obj);
@@ -477,7 +477,7 @@ void Jnjvm::error(const char* className, const char* fmt, ...) {
   vsnprintf(tmp, 4096, fmt, ap);
   va_end(ap);
 
-  JavaObject* obj = (*cl)(this);
+  JavaObject* obj = cl->doNew(this);
   JavaJIT::invokeOnceVoid(this, CommonClass::jnjvmClassLoader, className, "<init>",
                           "(Ljava/lang/String;)V", ACC_VIRTUAL, obj, 
                           this->asciizToStr(tmp));
@@ -492,7 +492,7 @@ void Jnjvm::verror(const char* className, const char* fmt, va_list ap) {
                                       true, true, true);
   vsnprintf(tmp, 4096, fmt, ap);
   va_end(ap);
-  JavaObject* obj = (*cl)(this);
+  JavaObject* obj = cl->doNew(this);
   JavaJIT::invokeOnceVoid(this, CommonClass::jnjvmClassLoader, className, "<init>",
                           "(Ljava/lang/String;)V", ACC_VIRTUAL, obj, 
                           this->asciizToStr(tmp));
@@ -784,12 +784,12 @@ void Jnjvm::addProperty(char* key, char* value) {
 JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
   cl->acquire();
   if (!(cl->delegatee)) {
-    JavaObject* delegatee = (*Classpath::newClass)(this);
+    JavaObject* delegatee = Classpath::newClass->doNew(this);
     cl->delegatee = delegatee;
     Classpath::initClass->invokeIntSpecial(this, delegatee, cl);
   } else if (cl->delegatee->classOf != Classpath::newClass) {
     JavaObject* pd = cl->delegatee;
-    JavaObject* delegatee = (*Classpath::newClass)(this);
+    JavaObject* delegatee = Classpath::newClass->doNew(this);
     cl->delegatee = delegatee;;
     Classpath::initClassWithProtectionDomain->invokeIntSpecial(this, delegatee,
                                                                cl, pd);
@@ -802,12 +802,12 @@ JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
   cl->acquire();
   JavaObject* val = delegatees->lookup(cl);
   if (!val) {
-    val = (*Classpath::newClass)(this);
+    val = Classpath::newClass->doNew(this);
     delegatees->hash(cl, val);
     Classpath::initClass->invokeIntSpecial(this, val, cl);
   } else if (val->classOf != Classpath::newClass) {
     JavaObject* pd = val;
-    val = (*Classpath::newClass)(this);
+    val = Classpath::newClass->doNew(this);
     delegatees->remove(cl);
     delegatees->hash(cl, val);
     Classpath::initClassWithProtectionDomain->invokeIntSpecial(this, val, cl,

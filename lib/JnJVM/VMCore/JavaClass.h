@@ -35,30 +35,80 @@ class JavaField;
 class JavaJIT;
 class JavaMethod;
 class JavaObject;
-class Reader;
 class Signdef;
 class Typedef;
 class UTF8;
 
 
+/// JavaState - List of states a Java class can have. A class is ready to be
+/// used (i.e allocating instances of the class, calling methods of the class
+/// and accessing static fields of the class) when it is in the ready state.
+///
 typedef enum JavaState {
-  hashed = 0, loaded, readed, prepared, resolved, clinitParent, inClinit, ready
+  hashed = 0,   /// The class is hashed in a class loader table.
+  loaded,       /// The .class file has been found.
+  classRead,    /// The .class file has been read.
+  prepared,     /// The parents of this class has been resolved.
+  resolved,     /// The class has been resolved.
+  clinitParent, /// The class is cliniting its parents.
+  inClinit,     /// The class is cliniting.
+  ready         /// The class is ready to be used.
 }JavaState;
 
 
+/// Attribut - This class represents JVM attributes to Java class, methods and
+/// fields located in the .class file.
+///
 class Attribut {
 public:
+  
+  /// name - The name of the attribut. These are specified in the JVM book.
+  /// Experimental attributes exist, but the JnJVM does nor parse them.
+  ///
   const UTF8* name;
+
+  /// start - The offset in the class of this attribut.
+  ///
   unsigned int start;
+
+  /// nbb - The size of the attribut.
+  ///
   unsigned int  nbb;
 
-  Attribut(const UTF8* name, unsigned int length, const Reader& reader);
-
+  /// Attribut - Create an attribut at the given length and offset.
+  ///
+  Attribut(const UTF8* name, uint32 length, uint32 offset);
+  
+  /// codeAttribut - The "Code" JVM attribut. This is a method attribut for
+  /// finding the bytecode of a method in the .class file.
+  //
   static const UTF8* codeAttribut;
+
+  /// exceptionsAttribut - The "Exceptions" attribut. This is a method
+  /// attribut for finding the exception table of a method in the .class
+  /// file.
+  ///
   static const UTF8* exceptionsAttribut;
+
+  /// constantAttribut - The "ConstantValue" attribut. This is a field attribut
+  /// when the field has a static constant value.
+  ///
   static const UTF8* constantAttribut;
+
+  /// lineNumberTableAttribut - The "LineNumberTable" attribut. This is used
+  /// for corresponding JVM bytecode to source line in the .java file.
+  ///
   static const UTF8* lineNumberTableAttribut;
+
+  /// innerClassAttribut - The "InnerClasses" attribut. This is a class attribut
+  /// for knowing the inner/outer informations of a Java class.
+  ///
   static const UTF8* innerClassesAttribut;
+
+  /// sourceFileAttribut - The "SourceFile" attribut. This is a class attribut
+  /// and gives the correspondance between a class and the name of its Java
+  /// file.
+  ///
   static const UTF8* sourceFileAttribut;
   
 };
@@ -393,122 +443,273 @@ public:
 
 };
 
+/// ClassPrimitive - This class represents internal classes for primitive
+/// types, e.g. java/lang/Integer.TYPE.
+///
 class ClassPrimitive : public CommonClass {
 public:
   ClassPrimitive(Jnjvm* vm, const UTF8* name);
 };
 
+
+/// Class - This class is the representation of Java regular classes (i.e not
+/// array or primitive). Theses classes have a constant pool.
+///
 class Class : public CommonClass {
 public:
+  
+  /// VT - The virtual table of this class.
+  ///
   static VirtualTable* VT;
+
+  /// minor - The minor version of this class.
+  ///
   unsigned int minor;
+
+  /// major - The major version of this class.
+  ///
   unsigned int major;
+
+  /// bytes - The .class file of this class.
+  ///
   ArrayUInt8* bytes;
+
+  /// ctpInfo - The constant pool info of this class.
+  ///
   JavaCtpInfo* ctpInfo;
+
+  /// attributs - JVM attributes of this class.
+  ///
   std::vector<Attribut*> attributs;
+  
+  /// innerClasses - The inner classes of this class.
+  ///
   std::vector<Class*> innerClasses;
+
+  /// outerClass - The outer class, if this class is an inner class.
+  ///
   Class* outerClass;
+
+  /// innerAccess - The access of this class, if this class is an inner class.
+  ///
   uint32 innerAccess;
+
+  /// innerOuterResolved - Is the inner/outer resolution done?
+  ///
   bool innerOuterResolved;
   
+  /// staticSize - The size of the static instance of this class.
+  ///
   uint32 staticSize;
+
+  /// staticVT - The virtual table of the static instance of this class.
+  ///
   VirtualTable* staticVT;
+
+  /// doNew - Allocates a Java object whose class is this class.
+  ///
   JavaObject* doNew(Jnjvm* vm);
+
+  /// print - Prints a string representation of this class in the buffer.
+  ///
   virtual void print(mvm::PrintBuffer *buf) const;
+
+  /// tracer - Tracer function of instances of Class.
+  ///
   virtual void TRACER;
   
   ~Class();
   Class();
-
-  JavaObject* operator()(Jnjvm* vm);
   
+  /// lookupAttribut - Look up a JVM attribut of this class.
+  ///
   Attribut* lookupAttribut(const UTF8* key);
-
+  
+  /// staticInstance - Get the static instance of this class. A static instance
+  /// is inlined when the vm is in a single environment. In a multiple
+  /// environment, the static instance is in a hashtable.
+  ///
 #ifndef MULTIPLE_VM
   JavaObject* _staticInstance;
   JavaObject* staticInstance() {
     return _staticInstance;
   }
+
+  /// createStaticInstance - Create the static instance of this class. This is
+  /// a no-op in a single environment because it is created only once when
+  /// creating the static type of the class. In a multiple environment, it is
+  /// called on each initialization of the class.
+  ///
   void createStaticInstance() { }
 #else
   JavaObject* staticInstance();
   void createStaticInstance();
 #endif
   
+  /// Class - Create a class in the given virtual machine and with the given
+  /// name.
   Class(Jnjvm* vm, const UTF8* name);
   
 };
 
-
+/// ClassArray - This class represents Java array classes.
+///
 class ClassArray : public CommonClass {
 public:
+  
+  /// VT - The virtual table of array classes.
+  ///
   static VirtualTable* VT;
+
+  /// _baseClass - The base class of the array, or null if not resolved.
+  ///
   CommonClass*  _baseClass;
+
+  /// _funcs - The type of the base class of the array (primitive or
+  /// reference). Null if not resolved.
+  ///
   AssessorDesc* _funcs;
 
+  /// resolveComponent - Resolve the array class. The base class and the
+  /// AssessorDesc are resolved.
+  ///
   void resolveComponent();
   
+  /// baseClass - Get the base class of this array class. Resolve the array
+  /// class if needed.
+  ///
   CommonClass* baseClass() {
     if (_baseClass == 0)
       resolveComponent();
     return _baseClass;
   }
 
+  /// funcs - Get the type of the base class/ Resolve the array if needed.
   AssessorDesc* funcs() {
     if (_funcs == 0)
       resolveComponent();
     return _funcs;
   }
   
-  /// Empty constructor for VT
+  /// ClassArray - Empty constructor for VT.
+  ///
   ClassArray() {}
-  ClassArray(Jnjvm* vm, const UTF8* name);
 
+  /// ClassArray - Construct a Java array class with the given name.
+  ///
+  ClassArray(Jnjvm* vm, const UTF8* name);
+  
+
+  /// arrayLoader - Return the class loader of the class with the name 'name'.
+  /// If the class has not been loaded, load it with the given loader and
+  /// return the real class loader that loaded this class.
+  ///
   static JavaObject* arrayLoader(Jnjvm* isolate, const UTF8* name,
                                  JavaObject* loader, unsigned int start,
                                  unsigned int end);
 
+  /// print - Print a string representation of this array class. Used for
+  /// debugging purposes.
+  ///
   virtual void print(mvm::PrintBuffer *buf) const;
+
+  /// tracer - Tracer of array classes.
+  ///
   virtual void TRACER;
 
+  /// SuperArray - The super class of array classes.
+  ///
   static CommonClass* SuperArray;
-  static std::vector<Class*>        InterfacesArray;
+
+  /// InterfacesArray - The interfaces that array classes implement.
+  ///
+  static std::vector<Class*> InterfacesArray;
 };
 
-
+/// JavaMethod - This class represents Java methods.
+///
 class JavaMethod {
   friend class CommonClass;
 private:
-  void* _compiledPtr();
+
+  /// _signature - The signature of this method. Null if not resolved.
+  ///
   Signdef* _signature;
+
 public:
+  
+  /// compiledPtr - Return a pointer to the compiled code of this Java method,
+  /// compiling it if necessary.
+  ///
+  void* compiledPtr();
+
+  /// JavaMethod - Delete the method as well as the cache enveloppes and
+  /// attributes of the method.
+  ///
   ~JavaMethod();
+
+  /// access - Java access type of this method (e.g. private, public...).
+  ///
   unsigned int access;
+
+  /// attributs - List of Java attributs of this method.
+  ///
   std::vector<Attribut*> attributs;
+
+  /// caches - List of caches in this method. For all invokeinterface bytecode
+  /// there is a corresponding cache.
+  ///
   std::vector<Enveloppe*> caches;
+  
+  /// classDef - The Java class where the method is defined.
+  ///
   Class* classDef;
+
+  /// name - The name of the method.
+  ///
   const UTF8* name;
+
+  /// type - The UTF8 signature of the method.
+  ///
   const UTF8* type;
+
+  /// canBeInlined - Can the method be inlined?
+  ///
   bool canBeInlined;
+
+  /// code - Pointer to the compiled code of this method.
+  ///
   void* code;
   
   /// offset - The index of the method in the virtual table.
   ///
   uint32 offset;
 
+  /// lookupAttribut - Look up an attribut in the method's attributs. Returns
+  /// null if the attribut is not found.
+  ///
   Attribut* lookupAttribut(const UTF8* key);
 
-  void* compiledPtr() {
-    if (!code) return _compiledPtr();
-    return code;
-  }
-  
+  /// getSignature - Get the signature of thes method, resolving it if
+  /// necessary.
+  ///
   Signdef* getSignature() {
     if(!_signature)
       _signature = (Signdef*) classDef->isolate->constructType(type);
     return _signature;
   }
+  
+  /// printString - Output a string representation of the method.
+  ///
+  const char* printString() const;
 
+//===----------------------------------------------------------------------===//
+//
+// Upcalls from JnJVM code to Java code. 
+//
+//===----------------------------------------------------------------------===//
+  
+  /// This class of methods takes a variable argument list.
   uint32 invokeIntSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
   float invokeFloatSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
   double invokeDoubleSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
@@ -526,7 +727,9 @@ public:
   double invokeDoubleStaticAP(Jnjvm* vm, va_list ap);
   sint64 invokeLongStaticAP(Jnjvm* vm, va_list ap);
   JavaObject* invokeJavaObjectStaticAP(Jnjvm* vm, va_list ap);
-  
+
+  /// This class of methods takes a buffer which contain the arguments of the
+  /// call.
   uint32 invokeIntSpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf);
   float invokeFloatSpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf);
   double invokeDoubleSpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf);
@@ -544,7 +747,8 @@ public:
   double invokeDoubleStaticBuf(Jnjvm* vm, void* buf);
   sint64 invokeLongStaticBuf(Jnjvm* vm, void* buf);
   JavaObject* invokeJavaObjectStaticBuf(Jnjvm* vm, void* buf);
-  
+
+  /// This class of methods is variadic.
   uint32 invokeIntSpecial(Jnjvm* vm, JavaObject* obj, ...);
   float invokeFloatSpecial(Jnjvm* vm, JavaObject* obj, ...);
   double invokeDoubleSpecial(Jnjvm* vm, JavaObject* obj, ...);
@@ -563,35 +767,75 @@ public:
   sint64 invokeLongStatic(Jnjvm* vm, ...);
   JavaObject* invokeJavaObjectStatic(Jnjvm* vm, ...);
   
-  const char* printString() const;
 };
 
+/// JavaField - This class represents a Java field.
+///
 class JavaField  {
   friend class CommonClass;
 private:
+  /// _signature - The signature of the field. Null if not resolved.
+  ///
   Typedef* _signature;
 public:
+
+  /// ~JavaField - Destroy the field as well as its attributs.
+  ///
   ~JavaField();
+
+  /// access - The Java access type of this field (e.g. public, private).
+  ///
   unsigned int access;
+
+  /// name - The name of the field.
+  ///
   const UTF8* name;
+
+  /// type - The UTF8 type name of the field.
+  ///
   const UTF8* type;
+
+  /// attributs - List of Java attributs for this field.
+  ///
   std::vector<Attribut*> attributs;
+
+  /// classDef - The class where the field is defined.
+  ///
   Class* classDef;
+
+  /// ptrOffset - The offset of the field when the object containing
+  /// the field is casted to an array of bytes.
+  ///
   uint64 ptrOffset;
+  
   /// num - The index of the field in the field list.
   ///
   uint32 num;
   
+  /// getSignature - Get the signature of this field, resolving it if
+  /// necessary.
+  ///
   Typedef* getSignature() {
     if(!_signature)
       _signature = classDef->isolate->constructType(type);
     return _signature;
   }
 
+  /// initField - Init the value of the field in the given object. This is
+  /// used for static fields which have a default value.
+  ///
   void initField(JavaObject* obj);
+
+  /// lookupAttribut - Look up the attribut in the field's list of attributs.
+  ///
   Attribut* lookupAttribut(const UTF8* key);
+
+  /// printString - Output a string representation of the field.
+  ///
   const char* printString() const;
 
+  /// getVritual*Field - Get a virtual field of an object.
+  ///
   #define GETVIRTUALFIELD(TYPE, TYPE_NAME) \
   TYPE getVirtual##TYPE_NAME##Field(JavaObject* obj) { \
     assert(*(classDef->getStatus()) >= inClinit); \
@@ -599,6 +843,8 @@ public:
     return ((TYPE*)ptr)[0]; \
   }
 
+  /// getStatic*Field - Get a static field in the defining class.
+  ///
   #define GETSTATICFIELD(TYPE, TYPE_NAME) \
   TYPE getStatic##TYPE_NAME##Field() { \
     assert(*(classDef->getStatus()) >= inClinit); \
@@ -607,6 +853,8 @@ public:
     return ((TYPE*)ptr)[0]; \
   }
 
+  /// setVirtual*Field - Set a virtual of an object.
+  ///
   #define SETVIRTUALFIELD(TYPE, TYPE_NAME) \
   void setVirtual##TYPE_NAME##Field(JavaObject* obj, TYPE val) { \
     assert(*(classDef->getStatus()) >= inClinit); \
@@ -614,6 +862,7 @@ public:
     ((TYPE*)ptr)[0] = val; \
   }
 
+  /// setStatic*Field - Set a static field in the defining class.
   #define SETSTATICFIELD(TYPE, TYPE_NAME) \
   void setStatic##TYPE_NAME##Field(TYPE val) { \
     assert(*(classDef->getStatus()) >= inClinit); \

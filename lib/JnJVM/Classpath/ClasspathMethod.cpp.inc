@@ -128,42 +128,42 @@ JNIEnv *env,
     } else if (retType == AssessorDesc::dBool) {
       uint32 val = 0;
       RUN_METH(Int);
-      res = (*Classpath::boolClass)(vm);
+      res = Classpath::boolClass->doNew(vm);
       Classpath::boolValue->setVirtualInt8Field(res, val);
     } else if (retType == AssessorDesc::dByte) {
       uint32 val = 0;
       RUN_METH(Int);
-      res = (*Classpath::byteClass)(vm);
+      res = Classpath::byteClass->doNew(vm);
       Classpath::byteValue->setVirtualInt8Field(res, val);
     } else if (retType == AssessorDesc::dChar) {
       uint32 val = 0;
       RUN_METH(Int);
-      res = (*Classpath::charClass)(vm);
+      res = Classpath::charClass->doNew(vm);
       Classpath::charValue->setVirtualInt16Field(res, val);
     } else if (retType == AssessorDesc::dShort) {
       uint32 val = 0;
       RUN_METH(Int);
-      res = (*Classpath::shortClass)(vm);
+      res = Classpath::shortClass->doNew(vm);
       Classpath::shortValue->setVirtualInt16Field(res, val);
     } else if (retType == AssessorDesc::dInt) {
       uint32 val = 0;
       RUN_METH(Int);
-      res = (*Classpath::intClass)(vm);
+      res = Classpath::intClass->doNew(vm);
       Classpath::intValue->setVirtualInt32Field(res, val);
     } else if (retType == AssessorDesc::dLong) {
       sint64 val = 0;
       RUN_METH(Long);
-      res = (*Classpath::longClass)(vm);
+      res = Classpath::longClass->doNew(vm);
       Classpath::longValue->setVirtualLongField(res, val);
     } else if (retType == AssessorDesc::dFloat) {
       float val = 0;
       RUN_METH(Float);
-      res = (*Classpath::floatClass)(vm);
+      res = Classpath::floatClass->doNew(vm);
       Classpath::floatValue->setVirtualFloatField(res, val);
     } else if (retType == AssessorDesc::dDouble) {
       double val = 0;
       RUN_METH(Double);
-      res = (*Classpath::doubleClass)(vm);
+      res = Classpath::doubleClass->doNew(vm);
       Classpath::doubleValue->setVirtualDoubleField(res, val);
     } else if (retType == AssessorDesc::dTab || retType == AssessorDesc::dRef) {
       JavaObject* val = 0;
