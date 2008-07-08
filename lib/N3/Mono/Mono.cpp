@@ -7,10 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 #include "mvm/JIT.h"
 
 #include "Assembly.h"
+#include "MonoString.h"
 #include "MSCorlib.h"
 #include "N3.h"
 #include "Reader.h"
@@ -56,4 +56,14 @@ extern "C" void System_Runtime_CompilerServices_RuntimeHelpers_InitializeArray(
 
 extern "C" VMObject* System_Type_GetTypeFromHandle(VMCommonClass* cl) {
   return cl->getClassDelegatee();
+}
+
+extern "C" int System_Environment_get_Platform (void) {
+#if defined (PLATFORM_WIN32)
+  /* Win32NT */
+  return 2;
+#else
+  /* Unix */
+  return 128; 
+#endif
 }

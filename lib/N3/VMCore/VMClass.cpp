@@ -211,6 +211,7 @@ void VMCommonClass::clinitClass() {
       }
       
       cl->status = inClinit;
+      resolveVT();
       std::vector<VMCommonClass*> args;
       args.push_back(MSCorlib::pVoid);
       VMMethod* meth = cl->lookupMethodDontThrow(N3::clinitName, args,
@@ -419,28 +420,18 @@ void VMCommonClass::resolveVirtual() {
 
 void VMCommonClass::resolveVT() {
   VMCommonClass* cl = this;
-  //printf("*** Resolving: %s\n", cl->printString());
-  if (cl->status < vt_resolved) {
-    cl->aquire();
-    int status = cl->status;
-    if (status >= vt_resolved) {
-      cl->release();
-    } else if (status <  loaded) {
-      cl->release();
-      VMThread::get()->vm->unknownError("try to vt-resolve a not-resolved class");
-    } else if (status == virtual_resolved) {
       if (cl->isArray) {
         VMClassArray* arrayCl = (VMClassArray*)cl;
         arrayCl->baseClass->resolveVT();
         arrayCl->arrayVT = CLIJit::makeArrayVT(arrayCl);
-        cl->status = vt_resolved;
       } else if (cl->isPointer) {
-        cl->status = vt_resolved;
       } else {
         VMClass* cl = (VMClass*)this;
         if (super) super->resolveVT();
         
-        if (super != MSCorlib::pEnum) {
+        // We check for virtual instance because the string class has a 
+        // bigger size than the class declares.
+        if (super != MSCorlib::pEnum && !cl->virtualInstance) {
           VirtualTable* VT = CLIJit::makeVT(cl, false);
   
           uint64 size = mvm::jit::getTypeSize(cl->virtualType->getContainedType(0));
@@ -453,23 +444,11 @@ void VMCommonClass::resolveVT() {
             (*i)->initField(cl->virtualInstance);
           }
         }
-        cl->status = vt_resolved;
       }
-      cl->release();
-    } else {
-      if (!(cl->ownerClass())) {
-        while (status < vt_resolved) {
-          cl->waitClass();
-        }
-      }
-      cl->release();
-    }
-  }
 }
 
 void VMCommonClass::resolveType(bool stat, bool clinit) {
   resolveVirtual();
-  resolveVT();
   if (stat) resolveStatic(clinit);
 }
 
@@ -480,10 +459,10 @@ void VMCommonClass::resolveStatic(bool clinit) {
     int status = cl->status;
     if (status >= static_resolved) {
       cl->release();
-    } else if (status < vt_resolved) {
+    } else if (status < virtual_resolved) {
       cl->release();
       VMThread::get()->vm->unknownError("try to resolve static of a not virtual-resolved class");
-    } else if (status == vt_resolved) {
+    } else if (status == virtual_resolved) {
       if (cl->isArray) {
         VMClassArray* arrayCl = (VMClassArray*)cl;
         VMCommonClass* baseClass =  arrayCl->baseClass;

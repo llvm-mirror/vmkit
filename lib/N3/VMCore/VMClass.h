@@ -37,7 +37,7 @@ class VMMethod;
 class VMObject;
 
 typedef enum VMClassState {
-  hashed = 0, loaded, prepared, readed, virtual_resolved, vt_resolved, static_resolved, clinitParent, inClinit, ready
+  hashed = 0, loaded, prepared, readed, virtual_resolved, static_resolved, clinitParent, inClinit, ready
 }VMClassState;
 
 

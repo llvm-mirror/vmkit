@@ -25,7 +25,10 @@ void MSCorlib::loadStringClass(N3* vm) {
                                            vm->asciizConstructUTF8("System"),
                                            false, false, false, true);
   MSCorlib::pString = type;
-  type->resolveType(false, false);
+  MSCorlib::pObject->resolveType(true, false);
+  MSCorlib::pObject->resolveVT();
+  type->resolveType(true, false);
+  type->resolveVT();
 
   uint64 size = mvm::jit::getTypeSize(type->virtualType->getContainedType(0)) + sizeof(const UTF8*) + sizeof(llvm::GlobalVariable*);
   type->virtualInstance = 
