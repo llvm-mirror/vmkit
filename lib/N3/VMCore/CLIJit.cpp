@@ -717,7 +717,7 @@ llvm::Value* CLIJit::getStaticField(uint32 value) {
 
 }
   
-void CLIJit::setVirtualField(uint32 value) {
+void CLIJit::setVirtualField(uint32 value, bool isVolatile) {
   VMField* field = compilingClass->assembly->getFieldFromToken(value, false);
   Value* val = pop();
   Value* obj = pop();
@@ -749,10 +749,10 @@ void CLIJit::setVirtualField(uint32 value) {
     val = changeType(val, type);
   }
   
-  new StoreInst(val, ptr, false, currentBlock);
+  new StoreInst(val, ptr, isVolatile, currentBlock);
 }
 
-void CLIJit::setStaticField(uint32 value) {
+void CLIJit::setStaticField(uint32 value, bool isVolatile) {
   VMField* field = compilingClass->assembly->getFieldFromToken(value, true);
   
   VMCommonClass* cl = field->classDef;
@@ -773,7 +773,7 @@ void CLIJit::setStaticField(uint32 value) {
   } else if (type != valType) {
     val = changeType(val, type);
   }
-  new StoreInst(val, ptr, false, currentBlock);
+  new StoreInst(val, ptr, isVolatile, currentBlock);
 }
 
 void CLIJit::JITVerifyNull(Value* obj) {

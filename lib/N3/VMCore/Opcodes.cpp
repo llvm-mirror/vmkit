@@ -7,34 +7,23 @@
 //
 //===----------------------------------------------------------------------===//
 
-//#define DEBUG 0
-//#define N3_COMPILE 0
-//#define N3_EXECUTE 0
+#define DEBUG 0
+#define N3_COMPILE 0
+#define N3_EXECUTE 0
 
 #include <string.h>
 
-#include <llvm/Type.h>
-#include <llvm/Module.h>
 #include <llvm/Constants.h>
-#include <llvm/Type.h>
 #include <llvm/DerivedTypes.h>
+#include <llvm/Module.h>
+#include <llvm/Type.h>
 #include <llvm/Function.h>
 #include <llvm/Instructions.h>
-#include <llvm/ModuleProvider.h>
-#include <llvm/ExecutionEngine/JIT.h>
-#include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/PassManager.h>
-#include <llvm/Analysis/Verifier.h>
+#include <llvm/Transforms/IPO.h>
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Target/TargetData.h>
-#include <llvm/Assembly/PrintModulePass.h>
 #include <llvm/Target/TargetOptions.h>
-#include <llvm/CodeGen/MachineCodeEmitter.h>
-#include <llvm/CodeGen/MachineBasicBlock.h>
-#include <../lib/ExecutionEngine/JIT/JIT.h>
-
-#include <llvm/Transforms/IPO.h>
-
 
 #include "mvm/JIT.h"
 #include "mvm/Method.h"
@@ -53,10 +42,6 @@
 #include "VMThread.h"
 
 #include "OpcodeNames.def"
-
-#include <iostream>
-
-
 
 using namespace n3;
 using namespace llvm;
@@ -148,6 +133,9 @@ static void verifyType(Value*& val1, Value*& val2, BasicBlock* currentBlock) {
     } else if (t1->isInteger() && t2 == PointerType::getUnqual(Type::Int8Ty)) {
       // CLI says that this is fine for some operation
       val2 = new PtrToIntInst(val2, t1, "", currentBlock);
+    } else if (t2->isInteger() && t1 == PointerType::getUnqual(Type::Int8Ty)) {
+      // CLI says that this is fine for some operation
+      val1 = new PtrToIntInst(val1, t2, "", currentBlock);
     }
   }
 }
@@ -181,7 +169,7 @@ static void store(Value* val, Value* local, bool vol,
       convertValue(val, contained, currentBlock);
     }
     new StoreInst(val, local, vol, currentBlock);
-  } else {
+  } else if (isa<PointerType>(val->getType())) {
     uint64 size = mvm::jit::getTypeSize(contained);
         
     std::vector<Value*> params;
@@ -190,6 +178,8 @@ static void store(Value* val, Value* local, bool vol,
     params.push_back(ConstantInt::get(Type::Int32Ty, size));
     params.push_back(mvm::jit::constantZero);
     CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
+  } else {
+    new StoreInst(val, local, vol, currentBlock);
   }
 }
 
@@ -212,10 +202,11 @@ static Value* load(Value* val, const char* name, BasicBlock* currentBlock) {
 
 void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
   uint32 leaveIndex = 0;
+  bool isVolatile = false;
   for(uint32 i = 0; i < codeLength; ++i) {
     
     if (bytecodes[i] != 0xFE) {
-      PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
+      PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %x] %-5d ", i,
                   bytecodes[i]);
       PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "compiling %s::", compilingMethod->printString());
       PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]]);
@@ -235,13 +226,14 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
     }
 
 #if N3_EXECUTE > 1
-    std::vector<llvm::Value*> args;
-    args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)OpcodeNames[bytecodes[i]]));
-    args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
-    CallInst::Create(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
     if (bytecodes[i] == 0xFE) {
       std::vector<llvm::Value*> args;
       args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)OpcodeNamesFE[bytecodes[i + 1]]));
+      args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
+      CallInst::Create(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
+    } else {
+      std::vector<llvm::Value*> args;
+      args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)OpcodeNames[bytecodes[i]]));
       args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
       CallInst::Create(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
     }
@@ -528,10 +520,20 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case CONV_I : {
         Value* val = pop();
-        if (val->getType() != Type::Int64Ty) 
-          val = new ZExtInst(val, Type::Int64Ty, "", currentBlock);
-        push(new IntToPtrInst(val, PointerType::getUnqual(Type::Int8Ty), "", 
-                              currentBlock));
+        Value* res = 0;
+        
+        if (val->getType()->isInteger()) {
+          if (val->getType() != Type::Int64Ty) {
+            val = new ZExtInst(val, Type::Int64Ty, "", currentBlock);
+          }
+          res = new IntToPtrInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock);
+        } else if (!val->getType()->isFloatingPoint()) {
+          res = new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock);
+        } else {
+          VMThread::get()->vm->unknownError("implement me");
+        }
+        
+        push(res);
         break;
       }
 
@@ -817,7 +819,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case LDIND_I1 : {
         Value* _val = pop();
         Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock);
-        push(new LoadInst(val, "", currentBlock));
+        push(new LoadInst(val, "", isVolatile, currentBlock));
+        isVolatile = false;
         break;
       }
       
@@ -825,36 +828,45 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case LDIND_I2 : {
         Value* _val = pop();
         Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::Int16Ty), "", currentBlock);
-        push(new LoadInst(val, "", currentBlock));
+        push(new LoadInst(val, "", isVolatile, currentBlock));
+        isVolatile = false;
         break;
       }
       
       case LDIND_U4 :
       case LDIND_I4 : {
-        Value* _val = pop();
-        Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::Int32Ty), "", currentBlock);
-        push(new LoadInst(val, "", currentBlock));
+        Value* val = pop();
+        if (val->getType()->isInteger()) {
+          val = new IntToPtrInst(val, PointerType::getUnqual(Type::Int32Ty), "", currentBlock);
+        } else {
+          val = new BitCastInst(val, PointerType::getUnqual(Type::Int32Ty), "", currentBlock);
+        }
+        push(new LoadInst(val, "", isVolatile, currentBlock));
+        isVolatile = false;
         break;
       }
       
       case LDIND_I8 : {
         Value* _val = pop();
         Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::Int64Ty), "", currentBlock);
-        push(new LoadInst(val, "", currentBlock));
+        push(new LoadInst(val, "", isVolatile, currentBlock));
+        isVolatile = false;
         break;
       }
 
       case LDIND_R4 : {
         Value* _val = pop();
         Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::FloatTy), "", currentBlock);
-        push(new LoadInst(val, "", currentBlock));
+        push(new LoadInst(val, "", isVolatile, currentBlock));
+        isVolatile = false;
         break;
       }
       
       case LDIND_R8 : {
         Value* _val = pop();
         Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::DoubleTy), "", currentBlock);
-        push(new LoadInst(val, "", currentBlock));
+        push(new LoadInst(val, "", isVolatile, currentBlock));
+        isVolatile = false;
         break;
       }
       
@@ -862,7 +874,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* _val = pop();
         Value* val = new BitCastInst(_val, PointerType::getUnqual(
                                         PointerType::getUnqual(Type::Int8Ty)), "", currentBlock);
-        push(new LoadInst(val, "", currentBlock));
+        push(new LoadInst(val, "", isVolatile, currentBlock));
+        isVolatile = false;
         break;
       }
       
@@ -870,7 +883,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* _val = pop();
         Value* val = new BitCastInst(_val, PointerType::getUnqual(
                                         PointerType::getUnqual(VMObject::llvmType)), "", currentBlock);
-        push(new LoadInst(val, "", currentBlock));
+        push(new LoadInst(val, "", isVolatile, currentBlock));
+        isVolatile = false;
         break;
       }
  
@@ -1101,7 +1115,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::Int8Ty), "",
                                       currentBlock);
         convertValue(val, Type::Int8Ty, currentBlock);
-        new StoreInst(val, addr, false, currentBlock);
+        new StoreInst(val, addr, isVolatile, currentBlock);
+        isVolatile = false;
         break;
       }
       
@@ -1110,7 +1125,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* _addr = pop();
         Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::Int16Ty), 
                                       "", currentBlock);
-        new StoreInst(val, addr, false, currentBlock);
+        new StoreInst(val, addr, isVolatile, currentBlock);
+        isVolatile = false;
         break;
       }
       
@@ -1119,7 +1135,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* _addr = pop();
         Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::Int32Ty), 
                                       "", currentBlock);
-        new StoreInst(val, addr, false, currentBlock);
+        new StoreInst(val, addr, isVolatile, currentBlock);
+        isVolatile = false;
         break;
       }
       
@@ -1128,7 +1145,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* _addr = pop();
         Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::Int64Ty), 
                                       "", currentBlock);
-        new StoreInst(val, addr, false, currentBlock);
+        new StoreInst(val, addr, isVolatile, currentBlock);
+        isVolatile = false;
         break;
       }
       
@@ -1137,7 +1155,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* _addr = pop();
         Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::FloatTy), 
                                       "", currentBlock);
-        new StoreInst(val, addr, false, currentBlock);
+        new StoreInst(val, addr, isVolatile, currentBlock);
+        isVolatile = false;
         break;
       }
       
@@ -1146,7 +1165,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* _addr = pop();
         Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::DoubleTy), 
                                       "", currentBlock);
-        new StoreInst(val, addr, false, currentBlock);
+        new StoreInst(val, addr, isVolatile, currentBlock);
+        isVolatile = false;
         break;
       }
       
@@ -1155,7 +1175,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* _addr = pop();
         Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::Int32Ty), 
                                       "", currentBlock);
-        new StoreInst(val, addr, false, currentBlock);
+        new StoreInst(val, addr, isVolatile, currentBlock);
+        isVolatile = false;
         break;
       }
       
@@ -1164,7 +1185,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* _addr = pop();
         Value* addr = new BitCastInst(_addr, PointerType::getUnqual(val->getType()), 
                                       "", currentBlock);
-        new StoreInst(val, addr, false, currentBlock);
+        new StoreInst(val, addr, isVolatile, currentBlock);
+        isVolatile = false;
         break;
       }
       
@@ -1222,7 +1244,18 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case SWITCH : {
-        VMThread::get()->vm->error("implement me");
+        uint32 value = readU4(bytecodes, i);
+        Value* val = pop();
+        uint32 next = i + value * sizeof(sint32) + 1;
+        BasicBlock* defBB = opcodeInfos[next].newBlock;
+        SwitchInst* SI = SwitchInst::Create(val, defBB, value, currentBlock);
+        for (uint32 t = 0; t < value; t++) {
+          sint32 offset = readS4(bytecodes, i);
+          sint32 index = next + offset;
+          assert(index > 0);
+          BasicBlock* BB = opcodeInfos[index].newBlock;
+          SI->addCase(ConstantInt::get(Type::Int32Ty, t), BB);
+        }
         break;
       }
 
@@ -1489,7 +1522,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case LDFLD : {
         uint32 value = readU4(bytecodes, i);
         Value* val = getVirtualField(value);
-        push(new LoadInst(val, "", currentBlock));
+        push(new LoadInst(val, "", isVolatile, currentBlock));
+        isVolatile = false;
         break;
       }
       
@@ -1511,7 +1545,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         VMCommonClass* cl = assembly->loadType(vm, token, true, false,
                                                false, true);
         if (!(cl->super == MSCorlib::pValue || cl->super == MSCorlib::pEnum)) {
-          push(new LoadInst(pop(), "", currentBlock));
+          push(new LoadInst(pop(), "", isVolatile, currentBlock));
+          isVolatile = false;
         }
         break;
       }
@@ -1519,7 +1554,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case LDSFLD : {
         uint32 value = readU4(bytecodes, i);
         Value* val = getStaticField(value);
-        push(new LoadInst(val, "", currentBlock));
+        push(new LoadInst(val, "", isVolatile, currentBlock));
+        isVolatile = false;
         break;
       }
       
@@ -1707,18 +1743,21 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       
       case STFLD : {
         uint32 index = readU4(bytecodes, i);
-        setVirtualField(index);
+        setVirtualField(index, isVolatile);
+        isVolatile = false;
         break;
       }
 
       case STOBJ : {
         VMThread::get()->vm->error("implement me");
+        isVolatile = false;
         break;
       }
 
       case STSFLD : {
         uint32 index = readU4(bytecodes, i);
-        setStaticField(index);
+        setStaticField(index, isVolatile);
+        isVolatile = false;
         break;
       }
 
@@ -1777,7 +1816,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case 0xFE : {
-        PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
+        PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %x] %-5d ", i,
                     bytecodes[i + 1]);
         PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "compiling %s::", compilingMethod->printString());
         PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNamesFE[bytecodes[i + 1]]);
@@ -1817,6 +1856,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             args.push_back(three);
             CallInst::Create(mvm::jit::llvm_memcpy_i32,
                          args.begin(), args.end(), "", currentBlock);
+            isVolatile = false;
             break;
           }
       
@@ -1863,6 +1903,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             args.push_back(three);
             CallInst::Create(mvm::jit::llvm_memset_i32,
                          args.begin(), args.end(), "", currentBlock);
+            isVolatile = false;
             break;
           }
       
@@ -1931,6 +1972,11 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
           case SIZEOF : {
             VMThread::get()->vm->error("implement me");
+            break;
+          }
+
+          case VOLATILE_ : {
+            isVolatile = true;
             break;
           }
           default :
@@ -2224,7 +2270,21 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       case SUB_OVF_UN : break;
 
       case SWITCH : {
-        VMThread::get()->vm->error("implement me");
+        uint32 value = readU4(bytecodes, i);
+        uint32 next = i + value * sizeof(sint32) + 1;
+        for (uint32 t = 0; t < value; t++) {
+          sint32 offset = readS4(bytecodes, i);
+          sint32 index = next + offset;
+          assert(index > 0);
+          if (!(opcodeInfos[index].newBlock)) {
+            BasicBlock* block = createBasicBlock("switch");
+            opcodeInfos[index].newBlock = block;
+          }
+        }
+        if (!(opcodeInfos[i + 1].newBlock)) {
+          BasicBlock* block = createBasicBlock("switch");
+          opcodeInfos[i + 1].newBlock = block;
+        }
         break;
       }
 
@@ -2381,7 +2441,7 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       
         PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
                     bytecodes[i + 1]);
-        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "exploring ");
+        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "exploring %s::", compilingMethod->printString());
         PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNamesFE[bytecodes[i + 1]]);
         PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "\n");
       
@@ -2464,6 +2524,10 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
         
           case SIZEOF : {
             VMThread::get()->vm->error("implement me");
+            break;
+          }
+
+          case VOLATILE_ : {
             break;
           }
           default :

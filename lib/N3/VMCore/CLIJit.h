@@ -131,8 +131,8 @@ public:
   void invokeNew(uint32 value);
   llvm::Value* getVirtualField(uint32 value);
   llvm::Value* getStaticField(uint32 value);
-  void setVirtualField(uint32 value);
-  void setStaticField(uint32 value);
+  void setVirtualField(uint32 value, bool isVolatile);
+  void setStaticField(uint32 value, bool isVolatile);
 
   void JITVerifyNull(llvm::Value* obj);
   
