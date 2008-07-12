@@ -265,7 +265,8 @@ void N3::runMain(int argc, char** argv) {
     try{
       executeAssembly(info.assembly, args);
     }catch(...) {
-      printf("N3 catched it\n");
+      VMObject* exc = VMThread::get()->pendingException;
+      printf("N3 caught %s\n", exc->printString());
     }
     waitForExit();
   }
