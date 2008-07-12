@@ -1483,7 +1483,7 @@ VMField* Assembly::getFieldFromToken(uint32 token, bool stat) {
       }
     }
   }
-  field->classDef->resolveType(false, false);
+  field->classDef->resolveType(stat, false);
   return field;
 }
 
