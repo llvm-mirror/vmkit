@@ -15,3 +15,9 @@ LINK_COMPONENTS = engine scalaropts instrumentation ipa ipo
 USEDLIBS = Allocator CommonThread Mvm N3 Main $(GCLIB) Mono
 
 include $(LEVEL)/Makefile.common
+
+CXX.Flags += `pkg-config --cflags glib-2.0 gthread-2.0`
+LIBS += `pkg-config --libs glib-2.0 gthread-2.0`
+CXX.Flags += `pkg-config --cflags gmodule-2.0`
+LIBS += `pkg-config --libs gmodule-2.0`
+
