@@ -19,7 +19,6 @@ class NativeUtil {
 public:
 
   static void* nativeLookup(VMCommonClass* cl, VMMethod* meth);
-  static void initialise();
 };
 
 }

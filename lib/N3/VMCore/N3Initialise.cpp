@@ -219,7 +219,6 @@ static void initialiseVT() {
 
 
 static void initialiseStatics() {
-  NativeUtil::initialise();
   CLIJit::initialise();
 
   VMObject::globalLock = mvm::Lock::allocNormal();

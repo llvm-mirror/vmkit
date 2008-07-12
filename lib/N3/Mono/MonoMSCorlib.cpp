@@ -132,9 +132,6 @@ void MSCorlib::initialise(N3* vm) {
 
   */
 }
-#include "NativeUtil.h"
-void NativeUtil::initialise() {
-}
 
 VMObject* Property::getPropertyDelegatee() {
   if (!delegatee) {
@@ -166,4 +163,12 @@ VMObject* Assembly::getAssemblyDelegatee() {
 }
 
 void MSCorlib::loadBootstrap(N3* vm) {
+  VMClass* cl = (VMClass*)vm->coreAssembly->loadTypeFromName(
+                                        vm->asciizConstructUTF8("Thread"),
+                                        vm->asciizConstructUTF8("System.Threading"),
+                                        true, true, true, true);
+  VMObject* th = (*cl)();
+  VMThread* myth = VMThread::get();
+  myth->vmThread = th;
+
 }

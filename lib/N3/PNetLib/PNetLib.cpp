@@ -132,65 +132,8 @@ void tgetflag(void) {
 
 
 
-extern "C" void System_Runtime_CompilerServices_RuntimeHelpers_InitializeArray(
-                                               VMArray* array, VMField* field) {
-  if (!array || !field) return;
-
-  VMClass* type = field->classDef;
-  VMClassArray* ts = (VMClassArray*)array->classOf;
-  VMCommonClass* bs = ts->baseClass;
-  Assembly* ass = type->assembly;
-
-  uint32 rva = ass->getRVAFromField(field->token);
-  Section* rsrcSection = ass->rsrcSection;
-
-  uint32 size = array->size;
-  uint32 offset = rsrcSection->rawAddress + (rva - rsrcSection->virtualAddress);
-  ArrayUInt8* bytes = ass->bytes;
-
-  if (bs == MSCorlib::pChar) {
-    for (uint32 i = 0; i < size; ++i) {
-      ((ArrayUInt16*)array)->elements[i] = READ_U2(bytes, offset);
-    }
-  } else if (bs == MSCorlib::pSInt32) {
-    for (uint32 i = 0; i < size; ++i) {
-      ((ArraySInt32*)array)->elements[i] = READ_U4(bytes, offset);
-    }
-  } else if (bs == MSCorlib::pDouble) {
-    for (uint32 i = 0; i < size; ++i) {
-      ((ArrayDouble*)array)->elements[i] = READ_U8(bytes, offset);
-    }
-  } else {
-    VMThread::get()->vm->error("implement me");
-  }
-}
-
-extern "C" VMObject* System_Type_GetTypeFromHandle(VMCommonClass* cl) {
-  return cl->getClassDelegatee();
-}
-
-extern "C" void System_Threading_Monitor_Enter(VMObject* obj) {
-  obj->aquire();
-}
-
-extern "C" void System_Threading_Monitor_Exit(VMObject* obj) {
-  obj->unlock();
-}
-
 extern "C" uint32 System_Text_DefaultEncoding_InternalCodePage() {
   return ILGetCodePage();
-}
-
-extern "C" VMObject* System_Reflection_Assembly_GetCallingAssembly() {
-  Assembly* ass = Assembly::getCallingAssembly();
-  assert(ass);
-  return ass->getAssemblyDelegatee();
-}
-
-extern "C" VMObject* System_Reflection_Assembly_GetExecutingAssembly() {
-  Assembly* ass = Assembly::getExecutingAssembly();
-  assert(ass);
-  return ass->getAssemblyDelegatee();
 }
 
 extern "C" uint32 System_Globalization_CultureInfo_InternalCultureID() {
@@ -208,10 +151,6 @@ extern "C" VMObject* System_Globalization_CultureInfo_InternalCultureName() {
     VMObject* ret = vm->asciizToStr("iv");
     return ret;
   }
-}
-
-extern "C" void System_Reflection_Assembly_LoadFromFile() {
-  VMThread::get()->vm->error("implement me");
 }
 
 static const UTF8* newBuilder(N3* vm, PNetString* value, uint32 length) {
@@ -287,97 +226,6 @@ extern "C" void Platform_Stdio_StdFlush(sint32 fd) {
   _IL_Stdio_StdFlush(0, fd);
 }
 
-extern "C" void System_Array_InternalCopy(VMArray* src, sint32 sstart, 
-                                          VMArray* dst, sint32 dstart, 
-                                          sint32 len) {
-  N3* vm = (N3*)(VMThread::get()->vm);
-  verifyNull(src);
-  verifyNull(dst);
-  
-  if (!(src->classOf->isArray && dst->classOf->isArray)) {
-    vm->arrayStoreException();
-  }
-  
-  VMClassArray* ts = (VMClassArray*)src->classOf;
-  VMClassArray* td = (VMClassArray*)dst->classOf;
-  VMCommonClass* dstType = td->baseClass;
-  VMCommonClass* srcType = ts->baseClass;
-
-  if (len > src->size) {
-    vm->indexOutOfBounds(src, len);
-  } else if (len > dst->size) {
-    vm->indexOutOfBounds(dst, len);
-  } else if (len + sstart > src->size) {
-    vm->indexOutOfBounds(src, len + sstart);
-  } else if (len + dstart > dst->size) {
-    vm->indexOutOfBounds(dst, len + dstart);
-  } else if (dstart < 0) {
-    vm->indexOutOfBounds(dst, dstart);
-  } else if (sstart < 0) {
-    vm->indexOutOfBounds(src, sstart);
-  } else if (len < 0) {
-    vm->indexOutOfBounds(src, len);
-  } 
-  
-  bool doThrow = false;
-  
-  if (srcType->super == MSCorlib::pValue && srcType != dstType) {
-    vm->arrayStoreException();
-  } else if (srcType->super != MSCorlib::pValue && srcType->super != MSCorlib::pEnum) {
-    sint32 i = sstart;
-    while (i < sstart + len && !doThrow) {
-      VMObject* cur = ((ArrayObject*)src)->at(i);
-      if (cur) {
-        if (!(cur->classOf->isAssignableFrom(dstType))) {
-          doThrow = true;
-          len = i;
-        }
-      }
-      ++i;
-    }
-  }
-  
-  
-  uint32 size = srcType->naturalType->getPrimitiveSizeInBits() / 8;
-  if (size == 0) size = sizeof(void*);
-  void* ptrDst = (void*)((int64_t)(dst->elements) + size * dstart);
-  void* ptrSrc = (void*)((int64_t)(src->elements) + size * sstart);
-  memmove(ptrDst, ptrSrc, size * len);
-
-  if (doThrow)
-    vm->arrayStoreException();
-  
-}
-
-extern "C" sint32 System_Array_GetRank(VMObject* arr) {
-  verifyNull(arr);
-  if (arr->classOf->isArray) {
-    return ((VMClassArray*)(arr->classOf))->dims;
-  } else {
-    VMThread::get()->vm->error("implement me");
-    return 0;
-  }
-}
-
-extern "C" sint32 System_Array_GetLength(VMObject* arr) {
-  verifyNull(arr);
-  if (arr->classOf->isArray) {
-    return ((VMArray*)arr)->size;
-  } else {
-    VMThread::get()->vm->error("implement me");
-    return 0;
-  }
-}
-
-extern "C" sint32 System_Array_GetLowerBound(VMObject* arr, sint32 dim) {
-  return 0;
-}
-
-extern "C" VMObject* System_Object_GetType(VMObject* obj) {
-  verifyNull(obj);
-  return obj->classOf->getClassDelegatee();
-}
-
 extern "C" VMObject* System_Reflection_ClrType_GetElementType(VMObject* Klass) {
   VMCommonClass* cl = (VMCommonClass*)((*Klass)(MSCorlib::typeClrType).PointerVal);
   if (!cl->isArray) {
@@ -436,12 +284,17 @@ extern "C" void System_String_Copy_5(PNetString* dest, sint32 destPos,
   }
 }
 
-extern "C" bool System_String_Equals(PNetString* str1, PNetString* str2) {
-  return str1->value == str2->value;
+extern "C" void System_Threading_Monitor_Enter(VMObject* obj) {
+  obj->aquire();
 }
 
-extern "C" VMObject* System_Threading_Thread_InternalCurrentThread() {
-  return VMThread::get()->vmThread;
+extern "C" void System_Threading_Monitor_Exit(VMObject* obj) {
+  obj->unlock();
+}
+
+
+extern "C" bool System_String_Equals(PNetString* str1, PNetString* str2) {
+  return str1->value == str2->value;
 }
 
 extern "C" sint32 Platform_SysCharInfo_GetUnicodeCategory(char c) {
@@ -479,19 +332,6 @@ extern "C" sint32 System_String_GetHashCode(PNetString* str) {
     hash += ((hash << 5) + utf8->elements[i]);
   }
   return hash;
-}
-
-extern "C" double System_Decimal_ToDouble(void* ptr) {
-  VMThread::get()->vm->error("implement me");
-  return 0.0;
-}
-
-extern "C" double System_Math_Log10(double val) {
-  return log10(val);
-}
-
-extern "C" double System_Math_Floor(double val) {
-  return floor(val);
 }
 
 extern "C" VMObject* System_Text_StringBuilder_Insert_System_Text_StringBuilder_System_Int32_System_Char(
@@ -1194,17 +1034,6 @@ extern "C" sint32 System_String_InternalOrdinal(PNetString *strA, sint32 indexA,
 	}
 }
 
-extern "C" void System_GC_Collect() {
-#ifdef MULTIPLE_GC
-  mvm::Thread::get()->GC->collect();
-#else
-  Collector::collect();
-#endif
-}
-
-
-
-void NativeUtil::initialise() {
-  intptr_t p;
-  p = (intptr_t)&System_Runtime_CompilerServices_RuntimeHelpers_InitializeArray;
+extern "C" VMObject* System_Threading_Thread_InternalCurrentThread() {
+  return VMThread::get()->vmThread;
 }
