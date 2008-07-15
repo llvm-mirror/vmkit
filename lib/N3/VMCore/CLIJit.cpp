@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-//#define DEBUG 0
-//#define N3_COMPILE 0
-//#define N3_EXECUTE 0
+#define DEBUG 0
+#define N3_COMPILE 0
+#define N3_EXECUTE 0
 
 #include "debug.h"
 #include "types.h"
@@ -741,15 +741,28 @@ void CLIJit::setVirtualField(uint32 value, bool isVolatile) {
     ptr = GetElementPtrInst::Create(obj, args.begin(), args.end(), "",
                                 currentBlock);
   }
-
-  type = field->signature->naturalType;
-  if (val == constantVMObjectNull) {
-    val = Constant::getNullValue(type);
-  } else if (type != valType) {
-    val = changeType(val, type);
-  }
   
-  new StoreInst(val, ptr, isVolatile, currentBlock);
+  if (field->signature->super == MSCorlib::pValue &&
+      field->signature->virtualFields.size() > 1) {
+    uint64 size = mvm::jit::getTypeSize(field->signature->naturalType);
+        
+    std::vector<Value*> params;
+    params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
+    params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
+    params.push_back(ConstantInt::get(Type::Int32Ty, size));
+    params.push_back(mvm::jit::constantZero);
+    CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
+
+  } else {
+    type = field->signature->naturalType;
+    if (val == constantVMObjectNull) {
+      val = Constant::getNullValue(type);
+    } else if (type != valType) {
+      val = changeType(val, type);
+    }
+  
+    new StoreInst(val, ptr, isVolatile, currentBlock);
+  }
 }
 
 void CLIJit::setStaticField(uint32 value, bool isVolatile) {
@@ -1121,6 +1134,30 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat) {
 
 }
 
+#if N3_EXECUTE > 1
+static void printArgs(std::vector<llvm::Value*> args, BasicBlock* insertAt) {
+  for (std::vector<llvm::Value*>::iterator i = args.begin(),
+       e = args.end(); i!= e; ++i) {
+    llvm::Value* arg = *i;
+    const llvm::Type* type = arg->getType();
+    if (type == Type::Int8Ty || type == Type::Int16Ty || type == Type::Int1Ty) {
+      CallInst::Create(mvm::jit::printIntLLVM, new ZExtInst(arg, Type::Int32Ty, "", insertAt), "", insertAt);
+    } else if (type == Type::Int32Ty) {
+      CallInst::Create(mvm::jit::printIntLLVM, arg, "", insertAt);
+    } else if (type == Type::Int64Ty) {
+      CallInst::Create(mvm::jit::printLongLLVM, arg, "", insertAt);
+    } else if (type == Type::FloatTy) {
+      CallInst::Create(mvm::jit::printFloatLLVM, arg, "", insertAt);
+    } else if (type == Type::DoubleTy) {
+      CallInst::Create(mvm::jit::printDoubleLLVM, arg, "", insertAt);
+    } else {
+      CallInst::Create(mvm::jit::printIntLLVM, new PtrToIntInst(arg, Type::Int32Ty, "", insertAt), "", insertAt);
+    }
+  }
+
+}
+#endif
+
 Function* CLIJit::compileFatOrTiny() {
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "tiny or fat compile %s\n",
               compilingMethod->printString());
@@ -1240,6 +1277,11 @@ Function* CLIJit::compileFatOrTiny() {
     endBlock->eraseFromParent();
   } else {
     if (endType != Type::VoidTy) {
+#if N3_EXECUTE > 1
+      std::vector<Value*> args;
+      args.push_back(endNode);
+      printArgs(args, endBlock);
+#endif
       ReturnInst::Create(endNode, endBlock);
     } else if (compilingMethod->structReturn) {
       const Type* lastType = 
@@ -2012,30 +2054,6 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
 
 Constant* CLIJit::constantVMObjectNull;
 
-
-#if N3_EXECUTE > 1
-static void printArgs(std::vector<llvm::Value*> args, BasicBlock* insertAt) {
-  for (std::vector<llvm::Value*>::iterator i = args.begin(),
-       e = args.end(); i!= e; ++i) {
-    llvm::Value* arg = *i;
-    const llvm::Type* type = arg->getType();
-    if (type == Type::Int8Ty || type == Type::Int16Ty || type == Type::Int1Ty) {
-      CallInst::Create(mvm::jit::printIntLLVM, new ZExtInst(arg, Type::Int32Ty, "", insertAt), "", insertAt);
-    } else if (type == Type::Int32Ty) {
-      CallInst::Create(mvm::jit::printIntLLVM, arg, "", insertAt);
-    } else if (type == Type::Int64Ty) {
-      CallInst::Create(mvm::jit::printLongLLVM, arg, "", insertAt);
-    } else if (type == Type::FloatTy) {
-      CallInst::Create(mvm::jit::printFloatLLVM, arg, "", insertAt);
-    } else if (type == Type::DoubleTy) {
-      CallInst::Create(mvm::jit::printDoubleLLVM, arg, "", insertAt);
-    } else {
-      CallInst::Create(mvm::jit::printObjectLLVM, new BitCastInst(arg, mvm::jit::ptrType, "", insertAt), "", insertAt);
-    }
-  }
-
-}
-#endif
 
 Value* CLIJit::invoke(Value *F, std::vector<llvm::Value*> args,
                        const char* Name,
