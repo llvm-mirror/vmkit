@@ -279,7 +279,6 @@ static VMCommonClass* METHOD_ElementTypeSentinel(uint32 op, Assembly* ass, uint3
 }
 
 static VMCommonClass* METHOD_ElementTypePinned(uint32 op, Assembly* ass, uint32& offset) {
-  VMThread::get()->vm->error("implement me");
   return 0;
 }
 
@@ -353,6 +352,7 @@ signatureVector_t Assembly::signatureVector[0x46] = {
   unimplemented,                   // 0x3D
   unimplemented,                   // 0x3E
   unimplemented,                   // 0x3F
+  unimplemented,                   // 0x40
   METHOD_ElementTypeSentinel,      // 0x41
   unimplemented,                   // 0x42
   unimplemented,                   // 0x43
@@ -406,7 +406,9 @@ void Assembly::localVarSignature(uint32& offset,
   }
   
   for (uint32 i = 0; i < nbLocals; ++i) {
-    locals.push_back(exploreType(offset));
+    VMCommonClass* cl = exploreType(offset);
+    if (!cl) --i; // PINNED
+    else locals.push_back(cl);
   }
 }
 
@@ -434,7 +436,7 @@ VMCommonClass* Assembly::extractTypeInSignature(uint32& offset) {
 
 VMCommonClass* Assembly::exploreType(uint32& offset) {
   uint32 op = READ_U1(bytes, offset);
-  //printf("reading %s\n", signatureNames[op]);
+  assert(op < 0x46 && "unknown signature type");
   return (signatureVector[op])(op, this, offset);
 }
 
