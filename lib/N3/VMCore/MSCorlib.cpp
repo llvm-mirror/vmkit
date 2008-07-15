@@ -38,10 +38,17 @@ extern "C" void System_Runtime_CompilerServices_RuntimeHelpers_InitializeArray(
   Assembly* ass = type->assembly;
 
   uint32 rva = ass->getRVAFromField(field->token);
-  Section* rsrcSection = ass->rsrcSection;
+  Section* inSection = 0;
+  
+  if (rva >= ass->rsrcSection->virtualAddress && rva < ass->rsrcSection->virtualAddress + ass->rsrcSection->virtualSize)
+    inSection = ass->rsrcSection;
+  if (rva >= ass->textSection->virtualAddress && rva < ass->textSection->virtualAddress + ass->textSection->virtualSize)
+    inSection = ass->textSection;
+  if (rva >= ass->relocSection->virtualAddress && rva < ass->relocSection->virtualAddress + ass->relocSection->virtualSize)
+    inSection = ass->relocSection;
 
   uint32 size = array->size;
-  uint32 offset = rsrcSection->rawAddress + (rva - rsrcSection->virtualAddress);
+  uint32 offset = inSection->rawAddress + (rva - inSection->virtualAddress);
   ArrayUInt8* bytes = ass->bytes;
 
   if (bs == MSCorlib::pChar) {
