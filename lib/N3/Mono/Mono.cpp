@@ -250,3 +250,90 @@ System_Threading_Thread_GetSerializedCurrentCulture (VMObject *obj)
 {
 	return 0;
 }
+
+extern "C" VMObject* System_Object_MemberwiseClone(VMObject* obj) {
+  uint64 size = obj->objectSize();
+  VMObject* res = (VMObject*)gc::operator new(size, obj->getVirtualTable());
+  memcpy(res, obj, size);
+  res->lockObj = 0;
+  return res;
+}
+
+extern "C" bool
+System_Globalization_CultureInfo_construct_internal_locale_from_current_locale (VMObject *ci)
+{
+	return false;
+}
+
+extern "C" void
+System_Threading_Thread_SetCachedCurrentCulture (VMObject* thread, VMObject *culture)
+{
+}
+
+extern "C" void
+System_String__ctor(MonoString* str, ArrayUInt16* array, sint32 startIndex, sint32 count) {
+  VirtualMachine* vm = VMThread::get()->vm;
+  const UTF8* utf8 = vm->readerConstructUTF8(&(array->elements[startIndex]), count);
+  str->length = count;
+  str->startChar = array->elements[startIndex];
+  str->value = utf8;
+}
+
+extern "C" MonoString * 
+System_String_InternalJoin (MonoString *separator, VMArray * value, sint32 sindex, sint32 count)
+{
+	MonoString *current;
+	sint32 length;
+	sint32 pos;
+	sint32 insertlen;
+	sint32 destpos;
+	sint32 srclen;
+  const uint16 *insert;
+	const uint16 *src;
+	uint16 *dest;
+
+	insert = separator->value->elements;
+	insertlen = separator->length;
+
+	length = 0;
+	for (pos = sindex; pos != sindex + count; pos++) {
+		current = (MonoString*)value->elements[pos];
+		if (current != NULL)
+			length += current->length;
+
+		if (pos < sindex + count - 1)
+			length += insertlen;
+	}
+
+	dest = (uint16*)alloca(length * sizeof(uint16));
+	destpos = 0;
+
+	for (pos = sindex; pos != sindex + count; pos++) {
+		current = (MonoString*)value->elements[pos];
+		if (current != NULL) {
+			src = current->value->elements;
+			srclen = current->length;
+
+			memcpy (dest + destpos, src, srclen * sizeof(uint16));
+			destpos += srclen;
+		}
+
+		if (pos < sindex + count - 1) {
+			memcpy(dest + destpos, insert, insertlen * sizeof(uint16));
+			destpos += insertlen;
+		}
+	}
+  
+  N3* vm = (N3*)VMThread::get()->vm;
+  const UTF8* utf8 = vm->readerConstructUTF8(dest, length);
+	return (MonoString*)vm->UTF8ToStr(utf8);
+}
+
+extern "C" MonoString *
+System_String_InternalAllocateStr (sint32 length)
+{
+  MonoString* str = (MonoString*)(MSCorlib::pString->doNew());
+  str->length = length;
+  return str;
+}
+
