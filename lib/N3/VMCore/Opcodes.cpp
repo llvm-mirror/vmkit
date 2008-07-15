@@ -206,7 +206,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
   for(uint32 i = 0; i < codeLength; ++i) {
     
     if (bytecodes[i] != 0xFE) {
-      PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %x] %-5d ", i,
+      PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5x] %-5d ", i,
                   bytecodes[i]);
       PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "compiling %s::", compilingMethod->printString());
       PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]]);
@@ -247,9 +247,15 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       
       case ADD: {
         Value* val2 = pop();
+        bool isPointer = (val2->getType() == mvm::jit::ptrType);
         Value* val1 = pop();
+        isPointer |= (val1->getType() == mvm::jit::ptrType);
         verifyType(val1, val2, currentBlock);
-        push(BinaryOperator::createAdd(val1, val2, "", currentBlock));
+        Value* res = BinaryOperator::createAdd(val1, val2, "", currentBlock);
+        if (isPointer) {
+          res = new IntToPtrInst(res, mvm::jit::ptrType, "", currentBlock);
+        }
+        push(res);
         break;
       }
       
@@ -1547,7 +1553,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         if (!(cl->super == MSCorlib::pValue || cl->super == MSCorlib::pEnum)) {
           push(new LoadInst(pop(), "", isVolatile, currentBlock));
           isVolatile = false;
-        }
+        } 
         break;
       }
 
@@ -1816,7 +1822,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case 0xFE : {
-        PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %x] %-5d ", i,
+        PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5x] %-5d ", i,
                     bytecodes[i + 1]);
         PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "compiling %s::", compilingMethod->printString());
         PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNamesFE[bytecodes[i + 1]]);
@@ -1940,7 +1946,24 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           }
       
           case INITOBJ : {
-            VMThread::get()->vm->error("implement me");
+            uint32 token = readU4(bytecodes, i);
+            Assembly* assembly = compilingClass->assembly;
+            N3* vm = (N3*)(VMThread::get()->vm);
+            VMCommonClass* type = assembly->loadType(vm, token, true, false, false,
+                                                     true);
+            if (type->super == MSCorlib::pValue) {
+              uint64 size = mvm::jit::getTypeSize(type->naturalType);
+        
+              std::vector<Value*> params;
+              params.push_back(new BitCastInst(pop(), mvm::jit::ptrType, "",
+                                               currentBlock));
+              params.push_back(mvm::jit::constantInt8Zero);
+              params.push_back(ConstantInt::get(Type::Int32Ty, size));
+              params.push_back(mvm::jit::constantZero);
+              CallInst::Create(mvm::jit::llvm_memset_i32, params.begin(),
+                               params.end(), "", currentBlock);
+            }
+
             break;  
           }
           
@@ -1995,7 +2018,7 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
   for(uint32 i = 0; i < codeLength; ++i) {
     
     if (bytecodes[i] != 0xFE) {
-      PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
+      PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5x] %-5d ", i,
                   bytecodes[i]);
       PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "exploring %s::", compilingMethod->printString());
       PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]]);
@@ -2439,7 +2462,7 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case 0xFE : {
       
-        PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
+        PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5x] %-5d ", i,
                     bytecodes[i + 1]);
         PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "exploring %s::", compilingMethod->printString());
         PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNamesFE[bytecodes[i + 1]]);
@@ -2504,7 +2527,7 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
           }
       
           case INITOBJ : {
-            VMThread::get()->vm->error("implement me");
+            i += 4;
             break;  
           }
           
