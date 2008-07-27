@@ -394,6 +394,22 @@ bool Assembly::isGenericMethod(uint32& offset) {
   return callingConvention & CONSTANT_Generic ? true : false;
 }
 
+void Assembly::methodSpecSignature(uint32& offset,
+                                   std::vector<VMCommonClass*>& genArgs) {
+  uncompressSignature(offset); // count
+  uint32 genericSig = uncompressSignature(offset);
+
+  if (genericSig != 0x0a) {
+    VMThread::get()->vm->error("unknown methodSpec sig %x", genericSig);
+  }
+
+  uint32 genArgCount = uncompressSignature(offset);
+  
+  for (uint32 i = 0; i < genArgCount; i++) {
+    genArgs.push_back(exploreType(offset));
+  }
+}
+
 void Assembly::localVarSignature(uint32& offset,
                                  std::vector<VMCommonClass*>& locals) {
   //uint32 count      = 

@@ -234,6 +234,8 @@ public:
   bool isGenericMethod(uint32& offset);
   void localVarSignature(uint32& offset,
                          std::vector<VMCommonClass*>& locals);
+  void methodSpecSignature(uint32& offset,
+                           std::vector<VMCommonClass*>& genArgs);
   VMCommonClass* extractFieldSignature(uint32& offset);
   VMCommonClass* extractTypeInSignature(uint32& offset);
   VMCommonClass* exploreType(uint32& offset); 

@@ -1754,6 +1754,7 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token) {
 
 VMMethod* Assembly::readMethodSpec(uint32 token) {
   uint32 index = token & 0xffff;
+  uint32 blobOffset = CLIHeader->blobStream->realOffset;
   
   Table* methodTable = CLIHeader->tables[CONSTANT_MethodSpec];
   uint32* methodArray = (uint32*) alloca(sizeof(uint32) * methodTable->rowSize);
@@ -1762,6 +1763,27 @@ VMMethod* Assembly::readMethodSpec(uint32 token) {
   
   uint32 method = methodArray[CONSTANT_METHOD_SPEC_METHOD];
   uint32 instantiation = methodArray[CONSTANT_METHOD_SPEC_INSTANTIATION];
+  
+  uint32 offset = blobOffset + instantiation;
+  
+  std::vector<VMCommonClass*> genArgs;
+  methodSpecSignature(offset, genArgs);
+  
+  uint32 table = method & 1;
+  index = method >> 1;
+  
+  uint32 methodToken;
+  
+  switch (table) {
+    case 0 : {
+      methodToken = index + (CONSTANT_MethodDef << 24);
+      break;
+    }
+    case 1 : {
+      methodToken = index + (CONSTANT_MemberRef << 24);
+      return readMemberRefAsMethod(methodToken);
+    }
+  }
   
   VMThread::get()->vm->error("MethodSpec");
 //  return NULL;
