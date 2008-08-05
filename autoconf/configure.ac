@@ -261,11 +261,7 @@ AC_ARG_WITH(jnjvm,
        [[WITH_JNJVM=yes]]
 )
 
-if test "x${classpathlibs}"  != "x/usr/lib/classpath"; then
-  classpathinclude=${classpathlibs}/../include;
-else
-  classpathinclude=/usr/include/classpath;
-fi
+classpathinclude="${classpathlibs}/../include:/usr/include/classpath";
 
 if test "x${WITH_JNJVM}" = "xyes"; then
   WITH_JNJVM=1;
