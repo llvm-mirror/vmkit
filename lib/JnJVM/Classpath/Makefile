@@ -11,4 +11,4 @@ LEVEL = ../../..
 LIBRARYNAME = Classpath
 include $(LEVEL)/Makefile.common
 
-CXX.Flags += -I../VMCore
+CXX.Flags += -I../VMCore $(CLASSPATH_FLAGS)
