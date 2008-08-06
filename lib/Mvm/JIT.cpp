@@ -241,212 +241,173 @@ void mvm::jit::initialise() {
   Intrinsic::getDeclaration(module, Intrinsic::vastart);
   Intrinsic::getDeclaration(module, Intrinsic::frameaddress);
 
-  {
-     const llvm::Type *BPTy = ptrType;
-     // Prototype malloc as "char* malloc(...)", because we don't know in
-     // doInitialization whether size_t is int or long.
-     FunctionType *FT = FunctionType::get(BPTy, std::vector<const llvm::Type*>(), true);
-     llvm::Function::Create(FT, llvm::GlobalValue::ExternalLinkage, "_ZN2gcnwEjP5gc_vt", module); 
-  }
+  std::vector<const llvm::Type*> args;
 
+  const llvm::Type *BPTy = ptrType;
+  // Prototype malloc as "char* malloc(...)", because we don't know in
+  // doInitialization whether size_t is int or long.
+  FunctionType *FT = FunctionType::get(BPTy, args, true);
+  llvm::Function::Create(FT, llvm::GlobalValue::ExternalLinkage,
+                         "_ZN2gcnwEjP5gc_vt", module); 
 
   // Create printFloatLLVM
-  {
-  std::vector<const Type*> args;
   args.push_back(Type::FloatTy);
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
   printFloatLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "printFloat",
-                     module);
-  }
+                                    "printFloat", module);
+  args.clear();
   
   // Create printDoubleLLVM
-  {
-  std::vector<const Type*> args;
   args.push_back(Type::DoubleTy);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
+  type = FunctionType::get(Type::VoidTy, args, false);
   printDoubleLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "printDouble",
-                     module);
-  }
+                                     "printDouble", module);
+  args.clear();
   
   // Create printLongLLVM
-  {
-  std::vector<const Type*> args;
   args.push_back(Type::Int64Ty);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
+  type = FunctionType::get(Type::VoidTy, args, false);
   printLongLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "printLong",
-                     module);
-  }
+                                   "printLong", module);
+  args.clear();
   
   // Create printIntLLVM
-  {
-  std::vector<const Type*> args;
   args.push_back(Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
+  type = FunctionType::get(Type::VoidTy, args, false);
   printIntLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "printInt",
-                     module);
-  }
+                                  "printInt", module);
+  args.clear();
   
   // Create printObjectLLVM
-  {
-  std::vector<const Type*> args;
   args.push_back(ptrType);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
+  type = FunctionType::get(Type::VoidTy, args, false);
   printObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "printObject",
-                     module);
-  }
+                                     "printObject", module);
+  args.clear();
 
-
-   {
-  const PointerType* PointerTy_0 = ptrType;
-
-  std::vector<const Type*>FuncTy_4_args;
-  FuncTy_4_args.push_back(IntegerType::get(32));
-
-
-  std::vector<const Type*>FuncTy_7_args;  
-  FuncTy_7_args.push_back(PointerTy_0);
-  FuncTy_7_args.push_back(PointerTy_0);
-  std::vector<const Type*>FuncTy_9_args;
-  FuncTy_9_args.push_back(PointerTy_0);
-  FunctionType* FuncTy_9 = FunctionType::get(
+  args.push_back(ptrType);
+  type = FunctionType::get(
     /*Result=*/Type::VoidTy,
-    /*Params=*/FuncTy_9_args,
+    /*Params=*/args,
     /*isVarArg=*/false);
-  PointerType* PointerTy_8 = PointerType::getUnqual(FuncTy_9);
-  
-  FuncTy_7_args.push_back(PointerTy_8);
+  unwindResume = Function::Create(
+    /*Type=*/type,
+    /*Linkage=*/GlobalValue::ExternalLinkage,
+    /*Name=*/"_Unwind_Resume_or_Rethrow", module); // (external, no body)
+  args.clear();
 
   llvmGetException = Intrinsic::getDeclaration(module, Intrinsic::eh_exception);
   exceptionSelector = sizeof(void*) == 4 ?
                 Intrinsic::getDeclaration(module, Intrinsic::eh_selector_i32) :
                 Intrinsic::getDeclaration(module, Intrinsic::eh_selector_i64);
   
-  
-  std::vector<const Type*>FuncTy_19_args;
-  FunctionType* FuncTy_19 = FunctionType::get(
+  type = FunctionType::get(
     /*Result=*/Type::VoidTy,
-    /*Params=*/FuncTy_19_args,
+    /*Params=*/args,
     /*isVarArg=*/false);
-
   personality = Function::Create(
-    /*Type=*/FuncTy_19,
+    /*Type=*/type,
     /*Linkage=*/GlobalValue::ExternalLinkage,
     /*Name=*/"__gxx_personality_v0", module); // (external, no body)
-  
-  unwindResume = Function::Create(
-    /*Type=*/FuncTy_9,
-    /*Linkage=*/GlobalValue::ExternalLinkage,
-    /*Name=*/"_Unwind_Resume_or_Rethrow", module); // (external, no body)
-  
     
-  std::vector<const Type*>FuncTy_17_args;
-  FuncTy_17_args.push_back(PointerTy_0);
-  FunctionType* FuncTy_17 = FunctionType::get(
-    /*Result=*/PointerTy_0,
-    /*Params=*/FuncTy_17_args,
+  args.push_back(ptrType);
+  type = FunctionType::get(
+    /*Result=*/ptrType,
+    /*Params=*/args,
     /*isVarArg=*/false);
-
   exceptionBeginCatch = Function::Create(
-    /*Type=*/FuncTy_17,
+    /*Type=*/type,
     /*Linkage=*/GlobalValue::ExternalLinkage,
     /*Name=*/"__cxa_begin_catch", module); // (external, no body)
-  
   exceptionEndCatch = Function::Create(
-    /*Type=*/FuncTy_19,
+    /*Type=*/type,
     /*Linkage=*/GlobalValue::ExternalLinkage,
     /*Name=*/"__cxa_end_catch", module); // (external, no body)
-  }
+  args.clear();
 
   // Math function
-  {
-    std::vector<const Type*>args1;
-    args1.push_back(Type::DoubleTy);
-    FunctionType* FuncTy = FunctionType::get(
-      /*Result=*/Type::DoubleTy,
-      /*Params=*/args1,
-      /*isVarArg=*/false);
+  args.push_back(Type::DoubleTy);
+  type = FunctionType::get(
+    /*Result=*/Type::DoubleTy,
+    /*Params=*/args,
+    /*isVarArg=*/false);
+  args.clear();
     
-    
-    func_llvm_sqrt_f64 = Intrinsic::getDeclaration(module, Intrinsic::sqrt, 
-                                                   &Type::DoubleTy, 1);
-    func_llvm_sin_f64 = Intrinsic::getDeclaration(module, Intrinsic::sin,
-                                                   &Type::DoubleTy, 1);
-    func_llvm_cos_f64 = Intrinsic::getDeclaration(module, Intrinsic::cos,
-                                                   &Type::DoubleTy, 1);
-    func_llvm_tan_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "tan", module);
-    func_llvm_asin_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "asin", module);
-    func_llvm_acos_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "acos", module);
-    func_llvm_atan_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "atan", module);
-    func_llvm_exp_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "exp", module);
-    func_llvm_log_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "log", module);
-    func_llvm_ceil_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "ceil", module);
-    func_llvm_floor_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "floor", module);
-    func_llvm_cbrt_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "cbrt", module);
-    func_llvm_cosh_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "cosh", module);
-    func_llvm_expm1_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "expm1", module);
-    func_llvm_log10_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "log10", module);
-    func_llvm_log1p_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "log1p", module);
-    func_llvm_sinh_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "sinh", module);
-    func_llvm_tanh_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "tanh", module);
-    func_llvm_fabs_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "fabs", module);
-    
-    std::vector<const Type*>args2;
-    args2.push_back(Type::DoubleTy);
-    args2.push_back(Type::DoubleTy);
-    FunctionType* FuncTy2 = FunctionType::get(
-      /*Result=*/Type::DoubleTy,
-      /*Params=*/args2,
-      /*isVarArg=*/false);
+  func_llvm_sqrt_f64 = Intrinsic::getDeclaration(module, Intrinsic::sqrt, 
+                                                 &Type::DoubleTy, 1);
+  func_llvm_sin_f64 = Intrinsic::getDeclaration(module, Intrinsic::sin,
+                                                &Type::DoubleTy, 1);
+  func_llvm_cos_f64 = Intrinsic::getDeclaration(module, Intrinsic::cos,
+                                                &Type::DoubleTy, 1);
   
-    func_llvm_hypot_f64 = Function::Create(FuncTy2, GlobalValue::ExternalLinkage, "hypot", module);
-    //func_llvm_pow_f64 = Function::Create(FuncTy2, GlobalValue::ExternalLinkage, "llvm.pow.f64", module);
-    func_llvm_pow_f64 = Function::Create(FuncTy2, GlobalValue::ExternalLinkage, "pow", module);
-    func_llvm_atan2_f64 = Function::Create(FuncTy2, GlobalValue::ExternalLinkage, "atan2", module);
+  func_llvm_tan_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                       "tan", module);
+  func_llvm_asin_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                        "asin", module);
+  func_llvm_acos_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                        "acos", module);
+  func_llvm_atan_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                        "atan", module);
+  func_llvm_exp_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                       "exp", module);
+  func_llvm_log_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                       "log", module);
+  func_llvm_ceil_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                        "ceil", module);
+  func_llvm_floor_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                         "floor", module);
+  func_llvm_cbrt_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                        "cbrt", module);
+  func_llvm_cosh_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                        "cosh", module);
+  func_llvm_expm1_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                         "expm1", module);
+  func_llvm_log10_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                         "log10", module);
+  func_llvm_log1p_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                         "log1p", module);
+  func_llvm_sinh_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                        "sinh", module);
+  func_llvm_tanh_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                        "tanh", module);
+  func_llvm_fabs_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                        "fabs", module);
+  func_llvm_rint_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                        "rint", module);
     
-    std::vector<const Type*>args3;
-    args3.push_back(Type::DoubleTy);
-    FunctionType* FuncTy3 = FunctionType::get(
-      /*Result=*/Type::DoubleTy,
-      /*Params=*/args3,
-      /*isVarArg=*/false);
+  args.push_back(Type::DoubleTy);
+  args.push_back(Type::DoubleTy);
+  type = FunctionType::get(
+    /*Result=*/Type::DoubleTy,
+    /*Params=*/args,
+    /*isVarArg=*/false);
+  args.clear();
+  
+  func_llvm_hypot_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                         "hypot", module);
+  //func_llvm_pow_f64 = Function::Create(FuncTy2, GlobalValue::ExternalLinkage, "llvm.pow.f64", module);
+  func_llvm_pow_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                       "pow", module);
+  func_llvm_atan2_f64 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                         "atan2", module);
     
-    func_llvm_rint_f64 = Function::Create(FuncTy3, GlobalValue::ExternalLinkage, "rint", module);
+  args.push_back(Type::FloatTy);
+  type = FunctionType::get(
+    /*Result=*/Type::FloatTy,
+    /*Params=*/args,
+    /*isVarArg=*/false);
+  args.clear();
     
-    std::vector<const Type*>args4;
-    args4.push_back(Type::FloatTy);
-    FunctionType* FuncTyF = FunctionType::get(
-      /*Result=*/Type::FloatTy,
-      /*Params=*/args4,
-      /*isVarArg=*/false);
-    
-    func_llvm_fabs_f32 = Function::Create(FuncTyF, GlobalValue::ExternalLinkage, "fabsf", module);
-
-  }
+  func_llvm_fabs_f32 = Function::Create(type, GlobalValue::ExternalLinkage,
+                                        "fabsf", module);
 
   // Create setjmp
-  {
-    std::vector<const Type*> args;
-    args.push_back(ptrType);
-    const FunctionType* type = FunctionType::get(Type::Int32Ty, args,
-                                               false);
-
-    setjmpLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "setjmp",
-                     module);
-    
-  }
-
-    /* Create memcpy */
+  args.push_back(ptrType);
+  type = FunctionType::get(Type::Int32Ty, args, false);
+  setjmpLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
+                                "setjmp", module);
+  
+  /* Create memcpy */
   llvm_memcpy_i32 = Intrinsic::getDeclaration(module, Intrinsic::memcpy_i32);
 
   /* Create memset */
