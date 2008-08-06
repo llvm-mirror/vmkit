@@ -8,8 +8,10 @@
 //===----------------------------------------------------------------------===//
 
 #include <llvm/Constants.h>
-#include <llvm/DerivedTypes.h>
+
+#include <llvm/Intrinsics.h>
 #include <llvm/Type.h>
+#include <llvm/DerivedTypes.h>
 #include "llvm/Support/MutexGuard.h"
 #include "llvm/Target/TargetOptions.h"
 
@@ -236,21 +238,8 @@ void mvm::jit::initialise() {
   ptr32Type = PointerType::getUnqual(Type::Int32Ty);
   ptrPtrType = PointerType::getUnqual(ptrType);
   
-  {
-    std::vector<const llvm::Type *> arg_types;
-    arg_types.insert (arg_types.begin (), llvm::PointerType::getUnqual(ptrType));
-    
-    llvm::FunctionType *mtype = llvm::FunctionType::get (llvm::Type::VoidTy, arg_types, false);
-    llvm::Function::Create(mtype,  llvm::GlobalValue::ExternalLinkage, "llvm.va_start", module);
-  }
-
-  {
-    std::vector<const llvm::Type *> arg_types;
-    arg_types.insert (arg_types.begin (), llvm::Type::Int32Ty);
-  
-    llvm::FunctionType *mtype = llvm::FunctionType::get (ptrType, arg_types, false);
-    llvm::Function::Create(mtype,  llvm::GlobalValue::ExternalLinkage, "llvm.frameaddress", module);
-  }
+  Intrinsic::getDeclaration(module, Intrinsic::vastart);
+  Intrinsic::getDeclaration(module, Intrinsic::frameaddress);
 
   {
      const llvm::Type *BPTy = ptrType;
@@ -337,36 +326,11 @@ void mvm::jit::initialise() {
   
   FuncTy_7_args.push_back(PointerTy_8);
 
-  std::vector<const Type*>FuncTy_11_args;
-  FunctionType* FuncTy_11 = FunctionType::get(
-    /*Result=*/PointerTy_0,
-    /*Params=*/FuncTy_11_args,
-    /*isVarArg=*/false);
-
-  llvmGetException = Function::Create(
-    /*Type=*/FuncTy_11,
-    /*Linkage=*/GlobalValue::ExternalLinkage,
-    /*Name=*/"llvm.eh.exception", module); // (external, no body)
+  llvmGetException = Intrinsic::getDeclaration(module, Intrinsic::eh_exception);
+  exceptionSelector = sizeof(void*) == 4 ?
+                Intrinsic::getDeclaration(module, Intrinsic::eh_selector_i32) :
+                Intrinsic::getDeclaration(module, Intrinsic::eh_selector_i64);
   
-  std::vector<const Type*>FuncTy_13_args;
-  FuncTy_13_args.push_back(PointerTy_0);
-  FuncTy_13_args.push_back(PointerTy_0);
-  FunctionType* FuncTy_13 = FunctionType::get(
-    /*Result=*/IntegerType::get(32),
-    /*Params=*/FuncTy_13_args,
-    /*isVarArg=*/true);
-
-  if (sizeof(void*) == 4) {
-    exceptionSelector = Function::Create(
-    /*Type=*/FuncTy_13,
-    /*Linkage=*/GlobalValue::ExternalLinkage,
-    /*Name=*/"llvm.eh.selector.i32", module); // (external, no body)
-  } else {
-    exceptionSelector = Function::Create(
-    /*Type=*/FuncTy_13,
-    /*Linkage=*/GlobalValue::ExternalLinkage,
-    /*Name=*/"llvm.eh.selector.i64", module); // (external, no body)
-  }
   
   std::vector<const Type*>FuncTy_19_args;
   FunctionType* FuncTy_19 = FunctionType::get(
@@ -412,9 +376,13 @@ void mvm::jit::initialise() {
       /*Params=*/args1,
       /*isVarArg=*/false);
     
-    func_llvm_sqrt_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "llvm.sqrt.f64", module);
-    func_llvm_sin_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "llvm.sin.f64", module);
-    func_llvm_cos_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "llvm.cos.f64", module);
+    
+    func_llvm_sqrt_f64 = Intrinsic::getDeclaration(module, Intrinsic::sqrt, 
+                                                   &Type::DoubleTy, 1);
+    func_llvm_sin_f64 = Intrinsic::getDeclaration(module, Intrinsic::sin,
+                                                   &Type::DoubleTy, 1);
+    func_llvm_cos_f64 = Intrinsic::getDeclaration(module, Intrinsic::cos,
+                                                   &Type::DoubleTy, 1);
     func_llvm_tan_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "tan", module);
     func_llvm_asin_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "asin", module);
     func_llvm_acos_f64 = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "acos", module);
@@ -479,58 +447,16 @@ void mvm::jit::initialise() {
   }
 
     /* Create memcpy */
-  {
-    PointerType* PointerTy_2 = PointerType::getUnqual(IntegerType::get(8));
-    std::vector<const Type*>FuncTy_4_args;
-    FuncTy_4_args.push_back(PointerTy_2);
-    FuncTy_4_args.push_back(PointerTy_2);
-    FuncTy_4_args.push_back(IntegerType::get(32));
-    FuncTy_4_args.push_back(IntegerType::get(32));
-    FunctionType* FuncTy_4 = FunctionType::get(
-      /*Result=*/Type::VoidTy,
-      /*Params=*/FuncTy_4_args,
-      /*isVarArg=*/false);
-    llvm_memcpy_i32 = Function::Create(
-      /*Type=*/FuncTy_4,
-      /*Linkage=*/GlobalValue::ExternalLinkage,
-      /*Name=*/"llvm.memcpy.i32", module); // (external, no body)
-  }
-  
+  llvm_memcpy_i32 = Intrinsic::getDeclaration(module, Intrinsic::memcpy_i32);
+
   /* Create memset */
-  {
-    PointerType* PointerTy_2 = PointerType::getUnqual(IntegerType::get(8));
-    std::vector<const Type*>FuncTy_4_args;
-    FuncTy_4_args.push_back(PointerTy_2);
-    FuncTy_4_args.push_back(IntegerType::get(8));
-    FuncTy_4_args.push_back(IntegerType::get(32));
-    FuncTy_4_args.push_back(IntegerType::get(32));
-    FunctionType* FuncTy_4 = FunctionType::get(
-      /*Result=*/Type::VoidTy,
-      /*Params=*/FuncTy_4_args,
-      /*isVarArg=*/false);
-    llvm_memset_i32 = Function::Create(
-      /*Type=*/FuncTy_4,
-      /*Linkage=*/GlobalValue::ExternalLinkage,
-      /*Name=*/"llvm.memset.i32", module); // (external, no body)
-  }
+  llvm_memset_i32 = Intrinsic::getDeclaration(module, Intrinsic::memset_i32);
     
   /* Create atomic cas i32 */
-  {
-    std::vector<const Type*>FuncTy_4_args;
-    FuncTy_4_args.push_back(ptr32Type);
-    FuncTy_4_args.push_back(IntegerType::get(32));
-    FuncTy_4_args.push_back(IntegerType::get(32));
-    FunctionType* FuncTy_4 = FunctionType::get(
-      /*Result=*/Type::Int32Ty,
-      /*Params=*/FuncTy_4_args,
-      /*isVarArg=*/false);
-    llvm_atomic_lcs_i32 = Function::Create(
-      /*Type=*/FuncTy_4,
-      /*Linkage=*/GlobalValue::ExternalLinkage,
-      /*Name=*/"llvm.atomic.cmp.swap.i32", module); // (external, no body)
-  }
-  
-
+  const Type* i32 = Type::Int32Ty;
+  llvm_atomic_lcs_i32 = Intrinsic::getDeclaration(module, 
+                                                  Intrinsic::atomic_cmp_swap,
+                                                  &i32, 1);
   
     // Constant declaration
   constantLongMinusOne = ConstantInt::get(Type::Int64Ty, (uint64_t)-1);
