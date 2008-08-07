@@ -309,6 +309,10 @@ void mvm::jit::initialise() {
     /*Type=*/type,
     /*Linkage=*/GlobalValue::ExternalLinkage,
     /*Name=*/"__gxx_personality_v0", module); // (external, no body)
+  exceptionEndCatch = Function::Create(
+    /*Type=*/type,
+    /*Linkage=*/GlobalValue::ExternalLinkage,
+    /*Name=*/"__cxa_end_catch", module); // (external, no body)
     
   args.push_back(ptrType);
   type = FunctionType::get(
@@ -319,10 +323,6 @@ void mvm::jit::initialise() {
     /*Type=*/type,
     /*Linkage=*/GlobalValue::ExternalLinkage,
     /*Name=*/"__cxa_begin_catch", module); // (external, no body)
-  exceptionEndCatch = Function::Create(
-    /*Type=*/type,
-    /*Linkage=*/GlobalValue::ExternalLinkage,
-    /*Name=*/"__cxa_end_catch", module); // (external, no body)
   args.clear();
 
   // Math function
