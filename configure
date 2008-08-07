@@ -3885,7 +3885,7 @@ fi
 
 
 if test "x$gc" = "xboehm";  then
-  GC_FLAGS ="-I$PWD/lib/Mvm/BoehmGC -DGC_THREADS"
+  GC_FLAGS="-I$PWD/lib/Mvm/BoehmGC -DGC_THREADS"
 
 cat >>confdefs.h <<\_ACEOF
 #define USE_GC_BOEHM 1
@@ -3952,9 +3952,7 @@ else
   fi
 fi
 
-
-
-if test "x$vmtype" = "xservice"; then
+ if test "x$vmtype" = "xservice"; then
   SERVICE_BUILD_TRUE=
   SERVICE_BUILD_FALSE='#'
 else
@@ -3962,9 +3960,7 @@ else
   SERVICE_BUILD_FALSE=
 fi
 
-
-
-if test "x$vmtype" = "xmulti"; then
+ if test "x$vmtype" = "xmulti"; then
   ISOLATE_BUILD_TRUE=
   ISOLATE_BUILD_FALSE='#'
 else

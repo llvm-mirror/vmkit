@@ -180,7 +180,7 @@ AC_ARG_WITH(gc,
 )
 
 if test "x$gc" = "xboehm";  then
-  GC_FLAGS ="-I$PWD/lib/Mvm/BoehmGC -DGC_THREADS"
+  GC_FLAGS="-I$PWD/lib/Mvm/BoehmGC -DGC_THREADS"
   AC_DEFINE([USE_GC_BOEHM], [1], [Using the boehm gc])
   AC_SUBST(GC_MMAP2, [0])
   AC_SUBST(GC_BOEHM, [1])
