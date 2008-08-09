@@ -259,6 +259,8 @@ public:
 
   void readCustomAttributes(uint32 offset, std::vector<llvm::GenericValue>& args, VMMethod* meth);
   ArrayObject* getCustomAttributes(uint32 token, VMCommonClass* cl);
+private:
+    VMMethod *instantiateGenericMethod(std::vector<VMCommonClass*> *genArgs, VMCommonClass *type, const UTF8 *& name, std::vector<VMCommonClass*> & args, uint32 token, bool virt);
 
 
 };

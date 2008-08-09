@@ -1701,6 +1701,42 @@ uint32 Assembly::getTypedefTokenFromMethod(uint32 token) {
   return i + 1 + (CONSTANT_TypeDef << 24);
 }
 
+VMMethod *Assembly::instantiateGenericMethod(
+    std::vector<VMCommonClass*> *genArgs, VMCommonClass *type,
+    const UTF8 *& name, std::vector<VMCommonClass*> & args, uint32 token,
+    bool virt) {
+  VMMethod *meth;
+  
+  if (genArgs != NULL) {
+    VMClass* cl = dynamic_cast<VMClass*> (type);
+
+    if (cl == NULL) {
+      VMThread::get()->vm->error(
+          "Only instances of generic classes are allowed.");
+    }
+
+    // search for matching signature
+    for (uint i = 0; i < cl->genericMethods.size(); ++i) {
+      VMMethod* genMethod = cl->genericMethods.at(i);
+
+      if (!name->equals(genMethod->name) || !genMethod->signatureEqualsGeneric(
+          args)) {
+        continue;
+      }
+
+      // use found token to create instance of generic method
+      VMThread::get()->genMethodInstantiation = genArgs;
+      meth = readMethodDef(genMethod->token & 0xFFFFFF, type);
+      VMThread::get()->genMethodInstantiation = NULL;
+      meth->token = token;
+    }
+  } else {
+    meth = type->lookupMethod(name, args, !virt, true);
+  }
+  
+  return meth;
+}
+
 VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClass*>* genArgs) {
   uint32 index = token & 0xffff;
   Table* memberTable = CLIHeader->tables[CONSTANT_MemberRef];
@@ -1725,37 +1761,9 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClas
   switch (table) {
     case 0 : {
       uint32 typeToken = index + (CONSTANT_TypeDef << 24);
-      VMCommonClass* type = loadType(((N3*)VMThread::get()->vm), typeToken,
-                                     true, false, false, true);
+      VMCommonClass* type = loadType(((N3*)(VMThread::get()->vm)), typeToken, true, false, false, true);
       bool virt = extractMethodSignature(offset, type, args);
-      VMMethod* meth;
-      
-      if (genArgs != NULL) {
-        VMClass* cl = dynamic_cast<VMClass*>(type);
-        
-        if (cl == NULL) {
-          VMThread::get()->vm->error("Only instances of generic classes are allowed.");
-        }
-        
-        // search for matching signature
-        for (uint i = 0; i < cl->genericMethods.size(); ++i) {
-          VMMethod* genMethod = cl->genericMethods.at(i);
-          
-          if (!name->equals(genMethod->name) || !genMethod->signatureEqualsGeneric(args)) {
-            continue;
-          }
-        
-          // use found token to create instance of generic method
-          VMThread::get()->genMethodInstantiation = genArgs;
-          meth = readMethodDef(genMethod->token & 0xFFFFFF, type);
-          VMThread::get()->genMethodInstantiation = NULL;
-          meth->token = token;
-          // insert in global hashmap
-        }
-      } else {
-        meth = type->lookupMethod(name, args, !virt, true);
-      }
-
+      VMMethod *meth = instantiateGenericMethod(genArgs, type, name, args, token, virt);
       return meth;
     }
 
@@ -1764,7 +1772,7 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClas
       VMCommonClass* type = loadType(((N3*)VMThread::get()->vm), typeToken,
                                      true, false, false, true);
       bool virt = extractMethodSignature(offset, type, args);
-      VMMethod* meth = type->lookupMethod(name, args, !virt, true);
+      VMMethod *meth = instantiateGenericMethod(genArgs, type, name, args, token, virt);
       return meth;
     }
 
@@ -1772,25 +1780,28 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClas
     case 3: VMThread::get()->vm->error("implement me %d", table); break;
     case 4: {
       VMClass* type = (VMClass*) readTypeSpec(vm, index);
-      
-      VMGenericClass* genClass = dynamic_cast<VMGenericClass*>(type);
-
+      type->resolveType(false, false);
+  
+      VMGenericClass* genClass = dynamic_cast<VMGenericClass*> (type);
+  
       if (genClass) {
         bool virt = extractMethodSignature(offset, type, args);
-        VMMethod* meth = type->lookupMethod(name, args, !virt, true);
+        VMMethod* meth = instantiateGenericMethod(genArgs, type, name, args,
+            token, virt);
         return meth;
       } else {
-	    VMMethod* meth = gc_new(VMMethod)();
-	    bool virt = extractMethodSignature(offset, type, args);
-	    bool structReturn = false;
-	    const llvm::FunctionType* signature = VMMethod::resolveSignature(args, virt, structReturn);
-	    meth->_signature = signature;
-	    meth->classDef = type;
-	    meth->name = name;
-	    meth->virt = virt;
-	    meth->structReturn = structReturn;
-	    meth->parameters = args; // TODO check whether this fix is correct
-	    return meth;
+        VMMethod* meth = gc_new(VMMethod)() ;
+        bool virt = extractMethodSignature(offset, type, args);
+        bool structReturn = false;
+        const llvm::FunctionType* signature = VMMethod::resolveSignature(args,
+            virt, structReturn);
+        meth->_signature = signature;
+        meth->classDef = type;
+        meth->name = name;
+        meth->virt = virt;
+        meth->structReturn = structReturn;
+        meth->parameters = args; // TODO check whether this fix is correct
+        return meth;
       }
     }
     default:
@@ -1826,17 +1837,18 @@ VMMethod* Assembly::readMethodSpec(uint32 token) {
   switch (table) {
     case 0 : {
       methodToken = index + (CONSTANT_MethodDef << 24);
+      VMThread::get()->vm->error("implement me");
       break;
     }
     case 1 : {
       methodToken = index + (CONSTANT_MemberRef << 24);
       return readMemberRefAsMethod(methodToken, &genArgs);
     }
+    default:
+      VMThread::get()->vm->error("Invalid MethodSpec!");
   }
   
-  VMThread::get()->vm->error("MethodSpec");
-//  return NULL;
-  return (VMMethod*) (method ^ instantiation);
+  return NULL;
 }
 
 const UTF8* Assembly::readUserString(uint32 token) {
