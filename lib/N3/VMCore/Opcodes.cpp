@@ -1280,6 +1280,11 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         VMCommonClass* type = assembly->loadType(vm, token, true, false, false,
                                                  true);
         assert(type);
+        
+        if (!type->isPrimitive) {
+          // the box instruction has no effect on non-primitive types
+          break;
+        }
 
         Value* var = new LoadInst(type->llvmVar(), "", currentBlock);
         Value* obj = CallInst::Create(objConsLLVM, var, "", currentBlock);

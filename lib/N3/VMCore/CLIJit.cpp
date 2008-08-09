@@ -1462,12 +1462,15 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   jit->compilingClass = cl; 
   jit->compilingMethod = meth;
 
-  // save previous generic class
+  // save previous generic and method class
   VMGenericClass* old = VMThread::get()->currGenericClass;
+  VMGenericMethod* oldMethod = VMThread::get()->currGenericMethod;
   
   // temporarily store the class of the method to be compiled
-  // in case it is a generic class
+  // in case it is a generic class 
   VMThread::get()->currGenericClass = dynamic_cast<VMGenericClass*>(cl);
+  
+  VMThread::get()->currGenericMethod = dynamic_cast<VMGenericMethod*>(meth);
   
   Function* func;
   meth->getSignature();
@@ -1482,6 +1485,8 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   
   // restore saved class
   VMThread::get()->currGenericClass = old;
+  
+  VMThread::get()->currGenericMethod = oldMethod;
   
   return func;
 }

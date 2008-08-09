@@ -110,6 +110,32 @@ void VMMethod::print(mvm::PrintBuffer* buf) const {
   buf->write(">");
 }
 
+void VMGenericMethod::print(mvm::PrintBuffer* buf) const {
+  buf->write("CLIGenericMethod<");
+  classDef->nameSpace->print(buf);
+  buf->write(".");
+  classDef->name->print(buf);
+  buf->write("::");
+  name->print(buf);
+  buf->write("(");
+  std::vector<VMCommonClass*>::iterator i = ((VMMethod*)this)->parameters.begin();
+  std::vector<VMCommonClass*>::iterator e = ((VMMethod*)this)->parameters.end();
+
+  ++i;
+  if (i != e) {
+    while (true) {
+      (*i)->nameSpace->print(buf);
+      buf->write(".");
+      (*i)->name->print(buf);
+      ++i;
+      if (i == e) break;
+      else buf->write(" ,");
+    }
+  }
+  buf->write(")");
+  buf->write(">");
+}
+
 void VMField::print(mvm::PrintBuffer* buf) const {
   buf->write("CLIField<");
   classDef->nameSpace->print(buf);
@@ -796,9 +822,59 @@ bool VMMethod::signatureEquals(std::vector<VMCommonClass*>& args) {
   return true;
 }
 
+bool VMMethod::signatureEqualsGeneric(std::vector<VMCommonClass*> & args) {
+	bool stat = isStatic(flags);
+
+	if (args.size() != parameters.size())
+		return false;
+	else {
+		std::vector<VMCommonClass*>::iterator i = parameters.begin(), a =
+				args.begin(), e = args.end();
+
+		if (((*i)->assembly == NULL && (*a)->assembly != NULL) ||
+		    ((*i)->assembly != NULL && (*a)->assembly == NULL))
+		  return false;
+		
+		if ((*i)->assembly == NULL && (*a)->assembly == NULL) {
+		  if ((*i)->token != (*a)->token) {
+		    return false;
+		  }
+		}
+		
+		if ((*i) != (*a))
+			return false;
+		++i;
+		++a;
+
+		if (!stat) {
+			++i;
+			++a;
+		}
+
+		for (; a != e; ++i, ++a) {
+	    if (((*i)->assembly == NULL && (*a)->assembly != NULL) ||
+	        ((*i)->assembly != NULL && (*a)->assembly == NULL))
+	      return false;
+	    
+	    if ((*i)->assembly == NULL && (*a)->assembly == NULL) {
+	      if ((*i)->token != (*a)->token) {
+	        return false;
+	      } else {
+	        continue;
+	      }
+	    }
+	    
+			if ((*i) != (*a))
+				return false;
+		}
+	}
+	return true;
+}
+
 void VMGenericClass::print(mvm::PrintBuffer* buf) const {
   buf->write("GenCLIType<");
   nameSpace->print(buf);
   buf->write("::");
   name->print(buf);
-  buf->write(">");}
+  buf->write(">");
+}

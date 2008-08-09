@@ -26,6 +26,7 @@ class VirtualMachine;
 class VMClass;
 class VMGenericClass;
 class VMObject;
+class VMGenericMethod;
 
 class VMThread : public mvm::Thread {
 public:
@@ -42,6 +43,11 @@ public:
   
   // helper which points to the current generic class
   VMGenericClass* currGenericClass;
+  // helper which contains the instantiation of the
+  // current generic method
+  std::vector<VMCommonClass*>* genMethodInstantiation;
+  // helper which points to the current generic method
+  VMGenericMethod* currGenericMethod;
 
   static const unsigned int StateRunning;
   static const unsigned int StateWaiting;

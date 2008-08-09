@@ -249,8 +249,18 @@ static VMCommonClass* METHOD_ElementTypeSzarray(uint32 op, Assembly* ass, uint32
 }
 
 static VMCommonClass* METHOD_ElementTypeMvar(uint32 op, Assembly* ass, uint32& offset) {
-  VMThread::get()->vm->error("implement me");
-  return 0;
+  uint32 number = ass->uncompressSignature(offset);
+  
+  if (VMThread::get()->currGenericMethod == NULL) {
+    // return dummy VMClass, use the token field
+    // to store the generic argument number
+    VMClass* cl = gc_new(VMClass)();
+    cl->token = number;
+    cl->assembly = NULL;
+    return cl;
+  } else {
+    return VMThread::get()->currGenericMethod->genericParams[number];
+  }
 }
 
 static VMCommonClass* METHOD_ElementTypeCmodReqd(uint32 op, Assembly* ass, uint32& offset) {
@@ -365,11 +375,16 @@ bool Assembly::extractMethodSignature(uint32& offset, VMCommonClass* cl,
   //uint32 count      = 
   uncompressSignature(offset);
   uint32 call       = uncompressSignature(offset);
+  
+  if (call & CONSTANT_Generic) {
+    //uint32 genArgCount =
+    uncompressSignature(offset);
+  }
+  
   uint32 paramCount = uncompressSignature(offset);
 
   uint32 hasThis = call & CONSTANT_HasThis ? 1 : 0;
   uint32 realCount = paramCount + hasThis;
-  //uint32 generic = call & CONSTANT_Generic ? 1 : 0;
 
   VMCommonClass* ret = exploreType(offset);
   types.push_back(ret);
@@ -377,6 +392,7 @@ bool Assembly::extractMethodSignature(uint32& offset, VMCommonClass* cl,
   if (hasThis) {
     types.push_back(cl);
   }
+  
   for (uint32 i = hasThis; i < realCount; ++i) {
     VMCommonClass* cur = exploreType(offset);
     types.push_back(cur);

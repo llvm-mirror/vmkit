@@ -44,6 +44,7 @@ using namespace n3;
   INIT(VMClassArray);
   INIT(VMClassPointer);
   INIT(VMMethod);
+  INIT(VMGenericMethod);
   INIT(VMField);
   INIT(VMCond);
   INIT(LockObj);
@@ -168,6 +169,7 @@ void VMClass::TRACER {
   virtualInstance->MARK_AND_TRACE;
   TRACE_VECTOR(VMClass*, innerClasses, std::allocator);
   outerClass->MARK_AND_TRACE;
+  TRACE_VECTOR(VMMethod*, genericMethods, std::allocator);
 }
 
 void VMGenericClass::TRACER {
@@ -193,6 +195,11 @@ void VMMethod::TRACER {
   TRACE_VECTOR(Param*, params, gc_allocator);
   TRACE_VECTOR(Enveloppe*, caches, gc_allocator);
   name->MARK_AND_TRACE;
+}
+
+void VMGenericMethod::TRACER {
+  VMMethod::PARENT_TRACER;
+  TRACE_VECTOR(VMCommonClass*, genericParams, std::allocator);
 }
 
 void VMField::TRACER {

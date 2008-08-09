@@ -218,3 +218,20 @@ char* UTF8::UTF8ToAsciiz() const {
   return buf->cString();
 }
 
+bool UTF8::equals(const UTF8 *string) const
+{
+  if (size != string->size) {
+    return false;
+  }
+  
+  for (sint32 i = 0; i < size; ++i) {
+    if (at(i) != string->at(i)) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+
+

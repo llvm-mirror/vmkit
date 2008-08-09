@@ -187,8 +187,10 @@ static void initialiseVT() {
   INIT(UTF8);
   INIT(VMCommonClass);
   INIT(VMClass);
+  INIT(VMGenericClass);
   INIT(VMClassArray);
   INIT(VMMethod);
+  INIT(VMGenericMethod);
   INIT(VMField);
   INIT(VMCond);
   INIT(LockObj);

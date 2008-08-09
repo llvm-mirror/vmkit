@@ -150,7 +150,7 @@ public:
   VMField*      constructField(VMClass* cl, const UTF8* name,
                                VMCommonClass* signature, uint32 token);
   VMMethod*     constructMethod(VMClass* cl, const UTF8* name,
-                                uint32 token);
+                                uint32 token, bool generic);
   VMCommonClass* lookupClassFromName(const UTF8* name, const UTF8* nameSpace);
   VMCommonClass* lookupClassFromToken(uint32 token);
   VMMethod* lookupMethodFromToken(uint32 token);
@@ -248,7 +248,7 @@ public:
   
   VMMethod* getMethodFromToken(uint32 token); 
   uint32 getTypedefTokenFromMethod(uint32 token);
-  VMMethod* readMemberRefAsMethod(uint32 token);
+  VMMethod* readMemberRefAsMethod(uint32 token, std::vector<VMCommonClass*>* genArgs);
 
   const UTF8* readUserString(uint32 token); 
   uint32 getExplicitLayout(uint32 token);

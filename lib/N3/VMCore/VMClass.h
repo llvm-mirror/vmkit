@@ -141,6 +141,7 @@ public:
   VMObject* virtualInstance;
   std::vector<VMClass*> innerClasses;
   VMClass* outerClass;
+  std::vector<VMMethod*> genericMethods;
   
   VMObject* operator()();
   VMObject* doNew();
@@ -229,8 +230,18 @@ public:
   static const llvm::FunctionType* resolveSignature(
       std::vector<VMCommonClass*>& params, bool isVirt, bool &structRet);
   bool signatureEquals(std::vector<VMCommonClass*>& args);
+  bool signatureEqualsGeneric(std::vector<VMCommonClass*>& args);
   llvm::GlobalVariable* llvmVar();
   llvm::GlobalVariable* _llvmVar;
+};
+
+class VMGenericMethod : public VMMethod {
+public:
+  static VirtualTable* VT;
+  virtual void print(mvm::PrintBuffer* buf) const;
+  virtual void TRACER;
+
+  std::vector<VMCommonClass*> genericParams;
 };
 
 class VMField : public mvm::Object {
