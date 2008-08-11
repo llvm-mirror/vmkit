@@ -83,9 +83,9 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
 
 void AssessorDesc::initialise(Jnjvm* vm) {
 
-  dParg = new AssessorDesc(false, I_PARG, 0, 0, "(", vm, -1, 0, 0,
+  dParg = new AssessorDesc(false, I_PARG, 0, 0, "(", vm, 0, 0, 0,
                                  0);
-  dPard = new AssessorDesc(false, I_PARD, 0, 0, ")", vm, -1, 0, 0,
+  dPard = new AssessorDesc(false, I_PARD, 0, 0, ")", vm, 0, 0, 0,
                                  0);
   dVoid = new AssessorDesc(false, I_VOID, 0, 0, "void",
                                  vm, VOID_ID, "java/lang/Void", 0, 0);
