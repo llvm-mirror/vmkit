@@ -93,7 +93,10 @@ extern llvm::Function* func_llvm_tanh_f64;
 
 extern llvm::Function* llvm_memcpy_i32;
 extern llvm::Function* llvm_memset_i32;
+extern llvm::Function* llvm_atomic_lcs_i8;
+extern llvm::Function* llvm_atomic_lcs_i16;
 extern llvm::Function* llvm_atomic_lcs_i32;
+extern llvm::Function* llvm_atomic_lcs_i64;
 
 extern llvm::ExecutionEngine* executionEngine;
 
@@ -159,6 +162,18 @@ extern int getBacktrace(void** stack, int size);
 extern Code* getCodeFromPointer(void* addr);
 extern void addMethodInfo(void* end, Code* c);
 
+extern uint8  (*llvm_atomic_cmp_swap_i8)  ( uint8* ptr,  uint8 cmp,  uint8 val );
+extern uint16 (*llvm_atomic_cmp_swap_i16) ( uint16* ptr, uint16 cmp, uint16 val );
+extern uint32 (*llvm_atomic_cmp_swap_i32) ( uint32* ptr, uint32 cmp, uint32 val );
+extern uint64 (*llvm_atomic_cmp_swap_i64) ( uint64* ptr, uint64 cmp, uint64 val );
+
+// TODO: find what macro for gcc < 4.2
+#if 1
+#define __sync_bool_compare_and_swap(ptr, cmp, val) \
+  (mvm::jit::llvm_atomic_cmp_swap_i32((uint32*)(ptr), (uint32)(cmp), (uint32)(val)) == (uint32)(cmp))
+#define __sync_val_compare_and_swap(ptr, cmp,val) \
+  mvm::jit::llvm_atomic_cmp_swap_i32((uint32*)(ptr), (uint32)(cmp), (uint32)(val))
+#endif
 } // end namespace jit
 
 } // end namespace mvm
