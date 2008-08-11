@@ -965,7 +965,7 @@ Value* LLVMServiceInfo::getDelegatee(JavaJIT* jit) {
 
 #endif
 
-
+static
 #include "LLVMRuntime.cpp"
 
 void JnjvmModule::initialise() {

@@ -50,6 +50,7 @@ extern "C" void printObject(mvm::Object* obj) {
 
 extern "C" void __register_frame(void*);
 
+static
 #include "LLVMRuntime.cpp"
 
 void mvm::jit::initialise() {
