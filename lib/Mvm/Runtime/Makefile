@@ -1,4 +1,4 @@
-##===- lib/Mvm/Makefile ------------------------------------*- Makefile -*-===##
+##===- lib/Mvm/Runtime/Makefile ----------------------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #
@@ -6,10 +6,11 @@
 # License. See LICENSE.TXT for details.
 # 
 ##===----------------------------------------------------------------------===##
-LEVEL = ../..
+LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-DIRS = Allocator CommonThread $(GCLIB) LLVMRuntime Runtime
-
+LIBRARYNAME = Mvm
 include $(LEVEL)/Makefile.common
+
+CXX.Flags += -I../LLVMRuntime
