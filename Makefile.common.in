@@ -23,7 +23,7 @@ REQUIRES_EH := 1
 # Include LLVM's Master Makefile.
 include $(LLVM_OBJ_ROOT)/Makefile.common
 
-CXX.Flags += @GC_FLAGS@ -Wno-variadic-macros -fno-omit-frame-pointer -ansi -Werror
+CXX.Flags += @GC_FLAGS@ -Wno-variadic-macros -fno-omit-frame-pointer -ansi
 
 # GNU Classpath flags
 CLASSPATH_FLAGS = @classpathinclude@
