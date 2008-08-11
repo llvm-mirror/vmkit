@@ -9,6 +9,7 @@
 
 #include <vector>
 
+#include "mvm/JIT.h"
 #include "mvm/Threads/Locks.h"
 
 #include "JavaClass.h"
