@@ -318,6 +318,8 @@ void JavaIsolate::mapInitialThread() {
 }
 
 void JavaIsolate::loadBootstrap() {
+  loadName(Classpath::newVMThrowable->name,
+           CommonClass::jnjvmClassLoader, true, true, true);
   loadName(Classpath::newClass->name,
            CommonClass::jnjvmClassLoader, true, true, true);
   loadName(Classpath::newConstructor->name,

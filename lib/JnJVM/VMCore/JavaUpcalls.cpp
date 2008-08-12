@@ -389,12 +389,12 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
     
   vm->loadName(vm->asciizConstructUTF8("java/lang/String"), 
                                        CommonClass::jnjvmClassLoader, true,
-                                       true, false);
+                                       false, false);
 
   CommonClass* object = 
     vm->loadName(vm->asciizConstructUTF8("java/lang/Object"), 
                                          CommonClass::jnjvmClassLoader, true,
-                                         true, false);
+                                         false, false);
   COMPILE_METHODS(object)
   
   JavaMethod* getCallingClass =
