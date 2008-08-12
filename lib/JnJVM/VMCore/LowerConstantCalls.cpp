@@ -32,8 +32,8 @@ namespace mvm {
   private:
   };
   char LowerConstantCalls::ID = 0;
-  RegisterPass<LowerConstantCalls> X("LowerConstantCalls",
-                                     "Lower Constant calls");
+  static RegisterPass<LowerConstantCalls> X("LowerConstantCalls",
+                                            "Lower Constant calls");
 
 bool LowerConstantCalls::runOnFunction(Function& F) {
   bool Changed = false;

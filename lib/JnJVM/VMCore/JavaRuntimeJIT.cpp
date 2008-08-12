@@ -36,7 +36,7 @@ extern "C" JavaString* runtimeUTF8ToStr(const UTF8* val) {
   return vm->UTF8ToStr(val);
 }
 
-extern "C" void* virtualLookup(CacheNode* cache, JavaObject *obj) {
+extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   Enveloppe* enveloppe = cache->enveloppe;
   JavaCtpInfo* ctpInfo = enveloppe->ctpInfo;
   CommonClass* ocl = obj->classOf;
@@ -156,7 +156,7 @@ extern "C" void* getSJLJBuffer() {
   return (void*)buf;
 }
 
-extern "C" void nullPointerException() {
+extern "C" void jnjvmNullPointerException() {
   JavaThread::get()->isolate->nullPointerException("null");
 }
 
@@ -168,7 +168,7 @@ extern "C" void outOfMemoryError(sint32 val) {
   JavaThread::get()->isolate->outOfMemoryError(val);
 }
 
-extern "C" void classCastException(JavaObject* obj, CommonClass* cl) {
+extern "C" void jnjvmClassCastException(JavaObject* obj, CommonClass* cl) {
   JavaThread::get()->isolate->classCastException("");
 }
 

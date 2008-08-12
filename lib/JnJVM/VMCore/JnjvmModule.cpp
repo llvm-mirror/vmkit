@@ -1010,7 +1010,7 @@ void JnjvmModule::initialise() {
   EnveloppeType =
     PointerType::getUnqual(module->getTypeByName("Enveloppe"));
 
-  InterfaceLookupFunction = module->getFunction("virtualLookup");
+  InterfaceLookupFunction = module->getFunction("jnjvmVirtualLookup");
   MultiCallNewFunction = module->getFunction("multiCallNew");
   InitialisationCheckFunction = module->getFunction("initialisationCheck");
   ForceInitialisationCheckFunction = 
@@ -1044,8 +1044,8 @@ void JnjvmModule::initialise() {
     module->getFunction("jniProceedPendingException");
   GetSJLJBufferFunction = module->getFunction("getSJLJBuffer");
   
-  NullPointerExceptionFunction = module->getFunction("nullPointerException");
-  ClassCastExceptionFunction = module->getFunction("classCastException");
+  NullPointerExceptionFunction = module->getFunction("jnjvmNullPointerException");
+  ClassCastExceptionFunction = module->getFunction("jnjvmClassCastException");
   IndexOutOfBoundsExceptionFunction = 
     module->getFunction("indexOutOfBoundsException");
   NegativeArraySizeExceptionFunction = 

@@ -45,6 +45,7 @@ using namespace jnjvm;
 extern "C" struct JNINativeInterface JNI_JNIEnvTable;
 extern "C" const struct JNIInvokeInterface JNI_JavaVMTable;
 
+namespace jnjvm {
 
 class ClArgumentsInfo {
 public:
@@ -60,6 +61,8 @@ public:
   void nyi();
   void printVersion();
 };
+
+}
 
 void ClArgumentsInfo::javaAgent(char* cur) {
   assert(0 && "implement me");
