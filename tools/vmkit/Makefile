@@ -11,10 +11,21 @@ LEVEL = ../..
 include $(LEVEL)/Makefile.config
 
 TOOLNAME = vmkit
-USEDLIBS = Allocator CommonThread Mvm $(GCLIB) JnJVM Classpath PNetLib N3
+USEDLIBS = Allocator CommonThread Mvm $(GCLIB) 
+
+ifeq ($(WITH_JNJVM), 1)
+USEDLIBS += JnJVM Classpath
+endif
+
+ifeq ($(WITH_N3_PNETLIB), 1)
+  USEDLIBS += N3 PNetLib
+endif
+
 LINK_COMPONENTS = engine scalaropts instrumentation ipa ipo
 
 include $(LEVEL)/Makefile.common
 
+ifeq ($(WITH_N3_PNETLIB), 1)
 LIBS += $(PNETLIB)/engine/libILEngine.a $(PNETLIB)/image/libILImage.a $(PNETLIB)/support/libILSupport.a \
         $(PNETLIB)/libffi/.libs/libffi.a $(PNETLIB)//dumpasm/libILDumpAsm.a
+endif
