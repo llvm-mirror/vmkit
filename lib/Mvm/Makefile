@@ -10,6 +10,6 @@ LEVEL = ../..
 
 include $(LEVEL)/Makefile.config
 
-DIRS = Allocator CommonThread $(GCLIB) LLVMRuntime Runtime
+DIRS = Allocator CommonThread $(GCLIB) Runtime
 
 include $(LEVEL)/Makefile.common
