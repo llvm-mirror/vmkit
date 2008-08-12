@@ -81,7 +81,7 @@ declare i32 @getDepth(%JavaClass*) readnone
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; virtualLookup - Used for interface calls.
-declare i8* @virtualLookup(%CacheNode*, %JavaObject*)
+declare i8* @jnjvmVirtualLookup(%CacheNode*, %JavaObject*)
 
 ;;; multiCallNew - Allocate multi-dimensional arrays. This will go to allocation
 ;;; specific methods.
@@ -143,8 +143,8 @@ declare i32 @getThreadID() readnone
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Exception methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-declare void @nullPointerException()
-declare void @classCastException(%JavaObject*, %JavaClass*)
+declare void @jnjvmNullPointerException()
+declare void @jnjvmClassCastException(%JavaObject*, %JavaClass*)
 declare void @indexOutOfBoundsException(%JavaObject*, i32)
 declare void @negativeArraySizeException(i32)
 declare void @outOfMemoryError(i32)

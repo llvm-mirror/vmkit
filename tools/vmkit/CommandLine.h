@@ -14,9 +14,25 @@
 
 #include <string.h>
 
+#include "mvm/VirtualMachine.h"
+
+#if defined(__APPLE__)
+#define JNJVM_LIB "Jnjvm.dylib"
+#define CLASSPATH_LIB "Classpath.dylib"
+#define N3_LIB "N3.dylib"
+#define PNET_LIB "Pnetlib.dylib"
+#else
+#define JNJVM_LIB "Jnjvm.so"
+#define CLASSPATH_LIB "Classpath.so"
+#define N3_LIB "N3.so"
+#define PNET_LIB "Pnetlib.so"
+#endif
+
+typedef int (*boot_t)();
+typedef mvm::VirtualMachine* (*create_vm_t)();
+
 namespace mvm {
 
-typedef int (*vmlet_main_t)(int argc, char** argv);
 
 struct ltstr
 {
@@ -37,7 +53,7 @@ public:
   unsigned _yylenMax;
   char _yyChar;
   
-  std::map<const char*, vmlet_main_t, ltstr> vmlets;
+  std::map<const char*, create_vm_t, ltstr> vmlets;
 
   CommandLine();
   

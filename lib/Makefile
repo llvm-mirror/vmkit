@@ -18,7 +18,5 @@ endif
 
 PARALLEL_DIRS += N3
 
-LIBRARYNAME = Main
-
 include $(LEVEL)/Makefile.common
 

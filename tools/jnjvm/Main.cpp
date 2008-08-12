@@ -10,14 +10,12 @@
 #include "MvmGC.h"
 #include "mvm/JIT.h"
 #include "mvm/Object.h"
+#include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Thread.h"
 
 #include "llvm/Support/ManagedStatic.h"
 
 using namespace mvm;
-
-extern "C" int boot();
-extern "C" int start_app(int, char**);
 
 int main(int argc, char **argv, char **envp) {
   llvm::llvm_shutdown_obj X;  
@@ -27,8 +25,10 @@ int main(int argc, char **argv, char **envp) {
   Object::initialise();
   Thread::initialise();
   Collector::initialise(0, &base);
-  boot();
-  start_app(argc, argv);
+  
+  VirtualMachine::initialiseJVM();
+  VirtualMachine* vm = VirtualMachine::createJVM();
+  vm->runApplication(argc, argv);
 
   return 0;
 }

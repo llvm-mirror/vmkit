@@ -22,10 +22,9 @@ using namespace mvm;
 typedef struct thread_arg_t {
   int argc;
   char** argv;
-  vmlet_main_t func;
+  create_vm_t func;
 } thread_arg_t;
 
-typedef int (*boot_t)();
 
 
 CommandLine::CommandLine() {
@@ -104,11 +103,12 @@ void CommandLine::start() {
 extern "C" int startApp(thread_arg_t* arg) {
   int argc = arg->argc;
   char** argv = arg->argv;
-  vmlet_main_t func = arg->func;
+  create_vm_t func = arg->func;
   free(arg);
 #ifndef MULTIPLE_GC
   Collector::inject_my_thread(&argc);
-  func(argc, argv);
+  VirtualMachine* VM = func();
+  VM->runApplication(argc, argv);
   Collector::remove_my_thread();
   Collector::collect();
 #else
@@ -123,8 +123,13 @@ extern "C" int startApp(thread_arg_t* arg) {
 
 void CommandLine::executeInstr() {
   if (!strcmp(argv[0], "load")) {
+#if defined(__APPLE__)
     char* buf = (char*)alloca(sizeof(argv[1]) + 7);
-    sprintf(buf, "lib%s.so", argv[1]);
+    sprintf(buf, "%s.dylib", argv[1]);
+#else
+    char* buf = (char*)alloca(sizeof(argv[1]) + 4);
+    sprintf(buf, "%s.so", argv[1]);
+#endif
     void* handle = dlopen(buf, RTLD_LAZY | RTLD_GLOBAL);
     if (handle == 0) {
       fprintf(stderr, "\t Unable to load %s\n", argv[1]);
@@ -132,7 +137,7 @@ void CommandLine::executeInstr() {
       return;
     }
     
-    boot_t func = (boot_t)(intptr_t)dlsym(handle, "boot");
+    boot_t func = (boot_t)(intptr_t)dlsym(handle, "initialiseVirtualMachine");
     
     if (func == 0) {
       fprintf(stderr, "\t Unable to find %s boot method\n", argv[1]);
@@ -141,14 +146,14 @@ void CommandLine::executeInstr() {
     }
     func();
     
-    vmlet_main_t vmlet = (vmlet_main_t)(intptr_t)dlsym(handle, "start_app");
+    create_vm_t vmlet = (create_vm_t)(intptr_t)dlsym(handle, "createVirtualMachine");
 
     vmlets[argv[1]] = vmlet;
 
   } else {
-    vmlet_main_t func = vmlets[argv[0]];
+    create_vm_t func = vmlets[argv[0]];
     if (!func) {
-      fprintf(stderr, "\t Unknown vmlet %s\n", argv[0]);
+      fprintf(stderr, "\t Unknown vm %s\n", argv[0]);
     } else {
 #if 0
       thread_arg_t* thread_arg = (thread_arg_t*)malloc(sizeof (thread_arg_t));
@@ -158,7 +163,12 @@ void CommandLine::executeInstr() {
       int tid = 0;
       Thread::start(&tid, (int (*)(void *))startApp, thread_arg);
 #else
-      func(argc, argv);
+      VirtualMachine* VM = func();
+      try {
+        VM->runApplication(argc, argv);
+      } catch(...) {
+        printf("Caught exception when running the VM");
+      }
 #endif
     }
   }
