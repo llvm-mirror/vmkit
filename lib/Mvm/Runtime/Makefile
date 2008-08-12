@@ -11,6 +11,8 @@ LEVEL = ../../..
 include $(LEVEL)/Makefile.config
 
 LIBRARYNAME = Mvm
-include $(LEVEL)/Makefile.common
+VMKIT_RUNTIME = Mvm
 
-CXX.Flags += -I../LLVMRuntime
+BUILT_SOURCES = LLVMRuntime.cpp
+
+include $(LEVEL)/Makefile.common
