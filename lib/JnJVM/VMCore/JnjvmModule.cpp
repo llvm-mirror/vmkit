@@ -965,13 +965,16 @@ Value* LLVMServiceInfo::getDelegatee(JavaJIT* jit) {
 
 #endif
 
-namespace llvm_runtime { 
-  #include "LLVMRuntime.inc"
+
+namespace jnjvm { 
+  namespace llvm_runtime { 
+    #include "LLVMRuntime.inc"
+  }
 }
 
 void JnjvmModule::initialise() {
   Module* module = this;
-  llvm_runtime::makeLLVMModuleContents(module);
+  jnjvm::llvm_runtime::makeLLVMModuleContents(module);
   
   VTType = module->getTypeByName("VT");
   

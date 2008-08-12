@@ -50,8 +50,10 @@ extern "C" void printObject(mvm::Object* obj) {
 
 extern "C" void __register_frame(void*);
 
-namespace llvm_runtime {
-  #include "LLVMRuntime.inc"
+namespace mvm {
+  namespace llvm_runtime {
+    #include "LLVMRuntime.inc"
+  }
 }
 
 void mvm::jit::initialise() {
@@ -67,7 +69,7 @@ void mvm::jit::initialise() {
   std::string str = executionEngine->getTargetData()->getStringRepresentation();
   module->setDataLayout(str);
   
-  llvm_runtime::makeLLVMModuleContents(module);
+  mvm::llvm_runtime::makeLLVMModuleContents(module);
   
   printFloatLLVM = module->getFunction("printFloat");
   printDoubleLLVM = module->getFunction("printDouble");
