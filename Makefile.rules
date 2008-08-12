@@ -1,24 +1,19 @@
 ifdef VMKIT_RUNTIME
 
-LLFiles := $(strip $(wildcard $(PROJ_SRC_DIR)/*.ll))
-INCFiles := $(filter %.inc,$(BUILT_SOURCES))
-.PRECIOUS: $(CPPFiles)
+.PRECIOUS: LLVMRuntime.inc
 
 # All of these files depend on tblgen and the .td files.
-$(INCFiles) : $(LLVMAS) $(LLC) $(LLFiles)
+LLVMRuntime.inc : $(LLVMAS) $(LLC) $(LLFiles)
 
-# CPPFiles rule: All of the tblgen generated files are emitted to 
-# $(ObjDir)/%.inc.tmp, instead of emitting them directly to %.inc.  This allows
-# us to only "touch" the real file if the contents of it change.  IOW, if
-# tblgen is modified, all of the .inc.tmp files are regereated, but no
-# dependencies of the .inc files are, unless the contents of the .inc file
-# changes.
-$(INCFiles) : %.inc : %.ll
-	$(Echo) "Building $(<F) LLVM runtime"
+LLVMRuntime.gen.ll : $(VMKIT_RUNTIME)
+	$(Verb) cat $(VMKIT_RUNTIME) > LLVMRuntime.gen.ll
+
+LLVMRuntime.inc : LLVMRuntime.gen.ll
+	$(Echo) "Building LLVM runtime"
 	$(Verb) $(LLVMAS) -f $(<F) -o - | $(LLC) -march=cpp -cppgen=contents -f -o $@
 
 
 clean-local::
-	$(Verb) $(RM) -f $(INCFiles)
+	$(Verb) $(RM) -f LLVMRuntime.inc LLVMRuntime.gen.ll
 
 endif
