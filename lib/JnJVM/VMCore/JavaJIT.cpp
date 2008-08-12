@@ -659,8 +659,8 @@ llvm::Function* JavaJIT::javaCompile() {
     {
     std::vector<llvm::Value*> args;
     args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
-    llvm::CallInst::Create(printMethodStartLLVM, args.begin(), args.end(), "",
-                           currentBlock);
+    llvm::CallInst::Create(JnjvmModule::PrintMethodStartFunction, args.begin(),
+                           args.end(), "", currentBlock);
     }
 #endif
 
