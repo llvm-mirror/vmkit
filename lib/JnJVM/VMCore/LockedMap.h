@@ -33,20 +33,10 @@ class Jnjvm;
 
 struct ltutf8
 {
-#ifdef MULTIPLE_VM
   bool operator()(const UTF8* s1, const UTF8* s2) const
   {
-    if (s1->size < s2->size) return true;
-    else if (s1->size > s2->size) return false;
-    else return memcmp((const char*)s1->elements, (const char*)s2->elements, 
-                       s1->size * sizeof(uint16)) < 0;
+    return s1->lessThan(s2);
   }
-#else
-  bool operator()(const UTF8* s1, const UTF8* s2) const
-  {
-    return s1 < s2;
-  }
-#endif
 };
 
 template<class Key, class Container, class Compare>

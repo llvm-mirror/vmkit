@@ -73,8 +73,11 @@ public:
   LLVMCommonClassInfo(CommonClass* cl, JnjvmModule* M) : 
     classDef(cl),
     module(M),
-    varGV(0),
-    delegateeGV(0) {}
+    varGV(0)
+#ifndef MULTIPLE_VM
+    ,delegateeGV(0)
+#endif
+    {}
 };
 
 class LLVMClassInfo : public LLVMCommonClassInfo {

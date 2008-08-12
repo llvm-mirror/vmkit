@@ -1105,9 +1105,9 @@ void JavaJIT::_ldc(uint16 index) {
 #else
           val = (void*)utf8;
           gv =
-            new GlobalVariable(JnjvmModule::ArrayUInt16Type, false, 
+            new GlobalVariable(JnjvmModule::JavaArrayUInt16Type, false, 
                                GlobalValue::ExternalLinkage,
-                               UTF8NullConstant, "",
+                               JnjvmModule::UTF8NullConstant, "",
                                module);
 #endif
         

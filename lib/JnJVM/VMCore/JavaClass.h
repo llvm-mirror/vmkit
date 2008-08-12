@@ -136,11 +136,7 @@ public:
 
   FieldCmp(const UTF8* n, const UTF8* t) : name(n), type(t) {}
   
-  inline bool operator<(const FieldCmp &cmp) const {
-    if (name < cmp.name) return true;
-    else if (name > cmp.name) return false;
-    else return type < cmp.type;
-  }
+  inline bool operator<(const FieldCmp &cmp) const;
 };
 
 public:

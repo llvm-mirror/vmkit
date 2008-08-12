@@ -24,6 +24,7 @@
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 #include "JnjvmModuleProvider.h"
+#include "LockedMap.h"
 #include "Reader.h"
 
 using namespace jnjvm;
@@ -79,6 +80,13 @@ Attribut* JavaMethod::lookupAttribut(const UTF8* key ) {
 
   return 0;
 }
+
+bool CommonClass::FieldCmp::operator<(const CommonClass::FieldCmp &cmp) const {
+  if (name->lessThan(cmp.name)) return true;
+  else if (cmp.name->lessThan(name)) return false;
+  else return type->lessThan(cmp.type);
+}
+
 
 CommonClass::~CommonClass() {
   free(display);
@@ -552,10 +560,11 @@ void Class::createStaticInstance() {
     (JavaObject*)JavaThread::get()->isolate->allocateObject(staticSize,
                                                             staticVT);
   val->initialise(this);
-  for (std::vector<JavaField*>::iterator i = this->staticFields.begin(),
+  for (field_iterator i = this->staticFields.begin(),
             e = this->staticFields.end(); i!= e; ++i) {
     
-    (*i)->initField(val);
+    JavaField* cur = i->second;
+    cur->initField(val);
   }
   
   Jnjvm* vm = JavaThread::get()->isolate;

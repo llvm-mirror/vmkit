@@ -131,11 +131,11 @@ llvm::Function* JnjvmModule::OverflowThinLockFunction = 0;
 Value* LLVMCommonClassInfo::getVar(JavaJIT* jit) {
   if (!varGV) {
 #ifdef MULTIPLE_VM
-    if (jit->compilingClass->isolate->module == Jnjvm::bootstrapVM->module &&
-        isArray && classDef->isolate != Jnjvm::bootstrapVM) {
+    if (jit->compilingClass->isolate->TheModule == Jnjvm::bootstrapVM->TheModule &&
+        classDef->isArray && classDef->isolate != Jnjvm::bootstrapVM) {
       // We know the array class can belong to bootstrap
-      CommonClass* cl = Jnjvm::bootstrapVM->constructArray(this->name, 0);
-      return getVar(cl, jit);
+      CommonClass* cl = Jnjvm::bootstrapVM->constructArray(classDef->name, 0);
+      return cl->isolate->TheModule->getClassInfo(cl)->getVar(jit);
     }
 #endif
       
@@ -166,8 +166,8 @@ Value* LLVMCommonClassInfo::getDelegatee(JavaJIT* jit) {
   }
   return new LoadInst(delegateeGV, "", jit->currentBlock);
 #else
-  Value* ld = llvmVar(jit);
-  return llvm::CallInst::Create(JnjvmModule::getClassDelegateeLLVM, ld, "",
+  Value* ld = getVar(jit);
+  return llvm::CallInst::Create(JnjvmModule::GetClassDelegateeFunction, ld, "",
                                 jit->currentBlock);
 #endif
 }
@@ -472,8 +472,7 @@ Value* LLVMClassInfo::getStaticVar(JavaJIT* jit) {
   return new LoadInst(staticVarGV, "", jit->currentBlock);
 
 #else
-  Value* var = getVar(jit->compilingClass->isolate->module);
-  Value* ld = new LoadInst(var, "", jit->currentBlock);
+  Value* ld = getVar(jit);
   ld = jit->invoke(JnjvmModule::InitialisationCheckFunction, ld, "",
                    jit->currentBlock);
   return jit->invoke(JnjvmModule::GetStaticInstanceFunction, ld,

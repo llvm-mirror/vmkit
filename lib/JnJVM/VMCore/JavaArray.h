@@ -167,10 +167,21 @@ public:
   bool equals(const UTF8* other) const {
     return this == other;
   }
+
+  bool lessThan(const UTF8* other) const {
+    return this < other;
+  }
 #else
   bool equals(const UTF8* other) const {
     if (size != other->size) return false;
     else return !memcmp(elements, other->elements, size * sizeof(uint16));
+  }
+
+  bool lessThan(const UTF8* other) const {
+    if (size < other->size) return true;
+    else if (size > other->size) return false;
+    else return memcmp((const char*)elements, (const char*)other->elements, 
+                       size * sizeof(uint16)) < 0;
   }
 #endif
   
