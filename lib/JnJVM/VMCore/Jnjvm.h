@@ -14,6 +14,7 @@
 
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
+#include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 
@@ -55,7 +56,7 @@ class FunctionDefMap;
 class AllocationMap;
 class ZipArchive;
 
-class Jnjvm : public mvm::Object{
+class Jnjvm : public mvm::VirtualMachine {
 public:
 #ifdef MULTIPLE_GC
   Collector* GC;
@@ -266,6 +267,8 @@ public:
     return gc::operator new(sz, VT, GC);
   }
 #endif
+
+  virtual void runApplication(int argc, char** argv);
 };
 
 } // end namespace jnjvm

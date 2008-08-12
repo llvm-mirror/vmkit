@@ -10,6 +10,7 @@
 #include <signal.h>
 #include <vector>
 
+#include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Locks.h"
 
 #include "JavaArray.h"
@@ -182,40 +183,22 @@ static void initialiseStatics() {
 
 extern "C" void ClasspathBoot();
 
-void handler(int val, siginfo_t* info, void* addr) {
-  printf("[%d] Crash in JnJVM at %p\n", mvm::Thread::self(), addr);
-  JavaJIT::printBacktrace();
-  assert(0);
+void mvm::VirtualMachine::initialiseJVM() {
+  if (!JavaIsolate::bootstrapVM) {
+    initialiseVT();
+    initialiseStatics();
+  
+    ClasspathBoot();
+    Classpath::initialiseClasspath(JavaIsolate::bootstrapVM);
+  }
 }
 
-extern "C" int boot() {
-  
-  struct sigaction sa;
-  
-  sigaction(SIGINT, 0, &sa);
-  sa.sa_sigaction = handler;
-  sa.sa_flags |= (SA_RESTART | SA_SIGINFO | SA_NODEFER);
-  sigaction(SIGINT, &sa, 0);
-  
-  sigaction(SIGILL, 0, &sa);
-  sa.sa_sigaction = handler;
-  sa.sa_flags |= (SA_RESTART | SA_SIGINFO | SA_NODEFER);
-  sigaction(SIGILL, &sa, 0);
-  
-  sigaction(SIGSEGV, 0, &sa);
-  sa.sa_sigaction = handler;
-  sa.sa_flags |= (SA_RESTART | SA_SIGINFO | SA_NODEFER);
-  sigaction(SIGSEGV, &sa, 0);
-
-  initialiseVT();
-  initialiseStatics();
-  
-  ClasspathBoot();
-  Classpath::initialiseClasspath(JavaIsolate::bootstrapVM);
-  return 0; 
+void Jnjvm::runApplication(int argc, char** argv) {
+  mvm::Thread::threadKey->set(((JavaIsolate*)this)->bootstrapThread);
+  ((JavaIsolate*)this)->runMain(argc, argv);
 }
 
-extern "C" int start_app(int argc, char** argv) {
+mvm::VirtualMachine* mvm::VirtualMachine::createJVM() {
 #if !defined(MULTIPLE_VM)
   JavaIsolate* vm = (JavaIsolate*)JavaIsolate::bootstrapVM;
 #else
@@ -226,6 +209,5 @@ extern "C" int start_app(int argc, char** argv) {
   JavaIsolate* vm = JavaIsolate::allocateIsolate(JavaIsolate::bootstrapVM);
 #endif
 #endif
-  vm->runMain(argc, argv);
-  return 0;
+  return vm;
 }

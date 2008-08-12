@@ -327,14 +327,19 @@ static void initialiseStatics() {
 }
 
 
-extern "C" int boot(int argc, char **argv, char **envp) {
-  initialiseVT();
-  initialiseStatics();
-  return 0;
+void mvm::VirtualMachine::initialiseCLIVM() {
+  if (!N3::bootstrapVM) {
+    initialiseVT();
+    initialiseStatics();
+  }
 }
 
-extern "C" int start_app(int argc, char** argv) {
+void VirtualMachine::runApplication(int argc, char** argv) {
+  mvm::Thread::threadKey->set(this->bootstrapThread);  
+  ((N3*)this)->runMain(argc, argv);
+}
+
+mvm::VirtualMachine* mvm::VirtualMachine::createCLIVM() {
   N3* vm = N3::allocate("", N3::bootstrapVM);
-  vm->runMain(argc, argv);
-  return 0; 
+  return vm;
 }

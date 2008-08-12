@@ -16,6 +16,7 @@
 
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
+#include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 
@@ -43,7 +44,7 @@ public:
   static ThreadSystem* allocateThreadSystem();
 };
 
-class VirtualMachine : public mvm::Object{
+class VirtualMachine : public mvm::VirtualMachine {
 public:
   static VirtualTable* VT;
   ThreadSystem* threadSystem; 
@@ -123,6 +124,9 @@ public:
   llvm::Module* module;
   N3ModuleProvider* TheModuleProvider;
   VMThread* bootstrapThread;
+
+  virtual void runApplication(int argc, char** argv);
+
 };
 
 } // end namespace n3
