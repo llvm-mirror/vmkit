@@ -51,7 +51,7 @@ extern "C" void printObject(mvm::Object* obj) {
 extern "C" void __register_frame(void*);
 
 static
-#include "LLVMRuntime.cpp"
+#include "LLVMRuntime.inc"
 
 void mvm::jit::initialise() {
   llvm::NoFramePointerElim = true;

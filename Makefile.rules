@@ -1,11 +1,11 @@
 ifdef VMKIT_RUNTIME
 
 LLFiles := $(strip $(wildcard $(PROJ_SRC_DIR)/*.ll))
-CPPFiles := $(filter %.cpp,$(BUILT_SOURCES))
+INCFiles := $(filter %.inc,$(BUILT_SOURCES))
 .PRECIOUS: $(CPPFiles)
 
 # All of these files depend on tblgen and the .td files.
-$(CPPFiles) : $(LLVMAS) $(LLC) $(LLFiles)
+$(INCFiles) : $(LLVMAS) $(LLC) $(LLFiles)
 
 # CPPFiles rule: All of the tblgen generated files are emitted to 
 # $(ObjDir)/%.inc.tmp, instead of emitting them directly to %.inc.  This allows
@@ -13,12 +13,12 @@ $(CPPFiles) : $(LLVMAS) $(LLC) $(LLFiles)
 # tblgen is modified, all of the .inc.tmp files are regereated, but no
 # dependencies of the .inc files are, unless the contents of the .inc file
 # changes.
-$(CPPFiles) : %.cpp : %.ll
+$(INCFiles) : %.inc : %.ll
 	$(Echo) "Building $(<F) LLVM runtime"
 	$(Verb) $(LLVMAS) -f $(<F) -o - | $(LLC) -march=cpp -cppgen=contents -f -o $@
 
 
 clean-local::
-	$(Verb) $(RM) -f $(CPPFiles)
+	$(Verb) $(RM) -f $(INCFiles)
 
 endif
