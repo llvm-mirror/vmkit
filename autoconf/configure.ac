@@ -222,18 +222,19 @@ AC_ARG_WITH(vm-type,
 )
 
 if test "x$vmtype" = "xmulti";  then
-  CFLAGS="$CFLAGS -DMULTIPLE_VM"
-  CXXFLAGS="$CXXFLAGS -DMULTIPLE_VM"
+  VM_FLAGS="-DMULTIPLE_VM"
+  ISOLATE_BUILD=1
 else 
   if test "x$vmtype" = "xservice"; then
-    CFLAGS="$CFLAGS -DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM -I$PWD/lib/Mvm/Allocator"
-    CXXFLAGS="$CXXFLAGS -DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM -I$PWD/lib/Mvm/Allocator"
+    VM_FLAGS="-DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM -I$PWD/lib/Mvm/Allocator"
+    SERVICE_BUILD=1
   fi
 fi
 
-AM_CONDITIONAL([SERVICE_BUILD], [test "x$vmtype" = "xservice"])
-AM_CONDITIONAL([ISOLATE_BUILD], [test "x$vmtype" = "xmulti"])
-  
+AC_SUBST([SERVICE_BUILD])
+AC_SUBST([ISOLATE_BUILD])
+AC_SUBST([VM_FLAGS])
+
 dnl **************************************************************************
 dnl GNU CLASSPATH installation prefix
 dnl **************************************************************************

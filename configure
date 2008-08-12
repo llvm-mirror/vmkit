@@ -687,10 +687,9 @@ GC_MULTI_MMAP
 GC_SINGLE_MMAP
 GC_FLAGS
 GC_LIBS
-SERVICE_BUILD_TRUE
-SERVICE_BUILD_FALSE
-ISOLATE_BUILD_TRUE
-ISOLATE_BUILD_FALSE
+SERVICE_BUILD
+ISOLATE_BUILD
+VM_FLAGS
 classpathglibj
 classpathlibs
 classpathinclude
@@ -3943,30 +3942,17 @@ fi
 
 
 if test "x$vmtype" = "xmulti";  then
-  CFLAGS="$CFLAGS -DMULTIPLE_VM"
-  CXXFLAGS="$CXXFLAGS -DMULTIPLE_VM"
+  VM_FLAGS="-DMULTIPLE_VM"
+  ISOLATE_BUILD=1
 else
   if test "x$vmtype" = "xservice"; then
-    CFLAGS="$CFLAGS -DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM -I$PWD/lib/Mvm/Allocator"
-    CXXFLAGS="$CXXFLAGS -DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM -I$PWD/lib/Mvm/Allocator"
+    VM_FLAGS="-DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM -I$PWD/lib/Mvm/Allocator"
+    SERVICE_BUILD=1
   fi
 fi
 
- if test "x$vmtype" = "xservice"; then
-  SERVICE_BUILD_TRUE=
-  SERVICE_BUILD_FALSE='#'
-else
-  SERVICE_BUILD_TRUE='#'
-  SERVICE_BUILD_FALSE=
-fi
 
- if test "x$vmtype" = "xmulti"; then
-  ISOLATE_BUILD_TRUE=
-  ISOLATE_BUILD_FALSE='#'
-else
-  ISOLATE_BUILD_TRUE='#'
-  ISOLATE_BUILD_FALSE=
-fi
+
 
 
 
@@ -7242,20 +7228,6 @@ LIBOBJS=$ac_libobjs
 LTLIBOBJS=$ac_ltlibobjs
 
 
-if test -z "${SERVICE_BUILD_TRUE}" && test -z "${SERVICE_BUILD_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"SERVICE_BUILD\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"SERVICE_BUILD\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${ISOLATE_BUILD_TRUE}" && test -z "${ISOLATE_BUILD_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ISOLATE_BUILD\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ISOLATE_BUILD\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 
 : ${CONFIG_STATUS=./config.status}
 ac_clean_files_save=$ac_clean_files
@@ -7862,10 +7834,9 @@ GC_MULTI_MMAP!$GC_MULTI_MMAP$ac_delim
 GC_SINGLE_MMAP!$GC_SINGLE_MMAP$ac_delim
 GC_FLAGS!$GC_FLAGS$ac_delim
 GC_LIBS!$GC_LIBS$ac_delim
-SERVICE_BUILD_TRUE!$SERVICE_BUILD_TRUE$ac_delim
-SERVICE_BUILD_FALSE!$SERVICE_BUILD_FALSE$ac_delim
-ISOLATE_BUILD_TRUE!$ISOLATE_BUILD_TRUE$ac_delim
-ISOLATE_BUILD_FALSE!$ISOLATE_BUILD_FALSE$ac_delim
+SERVICE_BUILD!$SERVICE_BUILD$ac_delim
+ISOLATE_BUILD!$ISOLATE_BUILD$ac_delim
+VM_FLAGS!$VM_FLAGS$ac_delim
 classpathglibj!$classpathglibj$ac_delim
 classpathlibs!$classpathlibs$ac_delim
 classpathinclude!$classpathinclude$ac_delim
@@ -7890,6 +7861,7 @@ MKDIR!$MKDIR$ac_delim
 MV!$MV$ac_delim
 RANLIB!$RANLIB$ac_delim
 RM!$RM$ac_delim
+SED!$SED$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -7931,7 +7903,6 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-SED!$SED$ac_delim
 TAR!$TAR$ac_delim
 BINPWD!$BINPWD$ac_delim
 CAT!$CAT$ac_delim
@@ -7946,7 +7917,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 13; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 12; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
