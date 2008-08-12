@@ -94,7 +94,7 @@ const UTF8* VirtualMachine::readerConstructUTF8(const uint16* buf, uint32 len) {
 void VirtualMachine::error(const char* className, const char* fmt, va_list ap) {
   fprintf(stderr, "Internal exception of type %s during bootstrap: ", className);
   vfprintf(stderr, fmt, ap);
-  abort();
+  throw 1;
 }
 
 void VirtualMachine::indexOutOfBounds(const VMObject* obj, sint32 entry) {
