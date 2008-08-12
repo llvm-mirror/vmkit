@@ -158,7 +158,7 @@ void CLIJit::invokeInterfaceOrVirtual(uint32 value) {
   }
 }
 
-extern "C" CacheNode* virtualLookup(CacheNode* cache, VMObject *obj) {
+extern "C" CacheNode* n3VirtualLookup(CacheNode* cache, VMObject *obj) {
   Enveloppe* enveloppe = cache->enveloppe;
   VMCommonClass* ocl = obj->classOf;
   VMMethod* orig = enveloppe->originalMethod;

@@ -31,7 +31,7 @@ namespace mvm {
   private:
   };
   char LowerArrayLength::ID = 0;
-  RegisterPass<LowerArrayLength> X("LowerArrayLength", "Lower Array length");
+  static RegisterPass<LowerArrayLength> X("LowerArrayLength", "Lower Array length");
 
 bool LowerArrayLength::runOnFunction(Function& F) {
   bool Changed = false;

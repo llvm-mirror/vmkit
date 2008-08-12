@@ -1526,12 +1526,12 @@ extern "C" VMObject* initialiseClass(VMClass* cl) {
   return cl->staticInstance;
 }
 
-extern "C" void classCastException() {
+extern "C" void n3ClassCastException() {
   fflush(stdout);
   assert(0 && "implement class cast exception");
 }
 
-extern "C" void nullPointerException() {
+extern "C" void n3NullPointerException() {
   fflush(stdout);
   assert(0 && "implement null pointer exception");
 }
@@ -1755,7 +1755,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
     FunctionType::get(CacheNode::llvmType, args, false);
 
   virtualLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                                   "virtualLookup", module);
+                                   "n3VirtualLookup", module);
 
 /*
   virtualLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
@@ -1847,7 +1847,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
   nullPointerExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "nullPointerException",
+                     "n3NullPointerException",
                      module);
   }
   
@@ -1857,7 +1857,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
 
   classCastExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "classCastException",
+                     "n3ClassCastException",
                      module);
   }
   

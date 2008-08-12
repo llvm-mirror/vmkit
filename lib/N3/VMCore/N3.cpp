@@ -153,6 +153,7 @@ ArrayUInt8* N3::openAssembly(const UTF8* name, const char* ext) {
   return res;
 }
 
+namespace n3 {
 
 class ClArgumentsInfo {
 public:
@@ -165,6 +166,8 @@ public:
   void nyi();
   void printVersion();
 };
+
+}
 
 void ClArgumentsInfo::nyi() {
   fprintf(stdout, "Not yet implemented\n");
@@ -251,8 +254,6 @@ void N3::runMain(int argc, char** argv) {
   info.readArgs(argc, argv, this);
   if (info.assembly) {
     int pos = info.appArgumentsPos;
-    llvm::cl::ParseCommandLineOptions(pos, argv,
-                                      "N3 CLI virtual machine\n");
     argv = argv + info.appArgumentsPos - 1;
     argc = argc - info.appArgumentsPos + 1;
     
