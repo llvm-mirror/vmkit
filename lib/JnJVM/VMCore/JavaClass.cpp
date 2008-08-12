@@ -405,6 +405,7 @@ JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
 }
 
 JavaObject* Class::doNew(Jnjvm* vm) {
+  assert(this->isReady() && "Uninitialized class when allocating.");
   JavaObject* res = (JavaObject*)vm->allocateObject(virtualSize, virtualVT);
   res->classOf = this;
   return res;
