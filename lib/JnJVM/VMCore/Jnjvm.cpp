@@ -759,6 +759,19 @@ Typedef* Jnjvm::constructType(const UTF8* name) {
   return res;
 }
 
+Signdef* Jnjvm::constructSign(const UTF8* name) {
+  Signdef* res = javaSignatures->lookup(name);
+  if (res == 0) {
+    res = Signdef::signDup(name, this);
+    javaSignatures->lock->lock();
+    Signdef* tmp = javaSignatures->lookup(name);
+    if (tmp == 0) javaSignatures->hash(name, res);
+    else res = tmp;
+    javaSignatures->lock->unlock();
+  }
+  return res;
+}
+
 CommonClass* Jnjvm::loadInClassLoader(const UTF8* name, JavaObject* loader) {
   JavaString* str = this->UTF8ToStr(name);
   JavaObject* obj = (JavaObject*)

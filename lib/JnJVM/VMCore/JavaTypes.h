@@ -10,13 +10,10 @@
 #ifndef JNJVM_JAVA_TYPES_H
 #define JNJVM_JAVA_TYPES_H
 
-#include "mvm/Object.h"
-
 #include "types.h"
 
-namespace mvm {
-  class Code;
-}
+#include "mvm/JIT.h"
+#include "mvm/Object.h"
 
 namespace jnjvm {
 
@@ -133,13 +130,14 @@ public:
   
   CommonClass* assocClass(JavaObject* loader);
   void typePrint(mvm::PrintBuffer* buf);
-  static void humanPrintArgs(const std::vector<Typedef*>*, mvm::PrintBuffer* buf);
+  static void humanPrintArgs(const std::vector<Typedef*>*,
+                             mvm::PrintBuffer* buf);
   static Typedef* typeDup(const UTF8* name, Jnjvm* vm);
   void tPrintBuf(mvm::PrintBuffer* buf) const;
 
 };
 
-class Signdef : public Typedef {
+class Signdef {
 private:
   intptr_t _staticCallBuf;
   intptr_t _virtualCallBuf;
@@ -154,6 +152,8 @@ private:
 public:
   std::vector<Typedef*> args;
   Typedef* ret;
+  Jnjvm* isolate;
+  const UTF8* keyName;
   
   const char* printString() const;
 
@@ -196,8 +196,20 @@ public:
   void setVirtualCallAP(intptr_t code) {
     _virtualCallAP = code;
   }
-  
-  
+
+   
+  mvm::JITInfo* JInfo;
+  template<typename Ty> 
+  Ty *getInfo() {
+    if (!JInfo) {
+      JInfo = new Ty(this);
+    }   
+
+    assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
+           "Invalid concrete type or multiple inheritence for getInfo");
+    return static_cast<Ty*>(JInfo);
+  }
+    
 };
 
 

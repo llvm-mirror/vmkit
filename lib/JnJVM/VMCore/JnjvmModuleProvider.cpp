@@ -209,7 +209,7 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   
   addPass(PM, createTailCallEliminationPass());  // Eliminate tail calls
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
-  addPass(PM, createPredicateSimplifierPass());
+  //addPass(PM, createPredicateSimplifierPass());
   addPass(PM, createReassociatePass());          // Reassociate expressions
   addPass(PM, createLoopRotatePass());
   addPass(PM, createLICMPass());                 // Hoist loop invariants

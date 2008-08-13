@@ -82,6 +82,7 @@ ServiceDomain* ServiceDomain::allocateService(JavaIsolate* callingVM) {
   service->loadedMethods = vm_new(service, MethodMap)();
   service->loadedFields = vm_new(service, FieldMap)();
   service->javaTypes = vm_new(service, TypeMap)(); 
+  service->javaSignatures = vm_new(service, SignMap)(); 
   service->globalRefsLock = mvm::Lock::allocNormal();
 #ifdef MULTIPLE_VM
   service->statics = vm_new(service, StaticInstanceMap)();  

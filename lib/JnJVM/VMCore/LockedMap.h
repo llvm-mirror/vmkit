@@ -209,6 +209,40 @@ public:
   
 };
 
+class SignMap {
+public:
+  mvm::Lock* lock;
+  
+  std::map<const UTF8*, Signdef*, ltutf8> map;
+  typedef std::map<const UTF8*, Signdef*, ltutf8>::iterator iterator;
+  
+  inline Signdef* lookup(const UTF8* V) {
+    lock->lock();
+    iterator End = map.end();
+    iterator I = map.find(V);
+    lock->unlock();
+    return I != End ? I->second : 0; 
+  }
+
+  inline void hash(const UTF8* k, Signdef* c) {
+    lock->lock();
+    map.insert(std::make_pair(k, c));
+    lock->unlock();
+  }
+  
+  SignMap() {
+    lock = mvm::Lock::allocRecursive();
+  }
+  
+  ~SignMap() {
+    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+      delete i->second;
+    }
+    delete lock;
+  }
+  
+};
+
 class StaticInstanceMap :
     public LockedMap<Class*, std::pair<JavaState, JavaObject*>*, std::less<Class*> > {
 public:

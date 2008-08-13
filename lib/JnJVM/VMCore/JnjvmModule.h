@@ -20,7 +20,10 @@
 #include "llvm/Type.h"
 #include "llvm/Value.h"
 
+#include "mvm/JIT.h"
+
 #include "JavaClass.h"
+#include "JavaTypes.h"
 
 namespace jnjvm {
 
@@ -46,13 +49,12 @@ public:
 };
 
 
-class LLVMCommonClassInfo {
+class LLVMCommonClassInfo : public mvm::JITInfo {
   
   friend class JnjvmModule;
 
 protected:
   CommonClass* classDef;
-  JnjvmModule* module;
 
 private:
   /// varGV - The LLVM global variable representing this class.
@@ -70,9 +72,8 @@ public:
   llvm::Value* getVar(JavaJIT* jit);
   llvm::Value* getDelegatee(JavaJIT* jit);
   
-  LLVMCommonClassInfo(CommonClass* cl, JnjvmModule* M) : 
+  LLVMCommonClassInfo(CommonClass* cl) : 
     classDef(cl),
-    module(M),
     varGV(0)
 #ifndef MULTIPLE_VM
     ,delegateeGV(0)
@@ -107,8 +108,8 @@ public:
   const llvm::Type* getVirtualType();
   const llvm::Type* getStaticType();
   
-  LLVMClassInfo(Class* cl, JnjvmModule* M) : 
-    LLVMCommonClassInfo((CommonClass*)cl, M),
+  LLVMClassInfo(CommonClass* cl) : 
+    LLVMCommonClassInfo(cl),
     virtualSizeConstant(0),
     staticVarGV(0),
     virtualTableGV(0),
@@ -118,10 +119,9 @@ public:
     staticType(0) {}
 };
 
-class LLVMMethodInfo {
+class LLVMMethodInfo : public mvm::JITInfo {
 private:
   JavaMethod* methodDef;
-  JnjvmModule* module;
 
   llvm::Function* methodFunction;
   llvm::ConstantInt* offsetConstant;
@@ -132,31 +132,28 @@ public:
   llvm::ConstantInt* getOffset();
   const llvm::FunctionType* getFunctionType();
   
-  LLVMMethodInfo(JavaMethod* M, JnjvmModule* Mo) : 
+  LLVMMethodInfo(JavaMethod* M) : 
     methodDef(M), 
-    module(Mo),
     methodFunction(0),
     offsetConstant(0),
     functionType(0) {}
 };
 
-class LLVMFieldInfo {
+class LLVMFieldInfo : public mvm::JITInfo {
 private:
   JavaField* fieldDef;
-  JnjvmModule* module;
   
   llvm::ConstantInt* offsetConstant;
 
 public:
   llvm::ConstantInt* getOffset();
 
-  LLVMFieldInfo(JavaField* F, JnjvmModule* M) : 
+  LLVMFieldInfo(JavaField* F) : 
     fieldDef(F), 
-    module(M),
     offsetConstant(0) {}
 };
 
-class LLVMSignatureInfo {
+class LLVMSignatureInfo : public mvm::JITInfo {
 private:
   const llvm::FunctionType* staticType;
   const llvm::FunctionType* virtualType;
@@ -216,7 +213,7 @@ public:
 };
 
 #ifdef SERVICE_VM
-class LLVMServiceInfo {
+class LLVMServiceInfo : public mvm::JITInfo {
 private:
   ServiceDomain* vm;
   llvm::GlobalVariable* delegateeGV;
@@ -229,31 +226,9 @@ public:
 class JnjvmModule : public llvm::Module {
   friend class LLVMClassInfo;
 private:
-  std::map<const CommonClass*, LLVMCommonClassInfo*> classMap;
-  std::map<const Signdef*, LLVMSignatureInfo*> signatureMap;
-  std::map<const JavaField*, LLVMFieldInfo*> fieldMap;
-  std::map<const JavaMethod*, LLVMMethodInfo*> methodMap;
-
-#ifdef SERVICE_VM
-  std::map<const ServiceDomain*, LLVMServiceInfo*> serviceMap;
-  typedef std::map<const ServiceDomain*, LLVMServiceInfo*>::iterator
-    class_iterator;
-#endif
   
-  typedef std::map<const CommonClass*, LLVMCommonClassInfo*>::iterator
-    class_iterator;  
-  
-  typedef std::map<const Signdef*, LLVMSignatureInfo*>::iterator
-    signature_iterator;  
-  
-  typedef std::map<const JavaMethod*, LLVMMethodInfo*>::iterator
-    method_iterator;  
-  
-  typedef std::map<const JavaField*, LLVMFieldInfo*>::iterator
-    field_iterator;  
-  
-  VirtualTable* makeVT(Class* cl, bool stat);
-  VirtualTable* allocateVT(Class* cl, CommonClass::method_iterator meths);
+  static VirtualTable* makeVT(Class* cl, bool stat);
+  static VirtualTable* allocateVT(Class* cl, CommonClass::method_iterator meths);
 
 
 public:
@@ -367,21 +342,37 @@ public:
   static void InitField(JavaField* field, JavaObject* obj, float val);
 
 
-  void resolveVirtualClass(Class* cl);
-  void resolveStaticClass(Class* cl);
-  void setMethod(JavaMethod* meth, const char* name);
-  void* getMethod(JavaMethod* meth);
+  static void resolveVirtualClass(Class* cl);
+  static void resolveStaticClass(Class* cl);
+  static void setMethod(JavaMethod* meth, const char* name);
+  static void* getMethod(JavaMethod* meth);
 
-  LLVMSignatureInfo* getSignatureInfo(Signdef*);
-  LLVMCommonClassInfo* getClassInfo(CommonClass*);
-  LLVMFieldInfo* getFieldInfo(JavaField*);
-  LLVMMethodInfo* getMethodInfo(JavaMethod*);
+  static LLVMSignatureInfo* getSignatureInfo(Signdef* sign) {
+    return sign->getInfo<LLVMSignatureInfo>();
+  }
+  
+  static LLVMCommonClassInfo* getClassInfo(CommonClass* cl) {
+    if (cl->isArray || cl->isPrimitive) {
+      return cl->getInfo<LLVMCommonClassInfo>();
+    } else {
+      return cl->getInfo<LLVMClassInfo>();
+    }
+  }
+
+  static LLVMFieldInfo* getFieldInfo(JavaField* field) {
+    return field->getInfo<LLVMFieldInfo>();
+  }
+  
+  static LLVMMethodInfo* getMethodInfo(JavaMethod* method) {
+    return method->getInfo<LLVMMethodInfo>();
+  }
+
 #ifdef SERVICE_VM
-  LLVMServiceInfo* getServiceInfo(ServiceDomain*);
+  static LLVMServiceInfo* getServiceInfo(ServiceDomain* service) {
+    return service->getInfo<LLVMServiceInfo>();
+  }
 #endif
   
-  void removeClass(CommonClass*);
-
   explicit JnjvmModule(const std::string &ModuleID);
   void initialise();
 };

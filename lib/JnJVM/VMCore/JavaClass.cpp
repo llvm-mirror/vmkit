@@ -91,8 +91,6 @@ bool CommonClass::FieldCmp::operator<(const CommonClass::FieldCmp &cmp) const {
 CommonClass::~CommonClass() {
   free(display);
   free(virtualVT);
-  if (isolate)
-    isolate->TheModule->removeClass(this);
   delete lockVar;
   delete condVar;
 }
@@ -103,6 +101,7 @@ CommonClass::CommonClass() {
   lockVar = 0;
   condVar = 0;
   virtualVT = 0;
+  JInfo = 0;
 }
 
 Class::Class() {
@@ -610,6 +609,7 @@ JavaMethod* CommonClass::constructMethod(const UTF8* name,
     method->access = access;
     method->canBeInlined = false;
     method->offset = 0;
+    method->JInfo = 0;
     map.insert(std::make_pair(CC, method));
     return method;
   } else {
@@ -631,6 +631,7 @@ JavaField* CommonClass::constructField(const UTF8* name,
     field->_signature = 0;
     field->ptrOffset = 0;
     field->access = access;
+    field->JInfo = 0;
     map.insert(std::make_pair(CC, field));
     return field;
   } else {

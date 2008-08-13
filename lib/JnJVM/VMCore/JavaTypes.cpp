@@ -446,7 +446,7 @@ void Signdef::printWithSign(CommonClass* cl, const UTF8* name,
   CommonClass::printClassName(cl->name, buf);
   buf->write("::");
   name->print(buf);
-  humanPrintArgs(&args, buf);
+  Typedef::humanPrintArgs(&args, buf);
 }
 
 Signdef* Signdef::signDup(const UTF8* name, Jnjvm *vm) {
@@ -480,12 +480,11 @@ Signdef* Signdef::signDup(const UTF8* name, Jnjvm *vm) {
   res->ret = vm->constructType(name->extract(vm, pos, pred));
   res->isolate = vm;
   res->keyName = name;
-  res->pseudoAssocClassName = name;
-  res->funcs = 0;
   res->_virtualCallBuf = 0;
   res->_staticCallBuf = 0;
   res->_virtualCallAP = 0;
   res->_staticCallAP = 0;
+  res->JInfo = 0;
   return res;
   
 }
@@ -495,20 +494,18 @@ Typedef* Typedef::typeDup(const UTF8* name, Jnjvm *vm) {
   uint32 next;
   AssessorDesc::analyseIntern(name, 0, 0, funcs, next);
 
-  if (funcs == AssessorDesc::dParg) {
-    return Signdef::signDup(name, vm);
-  } else {
-    Typedef* res = new Typedef();
-    res->isolate = vm;
-    res->keyName = name;
-    res->funcs = funcs;
-    if (funcs == AssessorDesc::dRef) {
-      res->pseudoAssocClassName = name->extract(vm, 1, next - 1);
-    } else if (funcs == AssessorDesc::dTab) {
-      res->pseudoAssocClassName = name;
-    }
-    return res;
+  assert(funcs != AssessorDesc::dParg && 
+         "Error: resolving a signature for a field");
+  Typedef* res = new Typedef();
+  res->isolate = vm;
+  res->keyName = name;
+  res->funcs = funcs;
+  if (funcs == AssessorDesc::dRef) {
+    res->pseudoAssocClassName = name->extract(vm, 1, next - 1);
+  } else if (funcs == AssessorDesc::dTab) {
+    res->pseudoAssocClassName = name;
   }
+  return res;
 
 }
 

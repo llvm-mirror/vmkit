@@ -47,6 +47,8 @@ class ClassMap;
 class DelegateeMap;
 class FieldMap;
 class MethodMap;
+class Signdef;
+class SignMap;
 class StaticInstanceMap;
 class StringMap;
 class TypeMap;
@@ -211,6 +213,7 @@ public:
   JavaString* asciizToStr(const char* asciiz);
   JavaString* UTF8ToStr(const UTF8* utf8);
   Typedef* constructType(const UTF8 * name);
+  Signdef* constructSign(const UTF8 * name);
   
   
   JavaObject* getClassDelegatee(CommonClass*);
@@ -248,6 +251,7 @@ public:
   StringMap * hashStr;
   ClassMap* bootstrapClasses;
   TypeMap* javaTypes;
+  SignMap* javaSignatures;
 #ifdef MULTIPLE_VM
   StaticInstanceMap* statics;
   DelegateeMap* delegatees;

@@ -15,6 +15,7 @@
 
 #include "types.h"
 
+#include "mvm/JIT.h"
 #include "mvm/Method.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
@@ -436,6 +437,18 @@ public:
   /// CommonClass - Default constructor.
   ///
   CommonClass();
+  
+  mvm::JITInfo* JInfo;
+  template<typename Ty> 
+  Ty *getInfo() {
+    if (!JInfo) {
+      JInfo = new Ty(this);
+    }   
+
+    assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
+           "Invalid concrete type or multiple inheritence for getInfo");
+    return static_cast<Ty*>(JInfo);
+  }
 
 };
 
@@ -691,7 +704,7 @@ public:
   ///
   Signdef* getSignature() {
     if(!_signature)
-      _signature = (Signdef*) classDef->isolate->constructType(type);
+      _signature = classDef->isolate->constructSign(type);
     return _signature;
   }
   
@@ -762,6 +775,18 @@ public:
   double invokeDoubleStatic(Jnjvm* vm, ...);
   sint64 invokeLongStatic(Jnjvm* vm, ...);
   JavaObject* invokeJavaObjectStatic(Jnjvm* vm, ...);
+  
+  mvm::JITInfo* JInfo;
+  template<typename Ty> 
+  Ty *getInfo() {
+    if (!JInfo) {
+      JInfo = new Ty(this);
+    }   
+
+    assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
+           "Invalid concrete type or multiple inheritence for getInfo");
+    return static_cast<Ty*>(JInfo);
+  }
   
 };
 
@@ -880,6 +905,18 @@ public:
   MK_ASSESSORS(uint16, Int16);
   MK_ASSESSORS(uint32, Int32);
   MK_ASSESSORS(sint64, Long);
+  
+  mvm::JITInfo* JInfo;
+  template<typename Ty> 
+  Ty *getInfo() {
+    if (!JInfo) {
+      JInfo = new Ty(this);
+    }   
+
+    assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
+           "Invalid concrete type or multiple inheritence for getInfo");
+    return static_cast<Ty*>(JInfo);
+  }
 
 };
 

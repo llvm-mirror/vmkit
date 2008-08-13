@@ -108,6 +108,7 @@ public:
   CommonClass* loadClass(uint32 index);
   void checkInfoOfClass(uint32 index);
   Typedef* resolveNameAndType(uint32 index);
+  Signdef* resolveNameAndSign(uint32 index);
   Typedef* infoOfField(uint32 index);
   Signdef* infoOfInterfaceOrVirtualMethod(uint32 index);
   void* infoOfStaticOrSpecialMethod(uint32 index,

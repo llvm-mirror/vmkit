@@ -355,7 +355,7 @@ const Type* LLVMClassInfo::getVirtualType() {
     
     if (classDef->super) {
       LLVMClassInfo* CLI = 
-        (LLVMClassInfo*)module->getClassInfo(classDef->super);
+        (LLVMClassInfo*)JnjvmModule::getClassInfo(classDef->super);
       fields.push_back(CLI->getVirtualType()->getContainedType(0));
     } else {
       fields.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
@@ -385,7 +385,7 @@ const Type* LLVMClassInfo::getVirtualType() {
       field->ptrOffset = sl->getElementOffset(field->num + 1);
     }
     
-    VirtualTable* VT = module->makeVT((Class*)classDef, false);
+    VirtualTable* VT = JnjvmModule::makeVT((Class*)classDef, false);
   
     uint64 size = mvm::jit::getTypeSize(structType);
     classDef->virtualSize = (uint32)size;
@@ -431,7 +431,7 @@ const Type* LLVMClassInfo::getStaticType() {
     }
     
 
-    VirtualTable* VT = module->makeVT((Class*)classDef, true);
+    VirtualTable* VT = JnjvmModule::makeVT((Class*)classDef, true);
 
     uint64 size = mvm::jit::getTypeSize(structType);
     cl->staticSize = size;
@@ -532,7 +532,7 @@ Function* LLVMMethodInfo::getMethod() {
 
 const FunctionType* LLVMMethodInfo::getFunctionType() {
   if (!functionType) {
-    LLVMSignatureInfo* LSI = module->getSignatureInfo(methodDef->getSignature());
+    LLVMSignatureInfo* LSI = JnjvmModule::getSignatureInfo(methodDef->getSignature());
     assert(LSI);
     if (isStatic(methodDef->access)) {
       functionType = LSI->getStaticType();
@@ -545,7 +545,7 @@ const FunctionType* LLVMMethodInfo::getFunctionType() {
 
 ConstantInt* LLVMMethodInfo::getOffset() {
   if (!offsetConstant) {
-    module->resolveVirtualClass(methodDef->classDef);
+    JnjvmModule::resolveVirtualClass(methodDef->classDef);
     offsetConstant = ConstantInt::get(Type::Int32Ty, methodDef->offset);
   }
   return offsetConstant;
@@ -554,9 +554,9 @@ ConstantInt* LLVMMethodInfo::getOffset() {
 ConstantInt* LLVMFieldInfo::getOffset() {
   if (!offsetConstant) {
     if (isStatic(fieldDef->access)) {
-      module->resolveStaticClass(fieldDef->classDef); 
+      JnjvmModule::resolveStaticClass(fieldDef->classDef); 
     } else {
-      module->resolveVirtualClass(fieldDef->classDef); 
+      JnjvmModule::resolveVirtualClass(fieldDef->classDef); 
     }
     // Increment by one because zero is JavaObject
     offsetConstant = ConstantInt::get(Type::Int32Ty, fieldDef->num + 1);
@@ -855,100 +855,7 @@ void JnjvmModule::resolveStaticClass(Class* cl) {
   LCI->getStaticType();
 }
 
-void JnjvmModule::removeClass(CommonClass* cl) {
-  // Lock here because we may be called by a finalizer
-  // (even if currently single threaded).
-  llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
-  classMap.erase(cl);
-
-  for (CommonClass::field_iterator i = cl->virtualFields.begin(),
-       e = cl->virtualFields.end(); i!= e; ++i) {
-    JavaField* field = i->second;
-    fieldMap.erase(field);
-  }
-  
-  for (CommonClass::field_iterator i = cl->staticFields.begin(),
-       e = cl->staticFields.end(); i!= e; ++i) {
-    JavaField* field = i->second;
-    fieldMap.erase(field);
-  }
-  
-  for (CommonClass::method_iterator i = cl->virtualMethods.begin(),
-       e = cl->virtualMethods.end(); i!= e; ++i) {
-    JavaMethod* meth = i->second;
-    methodMap.erase(meth);
-  }
-  
-  for (CommonClass::method_iterator i = cl->staticMethods.begin(),
-       e = cl->staticMethods.end(); i!= e; ++i) {
-    JavaMethod* meth = i->second;
-    methodMap.erase(meth);
-  }
-  
-}
-
-LLVMCommonClassInfo* JnjvmModule::getClassInfo(CommonClass* cl) {
-  class_iterator CI = classMap.find(cl);
-  if (CI != classMap.end()) {
-    return CI->second;
-  } else {
-    if (cl->isArray) {
-      LLVMCommonClassInfo* LCI = new LLVMCommonClassInfo(cl, this);
-      classMap.insert(std::make_pair(cl, LCI));
-      return LCI;
-    } else {
-      LLVMClassInfo* LCI = new LLVMClassInfo((Class*)cl, this);
-      classMap.insert(std::make_pair(cl, LCI));
-      return LCI;
-    }
-  }
-}
-
-LLVMMethodInfo* JnjvmModule::getMethodInfo(JavaMethod* meth) {
-  method_iterator MI = methodMap.find(meth);
-  if (MI != methodMap.end()) {
-    return MI->second;
-  } else {
-    LLVMMethodInfo* LMI = new LLVMMethodInfo(meth, this);
-    methodMap.insert(std::make_pair(meth, LMI));
-    return LMI;
-  }
-}
-
-LLVMFieldInfo* JnjvmModule::getFieldInfo(JavaField* field) {
-  field_iterator FI = fieldMap.find(field);
-  if (FI != fieldMap.end()) {
-    return FI->second;
-  } else {
-    LLVMFieldInfo* LFI = new LLVMFieldInfo(field, this);
-    fieldMap.insert(std::make_pair(field, LFI));
-    return LFI;
-  }
-}
-
-LLVMSignatureInfo* JnjvmModule::getSignatureInfo(Signdef* sign) {
-  signature_iterator SI = signatureMap.find(sign);
-  if (SI != signatureMap.end()) {
-    return SI->second;
-  } else {
-    LLVMSignatureInfo* LSI = new LLVMSignatureInfo(sign);
-    signatureMap.insert(std::make_pair(sign, LSI));
-    return LSI;
-  }
-}
-
 #ifdef SERVICE_VM
-LLVMServiceInfo* JnjvmModule::getServiceInfo(ServiceDomain* S) {
-  service_iterator SI = serviceMap.find(S);
-  if (SI != serviceMap.end()) {
-    return SI->second;
-  } else {
-    LLVMServiceInfo* LSI = new LLVMServiceInfo(sign);
-    serviceMap.insert(std::make_pair(S, LSI));
-    return LSI;
-  }
-}
-
 Value* LLVMServiceInfo::getDelegatee(JavaJIT* jit) {
   if (!delegateeGV) {
     Constant* cons = 
