@@ -701,6 +701,7 @@ N3_LIB
 pnetlibpath
 WITH_N3_MONO
 monopath
+WITH_N3
 CXX
 CXXFLAGS
 ac_ct_CXX
@@ -4024,9 +4025,12 @@ else
 fi
 
 
+WITH_N3=0
+
 if test "x$pnetlocalprefix" != x; then
   echo Using ${pnetlocalprefix} as PNET local prefix;
   WITH_N3_PNETLIB=1;
+  WITH_N3=1;
 else
   WITH_N3_PNETLIB=0;
 fi
@@ -4051,9 +4055,12 @@ fi
 if test "x$monopath" != x; then
   echo Building N3 with Mono;
   WITH_N3_MONO=1;
+  WITH_N3=1;
 else
   WITH_N3_MONO=0;
 fi
+
+
 
 
 
@@ -7848,6 +7855,7 @@ N3_LIB!$N3_LIB$ac_delim
 pnetlibpath!$pnetlibpath$ac_delim
 WITH_N3_MONO!$WITH_N3_MONO$ac_delim
 monopath!$monopath$ac_delim
+WITH_N3!$WITH_N3$ac_delim
 CXX!$CXX$ac_delim
 CXXFLAGS!$CXXFLAGS$ac_delim
 ac_ct_CXX!$ac_ct_CXX$ac_delim
@@ -7861,7 +7869,6 @@ MKDIR!$MKDIR$ac_delim
 MV!$MV$ac_delim
 RANLIB!$RANLIB$ac_delim
 RM!$RM$ac_delim
-SED!$SED$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -7903,6 +7910,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+SED!$SED$ac_delim
 TAR!$TAR$ac_delim
 BINPWD!$BINPWD$ac_delim
 CAT!$CAT$ac_delim
@@ -7917,7 +7925,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 12; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 13; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

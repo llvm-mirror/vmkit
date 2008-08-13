@@ -295,9 +295,12 @@ AC_ARG_WITH(pnetlib,
        [[pnetlibpath=/usr/lib/cscc/lib/]]
 )
 
+WITH_N3=0
+
 if test "x$pnetlocalprefix" != x; then
   echo Using ${pnetlocalprefix} as PNET local prefix;
   WITH_N3_PNETLIB=1;
+  WITH_N3=1;
 else
   WITH_N3_PNETLIB=0;
 fi
@@ -319,12 +322,15 @@ AC_ARG_WITH(mono,
 if test "x$monopath" != x; then
   echo Building N3 with Mono;
   WITH_N3_MONO=1;
+  WITH_N3=1;
 else
   WITH_N3_MONO=0;
 fi
 
 AC_SUBST([WITH_N3_MONO])
 AC_SUBST([monopath])
+
+AC_SUBST([WITH_N3])
 
 dnl===-----------------------------------------------------------------------===
 dnl===

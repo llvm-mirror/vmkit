@@ -3,13 +3,13 @@ ifdef VMKIT_RUNTIME
 .PRECIOUS: LLVMRuntime.inc
 
 # All of these files depend on tblgen and the .td files.
-LLVMRuntime.inc : $(LLVMAS) $(LLC) $(LLFiles)
+LLVMRuntime.inc : $(LLVMAS) $(LLC) $(VMKIT_RUNTIME)
 
 LLVMRuntime.gen.ll : $(VMKIT_RUNTIME)
 	$(Verb) cat $(VMKIT_RUNTIME) > LLVMRuntime.gen.ll
 
 LLVMRuntime.inc : LLVMRuntime.gen.ll
-	$(Echo) "Building LLVM runtime"
+	$(Echo) "Building LLVM runtime with $(VMKIT_RUNTIME)"
 	$(Verb) $(LLVMAS) -f $(<F) -o - | $(LLC) -march=cpp -cppgen=contents -f -o $@
 
 

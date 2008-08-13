@@ -16,7 +16,7 @@ ifeq ($(WITH_JNJVM), 1)
 PARALLEL_DIRS += JnJVM
 endif
 
-ifeq ($(WITH_N3_MONO), 1) || ($(WITH_N3_PNETLIB), 1)
+ifeq ($(WITH_N3), 1)
 PARALLEL_DIRS += N3
 endif
 
