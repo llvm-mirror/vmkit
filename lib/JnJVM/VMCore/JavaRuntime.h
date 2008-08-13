@@ -6,6 +6,16 @@
 // License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
+//
+// This file defines the Java runtime LLVM requires to execute Java programs.
+// The LLVM IR will perform JVM calls or access global variables that will
+// be defined at runtime.
+//
+// A clean implementation will create global variables and functions for each
+// module. Currently we don't do this, and the verifier pass in LLVM does not
+// like it.
+//
+//===----------------------------------------------------------------------===//
 
 #ifndef JNJVM_JAVA_RUNTIME_H
 #define JNJVM_JAVA_RUNTIME_H
@@ -87,7 +97,11 @@ private:
   /// virtualSizeLLVM - The LLVM constant size of instances of this class.
   ///
   llvm::ConstantInt* virtualSizeConstant;
+
+#ifndef MULTIPLE_VM
   llvm::GlobalVariable* staticVarGV;
+#endif
+
   llvm::GlobalVariable* virtualTableGV;
   llvm::Function* virtualTracerFunction;
   llvm::Function* staticTracerFunction;
@@ -111,7 +125,9 @@ public:
   LLVMClassInfo(CommonClass* cl) : 
     LLVMCommonClassInfo(cl),
     virtualSizeConstant(0),
+#ifndef MULITPLE_VM
     staticVarGV(0),
+#endif
     virtualTableGV(0),
     virtualTracerFunction(0),
     staticTracerFunction(0),

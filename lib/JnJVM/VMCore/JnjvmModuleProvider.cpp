@@ -17,9 +17,9 @@
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
 #include "JavaJIT.h"
-#include "JavaRuntime.h"
 #include "JavaThread.h"
 #include "Jnjvm.h"
+#include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
 
 using namespace llvm;
@@ -41,7 +41,7 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
   
   meth->compiledPtr();
   
-  LLVMMethodInfo* LMI = JavaRuntime::getMethodInfo(meth);
+  LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
   ctpInfo->ctpRes[index] = LMI->getMethod();
 
   return meth;
@@ -92,7 +92,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
     mvm::jit::executionEngine->updateGlobalMapping(F, val);
   
   if (isVirtual(meth->access)) {
-    LLVMMethodInfo* LMI = JavaRuntime::getMethodInfo(meth);
+    LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
     uint64_t offset = LMI->getOffset()->getZExtValue();
     assert(meth->classDef->isResolved() && "Class not resolved");
     assert(meth->classDef->virtualVT && "Class has no VT");
@@ -133,7 +133,7 @@ void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
 }
 
 Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
-  LLVMMethodInfo* LMI = JavaRuntime::getMethodInfo(meth);
+  LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
   Function* func = LMI->getMethod();
   if (func->hasNotBeenReadFromBitcode()) {
     // We are jitting. Take the lock.
@@ -141,7 +141,7 @@ Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
     JavaJIT jit;
     jit.compilingClass = meth->classDef;
     jit.compilingMethod = meth;
-    jit.module = TheModule;
+    jit.module = (JnjvmModule*)TheModule;
     jit.llvmFunction = func;
     if (isNative(meth->access)) {
       jit.nativeCompile();
@@ -156,7 +156,8 @@ Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
 llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
                                                  Signdef* sign, bool stat) {
   const llvm::FunctionType* type = 0;
-  LLVMSignatureInfo* LSI = JavaRuntime::getSignatureInfo(sign);
+  JnjvmModule* M = cl->isolate->TheModule;
+  LLVMSignatureInfo* LSI = M->getSignatureInfo(sign);
   
   if (stat) {
     type = LSI->getStaticType();
@@ -224,7 +225,7 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, createSCCPPass());                 // Constant prop with SCCP
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
   
-  addPass(PM, mvm::createEscapeAnalysisPass(JavaRuntime::JavaObjectAllocateFunction));
+  addPass(PM, mvm::createEscapeAnalysisPass(JnjvmModule::JavaObjectAllocateFunction));
   addPass(PM, mvm::createLowerConstantCallsPass());
   
   addPass(PM, createGVNPass());                  // Remove redundancies
@@ -240,7 +241,7 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   
 }
 
-JnjvmModuleProvider::JnjvmModuleProvider(llvm::Module *m) {
+JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
   TheModule = (Module*)m;
   mvm::jit::protectEngine->lock();
   mvm::jit::executionEngine->addModuleProvider(this);

@@ -26,10 +26,6 @@
 #define vm_new(vm, cl) gc_new(cl)
 #endif
 
-namespace llvm {
-  class Module;
-}
-
 namespace jnjvm {
 
 class ArrayUInt8;
@@ -41,6 +37,7 @@ class JavaField;
 class JavaMethod;
 class JavaObject;
 class JavaString;
+class JnjvmModule;
 class JnjvmModuleProvider;
 class Reader;
 class Typedef;
@@ -262,7 +259,7 @@ public:
 
   
   JnjvmModuleProvider* TheModuleProvider;
-  llvm::Module*         TheModule;
+  JnjvmModule*         TheModule;
 
 
 #ifndef MULTIPLE_GC

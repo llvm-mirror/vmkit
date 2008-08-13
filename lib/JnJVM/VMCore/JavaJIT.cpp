@@ -38,6 +38,7 @@
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "JnjvmModuleProvider.h"
 #include "NativeUtil.h"
 #include "Reader.h"
 #include "Zip.h"
@@ -65,18 +66,18 @@ void JavaJIT::invokeVirtual(uint16 index) {
   Constant* zero = mvm::jit::constantZero;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index);
   std::vector<Value*> args; // size = [signature->nbIn + 3];
-  LLVMSignatureInfo* LSI = JavaRuntime::getSignatureInfo(signature);
+  LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   FunctionType::param_iterator it  = virtualType->param_end();
   makeArgs(it, index, args, signature->args.size() + 1);
   
   JITVerifyNull(args[0]); 
 
-  Value* VT = CallInst::Create(JavaRuntime::GetVTFunction, args[0], "",
+  Value* VT = CallInst::Create(JnjvmModule::GetVTFunction, args[0], "",
                                currentBlock);
   std::vector<Value*> indexes2; //[3];
   if (meth) {
-    LLVMMethodInfo* LMI = JavaRuntime::getMethodInfo(meth);
+    LLVMMethodInfo* LMI = module->getMethodInfo(meth);
     indexes2.push_back(LMI->getOffset());
   } else {
     GlobalVariable* gv = 
@@ -100,12 +101,12 @@ void JavaJIT::invokeVirtual(uint16 index) {
     std::vector<Value*> Args;
     Args.push_back(args[0]);
     LLVMClassInfo* LCI = 
-      (LLVMClassInfo*)JavaRuntime::getClassInfo(compilingClass);
+      (LLVMClassInfo*)module->getClassInfo(compilingClass);
     Args.push_back(LCI->getVar(this));
     Constant* CI = ConstantInt::get(Type::Int32Ty, index);
     Args.push_back(CI);
     Args.push_back(gv);
-    val = invoke(JavaRuntime::VirtualLookupFunction, Args, "", currentBlock);
+    val = invoke(JnjvmModule::VirtualLookupFunction, Args, "", currentBlock);
     node->addIncoming(val, currentBlock);
     llvm::BranchInst::Create(endBlock, currentBlock);
     
@@ -175,7 +176,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   } else {
     JavaObject* loader = compilingClass->classLoader;
     ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
-    LLVMServiceInfo* LSI = JavaRuntime::getServiceInfo(vm);
+    LLVMServiceInfo* LSI = module->getServiceInfo(vm);
     isolateLocal = LSI->getDelegatee(this);
     Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, lastArg, 
                               isolateLocal, "", currentBlock);
@@ -186,7 +187,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
     std::vector<Value*> Args;
     Args.push_back(lastArg);
     Args.push_back(isolateLocal);
-    CallInst::Create(JavaRuntime::ServiceCallStartFunction, Args.begin(),
+    CallInst::Create(JnjvmModule::ServiceCallStartFunction, Args.begin(),
                      Args.end(), "", currentBlock);
     BranchInst::Create(endBlock, currentBlock);
     currentBlock = endBlock;
@@ -197,7 +198,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   if (funcType->getReturnType() != Type::VoidTy)
     endNode = llvm::PHINode::Create(funcType->getReturnType(), "", endBlock);
   
-  Value* buf = llvm::CallInst::Create(JavaRuntime::GetSJLJBufferFunction,
+  Value* buf = llvm::CallInst::Create(JnjvmModule::GetSJLJBufferFunction,
                                       "", currentBlock);
   Value* test = llvm::CallInst::Create(mvm::jit::setjmpLLVM, buf, "",
                                        currentBlock);
@@ -228,7 +229,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   uint32 index = 0;
   if (stat) {
     LLVMClassInfo* LCI = 
-      (LLVMClassInfo*)JavaRuntime::getClassInfo(compilingClass);
+      (LLVMClassInfo*)module->getClassInfo(compilingClass);
     nativeArgs.push_back(LCI->getDelegatee(this));
     index = 2;
   } else {
@@ -242,7 +243,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   
   
   LLVMSignatureInfo* LSI = 
-    JavaRuntime::getSignatureInfo(compilingMethod->getSignature());
+    module->getSignatureInfo(compilingMethod->getSignature());
   const llvm::Type* valPtrType = LSI->getNativePtrType();
   Value* valPtr = 
     ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, (uint64)natPtr),
@@ -259,7 +260,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   if (isSynchro(compilingMethod->access))
     endSynchronize();
   
-  llvm::CallInst::Create(JavaRuntime::JniProceedPendingExceptionFunction, "",
+  llvm::CallInst::Create(JnjvmModule::JniProceedPendingExceptionFunction, "",
                          currentBlock);
   
   if (funcType->getReturnType() != Type::VoidTy)
@@ -278,10 +279,10 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
 void JavaJIT::monitorEnter(Value* obj) {
   std::vector<Value*> gep;
   gep.push_back(mvm::jit::constantZero);
-  gep.push_back(JavaRuntime::JavaObjectLockOffsetConstant);
+  gep.push_back(JnjvmModule::JavaObjectLockOffsetConstant);
   Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
                                              currentBlock);
-  Value* threadId = CallInst::Create(JavaRuntime::GetThreadIDFunction, "",
+  Value* threadId = CallInst::Create(JnjvmModule::GetThreadIDFunction, "",
                                      currentBlock);
   std::vector<Value*> atomicArgs;
   atomicArgs.push_back(lockPtr);
@@ -347,14 +348,14 @@ void JavaJIT::monitorEnter(Value* obj) {
 
   // The counter will overflow, call this function to create a new lock,
   // lock it 0x101 times, and pass.
-  CallInst::Create(JavaRuntime::OverflowThinLockFunction, obj, "",
+  CallInst::Create(JnjvmModule::OverflowThinLockFunction, obj, "",
                    currentBlock);
   BranchInst::Create(OK, currentBlock);
   
   currentBlock = FatLockBB;
 
   // Either it's a fat lock or there is contention.
-  CallInst::Create(JavaRuntime::AquireObjectFunction, obj, "", currentBlock);
+  CallInst::Create(JnjvmModule::AquireObjectFunction, obj, "", currentBlock);
   BranchInst::Create(OK, currentBlock);
   currentBlock = OK;
 }
@@ -362,11 +363,11 @@ void JavaJIT::monitorEnter(Value* obj) {
 void JavaJIT::monitorExit(Value* obj) {
   std::vector<Value*> gep;
   gep.push_back(mvm::jit::constantZero);
-  gep.push_back(JavaRuntime::JavaObjectLockOffsetConstant);
+  gep.push_back(JnjvmModule::JavaObjectLockOffsetConstant);
   Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
                                              currentBlock);
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
-  Value* threadId = CallInst::Create(JavaRuntime::GetThreadIDFunction, "",
+  Value* threadId = CallInst::Create(JnjvmModule::GetThreadIDFunction, "",
                                      currentBlock);
   
   Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, lock, threadId, "",
@@ -408,7 +409,7 @@ void JavaJIT::monitorExit(Value* obj) {
   currentBlock = FatLockBB;
 
   // Either it's a fat lock or there is contention.
-  CallInst::Create(JavaRuntime::ReleaseObjectFunction, obj, "", currentBlock);
+  CallInst::Create(JnjvmModule::ReleaseObjectFunction, obj, "", currentBlock);
   BranchInst::Create(EndUnlock, currentBlock);
   currentBlock = EndUnlock;
 }
@@ -419,17 +420,17 @@ void JavaJIT::beginSynchronize() {
     obj = llvmFunction->arg_begin();
   } else {
     LLVMClassInfo* LCI = 
-      (LLVMClassInfo*)JavaRuntime::getClassInfo(compilingClass);
+      (LLVMClassInfo*)module->getClassInfo(compilingClass);
     obj = LCI->getStaticVar(this);
   }
 #ifndef SERVICE_VM
   monitorEnter(obj);
 #else
   if (ServiceDomain::isLockableDomain(compilingClass->isolate)) {
-    llvm::CallInst::Create(JavaRuntime::AquireObjectInSharedDomainFunction,
+    llvm::CallInst::Create(JnjvmModule::AquireObjectInSharedDomainFunction,
                            obj, "", currentBlock);
   } else {
-    llvm::CallInst::Create(JavaRuntime::AquireObjectFunction,
+    llvm::CallInst::Create(JnjvmModule::AquireObjectFunction,
                            obj, "", currentBlock);
   }
 #endif
@@ -441,17 +442,17 @@ void JavaJIT::endSynchronize() {
     obj = llvmFunction->arg_begin();
   } else {
     LLVMClassInfo* LCI = 
-      (LLVMClassInfo*)JavaRuntime::getClassInfo(compilingClass);
+      (LLVMClassInfo*)module->getClassInfo(compilingClass);
     obj = LCI->getStaticVar(this);
   }
 #ifndef SERVICE_VM
   monitorExit(obj);
 #else
   if (ServiceDomain::isLockableDomain(compilingClass->isolate)) {
-    llvm::CallInst::Create(JavaRuntime::ReleaseObjectInSharedDomainFunction,
+    llvm::CallInst::Create(JnjvmModule::ReleaseObjectInSharedDomainFunction,
                            argsSync.begin(), argsSync.end(), "", currentBlock);
   } else {
-    llvm::CallInst::Create(JavaRuntime::ReleaseObjectFunction, argsSync.begin(),
+    llvm::CallInst::Create(JnjvmModule::ReleaseObjectFunction, argsSync.begin(),
                            argsSync.end(), "", currentBlock);    
   }
 #endif
@@ -482,7 +483,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   
   reader.seek(codeLen, Reader::SeekCur);
   
-  LLVMMethodInfo* LMI = JavaRuntime::getMethodInfo(compilingMethod);
+  LLVMMethodInfo* LMI = module->getMethodInfo(compilingMethod);
   assert(LMI);
   Function* func = LMI->getMethod();
   llvmFunction = parentFunction;
@@ -506,7 +507,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
     doubleLocals.push_back(new AllocaInst(Type::DoubleTy, "", currentBlock));
     longLocals.push_back(new AllocaInst(Type::Int64Ty, "", currentBlock));
     floatLocals.push_back(new AllocaInst(Type::FloatTy, "", currentBlock));
-    objectLocals.push_back(new AllocaInst(JavaRuntime::JavaObjectType, "",
+    objectLocals.push_back(new AllocaInst(JnjvmModule::JavaObjectType, "",
                                           currentBlock));
   }
   
@@ -562,7 +563,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   } else {
     JavaObject* loader = compilingClass->classLoader;
     ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
-    LLVMServiceInfo* LSI = JavaRuntime::getServiceInfo(vm);
+    LLVMServiceInfo* LSI = module->getServiceInfo(vm);
     isolateLocal = LSI->getDelegatee(this);
     Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, args[args.size() - 1], 
                               isolateLocal, "", currentBlock);
@@ -573,7 +574,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
     std::vector<Value*> Args;
     Args.push_back(args[args.size()-  1]);
     Args.push_back(isolateLocal);
-    CallInst::Create(JavaRuntime::ServiceCallStartFunction, Args.begin(),
+    CallInst::Create(JnjvmModule::ServiceCallStartFunction, Args.begin(),
                      Args.end(), "", currentBlock);
     BranchInst::Create(endBlock, currentBlock);
     currentBlock = endBlock;
@@ -604,7 +605,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
     std::vector<Value*> Args;
     Args.push_back(args[args.size() - 1]);
     Args.push_back(isolateLocal);
-    CallInst::Create(JavaRuntime::ServiceCallStopFunction, Args.begin(),
+    CallInst::Create(JnjvmModule::ServiceCallStopFunction, Args.begin(),
                      Args.end(), "", currentBlock);
     BranchInst::Create(newEndBlock, currentBlock);
     currentBlock = newEndBlock;
@@ -658,7 +659,7 @@ llvm::Function* JavaJIT::javaCompile() {
     {
     std::vector<llvm::Value*> args;
     args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
-    llvm::CallInst::Create(JavaRuntime::PrintMethodStartFunction, args.begin(),
+    llvm::CallInst::Create(JnjvmModule::PrintMethodStartFunction, args.begin(),
                            args.end(), "", currentBlock);
     }
 #endif
@@ -670,7 +671,7 @@ llvm::Function* JavaJIT::javaCompile() {
     doubleLocals.push_back(new AllocaInst(Type::DoubleTy, "", currentBlock));
     longLocals.push_back(new AllocaInst(Type::Int64Ty, "", currentBlock));
     floatLocals.push_back(new AllocaInst(Type::FloatTy, "", currentBlock));
-    objectLocals.push_back(new AllocaInst(JavaRuntime::JavaObjectType, "",
+    objectLocals.push_back(new AllocaInst(JnjvmModule::JavaObjectType, "",
                                           currentBlock));
   }
   
@@ -725,7 +726,7 @@ llvm::Function* JavaJIT::javaCompile() {
   } else {
     JavaObject* loader = compilingClass->classLoader;
     ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
-    LLVMServiceInfo* LSI = JavaRuntime::getServiceInfo(vm);
+    LLVMServiceInfo* LSI = module->getServiceInfo(vm);
     isolateLocal = LSI->getDelegatee(this);
     Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, i, isolateLocal, "",
                               currentBlock);
@@ -736,7 +737,7 @@ llvm::Function* JavaJIT::javaCompile() {
     std::vector<Value*> Args;
     Args.push_back(i);
     Args.push_back(isolateLocal);
-    CallInst::Create(JavaRuntime::ServiceCallStartFunction, Args.begin(),
+    CallInst::Create(JnjvmModule::ServiceCallStartFunction, Args.begin(),
                      Args.end(), "", currentBlock);
     BranchInst::Create(endBlock, currentBlock);
     currentBlock = endBlock;
@@ -782,7 +783,7 @@ llvm::Function* JavaJIT::javaCompile() {
     {
     std::vector<llvm::Value*> args;
     args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
-    llvm::CallInst::Create(JavaRuntime::PrintMethodEndFunction, args.begin(),
+    llvm::CallInst::Create(JnjvmModule::PrintMethodEndFunction, args.begin(),
                            args.end(), "", currentBlock);
     }
 #endif
@@ -798,7 +799,7 @@ llvm::Function* JavaJIT::javaCompile() {
     std::vector<Value*> Args;
     Args.push_back(i);
     Args.push_back(isolateLocal);
-    CallInst::Create(JavaRuntime::ServiceCallStopFunction, Args.begin(),
+    CallInst::Create(JnjvmModule::ServiceCallStopFunction, Args.begin(),
                      Args.end(), "", currentBlock);
     BranchInst::Create(newEndBlock, currentBlock);
     currentBlock = newEndBlock;
@@ -815,7 +816,7 @@ llvm::Function* JavaJIT::javaCompile() {
   if (PI == PE) {
     endExceptionBlock->eraseFromParent();
   } else {
-    CallInst* ptr_eh_ptr = CallInst::Create(JavaRuntime::GetExceptionFunction,
+    CallInst* ptr_eh_ptr = CallInst::Create(JnjvmModule::GetExceptionFunction,
                                             "eh_ptr", endExceptionBlock);
     llvm::CallInst::Create(mvm::jit::unwindResume, ptr_eh_ptr, "",
                            endExceptionBlock);
@@ -850,7 +851,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
   nbe += sync;
   JavaCtpInfo* ctpInfo = compilingClass->ctpInfo;
   if (nbe) {
-    supplLocal = new AllocaInst(JavaRuntime::JavaObjectType, "exceptionVar",
+    supplLocal = new AllocaInst(JnjvmModule::JavaObjectType, "exceptionVar",
                                 currentBlock);
   }
   
@@ -868,11 +869,11 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     if (isVirtual(compilingMethod->access)) {
       argsSync.push_back(llvmFunction->arg_begin());
     } else {
-      LLVMClassInfo* LCI = (LLVMClassInfo*)JavaRuntime::getClassInfo(compilingClass);
+      LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(compilingClass);
       Value* arg = LCI->getStaticVar(this);
       argsSync.push_back(arg);
     }
-    llvm::CallInst::Create(JavaRuntime::ReleaseObjectFunction, argsSync.begin(), argsSync.end(),
+    llvm::CallInst::Create(JnjvmModule::ReleaseObjectFunction, argsSync.begin(), argsSync.end(),
                            "", synchronizeExceptionBlock);
 
     llvm::BranchInst::Create(endExceptionBlock, synchronizeExceptionBlock);
@@ -1026,9 +1027,9 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     Value* cl = 0;
     currentBlock = cur->realTest;
     assert(cur->catchClass);
-    LLVMClassInfo* LCI = (LLVMClassInfo*)JavaRuntime::getClassInfo(cur->catchClass);
+    LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(cur->catchClass);
     cl = LCI->getVar(this);
-    Value* cmp = llvm::CallInst::Create(JavaRuntime::CompareExceptionFunction, cl, "",
+    Value* cmp = llvm::CallInst::Create(JnjvmModule::CompareExceptionFunction, cl, "",
                                         currentBlock);
     llvm::BranchInst::Create(cur->handler, bbNext, cmp, currentBlock);
     if (nodeNext)
@@ -1038,9 +1039,9 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
       cur->handlerPHI = llvm::PHINode::Create(mvm::jit::ptrType, "",
                                               cur->handler);
       cur->handlerPHI->addIncoming(cur->exceptionPHI, currentBlock);
-      Value* exc = llvm::CallInst::Create(JavaRuntime::GetJavaExceptionFunction,
+      Value* exc = llvm::CallInst::Create(JnjvmModule::GetJavaExceptionFunction,
                                           "", cur->handler);
-      llvm::CallInst::Create(JavaRuntime::ClearExceptionFunction, "",
+      llvm::CallInst::Create(JnjvmModule::ClearExceptionFunction, "",
                              cur->handler);
       llvm::CallInst::Create(mvm::jit::exceptionBeginCatch, cur->handlerPHI,
                              "tmp8", cur->handler);
@@ -1097,16 +1098,16 @@ void JavaJIT::_ldc(uint16 index) {
 #ifndef MULTIPLE_VM
         val = compilingClass->isolate->UTF8ToStr(utf8);
         gv =
-          new GlobalVariable(JavaRuntime::JavaObjectType, false, 
+          new GlobalVariable(JnjvmModule::JavaObjectType, false, 
                              GlobalValue::ExternalLinkage,
-                             JavaRuntime::JavaObjectNullConstant, "",
+                             JnjvmModule::JavaObjectNullConstant, "",
                              module);
 #else
           val = (void*)utf8;
           gv =
-            new GlobalVariable(JavaRuntime::JavaArrayUInt16Type, false, 
+            new GlobalVariable(JnjvmModule::JavaArrayUInt16Type, false, 
                                GlobalValue::ExternalLinkage,
-                               JavaRuntime::UTF8NullConstant, "",
+                               JnjvmModule::UTF8NullConstant, "",
                                module);
 #endif
         
@@ -1115,7 +1116,7 @@ void JavaJIT::_ldc(uint16 index) {
         GenericValue Val = GenericValue(val);
         llvm::GenericValue * Ptr = (llvm::GenericValue*)ptr;
         mvm::jit::executionEngine->StoreValueToMemory(Val, Ptr,
-                                                  JavaRuntime::JavaObjectType);
+                                                  JnjvmModule::JavaObjectType);
         toPush = new LoadInst(gv, "", currentBlock);
         ctpInfo->ctpRes[index] = gv;
         compilingClass->release();
@@ -1129,7 +1130,7 @@ void JavaJIT::_ldc(uint16 index) {
                             currentBlock);
     }
 #ifdef MULTIPLE_VM
-    CallInst* C = llvm::CallInst::Create(JavaRuntime::RuntimeUTF8ToStrFunction,
+    CallInst* C = llvm::CallInst::Create(JnjvmModule::RuntimeUTF8ToStrFunction,
                                          toPush, "", currentBlock);
     push(C, AssessorDesc::dRef);
 #else
@@ -1150,11 +1151,11 @@ void JavaJIT::_ldc(uint16 index) {
   } else if (type == JavaCtpInfo::ConstantClass) {
     if (ctpInfo->ctpRes[index]) {
       CommonClass* cl = (CommonClass*)(ctpInfo->ctpRes[index]);
-      LLVMCommonClassInfo* LCI = JavaRuntime::getClassInfo(cl);
+      LLVMCommonClassInfo* LCI = module->getClassInfo(cl);
       push(LCI->getDelegatee(this), AssessorDesc::dRef);
     } else {
       Value* val = getResolvedClass(index, false);
-      Value* res = CallInst::Create(JavaRuntime::GetClassDelegateeFunction, val, "",
+      Value* res = CallInst::Create(JnjvmModule::GetClassDelegateeFunction, val, "",
                                     currentBlock);
       push(res, AssessorDesc::dRef);
     }
@@ -1166,7 +1167,7 @@ void JavaJIT::_ldc(uint16 index) {
 void JavaJIT::JITVerifyNull(Value* obj) { 
 
   JavaJIT* jit = this;
-  Constant* zero = JavaRuntime::JavaObjectNullConstant;
+  Constant* zero = JnjvmModule::JavaObjectNullConstant;
   Value* test = new ICmpInst(ICmpInst::ICMP_EQ, obj, zero, "",
                              jit->currentBlock);
 
@@ -1176,12 +1177,12 @@ void JavaJIT::JITVerifyNull(Value* obj) {
   llvm::BranchInst::Create(exit, cont, test, jit->currentBlock);
   std::vector<Value*> args;
   if (currentExceptionBlock != endExceptionBlock) {
-    llvm::InvokeInst::Create(JavaRuntime::NullPointerExceptionFunction,
+    llvm::InvokeInst::Create(JnjvmModule::NullPointerExceptionFunction,
                              unifiedUnreachable,
                              currentExceptionBlock, args.begin(),
                              args.end(), "", exit);
   } else {
-    llvm::CallInst::Create(JavaRuntime::NullPointerExceptionFunction,
+    llvm::CallInst::Create(JnjvmModule::NullPointerExceptionFunction,
                            args.begin(), args.end(), "", exit);
     new UnreachableInst(exit);
   }
@@ -1214,12 +1215,12 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
     args.push_back(obj);
     args.push_back(index);
     if (currentExceptionBlock != endExceptionBlock) {
-      llvm::InvokeInst::Create(JavaRuntime::IndexOutOfBoundsExceptionFunction,
+      llvm::InvokeInst::Create(JnjvmModule::IndexOutOfBoundsExceptionFunction,
                                unifiedUnreachable,
                                currentExceptionBlock, args.begin(),
                                args.end(), "", ifFalse);
     } else {
-      llvm::CallInst::Create(JavaRuntime::IndexOutOfBoundsExceptionFunction,
+      llvm::CallInst::Create(JnjvmModule::IndexOutOfBoundsExceptionFunction,
                              args.begin(), args.end(), "", ifFalse);
       new UnreachableInst(ifFalse);
     }
@@ -1232,7 +1233,7 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
   
   std::vector<Value*> indexes; //[3];
   indexes.push_back(zero);
-  indexes.push_back(JavaRuntime::JavaArrayElementsOffsetConstant);
+  indexes.push_back(JnjvmModule::JavaArrayElementsOffsetConstant);
   indexes.push_back(index);
   Value* ptr = llvm::GetElementPtrInst::Create(val, indexes.begin(),
                                                indexes.end(), 
@@ -1491,7 +1492,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
   const UTF8* name = 0;
   const UTF8* cl = 0;
   ctpInfo->nameOfStaticOrSpecialMethod(index, cl, name, signature);
-  LLVMSignatureInfo* LSI = JavaRuntime::getSignatureInfo(signature);
+  LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   llvm::Instruction* val = 0;
   
@@ -1536,7 +1537,7 @@ void JavaJIT::invokeStatic(uint16 index) {
   const UTF8* name = 0;
   const UTF8* cl = 0;
   ctpInfo->nameOfStaticOrSpecialMethod(index, cl, name, signature);
-  LLVMSignatureInfo* LSI = JavaRuntime::getSignatureInfo(signature);
+  LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
   const llvm::FunctionType* staticType = LSI->getStaticType();
   llvm::Instruction* val = 0;
   
@@ -1559,11 +1560,11 @@ void JavaJIT::invokeStatic(uint16 index) {
     uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
     Class* mycl = (Class*)(ctpInfo->getMethodClassIfLoaded(clIndex));
     if (mycl && mycl->status >= resolved) {
-      LLVMCommonClassInfo* LCI = JavaRuntime::getClassInfo(mycl);
+      LLVMCommonClassInfo* LCI = module->getClassInfo(mycl);
       Value* arg = LCI->getVar(this);
-      arg = invoke(JavaRuntime::InitialisationCheckFunction, arg, "",
+      arg = invoke(JnjvmModule::InitialisationCheckFunction, arg, "",
                    currentBlock);
-      CallInst::Create(JavaRuntime::ForceInitialisationCheckFunction, arg, "",
+      CallInst::Create(JnjvmModule::ForceInitialisationCheckFunction, arg, "",
                        currentBlock);
     }
 
@@ -1589,20 +1590,20 @@ void JavaJIT::invokeStatic(uint16 index) {
     
 Value* JavaJIT::getResolvedClass(uint16 index, bool clinit) {
     GlobalVariable * gv =
-      new GlobalVariable(JavaRuntime::JavaClassType, false, 
+      new GlobalVariable(JnjvmModule::JavaClassType, false, 
                          GlobalValue::ExternalLinkage,
-                         JavaRuntime::JavaClassNullConstant, "",
+                         JnjvmModule::JavaClassNullConstant, "",
                          module);
 
     
     Value* arg1 = new LoadInst(gv, "", false, currentBlock);
     Value* test = new ICmpInst(ICmpInst::ICMP_EQ, arg1, 
-                               JavaRuntime::JavaClassNullConstant, "",
+                               JnjvmModule::JavaClassNullConstant, "",
                                currentBlock);
     
     BasicBlock* trueCl = createBasicBlock("Cl OK");
     BasicBlock* falseCl = createBasicBlock("Cl Not OK");
-    PHINode* node = llvm::PHINode::Create(JavaRuntime::JavaClassType, "",
+    PHINode* node = llvm::PHINode::Create(JnjvmModule::JavaClassType, "",
                                           trueCl);
     node->addIncoming(arg1, currentBlock);
     llvm::BranchInst::Create(falseCl, trueCl, test, currentBlock);
@@ -1610,7 +1611,7 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit) {
     currentBlock = falseCl;
 
     std::vector<Value*> Args;
-    LLVMClassInfo* LCI = (LLVMClassInfo*)JavaRuntime::getClassInfo(compilingClass);
+    LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(compilingClass);
     Value* v = LCI->getVar(this);
     Args.push_back(v);
     ConstantInt* CI = ConstantInt::get(Type::Int32Ty, index);
@@ -1621,7 +1622,7 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit) {
     } else {
       Args.push_back(mvm::jit::constantZero);
     }
-    Value* res = invoke(JavaRuntime::ClassLookupFunction, Args, "",
+    Value* res = invoke(JnjvmModule::ClassLookupFunction, Args, "",
                         currentBlock);
     node->addIncoming(res, currentBlock);
 
@@ -1629,7 +1630,7 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit) {
     currentBlock = trueCl;
 #ifdef MULTIPLE_VM
     if (clinit)
-      return invoke(JavaRuntime::InitialisationCheckFunction, node, "",
+      return invoke(JnjvmModule::InitialisationCheckFunction, node, "",
                     currentBlock);
     else
 #endif
@@ -1646,35 +1647,35 @@ void JavaJIT::invokeNew(uint16 index) {
   Value* Cl = 0;
   if (!cl || !cl->isResolved()) {
     Cl = getResolvedClass(index, true);
-    Size = CallInst::Create(JavaRuntime::GetObjectSizeFromClassFunction, Cl,
+    Size = CallInst::Create(JnjvmModule::GetObjectSizeFromClassFunction, Cl,
                             "", currentBlock);
-    VT = CallInst::Create(JavaRuntime::GetVTFromClassFunction, Cl, "",
+    VT = CallInst::Create(JnjvmModule::GetVTFromClassFunction, Cl, "",
                           currentBlock);
   } else {
-    LLVMClassInfo* LCI = (LLVMClassInfo*)JavaRuntime::getClassInfo(cl);
+    LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(cl);
     Size = LCI->getVirtualSize(this);
     VT = LCI->getVirtualTable(this);
     Cl = LCI->getVar(this);
 #ifndef MULTIPLE_VM
     if (!cl->isReady())
 #endif
-      Cl = invoke(JavaRuntime::InitialisationCheckFunction, Cl, "", currentBlock);
+      Cl = invoke(JnjvmModule::InitialisationCheckFunction, Cl, "", currentBlock);
   }
   std::vector<Value*> args;
   args.push_back(Size);
   args.push_back(VT);
 #ifdef MULTIPLE_GC
-  args.push_back(CallInst::Create(JavaRuntime::GetCollectorFunction,
+  args.push_back(CallInst::Create(JnjvmModule::GetCollectorFunction,
                                   isolateLocal, "", currentBlock));
 #endif
-  Value* val = invoke(JavaRuntime::JavaObjectAllocateFunction, args, "",
+  Value* val = invoke(JnjvmModule::JavaObjectAllocateFunction, args, "",
                       currentBlock);
   
   // Set the class
   
   std::vector<Value*> gep;
   gep.push_back(mvm::jit::constantZero);
-  gep.push_back(JavaRuntime::JavaObjectClassOffsetConstant);
+  gep.push_back(JnjvmModule::JavaObjectClassOffsetConstant);
   Value* GEP = GetElementPtrInst::Create(val, gep.begin(), gep.end(), "",
                                          currentBlock);
   new StoreInst(Cl, GEP, currentBlock);
@@ -1684,7 +1685,7 @@ void JavaJIT::invokeNew(uint16 index) {
 }
 
 Value* JavaJIT::arraySize(Value* val) {
-  return llvm::CallInst::Create(JavaRuntime::ArrayLengthFunction, val, "",
+  return llvm::CallInst::Create(JnjvmModule::ArrayLengthFunction, val, "",
                                 currentBlock);
 }
 
@@ -1714,13 +1715,13 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
       && field->classDef->isReady()
 #endif
      ) {
-    LLVMClassInfo* LCI = (LLVMClassInfo*)JavaRuntime::getClassInfo(field->classDef);
+    LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(field->classDef);
     if (stat) {
       object = LCI->getStaticVar(this);
     }
     const Type* type = stat ? LCI->getStaticType() :
                               LCI->getVirtualType();
-    LLVMFieldInfo* LFI = JavaRuntime::getFieldInfo(field);
+    LLVMFieldInfo* LFI = module->getFieldInfo(field);
     return fieldGetter(this, type, object, LFI->getOffset());
   } else {
     const Type* Pty = mvm::jit::arrayPtrType;
@@ -1769,16 +1770,16 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     if (object) {
       args.push_back(object);
     } else {
-      args.push_back(JavaRuntime::JavaObjectNullConstant);
+      args.push_back(JnjvmModule::JavaObjectNullConstant);
     }
-    LLVMClassInfo* LCI = (LLVMClassInfo*)JavaRuntime::getClassInfo(compilingClass);
+    LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(compilingClass);
     args.push_back(LCI->getVar(this));
     Constant* CI = ConstantInt::get(Type::Int32Ty, index);
     args.push_back(CI);
     args.push_back(stat ? mvm::jit::constantOne : mvm::jit::constantZero);
     args.push_back(gvStaticInstance);
     args.push_back(gv);
-    Value* tmp = invoke(JavaRuntime::FieldLookupFunction, args, "", currentBlock);
+    Value* tmp = invoke(JnjvmModule::FieldLookupFunction, args, "", currentBlock);
     node->addIncoming(tmp, currentBlock);
     llvm::BranchInst::Create(endBlock, currentBlock);
     
@@ -1961,7 +1962,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   JavaCtpInfo* ctpInfo = compilingClass->ctpInfo;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index);
   
-  LLVMSignatureInfo* LSI = JavaRuntime::getSignatureInfo(signature);
+  LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   const llvm::PointerType* virtualPtrType = LSI->getVirtualPtrType();
 
@@ -1987,7 +1988,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   Value* llvmEnv = 
     ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                               uint64_t (enveloppe)),
-                              JavaRuntime::EnveloppeType);
+                              JnjvmModule::EnveloppeType);
   
 
   JITVerifyNull(args[0]);
@@ -1999,7 +2000,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
                                           "", currentBlock);
   Value* cache = new LoadInst(cachePtr, "", currentBlock);
 
-  Value* cl = CallInst::Create(JavaRuntime::GetClassFunction, args[0], "",
+  Value* cl = CallInst::Create(JnjvmModule::GetClassFunction, args[0], "",
                                currentBlock);
   std::vector<Value*> args3;
   args3.push_back(zero);
@@ -2016,7 +2017,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
   
   currentBlock = ifFalse;
-  Value* _meth = invoke(JavaRuntime::InterfaceLookupFunction, cache, args[0],
+  Value* _meth = invoke(JnjvmModule::InterfaceLookupFunction, cache, args[0],
                         "", ifFalse);
   Value* meth = new BitCastInst(_meth, virtualPtrType, "", 
                                 currentBlock);
