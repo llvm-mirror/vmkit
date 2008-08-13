@@ -253,7 +253,6 @@ void N3::runMain(int argc, char** argv) {
 
   info.readArgs(argc, argv, this);
   if (info.assembly) {
-    int pos = info.appArgumentsPos;
     argv = argv + info.appArgumentsPos - 1;
     argc = argc - info.appArgumentsPos + 1;
     
