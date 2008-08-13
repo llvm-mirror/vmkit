@@ -74,15 +74,15 @@ int main(int argc, char** argv) {
     vm->runApplication(argc, argv);
 #endif
   } else {
+    mvm::CommandLine MyCl;
 #if WITH_JNJVM
     mvm::VirtualMachine::initialiseJVM();
+    MyCl.vmlets["java"] = (mvm::VirtualMachine::createJVM);
 #endif
 #if WITH_N3
     mvm::VirtualMachine::initialiseCLIVM();
-#endif
-    mvm::CommandLine MyCl;
-    MyCl.vmlets["java"] = (mvm::VirtualMachine::createJVM);
     MyCl.vmlets["net"] = (mvm::VirtualMachine::createCLIVM);
+#endif
     MyCl.start();
   }
 
