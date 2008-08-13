@@ -1,4 +1,4 @@
-//===------- JnjvmModule.h - Definition of a Jnjvm module -----------------===//
+//===------- JavaRuntime.h - Definition of the Java runtime ---------------===//
 //
 //                              JnJVM
 //
@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef JNJVM_MODULE_H
-#define JNJVM_MODULE_H
+#ifndef JNJVM_JAVA_RUNTIME_H
+#define JNJVM_JAVA_RUNTIME_H
 
 #include <map>
 
@@ -33,7 +33,7 @@ class JavaField;
 class JavaMethod;
 class JavaObject;
 class JavaJIT;
-class JnjvmModule;
+class JavaRuntime;
 class Signdef;
 
 class LLVMAssessorInfo {
@@ -51,7 +51,7 @@ public:
 
 class LLVMCommonClassInfo : public mvm::JITInfo {
   
-  friend class JnjvmModule;
+  friend class JavaRuntime;
 
 protected:
   CommonClass* classDef;
@@ -82,7 +82,7 @@ public:
 };
 
 class LLVMClassInfo : public LLVMCommonClassInfo {
-  friend class JnjvmModule;
+  friend class JavaRuntime;
 private:
   /// virtualSizeLLVM - The LLVM constant size of instances of this class.
   ///
@@ -223,7 +223,7 @@ public:
 };
 #endif
 
-class JnjvmModule : public llvm::Module {
+class JavaRuntime {
   friend class LLVMClassInfo;
 private:
   
@@ -373,8 +373,7 @@ public:
   }
 #endif
   
-  explicit JnjvmModule(const std::string &ModuleID);
-  void initialise();
+  static void initialise(llvm::Module* mod);
 };
 
 }

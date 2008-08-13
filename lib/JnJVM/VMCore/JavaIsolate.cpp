@@ -449,11 +449,11 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   
   isolate->analyseClasspathEnv(isolate->bootClasspathEnv);
 
-  isolate->TheModule = new llvm::Module("Isolate JnJVM");
+  llvm::Module* mod = new llvm::Module("Isolate JnJVM");
    std::string str = 
     mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
-  isolate->TheModule->setDataLayout(str);
-  isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->TheModule);
+  mod->setDataLayout(str);
+  isolate->TheModuleProvider = new JnjvmModuleProvider(mod);
   
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
@@ -512,12 +512,12 @@ JavaIsolate* JavaIsolate::allocateBootstrap() {
   
   isolate->analyseClasspathEnv(isolate->bootClasspathEnv);
   
-  isolate->TheModule = new llvm::Module("Bootstrap JnJVM");
+  Module* Mod = new llvm::Module("Bootstrap JnJVM");
   std::string str = 
     mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
-  isolate->TheModule->setDataLayout(str);
-  JavaRuntime::initialise(isolate->TheModule);
-  isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->TheModule);
+  Mod->setDataLayout(str);
+  JavaRuntime::initialise(Mod);
+  isolate->TheModuleProvider = new JnjvmModuleProvider(Mod);
  
   isolate->bootstrapThread = vm_new(isolate, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
