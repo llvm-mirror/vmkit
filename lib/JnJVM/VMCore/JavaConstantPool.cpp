@@ -419,8 +419,7 @@ void* JavaCtpInfo::infoOfStaticOrSpecialMethod(uint32 index,
       cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access), false);
     if (meth) { 
       // don't throw if no meth, the exception will be thrown just in time
-      JnjvmModule* M = classDef->isolate->TheModule;
-      void* F = M->getMethod(meth);
+      void* F = JavaRuntime::getMethod(meth);
       ctpRes[index] = (void*)F;
       return F;
     }

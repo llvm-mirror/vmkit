@@ -15,12 +15,11 @@
 using namespace llvm;
 
 namespace llvm {
-class FunctionPassManager;
+  class FunctionPassManager;
+  class Module;
 }
 
 namespace jnjvm {
-
-class JnjvmModule;
 
 class JnjvmModuleProvider : public ModuleProvider {
 private:
@@ -42,7 +41,7 @@ private:
 
 public:
   
-  JnjvmModuleProvider(JnjvmModule *m);
+  JnjvmModuleProvider(llvm::Module *m);
   ~JnjvmModuleProvider();
   
   llvm::Function* addCallback(Class* cl, uint32 index, Signdef* sign,

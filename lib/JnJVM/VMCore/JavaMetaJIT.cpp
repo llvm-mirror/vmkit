@@ -21,7 +21,6 @@
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
-#include "JnjvmModule.h"
 
 using namespace jnjvm;
 

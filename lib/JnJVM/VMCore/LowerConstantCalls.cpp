@@ -16,7 +16,7 @@
 
 #include "mvm/JIT.h"
 
-#include "JnjvmModule.h"
+#include "JavaRuntime.h"
 
 using namespace llvm;
 using namespace jnjvm;
@@ -44,20 +44,20 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
       II++;
       if (CallInst *CI = dyn_cast<CallInst>(I)) {
         Value* V = CI->getOperand(0);
-        if (V == jnjvm::JnjvmModule::ArrayLengthFunction) {
+        if (V == jnjvm::JavaRuntime::ArrayLengthFunction) {
           Changed = true;
           Value* val = CI->getOperand(1); // get the array
-          Value* array = new BitCastInst(val, jnjvm::JnjvmModule::JavaArrayType,
+          Value* array = new BitCastInst(val, jnjvm::JavaRuntime::JavaArrayType,
                                          "", CI);
           std::vector<Value*> args; //size=  2
           args.push_back(mvm::jit::constantZero);
-          args.push_back(jnjvm::JnjvmModule::JavaArraySizeOffsetConstant);
+          args.push_back(jnjvm::JavaRuntime::JavaArraySizeOffsetConstant);
           Value* ptr = GetElementPtrInst::Create(array, args.begin(), args.end(),
                                          "", CI);
           Value* load = new LoadInst(ptr, "", CI);
           CI->replaceAllUsesWith(load);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetVTFunction) {
+        } else if (V == jnjvm::JavaRuntime::GetVTFunction) {
           Changed = true;
           Value* val = CI->getOperand(1); // get the object
           std::vector<Value*> indexes; //[3];
@@ -68,66 +68,66 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetClassFunction) {
+        } else if (V == jnjvm::JavaRuntime::GetClassFunction) {
           Changed = true;
           Value* val = CI->getOperand(1); // get the object
           std::vector<Value*> args2;
           args2.push_back(mvm::jit::constantZero);
-          args2.push_back(jnjvm::JnjvmModule::JavaObjectClassOffsetConstant);
+          args2.push_back(jnjvm::JavaRuntime::JavaObjectClassOffsetConstant);
           Value* classPtr = GetElementPtrInst::Create(val, args2.begin(),
                                                       args2.end(), "",
                                                       CI);
           Value* cl = new LoadInst(classPtr, "", CI);
           CI->replaceAllUsesWith(cl);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetVTFromClassFunction) {
+        } else if (V == jnjvm::JavaRuntime::GetVTFromClassFunction) {
           Changed = true;
           Value* val = CI->getOperand(1); 
           std::vector<Value*> indexes; 
           indexes.push_back(mvm::jit::constantZero);
-          indexes.push_back(jnjvm::JnjvmModule::OffsetVTInClassConstant);
+          indexes.push_back(jnjvm::JavaRuntime::OffsetVTInClassConstant);
           Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                    indexes.end(), "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetObjectSizeFromClassFunction) {
+        } else if (V == jnjvm::JavaRuntime::GetObjectSizeFromClassFunction) {
           Changed = true;
           Value* val = CI->getOperand(1); 
           std::vector<Value*> indexes; 
           indexes.push_back(mvm::jit::constantZero);
-          indexes.push_back(JnjvmModule::OffsetObjectSizeInClassConstant);
+          indexes.push_back(JavaRuntime::OffsetObjectSizeInClassConstant);
           Value* SizePtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                    indexes.end(), "", CI);
           Value* Size = new LoadInst(SizePtr, "", CI);
           CI->replaceAllUsesWith(Size);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::ForceInitialisationCheckFunction) {
+        } else if (V == jnjvm::JavaRuntime::ForceInitialisationCheckFunction) {
           Changed = true;
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetDepthFunction) {
+        } else if (V == jnjvm::JavaRuntime::GetDepthFunction) {
           Changed = true;
           Value* val = CI->getOperand(1); 
           std::vector<Value*> indexes; 
           indexes.push_back(mvm::jit::constantZero);
-          indexes.push_back(JnjvmModule::OffsetDepthInClassConstant);
+          indexes.push_back(JavaRuntime::OffsetDepthInClassConstant);
           Value* DepthPtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                       indexes.end(), "", CI);
           Value* Depth = new LoadInst(DepthPtr, "", CI);
           CI->replaceAllUsesWith(Depth);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetDisplayFunction) {
+        } else if (V == jnjvm::JavaRuntime::GetDisplayFunction) {
           Changed = true;
           Value* val = CI->getOperand(1); 
           std::vector<Value*> indexes; 
           indexes.push_back(mvm::jit::constantZero);
-          indexes.push_back(JnjvmModule::OffsetDisplayInClassConstant);
+          indexes.push_back(JavaRuntime::OffsetDisplayInClassConstant);
           Value* DisplayPtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                         indexes.end(), "", CI);
           Value* Display = new LoadInst(DisplayPtr, "", CI);
           CI->replaceAllUsesWith(Display);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetClassInDisplayFunction) {
+        } else if (V == jnjvm::JavaRuntime::GetClassInDisplayFunction) {
           Changed = true;
           Value* val = CI->getOperand(1); 
           Value* depth = CI->getOperand(2); 
@@ -135,7 +135,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* Class = new LoadInst(ClassPtr, "", CI);
           CI->replaceAllUsesWith(Class);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::InstanceOfFunction) {
+        } else if (V == jnjvm::JavaRuntime::InstanceOfFunction) {
           ConstantExpr* CE = dyn_cast<ConstantExpr>(CI->getOperand(2));
           if (CE) {
             ConstantInt* C = (ConstantInt*)CE->getOperand(0);
@@ -145,21 +145,21 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             I->getParent()->getTerminator()->eraseFromParent();
             Value* obj = CI->getOperand(1);
             Instruction* cmp = new ICmpInst(ICmpInst::ICMP_EQ, obj,
-                                            JnjvmModule::JavaObjectNullConstant,
+                                            JavaRuntime::JavaObjectNullConstant,
                                             "", CI);
             BasicBlock* ifTrue = BasicBlock::Create("", &F);
             BasicBlock* ifFalse = BasicBlock::Create("", &F);
             BranchInst::Create(ifTrue, ifFalse, cmp, CI);
             PHINode* node = PHINode::Create(Type::Int1Ty, "", ifTrue);
             node->addIncoming(ConstantInt::getFalse(), CI->getParent());
-            Value* objCl = CallInst::Create(JnjvmModule::GetClassFunction, obj,
+            Value* objCl = CallInst::Create(JavaRuntime::GetClassFunction, obj,
                                             "", ifFalse);
             
             if (isInterface(cl->access)) {
               std::vector<Value*> args;
               args.push_back(objCl);
               args.push_back(CE);
-              Value* res = CallInst::Create(JnjvmModule::ImplementsFunction,
+              Value* res = CallInst::Create(JavaRuntime::ImplementsFunction,
                                             args.begin(), args.end(), "",
                                             ifFalse);
               node->addIncoming(res, ifFalse);
@@ -174,7 +174,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                 std::vector<Value*> args;
                 args.push_back(objCl);
                 args.push_back(CE);
-                cmp = CallInst::Create(JnjvmModule::IsAssignableFromFunction,
+                cmp = CallInst::Create(JavaRuntime::IsAssignableFromFunction,
                                        args.begin(), args.end(), "", notEquals);
                 node->addIncoming(cmp, notEquals);
                 BranchInst::Create(ifTrue, notEquals);
@@ -183,7 +183,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                 args.push_back(objCl);
                 args.push_back(CE);
                 Value* res = 
-                  CallInst::Create(JnjvmModule::InstantiationOfArrayFunction,
+                  CallInst::Create(JavaRuntime::InstantiationOfArrayFunction,
                                    args.begin(), args.end(), "", notEquals);
                 node->addIncoming(res, notEquals);
                 BranchInst::Create(ifTrue, notEquals);
@@ -192,10 +192,10 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                 if (cl->isResolved()) {
                   depthCl = ConstantInt::get(Type::Int32Ty, cl->depth);
                 } else {
-                  depthCl = CallInst::Create(JnjvmModule::GetDepthFunction,
+                  depthCl = CallInst::Create(JavaRuntime::GetDepthFunction,
                                              CE, "", notEquals);
                 }
-                Value* depthClObj = CallInst::Create(JnjvmModule::GetDepthFunction,
+                Value* depthClObj = CallInst::Create(JavaRuntime::GetDepthFunction,
                                                      objCl, "", notEquals);
                 Value* cmp = new ICmpInst(ICmpInst::ICMP_ULE, depthCl, depthClObj, "",
                                           notEquals);
@@ -206,14 +206,14 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                 node->addIncoming(ConstantInt::getFalse(), notEquals);
   
                 Value* inDisplay = 
-                  CallInst::Create(JnjvmModule::GetDisplayFunction, objCl,
+                  CallInst::Create(JavaRuntime::GetDisplayFunction, objCl,
                                    "", supDepth);
             
                 std::vector<Value*> args;
                 args.push_back(inDisplay);
                 args.push_back(depthCl);
                 Value* clInDisplay = 
-                  CallInst::Create(JnjvmModule::GetClassInDisplayFunction,
+                  CallInst::Create(JavaRuntime::GetClassInDisplayFunction,
                                    args.begin(), args.end(), "", supDepth);
              
                 cmp = new ICmpInst(ICmpInst::ICMP_EQ, clInDisplay, CE, "",
@@ -229,7 +229,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           }
         }
 #ifdef MULTIPLE_GC
-        else if (V == jnjvm::JnjvmModule::GetCollectorFunction) {
+        else if (V == jnjvm::JavaRuntime::GetCollectorFunction) {
           Changed = true;
           Value* val = CI->getOperand(1); 
           std::vector<Value*> indexes; 

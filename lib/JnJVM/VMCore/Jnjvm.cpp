@@ -331,7 +331,7 @@ void Jnjvm::initialiseClass(CommonClass* cl) {
         cl->super->initialiseClass();
       }
 
-      TheModule->resolveStaticClass((Class*)cl);
+      JavaRuntime::resolveStaticClass((Class*)cl);
       
       *status = inClinit;
       JavaMethod* meth = cl->lookupMethodDontThrow(clinitName, clinitType, true,
@@ -401,7 +401,7 @@ void Jnjvm::resolveClass(CommonClass* cl, bool doClinit) {
         loadParents((Class*)cl);
         cl->acquire(); 
         cl->status = prepared;
-        TheModule->resolveVirtualClass((Class*)cl);
+        JavaRuntime::resolveVirtualClass((Class*)cl);
         cl->status = resolved;
       }
       cl->release();

@@ -508,25 +508,25 @@ void JavaField::initField(JavaObject* obj) {
   Attribut* attribut = lookupAttribut(Attribut::constantAttribut);
 
   if (!attribut) {
-    JnjvmModule::InitField(this, obj);
+    JavaRuntime::InitField(this, obj);
   } else {
     Reader reader(attribut, classDef->bytes);
     JavaCtpInfo * ctpInfo = classDef->ctpInfo;
     uint16 idx = reader.readU2();
     if (funcs == AssessorDesc::dLong) {
-      JnjvmModule::InitField(this, obj, (uint64)ctpInfo->LongAt(idx));
+      JavaRuntime::InitField(this, obj, (uint64)ctpInfo->LongAt(idx));
     } else if (funcs == AssessorDesc::dDouble) {
-      JnjvmModule::InitField(this, obj, ctpInfo->DoubleAt(idx));
+      JavaRuntime::InitField(this, obj, ctpInfo->DoubleAt(idx));
     } else if (funcs == AssessorDesc::dFloat) {
-      JnjvmModule::InitField(this, obj, ctpInfo->FloatAt(idx));
+      JavaRuntime::InitField(this, obj, ctpInfo->FloatAt(idx));
     } else if (funcs == AssessorDesc::dRef) {
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
-      JnjvmModule::InitField(this, obj,
+      JavaRuntime::InitField(this, obj,
                          (JavaObject*)ctpInfo->resolveString(utf8, idx));
     } else if (funcs == AssessorDesc::dInt || funcs == AssessorDesc::dChar ||
                funcs == AssessorDesc::dShort || funcs == AssessorDesc::dByte ||
                funcs == AssessorDesc::dBool) {
-      JnjvmModule::InitField(this, obj, (uint64)ctpInfo->IntegerAt(idx));
+      JavaRuntime::InitField(this, obj, (uint64)ctpInfo->IntegerAt(idx));
     } else {
       JavaThread::get()->isolate->
         unknownError("unknown constant %c", funcs->byteId);

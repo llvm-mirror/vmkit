@@ -15,12 +15,12 @@
 #include "JavaClass.h"
 #include "JavaJIT.h"
 #include "JavaObject.h"
+#include "JavaRuntime.h"
 #include "JavaString.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "JnjvmModule.h"
 
 #define COMPILE_METHODS(cl) \
   for (CommonClass::method_iterator i = cl->virtualMethods.begin(), \
@@ -379,11 +379,11 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   JavaMethod* internString =
     UPCALL_METHOD(vm, "java/lang/VMString", "intern",
                   "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC); 
-  vm->TheModule->setMethod(internString, "internString");
+  JavaRuntime::setMethod(internString, "internString");
   
   JavaMethod* isArray =
     UPCALL_METHOD(vm, "java/lang/Class", "isArray", "()Z", ACC_VIRTUAL);
-  vm->TheModule->setMethod(isArray, "isArray");
+  JavaRuntime::setMethod(isArray, "isArray");
 
   ClasspathThread::initialise(vm);
     
@@ -400,17 +400,17 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   JavaMethod* getCallingClass =
     UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClass",
                   "()Ljava/lang/Class;", ACC_STATIC);
-  vm->TheModule->setMethod(getCallingClass, "getCallingClass");
+  JavaRuntime::setMethod(getCallingClass, "getCallingClass");
   
   JavaMethod* getCallingClassLoader =
     UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClassLoader",
                   "()Ljava/lang/ClassLoader;", ACC_STATIC);
-  vm->TheModule->setMethod(getCallingClassLoader, "getCallingClassLoader");
+  JavaRuntime::setMethod(getCallingClassLoader, "getCallingClassLoader");
   
   JavaMethod* postProperties =
     UPCALL_METHOD(vm, "gnu/classpath/VMSystemProperties", "postInit",
                   "(Ljava/util/Properties;)V", ACC_STATIC);
-  vm->TheModule->setMethod(postProperties, "propertiesPostInit");
+  JavaRuntime::setMethod(postProperties, "propertiesPostInit");
 }
 
 extern "C" JavaString* internString(JavaString* obj) {

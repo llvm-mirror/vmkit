@@ -17,6 +17,7 @@
 #include "llvm/DerivedTypes.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
+#include "llvm/Module.h"
 #include "llvm/Value.h"
 
 #include "types.h"
@@ -25,7 +26,7 @@
 #include "mvm/PrintBuffer.h"
 
 #include "JavaTypes.h"
-#include "JnjvmModule.h"
+#include "JavaRuntime.h"
 
 namespace jnjvm {
 
@@ -58,7 +59,7 @@ struct Opinfo {
 class JavaJIT {
 public:
   
-  JnjvmModule* module;
+  llvm::Module* module;
 
   static void invokeOnceVoid(Jnjvm* vm, JavaObject* loader,
                              const char* className,
