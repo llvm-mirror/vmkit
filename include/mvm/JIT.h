@@ -30,6 +30,14 @@
 
 namespace mvm {
 
+/// JITInfo - This class can be derived from to hold private JIT-specific
+/// information. Objects of type are accessed/created with
+/// <Class>::getInfo and destroyed when the <Class> object is destroyed.
+struct JITInfo {
+  virtual ~JITInfo() {}
+};
+
+
 namespace jit {
 
 const double MaxDouble = +INFINITY; //1.0 / 0.0;
