@@ -20,8 +20,16 @@
 
 #include "CommandLine.h"
 
-static llvm::cl::opt<bool> Java("java", llvm::cl::desc("Run the JVM"));
-static llvm::cl::opt<bool> Net("net", llvm::cl::desc("Run the .Net VM"));
+enum VMType {
+  Interactive, RunJava, RunNet
+};
+
+static llvm::cl::opt<VMType> VMToRun(llvm::cl::desc("Choose VM to run:"),
+  llvm::cl::values(
+    clEnumValN(Interactive , "i", "Run in interactive mode"),
+    clEnumValN(RunJava , "java", "Run the JVM"),
+    clEnumValN(RunNet, "net", "Run the CLI VM"),
+   clEnumValEnd));
 
 int found(char** argv, int argc, const char* name) {
   int i = 1;
@@ -52,19 +60,17 @@ int main(int argc, char** argv) {
     }
   }
   
-  if (Java) {
+  if (VMToRun == RunJava) {
     mvm::VirtualMachine::initialiseJVM();
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM();
     vm->runApplication(argc, argv);
-  } else if (Net) {
+  } else if (VMToRun == RunNet) {
     mvm::VirtualMachine::initialiseCLIVM();
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createCLIVM();
     vm->runApplication(argc, argv);
   } else {
     mvm::VirtualMachine::initialiseJVM();
     mvm::VirtualMachine::initialiseCLIVM();
-    mvm::VirtualMachine* bootstrapJVM = mvm::VirtualMachine::createJVM();
-    mvm::VirtualMachine* bootstrapNet = mvm::VirtualMachine::createCLIVM();
     mvm::CommandLine MyCl;
     MyCl.vmlets["java"] = (mvm::VirtualMachine::createJVM);
     MyCl.vmlets["net"] = (mvm::VirtualMachine::createCLIVM);
