@@ -266,6 +266,7 @@ classpathinclude="-I${classpathlibs}/../include -I/usr/include/classpath";
 
 if test "x${WITH_JNJVM}" = "xyes"; then
   WITH_JNJVM=1;
+  AC_DEFINE([WITH_JNJVM], [1], [With JNJVM])
 else
   WITH_JNJVM=0;
 fi 
@@ -301,6 +302,7 @@ if test "x$pnetlocalprefix" != x; then
   echo Using ${pnetlocalprefix} as PNET local prefix;
   WITH_N3_PNETLIB=1;
   WITH_N3=1;
+  AC_DEFINE([WITH_N3], [1], [With N3])
 else
   WITH_N3_PNETLIB=0;
 fi

@@ -13,6 +13,7 @@
 #include "llvm/Support/ManagedStatic.h"
 
 #include "MvmGC.h"
+#include "mvm/Config/config.h"
 #include "mvm/JIT.h"
 #include "mvm/Object.h"
 #include "mvm/VirtualMachine.h"
@@ -61,16 +62,24 @@ int main(int argc, char** argv) {
   }
   
   if (VMToRun == RunJava) {
+#if WITH_JNJVM
     mvm::VirtualMachine::initialiseJVM();
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM();
     vm->runApplication(argc, argv);
+#endif
   } else if (VMToRun == RunNet) {
+#if WITH_N3
     mvm::VirtualMachine::initialiseCLIVM();
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createCLIVM();
     vm->runApplication(argc, argv);
+#endif
   } else {
+#if WITH_JNJVM
     mvm::VirtualMachine::initialiseJVM();
+#endif
+#if WITH_N3
     mvm::VirtualMachine::initialiseCLIVM();
+#endif
     mvm::CommandLine MyCl;
     MyCl.vmlets["java"] = (mvm::VirtualMachine::createJVM);
     MyCl.vmlets["net"] = (mvm::VirtualMachine::createCLIVM);
