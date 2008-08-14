@@ -23,6 +23,7 @@ class JavaArray;
 class JavaJIT;
 class JavaObject;
 class Jnjvm;
+class JnjvmClassLoader;
 class UTF8;
 
 #define VOID_ID 0
@@ -180,14 +181,14 @@ public:
   ///
   AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
                const char* name,
-               Jnjvm* vm, uint8 nid,
+               JnjvmClassLoader* loader, uint8 nid,
                const char* assocName, ClassArray* cl,
                arrayCtor_t ctor);
 
 
   /// initialise - Construct all assessors.
   ///
-  static void initialise(Jnjvm* vm);
+  static void initialise(JnjvmClassLoader* loader);
   
 
   /// printString - Print the assessor for debugging purposes.
@@ -198,13 +199,14 @@ public:
                             uint32 meth, AssessorDesc*& ass,
                             uint32& ret);
 
-  static const UTF8* constructArrayName(Jnjvm *vm, AssessorDesc* ass,
+  static const UTF8* constructArrayName(JnjvmClassLoader* loader, AssessorDesc* ass,
                                         uint32 steps, const UTF8* className);
   
-  static void introspectArrayName(Jnjvm *vm, const UTF8* utf8, uint32 start,
+  /*
+  static void introspectArrayName(const UTF8* utf8, uint32 start,
                                   AssessorDesc*& ass, const UTF8*& res);
-  
-  static void introspectArray(Jnjvm *vm, JavaObject* loader, const UTF8* utf8,
+  */
+  static void introspectArray(JnjvmClassLoader* loader, const UTF8* utf8,
                               uint32 start, AssessorDesc*& ass,
                               CommonClass*& res);
 
@@ -238,9 +240,9 @@ public:
   ///
   const AssessorDesc* funcs;
 
-  /// isolate - Which isolate constructed me?
+  /// initialLoader - The loader that first loaded this typedef.
   ///
-  Jnjvm* isolate;
+  JnjvmClassLoader* initialLoader;
 
   /// printString - Print the Typedef for debugging purposes.
   ///
@@ -249,16 +251,16 @@ public:
   /// assocClass - Given the loaded, try to load the class represented by this
   /// Typedef.
   ///
-  CommonClass* assocClass(JavaObject* loader);
+  CommonClass* assocClass(JnjvmClassLoader* loader);
 
   /// humanPrintArgs - Prints the list of typedef in a human readable form.
   ///
   static void humanPrintArgs(const std::vector<Typedef*>*,
                              mvm::PrintBuffer* buf);
   
-  /// typeDup - Create a new Typedef.
+  /// Typedef - Create a new Typedef.
   ///
-  static Typedef* typeDup(const UTF8* name, Jnjvm* vm);
+  Typedef(const UTF8* name, JnjvmClassLoader* loader);
   
   /// tPrintBuf - Prints the name of the class this Typedef represents.
   ///
@@ -311,9 +313,9 @@ public:
   ///
   Typedef* ret;
 
-  /// isolate - The isolate that defined the signature.
+  /// initialLoader - The loader that first loaded this typedef.
   ///
-  Jnjvm* isolate;
+  JnjvmClassLoader* initialLoader;
 
   /// keyName - The Java name of the signature, e.g. "()V".
   ///
@@ -328,9 +330,9 @@ public:
   ///
   void printWithSign(CommonClass* cl, const UTF8* name, mvm::PrintBuffer* buf);
   
-  /// signDup - Create a new Signdef.
+  /// Signdef - Create a new Signdef.
   ///
-  static Signdef* signDup(const UTF8* name, Jnjvm* vm);
+  Signdef(const UTF8* name, JnjvmClassLoader* loader);
   
   
 //===----------------------------------------------------------------------===//

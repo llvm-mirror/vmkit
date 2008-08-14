@@ -24,6 +24,7 @@ namespace jnjvm {
 
 class ClassArray;
 class CommonClass;
+class JavaAllocator;
 class JavaObject;
 class Jnjvm;
 
@@ -91,7 +92,7 @@ public:
 #define ARRAYCLASS(name, elmt)                                \
   class name : public TJavaArray<elmt> {                      \
   public:                                                     \
-    static name* acons(sint32 n, ClassArray* cl, Jnjvm* vm);  \
+    static name* acons(sint32 n, ClassArray* cl, JavaAllocator* allocator);  \
   }
 
 ARRAYCLASS(ArrayUInt8,  uint8);
@@ -116,7 +117,7 @@ public:
 
   /// acons - Allocates a Java array of objects. The class given as argument is
   /// the class of the array, not the class of its elements.
-  static ArrayObject* acons(sint32 n, ClassArray* cl, Jnjvm* vm);
+  static ArrayObject* acons(sint32 n, ClassArray* cl, JavaAllocator* allocator);
 
   /// tracer - The tracer method of Java arrays of objects. This method will
   /// trace all objects in the array.
@@ -133,32 +134,25 @@ public:
   
   /// acons - Allocates an UTF8 in permanent memory. The class argument must be
   /// JavaArray::ofChar.
-  static const UTF8* acons(sint32 n, ClassArray* cl, Jnjvm* vm);
+  static const UTF8* acons(sint32 n, ClassArray* cl, JavaAllocator* allocator);
 
   /// internalToJava - Creates a copy of the UTF8 at its given offset and size
   /// woth all its '.' replaced by '/'. The JVM bytecode reference classes in
   /// packages with the '.' as the separating character. The JVM language uses
   /// the '/' character.
-  const UTF8* internalToJava(Jnjvm *vm, unsigned int start,
+  const UTF8* internalToJava(UTF8Map* map, unsigned int start,
                              unsigned int len) const;
   
   /// javaToInternal - Replaces all '/' into '.'.
-  const UTF8* javaToInternal(Jnjvm *vm, unsigned int start,
+  const UTF8* javaToInternal(UTF8Map* map, unsigned int start,
                              unsigned int len) const;
   
   /// UTF8ToAsciiz - Allocates a C string with the contents of this UTF8.
   char* UTF8ToAsciiz() const;
 
-  /// asciizConstruct - Constructs an UTF8 with the given C string.
-  static const UTF8* asciizConstruct(Jnjvm *vm, char* asciiz);
-
-  /// readerConstruct - Constructs an UTF8 with the given buffer and size.
-  /// This function is called when parsing JVM bytecode.
-  static const UTF8* readerConstruct(Jnjvm *vm, uint16* buf, uint32 n);
-
   /// extract - Creates an UTF8 by extracting the contents at the given size
   /// of this.
-  const UTF8* extract(Jnjvm *vm, uint32 start, uint32 len) const;
+  const UTF8* extract(UTF8Map* map, uint32 start, uint32 len) const;
 
   /// equals - Returns whether two UTF8s are equals. When the JnJVM executes
   /// in single mode, equality is just a pointer comparison. When executing

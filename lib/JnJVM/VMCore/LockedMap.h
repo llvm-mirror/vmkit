@@ -29,7 +29,7 @@
 namespace jnjvm {
 
 class JavaObject;
-class Jnjvm;
+class Allocator;
 
 struct ltutf8
 {
@@ -39,22 +39,22 @@ struct ltutf8
   }
 };
 
-template<class Key, class Container, class Compare>
+template<class Key, class Container, class Compare, class Meta>
 class LockedMap : public mvm::Object {
 public:
   typedef typename std::map<const Key, Container, Compare>::iterator iterator;
-  typedef Container (*funcCreate)(Key& V, Jnjvm *vm);
+  typedef Container (*funcCreate)(Key& V, Meta meta);
 
   mvm::Lock* lock;
   std::map<const Key, Container, Compare,
            gc_allocator<std::pair<const Key, Container> > > map;
   
-  inline Container lookupOrCreate(Key& V, Jnjvm *vm, funcCreate func) {
+  inline Container lookupOrCreate(Key& V, Meta meta, funcCreate func) {
     lock->lock();
     iterator End = map.end();
     iterator I = map.find(V);
     if (I == End) {
-      Container res = func(V, vm);
+      Container res = func(V, meta);
       map.insert(std::make_pair(V, res));
       lock->unlock();
       return res;
@@ -96,14 +96,16 @@ public:
   typedef std::multimap<const uint32, const UTF8*>::iterator iterator;
   
   mvm::Lock* lock;
+  JavaAllocator* allocator;
   std::multimap<const uint32, const UTF8*> map;
-  const UTF8* lookupOrCreateAsciiz(Jnjvm* vm, const char* asciiz); 
-  const UTF8* lookupOrCreateReader(Jnjvm* vm, const uint16* buf, uint32 size);
+  const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
+  const UTF8* lookupOrCreateReader(const uint16* buf, uint32 size);
   const UTF8* lookupAsciiz(const char* asciiz); 
   const UTF8* lookupReader(const uint16* buf, uint32 size);
   
-  UTF8Map() {
+  UTF8Map(JavaAllocator* A) {
     lock = mvm::Lock::allocNormal();
+    allocator = A;
   }
 
   ~UTF8Map() {
@@ -124,7 +126,7 @@ public:
 };
 
 class ClassMap : 
-    public LockedMap<const UTF8*, CommonClass*, ltutf8 > {
+    public LockedMap<const UTF8*, CommonClass*, ltutf8, JnjvmClassLoader* > {
 public:
   static VirtualTable* VT;
   
@@ -244,7 +246,7 @@ public:
 };
 
 class StaticInstanceMap :
-    public LockedMap<Class*, std::pair<JavaState, JavaObject*>*, std::less<Class*> > {
+    public LockedMap<Class*, std::pair<JavaState, JavaObject*>*, std::less<Class*>, Jnjvm* > {
 public:
   static VirtualTable* VT;
   
@@ -263,7 +265,7 @@ public:
 }; 
 
 class DelegateeMap :
-    public LockedMap<CommonClass*, JavaObject*, std::less<CommonClass*> > {
+    public LockedMap<CommonClass*, JavaObject*, std::less<CommonClass*>, Jnjvm* > {
 public:
   static VirtualTable* VT;
   

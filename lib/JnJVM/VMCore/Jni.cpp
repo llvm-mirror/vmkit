@@ -62,15 +62,16 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   
   BEGIN_EXCEPTION
 
-  Jnjvm *vm = NativeUtil::myVM(env);
-  const UTF8* utf8 = vm->asciizConstructUTF8(asciiz);
-  sint32 len = utf8->size;
-  
-  JavaObject* loader = 0;
+  JnjvmClassLoader* loader = 0;
   Class* currentClass = JavaJIT::getCallingClass();
   if (currentClass) loader = currentClass->classLoader;
+  else loader = JnjvmClassLoader::bootstrapLoader;
 
-  CommonClass* cl = vm->lookupClassFromUTF8(utf8, 0, len, loader, true, true,
+  const UTF8* utf8 = loader->asciizConstructUTF8(asciiz);
+  sint32 len = utf8->size;
+  
+
+  CommonClass* cl = loader->lookupClassFromUTF8(utf8, 0, len, true, true,
                                             true);
   return (jclass)(cl->getClassDelegatee());
   
@@ -139,7 +140,7 @@ jint ThrowNew(JNIEnv* env, jclass clazz, const char *msg) {
   JavaObject* res = ((Class*)cl)->doNew(vm);
   JavaMethod* init =
     cl->lookupMethod(Jnjvm::initName, 
-                     vm->asciizConstructUTF8("(Ljava/lang/String;)V"), 0, 1);
+                     cl->classLoader->asciizConstructUTF8("(Ljava/lang/String;)V"), 0, 1);
   init->invokeIntSpecial(vm, res, vm->asciizToStr(msg));
   th->pendingException = res;
   th->returnFromNative();
@@ -291,14 +292,14 @@ jmethodID GetMethodID(JNIEnv* env, jclass clazz, const char *aname,
 		      const char *atype) {
   
   BEGIN_EXCEPTION
-
-  Jnjvm* vm = NativeUtil::myVM(env);
+  
+  // TODO: find a better place for creating UTF8
   CommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
-  const UTF8* name = vm->asciizConstructUTF8(aname);
-  const UTF8* type = vm->asciizConstructUTF8(atype);
+  const UTF8* name = cl->classLoader->asciizConstructUTF8(aname);
+  const UTF8* type = cl->classLoader->asciizConstructUTF8(atype);
   JavaMethod* meth = cl->lookupMethod(
-      name->javaToInternal(vm, 0, name->size),
-      type->javaToInternal(vm, 0, type->size), false, true);
+      name->javaToInternal(cl->classLoader->hashUTF8, 0, name->size),
+      type->javaToInternal(cl->classLoader->hashUTF8, 0, type->size), false, true);
 
   return (jmethodID)meth;
 
@@ -828,11 +829,11 @@ jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name,
 
   BEGIN_EXCEPTION
 
-  Jnjvm* vm = NativeUtil::myVM(env);
-  return (jfieldID)
-    NativeUtil::resolvedImplClass(clazz, true)->lookupField(
-                      vm->asciizConstructUTF8(name),
-                      vm->asciizConstructUTF8(sig), 0, 1);
+  // TODO: find a better place to store the UTF8
+  CommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
+  return (jfieldID) 
+    cl->lookupField(cl->classLoader->asciizConstructUTF8(name),
+                    cl->classLoader->asciizConstructUTF8(sig), 0, 1);
   
   END_EXCEPTION
   return 0;
@@ -1070,14 +1071,14 @@ jmethodID GetStaticMethodID(JNIEnv *env, jclass clazz, const char *aname,
 			    const char *atype) {
 
   BEGIN_EXCEPTION
-
-  Jnjvm* vm = NativeUtil::myVM(env);
+  
+  // TODO: find a better place to store the UTF8
   CommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
-  const UTF8* name = vm->asciizConstructUTF8(aname);
-  const UTF8* type = vm->asciizConstructUTF8(atype);
+  const UTF8* name = cl->classLoader->asciizConstructUTF8(aname);
+  const UTF8* type = cl->classLoader->asciizConstructUTF8(atype);
   JavaMethod* meth = cl->lookupMethod(
-      name->javaToInternal(vm, 0, name->size),
-      type->javaToInternal(vm, 0, type->size), true, true);
+      name->javaToInternal(cl->classLoader->hashUTF8, 0, name->size),
+      type->javaToInternal(cl->classLoader->hashUTF8, 0, type->size), true, true);
 
   return (jmethodID)meth;
 
@@ -1321,11 +1322,11 @@ jfieldID GetStaticFieldID(JNIEnv *env, jclass clazz, const char *name,
   
   BEGIN_EXCEPTION
   
-  Jnjvm* vm = NativeUtil::myVM(env);
+  // TODO: find a better place to store the UTF8
+  CommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
   return (jfieldID)
-    NativeUtil::resolvedImplClass(clazz, true)->lookupField(
-                      vm->asciizConstructUTF8(name),
-                      vm->asciizConstructUTF8(sig), true, true);
+    cl->lookupField(cl->classLoader->asciizConstructUTF8(name),
+                    cl->classLoader->asciizConstructUTF8(sig), true, true);
 
   END_EXCEPTION
   return 0;
@@ -1624,11 +1625,11 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass elementClass,
   if (length < 0) vm->negativeArraySizeException(length);
   
   CommonClass* base = NativeUtil::resolvedImplClass(elementClass, true);
-  JavaObject* loader = base->classLoader;
+  JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->name;
-  const UTF8* arrayName = AssessorDesc::constructArrayName(vm, 0, 1, name);
-  ClassArray* array = vm->constructArray(arrayName, loader);
-  ArrayObject* res = ArrayObject::acons(length, array, vm);
+  const UTF8* arrayName = AssessorDesc::constructArrayName(loader, 0, 1, name);
+  ClassArray* array = loader->constructArray(arrayName);
+  ArrayObject* res = ArrayObject::acons(length, array, &(vm->allocator));
   if (initialElement) {
     memset(res->elements, (int)initialElement, 
                length * sizeof(JavaObject*));
@@ -1672,7 +1673,7 @@ jbooleanArray NewBooleanArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayUInt8* res = 0;
-  res = ArrayUInt8::acons(len, JavaArray::ofBool, NativeUtil::myVM(env));
+  res = ArrayUInt8::acons(len, JavaArray::ofBool, &NativeUtil::myVM(env)->allocator);
   return (jbooleanArray)res;
 
   END_EXCEPTION
@@ -1685,7 +1686,7 @@ jbyteArray NewByteArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
 
   ArraySInt8* res = 0;
-  res = ArraySInt8::acons(len, JavaArray::ofByte, NativeUtil::myVM(env));
+  res = ArraySInt8::acons(len, JavaArray::ofByte, &NativeUtil::myVM(env)->allocator);
   return (jbyteArray) res;
 
   END_EXCEPTION
@@ -1698,7 +1699,7 @@ jcharArray NewCharArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayUInt16* res = 0;
-  res = ArrayUInt16::acons(len, JavaArray::ofChar, NativeUtil::myVM(env));
+  res = ArrayUInt16::acons(len, JavaArray::ofChar, &NativeUtil::myVM(env)->allocator);
   return (jcharArray) res;
 
   END_EXCEPTION
@@ -1711,7 +1712,7 @@ jshortArray NewShortArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArraySInt16* res = 0;
-  res = ArraySInt16::acons(len, JavaArray::ofShort, NativeUtil::myVM(env));
+  res = ArraySInt16::acons(len, JavaArray::ofShort, &NativeUtil::myVM(env)->allocator);
   return (jshortArray) res;
 
   END_EXCEPTION
@@ -1724,7 +1725,7 @@ jintArray NewIntArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArraySInt32* res = 0;
-  res = ArraySInt32::acons(len, JavaArray::ofInt, NativeUtil::myVM(env));
+  res = ArraySInt32::acons(len, JavaArray::ofInt, &NativeUtil::myVM(env)->allocator);
   return (jintArray) res;
 
   END_EXCEPTION
@@ -1737,7 +1738,7 @@ jlongArray NewLongArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayLong* res = 0;
-  res = ArrayLong::acons(len, JavaArray::ofLong, NativeUtil::myVM(env));
+  res = ArrayLong::acons(len, JavaArray::ofLong, &NativeUtil::myVM(env)->allocator);
   return (jlongArray) res;
 
   END_EXCEPTION
@@ -1750,7 +1751,7 @@ jfloatArray NewFloatArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayFloat* res = 0;
-  res = ArrayFloat::acons(len, JavaArray::ofFloat, NativeUtil::myVM(env));
+  res = ArrayFloat::acons(len, JavaArray::ofFloat, &NativeUtil::myVM(env)->allocator);
   return (jfloatArray) res;
 
   END_EXCEPTION
@@ -1763,7 +1764,7 @@ jdoubleArray NewDoubleArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayDouble* res = 0;
-  res = ArrayDouble::acons(len, JavaArray::ofDouble, NativeUtil::myVM(env));
+  res = ArrayDouble::acons(len, JavaArray::ofDouble, &NativeUtil::myVM(env)->allocator);
   return (jdoubleArray) res;
 
   END_EXCEPTION

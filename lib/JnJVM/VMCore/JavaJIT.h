@@ -60,7 +60,7 @@ public:
   
   JnjvmModule* module;
 
-  static void invokeOnceVoid(Jnjvm* vm, JavaObject* loader,
+  static void invokeOnceVoid(Jnjvm* vm, JnjvmClassLoader* loader,
                              const char* className,
                              const char* func, const char* sign,
                              int access, ...);

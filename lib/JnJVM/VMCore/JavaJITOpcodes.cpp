@@ -1823,7 +1823,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         ClassArray* dcl = 0;
         ConstantInt* sizeElement = 0;
         GlobalVariable* TheVT = 0;
-        Jnjvm* vm = compilingClass->isolate;
+        JnjvmClassLoader* JCL = compilingClass->classLoader;
 
         if (bytecodes[i] == NEWARRAY) {
           uint8 id = bytecodes[++i];
@@ -1838,9 +1838,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             compilingClass->ctpInfo->resolveClassName(index);
         
           const UTF8* arrayName = 
-            AssessorDesc::constructArrayName(vm, 0, 1, className);
+            AssessorDesc::constructArrayName(JCL, 0, 1, className);
         
-          dcl = vm->constructArray(arrayName, compilingClass->classLoader);
+          dcl = JCL->constructArray(arrayName);
           TheVT = JnjvmModule::ArrayObjectVirtualTableGV;
           sizeElement = mvm::jit::constantPtrSize;
         }
@@ -2062,15 +2062,14 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case MULTIANEWARRAY : {
-        Jnjvm* vm = compilingClass->isolate;
+        JnjvmClassLoader* JCL = compilingClass->classLoader;
         uint16 index = readU2(bytecodes, i);
         uint8 dim = readU1(bytecodes, i);
         
         const UTF8* className = 
           compilingClass->ctpInfo->resolveClassName(index);
 
-        ClassArray* dcl = 
-          vm->constructArray(className, compilingClass->classLoader);
+        ClassArray* dcl = JCL->constructArray(className);
         
         compilingClass->ctpInfo->loadClass(index);
         

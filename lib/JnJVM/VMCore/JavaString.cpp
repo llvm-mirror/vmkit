@@ -43,7 +43,8 @@ char* JavaString::strToAsciiz() {
 const UTF8* JavaString::strToUTF8(Jnjvm* vm) {
   const UTF8* utf8 = this->value;
   if (offset || (offset + count <= utf8->size)) {
-    return utf8->extract(vm, offset, offset + count);
+    // TODO find a way to get a relevant hashUTF8
+    return utf8->extract(JnjvmClassLoader::bootstrapLoader->hashUTF8, offset, offset + count);
   } else {
     return utf8;
   }

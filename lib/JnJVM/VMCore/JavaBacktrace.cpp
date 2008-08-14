@@ -106,5 +106,5 @@ Class* JavaJIT::getCallingClassWalker() {
 JavaObject* JavaJIT::getCallingClassLoader() {
   Class* cl = getCallingClassWalker();
   if (!cl) return 0;
-  else return cl->classLoader;
+  else return cl->classLoader->getJavaClassLoader();
 }

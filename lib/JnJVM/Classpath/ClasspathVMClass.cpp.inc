@@ -52,17 +52,17 @@ jclass clazz,
                                                         jboolean clinit, 
                                                         jobject loader) {
 
-  Jnjvm* vm = JavaThread::get()->isolate;
-  CommonClass* cl = vm->lookupClassFromJavaString((JavaString*)str,
-                                                  (JavaObject*)loader, true,
-                                                  false, false);
+  
+  JnjvmClassLoader* JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader);
+  CommonClass* cl = JCL->lookupClassFromJavaString((JavaString*)str,
+                                                   true, false, false);
   if (cl != 0) {
     if (clinit) {
       cl->initialiseClass();
     }
     return (jclass)(cl->getClassDelegatee());
   } else {
-    vm->error(Jnjvm::ClassNotFoundException, "unable to load %s",
+  JavaThread::get()->isolate->error(Jnjvm::ClassNotFoundException, "unable to load %s",
               ((JavaString*)str)->strToAsciiz());
     return 0;
   }
@@ -81,7 +81,7 @@ JNIEnv *env,
   Jnjvm* vm = JavaThread::get()->isolate;
 
   if (cl->isArray || isInterface(cl->access)) {
-    return (jobject)ArrayObject::acons(0, Classpath::constructorArrayClass, vm);
+    return (jobject)ArrayObject::acons(0, Classpath::constructorArrayClass, &(vm->allocator));
   } else {
     CommonClass::method_map meths = cl->virtualMethods;
     std::vector<JavaMethod*> res;
@@ -93,7 +93,7 @@ JNIEnv *env,
       }
     }
     
-    ArrayObject* ret = ArrayObject::acons(res.size(), Classpath::constructorArrayClass, vm);
+    ArrayObject* ret = ArrayObject::acons(res.size(), Classpath::constructorArrayClass, &(vm->allocator));
     sint32 index = 0;
     for (std::vector<JavaMethod*>::iterator i = res.begin(), e = res.end();
           i != e; ++i, ++index) {
@@ -120,7 +120,7 @@ JNIEnv *env,
   CommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
 
   if (cl->isArray) {
-    return (jobject)ArrayObject::acons(0, Classpath::methodArrayClass, vm);
+    return (jobject)ArrayObject::acons(0, Classpath::methodArrayClass, &(vm->allocator));
   } else {
     CommonClass::method_map meths = cl->virtualMethods;
     std::vector<JavaMethod*> res;
@@ -140,7 +140,7 @@ JNIEnv *env,
       }
     }
     
-    ArrayObject* ret = ArrayObject::acons(res.size(), Classpath::methodArrayClass, vm);
+    ArrayObject* ret = ArrayObject::acons(res.size(), Classpath::methodArrayClass, &(vm->allocator));
     sint32 index = 0;
     for (std::vector<JavaMethod*>::iterator i = res.begin(), e = res.end();
           i != e; ++i, ++index) {
@@ -178,7 +178,7 @@ JNIEnv *env,
     (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)Cl);
   
   const UTF8* iname = cl->name;
-  const UTF8* res = iname->internalToJava(vm, 0, iname->size);
+  const UTF8* res = iname->internalToJava(cl->classLoader->hashUTF8, 0, iname->size);
 
   return (jobject)(vm->UTF8ToStr(res));
 }
@@ -231,7 +231,7 @@ jclass clazz,
 jclass Cl) {
   CommonClass* cl = 
     (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)Cl);
-  return (jobject)cl->classLoader;
+  return (jobject)cl->classLoader->getJavaClassLoader();
 }
 
 JNIEXPORT jboolean JNICALL Java_java_lang_VMClass_isAssignableFrom(
@@ -288,7 +288,7 @@ jclass Cl, jboolean publicOnly) {
   CommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
 
   if (cl->isArray) {
-    return (jobject)ArrayObject::acons(0, Classpath::fieldArrayClass, vm);
+    return (jobject)ArrayObject::acons(0, Classpath::fieldArrayClass, &(vm->allocator));
   } else {
     CommonClass::field_map fields = cl->virtualFields;
     std::vector<JavaField*> res;
@@ -309,7 +309,7 @@ jclass Cl, jboolean publicOnly) {
     }
     
     ArrayObject* ret = ArrayObject::acons(res.size(),
-                                          Classpath::fieldArrayClass, vm);
+                                          Classpath::fieldArrayClass, &(vm->allocator));
     sint32 index = 0;
     for (std::vector<JavaField*>::iterator i = res.begin(), e = res.end();
           i != e; ++i, ++index) {
@@ -333,7 +333,7 @@ jclass Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
   CommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
   std::vector<Class*> & interfaces = cl->interfaces;
-  ArrayObject* ret = ArrayObject::acons(interfaces.size(), Classpath::classArrayClass, vm);
+  ArrayObject* ret = ArrayObject::acons(interfaces.size(), Classpath::classArrayClass, &(vm->allocator));
   sint32 index = 0;
   for (std::vector<Class*>::iterator i = interfaces.begin(), e = interfaces.end();
         i != e; ++i, ++index) {
@@ -397,7 +397,7 @@ jclass Cl, bool publicOnly) {
   Class* cl = (Class*)NativeUtil::resolvedImplClass(Cl, false);
   if (!(cl->innerOuterResolved))
     resolveInnerOuterClasses(cl);
-  ArrayObject* res = ArrayObject::acons(cl->innerClasses.size(), Classpath::constructorArrayClass, vm);
+  ArrayObject* res = ArrayObject::acons(cl->innerClasses.size(), Classpath::constructorArrayClass, &(vm->allocator));
   uint32 index = 0;
   for (std::vector<Class*>::iterator i = cl->innerClasses.begin(), 
        e = cl->innerClasses.end(); i!= e; i++) {
@@ -425,7 +425,7 @@ jclass clazz,
 jclass Cl) {
   // TODO implement me
   Jnjvm* vm = JavaThread::get()->isolate;
-  ArrayObject* res = ArrayObject::acons(0, Classpath::constructorArrayAnnotation, vm);
+  ArrayObject* res = ArrayObject::acons(0, Classpath::constructorArrayAnnotation, &(vm->allocator));
   return (jobjectArray)res;
 }
 }

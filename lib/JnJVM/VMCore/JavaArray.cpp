@@ -16,6 +16,7 @@
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 #include "JavaThread.h"
+#include "LockedMap.h"
 
 
 using namespace jnjvm;
@@ -49,30 +50,30 @@ extern "C" void negativeArraySizeException(sint32 val);
 extern "C" void outOfMemoryError(sint32 val);
 
 #ifndef MULTIPLE_VM
-#define ACONS(name, elmt, primSize, VT)                                     \
-  name *name::acons(sint32 n, ClassArray* atype, Jnjvm* vm) {               \
-    if (n < 0)                                                              \
-      negativeArraySizeException(n);                                        \
-    else if (n > JavaArray::MaxArraySize)                                   \
-      outOfMemoryError(n);                                                  \
-    name* res = (name*)                                                     \
-      (Object*) operator new(sizeof(name) + n * primSize, VT);              \
-    res->initialise(atype);                                                 \
-    res->size = n;                                                          \
-    return res;                                                             \
+#define ACONS(name, elmt, primSize, VT)                                      \
+  name *name::acons(sint32 n, ClassArray* atype, JavaAllocator* allocator) { \
+    if (n < 0)                                                               \
+      negativeArraySizeException(n);                                         \
+    else if (n > JavaArray::MaxArraySize)                                    \
+      outOfMemoryError(n);                                                   \
+    name* res = (name*)                                                      \
+      (Object*) allocator->allocateObject(sizeof(name) + n * primSize, VT);  \
+    res->initialise(atype);                                                  \
+    res->size = n;                                                           \
+    return res;                                                              \
   }
 #else
-#define ACONS(name, elmt, primSize, VT)                                     \
-  name *name::acons(sint32 n, ClassArray* atype, Jnjvm* vm) {               \
-    if (n < 0)                                                              \
-      negativeArraySizeException(n);                                        \
-    else if (n > JavaArray::MaxArraySize)                                   \
-      outOfMemoryError(n);                                                  \
-    name* res = (name*)                                                     \
-      (Object*) vm->allocateObject(sizeof(name) + n * primSize, VT);        \
-    res->initialise(atype);                                                 \
-    res->size = n;                                                          \
-    return res;                                                             \
+#define ACONS(name, elmt, primSize, VT)                                      \
+  name *name::acons(sint32 n, ClassArray* atype, JavaAllocator* allocator) { \
+    if (n < 0)                                                               \
+      negativeArraySizeException(n);                                         \
+    else if (n > JavaArray::MaxArraySize)                                    \
+      outOfMemoryError(n);                                                   \
+    name* res = (name*)                                                      \
+      (Object*) allocator->allocateObject(sizeof(name) + n * primSize, VT);  \
+    res->initialise(atype);                                                  \
+    res->size = n;                                                           \
+    return res;                                                              \
   }
 #endif
 
@@ -100,7 +101,7 @@ void UTF8::print(mvm::PrintBuffer* buf) const {
     buf->writeChar((char)elements[i]);
 }
 
-const UTF8* UTF8::javaToInternal(Jnjvm* vm, unsigned int start,
+const UTF8* UTF8::javaToInternal(UTF8Map* map, unsigned int start,
                                  unsigned int len) const {
   uint16* java = (uint16*) alloca(len * sizeof(uint16));
   for (uint32 i = 0; i < len; i++) {
@@ -109,10 +110,10 @@ const UTF8* UTF8::javaToInternal(Jnjvm* vm, unsigned int start,
     else java[i] = cur;
   }
 
-  return readerConstruct(vm, java, len);
+  return map->lookupOrCreateReader(java, len);
 }
 
-const UTF8* UTF8::internalToJava(Jnjvm *vm, unsigned int start,
+const UTF8* UTF8::internalToJava(UTF8Map* map, unsigned int start,
                                  unsigned int len) const {
   uint16* java = (uint16*) alloca(len * sizeof(uint16));
   for (uint32 i = 0; i < len; i++) {
@@ -121,10 +122,10 @@ const UTF8* UTF8::internalToJava(Jnjvm *vm, unsigned int start,
     else java[i] = cur;
   }
 
-  return readerConstruct(vm, java, len);
+  return map->lookupOrCreateReader(java, len);
 }
 
-const UTF8* UTF8::extract(Jnjvm *vm, uint32 start, uint32 end) const {
+const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
   uint32 len = end - start;
   uint16* buf = (uint16*)alloca(sizeof(uint16) * len);
 
@@ -132,15 +133,7 @@ const UTF8* UTF8::extract(Jnjvm *vm, uint32 start, uint32 end) const {
     buf[i] = elements[i + start];
   }
 
-  return readerConstruct(vm, buf, len);
-}
-
-const UTF8* UTF8::asciizConstruct(Jnjvm* vm, char* asciiz) {
-  return vm->asciizConstructUTF8(asciiz);
-}
-
-const UTF8* UTF8::readerConstruct(Jnjvm* vm, uint16* buf, uint32 n) {
-  return vm->readerConstructUTF8(buf, n);
+  return map->lookupOrCreateReader(buf, len);
 }
 
 char* UTF8::UTF8ToAsciiz() const {
@@ -167,13 +160,13 @@ void UTF8::operator delete(void* obj) {
   free(obj);
 }
 
-const UTF8* UTF8::acons(sint32 n, ClassArray* cl, Jnjvm* vm) {
+const UTF8* UTF8::acons(sint32 n, ClassArray* cl, JavaAllocator* allocator) {
   if (n < 0)
     negativeArraySizeException(n);                                        
   else if (n > JavaArray::MaxArraySize)                                   
     outOfMemoryError(n);                                                  
   UTF8* res = new (n) UTF8();
-  res->initialise(cl);                                               
+  res->initialise(cl);
   res->size = n;                                                          
   return (const UTF8*)res;                                                         
 }

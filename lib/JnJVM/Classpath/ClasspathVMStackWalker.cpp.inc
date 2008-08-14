@@ -40,7 +40,7 @@ ArrayObject* recGetClassContext(int** stack, uint32 size, uint32 first, uint32 r
     }   
   } else {
     Jnjvm* vm = JavaThread::get()->isolate;
-    return ArrayObject::acons(rec, Classpath::classArrayClass, vm);
+    return ArrayObject::acons(rec, Classpath::classArrayClass, &(vm->allocator));
   }
 }
 
@@ -75,7 +75,7 @@ jclass clazz,
 jclass _Cl) {
   JavaObject* Cl = (JavaObject*)_Cl;
   CommonClass* cl = (CommonClass*)Classpath::vmdataClass->getVirtualObjectField(Cl);
-  return (jobject)cl->classLoader;
+  return (jobject)cl->classLoader->getJavaClassLoader();
 }
 
 extern "C" JavaObject* getCallingClass() {

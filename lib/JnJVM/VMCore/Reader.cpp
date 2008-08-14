@@ -24,25 +24,25 @@ const int Reader::SeekSet = SEEK_SET;
 const int Reader::SeekCur = SEEK_CUR;
 const int Reader::SeekEnd = SEEK_END;
 
-ArrayUInt8* Reader::openFile(Jnjvm* vm, char* path) {
+ArrayUInt8* Reader::openFile(JnjvmClassLoader* loader, char* path) {
   FILE* fp = fopen(path, "r");
   ArrayUInt8* res = 0;
   if (fp != 0) {
     fseek(fp, 0, SeekEnd);
     long nbb = ftell(fp);
     fseek(fp, 0, SeekSet);
-    res = ArrayUInt8::acons(nbb, JavaArray::ofByte, vm);
+    res = ArrayUInt8::acons(nbb, JavaArray::ofByte, loader->allocator);
     fread(res->elements, nbb, 1, fp);
     fclose(fp);
   }
   return res;
 }
 
-ArrayUInt8* Reader::openZip(Jnjvm* vm, ZipArchive* archive, char* filename) {
+ArrayUInt8* Reader::openZip(JnjvmClassLoader* loader, ZipArchive* archive, char* filename) {
   ArrayUInt8* ret = 0;
   ZipFile* file = archive->getFile(filename);
   if (file != 0) {
-    ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, JavaArray::ofByte, vm);
+    ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, JavaArray::ofByte, loader->allocator);
     if (archive->readFile(res, file) != 0) {
       ret = res;
     }

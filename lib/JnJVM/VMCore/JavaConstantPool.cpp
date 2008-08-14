@@ -25,6 +25,7 @@
 #include "JnjvmModuleProvider.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
+#include "LockedMap.h"
 #include "Reader.h"
  
 using namespace jnjvm;
@@ -42,7 +43,7 @@ const uint32 JavaCtpInfo::ConstantInterfaceMethodref = 11;
 const uint32 JavaCtpInfo::ConstantNameAndType = 12;
 
 
-static uint32 unimplemented(Jnjvm* vm, uint32 type, uint32 e, Reader& reader,
+static uint32 unimplemented(Class* cl, uint32 type, uint32 e, Reader& reader,
                             sint32* ctpDef, void** ctpRes, uint8* ctpType) {
   JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
                                     "unknown constant pool type %d", 
@@ -51,7 +52,7 @@ static uint32 unimplemented(Jnjvm* vm, uint32 type, uint32 e, Reader& reader,
 }
 
 
-uint32 JavaCtpInfo::CtpReaderClass(Jnjvm* vm, uint32 type, uint32 e,
+uint32 JavaCtpInfo::CtpReaderClass(Class* cl, uint32 type, uint32 e,
                                    Reader& reader, sint32* ctpDef,
                                    void** ctpRes, uint8* ctpType) {
   uint16 entry = reader.readU2();
@@ -61,7 +62,7 @@ uint32 JavaCtpInfo::CtpReaderClass(Jnjvm* vm, uint32 type, uint32 e,
   return 1;
 }
   
-uint32 JavaCtpInfo::CtpReaderInteger(Jnjvm* vm, uint32 type, uint32 e,
+uint32 JavaCtpInfo::CtpReaderInteger(Class* cl, uint32 type, uint32 e,
                                      Reader& reader, sint32* ctpDef,
                                      void** ctpRes, uint8* ctpType) {
   uint32 val = reader.readU4();
@@ -71,7 +72,7 @@ uint32 JavaCtpInfo::CtpReaderInteger(Jnjvm* vm, uint32 type, uint32 e,
   return 1;
 }
   
-uint32 JavaCtpInfo::CtpReaderFloat(Jnjvm* vm, uint32 type, uint32 e,
+uint32 JavaCtpInfo::CtpReaderFloat(Class* cl, uint32 type, uint32 e,
                                    Reader& reader, sint32* ctpDef,
                                    void** ctpRes, uint8* ctpType) {
   uint32 val = reader.readU4();
@@ -81,7 +82,7 @@ uint32 JavaCtpInfo::CtpReaderFloat(Jnjvm* vm, uint32 type, uint32 e,
   return 1;
 }
   
-uint32 JavaCtpInfo::CtpReaderUTF8(Jnjvm* vm, uint32 type, uint32 e,
+uint32 JavaCtpInfo::CtpReaderUTF8(Class* cl, uint32 type, uint32 e,
                                   Reader& reader, sint32* ctpDef, void** ctpRes,
                                   uint8* ctpType) {
   uint16 len = reader.readU2();
@@ -111,7 +112,7 @@ uint32 JavaCtpInfo::CtpReaderUTF8(Jnjvm* vm, uint32 type, uint32 e,
     ++n;
   }
 
-  const UTF8* utf8 = UTF8::readerConstruct(vm, buf, n);
+  const UTF8* utf8 = cl->classLoader->hashUTF8->lookupOrCreateReader(buf, n);
   ctpRes[e] = (UTF8*)utf8;
   
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <utf8>\t\t\"%s\"\n", e,
@@ -120,9 +121,10 @@ uint32 JavaCtpInfo::CtpReaderUTF8(Jnjvm* vm, uint32 type, uint32 e,
   return 1;
 }
   
-uint32 JavaCtpInfo::CtpReaderNameAndType(Jnjvm* vm, uint32 type, uint32 e,
-                                         Reader& reader, sint32* ctpDef,
-                                         void** ctpRes, uint8* ctpType) {
+uint32 JavaCtpInfo::CtpReaderNameAndType(Class* cl, uint32 type,
+                                         uint32 e, Reader& reader,
+                                         sint32* ctpDef, void** ctpRes,
+                                         uint8* ctpType) {
   uint32 entry = reader.readU4();
   ctpDef[e] = entry;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, 
@@ -131,8 +133,8 @@ uint32 JavaCtpInfo::CtpReaderNameAndType(Jnjvm* vm, uint32 type, uint32 e,
   return 1;
 }
   
-uint32 JavaCtpInfo::CtpReaderFieldref(Jnjvm* vm, uint32 type, uint32 e,
-                                      Reader& reader, sint32* ctpDef,
+uint32 JavaCtpInfo::CtpReaderFieldref(Class* cl, uint32 type,
+                                      uint32 e, Reader& reader, sint32* ctpDef,
                                       void** ctpRes, uint8* ctpType) {
   uint32 entry = reader.readU4();
   ctpDef[e] = entry;
@@ -142,7 +144,7 @@ uint32 JavaCtpInfo::CtpReaderFieldref(Jnjvm* vm, uint32 type, uint32 e,
   return 1;
 }
 
-uint32 JavaCtpInfo::CtpReaderString(Jnjvm* vm, uint32 type, uint32 e,
+uint32 JavaCtpInfo::CtpReaderString(Class* cl, uint32 type, uint32 e,
                                     Reader& reader, sint32* ctpDef,
                                     void** ctpRes, uint8* ctpType) {
   uint16 entry = reader.readU2();
@@ -152,8 +154,8 @@ uint32 JavaCtpInfo::CtpReaderString(Jnjvm* vm, uint32 type, uint32 e,
   return 1;
 }
   
-uint32 JavaCtpInfo::CtpReaderMethodref(Jnjvm* vm, uint32 type, uint32 e,
-                                       Reader& reader, sint32* ctpDef,
+uint32 JavaCtpInfo::CtpReaderMethodref(Class* cl, uint32 type,
+                                       uint32 e, Reader& reader, sint32* ctpDef,
                                        void** ctpRes, uint8* ctpType) {
   uint32 entry = reader.readU4();
   ctpDef[e] = entry;
@@ -163,7 +165,8 @@ uint32 JavaCtpInfo::CtpReaderMethodref(Jnjvm* vm, uint32 type, uint32 e,
   return 1;
 }
 
-uint32 JavaCtpInfo::CtpReaderInterfaceMethodref(Jnjvm* vm, uint32 type,
+uint32 JavaCtpInfo::CtpReaderInterfaceMethodref(Class* cl,
+                                                uint32 type,
                                                 uint32 e, Reader& reader,
                                                 sint32* ctpDef, void** ctpRes,
                                                 uint8* ctpType) {
@@ -175,7 +178,7 @@ uint32 JavaCtpInfo::CtpReaderInterfaceMethodref(Jnjvm* vm, uint32 type,
   return 1;
 }
   
-uint32 JavaCtpInfo::CtpReaderLong(Jnjvm* vm, uint32 type, uint32 e,
+uint32 JavaCtpInfo::CtpReaderLong(Class* cl, uint32 type, uint32 e,
                                   Reader& reader, sint32* ctpDef, void** ctpRes,
                                   uint8* ctpType) {
   ctpDef[e + 1] = reader.readU4();
@@ -186,7 +189,7 @@ uint32 JavaCtpInfo::CtpReaderLong(Jnjvm* vm, uint32 type, uint32 e,
   return 2;
 }
 
-uint32 JavaCtpInfo::CtpReaderDouble(Jnjvm* vm, uint32 type, uint32 e,
+uint32 JavaCtpInfo::CtpReaderDouble(Class* cl, uint32 type, uint32 e,
                                     Reader& reader, sint32* ctpDef,
                                     void** ctpRes, uint8* ctpType) {
   ctpDef[e + 1] = reader.readU4();
@@ -197,7 +200,7 @@ uint32 JavaCtpInfo::CtpReaderDouble(Jnjvm* vm, uint32 type, uint32 e,
   return 2;
 }
 
-void JavaCtpInfo::read(Jnjvm *vm, Class* cl, Reader& reader) {
+void JavaCtpInfo::read(Class* cl, Reader& reader) {
   uint32 nbCtp = reader.readU2();
   JavaCtpInfo* res = new JavaCtpInfo();
   
@@ -216,7 +219,7 @@ void JavaCtpInfo::read(Jnjvm *vm, Class* cl, Reader& reader) {
   while (cur < nbCtp) {
     uint8 curType = reader.readU1();
     res->ctpType[cur] = curType;
-    cur += ((funcsReader[curType])(vm, curType, cur, reader, res->ctpDef,
+    cur += ((funcsReader[curType])(cl, curType, cur, reader, res->ctpDef,
                                    res->ctpRes, res->ctpType));
   }
 }
@@ -284,15 +287,14 @@ const UTF8* JavaCtpInfo::resolveClassName(uint32 index) {
 CommonClass* JavaCtpInfo::loadClass(uint32 index) {
   CommonClass* temp = isLoadedClassOrClassName(index);
   if (!temp) {
-    JavaObject* loader = classDef->classLoader;
+    JnjvmClassLoader* loader = classDef->classLoader;
     const UTF8* name = UTF8At(ctpDef[index]);
     if (name->elements[0] == AssessorDesc::I_TAB) {
       // Don't put into ctpRes because the class can be isolate specific
-      temp = JavaThread::get()->isolate->constructArray(name, loader);
+      temp = loader->constructArray(name);
     } else {
       // Put into ctpRes because there is only one representation of the class
-      ctpRes[index] = temp = classDef->isolate->loadName(name, loader, false,
-                                                         false, false);
+      ctpRes[index] = temp = loader->loadName(name, false, false, false);
     }
   }
   return temp;
@@ -301,12 +303,11 @@ CommonClass* JavaCtpInfo::loadClass(uint32 index) {
 CommonClass* JavaCtpInfo::getMethodClassIfLoaded(uint32 index) {
   CommonClass* temp = isLoadedClassOrClassName(index);
   if (!temp) {
-    JavaObject* loader = classDef->classLoader;
+    JnjvmClassLoader* loader = classDef->classLoader;
     const UTF8* name = UTF8At(ctpDef[index]);
-    temp = JavaThread::get()->isolate->lookupClass(name, loader);
+    temp = loader->lookupClass(name);
     if (!temp) 
-      temp = Jnjvm::bootstrapVM->lookupClass(name,
-                                             CommonClass::jnjvmClassLoader);
+      temp = JnjvmClassLoader::bootstrapLoader->lookupClass(name);
   }
   return temp;
 }
@@ -328,7 +329,7 @@ Typedef* JavaCtpInfo::resolveNameAndType(uint32 index) {
     }
     sint32 entry = ctpDef[index];
     const UTF8* type = UTF8At(entry & 0xFFFF);
-    Typedef* sign = classDef->isolate->constructType(type);
+    Typedef* sign = classDef->classLoader->constructType(type);
     ctpRes[index] = sign;
     return sign;
   }
@@ -344,7 +345,7 @@ Signdef* JavaCtpInfo::resolveNameAndSign(uint32 index) {
     }
     sint32 entry = ctpDef[index];
     const UTF8* type = UTF8At(entry & 0xFFFF);
-    Signdef* sign = classDef->isolate->constructSign(type);
+    Signdef* sign = classDef->classLoader->constructSign(type);
     ctpRes[index] = sign;
     return sign;
   }
@@ -419,7 +420,7 @@ void* JavaCtpInfo::infoOfStaticOrSpecialMethod(uint32 index,
       cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access), false);
     if (meth) { 
       // don't throw if no meth, the exception will be thrown just in time
-      JnjvmModule* M = classDef->isolate->TheModule;
+      JnjvmModule* M = classDef->classLoader->TheModule;
       void* F = M->getMethod(meth);
       ctpRes[index] = (void*)F;
       return F;
@@ -431,8 +432,8 @@ void* JavaCtpInfo::infoOfStaticOrSpecialMethod(uint32 index,
     return ctpRes[index];
   } else {
     void* val =
-      classDef->isolate->TheModuleProvider->addCallback(classDef, index, sign,
-                                                        isStatic(access));
+      classDef->classLoader->TheModuleProvider->addCallback(classDef, index, sign,
+                                                            isStatic(access));
         
     ctpRes[index] = val;
     return val;

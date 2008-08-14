@@ -7,7 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <signal.h>
 #include <vector>
 
 #include "mvm/VirtualMachine.h"
@@ -51,6 +50,8 @@ static void initialiseVT() {
   INIT(StaticInstanceMap);
   INIT(DelegateeMap);
   INIT(JavaIsolate);
+  INIT(JnjvmBootstrapLoader);
+  INIT(JnjvmClassLoader);
 #ifdef SERVICE_VM
   INIT(ServiceDomain);
 #endif
@@ -71,86 +72,73 @@ static void initialiseVT() {
 
 static void initialiseStatics() {
   
-  Jnjvm* vm = JavaIsolate::bootstrapVM = JavaIsolate::allocateBootstrap();
+  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader = JnjvmClassLoader::createBootstrapLoader();
   
   // Array initialization
-  const UTF8* utf8OfChar = vm->asciizConstructUTF8("[C");
-  JavaArray::ofChar = vm->constructArray(utf8OfChar,
-                                         CommonClass::jnjvmClassLoader);
+  const UTF8* utf8OfChar = JCL->asciizConstructUTF8("[C");
+  JavaArray::ofChar = JCL->constructArray(utf8OfChar);
   ((UTF8*)utf8OfChar)->classOf = JavaArray::ofChar;
   
 
 
   
   ClassArray::InterfacesArray.push_back(
-    vm->constructClass(vm->asciizConstructUTF8("java/lang/Cloneable"),
-                       CommonClass::jnjvmClassLoader));
+    JCL->constructClass(JCL->asciizConstructUTF8("java/lang/Cloneable")));
   
   ClassArray::InterfacesArray.push_back(
-    vm->constructClass(vm->asciizConstructUTF8("java/io/Serializable"),
-                       CommonClass::jnjvmClassLoader));
+    JCL->constructClass(JCL->asciizConstructUTF8("java/io/Serializable")));
   
   ClassArray::SuperArray = 
-    vm->constructClass(vm->asciizConstructUTF8("java/lang/Object"),
-                       CommonClass::jnjvmClassLoader);
+    JCL->constructClass(JCL->asciizConstructUTF8("java/lang/Object"));
   
   JavaArray::ofChar->interfaces = ClassArray::InterfacesArray;
   JavaArray::ofChar->super = ClassArray::SuperArray;
   
-  JavaArray::ofByte = vm->constructArray(vm->asciizConstructUTF8("[B"),
-                                         CommonClass::jnjvmClassLoader);
+  JavaArray::ofByte = JCL->constructArray(JCL->asciizConstructUTF8("[B"));
   JavaArray::ofString = 
-    vm->constructArray(vm->asciizConstructUTF8("[Ljava/lang/String;"),
-                       CommonClass::jnjvmClassLoader);
+    JCL->constructArray(JCL->asciizConstructUTF8("[Ljava/lang/String;"));
   
   JavaArray::ofObject = 
-    vm->constructArray(vm->asciizConstructUTF8("[Ljava/lang/Object;"),
-                       CommonClass::jnjvmClassLoader);
+    JCL->constructArray(JCL->asciizConstructUTF8("[Ljava/lang/Object;"));
   
-  JavaArray::ofInt = vm->constructArray(vm->asciizConstructUTF8("[I"), 
-                                        CommonClass::jnjvmClassLoader);
+  JavaArray::ofInt = JCL->constructArray(JCL->asciizConstructUTF8("[I"));
   
-  JavaArray::ofBool = vm->constructArray(vm->asciizConstructUTF8("[Z"), 
-                                        CommonClass::jnjvmClassLoader);
+  JavaArray::ofBool = JCL->constructArray(JCL->asciizConstructUTF8("[Z"));
   
-  JavaArray::ofLong = vm->constructArray(vm->asciizConstructUTF8("[J"), 
-                                        CommonClass::jnjvmClassLoader);
+  JavaArray::ofLong = JCL->constructArray(JCL->asciizConstructUTF8("[J"));
   
-  JavaArray::ofFloat = vm->constructArray(vm->asciizConstructUTF8("[F"), 
-                                        CommonClass::jnjvmClassLoader);
+  JavaArray::ofFloat = JCL->constructArray(JCL->asciizConstructUTF8("[F"));
   
-  JavaArray::ofDouble = vm->constructArray(vm->asciizConstructUTF8("[D"), 
-                                        CommonClass::jnjvmClassLoader);
+  JavaArray::ofDouble = JCL->constructArray(JCL->asciizConstructUTF8("[D"));
   
-  JavaArray::ofShort = vm->constructArray(vm->asciizConstructUTF8("[S"), 
-                                        CommonClass::jnjvmClassLoader);
+  JavaArray::ofShort = JCL->constructArray(JCL->asciizConstructUTF8("[S"));
   
   // End array initialization
   
-  AssessorDesc::initialise(vm);
+  AssessorDesc::initialise(JCL);
 
-  Attribut::codeAttribut = vm->asciizConstructUTF8("Code");
-  Attribut::exceptionsAttribut = vm->asciizConstructUTF8("Exceptions");
-  Attribut::constantAttribut = vm->asciizConstructUTF8("ConstantValue");
+  Attribut::codeAttribut = JCL->asciizConstructUTF8("Code");
+  Attribut::exceptionsAttribut = JCL->asciizConstructUTF8("Exceptions");
+  Attribut::constantAttribut = JCL->asciizConstructUTF8("ConstantValue");
   Attribut::lineNumberTableAttribut =
-    vm->asciizConstructUTF8("LineNumberTable");
-  Attribut::innerClassesAttribut = vm->asciizConstructUTF8("InnerClasses");
-  Attribut::sourceFileAttribut = vm->asciizConstructUTF8("SourceFile");
+    JCL->asciizConstructUTF8("LineNumberTable");
+  Attribut::innerClassesAttribut = JCL->asciizConstructUTF8("InnerClasses");
+  Attribut::sourceFileAttribut = JCL->asciizConstructUTF8("SourceFile");
   
-  Jnjvm::initName = vm->asciizConstructUTF8("<init>");
-  Jnjvm::clinitName = vm->asciizConstructUTF8("<clinit>");
-  Jnjvm::clinitType = vm->asciizConstructUTF8("()V");
-  Jnjvm::runName = vm->asciizConstructUTF8("run");
-  Jnjvm::prelib = vm->asciizConstructUTF8("lib");
+  Jnjvm::initName = JCL->asciizConstructUTF8("<init>");
+  Jnjvm::clinitName = JCL->asciizConstructUTF8("<clinit>");
+  Jnjvm::clinitType = JCL->asciizConstructUTF8("()V");
+  Jnjvm::runName = JCL->asciizConstructUTF8("run");
+  Jnjvm::prelib = JCL->asciizConstructUTF8("lib");
 #if defined(__MACH__)
-  Jnjvm::postlib = vm->asciizConstructUTF8(".dylib");
+  Jnjvm::postlib = JCL->asciizConstructUTF8(".dylib");
 #else 
-  Jnjvm::postlib = vm->asciizConstructUTF8(".so");
+  Jnjvm::postlib = JCL->asciizConstructUTF8(".so");
 #endif
-  Jnjvm::mathName = vm->asciizConstructUTF8("java/lang/Math");
+  Jnjvm::mathName = JCL->asciizConstructUTF8("java/lang/Math");
 
 #define DEF_UTF8(var) \
-  Jnjvm::var = vm->asciizConstructUTF8(#var)
+  Jnjvm::var = JCL->asciizConstructUTF8(#var)
   
   DEF_UTF8(abs);
   DEF_UTF8(sqrt);
@@ -184,12 +172,12 @@ static void initialiseStatics() {
 extern "C" void ClasspathBoot();
 
 void mvm::VirtualMachine::initialiseJVM() {
-  if (!JavaIsolate::bootstrapVM) {
+  if (!JnjvmClassLoader::bootstrapLoader) {
     initialiseVT();
     initialiseStatics();
   
     ClasspathBoot();
-    Classpath::initialiseClasspath(JavaIsolate::bootstrapVM);
+    Classpath::initialiseClasspath(JnjvmClassLoader::bootstrapLoader);
   }
 }
 
@@ -199,15 +187,11 @@ void Jnjvm::runApplication(int argc, char** argv) {
 }
 
 mvm::VirtualMachine* mvm::VirtualMachine::createJVM() {
-#if !defined(MULTIPLE_VM)
-  JavaIsolate* vm = (JavaIsolate*)JavaIsolate::bootstrapVM;
-#else
 #ifdef SERVICE_VM
-  ServiceDomain* vm = ServiceDomain::allocateService((JavaIsolate*)Jnjvm::bootstrapVM);
+  ServiceDomain* vm = ServiceDomain::allocateService();
   vm->startExecution();
 #else
-  JavaIsolate* vm = JavaIsolate::allocateIsolate(JavaIsolate::bootstrapVM);
-#endif
+  JavaIsolate* vm = JavaIsolate::allocateIsolate();
 #endif
   return vm;
 }

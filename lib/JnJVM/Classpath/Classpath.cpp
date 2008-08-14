@@ -166,11 +166,11 @@ Java_java_lang_reflect_VMArray_createObjectArray
 {
   Jnjvm* vm = JavaThread::get()->isolate;
   CommonClass* base = NativeUtil::resolvedImplClass(arrayType, true);
-  JavaObject* loader = base->classLoader;
+  JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->name;
-  const UTF8* arrayName = AssessorDesc::constructArrayName(vm, 0, 1, name);
-  ClassArray* array = vm->constructArray(arrayName, loader);
-  ArrayObject* res = ArrayObject::acons(arrayLength, array, vm);
+  const UTF8* arrayName = AssessorDesc::constructArrayName(loader, 0, 1, name);
+  ClassArray* array = loader->constructArray(arrayName);
+  ArrayObject* res = ArrayObject::acons(arrayLength, array, &(vm->allocator));
 
   return (jobject) res;
 }

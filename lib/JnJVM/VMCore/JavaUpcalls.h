@@ -12,8 +12,7 @@
 
 
 #define UPCALL_CLASS(vm, name)                                            \
-  vm->constructClass(vm->asciizConstructUTF8(name),                       \
-                     CommonClass::jnjvmClassLoader)
+  vm->constructClass(vm->asciizConstructUTF8(name))                       \
 
 #define UPCALL_FIELD(vm, cl, name, type, acc)                             \
   UPCALL_CLASS(vm, cl)->constructField(vm->asciizConstructUTF8(name),     \
@@ -26,8 +25,7 @@
 #define UPCALL_ARRAY_CLASS(vm, name, depth)                                \
   vm->constructArray(                                                      \
     AssessorDesc::constructArrayName(vm, 0, depth,                         \
-                                     vm->asciizConstructUTF8(name)),       \
-    CommonClass::jnjvmClassLoader)
+                                     vm->asciizConstructUTF8(name)))       \
 
 
 namespace jnjvm {
@@ -40,7 +38,7 @@ class ClassArray;
 
 class ClasspathThread {
 public:
-  static void initialise(Jnjvm* vm);
+  static void initialise(JnjvmClassLoader* vm);
   
   static Class* newThread;
   static Class* newVMThread;
@@ -111,7 +109,7 @@ public:
   static ClassArray* stackTraceArray;
   static JavaMethod* initStackTraceElement;
 
-  static void initialiseClasspath(Jnjvm* vm);
+  static void initialiseClasspath(JnjvmClassLoader* loader);
   
   static Class* voidClass;
   static Class* boolClass;

@@ -103,13 +103,14 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   sprintf(temp, "%s:%s", vm->classpath, jarFile);
   vm->setClasspath(temp);
   
-  ArrayUInt8* bytes = Reader::openFile(vm, jarFile);
+  ArrayUInt8* bytes = Reader::openFile(JnjvmClassLoader::bootstrapLoader,
+                                       jarFile);
 
   ZipArchive archive(bytes);
   if (archive.getOfscd() != -1) {
     ZipFile* file = archive.getFile(PATH_MANIFEST);
     if (file) {
-      ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, JavaArray::ofByte, vm);
+      ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, JavaArray::ofByte, &vm->allocator);
       int ok = archive.readFile(res, file);
       if (ok) {
         char* mainClass = findInformation(res, MAIN_CLASS, LENGTH_MAIN_CLASS);
@@ -224,7 +225,7 @@ void ClArgumentsInfo::readArgs(int argc, char** argv, Jnjvm* vm) {
         printInformation();
       } else {
         char* path = &cur[16];
-        vm->analyseClasspathEnv(path);
+        JnjvmClassLoader::bootstrapLoader->analyseClasspathEnv(path);
       }
     } else if (!(strcmp(cur, "-enableassertions"))) {
       nyi();
@@ -306,9 +307,10 @@ void JavaIsolate::print(mvm::PrintBuffer* buf) const {
 
 }
 
-JavaObject* JavaIsolate::loadAppClassLoader() {
+JnjvmClassLoader* JavaIsolate::loadAppClassLoader() {
   if (appClassLoader == 0) {
-    appClassLoader = Classpath::getSystemClassLoader->invokeJavaObjectStatic(this);
+    JavaObject* loader = Classpath::getSystemClassLoader->invokeJavaObjectStatic(this);
+    appClassLoader = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader);
   }
   return appClassLoader;
 }
@@ -318,26 +320,27 @@ void JavaIsolate::mapInitialThread() {
 }
 
 void JavaIsolate::loadBootstrap() {
-  loadName(Classpath::newVMThrowable->name,
-           CommonClass::jnjvmClassLoader, true, true, true);
-  loadName(Classpath::newClass->name,
-           CommonClass::jnjvmClassLoader, true, true, true);
-  loadName(Classpath::newConstructor->name,
-           CommonClass::jnjvmClassLoader, true, true, true);
-  loadName(Classpath::newMethod->name,
-           CommonClass::jnjvmClassLoader, true, true, true);
-  loadName(Classpath::newField->name,
-           CommonClass::jnjvmClassLoader, true, true, true);
-  loadName(Classpath::newStackTraceElement->name,
-           CommonClass::jnjvmClassLoader, true, true, true);
+  JnjvmClassLoader* loader = JnjvmClassLoader::bootstrapLoader;
+  loader->loadName(Classpath::newVMThrowable->name,
+                   true, true, true);
+  loader->loadName(Classpath::newClass->name,
+                   true, true, true);
+  loader->loadName(Classpath::newConstructor->name,
+                   true, true, true);
+  loader->loadName(Classpath::newMethod->name,
+                   true, true, true);
+  loader->loadName(Classpath::newField->name,
+                   true, true, true);
+  loader->loadName(Classpath::newStackTraceElement->name,
+                   true, true, true);
   mapInitialThread();
   loadAppClassLoader();
   JavaObject* obj = JavaThread::currentThread();
-  Classpath::setContextClassLoader->invokeIntSpecial(this, obj, appClassLoader);
+  Classpath::setContextClassLoader->invokeIntSpecial(this, obj, appClassLoader->getJavaClassLoader());
   // load and initialise math since it is responsible for dlopen'ing 
   // libjavalang.so and we are optimizing some math operations
-  loadName(asciizConstructUTF8("java/lang/Math"), 
-           CommonClass::jnjvmClassLoader, true, true, true);
+  loader->loadName(loader->asciizConstructUTF8("java/lang/Math"), 
+                   true, true, true);
 }
 
 void JavaIsolate::executeClass(const char* className, ArrayObject* args) {
@@ -408,7 +411,7 @@ void JavaIsolate::runMain(int argc, char** argv) {
       }
     }
 
-    ArrayObject* args = ArrayObject::acons(argc - 2, JavaArray::ofString, this);
+    ArrayObject* args = ArrayObject::acons(argc - 2, JavaArray::ofString, &allocator);
     for (int i = 2; i < argc; ++i) {
       args->elements[i - 2] = (JavaObject*)asciizToStr(argv[i]);
     }
@@ -419,17 +422,14 @@ void JavaIsolate::runMain(int argc, char** argv) {
 }
 
 void JavaIsolate::runIsolate(const char* className, ArrayObject* args) {
-  JavaIsolate *isolate = allocateIsolate(bootstrapVM);
+  JavaIsolate *isolate = allocateIsolate();
   isolate->loadBootstrap();
   isolate->executeClass(className, args);
   isolate->waitForExit();
 }
 
-extern const char* GNUClasspathGlibj;
-extern const char* GNUClasspathLibs;
-
-JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
-  JavaIsolate *isolate= vm_new(callingVM, JavaIsolate)();
+JavaIsolate* JavaIsolate::allocateIsolate() {
+  JavaIsolate *isolate= gc_new(JavaIsolate)();
 
 #ifdef MULTIPLE_GC
   isolate->GC = Collector::allocate();
@@ -438,21 +438,8 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   if (!(isolate->classpath)) {
     isolate->classpath = ".";
   }
-  isolate->bootClasspathEnv = getenv("JNJVM_BOOTCLASSPATH");
-  if (!(isolate->bootClasspathEnv)) {
-    isolate->bootClasspathEnv = GNUClasspathGlibj;
-  }
-  isolate->libClasspathEnv = getenv("JNJVM_LIBCLASSPATH");
-  if (!(isolate->libClasspathEnv)) {
-    isolate->libClasspathEnv = GNUClasspathLibs;
-  }
   
-  isolate->analyseClasspathEnv(isolate->bootClasspathEnv);
-
-  isolate->TheModule = new JnjvmModule("Isolate JnJVM");
-  isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->TheModule);
-  
-  isolate->bootstrapThread = vm_new(isolate, JavaThread)();
+  isolate->bootstrapThread = gc_new(JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
   void* baseSP = mvm::Thread::get()->baseSP;
   isolate->bootstrapThread->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
@@ -471,78 +458,13 @@ JavaIsolate* JavaIsolate::allocateIsolate(Jnjvm* callingVM) {
   isolate->javavmEnv = &JNI_JavaVMTable;
   
   // We copy so that bootstrap utf8 such as "<init>" are unique
-  isolate->hashUTF8 = new UTF8Map();
-  bootstrapVM->hashUTF8->copy(isolate->hashUTF8);
   isolate->hashStr = new StringMap();
-  isolate->bootstrapClasses = callingVM->bootstrapClasses;
-  isolate->javaTypes = new TypeMap(); 
-  isolate->javaSignatures = new SignMap(); 
   isolate->globalRefsLock = mvm::Lock::allocNormal();
 #ifdef MULTIPLE_VM
   isolate->statics = vm_new(isolate, StaticInstanceMap)();  
   isolate->delegatees = vm_new(isolate, DelegateeMap)(); 
 #endif
 
-  return isolate;
-}
-
-JavaIsolate* JavaIsolate::allocateBootstrap() {
-  JavaIsolate *isolate= gc_new(JavaIsolate)();
-  
-#ifdef MULTIPLE_GC
-  isolate->GC = mvm::Thread::get()->GC;
-  isolate->GC->enable(0);
-#endif 
-  
-  isolate->classpath = getenv("CLASSPATH");
-  if (!(isolate->classpath)) {
-    isolate->classpath = ".";
-  }
-  isolate->bootClasspathEnv = getenv("JNJVM_BOOTCLASSPATH");
-  if (!(isolate->bootClasspathEnv)) {
-    isolate->bootClasspathEnv = GNUClasspathGlibj;
-  }
-  isolate->libClasspathEnv = getenv("JNJVM_LIBCLASSPATH");
-  if (!(isolate->libClasspathEnv)) {
-    isolate->libClasspathEnv = GNUClasspathLibs;
-  }
-  
-  isolate->analyseClasspathEnv(isolate->bootClasspathEnv);
-  
-  isolate->TheModule = new JnjvmModule("Bootstrap JnJVM");
-  isolate->TheModule->initialise();
-  isolate->TheModuleProvider = new JnjvmModuleProvider(isolate->TheModule);
- 
-  isolate->bootstrapThread = vm_new(isolate, JavaThread)();
-  isolate->bootstrapThread->initialise(0, isolate);
-  void* baseSP = mvm::Thread::get()->baseSP;
-  isolate->bootstrapThread->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
-#ifdef MULTIPLE_GC
-  isolate->bootstrapThread->GC = isolate->GC;
-#endif 
-  isolate->bootstrapThread->baseSP = baseSP;
-  JavaThread::threadKey->set(isolate->bootstrapThread);
-
-  isolate->name = "bootstrapVM";
-  isolate->appClassLoader = 0;
-  isolate->hashUTF8 = new UTF8Map();
-  isolate->hashStr = new StringMap();
-  isolate->bootstrapClasses = vm_new(isolate, ClassMap)();
-  isolate->jniEnv = &JNI_JNIEnvTable;
-  isolate->javavmEnv = &JNI_JavaVMTable;
-  isolate->globalRefsLock = mvm::Lock::allocNormal();
-  isolate->javaTypes = new TypeMap();  
-  isolate->javaSignatures = new SignMap();  
-
-#ifdef MULTIPLE_VM
-  isolate->statics = vm_new(isolate, StaticInstanceMap)();  
-  isolate->delegatees = vm_new(isolate, DelegateeMap)(); 
-#endif
-
-#if defined(SERVICE_VM) || !defined(MULTIPLE_VM)
-  isolate->threadSystem = new ThreadSystem();
-#endif
-  
   return isolate;
 }
 

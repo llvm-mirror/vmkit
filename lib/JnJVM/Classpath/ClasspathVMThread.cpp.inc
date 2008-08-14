@@ -113,7 +113,7 @@ jobject _vmThread, sint64 stackSize) {
   assert(javaThread);
   Jnjvm* vm = JavaThread::get()->isolate;
 
-  JavaThread* th = vm_new(vm, JavaThread)();
+  JavaThread* th = allocator_new(vm->allocator, JavaThread)();
   th->initialise(javaThread, vm);
   ClasspathThread::vmdata->setVirtualObjectField(vmThread, (JavaObject*)th);
   int tid = 0;

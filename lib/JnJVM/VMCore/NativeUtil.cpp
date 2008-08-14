@@ -19,6 +19,7 @@
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "JnjvmClassLoader.h"
 #include "NativeUtil.h"
 #include "Reader.h"
 
@@ -375,15 +376,15 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
   return;
 }
 
-JavaObject* NativeUtil::getClassType(JavaObject* loader, Typedef* type) {
+JavaObject* NativeUtil::getClassType(JnjvmClassLoader* loader, Typedef* type) {
   CommonClass* res = type->assocClass(loader);
   return res->getClassDelegatee();
 }
 
-ArrayObject* NativeUtil::getParameterTypes(JavaObject* loader, JavaMethod* meth) {
+ArrayObject* NativeUtil::getParameterTypes(JnjvmClassLoader* loader, JavaMethod* meth) {
   std::vector<Typedef*>& args = meth->getSignature()->args;
   ArrayObject* res = ArrayObject::acons(args.size(), Classpath::classArrayClass,
-                                        JavaThread::get()->isolate);
+                                        &(JavaThread::get()->isolate->allocator));
 
   sint32 index = 0;
   for (std::vector<Typedef*>::iterator i = args.begin(), e = args.end();
@@ -399,14 +400,14 @@ ArrayObject* NativeUtil::getExceptionTypes(JavaMethod* meth) {
   Attribut* exceptionAtt = meth->lookupAttribut(Attribut::exceptionsAttribut);
   if (exceptionAtt == 0) {
     return ArrayObject::acons(0, Classpath::classArrayClass,
-                              JavaThread::get()->isolate);
+                              &(JavaThread::get()->isolate->allocator));
   } else {
     Class* cl = meth->classDef;
     JavaCtpInfo* ctp = cl->ctpInfo;
     Reader reader(exceptionAtt, cl->bytes);
     uint16 nbe = reader.readU2();
     ArrayObject* res = ArrayObject::acons(nbe, Classpath::classArrayClass,
-                                          JavaThread::get()->isolate);
+                                          &(JavaThread::get()->isolate->allocator));
 
     for (uint16 i = 0; i < nbe; ++i) {
       uint16 idx = reader.readU2();

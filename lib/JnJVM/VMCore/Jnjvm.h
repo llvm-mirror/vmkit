@@ -12,19 +12,15 @@
 
 #include <vector>
 
+#include "types.h"
+
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 
-#include "types.h"
-
-#ifdef MULTIPLE_GC
-#define vm_new(vm, cl) collector_new(cl, vm->GC)
-#else
-#define vm_new(vm, cl) gc_new(cl)
-#endif
+#include "JavaAllocator.h"
 
 namespace jnjvm {
 
@@ -37,6 +33,7 @@ class JavaField;
 class JavaMethod;
 class JavaObject;
 class JavaString;
+class JnjvmClassLoader;
 class JnjvmModule;
 class JnjvmModuleProvider;
 class Reader;
@@ -63,8 +60,8 @@ public:
 #ifdef MULTIPLE_GC
   Collector* GC;
 #endif
+  JavaAllocator allocator;
   static VirtualTable* VT;
-  static Jnjvm* bootstrapVM;
 
   static const char* dirSeparator;
   static const char* envSeparator;
@@ -179,45 +176,14 @@ public:
   static const UTF8* tanh;
   static const UTF8* finalize;
 
-
-  void analyseClasspathEnv(const char*);
-  
-  // Loads a Class
-  CommonClass* loadName(const UTF8* name, JavaObject* loader, bool doResolve,
-                        bool doClinit, bool doThrow);
-  
-  // Class lookup
-  CommonClass* lookupClassFromUTF8(const UTF8* utf8, unsigned int start,
-                                   unsigned int len, JavaObject* loader,
-                                   bool doResolve, bool doClinit, bool doThrow);
-  CommonClass* lookupClassFromJavaString(JavaString* str, JavaObject* loader,
-                                         bool doResolve, bool doClinit,
-                                         bool doThrow);
-
-  void readParents(Class* cl, Reader& reader);
-  void loadParents(Class* cl);
-  void readAttributs(Class* cl, Reader& reader, std::vector<Attribut*> & attr);
-  void readFields(Class* cl, Reader& reader);
-  void readMethods(Class* cl, Reader& reader);
-  void readClass(Class* cl);
+ 
   void initialiseClass(CommonClass* cl);
-  void resolveClass(CommonClass* cl, bool doClinit);
-  ArrayUInt8* openName(const UTF8* utf8);
   
-  CommonClass* lookupClass(const UTF8* utf8, JavaObject* loader);
-
-  ClassArray* constructArray(const UTF8* name, JavaObject* loader);
-  Class*      constructClass(const UTF8* name, JavaObject* loader);
-  const UTF8* asciizConstructUTF8(const char* asciiz);
-  const UTF8* readerConstructUTF8(const uint16* buf, uint32 len);
   JavaString* asciizToStr(const char* asciiz);
   JavaString* UTF8ToStr(const UTF8* utf8);
-  Typedef* constructType(const UTF8 * name);
-  Signdef* constructSign(const UTF8 * name);
   
   
   JavaObject* getClassDelegatee(CommonClass*);
-  CommonClass* loadInClassLoader(const UTF8* utf8, JavaObject* loader);
 
   virtual void TRACER;
   virtual void print(mvm::PrintBuffer* buf) const {
@@ -232,12 +198,10 @@ public:
   void* jniEnv;
   const void* javavmEnv;
   std::vector< std::pair<char*, char*> > postProperties;
-  std::vector<const char*> bootClasspath;
-  std::vector<ZipArchive*> bootArchives;
   std::vector<void*> nativeLibs;
   const char* classpath;
-  const char* libClasspathEnv;
-  const char* bootClasspathEnv;
+
+
   std::vector<JavaObject*, gc_allocator<JavaObject*> > globalRefs;
   mvm::Lock* globalRefsLock;
 
@@ -246,32 +210,14 @@ public:
   }
 
   const char* name;
-  JavaObject* appClassLoader;
-  UTF8Map * hashUTF8;
+  JnjvmClassLoader* appClassLoader;
   StringMap * hashStr;
-  ClassMap* bootstrapClasses;
-  TypeMap* javaTypes;
-  SignMap* javaSignatures;
 #ifdef MULTIPLE_VM
   StaticInstanceMap* statics;
   DelegateeMap* delegatees;
 #endif
 
   
-  JnjvmModuleProvider* TheModuleProvider;
-  JnjvmModule*         TheModule;
-
-
-#ifndef MULTIPLE_GC
-  void* allocateObject(unsigned int sz, VirtualTable* VT) {
-    return gc::operator new(sz, VT);
-  }
-#else
-  void* allocateObject(unsigned int sz, VirtualTable* VT) {
-    return gc::operator new(sz, VT, GC);
-  }
-#endif
-
   virtual void runApplication(int argc, char** argv);
 };
 

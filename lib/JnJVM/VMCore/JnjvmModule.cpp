@@ -135,7 +135,7 @@ Value* LLVMCommonClassInfo::getVar(JavaJIT* jit) {
         classDef->isArray && classDef->isolate != Jnjvm::bootstrapVM) {
       // We know the array class can belong to bootstrap
       CommonClass* cl = Jnjvm::bootstrapVM->constructArray(classDef->name, 0);
-      return cl->isolate->TheModule->getClassInfo(cl)->getVar(jit);
+      return cl->classLoader->TheModule->getClassInfo(cl)->getVar(jit);
     }
 #endif
       
@@ -147,7 +147,7 @@ Value* LLVMCommonClassInfo::getVar(JavaJIT* jit) {
     varGV = new GlobalVariable(JnjvmModule::JavaClassType, true,
                                GlobalValue::ExternalLinkage,
                                cons, "",
-                               classDef->isolate->TheModule);
+                               classDef->classLoader->TheModule);
   }
   return new LoadInst(varGV, "", jit->currentBlock);
 }
@@ -162,7 +162,7 @@ Value* LLVMCommonClassInfo::getDelegatee(JavaJIT* jit) {
     delegateeGV = new GlobalVariable(JnjvmModule::JavaObjectType, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "",
-                                    classDef->isolate->TheModule);
+                                    classDef->classLoader->TheModule);
   }
   return new LoadInst(delegateeGV, "", jit->currentBlock);
 #else
@@ -195,7 +195,7 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
     if (meth->name->equals(Jnjvm::finalize)) {
       VT = allocateVT(cl, ++meths);
       meth->offset = 0;
-      Function* func = cl->isolate->TheModuleProvider->parseFunction(meth);
+      Function* func = cl->classLoader->TheModuleProvider->parseFunction(meth);
       if (!cl->super) meth->canBeInlined = true;
       Function::iterator BB = func->begin();
       BasicBlock::iterator I = BB->begin();
@@ -280,7 +280,7 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
   Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
                                     GlobalValue::ExternalLinkage,
                                     "markAndTraceObject",
-                                    cl->isolate->TheModule);
+                                    cl->classLoader->TheModule);
 
   Constant* zero = mvm::jit::constantZero;
   Argument* arg = func->arg_begin();
@@ -439,8 +439,8 @@ const Type* LLVMClassInfo::getStaticType() {
 
 #ifndef MULTIPLE_VM
     JavaObject* val = 
-      (JavaObject*)classDef->isolate->allocateObject(cl->staticSize,
-                                                     cl->staticVT);
+      (JavaObject*)JavaThread::get()->isolate->allocator.allocateObject(cl->staticSize,
+                                                                        cl->staticVT);
     val->initialise(classDef);
     for (CommonClass::field_iterator i = cl->staticFields.begin(),
          e = cl->staticFields.end(); i!= e; ++i) {
@@ -466,7 +466,7 @@ Value* LLVMClassInfo::getStaticVar(JavaJIT* jit) {
       staticVarGV = new GlobalVariable(JnjvmModule::JavaObjectType, true,
                                        GlobalValue::ExternalLinkage,
                                        cons, "",
-                                       classDef->isolate->TheModule);
+                                       classDef->classLoader->TheModule);
   }
 
   return new LoadInst(staticVarGV, "", jit->currentBlock);
@@ -490,7 +490,7 @@ Value* LLVMClassInfo::getVirtualTable(JavaJIT* jit) {
     virtualTableGV = new GlobalVariable(JnjvmModule::VTType, true,
                                         GlobalValue::ExternalLinkage,
                                         cons, "",
-                                        classDef->isolate->TheModule);
+                                        classDef->classLoader->TheModule);
   }
   return new LoadInst(virtualTableGV, "", jit->currentBlock);
 }
@@ -520,12 +520,12 @@ Function* LLVMClassInfo::getVirtualTracer() {
 
 Function* LLVMMethodInfo::getMethod() {
   if (!methodFunction) {
-    Jnjvm* vm = methodDef->classDef->isolate;
+    JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
     methodFunction = Function::Create(getFunctionType(), 
                                       GlobalValue::GhostLinkage,
                                       methodDef->printString(),
-                                      vm->TheModule);
-    vm->TheModuleProvider->addFunction(methodFunction, methodDef);
+                                      JCL->TheModule);
+    JCL->TheModuleProvider->addFunction(methodFunction, methodDef);
   }
   return methodFunction;
 }
@@ -651,7 +651,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
                                           getStaticBufType(),
                                    GlobalValue::ExternalLinkage,
                                    signature->printString(),
-                                   signature->isolate->TheModule);
+                                   signature->initialLoader->TheModule);
   
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
@@ -706,7 +706,7 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
                                           getStaticBufType(),
                                       GlobalValue::ExternalLinkage,
                                       signature->printString(),
-                                      signature->isolate->TheModule);
+                                      signature->initialLoader->TheModule);
   
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();

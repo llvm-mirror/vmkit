@@ -56,7 +56,7 @@ public:
   ~JavaIsolate();
   JavaIsolate();
 
-  JavaObject* loadAppClassLoader();
+  JnjvmClassLoader* loadAppClassLoader();
   void loadBootstrap();
   void executeClass(const char* className, ArrayObject* args);
   void executePremain(const char* className, JavaString* args,
@@ -65,8 +65,7 @@ public:
   void runMain(int argc, char** argv);
   void mapInitialThread();
   static void runIsolate(const char* className, ArrayObject* args);
-  static JavaIsolate* allocateIsolate(Jnjvm* callingVM);
-  static JavaIsolate* allocateBootstrap();
+  static JavaIsolate* allocateIsolate();
   
 };
 

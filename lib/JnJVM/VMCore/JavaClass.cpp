@@ -36,8 +36,6 @@ const UTF8* Attribut::lineNumberTableAttribut = 0;
 const UTF8* Attribut::innerClassesAttribut = 0;
 const UTF8* Attribut::sourceFileAttribut = 0;
 
-JavaObject* CommonClass::jnjvmClassLoader = 0;
-
 CommonClass* ClassArray::SuperArray = 0;
 std::vector<Class*> ClassArray::InterfacesArray;
 
@@ -97,7 +95,6 @@ CommonClass::~CommonClass() {
 
 CommonClass::CommonClass() {
   display = 0;
-  isolate = 0;
   lockVar = 0;
   condVar = 0;
   virtualVT = 0;
@@ -206,12 +203,12 @@ void CommonClass::print(mvm::PrintBuffer* buf) const {
   buf->write(">");
 }
 
-CommonClass::CommonClass(Jnjvm* vm, const UTF8* n, bool isArray) {
+CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n, bool isArray) {
   name = n;
   this->lockVar = mvm::Lock::allocRecursive();
   this->condVar = mvm::Cond::allocCond();
   this->status = hashed;
-  this->isolate = vm;
+  this->classLoader = loader;
   this->isArray = isArray;
   this->isPrimitive = false;
 #ifndef MULTIPLE_VM
@@ -219,8 +216,8 @@ CommonClass::CommonClass(Jnjvm* vm, const UTF8* n, bool isArray) {
 #endif
 }
 
-ClassPrimitive::ClassPrimitive(Jnjvm* vm, const UTF8* n) : 
-  CommonClass(vm, n, false) {
+ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n) : 
+  CommonClass(loader, n, false) {
   
   display = (CommonClass**)malloc(sizeof(CommonClass*));
   display[0] = this;
@@ -229,8 +226,7 @@ ClassPrimitive::ClassPrimitive(Jnjvm* vm, const UTF8* n) :
   access = ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC;
 }
 
-Class::Class(Jnjvm* vm, const UTF8* n) : CommonClass(vm, n, false) {
-  classLoader = 0;
+Class::Class(JnjvmClassLoader* loader, const UTF8* n) : CommonClass(loader, n, false) {
   bytes = 0;
   super = 0;
   ctpInfo = 0;
@@ -239,8 +235,7 @@ Class::Class(Jnjvm* vm, const UTF8* n) : CommonClass(vm, n, false) {
 #endif
 }
 
-ClassArray::ClassArray(Jnjvm* vm, const UTF8* n) : CommonClass(vm, n, true) {
-  classLoader = 0;
+ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n) : CommonClass(loader, n, true) {
   _funcs = 0;
   _baseClass = 0;
   super = ClassArray::SuperArray;
@@ -266,24 +261,24 @@ void ClassArray::print(mvm::PrintBuffer* buf) const {
 }
 
 void ClassArray::resolveComponent() {
-  AssessorDesc::introspectArray(isolate, classLoader, name, 0, _funcs,
+  AssessorDesc::introspectArray(classLoader, name, 0, _funcs,
                                 _baseClass);
 }
 
-JavaObject* ClassArray::arrayLoader(Jnjvm* isolate, const UTF8* name,
-                                    JavaObject* loader,
-                                    unsigned int start, unsigned int len) {
+JnjvmClassLoader* ClassArray::arrayLoader(const UTF8* name,
+                                          JnjvmClassLoader* loader,
+                                          unsigned int start,
+                                          unsigned int len) {
   
   if (name->elements[start] == AssessorDesc::I_TAB) {
-    return arrayLoader(isolate, name, loader, start + 1, len - 1);
+    return arrayLoader(name, loader, start + 1, len - 1);
   } else if (name->elements[start] == AssessorDesc::I_REF) {
-    const UTF8* componentName = name->javaToInternal(isolate, start + 1,
+    const UTF8* componentName = name->javaToInternal(loader->hashUTF8, start + 1,
                                                      len - 2);
-    CommonClass* cl = isolate->loadName(componentName, loader, false, false,
-                                        true);
+    CommonClass* cl = loader->loadName(componentName, false, false, true);
     return cl->classLoader;
   } else {
-    return 0;
+    return JnjvmClassLoader::bootstrapLoader;
   }
 }
 
@@ -293,7 +288,7 @@ void* JavaMethod::compiledPtr() {
     classDef->acquire();
     if (code == 0) {
       code = 
-        classDef->isolate->TheModuleProvider->materializeFunction(this);
+        classDef->classLoader->TheModuleProvider->materializeFunction(this);
     }
     classDef->release();
     return code;
@@ -405,7 +400,7 @@ JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
 
 JavaObject* Class::doNew(Jnjvm* vm) {
   assert(this->isReady() && "Uninitialized class when allocating.");
-  JavaObject* res = (JavaObject*)vm->allocateObject(virtualSize, virtualVT);
+  JavaObject* res = (JavaObject*)vm->allocator.allocateObject(virtualSize, virtualVT);
   res->classOf = this;
   return res;
 }
@@ -436,16 +431,14 @@ bool CommonClass::isOfTypeName(const UTF8* Tname) {
     
     while (res && Tname->elements[prof] == AssessorDesc::I_TAB) {
       CommonClass* cl = ((ClassArray*)curS)->baseClass();
-      Jnjvm *vm = cl->isolate;
       ++prof;
-      vm->resolveClass(cl, false);
+      classLoader->resolveClass(cl, false);
       res = curS->isArray && cl && (prof < len);
       curS = cl;
     }
     
-    Jnjvm *vm = this->isolate;
     return (Tname->elements[prof] == AssessorDesc::I_REF) &&  
-      (res && curS->inheritName(Tname->extract(vm, prof + 1, len - 1)));
+      (res && curS->inheritName(Tname->extract(classLoader->hashUTF8, prof + 1, len - 1)));
   } else {
     return false;
   }
@@ -540,11 +533,11 @@ JavaObject* CommonClass::getClassDelegatee() {
 }
 
 void CommonClass::resolveClass(bool doClinit) {
-  isolate->resolveClass(this, doClinit);
+  classLoader->resolveClass(this, doClinit);
 }
 
 void CommonClass::initialiseClass() {
-  return isolate->initialiseClass(this);
+  return JavaThread::get()->isolate->initialiseClass(this);
 }
 
 #ifdef MULTIPLE_VM

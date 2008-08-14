@@ -111,7 +111,7 @@ Class* Classpath::longClass;
 
 Class* Classpath::vmStackWalker;
 
-void ClasspathThread::initialise(Jnjvm* vm) {
+void ClasspathThread::initialise(JnjvmClassLoader* vm) {
   newThread = 
     UPCALL_CLASS(vm, "java/lang/Thread");
   
@@ -169,7 +169,8 @@ void ClasspathThread::initialise(Jnjvm* vm) {
 }
 
 void ClasspathThread::createInitialThread(Jnjvm* vm, JavaObject* th) {
-  vm->loadName(newVMThread->name, newVMThread->classLoader, true, true, true);
+  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
+  JCL->loadName(newVMThread->name, true, true, true);
 
   JavaObject* vmth = newVMThread->doNew(vm);
   name->setVirtualObjectField(th, (JavaObject*)vm->asciizToStr("main"));
@@ -179,16 +180,16 @@ void ClasspathThread::createInitialThread(Jnjvm* vm, JavaObject* th) {
   assocThread->setVirtualObjectField(vmth, th);
   running->setVirtualInt8Field(vmth, (uint32)1);
   
-  rootGroup->classDef->isolate->loadName(rootGroup->classDef->name,
-                                         rootGroup->classDef->classLoader,
-                                         true, true, true);
+  JCL->loadName(rootGroup->classDef->name,
+                true, true, true);
   JavaObject* RG = rootGroup->getStaticObjectField();
   group->setVirtualObjectField(th, RG);
   groupAddThread->invokeIntSpecial(vm, RG, th);
 }
 
 void ClasspathThread::mapInitialThread(Jnjvm* vm) {
-  vm->loadName(newThread->name, newThread->classLoader, true, true, true);
+  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
+  JCL->loadName(newThread->name, true, true, true);
   JavaObject* th = newThread->doNew(vm);
   createInitialThread(vm, th);
   JavaThread* myth = JavaThread::get();
@@ -198,7 +199,7 @@ void ClasspathThread::mapInitialThread(Jnjvm* vm) {
   finaliseCreateInitialThread->invokeIntStatic(vm, th);
 }
 
-void Classpath::initialiseClasspath(Jnjvm* vm) {
+void Classpath::initialiseClasspath(JnjvmClassLoader* vm) {
   getSystemClassLoader =
     UPCALL_METHOD(vm, "java/lang/ClassLoader", "getSystemClassLoader",
                   "()Ljava/lang/ClassLoader;", ACC_STATIC);
@@ -388,15 +389,14 @@ void Classpath::initialiseClasspath(Jnjvm* vm) {
   ClasspathThread::initialise(vm);
     
   vm->loadName(vm->asciizConstructUTF8("java/lang/String"), 
-                                       CommonClass::jnjvmClassLoader, true,
-                                       false, false);
+                                       true, false, false);
 
-  CommonClass* object = 
-    vm->loadName(vm->asciizConstructUTF8("java/lang/Object"), 
-                                         CommonClass::jnjvmClassLoader, true,
-                                         false, false);
-  COMPILE_METHODS(object)
+  vm->loadName(vm->asciizConstructUTF8("java/lang/Object"), 
+                                       true, false, false);
   
+  // Don't compile methods here, we still don't know where to allocate Java
+  // strings.
+
   JavaMethod* getCallingClass =
     UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClass",
                   "()Ljava/lang/Class;", ACC_STATIC);

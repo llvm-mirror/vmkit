@@ -17,14 +17,17 @@
 namespace jnjvm {
 
 class Class;
+class CommonClass;
 class Jnjvm;
+class JavaField;
+class JavaMethod;
 class JavaString;
 class Reader;
 class Signdef;
 class Typedef;
 class UTF8;
 
-typedef uint32 (*ctpReader)(Jnjvm*, uint32, uint32, Reader&, sint32*, void**, uint8*);
+typedef uint32 (*ctpReader)(Class*, uint32, uint32, Reader&, sint32*, void**, uint8*);
 
 class JavaCtpInfo {
 public:
@@ -48,42 +51,42 @@ public:
   
   static ctpReader funcsReader[16];
 
-  static uint32 CtpReaderClass(Jnjvm* vm, uint32 type, uint32 e, Reader& reader,
+  static uint32 CtpReaderClass(Class*, uint32 type, uint32 e, Reader& reader,
                             sint32* ctpDef, void** ctpRes, uint8* ctpType);
   
-  static uint32 CtpReaderInteger(Jnjvm* vm, uint32 type, uint32 e, Reader& reader,
+  static uint32 CtpReaderInteger(Class*, uint32 type, uint32 e, Reader& reader,
                               sint32* ctpDef, void** ctpRes, uint8* ctpType);
   
-  static uint32 CtpReaderFloat(Jnjvm* vm, uint32 type, uint32 e, Reader& reader,
+  static uint32 CtpReaderFloat(Class*, uint32 type, uint32 e, Reader& reader,
                             sint32* ctpDef, void** ctpRes, uint8* ctpType);
   
-  static uint32 CtpReaderUTF8(Jnjvm* vm, uint32 type, uint32 e, Reader& reader,
+  static uint32 CtpReaderUTF8(Class*, uint32 type, uint32 e, Reader& reader,
                            sint32* ctpDef, void** ctpRes, uint8* ctpType);
   
-  static uint32 CtpReaderNameAndType(Jnjvm* vm, uint32 type, uint32 e, Reader& reader,
+  static uint32 CtpReaderNameAndType(Class*, uint32 type, uint32 e, Reader& reader,
                                   sint32* ctpDef, void** ctpRes,
                                   uint8* ctpType);
   
-  static uint32 CtpReaderFieldref(Jnjvm* vm, uint32 type, uint32 e, Reader& reader,
+  static uint32 CtpReaderFieldref(Class*, uint32 type, uint32 e, Reader& reader,
                                sint32* ctpDef, void** ctpRes, uint8* ctpType);
   
-  static uint32 CtpReaderString(Jnjvm* vm, uint32 type, uint32 e, Reader& reader,
+  static uint32 CtpReaderString(Class*, uint32 type, uint32 e, Reader& reader,
                              sint32* ctpDef, void** ctpRes, uint8* ctpType);
   
-  static uint32 CtpReaderMethodref(Jnjvm* vm, uint32 type, uint32 e, Reader& reader,
+  static uint32 CtpReaderMethodref(Class*, uint32 type, uint32 e, Reader& reader,
                                 sint32* ctpDef, void** ctpRes, uint8* ctpType);
   
-  static uint32 CtpReaderInterfaceMethodref(Jnjvm* vm, uint32 type, uint32 e,
+  static uint32 CtpReaderInterfaceMethodref(Class*, uint32 type, uint32 e,
                                          Reader& reader, sint32* ctpDef,
                                          void** ctpRes, uint8* ctpType);
   
-  static uint32 CtpReaderLong(Jnjvm* vm, uint32 type, uint32 e, Reader& reader,
+  static uint32 CtpReaderLong(Class*, uint32 type, uint32 e, Reader& reader,
                            sint32* ctpDef, void** ctpRes, uint8* ctpType);
   
-  static uint32 CtpReaderDouble(Jnjvm* vm, uint32 type, uint32 e, Reader& reader,
+  static uint32 CtpReaderDouble(Class*, uint32 type, uint32 e, Reader& reader,
                              sint32* ctpDef, void** ctpRes, uint8* ctpType);
 
-  static void read(Jnjvm *vm, Class* cl, Reader& reader);
+  static void read(Class* cl, Reader& reader);
 
   bool isAStaticCall(uint32 index) {
     return (ctpType[index] & 0x80) != 0;    

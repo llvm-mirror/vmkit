@@ -34,7 +34,7 @@ JNIEnv *env,
 #endif
 jobject obj) {
   JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)obj);
-  JavaObject* loader = field->classDef->classLoader;
+  JnjvmClassLoader* loader = field->classDef->classLoader;
   CommonClass* cl = field->getSignature()->assocClass(loader);
   return (jclass)cl->getClassDelegatee();
 }

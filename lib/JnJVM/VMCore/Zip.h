@@ -15,7 +15,7 @@
 namespace jnjvm {
 
 class ArrayUInt8;
-class Jnjvm;
+class JnjvmBootstrapLoader;
 
 struct ZipFile {
   char* filename;
@@ -31,7 +31,7 @@ struct ZipFile {
 
 
 class ZipArchive {
-  friend class Jnjvm;
+  friend class JnjvmBootstrapLoader;
 private:
   
   struct ltstr

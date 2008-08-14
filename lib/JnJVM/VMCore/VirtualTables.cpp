@@ -16,6 +16,7 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 #include "Jnjvm.h"
+#include "JnjvmClassLoader.h"
 #include "LockedMap.h"
 #ifdef SERVICE_VM
 #include "ServiceDomain.h"
@@ -37,6 +38,8 @@ using namespace jnjvm;
   INIT(StaticInstanceMap);
   INIT(JavaIsolate);
   INIT(DelegateeMap);
+  INIT(JnjvmBootstrapLoader);
+  INIT(JnjvmClassLoader);
 #ifdef SERVICE_VM
   INIT(ServiceDomain);
 #endif
@@ -98,23 +101,18 @@ void JavaThread::TRACER {
 
 void Jnjvm::TRACER {
   appClassLoader->MARK_AND_TRACE;
-  bootstrapClasses->MARK_AND_TRACE;
   TRACE_VECTOR(JavaObject*, gc_allocator, globalRefs);
 #ifdef MULTIPLE_VM
   statics->MARK_AND_TRACE;
   delegatees->MARK_AND_TRACE;
 #endif
   
-  for (std::vector<ZipArchive*>::iterator i = bootArchives.begin(),
-       e = bootArchives.end(); i != e; ++i) {
-    (*i)->bytes->MARK_AND_TRACE;
-  }
-
 }
 
 void JavaIsolate::TRACER {
   Jnjvm::PARENT_TRACER;
   bootstrapThread->MARK_AND_TRACE;
+  JnjvmClassLoader::bootstrapLoader->MARK_AND_TRACE;
 }
 
 void ClassMap::TRACER {
@@ -132,6 +130,21 @@ void StaticInstanceMap::TRACER {
 void DelegateeMap::TRACER {
   for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
     i->second->MARK_AND_TRACE;
+  }
+}
+
+void JnjvmClassLoader::TRACER {
+  javaLoader->MARK_AND_TRACE;
+  classes->MARK_AND_TRACE;
+  isolate->MARK_AND_TRACE;
+}
+
+void JnjvmBootstrapLoader::TRACER {
+  classes->MARK_AND_TRACE;
+  
+  for (std::vector<ZipArchive*>::iterator i = bootArchives.begin(),
+       e = bootArchives.end(); i != e; ++i) {
+    (*i)->bytes->MARK_AND_TRACE;
   }
 }
 

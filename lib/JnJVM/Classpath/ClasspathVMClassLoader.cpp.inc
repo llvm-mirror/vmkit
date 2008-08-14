@@ -52,7 +52,8 @@ jclass clazz,
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaString* name = (JavaString*)_name;
   const UTF8* utf8 = name->strToUTF8(vm);
-  CommonClass* cl = vm->lookupClass(utf8, (JavaObject*)loader);
+  JnjvmClassLoader* JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader);
+  CommonClass* cl = JCL->lookupClass(utf8);
 
   if (cl) return (jclass)(cl->getClassDelegatee());
   else return 0;
@@ -66,9 +67,9 @@ jclass clazz,
                                                                 jobject _str, 
                                                                 jboolean doResolve) {
   JavaString* str = (JavaString*)_str;
-  Jnjvm* vm = JavaThread::get()->isolate;
 
-  CommonClass* cl = vm->lookupClassFromJavaString(str, 0, doResolve, false, false);
+  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
+  CommonClass* cl = JCL->lookupClassFromJavaString(str, doResolve, false, false);
 
   if (cl != 0) {
     return (jclass)cl->getClassDelegatee();
@@ -88,10 +89,10 @@ jclass clazz,
                                                                   jint off, 
                                                                   jint len, 
                                                                   jobject pd) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  JnjvmClassLoader* JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader);
   JavaString* str = (JavaString*)_str;
-  const UTF8* name = str->value->javaToInternal(vm, str->offset, str->count);
-  Class* cl = vm->constructClass(name, (JavaObject*)loader);
+  const UTF8* name = str->value->javaToInternal(JCL->hashUTF8, str->offset, str->count);
+  Class* cl = JCL->constructClass(name);
 
   if (cl->status == hashed) {
     cl->acquire();

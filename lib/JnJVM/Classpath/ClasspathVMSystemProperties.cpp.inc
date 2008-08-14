@@ -70,16 +70,17 @@ jobject _prop) {
   tmp = getenv("JAVA_HOME");
   if (!tmp) tmp = "";
   setProperty(vm, prop, "java.home", tmp);
-			
+  
+  JnjvmBootstrapLoader* JCL = JnjvmClassLoader::bootstrapLoader;
   setProperty(vm, prop, "java.class.version", "49.0");
   setProperty(vm, prop, "java.class.path", vm->classpath);
-  setProperty(vm, prop, "java.boot.class.path", vm->bootClasspathEnv);
-  setProperty(vm, prop, "sun.boot.class.path", vm->bootClasspathEnv);
+  setProperty(vm, prop, "java.boot.class.path", JCL->bootClasspathEnv);
+  setProperty(vm, prop, "sun.boot.class.path", JCL->bootClasspathEnv);
   setProperty(vm, prop, "java.vm.version", "2.0");
   setProperty(vm, prop, "java.vm.vendor", "VVM Project");
   setProperty(vm, prop, "java.vm.name", "JnJVM");
   setProperty(vm, prop, "java.specification.version", "1.5");
-  setProperty(vm, prop, "java.library.path", vm->libClasspathEnv);
+  setProperty(vm, prop, "java.library.path", JCL->libClasspathEnv);
   setProperty(vm, prop, "java.io.tmpdir", "/tmp");
   
   tmp = getenv("JAVA_COMPILER");
@@ -87,7 +88,7 @@ jobject _prop) {
   setProperty(vm, prop, "java.compiler", tmp);
   
   setProperty(vm, prop, "build.compiler", "gcj");
-  setProperty(vm, prop, "gcj.class.path", vm->bootClasspathEnv);
+  setProperty(vm, prop, "gcj.class.path", JCL->bootClasspathEnv);
   
   setUnameProp(vm, prop);
   

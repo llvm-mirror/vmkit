@@ -156,7 +156,7 @@ Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
 llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
                                                  Signdef* sign, bool stat) {
   const llvm::FunctionType* type = 0;
-  JnjvmModule* M = cl->isolate->TheModule;
+  JnjvmModule* M = cl->classLoader->TheModule;
   LLVMSignatureInfo* LSI = M->getSignatureInfo(sign);
   
   if (stat) {

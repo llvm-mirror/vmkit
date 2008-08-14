@@ -23,7 +23,7 @@
 #include "mvm/Threads/Locks.h"
 
 #include "JavaAccess.h"
-#include "Jnjvm.h"
+#include "JnjvmClassLoader.h"
 
 namespace jnjvm {
 
@@ -200,10 +200,6 @@ public:
   ///
   const UTF8* name;
   
-  /// isolate - Which isolate defined this class.
-  ///
-  Jnjvm *isolate;
-  
   /// status - The loading/resolve/initialization state of the class.
   ///
   JavaState status;
@@ -233,9 +229,9 @@ public:
   /// process of this class, done by another thread.
   mvm::Cond* condVar;
   
-  /// classLoader - The Java class loader that loaded the class.
+  /// classLoader - The Jnjvm class loader that loaded the class.
   ///
-  JavaObject* classLoader;
+  JnjvmClassLoader* classLoader;
   
 #ifndef MULTIPLE_VM
   /// delegatee - The java/lang/Class object representing this class
@@ -418,17 +414,13 @@ public:
   
   /// CommonClass - Create a class with th given name.
   ///
-  CommonClass(Jnjvm* vm, const UTF8* name, bool isArray);
+  CommonClass(JnjvmClassLoader* loader, const UTF8* name, bool isArray);
   
   /// VT - The virtual table of instances of this class (TODO: should be
   /// removed).
   ///
   static VirtualTable* VT;
 
-  /// jnjvmClassLoader - The bootstrap class loader (null).
-  ///
-  static JavaObject* jnjvmClassLoader;
-  
   /// ~CommonClass - Free memory used by this class, and remove it from
   /// metadata.
   ///
@@ -457,7 +449,7 @@ public:
 ///
 class ClassPrimitive : public CommonClass {
 public:
-  ClassPrimitive(Jnjvm* vm, const UTF8* name);
+  ClassPrimitive(JnjvmClassLoader* loader, const UTF8* name);
 };
 
 
@@ -557,7 +549,7 @@ public:
   
   /// Class - Create a class in the given virtual machine and with the given
   /// name.
-  Class(Jnjvm* vm, const UTF8* name);
+  Class(JnjvmClassLoader* loader, const UTF8* name);
   
 };
 
@@ -606,16 +598,17 @@ public:
 
   /// ClassArray - Construct a Java array class with the given name.
   ///
-  ClassArray(Jnjvm* vm, const UTF8* name);
+  ClassArray(JnjvmClassLoader* loader, const UTF8* name);
   
 
   /// arrayLoader - Return the class loader of the class with the name 'name'.
   /// If the class has not been loaded, load it with the given loader and
   /// return the real class loader that loaded this class.
   ///
-  static JavaObject* arrayLoader(Jnjvm* isolate, const UTF8* name,
-                                 JavaObject* loader, unsigned int start,
-                                 unsigned int end);
+  static JnjvmClassLoader* arrayLoader(const UTF8* name,
+                                       JnjvmClassLoader* loader,
+                                       unsigned int start,
+                                       unsigned int end);
 
   /// print - Print a string representation of this array class. Used for
   /// debugging purposes.
@@ -704,7 +697,7 @@ public:
   ///
   Signdef* getSignature() {
     if(!_signature)
-      _signature = classDef->isolate->constructSign(type);
+      _signature = classDef->classLoader->constructSign(type);
     return _signature;
   }
   
@@ -838,7 +831,7 @@ public:
   ///
   Typedef* getSignature() {
     if(!_signature)
-      _signature = classDef->isolate->constructType(type);
+      _signature = classDef->classLoader->constructType(type);
     return _signature;
   }
 

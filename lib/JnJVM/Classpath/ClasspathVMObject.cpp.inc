@@ -40,7 +40,7 @@ jclass clazz,
     size = cl->virtualSize;
   }
   JavaObject* res = (JavaObject*)
-    JavaThread::get()->isolate->allocateObject(size, src->getVirtualTable());
+    JavaThread::get()->isolate->allocator.allocateObject(size, src->getVirtualTable());
   memcpy(res, src, size);
   res->lock = 0;
   return (jobject)res;

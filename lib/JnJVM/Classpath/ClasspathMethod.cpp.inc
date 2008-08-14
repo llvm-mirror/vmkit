@@ -19,6 +19,7 @@
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "JnjvmClassLoader.h"
 #include "NativeUtil.h"
 
 using namespace jnjvm;
@@ -40,7 +41,7 @@ JNIEnv *env,
 #endif
  jobject Meth) {
   JavaMethod* meth = (JavaMethod*)Classpath::methodSlot->getVirtualInt32Field((JavaObject*)Meth);
-  JavaObject* loader = meth->classDef->classLoader;
+  JnjvmClassLoader* loader = meth->classDef->classLoader;
   return (jclass)NativeUtil::getClassType(loader, meth->getSignature()->ret);
 }
 
@@ -52,7 +53,7 @@ JNIEnv *env,
 
                                                                           jobject Meth) {
   JavaMethod* meth = (JavaMethod*)Classpath::methodSlot->getVirtualInt32Field((JavaObject*)Meth);
-  JavaObject* loader = meth->classDef->classLoader;
+  JnjvmClassLoader* loader = meth->classDef->classLoader;
   return (jobject)(NativeUtil::getParameterTypes(loader, meth));
 }
 

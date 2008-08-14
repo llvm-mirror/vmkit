@@ -221,7 +221,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   uint32 nargs = func->arg_size() + 1 + (stat ? 1 : 0); 
   std::vector<Value*> nativeArgs;
   
-  int64_t jniEnv = (int64_t)&(compilingClass->isolate->jniEnv);
+  int64_t jniEnv = (int64_t)&(JavaThread::get()->isolate->jniEnv);
   nativeArgs.push_back(
     ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, jniEnv), 
                               mvm::jit::ptrType));
@@ -1096,7 +1096,7 @@ void JavaJIT::_ldc(uint16 index) {
         void* val = 0;
         GlobalVariable* gv = 0;
 #ifndef MULTIPLE_VM
-        val = compilingClass->isolate->UTF8ToStr(utf8);
+        val = JavaThread::get()->isolate->UTF8ToStr(utf8);
         gv =
           new GlobalVariable(JnjvmModule::JavaObjectType, false, 
                              GlobalValue::ExternalLinkage,

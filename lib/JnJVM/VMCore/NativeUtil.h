@@ -19,6 +19,7 @@ class CommonClass;
 class JavaMethod;
 class JavaObject;
 class Jnjvm;
+class JnjvmClassLoader;
 class Signdef;
 class Typedef;
 
@@ -32,8 +33,8 @@ public:
   static void decapsulePrimitive(Jnjvm *vm, void**&buf, JavaObject* obj,
                                  Typedef* signature);
 
-  static JavaObject* getClassType(JavaObject* loader, Typedef* type);
-  static ArrayObject* getParameterTypes(JavaObject* loader, JavaMethod* meth);
+  static JavaObject* getClassType(JnjvmClassLoader* loader, Typedef* type);
+  static ArrayObject* getParameterTypes(JnjvmClassLoader* loader, JavaMethod* meth);
   static ArrayObject* getExceptionTypes(JavaMethod* meth);
 
 };

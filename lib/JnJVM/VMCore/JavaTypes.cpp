@@ -54,7 +54,7 @@ AssessorDesc* AssessorDesc::dRef = 0;
 
 AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
                            const char* name,
-                           Jnjvm* vm, uint8 nid,
+                           JnjvmClassLoader* loader, uint8 nid,
                            const char* assocName, ClassArray* cl,
                            arrayCtor_t ctor) {
   AssessorDesc* res = this;
@@ -64,24 +64,24 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
   res->nbb = nb;
   res->nbw = nw;
   res->asciizName = name;
-  res->UTF8Name = vm->asciizConstructUTF8(name);
+  res->UTF8Name = loader->asciizConstructUTF8(name);
   res->arrayCtor = ctor;
   
   res->arrayClass = cl;
   if (assocName)
-    res->assocClassName = vm->asciizConstructUTF8(assocName);
+    res->assocClassName = loader->asciizConstructUTF8(assocName);
   else
     res->assocClassName = 0;
   
   if (bid != I_PARG && bid != I_PARD && bid != I_REF && bid != I_TAB) {
-    res->classType = new ClassPrimitive(vm, res->UTF8Name);
+    res->classType = new ClassPrimitive(loader, res->UTF8Name);
     res->classType->virtualSize = nb;
   } else {
     res->classType = 0;
   }
 }
 
-void AssessorDesc::initialise(Jnjvm* vm) {
+void AssessorDesc::initialise(JnjvmClassLoader* vm) {
 
   dParg = new AssessorDesc(false, I_PARG, 0, 0, "(", vm, 0, 0, 0,
                                  0);
@@ -226,7 +226,7 @@ void AssessorDesc::analyseIntern(const UTF8* name, uint32 pos,
   }
 }
 
-const UTF8* AssessorDesc::constructArrayName(Jnjvm *vm, AssessorDesc* ass,
+const UTF8* AssessorDesc::constructArrayName(JnjvmClassLoader *loader, AssessorDesc* ass,
                                              uint32 steps,
                                              const UTF8* className) {
   if (ass) {
@@ -235,7 +235,7 @@ const UTF8* AssessorDesc::constructArrayName(Jnjvm *vm, AssessorDesc* ass,
       buf[i] = I_TAB;
     }
     buf[steps] = ass->byteId;
-    return UTF8::readerConstruct(vm, buf, steps + 1);
+    return loader->readerConstructUTF8(buf, steps + 1);
   } else {
     uint32 len = className->size;
     uint32 pos = steps;
@@ -260,10 +260,11 @@ const UTF8* AssessorDesc::constructArrayName(Jnjvm *vm, AssessorDesc* ass,
       buf[n - 1] = I_END_REF;
     }
 
-    return UTF8::readerConstruct(vm, buf, n);
+    return loader->readerConstructUTF8(buf, n);
   }
 }
 
+/*
 void AssessorDesc::introspectArrayName(Jnjvm *vm, const UTF8* utf8,
                                        uint32 start, AssessorDesc*& ass,
                                        const UTF8*& res) {
@@ -290,8 +291,8 @@ void AssessorDesc::introspectArrayName(Jnjvm *vm, const UTF8* utf8,
     res = 0;
   }
 }
-
-void AssessorDesc::introspectArray(Jnjvm *vm, JavaObject* loader,
+*/
+void AssessorDesc::introspectArray(JnjvmClassLoader* loader,
                                    const UTF8* utf8, uint32 start,
                                    AssessorDesc*& ass, CommonClass*& res) {
   uint32 pos = 0;
@@ -301,18 +302,18 @@ void AssessorDesc::introspectArray(Jnjvm *vm, JavaObject* loader,
   analyseIntern(utf8, start, 1, funcs, intern);
 
   if (funcs != dTab) {
-    vm->unknownError("%s isn't an array", utf8->printString());
+    JavaThread::get()->isolate->unknownError("%s isn't an array", utf8->printString());
   }
 
   analyseIntern(utf8, intern, 0, funcs, pos);
 
   if (funcs == dRef) {
     ass = dRef;
-    res = vm->loadName(utf8->extract(vm, intern + 1, pos - 1), loader, false,
+    res = loader->loadName(utf8->extract(loader->hashUTF8, intern + 1, pos - 1), false,
                        false, true);
   } else if (funcs == dTab) {
     ass = dTab;
-    res = vm->constructArray(utf8->extract(vm, intern, pos), loader);
+    res = loader->constructArray(utf8->extract(loader->hashUTF8, intern, pos));
   } else {
     ass = funcs;
     res = funcs->classType;
@@ -407,13 +408,13 @@ const char* Typedef::printString() const {
   return buf->contents()->cString();
 }
 
-CommonClass* Typedef::assocClass(JavaObject* loader) {
+CommonClass* Typedef::assocClass(JnjvmClassLoader* loader) {
   if (pseudoAssocClassName == 0) {
     return funcs->classType;
   } else if (funcs == AssessorDesc::dRef) {
-    return isolate->loadName(pseudoAssocClassName, loader, false, true, true);
+    return loader->loadName(pseudoAssocClassName, false, true, true);
   } else {
-    return isolate->constructArray(pseudoAssocClassName, loader);
+    return loader->constructArray(pseudoAssocClassName);
   }
 }
 
@@ -449,7 +450,8 @@ void Signdef::printWithSign(CommonClass* cl, const UTF8* name,
   Typedef::humanPrintArgs(&args, buf);
 }
 
-Signdef* Signdef::signDup(const UTF8* name, Jnjvm *vm) {
+Signdef::Signdef(const UTF8* name, JnjvmClassLoader* loader) {
+  Signdef* res = this;
   std::vector<Typedef*> buf;
   uint32 len = (uint32)name->size;
   uint32 pos = 1;
@@ -461,7 +463,7 @@ Signdef* Signdef::signDup(const UTF8* name, Jnjvm *vm) {
     AssessorDesc::analyseIntern(name, pos, 0, funcs, pos);
     if (funcs == AssessorDesc::dPard) break;
     else {
-      buf.push_back(vm->constructType(name->extract(vm, pred, pos)));
+      buf.push_back(loader->constructType(name->extract(loader->hashUTF8, pred, pos)));
     } 
   }
   
@@ -475,43 +477,42 @@ Signdef* Signdef::signDup(const UTF8* name, Jnjvm *vm) {
     typeError(name, 0);
   }
 
-  Signdef* res = new Signdef();
   res->args = buf;
-  res->ret = vm->constructType(name->extract(vm, pos, pred));
-  res->isolate = vm;
+  res->ret = loader->constructType(name->extract(loader->hashUTF8, pos, pred));
+  res->initialLoader = loader;
   res->keyName = name;
   res->_virtualCallBuf = 0;
   res->_staticCallBuf = 0;
   res->_virtualCallAP = 0;
   res->_staticCallAP = 0;
   res->JInfo = 0;
-  return res;
   
 }
 
-Typedef* Typedef::typeDup(const UTF8* name, Jnjvm *vm) {
+Typedef::Typedef(const UTF8* name, JnjvmClassLoader *loader) {
+  Typedef* res = this;
   AssessorDesc* funcs = 0;
   uint32 next;
   AssessorDesc::analyseIntern(name, 0, 0, funcs, next);
 
   assert(funcs != AssessorDesc::dParg && 
          "Error: resolving a signature for a field");
-  Typedef* res = new Typedef();
-  res->isolate = vm;
+  res->initialLoader = loader;
   res->keyName = name;
   res->funcs = funcs;
   if (funcs == AssessorDesc::dRef) {
-    res->pseudoAssocClassName = name->extract(vm, 1, next - 1);
+    res->pseudoAssocClassName = name->extract(loader->hashUTF8, 1, next - 1);
   } else if (funcs == AssessorDesc::dTab) {
     res->pseudoAssocClassName = name;
+  } else {
+    res->pseudoAssocClassName = 0;
   }
-  return res;
 
 }
 
 intptr_t Signdef::staticCallBuf() {
   if (!_staticCallBuf) {
-    LLVMSignatureInfo* LSI = isolate->TheModule->getSignatureInfo(this);
+    LLVMSignatureInfo* LSI = initialLoader->TheModule->getSignatureInfo(this);
     LSI->getStaticBuf();
   }
   return _staticCallBuf;
@@ -519,7 +520,7 @@ intptr_t Signdef::staticCallBuf() {
 
 intptr_t Signdef::virtualCallBuf() {
   if (!_virtualCallBuf) {
-    LLVMSignatureInfo* LSI = isolate->TheModule->getSignatureInfo(this);
+    LLVMSignatureInfo* LSI = initialLoader->TheModule->getSignatureInfo(this);
     LSI->getVirtualBuf();
   }
   return _virtualCallBuf;
@@ -527,7 +528,7 @@ intptr_t Signdef::virtualCallBuf() {
 
 intptr_t Signdef::staticCallAP() {
   if (!_staticCallAP) {
-    LLVMSignatureInfo* LSI = isolate->TheModule->getSignatureInfo(this);
+    LLVMSignatureInfo* LSI = initialLoader->TheModule->getSignatureInfo(this);
     LSI->getStaticAP();
   }
   return _staticCallAP;
@@ -535,7 +536,7 @@ intptr_t Signdef::staticCallAP() {
 
 intptr_t Signdef::virtualCallAP() {
   if (!_virtualCallAP) {
-    LLVMSignatureInfo* LSI = isolate->TheModule->getSignatureInfo(this);
+    LLVMSignatureInfo* LSI = initialLoader->TheModule->getSignatureInfo(this);
     LSI->getVirtualAP();
   }
   return _virtualCallAP;

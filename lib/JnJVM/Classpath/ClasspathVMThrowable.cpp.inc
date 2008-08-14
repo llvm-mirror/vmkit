@@ -51,7 +51,7 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject* methodName = vm->UTF8ToStr(meth->name);
   Class* cl = meth->classDef;
-  JavaObject* className = vm->UTF8ToStr(cl->name->internalToJava(vm, 0, cl->name->size));
+  JavaObject* className = vm->UTF8ToStr(cl->name->internalToJava(cl->classLoader->hashUTF8, 0, cl->name->size));
   JavaObject* sourceName = 0;
   
   Attribut* sourceAtt = cl->lookupAttribut(Attribut::sourceFileAttribut);
@@ -83,7 +83,7 @@ ArrayObject* recGetStackTrace(int** stack, uint32 first, uint32 rec) {
       return recGetStackTrace(stack, first + 1, rec);
     }
   } else {
-    return ArrayObject::acons(rec, Classpath::stackTraceArray, vm);
+    return ArrayObject::acons(rec, Classpath::stackTraceArray, &(vm->allocator));
   }
 }
 
