@@ -474,8 +474,16 @@ void VMCommonClass::resolveVT() {
 }
 
 void VMCommonClass::resolveType(bool stat, bool clinit) {
+  // save previous current generic class to restore it later
+  VMGenericClass* old = VMThread::get()->currGenericClass;
+  // temporarily store the class being compiled in case it is a generic class
+  VMThread::get()->currGenericClass = dynamic_cast<VMGenericClass*>(this);
+  
   resolveVirtual();
   if (stat) resolveStatic(clinit);
+  
+  // restore saved class
+  VMThread::get()->currGenericClass = old;
 }
 
 void VMCommonClass::resolveStatic(bool clinit) {

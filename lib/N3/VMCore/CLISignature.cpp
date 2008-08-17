@@ -142,6 +142,8 @@ static VMCommonClass* METHOD_ElementTypeClass(uint32 op,
 static VMCommonClass* METHOD_ElementTypeVar(uint32 op, Assembly* ass, uint32& offset) {
   uint32 number = ass->uncompressSignature(offset);
   
+  assert(VMThread::get()->currGenericClass != NULL && "Current Generic Class not set!");
+  
   return VMThread::get()->currGenericClass->genericParams[number];
 }
 
@@ -257,6 +259,10 @@ static VMCommonClass* METHOD_ElementTypeMvar(uint32 op, Assembly* ass, uint32& o
     VMClass* cl = gc_new(VMClass)();
     cl->token = number;
     cl->assembly = NULL;
+    cl->nameSpace = UTF8::asciizConstruct(VMThread::get()->vm, "");
+    char *tmp = (char *) alloca(100);
+    snprintf(tmp, 100, "!!%d", number);
+    cl->name = UTF8::asciizConstruct(VMThread::get()->vm, tmp);
     return cl;
   } else {
     return VMThread::get()->currGenericMethod->genericParams[number];

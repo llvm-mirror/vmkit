@@ -2237,7 +2237,7 @@ void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, llvm::createInstructionCombiningPass()); // Clean up after the unroller
   //addPass(PM, mvm::createArrayChecksPass()); 
   addPass(PM, llvm::createGVNPass());                  // GVN for load instructions
-  addPass(PM, llvm::createGCSEPass());                 // Remove common subexprs
+  //addPass(PM, llvm::createGCSEPass());                 // Remove common subexprs
   addPass(PM, llvm::createSCCPPass());                 // Constant prop with SCCP
   addPass(PM, llvm::createPredicateSimplifierPass());                
   

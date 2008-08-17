@@ -1780,16 +1780,28 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClas
     case 3: VMThread::get()->vm->error("implement me %d", table); break;
     case 4: {
       VMClass* type = (VMClass*) readTypeSpec(vm, index);
-      type->resolveType(false, false);
-  
+        
       VMGenericClass* genClass = dynamic_cast<VMGenericClass*> (type);
   
       if (genClass) {
+        // temporarily store the current generic class, in case it's generic arguments
+        // are referenced in the current method
+        VMGenericClass* old = VMThread::get()->currGenericClass;
+        VMThread::get()->currGenericClass = genClass;
+        
+        type->resolveType(false, false);
+        
         bool virt = extractMethodSignature(offset, type, args);
         VMMethod* meth = instantiateGenericMethod(genArgs, type, name, args,
             token, virt);
+        
+        // restore previous generic class
+        VMThread::get()->currGenericClass = old;
+        
         return meth;
       } else {
+        type->resolveType(false, false);
+        
         VMMethod* meth = gc_new(VMMethod)() ;
         bool virt = extractMethodSignature(offset, type, args);
         bool structReturn = false;
