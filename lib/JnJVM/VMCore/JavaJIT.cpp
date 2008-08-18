@@ -1559,14 +1559,17 @@ void JavaJIT::invokeStatic(uint16 index) {
     
     uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
     Class* mycl = (Class*)(ctpInfo->getMethodClassIfLoaded(clIndex));
-    if (mycl && mycl->status >= resolved) {
+    Value* arg = 0;
+    if (mycl && mycl->isResolved()) {
       LLVMCommonClassInfo* LCI = module->getClassInfo(mycl);
-      Value* arg = LCI->getVar(this);
+      arg = LCI->getVar(this);
       arg = invoke(JnjvmModule::InitialisationCheckFunction, arg, "",
                    currentBlock);
-      CallInst::Create(JnjvmModule::ForceInitialisationCheckFunction, arg, "",
-                       currentBlock);
+    } else {
+      arg = getResolvedClass(clIndex, true);
     }
+    CallInst::Create(JnjvmModule::ForceInitialisationCheckFunction, arg, "",
+                     currentBlock);
 
 #endif
 

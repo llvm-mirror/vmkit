@@ -102,9 +102,6 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* Size = new LoadInst(SizePtr, "", CI);
           CI->replaceAllUsesWith(Size);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::ForceInitialisationCheckFunction) {
-          Changed = true;
-          CI->eraseFromParent();
         } else if (V == jnjvm::JnjvmModule::GetDepthFunction) {
           Changed = true;
           Value* val = CI->getOperand(1); 
@@ -253,4 +250,40 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 FunctionPass* createLowerConstantCallsPass() {
   return new LowerConstantCalls();
 }
+  
+class VISIBILITY_HIDDEN LowerForcedCalls : public FunctionPass {
+  public:
+    static char ID;
+    LowerForcedCalls() : FunctionPass((intptr_t)&ID) { }
+
+    virtual bool runOnFunction(Function &F);
+  private:
+  };
+  char LowerForcedCalls::ID = 0;
+  static RegisterPass<LowerForcedCalls> Y("LowerForcedCalls",
+                                            "Lower Forced calls");
+
+bool LowerForcedCalls::runOnFunction(Function& F) {
+  bool Changed = false;
+  for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
+    BasicBlock *Cur = BI; 
+    for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
+      Instruction *I = II;
+      II++;
+      if (CallInst *CI = dyn_cast<CallInst>(I)) {
+        Value* V = CI->getOperand(0);
+        if (V == jnjvm::JnjvmModule::ForceInitialisationCheckFunction) {
+          Changed = true;
+          CI->eraseFromParent();
+        }
+      }
+    }
+  }
+  return Changed;
+}
+
+FunctionPass* createLowerForcedCallsPass() {
+  return new LowerForcedCalls();
+}
+
 }

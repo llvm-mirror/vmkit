@@ -545,9 +545,10 @@ JavaObject* Class::staticInstance() {
 }
 
 void Class::createStaticInstance() {
+  JavaAllocator* allocator = &(JavaThread::get()->isolate->allocator);
   JavaObject* val = 
-    (JavaObject*)JavaThread::get()->isolate->allocateObject(staticSize,
-                                                            staticVT);
+    (JavaObject*)allocator->allocateObject(staticSize, staticVT);
+
   val->initialise(this);
   for (field_iterator i = this->staticFields.begin(),
             e = this->staticFields.end(); i!= e; ++i) {

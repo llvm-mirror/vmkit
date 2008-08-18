@@ -181,6 +181,7 @@ void JnjvmModuleProvider::addFunction(Function* F, JavaMethod* meth) {
 namespace mvm {
   llvm::FunctionPass* createEscapeAnalysisPass(llvm::Function*);
   llvm::FunctionPass* createLowerConstantCallsPass();
+  llvm::FunctionPass* createLowerForcedCallsPass();
 }
 
 static void addPass(FunctionPassManager *PM, Pass *P) {
@@ -228,8 +229,6 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, mvm::createEscapeAnalysisPass(JnjvmModule::JavaObjectAllocateFunction));
   addPass(PM, mvm::createLowerConstantCallsPass());
   
-  addPass(PM, createGVNPass());                  // Remove redundancies
-
   // Run instcombine after redundancy elimination to exploit opportunities
   // opened up by them.
   addPass(PM, createInstructionCombiningPass());
@@ -238,6 +237,8 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, createDeadStoreEliminationPass()); // Delete dead stores
   addPass(PM, createAggressiveDCEPass());        // Delete dead instructions
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+  
+  addPass(PM, mvm::createLowerForcedCallsPass());
   
 }
 

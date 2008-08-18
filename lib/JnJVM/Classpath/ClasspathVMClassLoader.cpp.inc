@@ -102,7 +102,7 @@ jclass clazz,
 #ifndef MULTIPLE_VM
       cl->delegatee = (JavaObject*)pd;
 #else
-      vm->delegatees->hash(cl, (JavaObject*)pd);
+      JavaThread::get()->isolate->delegatees->hash(cl, (JavaObject*)pd);
 #endif
     }
     cl->release();

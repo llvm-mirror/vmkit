@@ -131,10 +131,10 @@ llvm::Function* JnjvmModule::OverflowThinLockFunction = 0;
 Value* LLVMCommonClassInfo::getVar(JavaJIT* jit) {
   if (!varGV) {
 #ifdef MULTIPLE_VM
-    if (jit->compilingClass->isolate->TheModule == Jnjvm::bootstrapVM->TheModule &&
-        classDef->isArray && classDef->isolate != Jnjvm::bootstrapVM) {
+    if (jit->compilingClass->classLoader->TheModule == JnjvmClassLoader::bootstrapLoader->TheModule &&
+        classDef->isArray && classDef->classLoader != JnjvmClassLoader::bootstrapLoader) {
       // We know the array class can belong to bootstrap
-      CommonClass* cl = Jnjvm::bootstrapVM->constructArray(classDef->name, 0);
+      CommonClass* cl = JnjvmClassLoader::bootstrapLoader->constructArray(classDef->name);
       return cl->classLoader->TheModule->getClassInfo(cl)->getVar(jit);
     }
 #endif

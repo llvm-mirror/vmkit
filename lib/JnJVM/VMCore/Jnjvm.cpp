@@ -674,6 +674,7 @@ void Jnjvm::loadBootstrap() {
   LOAD_CLASS(Classpath::newMethod);
   LOAD_CLASS(Classpath::newField);
   LOAD_CLASS(Classpath::newStackTraceElement);
+  LOAD_CLASS(Classpath::newVMThrowable);
   LOAD_CLASS(ClasspathException::InvocationTargetException);
   LOAD_CLASS(ClasspathException::ArrayStoreException);
   LOAD_CLASS(ClasspathException::ClassCastException);
@@ -815,7 +816,7 @@ Jnjvm* Jnjvm::allocateIsolate() {
     isolate->classpath = ".";
   }
   
-  isolate->bootstrapThread = gc_new(JavaThread)();
+  isolate->bootstrapThread = allocator_new(&isolate->allocator, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
   void* baseSP = mvm::Thread::get()->baseSP;
   isolate->bootstrapThread->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
@@ -836,8 +837,8 @@ Jnjvm* Jnjvm::allocateIsolate() {
   isolate->hashStr = new StringMap();
   isolate->globalRefsLock = mvm::Lock::allocNormal();
 #ifdef MULTIPLE_VM
-  isolate->statics = vm_new(isolate, StaticInstanceMap)();  
-  isolate->delegatees = vm_new(isolate, DelegateeMap)(); 
+  isolate->statics = allocator_new(&isolate->allocator, StaticInstanceMap)(); 
+  isolate->delegatees = allocator_new(&isolate->allocator, DelegateeMap)(); 
 #endif
 
   return isolate;
