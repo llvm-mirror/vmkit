@@ -100,7 +100,7 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const;
 
   char* UTF8ToAsciiz() const;
-  static const UTF8* asciizConstruct(VirtualMachine *vm, char* asciiz);
+  static const UTF8* asciizConstruct(VirtualMachine *vm, const char* asciiz);
   static const UTF8* readerConstruct(VirtualMachine *vm, uint16* buf, uint32 n);
 
   const UTF8* extract(VirtualMachine *vm, uint32 start, uint32 len) const;

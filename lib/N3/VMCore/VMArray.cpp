@@ -201,7 +201,7 @@ const UTF8* UTF8::extract(VirtualMachine *vm, uint32 start, uint32 end) const {
   return readerConstruct(vm, buf, len);
 }
 
-const UTF8* UTF8::asciizConstruct(VirtualMachine* vm, char* asciiz) {
+const UTF8* UTF8::asciizConstruct(VirtualMachine* vm, const char* asciiz) {
   return vm->asciizConstructUTF8(asciiz);
 }
 
