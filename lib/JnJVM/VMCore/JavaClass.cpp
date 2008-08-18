@@ -351,9 +351,7 @@ JavaMethod* CommonClass::lookupMethod(const UTF8* name, const UTF8* type,
                                       bool isStatic, bool recurse) {
   JavaMethod* res = lookupMethodDontThrow(name, type, isStatic, recurse);
   if (!res) {
-    JavaThread::get()->isolate->error(Jnjvm::NoSuchMethodError, 
-                                      "unable to find %s in %s",
-                                      name->printString(), this->printString());
+    JavaThread::get()->isolate->noSuchMethodError(this, name);
   }
   return res;
 }
@@ -391,9 +389,7 @@ JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
   
   JavaField* res = lookupFieldDontThrow(name, type, isStatic, recurse);
   if (!res) {
-    JavaThread::get()->isolate->error(Jnjvm::NoSuchFieldError, 
-                                      "unable to find %s in %s",
-                                      name->printString(), this->printString());
+    JavaThread::get()->isolate->noSuchFieldError(this, name);
   }
   return res;
 }

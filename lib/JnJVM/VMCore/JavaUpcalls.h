@@ -11,11 +11,11 @@
 #define JNJVM_JAVA_UPCALLS_H
 
 
-#define UPCALL_CLASS(vm, name)                                            \
-  vm->constructClass(vm->asciizConstructUTF8(name))                       \
+#define UPCALL_CLASS(vm, name)                                             \
+  vm->constructClass(vm->asciizConstructUTF8(name))                        
 
-#define UPCALL_FIELD(vm, cl, name, type, acc)                             \
-  UPCALL_CLASS(vm, cl)->constructField(vm->asciizConstructUTF8(name),     \
+#define UPCALL_FIELD(vm, cl, name, type, acc)                              \
+  UPCALL_CLASS(vm, cl)->constructField(vm->asciizConstructUTF8(name),      \
                                        vm->asciizConstructUTF8(type), acc)
 
 #define UPCALL_METHOD(vm, cl, name, type, acc)                             \
@@ -25,8 +25,23 @@
 #define UPCALL_ARRAY_CLASS(vm, name, depth)                                \
   vm->constructArray(                                                      \
     AssessorDesc::constructArrayName(vm, 0, depth,                         \
-                                     vm->asciizConstructUTF8(name)))       \
+                                     vm->asciizConstructUTF8(name)))       
 
+#define UPCALL_CLASS_EXCEPTION(loader, name)                               \
+  name = UPCALL_CLASS(loader, "java/lang/"#name)                           
+
+#define UPCALL_REFLECT_CLASS_EXCEPTION(loader, name)                       \
+  name = UPCALL_CLASS(loader, "java/lang/reflect/"#name)                   
+
+#define UPCALL_METHOD_EXCEPTION(loader, name) \
+  Init##name = name->constructMethod(loader->asciizConstructUTF8("<init>"), \
+                                     loader->asciizConstructUTF8("(Ljava/lang/String;)V"), \
+                                     ACC_VIRTUAL);
+
+#define UPCALL_METHOD_WITH_EXCEPTION(loader, name) \
+  ErrorWithExcp##name = name->constructMethod(loader->asciizConstructUTF8("<init>"), \
+                                     loader->asciizConstructUTF8("(Ljava/lang/Throwable;)V"), \
+                                     ACC_VIRTUAL);
 
 namespace jnjvm {
 
@@ -58,6 +73,77 @@ public:
   
   static void createInitialThread(Jnjvm* vm, JavaObject* th);
   static void mapInitialThread(Jnjvm* vm);
+};
+
+class ClasspathException {
+public:
+  static void initialise(JnjvmClassLoader* vm);
+  
+  static Class* InvocationTargetException;
+  static Class* ArrayStoreException;
+  static Class* ClassCastException;
+  static Class* IllegalMonitorStateException;
+  static Class* IllegalArgumentException;
+  static Class* InterruptedException;
+  static Class* IndexOutOfBoundsException;
+  static Class* ArrayIndexOutOfBoundsException;
+  static Class* NegativeArraySizeException;
+  static Class* NullPointerException;
+  static Class* SecurityException;
+  static Class* ClassFormatError;
+  static Class* ClassCircularityError;
+  static Class* NoClassDefFoundError;
+  static Class* UnsupportedClassVersionError;
+  static Class* NoSuchFieldError;
+  static Class* NoSuchMethodError;
+  static Class* InstantiationError;
+  static Class* IllegalAccessError;
+  static Class* IllegalAccessException;
+  static Class* VerifyError;
+  static Class* ExceptionInInitializerError;
+  static Class* LinkageError;
+  static Class* AbstractMethodError;
+  static Class* UnsatisfiedLinkError;
+  static Class* InternalError;
+  static Class* OutOfMemoryError;
+  static Class* StackOverflowError;
+  static Class* UnknownError;
+  static Class* ClassNotFoundException;
+
+  static JavaMethod* InitInvocationTargetException;
+  static JavaMethod* InitArrayStoreException;
+  static JavaMethod* InitClassCastException;
+  static JavaMethod* InitIllegalMonitorStateException;
+  static JavaMethod* InitIllegalArgumentException;
+  static JavaMethod* InitInterruptedException;
+  static JavaMethod* InitIndexOutOfBoundsException;
+  static JavaMethod* InitArrayIndexOutOfBoundsException;
+  static JavaMethod* InitNegativeArraySizeException;
+  static JavaMethod* InitNullPointerException;
+  static JavaMethod* InitSecurityException;
+  static JavaMethod* InitClassFormatError;
+  static JavaMethod* InitClassCircularityError;
+  static JavaMethod* InitNoClassDefFoundError;
+  static JavaMethod* InitUnsupportedClassVersionError;
+  static JavaMethod* InitNoSuchFieldError;
+  static JavaMethod* InitNoSuchMethodError;
+  static JavaMethod* InitInstantiationError;
+  static JavaMethod* InitIllegalAccessError;
+  static JavaMethod* InitIllegalAccessException;
+  static JavaMethod* InitVerifyError;
+  static JavaMethod* InitExceptionInInitializerError;
+  static JavaMethod* InitLinkageError;
+  static JavaMethod* InitAbstractMethodError;
+  static JavaMethod* InitUnsatisfiedLinkError;
+  static JavaMethod* InitInternalError;
+  static JavaMethod* InitOutOfMemoryError;
+  static JavaMethod* InitStackOverflowError;
+  static JavaMethod* InitUnknownError;
+  static JavaMethod* InitClassNotFoundException;
+
+  static JavaMethod* ErrorWithExcpNoClassDefFoundError;
+  static JavaMethod* ErrorWithExcpExceptionInInitializerError;
+  static JavaMethod* ErrorWithExcpInvocationTargetException;
 };
 
 class Classpath {

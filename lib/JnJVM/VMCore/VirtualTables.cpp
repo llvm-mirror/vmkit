@@ -12,7 +12,6 @@
 #include "JavaArray.h"
 #include "JavaCache.h"
 #include "JavaClass.h"
-#include "JavaIsolate.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
 #include "Jnjvm.h"
@@ -36,7 +35,6 @@ using namespace jnjvm;
   INIT(Jnjvm);
   INIT(ClassMap);
   INIT(StaticInstanceMap);
-  INIT(JavaIsolate);
   INIT(DelegateeMap);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
@@ -106,13 +104,8 @@ void Jnjvm::TRACER {
   statics->MARK_AND_TRACE;
   delegatees->MARK_AND_TRACE;
 #endif
-  
-}
-
-void JavaIsolate::TRACER {
-  Jnjvm::PARENT_TRACER;
   bootstrapThread->MARK_AND_TRACE;
-  JnjvmClassLoader::bootstrapLoader->MARK_AND_TRACE;
+  JnjvmClassLoader::bootstrapLoader->MARK_AND_TRACE; 
 }
 
 void ClassMap::TRACER {

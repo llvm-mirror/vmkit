@@ -15,7 +15,6 @@
 
 #include "JavaArray.h"
 #include "JavaClass.h"
-#include "JavaIsolate.h"
 #include "JavaJIT.h"
 #include "JavaObject.h"
 #include "JavaTypes.h"
@@ -59,7 +58,7 @@ static void start(arg_thread_t* arg) {
 #endif
   CommonClass* vmthClass = vmThread->classOf;
   JavaObject* thread = ClasspathThread::assocThread->getVirtualObjectField(vmThread);
-  JavaIsolate* isolate = (JavaIsolate*)(intern->isolate);
+  Jnjvm* isolate = intern->isolate;
   ThreadSystem* ts = isolate->threadSystem;
   bool isDaemon = ClasspathThread::daemon->getVirtualInt8Field(thread);
   intern->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;

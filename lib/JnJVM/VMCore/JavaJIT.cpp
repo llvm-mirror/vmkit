@@ -929,7 +929,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
       
       if (exc) {
         Jnjvm* vm = JavaThread::get()->isolate;
-        vm->errorWithExcp(Jnjvm::NoClassDefFoundError, exc);
+        vm->noClassDefFoundError(exc);
       }
 
       ex->catchClass = cl;

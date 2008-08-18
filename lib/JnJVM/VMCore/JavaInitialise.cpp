@@ -16,7 +16,6 @@
 #include "JavaCache.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
-#include "JavaIsolate.h"
 #include "JavaJIT.h"
 #include "JavaObject.h"
 #include "JavaString.h"
@@ -49,7 +48,6 @@ static void initialiseVT() {
   INIT(ClassMap);
   INIT(StaticInstanceMap);
   INIT(DelegateeMap);
-  INIT(JavaIsolate);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
 #ifdef SERVICE_VM
@@ -72,7 +70,8 @@ static void initialiseVT() {
 
 static void initialiseStatics() {
   
-  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader = JnjvmClassLoader::createBootstrapLoader();
+  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader = 
+    JnjvmBootstrapLoader::createBootstrapLoader();
   
   // Array initialization
   const UTF8* utf8OfChar = JCL->asciizConstructUTF8("[C");
@@ -80,8 +79,7 @@ static void initialiseStatics() {
   ((UTF8*)utf8OfChar)->classOf = JavaArray::ofChar;
   
 
-
-  
+ 
   ClassArray::InterfacesArray.push_back(
     JCL->constructClass(JCL->asciizConstructUTF8("java/lang/Cloneable")));
   
@@ -136,6 +134,8 @@ static void initialiseStatics() {
   Jnjvm::postlib = JCL->asciizConstructUTF8(".so");
 #endif
   Jnjvm::mathName = JCL->asciizConstructUTF8("java/lang/Math");
+  Jnjvm::NoClassDefFoundError = 
+    JCL->asciizConstructUTF8("java/lang/NoClassDefFoundError");
 
 #define DEF_UTF8(var) \
   Jnjvm::var = JCL->asciizConstructUTF8(#var)
@@ -182,8 +182,8 @@ void mvm::VirtualMachine::initialiseJVM() {
 }
 
 void Jnjvm::runApplication(int argc, char** argv) {
-  mvm::Thread::threadKey->set(((JavaIsolate*)this)->bootstrapThread);
-  ((JavaIsolate*)this)->runMain(argc, argv);
+  mvm::Thread::threadKey->set(this->bootstrapThread);
+  this->runMain(argc, argv);
 }
 
 mvm::VirtualMachine* mvm::VirtualMachine::createJVM() {
@@ -191,7 +191,7 @@ mvm::VirtualMachine* mvm::VirtualMachine::createJVM() {
   ServiceDomain* vm = ServiceDomain::allocateService();
   vm->startExecution();
 #else
-  JavaIsolate* vm = JavaIsolate::allocateIsolate();
+  Jnjvm* vm = Jnjvm::allocateIsolate();
 #endif
   return vm;
 }

@@ -29,7 +29,7 @@ JnjvmBootstrapLoader* JnjvmClassLoader::bootstrapLoader = 0;
 extern const char* GNUClasspathGlibj;
 extern const char* GNUClasspathLibs;
 
-JnjvmBootstrapLoader* JnjvmClassLoader::createBootstrapLoader() {
+JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
   
   JnjvmBootstrapLoader* JCL = gc_new(JnjvmBootstrapLoader)();
   JCL->TheModule = new JnjvmModule("Bootstrap JnJVM");
@@ -163,7 +163,7 @@ void JnjvmClassLoader::readClass(Class* cl) {
   Reader reader(cl->bytes);
   uint32 magic = reader.readU4();
   if (magic != Jnjvm::Magic) {
-    JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, "bad magic number %p", magic);
+    JavaThread::get()->isolate->classFormatError("bad magic number %p", magic);
   }
   cl->minor = reader.readU2();
   cl->major = reader.readU2();
@@ -175,7 +175,7 @@ void JnjvmClassLoader::readClass(Class* cl) {
     ctpInfo->resolveClassName(reader.readU2());
   
   if (!(thisClassName->equals(cl->name))) {
-    JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, "try to load %s and found class named %s",
+    JavaThread::get()->isolate->classFormatError("try to load %s and found class named %s",
           cl->printString(), thisClassName->printString());
   }
 
@@ -298,11 +298,10 @@ CommonClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
   CommonClass* cl = internalLoad(name);
 
   if (!cl && doThrow) {
-    if (!memcmp(name->UTF8ToAsciiz(), Jnjvm::NoClassDefFoundError, 
-                    strlen(Jnjvm::NoClassDefFoundError))) {
+    if (!(name->equals(Jnjvm::NoClassDefFoundError))) {
       JavaThread::get()->isolate->unknownError("Unable to load NoClassDefFoundError");
     }
-    JavaThread::get()->isolate->error(Jnjvm::NoClassDefFoundError, "unable to load %s", name->printString());
+    JavaThread::get()->isolate->noClassDefFoundError("unable to load %s", name->printString());
   }
 
   if (cl && doResolve) cl->resolveClass(doClinit);

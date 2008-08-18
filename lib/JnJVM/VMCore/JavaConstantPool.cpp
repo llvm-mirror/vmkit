@@ -45,7 +45,7 @@ const uint32 JavaCtpInfo::ConstantNameAndType = 12;
 
 static uint32 unimplemented(Class* cl, uint32 type, uint32 e, Reader& reader,
                             sint32* ctpDef, void** ctpRes, uint8* ctpType) {
-  JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
+  JavaThread::get()->isolate->classFormatError(
                                     "unknown constant pool type %d", 
                                     type);
   return 1;
@@ -227,7 +227,7 @@ void JavaCtpInfo::read(Class* cl, Reader& reader) {
 const UTF8* JavaCtpInfo::UTF8At(uint32 entry) {
   if (! ((entry > 0) && (entry < ctpSize) && 
         typeAt(entry) == ConstantUTF8)) {
-    JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
+    JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for utf8 at entry %d", entry);
   }
   return (const UTF8*)ctpRes[entry];
@@ -236,7 +236,7 @@ const UTF8* JavaCtpInfo::UTF8At(uint32 entry) {
 float JavaCtpInfo::FloatAt(uint32 entry) {
   if (! ((entry > 0) && (entry < ctpSize) && 
         typeAt(entry) == ConstantFloat)) {
-    JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
+    JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for float at entry %d", entry);
   }
   return ((float*)ctpDef)[entry];
@@ -245,7 +245,7 @@ float JavaCtpInfo::FloatAt(uint32 entry) {
 sint32 JavaCtpInfo::IntegerAt(uint32 entry) {
   if (! ((entry > 0) && (entry < ctpSize) && 
         typeAt(entry) == ConstantInteger)) {
-    JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
+    JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for integer at entry %d", entry);
   }
   return ((sint32*)ctpDef)[entry];
@@ -254,7 +254,7 @@ sint32 JavaCtpInfo::IntegerAt(uint32 entry) {
 sint64 JavaCtpInfo::LongAt(uint32 entry) {
   if (! ((entry > 0) && (entry < ctpSize) && 
         typeAt(entry) == ConstantLong)) {
-    JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
+    JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for long at entry %d", entry);
   }
   return Reader::readLong(ctpDef[entry], ctpDef[entry + 1]);
@@ -263,7 +263,7 @@ sint64 JavaCtpInfo::LongAt(uint32 entry) {
 double JavaCtpInfo::DoubleAt(uint32 entry) {
   if (! ((entry > 0) && (entry < ctpSize) && 
         typeAt(entry) == ConstantDouble)) {
-    JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
+    JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for double at entry %d", entry);
   }
   return Reader::readDouble(ctpDef[entry], ctpDef[entry + 1]);
@@ -272,7 +272,7 @@ double JavaCtpInfo::DoubleAt(uint32 entry) {
 CommonClass* JavaCtpInfo::isLoadedClassOrClassName(uint32 entry) {
   if (! ((entry > 0) && (entry < ctpSize) && 
         typeAt(entry) == ConstantClass)) {
-    JavaThread::get()->isolate->error(Jnjvm::ClassFormatError, 
+    JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for class at entry %d", entry);
   }
   return (CommonClass*)ctpRes[entry];
@@ -314,7 +314,7 @@ CommonClass* JavaCtpInfo::getMethodClassIfLoaded(uint32 index) {
 
 void JavaCtpInfo::checkInfoOfClass(uint32 index) {
   if (typeAt(index) != ConstantClass)
-    JavaThread::get()->isolate->error(Jnjvm::ClassFormatError,
+    JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for class at entry %d", index);
   /*if (!(ctpRes[index]))
     ctpRes[index] = JavaJIT::newLookupLLVM;*/
@@ -324,7 +324,7 @@ Typedef* JavaCtpInfo::resolveNameAndType(uint32 index) {
   void* res = ctpRes[index];
   if (!res) {
     if (typeAt(index) != ConstantNameAndType) {
-      JavaThread::get()->isolate->error(Jnjvm::ClassFormatError,
+      JavaThread::get()->isolate->classFormatError(
                 "bad constant pool number for name/type at entry %d", index);
     }
     sint32 entry = ctpDef[index];
@@ -340,7 +340,7 @@ Signdef* JavaCtpInfo::resolveNameAndSign(uint32 index) {
   void* res = ctpRes[index];
   if (!res) {
     if (typeAt(index) != ConstantNameAndType) {
-      JavaThread::get()->isolate->error(Jnjvm::ClassFormatError,
+      JavaThread::get()->isolate->classFormatError(
                 "bad constant pool number for name/type at entry %d", index);
     }
     sint32 entry = ctpDef[index];
@@ -354,7 +354,7 @@ Signdef* JavaCtpInfo::resolveNameAndSign(uint32 index) {
 
 Typedef* JavaCtpInfo::infoOfField(uint32 index) {
   if (typeAt(index) != ConstantFieldref)
-    JavaThread::get()->isolate->error(Jnjvm::ClassFormatError,
+    JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for field at entry %d", index);
   return resolveNameAndType(ctpDef[index] & 0xFFFF);
 }
@@ -363,7 +363,7 @@ void JavaCtpInfo::infoOfMethod(uint32 index, uint32 access,
                                CommonClass*& cl, JavaMethod*& meth) {
   uint8 id = typeAt(index);
   if (id != ConstantMethodref && id != ConstantInterfaceMethodref)
-    JavaThread::get()->isolate->error(Jnjvm::ClassFormatError,
+    JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for method at entry %d", index);
   
   Signdef* sign = resolveNameAndSign(ctpDef[index] & 0xFFFF);
@@ -390,7 +390,7 @@ void JavaCtpInfo::nameOfStaticOrSpecialMethod(uint32 index,
                                               Signdef*& sign) {
   uint8 id = typeAt(index);
   if (id != ConstantMethodref && id != ConstantInterfaceMethodref)
-    JavaThread::get()->isolate->error(Jnjvm::ClassFormatError,
+    JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for method at entry %d", index);
   
   sign = resolveNameAndSign(ctpDef[index] & 0xFFFF);
@@ -406,7 +406,7 @@ void* JavaCtpInfo::infoOfStaticOrSpecialMethod(uint32 index,
                                                JavaMethod*& meth) {
   uint8 id = typeAt(index);
   if (id != ConstantMethodref && id != ConstantInterfaceMethodref)
-    JavaThread::get()->isolate->error(Jnjvm::ClassFormatError,
+    JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for method at entry %d", index);
   
   sign = resolveNameAndSign(ctpDef[index] & 0xFFFF);
@@ -445,7 +445,7 @@ Signdef* JavaCtpInfo::infoOfInterfaceOrVirtualMethod(uint32 index) {
 
   uint8 id = typeAt(index);
   if (id != ConstantMethodref && id != ConstantInterfaceMethodref)
-    JavaThread::get()->isolate->error(Jnjvm::ClassFormatError,
+    JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for method at entry %d", index);
   
   Signdef* sign = resolveNameAndSign(ctpDef[index] & 0xFFFF);

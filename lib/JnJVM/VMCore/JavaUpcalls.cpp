@@ -111,6 +111,72 @@ Class* Classpath::longClass;
 
 Class* Classpath::vmStackWalker;
 
+Class* ClasspathException::InvocationTargetException;
+Class* ClasspathException::ArrayStoreException;
+Class* ClasspathException::ClassCastException;
+Class* ClasspathException::IllegalMonitorStateException;
+Class* ClasspathException::IllegalArgumentException;
+Class* ClasspathException::InterruptedException;
+Class* ClasspathException::IndexOutOfBoundsException;
+Class* ClasspathException::ArrayIndexOutOfBoundsException;
+Class* ClasspathException::NegativeArraySizeException;
+Class* ClasspathException::NullPointerException;
+Class* ClasspathException::SecurityException;
+Class* ClasspathException::ClassFormatError;
+Class* ClasspathException::ClassCircularityError;
+Class* ClasspathException::NoClassDefFoundError;
+Class* ClasspathException::UnsupportedClassVersionError;
+Class* ClasspathException::NoSuchFieldError;
+Class* ClasspathException::NoSuchMethodError;
+Class* ClasspathException::InstantiationError;
+Class* ClasspathException::IllegalAccessError;
+Class* ClasspathException::IllegalAccessException;
+Class* ClasspathException::VerifyError;
+Class* ClasspathException::ExceptionInInitializerError;
+Class* ClasspathException::LinkageError;
+Class* ClasspathException::AbstractMethodError;
+Class* ClasspathException::UnsatisfiedLinkError;
+Class* ClasspathException::InternalError;
+Class* ClasspathException::OutOfMemoryError;
+Class* ClasspathException::StackOverflowError;
+Class* ClasspathException::UnknownError;
+Class* ClasspathException::ClassNotFoundException;
+
+JavaMethod* ClasspathException::InitInvocationTargetException;
+JavaMethod* ClasspathException::InitArrayStoreException;
+JavaMethod* ClasspathException::InitClassCastException;
+JavaMethod* ClasspathException::InitIllegalMonitorStateException;
+JavaMethod* ClasspathException::InitIllegalArgumentException;
+JavaMethod* ClasspathException::InitInterruptedException;
+JavaMethod* ClasspathException::InitIndexOutOfBoundsException;
+JavaMethod* ClasspathException::InitArrayIndexOutOfBoundsException;
+JavaMethod* ClasspathException::InitNegativeArraySizeException;
+JavaMethod* ClasspathException::InitNullPointerException;
+JavaMethod* ClasspathException::InitSecurityException;
+JavaMethod* ClasspathException::InitClassFormatError;
+JavaMethod* ClasspathException::InitClassCircularityError;
+JavaMethod* ClasspathException::InitNoClassDefFoundError;
+JavaMethod* ClasspathException::InitUnsupportedClassVersionError;
+JavaMethod* ClasspathException::InitNoSuchFieldError;
+JavaMethod* ClasspathException::InitNoSuchMethodError;
+JavaMethod* ClasspathException::InitInstantiationError;
+JavaMethod* ClasspathException::InitIllegalAccessError;
+JavaMethod* ClasspathException::InitIllegalAccessException;
+JavaMethod* ClasspathException::InitVerifyError;
+JavaMethod* ClasspathException::InitExceptionInInitializerError;
+JavaMethod* ClasspathException::InitLinkageError;
+JavaMethod* ClasspathException::InitAbstractMethodError;
+JavaMethod* ClasspathException::InitUnsatisfiedLinkError;
+JavaMethod* ClasspathException::InitInternalError;
+JavaMethod* ClasspathException::InitOutOfMemoryError;
+JavaMethod* ClasspathException::InitStackOverflowError;
+JavaMethod* ClasspathException::InitUnknownError;
+JavaMethod* ClasspathException::InitClassNotFoundException;
+
+JavaMethod* ClasspathException::ErrorWithExcpNoClassDefFoundError;
+JavaMethod* ClasspathException::ErrorWithExcpExceptionInInitializerError;
+JavaMethod* ClasspathException::ErrorWithExcpInvocationTargetException;
+
 void ClasspathThread::initialise(JnjvmClassLoader* vm) {
   newThread = 
     UPCALL_CLASS(vm, "java/lang/Thread");
@@ -167,6 +233,75 @@ void ClasspathThread::initialise(JnjvmClassLoader* vm) {
     UPCALL_METHOD(vm, "java/lang/ThreadGroup",  "uncaughtException",
                   "(Ljava/lang/Thread;Ljava/lang/Throwable;)V", ACC_VIRTUAL);
 }
+
+void ClasspathException::initialise(JnjvmClassLoader* loader) {
+  UPCALL_REFLECT_CLASS_EXCEPTION(loader, InvocationTargetException);
+  UPCALL_CLASS_EXCEPTION(loader, ArrayStoreException);
+  UPCALL_CLASS_EXCEPTION(loader, ClassCastException);
+  UPCALL_CLASS_EXCEPTION(loader, IllegalMonitorStateException);
+  UPCALL_CLASS_EXCEPTION(loader, IllegalArgumentException);
+  UPCALL_CLASS_EXCEPTION(loader, InterruptedException);
+  UPCALL_CLASS_EXCEPTION(loader, IndexOutOfBoundsException);
+  UPCALL_CLASS_EXCEPTION(loader, ArrayIndexOutOfBoundsException);
+  UPCALL_CLASS_EXCEPTION(loader, NegativeArraySizeException);
+  UPCALL_CLASS_EXCEPTION(loader, NullPointerException);
+  UPCALL_CLASS_EXCEPTION(loader, SecurityException);
+  UPCALL_CLASS_EXCEPTION(loader, ClassFormatError);
+  UPCALL_CLASS_EXCEPTION(loader, ClassCircularityError);
+  UPCALL_CLASS_EXCEPTION(loader, NoClassDefFoundError);
+  UPCALL_CLASS_EXCEPTION(loader, UnsupportedClassVersionError);
+  UPCALL_CLASS_EXCEPTION(loader, NoSuchFieldError);
+  UPCALL_CLASS_EXCEPTION(loader, NoSuchMethodError);
+  UPCALL_CLASS_EXCEPTION(loader, InstantiationError);
+  UPCALL_CLASS_EXCEPTION(loader, IllegalAccessError);
+  UPCALL_CLASS_EXCEPTION(loader, IllegalAccessException);
+  UPCALL_CLASS_EXCEPTION(loader, VerifyError);
+  UPCALL_CLASS_EXCEPTION(loader, ExceptionInInitializerError);
+  UPCALL_CLASS_EXCEPTION(loader, LinkageError);
+  UPCALL_CLASS_EXCEPTION(loader, AbstractMethodError);
+  UPCALL_CLASS_EXCEPTION(loader, UnsatisfiedLinkError);
+  UPCALL_CLASS_EXCEPTION(loader, InternalError);
+  UPCALL_CLASS_EXCEPTION(loader, OutOfMemoryError);
+  UPCALL_CLASS_EXCEPTION(loader, StackOverflowError);
+  UPCALL_CLASS_EXCEPTION(loader, UnknownError);
+  UPCALL_CLASS_EXCEPTION(loader, ClassNotFoundException);
+  
+  UPCALL_METHOD_EXCEPTION(loader, InvocationTargetException);
+  UPCALL_METHOD_EXCEPTION(loader, ArrayStoreException);
+  UPCALL_METHOD_EXCEPTION(loader, ClassCastException);
+  UPCALL_METHOD_EXCEPTION(loader, IllegalMonitorStateException);
+  UPCALL_METHOD_EXCEPTION(loader, IllegalArgumentException);
+  UPCALL_METHOD_EXCEPTION(loader, InterruptedException);
+  UPCALL_METHOD_EXCEPTION(loader, IndexOutOfBoundsException);
+  UPCALL_METHOD_EXCEPTION(loader, ArrayIndexOutOfBoundsException);
+  UPCALL_METHOD_EXCEPTION(loader, NegativeArraySizeException);
+  UPCALL_METHOD_EXCEPTION(loader, NullPointerException);
+  UPCALL_METHOD_EXCEPTION(loader, SecurityException);
+  UPCALL_METHOD_EXCEPTION(loader, ClassFormatError);
+  UPCALL_METHOD_EXCEPTION(loader, ClassCircularityError);
+  UPCALL_METHOD_EXCEPTION(loader, NoClassDefFoundError);
+  UPCALL_METHOD_EXCEPTION(loader, UnsupportedClassVersionError);
+  UPCALL_METHOD_EXCEPTION(loader, NoSuchFieldError);
+  UPCALL_METHOD_EXCEPTION(loader, NoSuchMethodError);
+  UPCALL_METHOD_EXCEPTION(loader, InstantiationError);
+  UPCALL_METHOD_EXCEPTION(loader, IllegalAccessError);
+  UPCALL_METHOD_EXCEPTION(loader, IllegalAccessException);
+  UPCALL_METHOD_EXCEPTION(loader, VerifyError);
+  UPCALL_METHOD_EXCEPTION(loader, ExceptionInInitializerError);
+  UPCALL_METHOD_EXCEPTION(loader, LinkageError);
+  UPCALL_METHOD_EXCEPTION(loader, AbstractMethodError);
+  UPCALL_METHOD_EXCEPTION(loader, UnsatisfiedLinkError);
+  UPCALL_METHOD_EXCEPTION(loader, InternalError);
+  UPCALL_METHOD_EXCEPTION(loader, OutOfMemoryError);
+  UPCALL_METHOD_EXCEPTION(loader, StackOverflowError);
+  UPCALL_METHOD_EXCEPTION(loader, UnknownError);
+  UPCALL_METHOD_EXCEPTION(loader, ClassNotFoundException);
+  
+  UPCALL_METHOD_WITH_EXCEPTION(loader, NoClassDefFoundError);
+  UPCALL_METHOD_WITH_EXCEPTION(loader, ExceptionInInitializerError);
+  UPCALL_METHOD_WITH_EXCEPTION(loader, InvocationTargetException);
+}
+
 
 void ClasspathThread::createInitialThread(Jnjvm* vm, JavaObject* th) {
   JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
@@ -387,6 +522,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* vm) {
   vm->TheModule->setMethod(isArray, "isArray");
 
   ClasspathThread::initialise(vm);
+  ClasspathException::initialise(vm);
     
   vm->loadName(vm->asciizConstructUTF8("java/lang/String"), 
                                        true, false, false);

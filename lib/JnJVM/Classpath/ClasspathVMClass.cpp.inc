@@ -62,8 +62,7 @@ jclass clazz,
     }
     return (jclass)(cl->getClassDelegatee());
   } else {
-  JavaThread::get()->isolate->error(Jnjvm::ClassNotFoundException, "unable to load %s",
-              ((JavaString*)str)->strToAsciiz());
+    JavaThread::get()->isolate->classNotFoundException((JavaString*)str);
     return 0;
   }
 }
