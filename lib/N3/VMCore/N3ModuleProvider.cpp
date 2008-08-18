@@ -44,7 +44,7 @@ bool N3ModuleProvider::materializeFunction(Function *F, std::string *ErrInfo) {
         code->setMetaInfo(meth);
       }
       meth->classDef->release();
-      meth->classDef->resolveStatic(true);
+      meth->classDef->resolveStatic(true, NULL);
     }
     return false;
   }

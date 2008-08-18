@@ -36,6 +36,8 @@ class VMClassArray;
 class VMCommonClass;
 class VMMethod;
 class VMObject;
+class VMGenericClass;
+class VMGenericMethod;
 
 class Exception : public mvm::Object {
 public:
@@ -85,7 +87,7 @@ public:
   static VirtualTable* makeArrayVT(VMClassArray* cl);
   
   static void printExecution(char*, n3::VMMethod*);
-  void compileOpcodes(uint8*, uint32);
+  void compileOpcodes(uint8*, uint32, VMGenericClass* genClass, VMGenericMethod* genMethod);
   void exploreOpcodes(uint8*, uint32);
   
   llvm::Function* llvmFunction;
@@ -121,18 +123,18 @@ public:
   llvm::BasicBlock* unifiedUnreachable;
   std::vector<Exception*> exceptions;
   std::vector<Exception*> finallyHandlers;
-  uint32 readExceptionTable(uint32 offset, bool fat);
+  uint32 readExceptionTable(uint32 offset, bool fat, VMGenericClass* genClass, VMGenericMethod* genMethod);
   std::vector<llvm::BasicBlock*> leaves; 
   llvm::Value* supplLocal;
 
   // calls
-  void invoke(uint32 value);
-  void invokeInterfaceOrVirtual(uint32 value);
-  void invokeNew(uint32 value);
-  llvm::Value* getVirtualField(uint32 value);
-  llvm::Value* getStaticField(uint32 value);
-  void setVirtualField(uint32 value, bool isVolatile);
-  void setStaticField(uint32 value, bool isVolatile);
+  void invoke(uint32 value, VMGenericClass* genClass, VMGenericMethod* genMethod);
+  void invokeInterfaceOrVirtual(uint32 value, VMGenericClass* genClass, VMGenericMethod* genMethod);
+  void invokeNew(uint32 value, VMGenericClass* genClass, VMGenericMethod* genMethod);
+  llvm::Value* getVirtualField(uint32 value, VMGenericClass* genClass, VMGenericMethod* genMethod);
+  llvm::Value* getStaticField(uint32 value, VMGenericClass* genClass, VMGenericMethod* genMethod);
+  void setVirtualField(uint32 value, bool isVolatile, VMGenericClass* genClass, VMGenericMethod* genMethod);
+  void setStaticField(uint32 value, bool isVolatile, VMGenericClass* genClass, VMGenericMethod* genMethod);
 
   void JITVerifyNull(llvm::Value* obj);
   
@@ -174,8 +176,8 @@ public:
   static void initialiseAppDomain(N3* vm);
   static void initialiseBootstrapVM(N3* vm);
 
-  llvm::Function* compileNative();
-  llvm::Function* compileFatOrTiny();
+  llvm::Function* compileNative(VMGenericMethod* genMethod);
+  llvm::Function* compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* genMethod);
   llvm::Function* compileIntern();
 
   llvm::Function* createDelegate();
@@ -211,12 +213,12 @@ public:
   llvm::Instruction* inlineCompile(llvm::Function* parentFunction, 
                                    llvm::BasicBlock*& curBB,
                                    llvm::BasicBlock* endExBlock,
-                                   std::vector<llvm::Value*>& args);
+                                   std::vector<llvm::Value*>& args, VMGenericClass* genClass, VMGenericMethod* genMethod);
 
   std::map<VMMethod*, bool> inlineMethods;
 
   llvm::Instruction* invokeInline(VMMethod* meth, 
-                                  std::vector<llvm::Value*>& args);
+                                  std::vector<llvm::Value*>& args, VMGenericClass* genClass, VMGenericMethod* genMethod);
 
 };
 

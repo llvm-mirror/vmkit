@@ -29,14 +29,14 @@ using namespace llvm;
 
 VMObject* VMClass::operator()() {
   if (status < ready) 
-    resolveType(true, true);
+    resolveType(true, true, NULL);
   return doNew();
 }
 
 void VMField::operator()(VMObject* obj, float val) {
   
   if (classDef->status < ready) 
-    classDef->resolveType(true, true);
+    classDef->resolveType(true, true, NULL);
   
   bool stat = isStatic(flags);
   if (stat) obj = classDef->staticInstance;
@@ -54,7 +54,7 @@ void VMField::operator()(VMObject* obj, float val) {
 void VMField::operator()(VMObject* obj, double val) {
   
   if (classDef->status < ready) 
-    classDef->resolveType(true, true);
+    classDef->resolveType(true, true, NULL);
   
   bool stat = isStatic(flags);
   if (stat) obj = classDef->staticInstance;
@@ -72,7 +72,7 @@ void VMField::operator()(VMObject* obj, double val) {
 void VMField::operator()(VMObject* obj, sint64 val) {
   
   if (classDef->status < ready) 
-    classDef->resolveType(true, true);
+    classDef->resolveType(true, true, NULL);
   
   bool stat = isStatic(flags);
   if (stat) obj = classDef->staticInstance;
@@ -90,7 +90,7 @@ void VMField::operator()(VMObject* obj, sint64 val) {
 void VMField::operator()(VMObject* obj, sint32 val) {
   
   if (classDef->status < ready) 
-    classDef->resolveType(true, true);
+    classDef->resolveType(true, true, NULL);
   
   bool stat = isStatic(flags);
   if (stat) obj = classDef->staticInstance;
@@ -108,7 +108,7 @@ void VMField::operator()(VMObject* obj, sint32 val) {
 void VMField::operator()(VMObject* obj, VMObject* val) {
   
   if (classDef->status < ready) 
-    classDef->resolveType(true, true);
+    classDef->resolveType(true, true, NULL);
   
   bool stat = isStatic(flags);
   if (stat) obj = classDef->staticInstance;
@@ -125,7 +125,7 @@ void VMField::operator()(VMObject* obj, VMObject* val) {
 void VMField::operator()(VMObject* obj, bool val) {
   
   if (classDef->status < ready) 
-    classDef->resolveType(true, true);
+    classDef->resolveType(true, true, NULL);
   
   bool stat = isStatic(flags);
   if (stat) obj = classDef->staticInstance;
@@ -143,7 +143,7 @@ void VMField::operator()(VMObject* obj, bool val) {
 GenericValue VMField::operator()(VMObject* obj) {
   
   if (classDef->status < ready) 
-    classDef->resolveType(true, true);
+    classDef->resolveType(true, true, NULL);
   
   bool stat = isStatic(flags);
   if (stat) {
@@ -193,9 +193,9 @@ GenericValue VMField::operator()(VMObject* obj) {
 GenericValue VMMethod::operator()(va_list ap) {
   
   if (classDef->status < ready) 
-    classDef->resolveType(true, true);
+    classDef->resolveType(true, true, NULL);
   
-  Function* func = compiledPtr();
+  Function* func = compiledPtr(NULL);
   
   std::vector<GenericValue> args;
   for (Function::arg_iterator i = func->arg_begin(), e = func->arg_end();
@@ -237,9 +237,9 @@ GenericValue VMMethod::operator()(va_list ap) {
 GenericValue VMMethod::operator()(VMObject* obj, va_list ap) {
   
   if (classDef->status < ready) 
-    classDef->resolveType(true, true);
+    classDef->resolveType(true, true, NULL);
   
-  Function* func = compiledPtr();
+  Function* func = compiledPtr(NULL);
   
   std::vector<GenericValue> args;
   GenericValue object(obj);
@@ -301,9 +301,9 @@ GenericValue VMMethod::run(...) {
 GenericValue VMMethod::operator()(std::vector<GenericValue>& args) {
   
   if (classDef->status < ready) 
-    classDef->resolveType(true, true);
+    classDef->resolveType(true, true, NULL);
   
-  Function* func = compiledPtr();
+  Function* func = compiledPtr(NULL);
   return mvm::jit::executionEngine->runFunction(func, args);
 }
 

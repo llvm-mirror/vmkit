@@ -35,6 +35,8 @@ class VMClass;
 class VMField;
 class VMMethod;
 class VMObject;
+class VMGenericClass;
+class VMGenericMethod;
 
 typedef enum VMClassState {
   hashed = 0, loaded, prepared, readed, virtual_resolved, static_resolved, clinitParent, inClinit, ready
@@ -98,12 +100,12 @@ public:
   bool isAssignableFrom(VMCommonClass* cl);
   
   void assignType();
-  void clinitClass();
-  void resolveStatic(bool clinit);
-  void resolveVirtual();
+  void clinitClass(VMGenericMethod* genMethod);
+  void resolveStatic(bool clinit, VMGenericMethod* genMethod);
+  void resolveVirtual(VMGenericClass* genClass, VMGenericMethod* genMethod);
   void resolveVT();
-  void resolveType(bool stat, bool clinit);
-  void loadParents();
+  void resolveType(bool stat, bool clinit, VMGenericMethod* genMethod);
+  void loadParents(VMGenericClass* genClass, VMGenericMethod* genMethod);
   
   VMMethod* lookupMethodDontThrow(const UTF8* name, 
                                   std::vector<VMCommonClass*>& args,
@@ -133,9 +135,9 @@ public:
   virtual void TRACER;
   
   void resolveFields();
-  void resolveStaticFields();
-  void resolveVirtualFields();
-  void unifyTypes();
+  void resolveStaticFields(VMGenericMethod* genMethod);
+  void resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* genMethod);
+  void unifyTypes(VMGenericClass* genClass, VMGenericMethod* genMethod);
   
   VMObject* staticInstance;
   VMObject* virtualInstance;
@@ -150,6 +152,8 @@ public:
   uint32 explicitLayoutSize;
 };
 
+// FIXME try to get rid of this class
+//       add flag to VMClass instead
 class VMGenericClass : public VMClass {
 public:
   static VirtualTable* VT;
@@ -210,7 +214,7 @@ public:
   std::vector<Enveloppe*, gc_allocator<Enveloppe*> > caches;
   std::vector<VMCommonClass*> parameters;
   VMClass* classDef;
-  llvm::Function* compiledPtr();
+  llvm::Function* compiledPtr(VMGenericMethod* genMethod);
   llvm::Function* methPtr;
   const UTF8* name;
   const llvm::FunctionType* _signature;
@@ -226,15 +230,17 @@ public:
   llvm::GenericValue operator()(std::vector<llvm::GenericValue>& args);
   llvm::GenericValue run(...);
   
-  const llvm::FunctionType* getSignature();
+  const llvm::FunctionType* getSignature(VMGenericMethod* genMethod);
   static const llvm::FunctionType* resolveSignature(
-      std::vector<VMCommonClass*>& params, bool isVirt, bool &structRet);
+      std::vector<VMCommonClass*>& params, bool isVirt, bool &structRet, VMGenericMethod* genMethod);
   bool signatureEquals(std::vector<VMCommonClass*>& args);
   bool signatureEqualsGeneric(std::vector<VMCommonClass*>& args);
   llvm::GlobalVariable* llvmVar();
   llvm::GlobalVariable* _llvmVar;
 };
 
+// FIXME try to get rid of this class
+//       add flag to VMMethod instead
 class VMGenericMethod : public VMMethod {
 public:
   static VirtualTable* VT;
@@ -298,7 +304,7 @@ public:
   std::vector<VMCommonClass*> parameters;
   VMCommonClass* type;
   const llvm::FunctionType* _signature;
-  const llvm::FunctionType* getSignature();
+  const llvm::FunctionType* getSignature(VMGenericMethod* genMethod);
   bool virt;
   const UTF8* name;
   VMObject* delegatee;

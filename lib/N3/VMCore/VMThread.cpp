@@ -60,9 +60,6 @@ VMThread* VMThread::allocate(VMObject* thread, VirtualMachine* vm) {
   key->pendingException = 0;
   key->perFunctionPasses = new llvm::FunctionPassManager(vm->TheModuleProvider);
   key->perFunctionPasses->add(new llvm::TargetData(vm->module));
-  key->currGenericClass = NULL;
-  key->currGenericMethod = NULL;
-  key->genMethodInstantiation = NULL;
   AddStandardCompilePasses(key->perFunctionPasses);
   return key;
 }

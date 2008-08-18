@@ -49,6 +49,8 @@ class VMCommonClass;
 class VMField;
 class VMMethod;
 class VMObject;
+class VMGenericClass;
+class VMGenericMethod;
 
 class Section : public mvm::Object {
 public:
@@ -129,7 +131,7 @@ typedef void (*maskVector_t)(uint32 index,
                              uint32 heapSizes);
 
 typedef VMCommonClass* (*signatureVector_t)(uint32 op, Assembly* ass,
-                                            uint32& offset);
+                                            uint32& offset, VMGenericClass* genClass, VMGenericMethod* genMethod);
 
 class Assembly : public mvm::Object {
 public:
@@ -148,9 +150,9 @@ public:
                                         std::vector<VMCommonClass*> genArgs,
                                         uint32 token);
   VMField*      constructField(VMClass* cl, const UTF8* name,
-                               VMCommonClass* signature, uint32 token);
+                               VMCommonClass* signature, uint32 token, VMGenericClass* genClass, VMGenericMethod* genMethod);
   VMMethod*     constructMethod(VMClass* cl, const UTF8* name,
-                                uint32 token, bool generic);
+                                uint32 token, bool generic, std::vector<VMCommonClass*>* genMethodInstantiation, VMGenericClass* genClass);
   VMCommonClass* lookupClassFromName(const UTF8* name, const UTF8* nameSpace);
   VMCommonClass* lookupClassFromToken(uint32 token);
   VMMethod* lookupMethodFromToken(uint32 token);
@@ -206,49 +208,50 @@ public:
   uint32 uncompressSignature(uint32& offset);
   uint32 getTypeDefTokenFromMethod(uint32 token);
   VMCommonClass* loadType(N3* vm, uint32 token, bool resolveFunc, bool resolve,
-                          bool clinit, bool dothrow);
+                          bool clinit, bool dothrow, VMGenericClass* genClass, VMGenericMethod* genMethod);
   VMCommonClass* loadType(N3* vm, uint32 token, bool resolveFunc, bool resolve,
-                          bool clinit, bool dothrow, std::vector<VMCommonClass*> genArgs);
+                          bool clinit, bool dothrow, std::vector<VMCommonClass*> genArgs, VMGenericClass* genClass, VMGenericMethod* genMethod);
   
   VMCommonClass* loadTypeFromName(const UTF8* name, const UTF8* nameSpace, 
                                   bool resolveFunc, bool resolve,
                                   bool clinit, bool dothrow);
-  void readClass(VMCommonClass* cl);
-  void getProperties(VMCommonClass* cl);
-  Property* readProperty(uint32 index, VMCommonClass* cl);
-  VMMethod* readMethodDef(uint32 index, VMCommonClass* cl);
-  VMMethod* readMethodSpec(uint32 token);
-  VMField* readField(uint32 index, VMCommonClass* cl);
+  void readClass(VMCommonClass* cl, VMGenericMethod* genMethod);
+  void getProperties(VMCommonClass* cl, VMGenericClass* genClass, VMGenericMethod* genMethod);
+  Property* readProperty(uint32 index, VMCommonClass* cl, VMGenericClass* genClass, VMGenericMethod* genMethod);
+  VMMethod* readMethodDef(uint32 index, VMCommonClass* cl,
+                          std::vector<VMCommonClass*>* genMethodInstantiation, VMGenericClass* genClass);
+  VMMethod* readMethodSpec(uint32 token, VMGenericClass* genClass, VMGenericMethod* genMethod);
+  VMField* readField(uint32 index, VMCommonClass* cl, VMGenericClass* genClass, VMGenericMethod* genMethod);
   Param* readParam(uint32 index, VMMethod* meth);
   VMClass* readTypeDef(N3* vm, uint32 index);
   VMClass* readTypeDef(N3* vm, uint32 index, std::vector<VMCommonClass*> genArgs);
-  VMCommonClass* readTypeSpec(N3* vm, uint32 index);
+  VMCommonClass* readTypeSpec(N3* vm, uint32 index, VMGenericClass* genClass, VMGenericMethod* genMethod);
   Assembly* readAssemblyRef(N3* vm, uint32 index);
   VMCommonClass* readTypeRef(N3* vm, uint32 index);
-  void readSignature(uint32 offset, std::vector<VMCommonClass*>& locals);
+  void readSignature(uint32 offset, std::vector<VMCommonClass*>& locals, VMGenericClass* genClass, VMGenericMethod* genMethod);
   
   void getInterfacesFromTokenType(std::vector<uint32>& tokens, uint32 token);
   
   bool extractMethodSignature(uint32& offset, VMCommonClass* cl,
-                              std::vector<VMCommonClass*> &params);
+                              std::vector<VMCommonClass*> &params, VMGenericClass* genClass, VMGenericMethod* genMethod);
   bool isGenericMethod(uint32& offset);
   void localVarSignature(uint32& offset,
-                         std::vector<VMCommonClass*>& locals);
+                         std::vector<VMCommonClass*>& locals, VMGenericClass* genClass, VMGenericMethod* genMethod);
   void methodSpecSignature(uint32& offset,
-                           std::vector<VMCommonClass*>& genArgs);
-  VMCommonClass* extractFieldSignature(uint32& offset);
-  VMCommonClass* extractTypeInSignature(uint32& offset);
-  VMCommonClass* exploreType(uint32& offset); 
+                           std::vector<VMCommonClass*>& genArgs, VMGenericClass* genClass, VMGenericMethod* genMethod);
+  VMCommonClass* extractFieldSignature(uint32& offset, VMGenericClass* genClass, VMGenericMethod* genMethod);
+  VMCommonClass* extractTypeInSignature(uint32& offset, VMGenericClass* genClass, VMGenericMethod* genMethod);
+  VMCommonClass* exploreType(uint32& offset, VMGenericClass* genClass, VMGenericMethod* genMethod); 
   
   VMCommonClass* getClassFromName(N3* vm, const UTF8* name, const UTF8* nameSpace);
   
-  VMField* getFieldFromToken(uint32 token, bool stat); 
+  VMField* getFieldFromToken(uint32 token, bool stat, VMGenericClass* genClass, VMGenericMethod* genMethod); 
   uint32 getTypedefTokenFromField(uint32 token);
-  VMField* readMemberRefAsField(uint32 token, bool stat);
+  VMField* readMemberRefAsField(uint32 token, bool stat, VMGenericClass* genClass, VMGenericMethod* genMethod);
   
-  VMMethod* getMethodFromToken(uint32 token); 
+  VMMethod* getMethodFromToken(uint32 token, VMGenericClass* genClass, VMGenericMethod* genMethod); 
   uint32 getTypedefTokenFromMethod(uint32 token);
-  VMMethod* readMemberRefAsMethod(uint32 token, std::vector<VMCommonClass*>* genArgs);
+  VMMethod* readMemberRefAsMethod(uint32 token, std::vector<VMCommonClass*>* genArgs, VMGenericClass* genClass, VMGenericMethod* genMethod);
 
   const UTF8* readUserString(uint32 token); 
   uint32 getExplicitLayout(uint32 token);
@@ -260,7 +263,7 @@ public:
   void readCustomAttributes(uint32 offset, std::vector<llvm::GenericValue>& args, VMMethod* meth);
   ArrayObject* getCustomAttributes(uint32 token, VMCommonClass* cl);
 private:
-    VMMethod *instantiateGenericMethod(std::vector<VMCommonClass*> *genArgs, VMCommonClass *type, const UTF8 *& name, std::vector<VMCommonClass*> & args, uint32 token, bool virt);
+    VMMethod *instantiateGenericMethod(std::vector<VMCommonClass*> *genArgs, VMCommonClass *type, const UTF8 *& name, std::vector<VMCommonClass*> & args, uint32 token, bool virt, VMGenericClass* genClass);
 
 
 };

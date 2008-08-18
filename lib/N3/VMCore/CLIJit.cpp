@@ -453,34 +453,25 @@ Instruction* CLIJit::lowerMathOps(VMMethod* meth,
 }
 
 Instruction* CLIJit::invokeInline(VMMethod* meth, 
-                                  std::vector<Value*>& args) {
+                                  std::vector<Value*>& args, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   
   CLIJit* jit = gc_new(CLIJit)();
   jit->compilingClass = meth->classDef; 
   jit->compilingMethod = meth;
   
-  // save previous current generic class to restore it later
-  VMGenericClass* old = VMThread::get()->currGenericClass;
-  // temporarily store the class being compiled in case it is a generic class
-  VMThread::get()->currGenericClass = dynamic_cast<VMGenericClass*>(jit->compilingClass);
-  
-  
   jit->unifiedUnreachable = unifiedUnreachable;
   jit->inlineMethods = inlineMethods;
   jit->inlineMethods[meth] = true;
   Instruction* ret = jit->inlineCompile(llvmFunction, currentBlock, 
-                                        currentExceptionBlock, args);
+                                        currentExceptionBlock, args, dynamic_cast<VMGenericClass*>(jit->compilingClass), genMethod);
   inlineMethods[meth] = false;
-  
-  // restore saved class
-  VMThread::get()->currGenericClass = old;
   
   return ret;
 }
 
 
-void CLIJit::invoke(uint32 value) {
-  VMMethod* meth = compilingClass->assembly->getMethodFromToken(value);
+void CLIJit::invoke(uint32 value, VMGenericClass* genClass, VMGenericMethod* genMethod) {
+  VMMethod* meth = compilingClass->assembly->getMethodFromToken(value, genClass, genMethod);
 
   if (meth->classDef->isArray) {
     uint8 func = 0;
@@ -530,7 +521,7 @@ void CLIJit::invoke(uint32 value) {
   }
 
   std::vector<Value*> Args;
-  const llvm::FunctionType* type = meth->getSignature();
+  const llvm::FunctionType* type = meth->getSignature(genMethod);
   makeArgs(type, Args, meth->structReturn);
   
   if (meth->classDef->nameSpace == N3::system && 
@@ -599,9 +590,9 @@ void CLIJit::invoke(uint32 value) {
   Value* res = 0;
   if (meth && meth->canBeInlined && meth != compilingMethod && 
       inlineMethods[meth] == 0) {
-    res = invokeInline(meth, Args);
+    res = invokeInline(meth, Args, genClass, genMethod);
   } else {
-    Function* func = meth->compiledPtr();
+    Function* func = meth->compiledPtr(genMethod);
     
     res = invoke(func, Args, "", currentBlock, meth->structReturn);
   }
@@ -610,11 +601,11 @@ void CLIJit::invoke(uint32 value) {
   }
 }
 
-void CLIJit::invokeNew(uint32 value) {
+void CLIJit::invokeNew(uint32 value, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   Assembly* ass = compilingClass->assembly;
-  VMMethod* meth = ass->getMethodFromToken(value);
+  VMMethod* meth = ass->getMethodFromToken(value, genClass, genMethod);
   VMClass* type = meth->classDef;
-  const FunctionType* funcType = meth->getSignature();
+  const FunctionType* funcType = meth->getSignature(genMethod);
     
   Value* obj = 0;
   if (type->isPointer) {
@@ -661,9 +652,9 @@ void CLIJit::invokeNew(uint32 value) {
   makeArgs(funcType, Args, meth->structReturn);
   if (meth && meth->canBeInlined && meth != compilingMethod && 
       inlineMethods[meth] == 0) {
-    invokeInline(meth, Args);
+    invokeInline(meth, Args, genClass, genMethod);
   } else {
-    Function* func = meth->compiledPtr();
+    Function* func = meth->compiledPtr(genMethod);
     
     invoke(func, Args, "", currentBlock, meth->structReturn);
   }
@@ -676,8 +667,8 @@ void CLIJit::invokeNew(uint32 value) {
   }
 }
   
-llvm::Value* CLIJit::getVirtualField(uint32 value) {
-  VMField* field = compilingClass->assembly->getFieldFromToken(value, false);
+llvm::Value* CLIJit::getVirtualField(uint32 value, VMGenericClass* genClass, VMGenericMethod* genMethod) {
+  VMField* field = compilingClass->assembly->getFieldFromToken(value, false, genClass, genMethod);
   Value* obj = pop();
   if ((field->classDef->super == MSCorlib::pValue ||
       field->classDef->super == MSCorlib::pEnum) &&
@@ -699,10 +690,10 @@ llvm::Value* CLIJit::getVirtualField(uint32 value) {
   }
 }
 
-llvm::Value* CLIJit::getStaticField(uint32 value) {
-  VMField* field = compilingClass->assembly->getFieldFromToken(value, true);
+llvm::Value* CLIJit::getStaticField(uint32 value, VMGenericClass* genClass, VMGenericMethod* genMethod) {
+  VMField* field = compilingClass->assembly->getFieldFromToken(value, true, genClass, genMethod);
   VMCommonClass* cl = field->classDef;
-  cl->resolveType(true, false);
+  cl->resolveType(true, false, genMethod);
   Value* arg = new LoadInst(cl->llvmVar(), "", currentBlock);
   Value* call = invoke(initialiseClassLLVM, arg, "", currentBlock, false);
   Value* staticCl = new BitCastInst(call, cl->staticType, "", currentBlock);
@@ -717,8 +708,8 @@ llvm::Value* CLIJit::getStaticField(uint32 value) {
 
 }
   
-void CLIJit::setVirtualField(uint32 value, bool isVolatile) {
-  VMField* field = compilingClass->assembly->getFieldFromToken(value, false);
+void CLIJit::setVirtualField(uint32 value, bool isVolatile, VMGenericClass* genClass, VMGenericMethod* genMethod) {
+  VMField* field = compilingClass->assembly->getFieldFromToken(value, false, genClass, genMethod);
   Value* val = pop();
   Value* obj = pop();
   const Type* valType = val->getType();
@@ -765,8 +756,8 @@ void CLIJit::setVirtualField(uint32 value, bool isVolatile) {
   }
 }
 
-void CLIJit::setStaticField(uint32 value, bool isVolatile) {
-  VMField* field = compilingClass->assembly->getFieldFromToken(value, true);
+void CLIJit::setStaticField(uint32 value, bool isVolatile, VMGenericClass* genClass, VMGenericMethod* genMethod) {
+  VMField* field = compilingClass->assembly->getFieldFromToken(value, true, genClass, genMethod);
   
   VMCommonClass* cl = field->classDef;
   Value* arg = new LoadInst(cl->llvmVar(), "", currentBlock);
@@ -936,11 +927,11 @@ Function* CLIJit::compileIntern() {
   return 0;
 }
 
-Function* CLIJit::compileNative() {
+Function* CLIJit::compileNative(VMGenericMethod* genMethod) {
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "native compile %s\n",
               compilingMethod->printString());
     
-  const FunctionType *funcType = compilingMethod->getSignature();
+  const FunctionType *funcType = compilingMethod->getSignature(genMethod);
   
   Function* func = llvmFunction = compilingMethod->methPtr;
   currentBlock = createBasicBlock("start");
@@ -977,7 +968,7 @@ Function* CLIJit::compileNative() {
   return llvmFunction;
 }
 
-uint32 CLIJit::readExceptionTable(uint32 offset, bool fat) {
+uint32 CLIJit::readExceptionTable(uint32 offset, bool fat, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   Assembly* ass = compilingClass->assembly;
   ArrayUInt8* bytes = ass->bytes;
   uint32 nbe = 0;
@@ -1027,7 +1018,7 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat) {
       ex->test = createBasicBlock("testException");
       if (classToken) {
         ex->catchClass = ass->loadType((N3*)VMThread::get()->vm, classToken,
-                                       true, false, false, true);
+                                       true, false, false, true, genClass, genMethod);
       } else {
         ex->catchClass = MSCorlib::pException;
       }
@@ -1158,7 +1149,7 @@ static void printArgs(std::vector<llvm::Value*> args, BasicBlock* insertAt) {
 }
 #endif
 
-Function* CLIJit::compileFatOrTiny() {
+Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* genMethod) {
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "tiny or fat compile %s\n",
               compilingMethod->printString());
   uint32 offset = compilingMethod->offset;
@@ -1187,7 +1178,7 @@ Function* CLIJit::compileFatOrTiny() {
   bool synchro = isSynchro(compilingMethod->flags);
   */
 
-  const FunctionType *funcType = compilingMethod->getSignature();
+  const FunctionType *funcType = compilingMethod->getSignature(genMethod);
   
   Function* func = llvmFunction = compilingMethod->methPtr;
   currentBlock = createBasicBlock("start");
@@ -1212,7 +1203,7 @@ Function* CLIJit::compileFatOrTiny() {
 
       uint8 flags = READ_U1(bytes, excpOffset);
       nbe = readExceptionTable(excpOffset, 
-                         flags & CONSTANT_CorILMethod_Sect_FatFormat);
+                         flags & CONSTANT_CorILMethod_Sect_FatFormat, genClass, genMethod);
     }
   }
 
@@ -1228,12 +1219,12 @@ Function* CLIJit::compileFatOrTiny() {
   
   if (localVarSig) {
     std::vector<VMCommonClass*> temp;
-    compilingClass->assembly->readSignature(localVarSig, temp);
+    compilingClass->assembly->readSignature(localVarSig, temp, genClass, genMethod);
 
     for (std::vector<VMCommonClass*>::iterator i = temp.begin(), 
             e = temp.end(); i!= e; ++i) {
       VMCommonClass* cl = *i;
-      cl->resolveType(false, false);
+      cl->resolveType(false, false, genMethod);
       AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
       if (cl->naturalType->isSingleValueType()) {
         new StoreInst(Constant::getNullValue(cl->naturalType), alloc, false,
@@ -1268,7 +1259,7 @@ Function* CLIJit::compileFatOrTiny() {
     endNode = PHINode::Create(lastType, "", endBlock);
   }
 
-  compileOpcodes(&compilingClass->assembly->bytes->elements[offset], codeLen);
+  compileOpcodes(&compilingClass->assembly->bytes->elements[offset], codeLen, genClass, genMethod);
   
   currentBlock = endBlock;
   pred_iterator PI = pred_begin(endBlock);
@@ -1335,7 +1326,7 @@ Function* CLIJit::compileFatOrTiny() {
 
 Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
                                    BasicBlock* endExBlock,
-                                   std::vector<Value*>& args) {
+                                   std::vector<Value*>& args, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "tiny or fat inline compile %s\n",
               compilingMethod->printString());
@@ -1364,7 +1355,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
   bool synchro = isSynchro(compilingMethod->flags);
   */
 
-  const FunctionType *funcType = compilingMethod->getSignature();
+  const FunctionType *funcType = compilingMethod->getSignature(genMethod);
   
   llvmFunction = parentFunction;
   currentBlock = curBB;
@@ -1389,7 +1380,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
 
       uint8 flags = READ_U1(bytes, excpOffset);
       readExceptionTable(excpOffset, 
-                         flags & CONSTANT_CorILMethod_Sect_FatFormat);
+                         flags & CONSTANT_CorILMethod_Sect_FatFormat, genClass, genMethod);
     }
   }
 
@@ -1405,12 +1396,12 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
 
   if (localVarSig) {
     std::vector<VMCommonClass*> temp;
-    compilingClass->assembly->readSignature(localVarSig, temp);
+    compilingClass->assembly->readSignature(localVarSig, temp, genClass, genMethod);
 
     for (std::vector<VMCommonClass*>::iterator i = temp.begin(), 
             e = temp.end(); i!= e; ++i) {
       VMCommonClass* cl = *i;
-      cl->resolveType(false, false);
+      cl->resolveType(false, false, genMethod);
       AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
       if (cl->naturalType->isSingleValueType()) {
         new StoreInst(Constant::getNullValue(cl->naturalType), alloc, false,
@@ -1445,7 +1436,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
     endNode = PHINode::Create(lastType, "", endBlock);
   }
 
-  compileOpcodes(&compilingClass->assembly->bytes->elements[offset], codeLen);
+  compileOpcodes(&compilingClass->assembly->bytes->elements[offset], codeLen, genClass, genMethod);
   
   curBB = endBlock;
   
@@ -1462,41 +1453,26 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   jit->compilingClass = cl; 
   jit->compilingMethod = meth;
 
-  // save previous generic and method class
-  VMGenericClass* old = VMThread::get()->currGenericClass;
-  VMGenericMethod* oldMethod = VMThread::get()->currGenericMethod;
-  
-  // temporarily store the class of the method to be compiled
-  // in case it is a generic class 
-  VMThread::get()->currGenericClass = dynamic_cast<VMGenericClass*>(cl);
-  
-  VMThread::get()->currGenericMethod = dynamic_cast<VMGenericMethod*>(meth);
-  
   Function* func;
-  meth->getSignature();
+  meth->getSignature(dynamic_cast<VMGenericMethod*>(meth));
   
   if (isInternal(meth->implFlags)) {
-    func = jit->compileNative();
+    func = jit->compileNative(dynamic_cast<VMGenericMethod*>(meth));
   } else if (meth->offset == 0) {
     func = jit->compileIntern();
   } else {
-    func = jit->compileFatOrTiny();
+    func = jit->compileFatOrTiny(dynamic_cast<VMGenericClass*>(cl), dynamic_cast<VMGenericMethod*>(meth));
   }
-  
-  // restore saved class
-  VMThread::get()->currGenericClass = old;
-  
-  VMThread::get()->currGenericMethod = oldMethod;
   
   return func;
 }
 
-llvm::Function *VMMethod::compiledPtr() {
+llvm::Function *VMMethod::compiledPtr(VMGenericMethod* genMethod) {
   if (methPtr != 0) return methPtr;
   else {
     classDef->aquire();
     if (methPtr == 0) {
-      methPtr = Function::Create(getSignature(), GlobalValue::GhostLinkage,
+      methPtr = Function::Create(getSignature(genMethod), GlobalValue::GhostLinkage,
                                    printString(), classDef->vm->module);
       classDef->vm->functions->hash(methPtr, this);
     }
@@ -1522,7 +1498,7 @@ void VMField::initField(VMObject* obj) {
 }
 
 extern "C" VMObject* initialiseClass(VMClass* cl) {
-  cl->clinitClass();
+  cl->clinitClass(NULL);
   return cl->staticInstance;
 }
 

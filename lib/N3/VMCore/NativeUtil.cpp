@@ -67,7 +67,7 @@ void* NativeUtil::nativeLookup(VMCommonClass* cl, VMMethod* meth) {
     buf = (char*)alloca(6 + strlen(name) + strlen(nameSpace) +
                         strlen(methName) + 10);
     sprintf(buf, "%s_%s_%s_%d", nameSpace, name, methName, 
-                meth->getSignature()->getNumParams());
+                meth->getSignature(NULL)->getNumParams());
     cliToInternal(buf);
     res = dlsym(0, buf);
     if (!res) {

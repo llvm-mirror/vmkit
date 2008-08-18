@@ -394,10 +394,10 @@ static VMField* fieldDup(uint32& key, Assembly* ass) {
 
 VMField*  Assembly::constructField(VMClass* cl, const UTF8* name,
                                    VMCommonClass* signature,
-                                   uint32 token) {
+                                   uint32 token, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   VMField* field; 
   
-  if (VMThread::get()->currGenericClass == 0) {
+  if (genClass == 0) {
     // we are not reading a generic class 
     field = loadedTokenFields->lookupOrCreate(token, this, fieldDup);
   } else {
@@ -428,10 +428,11 @@ static VMGenericMethod* genMethodDup(uint32& key, Assembly* ass) {
 }
 
 VMMethod* Assembly::constructMethod(VMClass* cl, const UTF8* name, 
-                                    uint32 token, bool generic) {
+                                    uint32 token, bool generic,
+                                    std::vector<VMCommonClass*>* genMethodInstantiation, VMGenericClass* genClass) {
   VMMethod* meth;
   
-  if (VMThread::get()->currGenericClass == 0 && generic == false) {
+  if (genClass == 0 && generic == false) {
     // we are not reading a generic class 
     meth = loadedTokenMethods->lookupOrCreate(token, this, methodDup);
   } else {
@@ -441,11 +442,11 @@ VMMethod* Assembly::constructMethod(VMClass* cl, const UTF8* name,
     
     if (generic) {
       // we are reading a generic method
-      if (VMThread::get()->genMethodInstantiation == NULL) {
+      if (genMethodInstantiation == NULL) {
         cl->genericMethods.push_back(meth);
       } else {
         VMGenericMethod* genMethod = genMethodDup(token, this);
-        genMethod->genericParams = *VMThread::get()->genMethodInstantiation;
+        genMethod->genericParams = *genMethodInstantiation;
         meth = genMethod;
         if (isStatic(meth->flags)) {
           cl->staticMethods.push_back(meth);
@@ -887,7 +888,7 @@ uint32 Assembly::getTypeDefTokenFromMethod(uint32 token) {
   return i + 1 + (CONSTANT_TypeDef << 24);
 }
 
-VMCommonClass* Assembly::readTypeSpec(N3* vm, uint32 index) {
+VMCommonClass* Assembly::readTypeSpec(N3* vm, uint32 index, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   uint32 blobOffset = CLIHeader->blobStream->realOffset;
   Table* typeTable  = CLIHeader->tables[CONSTANT_TypeSpec];
   uint32* typeArray = (uint32*)alloca(sizeof(uint32) * typeTable->rowSize);
@@ -896,7 +897,7 @@ VMCommonClass* Assembly::readTypeSpec(N3* vm, uint32 index) {
   uint32 signOffset = typeArray[CONSTANT_TYPESPEC_SIGNATURE];
   
   uint32 offset = blobOffset + signOffset;
-  return extractTypeInSignature(offset);
+  return extractTypeInSignature(offset, genClass, genMethod);
   
 }
 
@@ -1100,14 +1101,14 @@ void Assembly::getInterfacesFromTokenType(std::vector<uint32>& tokens,
 }
 
 VMCommonClass* Assembly::loadType(N3* vm, uint32 token, bool resolve,
-                            bool resolveStatic, bool clinit, bool dothrow) {
-	return loadType(vm, token, resolve, resolveStatic, clinit, dothrow, (std::vector<VMCommonClass*>) 0);
+                            bool resolveStatic, bool clinit, bool dothrow, VMGenericClass* genClass, VMGenericMethod* genMethod) {
+	return loadType(vm, token, resolve, resolveStatic, clinit, dothrow, (std::vector<VMCommonClass*>) 0, genClass, genMethod);
 }
 
 
 VMCommonClass* Assembly::loadType(N3* vm, uint32 token, bool resolve,
                             bool resolveStatic, bool clinit, bool dothrow,
-                            std::vector<VMCommonClass*> genArgs) {
+                            std::vector<VMCommonClass*> genArgs, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   
   VMCommonClass* type = lookupClassFromToken(token);
   if (!type || type->status == hashed) {
@@ -1119,7 +1120,7 @@ VMCommonClass* Assembly::loadType(N3* vm, uint32 token, bool resolve,
     } else if (table == CONSTANT_TypeRef) {
       type = readTypeRef(vm, index);
     } else if (table == CONSTANT_TypeSpec) {
-      type = readTypeSpec(vm, index);
+      type = readTypeSpec(vm, index, genClass, genMethod);
     } else {
       VMThread::get()->vm->error("implement me %x", token);
     }
@@ -1134,16 +1135,12 @@ VMCommonClass* Assembly::loadType(N3* vm, uint32 token, bool resolve,
     type->release();
   }
 
-  if (resolve) type->resolveType(resolveStatic, clinit);
+  if (resolve) type->resolveType(resolveStatic, clinit, genMethod);
 
   return type;
 }
 
-void Assembly::readClass(VMCommonClass* cl) {
-  // temporarily store the class being read in case it is a generic class
-  VMGenericClass* old = VMThread::get()->currGenericClass;
-  VMThread::get()->currGenericClass = dynamic_cast<VMGenericClass*>(cl);
-	
+void Assembly::readClass(VMCommonClass* cl, VMGenericMethod* genMethod) {
   uint32 index = cl->token & 0xffff;
   Table* typeTable = CLIHeader->tables[CONSTANT_TypeDef];
   uint32 typeSize = typeTable->rowsNumber;
@@ -1158,7 +1155,7 @@ void Assembly::readClass(VMCommonClass* cl) {
   Table* methodTable  = CLIHeader->tables[CONSTANT_MethodDef];
   uint32 methodSize   = methodTable->rowsNumber;
   
-  getProperties(cl);
+  getProperties(cl, dynamic_cast<VMGenericClass*>(cl), genMethod);
 
   if (methodList && methodTable != 0 && methodList <= methodSize) {
     uint32 endMethod = (index == typeSize) ? 
@@ -1169,7 +1166,7 @@ void Assembly::readClass(VMCommonClass* cl) {
     uint32 nbMethods = endMethod - methodList;
 
     for (uint32 i = 0; i < nbMethods; ++i) {
-      VMMethod* meth = readMethodDef(i + methodList, cl);
+      VMMethod* meth = readMethodDef(i + methodList, cl, NULL, dynamic_cast<VMGenericClass*>(cl));
       
       if (meth != NULL) {
         if (isStatic(meth->flags)) {
@@ -1189,7 +1186,7 @@ void Assembly::readClass(VMCommonClass* cl) {
     uint32 nbFields = endField - fieldList;
 
     for (uint32 i = 0; i < nbFields; ++i) {
-      VMField* field = readField(i + fieldList, cl);
+      VMField* field = readField(i + fieldList, cl, dynamic_cast<VMGenericClass*>(cl), genMethod);
       if (isStatic(field->flags)) {
         cl->staticFields.push_back(field);
       } else {
@@ -1197,9 +1194,6 @@ void Assembly::readClass(VMCommonClass* cl) {
       }
     }
   }
-  
-  // we have stopped reading a generic class
-  VMThread::get()->currGenericClass = old;
 }
 
 void Assembly::readCustomAttributes(uint32 offset, std::vector<llvm::GenericValue>& args, VMMethod* meth) {
@@ -1240,10 +1234,10 @@ ArrayObject* Assembly::getCustomAttributes(uint32 token, VMCommonClass* cl) {
         VMThread::get()->vm->error("implement me"); 
         break;
       case 2: 
-        cons = getMethodFromToken(index + (CONSTANT_MethodDef << 24));
+        cons = getMethodFromToken(index + (CONSTANT_MethodDef << 24), NULL, NULL);
         break;
       case 3:
-        cons = getMethodFromToken(index + (CONSTANT_MemberRef << 24));
+        cons = getMethodFromToken(index + (CONSTANT_MemberRef << 24), NULL, NULL);
         break;
     }
 
@@ -1266,7 +1260,7 @@ ArrayObject* Assembly::getCustomAttributes(uint32 token, VMCommonClass* cl) {
   return res;
 }
 
-void Assembly::getProperties(VMCommonClass* cl) {
+void Assembly::getProperties(VMCommonClass* cl, VMGenericClass* genClass, VMGenericMethod *genMethod) {
   uint32 index = cl->token & 0xffff;
   Table* mapTable = CLIHeader->tables[CONSTANT_PropertyMap];
   uint32 mapSize = mapTable->rowsNumber;
@@ -1296,13 +1290,13 @@ void Assembly::getProperties(VMCommonClass* cl) {
     uint32 nbProperties = endProperty - propertyList;
 
     for (uint32 j = 0; j < nbProperties; ++j) {
-      cl->properties.push_back(readProperty(j + propertyList, cl));
+      cl->properties.push_back(readProperty(j + propertyList, cl, genClass, genMethod));
     }
 
   } 
 }
 
-Property* Assembly::readProperty(uint32 index, VMCommonClass* cl) {
+Property* Assembly::readProperty(uint32 index, VMCommonClass* cl, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   uint32 stringOffset = CLIHeader->stringStream->realOffset;
   uint32 blobOffset = CLIHeader->blobStream->realOffset;
   
@@ -1320,11 +1314,12 @@ Property* Assembly::readProperty(uint32 index, VMCommonClass* cl) {
   prop->flags = flags;
   prop->type = cl;
   uint32 offset = blobOffset + type;
-  prop->virt = extractMethodSignature(offset, cl, prop->parameters);
+  prop->virt = extractMethodSignature(offset, cl, prop->parameters, genClass, genMethod);
   return prop;
 }
 
-VMMethod* Assembly::readMethodDef(uint32 index, VMCommonClass* cl) {
+VMMethod* Assembly::readMethodDef(uint32 index, VMCommonClass* cl,
+       std::vector<VMCommonClass*>* genMethodInstantiation, VMGenericClass* genClass) {
   uint32 token = index + (CONSTANT_MethodDef << 24);
   uint32 stringOffset = CLIHeader->stringStream->realOffset;
   uint32 blobOffset = CLIHeader->blobStream->realOffset;
@@ -1349,14 +1344,12 @@ VMMethod* Assembly::readMethodDef(uint32 index, VMCommonClass* cl) {
 
   VMMethod* meth = 
     constructMethod((VMClass*)cl, readString(cl->vm, (name + stringOffset)),
-                    token, isGenericMethod(offset));
+                    token, isGenericMethod(offset), genMethodInstantiation, genClass);
   
   offset = blobOffset + signature;
   
-  VMGenericMethod* tmp = VMThread::get()->currGenericMethod;
-  VMThread::get()->currGenericMethod = dynamic_cast<VMGenericMethod*>(meth);
-  meth->virt = extractMethodSignature(offset, cl, meth->parameters);
-  VMThread::get()->currGenericMethod = tmp;
+  meth->virt = extractMethodSignature(offset, cl, meth->parameters, genClass, 
+      dynamic_cast<VMGenericMethod*> (meth));
   
   meth->flags = flags;
   meth->implFlags = implFlags;
@@ -1384,7 +1377,7 @@ VMMethod* Assembly::readMethodDef(uint32 index, VMCommonClass* cl) {
   return meth;
 }
 
-VMField* Assembly::readField(uint32 index, VMCommonClass* cl) {
+VMField* Assembly::readField(uint32 index, VMCommonClass* cl, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   uint32 token = index + (CONSTANT_Field << 24);
   uint32 stringOffset = CLIHeader->stringStream->realOffset;
   uint32 blobOffset = CLIHeader->blobStream->realOffset;
@@ -1399,9 +1392,9 @@ VMField* Assembly::readField(uint32 index, VMCommonClass* cl) {
   uint32 signature  = fieldArray[CONSTANT_FIELD_SIGNATURE];
   
   uint32 offset = blobOffset + signature;
-  VMField* field = 
-    constructField((VMClass*)cl, readString(cl->vm, (name + stringOffset)),
-                   extractFieldSignature(offset), token);
+  VMField* field = constructField((VMClass*) cl, readString(cl->vm, (name
+      + stringOffset)), extractFieldSignature(offset, genClass, genMethod),
+      token, genClass, genMethod);
   field->flags = flags;
   
   return field;
@@ -1447,13 +1440,13 @@ VMCommonClass* Assembly::loadTypeFromName(const UTF8* name,
     }
   }
 
-  if (resolve) cl->resolveType(unify, clinit);
+  if (resolve) cl->resolveType(unify, clinit, NULL);
 
   return cl;
 }
 
 void Assembly::readSignature(uint32 localVarSig, 
-                             std::vector<VMCommonClass*>& locals) {
+                             std::vector<VMCommonClass*>& locals, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   uint32 table = localVarSig >> 24;
   uint32 index = localVarSig & 0xffff;
   if (table != CONSTANT_StandaloneSig) {
@@ -1467,10 +1460,10 @@ void Assembly::readSignature(uint32 localVarSig,
   uint32 blobEntry = blobOffset + array[CONSTANT_STANDALONE_SIG_SIGNATURE];
   
 
-  localVarSignature(blobEntry, locals);
+  localVarSignature(blobEntry, locals, genClass, genMethod);
 }
 
-VMField* Assembly::getFieldFromToken(uint32 token, bool stat) {
+VMField* Assembly::getFieldFromToken(uint32 token, bool stat, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   VMField* field = lookupFieldFromToken(token);
   if (!field) {
     uint32 table = token >> 24;
@@ -1481,7 +1474,7 @@ VMField* Assembly::getFieldFromToken(uint32 token, bool stat) {
         switch (newTable) {
           case CONSTANT_TypeDef : {
             loadType((N3*)(VMThread::get()->vm), typeToken, true, true, false,
-                     true);
+                     true, genClass, genMethod);
             field = lookupFieldFromToken(token);
             if (!field) {
               VMThread::get()->vm->error("implement me");
@@ -1496,7 +1489,7 @@ VMField* Assembly::getFieldFromToken(uint32 token, bool stat) {
       }
 
       case CONSTANT_MemberRef : {
-        field = readMemberRefAsField(token, stat);
+        field = readMemberRefAsField(token, stat, genClass, genMethod);
         break;
       }
 
@@ -1505,7 +1498,7 @@ VMField* Assembly::getFieldFromToken(uint32 token, bool stat) {
       }
     }
   }
-  field->classDef->resolveType(stat, false);
+  field->classDef->resolveType(stat, false, genMethod);
   return field;
 }
 
@@ -1557,7 +1550,7 @@ uint32 Assembly::getExplicitLayout(uint32 token) {
   return size;
 }
 
-VMField* Assembly::readMemberRefAsField(uint32 token, bool stat) {
+VMField* Assembly::readMemberRefAsField(uint32 token, bool stat, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   uint32 index = token & 0xffff;
   Table* memberTable = CLIHeader->tables[CONSTANT_MemberRef];
   uint32* memberArray = (uint32*)alloca(sizeof(uint32) * memberTable->rowSize);
@@ -1581,14 +1574,14 @@ VMField* Assembly::readMemberRefAsField(uint32 token, bool stat) {
     case 0 : {
       uint32 typeToken = index + (CONSTANT_TypeDef << 24);
       type = loadType(((N3*)VMThread::get()->vm), typeToken,
-                                     true, false, false, true);
+                                     true, false, false, true, genClass, genMethod);
 	  break;
     }
 
     case 1 : {
       uint32 typeToken = index + (CONSTANT_TypeRef << 24);
       type = loadType(((N3*)VMThread::get()->vm), typeToken,
-                                     true, false, false, true);
+                                     true, false, false, true, genClass, genMethod);
       break;
     }
 
@@ -1597,7 +1590,7 @@ VMField* Assembly::readMemberRefAsField(uint32 token, bool stat) {
     case 4: {
       uint32 typeToken = index + (CONSTANT_TypeSpec << 24);
       type = loadType(((N3*)VMThread::get()->vm), typeToken,
-                                       true, false, false, true);
+                                       true, false, false, true, genClass, genMethod);
       break;
     }
     default:
@@ -1607,24 +1600,15 @@ VMField* Assembly::readMemberRefAsField(uint32 token, bool stat) {
 
   uint32 offset = blobOffset + memberArray[CONSTANT_MEMBERREF_SIGNATURE];
 
-  VMGenericClass* genClass = dynamic_cast<VMGenericClass*>(type);
-  
-  if (genClass) {
-    // save previous generic class
-    VMGenericClass* old = VMThread::get()->currGenericClass;
-    
-    // set generic class this MemberRef is referring to
-	VMThread::get()->currGenericClass = genClass; 
-	
-	VMCommonClass* signature = extractFieldSignature(offset);
-	
-	// restore saved class
-	VMThread::get()->currGenericClass = old;
-	                                    
-	VMField* field = type->lookupField(name, signature, stat, true);
-	return field;
+  VMGenericClass* genericClass = dynamic_cast<VMGenericClass*> (type);
+
+  if (genericClass) {
+    VMCommonClass* signature = extractFieldSignature(offset, genericClass,
+        genMethod);
+    VMField* field = type->lookupField(name, signature, stat, true);
+    return field;
   } else {
-    VMCommonClass* signature = extractFieldSignature(offset);
+    VMCommonClass* signature = extractFieldSignature(offset, genClass, genMethod);
     VMField* field = type->lookupField(name, signature, stat, true);
     return field;
   }
@@ -1632,7 +1616,7 @@ VMField* Assembly::readMemberRefAsField(uint32 token, bool stat) {
 }
 
 
-VMMethod* Assembly::getMethodFromToken(uint32 token) {
+VMMethod* Assembly::getMethodFromToken(uint32 token, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   VMMethod* meth = lookupMethodFromToken(token);
   
   if (!meth) {
@@ -1644,7 +1628,7 @@ VMMethod* Assembly::getMethodFromToken(uint32 token) {
         switch (newTable) {
           case CONSTANT_TypeDef : {
             loadType((N3*)(VMThread::get()->vm), typeToken, true, true, false,
-                     true);
+                     true, genClass, genMethod);
             meth = lookupMethodFromToken(token);
             if (!meth) {
               VMThread::get()->vm->error("implement me");
@@ -1659,12 +1643,12 @@ VMMethod* Assembly::getMethodFromToken(uint32 token) {
       }
 
       case CONSTANT_MemberRef : {
-        meth = readMemberRefAsMethod(token, NULL);
+        meth = readMemberRefAsMethod(token, NULL, genClass, genMethod);
         break;
       }
       
       case CONSTANT_MethodSpec : {
-        meth = readMethodSpec(token); 
+        meth = readMethodSpec(token, genClass, genMethod); 
         break;
       }
 
@@ -1674,7 +1658,7 @@ VMMethod* Assembly::getMethodFromToken(uint32 token) {
     }
   }
   
-  meth->getSignature();
+  meth->getSignature(genMethod);
   
   return meth;
 }
@@ -1704,8 +1688,8 @@ uint32 Assembly::getTypedefTokenFromMethod(uint32 token) {
 VMMethod *Assembly::instantiateGenericMethod(
     std::vector<VMCommonClass*> *genArgs, VMCommonClass *type,
     const UTF8 *& name, std::vector<VMCommonClass*> & args, uint32 token,
-    bool virt) {
-  VMMethod *meth;
+    bool virt, VMGenericClass* genClass) {
+  VMMethod *meth = NULL;
   
   if (genArgs != NULL) {
     VMClass* cl = dynamic_cast<VMClass*> (type);
@@ -1719,15 +1703,13 @@ VMMethod *Assembly::instantiateGenericMethod(
     for (uint i = 0; i < cl->genericMethods.size(); ++i) {
       VMMethod* genMethod = cl->genericMethods.at(i);
 
-      if (!name->equals(genMethod->name) || !genMethod->signatureEqualsGeneric(
+      if ((name != genMethod->name) || !genMethod->signatureEqualsGeneric(
           args)) {
         continue;
       }
 
       // use found token to create instance of generic method
-      VMThread::get()->genMethodInstantiation = genArgs;
-      meth = readMethodDef(genMethod->token & 0xFFFFFF, type);
-      VMThread::get()->genMethodInstantiation = NULL;
+      meth = readMethodDef(genMethod->token & 0xFFFFFF, type, genArgs, genClass);
       meth->token = token;
     }
   } else {
@@ -1737,7 +1719,7 @@ VMMethod *Assembly::instantiateGenericMethod(
   return meth;
 }
 
-VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClass*>* genArgs) {
+VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClass*>* genArgs, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   uint32 index = token & 0xffff;
   Table* memberTable = CLIHeader->tables[CONSTANT_MemberRef];
   uint32* memberArray = (uint32*)alloca(sizeof(uint32) * memberTable->rowSize);
@@ -1761,52 +1743,44 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClas
   switch (table) {
     case 0 : {
       uint32 typeToken = index + (CONSTANT_TypeDef << 24);
-      VMCommonClass* type = loadType(((N3*)(VMThread::get()->vm)), typeToken, true, false, false, true);
-      bool virt = extractMethodSignature(offset, type, args);
-      VMMethod *meth = instantiateGenericMethod(genArgs, type, name, args, token, virt);
+      VMCommonClass* type = loadType(((N3*)(VMThread::get()->vm)), typeToken, true, false, false, true, genClass, genMethod);
+      bool virt = extractMethodSignature(offset, type, args, genClass, genMethod);
+      VMMethod *meth = instantiateGenericMethod(genArgs, type, name, args, token, virt, genClass);
       return meth;
     }
 
     case 1 : {
       uint32 typeToken = index + (CONSTANT_TypeRef << 24);
       VMCommonClass* type = loadType(((N3*)VMThread::get()->vm), typeToken,
-                                     true, false, false, true);
-      bool virt = extractMethodSignature(offset, type, args);
-      VMMethod *meth = instantiateGenericMethod(genArgs, type, name, args, token, virt);
+                                     true, false, false, true, genClass, genMethod);
+      bool virt = extractMethodSignature(offset, type, args, genClass, genMethod);
+      VMMethod *meth = instantiateGenericMethod(genArgs, type, name, args, token, virt, genClass);
       return meth;
     }
 
     case 2:
     case 3: VMThread::get()->vm->error("implement me %d", table); break;
     case 4: {
-      VMClass* type = (VMClass*) readTypeSpec(vm, index);
+      VMClass* type = (VMClass*) readTypeSpec(vm, index, genClass, genMethod);
         
       VMGenericClass* genClass = dynamic_cast<VMGenericClass*> (type);
   
       if (genClass) {
-        // temporarily store the current generic class, in case it's generic arguments
-        // are referenced in the current method
-        VMGenericClass* old = VMThread::get()->currGenericClass;
-        VMThread::get()->currGenericClass = genClass;
+        type->resolveType(false, false, genMethod);
         
-        type->resolveType(false, false);
-        
-        bool virt = extractMethodSignature(offset, type, args);
+        bool virt = extractMethodSignature(offset, type, args, genClass, genMethod);
         VMMethod* meth = instantiateGenericMethod(genArgs, type, name, args,
-            token, virt);
-        
-        // restore previous generic class
-        VMThread::get()->currGenericClass = old;
+            token, virt, genClass);
         
         return meth;
       } else {
-        type->resolveType(false, false);
+        type->resolveType(false, false, genMethod);
         
         VMMethod* meth = gc_new(VMMethod)() ;
-        bool virt = extractMethodSignature(offset, type, args);
+        bool virt = extractMethodSignature(offset, type, args, genClass, genMethod);
         bool structReturn = false;
         const llvm::FunctionType* signature = VMMethod::resolveSignature(args,
-            virt, structReturn);
+            virt, structReturn, genMethod);
         meth->_signature = signature;
         meth->classDef = type;
         meth->name = name;
@@ -1824,7 +1798,7 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClas
   return 0;
 }
 
-VMMethod* Assembly::readMethodSpec(uint32 token) {
+VMMethod* Assembly::readMethodSpec(uint32 token, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   uint32 index = token & 0xffff;
   uint32 blobOffset = CLIHeader->blobStream->realOffset;
   
@@ -1839,7 +1813,7 @@ VMMethod* Assembly::readMethodSpec(uint32 token) {
   uint32 offset = blobOffset + instantiation;
   
   std::vector<VMCommonClass*> genArgs;
-  methodSpecSignature(offset, genArgs);
+  methodSpecSignature(offset, genArgs, genClass, genMethod);
   
   uint32 table = method & 1;
   index = method >> 1;
@@ -1854,7 +1828,7 @@ VMMethod* Assembly::readMethodSpec(uint32 token) {
     }
     case 1 : {
       methodToken = index + (CONSTANT_MemberRef << 24);
-      return readMemberRefAsMethod(methodToken, &genArgs);
+      return readMemberRefAsMethod(methodToken, &genArgs, genClass, genMethod);
     }
     default:
       VMThread::get()->vm->error("Invalid MethodSpec!");

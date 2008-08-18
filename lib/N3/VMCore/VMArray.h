@@ -104,8 +104,6 @@ public:
   static const UTF8* readerConstruct(VirtualMachine *vm, uint16* buf, uint32 n);
 
   const UTF8* extract(VirtualMachine *vm, uint32 start, uint32 len) const;
-  
-  bool equals(const UTF8* string) const;
 };
 
 } // end namespace n3

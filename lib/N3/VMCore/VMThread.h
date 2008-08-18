@@ -41,14 +41,6 @@ public:
   unsigned int interruptFlag;
   unsigned int state;
   
-  // helper which points to the current generic class
-  VMGenericClass* currGenericClass;
-  // helper which contains the instantiation of the
-  // current generic method
-  std::vector<VMCommonClass*>* genMethodInstantiation;
-  // helper which points to the current generic method
-  VMGenericMethod* currGenericMethod;
-
   static const unsigned int StateRunning;
   static const unsigned int StateWaiting;
   static const unsigned int StateInterrupted;

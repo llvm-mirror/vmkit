@@ -25,9 +25,9 @@ void MSCorlib::loadStringClass(N3* vm) {
                                            vm->asciizConstructUTF8("System"),
                                            false, false, false, true);
   MSCorlib::pString = type;
-  MSCorlib::pObject->resolveType(true, false);
+  MSCorlib::pObject->resolveType(true, false, NULL);
   MSCorlib::pObject->resolveVT();
-  type->resolveType(true, false);
+  type->resolveType(true, false, NULL);
   type->resolveVT();
 
   uint64 size = mvm::jit::getTypeSize(type->virtualType->getContainedType(0)) + sizeof(const UTF8*) + sizeof(llvm::GlobalVariable*);
@@ -59,7 +59,7 @@ void MSCorlib::initialise(N3* vm) {
 #undef INIT
   
   {
-  MSCorlib::clrType->resolveType(false, false);
+  MSCorlib::clrType->resolveType(false, false, NULL);
   std::vector<VMCommonClass*> args;
   args.push_back(MSCorlib::pVoid);
   args.push_back(MSCorlib::clrType);
@@ -68,7 +68,7 @@ void MSCorlib::initialise(N3* vm) {
   }
 
   {
-  MSCorlib::assemblyReflection->resolveType(false, false);
+  MSCorlib::assemblyReflection->resolveType(false, false, NULL);
   std::vector<VMCommonClass*> args;
   args.push_back(MSCorlib::pVoid);
   args.push_back(MSCorlib::assemblyReflection);
@@ -77,7 +77,7 @@ void MSCorlib::initialise(N3* vm) {
   }
   
   {
-  MSCorlib::propertyType->resolveType(false, false);
+  MSCorlib::propertyType->resolveType(false, false, NULL);
   std::vector<VMCommonClass*> args;
   args.push_back(MSCorlib::pVoid);
   args.push_back(MSCorlib::propertyType);
@@ -86,7 +86,7 @@ void MSCorlib::initialise(N3* vm) {
   }
   
   {
-  MSCorlib::methodType->resolveType(false, false);
+  MSCorlib::methodType->resolveType(false, false, NULL);
   std::vector<VMCommonClass*> args;
   args.push_back(MSCorlib::pVoid);
   args.push_back(MSCorlib::methodType);
@@ -95,7 +95,7 @@ void MSCorlib::initialise(N3* vm) {
   }
   
   {
-  MSCorlib::resourceStreamType->resolveType(false, false);
+  MSCorlib::resourceStreamType->resolveType(false, false, NULL);
   std::vector<VMCommonClass*> args;
   args.push_back(MSCorlib::pVoid);
   args.push_back(MSCorlib::resourceStreamType);
@@ -107,7 +107,7 @@ void MSCorlib::initialise(N3* vm) {
   
   VMCommonClass* voidPtr = vm->coreAssembly->constructPointer(MSCorlib::pVoid, 1);
 #define INIT(var, cl, type) {\
-    cl->resolveType(false, false); \
+    cl->resolveType(false, false, NULL); \
     var = cl->lookupField(vm->asciizConstructUTF8("value_"), type, false, false); \
   }
   

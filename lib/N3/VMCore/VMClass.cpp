@@ -196,12 +196,12 @@ const UTF8* VMClassPointer::constructPointerName(const UTF8* name, uint32 dims) 
 }
 
 
-void VMCommonClass::loadParents() {
+void VMCommonClass::loadParents(VMGenericClass* genClass, VMGenericMethod* genMethod) {
   if ((0xffff & superToken) == 0) {
     depth = 0;
     display.push_back(this);
   } else {
-    super = assembly->loadType((N3*)vm, superToken, true, false, false, true);
+    super = assembly->loadType((N3*)vm, superToken, true, false, false, true, genClass, genMethod);
     depth = super->depth + 1;
     for (uint32 i = 0; i < super->display.size(); ++i) {
       display.push_back(super->display[i]);
@@ -212,14 +212,14 @@ void VMCommonClass::loadParents() {
   for (std::vector<uint32>::iterator i = interfacesToken.begin(), 
        e = interfacesToken.end(); i!= e; ++i) {
     interfaces.push_back((VMClass*)assembly->loadType((N3*)vm, (*i), true, 
-                                                      false, false, true));
+                                                      false, false, true, genClass, genMethod));
   }
 
 }
 
 typedef void (*clinit_t)(void);
 
-void VMCommonClass::clinitClass() {
+void VMCommonClass::clinitClass(VMGenericMethod* genMethod) {
   VMCommonClass* cl = this; 
   if (cl->status < ready) {
     cl->aquire();
@@ -230,10 +230,10 @@ void VMCommonClass::clinitClass() {
       cl->status = clinitParent;
       cl->release();
       if (cl->super) {
-        cl->super->resolveStatic(true);
+        cl->super->resolveStatic(true, genMethod);
       }
       for (uint32 i = 0; i < cl->interfaces.size(); i++) {
-        cl->interfaces[i]->resolveStatic(true);
+        cl->interfaces[i]->resolveStatic(true, genMethod);
       }
       
       cl->status = inClinit;
@@ -249,7 +249,7 @@ void VMCommonClass::clinitClass() {
                   cl->printString());
       
       if (meth) {
-        llvm::Function* pred = meth->compiledPtr();
+        llvm::Function* pred = meth->compiledPtr(genMethod);
         clinit_t res = (clinit_t)
           (intptr_t)mvm::jit::executionEngine->getPointerToGlobal(pred);
         res();
@@ -269,7 +269,7 @@ void VMCommonClass::clinitClass() {
   }
 }
 
-void VMClass::resolveStaticFields() {
+void VMClass::resolveStaticFields(VMGenericMethod* genMethod) {
   
   VMClass* cl = this;
 
@@ -283,7 +283,7 @@ void VMClass::resolveStaticFields() {
   }
   for (std::vector<VMField*>::iterator i = cl->staticFields.begin(),
             e = cl->staticFields.end(); i!= e; ++i) {
-    (*i)->signature->resolveType(false, false);
+    (*i)->signature->resolveType(false, false, genMethod);
     fields.push_back((*i)->signature->naturalType);
   }
 
@@ -302,16 +302,16 @@ void VMClass::resolveStaticFields() {
   }
 }
 
-void VMClass::unifyTypes() {
+void VMClass::unifyTypes(VMGenericClass* genClass, VMGenericMethod* genMethod) {
   PATypeHolder PA = naturalType;
   for (std::vector<VMField*>::iterator i = virtualFields.begin(), 
        e = virtualFields.end(); i!= e; ++i) {
-    (*i)->signature->resolveVirtual();
+    (*i)->signature->resolveVirtual(genClass, genMethod);
   }
   naturalType = PA.get();
 }
 
-void VMClass::resolveVirtualFields() {
+void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* genMethod) {
   const llvm::Type* ResultTy = 0;
   if (hasExplicitLayout(flags)) {
     explicitLayoutSize = assembly->getExplicitLayout(token);
@@ -362,7 +362,7 @@ void VMClass::resolveVirtualFields() {
     naturalType = ResultTy;
   }
   
-  unifyTypes();
+  unifyTypes(genClass, genMethod);
   
   if (super == MSCorlib::pValue) {
     std::vector<const llvm::Type*> Elts;
@@ -398,9 +398,9 @@ void VMClassPointer::makeType() {
   naturalType = pType;
 }
 
-void VMCommonClass::resolveVirtual() {
+void VMCommonClass::resolveVirtual(VMGenericClass* genClass, VMGenericMethod *genMethod) {
   VMCommonClass* cl = this;
-  //printf("*** Resolving: %s\n", cl->printString());
+  
   if (cl->status < virtual_resolved) {
     cl->aquire();
     int status = cl->status;
@@ -413,23 +413,23 @@ void VMCommonClass::resolveVirtual() {
       if (cl->isArray) {
         VMClassArray* arrayCl = (VMClassArray*)cl;
         VMCommonClass* baseClass =  arrayCl->baseClass;
-        baseClass->resolveType(false, false);
+        baseClass->resolveType(false, false, genMethod);
         arrayCl->makeType();
         cl->status = virtual_resolved;
       } else if (cl->isPointer) {
         VMClassPointer* pointerCl = (VMClassPointer*)cl;
         VMCommonClass* baseClass =  pointerCl->baseClass;
-        baseClass->resolveType(false, false);
+        baseClass->resolveType(false, false, genMethod);
         pointerCl->makeType();
         cl->status = virtual_resolved;
       } else {
         cl->release();
-        cl->loadParents();
+        cl->loadParents(genClass, genMethod);
         cl->aquire();
         cl->status = prepared;
-        assembly->readClass(cl);
+        assembly->readClass(cl, genMethod);
         cl->status = readed;
-        ((VMClass*)cl)->resolveVirtualFields();
+        ((VMClass*)cl)->resolveVirtualFields(genClass, genMethod);
         cl->status = virtual_resolved;
       }
       cl->release();
@@ -473,20 +473,12 @@ void VMCommonClass::resolveVT() {
       }
 }
 
-void VMCommonClass::resolveType(bool stat, bool clinit) {
-  // save previous current generic class to restore it later
-  VMGenericClass* old = VMThread::get()->currGenericClass;
-  // temporarily store the class being compiled in case it is a generic class
-  VMThread::get()->currGenericClass = dynamic_cast<VMGenericClass*>(this);
-  
-  resolveVirtual();
-  if (stat) resolveStatic(clinit);
-  
-  // restore saved class
-  VMThread::get()->currGenericClass = old;
+void VMCommonClass::resolveType(bool stat, bool clinit, VMGenericMethod* genMethod) {
+  resolveVirtual(dynamic_cast<VMGenericClass*>(this), genMethod);
+  if (stat) resolveStatic(clinit, genMethod);
 }
 
-void VMCommonClass::resolveStatic(bool clinit) {
+void VMCommonClass::resolveStatic(bool clinit, VMGenericMethod* genMethod) {
   VMCommonClass* cl = this;
   if (cl->status < static_resolved) {
     cl->aquire();
@@ -500,15 +492,15 @@ void VMCommonClass::resolveStatic(bool clinit) {
       if (cl->isArray) {
         VMClassArray* arrayCl = (VMClassArray*)cl;
         VMCommonClass* baseClass =  arrayCl->baseClass;
-        baseClass->resolveStatic(false);
+        baseClass->resolveStatic(false, genMethod);
         cl->status = static_resolved;
       } else if (cl->isPointer) {
         VMClassPointer* pointerCl = (VMClassPointer*)cl;
         VMCommonClass* baseClass =  pointerCl->baseClass;
-        baseClass->resolveStatic(false);
+        baseClass->resolveStatic(false, genMethod);
         cl->status = static_resolved;
       } else {
-        ((VMClass*)cl)->resolveStaticFields();
+        ((VMClass*)cl)->resolveStaticFields(genMethod);
         cl->status = static_resolved;
       }
       cl->release();
@@ -521,7 +513,7 @@ void VMCommonClass::resolveStatic(bool clinit) {
       cl->release();
     }
   }
-  if (clinit) cl->clinitClass();
+  if (clinit) cl->clinitClass(genMethod);
 }
 
 
@@ -628,7 +620,7 @@ VMObject* VMClass::initialiseObject(VMObject* obj) {
 }
 
 VMObject* VMClass::doNew() {
-  if (status < inClinit) resolveType(true, true);
+  if (status < inClinit) resolveType(true, true, NULL);
   uint64 size = mvm::jit::getTypeSize(virtualType->getContainedType(0));
   VMObject* res = (VMObject*)
     gc::operator new(size, virtualInstance->getVirtualTable());
@@ -637,7 +629,7 @@ VMObject* VMClass::doNew() {
 }
 
 VMObject* VMClassArray::doNew(uint32 nb) {
-  if (status < inClinit) resolveType(true, true);
+  if (status < inClinit) resolveType(true, true, NULL);
   uint64 size = mvm::jit::getTypeSize(baseClass->naturalType);
   VMArray* res = (VMArray*)
     gc::operator new(size * nb + sizeof(VMObject) + sizeof(sint32), arrayVT);
@@ -694,13 +686,13 @@ static void disassembleStruct(std::vector<const llvm::Type*> &args,
 
 const llvm::FunctionType* VMMethod::resolveSignature(
                   std::vector<VMCommonClass*> & parameters, bool isVirt,
-                  bool& structRet) {
+                  bool& structRet, VMGenericMethod* genMethod) {
     const llvm::Type* ret;
     std::vector<const llvm::Type*> args;
     std::vector<VMCommonClass*>::iterator i = parameters.begin(),
                                           e = parameters.end();
     if ((*i)->naturalType->isAbstract()) {
-      (*i)->resolveType(false, false);
+      (*i)->resolveType(false, false, genMethod);
     }
     ret = (*i)->naturalType;
     ++i;
@@ -709,7 +701,7 @@ const llvm::FunctionType* VMMethod::resolveSignature(
       VMCommonClass* cur = (*i);
       ++i;
       if (cur->naturalType->isAbstract()) {
-        cur->resolveType(false, false);
+        cur->resolveType(false, false, genMethod);
       }
       if (cur->super != MSCorlib::pValue && cur->super != MSCorlib::pEnum) {
         args.push_back(cur->naturalType);
@@ -721,7 +713,7 @@ const llvm::FunctionType* VMMethod::resolveSignature(
     for ( ; i!= e; ++i) {
       VMCommonClass* cur = (*i);
       if (cur->naturalType->isAbstract()) {
-        cur->resolveType(false, false);
+        cur->resolveType(false, false, genMethod);
       }
       if (cur->naturalType->isSingleValueType()) {
         args.push_back(cur->naturalType);
@@ -740,17 +732,17 @@ const llvm::FunctionType* VMMethod::resolveSignature(
     return llvm::FunctionType::get(ret, args, false);
 }
 
-const llvm::FunctionType* VMMethod::getSignature() {
+const llvm::FunctionType* VMMethod::getSignature(VMGenericMethod* genMethod) {
   if (!_signature) {
-    _signature = resolveSignature(parameters, !isStatic(flags), structReturn);
+    _signature = resolveSignature(parameters, !isStatic(flags), structReturn, genMethod);
   }
   return _signature;
 }
 
-const llvm::FunctionType* Property::getSignature() {
+const llvm::FunctionType* Property::getSignature(VMGenericMethod* genMethod) {
   if (!_signature) {
     bool structReturn = false;
-    _signature = VMMethod::resolveSignature(parameters, virt, structReturn);
+    _signature = VMMethod::resolveSignature(parameters, virt, structReturn, genMethod);
   }
   return _signature;
 }
@@ -839,10 +831,15 @@ bool VMMethod::signatureEqualsGeneric(std::vector<VMCommonClass*> & args) {
 		std::vector<VMCommonClass*>::iterator i = parameters.begin(), a =
 				args.begin(), e = args.end();
 
+		// dummy classes for generic arguments have a NULL assembly field
+		// check whether both i and a point to a dummy class
 		if (((*i)->assembly == NULL && (*a)->assembly != NULL) ||
 		    ((*i)->assembly != NULL && (*a)->assembly == NULL))
 		  return false;
 		
+		// dummy classes for generic arguments contain the 
+		// argument number in the token field
+		// signature is only equal if the argument number matches
 		if ((*i)->assembly == NULL && (*a)->assembly == NULL) {
 		  if ((*i)->token != (*a)->token) {
 		    return false;
@@ -860,10 +857,15 @@ bool VMMethod::signatureEqualsGeneric(std::vector<VMCommonClass*> & args) {
 		}
 
 		for (; a != e; ++i, ++a) {
+	    // dummy classes for generic arguments have a NULL assembly field
+	    // check whether both i and a point to a dummy class
 	    if (((*i)->assembly == NULL && (*a)->assembly != NULL) ||
 	        ((*i)->assembly != NULL && (*a)->assembly == NULL))
 	      return false;
 	    
+	    // dummy classes for generic arguments contain the 
+	    // argument number in the token field
+	    // signature is only equal if the argument number matches
 	    if ((*i)->assembly == NULL && (*a)->assembly == NULL) {
 	      if ((*i)->token != (*a)->token) {
 	        return false;

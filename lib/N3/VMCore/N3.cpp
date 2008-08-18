@@ -233,7 +233,7 @@ void N3::executeAssembly(const char* _name, ArrayObject* args) {
   const UTF8* name = asciizConstructUTF8(_name);
   Assembly* assembly = loadAssembly(name, 0);
   if (assembly == 0) {
-    error("Can not found assembly %s", _name);
+    error("Can not find assembly %s", _name);
   } else {
     uint32 entryPoint = assembly->entryPoint;
     uint32 table = entryPoint >> 24;
@@ -241,7 +241,7 @@ void N3::executeAssembly(const char* _name, ArrayObject* args) {
       error("Entry point does not point to a method");
     } else {
       uint32 typeToken = assembly->getTypeDefTokenFromMethod(entryPoint);
-      assembly->loadType(this, typeToken, true, true, true ,true);
+      assembly->loadType(this, typeToken, true, true, true ,true, NULL, NULL);
       VMMethod* mainMeth = assembly->lookupMethodFromToken(entryPoint);
       (*mainMeth)(args);
     }

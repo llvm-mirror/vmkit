@@ -66,10 +66,10 @@ Enveloppe* Enveloppe::allocate(VMMethod* meth) {
   return enveloppe;
 }
 
-void CLIJit::invokeInterfaceOrVirtual(uint32 value) {
+void CLIJit::invokeInterfaceOrVirtual(uint32 value, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   
-  VMMethod* origMeth = compilingClass->assembly->getMethodFromToken(value);
-  const llvm::FunctionType* funcType = origMeth->getSignature();
+  VMMethod* origMeth = compilingClass->assembly->getMethodFromToken(value, genClass, genMethod);
+  const llvm::FunctionType* funcType = origMeth->getSignature(genMethod);
   
   std::vector<Value*> args;
   makeArgs(funcType, args, origMeth->structReturn);
@@ -202,7 +202,7 @@ extern "C" CacheNode* n3VirtualLookup(CacheNode* cache, VMObject *obj) {
       rcache = cache;
     }
     
-    Function* func = dmeth->compiledPtr();
+    Function* func = dmeth->compiledPtr(NULL);
     rcache->methPtr = mvm::jit::executionEngine->getPointerToGlobal(func);
     rcache->lastCible = (VMClass*)ocl;
     rcache->box = (dmeth->classDef->super == MSCorlib::pValue);

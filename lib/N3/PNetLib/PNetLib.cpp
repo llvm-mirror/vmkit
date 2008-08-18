@@ -712,11 +712,11 @@ static void decapsulePrimitive(VMObject* arg, const llvm::Type* type, std::vecto
 
 extern "C" VMObject* System_Reflection_ClrMethod_Invoke(VMObject* Method, VMObject* obj, sint32 invokeAttr, VMObject* binder, ArrayObject* args, VMObject* culture) {
   VMMethod* meth = (VMMethod*)(*MSCorlib::methodMethodType)(Method).PointerVal;
-  meth->getSignature();
-  meth->compiledPtr();
+  meth->getSignature(NULL);
+  meth->compiledPtr(NULL);
   llvm::Function* func = CLIJit::compile(meth->classDef, meth);
   VMClass* type = meth->classDef;
-  type->resolveStatic(true);
+  type->resolveStatic(true, NULL);
   uint32 virt = meth->virt;
 
   if ((obj != 0) && virt) {

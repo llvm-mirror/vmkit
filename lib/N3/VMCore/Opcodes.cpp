@@ -200,7 +200,7 @@ static Value* load(Value* val, const char* name, BasicBlock* currentBlock) {
   }
 }
 
-void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
+void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   uint32 leaveIndex = 0;
   bool isVolatile = false;
   for(uint32 i = 0; i < codeLength; ++i) {
@@ -364,7 +364,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       
       case CALL: {
         uint32 value = readU4(bytecodes, i);
-        invoke(value);
+        invoke(value, genClass, genMethod);
         break;
       }
 
@@ -1067,7 +1067,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case RET : {
-        if (compilingMethod->getSignature()->getReturnType() != Type::VoidTy) {
+        if (compilingMethod->getSignature(genMethod)->getReturnType() != Type::VoidTy) {
           Value* val = pop();
           if (val->getType() == PointerType::getUnqual(endNode->getType())) {
             // In case it's a struct
@@ -1278,7 +1278,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Assembly* assembly = compilingClass->assembly;
         N3* vm = (N3*)(VMThread::get()->vm);
         VMCommonClass* type = assembly->loadType(vm, token, true, false, false,
-                                                 true);
+                                                 true, genClass, genMethod);
         assert(type);
         
         if (!type->isPrimitive) {
@@ -1322,7 +1322,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case CALLVIRT : {
         uint32 value = readU4(bytecodes, i);
-        invokeInterfaceOrVirtual(value);
+        invokeInterfaceOrVirtual(value, genClass, genMethod);
         break; 
       }
 
@@ -1331,7 +1331,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         N3* vm = (N3*)(VMThread::get()->vm);
         uint32 token = readU4(bytecodes, i);
         VMCommonClass* dcl = assembly->loadType(vm, token, true, false,
-                                               false, true);
+                                               false, true, genClass, genMethod);
         Value* obj = new BitCastInst(pop(), VMObject::llvmType, "", currentBlock);
 
         Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, obj, 
@@ -1380,7 +1380,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         N3* vm = (N3*)(VMThread::get()->vm);
         uint32 token = readU4(bytecodes, i);
         VMCommonClass* dcl = assembly->loadType(vm, token, true, false,
-                                               false, true);
+                                               false, true, genClass, genMethod);
         Value* obj = pop();
 
         Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, obj, 
@@ -1520,9 +1520,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         N3* vm = (N3*)(VMThread::get()->vm);
         uint32 token = readU4(bytecodes, i);
         VMCommonClass* cl = assembly->loadType(vm, token, true, false,
-                                               false, true);
+                                               false, true, genClass, genMethod);
         VMClassArray* array = assembly->constructArray(cl, 1);
-        array->resolveType(false, false);
+        array->resolveType(false, false, genMethod);
         Value* index = pop();
         Value* obj = pop();
         Value* ptr = verifyAndComputePtr(obj, index, array->naturalType);
@@ -1532,7 +1532,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case LDFLD : {
         uint32 value = readU4(bytecodes, i);
-        Value* val = getVirtualField(value);
+        Value* val = getVirtualField(value, genClass, genMethod);
         push(new LoadInst(val, "", isVolatile, currentBlock));
         isVolatile = false;
         break;
@@ -1540,7 +1540,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       
       case LDFLDA : {
         uint32 value = readU4(bytecodes, i);
-        push(getVirtualField(value));
+        push(getVirtualField(value, genClass, genMethod));
         break;
       }
 
@@ -1554,7 +1554,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         N3* vm = (N3*)(VMThread::get()->vm);
         uint32 token = readU4(bytecodes, i);
         VMCommonClass* cl = assembly->loadType(vm, token, true, false,
-                                               false, true);
+                                               false, true, genClass, genMethod);
         if (!(cl->super == MSCorlib::pValue || cl->super == MSCorlib::pEnum)) {
           push(new LoadInst(pop(), "", isVolatile, currentBlock));
           isVolatile = false;
@@ -1564,7 +1564,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case LDSFLD : {
         uint32 value = readU4(bytecodes, i);
-        Value* val = getStaticField(value);
+        Value* val = getStaticField(value, genClass, genMethod);
         push(new LoadInst(val, "", isVolatile, currentBlock));
         isVolatile = false;
         break;
@@ -1572,7 +1572,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       
       case LDSFLDA : {
         uint32 value = readU4(bytecodes, i);
-        push(getStaticField(value));
+        push(getStaticField(value, genClass, genMethod));
         break;
       }
 
@@ -1600,7 +1600,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         switch (table) {
           case CONSTANT_Field : {
             uint32 typeToken = assembly->getTypedefTokenFromField(token);
-            assembly->loadType(vm, typeToken, true, true, false, true);
+            assembly->loadType(vm, typeToken, true, true, false, true, genClass, genMethod);
             VMField* field = assembly->lookupFieldFromToken(token);
             if (!field) {
               VMThread::get()->vm->error("implement me");
@@ -1612,7 +1612,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           
           case CONSTANT_MethodDef : {
             uint32 typeToken = assembly->getTypedefTokenFromMethod(token);
-            assembly->loadType(vm, typeToken, true, true, false, true);
+            assembly->loadType(vm, typeToken, true, true, false, true, genClass, genMethod);
             VMMethod* meth = assembly->lookupMethodFromToken(token);
             if (!meth) {
               VMThread::get()->vm->error("implement me");
@@ -1625,7 +1625,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           case CONSTANT_TypeDef :
           case CONSTANT_TypeRef : {
             VMCommonClass* cl = assembly->loadType(vm, token, true, false,
-                                                   false, true);
+                                                   false, true, genClass, genMethod);
             Value* arg = new LoadInst(cl->llvmVar(), "", currentBlock);
             push(arg);
             break;
@@ -1647,10 +1647,10 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Assembly* ass = compilingClass->assembly;
         VMCommonClass* baseType = ass->loadType((N3*)(VMThread::get()->vm),
                                                 value, true, false, false, 
-                                                true);
+                                                true, genClass, genMethod);
 
         VMClassArray* type = ass->constructArray(baseType, 1);
-        type->resolveType(false, false);
+        type->resolveType(false, false, genMethod);
         Value* var = new LoadInst(type->llvmVar(), "", currentBlock);
         std::vector<Value*> args;
         args.push_back(var);
@@ -1663,7 +1663,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case NEWOBJ : {
         uint32 value = readU4(bytecodes, i);
-        invokeNew(value);
+        invokeNew(value, genClass, genMethod);
         break;
       }
       
@@ -1754,7 +1754,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       
       case STFLD : {
         uint32 index = readU4(bytecodes, i);
-        setVirtualField(index, isVolatile);
+        setVirtualField(index, isVolatile, genClass, genMethod);
         isVolatile = false;
         break;
       }
@@ -1767,7 +1767,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case STSFLD : {
         uint32 index = readU4(bytecodes, i);
-        setStaticField(index, isVolatile);
+        setStaticField(index, isVolatile, genClass, genMethod);
         isVolatile = false;
         break;
       }
@@ -1791,7 +1791,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Assembly* assembly = compilingClass->assembly;
         N3* vm = (N3*)(VMThread::get()->vm);
         VMCommonClass* type = assembly->loadType(vm, token, true, false, false,
-                                                 true);
+                                                 true, genClass, genMethod);
         assert(type);
 
         Value* val = new AllocaInst(type->naturalType, "", currentBlock);
@@ -1893,7 +1893,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             uint32 table = token >> 24;
             if (table == CONSTANT_MethodDef) {
               uint32 typeToken = assembly->getTypedefTokenFromMethod(token);
-              assembly->loadType(vm, typeToken, true, false,  false, true);
+              assembly->loadType(vm, typeToken, true, false,  false, true, genClass, genMethod);
               VMMethod* meth = assembly->lookupMethodFromToken(token);
               if (!meth) VMThread::get()->vm->error("implement me");
               Value* arg = new LoadInst(meth->llvmVar(), "", currentBlock);
@@ -1955,7 +1955,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             Assembly* assembly = compilingClass->assembly;
             N3* vm = (N3*)(VMThread::get()->vm);
             VMCommonClass* type = assembly->loadType(vm, token, true, false, false,
-                                                     true);
+                                                     true, genClass, genMethod);
             if (type->super == MSCorlib::pValue) {
               uint64 size = mvm::jit::getTypeSize(type->naturalType);
         
