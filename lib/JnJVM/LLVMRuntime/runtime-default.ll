@@ -89,7 +89,9 @@ declare %JavaObject* @multiCallNew(%JavaClass*, i32, ...)
 
 ;;; forceInitialisationCheck - Force to check initialization. The difference
 ;;; between this function and the initialisationCheck function is that the
-;;; latter is readnone and can thus be removed.
+;;; latter is readnone and can thus be removed. This function is removed
+;;; by Jnjvm after the GVN pass, therefore it does not have an actual
+;;; implementation.
 declare void @forceInitialisationCheck(%JavaClass*)
 
 ;;; vtableLookup - Look up the offset in a virtual table of a specific
