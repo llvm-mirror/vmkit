@@ -80,6 +80,11 @@ const char* Jnjvm::dirSeparator = "/";
 const char* Jnjvm::envSeparator = ":";
 const unsigned int Jnjvm::Magic = 0xcafebabe;
 
+#ifndef MULTIPLE_VM
+/// If we're not in a multi-vm environment, this can be made static.
+std::vector<void*> Jnjvm::nativeLibs;
+#endif
+
 typedef void (*clinit_t)(Jnjvm* vm);
 
 void Jnjvm::initialiseClass(CommonClass* cl) {

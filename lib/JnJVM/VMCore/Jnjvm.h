@@ -245,6 +245,9 @@ public:
 
   /// nativeLibs - Native libraries (e.g. '.so') loaded by this JVM.
   ///
+#ifndef MULTIPLE_VM
+  static
+#endif
   std::vector<void*> nativeLibs;
 
   /// classpath - The CLASSPATH value, or the paths given in command line.
