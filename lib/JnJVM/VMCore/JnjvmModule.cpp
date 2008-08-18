@@ -130,14 +130,6 @@ llvm::Function* JnjvmModule::OverflowThinLockFunction = 0;
 
 Value* LLVMCommonClassInfo::getVar(JavaJIT* jit) {
   if (!varGV) {
-#ifdef MULTIPLE_VM
-    if (jit->compilingClass->classLoader->TheModule == JnjvmClassLoader::bootstrapLoader->TheModule &&
-        classDef->isArray && classDef->classLoader != JnjvmClassLoader::bootstrapLoader) {
-      // We know the array class can belong to bootstrap
-      CommonClass* cl = JnjvmClassLoader::bootstrapLoader->constructArray(classDef->name);
-      return cl->classLoader->TheModule->getClassInfo(cl)->getVar(jit);
-    }
-#endif
       
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
