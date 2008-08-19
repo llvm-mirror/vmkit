@@ -12,6 +12,6 @@ include $(LEVEL)/Makefile.config
 
 TOOLNAME = jnjvm
 USEDLIBS = Allocator CommonThread Mvm JnJVM Classpath $(GCLIB)
-LINK_COMPONENTS = engine scalaropts instrumentation ipa ipo
+LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo
 
 include $(LEVEL)/Makefile.common

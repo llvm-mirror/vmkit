@@ -21,7 +21,7 @@ ifeq ($(WITH_N3_PNETLIB), 1)
   USEDLIBS += N3 PNetLib
 endif
 
-LINK_COMPONENTS = engine scalaropts instrumentation ipa ipo
+LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo
 
 include $(LEVEL)/Makefile.common
 
