@@ -48,8 +48,6 @@ extern "C" void printObject(mvm::Object* obj) {
   printf("%s\n", obj->printString());
 }
 
-extern "C" void __register_frame(void*);
-
 namespace mvm {
   namespace llvm_runtime {
     #include "LLVMRuntime.inc"
@@ -65,7 +63,6 @@ void mvm::jit::initialise() {
   
   executionEngine = ExecutionEngine::createJIT(globalModuleProvider, 0,
                                                memoryManager);
-  executionEngine->InstallExceptionTableRegister(__register_frame);
   std::string str = executionEngine->getTargetData()->getStringRepresentation();
   module->setDataLayout(str);
   
