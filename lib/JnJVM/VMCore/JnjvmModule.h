@@ -354,9 +354,9 @@ public:
   static LLVMCommonClassInfo* getClassInfo(CommonClass* cl) {
     if (cl->isArray || cl->isPrimitive) {
       return cl->getInfo<LLVMCommonClassInfo>();
-    } else {
-      return cl->getInfo<LLVMClassInfo>();
-    }
+    } 
+    
+    return cl->getInfo<LLVMClassInfo>();
   }
 
   static LLVMFieldInfo* getFieldInfo(JavaField* field) {
