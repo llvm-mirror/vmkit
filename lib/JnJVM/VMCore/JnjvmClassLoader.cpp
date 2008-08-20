@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <limits.h>
+#include <unistd.h>
 #include <sys/stat.h>
 
 #include "debug.h"
@@ -27,7 +29,7 @@ using namespace jnjvm;
 JnjvmBootstrapLoader* JnjvmClassLoader::bootstrapLoader = 0;
 
 #ifdef MULTIPLE_VM
-JnjvmClassLoader* JnjvmClassLoader::sharedLoader = 0;
+JnjvmSharedLoader* JnjvmClassLoader::sharedLoader = 0;
 #endif
 
 extern const char* GNUClasspathGlibj;
@@ -61,6 +63,25 @@ JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
 
   return JCL;
 }
+
+#ifdef MULTIPLE_VM
+JnjvmSharedLoader* JnjvmSharedLoader::createSharedLoader() {
+  
+  JnjvmSharedLoader* JCL = gc_new(JnjvmSharedLoader)();
+  JCL->TheModule = new JnjvmModule("Bootstrap JnJVM");
+  JCL->TheModuleProvider = new JnjvmModuleProvider(JCL->TheModule);
+  JCL->TheModule->initialise(); 
+  
+  JCL->allocator = new JavaAllocator();
+  
+  JCL->hashUTF8 = new UTF8Map(JCL->allocator);
+  JCL->classes = allocator_new(allocator, ClassMap)();
+  JCL->javaTypes = new TypeMap(); 
+  JCL->javaSignatures = new SignMap(); 
+  
+  return JCL;
+}
+#endif
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader, Jnjvm* I) {
   TheModule = JCL.TheModule;
@@ -400,16 +421,30 @@ static CommonClass* arrayDup(const UTF8*& name, JnjvmClassLoader* loader) {
 
 ClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
   if (javaLoader != 0) {
-    JnjvmClassLoader * ld = ClassArray::arrayLoader(name, this, 1, name->size - 1);
-    ClassArray* res = (ClassArray*)ld->classes->lookupOrCreate(name, this, arrayDup);
+    JnjvmClassLoader * ld = 
+      ClassArray::arrayLoader(name, this, 1, name->size - 1);
+    ClassArray* res = 
+      (ClassArray*)ld->classes->lookupOrCreate(name, this, arrayDup);
     return res;
   } else {
     return (ClassArray*)classes->lookupOrCreate(name, this, arrayDup);
   }
 }
 
+Class* JnjvmSharedLoader::constructSharedClass(const UTF8* name,
+                                               ArrayUInt8* bytes) {
+  
+  return 0;
+}
+
 
 Class* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes) {
+#ifdef MULTIPLE_VM
+  if (this != bootstrapLoader && this != sharedLoader && bytes) {
+    Class* cl = sharedLoader->constructSharedClass(name, bytes);
+    if (cl) return cl;
+  }
+#endif
   classes->lock->lock();
   ClassMap::iterator End = classes->map.end();
   ClassMap::iterator I = classes->map.find(name);

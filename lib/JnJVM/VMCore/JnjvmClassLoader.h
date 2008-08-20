@@ -41,6 +41,10 @@ class UTF8;
 class UTF8Map;
 class ZipArchive;
 
+#ifdef MULTIPLE_VM
+class JnjvmSharedLoader;
+#endif
+
 /// JnjvmClassLoader - Runtime representation of a class loader. It contains
 /// its own tables (signatures, UTF8, types) which are mapped to a single
 /// table for non-isolate environments.
@@ -217,7 +221,7 @@ public:
 #ifdef MULTIPLE_VM
   /// sharedLoader - Shared loader when multiple vms are executing.
   ///
-  static JnjvmClassLoader* sharedLoader;
+  static JnjvmSharedLoader* sharedLoader;
 #endif
 
   /// ~JnjvmClassLoader - Destroy the loader. Depending on the JVM
@@ -237,6 +241,32 @@ public:
     isolate = 0;
   }
 
+};
+
+class JnjvmSharedLoader : public JnjvmClassLoader {
+private:
+  
+  /// internalLoad - Load the class with the given name.
+  ///
+  virtual CommonClass* internalLoad(const UTF8* utf8) {
+    fprintf(stderr, "Don't use me");
+    exit(1);
+  }
+
+public:
+  
+  /// VT - The virtual table of this class.
+  ///
+  static VirtualTable* VT;
+
+
+  /// constructSharedClass - Create a shared representation of the class.
+  /// If two classes have the same name but not the same array of bytes, 
+  /// raise an exception.
+  ///
+  Class* constructSharedClass(const UTF8* name, ArrayUInt8* bytes);
+
+  static JnjvmSharedLoader* createSharedLoader();
 };
 
 

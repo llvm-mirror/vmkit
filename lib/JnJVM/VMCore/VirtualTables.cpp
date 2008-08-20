@@ -37,6 +37,9 @@ using namespace jnjvm;
   INIT(DelegateeMap);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
+#ifdef MULTIPLE_VM
+  INIT(JnjvmSharedLoader);
+#endif
 #ifdef SERVICE_VM
   INIT(ServiceDomain);
 #endif
