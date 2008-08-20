@@ -439,7 +439,7 @@ public:
 
 #ifdef MULTIPLE_VM
   bool isSharedClass() {
-    return loader == JnjvmClassLoader::sharedLoader;
+    return classLoader == JnjvmClassLoader::sharedLoader;
   }
 #endif
 

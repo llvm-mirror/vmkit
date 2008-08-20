@@ -290,12 +290,17 @@ CommonClass* JavaCtpInfo::loadClass(uint32 index) {
     JnjvmClassLoader* loader = classDef->classLoader;
     const UTF8* name = UTF8At(ctpDef[index]);
     if (name->elements[0] == AssessorDesc::I_TAB) {
-      // Don't put into ctpRes because the class can be isolate specific
       temp = loader->constructArray(name);
     } else {
       // Put into ctpRes because there is only one representation of the class
-      ctpRes[index] = temp = loader->loadName(name, false, false, false);
+      temp = loader->loadName(name, false, false, false);
     }
+#ifdef MULTIPLE_VM
+    if (classDef->isSharedClass() && !temp->isSharedClass()) {
+      JavaThread::get()->isolate->unknownError("Class sharing violation");
+    }
+#endif
+    ctpRes[index] = temp;
   }
   return temp;
 }
@@ -309,6 +314,11 @@ CommonClass* JavaCtpInfo::getMethodClassIfLoaded(uint32 index) {
     if (!temp) 
       temp = JnjvmClassLoader::bootstrapLoader->lookupClass(name);
   }
+#ifdef MULTIPLE_VM
+    if (temp && classDef->isSharedClass() && !temp->isSharedClass()) {
+      JavaThread::get()->isolate->unknownError("Class sharing violation");
+    }
+#endif
   return temp;
 }
 
