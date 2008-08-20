@@ -92,16 +92,8 @@ jclass clazz,
   JnjvmClassLoader* JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader);
   JavaString* str = (JavaString*)_str;
   const UTF8* name = str->value->javaToInternal(JCL->hashUTF8, str->offset, str->count);
-  Class* cl = JCL->constructClass(name);
+  Class* cl = JCL->constructClass(name, (ArrayUInt8*)bytes);
 
-  if (cl->status == hashed) {
-    cl->acquire();
-    if (cl->status == hashed) {
-      cl->bytes = (ArrayUInt8*)bytes;
-      cl->status = loaded;
-    }
-    cl->release();
-  }
   return (jclass)(cl->getClassDelegatee((JavaObject*)pd));
 }
 
