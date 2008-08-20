@@ -27,7 +27,6 @@ using namespace jnjvm;
 
   INIT(JavaArray);
   INIT(ArrayObject);
-  INIT(CommonClass);
   INIT(Class);
   INIT(ClassArray);
   INIT(JavaObject);

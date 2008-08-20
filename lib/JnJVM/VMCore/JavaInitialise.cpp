@@ -40,7 +40,6 @@ static void initialiseVT() {
   X fake; \
   X::VT = ((void**)(void*)(&fake))[0]; }
 
-  INIT(CommonClass);
   INIT(Class);
   INIT(ClassArray);
   INIT(JavaThread);

@@ -215,9 +215,9 @@ public:
   static JnjvmBootstrapLoader* bootstrapLoader;
   
 #ifdef MULTIPLE_VM
-  /// SharedLoader - Shared loader when multiple vms are executing.
+  /// sharedLoader - Shared loader when multiple vms are executing.
   ///
-  static JnjvmClassLoader* SharedLoader;
+  static JnjvmClassLoader* sharedLoader;
 #endif
 
   /// ~JnjvmClassLoader - Destroy the loader. Depending on the JVM

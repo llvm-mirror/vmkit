@@ -416,11 +416,6 @@ public:
   ///
   CommonClass(JnjvmClassLoader* loader, const UTF8* name, bool isArray);
   
-  /// VT - The virtual table of instances of this class (TODO: should be
-  /// removed).
-  ///
-  static VirtualTable* VT;
-
   /// ~CommonClass - Free memory used by this class, and remove it from
   /// metadata.
   ///
@@ -441,6 +436,12 @@ public:
            "Invalid concrete type or multiple inheritence for getInfo");
     return static_cast<Ty*>(JInfo);
   }
+
+#ifdef MULTIPLE_VM
+  bool isSharedClass() {
+    return loader == JnjvmClassLoader::sharedLoader;
+  }
+#endif
 
 };
 
