@@ -196,11 +196,7 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   
   addPass(PM, llvm::createCFGSimplificationPass());    // Clean up disgusting code
   addPass(PM, llvm::createPromoteMemoryToRegisterPass());// Kill useless allocas
-  addPass(PM, llvm::createInstructionCombiningPass()); // Clean up after IPCP & DAE
-  addPass(PM, llvm::createCFGSimplificationPass());    // Clean up after IPCP & DAE
   
-  addPass(PM, createTailDuplicationPass());      // Simplify cfg by copying code
-  addPass(PM, createSimplifyLibCallsPass());     // Library Call Optimizations
   addPass(PM, createInstructionCombiningPass()); // Cleanup for scalarrepl.
   addPass(PM, createJumpThreadingPass());        // Thread jumps.
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
@@ -208,21 +204,17 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, createInstructionCombiningPass()); // Combine silly seq's
   addPass(PM, createCondPropagationPass());      // Propagate conditionals
   
-  addPass(PM, createTailCallEliminationPass());  // Eliminate tail calls
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
   //addPass(PM, createPredicateSimplifierPass());
   addPass(PM, createReassociatePass());          // Reassociate expressions
-  addPass(PM, createLoopRotatePass());
   addPass(PM, createLICMPass());                 // Hoist loop invariants
   
   addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
-  addPass(PM, createLoopIndexSplitPass());       // Index split loops.
   addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
   addPass(PM, createLoopDeletionPass());         // Delete dead loops
   addPass(PM, createLoopUnrollPass());           // Unroll small loops*/
   addPass(PM, createInstructionCombiningPass()); // Clean up after the unroller
   addPass(PM, createGVNPass());                  // Remove redundancies
-  addPass(PM, createMemCpyOptPass());            // Remove memcpy / form memset
   addPass(PM, createSCCPPass());                 // Constant prop with SCCP
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
   
