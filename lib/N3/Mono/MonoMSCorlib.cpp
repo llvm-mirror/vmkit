@@ -25,9 +25,9 @@ void MSCorlib::loadStringClass(N3* vm) {
                                            vm->asciizConstructUTF8("System"),
                                            false, false, false, true);
   MSCorlib::pString = type;
-  MSCorlib::pObject->resolveType(true, false);
+  MSCorlib::pObject->resolveType(true, false, NULL);
   MSCorlib::pObject->resolveVT();
-  type->resolveType(true, false);
+  type->resolveType(true, false, NULL);
   type->resolveVT();
 
   uint64 size = mvm::jit::getTypeSize(type->virtualType->getContainedType(0)) + sizeof(const UTF8*) + sizeof(llvm::GlobalVariable*);
@@ -64,7 +64,7 @@ void MSCorlib::initialise(N3* vm) {
 #undef INIT
   
   {
-  MSCorlib::clrType->resolveType(false, false);
+  MSCorlib::clrType->resolveType(false, false, NULL);
   MSCorlib::typeClrType = realClrType->lookupField(vm->asciizConstructUTF8("_impl"), runtimeTypeHandle, false, false);
   }
 
