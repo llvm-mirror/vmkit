@@ -99,15 +99,10 @@ jclass clazz,
     if (cl->status == hashed) {
       cl->bytes = (ArrayUInt8*)bytes;
       cl->status = loaded;
-#ifndef MULTIPLE_VM
-      cl->delegatee = (JavaObject*)pd;
-#else
-      JavaThread::get()->isolate->delegatees->hash(cl, (JavaObject*)pd);
-#endif
     }
     cl->release();
   }
-  return (jclass)(cl->getClassDelegatee());
+  return (jclass)(cl->getClassDelegatee((JavaObject*)pd));
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMClassLoader_resolveClass(

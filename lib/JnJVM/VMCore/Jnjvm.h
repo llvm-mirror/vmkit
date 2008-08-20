@@ -278,14 +278,15 @@ public:
   /// statics - The static instances of classes, in a multi-vm environment.
   ///
   StaticInstanceMap* statics;
-  
+
+private:
   /// delegatees - The java/lang/Class equivalents of internal classes. This is
   /// also in a multi-vm environment.
   ///
   DelegateeMap* delegatees;
 #endif
   
-  
+public:
   /// Exceptions - These are the only exceptions VMKit will make.
   ///
   void arrayStoreException();
@@ -329,7 +330,7 @@ public:
   /// getClassDelegatee - Get the java/lang/Class object representing the
   /// internal class.
   ///
-  JavaObject* getClassDelegatee(CommonClass*);
+  JavaObject* getClassDelegatee(CommonClass* cl, JavaObject* pd = 0);
 
   /// ~Jnjvm - Destroy the JVM.
   ///

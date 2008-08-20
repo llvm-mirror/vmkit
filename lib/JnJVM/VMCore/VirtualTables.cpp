@@ -138,6 +138,21 @@ void JnjvmBootstrapLoader::TRACER {
        e = bootArchives.end(); i != e; ++i) {
     (*i)->bytes->MARK_AND_TRACE;
   }
+#ifndef MULTIPLE_VM
+#define TRACE_DELEGATEE(prim) \
+  prim->classType->delegatee->MARK_AND_TRACE
+
+  TRACE_DELEGATEE(AssessorDesc::dVoid);
+  TRACE_DELEGATEE(AssessorDesc::dBool);
+  TRACE_DELEGATEE(AssessorDesc::dByte);
+  TRACE_DELEGATEE(AssessorDesc::dChar);
+  TRACE_DELEGATEE(AssessorDesc::dShort);
+  TRACE_DELEGATEE(AssessorDesc::dInt);
+  TRACE_DELEGATEE(AssessorDesc::dFloat);
+  TRACE_DELEGATEE(AssessorDesc::dLong);
+  TRACE_DELEGATEE(AssessorDesc::dDouble);
+#undef TRACE_DELEGATEE
+#endif
 }
 
 #ifdef SERVICE_VM

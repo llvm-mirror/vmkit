@@ -321,37 +321,35 @@ void Jnjvm::addProperty(char* key, char* value) {
 }
 
 #ifndef MULTIPLE_VM
-JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
+JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl, JavaObject* pd) {
   cl->acquire();
   if (!(cl->delegatee)) {
     JavaObject* delegatee = Classpath::newClass->doNew(this);
     cl->delegatee = delegatee;
-    Classpath::initClass->invokeIntSpecial(this, delegatee, cl);
-  } else if (cl->delegatee->classOf != Classpath::newClass) {
-    JavaObject* pd = cl->delegatee;
-    JavaObject* delegatee = Classpath::newClass->doNew(this);
-    cl->delegatee = delegatee;;
-    Classpath::initClassWithProtectionDomain->invokeIntSpecial(this, delegatee,
-                                                               cl, pd);
+    if (!pd) {
+      Classpath::initClass->invokeIntSpecial(this, delegatee, cl);
+    } else {
+      Classpath::initClassWithProtectionDomain->invokeIntSpecial(this,
+                                                                 delegatee,
+                                                                 cl, pd);
+    }
   }
   cl->release();
   return cl->delegatee;
 }
 #else
-JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl) {
+JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl, JavaObject* pd) {
   cl->acquire();
   JavaObject* val = delegatees->lookup(cl);
   if (!val) {
     val = Classpath::newClass->doNew(this);
     delegatees->hash(cl, val);
-    Classpath::initClass->invokeIntSpecial(this, val, cl);
-  } else if (val->classOf != Classpath::newClass) {
-    JavaObject* pd = val;
-    val = Classpath::newClass->doNew(this);
-    delegatees->remove(cl);
-    delegatees->hash(cl, val);
-    Classpath::initClassWithProtectionDomain->invokeIntSpecial(this, val, cl,
-                                                               pd);
+    if (!pd) {
+      Classpath::initClass->invokeIntSpecial(this, val, cl);
+    } else {
+      Classpath::initClassWithProtectionDomain->invokeIntSpecial(this, val, cl,
+                                                                 pd);
+    }
   }
   cl->release();
   return val;

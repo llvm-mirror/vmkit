@@ -26,6 +26,10 @@ using namespace jnjvm;
 
 JnjvmBootstrapLoader* JnjvmClassLoader::bootstrapLoader = 0;
 
+#ifdef MULTIPLE_VM
+JnjvmClassLoader* JnjvmClassLoader::sharedLoader = 0;
+#endif
+
 extern const char* GNUClasspathGlibj;
 extern const char* GNUClasspathLibs;
 
