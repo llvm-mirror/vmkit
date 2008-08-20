@@ -296,7 +296,7 @@ CommonClass* JavaCtpInfo::loadClass(uint32 index) {
       temp = loader->loadName(name, false, false, false);
     }
 #ifdef MULTIPLE_VM
-    if (temp && classDef->isSharedClass() && !temp->isSharedClass()) {
+    if (classDef->isSharedClass() && !temp->isSharedClass()) {
       JavaThread::get()->isolate->unknownError("Class sharing violation");
     }
 #endif

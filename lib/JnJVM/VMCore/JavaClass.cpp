@@ -524,8 +524,8 @@ void JavaField::initField(JavaObject* obj) {
   
 }
 
-JavaObject* CommonClass::getClassDelegatee(JavaObject* pd) {
-  return JavaThread::get()->isolate->getClassDelegatee(this, pd);
+JavaObject* CommonClass::getClassDelegatee() {
+  return JavaThread::get()->isolate->getClassDelegatee(this);
 }
 
 void CommonClass::resolveClass(bool doClinit) {

@@ -329,7 +329,7 @@ public:
   /// getClassDelegatee - Get the java/lang/Class object representing the
   /// internal class.
   ///
-  JavaObject* getClassDelegatee(CommonClass* cl, JavaObject* pd = 0);
+  JavaObject* getClassDelegatee(CommonClass*);
 
   /// ~Jnjvm - Destroy the JVM.
   ///
