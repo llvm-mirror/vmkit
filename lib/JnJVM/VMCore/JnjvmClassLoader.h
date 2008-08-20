@@ -189,7 +189,7 @@ public:
   /// constructClass - Hashes a runtime representation of a class with
   /// the given name.
   ///
-  Class*      constructClass(const UTF8* name);
+  Class* constructClass(const UTF8* name, ArrayUInt8* bytes = 0);
   
   /// constructType - Hashes a Typedef, an internal representation of a class
   /// still not loaded.

@@ -26,6 +26,10 @@ using namespace jnjvm;
 
 JnjvmBootstrapLoader* JnjvmClassLoader::bootstrapLoader = 0;
 
+#ifdef MULTIPLE_VM
+JnjvmClassLoader* JnjvmClassLoader::sharedLoader = 0;
+#endif
+
 extern const char* GNUClasspathGlibj;
 extern const char* GNUClasspathLibs;
 
@@ -256,10 +260,13 @@ CommonClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name) {
   
   CommonClass* cl = lookupClass(name);
   
-  if (!cl || cl->status == hashed) {
-    ArrayUInt8* bytes = bootstrapLoader->openName(name);
+  if (!cl) {
+    ArrayUInt8* bytes = openName(name);
+    if (bytes)
+      cl = constructClass(name, bytes);
+  } else if (cl->status == hashed) {
+    ArrayUInt8* bytes = openName(name);
     if (bytes) {
-      if (!cl) cl = bootstrapLoader->constructClass(name);
       if (cl->status == hashed) {
         cl->acquire();
         if (cl->status == hashed) {
@@ -401,13 +408,26 @@ ClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
 }
 
 
-static CommonClass* classDup(const UTF8*& name, JnjvmClassLoader* loader) {
-  Class* cl = allocator_new(loader->allocator, Class)(loader, name);
-  return cl;
-}
-
-Class* JnjvmClassLoader::constructClass(const UTF8* name) {
-  Class* res = (Class*)classes->lookupOrCreate(name, this, classDup);
+Class* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes) {
+  classes->lock->lock();
+  ClassMap::iterator End = classes->map.end();
+  ClassMap::iterator I = classes->map.find(name);
+  Class* res = 0;
+  if (I == End) {
+    res = allocator_new(allocator, Class)(this, name);
+    if (bytes) {
+      res->bytes = bytes;
+      res->status = loaded;
+    }
+    classes->map.insert(std::make_pair(name, res));
+  } else {
+    res = ((Class*)(I->second));
+    if (res->status == hashed && bytes) {
+      res->bytes = bytes;
+      res->status = loaded;
+    }
+  }
+  classes->lock->unlock();
   return res;
 }
 

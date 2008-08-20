@@ -378,7 +378,7 @@ public:
   /// getClassDelegatee - Return the java/lang/Class representation of this
   /// class.
   ///
-  JavaObject* getClassDelegatee();
+  JavaObject* getClassDelegatee(JavaObject* pd = 0);
 
   /// initialiseClass - If the class has a static initializer and has not been
   /// initialized yet, call it.
