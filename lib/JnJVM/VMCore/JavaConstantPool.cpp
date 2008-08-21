@@ -183,7 +183,6 @@ uint32 JavaCtpInfo::CtpReaderLong(Class* cl, uint32 type, uint32 e,
                                   uint8* ctpType) {
   ctpDef[e + 1] = reader.readU4();
   ctpDef[e] = reader.readU4();
-  ctpType[e] = ConstantLong;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <long>%d %d\n", e,
               ctpDef[e], ctpDef[e + 1]);
   return 2;
@@ -194,7 +193,6 @@ uint32 JavaCtpInfo::CtpReaderDouble(Class* cl, uint32 type, uint32 e,
                                     void** ctpRes, uint8* ctpType) {
   ctpDef[e + 1] = reader.readU4();
   ctpDef[e] = reader.readU4();
-  ctpType[e] = ConstantDouble;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <double>%d %d\n", e,
               ctpDef[e], ctpDef[e + 1]);
   return 2;
