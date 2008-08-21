@@ -302,10 +302,10 @@ static VMCommonClass* METHOD_ElementTypeMvar(uint32 op, Assembly* ass,
     // of generic methods we need create a placeholder for each of them,
     // this is done by creating a dummy VMClass which has the assembly field
     // set to NULL, the token field is used to store the generic argument number
-    VMClass* cl = gc_new(VMClass)() ;
+    VMClass* cl = gc_new(VMClass)();
     cl->token = number;
-    cl->assembly = NULL;
-    cl->nameSpace = UTF8::asciizConstruct(VMThread::get()->vm, "");
+    cl->assembly = ass;
+    cl->nameSpace = ass->name;
     char *tmp = (char *) alloca(100);
     snprintf(tmp, 100, "!!%d", number);
     cl->name = UTF8::asciizConstruct(VMThread::get()->vm, tmp);
