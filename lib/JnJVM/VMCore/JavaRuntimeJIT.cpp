@@ -180,7 +180,7 @@ extern "C" void indexOutOfBoundsException(JavaObject* obj, sint32 index) {
 extern "C" JavaObject* getStaticInstance(Class* cl, Jnjvm* vm) {
   std::pair<JavaState, JavaObject*>* val = vm->statics->lookup(cl);
   if (!val || !(val->second)) {
-    cl->initialiseClass();
+    vm->initialiseClass(cl);
     val = vm->statics->lookup(cl);
   }
   return val->second;

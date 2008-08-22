@@ -58,7 +58,7 @@ jclass clazz,
                                                    true, false);
   if (cl != 0) {
     if (clinit) {
-      cl->initialiseClass();
+      JavaThread::get()->isolate->initialiseClass(cl);
     }
     return (jclass)(cl->getClassDelegatee());
   } else {

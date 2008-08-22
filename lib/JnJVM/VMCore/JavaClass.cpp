@@ -7,11 +7,14 @@
 //
 //===----------------------------------------------------------------------===//
 
+#define JNJVM_LOAD 0
+
 #include <vector>
 
 #include <string.h>
 
 #include "mvm/JIT.h"
+#include "debug.h"
 #include "types.h"
 
 #include "JavaArray.h"
@@ -532,10 +535,6 @@ void CommonClass::resolveClass() {
   classLoader->resolveClass(this);
 }
 
-void CommonClass::initialiseClass() {
-  return JavaThread::get()->isolate->initialiseClass(this);
-}
-
 #ifdef MULTIPLE_VM
 JavaObject* Class::staticInstance() {
   std::pair<JavaState, JavaObject*>* val = 
@@ -629,3 +628,104 @@ JavaField* CommonClass::constructField(const UTF8* name,
   }
 }
 
+void Class::readParents(Reader& reader) {
+  unsigned short int superEntry = reader.readU2();
+  const UTF8* super = superEntry ? 
+        ctpInfo->resolveClassName(superEntry) : 0;
+
+  unsigned short int nbI = reader.readU2();
+  superUTF8 = super;
+  for (int i = 0; i < nbI; i++)
+    interfacesUTF8.push_back(ctpInfo->resolveClassName(reader.readU2()));
+
+}
+
+void Class::loadParents() {
+  int nbI = interfacesUTF8.size();
+  if (superUTF8 == 0) {
+    depth = 0;
+    display = (CommonClass**)malloc(sizeof(CommonClass*));
+    display[0] = this;
+    virtualTableSize = VT_SIZE / sizeof(void*);
+  } else {
+    super = classLoader->loadName(superUTF8, true, true);
+    depth = super->depth + 1;
+    virtualTableSize = super->virtualTableSize;
+    display = (CommonClass**)malloc((depth + 1) * sizeof(CommonClass*));
+    memcpy(display, super->display, depth * sizeof(CommonClass*));
+    display[depth] = this;
+  }
+
+  for (int i = 0; i < nbI; i++)
+    interfaces.push_back((Class*)classLoader->loadName(interfacesUTF8[i],
+                                                       true, true));
+}
+
+void Class::readAttributs(Reader& reader, std::vector<Attribut*>& attr) {
+  unsigned short int nba = reader.readU2();
+  
+  for (int i = 0; i < nba; i++) {
+    const UTF8* attName = ctpInfo->UTF8At(reader.readU2());
+    uint32 attLen = reader.readU4();
+    Attribut* att = new Attribut(attName, attLen, reader.cursor);
+    attr.push_back(att);
+    reader.seek(attLen, Reader::SeekCur);
+  }
+}
+
+void Class::readFields(Reader& reader) {
+  uint16 nbFields = reader.readU2();
+  uint32 sindex = 0;
+  uint32 vindex = 0;
+  for (int i = 0; i < nbFields; i++) {
+    uint16 access = reader.readU2();
+    const UTF8* name = ctpInfo->UTF8At(reader.readU2());
+    const UTF8* type = ctpInfo->UTF8At(reader.readU2());
+    JavaField* field = constructField(name, type, access);
+    isStatic(access) ?
+      field->num = sindex++ :
+      field->num = vindex++;
+    readAttributs(reader, field->attributs);
+  }
+}
+
+void Class::readMethods(Reader& reader) {
+  uint16 nbMethods = reader.readU2();
+  for (int i = 0; i < nbMethods; i++) {
+    uint16 access = reader.readU2();
+    const UTF8* name = ctpInfo->UTF8At(reader.readU2());
+    const UTF8* type = ctpInfo->UTF8At(reader.readU2());
+    JavaMethod* meth = constructMethod(name, type, access);
+    readAttributs(reader, meth->attributs);
+  }
+}
+
+void Class::readClass() {
+
+  PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
+  PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "reading ", 0);
+  PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", printString());
+
+  Reader reader(bytes);
+  uint32 magic = reader.readU4();
+  if (magic != Jnjvm::Magic) {
+    JavaThread::get()->isolate->classFormatError("bad magic number %p", magic);
+  }
+  minor = reader.readU2();
+  major = reader.readU2();
+  ctpInfo = new JavaConstantPool(this, reader);
+  access = reader.readU2();
+  
+  const UTF8* thisClassName = 
+    ctpInfo->resolveClassName(reader.readU2());
+  
+  if (!(thisClassName->equals(name))) {
+    JavaThread::get()->isolate->classFormatError("try to load %s and found class named %s",
+          printString(), thisClassName->printString());
+  }
+
+  readParents(reader);
+  readFields(reader);
+  readMethods(reader);
+  readAttributs(reader, attributs);
+}

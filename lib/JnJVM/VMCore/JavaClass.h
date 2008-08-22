@@ -380,10 +380,6 @@ public:
   ///
   JavaObject* getClassDelegatee(JavaObject* pd = 0);
 
-  /// initialiseClass - If the class has a static initializer and has not been
-  /// initialized yet, call it.
-  void initialiseClass();
-
   /// resolveClass - If the class has not been resolved yet, resolve it.
   ///
   void resolveClass();
@@ -552,6 +548,30 @@ public:
   /// name.
   Class(JnjvmClassLoader* loader, const UTF8* name);
   
+  /// readParents - Reads the parents, i.e. super and interfaces, of the class.
+  ///
+  void readParents(Reader& reader);
+
+  /// loadParents - Loads and resolves the parents, i.e. super and interfarces,
+  /// of the class.
+  ///
+  void loadParents();
+
+  /// readAttributs - Reads the attributs of the class.
+  ///
+  void readAttributs(Reader& reader, std::vector<Attribut*> & attr);
+
+  /// readFields - Reads the fields of the class.
+  ///
+  void readFields(Reader& reader);
+
+  /// readMethods - Reads the methods of the class.
+  ///
+  void readMethods(Reader& reader);
+  
+  /// readClass - Reads the class.
+  ///
+  void readClass();
 };
 
 /// ClassArray - This class represents Java array classes.

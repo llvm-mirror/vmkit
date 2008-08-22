@@ -66,31 +66,6 @@ private:
   ///
   virtual CommonClass* internalLoad(const UTF8* utf8);
   
-  /// readParents - Reads the parents, i.e. super and interfaces, of the class.
-  ///
-  void readParents(Class* cl, Reader& reader);
-
-  /// loadParents - Loads and resolves the parents, i.e. super and interfarces,
-  /// of the class.
-  ///
-  void loadParents(Class* cl);
-
-  /// readAttributs - Reads the attributs of the class.
-  ///
-  void readAttributs(Class* cl, Reader& reader, std::vector<Attribut*> & attr);
-
-  /// readFields - Reads the fields of the class.
-  ///
-  void readFields(Class* cl, Reader& reader);
-
-  /// readMethods - Reads the methods of the class.
-  ///
-  void readMethods(Class* cl, Reader& reader);
-  
-  /// readClass - Reads the class.
-  ///
-  void readClass(Class* cl);
-  
   /// JnjvmClassLoader - Allocate a user-defined class loader. Called on
   /// first use of a Java class loader.
   ///

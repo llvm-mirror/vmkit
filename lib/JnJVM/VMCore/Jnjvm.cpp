@@ -101,7 +101,7 @@ void Jnjvm::initialiseClass(CommonClass* cl) {
       *status = clinitParent;
       cl->release();
       if (cl->super) {
-        cl->super->initialiseClass();
+        initialiseClass(cl->super);
       }
 
       cl->classLoader->TheModule->resolveStaticClass((Class*)cl);

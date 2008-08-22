@@ -67,7 +67,7 @@ JNIEnv *env,
     CommonClass* _cl = NativeUtil::resolvedImplClass(Clazz, false);
     if (!_cl->isArray) {
       Class* cl = (Class*)_cl;
-      cl->initialiseClass();
+      vm->initialiseClass(cl);
 
       JavaObject* res = cl->doNew(vm);
       JavaObject** ptr = (JavaObject**)(void*)(args->elements);

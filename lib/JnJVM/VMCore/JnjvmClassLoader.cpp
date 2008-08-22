@@ -99,116 +99,6 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader, Jn
 
 }
 
-void JnjvmClassLoader::readParents(Class* cl, Reader& reader) {
-  JavaConstantPool* ctpInfo = cl->ctpInfo;
-  unsigned short int superEntry = reader.readU2();
-  const UTF8* super = superEntry ? 
-        ctpInfo->resolveClassName(superEntry) : 0;
-
-  unsigned short int nbI = reader.readU2();
-  cl->superUTF8 = super;
-  for (int i = 0; i < nbI; i++)
-    cl->interfacesUTF8.push_back(ctpInfo->resolveClassName(reader.readU2()));
-
-}
-
-void JnjvmClassLoader::loadParents(Class* cl) {
-  const UTF8* super = cl->superUTF8;
-  int nbI = cl->interfacesUTF8.size();
-  if (super == 0) {
-    cl->depth = 0;
-    cl->display = (CommonClass**)malloc(sizeof(CommonClass*));
-    cl->display[0] = cl;
-    cl->virtualTableSize = VT_SIZE / sizeof(void*);
-  } else {
-    cl->super = loadName(super, true, true);
-    int depth = cl->super->depth + 1;
-    cl->depth = depth;
-    cl->virtualTableSize = cl->super->virtualTableSize;
-    cl->display = (CommonClass**)malloc((depth + 1) * sizeof(CommonClass*));
-    memcpy(cl->display, cl->super->display, depth * sizeof(CommonClass*));
-    cl->display[cl->depth] = cl;
-  }
-
-  for (int i = 0; i < nbI; i++)
-    cl->interfaces.push_back((Class*)loadName(cl->interfacesUTF8[i],
-                                              true, true));
-}
-
-void JnjvmClassLoader::readAttributs(Class* cl, Reader& reader,
-                           std::vector<Attribut*>& attr) {
-  JavaConstantPool* ctpInfo = cl->ctpInfo;
-  unsigned short int nba = reader.readU2();
-  
-  for (int i = 0; i < nba; i++) {
-    const UTF8* attName = ctpInfo->UTF8At(reader.readU2());
-    uint32 attLen = reader.readU4();
-    Attribut* att = new Attribut(attName, attLen, reader.cursor);
-    attr.push_back(att);
-    reader.seek(attLen, Reader::SeekCur);
-  }
-}
-
-void JnjvmClassLoader::readFields(Class* cl, Reader& reader) {
-  uint16 nbFields = reader.readU2();
-  JavaConstantPool* ctpInfo = cl->ctpInfo;
-  uint32 sindex = 0;
-  uint32 vindex = 0;
-  for (int i = 0; i < nbFields; i++) {
-    uint16 access = reader.readU2();
-    const UTF8* name = ctpInfo->UTF8At(reader.readU2());
-    const UTF8* type = ctpInfo->UTF8At(reader.readU2());
-    JavaField* field = cl->constructField(name, type, access);
-    isStatic(access) ?
-      field->num = sindex++ :
-      field->num = vindex++;
-    readAttributs(cl, reader, field->attributs);
-  }
-}
-
-void JnjvmClassLoader::readMethods(Class* cl, Reader& reader) {
-  uint16 nbMethods = reader.readU2();
-  JavaConstantPool* ctpInfo = cl->ctpInfo;
-  for (int i = 0; i < nbMethods; i++) {
-    uint16 access = reader.readU2();
-    const UTF8* name = ctpInfo->UTF8At(reader.readU2());
-    const UTF8* type = ctpInfo->UTF8At(reader.readU2());
-    JavaMethod* meth = cl->constructMethod(name, type, access);
-    readAttributs(cl, reader, meth->attributs);
-  }
-}
-
-void JnjvmClassLoader::readClass(Class* cl) {
-
-  PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
-  PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "reading ", 0);
-  PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s::%s\n", printString(),
-              cl->printString());
-
-  Reader reader(cl->bytes);
-  uint32 magic = reader.readU4();
-  if (magic != Jnjvm::Magic) {
-    JavaThread::get()->isolate->classFormatError("bad magic number %p", magic);
-  }
-  cl->minor = reader.readU2();
-  cl->major = reader.readU2();
-  cl->ctpInfo = new JavaConstantPool(cl, reader);
-  cl->access = reader.readU2();
-  
-  const UTF8* thisClassName = 
-    cl->ctpInfo->resolveClassName(reader.readU2());
-  
-  if (!(thisClassName->equals(cl->name))) {
-    JavaThread::get()->isolate->classFormatError("try to load %s and found class named %s",
-          cl->printString(), thisClassName->printString());
-  }
-
-  readParents(cl, reader);
-  readFields(cl, reader);
-  readMethods(cl, reader);
-  readAttributs(cl, reader, cl->attributs);
-}
-
 ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
   char* asciiz = utf8->UTF8ToAsciiz();
   uint32 alen = strlen(asciiz);
@@ -255,14 +145,15 @@ void JnjvmClassLoader::resolveClass(CommonClass* cl) {
         baseClass->resolveClass();
         cl->status = resolved;
       } else {
-        readClass((Class*)cl);
-        cl->status = classRead;
-        cl->release();
-        loadParents((Class*)cl);
-        cl->acquire(); 
-        cl->status = prepared;
-        TheModule->resolveVirtualClass((Class*)cl);
-        cl->status = resolved;
+        Class* regCl = (Class*)cl;
+        regCl->readClass();
+        regCl->status = classRead;
+        regCl->release();
+        regCl->loadParents();
+        regCl->acquire(); 
+        regCl->status = prepared;
+        TheModule->resolveVirtualClass(regCl);
+        regCl->status = resolved;
       }
       cl->release();
       cl->broadcastClass();

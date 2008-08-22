@@ -84,7 +84,7 @@ JNIEnv *env,
       }
 
     } else {
-      cl->initialiseClass();
+      vm->initialiseClass(cl);
     }
 
     JavaObject** ptr = (JavaObject**)(void*)(args->elements);     
