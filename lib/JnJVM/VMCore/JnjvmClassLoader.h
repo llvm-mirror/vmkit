@@ -149,10 +149,6 @@ public:
   CommonClass* lookupClassFromJavaString(JavaString* str, bool doResolve,
                                          bool doThrow);
    
-  /// resolveClass - Resolves the class.
-  ///
-  void resolveClass(CommonClass* cl);
-  
   /// lookupClass - Finds the class of th given name in the class loader's
   /// table.
   ///

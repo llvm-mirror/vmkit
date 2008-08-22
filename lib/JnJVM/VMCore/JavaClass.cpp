@@ -431,7 +431,7 @@ bool CommonClass::isOfTypeName(const UTF8* Tname) {
     while (res && Tname->elements[prof] == AssessorDesc::I_TAB) {
       CommonClass* cl = ((ClassArray*)curS)->baseClass();
       ++prof;
-      classLoader->resolveClass(cl);
+      cl->resolveClass();
       res = curS->isArray && cl && (prof < len);
       curS = cl;
     }
@@ -529,10 +529,6 @@ void JavaField::initField(JavaObject* obj) {
 
 JavaObject* CommonClass::getClassDelegatee(JavaObject* pd) {
   return JavaThread::get()->isolate->getClassDelegatee(this, pd);
-}
-
-void CommonClass::resolveClass() {
-  classLoader->resolveClass(this);
 }
 
 #ifdef MULTIPLE_VM
@@ -728,4 +724,41 @@ void Class::readClass() {
   readFields(reader);
   readMethods(reader);
   readAttributs(reader, attributs);
+}
+
+void CommonClass::resolveClass() {
+  if (status < resolved) {
+    acquire();
+    if (status >= resolved) {
+      release();
+    } else if (status <  loaded) {
+      release();
+      JavaThread::get()->isolate->unknownError("try to resolve a not-read class");
+    } else if (status == loaded || ownerClass()) {
+      if (isArray) {
+        ClassArray* arrayCl = (ClassArray*)this;
+        CommonClass* baseClass =  arrayCl->baseClass();
+        baseClass->resolveClass();
+        status = resolved;
+      // Primitives are resolved at boot time
+      } else {
+        Class* cl = (Class*)this;
+        cl->readClass();
+        cl->status = classRead;
+        cl->release();
+        cl->loadParents();
+        cl->acquire();
+        cl->status = prepared;
+        classLoader->TheModule->resolveVirtualClass(cl);
+        cl->status = resolved;
+      }
+      release();
+      broadcastClass();
+    } else {
+      while (status < resolved) {
+        waitClass();
+      }
+      release();
+    }
+  }
 }

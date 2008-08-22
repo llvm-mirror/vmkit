@@ -89,7 +89,8 @@ typedef void (*clinit_t)(Jnjvm* vm);
 
 void Jnjvm::initialiseClass(CommonClass* cl) {
   JavaState* status = cl->getStatus();
-  if (cl->isArray || cl->isPrimitive) {
+  // Primitives are initialized at boot time
+  if (cl->isArray) {
     *status = ready;
   } else if (!(*status == ready)) {
     cl->acquire();

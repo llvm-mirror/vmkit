@@ -129,43 +129,6 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
 }
 
 
-void JnjvmClassLoader::resolveClass(CommonClass* cl) {
-  if (cl->status < resolved) {
-    cl->acquire();
-    int status = cl->status;
-    if (status >= resolved) {
-      cl->release();
-    } else if (status <  loaded) {
-      cl->release();
-      JavaThread::get()->isolate->unknownError("try to resolve a not-read class");
-    } else if (status == loaded || cl->ownerClass()) {
-      if (cl->isArray) {
-        ClassArray* arrayCl = (ClassArray*)cl;
-        CommonClass* baseClass =  arrayCl->baseClass();
-        baseClass->resolveClass();
-        cl->status = resolved;
-      } else {
-        Class* regCl = (Class*)cl;
-        regCl->readClass();
-        regCl->status = classRead;
-        regCl->release();
-        regCl->loadParents();
-        regCl->acquire(); 
-        regCl->status = prepared;
-        TheModule->resolveVirtualClass(regCl);
-        regCl->status = resolved;
-      }
-      cl->release();
-      cl->broadcastClass();
-    } else {
-      while (status < resolved) {
-        cl->waitClass();
-      }
-      cl->release();
-    }
-  }
-}
-
 CommonClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name) {
   
   CommonClass* cl = lookupClass(name);

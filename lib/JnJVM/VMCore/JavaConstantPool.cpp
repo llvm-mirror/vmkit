@@ -272,7 +272,7 @@ CommonClass* JavaConstantPool::loadClass(uint32 index) {
     const UTF8* name = UTF8At(ctpDef[index]);
     if (name->elements[0] == AssessorDesc::I_TAB) {
       temp = loader->constructArray(name);
-      loader->resolveClass(temp);
+      temp->resolveClass();
     } else {
       // Put into ctpRes because there is only one representation of the class
       temp = loader->loadName(name, true, false);
