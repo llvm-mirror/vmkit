@@ -100,7 +100,7 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader, Jn
 }
 
 void JnjvmClassLoader::readParents(Class* cl, Reader& reader) {
-  JavaCtpInfo* ctpInfo = cl->ctpInfo;
+  JavaConstantPool* ctpInfo = cl->ctpInfo;
   unsigned short int superEntry = reader.readU2();
   const UTF8* super = superEntry ? 
         ctpInfo->resolveClassName(superEntry) : 0;
@@ -137,7 +137,7 @@ void JnjvmClassLoader::loadParents(Class* cl) {
 
 void JnjvmClassLoader::readAttributs(Class* cl, Reader& reader,
                            std::vector<Attribut*>& attr) {
-  JavaCtpInfo* ctpInfo = cl->ctpInfo;
+  JavaConstantPool* ctpInfo = cl->ctpInfo;
   unsigned short int nba = reader.readU2();
   
   for (int i = 0; i < nba; i++) {
@@ -151,7 +151,7 @@ void JnjvmClassLoader::readAttributs(Class* cl, Reader& reader,
 
 void JnjvmClassLoader::readFields(Class* cl, Reader& reader) {
   uint16 nbFields = reader.readU2();
-  JavaCtpInfo* ctpInfo = cl->ctpInfo;
+  JavaConstantPool* ctpInfo = cl->ctpInfo;
   uint32 sindex = 0;
   uint32 vindex = 0;
   for (int i = 0; i < nbFields; i++) {
@@ -168,7 +168,7 @@ void JnjvmClassLoader::readFields(Class* cl, Reader& reader) {
 
 void JnjvmClassLoader::readMethods(Class* cl, Reader& reader) {
   uint16 nbMethods = reader.readU2();
-  JavaCtpInfo* ctpInfo = cl->ctpInfo;
+  JavaConstantPool* ctpInfo = cl->ctpInfo;
   for (int i = 0; i < nbMethods; i++) {
     uint16 access = reader.readU2();
     const UTF8* name = ctpInfo->UTF8At(reader.readU2());
@@ -192,12 +192,11 @@ void JnjvmClassLoader::readClass(Class* cl) {
   }
   cl->minor = reader.readU2();
   cl->major = reader.readU2();
-  JavaCtpInfo::read(cl, reader);
-  JavaCtpInfo* ctpInfo = cl->ctpInfo;
+  cl->ctpInfo = new JavaConstantPool(cl, reader);
   cl->access = reader.readU2();
   
   const UTF8* thisClassName = 
-    ctpInfo->resolveClassName(reader.readU2());
+    cl->ctpInfo->resolveClassName(reader.readU2());
   
   if (!(thisClassName->equals(cl->name))) {
     JavaThread::get()->isolate->classFormatError("try to load %s and found class named %s",

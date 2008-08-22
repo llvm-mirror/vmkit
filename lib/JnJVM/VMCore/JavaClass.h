@@ -31,7 +31,7 @@ class ArrayUInt8;
 class AssessorDesc;
 class Enveloppe;
 class Class;
-class JavaCtpInfo;
+class JavaConstantPool;
 class JavaField;
 class JavaJIT;
 class JavaMethod;
@@ -478,7 +478,7 @@ public:
 
   /// ctpInfo - The constant pool info of this class.
   ///
-  JavaCtpInfo* ctpInfo;
+  JavaConstantPool* ctpInfo;
 
   /// attributs - JVM attributes of this class.
   ///

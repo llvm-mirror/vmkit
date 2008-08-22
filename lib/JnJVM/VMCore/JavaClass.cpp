@@ -500,7 +500,7 @@ void JavaField::initField(JavaObject* obj) {
     JnjvmModule::InitField(this, obj);
   } else {
     Reader reader(attribut, classDef->bytes);
-    JavaCtpInfo * ctpInfo = classDef->ctpInfo;
+    JavaConstantPool * ctpInfo = classDef->ctpInfo;
     uint16 idx = reader.readU2();
     if (funcs == AssessorDesc::dLong) {
       JnjvmModule::InitField(this, obj, (uint64)ctpInfo->LongAt(idx));

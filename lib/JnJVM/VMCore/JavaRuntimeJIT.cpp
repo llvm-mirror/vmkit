@@ -37,14 +37,14 @@ extern "C" JavaString* runtimeUTF8ToStr(const UTF8* val) {
 
 extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   Enveloppe* enveloppe = cache->enveloppe;
-  JavaCtpInfo* ctpInfo = enveloppe->ctpInfo;
+  JavaConstantPool* ctpInfo = enveloppe->ctpInfo;
   CommonClass* ocl = obj->classOf;
   CommonClass* cl = 0;
   const UTF8* utf8 = 0;
   Signdef* sign = 0;
   uint32 index = enveloppe->index;
   
-  ctpInfo->resolveInterfaceOrMethod(index, cl, utf8, sign);
+  ctpInfo->resolveMethod(index, cl, utf8, sign);
 
   enveloppe->cacheLock->lock();
   CacheNode* rcache = 0;
@@ -88,7 +88,7 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
 
 extern "C" void* fieldLookup(JavaObject* obj, Class* caller, uint32 index,
                              uint32 stat, void** ifStatic, uint32* offset) {
-  JavaCtpInfo* ctpInfo = caller->ctpInfo;
+  JavaConstantPool* ctpInfo = caller->ctpInfo;
   if (ctpInfo->ctpRes[index]) {
     JavaField* field = (JavaField*)(ctpInfo->ctpRes[index]);
     field->classDef->initialiseClass();
@@ -198,7 +198,7 @@ extern "C" JavaObject* getClassDelegatee(CommonClass* cl) {
 
 extern "C" Class* newLookup(Class* caller, uint32 index, Class** toAlloc,
                             uint32 clinit) { 
-  JavaCtpInfo* ctpInfo = caller->ctpInfo;
+  JavaConstantPool* ctpInfo = caller->ctpInfo;
   Class* cl = (Class*)ctpInfo->loadClass(index);
   cl->resolveClass(clinit);
   
@@ -213,7 +213,7 @@ extern "C" uint32 vtableLookup(JavaObject* obj, Class* caller, uint32 index,
   const UTF8* utf8 = 0;
   Signdef* sign = 0;
   
-  caller->ctpInfo->resolveInterfaceOrMethod(index, cl, utf8, sign);
+  caller->ctpInfo->resolveMethod(index, cl, utf8, sign);
   JavaMethod* dmeth = cl->lookupMethodDontThrow(utf8, sign->keyName, false,
                                                 true);
   if (!dmeth) {

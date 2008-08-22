@@ -403,7 +403,7 @@ ArrayObject* NativeUtil::getExceptionTypes(JavaMethod* meth) {
                               &(JavaThread::get()->isolate->allocator));
   } else {
     Class* cl = meth->classDef;
-    JavaCtpInfo* ctp = cl->ctpInfo;
+    JavaConstantPool* ctp = cl->ctpInfo;
     Reader reader(exceptionAtt, cl->bytes);
     uint16 nbe = reader.readU2();
     ArrayObject* res = ArrayObject::acons(nbe, Classpath::classArrayClass,

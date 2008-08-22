@@ -30,61 +30,56 @@
  
 using namespace jnjvm;
 
-const uint32 JavaCtpInfo::ConstantUTF8 = 1;
-const uint32 JavaCtpInfo::ConstantInteger = 3;
-const uint32 JavaCtpInfo::ConstantFloat = 4;
-const uint32 JavaCtpInfo::ConstantLong = 5;
-const uint32 JavaCtpInfo::ConstantDouble = 6;
-const uint32 JavaCtpInfo::ConstantClass = 7;
-const uint32 JavaCtpInfo::ConstantString = 8;
-const uint32 JavaCtpInfo::ConstantFieldref = 9;
-const uint32 JavaCtpInfo::ConstantMethodref = 10;
-const uint32 JavaCtpInfo::ConstantInterfaceMethodref = 11;
-const uint32 JavaCtpInfo::ConstantNameAndType = 12;
+const uint32 JavaConstantPool::ConstantUTF8 = 1;
+const uint32 JavaConstantPool::ConstantInteger = 3;
+const uint32 JavaConstantPool::ConstantFloat = 4;
+const uint32 JavaConstantPool::ConstantLong = 5;
+const uint32 JavaConstantPool::ConstantDouble = 6;
+const uint32 JavaConstantPool::ConstantClass = 7;
+const uint32 JavaConstantPool::ConstantString = 8;
+const uint32 JavaConstantPool::ConstantFieldref = 9;
+const uint32 JavaConstantPool::ConstantMethodref = 10;
+const uint32 JavaConstantPool::ConstantInterfaceMethodref = 11;
+const uint32 JavaConstantPool::ConstantNameAndType = 12;
 
 
-static uint32 unimplemented(Class* cl, uint32 type, uint32 e, Reader& reader,
-                            sint32* ctpDef, void** ctpRes, uint8* ctpType) {
+static uint32 unimplemented(JavaConstantPool* ctp, Reader& reader, uint32 index) {
   JavaThread::get()->isolate->classFormatError(
-                                    "unknown constant pool type %d", 
-                                    type);
+                                    "unknown constant pool at index %d", 
+                                    index);
   return 1;
 }
 
 
-uint32 JavaCtpInfo::CtpReaderClass(Class* cl, uint32 type, uint32 e,
-                                   Reader& reader, sint32* ctpDef,
-                                   void** ctpRes, uint8* ctpType) {
+uint32 JavaConstantPool::CtpReaderClass(JavaConstantPool* ctp, Reader& reader,
+                                   uint32 index) {
   uint16 entry = reader.readU2();
-  ctpDef[e] = entry;
+  ctp->ctpDef[index] = entry;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <class>\t\tutf8 is at %d\n", e,
               entry);
   return 1;
 }
   
-uint32 JavaCtpInfo::CtpReaderInteger(Class* cl, uint32 type, uint32 e,
-                                     Reader& reader, sint32* ctpDef,
-                                     void** ctpRes, uint8* ctpType) {
+uint32 JavaConstantPool::CtpReaderInteger(JavaConstantPool* ctp, Reader& reader,
+                                     uint32 index) {
   uint32 val = reader.readU4();
-  ctpDef[e] = val;
+  ctp->ctpDef[index] = val;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <class>\tinteger: %d\n", e,
               val);
   return 1;
 }
   
-uint32 JavaCtpInfo::CtpReaderFloat(Class* cl, uint32 type, uint32 e,
-                                   Reader& reader, sint32* ctpDef,
-                                   void** ctpRes, uint8* ctpType) {
+uint32 JavaConstantPool::CtpReaderFloat(JavaConstantPool* ctp, Reader& reader,
+                                   uint32 index) { 
   uint32 val = reader.readU4();
-  ctpDef[e] = val;
+  ctp->ctpDef[index] = val;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <class>\tfloat: %d\n", e,
               val);
   return 1;
 }
   
-uint32 JavaCtpInfo::CtpReaderUTF8(Class* cl, uint32 type, uint32 e,
-                                  Reader& reader, sint32* ctpDef, void** ctpRes,
-                                  uint8* ctpType) {
+uint32 JavaConstantPool::CtpReaderUTF8(JavaConstantPool* ctp, Reader& reader,
+                                  uint32 index) { 
   uint16 len = reader.readU2();
   uint16* buf = (uint16*)alloca(len * sizeof(uint16));
   uint32 n = 0;
@@ -111,118 +106,105 @@ uint32 JavaCtpInfo::CtpReaderUTF8(Class* cl, uint32 type, uint32 e,
     buf[n] = ((uint16)cur);
     ++n;
   }
-
-  const UTF8* utf8 = cl->classLoader->hashUTF8->lookupOrCreateReader(buf, n);
-  ctpRes[e] = (UTF8*)utf8;
   
-  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <utf8>\t\t\"%s\"\n", e,
+  Class* cl = ctp->classDef;
+  const UTF8* utf8 = cl->classLoader->hashUTF8->lookupOrCreateReader(buf, n);
+  ctp->ctpRes[index] = (UTF8*)utf8;
+  
+  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <utf8>\t\t\"%s\"\n", index,
               utf8->printString());
 
   return 1;
 }
   
-uint32 JavaCtpInfo::CtpReaderNameAndType(Class* cl, uint32 type,
-                                         uint32 e, Reader& reader,
-                                         sint32* ctpDef, void** ctpRes,
-                                         uint8* ctpType) {
+uint32 JavaConstantPool::CtpReaderNameAndType(JavaConstantPool* ctp, Reader& reader,
+                                         uint32 index) {
   uint32 entry = reader.readU4();
-  ctpDef[e] = entry;
+  ctp->ctpDef[index] = entry;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, 
-              "; [%5d] <name/type>\tname is at %d, type is at %d\n", e,
+              "; [%5d] <name/type>\tname is at %d, type is at %d\n", index,
               (entry >> 16), (entry & 0xffff));
   return 1;
 }
   
-uint32 JavaCtpInfo::CtpReaderFieldref(Class* cl, uint32 type,
-                                      uint32 e, Reader& reader, sint32* ctpDef,
-                                      void** ctpRes, uint8* ctpType) {
+uint32 JavaConstantPool::CtpReaderFieldref(JavaConstantPool* ctp, Reader& reader,
+                                      uint32 index) {
   uint32 entry = reader.readU4();
-  ctpDef[e] = entry;
+  ctp->ctpDef[index] = entry;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, 
-              "; [%5d] <fieldref>\tclass is at %d, name/type is at %d\n", e,
+              "; [%5d] <fieldref>\tclass is at %d, name/type is at %d\n", index,
               (entry >> 16), (entry & 0xffff));
   return 1;
 }
 
-uint32 JavaCtpInfo::CtpReaderString(Class* cl, uint32 type, uint32 e,
-                                    Reader& reader, sint32* ctpDef,
-                                    void** ctpRes, uint8* ctpType) {
+uint32 JavaConstantPool::CtpReaderString(JavaConstantPool* ctp, Reader& reader,
+                                    uint32 index) {
   uint16 entry = reader.readU2();
-  ctpDef[e] = entry;
+  ctp->ctpDef[index] = entry;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <string>\tutf8 is at %d\n",
-              e, entry);
+              index, entry);
   return 1;
 }
   
-uint32 JavaCtpInfo::CtpReaderMethodref(Class* cl, uint32 type,
-                                       uint32 e, Reader& reader, sint32* ctpDef,
-                                       void** ctpRes, uint8* ctpType) {
+uint32 JavaConstantPool::CtpReaderMethodref(JavaConstantPool* ctp, Reader& reader,
+                                       uint32 index) {
   uint32 entry = reader.readU4();
-  ctpDef[e] = entry;
+  ctp->ctpDef[index] = entry;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, 
-              "; [%5d] <methodref>\tclass is at %d, name/type is at %d\n", e,
-              (entry >> 16), (entry & 0xffff));
+              "; [%5d] <methodref>\tclass is at %d, name/type is at %d\n",
+              index, (entry >> 16), (entry & 0xffff));
   return 1;
 }
 
-uint32 JavaCtpInfo::CtpReaderInterfaceMethodref(Class* cl,
-                                                uint32 type,
-                                                uint32 e, Reader& reader,
-                                                sint32* ctpDef, void** ctpRes,
-                                                uint8* ctpType) {
+uint32 JavaConstantPool::CtpReaderInterfaceMethodref(JavaConstantPool* ctp,
+                                                Reader& reader,
+                                                uint32 index) {
   uint32 entry = reader.readU4();
-  ctpDef[e] = entry;
+  ctp->ctpDef[index] = entry;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, 
         "; [%5d] <Interface xmethodref>\tclass is at %d, name/type is at %d\n",
-        e, (entry >> 16), (entry & 0xffff));
+        index, (entry >> 16), (entry & 0xffff));
   return 1;
 }
   
-uint32 JavaCtpInfo::CtpReaderLong(Class* cl, uint32 type, uint32 e,
-                                  Reader& reader, sint32* ctpDef, void** ctpRes,
-                                  uint8* ctpType) {
-  ctpDef[e + 1] = reader.readU4();
-  ctpDef[e] = reader.readU4();
-  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <long>%d %d\n", e,
+uint32 JavaConstantPool::CtpReaderLong(JavaConstantPool* ctp, Reader& reader,
+                                  uint32 index) {
+  ctp->ctpDef[index + 1] = reader.readU4();
+  ctp->ctpDef[index] = reader.readU4();
+  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <long>%d %d\n", index,
               ctpDef[e], ctpDef[e + 1]);
   return 2;
 }
 
-uint32 JavaCtpInfo::CtpReaderDouble(Class* cl, uint32 type, uint32 e,
-                                    Reader& reader, sint32* ctpDef,
-                                    void** ctpRes, uint8* ctpType) {
-  ctpDef[e + 1] = reader.readU4();
-  ctpDef[e] = reader.readU4();
-  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <double>%d %d\n", e,
-              ctpDef[e], ctpDef[e + 1]);
+uint32 JavaConstantPool::CtpReaderDouble(JavaConstantPool* ctp, Reader& reader,
+                                    uint32 index) {
+  ctp->ctpDef[index + 1] = reader.readU4();
+  ctp->ctpDef[index] = reader.readU4();
+  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <double>%d %d\n", index,
+              ctp->ctpDef[index], ctp->ctpDef[index + 1]);
   return 2;
 }
 
-void JavaCtpInfo::read(Class* cl, Reader& reader) {
-  uint32 nbCtp = reader.readU2();
-  JavaCtpInfo* res = new JavaCtpInfo();
+JavaConstantPool::JavaConstantPool(Class* cl, Reader& reader) {
+  ctpSize = reader.readU2();
+  classDef = cl;
   
-  res->ctpRes   = (void**)malloc(sizeof(void*)*nbCtp);
-  res->ctpDef   = (sint32*)malloc(sizeof(sint32)*nbCtp);
-  res->ctpType  = (uint8*)malloc(sizeof(uint8)*nbCtp);
-  memset(res->ctpRes, 0, sizeof(void**)*nbCtp);
-  memset(res->ctpDef, 0, sizeof(sint32)*nbCtp);
-  memset(res->ctpType, 0, sizeof(uint8)*nbCtp);
-
-  res->ctpSize = nbCtp;
-  res->classDef = cl;
-  cl->ctpInfo = res;
+  ctpRes   = new void*[ctpSize];
+  ctpDef   = new sint32[ctpSize];
+  ctpType  = new uint8[ctpSize];
+  memset(ctpRes, 0, sizeof(void**) * ctpSize);
+  memset(ctpDef, 0, sizeof(sint32) * ctpSize);
+  memset(ctpType, 0, sizeof(uint8) * ctpSize);
 
   uint32 cur = 1;
-  while (cur < nbCtp) {
+  while (cur < ctpSize) {
     uint8 curType = reader.readU1();
-    res->ctpType[cur] = curType;
-    cur += ((funcsReader[curType])(cl, curType, cur, reader, res->ctpDef,
-                                   res->ctpRes, res->ctpType));
+    ctpType[cur] = curType;
+    cur += ((funcsReader[curType])(this, reader, cur));
   }
 }
 
-const UTF8* JavaCtpInfo::UTF8At(uint32 entry) {
+const UTF8* JavaConstantPool::UTF8At(uint32 entry) {
   if (! ((entry > 0) && (entry < ctpSize) && 
         typeAt(entry) == ConstantUTF8)) {
     JavaThread::get()->isolate->classFormatError(
@@ -231,7 +213,7 @@ const UTF8* JavaCtpInfo::UTF8At(uint32 entry) {
   return (const UTF8*)ctpRes[entry];
 }
 
-float JavaCtpInfo::FloatAt(uint32 entry) {
+float JavaConstantPool::FloatAt(uint32 entry) {
   if (! ((entry > 0) && (entry < ctpSize) && 
         typeAt(entry) == ConstantFloat)) {
     JavaThread::get()->isolate->classFormatError(
@@ -240,7 +222,7 @@ float JavaCtpInfo::FloatAt(uint32 entry) {
   return ((float*)ctpDef)[entry];
 }
 
-sint32 JavaCtpInfo::IntegerAt(uint32 entry) {
+sint32 JavaConstantPool::IntegerAt(uint32 entry) {
   if (! ((entry > 0) && (entry < ctpSize) && 
         typeAt(entry) == ConstantInteger)) {
     JavaThread::get()->isolate->classFormatError(
@@ -249,7 +231,7 @@ sint32 JavaCtpInfo::IntegerAt(uint32 entry) {
   return ((sint32*)ctpDef)[entry];
 }
 
-sint64 JavaCtpInfo::LongAt(uint32 entry) {
+sint64 JavaConstantPool::LongAt(uint32 entry) {
   if (! ((entry > 0) && (entry < ctpSize) && 
         typeAt(entry) == ConstantLong)) {
     JavaThread::get()->isolate->classFormatError(
@@ -258,7 +240,7 @@ sint64 JavaCtpInfo::LongAt(uint32 entry) {
   return Reader::readLong(ctpDef[entry], ctpDef[entry + 1]);
 }
 
-double JavaCtpInfo::DoubleAt(uint32 entry) {
+double JavaConstantPool::DoubleAt(uint32 entry) {
   if (! ((entry > 0) && (entry < ctpSize) && 
         typeAt(entry) == ConstantDouble)) {
     JavaThread::get()->isolate->classFormatError(
@@ -267,7 +249,7 @@ double JavaCtpInfo::DoubleAt(uint32 entry) {
   return Reader::readDouble(ctpDef[entry], ctpDef[entry + 1]);
 }
 
-CommonClass* JavaCtpInfo::isLoadedClassOrClassName(uint32 entry) {
+CommonClass* JavaConstantPool::isClassLoaded(uint32 entry) {
   if (! ((entry > 0) && (entry < ctpSize) && 
         typeAt(entry) == ConstantClass)) {
     JavaThread::get()->isolate->classFormatError(
@@ -276,14 +258,14 @@ CommonClass* JavaCtpInfo::isLoadedClassOrClassName(uint32 entry) {
   return (CommonClass*)ctpRes[entry];
 }
 
-const UTF8* JavaCtpInfo::resolveClassName(uint32 index) {
-  CommonClass* cl = isLoadedClassOrClassName(index);
+const UTF8* JavaConstantPool::resolveClassName(uint32 index) {
+  CommonClass* cl = isClassLoaded(index);
   if (cl) return cl->name;
   else return UTF8At(ctpDef[index]);
 }
 
-CommonClass* JavaCtpInfo::loadClass(uint32 index) {
-  CommonClass* temp = isLoadedClassOrClassName(index);
+CommonClass* JavaConstantPool::loadClass(uint32 index) {
+  CommonClass* temp = isClassLoaded(index);
   if (!temp) {
     JnjvmClassLoader* loader = classDef->classLoader;
     const UTF8* name = UTF8At(ctpDef[index]);
@@ -293,18 +275,13 @@ CommonClass* JavaCtpInfo::loadClass(uint32 index) {
       // Put into ctpRes because there is only one representation of the class
       temp = loader->loadName(name, false, false, false);
     }
-#ifdef MULTIPLE_VM
-    if (classDef->isSharedClass() && !temp->isSharedClass()) {
-      JavaThread::get()->isolate->unknownError("Class sharing violation");
-    }
-#endif
     ctpRes[index] = temp;
   }
   return temp;
 }
 
-CommonClass* JavaCtpInfo::getMethodClassIfLoaded(uint32 index) {
-  CommonClass* temp = isLoadedClassOrClassName(index);
+CommonClass* JavaConstantPool::getMethodClassIfLoaded(uint32 index) {
+  CommonClass* temp = isClassLoaded(index);
   if (!temp) {
     JnjvmClassLoader* loader = classDef->classLoader;
     const UTF8* name = UTF8At(ctpDef[index]);
@@ -312,23 +289,10 @@ CommonClass* JavaCtpInfo::getMethodClassIfLoaded(uint32 index) {
     if (!temp) 
       temp = JnjvmClassLoader::bootstrapLoader->lookupClass(name);
   }
-#ifdef MULTIPLE_VM
-    if (temp && classDef->isSharedClass() && !temp->isSharedClass()) {
-      JavaThread::get()->isolate->unknownError("Class sharing violation");
-    }
-#endif
   return temp;
 }
 
-void JavaCtpInfo::checkInfoOfClass(uint32 index) {
-  if (typeAt(index) != ConstantClass)
-    JavaThread::get()->isolate->classFormatError(
-              "bad constant pool number for class at entry %d", index);
-  /*if (!(ctpRes[index]))
-    ctpRes[index] = JavaJIT::newLookupLLVM;*/
-}
-
-Typedef* JavaCtpInfo::resolveNameAndType(uint32 index) {
+Typedef* JavaConstantPool::resolveNameAndType(uint32 index) {
   void* res = ctpRes[index];
   if (!res) {
     if (typeAt(index) != ConstantNameAndType) {
@@ -344,7 +308,7 @@ Typedef* JavaCtpInfo::resolveNameAndType(uint32 index) {
   return (Typedef*)res;
 }
 
-Signdef* JavaCtpInfo::resolveNameAndSign(uint32 index) {
+Signdef* JavaConstantPool::resolveNameAndSign(uint32 index) {
   void* res = ctpRes[index];
   if (!res) {
     if (typeAt(index) != ConstantNameAndType) {
@@ -360,15 +324,15 @@ Signdef* JavaCtpInfo::resolveNameAndSign(uint32 index) {
   return (Signdef*)res;
 }
 
-Typedef* JavaCtpInfo::infoOfField(uint32 index) {
+Typedef* JavaConstantPool::infoOfField(uint32 index) {
   if (typeAt(index) != ConstantFieldref)
     JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for field at entry %d", index);
   return resolveNameAndType(ctpDef[index] & 0xFFFF);
 }
 
-void JavaCtpInfo::infoOfMethod(uint32 index, uint32 access, 
-                               CommonClass*& cl, JavaMethod*& meth) {
+void JavaConstantPool::infoOfMethod(uint32 index, uint32 access, 
+                                    CommonClass*& cl, JavaMethod*& meth) {
   uint8 id = typeAt(index);
   if (id != ConstantMethodref && id != ConstantInterfaceMethodref)
     JavaThread::get()->isolate->classFormatError(
@@ -386,13 +350,13 @@ void JavaCtpInfo::infoOfMethod(uint32 index, uint32 access,
   } 
 }
 
-uint32 JavaCtpInfo::getClassIndexFromMethod(uint32 index) {
+uint32 JavaConstantPool::getClassIndexFromMethod(uint32 index) {
   sint32 entry = ctpDef[index];
   return (uint32)(entry >> 16);
 }
 
 
-void JavaCtpInfo::nameOfStaticOrSpecialMethod(uint32 index, 
+void JavaConstantPool::nameOfStaticOrSpecialMethod(uint32 index, 
                                               const UTF8*& cl,
                                               const UTF8*& name,
                                               Signdef*& sign) {
@@ -408,15 +372,17 @@ void JavaCtpInfo::nameOfStaticOrSpecialMethod(uint32 index,
   cl = resolveClassName(entry >> 16);
 }
 
-void* JavaCtpInfo::infoOfStaticOrSpecialMethod(uint32 index, 
-                                               uint32 access,
-                                               Signdef*& sign,
-                                               JavaMethod*& meth) {
+void* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index, 
+                                                    uint32 access,
+                                                    Signdef*& sign,
+                                                    JavaMethod*& meth) {
   uint8 id = typeAt(index);
   if (id != ConstantMethodref && id != ConstantInterfaceMethodref)
     JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for method at entry %d", index);
   
+  if (ctpRes[index]) return ctpRes[index];
+
   sign = resolveNameAndSign(ctpDef[index] & 0xFFFF);
   sint32 entry = ctpDef[index];
   sint32 ntIndex = entry & 0xFFFF;
@@ -436,20 +402,16 @@ void* JavaCtpInfo::infoOfStaticOrSpecialMethod(uint32 index,
   }
   
   // Must be a callback
-  if (ctpRes[index]) {
-    return ctpRes[index];
-  } else {
-    void* val =
-      classDef->classLoader->TheModuleProvider->addCallback(classDef, index, sign,
-                                                            isStatic(access));
+  void* val =
+    classDef->classLoader->TheModuleProvider->addCallback(classDef, index, sign,
+                                                          isStatic(access));
         
-    ctpRes[index] = val;
-    return val;
-  }
+  ctpRes[index] = val;
+  return val;
 }
 
 
-Signdef* JavaCtpInfo::infoOfInterfaceOrVirtualMethod(uint32 index) {
+Signdef* JavaConstantPool::infoOfInterfaceOrVirtualMethod(uint32 index) {
 
   uint8 id = typeAt(index);
   if (id != ConstantMethodref && id != ConstantInterfaceMethodref)
@@ -461,28 +423,29 @@ Signdef* JavaCtpInfo::infoOfInterfaceOrVirtualMethod(uint32 index) {
   return sign;
 }
 
-void JavaCtpInfo::resolveInterfaceOrMethod(uint32 index,
-                                           CommonClass*& cl, const UTF8*& utf8,
-                                           Signdef*& sign) {
+void JavaConstantPool::resolveMethod(uint32 index, CommonClass*& cl,
+                                     const UTF8*& utf8, Signdef*& sign) {
   sint32 entry = ctpDef[index];
   sint32 ntIndex = entry & 0xFFFF;
   sign = (Signdef*)ctpRes[ntIndex];
+  assert(sign && "No cached signature after JITting");
   utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = loadClass(entry >> 16);
   cl->resolveClass(true);
 }
   
-void JavaCtpInfo::resolveField(uint32 index, CommonClass*& cl,
-                               const UTF8*& utf8, Typedef*& sign) {
+void JavaConstantPool::resolveField(uint32 index, CommonClass*& cl,
+                                    const UTF8*& utf8, Typedef*& sign) {
   sint32 entry = ctpDef[index];
   sint32 ntIndex = entry & 0xFFFF;
   sign = (Typedef*)ctpRes[ntIndex];
+  assert(sign && "No cached Typedef after JITting");
   utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = loadClass(entry >> 16);
   cl->resolveClass(true);
 }
 
-JavaField* JavaCtpInfo::lookupField(uint32 index, bool stat) {
+JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
   if (!(ctpRes[index])) {
     sint32 entry = ctpDef[index];
     sint32 ntIndex = entry & 0xFFFF;
@@ -504,12 +467,12 @@ JavaField* JavaCtpInfo::lookupField(uint32 index, bool stat) {
   return (JavaField*)ctpRes[index];
 }
 
-JavaString* JavaCtpInfo::resolveString(const UTF8* utf8, uint16 index) {
+JavaString* JavaConstantPool::resolveString(const UTF8* utf8, uint16 index) {
   JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
   return str;
 }
 
-ctpReader JavaCtpInfo::funcsReader[16] = {
+JavaConstantPool::ctpReader JavaConstantPool::funcsReader[16] = {
   unimplemented,
   CtpReaderUTF8,
   unimplemented,

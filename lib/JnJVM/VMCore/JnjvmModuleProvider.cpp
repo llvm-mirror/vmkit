@@ -26,7 +26,7 @@ using namespace llvm;
 using namespace jnjvm;
 
 JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) { 
-  JavaCtpInfo* ctpInfo = caller->ctpInfo;
+  JavaConstantPool* ctpInfo = caller->ctpInfo;
   
 
   bool isStatic = ctpInfo->isAStaticCall(index);
@@ -35,7 +35,7 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
   const UTF8* utf8 = 0;
   Signdef* sign = 0;
 
-  ctpInfo->resolveInterfaceOrMethod(index, cl, utf8, sign);
+  ctpInfo->resolveMethod(index, cl, utf8, sign);
   
   JavaMethod* meth = cl->lookupMethod(utf8, sign->keyName, isStatic, true);
   

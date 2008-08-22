@@ -52,7 +52,7 @@ using namespace llvm;
 
 void JavaJIT::invokeVirtual(uint16 index) {
   
-  JavaCtpInfo* ctpInfo = compilingClass->ctpInfo;
+  JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   CommonClass* cl = 0;
   JavaMethod* meth = 0;
   ctpInfo->infoOfMethod(index, ACC_VIRTUAL, cl, meth);
@@ -849,7 +849,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
   std::vector<Exception*> exceptions;  
   unsigned sync = isSynchro(compilingMethod->access) ? 1 : 0;
   nbe += sync;
-  JavaCtpInfo* ctpInfo = compilingClass->ctpInfo;
+  JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   if (nbe) {
     supplLocal = new AllocaInst(JnjvmModule::JavaObjectType, "exceptionVar",
                                 currentBlock);
@@ -1084,10 +1084,10 @@ void JavaJIT::compareFP(Value* val1, Value* val2, const Type* ty, bool l) {
 }
 
 void JavaJIT::_ldc(uint16 index) {
-  JavaCtpInfo* ctpInfo = compilingClass->ctpInfo;
+  JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   uint8 type = ctpInfo->typeAt(index);
   
-  if (type == JavaCtpInfo::ConstantString) {
+  if (type == JavaConstantPool::ConstantString) {
     Value* toPush = 0;
     if (ctpInfo->ctpRes[index] == 0) {
       compilingClass->acquire();
@@ -1136,19 +1136,19 @@ void JavaJIT::_ldc(uint16 index) {
 #else
     push(toPush, AssessorDesc::dRef);
 #endif
-  } else if (type == JavaCtpInfo::ConstantLong) {
+  } else if (type == JavaConstantPool::ConstantLong) {
     push(ConstantInt::get(Type::Int64Ty, ctpInfo->LongAt(index)),
          AssessorDesc::dLong);
-  } else if (type == JavaCtpInfo::ConstantDouble) {
+  } else if (type == JavaConstantPool::ConstantDouble) {
     push(ConstantFP::get(Type::DoubleTy, ctpInfo->DoubleAt(index)),
          AssessorDesc::dDouble);
-  } else if (type == JavaCtpInfo::ConstantInteger) {
+  } else if (type == JavaConstantPool::ConstantInteger) {
     push(ConstantInt::get(Type::Int32Ty, ctpInfo->IntegerAt(index)),
          AssessorDesc::dInt);
-  } else if (type == JavaCtpInfo::ConstantFloat) {
+  } else if (type == JavaConstantPool::ConstantFloat) {
     push(ConstantFP::get(Type::FloatTy, ctpInfo->FloatAt(index)),
          AssessorDesc::dFloat);
-  } else if (type == JavaCtpInfo::ConstantClass) {
+  } else if (type == JavaConstantPool::ConstantClass) {
     if (ctpInfo->ctpRes[index]) {
       CommonClass* cl = (CommonClass*)(ctpInfo->ctpRes[index]);
       LLVMCommonClassInfo* LCI = module->getClassInfo(cl);
@@ -1486,7 +1486,7 @@ Instruction* JavaJIT::invokeInline(JavaMethod* meth,
 }
 
 void JavaJIT::invokeSpecial(uint16 index) {
-  JavaCtpInfo* ctpInfo = compilingClass->ctpInfo;
+  JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   JavaMethod* meth = 0;
   Signdef* signature = 0;
   const UTF8* name = 0;
@@ -1531,7 +1531,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
 }
 
 void JavaJIT::invokeStatic(uint16 index) {
-  JavaCtpInfo* ctpInfo = compilingClass->ctpInfo;
+  JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   JavaMethod* meth = 0;
   Signdef* signature = 0;
   const UTF8* name = 0;
@@ -1641,8 +1641,7 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit) {
 }
 
 void JavaJIT::invokeNew(uint16 index) {
-  JavaCtpInfo* ctpInfo = compilingClass->ctpInfo;
-  ctpInfo->checkInfoOfClass(index);
+  JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   
   Class* cl = (Class*)(ctpInfo->getMethodClassIfLoaded(index));
   Value* Size = 0;
@@ -1710,7 +1709,7 @@ static llvm::Value* fieldGetter(JavaJIT* jit, const Type* type, Value* object,
 
 Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object, 
                            const Type* fieldType, const Type* fieldTypePtr) {
-  JavaCtpInfo* info = compilingClass->ctpInfo;
+  JavaConstantPool* info = compilingClass->ctpInfo;
   
   JavaField* field = info->lookupField(index, stat);
   if (field && field->classDef->isResolved()
@@ -1962,7 +1961,7 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
 void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   
   // Do the usual
-  JavaCtpInfo* ctpInfo = compilingClass->ctpInfo;
+  JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index);
   
   LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);

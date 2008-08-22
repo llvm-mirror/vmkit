@@ -31,7 +31,7 @@ namespace jnjvm {
 
 class Class;
 class Enveloppe;
-class JavaCtpInfo;
+class JavaConstantPool;
 
 /// CacheNode - A {class, method pointer} pair.
 class CacheNode {
@@ -67,7 +67,7 @@ public:
   /// ctpInfo - The constant pool info that owns the invokeinterface
   /// bytecode. This is used to resolve the interface call at its first
   /// occurence.
-  JavaCtpInfo* ctpInfo;
+  JavaConstantPool* ctpInfo;
 
   /// cacheLock - The linked list may be modified by concurrent thread. This
   /// lock ensures that the list stays consistent.
@@ -79,7 +79,7 @@ public:
   /// Enveloppe - Allocates the linked list with the given constant pool info
   /// at the given index, so as the resolution process knows which interface
   /// method the invokeinterface bytecode references.
-  Enveloppe(JavaCtpInfo* info, uint32 index);
+  Enveloppe(JavaConstantPool* info, uint32 index);
 
 };
 
