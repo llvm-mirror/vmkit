@@ -36,8 +36,10 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
   Signdef* sign = 0;
 
   ctpInfo->resolveMethod(index, cl, utf8, sign);
-  
   JavaMethod* meth = cl->lookupMethod(utf8, sign->keyName, isStatic, true);
+  
+  if (!isVirtual(meth->access))
+    JavaThread::get()->isolate->initialiseClass(cl);
   
   meth->compiledPtr();
   
@@ -86,15 +88,18 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   void* val = meth->compiledPtr();
   if (F->isDeclaration())
     mvm::jit::executionEngine->updateGlobalMapping(F, val);
-  
+ 
   if (isVirtual(meth->access)) {
     LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
     uint64_t offset = LMI->getOffset()->getZExtValue();
     assert(meth->classDef->isResolved() && "Class not resolved");
+    assert(meth->classDef->isReady() && "Class not ready");
     assert(meth->classDef->virtualVT && "Class has no VT");
     assert(meth->classDef->virtualTableSize > offset && 
         "The method's offset is greater than the virtual table size");
     ((void**)meth->classDef->virtualVT)[offset] = val;
+  } else {
+    JavaThread::get()->isolate->initialiseClass(meth->classDef);
   }
 
   return false;

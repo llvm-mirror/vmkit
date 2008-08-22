@@ -666,9 +666,12 @@ void Jnjvm::mapInitialThread() {
 void Jnjvm::loadBootstrap() {
   JnjvmClassLoader* loader = JnjvmClassLoader::bootstrapLoader;
 #define LOAD_CLASS(cl) \
-  loader->loadName(cl->name, true, true, true);
+  loader->loadName(cl->name, true, true);\
+  initialiseClass(cl);
+
   LOAD_CLASS(Classpath::newClass);
   LOAD_CLASS(Classpath::newConstructor);
+  LOAD_CLASS(Classpath::newString);
   LOAD_CLASS(Classpath::newMethod);
   LOAD_CLASS(Classpath::newField);
   LOAD_CLASS(Classpath::newStackTraceElement);
@@ -712,8 +715,9 @@ void Jnjvm::loadBootstrap() {
                                         appClassLoader->getJavaClassLoader());
   // load and initialise math since it is responsible for dlopen'ing 
   // libjavalang.so and we are optimizing some math operations
-  loader->loadName(loader->asciizConstructUTF8("java/lang/Math"), 
-                   true, true, true);
+  CommonClass* math = 
+    loader->loadName(loader->asciizConstructUTF8("java/lang/Math"), true, true);
+  initialiseClass(math);
 }
 
 void Jnjvm::executeClass(const char* className, ArrayObject* args) {

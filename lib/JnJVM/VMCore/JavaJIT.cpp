@@ -1655,9 +1655,14 @@ void JavaJIT::invokeNew(uint16 index) {
     VT = LCI->getVirtualTable(this);
     Cl = LCI->getVar(this);
 #ifndef MULTIPLE_VM
-    if (!cl->isReady())
+    if (!cl->isReady()) {
 #endif
-      Cl = invoke(JnjvmModule::InitialisationCheckFunction, Cl, "", currentBlock);
+    Cl = invoke(JnjvmModule::InitialisationCheckFunction, Cl, "", currentBlock);
+    CallInst::Create(JnjvmModule::ForceInitialisationCheckFunction, Cl, "",
+                     currentBlock);
+#ifndef MULTIPLE_VM
+    }
+#endif
   }
   std::vector<Value*> args;
   args.push_back(Size);

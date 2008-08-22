@@ -302,15 +302,16 @@ void AssessorDesc::introspectArray(JnjvmClassLoader* loader,
   analyseIntern(utf8, start, 1, funcs, intern);
 
   if (funcs != dTab) {
-    JavaThread::get()->isolate->unknownError("%s isn't an array", utf8->printString());
+    Jnjvm* vm = JavaThread::get()->isolate;
+    vm->unknownError("%s isn't an array", utf8->printString());
   }
 
   analyseIntern(utf8, intern, 0, funcs, pos);
 
   if (funcs == dRef) {
     ass = dRef;
-    res = loader->loadName(utf8->extract(loader->hashUTF8, intern + 1, pos - 1), false,
-                       false, true);
+    const UTF8* temp = utf8->extract(loader->hashUTF8, intern + 1, pos - 1);
+    res = loader->loadName(temp, false, true);
   } else if (funcs == dTab) {
     ass = dTab;
     res = loader->constructArray(utf8->extract(loader->hashUTF8, intern, pos));
@@ -412,7 +413,7 @@ CommonClass* Typedef::assocClass(JnjvmClassLoader* loader) {
   if (pseudoAssocClassName == 0) {
     return funcs->classType;
   } else if (funcs == AssessorDesc::dRef) {
-    return loader->loadName(pseudoAssocClassName, false, true, true);
+    return loader->loadName(pseudoAssocClassName, false, true);
   } else {
     return loader->constructArray(pseudoAssocClassName);
   }

@@ -229,7 +229,8 @@ void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
 CommonClass* NativeUtil::resolvedImplClass(jclass clazz, bool doClinit) {
   JavaObject *Cl = (JavaObject*)clazz;
   CommonClass* cl = (CommonClass*)Classpath::vmdataClass->getVirtualObjectField(Cl);
-  cl->resolveClass(doClinit);
+  cl->resolveClass();
+  JavaThread::get()->isolate->initialiseClass(cl);
   return cl;
 }
 
@@ -412,7 +413,7 @@ ArrayObject* NativeUtil::getExceptionTypes(JavaMethod* meth) {
     for (uint16 i = 0; i < nbe; ++i) {
       uint16 idx = reader.readU2();
       CommonClass* cl = ctp->loadClass(idx);
-      cl->resolveClass(false);
+      cl->resolveClass();
       JavaObject* obj = cl->getClassDelegatee();
       res->elements[i] = obj;
     }

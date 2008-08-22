@@ -386,7 +386,7 @@ public:
 
   /// resolveClass - If the class has not been resolved yet, resolve it.
   ///
-  void resolveClass(bool doClinit);
+  void resolveClass();
 
 #ifndef MULTIPLE_VM
   /// getStatus - Get the resolution/initialization status of this class.
@@ -397,12 +397,12 @@ public:
   /// isReady - Has this class been initialized?
   ///
   bool isReady() {
-    return status == ready;
+    return status >= inClinit;
   }
 #else
   JavaState* getStatus();
   bool isReady() {
-    return *getStatus() == ready;
+    return *getStatus() >= inClinit;
   }
 #endif
 

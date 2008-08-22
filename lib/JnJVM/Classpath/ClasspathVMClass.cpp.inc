@@ -55,7 +55,7 @@ jclass clazz,
   
   JnjvmClassLoader* JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader);
   CommonClass* cl = JCL->lookupClassFromJavaString((JavaString*)str,
-                                                   true, false, false);
+                                                   true, false);
   if (cl != 0) {
     if (clinit) {
       cl->initialiseClass();
@@ -244,7 +244,7 @@ jclass Cl1, jclass Cl2) {
   CommonClass* cl2 = 
     (CommonClass*)Classpath::vmdataClass->getVirtualObjectField((JavaObject*)Cl2);
 
-  cl2->resolveClass(false);
+  cl2->resolveClass();
   return cl2->isAssignableFrom(cl1);
 
 }
@@ -260,7 +260,7 @@ jclass Cl) {
   if (isInterface(cl->access))
     return 0;
   else {
-    cl->resolveClass(false);
+    cl->resolveClass();
     if (cl->super) return (jobject)JavaThread::get()->isolate->getClassDelegatee(cl->super);
     else return 0;
   }

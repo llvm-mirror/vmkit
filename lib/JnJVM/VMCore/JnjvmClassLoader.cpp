@@ -121,7 +121,7 @@ void JnjvmClassLoader::loadParents(Class* cl) {
     cl->display[0] = cl;
     cl->virtualTableSize = VT_SIZE / sizeof(void*);
   } else {
-    cl->super = loadName(super, true, false, true);
+    cl->super = loadName(super, true, true);
     int depth = cl->super->depth + 1;
     cl->depth = depth;
     cl->virtualTableSize = cl->super->virtualTableSize;
@@ -132,7 +132,7 @@ void JnjvmClassLoader::loadParents(Class* cl) {
 
   for (int i = 0; i < nbI; i++)
     cl->interfaces.push_back((Class*)loadName(cl->interfacesUTF8[i],
-                                              true, false, true));
+                                              true, true));
 }
 
 void JnjvmClassLoader::readAttributs(Class* cl, Reader& reader,
@@ -239,7 +239,7 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
 }
 
 
-void JnjvmClassLoader::resolveClass(CommonClass* cl, bool doClinit) {
+void JnjvmClassLoader::resolveClass(CommonClass* cl) {
   if (cl->status < resolved) {
     cl->acquire();
     int status = cl->status;
@@ -252,7 +252,7 @@ void JnjvmClassLoader::resolveClass(CommonClass* cl, bool doClinit) {
       if (cl->isArray) {
         ClassArray* arrayCl = (ClassArray*)cl;
         CommonClass* baseClass =  arrayCl->baseClass();
-        baseClass->resolveClass(doClinit);
+        baseClass->resolveClass();
         cl->status = resolved;
       } else {
         readClass((Class*)cl);
@@ -273,7 +273,6 @@ void JnjvmClassLoader::resolveClass(CommonClass* cl, bool doClinit) {
       cl->release();
     }
   }
-  if (doClinit) cl->initialiseClass();
 }
 
 CommonClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name) {
@@ -320,7 +319,7 @@ CommonClass* JnjvmClassLoader::internalLoad(const UTF8* name) {
 }
 
 CommonClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
-                                        bool doClinit, bool doThrow) {
+                                        bool doThrow) {
  
 
   CommonClass* cl = internalLoad(name);
@@ -332,14 +331,14 @@ CommonClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
     JavaThread::get()->isolate->noClassDefFoundError("unable to load %s", name->printString());
   }
 
-  if (cl && doResolve) cl->resolveClass(doClinit);
+  if (cl && doResolve) cl->resolveClass();
 
   return cl;
 }
 
 CommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigned int start,
                                          unsigned int len,
-                                         bool doResolve, bool doClinit,
+                                         bool doResolve,
                                          bool doThrow) {
   uint32 origLen = len;
   const UTF8* name = utf8->javaToInternal(hashUTF8, start, len);
@@ -367,10 +366,9 @@ CommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigned in
               const UTF8* componentName = utf8->javaToInternal(hashUTF8,
                                                                start + 1,
                                                                len - 2);
-              if (loadName(componentName, doResolve, doClinit,
-                           doThrow)) {
+              if (loadName(componentName, doResolve, doThrow)) {
                 ret = constructArray(name);
-                if (doResolve) ret->resolveClass(doClinit);
+                if (doResolve) ret->resolveClass();
                 doLoop = false;
               } else {
                 doLoop = false;
@@ -385,7 +383,7 @@ CommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigned in
                 && ((uint32)name->size) == start + 1) {
 
               ret = constructArray(name);
-              ret->resolveClass(doClinit);
+              ret->resolveClass();
               doLoop = false;
             } else {
               doLoop = false;
@@ -398,15 +396,14 @@ CommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigned in
     return ret;
 
   } else {
-    return loadName(name, doResolve, doClinit, doThrow);
+    return loadName(name, doResolve, doThrow);
   }
 }
 
 CommonClass* JnjvmClassLoader::lookupClassFromJavaString(JavaString* str,
-                                              bool doResolve, bool doClinit,
-                                              bool doThrow) {
+                                              bool doResolve, bool doThrow) {
   return lookupClassFromUTF8(str->value, str->offset, str->count,
-                             doResolve, doClinit, doThrow);
+                             doResolve, doThrow);
 }
 
 CommonClass* JnjvmClassLoader::lookupClass(const UTF8* utf8) {

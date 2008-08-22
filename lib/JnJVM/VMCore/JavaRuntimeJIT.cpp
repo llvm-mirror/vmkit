@@ -48,6 +48,7 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   uint32 index = enveloppe->index;
   
   ctpInfo->resolveMethod(index, cl, utf8, sign);
+  assert(obj->classOf->isReady() && "Class not ready in a virtual lookup.");
 
   enveloppe->cacheLock->lock();
   CacheNode* rcache = 0;
@@ -66,6 +67,8 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
 
   if (!rcache) {
     JavaMethod* dmeth = ocl->lookupMethod(utf8, sign->keyName, false, true);
+    assert(dmeth->classDef->isReady() &&
+           "Class not ready in a virtual lookup.");
     if (cache->methPtr) {
       rcache = new CacheNode(enveloppe);
     } else {
@@ -103,11 +106,12 @@ extern "C" void* fieldLookup(JavaObject* obj, Class* caller, uint32 index,
   ctpInfo->resolveField(index, cl, utf8, sign);
   
   JavaField* field = cl->lookupField(utf8, sign->keyName, stat, true);
-  field->classDef->initialiseClass();
   
   void* ptr = 0;
   if (stat) {
-    ptr = (void*)(((uint64)((Class*)cl)->staticInstance()) + field->ptrOffset);
+    Class* fieldCl = field->classDef;
+    JavaThread::get()->isolate->initialiseClass(fieldCl);
+    ptr = (void*)((uint64)(fieldCl->staticInstance()) + field->ptrOffset);
 #ifndef MULTIPLE_VM
     ctpInfo->ctpRes[index] = ptr;
 #endif
@@ -208,6 +212,7 @@ extern "C" uint32 vtableLookup(JavaObject* obj, Class* caller, uint32 index) {
   caller->ctpInfo->resolveMethod(index, cl, utf8, sign);
   JavaMethod* dmeth = cl->lookupMethodDontThrow(utf8, sign->keyName, false,
                                                 true);
+  assert(obj->classOf->isReady() && "Class not ready in a virtual lookup.");
   if (!dmeth) {
     // Arg, it should have been an invoke interface.... Perform the lookup
     // on the object class and do not update offset.
@@ -216,6 +221,8 @@ extern "C" uint32 vtableLookup(JavaObject* obj, Class* caller, uint32 index) {
     caller->ctpInfo->ctpRes[index] = (void*)dmeth->offset;
   }
   
+  assert(dmeth->classDef->isReady() && "Class not ready in a virtual lookup.");
+
   return dmeth->offset;
 }
 #endif

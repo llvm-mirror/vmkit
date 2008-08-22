@@ -161,24 +161,22 @@ public:
   
   /// loadName - Loads the class of the given name.
   ///
-  CommonClass* loadName(const UTF8* name, bool doResolve, bool doClinit,
-                        bool doThrow);
+  CommonClass* loadName(const UTF8* name, bool doResolve, bool doThrow);
   
   /// lookupClassFromUTF8 - Lookup a class from an UTF8 name and load it.
   ///
   CommonClass* lookupClassFromUTF8(const UTF8* utf8, unsigned int start,
-                                   unsigned int len,
-                                   bool doResolve, bool doClinit, bool doThrow);
+                                   unsigned int len, bool doResolve,
+                                   bool doThrow);
   
   /// lookupClassFromJavaString - Lookup a class from a Java String and load it.
   ///
-  CommonClass* lookupClassFromJavaString(JavaString* str,
-                                         bool doResolve, bool doClinit,
+  CommonClass* lookupClassFromJavaString(JavaString* str, bool doResolve,
                                          bool doThrow);
    
   /// resolveClass - Resolves the class.
   ///
-  void resolveClass(CommonClass* cl, bool doClinit);
+  void resolveClass(CommonClass* cl);
   
   /// lookupClass - Finds the class of th given name in the class loader's
   /// table.

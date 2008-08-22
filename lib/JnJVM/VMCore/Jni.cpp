@@ -71,8 +71,8 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   sint32 len = utf8->size;
   
 
-  CommonClass* cl = loader->lookupClassFromUTF8(utf8, 0, len, true, true,
-                                            true);
+  CommonClass* cl = loader->lookupClassFromUTF8(utf8, 0, len, true, true);
+  JavaThread::get()->isolate->initialiseClass(cl);
   return (jclass)(cl->getClassDelegatee());
   
   END_EXCEPTION

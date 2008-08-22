@@ -275,7 +275,7 @@ JnjvmClassLoader* ClassArray::arrayLoader(const UTF8* name,
   } else if (name->elements[start] == AssessorDesc::I_REF) {
     const UTF8* componentName = name->javaToInternal(loader->hashUTF8, start + 1,
                                                      len - 2);
-    CommonClass* cl = loader->loadName(componentName, false, false, true);
+    CommonClass* cl = loader->loadName(componentName, false, true);
     return cl->classLoader;
   } else {
     return JnjvmClassLoader::bootstrapLoader;
@@ -428,7 +428,7 @@ bool CommonClass::isOfTypeName(const UTF8* Tname) {
     while (res && Tname->elements[prof] == AssessorDesc::I_TAB) {
       CommonClass* cl = ((ClassArray*)curS)->baseClass();
       ++prof;
-      classLoader->resolveClass(cl, false);
+      classLoader->resolveClass(cl);
       res = curS->isArray && cl && (prof < len);
       curS = cl;
     }
@@ -528,8 +528,8 @@ JavaObject* CommonClass::getClassDelegatee(JavaObject* pd) {
   return JavaThread::get()->isolate->getClassDelegatee(this, pd);
 }
 
-void CommonClass::resolveClass(bool doClinit) {
-  classLoader->resolveClass(this, doClinit);
+void CommonClass::resolveClass() {
+  classLoader->resolveClass(this);
 }
 
 void CommonClass::initialiseClass() {

@@ -69,7 +69,7 @@ jclass clazz,
   JavaString* str = (JavaString*)_str;
 
   JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
-  CommonClass* cl = JCL->lookupClassFromJavaString(str, doResolve, false, false);
+  CommonClass* cl = JCL->lookupClassFromJavaString(str, doResolve, false);
 
   if (cl != 0) {
     return (jclass)cl->getClassDelegatee();

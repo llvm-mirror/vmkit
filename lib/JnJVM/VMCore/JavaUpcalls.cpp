@@ -305,7 +305,8 @@ void ClasspathException::initialise(JnjvmClassLoader* loader) {
 
 void ClasspathThread::createInitialThread(Jnjvm* vm, JavaObject* th) {
   JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
-  JCL->loadName(newVMThread->name, true, true, true);
+  JCL->loadName(newVMThread->name, true, true);
+  vm->initialiseClass(newVMThread);
 
   JavaObject* vmth = newVMThread->doNew(vm);
   name->setVirtualObjectField(th, (JavaObject*)vm->asciizToStr("main"));
@@ -315,8 +316,8 @@ void ClasspathThread::createInitialThread(Jnjvm* vm, JavaObject* th) {
   assocThread->setVirtualObjectField(vmth, th);
   running->setVirtualInt8Field(vmth, (uint32)1);
   
-  JCL->loadName(rootGroup->classDef->name,
-                true, true, true);
+  JCL->loadName(rootGroup->classDef->name, true, true);
+  vm->initialiseClass(rootGroup->classDef);
   JavaObject* RG = rootGroup->getStaticObjectField();
   group->setVirtualObjectField(th, RG);
   groupAddThread->invokeIntSpecial(vm, RG, th);
@@ -324,7 +325,8 @@ void ClasspathThread::createInitialThread(Jnjvm* vm, JavaObject* th) {
 
 void ClasspathThread::mapInitialThread(Jnjvm* vm) {
   JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
-  JCL->loadName(newThread->name, true, true, true);
+  JCL->loadName(newThread->name, true, true);
+  vm->initialiseClass(newThread);
   JavaObject* th = newThread->doNew(vm);
   createInitialThread(vm, th);
   JavaThread* myth = JavaThread::get();
@@ -525,10 +527,10 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* vm) {
   ClasspathException::initialise(vm);
     
   vm->loadName(vm->asciizConstructUTF8("java/lang/String"), 
-                                       true, false, false);
+                                       true, false);
 
   vm->loadName(vm->asciizConstructUTF8("java/lang/Object"), 
-                                       true, false, false);
+                                       true, false);
   
   // Don't compile methods here, we still don't know where to allocate Java
   // strings.

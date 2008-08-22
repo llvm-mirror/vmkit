@@ -272,10 +272,10 @@ CommonClass* JavaConstantPool::loadClass(uint32 index) {
     const UTF8* name = UTF8At(ctpDef[index]);
     if (name->elements[0] == AssessorDesc::I_TAB) {
       temp = loader->constructArray(name);
-      loader->resolveClass(temp, false);
+      loader->resolveClass(temp);
     } else {
       // Put into ctpRes because there is only one representation of the class
-      temp = loader->loadName(name, true, false, false);
+      temp = loader->loadName(name, true, false);
     }
     ctpRes[index] = temp;
   }
@@ -429,7 +429,7 @@ void JavaConstantPool::resolveMethod(uint32 index, CommonClass*& cl,
   assert(sign && "No cached signature after JITting");
   utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = loadClass(entry >> 16);
-  cl->resolveClass(true);
+  cl->resolveClass();
 }
   
 void JavaConstantPool::resolveField(uint32 index, CommonClass*& cl,
@@ -440,7 +440,7 @@ void JavaConstantPool::resolveField(uint32 index, CommonClass*& cl,
   assert(sign && "No cached Typedef after JITting");
   utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = loadClass(entry >> 16);
-  cl->resolveClass(true);
+  cl->resolveClass();
 }
 
 JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
