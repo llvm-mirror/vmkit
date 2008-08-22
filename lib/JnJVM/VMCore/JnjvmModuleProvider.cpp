@@ -47,24 +47,21 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
   return meth;
 }
 
-bool JnjvmModuleProvider::lookupCallback(Function* F, std::pair<Class*, uint32>& res) {
+std::pair<Class*, uint32>* JnjvmModuleProvider::lookupCallback(Function* F) {
   callback_iterator CI = callbacks.find(F);
   if (CI != callbacks.end()) {
-    res.first = CI->second.first;
-    res.second = CI->second.second;
-    return true;
+    return &(CI->second);
   } else {
-    return false;
+    return 0;
   }
 }
 
-bool JnjvmModuleProvider::lookupFunction(Function* F, JavaMethod*& meth) {
+JavaMethod* JnjvmModuleProvider::lookupFunction(Function* F) {
   function_iterator CI = functions.find(F);
   if (CI != functions.end()) {
-    meth = CI->second;
-    return true;
+    return CI->second;
   } else {
-    return false;
+    return 0;
   }
 }
 
@@ -77,14 +74,13 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   if (!(F->hasNotBeenReadFromBitcode())) 
     return false;
   
-  JavaMethod* meth = 0;
-  lookupFunction(F, meth);
+  JavaMethod* meth = lookupFunction(F);
   
   if (!meth) {
     // It's a callback
-    std::pair<Class*, uint32> p;
-    lookupCallback(F, p);
-    meth = staticLookup(p.first, p.second); 
+    std::pair<Class*, uint32> * p = lookupCallback(F);
+    assert(p && "No callback where there should be one");
+    meth = staticLookup(p->first, p->second); 
   }
   
   void* val = meth->compiledPtr();
@@ -155,6 +151,14 @@ Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
 
 llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
                                                  Signdef* sign, bool stat) {
+  
+  void* key = &(cl->ctpInfo->ctpRes[index]);
+  
+  reverse_callback_iterator CI = reverseCallbacks.find(key);
+  if (CI != reverseCallbacks.end()) {
+    return CI->second;
+  }
+  
   const llvm::FunctionType* type = 0;
   JnjvmModule* M = cl->classLoader->TheModule;
   LLVMSignatureInfo* LSI = M->getSignatureInfo(sign);
@@ -164,12 +168,15 @@ llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
   } else {
     type = LSI->getVirtualType();
   }
+  
   Function* func = llvm::Function::Create(type, 
                                           llvm::GlobalValue::GhostLinkage,
                                           "callback",
                                           TheModule);
 
   callbacks.insert(std::make_pair(func, std::make_pair(cl, index)));
+  reverseCallbacks.insert(std::make_pair(key, func));
+
   return func;
 }
 

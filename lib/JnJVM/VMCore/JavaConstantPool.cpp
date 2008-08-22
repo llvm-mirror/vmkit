@@ -188,6 +188,7 @@ uint32 JavaConstantPool::CtpReaderDouble(JavaConstantPool* ctp, Reader& reader,
 JavaConstantPool::JavaConstantPool(Class* cl, Reader& reader) {
   ctpSize = reader.readU2();
   classDef = cl;
+  JInfo = 0;
   
   ctpRes   = new void*[ctpSize];
   ctpDef   = new sint32[ctpSize];
@@ -271,9 +272,10 @@ CommonClass* JavaConstantPool::loadClass(uint32 index) {
     const UTF8* name = UTF8At(ctpDef[index]);
     if (name->elements[0] == AssessorDesc::I_TAB) {
       temp = loader->constructArray(name);
+      loader->resolveClass(temp, false);
     } else {
       // Put into ctpRes because there is only one representation of the class
-      temp = loader->loadName(name, false, false, false);
+      temp = loader->loadName(name, true, false, false);
     }
     ctpRes[index] = temp;
   }
@@ -381,8 +383,6 @@ void* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index,
     JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for method at entry %d", index);
   
-  if (ctpRes[index]) return ctpRes[index];
-
   sign = resolveNameAndSign(ctpDef[index] & 0xFFFF);
   sint32 entry = ctpDef[index];
   sint32 ntIndex = entry & 0xFFFF;
@@ -396,17 +396,15 @@ void* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index,
       // don't throw if no meth, the exception will be thrown just in time
       JnjvmModule* M = classDef->classLoader->TheModule;
       void* F = M->getMethod(meth);
-      ctpRes[index] = (void*)F;
       return F;
     }
   }
   
-  // Must be a callback
+  // Return the callback.
   void* val =
     classDef->classLoader->TheModuleProvider->addCallback(classDef, index, sign,
                                                           isStatic(access));
         
-  ctpRes[index] = val;
   return val;
 }
 
@@ -446,25 +444,29 @@ void JavaConstantPool::resolveField(uint32 index, CommonClass*& cl,
 }
 
 JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
-  if (!(ctpRes[index])) {
-    sint32 entry = ctpDef[index];
-    sint32 ntIndex = entry & 0xFFFF;
-    Typedef* sign = (Typedef*)ctpRes[ntIndex];
-    const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
-    CommonClass* cl = getMethodClassIfLoaded(entry >> 16);
-    if (cl && cl->status >= resolved) {
-      JavaField* field = cl->lookupFieldDontThrow(utf8, sign->keyName, stat, 
+  sint32 entry = ctpDef[index];
+  sint32 ntIndex = entry & 0xFFFF;
+  Typedef* sign = (Typedef*)ctpRes[ntIndex];
+  const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
+  CommonClass* cl = getMethodClassIfLoaded(entry >> 16);
+  if (cl && cl->status >= resolved) {
+    JavaField* field = cl->lookupFieldDontThrow(utf8, sign->keyName, stat, 
                                                 true);
-      // don't throw if no field, the exception will be thrown just in time  
-      if (field) { 
-        ctpRes[index] = field;
-        return field;
+    // don't throw if no field, the exception will be thrown just in time  
+    if (field) {
+      if (!stat) {
+        ctpRes[index] = (void*)field->ptrOffset;
+      } 
+#ifndef MULTIPLE_VM
+      else if (cl->isReady()) {
+        JavaObject* S = field->classDef->staticInstance();
+        ctpRes[index] = (void*)((uint64)S + field->ptrOffset);
       }
-    } else {
-      return 0;
+#endif
     }
-  }
-  return (JavaField*)ctpRes[index];
+    return field;
+  } 
+  return 0;
 }
 
 JavaString* JavaConstantPool::resolveString(const UTF8* utf8, uint16 index) {

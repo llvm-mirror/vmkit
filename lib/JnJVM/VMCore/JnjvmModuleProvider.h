@@ -28,15 +28,19 @@ private:
   
   std::map<llvm::Function*, JavaMethod*> functions;
   std::map<llvm::Function*, std::pair<Class*, uint32> > callbacks;
+  std::map<void*, llvm::Function* > reverseCallbacks;
   
-  bool lookupCallback(llvm::Function*, std::pair<Class*, uint32>&);
-  bool lookupFunction(llvm::Function*, JavaMethod*& meth);
+  std::pair<Class*, uint32>* lookupCallback(llvm::Function*);
+  JavaMethod* lookupFunction(llvm::Function*);
 
   typedef std::map<llvm::Function*, JavaMethod*>::iterator
     function_iterator;  
   
   typedef std::map<llvm::Function*, std::pair<Class*, uint32> >::iterator
     callback_iterator;  
+  
+  typedef std::map<void*, llvm::Function* >::iterator
+    reverse_callback_iterator;  
 
   llvm::FunctionPassManager* perFunctionPasses;
 

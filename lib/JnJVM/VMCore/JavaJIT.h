@@ -56,6 +56,10 @@ struct Opinfo {
 };
 
 class JavaJIT {
+private:
+
+  llvm::Value* getConstantPoolAt(uint32 index);
+
 public:
   
   JnjvmModule* module;

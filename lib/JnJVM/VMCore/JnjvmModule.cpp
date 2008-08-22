@@ -102,8 +102,11 @@ llvm::Function* JnjvmModule::GetClassInDisplayFunction = 0;
 llvm::Function* JnjvmModule::AquireObjectFunction = 0;
 llvm::Function* JnjvmModule::ReleaseObjectFunction = 0;
 llvm::Function* JnjvmModule::MultiCallNewFunction = 0;
-llvm::Function* JnjvmModule::RuntimeUTF8ToStrFunction = 0;
+
+#ifdef MULTIPLE_VM
+llvm::Function* JnjvmModule::StringLookupFunction = 0;
 llvm::Function* JnjvmModule::GetStaticInstanceFunction = 0;
+#endif
 llvm::Function* JnjvmModule::GetClassDelegateeFunction = 0;
 llvm::Function* JnjvmModule::ArrayLengthFunction = 0;
 llvm::Function* JnjvmModule::GetVTFunction = 0;
@@ -142,6 +145,20 @@ Value* LLVMCommonClassInfo::getVar(JavaJIT* jit) {
                                classDef->classLoader->TheModule);
   }
   return new LoadInst(varGV, "", jit->currentBlock);
+}
+
+Value* LLVMConstantPoolInfo::getDelegatee(JavaJIT* jit) {
+  if (!delegateeGV) {
+    void* ptr = ctp->ctpRes;
+    Constant* cons = 
+      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
+                                mvm::jit::ptrPtrType);
+    delegateeGV = new GlobalVariable(mvm::jit::ptrPtrType, true,
+                                     GlobalValue::ExternalLinkage,
+                                     cons, "",
+                                     ctp->classDef->classLoader->TheModule);
+  }
+  return new LoadInst(delegateeGV, "", jit->currentBlock);
 }
 
 Value* LLVMCommonClassInfo::getDelegatee(JavaJIT* jit) {
@@ -864,6 +881,32 @@ Value* LLVMServiceInfo::getDelegatee(JavaJIT* jit) {
 #endif
 
 
+LLVMStringInfo* JnjvmModule::getStringInfo(JavaString* str) {
+  string_iterator SI = stringMap.find(str);
+  if (SI != stringMap.end()) {
+    return SI->second;
+  } else {
+    LLVMStringInfo* LSI = new LLVMStringInfo(str);
+    stringMap.insert(std::make_pair(str, LSI));
+    return LSI; 
+  }
+}
+
+Value* LLVMStringInfo::getDelegatee(JavaJIT* jit) {
+  if (!delegateeGV) {
+    void* ptr = str;
+    Constant* cons = 
+      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
+                                JnjvmModule::JavaObjectType);
+    delegateeGV = new GlobalVariable(JnjvmModule::JavaObjectType, true,
+                                     GlobalValue::ExternalLinkage,
+                                     cons, "",
+                                     jit->module);
+  }
+  return new LoadInst(delegateeGV, "", jit->currentBlock);
+}
+
+
 namespace jnjvm { 
   namespace llvm_runtime { 
     #include "LLVMRuntime.inc"
@@ -967,7 +1010,7 @@ void JnjvmModule::initialise() {
 
 #ifdef MULTIPLE_VM
   GetStaticInstanceFunction = module->getFunction("getStaticInstance");
-  RuntimeUTF8ToStrFunction = module->getFunction("runtimeUTF8ToStr");
+  StringLookupFunction = module->getFunction("stringLookup");
 #endif
   
 #ifdef SERVICE_VM

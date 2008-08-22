@@ -10,6 +10,7 @@
 #ifndef JNJVM_JAVA_CONSTANT_POOL_H
 #define JNJVM_JAVA_CONSTANT_POOL_H
 
+#include "mvm/JIT.h"
 #include "mvm/Object.h"
 
 #include "types.h"
@@ -251,6 +252,7 @@ public:
     ctpRes = 0;
     ctpType = 0;
     ctpDef = 0;
+    JInfo = 0;
   }
   
   /// JavaConstantPool - Reads the bytecode of the class to get
@@ -264,6 +266,18 @@ public:
     delete ctpRes;
     delete ctpDef;
     delete ctpType;
+  }
+  
+  mvm::JITInfo* JInfo;
+  template<typename Ty> 
+  Ty *getInfo() {
+    if (!JInfo) {
+      JInfo = new Ty(this);
+    }   
+
+    assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
+           "Invalid concrete type or multiple inheritence for getInfo");
+    return static_cast<Ty*>(JInfo);
   }
 
 };

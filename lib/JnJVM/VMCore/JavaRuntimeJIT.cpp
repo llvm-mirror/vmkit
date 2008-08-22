@@ -30,10 +30,13 @@
 
 using namespace jnjvm;
 
-extern "C" JavaString* runtimeUTF8ToStr(const UTF8* val) {
-  Jnjvm* vm = JavaThread::get()->isolate;
-  return vm->UTF8ToStr(val);
+#ifdef MULTIPLE_VM
+extern "C" JavaString* stringLookup(Class* cl, uint32 index) {
+  const UTF8* utf8 = cl->ctpInfo->UTF8At(cl->ctpInfo->ctpDef[index]);
+  JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
+  return str;
 }
+#endif
 
 extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   Enveloppe* enveloppe = cache->enveloppe;
@@ -87,18 +90,10 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
 }
 
 extern "C" void* fieldLookup(JavaObject* obj, Class* caller, uint32 index,
-                             uint32 stat, void** ifStatic, uint32* offset) {
+                             uint32 stat) {
   JavaConstantPool* ctpInfo = caller->ctpInfo;
   if (ctpInfo->ctpRes[index]) {
-    JavaField* field = (JavaField*)(ctpInfo->ctpRes[index]);
-    field->classDef->initialiseClass();
-    if (stat) obj = field->classDef->staticInstance();
-    void* ptr = (void*)(field->ptrOffset + (uint64)obj);
-#ifndef MULTIPLE_VM
-    if (stat) *ifStatic = ptr;
-    *offset = (uint32)field->ptrOffset;
-#endif
-    return ptr;
+    return ctpInfo->ctpRes[index];
   }
   
   CommonClass* cl = 0;
@@ -110,15 +105,17 @@ extern "C" void* fieldLookup(JavaObject* obj, Class* caller, uint32 index,
   JavaField* field = cl->lookupField(utf8, sign->keyName, stat, true);
   field->classDef->initialiseClass();
   
-  if (stat) obj = ((Class*)cl)->staticInstance();
-  void* ptr = (void*)((uint64)obj + field->ptrOffset);
-  
-  ctpInfo->ctpRes[index] = field;
+  void* ptr = 0;
+  if (stat) {
+    ptr = (void*)(((uint64)((Class*)cl)->staticInstance()) + field->ptrOffset);
 #ifndef MULTIPLE_VM
-  if (stat) *ifStatic = ptr;
-  *offset = (uint32)field->ptrOffset;
+    ctpInfo->ctpRes[index] = ptr;
 #endif
-
+  } else {
+    ptr = (void*)((uint64)obj + field->ptrOffset);
+    ctpInfo->ctpRes[index] = (void*)field->ptrOffset;
+  }
+  
   return ptr;
 }
 
@@ -196,19 +193,14 @@ extern "C" JavaObject* getClassDelegatee(CommonClass* cl) {
   return vm->getClassDelegatee(cl);
 }
 
-extern "C" Class* newLookup(Class* caller, uint32 index, Class** toAlloc,
-                            uint32 clinit) { 
+extern "C" Class* newLookup(Class* caller, uint32 index) { 
   JavaConstantPool* ctpInfo = caller->ctpInfo;
   Class* cl = (Class*)ctpInfo->loadClass(index);
-  cl->resolveClass(clinit);
-  
-  *toAlloc = cl;
   return cl;
 }
 
 #ifndef WITHOUT_VTABLE
-extern "C" uint32 vtableLookup(JavaObject* obj, Class* caller, uint32 index,
-                               uint32* offset) {
+extern "C" uint32 vtableLookup(JavaObject* obj, Class* caller, uint32 index) {
   CommonClass* cl = 0;
   const UTF8* utf8 = 0;
   Signdef* sign = 0;
@@ -220,10 +212,11 @@ extern "C" uint32 vtableLookup(JavaObject* obj, Class* caller, uint32 index,
     // Arg, it should have been an invoke interface.... Perform the lookup
     // on the object class and do not update offset.
     dmeth = obj->classOf->lookupMethod(utf8, sign->keyName, false, true);
-    return dmeth->offset;
+  } else {
+    caller->ctpInfo->ctpRes[index] = (void*)dmeth->offset;
   }
-  *offset = dmeth->offset;
-  return *offset;
+  
+  return dmeth->offset;
 }
 #endif
 

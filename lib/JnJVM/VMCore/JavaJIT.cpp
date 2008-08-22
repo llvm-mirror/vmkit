@@ -80,12 +80,10 @@ void JavaJIT::invokeVirtual(uint16 index) {
     LLVMMethodInfo* LMI = module->getMethodInfo(meth);
     indexes2.push_back(LMI->getOffset());
   } else {
-    GlobalVariable* gv = 
-      new GlobalVariable(Type::Int32Ty, false, GlobalValue::ExternalLinkage,
-                         zero, "", module);
     
-    // set is volatile
-    Value* val = new LoadInst(gv, "", true, currentBlock);
+    Value* val = getConstantPoolAt(index);
+    val = new PtrToIntInst(val, Type::Int32Ty, "", currentBlock);
+    
     Value * cmp = new ICmpInst(ICmpInst::ICMP_NE, val, zero, "", currentBlock);
     BasicBlock* ifTrue  = createBasicBlock("true vtable");
     BasicBlock* ifFalse  = createBasicBlock("false vtable");
@@ -105,7 +103,6 @@ void JavaJIT::invokeVirtual(uint16 index) {
     Args.push_back(LCI->getVar(this));
     Constant* CI = ConstantInt::get(Type::Int32Ty, index);
     Args.push_back(CI);
-    Args.push_back(gv);
     val = invoke(JnjvmModule::VirtualLookupFunction, Args, "", currentBlock);
     node->addIncoming(val, currentBlock);
     llvm::BranchInst::Create(endBlock, currentBlock);
@@ -1088,54 +1085,49 @@ void JavaJIT::_ldc(uint16 index) {
   uint8 type = ctpInfo->typeAt(index);
   
   if (type == JavaConstantPool::ConstantString) {
-    Value* toPush = 0;
-    if (ctpInfo->ctpRes[index] == 0) {
-      compilingClass->acquire();
-      if (ctpInfo->ctpRes[index] == 0) {
-        const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
-        void* val = 0;
-        GlobalVariable* gv = 0;
-#ifndef MULTIPLE_VM
-        val = JavaThread::get()->isolate->UTF8ToStr(utf8);
-        gv =
-          new GlobalVariable(JnjvmModule::JavaObjectType, false, 
-                             GlobalValue::ExternalLinkage,
-                             JnjvmModule::JavaObjectNullConstant, "",
-                             module);
+#ifdef MULTIPLE_VM
+    // Lookup the constant pool cache
+    Constant* nil = mvm::jit::constantPtrNull;
+    Value* val = getConstantPoolAt(index);
+    Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, nil, val, "", currentBlock);
+    BasicBlock* ifTrue  = createBasicBlock("true string");
+    BasicBlock* ifFalse  = createBasicBlock("false string");
+    BasicBlock* endBlock  = createBasicBlock("end string");
+  
+    PHINode * node = PHINode::Create(JnjvmModule::JavaObjectType, "", endBlock);
+    BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
+  
+    // ---------- In case we already resolved something --------------------- //
+    currentBlock = ifTrue;
+    val = new BitCastInst(val, JnjvmModule::JavaObjectType, "", currentBlock);
+    node->addIncoming(val, currentBlock);
+    BranchInst::Create(endBlock, currentBlock);
+    
+    // ---------------- In case we have to resolve -------------------------- //
+    currentBlock = ifFalse;
+    LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(compilingClass);
+    Value* v = LCI->getVar(this);
+    std::vector<Value*> Args;
+    Args.push_back(v);
+    Args.push_back(ConstantInt::get(Type::Int32Ty, index));
+    CallInst* C = llvm::CallInst::Create(JnjvmModule::StringLookupFunction,
+                                         Args.begin(), Args.end(),
+                                         "", currentBlock);
+    node->addIncoming(C, currentBlock);
+    BranchInst::Create(endBlock, currentBlock);
+
+    // ---------------------------- The end ----------------------------------//
+    currentBlock = endBlock;
+    push(node, AssessorDesc::dRef);
+      
 #else
-          val = (void*)utf8;
-          gv =
-            new GlobalVariable(JnjvmModule::JavaArrayUInt16Type, false, 
-                               GlobalValue::ExternalLinkage,
-                               JnjvmModule::UTF8NullConstant, "",
-                               module);
+    const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
+    JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
+    LLVMStringInfo* LSI = module->getStringInfo(str);
+    Value* val = LSI->getDelegatee(this);
+    push(val, AssessorDesc::dRef);
 #endif
         
-        // TODO: put an initialiser in here
-        void* ptr = mvm::jit::executionEngine->getPointerToGlobal(gv);
-        GenericValue Val = GenericValue(val);
-        llvm::GenericValue * Ptr = (llvm::GenericValue*)ptr;
-        mvm::jit::executionEngine->StoreValueToMemory(Val, Ptr,
-                                                  JnjvmModule::JavaObjectType);
-        toPush = new LoadInst(gv, "", currentBlock);
-        ctpInfo->ctpRes[index] = gv;
-        compilingClass->release();
-      } else {
-        compilingClass->release();
-        toPush = new LoadInst((GlobalVariable*)ctpInfo->ctpRes[index], "",
-                              currentBlock);
-      }
-    } else {
-      toPush = new LoadInst((GlobalVariable*)ctpInfo->ctpRes[index], "",
-                            currentBlock);
-    }
-#ifdef MULTIPLE_VM
-    CallInst* C = llvm::CallInst::Create(JnjvmModule::RuntimeUTF8ToStrFunction,
-                                         toPush, "", currentBlock);
-    push(C, AssessorDesc::dRef);
-#else
-    push(toPush, AssessorDesc::dRef);
-#endif
   } else if (type == JavaConstantPool::ConstantLong) {
     push(ConstantInt::get(Type::Int64Ty, ctpInfo->LongAt(index)),
          AssessorDesc::dLong);
@@ -1590,16 +1582,28 @@ void JavaJIT::invokeStatic(uint16 index) {
     }
   }
 }
-    
-Value* JavaJIT::getResolvedClass(uint16 index, bool clinit) {
-    GlobalVariable * gv =
-      new GlobalVariable(JnjvmModule::JavaClassType, false, 
-                         GlobalValue::ExternalLinkage,
-                         JnjvmModule::JavaClassNullConstant, "",
-                         module);
 
+Value* JavaJIT::getConstantPoolAt(uint32 index) {
+  JavaConstantPool* ctp = compilingClass->ctpInfo;
+  LLVMConstantPoolInfo* LCPI = module->getConstantPoolInfo(ctp);
+  Value* CTP = LCPI->getDelegatee(this);
+      
+  std::vector<Value*> indexes; //[3];
+  indexes.push_back(ConstantInt::get(Type::Int32Ty, index));
+  Value* arg1 = GetElementPtrInst::Create(CTP, indexes.begin(),
+                                          indexes.end(), 
+                                          "", currentBlock);
+  // We set as volatile because "readnone" calls may alter
+  // the constant pool cache.
+  arg1 = new LoadInst(arg1, "", true, currentBlock);
+
+  return arg1;
+}
+
+Value* JavaJIT::getResolvedClass(uint16 index, bool clinit) {
     
-    Value* arg1 = new LoadInst(gv, "", false, currentBlock);
+    Value* arg1 = getConstantPoolAt(index);
+    arg1 = new BitCastInst(arg1, JnjvmModule::JavaClassType, "", currentBlock);
     Value* test = new ICmpInst(ICmpInst::ICMP_EQ, arg1, 
                                JnjvmModule::JavaClassNullConstant, "",
                                currentBlock);
@@ -1619,25 +1623,17 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit) {
     Args.push_back(v);
     ConstantInt* CI = ConstantInt::get(Type::Int32Ty, index);
     Args.push_back(CI);
-    Args.push_back(gv);
-    if (clinit) {
-      Args.push_back(mvm::jit::constantOne);
-    } else {
-      Args.push_back(mvm::jit::constantZero);
-    }
     Value* res = invoke(JnjvmModule::ClassLookupFunction, Args, "",
                         currentBlock);
     node->addIncoming(res, currentBlock);
 
     llvm::BranchInst::Create(trueCl, currentBlock);
     currentBlock = trueCl;
-#ifdef MULTIPLE_VM
     if (clinit)
       return invoke(JnjvmModule::InitialisationCheckFunction, node, "",
                     currentBlock);
     else
-#endif
-    return node;
+      return node;
 }
 
 void JavaJIT::invokeNew(uint16 index) {
@@ -1712,36 +1708,34 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
   JavaConstantPool* info = compilingClass->ctpInfo;
   
   JavaField* field = info->lookupField(index, stat);
-  if (field && field->classDef->isResolved()
-#ifndef MULTIPLE_VM
-      && field->classDef->isReady()
-#endif
-     ) {
+  if (field && field->classDef->isResolved()) {
     LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(field->classDef);
-    if (stat) {
-      object = LCI->getStaticVar(this);
-    }
-    const Type* type = stat ? LCI->getStaticType() :
-                              LCI->getVirtualType();
     LLVMFieldInfo* LFI = module->getFieldInfo(field);
-    return fieldGetter(this, type, object, LFI->getOffset());
-  } else {
+    const Type* type = 0;
+    if (stat) {
+
+#ifndef MULTIPLE_VM
+      if (field->classDef->isReady()) {
+#endif
+        object = LCI->getStaticVar(this);
+        type = LCI->getStaticType();
+        return fieldGetter(this, type, object, LFI->getOffset());
+#ifndef MULTIPLE_VM
+      }
+#endif
+    } else {
+      type = LCI->getVirtualType();
+      return fieldGetter(this, type, object, LFI->getOffset());
+    }
+  }
+
     const Type* Pty = mvm::jit::arrayPtrType;
-    GlobalVariable* gvStaticInstance = 
-      new GlobalVariable(mvm::jit::ptrType, false, 
-                         GlobalValue::ExternalLinkage,
-                         mvm::jit::constantPtrNull, 
-                         "", module);
-    
-    
     Constant* zero = mvm::jit::constantZero;
-    GlobalVariable* gv = 
-      new GlobalVariable(Type::Int32Ty, false, GlobalValue::ExternalLinkage,
-                         zero, "", module);
+    Constant* nil = mvm::jit::constantPtrNull;
     
-    // set is volatile
-    Value* val = new LoadInst(gv, "", true, currentBlock);
-    Value * cmp = new ICmpInst(ICmpInst::ICMP_NE, val, zero, "", currentBlock);
+    Value* val = getConstantPoolAt(index);
+    // a virtual field can never be zero.
+    Value * cmp = new ICmpInst(ICmpInst::ICMP_NE, val, nil, "", currentBlock);
     BasicBlock* ifTrue  = createBasicBlock("true ldResolved");
     BasicBlock* ifFalse  = createBasicBlock("false ldResolved");
     BasicBlock* endBlock  = createBasicBlock("end ldResolved");
@@ -1753,6 +1747,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     Value* resPtr = 0;
     if (object) {
       Value* ptr = new BitCastInst(object, Pty, "", currentBlock);
+      val = new PtrToIntInst(val, Type::Int32Ty, "", currentBlock);
       std::vector<Value*> gepArgs; // size = 1
       gepArgs.push_back(zero);
       gepArgs.push_back(val);
@@ -1760,7 +1755,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
                                      "", currentBlock);
     
     } else {
-      resPtr = new LoadInst(gvStaticInstance, "", currentBlock);
+      resPtr = val;
     }
     
     node->addIncoming(resPtr, currentBlock);
@@ -1779,15 +1774,12 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     Constant* CI = ConstantInt::get(Type::Int32Ty, index);
     args.push_back(CI);
     args.push_back(stat ? mvm::jit::constantOne : mvm::jit::constantZero);
-    args.push_back(gvStaticInstance);
-    args.push_back(gv);
     Value* tmp = invoke(JnjvmModule::FieldLookupFunction, args, "", currentBlock);
     node->addIncoming(tmp, currentBlock);
     llvm::BranchInst::Create(endBlock, currentBlock);
     
     currentBlock = endBlock;;
     return new BitCastInst(node, fieldTypePtr, "", currentBlock);
-  }
 }
 
 void JavaJIT::convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock,

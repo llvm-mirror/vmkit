@@ -23,6 +23,7 @@
 #include "mvm/JIT.h"
 
 #include "JavaClass.h"
+#include "JavaConstantPool.h"
 #include "JavaTypes.h"
 
 namespace jnjvm {
@@ -223,10 +224,61 @@ public:
 };
 #endif
 
+class LLVMConstantPoolInfo : public mvm::JITInfo {
+private:
+  JavaConstantPool* ctp;
+  llvm::GlobalVariable* delegateeGV;
+
+public:
+  llvm::Value* getDelegatee(JavaJIT* jit);
+
+  LLVMConstantPoolInfo(JavaConstantPool* c) :
+    ctp(c), delegateeGV(0) {}
+};
+
+class LLVMStringInfo : public mvm::JITInfo {
+private:
+  JavaString* str;
+  llvm::GlobalVariable* delegateeGV;
+
+public:
+  llvm::Value* getDelegatee(JavaJIT* jit);
+
+  LLVMStringInfo(JavaString* c) :
+    str(c), delegateeGV(0) {}
+};
+
 class JnjvmModule : public llvm::Module {
   friend class LLVMClassInfo;
 private:
+  std::map<const CommonClass*, LLVMCommonClassInfo*> classMap;
+  std::map<const Signdef*, LLVMSignatureInfo*> signatureMap;
+  std::map<const JavaField*, LLVMFieldInfo*> fieldMap;
+  std::map<const JavaMethod*, LLVMMethodInfo*> methodMap;
+  std::map<const JavaString*, LLVMStringInfo*> stringMap;
+
+#ifdef SERVICE_VM
+  std::map<const ServiceDomain*, LLVMServiceInfo*> serviceMap;
+  typedef std::map<const ServiceDomain*, LLVMServiceInfo*>::iterator
+    class_iterator;
+#endif
   
+  typedef std::map<const CommonClass*, LLVMCommonClassInfo*>::iterator
+    class_iterator;  
+  
+  typedef std::map<const Signdef*, LLVMSignatureInfo*>::iterator
+    signature_iterator;  
+  
+  typedef std::map<const JavaMethod*, LLVMMethodInfo*>::iterator
+    method_iterator;  
+  
+  typedef std::map<const JavaField*, LLVMFieldInfo*>::iterator
+    field_iterator;
+  
+  typedef std::map<const JavaString*, LLVMStringInfo*>::iterator
+    string_iterator;
+
+
   static VirtualTable* makeVT(Class* cl, bool stat);
   static VirtualTable* allocateVT(Class* cl, CommonClass::method_iterator meths);
 
@@ -292,8 +344,12 @@ public:
   static llvm::Function* ServiceCallStopFunction;
 #endif
   static llvm::Function* MultiCallNewFunction;
-  static llvm::Function* RuntimeUTF8ToStrFunction;
+
+#ifdef MULTIPLE_VM
+  static llvm::Function* StringLookupFunction;
   static llvm::Function* GetStaticInstanceFunction;
+#endif
+
   static llvm::Function* GetClassDelegateeFunction;
   static llvm::Function* ArrayLengthFunction;
   static llvm::Function* GetVTFunction;
@@ -366,6 +422,12 @@ public:
   static LLVMMethodInfo* getMethodInfo(JavaMethod* method) {
     return method->getInfo<LLVMMethodInfo>();
   }
+
+  static LLVMConstantPoolInfo* getConstantPoolInfo(JavaConstantPool* ctp) {
+    return ctp->getInfo<LLVMConstantPoolInfo>();
+  }
+  
+  LLVMStringInfo* getStringInfo(JavaString* str);
 
 #ifdef SERVICE_VM
   static LLVMServiceInfo* getServiceInfo(ServiceDomain* service) {
