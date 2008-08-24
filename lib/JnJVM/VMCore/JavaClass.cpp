@@ -762,3 +762,31 @@ void CommonClass::resolveClass() {
     }
   }
 }
+
+void Class::resolveInnerOuterClasses() {
+  if (!innerOuterResolved) {
+    Attribut* attribut = lookupAttribut(Attribut::innerClassesAttribut);
+    if (attribut != 0) {
+      Reader reader(attribut, bytes);
+
+      uint16 nbi = reader.readU2();
+      for (uint16 i = 0; i < nbi; ++i) {
+        uint16 inner = reader.readU2();
+        uint16 outer = reader.readU2();
+        //uint16 innerName = 
+        reader.readU2();
+        uint16 accessFlags = reader.readU2();
+        Class* clInner = (Class*)ctpInfo->loadClass(inner);
+        Class* clOuter = (Class*)ctpInfo->loadClass(outer);
+
+        if (clInner == this) {
+          outerClass = clOuter;
+        } else if (clOuter == this) {
+          clInner->innerAccess = accessFlags;
+          innerClasses.push_back(clInner);
+        }
+      }
+    }
+    innerOuterResolved = true;
+  }
+}

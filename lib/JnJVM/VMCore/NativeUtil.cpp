@@ -404,8 +404,8 @@ ArrayObject* NativeUtil::getExceptionTypes(JavaMethod* meth) {
                               &(JavaThread::get()->isolate->allocator));
   } else {
     Class* cl = meth->classDef;
-    JavaConstantPool* ctp = cl->ctpInfo;
-    Reader reader(exceptionAtt, cl->bytes);
+    JavaConstantPool* ctp = cl->getConstantPool();
+    Reader reader(exceptionAtt, cl->getBytes());
     uint16 nbe = reader.readU2();
     ArrayObject* res = ArrayObject::acons(nbe, Classpath::classArrayClass,
                                           &(JavaThread::get()->isolate->allocator));

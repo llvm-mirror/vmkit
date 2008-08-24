@@ -32,7 +32,8 @@ using namespace jnjvm;
 
 #ifdef MULTIPLE_VM
 extern "C" JavaString* stringLookup(Class* cl, uint32 index) {
-  const UTF8* utf8 = cl->ctpInfo->UTF8At(cl->ctpInfo->ctpDef[index]);
+  JavaConstantPool* ctpInfo = cl->getConstantPool();
+  const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
   JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
   return str;
 }
@@ -94,7 +95,7 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
 
 extern "C" void* fieldLookup(JavaObject* obj, Class* caller, uint32 index,
                              uint32 stat) {
-  JavaConstantPool* ctpInfo = caller->ctpInfo;
+  JavaConstantPool* ctpInfo = caller->getConstantPool();
   if (ctpInfo->ctpRes[index]) {
     return ctpInfo->ctpRes[index];
   }
@@ -198,7 +199,7 @@ extern "C" JavaObject* getClassDelegatee(CommonClass* cl) {
 }
 
 extern "C" Class* newLookup(Class* caller, uint32 index) { 
-  JavaConstantPool* ctpInfo = caller->ctpInfo;
+  JavaConstantPool* ctpInfo = caller->getConstantPool();
   Class* cl = (Class*)ctpInfo->loadClass(index);
   return cl;
 }
@@ -209,7 +210,7 @@ extern "C" uint32 vtableLookup(JavaObject* obj, Class* caller, uint32 index) {
   const UTF8* utf8 = 0;
   Signdef* sign = 0;
   
-  caller->ctpInfo->resolveMethod(index, cl, utf8, sign);
+  caller->getConstantPool()->resolveMethod(index, cl, utf8, sign);
   JavaMethod* dmeth = cl->lookupMethodDontThrow(utf8, sign->keyName, false,
                                                 true);
   assert(obj->classOf->isReady() && "Class not ready in a virtual lookup.");
@@ -218,7 +219,7 @@ extern "C" uint32 vtableLookup(JavaObject* obj, Class* caller, uint32 index) {
     // on the object class and do not update offset.
     dmeth = obj->classOf->lookupMethod(utf8, sign->keyName, false, true);
   } else {
-    caller->ctpInfo->ctpRes[index] = (void*)dmeth->offset;
+    caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
   }
   
   assert(dmeth->classDef->isReady() && "Class not ready in a virtual lookup.");

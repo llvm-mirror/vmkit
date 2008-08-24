@@ -144,8 +144,7 @@ CommonClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name) {
       if (cl->status == hashed) {
         cl->acquire();
         if (cl->status == hashed) {
-          cl->status = loaded;
-          ((Class*)cl)->bytes = bytes;
+          ((Class*)cl)->setBytes(bytes);
         }
         cl->release();
       }
@@ -302,15 +301,13 @@ Class* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes) {
   if (I == End) {
     res = allocator_new(allocator, Class)(this, name);
     if (bytes) {
-      res->bytes = bytes;
-      res->status = loaded;
+      res->setBytes(bytes);
     }
     classes->map.insert(std::make_pair(name, res));
   } else {
     res = ((Class*)(I->second));
     if (res->status == hashed && bytes) {
-      res->bytes = bytes;
-      res->status = loaded;
+      res->setBytes(bytes);
     }
   }
   classes->lock->unlock();

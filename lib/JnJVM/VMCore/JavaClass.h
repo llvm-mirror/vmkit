@@ -572,6 +572,30 @@ public:
   /// readClass - Reads the class.
   ///
   void readClass();
+
+  
+  JavaConstantPool* getConstantPool() {
+    return ctpInfo;
+  }
+  
+  ArrayUInt8* getBytes() {
+    return bytes;
+  }
+  
+  void setBytes(ArrayUInt8* B) {
+    bytes = B;
+    status = loaded;
+  }
+
+  void resolveInnerOuterClasses();
+
+  Class* getOuterClass() {
+    return outerClass;
+  }
+
+  std::vector<Class*>* getInnerClasses() {
+    return &innerClasses;
+  }
 };
 
 /// ClassArray - This class represents Java array classes.

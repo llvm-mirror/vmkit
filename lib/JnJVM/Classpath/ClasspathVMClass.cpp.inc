@@ -342,32 +342,6 @@ jclass Cl) {
   return (jobject)ret;
 }
 
-static void resolveInnerOuterClasses(Class* cl) {
-  Attribut* attribut = cl->lookupAttribut(Attribut::innerClassesAttribut);
-  if (attribut != 0) {
-    Reader reader(attribut, cl->bytes);
-
-    uint16 nbi = reader.readU2();
-    for (uint16 i = 0; i < nbi; ++i) {
-      uint16 inner = reader.readU2();
-      uint16 outer = reader.readU2();
-      //uint16 innerName = 
-      reader.readU2();
-      uint16 accessFlags = reader.readU2();
-      Class* clInner = (Class*)cl->ctpInfo->loadClass(inner);
-      Class* clOuter = (Class*)cl->ctpInfo->loadClass(outer);
-
-      if (clInner == cl) {
-        cl->outerClass = clOuter;
-      } else if (clOuter == cl) {
-        clInner->innerAccess = accessFlags;
-        cl->innerClasses.push_back(clInner);
-      }
-    }
-  }
-  cl->innerOuterResolved = true;
-}
-
 
 JNIEXPORT jclass JNICALL Java_java_lang_VMClass_getDeclaringClass(
 #ifdef NATIVE_JNI
@@ -377,10 +351,10 @@ jclass clazz,
 jclass Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
   Class* cl = (Class*)NativeUtil::resolvedImplClass(Cl, false);
-  if (!(cl->innerOuterResolved))
-    resolveInnerOuterClasses(cl);
-  if (cl->outerClass) {
-    return (jclass)vm->getClassDelegatee(cl->outerClass);
+  cl->resolveInnerOuterClasses();
+  Class* outer = cl->getOuterClass();
+  if (outer) {
+    return (jclass)vm->getClassDelegatee(outer);
   } else {
     return 0;
   }
@@ -394,12 +368,12 @@ jclass clazz,
 jclass Cl, bool publicOnly) {
   Jnjvm* vm = JavaThread::get()->isolate;
   Class* cl = (Class*)NativeUtil::resolvedImplClass(Cl, false);
-  if (!(cl->innerOuterResolved))
-    resolveInnerOuterClasses(cl);
-  ArrayObject* res = ArrayObject::acons(cl->innerClasses.size(), Classpath::constructorArrayClass, &(vm->allocator));
+  cl->resolveInnerOuterClasses();
+  std::vector<Class*>* innerClasses = cl->getInnerClasses();
+  ArrayObject* res = ArrayObject::acons(innerClasses->size(), Classpath::constructorArrayClass, &(vm->allocator));
   uint32 index = 0;
-  for (std::vector<Class*>::iterator i = cl->innerClasses.begin(), 
-       e = cl->innerClasses.end(); i!= e; i++) {
+  for (std::vector<Class*>::iterator i = innerClasses->begin(), 
+       e = innerClasses->end(); i!= e; i++) {
     res->elements[index++] = vm->getClassDelegatee(*i); 
   }
 

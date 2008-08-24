@@ -57,9 +57,9 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   Attribut* sourceAtt = cl->lookupAttribut(Attribut::sourceFileAttribut);
   
   if (sourceAtt) {
-    Reader reader(sourceAtt, cl->bytes);
+    Reader reader(sourceAtt, cl->getBytes());
     uint16 index = reader.readU2();
-    sourceName = vm->UTF8ToStr(cl->ctpInfo->UTF8At(index));
+    sourceName = vm->UTF8ToStr(cl->getConstantPool()->UTF8At(index));
   }
 
   bool native = isNative(meth->access);

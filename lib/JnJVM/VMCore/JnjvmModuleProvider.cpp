@@ -26,7 +26,7 @@ using namespace llvm;
 using namespace jnjvm;
 
 JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) { 
-  JavaConstantPool* ctpInfo = caller->ctpInfo;
+  JavaConstantPool* ctpInfo = caller->getConstantPool();
   
 
   bool isStatic = ctpInfo->isAStaticCall(index);
@@ -157,7 +157,7 @@ Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
 llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
                                                  Signdef* sign, bool stat) {
   
-  void* key = &(cl->ctpInfo->ctpRes[index]);
+  void* key = &(cl->getConstantPool()->ctpRes[index]);
   
   reverse_callback_iterator CI = reverseCallbacks.find(key);
   if (CI != reverseCallbacks.end()) {
