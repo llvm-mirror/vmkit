@@ -129,7 +129,7 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
 }
 
 
-CommonClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name) {
+Class* JnjvmBootstrapLoader::internalLoad(const UTF8* name) {
   
   CommonClass* cl = lookupClass(name);
   
@@ -138,28 +138,16 @@ CommonClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name) {
     if (bytes) {
       cl = constructClass(name, bytes);
     }
-  } else if (cl->status == hashed) {
-    ArrayUInt8* bytes = openName(name);
-    if (bytes) {
-      if (cl->status == hashed) {
-        cl->acquire();
-        if (cl->status == hashed) {
-          ((Class*)cl)->setBytes(bytes);
-        }
-        cl->release();
-      }
-    } else {
-      cl = 0;
-    }
   }
-
-  return cl;
+  
+  if (cl) assert(!cl->isArray);
+  return (Class*)cl;
 }
 
-CommonClass* JnjvmClassLoader::internalLoad(const UTF8* name) {
+Class* JnjvmClassLoader::internalLoad(const UTF8* name) {
   CommonClass* cl = lookupClass(name);
   
-  if (!cl || cl->status == hashed) {
+  if (!cl) {
     const UTF8* javaName = name->internalToJava(hashUTF8, 0, name->size);
     JavaString* str = isolate->UTF8ToStr(javaName);
     JavaObject* obj = (JavaObject*)
@@ -168,14 +156,15 @@ CommonClass* JnjvmClassLoader::internalLoad(const UTF8* name) {
     cl = (CommonClass*)(Classpath::vmdataClass->getVirtualObjectField(obj));
   }
   
-  return cl;
+  if (cl) assert(!cl->isArray);
+  return (Class*)cl;
 }
 
-CommonClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
+Class* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
                                         bool doThrow) {
  
 
-  CommonClass* cl = internalLoad(name);
+  Class* cl = internalLoad(name);
 
   if (!cl && doThrow) {
     if (!(name->equals(Jnjvm::NoClassDefFoundError))) {
@@ -288,6 +277,7 @@ Class* JnjvmSharedLoader::constructSharedClass(const UTF8* name,
 
 
 Class* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes) {
+  assert(bytes && "constructing a class without bytes");
 #ifdef MULTIPLE_VM
   if (this != bootstrapLoader && this != sharedLoader && bytes) {
     Class* cl = sharedLoader->constructSharedClass(name, bytes);
@@ -299,16 +289,10 @@ Class* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes) {
   ClassMap::iterator I = classes->map.find(name);
   Class* res = 0;
   if (I == End) {
-    res = allocator_new(allocator, Class)(this, name);
-    if (bytes) {
-      res->setBytes(bytes);
-    }
+    res = allocator_new(allocator, Class)(this, name, bytes);
     classes->map.insert(std::make_pair(name, res));
   } else {
     res = ((Class*)(I->second));
-    if (res->status == hashed && bytes) {
-      res->setBytes(bytes);
-    }
   }
   classes->lock->unlock();
   return res;

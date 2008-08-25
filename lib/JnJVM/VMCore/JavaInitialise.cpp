@@ -79,17 +79,18 @@ static void initialiseStatics() {
   const UTF8* utf8OfChar = JCL->asciizConstructUTF8("[C");
   JavaArray::ofChar = JCL->constructArray(utf8OfChar);
   ((UTF8*)utf8OfChar)->classOf = JavaArray::ofChar;
-  
-
- 
+   
   ClassArray::InterfacesArray.push_back(
-    JCL->constructClass(JCL->asciizConstructUTF8("java/lang/Cloneable")));
+    JCL->loadName(JCL->asciizConstructUTF8("java/lang/Cloneable"), false,
+                  false));
   
   ClassArray::InterfacesArray.push_back(
-    JCL->constructClass(JCL->asciizConstructUTF8("java/io/Serializable")));
+    JCL->loadName(JCL->asciizConstructUTF8("java/io/Serializable"), false,
+                  false));
   
   ClassArray::SuperArray = 
-    JCL->constructClass(JCL->asciizConstructUTF8("java/lang/Object"));
+    JCL->loadName(JCL->asciizConstructUTF8("java/lang/Object"), false,
+                  false);
   
   JavaArray::ofChar->interfaces = ClassArray::InterfacesArray;
   JavaArray::ofChar->super = ClassArray::SuperArray;

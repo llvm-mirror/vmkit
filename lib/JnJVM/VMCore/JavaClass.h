@@ -46,8 +46,7 @@ class UTF8;
 /// and accessing static fields of the class) when it is in the ready state.
 ///
 typedef enum JavaState {
-  hashed = 0,   /// The class is hashed in a class loader table.
-  loaded,       /// The .class file has been found.
+  loaded = 0,       /// The .class file has been found.
   classRead,    /// The .class file has been read.
   prepared,     /// The parents of this class has been resolved.
   resolved,     /// The class has been resolved.
@@ -550,7 +549,7 @@ public:
   
   /// Class - Create a class in the given virtual machine and with the given
   /// name.
-  Class(JnjvmClassLoader* loader, const UTF8* name);
+  Class(JnjvmClassLoader* loader, const UTF8* name, ArrayUInt8* bytes);
   
   /// readParents - Reads the parents, i.e. super and interfaces, of the class.
   ///
@@ -586,11 +585,6 @@ public:
     return bytes;
   }
   
-  void setBytes(ArrayUInt8* B) {
-    bytes = B;
-    status = loaded;
-  }
-
   void resolveInnerOuterClasses();
 
   Class* getOuterClass() {

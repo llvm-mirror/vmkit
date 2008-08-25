@@ -12,7 +12,7 @@
 
 
 #define UPCALL_CLASS(vm, name)                                             \
-  vm->constructClass(vm->asciizConstructUTF8(name))                        
+  vm->loadName(vm->asciizConstructUTF8(name), false, false)                        
 
 #define UPCALL_FIELD(vm, cl, name, type, acc)                              \
   UPCALL_CLASS(vm, cl)->constructField(vm->asciizConstructUTF8(name),      \

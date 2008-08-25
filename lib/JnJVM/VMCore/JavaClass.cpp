@@ -210,7 +210,7 @@ CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n, bool isArray) 
   name = n;
   this->lockVar = mvm::Lock::allocRecursive();
   this->condVar = mvm::Cond::allocCond();
-  this->status = hashed;
+  this->status = loaded;
   this->classLoader = loader;
   this->isArray = isArray;
   this->isPrimitive = false;
@@ -229,8 +229,9 @@ ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n) :
   access = ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC;
 }
 
-Class::Class(JnjvmClassLoader* loader, const UTF8* n) : CommonClass(loader, n, false) {
-  bytes = 0;
+Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) : 
+    CommonClass(loader, n, false) {
+  bytes = B;
   super = 0;
   ctpInfo = 0;
 #ifndef MULTIPLE_VM
@@ -248,7 +249,6 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n) : CommonClass(lo
   display[0] = ClassArray::SuperArray;
   display[1] = this;
   access = ACC_FINAL | ACC_ABSTRACT;
-  status = loaded;
 }
 
 void Class::print(mvm::PrintBuffer* buf) const {
