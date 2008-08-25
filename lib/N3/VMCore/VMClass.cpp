@@ -168,6 +168,7 @@ void VMCommonClass::initialise(VirtualMachine* vm, bool isArray) {
   this->isArray = isArray;
   this->isPointer = false;
   this->isPrimitive = false;
+  this->isDummy = false;
   this->naturalType = llvm::OpaqueType::get();
 }
 
@@ -831,16 +832,14 @@ bool VMMethod::signatureEqualsGeneric(std::vector<VMCommonClass*> & args) {
 		std::vector<VMCommonClass*>::iterator i = parameters.begin(), a =
 				args.begin(), e = args.end();
 
-		// dummy classes for generic arguments have a NULL assembly field
 		// check whether both i and a point to a dummy class
-		if (((*i)->assembly == NULL && (*a)->assembly != NULL) ||
-		    ((*i)->assembly != NULL && (*a)->assembly == NULL))
+		if (((*i)->isDummy && !(*a)->isDummy) || (!(*i)->isDummy && (*a)->isDummy))
 		  return false;
 		
 		// dummy classes for generic arguments contain the 
 		// argument number in the token field
 		// signature is only equal if the argument number matches
-		if ((*i)->assembly == NULL && (*a)->assembly == NULL) {
+		if ((*i)->isDummy && (*a)->isDummy) {
 		  if ((*i)->token != (*a)->token) {
 		    return false;
 		  }
@@ -857,16 +856,14 @@ bool VMMethod::signatureEqualsGeneric(std::vector<VMCommonClass*> & args) {
 		}
 
 		for (; a != e; ++i, ++a) {
-	    // dummy classes for generic arguments have a NULL assembly field
 	    // check whether both i and a point to a dummy class
-	    if (((*i)->assembly == NULL && (*a)->assembly != NULL) ||
-	        ((*i)->assembly != NULL && (*a)->assembly == NULL))
+	    if (((*i)->isDummy && !(*a)->isDummy) || (!(*i)->isDummy && (*a)->isDummy))
 	      return false;
 	    
 	    // dummy classes for generic arguments contain the 
 	    // argument number in the token field
 	    // signature is only equal if the argument number matches
-	    if ((*i)->assembly == NULL && (*a)->assembly == NULL) {
+	    if ((*i)->isDummy && (*a)->isDummy) {
 	      if ((*i)->token != (*a)->token) {
 	        return false;
 	      } else {

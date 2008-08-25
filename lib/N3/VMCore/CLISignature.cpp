@@ -300,9 +300,10 @@ static VMCommonClass* METHOD_ElementTypeMvar(uint32 op, Assembly* ass,
   if (currGenericMethod == NULL) {
     // when reading in signatures which contain references to generic arguments
     // of generic methods we need create a placeholder for each of them,
-    // this is done by creating a dummy VMClass which has the assembly field
-    // set to NULL, the token field is used to store the generic argument number
+    // this is done by creating a dummy VMClass,
+    // the token field is used to store the generic argument number
     VMClass* cl = gc_new(VMClass)();
+    cl->isDummy = true;
     cl->token = number;
     cl->assembly = ass;
     cl->nameSpace = ass->name;

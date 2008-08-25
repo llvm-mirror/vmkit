@@ -74,6 +74,7 @@ public:
   bool isArray;
   bool isPointer;
   bool isPrimitive;
+  bool isDummy;
   uint32 depth;
   VMClassState status;
   uint32 flags;
