@@ -230,7 +230,7 @@ CommonClass* NativeUtil::resolvedImplClass(jclass clazz, bool doClinit) {
   JavaObject *Cl = (JavaObject*)clazz;
   CommonClass* cl = (CommonClass*)Classpath::vmdataClass->getVirtualObjectField(Cl);
   cl->resolveClass();
-  JavaThread::get()->isolate->initialiseClass(cl);
+  if (doClinit) JavaThread::get()->isolate->initialiseClass(cl);
   return cl;
 }
 
