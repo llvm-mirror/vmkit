@@ -36,21 +36,21 @@
 
 using namespace jnjvm;
 
-Class*      ClasspathThread::newThread;
-Class*      ClasspathThread::newVMThread;
-JavaField*  ClasspathThread::assocThread;
-JavaField*  ClasspathThread::vmdata;
-JavaMethod* ClasspathThread::finaliseCreateInitialThread;
-JavaMethod* ClasspathThread::initVMThread;
-JavaMethod* ClasspathThread::groupAddThread;
-JavaField*  ClasspathThread::name;
-JavaField*  ClasspathThread::priority;
-JavaField*  ClasspathThread::daemon;
-JavaField*  ClasspathThread::group;
-JavaField*  ClasspathThread::running;
-JavaField*  ClasspathThread::rootGroup;
-JavaField*  ClasspathThread::vmThread;
-JavaMethod* ClasspathThread::uncaughtException;
+Class*      Classpath::newThread;
+Class*      Classpath::newVMThread;
+JavaField*  Classpath::assocThread;
+JavaField*  Classpath::vmdataVMThread;
+JavaMethod* Classpath::finaliseCreateInitialThread;
+JavaMethod* Classpath::initVMThread;
+JavaMethod* Classpath::groupAddThread;
+JavaField*  Classpath::name;
+JavaField*  Classpath::priority;
+JavaField*  Classpath::daemon;
+JavaField*  Classpath::group;
+JavaField*  Classpath::running;
+JavaField*  Classpath::rootGroup;
+JavaField*  Classpath::vmThread;
+JavaMethod* Classpath::uncaughtException;
 
 JavaMethod* Classpath::setContextClassLoader;
 JavaMethod* Classpath::getSystemClassLoader;
@@ -111,130 +111,293 @@ Class* Classpath::longClass;
 
 Class* Classpath::vmStackWalker;
 
-Class* ClasspathException::InvocationTargetException;
-Class* ClasspathException::ArrayStoreException;
-Class* ClasspathException::ClassCastException;
-Class* ClasspathException::IllegalMonitorStateException;
-Class* ClasspathException::IllegalArgumentException;
-Class* ClasspathException::InterruptedException;
-Class* ClasspathException::IndexOutOfBoundsException;
-Class* ClasspathException::ArrayIndexOutOfBoundsException;
-Class* ClasspathException::NegativeArraySizeException;
-Class* ClasspathException::NullPointerException;
-Class* ClasspathException::SecurityException;
-Class* ClasspathException::ClassFormatError;
-Class* ClasspathException::ClassCircularityError;
-Class* ClasspathException::NoClassDefFoundError;
-Class* ClasspathException::UnsupportedClassVersionError;
-Class* ClasspathException::NoSuchFieldError;
-Class* ClasspathException::NoSuchMethodError;
-Class* ClasspathException::InstantiationError;
-Class* ClasspathException::IllegalAccessError;
-Class* ClasspathException::IllegalAccessException;
-Class* ClasspathException::VerifyError;
-Class* ClasspathException::ExceptionInInitializerError;
-Class* ClasspathException::LinkageError;
-Class* ClasspathException::AbstractMethodError;
-Class* ClasspathException::UnsatisfiedLinkError;
-Class* ClasspathException::InternalError;
-Class* ClasspathException::OutOfMemoryError;
-Class* ClasspathException::StackOverflowError;
-Class* ClasspathException::UnknownError;
-Class* ClasspathException::ClassNotFoundException;
+Class* Classpath::InvocationTargetException;
+Class* Classpath::ArrayStoreException;
+Class* Classpath::ClassCastException;
+Class* Classpath::IllegalMonitorStateException;
+Class* Classpath::IllegalArgumentException;
+Class* Classpath::InterruptedException;
+Class* Classpath::IndexOutOfBoundsException;
+Class* Classpath::ArrayIndexOutOfBoundsException;
+Class* Classpath::NegativeArraySizeException;
+Class* Classpath::NullPointerException;
+Class* Classpath::SecurityException;
+Class* Classpath::ClassFormatError;
+Class* Classpath::ClassCircularityError;
+Class* Classpath::NoClassDefFoundError;
+Class* Classpath::UnsupportedClassVersionError;
+Class* Classpath::NoSuchFieldError;
+Class* Classpath::NoSuchMethodError;
+Class* Classpath::InstantiationError;
+Class* Classpath::IllegalAccessError;
+Class* Classpath::IllegalAccessException;
+Class* Classpath::VerifyError;
+Class* Classpath::ExceptionInInitializerError;
+Class* Classpath::LinkageError;
+Class* Classpath::AbstractMethodError;
+Class* Classpath::UnsatisfiedLinkError;
+Class* Classpath::InternalError;
+Class* Classpath::OutOfMemoryError;
+Class* Classpath::StackOverflowError;
+Class* Classpath::UnknownError;
+Class* Classpath::ClassNotFoundException;
 
-JavaMethod* ClasspathException::InitInvocationTargetException;
-JavaMethod* ClasspathException::InitArrayStoreException;
-JavaMethod* ClasspathException::InitClassCastException;
-JavaMethod* ClasspathException::InitIllegalMonitorStateException;
-JavaMethod* ClasspathException::InitIllegalArgumentException;
-JavaMethod* ClasspathException::InitInterruptedException;
-JavaMethod* ClasspathException::InitIndexOutOfBoundsException;
-JavaMethod* ClasspathException::InitArrayIndexOutOfBoundsException;
-JavaMethod* ClasspathException::InitNegativeArraySizeException;
-JavaMethod* ClasspathException::InitNullPointerException;
-JavaMethod* ClasspathException::InitSecurityException;
-JavaMethod* ClasspathException::InitClassFormatError;
-JavaMethod* ClasspathException::InitClassCircularityError;
-JavaMethod* ClasspathException::InitNoClassDefFoundError;
-JavaMethod* ClasspathException::InitUnsupportedClassVersionError;
-JavaMethod* ClasspathException::InitNoSuchFieldError;
-JavaMethod* ClasspathException::InitNoSuchMethodError;
-JavaMethod* ClasspathException::InitInstantiationError;
-JavaMethod* ClasspathException::InitIllegalAccessError;
-JavaMethod* ClasspathException::InitIllegalAccessException;
-JavaMethod* ClasspathException::InitVerifyError;
-JavaMethod* ClasspathException::InitExceptionInInitializerError;
-JavaMethod* ClasspathException::InitLinkageError;
-JavaMethod* ClasspathException::InitAbstractMethodError;
-JavaMethod* ClasspathException::InitUnsatisfiedLinkError;
-JavaMethod* ClasspathException::InitInternalError;
-JavaMethod* ClasspathException::InitOutOfMemoryError;
-JavaMethod* ClasspathException::InitStackOverflowError;
-JavaMethod* ClasspathException::InitUnknownError;
-JavaMethod* ClasspathException::InitClassNotFoundException;
+JavaMethod* Classpath::InitInvocationTargetException;
+JavaMethod* Classpath::InitArrayStoreException;
+JavaMethod* Classpath::InitClassCastException;
+JavaMethod* Classpath::InitIllegalMonitorStateException;
+JavaMethod* Classpath::InitIllegalArgumentException;
+JavaMethod* Classpath::InitInterruptedException;
+JavaMethod* Classpath::InitIndexOutOfBoundsException;
+JavaMethod* Classpath::InitArrayIndexOutOfBoundsException;
+JavaMethod* Classpath::InitNegativeArraySizeException;
+JavaMethod* Classpath::InitNullPointerException;
+JavaMethod* Classpath::InitSecurityException;
+JavaMethod* Classpath::InitClassFormatError;
+JavaMethod* Classpath::InitClassCircularityError;
+JavaMethod* Classpath::InitNoClassDefFoundError;
+JavaMethod* Classpath::InitUnsupportedClassVersionError;
+JavaMethod* Classpath::InitNoSuchFieldError;
+JavaMethod* Classpath::InitNoSuchMethodError;
+JavaMethod* Classpath::InitInstantiationError;
+JavaMethod* Classpath::InitIllegalAccessError;
+JavaMethod* Classpath::InitIllegalAccessException;
+JavaMethod* Classpath::InitVerifyError;
+JavaMethod* Classpath::InitExceptionInInitializerError;
+JavaMethod* Classpath::InitLinkageError;
+JavaMethod* Classpath::InitAbstractMethodError;
+JavaMethod* Classpath::InitUnsatisfiedLinkError;
+JavaMethod* Classpath::InitInternalError;
+JavaMethod* Classpath::InitOutOfMemoryError;
+JavaMethod* Classpath::InitStackOverflowError;
+JavaMethod* Classpath::InitUnknownError;
+JavaMethod* Classpath::InitClassNotFoundException;
 
-JavaMethod* ClasspathException::ErrorWithExcpNoClassDefFoundError;
-JavaMethod* ClasspathException::ErrorWithExcpExceptionInInitializerError;
-JavaMethod* ClasspathException::ErrorWithExcpInvocationTargetException;
+JavaMethod* Classpath::ErrorWithExcpNoClassDefFoundError;
+JavaMethod* Classpath::ErrorWithExcpExceptionInInitializerError;
+JavaMethod* Classpath::ErrorWithExcpInvocationTargetException;
 
-void ClasspathThread::initialise(JnjvmClassLoader* vm) {
-  newThread = 
-    UPCALL_CLASS(vm, "java/lang/Thread");
-  
-  newVMThread = 
-    UPCALL_CLASS(vm, "java/lang/VMThread");
-  
-  assocThread = 
-    UPCALL_FIELD(vm, "java/lang/VMThread", "thread", "Ljava/lang/Thread;",
-                 ACC_VIRTUAL);
-  
-  vmdata = 
-    UPCALL_FIELD(vm, "java/lang/VMThread", "vmdata", "Ljava/lang/Object;",
-                 ACC_VIRTUAL);
-  
-  finaliseCreateInitialThread = 
-    UPCALL_METHOD(vm, "java/lang/InheritableThreadLocal", "newChildThread",
-                  "(Ljava/lang/Thread;)V", ACC_STATIC);
-  
-  initVMThread = 
-    UPCALL_METHOD(vm, "java/lang/VMThread", "<init>",
-                  "(Ljava/lang/Thread;)V", ACC_VIRTUAL);
+void Classpath::createInitialThread(Jnjvm* vm, JavaObject* th) {
+  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
+  JCL->loadName(newVMThread->name, true, true);
+  vm->initialiseClass(newVMThread);
 
-  groupAddThread = 
-    UPCALL_METHOD(vm, "java/lang/ThreadGroup", "addThread",
-                  "(Ljava/lang/Thread;)V", ACC_VIRTUAL);
+  JavaObject* vmth = newVMThread->doNew(vm);
+  name->setVirtualObjectField(th, (JavaObject*)vm->asciizToStr("main"));
+  priority->setVirtualInt32Field(th, (uint32)1);
+  daemon->setVirtualInt8Field(th, (uint32)0);
+  vmThread->setVirtualObjectField(th, vmth);
+  assocThread->setVirtualObjectField(vmth, th);
+  running->setVirtualInt8Field(vmth, (uint32)1);
   
-  name = 
-    UPCALL_FIELD(vm, "java/lang/Thread", "name", "Ljava/lang/String;",
-                 ACC_VIRTUAL);
-  
-  priority = 
-    UPCALL_FIELD(vm,  "java/lang/Thread", "priority", "I", ACC_VIRTUAL);
-
-  daemon = 
-    UPCALL_FIELD(vm, "java/lang/Thread", "daemon", "Z", ACC_VIRTUAL);
-
-  group =
-    UPCALL_FIELD(vm, "java/lang/Thread", "group",
-                 "Ljava/lang/ThreadGroup;", ACC_VIRTUAL);
-  
-  running = 
-    UPCALL_FIELD(vm, "java/lang/VMThread", "running", "Z", ACC_VIRTUAL);
-  
-  rootGroup =
-    UPCALL_FIELD(vm, "java/lang/ThreadGroup", "root",
-                 "Ljava/lang/ThreadGroup;", ACC_STATIC);
-
-  vmThread = 
-    UPCALL_FIELD(vm, "java/lang/Thread", "vmThread",
-                 "Ljava/lang/VMThread;", ACC_VIRTUAL);
-  
-  uncaughtException = 
-    UPCALL_METHOD(vm, "java/lang/ThreadGroup",  "uncaughtException",
-                  "(Ljava/lang/Thread;Ljava/lang/Throwable;)V", ACC_VIRTUAL);
+  JCL->loadName(rootGroup->classDef->name, true, true);
+  vm->initialiseClass(rootGroup->classDef);
+  JavaObject* RG = rootGroup->getStaticObjectField();
+  group->setVirtualObjectField(th, RG);
+  groupAddThread->invokeIntSpecial(vm, RG, th);
 }
 
-void ClasspathException::initialise(JnjvmClassLoader* loader) {
+void Classpath::mapInitialThread(Jnjvm* vm) {
+  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
+  JCL->loadName(newThread->name, true, true);
+  vm->initialiseClass(newThread);
+  JavaObject* th = newThread->doNew(vm);
+  createInitialThread(vm, th);
+  JavaThread* myth = JavaThread::get();
+  myth->javaThread = th;
+  JavaObject* vmth = vmThread->getVirtualObjectField(th);
+  vmdataVMThread->setVirtualObjectField(vmth, (JavaObject*)myth);
+  finaliseCreateInitialThread->invokeIntStatic(vm, th);
+}
+
+void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
+  getSystemClassLoader =
+    UPCALL_METHOD(loader, "java/lang/ClassLoader", "getSystemClassLoader",
+                  "()Ljava/lang/ClassLoader;", ACC_STATIC);
+
+  setContextClassLoader =
+    UPCALL_METHOD(loader, "java/lang/Thread", "setContextClassLoader",
+                  "(Ljava/lang/ClassLoader;)V", ACC_VIRTUAL);
+
+  newString = 
+    UPCALL_CLASS(loader, "java/lang/String");
+  
+  newClass =
+    UPCALL_CLASS(loader, "java/lang/Class");
+  
+  newThrowable =
+    UPCALL_CLASS(loader, "java/lang/Throwable");
+  
+  newException =
+    UPCALL_CLASS(loader, "java/lang/Exception");
+  
+  initClass =
+    UPCALL_METHOD(loader, "java/lang/Class", "<init>", "(Ljava/lang/Object;)V",
+                  ACC_VIRTUAL);
+
+  initClassWithProtectionDomain =
+    UPCALL_METHOD(loader, "java/lang/Class", "<init>",
+                  "(Ljava/lang/Object;Ljava/security/ProtectionDomain;)V",
+                  ACC_VIRTUAL);
+
+  vmdataClass =
+    UPCALL_FIELD(loader, "java/lang/Class", "vmdata", "Ljava/lang/Object;",
+                 ACC_VIRTUAL);
+  
+  setProperty = 
+    UPCALL_METHOD(loader, "java/util/Properties", "setProperty",
+                  "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;",
+                  ACC_VIRTUAL);
+
+  initString =
+    UPCALL_METHOD(loader, "java/lang/String", "<init>", "([CIIZ)V", ACC_VIRTUAL);
+  
+  initConstructor =
+    UPCALL_METHOD(loader, "java/lang/reflect/Constructor", "<init>",
+                  "(Ljava/lang/Class;I)V", ACC_VIRTUAL);
+
+  newConstructor =
+    UPCALL_CLASS(loader, "java/lang/reflect/Constructor");
+
+  constructorArrayClass =
+    UPCALL_ARRAY_CLASS(loader, "java/lang/reflect/Constructor", 1);
+  
+  constructorArrayAnnotation =
+    UPCALL_ARRAY_CLASS(loader, "java/lang/annotation/Annotation", 1);
+
+  constructorSlot =
+    UPCALL_FIELD(loader, "java/lang/reflect/Constructor", "slot", "I", ACC_VIRTUAL);
+  
+  initMethod =
+    UPCALL_METHOD(loader, "java/lang/reflect/Method", "<init>",
+                  "(Ljava/lang/Class;Ljava/lang/String;I)V", ACC_VIRTUAL);
+
+  newMethod =
+    UPCALL_CLASS(loader, "java/lang/reflect/Method");
+
+  methodArrayClass =
+    UPCALL_ARRAY_CLASS(loader, "java/lang/reflect/Method", 1);
+
+  methodSlot =
+    UPCALL_FIELD(loader, "java/lang/reflect/Method", "slot", "I", ACC_VIRTUAL);
+  
+  initField =
+    UPCALL_METHOD(loader, "java/lang/reflect/Field", "<init>",
+                  "(Ljava/lang/Class;Ljava/lang/String;I)V", ACC_VIRTUAL);
+
+  newField =
+    UPCALL_CLASS(loader, "java/lang/reflect/Field");
+
+  fieldArrayClass =
+    UPCALL_ARRAY_CLASS(loader, "java/lang/reflect/Field", 1);
+  
+  fieldSlot =
+    UPCALL_FIELD(loader, "java/lang/reflect/Field", "slot", "I", ACC_VIRTUAL);
+  
+  
+  classArrayClass =
+    UPCALL_ARRAY_CLASS(loader, "java/lang/Class", 1);
+  
+  newVMThrowable =
+    UPCALL_CLASS(loader, "java/lang/VMThrowable");
+  
+  initVMThrowable =
+    UPCALL_METHOD(loader, "java/lang/VMThrowable", "<init>", "()V", ACC_VIRTUAL);
+
+  vmDataVMThrowable =
+    UPCALL_FIELD(loader, "java/lang/VMThrowable", "vmdata", "Ljava/lang/Object;",
+                 ACC_VIRTUAL);
+
+  bufferAddress =
+    UPCALL_FIELD(loader, "java/nio/Buffer", "address", "Lgnu/classpath/Pointer;",
+                 ACC_VIRTUAL);
+
+  dataPointer32 =
+    UPCALL_FIELD(loader, "gnu/classpath/Pointer32", "data", "I", ACC_VIRTUAL);
+
+  vmdataClassLoader =
+    UPCALL_FIELD(loader, "java/lang/ClassLoader", "vmdata", "Ljava/lang/Object;",
+                 ACC_VIRTUAL);
+  
+  newStackTraceElement =
+    UPCALL_CLASS(loader, "java/lang/StackTraceElement");
+  
+  stackTraceArray =
+    UPCALL_ARRAY_CLASS(loader, "java/lang/StackTraceElement", 1);
+
+  initStackTraceElement =
+    UPCALL_METHOD(loader,  "java/lang/StackTraceElement", "<init>",
+                  "(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Z)V",
+                  ACC_VIRTUAL);
+
+  boolValue =
+    UPCALL_FIELD(loader, "java/lang/Boolean", "value", "Z", ACC_VIRTUAL);
+  
+  byteValue =
+    UPCALL_FIELD(loader, "java/lang/Byte", "value", "B", ACC_VIRTUAL);
+
+  shortValue =
+    UPCALL_FIELD(loader, "java/lang/Short", "value", "S", ACC_VIRTUAL);
+
+  charValue =
+    UPCALL_FIELD(loader, "java/lang/Character", "value", "C", ACC_VIRTUAL);
+
+  intValue =
+    UPCALL_FIELD(loader, "java/lang/Integer", "value", "I", ACC_VIRTUAL);
+
+  longValue =
+    UPCALL_FIELD(loader, "java/lang/Long", "value", "J", ACC_VIRTUAL);
+
+  floatValue =
+    UPCALL_FIELD(loader, "java/lang/Float", "value", "F", ACC_VIRTUAL);
+
+  doubleValue =
+    UPCALL_FIELD(loader, "java/lang/Double", "value", "D", ACC_VIRTUAL);
+
+  Classpath::voidClass =
+    UPCALL_CLASS(loader, "java/lang/Void");
+  
+  Classpath::boolClass =
+    UPCALL_CLASS(loader, "java/lang/Boolean");
+
+  Classpath::byteClass =
+    UPCALL_CLASS(loader, "java/lang/Byte");
+
+  Classpath::shortClass =
+    UPCALL_CLASS(loader, "java/lang/Short");
+
+  Classpath::charClass =
+    UPCALL_CLASS(loader, "java/lang/Character"); 
+
+  Classpath::intClass =
+    UPCALL_CLASS(loader, "java/lang/Integer");
+
+  Classpath::floatClass =
+    UPCALL_CLASS(loader, "java/lang/Float");
+
+  Classpath::doubleClass =
+    UPCALL_CLASS(loader, "java/lang/Double");
+
+  Classpath::longClass =
+    UPCALL_CLASS(loader, "java/lang/Long");
+
+  vmStackWalker =
+    UPCALL_CLASS(loader, "gnu/classpath/VMStackWalker");
+
+  loadInClassLoader =
+    UPCALL_METHOD(loader, "java/lang/ClassLoader", "loadClass",
+                  "(Ljava/lang/String;Z)Ljava/lang/Class;", ACC_VIRTUAL);
+
+  JavaMethod* internString =
+    UPCALL_METHOD(loader, "java/lang/VMString", "intern",
+                  "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC); 
+  loader->TheModule->setMethod(internString, "internString");
+  
+  JavaMethod* isArray =
+    UPCALL_METHOD(loader, "java/lang/Class", "isArray", "()Z", ACC_VIRTUAL);
+  loader->TheModule->setMethod(isArray, "isArray");
+
+
   UPCALL_REFLECT_CLASS_EXCEPTION(loader, InvocationTargetException);
   UPCALL_CLASS_EXCEPTION(loader, ArrayStoreException);
   UPCALL_CLASS_EXCEPTION(loader, ClassCastException);
@@ -300,255 +463,87 @@ void ClasspathException::initialise(JnjvmClassLoader* loader) {
   UPCALL_METHOD_WITH_EXCEPTION(loader, NoClassDefFoundError);
   UPCALL_METHOD_WITH_EXCEPTION(loader, ExceptionInInitializerError);
   UPCALL_METHOD_WITH_EXCEPTION(loader, InvocationTargetException);
-}
 
 
-void ClasspathThread::createInitialThread(Jnjvm* vm, JavaObject* th) {
-  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
-  JCL->loadName(newVMThread->name, true, true);
-  vm->initialiseClass(newVMThread);
-
-  JavaObject* vmth = newVMThread->doNew(vm);
-  name->setVirtualObjectField(th, (JavaObject*)vm->asciizToStr("main"));
-  priority->setVirtualInt32Field(th, (uint32)1);
-  daemon->setVirtualInt8Field(th, (uint32)0);
-  vmThread->setVirtualObjectField(th, vmth);
-  assocThread->setVirtualObjectField(vmth, th);
-  running->setVirtualInt8Field(vmth, (uint32)1);
+  newThread = 
+    UPCALL_CLASS(loader, "java/lang/Thread");
   
-  JCL->loadName(rootGroup->classDef->name, true, true);
-  vm->initialiseClass(rootGroup->classDef);
-  JavaObject* RG = rootGroup->getStaticObjectField();
-  group->setVirtualObjectField(th, RG);
-  groupAddThread->invokeIntSpecial(vm, RG, th);
-}
-
-void ClasspathThread::mapInitialThread(Jnjvm* vm) {
-  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
-  JCL->loadName(newThread->name, true, true);
-  vm->initialiseClass(newThread);
-  JavaObject* th = newThread->doNew(vm);
-  createInitialThread(vm, th);
-  JavaThread* myth = JavaThread::get();
-  myth->javaThread = th;
-  JavaObject* vmth = vmThread->getVirtualObjectField(th);
-  vmdata->setVirtualObjectField(vmth, (JavaObject*)myth);
-  finaliseCreateInitialThread->invokeIntStatic(vm, th);
-}
-
-void Classpath::initialiseClasspath(JnjvmClassLoader* vm) {
-  getSystemClassLoader =
-    UPCALL_METHOD(vm, "java/lang/ClassLoader", "getSystemClassLoader",
-                  "()Ljava/lang/ClassLoader;", ACC_STATIC);
-
-  setContextClassLoader =
-    UPCALL_METHOD(vm, "java/lang/Thread", "setContextClassLoader",
-                  "(Ljava/lang/ClassLoader;)V", ACC_VIRTUAL);
-
-  newString = 
-    UPCALL_CLASS(vm, "java/lang/String");
+  newVMThread = 
+    UPCALL_CLASS(loader, "java/lang/VMThread");
   
-  newClass =
-    UPCALL_CLASS(vm, "java/lang/Class");
-  
-  newThrowable =
-    UPCALL_CLASS(vm, "java/lang/Throwable");
-  
-  newException =
-    UPCALL_CLASS(vm, "java/lang/Exception");
-  
-  initClass =
-    UPCALL_METHOD(vm, "java/lang/Class", "<init>", "(Ljava/lang/Object;)V",
-                  ACC_VIRTUAL);
-
-  initClassWithProtectionDomain =
-    UPCALL_METHOD(vm, "java/lang/Class", "<init>",
-                  "(Ljava/lang/Object;Ljava/security/ProtectionDomain;)V",
-                  ACC_VIRTUAL);
-
-  vmdataClass =
-    UPCALL_FIELD(vm, "java/lang/Class", "vmdata", "Ljava/lang/Object;",
+  assocThread = 
+    UPCALL_FIELD(loader, "java/lang/VMThread", "thread", "Ljava/lang/Thread;",
                  ACC_VIRTUAL);
   
-  setProperty = 
-    UPCALL_METHOD(vm, "java/util/Properties", "setProperty",
-                  "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;",
-                  ACC_VIRTUAL);
-
-  initString =
-    UPCALL_METHOD(vm, "java/lang/String", "<init>", "([CIIZ)V", ACC_VIRTUAL);
-  
-  initConstructor =
-    UPCALL_METHOD(vm, "java/lang/reflect/Constructor", "<init>",
-                  "(Ljava/lang/Class;I)V", ACC_VIRTUAL);
-
-  newConstructor =
-    UPCALL_CLASS(vm, "java/lang/reflect/Constructor");
-
-  constructorArrayClass =
-    UPCALL_ARRAY_CLASS(vm, "java/lang/reflect/Constructor", 1);
-  
-  constructorArrayAnnotation =
-    UPCALL_ARRAY_CLASS(vm, "java/lang/annotation/Annotation", 1);
-
-  constructorSlot =
-    UPCALL_FIELD(vm, "java/lang/reflect/Constructor", "slot", "I", ACC_VIRTUAL);
-  
-  initMethod =
-    UPCALL_METHOD(vm, "java/lang/reflect/Method", "<init>",
-                  "(Ljava/lang/Class;Ljava/lang/String;I)V", ACC_VIRTUAL);
-
-  newMethod =
-    UPCALL_CLASS(vm, "java/lang/reflect/Method");
-
-  methodArrayClass =
-    UPCALL_ARRAY_CLASS(vm, "java/lang/reflect/Method", 1);
-
-  methodSlot =
-    UPCALL_FIELD(vm, "java/lang/reflect/Method", "slot", "I", ACC_VIRTUAL);
-  
-  initField =
-    UPCALL_METHOD(vm, "java/lang/reflect/Field", "<init>",
-                  "(Ljava/lang/Class;Ljava/lang/String;I)V", ACC_VIRTUAL);
-
-  newField =
-    UPCALL_CLASS(vm, "java/lang/reflect/Field");
-
-  fieldArrayClass =
-    UPCALL_ARRAY_CLASS(vm, "java/lang/reflect/Field", 1);
-  
-  fieldSlot =
-    UPCALL_FIELD(vm, "java/lang/reflect/Field", "slot", "I", ACC_VIRTUAL);
-  
-  
-  classArrayClass =
-    UPCALL_ARRAY_CLASS(vm, "java/lang/Class", 1);
-  
-  newVMThrowable =
-    UPCALL_CLASS(vm, "java/lang/VMThrowable");
-  
-  initVMThrowable =
-    UPCALL_METHOD(vm, "java/lang/VMThrowable", "<init>", "()V", ACC_VIRTUAL);
-
-  vmDataVMThrowable =
-    UPCALL_FIELD(vm, "java/lang/VMThrowable", "vmdata", "Ljava/lang/Object;",
-                 ACC_VIRTUAL);
-
-  bufferAddress =
-    UPCALL_FIELD(vm, "java/nio/Buffer", "address", "Lgnu/classpath/Pointer;",
-                 ACC_VIRTUAL);
-
-  dataPointer32 =
-    UPCALL_FIELD(vm, "gnu/classpath/Pointer32", "data", "I", ACC_VIRTUAL);
-
-  vmdataClassLoader =
-    UPCALL_FIELD(vm, "java/lang/ClassLoader", "vmdata", "Ljava/lang/Object;",
+  vmdataVMThread = 
+    UPCALL_FIELD(loader, "java/lang/VMThread", "vmdata", "Ljava/lang/Object;",
                  ACC_VIRTUAL);
   
-  newStackTraceElement =
-    UPCALL_CLASS(vm, "java/lang/StackTraceElement");
+  finaliseCreateInitialThread = 
+    UPCALL_METHOD(loader, "java/lang/InheritableThreadLocal", "newChildThread",
+                  "(Ljava/lang/Thread;)V", ACC_STATIC);
   
-  stackTraceArray =
-    UPCALL_ARRAY_CLASS(vm, "java/lang/StackTraceElement", 1);
+  initVMThread = 
+    UPCALL_METHOD(loader, "java/lang/VMThread", "<init>",
+                  "(Ljava/lang/Thread;)V", ACC_VIRTUAL);
 
-  initStackTraceElement =
-    UPCALL_METHOD(vm,  "java/lang/StackTraceElement", "<init>",
-                  "(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Z)V",
-                  ACC_VIRTUAL);
-
-  boolValue =
-    UPCALL_FIELD(vm, "java/lang/Boolean", "value", "Z", ACC_VIRTUAL);
+  groupAddThread = 
+    UPCALL_METHOD(loader, "java/lang/ThreadGroup", "addThread",
+                  "(Ljava/lang/Thread;)V", ACC_VIRTUAL);
   
-  byteValue =
-    UPCALL_FIELD(vm, "java/lang/Byte", "value", "B", ACC_VIRTUAL);
-
-  shortValue =
-    UPCALL_FIELD(vm, "java/lang/Short", "value", "S", ACC_VIRTUAL);
-
-  charValue =
-    UPCALL_FIELD(vm, "java/lang/Character", "value", "C", ACC_VIRTUAL);
-
-  intValue =
-    UPCALL_FIELD(vm, "java/lang/Integer", "value", "I", ACC_VIRTUAL);
-
-  longValue =
-    UPCALL_FIELD(vm, "java/lang/Long", "value", "J", ACC_VIRTUAL);
-
-  floatValue =
-    UPCALL_FIELD(vm, "java/lang/Float", "value", "F", ACC_VIRTUAL);
-
-  doubleValue =
-    UPCALL_FIELD(vm, "java/lang/Double", "value", "D", ACC_VIRTUAL);
-
-  Classpath::voidClass =
-    UPCALL_CLASS(vm, "java/lang/Void");
+  name = 
+    UPCALL_FIELD(loader, "java/lang/Thread", "name", "Ljava/lang/String;",
+                 ACC_VIRTUAL);
   
-  Classpath::boolClass =
-    UPCALL_CLASS(vm, "java/lang/Boolean");
+  priority = 
+    UPCALL_FIELD(loader,  "java/lang/Thread", "priority", "I", ACC_VIRTUAL);
 
-  Classpath::byteClass =
-    UPCALL_CLASS(vm, "java/lang/Byte");
+  daemon = 
+    UPCALL_FIELD(loader, "java/lang/Thread", "daemon", "Z", ACC_VIRTUAL);
 
-  Classpath::shortClass =
-    UPCALL_CLASS(vm, "java/lang/Short");
-
-  Classpath::charClass =
-    UPCALL_CLASS(vm, "java/lang/Character"); 
-
-  Classpath::intClass =
-    UPCALL_CLASS(vm, "java/lang/Integer");
-
-  Classpath::floatClass =
-    UPCALL_CLASS(vm, "java/lang/Float");
-
-  Classpath::doubleClass =
-    UPCALL_CLASS(vm, "java/lang/Double");
-
-  Classpath::longClass =
-    UPCALL_CLASS(vm, "java/lang/Long");
-
-  vmStackWalker =
-    UPCALL_CLASS(vm, "gnu/classpath/VMStackWalker");
-
-  loadInClassLoader =
-    UPCALL_METHOD(vm, "java/lang/ClassLoader", "loadClass",
-                  "(Ljava/lang/String;Z)Ljava/lang/Class;", ACC_VIRTUAL);
-
-  JavaMethod* internString =
-    UPCALL_METHOD(vm, "java/lang/VMString", "intern",
-                  "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC); 
-  vm->TheModule->setMethod(internString, "internString");
+  group =
+    UPCALL_FIELD(loader, "java/lang/Thread", "group",
+                 "Ljava/lang/ThreadGroup;", ACC_VIRTUAL);
   
-  JavaMethod* isArray =
-    UPCALL_METHOD(vm, "java/lang/Class", "isArray", "()Z", ACC_VIRTUAL);
-  vm->TheModule->setMethod(isArray, "isArray");
+  running = 
+    UPCALL_FIELD(loader, "java/lang/VMThread", "running", "Z", ACC_VIRTUAL);
+  
+  rootGroup =
+    UPCALL_FIELD(loader, "java/lang/ThreadGroup", "root",
+                 "Ljava/lang/ThreadGroup;", ACC_STATIC);
 
-  ClasspathThread::initialise(vm);
-  ClasspathException::initialise(vm);
-    
-  vm->loadName(vm->asciizConstructUTF8("java/lang/String"), 
+  vmThread = 
+    UPCALL_FIELD(loader, "java/lang/Thread", "vmThread",
+                 "Ljava/lang/VMThread;", ACC_VIRTUAL);
+  
+  uncaughtException = 
+    UPCALL_METHOD(loader, "java/lang/ThreadGroup",  "uncaughtException",
+                  "(Ljava/lang/Thread;Ljava/lang/Throwable;)V", ACC_VIRTUAL);
+
+
+  loader->loadName(loader->asciizConstructUTF8("java/lang/String"), 
                                        true, false);
 
-  vm->loadName(vm->asciizConstructUTF8("java/lang/Object"), 
+  loader->loadName(loader->asciizConstructUTF8("java/lang/Object"), 
                                        true, false);
   
   // Don't compile methods here, we still don't know where to allocate Java
   // strings.
 
   JavaMethod* getCallingClass =
-    UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClass",
+    UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "getCallingClass",
                   "()Ljava/lang/Class;", ACC_STATIC);
-  vm->TheModule->setMethod(getCallingClass, "getCallingClass");
+  loader->TheModule->setMethod(getCallingClass, "getCallingClass");
   
   JavaMethod* getCallingClassLoader =
-    UPCALL_METHOD(vm, "gnu/classpath/VMStackWalker", "getCallingClassLoader",
+    UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "getCallingClassLoader",
                   "()Ljava/lang/ClassLoader;", ACC_STATIC);
-  vm->TheModule->setMethod(getCallingClassLoader, "getCallingClassLoader");
+  loader->TheModule->setMethod(getCallingClassLoader, "getCallingClassLoader");
   
   JavaMethod* postProperties =
-    UPCALL_METHOD(vm, "gnu/classpath/VMSystemProperties", "postInit",
+    UPCALL_METHOD(loader, "gnu/classpath/VMSystemProperties", "postInit",
                   "(Ljava/util/Properties;)V", ACC_STATIC);
-  vm->TheModule->setMethod(postProperties, "propertiesPostInit");
+  loader->TheModule->setMethod(postProperties, "propertiesPostInit");
 }
 
 extern "C" JavaString* internString(JavaString* obj) {

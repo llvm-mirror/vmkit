@@ -57,10 +57,10 @@ static void start(arg_thread_t* arg) {
   Collector::inject_my_thread(&argc);
 #endif
   CommonClass* vmthClass = vmThread->classOf;
-  JavaObject* thread = ClasspathThread::assocThread->getVirtualObjectField(vmThread);
+  JavaObject* thread = Classpath::assocThread->getVirtualObjectField(vmThread);
   Jnjvm* isolate = intern->isolate;
   ThreadSystem* ts = isolate->threadSystem;
-  bool isDaemon = ClasspathThread::daemon->getVirtualInt8Field(thread);
+  bool isDaemon = Classpath::daemon->getVirtualInt8Field(thread);
   intern->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
 
 
@@ -108,13 +108,13 @@ JNIEnv *env,
 #endif
 jobject _vmThread, sint64 stackSize) {
   JavaObject* vmThread = (JavaObject*)_vmThread;
-  JavaObject* javaThread = ClasspathThread::assocThread->getVirtualObjectField(vmThread);
+  JavaObject* javaThread = Classpath::assocThread->getVirtualObjectField(vmThread);
   assert(javaThread);
   Jnjvm* vm = JavaThread::get()->isolate;
 
   JavaThread* th = allocator_new(vm->allocator, JavaThread)();
   th->initialise(javaThread, vm);
-  ClasspathThread::vmdata->setVirtualObjectField(vmThread, (JavaObject*)th);
+  Classpath::vmdataVMThread->setVirtualObjectField(vmThread, (JavaObject*)th);
   int tid = 0;
   arg_thread_t* arg = (arg_thread_t*)malloc(sizeof(arg_thread_t));
   arg->intern = th;
@@ -133,10 +133,10 @@ JNIEnv *env,
 jobject _vmthread) {
   JavaObject* vmthread = (JavaObject*)_vmthread;
 
-  while (ClasspathThread::vmdata->getVirtualObjectField(vmthread) == 0)
+  while (Classpath::vmdataVMThread->getVirtualObjectField(vmthread) == 0)
     mvm::Thread::yield();
 
-  JavaThread* th = (JavaThread*)ClasspathThread::vmdata->getVirtualObjectField(vmthread);
+  JavaThread* th = (JavaThread*)Classpath::vmdataVMThread->getVirtualObjectField(vmthread);
   th->lock->lock();
   th->interruptFlag = 1;
 
@@ -167,7 +167,7 @@ JNIEnv *env,
 #endif
 jobject _vmthread) {
   JavaObject* vmthread = (JavaObject*)_vmthread;
-  JavaThread* th = (JavaThread*)ClasspathThread::vmdata->getVirtualObjectField(vmthread);
+  JavaThread* th = (JavaThread*)Classpath::vmdataVMThread->getVirtualObjectField(vmthread);
   return (jboolean)th->interruptFlag;
 }
 

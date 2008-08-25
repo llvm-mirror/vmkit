@@ -51,14 +51,73 @@ class JavaMethod;
 class Class;
 class ClassArray;
 
-class ClasspathThread {
-public:
-  static void initialise(JnjvmClassLoader* vm);
+class Classpath {
+public: 
+  static JavaMethod* getSystemClassLoader;
+  static JavaMethod* setContextClassLoader;
+  static Class* newString;
+  static Class* newClass;
+  static Class* newThrowable;
+  static Class* newException;
+  static JavaMethod* initClass;
+  static JavaMethod* initClassWithProtectionDomain;
+  static JavaField* vmdataClass;
+  static JavaMethod* setProperty;
+  static JavaMethod* initString;
+  static JavaMethod* getCallingClassLoader;
+  static JavaMethod* initConstructor;
+  static ClassArray* constructorArrayClass;
+  static ClassArray* constructorArrayAnnotation;
+  static Class*      newConstructor;
+  static JavaField*  constructorSlot;
+  static JavaMethod* initMethod;
+  static JavaMethod* initField;
+  static ClassArray* methodArrayClass;
+  static ClassArray* fieldArrayClass;
+  static Class*      newMethod;
+  static Class*      newField;
+  static JavaField*  methodSlot;
+  static JavaField*  fieldSlot;
+  static ClassArray* classArrayClass;
+  static JavaMethod* loadInClassLoader;
+  static JavaMethod* initVMThrowable;
+  static JavaField*  vmDataVMThrowable;
+  static Class*      newVMThrowable;
+  static JavaField*  bufferAddress;
+  static JavaField*  dataPointer32;
+  static JavaField*  vmdataClassLoader;
+
+  static JavaField* boolValue;
+  static JavaField* byteValue;
+  static JavaField* shortValue;
+  static JavaField* charValue;
+  static JavaField* intValue;
+  static JavaField* longValue;
+  static JavaField* floatValue;
+  static JavaField* doubleValue;
+
+  static Class* newStackTraceElement;
+  static ClassArray* stackTraceArray;
+  static JavaMethod* initStackTraceElement;
+
+  static void initialiseClasspath(JnjvmClassLoader* loader);
+  
+  static Class* voidClass;
+  static Class* boolClass;
+  static Class* byteClass;
+  static Class* shortClass;
+  static Class* charClass;
+  static Class* intClass;
+  static Class* floatClass;
+  static Class* doubleClass;
+  static Class* longClass;
+  
+  static Class* vmStackWalker;
   
   static Class* newThread;
   static Class* newVMThread;
   static JavaField* assocThread;
-  static JavaField* vmdata;
+  static JavaField* vmdataVMThread;
   static JavaMethod* finaliseCreateInitialThread;
   static JavaMethod* initVMThread;
   static JavaMethod* groupAddThread;
@@ -70,14 +129,6 @@ public:
   static JavaField* rootGroup;
   static JavaField* vmThread;
   static JavaMethod* uncaughtException;
-  
-  static void createInitialThread(Jnjvm* vm, JavaObject* th);
-  static void mapInitialThread(Jnjvm* vm);
-};
-
-class ClasspathException {
-public:
-  static void initialise(JnjvmClassLoader* vm);
   
   static Class* InvocationTargetException;
   static Class* ArrayStoreException;
@@ -144,70 +195,9 @@ public:
   static JavaMethod* ErrorWithExcpNoClassDefFoundError;
   static JavaMethod* ErrorWithExcpExceptionInInitializerError;
   static JavaMethod* ErrorWithExcpInvocationTargetException;
-};
-
-class Classpath {
-public: 
-  static JavaMethod* getSystemClassLoader;
-  static JavaMethod* setContextClassLoader;
-  static Class* newString;
-  static Class* newClass;
-  static Class* newThrowable;
-  static Class* newException;
-  static JavaMethod* initClass;
-  static JavaMethod* initClassWithProtectionDomain;
-  static JavaField* vmdataClass;
-  static JavaMethod* setProperty;
-  static JavaMethod* initString;
-  static JavaMethod* getCallingClassLoader;
-  static JavaMethod* initConstructor;
-  static ClassArray* constructorArrayClass;
-  static ClassArray* constructorArrayAnnotation;
-  static Class*      newConstructor;
-  static JavaField*  constructorSlot;
-  static JavaMethod* initMethod;
-  static JavaMethod* initField;
-  static ClassArray* methodArrayClass;
-  static ClassArray* fieldArrayClass;
-  static Class*      newMethod;
-  static Class*      newField;
-  static JavaField*  methodSlot;
-  static JavaField*  fieldSlot;
-  static ClassArray* classArrayClass;
-  static JavaMethod* loadInClassLoader;
-  static JavaMethod* initVMThrowable;
-  static JavaField*  vmDataVMThrowable;
-  static Class*      newVMThrowable;
-  static JavaField*  bufferAddress;
-  static JavaField*  dataPointer32;
-  static JavaField*  vmdataClassLoader;
-
-  static JavaField* boolValue;
-  static JavaField* byteValue;
-  static JavaField* shortValue;
-  static JavaField* charValue;
-  static JavaField* intValue;
-  static JavaField* longValue;
-  static JavaField* floatValue;
-  static JavaField* doubleValue;
-
-  static Class* newStackTraceElement;
-  static ClassArray* stackTraceArray;
-  static JavaMethod* initStackTraceElement;
-
-  static void initialiseClasspath(JnjvmClassLoader* loader);
   
-  static Class* voidClass;
-  static Class* boolClass;
-  static Class* byteClass;
-  static Class* shortClass;
-  static Class* charClass;
-  static Class* intClass;
-  static Class* floatClass;
-  static Class* doubleClass;
-  static Class* longClass;
-  
-  static Class* vmStackWalker;
+  static void createInitialThread(Jnjvm* vm, JavaObject* th);
+  static void mapInitialThread(Jnjvm* vm);
 };
 
 

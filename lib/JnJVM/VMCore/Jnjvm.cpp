@@ -173,18 +173,18 @@ void Jnjvm::error(Class* cl, JavaMethod* init, const char* fmt, ...) {
 }
 
 void Jnjvm::arrayStoreException() {
-  error(ClasspathException::ArrayStoreException,
-        ClasspathException::InitArrayStoreException, "");
+  error(Classpath::ArrayStoreException,
+        Classpath::InitArrayStoreException, "");
 }
 
 void Jnjvm::indexOutOfBounds(const JavaObject* obj, sint32 entry) {
-  error(ClasspathException::ArrayIndexOutOfBoundsException,
-        ClasspathException::InitArrayIndexOutOfBoundsException, "%d", entry);
+  error(Classpath::ArrayIndexOutOfBoundsException,
+        Classpath::InitArrayIndexOutOfBoundsException, "%d", entry);
 }
 
 void Jnjvm::negativeArraySizeException(sint32 size) {
-  error(ClasspathException::NegativeArraySizeException,
-        ClasspathException::InitNegativeArraySizeException, "%d", size);
+  error(Classpath::NegativeArraySizeException,
+        Classpath::InitNegativeArraySizeException, "%d", size);
 }
 
 void Jnjvm::nullPointerException(const char* fmt, ...) {
@@ -192,115 +192,115 @@ void Jnjvm::nullPointerException(const char* fmt, ...) {
   va_start(ap, fmt);
   char* val = va_arg(ap, char*);
   va_end(ap);
-  error(ClasspathException::NullPointerException,
-        ClasspathException::InitNullPointerException, fmt, val);
+  error(Classpath::NullPointerException,
+        Classpath::InitNullPointerException, fmt, val);
 }
 
 void Jnjvm::illegalAccessException(const char* msg) {
-  error(ClasspathException::IllegalAccessException,
-        ClasspathException::InitIllegalAccessException, msg);
+  error(Classpath::IllegalAccessException,
+        Classpath::InitIllegalAccessException, msg);
 }
 
 void Jnjvm::illegalMonitorStateException(const JavaObject* obj) {
-  error(ClasspathException::IllegalMonitorStateException,
-        ClasspathException::InitIllegalMonitorStateException, "");
+  error(Classpath::IllegalMonitorStateException,
+        Classpath::InitIllegalMonitorStateException, "");
 }
 
 void Jnjvm::interruptedException(const JavaObject* obj) {
-  error(ClasspathException::InterruptedException,
-        ClasspathException::InitInterruptedException, "");
+  error(Classpath::InterruptedException,
+        Classpath::InitInterruptedException, "");
 }
 
 
 void Jnjvm::initializerError(const JavaObject* excp) {
-  errorWithExcp(ClasspathException::ExceptionInInitializerError,
-                ClasspathException::ErrorWithExcpExceptionInInitializerError,
+  errorWithExcp(Classpath::ExceptionInInitializerError,
+                Classpath::ErrorWithExcpExceptionInInitializerError,
                 excp);
 }
 
 void Jnjvm::invocationTargetException(const JavaObject* excp) {
-  errorWithExcp(ClasspathException::InvocationTargetException,
-                ClasspathException::ErrorWithExcpInvocationTargetException,
+  errorWithExcp(Classpath::InvocationTargetException,
+                Classpath::ErrorWithExcpInvocationTargetException,
                 excp);
 }
 
 void Jnjvm::outOfMemoryError(sint32 n) {
-  error(ClasspathException::OutOfMemoryError,
-        ClasspathException::InitOutOfMemoryError, "%d", n);
+  error(Classpath::OutOfMemoryError,
+        Classpath::InitOutOfMemoryError, "%d", n);
 }
 
 void Jnjvm::illegalArgumentExceptionForMethod(JavaMethod* meth, 
                                                CommonClass* required,
                                                CommonClass* given) {
-  error(ClasspathException::IllegalArgumentException, 
-        ClasspathException::InitIllegalArgumentException, 
+  error(Classpath::IllegalArgumentException, 
+        Classpath::InitIllegalArgumentException, 
         "for method %s", meth->printString());
 }
 
 void Jnjvm::illegalArgumentExceptionForField(JavaField* field, 
                                               CommonClass* required,
                                               CommonClass* given) {
-  error(ClasspathException::IllegalArgumentException, 
-        ClasspathException::InitIllegalArgumentException, 
+  error(Classpath::IllegalArgumentException, 
+        Classpath::InitIllegalArgumentException, 
         "for field %s", field->printString());
 }
 
 void Jnjvm::illegalArgumentException(const char* msg) {
-  error(ClasspathException::IllegalArgumentException,
-        ClasspathException::InitIllegalArgumentException,
+  error(Classpath::IllegalArgumentException,
+        Classpath::InitIllegalArgumentException,
         msg);
 }
 
 void Jnjvm::classCastException(const char* msg) {
-  error(ClasspathException::ClassCastException,
-        ClasspathException::InitClassCastException,
+  error(Classpath::ClassCastException,
+        Classpath::InitClassCastException,
         msg);
 }
 
 void Jnjvm::noSuchFieldError(CommonClass* cl, const UTF8* name) {
-  error(ClasspathException::NoSuchFieldError,
-        ClasspathException::InitNoSuchFieldError, 
+  error(Classpath::NoSuchFieldError,
+        Classpath::InitNoSuchFieldError, 
         "unable to find %s in %s",
         name->printString(), cl->printString());
 
 }
 
 void Jnjvm::noSuchMethodError(CommonClass* cl, const UTF8* name) {
-  error(ClasspathException::NoSuchMethodError,
-        ClasspathException::InitNoSuchMethodError, 
+  error(Classpath::NoSuchMethodError,
+        Classpath::InitNoSuchMethodError, 
         "unable to find %s in %s",
         name->printString(), cl->printString());
 
 }
 
 void Jnjvm::classFormatError(const char* msg, ...) {
-  error(ClasspathException::ClassFormatError,
-        ClasspathException::InitClassFormatError, 
+  error(Classpath::ClassFormatError,
+        Classpath::InitClassFormatError, 
         msg);
 }
 
 void Jnjvm::noClassDefFoundError(JavaObject* obj) {
-  errorWithExcp(ClasspathException::NoClassDefFoundError,
-        ClasspathException::ErrorWithExcpNoClassDefFoundError, 
+  errorWithExcp(Classpath::NoClassDefFoundError,
+        Classpath::ErrorWithExcpNoClassDefFoundError, 
         obj);
 }
 
 void Jnjvm::noClassDefFoundError(const char* fmt, ...) {
-  error(ClasspathException::NoClassDefFoundError,
-        ClasspathException::InitNoClassDefFoundError, 
+  error(Classpath::NoClassDefFoundError,
+        Classpath::InitNoClassDefFoundError, 
         fmt);
 }
 
 void Jnjvm::classNotFoundException(JavaString* str) {
-  error(ClasspathException::ClassNotFoundException,
-        ClasspathException::InitClassNotFoundException, 
+  error(Classpath::ClassNotFoundException,
+        Classpath::InitClassNotFoundException, 
         "unable to load %s",
         str->strToAsciiz());
 }
 
 void Jnjvm::unknownError(const char* fmt, ...) {
-  error(ClasspathException::UnknownError,
-        ClasspathException::InitUnknownError,  
+  error(Classpath::UnknownError,
+        Classpath::InitUnknownError,  
         fmt);
 }
 
@@ -661,13 +661,13 @@ JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
 }
 
 void Jnjvm::mapInitialThread() {
-  ClasspathThread::mapInitialThread(this);
+  Classpath::mapInitialThread(this);
 }
 
 void Jnjvm::loadBootstrap() {
   JnjvmClassLoader* loader = JnjvmClassLoader::bootstrapLoader;
 #define LOAD_CLASS(cl) \
-  loader->loadName(cl->name, true, true);\
+  cl->resolveClass(); \
   initialiseClass(cl);
 
   LOAD_CLASS(Classpath::newClass);
@@ -677,36 +677,36 @@ void Jnjvm::loadBootstrap() {
   LOAD_CLASS(Classpath::newField);
   LOAD_CLASS(Classpath::newStackTraceElement);
   LOAD_CLASS(Classpath::newVMThrowable);
-  LOAD_CLASS(ClasspathException::InvocationTargetException);
-  LOAD_CLASS(ClasspathException::ArrayStoreException);
-  LOAD_CLASS(ClasspathException::ClassCastException);
-  LOAD_CLASS(ClasspathException::IllegalMonitorStateException);
-  LOAD_CLASS(ClasspathException::IllegalArgumentException);
-  LOAD_CLASS(ClasspathException::InterruptedException);
-  LOAD_CLASS(ClasspathException::IndexOutOfBoundsException);
-  LOAD_CLASS(ClasspathException::ArrayIndexOutOfBoundsException);
-  LOAD_CLASS(ClasspathException::NegativeArraySizeException);
-  LOAD_CLASS(ClasspathException::NullPointerException);
-  LOAD_CLASS(ClasspathException::SecurityException);
-  LOAD_CLASS(ClasspathException::ClassFormatError);
-  LOAD_CLASS(ClasspathException::ClassCircularityError);
-  LOAD_CLASS(ClasspathException::NoClassDefFoundError);
-  LOAD_CLASS(ClasspathException::UnsupportedClassVersionError);
-  LOAD_CLASS(ClasspathException::NoSuchFieldError);
-  LOAD_CLASS(ClasspathException::NoSuchMethodError);
-  LOAD_CLASS(ClasspathException::InstantiationError);
-  LOAD_CLASS(ClasspathException::IllegalAccessError);
-  LOAD_CLASS(ClasspathException::IllegalAccessException);
-  LOAD_CLASS(ClasspathException::VerifyError);
-  LOAD_CLASS(ClasspathException::ExceptionInInitializerError);
-  LOAD_CLASS(ClasspathException::LinkageError);
-  LOAD_CLASS(ClasspathException::AbstractMethodError);
-  LOAD_CLASS(ClasspathException::UnsatisfiedLinkError);
-  LOAD_CLASS(ClasspathException::InternalError);
-  LOAD_CLASS(ClasspathException::OutOfMemoryError);
-  LOAD_CLASS(ClasspathException::StackOverflowError);
-  LOAD_CLASS(ClasspathException::UnknownError);
-  LOAD_CLASS(ClasspathException::ClassNotFoundException); 
+  LOAD_CLASS(Classpath::InvocationTargetException);
+  LOAD_CLASS(Classpath::ArrayStoreException);
+  LOAD_CLASS(Classpath::ClassCastException);
+  LOAD_CLASS(Classpath::IllegalMonitorStateException);
+  LOAD_CLASS(Classpath::IllegalArgumentException);
+  LOAD_CLASS(Classpath::InterruptedException);
+  LOAD_CLASS(Classpath::IndexOutOfBoundsException);
+  LOAD_CLASS(Classpath::ArrayIndexOutOfBoundsException);
+  LOAD_CLASS(Classpath::NegativeArraySizeException);
+  LOAD_CLASS(Classpath::NullPointerException);
+  LOAD_CLASS(Classpath::SecurityException);
+  LOAD_CLASS(Classpath::ClassFormatError);
+  LOAD_CLASS(Classpath::ClassCircularityError);
+  LOAD_CLASS(Classpath::NoClassDefFoundError);
+  LOAD_CLASS(Classpath::UnsupportedClassVersionError);
+  LOAD_CLASS(Classpath::NoSuchFieldError);
+  LOAD_CLASS(Classpath::NoSuchMethodError);
+  LOAD_CLASS(Classpath::InstantiationError);
+  LOAD_CLASS(Classpath::IllegalAccessError);
+  LOAD_CLASS(Classpath::IllegalAccessException);
+  LOAD_CLASS(Classpath::VerifyError);
+  LOAD_CLASS(Classpath::ExceptionInInitializerError);
+  LOAD_CLASS(Classpath::LinkageError);
+  LOAD_CLASS(Classpath::AbstractMethodError);
+  LOAD_CLASS(Classpath::UnsatisfiedLinkError);
+  LOAD_CLASS(Classpath::InternalError);
+  LOAD_CLASS(Classpath::OutOfMemoryError);
+  LOAD_CLASS(Classpath::StackOverflowError);
+  LOAD_CLASS(Classpath::UnknownError);
+  LOAD_CLASS(Classpath::ClassNotFoundException); 
 #undef LOAD_CLASS
 
   mapInitialThread();
@@ -733,9 +733,9 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
     JavaThread::clearException();
     JavaObject* obj = JavaThread::currentThread();
     JavaObject* group = 
-      ClasspathThread::group->getVirtualObjectField(obj);
+      Classpath::group->getVirtualObjectField(obj);
     try{
-      ClasspathThread::uncaughtException->invokeIntSpecial(this, group, obj, 
+      Classpath::uncaughtException->invokeIntSpecial(this, group, obj, 
                                                            exc);
     }catch(...) {
       printf("Even uncaught exception throwed an exception!\n");
