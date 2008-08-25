@@ -438,7 +438,11 @@ public:
     return classLoader == JnjvmClassLoader::sharedLoader;
   }
 #endif
-
+  
+  void getDeclaredConstructors(std::vector<JavaMethod*>& res, bool publicOnly);
+  void getDeclaredMethods(std::vector<JavaMethod*>& res, bool publicOnly);
+  void getDeclaredFields(std::vector<JavaField*>& res, bool publicOnly);
+  
 };
 
 /// ClassPrimitive - This class represents internal classes for primitive

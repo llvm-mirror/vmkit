@@ -82,15 +82,8 @@ JNIEnv *env,
   if (cl->isArray || isInterface(cl->access)) {
     return (jobject)ArrayObject::acons(0, Classpath::constructorArrayClass, &(vm->allocator));
   } else {
-    CommonClass::method_map meths = cl->virtualMethods;
     std::vector<JavaMethod*> res;
-    for (CommonClass::method_iterator i = meths.begin(), e = meths.end();
-          i != e; ++i) {
-      JavaMethod* meth = i->second;
-      if (meth->name == Jnjvm::initName && (!publicOnly || isPublic(meth->access))) {
-        res.push_back(meth);
-      }
-    }
+    cl->getDeclaredConstructors(res, publicOnly);
     
     ArrayObject* ret = ArrayObject::acons(res.size(), Classpath::constructorArrayClass, &(vm->allocator));
     sint32 index = 0;
@@ -121,23 +114,8 @@ JNIEnv *env,
   if (cl->isArray) {
     return (jobject)ArrayObject::acons(0, Classpath::methodArrayClass, &(vm->allocator));
   } else {
-    CommonClass::method_map meths = cl->virtualMethods;
     std::vector<JavaMethod*> res;
-    for (CommonClass::method_iterator i = meths.begin(), e = meths.end();
-          i != e; ++i) {
-      JavaMethod* meth = i->second;
-      if (meth->name != Jnjvm::initName && (!publicOnly || isPublic(meth->access))) {
-        res.push_back(meth);
-      }
-    }
-    meths = cl->staticMethods; 
-    for (CommonClass::method_iterator i = meths.begin(), e = meths.end();
-          i != e; ++i) {
-      JavaMethod* meth = i->second;
-      if (meth->name != Jnjvm::clinitName && (!publicOnly || isPublic(meth->access))) {
-        res.push_back(meth);
-      }
-    }
+    cl->getDeclaredMethods(res, publicOnly);
     
     ArrayObject* ret = ArrayObject::acons(res.size(), Classpath::methodArrayClass, &(vm->allocator));
     sint32 index = 0;
@@ -289,23 +267,8 @@ jclass Cl, jboolean publicOnly) {
   if (cl->isArray) {
     return (jobject)ArrayObject::acons(0, Classpath::fieldArrayClass, &(vm->allocator));
   } else {
-    CommonClass::field_map fields = cl->virtualFields;
     std::vector<JavaField*> res;
-    for (CommonClass::field_iterator i = fields.begin(), e = fields.end();
-          i != e; ++i) {
-      JavaField* field = i->second;
-      if (!publicOnly || isPublic(field->access)) {
-        res.push_back(field);
-      }
-    }
-    fields = cl->staticFields; 
-    for (CommonClass::field_iterator i = fields.begin(), e = fields.end();
-          i != e; ++i) {
-      JavaField* field = i->second;
-      if (!publicOnly || isPublic(field->access)) {
-        res.push_back(field);
-      }
-    }
+    cl->getDeclaredFields(res, publicOnly);
     
     ArrayObject* ret = ArrayObject::acons(res.size(),
                                           Classpath::fieldArrayClass, &(vm->allocator));

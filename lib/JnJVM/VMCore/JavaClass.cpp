@@ -790,3 +790,55 @@ void Class::resolveInnerOuterClasses() {
     innerOuterResolved = true;
   }
 }
+
+void CommonClass::getDeclaredConstructors(std::vector<JavaMethod*>& res,
+                                          bool publicOnly) {
+  for (CommonClass::method_iterator i = virtualMethods.begin(),
+       e = virtualMethods.end(); i != e; ++i) {
+    JavaMethod* meth = i->second;
+    bool pub = isPublic(meth->access);
+    if (meth->name == Jnjvm::initName && (!publicOnly || pub)) {
+      res.push_back(meth);
+    }
+  }
+}
+
+void CommonClass::getDeclaredMethods(std::vector<JavaMethod*>& res,
+                                     bool publicOnly) {
+  for (CommonClass::method_iterator i = virtualMethods.begin(),
+       e = virtualMethods.end(); i != e; ++i) {
+    JavaMethod* meth = i->second;
+    bool pub = isPublic(meth->access);
+    if (meth->name != Jnjvm::initName && (!publicOnly || pub)) {
+      res.push_back(meth);
+    }
+  }
+  
+  for (CommonClass::method_iterator i = staticMethods.begin(),
+       e = staticMethods.end(); i != e; ++i) {
+    JavaMethod* meth = i->second;
+    bool pub = isPublic(meth->access);
+    if (meth->name != Jnjvm::clinitName && (!publicOnly || pub)) {
+      res.push_back(meth);
+    }
+  }
+}
+
+void CommonClass::getDeclaredFields(std::vector<JavaField*>& res,
+                                    bool publicOnly) {
+  for (CommonClass::field_iterator i = virtualFields.begin(),
+       e = virtualFields.end(); i != e; ++i) {
+    JavaField* field = i->second;
+    if (!publicOnly || isPublic(field->access)) {
+      res.push_back(field);
+    }
+  }
+  
+  for (CommonClass::field_iterator i = staticFields.begin(),
+       e = staticFields.end(); i != e; ++i) {
+    JavaField* field = i->second;
+    if (!publicOnly || isPublic(field->access)) {
+      res.push_back(field);
+    }
+  }
+}
