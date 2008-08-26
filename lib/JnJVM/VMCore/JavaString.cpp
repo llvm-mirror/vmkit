@@ -17,9 +17,9 @@ using namespace jnjvm;
 
 
 JavaString* JavaString::stringDup(const UTF8*& utf8, Jnjvm* vm) {
-  Class* cl = vm->upcalls->newString;
-  JavaString* res = (JavaString*)malloc(cl->virtualSize);
-  ((void**)res)[0] = cl->virtualVT;
+  UserClass* cl = vm->upcalls->newString;
+  JavaString* res = (JavaString*)malloc(cl->getVirtualSize());
+  ((void**)res)[0] = cl->getVirtualVT();
   res->classOf = cl;
 
   // No need to call the Java function: both the Java function and

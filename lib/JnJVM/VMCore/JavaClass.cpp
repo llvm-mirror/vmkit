@@ -39,10 +39,6 @@ const UTF8* Attribut::lineNumberTableAttribut = 0;
 const UTF8* Attribut::innerClassesAttribut = 0;
 const UTF8* Attribut::sourceFileAttribut = 0;
 
-CommonClass* ClassArray::SuperArray = 0;
-std::vector<Class*> ClassArray::InterfacesArray;
-
-
 Attribut::Attribut(const UTF8* name, uint32 length,
                    uint32 offset) {
   
@@ -219,7 +215,9 @@ CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n, bool isArray) 
 #endif
 }
 
-ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n) : 
+#ifndef MULTIPLE_VM
+ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n,
+                               uint32 nb) : 
   CommonClass(loader, n, false) {
   
   display = (CommonClass**)malloc(sizeof(CommonClass*));
@@ -227,6 +225,7 @@ ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n) :
   primitive = true;
   status = ready;
   access = ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC;
+  virtualSize = nb;
 }
 
 Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) : 
@@ -234,22 +233,21 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
   bytes = B;
   super = 0;
   ctpInfo = 0;
-#ifndef MULTIPLE_VM
   _staticInstance = 0;
-#endif
 }
 
 ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n) : CommonClass(loader, n, true) {
   _funcs = 0;
   _baseClass = 0;
-  super = ClassArray::SuperArray;
-  interfaces = ClassArray::InterfacesArray;
+  super = JnjvmBootstrapLoader::SuperArray;
+  interfaces = JnjvmBootstrapLoader::InterfacesArray;
   depth = 1;
   display = (CommonClass**)malloc(2 * sizeof(CommonClass*));
-  display[0] = ClassArray::SuperArray;
+  display[0] = JnjvmBootstrapLoader::SuperArray;
   display[1] = this;
   access = ACC_FINAL | ACC_ABSTRACT;
 }
+#endif
 
 void Class::print(mvm::PrintBuffer* buf) const {
   buf->write("Class<");
@@ -263,10 +261,12 @@ void ClassArray::print(mvm::PrintBuffer* buf) const {
   buf->write(">");
 }
 
+#ifndef MULTIPLE_VM
 void ClassArray::resolveComponent() {
   AssessorDesc::introspectArray(classLoader, name, 0, _funcs,
                                 _baseClass);
 }
+#endif
 
 JnjvmClassLoader* ClassArray::arrayLoader(const UTF8* name,
                                           JnjvmClassLoader* loader,
@@ -278,7 +278,7 @@ JnjvmClassLoader* ClassArray::arrayLoader(const UTF8* name,
   } else if (name->elements[start] == AssessorDesc::I_REF) {
     const UTF8* componentName = name->javaToInternal(loader->hashUTF8, start + 1,
                                                      len - 2);
-    CommonClass* cl = loader->loadName(componentName, false, true);
+    UserCommonClass* cl = loader->loadName(componentName, false, true);
     return cl->classLoader;
   } else {
     return JnjvmClassLoader::bootstrapLoader;
@@ -361,25 +361,36 @@ JavaMethod* CommonClass::lookupMethod(const UTF8* name, const UTF8* type,
 
 JavaField* CommonClass::lookupFieldDontThrow(const UTF8* name,
                                              const UTF8* type, bool isStatic,
-                                             bool recurse) {
+                                             bool recurse,
+                                             CommonClass*& definingClass) {
 
   FieldCmp CC(name, type);
   field_map& map = isStatic ? staticFields : virtualFields;
   field_iterator End = map.end();
   field_iterator I = map.find(CC);
-  if (I != End) return I->second;
+  if (I != End) {
+    definingClass = this;
+    return I->second;
+  }
   
   JavaField *cur = 0;
 
   if (recurse) {
     if (super) cur = super->lookupFieldDontThrow(name, type, isStatic,
-                                                 recurse);
-    if (cur) return cur;
+                                                 recurse, definingClass);
+    if (cur) {
+      definingClass = (Class*)super;
+      return cur;
+    }
     if (isStatic) {
       for (std::vector<Class*>::iterator i = interfaces.begin(),
            e = interfaces.end(); i!= e; i++) {
-        cur = (*i)->lookupFieldDontThrow(name, type, isStatic, recurse);
-        if (cur) return cur;
+        cur = (*i)->lookupFieldDontThrow(name, type, isStatic, recurse,
+                                         definingClass);
+        if (cur) {
+          definingClass = *i;
+          return cur;
+        }
       }
     }
   }
@@ -388,21 +399,25 @@ JavaField* CommonClass::lookupFieldDontThrow(const UTF8* name,
 }
 
 JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
-                                    bool isStatic, bool recurse) {
+                                    bool isStatic, bool recurse,
+                                    CommonClass*& definingClass) {
   
-  JavaField* res = lookupFieldDontThrow(name, type, isStatic, recurse);
+  JavaField* res = lookupFieldDontThrow(name, type, isStatic, recurse,
+                                        definingClass);
   if (!res) {
     JavaThread::get()->isolate->noSuchFieldError(this, name);
   }
   return res;
 }
 
+#ifndef MULTIPLE_VM
 JavaObject* Class::doNew(Jnjvm* vm) {
   assert(this->isReady() && "Uninitialized class when allocating.");
   JavaObject* res = (JavaObject*)vm->allocator.allocateObject(virtualSize, virtualVT);
   res->classOf = this;
   return res;
 }
+#endif
 
 bool CommonClass::inheritName(const UTF8* Tname) {
   if (name->equals(Tname)) {
@@ -585,6 +600,7 @@ void Class::readParents(Reader& reader) {
 
 }
 
+#ifndef MULTIPLE_VM
 void Class::loadParents() {
   int nbI = interfacesUTF8.size();
   if (superUTF8 == 0) {
@@ -605,6 +621,7 @@ void Class::loadParents() {
     interfaces.push_back((Class*)classLoader->loadName(interfacesUTF8[i],
                                                        true, true));
 }
+#endif
 
 void Class::readAttributs(Reader& reader, std::vector<Attribut*>& attr) {
   unsigned short int nba = reader.readU2();
@@ -712,7 +729,8 @@ void CommonClass::resolveClass() {
   }
 }
 
-void Class::resolveInnerOuterClasses() {
+#ifndef MULTIPLE_VM
+void UserClass::resolveInnerOuterClasses() {
   if (!innerOuterResolved) {
     Attribut* attribut = lookupAttribut(Attribut::innerClassesAttribut);
     if (attribut != 0) {
@@ -739,6 +757,7 @@ void Class::resolveInnerOuterClasses() {
     innerOuterResolved = true;
   }
 }
+#endif
 
 void CommonClass::getDeclaredConstructors(std::vector<JavaMethod*>& res,
                                           bool publicOnly) {

@@ -56,7 +56,7 @@ AssessorDesc* AssessorDesc::dRef = 0;
 AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
                            const char* name,
                            JnjvmClassLoader* loader, uint8 nid,
-                           const char* assocName, ClassArray* cl,
+                           const char* assocName, UserClassArray* cl,
                            arrayCtor_t ctor) {
   AssessorDesc* res = this;
   res->numId = nid;
@@ -75,10 +75,9 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
     res->assocClassName = 0;
   
   if (bid != I_PARG && bid != I_PARD && bid != I_REF && bid != I_TAB) {
-    res->classType = new ClassPrimitive(loader, res->UTF8Name);
-    res->classType->virtualSize = nb;
+    res->primitiveClass = new UserClassPrimitive(loader, res->UTF8Name, nb);
   } else {
-    res->classType = 0;
+    res->primitiveClass = 0;
   }
 }
 
@@ -265,37 +264,9 @@ const UTF8* AssessorDesc::constructArrayName(JnjvmClassLoader *loader, AssessorD
   }
 }
 
-/*
-void AssessorDesc::introspectArrayName(Jnjvm *vm, const UTF8* utf8,
-                                       uint32 start, AssessorDesc*& ass,
-                                       const UTF8*& res) {
-  uint32 pos = 0;
-  uint32 intern = 0;
-  AssessorDesc* funcs = 0;
-
-  analyseIntern(utf8, start, 1, funcs, intern);
-
-  if (funcs != dTab) {
-    vm->unknownError("%s isn't an array", utf8->printString());
-  }
-
-  analyseIntern(utf8, intern, 0, funcs, pos);
-
-  if (funcs == dRef) {
-    ass = dRef;
-    res = utf8->extract(vm, intern + 1, pos - 1);
-  } else if (funcs == dTab) {
-    ass = dTab;
-    res = utf8->extract(vm, intern, pos);
-  } else {
-    ass = funcs;
-    res = 0;
-  }
-}
-*/
 void AssessorDesc::introspectArray(JnjvmClassLoader* loader,
                                    const UTF8* utf8, uint32 start,
-                                   AssessorDesc*& ass, CommonClass*& res) {
+                                   AssessorDesc*& ass, UserCommonClass*& res) {
   uint32 pos = 0;
   uint32 intern = 0;
   AssessorDesc* funcs = 0;
@@ -318,7 +289,7 @@ void AssessorDesc::introspectArray(JnjvmClassLoader* loader,
     res = loader->constructArray(utf8->extract(loader->hashUTF8, intern, pos));
   } else {
     ass = funcs;
-    res = funcs->classType;
+    res = funcs->getPrimitiveClass();
   }
 }
 
@@ -377,8 +348,7 @@ AssessorDesc* AssessorDesc::byteIdToPrimitive(char id) {
   }
 }
 
-AssessorDesc* AssessorDesc::classToPrimitive(CommonClass* cl) {
-  const UTF8* name = cl->name;
+AssessorDesc* AssessorDesc::classNameToPrimitive(const UTF8* name) {
   if (name->equals(dFloat->assocClassName)) {
     return dFloat;
   } else if (name->equals(dInt->assocClassName)) {
@@ -410,9 +380,9 @@ const char* Typedef::printString() const {
   return buf->contents()->cString();
 }
 
-CommonClass* Typedef::assocClass(JnjvmClassLoader* loader) {
+UserCommonClass* Typedef::assocClass(JnjvmClassLoader* loader) {
   if (pseudoAssocClassName == 0) {
-    return funcs->classType;
+    return funcs->getPrimitiveClass();
   } else if (funcs == AssessorDesc::dRef) {
     return loader->loadName(pseudoAssocClassName, false, true);
   } else {

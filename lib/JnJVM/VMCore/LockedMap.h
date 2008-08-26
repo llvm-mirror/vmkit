@@ -97,14 +97,14 @@ public:
   
   mvm::Lock* lock;
   JavaAllocator* allocator;
-  ClassArray* array;
+  UserClassArray* array;
   std::multimap<const uint32, const UTF8*> map;
   const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
   const UTF8* lookupOrCreateReader(const uint16* buf, uint32 size);
   const UTF8* lookupAsciiz(const char* asciiz); 
   const UTF8* lookupReader(const uint16* buf, uint32 size);
   
-  UTF8Map(JavaAllocator* A, ClassArray* cl) {
+  UTF8Map(JavaAllocator* A, UserClassArray* cl) {
     lock = mvm::Lock::allocNormal();
     allocator = A;
     array = cl;

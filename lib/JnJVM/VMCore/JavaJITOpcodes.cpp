@@ -1820,7 +1820,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case NEWARRAY :
       case ANEWARRAY : {
         
-        ClassArray* dcl = 0;
+        UserClassArray* dcl = 0;
         ConstantInt* sizeElement = 0;
         GlobalVariable* TheVT = 0;
         JnjvmClassLoader* JCL = compilingClass->classLoader;
@@ -1828,7 +1828,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         if (bytecodes[i] == NEWARRAY) {
           uint8 id = bytecodes[++i];
           AssessorDesc* ass = AssessorDesc::arrayType(id);
-          dcl = ass->arrayClass;
+          dcl = ass->getArrayClass();
           TheVT = JnjvmModule::JavaObjectVirtualTableGV;
           LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[ass->numId];
           sizeElement = LAI.sizeInBytesConstant;
@@ -1844,10 +1844,14 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           TheVT = JnjvmModule::ArrayObjectVirtualTableGV;
           sizeElement = mvm::jit::constantPtrSize;
         }
-        
+#ifdef MULTIPLE_VM
+        llvm::Value* valCl = 0;
+        fprintf(stderr, "implement me");
+        abort();
+#else
         LLVMCommonClassInfo* LCI = module->getClassInfo(dcl);
         llvm::Value* valCl = LCI->getVar(this);
-        
+#endif   
         llvm::Value* arg1 = popAsInt();
 
         Value* cmp = new ICmpInst(ICmpInst::ICMP_SLT, arg1,
@@ -2069,12 +2073,18 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         const UTF8* className = 
           compilingClass->ctpInfo->resolveClassName(index);
 
-        ClassArray* dcl = JCL->constructArray(className);
+        UserClassArray* dcl = JCL->constructArray(className);
         
         compilingClass->ctpInfo->loadClass(index);
         
+#ifdef MULTIPLE_VM
+        llvm::Value* valCl = 0;
+        fprintf(stderr, "implement me %s", dcl->printString());
+        abort();
+#else
         LLVMCommonClassInfo* LCI = module->getClassInfo(dcl);
         Value* valCl = LCI->getVar(this);
+#endif
         Value** args = (Value**)alloca(sizeof(Value*) * (dim + 2));
         args[0] = valCl;
         args[1] = ConstantInt::get(Type::Int32Ty, dim);

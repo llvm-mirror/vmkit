@@ -914,9 +914,9 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
 
     if (ex->catche) {
       JavaObject* exc = 0;
-      Class* cl = 0; 
+      UserClass* cl = 0; 
       try {
-        cl = (Class*)(ctpInfo->loadClass(ex->catche));
+        cl = (UserClass*)(ctpInfo->loadClass(ex->catche));
       } catch(...) {
         compilingClass->release();
         exc = JavaThread::getJavaException();
@@ -931,7 +931,12 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
 
       ex->catchClass = cl;
     } else {
+#ifdef MULTIPLE_VM
+      fprintf(stderr, "implement me");
+      abort();
+#else
       ex->catchClass = Classpath::newThrowable;
+#endif
     }
     
     ex->test = createBasicBlock("testException");
@@ -1024,8 +1029,13 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     Value* cl = 0;
     currentBlock = cur->realTest;
     assert(cur->catchClass);
+#ifdef MULTIPLE_VM
+    fprintf(stderr, "implement me");
+    abort();
+#else
     LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(cur->catchClass);
     cl = LCI->getVar(this);
+#endif
     Value* cmp = llvm::CallInst::Create(JnjvmModule::CompareExceptionFunction, cl, "",
                                         currentBlock);
     llvm::BranchInst::Create(cur->handler, bbNext, cmp, currentBlock);

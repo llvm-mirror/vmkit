@@ -49,8 +49,8 @@ JNIEnv *env,
   UserCommonClass* dstType = td->baseClass();
   AssessorDesc* dstFuncs = td->funcs();
   AssessorDesc* srcFuncs = ts->funcs();
-  UserCommonClass* srcPrim = vm->getPrimitiveClass(srcFuncs);
-  UserCommonClass* dstPrim = vm->getPrimitiveClass(dstFuncs);
+  UserCommonClass* srcPrim = srcFuncs->getPrimitiveClass();
+  UserCommonClass* dstPrim = dstFuncs->getPrimitiveClass();
 
   if (len > src->size) {
     vm->indexOutOfBounds(src, len);

@@ -26,13 +26,8 @@
 namespace jnjvm {
 
 class ArrayObject;
-class ArrayUInt8;
-class Attribut;
-class UserClass;
-class UserClassArray;
 class Classpath;
-class UserCommonClass;
-class UserClassPrimitive;
+class CommonClass;
 class JavaField;
 class JavaMethod;
 class JavaObject;
@@ -40,26 +35,12 @@ class JavaString;
 class JavaThread;
 class JnjvmBootstrapLoader;
 class JnjvmClassLoader;
-class JnjvmModule;
-class JnjvmModuleProvider;
-class Reader;
-class Typedef;
-class UTF8;
-class UTF8Map;
-class ClassMap;
-class DelegateeMap;
-class FieldMap;
-class MethodMap;
-class Signdef;
-class SignMap;
-class StaticInstanceMap;
 class StringMap;
-class TypeMap;
-class FunctionMap;
-class FunctionDefMap;
-class FunctionDefMap;
-class AllocationMap;
-class ZipArchive;
+class UserClass;
+class UserClassArray;
+class UserClassPrimitive;
+class UserCommonClass;
+class UTF8;
 
 /// ThreadSystem - Thread management of a JVM. Each JVM has one thread
 /// management system to count the number of non-daemon threads it owns.
@@ -307,8 +288,8 @@ public:
   void illegalArgumentException(const char* msg);
   void classCastException(const char* msg);
   void unknownError(const char* fmt, ...); 
-  void noSuchFieldError(UserCommonClass* cl, const UTF8* name);
-  void noSuchMethodError(UserCommonClass* cl, const UTF8* name);
+  void noSuchFieldError(CommonClass* cl, const UTF8* name);
+  void noSuchMethodError(CommonClass* cl, const UTF8* name);
   void classFormatError(const char* fmt, ...);
   void noClassDefFoundError(JavaObject* obj);
   void noClassDefFoundError(const char* fmt, ...);
@@ -355,13 +336,6 @@ public:
   ///
   virtual void runApplication(int argc, char** argv);
 
-#ifdef MULTIPLE_VM
-  UserClassPrimitive* getPrimitiveClass(const AssessorDesc* ass);
-#else
-  UserClassPrimitive* getPrimitiveClass(const AssessorDesc* ass) {
-    return (UserClassPrimitive*)ass->classType;
-  }
-#endif
 };
 
 } // end namespace jnjvm

@@ -408,7 +408,7 @@ const Type* LLVMClassInfo::getVirtualType() {
 const Type* LLVMClassInfo::getStaticType() {
   
   if (!staticType) {
-    UserClass* cl = (UserClass*)classDef;
+    Class* cl = (Class*)classDef;
     std::vector<const llvm::Type*> fields;
     JavaField** array = (JavaField**)
       alloca(sizeof(JavaField*) * (classDef->staticFields.size() + 1));
@@ -444,18 +444,6 @@ const Type* LLVMClassInfo::getStaticType() {
     uint64 size = mvm::jit::getTypeSize(structType);
     cl->staticSize = size;
     cl->staticVT = VT;
-
-    JavaObject* val = 
-      (JavaObject*)JavaThread::get()->isolate->allocator.allocateObject(cl->staticSize,
-                                                                        cl->staticVT);
-    val->initialise(classDef);
-    for (CommonClass::field_iterator i = cl->staticFields.begin(),
-         e = cl->staticFields.end(); i!= e; ++i) {
-    
-      i->second->initField(val);
-    }
-  
-    cl->_staticInstance = val;
   }
   return staticType;
 }

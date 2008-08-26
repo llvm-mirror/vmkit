@@ -37,7 +37,7 @@ jchar byteId) {
   if (!ass)
     vm->unknownError("unknown byte primitive %c", byteId);
   
-  return (jobject)ass->classType->getClassDelegatee(vm);
+  return (jobject)ass->getPrimitiveClass()->getClassDelegatee(vm);
   
 }
 

@@ -31,7 +31,7 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
 
   bool isStatic = ctpInfo->isAStaticCall(index);
 
-  CommonClass* cl = 0;
+  UserCommonClass* cl = 0;
   const UTF8* utf8 = 0;
   Signdef* sign = 0;
 

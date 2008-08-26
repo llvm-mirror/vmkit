@@ -29,8 +29,8 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JnjvmClassLoader* loader,
                              char const* className, char const* func,
                              char const* sign, int access, ...) {
   
-  CommonClass* cl = loader->loadName(loader->asciizConstructUTF8(className),
-                                     true, true);
+  UserCommonClass* cl = loader->loadName(loader->asciizConstructUTF8(className),
+                                         true, true);
   
   cl->initialiseClass(vm);
   bool stat = access == ACC_STATIC ? true : false;

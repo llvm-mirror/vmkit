@@ -19,13 +19,15 @@ namespace jnjvm {
 
 class ClassArray;
 class CommonClass;
-class UserCommonClass;
 class JavaArray;
 class JavaJIT;
 class JavaObject;
 class Jnjvm;
 class JnjvmBootstrapLoader;
 class JnjvmClassLoader;
+class UserClassArray;
+class UserClassPrimitive;
+class UserCommonClass;
 class UTF8;
 
 #define VOID_ID 0
@@ -41,7 +43,7 @@ class UTF8;
 #define OBJECT_ID 10
 #define NUM_ASSESSORS 11
 
-typedef JavaArray* (*arrayCtor_t)(uint32 len, CommonClass* cl, Jnjvm* vm);
+typedef JavaArray* (*arrayCtor_t)(uint32 len, UserClassArray* cl, Jnjvm* vm);
 
 
 /// AssessorDesc - Description of a Java assessor: these are the letters found
@@ -95,10 +97,10 @@ public:
   ///
   const UTF8* UTF8Name;
 
-  /// classType - The primitive Java class of this assessor. This class
+  /// primitiveClass - The primitive Java class of this assessor. This class
   /// is internal to the JVM.
   ///
-  CommonClass* classType;
+  UserClassPrimitive* primitiveClass;
 
   /// assocClassName - The associated class name, e.g. "java/lang/Integer" for
   /// "I".
@@ -107,7 +109,7 @@ public:
   
   /// arrayClass - The primitive array class of the assessor, e.g. I[] for "I".
   ///
-  ClassArray* arrayClass;
+  UserClassArray* arrayClass;
 
   /// arrayCtor - The constructor of an array of this assessor.
   ///
@@ -184,7 +186,7 @@ public:
   AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
                const char* name,
                JnjvmClassLoader* loader, uint8 nid,
-               const char* assocName, ClassArray* cl,
+               const char* assocName, UserClassArray* cl,
                arrayCtor_t ctor);
 
 
@@ -204,19 +206,26 @@ public:
   static const UTF8* constructArrayName(JnjvmClassLoader* loader, AssessorDesc* ass,
                                         uint32 steps, const UTF8* className);
   
-  /*
-  static void introspectArrayName(const UTF8* utf8, uint32 start,
-                                  AssessorDesc*& ass, const UTF8*& res);
-  */
   static void introspectArray(JnjvmClassLoader* loader, const UTF8* utf8,
                               uint32 start, AssessorDesc*& ass,
-                              CommonClass*& res);
+                              UserCommonClass*& res);
 
   static AssessorDesc* arrayType(unsigned int t);
   
   static AssessorDesc* byteIdToPrimitive(const char id);
-  static AssessorDesc* classToPrimitive(CommonClass* cl);
-
+  static AssessorDesc* classNameToPrimitive(const UTF8* name);
+ 
+#ifdef MULTIPLE_VM
+  UserClassArray* getArrayClass() const;
+  UserClassPrimitive* getPrimitiveClass() const;
+#else
+  UserClassArray* getArrayClass() const {
+    return arrayClass;
+  }
+  UserClassPrimitive* getPrimitiveClass() const {
+    return primitiveClass;
+  }
+#endif
 };
 
 

@@ -266,6 +266,9 @@ public:
   /// Java code.
   ///
   Classpath* upcalls;
+
+  ISOLATE_STATIC std::vector<UserClass*> InterfacesArray;
+  ISOLATE_STATIC UserClass* SuperArray;
 };
 
 } // end namespace jnjvm

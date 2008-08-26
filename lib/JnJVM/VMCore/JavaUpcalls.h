@@ -127,6 +127,7 @@ public:
   ISOLATE_STATIC JavaField* daemon;
   ISOLATE_STATIC JavaField* group;
   ISOLATE_STATIC JavaField* running;
+  ISOLATE_STATIC UserClass* threadGroup;
   ISOLATE_STATIC JavaField* rootGroup;
   ISOLATE_STATIC JavaField* vmThread;
   ISOLATE_STATIC JavaMethod* uncaughtException;

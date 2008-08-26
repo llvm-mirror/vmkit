@@ -49,6 +49,7 @@ JavaField*  Classpath::priority;
 JavaField*  Classpath::daemon;
 JavaField*  Classpath::group;
 JavaField*  Classpath::running;
+Class*      Classpath::threadGroup;
 JavaField*  Classpath::rootGroup;
 JavaField*  Classpath::vmThread;
 JavaMethod* Classpath::uncaughtException;
@@ -197,7 +198,7 @@ JavaField* Classpath::constructorClass;
 
 void Classpath::createInitialThread(Jnjvm* vm, JavaObject* th) {
   JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
-  JCL->loadName(newVMThread->name, true, true);
+  JCL->loadName(newVMThread->getName(), true, true);
   newVMThread->initialiseClass(vm);
 
   JavaObject* vmth = newVMThread->doNew(vm);
@@ -208,9 +209,9 @@ void Classpath::createInitialThread(Jnjvm* vm, JavaObject* th) {
   assocThread->setObjectField(vmth, th);
   running->setInt8Field(vmth, (uint32)1);
   
-  JCL->loadName(rootGroup->classDef->name, true, true);
-  rootGroup->classDef->initialiseClass(vm);
-  JavaObject* Stat = rootGroup->classDef->getStaticInstance();
+  JCL->loadName(threadGroup->getName(), true, true);
+  threadGroup->initialiseClass(vm);
+  JavaObject* Stat = threadGroup->getStaticInstance();
   JavaObject* RG = rootGroup->getObjectField(Stat);
   group->setObjectField(th, RG);
   groupAddThread->invokeIntSpecial(vm, RG, th);
@@ -218,7 +219,7 @@ void Classpath::createInitialThread(Jnjvm* vm, JavaObject* th) {
 
 void Classpath::mapInitialThread(Jnjvm* vm) {
   JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
-  JCL->loadName(newThread->name, true, true);
+  JCL->loadName(newThread->getName(), true, true);
   newThread->initialiseClass(vm);
   JavaObject* th = newThread->doNew(vm);
   createInitialThread(vm, th);
@@ -527,6 +528,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   running = 
     UPCALL_FIELD(loader, "java/lang/VMThread", "running", "Z", ACC_VIRTUAL);
   
+  threadGroup = 
+    UPCALL_CLASS(loader, "java/lang/ThreadGroup");
+  
   rootGroup =
     UPCALL_FIELD(loader, "java/lang/ThreadGroup", "root",
                  "Ljava/lang/ThreadGroup;", ACC_STATIC);
@@ -584,8 +588,9 @@ extern "C" JavaString* internString(JavaString* obj) {
 }
 
 extern "C" uint8 isArray(JavaObject* klass) {
+  Jnjvm* vm = JavaThread::get()->isolate;
   CommonClass* cl = 
-    (CommonClass*)((Classpath::vmdataClass->getObjectField(klass)));
+    (CommonClass*)((vm->upcalls->vmdataClass->getObjectField(klass)));
 
   return (uint8)cl->isArray();
 }

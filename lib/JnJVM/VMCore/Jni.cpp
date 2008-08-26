@@ -834,9 +834,10 @@ jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name,
 
   // TODO: find a better place to store the UTF8
   UserCommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
+  UserCommonClass* realCl = 0;
   return (jfieldID) 
     cl->lookupField(cl->classLoader->asciizConstructUTF8(name),
-                    cl->classLoader->asciizConstructUTF8(sig), 0, 1);
+                    cl->classLoader->asciizConstructUTF8(sig), 0, 1, realCl);
   
   END_EXCEPTION
   return 0;
@@ -1327,9 +1328,11 @@ jfieldID GetStaticFieldID(JNIEnv *env, jclass clazz, const char *name,
   
   // TODO: find a better place to store the UTF8
   UserCommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
+  UserCommonClass* realCl = 0;
   return (jfieldID)
     cl->lookupField(cl->classLoader->asciizConstructUTF8(name),
-                    cl->classLoader->asciizConstructUTF8(sig), true, true);
+                    cl->classLoader->asciizConstructUTF8(sig), true, true,
+                    realCl);
 
   END_EXCEPTION
   return 0;
@@ -1665,7 +1668,7 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass elementClass,
   
   UserCommonClass* base = NativeUtil::resolvedImplClass(elementClass, true);
   JnjvmClassLoader* loader = base->classLoader;
-  const UTF8* name = base->name;
+  const UTF8* name = base->getName();
   const UTF8* arrayName = AssessorDesc::constructArrayName(loader, 0, 1, name);
   UserClassArray* array = loader->constructArray(arrayName);
   ArrayObject* res = ArrayObject::acons(length, array, &(vm->allocator));

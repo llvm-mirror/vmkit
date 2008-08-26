@@ -87,6 +87,7 @@ std::vector<void*> Jnjvm::nativeLibs;
 
 typedef void (*clinit_t)(Jnjvm* vm);
 
+#ifndef MULTIPLE_VM
 void CommonClass::initialiseClass(Jnjvm* vm) {
   // Primitives are initialized at boot time
   if (isArray()) {
@@ -97,6 +98,7 @@ void CommonClass::initialiseClass(Jnjvm* vm) {
       release();
     } else if (status >= resolved && status != clinitParent &&
                status != inClinit) {
+      Class* cl = (Class*)this;
       status = clinitParent;
       release();
       if (super) {
@@ -114,6 +116,16 @@ void CommonClass::initialiseClass(Jnjvm* vm) {
       PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ", 0);
       PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", printString());
       
+      JavaObject* val = 
+        (JavaObject*)vm->allocator.allocateObject(cl->staticSize, cl->staticVT);
+      val->initialise(cl);
+      for (CommonClass::field_iterator i = cl->staticFields.begin(),
+         e = cl->staticFields.end(); i!= e; ++i) { 
+        i->second->initField(val);
+      }
+  
+      cl->_staticInstance = val;
+
       if (meth) {
         JavaObject* exc = 0;
         try{
@@ -148,15 +160,16 @@ void CommonClass::initialiseClass(Jnjvm* vm) {
     }
   }
 }
+#endif
 
 
-void Jnjvm::errorWithExcp(Class* cl, JavaMethod* init, const JavaObject* excp) {
+void Jnjvm::errorWithExcp(UserClass* cl, JavaMethod* init, const JavaObject* excp) {
   JavaObject* obj = cl->doNew(this);
   init->invokeIntSpecial(this, obj, excp);
   JavaThread::throwException(obj);
 }
 
-void Jnjvm::error(Class* cl, JavaMethod* init, const char* fmt, ...) {
+void Jnjvm::error(UserClass* cl, JavaMethod* init, const char* fmt, ...) {
   char* tmp = (char*)alloca(4096);
   va_list ap;
   va_start(ap, fmt);
@@ -316,6 +329,7 @@ void Jnjvm::addProperty(char* key, char* value) {
   postProperties.push_back(std::make_pair(key, value));
 }
 
+#ifndef MULTIPLE_VM
 JavaObject* CommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
   acquire();
   if (!(delegatee)) {
@@ -332,6 +346,7 @@ JavaObject* CommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
   release();
   return delegatee;
 }
+#endif
 
 Jnjvm::~Jnjvm() {
 #ifdef MULTIPLE_GC
@@ -431,7 +446,7 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   if (archive.getOfscd() != -1) {
     ZipFile* file = archive.getFile(PATH_MANIFEST);
     if (file) {
-      ClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfByte;
+      UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfByte;
       ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, array, &vm->allocator);
       int ok = archive.readFile(res, file);
       if (ok) {
@@ -693,7 +708,7 @@ void Jnjvm::loadBootstrap() {
                                         appClassLoader->getJavaClassLoader());
   // load and initialise math since it is responsible for dlopen'ing 
   // libjavalang.so and we are optimizing some math operations
-  CommonClass* math = 
+  UserCommonClass* math = 
     loader->loadName(loader->asciizConstructUTF8("java/lang/Math"), true, true);
   math->initialiseClass(this);
 }
@@ -767,7 +782,7 @@ void Jnjvm::runMain(int argc, char** argv) {
       }
     }
     
-    ClassArray* array = bootstrapLoader->upcalls->ArrayOfString;
+    UserClassArray* array = bootstrapLoader->upcalls->ArrayOfString;
     ArrayObject* args = ArrayObject::acons(argc - 2, array, &allocator);
     for (int i = 2; i < argc; ++i) {
       args->elements[i - 2] = (JavaObject*)asciizToStr(argv[i]);

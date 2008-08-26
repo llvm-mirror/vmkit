@@ -27,7 +27,12 @@
 
 using namespace jnjvm;
 
+#ifndef MULTIPLE_VM
 JnjvmBootstrapLoader* JnjvmClassLoader::bootstrapLoader = 0;
+UserClass* JnjvmBootstrapLoader::SuperArray = 0;
+std::vector<UserClass*> JnjvmBootstrapLoader::InterfacesArray;
+#endif
+
 
 extern const char* GNUClasspathGlibj;
 extern const char* GNUClasspathLibs;
@@ -241,7 +246,7 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
     JnjvmClassLoader * ld = 
       ClassArray::arrayLoader(name, this, 1, name->size - 1);
     UserClassArray* res = 
-      (ClassArray*)ld->classes->lookupOrCreate(name, this, arrayDup);
+      (UserClassArray*)ld->classes->lookupOrCreate(name, this, arrayDup);
     return res;
   } else {
     return (UserClassArray*)classes->lookupOrCreate(name, this, arrayDup);

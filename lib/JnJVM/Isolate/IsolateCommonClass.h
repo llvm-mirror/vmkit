@@ -20,12 +20,14 @@ class CommonClass;
 class Class;
 class ClassArray;
 class ClassPrimitive;
+class JavaConstantPool;
 class JavaField;
 class JavaMethod;
 class JavaObject;
 class Jnjvm;
 class JnjvmClassLoader;
 class UserClass;
+class UserClassArray;
 class UTF8;
 
 class UserCommonClass : public mvm::Object {
@@ -48,6 +50,7 @@ public:
   bool isArray();
   bool isPrimitive();
   bool isInterface();
+  bool isReady();
   uint8 getAccess();
   const UTF8* getName();
 
@@ -67,8 +70,28 @@ public:
                                     bool isStatic, bool recurse);
   JavaMethod* lookupMethod(const UTF8* name, const UTF8* type,
                            bool isStatic, bool recurse);
+  JavaField* lookupField(const UTF8* name, const UTF8* type,
+                         bool isStatic, bool recurse,
+                         UserCommonClass*& fieldCl);
   
   uint64 getVirtualSize();
+  VirtualTable* getVirtualVT();
+
+  void setInterfaces(std::vector<UserClass*> Is);
+  void setSuper(UserClass* S);
+
+  bool instantiationOfArray(UserClassArray* cl);
+  bool implements(UserCommonClass* cl);
+
+  /// constructMethod - Add a new method in this class method map.
+  ///
+  JavaMethod* constructMethod(const UTF8* name, const UTF8* type,
+                              uint32 access);
+  
+  /// constructField - Add a new field in this class field map.
+  ///
+  JavaField* constructField(const UTF8* name, const UTF8* type,
+                            uint32 access);
 };
 
 class UserClass : public UserCommonClass {
@@ -86,7 +109,13 @@ public:
   UserClass* getOuterClass();
   void resolveInnerOuterClasses();
   JavaObject* getStaticInstance();
+  JavaConstantPool* getConstantPool();
+
+  void setStaticSize(uint64 size);
+  void setStaticVT(VirtualTable* VT);
   
+  uint64 getStaticSize();
+  VirtualTable* getStaticVT();
 };
 
 class UserClassArray : public UserCommonClass {
@@ -107,7 +136,7 @@ class UserClassPrimitive : public UserCommonClass {
 public:
   
   virtual void TRACER;
-  UserClassPrimitive(JnjvmClassLoader* JCL, const UTF8* name);
+  UserClassPrimitive(JnjvmClassLoader* JCL, const UTF8* name, uint32 nb);
 };
 
 } // end namespace jnjvm

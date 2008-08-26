@@ -182,6 +182,10 @@ public:
   uint32 getVirtualSize() {
     return virtualSize;
   }
+  
+  VirtualTable* getVirtualVT() {
+    return virtualVT;
+  }
 
   /// virtualTableSize - The size of the virtual table of this class.
   ///
@@ -215,9 +219,11 @@ public:
     return jnjvm::isInterface(access);
   }
 
+#ifndef MULTIPLE_VM
   std::vector<Class*> * getInterfaces() {
     return &interfaces;
   }
+#endif
   
   /// name - The name of the class.
   ///
@@ -230,7 +236,7 @@ public:
   /// status - The loading/resolve/initialization state of the class.
   ///
   JavaState status;
-  
+ 
   /// super - The parent of this class.
   ///
   CommonClass * super;
@@ -242,7 +248,7 @@ public:
   /// superUTF8 - The name of the parent of this class.
   ///
   const UTF8* superUTF8;
-  
+
   /// interfaces - The interfaces this class implements.
   ///
   std::vector<Class*> interfaces;
@@ -360,12 +366,13 @@ public:
   /// not throw if the field is not found.
   ///
   JavaField* lookupFieldDontThrow(const UTF8* name, const UTF8* type,
-                                  bool isStatic, bool recurse);
+                                  bool isStatic, bool recurse,
+                                  CommonClass*& definingClass);
   
   /// lookupField - Lookup a field and throw an exception if not found.
   ///
   JavaField* lookupField(const UTF8* name, const UTF8* type, bool isStatic,
-                         bool recurse);
+                         bool recurse, CommonClass*& definingClass);
 
   /// print - Print the class for debugging purposes.
   ///
@@ -465,7 +472,12 @@ public:
   void getDeclaredConstructors(std::vector<JavaMethod*>& res, bool publicOnly);
   void getDeclaredMethods(std::vector<JavaMethod*>& res, bool publicOnly);
   void getDeclaredFields(std::vector<JavaField*>& res, bool publicOnly);
-  
+  void setInterfaces(std::vector<Class*> I) {
+    interfaces = I;
+  }
+  void setSuper(CommonClass* S) {
+    super = S;
+  }
 };
 
 /// ClassPrimitive - This class represents internal classes for primitive
@@ -473,7 +485,7 @@ public:
 ///
 class ClassPrimitive : public CommonClass {
 public:
-  ClassPrimitive(JnjvmClassLoader* loader, const UTF8* name);
+  ClassPrimitive(JnjvmClassLoader* loader, const UTF8* name, uint32 nb);
 };
 
 
@@ -506,7 +518,8 @@ public:
   /// attributs - JVM attributes of this class.
   ///
   std::vector<Attribut*> attributs;
-  
+ 
+#ifndef MULTIPLE_VM
   /// innerClasses - The inner classes of this class.
   ///
   std::vector<Class*> innerClasses;
@@ -514,6 +527,7 @@ public:
   /// outerClass - The outer class, if this class is an inner class.
   ///
   Class* outerClass;
+#endif
 
   /// innerAccess - The access of this class, if this class is an inner class.
   ///
@@ -531,9 +545,11 @@ public:
   ///
   VirtualTable* staticVT;
 
+#ifndef MULTIPLE_VM
   /// doNew - Allocates a Java object whose class is this class.
   ///
   JavaObject* doNew(Jnjvm* vm);
+#endif
 
   /// print - Prints a string representation of this class in the buffer.
   ///
@@ -602,6 +618,7 @@ public:
   
   void resolveInnerOuterClasses();
 
+#ifndef MULTIPLE_VM
   Class* getOuterClass() {
     return outerClass;
   }
@@ -609,6 +626,9 @@ public:
   std::vector<Class*>* getInnerClasses() {
     return &innerClasses;
   }
+#endif
+
+   
 };
 
 /// ClassArray - This class represents Java array classes.
@@ -676,14 +696,6 @@ public:
   /// tracer - Tracer of array classes.
   ///
   virtual void TRACER;
-
-  /// SuperArray - The super class of array classes.
-  ///
-  static CommonClass* SuperArray;
-
-  /// InterfacesArray - The interfaces that array classes implement.
-  ///
-  static std::vector<Class*> InterfacesArray;
 };
 
 /// JavaMethod - This class represents Java methods.

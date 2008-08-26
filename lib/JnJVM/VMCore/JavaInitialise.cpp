@@ -47,9 +47,6 @@ static void initialiseVT() {
   INIT(ClassMap);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
-#ifdef MULTIPLE_VM
-  INIT(JnjvmSharedLoader);
-#endif
 #ifdef SERVICE_VM
   INIT(ServiceDomain);
 #endif
@@ -79,20 +76,20 @@ static void initialiseStatics() {
   ((UTF8*)utf8OfChar)->classOf = JCL->upcalls->ArrayOfChar;
   JCL->hashUTF8->array = JCL->upcalls->ArrayOfChar;
 
-  ClassArray::InterfacesArray.push_back(
+  JCL->InterfacesArray.push_back(
     JCL->loadName(JCL->asciizConstructUTF8("java/lang/Cloneable"), false,
                   false));
   
-  ClassArray::InterfacesArray.push_back(
+  JCL->InterfacesArray.push_back(
     JCL->loadName(JCL->asciizConstructUTF8("java/io/Serializable"), false,
                   false));
   
-  ClassArray::SuperArray = 
+  JCL->SuperArray = 
     JCL->loadName(JCL->asciizConstructUTF8("java/lang/Object"), false,
                   false);
   
-  JCL->upcalls->ArrayOfChar->interfaces = ClassArray::InterfacesArray;
-  JCL->upcalls->ArrayOfChar->super = ClassArray::SuperArray;
+  JCL->upcalls->ArrayOfChar->setInterfaces(JCL->InterfacesArray);
+  JCL->upcalls->ArrayOfChar->setSuper(JCL->SuperArray);
   
   JCL->upcalls->ArrayOfByte = JCL->constructArray(JCL->asciizConstructUTF8("[B"));
   JCL->upcalls->ArrayOfString = 
@@ -169,7 +166,7 @@ static void initialiseStatics() {
 
 #undef DEF_UTF8
  
-  Classpath::initialiseClasspath(JCL);
+  JCL->upcalls->initialiseClasspath(JCL);
 }
 
 void mvm::VirtualMachine::initialiseJVM() {

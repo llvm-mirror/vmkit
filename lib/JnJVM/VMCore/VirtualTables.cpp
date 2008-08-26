@@ -35,9 +35,6 @@ using namespace jnjvm;
   INIT(ClassMap);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
-#ifdef MULTIPLE_VM
-  INIT(JnjvmSharedLoader);
-#endif
 #ifdef SERVICE_VM
   INIT(ServiceDomain);
 #endif
@@ -100,10 +97,6 @@ void JavaThread::TRACER {
 void Jnjvm::TRACER {
   appClassLoader->MARK_AND_TRACE;
   TRACE_VECTOR(JavaObject*, gc_allocator, globalRefs);
-#ifdef MULTIPLE_VM
-  statics->MARK_AND_TRACE;
-  delegatees->MARK_AND_TRACE;
-#endif
   bootstrapThread->MARK_AND_TRACE;
   JnjvmClassLoader::bootstrapLoader->MARK_AND_TRACE; 
 }
@@ -129,7 +122,7 @@ void JnjvmBootstrapLoader::TRACER {
   }
 #ifndef MULTIPLE_VM
 #define TRACE_DELEGATEE(prim) \
-  prim->classType->delegatee->MARK_AND_TRACE
+  prim->primitiveClass->delegatee->MARK_AND_TRACE
 
   TRACE_DELEGATEE(AssessorDesc::dVoid);
   TRACE_DELEGATEE(AssessorDesc::dBool);

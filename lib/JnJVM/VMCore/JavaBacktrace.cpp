@@ -61,7 +61,8 @@ void JavaJIT::printBacktrace() {
 
 
 
-Class* JavaJIT::getCallingClass() {
+#ifndef MULTIPLE_VM
+UserClass* JavaJIT::getCallingClass() {
   int* ips[10];
   int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
   int n = 0;
@@ -82,7 +83,7 @@ Class* JavaJIT::getCallingClass() {
   return 0;
 }
 
-Class* JavaJIT::getCallingClassWalker() {
+UserClass* JavaJIT::getCallingClassWalker() {
   int* ips[10];
   int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
   int n = 0;
@@ -102,9 +103,19 @@ Class* JavaJIT::getCallingClassWalker() {
   }
   return 0;
 }
+#else
+UserClass* JavaJIT::getCallingClassWalker() {
+  fprintf(stderr, "implement me");
+  abort();
+}
+UserClass* JavaJIT::getCallingClass() {
+  fprintf(stderr, "implement me");
+  abort();
+}
+#endif
 
 JavaObject* JavaJIT::getCallingClassLoader() {
-  Class* cl = getCallingClassWalker();
+  UserClass* cl = getCallingClassWalker();
   if (!cl) return 0;
   else return cl->classLoader->getJavaClassLoader();
 }

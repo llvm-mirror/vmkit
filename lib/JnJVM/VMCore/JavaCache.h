@@ -29,9 +29,9 @@
 
 namespace jnjvm {
 
-class Class;
 class Enveloppe;
 class JavaConstantPool;
+class UserClass;
 
 /// CacheNode - A {class, method pointer} pair.
 class CacheNode {
@@ -41,7 +41,7 @@ public:
   void* methPtr;
 
   /// lastCible - The class of this cache.
-  Class* lastCible;
+  UserClass* lastCible;
 
   /// next - The next cache.
   CacheNode* next;

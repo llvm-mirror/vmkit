@@ -230,7 +230,7 @@ UserCommonClass* NativeUtil::resolvedImplClass(jclass clazz, bool doClinit) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject *Cl = (JavaObject*)clazz;
   UserCommonClass* cl = 
-    (CommonClass*)vm->upcalls->vmdataClass->getObjectField(Cl);
+    (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField(Cl);
   cl->resolveClass();
   if (doClinit) cl->initialiseClass(vm);
   return cl;
@@ -251,8 +251,8 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
   } else if (obj == 0) {
     vm->illegalArgumentException("");
   } else {
-    CommonClass* cl = obj->classOf;
-    AssessorDesc* value = AssessorDesc::classToPrimitive(cl);
+    UserCommonClass* cl = obj->classOf;
+    AssessorDesc* value = AssessorDesc::classNameToPrimitive(cl->getName());
     
     if (value == 0) {
       vm->illegalArgumentException("");
@@ -381,7 +381,7 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
 
 JavaObject* NativeUtil::getClassType(JnjvmClassLoader* loader, Typedef* type) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  CommonClass* res = type->assocClass(loader);
+  UserCommonClass* res = type->assocClass(loader);
   return res->getClassDelegatee(vm);
 }
 
@@ -417,7 +417,7 @@ ArrayObject* NativeUtil::getExceptionTypes(JavaMethod* meth) {
 
     for (uint16 i = 0; i < nbe; ++i) {
       uint16 idx = reader.readU2();
-      CommonClass* cl = ctp->loadClass(idx);
+      UserCommonClass* cl = ctp->loadClass(idx);
       cl->resolveClass();
       JavaObject* obj = cl->getClassDelegatee(vm);
       res->elements[i] = obj;

@@ -27,6 +27,7 @@ class JavaString;
 class Reader;
 class Signdef;
 class Typedef;
+class UserCommonClass;
 class UTF8;
 
 
@@ -228,14 +229,14 @@ public:
   /// perform class loading. This function is called just in time, ie when
   /// the method call is actually made and not yet resolved.
   ///
-  void resolveMethod(uint32 index, CommonClass*& cl,
+  void resolveMethod(uint32 index, UserCommonClass*& cl,
                      const UTF8*& utf8, Signdef*& sign);
   
   /// resolveField - Resolve the class and signature of the field. May
   /// perform class loading. This function is called just in time, ie when
   /// the field is accessed and not yet resolved.
   ///
-  void resolveField(uint32 index, CommonClass*& cl, const UTF8*& utf8,
+  void resolveField(uint32 index, UserCommonClass*& cl, const UTF8*& utf8,
                     Typedef*& sign);
   
   /// loadClass - Loads the class and returns it. This is called just in time, 
@@ -244,7 +245,7 @@ public:
   /// MULTIANEWARRAY. This function is also called by the classpath for
   /// loading exception classes referenced by a method.
   ///
-  CommonClass* loadClass(uint32 index);
+  UserCommonClass* loadClass(uint32 index);
 
   /// JavaConstantPool - Default constructor.
   ///

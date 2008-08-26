@@ -101,21 +101,19 @@ extern "C" void* fieldLookup(JavaObject* obj, UserClass* caller, uint32 index,
   }
   
   UserCommonClass* cl = 0;
+  UserCommonClass* fieldCl = 0;
   const UTF8* utf8 = 0;
   Typedef* sign = 0;
   
   ctpInfo->resolveField(index, cl, utf8, sign);
   
-  JavaField* field = cl->lookupField(utf8, sign->keyName, stat, true);
+  JavaField* field = cl->lookupField(utf8, sign->keyName, stat, true, fieldCl);
   
   void* ptr = 0;
   if (stat) {
-    UserClass* fieldCl = field->classDef;
     fieldCl->initialiseClass(JavaThread::get()->isolate);
-    ptr = (void*)((uint64)(fieldCl->getStaticInstance()) + field->ptrOffset);
-#ifndef MULTIPLE_VM
+    ptr = (void*)((uint64)(((UserClass*)fieldCl)->getStaticInstance()) + field->ptrOffset);
     ctpInfo->ctpRes[index] = ptr;
-#endif
   } else {
     ptr = (void*)((uint64)obj + field->ptrOffset);
     ctpInfo->ctpRes[index] = (void*)field->ptrOffset;
@@ -177,18 +175,7 @@ extern "C" void indexOutOfBoundsException(JavaObject* obj, sint32 index) {
   JavaThread::get()->isolate->indexOutOfBounds(obj, index);
 }
 
-#ifdef MULTIPLE_VM
-extern "C" JavaObject* getStaticInstance(UserClass* cl, Jnjvm* vm) {
-  std::pair<JavaState, JavaObject*>* val = vm->statics->lookup(cl);
-  if (!val || !(val->second)) {
-    vm->initialiseClass(cl);
-    val = vm->statics->lookup(cl);
-  }
-  return val->second;
-}
-#endif
-
-extern "C" CommonClass* initialisationCheck(UserCommonClass* cl) {
+extern "C" UserCommonClass* initialisationCheck(UserCommonClass* cl) {
   cl->initialiseClass(JavaThread::get()->isolate);
   return cl;
 }
@@ -198,7 +185,7 @@ extern "C" JavaObject* getClassDelegatee(UserCommonClass* cl) {
   return cl->getClassDelegatee(vm);
 }
 
-extern "C" Class* newLookup(UserClass* caller, uint32 index) { 
+extern "C" UserClass* newLookup(UserClass* caller, uint32 index) { 
   JavaConstantPool* ctpInfo = caller->getConstantPool();
   UserClass* cl = (UserClass*)ctpInfo->loadClass(index);
   return cl;

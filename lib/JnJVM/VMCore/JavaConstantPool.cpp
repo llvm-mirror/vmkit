@@ -265,6 +265,7 @@ const UTF8* JavaConstantPool::resolveClassName(uint32 index) {
   else return UTF8At(ctpDef[index]);
 }
 
+#ifndef MULTIPLE_VM
 CommonClass* JavaConstantPool::loadClass(uint32 index) {
   CommonClass* temp = isClassLoaded(index);
   if (!temp) {
@@ -293,6 +294,7 @@ CommonClass* JavaConstantPool::getMethodClassIfLoaded(uint32 index) {
   }
   return temp;
 }
+#endif
 
 Typedef* JavaConstantPool::resolveNameAndType(uint32 index) {
   void* res = ctpRes[index];
@@ -421,7 +423,7 @@ Signdef* JavaConstantPool::infoOfInterfaceOrVirtualMethod(uint32 index) {
   return sign;
 }
 
-void JavaConstantPool::resolveMethod(uint32 index, CommonClass*& cl,
+void JavaConstantPool::resolveMethod(uint32 index, UserCommonClass*& cl,
                                      const UTF8*& utf8, Signdef*& sign) {
   sint32 entry = ctpDef[index];
   sint32 ntIndex = entry & 0xFFFF;
@@ -432,7 +434,7 @@ void JavaConstantPool::resolveMethod(uint32 index, CommonClass*& cl,
   cl->resolveClass();
 }
   
-void JavaConstantPool::resolveField(uint32 index, CommonClass*& cl,
+void JavaConstantPool::resolveField(uint32 index, UserCommonClass*& cl,
                                     const UTF8*& utf8, Typedef*& sign) {
   sint32 entry = ctpDef[index];
   sint32 ntIndex = entry & 0xFFFF;
@@ -450,8 +452,9 @@ JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
   const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   CommonClass* cl = getMethodClassIfLoaded(entry >> 16);
   if (cl && cl->status >= resolved) {
+    CommonClass* fieldCl = 0; 
     JavaField* field = cl->lookupFieldDontThrow(utf8, sign->keyName, stat, 
-                                                true);
+                                                true, fieldCl);
     // don't throw if no field, the exception will be thrown just in time  
     if (field) {
       if (!stat) {

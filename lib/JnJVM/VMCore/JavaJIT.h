@@ -41,7 +41,7 @@ struct Exception {
   uint32 endpc;
   uint32 handlerpc;
   uint16 catche;
-  Class* catchClass;
+  UserClass* catchClass;
   llvm::BasicBlock* test;
   llvm::BasicBlock* realTest;
   llvm::BasicBlock* handler;
