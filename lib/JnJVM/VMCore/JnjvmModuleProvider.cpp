@@ -39,7 +39,7 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
   JavaMethod* meth = cl->lookupMethod(utf8, sign->keyName, isStatic, true);
   
   if (!isVirtual(meth->access))
-    JavaThread::get()->isolate->initialiseClass(cl);
+    cl->initialiseClass(JavaThread::get()->isolate);
   
   meth->compiledPtr();
   
@@ -99,7 +99,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
         "The method's offset is greater than the virtual table size");
     ((void**)meth->classDef->virtualVT)[offset] = val;
   } else {
-    JavaThread::get()->isolate->initialiseClass(meth->classDef);
+    meth->classDef->initialiseClass(JavaThread::get()->isolate);
   }
 
   return false;

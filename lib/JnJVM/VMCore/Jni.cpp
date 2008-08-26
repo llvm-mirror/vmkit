@@ -63,7 +63,7 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   BEGIN_EXCEPTION
 
   JnjvmClassLoader* loader = 0;
-  Class* currentClass = JavaJIT::getCallingClass();
+  UserClass* currentClass = JavaJIT::getCallingClass();
   if (currentClass) loader = currentClass->classLoader;
   else loader = JnjvmClassLoader::bootstrapLoader;
 
@@ -71,9 +71,10 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   sint32 len = utf8->size;
   
 
-  CommonClass* cl = loader->lookupClassFromUTF8(utf8, 0, len, true, true);
-  JavaThread::get()->isolate->initialiseClass(cl);
-  return (jclass)(cl->getClassDelegatee());
+  UserCommonClass* cl = loader->lookupClassFromUTF8(utf8, 0, len, true, true);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  cl->initialiseClass(vm);
+  return (jclass)(cl->getClassDelegatee(vm));
   
   END_EXCEPTION
   return 0;
@@ -84,16 +85,17 @@ jmethodID FromReflectedMethod(JNIEnv *env, jobject method) {
   
   BEGIN_EXCEPTION
   
+  Jnjvm* vm = NativeUtil::myVM(env);
+  Classpath* upcalls = vm->upcalls;
   JavaObject* meth = (JavaObject*)method;
-  CommonClass* cl = meth->classOf;
-  if (cl == Classpath::newConstructor)  {
-    return (jmethodID)Classpath::constructorSlot->getVirtualInt32Field(meth);
-  } else if (cl == Classpath::newMethod) {
-    return (jmethodID)Classpath::methodSlot->getVirtualInt32Field(meth);
+  UserCommonClass* cl = meth->classOf;
+  if (cl == upcalls->newConstructor)  {
+    return (jmethodID)upcalls->constructorSlot->getInt32Field(meth);
+  } else if (cl == upcalls->newMethod) {
+    return (jmethodID)upcalls->methodSlot->getInt32Field(meth);
   } else {
-    JavaThread::get()->isolate->unknownError(
-                  "%s is not a constructor or a method", 
-                  meth->printString());
+    vm->unknownError("%s is not a constructor or a method", 
+                     meth->printString());
   }
   
   END_EXCEPTION
@@ -112,8 +114,8 @@ jboolean IsAssignableFrom(JNIEnv *env, jclass sub, jclass sup) {
   
   BEGIN_EXCEPTION
   
-  CommonClass* cl2 = NativeUtil::resolvedImplClass(sup, false);
-  CommonClass* cl1 = NativeUtil::resolvedImplClass(sub, false);
+  UserCommonClass* cl2 = NativeUtil::resolvedImplClass(sup, false);
+  UserCommonClass* cl1 = NativeUtil::resolvedImplClass(sub, false);
 
   return cl1->isAssignableFrom(cl2);
   
@@ -135,9 +137,9 @@ jint ThrowNew(JNIEnv* env, jclass clazz, const char *msg) {
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->isolate;
-  CommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
-  if (cl->isArray) assert(0 && "implement me");
-  JavaObject* res = ((Class*)cl)->doNew(vm);
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
+  if (cl->isArray()) assert(0 && "implement me");
+  JavaObject* res = ((UserClass*)cl)->doNew(vm);
   JavaMethod* init =
     cl->lookupMethod(Jnjvm::initName, 
                      cl->classLoader->asciizConstructUTF8("(Ljava/lang/String;)V"), 0, 1);
@@ -209,9 +211,9 @@ jobject AllocObject(JNIEnv *env, jclass clazz) {
   
   BEGIN_EXCEPTION
   
-  CommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
-  if (cl->isArray) JavaThread::get()->isolate->unknownError("implement me");
-  return (jobject)((Class*)cl)->doNew(JavaThread::get()->isolate);
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
+  if (cl->isArray()) JavaThread::get()->isolate->unknownError("implement me");
+  return (jobject)((UserClass*)cl)->doNew(JavaThread::get()->isolate);
 
   END_EXCEPTION
   return 0;
@@ -224,7 +226,7 @@ jobject NewObject(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   va_list ap;
   va_start(ap, methodID);
   JavaMethod* meth = (JavaMethod*)methodID;
-  Class* cl = (Class*)NativeUtil::resolvedImplClass(clazz, true);
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject* res = cl->doNew(vm);
   meth->invokeIntSpecialAP(vm, res, ap);
@@ -255,7 +257,8 @@ jclass GetObjectClass(JNIEnv *env, jobject obj) {
   BEGIN_EXCEPTION
 
   verifyNull((JavaObject*)obj);
-  return (jclass)((JavaObject*)obj)->classOf->getClassDelegatee();
+  Jnjvm* vm = JavaThread::get()->isolate;
+  return (jclass)((JavaObject*)obj)->classOf->getClassDelegatee(vm);
 
   END_EXCEPTION
   return 0;
@@ -294,7 +297,7 @@ jmethodID GetMethodID(JNIEnv* env, jclass clazz, const char *aname,
   BEGIN_EXCEPTION
   
   // TODO: find a better place for creating UTF8
-  CommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
   const UTF8* name = cl->classLoader->asciizConstructUTF8(aname);
   const UTF8* type = cl->classLoader->asciizConstructUTF8(atype);
   JavaMethod* meth = cl->lookupMethod(
@@ -830,7 +833,7 @@ jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name,
   BEGIN_EXCEPTION
 
   // TODO: find a better place to store the UTF8
-  CommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
   return (jfieldID) 
     cl->lookupField(cl->classLoader->asciizConstructUTF8(name),
                     cl->classLoader->asciizConstructUTF8(sig), 0, 1);
@@ -847,7 +850,7 @@ jobject GetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (jobject)field->getVirtualObjectField(o);
+  return (jobject)field->getObjectField(o);
 
   END_EXCEPTION
   return 0;
@@ -860,7 +863,7 @@ jboolean GetBooleanField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (uint8)field->getVirtualInt8Field(o);
+  return (uint8)field->getInt8Field(o);
 
   END_EXCEPTION
   return 0;
@@ -873,7 +876,7 @@ jbyte GetByteField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (sint8)field->getVirtualInt8Field(o);
+  return (sint8)field->getInt8Field(o);
 
   END_EXCEPTION
   return 0;
@@ -886,7 +889,7 @@ jchar GetCharField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (uint16)field->getVirtualInt16Field(o);
+  return (uint16)field->getInt16Field(o);
 
   END_EXCEPTION
   return 0;
@@ -899,7 +902,7 @@ jshort GetShortField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (sint16)field->getVirtualInt16Field(o);
+  return (sint16)field->getInt16Field(o);
 
   END_EXCEPTION
   return 0;
@@ -912,7 +915,7 @@ jint GetIntField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (sint32)field->getVirtualInt32Field(o);
+  return (sint32)field->getInt32Field(o);
 
   END_EXCEPTION
   return 0;
@@ -925,7 +928,7 @@ jlong GetLongField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (sint64)field->getVirtualLongField(o);
+  return (sint64)field->getLongField(o);
 
   END_EXCEPTION
   return 0;
@@ -938,7 +941,7 @@ jfloat GetFloatField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return field->getVirtualFloatField(o);
+  return field->getFloatField(o);
 
   END_EXCEPTION
   return 0;
@@ -951,7 +954,7 @@ jdouble GetDoubleField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  return (jdouble)field->getVirtualDoubleField(o);
+  return (jdouble)field->getDoubleField(o);
 
   END_EXCEPTION
   return 0;
@@ -964,7 +967,7 @@ void SetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID, jobject value) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  field->setVirtualObjectField(o, (JavaObject*)value);
+  field->setObjectField(o, (JavaObject*)value);
 
   END_EXCEPTION
 }
@@ -977,7 +980,7 @@ void SetBooleanField(JNIEnv *env, jobject obj, jfieldID fieldID,
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  field->setVirtualInt8Field(o, (uint8)value);
+  field->setInt8Field(o, (uint8)value);
 
   END_EXCEPTION
 }
@@ -989,7 +992,7 @@ void SetByteField(JNIEnv *env, jobject obj, jfieldID fieldID, jbyte value) {
   
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  field->setVirtualInt8Field(o, (uint8)value);
+  field->setInt8Field(o, (uint8)value);
 
   END_EXCEPTION
 }
@@ -1001,7 +1004,7 @@ void SetCharField(JNIEnv *env, jobject obj, jfieldID fieldID, jchar value) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  field->setVirtualInt16Field(o, (uint16)value);
+  field->setInt16Field(o, (uint16)value);
   
   END_EXCEPTION
 }
@@ -1013,7 +1016,7 @@ void SetShortField(JNIEnv *env, jobject obj, jfieldID fieldID, jshort value) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  field->setVirtualInt16Field(o, (sint16)value);
+  field->setInt16Field(o, (sint16)value);
 
   END_EXCEPTION
 }
@@ -1025,7 +1028,7 @@ void SetIntField(JNIEnv *env, jobject obj, jfieldID fieldID, jint value) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  field->setVirtualInt32Field(o, (sint32)value);
+  field->setInt32Field(o, (sint32)value);
 
   END_EXCEPTION
 }
@@ -1037,7 +1040,7 @@ void SetLongField(JNIEnv *env, jobject obj, jfieldID fieldID, jlong value) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  field->setVirtualLongField(o, (sint64)value);
+  field->setLongField(o, (sint64)value);
 
   END_EXCEPTION
 }
@@ -1049,7 +1052,7 @@ void SetFloatField(JNIEnv *env, jobject obj, jfieldID fieldID, jfloat value) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  field->setVirtualFloatField(o, (float)value);
+  field->setFloatField(o, (float)value);
 
   END_EXCEPTION
 }
@@ -1061,7 +1064,7 @@ void SetDoubleField(JNIEnv *env, jobject obj, jfieldID fieldID, jdouble value) {
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
-  field->setVirtualDoubleField(o, (float)value);
+  field->setDoubleField(o, (float)value);
 
   END_EXCEPTION
 }
@@ -1073,7 +1076,7 @@ jmethodID GetStaticMethodID(JNIEnv *env, jclass clazz, const char *aname,
   BEGIN_EXCEPTION
   
   // TODO: find a better place to store the UTF8
-  CommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
   const UTF8* name = cl->classLoader->asciizConstructUTF8(aname);
   const UTF8* type = cl->classLoader->asciizConstructUTF8(atype);
   JavaMethod* meth = cl->lookupMethod(
@@ -1323,7 +1326,7 @@ jfieldID GetStaticFieldID(JNIEnv *env, jclass clazz, const char *name,
   BEGIN_EXCEPTION
   
   // TODO: find a better place to store the UTF8
-  CommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
   return (jfieldID)
     cl->lookupField(cl->classLoader->asciizConstructUTF8(name),
                     cl->classLoader->asciizConstructUTF8(sig), true, true);
@@ -1338,7 +1341,9 @@ jobject GetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  return (jobject)field->getStaticObjectField();
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  return (jobject)field->getObjectField(Stat);
 
   END_EXCEPTION
   return 0;
@@ -1350,7 +1355,9 @@ jboolean GetStaticBooleanField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  return (jboolean)field->getStaticInt8Field();
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  return (jboolean)field->getInt8Field(Stat);
 
   END_EXCEPTION
   return 0;
@@ -1362,7 +1369,9 @@ jbyte GetStaticByteField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  return (jbyte)field->getStaticInt8Field();
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  return (jbyte)field->getInt8Field(Stat);
 
   END_EXCEPTION
   return 0;
@@ -1374,7 +1383,9 @@ jchar GetStaticCharField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  return (jchar)field->getStaticInt16Field();
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  return (jchar)field->getInt16Field(Stat);
 
   END_EXCEPTION
   return 0;
@@ -1386,7 +1397,9 @@ jshort GetStaticShortField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  return (jshort)field->getStaticInt16Field();
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  return (jshort)field->getInt16Field(Stat);
 
   END_EXCEPTION
   return 0;
@@ -1398,7 +1411,9 @@ jint GetStaticIntField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  return (jint)field->getStaticInt32Field();
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  return (jint)field->getInt32Field(Stat);
 
   END_EXCEPTION
   return 0;
@@ -1410,7 +1425,9 @@ jlong GetStaticLongField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  return (jlong)field->getStaticLongField();
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  return (jlong)field->getLongField(Stat);
 
   END_EXCEPTION
   return 0;
@@ -1422,7 +1439,9 @@ jfloat GetStaticFloatField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  return (jfloat)field->getStaticFloatField();
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  return (jfloat)field->getFloatField(Stat);
 
   END_EXCEPTION
   return 0;
@@ -1434,7 +1453,9 @@ jdouble GetStaticDoubleField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  return (jdouble)field->getStaticDoubleField();
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  return (jdouble)field->getDoubleField(Stat);
 
   END_EXCEPTION
   return 0;
@@ -1447,7 +1468,9 @@ void SetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  field->setStaticObjectField((JavaObject*)value);
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  field->setObjectField(Stat, (JavaObject*)value);
   
   END_EXCEPTION
 }
@@ -1459,7 +1482,9 @@ void SetStaticBooleanField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
   
   JavaField* field = (JavaField*)fieldID;
-  field->setStaticInt8Field((uint8)value);
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  field->setInt8Field(Stat, (uint8)value);
 
   END_EXCEPTION
 }
@@ -1471,7 +1496,9 @@ void SetStaticByteField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  field->setStaticInt8Field((sint8)value);
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  field->setInt8Field(Stat, (sint8)value);
 
   END_EXCEPTION
 }
@@ -1483,7 +1510,9 @@ void SetStaticCharField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  field->setStaticInt16Field((uint16)value);
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  field->setInt16Field(Stat, (uint16)value);
 
   END_EXCEPTION
 }
@@ -1495,7 +1524,9 @@ void SetStaticShortField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  field->setStaticInt16Field((sint16)value);
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  field->setInt16Field(Stat, (sint16)value);
 
   END_EXCEPTION
 }
@@ -1507,7 +1538,9 @@ void SetStaticIntField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  field->setStaticInt32Field((sint32)value);
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  field->setInt32Field(Stat, (sint32)value);
 
   END_EXCEPTION
 }
@@ -1519,7 +1552,9 @@ void SetStaticLongField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  field->setStaticLongField((sint64)value);
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  field->setLongField(Stat, (sint64)value);
 
   END_EXCEPTION
 }
@@ -1531,7 +1566,9 @@ void SetStaticFloatField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  field->setStaticFloatField((float)value);
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  field->setFloatField(Stat, (float)value);
 
   END_EXCEPTION
 }
@@ -1543,7 +1580,9 @@ void SetStaticDoubleField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   BEGIN_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
-  field->setStaticDoubleField((double)value);
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+  JavaObject* Stat = cl->getStaticInstance();
+  field->setDoubleField(Stat, (double)value);
 
   END_EXCEPTION
 }
@@ -1624,11 +1663,11 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass elementClass,
   Jnjvm* vm = NativeUtil::myVM(env);
   if (length < 0) vm->negativeArraySizeException(length);
   
-  CommonClass* base = NativeUtil::resolvedImplClass(elementClass, true);
+  UserCommonClass* base = NativeUtil::resolvedImplClass(elementClass, true);
   JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->name;
   const UTF8* arrayName = AssessorDesc::constructArrayName(loader, 0, 1, name);
-  ClassArray* array = loader->constructArray(arrayName);
+  UserClassArray* array = loader->constructArray(arrayName);
   ArrayObject* res = ArrayObject::acons(length, array, &(vm->allocator));
   if (initialElement) {
     memset(res->elements, (int)initialElement, 
@@ -1673,7 +1712,9 @@ jbooleanArray NewBooleanArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayUInt8* res = 0;
-  res = ArrayUInt8::acons(len, JavaArray::ofBool, &NativeUtil::myVM(env)->allocator);
+  Jnjvm* vm = NativeUtil::myVM(env);
+  res = ArrayUInt8::acons(len, vm->bootstrapLoader->upcalls->ArrayOfBool,
+                          &vm->allocator);
   return (jbooleanArray)res;
 
   END_EXCEPTION
@@ -1686,7 +1727,9 @@ jbyteArray NewByteArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
 
   ArraySInt8* res = 0;
-  res = ArraySInt8::acons(len, JavaArray::ofByte, &NativeUtil::myVM(env)->allocator);
+  Jnjvm* vm = NativeUtil::myVM(env);
+  res = ArraySInt8::acons(len, vm->bootstrapLoader->upcalls->ArrayOfByte,
+                          &vm->allocator);
   return (jbyteArray) res;
 
   END_EXCEPTION
@@ -1699,7 +1742,9 @@ jcharArray NewCharArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayUInt16* res = 0;
-  res = ArrayUInt16::acons(len, JavaArray::ofChar, &NativeUtil::myVM(env)->allocator);
+  Jnjvm* vm = NativeUtil::myVM(env);
+  res = ArrayUInt16::acons(len, vm->bootstrapLoader->upcalls->ArrayOfChar,
+                           &vm->allocator);
   return (jcharArray) res;
 
   END_EXCEPTION
@@ -1712,7 +1757,9 @@ jshortArray NewShortArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArraySInt16* res = 0;
-  res = ArraySInt16::acons(len, JavaArray::ofShort, &NativeUtil::myVM(env)->allocator);
+  Jnjvm* vm = NativeUtil::myVM(env);
+  res = ArraySInt16::acons(len, vm->bootstrapLoader->upcalls->ArrayOfShort,
+                           &vm->allocator);
   return (jshortArray) res;
 
   END_EXCEPTION
@@ -1725,7 +1772,9 @@ jintArray NewIntArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArraySInt32* res = 0;
-  res = ArraySInt32::acons(len, JavaArray::ofInt, &NativeUtil::myVM(env)->allocator);
+  Jnjvm* vm = NativeUtil::myVM(env);
+  res = ArraySInt32::acons(len, vm->bootstrapLoader->upcalls->ArrayOfInt,
+                           &vm->allocator);
   return (jintArray) res;
 
   END_EXCEPTION
@@ -1738,7 +1787,9 @@ jlongArray NewLongArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayLong* res = 0;
-  res = ArrayLong::acons(len, JavaArray::ofLong, &NativeUtil::myVM(env)->allocator);
+  Jnjvm* vm = NativeUtil::myVM(env);
+  res = ArrayLong::acons(len, vm->bootstrapLoader->upcalls->ArrayOfLong,
+                         &vm->allocator);
   return (jlongArray) res;
 
   END_EXCEPTION
@@ -1751,7 +1802,9 @@ jfloatArray NewFloatArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayFloat* res = 0;
-  res = ArrayFloat::acons(len, JavaArray::ofFloat, &NativeUtil::myVM(env)->allocator);
+  Jnjvm* vm = NativeUtil::myVM(env);
+  res = ArrayFloat::acons(len, vm->bootstrapLoader->upcalls->ArrayOfFloat,
+                          &vm->allocator);
   return (jfloatArray) res;
 
   END_EXCEPTION
@@ -1764,7 +1817,9 @@ jdoubleArray NewDoubleArray(JNIEnv *env, jsize len) {
   BEGIN_EXCEPTION
   
   ArrayDouble* res = 0;
-  res = ArrayDouble::acons(len, JavaArray::ofDouble, &NativeUtil::myVM(env)->allocator);
+  Jnjvm* vm = NativeUtil::myVM(env);
+  res = ArrayDouble::acons(len, vm->bootstrapLoader->upcalls->ArrayOfDouble,
+                           &vm->allocator);
   return (jdoubleArray) res;
 
   END_EXCEPTION
@@ -2143,10 +2198,11 @@ void *GetDirectBufferAddress(JNIEnv *env, jobject _buf) {
 
   BEGIN_EXCEPTION
 
+  Jnjvm* vm = NativeUtil::myVM(env);
   JavaObject* buf = (JavaObject*)_buf;
-  JavaObject* address = Classpath::bufferAddress->getVirtualObjectField(buf);
+  JavaObject* address = vm->upcalls->bufferAddress->getObjectField(buf);
   if (address != 0) {
-    int res = Classpath::dataPointer32->getVirtualInt32Field(address);
+    int res = vm->upcalls->dataPointer32->getInt32Field(address);
     return (void*)res;
   } else {
     return 0;

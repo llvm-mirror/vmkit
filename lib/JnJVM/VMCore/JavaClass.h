@@ -178,6 +178,10 @@ public:
 //
 //===----------------------------------------------------------------------===//
   
+  
+  uint32 getVirtualSize() {
+    return virtualSize;
+  }
 
   /// virtualTableSize - The size of the virtual table of this class.
   ///
@@ -187,18 +191,42 @@ public:
   ///
   uint32 access;
   
+  uint32 getAccess() {
+    return access;
+  }
+
   /// isArray - Is the class an array class?
   ///
-  bool isArray;
+  bool array;
   
+  bool isArray() {
+    return array;
+  }
+
   /// isPrimitive - Is the class a primitive class?
   ///
-  bool isPrimitive;
+  bool primitive;
+
+  bool isPrimitive() {
+    return primitive;
+  }
+
+  bool isInterface() {
+    return jnjvm::isInterface(access);
+  }
+
+  std::vector<Class*> * getInterfaces() {
+    return &interfaces;
+  }
   
   /// name - The name of the class.
   ///
   const UTF8* name;
   
+  const UTF8* getName() {
+    return name;
+  }
+
   /// status - The loading/resolve/initialization state of the class.
   ///
   JavaState status;
@@ -206,6 +234,10 @@ public:
   /// super - The parent of this class.
   ///
   CommonClass * super;
+  
+  CommonClass* getSuper() {
+    return super;
+  }
 
   /// superUTF8 - The name of the parent of this class.
   ///
@@ -377,29 +409,27 @@ public:
   /// getClassDelegatee - Return the java/lang/Class representation of this
   /// class.
   ///
-  JavaObject* getClassDelegatee(JavaObject* pd = 0);
+  JavaObject* getClassDelegatee(Jnjvm* vm, JavaObject* pd = 0);
 
   /// resolveClass - If the class has not been resolved yet, resolve it.
   ///
   void resolveClass();
 
-#ifndef MULTIPLE_VM
+  /// initialiseClass - If the class has not been initialized yet,
+  /// initialize it.
+  ///
+  void initialiseClass(Jnjvm* vm);
+
   /// getStatus - Get the resolution/initialization status of this class.
   ///
-  JavaState* getStatus() {
-    return &status;
+  JavaState getStatus() {
+    return status;
   }
   /// isReady - Has this class been initialized?
   ///
   bool isReady() {
     return status >= inClinit;
   }
-#else
-  JavaState* getStatus();
-  bool isReady() {
-    return *getStatus() >= inClinit;
-  }
-#endif
 
   /// isResolved - Has this class been resolved?
   ///
@@ -432,12 +462,6 @@ public:
     return static_cast<Ty*>(JInfo);
   }
 
-#ifdef MULTIPLE_VM
-  bool isSharedClass() {
-    return classLoader == JnjvmClassLoader::sharedLoader;
-  }
-#endif
-  
   void getDeclaredConstructors(std::vector<JavaMethod*>& res, bool publicOnly);
   void getDeclaredMethods(std::vector<JavaMethod*>& res, bool publicOnly);
   void getDeclaredFields(std::vector<JavaField*>& res, bool publicOnly);
@@ -532,20 +556,11 @@ public:
   ///
 #ifndef MULTIPLE_VM
   JavaObject* _staticInstance;
-  JavaObject* staticInstance() {
+  JavaObject* getStaticInstance() {
     return _staticInstance;
   }
-
-  /// createStaticInstance - Create the static instance of this class. This is
-  /// a no-op in a single environment because it is created only once when
-  /// creating the static type of the class. In a multiple environment, it is
-  /// called on each initialization of the class.
-  ///
-  void createStaticInstance() { }
-#else
-  JavaObject* staticInstance();
-  void createStaticInstance();
 #endif
+
   
   /// Class - Create a class in the given virtual machine and with the given
   /// name.
@@ -893,46 +908,25 @@ public:
 
   /// getVritual*Field - Get a virtual field of an object.
   ///
-  #define GETVIRTUALFIELD(TYPE, TYPE_NAME) \
-  TYPE getVirtual##TYPE_NAME##Field(JavaObject* obj) { \
-    assert(*(classDef->getStatus()) >= inClinit); \
+  #define GETFIELD(TYPE, TYPE_NAME) \
+  TYPE get##TYPE_NAME##Field(JavaObject* obj) { \
+    assert((classDef->getStatus()) >= inClinit); \
     void* ptr = (void*)((uint64)obj + ptrOffset); \
     return ((TYPE*)ptr)[0]; \
   }
 
-  /// getStatic*Field - Get a static field in the defining class.
+  /// set*Field - Set a field of an object.
   ///
-  #define GETSTATICFIELD(TYPE, TYPE_NAME) \
-  TYPE getStatic##TYPE_NAME##Field() { \
-    assert(*(classDef->getStatus()) >= inClinit); \
-    JavaObject* obj = classDef->staticInstance(); \
-    void* ptr = (void*)((uint64)obj + ptrOffset); \
-    return ((TYPE*)ptr)[0]; \
-  }
-
-  /// setVirtual*Field - Set a virtual of an object.
-  ///
-  #define SETVIRTUALFIELD(TYPE, TYPE_NAME) \
-  void setVirtual##TYPE_NAME##Field(JavaObject* obj, TYPE val) { \
-    assert(*(classDef->getStatus()) >= inClinit); \
-    void* ptr = (void*)((uint64)obj + ptrOffset); \
-    ((TYPE*)ptr)[0] = val; \
-  }
-
-  /// setStatic*Field - Set a static field in the defining class.
-  #define SETSTATICFIELD(TYPE, TYPE_NAME) \
-  void setStatic##TYPE_NAME##Field(TYPE val) { \
-    assert(*(classDef->getStatus()) >= inClinit); \
-    JavaObject* obj = classDef->staticInstance(); \
+  #define SETFIELD(TYPE, TYPE_NAME) \
+  void set##TYPE_NAME##Field(JavaObject* obj, TYPE val) { \
+    assert((classDef->getStatus()) >= inClinit); \
     void* ptr = (void*)((uint64)obj + ptrOffset); \
     ((TYPE*)ptr)[0] = val; \
   }
 
   #define MK_ASSESSORS(TYPE, TYPE_NAME) \
-    GETVIRTUALFIELD(TYPE, TYPE_NAME) \
-    SETVIRTUALFIELD(TYPE, TYPE_NAME) \
-    GETSTATICFIELD(TYPE, TYPE_NAME) \
-    SETSTATICFIELD(TYPE, TYPE_NAME) \
+    GETFIELD(TYPE, TYPE_NAME) \
+    SETFIELD(TYPE, TYPE_NAME) \
 
   MK_ASSESSORS(float, Float);
   MK_ASSESSORS(double, Double);

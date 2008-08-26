@@ -28,33 +28,33 @@ using namespace jnjvm;
 
 extern "C" {
 
-ArrayObject* recGetClassContext(int** stack, uint32 size, uint32 first, uint32 rec) {
+ArrayObject* recGetClassContext(Jnjvm* vm, int** stack, uint32 size, uint32 first, uint32 rec) {
   if (size != first) {
     JavaMethod* meth = JavaJIT::IPToJavaMethod(stack[first]);
     if (meth) {
-      ArrayObject* res = recGetClassContext(stack, size, first + 1, rec + 1); 
-      res->elements[rec] = meth->classDef->getClassDelegatee();
+      ArrayObject* res = recGetClassContext(vm, stack, size, first + 1, rec + 1); 
+      res->elements[rec] = meth->classDef->getClassDelegatee(vm);
       return res;
     } else {
-      return recGetClassContext(stack, size, first + 1, rec);
+      return recGetClassContext(vm, stack, size, first + 1, rec);
     }   
   } else {
-    Jnjvm* vm = JavaThread::get()->isolate;
-    return ArrayObject::acons(rec, Classpath::classArrayClass, &(vm->allocator));
+    return ArrayObject::acons(rec, vm->upcalls->classArrayClass, &(vm->allocator));
   }
 }
-
+#ifndef MULTIPLE_VM
 JNIEXPORT jobject JNICALL Java_gnu_classpath_VMStackWalker_getClassContext(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz,
 #endif
 ) {
+  Jnjvm* vm = JavaThread::get()->isolate;
   int* ips[100];
   int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 100);
   int i = 0;
   int first = 0;
-  CommonClass* cl = Classpath::vmStackWalker; 
+  UserCommonClass* cl = vm->upcalls->vmStackWalker; 
 
   while (i < real_size) {
     JavaMethod* meth = JavaJIT::IPToJavaMethod(ips[i++]);
@@ -64,7 +64,7 @@ jclass clazz,
     }   
   }
 
-  return (jobject)recGetClassContext(ips, real_size, first, 0);
+  return (jobject)recGetClassContext(vm, ips, real_size, first, 0);
 }
 
 JNIEXPORT jobject JNICALL Java_gnu_classpath_VMStackWalker_getClassLoader(
@@ -73,14 +73,16 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jclass _Cl) {
+  Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject* Cl = (JavaObject*)_Cl;
-  CommonClass* cl = (CommonClass*)Classpath::vmdataClass->getVirtualObjectField(Cl);
+  UserCommonClass* cl = (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField(Cl);
   return (jobject)cl->classLoader->getJavaClassLoader();
 }
+#endif
 
 extern "C" JavaObject* getCallingClass() {
-  Class* cl = JavaJIT::getCallingClass();
-  if (cl) return cl->getClassDelegatee();
+  UserClass* cl = JavaJIT::getCallingClass();
+  if (cl) return cl->getClassDelegatee(JavaThread::get()->isolate);
   return 0;
 }
 

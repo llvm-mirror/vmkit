@@ -44,7 +44,7 @@ jclass clazz,
 #endif
 jclass Cl) {
 
-  CommonClass* cl = NativeUtil::resolvedImplClass(Cl, true);
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, true);
   if (cl->lookupMethodDontThrow(Jnjvm::clinitName, Jnjvm::clinitType, true, false))
     return true;
   else
@@ -57,8 +57,9 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jboolean val) {
-  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  field->setVirtualInt8Field((JavaObject*)obj, (uint8)val);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  field->setInt8Field((JavaObject*)obj, (uint8)val);
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setByteNative(
@@ -67,8 +68,9 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jbyte val) {
-  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  field->setVirtualInt8Field((JavaObject*)obj, (uint8)val);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  field->setInt8Field((JavaObject*)obj, (uint8)val);
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setCharNative(
@@ -77,8 +79,9 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jchar val) {
-  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  field->setVirtualInt16Field((JavaObject*)obj, (uint16)val);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  field->setInt16Field((JavaObject*)obj, (uint16)val);
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setShortNative(
@@ -87,8 +90,9 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jshort val) {
-  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  field->setVirtualInt16Field((JavaObject*)obj, (sint16)val);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  field->setInt16Field((JavaObject*)obj, (sint16)val);
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setIntNative(
@@ -97,8 +101,9 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jint val) {
-  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  field->setVirtualInt32Field((JavaObject*)obj, (sint32)val);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  field->setInt32Field((JavaObject*)obj, (sint32)val);
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setLongNative(
@@ -107,8 +112,9 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jlong val) {
-  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  field->setVirtualLongField((JavaObject*)obj, (sint64)val);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  field->setLongField((JavaObject*)obj, (sint64)val);
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setFloatNative(
@@ -117,8 +123,9 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jfloat val) {
-  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  field->setVirtualFloatField((JavaObject*)obj, (float)val);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  field->setFloatField((JavaObject*)obj, (float)val);
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setDoubleNative(
@@ -127,8 +134,9 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jdouble val) {
-  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  field->setVirtualDoubleField((JavaObject*)obj, (double)val);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  field->setDoubleField((JavaObject*)obj, (double)val);
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setObjectNative(
@@ -137,8 +145,9 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jobject val) {
-  JavaField* field = (JavaField*)Classpath::fieldSlot->getVirtualInt32Field((JavaObject*)Field);
-  field->setVirtualObjectField((JavaObject*)obj, (JavaObject*)val);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  field->setObjectField((JavaObject*)obj, (JavaObject*)val);
 }
 
 JNIEXPORT jobject JNICALL Java_java_io_VMObjectInputStream_allocateObject(
@@ -148,9 +157,9 @@ jclass clazz,
 #endif
 jclass target, jclass constr, jobject cons) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  Class* cl = (Class*)NativeUtil::resolvedImplClass(target, true);
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(target, true);
   JavaObject* res = cl->doNew(vm);
-  JavaMethod* meth = (JavaMethod*)(Classpath::constructorSlot->getVirtualInt32Field((JavaObject*)cons));
+  JavaMethod* meth = (JavaMethod*)(vm->upcalls->constructorSlot->getInt32Field((JavaObject*)cons));
   meth->invokeIntSpecial(vm, res);
   return (jobject)res;
 }
@@ -165,11 +174,11 @@ Java_java_lang_reflect_VMArray_createObjectArray
    jclass arrayType, jint arrayLength)
 {
   Jnjvm* vm = JavaThread::get()->isolate;
-  CommonClass* base = NativeUtil::resolvedImplClass(arrayType, true);
+  UserCommonClass* base = NativeUtil::resolvedImplClass(arrayType, true);
   JnjvmClassLoader* loader = base->classLoader;
-  const UTF8* name = base->name;
+  const UTF8* name = base->getName();
   const UTF8* arrayName = AssessorDesc::constructArrayName(loader, 0, 1, name);
-  ClassArray* array = loader->constructArray(arrayName);
+  UserClassArray* array = loader->constructArray(arrayName);
   ArrayObject* res = ArrayObject::acons(arrayLength, array, &(vm->allocator));
 
   return (jobject) res;

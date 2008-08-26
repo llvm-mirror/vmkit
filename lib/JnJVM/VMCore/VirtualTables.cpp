@@ -33,8 +33,6 @@ using namespace jnjvm;
   INIT(JavaThread);
   INIT(Jnjvm);
   INIT(ClassMap);
-  INIT(StaticInstanceMap);
-  INIT(DelegateeMap);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
 #ifdef MULTIPLE_VM
@@ -111,18 +109,6 @@ void Jnjvm::TRACER {
 }
 
 void ClassMap::TRACER {
-  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-    i->second->MARK_AND_TRACE;
-  }
-}
-
-void StaticInstanceMap::TRACER {
-  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-    i->second->second->MARK_AND_TRACE;
-  }
-}
-
-void DelegateeMap::TRACER {
   for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
     i->second->MARK_AND_TRACE;
   }

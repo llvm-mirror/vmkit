@@ -37,7 +37,7 @@ jchar byteId) {
   if (!ass)
     vm->unknownError("unknown byte primitive %c", byteId);
   
-  return (jobject)ass->classType->getClassDelegatee();
+  return (jobject)ass->classType->getClassDelegatee(vm);
   
 }
 
@@ -53,9 +53,9 @@ jclass clazz,
   JavaString* name = (JavaString*)_name;
   const UTF8* utf8 = name->strToUTF8(vm);
   JnjvmClassLoader* JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader);
-  CommonClass* cl = JCL->lookupClass(utf8);
+  UserCommonClass* cl = JCL->lookupClass(utf8);
 
-  if (cl) return (jclass)(cl->getClassDelegatee());
+  if (cl) return (jclass)(cl->getClassDelegatee(vm));
   else return 0;
 }
 
@@ -66,13 +66,14 @@ jclass clazz,
 #endif
                                                                 jobject _str, 
                                                                 jboolean doResolve) {
+  Jnjvm* vm = JavaThread::get()->isolate;
   JavaString* str = (JavaString*)_str;
 
   JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
-  CommonClass* cl = JCL->lookupClassFromJavaString(str, doResolve, false);
+  UserCommonClass* cl = JCL->lookupClassFromJavaString(str, doResolve, false);
 
   if (cl != 0) {
-    return (jclass)cl->getClassDelegatee();
+    return (jclass)cl->getClassDelegatee(vm);
   } else {
     return 0;
   }
@@ -89,12 +90,13 @@ jclass clazz,
                                                                   jint off, 
                                                                   jint len, 
                                                                   jobject pd) {
+  Jnjvm* vm = JavaThread::get()->isolate;
   JnjvmClassLoader* JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader);
   JavaString* str = (JavaString*)_str;
   const UTF8* name = str->value->javaToInternal(JCL->hashUTF8, str->offset, str->count);
-  Class* cl = JCL->constructClass(name, (ArrayUInt8*)bytes);
+  UserClass* cl = JCL->constructClass(name, (ArrayUInt8*)bytes);
 
-  return (jclass)(cl->getClassDelegatee((JavaObject*)pd));
+  return (jclass)(cl->getClassDelegatee(vm, (JavaObject*)pd));
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMClassLoader_resolveClass(

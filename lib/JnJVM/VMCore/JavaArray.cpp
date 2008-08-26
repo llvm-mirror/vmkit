@@ -34,24 +34,13 @@ const unsigned int JavaArray::T_SHORT = 9;
 const unsigned int JavaArray::T_INT = 10;
 const unsigned int JavaArray::T_LONG = 11;
 
-ClassArray* JavaArray::ofByte = 0;
-ClassArray* JavaArray::ofChar = 0;
-ClassArray* JavaArray::ofInt = 0;
-ClassArray* JavaArray::ofShort = 0;
-ClassArray* JavaArray::ofBool = 0;
-ClassArray* JavaArray::ofLong = 0;
-ClassArray* JavaArray::ofFloat = 0;
-ClassArray* JavaArray::ofDouble = 0;
-ClassArray* JavaArray::ofString = 0;
-ClassArray* JavaArray::ofObject = 0;
-
 // This will force linking runtime methods
 extern "C" void negativeArraySizeException(sint32 val);
 extern "C" void outOfMemoryError(sint32 val);
 
-#ifndef MULTIPLE_VM
 #define ACONS(name, elmt, primSize, VT)                                      \
-  name *name::acons(sint32 n, ClassArray* atype, JavaAllocator* allocator) { \
+  name *name::acons(sint32 n, UserClassArray* atype,                         \
+                    JavaAllocator* allocator) {                              \
     if (n < 0)                                                               \
       negativeArraySizeException(n);                                         \
     else if (n > JavaArray::MaxArraySize)                                    \
@@ -62,20 +51,6 @@ extern "C" void outOfMemoryError(sint32 val);
     res->size = n;                                                           \
     return res;                                                              \
   }
-#else
-#define ACONS(name, elmt, primSize, VT)                                      \
-  name *name::acons(sint32 n, ClassArray* atype, JavaAllocator* allocator) { \
-    if (n < 0)                                                               \
-      negativeArraySizeException(n);                                         \
-    else if (n > JavaArray::MaxArraySize)                                    \
-      outOfMemoryError(n);                                                   \
-    name* res = (name*)                                                      \
-      (Object*) allocator->allocateObject(sizeof(name) + n * primSize, VT);  \
-    res->initialise(atype);                                                  \
-    res->size = n;                                                           \
-    return res;                                                              \
-  }
-#endif
 
 /// Each array class has its own element size for allocating arrays.
 ACONS(ArrayUInt8,  uint8, 1, JavaArray::VT)
@@ -160,7 +135,8 @@ void UTF8::operator delete(void* obj) {
   free(obj);
 }
 
-const UTF8* UTF8::acons(sint32 n, ClassArray* cl, JavaAllocator* allocator) {
+const UTF8* UTF8::acons(sint32 n, UserClassArray* cl,
+                        JavaAllocator* allocator) {
   if (n < 0)
     negativeArraySizeException(n);                                        
   else if (n > JavaArray::MaxArraySize)                                   

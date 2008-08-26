@@ -19,10 +19,12 @@ namespace jnjvm {
 
 class ClassArray;
 class CommonClass;
+class UserCommonClass;
 class JavaArray;
 class JavaJIT;
 class JavaObject;
 class Jnjvm;
+class JnjvmBootstrapLoader;
 class JnjvmClassLoader;
 class UTF8;
 
@@ -188,7 +190,7 @@ public:
 
   /// initialise - Construct all assessors.
   ///
-  static void initialise(JnjvmClassLoader* loader);
+  static void initialise(JnjvmBootstrapLoader* loader);
   
 
   /// printString - Print the assessor for debugging purposes.
@@ -251,7 +253,7 @@ public:
   /// assocClass - Given the loaded, try to load the class represented by this
   /// Typedef.
   ///
-  CommonClass* assocClass(JnjvmClassLoader* loader);
+  UserCommonClass* assocClass(JnjvmClassLoader* loader);
 
   /// humanPrintArgs - Prints the list of typedef in a human readable form.
   ///

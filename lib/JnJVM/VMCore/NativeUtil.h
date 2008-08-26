@@ -29,7 +29,7 @@ public:
 
   static Jnjvm* myVM(JNIEnv* env);
   static void* nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm);
-  static CommonClass* resolvedImplClass(jclass clazz, bool doClinit);
+  static UserCommonClass* resolvedImplClass(jclass clazz, bool doClinit);
   static void decapsulePrimitive(Jnjvm *vm, void**&buf, JavaObject* obj,
                                  Typedef* signature);
 

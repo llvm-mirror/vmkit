@@ -32,7 +32,8 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_getParameterTypes(
 JNIEnv *env,
 #endif
 jobject cons) {
-  JavaMethod* meth = (JavaMethod*)(Classpath::constructorSlot->getVirtualInt32Field((JavaObject*)cons));
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaMethod* meth = (JavaMethod*)(vm->upcalls->constructorSlot->getInt32Field((JavaObject*)cons));
   JnjvmClassLoader* loader = meth->classDef->classLoader;
   return (jobject)(NativeUtil::getParameterTypes(loader, meth));
 }
@@ -42,7 +43,8 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Constructor_getModifiersInternal(
 JNIEnv *env,
 #endif
 jobject cons) {
-  JavaMethod* meth = (JavaMethod*)(Classpath::constructorSlot->getVirtualInt32Field((JavaObject*)cons));
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaMethod* meth = (JavaMethod*)(vm->upcalls->constructorSlot->getInt32Field((JavaObject*)cons));
   return meth->access;
 }
 
@@ -64,10 +66,10 @@ JNIEnv *env,
   void* _buf = (void*)buf;
   sint32 index = 0;
   if (nbArgs == size) {
-    CommonClass* _cl = NativeUtil::resolvedImplClass(Clazz, false);
-    if (!_cl->isArray) {
-      Class* cl = (Class*)_cl;
-      vm->initialiseClass(cl);
+    UserCommonClass* _cl = NativeUtil::resolvedImplClass(Clazz, false);
+    if (!_cl->isArray()) {
+      UserClass* cl = (UserClass*)_cl;
+      cl->initialiseClass(vm);
 
       JavaObject* res = cl->doNew(vm);
       JavaObject** ptr = (JavaObject**)(void*)(args->elements);
@@ -84,8 +86,8 @@ JNIEnv *env,
         JavaThread::clearException();
       }
       if (excp) {
-        if (excp->classOf->isAssignableFrom(Classpath::newException)) {
-          JavaThread::get()->isolate->invocationTargetException(excp);
+        if (excp->classOf->isAssignableFrom(vm->upcalls->newException)) {
+          vm->invocationTargetException(excp);
         } else {
           JavaThread::throwException(excp);
         }
@@ -104,7 +106,8 @@ JNIEnv *env,
 #endif
 jobject cons) {
   verifyNull(cons);
-  JavaMethod* meth = (JavaMethod*)Classpath::constructorSlot->getVirtualInt32Field((JavaObject*)cons);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaMethod* meth = (JavaMethod*)vm->upcalls->constructorSlot->getInt32Field((JavaObject*)cons);
   return (jobjectArray)NativeUtil::getExceptionTypes(meth);
 }
 

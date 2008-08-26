@@ -259,8 +259,8 @@ public:
 
   static const char* OpcodeNames[256];
 
-  static Class* getCallingClass();
-  static Class* getCallingClassWalker();
+  static UserClass* getCallingClass();
+  static UserClass* getCallingClassWalker();
   static JavaObject* getCallingClassLoader();
   static void printBacktrace();
   static JavaMethod* IPToJavaMethod(void* ip);

@@ -175,7 +175,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                                        args.begin(), args.end(), "", notEquals);
                 node->addIncoming(cmp, notEquals);
                 BranchInst::Create(ifTrue, notEquals);
-              } else if (cl->isArray) {
+              } else if (cl->isArray()) {
                 std::vector<Value*> args;
                 args.push_back(objCl);
                 args.push_back(CE);

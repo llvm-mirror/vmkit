@@ -97,15 +97,17 @@ public:
   
   mvm::Lock* lock;
   JavaAllocator* allocator;
+  ClassArray* array;
   std::multimap<const uint32, const UTF8*> map;
   const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
   const UTF8* lookupOrCreateReader(const uint16* buf, uint32 size);
   const UTF8* lookupAsciiz(const char* asciiz); 
   const UTF8* lookupReader(const uint16* buf, uint32 size);
   
-  UTF8Map(JavaAllocator* A) {
+  UTF8Map(JavaAllocator* A, ClassArray* cl) {
     lock = mvm::Lock::allocNormal();
     allocator = A;
+    array = cl;
   }
 
   ~UTF8Map() {
@@ -126,7 +128,7 @@ public:
 };
 
 class ClassMap : 
-    public LockedMap<const UTF8*, CommonClass*, ltutf8, JnjvmClassLoader* > {
+    public LockedMap<const UTF8*, UserCommonClass*, ltutf8, JnjvmClassLoader* > {
 public:
   static VirtualTable* VT;
   
@@ -244,41 +246,6 @@ public:
   }
   
 };
-
-class StaticInstanceMap :
-    public LockedMap<Class*, std::pair<JavaState, JavaObject*>*, std::less<Class*>, Jnjvm* > {
-public:
-  static VirtualTable* VT;
-  
-  StaticInstanceMap() {
-    lock = mvm::Lock::allocNormal();
-  }
-  
-  virtual void TRACER;
-
-  ~StaticInstanceMap() {
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      delete i->second;
-    }
-    delete lock;
-  }
-}; 
-
-class DelegateeMap :
-    public LockedMap<CommonClass*, JavaObject*, std::less<CommonClass*>, Jnjvm* > {
-public:
-  static VirtualTable* VT;
-  
-  DelegateeMap() {
-    lock = mvm::Lock::allocNormal();
-  }
-  
-  ~DelegateeMap() {
-    delete lock;
-  }
-  
-  virtual void TRACER;
-}; 
 
 } // end namespace jnjvm
 

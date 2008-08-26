@@ -37,16 +37,17 @@ JNIEnv *env,
 jclass clazz,
 #endif
                                                                       jobject throwable) {
-  //int** fp =  (int**)__builtin_frame_address(0);
   Jnjvm* vm = JavaThread::get()->isolate;
   int** stack = (int**)malloc(sizeof(int*) * 100);
   int real_size = mvm::jit::getBacktrace((void**)stack, 100);
   stack[real_size] = 0;
-  JavaObject* vmThrowable = Classpath::newVMThrowable->doNew(vm);
-  ((JavaObject**)((uint64)vmThrowable + Classpath::vmDataVMThrowable->ptrOffset))[0] = (JavaObject*)stack;
+  JavaObject* vmThrowable = vm->upcalls->newVMThrowable->doNew(vm);
+  ((JavaObject**)((uint64)vmThrowable + vm->upcalls->vmDataVMThrowable->ptrOffset))[0] = (JavaObject*)stack;
   return (jobject)vmThrowable;
 }
 
+
+#ifndef MULTIPLE_VM
 JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject* methodName = vm->UTF8ToStr(meth->name);
@@ -64,8 +65,8 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
 
   bool native = isNative(meth->access);
 
-  JavaObject* res = Classpath::newStackTraceElement->doNew(vm);
-  Classpath::initStackTraceElement->invokeIntSpecial(vm, res, sourceName,
+  JavaObject* res = vm->upcalls->newStackTraceElement->doNew(vm);
+  vm->upcalls->initStackTraceElement->invokeIntSpecial(vm, res, sourceName,
                                                      (uint32)ip, className,
                                                      methodName, native);
   return res;
@@ -83,7 +84,7 @@ ArrayObject* recGetStackTrace(int** stack, uint32 first, uint32 rec) {
       return recGetStackTrace(stack, first + 1, rec);
     }
   } else {
-    return ArrayObject::acons(rec, Classpath::stackTraceArray, &(vm->allocator));
+    return ArrayObject::acons(rec, vm->upcalls->stackTraceArray, &(vm->allocator));
   }
 }
 
@@ -92,13 +93,14 @@ JNIEXPORT jobject JNICALL Java_java_lang_VMThrowable_getStackTrace(
 JNIEnv *env,
 #endif
 jobject vmthrow, jobject throwable) {
-  int** stack = (int**)Classpath::vmDataVMThrowable->getVirtualObjectField((JavaObject*)vmthrow);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  int** stack = (int**)vm->upcalls->vmDataVMThrowable->getObjectField((JavaObject*)vmthrow);
   uint32 first = 0;
   sint32 i = 0;
   
   while (stack[i] != 0) {
     JavaMethod* meth = JavaJIT::IPToJavaMethod(stack[i++]);
-    if (meth && !meth->classDef->subclassOf(Classpath::newThrowable)) {
+    if (meth && !meth->classDef->subclassOf(vm->upcalls->newThrowable)) {
       first = i - 1;
       break;
     }
@@ -108,4 +110,6 @@ jobject vmthrow, jobject throwable) {
   return res;
 }
 
+#endif
 }
+

@@ -62,11 +62,9 @@ private:
   ///
   llvm::GlobalVariable* varGV;
 
-#ifndef MULTIPLE_VM
   /// delegateeGV - The LLVM global variable representing the 
   /// java/lang/Class instance of this class.
   llvm::GlobalVariable* delegateeGV;
-#endif
 
 
 public:
@@ -75,10 +73,8 @@ public:
   
   LLVMCommonClassInfo(CommonClass* cl) : 
     classDef(cl),
-    varGV(0)
-#ifndef MULTIPLE_VM
-    ,delegateeGV(0)
-#endif
+    varGV(0),
+    delegateeGV(0)
     {}
 };
 
@@ -408,7 +404,7 @@ public:
   }
   
   static LLVMCommonClassInfo* getClassInfo(CommonClass* cl) {
-    if (cl->isArray || cl->isPrimitive) {
+    if (cl->isArray() || cl->isPrimitive()) {
       return cl->getInfo<LLVMCommonClassInfo>();
     } 
     

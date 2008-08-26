@@ -21,20 +21,24 @@
 #include "mvm/Threads/Locks.h"
 
 #include "JavaAllocator.h"
+#include "JavaTypes.h"
 
 namespace jnjvm {
 
 class ArrayObject;
 class ArrayUInt8;
 class Attribut;
-class Class;
-class ClassArray;
-class CommonClass;
+class UserClass;
+class UserClassArray;
+class Classpath;
+class UserCommonClass;
+class UserClassPrimitive;
 class JavaField;
 class JavaMethod;
 class JavaObject;
 class JavaString;
 class JavaThread;
+class JnjvmBootstrapLoader;
 class JnjvmClassLoader;
 class JnjvmModule;
 class JnjvmModuleProvider;
@@ -113,11 +117,11 @@ private:
   /// that calls this functions. This is used internally by Jnjvm to control
   /// which pair class/method are used.
   ///
-  void error(Class* cl, JavaMethod* meth, const char* fmt, ...);
+  void error(UserClass* cl, JavaMethod* meth, const char* fmt, ...);
   
   /// errorWithExcp - Throws an exception whose cause is the Java object excp.
   ///
-  void errorWithExcp(Class* cl, JavaMethod* meth, const JavaObject* excp);
+  void errorWithExcp(UserClass* cl, JavaMethod* meth, const JavaObject* excp);
   
   /// loadAppClassLoader - Loads the application class loader, so that VMKit
   /// knowns which loader has to load the main class.
@@ -222,6 +226,15 @@ public:
   Collector* GC;
 #endif
   
+  /// bootstraLoader - Bootstrap loader for base classes of this virtual
+  /// machine.
+  ///
+  JnjvmBootstrapLoader* bootstrapLoader;
+
+  /// upcalls - Upcalls to call Java methods and access Java fields.
+  ///
+  Classpath* upcalls;
+
   /// threadSystem - The thread system to manage non-daemon threads and
   /// control the end of the JVM's execution.
   ///
@@ -274,18 +287,6 @@ public:
   ///
   StringMap * hashStr;
 
-#ifdef MULTIPLE_VM
-  /// statics - The static instances of classes, in a multi-vm environment.
-  ///
-  StaticInstanceMap* statics;
-
-private:
-  /// delegatees - The java/lang/Class equivalents of internal classes. This is
-  /// also in a multi-vm environment.
-  ///
-  DelegateeMap* delegatees;
-#endif
-  
 public:
   /// Exceptions - These are the only exceptions VMKit will make.
   ///
@@ -299,26 +300,20 @@ public:
   void initializerError(const JavaObject* excp);
   void invocationTargetException(const JavaObject* obj);
   void outOfMemoryError(sint32 n);
-  void illegalArgumentExceptionForMethod(JavaMethod* meth, CommonClass* required,
-                                         CommonClass* given);
-  void illegalArgumentExceptionForField(JavaField* field, CommonClass* required,
-                                        CommonClass* given);
+  void illegalArgumentExceptionForMethod(JavaMethod* meth, UserCommonClass* required,
+                                         UserCommonClass* given);
+  void illegalArgumentExceptionForField(JavaField* field, UserCommonClass* required,
+                                        UserCommonClass* given);
   void illegalArgumentException(const char* msg);
   void classCastException(const char* msg);
   void unknownError(const char* fmt, ...); 
-  void noSuchFieldError(CommonClass* cl, const UTF8* name);
-  void noSuchMethodError(CommonClass* cl, const UTF8* name);
+  void noSuchFieldError(UserCommonClass* cl, const UTF8* name);
+  void noSuchMethodError(UserCommonClass* cl, const UTF8* name);
   void classFormatError(const char* fmt, ...);
   void noClassDefFoundError(JavaObject* obj);
   void noClassDefFoundError(const char* fmt, ...);
   void classNotFoundException(JavaString* str);
 
-
-  /// initialiseClass - Initialise the class for this JVM, and call the
-  /// "<clinit>" function.
-  ///
-  void initialiseClass(CommonClass* cl);
-  
   /// asciizToStr - Constructs a java/lang/String object from the given asciiz.
   ///
   JavaString* asciizToStr(const char* asciiz);
@@ -327,11 +322,6 @@ public:
   ///
   JavaString* UTF8ToStr(const UTF8* utf8);
   
-  /// getClassDelegatee - Get the java/lang/Class object representing the
-  /// internal class.
-  ///
-  JavaObject* getClassDelegatee(CommonClass* cl, JavaObject* pd = 0);
-
   /// ~Jnjvm - Destroy the JVM.
   ///
   ~Jnjvm();
@@ -364,7 +354,14 @@ public:
   /// User-visible function, inherited by the VirtualMachine class.
   ///
   virtual void runApplication(int argc, char** argv);
-  
+
+#ifdef MULTIPLE_VM
+  UserClassPrimitive* getPrimitiveClass(const AssessorDesc* ass);
+#else
+  UserClassPrimitive* getPrimitiveClass(const AssessorDesc* ass) {
+    return (UserClassPrimitive*)ass->classType;
+  }
+#endif
 };
 
 } // end namespace jnjvm

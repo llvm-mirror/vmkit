@@ -16,15 +16,19 @@
 #include "types.h"
 
 #include "mvm/Object.h"
+#include "mvm/PrintBuffer.h"
+
+#include "JnjvmConfig.h"
 
 namespace jnjvm {
 
 class ArrayUInt8;
 class Attribut;
-class Class;
-class ClassArray;
+class UserClass;
+class UserClassArray;
 class ClassMap;
-class CommonClass;
+class Classpath;
+class UserCommonClass;
 class JavaAllocator;
 class JavaObject;
 class JavaString;
@@ -40,10 +44,6 @@ class TypeMap;
 class UTF8;
 class UTF8Map;
 class ZipArchive;
-
-#ifdef MULTIPLE_VM
-class JnjvmSharedLoader;
-#endif
 
 /// JnjvmClassLoader - Runtime representation of a class loader. It contains
 /// its own tables (signatures, UTF8, types) which are mapped to a single
@@ -64,7 +64,7 @@ private:
    
   /// internalLoad - Load the class with the given name.
   ///
-  virtual Class* internalLoad(const UTF8* utf8);
+  virtual UserClass* internalLoad(const UTF8* utf8);
   
   /// JnjvmClassLoader - Allocate a user-defined class loader. Called on
   /// first use of a Java class loader.
@@ -136,33 +136,33 @@ public:
   
   /// loadName - Loads the class of the given name.
   ///
-  Class* loadName(const UTF8* name, bool doResolve, bool doThrow);
+  UserClass* loadName(const UTF8* name, bool doResolve, bool doThrow);
   
   /// lookupClassFromUTF8 - Lookup a class from an UTF8 name and load it.
   ///
-  CommonClass* lookupClassFromUTF8(const UTF8* utf8, unsigned int start,
+  UserCommonClass* lookupClassFromUTF8(const UTF8* utf8, unsigned int start,
                                    unsigned int len, bool doResolve,
                                    bool doThrow);
   
   /// lookupClassFromJavaString - Lookup a class from a Java String and load it.
   ///
-  CommonClass* lookupClassFromJavaString(JavaString* str, bool doResolve,
+  UserCommonClass* lookupClassFromJavaString(JavaString* str, bool doResolve,
                                          bool doThrow);
    
   /// lookupClass - Finds the class of th given name in the class loader's
   /// table.
   ///
-  CommonClass* lookupClass(const UTF8* utf8);
+  UserCommonClass* lookupClass(const UTF8* utf8);
 
   /// constructArray - Hashes a runtime representation of a class with
   /// the given name.
   ///
-  ClassArray* constructArray(const UTF8* name);
+  UserClassArray* constructArray(const UTF8* name);
 
   /// constructClass - Hashes a runtime representation of a class with
   /// the given name.
   ///
-  Class* constructClass(const UTF8* name, ArrayUInt8* bytes);
+  UserClass* constructClass(const UTF8* name, ArrayUInt8* bytes);
   
   /// constructType - Hashes a Typedef, an internal representation of a class
   /// still not loaded.
@@ -187,12 +187,6 @@ public:
   ///
   static JnjvmBootstrapLoader* bootstrapLoader;
   
-#ifdef MULTIPLE_VM
-  /// sharedLoader - Shared loader when multiple vms are executing.
-  ///
-  static JnjvmSharedLoader* sharedLoader;
-#endif
-
   /// ~JnjvmClassLoader - Destroy the loader. Depending on the JVM
   /// configuration, this may destroy the tables, JIT module and
   /// module provider.
@@ -212,33 +206,6 @@ public:
 
 };
 
-class JnjvmSharedLoader : public JnjvmClassLoader {
-private:
-  
-  /// internalLoad - Load the class with the given name.
-  ///
-  virtual Class* internalLoad(const UTF8* utf8) {
-    fprintf(stderr, "Don't use me");
-    exit(1);
-  }
-
-public:
-  
-  /// VT - The virtual table of this class.
-  ///
-  static VirtualTable* VT;
-
-
-  /// constructSharedClass - Create a shared representation of the class.
-  /// If two classes have the same name but not the same array of bytes, 
-  /// raise an exception.
-  ///
-  Class* constructSharedClass(const UTF8* name, ArrayUInt8* bytes);
-
-  static JnjvmSharedLoader* createSharedLoader();
-};
-
-
 /// JnjvmBootstrapLoader - This class is for the bootstrap class loader, which
 /// loads base classes, ie glibj.zip or rt.jar and -Xbootclasspath.
 ///
@@ -246,7 +213,7 @@ class JnjvmBootstrapLoader : public JnjvmClassLoader {
 private:
   /// internalLoad - Load the class with the given name.
   ///
-  virtual Class* internalLoad(const UTF8* utf8);
+  virtual UserClass* internalLoad(const UTF8* utf8);
      
   /// bootClasspath - List of paths for the base classes.
   ///
@@ -295,7 +262,10 @@ public:
   ///
   static JnjvmBootstrapLoader* createBootstrapLoader();
 
-  
+  /// upcalls - Upcall classes, fields and methods so that C++ code can call
+  /// Java code.
+  ///
+  Classpath* upcalls;
 };
 
 } // end namespace jnjvm

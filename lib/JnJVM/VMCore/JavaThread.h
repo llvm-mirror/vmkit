@@ -100,7 +100,7 @@ public:
     th->internalPendingException = 0;
   }
 
-  static bool compareException(Class* cl) {
+  static bool compareException(UserClass* cl) {
     JavaObject* pe = JavaThread::get()->pendingException;
     assert(pe && "no pending exception?");
     bool val = pe->classOf->subclassOf(cl);

@@ -2086,9 +2086,6 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         for (sint32 v = 0; v < dim + 2; ++v) {
           Args.push_back(args[v]);
         }
-#ifdef MULTIPLE_VM
-        Args.push_back(isolateLocal);
-#endif
         push(invoke(JnjvmModule::MultiCallNewFunction, Args, "", currentBlock),
              AssessorDesc::dRef);
         break;

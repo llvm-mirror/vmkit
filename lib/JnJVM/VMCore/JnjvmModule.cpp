@@ -164,7 +164,7 @@ Value* LLVMConstantPoolInfo::getDelegatee(JavaJIT* jit) {
 Value* LLVMCommonClassInfo::getDelegatee(JavaJIT* jit) {
 #ifndef MULTIPLE_VM
   if (!delegateeGV) {
-    JavaObject* obj = classDef->getClassDelegatee();
+    JavaObject* obj = classDef->getClassDelegatee(JavaThread::get()->isolate);
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(obj)),
                                 JnjvmModule::JavaObjectType);
@@ -175,9 +175,8 @@ Value* LLVMCommonClassInfo::getDelegatee(JavaJIT* jit) {
   }
   return new LoadInst(delegateeGV, "", jit->currentBlock);
 #else
-  Value* ld = getVar(jit);
-  return llvm::CallInst::Create(JnjvmModule::GetClassDelegateeFunction, ld, "",
-                                jit->currentBlock);
+  fprintf(stderr, "implement me\n");
+  abort();
 #endif
 }
 
@@ -409,7 +408,7 @@ const Type* LLVMClassInfo::getVirtualType() {
 const Type* LLVMClassInfo::getStaticType() {
   
   if (!staticType) {
-    Class* cl = (Class*)classDef;
+    UserClass* cl = (UserClass*)classDef;
     std::vector<const llvm::Type*> fields;
     JavaField** array = (JavaField**)
       alloca(sizeof(JavaField*) * (classDef->staticFields.size() + 1));
@@ -446,7 +445,6 @@ const Type* LLVMClassInfo::getStaticType() {
     cl->staticSize = size;
     cl->staticVT = VT;
 
-#ifndef MULTIPLE_VM
     JavaObject* val = 
       (JavaObject*)JavaThread::get()->isolate->allocator.allocateObject(cl->staticSize,
                                                                         cl->staticVT);
@@ -458,7 +456,6 @@ const Type* LLVMClassInfo::getStaticType() {
     }
   
     cl->_staticInstance = val;
-#endif
   }
   return staticType;
 }
@@ -467,7 +464,7 @@ Value* LLVMClassInfo::getStaticVar(JavaJIT* jit) {
 #ifndef MULTIPLE_VM
   if (!staticVarGV) {
     getStaticType();
-    JavaObject* obj = ((Class*)classDef)->staticInstance();
+    JavaObject* obj = ((Class*)classDef)->getStaticInstance();
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                                 uint64_t (obj)), JnjvmModule::JavaObjectType);
@@ -481,11 +478,8 @@ Value* LLVMClassInfo::getStaticVar(JavaJIT* jit) {
   return new LoadInst(staticVarGV, "", jit->currentBlock);
 
 #else
-  Value* ld = getVar(jit);
-  ld = jit->invoke(JnjvmModule::InitialisationCheckFunction, ld, "",
-                   jit->currentBlock);
-  return jit->invoke(JnjvmModule::GetStaticInstanceFunction, ld,
-                     jit->isolateLocal, "", jit->currentBlock);
+  fprintf(stderr, "implement me\n");
+  abort();
 #endif
 }
 

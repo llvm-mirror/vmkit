@@ -18,6 +18,7 @@
 #include "JavaJIT.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
+#include "JavaUpcalls.h"
 #include "Jnjvm.h"
 
 using namespace jnjvm;
@@ -81,7 +82,7 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
   }
 }
 
-void AssessorDesc::initialise(JnjvmClassLoader* vm) {
+void AssessorDesc::initialise(JnjvmBootstrapLoader* vm) {
 
   dParg = new AssessorDesc(false, I_PARG, 0, 0, "(", vm, 0, 0, 0,
                                  0);
@@ -92,38 +93,38 @@ void AssessorDesc::initialise(JnjvmClassLoader* vm) {
   dBool = new AssessorDesc(false, I_BOOL, 1, 1, "boolean", 
                                  vm,
                                  BOOL_ID, "java/lang/Boolean", 
-                                 JavaArray::ofBool,
+                                 vm->upcalls->ArrayOfBool,
                                  (arrayCtor_t)ArrayUInt8::acons);
   dByte = new AssessorDesc(false, I_BYTE, 1, 1, "byte",
                                  vm, BYTE_ID, "java/lang/Byte",
-                                 JavaArray::ofByte,
+                                 vm->upcalls->ArrayOfByte,
                                  (arrayCtor_t)ArraySInt8::acons);
   dChar = new AssessorDesc(false, I_CHAR, 2, 1, "char",
                                  vm, CHAR_ID, "java/lang/Character",
-                                 JavaArray::ofChar,
+                                 vm->upcalls->ArrayOfChar,
                                  (arrayCtor_t)ArrayUInt16::acons);
   dShort = new AssessorDesc(false, I_SHORT, 2, 1, "short", 
                                   vm, SHORT_ID,
                                   "java/lang/Short",
-                                  JavaArray::ofShort,
+                                  vm->upcalls->ArrayOfShort,
                                   (arrayCtor_t)ArraySInt16::acons);
   dInt = new AssessorDesc(false, I_INT, 4, 1, "int", vm,
                                 INT_ID, "java/lang/Integer",
-                                JavaArray::ofInt,
+                                vm->upcalls->ArrayOfInt,
                                 (arrayCtor_t)ArraySInt32::acons);
   dFloat = new AssessorDesc(false, I_FLOAT, 4, 1, "float", 
                                   vm,
                                   FLOAT_ID, "java/lang/Float",
-                                  JavaArray::ofFloat,
+                                  vm->upcalls->ArrayOfFloat,
                                   (arrayCtor_t)ArrayFloat::acons);
   dLong = new AssessorDesc(false, I_LONG, 8, 2, "long", 
                                  vm, LONG_ID, "java/lang/Long",
-                                 JavaArray::ofLong,
+                                 vm->upcalls->ArrayOfLong,
                                   (arrayCtor_t)ArrayLong::acons);
   dDouble = new AssessorDesc(false, I_DOUBLE, 8, 2, "double", 
                                    vm,
                                    DOUBLE_ID, "java/lang/Double",
-                                   JavaArray::ofDouble,
+                                   vm->upcalls->ArrayOfDouble,
                                    (arrayCtor_t)ArrayDouble::acons);
   dTab = new AssessorDesc(true, I_TAB, sizeof(void*), 1, "array",
                                 vm, ARRAY_ID, 0, 0,
@@ -378,23 +379,23 @@ AssessorDesc* AssessorDesc::byteIdToPrimitive(char id) {
 
 AssessorDesc* AssessorDesc::classToPrimitive(CommonClass* cl) {
   const UTF8* name = cl->name;
-  if (name == dFloat->assocClassName) {
+  if (name->equals(dFloat->assocClassName)) {
     return dFloat;
-  } else if (name == dInt->assocClassName) {
+  } else if (name->equals(dInt->assocClassName)) {
     return dInt;
-  } else if (name == dShort->assocClassName) {
+  } else if (name->equals(dShort->assocClassName)) {
     return dShort;
-  } else if (name == dChar->assocClassName) {
+  } else if (name->equals(dChar->assocClassName)) {
     return dChar;
-  } else if (name == dDouble->assocClassName) {
+  } else if (name->equals(dDouble->assocClassName)) {
     return dDouble;
-  } else if (name == dByte->assocClassName) {
+  } else if (name->equals(dByte->assocClassName)) {
     return dByte;
-  } else if (name == dBool->assocClassName) {
+  } else if (name->equals(dBool->assocClassName)) {
     return dBool;
-  } else if (name == dLong->assocClassName) {
+  } else if (name->equals(dLong->assocClassName)) {
     return dLong;
-  } else if (name == dVoid->assocClassName) {
+  } else if (name->equals(dVoid->assocClassName)) {
     return dVoid;
   } else {
     return 0;

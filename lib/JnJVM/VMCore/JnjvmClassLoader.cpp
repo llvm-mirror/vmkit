@@ -14,6 +14,7 @@
 #include "debug.h"
 
 #include "JavaAllocator.h"
+#include "JavaClass.h"
 #include "JavaConstantPool.h"
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
@@ -28,10 +29,6 @@ using namespace jnjvm;
 
 JnjvmBootstrapLoader* JnjvmClassLoader::bootstrapLoader = 0;
 
-#ifdef MULTIPLE_VM
-JnjvmSharedLoader* JnjvmClassLoader::sharedLoader = 0;
-#endif
-
 extern const char* GNUClasspathGlibj;
 extern const char* GNUClasspathLibs;
 
@@ -44,7 +41,7 @@ JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
   
   JCL->allocator = new JavaAllocator();
   
-  JCL->hashUTF8 = new UTF8Map(JCL->allocator);
+  JCL->hashUTF8 = new UTF8Map(JCL->allocator, JCL->upcalls->ArrayOfChar);
   JCL->classes = allocator_new(allocator, ClassMap)();
   JCL->javaTypes = new TypeMap(); 
   JCL->javaSignatures = new SignMap(); 
@@ -63,25 +60,6 @@ JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
 
   return JCL;
 }
-
-#ifdef MULTIPLE_VM
-JnjvmSharedLoader* JnjvmSharedLoader::createSharedLoader() {
-  
-  JnjvmSharedLoader* JCL = gc_new(JnjvmSharedLoader)();
-  JCL->TheModule = new JnjvmModule("Bootstrap JnJVM");
-  JCL->TheModuleProvider = new JnjvmModuleProvider(JCL->TheModule);
-  JCL->TheModule->initialise(); 
-  
-  JCL->allocator = new JavaAllocator();
-  
-  JCL->hashUTF8 = new UTF8Map(JCL->allocator);
-  JCL->classes = allocator_new(allocator, ClassMap)();
-  JCL->javaTypes = new TypeMap(); 
-  JCL->javaSignatures = new SignMap(); 
-  
-  return JCL;
-}
-#endif
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader, Jnjvm* I) {
   TheModule = JCL.TheModule;
@@ -129,9 +107,9 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
 }
 
 
-Class* JnjvmBootstrapLoader::internalLoad(const UTF8* name) {
+UserClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name) {
   
-  CommonClass* cl = lookupClass(name);
+  UserCommonClass* cl = lookupClass(name);
   
   if (!cl) {
     ArrayUInt8* bytes = openName(name);
@@ -140,31 +118,32 @@ Class* JnjvmBootstrapLoader::internalLoad(const UTF8* name) {
     }
   }
   
-  if (cl) assert(!cl->isArray);
-  return (Class*)cl;
+  if (cl) assert(!cl->isArray());
+  return (UserClass*)cl;
 }
 
-Class* JnjvmClassLoader::internalLoad(const UTF8* name) {
-  CommonClass* cl = lookupClass(name);
+UserClass* JnjvmClassLoader::internalLoad(const UTF8* name) {
+  UserCommonClass* cl = lookupClass(name);
   
   if (!cl) {
     const UTF8* javaName = name->internalToJava(hashUTF8, 0, name->size);
     JavaString* str = isolate->UTF8ToStr(javaName);
+    Classpath* upcalls = bootstrapLoader->upcalls;
     JavaObject* obj = (JavaObject*)
-      Classpath::loadInClassLoader->invokeJavaObjectVirtual(isolate, javaLoader,
+      upcalls->loadInClassLoader->invokeJavaObjectVirtual(isolate, javaLoader,
                                                           str);
-    cl = (CommonClass*)(Classpath::vmdataClass->getVirtualObjectField(obj));
+    cl = (UserCommonClass*)(upcalls->vmdataClass->getObjectField(obj));
   }
   
-  if (cl) assert(!cl->isArray);
-  return (Class*)cl;
+  if (cl) assert(!cl->isArray());
+  return (UserClass*)cl;
 }
 
-Class* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
+UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
                                         bool doThrow) {
  
 
-  Class* cl = internalLoad(name);
+  UserClass* cl = internalLoad(name);
 
   if (!cl && doThrow) {
     if (!(name->equals(Jnjvm::NoClassDefFoundError))) {
@@ -178,14 +157,14 @@ Class* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
   return cl;
 }
 
-CommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigned int start,
+UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigned int start,
                                          unsigned int len,
                                          bool doResolve,
                                          bool doThrow) {
   uint32 origLen = len;
   const UTF8* name = utf8->javaToInternal(hashUTF8, start, len);
   bool doLoop = true;
-  CommonClass* ret = 0;
+  UserCommonClass* ret = 0;
 
   if (len == 0) {
     return 0;
@@ -242,57 +221,44 @@ CommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigned in
   }
 }
 
-CommonClass* JnjvmClassLoader::lookupClassFromJavaString(JavaString* str,
+UserCommonClass* JnjvmClassLoader::lookupClassFromJavaString(JavaString* str,
                                               bool doResolve, bool doThrow) {
   return lookupClassFromUTF8(str->value, str->offset, str->count,
                              doResolve, doThrow);
 }
 
-CommonClass* JnjvmClassLoader::lookupClass(const UTF8* utf8) {
+UserCommonClass* JnjvmClassLoader::lookupClass(const UTF8* utf8) {
   return classes->lookup(utf8);
 }
 
-static CommonClass* arrayDup(const UTF8*& name, JnjvmClassLoader* loader) {
-  ClassArray* cl = allocator_new(loader->allocator, ClassArray)(loader, name);
+static UserCommonClass* arrayDup(const UTF8*& name, JnjvmClassLoader* loader) {
+  UserClassArray* cl = allocator_new(loader->allocator, UserClassArray)(loader, name);
   return cl;
 }
 
-ClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
+UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
   if (javaLoader != 0) {
     JnjvmClassLoader * ld = 
       ClassArray::arrayLoader(name, this, 1, name->size - 1);
-    ClassArray* res = 
+    UserClassArray* res = 
       (ClassArray*)ld->classes->lookupOrCreate(name, this, arrayDup);
     return res;
   } else {
-    return (ClassArray*)classes->lookupOrCreate(name, this, arrayDup);
+    return (UserClassArray*)classes->lookupOrCreate(name, this, arrayDup);
   }
 }
 
-Class* JnjvmSharedLoader::constructSharedClass(const UTF8* name,
-                                               ArrayUInt8* bytes) {
-  
-  return 0;
-}
-
-
-Class* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes) {
+UserClass* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes) {
   assert(bytes && "constructing a class without bytes");
-#ifdef MULTIPLE_VM
-  if (this != bootstrapLoader && this != sharedLoader && bytes) {
-    Class* cl = sharedLoader->constructSharedClass(name, bytes);
-    if (cl) return cl;
-  }
-#endif
   classes->lock->lock();
   ClassMap::iterator End = classes->map.end();
   ClassMap::iterator I = classes->map.find(name);
-  Class* res = 0;
+  UserClass* res = 0;
   if (I == End) {
-    res = allocator_new(allocator, Class)(this, name, bytes);
+    res = allocator_new(allocator, UserClass)(this, name, bytes);
     classes->map.insert(std::make_pair(name, res));
   } else {
-    res = ((Class*)(I->second));
+    res = ((UserClass*)(I->second));
   }
   classes->lock->unlock();
   return res;
@@ -329,13 +295,14 @@ JnjvmClassLoader* JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loa
   
   if (loader == 0)
     return bootstrapLoader;
-
+  
+  Classpath* upcalls = bootstrapLoader->upcalls;
   JnjvmClassLoader* JCL = 
-      (JnjvmClassLoader*)(Classpath::vmdataClassLoader->getVirtualObjectField(loader));
+    (JnjvmClassLoader*)(upcalls->vmdataClassLoader->getObjectField(loader));
   
   if (!JCL) {
     JCL = gc_new(JnjvmClassLoader)(*bootstrapLoader, loader, JavaThread::get()->isolate);
-    (Classpath::vmdataClassLoader->setVirtualObjectField(loader, (JavaObject*)JCL));
+    (upcalls->vmdataClassLoader->setObjectField(loader, (JavaObject*)JCL));
   }
 
   return JCL;

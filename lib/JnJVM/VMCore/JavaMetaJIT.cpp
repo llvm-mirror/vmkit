@@ -32,7 +32,7 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JnjvmClassLoader* loader,
   CommonClass* cl = loader->loadName(loader->asciizConstructUTF8(className),
                                      true, true);
   
-  vm->initialiseClass(cl);
+  cl->initialiseClass(vm);
   bool stat = access == ACC_STATIC ? true : false;
   JavaMethod* method = cl->lookupMethod(loader->asciizConstructUTF8(func), 
                                         loader->asciizConstructUTF8(sign), stat,
@@ -94,7 +94,7 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JnjvmClassLoader* loader,
 TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, JavaObject* obj, va_list ap) { \
   if (!classDef->isReady()) { \
     classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+    classDef->initialiseClass(vm); \
   } \
   verifyNull(obj); \
   Signdef* sign = getSignature(); \
@@ -108,7 +108,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, JavaObject* obj, va_lis
 TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap) {\
   if (!classDef->isReady()) { \
     classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+    classDef->initialiseClass(vm); \
   } \
   \
   verifyNull(obj);\
@@ -123,7 +123,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, JavaObject* obj, va_lis
 TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, va_list ap) {\
   if (!classDef->isReady()) { \
     classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+    classDef->initialiseClass(vm); \
   } \
   \
   Signdef* sign = getSignature(); \
@@ -137,7 +137,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, va_list ap) {\
 TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf) {\
   if (!classDef->isReady()) { \
     classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+    classDef->initialiseClass(vm); \
   } \
   \
   verifyNull(obj);\
@@ -151,7 +151,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, JavaObject* obj, void*
 TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf) {\
   if (!classDef->isReady()) { \
     classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+    classDef->initialiseClass(vm); \
   } \
   \
   verifyNull(obj);\
@@ -163,7 +163,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, JavaObject* obj, void*
 TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, void* buf) {\
   if (!classDef->isReady()) { \
     classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+    classDef->initialiseClass(vm); \
   } \
   \
   void* func = this->compiledPtr();\
@@ -202,7 +202,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##Static(Jnjvm* vm, ...) {\
 TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, JavaObject* obj, va_list ap) { \
   if (!classDef->isReady()) { \
     classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+    classDef->initialiseClass(vm); \
   } \
   \
   verifyNull(obj); \
@@ -214,7 +214,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, JavaObject* obj, va_lis
 TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap) {\
   if (!classDef->isReady()) { \
     classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+    classDef->initialiseClass(vm); \
   } \
   \
   verifyNull(obj);\
@@ -226,7 +226,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, JavaObject* obj, va_lis
 TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, va_list ap) {\
   if (!classDef->isReady()) { \
     classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+    classDef->initialiseClass(vm); \
   } \
   \
   void* func = this->compiledPtr();\
@@ -237,7 +237,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, va_list ap) {\
 TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf) {\
   if (!classDef->isReady()) { \
     classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+    classDef->initialiseClass(vm); \
   } \
   \
   verifyNull(obj);\
@@ -249,7 +249,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, JavaObject* obj, void*
 TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf) {\
   if (!classDef->isReady()) { \
     classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+    classDef->initialiseClass(vm); \
   } \
   \
   verifyNull(obj);\
@@ -261,7 +261,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, JavaObject* obj, void*
 TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, void* buf) {\
   if (!classDef->isReady()) { \
     classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+    classDef->initialiseClass(vm); \
   } \
   \
   void* func = this->compiledPtr();\

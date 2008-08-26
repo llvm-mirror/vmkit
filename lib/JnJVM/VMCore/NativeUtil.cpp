@@ -226,11 +226,13 @@ void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
   return res;
 }
 
-CommonClass* NativeUtil::resolvedImplClass(jclass clazz, bool doClinit) {
+UserCommonClass* NativeUtil::resolvedImplClass(jclass clazz, bool doClinit) {
+  Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject *Cl = (JavaObject*)clazz;
-  CommonClass* cl = (CommonClass*)Classpath::vmdataClass->getVirtualObjectField(Cl);
+  UserCommonClass* cl = 
+    (CommonClass*)vm->upcalls->vmdataClass->getObjectField(Cl);
   cl->resolveClass();
-  if (doClinit) JavaThread::get()->isolate->initialiseClass(cl);
+  if (doClinit) cl->initialiseClass(vm);
   return cl;
 }
 
@@ -258,12 +260,12 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
     
     if (funcs == AssessorDesc::dShort) {
       if (value == AssessorDesc::dShort) {
-        ((uint16*)buf)[0] = Classpath::shortValue->getVirtualInt16Field(obj);
+        ((uint16*)buf)[0] = vm->upcalls->shortValue->getInt16Field(obj);
         buf++;
         return;
       } else if (value == AssessorDesc::dByte) {
         ((sint16*)buf)[0] = 
-          (sint16)Classpath::byteValue->getVirtualInt8Field(obj);
+          (sint16)vm->upcalls->byteValue->getInt8Field(obj);
         buf++;
         return;
       } else {
@@ -271,7 +273,7 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
       }
     } else if (funcs == AssessorDesc::dByte) {
       if (value == AssessorDesc::dByte) {
-        ((uint8*)buf)[0] = Classpath::byteValue->getVirtualInt8Field(obj);
+        ((uint8*)buf)[0] = vm->upcalls->byteValue->getInt8Field(obj);
         buf++;
         return;
       } else {
@@ -279,7 +281,7 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
       }
     } else if (funcs == AssessorDesc::dBool) {
       if (value == AssessorDesc::dBool) {
-        ((uint8*)buf)[0] = Classpath::boolValue->getVirtualInt8Field(obj);
+        ((uint8*)buf)[0] = vm->upcalls->boolValue->getInt8Field(obj);
         buf++;
         return;
       } else {
@@ -288,13 +290,13 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
     } else if (funcs == AssessorDesc::dInt) {
       sint32 val = 0;
       if (value == AssessorDesc::dInt) {
-        val = Classpath::intValue->getVirtualInt32Field(obj);
+        val = vm->upcalls->intValue->getInt32Field(obj);
       } else if (value == AssessorDesc::dByte) {
-        val = (sint32)Classpath::byteValue->getVirtualInt8Field(obj);
+        val = (sint32)vm->upcalls->byteValue->getInt8Field(obj);
       } else if (value == AssessorDesc::dChar) {
-        val = (uint32)Classpath::charValue->getVirtualInt16Field(obj);
+        val = (uint32)vm->upcalls->charValue->getInt16Field(obj);
       } else if (value == AssessorDesc::dShort) {
-        val = (sint32)Classpath::shortValue->getVirtualInt16Field(obj);
+        val = (sint32)vm->upcalls->shortValue->getInt16Field(obj);
       } else {
         vm->illegalArgumentException("");
       }
@@ -304,7 +306,7 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
     } else if (funcs == AssessorDesc::dChar) {
       uint16 val = 0;
       if (value == AssessorDesc::dChar) {
-        val = (uint16)Classpath::charValue->getVirtualInt16Field(obj);
+        val = (uint16)vm->upcalls->charValue->getInt16Field(obj);
       } else {
         vm->illegalArgumentException("");
       }
@@ -314,17 +316,17 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
     } else if (funcs == AssessorDesc::dFloat) {
       float val = 0;
       if (value == AssessorDesc::dFloat) {
-        val = (float)Classpath::floatValue->getVirtualFloatField(obj);
+        val = (float)vm->upcalls->floatValue->getFloatField(obj);
       } else if (value == AssessorDesc::dByte) {
-        val = (float)(sint32)Classpath::byteValue->getVirtualInt8Field(obj);
+        val = (float)(sint32)vm->upcalls->byteValue->getInt8Field(obj);
       } else if (value == AssessorDesc::dChar) {
-        val = (float)(uint32)Classpath::charValue->getVirtualInt16Field(obj);
+        val = (float)(uint32)vm->upcalls->charValue->getInt16Field(obj);
       } else if (value == AssessorDesc::dShort) {
-        val = (float)(sint32)Classpath::shortValue->getVirtualInt16Field(obj);
+        val = (float)(sint32)vm->upcalls->shortValue->getInt16Field(obj);
       } else if (value == AssessorDesc::dInt) {
-        val = (float)(sint32)Classpath::intValue->getVirtualInt32Field(obj);
+        val = (float)(sint32)vm->upcalls->intValue->getInt32Field(obj);
       } else if (value == AssessorDesc::dLong) {
-        val = (float)Classpath::longValue->getVirtualLongField(obj);
+        val = (float)vm->upcalls->longValue->getLongField(obj);
       } else {
         vm->illegalArgumentException("");
       }
@@ -334,19 +336,19 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
     } else if (funcs == AssessorDesc::dDouble) {
       double val = 0;
       if (value == AssessorDesc::dDouble) {
-        val = (double)Classpath::doubleValue->getVirtualDoubleField(obj);
+        val = (double)vm->upcalls->doubleValue->getDoubleField(obj);
       } else if (value == AssessorDesc::dFloat) {
-        val = (double)Classpath::floatValue->getVirtualFloatField(obj);
+        val = (double)vm->upcalls->floatValue->getFloatField(obj);
       } else if (value == AssessorDesc::dByte) {
-        val = (double)(sint64)Classpath::byteValue->getVirtualInt8Field(obj);
+        val = (double)(sint64)vm->upcalls->byteValue->getInt8Field(obj);
       } else if (value == AssessorDesc::dChar) {
-        val = (double)(uint64)Classpath::charValue->getVirtualInt16Field(obj);
+        val = (double)(uint64)vm->upcalls->charValue->getInt16Field(obj);
       } else if (value == AssessorDesc::dShort) {
-        val = (double)(sint16)Classpath::shortValue->getVirtualInt16Field(obj);
+        val = (double)(sint16)vm->upcalls->shortValue->getInt16Field(obj);
       } else if (value == AssessorDesc::dInt) {
-        val = (double)(sint32)Classpath::intValue->getVirtualInt32Field(obj);
+        val = (double)(sint32)vm->upcalls->intValue->getInt32Field(obj);
       } else if (value == AssessorDesc::dLong) {
-        val = (double)(sint64)Classpath::longValue->getVirtualLongField(obj);
+        val = (double)(sint64)vm->upcalls->longValue->getLongField(obj);
       } else {
         vm->illegalArgumentException("");
       }
@@ -356,15 +358,15 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
     } else if (funcs == AssessorDesc::dLong) {
       sint64 val = 0;
       if (value == AssessorDesc::dByte) {
-        val = (sint64)Classpath::byteValue->getVirtualInt8Field(obj);
+        val = (sint64)vm->upcalls->byteValue->getInt8Field(obj);
       } else if (value == AssessorDesc::dChar) {
-        val = (sint64)(uint64)Classpath::charValue->getVirtualInt16Field(obj);
+        val = (sint64)(uint64)vm->upcalls->charValue->getInt16Field(obj);
       } else if (value == AssessorDesc::dShort) {
-        val = (sint64)Classpath::shortValue->getVirtualInt16Field(obj);
+        val = (sint64)vm->upcalls->shortValue->getInt16Field(obj);
       } else if (value == AssessorDesc::dInt) {
-        val = (sint64)Classpath::intValue->getVirtualInt32Field(obj);
+        val = (sint64)vm->upcalls->intValue->getInt32Field(obj);
       } else if (value == AssessorDesc::dLong) {
-        val = (sint64)Classpath::intValue->getVirtualLongField(obj);
+        val = (sint64)vm->upcalls->intValue->getLongField(obj);
       } else {
         vm->illegalArgumentException("");
       }
@@ -378,13 +380,15 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
 }
 
 JavaObject* NativeUtil::getClassType(JnjvmClassLoader* loader, Typedef* type) {
+  Jnjvm* vm = JavaThread::get()->isolate;
   CommonClass* res = type->assocClass(loader);
-  return res->getClassDelegatee();
+  return res->getClassDelegatee(vm);
 }
 
 ArrayObject* NativeUtil::getParameterTypes(JnjvmClassLoader* loader, JavaMethod* meth) {
+  Jnjvm* vm = JavaThread::get()->isolate;
   std::vector<Typedef*>& args = meth->getSignature()->args;
-  ArrayObject* res = ArrayObject::acons(args.size(), Classpath::classArrayClass,
+  ArrayObject* res = ArrayObject::acons(args.size(), vm->upcalls->classArrayClass,
                                         &(JavaThread::get()->isolate->allocator));
 
   sint32 index = 0;
@@ -399,22 +403,23 @@ ArrayObject* NativeUtil::getParameterTypes(JnjvmClassLoader* loader, JavaMethod*
 
 ArrayObject* NativeUtil::getExceptionTypes(JavaMethod* meth) {
   Attribut* exceptionAtt = meth->lookupAttribut(Attribut::exceptionsAttribut);
+  Jnjvm* vm = JavaThread::get()->isolate;
   if (exceptionAtt == 0) {
-    return ArrayObject::acons(0, Classpath::classArrayClass,
+    return ArrayObject::acons(0, vm->upcalls->classArrayClass,
                               &(JavaThread::get()->isolate->allocator));
   } else {
     Class* cl = meth->classDef;
     JavaConstantPool* ctp = cl->getConstantPool();
     Reader reader(exceptionAtt, cl->getBytes());
     uint16 nbe = reader.readU2();
-    ArrayObject* res = ArrayObject::acons(nbe, Classpath::classArrayClass,
+    ArrayObject* res = ArrayObject::acons(nbe, vm->upcalls->classArrayClass,
                                           &(JavaThread::get()->isolate->allocator));
 
     for (uint16 i = 0; i < nbe; ++i) {
       uint16 idx = reader.readU2();
       CommonClass* cl = ctp->loadClass(idx);
       cl->resolveClass();
-      JavaObject* obj = cl->getClassDelegatee();
+      JavaObject* obj = cl->getClassDelegatee(vm);
       res->elements[i] = obj;
     }
     return res;

@@ -45,8 +45,6 @@ static void initialiseVT() {
   INIT(JavaThread);
   INIT(Jnjvm);
   INIT(ClassMap);
-  INIT(StaticInstanceMap);
-  INIT(DelegateeMap);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
 #ifdef MULTIPLE_VM
@@ -72,14 +70,15 @@ static void initialiseVT() {
 
 static void initialiseStatics() {
   
-  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader = 
+  JnjvmBootstrapLoader* JCL = JnjvmClassLoader::bootstrapLoader = 
     JnjvmBootstrapLoader::createBootstrapLoader();
   
   // Array initialization
   const UTF8* utf8OfChar = JCL->asciizConstructUTF8("[C");
-  JavaArray::ofChar = JCL->constructArray(utf8OfChar);
-  ((UTF8*)utf8OfChar)->classOf = JavaArray::ofChar;
-   
+  JCL->upcalls->ArrayOfChar = JCL->constructArray(utf8OfChar);
+  ((UTF8*)utf8OfChar)->classOf = JCL->upcalls->ArrayOfChar;
+  JCL->hashUTF8->array = JCL->upcalls->ArrayOfChar;
+
   ClassArray::InterfacesArray.push_back(
     JCL->loadName(JCL->asciizConstructUTF8("java/lang/Cloneable"), false,
                   false));
@@ -92,27 +91,27 @@ static void initialiseStatics() {
     JCL->loadName(JCL->asciizConstructUTF8("java/lang/Object"), false,
                   false);
   
-  JavaArray::ofChar->interfaces = ClassArray::InterfacesArray;
-  JavaArray::ofChar->super = ClassArray::SuperArray;
+  JCL->upcalls->ArrayOfChar->interfaces = ClassArray::InterfacesArray;
+  JCL->upcalls->ArrayOfChar->super = ClassArray::SuperArray;
   
-  JavaArray::ofByte = JCL->constructArray(JCL->asciizConstructUTF8("[B"));
-  JavaArray::ofString = 
+  JCL->upcalls->ArrayOfByte = JCL->constructArray(JCL->asciizConstructUTF8("[B"));
+  JCL->upcalls->ArrayOfString = 
     JCL->constructArray(JCL->asciizConstructUTF8("[Ljava/lang/String;"));
   
-  JavaArray::ofObject = 
+  JCL->upcalls->ArrayOfObject = 
     JCL->constructArray(JCL->asciizConstructUTF8("[Ljava/lang/Object;"));
   
-  JavaArray::ofInt = JCL->constructArray(JCL->asciizConstructUTF8("[I"));
+  JCL->upcalls->ArrayOfInt = JCL->constructArray(JCL->asciizConstructUTF8("[I"));
   
-  JavaArray::ofBool = JCL->constructArray(JCL->asciizConstructUTF8("[Z"));
+  JCL->upcalls->ArrayOfBool = JCL->constructArray(JCL->asciizConstructUTF8("[Z"));
   
-  JavaArray::ofLong = JCL->constructArray(JCL->asciizConstructUTF8("[J"));
+  JCL->upcalls->ArrayOfLong = JCL->constructArray(JCL->asciizConstructUTF8("[J"));
   
-  JavaArray::ofFloat = JCL->constructArray(JCL->asciizConstructUTF8("[F"));
+  JCL->upcalls->ArrayOfFloat = JCL->constructArray(JCL->asciizConstructUTF8("[F"));
   
-  JavaArray::ofDouble = JCL->constructArray(JCL->asciizConstructUTF8("[D"));
+  JCL->upcalls->ArrayOfDouble = JCL->constructArray(JCL->asciizConstructUTF8("[D"));
   
-  JavaArray::ofShort = JCL->constructArray(JCL->asciizConstructUTF8("[S"));
+  JCL->upcalls->ArrayOfShort = JCL->constructArray(JCL->asciizConstructUTF8("[S"));
   
   // End array initialization
   
@@ -170,17 +169,13 @@ static void initialiseStatics() {
 
 #undef DEF_UTF8
  
+  Classpath::initialiseClasspath(JCL);
 }
-
-extern "C" void ClasspathBoot();
 
 void mvm::VirtualMachine::initialiseJVM() {
   if (!JnjvmClassLoader::bootstrapLoader) {
     initialiseVT();
-    initialiseStatics();
-  
-    ClasspathBoot();
-    Classpath::initialiseClasspath(JnjvmClassLoader::bootstrapLoader);
+    initialiseStatics(); 
   }
 }
 

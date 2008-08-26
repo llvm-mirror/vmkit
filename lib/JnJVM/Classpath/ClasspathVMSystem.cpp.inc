@@ -40,17 +40,17 @@ JNIEnv *env,
   verifyNull(src);
   verifyNull(dst);
   
-  if (!(src->classOf->isArray && dst->classOf->isArray)) {
+  if (!(src->classOf->isArray() && dst->classOf->isArray())) {
     vm->arrayStoreException();
   }
   
-  ClassArray* ts = (ClassArray*)src->classOf;
-  ClassArray* td = (ClassArray*)dst->classOf;
-  CommonClass* dstType = td->baseClass();
+  UserClassArray* ts = (UserClassArray*)src->classOf;
+  UserClassArray* td = (UserClassArray*)dst->classOf;
+  UserCommonClass* dstType = td->baseClass();
   AssessorDesc* dstFuncs = td->funcs();
   AssessorDesc* srcFuncs = ts->funcs();
-  CommonClass* srcPrim = srcFuncs->classType;
-  CommonClass* dstPrim = dstFuncs->classType;
+  UserCommonClass* srcPrim = vm->getPrimitiveClass(srcFuncs);
+  UserCommonClass* dstPrim = vm->getPrimitiveClass(dstFuncs);
 
   if (len > src->size) {
     vm->indexOutOfBounds(src, len);

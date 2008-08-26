@@ -36,6 +36,7 @@
 
 using namespace jnjvm;
 
+#ifndef MULTIPLE_VM
 Class*      Classpath::newThread;
 Class*      Classpath::newVMThread;
 JavaField*  Classpath::assocThread;
@@ -177,36 +178,54 @@ JavaMethod* Classpath::ErrorWithExcpNoClassDefFoundError;
 JavaMethod* Classpath::ErrorWithExcpExceptionInInitializerError;
 JavaMethod* Classpath::ErrorWithExcpInvocationTargetException;
 
+ClassArray* Classpath::ArrayOfByte;
+ClassArray* Classpath::ArrayOfChar;
+ClassArray* Classpath::ArrayOfString;
+ClassArray* Classpath::ArrayOfInt;
+ClassArray* Classpath::ArrayOfShort;
+ClassArray* Classpath::ArrayOfBool;
+ClassArray* Classpath::ArrayOfLong;
+ClassArray* Classpath::ArrayOfFloat;
+ClassArray* Classpath::ArrayOfDouble;
+ClassArray* Classpath::ArrayOfObject;
+
+JavaField* Classpath::methodClass;
+JavaField* Classpath::fieldClass;
+JavaField* Classpath::constructorClass;
+
+#endif
+
 void Classpath::createInitialThread(Jnjvm* vm, JavaObject* th) {
   JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
   JCL->loadName(newVMThread->name, true, true);
-  vm->initialiseClass(newVMThread);
+  newVMThread->initialiseClass(vm);
 
   JavaObject* vmth = newVMThread->doNew(vm);
-  name->setVirtualObjectField(th, (JavaObject*)vm->asciizToStr("main"));
-  priority->setVirtualInt32Field(th, (uint32)1);
-  daemon->setVirtualInt8Field(th, (uint32)0);
-  vmThread->setVirtualObjectField(th, vmth);
-  assocThread->setVirtualObjectField(vmth, th);
-  running->setVirtualInt8Field(vmth, (uint32)1);
+  name->setObjectField(th, (JavaObject*)vm->asciizToStr("main"));
+  priority->setInt32Field(th, (uint32)1);
+  daemon->setInt8Field(th, (uint32)0);
+  vmThread->setObjectField(th, vmth);
+  assocThread->setObjectField(vmth, th);
+  running->setInt8Field(vmth, (uint32)1);
   
   JCL->loadName(rootGroup->classDef->name, true, true);
-  vm->initialiseClass(rootGroup->classDef);
-  JavaObject* RG = rootGroup->getStaticObjectField();
-  group->setVirtualObjectField(th, RG);
+  rootGroup->classDef->initialiseClass(vm);
+  JavaObject* Stat = rootGroup->classDef->getStaticInstance();
+  JavaObject* RG = rootGroup->getObjectField(Stat);
+  group->setObjectField(th, RG);
   groupAddThread->invokeIntSpecial(vm, RG, th);
 }
 
 void Classpath::mapInitialThread(Jnjvm* vm) {
   JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
   JCL->loadName(newThread->name, true, true);
-  vm->initialiseClass(newThread);
+  newThread->initialiseClass(vm);
   JavaObject* th = newThread->doNew(vm);
   createInitialThread(vm, th);
   JavaThread* myth = JavaThread::get();
   myth->javaThread = th;
-  JavaObject* vmth = vmThread->getVirtualObjectField(th);
-  vmdataVMThread->setVirtualObjectField(vmth, (JavaObject*)myth);
+  JavaObject* vmth = vmThread->getObjectField(th);
+  vmdataVMThread->setObjectField(vmth, (JavaObject*)myth);
   finaliseCreateInitialThread->invokeIntStatic(vm, th);
 }
 
@@ -520,6 +539,18 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_METHOD(loader, "java/lang/ThreadGroup",  "uncaughtException",
                   "(Ljava/lang/Thread;Ljava/lang/Throwable;)V", ACC_VIRTUAL);
 
+  
+  methodClass =
+    UPCALL_FIELD(loader, "java/lang/reflect/Method", "declaringClass",
+                 "Ljava/lang/Class;", ACC_VIRTUAL);
+  
+  fieldClass =
+    UPCALL_FIELD(loader, "java/lang/reflect/Field", "declaringClass",
+                 "Ljava/lang/Class;", ACC_VIRTUAL);
+  
+  constructorClass =
+    UPCALL_FIELD(loader, "java/lang/reflect/Constructor", "clazz",
+                 "Ljava/lang/Class;", ACC_VIRTUAL);
 
   loader->loadName(loader->asciizConstructUTF8("java/lang/String"), 
                                        true, false);
@@ -554,7 +585,7 @@ extern "C" JavaString* internString(JavaString* obj) {
 
 extern "C" uint8 isArray(JavaObject* klass) {
   CommonClass* cl = 
-    (CommonClass*)((Classpath::vmdataClass->getVirtualObjectField(klass)));
+    (CommonClass*)((Classpath::vmdataClass->getObjectField(klass)));
 
-  return (uint8)cl->isArray;
+  return (uint8)cl->isArray();
 }

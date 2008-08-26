@@ -129,7 +129,7 @@ public:
 
   /// classOf - The class of this object.
   ///
-  CommonClass* classOf;
+  UserCommonClass* classOf;
 
   /// lock - The monitor of this object. Most of the time null.
   ///
@@ -156,7 +156,7 @@ public:
   
   /// initialise - Initialises the object.
   ///
-  void initialise(CommonClass* cl) {
+  void initialise(UserCommonClass* cl) {
     this->classOf = cl; 
     this->lock = 0;
   }
@@ -170,7 +170,7 @@ public:
 
   /// instanceOf - Is this object's class of type the given class?
   ///
-  bool instanceOf(CommonClass* cl) {
+  bool instanceOf(UserCommonClass* cl) {
     if (!this) return false;
     else return this->classOf->isAssignableFrom(cl);
   }

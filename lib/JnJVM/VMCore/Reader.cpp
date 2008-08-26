@@ -15,6 +15,7 @@
 #include "Jnjvm.h"
 #include "JavaArray.h"
 #include "JavaThread.h"
+#include "JavaUpcalls.h"
 #include "Reader.h"
 #include "Zip.h"
 
@@ -31,18 +32,21 @@ ArrayUInt8* Reader::openFile(JnjvmClassLoader* loader, char* path) {
     fseek(fp, 0, SeekEnd);
     long nbb = ftell(fp);
     fseek(fp, 0, SeekSet);
-    res = ArrayUInt8::acons(nbb, JavaArray::ofByte, loader->allocator);
+    ClassArray* array = loader->bootstrapLoader->upcalls->ArrayOfByte;
+    res = ArrayUInt8::acons(nbb, array, loader->allocator);
     fread(res->elements, nbb, 1, fp);
     fclose(fp);
   }
   return res;
 }
 
-ArrayUInt8* Reader::openZip(JnjvmClassLoader* loader, ZipArchive* archive, char* filename) {
+ArrayUInt8* Reader::openZip(JnjvmClassLoader* loader, ZipArchive* archive,
+                            char* filename) {
   ArrayUInt8* ret = 0;
   ZipFile* file = archive->getFile(filename);
   if (file != 0) {
-    ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, JavaArray::ofByte, loader->allocator);
+    ClassArray* array = loader->bootstrapLoader->upcalls->ArrayOfByte;
+    ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, array, loader->allocator);
     if (archive->readFile(res, file) != 0) {
       ret = res;
     }

@@ -212,8 +212,8 @@ CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n, bool isArray) 
   this->condVar = mvm::Cond::allocCond();
   this->status = loaded;
   this->classLoader = loader;
-  this->isArray = isArray;
-  this->isPrimitive = false;
+  this->array = isArray;
+  this->primitive = false;
 #ifndef MULTIPLE_VM
   this->delegatee = 0;
 #endif
@@ -224,7 +224,7 @@ ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n) :
   
   display = (CommonClass**)malloc(sizeof(CommonClass*));
   display[0] = this;
-  isPrimitive = true;
+  primitive = true;
   status = ready;
   access = ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC;
 }
@@ -407,7 +407,7 @@ JavaObject* Class::doNew(Jnjvm* vm) {
 bool CommonClass::inheritName(const UTF8* Tname) {
   if (name->equals(Tname)) {
     return true;
-  } else  if (isPrimitive) {
+  } else  if (isPrimitive()) {
     return false;
   } else if (super) {
     if (super->inheritName(Tname)) return true;
@@ -422,7 +422,7 @@ bool CommonClass::inheritName(const UTF8* Tname) {
 bool CommonClass::isOfTypeName(const UTF8* Tname) {
   if (inheritName(Tname)) {
     return true;
-  } else if (isArray) {
+  } else if (isArray()) {
     CommonClass* curS = this;
     uint32 prof = 0;
     uint32 len = Tname->size;
@@ -432,7 +432,7 @@ bool CommonClass::isOfTypeName(const UTF8* Tname) {
       CommonClass* cl = ((ClassArray*)curS)->baseClass();
       ++prof;
       cl->resolveClass();
-      res = curS->isArray && cl && (prof < len);
+      res = curS->isArray() && cl && (prof < len);
       curS = cl;
     }
     
@@ -461,11 +461,11 @@ bool CommonClass::implements(CommonClass* cl) {
 bool CommonClass::instantiationOfArray(ClassArray* cl) {
   if (this == cl) return true;
   else {
-    if (isArray) {
+    if (isArray()) {
       CommonClass* baseThis = ((ClassArray*)this)->baseClass();
       CommonClass* baseCl = ((ClassArray*)cl)->baseClass();
 
-      if (isInterface(baseThis->access) && isInterface(baseCl->access)) {
+      if (baseThis->isInterface() && baseCl->isInterface()) {
         return baseThis->implements(baseCl);
       } else {
         return baseThis->isAssignableFrom(baseCl);
@@ -486,9 +486,9 @@ bool CommonClass::subclassOf(CommonClass* cl) {
 bool CommonClass::isAssignableFrom(CommonClass* cl) {
   if (this == cl) {
     return true;
-  } else if (isInterface(cl->access)) {
+  } else if (cl->isInterface()) {
     return this->implements(cl);
-  } else if (cl->isArray) {
+  } else if (cl->isArray()) {
     return this->instantiationOfArray((ClassArray*)cl);
   } else {
     return this->subclassOf(cl);
@@ -526,57 +526,6 @@ void JavaField::initField(JavaObject* obj) {
   }
   
 }
-
-JavaObject* CommonClass::getClassDelegatee(JavaObject* pd) {
-  return JavaThread::get()->isolate->getClassDelegatee(this, pd);
-}
-
-#ifdef MULTIPLE_VM
-JavaObject* Class::staticInstance() {
-  std::pair<JavaState, JavaObject*>* val = 
-    JavaThread::get()->isolate->statics->lookup(this);
-  assert(val);
-  return val->second;
-}
-
-void Class::createStaticInstance() {
-  JavaAllocator* allocator = &(JavaThread::get()->isolate->allocator);
-  JavaObject* val = 
-    (JavaObject*)allocator->allocateObject(staticSize, staticVT);
-
-  val->initialise(this);
-  for (field_iterator i = this->staticFields.begin(),
-            e = this->staticFields.end(); i!= e; ++i) {
-    
-    JavaField* cur = i->second;
-    cur->initField(val);
-  }
-  
-  Jnjvm* vm = JavaThread::get()->isolate;
-  std::pair<JavaState, JavaObject*>* p = vm->statics->lookup(this);
-  assert(p);
-  assert(!p->second);
-  p->second = val;
-}
-
-JavaState* CommonClass::getStatus() {
-  if (!this->isArray && 
-      !this->isPrimitive) {
-    Class* cl = (Class*)this;
-    Jnjvm* vm = JavaThread::get()->isolate;
-    std::pair<JavaState, JavaObject*>* val = vm->statics->lookup(cl);
-    if (!val) {
-      val = new std::pair<JavaState, JavaObject*>(status, 0);
-      JavaThread::get()->isolate->statics->hash(cl, val);
-    }
-    if (val->first < status) val->first = status;
-    return (JavaState*)&(val->first);
-  } else {
-    return &status;
-  }
-}
-#endif
-
 
 JavaMethod* CommonClass::constructMethod(const UTF8* name,
                                          const UTF8* type, uint32 access) {
@@ -735,7 +684,7 @@ void CommonClass::resolveClass() {
       release();
       JavaThread::get()->isolate->unknownError("try to resolve a not-read class");
     } else if (status == loaded || ownerClass()) {
-      if (isArray) {
+      if (isArray()) {
         ClassArray* arrayCl = (ClassArray*)this;
         CommonClass* baseClass =  arrayCl->baseClass();
         baseClass->resolveClass();
