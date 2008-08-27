@@ -257,6 +257,9 @@ public:
   llvm::Value* isolateLocal;
 #endif
 
+#if defined(MULTIPLE_VM)
+  llvm::Value* ctpCache;
+#endif
 
   static const char* OpcodeNames[256];
 

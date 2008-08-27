@@ -1550,10 +1550,13 @@ void JavaJIT::invokeStatic(uint16 index) {
 Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
                                   Value* additionalArg, bool doThrow) {
   const Type* returnType = resolver->getReturnType();
+#ifdef MULTIPLE_VM
+  Value* CTP = ctpCache;
+#else
   JavaConstantPool* ctp = compilingClass->ctpInfo;
   LLVMConstantPoolInfo* LCPI = module->getConstantPoolInfo(ctp);
   Value* CTP = LCPI->getDelegatee(this);
-      
+#endif 
   std::vector<Value*> indexes; //[3];
   indexes.push_back(ConstantInt::get(Type::Int32Ty, index));
   Value* arg1 = GetElementPtrInst::Create(CTP, indexes.begin(),
@@ -1578,8 +1581,13 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   
   currentBlock = falseCl;
   std::vector<Value*> Args;
+#ifdef MULTIPLE_VM
+  Value* v = new LoadInst(ctpCache, "", currentBlock);
+  v = new BitCastInst(v, JnjvmModule::JavaClassType, "", currentBlock);
+#else
   LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(compilingClass);
   Value* v = LCI->getVar(this);
+#endif
   Args.push_back(v);
   ConstantInt* CI = ConstantInt::get(Type::Int32Ty, index);
   Args.push_back(CI);

@@ -569,7 +569,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
 
 #if defined(MULTIPLE_VM)
     llvmArgs.push_back(mvm::jit::ptrType); // domain
-    llvmArgs.push_back(mvm::jit::ptr32Type); // cached constant pool
+    llvmArgs.push_back(mvm::jit::ptrPtrType); // cached constant pool
 #endif
 
     uint8 id = signature->ret->funcs->numId;
@@ -594,7 +594,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
 
 #if defined(MULTIPLE_VM)
     llvmArgs.push_back(mvm::jit::ptrType); // domain
-    llvmArgs.push_back(mvm::jit::ptr32Type); // cached constant pool
+    llvmArgs.push_back(mvm::jit::ptrPtrType); // cached constant pool
 #endif
 
     uint8 id = signature->ret->funcs->numId;
@@ -622,7 +622,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
 
 #if defined(MULTIPLE_VM)
     llvmArgs.push_back(mvm::jit::ptrType); // domain
-    llvmArgs.push_back(mvm::jit::ptr32Type); // cached constant pool
+    llvmArgs.push_back(mvm::jit::ptrPtrType); // cached constant pool
 #endif
 
     uint8 id = signature->ret->funcs->numId;
@@ -773,7 +773,7 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     std::vector<const llvm::Type*> Args2;
     Args2.push_back(mvm::jit::ptrType); // vm
-    Args2.push_back(mvm::jit::ptr32Type); // ctp
+    Args2.push_back(mvm::jit::ptrPtrType); // ctp
     Args2.push_back(getVirtualPtrType());
     Args2.push_back(JnjvmModule::JavaObjectType);
     Args2.push_back(PointerType::getUnqual(Type::Int32Ty));
@@ -790,7 +790,7 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     std::vector<const llvm::Type*> Args;
     Args.push_back(mvm::jit::ptrType); // vm
-    Args.push_back(mvm::jit::ptr32Type); // ctp
+    Args.push_back(mvm::jit::ptrPtrType); // ctp
     Args.push_back(getStaticPtrType());
     Args.push_back(PointerType::getUnqual(Type::Int32Ty));
     uint8 id = signature->ret->funcs->numId;
