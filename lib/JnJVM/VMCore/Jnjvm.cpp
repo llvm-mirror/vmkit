@@ -261,7 +261,7 @@ void Jnjvm::noSuchFieldError(CommonClass* cl, const UTF8* name) {
   error(Classpath::NoSuchFieldError,
         Classpath::InitNoSuchFieldError, 
         "unable to find %s in %s",
-        name->printString(), cl->printString());
+        name->UTF8ToAsciiz(), cl->printString());
 
 }
 
@@ -269,7 +269,7 @@ void Jnjvm::noSuchMethodError(CommonClass* cl, const UTF8* name) {
   error(Classpath::NoSuchMethodError,
         Classpath::InitNoSuchMethodError, 
         "unable to find %s in %s",
-        name->printString(), cl->printString());
+        name->UTF8ToAsciiz(), cl->printString());
 
 }
 
