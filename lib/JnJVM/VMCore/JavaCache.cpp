@@ -44,7 +44,7 @@ CacheNode::CacheNode(Enveloppe* E) {
   enveloppe = E;
 }
 
-Enveloppe::Enveloppe(JavaConstantPool* ctp, uint32 i) {
+Enveloppe::Enveloppe(UserConstantPool* ctp, uint32 i) {
   firstCache = new CacheNode(this);
   cacheLock = mvm::Lock::allocNormal();
   ctpInfo = ctp;

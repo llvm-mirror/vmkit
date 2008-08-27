@@ -97,15 +97,18 @@ declare void @forceInitialisationCheck(%JavaClass*)
 ;;; vtableLookup - Look up the offset in a virtual table of a specific
 ;;; function. This function takes a class and an index to lookup in the
 ;;; constant pool and returns and stores it in the constant pool cache.
-declare i32 @vtableLookup(%JavaObject*, %JavaClass*, i32) readnone 
+declare i32 @vtableLookup(%JavaClass*, i32, %JavaObject*) readnone 
 
 ;;; newLookup - Look up a specific class. The function takes a class and an
 ;;; index to lookup in the constant pool and returns and stores it in the
 ;;; constant pool cache.
-declare %JavaClass* @newLookup(%JavaClass*, i32) readnone 
+declare %JavaClass* @classLookup(%JavaClass*, i32) readnone 
 
 ;;; fieldLookup - Look up a specific field.
-declare i8* @fieldLookup(%JavaObject*, %JavaClass*, i32, i32) readnone 
+declare i32 @virtualFieldLookup(%JavaClass*, i32) readnone 
+
+;;; fieldLookup - Look up a specific field.
+declare i8* @staticFieldLookup(%JavaClass*, i32) readnone 
 
 ;;; JavaObjectAquire - This function is called when starting a synchronized
 ;;; block or method.

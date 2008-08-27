@@ -313,7 +313,8 @@ public:
   
   static llvm::Function* GetSJLJBufferFunction;
   static llvm::Function* InterfaceLookupFunction;
-  static llvm::Function* FieldLookupFunction;
+  static llvm::Function* VirtualFieldLookupFunction;
+  static llvm::Function* StaticFieldLookupFunction;
   static llvm::Function* PrintExecutionFunction;
   static llvm::Function* PrintMethodStartFunction;
   static llvm::Function* PrintMethodEndFunction;

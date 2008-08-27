@@ -81,7 +81,8 @@ llvm::Function* JnjvmModule::NegativeArraySizeExceptionFunction = 0;
 llvm::Function* JnjvmModule::OutOfMemoryErrorFunction = 0;
 llvm::Function* JnjvmModule::JavaObjectAllocateFunction = 0;
 llvm::Function* JnjvmModule::InterfaceLookupFunction = 0;
-llvm::Function* JnjvmModule::FieldLookupFunction = 0;
+llvm::Function* JnjvmModule::StaticFieldLookupFunction = 0;
+llvm::Function* JnjvmModule::VirtualFieldLookupFunction = 0;
 #ifndef WITHOUT_VTABLE
 llvm::Function* JnjvmModule::VirtualLookupFunction = 0;
 #endif
@@ -957,9 +958,10 @@ void JnjvmModule::initialise() {
   ArrayLengthFunction = module->getFunction("arrayLength");
   GetVTFunction = module->getFunction("getVT");
   GetClassFunction = module->getFunction("getClass");
-  ClassLookupFunction = module->getFunction("newLookup");
+  ClassLookupFunction = module->getFunction("classLookup");
   GetVTFromClassFunction = module->getFunction("getVTFromClass");
-  GetObjectSizeFromClassFunction = module->getFunction("getObjectSizeFromClass");
+  GetObjectSizeFromClassFunction = 
+    module->getFunction("getObjectSizeFromClass");
  
   GetClassDelegateeFunction = module->getFunction("getClassDelegatee");
   InstanceOfFunction = module->getFunction("instanceOf");
@@ -973,7 +975,8 @@ void JnjvmModule::initialise() {
   ReleaseObjectFunction = module->getFunction("JavaObjectRelease");
   OverflowThinLockFunction = module->getFunction("overflowThinLock");
 
-  FieldLookupFunction = module->getFunction("fieldLookup");
+  VirtualFieldLookupFunction = module->getFunction("virtualFieldLookup");
+  StaticFieldLookupFunction = module->getFunction("staticFieldLookup");
   
   GetExceptionFunction = module->getFunction("JavaThreadGetException");
   GetJavaExceptionFunction = module->getFunction("JavaThreadGetJavaException");
@@ -982,7 +985,8 @@ void JnjvmModule::initialise() {
     module->getFunction("jniProceedPendingException");
   GetSJLJBufferFunction = module->getFunction("getSJLJBuffer");
   
-  NullPointerExceptionFunction = module->getFunction("jnjvmNullPointerException");
+  NullPointerExceptionFunction =
+    module->getFunction("jnjvmNullPointerException");
   ClassCastExceptionFunction = module->getFunction("jnjvmClassCastException");
   IndexOutOfBoundsExceptionFunction = 
     module->getFunction("indexOutOfBoundsException");

@@ -30,15 +30,6 @@
 
 using namespace jnjvm;
 
-#ifdef MULTIPLE_VM
-extern "C" JavaString* stringLookup(UserClass* cl, uint32 index) {
-  JavaConstantPool* ctpInfo = cl->getConstantPool();
-  const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
-  JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
-  return str;
-}
-#endif
-
 extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   Enveloppe* enveloppe = cache->enveloppe;
   JavaConstantPool* ctpInfo = enveloppe->ctpInfo;
@@ -93,9 +84,29 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   return rcache->methPtr;
 }
 
-extern "C" void* fieldLookup(JavaObject* obj, UserClass* caller, uint32 index,
-                             uint32 stat) {
+extern "C" uint32 virtualFieldLookup(UserClass* caller, uint32 index) {
   JavaConstantPool* ctpInfo = caller->getConstantPool();
+  if (ctpInfo->ctpRes[index]) {
+    return (uint32)ctpInfo->ctpRes[index];
+  }
+  
+  UserCommonClass* cl = 0;
+  UserCommonClass* fieldCl = 0;
+  const UTF8* utf8 = 0;
+  Typedef* sign = 0;
+  
+  ctpInfo->resolveField(index, cl, utf8, sign);
+  
+  JavaField* field = cl->lookupField(utf8, sign->keyName, false, true, fieldCl);
+  
+  ctpInfo->ctpRes[index] = (void*)field->ptrOffset;
+  
+  return field->ptrOffset;
+}
+
+extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
+  JavaConstantPool* ctpInfo = caller->getConstantPool();
+  
   if (ctpInfo->ctpRes[index]) {
     return ctpInfo->ctpRes[index];
   }
@@ -107,20 +118,56 @@ extern "C" void* fieldLookup(JavaObject* obj, UserClass* caller, uint32 index,
   
   ctpInfo->resolveField(index, cl, utf8, sign);
   
-  JavaField* field = cl->lookupField(utf8, sign->keyName, stat, true, fieldCl);
+  JavaField* field = cl->lookupField(utf8, sign->keyName, true, true, fieldCl);
   
-  void* ptr = 0;
-  if (stat) {
-    fieldCl->initialiseClass(JavaThread::get()->isolate);
-    ptr = (void*)((uint64)(((UserClass*)fieldCl)->getStaticInstance()) + field->ptrOffset);
-    ctpInfo->ctpRes[index] = ptr;
-  } else {
-    ptr = (void*)((uint64)obj + field->ptrOffset);
-    ctpInfo->ctpRes[index] = (void*)field->ptrOffset;
-  }
+  fieldCl->initialiseClass(JavaThread::get()->isolate);
+  void* ptr = 
+    (void*)((uint64)(((UserClass*)fieldCl)->getStaticInstance()) + field->ptrOffset);
+  ctpInfo->ctpRes[index] = ptr;
   
   return ptr;
 }
+
+#ifdef MULTIPLE_VM
+extern "C" JavaString* stringLookup(UserClass* cl, uint32 index) {
+  JavaConstantPool* ctpInfo = cl->getConstantPool();
+  const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
+  JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
+  ctpInfo->ctpRes[index] = str;
+  return str;
+}
+#endif
+
+#ifndef WITHOUT_VTABLE
+extern "C" uint32 vtableLookup(UserClass* caller, uint32 index, JavaObject* obj) {
+  UserCommonClass* cl = 0;
+  const UTF8* utf8 = 0;
+  Signdef* sign = 0;
+  
+  caller->getConstantPool()->resolveMethod(index, cl, utf8, sign);
+  JavaMethod* dmeth = cl->lookupMethodDontThrow(utf8, sign->keyName, false,
+                                                true);
+  assert(obj->classOf->isReady() && "Class not ready in a virtual lookup.");
+  if (!dmeth) {
+    // Arg, it should have been an invoke interface.... Perform the lookup
+    // on the object class and do not update offset.
+    dmeth = obj->classOf->lookupMethod(utf8, sign->keyName, false, true);
+  } else {
+    caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
+  }
+  
+  assert(dmeth->classDef->isReady() && "Class not ready in a virtual lookup.");
+
+  return dmeth->offset;
+}
+#endif
+
+extern "C" UserClass* classLookup(UserClass* caller, uint32 index) { 
+  JavaConstantPool* ctpInfo = caller->getConstantPool();
+  UserClass* cl = (UserClass*)ctpInfo->loadClass(index);
+  return cl;
+}
+
 
 extern "C" void printMethodStart(JavaMethod* meth) {
   printf("[%d] executing %s\n", mvm::Thread::self(), meth->printString());
@@ -184,37 +231,6 @@ extern "C" JavaObject* getClassDelegatee(UserCommonClass* cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
   return cl->getClassDelegatee(vm);
 }
-
-extern "C" UserClass* newLookup(UserClass* caller, uint32 index) { 
-  JavaConstantPool* ctpInfo = caller->getConstantPool();
-  UserClass* cl = (UserClass*)ctpInfo->loadClass(index);
-  return cl;
-}
-
-#ifndef WITHOUT_VTABLE
-extern "C" uint32 vtableLookup(JavaObject* obj, UserClass* caller, uint32 index) {
-  UserCommonClass* cl = 0;
-  const UTF8* utf8 = 0;
-  Signdef* sign = 0;
-  
-  caller->getConstantPool()->resolveMethod(index, cl, utf8, sign);
-  JavaMethod* dmeth = cl->lookupMethodDontThrow(utf8, sign->keyName, false,
-                                                true);
-  assert(obj->classOf->isReady() && "Class not ready in a virtual lookup.");
-  if (!dmeth) {
-    // Arg, it should have been an invoke interface.... Perform the lookup
-    // on the object class and do not update offset.
-    dmeth = obj->classOf->lookupMethod(utf8, sign->keyName, false, true);
-  } else {
-    caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
-  }
-  
-  assert(dmeth->classDef->isReady() && "Class not ready in a virtual lookup.");
-
-  return dmeth->offset;
-}
-#endif
-
 
 static JavaArray* multiCallNewIntern(arrayCtor_t ctor, UserClassArray* cl,
                                      uint32 len,

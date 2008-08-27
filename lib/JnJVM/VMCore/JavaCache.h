@@ -27,11 +27,11 @@
 
 #include "types.h"
 
+#include "JnjvmConfig.h"
+
 namespace jnjvm {
 
 class Enveloppe;
-class JavaConstantPool;
-class UserClass;
 
 /// CacheNode - A {class, method pointer} pair.
 class CacheNode {
@@ -48,6 +48,12 @@ public:
   
   /// enveloppe - The container to which this class belongs to.
   Enveloppe* enveloppe;
+
+#ifdef MULTIPLE_VM
+  ///definingClass - The class that defined the method being called.
+  ///
+  UserConstantPool* definingCtp;
+#endif
 
   /// CacheNode - Creates a CacheNode with empty values.
   CacheNode(Enveloppe* E);
@@ -67,7 +73,7 @@ public:
   /// ctpInfo - The constant pool info that owns the invokeinterface
   /// bytecode. This is used to resolve the interface call at its first
   /// occurence.
-  JavaConstantPool* ctpInfo;
+  UserConstantPool* ctpInfo;
 
   /// cacheLock - The linked list may be modified by concurrent thread. This
   /// lock ensures that the list stays consistent.
@@ -79,7 +85,7 @@ public:
   /// Enveloppe - Allocates the linked list with the given constant pool info
   /// at the given index, so as the resolution process knows which interface
   /// method the invokeinterface bytecode references.
-  Enveloppe(JavaConstantPool* info, uint32 index);
+  Enveloppe(UserConstantPool* info, uint32 index);
 
 };
 

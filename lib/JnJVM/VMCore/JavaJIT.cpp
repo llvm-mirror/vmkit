@@ -74,15 +74,6 @@ void JavaJIT::invokeVirtual(uint16 index) {
 
   JITVerifyNull(args[0]); 
 
-#if defined(MULTIPLE_VM)
-  Value* cl = CallInst::Create(JnjvmModule::GetClassFunction, args[0], "",
-                               currentBlock);
-
-  Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheFunction, cl, "",
-                                        currentBlock);
-  args.push_back(newCtpCache);
-#endif
-
   Value* VT = CallInst::Create(JnjvmModule::GetVTFunction, args[0], "",
                                currentBlock);
   std::vector<Value*> indexes2; //[3];
@@ -107,12 +98,12 @@ void JavaJIT::invokeVirtual(uint16 index) {
 
     currentBlock = ifFalse;
     std::vector<Value*> Args;
-    Args.push_back(args[0]);
     LLVMClassInfo* LCI = 
       (LLVMClassInfo*)module->getClassInfo(compilingClass);
     Args.push_back(LCI->getVar(this));
     Constant* CI = ConstantInt::get(Type::Int32Ty, index);
     Args.push_back(CI);
+    Args.push_back(args[0]);
     val = invoke(JnjvmModule::VirtualLookupFunction, Args, "", currentBlock);
     node->addIncoming(val, currentBlock);
     llvm::BranchInst::Create(endBlock, currentBlock);
@@ -1809,17 +1800,21 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     // ---------- In case we have to resolve -------------------------------- //
     currentBlock = ifFalse;
     std::vector<Value*> args;
-    if (object) {
-      args.push_back(object);
-    } else {
-      args.push_back(JnjvmModule::JavaObjectNullConstant);
-    }
     LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(compilingClass);
     args.push_back(LCI->getVar(this));
     Constant* CI = ConstantInt::get(Type::Int32Ty, index);
     args.push_back(CI);
-    args.push_back(stat ? mvm::jit::constantOne : mvm::jit::constantZero);
-    Value* tmp = invoke(JnjvmModule::FieldLookupFunction, args, "", currentBlock);
+    Function* func = stat ? JnjvmModule::StaticFieldLookupFunction :
+                            JnjvmModule::VirtualFieldLookupFunction;
+    Value* tmp = invoke(func, args, "", currentBlock);
+    if (!stat) {
+      Value* ptr = new BitCastInst(object, Pty, "", currentBlock);
+      args.clear();
+      args.push_back(zero);
+      args.push_back(tmp);
+      tmp = GetElementPtrInst::Create(ptr, args.begin(), args.end(), "",
+                                      currentBlock);
+    }
     node->addIncoming(tmp, currentBlock);
     llvm::BranchInst::Create(endBlock, currentBlock);
     
@@ -2016,29 +2011,23 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   if (retType != Type::VoidTy) {
     node = PHINode::Create(retType, "", endBlock);
   }
-
-  // ok now the cache
-  Enveloppe* enveloppe = new Enveloppe(compilingClass->ctpInfo, index);
-  compilingMethod->caches.push_back(enveloppe);
+  
+  JITVerifyNull(args[0]);
   
   Value* zero = mvm::jit::constantZero;
   Value* one = mvm::jit::constantOne;
-  
+
+#ifndef MULTIPLE_VM
+  // ok now the cache
+  Enveloppe* enveloppe = new Enveloppe(compilingClass->ctpInfo, index);
+  compilingMethod->caches.push_back(enveloppe);
+   
   Value* llvmEnv = 
     ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                               uint64_t (enveloppe)),
                               JnjvmModule::EnveloppeType);
-  
-
-  JITVerifyNull(args[0]);
-
-#if defined(MULTIPLE_VM)
-  Value* cl = CallInst::Create(JnjvmModule::GetClassFunction, args[0], "",
-                               currentBlock);
-
-  Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheFunction, cl, "",
-                                        currentBlock);
-  args.push_back(newCtpCache);
+#else
+  llvmEnv = getConstantPoolAt(index);
 #endif
 
   std::vector<Value*> args1;
@@ -2083,6 +2072,12 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   _meth = new LoadInst(methPtr, "", currentBlock);
   meth = new BitCastInst(_meth, virtualPtrType, "", currentBlock);
   
+#ifdef MULTIPLE_VM
+  cache = new LoadInst(cachePtr, "", currentBlock);
+  Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheNodeFunction,
+                                        cache, "", currentBlock);
+  args.push_back(newCtpCache);
+#endif
   ret = invoke(meth, args, "", currentBlock);
   BranchInst::Create(endBlock, currentBlock);
 
