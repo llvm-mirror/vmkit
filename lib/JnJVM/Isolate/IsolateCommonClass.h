@@ -139,6 +139,9 @@ public:
   UserClassPrimitive(JnjvmClassLoader* JCL, const UTF8* name, uint32 nb);
 };
 
+class UserConstantPool {
+};
+
 } // end namespace jnjvm
 
 #endif // JNJVM_CLASS_ISOLATE_H

@@ -62,7 +62,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
     return invokeSpecial(index);
  
 
-#ifndef WITHOUT_VTABLE
+#if !defined(WITHOUT_VTABLE) && !defined(MULTIPLE_VM)
   Constant* zero = mvm::jit::constantZero;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index);
   std::vector<Value*> args; // size = [signature->nbIn + 3];
@@ -70,8 +70,18 @@ void JavaJIT::invokeVirtual(uint16 index) {
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   FunctionType::param_iterator it  = virtualType->param_end();
   makeArgs(it, index, args, signature->args.size() + 1);
-  
+
+
   JITVerifyNull(args[0]); 
+
+#if defined(MULTIPLE_VM)
+  Value* cl = CallInst::Create(JnjvmModule::GetClassFunction, args[0], "",
+                               currentBlock);
+
+  Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheFunction, cl, "",
+                                        currentBlock);
+  args.push_back(newCtpCache);
+#endif
 
   Value* VT = CallInst::Create(JnjvmModule::GetVTFunction, args[0], "",
                                currentBlock);
@@ -159,15 +169,19 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   BasicBlock* executeBlock = createBasicBlock("execute");
   endBlock = createBasicBlock("end block");
 
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
+#if defined(MULTIPLE_VM)
   Value* lastArg = 0;
   for (Function::arg_iterator i = func->arg_begin(), e = func->arg_end();
        i != e; ++i) {
     lastArg = i;
   }
 #if !defined(SERVICE_VM)
+  ctpCache = lastArg;
+  lastArg--;
   isolateLocal = lastArg;
 #else
+  ctpCache = lastArg;
+  lastArg--;
   if (compilingClass->isolate == Jnjvm::bootstrapVM) {
     isolateLocal = lastArg;
   } else {
@@ -510,8 +524,8 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   
   uint32 index = 0;
   uint32 count = 0;
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
-  uint32 max = args.size() - 1;
+#if defined(MULTIPLE_VM)
+  uint32 max = args.size() - 2;
 #else
   uint32 max = args.size();
 #endif
@@ -551,12 +565,14 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
     }
   }
 
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
+#if defined(MULTIPLE_VM)
 #if !defined(SERVICE_VM)
-  isolateLocal = args[args.size() - 1];
+  isolateLocal = args[args.size() - 2];
+  ctpCache = args[args.size() - 1];
 #else
+  ctpCache = args[args.size() - 1];
   if (compilingClass->isolate == Jnjvm::bootstrapVM) {
-    isolateLocal = args[args.size() - 1];
+    isolateLocal = args[args.size() - 2];
   } else {
     JavaObject* loader = compilingClass->classLoader;
     ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
@@ -569,7 +585,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
     BranchInst::Create(ifTrue, endBlock, cmp, currentBlock);
     currentBlock = ifTrue;
     std::vector<Value*> Args;
-    Args.push_back(args[args.size()-  1]);
+    Args.push_back(args[args.size()-  2]);
     Args.push_back(isolateLocal);
     CallInst::Create(JnjvmModule::ServiceCallStartFunction, Args.begin(),
                      Args.end(), "", currentBlock);
@@ -674,8 +690,8 @@ llvm::Function* JavaJIT::javaCompile() {
   
   uint32 index = 0;
   uint32 count = 0;
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
-  uint32 max = func->arg_size() - 1;
+#if defined(MULTIPLE_VM)
+  uint32 max = func->arg_size() - 2;
 #else
   uint32 max = func->arg_size();
 #endif
@@ -714,9 +730,11 @@ llvm::Function* JavaJIT::javaCompile() {
     }
   }
 
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
+#if defined(MULTIPLE_VM)
 #if !defined(SERVICE_VM)
   isolateLocal = i;
+  i++;
+  ctpCache = i;
 #else
   if (compilingClass->isolate == Jnjvm::bootstrapVM) {
     isolateLocal = i;
@@ -739,6 +757,8 @@ llvm::Function* JavaJIT::javaCompile() {
     BranchInst::Create(endBlock, currentBlock);
     currentBlock = endBlock;
   }
+  i++;
+  ctpCache = i;
 #endif
 #endif
   
@@ -912,6 +932,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
 
     ex->catche = reader.readU2();
 
+#ifndef MULTIPLE_VM
     if (ex->catche) {
       JavaObject* exc = 0;
       UserClass* cl = 0; 
@@ -931,13 +952,9 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
 
       ex->catchClass = cl;
     } else {
-#ifdef MULTIPLE_VM
-      fprintf(stderr, "implement me");
-      abort();
-#else
       ex->catchClass = Classpath::newThrowable;
-#endif
     }
+#endif
     
     ex->test = createBasicBlock("testException");
     
@@ -1028,11 +1045,13 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     
     Value* cl = 0;
     currentBlock = cur->realTest;
-    assert(cur->catchClass);
 #ifdef MULTIPLE_VM
-    fprintf(stderr, "implement me");
-    abort();
+    // We're dealing with exceptions, don't catch the exception if the class can
+    // not be found.
+    if (catche) cl = getResolvedClass(cur->catche, false, false);
+    else cl = getJnjvmExceptionClass();
 #else
+    assert(cur->catchClass);
     LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(cur->catchClass);
     cl = LCI->getVar(this);
 #endif
@@ -1327,14 +1346,15 @@ void JavaJIT::branch(llvm::Value* test, llvm::BasicBlock* ifTrue,
 
 void JavaJIT::makeArgs(FunctionType::param_iterator it,
                        uint32 index, std::vector<Value*>& Args, uint32 nb) {
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
-  nb++;
+#if defined(MULTIPLE_VM)
+  nb += 2;
 #endif
   Args.reserve(nb + 2);
   Value** args = (Value**)alloca(nb*sizeof(Value*));
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
-  args[nb - 1] = isolateLocal;
-  sint32 start = nb - 2;
+#if defined(MULTIPLE_VM)
+  args[nb - 2] = isolateLocal;
+  sint32 start = nb - 3;
+  it--;
   it--;
 #else
   sint32 start = nb - 1;
@@ -1509,6 +1529,14 @@ void JavaJIT::invokeSpecial(uint16 index) {
 
 
   if (!val) {
+#if defined(MULTIPLE_VM)
+    uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
+    Value* cl = getResolvedClass(clIndex, false);
+
+    Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheFunction, cl,
+                                        "", currentBlock);
+    args.push_back(newCtpCache);
+#endif
     Function* func = 
       (Function*)ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
                                                       signature, meth);
@@ -1557,22 +1585,13 @@ void JavaJIT::invokeStatic(uint16 index) {
       ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_STATIC,
                                            signature, meth);
     
-#ifdef MULTIPLE_VM
-    
+#if defined(MULTIPLE_VM)
     uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
-    Class* mycl = (Class*)(ctpInfo->getMethodClassIfLoaded(clIndex));
-    Value* arg = 0;
-    if (mycl && mycl->isResolved()) {
-      LLVMCommonClassInfo* LCI = module->getClassInfo(mycl);
-      arg = LCI->getVar(this);
-      arg = invoke(JnjvmModule::InitialisationCheckFunction, arg, "",
-                   currentBlock);
-    } else {
-      arg = getResolvedClass(clIndex, true);
-    }
-    CallInst::Create(JnjvmModule::ForceInitialisationCheckFunction, arg, "",
-                     currentBlock);
+    Value* cl = getResolvedClass(clIndex, true);
 
+    Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheFunction, cl,
+                                        "", currentBlock);
+    args.push_back(newCtpCache);
 #endif
 
     if (meth && meth->canBeInlined && meth != compilingMethod && 
@@ -1610,7 +1629,7 @@ Value* JavaJIT::getConstantPoolAt(uint32 index) {
   return arg1;
 }
 
-Value* JavaJIT::getResolvedClass(uint16 index, bool clinit) {
+Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow) {
     
     Value* arg1 = getConstantPoolAt(index);
     arg1 = new BitCastInst(arg1, JnjvmModule::JavaClassType, "", currentBlock);
@@ -1633,8 +1652,13 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit) {
     Args.push_back(v);
     ConstantInt* CI = ConstantInt::get(Type::Int32Ty, index);
     Args.push_back(CI);
-    Value* res = invoke(JnjvmModule::ClassLookupFunction, Args, "",
-                        currentBlock);
+    Value* res = 0;
+    if (doThrow) {
+      res = invoke(JnjvmModule::ClassLookupFunction, Args, "", currentBlock);
+    } else {
+      res = CallInst::Create(JnjvmModule::ClassLookupFunction, Args.begin(),
+                             Args.end(), "", currentBlock);
+    }
     node->addIncoming(res, currentBlock);
 
     llvm::BranchInst::Create(trueCl, currentBlock);
@@ -1660,18 +1684,23 @@ void JavaJIT::invokeNew(uint16 index) {
     VT = CallInst::Create(JnjvmModule::GetVTFromClassFunction, Cl, "",
                           currentBlock);
   } else {
+#ifndef MULTIPLE_VM
     LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(cl);
     Size = LCI->getVirtualSize(this);
     VT = LCI->getVirtualTable(this);
     Cl = LCI->getVar(this);
-#ifndef MULTIPLE_VM
     if (!cl->isReady()) {
-#endif
+      Cl = invoke(JnjvmModule::InitialisationCheckFunction, Cl, "", currentBlock);
+      CallInst::Create(JnjvmModule::ForceInitialisationCheckFunction, Cl, "",
+                       currentBlock);
+    }
+#else
+    Cl = getResolvedClass(index, true);
+    Size = LCI->getVirtualSize(this);
+    VT = LCI->getVirtualTable(this);
     Cl = invoke(JnjvmModule::InitialisationCheckFunction, Cl, "", currentBlock);
     CallInst::Create(JnjvmModule::ForceInitialisationCheckFunction, Cl, "",
                      currentBlock);
-#ifndef MULTIPLE_VM
-    }
 #endif
   }
   std::vector<Value*> args;
@@ -1731,12 +1760,13 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
 
 #ifndef MULTIPLE_VM
       if (field->classDef->isReady()) {
-#endif
         object = LCI->getStaticVar(this);
         type = LCI->getStaticType();
         return fieldGetter(this, type, object, LFI->getOffset());
-#ifndef MULTIPLE_VM
       }
+#else
+      // In a multi environment, we always need to get the ptr in the constant
+      // pool. Therefore, we do nothing here.
 #endif
     } else {
       type = LCI->getVirtualType();
@@ -2001,6 +2031,15 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   
 
   JITVerifyNull(args[0]);
+
+#if defined(MULTIPLE_VM)
+  Value* cl = CallInst::Create(JnjvmModule::GetClassFunction, args[0], "",
+                               currentBlock);
+
+  Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheFunction, cl, "",
+                                        currentBlock);
+  args.push_back(newCtpCache);
+#endif
 
   std::vector<Value*> args1;
   args1.push_back(zero);

@@ -54,6 +54,7 @@ class ClassArray;
 
 class Classpath {
 public: 
+  ISOLATE_STATIC Class*      newClassLoader;
   ISOLATE_STATIC JavaMethod* getSystemClassLoader;
   ISOLATE_STATIC JavaMethod* setContextClassLoader;
   ISOLATE_STATIC UserClass* newString;
@@ -131,7 +132,9 @@ public:
   ISOLATE_STATIC JavaField* rootGroup;
   ISOLATE_STATIC JavaField* vmThread;
   ISOLATE_STATIC JavaMethod* uncaughtException;
+  ISOLATE_STATIC Class*      inheritableThreadLocal;
   
+
   ISOLATE_STATIC UserClass* InvocationTargetException;
   ISOLATE_STATIC UserClass* ArrayStoreException;
   ISOLATE_STATIC UserClass* ClassCastException;

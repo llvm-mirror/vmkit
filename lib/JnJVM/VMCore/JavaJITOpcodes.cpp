@@ -1823,34 +1823,41 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         UserClassArray* dcl = 0;
         ConstantInt* sizeElement = 0;
         GlobalVariable* TheVT = 0;
-        JnjvmClassLoader* JCL = compilingClass->classLoader;
+        Value* valCl = 0;
 
         if (bytecodes[i] == NEWARRAY) {
           uint8 id = bytecodes[++i];
           AssessorDesc* ass = AssessorDesc::arrayType(id);
+#ifndef MULTIPLE_VM
           dcl = ass->getArrayClass();
+#else
+          valCl = getJnjvmArrayCacheAt(ass->numId);
+#endif
+
           TheVT = JnjvmModule::JavaObjectVirtualTableGV;
           LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[ass->numId];
           sizeElement = LAI.sizeInBytesConstant;
         } else {
           uint16 index = readU2(bytecodes, i);
+#ifndef MULTIPLE_VM
           const UTF8* className = 
             compilingClass->ctpInfo->resolveClassName(index);
         
+          JnjvmClassLoader* JCL = compilingClass->classLoader;
           const UTF8* arrayName = 
             AssessorDesc::constructArrayName(JCL, 0, 1, className);
         
           dcl = JCL->constructArray(arrayName);
+#else
+
+          valCl = getResolvedClass(index, true);
+#endif
           TheVT = JnjvmModule::ArrayObjectVirtualTableGV;
           sizeElement = mvm::jit::constantPtrSize;
         }
-#ifdef MULTIPLE_VM
-        llvm::Value* valCl = 0;
-        fprintf(stderr, "implement me");
-        abort();
-#else
+#ifndef MULTIPLE_VM
         LLVMCommonClassInfo* LCI = module->getClassInfo(dcl);
-        llvm::Value* valCl = LCI->getVar(this);
+        valCl = LCI->getVar(this);
 #endif   
         llvm::Value* arg1 = popAsInt();
 
@@ -2066,22 +2073,20 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case MULTIANEWARRAY : {
-        JnjvmClassLoader* JCL = compilingClass->classLoader;
         uint16 index = readU2(bytecodes, i);
         uint8 dim = readU1(bytecodes, i);
         
+        
+#ifdef MULTIPLE_VM
+        Value* valCl = getResolvedClass(index, true);
+#else
+        JnjvmClassLoader* JCL = compilingClass->classLoader;
         const UTF8* className = 
           compilingClass->ctpInfo->resolveClassName(index);
 
         UserClassArray* dcl = JCL->constructArray(className);
         
         compilingClass->ctpInfo->loadClass(index);
-        
-#ifdef MULTIPLE_VM
-        llvm::Value* valCl = 0;
-        fprintf(stderr, "implement me %s", dcl->printString());
-        abort();
-#else
         LLVMCommonClassInfo* LCI = module->getClassInfo(dcl);
         Value* valCl = LCI->getVar(this);
 #endif

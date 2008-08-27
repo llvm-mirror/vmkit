@@ -88,6 +88,17 @@ public:
 /// Jnjvm - A JVM. Each execution of a program allocates a Jnjvm.
 ///
 class Jnjvm : public mvm::VirtualMachine {
+public:
+#ifdef MULTIPLE_GC
+  /// GC - The garbage collector of this JVM.
+  ///
+  Collector* GC;
+#endif
+
+#ifdef MULTIPLE_VM
+  UserClass* throwable;
+  UserClassArray* arrayClasses[9];
+#endif
 private:
   
   /// bootstrapThread - The initial thread of this JVM.
@@ -200,13 +211,7 @@ public:
   static const UTF8* sinh;
   static const UTF8* tanh;
   static const UTF8* finalize;
-
-#ifdef MULTIPLE_GC
-  /// GC - The garbage collector of this JVM.
-  ///
-  Collector* GC;
-#endif
-  
+ 
   /// bootstraLoader - Bootstrap loader for base classes of this virtual
   /// machine.
   ///

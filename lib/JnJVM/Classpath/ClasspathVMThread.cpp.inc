@@ -78,7 +78,7 @@ static void start(arg_thread_t* arg) {
   vm->lock->unlock();
 #endif
   JavaMethod* method = vmthClass->lookupMethod(Jnjvm::runName, Jnjvm::clinitType, ACC_VIRTUAL, true);
-  method->invokeIntSpecial(isolate, vmThread);
+  method->invokeIntSpecial(isolate, (UserClass*)vmthClass, vmThread);
 
   
   if (!isDaemon) {

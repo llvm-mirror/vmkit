@@ -53,6 +53,7 @@ Class*      Classpath::threadGroup;
 JavaField*  Classpath::rootGroup;
 JavaField*  Classpath::vmThread;
 JavaMethod* Classpath::uncaughtException;
+Class*      Classpath::inheritableThreadLocal;
 
 JavaMethod* Classpath::setContextClassLoader;
 JavaMethod* Classpath::getSystemClassLoader;
@@ -87,6 +88,8 @@ Class*      Classpath::newVMThrowable;
 JavaField*  Classpath::bufferAddress;
 JavaField*  Classpath::dataPointer32;
 JavaField*  Classpath::vmdataClassLoader;
+Class*      Classpath::newClassLoader;
+
 
 JavaField*  Classpath::boolValue;
 JavaField*  Classpath::byteValue;
@@ -214,7 +217,7 @@ void Classpath::createInitialThread(Jnjvm* vm, JavaObject* th) {
   JavaObject* Stat = threadGroup->getStaticInstance();
   JavaObject* RG = rootGroup->getObjectField(Stat);
   group->setObjectField(th, RG);
-  groupAddThread->invokeIntSpecial(vm, RG, th);
+  groupAddThread->invokeIntSpecial(vm, threadGroup, RG, th);
 }
 
 void Classpath::mapInitialThread(Jnjvm* vm) {
@@ -227,10 +230,13 @@ void Classpath::mapInitialThread(Jnjvm* vm) {
   myth->javaThread = th;
   JavaObject* vmth = vmThread->getObjectField(th);
   vmdataVMThread->setObjectField(vmth, (JavaObject*)myth);
-  finaliseCreateInitialThread->invokeIntStatic(vm, th);
+  finaliseCreateInitialThread->invokeIntStatic(vm, inheritableThreadLocal, th);
 }
 
 void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
+  newClassLoader = 
+    UPCALL_CLASS(loader, "java/lang/ClassLoader");
+  
   getSystemClassLoader =
     UPCALL_METHOD(loader, "java/lang/ClassLoader", "getSystemClassLoader",
                   "()Ljava/lang/ClassLoader;", ACC_STATIC);
@@ -499,6 +505,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_FIELD(loader, "java/lang/VMThread", "vmdata", "Ljava/lang/Object;",
                  ACC_VIRTUAL);
   
+  inheritableThreadLocal = 
+    UPCALL_CLASS(loader, "java/lang/InheritableThreadLocal");
+
   finaliseCreateInitialThread = 
     UPCALL_METHOD(loader, "java/lang/InheritableThreadLocal", "newChildThread",
                   "(Ljava/lang/Thread;)V", ACC_STATIC);

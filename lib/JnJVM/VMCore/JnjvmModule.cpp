@@ -448,8 +448,8 @@ const Type* LLVMClassInfo::getStaticType() {
   return staticType;
 }
 
-Value* LLVMClassInfo::getStaticVar(JavaJIT* jit) {
 #ifndef MULTIPLE_VM
+Value* LLVMClassInfo::getStaticVar(JavaJIT* jit) {
   if (!staticVarGV) {
     getStaticType();
     JavaObject* obj = ((Class*)classDef)->getStaticInstance();
@@ -464,12 +464,8 @@ Value* LLVMClassInfo::getStaticVar(JavaJIT* jit) {
   }
 
   return new LoadInst(staticVarGV, "", jit->currentBlock);
-
-#else
-  fprintf(stderr, "implement me\n");
-  abort();
-#endif
 }
+#endif
 
 Value* LLVMClassInfo::getVirtualTable(JavaJIT* jit) {
   if (!virtualTableGV) {
@@ -570,8 +566,9 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
       llvmArgs.push_back(LAI.llvmType);
     }
 
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
+#if defined(MULTIPLE_VM)
     llvmArgs.push_back(mvm::jit::ptrType); // domain
+    llvmArgs.push_back(mvm::jit::ptr32Type); // cached constant pool
 #endif
 
     uint8 id = signature->ret->funcs->numId;
@@ -594,8 +591,9 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
       llvmArgs.push_back(LAI.llvmType);
     }
 
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
+#if defined(MULTIPLE_VM)
     llvmArgs.push_back(mvm::jit::ptrType); // domain
+    llvmArgs.push_back(mvm::jit::ptr32Type); // cached constant pool
 #endif
 
     uint8 id = signature->ret->funcs->numId;
@@ -621,8 +619,9 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
       llvmArgs.push_back(LAI.llvmType);
     }
 
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
+#if defined(MULTIPLE_VM)
     llvmArgs.push_back(mvm::jit::ptrType); // domain
+    llvmArgs.push_back(mvm::jit::ptr32Type); // cached constant pool
 #endif
 
     uint8 id = signature->ret->funcs->numId;
@@ -647,8 +646,12 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ptr, *func;
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
+#if defined(MULTIPLE_VM)
   Value* vm = i;
+#endif
+  ++i;
+#if defined(MULTIPLE_VM)
+  Value* ctp = i;
 #endif
   ++i;
   func = i;
@@ -676,8 +679,9 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
     }
   }
 
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
+#if defined(MULTIPLE_VM)
   Args.push_back(vm);
+  Args.push_back(ctp);
 #endif
 
   Value* val = CallInst::Create(func, Args.begin(), Args.end(), "", currentBlock);
@@ -702,8 +706,12 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ap, *func;
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
+#if defined(MULTIPLE_VM)
   Value* vm = i;
+#endif
+  ++i;
+#if defined(MULTIPLE_VM)
+  Value* ctp = i;
 #endif
   ++i;
   func = i;
@@ -722,8 +730,9 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
     Args.push_back(new VAArgInst(ap, LAI.llvmType, "", currentBlock));
   }
 
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
+#if defined(MULTIPLE_VM)
   Args.push_back(vm);
+  Args.push_back(ctp);
 #endif
 
   Value* val = CallInst::Create(func, Args.begin(), Args.end(), "", currentBlock);
@@ -763,6 +772,7 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     std::vector<const llvm::Type*> Args2;
     Args2.push_back(mvm::jit::ptrType); // vm
+    Args2.push_back(mvm::jit::ptr32Type); // ctp
     Args2.push_back(getVirtualPtrType());
     Args2.push_back(JnjvmModule::JavaObjectType);
     Args2.push_back(PointerType::getUnqual(Type::Int32Ty));
@@ -779,6 +789,7 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     std::vector<const llvm::Type*> Args;
     Args.push_back(mvm::jit::ptrType); // vm
+    Args.push_back(mvm::jit::ptr32Type); // ctp
     Args.push_back(getStaticPtrType());
     Args.push_back(PointerType::getUnqual(Type::Int32Ty));
     uint8 id = signature->ret->funcs->numId;

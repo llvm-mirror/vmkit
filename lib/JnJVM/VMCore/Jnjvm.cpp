@@ -165,7 +165,7 @@ void CommonClass::initialiseClass(Jnjvm* vm) {
 
 void Jnjvm::errorWithExcp(UserClass* cl, JavaMethod* init, const JavaObject* excp) {
   JavaObject* obj = cl->doNew(this);
-  init->invokeIntSpecial(this, obj, excp);
+  init->invokeIntSpecial(this, cl, obj, excp);
   JavaThread::throwException(obj);
 }
 
@@ -177,7 +177,7 @@ void Jnjvm::error(UserClass* cl, JavaMethod* init, const char* fmt, ...) {
   va_end(ap);
   
   JavaObject* obj = cl->doNew(this);
-  init->invokeIntSpecial(this, obj, asciizToStr(tmp));
+  init->invokeIntSpecial(this, cl, obj, asciizToStr(tmp));
   JavaThread::throwException(obj);
 }
 
@@ -333,13 +333,14 @@ void Jnjvm::addProperty(char* key, char* value) {
 JavaObject* CommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
   acquire();
   if (!(delegatee)) {
-    JavaObject* delegatee = vm->upcalls->newClass->doNew(vm);
+    UserClass* cl = vm->upcalls->newClass;
+    JavaObject* delegatee = cl->doNew(vm);
     if (!pd) {
-      vm->upcalls->initClass->invokeIntSpecial(vm, delegatee, this);
+      vm->upcalls->initClass->invokeIntSpecial(vm, cl, delegatee, this);
     } else {
-      vm->upcalls->initClassWithProtectionDomain->invokeIntSpecial(vm,
-                                                               delegatee,
-                                                               this, pd);
+      vm->upcalls->initClassWithProtectionDomain->invokeIntSpecial(vm, cl,
+                                                                   delegatee,
+                                                                   this, pd);
     }
     this->delegatee = delegatee;
   }
@@ -646,7 +647,9 @@ void Jnjvm::print(mvm::PrintBuffer* buf) const {
 
 JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
   if (appClassLoader == 0) {
-    JavaObject* loader = upcalls->getSystemClassLoader->invokeJavaObjectStatic(this);
+    UserClass* cl = upcalls->newClassLoader;
+    JavaObject* loader = 
+      upcalls->getSystemClassLoader->invokeJavaObjectStatic(this, cl);
     appClassLoader = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader);
   }
   return appClassLoader;
@@ -704,8 +707,9 @@ void Jnjvm::loadBootstrap() {
   mapInitialThread();
   loadAppClassLoader();
   JavaObject* obj = JavaThread::currentThread();
-  upcalls->setContextClassLoader->invokeIntSpecial(this, obj,
-                                        appClassLoader->getJavaClassLoader());
+  JavaObject* javaLoader = appClassLoader->getJavaClassLoader();
+  upcalls->setContextClassLoader->invokeIntSpecial(this, upcalls->newThread,
+                                                   obj, javaLoader);
   // load and initialise math since it is responsible for dlopen'ing 
   // libjavalang.so and we are optimizing some math operations
   UserCommonClass* math = 
@@ -727,8 +731,8 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
     JavaObject* group = 
       upcalls->group->getObjectField(obj);
     try{
-      upcalls->uncaughtException->invokeIntSpecial(this, group, obj, 
-                                                           exc);
+      upcalls->uncaughtException->invokeIntSpecial(this, upcalls->threadGroup,
+                                                   group, obj, exc);
     }catch(...) {
       printf("Even uncaught exception throwed an exception!\n");
       assert(0);
@@ -833,6 +837,18 @@ Jnjvm* Jnjvm::allocateIsolate() {
   isolate->globalRefsLock = mvm::Lock::allocNormal();
   isolate->bootstrapLoader = JnjvmClassLoader::bootstrapLoader;
   isolate->upcalls = isolate->bootstrapLoader->upcalls;
+
+#ifdef MULTIPLE_VM
+  isolate->throwable = isolate->upcalls->newThrowable;
+  isolate->arrayClasses[1] = isolate->upcalls->ArrayOfBool;
+  isolate->arrayClasses[2] = isolate->upcalls->ArrayOfByte;
+  isolate->arrayClasses[3] = isolate->upcalls->ArrayOfChar;
+  isolate->arrayClasses[4] = isolate->upcalls->ArrayOfShort;
+  isolate->arrayClasses[5] = isolate->upcalls->ArrayOfInt;
+  isolate->arrayClasses[6] = isolate->upcalls->ArrayOfFloat;
+  isolate->arrayClasses[7] = isolate->upcalls->ArrayOfLong;
+  isolate->arrayClasses[8] = isolate->upcalls->ArrayOfDouble;
+#endif
 
   return isolate;
 }

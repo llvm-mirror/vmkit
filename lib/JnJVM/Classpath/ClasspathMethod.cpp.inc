@@ -116,12 +116,12 @@ JNIEnv *env,
     try{ \
       if (isVirtual(meth->access)) { \
         if (isPublic(meth->access)) { \
-          val = meth->invoke##TYPE##VirtualBuf(vm, obj, _buf); \
+          val = meth->invoke##TYPE##VirtualBuf(vm, cl, obj, _buf); \
         } else { \
-          val = meth->invoke##TYPE##SpecialBuf(vm, obj, _buf); \
+          val = meth->invoke##TYPE##SpecialBuf(vm, cl, obj, _buf); \
         } \
       } else { \
-        val = meth->invoke##TYPE##StaticBuf(vm, _buf); \
+        val = meth->invoke##TYPE##StaticBuf(vm, cl, _buf); \
       } \
     }catch(...) { \
       exc = JavaThread::getJavaException(); \

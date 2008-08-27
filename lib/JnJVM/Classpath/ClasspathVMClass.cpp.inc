@@ -92,8 +92,9 @@ JNIEnv *env,
           i != e; ++i, ++index) {
       JavaMethod* meth = *i;
       // TODO: check parameter types
-      JavaObject* tmp = vm->upcalls->newConstructor->doNew(vm);
-      vm->upcalls->initConstructor->invokeIntSpecial(vm, tmp, Cl, meth);
+      UserClass* Cons = vm->upcalls->newConstructor;
+      JavaObject* tmp = Cons->doNew(vm);
+      vm->upcalls->initConstructor->invokeIntSpecial(vm, Cons, tmp, Cl, meth);
       ret->elements[index] = tmp;
     }
     return (jobject)ret;
@@ -124,8 +125,9 @@ JNIEnv *env,
           i != e; ++i, ++index) {
       JavaMethod* meth = *i;
       // TODO: check parameter types
-      JavaObject* tmp = vm->upcalls->newMethod->doNew(vm);
-      vm->upcalls->initMethod->invokeIntSpecial(vm, tmp, Cl,
+      UserClass* Meth = vm->upcalls->newMethod;
+      JavaObject* tmp = Meth->doNew(vm);
+      vm->upcalls->initMethod->invokeIntSpecial(vm, Meth, tmp, Cl,
                                               vm->UTF8ToStr(meth->name), meth);
       ret->elements[index] = tmp;
     }
@@ -284,8 +286,9 @@ jclass Cl, jboolean publicOnly) {
           i != e; ++i, ++index) {
       JavaField* field = *i;
       // TODO: check parameter types
-      JavaObject* tmp = vm->upcalls->newField->doNew(vm);
-      vm->upcalls->initField->invokeIntSpecial(vm, tmp, Cl,
+      UserClass* Field = vm->upcalls->newField;
+      JavaObject* tmp = Field->doNew(vm);
+      vm->upcalls->initField->invokeIntSpecial(vm, Field, tmp, Cl,
                                              vm->UTF8ToStr(field->name), field);
       ret->elements[index] = tmp;
     }

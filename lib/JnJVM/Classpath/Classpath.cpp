@@ -160,7 +160,7 @@ jclass target, jclass constr, jobject cons) {
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(target, true);
   JavaObject* res = cl->doNew(vm);
   JavaMethod* meth = (JavaMethod*)(vm->upcalls->constructorSlot->getInt32Field((JavaObject*)cons));
-  meth->invokeIntSpecial(vm, res);
+  meth->invokeIntSpecial(vm, cl, res);
   return (jobject)res;
 }
 

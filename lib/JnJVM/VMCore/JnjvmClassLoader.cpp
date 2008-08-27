@@ -134,9 +134,15 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name) {
     const UTF8* javaName = name->internalToJava(hashUTF8, 0, name->size);
     JavaString* str = isolate->UTF8ToStr(javaName);
     Classpath* upcalls = bootstrapLoader->upcalls;
+    UserClass* forCtp = 0;
+#ifdef MULTIPLE_VM
+    forCtp = javaLoader->classOf->lookupClassInMethod(upcalls->loadInClassLoader);
+#else
+    forCtp = upcalls->loadInClassLoader->classDef;
+#endif
     JavaObject* obj = (JavaObject*)
-      upcalls->loadInClassLoader->invokeJavaObjectVirtual(isolate, javaLoader,
-                                                          str);
+      upcalls->loadInClassLoader->invokeJavaObjectVirtual(isolate, forCtp,
+                                                          javaLoader, str);
     cl = (UserCommonClass*)(upcalls->vmdataClass->getObjectField(obj));
   }
   
