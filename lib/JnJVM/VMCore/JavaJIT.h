@@ -58,7 +58,8 @@ struct Opinfo {
 class JavaJIT {
 private:
 
-  llvm::Value* getConstantPoolAt(uint32 index);
+  llvm::Value* getConstantPoolAt(uint32 index, llvm::Function* resolver,
+                                 llvm::Value* addArg, bool doThrow = true);
 
 public:
   
