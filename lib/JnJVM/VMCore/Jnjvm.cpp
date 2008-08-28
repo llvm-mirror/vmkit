@@ -802,13 +802,14 @@ void Jnjvm::runMain(int argc, char** argv) {
 }
 
 void Jnjvm::runIsolate(const char* className, ArrayObject* args) {
-  Jnjvm *isolate = allocateIsolate();
+  int stack;
+  Jnjvm *isolate = allocateIsolate(&stack);
   isolate->loadBootstrap();
   isolate->executeClass(className, args);
   isolate->waitForExit();
 }
 
-Jnjvm* Jnjvm::allocateIsolate() {
+Jnjvm* Jnjvm::allocateIsolate(void* sp) {
   Jnjvm *isolate= gc_new(Jnjvm)();
 
 #ifdef MULTIPLE_GC
@@ -821,16 +822,19 @@ Jnjvm* Jnjvm::allocateIsolate() {
   
   isolate->bootstrapThread = allocator_new(&isolate->allocator, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
-  void* baseSP = mvm::Thread::get()->baseSP;
-  isolate->bootstrapThread->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
+  void* baseSP = sp ? sp : mvm::Thread::get()->baseSP;
   
 #ifdef MULTIPLE_GC
   isolate->bootstrapThread->GC = isolate->GC;
   isolate->GC->inject_my_thread(baseSP);
-#endif 
+#else
+  if (sp) Collector::inject_my_thread(baseSP);
+#endif
+
   isolate->bootstrapThread->baseSP = baseSP;
   JavaThread::threadKey->set(isolate->bootstrapThread);
   
+  isolate->bootstrapThread->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
   isolate->threadSystem = new ThreadSystem();
   isolate->name = "isolate";
   isolate->appClassLoader = 0;

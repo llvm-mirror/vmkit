@@ -352,7 +352,7 @@ public:
 
   /// allocateIsolate - Allocates a new JVM.
   ///
-  static Jnjvm* allocateIsolate();
+  static Jnjvm* allocateIsolate(void* sp = 0);
   
   /// runIsolate - Runs an isolate with the given main class and with
   /// these Java args. This should be called internaly by the javax.isolate
