@@ -14,6 +14,12 @@
 
 using namespace jnjvm;
 
+UserCommonClass::UserCommonClass() {
+  this->lockVar = mvm::Lock::allocRecursive();
+  this->condVar = mvm::Cond::allocCond();
+  this->status = loaded;
+}
+
 UserClass::UserClass(JnjvmClassLoader* JCL, const UTF8* name,
                      ArrayUInt8* bytes) {
   Class* cl = JnjvmSharedLoader::sharedLoader->constructSharedClass(name, bytes);
@@ -47,3 +53,5 @@ UserClassPrimitive::UserClassPrimitive(JnjvmClassLoader* JCL, const UTF8* name) 
   classLoader = JCL;
   delegatee = 0;
 }
+
+

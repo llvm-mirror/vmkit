@@ -30,13 +30,54 @@ class UserClass;
 class UserClassArray;
 class UserConstantPool;
 class UTF8;
+enum JavaState;
 
 class UserCommonClass : public mvm::Object {
 public:
-  CommonClass* classDef;
+  
+ //===----------------------------------------------------------------------===//
+//
+// Do not reorder these fields or add new ones! the LLVM runtime assumes that
+// classes have the following beginning layout.
+//
+//===----------------------------------------------------------------------===//
+
+  
+  /// virtualSize - The size of instances of this class. Array classes do
+  /// not need this information, but to simplify accessing this field in
+  /// the JIT, we put this in here.
+  /// 
+  uint32 virtualSize;
+
+  /// virtualVT - The virtual table of instances of this class. Like the
+  /// virtualSize field, array classes do not need this information. But we
+  /// simplify JIT generation to set it here.
+  ///
+  VirtualTable* virtualVT;
+  
+  /// display - The class hierarchy of supers for this class. Array classes
+  /// do not need it.
+  ///
+  CommonClass** display;
+  
+  /// depth - The depth of this class in its class hierarchy. 
+  /// display[depth] contains the class. Array classes do not need it.
+  ///
+  uint32 depth;
+
+  /// status - The loading/resolve/initialization state of the class.
+  ///
+  JavaState status;
+
+//===----------------------------------------------------------------------===//
+//
+// New fields can be added from now, or reordered.
+//
+//===----------------------------------------------------------------------===// 
+
   JnjvmClassLoader* classLoader;
   JavaObject* delegatee;
-  uint8 status;
+  CommonClass* classDef;
 
   virtual void TRACER;
 
@@ -66,6 +107,9 @@ public:
   UserClass* getSuper();
 
   std::vector<UserClass*>* getInterfaces();
+  CommonClass::field_map* getStaticFields();
+  void resolveStaticClass();
+
 
   JavaMethod* lookupMethodDontThrow(const UTF8* name, const UTF8* type,
                                     bool isStatic, bool recurse);
@@ -97,6 +141,47 @@ public:
   UserConstantPool* getCtpCache();
 
   UserClass* lookupClassFromMethod(JavaMethod* meth);
+  
+  /// lockVar - When multiple threads want to initialize a class,
+  /// they must be synchronized so that it is only performed once
+  /// for a given class.
+  mvm::Lock* lockVar;
+
+  /// condVar - Used to wake threads waiting on the initialization
+  /// process of this class, done by another thread.
+  mvm::Cond* condVar;
+
+  /// acquire - Acquire this class lock.
+  ///
+  void acquire() {
+    lockVar->lock();
+  }
+  
+  /// release - Release this class lock.
+  ///
+  void release() {
+    lockVar->unlock();  
+  }
+  
+    /// waitClass - Wait for the class to be loaded/initialized/resolved.
+  ///
+  void waitClass() {
+    condVar->wait(lockVar);
+  }
+  
+  /// broadcastClass - Unblock threads that were waiting on the class being
+  /// loaded/initialized/resolved.
+  ///
+  void broadcastClass() {
+    condVar->broadcast();  
+  }
+
+  /// ownerClass - Is the current thread the owner of this thread?
+  ///
+  bool ownerClass() {
+    return mvm::Lock::selfOwner(lockVar);    
+  }
+
 };
 
 class UserClass : public UserCommonClass {
@@ -114,6 +199,7 @@ public:
   UserClass* getOuterClass();
   void resolveInnerOuterClasses();
   JavaObject* getStaticInstance();
+  void setStaticInstance(JavaObject* obj);
   UserConstantPool* getConstantPool();
 
   void setStaticSize(uint64 size);

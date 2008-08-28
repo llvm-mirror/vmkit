@@ -48,12 +48,13 @@ class UTF8;
 ///
 typedef enum JavaState {
   loaded = 0,       /// The .class file has been found.
-  classRead,    /// The .class file has been read.
-  prepared,     /// The parents of this class has been resolved.
-  resolved,     /// The class has been resolved.
-  clinitParent, /// The class is cliniting its parents.
-  inClinit,     /// The class is cliniting.
-  ready         /// The class is ready to be used.
+  classRead = 1,    /// The .class file has been read.
+  prepared = 2,     /// The parents of this class has been resolved.
+  resolved = 3,     /// The class has been resolved.
+  clinitParent = 4, /// The class is cliniting its parents.
+  inClinit = 5,     /// The class is cliniting.
+  ready = 6,        /// The class is ready to be used.
+  dontuseenums = 0xffffffff /// dummy value to force the enum to be int32
 }JavaState;
 
 
@@ -172,6 +173,9 @@ public:
   ///
   uint32 depth;
 
+  /// status - The loading/resolve/initialization state of the class.
+  ///
+  JavaState status;
 
 //===----------------------------------------------------------------------===//
 //
@@ -183,11 +187,11 @@ public:
   uint32 getVirtualSize() {
     return virtualSize;
   }
-  
+   
   VirtualTable* getVirtualVT() {
     return virtualVT;
   }
-
+  
   /// virtualTableSize - The size of the virtual table of this class.
   ///
   uint32 virtualTableSize;
@@ -233,10 +237,6 @@ public:
   const UTF8* getName() {
     return name;
   }
-
-  /// status - The loading/resolve/initialization state of the class.
-  ///
-  JavaState status;
  
   /// super - The parent of this class.
   ///
@@ -259,7 +259,7 @@ public:
   std::vector<const UTF8*> interfacesUTF8;
   
   /// lockVar - When multiple threads want to load/resolve/initialize a class,
-  /// they must be synchronized so that these steps are only performned once
+  /// they must be synchronized so that these steps are only performed once
   /// for a given class.
   mvm::Lock* lockVar;
 
@@ -306,6 +306,9 @@ public:
   ///
   method_map staticMethods;
   
+  field_map* getStaticFields() { return &staticFields; }
+  field_map* getVirtualFields() { return &virtualFields; }
+
   /// constructMethod - Add a new method in this class method map.
   ///
   JavaMethod* constructMethod(const UTF8* name, const UTF8* type,
@@ -427,6 +430,7 @@ public:
   /// initialize it.
   ///
   void initialiseClass(Jnjvm* vm);
+  
 
   /// getStatus - Get the resolution/initialization status of this class.
   ///
@@ -545,12 +549,25 @@ public:
   /// staticVT - The virtual table of the static instance of this class.
   ///
   VirtualTable* staticVT;
+  
+  uint32 getStaticSize() {
+    return staticSize;
+  }
+  
+  VirtualTable* getStaticVT() {
+    return staticVT;
+  }
+
 
 #ifndef MULTIPLE_VM
   /// doNew - Allocates a Java object whose class is this class.
   ///
   JavaObject* doNew(Jnjvm* vm);
 #endif
+  
+  /// resolveStaticClass - Resolve the static type of the class.
+  ///
+  void resolveStaticClass();
 
   /// print - Prints a string representation of this class in the buffer.
   ///
@@ -573,8 +590,13 @@ public:
   ///
 #ifndef MULTIPLE_VM
   JavaObject* _staticInstance;
+  
   JavaObject* getStaticInstance() {
     return _staticInstance;
+  }
+  
+  void setStaticInstance(JavaObject* val) {
+    _staticInstance = val;
   }
 #endif
 

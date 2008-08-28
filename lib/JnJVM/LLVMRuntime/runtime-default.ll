@@ -5,14 +5,21 @@
 ;;; A virtual table is an array of function pointers.
 %VT = type i32**
 
+;;; The type of a constant pool. This is only used in a multi vm environment.
+;;; Field 1 - The VT of constant pools.
+;;; Field 2 - The constant pool cache.
+%ConstantPool = type { %VT, i8** }
+
 ;;; The type of internal classes. This is not complete, but we only need
 ;;; the first fields for now. 
 ;;; Field 1 - The VT of a class C++ object.
 ;;; Field 2 - The size of instances of this class.
 ;;; Field 3 - The VT of instances of this class.
 ;;; Field 4 - The list of super classes of this class.
-;;; Field 5 - The depth of the class in its super hierarchy
-%JavaClass = type { %VT, i32, %VT ,%JavaClass**, i32}
+;;; Field 5 - The depth of the class in its super hierarchy.
+;;; Field 6 - The class state (resolved, initialized, ...)
+;;; field 7 - The constant pool, only for multi vm environment.
+%JavaClass = type { %VT, i32, %VT ,%JavaClass**, i32, i32, %ConstantPool* }
 
 ;;; The root of all Java Objects: a VT, a class and a lock.
 %JavaObject = type { %VT, %JavaClass*, i32 }
@@ -30,12 +37,13 @@
 %ArrayUInt32 = type { %JavaObject, i32, [0 x i32] }
 %ArrayUInt8 = type { %JavaObject, i32, [0 x i8] }
 
-;;; The CacheNode type. The second field is the last called method
-%CacheNode = type { i8*, %JavaClass*, %CacheNode*, %Enveloppe* }
+;;; The CacheNode type. The second field is the last called method. The
+;;; last field is for multi vm environment.
+%CacheNode = type { i8*, %JavaClass*, %CacheNode*, %Enveloppe*, %ConstantPool* }
 
 ;;; The Enveloppe type, which contains the first cache and all the info
 ;;; to lookup in the constant pool.
-%Enveloppe = type { %CacheNode*, i8*, i8*, i32 }
+%Enveloppe = type { %CacheNode*, %ConstantPool*, i8*, i32 }
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Constant calls for Jnjvm runtime internal objects field accesses ;;;;;;;;;

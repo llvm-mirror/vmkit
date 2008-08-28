@@ -87,8 +87,7 @@ std::vector<void*> Jnjvm::nativeLibs;
 
 typedef void (*clinit_t)(Jnjvm* vm);
 
-#ifndef MULTIPLE_VM
-void CommonClass::initialiseClass(Jnjvm* vm) {
+void UserCommonClass::initialiseClass(Jnjvm* vm) {
   // Primitives are initialized at boot time
   if (isArray()) {
     status = ready;
@@ -98,14 +97,15 @@ void CommonClass::initialiseClass(Jnjvm* vm) {
       release();
     } else if (status >= resolved && status != clinitParent &&
                status != inClinit) {
-      Class* cl = (Class*)this;
+      UserClass* cl = (UserClass*)this;
       status = clinitParent;
       release();
+      UserCommonClass* super = getSuper();
       if (super) {
         super->initialiseClass(vm);
       }
-
-      classLoader->TheModule->resolveStaticClass((Class*)this);
+      
+      cl->resolveStaticClass();
       
       status = inClinit;
       JavaMethod* meth = lookupMethodDontThrow(Jnjvm::clinitName,
@@ -117,14 +117,16 @@ void CommonClass::initialiseClass(Jnjvm* vm) {
       PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", printString());
       
       JavaObject* val = 
-        (JavaObject*)vm->allocator.allocateObject(cl->staticSize, cl->staticVT);
+        (JavaObject*)vm->allocator.allocateObject(cl->getStaticSize(),
+                                                  cl->getStaticVT());
       val->initialise(cl);
-      for (CommonClass::field_iterator i = cl->staticFields.begin(),
-         e = cl->staticFields.end(); i!= e; ++i) { 
+      CommonClass::field_map* map = cl->getStaticFields();
+      for (CommonClass::field_iterator i = map->begin(), e = map->end(); i!= e;
+           ++i) { 
         i->second->initField(val);
       }
   
-      cl->_staticInstance = val;
+      cl->setStaticInstance(val);
 
       if (meth) {
         JavaObject* exc = 0;
@@ -160,7 +162,6 @@ void CommonClass::initialiseClass(Jnjvm* vm) {
     }
   }
 }
-#endif
 
 
 void Jnjvm::errorWithExcp(UserClass* cl, JavaMethod* init, const JavaObject* excp) {
@@ -329,8 +330,7 @@ void Jnjvm::addProperty(char* key, char* value) {
   postProperties.push_back(std::make_pair(key, value));
 }
 
-#ifndef MULTIPLE_VM
-JavaObject* CommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
+JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
   acquire();
   if (!(delegatee)) {
     UserClass* cl = vm->upcalls->newClass;
@@ -347,7 +347,6 @@ JavaObject* CommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
   release();
   return delegatee;
 }
-#endif
 
 Jnjvm::~Jnjvm() {
 #ifdef MULTIPLE_GC

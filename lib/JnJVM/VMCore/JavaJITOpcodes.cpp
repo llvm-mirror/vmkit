@@ -1974,8 +1974,10 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case CHECKCAST : {
         uint16 index = readU2(bytecodes, i);
+#ifndef MULTIPLE_VM
         CommonClass* dcl =
           compilingClass->ctpInfo->getMethodClassIfLoaded(index);
+#endif
         
         Value* obj = top();
 
@@ -1989,12 +1991,14 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
         currentBlock = ifFalse;
         Value* clVar = 0;
+#ifndef MULTIPLE_VM
         if (dcl) {
           LLVMCommonClassInfo* LCI = module->getClassInfo(dcl);
           clVar = LCI->getVar(this);
-        } else {
+        } else
+#endif
           clVar = getResolvedClass(index, false);
-        }
+        
         std::vector<Value*> args;
         args.push_back(obj);
         args.push_back(clVar);

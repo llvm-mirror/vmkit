@@ -697,10 +697,7 @@ void CommonClass::resolveClass() {
     acquire();
     if (status >= resolved) {
       release();
-    } else if (status <  loaded) {
-      release();
-      JavaThread::get()->isolate->unknownError("try to resolve a not-read class");
-    } else if (status == loaded || ownerClass()) {
+    } else if (status == loaded) {
       if (isArray()) {
         ClassArray* arrayCl = (ClassArray*)this;
         CommonClass* baseClass =  arrayCl->baseClass();
@@ -809,4 +806,8 @@ void CommonClass::getDeclaredFields(std::vector<JavaField*>& res,
       res.push_back(field);
     }
   }
+}
+
+void Class::resolveStaticClass() {
+  classLoader->TheModule->resolveStaticClass((Class*)this);
 }
