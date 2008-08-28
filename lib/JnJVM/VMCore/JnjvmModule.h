@@ -334,6 +334,7 @@ public:
   static llvm::Function* GetDisplayFunction;
   static llvm::Function* AquireObjectFunction;
   static llvm::Function* ReleaseObjectFunction;
+  static llvm::Function* GetConstantPoolAtFunction;
 #ifdef SERVICE_VM
   static llvm::Function* AquireObjectInSharedDomainFunction;
   static llvm::Function* ReleaseObjectInSharedDomainFunction;

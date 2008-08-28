@@ -59,6 +59,7 @@ class JavaJIT {
 private:
 
   llvm::Value* getConstantPoolAt(uint32 index, llvm::Function* resolver,
+                                 const llvm::Type* returnType,
                                  llvm::Value* addArg, bool doThrow = true);
 
 public:

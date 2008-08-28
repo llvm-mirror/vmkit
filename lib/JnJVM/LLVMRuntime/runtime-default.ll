@@ -94,21 +94,27 @@ declare %JavaObject* @multiCallNew(%JavaClass*, i32, ...)
 ;;; implementation.
 declare void @forceInitialisationCheck(%JavaClass*)
 
+;;; getConstantPoolAt - Get the value in the constant pool of this class.
+;;; This function is removed by Jnjvm after the GVn pass, therefore it does
+;;; not have an actual implementation.
+declare i8* @getConstantPoolAt(i8* (%JavaClass*, i32, ...)*, i8**, %JavaClass*,
+                               i32, ...) readnone
+
 ;;; vtableLookup - Look up the offset in a virtual table of a specific
 ;;; function. This function takes a class and an index to lookup in the
 ;;; constant pool and returns and stores it in the constant pool cache.
-declare i32 @vtableLookup(%JavaClass*, i32, %JavaObject*) readnone 
+declare i8* @vtableLookup(%JavaClass*, i32, ...)
 
 ;;; newLookup - Look up a specific class. The function takes a class and an
 ;;; index to lookup in the constant pool and returns and stores it in the
 ;;; constant pool cache.
-declare %JavaClass* @classLookup(%JavaClass*, i32) readnone 
+declare i8* @classLookup(%JavaClass*, i32, ...)
 
-;;; fieldLookup - Look up a specific field.
-declare i32 @virtualFieldLookup(%JavaClass*, i32) readnone 
+;;; virtualFieldLookup - Look up a specific virtual field.
+declare i8* @virtualFieldLookup(%JavaClass*, i32, ...)
 
-;;; fieldLookup - Look up a specific field.
-declare i8* @staticFieldLookup(%JavaClass*, i32) readnone 
+;;; staticFieldLookup - Look up a specific static field.
+declare i8* @staticFieldLookup(%JavaClass*, i32, ...)
 
 ;;; JavaObjectAquire - This function is called when starting a synchronized
 ;;; block or method.

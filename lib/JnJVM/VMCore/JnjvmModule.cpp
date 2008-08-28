@@ -103,6 +103,7 @@ llvm::Function* JnjvmModule::GetClassInDisplayFunction = 0;
 llvm::Function* JnjvmModule::AquireObjectFunction = 0;
 llvm::Function* JnjvmModule::ReleaseObjectFunction = 0;
 llvm::Function* JnjvmModule::MultiCallNewFunction = 0;
+llvm::Function* JnjvmModule::GetConstantPoolAtFunction = 0;
 
 #ifdef MULTIPLE_VM
 llvm::Function* JnjvmModule::StringLookupFunction = 0;
@@ -954,7 +955,8 @@ void JnjvmModule::initialise() {
   InitialisationCheckFunction = module->getFunction("initialisationCheck");
   ForceInitialisationCheckFunction = 
     module->getFunction("forceInitialisationCheck");
-
+  
+  GetConstantPoolAtFunction = module->getFunction("getConstantPoolAt");
   ArrayLengthFunction = module->getFunction("arrayLength");
   GetVTFunction = module->getFunction("getVT");
   GetClassFunction = module->getFunction("getClass");

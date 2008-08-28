@@ -82,7 +82,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   } else {
     
     Value* val = getConstantPoolAt(index, JnjvmModule::VirtualLookupFunction,
-                                   args[0], true);
+                                   Type::Int32Ty, args[0], true);
     indexes2.push_back(val);
   }
   
@@ -1082,7 +1082,7 @@ void JavaJIT::_ldc(uint16 index) {
 #ifdef MULTIPLE_VM
     // Lookup the constant pool cache
     Value* val = getConstantPoolAt(index, JnjvmModule::StringLookupFunction,
-                                   0, true);
+                                   JnjvmModule::JavaObjectType, 0, true);
     push(node, AssessorDesc::dRef);  
 #else
     const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
@@ -1548,8 +1548,51 @@ void JavaJIT::invokeStatic(uint16 index) {
 }
 
 Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
+                                  const Type* returnType,
                                   Value* additionalArg, bool doThrow) {
-  const Type* returnType = resolver->getReturnType();
+
+// This makes unswitch loop very unhappy time-wise, but makes GVN happy
+// number-wise. IMO, it's better to have this than Unswitch.
+#if 1
+#ifdef MULTIPLE_VM
+  Value* CTP = ctpCache;
+  Value* Cl = new LoadInst(ctpCache, "", currentBlock);
+  Cl = new BitCastInst(v, JnjvmModule::JavaClassType, "", currentBlock);
+#else
+  JavaConstantPool* ctp = compilingClass->ctpInfo;
+  LLVMConstantPoolInfo* LCPI = module->getConstantPoolInfo(ctp);
+  Value* CTP = LCPI->getDelegatee(this);
+  LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(compilingClass);
+  Value* Cl = LCI->getVar(this);
+#endif
+
+  std::vector<Value*> Args;
+  Args.push_back(resolver);
+  Args.push_back(CTP);
+  Args.push_back(Cl);
+  Args.push_back(ConstantInt::get(Type::Int32Ty, index));
+  if (additionalArg) Args.push_back(additionalArg);
+
+  Value* res = 0;
+  if (doThrow) {
+    res = invoke(JnjvmModule::GetConstantPoolAtFunction, Args, "",
+                 currentBlock);
+  } else {
+    res = CallInst::Create(JnjvmModule::GetConstantPoolAtFunction, Args.begin(),
+                           Args.end(), "", currentBlock);
+  }
+  
+  const Type* realType = 
+    JnjvmModule::GetConstantPoolAtFunction->getReturnType();
+  if (returnType == Type::Int32Ty) {
+    return new PtrToIntInst(res, Type::Int32Ty, "", currentBlock);
+  } else if (returnType != realType) {
+    return new BitCastInst(res, returnType, "", currentBlock);
+  } 
+  
+  return res;
+#else
+
 #ifdef MULTIPLE_VM
   Value* CTP = ctpCache;
 #else
@@ -1568,14 +1611,9 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   Value* test = new ICmpInst(ICmpInst::ICMP_EQ, arg1, mvm::jit::constantPtrNull,
                              "", currentBlock);
  
-  if (returnType == Type::Int32Ty) {
-    arg1 = new PtrToIntInst(arg1, returnType, "", currentBlock);
-  } else if (returnType != arg1->getType()) {
-    arg1 = new BitCastInst(arg1, returnType, "", currentBlock);
-  }
   BasicBlock* trueCl = createBasicBlock("Ctp OK");
   BasicBlock* falseCl = createBasicBlock("Ctp Not OK");
-  PHINode* node = llvm::PHINode::Create(returnType, "", trueCl);
+  PHINode* node = llvm::PHINode::Create(mvm::jit::ptrType, "", trueCl);
   node->addIncoming(arg1, currentBlock);
   llvm::BranchInst::Create(falseCl, trueCl, test, currentBlock);
   
@@ -1607,13 +1645,18 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   llvm::BranchInst::Create(trueCl, currentBlock);
   currentBlock = trueCl;
 
-  return node;
+  if (returnType == Type::Int32Ty) {
+    return new PtrToIntInst(node, Type::Int32Ty, "", currentBlock);
+  } else {
+    return new BitCastInst(node, returnType, "", currentBlock);
+  } 
+#endif
 }
 
 Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow) {
     
     Value* node = getConstantPoolAt(index, JnjvmModule::ClassLookupFunction,
-                                    0, doThrow);
+                                    JnjvmModule::JavaClassType, 0, doThrow);
     
     if (clinit)
       return invoke(JnjvmModule::InitialisationCheckFunction, node, "",
@@ -1731,7 +1774,14 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     
     Function* func = stat ? JnjvmModule::StaticFieldLookupFunction :
                             JnjvmModule::VirtualFieldLookupFunction;
-    Value* ptr = getConstantPoolAt(index, func, 0, true);
+    
+    const Type* returnType = 0;
+    if (stat)
+      returnType = mvm::jit::ptrType;
+    else
+      returnType = Type::Int32Ty;
+
+    Value* ptr = getConstantPoolAt(index, func, returnType, 0, true);
     if (!stat) {
       Value* tmp = new BitCastInst(object, Pty, "", currentBlock);
       std::vector<Value*> args;
@@ -1950,7 +2000,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
                               JnjvmModule::EnveloppeType);
 #else
   llvmEnv = getConstantPoolAt(index, JnjvmModule::EnveloppeLookupFunction,
-                              0, false);
+                              JnjvmModule::EnveloppeType, 0, false);
 #endif
 
   std::vector<Value*> args1;
