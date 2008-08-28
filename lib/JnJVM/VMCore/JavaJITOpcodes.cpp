@@ -1820,7 +1820,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case NEWARRAY :
       case ANEWARRAY : {
         
+#ifndef MULTIPLE_VM
         UserClassArray* dcl = 0;
+#endif
         ConstantInt* sizeElement = 0;
         GlobalVariable* TheVT = 0;
         Value* valCl = 0;
@@ -1831,7 +1833,11 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 #ifndef MULTIPLE_VM
           dcl = ass->getArrayClass();
 #else
-          valCl = getJnjvmArrayCacheAt(ass->numId);
+          std::vector<Value*> args;
+          args.push_back(isolateLocal);
+          args.push_back(ConstantInt::get(Type::Int32Ty, ass->numId));
+          valCl = CallInst::Create(JnjvmModule::GetJnjvmArrayClassFunction,
+                                   args.begin(), args.end(), "", currentBlock);
 #endif
 
           TheVT = JnjvmModule::JavaObjectVirtualTableGV;

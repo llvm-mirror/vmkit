@@ -1176,7 +1176,7 @@ jboolean CallStaticBooleanMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
   Jnjvm* vm = JavaThread::get()->isolate;
   UserClass* cl = 0;
 #ifdef MULTIPLE_VM
-  cl = NativeUtil::resolvedImplClass(clazz, true);
+  cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
 #else
   cl = meth->classDef;
 #endif
@@ -1357,7 +1357,7 @@ void CallStaticVoidMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   Jnjvm* vm = JavaThread::get()->isolate;
   UserClass* cl = 0;
 #ifdef MULTIPLE_VM
-  cl = NativeUtil::resolvedImplClass(clazz, true);
+  cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
 #else
   cl = meth->classDef;
 #endif
@@ -1377,7 +1377,7 @@ void CallStaticVoidMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
   Jnjvm* vm = JavaThread::get()->isolate;
   UserClass* cl = 0;
 #ifdef MULTIPLE_VM
-  cl = NativeUtil::resolvedImplClass(clazz, true);
+  cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
 #else
   cl = meth->classDef;
 #endif

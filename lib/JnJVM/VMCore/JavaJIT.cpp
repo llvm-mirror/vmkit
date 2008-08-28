@@ -831,7 +831,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
   std::vector<Exception*> exceptions;  
   unsigned sync = isSynchro(compilingMethod->access) ? 1 : 0;
   nbe += sync;
-  JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   if (nbe) {
     supplLocal = new AllocaInst(JnjvmModule::JavaObjectType, "exceptionVar",
                                 currentBlock);
@@ -902,7 +901,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
       JavaObject* exc = 0;
       UserClass* cl = 0; 
       try {
-        cl = (UserClass*)(ctpInfo->loadClass(ex->catche));
+        cl = (UserClass*)(compilingClass->ctpInfo->loadClass(ex->catche));
       } catch(...) {
         compilingClass->release();
         exc = JavaThread::getJavaException();
@@ -1013,8 +1012,9 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
 #ifdef MULTIPLE_VM
     // We're dealing with exceptions, don't catch the exception if the class can
     // not be found.
-    if (catche) cl = getResolvedClass(cur->catche, false, false);
-    else cl = getJnjvmExceptionClass();
+    if (cur->catche) cl = getResolvedClass(cur->catche, false, false);
+    else cl = CallInst::Create(JnjvmModule::GetJnjvmExceptionClassFunction,
+                               isolateLocal, "", currentBlock);
 #else
     assert(cur->catchClass);
     LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(cur->catchClass);
@@ -1083,7 +1083,7 @@ void JavaJIT::_ldc(uint16 index) {
     // Lookup the constant pool cache
     Value* val = getConstantPoolAt(index, JnjvmModule::StringLookupFunction,
                                    JnjvmModule::JavaObjectType, 0, true);
-    push(node, AssessorDesc::dRef);  
+    push(val, AssessorDesc::dRef);  
 #else
     const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
     JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
@@ -1111,8 +1111,8 @@ void JavaJIT::_ldc(uint16 index) {
       push(LCI->getDelegatee(this), AssessorDesc::dRef);
     } else {
       Value* val = getResolvedClass(index, false);
-      Value* res = CallInst::Create(JnjvmModule::GetClassDelegateeFunction, val, "",
-                                    currentBlock);
+      Value* res = CallInst::Create(JnjvmModule::GetClassDelegateeFunction,
+                                    val, "", currentBlock);
       push(res, AssessorDesc::dRef);
     }
   } else {
@@ -1468,7 +1468,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
     uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
     Value* cl = getResolvedClass(clIndex, false);
 
-    Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheFunction, cl,
+    Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpClassFunction, cl,
                                         "", currentBlock);
     args.push_back(newCtpCache);
 #endif
@@ -1524,7 +1524,7 @@ void JavaJIT::invokeStatic(uint16 index) {
     uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
     Value* cl = getResolvedClass(clIndex, true);
 
-    Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheFunction, cl,
+    Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpClassFunction, cl,
                                         "", currentBlock);
     args.push_back(newCtpCache);
 #endif
@@ -1557,7 +1557,7 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
 #ifdef MULTIPLE_VM
   Value* CTP = ctpCache;
   Value* Cl = new LoadInst(ctpCache, "", currentBlock);
-  Cl = new BitCastInst(v, JnjvmModule::JavaClassType, "", currentBlock);
+  Cl = new BitCastInst(Cl, JnjvmModule::JavaClassType, "", currentBlock);
 #else
   JavaConstantPool* ctp = compilingClass->ctpInfo;
   LLVMConstantPoolInfo* LCPI = module->getConstantPoolInfo(ctp);
@@ -1605,9 +1605,7 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   Value* arg1 = GetElementPtrInst::Create(CTP, indexes.begin(),
                                           indexes.end(), 
                                           "", currentBlock);
-  // We set as volatile because "readnone" calls may alter
-  // the constant pool cache.
-  arg1 = new LoadInst(arg1, "", true, currentBlock);
+  arg1 = new LoadInst(arg1, "", false, currentBlock);
   Value* test = new ICmpInst(ICmpInst::ICMP_EQ, arg1, mvm::jit::constantPtrNull,
                              "", currentBlock);
  
@@ -1679,10 +1677,10 @@ void JavaJIT::invokeNew(uint16 index) {
     VT = CallInst::Create(JnjvmModule::GetVTFromClassFunction, Cl, "",
                           currentBlock);
   } else {
-#ifndef MULTIPLE_VM
     LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(cl);
     Size = LCI->getVirtualSize(this);
     VT = LCI->getVirtualTable(this);
+#ifndef MULTIPLE_VM
     Cl = LCI->getVar(this);
     if (!cl->isReady()) {
       Cl = invoke(JnjvmModule::InitialisationCheckFunction, Cl, "", currentBlock);
@@ -1691,9 +1689,6 @@ void JavaJIT::invokeNew(uint16 index) {
     }
 #else
     Cl = getResolvedClass(index, true);
-    Size = LCI->getVirtualSize(this);
-    VT = LCI->getVirtualTable(this);
-    Cl = invoke(JnjvmModule::InitialisationCheckFunction, Cl, "", currentBlock);
     CallInst::Create(JnjvmModule::ForceInitialisationCheckFunction, Cl, "",
                      currentBlock);
 #endif
@@ -1999,8 +1994,9 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
                               uint64_t (enveloppe)),
                               JnjvmModule::EnveloppeType);
 #else
-  llvmEnv = getConstantPoolAt(index, JnjvmModule::EnveloppeLookupFunction,
-                              JnjvmModule::EnveloppeType, 0, false);
+  Value* llvmEnv = getConstantPoolAt(index,
+                                     JnjvmModule::EnveloppeLookupFunction,
+                                     JnjvmModule::EnveloppeType, 0, false);
 #endif
 
   std::vector<Value*> args1;

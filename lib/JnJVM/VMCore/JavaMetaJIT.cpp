@@ -107,7 +107,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObje
 \
 TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) {\
   if (!cl->isReady()) { \
-    cl->classLoader->loadName(cl->name, true, true); \
+    cl->classLoader->loadName(cl->getName(), true, true); \
     cl->initialiseClass(vm); \
   } \
   \

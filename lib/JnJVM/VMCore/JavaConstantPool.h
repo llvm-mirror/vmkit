@@ -143,6 +143,12 @@ public:
   /// UTF8At - Get the UTF8 at the given entry.
   ///
   const UTF8* UTF8At(uint32 entry);
+  
+  /// UTF8At - Get the UTF8 referenced from this string entry.
+  ///
+  const UTF8* UTF8AtForString(uint32 entry) {
+    return UTF8At(ctpDef[entry]);
+  }
 
   /// FloatAt - Get the float at the given entry.
   ///

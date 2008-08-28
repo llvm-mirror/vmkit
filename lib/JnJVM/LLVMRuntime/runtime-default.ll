@@ -37,7 +37,6 @@
 ;;; to lookup in the constant pool.
 %Enveloppe = type { %CacheNode*, i8*, i8*, i32 }
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Constant calls for Jnjvm runtime internal objects field accesses ;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

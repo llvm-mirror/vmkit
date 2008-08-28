@@ -136,7 +136,7 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name) {
     Classpath* upcalls = bootstrapLoader->upcalls;
     UserClass* forCtp = 0;
 #ifdef MULTIPLE_VM
-    forCtp = javaLoader->classOf->lookupClassInMethod(upcalls->loadInClassLoader);
+    forCtp = javaLoader->classOf->lookupClassFromMethod(upcalls->loadInClassLoader);
 #else
     forCtp = upcalls->loadInClassLoader->classDef;
 #endif

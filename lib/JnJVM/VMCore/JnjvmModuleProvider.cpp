@@ -37,10 +37,15 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
 
   ctpInfo->resolveMethod(index, cl, utf8, sign);
   JavaMethod* meth = cl->lookupMethod(utf8, sign->keyName, isStatic, true);
-  
+
+#ifndef MULTIPLE_VM
+  // A multi environment would have already initialized the class. Besides,
+  // a callback does not involve UserClass, therefore we wouldn't know
+  // which class to initialize.
   if (!isVirtual(meth->access))
     cl->initialiseClass(JavaThread::get()->isolate);
-  
+#endif
+
   meth->compiledPtr();
   
   LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
@@ -204,9 +209,9 @@ static void addPass(FunctionPassManager *PM, Pass *P) {
 static void AddStandardCompilePasses(FunctionPassManager *PM) {
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
   // LLVM does not allow calling functions from other modules in verifier
-  //PM->add(llvm::createVerifierPass());                  // Verify that input is correct
+  //PM->add(llvm::createVerifierPass());        // Verify that input is correct
   
-  addPass(PM, llvm::createCFGSimplificationPass());    // Clean up disgusting code
+  addPass(PM, llvm::createCFGSimplificationPass()); // Clean up disgusting code
   addPass(PM, llvm::createPromoteMemoryToRegisterPass());// Kill useless allocas
   
   addPass(PM, createInstructionCombiningPass()); // Cleanup for scalarrepl.
@@ -229,8 +234,9 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, createGVNPass());                  // Remove redundancies
   addPass(PM, createSCCPPass());                 // Constant prop with SCCP
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
-  
-  addPass(PM, mvm::createEscapeAnalysisPass(JnjvmModule::JavaObjectAllocateFunction));
+ 
+  Function* func = JnjvmModule::JavaObjectAllocateFunction;
+  addPass(PM, mvm::createEscapeAnalysisPass(func));
   addPass(PM, mvm::createLowerConstantCallsPass());
   
   // Run instcombine after redundancy elimination to exploit opportunities

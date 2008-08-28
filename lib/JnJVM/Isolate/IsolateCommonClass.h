@@ -28,6 +28,7 @@ class Jnjvm;
 class JnjvmClassLoader;
 class UserClass;
 class UserClassArray;
+class UserConstantPool;
 class UTF8;
 
 class UserCommonClass : public mvm::Object {
@@ -92,6 +93,10 @@ public:
   ///
   JavaField* constructField(const UTF8* name, const UTF8* type,
                             uint32 access);
+
+  UserConstantPool* getCtpCache();
+
+  UserClass* lookupClassFromMethod(JavaMethod* meth);
 };
 
 class UserClass : public UserCommonClass {
@@ -109,7 +114,7 @@ public:
   UserClass* getOuterClass();
   void resolveInnerOuterClasses();
   JavaObject* getStaticInstance();
-  JavaConstantPool* getConstantPool();
+  UserConstantPool* getConstantPool();
 
   void setStaticSize(uint64 size);
   void setStaticVT(VirtualTable* VT);
@@ -140,6 +145,35 @@ public:
 };
 
 class UserConstantPool {
+public:
+  
+  /// ctpRes - Objects resolved dynamically, e.g. UTF8s, classes, methods,
+  /// fields, strings.
+  ///
+  void**  ctpRes; 
+  
+  /// resolveMethod - Resolve the class and the signature of the method. May
+  /// perform class loading. This function is called just in time, ie when
+  /// the method call is actually made and not yet resolved.
+  ///
+  void resolveMethod(uint32 index, UserCommonClass*& cl,
+                     const UTF8*& utf8, Signdef*& sign);
+  
+  /// resolveField - Resolve the class and signature of the field. May
+  /// perform class loading. This function is called just in time, ie when
+  /// the field is accessed and not yet resolved.
+  ///
+  void resolveField(uint32 index, UserCommonClass*& cl, const UTF8*& utf8,
+                    Typedef*& sign);
+
+  /// UTF8At - Get the UTF8 referenced from this string entry.
+  ///
+  const UTF8* UTF8AtForString(uint32 entry);
+
+  /// loadClass - Loads the class and returns it. This is called just in time, 
+  /// ie when the class will be used and not yet resolved.
+  ///
+  UserCommonClass* loadClass(uint32 index);
 };
 
 } // end namespace jnjvm

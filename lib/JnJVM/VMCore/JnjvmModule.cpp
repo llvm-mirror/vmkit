@@ -46,6 +46,11 @@ const llvm::Type* JnjvmModule::JavaArrayObjectType = 0;
 const llvm::Type* JnjvmModule::CacheNodeType = 0;
 const llvm::Type* JnjvmModule::EnveloppeType = 0;
 
+#ifdef MULTIPLE_VM
+const llvm::Type* JnjvmModule::JnjvmType = 0;
+const llvm::Type* JnjvmModule::UserClassType = 0;
+#endif
+
 llvm::Constant*       JnjvmModule::JavaObjectNullConstant;
 llvm::Constant*       JnjvmModule::UTF8NullConstant;
 llvm::Constant*       JnjvmModule::JavaClassNullConstant;
@@ -107,7 +112,11 @@ llvm::Function* JnjvmModule::GetConstantPoolAtFunction = 0;
 
 #ifdef MULTIPLE_VM
 llvm::Function* JnjvmModule::StringLookupFunction = 0;
-llvm::Function* JnjvmModule::GetStaticInstanceFunction = 0;
+llvm::Function* JnjvmModule::GetCtpCacheNodeFunction = 0;
+llvm::Function* JnjvmModule::GetCtpClassFunction = 0;
+llvm::Function* JnjvmModule::EnveloppeLookupFunction = 0;
+llvm::Function* JnjvmModule::GetJnjvmExceptionClassFunction = 0;
+llvm::Function* JnjvmModule::GetJnjvmArrayClassFunction = 0;
 #endif
 llvm::Function* JnjvmModule::GetClassDelegateeFunction = 0;
 llvm::Function* JnjvmModule::ArrayLengthFunction = 0;
@@ -913,6 +922,11 @@ void JnjvmModule::initialise() {
   jnjvm::llvm_runtime::makeLLVMModuleContents(module);
   
   VTType = module->getTypeByName("VT");
+
+#ifdef MULTIPLE_VM
+  UserClassType = module->getTypeByName("UserClass");
+  JnjvmType = module->getTypeByName("Jnjvm");
+#endif
   
   JavaObjectType = 
     PointerType::getUnqual(module->getTypeByName("JavaObject"));
@@ -1008,8 +1022,13 @@ void JnjvmModule::initialise() {
   
 
 #ifdef MULTIPLE_VM
-  GetStaticInstanceFunction = module->getFunction("getStaticInstance");
   StringLookupFunction = module->getFunction("stringLookup");
+  EnveloppeLookupFunction = module->getFunction("enveloppeLookup");
+  GetCtpCacheNodeFunction = module->getFunction("getCtpCacheNode");
+  GetCtpClassFunction = module->getFunction("getCtpClass");
+  GetJnjvmExceptionClassFunction = 
+    module->getFunction("getJnjvmExceptionClass");
+  GetJnjvmArrayClassFunction = module->getFunction("getJnjvmArrayClass");
 #endif
   
 #ifdef SERVICE_VM

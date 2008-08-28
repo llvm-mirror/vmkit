@@ -32,7 +32,7 @@ using namespace jnjvm;
 
 extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   Enveloppe* enveloppe = cache->enveloppe;
-  JavaConstantPool* ctpInfo = enveloppe->ctpInfo;
+  UserConstantPool* ctpInfo = enveloppe->ctpInfo;
   UserCommonClass* ocl = obj->classOf;
   UserCommonClass* cl = 0;
   const UTF8* utf8 = 0;
@@ -85,7 +85,7 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
 }
 
 extern "C" void* virtualFieldLookup(UserClass* caller, uint32 index) {
-  JavaConstantPool* ctpInfo = caller->getConstantPool();
+  UserConstantPool* ctpInfo = caller->getConstantPool();
   if (ctpInfo->ctpRes[index]) {
     return ctpInfo->ctpRes[index];
   }
@@ -105,7 +105,7 @@ extern "C" void* virtualFieldLookup(UserClass* caller, uint32 index) {
 }
 
 extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
-  JavaConstantPool* ctpInfo = caller->getConstantPool();
+  UserConstantPool* ctpInfo = caller->getConstantPool();
   
   if (ctpInfo->ctpRes[index]) {
     return ctpInfo->ctpRes[index];
@@ -130,11 +130,18 @@ extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
 
 #ifdef MULTIPLE_VM
 extern "C" void* stringLookup(UserClass* cl, uint32 index) {
-  JavaConstantPool* ctpInfo = cl->getConstantPool();
-  const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
+  UserConstantPool* ctpInfo = cl->getConstantPool();
+  const UTF8* utf8 = ctpInfo->UTF8AtForString(index);
   JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
   ctpInfo->ctpRes[index] = str;
   return (void*)str;
+}
+
+extern "C" void* enveloppeLookup(UserClass* cl, uint32 index) {
+  UserConstantPool* ctpInfo = cl->getConstantPool();
+  Enveloppe* enveloppe = new Enveloppe(ctpInfo, index);
+  ctpInfo->ctpRes[index] = enveloppe;
+  return (void*)enveloppe;
 }
 #endif
 
@@ -153,8 +160,8 @@ extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
     JavaObject* obj = va_arg(ap, JavaObject*);
     va_end(ap);
     assert(obj->classOf->isReady() && "Class not ready in a virtual lookup.");
-    // Arg, it should have been an invoke interface.... Perform the lookup
-    // on the object class and do not update offset.
+    // Arg, the bytecode is buggy! Perform the lookup on the object class
+    // and do not update offset.
     dmeth = obj->classOf->lookupMethod(utf8, sign->keyName, false, true);
   } else {
     caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
@@ -167,8 +174,12 @@ extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
 #endif
 
 extern "C" void* classLookup(UserClass* caller, uint32 index) { 
-  JavaConstantPool* ctpInfo = caller->getConstantPool();
+  UserConstantPool* ctpInfo = caller->getConstantPool();
   UserClass* cl = (UserClass*)ctpInfo->loadClass(index);
+  // We can not initialize here, because bytecodes such as CHECKCAST
+  // or classes used in catch clauses do not trigger class initialization.
+  // This is really sad, because we need to insert class initialization checks
+  // in the LLVM code.
   return (void*)cl;
 }
 

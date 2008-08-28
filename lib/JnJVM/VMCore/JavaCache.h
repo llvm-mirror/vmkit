@@ -32,6 +32,8 @@
 namespace jnjvm {
 
 class Enveloppe;
+class UserClass;
+class UserConstantPool;
 
 /// CacheNode - A {class, method pointer} pair.
 class CacheNode {

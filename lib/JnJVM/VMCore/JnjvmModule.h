@@ -304,6 +304,11 @@ public:
   static const llvm::Type* JavaCacheType;
   static const llvm::Type* EnveloppeType;
   static const llvm::Type* CacheNodeType;
+
+#ifdef MULTIPLE_VM
+  static const llvm::Type* JnjvmType;
+  static const llvm::Type* UserClassType;
+#endif
   
 #ifdef WITH_TRACER
   static llvm::Function* MarkAndTraceFunction;
@@ -345,7 +350,11 @@ public:
 
 #ifdef MULTIPLE_VM
   static llvm::Function* StringLookupFunction;
-  static llvm::Function* GetStaticInstanceFunction;
+  static llvm::Function* GetCtpCacheNodeFunction;
+  static llvm::Function* GetCtpClassFunction;
+  static llvm::Function* EnveloppeLookupFunction;
+  static llvm::Function* GetJnjvmExceptionClassFunction;
+  static llvm::Function* GetJnjvmArrayClassFunction;
 #endif
 
   static llvm::Function* GetClassDelegateeFunction;
