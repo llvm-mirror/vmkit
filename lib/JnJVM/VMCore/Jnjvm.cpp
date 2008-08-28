@@ -823,6 +823,7 @@ Jnjvm* Jnjvm::allocateIsolate(void* sp) {
   isolate->bootstrapThread = allocator_new(&isolate->allocator, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
   void* baseSP = sp ? sp : mvm::Thread::get()->baseSP;
+  JavaThread::threadKey->set(isolate->bootstrapThread);
   
 #ifdef MULTIPLE_GC
   isolate->bootstrapThread->GC = isolate->GC;
@@ -832,7 +833,6 @@ Jnjvm* Jnjvm::allocateIsolate(void* sp) {
 #endif
 
   isolate->bootstrapThread->baseSP = baseSP;
-  JavaThread::threadKey->set(isolate->bootstrapThread);
   
   isolate->bootstrapThread->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
   isolate->threadSystem = new ThreadSystem();
