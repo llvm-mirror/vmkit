@@ -54,4 +54,56 @@ UserClassPrimitive::UserClassPrimitive(JnjvmClassLoader* JCL, const UTF8* name) 
   delegatee = 0;
 }
 
-
+void UserCommonClass::resolveClass() {
+  if (status < resolved) {
+    acquire();
+    if (status >= resolved) {
+      release();
+    } else if (status == loaded) {
+      if (isArray()) {
+        UserClassArray* arrayCl = (UserClassArray*)this;
+        UserCommonClass* baseClass =  arrayCl->baseClass();
+        baseClass->resolveClass();
+        status = resolved;
+      } else {
+        UserClass* cl = (UserClass*)this;
+        Class* def = (Class*)classDef;
+        if (classDef->status < resolved) {
+          classDef->acquire();
+          if (classDef->status == loaded) {
+            def->readClass();
+            def->status = classRead;
+            status = classRead;
+            def->release();
+            release();
+            cl->loadParents();
+            acquire();
+            def->acquire();
+            def->status = prepared;
+            status = prepared;
+            def->classLoader->TheModule->resolveVirtualClass(cl);
+            def->status = resolved;
+            status = resolved;
+            classDef->broadcastClass();
+          } else {
+            while (classDef->status < resolved) {
+              classDef->waitClass();
+            }
+            classDef->release();
+          }
+        } else {
+          release();
+          status = classRead,
+          cl->loadParents();
+          status = resolved;
+          broadcastClass();
+        }
+      }
+    } else {
+      while (status < resolved) {
+        waitClass();
+      }
+      release();
+    }
+  }
+}

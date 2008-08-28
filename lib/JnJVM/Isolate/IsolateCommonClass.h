@@ -58,7 +58,7 @@ public:
   /// display - The class hierarchy of supers for this class. Array classes
   /// do not need it.
   ///
-  CommonClass** display;
+  UserCommonClass** display;
   
   /// depth - The depth of this class in its class hierarchy. 
   /// display[depth] contains the class. Array classes do not need it.
@@ -78,9 +78,12 @@ public:
   JnjvmClassLoader* classLoader;
   JavaObject* delegatee;
   CommonClass* classDef;
+  UserClass* super;
+  std::vector<UserClass*> interfaces;
 
   virtual void TRACER;
-
+  
+  bool inheritName(const UTF8* Tname);
   bool isOfTypeName(const UTF8* name);
   bool isAssignableFrom(UserCommonClass* cl);
   
@@ -89,41 +92,97 @@ public:
   ///
   bool subclassOf(UserCommonClass* cl);
 
-  bool isArray();
-  bool isPrimitive();
-  bool isInterface();
-  bool isReady();
-  uint8 getAccess();
-  const UTF8* getName();
+  bool isArray() {
+    return classDef->isArray();
+  }
+  bool isPrimitive() {
+    return classDef->isPrimitive();
+  }
 
-  void getDeclaredConstructors(std::vector<JavaMethod*>& res, bool publicOnly);
-  void getDeclaredFields(std::vector<JavaField*>& res, bool publicOnly);
-  void getDeclaredMethods(std::vector<JavaMethod*>& res, bool publicOnly);
+  bool isInterface() {
+    return classDef->isInterface();
+  }
+
+  bool isReady() {
+    return status >= inClinit;
+  }
+
+  uint8 getAccess() {
+    return classDef->access;
+  }
+
+  const UTF8* getName() {
+    return classDef->name;
+  }
+
+  void getDeclaredConstructors(std::vector<JavaMethod*>& res, bool publicOnly) {
+    classDef->getDeclaredConstructors(res, publicOnly);
+  }
+
+  void getDeclaredFields(std::vector<JavaField*>& res, bool publicOnly) {
+    classDef->getDeclaredFields(res, publicOnly);
+  }
+
+  void getDeclaredMethods(std::vector<JavaMethod*>& res, bool publicOnly) {
+    classDef->getDeclaredMethods(res, publicOnly);
+  }
   
   void initialiseClass(Jnjvm* vm);
   JavaObject* getClassDelegatee(Jnjvm* vm, JavaObject* pd = 0);
 
   void resolveClass();
-  UserClass* getSuper();
 
-  std::vector<UserClass*>* getInterfaces();
-  CommonClass::field_map* getStaticFields();
-  void resolveStaticClass();
+  UserClass* getSuper() {
+    return super;
+  }
+
+  std::vector<UserClass*>* getInterfaces() {
+    return &interfaces;
+  }
+
+  CommonClass::field_map* getStaticFields() {
+    return classDef->getStaticFields();
+  }
+  
+  void resolveStaticClass() {
+    ((Class*)classDef)->resolveStaticClass();
+  }
 
 
   JavaMethod* lookupMethodDontThrow(const UTF8* name, const UTF8* type,
-                                    bool isStatic, bool recurse);
+                                    bool isStatic, bool recurse) {
+    return classDef->lookupMethodDontThrow(name, type, isStatic, recurse);
+  }
+
   JavaMethod* lookupMethod(const UTF8* name, const UTF8* type,
-                           bool isStatic, bool recurse);
+                           bool isStatic, bool recurse) {
+    return classDef->lookupMethod(name, type, isStatic, recurse);
+  }
+
   JavaField* lookupField(const UTF8* name, const UTF8* type,
                          bool isStatic, bool recurse,
-                         UserCommonClass*& fieldCl);
+                         UserCommonClass*& fieldCl) {
+    CommonClass* cl = 0;
+    JavaField* field = classDef->lookupField(name, type, isStatic, recurse, cl);
+    fieldCl = getUserClass(cl);
+    return field;
+  }
   
-  uint64 getVirtualSize();
-  VirtualTable* getVirtualVT();
+  uint64 getVirtualSize() {
+    return virtualSize;
+  }
 
-  void setInterfaces(std::vector<UserClass*> Is);
-  void setSuper(UserClass* S);
+  VirtualTable* getVirtualVT() {
+    return virtualVT;
+  }
+
+  void setInterfaces(std::vector<UserClass*> Is) {
+    interfaces = Is;
+  }
+
+  void setSuper(UserClass* S) {
+    super = S;
+  }
 
   bool instantiationOfArray(UserClassArray* cl);
   bool implements(UserCommonClass* cl);
@@ -131,16 +190,21 @@ public:
   /// constructMethod - Add a new method in this class method map.
   ///
   JavaMethod* constructMethod(const UTF8* name, const UTF8* type,
-                              uint32 access);
+                              uint32 access) {
+    return classDef->constructMethod(name, type, access);
+  }
   
   /// constructField - Add a new field in this class field map.
   ///
   JavaField* constructField(const UTF8* name, const UTF8* type,
-                            uint32 access);
+                            uint32 access) {
+    return classDef->constructField(name, type, access);
+  }
 
   UserConstantPool* getCtpCache();
 
   UserClass* lookupClassFromMethod(JavaMethod* meth);
+  UserCommonClass* getUserClass(CommonClass* cl);
   
   /// lockVar - When multiple threads want to initialize a class,
   /// they must be synchronized so that it is only performed once
@@ -182,6 +246,14 @@ public:
     return mvm::Lock::selfOwner(lockVar);    
   }
 
+  const UTF8* getSuperUTF8(){
+    return classDef->superUTF8;
+  }
+
+  std::vector<const UTF8*>* getInterfacesUTF8(){
+    return &classDef->interfacesUTF8;
+  }
+  
 };
 
 class UserClass : public UserCommonClass {
@@ -195,29 +267,74 @@ public:
   
   JavaObject* doNew(Jnjvm* vm);
   
-  std::vector<UserClass*>* getInnerClasses();
-  UserClass* getOuterClass();
+  std::vector<UserClass*> innerClasses;
+  UserClass* outerClass;
+
+  std::vector<UserClass*>* getInnerClasses() {
+    return &innerClasses;
+  }
+
+  UserClass* getOuterClass() {
+    return outerClass;
+  }
+  
+  bool innerOuterResolved;
+
   void resolveInnerOuterClasses();
-  JavaObject* getStaticInstance();
-  void setStaticInstance(JavaObject* obj);
+  
+  void setInnerAccess(uint32 access) {
+    ((Class*)classDef)->setInnerAccess(access);
+  }
+
+  JavaObject* getStaticInstance() {
+    return staticInstance;
+  }
+
+  void setStaticInstance(JavaObject* obj) {
+    staticInstance = obj;
+  }
+  
+  UserConstantPool* ctpInfo;
   UserConstantPool* getConstantPool();
 
-  void setStaticSize(uint64 size);
-  void setStaticVT(VirtualTable* VT);
+  uint64 getStaticSize() {
+    return ((Class*)classDef)->getStaticSize();
+  }
+
+  VirtualTable* getStaticVT() {
+    return ((Class*)classDef)->getStaticVT();
+  }
   
-  uint64 getStaticSize();
-  VirtualTable* getStaticVT();
+  /// loadParents - Loads and resolves the parents, i.e. super and interfarces,
+  /// of the class.
+  ///
+  void loadParents();
+
+  Attribut* lookupAttribut(const UTF8* Att) {
+    return ((Class*)classDef)->lookupAttribut(Att);
+  }
+
+  ArrayUInt8* getBytes() {
+    return ((Class*)classDef)->bytes;
+  }
 };
 
 class UserClassArray : public UserCommonClass {
 public:
   static VirtualTable* VT;
   UserCommonClass* _baseClass;
-  
+  AssessorDesc* _funcs;
+
   virtual void TRACER;
   UserClassArray(JnjvmClassLoader* JCL, const UTF8* name);
+  
+  void resolveComponent();
 
-  UserCommonClass* baseClass();
+  UserCommonClass* baseClass() {
+    if (_baseClass == 0)
+      resolveComponent();
+    return _baseClass;
+  }
 
   AssessorDesc* funcs();
 };

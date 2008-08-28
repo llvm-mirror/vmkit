@@ -250,6 +250,10 @@ public:
   ///
   const UTF8* superUTF8;
 
+  const UTF8* getSuperUTF8() {
+    return superUTF8;
+  }
+
   /// interfaces - The interfaces this class implements.
   ///
   std::vector<Class*> interfaces;
@@ -258,6 +262,10 @@ public:
   ///
   std::vector<const UTF8*> interfacesUTF8;
   
+  std::vector<const UTF8*>* getInterfacesUTF8() {
+    return &interfacesUTF8;
+  }
+
   /// lockVar - When multiple threads want to load/resolve/initialize a class,
   /// they must be synchronized so that these steps are only performed once
   /// for a given class.
@@ -537,6 +545,10 @@ public:
   /// innerAccess - The access of this class, if this class is an inner class.
   ///
   uint32 innerAccess;
+
+  void setInnerAccess(uint32 access) {
+    innerAccess = access;
+  }
 
   /// innerOuterResolved - Is the inner/outer resolution done?
   ///

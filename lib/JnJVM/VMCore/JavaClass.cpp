@@ -261,12 +261,10 @@ void ClassArray::print(mvm::PrintBuffer* buf) const {
   buf->write(">");
 }
 
-#ifndef MULTIPLE_VM
-void ClassArray::resolveComponent() {
-  AssessorDesc::introspectArray(classLoader, name, 0, _funcs,
+void UserClassArray::resolveComponent() {
+  AssessorDesc::introspectArray(classLoader, getName(), 0, _funcs,
                                 _baseClass);
 }
-#endif
 
 JnjvmClassLoader* ClassArray::arrayLoader(const UTF8* name,
                                           JnjvmClassLoader* loader,
@@ -410,22 +408,21 @@ JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
   return res;
 }
 
-#ifndef MULTIPLE_VM
-JavaObject* Class::doNew(Jnjvm* vm) {
+JavaObject* UserClass::doNew(Jnjvm* vm) {
   assert(this->isReady() && "Uninitialized class when allocating.");
-  JavaObject* res = (JavaObject*)vm->allocator.allocateObject(virtualSize, virtualVT);
+  JavaObject* res = (JavaObject*)vm->allocator.allocateObject(getVirtualSize(),
+                                                              getVirtualVT());
   res->classOf = this;
   return res;
 }
-#endif
 
-bool CommonClass::inheritName(const UTF8* Tname) {
-  if (name->equals(Tname)) {
+bool UserCommonClass::inheritName(const UTF8* Tname) {
+  if (getName()->equals(Tname)) {
     return true;
   } else  if (isPrimitive()) {
     return false;
   } else if (super) {
-    if (super->inheritName(Tname)) return true;
+    if (getSuper()->inheritName(Tname)) return true;
   }
   
   for (uint32 i = 0; i < interfaces.size(); ++i) {
@@ -434,17 +431,17 @@ bool CommonClass::inheritName(const UTF8* Tname) {
   return false;
 }
 
-bool CommonClass::isOfTypeName(const UTF8* Tname) {
+bool UserCommonClass::isOfTypeName(const UTF8* Tname) {
   if (inheritName(Tname)) {
     return true;
   } else if (isArray()) {
-    CommonClass* curS = this;
+    UserCommonClass* curS = this;
     uint32 prof = 0;
     uint32 len = Tname->size;
     bool res = true;
     
     while (res && Tname->elements[prof] == AssessorDesc::I_TAB) {
-      CommonClass* cl = ((ClassArray*)curS)->baseClass();
+      UserCommonClass* cl = ((UserClassArray*)curS)->baseClass();
       ++prof;
       cl->resolveClass();
       res = curS->isArray() && cl && (prof < len);
@@ -458,10 +455,10 @@ bool CommonClass::isOfTypeName(const UTF8* Tname) {
   }
 }
 
-bool CommonClass::implements(CommonClass* cl) {
+bool UserCommonClass::implements(UserCommonClass* cl) {
   if (this == cl) return true;
   else {
-    for (std::vector<Class*>::iterator i = interfaces.begin(),
+    for (std::vector<UserClass*>::iterator i = interfaces.begin(),
          e = interfaces.end(); i!= e; i++) {
       if (*i == cl) return true;
       else if ((*i)->implements(cl)) return true;
@@ -473,12 +470,12 @@ bool CommonClass::implements(CommonClass* cl) {
   return false;
 }
 
-bool CommonClass::instantiationOfArray(ClassArray* cl) {
+bool UserCommonClass::instantiationOfArray(UserClassArray* cl) {
   if (this == cl) return true;
   else {
     if (isArray()) {
-      CommonClass* baseThis = ((ClassArray*)this)->baseClass();
-      CommonClass* baseCl = ((ClassArray*)cl)->baseClass();
+      UserCommonClass* baseThis = ((UserClassArray*)this)->baseClass();
+      UserCommonClass* baseCl = ((UserClassArray*)cl)->baseClass();
 
       if (baseThis->isInterface() && baseCl->isInterface()) {
         return baseThis->implements(baseCl);
@@ -490,7 +487,7 @@ bool CommonClass::instantiationOfArray(ClassArray* cl) {
   return false;
 }
 
-bool CommonClass::subclassOf(CommonClass* cl) {
+bool UserCommonClass::subclassOf(UserCommonClass* cl) {
   if (cl->depth <= depth) {
     return display[cl->depth] == cl;
   } else {
@@ -498,13 +495,13 @@ bool CommonClass::subclassOf(CommonClass* cl) {
   }
 }
 
-bool CommonClass::isAssignableFrom(CommonClass* cl) {
+bool UserCommonClass::isAssignableFrom(UserCommonClass* cl) {
   if (this == cl) {
     return true;
   } else if (cl->isInterface()) {
     return this->implements(cl);
   } else if (cl->isArray()) {
-    return this->instantiationOfArray((ClassArray*)cl);
+    return this->instantiationOfArray((UserClassArray*)cl);
   } else {
     return this->subclassOf(cl);
   }
@@ -600,28 +597,26 @@ void Class::readParents(Reader& reader) {
 
 }
 
-#ifndef MULTIPLE_VM
-void Class::loadParents() {
-  int nbI = interfacesUTF8.size();
+void UserClass::loadParents() {
+  std::vector<const UTF8*>* interfacesUTF8 = getInterfacesUTF8();
+  unsigned nbI = interfacesUTF8->size();
+  const UTF8* superUTF8 = getSuperUTF8();
   if (superUTF8 == 0) {
     depth = 0;
-    display = (CommonClass**)malloc(sizeof(CommonClass*));
+    display = (UserCommonClass**)malloc(sizeof(UserCommonClass*));
     display[0] = this;
-    virtualTableSize = VT_SIZE / sizeof(void*);
   } else {
     super = classLoader->loadName(superUTF8, true, true);
     depth = super->depth + 1;
-    virtualTableSize = super->virtualTableSize;
-    display = (CommonClass**)malloc((depth + 1) * sizeof(CommonClass*));
-    memcpy(display, super->display, depth * sizeof(CommonClass*));
+    display = (UserCommonClass**)malloc((depth + 1) * sizeof(UserCommonClass*));
+    memcpy(display, super->display, depth * sizeof(UserCommonClass*));
     display[depth] = this;
   }
 
-  for (int i = 0; i < nbI; i++)
-    interfaces.push_back((Class*)classLoader->loadName(interfacesUTF8[i],
-                                                       true, true));
+  for (unsigned i = 0; i < nbI; i++)
+    interfaces.push_back((UserClass*)classLoader->loadName((*interfacesUTF8)[i],
+                                                           true, true));
 }
-#endif
 
 void Class::readAttributs(Reader& reader, std::vector<Attribut*>& attr) {
   unsigned short int nba = reader.readU2();
@@ -692,6 +687,7 @@ void Class::readClass() {
   readAttributs(reader, attributs);
 }
 
+#ifndef MULTIPLE_VM
 void CommonClass::resolveClass() {
   if (status < resolved) {
     acquire();
@@ -725,13 +721,13 @@ void CommonClass::resolveClass() {
     }
   }
 }
+#endif
 
-#ifndef MULTIPLE_VM
 void UserClass::resolveInnerOuterClasses() {
   if (!innerOuterResolved) {
     Attribut* attribut = lookupAttribut(Attribut::innerClassesAttribut);
     if (attribut != 0) {
-      Reader reader(attribut, bytes);
+      Reader reader(attribut, getBytes());
 
       uint16 nbi = reader.readU2();
       for (uint16 i = 0; i < nbi; ++i) {
@@ -740,13 +736,13 @@ void UserClass::resolveInnerOuterClasses() {
         //uint16 innerName = 
         reader.readU2();
         uint16 accessFlags = reader.readU2();
-        Class* clInner = (Class*)ctpInfo->loadClass(inner);
-        Class* clOuter = (Class*)ctpInfo->loadClass(outer);
+        UserClass* clInner = (UserClass*)ctpInfo->loadClass(inner);
+        UserClass* clOuter = (UserClass*)ctpInfo->loadClass(outer);
 
         if (clInner == this) {
           outerClass = clOuter;
         } else if (clOuter == this) {
-          clInner->innerAccess = accessFlags;
+          clInner->setInnerAccess(accessFlags);
           innerClasses.push_back(clInner);
         }
       }
@@ -754,7 +750,6 @@ void UserClass::resolveInnerOuterClasses() {
     innerOuterResolved = true;
   }
 }
-#endif
 
 void CommonClass::getDeclaredConstructors(std::vector<JavaMethod*>& res,
                                           bool publicOnly) {

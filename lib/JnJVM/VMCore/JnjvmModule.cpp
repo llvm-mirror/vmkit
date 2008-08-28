@@ -262,6 +262,11 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
     memcpy(res, JavaObject::VT, VT_SIZE);
 #ifndef WITHOUT_VTABLE
   } else {
+    if (cl->super) {
+      cl->virtualTableSize = cl->super->virtualTableSize;
+    } else {
+      cl->virtualTableSize = VT_SIZE / sizeof(void*);
+    }
     res = allocateVT(cl, cl->virtualMethods.begin());
   
     if (!(cl->super)) {

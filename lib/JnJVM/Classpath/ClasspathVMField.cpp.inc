@@ -323,9 +323,6 @@ jobject Field, jobject _obj) {
     Obj = cl->getStaticInstance();
   }
   
-  if (isStatic(field->access)) 
-    field->classDef->initialiseClass(vm);
-  
   JavaObject* res = 0;
   switch (ass->numId) {
     case BOOL_ID : {

@@ -73,7 +73,7 @@ jobject _prop) {
   if (!tmp) tmp = "";
   setProperty(vm, prop, "java.home", tmp);
   
-  JnjvmBootstrapLoader* JCL = JnjvmClassLoader::bootstrapLoader;
+  JnjvmBootstrapLoader* JCL = vm->bootstrapLoader;
   setProperty(vm, prop, "java.class.version", "49.0");
   setProperty(vm, prop, "java.class.path", vm->classpath);
   setProperty(vm, prop, "java.boot.class.path", JCL->bootClasspathEnv);
