@@ -72,6 +72,10 @@ public:
   /// status - The loading/resolve/initialization state of the class.
   ///
   JavaState status;
+  
+  /// ctpInfo - The private constant pool of this class.
+  ///
+  UserConstantPool* ctpInfo;
 
 //===----------------------------------------------------------------------===//
 //
@@ -146,29 +150,37 @@ public:
     return classDef->getStaticFields();
   }
   
+  CommonClass::field_map* getVirtualFields() {
+    return classDef->getVirtualFields();
+  }
+  
+  CommonClass::method_map* getStaticMethods() {
+    return classDef->getStaticMethods();
+  }
+  
+  CommonClass::method_map* getVirtualMethods() {
+    return classDef->getVirtualMethods();
+  }
+  
   void resolveStaticClass() {
     ((Class*)classDef)->resolveStaticClass();
   }
 
 
   JavaMethod* lookupMethodDontThrow(const UTF8* name, const UTF8* type,
-                                    bool isStatic, bool recurse) {
-    return classDef->lookupMethodDontThrow(name, type, isStatic, recurse);
-  }
+                                    bool isStatic, bool recurse);
 
   JavaMethod* lookupMethod(const UTF8* name, const UTF8* type,
-                           bool isStatic, bool recurse) {
-    return classDef->lookupMethod(name, type, isStatic, recurse);
-  }
+                           bool isStatic, bool recurse);
 
   JavaField* lookupField(const UTF8* name, const UTF8* type,
                          bool isStatic, bool recurse,
-                         UserCommonClass*& fieldCl) {
-    CommonClass* cl = 0;
-    JavaField* field = classDef->lookupField(name, type, isStatic, recurse, cl);
-    fieldCl = getUserClass(cl);
-    return field;
-  }
+                         UserCommonClass*& fieldCl);
+  
+  JavaField* lookupFieldDontThrow(const UTF8* name, const UTF8* type,
+                                  bool isStatic, bool recurse,
+                                  UserCommonClass*& fieldCl);
+  
   
   uint64 getVirtualSize() {
     return virtualSize;
@@ -297,9 +309,9 @@ public:
     staticInstance = obj;
   }
   
-  UserConstantPool* ctpInfo;
-  UserConstantPool* getConstantPool();
-  UserConstantPool* getCtpCache();
+  UserConstantPool* getConstantPool() {
+    return ctpInfo;
+  }
 
   uint64 getStaticSize() {
     return ((Class*)classDef)->getStaticSize();
@@ -352,13 +364,14 @@ public:
   UserClassPrimitive(JnjvmClassLoader* JCL, const UTF8* name, uint32 nb);
 };
 
-class UserConstantPool {
+class UserConstantPool : public mvm::Object {
 public:
   
+  static VirtualTable* VT;
   /// ctpRes - Objects resolved dynamically, e.g. UTF8s, classes, methods,
   /// fields, strings.
   ///
-  void**  ctpRes; 
+  void*  ctpRes[1]; 
   
   /// resolveMethod - Resolve the class and the signature of the method. May
   /// perform class loading. This function is called just in time, ie when
@@ -382,6 +395,14 @@ public:
   /// ie when the class will be used and not yet resolved.
   ///
   UserCommonClass* loadClass(uint32 index);
+
+  void* operator new(size_t sz, JavaAllocator* alloc, uint32 size);
+  
+  UserConstantPool(){}
+
+  UserConstantPool(UserClass* cl) {
+    ctpRes[0] = cl;
+  }
 };
 
 } // end namespace jnjvm

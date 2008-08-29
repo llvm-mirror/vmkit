@@ -42,9 +42,9 @@ using namespace jnjvm;
 #ifdef MULTIPLE_VM
   INIT(JnjvmSharedLoader);
   INIT(SharedClassByteMap);
-  INIT(SharedClassNameMap);
   INIT(UserClass);
   INIT(UserClassArray);
+  INIT(UserConstantPool);
 #endif
 #ifdef SERVICE_VM
   INIT(ServiceDomain);
@@ -153,6 +153,7 @@ void UserClass::TRACER {
   classLoader->MARK_AND_TRACE;
   delegatee->MARK_AND_TRACE;
   staticInstance->MARK_AND_TRACE;
+  ctpInfo->MARK_AND_TRACE;
 }
 
 void UserClassPrimitive::TRACER {
@@ -171,12 +172,8 @@ void SharedClassByteMap::TRACER {
   }
 }
 
-void SharedClassNameMap::TRACER {
-}
-
 void JnjvmSharedLoader::TRACER {
   byteClasses->MARK_AND_TRACE;
-  nameClasses->MARK_AND_TRACE;
 }
 #endif
 

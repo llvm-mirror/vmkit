@@ -310,6 +310,21 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
         }
 #endif
+
+#ifdef MULTIPLE_VM
+        else if (V == jnjvm::JnjvmModule::GetCtpClassFunction) {
+          Changed = true;
+          Value* val = Call.getArgument(0); 
+          std::vector<Value*> indexes; 
+          indexes.push_back(mvm::jit::constantZero);
+          indexes.push_back(jnjvm::JnjvmModule::OffsetCtpInClassConstant);
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
+                                                   indexes.end(), "", CI);
+          Value* VT = new LoadInst(VTPtr, "", CI);
+          CI->replaceAllUsesWith(VT);
+          CI->eraseFromParent();
+        }
+#endif
       }
     }
   }

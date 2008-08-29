@@ -5,10 +5,10 @@
 ;;; A virtual table is an array of function pointers.
 %VT = type i32**
 
-;;; The type of a constant pool. This is only used in a multi vm environment.
-;;; Field 1 - The VT of constant pools.
-;;; Field 2 - The constant pool cache.
-%ConstantPool = type { %VT, i8** }
+;;; The type of a constant pool. Jnjvm will make this into a i8**
+%ConstantPool = type i8*
+
+%Jnjvm = type {%VT, %JavaClass*, [9 x %JavaClass*]}
 
 ;;; The type of internal classes. This is not complete, but we only need
 ;;; the first fields for now. 
@@ -104,8 +104,8 @@ declare void @forceInitialisationCheck(%JavaClass*)
 ;;; getConstantPoolAt - Get the value in the constant pool of this class.
 ;;; This function is removed by Jnjvm after the GVn pass, therefore it does
 ;;; not have an actual implementation.
-declare i8* @getConstantPoolAt(i8* (%JavaClass*, i32, ...)*, i8**, %JavaClass*,
-                               i32, ...) readnone
+declare i8* @getConstantPoolAt(i8* (%JavaClass*, i32, ...)*, %ConstantPool*,
+                               %JavaClass*, i32, ...) readnone
 
 ;;; vtableLookup - Look up the offset in a virtual table of a specific
 ;;; function. This function takes a class and an index to lookup in the

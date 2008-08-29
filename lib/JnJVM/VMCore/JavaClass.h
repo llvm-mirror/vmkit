@@ -120,6 +120,9 @@ public:
 /// class loader finalizer method will be defined.
 ///
 class CommonClass : public mvm::Object {
+#ifdef MULTIPLE_VM
+friend class UserCommonClass;
+#endif
 private:
 
 
@@ -138,7 +141,7 @@ public:
 
   FieldCmp(const UTF8* n, const UTF8* t) : name(n), type(t) {}
   
-  inline bool operator<(const FieldCmp &cmp) const;
+  bool operator<(const FieldCmp &cmp) const;
 };
 
 public:
@@ -223,12 +226,14 @@ public:
   bool isInterface() {
     return jnjvm::isInterface(access);
   }
-
-#ifndef MULTIPLE_VM
+  
+  /// interfaces - The interfaces this class implements.
+  ///
+  std::vector<Class*> interfaces;
+  
   std::vector<Class*> * getInterfaces() {
     return &interfaces;
   }
-#endif
   
   /// name - The name of the class.
   ///
@@ -253,10 +258,6 @@ public:
   const UTF8* getSuperUTF8() {
     return superUTF8;
   }
-
-  /// interfaces - The interfaces this class implements.
-  ///
-  std::vector<Class*> interfaces;
 
   /// interfacesUTF8 - The names of the interfaces this class implements.
   ///
@@ -316,6 +317,8 @@ public:
   
   field_map* getStaticFields() { return &staticFields; }
   field_map* getVirtualFields() { return &virtualFields; }
+  method_map* getStaticMethods() { return &staticMethods; }
+  method_map* getVirtualMethods() { return &virtualMethods; }
 
   /// constructMethod - Add a new method in this class method map.
   ///
@@ -647,13 +650,6 @@ public:
     return ctpInfo;
   }
 
-  /// getCtpCache - A class does not have a ctp cache, hence
-  /// this method always returns 0.
-  ///
-  JavaConstantPool* getCtpCache() {
-    return 0;
-  }
-  
   ArrayUInt8* getBytes() {
     return bytes;
   }
@@ -738,6 +734,9 @@ public:
   /// tracer - Tracer of array classes.
   ///
   virtual void TRACER;
+
+  static CommonClass* SuperArray;
+  static std::vector<Class*> InterfacesArray;
 };
 
 /// JavaMethod - This class represents Java methods.

@@ -39,6 +39,9 @@ const UTF8* Attribut::lineNumberTableAttribut = 0;
 const UTF8* Attribut::innerClassesAttribut = 0;
 const UTF8* Attribut::sourceFileAttribut = 0;
 
+CommonClass* ClassArray::SuperArray;
+std::vector<Class*> ClassArray::InterfacesArray;
+
 Attribut::Attribut(const UTF8* name, uint32 length,
                    uint32 offset) {
   
@@ -210,18 +213,20 @@ CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n, bool isArray) 
   this->classLoader = loader;
   this->array = isArray;
   this->primitive = false;
+  this->JInfo = 0;
 #ifndef MULTIPLE_VM
   this->delegatee = 0;
 #endif
 }
 
-#ifndef MULTIPLE_VM
 ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n,
                                uint32 nb) : 
   CommonClass(loader, n, false) {
-  
+ 
+#ifndef MULTIPLE_VM
   display = (CommonClass**)malloc(sizeof(CommonClass*));
   display[0] = this;
+#endif
   primitive = true;
   status = ready;
   access = ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC;
@@ -233,21 +238,24 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
   bytes = B;
   super = 0;
   ctpInfo = 0;
+#ifndef MULTIPLE_VM
   _staticInstance = 0;
+#endif
 }
 
 ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n) : CommonClass(loader, n, true) {
   _funcs = 0;
   _baseClass = 0;
-  super = JnjvmBootstrapLoader::SuperArray;
-  interfaces = JnjvmBootstrapLoader::InterfacesArray;
+  super = ClassArray::SuperArray;
+  interfaces = ClassArray::InterfacesArray;
+#ifndef MULTIPLE_VM
   depth = 1;
   display = (CommonClass**)malloc(2 * sizeof(CommonClass*));
   display[0] = JnjvmBootstrapLoader::SuperArray;
   display[1] = this;
+#endif
   access = ACC_FINAL | ACC_ABSTRACT;
 }
-#endif
 
 void Class::print(mvm::PrintBuffer* buf) const {
   buf->write("Class<");
@@ -321,13 +329,15 @@ const char* JavaField::printString() const {
 }
 
 JavaMethod* CommonClass::lookupMethodDontThrow(const UTF8* name,
-                                               const UTF8* type, bool isStatic,
+                                               const UTF8* type,
+                                               bool isStatic,
                                                bool recurse) {
   
-  FieldCmp CC(name, type);
-  method_map& map = isStatic ? staticMethods : virtualMethods;
-  method_iterator End = map.end();
-  method_iterator I = map.find(CC);
+  CommonClass::FieldCmp CC(name, type);
+  CommonClass::method_map* map = isStatic ? getStaticMethods() :
+                                            getVirtualMethods();
+  CommonClass::method_iterator End = map->end();
+  CommonClass::method_iterator I = map->find(CC);
   if (I != End) return I->second;
   
   JavaMethod *cur = 0;
@@ -337,8 +347,9 @@ JavaMethod* CommonClass::lookupMethodDontThrow(const UTF8* name,
                                                   recurse);
     if (cur) return cur;
     if (isStatic) {
-      for (std::vector<Class*>::iterator i = interfaces.begin(),
-           e = interfaces.end(); i!= e; i++) {
+      std::vector<Class*>* interfaces = getInterfaces();
+      for (std::vector<Class*>::iterator i = interfaces->begin(),
+           e = interfaces->end(); i!= e; i++) {
         cur = (*i)->lookupMethodDontThrow(name, type, isStatic, recurse);
         if (cur) return cur;
       }
@@ -357,15 +368,16 @@ JavaMethod* CommonClass::lookupMethod(const UTF8* name, const UTF8* type,
   return res;
 }
 
-JavaField* CommonClass::lookupFieldDontThrow(const UTF8* name,
-                                             const UTF8* type, bool isStatic,
-                                             bool recurse,
-                                             CommonClass*& definingClass) {
+JavaField*
+CommonClass::lookupFieldDontThrow(const UTF8* name, const UTF8* type,
+                                  bool isStatic, bool recurse,
+                                  CommonClass*& definingClass) {
 
-  FieldCmp CC(name, type);
-  field_map& map = isStatic ? staticFields : virtualFields;
-  field_iterator End = map.end();
-  field_iterator I = map.find(CC);
+  CommonClass::FieldCmp CC(name, type);
+  CommonClass::field_map* map = isStatic ? getStaticFields() :
+                                           getVirtualFields();
+  CommonClass::field_iterator End = map->end();
+  CommonClass::field_iterator I = map->find(CC);
   if (I != End) {
     definingClass = this;
     return I->second;
@@ -381,8 +393,9 @@ JavaField* CommonClass::lookupFieldDontThrow(const UTF8* name,
       return cur;
     }
     if (isStatic) {
-      for (std::vector<Class*>::iterator i = interfaces.begin(),
-           e = interfaces.end(); i!= e; i++) {
+      std::vector<Class*>* interfaces = getInterfaces();
+      for (std::vector<Class*>::iterator i = interfaces->begin(),
+           e = interfaces->end(); i!= e; i++) {
         cur = (*i)->lookupFieldDontThrow(name, type, isStatic, recurse,
                                          definingClass);
         if (cur) {

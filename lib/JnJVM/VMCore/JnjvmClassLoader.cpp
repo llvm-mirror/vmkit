@@ -46,7 +46,7 @@ JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
   
   JCL->allocator = new JavaAllocator();
   
-  JCL->hashUTF8 = new UTF8Map(JCL->allocator, JCL->upcalls->ArrayOfChar);
+  JCL->hashUTF8 = new UTF8Map(JCL->allocator, 0);
   JCL->classes = allocator_new(allocator, ClassMap)();
   JCL->javaTypes = new TypeMap(); 
   JCL->javaSignatures = new SignMap(); 
@@ -62,7 +62,8 @@ JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
   }
   
   JCL->analyseClasspathEnv(JCL->bootClasspathEnv);
-
+  
+  JCL->upcalls = new Classpath();
   return JCL;
 }
 

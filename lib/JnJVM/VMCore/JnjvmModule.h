@@ -304,11 +304,8 @@ public:
   static const llvm::Type* JavaCacheType;
   static const llvm::Type* EnveloppeType;
   static const llvm::Type* CacheNodeType;
-
-#ifdef MULTIPLE_VM
   static const llvm::Type* JnjvmType;
-  static const llvm::Type* UserClassType;
-#endif
+  static const llvm::Type* ConstantPoolType;
   
 #ifdef WITH_TRACER
   static llvm::Function* MarkAndTraceFunction;
@@ -376,6 +373,8 @@ public:
   static llvm::ConstantInt* OffsetVTInClassConstant;
   static llvm::ConstantInt* OffsetDepthInClassConstant;
   static llvm::ConstantInt* OffsetDisplayInClassConstant;
+  static llvm::ConstantInt* OffsetStatusInClassConstant;
+  static llvm::ConstantInt* OffsetCtpInClassConstant;
 
   static llvm::Constant* JavaClassNullConstant;
 

@@ -86,7 +86,7 @@ std::vector<void*> Jnjvm::nativeLibs;
 JnjvmBootstrapLoader* Jnjvm::bootstrapLoader;
 #endif
 
-typedef void (*clinit_t)(Jnjvm* vm);
+typedef void (*clinit_t)(Jnjvm* vm, UserConstantPool*);
 
 void UserCommonClass::initialiseClass(Jnjvm* vm) {
   // Primitives are initialized at boot time
@@ -133,7 +133,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
         JavaObject* exc = 0;
         try{
           clinit_t pred = (clinit_t)(intptr_t)meth->compiledPtr();
-          pred(vm);
+          pred(vm, cl->getConstantPool());
         } catch(...) {
           exc = JavaThread::getJavaException();
           assert(exc && "no exception?");

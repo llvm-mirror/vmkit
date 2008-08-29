@@ -1302,13 +1302,13 @@ void JavaJIT::branch(llvm::Value* test, llvm::BasicBlock* ifTrue,
 void JavaJIT::makeArgs(FunctionType::param_iterator it,
                        uint32 index, std::vector<Value*>& Args, uint32 nb) {
 #if defined(MULTIPLE_VM)
-  nb += 2;
+  nb += 1;
 #endif
   Args.reserve(nb + 2);
   Value** args = (Value**)alloca(nb*sizeof(Value*));
 #if defined(MULTIPLE_VM)
-  args[nb - 2] = isolateLocal;
-  sint32 start = nb - 3;
+  args[nb - 1] = isolateLocal;
+  sint32 start = nb - 2;
   it--;
   it--;
 #else
@@ -1574,10 +1574,16 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
 // This makes unswitch loop very unhappy time-wise, but makes GVN happy
 // number-wise. IMO, it's better to have this than Unswitch.
 #if 1
+  std::vector<Value*> Args;
 #ifdef MULTIPLE_VM
   Value* CTP = ctpCache;
-  Value* Cl = new LoadInst(ctpCache, "", currentBlock);
+  std::vector<Value*> Args;
+  Args.push_back(mvm::jit::constantOne);
+  Value* Cl = GetElementPtrInst::Create(CTP, Args.begin(), Args.end(), "",
+                                        currentBlock);
+  Cl = new LoadInst(Cl, "", currentBlock);
   Cl = new BitCastInst(Cl, JnjvmModule::JavaClassType, "", currentBlock);
+  Args.clear();
 #else
   JavaConstantPool* ctp = compilingClass->ctpInfo;
   LLVMConstantPoolInfo* LCPI = module->getConstantPoolInfo(ctp);
@@ -1586,11 +1592,15 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   Value* Cl = LCI->getVar(this);
 #endif
 
-  std::vector<Value*> Args;
   Args.push_back(resolver);
   Args.push_back(CTP);
   Args.push_back(Cl);
+#ifndef MULTIPLE_VM
   Args.push_back(ConstantInt::get(Type::Int32Ty, index));
+#else
+  // Add one to the index because of the VT
+  Args.push_back(ConstantInt::get(Type::Int32Ty, index + 1));
+#endif
   if (additionalArg) Args.push_back(additionalArg);
 
   Value* res = 0;
@@ -1621,7 +1631,12 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   Value* CTP = LCPI->getDelegatee(this);
 #endif 
   std::vector<Value*> indexes; //[3];
+#ifndef MULTIPLE_VM
   indexes.push_back(ConstantInt::get(Type::Int32Ty, index));
+#else
+  // Add one to the index because of the VT
+  indexes.push_back(ConstantInt::get(Type::Int32Ty, index + 1));
+#endif
   Value* arg1 = GetElementPtrInst::Create(CTP, indexes.begin(),
                                           indexes.end(), 
                                           "", currentBlock);
@@ -1638,7 +1653,11 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   currentBlock = falseCl;
   std::vector<Value*> Args;
 #ifdef MULTIPLE_VM
-  Value* v = new LoadInst(ctpCache, "", currentBlock);
+  std::vector<Value*> Args;
+  Args.push_back(mvm::jit::constantOne);
+  Value* v = GetElementPtrInst::Create(ctpCache, Args.begin(), Args.end(), "",
+                                       currentBlock);
+  v = new LoadInst(v, "", currentBlock);
   v = new BitCastInst(v, JnjvmModule::JavaClassType, "", currentBlock);
 #else
   LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(compilingClass);

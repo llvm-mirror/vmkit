@@ -45,11 +45,8 @@ const llvm::Type* JnjvmModule::JavaArrayLongType = 0;
 const llvm::Type* JnjvmModule::JavaArrayObjectType = 0;
 const llvm::Type* JnjvmModule::CacheNodeType = 0;
 const llvm::Type* JnjvmModule::EnveloppeType = 0;
-
-#ifdef MULTIPLE_VM
 const llvm::Type* JnjvmModule::JnjvmType = 0;
-const llvm::Type* JnjvmModule::UserClassType = 0;
-#endif
+const llvm::Type* JnjvmModule::ConstantPoolType = 0;
 
 llvm::Constant*       JnjvmModule::JavaObjectNullConstant;
 llvm::Constant*       JnjvmModule::UTF8NullConstant;
@@ -62,6 +59,8 @@ llvm::ConstantInt*    JnjvmModule::OffsetObjectSizeInClassConstant;
 llvm::ConstantInt*    JnjvmModule::OffsetVTInClassConstant;
 llvm::ConstantInt*    JnjvmModule::OffsetDepthInClassConstant;
 llvm::ConstantInt*    JnjvmModule::OffsetDisplayInClassConstant;
+llvm::ConstantInt*    JnjvmModule::OffsetStatusInClassConstant;
+llvm::ConstantInt*    JnjvmModule::OffsetCtpInClassConstant;
 const llvm::Type*     JnjvmModule::JavaClassType;
 const llvm::Type*     JnjvmModule::VTType;
 llvm::ConstantInt*    JnjvmModule::JavaArrayElementsOffsetConstant;
@@ -583,8 +582,8 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
     }
 
 #if defined(MULTIPLE_VM)
-    llvmArgs.push_back(mvm::jit::ptrType); // domain
-    llvmArgs.push_back(mvm::jit::ptrPtrType); // cached constant pool
+    llvmArgs.push_back(JnjvmModule::JnjvmType); // vm
+    llvmArgs.push_back(JnjvmModule::ConstantPoolType); // cached constant pool
 #endif
 
     uint8 id = signature->ret->funcs->numId;
@@ -608,8 +607,8 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
     }
 
 #if defined(MULTIPLE_VM)
-    llvmArgs.push_back(mvm::jit::ptrType); // domain
-    llvmArgs.push_back(mvm::jit::ptrPtrType); // cached constant pool
+    llvmArgs.push_back(JnjvmModule::JnjvmType); // vm
+    llvmArgs.push_back(JnjvmModule::ConstantPoolType); // cached constant pool
 #endif
 
     uint8 id = signature->ret->funcs->numId;
@@ -636,8 +635,8 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
     }
 
 #if defined(MULTIPLE_VM)
-    llvmArgs.push_back(mvm::jit::ptrType); // domain
-    llvmArgs.push_back(mvm::jit::ptrPtrType); // cached constant pool
+    llvmArgs.push_back(JnjvmModule::JnjvmType); // vm
+    llvmArgs.push_back(JnjvmModule::ConstantPoolType); // cached constant pool
 #endif
 
     uint8 id = signature->ret->funcs->numId;
@@ -787,8 +786,8 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     std::vector<const llvm::Type*> Args2;
-    Args2.push_back(mvm::jit::ptrType); // vm
-    Args2.push_back(mvm::jit::ptrPtrType); // ctp
+    Args2.push_back(JnjvmModule::JnjvmType); // vm
+    Args2.push_back(JnjvmModule::ConstantPoolType); // ctp
     Args2.push_back(getVirtualPtrType());
     Args2.push_back(JnjvmModule::JavaObjectType);
     Args2.push_back(PointerType::getUnqual(Type::Int32Ty));
@@ -804,8 +803,8 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
     std::vector<const llvm::Type*> Args;
-    Args.push_back(mvm::jit::ptrType); // vm
-    Args.push_back(mvm::jit::ptrPtrType); // ctp
+    Args.push_back(JnjvmModule::JnjvmType); // vm
+    Args.push_back(JnjvmModule::ConstantPoolType); // ctp
     Args.push_back(getStaticPtrType());
     Args.push_back(PointerType::getUnqual(Type::Int32Ty));
     uint8 id = signature->ret->funcs->numId;
@@ -928,10 +927,10 @@ void JnjvmModule::initialise() {
   
   VTType = module->getTypeByName("VT");
 
-#ifdef MULTIPLE_VM
-  UserClassType = module->getTypeByName("UserClass");
-  JnjvmType = module->getTypeByName("Jnjvm");
-#endif
+  JnjvmType = 
+    PointerType::getUnqual(module->getTypeByName("Jnjvm"));
+  ConstantPoolType = 
+    PointerType::getUnqual(module->getTypeByName("ConstantPool"));
   
   JavaObjectType = 
     PointerType::getUnqual(module->getTypeByName("JavaObject"));
@@ -1097,6 +1096,8 @@ void JnjvmModule::initialise() {
   OffsetVTInClassConstant = mvm::jit::constantTwo;
   OffsetDisplayInClassConstant = mvm::jit::constantThree;
   OffsetDepthInClassConstant = mvm::jit::constantFour;
+  OffsetStatusInClassConstant = mvm::jit::constantFive;
+  OffsetCtpInClassConstant = mvm::jit::constantSix;
 
   LLVMAssessorInfo::initialise();
 }

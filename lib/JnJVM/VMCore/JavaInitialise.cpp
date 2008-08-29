@@ -58,9 +58,9 @@ static void initialiseVT() {
 #ifdef MULTIPLE_VM
   INIT(JnjvmSharedLoader);
   INIT(SharedClassByteMap);
-  INIT(SharedClassNameMap);
   INIT(UserClass);
   INIT(UserClassArray);
+  INIT(UserConstantPool);
 #endif
 #undef INIT
 
@@ -78,6 +78,12 @@ static void initialiseVT() {
 }
 
 void Jnjvm::initialiseStatics() {
+
+#ifdef MULTIPLE_VM
+  if (!JnjvmSharedLoader::sharedLoader) {
+    JnjvmSharedLoader::sharedLoader = JnjvmSharedLoader::createSharedLoader();
+  }
+#endif
   
   JnjvmBootstrapLoader* JCL = bootstrapLoader = 
     JnjvmBootstrapLoader::createBootstrapLoader();
@@ -100,6 +106,17 @@ void Jnjvm::initialiseStatics() {
     JCL->loadName(JCL->asciizConstructUTF8("java/lang/Object"), false,
                   false);
   
+#ifdef MULTIPLE_VM
+  if (!ClassArray::SuperArray) {
+    ClassArray::SuperArray = JCL->SuperArray->classDef;
+    ClassArray::InterfacesArray.push_back((Class*)JCL->InterfacesArray[0]->classDef);
+    ClassArray::InterfacesArray.push_back((Class*)JCL->InterfacesArray[1]->classDef);
+  }
+#else
+  ClassArray::SuperArray = JCL->SuperArray;
+  ClassArray::InterfacesArray = JCL->InterfacesArray;
+#endif
+
   JCL->upcalls->ArrayOfChar->setInterfaces(JCL->InterfacesArray);
   JCL->upcalls->ArrayOfChar->setSuper(JCL->SuperArray);
   
@@ -179,6 +196,7 @@ void Jnjvm::initialiseStatics() {
 #undef DEF_UTF8
  
   JCL->upcalls->initialiseClasspath(JCL);
+
 }
 
 void mvm::VirtualMachine::initialiseJVM() {

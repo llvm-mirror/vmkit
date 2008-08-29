@@ -29,7 +29,7 @@ JnjvmSharedLoader* JnjvmSharedLoader::createSharedLoader() {
   
   JCL->hashUTF8 = new UTF8Map(JCL->allocator, 0);
   JCL->classes = allocator_new(allocator, ClassMap)();
-  JCL->nameClasses = allocator_new(allocator, SharedClassNameMap)();
+  JCL->nameClasses = new SharedClassNameMap();
   JCL->byteClasses = allocator_new(allocator, SharedClassByteMap)();
   JCL->javaTypes = new TypeMap(); 
   JCL->javaSignatures = new SignMap(); 
@@ -44,7 +44,7 @@ Class* JnjvmSharedLoader::constructSharedClass(const UTF8* name,
   SharedClassByteMap::iterator I = byteClasses->map.find(bytes);
   Class* res = 0;
   if (I == End) {
-    res = allocator_new(allocator, Class)(this, name, bytes);
+    res = new Class(this, name, bytes);
     byteClasses->map.insert(std::make_pair(bytes, res));
   } else {
     res = ((Class*)(I->second));
@@ -59,7 +59,7 @@ ClassArray* JnjvmSharedLoader::constructSharedClassArray(const UTF8* name) {
   SharedClassNameMap::iterator I = nameClasses->map.find(name);
   ClassArray* res = 0;
   if (I == End) {
-    res = allocator_new(allocator, ClassArray)(this, name);
+    res = new ClassArray(this, name);
     nameClasses->map.insert(std::make_pair(name, res));
   } else {
     res = ((ClassArray*)(I->second));

@@ -11,6 +11,8 @@
 #include "IsolateSharedLoader.h"
 #include "JavaAllocator.h"
 #include "JavaClass.h"
+#include "JavaThread.h"
+#include "Jnjvm.h"
 #include "JnjvmModule.h"
 
 using namespace jnjvm;
@@ -23,7 +25,8 @@ UserCommonClass::UserCommonClass() {
 
 UserClass::UserClass(JnjvmClassLoader* JCL, const UTF8* name,
                      ArrayUInt8* bytes) {
-  Class* cl = JnjvmSharedLoader::sharedLoader->constructSharedClass(name, bytes);
+  Class* cl = JnjvmSharedLoader::sharedLoader->constructSharedClass(name,
+                                                                    bytes);
   if (!cl) {
     cl = allocator_new(JCL->allocator, Class)(JCL, name, bytes);
   }
@@ -32,6 +35,7 @@ UserClass::UserClass(JnjvmClassLoader* JCL, const UTF8* name,
   classLoader = JCL;
   delegatee = 0;
   staticInstance = 0;
+  ctpInfo = new(JCL->allocator, cl->ctpInfo->ctpSize) UserConstantPool(this);
 }
 
 UserClassArray::UserClassArray(JnjvmClassLoader* JCL, const UTF8* name) {
@@ -112,18 +116,6 @@ void UserCommonClass::resolveClass() {
   }
 }
 
-UserConstantPool* UserClass::getCtpCache() {
-  fprintf(stderr, "implement me");
-  abort();
-  return 0;
-}
-
-UserConstantPool* UserClass::getConstantPool() {
-  fprintf(stderr, "implement me");
-  abort();
-  return 0;
-}
-
 UserClass* UserCommonClass::lookupClassFromMethod(JavaMethod* meth) {
   fprintf(stderr, "implement me");
   abort();
@@ -159,6 +151,11 @@ const UTF8* UserConstantPool::UTF8AtForString(uint32 entry) {
   abort();
 }
 
+void* UserConstantPool::operator new(size_t sz, JavaAllocator* alloc,
+                                     uint32 size){
+  return alloc->allocateObject(sz + size * sizeof(void*), VT);
+}
+
 AssessorDesc* UserClassArray::funcs() {
   fprintf(stderr, "implement me");
   abort();
@@ -178,17 +175,95 @@ UserClassArray* AssessorDesc::getArrayClass() const {
   return 0;
 }
 
-Class::Class(JnjvmClassLoader*, const UTF8*, ArrayUInt8*) {
-  fprintf(stderr, "implement me");
-  abort();
+JavaMethod* UserCommonClass::lookupMethodDontThrow(const UTF8* name,
+                                                   const UTF8* type,
+                                                   bool isStatic,
+                                                   bool recurse) {
+  
+  CommonClass::FieldCmp CC(name, type);
+  CommonClass::method_map* map = isStatic ? getStaticMethods() :
+                                            getVirtualMethods();
+  CommonClass::method_iterator End = map->end();
+  CommonClass::method_iterator I = map->find(CC);
+  if (I != End) return I->second;
+  
+  JavaMethod *cur = 0;
+  
+  if (recurse) {
+    if (super) cur = super->lookupMethodDontThrow(name, type, isStatic,
+                                                  recurse);
+    if (cur) return cur;
+    if (isStatic) {
+      std::vector<UserClass*>* interfaces = getInterfaces();
+      for (std::vector<UserClass*>::iterator i = interfaces->begin(),
+           e = interfaces->end(); i!= e; i++) {
+        cur = (*i)->lookupMethodDontThrow(name, type, isStatic, recurse);
+        if (cur) return cur;
+      }
+    }
+  }
+
+  return 0;
 }
 
-ClassPrimitive::ClassPrimitive(JnjvmClassLoader*, const UTF8*, uint32) {
-  fprintf(stderr, "implement me");
-  abort();
+JavaMethod* UserCommonClass::lookupMethod(const UTF8* name, const UTF8* type,
+                                          bool isStatic, bool recurse) {
+  JavaMethod* res = lookupMethodDontThrow(name, type, isStatic, recurse);
+  if (!res) {
+    JavaThread::get()->isolate->noSuchMethodError(this->classDef, name);
+  }
+  return res;
 }
 
-ClassArray::ClassArray(JnjvmClassLoader*, const UTF8*) {
-  fprintf(stderr, "implement me");
-  abort();
+JavaField*
+UserCommonClass::lookupFieldDontThrow(const UTF8* name, const UTF8* type,
+                                      bool isStatic, bool recurse,
+                                      UserCommonClass*& definingClass) {
+
+  CommonClass::FieldCmp CC(name, type);
+  CommonClass::field_map* map = isStatic ? getStaticFields() :
+                                           getVirtualFields();
+  CommonClass::field_iterator End = map->end();
+  CommonClass::field_iterator I = map->find(CC);
+  if (I != End) {
+    definingClass = this;
+    return I->second;
+  }
+  
+  JavaField *cur = 0;
+
+  if (recurse) {
+    if (super) cur = super->lookupFieldDontThrow(name, type, isStatic,
+                                                 recurse, definingClass);
+    if (cur) {
+      definingClass = (UserClass*)super;
+      return cur;
+    }
+    if (isStatic) {
+      std::vector<UserClass*>* interfaces = getInterfaces();
+      for (std::vector<UserClass*>::iterator i = interfaces->begin(),
+           e = interfaces->end(); i!= e; i++) {
+        cur = (*i)->lookupFieldDontThrow(name, type, isStatic, recurse,
+                                         definingClass);
+        if (cur) {
+          definingClass = *i;
+          return cur;
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
+JavaField* UserCommonClass::lookupField(const UTF8* name, const UTF8* type,
+                                        bool isStatic, bool recurse,
+                                        UserCommonClass*& definingClass) {
+  
+  JavaField* res = lookupFieldDontThrow(name, type, isStatic, recurse,
+                                        definingClass);
+  if (!res) {
+    JavaThread::get()->isolate->noSuchFieldError(this->classDef, name);
+  }
+  return res;
 }

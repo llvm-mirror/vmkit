@@ -46,8 +46,6 @@ class SharedClassNameMap :
     public LockedMap<const UTF8*, CommonClass*, ltutf8, JnjvmClassLoader* > {
 public:
   
-  static VirtualTable* VT;
-  
   SharedClassNameMap() {
     lock = mvm::Lock::allocNormal();
   }
@@ -55,8 +53,6 @@ public:
   ~SharedClassNameMap() {
     delete lock;
   }
-  
-  virtual void TRACER;
 
 };
 
