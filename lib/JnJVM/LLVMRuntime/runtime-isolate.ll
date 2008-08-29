@@ -16,8 +16,8 @@ declare i8* @stringLookup(%JavaClass*, i32, ...)
 ;;; constant call because the cache node never changes.
 declare i8** @getCtpCacheNode(%CacheNode*) readnone
 
-;;; getCtpCacheNode - Get the constant pool cache of a cache node. This is a
-;;; constant call because the cache node never changes.
+;;; getCtpCacheNode - Get the constant pool cache of a class. This is a
+;;; constant call because the constant pool never changes.
 declare i8** @getCtpClass(%JavaClass*) readnone
 
 ;;; getJnjvmExceptionClass - Get the exception user class for the given

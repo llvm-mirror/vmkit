@@ -401,15 +401,14 @@ ArrayObject* NativeUtil::getParameterTypes(JnjvmClassLoader* loader, JavaMethod*
 
 }
 
-ArrayObject* NativeUtil::getExceptionTypes(JavaMethod* meth) {
+ArrayObject* NativeUtil::getExceptionTypes(UserClass* cl, JavaMethod* meth) {
   Attribut* exceptionAtt = meth->lookupAttribut(Attribut::exceptionsAttribut);
   Jnjvm* vm = JavaThread::get()->isolate;
   if (exceptionAtt == 0) {
     return ArrayObject::acons(0, vm->upcalls->classArrayClass,
                               &(JavaThread::get()->isolate->allocator));
   } else {
-    Class* cl = meth->classDef;
-    JavaConstantPool* ctp = cl->getConstantPool();
+    UserConstantPool* ctp = cl->getConstantPool();
     Reader reader(exceptionAtt, cl->getBytes());
     uint16 nbe = reader.readU2();
     ArrayObject* res = ArrayObject::acons(nbe, vm->upcalls->classArrayClass,

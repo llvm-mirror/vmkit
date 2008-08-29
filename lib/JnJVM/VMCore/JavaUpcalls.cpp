@@ -200,7 +200,7 @@ JavaField* Classpath::constructorClass;
 #endif
 
 void Classpath::createInitialThread(Jnjvm* vm, JavaObject* th) {
-  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
+  JnjvmClassLoader* JCL = vm->bootstrapLoader;
   JCL->loadName(newVMThread->getName(), true, true);
   newVMThread->initialiseClass(vm);
 
@@ -221,7 +221,7 @@ void Classpath::createInitialThread(Jnjvm* vm, JavaObject* th) {
 }
 
 void Classpath::mapInitialThread(Jnjvm* vm) {
-  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
+  JnjvmClassLoader* JCL = vm->bootstrapLoader;
   JCL->loadName(newThread->getName(), true, true);
   newThread->initialiseClass(vm);
   JavaObject* th = newThread->doNew(vm);

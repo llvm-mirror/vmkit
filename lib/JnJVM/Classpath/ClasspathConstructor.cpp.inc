@@ -108,7 +108,15 @@ jobject cons) {
   verifyNull(cons);
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaMethod* meth = (JavaMethod*)vm->upcalls->constructorSlot->getInt32Field((JavaObject*)cons);
-  return (jobjectArray)NativeUtil::getExceptionTypes(meth);
+  UserClass* cl = 0;
+#ifdef MULTIPLE_VM
+    jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)cons);
+    cl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
+#else
+    cl = meth->classDef;
+#endif
+
+  return (jobjectArray)NativeUtil::getExceptionTypes(cl, meth);
 }
 
 }

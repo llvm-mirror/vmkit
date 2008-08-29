@@ -265,9 +265,9 @@ const UTF8* JavaConstantPool::resolveClassName(uint32 index) {
   else return UTF8At(ctpDef[index]);
 }
 
-#ifndef MULTIPLE_VM
 CommonClass* JavaConstantPool::loadClass(uint32 index) {
   CommonClass* temp = isClassLoaded(index);
+#ifndef MULTIPLE_VM
   if (!temp) {
     JnjvmClassLoader* loader = classDef->classLoader;
     const UTF8* name = UTF8At(ctpDef[index]);
@@ -280,21 +280,24 @@ CommonClass* JavaConstantPool::loadClass(uint32 index) {
     }
     ctpRes[index] = temp;
   }
+#endif
   return temp;
 }
 
 CommonClass* JavaConstantPool::getMethodClassIfLoaded(uint32 index) {
   CommonClass* temp = isClassLoaded(index);
+#ifndef MULTIPLE_VM
   if (!temp) {
     JnjvmClassLoader* loader = classDef->classLoader;
+    assert(loader && "Class has no loader?");
     const UTF8* name = UTF8At(ctpDef[index]);
     temp = loader->lookupClass(name);
     if (!temp) 
       temp = JnjvmClassLoader::bootstrapLoader->lookupClass(name);
   }
+#endif
   return temp;
 }
-#endif
 
 Typedef* JavaConstantPool::resolveNameAndType(uint32 index) {
   void* res = ctpRes[index];
@@ -423,7 +426,7 @@ Signdef* JavaConstantPool::infoOfInterfaceOrVirtualMethod(uint32 index) {
   return sign;
 }
 
-void JavaConstantPool::resolveMethod(uint32 index, UserCommonClass*& cl,
+void JavaConstantPool::resolveMethod(uint32 index, CommonClass*& cl,
                                      const UTF8*& utf8, Signdef*& sign) {
   sint32 entry = ctpDef[index];
   sint32 ntIndex = entry & 0xFFFF;
@@ -434,7 +437,7 @@ void JavaConstantPool::resolveMethod(uint32 index, UserCommonClass*& cl,
   cl->resolveClass();
 }
   
-void JavaConstantPool::resolveField(uint32 index, UserCommonClass*& cl,
+void JavaConstantPool::resolveField(uint32 index, CommonClass*& cl,
                                     const UTF8*& utf8, Typedef*& sign) {
   sint32 entry = ctpDef[index];
   sint32 ntIndex = entry & 0xFFFF;

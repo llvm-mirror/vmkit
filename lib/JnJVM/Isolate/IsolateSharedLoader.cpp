@@ -17,6 +17,8 @@
 
 using namespace jnjvm;
 
+JnjvmSharedLoader* JnjvmSharedLoader::sharedLoader;
+
 JnjvmSharedLoader* JnjvmSharedLoader::createSharedLoader() {
   
   JnjvmSharedLoader* JCL = gc_new(JnjvmSharedLoader)();
@@ -66,13 +68,14 @@ ClassArray* JnjvmSharedLoader::constructSharedClassArray(const UTF8* name) {
   return res;
 }
 
-ClassPrimitive* JnjvmSharedLoader::constructSharedClassPrimitive(const UTF8* name) {
+ClassPrimitive*
+JnjvmSharedLoader::constructSharedClassPrimitive(const UTF8* name, uint32 nb) {
   nameClasses->lock->lock();
   SharedClassNameMap::iterator End = nameClasses->map.end();
   SharedClassNameMap::iterator I = nameClasses->map.find(name);
   ClassPrimitive* res = 0;
   if (I == End) {
-    res = new ClassPrimitive(this, name);
+    res = new ClassPrimitive(this, name, nb);
     nameClasses->map.insert(std::make_pair(name, res));
   } else {
     res = ((ClassPrimitive*)(I->second));

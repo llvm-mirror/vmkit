@@ -52,7 +52,7 @@ JNIEnv *env,
   memmove(&(elements[lgPre + lgLib]), vm->postlib->elements, lgPost * sizeof(uint16));
   
   // TODO: find a better place to store the UTF8
-  const UTF8* res = JnjvmClassLoader::bootstrapLoader->readerConstructUTF8(elements, size);
+  const UTF8* res = vm->bootstrapLoader->readerConstructUTF8(elements, size);
 
   return (jobject)(vm->UTF8ToStr(res));
   

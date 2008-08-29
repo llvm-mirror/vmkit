@@ -33,7 +33,8 @@ public:
   /// VT - The virtual table of this class.
   ///
   static VirtualTable* VT;
-
+  
+  virtual void TRACER;
 
   /// constructSharedClass - Create a shared representation of the class.
   /// If two classes have the same name but not the same array of bytes, 
@@ -41,7 +42,7 @@ public:
   ///
   Class* constructSharedClass(const UTF8* name, ArrayUInt8* bytes);
   ClassArray* constructSharedClassArray(const UTF8* name);
-  ClassPrimitive* constructSharedClassPrimitive(const UTF8* name);
+  ClassPrimitive* constructSharedClassPrimitive(const UTF8* name, uint32 nb);
 
   static JnjvmSharedLoader* createSharedLoader();
 

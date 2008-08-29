@@ -9,7 +9,10 @@
 
 #include "LockedMap.h"
 
-using namespace jnjvm;
+#ifndef ISOLATE_JNJVM_SHARED_MAPS_H
+#define ISOLATE_JNJVM_SHARED_MAPS_H
+
+namespace jnjvm {
 
 
 struct ltarray {
@@ -56,3 +59,7 @@ public:
   virtual void TRACER;
 
 };
+
+} // end namespace jnjvm
+
+#endif //ISOLATE_JNJVM_SHARED_MAPS_H

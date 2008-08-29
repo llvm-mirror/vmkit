@@ -302,17 +302,17 @@ Signdef* JnjvmClassLoader::constructSign(const UTF8* name) {
 }
 
 
-JnjvmClassLoader* JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader) {
+JnjvmClassLoader* JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
   
   if (loader == 0)
-    return bootstrapLoader;
+    return vm->bootstrapLoader;
   
-  Classpath* upcalls = bootstrapLoader->upcalls;
+  Classpath* upcalls = vm->bootstrapLoader->upcalls;
   JnjvmClassLoader* JCL = 
     (JnjvmClassLoader*)(upcalls->vmdataClassLoader->getObjectField(loader));
   
   if (!JCL) {
-    JCL = gc_new(JnjvmClassLoader)(*bootstrapLoader, loader, JavaThread::get()->isolate);
+    JCL = gc_new(JnjvmClassLoader)(*vm->bootstrapLoader, loader, JavaThread::get()->isolate);
     (upcalls->vmdataClassLoader->setObjectField(loader, (JavaObject*)JCL));
   }
 

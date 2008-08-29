@@ -63,16 +63,16 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   BEGIN_EXCEPTION
 
   JnjvmClassLoader* loader = 0;
+  Jnjvm* vm = JavaThread::get()->isolate;
   UserClass* currentClass = JavaJIT::getCallingClass();
   if (currentClass) loader = currentClass->classLoader;
-  else loader = JnjvmClassLoader::bootstrapLoader;
+  else loader = vm->bootstrapLoader;
 
   const UTF8* utf8 = loader->asciizConstructUTF8(asciiz);
   sint32 len = utf8->size;
   
 
   UserCommonClass* cl = loader->lookupClassFromUTF8(utf8, 0, len, true, true);
-  Jnjvm* vm = JavaThread::get()->isolate;
   cl->initialiseClass(vm);
   return (jclass)(cl->getClassDelegatee(vm));
   

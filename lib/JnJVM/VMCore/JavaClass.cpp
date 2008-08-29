@@ -279,7 +279,7 @@ JnjvmClassLoader* ClassArray::arrayLoader(const UTF8* name,
     UserCommonClass* cl = loader->loadName(componentName, false, true);
     return cl->classLoader;
   } else {
-    return JnjvmClassLoader::bootstrapLoader;
+    return JavaThread::get()->isolate->bootstrapLoader;
   }
 }
 
@@ -720,6 +720,11 @@ void CommonClass::resolveClass() {
       release();
     }
   }
+}
+#else
+void CommonClass::resolveClass() {
+  assert(status >= resolved && 
+         "Asking to resolve a not resolved-class in a isolate environment");
 }
 #endif
 

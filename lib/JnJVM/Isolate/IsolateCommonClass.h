@@ -7,6 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#ifndef JNJVM_JAVA_CLASS_H
+#error "Never use <IsolateCommonClass.h> directly, but include <JavaClass.h>"
+#endif
+
 #ifndef ISOLATE_COMMON_CLASS_H
 #define ISOLATE_COMMON_CLASS_H
 
@@ -81,8 +85,6 @@ public:
   UserClass* super;
   std::vector<UserClass*> interfaces;
 
-  virtual void TRACER;
-  
   bool inheritName(const UTF8* Tname);
   bool isOfTypeName(const UTF8* name);
   bool isAssignableFrom(UserCommonClass* cl);
@@ -201,7 +203,6 @@ public:
     return classDef->constructField(name, type, access);
   }
 
-  UserConstantPool* getCtpCache();
 
   UserClass* lookupClassFromMethod(JavaMethod* meth);
   UserCommonClass* getUserClass(CommonClass* cl);
@@ -254,6 +255,7 @@ public:
     return &classDef->interfacesUTF8;
   }
   
+  UserCommonClass();
 };
 
 class UserClass : public UserCommonClass {
@@ -264,7 +266,8 @@ public:
   virtual void TRACER;
 
   UserClass(JnjvmClassLoader* JCL, const UTF8* name, ArrayUInt8* bytes);
-  
+  UserClass() {}
+
   JavaObject* doNew(Jnjvm* vm);
   
   std::vector<UserClass*> innerClasses;
@@ -296,6 +299,7 @@ public:
   
   UserConstantPool* ctpInfo;
   UserConstantPool* getConstantPool();
+  UserConstantPool* getCtpCache();
 
   uint64 getStaticSize() {
     return ((Class*)classDef)->getStaticSize();
@@ -327,6 +331,7 @@ public:
 
   virtual void TRACER;
   UserClassArray(JnjvmClassLoader* JCL, const UTF8* name);
+  UserClassArray() {}
   
   void resolveComponent();
 

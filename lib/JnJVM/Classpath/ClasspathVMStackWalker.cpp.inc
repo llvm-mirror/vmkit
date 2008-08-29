@@ -28,6 +28,7 @@ using namespace jnjvm;
 
 extern "C" {
 
+#ifndef MULTIPLE_VM
 ArrayObject* recGetClassContext(Jnjvm* vm, int** stack, uint32 size, uint32 first, uint32 rec) {
   if (size != first) {
     JavaMethod* meth = JavaJIT::IPToJavaMethod(stack[first]);
@@ -42,7 +43,7 @@ ArrayObject* recGetClassContext(Jnjvm* vm, int** stack, uint32 size, uint32 firs
     return ArrayObject::acons(rec, vm->upcalls->classArrayClass, &(vm->allocator));
   }
 }
-#ifndef MULTIPLE_VM
+
 JNIEXPORT jobject JNICALL Java_gnu_classpath_VMStackWalker_getClassContext(
 #ifdef NATIVE_JNI
 JNIEnv *env,

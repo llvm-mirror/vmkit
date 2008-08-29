@@ -35,7 +35,7 @@ public:
 
   static JavaObject* getClassType(JnjvmClassLoader* loader, Typedef* type);
   static ArrayObject* getParameterTypes(JnjvmClassLoader* loader, JavaMethod* meth);
-  static ArrayObject* getExceptionTypes(JavaMethod* meth);
+  static ArrayObject* getExceptionTypes(UserClass* cl, JavaMethod* meth);
 
 };
 

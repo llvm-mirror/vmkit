@@ -206,7 +206,14 @@ JNIEnv *env,
   verifyNull(_meth);
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaMethod* meth = (JavaMethod*)vm->upcalls->methodSlot->getInt32Field((JavaObject*)_meth);
-  return (jobjectArray)NativeUtil::getExceptionTypes(meth);
+  UserClass* cl = 0;
+#ifdef MULTIPLE_VM
+  jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)_meth);
+  cl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
+#else
+  cl = meth->classDef;
+#endif
+  return (jobjectArray)NativeUtil::getExceptionTypes(cl, meth);
 }
 
 }

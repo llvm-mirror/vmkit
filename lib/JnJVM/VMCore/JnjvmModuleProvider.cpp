@@ -31,7 +31,7 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
 
   bool isStatic = ctpInfo->isAStaticCall(index);
 
-  UserCommonClass* cl = 0;
+  CommonClass* cl = 0;
   const UTF8* utf8 = 0;
   Signdef* sign = 0;
 
@@ -104,7 +104,9 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
         "The method's offset is greater than the virtual table size");
     ((void**)meth->classDef->virtualVT)[offset] = val;
   } else {
+#ifndef MULTIPLE_VM
     meth->classDef->initialiseClass(JavaThread::get()->isolate);
+#endif
   }
 
   return false;

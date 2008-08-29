@@ -390,14 +390,26 @@ void JavaJIT::monitorExit(Value* obj) {
   currentBlock = EndUnlock;
 }
 
+#ifdef MULTIPLE_VM
+Value* JavaJIT::getStaticInstanceCtp() {
+  /// get the -1 offset of the ctp
+  fprintf(stderr, "implement me");
+  abort();
+}
+#endif
+
 void JavaJIT::beginSynchronize() {
   Value* obj = 0;
   if (isVirtual(compilingMethod->access)) {
     obj = llvmFunction->arg_begin();
   } else {
+#ifndef MULTIPLE_VM
     LLVMClassInfo* LCI = 
       (LLVMClassInfo*)module->getClassInfo(compilingClass);
     obj = LCI->getStaticVar(this);
+#else
+    obj = getStaticInstanceCtp();
+#endif
   }
 #ifndef SERVICE_VM
   monitorEnter(obj);
@@ -417,9 +429,13 @@ void JavaJIT::endSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     obj = llvmFunction->arg_begin();
   } else {
+#ifndef MULTIPLE_VM
     LLVMClassInfo* LCI = 
       (LLVMClassInfo*)module->getClassInfo(compilingClass);
     obj = LCI->getStaticVar(this);
+#else
+    obj = getStaticInstanceCtp();
+#endif
   }
 #ifndef SERVICE_VM
   monitorExit(obj);
@@ -850,8 +866,12 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     if (isVirtual(compilingMethod->access)) {
       argsSync.push_back(llvmFunction->arg_begin());
     } else {
+#ifndef MULTIPLE_VM
       LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(compilingClass);
       Value* arg = LCI->getStaticVar(this);
+#else
+      Value* arg = getStaticInstanceCtp();
+#endif
       argsSync.push_back(arg);
     }
     llvm::CallInst::Create(JnjvmModule::ReleaseObjectFunction, argsSync.begin(), argsSync.end(),

@@ -54,7 +54,7 @@ jclass clazz,
                                                         jobject loader) {
 
   Jnjvm* vm = JavaThread::get()->isolate; 
-  JnjvmClassLoader* JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader);
+  JnjvmClassLoader* JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
   UserCommonClass* cl = JCL->lookupClassFromJavaString((JavaString*)str,
                                                    true, false);
   if (cl != 0) {

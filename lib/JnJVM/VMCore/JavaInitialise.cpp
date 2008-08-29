@@ -32,6 +32,11 @@
 #include "ServiceDomain.h"
 #endif
 
+#ifdef MULTIPLE_VM
+#include "SharedMaps.h"
+#include "IsolateSharedLoader.h"
+#endif
+
 using namespace jnjvm;
 
 static void initialiseVT() {
@@ -50,6 +55,13 @@ static void initialiseVT() {
 #ifdef SERVICE_VM
   INIT(ServiceDomain);
 #endif
+#ifdef MULTIPLE_VM
+  INIT(JnjvmSharedLoader);
+  INIT(SharedClassByteMap);
+  INIT(SharedClassNameMap);
+  INIT(UserClass);
+  INIT(UserClassArray);
+#endif
 #undef INIT
 
 #define INIT(X) { \
@@ -65,9 +77,9 @@ static void initialiseVT() {
 #undef INIT
 }
 
-static void initialiseStatics() {
+void Jnjvm::initialiseStatics() {
   
-  JnjvmBootstrapLoader* JCL = JnjvmClassLoader::bootstrapLoader = 
+  JnjvmBootstrapLoader* JCL = bootstrapLoader = 
     JnjvmBootstrapLoader::createBootstrapLoader();
   
   // Array initialization
@@ -170,10 +182,15 @@ static void initialiseStatics() {
 }
 
 void mvm::VirtualMachine::initialiseJVM() {
+#ifndef MULTIPLE_VM
   if (!JnjvmClassLoader::bootstrapLoader) {
     initialiseVT();
-    initialiseStatics(); 
+    Jnjvm::initialiseStatics();
+    JnjvmClassLoader::bootstrapLoader = Jnjvm::bootstrapLoader;
   }
+#else
+  initialiseVT(); 
+#endif
 }
 
 void Jnjvm::runApplication(int argc, char** argv) {

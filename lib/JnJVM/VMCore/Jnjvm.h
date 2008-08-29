@@ -22,6 +22,7 @@
 
 #include "JavaAllocator.h"
 #include "JavaTypes.h"
+#include "JnjvmConfig.h"
 
 namespace jnjvm {
 
@@ -215,7 +216,7 @@ public:
   /// bootstraLoader - Bootstrap loader for base classes of this virtual
   /// machine.
   ///
-  JnjvmBootstrapLoader* bootstrapLoader;
+  ISOLATE_STATIC JnjvmBootstrapLoader* bootstrapLoader;
 
   /// upcalls - Upcalls to call Java methods and access Java fields.
   ///
@@ -325,6 +326,11 @@ public:
   void setClasspath(char* cp) {
     classpath = cp;
   }
+  
+  /// initialiseStatics - Initializes the isolate. The function initialize
+  /// static variables in a single environment.
+  ///
+  ISOLATE_STATIC void initialiseStatics();
 
   /// allocateIsolate - Allocates a new JVM.
   ///

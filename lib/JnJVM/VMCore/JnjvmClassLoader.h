@@ -126,7 +126,7 @@ public:
   /// getJnjvmLoaderFromJavaObject - Return the Jnjvm runtime representation
   /// of the given class loader.
   ///
-  static JnjvmClassLoader* getJnjvmLoaderFromJavaObject(JavaObject*);
+  static JnjvmClassLoader* getJnjvmLoaderFromJavaObject(JavaObject*, Jnjvm *vm);
   
   /// getJavaClassLoader - Return the Java representation of this class loader.
   ///
@@ -185,7 +185,7 @@ public:
   /// bootstrapLoader - The bootstrap loader of the JVM. Loads the base
   /// classes.
   ///
-  static JnjvmBootstrapLoader* bootstrapLoader;
+  ISOLATE_STATIC JnjvmBootstrapLoader* bootstrapLoader;
   
   /// ~JnjvmClassLoader - Destroy the loader. Depending on the JVM
   /// configuration, this may destroy the tables, JIT module and

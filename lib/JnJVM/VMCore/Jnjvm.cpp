@@ -83,6 +83,7 @@ const unsigned int Jnjvm::Magic = 0xcafebabe;
 #ifndef MULTIPLE_VM
 /// If we're not in a multi-vm environment, this can be made static.
 std::vector<void*> Jnjvm::nativeLibs;
+JnjvmBootstrapLoader* Jnjvm::bootstrapLoader;
 #endif
 
 typedef void (*clinit_t)(Jnjvm* vm);
@@ -439,7 +440,7 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   sprintf(temp, "%s:%s", vm->classpath, jarFile);
   vm->setClasspath(temp);
   
-  ArrayUInt8* bytes = Reader::openFile(JnjvmClassLoader::bootstrapLoader,
+  ArrayUInt8* bytes = Reader::openFile(vm->bootstrapLoader,
                                        jarFile);
 
   ZipArchive archive(bytes);
@@ -562,7 +563,7 @@ void ClArgumentsInfo::readArgs(int argc, char** argv, Jnjvm* vm) {
         printInformation();
       } else {
         char* path = &cur[16];
-        JnjvmClassLoader::bootstrapLoader->analyseClasspathEnv(path);
+        vm->bootstrapLoader->analyseClasspathEnv(path);
       }
     } else if (!(strcmp(cur, "-enableassertions"))) {
       nyi();
@@ -649,7 +650,8 @@ JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
     UserClass* cl = upcalls->newClassLoader;
     JavaObject* loader = 
       upcalls->getSystemClassLoader->invokeJavaObjectStatic(this, cl);
-    appClassLoader = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader);
+    appClassLoader = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader,
+                                                                    this);
   }
   return appClassLoader;
 }
@@ -659,7 +661,7 @@ void Jnjvm::mapInitialThread() {
 }
 
 void Jnjvm::loadBootstrap() {
-  JnjvmClassLoader* loader = JnjvmClassLoader::bootstrapLoader;
+  JnjvmClassLoader* loader = bootstrapLoader;
 #define LOAD_CLASS(cl) \
   cl->resolveClass(); \
   cl->initialiseClass(this);
@@ -834,7 +836,11 @@ Jnjvm* Jnjvm::allocateIsolate() {
   
   isolate->hashStr = new StringMap();
   isolate->globalRefsLock = mvm::Lock::allocNormal();
-  isolate->bootstrapLoader = JnjvmClassLoader::bootstrapLoader;
+
+#ifdef MULTIPLE_VM
+  isolate->initialiseStatics();
+#endif
+  
   isolate->upcalls = isolate->bootstrapLoader->upcalls;
 
 #ifdef MULTIPLE_VM
