@@ -35,7 +35,7 @@ UserClass::UserClass(JnjvmClassLoader* JCL, const UTF8* name,
   classLoader = JCL;
   delegatee = 0;
   staticInstance = 0;
-  ctpInfo = new(JCL->allocator, cl->ctpInfo->ctpSize) UserConstantPool(this);
+  ctpInfo = 0;
 }
 
 UserClassArray::UserClassArray(JnjvmClassLoader* JCL, const UTF8* name) {
@@ -82,11 +82,15 @@ void UserCommonClass::resolveClass() {
             def->readClass();
             def->status = classRead;
             status = classRead;
-            def->release();
-            release();
+            cl->ctpInfo = 
+              new(classLoader->allocator, def->ctpInfo->ctpSize) UserConstantPool(cl);
             cl->loadParents();
-            acquire();
-            def->acquire();
+            if (cl->super)
+              def->super = cl->super->classDef;
+            for (std::vector<UserClass*>::iterator i = interfaces.begin(),
+                 e = interfaces.end(); i != e; ++i) {
+              def->interfaces.push_back((Class*)((*i)->classDef));
+            }
             def->status = prepared;
             status = prepared;
             def->classLoader->TheModule->resolveVirtualClass(def);
@@ -100,6 +104,8 @@ void UserCommonClass::resolveClass() {
             classDef->release();
           }
         } else {
+          cl->ctpInfo = 
+            new(classLoader->allocator, def->ctpInfo->ctpSize) UserConstantPool(cl);
           release();
           status = classRead,
           cl->loadParents();
@@ -128,27 +134,58 @@ UserCommonClass* UserCommonClass::getUserClass(CommonClass* cl) {
   return 0;
 }
 
+
+UserCommonClass* UserConstantPool::isClassLoaded(uint32 entry) {
+  JavaConstantPool* ctpInfo = getSharedPool();
+  if (! ((entry > 0) && (entry < ctpInfo->ctpSize) && 
+        ctpInfo->typeAt(entry) == JavaConstantPool::ConstantClass)) {
+    JavaThread::get()->isolate->classFormatError(
+              "bad constant pool number for class at entry %d", entry);
+  }
+  return (UserCommonClass*)ctpRes[entry];
+}
+
 UserCommonClass* UserConstantPool::loadClass(uint32 index) {
-  fprintf(stderr, "implement me");
-  abort();
-  return 0;
+  UserCommonClass* temp = isClassLoaded(index);
+  if (!temp) {
+    JavaConstantPool* ctpInfo = getSharedPool();
+    JnjvmClassLoader* loader = getClass()->classLoader;
+    const UTF8* name = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
+    if (name->elements[0] == AssessorDesc::I_TAB) {
+      temp = loader->constructArray(name);
+      temp->resolveClass();
+    } else {
+      // Put into ctpRes because there is only one representation of the class
+      temp = loader->loadName(name, true, false);
+    }
+    ctpRes[index] = temp;
+    ctpInfo->ctpRes[index] = getClass()->classDef;
+  }
+  return temp;
 }
 
 void UserConstantPool::resolveMethod(uint32 index, UserCommonClass*& cl,
                                      const UTF8*& utf8, Signdef*& sign) {
-  fprintf(stderr, "implement me");
-  abort();
+  JavaConstantPool* ctpInfo = getSharedPool();
+  sint32 entry = ctpInfo->ctpDef[index];
+  sint32 ntIndex = entry & 0xFFFF;
+  sign = (Signdef*)ctpInfo->ctpRes[ntIndex];
+  assert(sign && "No cached signature after JITting");
+  utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[ntIndex] >> 16);
+  cl = loadClass(entry >> 16);
+  assert(cl && cl->isResolved() && "No resolved class when resolving method");
 }
   
 void UserConstantPool::resolveField(uint32 index, UserCommonClass*& cl,
                                     const UTF8*& utf8, Typedef*& sign) {
-  fprintf(stderr, "implement me");
-  abort();
-}
-
-const UTF8* UserConstantPool::UTF8AtForString(uint32 entry) {
-  fprintf(stderr, "implement me");
-  abort();
+  JavaConstantPool* ctpInfo = getSharedPool();
+  sint32 entry = ctpInfo->ctpDef[index];
+  sint32 ntIndex = entry & 0xFFFF;
+  sign = (Typedef*)ctpInfo->ctpRes[ntIndex];
+  assert(sign && "No cached Typedef after JITting");
+  utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[ntIndex] >> 16);
+  cl = loadClass(entry >> 16);
+  assert(cl && cl->isResolved() && "No resolved class when resolving field");
 }
 
 void* UserConstantPool::operator new(size_t sz, JavaAllocator* alloc,

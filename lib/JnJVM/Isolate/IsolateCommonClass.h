@@ -16,6 +16,8 @@
 
 #include "mvm/Object.h"
 
+#include "JavaConstantPool.h"
+
 namespace jnjvm {
 
 class ArrayUInt8;
@@ -111,6 +113,10 @@ public:
 
   bool isReady() {
     return status >= inClinit;
+  }
+  
+  bool isResolved() {
+    return status >= resolved;
   }
 
   uint8 getAccess() {
@@ -386,10 +392,20 @@ public:
   ///
   void resolveField(uint32 index, UserCommonClass*& cl, const UTF8*& utf8,
                     Typedef*& sign);
+  
+  UserClass* getClass() {
+    return (UserClass*)ctpRes[0];
+  }
+
+  JavaConstantPool* getSharedPool() {
+    return ((Class*)(getClass()->classDef))->ctpInfo;
+  }
 
   /// UTF8At - Get the UTF8 referenced from this string entry.
   ///
-  const UTF8* UTF8AtForString(uint32 entry);
+  const UTF8* UTF8AtForString(uint32 entry) {
+    return getSharedPool()->UTF8AtForString(entry);
+  }
 
   /// loadClass - Loads the class and returns it. This is called just in time, 
   /// ie when the class will be used and not yet resolved.
@@ -403,6 +419,9 @@ public:
   UserConstantPool(UserClass* cl) {
     ctpRes[0] = cl;
   }
+
+  UserCommonClass* isClassLoaded(uint32 entry);
+
 };
 
 } // end namespace jnjvm
