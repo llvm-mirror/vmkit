@@ -264,13 +264,12 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
     if (cl->super) {
       cl->virtualTableSize = cl->super->virtualTableSize;
     } else {
-      cl->virtualTableSize = VT_SIZE / sizeof(void*);
+      cl->virtualTableSize = VT_NB_FUNCS;
     }
     res = allocateVT(cl, cl->virtualMethods.begin());
   
     if (!(cl->super)) {
-      // 12 = number of virtual methods in java/lang/Object (!!!)
-      uint32 size = 12 * sizeof(void*);
+      uint32 size =  (cl->virtualTableSize - VT_NB_FUNCS) * sizeof(void*);
 #define COPY(CLASS) \
     memcpy((void*)((unsigned)CLASS::VT + VT_SIZE), \
            (void*)((unsigned)res + VT_SIZE), size);
