@@ -247,7 +247,14 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           }
           
           std::vector<Value*> indexes; //[3];
+#ifdef MULTIPLE_VM
+          ConstantInt* Cons = dyn_cast<ConstantInt>(Index);
+          assert(CI && "Wrong use of GetConstantPoolAt");
+          uint64 val = Cons->getZExtValue();
+          indexes.push_back(ConstantInt::get(Type::Int32Ty, val + 1));
+#else
           indexes.push_back(Index);
+#endif
           Value* arg1 = GetElementPtrInst::Create(CTP, indexes.begin(),
                                                   indexes.end(),  "", CI);
           arg1 = new LoadInst(arg1, "", false, CI);
@@ -318,6 +325,19 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           std::vector<Value*> indexes; 
           indexes.push_back(mvm::jit::constantZero);
           indexes.push_back(jnjvm::JnjvmModule::OffsetCtpInClassConstant);
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
+                                                   indexes.end(), "", CI);
+          Value* VT = new LoadInst(VTPtr, "", CI);
+          CI->replaceAllUsesWith(VT);
+          CI->eraseFromParent();
+        } else if (V == jnjvm::JnjvmModule::GetJnjvmArrayClassFunction) {
+          Changed = true;
+          Value* val = Call.getArgument(0); 
+          Value* index = Call.getArgument(1); 
+          std::vector<Value*> indexes; 
+          indexes.push_back(mvm::jit::constantZero);
+          indexes.push_back(mvm::jit::constantTwo);
+          indexes.push_back(index);
           Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                    indexes.end(), "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
