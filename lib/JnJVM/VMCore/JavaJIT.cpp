@@ -1577,7 +1577,6 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   std::vector<Value*> Args;
 #ifdef MULTIPLE_VM
   Value* CTP = ctpCache;
-  std::vector<Value*> Args;
   Args.push_back(mvm::jit::constantOne);
   Value* Cl = GetElementPtrInst::Create(CTP, Args.begin(), Args.end(), "",
                                         currentBlock);
@@ -1595,12 +1594,7 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   Args.push_back(resolver);
   Args.push_back(CTP);
   Args.push_back(Cl);
-#ifndef MULTIPLE_VM
   Args.push_back(ConstantInt::get(Type::Int32Ty, index));
-#else
-  // Add one to the index because of the VT
-  Args.push_back(ConstantInt::get(Type::Int32Ty, index + 1));
-#endif
   if (additionalArg) Args.push_back(additionalArg);
 
   Value* res = 0;
