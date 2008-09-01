@@ -963,7 +963,7 @@ public:
   ///
   #define GETFIELD(TYPE, TYPE_NAME) \
   TYPE get##TYPE_NAME##Field(JavaObject* obj) { \
-    assert((classDef->getStatus()) >= inClinit); \
+    assert(classDef->isResolved()); \
     void* ptr = (void*)((uint64)obj + ptrOffset); \
     return ((TYPE*)ptr)[0]; \
   }
@@ -972,7 +972,7 @@ public:
   ///
   #define SETFIELD(TYPE, TYPE_NAME) \
   void set##TYPE_NAME##Field(JavaObject* obj, TYPE val) { \
-    assert((classDef->getStatus()) >= inClinit); \
+    assert(classDef->isResolved()); \
     void* ptr = (void*)((uint64)obj + ptrOffset); \
     ((TYPE*)ptr)[0] = val; \
   }

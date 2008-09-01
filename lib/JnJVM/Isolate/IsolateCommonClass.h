@@ -188,7 +188,7 @@ public:
                                   UserCommonClass*& fieldCl);
   
   
-  uint64 getVirtualSize() {
+  uint32 getVirtualSize() {
     return virtualSize;
   }
 
@@ -319,7 +319,7 @@ public:
     return ctpInfo;
   }
 
-  uint64 getStaticSize() {
+  uint32 getStaticSize() {
     return ((Class*)classDef)->getStaticSize();
   }
 

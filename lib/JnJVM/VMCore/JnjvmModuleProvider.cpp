@@ -98,7 +98,9 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
     LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
     uint64_t offset = LMI->getOffset()->getZExtValue();
     assert(meth->classDef->isResolved() && "Class not resolved");
+#ifndef MULTIPLE_VM
     assert(meth->classDef->isReady() && "Class not ready");
+#endif
     assert(meth->classDef->virtualVT && "Class has no VT");
     assert(meth->classDef->virtualTableSize > offset && 
         "The method's offset is greater than the virtual table size");

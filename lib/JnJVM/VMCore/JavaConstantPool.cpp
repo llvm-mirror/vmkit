@@ -434,7 +434,7 @@ void JavaConstantPool::resolveMethod(uint32 index, CommonClass*& cl,
   assert(sign && "No cached signature after JITting");
   utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = loadClass(entry >> 16);
-  cl->resolveClass();
+  assert(cl && cl->isResolved() && "No class after loadClass");
 }
   
 void JavaConstantPool::resolveField(uint32 index, CommonClass*& cl,
@@ -445,7 +445,7 @@ void JavaConstantPool::resolveField(uint32 index, CommonClass*& cl,
   assert(sign && "No cached Typedef after JITting");
   utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = loadClass(entry >> 16);
-  cl->resolveClass();
+  assert(cl && cl->isResolved() && "No class after loadClass");
 }
 
 JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {

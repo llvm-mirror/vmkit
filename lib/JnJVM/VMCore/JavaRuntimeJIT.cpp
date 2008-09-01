@@ -58,9 +58,13 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   }
 
   if (!rcache) {
+#ifndef MULTIPLE_VM
     JavaMethod* dmeth = ocl->lookupMethod(utf8, sign->keyName, false, true);
     assert(dmeth->classDef->isReady() &&
            "Class not ready in a virtual lookup.");
+#else
+    JavaMethod* dmeth = ocl->lookupMethod(utf8, sign->keyName, false, true);
+#endif
     if (cache->methPtr) {
       rcache = new CacheNode(enveloppe);
     } else {

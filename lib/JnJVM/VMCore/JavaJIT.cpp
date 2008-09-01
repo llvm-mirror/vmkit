@@ -2060,6 +2060,12 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
                         "", ifFalse);
   Value* meth = new BitCastInst(_meth, virtualPtrType, "", 
                                 currentBlock);
+#ifdef MULTIPLE_VM
+  cache = new LoadInst(cachePtr, "", currentBlock);
+  Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheNodeFunction,
+                                        cache, "", currentBlock);
+  args.push_back(newCtpCache);
+#endif
   Value* ret = invoke(meth, args, "", currentBlock);
   if (node) {
     node->addIncoming(ret, currentBlock);
@@ -2075,9 +2081,10 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   meth = new BitCastInst(_meth, virtualPtrType, "", currentBlock);
   
 #ifdef MULTIPLE_VM
+  args.pop_back();
   cache = new LoadInst(cachePtr, "", currentBlock);
-  Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheNodeFunction,
-                                        cache, "", currentBlock);
+  newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheNodeFunction,
+                                 cache, "", currentBlock);
   args.push_back(newCtpCache);
 #endif
   ret = invoke(meth, args, "", currentBlock);

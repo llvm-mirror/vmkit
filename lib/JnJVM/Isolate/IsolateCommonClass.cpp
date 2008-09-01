@@ -94,6 +94,8 @@ void UserCommonClass::resolveClass() {
             def->status = prepared;
             status = prepared;
             def->classLoader->TheModule->resolveVirtualClass(def);
+            virtualSize = def->virtualSize;
+            virtualVT = def->virtualVT;
             def->status = resolved;
             status = resolved;
             classDef->broadcastClass();
@@ -159,7 +161,7 @@ UserCommonClass* UserConstantPool::loadClass(uint32 index) {
       temp = loader->loadName(name, true, false);
     }
     ctpRes[index] = temp;
-    ctpInfo->ctpRes[index] = getClass()->classDef;
+    ctpInfo->ctpRes[index] = temp->classDef;
   }
   return temp;
 }
