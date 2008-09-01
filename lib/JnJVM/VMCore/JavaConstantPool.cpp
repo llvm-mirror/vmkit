@@ -351,9 +351,10 @@ void JavaConstantPool::infoOfMethod(uint32 index, uint32 access,
   const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = getMethodClassIfLoaded(entry >> 16);
   if (cl && cl->status >= classRead) {
+    Class* methodCl = 0;
     // lookup the method
-    meth = 
-      cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access), false);
+    meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access),
+                                     false, methodCl);
   } 
 }
 
@@ -395,8 +396,9 @@ void* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index,
   CommonClass* cl = getMethodClassIfLoaded(entry >> 16);
   if (cl && cl->status >= classRead) {
     // lookup the method
-    meth =
-      cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access), false);
+    Class* methodCl = 0;
+    meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access),
+                                     false, methodCl);
     if (meth) { 
       // don't throw if no meth, the exception will be thrown just in time
       JnjvmModule* M = classDef->classLoader->TheModule;

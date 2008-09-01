@@ -226,8 +226,10 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
       }
     } else {
     
+      Class* methodCl = 0;
       JavaMethod* parent = cl->super? 
-        cl->super->lookupMethodDontThrow(meth->name, meth->type, false, true) :
+        cl->super->lookupMethodDontThrow(meth->name, meth->type, false, true,
+                                         methodCl) :
         0;
 
       uint64_t offset = 0;

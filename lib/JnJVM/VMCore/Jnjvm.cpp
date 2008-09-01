@@ -109,9 +109,10 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
       cl->resolveStaticClass();
       
       status = inClinit;
+      UserClass* methodCl;
       JavaMethod* meth = lookupMethodDontThrow(Jnjvm::clinitName,
                                                Jnjvm::clinitType, true,
-                                               false);
+                                               false, methodCl);
       
       PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
       PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ", 0);

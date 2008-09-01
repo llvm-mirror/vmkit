@@ -370,12 +370,12 @@ public:
   /// Do not throw if the method is not found.
   ///
   JavaMethod* lookupMethodDontThrow(const UTF8* name, const UTF8* type,
-                                    bool isStatic, bool recurse);
+                                    bool isStatic, bool recurse, Class*& cl);
   
   /// lookupMethod - Lookup a method and throw an exception if not found.
   ///
   JavaMethod* lookupMethod(const UTF8* name, const UTF8* type, bool isStatic,
-                           bool recurse);
+                           bool recurse, Class*& cl);
   
   /// lookupFieldDontThrow - Lookup a field in the field map of this class. Do
   /// not throw if the field is not found.

@@ -140,9 +140,10 @@ jint ThrowNew(JNIEnv* env, jclass clazz, const char *msg) {
   UserCommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
   if (cl->isArray()) assert(0 && "implement me");
   JavaObject* res = ((UserClass*)cl)->doNew(vm);
-  JavaMethod* init =
-    cl->lookupMethod(Jnjvm::initName, 
-                     cl->classLoader->asciizConstructUTF8("(Ljava/lang/String;)V"), 0, 1);
+  UserClass* methodCl = 0;
+  JavaMethod* init = cl->lookupMethod(Jnjvm::initName, 
+              cl->classLoader->asciizConstructUTF8("(Ljava/lang/String;)V"),
+              false, true, methodCl);
   init->invokeIntSpecial(vm, (UserClass*)cl, res, vm->asciizToStr(msg));
   th->pendingException = res;
   th->returnFromNative();
@@ -300,9 +301,11 @@ jmethodID GetMethodID(JNIEnv* env, jclass clazz, const char *aname,
   UserCommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
   const UTF8* name = cl->classLoader->asciizConstructUTF8(aname);
   const UTF8* type = cl->classLoader->asciizConstructUTF8(atype);
+  UserClass* methodCl = 0;
   JavaMethod* meth = cl->lookupMethod(
       name->javaToInternal(cl->classLoader->hashUTF8, 0, name->size),
-      type->javaToInternal(cl->classLoader->hashUTF8, 0, type->size), false, true);
+      type->javaToInternal(cl->classLoader->hashUTF8, 0, type->size), false,
+      true, methodCl);
 
   return (jmethodID)meth;
 
@@ -1134,9 +1137,11 @@ jmethodID GetStaticMethodID(JNIEnv *env, jclass clazz, const char *aname,
   UserCommonClass* cl = NativeUtil::resolvedImplClass(clazz, true);
   const UTF8* name = cl->classLoader->asciizConstructUTF8(aname);
   const UTF8* type = cl->classLoader->asciizConstructUTF8(atype);
+  UserClass* methodCl = 0;
   JavaMethod* meth = cl->lookupMethod(
       name->javaToInternal(cl->classLoader->hashUTF8, 0, name->size),
-      type->javaToInternal(cl->classLoader->hashUTF8, 0, type->size), true, true);
+      type->javaToInternal(cl->classLoader->hashUTF8, 0, type->size), true,
+      true, methodCl);
 
   return (jmethodID)meth;
 

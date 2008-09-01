@@ -217,26 +217,32 @@ UserClassArray* AssessorDesc::getArrayClass() const {
 JavaMethod* UserCommonClass::lookupMethodDontThrow(const UTF8* name,
                                                    const UTF8* type,
                                                    bool isStatic,
-                                                   bool recurse) {
+                                                   bool recurse,
+                                                   UserClass*& methodCl) {
   
   CommonClass::FieldCmp CC(name, type);
   CommonClass::method_map* map = isStatic ? getStaticMethods() :
                                             getVirtualMethods();
   CommonClass::method_iterator End = map->end();
   CommonClass::method_iterator I = map->find(CC);
-  if (I != End) return I->second;
+  if (I != End) {
+    methodCl = (UserClass*)this;
+    return I->second;
+  }
   
   JavaMethod *cur = 0;
   
   if (recurse) {
     if (super) cur = super->lookupMethodDontThrow(name, type, isStatic,
-                                                  recurse);
+                                                  recurse, methodCl);
     if (cur) return cur;
+
     if (isStatic) {
       std::vector<UserClass*>* interfaces = getInterfaces();
       for (std::vector<UserClass*>::iterator i = interfaces->begin(),
            e = interfaces->end(); i!= e; i++) {
-        cur = (*i)->lookupMethodDontThrow(name, type, isStatic, recurse);
+        cur = (*i)->lookupMethodDontThrow(name, type, isStatic, recurse,
+                                          methodCl);
         if (cur) return cur;
       }
     }
@@ -246,8 +252,10 @@ JavaMethod* UserCommonClass::lookupMethodDontThrow(const UTF8* name,
 }
 
 JavaMethod* UserCommonClass::lookupMethod(const UTF8* name, const UTF8* type,
-                                          bool isStatic, bool recurse) {
-  JavaMethod* res = lookupMethodDontThrow(name, type, isStatic, recurse);
+                                          bool isStatic, bool recurse,
+                                          UserClass*& methodCl) {
+  JavaMethod* res = lookupMethodDontThrow(name, type, isStatic, recurse,
+                                          methodCl);
   if (!res) {
     JavaThread::get()->isolate->noSuchMethodError(this->classDef, name);
   }
@@ -274,20 +282,15 @@ UserCommonClass::lookupFieldDontThrow(const UTF8* name, const UTF8* type,
   if (recurse) {
     if (super) cur = super->lookupFieldDontThrow(name, type, isStatic,
                                                  recurse, definingClass);
-    if (cur) {
-      definingClass = (UserClass*)super;
-      return cur;
-    }
+    if (cur) return cur;
+
     if (isStatic) {
       std::vector<UserClass*>* interfaces = getInterfaces();
       for (std::vector<UserClass*>::iterator i = interfaces->begin(),
            e = interfaces->end(); i!= e; i++) {
         cur = (*i)->lookupFieldDontThrow(name, type, isStatic, recurse,
                                          definingClass);
-        if (cur) {
-          definingClass = *i;
-          return cur;
-        }
+        if (cur) return cur;
       }
     }
   }

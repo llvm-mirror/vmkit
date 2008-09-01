@@ -174,10 +174,11 @@ public:
 
 
   JavaMethod* lookupMethodDontThrow(const UTF8* name, const UTF8* type,
-                                    bool isStatic, bool recurse);
+                                    bool isStatic, bool recurse,
+                                    UserClass*& methodCl);
 
   JavaMethod* lookupMethod(const UTF8* name, const UTF8* type,
-                           bool isStatic, bool recurse);
+                           bool isStatic, bool recurse, UserClass*& methodCl);
 
   JavaField* lookupField(const UTF8* name, const UTF8* type,
                          bool isStatic, bool recurse,

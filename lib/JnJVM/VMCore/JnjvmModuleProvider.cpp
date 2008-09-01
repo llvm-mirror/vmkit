@@ -36,7 +36,9 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
   Signdef* sign = 0;
 
   ctpInfo->resolveMethod(index, cl, utf8, sign);
-  JavaMethod* meth = cl->lookupMethod(utf8, sign->keyName, isStatic, true);
+  Class* methodCl = 0;
+  JavaMethod* meth = cl->lookupMethod(utf8, sign->keyName, isStatic, true,
+                                      methodCl);
 
 #ifndef MULTIPLE_VM
   // A multi environment would have already initialized the class. Besides,

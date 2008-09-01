@@ -58,12 +58,12 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   }
 
   if (!rcache) {
+    UserClass* methodCl = 0;
+    JavaMethod* dmeth = ocl->lookupMethod(utf8, sign->keyName, false, true,
+                                          methodCl);
 #ifndef MULTIPLE_VM
-    JavaMethod* dmeth = ocl->lookupMethod(utf8, sign->keyName, false, true);
     assert(dmeth->classDef->isReady() &&
            "Class not ready in a virtual lookup.");
-#else
-    JavaMethod* dmeth = ocl->lookupMethod(utf8, sign->keyName, false, true);
 #endif
     if (cache->methPtr) {
       rcache = new CacheNode(enveloppe);
@@ -73,6 +73,9 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
     
     rcache->methPtr = dmeth->compiledPtr();
     rcache->lastCible = (UserClass*)ocl;
+#ifdef MULTIPLE_VM
+    rcache->definingCtp = methodCl->getConstantPool();
+#endif
     
   }
 
@@ -156,8 +159,9 @@ extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
   Signdef* sign = 0;
   
   caller->getConstantPool()->resolveMethod(index, cl, utf8, sign);
+  UserClass* methodCl = 0;
   JavaMethod* dmeth = cl->lookupMethodDontThrow(utf8, sign->keyName, false,
-                                                true);
+                                                true, methodCl);
   if (!dmeth) {
     va_list ap;
     va_start(ap, index);
@@ -166,7 +170,8 @@ extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
     assert(obj->classOf->isReady() && "Class not ready in a virtual lookup.");
     // Arg, the bytecode is buggy! Perform the lookup on the object class
     // and do not update offset.
-    dmeth = obj->classOf->lookupMethod(utf8, sign->keyName, false, true);
+    dmeth = obj->classOf->lookupMethod(utf8, sign->keyName, false, true,
+                                       methodCl);
   } else {
     caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
   }

@@ -45,7 +45,9 @@ jclass clazz,
 jclass Cl) {
 
   UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, true);
-  if (cl->lookupMethodDontThrow(Jnjvm::clinitName, Jnjvm::clinitType, true, false))
+  UserClass* methodCl = 0;
+  if (cl->lookupMethodDontThrow(Jnjvm::clinitName, Jnjvm::clinitType, true,
+                                false, methodCl))
     return true;
   else
     return false;
