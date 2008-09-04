@@ -195,23 +195,18 @@ void* UserConstantPool::operator new(size_t sz, JavaAllocator* alloc,
   return alloc->allocateObject(sz + size * sizeof(void*), VT);
 }
 
-AssessorDesc* UserClassArray::funcs() {
-  fprintf(stderr, "implement me");
-  abort();
-  return 0;
-}
-
-
 UserClassPrimitive* AssessorDesc::getPrimitiveClass() const {
-  fprintf(stderr, "implement me");
-  abort();
-  return 0;
+  Jnjvm* vm = JavaThread::get()->isolate;
+  UserClassArray* arrayCl = vm->arrayClasses[numId];
+  UserClassPrimitive* cl = (UserClassPrimitive*)arrayCl->baseClass();
+  assert(cl && "Primitive array class does not have a primitive.");
+  return cl;
 }
 
 UserClassArray* AssessorDesc::getArrayClass() const {
-  fprintf(stderr, "implement me");
-  abort();
-  return 0;
+  Jnjvm* vm = JavaThread::get()->isolate;
+  UserClassArray* arrayCl = vm->arrayClasses[numId];
+  return arrayCl;
 }
 
 JavaMethod* UserCommonClass::lookupMethodDontThrow(const UTF8* name,
@@ -308,4 +303,10 @@ JavaField* UserCommonClass::lookupField(const UTF8* name, const UTF8* type,
     JavaThread::get()->isolate->noSuchFieldError(this->classDef, name);
   }
   return res;
+}
+
+void UserConstantPool::print(mvm::PrintBuffer* buf) const {
+  buf->write("User constant pool of <");
+  getClass()->classDef->print(buf);
+  buf->write(">");
 }

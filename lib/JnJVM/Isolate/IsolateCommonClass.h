@@ -360,7 +360,11 @@ public:
     return _baseClass;
   }
 
-  AssessorDesc* funcs();
+  AssessorDesc* funcs() {
+    if (_funcs == 0)
+      resolveComponent();
+    return _funcs;
+  }
 };
 
 class UserClassPrimitive : public UserCommonClass {
@@ -394,17 +398,17 @@ public:
   void resolveField(uint32 index, UserCommonClass*& cl, const UTF8*& utf8,
                     Typedef*& sign);
   
-  UserClass* getClass() {
+  UserClass* getClass() const {
     return (UserClass*)ctpRes[0];
   }
 
-  JavaConstantPool* getSharedPool() {
+  JavaConstantPool* getSharedPool() const {
     return ((Class*)(getClass()->classDef))->ctpInfo;
   }
 
   /// UTF8At - Get the UTF8 referenced from this string entry.
   ///
-  const UTF8* UTF8AtForString(uint32 entry) {
+  const UTF8* UTF8AtForString(uint32 entry) const {
     return getSharedPool()->UTF8AtForString(entry);
   }
 
@@ -422,6 +426,8 @@ public:
   }
 
   UserCommonClass* isClassLoaded(uint32 entry);
+
+  virtual void print(mvm::PrintBuffer *buf) const;
 
 };
 
