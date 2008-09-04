@@ -2029,6 +2029,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case INSTANCEOF : {
         uint16 index = readU2(bytecodes, i);
+#ifndef MULTIPLE_VM
         CommonClass* dcl =
           compilingClass->ctpInfo->getMethodClassIfLoaded(index);
         
@@ -2039,6 +2040,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         } else {
           clVar = getResolvedClass(index, false);
         }
+#else
+        Value* clVar = getResolvedClass(index, false);
+#endif
         std::vector<Value*> args;
         args.push_back(pop());
         args.push_back(clVar);
