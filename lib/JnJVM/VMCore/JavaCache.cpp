@@ -41,6 +41,9 @@ CacheNode::CacheNode(Enveloppe* E) {
   lastCible = 0;
   methPtr = 0;
   next = 0;
+#ifdef MULTIPLE_VM
+  definingCtp = 0;
+#endif
   enveloppe = E;
 }
 
