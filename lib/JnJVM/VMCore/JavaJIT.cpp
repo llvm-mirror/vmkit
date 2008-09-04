@@ -2061,9 +2061,9 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   Value* meth = new BitCastInst(_meth, virtualPtrType, "", 
                                 currentBlock);
 #ifdef MULTIPLE_VM
-  cache = new LoadInst(cachePtr, "", currentBlock);
+  Value* cache2 = new LoadInst(cachePtr, "", currentBlock);
   Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheNodeFunction,
-                                        cache, "", currentBlock);
+                                        cache2, "", currentBlock);
   args.push_back(newCtpCache);
 #endif
   Value* ret = invoke(meth, args, "", currentBlock);
