@@ -354,6 +354,17 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
+        } else if (V == jnjvm::JnjvmModule::GetJnjvmExceptionClassFunction) {
+          Changed = true;
+          Value* val = Call.getArgument(0);
+          std::vector<Value*> indexes;
+          indexes.push_back(mvm::jit::constantZero);
+          indexes.push_back(mvm::jit::constantOne);
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
+                                                   indexes.end(), "", CI);
+          Value* VT = new LoadInst(VTPtr, "", CI);
+          CI->replaceAllUsesWith(VT);
+          CI->eraseFromParent();
         }
 #endif
       }
