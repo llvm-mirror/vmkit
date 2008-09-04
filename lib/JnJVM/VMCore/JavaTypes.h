@@ -81,7 +81,7 @@ public:
   ///
   uint32 nbb;
 
-  /// nbw - Number of words of instances if this assessor (e.g. 8 for "D").
+  /// nbw - Number of words of instances if this assessor (e.g. 2 for "D").
   ///
   uint32 nbw;
 
