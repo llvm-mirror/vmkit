@@ -76,6 +76,10 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
   
   if (bid != I_PARG && bid != I_PARD && bid != I_REF && bid != I_TAB) {
     res->primitiveClass = new UserClassPrimitive(loader, res->UTF8Name, nb);
+    if (res->arrayClass) {
+      res->arrayClass->_baseClass = res->primitiveClass;
+      res->arrayClass->_funcs = res;
+    }
   } else {
     res->primitiveClass = 0;
   }
