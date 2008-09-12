@@ -78,6 +78,8 @@ public:
   /// ctpInfo - The private constant pool of this class.
   ///
   UserConstantPool* ctpInfo;
+  
+  JavaObject* staticInstance;
 
 //===----------------------------------------------------------------------===//
 //
@@ -275,12 +277,13 @@ public:
   }
   
   UserCommonClass();
+  
+  virtual void print(mvm::PrintBuffer *buf) const;
 };
 
 class UserClass : public UserCommonClass {
 public:
   static VirtualTable* VT;
-  JavaObject* staticInstance;
   
   virtual void TRACER;
 

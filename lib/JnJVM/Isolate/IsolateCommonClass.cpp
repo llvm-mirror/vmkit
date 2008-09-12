@@ -310,3 +310,9 @@ void UserConstantPool::print(mvm::PrintBuffer* buf) const {
   getClass()->classDef->print(buf);
   buf->write(">");
 }
+
+void UserCommonClass::print(mvm::PrintBuffer* buf) const {
+  buf->write("User class of <");
+  classDef->print(buf);
+  buf->write(">");
+}
