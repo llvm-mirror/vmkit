@@ -352,6 +352,8 @@ public:
   static llvm::Function* EnveloppeLookupFunction;
   static llvm::Function* GetJnjvmExceptionClassFunction;
   static llvm::Function* GetJnjvmArrayClassFunction;
+  static llvm::Function* StaticCtpLookupFunction;
+  static llvm::Function* GetArrayClassFunction;
 #endif
 
   static llvm::Function* GetClassDelegateeFunction;

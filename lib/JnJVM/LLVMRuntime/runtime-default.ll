@@ -19,7 +19,8 @@
 ;;; Field 5 - The depth of the class in its super hierarchy.
 ;;; Field 6 - The class state (resolved, initialized, ...)
 ;;; field 7 - The constant pool, only for multi vm environment.
-%JavaClass = type { %VT, i32, %VT ,%JavaClass**, i32, i32, %ConstantPool* }
+;;; field 8 - The static instance, only for multi vm environment.
+%JavaClass = type { %VT, i32, %VT ,%JavaClass**, i32, i32, %ConstantPool*, %JavaObject* }
 
 ;;; The root of all Java Objects: a VT, a class and a lock.
 %JavaObject = type { %VT, %JavaClass*, i32 }

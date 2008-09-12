@@ -116,6 +116,8 @@ llvm::Function* JnjvmModule::GetCtpClassFunction = 0;
 llvm::Function* JnjvmModule::EnveloppeLookupFunction = 0;
 llvm::Function* JnjvmModule::GetJnjvmExceptionClassFunction = 0;
 llvm::Function* JnjvmModule::GetJnjvmArrayClassFunction = 0;
+llvm::Function* JnjvmModule::StaticCtpLookupFunction = 0;
+llvm::Function* JnjvmModule::GetArrayClassFunction = 0;
 #endif
 llvm::Function* JnjvmModule::GetClassDelegateeFunction = 0;
 llvm::Function* JnjvmModule::ArrayLengthFunction = 0;
@@ -1025,6 +1027,8 @@ void JnjvmModule::initialise() {
   GetJnjvmExceptionClassFunction = 
     module->getFunction("getJnjvmExceptionClass");
   GetJnjvmArrayClassFunction = module->getFunction("getJnjvmArrayClass");
+  StaticCtpLookupFunction = module->getFunction("staticCtpLookup");
+  GetArrayClassFunction = module->getFunction("getArrayClass");
 #endif
   
 #ifdef SERVICE_VM
