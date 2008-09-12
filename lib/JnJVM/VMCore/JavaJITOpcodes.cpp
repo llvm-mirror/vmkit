@@ -1857,6 +1857,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 #else
 
           valCl = getResolvedClass(index, true);
+          valCl = CallInst::Create(JnjvmModule::GetArrayClassFunction, valCl,
+                                   "", currentBlock);
 #endif
           TheVT = JnjvmModule::ArrayObjectVirtualTableGV;
           sizeElement = mvm::jit::constantPtrSize;
