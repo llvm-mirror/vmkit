@@ -263,7 +263,7 @@ void Jnjvm::illegalArgumentException(const char* msg) {
         msg);
 }
 
-void Jnjvm::classCastException(const char* msg) {
+void Jnjvm::classCastException(JavaObject* obj, UserCommonClass* cl) {
   error(upcalls->ClassCastException,
         upcalls->InitClassCastException,
         msg);

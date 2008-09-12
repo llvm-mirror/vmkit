@@ -292,7 +292,7 @@ public:
   void illegalArgumentExceptionForField(JavaField* field, UserCommonClass* required,
                                         UserCommonClass* given);
   void illegalArgumentException(const char* msg);
-  void classCastException(const char* msg);
+  void classCastException(JavaObject* obj, UserCommonClass* cl);
   void unknownError(const char* fmt, ...); 
   void noSuchFieldError(CommonClass* cl, const UTF8* name);
   void noSuchMethodError(CommonClass* cl, const UTF8* name);

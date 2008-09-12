@@ -150,6 +150,35 @@ extern "C" void* enveloppeLookup(UserClass* cl, uint32 index) {
   ctpInfo->ctpRes[index] = enveloppe;
   return (void*)enveloppe;
 }
+
+extern "C" void* staticCtpLookup(UserClass* cl, uint32 index) {
+  UserConstantPool* ctpInfo = cl->getConstantPool();
+  JavaConstantPool* shared = ctpInfo->getSharedPool();
+  uint32 clIndex = shared->getClassIndexFromMethod(index);
+  UserClass* refCl = (UserClass*)ctpInfo->loadClass(clIndex);
+  refCl->initialiseClass(JavaThread::get()->isolate);
+
+  CommonClass* baseCl = 0;
+  const UTF8* utf8 = 0;
+  Signdef* sign = 0;
+
+  shared->resolveMethod(index, baseCl, utf8, sign);
+  UserClass* methodCl = 0;
+  refCl->lookupMethod(utf8, sign->keyName, isStatic, true, methodCl);
+  ctpInfo->ctpRes[index] = methodCl->getConstantPool();
+  shared->ctpRes[clIndex] = refCl->classDef;
+  return (void*)methodCl->getConstantPool();
+}
+
+extern "C" UserClassArray* getArrayClass(UserCommonClass* cl) {
+  JnjvmClassLoader* JCL = cl->classLoader;
+  const UTF8* arrayName = 
+    AssessorDesc::constructArrayName(JCL, 0, 1, cl->getName());
+        
+  UserClassArray* dcl = JCL->constructArray(arrayName);
+  return dcl;
+}
+
 #endif
 
 #ifndef WITHOUT_VTABLE
@@ -239,7 +268,7 @@ extern "C" void outOfMemoryError(sint32 val) {
 }
 
 extern "C" void jnjvmClassCastException(JavaObject* obj, UserCommonClass* cl) {
-  JavaThread::get()->isolate->classCastException("");
+  JavaThread::get()->isolate->classCastException(obj, cl);
 }
 
 extern "C" void indexOutOfBoundsException(JavaObject* obj, sint32 index) {
