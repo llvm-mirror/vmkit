@@ -104,13 +104,29 @@ UserClass* JavaJIT::getCallingClassWalker() {
   return 0;
 }
 #else
-UserClass* JavaJIT::getCallingClassWalker() {
-  fprintf(stderr, "implement me");
-  abort();
-}
 UserClass* JavaJIT::getCallingClass() {
-  fprintf(stderr, "implement me");
-  abort();
+  unsigned int* top;
+  register unsigned int  **cur = &top;
+  register unsigned int  **max = (unsigned int**)mvm::Thread::get()->baseSP;
+    
+  void* obj = 0;
+  int i = 0;
+    
+  for(; cur<max; cur++) {
+    obj = (void*)(*cur);
+    obj = Collector::begOf(obj);
+    if (obj && ((mvm::Object*)obj)->getVirtualTable() == UserConstantPool::VT) {
+      if (i == 1) {
+        return ((UserConstantPool*)obj)->getClass();
+      }
+      ++i;
+    }
+  }
+  return 0;
+}
+
+UserClass* JavaJIT::getCallingClassWalker() {
+  return getCallingClass();
 }
 #endif
 
