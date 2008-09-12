@@ -79,6 +79,7 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
     if (res->arrayClass) {
       res->arrayClass->_baseClass = res->primitiveClass;
       res->arrayClass->_funcs = res;
+      res->arrayClass->status = ready;
     }
   } else {
     res->primitiveClass = 0;
