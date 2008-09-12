@@ -50,9 +50,6 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
 
   meth->compiledPtr();
   
-  LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
-  ctpInfo->ctpRes[index] = LMI->getMethod();
-
   return meth;
 }
 
@@ -169,7 +166,7 @@ llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
                                                  Signdef* sign, bool stat) {
   
   void* key = &(cl->getConstantPool()->ctpRes[index]);
-  
+   
   reverse_callback_iterator CI = reverseCallbacks.find(key);
   if (CI != reverseCallbacks.end()) {
     return CI->second;
