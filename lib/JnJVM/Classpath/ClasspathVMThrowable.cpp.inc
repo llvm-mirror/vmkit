@@ -47,7 +47,6 @@ jclass clazz,
 }
 
 
-#ifndef MULTIPLE_VM
 JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject* methodName = vm->UTF8ToStr(meth->name);
@@ -102,7 +101,11 @@ jobject vmthrow, jobject throwable) {
   
   while (stack[i] != 0) {
     JavaMethod* meth = JavaJIT::IPToJavaMethod(stack[i++]);
+#ifdef MULTIPLE_VM
+    if (meth) {
+#else
     if (meth && !meth->classDef->subclassOf(vm->upcalls->newThrowable)) {
+#endif
       first = i - 1;
       break;
     }
@@ -112,6 +115,5 @@ jobject vmthrow, jobject throwable) {
   return res;
 }
 
-#endif
 }
 
