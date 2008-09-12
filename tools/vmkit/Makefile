@@ -17,6 +17,10 @@ ifeq ($(WITH_JNJVM), 1)
 USEDLIBS += JnJVM Classpath
 endif
 
+ifeq ($(ISOLATE_BUILD), 1) 
+    USEDLIBS += Isolate
+endif
+
 ifeq ($(WITH_N3_PNETLIB), 1)
   USEDLIBS += N3 PNetLib
 endif
@@ -29,3 +33,5 @@ ifeq ($(WITH_N3_PNETLIB), 1)
 LIBS += $(PNETLIB)/engine/libILEngine.a $(PNETLIB)/image/libILImage.a $(PNETLIB)/support/libILSupport.a \
         $(PNETLIB)/libffi/.libs/libffi.a $(PNETLIB)//dumpasm/libILDumpAsm.a
 endif
+
+
