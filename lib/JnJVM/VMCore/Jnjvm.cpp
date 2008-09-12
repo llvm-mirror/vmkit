@@ -266,7 +266,7 @@ void Jnjvm::illegalArgumentException(const char* msg) {
 void Jnjvm::classCastException(JavaObject* obj, UserCommonClass* cl) {
   error(upcalls->ClassCastException,
         upcalls->InitClassCastException,
-        msg);
+        "");
 }
 
 void Jnjvm::noSuchFieldError(CommonClass* cl, const UTF8* name) {
