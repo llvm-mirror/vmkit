@@ -261,6 +261,7 @@ public:
 #if defined(MULTIPLE_VM)
   llvm::Value* ctpCache;
   llvm::Value* getStaticInstanceCtp();
+  llvm::Value* getClassCtp();
 #endif
 
   static const char* OpcodeNames[256];

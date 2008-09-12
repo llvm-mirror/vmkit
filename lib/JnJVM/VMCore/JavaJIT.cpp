@@ -56,10 +56,12 @@ void JavaJIT::invokeVirtual(uint16 index) {
   CommonClass* cl = 0;
   JavaMethod* meth = 0;
   ctpInfo->infoOfMethod(index, ACC_VIRTUAL, cl, meth);
-  
+ 
+#if !defined(MULTIPLE_VM)
   if ((cl && isFinal(cl->access)) || 
       (meth && (isFinal(meth->access) || isPrivate(meth->access))))
     return invokeSpecial(index);
+#endif
  
 
 #if !defined(WITHOUT_VTABLE) && !defined(MULTIPLE_VM)
@@ -204,9 +206,16 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
 
   uint32 index = 0;
   if (stat) {
+#ifdef MULTIPLE_VM
+    Value* val = getClassCtp();
+    Value* res = CallInst::Create(JnjvmModule::GetClassDelegateeFunction,
+                                  val, "", currentBlock);
+    nativeArgs.push_back(res);
+#else
     LLVMClassInfo* LCI = 
       (LLVMClassInfo*)module->getClassInfo(compilingClass);
     nativeArgs.push_back(LCI->getDelegatee(this));
+#endif
     index = 2;
   } else {
     index = 1;
@@ -392,9 +401,25 @@ void JavaJIT::monitorExit(Value* obj) {
 
 #ifdef MULTIPLE_VM
 Value* JavaJIT::getStaticInstanceCtp() {
-  /// get the -1 offset of the ctp
-  fprintf(stderr, "implement me");
-  abort();
+  Value* cl = getClassCtp();
+  std::vector<Value*> indexes; //[3];
+  indexes.push_back(mvm::jit::constantZero);
+  indexes.push_back(mvm::jit::constantSeven);
+  Value* arg1 = GetElementPtrInst::Create(cl, indexes.begin(),
+                                          indexes.end(),  "", currentBlock);
+  arg1 = new LoadInst(arg1, "", false, currentBlock);
+  return arg1;
+  
+}
+
+Value* JavaJIT::getClassCtp() {
+  std::vector<Value*> indexes; //[3];
+  indexes.push_back(mvm::jit::constantOne);
+  Value* arg1 = GetElementPtrInst::Create(ctpCache, indexes.begin(),
+                                          indexes.end(),  "", currentBlock);
+  arg1 = new LoadInst(arg1, "", false, currentBlock);
+  arg1 = new BitCastInst(arg1, JnjvmModule::JavaClassType, "", currentBlock);
+  return arg1;
 }
 #endif
 
@@ -741,6 +766,10 @@ llvm::Function* JavaJIT::javaCompile() {
   i++;
   ctpCache = i;
 #endif
+  Value* addrCtpCache = new AllocaInst(JnjvmModule::ConstantPoolType, "",
+                                       currentBlock);
+  /// make it volatile to be sure it's on the stack
+  new StoreInst(ctpCache, addrCtpCache, true, currentBlock);
 #endif
   
   unsigned nbe = readExceptionTable(reader);
@@ -759,7 +788,8 @@ llvm::Function* JavaJIT::javaCompile() {
     beginSynchronize();
 
   compileOpcodes(&compilingClass->bytes->elements[start], codeLen); 
-
+  
+  assert(stack.size() == 0 && "Stack not empty after compiling bytecode");
   // Fix a javac(?) bug where a method only throws an exception and des
   // not return.
   pred_iterator PI = pred_begin(endBlock);
@@ -1125,16 +1155,20 @@ void JavaJIT::_ldc(uint16 index) {
     push(ConstantFP::get(Type::FloatTy, ctpInfo->FloatAt(index)),
          AssessorDesc::dFloat);
   } else if (type == JavaConstantPool::ConstantClass) {
+#ifndef MULTIPLE_VM
     if (ctpInfo->ctpRes[index]) {
       CommonClass* cl = (CommonClass*)(ctpInfo->ctpRes[index]);
       LLVMCommonClassInfo* LCI = module->getClassInfo(cl);
       push(LCI->getDelegatee(this), AssessorDesc::dRef);
     } else {
+#endif
       Value* val = getResolvedClass(index, false);
       Value* res = CallInst::Create(JnjvmModule::GetClassDelegateeFunction,
                                     val, "", currentBlock);
       push(res, AssessorDesc::dRef);
+#ifndef MULTIPLE_VM
     }
+#endif
   } else {
     JavaThread::get()->isolate->unknownError("unknown type %d", type);
   }
@@ -1541,11 +1575,10 @@ void JavaJIT::invokeStatic(uint16 index) {
                                            signature, meth);
     
 #if defined(MULTIPLE_VM)
-    uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
-    Value* cl = getResolvedClass(clIndex, true);
-
-    Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpClassFunction, cl,
-                                        "", currentBlock);
+    Value* newCtpCache = getConstantPoolAt(index,
+                                           JnjvmModule::StaticCtpLookupFunction,
+                                           JnjvmModule::ConstantPoolType, 0,
+                                           false);
     args.push_back(newCtpCache);
 #endif
 
