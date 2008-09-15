@@ -112,7 +112,6 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
 
   return false;
 }
-
 void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
   Function* func = parseFunction(meth);
   
@@ -120,10 +119,10 @@ void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
   mvm::Code* m = mvm::jit::getCodeFromPointer(res);
   if (m) m->setMetaInfo(meth);
 
-  /*
-  if (compilingMethod->name == 
-      compilingClass->isolate->asciizConstructUTF8("main")) {
-    llvmFunction->print(llvm::cout);
+/*  
+  if (meth->name->equals(
+      JavaThread::get()->isolate->bootstrapLoader->asciizConstructUTF8("getDeclaredConstructors"))) {
+    func->print(std::cout);
     printf("\n");
     void* res = mvm::jit::executionEngine->getPointerToGlobal(llvmFunction);
     void* base = res; 
@@ -135,8 +134,7 @@ void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
     }    
     printf("\n");
     fflush(stdout);
-  }
-  */
+  }*/
 
   return res;
 }
