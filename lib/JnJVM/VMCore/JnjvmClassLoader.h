@@ -204,6 +204,10 @@ public:
     isolate = 0;
   }
 
+#ifdef MULTIPLE_VM
+  UserClass* loadClass;
+#endif
+
 };
 
 /// JnjvmBootstrapLoader - This class is for the bootstrap class loader, which

@@ -64,12 +64,15 @@ JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
   JCL->analyseClasspathEnv(JCL->bootClasspathEnv);
   
   JCL->upcalls = new Classpath();
+  JCL->bootstrapLoader = JCL;
   return JCL;
 }
 
-JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader, Jnjvm* I) {
+JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
+                                   Jnjvm* I) {
   TheModule = JCL.TheModule;
   TheModuleProvider = JCL.TheModuleProvider;
+  bootstrapLoader = JCL.bootstrapLoader;
   
   allocator = &(isolate->allocator);
 
@@ -80,6 +83,13 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader, Jn
 
   javaLoader = loader;
   isolate = I;
+
+#ifdef MULTIPLE_VM
+  JavaMethod* meth = bootstrapLoader->upcalls->loadInClassLoader;
+  loader->classOf->lookupMethodDontThrow(meth->name, meth->type, false, true,
+                                         loadClass);
+  assert(loadClass && "Loader does not have a loadClass function");
+#endif
 
 }
 
@@ -137,7 +147,7 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name) {
     Classpath* upcalls = bootstrapLoader->upcalls;
     UserClass* forCtp = 0;
 #ifdef MULTIPLE_VM
-    forCtp = javaLoader->classOf->lookupClassFromMethod(upcalls->loadInClassLoader);
+    forCtp = loadClass;
 #else
     forCtp = upcalls->loadInClassLoader->classDef;
 #endif
