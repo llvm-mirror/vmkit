@@ -12,6 +12,7 @@
 #include "JavaAllocator.h"
 #include "JavaClass.h"
 #include "JavaThread.h"
+#include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "JnjvmModule.h"
 
@@ -220,9 +221,11 @@ UserClassPrimitive* AssessorDesc::getPrimitiveClass() const {
   Jnjvm* vm = JavaThread::get()->isolate;
   if (numId > VOID_ID && numId < ARRAY_ID) {
     UserClassArray* arrayCl = vm->arrayClasses[numId];
-    UserClassPrimitive* cl = (UserClassPrimitive*)arrayCl->baseClass();
+    UserClassPrimitive* cl = (UserClassPrimitive*)arrayCl->_baseClass;
     assert(cl && "Primitive array class does not have a primitive.");
     return cl;
+  } else if (numId == VOID_ID) {
+    return vm->upcalls->OfVoid;
   }
   return 0;
 }
