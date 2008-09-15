@@ -94,17 +94,17 @@ JNIEnv *env,
     
     if (isVirtual(meth->access)) {
       verifyNull(obj);
-      UserCommonClass* cl;
-#ifdef MULTIPLE_VM
-      jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)Meth);
-      cl = NativeUtil::resolvedImplClass(Cl, false);
-      
-#else
-      cl = meth->classDef;
-#endif
       if (!(obj->classOf->isAssignableFrom(cl))) {
         vm->illegalArgumentExceptionForMethod(meth, cl, obj->classOf);
       }
+#ifdef MULTIPLE_VM
+      if (isInterface(cl->classDef->access)) {
+        cl = obj->classOf->lookupClassFromMethod(meth);
+      } else {
+        jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)Meth);
+        cl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
+      }
+#endif
 
     } else {
       cl->initialiseClass(vm);
@@ -121,7 +121,7 @@ JNIEnv *env,
 #define RUN_METH(TYPE) \
     try{ \
       if (isVirtual(meth->access)) { \
-        if (isPublic(meth->access)) { \
+        if (isPublic(meth->access) && !isFinal(meth->access) && !isFinal(meth->classDef->access)) { \
           val = meth->invoke##TYPE##VirtualBuf(vm, cl, obj, _buf); \
         } else { \
           val = meth->invoke##TYPE##SpecialBuf(vm, cl, obj, _buf); \
