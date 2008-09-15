@@ -353,6 +353,7 @@ public:
   static llvm::Function* GetJnjvmExceptionClassFunction;
   static llvm::Function* GetJnjvmArrayClassFunction;
   static llvm::Function* StaticCtpLookupFunction;
+  static llvm::Function* SpecialCtpLookupFunction;
   static llvm::Function* GetArrayClassFunction;
 #endif
 

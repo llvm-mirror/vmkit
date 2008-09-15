@@ -164,7 +164,7 @@ extern "C" void* staticCtpLookup(UserClass* cl, uint32 index) {
 
   shared->resolveMethod(index, baseCl, utf8, sign);
   UserClass* methodCl = 0;
-  refCl->lookupMethod(utf8, sign->keyName, isStatic, true, methodCl);
+  refCl->lookupMethod(utf8, sign->keyName, true, true, methodCl);
   ctpInfo->ctpRes[index] = methodCl->getConstantPool();
   shared->ctpRes[clIndex] = refCl->classDef;
   return (void*)methodCl->getConstantPool();
@@ -177,6 +177,25 @@ extern "C" UserClassArray* getArrayClass(UserCommonClass* cl) {
         
   UserClassArray* dcl = JCL->constructArray(arrayName);
   return dcl;
+}
+
+extern "C" UserConstantPool* specialCtpLookup(UserConstantPool* ctpInfo,
+                                              uint32 index,
+                                              UserConstantPool** res) {
+  JavaConstantPool* shared = ctpInfo->getSharedPool();
+  uint32 clIndex = shared->getClassIndexFromMethod(index);
+  UserClass* refCl = (UserClass*)ctpInfo->loadClass(clIndex);
+
+  CommonClass* baseCl = 0;
+  const UTF8* utf8 = 0;
+  Signdef* sign = 0;
+
+  shared->resolveMethod(index, baseCl, utf8, sign);
+  UserClass* methodCl = 0;
+  refCl->lookupMethod(utf8, sign->keyName, false, true, methodCl);
+  shared->ctpRes[clIndex] = refCl->classDef;
+  *res = methodCl->getConstantPool();
+  return methodCl->getConstantPool();
 }
 
 #endif
@@ -204,8 +223,10 @@ extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
   } else {
     caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
   }
-  
+
+#ifndef MULTIPLE_VM
   assert(dmeth->classDef->isReady() && "Class not ready in a virtual lookup.");
+#endif
 
   return (void*)dmeth->offset;
 }

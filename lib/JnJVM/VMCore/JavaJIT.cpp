@@ -57,11 +57,9 @@ void JavaJIT::invokeVirtual(uint16 index) {
   JavaMethod* meth = 0;
   ctpInfo->infoOfMethod(index, ACC_VIRTUAL, cl, meth);
  
-#if !defined(MULTIPLE_VM)
   if ((cl && isFinal(cl->access)) || 
       (meth && (isFinal(meth->access) || isPrivate(meth->access))))
     return invokeSpecial(index);
-#endif
  
 
 #if !defined(WITHOUT_VTABLE) && !defined(MULTIPLE_VM)
@@ -78,14 +76,27 @@ void JavaJIT::invokeVirtual(uint16 index) {
   Value* VT = CallInst::Create(JnjvmModule::GetVTFunction, args[0], "",
                                currentBlock);
   std::vector<Value*> indexes2; //[3];
+#ifdef MULTIPLE_VM
+  std::vector<Value*> indexesCtp; //[3];
+#endif
   if (meth) {
     LLVMMethodInfo* LMI = module->getMethodInfo(meth);
-    indexes2.push_back(LMI->getOffset());
+    ConstantInt* Offset = LMI->getOffset();
+    indexes2.push_back(Offset);
+#ifdef MULTIPLE_VM
+    indexesCtp.push_back(ConstantInt::get(Type::Int32Ty,
+                                          Offset->getZExtValue() * -1));
+#endif
   } else {
     
     Value* val = getConstantPoolAt(index, JnjvmModule::VirtualLookupFunction,
                                    Type::Int32Ty, args[0], true);
     indexes2.push_back(val);
+#ifdef MULTIPLE_VM
+    Value* mul = BinaryOperator::createMul(val, mvm::jit::constantMinusOne,
+                                           "", currentBlock);
+    indexesCtp.push_back(mul);
+#endif
   }
   
   Value* FuncPtr = GetElementPtrInst::Create(VT, indexes2.begin(),
@@ -94,7 +105,15 @@ void JavaJIT::invokeVirtual(uint16 index) {
     
   Value* Func = new LoadInst(FuncPtr, "", currentBlock);
   Func = new BitCastInst(Func, LSI->getVirtualPtrType(), "", currentBlock);
-
+#ifdef MULTIPLE_VM
+  Value* CTP = GetElementPtrInst::Create(VT, indexesCtp.begin(),
+                                             indexesCtp.end(), "",
+                                             currentBlock);
+    
+  CTP = new LoadInst(CTP, "", currentBlock);
+  CTP = new BitCastInst(CTP, JnjvmModule::ConstantPoolType, "", currentBlock);
+  args.push_back(CTP);
+#endif
   Value* val = invoke(Func, args, "", currentBlock);
   
   const llvm::Type* retType = virtualType->getReturnType();
@@ -1373,7 +1392,7 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
 
 Instruction* JavaJIT::lowerMathOps(const UTF8* name, 
                                    std::vector<Value*>& args) {
-  if (name == Jnjvm::abs) {
+  if (name->equals(Jnjvm::abs)) {
     const Type* Ty = args[0]->getType();
     if (Ty == Type::Int32Ty) {
       Constant* const_int32_9 = mvm::jit::constantZero;
@@ -1407,71 +1426,71 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
       return llvm::CallInst::Create(mvm::jit::func_llvm_fabs_f64, args[0],
                                     "tmp1", currentBlock);
     }
-  } else if (name == Jnjvm::sqrt) {
+  } else if (name->equals(Jnjvm::sqrt)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_sqrt_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::sin) {
+  } else if (name->equals(Jnjvm::sin)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_sin_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::cos) {
+  } else if (name->equals(Jnjvm::cos)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_cos_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::tan) {
+  } else if (name->equals(Jnjvm::tan)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_tan_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::asin) {
+  } else if (name->equals(Jnjvm::asin)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_asin_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::acos) {
+  } else if (name->equals(Jnjvm::acos)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_acos_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::atan) {
+  } else if (name->equals(Jnjvm::atan)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_atan_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::atan2) {
+  } else if (name->equals(Jnjvm::atan2)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_atan2_f64, 
                                   args.begin(), args.end(), "tmp1",
                                   currentBlock);
-  } else if (name == Jnjvm::exp) {
+  } else if (name->equals(Jnjvm::exp)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_exp_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::log) {
+  } else if (name->equals(Jnjvm::log)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_log_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::pow) {
+  } else if (name->equals(Jnjvm::pow)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_pow_f64, args.begin(),
                                   args.end(), "tmp1", currentBlock);
-  } else if (name == Jnjvm::ceil) {
+  } else if (name->equals(Jnjvm::ceil)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_ceil_f64, args[0], "tmp1",
                                   currentBlock);
-  } else if (name == Jnjvm::floor) {
+  } else if (name->equals(Jnjvm::floor)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_floor_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::rint) {
+  } else if (name->equals(Jnjvm::rint)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_rint_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::cbrt) {
+  } else if (name->equals(Jnjvm::cbrt)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_cbrt_f64, args[0], "tmp1",
                                   currentBlock);
-  } else if (name == Jnjvm::cosh) {
+  } else if (name->equals(Jnjvm::cosh)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_cosh_f64, args[0], "tmp1",
                                   currentBlock);
-  } else if (name == Jnjvm::expm1) {
+  } else if (name->equals(Jnjvm::expm1)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_expm1_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::hypot) {
+  } else if (name->equals(Jnjvm::hypot)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_hypot_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::log10) {
+  } else if (name->equals(Jnjvm::log10)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_log10_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::log1p) {
+  } else if (name->equals(Jnjvm::log1p)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_log1p_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::sinh) {
+  } else if (name->equals(Jnjvm::sinh)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_sinh_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name == Jnjvm::tanh) {
+  } else if (name->equals(Jnjvm::tanh)) {
     return llvm::CallInst::Create(mvm::jit::func_llvm_tanh_f64, args[0],
                                   "tmp1", currentBlock);
   }
@@ -1512,19 +1531,36 @@ void JavaJIT::invokeSpecial(uint16 index) {
   makeArgs(it, index, args, signature->args.size() + 1);
   JITVerifyNull(args[0]); 
 
-  if (cl == Jnjvm::mathName) {
+  if (cl->equals(Jnjvm::mathName)) {
     val = lowerMathOps(name, args);
   }
 
 
   if (!val) {
 #if defined(MULTIPLE_VM)
-    uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
-    Value* cl = getResolvedClass(clIndex, false);
-
-    Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpClassFunction, cl,
-                                        "", currentBlock);
-    args.push_back(newCtpCache);
+    const Type* Ty = JnjvmModule::ConstantPoolType;
+    Constant* Nil = Constant::getNullValue(Ty);
+    GlobalVariable* GV = new GlobalVariable(Ty, false,
+                                            GlobalValue::ExternalLinkage, Nil,
+                                            "", module);
+    Value* res = new LoadInst(GV, "", false, currentBlock);
+    Value* test = new ICmpInst(ICmpInst::ICMP_EQ, res, Nil, "", currentBlock);
+ 
+    BasicBlock* trueCl = createBasicBlock("UserCtp OK");
+    BasicBlock* falseCl = createBasicBlock("UserCtp Not OK");
+    PHINode* node = llvm::PHINode::Create(Ty, "", trueCl);
+    node->addIncoming(res, currentBlock);
+    BranchInst::Create(falseCl, trueCl, test, currentBlock);
+    std::vector<Value*> Args;
+    Args.push_back(ctpCache);
+    Args.push_back(ConstantInt::get(Type::Int32Ty, index));
+    Args.push_back(GV);
+    res = CallInst::Create(JnjvmModule::SpecialCtpLookupFunction, Args.begin(),
+                           Args.end(), "", falseCl);
+    node->addIncoming(res, falseCl);
+    BranchInst::Create(trueCl, falseCl);
+    currentBlock = trueCl;
+    args.push_back(node);
 #endif
     Function* func = 
       (Function*)ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
@@ -1565,7 +1601,7 @@ void JavaJIT::invokeStatic(uint16 index) {
   makeArgs(it, index, args, signature->args.size());
   ctpInfo->markAsStaticCall(index);
 
-  if (cl == Jnjvm::mathName) {
+  if (cl->equals(Jnjvm::mathName)) {
     val = lowerMathOps(name, args);
   }
 
@@ -1745,11 +1781,12 @@ void JavaJIT::invokeNew(uint16 index) {
   } else {
     LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(cl);
     Size = LCI->getVirtualSize(this);
-    VT = LCI->getVirtualTable(this);
 #ifndef MULTIPLE_VM
+    VT = LCI->getVirtualTable(this);
     Cl = LCI->getVar(this);
     if (!cl->isReady()) {
-      Cl = invoke(JnjvmModule::InitialisationCheckFunction, Cl, "", currentBlock);
+      Cl = invoke(JnjvmModule::InitialisationCheckFunction, Cl, "",
+                  currentBlock);
       CallInst::Create(JnjvmModule::ForceInitialisationCheckFunction, Cl, "",
                        currentBlock);
     }
@@ -1757,6 +1794,8 @@ void JavaJIT::invokeNew(uint16 index) {
     Cl = getResolvedClass(index, true);
     CallInst::Create(JnjvmModule::ForceInitialisationCheckFunction, Cl, "",
                      currentBlock);
+    VT = CallInst::Create(JnjvmModule::GetVTFromClassFunction, Cl, "",
+                          currentBlock);
 #endif
   }
   std::vector<Value*> args;
