@@ -48,6 +48,12 @@ UserClassArray::UserClassArray(JnjvmClassLoader* JCL, const UTF8* name) {
   delegatee = 0;
   _baseClass = 0;
   _funcs = 0;
+  super = JCL->bootstrapLoader->SuperArray;
+  interfaces = JCL->bootstrapLoader->InterfacesArray;
+  depth = 1;
+  display = (UserCommonClass**)malloc(2 * sizeof(UserCommonClass*));
+  display[0] = super;
+  display[1] = this;
 }
 
 UserClassPrimitive::UserClassPrimitive(JnjvmClassLoader* JCL, const UTF8* name,
@@ -60,6 +66,8 @@ UserClassPrimitive::UserClassPrimitive(JnjvmClassLoader* JCL, const UTF8* name,
   classDef = cl;
   classLoader = JCL;
   delegatee = 0;
+  display = (UserCommonClass**)malloc(sizeof(UserCommonClass*));
+  display[0] = this;
 }
 
 void UserCommonClass::resolveClass() {
@@ -95,6 +103,18 @@ void UserCommonClass::resolveClass() {
             status = prepared;
             def->classLoader->TheModule->resolveVirtualClass(def);
             virtualSize = def->virtualSize;
+            /*uint64 vtSize = def->virtualTableSize * sizeof(void*);
+            virtualVT = (VirtualTable*)malloc(2 * vtSize);
+            memcpy(virtualVT, (void*)((uint64)def->virtualVT + vtSize), vtSize);
+            if (super) {
+              memcpy(virtualVT, (void*)((uint64)super->virtualVT - vtSize),
+                     vtSize);
+            }
+            for (CommonClass::method_iterator i = def->virtualMethods.begin(),
+                 e = def->virtualMethods.end(); i != e; ++i) {
+              ((void**)virtualVT)[i->second->offset] = ctpInfo;
+            }
+            virtualVT = (VirtualTable*)((uint64)virtualVT + vtSize);*/
             virtualVT = def->virtualVT;
             def->status = resolved;
             status = resolved;
@@ -125,9 +145,10 @@ void UserCommonClass::resolveClass() {
 }
 
 UserClass* UserCommonClass::lookupClassFromMethod(JavaMethod* meth) {
-  fprintf(stderr, "implement me");
-  abort();
-  return 0;
+  UserClass* res = 0;
+  lookupMethodDontThrow(meth->name, meth->type,
+                        isStatic(meth->access), true, res);
+  return res;
 }
 
 UserCommonClass* UserCommonClass::getUserClass(CommonClass* cl) {
@@ -197,10 +218,13 @@ void* UserConstantPool::operator new(size_t sz, JavaAllocator* alloc,
 
 UserClassPrimitive* AssessorDesc::getPrimitiveClass() const {
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClassArray* arrayCl = vm->arrayClasses[numId];
-  UserClassPrimitive* cl = (UserClassPrimitive*)arrayCl->baseClass();
-  assert(cl && "Primitive array class does not have a primitive.");
-  return cl;
+  if (numId > VOID_ID && numId < ARRAY_ID) {
+    UserClassArray* arrayCl = vm->arrayClasses[numId];
+    UserClassPrimitive* cl = (UserClassPrimitive*)arrayCl->baseClass();
+    assert(cl && "Primitive array class does not have a primitive.");
+    return cl;
+  }
+  return 0;
 }
 
 UserClassArray* AssessorDesc::getArrayClass() const {
