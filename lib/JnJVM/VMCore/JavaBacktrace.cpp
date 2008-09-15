@@ -116,7 +116,7 @@ UserClass* JavaJIT::getCallingClass() {
     obj = (void*)(*cur);
     obj = Collector::begOf(obj);
     if (obj && ((mvm::Object*)obj)->getVirtualTable() == UserConstantPool::VT) {
-      if (i == 1) {
+      if (i == 4) {
         return ((UserConstantPool*)obj)->getClass();
       }
       ++i;
