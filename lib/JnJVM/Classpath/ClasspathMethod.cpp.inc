@@ -62,7 +62,13 @@ JNIEnv *env,
                                                                           jobject Meth) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaMethod* meth = (JavaMethod*)vm->upcalls->methodSlot->getInt32Field((JavaObject*)Meth);
+#ifdef MULTIPLE_VM
+  jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)Meth);
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
+  JnjvmClassLoader* loader = cl->classLoader;
+#else
   JnjvmClassLoader* loader = meth->classDef->classLoader;
+#endif
   return (jobject)(NativeUtil::getParameterTypes(loader, meth));
 }
 
