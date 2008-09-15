@@ -22,7 +22,7 @@ private:
   ///
   virtual UserClass* internalLoad(const UTF8* utf8) {
     fprintf(stderr, "Don't use me");
-    exit(1);
+    abort();
   }
   
   SharedClassByteMap* byteClasses;
