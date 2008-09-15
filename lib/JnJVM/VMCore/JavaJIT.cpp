@@ -1151,7 +1151,7 @@ void JavaJIT::_ldc(uint16 index) {
 #ifdef MULTIPLE_VM
     // Lookup the constant pool cache
     Value* val = getConstantPoolAt(index, JnjvmModule::StringLookupFunction,
-                                   JnjvmModule::JavaObjectType, 0, true);
+                                   JnjvmModule::JavaObjectType, 0, false);
     push(val, AssessorDesc::dRef);  
 #else
     const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
