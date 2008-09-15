@@ -193,6 +193,16 @@ ClassArray* Classpath::ArrayOfFloat;
 ClassArray* Classpath::ArrayOfDouble;
 ClassArray* Classpath::ArrayOfObject;
 
+ClassPrimitive* Classpath::OfByte;
+ClassPrimitive* Classpath::OfChar;
+ClassPrimitive* Classpath::OfInt;
+ClassPrimitive* Classpath::OfShort;
+ClassPrimitive* Classpath::OfBool;
+ClassPrimitive* Classpath::OfLong;
+ClassPrimitive* Classpath::OfFloat;
+ClassPrimitive* Classpath::OfDouble;
+ClassPrimitive* Classpath::OfVoid;
+
 JavaField* Classpath::methodClass;
 JavaField* Classpath::fieldClass;
 JavaField* Classpath::constructorClass;
@@ -234,6 +244,7 @@ void Classpath::mapInitialThread(Jnjvm* vm) {
 }
 
 void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
+
   newClassLoader = 
     UPCALL_CLASS(loader, "java/lang/ClassLoader");
   

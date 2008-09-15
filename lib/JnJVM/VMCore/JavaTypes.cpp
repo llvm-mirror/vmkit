@@ -56,7 +56,8 @@ AssessorDesc* AssessorDesc::dRef = 0;
 AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
                            const char* name,
                            JnjvmClassLoader* loader, uint8 nid,
-                           const char* assocName, UserClassArray* cl,
+                           const char* assocName,
+                           UserClassPrimitive* prim, UserClassArray* cl,
                            arrayCtor_t ctor) {
   AssessorDesc* res = this;
   res->numId = nid;
@@ -75,7 +76,7 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
     res->assocClassName = 0;
   
   if (bid != I_PARG && bid != I_PARD && bid != I_REF && bid != I_TAB) {
-    res->primitiveClass = new UserClassPrimitive(loader, res->UTF8Name, nb);
+    res->primitiveClass = prim;
     if (res->arrayClass) {
       res->arrayClass->_baseClass = res->primitiveClass;
       res->arrayClass->_funcs = res;
@@ -89,53 +90,62 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
 void AssessorDesc::initialise(JnjvmBootstrapLoader* vm) {
 
   dParg = new AssessorDesc(false, I_PARG, 0, 0, "(", vm, 0, 0, 0,
-                                 0);
+                                 0, 0);
   dPard = new AssessorDesc(false, I_PARD, 0, 0, ")", vm, 0, 0, 0,
-                                 0);
+                                 0, 0);
   dVoid = new AssessorDesc(false, I_VOID, 0, 0, "void",
-                                 vm, VOID_ID, "java/lang/Void", 0, 0);
+                                 vm, VOID_ID, "java/lang/Void",
+                                 vm->upcalls->OfVoid, 0, 0);
   dBool = new AssessorDesc(false, I_BOOL, 1, 1, "boolean", 
                                  vm,
                                  BOOL_ID, "java/lang/Boolean", 
+                                 vm->upcalls->OfBool,
                                  vm->upcalls->ArrayOfBool,
                                  (arrayCtor_t)ArrayUInt8::acons);
   dByte = new AssessorDesc(false, I_BYTE, 1, 1, "byte",
                                  vm, BYTE_ID, "java/lang/Byte",
+                                 vm->upcalls->OfByte,
                                  vm->upcalls->ArrayOfByte,
                                  (arrayCtor_t)ArraySInt8::acons);
   dChar = new AssessorDesc(false, I_CHAR, 2, 1, "char",
                                  vm, CHAR_ID, "java/lang/Character",
+                                 vm->upcalls->OfChar,
                                  vm->upcalls->ArrayOfChar,
                                  (arrayCtor_t)ArrayUInt16::acons);
   dShort = new AssessorDesc(false, I_SHORT, 2, 1, "short", 
                                   vm, SHORT_ID,
                                   "java/lang/Short",
+                                  vm->upcalls->OfShort,
                                   vm->upcalls->ArrayOfShort,
                                   (arrayCtor_t)ArraySInt16::acons);
   dInt = new AssessorDesc(false, I_INT, 4, 1, "int", vm,
                                 INT_ID, "java/lang/Integer",
+                                vm->upcalls->OfInt,
                                 vm->upcalls->ArrayOfInt,
                                 (arrayCtor_t)ArraySInt32::acons);
   dFloat = new AssessorDesc(false, I_FLOAT, 4, 1, "float", 
                                   vm,
                                   FLOAT_ID, "java/lang/Float",
+                                  vm->upcalls->OfFloat,
                                   vm->upcalls->ArrayOfFloat,
                                   (arrayCtor_t)ArrayFloat::acons);
   dLong = new AssessorDesc(false, I_LONG, 8, 2, "long", 
                                  vm, LONG_ID, "java/lang/Long",
+                                 vm->upcalls->OfLong,
                                  vm->upcalls->ArrayOfLong,
                                   (arrayCtor_t)ArrayLong::acons);
   dDouble = new AssessorDesc(false, I_DOUBLE, 8, 2, "double", 
                                    vm,
                                    DOUBLE_ID, "java/lang/Double",
+                                   vm->upcalls->OfDouble,
                                    vm->upcalls->ArrayOfDouble,
                                    (arrayCtor_t)ArrayDouble::acons);
   dTab = new AssessorDesc(true, I_TAB, sizeof(void*), 1, "array",
-                                vm, ARRAY_ID, 0, 0,
+                                vm, ARRAY_ID, 0, 0, 0,
                                 (arrayCtor_t)ArrayObject::acons);
   dRef = new AssessorDesc(true, I_REF, sizeof(void*), 1, "reference",
                                 vm, OBJECT_ID,
-                                0, 0, 
+                                0, 0, 0,
                                 (arrayCtor_t)ArrayObject::acons);
   
 }

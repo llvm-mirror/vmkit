@@ -15,6 +15,9 @@
 #define UPCALL_CLASS(vm, name)                                             \
   vm->loadName(vm->asciizConstructUTF8(name), false, false)                        
 
+#define UPCALL_PRIMITIVE_CLASS(loader, name, nb)                              \
+  new UserClassPrimitive(loader, loader->asciizConstructUTF8(name), nb)                        
+
 #define UPCALL_FIELD(vm, cl, name, type, acc)                              \
   UPCALL_CLASS(vm, cl)->constructField(vm->asciizConstructUTF8(name),      \
                                        vm->asciizConstructUTF8(type), acc)
@@ -207,7 +210,6 @@ public:
 
   ISOLATE_STATIC UserClassArray* ArrayOfByte;
   ISOLATE_STATIC UserClassArray* ArrayOfChar;
-  ISOLATE_STATIC UserClassArray* ArrayOfString;
   ISOLATE_STATIC UserClassArray* ArrayOfInt;
   ISOLATE_STATIC UserClassArray* ArrayOfShort;
   ISOLATE_STATIC UserClassArray* ArrayOfBool;
@@ -215,6 +217,17 @@ public:
   ISOLATE_STATIC UserClassArray* ArrayOfFloat;
   ISOLATE_STATIC UserClassArray* ArrayOfDouble;
   ISOLATE_STATIC UserClassArray* ArrayOfObject;
+  ISOLATE_STATIC UserClassArray* ArrayOfString;
+  
+  ISOLATE_STATIC UserClassPrimitive* OfByte;
+  ISOLATE_STATIC UserClassPrimitive* OfChar;
+  ISOLATE_STATIC UserClassPrimitive* OfInt;
+  ISOLATE_STATIC UserClassPrimitive* OfShort;
+  ISOLATE_STATIC UserClassPrimitive* OfBool;
+  ISOLATE_STATIC UserClassPrimitive* OfLong;
+  ISOLATE_STATIC UserClassPrimitive* OfFloat;
+  ISOLATE_STATIC UserClassPrimitive* OfDouble;
+  ISOLATE_STATIC UserClassPrimitive* OfVoid;
   
   ISOLATE_STATIC JavaField* methodClass;
   ISOLATE_STATIC JavaField* fieldClass;

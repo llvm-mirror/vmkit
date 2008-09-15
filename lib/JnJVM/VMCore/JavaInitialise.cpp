@@ -141,6 +141,16 @@ void Jnjvm::initialiseStatics() {
   
   // End array initialization
   
+  JCL->upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(JCL, "B", 1);
+  JCL->upcalls->OfBool = UPCALL_PRIMITIVE_CLASS(JCL, "Z", 1);
+  JCL->upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(JCL, "C", 2);
+  JCL->upcalls->OfShort = UPCALL_PRIMITIVE_CLASS(JCL, "S", 2);
+  JCL->upcalls->OfInt = UPCALL_PRIMITIVE_CLASS(JCL, "I", 4);
+  JCL->upcalls->OfLong = UPCALL_PRIMITIVE_CLASS(JCL, "J", 8);
+  JCL->upcalls->OfFloat = UPCALL_PRIMITIVE_CLASS(JCL, "F", 4);
+  JCL->upcalls->OfDouble = UPCALL_PRIMITIVE_CLASS(JCL, "D", 8);
+  JCL->upcalls->OfVoid = UPCALL_PRIMITIVE_CLASS(JCL, "V", 0);
+
   AssessorDesc::initialise(JCL);
 
   Attribut::codeAttribut = JCL->asciizConstructUTF8("Code");

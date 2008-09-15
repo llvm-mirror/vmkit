@@ -186,7 +186,8 @@ public:
   AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
                const char* name,
                JnjvmClassLoader* loader, uint8 nid,
-               const char* assocName, UserClassArray* cl,
+               const char* assocName, 
+               UserClassPrimitive* prim, UserClassArray* cl,
                arrayCtor_t ctor);
 
 
