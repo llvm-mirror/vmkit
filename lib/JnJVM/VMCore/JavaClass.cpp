@@ -223,10 +223,8 @@ ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n,
                                uint32 nb) : 
   CommonClass(loader, n, false) {
  
-#ifndef MULTIPLE_VM
   display = (CommonClass**)malloc(sizeof(CommonClass*));
   display[0] = this;
-#endif
   primitive = true;
   status = ready;
   access = ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC;
@@ -248,12 +246,10 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n) : CommonClass(lo
   _baseClass = 0;
   super = ClassArray::SuperArray;
   interfaces = ClassArray::InterfacesArray;
-#ifndef MULTIPLE_VM
   depth = 1;
   display = (CommonClass**)malloc(2 * sizeof(CommonClass*));
-  display[0] = JnjvmBootstrapLoader::SuperArray;
+  display[0] = ClassArray::SuperArray;
   display[1] = this;
-#endif
   access = ACC_FINAL | ACC_ABSTRACT;
 }
 
@@ -776,7 +772,7 @@ void CommonClass::getDeclaredConstructors(std::vector<JavaMethod*>& res,
        e = virtualMethods.end(); i != e; ++i) {
     JavaMethod* meth = i->second;
     bool pub = isPublic(meth->access);
-    if (meth->name == Jnjvm::initName && (!publicOnly || pub)) {
+    if (meth->name->equals(Jnjvm::initName) && (!publicOnly || pub)) {
       res.push_back(meth);
     }
   }
@@ -788,7 +784,7 @@ void CommonClass::getDeclaredMethods(std::vector<JavaMethod*>& res,
        e = virtualMethods.end(); i != e; ++i) {
     JavaMethod* meth = i->second;
     bool pub = isPublic(meth->access);
-    if (meth->name != Jnjvm::initName && (!publicOnly || pub)) {
+    if (!(meth->name->equals(Jnjvm::initName)) && (!publicOnly || pub)) {
       res.push_back(meth);
     }
   }
@@ -797,7 +793,7 @@ void CommonClass::getDeclaredMethods(std::vector<JavaMethod*>& res,
        e = staticMethods.end(); i != e; ++i) {
     JavaMethod* meth = i->second;
     bool pub = isPublic(meth->access);
-    if (meth->name != Jnjvm::clinitName && (!publicOnly || pub)) {
+    if (!(meth->name->equals(Jnjvm::clinitName)) && (!publicOnly || pub)) {
       res.push_back(meth);
     }
   }
