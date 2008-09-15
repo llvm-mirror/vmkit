@@ -109,7 +109,10 @@ void Jnjvm::TRACER {
   appClassLoader->MARK_AND_TRACE;
   TRACE_VECTOR(JavaObject*, gc_allocator, globalRefs);
   bootstrapThread->MARK_AND_TRACE;
-  bootstrapLoader->MARK_AND_TRACE; 
+  bootstrapLoader->MARK_AND_TRACE;
+#ifdef MULTIPLE_VM
+  JnjvmSharedLoader::sharedLoader->MARK_AND_TRACE;
+#endif
 }
 
 void ClassMap::TRACER {
