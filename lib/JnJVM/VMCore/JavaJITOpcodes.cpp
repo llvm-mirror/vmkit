@@ -1856,7 +1856,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           dcl = JCL->constructArray(arrayName);
 #else
 
-          valCl = getResolvedClass(index, true);
+          valCl = getResolvedClass(index, false);
           valCl = CallInst::Create(JnjvmModule::GetArrayClassFunction, valCl,
                                    "", currentBlock);
 #endif
