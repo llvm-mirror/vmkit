@@ -609,8 +609,8 @@ extern "C" JavaString* internString(JavaString* obj) {
 
 extern "C" uint8 isArray(JavaObject* klass) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  CommonClass* cl = 
-    (CommonClass*)((vm->upcalls->vmdataClass->getObjectField(klass)));
+  UserCommonClass* cl = 
+    (UserCommonClass*)((vm->upcalls->vmdataClass->getObjectField(klass)));
 
   return (uint8)cl->isArray();
 }
