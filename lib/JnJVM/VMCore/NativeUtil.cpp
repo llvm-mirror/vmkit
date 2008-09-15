@@ -382,6 +382,7 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
 JavaObject* NativeUtil::getClassType(JnjvmClassLoader* loader, Typedef* type) {
   Jnjvm* vm = JavaThread::get()->isolate;
   UserCommonClass* res = type->assocClass(loader);
+  assert(res && "No associated class");
   return res->getClassDelegatee(vm);
 }
 
