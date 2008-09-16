@@ -47,7 +47,13 @@ JNIEnv *env,
 jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)obj);
+#ifdef MULTIPLE_VM
+  jclass Cl = (jclass)vm->upcalls->fieldClass->getInt32Field((JavaObject*)obj);
+  UserClass* fieldCl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
+  JnjvmClassLoader* loader = fieldCl->classLoader;
+#else
   JnjvmClassLoader* loader = field->classDef->classLoader;
+#endif
   UserCommonClass* cl = field->getSignature()->assocClass(loader);
   return (jclass)cl->getClassDelegatee(vm);
 }
