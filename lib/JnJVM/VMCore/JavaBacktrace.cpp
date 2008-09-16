@@ -104,22 +104,44 @@ UserClass* JavaJIT::getCallingClassWalker() {
   return 0;
 }
 #else
+
 UserClass* JavaJIT::getCallingClass() {
+  Class* res = 0;
+
+  int* ips[10];
+  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
+  int n = 0;
+  int i = 0;
+  while (n < real_size) {
+    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
+    if (code) {
+      JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
+      if (meth) {
+        if (i == 1) {
+          res = meth->classDef;
+          break;
+        } else {
+          ++i;
+        }
+      }
+    }
+  }
+
+  if (!res) return 0;
+
   unsigned int* top;
   register unsigned int  **cur = &top;
   register unsigned int  **max = (unsigned int**)mvm::Thread::get()->baseSP;
     
-  void* obj = 0;
-  int i = 0;
-    
   for(; cur<max; cur++) {
-    obj = (void*)(*cur);
+    void* obj = (void*)(*cur);
     obj = Collector::begOf(obj);
     if (obj && ((mvm::Object*)obj)->getVirtualTable() == UserConstantPool::VT) {
-      if (i == 4) {
-        return ((UserConstantPool*)obj)->getClass();
+      UserConstantPool* ctp = (UserConstantPool*)obj;
+      UserClass* cl = ctp->getClass();
+      if (cl->classDef == res) {
+        return cl;
       }
-      ++i;
     }
   }
   return 0;
