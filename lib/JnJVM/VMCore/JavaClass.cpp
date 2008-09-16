@@ -205,7 +205,8 @@ void CommonClass::print(mvm::PrintBuffer* buf) const {
   buf->write(">");
 }
 
-CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n, bool isArray) {
+CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n,
+                         bool isArray) {
   name = n;
   this->lockVar = mvm::Lock::allocRecursive();
   this->condVar = mvm::Cond::allocCond();
@@ -241,7 +242,8 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
 #endif
 }
 
-ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n) : CommonClass(loader, n, true) {
+ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n) : 
+    CommonClass(loader, n, true) {
   _funcs = 0;
   _baseClass = 0;
   super = ClassArray::SuperArray;
@@ -278,8 +280,8 @@ JnjvmClassLoader* ClassArray::arrayLoader(const UTF8* name,
   if (name->elements[start] == AssessorDesc::I_TAB) {
     return arrayLoader(name, loader, start + 1, len - 1);
   } else if (name->elements[start] == AssessorDesc::I_REF) {
-    const UTF8* componentName = name->javaToInternal(loader->hashUTF8, start + 1,
-                                                     len - 2);
+    const UTF8* componentName = name->javaToInternal(loader->hashUTF8,
+                                                     start + 1, len - 2);
     UserCommonClass* cl = loader->loadName(componentName, false, true);
     return cl->classLoader;
   } else {
@@ -419,6 +421,7 @@ JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
 }
 
 JavaObject* UserClass::doNew(Jnjvm* vm) {
+  assert(this && "No class when allocating.");
   assert(this->isReady() && "Uninitialized class when allocating.");
   JavaObject* res = (JavaObject*)vm->allocator.allocateObject(getVirtualSize(),
                                                               getVirtualVT());
@@ -459,7 +462,8 @@ bool UserCommonClass::isOfTypeName(const UTF8* Tname) {
     }
     
     return (Tname->elements[prof] == AssessorDesc::I_REF) &&  
-      (res && curS->inheritName(Tname->extract(classLoader->hashUTF8, prof + 1, len - 1)));
+      (res && curS->inheritName(Tname->extract(classLoader->hashUTF8, prof + 1,
+                                               len - 1)));
   } else {
     return false;
   }
@@ -687,8 +691,9 @@ void Class::readClass() {
     ctpInfo->resolveClassName(reader.readU2());
   
   if (!(thisClassName->equals(name))) {
-    JavaThread::get()->isolate->classFormatError("try to load %s and found class named %s",
-          printString(), thisClassName->printString());
+    JavaThread::get()->isolate->classFormatError(
+        "try to load %s and found class named %s",
+        printString(), thisClassName->printString());
   }
 
   readParents(reader);
