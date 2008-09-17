@@ -69,6 +69,8 @@ UserClassPrimitive::UserClassPrimitive(JnjvmClassLoader* JCL, const UTF8* name,
   delegatee = 0;
   display = (UserCommonClass**)malloc(sizeof(UserCommonClass*));
   display[0] = this;
+  virtualSize = nb;
+  status = ready;
 }
 
 void UserCommonClass::resolveClass() {
