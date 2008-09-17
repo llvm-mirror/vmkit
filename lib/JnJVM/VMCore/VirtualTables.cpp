@@ -14,6 +14,7 @@
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
+#include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
 #include "LockedMap.h"
@@ -134,21 +135,19 @@ void JnjvmBootstrapLoader::TRACER {
        e = bootArchives.end(); i != e; ++i) {
     (*i)->bytes->MARK_AND_TRACE;
   }
-#ifndef MULTIPLE_VM
 #define TRACE_DELEGATEE(prim) \
-  prim->primitiveClass->delegatee->MARK_AND_TRACE
+  prim->delegatee->MARK_AND_TRACE
 
-  TRACE_DELEGATEE(AssessorDesc::dVoid);
-  TRACE_DELEGATEE(AssessorDesc::dBool);
-  TRACE_DELEGATEE(AssessorDesc::dByte);
-  TRACE_DELEGATEE(AssessorDesc::dChar);
-  TRACE_DELEGATEE(AssessorDesc::dShort);
-  TRACE_DELEGATEE(AssessorDesc::dInt);
-  TRACE_DELEGATEE(AssessorDesc::dFloat);
-  TRACE_DELEGATEE(AssessorDesc::dLong);
-  TRACE_DELEGATEE(AssessorDesc::dDouble);
+  TRACE_DELEGATEE(upcalls->OfVoid);
+  TRACE_DELEGATEE(upcalls->OfBool);
+  TRACE_DELEGATEE(upcalls->OfByte);
+  TRACE_DELEGATEE(upcalls->OfChar);
+  TRACE_DELEGATEE(upcalls->OfShort);
+  TRACE_DELEGATEE(upcalls->OfInt);
+  TRACE_DELEGATEE(upcalls->OfFloat);
+  TRACE_DELEGATEE(upcalls->OfLong);
+  TRACE_DELEGATEE(upcalls->OfDouble);
 #undef TRACE_DELEGATEE
-#endif
 }
 
 #ifdef MULTIPLE_VM
