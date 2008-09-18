@@ -126,8 +126,8 @@ void UserCommonClass::resolveClass() {
             while (classDef->status < resolved) {
               classDef->waitClass();
             }
-            classDef->release();
           }
+          classDef->release();
         } else {
           cl->ctpInfo = 
             new(classLoader->allocator, def->ctpInfo->ctpSize) UserConstantPool(cl);
@@ -138,6 +138,7 @@ void UserCommonClass::resolveClass() {
           broadcastClass();
         }
       }
+      release();
     } else {
       while (status < resolved) {
         waitClass();
