@@ -215,6 +215,7 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
     VirtualTable* VT = 0;
     if (meth->name->equals(Jnjvm::finalize)) {
       VT = allocateVT(cl, ++meths);
+#ifndef MULTIPLE_VM
       meth->offset = 0;
       Function* func = cl->classLoader->TheModuleProvider->parseFunction(meth);
       if (!cl->super) meth->canBeInlined = true;
@@ -227,6 +228,7 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
         // LLVM does not allow recursive compilation. Create the code now.
         ((void**)VT)[0] = EE->getPointerToFunction(func);
       }
+#endif
     } else {
     
       Class* methodCl = 0;
