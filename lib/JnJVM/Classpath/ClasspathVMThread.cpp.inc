@@ -56,7 +56,7 @@ static void start(arg_thread_t* arg) {
 #else
   Collector::inject_my_thread(&argc);
 #endif
-  UserCommonClass* vmthClass = vmThread->classOf;
+  UserClass* vmthClass = (UserClass*)vmThread->classOf;
   Jnjvm* isolate = intern->isolate;
   JavaObject* thread = isolate->upcalls->assocThread->getObjectField(vmThread);
   ThreadSystem* ts = isolate->threadSystem;
@@ -77,10 +77,8 @@ static void start(arg_thread_t* arg) {
   vm->numThreads++;
   vm->lock->unlock();
 #endif
-  UserClass* methodCl = 0;
-  JavaMethod* method = vmthClass->lookupMethod(Jnjvm::runName, Jnjvm::clinitType, false, true, methodCl);
-  method->invokeIntSpecial(isolate, (UserClass*)vmthClass, vmThread);
-
+  
+  isolate->upcalls->runVMThread->invokeIntSpecial(isolate, vmthClass, vmThread);
   
   if (!isDaemon) {
     ts->nonDaemonLock->lock();

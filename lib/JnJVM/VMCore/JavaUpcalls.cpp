@@ -55,6 +55,7 @@ JavaField*  Classpath::vmThread;
 JavaMethod* Classpath::uncaughtException;
 Class*      Classpath::inheritableThreadLocal;
 
+JavaMethod* Classpath::runVMThread;
 JavaMethod* Classpath::setContextClassLoader;
 JavaMethod* Classpath::getSystemClassLoader;
 Class*      Classpath::newString;
@@ -526,6 +527,10 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   initVMThread = 
     UPCALL_METHOD(loader, "java/lang/VMThread", "<init>",
                   "(Ljava/lang/Thread;)V", ACC_VIRTUAL);
+  
+  runVMThread = 
+    UPCALL_METHOD(loader, "java/lang/VMThread", "run", "()V", ACC_VIRTUAL);
+
 
   groupAddThread = 
     UPCALL_METHOD(loader, "java/lang/ThreadGroup", "addThread",

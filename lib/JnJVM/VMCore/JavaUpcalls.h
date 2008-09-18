@@ -125,6 +125,7 @@ public:
   ISOLATE_STATIC JavaField* vmdataVMThread;
   ISOLATE_STATIC JavaMethod* finaliseCreateInitialThread;
   ISOLATE_STATIC JavaMethod* initVMThread;
+  ISOLATE_STATIC JavaMethod* runVMThread;
   ISOLATE_STATIC JavaMethod* groupAddThread;
   ISOLATE_STATIC JavaField* name;
   ISOLATE_STATIC JavaField* priority;
