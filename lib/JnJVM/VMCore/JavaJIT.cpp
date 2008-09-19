@@ -62,7 +62,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
     return invokeSpecial(index);
  
 
-#if !defined(WITHOUT_VTABLE) && !defined(MULTIPLE_VM)
+#if !defined(WITHOUT_VTABLE)
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index);
   std::vector<Value*> args; // size = [signature->nbIn + 3];
   LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);

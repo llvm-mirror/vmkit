@@ -106,19 +106,26 @@ void UserCommonClass::resolveClass() {
             status = prepared;
             def->classLoader->TheModule->resolveVirtualClass(def);
             virtualSize = def->virtualSize;
-            /*uint64 vtSize = def->virtualTableSize * sizeof(void*);
+            
+            uint64 vtSize = def->virtualTableSize * sizeof(void*);
+            
             virtualVT = (VirtualTable*)malloc(2 * vtSize);
-            memcpy(virtualVT, (void*)((uint64)def->virtualVT + vtSize), vtSize);
+            
+            memcpy((void*)((uint64)virtualVT + vtSize), def->virtualVT, vtSize);
             if (super) {
               memcpy(virtualVT, (void*)((uint64)super->virtualVT - vtSize),
                      vtSize);
             }
+            
+            virtualVT = (VirtualTable*)((uint64)virtualVT + vtSize);
+            
             for (CommonClass::method_iterator i = def->virtualMethods.begin(),
                  e = def->virtualMethods.end(); i != e; ++i) {
-              ((void**)virtualVT)[i->second->offset] = ctpInfo;
+              if (i->second->offset > 0) {
+                ((void**)virtualVT)[-(i->second->offset)] = ctpInfo;
+              }
             }
-            virtualVT = (VirtualTable*)((uint64)virtualVT + vtSize);*/
-            virtualVT = def->virtualVT;
+            
             def->status = resolved;
             status = resolved;
             classDef->broadcastClass();
