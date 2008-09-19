@@ -179,8 +179,8 @@ Java_java_lang_reflect_VMArray_createObjectArray
   UserCommonClass* base = NativeUtil::resolvedImplClass(arrayType, true);
   JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->getName();
-  const UTF8* arrayName = AssessorDesc::constructArrayName(loader, 1, name);
-  UserClassArray* array = loader->constructArray(arrayName);
+  const UTF8* arrayName = loader->constructArrayName(1, name);
+  UserClassArray* array = loader->constructArray(arrayName, base);
   ArrayObject* res = ArrayObject::acons(arrayLength, array, &(vm->allocator));
 
   return (jobject) res;

@@ -45,42 +45,21 @@ class UTF8Map;
 #define ARRAY_ID 10
 #define NUM_ASSESSORS 11
 
-/// AssessorDesc - Helpful functions to analyse UTF8s and ids and get
-/// either Typedefs or Classes.
-///
-class AssessorDesc {
-public:
-  static VirtualTable *VT;
-  static const char I_TAB;
-  static const char I_END_REF;
-  static const char I_PARG;
-  static const char I_PARD;
-  static const char I_BYTE;
-  static const char I_CHAR;
-  static const char I_DOUBLE;
-  static const char I_FLOAT;
-  static const char I_INT;
-  static const char I_LONG;
-  static const char I_REF;
-  static const char I_SHORT;
-  static const char I_VOID;
-  static const char I_BOOL;
-  static const char I_SEP;
-  
-  static bool analyseIntern(const UTF8* name, uint32 pos,
-                            uint32 meth,
-                            uint32& ret);
-
-  static const UTF8* constructArrayName(JnjvmClassLoader* loader,
-                                        uint32 steps, const UTF8* className);
-  
-  static uint8 arrayType(unsigned int t);
- 
-  static UserClassPrimitive* byteIdToPrimitive(char id, Classpath* upcalls);
-
-
-};
-
+static const char I_TAB = '[';
+static const char I_END_REF = ';';
+static const char I_PARG = '(';
+static const char I_PARD = ')';
+static const char I_BYTE = 'B';
+static const char I_CHAR = 'C';
+static const char I_DOUBLE = 'D';
+static const char I_FLOAT = 'F';
+static const char I_INT = 'I';
+static const char I_LONG = 'J';
+static const char I_REF = 'L';
+static const char I_SHORT = 'S';
+static const char I_VOID = 'V';
+static const char I_BOOL = 'Z';
+static const char I_SEP = '/';
 
 /// Typedef - Each class has a Typedef representation. A Typedef is also a class
 /// which has not been loaded yet. Typedefs are hashed on the name of the class.
@@ -181,39 +160,39 @@ public:
   }
   
   bool isVoid() const {
-    return charId == AssessorDesc::I_VOID;
+    return charId == I_VOID;
   }
 
   bool isLong() const {
-    return charId == AssessorDesc::I_LONG;
+    return charId == I_LONG;
   }
 
   bool isInt() const {
-    return charId == AssessorDesc::I_INT;
+    return charId == I_INT;
   }
 
   bool isChar() const {
-    return charId == AssessorDesc::I_CHAR;
+    return charId == I_CHAR;
   }
 
   bool isShort() const {
-    return charId == AssessorDesc::I_SHORT;
+    return charId == I_SHORT;
   }
 
   bool isByte() const {
-    return charId == AssessorDesc::I_BYTE;
+    return charId == I_BYTE;
   }
 
   bool isBool() const {
-    return charId == AssessorDesc::I_BOOL;
+    return charId == I_BOOL;
   }
 
   bool isFloat() const {
-    return charId == AssessorDesc::I_FLOAT;
+    return charId == I_FLOAT;
   }
 
   bool isDouble() const {
-    return charId == AssessorDesc::I_DOUBLE;
+    return charId == I_DOUBLE;
   }
   
   /// JInfo - Holds info useful for the JIT.
@@ -313,7 +292,7 @@ private:
   ///
   intptr_t _virtualCallAP; 
   intptr_t virtualCallAP();
-
+  
 public:
 
   /// args - The arguments as Typedef of this signature.

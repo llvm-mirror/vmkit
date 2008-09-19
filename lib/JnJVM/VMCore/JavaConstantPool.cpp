@@ -271,7 +271,7 @@ CommonClass* JavaConstantPool::loadClass(uint32 index) {
   if (!temp) {
     JnjvmClassLoader* loader = classDef->classLoader;
     const UTF8* name = UTF8At(ctpDef[index]);
-    if (name->elements[0] == AssessorDesc::I_TAB) {
+    if (name->elements[0] == I_TAB) {
       temp = loader->constructArray(name);
       temp->resolveClass();
     } else {

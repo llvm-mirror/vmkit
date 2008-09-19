@@ -23,21 +23,7 @@
 
 using namespace jnjvm;
 
-const char AssessorDesc::I_TAB = '[';
-const char AssessorDesc::I_END_REF = ';';
-const char AssessorDesc::I_PARG = '(';
-const char AssessorDesc::I_PARD = ')';
-const char AssessorDesc::I_BYTE = 'B';
-const char AssessorDesc::I_CHAR = 'C';
-const char AssessorDesc::I_DOUBLE = 'D';
-const char AssessorDesc::I_FLOAT = 'F';
-const char AssessorDesc::I_INT = 'I';
-const char AssessorDesc::I_LONG = 'J';
-const char AssessorDesc::I_REF = 'L';
-const char AssessorDesc::I_SHORT = 'S';
-const char AssessorDesc::I_VOID = 'V';
-const char AssessorDesc::I_BOOL = 'Z';
-const char AssessorDesc::I_SEP = '/';
+
 
 static void typeError(const UTF8* name, short int l) {
   if (l != 0) {
@@ -50,9 +36,8 @@ static void typeError(const UTF8* name, short int l) {
 }
 
 
-bool AssessorDesc::analyseIntern(const UTF8* name, uint32 pos,
-                                 uint32 meth,
-                                 uint32& ret) {
+static bool analyseIntern(const UTF8* name, uint32 pos, uint32 meth,
+                          uint32& ret) {
   short int cur = name->elements[pos];
   switch (cur) {
     case I_PARD :
@@ -106,58 +91,6 @@ bool AssessorDesc::analyseIntern(const UTF8* name, uint32 pos,
   return false;
 }
 
-const UTF8* AssessorDesc::constructArrayName(JnjvmClassLoader *loader,
-                                             uint32 steps,
-                                             const UTF8* className) {
-  uint32 len = className->size;
-  uint32 pos = steps;
-  bool isTab = (className->elements[0] == I_TAB ? true : false);
-  uint32 n = steps + len + (isTab ? 0 : 2);
-  uint16* buf = (uint16*)alloca(n * sizeof(uint16));
-    
-  for (uint32 i = 0; i < steps; i++) {
-    buf[i] = I_TAB;
-  }
-
-  if (!isTab) {
-    ++pos;
-    buf[steps] = I_REF;
-  }
-
-  for (uint32 i = 0; i < len; i++) {
-    buf[pos + i] = className->elements[i];
-  }
-
-  if (!isTab) {
-    buf[n - 1] = I_END_REF;
-  }
-
-  return loader->readerConstructUTF8(buf, n);
-}
-
-uint8 AssessorDesc::arrayType(unsigned int t) {
-  if (t == JavaArray::T_CHAR) {
-    return I_CHAR;
-  } else if (t == JavaArray::T_BOOLEAN) {
-    return I_BOOL;
-  } else if (t == JavaArray::T_INT) {
-    return I_INT;
-  } else if (t == JavaArray::T_SHORT) {
-    return I_SHORT;
-  } else if (t == JavaArray::T_BYTE) {
-    return I_BYTE;
-  } else if (t == JavaArray::T_FLOAT) {
-    return I_FLOAT;
-  } else if (t == JavaArray::T_LONG) {
-    return I_LONG;
-  } else if (t == JavaArray::T_DOUBLE) {
-    return I_DOUBLE;
-  } else {
-    JavaThread::get()->isolate->unknownError("unknown array type %d\n", t);
-    return 0;
-  }
-}
-
 void PrimitiveTypedef::tPrintBuf(mvm::PrintBuffer* buf) const {
   prim->name->print(buf);
 }
@@ -168,32 +101,6 @@ void ArrayTypedef::tPrintBuf(mvm::PrintBuffer* buf) const {
 
 void ObjectTypedef::tPrintBuf(mvm::PrintBuffer* buf) const {
   CommonClass::printClassName(pseudoAssocClassName, buf);
-}
-
-UserClassPrimitive* 
-AssessorDesc::byteIdToPrimitive(char id, Classpath* upcalls) {
-  switch (id) {
-    case I_FLOAT :
-      return upcalls->OfFloat;
-    case I_INT :
-      return upcalls->OfInt;
-    case I_SHORT :
-      return upcalls->OfShort;
-    case I_CHAR :
-      return upcalls->OfChar;
-    case I_DOUBLE :
-      return upcalls->OfDouble;
-    case I_BYTE :
-      return upcalls->OfByte;
-    case I_BOOL :
-      return upcalls->OfBool;
-    case I_LONG :
-      return upcalls->OfLong;
-    case I_VOID :
-      return upcalls->OfVoid;
-    default :
-      return 0;
-  }
 }
 
 const char* Typedef::printString() const {
@@ -253,7 +160,7 @@ Signdef::Signdef(const UTF8* name, JnjvmClassLoader* loader) {
 
   while (pos < len) {
     pred = pos;
-    bool end = AssessorDesc::analyseIntern(name, pos, 0, pos);
+    bool end = analyseIntern(name, pos, 0, pos);
     if (end) break;
     else {
       buf.push_back(loader->constructType(name->extract(loader->hashUTF8, pred, pos)));
@@ -264,7 +171,7 @@ Signdef::Signdef(const UTF8* name, JnjvmClassLoader* loader) {
     typeError(name, 0);
   }
   
-  AssessorDesc::analyseIntern(name, pos, 0, pred);
+  analyseIntern(name, pos, 0, pred);
 
   if (pred != len) {
     typeError(name, 0);
@@ -286,10 +193,10 @@ Typedef* Typedef::constructType(const UTF8* name, UTF8Map* map, Jnjvm* vm) {
   short int cur = name->elements[0];
   Typedef* res = 0;
   switch (cur) {
-    case AssessorDesc::I_TAB :
+    case I_TAB :
       res = new ArrayTypedef(name);
       break;
-    case AssessorDesc::I_REF :
+    case I_REF :
       res = new ObjectTypedef(name, map);
       break;
     default :

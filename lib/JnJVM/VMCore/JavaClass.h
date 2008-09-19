@@ -506,6 +506,9 @@ public:
 class ClassPrimitive : public CommonClass {
 public:
   ClassPrimitive(JnjvmClassLoader* loader, const UTF8* name, uint32 nb);
+
+  static UserClassPrimitive* byteIdToPrimitive(char id, Classpath* upcalls);
+
 };
 
 

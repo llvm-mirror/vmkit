@@ -171,10 +171,10 @@ static void printClassNameIntern(const UTF8* name, unsigned int start,
                                  unsigned int end,  mvm::PrintBuffer* buf) {
   
   uint16 first = name->elements[start];
-  if (first == AssessorDesc::I_TAB) {
+  if (first == I_TAB) {
     unsigned int stepsEnd = start;
-    while (name->elements[stepsEnd] == AssessorDesc::I_TAB) stepsEnd++;
-    if (name->elements[stepsEnd] == AssessorDesc::I_REF) {
+    while (name->elements[stepsEnd] == I_TAB) stepsEnd++;
+    if (name->elements[stepsEnd] == I_REF) {
       printClassNameIntern(name, (stepsEnd + 1),(end - 1), buf);
     } else {
       name->print(buf);
@@ -224,6 +224,33 @@ UserClassPrimitive* CommonClass::toPrimitive(Jnjvm* vm) const {
     return vm->upcalls->OfFloat;
   } else {
     return 0;
+  }
+}
+
+
+UserClassPrimitive* 
+ClassPrimitive::byteIdToPrimitive(char id, Classpath* upcalls) {
+  switch (id) {
+    case I_FLOAT :
+      return upcalls->OfFloat;
+    case I_INT :
+      return upcalls->OfInt;
+    case I_SHORT :
+      return upcalls->OfShort;
+    case I_CHAR :
+      return upcalls->OfChar;
+    case I_DOUBLE :
+      return upcalls->OfDouble;
+    case I_BYTE :
+      return upcalls->OfByte;
+    case I_BOOL :
+      return upcalls->OfBool;
+    case I_LONG :
+      return upcalls->OfLong;
+    case I_VOID :
+      return upcalls->OfVoid;
+    default :
+      return 0;
   }
 }
 
@@ -475,7 +502,7 @@ bool UserCommonClass::isOfTypeName(const UTF8* Tname) {
     uint32 len = Tname->size;
     bool res = true;
     
-    while (res && Tname->elements[prof] == AssessorDesc::I_TAB) {
+    while (res && Tname->elements[prof] == I_TAB) {
       UserCommonClass* cl = ((UserClassArray*)curS)->baseClass();
       ++prof;
       cl->resolveClass();
@@ -483,7 +510,7 @@ bool UserCommonClass::isOfTypeName(const UTF8* Tname) {
       curS = cl;
     }
     
-    return (Tname->elements[prof] == AssessorDesc::I_REF) &&  
+    return (Tname->elements[prof] == I_REF) &&  
       (res && curS->inheritName(Tname->extract(classLoader->hashUTF8, prof + 1,
                                                len - 1)));
   } else {

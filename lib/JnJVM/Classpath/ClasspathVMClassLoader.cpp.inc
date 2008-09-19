@@ -33,7 +33,8 @@ jclass clazz,
 jchar byteId) {
   
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClassPrimitive* prim = AssessorDesc::byteIdToPrimitive(byteId, vm->upcalls);
+  UserClassPrimitive* prim = 
+    UserClassPrimitive::byteIdToPrimitive(byteId, vm->upcalls);
   if (!prim)
     vm->unknownError("unknown byte primitive %c", byteId);
   

@@ -12,29 +12,28 @@
 
 #include "JnjvmConfig.h"
 
-#define UPCALL_CLASS(vm, name)                                             \
+#define UPCALL_CLASS(vm, name)                                                 \
   vm->loadName(vm->asciizConstructUTF8(name), false, false)                        
 
-#define UPCALL_PRIMITIVE_CLASS(loader, name, nb)                              \
+#define UPCALL_PRIMITIVE_CLASS(loader, name, nb)                               \
   new UserClassPrimitive(loader, loader->asciizConstructUTF8(name), nb)                        
 
-#define UPCALL_FIELD(vm, cl, name, type, acc)                              \
-  UPCALL_CLASS(vm, cl)->constructField(vm->asciizConstructUTF8(name),      \
+#define UPCALL_FIELD(vm, cl, name, type, acc)                                  \
+  UPCALL_CLASS(vm, cl)->constructField(vm->asciizConstructUTF8(name),          \
                                        vm->asciizConstructUTF8(type), acc)
 
-#define UPCALL_METHOD(vm, cl, name, type, acc)                             \
-  UPCALL_CLASS(vm, cl)->constructMethod(vm->asciizConstructUTF8(name),     \
+#define UPCALL_METHOD(vm, cl, name, type, acc)                                 \
+  UPCALL_CLASS(vm, cl)->constructMethod(vm->asciizConstructUTF8(name),         \
                                         vm->asciizConstructUTF8(type), acc)
 
-#define UPCALL_ARRAY_CLASS(vm, name, depth)                                \
-  vm->constructArray(                                                      \
-    AssessorDesc::constructArrayName(vm, depth,                            \
-                                     vm->asciizConstructUTF8(name)))       
+#define UPCALL_ARRAY_CLASS(loader, name, depth)                                \
+  loader->constructArray(                                                      \
+    loader->constructArrayName(depth, loader->asciizConstructUTF8(name)))       
 
-#define UPCALL_CLASS_EXCEPTION(loader, name)                               \
+#define UPCALL_CLASS_EXCEPTION(loader, name)                                   \
   name = UPCALL_CLASS(loader, "java/lang/"#name)                           
 
-#define UPCALL_REFLECT_CLASS_EXCEPTION(loader, name)                       \
+#define UPCALL_REFLECT_CLASS_EXCEPTION(loader, name)                           \
   name = UPCALL_CLASS(loader, "java/lang/reflect/"#name)                   
 
 #define UPCALL_METHOD_EXCEPTION(loader, name) \

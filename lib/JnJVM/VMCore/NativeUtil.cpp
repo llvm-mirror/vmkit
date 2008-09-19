@@ -151,7 +151,7 @@ static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth) {
   sint32 i = 0;
   while (i < jniConsType->size) {
     char c = jniConsType->elements[i++];
-    if (c == AssessorDesc::I_PARG) {
+    if (c == I_PARG) {
       ptr[0] = '_';
       ptr[1] = '_';
       ptr += 2;
@@ -162,15 +162,15 @@ static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth) {
       ptr[0] = '_';
       ptr[1] = '1';
       ptr += 2;
-    } else if (c == AssessorDesc::I_END_REF) {
+    } else if (c == I_END_REF) {
       ptr[0] = '_';
       ptr[1] = '2';
       ptr += 2;
-    } else if (c == AssessorDesc::I_TAB) {
+    } else if (c == I_TAB) {
       ptr[0] = '_';
       ptr[1] = '3';
       ptr += 2;
-    } else if (c == AssessorDesc::I_PARD) {
+    } else if (c == I_PARD) {
       break;
     } else {
       ptr[0] = c;

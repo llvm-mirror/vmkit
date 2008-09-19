@@ -210,7 +210,8 @@ public:
 #ifdef MULTIPLE_VM
   UserClass* loadClass;
 #endif
-
+  
+  const UTF8* constructArrayName(uint32 steps, const UTF8* className);
 };
 
 /// JnjvmBootstrapLoader - This class is for the bootstrap class loader, which

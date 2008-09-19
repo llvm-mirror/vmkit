@@ -190,7 +190,7 @@ UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigne
 
   if (len == 0) {
     return 0;
-  } else if (name->elements[0] == AssessorDesc::I_TAB) {
+  } else if (name->elements[0] == I_TAB) {
     
     while (doLoop) {
       --len;
@@ -198,12 +198,12 @@ UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigne
         doLoop = false;
       } else {
         ++start;
-        if (name->elements[start] != AssessorDesc::I_TAB) {
-          if (name->elements[start] == AssessorDesc::I_REF) {
+        if (name->elements[start] != I_TAB) {
+          if (name->elements[start] == I_REF) {
             uint32 size = (uint32)name->size;
             if ((size == (start + 1)) || (size == (start + 2)) || 
-                 (name->elements[start + 1] == AssessorDesc::I_TAB) || 
-                 (utf8->elements[origLen - 1] != AssessorDesc::I_END_REF)) {
+                 (name->elements[start + 1] == I_TAB) || 
+                 (utf8->elements[origLen - 1] != I_END_REF)) {
               doLoop = false; 
             } else {
               const UTF8* componentName = utf8->javaToInternal(hashUTF8,
@@ -219,10 +219,10 @@ UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigne
             }
           } else {
             uint16 cur = name->elements[start];
-            if ((cur == AssessorDesc::I_BOOL || cur == AssessorDesc::I_BYTE ||
-                 cur == AssessorDesc::I_CHAR || cur == AssessorDesc::I_SHORT ||
-                 cur == AssessorDesc::I_INT || cur == AssessorDesc::I_FLOAT || 
-                 cur == AssessorDesc::I_DOUBLE || cur == AssessorDesc::I_LONG)
+            if ((cur == I_BOOL || cur == I_BYTE ||
+                 cur == I_CHAR || cur == I_SHORT ||
+                 cur == I_INT || cur == I_FLOAT || 
+                 cur == I_DOUBLE || cur == I_LONG)
                 && ((uint32)name->size) == start + 1) {
 
               ret = constructArray(name);
@@ -256,12 +256,12 @@ UserCommonClass* JnjvmClassLoader::lookupClass(const UTF8* utf8) {
 UserCommonClass* JnjvmClassLoader::loadBaseClass(const UTF8* name,
                                                  uint32 start, uint32 len) {
   
-  if (name->elements[start] == AssessorDesc::I_TAB) {
+  if (name->elements[start] == I_TAB) {
     UserCommonClass* baseClass = loadBaseClass(name, start + 1, len - 1);
     JnjvmClassLoader* loader = baseClass->classLoader;
     const UTF8* arrayName = name->extract(loader->hashUTF8, start, start + len);
     return loader->constructArray(arrayName);
-  } else if (name->elements[start] == AssessorDesc::I_REF) {
+  } else if (name->elements[start] == I_REF) {
     const UTF8* componentName = name->extract(hashUTF8,
                                               start + 1, start + len - 1);
     UserCommonClass* cl = loadName(componentName, false, true);
@@ -269,7 +269,7 @@ UserCommonClass* JnjvmClassLoader::loadBaseClass(const UTF8* name,
   } else {
     Classpath* upcalls = bootstrapLoader->upcalls;
     UserClassPrimitive* prim = 
-      AssessorDesc::byteIdToPrimitive(name->elements[start], upcalls);
+      UserClassPrimitive::byteIdToPrimitive(name->elements[start], upcalls);
     assert(prim && "No primitive found");
     return prim;
   }
@@ -432,3 +432,30 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
   }
 }
 
+const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
+                                                 const UTF8* className) {
+  uint32 len = className->size;
+  uint32 pos = steps;
+  bool isTab = (className->elements[0] == I_TAB ? true : false);
+  uint32 n = steps + len + (isTab ? 0 : 2);
+  uint16* buf = (uint16*)alloca(n * sizeof(uint16));
+    
+  for (uint32 i = 0; i < steps; i++) {
+    buf[i] = I_TAB;
+  }
+
+  if (!isTab) {
+    ++pos;
+    buf[steps] = I_REF;
+  }
+
+  for (uint32 i = 0; i < len; i++) {
+    buf[pos + i] = className->elements[i];
+  }
+
+  if (!isTab) {
+    buf[n - 1] = I_END_REF;
+  }
+
+  return readerConstructUTF8(buf, n);
+}

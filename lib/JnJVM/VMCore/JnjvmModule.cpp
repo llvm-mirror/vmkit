@@ -1151,72 +1151,72 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID) : llvm::Module(ModuleID) {
   setDataLayout(str);
 }
 void LLVMAssessorInfo::initialise() {
-  AssessorInfo[AssessorDesc::I_VOID].llvmType = Type::VoidTy;
-  AssessorInfo[AssessorDesc::I_VOID].llvmTypePtr = 0;
-  AssessorInfo[AssessorDesc::I_VOID].llvmNullConstant = 0;
-  AssessorInfo[AssessorDesc::I_VOID].sizeInBytesConstant = 0;
+  AssessorInfo[I_VOID].llvmType = Type::VoidTy;
+  AssessorInfo[I_VOID].llvmTypePtr = 0;
+  AssessorInfo[I_VOID].llvmNullConstant = 0;
+  AssessorInfo[I_VOID].sizeInBytesConstant = 0;
   
-  AssessorInfo[AssessorDesc::I_BOOL].llvmType = Type::Int8Ty;
-  AssessorInfo[AssessorDesc::I_BOOL].llvmTypePtr = PointerType::getUnqual(Type::Int8Ty);
-  AssessorInfo[AssessorDesc::I_BOOL].llvmNullConstant = 
+  AssessorInfo[I_BOOL].llvmType = Type::Int8Ty;
+  AssessorInfo[I_BOOL].llvmTypePtr = PointerType::getUnqual(Type::Int8Ty);
+  AssessorInfo[I_BOOL].llvmNullConstant = 
     Constant::getNullValue(Type::Int8Ty);
-  AssessorInfo[AssessorDesc::I_BOOL].sizeInBytesConstant = mvm::jit::constantOne;
+  AssessorInfo[I_BOOL].sizeInBytesConstant = mvm::jit::constantOne;
   
-  AssessorInfo[AssessorDesc::I_BYTE].llvmType = Type::Int8Ty;
-  AssessorInfo[AssessorDesc::I_BYTE].llvmTypePtr = PointerType::getUnqual(Type::Int8Ty);
-  AssessorInfo[AssessorDesc::I_BYTE].llvmNullConstant = 
+  AssessorInfo[I_BYTE].llvmType = Type::Int8Ty;
+  AssessorInfo[I_BYTE].llvmTypePtr = PointerType::getUnqual(Type::Int8Ty);
+  AssessorInfo[I_BYTE].llvmNullConstant = 
     Constant::getNullValue(Type::Int8Ty);
-  AssessorInfo[AssessorDesc::I_BYTE].sizeInBytesConstant = mvm::jit::constantOne;
+  AssessorInfo[I_BYTE].sizeInBytesConstant = mvm::jit::constantOne;
   
-  AssessorInfo[AssessorDesc::I_SHORT].llvmType = Type::Int16Ty;
-  AssessorInfo[AssessorDesc::I_SHORT].llvmTypePtr = PointerType::getUnqual(Type::Int16Ty);
-  AssessorInfo[AssessorDesc::I_SHORT].llvmNullConstant = 
+  AssessorInfo[I_SHORT].llvmType = Type::Int16Ty;
+  AssessorInfo[I_SHORT].llvmTypePtr = PointerType::getUnqual(Type::Int16Ty);
+  AssessorInfo[I_SHORT].llvmNullConstant = 
     Constant::getNullValue(Type::Int16Ty);
-  AssessorInfo[AssessorDesc::I_SHORT].sizeInBytesConstant = mvm::jit::constantTwo;
+  AssessorInfo[I_SHORT].sizeInBytesConstant = mvm::jit::constantTwo;
   
-  AssessorInfo[AssessorDesc::I_CHAR].llvmType = Type::Int16Ty;
-  AssessorInfo[AssessorDesc::I_CHAR].llvmTypePtr = PointerType::getUnqual(Type::Int16Ty);
-  AssessorInfo[AssessorDesc::I_CHAR].llvmNullConstant = 
+  AssessorInfo[I_CHAR].llvmType = Type::Int16Ty;
+  AssessorInfo[I_CHAR].llvmTypePtr = PointerType::getUnqual(Type::Int16Ty);
+  AssessorInfo[I_CHAR].llvmNullConstant = 
     Constant::getNullValue(Type::Int16Ty);
-  AssessorInfo[AssessorDesc::I_CHAR].sizeInBytesConstant = mvm::jit::constantTwo;
+  AssessorInfo[I_CHAR].sizeInBytesConstant = mvm::jit::constantTwo;
   
-  AssessorInfo[AssessorDesc::I_INT].llvmType = Type::Int32Ty;
-  AssessorInfo[AssessorDesc::I_INT].llvmTypePtr = PointerType::getUnqual(Type::Int32Ty);
-  AssessorInfo[AssessorDesc::I_INT].llvmNullConstant = 
+  AssessorInfo[I_INT].llvmType = Type::Int32Ty;
+  AssessorInfo[I_INT].llvmTypePtr = PointerType::getUnqual(Type::Int32Ty);
+  AssessorInfo[I_INT].llvmNullConstant = 
     Constant::getNullValue(Type::Int32Ty);
-  AssessorInfo[AssessorDesc::I_INT].sizeInBytesConstant = mvm::jit::constantFour;
+  AssessorInfo[I_INT].sizeInBytesConstant = mvm::jit::constantFour;
   
-  AssessorInfo[AssessorDesc::I_FLOAT].llvmType = Type::FloatTy;
-  AssessorInfo[AssessorDesc::I_FLOAT].llvmTypePtr = PointerType::getUnqual(Type::FloatTy);
-  AssessorInfo[AssessorDesc::I_FLOAT].llvmNullConstant = 
+  AssessorInfo[I_FLOAT].llvmType = Type::FloatTy;
+  AssessorInfo[I_FLOAT].llvmTypePtr = PointerType::getUnqual(Type::FloatTy);
+  AssessorInfo[I_FLOAT].llvmNullConstant = 
     Constant::getNullValue(Type::FloatTy);
-  AssessorInfo[AssessorDesc::I_FLOAT].sizeInBytesConstant = mvm::jit::constantFour;
+  AssessorInfo[I_FLOAT].sizeInBytesConstant = mvm::jit::constantFour;
   
-  AssessorInfo[AssessorDesc::I_LONG].llvmType = Type::Int64Ty;
-  AssessorInfo[AssessorDesc::I_LONG].llvmTypePtr = PointerType::getUnqual(Type::Int64Ty);
-  AssessorInfo[AssessorDesc::I_LONG].llvmNullConstant = 
+  AssessorInfo[I_LONG].llvmType = Type::Int64Ty;
+  AssessorInfo[I_LONG].llvmTypePtr = PointerType::getUnqual(Type::Int64Ty);
+  AssessorInfo[I_LONG].llvmNullConstant = 
     Constant::getNullValue(Type::Int64Ty);
-  AssessorInfo[AssessorDesc::I_LONG].sizeInBytesConstant = mvm::jit::constantEight;
+  AssessorInfo[I_LONG].sizeInBytesConstant = mvm::jit::constantEight;
   
-  AssessorInfo[AssessorDesc::I_DOUBLE].llvmType = Type::DoubleTy;
-  AssessorInfo[AssessorDesc::I_DOUBLE].llvmTypePtr = PointerType::getUnqual(Type::DoubleTy);
-  AssessorInfo[AssessorDesc::I_DOUBLE].llvmNullConstant = 
+  AssessorInfo[I_DOUBLE].llvmType = Type::DoubleTy;
+  AssessorInfo[I_DOUBLE].llvmTypePtr = PointerType::getUnqual(Type::DoubleTy);
+  AssessorInfo[I_DOUBLE].llvmNullConstant = 
     Constant::getNullValue(Type::DoubleTy);
-  AssessorInfo[AssessorDesc::I_DOUBLE].sizeInBytesConstant = mvm::jit::constantEight;
+  AssessorInfo[I_DOUBLE].sizeInBytesConstant = mvm::jit::constantEight;
   
-  AssessorInfo[AssessorDesc::I_TAB].llvmType = JnjvmModule::JavaObjectType;
-  AssessorInfo[AssessorDesc::I_TAB].llvmTypePtr =
+  AssessorInfo[I_TAB].llvmType = JnjvmModule::JavaObjectType;
+  AssessorInfo[I_TAB].llvmTypePtr =
     PointerType::getUnqual(JnjvmModule::JavaObjectType);
-  AssessorInfo[AssessorDesc::I_TAB].llvmNullConstant =
+  AssessorInfo[I_TAB].llvmNullConstant =
     JnjvmModule::JavaObjectNullConstant;
-  AssessorInfo[AssessorDesc::I_TAB].sizeInBytesConstant = mvm::jit::constantPtrSize;
+  AssessorInfo[I_TAB].sizeInBytesConstant = mvm::jit::constantPtrSize;
   
-  AssessorInfo[AssessorDesc::I_REF].llvmType = JnjvmModule::JavaObjectType;
-  AssessorInfo[AssessorDesc::I_REF].llvmTypePtr =
+  AssessorInfo[I_REF].llvmType = JnjvmModule::JavaObjectType;
+  AssessorInfo[I_REF].llvmTypePtr =
     PointerType::getUnqual(JnjvmModule::JavaObjectType);
-  AssessorInfo[AssessorDesc::I_REF].llvmNullConstant =
+  AssessorInfo[I_REF].llvmNullConstant =
     JnjvmModule::JavaObjectNullConstant;
-  AssessorInfo[AssessorDesc::I_REF].sizeInBytesConstant = mvm::jit::constantPtrSize;
+  AssessorInfo[I_REF].sizeInBytesConstant = mvm::jit::constantPtrSize;
 }
 
 std::map<const char, LLVMAssessorInfo> LLVMAssessorInfo::AssessorInfo;

@@ -43,6 +43,28 @@
 using namespace jnjvm;
 using namespace llvm;
 
+uint8 arrayType(unsigned int t) {
+  if (t == JavaArray::T_CHAR) {
+    return I_CHAR;
+  } else if (t == JavaArray::T_BOOLEAN) {
+    return I_BOOL;
+  } else if (t == JavaArray::T_INT) {
+    return I_INT;
+  } else if (t == JavaArray::T_SHORT) {
+    return I_SHORT;
+  } else if (t == JavaArray::T_BYTE) {
+    return I_BYTE;
+  } else if (t == JavaArray::T_FLOAT) {
+    return I_FLOAT;
+  } else if (t == JavaArray::T_LONG) {
+    return I_LONG;
+  } else if (t == JavaArray::T_DOUBLE) {
+    return I_DOUBLE;
+  } else {
+    JavaThread::get()->isolate->unknownError("unknown array type %d\n", t);
+    return 0;
+  }
+}
 
 static inline sint8 readS1(uint8* bytecode, uint32& i) {
   return ((sint8*)bytecode)[++i];
@@ -1815,7 +1837,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         if (bytecodes[i] == NEWARRAY) {
           uint8 id = bytecodes[++i];
-          uint8 charId = AssessorDesc::arrayType(id);
+          uint8 charId = arrayType(id);
 #ifndef MULTIPLE_VM
           dcl = JavaThread::get()->isolate->arrayClasses[id - 4];
 #else
@@ -1836,8 +1858,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             compilingClass->ctpInfo->resolveClassName(index);
         
           JnjvmClassLoader* JCL = compilingClass->classLoader;
-          const UTF8* arrayName = 
-            AssessorDesc::constructArrayName(JCL, 1, className);
+          const UTF8* arrayName = JCL->constructArrayName(1, className);
         
           dcl = JCL->constructArray(arrayName);
 #else
