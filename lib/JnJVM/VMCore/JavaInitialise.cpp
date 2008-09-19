@@ -88,12 +88,28 @@ void Jnjvm::initialiseStatics() {
   JnjvmBootstrapLoader* JCL = bootstrapLoader = 
     JnjvmBootstrapLoader::createBootstrapLoader();
   
-  // Array initialization
+  // Create the name of char arrays.
   const UTF8* utf8OfChar = JCL->asciizConstructUTF8("[C");
-  JCL->upcalls->ArrayOfChar = JCL->constructArray(utf8OfChar);
-  ((UTF8*)utf8OfChar)->classOf = JCL->upcalls->ArrayOfChar;
-  JCL->hashUTF8->array = JCL->upcalls->ArrayOfChar;
 
+  // Create the base class of char arrays.
+  JCL->upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(JCL, "char", 2);
+  
+  // Create the char array.
+  JCL->upcalls->ArrayOfChar = JCL->constructArray(utf8OfChar,
+                                                  JCL->upcalls->OfChar);
+
+  // Alright, now we can repair the damage: set the class to the UTF8s created
+  // and set the array class of UTF8s.
+  ((UTF8*)utf8OfChar)->classOf = JCL->upcalls->ArrayOfChar;
+  ((UTF8*)JCL->upcalls->OfChar->name)->classOf = JCL->upcalls->ArrayOfChar;
+  JCL->hashUTF8->array = JCL->upcalls->ArrayOfChar;
+ 
+  // Create the byte array, so that bytes for classes can be created.
+  JCL->upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(JCL, "byte", 1);
+  JCL->upcalls->ArrayOfByte = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[B"), JCL->upcalls->OfByte);
+
+  // Now we can create the super and interfaces of arrays.
   JCL->InterfacesArray.push_back(
     JCL->loadName(JCL->asciizConstructUTF8("java/lang/Cloneable"), false,
                   false));
@@ -116,41 +132,49 @@ void Jnjvm::initialiseStatics() {
   ClassArray::SuperArray = JCL->SuperArray;
   ClassArray::InterfacesArray = JCL->InterfacesArray;
 #endif
-
+  
+  // And repair the damage: set the interfaces and super of array classes already
+  // created.
   JCL->upcalls->ArrayOfChar->setInterfaces(JCL->InterfacesArray);
   JCL->upcalls->ArrayOfChar->setSuper(JCL->SuperArray);
+  JCL->upcalls->ArrayOfByte->setInterfaces(JCL->InterfacesArray);
+  JCL->upcalls->ArrayOfByte->setSuper(JCL->SuperArray);
   
-  JCL->upcalls->ArrayOfByte = JCL->constructArray(JCL->asciizConstructUTF8("[B"));
-  JCL->upcalls->ArrayOfString = 
-    JCL->constructArray(JCL->asciizConstructUTF8("[Ljava/lang/String;"));
-  
-  JCL->upcalls->ArrayOfObject = 
-    JCL->constructArray(JCL->asciizConstructUTF8("[Ljava/lang/Object;"));
-  
-  JCL->upcalls->ArrayOfInt = JCL->constructArray(JCL->asciizConstructUTF8("[I"));
-  
-  JCL->upcalls->ArrayOfBool = JCL->constructArray(JCL->asciizConstructUTF8("[Z"));
-  
-  JCL->upcalls->ArrayOfLong = JCL->constructArray(JCL->asciizConstructUTF8("[J"));
-  
-  JCL->upcalls->ArrayOfFloat = JCL->constructArray(JCL->asciizConstructUTF8("[F"));
-  
-  JCL->upcalls->ArrayOfDouble = JCL->constructArray(JCL->asciizConstructUTF8("[D"));
-  
-  JCL->upcalls->ArrayOfShort = JCL->constructArray(JCL->asciizConstructUTF8("[S"));
-  
-  // End array initialization
-  
-  JCL->upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(JCL, "byte", 1);
+  // Yay, create the other primitive types.
   JCL->upcalls->OfBool = UPCALL_PRIMITIVE_CLASS(JCL, "boolean", 1);
-  JCL->upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(JCL, "char", 2);
   JCL->upcalls->OfShort = UPCALL_PRIMITIVE_CLASS(JCL, "short", 2);
   JCL->upcalls->OfInt = UPCALL_PRIMITIVE_CLASS(JCL, "int", 4);
   JCL->upcalls->OfLong = UPCALL_PRIMITIVE_CLASS(JCL, "long", 8);
   JCL->upcalls->OfFloat = UPCALL_PRIMITIVE_CLASS(JCL, "float", 4);
   JCL->upcalls->OfDouble = UPCALL_PRIMITIVE_CLASS(JCL, "double", 8);
   JCL->upcalls->OfVoid = UPCALL_PRIMITIVE_CLASS(JCL, "void", 0);
-
+  
+  // And finally create the primitive arrays.
+  JCL->upcalls->ArrayOfInt = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[I"), JCL->upcalls->OfInt);
+  
+  JCL->upcalls->ArrayOfBool = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[Z"), JCL->upcalls->OfBool);
+  
+  JCL->upcalls->ArrayOfLong = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[J"), JCL->upcalls->OfLong);
+  
+  JCL->upcalls->ArrayOfFloat = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[F"), JCL->upcalls->OfFloat);
+  
+  JCL->upcalls->ArrayOfDouble = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[D"), JCL->upcalls->OfDouble);
+  
+  JCL->upcalls->ArrayOfShort = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[S"), JCL->upcalls->OfShort);
+  
+  JCL->upcalls->ArrayOfString = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[Ljava/lang/String;"));
+  
+  JCL->upcalls->ArrayOfObject = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[Ljava/lang/Object;"));
+  
+  
   AssessorDesc::initialise(JCL);
 
   Attribut::codeAttribut = JCL->asciizConstructUTF8("Code");

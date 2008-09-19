@@ -330,7 +330,7 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
   
   for (CommonClass::field_iterator i = fields.begin(), e = fields.end();
        i!= e; ++i) {
-    if (i->second->getSignature()->funcs->doTrace) {
+    if (i->second->getSignature()->trace()) {
       LLVMFieldInfo* LFI = getFieldInfo(i->second);
       std::vector<Value*> args; //size = 2
       args.push_back(zero);

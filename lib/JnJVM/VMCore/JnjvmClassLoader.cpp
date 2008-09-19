@@ -253,21 +253,31 @@ UserCommonClass* JnjvmClassLoader::lookupClass(const UTF8* utf8) {
   return classes->lookup(utf8);
 }
 
-static UserCommonClass* arrayDup(const UTF8*& name, JnjvmClassLoader* loader) {
-  UserClassArray* cl = allocator_new(loader->allocator, UserClassArray)(loader, name);
-  return cl;
+UserCommonClass* JnjvmClassLoader::loadBaseClass(const UTF8* name,
+                                                 uint32 start, uint32 len) {
+  
+  if (name->elements[start] == AssessorDesc::I_TAB) {
+    UserCommonClass* baseClass = loadBaseClass(name, start + 1, len - 1);
+    JnjvmClassLoader* loader = baseClass->classLoader;
+    const UTF8* arrayName = name->extract(loader->hashUTF8, start, start + len);
+    return loader->constructArray(arrayName);
+  } else if (name->elements[start] == AssessorDesc::I_REF) {
+    const UTF8* componentName = name->extract(hashUTF8,
+                                              start + 1, start + len - 1);
+    UserCommonClass* cl = loadName(componentName, false, true);
+    return cl;
+  } else {
+    AssessorDesc* ass = AssessorDesc::byteIdToPrimitive(name->elements[start]);
+    return ass ? ass->primitiveClass : 0;
+  }
 }
 
+
 UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
-  if (javaLoader != 0) {
-    JnjvmClassLoader * ld = 
-      ClassArray::arrayLoader(name, this, 1, name->size - 1);
-    UserClassArray* res = 
-      (UserClassArray*)ld->classes->lookupOrCreate(name, this, arrayDup);
-    return res;
-  } else {
-    return (UserClassArray*)classes->lookupOrCreate(name, this, arrayDup);
-  }
+  UserCommonClass* cl = loadBaseClass(name, 1, name->size - 1);
+  assert(cl && "no base class for an array");
+  JnjvmClassLoader* ld = cl->classLoader;
+  return ld->constructArray(name, cl);
 }
 
 UserClass* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes) {
@@ -281,6 +291,25 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes)
     classes->map.insert(std::make_pair(name, res));
   } else {
     res = ((UserClass*)(I->second));
+  }
+  classes->lock->unlock();
+  return res;
+}
+
+UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name,
+                                                 UserCommonClass* baseClass) {
+  assert(baseClass && "constructing an array class without a base class");
+  assert(baseClass->classLoader == this && 
+         "constructing an array with wrong loader");
+  classes->lock->lock();
+  ClassMap::iterator End = classes->map.end();
+  ClassMap::iterator I = classes->map.find(name);
+  UserClassArray* res = 0;
+  if (I == End) {
+    res = allocator_new(allocator, UserClassArray)(this, name, baseClass);
+    classes->map.insert(std::make_pair(name, res));
+  } else {
+    res = ((UserClassArray*)(I->second));
   }
   classes->lock->unlock();
   return res;

@@ -158,6 +158,9 @@ public:
   /// the given name.
   ///
   UserClassArray* constructArray(const UTF8* name);
+  UserClassArray* constructArray(const UTF8* name, UserCommonClass* base);
+  
+  UserCommonClass* loadBaseClass(const UTF8* name, uint32 start, uint32 len);
 
   /// constructClass - Hashes a runtime representation of a class with
   /// the given name.

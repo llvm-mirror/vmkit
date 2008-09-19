@@ -242,10 +242,10 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
 #endif
 }
 
-ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n) : 
+ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
+                       UserCommonClass* base) : 
     CommonClass(loader, n, true) {
-  _funcs = 0;
-  _baseClass = 0;
+  _baseClass = base;
   super = ClassArray::SuperArray;
   interfaces = ClassArray::InterfacesArray;
   depth = 1;
@@ -253,6 +253,11 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n) :
   display[0] = ClassArray::SuperArray;
   display[1] = this;
   access = ACC_FINAL | ACC_ABSTRACT;
+  if (base->isPrimitive()) {
+    virtualVT = JavaArray::VT;
+  } else {
+    virtualVT = ArrayObject::VT;
+  }
 }
 
 void Class::print(mvm::PrintBuffer* buf) const {
@@ -267,26 +272,21 @@ void ClassArray::print(mvm::PrintBuffer* buf) const {
   buf->write(">");
 }
 
-void UserClassArray::resolveComponent() {
-  AssessorDesc::introspectArray(classLoader, getName(), 0, _funcs,
-                                _baseClass);
-}
-
-JnjvmClassLoader* ClassArray::arrayLoader(const UTF8* name,
-                                          JnjvmClassLoader* loader,
-                                          unsigned int start,
-                                          unsigned int len) {
+JavaArray* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
+  if (n < 0)
+    vm->negativeArraySizeException(n);
+  else if (n > JavaArray::MaxArraySize)
+    vm->outOfMemoryError(n);
   
-  if (name->elements[start] == AssessorDesc::I_TAB) {
-    return arrayLoader(name, loader, start + 1, len - 1);
-  } else if (name->elements[start] == AssessorDesc::I_REF) {
-    const UTF8* componentName = name->javaToInternal(loader->hashUTF8,
-                                                     start + 1, len - 2);
-    UserCommonClass* cl = loader->loadName(componentName, false, true);
-    return cl->classLoader;
-  } else {
-    return JavaThread::get()->isolate->bootstrapLoader;
-  }
+  UserCommonClass* cl = baseClass();
+  assert(cl && virtualVT && "array class not resolved");
+
+  uint32 primSize = cl->isPrimitive() ? cl->virtualSize : sizeof(JavaObject*);
+  JavaArray* res = (JavaArray*)
+    vm->allocator.allocateObject(sizeof(name) + n * primSize, virtualVT);
+  res->initialise(this);
+  res->size = n;
+  return res;
 }
 
 void* JavaMethod::compiledPtr() {

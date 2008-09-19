@@ -43,9 +43,6 @@ class UTF8;
 #define OBJECT_ID 10
 #define NUM_ASSESSORS 11
 
-typedef JavaArray* (*arrayCtor_t)(uint32 len, UserClassArray* cl, Jnjvm* vm);
-
-
 /// AssessorDesc - Description of a Java assessor: these are the letters found
 /// in Java signatures, e.g. "I" or "(".
 ///
@@ -110,10 +107,6 @@ public:
   /// arrayClass - The primitive array class of the assessor, e.g. I[] for "I".
   ///
   UserClassArray* arrayClass;
-
-  /// arrayCtor - The constructor of an array of this assessor.
-  ///
-  arrayCtor_t arrayCtor;
 
 //===----------------------------------------------------------------------===//
 //
@@ -187,8 +180,7 @@ public:
                const char* name,
                JnjvmClassLoader* loader, uint8 nid,
                const char* assocName, 
-               UserClassPrimitive* prim, UserClassArray* cl,
-               arrayCtor_t ctor);
+               UserClassPrimitive* prim, UserClassArray* cl);
 
 
   /// initialise - Construct all assessors.
@@ -207,10 +199,6 @@ public:
   static const UTF8* constructArrayName(JnjvmClassLoader* loader, AssessorDesc* ass,
                                         uint32 steps, const UTF8* className);
   
-  static void introspectArray(JnjvmClassLoader* loader, const UTF8* utf8,
-                              uint32 start, AssessorDesc*& ass,
-                              UserCommonClass*& res);
-
   static AssessorDesc* arrayType(unsigned int t);
   
   static AssessorDesc* byteIdToPrimitive(const char id);
@@ -277,6 +265,10 @@ public:
   /// tPrintBuf - Prints the name of the class this Typedef represents.
   ///
   void tPrintBuf(mvm::PrintBuffer* buf) const;
+  
+  bool isArray();
+  bool isReference();
+  bool trace();
 
 };
 

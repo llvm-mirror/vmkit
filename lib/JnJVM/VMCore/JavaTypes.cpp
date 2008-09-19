@@ -57,8 +57,8 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
                            const char* name,
                            JnjvmClassLoader* loader, uint8 nid,
                            const char* assocName,
-                           UserClassPrimitive* prim, UserClassArray* cl,
-                           arrayCtor_t ctor) {
+                           UserClassPrimitive* prim, UserClassArray* cl) {
+  
   AssessorDesc* res = this;
   res->numId = nid;
   res->doTrace = dt;
@@ -67,7 +67,6 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
   res->nbw = nw;
   res->asciizName = name;
   res->UTF8Name = loader->asciizConstructUTF8(name);
-  res->arrayCtor = ctor;
   
   res->arrayClass = cl;
   if (assocName)
@@ -79,7 +78,6 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
     res->primitiveClass = prim;
     if (res->arrayClass) {
       res->arrayClass->_baseClass = res->primitiveClass;
-      res->arrayClass->_funcs = res;
       res->arrayClass->status = ready;
     }
   } else {
@@ -90,63 +88,53 @@ AssessorDesc::AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
 void AssessorDesc::initialise(JnjvmBootstrapLoader* vm) {
 
   dParg = new AssessorDesc(false, I_PARG, 0, 0, "(", vm, 0, 0, 0,
-                                 0, 0);
+                                 0);
   dPard = new AssessorDesc(false, I_PARD, 0, 0, ")", vm, 0, 0, 0,
-                                 0, 0);
+                                 0);
   dVoid = new AssessorDesc(false, I_VOID, 0, 0, "void",
                                  vm, VOID_ID, "java/lang/Void",
-                                 vm->upcalls->OfVoid, 0, 0);
+                                 vm->upcalls->OfVoid, 0);
   dBool = new AssessorDesc(false, I_BOOL, 1, 1, "boolean", 
                                  vm,
                                  BOOL_ID, "java/lang/Boolean", 
                                  vm->upcalls->OfBool,
-                                 vm->upcalls->ArrayOfBool,
-                                 (arrayCtor_t)ArrayUInt8::acons);
+                                 vm->upcalls->ArrayOfBool);
   dByte = new AssessorDesc(false, I_BYTE, 1, 1, "byte",
                                  vm, BYTE_ID, "java/lang/Byte",
                                  vm->upcalls->OfByte,
-                                 vm->upcalls->ArrayOfByte,
-                                 (arrayCtor_t)ArraySInt8::acons);
+                                 vm->upcalls->ArrayOfByte);
   dChar = new AssessorDesc(false, I_CHAR, 2, 1, "char",
                                  vm, CHAR_ID, "java/lang/Character",
                                  vm->upcalls->OfChar,
-                                 vm->upcalls->ArrayOfChar,
-                                 (arrayCtor_t)ArrayUInt16::acons);
+                                 vm->upcalls->ArrayOfChar);
   dShort = new AssessorDesc(false, I_SHORT, 2, 1, "short", 
                                   vm, SHORT_ID,
                                   "java/lang/Short",
                                   vm->upcalls->OfShort,
-                                  vm->upcalls->ArrayOfShort,
-                                  (arrayCtor_t)ArraySInt16::acons);
+                                  vm->upcalls->ArrayOfShort);
   dInt = new AssessorDesc(false, I_INT, 4, 1, "int", vm,
                                 INT_ID, "java/lang/Integer",
                                 vm->upcalls->OfInt,
-                                vm->upcalls->ArrayOfInt,
-                                (arrayCtor_t)ArraySInt32::acons);
+                                vm->upcalls->ArrayOfInt);
   dFloat = new AssessorDesc(false, I_FLOAT, 4, 1, "float", 
                                   vm,
                                   FLOAT_ID, "java/lang/Float",
                                   vm->upcalls->OfFloat,
-                                  vm->upcalls->ArrayOfFloat,
-                                  (arrayCtor_t)ArrayFloat::acons);
+                                  vm->upcalls->ArrayOfFloat);
   dLong = new AssessorDesc(false, I_LONG, 8, 2, "long", 
                                  vm, LONG_ID, "java/lang/Long",
                                  vm->upcalls->OfLong,
-                                 vm->upcalls->ArrayOfLong,
-                                  (arrayCtor_t)ArrayLong::acons);
+                                 vm->upcalls->ArrayOfLong);
   dDouble = new AssessorDesc(false, I_DOUBLE, 8, 2, "double", 
                                    vm,
                                    DOUBLE_ID, "java/lang/Double",
                                    vm->upcalls->OfDouble,
-                                   vm->upcalls->ArrayOfDouble,
-                                   (arrayCtor_t)ArrayDouble::acons);
+                                   vm->upcalls->ArrayOfDouble);
   dTab = new AssessorDesc(true, I_TAB, sizeof(void*), 1, "array",
-                                vm, ARRAY_ID, 0, 0, 0,
-                                (arrayCtor_t)ArrayObject::acons);
+                                vm, ARRAY_ID, 0, 0, 0);
   dRef = new AssessorDesc(true, I_REF, sizeof(void*), 1, "reference",
                                 vm, OBJECT_ID,
-                                0, 0, 0,
-                                (arrayCtor_t)ArrayObject::acons);
+                                0, 0, 0);
   
 }
 
@@ -276,35 +264,6 @@ const UTF8* AssessorDesc::constructArrayName(JnjvmClassLoader *loader, AssessorD
     }
 
     return loader->readerConstructUTF8(buf, n);
-  }
-}
-
-void AssessorDesc::introspectArray(JnjvmClassLoader* loader,
-                                   const UTF8* utf8, uint32 start,
-                                   AssessorDesc*& ass, UserCommonClass*& res) {
-  uint32 pos = 0;
-  uint32 intern = 0;
-  AssessorDesc* funcs = 0;
-
-  analyseIntern(utf8, start, 1, funcs, intern);
-
-  if (funcs != dTab) {
-    Jnjvm* vm = JavaThread::get()->isolate;
-    vm->unknownError("%s isn't an array", utf8->printString());
-  }
-
-  analyseIntern(utf8, intern, 0, funcs, pos);
-
-  if (funcs == dRef) {
-    ass = dRef;
-    const UTF8* temp = utf8->extract(loader->hashUTF8, intern + 1, pos - 1);
-    res = loader->loadName(temp, false, true);
-  } else if (funcs == dTab) {
-    ass = dTab;
-    res = loader->constructArray(utf8->extract(loader->hashUTF8, intern, pos));
-  } else {
-    ass = funcs;
-    res = funcs->getPrimitiveClass();
   }
 }
 
@@ -487,14 +446,27 @@ Typedef::Typedef(const UTF8* name, JnjvmClassLoader *loader) {
   res->initialLoader = loader;
   res->keyName = name;
   res->funcs = funcs;
-  if (funcs == AssessorDesc::dRef) {
+  if (isReference()) {
     res->pseudoAssocClassName = name->extract(loader->hashUTF8, 1, next - 1);
-  } else if (funcs == AssessorDesc::dTab) {
+  } else if (isArray()) {
     res->pseudoAssocClassName = name;
   } else {
     res->pseudoAssocClassName = 0;
   }
 
+}
+
+bool Typedef::isArray() {
+  return keyName->elements[0] == '[';
+}
+
+bool Typedef::isReference() {
+  return keyName->elements[0] == 'L';
+}
+
+bool Typedef::trace() {
+  uint16 val = keyName->elements[0];
+  return (val == '[' || val == 'L');
 }
 
 intptr_t Signdef::staticCallBuf() {

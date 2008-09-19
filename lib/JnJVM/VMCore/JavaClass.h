@@ -32,6 +32,7 @@ class AssessorDesc;
 class Enveloppe;
 class Class;
 class ClassArray;
+class JavaArray;
 class JavaConstantPool;
 class JavaField;
 class JavaJIT;
@@ -682,39 +683,25 @@ public:
   ///
   CommonClass*  _baseClass;
 
-  /// _funcs - The type of the base class of the array (primitive or
-  /// reference). Null if not resolved.
-  ///
-  AssessorDesc* _funcs;
-
-  /// resolveComponent - Resolve the array class. The base class and the
-  /// AssessorDesc are resolved.
-  ///
-  void resolveComponent();
-  
   /// baseClass - Get the base class of this array class. Resolve the array
   /// class if needed.
   ///
   CommonClass* baseClass() {
-    if (_baseClass == 0)
-      resolveComponent();
     return _baseClass;
   }
 
-  /// funcs - Get the type of the base class/ Resolve the array if needed.
-  AssessorDesc* funcs() {
-    if (_funcs == 0)
-      resolveComponent();
-    return _funcs;
-  }
   
+  /// funcs - Get the type of the base class/ Resolve the array if needed.
+  JavaArray* doNew(sint32 n, Jnjvm* vm);
+
   /// ClassArray - Empty constructor for VT.
   ///
   ClassArray() {}
 
   /// ClassArray - Construct a Java array class with the given name.
   ///
-  ClassArray(JnjvmClassLoader* loader, const UTF8* name);
+  ClassArray(JnjvmClassLoader* loader, const UTF8* name,
+             UserCommonClass* baseClass);
   
 
   /// arrayLoader - Return the class loader of the class with the name 'name'.

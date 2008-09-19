@@ -306,22 +306,18 @@ extern "C" JavaObject* getClassDelegatee(UserCommonClass* cl) {
   return cl->getClassDelegatee(vm);
 }
 
-static JavaArray* multiCallNewIntern(arrayCtor_t ctor, UserClassArray* cl,
-                                     uint32 len,
-                                     sint32* dims,
-                                     Jnjvm* vm) {
+static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
+                                     sint32* dims, Jnjvm* vm) {
   if (len <= 0) JavaThread::get()->isolate->unknownError("Can not happen");
-  JavaArray* _res = ctor(dims[0], cl, vm);
+  JavaArray* _res = cl->doNew(dims[0], vm);
   if (len > 1) {
     ArrayObject* res = (ArrayObject*)_res;
     UserCommonClass* _base = cl->baseClass();
     if (_base->isArray()) {
       UserClassArray* base = (UserClassArray*)_base;
-      AssessorDesc* func = base->funcs();
-      arrayCtor_t newCtor = func->arrayCtor;
       if (dims[0] > 0) {
         for (sint32 i = 0; i < dims[0]; ++i) {
-          res->elements[i] = multiCallNewIntern(newCtor, base, (len - 1),
+          res->elements[i] = multiCallNewIntern(base, (len - 1),
                                                 &dims[1], vm);
         }
       } else {
@@ -345,7 +341,7 @@ extern "C" JavaArray* multiCallNew(UserClassArray* cl, uint32 len, ...) {
     dims[i] = va_arg(ap, int);
   }
   Jnjvm* vm = JavaThread::get()->isolate;
-  return multiCallNewIntern((arrayCtor_t)ArrayObject::acons, cl, len, dims, vm);
+  return multiCallNewIntern(cl, len, dims, vm);
 }
 
 extern "C" void JavaObjectAquire(JavaObject* obj) {
