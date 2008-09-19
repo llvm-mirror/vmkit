@@ -175,8 +175,6 @@ void Jnjvm::initialiseStatics() {
     JCL->constructArray(JCL->asciizConstructUTF8("[Ljava/lang/Object;"));
   
   
-  AssessorDesc::initialise(JCL);
-
   Attribut::codeAttribut = JCL->asciizConstructUTF8("Code");
   Attribut::exceptionsAttribut = JCL->asciizConstructUTF8("Exceptions");
   Attribut::constantAttribut = JCL->asciizConstructUTF8("ConstantValue");
@@ -228,9 +226,6 @@ void Jnjvm::initialiseStatics() {
   DEF_UTF8(finalize);
 
 #undef DEF_UTF8
- 
-  JCL->upcalls->initialiseClasspath(JCL);
-
 }
 
 void mvm::VirtualMachine::initialiseJVM() {

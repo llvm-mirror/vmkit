@@ -64,6 +64,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
 
 #if !defined(WITHOUT_VTABLE)
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index);
+  Typedef* retTypedef = signature->ret;
   std::vector<Value*> args; // size = [signature->nbIn + 3];
   LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
@@ -118,9 +119,9 @@ void JavaJIT::invokeVirtual(uint16 index) {
   
   const llvm::Type* retType = virtualType->getReturnType();
   if (retType != Type::VoidTy) {
-    push(val, signature->ret->funcs);
+    push(val, retTypedef->isUnsigned());
     if (retType == Type::DoubleTy || retType == Type::Int64Ty) {
-      push(mvm::jit::constantZero, AssessorDesc::dInt);
+      push(mvm::jit::constantZero, false);
     }
   }
     
@@ -154,6 +155,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   currentBlock = createBasicBlock("start");
   BasicBlock* executeBlock = createBasicBlock("execute");
   endBlock = createBasicBlock("end block");
+  returnType = funcType->getReturnType();
 
 #if defined(MULTIPLE_VM)
   Value* lastArg = 0;
@@ -192,8 +194,6 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
 #endif
 #endif
 
-  if (funcType->getReturnType() != Type::VoidTy)
-    endNode = llvm::PHINode::Create(funcType->getReturnType(), "", endBlock);
   
   Value* buf = llvm::CallInst::Create(JnjvmModule::GetSJLJBufferFunction,
                                       "", currentBlock);
@@ -202,14 +202,13 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   test = new ICmpInst(ICmpInst::ICMP_EQ, test, mvm::jit::constantZero, "",
                       currentBlock);
   llvm::BranchInst::Create(executeBlock, endBlock, test, currentBlock);
-
-  if (compilingMethod->getSignature()->ret->funcs != AssessorDesc::dVoid) {
-    uint8 id = compilingMethod->getSignature()->ret->funcs->numId;
-    LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
-    Constant* C = LAI.llvmNullConstant;
-    endNode->addIncoming(C, currentBlock);
-  }
   
+  if (returnType != Type::VoidTy) {
+    endNode = llvm::PHINode::Create(returnType, "", endBlock);
+    endNode->addIncoming(Constant::getNullValue(returnType),
+                         currentBlock);
+  }
+
   currentBlock = executeBlock;
   if (isSynchro(compilingMethod->access))
     beginSynchronize();
@@ -256,7 +255,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   Value* result = llvm::CallInst::Create(valPtr, nativeArgs.begin(),
                                          nativeArgs.end(), "", currentBlock);
 
-  if (funcType->getReturnType() != Type::VoidTy)
+  if (returnType != Type::VoidTy)
     endNode->addIncoming(result, currentBlock);
   llvm::BranchInst::Create(endBlock, currentBlock);
 
@@ -267,7 +266,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   llvm::CallInst::Create(JnjvmModule::JniProceedPendingExceptionFunction, "",
                          currentBlock);
   
-  if (funcType->getReturnType() != Type::VoidTy)
+  if (returnType != Type::VoidTy)
     llvm::ReturnInst::Create(result, currentBlock);
   else
     llvm::ReturnInst::Create(currentBlock);
@@ -556,37 +555,39 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
 #endif
   std::vector<Typedef*>::iterator type = 
     compilingMethod->getSignature()->args.begin();
-  std::vector<Value*>::iterator i = args.begin();
+  Function::arg_iterator i = func->arg_begin(); 
 
   if (isVirtual(compilingMethod->access)) {
-    new StoreInst(*i, objectLocals[0], false, currentBlock);
+    new StoreInst(i, objectLocals[0], false, currentBlock);
     ++i;
     ++index;
     ++count;
   }
+
   
   for (;count < max; ++i, ++index, ++count, ++type) {
     
-    const AssessorDesc* cur = (*type)->funcs;
+    const Typedef* cur = *type;
+    const Type* curType = i->getType();
 
-    if (cur == AssessorDesc::dLong){
-      new StoreInst(*i, longLocals[index], false, currentBlock);
+    if (curType == Type::Int64Ty){
+      new StoreInst(i, longLocals[index], false, currentBlock);
       ++index;
-    } else if (cur == AssessorDesc::dBool || cur == AssessorDesc::dChar) {
-      new StoreInst(new ZExtInst(*i, Type::Int32Ty, "", currentBlock),
+    } else if (cur->isUnsigned()) {
+      new StoreInst(new ZExtInst(i, Type::Int32Ty, "", currentBlock),
                     intLocals[index], false, currentBlock);
-    } else if (cur == AssessorDesc::dByte || cur == AssessorDesc::dShort) {
-      new StoreInst(new SExtInst(*i, Type::Int32Ty, "", currentBlock),
+    } else if (curType == Type::Int8Ty || curType == Type::Int16Ty) {
+      new StoreInst(new SExtInst(i, Type::Int32Ty, "", currentBlock),
                     intLocals[index], false, currentBlock);
-    } else if (cur == AssessorDesc::dInt) {
-      new StoreInst(*i, intLocals[index], false, currentBlock);
-    } else if (cur == AssessorDesc::dDouble) {
-      new StoreInst(*i, doubleLocals[index], false, currentBlock);
+    } else if (curType == Type::Int32Ty) {
+      new StoreInst(i, intLocals[index], false, currentBlock);
+    } else if (curType == Type::DoubleTy) {
+      new StoreInst(i, doubleLocals[index], false, currentBlock);
       ++index;
-    } else if (cur == AssessorDesc::dFloat) {
-      new StoreInst(*i, floatLocals[index], false, currentBlock);
+    } else if (curType == Type::FloatTy) {
+      new StoreInst(i, floatLocals[index], false, currentBlock);
     } else {
-      new StoreInst(*i, objectLocals[index], false, currentBlock);
+      new StoreInst(i, objectLocals[index], false, currentBlock);
     }
   }
 
@@ -733,22 +734,24 @@ llvm::Function* JavaJIT::javaCompile() {
 
   for (;count < max; ++i, ++index, ++count, ++type) {
     
-    const AssessorDesc* cur = (*type)->funcs;
-    if (cur == AssessorDesc::dLong){
+    const Typedef* cur = *type;
+    const llvm::Type* curType = i->getType();
+
+    if (curType == Type::Int64Ty){
       new StoreInst(i, longLocals[index], false, currentBlock);
       ++index;
-    } else if (cur == AssessorDesc::dBool || cur == AssessorDesc::dChar) {
+    } else if (cur->isUnsigned()) {
       new StoreInst(new ZExtInst(i, Type::Int32Ty, "", currentBlock),
                     intLocals[index], false, currentBlock);
-    } else if (cur == AssessorDesc::dByte || cur == AssessorDesc::dShort) {
+    } else if (curType == Type::Int8Ty || curType == Type::Int16Ty) {
       new StoreInst(new SExtInst(i, Type::Int32Ty, "", currentBlock),
                     intLocals[index], false, currentBlock);
-    } else if (cur == AssessorDesc::dInt) {
+    } else if (curType == Type::Int32Ty) {
       new StoreInst(i, intLocals[index], false, currentBlock);
-    } else if (cur == AssessorDesc::dDouble) {
+    } else if (curType == Type::DoubleTy) {
       new StoreInst(i, doubleLocals[index], false, currentBlock);
       ++index;
-    } else if (cur == AssessorDesc::dFloat) {
+    } else if (curType == Type::FloatTy) {
       new StoreInst(i, floatLocals[index], false, currentBlock);
     } else {
       new StoreInst(i, objectLocals[index], false, currentBlock);
@@ -1139,7 +1142,7 @@ void JavaJIT::compareFP(Value* val1, Value* val2, const Type* ty, bool l) {
   c = new FCmpInst(FCmpInst::FCMP_UNO, val1, val2, "", currentBlock);
   r = llvm::SelectInst::Create(c, l ? one : minus, r, "", currentBlock);
 
-  push(r, AssessorDesc::dInt);
+  push(r, false);
 
 }
 
@@ -1152,39 +1155,39 @@ void JavaJIT::_ldc(uint16 index) {
     // Lookup the constant pool cache
     Value* val = getConstantPoolAt(index, JnjvmModule::StringLookupFunction,
                                    JnjvmModule::JavaObjectType, 0, false);
-    push(val, AssessorDesc::dRef);  
+    push(val, false);  
 #else
     const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
     JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
     LLVMStringInfo* LSI = module->getStringInfo(str);
     Value* val = LSI->getDelegatee(this);
-    push(val, AssessorDesc::dRef);
+    push(val, false);
 #endif
         
   } else if (type == JavaConstantPool::ConstantLong) {
     push(ConstantInt::get(Type::Int64Ty, ctpInfo->LongAt(index)),
-         AssessorDesc::dLong);
+         false);
   } else if (type == JavaConstantPool::ConstantDouble) {
     push(ConstantFP::get(Type::DoubleTy, ctpInfo->DoubleAt(index)),
-         AssessorDesc::dDouble);
+         false);
   } else if (type == JavaConstantPool::ConstantInteger) {
     push(ConstantInt::get(Type::Int32Ty, ctpInfo->IntegerAt(index)),
-         AssessorDesc::dInt);
+         false);
   } else if (type == JavaConstantPool::ConstantFloat) {
     push(ConstantFP::get(Type::FloatTy, ctpInfo->FloatAt(index)),
-         AssessorDesc::dFloat);
+         false);
   } else if (type == JavaConstantPool::ConstantClass) {
 #ifndef MULTIPLE_VM
     if (ctpInfo->ctpRes[index]) {
       CommonClass* cl = (CommonClass*)(ctpInfo->ctpRes[index]);
       LLVMCommonClassInfo* LCI = module->getClassInfo(cl);
-      push(LCI->getDelegatee(this), AssessorDesc::dRef);
+      push(LCI->getDelegatee(this), false);
     } else {
 #endif
       Value* val = getResolvedClass(index, false);
       Value* res = CallInst::Create(JnjvmModule::GetClassDelegateeFunction,
                                     val, "", currentBlock);
-      push(res, AssessorDesc::dRef);
+      push(res, false);
 #ifndef MULTIPLE_VM
     }
 #endif
@@ -1274,7 +1277,7 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
 
 void JavaJIT::setCurrentBlock(BasicBlock* newBlock) {
 
-  std::vector< std::pair<Value*, const AssessorDesc*> > newStack;
+  std::vector< std::pair<Value*, bool> > newStack;
   uint32 index = 0;
   for (BasicBlock::iterator i = newBlock->begin(), e = newBlock->end(); i != e;
        ++i, ++index) {
@@ -1285,7 +1288,7 @@ void JavaJIT::setCurrentBlock(BasicBlock* newBlock) {
       const llvm::Type* type = i->getType();
       if (type == Type::Int32Ty || type == Type::Int16Ty || 
           type == Type::Int8Ty) {
-        newStack.push_back(std::make_pair(i, AssessorDesc::dInt));
+        newStack.push_back(std::make_pair(i, false));
       } else {
         newStack.push_back(std::make_pair(i, stack[index].second));
       }
@@ -1298,16 +1301,17 @@ void JavaJIT::setCurrentBlock(BasicBlock* newBlock) {
 
 static void testPHINodes(BasicBlock* dest, BasicBlock* insert, JavaJIT* jit) {
   if(dest->empty()) {
-    for (std::vector< std::pair<Value*, const AssessorDesc*> >::iterator i =
+    for (std::vector< std::pair<Value*, bool> >::iterator i =
               jit->stack.begin(),
             e = jit->stack.end(); i!= e; ++i) {
       Value* cur = i->first;
-      const AssessorDesc* func = i->second;
+      bool unsign = i->second;
       PHINode* node = 0;
-      if (func == AssessorDesc::dChar || func == AssessorDesc::dBool) {
+      const Type* type = cur->getType();
+      if (unsign) {
         node = llvm::PHINode::Create(Type::Int32Ty, "", dest);
         cur = new ZExtInst(cur, Type::Int32Ty, "", jit->currentBlock);
-      } else if (func == AssessorDesc::dByte || func == AssessorDesc::dShort) {
+      } else if (type == Type::Int8Ty || type == Type::Int16Ty) {
         node = llvm::PHINode::Create(Type::Int32Ty, "", dest);
         cur = new SExtInst(cur, Type::Int32Ty, "", jit->currentBlock);
       } else {
@@ -1316,7 +1320,7 @@ static void testPHINodes(BasicBlock* dest, BasicBlock* insert, JavaJIT* jit) {
       node->addIncoming(cur, insert);
     }
   } else {
-    std::vector< std::pair<Value*, const AssessorDesc*> >::iterator stackit = 
+    std::vector< std::pair<Value*, bool> >::iterator stackit = 
       jit->stack.begin();
     for (BasicBlock::iterator i = dest->begin(), e = dest->end(); i != e;
          ++i) {
@@ -1325,11 +1329,12 @@ static void testPHINodes(BasicBlock* dest, BasicBlock* insert, JavaJIT* jit) {
       } else {
         Instruction* ins = i;
         Value* cur = stackit->first;
-        const AssessorDesc* func = stackit->second;
+        const Type* type = cur->getType();
+        bool unsign = stackit->second;
         
-        if (func == AssessorDesc::dChar || func == AssessorDesc::dBool) {
+        if (unsign) {
           cur = new ZExtInst(cur, Type::Int32Ty, "", jit->currentBlock);
-        } else if (func == AssessorDesc::dByte || func == AssessorDesc::dShort) {
+        } else if (type == Type::Int8Ty || type == Type::Int16Ty) {
           cur = new SExtInst(cur, Type::Int32Ty, "", jit->currentBlock);
         }
         
@@ -1372,13 +1377,12 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
     if (it->get() == Type::Int64Ty || it->get() == Type::DoubleTy) {
       pop();
     }
-    const AssessorDesc* func = topFunc();
+    bool unsign = topFunc();
     Value* tmp = pop();
     
     const Type* type = it->get();
     if (tmp->getType() != type) { // int8 or int16
-      convertValue(tmp, type, currentBlock,
-                   func == AssessorDesc::dChar || func == AssessorDesc::dBool);
+      convertValue(tmp, type, currentBlock, unsign);
     }
     args[i] = tmp;
 
@@ -1577,9 +1581,9 @@ void JavaJIT::invokeSpecial(uint16 index) {
   
   const llvm::Type* retType = virtualType->getReturnType();
   if (retType != Type::VoidTy) {
-    push(val, signature->ret->funcs);
+    push(val, signature->ret->isUnsigned());
     if (retType == Type::DoubleTy || retType == Type::Int64Ty) {
-      push(mvm::jit::constantZero, AssessorDesc::dInt);
+      push(mvm::jit::constantZero, false);
     }
   }
 
@@ -1629,9 +1633,9 @@ void JavaJIT::invokeStatic(uint16 index) {
 
   const llvm::Type* retType = staticType->getReturnType();
   if (retType != Type::VoidTy) {
-    push(val, signature->ret->funcs);
+    push(val, signature->ret->isUnsigned());
     if (retType == Type::DoubleTy || retType == Type::Int64Ty) {
-      push(mvm::jit::constantZero, AssessorDesc::dInt);
+      push(mvm::jit::constantZero, false);
     }
   }
 }
@@ -1818,7 +1822,7 @@ void JavaJIT::invokeNew(uint16 index) {
   new StoreInst(Cl, GEP, currentBlock);
 
 
-  push(val, AssessorDesc::dRef);
+  push(val, false);
 }
 
 Value* JavaJIT::arraySize(Value* val) {
@@ -1922,20 +1926,21 @@ void JavaJIT::convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock
  
 
 void JavaJIT::setStaticField(uint16 index) {
-  const AssessorDesc* ass = topFunc();
+  bool unsign = topFunc();
   Value* val = pop(); 
+  
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
-  uint8 id = sign->funcs->numId;
-  LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+  LLVMAssessorInfo& LAI = module->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
+  
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
     val = pop();
   }
+  
   Value* ptr = ldResolved(index, true, 0, type, LAI.llvmTypePtr);
   
   if (type != val->getType()) { // int1, int8, int16
-    convertValue(val, type, currentBlock, 
-                 ass == AssessorDesc::dChar || ass == AssessorDesc::dBool);
+    convertValue(val, type, currentBlock, unsign);
   }
   
   new StoreInst(val, ptr, false, currentBlock);
@@ -1943,23 +1948,22 @@ void JavaJIT::setStaticField(uint16 index) {
 
 void JavaJIT::getStaticField(uint16 index) {
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
-  uint8 id = sign->funcs->numId;
-  LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
-  Value* ptr = ldResolved(index, true, 0, LAI.llvmType, 
-                          LAI.llvmTypePtr);
-  push(new LoadInst(ptr, "", currentBlock), sign->funcs);
+  LLVMAssessorInfo& LAI = module->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
+  
+  Value* ptr = ldResolved(index, true, 0, type, LAI.llvmTypePtr);
+  
+  push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned());
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
-    push(mvm::jit::constantZero, AssessorDesc::dInt);
+    push(mvm::jit::constantZero, false);
   }
 }
 
 void JavaJIT::setVirtualField(uint16 index) {
-  const AssessorDesc* ass = topFunc();
+  bool unsign = topFunc();
   Value* val = pop();
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
-  uint8 id = sign->funcs->numId;
-  LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
+  LLVMAssessorInfo& LAI = module->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
   
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
@@ -1968,12 +1972,10 @@ void JavaJIT::setVirtualField(uint16 index) {
   
   Value* object = pop();
   JITVerifyNull(object);
-  Value* ptr = ldResolved(index, false, object, type, 
-                          LAI.llvmTypePtr);
+  Value* ptr = ldResolved(index, false, object, type, LAI.llvmTypePtr);
 
   if (type != val->getType()) { // int1, int8, int16
-    convertValue(val, type, currentBlock, 
-                 ass == AssessorDesc::dChar || ass == AssessorDesc::dBool);
+    convertValue(val, type, currentBlock, unsign);
   }
 
   new StoreInst(val, ptr, false, currentBlock);
@@ -1981,16 +1983,16 @@ void JavaJIT::setVirtualField(uint16 index) {
 
 void JavaJIT::getVirtualField(uint16 index) {
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
+  LLVMAssessorInfo& LAI = module->getTypedefInfo(sign);
+  const Type* type = LAI.llvmType;
   Value* obj = pop();
   JITVerifyNull(obj);
-  uint8 id = sign->funcs->numId;
-  LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[id];
-  Value* ptr = ldResolved(index, false, obj, LAI.llvmType, 
-                          LAI.llvmTypePtr);
-  push(new LoadInst(ptr, "", currentBlock), sign->funcs);
-  const Type* type = LAI.llvmType;
+  
+  Value* ptr = ldResolved(index, false, obj, type, LAI.llvmTypePtr);
+
+  push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned());
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
-    push(mvm::jit::constantZero, AssessorDesc::dInt);
+    push(mvm::jit::constantZero, false);
   }
 }
 
@@ -2168,9 +2170,9 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
 
   currentBlock = endBlock;
   if (node) {
-    push(node, signature->ret->funcs);
+    push(node, signature->ret->isUnsigned());
     if (retType == Type::DoubleTy || retType == Type::Int64Ty) {
-      push(mvm::jit::constantZero, AssessorDesc::dInt);
+      push(mvm::jit::constantZero, false);
     }
   }
 }

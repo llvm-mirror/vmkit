@@ -65,7 +65,7 @@ JNIEnv *env,
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
+  const Typedef* type = field->getSignature();
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -75,18 +75,20 @@ jobject Field, jobject obj) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) {
-    case INT_ID :
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+
+    if (prim->isInt())
       return (sint32)field->getInt32Field(Obj);
-    case CHAR_ID :
+    if (prim->isChar())
       return (uint32)field->getInt16Field(Obj);
-    case BYTE_ID :
+    if (prim->isByte())
       return (sint32)field->getInt8Field(Obj);
-    case SHORT_ID :
+    if (prim->isShort())
       return (sint32)field->getInt16Field(Obj);
-    default :
-      JavaThread::get()->isolate->illegalArgumentException("");
   }
+  
+  JavaThread::get()->isolate->illegalArgumentException("");
   return 0;
   
 }
@@ -98,7 +100,6 @@ JNIEnv *env,
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -108,20 +109,23 @@ jobject Field, jobject obj) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) {
-    case INT_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    
+    if (prim->isInt())
       return (sint64)field->getInt32Field(Obj);
-    case CHAR_ID :
+    if (prim->isChar())
       return (uint64)field->getInt16Field(Obj);
-    case BYTE_ID :
+    if (prim->isByte())
       return (sint64)field->getInt8Field(Obj);
-    case SHORT_ID :
+    if (prim->isShort())
       return (sint64)field->getInt16Field(Obj);
-    case LONG_ID :
+    if (prim->isLong())
       return (sint64)field->getLongField(Obj);
-    default:
-      JavaThread::get()->isolate->illegalArgumentException("");     
   }
+
+  JavaThread::get()->isolate->illegalArgumentException("");
   return 0;
 }
 
@@ -132,7 +136,6 @@ JNIEnv *env,
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -142,12 +145,14 @@ jobject Field, jobject obj) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) {
-    case BOOL_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isBool())  
       return (uint8)field->getInt8Field(Obj);
-    default:
-      JavaThread::get()->isolate->illegalArgumentException("");
   }
+  
+  JavaThread::get()->isolate->illegalArgumentException("");
 
   return 0;
   
@@ -160,7 +165,6 @@ JNIEnv *env,
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -170,22 +174,23 @@ jobject Field, jobject obj) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) { 
-    case BYTE_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isByte())
       return (jfloat)field->getInt8Field(Obj);
-    case INT_ID :
+    if (prim->isInt())
       return (jfloat)field->getInt32Field((JavaObject*)obj);
-    case SHORT_ID :
+    if (prim->isShort())
       return (jfloat)field->getInt16Field((JavaObject*)obj);
-    case LONG_ID :
+    if (prim->isLong())
       return (jfloat)field->getLongField((JavaObject*)obj);
-    case CHAR_ID :
+    if (prim->isChar())
       return (jfloat)(uint32)field->getInt16Field((JavaObject*)obj);
-    case FLOAT_ID :
+    if (prim->isFloat())
       return (jfloat)field->getFloatField((JavaObject*)obj);
-    default:
-      JavaThread::get()->isolate->illegalArgumentException("");
   }
+  JavaThread::get()->isolate->illegalArgumentException("");
   return 0.0;
 }
 
@@ -196,7 +201,6 @@ JNIEnv *env,
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -206,12 +210,13 @@ jobject Field, jobject obj) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) {
-    case BYTE_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isByte())
       return (sint8)field->getInt8Field(Obj);
-    default :
-      JavaThread::get()->isolate->illegalArgumentException("");
   }
+  JavaThread::get()->isolate->illegalArgumentException("");
   
   return 0;
 }
@@ -223,7 +228,6 @@ JNIEnv *env,
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -233,12 +237,13 @@ jobject Field, jobject obj) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) {
-    case CHAR_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isChar())
       return (uint16)field->getInt16Field((JavaObject*)obj);
-    default :
-      JavaThread::get()->isolate->illegalArgumentException("");
   }
+  JavaThread::get()->isolate->illegalArgumentException("");
   
   return 0;
   
@@ -251,7 +256,6 @@ JNIEnv *env,
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -261,14 +265,15 @@ jobject Field, jobject obj) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) {
-    case SHORT_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isShort())
       return (sint16)field->getInt16Field(Obj);
-    case BYTE_ID :
+    if (prim->isByte())
       return (sint16)field->getInt8Field(Obj);
-    default :
-      JavaThread::get()->isolate->illegalArgumentException("");
   }
+  JavaThread::get()->isolate->illegalArgumentException("");
   
   return 0;
 }
@@ -280,7 +285,6 @@ JNIEnv *env,
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -290,24 +294,25 @@ jobject Field, jobject obj) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) {
-    case BYTE_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isByte())
       return (jdouble)(sint64)field->getInt8Field(Obj);
-    case INT_ID :
+    if (prim->isInt())
       return (jdouble)(sint64)field->getInt32Field(Obj);
-    case SHORT_ID :
+    if (prim->isShort())
       return (jdouble)(sint64)field->getInt16Field(Obj);
-    case LONG_ID :
+    if (prim->isLong())
       return (jdouble)(sint64)field->getLongField(Obj);
-    case CHAR_ID :
+    if (prim->isChar())
       return (jdouble)(uint64)field->getInt16Field(Obj);
-    case FLOAT_ID :
+    if (prim->isFloat())
       return (jdouble)field->getFloatField(Obj);
-    case DOUBLE_ID :
+    if (prim->isDouble())
       return (jdouble)field->getDoubleField(Obj);
-    default :
-      JavaThread::get()->isolate->illegalArgumentException("");
   }
+  JavaThread::get()->isolate->illegalArgumentException("");
   return 0.0;
 }
 
@@ -318,8 +323,6 @@ JNIEnv *env,
 jobject Field, jobject _obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  Typedef* type = field->getSignature();
-  const AssessorDesc* ass = type->funcs;
   
   JavaObject* Obj = (JavaObject*)_obj;
   
@@ -330,61 +333,51 @@ jobject Field, jobject _obj) {
   }
   
   JavaObject* res = 0;
-  switch (ass->numId) {
-    case BOOL_ID : {
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isBool()) {
       uint8 val =  field->getInt8Field(Obj);
       res = vm->upcalls->boolClass->doNew(vm);
       vm->upcalls->boolValue->setInt8Field(res, val);
-      break;
     }
-    case BYTE_ID : {
+    else if (prim->isByte()) {
       sint8 val =  field->getInt8Field(Obj);
       res = vm->upcalls->byteClass->doNew(vm);
       vm->upcalls->byteValue->setInt8Field(res, val);
-      break;
     }
-    case CHAR_ID : {
+    else if (prim->isChar()) {
       uint16 val =  field->getInt16Field(Obj);
       res = vm->upcalls->charClass->doNew(vm);
       vm->upcalls->charValue->setInt16Field(res, val);
-      break;
     }
-    case SHORT_ID : {
+    else if (prim->isShort()) {
       sint16 val =  field->getInt16Field(Obj);
       res = vm->upcalls->shortClass->doNew(vm);
       vm->upcalls->shortValue->setInt16Field(res, val);
-      break;
     }
-    case INT_ID : {
+    else if (prim->isInt()) {
       sint32 val =  field->getInt32Field(Obj);
       res = vm->upcalls->intClass->doNew(vm);
       vm->upcalls->intValue->setInt32Field(res, val);
-      break;
     }
-    case LONG_ID : {
+    else if (prim->isLong()) {
       sint64 val =  field->getLongField(Obj);
       res = vm->upcalls->longClass->doNew(vm);
       vm->upcalls->longValue->setLongField(res, val);
-      break;
     }
-    case FLOAT_ID : {
+    else if (prim->isFloat()) {
       float val =  field->getFloatField(Obj);
       res = vm->upcalls->floatClass->doNew(vm);
       vm->upcalls->floatValue->setFloatField(res, val);
-      break;
     }
-    case DOUBLE_ID : {
+    else if (prim->isDouble()) {
       double val =  field->getDoubleField(Obj);
       res = vm->upcalls->doubleClass->doNew(vm);
       vm->upcalls->doubleValue->setDoubleField(res, val);
-      break;
     }
-    case OBJECT_ID :
-    case ARRAY_ID :
-      res =  field->getObjectField(Obj);
-      break;
-    default:
-      JavaThread::get()->isolate->unknownError("should not be here");
+  } else {
+    res =  field->getObjectField(Obj);
   }
   return (jobject)res;
 }
@@ -400,7 +393,6 @@ jobject Field, jobject obj, jobject val) {
   void* _buf = (void*)buf;
   NativeUtil::decapsulePrimitive(JavaThread::get()->isolate, buf, (JavaObject*)val, field->getSignature());
 
-  const AssessorDesc* ass = field->getSignature()->funcs;
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -410,28 +402,27 @@ jobject Field, jobject obj, jobject val) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) {
-    case BOOL_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isBool())
       return field->setInt8Field(Obj, ((uint8*)_buf)[0]);
-    case BYTE_ID :
+    if (prim->isByte())
       return field->setInt8Field(Obj, ((sint8*)_buf)[0]);
-    case CHAR_ID :
+    if (prim->isChar())
       return field->setInt16Field(Obj, ((uint16*)_buf)[0]);
-    case SHORT_ID :
+    if (prim->isShort())
       return field->setInt16Field(Obj, ((sint16*)_buf)[0]);
-    case INT_ID :
+    if (prim->isInt())
       return field->setInt32Field(Obj, ((sint32*)_buf)[0]);
-    case LONG_ID :
+    if (prim->isLong())
       return field->setLongField(Obj, ((sint64*)_buf)[0]);
-    case FLOAT_ID :
+    if (prim->isFloat())
       return field->setFloatField(Obj, ((float*)_buf)[0]);
-    case DOUBLE_ID :
+    if (prim->isDouble())
       return field->setDoubleField(Obj, ((double*)_buf)[0]);
-    case ARRAY_ID :
-    case OBJECT_ID :
-      return field->setObjectField(Obj, ((JavaObject**)_buf)[0]);
-    default :
-      JavaThread::get()->isolate->unknownError("should not be here");
+  } else {
+    return field->setObjectField(Obj, ((JavaObject**)_buf)[0]);
   }
 }
 
@@ -442,7 +433,6 @@ JNIEnv *env,
 jobject Field, jobject obj, jboolean val) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;  
   JavaObject* Obj = (JavaObject*)obj;
   
   if (isStatic(field->access)) {
@@ -451,12 +441,13 @@ jobject Field, jobject obj, jboolean val) {
     Obj = cl->getStaticInstance();
   }
  
-  switch (ass->numId) {
-    case BOOL_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isBool())
       return field->setInt8Field(Obj, (uint8)val);
-    default :
-      JavaThread::get()->isolate->illegalArgumentException("");
   }
+  JavaThread::get()->isolate->illegalArgumentException("");
   
 }
 
@@ -467,7 +458,6 @@ JNIEnv *env,
 jobject Field, jobject obj, jbyte val) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
   JavaObject* Obj = (JavaObject*)obj;
   
   if (isStatic(field->access)) {
@@ -476,22 +466,23 @@ jobject Field, jobject obj, jbyte val) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) {
-    case BYTE_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isByte())
       return field->setInt8Field(Obj, (sint8)val);
-    case SHORT_ID :
+    if (prim->isShort())
       return field->setInt16Field(Obj, (sint16)val);
-    case INT_ID :
+    if (prim->isInt())
       return field->setInt32Field(Obj, (sint32)val);
-    case LONG_ID :
+    if (prim->isLong())
       return field->setLongField(Obj, (sint64)val);
-    case FLOAT_ID :
+    if (prim->isFloat())
       return field->setFloatField(Obj, (float)val);
-    case DOUBLE_ID :
+    if (prim->isDouble())
       return field->setDoubleField(Obj, (double)val);
-    default :
-      JavaThread::get()->isolate->illegalArgumentException("");
   }
+  JavaThread::get()->isolate->illegalArgumentException("");
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setChar(
@@ -501,7 +492,6 @@ JNIEnv *env,
 jobject Field, jobject obj, jchar val) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -511,20 +501,21 @@ jobject Field, jobject obj, jchar val) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) {
-    case CHAR_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isChar())
       return field->setInt16Field(Obj, (uint16)val);
-    case INT_ID :
+    if (prim->isInt())
       return field->setInt32Field(Obj, (uint32)val);
-    case LONG_ID :
+    if (prim->isLong())
       return field->setLongField(Obj, (uint64)val);
-    case FLOAT_ID :
+    if (prim->isFloat())
       return field->setFloatField(Obj, (float)(uint32)val);
-    case DOUBLE_ID :
+    if (prim->isDouble())
       return field->setDoubleField(Obj, (double)(uint64)val);
-    default :
-      JavaThread::get()->isolate->illegalArgumentException("");
   }
+  JavaThread::get()->isolate->illegalArgumentException("");
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setShort(
@@ -534,7 +525,6 @@ JNIEnv *env,
 jobject Field, jobject obj, jshort val) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -544,20 +534,21 @@ jobject Field, jobject obj, jshort val) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) {
-    case SHORT_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isShort())
       return field->setInt16Field(Obj, (sint16)val);
-    case INT_ID :
+    if (prim->isInt())
       return field->setInt32Field(Obj, (sint32)val);
-    case LONG_ID :
+    if (prim->isLong())
       return field->setLongField(Obj, (sint64)val);
-    case FLOAT_ID :
+    if (prim->isFloat())
       return field->setFloatField(Obj, (float)val);
-    case DOUBLE_ID :
+    if (prim->isDouble())
       return field->setDoubleField(Obj, (double)val);
-    default :
-      JavaThread::get()->isolate->illegalArgumentException("");
   }
+  JavaThread::get()->isolate->illegalArgumentException("");
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setInt(
@@ -567,7 +558,6 @@ JNIEnv *env,
 jobject Field, jobject obj, jint val) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
   JavaObject* Obj = (JavaObject*)obj;
   
   if (isStatic(field->access)) {
@@ -576,18 +566,19 @@ jobject Field, jobject obj, jint val) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) {
-    case INT_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isInt())
       return field->setInt32Field(Obj, (sint32)val);
-    case LONG_ID :
+    if (prim->isLong())
       return field->setLongField(Obj, (sint64)val);
-    case FLOAT_ID :
+    if (prim->isFloat())
       return field->setFloatField(Obj, (float)val);
-    case DOUBLE_ID :
+    if (prim->isDouble())
       return field->setDoubleField(Obj, (double)val);
-    default :
-    JavaThread::get()->isolate->illegalArgumentException("");
   }
+  JavaThread::get()->isolate->illegalArgumentException("");
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setLong(
@@ -597,7 +588,6 @@ JNIEnv *env,
 jobject Field, jobject obj, jlong val) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
   JavaObject* Obj = (JavaObject*)obj;
   
   if (isStatic(field->access)) {
@@ -606,16 +596,17 @@ jobject Field, jobject obj, jlong val) {
     Obj = cl->getStaticInstance();
   }
 
-  switch (ass->numId) {
-    case LONG_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isLong())
       return field->setLongField(Obj, (sint64)val);
-    case FLOAT_ID :
+    if (prim->isFloat())
       return field->setFloatField(Obj, (float)val);
-    case DOUBLE_ID :
+    if (prim->isDouble())
       return field->setDoubleField(Obj, (double)val);
-    default :
-      JavaThread::get()->isolate->illegalArgumentException("");
   }
+  JavaThread::get()->isolate->illegalArgumentException("");
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setFloat(
@@ -625,7 +616,6 @@ JNIEnv *env,
 jobject Field, jobject obj, jfloat val) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
   JavaObject* Obj = (JavaObject*)obj;
   
   if (isStatic(field->access)) {
@@ -634,14 +624,15 @@ jobject Field, jobject obj, jfloat val) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) {
-    case FLOAT_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isFloat())
       return field->setFloatField(Obj, (float)val);
-    case DOUBLE_ID :
+    if (prim->isDouble())
       return field->setDoubleField(Obj, (double)val);
-    default :
-      JavaThread::get()->isolate->illegalArgumentException("");
   }
+  JavaThread::get()->isolate->illegalArgumentException("");
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setDouble(
@@ -651,7 +642,6 @@ JNIEnv *env,
 jobject Field, jobject obj, jdouble val) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
-  const AssessorDesc* ass = field->getSignature()->funcs;
   JavaObject* Obj = (JavaObject*)obj;
 
   if (isStatic(field->access)) {
@@ -660,12 +650,13 @@ jobject Field, jobject obj, jdouble val) {
     Obj = cl->getStaticInstance();
   }
   
-  switch (ass->numId) {
-    case DOUBLE_ID :
+  const Typedef* type = field->getSignature();
+  if (type->isPrimitive()) {
+    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    if (prim->isDouble())
       return field->setDoubleField(Obj, (double)val);
-    default :
-      JavaThread::get()->isolate->illegalArgumentException("");
   }
+  JavaThread::get()->isolate->illegalArgumentException("");
 }
 
 JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_objectFieldOffset(

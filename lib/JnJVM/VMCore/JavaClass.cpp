@@ -25,6 +25,7 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
+#include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
@@ -176,10 +177,7 @@ static void printClassNameIntern(const UTF8* name, unsigned int start,
     if (name->elements[stepsEnd] == AssessorDesc::I_REF) {
       printClassNameIntern(name, (stepsEnd + 1),(end - 1), buf);
     } else {
-      AssessorDesc * funcs = 0;
-      uint32 next = 0;
-      AssessorDesc::analyseIntern(name, stepsEnd, 0, funcs, next);
-      buf->write(funcs->asciizName);
+      name->print(buf);
     }
     buf->write(" ");
     for (uint32 i = start; i < stepsEnd; i++)
@@ -203,6 +201,30 @@ void CommonClass::print(mvm::PrintBuffer* buf) const {
   buf->write("CommonClass<");
   printClassName(name, buf);
   buf->write(">");
+}
+
+UserClassPrimitive* CommonClass::toPrimitive(Jnjvm* vm) const {
+  if (this == vm->upcalls->voidClass) {
+    return vm->upcalls->OfVoid;
+  } else if (this == vm->upcalls->intClass) {
+    return vm->upcalls->OfInt;
+  } else if (this == vm->upcalls->shortClass) {
+    return vm->upcalls->OfShort;
+  } else if (this == vm->upcalls->charClass) {
+    return vm->upcalls->OfChar;
+  } else if (this == vm->upcalls->doubleClass) {
+    return vm->upcalls->OfDouble;
+  } else if (this == vm->upcalls->byteClass) {
+    return vm->upcalls->OfByte;
+  } else if (this == vm->upcalls->boolClass) {
+    return vm->upcalls->OfBool;
+  } else if (this == vm->upcalls->longClass) {
+    return vm->upcalls->OfLong;
+  } else if (this == vm->upcalls->floatClass) {
+    return vm->upcalls->OfFloat;
+  } else {
+    return 0;
+  }
 }
 
 CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n,
@@ -521,8 +543,8 @@ bool UserCommonClass::isAssignableFrom(UserCommonClass* cl) {
   }
 }
 
-void JavaField::initField(JavaObject* obj) {
-  const AssessorDesc* funcs = getSignature()->funcs;
+void JavaField::initField(JavaObject* obj, Jnjvm* vm) {
+  const Typedef* type = getSignature();
   Attribut* attribut = lookupAttribut(Attribut::constantAttribut);
 
   if (!attribut) {
@@ -531,26 +553,26 @@ void JavaField::initField(JavaObject* obj) {
     Reader reader(attribut, classDef->bytes);
     JavaConstantPool * ctpInfo = classDef->ctpInfo;
     uint16 idx = reader.readU2();
-    if (funcs == AssessorDesc::dLong) {
-      JnjvmModule::InitField(this, obj, (uint64)ctpInfo->LongAt(idx));
-    } else if (funcs == AssessorDesc::dDouble) {
-      JnjvmModule::InitField(this, obj, ctpInfo->DoubleAt(idx));
-    } else if (funcs == AssessorDesc::dFloat) {
-      JnjvmModule::InitField(this, obj, ctpInfo->FloatAt(idx));
-    } else if (funcs == AssessorDesc::dRef) {
+    if (type->isPrimitive()) {
+      UserCommonClass* cl = type->assocClass(vm->bootstrapLoader);
+      if (cl == vm->upcalls->OfLong) {
+        JnjvmModule::InitField(this, obj, (uint64)ctpInfo->LongAt(idx));
+      } else if (cl == vm->upcalls->OfDouble) {
+        JnjvmModule::InitField(this, obj, ctpInfo->DoubleAt(idx));
+      } else if (cl == vm->upcalls->OfFloat) {
+        JnjvmModule::InitField(this, obj, ctpInfo->FloatAt(idx));
+      } else {
+        JnjvmModule::InitField(this, obj, (uint64)ctpInfo->IntegerAt(idx));
+      }
+    } else if (type->isReference()){
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
       JnjvmModule::InitField(this, obj,
                          (JavaObject*)ctpInfo->resolveString(utf8, idx));
-    } else if (funcs == AssessorDesc::dInt || funcs == AssessorDesc::dChar ||
-               funcs == AssessorDesc::dShort || funcs == AssessorDesc::dByte ||
-               funcs == AssessorDesc::dBool) {
-      JnjvmModule::InitField(this, obj, (uint64)ctpInfo->IntegerAt(idx));
     } else {
       JavaThread::get()->isolate->
-        unknownError("unknown constant %c", funcs->byteId);
+        unknownError("unknown constant %s\n", type->printString());
     }
-  }
-  
+  } 
 }
 
 JavaMethod* CommonClass::constructMethod(const UTF8* name,

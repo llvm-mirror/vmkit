@@ -28,7 +28,7 @@
 
 #define UPCALL_ARRAY_CLASS(vm, name, depth)                                \
   vm->constructArray(                                                      \
-    AssessorDesc::constructArrayName(vm, 0, depth,                         \
+    AssessorDesc::constructArrayName(vm, depth,                            \
                                      vm->asciizConstructUTF8(name)))       
 
 #define UPCALL_CLASS_EXCEPTION(loader, name)                               \

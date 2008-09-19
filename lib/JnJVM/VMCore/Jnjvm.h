@@ -98,10 +98,12 @@ public:
 
 #ifdef MULTIPLE_VM
   UserClass* throwable;
-  UserClassArray* arrayClasses[9];
 #endif
+  std::map<const char, UserClassArray*> arrayClasses;
 private:
   
+  ISOLATE_STATIC std::map<const char, UserClassPrimitive*> primitiveMap;
+
   /// bootstrapThread - The initial thread of this JVM.
   ///
   JavaThread* bootstrapThread;
@@ -245,10 +247,7 @@ public:
 
   /// nativeLibs - Native libraries (e.g. '.so') loaded by this JVM.
   ///
-#ifndef MULTIPLE_VM
-  static
-#endif
-  std::vector<void*> nativeLibs;
+  ISOLATE_STATIC std::vector<void*> nativeLibs;
 
   /// classpath - The CLASSPATH value, or the paths given in command line.
   ///
@@ -331,6 +330,10 @@ public:
   /// static variables in a single environment.
   ///
   ISOLATE_STATIC void initialiseStatics();
+  
+  ISOLATE_STATIC UserClassPrimitive* getPrimitiveClass(char id) {
+    return primitiveMap[id];
+  }
 
   /// allocateIsolate - Allocates a new JVM.
   ///

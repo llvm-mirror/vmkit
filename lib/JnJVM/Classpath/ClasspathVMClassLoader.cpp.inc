@@ -32,12 +32,12 @@ jclass clazz,
 #endif
 jchar byteId) {
   
-  AssessorDesc* ass = AssessorDesc::byteIdToPrimitive(byteId);
   Jnjvm* vm = JavaThread::get()->isolate;
-  if (!ass)
+  UserClassPrimitive* prim = AssessorDesc::byteIdToPrimitive(byteId, vm->upcalls);
+  if (!prim)
     vm->unknownError("unknown byte primitive %c", byteId);
   
-  return (jobject)ass->getPrimitiveClass()->getClassDelegatee(vm);
+  return (jobject)prim->getClassDelegatee(vm);
   
 }
 

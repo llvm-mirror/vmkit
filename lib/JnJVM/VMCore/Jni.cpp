@@ -1746,7 +1746,7 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass elementClass,
   UserCommonClass* base = NativeUtil::resolvedImplClass(elementClass, true);
   JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->getName();
-  const UTF8* arrayName = AssessorDesc::constructArrayName(loader, 0, 1, name);
+  const UTF8* arrayName = AssessorDesc::constructArrayName(loader, 1, name);
   UserClassArray* array = loader->constructArray(arrayName);
   ArrayObject* res = ArrayObject::acons(length, array, &(vm->allocator));
   if (initialElement) {

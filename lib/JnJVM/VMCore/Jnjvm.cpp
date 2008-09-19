@@ -84,6 +84,7 @@ const unsigned int Jnjvm::Magic = 0xcafebabe;
 /// If we're not in a multi-vm environment, this can be made static.
 std::vector<void*> Jnjvm::nativeLibs;
 JnjvmBootstrapLoader* Jnjvm::bootstrapLoader;
+std::map<const char, UserClassPrimitive*> Jnjvm::primitiveMap;
 #endif
 
 typedef void (*clinit_t)(Jnjvm* vm, UserConstantPool*);
@@ -125,7 +126,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
       CommonClass::field_map* map = cl->getStaticFields();
       for (CommonClass::field_iterator i = map->begin(), e = map->end(); i!= e;
            ++i) { 
-        i->second->initField(val);
+        i->second->initField(val, vm);
       }
   
       cl->setStaticInstance(val);
@@ -846,15 +847,34 @@ Jnjvm* Jnjvm::allocateIsolate() {
 
 #ifdef MULTIPLE_VM
   isolate->throwable = isolate->upcalls->newThrowable;
-  isolate->arrayClasses[1] = isolate->upcalls->ArrayOfBool;
-  isolate->arrayClasses[2] = isolate->upcalls->ArrayOfByte;
-  isolate->arrayClasses[3] = isolate->upcalls->ArrayOfChar;
-  isolate->arrayClasses[4] = isolate->upcalls->ArrayOfShort;
-  isolate->arrayClasses[5] = isolate->upcalls->ArrayOfInt;
-  isolate->arrayClasses[6] = isolate->upcalls->ArrayOfFloat;
-  isolate->arrayClasses[7] = isolate->upcalls->ArrayOfLong;
-  isolate->arrayClasses[8] = isolate->upcalls->ArrayOfDouble;
 #endif
+  isolate->arrayClasses[JavaArray::T_BOOLEAN - 4] = 
+    isolate->upcalls->ArrayOfBool;
+  isolate->arrayClasses[JavaArray::T_BYTE - 4] = 
+    isolate->upcalls->ArrayOfByte;
+  isolate->arrayClasses[JavaArray::T_CHAR - 4] = 
+    isolate->upcalls->ArrayOfChar;
+  isolate->arrayClasses[JavaArray::T_SHORT - 4] = 
+    isolate->upcalls->ArrayOfShort;
+  isolate->arrayClasses[JavaArray::T_INT - 4] = 
+    isolate->upcalls->ArrayOfInt;
+  isolate->arrayClasses[JavaArray::T_FLOAT - 4] = 
+    isolate->upcalls->ArrayOfFloat;
+  isolate->arrayClasses[JavaArray::T_LONG - 4] = 
+    isolate->upcalls->ArrayOfLong;
+  isolate->arrayClasses[JavaArray::T_DOUBLE - 4] = 
+    isolate->upcalls->ArrayOfDouble;
 
+  isolate->primitiveMap[AssessorDesc::I_VOID] = isolate->upcalls->OfVoid;
+  isolate->primitiveMap[AssessorDesc::I_BOOL] = isolate->upcalls->OfBool;
+  isolate->primitiveMap[AssessorDesc::I_BYTE] = isolate->upcalls->OfByte;
+  isolate->primitiveMap[AssessorDesc::I_CHAR] = isolate->upcalls->OfChar;
+  isolate->primitiveMap[AssessorDesc::I_SHORT] = isolate->upcalls->OfShort;
+  isolate->primitiveMap[AssessorDesc::I_INT] = isolate->upcalls->OfInt;
+  isolate->primitiveMap[AssessorDesc::I_FLOAT] = isolate->upcalls->OfFloat;
+  isolate->primitiveMap[AssessorDesc::I_LONG] = isolate->upcalls->OfLong;
+  isolate->primitiveMap[AssessorDesc::I_DOUBLE] = isolate->upcalls->OfDouble;
+  
+  isolate->upcalls->initialiseClasspath(bootstrapLoader);
   return isolate;
 }

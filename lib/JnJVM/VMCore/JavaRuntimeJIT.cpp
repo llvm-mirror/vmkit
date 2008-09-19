@@ -173,7 +173,7 @@ extern "C" void* staticCtpLookup(UserClass* cl, uint32 index) {
 extern "C" UserClassArray* getArrayClass(UserCommonClass* cl) {
   JnjvmClassLoader* JCL = cl->classLoader;
   const UTF8* arrayName = 
-    AssessorDesc::constructArrayName(JCL, 0, 1, cl->getName());
+    AssessorDesc::constructArrayName(JCL, 1, cl->getName());
         
   UserClassArray* dcl = JCL->constructArray(arrayName);
   return dcl;

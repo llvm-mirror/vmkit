@@ -144,58 +144,59 @@ JNIEnv *env,
     } \
     
     JavaObject* res = 0;
-    const AssessorDesc* retType = meth->getSignature()->ret->funcs;
-    if (retType == AssessorDesc::dVoid) {
-      res = 0;
-      uint32 val = 0;
-      RUN_METH(Int);
-    } else if (retType == AssessorDesc::dBool) {
-      uint32 val = 0;
-      RUN_METH(Int);
-      res = vm->upcalls->boolClass->doNew(vm);
-      vm->upcalls->boolValue->setInt8Field(res, val);
-    } else if (retType == AssessorDesc::dByte) {
-      uint32 val = 0;
-      RUN_METH(Int);
-      res = vm->upcalls->byteClass->doNew(vm);
-      vm->upcalls->byteValue->setInt8Field(res, val);
-    } else if (retType == AssessorDesc::dChar) {
-      uint32 val = 0;
-      RUN_METH(Int);
-      res = vm->upcalls->charClass->doNew(vm);
-      vm->upcalls->charValue->setInt16Field(res, val);
-    } else if (retType == AssessorDesc::dShort) {
-      uint32 val = 0;
-      RUN_METH(Int);
-      res = vm->upcalls->shortClass->doNew(vm);
-      vm->upcalls->shortValue->setInt16Field(res, val);
-    } else if (retType == AssessorDesc::dInt) {
-      uint32 val = 0;
-      RUN_METH(Int);
-      res = vm->upcalls->intClass->doNew(vm);
-      vm->upcalls->intValue->setInt32Field(res, val);
-    } else if (retType == AssessorDesc::dLong) {
-      sint64 val = 0;
-      RUN_METH(Long);
-      res = vm->upcalls->longClass->doNew(vm);
-      vm->upcalls->longValue->setLongField(res, val);
-    } else if (retType == AssessorDesc::dFloat) {
-      float val = 0;
-      RUN_METH(Float);
-      res = vm->upcalls->floatClass->doNew(vm);
-      vm->upcalls->floatValue->setFloatField(res, val);
-    } else if (retType == AssessorDesc::dDouble) {
-      double val = 0;
-      RUN_METH(Double);
-      res = vm->upcalls->doubleClass->doNew(vm);
-      vm->upcalls->doubleValue->setDoubleField(res, val);
-    } else if (retType == AssessorDesc::dTab || retType == AssessorDesc::dRef) {
+    Typedef* retType = meth->getSignature()->ret;
+    if (retType->isPrimitive()) {
+      PrimitiveTypedef* prim = (PrimitiveTypedef*)retType;
+      if (prim->isVoid()) {
+        res = 0;
+        uint32 val = 0;
+        RUN_METH(Int);
+      } else if (prim->isBool()) {
+        uint32 val = 0;
+        RUN_METH(Int);
+        res = vm->upcalls->boolClass->doNew(vm);
+        vm->upcalls->boolValue->setInt8Field(res, val);
+      } else if (prim->isByte()) {
+        uint32 val = 0;
+        RUN_METH(Int);
+        res = vm->upcalls->byteClass->doNew(vm);
+        vm->upcalls->byteValue->setInt8Field(res, val);
+      } else if (prim->isChar()) {
+        uint32 val = 0;
+        RUN_METH(Int);
+        res = vm->upcalls->charClass->doNew(vm);
+        vm->upcalls->charValue->setInt16Field(res, val);
+      } else if (prim->isShort()) {
+        uint32 val = 0;
+        RUN_METH(Int);
+        res = vm->upcalls->shortClass->doNew(vm);
+        vm->upcalls->shortValue->setInt16Field(res, val);
+      } else if (prim->isInt()) {
+        uint32 val = 0;
+        RUN_METH(Int);
+        res = vm->upcalls->intClass->doNew(vm);
+        vm->upcalls->intValue->setInt32Field(res, val);
+      } else if (prim->isLong()) {
+        sint64 val = 0;
+        RUN_METH(Long);
+        res = vm->upcalls->longClass->doNew(vm);
+        vm->upcalls->longValue->setLongField(res, val);
+      } else if (prim->isFloat()) {
+        float val = 0;
+        RUN_METH(Float);
+        res = vm->upcalls->floatClass->doNew(vm);
+        vm->upcalls->floatValue->setFloatField(res, val);
+      } else if (prim->isDouble()) {
+        double val = 0;
+        RUN_METH(Double);
+        res = vm->upcalls->doubleClass->doNew(vm);
+        vm->upcalls->doubleValue->setDoubleField(res, val);
+      }
+    } else {
       JavaObject* val = 0;
       RUN_METH(JavaObject);
       res = val;
-    } else {
-      vm->unknownError("should not be here");
-    }
+    } 
     return (jobject)res;
   }
   vm->illegalArgumentExceptionForMethod(meth, 0, 0); 

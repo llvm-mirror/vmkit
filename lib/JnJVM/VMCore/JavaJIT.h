@@ -24,7 +24,6 @@
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 
-#include "JavaTypes.h"
 #include "JnjvmModule.h"
 
 namespace jnjvm {
@@ -102,16 +101,12 @@ public:
 
   
   // stack manipulation
-  std::vector< std::pair<llvm::Value*, const AssessorDesc*> > stack;
-  void push(llvm::Value* val, const AssessorDesc* ass) {
-    assert(LLVMAssessorInfo::AssessorInfo[ass->numId].llvmType == 
-        val->getType());
-    stack.push_back(std::make_pair(val, ass));
+  std::vector< std::pair<llvm::Value*, bool> > stack;
+  void push(llvm::Value* val, bool unsign) {
+    stack.push_back(std::make_pair(val, unsign));
   }
 
-  void push(std::pair<llvm::Value*, const AssessorDesc*> pair) {
-    assert(LLVMAssessorInfo::AssessorInfo[pair.second->numId].llvmType == 
-      pair.first->getType());
+  void push(std::pair<llvm::Value*, bool> pair) {
     stack.push_back(pair);
   }
   
@@ -125,7 +120,7 @@ public:
     return stack.back().first;
   }
   
-  const AssessorDesc* topFunc() {
+  bool topFunc() {
     return stack.back().second;  
   }
   
@@ -135,11 +130,11 @@ public:
   
   llvm::Value* popAsInt() {
     llvm::Value * ret = top();
-    const AssessorDesc* ass = topFunc();
+    bool unsign = topFunc();
     stack.pop_back();
 
     if (ret->getType() != llvm::Type::Int32Ty) {
-      if (ass == AssessorDesc::dChar || ass == AssessorDesc::dBool) {
+      if (unsign) {
         ret = new llvm::ZExtInst(ret, llvm::Type::Int32Ty, "", currentBlock);
       } else {
         ret = new llvm::SExtInst(ret, llvm::Type::Int32Ty, "", currentBlock);
@@ -150,8 +145,8 @@ public:
 
   }
 
-  std::pair<llvm::Value*, const AssessorDesc*> popPair() {
-    std::pair<llvm::Value*, const AssessorDesc*> ret = stack.back();
+  std::pair<llvm::Value*, bool> popPair() {
+    std::pair<llvm::Value*, bool> ret = stack.back();
     stack.pop_back();
     return ret;
   }

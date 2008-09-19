@@ -45,7 +45,7 @@ public:
   llvm::ConstantInt* sizeInBytesConstant;
   
   static void initialise();
-  static LLVMAssessorInfo AssessorInfo[];
+  static std::map<const char, LLVMAssessorInfo> AssessorInfo;
 
 };
 
@@ -435,6 +435,8 @@ public:
   static LLVMConstantPoolInfo* getConstantPoolInfo(JavaConstantPool* ctp) {
     return ctp->getInfo<LLVMConstantPoolInfo>();
   }
+  
+  static LLVMAssessorInfo& getTypedefInfo(Typedef* type);
   
   LLVMStringInfo* getStringInfo(JavaString* str);
 

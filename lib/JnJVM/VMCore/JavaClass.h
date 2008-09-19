@@ -495,6 +495,9 @@ public:
   void setSuper(CommonClass* S) {
     super = S;
   }
+  
+  UserClassPrimitive* toPrimitive(Jnjvm* vm) const;
+
 };
 
 /// ClassPrimitive - This class represents internal classes for primitive
@@ -936,7 +939,7 @@ public:
   /// initField - Init the value of the field in the given object. This is
   /// used for static fields which have a default value.
   ///
-  void initField(JavaObject* obj);
+  void initField(JavaObject* obj, Jnjvm* vm);
 
   /// lookupAttribut - Look up the attribut in the field's list of attributs.
   ///

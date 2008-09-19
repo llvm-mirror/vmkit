@@ -239,10 +239,9 @@ UserCommonClass* NativeUtil::resolvedImplClass(jclass clazz, bool doClinit) {
 void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
                                     JavaObject* obj,
                                     Typedef* signature) {
-  const AssessorDesc* funcs = signature->funcs;
 
-  if (funcs == AssessorDesc::dRef || funcs == AssessorDesc::dTab) {
-    if (obj && !(obj->classOf->isOfTypeName(signature->pseudoAssocClassName))) {
+  if (!signature->isPrimitive()) {
+    if (obj && !(obj->classOf->isOfTypeName(signature->getName()))) {
       vm->illegalArgumentException("wrong type argument");
     }
     ((JavaObject**)buf)[0] = obj;
@@ -252,18 +251,19 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
     vm->illegalArgumentException("");
   } else {
     UserCommonClass* cl = obj->classOf;
-    AssessorDesc* value = AssessorDesc::classNameToPrimitive(cl->getName());
-    
+    UserClassPrimitive* value = cl->toPrimitive(vm);
+    PrimitiveTypedef* prim = (PrimitiveTypedef*)signature;
+
     if (value == 0) {
       vm->illegalArgumentException("");
     }
     
-    if (funcs == AssessorDesc::dShort) {
-      if (value == AssessorDesc::dShort) {
+    if (prim->isShort()) {
+      if (value == vm->upcalls->OfShort) {
         ((uint16*)buf)[0] = vm->upcalls->shortValue->getInt16Field(obj);
         buf++;
         return;
-      } else if (value == AssessorDesc::dByte) {
+      } else if (value == vm->upcalls->OfByte) {
         ((sint16*)buf)[0] = 
           (sint16)vm->upcalls->byteValue->getInt8Field(obj);
         buf++;
@@ -271,31 +271,31 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
       } else {
         vm->illegalArgumentException("");
       }
-    } else if (funcs == AssessorDesc::dByte) {
-      if (value == AssessorDesc::dByte) {
+    } else if (prim->isByte()) {
+      if (value == vm->upcalls->OfByte) {
         ((uint8*)buf)[0] = vm->upcalls->byteValue->getInt8Field(obj);
         buf++;
         return;
       } else {
         vm->illegalArgumentException("");
       }
-    } else if (funcs == AssessorDesc::dBool) {
-      if (value == AssessorDesc::dBool) {
+    } else if (prim->isBool()) {
+      if (value == vm->upcalls->OfBool) {
         ((uint8*)buf)[0] = vm->upcalls->boolValue->getInt8Field(obj);
         buf++;
         return;
       } else {
         vm->illegalArgumentException("");
       }
-    } else if (funcs == AssessorDesc::dInt) {
+    } else if (prim->isInt()) {
       sint32 val = 0;
-      if (value == AssessorDesc::dInt) {
+      if (value == vm->upcalls->OfInt) {
         val = vm->upcalls->intValue->getInt32Field(obj);
-      } else if (value == AssessorDesc::dByte) {
+      } else if (value == vm->upcalls->OfByte) {
         val = (sint32)vm->upcalls->byteValue->getInt8Field(obj);
-      } else if (value == AssessorDesc::dChar) {
+      } else if (value == vm->upcalls->OfChar) {
         val = (uint32)vm->upcalls->charValue->getInt16Field(obj);
-      } else if (value == AssessorDesc::dShort) {
+      } else if (value == vm->upcalls->OfShort) {
         val = (sint32)vm->upcalls->shortValue->getInt16Field(obj);
       } else {
         vm->illegalArgumentException("");
@@ -303,9 +303,9 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
       ((sint32*)buf)[0] = val;
       buf++;
       return;
-    } else if (funcs == AssessorDesc::dChar) {
+    } else if (prim->isChar()) {
       uint16 val = 0;
-      if (value == AssessorDesc::dChar) {
+      if (value == vm->upcalls->OfChar) {
         val = (uint16)vm->upcalls->charValue->getInt16Field(obj);
       } else {
         vm->illegalArgumentException("");
@@ -313,19 +313,19 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
       ((uint16*)buf)[0] = val;
       buf++;
       return;
-    } else if (funcs == AssessorDesc::dFloat) {
+    } else if (prim->isFloat()) {
       float val = 0;
-      if (value == AssessorDesc::dFloat) {
+      if (value == vm->upcalls->OfFloat) {
         val = (float)vm->upcalls->floatValue->getFloatField(obj);
-      } else if (value == AssessorDesc::dByte) {
+      } else if (value == vm->upcalls->OfByte) {
         val = (float)(sint32)vm->upcalls->byteValue->getInt8Field(obj);
-      } else if (value == AssessorDesc::dChar) {
+      } else if (value == vm->upcalls->OfChar) {
         val = (float)(uint32)vm->upcalls->charValue->getInt16Field(obj);
-      } else if (value == AssessorDesc::dShort) {
+      } else if (value == vm->upcalls->OfShort) {
         val = (float)(sint32)vm->upcalls->shortValue->getInt16Field(obj);
-      } else if (value == AssessorDesc::dInt) {
+      } else if (value == vm->upcalls->OfInt) {
         val = (float)(sint32)vm->upcalls->intValue->getInt32Field(obj);
-      } else if (value == AssessorDesc::dLong) {
+      } else if (value == vm->upcalls->OfLong) {
         val = (float)vm->upcalls->longValue->getLongField(obj);
       } else {
         vm->illegalArgumentException("");
@@ -333,21 +333,21 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
       ((float*)buf)[0] = val;
       buf++;
       return;
-    } else if (funcs == AssessorDesc::dDouble) {
+    } else if (prim->isDouble()) {
       double val = 0;
-      if (value == AssessorDesc::dDouble) {
+      if (value == vm->upcalls->OfDouble) {
         val = (double)vm->upcalls->doubleValue->getDoubleField(obj);
-      } else if (value == AssessorDesc::dFloat) {
+      } else if (value == vm->upcalls->OfFloat) {
         val = (double)vm->upcalls->floatValue->getFloatField(obj);
-      } else if (value == AssessorDesc::dByte) {
+      } else if (value == vm->upcalls->OfByte) {
         val = (double)(sint64)vm->upcalls->byteValue->getInt8Field(obj);
-      } else if (value == AssessorDesc::dChar) {
+      } else if (value == vm->upcalls->OfChar) {
         val = (double)(uint64)vm->upcalls->charValue->getInt16Field(obj);
-      } else if (value == AssessorDesc::dShort) {
+      } else if (value == vm->upcalls->OfShort) {
         val = (double)(sint16)vm->upcalls->shortValue->getInt16Field(obj);
-      } else if (value == AssessorDesc::dInt) {
+      } else if (value == vm->upcalls->OfInt) {
         val = (double)(sint32)vm->upcalls->intValue->getInt32Field(obj);
-      } else if (value == AssessorDesc::dLong) {
+      } else if (value == vm->upcalls->OfLong) {
         val = (double)(sint64)vm->upcalls->longValue->getLongField(obj);
       } else {
         vm->illegalArgumentException("");
@@ -355,17 +355,17 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
       ((double*)buf)[0] = val;
       buf += 2;
       return;
-    } else if (funcs == AssessorDesc::dLong) {
+    } else if (prim->isLong()) {
       sint64 val = 0;
-      if (value == AssessorDesc::dByte) {
+      if (value == vm->upcalls->OfByte) {
         val = (sint64)vm->upcalls->byteValue->getInt8Field(obj);
-      } else if (value == AssessorDesc::dChar) {
+      } else if (value == vm->upcalls->OfChar) {
         val = (sint64)(uint64)vm->upcalls->charValue->getInt16Field(obj);
-      } else if (value == AssessorDesc::dShort) {
+      } else if (value == vm->upcalls->OfShort) {
         val = (sint64)vm->upcalls->shortValue->getInt16Field(obj);
-      } else if (value == AssessorDesc::dInt) {
+      } else if (value == vm->upcalls->OfInt) {
         val = (sint64)vm->upcalls->intValue->getInt32Field(obj);
-      } else if (value == AssessorDesc::dLong) {
+      } else if (value == vm->upcalls->OfLong) {
         val = (sint64)vm->upcalls->intValue->getLongField(obj);
       } else {
         vm->illegalArgumentException("");

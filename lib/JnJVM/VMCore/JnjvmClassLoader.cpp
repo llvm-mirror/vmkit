@@ -267,8 +267,11 @@ UserCommonClass* JnjvmClassLoader::loadBaseClass(const UTF8* name,
     UserCommonClass* cl = loadName(componentName, false, true);
     return cl;
   } else {
-    AssessorDesc* ass = AssessorDesc::byteIdToPrimitive(name->elements[start]);
-    return ass ? ass->primitiveClass : 0;
+    Classpath* upcalls = bootstrapLoader->upcalls;
+    UserClassPrimitive* prim = 
+      AssessorDesc::byteIdToPrimitive(name->elements[start], upcalls);
+    assert(prim && "No primitive found");
+    return prim;
   }
 }
 
@@ -318,11 +321,14 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name,
 Typedef* JnjvmClassLoader::constructType(const UTF8* name) {
   Typedef* res = javaTypes->lookup(name);
   if (res == 0) {
-    res = new Typedef(name, this);
+    res = Typedef::constructType(name, hashUTF8, isolate);
     javaTypes->lock->lock();
     Typedef* tmp = javaTypes->lookup(name);
     if (tmp == 0) javaTypes->hash(name, res);
-    else res = tmp;
+    else {
+      delete res;
+      res = tmp;
+    }
     javaTypes->lock->unlock();
   }
   return res;
@@ -335,7 +341,10 @@ Signdef* JnjvmClassLoader::constructSign(const UTF8* name) {
     javaSignatures->lock->lock();
     Signdef* tmp = javaSignatures->lookup(name);
     if (tmp == 0) javaSignatures->hash(name, res);
-    else res = tmp;
+    else {
+      delete res;
+      res = tmp;
+    }
     javaSignatures->lock->unlock();
   }
   return res;
