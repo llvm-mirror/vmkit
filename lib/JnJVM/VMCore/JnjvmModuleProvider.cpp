@@ -118,7 +118,7 @@ void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
   void* res = mvm::jit::executionEngine->getPointerToGlobal(func);
   mvm::Code* m = mvm::jit::getCodeFromPointer(res);
   if (m) m->setMetaInfo(meth);
-
+  func->deleteBody();
 /*  
   if (meth->name->equals(
       JavaThread::get()->isolate->bootstrapLoader->asciizConstructUTF8("getDeclaredConstructors"))) {
