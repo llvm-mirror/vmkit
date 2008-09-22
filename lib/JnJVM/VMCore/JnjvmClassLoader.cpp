@@ -397,7 +397,7 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
       if (top != 0) {
         memcpy(buf, cur, top);
         buf[top] = 0;
-        char* rp = (char*)malloc(PATH_MAX);
+        char* rp = (char*)alloca(PATH_MAX);
         memset(rp, 0, PATH_MAX);
         rp = realpath(buf, rp);
         if (rp[PATH_MAX - 1] == 0 && strlen(rp) != 0) {
@@ -410,11 +410,9 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
             temp[len] = Jnjvm::dirSeparator[0];
             temp[len + 1] = 0;
             bootClasspath.push_back(temp);
-            free(rp);
           } else {
             ArrayUInt8* bytes =
               Reader::openFile(this, rp);
-            free(rp);
             if (bytes) {
               ZipArchive *archive = new ZipArchive(bytes);
               if (archive) {
@@ -422,9 +420,7 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
               }
             }
           }
-        } else {
-          free(rp);
-        }
+        } 
       }
       cur = cur + top + 1;
       top = 0;
