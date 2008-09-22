@@ -38,15 +38,12 @@ Jnjvm* NativeUtil::myVM(JNIEnv* env) {
 #define PRE "Java_"
 #define PRE_LEN 5
 
-static char* jniConsFromMeth(CommonClass* cl, JavaMethod* meth) {
+static char* jniConsFromMeth(CommonClass* cl, JavaMethod* meth, char* buf) {
   const UTF8* jniConsClName = cl->name;
   const UTF8* jniConsName = meth->name;
-  const UTF8* jniConsType = meth->type;
   sint32 clen = jniConsClName->size;
   sint32 mnlen = jniConsName->size;
-  sint32 mtlen = jniConsType->size;
 
-  char* buf = (char*)malloc(3 + PRE_LEN + mnlen + clen + (mtlen << 1));
   uint32 cur = 0;
   char* ptr = &(buf[PRE_LEN]);
   
@@ -75,15 +72,12 @@ static char* jniConsFromMeth(CommonClass* cl, JavaMethod* meth) {
 
 }
 
-static char* jniConsFromMeth2(CommonClass* cl, JavaMethod* meth) {
+static char* jniConsFromMeth2(CommonClass* cl, JavaMethod* meth, char* buf) {
   const UTF8* jniConsClName = cl->name;
   const UTF8* jniConsName = meth->name;
-  const UTF8* jniConsType = meth->type;
   sint32 clen = jniConsClName->size;
   sint32 mnlen = jniConsName->size;
-  sint32 mtlen = jniConsType->size;
 
-  char* buf = (char*)malloc(3 + PRE_LEN + mnlen + clen + (mtlen << 1));
   uint32 cur = 0;
   char* ptr = &(buf[PRE_LEN]);
   
@@ -117,15 +111,13 @@ static char* jniConsFromMeth2(CommonClass* cl, JavaMethod* meth) {
 
 }
 
-static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth) {
+static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth, char* buf) {
   const UTF8* jniConsClName = cl->name;
   const UTF8* jniConsName = meth->name;
   const UTF8* jniConsType = meth->type;
   sint32 clen = jniConsClName->size;
   sint32 mnlen = jniConsName->size;
-  sint32 mtlen = jniConsType->size;
 
-  char* buf = (char*)malloc(3 + PRE_LEN + mnlen + clen + (mtlen << 1));
   uint32 cur = 0;
   char* ptr = &(buf[PRE_LEN]);
   
@@ -183,7 +175,6 @@ static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth) {
   return buf;
 
 }
-#undef PRE_LEN
 
 static void* loadName(char* buf, bool& jnjvm) {
   void* res = dlsym(SELF_HANDLE, buf);
@@ -205,13 +196,21 @@ static void* loadName(char* buf, bool& jnjvm) {
 }
 
 void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
-  char* buf = jniConsFromMeth(cl, meth);
+  const UTF8* jniConsClName = cl->name;
+  const UTF8* jniConsName = meth->name;
+  const UTF8* jniConsType = meth->type;
+  sint32 clen = jniConsClName->size;
+  sint32 mnlen = jniConsName->size;
+  sint32 mtlen = jniConsType->size;
+
+  char* buf = (char*)alloca(3 + PRE_LEN + mnlen + clen + (mtlen << 1));
+  jniConsFromMeth(cl, meth, buf);
   void* res = loadName(buf, jnjvm);
   if (!res) {
-    buf = jniConsFromMeth2(cl, meth);
+    buf = jniConsFromMeth2(cl, meth, buf);
     res = loadName(buf, jnjvm);
     if (!res) {
-      buf = jniConsFromMeth3(cl, meth);
+      buf = jniConsFromMeth3(cl, meth, buf);
       res = loadName(buf, jnjvm);
       if (!res) {
         printf("Native function %s not found. Probably "
@@ -222,9 +221,10 @@ void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
       }
     }
   }
-  free(buf);
   return res;
 }
+
+#undef PRE_LEN
 
 UserCommonClass* NativeUtil::resolvedImplClass(jclass clazz, bool doClinit) {
   Jnjvm* vm = JavaThread::get()->isolate;
