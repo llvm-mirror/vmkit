@@ -357,6 +357,8 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
   void* codePtr = mvm::jit::executionEngine->getPointerToGlobal(func);
   ((void**)res)[VT_TRACER_OFFSET] = codePtr;
   
+  func->deleteBody();
+
   if (!stat) {
     LCI->virtualTracerFunction = func;
   } else {
@@ -812,6 +814,7 @@ Function* LLVMSignatureInfo::getVirtualBuf() {
     virtualBufFunction = createFunctionCallBuf(true);
     signature->setVirtualCallBuf((intptr_t)
       mvm::jit::executionEngine->getPointerToGlobal(virtualBufFunction));
+    virtualBufFunction->deleteBody();
   }
   return virtualBufFunction;
 }
@@ -823,6 +826,7 @@ Function* LLVMSignatureInfo::getVirtualAP() {
     virtualAPFunction = createFunctionCallAP(true);
     signature->setVirtualCallAP((intptr_t)
       mvm::jit::executionEngine->getPointerToGlobal(virtualAPFunction));
+    virtualAPFunction->deleteBody();
   }
   return virtualAPFunction;
 }
@@ -834,6 +838,7 @@ Function* LLVMSignatureInfo::getStaticBuf() {
     staticBufFunction = createFunctionCallBuf(false);
     signature->setStaticCallBuf((intptr_t)
       mvm::jit::executionEngine->getPointerToGlobal(staticBufFunction));
+    staticBufFunction->deleteBody();
   }
   return staticBufFunction;
 }
@@ -845,6 +850,7 @@ Function* LLVMSignatureInfo::getStaticAP() {
     staticAPFunction = createFunctionCallAP(false);
     signature->setStaticCallAP((intptr_t)
       mvm::jit::executionEngine->getPointerToGlobal(staticAPFunction));
+    staticAPFunction->deleteBody();
   }
   return staticAPFunction;
 }
