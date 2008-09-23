@@ -267,7 +267,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
                          currentBlock);
   
   if (returnType != Type::VoidTy)
-    llvm::ReturnInst::Create(result, currentBlock);
+    llvm::ReturnInst::Create(endNode, currentBlock);
   else
     llvm::ReturnInst::Create(currentBlock);
   
@@ -523,8 +523,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   Function* func = LMI->getMethod();
   llvmFunction = parentFunction;
 
-  const FunctionType *funcType = func->getFunctionType();
-  returnType = funcType->getReturnType();
+  returnType = func->getReturnType();
   endBlock = createBasicBlock("end");
 
   llvmFunction = parentFunction;
@@ -555,10 +554,10 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
 #endif
   std::vector<Typedef*>::iterator type = 
     compilingMethod->getSignature()->args.begin();
-  Function::arg_iterator i = func->arg_begin(); 
+  std::vector<Value*>::iterator i = args.begin(); 
 
   if (isVirtual(compilingMethod->access)) {
-    new StoreInst(i, objectLocals[0], false, currentBlock);
+    new StoreInst(*i, objectLocals[0], false, currentBlock);
     ++i;
     ++index;
     ++count;
@@ -568,26 +567,26 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   for (;count < max; ++i, ++index, ++count, ++type) {
     
     const Typedef* cur = *type;
-    const Type* curType = i->getType();
+    const Type* curType = (*i)->getType();
 
     if (curType == Type::Int64Ty){
-      new StoreInst(i, longLocals[index], false, currentBlock);
+      new StoreInst(*i, longLocals[index], false, currentBlock);
       ++index;
     } else if (cur->isUnsigned()) {
-      new StoreInst(new ZExtInst(i, Type::Int32Ty, "", currentBlock),
+      new StoreInst(new ZExtInst(*i, Type::Int32Ty, "", currentBlock),
                     intLocals[index], false, currentBlock);
     } else if (curType == Type::Int8Ty || curType == Type::Int16Ty) {
-      new StoreInst(new SExtInst(i, Type::Int32Ty, "", currentBlock),
+      new StoreInst(new SExtInst(*i, Type::Int32Ty, "", currentBlock),
                     intLocals[index], false, currentBlock);
     } else if (curType == Type::Int32Ty) {
-      new StoreInst(i, intLocals[index], false, currentBlock);
+      new StoreInst(*i, intLocals[index], false, currentBlock);
     } else if (curType == Type::DoubleTy) {
-      new StoreInst(i, doubleLocals[index], false, currentBlock);
+      new StoreInst(*i, doubleLocals[index], false, currentBlock);
       ++index;
     } else if (curType == Type::FloatTy) {
-      new StoreInst(i, floatLocals[index], false, currentBlock);
+      new StoreInst(*i, floatLocals[index], false, currentBlock);
     } else {
-      new StoreInst(i, objectLocals[index], false, currentBlock);
+      new StoreInst(*i, objectLocals[index], false, currentBlock);
     }
   }
 
