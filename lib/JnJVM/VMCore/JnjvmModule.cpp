@@ -8,7 +8,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/CallingConv.h"
-#include "llvm/ParameterAttributes.h"
 #include "llvm/Support/MutexGuard.h"
 
 
