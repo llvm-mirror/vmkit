@@ -10,7 +10,7 @@ LEVEL = ../..
 
 include $(LEVEL)/Makefile.config
 
-DIRS = VMCore
+DIRS = LLVMRuntime VMCore
 
 ifeq ($(WITH_N3_MONO), 1) 
     DIRS += Mono
