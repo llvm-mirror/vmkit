@@ -112,18 +112,12 @@ const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
 }
 
 char* UTF8::UTF8ToAsciiz() const {
-  /*mvm::NativeString* buf = mvm::NativeString::alloc(size + 1);
+  mvm::NativeString* buf = mvm::NativeString::alloc(size + 1);
   for (sint32 i = 0; i < size; ++i) {
     buf->setAt(i, elements[i]);
   }
   buf->setAt(size, 0);
-  return buf->cString();*/
-  char* buf = (char*)malloc(size + 1);
-  for (sint32 i = 0; i < size; ++i) {
-    buf[i] =  elements[i];
-  }
-  buf[size] = 0;
-  return buf;
+  return buf->cString();
 }
 
 /// Currently, this uses malloc/free. This should use a custom memory pool.
@@ -134,6 +128,7 @@ void* UTF8::operator new(size_t sz, sint32 size) {
 void UTF8::operator delete(void* obj) {
   free(obj);
 }
+
 
 const UTF8* UTF8::acons(sint32 n, UserClassArray* cl,
                         JavaAllocator* allocator) {
