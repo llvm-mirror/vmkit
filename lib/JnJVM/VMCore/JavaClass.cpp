@@ -301,7 +301,7 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
   display = (CommonClass**)malloc(2 * sizeof(CommonClass*));
   display[0] = ClassArray::SuperArray;
   display[1] = this;
-  access = ACC_FINAL | ACC_ABSTRACT;
+  access = ACC_FINAL | ACC_ABSTRACT | ACC_PUBLIC;
   if (base->isPrimitive()) {
     virtualVT = JavaArray::VT;
   } else {
@@ -736,6 +736,8 @@ void Class::readClass() {
   ctpInfo = new JavaConstantPool(this, reader);
   access = reader.readU2();
   
+  if (!isPublic(access)) access |= ACC_PRIVATE;
+
   const UTF8* thisClassName = 
     ctpInfo->resolveClassName(reader.readU2());
   
