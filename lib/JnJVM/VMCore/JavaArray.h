@@ -137,8 +137,18 @@ public:
   const UTF8* javaToInternal(UTF8Map* map, unsigned int start,
                              unsigned int len) const;
   
+  /// checkedJavaToInternal - Replaces all '/' into '.'. Returns null if the
+  /// UTF8 contains a '/', as Java does not allow things like
+  /// Class.forName("java/lang/Object")
+  const UTF8* checkedJavaToInternal(UTF8Map* map, unsigned int start,
+                                    unsigned int len) const;
+  
   /// UTF8ToAsciiz - Allocates a C string with the contents of this UTF8.
   char* UTF8ToAsciiz() const;
+  
+  char* printString() const {
+    return UTF8ToAsciiz();
+  }
 
   /// extract - Creates an UTF8 by extracting the contents at the given size
   /// of this.

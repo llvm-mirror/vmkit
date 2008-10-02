@@ -88,6 +88,19 @@ const UTF8* UTF8::javaToInternal(UTF8Map* map, unsigned int start,
   return map->lookupOrCreateReader(java, len);
 }
 
+const UTF8* UTF8::checkedJavaToInternal(UTF8Map* map, unsigned int start,
+                                        unsigned int len) const {
+  uint16* java = (uint16*) alloca(len * sizeof(uint16));
+  for (uint32 i = 0; i < len; i++) {
+    uint16 cur = elements[start + i];
+    if (cur == '.') java[i] = '/';
+    else if (cur == '/') return 0;
+    else java[i] = cur;
+  }
+
+  return map->lookupOrCreateReader(java, len);
+}
+
 const UTF8* UTF8::internalToJava(UTF8Map* map, unsigned int start,
                                  unsigned int len) const {
   uint16* java = (uint16*) alloca(len * sizeof(uint16));
@@ -112,12 +125,21 @@ const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
 }
 
 char* UTF8::UTF8ToAsciiz() const {
+#ifndef DEBUG
   mvm::NativeString* buf = mvm::NativeString::alloc(size + 1);
   for (sint32 i = 0; i < size; ++i) {
     buf->setAt(i, elements[i]);
   }
   buf->setAt(size, 0);
   return buf->cString();
+#else
+  char* buf = (char*)malloc(size + 1);
+  for (sint32 i = 0; i < size; ++i) {
+    buf[i] =  elements[i];
+  }
+  buf[size] = 0;
+  return buf;
+#endif
 }
 
 /// Currently, this uses malloc/free. This should use a custom memory pool.
