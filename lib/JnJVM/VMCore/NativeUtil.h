@@ -29,13 +29,13 @@ public:
 
   static Jnjvm* myVM(JNIEnv* env);
   static void* nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm);
-  static CommonClass* resolvedImplClass(jclass clazz, bool doClinit);
+  static UserCommonClass* resolvedImplClass(jclass clazz, bool doClinit);
   static void decapsulePrimitive(Jnjvm *vm, void**&buf, JavaObject* obj,
                                  Typedef* signature);
 
   static JavaObject* getClassType(JnjvmClassLoader* loader, Typedef* type);
   static ArrayObject* getParameterTypes(JnjvmClassLoader* loader, JavaMethod* meth);
-  static ArrayObject* getExceptionTypes(JavaMethod* meth);
+  static ArrayObject* getExceptionTypes(UserClass* cl, JavaMethod* meth);
 
 };
 

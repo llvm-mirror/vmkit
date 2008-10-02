@@ -159,7 +159,7 @@ LockObj* JavaObject::changeToFatlock() {
 
 void JavaObject::print(mvm::PrintBuffer* buf) const {
   buf->write("JavaObject<");
-  CommonClass::printClassName(classOf->name, buf);
+  CommonClass::printClassName(classOf->getName(), buf);
   buf->write(">");
 }
 

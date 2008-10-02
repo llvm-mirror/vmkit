@@ -31,6 +31,8 @@ class ArrayUInt8;
 class AssessorDesc;
 class Enveloppe;
 class Class;
+class ClassArray;
+class JavaArray;
 class JavaConstantPool;
 class JavaField;
 class JavaJIT;
@@ -47,12 +49,13 @@ class UTF8;
 ///
 typedef enum JavaState {
   loaded = 0,       /// The .class file has been found.
-  classRead,    /// The .class file has been read.
-  prepared,     /// The parents of this class has been resolved.
-  resolved,     /// The class has been resolved.
-  clinitParent, /// The class is cliniting its parents.
-  inClinit,     /// The class is cliniting.
-  ready         /// The class is ready to be used.
+  classRead = 1,    /// The .class file has been read.
+  prepared = 2,     /// The parents of this class has been resolved.
+  resolved = 3,     /// The class has been resolved.
+  clinitParent = 4, /// The class is cliniting its parents.
+  inClinit = 5,     /// The class is cliniting.
+  ready = 6,        /// The class is ready to be used.
+  dontuseenums = 0xffffffff /// dummy value to force the enum to be int32
 }JavaState;
 
 
@@ -118,6 +121,9 @@ public:
 /// class loader finalizer method will be defined.
 ///
 class CommonClass : public mvm::Object {
+#ifdef MULTIPLE_VM
+friend class UserCommonClass;
+#endif
 private:
 
 
@@ -136,7 +142,7 @@ public:
 
   FieldCmp(const UTF8* n, const UTF8* t) : name(n), type(t) {}
   
-  inline bool operator<(const FieldCmp &cmp) const;
+  bool operator<(const FieldCmp &cmp) const;
 };
 
 public:
@@ -171,6 +177,9 @@ public:
   ///
   uint32 depth;
 
+  /// status - The loading/resolve/initialization state of the class.
+  ///
+  JavaState status;
 
 //===----------------------------------------------------------------------===//
 //
@@ -178,7 +187,15 @@ public:
 //
 //===----------------------------------------------------------------------===//
   
-
+  
+  uint32 getVirtualSize() {
+    return virtualSize;
+  }
+   
+  VirtualTable* getVirtualVT() {
+    return virtualVT;
+  }
+  
   /// virtualTableSize - The size of the virtual table of this class.
   ///
   uint32 virtualTableSize;
@@ -187,40 +204,95 @@ public:
   ///
   uint32 access;
   
+  uint32 getAccess() {
+    return access;
+  }
+
   /// isArray - Is the class an array class?
   ///
-  bool isArray;
+  bool array;
   
+  bool isArray() {
+    return array;
+  }
+
+  bool primitive;
+
   /// isPrimitive - Is the class a primitive class?
   ///
-  bool isPrimitive;
+  bool isPrimitive() {
+    return primitive;
+  }
+  
+  /// isInterface - Is the class an interface?
+  ///
+  bool isInterface() {
+    return jnjvm::isInterface(access);
+  }
+  
+  /// asClass - Returns the class as a user-defined class
+  /// if it is not a primitive or an array.
+  UserClass* asClass() {
+    if (!primitive && !array) return (UserClass*)this;
+    return 0;
+  }
+  
+  /// asPrimitiveClass - Returns the class if it's a primitive class.
+  ///
+  UserClassPrimitive* asPrimitiveClass() {
+    if (primitive) return (UserClassPrimitive*)this;
+    return 0;
+  }
+  
+  /// asArrayClass - Returns the class if it's an array class.
+  ///
+  UserClassArray* asArrayClass() {
+    if (array) return (UserClassArray*)this;
+    return 0;
+  }
+  
+  /// interfaces - The interfaces this class implements.
+  ///
+  std::vector<Class*> interfaces;
+  
+  std::vector<Class*> * getInterfaces() {
+    return &interfaces;
+  }
   
   /// name - The name of the class.
   ///
   const UTF8* name;
   
-  /// status - The loading/resolve/initialization state of the class.
-  ///
-  JavaState status;
-  
+  const UTF8* getName() {
+    return name;
+  }
+ 
   /// super - The parent of this class.
   ///
   CommonClass * super;
+  
+  CommonClass* getSuper() {
+    return super;
+  }
 
   /// superUTF8 - The name of the parent of this class.
   ///
   const UTF8* superUTF8;
-  
-  /// interfaces - The interfaces this class implements.
-  ///
-  std::vector<Class*> interfaces;
+
+  const UTF8* getSuperUTF8() {
+    return superUTF8;
+  }
 
   /// interfacesUTF8 - The names of the interfaces this class implements.
   ///
   std::vector<const UTF8*> interfacesUTF8;
   
+  std::vector<const UTF8*>* getInterfacesUTF8() {
+    return &interfacesUTF8;
+  }
+
   /// lockVar - When multiple threads want to load/resolve/initialize a class,
-  /// they must be synchronized so that these steps are only performned once
+  /// they must be synchronized so that these steps are only performed once
   /// for a given class.
   mvm::Lock* lockVar;
 
@@ -267,6 +339,11 @@ public:
   ///
   method_map staticMethods;
   
+  field_map* getStaticFields() { return &staticFields; }
+  field_map* getVirtualFields() { return &virtualFields; }
+  method_map* getStaticMethods() { return &staticMethods; }
+  method_map* getVirtualMethods() { return &virtualMethods; }
+
   /// constructMethod - Add a new method in this class method map.
   ///
   JavaMethod* constructMethod(const UTF8* name, const UTF8* type,
@@ -317,23 +394,24 @@ public:
   /// Do not throw if the method is not found.
   ///
   JavaMethod* lookupMethodDontThrow(const UTF8* name, const UTF8* type,
-                                    bool isStatic, bool recurse);
+                                    bool isStatic, bool recurse, Class*& cl);
   
   /// lookupMethod - Lookup a method and throw an exception if not found.
   ///
   JavaMethod* lookupMethod(const UTF8* name, const UTF8* type, bool isStatic,
-                           bool recurse);
+                           bool recurse, Class*& cl);
   
   /// lookupFieldDontThrow - Lookup a field in the field map of this class. Do
   /// not throw if the field is not found.
   ///
   JavaField* lookupFieldDontThrow(const UTF8* name, const UTF8* type,
-                                  bool isStatic, bool recurse);
+                                  bool isStatic, bool recurse,
+                                  CommonClass*& definingClass);
   
   /// lookupField - Lookup a field and throw an exception if not found.
   ///
   JavaField* lookupField(const UTF8* name, const UTF8* type, bool isStatic,
-                         bool recurse);
+                         bool recurse, CommonClass*& definingClass);
 
   /// print - Print the class for debugging purposes.
   ///
@@ -377,29 +455,28 @@ public:
   /// getClassDelegatee - Return the java/lang/Class representation of this
   /// class.
   ///
-  JavaObject* getClassDelegatee(JavaObject* pd = 0);
+  JavaObject* getClassDelegatee(Jnjvm* vm, JavaObject* pd = 0);
 
   /// resolveClass - If the class has not been resolved yet, resolve it.
   ///
   void resolveClass();
 
-#ifndef MULTIPLE_VM
+  /// initialiseClass - If the class has not been initialized yet,
+  /// initialize it.
+  ///
+  void initialiseClass(Jnjvm* vm);
+  
+
   /// getStatus - Get the resolution/initialization status of this class.
   ///
-  JavaState* getStatus() {
-    return &status;
+  JavaState getStatus() {
+    return status;
   }
   /// isReady - Has this class been initialized?
   ///
   bool isReady() {
     return status >= inClinit;
   }
-#else
-  JavaState* getStatus();
-  bool isReady() {
-    return *getStatus() >= inClinit;
-  }
-#endif
 
   /// isResolved - Has this class been resolved?
   ///
@@ -432,16 +509,18 @@ public:
     return static_cast<Ty*>(JInfo);
   }
 
-#ifdef MULTIPLE_VM
-  bool isSharedClass() {
-    return classLoader == JnjvmClassLoader::sharedLoader;
-  }
-#endif
-  
   void getDeclaredConstructors(std::vector<JavaMethod*>& res, bool publicOnly);
   void getDeclaredMethods(std::vector<JavaMethod*>& res, bool publicOnly);
   void getDeclaredFields(std::vector<JavaField*>& res, bool publicOnly);
+  void setInterfaces(std::vector<Class*> I) {
+    interfaces = I;
+  }
+  void setSuper(CommonClass* S) {
+    super = S;
+  }
   
+  UserClassPrimitive* toPrimitive(Jnjvm* vm) const;
+
 };
 
 /// ClassPrimitive - This class represents internal classes for primitive
@@ -449,7 +528,10 @@ public:
 ///
 class ClassPrimitive : public CommonClass {
 public:
-  ClassPrimitive(JnjvmClassLoader* loader, const UTF8* name);
+  ClassPrimitive(JnjvmClassLoader* loader, const UTF8* name, uint32 nb);
+
+  static UserClassPrimitive* byteIdToPrimitive(char id, Classpath* upcalls);
+
 };
 
 
@@ -482,7 +564,8 @@ public:
   /// attributs - JVM attributes of this class.
   ///
   std::vector<Attribut*> attributs;
-  
+ 
+#ifndef MULTIPLE_VM
   /// innerClasses - The inner classes of this class.
   ///
   std::vector<Class*> innerClasses;
@@ -490,10 +573,15 @@ public:
   /// outerClass - The outer class, if this class is an inner class.
   ///
   Class* outerClass;
+#endif
 
   /// innerAccess - The access of this class, if this class is an inner class.
   ///
   uint32 innerAccess;
+
+  void setInnerAccess(uint32 access) {
+    innerAccess = access;
+  }
 
   /// innerOuterResolved - Is the inner/outer resolution done?
   ///
@@ -506,10 +594,25 @@ public:
   /// staticVT - The virtual table of the static instance of this class.
   ///
   VirtualTable* staticVT;
+  
+  uint32 getStaticSize() {
+    return staticSize;
+  }
+  
+  VirtualTable* getStaticVT() {
+    return staticVT;
+  }
 
+
+#ifndef MULTIPLE_VM
   /// doNew - Allocates a Java object whose class is this class.
   ///
   JavaObject* doNew(Jnjvm* vm);
+#endif
+  
+  /// resolveStaticClass - Resolve the static type of the class.
+  ///
+  void resolveStaticClass();
 
   /// print - Prints a string representation of this class in the buffer.
   ///
@@ -532,20 +635,16 @@ public:
   ///
 #ifndef MULTIPLE_VM
   JavaObject* _staticInstance;
-  JavaObject* staticInstance() {
+  
+  JavaObject* getStaticInstance() {
     return _staticInstance;
   }
-
-  /// createStaticInstance - Create the static instance of this class. This is
-  /// a no-op in a single environment because it is created only once when
-  /// creating the static type of the class. In a multiple environment, it is
-  /// called on each initialization of the class.
-  ///
-  void createStaticInstance() { }
-#else
-  JavaObject* staticInstance();
-  void createStaticInstance();
+  
+  void setStaticInstance(JavaObject* val) {
+    _staticInstance = val;
+  }
 #endif
+
   
   /// Class - Create a class in the given virtual machine and with the given
   /// name.
@@ -580,13 +679,14 @@ public:
   JavaConstantPool* getConstantPool() {
     return ctpInfo;
   }
-  
+
   ArrayUInt8* getBytes() {
     return bytes;
   }
   
   void resolveInnerOuterClasses();
 
+#ifndef MULTIPLE_VM
   Class* getOuterClass() {
     return outerClass;
   }
@@ -594,6 +694,9 @@ public:
   std::vector<Class*>* getInnerClasses() {
     return &innerClasses;
   }
+#endif
+
+   
 };
 
 /// ClassArray - This class represents Java array classes.
@@ -609,39 +712,25 @@ public:
   ///
   CommonClass*  _baseClass;
 
-  /// _funcs - The type of the base class of the array (primitive or
-  /// reference). Null if not resolved.
-  ///
-  AssessorDesc* _funcs;
-
-  /// resolveComponent - Resolve the array class. The base class and the
-  /// AssessorDesc are resolved.
-  ///
-  void resolveComponent();
-  
   /// baseClass - Get the base class of this array class. Resolve the array
   /// class if needed.
   ///
   CommonClass* baseClass() {
-    if (_baseClass == 0)
-      resolveComponent();
     return _baseClass;
   }
 
-  /// funcs - Get the type of the base class/ Resolve the array if needed.
-  AssessorDesc* funcs() {
-    if (_funcs == 0)
-      resolveComponent();
-    return _funcs;
-  }
   
+  /// funcs - Get the type of the base class/ Resolve the array if needed.
+  JavaArray* doNew(sint32 n, Jnjvm* vm);
+
   /// ClassArray - Empty constructor for VT.
   ///
   ClassArray() {}
 
   /// ClassArray - Construct a Java array class with the given name.
   ///
-  ClassArray(JnjvmClassLoader* loader, const UTF8* name);
+  ClassArray(JnjvmClassLoader* loader, const UTF8* name,
+             UserCommonClass* baseClass);
   
 
   /// arrayLoader - Return the class loader of the class with the name 'name'.
@@ -662,12 +751,7 @@ public:
   ///
   virtual void TRACER;
 
-  /// SuperArray - The super class of array classes.
-  ///
   static CommonClass* SuperArray;
-
-  /// InterfacesArray - The interfaces that array classes implement.
-  ///
   static std::vector<Class*> InterfacesArray;
 };
 
@@ -755,62 +839,62 @@ public:
 //===----------------------------------------------------------------------===//
   
   /// This class of methods takes a variable argument list.
-  uint32 invokeIntSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
-  float invokeFloatSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
-  double invokeDoubleSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
-  sint64 invokeLongSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
-  JavaObject* invokeJavaObjectSpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap);
+  uint32 invokeIntSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
+  float invokeFloatSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
+  double invokeDoubleSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
+  sint64 invokeLongSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
+  JavaObject* invokeJavaObjectSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
   
-  uint32 invokeIntVirtualAP(Jnjvm* vm, JavaObject* obj, va_list ap);
-  float invokeFloatVirtualAP(Jnjvm* vm, JavaObject* obj, va_list ap);
-  double invokeDoubleVirtualAP(Jnjvm* vm, JavaObject* obj, va_list ap);
-  sint64 invokeLongVirtualAP(Jnjvm* vm, JavaObject* obj, va_list ap);
-  JavaObject* invokeJavaObjectVirtualAP(Jnjvm* vm, JavaObject* obj, va_list ap);
+  uint32 invokeIntVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
+  float invokeFloatVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
+  double invokeDoubleVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
+  sint64 invokeLongVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
+  JavaObject* invokeJavaObjectVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
   
-  uint32 invokeIntStaticAP(Jnjvm* vm, va_list ap);
-  float invokeFloatStaticAP(Jnjvm* vm, va_list ap);
-  double invokeDoubleStaticAP(Jnjvm* vm, va_list ap);
-  sint64 invokeLongStaticAP(Jnjvm* vm, va_list ap);
-  JavaObject* invokeJavaObjectStaticAP(Jnjvm* vm, va_list ap);
+  uint32 invokeIntStaticAP(Jnjvm* vm, UserClass*, va_list ap);
+  float invokeFloatStaticAP(Jnjvm* vm, UserClass*, va_list ap);
+  double invokeDoubleStaticAP(Jnjvm* vm, UserClass*, va_list ap);
+  sint64 invokeLongStaticAP(Jnjvm* vm, UserClass*, va_list ap);
+  JavaObject* invokeJavaObjectStaticAP(Jnjvm* vm, UserClass*, va_list ap);
 
   /// This class of methods takes a buffer which contain the arguments of the
   /// call.
-  uint32 invokeIntSpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf);
-  float invokeFloatSpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf);
-  double invokeDoubleSpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf);
-  sint64 invokeLongSpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf);
-  JavaObject* invokeJavaObjectSpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf);
+  uint32 invokeIntSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
+  float invokeFloatSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
+  double invokeDoubleSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
+  sint64 invokeLongSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
+  JavaObject* invokeJavaObjectSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
   
-  uint32 invokeIntVirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf);
-  float invokeFloatVirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf);
-  double invokeDoubleVirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf);
-  sint64 invokeLongVirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf);
-  JavaObject* invokeJavaObjectVirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf);
+  uint32 invokeIntVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
+  float invokeFloatVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
+  double invokeDoubleVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
+  sint64 invokeLongVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
+  JavaObject* invokeJavaObjectVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
   
-  uint32 invokeIntStaticBuf(Jnjvm* vm, void* buf);
-  float invokeFloatStaticBuf(Jnjvm* vm, void* buf);
-  double invokeDoubleStaticBuf(Jnjvm* vm, void* buf);
-  sint64 invokeLongStaticBuf(Jnjvm* vm, void* buf);
-  JavaObject* invokeJavaObjectStaticBuf(Jnjvm* vm, void* buf);
+  uint32 invokeIntStaticBuf(Jnjvm* vm, UserClass*, void* buf);
+  float invokeFloatStaticBuf(Jnjvm* vm, UserClass*, void* buf);
+  double invokeDoubleStaticBuf(Jnjvm* vm, UserClass*, void* buf);
+  sint64 invokeLongStaticBuf(Jnjvm* vm, UserClass*, void* buf);
+  JavaObject* invokeJavaObjectStaticBuf(Jnjvm* vm, UserClass*, void* buf);
 
   /// This class of methods is variadic.
-  uint32 invokeIntSpecial(Jnjvm* vm, JavaObject* obj, ...);
-  float invokeFloatSpecial(Jnjvm* vm, JavaObject* obj, ...);
-  double invokeDoubleSpecial(Jnjvm* vm, JavaObject* obj, ...);
-  sint64 invokeLongSpecial(Jnjvm* vm, JavaObject* obj, ...);
-  JavaObject* invokeJavaObjectSpecial(Jnjvm* vm, JavaObject* obj, ...);
+  uint32 invokeIntSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
+  float invokeFloatSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
+  double invokeDoubleSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
+  sint64 invokeLongSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
+  JavaObject* invokeJavaObjectSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
   
-  uint32 invokeIntVirtual(Jnjvm* vm, JavaObject* obj, ...);
-  float invokeFloatVirtual(Jnjvm* vm, JavaObject* obj, ...);
-  double invokeDoubleVirtual(Jnjvm* vm, JavaObject* obj, ...);
-  sint64 invokeLongVirtual(Jnjvm* vm, JavaObject* obj, ...);
-  JavaObject* invokeJavaObjectVirtual(Jnjvm* vm, JavaObject* obj, ...);
+  uint32 invokeIntVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
+  float invokeFloatVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
+  double invokeDoubleVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
+  sint64 invokeLongVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
+  JavaObject* invokeJavaObjectVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
   
-  uint32 invokeIntStatic(Jnjvm* vm, ...);
-  float invokeFloatStatic(Jnjvm* vm, ...);
-  double invokeDoubleStatic(Jnjvm* vm, ...);
-  sint64 invokeLongStatic(Jnjvm* vm, ...);
-  JavaObject* invokeJavaObjectStatic(Jnjvm* vm, ...);
+  uint32 invokeIntStatic(Jnjvm* vm, UserClass*, ...);
+  float invokeFloatStatic(Jnjvm* vm, UserClass*, ...);
+  double invokeDoubleStatic(Jnjvm* vm, UserClass*, ...);
+  sint64 invokeLongStatic(Jnjvm* vm, UserClass*, ...);
+  JavaObject* invokeJavaObjectStatic(Jnjvm* vm, UserClass*, ...);
   
   mvm::JITInfo* JInfo;
   template<typename Ty> 
@@ -881,7 +965,7 @@ public:
   /// initField - Init the value of the field in the given object. This is
   /// used for static fields which have a default value.
   ///
-  void initField(JavaObject* obj);
+  void initField(JavaObject* obj, Jnjvm* vm);
 
   /// lookupAttribut - Look up the attribut in the field's list of attributs.
   ///
@@ -893,46 +977,25 @@ public:
 
   /// getVritual*Field - Get a virtual field of an object.
   ///
-  #define GETVIRTUALFIELD(TYPE, TYPE_NAME) \
-  TYPE getVirtual##TYPE_NAME##Field(JavaObject* obj) { \
-    assert(*(classDef->getStatus()) >= inClinit); \
+  #define GETFIELD(TYPE, TYPE_NAME) \
+  TYPE get##TYPE_NAME##Field(JavaObject* obj) { \
+    assert(classDef->isResolved()); \
     void* ptr = (void*)((uint64)obj + ptrOffset); \
     return ((TYPE*)ptr)[0]; \
   }
 
-  /// getStatic*Field - Get a static field in the defining class.
+  /// set*Field - Set a field of an object.
   ///
-  #define GETSTATICFIELD(TYPE, TYPE_NAME) \
-  TYPE getStatic##TYPE_NAME##Field() { \
-    assert(*(classDef->getStatus()) >= inClinit); \
-    JavaObject* obj = classDef->staticInstance(); \
-    void* ptr = (void*)((uint64)obj + ptrOffset); \
-    return ((TYPE*)ptr)[0]; \
-  }
-
-  /// setVirtual*Field - Set a virtual of an object.
-  ///
-  #define SETVIRTUALFIELD(TYPE, TYPE_NAME) \
-  void setVirtual##TYPE_NAME##Field(JavaObject* obj, TYPE val) { \
-    assert(*(classDef->getStatus()) >= inClinit); \
-    void* ptr = (void*)((uint64)obj + ptrOffset); \
-    ((TYPE*)ptr)[0] = val; \
-  }
-
-  /// setStatic*Field - Set a static field in the defining class.
-  #define SETSTATICFIELD(TYPE, TYPE_NAME) \
-  void setStatic##TYPE_NAME##Field(TYPE val) { \
-    assert(*(classDef->getStatus()) >= inClinit); \
-    JavaObject* obj = classDef->staticInstance(); \
+  #define SETFIELD(TYPE, TYPE_NAME) \
+  void set##TYPE_NAME##Field(JavaObject* obj, TYPE val) { \
+    assert(classDef->isResolved()); \
     void* ptr = (void*)((uint64)obj + ptrOffset); \
     ((TYPE*)ptr)[0] = val; \
   }
 
   #define MK_ASSESSORS(TYPE, TYPE_NAME) \
-    GETVIRTUALFIELD(TYPE, TYPE_NAME) \
-    SETVIRTUALFIELD(TYPE, TYPE_NAME) \
-    GETSTATICFIELD(TYPE, TYPE_NAME) \
-    SETSTATICFIELD(TYPE, TYPE_NAME) \
+    GETFIELD(TYPE, TYPE_NAME) \
+    SETFIELD(TYPE, TYPE_NAME) \
 
   MK_ASSESSORS(float, Float);
   MK_ASSESSORS(double, Double);
@@ -958,5 +1021,10 @@ public:
 
 
 } // end namespace jnjvm
+
+
+#ifdef MULTIPLE_VM
+#include "IsolateCommonClass.h"
+#endif
 
 #endif

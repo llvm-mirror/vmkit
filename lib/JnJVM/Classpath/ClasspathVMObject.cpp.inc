@@ -31,13 +31,13 @@ jclass clazz,
                                                         jobject _src) {
   
   JavaObject* src = (JavaObject*)_src;
-  CommonClass* cl = src->classOf;
+  UserCommonClass* cl = src->classOf;
   uint64 size = 0;
-  if (cl->isArray) {
+  if (cl->isArray()) {
     size = sizeof(JavaArray) + ((JavaArray*)src)->size * 
-            ((ClassArray*)cl)->baseClass()->virtualSize;
+            ((UserClassArray*)cl)->baseClass()->getVirtualSize();
   } else {
-    size = cl->virtualSize;
+    size = cl->getVirtualSize();
   }
   JavaObject* res = (JavaObject*)
     JavaThread::get()->isolate->allocator.allocateObject(size, src->getVirtualTable());
@@ -52,8 +52,10 @@ JNIEnv *env,
 jclass clazz,
 #endif
                                                            jobject _obj) {
+  
   JavaObject* obj = (JavaObject*)_obj;
-  return (jobject)(obj->classOf->getClassDelegatee()); 
+  Jnjvm* vm = JavaThread::get()->isolate;
+  return (jobject)(obj->classOf->getClassDelegatee(vm)); 
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMObject_notifyAll(

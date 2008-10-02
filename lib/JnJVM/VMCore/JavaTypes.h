@@ -17,14 +17,20 @@
 
 namespace jnjvm {
 
+class Classpath;
 class ClassArray;
 class CommonClass;
 class JavaArray;
 class JavaJIT;
 class JavaObject;
 class Jnjvm;
+class JnjvmBootstrapLoader;
 class JnjvmClassLoader;
+class UserClassArray;
+class UserClassPrimitive;
+class UserCommonClass;
 class UTF8;
+class UTF8Map;
 
 #define VOID_ID 0
 #define BOOL_ID 1
@@ -35,188 +41,25 @@ class UTF8;
 #define FLOAT_ID 6
 #define LONG_ID 7
 #define DOUBLE_ID 8
-#define ARRAY_ID 9
-#define OBJECT_ID 10
+#define OBJECT_ID 9
+#define ARRAY_ID 10
 #define NUM_ASSESSORS 11
 
-typedef JavaArray* (*arrayCtor_t)(uint32 len, CommonClass* cl, Jnjvm* vm);
-
-
-/// AssessorDesc - Description of a Java assessor: these are the letters found
-/// in Java signatures, e.g. "I" or "(".
-///
-class AssessorDesc {
-public:
-  static VirtualTable *VT;
-  static const char I_TAB;
-  static const char I_END_REF;
-  static const char I_PARG;
-  static const char I_PARD;
-  static const char I_BYTE;
-  static const char I_CHAR;
-  static const char I_DOUBLE;
-  static const char I_FLOAT;
-  static const char I_INT;
-  static const char I_LONG;
-  static const char I_REF;
-  static const char I_SHORT;
-  static const char I_VOID;
-  static const char I_BOOL;
-  static const char I_SEP;
-  
-  /// doTrace - Is this assessor for garbage collected objects? True for
-  /// the "L" assessor and the "[" assessor.
-  ///
-  bool doTrace;
-
-  /// byteId - Letter reprensenting this assessor.
-  ///
-  char byteId;
-
-  /// nbb - Number of bytes of instances of this assessor (e.g. 4 for "I").
-  ///
-  uint32 nbb;
-
-  /// nbw - Number of words of instances if this assessor (e.g. 8 for "D").
-  ///
-  uint32 nbw;
-
-  /// numId - A byte identifier from 0 to the number of assessors.
-  ///
-  uint8 numId;
-
-  /// asciizName - The name of the assessor in asciiz, e.g. "void" for "V".
-  ///
-  const char* asciizName;
-  
-  /// UTF8Name - The name of the assessor in UTF8, e.g. "void" for "V".
-  ///
-  const UTF8* UTF8Name;
-
-  /// classType - The primitive Java class of this assessor. This class
-  /// is internal to the JVM.
-  ///
-  CommonClass* classType;
-
-  /// assocClassName - The associated class name, e.g. "java/lang/Integer" for
-  /// "I".
-  ///
-  const UTF8* assocClassName;
-  
-  /// arrayClass - The primitive array class of the assessor, e.g. I[] for "I".
-  ///
-  ClassArray* arrayClass;
-
-  /// arrayCtor - The constructor of an array of this assessor.
-  ///
-  arrayCtor_t arrayCtor;
-
-//===----------------------------------------------------------------------===//
-//
-// The set of assessors in Java. This set is unique and there are no other
-// assessors.
-//
-//===----------------------------------------------------------------------===//
-
-
-  /// dParg - The "(" assessor.
-  ///
-  static AssessorDesc* dParg;
-
-  /// dPard - The ")" assessor.
-  ///
-  static AssessorDesc* dPard;
-
-  /// dVoid - The "V" assessor.
-  ///
-  static AssessorDesc* dVoid;
-
-  /// dBool - The "Z" assessor.
-  ///
-  static AssessorDesc* dBool;
-
-  /// dByte - The "B" assessor.
-  ///
-  static AssessorDesc* dByte;
-
-  /// dChar - The "C" assessor.
-  ///
-  static AssessorDesc* dChar;
-
-  /// dShort - The "S" assessor.
-  ///
-  static AssessorDesc* dShort;
-
-  /// dInt - The "I" assessor.
-  ///
-  static AssessorDesc* dInt;
-
-  /// dFloat - The "F" assessor.
-  ///
-  static AssessorDesc* dFloat;
-
-  /// dLong - The "J" assessor.
-  ///
-  static AssessorDesc* dLong;
-
-  /// dDouble - The "D" assessor.
-  ///
-  static AssessorDesc* dDouble;
-
-  /// dTab - The "[" assessor.
-  ///
-  static AssessorDesc* dTab;
-
-  /// dRef - The "L" assessor.
-  ///
-  static AssessorDesc* dRef;
-  
-//===----------------------------------------------------------------------===//
-//
-// End of assessors.
-//
-//===----------------------------------------------------------------------===//
-
-  /// AssessorDesc - Construct an assessor.
-  ///
-  AssessorDesc(bool dt, char bid, uint32 nb, uint32 nw,
-               const char* name,
-               JnjvmClassLoader* loader, uint8 nid,
-               const char* assocName, ClassArray* cl,
-               arrayCtor_t ctor);
-
-
-  /// initialise - Construct all assessors.
-  ///
-  static void initialise(JnjvmClassLoader* loader);
-  
-
-  /// printString - Print the assessor for debugging purposes.
-  ///
-  const char* printString() const;
-
-  static void analyseIntern(const UTF8* name, uint32 pos,
-                            uint32 meth, AssessorDesc*& ass,
-                            uint32& ret);
-
-  static const UTF8* constructArrayName(JnjvmClassLoader* loader, AssessorDesc* ass,
-                                        uint32 steps, const UTF8* className);
-  
-  /*
-  static void introspectArrayName(const UTF8* utf8, uint32 start,
-                                  AssessorDesc*& ass, const UTF8*& res);
-  */
-  static void introspectArray(JnjvmClassLoader* loader, const UTF8* utf8,
-                              uint32 start, AssessorDesc*& ass,
-                              CommonClass*& res);
-
-  static AssessorDesc* arrayType(unsigned int t);
-  
-  static AssessorDesc* byteIdToPrimitive(const char id);
-  static AssessorDesc* classToPrimitive(CommonClass* cl);
-
-};
-
+static const char I_TAB = '[';
+static const char I_END_REF = ';';
+static const char I_PARG = '(';
+static const char I_PARD = ')';
+static const char I_BYTE = 'B';
+static const char I_CHAR = 'C';
+static const char I_DOUBLE = 'D';
+static const char I_FLOAT = 'F';
+static const char I_INT = 'I';
+static const char I_LONG = 'J';
+static const char I_REF = 'L';
+static const char I_SHORT = 'S';
+static const char I_VOID = 'V';
+static const char I_BOOL = 'Z';
+static const char I_SEP = '/';
 
 /// Typedef - Each class has a Typedef representation. A Typedef is also a class
 /// which has not been loaded yet. Typedefs are hashed on the name of the class.
@@ -229,21 +72,16 @@ public:
   /// in a Java signature, e.g. "Ljava/lang/Object;".
   ///
   const UTF8* keyName;
-
-  /// pseudoAssocClassName - The real name of the class this Typedef
-  /// represents, e.g. "java/lang/Object"
+  
+  /// humanPrintArgs - Prints the list of typedef in a human readable form.
   ///
-  const UTF8* pseudoAssocClassName;
+  static void humanPrintArgs(const std::vector<Typedef*>*,
+                             mvm::PrintBuffer* buf);
 
-  /// funcs - The assessor for this Typedef. All Typedef must have the dRef
-  /// or the dTab assessor, except the primive Typedefs.
+  /// tPrintBuf - Prints the name of the class this Typedef represents.
   ///
-  const AssessorDesc* funcs;
-
-  /// initialLoader - The loader that first loaded this typedef.
-  ///
-  JnjvmClassLoader* initialLoader;
-
+  virtual void tPrintBuf(mvm::PrintBuffer* buf) const = 0;
+  
   /// printString - Print the Typedef for debugging purposes.
   ///
   const char* printString() const;
@@ -251,22 +89,174 @@ public:
   /// assocClass - Given the loaded, try to load the class represented by this
   /// Typedef.
   ///
-  CommonClass* assocClass(JnjvmClassLoader* loader);
-
-  /// humanPrintArgs - Prints the list of typedef in a human readable form.
-  ///
-  static void humanPrintArgs(const std::vector<Typedef*>*,
-                             mvm::PrintBuffer* buf);
-  
+  virtual UserCommonClass* assocClass(JnjvmClassLoader* loader) const = 0;
+ 
   /// Typedef - Create a new Typedef.
   ///
-  Typedef(const UTF8* name, JnjvmClassLoader* loader);
+  static Typedef* constructType(const UTF8* name, UTF8Map* map, Jnjvm* vm);
+   
+  virtual bool trace() const = 0;
+  
+  virtual bool isPrimitive() const {
+    return false;
+  }
+  
+  virtual bool isReference() const {
+    return true;
+  }
+  
+  virtual bool isUnsigned() const {
+    return false;
+  }
+
+  virtual const UTF8* getName() const {
+    return keyName;
+  }
+
+  const UTF8* getKey() const {
+    return keyName;
+  }
+
+};
+
+class PrimitiveTypedef : public Typedef {
+private:
+  UserClassPrimitive* prim;
+  bool unsign;
+  char charId;
+  
+public:
   
   /// tPrintBuf - Prints the name of the class this Typedef represents.
   ///
-  void tPrintBuf(mvm::PrintBuffer* buf) const;
+  virtual void tPrintBuf(mvm::PrintBuffer* buf) const;
+  
+
+  virtual bool trace() const {
+    return false;
+  }
+  
+  virtual bool isPrimitive() const {
+    return true;
+  }
+  
+  virtual bool isReference() const {
+    return false;
+  }
+
+  virtual bool isUnsigned() const {
+    return unsign;
+  }
+
+  virtual UserCommonClass* assocClass(JnjvmClassLoader* loader) const {
+    return (UserCommonClass*)prim;
+  }
+
+  PrimitiveTypedef(const UTF8* name, UserClassPrimitive* cl, bool u, char i) {
+    keyName = name;
+    prim = cl;
+    unsign = u;
+    charId = i;
+  }
+  
+  bool isVoid() const {
+    return charId == I_VOID;
+  }
+
+  bool isLong() const {
+    return charId == I_LONG;
+  }
+
+  bool isInt() const {
+    return charId == I_INT;
+  }
+
+  bool isChar() const {
+    return charId == I_CHAR;
+  }
+
+  bool isShort() const {
+    return charId == I_SHORT;
+  }
+
+  bool isByte() const {
+    return charId == I_BYTE;
+  }
+
+  bool isBool() const {
+    return charId == I_BOOL;
+  }
+
+  bool isFloat() const {
+    return charId == I_FLOAT;
+  }
+
+  bool isDouble() const {
+    return charId == I_DOUBLE;
+  }
+  
+  /// JInfo - Holds info useful for the JIT.
+  ///
+  mvm::JITInfo* JInfo;
+
+  /// getInfo - Get the JIT info of this signature. The info is created lazely.
+  ///
+  template<typename Ty> 
+  Ty *getInfo() {
+    if (!JInfo) {
+      JInfo = new Ty(this);
+    }   
+
+    assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
+           "Invalid concrete type or multiple inheritence for getInfo");
+    return static_cast<Ty*>(JInfo);
+  }
+};
+
+class ArrayTypedef : public Typedef {
+public:
+  /// tPrintBuf - Prints the name of the class this Typedef represents.
+  ///
+  virtual void tPrintBuf(mvm::PrintBuffer* buf) const;
+
+  
+  virtual bool trace() const {
+    return true;
+  }
+
+  virtual UserCommonClass* assocClass(JnjvmClassLoader* loader) const;
+
+  ArrayTypedef(const UTF8* name) {
+    keyName = name;
+  }
+};
+
+class ObjectTypedef : public Typedef {
+private:
+  /// pseudoAssocClassName - The real name of the class this Typedef
+  /// represents, e.g. "java/lang/Object"
+  ///
+  const UTF8* pseudoAssocClassName;
+
+public:
+  /// tPrintBuf - Prints the name of the class this Typedef represents.
+  ///
+  virtual void tPrintBuf(mvm::PrintBuffer* buf) const;
+  
+  virtual bool trace() const {
+    return true;
+  }
+  
+  virtual UserCommonClass* assocClass(JnjvmClassLoader* loader) const;
+
+  ObjectTypedef(const UTF8*name, UTF8Map* map);
+  
+  virtual const UTF8* getName() const {
+    return pseudoAssocClassName;
+  }
 
 };
+
 
 /// Signdef - This class represents a Java signature. Each Java method has a
 /// Java signature. Signdefs are hashed for memory purposes, not equality
@@ -302,7 +292,7 @@ private:
   ///
   intptr_t _virtualCallAP; 
   intptr_t virtualCallAP();
-
+  
 public:
 
   /// args - The arguments as Typedef of this signature.

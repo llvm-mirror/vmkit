@@ -9,6 +9,13 @@
 LEVEL = ../../..
 
 LIBRARYNAME = JnJVM
+
+include $(LEVEL)/Makefile.config
+
 include $(LEVEL)/Makefile.common
 
 CXX.Flags += -I../LLVMRuntime $(CLASSPATH_FLAGS)
+
+ifeq ($(ISOLATE_BUILD), 1)
+  CXX.Flags += -I../Isolate
+endif

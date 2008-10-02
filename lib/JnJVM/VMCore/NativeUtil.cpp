@@ -38,15 +38,12 @@ Jnjvm* NativeUtil::myVM(JNIEnv* env) {
 #define PRE "Java_"
 #define PRE_LEN 5
 
-static char* jniConsFromMeth(CommonClass* cl, JavaMethod* meth) {
+static char* jniConsFromMeth(CommonClass* cl, JavaMethod* meth, char* buf) {
   const UTF8* jniConsClName = cl->name;
   const UTF8* jniConsName = meth->name;
-  const UTF8* jniConsType = meth->type;
   sint32 clen = jniConsClName->size;
   sint32 mnlen = jniConsName->size;
-  sint32 mtlen = jniConsType->size;
 
-  char* buf = (char*)malloc(3 + PRE_LEN + mnlen + clen + (mtlen << 1));
   uint32 cur = 0;
   char* ptr = &(buf[PRE_LEN]);
   
@@ -75,15 +72,12 @@ static char* jniConsFromMeth(CommonClass* cl, JavaMethod* meth) {
 
 }
 
-static char* jniConsFromMeth2(CommonClass* cl, JavaMethod* meth) {
+static char* jniConsFromMeth2(CommonClass* cl, JavaMethod* meth, char* buf) {
   const UTF8* jniConsClName = cl->name;
   const UTF8* jniConsName = meth->name;
-  const UTF8* jniConsType = meth->type;
   sint32 clen = jniConsClName->size;
   sint32 mnlen = jniConsName->size;
-  sint32 mtlen = jniConsType->size;
 
-  char* buf = (char*)malloc(3 + PRE_LEN + mnlen + clen + (mtlen << 1));
   uint32 cur = 0;
   char* ptr = &(buf[PRE_LEN]);
   
@@ -117,15 +111,13 @@ static char* jniConsFromMeth2(CommonClass* cl, JavaMethod* meth) {
 
 }
 
-static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth) {
+static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth, char* buf) {
   const UTF8* jniConsClName = cl->name;
   const UTF8* jniConsName = meth->name;
   const UTF8* jniConsType = meth->type;
   sint32 clen = jniConsClName->size;
   sint32 mnlen = jniConsName->size;
-  sint32 mtlen = jniConsType->size;
 
-  char* buf = (char*)malloc(3 + PRE_LEN + mnlen + clen + (mtlen << 1));
   uint32 cur = 0;
   char* ptr = &(buf[PRE_LEN]);
   
@@ -151,7 +143,7 @@ static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth) {
   sint32 i = 0;
   while (i < jniConsType->size) {
     char c = jniConsType->elements[i++];
-    if (c == AssessorDesc::I_PARG) {
+    if (c == I_PARG) {
       ptr[0] = '_';
       ptr[1] = '_';
       ptr += 2;
@@ -162,15 +154,15 @@ static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth) {
       ptr[0] = '_';
       ptr[1] = '1';
       ptr += 2;
-    } else if (c == AssessorDesc::I_END_REF) {
+    } else if (c == I_END_REF) {
       ptr[0] = '_';
       ptr[1] = '2';
       ptr += 2;
-    } else if (c == AssessorDesc::I_TAB) {
+    } else if (c == I_TAB) {
       ptr[0] = '_';
       ptr[1] = '3';
       ptr += 2;
-    } else if (c == AssessorDesc::I_PARD) {
+    } else if (c == I_PARD) {
       break;
     } else {
       ptr[0] = c;
@@ -183,7 +175,6 @@ static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth) {
   return buf;
 
 }
-#undef PRE_LEN
 
 static void* loadName(char* buf, bool& jnjvm) {
   void* res = dlsym(SELF_HANDLE, buf);
@@ -205,13 +196,21 @@ static void* loadName(char* buf, bool& jnjvm) {
 }
 
 void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
-  char* buf = jniConsFromMeth(cl, meth);
+  const UTF8* jniConsClName = cl->name;
+  const UTF8* jniConsName = meth->name;
+  const UTF8* jniConsType = meth->type;
+  sint32 clen = jniConsClName->size;
+  sint32 mnlen = jniConsName->size;
+  sint32 mtlen = jniConsType->size;
+
+  char* buf = (char*)alloca(3 + PRE_LEN + mnlen + clen + (mtlen << 1));
+  jniConsFromMeth(cl, meth, buf);
   void* res = loadName(buf, jnjvm);
   if (!res) {
-    buf = jniConsFromMeth2(cl, meth);
+    buf = jniConsFromMeth2(cl, meth, buf);
     res = loadName(buf, jnjvm);
     if (!res) {
-      buf = jniConsFromMeth3(cl, meth);
+      buf = jniConsFromMeth3(cl, meth, buf);
       res = loadName(buf, jnjvm);
       if (!res) {
         printf("Native function %s not found. Probably "
@@ -222,25 +221,27 @@ void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
       }
     }
   }
-  free(buf);
   return res;
 }
 
-CommonClass* NativeUtil::resolvedImplClass(jclass clazz, bool doClinit) {
+#undef PRE_LEN
+
+UserCommonClass* NativeUtil::resolvedImplClass(jclass clazz, bool doClinit) {
+  Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject *Cl = (JavaObject*)clazz;
-  CommonClass* cl = (CommonClass*)Classpath::vmdataClass->getVirtualObjectField(Cl);
+  UserCommonClass* cl = 
+    (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField(Cl);
   cl->resolveClass();
-  if (doClinit) JavaThread::get()->isolate->initialiseClass(cl);
+  if (doClinit) cl->initialiseClass(vm);
   return cl;
 }
 
 void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
                                     JavaObject* obj,
                                     Typedef* signature) {
-  const AssessorDesc* funcs = signature->funcs;
 
-  if (funcs == AssessorDesc::dRef || funcs == AssessorDesc::dTab) {
-    if (obj && !(obj->classOf->isOfTypeName(signature->pseudoAssocClassName))) {
+  if (!signature->isPrimitive()) {
+    if (obj && !(obj->classOf->isOfTypeName(signature->getName()))) {
       vm->illegalArgumentException("wrong type argument");
     }
     ((JavaObject**)buf)[0] = obj;
@@ -249,122 +250,123 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
   } else if (obj == 0) {
     vm->illegalArgumentException("");
   } else {
-    CommonClass* cl = obj->classOf;
-    AssessorDesc* value = AssessorDesc::classToPrimitive(cl);
-    
+    UserCommonClass* cl = obj->classOf;
+    UserClassPrimitive* value = cl->toPrimitive(vm);
+    PrimitiveTypedef* prim = (PrimitiveTypedef*)signature;
+
     if (value == 0) {
       vm->illegalArgumentException("");
     }
     
-    if (funcs == AssessorDesc::dShort) {
-      if (value == AssessorDesc::dShort) {
-        ((uint16*)buf)[0] = Classpath::shortValue->getVirtualInt16Field(obj);
+    if (prim->isShort()) {
+      if (value == vm->upcalls->OfShort) {
+        ((uint16*)buf)[0] = vm->upcalls->shortValue->getInt16Field(obj);
         buf++;
         return;
-      } else if (value == AssessorDesc::dByte) {
+      } else if (value == vm->upcalls->OfByte) {
         ((sint16*)buf)[0] = 
-          (sint16)Classpath::byteValue->getVirtualInt8Field(obj);
+          (sint16)vm->upcalls->byteValue->getInt8Field(obj);
         buf++;
         return;
       } else {
         vm->illegalArgumentException("");
       }
-    } else if (funcs == AssessorDesc::dByte) {
-      if (value == AssessorDesc::dByte) {
-        ((uint8*)buf)[0] = Classpath::byteValue->getVirtualInt8Field(obj);
+    } else if (prim->isByte()) {
+      if (value == vm->upcalls->OfByte) {
+        ((uint8*)buf)[0] = vm->upcalls->byteValue->getInt8Field(obj);
         buf++;
         return;
       } else {
         vm->illegalArgumentException("");
       }
-    } else if (funcs == AssessorDesc::dBool) {
-      if (value == AssessorDesc::dBool) {
-        ((uint8*)buf)[0] = Classpath::boolValue->getVirtualInt8Field(obj);
+    } else if (prim->isBool()) {
+      if (value == vm->upcalls->OfBool) {
+        ((uint8*)buf)[0] = vm->upcalls->boolValue->getInt8Field(obj);
         buf++;
         return;
       } else {
         vm->illegalArgumentException("");
       }
-    } else if (funcs == AssessorDesc::dInt) {
+    } else if (prim->isInt()) {
       sint32 val = 0;
-      if (value == AssessorDesc::dInt) {
-        val = Classpath::intValue->getVirtualInt32Field(obj);
-      } else if (value == AssessorDesc::dByte) {
-        val = (sint32)Classpath::byteValue->getVirtualInt8Field(obj);
-      } else if (value == AssessorDesc::dChar) {
-        val = (uint32)Classpath::charValue->getVirtualInt16Field(obj);
-      } else if (value == AssessorDesc::dShort) {
-        val = (sint32)Classpath::shortValue->getVirtualInt16Field(obj);
+      if (value == vm->upcalls->OfInt) {
+        val = vm->upcalls->intValue->getInt32Field(obj);
+      } else if (value == vm->upcalls->OfByte) {
+        val = (sint32)vm->upcalls->byteValue->getInt8Field(obj);
+      } else if (value == vm->upcalls->OfChar) {
+        val = (uint32)vm->upcalls->charValue->getInt16Field(obj);
+      } else if (value == vm->upcalls->OfShort) {
+        val = (sint32)vm->upcalls->shortValue->getInt16Field(obj);
       } else {
         vm->illegalArgumentException("");
       }
       ((sint32*)buf)[0] = val;
       buf++;
       return;
-    } else if (funcs == AssessorDesc::dChar) {
+    } else if (prim->isChar()) {
       uint16 val = 0;
-      if (value == AssessorDesc::dChar) {
-        val = (uint16)Classpath::charValue->getVirtualInt16Field(obj);
+      if (value == vm->upcalls->OfChar) {
+        val = (uint16)vm->upcalls->charValue->getInt16Field(obj);
       } else {
         vm->illegalArgumentException("");
       }
       ((uint16*)buf)[0] = val;
       buf++;
       return;
-    } else if (funcs == AssessorDesc::dFloat) {
+    } else if (prim->isFloat()) {
       float val = 0;
-      if (value == AssessorDesc::dFloat) {
-        val = (float)Classpath::floatValue->getVirtualFloatField(obj);
-      } else if (value == AssessorDesc::dByte) {
-        val = (float)(sint32)Classpath::byteValue->getVirtualInt8Field(obj);
-      } else if (value == AssessorDesc::dChar) {
-        val = (float)(uint32)Classpath::charValue->getVirtualInt16Field(obj);
-      } else if (value == AssessorDesc::dShort) {
-        val = (float)(sint32)Classpath::shortValue->getVirtualInt16Field(obj);
-      } else if (value == AssessorDesc::dInt) {
-        val = (float)(sint32)Classpath::intValue->getVirtualInt32Field(obj);
-      } else if (value == AssessorDesc::dLong) {
-        val = (float)Classpath::longValue->getVirtualLongField(obj);
+      if (value == vm->upcalls->OfFloat) {
+        val = (float)vm->upcalls->floatValue->getFloatField(obj);
+      } else if (value == vm->upcalls->OfByte) {
+        val = (float)(sint32)vm->upcalls->byteValue->getInt8Field(obj);
+      } else if (value == vm->upcalls->OfChar) {
+        val = (float)(uint32)vm->upcalls->charValue->getInt16Field(obj);
+      } else if (value == vm->upcalls->OfShort) {
+        val = (float)(sint32)vm->upcalls->shortValue->getInt16Field(obj);
+      } else if (value == vm->upcalls->OfInt) {
+        val = (float)(sint32)vm->upcalls->intValue->getInt32Field(obj);
+      } else if (value == vm->upcalls->OfLong) {
+        val = (float)vm->upcalls->longValue->getLongField(obj);
       } else {
         vm->illegalArgumentException("");
       }
       ((float*)buf)[0] = val;
       buf++;
       return;
-    } else if (funcs == AssessorDesc::dDouble) {
+    } else if (prim->isDouble()) {
       double val = 0;
-      if (value == AssessorDesc::dDouble) {
-        val = (double)Classpath::doubleValue->getVirtualDoubleField(obj);
-      } else if (value == AssessorDesc::dFloat) {
-        val = (double)Classpath::floatValue->getVirtualFloatField(obj);
-      } else if (value == AssessorDesc::dByte) {
-        val = (double)(sint64)Classpath::byteValue->getVirtualInt8Field(obj);
-      } else if (value == AssessorDesc::dChar) {
-        val = (double)(uint64)Classpath::charValue->getVirtualInt16Field(obj);
-      } else if (value == AssessorDesc::dShort) {
-        val = (double)(sint16)Classpath::shortValue->getVirtualInt16Field(obj);
-      } else if (value == AssessorDesc::dInt) {
-        val = (double)(sint32)Classpath::intValue->getVirtualInt32Field(obj);
-      } else if (value == AssessorDesc::dLong) {
-        val = (double)(sint64)Classpath::longValue->getVirtualLongField(obj);
+      if (value == vm->upcalls->OfDouble) {
+        val = (double)vm->upcalls->doubleValue->getDoubleField(obj);
+      } else if (value == vm->upcalls->OfFloat) {
+        val = (double)vm->upcalls->floatValue->getFloatField(obj);
+      } else if (value == vm->upcalls->OfByte) {
+        val = (double)(sint64)vm->upcalls->byteValue->getInt8Field(obj);
+      } else if (value == vm->upcalls->OfChar) {
+        val = (double)(uint64)vm->upcalls->charValue->getInt16Field(obj);
+      } else if (value == vm->upcalls->OfShort) {
+        val = (double)(sint16)vm->upcalls->shortValue->getInt16Field(obj);
+      } else if (value == vm->upcalls->OfInt) {
+        val = (double)(sint32)vm->upcalls->intValue->getInt32Field(obj);
+      } else if (value == vm->upcalls->OfLong) {
+        val = (double)(sint64)vm->upcalls->longValue->getLongField(obj);
       } else {
         vm->illegalArgumentException("");
       }
       ((double*)buf)[0] = val;
       buf += 2;
       return;
-    } else if (funcs == AssessorDesc::dLong) {
+    } else if (prim->isLong()) {
       sint64 val = 0;
-      if (value == AssessorDesc::dByte) {
-        val = (sint64)Classpath::byteValue->getVirtualInt8Field(obj);
-      } else if (value == AssessorDesc::dChar) {
-        val = (sint64)(uint64)Classpath::charValue->getVirtualInt16Field(obj);
-      } else if (value == AssessorDesc::dShort) {
-        val = (sint64)Classpath::shortValue->getVirtualInt16Field(obj);
-      } else if (value == AssessorDesc::dInt) {
-        val = (sint64)Classpath::intValue->getVirtualInt32Field(obj);
-      } else if (value == AssessorDesc::dLong) {
-        val = (sint64)Classpath::intValue->getVirtualLongField(obj);
+      if (value == vm->upcalls->OfByte) {
+        val = (sint64)vm->upcalls->byteValue->getInt8Field(obj);
+      } else if (value == vm->upcalls->OfChar) {
+        val = (sint64)(uint64)vm->upcalls->charValue->getInt16Field(obj);
+      } else if (value == vm->upcalls->OfShort) {
+        val = (sint64)vm->upcalls->shortValue->getInt16Field(obj);
+      } else if (value == vm->upcalls->OfInt) {
+        val = (sint64)vm->upcalls->intValue->getInt32Field(obj);
+      } else if (value == vm->upcalls->OfLong) {
+        val = (sint64)vm->upcalls->intValue->getLongField(obj);
       } else {
         vm->illegalArgumentException("");
       }
@@ -378,13 +380,16 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
 }
 
 JavaObject* NativeUtil::getClassType(JnjvmClassLoader* loader, Typedef* type) {
-  CommonClass* res = type->assocClass(loader);
-  return res->getClassDelegatee();
+  Jnjvm* vm = JavaThread::get()->isolate;
+  UserCommonClass* res = type->assocClass(loader);
+  assert(res && "No associated class");
+  return res->getClassDelegatee(vm);
 }
 
 ArrayObject* NativeUtil::getParameterTypes(JnjvmClassLoader* loader, JavaMethod* meth) {
+  Jnjvm* vm = JavaThread::get()->isolate;
   std::vector<Typedef*>& args = meth->getSignature()->args;
-  ArrayObject* res = ArrayObject::acons(args.size(), Classpath::classArrayClass,
+  ArrayObject* res = ArrayObject::acons(args.size(), vm->upcalls->classArrayClass,
                                         &(JavaThread::get()->isolate->allocator));
 
   sint32 index = 0;
@@ -397,24 +402,24 @@ ArrayObject* NativeUtil::getParameterTypes(JnjvmClassLoader* loader, JavaMethod*
 
 }
 
-ArrayObject* NativeUtil::getExceptionTypes(JavaMethod* meth) {
+ArrayObject* NativeUtil::getExceptionTypes(UserClass* cl, JavaMethod* meth) {
   Attribut* exceptionAtt = meth->lookupAttribut(Attribut::exceptionsAttribut);
+  Jnjvm* vm = JavaThread::get()->isolate;
   if (exceptionAtt == 0) {
-    return ArrayObject::acons(0, Classpath::classArrayClass,
+    return ArrayObject::acons(0, vm->upcalls->classArrayClass,
                               &(JavaThread::get()->isolate->allocator));
   } else {
-    Class* cl = meth->classDef;
-    JavaConstantPool* ctp = cl->getConstantPool();
+    UserConstantPool* ctp = cl->getConstantPool();
     Reader reader(exceptionAtt, cl->getBytes());
     uint16 nbe = reader.readU2();
-    ArrayObject* res = ArrayObject::acons(nbe, Classpath::classArrayClass,
+    ArrayObject* res = ArrayObject::acons(nbe, vm->upcalls->classArrayClass,
                                           &(JavaThread::get()->isolate->allocator));
 
     for (uint16 i = 0; i < nbe; ++i) {
       uint16 idx = reader.readU2();
-      CommonClass* cl = ctp->loadClass(idx);
+      UserCommonClass* cl = ctp->loadClass(idx);
       cl->resolveClass();
-      JavaObject* obj = cl->getClassDelegatee();
+      JavaObject* obj = cl->getClassDelegatee(vm);
       res->elements[i] = obj;
     }
     return res;

@@ -24,7 +24,6 @@
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 
-#include "JavaTypes.h"
 #include "JnjvmModule.h"
 
 namespace jnjvm {
@@ -41,7 +40,7 @@ struct Exception {
   uint32 endpc;
   uint32 handlerpc;
   uint16 catche;
-  Class* catchClass;
+  UserClass* catchClass;
   llvm::BasicBlock* test;
   llvm::BasicBlock* realTest;
   llvm::BasicBlock* handler;
@@ -58,7 +57,9 @@ struct Opinfo {
 class JavaJIT {
 private:
 
-  llvm::Value* getConstantPoolAt(uint32 index);
+  llvm::Value* getConstantPoolAt(uint32 index, llvm::Function* resolver,
+                                 const llvm::Type* returnType,
+                                 llvm::Value* addArg, bool doThrow = true);
 
 public:
   
@@ -100,16 +101,12 @@ public:
 
   
   // stack manipulation
-  std::vector< std::pair<llvm::Value*, const AssessorDesc*> > stack;
-  void push(llvm::Value* val, const AssessorDesc* ass) {
-    assert(LLVMAssessorInfo::AssessorInfo[ass->numId].llvmType == 
-        val->getType());
-    stack.push_back(std::make_pair(val, ass));
+  std::vector< std::pair<llvm::Value*, bool> > stack;
+  void push(llvm::Value* val, bool unsign) {
+    stack.push_back(std::make_pair(val, unsign));
   }
 
-  void push(std::pair<llvm::Value*, const AssessorDesc*> pair) {
-    assert(LLVMAssessorInfo::AssessorInfo[pair.second->numId].llvmType == 
-      pair.first->getType());
+  void push(std::pair<llvm::Value*, bool> pair) {
     stack.push_back(pair);
   }
   
@@ -123,7 +120,7 @@ public:
     return stack.back().first;
   }
   
-  const AssessorDesc* topFunc() {
+  bool topFunc() {
     return stack.back().second;  
   }
   
@@ -133,11 +130,11 @@ public:
   
   llvm::Value* popAsInt() {
     llvm::Value * ret = top();
-    const AssessorDesc* ass = topFunc();
+    bool unsign = topFunc();
     stack.pop_back();
 
     if (ret->getType() != llvm::Type::Int32Ty) {
-      if (ass == AssessorDesc::dChar || ass == AssessorDesc::dBool) {
+      if (unsign) {
         ret = new llvm::ZExtInst(ret, llvm::Type::Int32Ty, "", currentBlock);
       } else {
         ret = new llvm::SExtInst(ret, llvm::Type::Int32Ty, "", currentBlock);
@@ -148,8 +145,8 @@ public:
 
   }
 
-  std::pair<llvm::Value*, const AssessorDesc*> popPair() {
-    std::pair<llvm::Value*, const AssessorDesc*> ret = stack.back();
+  std::pair<llvm::Value*, bool> popPair() {
+    std::pair<llvm::Value*, bool> ret = stack.back();
     stack.pop_back();
     return ret;
   }
@@ -208,7 +205,7 @@ public:
   llvm::Value* ldResolved(uint16 index, bool stat, llvm::Value* object,
                           const llvm::Type* fieldType, 
                           const llvm::Type* fieldTypePtr);
-  llvm::Value* getResolvedClass(uint16 index, bool clinit);
+  llvm::Value* getResolvedClass(uint16 index, bool clinit, bool doThrow = true);
   
   // methods invoke
   void makeArgs(llvm::FunctionType::param_iterator it,
@@ -256,11 +253,16 @@ public:
   llvm::Value* isolateLocal;
 #endif
 
+#if defined(MULTIPLE_VM)
+  llvm::Value* ctpCache;
+  llvm::Value* getStaticInstanceCtp();
+  llvm::Value* getClassCtp();
+#endif
 
   static const char* OpcodeNames[256];
 
-  static Class* getCallingClass();
-  static Class* getCallingClassWalker();
+  static UserClass* getCallingClass();
+  static UserClass* getCallingClassWalker();
   static JavaObject* getCallingClassLoader();
   static void printBacktrace();
   static JavaMethod* IPToJavaMethod(void* ip);

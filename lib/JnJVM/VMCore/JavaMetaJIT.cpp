@@ -29,21 +29,22 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JnjvmClassLoader* loader,
                              char const* className, char const* func,
                              char const* sign, int access, ...) {
   
-  CommonClass* cl = loader->loadName(loader->asciizConstructUTF8(className),
-                                     true, true);
+  UserCommonClass* cl = loader->loadName(loader->asciizConstructUTF8(className),
+                                         true, true);
   
-  vm->initialiseClass(cl);
+  cl->initialiseClass(vm);
   bool stat = access == ACC_STATIC ? true : false;
+  UserClass* methodCl = 0;
   JavaMethod* method = cl->lookupMethod(loader->asciizConstructUTF8(func), 
                                         loader->asciizConstructUTF8(sign), stat,
-                                        true);
+                                        true, methodCl);
   va_list ap;
   va_start(ap, access);
   if (stat) {
-    method->invokeIntStaticAP(vm, ap);
+    method->invokeIntStaticAP(vm, (UserClass*)cl, ap);
   } else {
     JavaObject* obj = va_arg(ap, JavaObject*);
-    method->invokeIntSpecialAP(vm, obj, ap);
+    method->invokeIntSpecialAP(vm, (UserClass*)cl, obj, ap);
   }
   va_end(ap);
 }
@@ -54,47 +55,51 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JnjvmClassLoader* loader,
 #define readArgs(buf, signature, ap) \
   for (std::vector<Typedef*>::iterator i = signature->args.begin(), \
             e = signature->args.end(); i!= e; i++) { \
-    const AssessorDesc* funcs = (*i)->funcs; \
-    if (funcs == AssessorDesc::dLong) { \
-      ((sint64*)buf)[0] = va_arg(ap, sint64); \
-      buf += 2; \
-    } else if (funcs == AssessorDesc::dInt) { \
-      ((sint32*)buf)[0] = va_arg(ap, sint32); \
+    const Typedef* type = *i;\
+    if (type->isPrimitive()){\
+      const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;\
+      if (prim->isLong()){\
+        ((sint64*)buf)[0] = va_arg(ap, sint64);\
+        buf += 2;\
+      } else if (prim->isInt()){ \
+        ((sint32*)buf)[0] = va_arg(ap, sint32);\
+        buf++; \
+      } else if (prim->isChar()){ \
+        ((uint32*)buf)[0] = va_arg(ap, uint32);\
+        buf++; \
+      } else if (prim->isShort()){ \
+        ((uint32*)buf)[0] = va_arg(ap, uint32);\
+        buf++; \
+      } else if (prim->isByte()){ \
+        ((uint32*)buf)[0] = va_arg(ap, uint32);\
+        buf++; \
+      } else if (prim->isBool()){ \
+        ((uint32*)buf)[0] = va_arg(ap, uint32);\
+        buf++;\
+      } else if (prim->isFloat()){\
+        ((float*)buf)[0] = (float)va_arg(ap, double);\
+        buf++;\
+      } else if (prim->isDouble()){\
+        ((double*)buf)[0] = va_arg(ap, double);\
+        buf += 2;\
+      } else{\
+        fprintf(stderr, "Can't happen");\
+        abort();\
+      }\
+    } else{\
+      ((JavaObject**)buf)[0] = va_arg(ap, JavaObject*);\
       buf++; \
-    } else if (funcs == AssessorDesc::dChar) { \
-      ((uint32*)buf)[0] = va_arg(ap, uint32); \
-      buf++; \
-    } else if (funcs == AssessorDesc::dShort) { \
-      ((uint32*)buf)[0] = va_arg(ap, uint32); \
-      buf++; \
-    } else if (funcs == AssessorDesc::dByte) { \
-      ((uint32*)buf)[0] = va_arg(ap, uint32); \
-      buf++; \
-    } else if (funcs == AssessorDesc::dBool) { \
-      ((uint32*)buf)[0] = va_arg(ap, uint32); \
-      buf++; \
-    } else if (funcs == AssessorDesc::dFloat) { \
-      ((float*)buf)[0] = (float)va_arg(ap, double); \
-      buf++; \
-    } else if (funcs == AssessorDesc::dDouble) { \
-      ((double*)buf)[0] = va_arg(ap, double); \
-      buf += 2; \
-    } else if (funcs == AssessorDesc::dRef || funcs == AssessorDesc::dTab) { \
-      ((JavaObject**)buf)[0] = va_arg(ap, JavaObject*); \
-      buf++; \
-    } else { \
-      assert(0 && "Should not be here"); \
-    } \
-  } \
+    }\
+  }\
 
 
 #if 1//defined(__PPC__) && !defined(__MACH__)
 #define INVOKE(TYPE, TYPE_NAME, FUNC_TYPE_VIRTUAL_AP, FUNC_TYPE_STATIC_AP, FUNC_TYPE_VIRTUAL_BUF, FUNC_TYPE_STATIC_BUF) \
 \
-TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, JavaObject* obj, va_list ap) { \
-  if (!classDef->isReady()) { \
-    classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) { \
+  if (!cl->isReady()) { \
+    cl->classLoader->loadName(cl->getName(), true, true); \
+    cl->initialiseClass(vm); \
   } \
   verifyNull(obj); \
   Signdef* sign = getSignature(); \
@@ -102,13 +107,13 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, JavaObject* obj, va_lis
   void* _buf = (void*)buf; \
   readArgs(buf, sign, ap); \
   void* func = (((void***)obj)[0])[offset];\
-  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, func, obj, _buf);\
+  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, cl->getConstantPool(), func, obj, _buf);\
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap) {\
-  if (!classDef->isReady()) { \
-    classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) {\
+  if (!cl->isReady()) { \
+    cl->classLoader->loadName(cl->getName(), true, true); \
+    cl->initialiseClass(vm); \
   } \
   \
   verifyNull(obj);\
@@ -117,13 +122,13 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, JavaObject* obj, va_lis
   void* _buf = (void*)buf; \
   readArgs(buf, sign, ap); \
   void* func = this->compiledPtr();\
-  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, func, obj, _buf);\
+  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, cl->getConstantPool(), func, obj, _buf);\
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, va_list ap) {\
-  if (!classDef->isReady()) { \
-    classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list ap) {\
+  if (!cl->isReady()) { \
+    cl->classLoader->loadName(cl->getName(), true, true); \
+    cl->initialiseClass(vm); \
   } \
   \
   Signdef* sign = getSignature(); \
@@ -131,66 +136,67 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, va_list ap) {\
   void* _buf = (void*)buf; \
   readArgs(buf, sign, ap); \
   void* func = this->compiledPtr();\
-  return ((FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf())(vm, func, _buf);\
+  return ((FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf())(vm, cl->getConstantPool(), func, _buf);\
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf) {\
-  if (!classDef->isReady()) { \
-    classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {\
+  if (!cl->isReady()) { \
+    cl->classLoader->loadName(cl->getName(), true, true); \
+    cl->initialiseClass(vm); \
   } \
   \
   verifyNull(obj);\
-  JavaMethod* meth = obj->classOf->lookupMethod(name, type, false, true);\
+  UserClass* methodCl = 0; \
+  JavaMethod* meth = obj->classOf->lookupMethod(name, type, false, true, methodCl);\
   \
   Signdef* sign = getSignature(); \
   void* func = meth->compiledPtr();\
-  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, func, obj, buf);\
+  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, cl->getConstantPool(), func, obj, buf);\
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf) {\
-  if (!classDef->isReady()) { \
-    classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {\
+  if (!cl->isReady()) { \
+    cl->classLoader->loadName(cl->getName(), true, true); \
+    cl->initialiseClass(vm); \
   } \
   \
   verifyNull(obj);\
   void* func = this->compiledPtr();\
   Signdef* sign = getSignature(); \
-  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, func, obj, buf);\
+  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, cl->getConstantPool(), func, obj, buf);\
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, void* buf) {\
-  if (!classDef->isReady()) { \
-    classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* buf) {\
+  if (!cl->isReady()) { \
+    cl->classLoader->loadName(cl->getName(), true, true); \
+    cl->initialiseClass(vm); \
   } \
   \
   void* func = this->compiledPtr();\
   Signdef* sign = getSignature(); \
-  return ((FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf())(vm, func, buf);\
+  return ((FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf())(vm, cl->getConstantPool(), func, buf);\
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##Virtual(Jnjvm* vm, JavaObject* obj, ...) { \
+TYPE JavaMethod::invoke##TYPE_NAME##Virtual(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) { \
   va_list ap;\
   va_start(ap, obj);\
-  TYPE res = invoke##TYPE_NAME##VirtualAP(vm, obj, ap);\
+  TYPE res = invoke##TYPE_NAME##VirtualAP(vm, cl, obj, ap);\
   va_end(ap); \
   return res; \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##Special(Jnjvm* vm, JavaObject* obj, ...) {\
+TYPE JavaMethod::invoke##TYPE_NAME##Special(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) {\
   va_list ap;\
   va_start(ap, obj);\
-  TYPE res = invoke##TYPE_NAME##SpecialAP(vm, obj, ap);\
+  TYPE res = invoke##TYPE_NAME##SpecialAP(vm, cl, obj, ap);\
   va_end(ap); \
   return res; \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##Static(Jnjvm* vm, ...) {\
+TYPE JavaMethod::invoke##TYPE_NAME##Static(Jnjvm* vm, UserClass* cl, ...) {\
   va_list ap;\
-  va_start(ap, vm);\
-  TYPE res = invoke##TYPE_NAME##StaticAP(vm, ap);\
+  va_start(ap, cl);\
+  TYPE res = invoke##TYPE_NAME##StaticAP(vm, cl, ap);\
   va_end(ap); \
   return res; \
 }\
@@ -199,125 +205,125 @@ TYPE JavaMethod::invoke##TYPE_NAME##Static(Jnjvm* vm, ...) {\
 
 #define INVOKE(TYPE, TYPE_NAME, FUNC_TYPE_VIRTUAL_AP, FUNC_TYPE_STATIC_AP, FUNC_TYPE_VIRTUAL_BUF, FUNC_TYPE_STATIC_BUF) \
 \
-TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, JavaObject* obj, va_list ap) { \
-  if (!classDef->isReady()) { \
-    classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) { \
+  if (!cl->isReady()) { \
+    cl->classLoader->loadName(cl->getName(), true, true); \
+    cl->initialiseClass(vm); \
   } \
   \
   verifyNull(obj); \
   void* func = (((void***)obj)[0])[offset];\
   Signdef* sign = getSignature(); \
-  return ((FUNC_TYPE_VIRTUAL_AP)sign->getVirtualCallAP())(vm, func, obj, ap);\
+  return ((FUNC_TYPE_VIRTUAL_AP)sign->getVirtualCallAP())(vm, cl->getConstantPool(), func, obj, ap);\
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, JavaObject* obj, va_list ap) {\
-  if (!classDef->isReady()) { \
-    classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) {\
+  if (!cl->isReady()) { \
+    cl->classLoader->loadName(cl->getName(), true, true); \
+    cl->initialiseClass(vm); \
   } \
   \
   verifyNull(obj);\
   void* func = this->compiledPtr();\
   Signdef* sign = getSignature(); \
-  return ((FUNC_TYPE_VIRTUAL_AP)sign->getVirtualCallAP())(vm, func, obj, ap);\
+  return ((FUNC_TYPE_VIRTUAL_AP)sign->getVirtualCallAP())(vm, cl->getConstantPool(), func, obj, ap);\
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, va_list ap) {\
-  if (!classDef->isReady()) { \
-    classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list ap) {\
+  if (!cl->isReady()) { \
+    cl->classLoader->loadName(cl->getName(), true, true); \
+    cl->initialiseClass(vm); \
   } \
   \
   void* func = this->compiledPtr();\
   Signdef* sign = getSignature(); \
-  return ((FUNC_TYPE_STATIC_AP)sign->getStaticCallAP())(vm, func, ap);\
+  return ((FUNC_TYPE_STATIC_AP)sign->getStaticCallAP())(vm, cl->getConstantPool(), func, ap);\
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, JavaObject* obj, void* buf) {\
-  if (!classDef->isReady()) { \
-    classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {\
+  if (!cl->isReady()) { \
+    cl->classLoader->loadName(cl->getName(), true, true); \
+    cl->initialiseClass(vm); \
   } \
   \
   verifyNull(obj);\
   void* func = (((void***)obj)[0])[offset];\
   Signdef* sign = getSignature(); \
-  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, func, obj, buf);\
+  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, cl->getConstantPool(), func, obj, buf);\
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, JavaObject* obj, void* buf) {\
-  if (!classDef->isReady()) { \
-    classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {\
+  if (!cl->isReady()) { \
+    cl->classLoader->loadName(cl->getName(), true, true); \
+    cl->initialiseClass(vm); \
   } \
   \
   verifyNull(obj);\
   void* func = this->compiledPtr();\
   Signdef* sign = getSignature(); \
-  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, func, obj, buf);\
+  return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, cl->getConstantPool(), func, obj, buf);\
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, void* buf) {\
-  if (!classDef->isReady()) { \
-    classDef->classLoader->loadName(classDef->name, true, true); \
-    vm->initialiseClass(classDef); \
+TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* buf) {\
+  if (!cl->isReady()) { \
+    cl->classLoader->loadName(cl->getName(), true, true); \
+    cl->initialiseClass(vm); \
   } \
   \
   void* func = this->compiledPtr();\
   Signdef* sign = getSignature(); \
-  return ((FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf())(vm, func, buf);\
+  return ((FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf())(vm, cl->getConstantPool(), func, buf);\
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##Virtual(Jnjvm* vm,JavaObject* obj, ...) { \
+TYPE JavaMethod::invoke##TYPE_NAME##Virtual(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) { \
   va_list ap;\
   va_start(ap, obj);\
-  TYPE res = invoke##TYPE_NAME##VirtualAP(vm, obj, ap);\
+  TYPE res = invoke##TYPE_NAME##VirtualAP(vm, cl, obj, ap);\
   va_end(ap); \
   return res; \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##Special(Jnjvm* vm, JavaObject* obj, ...) {\
+TYPE JavaMethod::invoke##TYPE_NAME##Special(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) {\
   va_list ap;\
   va_start(ap, obj);\
-  TYPE res = invoke##TYPE_NAME##SpecialAP(vm, obj, ap);\
+  TYPE res = invoke##TYPE_NAME##SpecialAP(vm, cl, obj, ap);\
   va_end(ap); \
   return res; \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##Static(Jnjvm* vm, ...) {\
+TYPE JavaMethod::invoke##TYPE_NAME##Static(Jnjvm* vm, UserClass* cl, ...) {\
   va_list ap;\
-  va_start(ap, this);\
-  TYPE res = invoke##TYPE_NAME##StaticAP(vm, ap);\
+  va_start(ap, cl);\
+  TYPE res = invoke##TYPE_NAME##StaticAP(vm, cl, ap);\
   va_end(ap); \
   return res; \
 }\
 
 #endif
 
-typedef uint32 (*uint32_virtual_ap)(Jnjvm*, void*, JavaObject*, va_list);
-typedef sint64 (*sint64_virtual_ap)(Jnjvm*, void*, JavaObject*, va_list);
-typedef float  (*float_virtual_ap)(Jnjvm*, void*, JavaObject*, va_list);
-typedef double (*double_virtual_ap)(Jnjvm*, void*, JavaObject*, va_list);
-typedef JavaObject* (*object_virtual_ap)(Jnjvm*, void*, JavaObject*, va_list);
+typedef uint32 (*uint32_virtual_ap)(Jnjvm*, UserConstantPool*, void*, JavaObject*, va_list);
+typedef sint64 (*sint64_virtual_ap)(Jnjvm*, UserConstantPool*, void*, JavaObject*, va_list);
+typedef float  (*float_virtual_ap)(Jnjvm*, UserConstantPool*, void*, JavaObject*, va_list);
+typedef double (*double_virtual_ap)(Jnjvm*, UserConstantPool*, void*, JavaObject*, va_list);
+typedef JavaObject* (*object_virtual_ap)(Jnjvm*, UserConstantPool*, void*, JavaObject*, va_list);
 
-typedef uint32 (*uint32_static_ap)(Jnjvm*, void*, va_list);
-typedef sint64 (*sint64_static_ap)(Jnjvm*, void*, va_list);
-typedef float  (*float_static_ap)(Jnjvm*, void*, va_list);
-typedef double (*double_static_ap)(Jnjvm*, void*, va_list);
-typedef JavaObject* (*object_static_ap)(Jnjvm*, void*, va_list);
+typedef uint32 (*uint32_static_ap)(Jnjvm*, UserConstantPool*, void*, va_list);
+typedef sint64 (*sint64_static_ap)(Jnjvm*, UserConstantPool*, void*, va_list);
+typedef float  (*float_static_ap)(Jnjvm*, UserConstantPool*, void*, va_list);
+typedef double (*double_static_ap)(Jnjvm*, UserConstantPool*, void*, va_list);
+typedef JavaObject* (*object_static_ap)(Jnjvm*, UserConstantPool*, void*, va_list);
 
-typedef uint32 (*uint32_virtual_buf)(Jnjvm*, void*, JavaObject*, void*);
-typedef sint64 (*sint64_virtual_buf)(Jnjvm*, void*, JavaObject*, void*);
-typedef float  (*float_virtual_buf)(Jnjvm*, void*, JavaObject*, void*);
-typedef double (*double_virtual_buf)(Jnjvm*, void*, JavaObject*, void*);
-typedef JavaObject* (*object_virtual_buf)(Jnjvm*, void*, JavaObject*, void*);
+typedef uint32 (*uint32_virtual_buf)(Jnjvm*, UserConstantPool*, void*, JavaObject*, void*);
+typedef sint64 (*sint64_virtual_buf)(Jnjvm*, UserConstantPool*, void*, JavaObject*, void*);
+typedef float  (*float_virtual_buf)(Jnjvm*, UserConstantPool*, void*, JavaObject*, void*);
+typedef double (*double_virtual_buf)(Jnjvm*, UserConstantPool*, void*, JavaObject*, void*);
+typedef JavaObject* (*object_virtual_buf)(Jnjvm*, UserConstantPool*, void*, JavaObject*, void*);
 
-typedef uint32 (*uint32_static_buf)(Jnjvm*, void*, void*);
-typedef sint64 (*sint64_static_buf)(Jnjvm*, void*, void*);
-typedef float  (*float_static_buf)(Jnjvm*, void*, void*);
-typedef double (*double_static_buf)(Jnjvm*, void*, void*);
-typedef JavaObject* (*object_static_buf)(Jnjvm*, void*, void*);
+typedef uint32 (*uint32_static_buf)(Jnjvm*, UserConstantPool*, void*, void*);
+typedef sint64 (*sint64_static_buf)(Jnjvm*, UserConstantPool*, void*, void*);
+typedef float  (*float_static_buf)(Jnjvm*, UserConstantPool*, void*, void*);
+typedef double (*double_static_buf)(Jnjvm*, UserConstantPool*, void*, void*);
+typedef JavaObject* (*object_static_buf)(Jnjvm*, UserConstantPool*, void*, void*);
 
 INVOKE(uint32, Int, uint32_virtual_ap, uint32_static_ap, uint32_virtual_buf, uint32_static_buf)
 INVOKE(sint64, Long, sint64_virtual_ap, sint64_static_ap, sint64_virtual_buf, sint64_static_buf)

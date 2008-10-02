@@ -14,6 +14,7 @@
 #include "debug.h"
 #include "types.h"
 
+#include "llvm/CallingConv.h"
 #include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
 #include <llvm/Function.h>
@@ -1497,33 +1498,6 @@ void VMField::initField(VMObject* obj) {
 
 }
 
-extern "C" VMObject* initialiseClass(VMClass* cl) {
-  cl->clinitClass(NULL);
-  return cl->staticInstance;
-}
-
-extern "C" void n3ClassCastException() {
-  fflush(stdout);
-  assert(0 && "implement class cast exception");
-}
-
-extern "C" void n3NullPointerException() {
-  fflush(stdout);
-  assert(0 && "implement null pointer exception");
-}
-
-extern "C" void indexOutOfBounds() {
-  fflush(stdout);
-  assert(0 && "implement index out of bounds exception");
-}
-
-
-extern "C" VMObject* newString(const UTF8* utf8) {
-  CLIString * str = 
-    (CLIString*)(((N3*)VMThread::get()->vm)->UTF8ToStr(utf8));
-  return str;
-}
-
 void CLIJit::initialise() {
 }
 
@@ -1533,501 +1507,82 @@ void CLIJit::initialiseAppDomain(N3* vm) {
   mvm::jit::protectEngine->unlock();
 }
 
+namespace n3 { 
+  namespace llvm_runtime { 
+    #include "LLVMRuntime.inc"
+  }
+}
+
+
 void CLIJit::initialiseBootstrapVM(N3* vm) {
   Module* module = vm->module;
   mvm::jit::protectEngine->lock();
   mvm::jit::executionEngine->addModuleProvider(vm->TheModuleProvider);
   mvm::jit::protectEngine->unlock();
- 
-  
-
-  {
-    std::vector<const llvm::Type *> arg_types;
-    arg_types.insert (arg_types.begin (), llvm::PointerType::getUnqual(mvm::jit::ptrType));
     
-    llvm::FunctionType *mtype = llvm::FunctionType::get (llvm::Type::VoidTy, arg_types, false);
-    Function::Create(mtype,  llvm::GlobalValue::ExternalLinkage, "llvm.va_start", module);
-  }
+  n3::llvm_runtime::makeLLVMModuleContents(module);
 
-  {
-    std::vector<const llvm::Type *> arg_types;
-    arg_types.insert (arg_types.begin (), llvm::Type::Int32Ty);
-  
-    llvm::FunctionType *mtype = llvm::FunctionType::get (llvm::PointerType::getUnqual(llvm::Type::Int8Ty), arg_types, false);
-    Function::Create(mtype,  llvm::GlobalValue::ExternalLinkage, "llvm.frameaddress", module);
-  }
-
-  
-  {
-     const llvm::Type *BPTy = PointerType::getUnqual(llvm::Type::Int8Ty);
-     // Prototype malloc as "char* malloc(...)", because we don't know in
-     // doInitialization whether size_t is int or long.
-     FunctionType *FT = FunctionType::get(BPTy, std::vector<const llvm::Type*>(), true);
-     Function::Create(FT, llvm::GlobalValue::ExternalLinkage, "_ZN2gcnwEjP5gc_vt", module); 
-  }
-
-
-  // Create VMObject::llvmType
-  const llvm::Type* Pty = llvm::PointerType::getUnqual(llvm::Type::Int8Ty);
-  
-  std::vector<const llvm::Type*> objectFields;
-  objectFields.push_back(Pty); // VT
-  objectFields.push_back(Pty); // Class
-  objectFields.push_back(Pty); // Lock
   VMObject::llvmType = 
-    llvm::PointerType::getUnqual(llvm::StructType::get(objectFields, false));
-
-  // Create VMArray::llvmType
-  {
-  std::vector<const llvm::Type*> arrayFields;
-  arrayFields.push_back(VMObject::llvmType->getContainedType(0));
-  arrayFields.push_back(llvm::Type::Int32Ty);
-  VMArray::llvmType =
-    llvm::PointerType::getUnqual(llvm::StructType::get(arrayFields, false));
-  }
-
-#define ARRAY_TYPE(name, type)                                            \
-  {                                                                       \
-  std::vector<const Type*> arrayFields;                                   \
-  arrayFields.push_back(VMObject::llvmType->getContainedType(0));       \
-  arrayFields.push_back(Type::Int32Ty);                                   \
-  arrayFields.push_back(ArrayType::get(type, 0));                         \
-  name::llvmType = PointerType::getUnqual(StructType::get(arrayFields, false)); \
-  }
-
-  ARRAY_TYPE(ArrayUInt8, Type::Int8Ty);
-  ARRAY_TYPE(ArraySInt8, Type::Int8Ty);
-  ARRAY_TYPE(ArrayUInt16, Type::Int16Ty);
-  ARRAY_TYPE(ArraySInt16, Type::Int16Ty);
-  ARRAY_TYPE(ArrayUInt32, Type::Int32Ty);
-  ARRAY_TYPE(ArraySInt32, Type::Int32Ty);
-  ARRAY_TYPE(ArrayLong, Type::Int64Ty);
-  ARRAY_TYPE(ArrayDouble, Type::DoubleTy);
-  ARRAY_TYPE(ArrayFloat, Type::FloatTy);
-  ARRAY_TYPE(ArrayObject, VMObject::llvmType);
-
-#undef ARRAY_TYPE
-
-  // Create UTF8::llvmType
-  {
-  std::vector<const llvm::Type*> arrayFields;
-  arrayFields.push_back(VMObject::llvmType->getContainedType(0));
-  arrayFields.push_back(llvm::Type::Int32Ty);
-  arrayFields.push_back(llvm::ArrayType::get(llvm::Type::Int16Ty, 0));
-  UTF8::llvmType =
-    llvm::PointerType::getUnqual(llvm::StructType::get(arrayFields, false));
-  }
+    PointerType::getUnqual(module->getTypeByName("CLIObject"));
+  VMArray::llvmType = 
+    PointerType::getUnqual(module->getTypeByName("CLIArray"));
+  ArrayUInt8::llvmType = 
+    PointerType::getUnqual(module->getTypeByName("ArrayUInt8"));
+  ArraySInt8::llvmType = 
+    PointerType::getUnqual(module->getTypeByName("ArraySInt8"));
+  ArrayUInt16::llvmType = 
+    PointerType::getUnqual(module->getTypeByName("ArrayUInt16"));
+  ArraySInt16::llvmType = 
+    PointerType::getUnqual(module->getTypeByName("ArraySInt16"));
+  ArraySInt32::llvmType = 
+    PointerType::getUnqual(module->getTypeByName("ArraySInt32"));
+  ArrayLong::llvmType = 
+    PointerType::getUnqual(module->getTypeByName("ArrayLong"));
+  ArrayDouble::llvmType = 
+    PointerType::getUnqual(module->getTypeByName("ArrayDouble"));
+  ArrayFloat::llvmType = 
+    PointerType::getUnqual(module->getTypeByName("ArrayFloat"));
+  ArrayObject::llvmType = 
+    PointerType::getUnqual(module->getTypeByName("ArrayObject"));
+  UTF8::llvmType = 
+    PointerType::getUnqual(module->getTypeByName("ArrayUInt16"));
+  CacheNode::llvmType = 
+    PointerType::getUnqual(module->getTypeByName("CacheNode"));
+  Enveloppe::llvmType = 
+    PointerType::getUnqual(module->getTypeByName("Enveloppe"));
   
-  // Create CacheNode::llvmType
-  {
-  std::vector<const llvm::Type*> arrayFields;
-  arrayFields.push_back(PointerType::getUnqual(Type::Int8Ty)); // VT
-  arrayFields.push_back(PointerType::getUnqual(Type::Int8Ty)); // methPtr
-  arrayFields.push_back(PointerType::getUnqual(Type::Int8Ty)); // lastCible
-  arrayFields.push_back(PointerType::getUnqual(Type::Int8Ty)); // next
-  arrayFields.push_back(PointerType::getUnqual(Type::Int8Ty)); // enveloppe
-  arrayFields.push_back(Type::Int1Ty); // box
-  CacheNode::llvmType =
-    PointerType::getUnqual(StructType::get(arrayFields, false));
-  }
-  
-  // Create Enveloppe::llvmType
-  {
-  std::vector<const llvm::Type*> arrayFields;
-  arrayFields.push_back(PointerType::getUnqual(Type::Int8Ty)); // VT
-  arrayFields.push_back(CacheNode::llvmType); // firstCache
-  arrayFields.push_back(PointerType::getUnqual(Type::Int8Ty)); // cacheLock
-  arrayFields.push_back(PointerType::getUnqual(Type::Int8Ty)); // originalMethod
-  Enveloppe::llvmType =
-    PointerType::getUnqual(StructType::get(arrayFields, false));
-  }
-
 #ifdef WITH_TRACER
-  // Create markAndTraceLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(VMObject::llvmType);
-#ifdef MULTIPLE_GC
-  args.push_back(mvm::jit::ptrType);
+  markAndTraceLLVM = module->getFunction("MarkAndTrace");
+  markAndTraceLLVMType = markAndTraceLLVM->getFunctionType();
+  vmObjectTracerLLVM = module->getFunction("CLIObjectTracer");
 #endif
-  markAndTraceLLVMType = FunctionType::get(llvm::Type::VoidTy, args, false);
-  markAndTraceLLVM = Function::Create(markAndTraceLLVMType,
-                                  GlobalValue::ExternalLinkage,
-#ifdef MULTIPLE_GC
-                                  "_ZNK2gc12markAndTraceEP9Collector",
-#else
-                                  "_ZNK2gc12markAndTraceEv",
-#endif
-                                  module);
-  }
-#endif
-  
-  // Create vmObjectTracerLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(VMObject::llvmType);
-#ifdef MULTIPLE_GC
-  args.push_back(mvm::jit::ptrType);
-#endif
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-  vmObjectTracerLLVM = Function::Create(type,
-                                    GlobalValue::ExternalLinkage,
-#ifdef MULTIPLE_GC
-                                    "_ZN2n38VMObject6tracerEPv",
-#else
-                                    "_ZN2n38VMObject6tracerEv",
-#endif
-                                    module);
-  }
 
-  // Create intialiseClassLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(PointerType::getUnqual(Type::Int8Ty));
-  const FunctionType* type = FunctionType::get(VMObject::llvmType, args, false);
-  initialiseClassLLVM = Function::Create(type,
-                                     GlobalValue::ExternalLinkage,
-                                     "initialiseClass",
-                                     module);
-  }
+
+  initialiseClassLLVM = module->getFunction("initialiseClass");
+  virtualLookupLLVM = module->getFunction("n3VirtualLookup");
+
+  arrayConsLLVM = module->getFunction("newArray");
+  objConsLLVM = module->getFunction("newObject");
+  newStringLLVM = module->getFunction("newString");
+  objInitLLVM = module->getFunction("initialiseObject");
+  arrayMultiConsLLVM = module->getFunction("newMultiArray");
+  arrayLengthLLVM = module->getFunction("arrayLength");
+  instanceOfLLVM = module->getFunction("n3InstanceOf");
+
+  nullPointerExceptionLLVM = module->getFunction("n3NullPointerException");
+  classCastExceptionLLVM = module->getFunction("n3ClassCastException");
+  indexOutOfBoundsExceptionLLVM = module->getFunction("indexOutOfBounds");
 
   
-  // Create resolveStringLLVM
-  /*{
-  std::vector<const Type*> args;
-  args.push_back(UTF8::llvmType);
-  args.push_back(PointerType::getUnqual(Type::Int8Ty));
-  args.push_back(llvm::Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(VMObject::llvmType, args,
-                                               false);
-  stringLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                "_ZN5n37CLIJit12stringLookupEPKNS_4UTF8EPNS_5ClassEj",
-                module);
-  }*/
- 
-  // Create staticLookupLLVM
-  /*{
-  std::vector<const Type*> args;
-  args.push_back(PointerType::getUnqual(Type::Int8Ty));
-  args.push_back(llvm::Type::Int32Ty);
-  const FunctionType* type =
-    FunctionType::get(llvm::PointerType::getUnqual(llvm::Type::Int8Ty), args,
-                      false);
+  throwExceptionLLVM = module->getFunction("ThrowException");
+  clearExceptionLLVM = module->getFunction("ClearException");
+  compareExceptionLLVM = module->getFunction("CompareException");
+  getCppExceptionLLVM = module->getFunction("GetCppException");
+  getCLIExceptionLLVM = module->getFunction("GetCLIException");
 
-  staticLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5n37CLIJit12staticLookupEPNS_5ClassEj",
-                     module);
-  }*/
-  
-  // Create virtualLookupLLVM
-  {
-  std::vector<const Type*> args;
-  //args.push_back(VMObject::llvmType);
-  //args.push_back(PointerType::getUnqual(Type::Int8Ty));
-  //args.push_back(llvm::Type::Int32Ty);
-  args.push_back(CacheNode::llvmType);
-  args.push_back(VMObject::llvmType);
-  const FunctionType* type =
-    FunctionType::get(CacheNode::llvmType, args, false);
 
-  virtualLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                                   "n3VirtualLookup", module);
+  printExecutionLLVM = module->getFunction("printExecution");
 
-/*
-  virtualLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5n37CLIJit13virtualLookupEPNS_10VMObjectEPNS_5ClassEj",
-                     module);
-*/
-  }
-  
-  // Create newLookupLLVM
-  /*{
-  std::vector<const Type*> args;
-  args.push_back(PointerType::getUnqual(Type::Int8Ty));
-  args.push_back(llvm::Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(VMObject::llvmType, args,
-                                               false);
-
-  newLookupLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5n37CLIJit9newLookupEPNS_5ClassEj",
-                     module);
-  }*/
-  
-  // Create arrayConsLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(PointerType::getUnqual(Type::Int8Ty));
-  args.push_back(Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(VMObject::llvmType, args,
-                                               false);
-
-  arrayConsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN2n312VMClassArray5doNewEj",
-                     module);
-  }
-  
-  // Create objConsLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(PointerType::getUnqual(Type::Int8Ty));
-  const FunctionType* type = FunctionType::get(VMObject::llvmType, args,
-                                               false);
-
-  objConsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN2n37VMClass5doNewEv",
-                     module);
-  }
-  
-  // Create objInitLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(PointerType::getUnqual(Type::Int8Ty));
-  args.push_back(VMObject::llvmType);
-  const FunctionType* type = FunctionType::get(VMObject::llvmType, args,
-                                               false);
-
-  objInitLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN2n37VMClass16initialiseObjectEPNS_8VMObjectE",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  objInitLLVM->setParamAttrs(func_toto_PAL);
-  }
-  
-  // Create arrayLengthLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(VMArray::llvmType);
-  const FunctionType* type = FunctionType::get(Type::Int32Ty, args, false);
-
-  arrayLengthLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "arrayLength",
-                     module);
-  PAListPtr func_toto_PAL;
-  SmallVector<ParamAttrsWithIndex, 4> Attrs;
-  ParamAttrsWithIndex PAWI;
-  PAWI.Index = 0; PAWI.Attrs = 0  | ParamAttr::ReadNone;
-  Attrs.push_back(PAWI);
-  func_toto_PAL = PAListPtr::get(Attrs.begin(), Attrs.end());
-  arrayLengthLLVM->setParamAttrs(func_toto_PAL);
-  }
-
-  
-  // Create nullPointerExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  nullPointerExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "n3NullPointerException",
-                     module);
-  }
-  
-  // Create classCastExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  classCastExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "n3ClassCastException",
-                     module);
-  }
-  
-  // Create indexOutOfBoundsExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(VMObject::llvmType);
-  args.push_back(Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  indexOutOfBoundsExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "indexOutOfBounds",
-                     module);
-  }
-  
-  // Create proceedPendingExceptionLLVM
-  /*{
-  std::vector<const Type*> args;
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  jniProceedPendingExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5n37CLIJit26jniProceedPendingExceptionEv",
-                     module);
-  }*/
-  
-  // Create printExecutionLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(Type::Int32Ty);
-  args.push_back(Type::Int32Ty);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  printExecutionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN2n36CLIJit14printExecutionEPcPNS_8VMMethodE",
-                     module);
-  }
-  
-  // Create throwExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(VMObject::llvmType);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  throwExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN2n38VMThread14throwExceptionEPNS_8VMObjectE",
-                     module);
-  }
-   
-  // Create clearExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  clearExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN2n38VMThread14clearExceptionEv",
-                     module);
-  }
-  
-  
-  // Create compareExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(PointerType::getUnqual(Type::Int8Ty));
-  const FunctionType* type = FunctionType::get(Type::Int1Ty, args, false);
-
-  compareExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN2n38VMThread16compareExceptionEPNS_7VMClassE",
-                     module);
-  }
-  
-  // Create instanceOfLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(VMObject::llvmType);
-  args.push_back(PointerType::getUnqual(Type::Int8Ty));
-  const FunctionType* type = FunctionType::get(Type::Int32Ty, args, false);
-
-  instanceOfLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN2n38VMObject10instanceOfEPNS_13VMCommonClassE",
-                     module);
-  }
-  
-  // Create arrayMultiConsLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(PointerType::getUnqual(Type::Int8Ty));
-  const FunctionType* type = FunctionType::get(VMObject::llvmType, args,
-                                               true);
-
-  arrayMultiConsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "doMultiNew",
-                     module);
-  }
-
-  /*
-  // Create aquireObjectLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(VMObject::llvmType);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  aquireObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5n310VMObject6aquireEv",
-                     module);
-  }
-  
-  // Create releaseObjectLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(VMObject::llvmType);
-  const FunctionType* type = FunctionType::get(Type::VoidTy, args, false);
-
-  releaseObjectLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5n310VMObject6unlockEv",
-                     module);
-  }
-  
-  */
-  
-  
-  // Create *AconsLLVM
-  /*{
-  std::vector<const Type*> args;
-  args.push_back(Type::Int32Ty);
-  args.push_back(PointerType::getUnqual(Type::Int8Ty));
-  const FunctionType* type = FunctionType::get(VMObject::llvmType, args,
-                                               false);
-
-  FloatAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5n310ArrayFloat5aconsEiPNS_10VMClassArrayE",
-                     module);
-  
-  Int8AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5n310ArraySInt85aconsEiPNS_10VMClassArrayE",
-                     module);
-  
-  DoubleAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5n311ArrayDouble5aconsEiPNS_10VMClassArrayE",
-                     module);
-   
-  Int16AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5n311ArraySInt165aconsEiPNS_10VMClassArrayE",
-                     module);
-  
-  Int32AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5n311ArraySInt325aconsEiPNS_10VMClassArrayE",
-                     module);
-  
-  UTF8AconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5n34UTF85aconsEiPNS_10VMClassArrayE",
-                     module);
-  
-  LongAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5n39ArrayLong5aconsEiPNS_10VMClassArrayE",
-                     module);
-  
-  ObjectAconsLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN5n311ArrayObject5aconsEiPNS_10VMClassArrayE",
-                     module);
-  }*/
-  
-  // Create getCppExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  const FunctionType* type = FunctionType::get(mvm::jit::ptrType, 
-                                               args, false);
-
-  getCppExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN2n38VMThread15getCppExceptionEv",
-                     module);
-  }
-  
-  // Create getCLIExceptionLLVM
-  {
-  std::vector<const Type*> args;
-  const FunctionType* type = FunctionType::get(VMObject::llvmType, 
-                                               args, false);
-
-  getCLIExceptionLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "_ZN2n38VMThread15getCLIExceptionEv",
-                     module);
-  }
-  
-  // Create newStringLLVM
-  {
-  std::vector<const Type*> args;
-  args.push_back(mvm::jit::ptrType);
-  const FunctionType* type = FunctionType::get(VMObject::llvmType, 
-                                               args, false);
-
-  newStringLLVM = Function::Create(type, GlobalValue::ExternalLinkage,
-                     "newString",
-                     module);
-  }
 
   
   constantVMObjectNull = Constant::getNullValue(VMObject::llvmType);

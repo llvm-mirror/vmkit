@@ -17,13 +17,18 @@ using namespace jnjvm;
 
 
 JavaString* JavaString::stringDup(const UTF8*& utf8, Jnjvm* vm) {
-  Class* cl = Classpath::newString;
-  JavaString* res = (JavaString*)malloc(cl->virtualSize);
-  ((void**)res)[0] = cl->virtualVT;
+  UserClass* cl = vm->upcalls->newString;
+  JavaString* res = (JavaString*)malloc(cl->getVirtualSize());
+#ifdef MULTIPLE_VM
+  /// Do this for now, but we will have to change it to duplicate the UTF8.
+  /// UTF8 that dont have a class are shared UTF8.
+  if (!utf8->classOf) ((UTF8*)utf8)->classOf = vm->upcalls->ArrayOfChar;
+#endif
+  ((void**)res)[0] = cl->getVirtualVT();
   res->classOf = cl;
 
-  // no need to call the function
-  // Classpath::initString->run(res, utf8, 0, utf8->size, true);
+  // No need to call the Java function: both the Java function and
+  // this function do the same thing.
   res->value = utf8;
   res->count = utf8->size;
   res->offset = 0;
@@ -44,7 +49,8 @@ const UTF8* JavaString::strToUTF8(Jnjvm* vm) {
   const UTF8* utf8 = this->value;
   if (offset || (offset + count <= utf8->size)) {
     // TODO find a way to get a relevant hashUTF8
-    return utf8->extract(JnjvmClassLoader::bootstrapLoader->hashUTF8, offset, offset + count);
+    UTF8Map* map = vm->bootstrapLoader->hashUTF8;
+    return utf8->extract(map, offset, offset + count);
   } else {
     return utf8;
   }

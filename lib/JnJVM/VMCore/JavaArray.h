@@ -68,18 +68,6 @@ public:
   static const unsigned int T_SHORT;
   static const unsigned int T_INT;
   static const unsigned int T_LONG;
-
-  /// The Java class of Java arrays used in JnJVM.
-  static ClassArray* ofByte;
-  static ClassArray* ofChar;
-  static ClassArray* ofString;
-  static ClassArray* ofInt;
-  static ClassArray* ofShort;
-  static ClassArray* ofBool;
-  static ClassArray* ofLong;
-  static ClassArray* ofFloat;
-  static ClassArray* ofDouble;
-  static ClassArray* ofObject;
   
   /// tracer - The trace method of Java arrays of primitive types. Since their
   /// class lives throughout the lifetime of the application, there is no need
@@ -92,7 +80,7 @@ public:
 #define ARRAYCLASS(name, elmt)                                \
   class name : public TJavaArray<elmt> {                      \
   public:                                                     \
-    static name* acons(sint32 n, ClassArray* cl, JavaAllocator* allocator);  \
+    static name* acons(sint32 n, UserClassArray* cl, JavaAllocator* allocator);\
   }
 
 ARRAYCLASS(ArrayUInt8,  uint8);
@@ -117,7 +105,8 @@ public:
 
   /// acons - Allocates a Java array of objects. The class given as argument is
   /// the class of the array, not the class of its elements.
-  static ArrayObject* acons(sint32 n, ClassArray* cl, JavaAllocator* allocator);
+  static ArrayObject* acons(sint32 n, UserClassArray* cl,
+                            JavaAllocator* allocator);
 
   /// tracer - The tracer method of Java arrays of objects. This method will
   /// trace all objects in the array.
@@ -134,7 +123,8 @@ public:
   
   /// acons - Allocates an UTF8 in permanent memory. The class argument must be
   /// JavaArray::ofChar.
-  static const UTF8* acons(sint32 n, ClassArray* cl, JavaAllocator* allocator);
+  static const UTF8* acons(sint32 n, UserClassArray* cl,
+                           JavaAllocator* allocator);
 
   /// internalToJava - Creates a copy of the UTF8 at its given offset and size
   /// woth all its '.' replaced by '/'. The JVM bytecode reference classes in
@@ -147,8 +137,18 @@ public:
   const UTF8* javaToInternal(UTF8Map* map, unsigned int start,
                              unsigned int len) const;
   
+  /// checkedJavaToInternal - Replaces all '/' into '.'. Returns null if the
+  /// UTF8 contains a '/', as Java does not allow things like
+  /// Class.forName("java/lang/Object")
+  const UTF8* checkedJavaToInternal(UTF8Map* map, unsigned int start,
+                                    unsigned int len) const;
+  
   /// UTF8ToAsciiz - Allocates a C string with the contents of this UTF8.
   char* UTF8ToAsciiz() const;
+  
+  char* printString() const {
+    return UTF8ToAsciiz();
+  }
 
   /// extract - Creates an UTF8 by extracting the contents at the given size
   /// of this.
@@ -156,7 +156,7 @@ public:
 
   /// equals - Returns whether two UTF8s are equals. When the JnJVM executes
   /// in single mode, equality is just a pointer comparison. When executing
-  /// in multiple mode, we compare the contents f the UTF8s.
+  /// in multiple mode, we compare the contents of the UTF8s.
 #ifndef MULTIPLE_VM
   bool equals(const UTF8* other) const {
     return this == other;

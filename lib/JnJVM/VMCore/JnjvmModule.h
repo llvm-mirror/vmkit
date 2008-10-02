@@ -45,7 +45,7 @@ public:
   llvm::ConstantInt* sizeInBytesConstant;
   
   static void initialise();
-  static LLVMAssessorInfo AssessorInfo[];
+  static std::map<const char, LLVMAssessorInfo> AssessorInfo;
 
 };
 
@@ -62,11 +62,9 @@ private:
   ///
   llvm::GlobalVariable* varGV;
 
-#ifndef MULTIPLE_VM
   /// delegateeGV - The LLVM global variable representing the 
   /// java/lang/Class instance of this class.
   llvm::GlobalVariable* delegateeGV;
-#endif
 
 
 public:
@@ -75,10 +73,8 @@ public:
   
   LLVMCommonClassInfo(CommonClass* cl) : 
     classDef(cl),
-    varGV(0)
-#ifndef MULTIPLE_VM
-    ,delegateeGV(0)
-#endif
+    varGV(0),
+    delegateeGV(0)
     {}
 };
 
@@ -308,6 +304,8 @@ public:
   static const llvm::Type* JavaCacheType;
   static const llvm::Type* EnveloppeType;
   static const llvm::Type* CacheNodeType;
+  static const llvm::Type* JnjvmType;
+  static const llvm::Type* ConstantPoolType;
   
 #ifdef WITH_TRACER
   static llvm::Function* MarkAndTraceFunction;
@@ -317,7 +315,8 @@ public:
   
   static llvm::Function* GetSJLJBufferFunction;
   static llvm::Function* InterfaceLookupFunction;
-  static llvm::Function* FieldLookupFunction;
+  static llvm::Function* VirtualFieldLookupFunction;
+  static llvm::Function* StaticFieldLookupFunction;
   static llvm::Function* PrintExecutionFunction;
   static llvm::Function* PrintMethodStartFunction;
   static llvm::Function* PrintMethodEndFunction;
@@ -337,6 +336,7 @@ public:
   static llvm::Function* GetDisplayFunction;
   static llvm::Function* AquireObjectFunction;
   static llvm::Function* ReleaseObjectFunction;
+  static llvm::Function* GetConstantPoolAtFunction;
 #ifdef SERVICE_VM
   static llvm::Function* AquireObjectInSharedDomainFunction;
   static llvm::Function* ReleaseObjectInSharedDomainFunction;
@@ -347,7 +347,14 @@ public:
 
 #ifdef MULTIPLE_VM
   static llvm::Function* StringLookupFunction;
-  static llvm::Function* GetStaticInstanceFunction;
+  static llvm::Function* GetCtpCacheNodeFunction;
+  static llvm::Function* GetCtpClassFunction;
+  static llvm::Function* EnveloppeLookupFunction;
+  static llvm::Function* GetJnjvmExceptionClassFunction;
+  static llvm::Function* GetJnjvmArrayClassFunction;
+  static llvm::Function* StaticCtpLookupFunction;
+  static llvm::Function* SpecialCtpLookupFunction;
+  static llvm::Function* GetArrayClassFunction;
 #endif
 
   static llvm::Function* GetClassDelegateeFunction;
@@ -369,6 +376,8 @@ public:
   static llvm::ConstantInt* OffsetVTInClassConstant;
   static llvm::ConstantInt* OffsetDepthInClassConstant;
   static llvm::ConstantInt* OffsetDisplayInClassConstant;
+  static llvm::ConstantInt* OffsetStatusInClassConstant;
+  static llvm::ConstantInt* OffsetCtpInClassConstant;
 
   static llvm::Constant* JavaClassNullConstant;
 
@@ -408,7 +417,7 @@ public:
   }
   
   static LLVMCommonClassInfo* getClassInfo(CommonClass* cl) {
-    if (cl->isArray || cl->isPrimitive) {
+    if (cl->isArray() || cl->isPrimitive()) {
       return cl->getInfo<LLVMCommonClassInfo>();
     } 
     
@@ -426,6 +435,8 @@ public:
   static LLVMConstantPoolInfo* getConstantPoolInfo(JavaConstantPool* ctp) {
     return ctp->getInfo<LLVMConstantPoolInfo>();
   }
+  
+  static LLVMAssessorInfo& getTypedefInfo(Typedef* type);
   
   LLVMStringInfo* getStringInfo(JavaString* str);
 

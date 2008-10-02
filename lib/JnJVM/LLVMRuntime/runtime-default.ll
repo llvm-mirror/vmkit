@@ -5,14 +5,22 @@
 ;;; A virtual table is an array of function pointers.
 %VT = type i32**
 
+;;; The type of a constant pool. Jnjvm will make this into a i8**
+%ConstantPool = type i8*
+
+%Jnjvm = type {%VT, %JavaClass*, [9 x %JavaClass*]}
+
 ;;; The type of internal classes. This is not complete, but we only need
 ;;; the first fields for now. 
 ;;; Field 1 - The VT of a class C++ object.
 ;;; Field 2 - The size of instances of this class.
 ;;; Field 3 - The VT of instances of this class.
 ;;; Field 4 - The list of super classes of this class.
-;;; Field 5 - The depth of the class in its super hierarchy
-%JavaClass = type { %VT, i32, %VT ,%JavaClass**, i32}
+;;; Field 5 - The depth of the class in its super hierarchy.
+;;; Field 6 - The class state (resolved, initialized, ...)
+;;; field 7 - The constant pool, only for multi vm environment.
+;;; field 8 - The static instance, only for multi vm environment.
+%JavaClass = type { %VT, i32, %VT ,%JavaClass**, i32, i32, %ConstantPool*, %JavaObject* }
 
 ;;; The root of all Java Objects: a VT, a class and a lock.
 %JavaObject = type { %VT, %JavaClass*, i32 }
@@ -30,13 +38,13 @@
 %ArrayUInt32 = type { %JavaObject, i32, [0 x i32] }
 %ArrayUInt8 = type { %JavaObject, i32, [0 x i8] }
 
-;;; The CacheNode type. The second field is the last called method
-%CacheNode = type { i8*, %JavaClass*, %CacheNode*, %Enveloppe* }
+;;; The CacheNode type. The second field is the last called method. The
+;;; last field is for multi vm environment.
+%CacheNode = type { i8*, %JavaClass*, %CacheNode*, %Enveloppe*, %ConstantPool* }
 
 ;;; The Enveloppe type, which contains the first cache and all the info
 ;;; to lookup in the constant pool.
-%Enveloppe = type { %CacheNode*, i8*, i8*, i32 }
-
+%Enveloppe = type { %CacheNode*, %ConstantPool*, i8*, i32 }
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Constant calls for Jnjvm runtime internal objects field accesses ;;;;;;;;;
@@ -94,18 +102,27 @@ declare %JavaObject* @multiCallNew(%JavaClass*, i32, ...)
 ;;; implementation.
 declare void @forceInitialisationCheck(%JavaClass*)
 
+;;; getConstantPoolAt - Get the value in the constant pool of this class.
+;;; This function is removed by Jnjvm after the GVn pass, therefore it does
+;;; not have an actual implementation.
+declare i8* @getConstantPoolAt(i8* (%JavaClass*, i32, ...)*, %ConstantPool*,
+                               %JavaClass*, i32, ...) readnone
+
 ;;; vtableLookup - Look up the offset in a virtual table of a specific
 ;;; function. This function takes a class and an index to lookup in the
 ;;; constant pool and returns and stores it in the constant pool cache.
-declare i32 @vtableLookup(%JavaObject*, %JavaClass*, i32) readnone 
+declare i8* @vtableLookup(%JavaClass*, i32, ...)
 
 ;;; newLookup - Look up a specific class. The function takes a class and an
 ;;; index to lookup in the constant pool and returns and stores it in the
 ;;; constant pool cache.
-declare %JavaClass* @newLookup(%JavaClass*, i32) readnone 
+declare i8* @classLookup(%JavaClass*, i32, ...)
 
-;;; fieldLookup - Look up a specific field.
-declare i8* @fieldLookup(%JavaObject*, %JavaClass*, i32, i32) readnone 
+;;; virtualFieldLookup - Look up a specific virtual field.
+declare i8* @virtualFieldLookup(%JavaClass*, i32, ...)
+
+;;; staticFieldLookup - Look up a specific static field.
+declare i8* @staticFieldLookup(%JavaClass*, i32, ...)
 
 ;;; JavaObjectAquire - This function is called when starting a synchronized
 ;;; block or method.

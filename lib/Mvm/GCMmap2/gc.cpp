@@ -234,8 +234,7 @@ void GCCollector::siggc_handler(int) {
   if(!loc) /* a key is being destroyed */  
     COLLECTOR threads->another_mark();
   else {
-    unsigned int* top;
-    register unsigned int  **cur = &top;
+    register unsigned int  **cur = (unsigned int**)(void*)&buf;
     register unsigned int  **max = loc->base_sp();
     
     GCChunkNode *node;

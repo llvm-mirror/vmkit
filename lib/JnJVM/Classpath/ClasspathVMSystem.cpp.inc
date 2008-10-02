@@ -40,17 +40,14 @@ JNIEnv *env,
   verifyNull(src);
   verifyNull(dst);
   
-  if (!(src->classOf->isArray && dst->classOf->isArray)) {
+  if (!(src->classOf->isArray() && dst->classOf->isArray())) {
     vm->arrayStoreException();
   }
   
-  ClassArray* ts = (ClassArray*)src->classOf;
-  ClassArray* td = (ClassArray*)dst->classOf;
-  CommonClass* dstType = td->baseClass();
-  AssessorDesc* dstFuncs = td->funcs();
-  AssessorDesc* srcFuncs = ts->funcs();
-  CommonClass* srcPrim = srcFuncs->classType;
-  CommonClass* dstPrim = dstFuncs->classType;
+  UserClassArray* ts = (UserClassArray*)src->classOf;
+  UserClassArray* td = (UserClassArray*)dst->classOf;
+  UserCommonClass* dstType = td->baseClass();
+  UserCommonClass* srcType = ts->baseClass();
 
   if (len > src->size) {
     vm->indexOutOfBounds(src, len);
@@ -66,13 +63,14 @@ JNIEnv *env,
     vm->indexOutOfBounds(src, sstart);
   } else if (len < 0) {
     vm->indexOutOfBounds(src, len);
-  } else if (srcPrim != dstPrim) {
+  } else if ((dstType->isPrimitive() || srcType->isPrimitive()) &&
+             srcType != dstType) {
     vm->arrayStoreException();
   }
   
   jint i = sstart;
   bool doThrow = false;
-  if (srcFuncs->doTrace) {
+  if (!(dstType->isPrimitive())) {
     while (i < sstart + len && !doThrow) {
       JavaObject* cur = ((ArrayObject*)src)->elements[i];
       if (cur) {
@@ -85,8 +83,10 @@ JNIEnv *env,
     }
   }
   
-  uint32 size = srcFuncs->nbb;
-  if (size == 0) size = sizeof(void*);
+  uint32 size = dstType->isPrimitive() ? 
+                      dstType->virtualSize : sizeof(JavaObject*);
+  
+  assert(size && "Size zero in a arraycopy");
   void* ptrDst = (void*)((int64_t)(dst->elements) + size * dstart);
   void* ptrSrc = (void*)((int64_t)(src->elements) + size * sstart);
   memmove(ptrDst, ptrSrc, size * len);

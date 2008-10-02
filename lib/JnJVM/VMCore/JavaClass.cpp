@@ -25,6 +25,7 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
+#include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
@@ -39,9 +40,8 @@ const UTF8* Attribut::lineNumberTableAttribut = 0;
 const UTF8* Attribut::innerClassesAttribut = 0;
 const UTF8* Attribut::sourceFileAttribut = 0;
 
-CommonClass* ClassArray::SuperArray = 0;
+CommonClass* ClassArray::SuperArray;
 std::vector<Class*> ClassArray::InterfacesArray;
-
 
 Attribut::Attribut(const UTF8* name, uint32 length,
                    uint32 offset) {
@@ -171,16 +171,13 @@ static void printClassNameIntern(const UTF8* name, unsigned int start,
                                  unsigned int end,  mvm::PrintBuffer* buf) {
   
   uint16 first = name->elements[start];
-  if (first == AssessorDesc::I_TAB) {
+  if (first == I_TAB) {
     unsigned int stepsEnd = start;
-    while (name->elements[stepsEnd] == AssessorDesc::I_TAB) stepsEnd++;
-    if (name->elements[stepsEnd] == AssessorDesc::I_REF) {
+    while (name->elements[stepsEnd] == I_TAB) stepsEnd++;
+    if (name->elements[stepsEnd] == I_REF) {
       printClassNameIntern(name, (stepsEnd + 1),(end - 1), buf);
     } else {
-      AssessorDesc * funcs = 0;
-      uint32 next = 0;
-      AssessorDesc::analyseIntern(name, stepsEnd, 0, funcs, next);
-      buf->write(funcs->asciizName);
+      name->print(buf);
     }
     buf->write(" ");
     for (uint32 i = start; i < stepsEnd; i++)
@@ -206,27 +203,82 @@ void CommonClass::print(mvm::PrintBuffer* buf) const {
   buf->write(">");
 }
 
-CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n, bool isArray) {
+UserClassPrimitive* CommonClass::toPrimitive(Jnjvm* vm) const {
+  if (this == vm->upcalls->voidClass) {
+    return vm->upcalls->OfVoid;
+  } else if (this == vm->upcalls->intClass) {
+    return vm->upcalls->OfInt;
+  } else if (this == vm->upcalls->shortClass) {
+    return vm->upcalls->OfShort;
+  } else if (this == vm->upcalls->charClass) {
+    return vm->upcalls->OfChar;
+  } else if (this == vm->upcalls->doubleClass) {
+    return vm->upcalls->OfDouble;
+  } else if (this == vm->upcalls->byteClass) {
+    return vm->upcalls->OfByte;
+  } else if (this == vm->upcalls->boolClass) {
+    return vm->upcalls->OfBool;
+  } else if (this == vm->upcalls->longClass) {
+    return vm->upcalls->OfLong;
+  } else if (this == vm->upcalls->floatClass) {
+    return vm->upcalls->OfFloat;
+  } else {
+    return 0;
+  }
+}
+
+
+UserClassPrimitive* 
+ClassPrimitive::byteIdToPrimitive(char id, Classpath* upcalls) {
+  switch (id) {
+    case I_FLOAT :
+      return upcalls->OfFloat;
+    case I_INT :
+      return upcalls->OfInt;
+    case I_SHORT :
+      return upcalls->OfShort;
+    case I_CHAR :
+      return upcalls->OfChar;
+    case I_DOUBLE :
+      return upcalls->OfDouble;
+    case I_BYTE :
+      return upcalls->OfByte;
+    case I_BOOL :
+      return upcalls->OfBool;
+    case I_LONG :
+      return upcalls->OfLong;
+    case I_VOID :
+      return upcalls->OfVoid;
+    default :
+      return 0;
+  }
+}
+
+CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n,
+                         bool isArray) {
   name = n;
   this->lockVar = mvm::Lock::allocRecursive();
   this->condVar = mvm::Cond::allocCond();
   this->status = loaded;
   this->classLoader = loader;
-  this->isArray = isArray;
-  this->isPrimitive = false;
+  this->array = isArray;
+  this->primitive = false;
+  this->JInfo = 0;
 #ifndef MULTIPLE_VM
   this->delegatee = 0;
 #endif
 }
 
-ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n) : 
+ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n,
+                               uint32 nb) : 
   CommonClass(loader, n, false) {
-  
+ 
   display = (CommonClass**)malloc(sizeof(CommonClass*));
   display[0] = this;
-  isPrimitive = true;
+  primitive = true;
   status = ready;
   access = ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC;
+  virtualSize = nb;
 }
 
 Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) : 
@@ -239,16 +291,22 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
 #endif
 }
 
-ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n) : CommonClass(loader, n, true) {
-  _funcs = 0;
-  _baseClass = 0;
+ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
+                       UserCommonClass* base) : 
+    CommonClass(loader, n, true) {
+  _baseClass = base;
   super = ClassArray::SuperArray;
   interfaces = ClassArray::InterfacesArray;
   depth = 1;
   display = (CommonClass**)malloc(2 * sizeof(CommonClass*));
   display[0] = ClassArray::SuperArray;
   display[1] = this;
-  access = ACC_FINAL | ACC_ABSTRACT;
+  access = ACC_FINAL | ACC_ABSTRACT | ACC_PUBLIC;
+  if (base->isPrimitive()) {
+    virtualVT = JavaArray::VT;
+  } else {
+    virtualVT = ArrayObject::VT;
+  }
 }
 
 void Class::print(mvm::PrintBuffer* buf) const {
@@ -263,26 +321,21 @@ void ClassArray::print(mvm::PrintBuffer* buf) const {
   buf->write(">");
 }
 
-void ClassArray::resolveComponent() {
-  AssessorDesc::introspectArray(classLoader, name, 0, _funcs,
-                                _baseClass);
-}
-
-JnjvmClassLoader* ClassArray::arrayLoader(const UTF8* name,
-                                          JnjvmClassLoader* loader,
-                                          unsigned int start,
-                                          unsigned int len) {
+JavaArray* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
+  if (n < 0)
+    vm->negativeArraySizeException(n);
+  else if (n > JavaArray::MaxArraySize)
+    vm->outOfMemoryError(n);
   
-  if (name->elements[start] == AssessorDesc::I_TAB) {
-    return arrayLoader(name, loader, start + 1, len - 1);
-  } else if (name->elements[start] == AssessorDesc::I_REF) {
-    const UTF8* componentName = name->javaToInternal(loader->hashUTF8, start + 1,
-                                                     len - 2);
-    CommonClass* cl = loader->loadName(componentName, false, true);
-    return cl->classLoader;
-  } else {
-    return JnjvmClassLoader::bootstrapLoader;
-  }
+  UserCommonClass* cl = baseClass();
+  assert(cl && virtualVT && "array class not resolved");
+
+  uint32 primSize = cl->isPrimitive() ? cl->virtualSize : sizeof(JavaObject*);
+  JavaArray* res = (JavaArray*)
+    vm->allocator.allocateObject(sizeof(name) + n * primSize, virtualVT);
+  res->initialise(this);
+  res->size = n;
+  return res;
 }
 
 void* JavaMethod::compiledPtr() {
@@ -323,25 +376,33 @@ const char* JavaField::printString() const {
 }
 
 JavaMethod* CommonClass::lookupMethodDontThrow(const UTF8* name,
-                                               const UTF8* type, bool isStatic,
-                                               bool recurse) {
+                                               const UTF8* type,
+                                               bool isStatic,
+                                               bool recurse,
+                                               Class*& methodCl) {
   
-  FieldCmp CC(name, type);
-  method_map& map = isStatic ? staticMethods : virtualMethods;
-  method_iterator End = map.end();
-  method_iterator I = map.find(CC);
-  if (I != End) return I->second;
+  CommonClass::FieldCmp CC(name, type);
+  CommonClass::method_map* map = isStatic ? getStaticMethods() :
+                                            getVirtualMethods();
+  CommonClass::method_iterator End = map->end();
+  CommonClass::method_iterator I = map->find(CC);
+  if (I != End) {
+    methodCl = (Class*)this;
+    return I->second;
+  }
   
   JavaMethod *cur = 0;
   
   if (recurse) {
     if (super) cur = super->lookupMethodDontThrow(name, type, isStatic,
-                                                  recurse);
+                                                  recurse, methodCl);
     if (cur) return cur;
     if (isStatic) {
-      for (std::vector<Class*>::iterator i = interfaces.begin(),
-           e = interfaces.end(); i!= e; i++) {
-        cur = (*i)->lookupMethodDontThrow(name, type, isStatic, recurse);
+      std::vector<Class*>* interfaces = getInterfaces();
+      for (std::vector<Class*>::iterator i = interfaces->begin(),
+           e = interfaces->end(); i!= e; i++) {
+        cur = (*i)->lookupMethodDontThrow(name, type, isStatic, recurse,
+                                          methodCl);
         if (cur) return cur;
       }
     }
@@ -351,34 +412,43 @@ JavaMethod* CommonClass::lookupMethodDontThrow(const UTF8* name,
 }
 
 JavaMethod* CommonClass::lookupMethod(const UTF8* name, const UTF8* type,
-                                      bool isStatic, bool recurse) {
-  JavaMethod* res = lookupMethodDontThrow(name, type, isStatic, recurse);
+                                      bool isStatic, bool recurse,
+                                      Class*& methodCl) {
+  JavaMethod* res = lookupMethodDontThrow(name, type, isStatic, recurse,
+                                          methodCl);
   if (!res) {
     JavaThread::get()->isolate->noSuchMethodError(this, name);
   }
   return res;
 }
 
-JavaField* CommonClass::lookupFieldDontThrow(const UTF8* name,
-                                             const UTF8* type, bool isStatic,
-                                             bool recurse) {
+JavaField*
+CommonClass::lookupFieldDontThrow(const UTF8* name, const UTF8* type,
+                                  bool isStatic, bool recurse,
+                                  CommonClass*& definingClass) {
 
-  FieldCmp CC(name, type);
-  field_map& map = isStatic ? staticFields : virtualFields;
-  field_iterator End = map.end();
-  field_iterator I = map.find(CC);
-  if (I != End) return I->second;
+  CommonClass::FieldCmp CC(name, type);
+  CommonClass::field_map* map = isStatic ? getStaticFields() :
+                                           getVirtualFields();
+  CommonClass::field_iterator End = map->end();
+  CommonClass::field_iterator I = map->find(CC);
+  if (I != End) {
+    definingClass = this;
+    return I->second;
+  }
   
   JavaField *cur = 0;
 
   if (recurse) {
     if (super) cur = super->lookupFieldDontThrow(name, type, isStatic,
-                                                 recurse);
+                                                 recurse, definingClass);
     if (cur) return cur;
     if (isStatic) {
-      for (std::vector<Class*>::iterator i = interfaces.begin(),
-           e = interfaces.end(); i!= e; i++) {
-        cur = (*i)->lookupFieldDontThrow(name, type, isStatic, recurse);
+      std::vector<Class*>* interfaces = getInterfaces();
+      for (std::vector<Class*>::iterator i = interfaces->begin(),
+           e = interfaces->end(); i!= e; i++) {
+        cur = (*i)->lookupFieldDontThrow(name, type, isStatic, recurse,
+                                         definingClass);
         if (cur) return cur;
       }
     }
@@ -388,29 +458,33 @@ JavaField* CommonClass::lookupFieldDontThrow(const UTF8* name,
 }
 
 JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
-                                    bool isStatic, bool recurse) {
+                                    bool isStatic, bool recurse,
+                                    CommonClass*& definingClass) {
   
-  JavaField* res = lookupFieldDontThrow(name, type, isStatic, recurse);
+  JavaField* res = lookupFieldDontThrow(name, type, isStatic, recurse,
+                                        definingClass);
   if (!res) {
     JavaThread::get()->isolate->noSuchFieldError(this, name);
   }
   return res;
 }
 
-JavaObject* Class::doNew(Jnjvm* vm) {
+JavaObject* UserClass::doNew(Jnjvm* vm) {
+  assert(this && "No class when allocating.");
   assert(this->isReady() && "Uninitialized class when allocating.");
-  JavaObject* res = (JavaObject*)vm->allocator.allocateObject(virtualSize, virtualVT);
+  JavaObject* res = (JavaObject*)vm->allocator.allocateObject(getVirtualSize(),
+                                                              getVirtualVT());
   res->classOf = this;
   return res;
 }
 
-bool CommonClass::inheritName(const UTF8* Tname) {
-  if (name->equals(Tname)) {
+bool UserCommonClass::inheritName(const UTF8* Tname) {
+  if (getName()->equals(Tname)) {
     return true;
-  } else  if (isPrimitive) {
+  } else  if (isPrimitive()) {
     return false;
   } else if (super) {
-    if (super->inheritName(Tname)) return true;
+    if (getSuper()->inheritName(Tname)) return true;
   }
   
   for (uint32 i = 0; i < interfaces.size(); ++i) {
@@ -419,34 +493,35 @@ bool CommonClass::inheritName(const UTF8* Tname) {
   return false;
 }
 
-bool CommonClass::isOfTypeName(const UTF8* Tname) {
+bool UserCommonClass::isOfTypeName(const UTF8* Tname) {
   if (inheritName(Tname)) {
     return true;
-  } else if (isArray) {
-    CommonClass* curS = this;
+  } else if (isArray()) {
+    UserCommonClass* curS = this;
     uint32 prof = 0;
     uint32 len = Tname->size;
     bool res = true;
     
-    while (res && Tname->elements[prof] == AssessorDesc::I_TAB) {
-      CommonClass* cl = ((ClassArray*)curS)->baseClass();
+    while (res && Tname->elements[prof] == I_TAB) {
+      UserCommonClass* cl = ((UserClassArray*)curS)->baseClass();
       ++prof;
       cl->resolveClass();
-      res = curS->isArray && cl && (prof < len);
+      res = curS->isArray() && cl && (prof < len);
       curS = cl;
     }
     
-    return (Tname->elements[prof] == AssessorDesc::I_REF) &&  
-      (res && curS->inheritName(Tname->extract(classLoader->hashUTF8, prof + 1, len - 1)));
+    return (Tname->elements[prof] == I_REF) &&  
+      (res && curS->inheritName(Tname->extract(classLoader->hashUTF8, prof + 1,
+                                               len - 1)));
   } else {
     return false;
   }
 }
 
-bool CommonClass::implements(CommonClass* cl) {
+bool UserCommonClass::implements(UserCommonClass* cl) {
   if (this == cl) return true;
   else {
-    for (std::vector<Class*>::iterator i = interfaces.begin(),
+    for (std::vector<UserClass*>::iterator i = interfaces.begin(),
          e = interfaces.end(); i!= e; i++) {
       if (*i == cl) return true;
       else if ((*i)->implements(cl)) return true;
@@ -458,14 +533,14 @@ bool CommonClass::implements(CommonClass* cl) {
   return false;
 }
 
-bool CommonClass::instantiationOfArray(ClassArray* cl) {
+bool UserCommonClass::instantiationOfArray(UserClassArray* cl) {
   if (this == cl) return true;
   else {
-    if (isArray) {
-      CommonClass* baseThis = ((ClassArray*)this)->baseClass();
-      CommonClass* baseCl = ((ClassArray*)cl)->baseClass();
+    if (isArray()) {
+      UserCommonClass* baseThis = ((UserClassArray*)this)->baseClass();
+      UserCommonClass* baseCl = ((UserClassArray*)cl)->baseClass();
 
-      if (isInterface(baseThis->access) && isInterface(baseCl->access)) {
+      if (baseThis->isInterface() && baseCl->isInterface()) {
         return baseThis->implements(baseCl);
       } else {
         return baseThis->isAssignableFrom(baseCl);
@@ -475,7 +550,7 @@ bool CommonClass::instantiationOfArray(ClassArray* cl) {
   return false;
 }
 
-bool CommonClass::subclassOf(CommonClass* cl) {
+bool UserCommonClass::subclassOf(UserCommonClass* cl) {
   if (cl->depth <= depth) {
     return display[cl->depth] == cl;
   } else {
@@ -483,20 +558,20 @@ bool CommonClass::subclassOf(CommonClass* cl) {
   }
 }
 
-bool CommonClass::isAssignableFrom(CommonClass* cl) {
+bool UserCommonClass::isAssignableFrom(UserCommonClass* cl) {
   if (this == cl) {
     return true;
-  } else if (isInterface(cl->access)) {
+  } else if (cl->isInterface()) {
     return this->implements(cl);
-  } else if (cl->isArray) {
-    return this->instantiationOfArray((ClassArray*)cl);
+  } else if (cl->isArray()) {
+    return this->instantiationOfArray((UserClassArray*)cl);
   } else {
     return this->subclassOf(cl);
   }
 }
 
-void JavaField::initField(JavaObject* obj) {
-  const AssessorDesc* funcs = getSignature()->funcs;
+void JavaField::initField(JavaObject* obj, Jnjvm* vm) {
+  const Typedef* type = getSignature();
   Attribut* attribut = lookupAttribut(Attribut::constantAttribut);
 
   if (!attribut) {
@@ -505,78 +580,27 @@ void JavaField::initField(JavaObject* obj) {
     Reader reader(attribut, classDef->bytes);
     JavaConstantPool * ctpInfo = classDef->ctpInfo;
     uint16 idx = reader.readU2();
-    if (funcs == AssessorDesc::dLong) {
-      JnjvmModule::InitField(this, obj, (uint64)ctpInfo->LongAt(idx));
-    } else if (funcs == AssessorDesc::dDouble) {
-      JnjvmModule::InitField(this, obj, ctpInfo->DoubleAt(idx));
-    } else if (funcs == AssessorDesc::dFloat) {
-      JnjvmModule::InitField(this, obj, ctpInfo->FloatAt(idx));
-    } else if (funcs == AssessorDesc::dRef) {
+    if (type->isPrimitive()) {
+      UserCommonClass* cl = type->assocClass(vm->bootstrapLoader);
+      if (cl == vm->upcalls->OfLong) {
+        JnjvmModule::InitField(this, obj, (uint64)ctpInfo->LongAt(idx));
+      } else if (cl == vm->upcalls->OfDouble) {
+        JnjvmModule::InitField(this, obj, ctpInfo->DoubleAt(idx));
+      } else if (cl == vm->upcalls->OfFloat) {
+        JnjvmModule::InitField(this, obj, ctpInfo->FloatAt(idx));
+      } else {
+        JnjvmModule::InitField(this, obj, (uint64)ctpInfo->IntegerAt(idx));
+      }
+    } else if (type->isReference()){
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
       JnjvmModule::InitField(this, obj,
                          (JavaObject*)ctpInfo->resolveString(utf8, idx));
-    } else if (funcs == AssessorDesc::dInt || funcs == AssessorDesc::dChar ||
-               funcs == AssessorDesc::dShort || funcs == AssessorDesc::dByte ||
-               funcs == AssessorDesc::dBool) {
-      JnjvmModule::InitField(this, obj, (uint64)ctpInfo->IntegerAt(idx));
     } else {
       JavaThread::get()->isolate->
-        unknownError("unknown constant %c", funcs->byteId);
+        unknownError("unknown constant %s\n", type->printString());
     }
-  }
-  
+  } 
 }
-
-JavaObject* CommonClass::getClassDelegatee(JavaObject* pd) {
-  return JavaThread::get()->isolate->getClassDelegatee(this, pd);
-}
-
-#ifdef MULTIPLE_VM
-JavaObject* Class::staticInstance() {
-  std::pair<JavaState, JavaObject*>* val = 
-    JavaThread::get()->isolate->statics->lookup(this);
-  assert(val);
-  return val->second;
-}
-
-void Class::createStaticInstance() {
-  JavaAllocator* allocator = &(JavaThread::get()->isolate->allocator);
-  JavaObject* val = 
-    (JavaObject*)allocator->allocateObject(staticSize, staticVT);
-
-  val->initialise(this);
-  for (field_iterator i = this->staticFields.begin(),
-            e = this->staticFields.end(); i!= e; ++i) {
-    
-    JavaField* cur = i->second;
-    cur->initField(val);
-  }
-  
-  Jnjvm* vm = JavaThread::get()->isolate;
-  std::pair<JavaState, JavaObject*>* p = vm->statics->lookup(this);
-  assert(p);
-  assert(!p->second);
-  p->second = val;
-}
-
-JavaState* CommonClass::getStatus() {
-  if (!this->isArray && 
-      !this->isPrimitive) {
-    Class* cl = (Class*)this;
-    Jnjvm* vm = JavaThread::get()->isolate;
-    std::pair<JavaState, JavaObject*>* val = vm->statics->lookup(cl);
-    if (!val) {
-      val = new std::pair<JavaState, JavaObject*>(status, 0);
-      JavaThread::get()->isolate->statics->hash(cl, val);
-    }
-    if (val->first < status) val->first = status;
-    return (JavaState*)&(val->first);
-  } else {
-    return &status;
-  }
-}
-#endif
-
 
 JavaMethod* CommonClass::constructMethod(const UTF8* name,
                                          const UTF8* type, uint32 access) {
@@ -636,25 +660,25 @@ void Class::readParents(Reader& reader) {
 
 }
 
-void Class::loadParents() {
-  int nbI = interfacesUTF8.size();
+void UserClass::loadParents() {
+  std::vector<const UTF8*>* interfacesUTF8 = getInterfacesUTF8();
+  unsigned nbI = interfacesUTF8->size();
+  const UTF8* superUTF8 = getSuperUTF8();
   if (superUTF8 == 0) {
     depth = 0;
-    display = (CommonClass**)malloc(sizeof(CommonClass*));
+    display = (UserCommonClass**)malloc(sizeof(UserCommonClass*));
     display[0] = this;
-    virtualTableSize = VT_SIZE / sizeof(void*);
   } else {
     super = classLoader->loadName(superUTF8, true, true);
     depth = super->depth + 1;
-    virtualTableSize = super->virtualTableSize;
-    display = (CommonClass**)malloc((depth + 1) * sizeof(CommonClass*));
-    memcpy(display, super->display, depth * sizeof(CommonClass*));
+    display = (UserCommonClass**)malloc((depth + 1) * sizeof(UserCommonClass*));
+    memcpy(display, super->display, depth * sizeof(UserCommonClass*));
     display[depth] = this;
   }
 
-  for (int i = 0; i < nbI; i++)
-    interfaces.push_back((Class*)classLoader->loadName(interfacesUTF8[i],
-                                                       true, true));
+  for (unsigned i = 0; i < nbI; i++)
+    interfaces.push_back((UserClass*)classLoader->loadName((*interfacesUTF8)[i],
+                                                           true, true));
 }
 
 void Class::readAttributs(Reader& reader, std::vector<Attribut*>& attr) {
@@ -712,12 +736,15 @@ void Class::readClass() {
   ctpInfo = new JavaConstantPool(this, reader);
   access = reader.readU2();
   
+  if (!isPublic(access)) access |= ACC_PRIVATE;
+
   const UTF8* thisClassName = 
     ctpInfo->resolveClassName(reader.readU2());
   
   if (!(thisClassName->equals(name))) {
-    JavaThread::get()->isolate->classFormatError("try to load %s and found class named %s",
-          printString(), thisClassName->printString());
+    JavaThread::get()->isolate->classFormatError(
+        "try to load %s and found class named %s",
+        printString(), thisClassName->printString());
   }
 
   readParents(reader);
@@ -726,16 +753,14 @@ void Class::readClass() {
   readAttributs(reader, attributs);
 }
 
+#ifndef MULTIPLE_VM
 void CommonClass::resolveClass() {
   if (status < resolved) {
     acquire();
     if (status >= resolved) {
       release();
-    } else if (status <  loaded) {
-      release();
-      JavaThread::get()->isolate->unknownError("try to resolve a not-read class");
-    } else if (status == loaded || ownerClass()) {
-      if (isArray) {
+    } else if (status == loaded) {
+      if (isArray()) {
         ClassArray* arrayCl = (ClassArray*)this;
         CommonClass* baseClass =  arrayCl->baseClass();
         baseClass->resolveClass();
@@ -762,12 +787,18 @@ void CommonClass::resolveClass() {
     }
   }
 }
+#else
+void CommonClass::resolveClass() {
+  assert(status >= resolved && 
+         "Asking to resolve a not resolved-class in a isolate environment");
+}
+#endif
 
-void Class::resolveInnerOuterClasses() {
+void UserClass::resolveInnerOuterClasses() {
   if (!innerOuterResolved) {
     Attribut* attribut = lookupAttribut(Attribut::innerClassesAttribut);
     if (attribut != 0) {
-      Reader reader(attribut, bytes);
+      Reader reader(attribut, getBytes());
 
       uint16 nbi = reader.readU2();
       for (uint16 i = 0; i < nbi; ++i) {
@@ -776,13 +807,13 @@ void Class::resolveInnerOuterClasses() {
         //uint16 innerName = 
         reader.readU2();
         uint16 accessFlags = reader.readU2();
-        Class* clInner = (Class*)ctpInfo->loadClass(inner);
-        Class* clOuter = (Class*)ctpInfo->loadClass(outer);
+        UserClass* clInner = (UserClass*)ctpInfo->loadClass(inner);
+        UserClass* clOuter = (UserClass*)ctpInfo->loadClass(outer);
 
         if (clInner == this) {
           outerClass = clOuter;
         } else if (clOuter == this) {
-          clInner->innerAccess = accessFlags;
+          clInner->setInnerAccess(accessFlags);
           innerClasses.push_back(clInner);
         }
       }
@@ -797,7 +828,7 @@ void CommonClass::getDeclaredConstructors(std::vector<JavaMethod*>& res,
        e = virtualMethods.end(); i != e; ++i) {
     JavaMethod* meth = i->second;
     bool pub = isPublic(meth->access);
-    if (meth->name == Jnjvm::initName && (!publicOnly || pub)) {
+    if (meth->name->equals(Jnjvm::initName) && (!publicOnly || pub)) {
       res.push_back(meth);
     }
   }
@@ -809,7 +840,7 @@ void CommonClass::getDeclaredMethods(std::vector<JavaMethod*>& res,
        e = virtualMethods.end(); i != e; ++i) {
     JavaMethod* meth = i->second;
     bool pub = isPublic(meth->access);
-    if (meth->name != Jnjvm::initName && (!publicOnly || pub)) {
+    if (!(meth->name->equals(Jnjvm::initName)) && (!publicOnly || pub)) {
       res.push_back(meth);
     }
   }
@@ -818,7 +849,7 @@ void CommonClass::getDeclaredMethods(std::vector<JavaMethod*>& res,
        e = staticMethods.end(); i != e; ++i) {
     JavaMethod* meth = i->second;
     bool pub = isPublic(meth->access);
-    if (meth->name != Jnjvm::clinitName && (!publicOnly || pub)) {
+    if (!(meth->name->equals(Jnjvm::clinitName)) && (!publicOnly || pub)) {
       res.push_back(meth);
     }
   }
@@ -841,4 +872,8 @@ void CommonClass::getDeclaredFields(std::vector<JavaField*>& res,
       res.push_back(field);
     }
   }
+}
+
+void Class::resolveStaticClass() {
+  classLoader->TheModule->resolveStaticClass((Class*)this);
 }

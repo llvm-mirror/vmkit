@@ -8,13 +8,7 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
-LIBRARYNAME = Classpath
-
-include $(LEVEL)/Makefile.config
+LIBRARYNAME = Isolate
 include $(LEVEL)/Makefile.common
 
-CXX.Flags += -I../VMCore $(CLASSPATH_FLAGS)
-
-ifeq ($(ISOLATE_BUILD), 1)
-  CXX.Flags += -I../Isolate
-endif
+CXX.Flags += -I../VMCore

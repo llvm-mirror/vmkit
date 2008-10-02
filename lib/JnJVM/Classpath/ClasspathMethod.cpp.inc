@@ -30,8 +30,9 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Method_getModifiersInternal(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
- jobject Meth) {
-  JavaMethod* meth = (JavaMethod*)Classpath::methodSlot->getVirtualInt32Field((JavaObject*)Meth);
+ jobject Meth) { 
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaMethod* meth = (JavaMethod*)vm->upcalls->methodSlot->getInt32Field((JavaObject*)Meth);
   return meth->access;
 }
 
@@ -40,8 +41,15 @@ JNIEXPORT jclass JNICALL Java_java_lang_reflect_Method_getReturnType(
 JNIEnv *env, 
 #endif
  jobject Meth) {
-  JavaMethod* meth = (JavaMethod*)Classpath::methodSlot->getVirtualInt32Field((JavaObject*)Meth);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaMethod* meth = (JavaMethod*)vm->upcalls->methodSlot->getInt32Field((JavaObject*)Meth);
+#ifdef MULTIPLE_VM
+  jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)Meth);
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
+  JnjvmClassLoader* loader = cl->classLoader;
+#else
   JnjvmClassLoader* loader = meth->classDef->classLoader;
+#endif
   return (jclass)NativeUtil::getClassType(loader, meth->getSignature()->ret);
 }
 
@@ -52,8 +60,15 @@ JNIEnv *env,
 #endif
 
                                                                           jobject Meth) {
-  JavaMethod* meth = (JavaMethod*)Classpath::methodSlot->getVirtualInt32Field((JavaObject*)Meth);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaMethod* meth = (JavaMethod*)vm->upcalls->methodSlot->getInt32Field((JavaObject*)Meth);
+#ifdef MULTIPLE_VM
+  jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)Meth);
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
+  JnjvmClassLoader* loader = cl->classLoader;
+#else
   JnjvmClassLoader* loader = meth->classDef->classLoader;
+#endif
   return (jobject)(NativeUtil::getParameterTypes(loader, meth));
 }
 
@@ -74,17 +89,25 @@ JNIEnv *env,
   void* _buf = (void*)buf;
   sint32 index = 0;
   if (nbArgs == size) {
-    CommonClass* _cl = NativeUtil::resolvedImplClass(Cl, false);
-    Class* cl = (Class*)_cl;
+    UserCommonClass* _cl = NativeUtil::resolvedImplClass(Cl, false);
+    UserClass* cl = (UserClass*)_cl;
     
     if (isVirtual(meth->access)) {
       verifyNull(obj);
-      if (!(obj->classOf->isAssignableFrom(meth->classDef))) {
-        vm->illegalArgumentExceptionForMethod(meth, meth->classDef, obj->classOf);
+      if (!(obj->classOf->isAssignableFrom(cl))) {
+        vm->illegalArgumentExceptionForMethod(meth, cl, obj->classOf);
       }
+#ifdef MULTIPLE_VM
+      if (isInterface(cl->classDef->access)) {
+        cl = obj->classOf->lookupClassFromMethod(meth);
+      } else {
+        jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)Meth);
+        cl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
+      }
+#endif
 
     } else {
-      vm->initialiseClass(cl);
+      cl->initialiseClass(vm);
     }
 
     JavaObject** ptr = (JavaObject**)(void*)(args->elements);     
@@ -98,13 +121,13 @@ JNIEnv *env,
 #define RUN_METH(TYPE) \
     try{ \
       if (isVirtual(meth->access)) { \
-        if (isPublic(meth->access)) { \
-          val = meth->invoke##TYPE##VirtualBuf(vm, obj, _buf); \
+        if (isPublic(meth->access) && !isFinal(meth->access) && !isFinal(meth->classDef->access)) { \
+          val = meth->invoke##TYPE##VirtualBuf(vm, cl, obj, _buf); \
         } else { \
-          val = meth->invoke##TYPE##SpecialBuf(vm, obj, _buf); \
+          val = meth->invoke##TYPE##SpecialBuf(vm, cl, obj, _buf); \
         } \
       } else { \
-        val = meth->invoke##TYPE##StaticBuf(vm, _buf); \
+        val = meth->invoke##TYPE##StaticBuf(vm, cl, _buf); \
       } \
     }catch(...) { \
       exc = JavaThread::getJavaException(); \
@@ -113,7 +136,7 @@ JNIEnv *env,
     } \
     \
     if (exc) { \
-      if (exc->classOf->isAssignableFrom(Classpath::newException)) { \
+      if (exc->classOf->isAssignableFrom(vm->upcalls->newException)) { \
         JavaThread::get()->isolate->invocationTargetException(exc); \
       } else { \
         JavaThread::throwException(exc); \
@@ -121,58 +144,59 @@ JNIEnv *env,
     } \
     
     JavaObject* res = 0;
-    const AssessorDesc* retType = meth->getSignature()->ret->funcs;
-    if (retType == AssessorDesc::dVoid) {
-      res = 0;
-      uint32 val = 0;
-      RUN_METH(Int);
-    } else if (retType == AssessorDesc::dBool) {
-      uint32 val = 0;
-      RUN_METH(Int);
-      res = Classpath::boolClass->doNew(vm);
-      Classpath::boolValue->setVirtualInt8Field(res, val);
-    } else if (retType == AssessorDesc::dByte) {
-      uint32 val = 0;
-      RUN_METH(Int);
-      res = Classpath::byteClass->doNew(vm);
-      Classpath::byteValue->setVirtualInt8Field(res, val);
-    } else if (retType == AssessorDesc::dChar) {
-      uint32 val = 0;
-      RUN_METH(Int);
-      res = Classpath::charClass->doNew(vm);
-      Classpath::charValue->setVirtualInt16Field(res, val);
-    } else if (retType == AssessorDesc::dShort) {
-      uint32 val = 0;
-      RUN_METH(Int);
-      res = Classpath::shortClass->doNew(vm);
-      Classpath::shortValue->setVirtualInt16Field(res, val);
-    } else if (retType == AssessorDesc::dInt) {
-      uint32 val = 0;
-      RUN_METH(Int);
-      res = Classpath::intClass->doNew(vm);
-      Classpath::intValue->setVirtualInt32Field(res, val);
-    } else if (retType == AssessorDesc::dLong) {
-      sint64 val = 0;
-      RUN_METH(Long);
-      res = Classpath::longClass->doNew(vm);
-      Classpath::longValue->setVirtualLongField(res, val);
-    } else if (retType == AssessorDesc::dFloat) {
-      float val = 0;
-      RUN_METH(Float);
-      res = Classpath::floatClass->doNew(vm);
-      Classpath::floatValue->setVirtualFloatField(res, val);
-    } else if (retType == AssessorDesc::dDouble) {
-      double val = 0;
-      RUN_METH(Double);
-      res = Classpath::doubleClass->doNew(vm);
-      Classpath::doubleValue->setVirtualDoubleField(res, val);
-    } else if (retType == AssessorDesc::dTab || retType == AssessorDesc::dRef) {
+    Typedef* retType = meth->getSignature()->ret;
+    if (retType->isPrimitive()) {
+      PrimitiveTypedef* prim = (PrimitiveTypedef*)retType;
+      if (prim->isVoid()) {
+        res = 0;
+        uint32 val = 0;
+        RUN_METH(Int);
+      } else if (prim->isBool()) {
+        uint32 val = 0;
+        RUN_METH(Int);
+        res = vm->upcalls->boolClass->doNew(vm);
+        vm->upcalls->boolValue->setInt8Field(res, val);
+      } else if (prim->isByte()) {
+        uint32 val = 0;
+        RUN_METH(Int);
+        res = vm->upcalls->byteClass->doNew(vm);
+        vm->upcalls->byteValue->setInt8Field(res, val);
+      } else if (prim->isChar()) {
+        uint32 val = 0;
+        RUN_METH(Int);
+        res = vm->upcalls->charClass->doNew(vm);
+        vm->upcalls->charValue->setInt16Field(res, val);
+      } else if (prim->isShort()) {
+        uint32 val = 0;
+        RUN_METH(Int);
+        res = vm->upcalls->shortClass->doNew(vm);
+        vm->upcalls->shortValue->setInt16Field(res, val);
+      } else if (prim->isInt()) {
+        uint32 val = 0;
+        RUN_METH(Int);
+        res = vm->upcalls->intClass->doNew(vm);
+        vm->upcalls->intValue->setInt32Field(res, val);
+      } else if (prim->isLong()) {
+        sint64 val = 0;
+        RUN_METH(Long);
+        res = vm->upcalls->longClass->doNew(vm);
+        vm->upcalls->longValue->setLongField(res, val);
+      } else if (prim->isFloat()) {
+        float val = 0;
+        RUN_METH(Float);
+        res = vm->upcalls->floatClass->doNew(vm);
+        vm->upcalls->floatValue->setFloatField(res, val);
+      } else if (prim->isDouble()) {
+        double val = 0;
+        RUN_METH(Double);
+        res = vm->upcalls->doubleClass->doNew(vm);
+        vm->upcalls->doubleValue->setDoubleField(res, val);
+      }
+    } else {
       JavaObject* val = 0;
       RUN_METH(JavaObject);
       res = val;
-    } else {
-      vm->unknownError("should not be here");
-    }
+    } 
     return (jobject)res;
   }
   vm->illegalArgumentExceptionForMethod(meth, 0, 0); 
@@ -187,8 +211,16 @@ JNIEnv *env,
 #endif
  jobject _meth) {
   verifyNull(_meth);
-  JavaMethod* meth = (JavaMethod*)Classpath::methodSlot->getVirtualInt32Field((JavaObject*)_meth);
-  return (jobjectArray)NativeUtil::getExceptionTypes(meth);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaMethod* meth = (JavaMethod*)vm->upcalls->methodSlot->getInt32Field((JavaObject*)_meth);
+  UserClass* cl = 0;
+#ifdef MULTIPLE_VM
+  jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)_meth);
+  cl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
+#else
+  cl = meth->classDef;
+#endif
+  return (jobjectArray)NativeUtil::getExceptionTypes(cl, meth);
 }
 
 }

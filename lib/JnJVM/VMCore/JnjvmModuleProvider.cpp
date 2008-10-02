@@ -36,16 +36,20 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
   Signdef* sign = 0;
 
   ctpInfo->resolveMethod(index, cl, utf8, sign);
-  JavaMethod* meth = cl->lookupMethod(utf8, sign->keyName, isStatic, true);
-  
+  Class* methodCl = 0;
+  JavaMethod* meth = cl->lookupMethod(utf8, sign->keyName, isStatic, true,
+                                      methodCl);
+
+#ifndef MULTIPLE_VM
+  // A multi environment would have already initialized the class. Besides,
+  // a callback does not involve UserClass, therefore we wouldn't know
+  // which class to initialize.
   if (!isVirtual(meth->access))
-    JavaThread::get()->isolate->initialiseClass(cl);
-  
+    cl->initialiseClass(JavaThread::get()->isolate);
+#endif
+
   meth->compiledPtr();
   
-  LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
-  ctpInfo->ctpRes[index] = LMI->getMethod();
-
   return meth;
 }
 
@@ -93,42 +97,28 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
     LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
     uint64_t offset = LMI->getOffset()->getZExtValue();
     assert(meth->classDef->isResolved() && "Class not resolved");
+#ifndef MULTIPLE_VM
     assert(meth->classDef->isReady() && "Class not ready");
+#endif
     assert(meth->classDef->virtualVT && "Class has no VT");
     assert(meth->classDef->virtualTableSize > offset && 
         "The method's offset is greater than the virtual table size");
     ((void**)meth->classDef->virtualVT)[offset] = val;
   } else {
-    JavaThread::get()->isolate->initialiseClass(meth->classDef);
+#ifndef MULTIPLE_VM
+    meth->classDef->initialiseClass(JavaThread::get()->isolate);
+#endif
   }
 
   return false;
 }
-
 void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
   Function* func = parseFunction(meth);
   
   void* res = mvm::jit::executionEngine->getPointerToGlobal(func);
   mvm::Code* m = mvm::jit::getCodeFromPointer(res);
   if (m) m->setMetaInfo(meth);
-
-  /*
-  if (compilingMethod->name == 
-      compilingClass->isolate->asciizConstructUTF8("main")) {
-    llvmFunction->print(llvm::cout);
-    printf("\n");
-    void* res = mvm::jit::executionEngine->getPointerToGlobal(llvmFunction);
-    void* base = res; 
-    while (base <  (void*)((char*)res + 100)) {
-      printf("%08x\t", (unsigned)base);
-      int n= mvm::jit::disassemble((unsigned int *)base);
-      printf("\n");
-      base= ((void *)((char *)base + n)); 
-    }    
-    printf("\n");
-    fflush(stdout);
-  }
-  */
+  func->deleteBody();
 
   return res;
 }
@@ -158,7 +148,7 @@ llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
                                                  Signdef* sign, bool stat) {
   
   void* key = &(cl->getConstantPool()->ctpRes[index]);
-  
+   
   reverse_callback_iterator CI = reverseCallbacks.find(key);
   if (CI != reverseCallbacks.end()) {
     return CI->second;
@@ -204,9 +194,9 @@ static void addPass(FunctionPassManager *PM, Pass *P) {
 static void AddStandardCompilePasses(FunctionPassManager *PM) {
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
   // LLVM does not allow calling functions from other modules in verifier
-  //PM->add(llvm::createVerifierPass());                  // Verify that input is correct
+  //PM->add(llvm::createVerifierPass());        // Verify that input is correct
   
-  addPass(PM, llvm::createCFGSimplificationPass());    // Clean up disgusting code
+  addPass(PM, llvm::createCFGSimplificationPass()); // Clean up disgusting code
   addPass(PM, llvm::createPromoteMemoryToRegisterPass());// Kill useless allocas
   
   addPass(PM, createInstructionCombiningPass()); // Cleanup for scalarrepl.
@@ -229,8 +219,9 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, createGVNPass());                  // Remove redundancies
   addPass(PM, createSCCPPass());                 // Constant prop with SCCP
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
-  
-  addPass(PM, mvm::createEscapeAnalysisPass(JnjvmModule::JavaObjectAllocateFunction));
+ 
+  Function* func = JnjvmModule::JavaObjectAllocateFunction;
+  addPass(PM, mvm::createEscapeAnalysisPass(func));
   addPass(PM, mvm::createLowerConstantCallsPass());
   
   // Run instcombine after redundancy elimination to exploit opportunities

@@ -267,10 +267,11 @@ const UTF8* JavaConstantPool::resolveClassName(uint32 index) {
 
 CommonClass* JavaConstantPool::loadClass(uint32 index) {
   CommonClass* temp = isClassLoaded(index);
+#ifndef MULTIPLE_VM
   if (!temp) {
     JnjvmClassLoader* loader = classDef->classLoader;
     const UTF8* name = UTF8At(ctpDef[index]);
-    if (name->elements[0] == AssessorDesc::I_TAB) {
+    if (name->elements[0] == I_TAB) {
       temp = loader->constructArray(name);
       temp->resolveClass();
     } else {
@@ -279,18 +280,22 @@ CommonClass* JavaConstantPool::loadClass(uint32 index) {
     }
     ctpRes[index] = temp;
   }
+#endif
   return temp;
 }
 
 CommonClass* JavaConstantPool::getMethodClassIfLoaded(uint32 index) {
   CommonClass* temp = isClassLoaded(index);
+#ifndef MULTIPLE_VM
   if (!temp) {
     JnjvmClassLoader* loader = classDef->classLoader;
+    assert(loader && "Class has no loader?");
     const UTF8* name = UTF8At(ctpDef[index]);
     temp = loader->lookupClass(name);
     if (!temp) 
       temp = JnjvmClassLoader::bootstrapLoader->lookupClass(name);
   }
+#endif
   return temp;
 }
 
@@ -346,9 +351,10 @@ void JavaConstantPool::infoOfMethod(uint32 index, uint32 access,
   const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = getMethodClassIfLoaded(entry >> 16);
   if (cl && cl->status >= classRead) {
+    Class* methodCl = 0;
     // lookup the method
-    meth = 
-      cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access), false);
+    meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access),
+                                     false, methodCl);
   } 
 }
 
@@ -390,8 +396,9 @@ void* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index,
   CommonClass* cl = getMethodClassIfLoaded(entry >> 16);
   if (cl && cl->status >= classRead) {
     // lookup the method
-    meth =
-      cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access), false);
+    Class* methodCl = 0;
+    meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access),
+                                     false, methodCl);
     if (meth) { 
       // don't throw if no meth, the exception will be thrown just in time
       JnjvmModule* M = classDef->classLoader->TheModule;
@@ -429,7 +436,8 @@ void JavaConstantPool::resolveMethod(uint32 index, CommonClass*& cl,
   assert(sign && "No cached signature after JITting");
   utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = loadClass(entry >> 16);
-  cl->resolveClass();
+  assert(cl && "No class after loadClass");
+  assert(cl->isResolved() && "Class not resolved after loadClass");
 }
   
 void JavaConstantPool::resolveField(uint32 index, CommonClass*& cl,
@@ -440,7 +448,8 @@ void JavaConstantPool::resolveField(uint32 index, CommonClass*& cl,
   assert(sign && "No cached Typedef after JITting");
   utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = loadClass(entry >> 16);
-  cl->resolveClass();
+  assert(cl && "No class after loadClass");
+  assert(cl->isResolved() && "Class not resolved after loadClass");
 }
 
 JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
@@ -450,8 +459,9 @@ JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
   const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   CommonClass* cl = getMethodClassIfLoaded(entry >> 16);
   if (cl && cl->status >= resolved) {
+    CommonClass* fieldCl = 0; 
     JavaField* field = cl->lookupFieldDontThrow(utf8, sign->keyName, stat, 
-                                                true);
+                                                true, fieldCl);
     // don't throw if no field, the exception will be thrown just in time  
     if (field) {
       if (!stat) {
@@ -459,7 +469,7 @@ JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
       } 
 #ifndef MULTIPLE_VM
       else if (cl->isReady()) {
-        JavaObject* S = field->classDef->staticInstance();
+        JavaObject* S = field->classDef->getStaticInstance();
         ctpRes[index] = (void*)((uint64)S + field->ptrOffset);
       }
 #endif

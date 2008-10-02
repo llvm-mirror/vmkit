@@ -21,41 +21,27 @@
 #include "mvm/Threads/Locks.h"
 
 #include "JavaAllocator.h"
+#include "JavaTypes.h"
+#include "JnjvmConfig.h"
 
 namespace jnjvm {
 
 class ArrayObject;
-class ArrayUInt8;
-class Attribut;
-class Class;
-class ClassArray;
+class Classpath;
 class CommonClass;
 class JavaField;
 class JavaMethod;
 class JavaObject;
 class JavaString;
 class JavaThread;
+class JnjvmBootstrapLoader;
 class JnjvmClassLoader;
-class JnjvmModule;
-class JnjvmModuleProvider;
-class Reader;
-class Typedef;
-class UTF8;
-class UTF8Map;
-class ClassMap;
-class DelegateeMap;
-class FieldMap;
-class MethodMap;
-class Signdef;
-class SignMap;
-class StaticInstanceMap;
 class StringMap;
-class TypeMap;
-class FunctionMap;
-class FunctionDefMap;
-class FunctionDefMap;
-class AllocationMap;
-class ZipArchive;
+class UserClass;
+class UserClassArray;
+class UserClassPrimitive;
+class UserCommonClass;
+class UTF8;
 
 /// ThreadSystem - Thread management of a JVM. Each JVM has one thread
 /// management system to count the number of non-daemon threads it owns.
@@ -103,8 +89,21 @@ public:
 /// Jnjvm - A JVM. Each execution of a program allocates a Jnjvm.
 ///
 class Jnjvm : public mvm::VirtualMachine {
+public:
+#ifdef MULTIPLE_GC
+  /// GC - The garbage collector of this JVM.
+  ///
+  Collector* GC;
+#endif
+
+#ifdef MULTIPLE_VM
+  UserClass* throwable;
+#endif
+  std::map<const char, UserClassArray*> arrayClasses;
 private:
   
+  ISOLATE_STATIC std::map<const char, UserClassPrimitive*> primitiveMap;
+
   /// bootstrapThread - The initial thread of this JVM.
   ///
   JavaThread* bootstrapThread;
@@ -113,11 +112,11 @@ private:
   /// that calls this functions. This is used internally by Jnjvm to control
   /// which pair class/method are used.
   ///
-  void error(Class* cl, JavaMethod* meth, const char* fmt, ...);
+  void error(UserClass* cl, JavaMethod* meth, const char* fmt, ...);
   
   /// errorWithExcp - Throws an exception whose cause is the Java object excp.
   ///
-  void errorWithExcp(Class* cl, JavaMethod* meth, const JavaObject* excp);
+  void errorWithExcp(UserClass* cl, JavaMethod* meth, const JavaObject* excp);
   
   /// loadAppClassLoader - Loads the application class loader, so that VMKit
   /// knowns which loader has to load the main class.
@@ -215,13 +214,16 @@ public:
   static const UTF8* sinh;
   static const UTF8* tanh;
   static const UTF8* finalize;
-
-#ifdef MULTIPLE_GC
-  /// GC - The garbage collector of this JVM.
+ 
+  /// bootstraLoader - Bootstrap loader for base classes of this virtual
+  /// machine.
   ///
-  Collector* GC;
-#endif
-  
+  ISOLATE_STATIC JnjvmBootstrapLoader* bootstrapLoader;
+
+  /// upcalls - Upcalls to call Java methods and access Java fields.
+  ///
+  Classpath* upcalls;
+
   /// threadSystem - The thread system to manage non-daemon threads and
   /// control the end of the JVM's execution.
   ///
@@ -245,10 +247,7 @@ public:
 
   /// nativeLibs - Native libraries (e.g. '.so') loaded by this JVM.
   ///
-#ifndef MULTIPLE_VM
-  static
-#endif
-  std::vector<void*> nativeLibs;
+  ISOLATE_STATIC std::vector<void*> nativeLibs;
 
   /// classpath - The CLASSPATH value, or the paths given in command line.
   ///
@@ -274,18 +273,6 @@ public:
   ///
   StringMap * hashStr;
 
-#ifdef MULTIPLE_VM
-  /// statics - The static instances of classes, in a multi-vm environment.
-  ///
-  StaticInstanceMap* statics;
-
-private:
-  /// delegatees - The java/lang/Class equivalents of internal classes. This is
-  /// also in a multi-vm environment.
-  ///
-  DelegateeMap* delegatees;
-#endif
-  
 public:
   /// Exceptions - These are the only exceptions VMKit will make.
   ///
@@ -299,12 +286,12 @@ public:
   void initializerError(const JavaObject* excp);
   void invocationTargetException(const JavaObject* obj);
   void outOfMemoryError(sint32 n);
-  void illegalArgumentExceptionForMethod(JavaMethod* meth, CommonClass* required,
-                                         CommonClass* given);
-  void illegalArgumentExceptionForField(JavaField* field, CommonClass* required,
-                                        CommonClass* given);
+  void illegalArgumentExceptionForMethod(JavaMethod* meth, UserCommonClass* required,
+                                         UserCommonClass* given);
+  void illegalArgumentExceptionForField(JavaField* field, UserCommonClass* required,
+                                        UserCommonClass* given);
   void illegalArgumentException(const char* msg);
-  void classCastException(const char* msg);
+  void classCastException(JavaObject* obj, UserCommonClass* cl);
   void unknownError(const char* fmt, ...); 
   void noSuchFieldError(CommonClass* cl, const UTF8* name);
   void noSuchMethodError(CommonClass* cl, const UTF8* name);
@@ -313,12 +300,6 @@ public:
   void noClassDefFoundError(const char* fmt, ...);
   void classNotFoundException(JavaString* str);
 
-
-  /// initialiseClass - Initialise the class for this JVM, and call the
-  /// "<clinit>" function.
-  ///
-  void initialiseClass(CommonClass* cl);
-  
   /// asciizToStr - Constructs a java/lang/String object from the given asciiz.
   ///
   JavaString* asciizToStr(const char* asciiz);
@@ -327,11 +308,6 @@ public:
   ///
   JavaString* UTF8ToStr(const UTF8* utf8);
   
-  /// getClassDelegatee - Get the java/lang/Class object representing the
-  /// internal class.
-  ///
-  JavaObject* getClassDelegatee(CommonClass* cl, JavaObject* pd = 0);
-
   /// ~Jnjvm - Destroy the JVM.
   ///
   ~Jnjvm();
@@ -349,6 +325,15 @@ public:
   void setClasspath(char* cp) {
     classpath = cp;
   }
+  
+  /// initialiseStatics - Initializes the isolate. The function initialize
+  /// static variables in a single environment.
+  ///
+  ISOLATE_STATIC void initialiseStatics();
+  
+  ISOLATE_STATIC UserClassPrimitive* getPrimitiveClass(char id) {
+    return primitiveMap[id];
+  }
 
   /// allocateIsolate - Allocates a new JVM.
   ///
@@ -364,7 +349,7 @@ public:
   /// User-visible function, inherited by the VirtualMachine class.
   ///
   virtual void runApplication(int argc, char** argv);
-  
+
 };
 
 } // end namespace jnjvm

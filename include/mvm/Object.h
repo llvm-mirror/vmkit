@@ -23,6 +23,7 @@ namespace mvm {
 #define VT_TRACER_OFFSET 2
 #define VT_PRINT_OFFSET 3
 #define VT_HASHCODE_OFFSET 4
+#define VT_NB_FUNCS 5
 #define VT_SIZE 5 * sizeof(void*)
 
 

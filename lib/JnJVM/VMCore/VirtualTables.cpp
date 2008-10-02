@@ -14,11 +14,16 @@
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
+#include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
 #include "LockedMap.h"
 #ifdef SERVICE_VM
 #include "ServiceDomain.h"
+#endif
+#ifdef MULTIPLE_VM
+#include "SharedMaps.h"
+#include "IsolateSharedLoader.h"
 #endif
 
 using namespace jnjvm;
@@ -33,12 +38,14 @@ using namespace jnjvm;
   INIT(JavaThread);
   INIT(Jnjvm);
   INIT(ClassMap);
-  INIT(StaticInstanceMap);
-  INIT(DelegateeMap);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
 #ifdef MULTIPLE_VM
   INIT(JnjvmSharedLoader);
+  INIT(SharedClassByteMap);
+  INIT(UserClass);
+  INIT(UserClassArray);
+  INIT(UserConstantPool);
 #endif
 #ifdef SERVICE_VM
   INIT(ServiceDomain);
@@ -102,27 +109,14 @@ void JavaThread::TRACER {
 void Jnjvm::TRACER {
   appClassLoader->MARK_AND_TRACE;
   TRACE_VECTOR(JavaObject*, gc_allocator, globalRefs);
-#ifdef MULTIPLE_VM
-  statics->MARK_AND_TRACE;
-  delegatees->MARK_AND_TRACE;
-#endif
   bootstrapThread->MARK_AND_TRACE;
-  JnjvmClassLoader::bootstrapLoader->MARK_AND_TRACE; 
+  bootstrapLoader->MARK_AND_TRACE;
+#ifdef MULTIPLE_VM
+  JnjvmSharedLoader::sharedLoader->MARK_AND_TRACE;
+#endif
 }
 
 void ClassMap::TRACER {
-  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-    i->second->MARK_AND_TRACE;
-  }
-}
-
-void StaticInstanceMap::TRACER {
-  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-    i->second->second->MARK_AND_TRACE;
-  }
-}
-
-void DelegateeMap::TRACER {
   for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
     i->second->MARK_AND_TRACE;
   }
@@ -141,22 +135,49 @@ void JnjvmBootstrapLoader::TRACER {
        e = bootArchives.end(); i != e; ++i) {
     (*i)->bytes->MARK_AND_TRACE;
   }
-#ifndef MULTIPLE_VM
 #define TRACE_DELEGATEE(prim) \
-  prim->classType->delegatee->MARK_AND_TRACE
+  prim->delegatee->MARK_AND_TRACE
 
-  TRACE_DELEGATEE(AssessorDesc::dVoid);
-  TRACE_DELEGATEE(AssessorDesc::dBool);
-  TRACE_DELEGATEE(AssessorDesc::dByte);
-  TRACE_DELEGATEE(AssessorDesc::dChar);
-  TRACE_DELEGATEE(AssessorDesc::dShort);
-  TRACE_DELEGATEE(AssessorDesc::dInt);
-  TRACE_DELEGATEE(AssessorDesc::dFloat);
-  TRACE_DELEGATEE(AssessorDesc::dLong);
-  TRACE_DELEGATEE(AssessorDesc::dDouble);
+  TRACE_DELEGATEE(upcalls->OfVoid);
+  TRACE_DELEGATEE(upcalls->OfBool);
+  TRACE_DELEGATEE(upcalls->OfByte);
+  TRACE_DELEGATEE(upcalls->OfChar);
+  TRACE_DELEGATEE(upcalls->OfShort);
+  TRACE_DELEGATEE(upcalls->OfInt);
+  TRACE_DELEGATEE(upcalls->OfFloat);
+  TRACE_DELEGATEE(upcalls->OfLong);
+  TRACE_DELEGATEE(upcalls->OfDouble);
 #undef TRACE_DELEGATEE
-#endif
 }
+
+#ifdef MULTIPLE_VM
+void UserClass::TRACER {
+  classLoader->MARK_AND_TRACE;
+  delegatee->MARK_AND_TRACE;
+  staticInstance->MARK_AND_TRACE;
+  ctpInfo->MARK_AND_TRACE;
+}
+
+void UserClassPrimitive::TRACER {
+  classLoader->MARK_AND_TRACE;
+  delegatee->MARK_AND_TRACE;
+}
+
+void UserClassArray::TRACER {
+  classLoader->MARK_AND_TRACE;
+  delegatee->MARK_AND_TRACE;
+}
+
+void SharedClassByteMap::TRACER {
+  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+    i->first->MARK_AND_TRACE;
+  }
+}
+
+void JnjvmSharedLoader::TRACER {
+  byteClasses->MARK_AND_TRACE;
+}
+#endif
 
 #ifdef SERVICE_VM
 void ServiceDomain::TRACER {

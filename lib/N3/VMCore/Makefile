@@ -10,3 +10,5 @@ LEVEL = ../../..
 
 LIBRARYNAME = N3
 include $(LEVEL)/Makefile.common
+
+CXX.Flags += -I../LLVMRuntime

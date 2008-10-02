@@ -1,4 +1,4 @@
-##===- lib/JnJVM/Classpath/Makefile ------------------------*- Makefile -*-===##
+##===- lib/N3/LLVMRuntime/Makefile -------------------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #
@@ -8,13 +8,9 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
-LIBRARYNAME = Classpath
-
 include $(LEVEL)/Makefile.config
+
+VMKIT_RUNTIME = runtime.ll
+BUILT_SOURCES = LLVMRuntime.inc
+
 include $(LEVEL)/Makefile.common
-
-CXX.Flags += -I../VMCore $(CLASSPATH_FLAGS)
-
-ifeq ($(ISOLATE_BUILD), 1)
-  CXX.Flags += -I../Isolate
-endif

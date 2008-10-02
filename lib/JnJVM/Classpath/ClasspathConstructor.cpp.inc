@@ -32,8 +32,16 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_getParameterTypes(
 JNIEnv *env,
 #endif
 jobject cons) {
-  JavaMethod* meth = (JavaMethod*)(Classpath::constructorSlot->getVirtualInt32Field((JavaObject*)cons));
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaMethod* meth = (JavaMethod*)(vm->upcalls->constructorSlot->getInt32Field((JavaObject*)cons));
+#ifdef MULTIPLE_VM
+  jclass Cl = (jclass)vm->upcalls->constructorClass->getInt32Field((JavaObject*)cons);
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
+  JnjvmClassLoader* loader = cl->classLoader;
+#else
   JnjvmClassLoader* loader = meth->classDef->classLoader;
+#endif
+
   return (jobject)(NativeUtil::getParameterTypes(loader, meth));
 }
 
@@ -42,7 +50,8 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Constructor_getModifiersInternal(
 JNIEnv *env,
 #endif
 jobject cons) {
-  JavaMethod* meth = (JavaMethod*)(Classpath::constructorSlot->getVirtualInt32Field((JavaObject*)cons));
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaMethod* meth = (JavaMethod*)(vm->upcalls->constructorSlot->getInt32Field((JavaObject*)cons));
   return meth->access;
 }
 
@@ -64,10 +73,10 @@ JNIEnv *env,
   void* _buf = (void*)buf;
   sint32 index = 0;
   if (nbArgs == size) {
-    CommonClass* _cl = NativeUtil::resolvedImplClass(Clazz, false);
-    if (!_cl->isArray) {
-      Class* cl = (Class*)_cl;
-      vm->initialiseClass(cl);
+    UserCommonClass* _cl = NativeUtil::resolvedImplClass(Clazz, false);
+    if (!_cl->isArray()) {
+      UserClass* cl = (UserClass*)_cl;
+      cl->initialiseClass(vm);
 
       JavaObject* res = cl->doNew(vm);
       JavaObject** ptr = (JavaObject**)(void*)(args->elements);
@@ -78,14 +87,14 @@ JNIEnv *env,
       
       JavaObject* excp = 0;
       try {
-        meth->invokeIntSpecialBuf(vm, res, _buf);
+        meth->invokeIntSpecialBuf(vm, cl, res, _buf);
       }catch(...) {
         excp = JavaThread::getJavaException();
         JavaThread::clearException();
       }
       if (excp) {
-        if (excp->classOf->isAssignableFrom(Classpath::newException)) {
-          JavaThread::get()->isolate->invocationTargetException(excp);
+        if (excp->classOf->isAssignableFrom(vm->upcalls->newException)) {
+          vm->invocationTargetException(excp);
         } else {
           JavaThread::throwException(excp);
         }
@@ -104,8 +113,17 @@ JNIEnv *env,
 #endif
 jobject cons) {
   verifyNull(cons);
-  JavaMethod* meth = (JavaMethod*)Classpath::constructorSlot->getVirtualInt32Field((JavaObject*)cons);
-  return (jobjectArray)NativeUtil::getExceptionTypes(meth);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaMethod* meth = (JavaMethod*)vm->upcalls->constructorSlot->getInt32Field((JavaObject*)cons);
+  UserClass* cl = 0;
+#ifdef MULTIPLE_VM
+    jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)cons);
+    cl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
+#else
+    cl = meth->classDef;
+#endif
+
+  return (jobjectArray)NativeUtil::getExceptionTypes(cl, meth);
 }
 
 }

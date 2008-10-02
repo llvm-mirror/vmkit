@@ -34,24 +34,13 @@ const unsigned int JavaArray::T_SHORT = 9;
 const unsigned int JavaArray::T_INT = 10;
 const unsigned int JavaArray::T_LONG = 11;
 
-ClassArray* JavaArray::ofByte = 0;
-ClassArray* JavaArray::ofChar = 0;
-ClassArray* JavaArray::ofInt = 0;
-ClassArray* JavaArray::ofShort = 0;
-ClassArray* JavaArray::ofBool = 0;
-ClassArray* JavaArray::ofLong = 0;
-ClassArray* JavaArray::ofFloat = 0;
-ClassArray* JavaArray::ofDouble = 0;
-ClassArray* JavaArray::ofString = 0;
-ClassArray* JavaArray::ofObject = 0;
-
 // This will force linking runtime methods
 extern "C" void negativeArraySizeException(sint32 val);
 extern "C" void outOfMemoryError(sint32 val);
 
-#ifndef MULTIPLE_VM
 #define ACONS(name, elmt, primSize, VT)                                      \
-  name *name::acons(sint32 n, ClassArray* atype, JavaAllocator* allocator) { \
+  name *name::acons(sint32 n, UserClassArray* atype,                         \
+                    JavaAllocator* allocator) {                              \
     if (n < 0)                                                               \
       negativeArraySizeException(n);                                         \
     else if (n > JavaArray::MaxArraySize)                                    \
@@ -62,20 +51,6 @@ extern "C" void outOfMemoryError(sint32 val);
     res->size = n;                                                           \
     return res;                                                              \
   }
-#else
-#define ACONS(name, elmt, primSize, VT)                                      \
-  name *name::acons(sint32 n, ClassArray* atype, JavaAllocator* allocator) { \
-    if (n < 0)                                                               \
-      negativeArraySizeException(n);                                         \
-    else if (n > JavaArray::MaxArraySize)                                    \
-      outOfMemoryError(n);                                                   \
-    name* res = (name*)                                                      \
-      (Object*) allocator->allocateObject(sizeof(name) + n * primSize, VT);  \
-    res->initialise(atype);                                                  \
-    res->size = n;                                                           \
-    return res;                                                              \
-  }
-#endif
 
 /// Each array class has its own element size for allocating arrays.
 ACONS(ArrayUInt8,  uint8, 1, JavaArray::VT)
@@ -113,6 +88,19 @@ const UTF8* UTF8::javaToInternal(UTF8Map* map, unsigned int start,
   return map->lookupOrCreateReader(java, len);
 }
 
+const UTF8* UTF8::checkedJavaToInternal(UTF8Map* map, unsigned int start,
+                                        unsigned int len) const {
+  uint16* java = (uint16*) alloca(len * sizeof(uint16));
+  for (uint32 i = 0; i < len; i++) {
+    uint16 cur = elements[start + i];
+    if (cur == '.') java[i] = '/';
+    else if (cur == '/') return 0;
+    else java[i] = cur;
+  }
+
+  return map->lookupOrCreateReader(java, len);
+}
+
 const UTF8* UTF8::internalToJava(UTF8Map* map, unsigned int start,
                                  unsigned int len) const {
   uint16* java = (uint16*) alloca(len * sizeof(uint16));
@@ -137,18 +125,21 @@ const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
 }
 
 char* UTF8::UTF8ToAsciiz() const {
-  /*mvm::NativeString* buf = mvm::NativeString::alloc(size + 1);
+#ifndef DEBUG
+  mvm::NativeString* buf = mvm::NativeString::alloc(size + 1);
   for (sint32 i = 0; i < size; ++i) {
     buf->setAt(i, elements[i]);
   }
   buf->setAt(size, 0);
-  return buf->cString();*/
+  return buf->cString();
+#else
   char* buf = (char*)malloc(size + 1);
   for (sint32 i = 0; i < size; ++i) {
     buf[i] =  elements[i];
   }
   buf[size] = 0;
   return buf;
+#endif
 }
 
 /// Currently, this uses malloc/free. This should use a custom memory pool.
@@ -160,7 +151,9 @@ void UTF8::operator delete(void* obj) {
   free(obj);
 }
 
-const UTF8* UTF8::acons(sint32 n, ClassArray* cl, JavaAllocator* allocator) {
+
+const UTF8* UTF8::acons(sint32 n, UserClassArray* cl,
+                        JavaAllocator* allocator) {
   if (n < 0)
     negativeArraySizeException(n);                                        
   else if (n > JavaArray::MaxArraySize)                                   

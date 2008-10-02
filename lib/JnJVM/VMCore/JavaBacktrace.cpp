@@ -61,7 +61,8 @@ void JavaJIT::printBacktrace() {
 
 
 
-Class* JavaJIT::getCallingClass() {
+#ifndef MULTIPLE_VM
+UserClass* JavaJIT::getCallingClass() {
   int* ips[10];
   int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
   int n = 0;
@@ -82,7 +83,7 @@ Class* JavaJIT::getCallingClass() {
   return 0;
 }
 
-Class* JavaJIT::getCallingClassWalker() {
+UserClass* JavaJIT::getCallingClassWalker() {
   int* ips[10];
   int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
   int n = 0;
@@ -102,9 +103,57 @@ Class* JavaJIT::getCallingClassWalker() {
   }
   return 0;
 }
+#else
+
+UserClass* JavaJIT::getCallingClass() {
+  Class* res = 0;
+
+  int* ips[10];
+  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
+  int n = 0;
+  int i = 0;
+  while (n < real_size) {
+    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
+    if (code) {
+      JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
+      if (meth) {
+        if (i == 1) {
+          res = meth->classDef;
+          break;
+        } else {
+          ++i;
+        }
+      }
+    }
+  }
+
+  if (!res) return 0;
+
+  unsigned int* top;
+  register unsigned int  **cur = &top;
+  register unsigned int  **max = (unsigned int**)mvm::Thread::get()->baseSP;
+    
+  for(; cur<max; cur++) {
+    void* obj = (void*)(*cur);
+    obj = Collector::begOf(obj);
+    if (obj && ((mvm::Object*)obj)->getVirtualTable() == UserConstantPool::VT) {
+      UserConstantPool* ctp = (UserConstantPool*)obj;
+      UserClass* cl = ctp->getClass();
+      if (cl->classDef == res) {
+        return cl;
+      }
+    }
+  }
+  return 0;
+}
+
+UserClass* JavaJIT::getCallingClassWalker() {
+  return getCallingClass();
+}
+#endif
 
 JavaObject* JavaJIT::getCallingClassLoader() {
-  Class* cl = getCallingClassWalker();
+  UserClass* cl = getCallingClassWalker();
   if (!cl) return 0;
   else return cl->classLoader->getJavaClassLoader();
 }

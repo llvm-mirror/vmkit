@@ -14,6 +14,7 @@
 #include "debug.h"
 
 #include "JavaAllocator.h"
+#include "JavaClass.h"
 #include "JavaConstantPool.h"
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
@@ -26,11 +27,12 @@
 
 using namespace jnjvm;
 
+#ifndef MULTIPLE_VM
 JnjvmBootstrapLoader* JnjvmClassLoader::bootstrapLoader = 0;
-
-#ifdef MULTIPLE_VM
-JnjvmSharedLoader* JnjvmClassLoader::sharedLoader = 0;
+UserClass* JnjvmBootstrapLoader::SuperArray = 0;
+std::vector<UserClass*> JnjvmBootstrapLoader::InterfacesArray;
 #endif
+
 
 extern const char* GNUClasspathGlibj;
 extern const char* GNUClasspathLibs;
@@ -44,7 +46,7 @@ JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
   
   JCL->allocator = new JavaAllocator();
   
-  JCL->hashUTF8 = new UTF8Map(JCL->allocator);
+  JCL->hashUTF8 = new UTF8Map(JCL->allocator, 0);
   JCL->classes = allocator_new(allocator, ClassMap)();
   JCL->javaTypes = new TypeMap(); 
   JCL->javaSignatures = new SignMap(); 
@@ -60,32 +62,17 @@ JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
   }
   
   JCL->analyseClasspathEnv(JCL->bootClasspathEnv);
-
+  
+  JCL->upcalls = new Classpath();
+  JCL->bootstrapLoader = JCL;
   return JCL;
 }
 
-#ifdef MULTIPLE_VM
-JnjvmSharedLoader* JnjvmSharedLoader::createSharedLoader() {
-  
-  JnjvmSharedLoader* JCL = gc_new(JnjvmSharedLoader)();
-  JCL->TheModule = new JnjvmModule("Bootstrap JnJVM");
-  JCL->TheModuleProvider = new JnjvmModuleProvider(JCL->TheModule);
-  JCL->TheModule->initialise(); 
-  
-  JCL->allocator = new JavaAllocator();
-  
-  JCL->hashUTF8 = new UTF8Map(JCL->allocator);
-  JCL->classes = allocator_new(allocator, ClassMap)();
-  JCL->javaTypes = new TypeMap(); 
-  JCL->javaSignatures = new SignMap(); 
-  
-  return JCL;
-}
-#endif
-
-JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader, Jnjvm* I) {
+JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
+                                   Jnjvm* I) {
   TheModule = JCL.TheModule;
   TheModuleProvider = JCL.TheModuleProvider;
+  bootstrapLoader = JCL.bootstrapLoader;
   
   allocator = &(isolate->allocator);
 
@@ -96,6 +83,13 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader, Jn
 
   javaLoader = loader;
   isolate = I;
+
+#ifdef MULTIPLE_VM
+  JavaMethod* meth = bootstrapLoader->upcalls->loadInClassLoader;
+  loader->classOf->lookupMethodDontThrow(meth->name, meth->type, false, true,
+                                         loadClass);
+  assert(loadClass && "Loader does not have a loadClass function");
+#endif
 
 }
 
@@ -129,9 +123,9 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
 }
 
 
-Class* JnjvmBootstrapLoader::internalLoad(const UTF8* name) {
+UserClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name) {
   
-  CommonClass* cl = lookupClass(name);
+  UserCommonClass* cl = lookupClass(name);
   
   if (!cl) {
     ArrayUInt8* bytes = openName(name);
@@ -140,31 +134,38 @@ Class* JnjvmBootstrapLoader::internalLoad(const UTF8* name) {
     }
   }
   
-  if (cl) assert(!cl->isArray);
-  return (Class*)cl;
+  if (cl) assert(!cl->isArray());
+  return (UserClass*)cl;
 }
 
-Class* JnjvmClassLoader::internalLoad(const UTF8* name) {
-  CommonClass* cl = lookupClass(name);
+UserClass* JnjvmClassLoader::internalLoad(const UTF8* name) {
+  UserCommonClass* cl = lookupClass(name);
   
   if (!cl) {
     const UTF8* javaName = name->internalToJava(hashUTF8, 0, name->size);
     JavaString* str = isolate->UTF8ToStr(javaName);
+    Classpath* upcalls = bootstrapLoader->upcalls;
+    UserClass* forCtp = 0;
+#ifdef MULTIPLE_VM
+    forCtp = loadClass;
+#else
+    forCtp = upcalls->loadInClassLoader->classDef;
+#endif
     JavaObject* obj = (JavaObject*)
-      Classpath::loadInClassLoader->invokeJavaObjectVirtual(isolate, javaLoader,
-                                                          str);
-    cl = (CommonClass*)(Classpath::vmdataClass->getVirtualObjectField(obj));
+      upcalls->loadInClassLoader->invokeJavaObjectVirtual(isolate, forCtp,
+                                                          javaLoader, str);
+    cl = (UserCommonClass*)(upcalls->vmdataClass->getObjectField(obj));
   }
   
-  if (cl) assert(!cl->isArray);
-  return (Class*)cl;
+  if (cl) assert(!cl->isArray());
+  return (UserClass*)cl;
 }
 
-Class* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
+UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
                                         bool doThrow) {
  
 
-  Class* cl = internalLoad(name);
+  UserClass* cl = internalLoad(name);
 
   if (!cl && doThrow) {
     if (!(name->equals(Jnjvm::NoClassDefFoundError))) {
@@ -178,18 +179,18 @@ Class* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
   return cl;
 }
 
-CommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigned int start,
-                                         unsigned int len,
-                                         bool doResolve,
-                                         bool doThrow) {
+UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* name,
+                                                       bool doResolve,
+                                                       bool doThrow) {
+  uint32 len = name->size;
+  uint32 start = 0;
   uint32 origLen = len;
-  const UTF8* name = utf8->javaToInternal(hashUTF8, start, len);
   bool doLoop = true;
-  CommonClass* ret = 0;
+  UserCommonClass* ret = 0;
 
   if (len == 0) {
     return 0;
-  } else if (name->elements[0] == AssessorDesc::I_TAB) {
+  } else if (name->elements[0] == I_TAB) {
     
     while (doLoop) {
       --len;
@@ -197,15 +198,15 @@ CommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigned in
         doLoop = false;
       } else {
         ++start;
-        if (name->elements[start] != AssessorDesc::I_TAB) {
-          if (name->elements[start] == AssessorDesc::I_REF) {
+        if (name->elements[start] != I_TAB) {
+          if (name->elements[start] == I_REF) {
             uint32 size = (uint32)name->size;
             if ((size == (start + 1)) || (size == (start + 2)) || 
-                 (name->elements[start + 1] == AssessorDesc::I_TAB) || 
-                 (utf8->elements[origLen - 1] != AssessorDesc::I_END_REF)) {
+                 (name->elements[start + 1] == I_TAB) || 
+                 (name->elements[origLen - 1] != I_END_REF)) {
               doLoop = false; 
             } else {
-              const UTF8* componentName = utf8->javaToInternal(hashUTF8,
+              const UTF8* componentName = name->javaToInternal(hashUTF8,
                                                                start + 1,
                                                                len - 2);
               if (loadName(componentName, doResolve, doThrow)) {
@@ -218,10 +219,10 @@ CommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigned in
             }
           } else {
             uint16 cur = name->elements[start];
-            if ((cur == AssessorDesc::I_BOOL || cur == AssessorDesc::I_BYTE ||
-                 cur == AssessorDesc::I_CHAR || cur == AssessorDesc::I_SHORT ||
-                 cur == AssessorDesc::I_INT || cur == AssessorDesc::I_FLOAT || 
-                 cur == AssessorDesc::I_DOUBLE || cur == AssessorDesc::I_LONG)
+            if ((cur == I_BOOL || cur == I_BYTE ||
+                 cur == I_CHAR || cur == I_SHORT ||
+                 cur == I_INT || cur == I_FLOAT || 
+                 cur == I_DOUBLE || cur == I_LONG)
                 && ((uint32)name->size) == start + 1) {
 
               ret = constructArray(name);
@@ -242,57 +243,87 @@ CommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigned in
   }
 }
 
-CommonClass* JnjvmClassLoader::lookupClassFromJavaString(JavaString* str,
+UserCommonClass* JnjvmClassLoader::lookupClassFromJavaString(JavaString* str,
                                               bool doResolve, bool doThrow) {
-  return lookupClassFromUTF8(str->value, str->offset, str->count,
-                             doResolve, doThrow);
-}
-
-CommonClass* JnjvmClassLoader::lookupClass(const UTF8* utf8) {
-  return classes->lookup(utf8);
-}
-
-static CommonClass* arrayDup(const UTF8*& name, JnjvmClassLoader* loader) {
-  ClassArray* cl = allocator_new(loader->allocator, ClassArray)(loader, name);
-  return cl;
-}
-
-ClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
-  if (javaLoader != 0) {
-    JnjvmClassLoader * ld = 
-      ClassArray::arrayLoader(name, this, 1, name->size - 1);
-    ClassArray* res = 
-      (ClassArray*)ld->classes->lookupOrCreate(name, this, arrayDup);
-    return res;
-  } else {
-    return (ClassArray*)classes->lookupOrCreate(name, this, arrayDup);
-  }
-}
-
-Class* JnjvmSharedLoader::constructSharedClass(const UTF8* name,
-                                               ArrayUInt8* bytes) {
   
+  const UTF8* name = 0;
+  
+  if (str->value->elements[str->offset] != I_TAB)
+    name = str->value->checkedJavaToInternal(hashUTF8, str->offset,
+                                             str->count);
+  else
+    name = str->value->javaToInternal(hashUTF8, str->offset, str->count);
+
+  if (name)
+    return lookupClassFromUTF8(name, doResolve, doThrow);
+
   return 0;
 }
 
+UserCommonClass* JnjvmClassLoader::lookupClass(const UTF8* utf8) {
+  return classes->lookup(utf8);
+}
 
-Class* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes) {
-  assert(bytes && "constructing a class without bytes");
-#ifdef MULTIPLE_VM
-  if (this != bootstrapLoader && this != sharedLoader && bytes) {
-    Class* cl = sharedLoader->constructSharedClass(name, bytes);
-    if (cl) return cl;
+UserCommonClass* JnjvmClassLoader::loadBaseClass(const UTF8* name,
+                                                 uint32 start, uint32 len) {
+  
+  if (name->elements[start] == I_TAB) {
+    UserCommonClass* baseClass = loadBaseClass(name, start + 1, len - 1);
+    JnjvmClassLoader* loader = baseClass->classLoader;
+    const UTF8* arrayName = name->extract(loader->hashUTF8, start, start + len);
+    return loader->constructArray(arrayName);
+  } else if (name->elements[start] == I_REF) {
+    const UTF8* componentName = name->extract(hashUTF8,
+                                              start + 1, start + len - 1);
+    UserCommonClass* cl = loadName(componentName, false, true);
+    return cl;
+  } else {
+    Classpath* upcalls = bootstrapLoader->upcalls;
+    UserClassPrimitive* prim = 
+      UserClassPrimitive::byteIdToPrimitive(name->elements[start], upcalls);
+    assert(prim && "No primitive found");
+    return prim;
   }
-#endif
+}
+
+
+UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
+  UserCommonClass* cl = loadBaseClass(name, 1, name->size - 1);
+  assert(cl && "no base class for an array");
+  JnjvmClassLoader* ld = cl->classLoader;
+  return ld->constructArray(name, cl);
+}
+
+UserClass* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes) {
+  assert(bytes && "constructing a class without bytes");
   classes->lock->lock();
   ClassMap::iterator End = classes->map.end();
   ClassMap::iterator I = classes->map.find(name);
-  Class* res = 0;
+  UserClass* res = 0;
   if (I == End) {
-    res = allocator_new(allocator, Class)(this, name, bytes);
+    res = allocator_new(allocator, UserClass)(this, name, bytes);
     classes->map.insert(std::make_pair(name, res));
   } else {
-    res = ((Class*)(I->second));
+    res = ((UserClass*)(I->second));
+  }
+  classes->lock->unlock();
+  return res;
+}
+
+UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name,
+                                                 UserCommonClass* baseClass) {
+  assert(baseClass && "constructing an array class without a base class");
+  assert(baseClass->classLoader == this && 
+         "constructing an array with wrong loader");
+  classes->lock->lock();
+  ClassMap::iterator End = classes->map.end();
+  ClassMap::iterator I = classes->map.find(name);
+  UserClassArray* res = 0;
+  if (I == End) {
+    res = allocator_new(allocator, UserClassArray)(this, name, baseClass);
+    classes->map.insert(std::make_pair(name, res));
+  } else {
+    res = ((UserClassArray*)(I->second));
   }
   classes->lock->unlock();
   return res;
@@ -301,11 +332,14 @@ Class* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes) {
 Typedef* JnjvmClassLoader::constructType(const UTF8* name) {
   Typedef* res = javaTypes->lookup(name);
   if (res == 0) {
-    res = new Typedef(name, this);
+    res = Typedef::constructType(name, hashUTF8, isolate);
     javaTypes->lock->lock();
     Typedef* tmp = javaTypes->lookup(name);
     if (tmp == 0) javaTypes->hash(name, res);
-    else res = tmp;
+    else {
+      delete res;
+      res = tmp;
+    }
     javaTypes->lock->unlock();
   }
   return res;
@@ -318,24 +352,28 @@ Signdef* JnjvmClassLoader::constructSign(const UTF8* name) {
     javaSignatures->lock->lock();
     Signdef* tmp = javaSignatures->lookup(name);
     if (tmp == 0) javaSignatures->hash(name, res);
-    else res = tmp;
+    else {
+      delete res;
+      res = tmp;
+    }
     javaSignatures->lock->unlock();
   }
   return res;
 }
 
 
-JnjvmClassLoader* JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader) {
+JnjvmClassLoader* JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
   
   if (loader == 0)
-    return bootstrapLoader;
-
+    return vm->bootstrapLoader;
+  
+  Classpath* upcalls = vm->bootstrapLoader->upcalls;
   JnjvmClassLoader* JCL = 
-      (JnjvmClassLoader*)(Classpath::vmdataClassLoader->getVirtualObjectField(loader));
+    (JnjvmClassLoader*)(upcalls->vmdataClassLoader->getObjectField(loader));
   
   if (!JCL) {
-    JCL = gc_new(JnjvmClassLoader)(*bootstrapLoader, loader, JavaThread::get()->isolate);
-    (Classpath::vmdataClassLoader->setVirtualObjectField(loader, (JavaObject*)JCL));
+    JCL = gc_new(JnjvmClassLoader)(*vm->bootstrapLoader, loader, JavaThread::get()->isolate);
+    (upcalls->vmdataClassLoader->setObjectField(loader, (JavaObject*)JCL));
   }
 
   return JCL;
@@ -370,7 +408,7 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
       if (top != 0) {
         memcpy(buf, cur, top);
         buf[top] = 0;
-        char* rp = (char*)malloc(PATH_MAX);
+        char* rp = (char*)alloca(PATH_MAX);
         memset(rp, 0, PATH_MAX);
         rp = realpath(buf, rp);
         if (rp[PATH_MAX - 1] == 0 && strlen(rp) != 0) {
@@ -383,11 +421,9 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
             temp[len] = Jnjvm::dirSeparator[0];
             temp[len + 1] = 0;
             bootClasspath.push_back(temp);
-            free(rp);
           } else {
             ArrayUInt8* bytes =
               Reader::openFile(this, rp);
-            free(rp);
             if (bytes) {
               ZipArchive *archive = new ZipArchive(bytes);
               if (archive) {
@@ -395,9 +431,7 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
               }
             }
           }
-        } else {
-          free(rp);
-        }
+        } 
       }
       cur = cur + top + 1;
       top = 0;
@@ -405,3 +439,30 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
   }
 }
 
+const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
+                                                 const UTF8* className) {
+  uint32 len = className->size;
+  uint32 pos = steps;
+  bool isTab = (className->elements[0] == I_TAB ? true : false);
+  uint32 n = steps + len + (isTab ? 0 : 2);
+  uint16* buf = (uint16*)alloca(n * sizeof(uint16));
+    
+  for (uint32 i = 0; i < steps; i++) {
+    buf[i] = I_TAB;
+  }
+
+  if (!isTab) {
+    ++pos;
+    buf[steps] = I_REF;
+  }
+
+  for (uint32 i = 0; i < len; i++) {
+    buf[pos + i] = className->elements[i];
+  }
+
+  if (!isTab) {
+    buf[n - 1] = I_END_REF;
+  }
+
+  return readerConstructUTF8(buf, n);
+}

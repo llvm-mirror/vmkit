@@ -83,53 +83,66 @@ const unsigned int Jnjvm::Magic = 0xcafebabe;
 #ifndef MULTIPLE_VM
 /// If we're not in a multi-vm environment, this can be made static.
 std::vector<void*> Jnjvm::nativeLibs;
+JnjvmBootstrapLoader* Jnjvm::bootstrapLoader;
+std::map<const char, UserClassPrimitive*> Jnjvm::primitiveMap;
 #endif
 
-typedef void (*clinit_t)(Jnjvm* vm);
+typedef void (*clinit_t)(Jnjvm* vm, UserConstantPool*);
 
-void Jnjvm::initialiseClass(CommonClass* cl) {
-  JavaState* status = cl->getStatus();
+void UserCommonClass::initialiseClass(Jnjvm* vm) {
   // Primitives are initialized at boot time
-  if (cl->isArray) {
-    *status = ready;
-  } else if (!(*status == ready)) {
-    cl->acquire();
-    JavaState* status = cl->getStatus();
-    if (*status == ready) {
-      cl->release();
-    } else if (*status >= resolved && *status != clinitParent &&
-               *status != inClinit) {
-      *status = clinitParent;
-      cl->release();
-      if (cl->super) {
-        initialiseClass(cl->super);
+  if (isArray()) {
+    status = ready;
+  } else if (status != ready) {
+    acquire();
+    if (status == ready) {
+      release();
+    } else if (status >= resolved && status != clinitParent &&
+               status != inClinit) {
+      UserClass* cl = (UserClass*)this;
+      status = clinitParent;
+      release();
+      UserCommonClass* super = getSuper();
+      if (super) {
+        super->initialiseClass(vm);
       }
-
-      cl->classLoader->TheModule->resolveStaticClass((Class*)cl);
       
-      *status = inClinit;
-      JavaMethod* meth = cl->lookupMethodDontThrow(clinitName, clinitType, true,
-                                                   false);
+      cl->resolveStaticClass();
+      
+      status = inClinit;
+      UserClass* methodCl;
+      JavaMethod* meth = lookupMethodDontThrow(Jnjvm::clinitName,
+                                               Jnjvm::clinitType, true,
+                                               false, methodCl);
       
       PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
       PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ", 0);
-      PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s::%s\n", printString(),
-                  cl->printString());
+      PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", printString());
       
-      ((Class*)cl)->createStaticInstance();
-      
+      JavaObject* val = 
+        (JavaObject*)vm->allocator.allocateObject(cl->getStaticSize(),
+                                                  cl->getStaticVT());
+      val->initialise(cl);
+      CommonClass::field_map* map = cl->getStaticFields();
+      for (CommonClass::field_iterator i = map->begin(), e = map->end(); i!= e;
+           ++i) { 
+        i->second->initField(val, vm);
+      }
+  
+      cl->setStaticInstance(val);
+
       if (meth) {
         JavaObject* exc = 0;
         try{
           clinit_t pred = (clinit_t)(intptr_t)meth->compiledPtr();
-          pred(JavaThread::get()->isolate);
+          pred(vm, cl->getConstantPool());
         } catch(...) {
           exc = JavaThread::getJavaException();
           assert(exc && "no exception?");
           JavaThread::clearException();
         }
         if (exc) {
-          if (exc->classOf->isAssignableFrom(Classpath::newException)) {
+          if (exc->classOf->isAssignableFrom(vm->upcalls->newException)) {
             JavaThread::get()->isolate->initializerError(exc);
           } else {
             JavaThread::throwException(exc);
@@ -137,30 +150,30 @@ void Jnjvm::initialiseClass(CommonClass* cl) {
         }
       }
       
-      *status = ready;
-      cl->broadcastClass();
-    } else if (*status < resolved) {
-      cl->release();
-      unknownError("try to clinit a not-read class...");
+      status = ready;
+      broadcastClass();
+    } else if (status < resolved) {
+      release();
+      vm->unknownError("try to clinit a not-read class...");
     } else {
-      if (!cl->ownerClass()) {
-        while (*status < ready) cl->waitClass();
-        cl->release();
-        initialiseClass(cl);
+      if (!ownerClass()) {
+        while (status < ready) waitClass();
+        release();
+        initialiseClass(vm);
       } 
-      cl->release();
+      release();
     }
   }
 }
 
 
-void Jnjvm::errorWithExcp(Class* cl, JavaMethod* init, const JavaObject* excp) {
+void Jnjvm::errorWithExcp(UserClass* cl, JavaMethod* init, const JavaObject* excp) {
   JavaObject* obj = cl->doNew(this);
-  init->invokeIntSpecial(this, obj, excp);
+  init->invokeIntSpecial(this, cl, obj, excp);
   JavaThread::throwException(obj);
 }
 
-void Jnjvm::error(Class* cl, JavaMethod* init, const char* fmt, ...) {
+void Jnjvm::error(UserClass* cl, JavaMethod* init, const char* fmt, ...) {
   char* tmp = (char*)alloca(4096);
   va_list ap;
   va_start(ap, fmt);
@@ -168,23 +181,23 @@ void Jnjvm::error(Class* cl, JavaMethod* init, const char* fmt, ...) {
   va_end(ap);
   
   JavaObject* obj = cl->doNew(this);
-  init->invokeIntSpecial(this, obj, asciizToStr(tmp));
+  init->invokeIntSpecial(this, cl, obj, asciizToStr(tmp));
   JavaThread::throwException(obj);
 }
 
 void Jnjvm::arrayStoreException() {
-  error(Classpath::ArrayStoreException,
-        Classpath::InitArrayStoreException, "");
+  error(upcalls->ArrayStoreException,
+        upcalls->InitArrayStoreException, "");
 }
 
 void Jnjvm::indexOutOfBounds(const JavaObject* obj, sint32 entry) {
-  error(Classpath::ArrayIndexOutOfBoundsException,
-        Classpath::InitArrayIndexOutOfBoundsException, "%d", entry);
+  error(upcalls->ArrayIndexOutOfBoundsException,
+        upcalls->InitArrayIndexOutOfBoundsException, "%d", entry);
 }
 
 void Jnjvm::negativeArraySizeException(sint32 size) {
-  error(Classpath::NegativeArraySizeException,
-        Classpath::InitNegativeArraySizeException, "%d", size);
+  error(upcalls->NegativeArraySizeException,
+        upcalls->InitNegativeArraySizeException, "%d", size);
 }
 
 void Jnjvm::nullPointerException(const char* fmt, ...) {
@@ -192,115 +205,115 @@ void Jnjvm::nullPointerException(const char* fmt, ...) {
   va_start(ap, fmt);
   char* val = va_arg(ap, char*);
   va_end(ap);
-  error(Classpath::NullPointerException,
-        Classpath::InitNullPointerException, fmt, val);
+  error(upcalls->NullPointerException,
+        upcalls->InitNullPointerException, fmt, val);
 }
 
 void Jnjvm::illegalAccessException(const char* msg) {
-  error(Classpath::IllegalAccessException,
-        Classpath::InitIllegalAccessException, msg);
+  error(upcalls->IllegalAccessException,
+        upcalls->InitIllegalAccessException, msg);
 }
 
 void Jnjvm::illegalMonitorStateException(const JavaObject* obj) {
-  error(Classpath::IllegalMonitorStateException,
-        Classpath::InitIllegalMonitorStateException, "");
+  error(upcalls->IllegalMonitorStateException,
+        upcalls->InitIllegalMonitorStateException, "");
 }
 
 void Jnjvm::interruptedException(const JavaObject* obj) {
-  error(Classpath::InterruptedException,
-        Classpath::InitInterruptedException, "");
+  error(upcalls->InterruptedException,
+        upcalls->InitInterruptedException, "");
 }
 
 
 void Jnjvm::initializerError(const JavaObject* excp) {
-  errorWithExcp(Classpath::ExceptionInInitializerError,
-                Classpath::ErrorWithExcpExceptionInInitializerError,
+  errorWithExcp(upcalls->ExceptionInInitializerError,
+                upcalls->ErrorWithExcpExceptionInInitializerError,
                 excp);
 }
 
 void Jnjvm::invocationTargetException(const JavaObject* excp) {
-  errorWithExcp(Classpath::InvocationTargetException,
-                Classpath::ErrorWithExcpInvocationTargetException,
+  errorWithExcp(upcalls->InvocationTargetException,
+                upcalls->ErrorWithExcpInvocationTargetException,
                 excp);
 }
 
 void Jnjvm::outOfMemoryError(sint32 n) {
-  error(Classpath::OutOfMemoryError,
-        Classpath::InitOutOfMemoryError, "%d", n);
+  error(upcalls->OutOfMemoryError,
+        upcalls->InitOutOfMemoryError, "%d", n);
 }
 
 void Jnjvm::illegalArgumentExceptionForMethod(JavaMethod* meth, 
-                                               CommonClass* required,
-                                               CommonClass* given) {
-  error(Classpath::IllegalArgumentException, 
-        Classpath::InitIllegalArgumentException, 
+                                              UserCommonClass* required,
+                                              UserCommonClass* given) {
+  error(upcalls->IllegalArgumentException, 
+        upcalls->InitIllegalArgumentException, 
         "for method %s", meth->printString());
 }
 
 void Jnjvm::illegalArgumentExceptionForField(JavaField* field, 
-                                              CommonClass* required,
-                                              CommonClass* given) {
-  error(Classpath::IllegalArgumentException, 
-        Classpath::InitIllegalArgumentException, 
+                                             UserCommonClass* required,
+                                             UserCommonClass* given) {
+  error(upcalls->IllegalArgumentException, 
+        upcalls->InitIllegalArgumentException, 
         "for field %s", field->printString());
 }
 
 void Jnjvm::illegalArgumentException(const char* msg) {
-  error(Classpath::IllegalArgumentException,
-        Classpath::InitIllegalArgumentException,
+  error(upcalls->IllegalArgumentException,
+        upcalls->InitIllegalArgumentException,
         msg);
 }
 
-void Jnjvm::classCastException(const char* msg) {
-  error(Classpath::ClassCastException,
-        Classpath::InitClassCastException,
-        msg);
+void Jnjvm::classCastException(JavaObject* obj, UserCommonClass* cl) {
+  error(upcalls->ClassCastException,
+        upcalls->InitClassCastException,
+        "");
 }
 
 void Jnjvm::noSuchFieldError(CommonClass* cl, const UTF8* name) {
-  error(Classpath::NoSuchFieldError,
-        Classpath::InitNoSuchFieldError, 
+  error(upcalls->NoSuchFieldError,
+        upcalls->InitNoSuchFieldError, 
         "unable to find %s in %s",
-        name->UTF8ToAsciiz(), cl->printString());
+        name->UTF8ToAsciiz(), cl->name->UTF8ToAsciiz());
 
 }
 
 void Jnjvm::noSuchMethodError(CommonClass* cl, const UTF8* name) {
-  error(Classpath::NoSuchMethodError,
-        Classpath::InitNoSuchMethodError, 
+  error(upcalls->NoSuchMethodError,
+        upcalls->InitNoSuchMethodError, 
         "unable to find %s in %s",
-        name->UTF8ToAsciiz(), cl->printString());
+        name->UTF8ToAsciiz(), cl->name->UTF8ToAsciiz());
 
 }
 
 void Jnjvm::classFormatError(const char* msg, ...) {
-  error(Classpath::ClassFormatError,
-        Classpath::InitClassFormatError, 
+  error(upcalls->ClassFormatError,
+        upcalls->InitClassFormatError, 
         msg);
 }
 
 void Jnjvm::noClassDefFoundError(JavaObject* obj) {
-  errorWithExcp(Classpath::NoClassDefFoundError,
-        Classpath::ErrorWithExcpNoClassDefFoundError, 
+  errorWithExcp(upcalls->NoClassDefFoundError,
+        upcalls->ErrorWithExcpNoClassDefFoundError, 
         obj);
 }
 
 void Jnjvm::noClassDefFoundError(const char* fmt, ...) {
-  error(Classpath::NoClassDefFoundError,
-        Classpath::InitNoClassDefFoundError, 
+  error(upcalls->NoClassDefFoundError,
+        upcalls->InitNoClassDefFoundError, 
         fmt);
 }
 
 void Jnjvm::classNotFoundException(JavaString* str) {
-  error(Classpath::ClassNotFoundException,
-        Classpath::InitClassNotFoundException, 
+  error(upcalls->ClassNotFoundException,
+        upcalls->InitClassNotFoundException, 
         "unable to load %s",
         str->strToAsciiz());
 }
 
 void Jnjvm::unknownError(const char* fmt, ...) {
-  error(Classpath::UnknownError,
-        Classpath::InitUnknownError,  
+  error(upcalls->UnknownError,
+        upcalls->InitUnknownError,  
         fmt);
 }
 
@@ -312,8 +325,7 @@ JavaString* Jnjvm::UTF8ToStr(const UTF8* utf8) {
 JavaString* Jnjvm::asciizToStr(const char* asciiz) {
   // asciizToStr is called by jnjvm code, so utf8s created
   // by this method are stored in the bootstrap class loader
-  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader;
-  const UTF8* var = JCL->asciizConstructUTF8(asciiz);
+  const UTF8* var = bootstrapLoader->asciizConstructUTF8(asciiz);
   return UTF8ToStr(var);
 }
 
@@ -321,41 +333,23 @@ void Jnjvm::addProperty(char* key, char* value) {
   postProperties.push_back(std::make_pair(key, value));
 }
 
-#ifndef MULTIPLE_VM
-JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl, JavaObject* pd) {
-  cl->acquire();
-  if (!(cl->delegatee)) {
-    JavaObject* delegatee = Classpath::newClass->doNew(this);
-    cl->delegatee = delegatee;
+JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
+  acquire();
+  if (!(delegatee)) {
+    UserClass* cl = vm->upcalls->newClass;
+    JavaObject* delegatee = cl->doNew(vm);
     if (!pd) {
-      Classpath::initClass->invokeIntSpecial(this, delegatee, cl);
+      vm->upcalls->initClass->invokeIntSpecial(vm, cl, delegatee, this);
     } else {
-      Classpath::initClassWithProtectionDomain->invokeIntSpecial(this,
-                                                                 delegatee,
-                                                                 cl, pd);
+      vm->upcalls->initClassWithProtectionDomain->invokeIntSpecial(vm, cl,
+                                                                   delegatee,
+                                                                   this, pd);
     }
+    this->delegatee = delegatee;
   }
-  cl->release();
-  return cl->delegatee;
+  release();
+  return delegatee;
 }
-#else
-JavaObject* Jnjvm::getClassDelegatee(CommonClass* cl, JavaObject* pd) {
-  cl->acquire();
-  JavaObject* val = delegatees->lookup(cl);
-  if (!val) {
-    val = Classpath::newClass->doNew(this);
-    delegatees->hash(cl, val);
-    if (!pd) {
-      Classpath::initClass->invokeIntSpecial(this, val, cl);
-    } else {
-      Classpath::initClassWithProtectionDomain->invokeIntSpecial(this, val, cl,
-                                                                 pd);
-    }
-  }
-  cl->release();
-  return val;
-}
-#endif
 
 Jnjvm::~Jnjvm() {
 #ifdef MULTIPLE_GC
@@ -448,14 +442,15 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   sprintf(temp, "%s:%s", vm->classpath, jarFile);
   vm->setClasspath(temp);
   
-  ArrayUInt8* bytes = Reader::openFile(JnjvmClassLoader::bootstrapLoader,
+  ArrayUInt8* bytes = Reader::openFile(vm->bootstrapLoader,
                                        jarFile);
 
   ZipArchive archive(bytes);
   if (archive.getOfscd() != -1) {
     ZipFile* file = archive.getFile(PATH_MANIFEST);
     if (file) {
-      ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, JavaArray::ofByte, &vm->allocator);
+      UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfByte;
+      ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, array, &vm->allocator);
       int ok = archive.readFile(res, file);
       if (ok) {
         char* mainClass = findInformation(res, MAIN_CLASS, LENGTH_MAIN_CLASS);
@@ -570,7 +565,7 @@ void ClArgumentsInfo::readArgs(int argc, char** argv, Jnjvm* vm) {
         printInformation();
       } else {
         char* path = &cur[16];
-        JnjvmClassLoader::bootstrapLoader->analyseClasspathEnv(path);
+        vm->bootstrapLoader->analyseClasspathEnv(path);
       }
     } else if (!(strcmp(cur, "-enableassertions"))) {
       nyi();
@@ -654,71 +649,83 @@ void Jnjvm::print(mvm::PrintBuffer* buf) const {
 
 JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
   if (appClassLoader == 0) {
-    JavaObject* loader = Classpath::getSystemClassLoader->invokeJavaObjectStatic(this);
-    appClassLoader = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader);
+    UserClass* cl = upcalls->newClassLoader;
+    JavaObject* loader = 
+      upcalls->getSystemClassLoader->invokeJavaObjectStatic(this, cl);
+    appClassLoader = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader,
+                                                                    this);
   }
   return appClassLoader;
 }
 
 void Jnjvm::mapInitialThread() {
-  Classpath::mapInitialThread(this);
+  upcalls->mapInitialThread(this);
 }
 
 void Jnjvm::loadBootstrap() {
-  JnjvmClassLoader* loader = JnjvmClassLoader::bootstrapLoader;
+  JnjvmClassLoader* loader = bootstrapLoader;
 #define LOAD_CLASS(cl) \
   cl->resolveClass(); \
-  initialiseClass(cl);
+  cl->initialiseClass(this);
 
-  LOAD_CLASS(Classpath::newClass);
-  LOAD_CLASS(Classpath::newConstructor);
-  LOAD_CLASS(Classpath::newString);
-  LOAD_CLASS(Classpath::newMethod);
-  LOAD_CLASS(Classpath::newField);
-  LOAD_CLASS(Classpath::newStackTraceElement);
-  LOAD_CLASS(Classpath::newVMThrowable);
-  LOAD_CLASS(Classpath::InvocationTargetException);
-  LOAD_CLASS(Classpath::ArrayStoreException);
-  LOAD_CLASS(Classpath::ClassCastException);
-  LOAD_CLASS(Classpath::IllegalMonitorStateException);
-  LOAD_CLASS(Classpath::IllegalArgumentException);
-  LOAD_CLASS(Classpath::InterruptedException);
-  LOAD_CLASS(Classpath::IndexOutOfBoundsException);
-  LOAD_CLASS(Classpath::ArrayIndexOutOfBoundsException);
-  LOAD_CLASS(Classpath::NegativeArraySizeException);
-  LOAD_CLASS(Classpath::NullPointerException);
-  LOAD_CLASS(Classpath::SecurityException);
-  LOAD_CLASS(Classpath::ClassFormatError);
-  LOAD_CLASS(Classpath::ClassCircularityError);
-  LOAD_CLASS(Classpath::NoClassDefFoundError);
-  LOAD_CLASS(Classpath::UnsupportedClassVersionError);
-  LOAD_CLASS(Classpath::NoSuchFieldError);
-  LOAD_CLASS(Classpath::NoSuchMethodError);
-  LOAD_CLASS(Classpath::InstantiationError);
-  LOAD_CLASS(Classpath::IllegalAccessError);
-  LOAD_CLASS(Classpath::IllegalAccessException);
-  LOAD_CLASS(Classpath::VerifyError);
-  LOAD_CLASS(Classpath::ExceptionInInitializerError);
-  LOAD_CLASS(Classpath::LinkageError);
-  LOAD_CLASS(Classpath::AbstractMethodError);
-  LOAD_CLASS(Classpath::UnsatisfiedLinkError);
-  LOAD_CLASS(Classpath::InternalError);
-  LOAD_CLASS(Classpath::OutOfMemoryError);
-  LOAD_CLASS(Classpath::StackOverflowError);
-  LOAD_CLASS(Classpath::UnknownError);
-  LOAD_CLASS(Classpath::ClassNotFoundException); 
+  LOAD_CLASS(upcalls->newClass);
+  LOAD_CLASS(upcalls->newConstructor);
+  LOAD_CLASS(upcalls->newString);
+  LOAD_CLASS(upcalls->newMethod);
+  LOAD_CLASS(upcalls->newField);
+  LOAD_CLASS(upcalls->newStackTraceElement);
+  LOAD_CLASS(upcalls->newVMThrowable);
+  LOAD_CLASS(upcalls->boolClass);
+  LOAD_CLASS(upcalls->byteClass);
+  LOAD_CLASS(upcalls->charClass);
+  LOAD_CLASS(upcalls->shortClass);
+  LOAD_CLASS(upcalls->intClass);
+  LOAD_CLASS(upcalls->longClass);
+  LOAD_CLASS(upcalls->floatClass);
+  LOAD_CLASS(upcalls->doubleClass);
+  LOAD_CLASS(upcalls->InvocationTargetException);
+  LOAD_CLASS(upcalls->ArrayStoreException);
+  LOAD_CLASS(upcalls->ClassCastException);
+  LOAD_CLASS(upcalls->IllegalMonitorStateException);
+  LOAD_CLASS(upcalls->IllegalArgumentException);
+  LOAD_CLASS(upcalls->InterruptedException);
+  LOAD_CLASS(upcalls->IndexOutOfBoundsException);
+  LOAD_CLASS(upcalls->ArrayIndexOutOfBoundsException);
+  LOAD_CLASS(upcalls->NegativeArraySizeException);
+  LOAD_CLASS(upcalls->NullPointerException);
+  LOAD_CLASS(upcalls->SecurityException);
+  LOAD_CLASS(upcalls->ClassFormatError);
+  LOAD_CLASS(upcalls->ClassCircularityError);
+  LOAD_CLASS(upcalls->NoClassDefFoundError);
+  LOAD_CLASS(upcalls->UnsupportedClassVersionError);
+  LOAD_CLASS(upcalls->NoSuchFieldError);
+  LOAD_CLASS(upcalls->NoSuchMethodError);
+  LOAD_CLASS(upcalls->InstantiationError);
+  LOAD_CLASS(upcalls->IllegalAccessError);
+  LOAD_CLASS(upcalls->IllegalAccessException);
+  LOAD_CLASS(upcalls->VerifyError);
+  LOAD_CLASS(upcalls->ExceptionInInitializerError);
+  LOAD_CLASS(upcalls->LinkageError);
+  LOAD_CLASS(upcalls->AbstractMethodError);
+  LOAD_CLASS(upcalls->UnsatisfiedLinkError);
+  LOAD_CLASS(upcalls->InternalError);
+  LOAD_CLASS(upcalls->OutOfMemoryError);
+  LOAD_CLASS(upcalls->StackOverflowError);
+  LOAD_CLASS(upcalls->UnknownError);
+  LOAD_CLASS(upcalls->ClassNotFoundException); 
 #undef LOAD_CLASS
 
   mapInitialThread();
   loadAppClassLoader();
   JavaObject* obj = JavaThread::currentThread();
-  Classpath::setContextClassLoader->invokeIntSpecial(this, obj,
-                                        appClassLoader->getJavaClassLoader());
+  JavaObject* javaLoader = appClassLoader->getJavaClassLoader();
+  upcalls->setContextClassLoader->invokeIntSpecial(this, upcalls->newThread,
+                                                   obj, javaLoader);
   // load and initialise math since it is responsible for dlopen'ing 
   // libjavalang.so and we are optimizing some math operations
-  CommonClass* math = 
+  UserCommonClass* math = 
     loader->loadName(loader->asciizConstructUTF8("java/lang/Math"), true, true);
-  initialiseClass(math);
+  math->initialiseClass(this);
 }
 
 void Jnjvm::executeClass(const char* className, ArrayObject* args) {
@@ -733,10 +740,10 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
     JavaThread::clearException();
     JavaObject* obj = JavaThread::currentThread();
     JavaObject* group = 
-      Classpath::group->getVirtualObjectField(obj);
+      upcalls->group->getObjectField(obj);
     try{
-      Classpath::uncaughtException->invokeIntSpecial(this, group, obj, 
-                                                           exc);
+      upcalls->uncaughtException->invokeIntSpecial(this, upcalls->threadGroup,
+                                                   group, obj, exc);
     }catch(...) {
       printf("Even uncaught exception throwed an exception!\n");
       assert(0);
@@ -789,9 +796,9 @@ void Jnjvm::runMain(int argc, char** argv) {
         executePremain(i->first, args, instrumenter);
       }
     }
-
-    ArrayObject* args = ArrayObject::acons(argc - 2, JavaArray::ofString,
-                                           &allocator);
+    
+    UserClassArray* array = bootstrapLoader->upcalls->ArrayOfString;
+    ArrayObject* args = ArrayObject::acons(argc - 2, array, &allocator);
     for (int i = 2; i < argc; ++i) {
       args->elements[i - 2] = (JavaObject*)asciizToStr(argv[i]);
     }
@@ -843,10 +850,43 @@ Jnjvm* Jnjvm::allocateIsolate(void* sp) {
   
   isolate->hashStr = new StringMap();
   isolate->globalRefsLock = mvm::Lock::allocNormal();
-#ifdef MULTIPLE_VM
-  isolate->statics = allocator_new(&isolate->allocator, StaticInstanceMap)(); 
-  isolate->delegatees = allocator_new(&isolate->allocator, DelegateeMap)(); 
-#endif
 
+#ifdef MULTIPLE_VM
+  isolate->initialiseStatics();
+#endif
+  
+  isolate->upcalls = isolate->bootstrapLoader->upcalls;
+
+#ifdef MULTIPLE_VM
+  isolate->throwable = isolate->upcalls->newThrowable;
+#endif
+  isolate->arrayClasses[JavaArray::T_BOOLEAN - 4] = 
+    isolate->upcalls->ArrayOfBool;
+  isolate->arrayClasses[JavaArray::T_BYTE - 4] = 
+    isolate->upcalls->ArrayOfByte;
+  isolate->arrayClasses[JavaArray::T_CHAR - 4] = 
+    isolate->upcalls->ArrayOfChar;
+  isolate->arrayClasses[JavaArray::T_SHORT - 4] = 
+    isolate->upcalls->ArrayOfShort;
+  isolate->arrayClasses[JavaArray::T_INT - 4] = 
+    isolate->upcalls->ArrayOfInt;
+  isolate->arrayClasses[JavaArray::T_FLOAT - 4] = 
+    isolate->upcalls->ArrayOfFloat;
+  isolate->arrayClasses[JavaArray::T_LONG - 4] = 
+    isolate->upcalls->ArrayOfLong;
+  isolate->arrayClasses[JavaArray::T_DOUBLE - 4] = 
+    isolate->upcalls->ArrayOfDouble;
+
+  isolate->primitiveMap[I_VOID] = isolate->upcalls->OfVoid;
+  isolate->primitiveMap[I_BOOL] = isolate->upcalls->OfBool;
+  isolate->primitiveMap[I_BYTE] = isolate->upcalls->OfByte;
+  isolate->primitiveMap[I_CHAR] = isolate->upcalls->OfChar;
+  isolate->primitiveMap[I_SHORT] = isolate->upcalls->OfShort;
+  isolate->primitiveMap[I_INT] = isolate->upcalls->OfInt;
+  isolate->primitiveMap[I_FLOAT] = isolate->upcalls->OfFloat;
+  isolate->primitiveMap[I_LONG] = isolate->upcalls->OfLong;
+  isolate->primitiveMap[I_DOUBLE] = isolate->upcalls->OfDouble;
+  
+  isolate->upcalls->initialiseClasspath(bootstrapLoader);
   return isolate;
 }

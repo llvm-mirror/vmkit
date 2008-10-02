@@ -32,6 +32,11 @@
 #include "ServiceDomain.h"
 #endif
 
+#ifdef MULTIPLE_VM
+#include "SharedMaps.h"
+#include "IsolateSharedLoader.h"
+#endif
+
 using namespace jnjvm;
 
 static void initialiseVT() {
@@ -45,15 +50,17 @@ static void initialiseVT() {
   INIT(JavaThread);
   INIT(Jnjvm);
   INIT(ClassMap);
-  INIT(StaticInstanceMap);
-  INIT(DelegateeMap);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
-#ifdef MULTIPLE_VM
-  INIT(JnjvmSharedLoader);
-#endif
 #ifdef SERVICE_VM
   INIT(ServiceDomain);
+#endif
+#ifdef MULTIPLE_VM
+  INIT(JnjvmSharedLoader);
+  INIT(SharedClassByteMap);
+  INIT(UserClass);
+  INIT(UserClassArray);
+  INIT(UserConstantPool);
 #endif
 #undef INIT
 
@@ -70,54 +77,104 @@ static void initialiseVT() {
 #undef INIT
 }
 
-static void initialiseStatics() {
+void Jnjvm::initialiseStatics() {
+
+#ifdef MULTIPLE_VM
+  if (!JnjvmSharedLoader::sharedLoader) {
+    JnjvmSharedLoader::sharedLoader = JnjvmSharedLoader::createSharedLoader();
+  }
+#endif
   
-  JnjvmClassLoader* JCL = JnjvmClassLoader::bootstrapLoader = 
+  JnjvmBootstrapLoader* JCL = bootstrapLoader = 
     JnjvmBootstrapLoader::createBootstrapLoader();
   
-  // Array initialization
+  // Create the name of char arrays.
   const UTF8* utf8OfChar = JCL->asciizConstructUTF8("[C");
-  JavaArray::ofChar = JCL->constructArray(utf8OfChar);
-  ((UTF8*)utf8OfChar)->classOf = JavaArray::ofChar;
-   
-  ClassArray::InterfacesArray.push_back(
+
+  // Create the base class of char arrays.
+  JCL->upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(JCL, "char", 2);
+  
+  // Create the char array.
+  JCL->upcalls->ArrayOfChar = JCL->constructArray(utf8OfChar,
+                                                  JCL->upcalls->OfChar);
+
+  // Alright, now we can repair the damage: set the class to the UTF8s created
+  // and set the array class of UTF8s.
+  ((UTF8*)utf8OfChar)->classOf = JCL->upcalls->ArrayOfChar;
+  ((UTF8*)JCL->upcalls->OfChar->name)->classOf = JCL->upcalls->ArrayOfChar;
+  JCL->hashUTF8->array = JCL->upcalls->ArrayOfChar;
+ 
+  // Create the byte array, so that bytes for classes can be created.
+  JCL->upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(JCL, "byte", 1);
+  JCL->upcalls->ArrayOfByte = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[B"), JCL->upcalls->OfByte);
+
+  // Now we can create the super and interfaces of arrays.
+  JCL->InterfacesArray.push_back(
     JCL->loadName(JCL->asciizConstructUTF8("java/lang/Cloneable"), false,
                   false));
   
-  ClassArray::InterfacesArray.push_back(
+  JCL->InterfacesArray.push_back(
     JCL->loadName(JCL->asciizConstructUTF8("java/io/Serializable"), false,
                   false));
   
-  ClassArray::SuperArray = 
+  JCL->SuperArray = 
     JCL->loadName(JCL->asciizConstructUTF8("java/lang/Object"), false,
                   false);
   
-  JavaArray::ofChar->interfaces = ClassArray::InterfacesArray;
-  JavaArray::ofChar->super = ClassArray::SuperArray;
+#ifdef MULTIPLE_VM
+  if (!ClassArray::SuperArray) {
+    ClassArray::SuperArray = JCL->SuperArray->classDef;
+    ClassArray::InterfacesArray.push_back((Class*)JCL->InterfacesArray[0]->classDef);
+    ClassArray::InterfacesArray.push_back((Class*)JCL->InterfacesArray[1]->classDef);
+  }
+#else
+  ClassArray::SuperArray = JCL->SuperArray;
+  ClassArray::InterfacesArray = JCL->InterfacesArray;
+#endif
   
-  JavaArray::ofByte = JCL->constructArray(JCL->asciizConstructUTF8("[B"));
-  JavaArray::ofString = 
+  // And repair the damage: set the interfaces and super of array classes already
+  // created.
+  JCL->upcalls->ArrayOfChar->setInterfaces(JCL->InterfacesArray);
+  JCL->upcalls->ArrayOfChar->setSuper(JCL->SuperArray);
+  JCL->upcalls->ArrayOfByte->setInterfaces(JCL->InterfacesArray);
+  JCL->upcalls->ArrayOfByte->setSuper(JCL->SuperArray);
+  
+  // Yay, create the other primitive types.
+  JCL->upcalls->OfBool = UPCALL_PRIMITIVE_CLASS(JCL, "boolean", 1);
+  JCL->upcalls->OfShort = UPCALL_PRIMITIVE_CLASS(JCL, "short", 2);
+  JCL->upcalls->OfInt = UPCALL_PRIMITIVE_CLASS(JCL, "int", 4);
+  JCL->upcalls->OfLong = UPCALL_PRIMITIVE_CLASS(JCL, "long", 8);
+  JCL->upcalls->OfFloat = UPCALL_PRIMITIVE_CLASS(JCL, "float", 4);
+  JCL->upcalls->OfDouble = UPCALL_PRIMITIVE_CLASS(JCL, "double", 8);
+  JCL->upcalls->OfVoid = UPCALL_PRIMITIVE_CLASS(JCL, "void", 0);
+  
+  // And finally create the primitive arrays.
+  JCL->upcalls->ArrayOfInt = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[I"), JCL->upcalls->OfInt);
+  
+  JCL->upcalls->ArrayOfBool = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[Z"), JCL->upcalls->OfBool);
+  
+  JCL->upcalls->ArrayOfLong = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[J"), JCL->upcalls->OfLong);
+  
+  JCL->upcalls->ArrayOfFloat = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[F"), JCL->upcalls->OfFloat);
+  
+  JCL->upcalls->ArrayOfDouble = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[D"), JCL->upcalls->OfDouble);
+  
+  JCL->upcalls->ArrayOfShort = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[S"), JCL->upcalls->OfShort);
+  
+  JCL->upcalls->ArrayOfString = 
     JCL->constructArray(JCL->asciizConstructUTF8("[Ljava/lang/String;"));
   
-  JavaArray::ofObject = 
+  JCL->upcalls->ArrayOfObject = 
     JCL->constructArray(JCL->asciizConstructUTF8("[Ljava/lang/Object;"));
   
-  JavaArray::ofInt = JCL->constructArray(JCL->asciizConstructUTF8("[I"));
   
-  JavaArray::ofBool = JCL->constructArray(JCL->asciizConstructUTF8("[Z"));
-  
-  JavaArray::ofLong = JCL->constructArray(JCL->asciizConstructUTF8("[J"));
-  
-  JavaArray::ofFloat = JCL->constructArray(JCL->asciizConstructUTF8("[F"));
-  
-  JavaArray::ofDouble = JCL->constructArray(JCL->asciizConstructUTF8("[D"));
-  
-  JavaArray::ofShort = JCL->constructArray(JCL->asciizConstructUTF8("[S"));
-  
-  // End array initialization
-  
-  AssessorDesc::initialise(JCL);
-
   Attribut::codeAttribut = JCL->asciizConstructUTF8("Code");
   Attribut::exceptionsAttribut = JCL->asciizConstructUTF8("Exceptions");
   Attribut::constantAttribut = JCL->asciizConstructUTF8("ConstantValue");
@@ -169,19 +226,18 @@ static void initialiseStatics() {
   DEF_UTF8(finalize);
 
 #undef DEF_UTF8
- 
 }
 
-extern "C" void ClasspathBoot();
-
 void mvm::VirtualMachine::initialiseJVM() {
+#ifndef MULTIPLE_VM
   if (!JnjvmClassLoader::bootstrapLoader) {
     initialiseVT();
-    initialiseStatics();
-  
-    ClasspathBoot();
-    Classpath::initialiseClasspath(JnjvmClassLoader::bootstrapLoader);
+    Jnjvm::initialiseStatics();
+    JnjvmClassLoader::bootstrapLoader = Jnjvm::bootstrapLoader;
   }
+#else
+  initialiseVT(); 
+#endif
 }
 
 void Jnjvm::runApplication(int argc, char** argv) {

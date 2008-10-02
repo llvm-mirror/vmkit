@@ -30,20 +30,11 @@
 
 using namespace jnjvm;
 
-#ifdef MULTIPLE_VM
-extern "C" JavaString* stringLookup(Class* cl, uint32 index) {
-  JavaConstantPool* ctpInfo = cl->getConstantPool();
-  const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
-  JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
-  return str;
-}
-#endif
-
 extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   Enveloppe* enveloppe = cache->enveloppe;
-  JavaConstantPool* ctpInfo = enveloppe->ctpInfo;
-  CommonClass* ocl = obj->classOf;
-  CommonClass* cl = 0;
+  UserConstantPool* ctpInfo = enveloppe->ctpInfo;
+  UserCommonClass* ocl = obj->classOf;
+  UserCommonClass* cl = 0;
   const UTF8* utf8 = 0;
   Signdef* sign = 0;
   uint32 index = enveloppe->index;
@@ -67,9 +58,13 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   }
 
   if (!rcache) {
-    JavaMethod* dmeth = ocl->lookupMethod(utf8, sign->keyName, false, true);
+    UserClass* methodCl = 0;
+    JavaMethod* dmeth = ocl->lookupMethod(utf8, sign->keyName, false, true,
+                                          methodCl);
+#ifndef MULTIPLE_VM
     assert(dmeth->classDef->isReady() &&
            "Class not ready in a virtual lookup.");
+#endif
     if (cache->methPtr) {
       rcache = new CacheNode(enveloppe);
     } else {
@@ -77,7 +72,10 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
     }
     
     rcache->methPtr = dmeth->compiledPtr();
-    rcache->lastCible = (Class*)ocl;
+    rcache->lastCible = (UserClass*)ocl;
+#ifdef MULTIPLE_VM
+    rcache->definingCtp = methodCl->getConstantPool();
+#endif
     
   }
 
@@ -93,36 +91,156 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   return rcache->methPtr;
 }
 
-extern "C" void* fieldLookup(JavaObject* obj, Class* caller, uint32 index,
-                             uint32 stat) {
-  JavaConstantPool* ctpInfo = caller->getConstantPool();
+extern "C" void* virtualFieldLookup(UserClass* caller, uint32 index) {
+  UserConstantPool* ctpInfo = caller->getConstantPool();
   if (ctpInfo->ctpRes[index]) {
     return ctpInfo->ctpRes[index];
   }
   
-  CommonClass* cl = 0;
+  UserCommonClass* cl = 0;
+  UserCommonClass* fieldCl = 0;
   const UTF8* utf8 = 0;
   Typedef* sign = 0;
   
   ctpInfo->resolveField(index, cl, utf8, sign);
   
-  JavaField* field = cl->lookupField(utf8, sign->keyName, stat, true);
+  JavaField* field = cl->lookupField(utf8, sign->keyName, false, true, fieldCl);
   
-  void* ptr = 0;
-  if (stat) {
-    Class* fieldCl = field->classDef;
-    JavaThread::get()->isolate->initialiseClass(fieldCl);
-    ptr = (void*)((uint64)(fieldCl->staticInstance()) + field->ptrOffset);
-#ifndef MULTIPLE_VM
-    ctpInfo->ctpRes[index] = ptr;
-#endif
-  } else {
-    ptr = (void*)((uint64)obj + field->ptrOffset);
-    ctpInfo->ctpRes[index] = (void*)field->ptrOffset;
+  ctpInfo->ctpRes[index] = (void*)field->ptrOffset;
+  
+  return (void*)field->ptrOffset;
+}
+
+extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
+  UserConstantPool* ctpInfo = caller->getConstantPool();
+  
+  if (ctpInfo->ctpRes[index]) {
+    return ctpInfo->ctpRes[index];
   }
+  
+  UserCommonClass* cl = 0;
+  UserCommonClass* fieldCl = 0;
+  const UTF8* utf8 = 0;
+  Typedef* sign = 0;
+  
+  ctpInfo->resolveField(index, cl, utf8, sign);
+  
+  JavaField* field = cl->lookupField(utf8, sign->keyName, true, true, fieldCl);
+  
+  fieldCl->initialiseClass(JavaThread::get()->isolate);
+  void* ptr = 
+    (void*)((uint64)(((UserClass*)fieldCl)->getStaticInstance()) + field->ptrOffset);
+  ctpInfo->ctpRes[index] = ptr;
   
   return ptr;
 }
+
+#ifdef MULTIPLE_VM
+extern "C" void* stringLookup(UserClass* cl, uint32 index) {
+  UserConstantPool* ctpInfo = cl->getConstantPool();
+  const UTF8* utf8 = ctpInfo->UTF8AtForString(index);
+  JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
+  ctpInfo->ctpRes[index] = str;
+  return (void*)str;
+}
+
+extern "C" void* enveloppeLookup(UserClass* cl, uint32 index) {
+  UserConstantPool* ctpInfo = cl->getConstantPool();
+  Enveloppe* enveloppe = new Enveloppe(ctpInfo, index);
+  ctpInfo->ctpRes[index] = enveloppe;
+  return (void*)enveloppe;
+}
+
+extern "C" void* staticCtpLookup(UserClass* cl, uint32 index) {
+  UserConstantPool* ctpInfo = cl->getConstantPool();
+  JavaConstantPool* shared = ctpInfo->getSharedPool();
+  uint32 clIndex = shared->getClassIndexFromMethod(index);
+  UserClass* refCl = (UserClass*)ctpInfo->loadClass(clIndex);
+  refCl->initialiseClass(JavaThread::get()->isolate);
+
+  CommonClass* baseCl = 0;
+  const UTF8* utf8 = 0;
+  Signdef* sign = 0;
+
+  shared->resolveMethod(index, baseCl, utf8, sign);
+  UserClass* methodCl = 0;
+  refCl->lookupMethod(utf8, sign->keyName, true, true, methodCl);
+  ctpInfo->ctpRes[index] = methodCl->getConstantPool();
+  shared->ctpRes[clIndex] = refCl->classDef;
+  return (void*)methodCl->getConstantPool();
+}
+
+extern "C" UserClassArray* getArrayClass(UserCommonClass* cl) {
+  JnjvmClassLoader* JCL = cl->classLoader;
+  const UTF8* arrayName = JCL->constructArrayName(1, cl->getName());
+        
+  UserClassArray* dcl = JCL->constructArray(arrayName);
+  return dcl;
+}
+
+extern "C" UserConstantPool* specialCtpLookup(UserConstantPool* ctpInfo,
+                                              uint32 index,
+                                              UserConstantPool** res) {
+  JavaConstantPool* shared = ctpInfo->getSharedPool();
+  uint32 clIndex = shared->getClassIndexFromMethod(index);
+  UserClass* refCl = (UserClass*)ctpInfo->loadClass(clIndex);
+
+  CommonClass* baseCl = 0;
+  const UTF8* utf8 = 0;
+  Signdef* sign = 0;
+
+  shared->resolveMethod(index, baseCl, utf8, sign);
+  UserClass* methodCl = 0;
+  refCl->lookupMethod(utf8, sign->keyName, false, true, methodCl);
+  shared->ctpRes[clIndex] = refCl->classDef;
+  *res = methodCl->getConstantPool();
+  return methodCl->getConstantPool();
+}
+
+#endif
+
+#ifndef WITHOUT_VTABLE
+extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
+  UserCommonClass* cl = 0;
+  const UTF8* utf8 = 0;
+  Signdef* sign = 0;
+  
+  caller->getConstantPool()->resolveMethod(index, cl, utf8, sign);
+  UserClass* methodCl = 0;
+  JavaMethod* dmeth = cl->lookupMethodDontThrow(utf8, sign->keyName, false,
+                                                true, methodCl);
+  if (!dmeth) {
+    va_list ap;
+    va_start(ap, index);
+    JavaObject* obj = va_arg(ap, JavaObject*);
+    va_end(ap);
+    assert(obj->classOf->isReady() && "Class not ready in a virtual lookup.");
+    // Arg, the bytecode is buggy! Perform the lookup on the object class
+    // and do not update offset.
+    dmeth = obj->classOf->lookupMethod(utf8, sign->keyName, false, true,
+                                       methodCl);
+  } else {
+    caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
+  }
+
+#ifndef MULTIPLE_VM
+  assert(dmeth->classDef->isReady() && "Class not ready in a virtual lookup.");
+#endif
+
+  return (void*)dmeth->offset;
+}
+#endif
+
+extern "C" void* classLookup(UserClass* caller, uint32 index) { 
+  UserConstantPool* ctpInfo = caller->getConstantPool();
+  UserClass* cl = (UserClass*)ctpInfo->loadClass(index);
+  // We can not initialize here, because bytecodes such as CHECKCAST
+  // or classes used in catch clauses do not trigger class initialization.
+  // This is really sad, because we need to insert class initialization checks
+  // in the LLVM code.
+  return (void*)cl;
+}
+
 
 extern "C" void printMethodStart(JavaMethod* meth) {
   printf("[%d] executing %s\n", mvm::Thread::self(), meth->printString());
@@ -169,82 +287,36 @@ extern "C" void outOfMemoryError(sint32 val) {
   JavaThread::get()->isolate->outOfMemoryError(val);
 }
 
-extern "C" void jnjvmClassCastException(JavaObject* obj, CommonClass* cl) {
-  JavaThread::get()->isolate->classCastException("");
+extern "C" void jnjvmClassCastException(JavaObject* obj, UserCommonClass* cl) {
+  JavaThread::get()->isolate->classCastException(obj, cl);
 }
 
 extern "C" void indexOutOfBoundsException(JavaObject* obj, sint32 index) {
   JavaThread::get()->isolate->indexOutOfBounds(obj, index);
 }
 
-#ifdef MULTIPLE_VM
-extern "C" JavaObject* getStaticInstance(Class* cl, Jnjvm* vm) {
-  std::pair<JavaState, JavaObject*>* val = vm->statics->lookup(cl);
-  if (!val || !(val->second)) {
-    vm->initialiseClass(cl);
-    val = vm->statics->lookup(cl);
-  }
-  return val->second;
-}
-#endif
-
-extern "C" CommonClass* initialisationCheck(CommonClass* cl) {
-  JavaThread::get()->isolate->initialiseClass(cl);
+extern "C" UserCommonClass* initialisationCheck(UserCommonClass* cl) {
+  cl->initialiseClass(JavaThread::get()->isolate);
   return cl;
 }
 
-extern "C" JavaObject* getClassDelegatee(CommonClass* cl) {
+extern "C" JavaObject* getClassDelegatee(UserCommonClass* cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  return vm->getClassDelegatee(cl);
+  return cl->getClassDelegatee(vm);
 }
 
-extern "C" Class* newLookup(Class* caller, uint32 index) { 
-  JavaConstantPool* ctpInfo = caller->getConstantPool();
-  Class* cl = (Class*)ctpInfo->loadClass(index);
-  return cl;
-}
-
-#ifndef WITHOUT_VTABLE
-extern "C" uint32 vtableLookup(JavaObject* obj, Class* caller, uint32 index) {
-  CommonClass* cl = 0;
-  const UTF8* utf8 = 0;
-  Signdef* sign = 0;
-  
-  caller->getConstantPool()->resolveMethod(index, cl, utf8, sign);
-  JavaMethod* dmeth = cl->lookupMethodDontThrow(utf8, sign->keyName, false,
-                                                true);
-  assert(obj->classOf->isReady() && "Class not ready in a virtual lookup.");
-  if (!dmeth) {
-    // Arg, it should have been an invoke interface.... Perform the lookup
-    // on the object class and do not update offset.
-    dmeth = obj->classOf->lookupMethod(utf8, sign->keyName, false, true);
-  } else {
-    caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
-  }
-  
-  assert(dmeth->classDef->isReady() && "Class not ready in a virtual lookup.");
-
-  return dmeth->offset;
-}
-#endif
-
-
-static JavaArray* multiCallNewIntern(arrayCtor_t ctor, ClassArray* cl,
-                                     uint32 len,
-                                     sint32* dims,
-                                     Jnjvm* vm) {
+static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
+                                     sint32* dims, Jnjvm* vm) {
   if (len <= 0) JavaThread::get()->isolate->unknownError("Can not happen");
-  JavaArray* _res = ctor(dims[0], cl, vm);
+  JavaArray* _res = cl->doNew(dims[0], vm);
   if (len > 1) {
     ArrayObject* res = (ArrayObject*)_res;
-    CommonClass* _base = cl->baseClass();
-    if (_base->isArray) {
-      ClassArray* base = (ClassArray*)_base;
-      AssessorDesc* func = base->funcs();
-      arrayCtor_t newCtor = func->arrayCtor;
+    UserCommonClass* _base = cl->baseClass();
+    if (_base->isArray()) {
+      UserClassArray* base = (UserClassArray*)_base;
       if (dims[0] > 0) {
         for (sint32 i = 0; i < dims[0]; ++i) {
-          res->elements[i] = multiCallNewIntern(newCtor, base, (len - 1),
+          res->elements[i] = multiCallNewIntern(base, (len - 1),
                                                 &dims[1], vm);
         }
       } else {
@@ -260,19 +332,15 @@ static JavaArray* multiCallNewIntern(arrayCtor_t ctor, ClassArray* cl,
   return _res;
 }
 
-extern "C" JavaArray* multiCallNew(ClassArray* cl, uint32 len, ...) {
+extern "C" JavaArray* multiCallNew(UserClassArray* cl, uint32 len, ...) {
   va_list ap;
   va_start(ap, len);
   sint32* dims = (sint32*)alloca(sizeof(sint32) * len);
   for (uint32 i = 0; i < len; ++i){
     dims[i] = va_arg(ap, int);
   }
-#ifdef MULTIPLE_VM
-  Jnjvm* vm = va_arg(ap, Jnjvm*);
-#else
-  Jnjvm* vm = 0;
-#endif
-  return multiCallNewIntern((arrayCtor_t)ArrayObject::acons, cl, len, dims, vm);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  return multiCallNewIntern(cl, len, dims, vm);
 }
 
 extern "C" void JavaObjectAquire(JavaObject* obj) {
@@ -309,19 +377,19 @@ extern "C" void JavaObjectReleaseInSharedDomain(JavaObject* obj) {
 }
 #endif
 
-extern "C" bool instanceOf(JavaObject* obj, CommonClass* cl) {
+extern "C" bool instanceOf(JavaObject* obj, UserCommonClass* cl) {
   return obj->instanceOf(cl);
 }
 
-extern "C" bool instantiationOfArray(CommonClass* cl1, ClassArray* cl2) {
+extern "C" bool instantiationOfArray(UserCommonClass* cl1, UserClassArray* cl2) {
   return cl1->instantiationOfArray(cl2);
 }
 
-extern "C" bool implements(CommonClass* cl1, CommonClass* cl2) {
+extern "C" bool implements(UserCommonClass* cl1, UserCommonClass* cl2) {
   return cl1->implements(cl2);
 }
 
-extern "C" bool isAssignableFrom(CommonClass* cl1, CommonClass* cl2) {
+extern "C" bool isAssignableFrom(UserCommonClass* cl1, UserCommonClass* cl2) {
   return cl1->isAssignableFrom(cl2);
 }
 
@@ -337,7 +405,7 @@ extern "C" JavaObject* JavaThreadGetJavaException() {
   return JavaThread::getJavaException();
 }
 
-extern "C" bool JavaThreadCompareException(Class* cl) {
+extern "C" bool JavaThreadCompareException(UserClass* cl) {
   return JavaThread::compareException(cl);
 }
 

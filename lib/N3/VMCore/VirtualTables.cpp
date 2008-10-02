@@ -300,3 +300,13 @@ void CLIString::TRACER {
 void Exception::TRACER {
   catchClass->MARK_AND_TRACE;
 }
+
+#ifdef MULTIPLE_GC
+extern "C" void CLIObjectTracer(VMObject* obj, Collector* GC) {
+#else
+extern "C" void CLIObjectTracer(VMObject* obj) {
+#endif
+  obj->classOf->MARK_AND_TRACE;
+  obj->lockObj->MARK_AND_TRACE;
+}
+

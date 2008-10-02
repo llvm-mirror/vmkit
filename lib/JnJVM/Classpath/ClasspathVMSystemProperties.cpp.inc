@@ -28,8 +28,10 @@ extern "C" {
 
 static void setProperty(Jnjvm* vm, JavaObject* prop, const char* key,
                         const char* val) {
-  Classpath::setProperty->invokeIntSpecial(vm, prop, vm->asciizToStr(key),
-                                           vm->asciizToStr(val));
+  vm->upcalls->setProperty->invokeIntSpecial(vm, (UserClass*)prop->classOf,
+                                             prop,
+                                             vm->asciizToStr(key),
+                                             vm->asciizToStr(val));
 }
 
 static void setUnameProp(Jnjvm* vm, JavaObject* prop) {
@@ -71,7 +73,7 @@ jobject _prop) {
   if (!tmp) tmp = "";
   setProperty(vm, prop, "java.home", tmp);
   
-  JnjvmBootstrapLoader* JCL = JnjvmClassLoader::bootstrapLoader;
+  JnjvmBootstrapLoader* JCL = vm->bootstrapLoader;
   setProperty(vm, prop, "java.class.version", "49.0");
   setProperty(vm, prop, "java.class.path", vm->classpath);
   setProperty(vm, prop, "java.boot.class.path", JCL->bootClasspathEnv);
