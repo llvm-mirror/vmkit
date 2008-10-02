@@ -71,8 +71,8 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   const UTF8* utf8 = loader->asciizConstructUTF8(asciiz);
   sint32 len = utf8->size;
   
-
-  UserCommonClass* cl = loader->lookupClassFromUTF8(utf8, 0, len, true, true);
+  const UTF8* internal = utf8->javaToInternal(loader->hashUTF8, 0, len);
+  UserCommonClass* cl = loader->lookupClassFromUTF8(internal, true, true);
   cl->initialiseClass(vm);
   return (jclass)(cl->getClassDelegatee(vm));
   
