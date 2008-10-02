@@ -119,22 +119,6 @@ void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
   mvm::Code* m = mvm::jit::getCodeFromPointer(res);
   if (m) m->setMetaInfo(meth);
   func->deleteBody();
-/*  
-  if (meth->name->equals(
-      JavaThread::get()->isolate->bootstrapLoader->asciizConstructUTF8("getDeclaredConstructors"))) {
-    func->print(std::cout);
-    printf("\n");
-    void* res = mvm::jit::executionEngine->getPointerToGlobal(llvmFunction);
-    void* base = res; 
-    while (base <  (void*)((char*)res + 100)) {
-      printf("%08x\t", (unsigned)base);
-      int n= mvm::jit::disassemble((unsigned int *)base);
-      printf("\n");
-      base= ((void *)((char *)base + n)); 
-    }    
-    printf("\n");
-    fflush(stdout);
-  }*/
 
   return res;
 }
