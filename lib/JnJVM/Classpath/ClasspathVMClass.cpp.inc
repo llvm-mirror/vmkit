@@ -56,7 +56,7 @@ jclass clazz,
   Jnjvm* vm = JavaThread::get()->isolate; 
   JnjvmClassLoader* JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
   UserCommonClass* cl = JCL->lookupClassFromJavaString((JavaString*)str,
-                                                   true, false);
+                                                        true, false);
   if (cl != 0) {
     if (clinit) {
       cl->initialiseClass(vm);
@@ -271,9 +271,9 @@ jclass clazz,
 #endif
 jclass Cl, jboolean publicOnly) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
+  UserClass* cl = NativeUtil::resolvedImplClass(Cl, false)->asClass();
 
-  if (cl->isArray()) {
+  if (!cl) {
     return (jobject)ArrayObject::acons(0, vm->upcalls->fieldArrayClass, &(vm->allocator));
   } else {
     std::vector<JavaField*> res;
@@ -323,14 +323,16 @@ jclass clazz,
 #endif
 jclass Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
-  cl->resolveInnerOuterClasses();
-  UserClass* outer = cl->getOuterClass();
-  if (outer) {
-    return (jclass)outer->getClassDelegatee(vm);
-  } else {
-    return 0;
+  UserClass* cl = NativeUtil::resolvedImplClass(Cl, false)->asClass();
+  if (cl) {
+    cl->resolveInnerOuterClasses();
+    UserClass* outer = cl->getOuterClass();
+    if (outer) {
+      return (jclass)outer->getClassDelegatee(vm);
+    }
   }
+
+  return 0;
 }
 
 JNIEXPORT jobject JNICALL Java_java_lang_VMClass_getDeclaredClasses(
@@ -340,17 +342,21 @@ jclass clazz,
 #endif
 jclass Cl, bool publicOnly) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
-  cl->resolveInnerOuterClasses();
-  std::vector<UserClass*>* innerClasses = cl->getInnerClasses();
-  ArrayObject* res = ArrayObject::acons(innerClasses->size(), vm->upcalls->constructorArrayClass, &(vm->allocator));
-  uint32 index = 0;
-  for (std::vector<UserClass*>::iterator i = innerClasses->begin(), 
-       e = innerClasses->end(); i!= e; i++) {
-    res->elements[index++] = (*i)->getClassDelegatee(vm); 
+  UserClass* cl = NativeUtil::resolvedImplClass(Cl, false)->asClass();
+  if (cl) {
+    cl->resolveInnerOuterClasses();
+    std::vector<UserClass*>* innerClasses = cl->getInnerClasses();
+    ArrayObject* res = ArrayObject::acons(innerClasses->size(), vm->upcalls->constructorArrayClass, &(vm->allocator));
+    uint32 index = 0;
+    for (std::vector<UserClass*>::iterator i = innerClasses->begin(), 
+         e = innerClasses->end(); i!= e; i++) {
+      res->elements[index++] = (*i)->getClassDelegatee(vm); 
+    }
+    return (jobject)res;
   }
 
-  return (jobject)res;
+  return 0;
+
 }
 
 
