@@ -216,16 +216,39 @@ public:
     return array;
   }
 
-  /// isPrimitive - Is the class a primitive class?
-  ///
   bool primitive;
 
+  /// isPrimitive - Is the class a primitive class?
+  ///
   bool isPrimitive() {
     return primitive;
   }
-
+  
+  /// isInterface - Is the class an interface?
+  ///
   bool isInterface() {
     return jnjvm::isInterface(access);
+  }
+  
+  /// asClass - Returns the class as a user-defined class
+  /// if it is not a primitive or an array.
+  UserClass* asClass() {
+    if (!primitive && !array) return (UserClass*)this;
+    return 0;
+  }
+  
+  /// asPrimitiveClass - Returns the class if it's a primitive class.
+  ///
+  UserClassPrimitive* asPrimitiveClass() {
+    if (primitive) return (UserClassPrimitive*)this;
+    return 0;
+  }
+  
+  /// asArrayClass - Returns the class if it's an array class.
+  ///
+  UserClassArray* asArrayClass() {
+    if (array) return (UserClassArray*)this;
+    return 0;
   }
   
   /// interfaces - The interfaces this class implements.
