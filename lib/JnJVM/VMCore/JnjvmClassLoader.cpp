@@ -179,12 +179,12 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
   return cl;
 }
 
-UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigned int start,
-                                         unsigned int len,
-                                         bool doResolve,
-                                         bool doThrow) {
+UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* name,
+                                                       bool doResolve,
+                                                       bool doThrow) {
+  uint32 len = name->size;
+  uint32 start = 0;
   uint32 origLen = len;
-  const UTF8* name = utf8->javaToInternal(hashUTF8, start, len);
   bool doLoop = true;
   UserCommonClass* ret = 0;
 
@@ -203,10 +203,10 @@ UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigne
             uint32 size = (uint32)name->size;
             if ((size == (start + 1)) || (size == (start + 2)) || 
                  (name->elements[start + 1] == I_TAB) || 
-                 (utf8->elements[origLen - 1] != I_END_REF)) {
+                 (name->elements[origLen - 1] != I_END_REF)) {
               doLoop = false; 
             } else {
-              const UTF8* componentName = utf8->javaToInternal(hashUTF8,
+              const UTF8* componentName = name->javaToInternal(hashUTF8,
                                                                start + 1,
                                                                len - 2);
               if (loadName(componentName, doResolve, doThrow)) {
@@ -245,8 +245,19 @@ UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* utf8, unsigne
 
 UserCommonClass* JnjvmClassLoader::lookupClassFromJavaString(JavaString* str,
                                               bool doResolve, bool doThrow) {
-  return lookupClassFromUTF8(str->value, str->offset, str->count,
-                             doResolve, doThrow);
+  
+  const UTF8* name = 0;
+  
+  if (str->value->elements[str->offset] != I_TAB)
+    name = str->value->checkedJavaToInternal(hashUTF8, str->offset,
+                                             str->count);
+  else
+    name = str->value->javaToInternal(hashUTF8, str->offset, str->count);
+
+  if (name)
+    return lookupClassFromUTF8(name, doResolve, doThrow);
+
+  return 0;
 }
 
 UserCommonClass* JnjvmClassLoader::lookupClass(const UTF8* utf8) {

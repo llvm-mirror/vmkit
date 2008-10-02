@@ -140,9 +140,8 @@ public:
   
   /// lookupClassFromUTF8 - Lookup a class from an UTF8 name and load it.
   ///
-  UserCommonClass* lookupClassFromUTF8(const UTF8* utf8, unsigned int start,
-                                   unsigned int len, bool doResolve,
-                                   bool doThrow);
+  UserCommonClass* lookupClassFromUTF8(const UTF8* utf8, bool doResolve,
+                                       bool doThrow);
   
   /// lookupClassFromJavaString - Lookup a class from a Java String and load it.
   ///
