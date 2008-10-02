@@ -315,12 +315,12 @@ void mvm::jit::runPasses(llvm::Function* func,  llvm::FunctionPassManager* pm) {
 #endif
 
 int mvm::jit::getBacktrace(void** stack, int size) {
-  void** addr = (void**)__builtin_frame_address(1);
+  void** addr = (void**)__builtin_frame_address(0);
   int cpt = 0;
   void* baseSP = mvm::Thread::get()->baseSP;
   while (addr && cpt < size && addr < baseSP && addr < addr[0]) {
-    stack[cpt++] = (void**)FRAME_IP(addr);
     addr = (void**)addr[0];
+    stack[cpt++] = (void**)FRAME_IP(addr);
   }
   return cpt;
 }
