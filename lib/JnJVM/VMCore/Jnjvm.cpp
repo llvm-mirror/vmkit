@@ -675,6 +675,14 @@ void Jnjvm::loadBootstrap() {
   LOAD_CLASS(upcalls->newField);
   LOAD_CLASS(upcalls->newStackTraceElement);
   LOAD_CLASS(upcalls->newVMThrowable);
+  LOAD_CLASS(upcalls->boolClass);
+  LOAD_CLASS(upcalls->byteClass);
+  LOAD_CLASS(upcalls->charClass);
+  LOAD_CLASS(upcalls->shortClass);
+  LOAD_CLASS(upcalls->intClass);
+  LOAD_CLASS(upcalls->longClass);
+  LOAD_CLASS(upcalls->floatClass);
+  LOAD_CLASS(upcalls->doubleClass);
   LOAD_CLASS(upcalls->InvocationTargetException);
   LOAD_CLASS(upcalls->ArrayStoreException);
   LOAD_CLASS(upcalls->ClassCastException);
