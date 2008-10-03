@@ -331,8 +331,8 @@ JavaArray* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
   assert(cl && virtualVT && "array class not resolved");
 
   uint32 primSize = cl->isPrimitive() ? cl->virtualSize : sizeof(JavaObject*);
-  JavaArray* res = (JavaArray*)
-    vm->allocator.allocateObject(sizeof(name) + n * primSize, virtualVT);
+  uint32 size = sizeof(JavaObject) + sizeof(sint32) + n * primSize;
+  JavaArray* res = (JavaArray*)vm->allocator.allocateObject(size, virtualVT);
   res->initialise(this);
   res->size = n;
   return res;
