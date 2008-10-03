@@ -191,6 +191,12 @@ static void addPass(FunctionPassManager *PM, Pass *P) {
   PM->add(P);
 }
 
+// This is equivalent to:
+// opt -simplifycfg -mem2reg -instcombine -jump-threading -scalarrepl -instcombine 
+//     -condprop -simplifycfg -reassociate -licm essai.bc -loop-unswitch 
+//     -indvars -loop-unroll -instcombine -gvn -sccp -simplifycfg
+//     -instcombine -condprop -dse -adce -simplifycfg
+//
 static void AddStandardCompilePasses(FunctionPassManager *PM) {
     llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
   // LLVM does not allow calling functions from other modules in verifier
