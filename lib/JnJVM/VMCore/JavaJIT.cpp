@@ -855,10 +855,16 @@ llvm::Function* JavaJIT::javaCompile() {
   }
 #endif
 
-  if (returnType != Type::VoidTy)
-    llvm::ReturnInst::Create(endNode, currentBlock);
-  else
-    llvm::ReturnInst::Create(currentBlock);
+  PI = pred_begin(currentBlock);
+  PE = pred_end(currentBlock);
+  if (PI == PE) {
+    currentBlock->eraseFromParent();
+  } else {
+    if (returnType != Type::VoidTy)
+      llvm::ReturnInst::Create(endNode, currentBlock);
+    else
+      llvm::ReturnInst::Create(currentBlock);
+  }
 
   PI = pred_begin(endExceptionBlock);
   PE = pred_end(endExceptionBlock);
