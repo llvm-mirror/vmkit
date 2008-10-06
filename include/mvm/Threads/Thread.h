@@ -20,22 +20,69 @@ class Collector;
 
 namespace mvm {
 
+/// Thread - This class is the base of custom virtual machines' Thread classes.
+/// It provides static functions to manage threads. An instance of this class
+/// contains all thread-specific informations.
 class Thread : public gc {
 public:
-  static void yield(void);
-  static void yield(unsigned int *);
-  static int self(void);
-  static void initialise(void);
-  static int kill(int tid, int signo);
-  static void exit(int value);
-  static int start(int *tid, int (*fct)(void *), void *arg);
   
+  /// yield - Yield the processor to another thread.
+  ///
+  static void yield(void);
+  
+  /// yield - Yield the processor to another thread. If the thread has been
+  /// askink for yield already a number of times (n), then do a small sleep.
+  ///
+  static void yield(unsigned int* n);
+  
+  /// self - The thread id of the current thread, which is specific to the
+  /// underlying implementation.
+  ///
+  static int self(void);
+
+  /// initialise - Initialise the thread implementation. Used for pthread_key.
+  ///
+  static void initialise(void);
+
+  /// kill - Kill the thread with the given pid by sending it a signal.
+  ///
+  static int kill(int tid, int signo);
+
+  /// exit - Exit the current thread.
+  ///
+  static void exit(int value);
+  
+  /// start - Start the execution of a thread, creating it and setting its
+  /// Thread instance.
+  ///
+  static int start(int *tid, int (*fct)(void *), void *arg);
+ 
+  /// threadKey - the key for accessing the thread specific data.
+  ///
   static mvm::Key<Thread>* threadKey;
+ 
+  /// GC - The collector of this thread.
+  ///
   Collector* GC;
+  
+  /// baseSP - The base stack pointer.
+  ///
   void* baseSP;
+  
+  /// threadID - The virtual machine specific thread id.
+  ///
   uint32 threadID;
+
+  /// get - Get the thread specific data of the current thread.
+  ///
   static Thread* get() {
     return (Thread*)Thread::threadKey->get();
+  }
+  
+  /// set - Set the thread specific data of the current thread.
+  ///
+  static void set(Thread* th) {
+    return Thread::threadKey->set(th);
   }
 
 };
