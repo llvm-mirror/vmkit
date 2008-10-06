@@ -450,7 +450,7 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
     ZipFile* file = archive.getFile(PATH_MANIFEST);
     if (file) {
       UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfByte;
-      ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, array, &vm->allocator);
+      ArrayUInt8* res = (ArrayUInt8*)array->doNew(file->ucsize, vm);
       int ok = archive.readFile(res, file);
       if (ok) {
         char* mainClass = findInformation(res, MAIN_CLASS, LENGTH_MAIN_CLASS);
@@ -798,7 +798,7 @@ void Jnjvm::runMain(int argc, char** argv) {
     }
     
     UserClassArray* array = bootstrapLoader->upcalls->ArrayOfString;
-    ArrayObject* args = ArrayObject::acons(argc - 2, array, &allocator);
+    ArrayObject* args = (ArrayObject*)array->doNew(argc - 2, this);
     for (int i = 2; i < argc; ++i) {
       args->elements[i - 2] = (JavaObject*)asciizToStr(argv[i]);
     }

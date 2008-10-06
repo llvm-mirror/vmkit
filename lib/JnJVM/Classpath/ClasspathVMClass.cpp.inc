@@ -81,12 +81,13 @@ JNIEnv *env,
   Jnjvm* vm = JavaThread::get()->isolate;
 
   if (cl->isArray() || cl->isInterface()) {
-    return (jobject)ArrayObject::acons(0, vm->upcalls->constructorArrayClass, &(vm->allocator));
+    return (jobject)vm->upcalls->constructorArrayClass->doNew(0, vm);
   } else {
     std::vector<JavaMethod*> res;
     cl->getDeclaredConstructors(res, publicOnly);
     
-    ArrayObject* ret = ArrayObject::acons(res.size(), vm->upcalls->constructorArrayClass, &(vm->allocator));
+    ArrayObject* ret = 
+      (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(res.size(), vm);
     sint32 index = 0;
     for (std::vector<JavaMethod*>::iterator i = res.begin(), e = res.end();
           i != e; ++i, ++index) {
@@ -114,12 +115,12 @@ JNIEnv *env,
   UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
 
   if (cl->isArray()) {
-    return (jobject)ArrayObject::acons(0, vm->upcalls->methodArrayClass, &(vm->allocator));
+    return (jobject)vm->upcalls->methodArrayClass->doNew(0, vm);
   } else {
     std::vector<JavaMethod*> res;
     cl->getDeclaredMethods(res, publicOnly);
     
-    ArrayObject* ret = ArrayObject::acons(res.size(), vm->upcalls->methodArrayClass, &(vm->allocator));
+    ArrayObject* ret = (ArrayObject*)vm->upcalls->methodArrayClass->doNew(res.size(), vm);
     sint32 index = 0;
     for (std::vector<JavaMethod*>::iterator i = res.begin(), e = res.end();
           i != e; ++i, ++index) {
@@ -274,13 +275,13 @@ jclass Cl, jboolean publicOnly) {
   UserClass* cl = NativeUtil::resolvedImplClass(Cl, false)->asClass();
 
   if (!cl) {
-    return (jobject)ArrayObject::acons(0, vm->upcalls->fieldArrayClass, &(vm->allocator));
+    return (jobject)vm->upcalls->fieldArrayClass->doNew(0, vm);
   } else {
     std::vector<JavaField*> res;
     cl->getDeclaredFields(res, publicOnly);
     
-    ArrayObject* ret = ArrayObject::acons(res.size(),
-                                          vm->upcalls->fieldArrayClass, &(vm->allocator));
+    ArrayObject* ret = 
+      (ArrayObject*)vm->upcalls->fieldArrayClass->doNew(res.size(), vm);
     sint32 index = 0;
     for (std::vector<JavaField*>::iterator i = res.begin(), e = res.end();
           i != e; ++i, ++index) {
@@ -305,10 +306,11 @@ jclass Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
   UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
   std::vector<UserClass*> * interfaces = cl->getInterfaces();
-  ArrayObject* ret = ArrayObject::acons(interfaces->size(), vm->upcalls->classArrayClass, &(vm->allocator));
+  ArrayObject* ret = 
+    (ArrayObject*)vm->upcalls->classArrayClass->doNew(interfaces->size(), vm);
   sint32 index = 0;
-  for (std::vector<UserClass*>::iterator i = interfaces->begin(), e = interfaces->end();
-        i != e; ++i, ++index) {
+  for (std::vector<UserClass*>::iterator i = interfaces->begin(),
+       e = interfaces->end(); i != e; ++i, ++index) {
     UserClass* klass = *i; 
     ret->elements[index] = klass->getClassDelegatee(vm);
   }
@@ -346,7 +348,8 @@ jclass Cl, bool publicOnly) {
   if (cl) {
     cl->resolveInnerOuterClasses();
     std::vector<UserClass*>* innerClasses = cl->getInnerClasses();
-    ArrayObject* res = ArrayObject::acons(innerClasses->size(), vm->upcalls->constructorArrayClass, &(vm->allocator));
+    ArrayObject* res = 
+      (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(innerClasses->size(), vm);
     uint32 index = 0;
     for (std::vector<UserClass*>::iterator i = innerClasses->begin(), 
          e = innerClasses->end(); i!= e; i++) {
@@ -377,7 +380,7 @@ jclass clazz,
 jclass Cl) {
   // TODO implement me
   Jnjvm* vm = JavaThread::get()->isolate;
-  ArrayObject* res = ArrayObject::acons(0, vm->upcalls->constructorArrayAnnotation, &(vm->allocator));
+  ArrayObject* res = (ArrayObject*)vm->upcalls->constructorArrayAnnotation->doNew(0, vm);
   return (jobjectArray)res;
 }
 }

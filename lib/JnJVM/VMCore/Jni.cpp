@@ -1755,7 +1755,7 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass elementClass,
   const UTF8* name = base->getName();
   const UTF8* arrayName = loader->constructArrayName(1, name);
   UserClassArray* array = loader->constructArray(arrayName);
-  ArrayObject* res = ArrayObject::acons(length, array, &(vm->allocator));
+  ArrayObject* res = (ArrayObject*)array->doNew(length, vm);
   if (initialElement) {
     memset(res->elements, (int)initialElement, 
                length * sizeof(JavaObject*));
@@ -1798,11 +1798,8 @@ jbooleanArray NewBooleanArray(JNIEnv *env, jsize len) {
   
   BEGIN_EXCEPTION
   
-  ArrayUInt8* res = 0;
   Jnjvm* vm = NativeUtil::myVM(env);
-  res = ArrayUInt8::acons(len, vm->bootstrapLoader->upcalls->ArrayOfBool,
-                          &vm->allocator);
-  return (jbooleanArray)res;
+  return (jbooleanArray)vm->upcalls->ArrayOfByte->doNew(len, vm);
 
   END_EXCEPTION
   return 0;
@@ -1813,11 +1810,8 @@ jbyteArray NewByteArray(JNIEnv *env, jsize len) {
   
   BEGIN_EXCEPTION
 
-  ArraySInt8* res = 0;
   Jnjvm* vm = NativeUtil::myVM(env);
-  res = ArraySInt8::acons(len, vm->bootstrapLoader->upcalls->ArrayOfByte,
-                          &vm->allocator);
-  return (jbyteArray) res;
+  return (jbyteArray)vm->upcalls->ArrayOfByte->doNew(len, vm);
 
   END_EXCEPTION
   return 0;
@@ -1828,11 +1822,8 @@ jcharArray NewCharArray(JNIEnv *env, jsize len) {
   
   BEGIN_EXCEPTION
   
-  ArrayUInt16* res = 0;
   Jnjvm* vm = NativeUtil::myVM(env);
-  res = ArrayUInt16::acons(len, vm->bootstrapLoader->upcalls->ArrayOfChar,
-                           &vm->allocator);
-  return (jcharArray) res;
+  return (jcharArray)vm->upcalls->ArrayOfChar->doNew(len, vm);
 
   END_EXCEPTION
   return 0;
@@ -1843,11 +1834,8 @@ jshortArray NewShortArray(JNIEnv *env, jsize len) {
   
   BEGIN_EXCEPTION
   
-  ArraySInt16* res = 0;
   Jnjvm* vm = NativeUtil::myVM(env);
-  res = ArraySInt16::acons(len, vm->bootstrapLoader->upcalls->ArrayOfShort,
-                           &vm->allocator);
-  return (jshortArray) res;
+  return (jshortArray)vm->upcalls->ArrayOfShort->doNew(len, vm);
 
   END_EXCEPTION
   return 0;
@@ -1858,11 +1846,8 @@ jintArray NewIntArray(JNIEnv *env, jsize len) {
   
   BEGIN_EXCEPTION
   
-  ArraySInt32* res = 0;
   Jnjvm* vm = NativeUtil::myVM(env);
-  res = ArraySInt32::acons(len, vm->bootstrapLoader->upcalls->ArrayOfInt,
-                           &vm->allocator);
-  return (jintArray) res;
+  return (jintArray)vm->upcalls->ArrayOfInt->doNew(len, vm);
 
   END_EXCEPTION
   return 0;
@@ -1873,11 +1858,8 @@ jlongArray NewLongArray(JNIEnv *env, jsize len) {
   
   BEGIN_EXCEPTION
   
-  ArrayLong* res = 0;
   Jnjvm* vm = NativeUtil::myVM(env);
-  res = ArrayLong::acons(len, vm->bootstrapLoader->upcalls->ArrayOfLong,
-                         &vm->allocator);
-  return (jlongArray) res;
+  return (jlongArray)vm->upcalls->ArrayOfLong->doNew(len, vm);
 
   END_EXCEPTION
   return 0;
@@ -1888,11 +1870,8 @@ jfloatArray NewFloatArray(JNIEnv *env, jsize len) {
   
   BEGIN_EXCEPTION
   
-  ArrayFloat* res = 0;
   Jnjvm* vm = NativeUtil::myVM(env);
-  res = ArrayFloat::acons(len, vm->bootstrapLoader->upcalls->ArrayOfFloat,
-                          &vm->allocator);
-  return (jfloatArray) res;
+  return (jfloatArray)vm->upcalls->ArrayOfFloat->doNew(len, vm);
 
   END_EXCEPTION
   return 0;
@@ -1903,11 +1882,8 @@ jdoubleArray NewDoubleArray(JNIEnv *env, jsize len) {
   
   BEGIN_EXCEPTION
   
-  ArrayDouble* res = 0;
   Jnjvm* vm = NativeUtil::myVM(env);
-  res = ArrayDouble::acons(len, vm->bootstrapLoader->upcalls->ArrayOfDouble,
-                           &vm->allocator);
-  return (jdoubleArray) res;
+  return (jdoubleArray)vm->upcalls->ArrayOfDouble->doNew(len, vm);
 
   END_EXCEPTION
   return 0;

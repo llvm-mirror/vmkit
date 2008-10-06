@@ -386,11 +386,12 @@ JavaObject* NativeUtil::getClassType(JnjvmClassLoader* loader, Typedef* type) {
   return res->getClassDelegatee(vm);
 }
 
-ArrayObject* NativeUtil::getParameterTypes(JnjvmClassLoader* loader, JavaMethod* meth) {
+ArrayObject* NativeUtil::getParameterTypes(JnjvmClassLoader* loader,
+                                           JavaMethod* meth) {
   Jnjvm* vm = JavaThread::get()->isolate;
   std::vector<Typedef*>& args = meth->getSignature()->args;
-  ArrayObject* res = ArrayObject::acons(args.size(), vm->upcalls->classArrayClass,
-                                        &(JavaThread::get()->isolate->allocator));
+  ArrayObject* res = 
+    (ArrayObject*)vm->upcalls->classArrayClass->doNew(args.size(), vm);
 
   sint32 index = 0;
   for (std::vector<Typedef*>::iterator i = args.begin(), e = args.end();
@@ -406,14 +407,13 @@ ArrayObject* NativeUtil::getExceptionTypes(UserClass* cl, JavaMethod* meth) {
   Attribut* exceptionAtt = meth->lookupAttribut(Attribut::exceptionsAttribut);
   Jnjvm* vm = JavaThread::get()->isolate;
   if (exceptionAtt == 0) {
-    return ArrayObject::acons(0, vm->upcalls->classArrayClass,
-                              &(JavaThread::get()->isolate->allocator));
+    return (ArrayObject*)vm->upcalls->classArrayClass->doNew(0, vm);
   } else {
     UserConstantPool* ctp = cl->getConstantPool();
     Reader reader(exceptionAtt, cl->getBytes());
     uint16 nbe = reader.readU2();
-    ArrayObject* res = ArrayObject::acons(nbe, vm->upcalls->classArrayClass,
-                                          &(JavaThread::get()->isolate->allocator));
+    ArrayObject* res = 
+      (ArrayObject*)vm->upcalls->classArrayClass->doNew(nbe, vm);
 
     for (uint16 i = 0; i < nbe; ++i) {
       uint16 idx = reader.readU2();

@@ -38,39 +38,6 @@ const unsigned int JavaArray::T_LONG = 11;
 extern "C" void negativeArraySizeException(sint32 val);
 extern "C" void outOfMemoryError(sint32 val);
 
-#define ACONS(name, elmt, primSize, VT)                                      \
-  name *name::acons(sint32 n, UserClassArray* atype,                         \
-                    JavaAllocator* allocator) {                              \
-    if (n < 0)                                                               \
-      negativeArraySizeException(n);                                         \
-    else if (n > JavaArray::MaxArraySize)                                    \
-      outOfMemoryError(n);                                                   \
-    name* res = (name*)                                                      \
-      (Object*) allocator->allocateObject(sizeof(name) + n * primSize, VT);  \
-    res->initialise(atype);                                                  \
-    res->size = n;                                                           \
-    return res;                                                              \
-  }
-
-/// Each array class has its own element size for allocating arrays.
-ACONS(ArrayUInt8,  uint8, 1, JavaArray::VT)
-ACONS(ArraySInt8,  sint8, 1, JavaArray::VT)
-ACONS(ArrayUInt16, uint16, 2, JavaArray::VT)
-ACONS(ArraySInt16, sint16, 2, JavaArray::VT)
-ACONS(ArrayUInt32, uint32, 4, JavaArray::VT)
-ACONS(ArraySInt32, sint32, 4, JavaArray::VT)
-ACONS(ArrayLong,   sint64, 8, JavaArray::VT)
-ACONS(ArrayFloat,  float, 4, JavaArray::VT)
-ACONS(ArrayDouble, double, 8, JavaArray::VT)
-
-/// ArrayObject differs wit arrays of primitive types because its
-/// tracer method traces the objects in the array as well as the class of the
-/// array.
-ACONS(ArrayObject, JavaObject*, sizeof(JavaObject*), ArrayObject::VT)
-
-#undef ARRAYCLASS
-#undef ACONS
-
 void UTF8::print(mvm::PrintBuffer* buf) const {
   for (int i = 0; i < size; i++)
     buf->writeChar((char)elements[i]);
@@ -155,8 +122,8 @@ void UTF8::operator delete(void* obj) {
 const UTF8* UTF8::acons(sint32 n, UserClassArray* cl,
                         JavaAllocator* allocator) {
   if (n < 0)
-    negativeArraySizeException(n);                                        
-  else if (n > JavaArray::MaxArraySize)                                   
+    negativeArraySizeException(n);
+  else if (n > JavaArray::MaxArraySize)
     outOfMemoryError(n);                                                  
   UTF8* res = new (n) UTF8();
   res->initialise(cl);

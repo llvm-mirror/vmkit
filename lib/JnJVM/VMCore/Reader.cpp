@@ -33,7 +33,7 @@ ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, char* path) {
     long nbb = ftell(fp);
     fseek(fp, 0, SeekSet);
     UserClassArray* array = loader->upcalls->ArrayOfByte;
-    res = ArrayUInt8::acons(nbb, array, loader->allocator);
+    res = (ArrayUInt8*)array->doNew((sint32)nbb, *loader->allocator);
     fread(res->elements, nbb, 1, fp);
     fclose(fp);
   }
@@ -46,7 +46,8 @@ ArrayUInt8* Reader::openZip(JnjvmBootstrapLoader* loader, ZipArchive* archive,
   ZipFile* file = archive->getFile(filename);
   if (file != 0) {
     UserClassArray* array = loader->upcalls->ArrayOfByte;
-    ArrayUInt8* res = ArrayUInt8::acons(file->ucsize, array, loader->allocator);
+    ArrayUInt8* res = 
+      (ArrayUInt8*)array->doNew((sint32)file->ucsize, *loader->allocator);
     if (archive->readFile(res, file) != 0) {
       ret = res;
     }

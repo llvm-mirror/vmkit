@@ -62,7 +62,7 @@ public:
   }
 
   static JavaThread* get() {
-    return (JavaThread*)Thread::threadKey->get();
+    return (JavaThread*)mvm::Thread::get();
   }
   static JavaObject* currentThread() {
     JavaThread* result = get();

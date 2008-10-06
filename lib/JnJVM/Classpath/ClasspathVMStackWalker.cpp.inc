@@ -69,7 +69,7 @@ ArrayObject* recGetClassContext(Jnjvm* vm, int** stack, uint32 size, uint32 firs
       return recGetClassContext(vm, stack, size, first + 1, rec, ctps, ctpIndex);
     }   
   } else {
-    return ArrayObject::acons(rec, vm->upcalls->classArrayClass, &(vm->allocator));
+    return (ArrayObject*)vm->upcalls->classArrayClass->doNew(rec, vm);
   }
 }
 #else
@@ -84,7 +84,7 @@ ArrayObject* recGetClassContext(Jnjvm* vm, int** stack, uint32 size, uint32 firs
       return recGetClassContext(vm, stack, size, first + 1, rec);
     }   
   } else {
-    return ArrayObject::acons(rec, vm->upcalls->classArrayClass, &(vm->allocator));
+    return (ArrayObject*)vm->upcalls->classArrayClass->doNew(rec, vm);
   }
 }
 #endif

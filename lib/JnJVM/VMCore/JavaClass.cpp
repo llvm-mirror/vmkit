@@ -326,13 +326,17 @@ JavaArray* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
     vm->negativeArraySizeException(n);
   else if (n > JavaArray::MaxArraySize)
     vm->outOfMemoryError(n);
-  
+
+  return doNew(n, vm->allocator);
+}
+
+JavaArray* UserClassArray::doNew(sint32 n, JavaAllocator& allocator) {
   UserCommonClass* cl = baseClass();
   assert(cl && virtualVT && "array class not resolved");
 
   uint32 primSize = cl->isPrimitive() ? cl->virtualSize : sizeof(JavaObject*);
   uint32 size = sizeof(JavaObject) + sizeof(sint32) + n * primSize;
-  JavaArray* res = (JavaArray*)vm->allocator.allocateObject(size, virtualVT);
+  JavaArray* res = (JavaArray*)allocator.allocateObject(size, virtualVT);
   res->initialise(this);
   res->size = n;
   return res;

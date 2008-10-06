@@ -23,6 +23,7 @@
 #include "mvm/Threads/Locks.h"
 
 #include "JavaAccess.h"
+#include "JavaAllocator.h"
 #include "JnjvmClassLoader.h"
 
 namespace jnjvm {
@@ -702,6 +703,14 @@ public:
 /// ClassArray - This class represents Java array classes.
 ///
 class ClassArray : public CommonClass {
+
+  /// Reader is a friend because it allocates arrays without a vm.
+  friend class Reader;
+private:
+  /// doNew - Allocate a new array with the given loader.
+  ///
+  JavaArray* doNew(sint32 n, JavaAllocator& allocator);
+
 public:
   
   /// VT - The virtual table of array classes.
@@ -720,8 +729,10 @@ public:
   }
 
   
-  /// funcs - Get the type of the base class/ Resolve the array if needed.
+  /// doNew - Allocate a new array in the given vm.
+  ///
   JavaArray* doNew(sint32 n, Jnjvm* vm);
+  
 
   /// ClassArray - Empty constructor for VT.
   ///

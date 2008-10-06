@@ -29,11 +29,6 @@
 #include "NativeUtil.h"
 
 
-// Called by JnJVM to ensure the compiler will link the classpath methods
-extern "C" int ClasspathBoot(int argc, char** argv, char** env) {
-  return 1;
-}
-
 using namespace jnjvm;
 
 extern "C" {
@@ -161,29 +156,25 @@ jclass target, jclass constr, jobject cons) {
   Jnjvm* vm = JavaThread::get()->isolate;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(target, true);
   JavaObject* res = cl->doNew(vm);
-  JavaMethod* meth = (JavaMethod*)(vm->upcalls->constructorSlot->getInt32Field((JavaObject*)cons));
+  JavaField* field = vm->upcalls->constructorSlot;
+  JavaMethod* meth = (JavaMethod*)(field->getInt32Field((JavaObject*)cons));
   meth->invokeIntSpecial(vm, cl, res);
   return (jobject)res;
 }
 
-JNIEXPORT jobject JNICALL
-Java_java_lang_reflect_VMArray_createObjectArray
-  (
+JNIEXPORT jobject JNICALL Java_java_lang_reflect_VMArray_createObjectArray(
 #ifdef NATIVE_JNI
-   JNIEnv * env,
-   jclass thisClass __attribute__ ((__unused__)),
+JNIEnv * env,
+jclass thisClass,
 #endif
-   jclass arrayType, jint arrayLength)
-{
+jclass arrayType, jint arrayLength) {
   Jnjvm* vm = JavaThread::get()->isolate;
   UserCommonClass* base = NativeUtil::resolvedImplClass(arrayType, true);
   JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->getName();
   const UTF8* arrayName = loader->constructArrayName(1, name);
   UserClassArray* array = loader->constructArray(arrayName, base);
-  ArrayObject* res = ArrayObject::acons(arrayLength, array, &(vm->allocator));
-
-  return (jobject) res;
+  return (jobject)array->doNew(arrayLength, vm);
 }
 
 
@@ -198,9 +189,9 @@ jclass clazz,
 
 JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapLong(
 #ifdef NATIVE_JNI
-    JNIEnv *env, 
+JNIEnv *env, 
 #endif
-    JavaObject* unsafe, JavaObject* obj, jlong offset, jlong expect, jlong update) {
+JavaObject* unsafe, JavaObject* obj, jlong offset, jlong expect, jlong update) {
 
   jlong *ptr; 
   jlong  value;
@@ -220,9 +211,9 @@ JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapLong(
 
 JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapInt(
 #ifdef NATIVE_JNI
-    JNIEnv *env, 
+JNIEnv *env, 
 #endif
-    JavaObject* unsafe, JavaObject* obj, jlong offset, jint expect, jint update) {
+JavaObject* unsafe, JavaObject* obj, jlong offset, jint expect, jint update) {
 
   jint *ptr; 
 
@@ -233,9 +224,10 @@ JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapInt(
 
 JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapObject(
 #ifdef NATIVE_JNI
-    JNIEnv *env, 
+JNIEnv *env, 
 #endif
-    JavaObject* unsafe, JavaObject* obj, jlong offset, jobject expect, jobject update) {
+JavaObject* unsafe, JavaObject* obj, jlong offset, jobject expect,
+jobject update) {
 
   jobject *ptr; 
 

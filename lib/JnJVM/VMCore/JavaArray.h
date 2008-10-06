@@ -79,8 +79,6 @@ public:
 /// Instantiation of the TJavaArray class for Java arrays of primitive types.
 #define ARRAYCLASS(name, elmt)                                \
   class name : public TJavaArray<elmt> {                      \
-  public:                                                     \
-    static name* acons(sint32 n, UserClassArray* cl, JavaAllocator* allocator);\
   }
 
 ARRAYCLASS(ArrayUInt8,  uint8);
@@ -102,11 +100,6 @@ class ArrayObject : public TJavaArray<JavaObject*> {
 public:
   /// VT - The virtual table of arrays of objects.
   static VirtualTable *VT;
-
-  /// acons - Allocates a Java array of objects. The class given as argument is
-  /// the class of the array, not the class of its elements.
-  static ArrayObject* acons(sint32 n, UserClassArray* cl,
-                            JavaAllocator* allocator);
 
   /// tracer - The tracer method of Java arrays of objects. This method will
   /// trace all objects in the array.

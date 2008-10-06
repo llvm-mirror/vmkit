@@ -85,7 +85,7 @@ ArrayObject* recGetStackTrace(int** stack, uint32 first, uint32 rec) {
       return recGetStackTrace(stack, first + 1, rec);
     }
   } else {
-    return ArrayObject::acons(rec, vm->upcalls->stackTraceArray, &(vm->allocator));
+    return (ArrayObject*)vm->upcalls->stackTraceArray->doNew(rec, vm);
   }
 }
 
