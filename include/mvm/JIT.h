@@ -27,6 +27,7 @@
 #include "mvm/Method.h"
 #include "mvm/MvmMemoryManager.h"
 #include "mvm/Threads/Locks.h"
+#include "mvm/Threads/Thread.h"
 
 namespace mvm {
 
@@ -174,6 +175,10 @@ extern uint8  (*llvm_atomic_cmp_swap_i8)  ( uint8* ptr,  uint8 cmp,  uint8 val )
 extern uint16 (*llvm_atomic_cmp_swap_i16) ( uint16* ptr, uint16 cmp, uint16 val );
 extern uint32 (*llvm_atomic_cmp_swap_i32) ( uint32* ptr, uint32 cmp, uint32 val );
 extern uint64 (*llvm_atomic_cmp_swap_i64) ( uint64* ptr, uint64 cmp, uint64 val );
+
+extern llvm::GlobalVariable* executionEnvironment;
+extern mvm::Thread* (*getExecutionEnvironment)();
+extern void (*setExecutionEnvironment)(mvm::Thread*);
 
 // TODO: find what macro for gcc < 4.2
 #if 1
