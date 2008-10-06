@@ -1,4 +1,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Common types ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;; A virtual table is an array of function pointers.
+%VT = type i32**
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Printing functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -92,4 +99,22 @@ define i64 @runtime.llvm.atomic.cmp.swap.i64(i64* %ptr, i64 %cmp, i64 %swap)
 nounwind {
   %A = call i64 @llvm.atomic.cmp.swap.i64.p0i64( i64* %ptr, i64 %cmp, i64 %swap)
   ret i64 %A
+}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;; TLS for the execution environment ;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+%Thread = type {%VT*, i32}
+
+@executionEnvironment = thread_local global %Thread* null
+
+define %Thread* @getExecutionEnvironment() nounwind readnone {
+  %E = load %Thread** @executionEnvironment
+  ret %Thread* %E
+}
+
+define void @setExecutionEnvironment(%Thread* %E) nounwind {
+  store %Thread* %E, %Thread** @executionEnvironment
+  ret void
 }

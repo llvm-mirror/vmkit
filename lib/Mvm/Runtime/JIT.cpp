@@ -135,6 +135,14 @@ void mvm::jit::initialise() {
   llvm_atomic_cmp_swap_i64 = (uint64 (*)(uint64*, uint64, uint64))
     (uintptr_t)executionEngine->getPointerToFunction(
       module->getFunction("runtime.llvm.atomic.cmp.swap.i64"));
+  
+  executionEnvironment = module->getGlobalVariable("executionEnvironment");
+  getExecutionEnvironment = (mvm::Thread* (*)())
+    (uintptr_t)executionEngine->getPointerToFunction(
+      module->getFunction("getExecutionEnvironment"));
+  setExecutionEnvironment = (void (*)(mvm::Thread*))
+    (uintptr_t)executionEngine->getPointerToFunction(
+      module->getFunction("setExecutionEnvironment"));
 
   // Type declaration
   ptrType = PointerType::getUnqual(Type::Int8Ty);
@@ -299,6 +307,10 @@ uint32 (*mvm::jit::llvm_atomic_cmp_swap_i32) (uint32* ptr, uint32 cmp,
 uint64 (*mvm::jit::llvm_atomic_cmp_swap_i64) (uint64* ptr, uint64 cmp,
                                               uint64 val);
 
+
+llvm::GlobalVariable* mvm::jit::executionEnvironment;
+mvm::Thread* (*mvm::jit::getExecutionEnvironment)();
+void (*mvm::jit::setExecutionEnvironment)(mvm::Thread*);
 
 uint64 mvm::jit::getTypeSize(const llvm::Type* type) {
   return executionEngine->getTargetData()->getABITypeSize(type);
