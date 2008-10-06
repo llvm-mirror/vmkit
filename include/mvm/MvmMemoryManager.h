@@ -93,6 +93,15 @@ public:
   virtual void endExceptionTable(const Function *F, unsigned char *TableStart,
                                unsigned char *TableEnd, 
                                unsigned char* FrameRegister);
+  
+  virtual void setMemoryWritable() {
+    realMemoryManager->setMemoryWritable();
+  }
+  
+  virtual void setMemoryExecutable() {
+    realMemoryManager->setMemoryExecutable();
+  }
+
 };
 
 } // End mvm namespace
