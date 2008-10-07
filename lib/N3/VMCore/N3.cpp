@@ -80,7 +80,7 @@ N3* N3::allocateBootstrap() {
   vm->bootstrapThread->GC = GC;
   mvm::jit::memoryManager->addGCForModule(vm->module, GC);
 #endif
-  VMThread::threadKey->set(vm->bootstrapThread);
+  VMThread::set(vm->bootstrapThread);
 
   vm->name = "bootstrapN3";
   vm->hashUTF8 = UTF8Map::allocate();
@@ -114,7 +114,7 @@ N3* N3::allocate(const char* name, N3* parent) {
   vm->bootstrapThread->GC = GC;
   mvm::jit::memoryManager->addGCForModule(vm->module, GC);
 #endif
-  VMThread::threadKey->set(vm->bootstrapThread);
+  VMThread::set(vm->bootstrapThread);
   
   vm->threadSystem = ThreadSystem::allocateThreadSystem();
   vm->name = name;

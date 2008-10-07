@@ -335,7 +335,7 @@ void mvm::VirtualMachine::initialiseCLIVM() {
 }
 
 void VirtualMachine::runApplication(int argc, char** argv) {
-  mvm::Thread::threadKey->set(this->bootstrapThread);  
+  mvm::Thread::set(this->bootstrapThread);  
   ((N3*)this)->runMain(argc, argv);
 }
 

@@ -43,7 +43,7 @@ VMThread::VMThread() {
 }
 
 VMThread* VMThread::get() {
-  return (VMThread*)threadKey->get();
+  return (VMThread*)mvm::Thread::get();
 }
 
 extern void AddStandardCompilePasses(llvm::FunctionPassManager*);

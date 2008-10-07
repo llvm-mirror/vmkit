@@ -56,11 +56,13 @@ public:
   /// Thread instance.
   ///
   static int start(int *tid, int (*fct)(void *), void *arg);
- 
+
+private:
   /// threadKey - the key for accessing the thread specific data.
   ///
   static mvm::Key<Thread>* threadKey;
  
+public:
   /// GC - The collector of this thread.
   ///
   Collector* GC;
