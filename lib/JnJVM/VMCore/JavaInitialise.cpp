@@ -11,6 +11,7 @@
 
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Locks.h"
+#include "mvm/Threads/Thread.h"
 
 #include "JavaArray.h"
 #include "JavaCache.h"
@@ -241,7 +242,7 @@ void mvm::VirtualMachine::initialiseJVM() {
 }
 
 void Jnjvm::runApplication(int argc, char** argv) {
-  mvm::Thread::threadKey->set(this->bootstrapThread);
+  mvm::Thread::set(this->bootstrapThread);
   this->runMain(argc, argv);
 }
 

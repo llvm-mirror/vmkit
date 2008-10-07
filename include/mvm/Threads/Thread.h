@@ -13,6 +13,7 @@
 #include "types.h"
 
 #include "MvmGC.h"
+#include "mvm/JIT.h"
 #include "mvm/Threads/Key.h"
 
 
@@ -78,15 +79,22 @@ public:
   /// get - Get the thread specific data of the current thread.
   ///
   static Thread* get() {
+#if 1//defined(__PPC__) || defined(__ppc__)
     return (Thread*)Thread::threadKey->get();
+#else
+    return (Thread*)mvm::jit::getExecutionEnvironment();
+#endif
   }
   
   /// set - Set the thread specific data of the current thread.
   ///
   static void set(Thread* th) {
-    return Thread::threadKey->set(th);
+#if 1//defined(__PPC__) || defined(__ppc__)
+    Thread::threadKey->set(th);
+#else
+    mvm::jit::setExecutionEnvironment(th);
+#endif
   }
-
 };
 
 

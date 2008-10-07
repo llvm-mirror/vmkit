@@ -27,9 +27,10 @@
 #include "mvm/Method.h"
 #include "mvm/MvmMemoryManager.h"
 #include "mvm/Threads/Locks.h"
-#include "mvm/Threads/Thread.h"
 
 namespace mvm {
+
+class Thread;
 
 /// JITInfo - This class can be derived from to hold private JIT-specific
 /// information. Objects of type are accessed/created with

@@ -18,6 +18,7 @@
 #include "debug.h"
 
 #include "mvm/JIT.h"
+#include "mvm/Threads/Thread.h"
 
 #include "JavaArray.h"
 #include "JavaClass.h"
@@ -830,7 +831,7 @@ Jnjvm* Jnjvm::allocateIsolate(void* sp) {
   isolate->bootstrapThread = allocator_new(&isolate->allocator, JavaThread)();
   isolate->bootstrapThread->initialise(0, isolate);
   void* baseSP = sp ? sp : mvm::Thread::get()->baseSP;
-  JavaThread::threadKey->set(isolate->bootstrapThread);
+  JavaThread::set(isolate->bootstrapThread);
   
 #ifdef MULTIPLE_GC
   isolate->bootstrapThread->GC = isolate->GC;

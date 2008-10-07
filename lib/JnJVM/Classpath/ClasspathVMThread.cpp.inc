@@ -50,7 +50,7 @@ static void start(arg_thread_t* arg) {
   JavaObject* vmThread = arg->vmThread;
   JavaThread* intern = arg->intern;
   free(arg);
-  mvm::Thread::threadKey->set(intern);
+  mvm::Thread::set(intern);
 #ifdef MULTIPLE_GC
   intern->GC->inject_my_thread(&argc);
 #else
