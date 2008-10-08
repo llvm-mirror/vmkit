@@ -28,10 +28,11 @@ JNIEXPORT jobject JNICALL Java_java_lang_VMObject_clone(
 JNIEnv *env,
 jclass clazz, 
 #endif
-                                                        jobject _src) {
+jobject _src) {
   
   JavaObject* src = (JavaObject*)_src;
   UserCommonClass* cl = src->classOf;
+  Jnjvm* vm = JavaThread::get()->isolate;
   uint64 size = 0;
   if (cl->isArray()) {
     size = sizeof(JavaArray) + ((JavaArray*)src)->size * 
@@ -40,7 +41,7 @@ jclass clazz,
     size = cl->getVirtualSize();
   }
   JavaObject* res = (JavaObject*)
-    JavaThread::get()->isolate->allocator.allocateObject(size, src->getVirtualTable());
+    vm->allocator.allocateObject(size, src->getVirtualTable());
   memcpy(res, src, size);
   res->lock = 0;
   return (jobject)res;
@@ -51,7 +52,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_VMObject_getClass(
 JNIEnv *env,
 jclass clazz,
 #endif
-                                                           jobject _obj) {
+jobject _obj) {
   
   JavaObject* obj = (JavaObject*)_obj;
   Jnjvm* vm = JavaThread::get()->isolate;
@@ -63,8 +64,7 @@ JNIEXPORT void JNICALL Java_java_lang_VMObject_notifyAll(
 JNIEnv *env,
 jclass clazz,
 #endif
-
-                                                         jobject _obj) {
+jobject _obj) {
   JavaObject* obj = (JavaObject*)_obj;
   obj->notifyAll();
 }

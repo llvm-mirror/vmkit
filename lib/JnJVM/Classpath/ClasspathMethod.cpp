@@ -26,13 +26,29 @@ using namespace jnjvm;
 
 extern "C" {
 
+// internalGetClass selects the class of a method depending on the isolate
+// environment. In a sharing environment, the class is located in the 
+// Java object. In regular environment, it is the classDef of the method.
+static UserClass* internalGetClass(Jnjvm* vm, JavaMethod* meth, jobject Meth) {
+#ifdef ISOLATE_SHARING
+  JavaField* field = vm->upcalls->methodClass;
+  jclass Cl = (jclass)field->getInt32Field((JavaObject*)Meth);
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, Cl, false);
+  return cl;
+#else
+  return meth->classDef;
+#endif
+}
+
+
 JNIEXPORT jint JNICALL Java_java_lang_reflect_Method_getModifiersInternal(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
  jobject Meth) { 
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaMethod* meth = (JavaMethod*)vm->upcalls->methodSlot->getInt32Field((JavaObject*)Meth);
+  JavaField* slot = vm->upcalls->methodSlot;
+  JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
   return meth->access;
 }
 
@@ -42,14 +58,10 @@ JNIEnv *env,
 #endif
  jobject Meth) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaMethod* meth = (JavaMethod*)vm->upcalls->methodSlot->getInt32Field((JavaObject*)Meth);
-#ifdef ISOLATE_SHARING
-  jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)Meth);
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
+  JavaField* slot = vm->upcalls->methodSlot;
+  JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
+  UserClass* cl = internalGetClass(vm, meth, Meth);
   JnjvmClassLoader* loader = cl->classLoader;
-#else
-  JnjvmClassLoader* loader = meth->classDef->classLoader;
-#endif
   return (jclass)NativeUtil::getClassType(loader, meth->getSignature()->ret);
 }
 
@@ -58,17 +70,12 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_getParameterTypes(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
-
-                                                                          jobject Meth) {
+jobject Meth) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaMethod* meth = (JavaMethod*)vm->upcalls->methodSlot->getInt32Field((JavaObject*)Meth);
-#ifdef ISOLATE_SHARING
-  jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)Meth);
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
+  JavaField* slot = vm->upcalls->methodSlot;
+  JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
+  UserClass* cl = internalGetClass(vm, meth, Meth);
   JnjvmClassLoader* loader = cl->classLoader;
-#else
-  JnjvmClassLoader* loader = meth->classDef->classLoader;
-#endif
   return (jobject)(NativeUtil::getParameterTypes(loader, meth));
 }
 
@@ -76,20 +83,20 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_invokeNative(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
- jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
+jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
 
+  Jnjvm* vm = JavaThread::get()->isolate;
   JavaMethod* meth = (JavaMethod*)_meth;
   JavaArray* args = (JavaArray*)_args;
   sint32 nbArgs = args ? args->size : 0;
   sint32 size = meth->getSignature()->args.size();
-  Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject* obj = (JavaObject*)_obj;
 
   void** buf = (void**)alloca(size * sizeof(uint64)); 
   void* _buf = (void*)buf;
   sint32 index = 0;
   if (nbArgs == size) {
-    UserCommonClass* _cl = NativeUtil::resolvedImplClass(Cl, false);
+    UserCommonClass* _cl = NativeUtil::resolvedImplClass(vm, Cl, false);
     UserClass* cl = (UserClass*)_cl;
     
     if (isVirtual(meth->access)) {
@@ -101,18 +108,18 @@ JNIEnv *env,
       if (isInterface(cl->classDef->access)) {
         cl = obj->classOf->lookupClassFromMethod(meth);
       } else {
-        jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)Meth);
-        cl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
+        cl = internalGetClass(vm, meth, Meth);
       }
 #endif
 
     } else {
       cl->initialiseClass(vm);
     }
-
+    
+    Signdef* sign = meth->getSignature();
     JavaObject** ptr = (JavaObject**)(void*)(args->elements);     
-    for (std::vector<Typedef*>::iterator i = meth->getSignature()->args.begin(),
-         e = meth->getSignature()->args.end(); i != e; ++i, ++index) {
+    for (std::vector<Typedef*>::iterator i = sign->args.begin(),
+         e = sign->args.end(); i != e; ++i, ++index) {
       NativeUtil::decapsulePrimitive(vm, buf, ptr[index], *i);
     }
     
@@ -121,7 +128,8 @@ JNIEnv *env,
 #define RUN_METH(TYPE) \
     try{ \
       if (isVirtual(meth->access)) { \
-        if (isPublic(meth->access) && !isFinal(meth->access) && !isFinal(meth->classDef->access)) { \
+        if (isPublic(meth->access) && !isFinal(meth->access) && \
+            !isFinal(meth->classDef->access)) { \
           val = meth->invoke##TYPE##VirtualBuf(vm, cl, obj, _buf); \
         } else { \
           val = meth->invoke##TYPE##SpecialBuf(vm, cl, obj, _buf); \
@@ -144,7 +152,7 @@ JNIEnv *env,
     } \
     
     JavaObject* res = 0;
-    Typedef* retType = meth->getSignature()->ret;
+    Typedef* retType = sign->ret;
     if (retType->isPrimitive()) {
       PrimitiveTypedef* prim = (PrimitiveTypedef*)retType;
       if (prim->isVoid()) {
@@ -209,17 +217,12 @@ JNIEXPORT jobjectArray JNICALL Java_java_lang_reflect_Method_getExceptionTypes(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
- jobject _meth) {
+jobject _meth) {
   verifyNull(_meth);
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaMethod* meth = (JavaMethod*)vm->upcalls->methodSlot->getInt32Field((JavaObject*)_meth);
-  UserClass* cl = 0;
-#ifdef ISOLATE_SHARING
-  jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)_meth);
-  cl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
-#else
-  cl = meth->classDef;
-#endif
+  JavaField* slot = vm->upcalls->methodSlot;
+  JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)_meth);
+  UserClass* cl = internalGetClass(vm, meth, _meth);
   return (jobjectArray)NativeUtil::getExceptionTypes(cl, meth);
 }
 

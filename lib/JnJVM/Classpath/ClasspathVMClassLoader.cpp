@@ -25,7 +25,7 @@ using namespace jnjvm;
 
 extern "C" {
 
-JNIEXPORT jobject JNICALL Java_java_lang_VMClassLoader_getPrimitiveClass(                                                     
+JNIEXPORT jobject JNICALL Java_java_lang_VMClassLoader_getPrimitiveClass(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz,
@@ -47,17 +47,19 @@ JNIEXPORT jclass JNICALL Java_java_lang_VMClassLoader_findLoadedClass(
 JNIEnv *env,
 jclass clazz,
 #endif
-                                                                      jobject loader, 
-                                                                      jobject _name) {
+jobject loader, 
+jobject _name) {
 
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaString* name = (JavaString*)_name;
   const UTF8* utf8 = name->strToUTF8(vm);
-  JnjvmClassLoader* JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
+  JnjvmClassLoader* JCL = 
+    JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
   UserCommonClass* cl = JCL->lookupClass(utf8);
 
   if (cl) return (jclass)(cl->getClassDelegatee(vm));
-  else return 0;
+  
+  return 0;
 }
 
 JNIEXPORT jclass JNICALL Java_java_lang_VMClassLoader_loadClass(
@@ -65,19 +67,18 @@ JNIEXPORT jclass JNICALL Java_java_lang_VMClassLoader_loadClass(
 JNIEnv *env,
 jclass clazz,
 #endif
-                                                                jobject _str, 
-                                                                jboolean doResolve) {
+jobject _str, 
+jboolean doResolve) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaString* str = (JavaString*)_str;
 
   JnjvmClassLoader* JCL = vm->bootstrapLoader;
   UserCommonClass* cl = JCL->lookupClassFromJavaString(str, doResolve, false);
 
-  if (cl != 0) {
+  if (cl != 0)
     return (jclass)cl->getClassDelegatee(vm);
-  } else {
-    return 0;
-  }
+  
+  return 0;
 }
 
 JNIEXPORT jclass JNICALL Java_java_lang_VMClassLoader_defineClass(
@@ -85,16 +86,20 @@ JNIEXPORT jclass JNICALL Java_java_lang_VMClassLoader_defineClass(
 JNIEnv *env,
 jclass clazz, 
 #endif
-                                                                  jobject loader, 
-                                                                  jobject _str, 
-                                                                  jobject bytes, 
-                                                                  jint off, 
-                                                                  jint len, 
-                                                                  jobject pd) {
+jobject loader, 
+jobject _str, 
+jobject bytes, 
+jint off, 
+jint len, 
+jobject pd) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JnjvmClassLoader* JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
+  
+  JnjvmClassLoader* JCL = 
+    JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
+  
   JavaString* str = (JavaString*)_str;
-  const UTF8* name = str->value->javaToInternal(JCL->hashUTF8, str->offset, str->count);
+  const UTF8* name = str->value->javaToInternal(JCL->hashUTF8, str->offset,
+                                                str->count);
   UserClass* cl = JCL->constructClass(name, (ArrayUInt8*)bytes);
 
   return (jclass)(cl->getClassDelegatee(vm, (JavaObject*)pd));
@@ -105,9 +110,10 @@ JNIEXPORT void JNICALL Java_java_lang_VMClassLoader_resolveClass(
 JNIEnv *env,
 jclass clazz,
 #endif
-                                                                 jclass Cl) {
+jclass Cl) {
   verifyNull(Cl);
-  NativeUtil::resolvedImplClass(Cl, false);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  NativeUtil::resolvedImplClass(vm, Cl, false);
 }
 
 }

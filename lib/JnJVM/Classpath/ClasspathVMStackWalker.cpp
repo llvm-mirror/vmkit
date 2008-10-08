@@ -45,10 +45,9 @@ uint32 getPools(UserConstantPool** pools, uint32 size) {
   }
   return i;
 }
-#endif
 
-#ifdef ISOLATE_SHARING
-JavaObject* getClassInContext(Jnjvm* vm, Class* cl, UserConstantPool** ctps, uint32& ctpIndex) {
+JavaObject* getClassInContext(Jnjvm* vm, Class* cl, UserConstantPool** ctps,
+                              uint32& ctpIndex) {
   for (; ctpIndex < 100; ++ctpIndex) {
     UserClass* newCl = ctps[ctpIndex]->getClass();
     if (cl == newCl->classDef) return newCl->getClassDelegatee(vm);
@@ -56,28 +55,35 @@ JavaObject* getClassInContext(Jnjvm* vm, Class* cl, UserConstantPool** ctps, uin
   return 0;
 }
 
-ArrayObject* recGetClassContext(Jnjvm* vm, int** stack, uint32 size, uint32 first, uint32 rec, UserConstantPool** ctps, uint32 ctpIndex) {
+ArrayObject* recGetClassContext(Jnjvm* vm, int** stack, uint32 size,
+                                uint32 first, uint32 rec,
+                                UserConstantPool** ctps, uint32 ctpIndex) {
   if (size != first) {
     JavaMethod* meth = JavaJIT::IPToJavaMethod(stack[first]);
     if (meth) {
       JavaObject* obj = getClassInContext(vm, meth->classDef, ctps, ctpIndex);
-      ArrayObject* res = recGetClassContext(vm, stack, size, first + 1, rec + 1, ctps, ctpIndex); 
+      ArrayObject* res = recGetClassContext(vm, stack, size, first + 1,
+                                            rec + 1, ctps, ctpIndex); 
       res->elements[rec] = obj;
       assert(res->elements[rec] && "Did not found the user class");
       return res;
     } else {
-      return recGetClassContext(vm, stack, size, first + 1, rec, ctps, ctpIndex);
+      return recGetClassContext(vm, stack, size, first + 1, rec, ctps,
+                                ctpIndex);
     }   
   } else {
     return (ArrayObject*)vm->upcalls->classArrayClass->doNew(rec, vm);
   }
 }
+
 #else
-ArrayObject* recGetClassContext(Jnjvm* vm, int** stack, uint32 size, uint32 first, uint32 rec) {
+ArrayObject* recGetClassContext(Jnjvm* vm, int** stack, uint32 size,
+                                uint32 first, uint32 rec) {
   if (size != first) {
     JavaMethod* meth = JavaJIT::IPToJavaMethod(stack[first]);
     if (meth) {
-      ArrayObject* res = recGetClassContext(vm, stack, size, first + 1, rec + 1); 
+      ArrayObject* res = recGetClassContext(vm, stack, size, first + 1,
+                                            rec + 1); 
       res->elements[rec] = meth->classDef->getClassDelegatee(vm);
       return res;
     } else {
@@ -134,7 +140,8 @@ jclass clazz,
 jclass _Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject* Cl = (JavaObject*)_Cl;
-  UserCommonClass* cl = (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField(Cl);
+  JavaField* field = vm->upcalls->vmdataClass;
+  UserCommonClass* cl = (UserCommonClass*)field->getObjectField(Cl);
   return (jobject)cl->classLoader->getJavaClassLoader();
 }
 

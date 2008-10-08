@@ -43,7 +43,7 @@ jclass clazz
 typedef struct arg_thread_t {
   JavaObject* vmThread;
   JavaThread* intern;
-}arg_thread_t;
+} arg_thread_t;
 
 static void start(arg_thread_t* arg) {
   int argc;
@@ -135,8 +135,9 @@ jobject _vmthread) {
 
   while (vm->upcalls->vmdataVMThread->getObjectField(vmthread) == 0)
     mvm::Thread::yield();
-
-  JavaThread* th = (JavaThread*)vm->upcalls->vmdataVMThread->getObjectField(vmthread);
+  
+  JavaField* field = vm->upcalls->vmdataVMThread;
+  JavaThread* th = (JavaThread*)field->getObjectField(vmthread);
   th->lock->lock();
   th->interruptFlag = 1;
 
@@ -168,7 +169,8 @@ JNIEnv *env,
 jobject _vmthread) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject* vmthread = (JavaObject*)_vmthread;
-  JavaThread* th = (JavaThread*)vm->upcalls->vmdataVMThread->getObjectField(vmthread);
+  JavaField* field = vm->upcalls->vmdataVMThread;
+  JavaThread* th = (JavaThread*)field->getObjectField(vmthread);
   return (jboolean)th->interruptFlag;
 }
 

@@ -22,8 +22,9 @@ extern "C" {
 
 static UserClass* internalGetClass(Jnjvm* vm, JavaField* field, jobject Field) {
 #ifdef ISOLATE_SHARING
-  jclass Cl = (jclass)vm->upcalls->fieldClass->getInt32Field((JavaObject*)Field);
-  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
+  JavaField* slot = vm->upcalls->fieldClass;
+  jclass Cl = (jclass)slot->getInt32Field((JavaObject*)Field);
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, Cl, false);
   return cl;
 #else
   return field->classDef;
@@ -36,7 +37,8 @@ JNIEnv *env,
 #endif
 jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)obj);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)obj);
   return field->access;
 }
 
@@ -46,7 +48,8 @@ JNIEnv *env,
 #endif
 jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)obj);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)obj);
   UserClass* fieldCl = internalGetClass(vm, field, obj);
   JnjvmClassLoader* loader = fieldCl->classLoader;
   UserCommonClass* cl = field->getSignature()->assocClass(loader);
@@ -59,7 +62,8 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   const Typedef* type = field->getSignature();
   
   JavaObject* Obj = (JavaObject*)obj;
@@ -68,6 +72,8 @@ jobject Field, jobject obj) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
   
   if (type->isPrimitive()) {
@@ -83,7 +89,7 @@ jobject Field, jobject obj) {
       return (sint32)field->getInt16Field(Obj);
   }
   
-  JavaThread::get()->isolate->illegalArgumentException("");
+  vm->illegalArgumentException("");
   return 0;
   
 }
@@ -94,7 +100,8 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -102,6 +109,8 @@ jobject Field, jobject obj) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
   
   const Typedef* type = field->getSignature();
@@ -120,7 +129,7 @@ jobject Field, jobject obj) {
       return (sint64)field->getLongField(Obj);
   }
 
-  JavaThread::get()->isolate->illegalArgumentException("");
+  vm->illegalArgumentException("");
   return 0;
 }
 
@@ -130,7 +139,8 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -138,6 +148,8 @@ jobject Field, jobject obj) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
   
   const Typedef* type = field->getSignature();
@@ -147,7 +159,7 @@ jobject Field, jobject obj) {
       return (uint8)field->getInt8Field(Obj);
   }
   
-  JavaThread::get()->isolate->illegalArgumentException("");
+  vm->illegalArgumentException("");
 
   return 0;
   
@@ -159,7 +171,8 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -167,6 +180,8 @@ jobject Field, jobject obj) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
   
   const Typedef* type = field->getSignature();
@@ -181,11 +196,13 @@ jobject Field, jobject obj) {
     if (prim->isLong())
       return (jfloat)field->getLongField((JavaObject*)obj);
     if (prim->isChar())
+      // Cast to uint32 because char is unsigned.
       return (jfloat)(uint32)field->getInt16Field((JavaObject*)obj);
     if (prim->isFloat())
       return (jfloat)field->getFloatField((JavaObject*)obj);
   }
-  JavaThread::get()->isolate->illegalArgumentException("");
+  
+  vm->illegalArgumentException("");
   return 0.0;
 }
 
@@ -195,7 +212,8 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -203,6 +221,8 @@ jobject Field, jobject obj) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
   
   const Typedef* type = field->getSignature();
@@ -211,7 +231,8 @@ jobject Field, jobject obj) {
     if (prim->isByte())
       return (sint8)field->getInt8Field(Obj);
   }
-  JavaThread::get()->isolate->illegalArgumentException("");
+  
+  vm->illegalArgumentException("");
   
   return 0;
 }
@@ -222,7 +243,8 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -230,6 +252,8 @@ jobject Field, jobject obj) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
   
   const Typedef* type = field->getSignature();
@@ -238,7 +262,8 @@ jobject Field, jobject obj) {
     if (prim->isChar())
       return (uint16)field->getInt16Field((JavaObject*)obj);
   }
-  JavaThread::get()->isolate->illegalArgumentException("");
+  
+  vm->illegalArgumentException("");
   
   return 0;
   
@@ -250,7 +275,8 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -258,6 +284,8 @@ jobject Field, jobject obj) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
   
   const Typedef* type = field->getSignature();
@@ -268,7 +296,8 @@ jobject Field, jobject obj) {
     if (prim->isByte())
       return (sint16)field->getInt8Field(Obj);
   }
-  JavaThread::get()->isolate->illegalArgumentException("");
+  
+  vm->illegalArgumentException("");
   
   return 0;
 }
@@ -279,7 +308,8 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -287,6 +317,8 @@ jobject Field, jobject obj) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
   
   const Typedef* type = field->getSignature();
@@ -307,7 +339,8 @@ jobject Field, jobject obj) {
     if (prim->isDouble())
       return (jdouble)field->getDoubleField(Obj);
   }
-  JavaThread::get()->isolate->illegalArgumentException("");
+  
+  vm->illegalArgumentException("");
   return 0.0;
 }
 
@@ -317,7 +350,8 @@ JNIEnv *env,
 #endif
 jobject Field, jobject _obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
   JavaObject* Obj = (JavaObject*)_obj;
   
@@ -325,6 +359,8 @@ jobject Field, jobject _obj) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
   
   JavaObject* res = 0;
@@ -374,6 +410,7 @@ jobject Field, jobject _obj) {
   } else {
     res =  field->getObjectField(Obj);
   }
+
   return (jobject)res;
 }
 
@@ -383,10 +420,12 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jobject val) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   void** buf = (void**)alloca(sizeof(uint64));
   void* _buf = (void*)buf;
-  NativeUtil::decapsulePrimitive(JavaThread::get()->isolate, buf, (JavaObject*)val, field->getSignature());
+  const Typedef* type = field->getSignature();
+  NativeUtil::decapsulePrimitive(vm, buf, (JavaObject*)val, type);
 
   
   JavaObject* Obj = (JavaObject*)obj;
@@ -395,9 +434,11 @@ jobject Field, jobject obj, jobject val) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
   
-  const Typedef* type = field->getSignature();
+
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isBool())
@@ -419,6 +460,9 @@ jobject Field, jobject obj, jobject val) {
   } else {
     return field->setObjectField(Obj, ((JavaObject**)_buf)[0]);
   }
+
+  // Unreachable code
+  return;
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setBoolean(
@@ -427,13 +471,16 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jboolean val) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   JavaObject* Obj = (JavaObject*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
  
   const Typedef* type = field->getSignature();
@@ -442,7 +489,8 @@ jobject Field, jobject obj, jboolean val) {
     if (prim->isBool())
       return field->setInt8Field(Obj, (uint8)val);
   }
-  JavaThread::get()->isolate->illegalArgumentException("");
+
+  vm->illegalArgumentException("");
   
 }
 
@@ -452,15 +500,18 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jbyte val) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   JavaObject* Obj = (JavaObject*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
-  
+
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
@@ -477,7 +528,8 @@ jobject Field, jobject obj, jbyte val) {
     if (prim->isDouble())
       return field->setDoubleField(Obj, (double)val);
   }
-  JavaThread::get()->isolate->illegalArgumentException("");
+  
+  vm->illegalArgumentException("");
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setChar(
@@ -486,7 +538,8 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jchar val) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -494,8 +547,9 @@ jobject Field, jobject obj, jchar val) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
-  
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
@@ -510,7 +564,8 @@ jobject Field, jobject obj, jchar val) {
     if (prim->isDouble())
       return field->setDoubleField(Obj, (double)(uint64)val);
   }
-  JavaThread::get()->isolate->illegalArgumentException("");
+  
+  vm->illegalArgumentException("");
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setShort(
@@ -519,7 +574,8 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jshort val) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
   JavaObject* Obj = (JavaObject*)obj;
   
@@ -527,6 +583,8 @@ jobject Field, jobject obj, jshort val) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
   
   const Typedef* type = field->getSignature();
@@ -543,7 +601,8 @@ jobject Field, jobject obj, jshort val) {
     if (prim->isDouble())
       return field->setDoubleField(Obj, (double)val);
   }
-  JavaThread::get()->isolate->illegalArgumentException("");
+  
+  vm->illegalArgumentException("");
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setInt(
@@ -552,13 +611,16 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jint val) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   JavaObject* Obj = (JavaObject*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
   
   const Typedef* type = field->getSignature();
@@ -573,7 +635,8 @@ jobject Field, jobject obj, jint val) {
     if (prim->isDouble())
       return field->setDoubleField(Obj, (double)val);
   }
-  JavaThread::get()->isolate->illegalArgumentException("");
+  
+  vm->illegalArgumentException("");
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setLong(
@@ -582,13 +645,16 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jlong val) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   JavaObject* Obj = (JavaObject*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
 
   const Typedef* type = field->getSignature();
@@ -601,7 +667,8 @@ jobject Field, jobject obj, jlong val) {
     if (prim->isDouble())
       return field->setDoubleField(Obj, (double)val);
   }
-  JavaThread::get()->isolate->illegalArgumentException("");
+  
+  vm->illegalArgumentException("");
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setFloat(
@@ -610,13 +677,16 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jfloat val) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   JavaObject* Obj = (JavaObject*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
   
   const Typedef* type = field->getSignature();
@@ -627,7 +697,8 @@ jobject Field, jobject obj, jfloat val) {
     if (prim->isDouble())
       return field->setDoubleField(Obj, (double)val);
   }
-  JavaThread::get()->isolate->illegalArgumentException("");
+ 
+  vm->illegalArgumentException("");
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setDouble(
@@ -636,13 +707,16 @@ JNIEnv *env,
 #endif
 jobject Field, jobject obj, jdouble val) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   JavaObject* Obj = (JavaObject*)obj;
 
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
+  } else {
+    verifyNull(Obj);
   }
   
   const Typedef* type = field->getSignature();
@@ -651,7 +725,8 @@ jobject Field, jobject obj, jdouble val) {
     if (prim->isDouble())
       return field->setDoubleField(Obj, (double)val);
   }
-  JavaThread::get()->isolate->illegalArgumentException("");
+  
+  vm->illegalArgumentException("");
 }
 
 JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_objectFieldOffset(
@@ -661,7 +736,8 @@ JNIEnv *env,
 JavaObject* Unsafe,
 JavaObject* Field) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   return (jlong)field->ptrOffset;
 }
 

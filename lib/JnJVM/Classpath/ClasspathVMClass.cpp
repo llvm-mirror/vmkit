@@ -36,8 +36,9 @@ jclass clazz,
 jobject klass) {
 
   Jnjvm* vm = JavaThread::get()->isolate;
+  JavaField* field = vm->upcalls->vmdataClass;
   UserCommonClass* cl = 
-    (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField((JavaObject*)klass);
+    (UserCommonClass*)field->getObjectField((JavaObject*)klass);
 
   return cl->isArray();
   
@@ -48,13 +49,13 @@ JNIEXPORT jclass JNICALL Java_java_lang_VMClass_forName(
 JNIEnv *env,
 jclass clazz,
 #endif
-
-                                                        jobject str, 
-                                                        jboolean clinit, 
-                                                        jobject loader) {
+jobject str, 
+jboolean clinit, 
+jobject loader) {
 
   Jnjvm* vm = JavaThread::get()->isolate; 
-  JnjvmClassLoader* JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
+  JnjvmClassLoader* JCL = 
+    JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
   UserCommonClass* cl = JCL->lookupClassFromJavaString((JavaString*)str,
                                                         true, false);
   if (cl != 0) {
@@ -71,16 +72,15 @@ jclass clazz,
 JNIEXPORT jobject JNICALL Java_java_lang_VMClass_getDeclaredConstructors(
 #ifdef NATIVE_JNI
 JNIEnv *env,
-                                                                         jclass clazz,
+jclass clazz,
 #endif
+jclass Cl, 
+jboolean publicOnly) {
 
-                                                                         jclass Cl, 
-                                                                         jboolean publicOnly) {
-
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
   Jnjvm* vm = JavaThread::get()->isolate;
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
 
-  if (cl->isArray() || cl->isInterface()) {
+  if (cl->isArray() || cl->isInterface() || cl->isPrimitive()) {
     return (jobject)vm->upcalls->constructorArrayClass->doNew(0, vm);
   } else {
     std::vector<JavaMethod*> res;
@@ -105,22 +105,24 @@ JNIEnv *env,
 JNIEXPORT jobject JNICALL Java_java_lang_VMClass_getDeclaredMethods(
 #ifdef NATIVE_JNI
 JNIEnv *env,
-                                                                    jclass clazz,
+jclass clazz,
 #endif
-
-                                                                    jclass Cl, 
-                                                                    jboolean publicOnly) {
+jclass Cl, 
+jboolean publicOnly) {
 
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
+  Classpath* upcalls = vm->upcalls;
 
   if (cl->isArray()) {
-    return (jobject)vm->upcalls->methodArrayClass->doNew(0, vm);
+    return (jobject)upcalls->methodArrayClass->doNew(0, vm);
   } else {
     std::vector<JavaMethod*> res;
     cl->getDeclaredMethods(res, publicOnly);
     
-    ArrayObject* ret = (ArrayObject*)vm->upcalls->methodArrayClass->doNew(res.size(), vm);
+    ArrayObject* ret = 
+      (ArrayObject*)upcalls->methodArrayClass->doNew(res.size(), vm);
+
     sint32 index = 0;
     for (std::vector<JavaMethod*>::iterator i = res.begin(), e = res.end();
           i != e; ++i, ++index) {
@@ -128,8 +130,8 @@ JNIEnv *env,
       // TODO: check parameter types
       UserClass* Meth = vm->upcalls->newMethod;
       JavaObject* tmp = Meth->doNew(vm);
-      vm->upcalls->initMethod->invokeIntSpecial(vm, Meth, tmp, Cl,
-                                              vm->UTF8ToStr(meth->name), meth);
+      JavaString* str = vm->UTF8ToStr(meth->name);
+      upcalls->initMethod->invokeIntSpecial(vm, Meth, tmp, Cl, str, meth);
       ret->elements[index] = tmp;
     }
     return (jobject)ret;
@@ -139,27 +141,29 @@ JNIEnv *env,
 JNIEXPORT jint JNICALL Java_java_lang_VMClass_getModifiers(
 #ifdef NATIVE_JNI
 JNIEnv *env,
-                                                           jclass clazz,
+jclass clazz,
 #endif
-                                                           jclass Cl, 
-                                                           jboolean ignore) {
+jclass Cl, 
+jboolean ignore) {
 
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
   return cl->getAccess();
 }
 
 JNIEXPORT jobject JNICALL Java_java_lang_VMClass_getName(
 #ifdef NATIVE_JNI
 JNIEnv *env,
-                                                         jclass clazz, 
+jclass clazz, 
 #endif
-                                                         jobject Cl) {
+jobject Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
   UserCommonClass* cl = 
     (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField((JavaObject*)Cl);
   
   const UTF8* iname = cl->getName();
-  const UTF8* res = iname->internalToJava(cl->classLoader->hashUTF8, 0, iname->size);
+  const UTF8* res = iname->internalToJava(cl->classLoader->hashUTF8, 0,
+                                          iname->size);
 
   return (jobject)(vm->UTF8ToStr(res));
 }
@@ -167,9 +171,9 @@ JNIEnv *env,
 JNIEXPORT jboolean JNICALL Java_java_lang_VMClass_isPrimitive(
 #ifdef NATIVE_JNI
 JNIEnv *env,
-                                                              jclass clazz, 
+jclass clazz, 
 #endif
-                                                              jclass Cl) {
+jclass Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
   UserCommonClass* cl = 
     (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField((JavaObject*)Cl);
@@ -180,10 +184,11 @@ JNIEnv *env,
 JNIEXPORT jboolean JNICALL Java_java_lang_VMClass_isInterface(
 #ifdef NATIVE_JNI
 JNIEnv *env,
-                                                              jclass clazz, 
+jclass clazz, 
 #endif
-                                                              jclass Cl) {
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
+jclass Cl) {
+  Jnjvm* vm = JavaThread::get()->isolate;
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
 
   return cl->isInterface();
 }
@@ -191,9 +196,9 @@ JNIEnv *env,
 JNIEXPORT jclass JNICALL Java_java_lang_VMClass_getComponentType(
 #ifdef NATIVE_JNI
 JNIEnv *env,
-                                                                 jclass clazz, 
+jclass clazz, 
 #endif
-                                                                 jclass Cl) {
+jclass Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
   UserCommonClass* cl = 
     (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField((JavaObject*)Cl);
@@ -272,7 +277,7 @@ jclass clazz,
 #endif
 jclass Cl, jboolean publicOnly) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = NativeUtil::resolvedImplClass(Cl, false)->asClass();
+  UserClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false)->asClass();
 
   if (!cl) {
     return (jobject)vm->upcalls->fieldArrayClass->doNew(0, vm);
@@ -304,7 +309,7 @@ jclass clazz,
 #endif
 jclass Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
   std::vector<UserClass*> * interfaces = cl->getInterfaces();
   ArrayObject* ret = 
     (ArrayObject*)vm->upcalls->classArrayClass->doNew(interfaces->size(), vm);
@@ -325,7 +330,7 @@ jclass clazz,
 #endif
 jclass Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = NativeUtil::resolvedImplClass(Cl, false)->asClass();
+  UserClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false)->asClass();
   if (cl) {
     cl->resolveInnerOuterClasses();
     UserClass* outer = cl->getOuterClass();
@@ -344,12 +349,12 @@ jclass clazz,
 #endif
 jclass Cl, bool publicOnly) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = NativeUtil::resolvedImplClass(Cl, false)->asClass();
+  UserClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false)->asClass();
   if (cl) {
     cl->resolveInnerOuterClasses();
     std::vector<UserClass*>* innerClasses = cl->getInnerClasses();
-    ArrayObject* res = 
-      (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(innerClasses->size(), vm);
+    UserClassArray* array = vm->upcalls->constructorArrayClass;
+    ArrayObject* res = (ArrayObject*)array->doNew(innerClasses->size(), vm);
     uint32 index = 0;
     for (std::vector<UserClass*>::iterator i = innerClasses->begin(), 
          e = innerClasses->end(); i!= e; i++) {
@@ -380,7 +385,7 @@ jclass clazz,
 jclass Cl) {
   // TODO implement me
   Jnjvm* vm = JavaThread::get()->isolate;
-  ArrayObject* res = (ArrayObject*)vm->upcalls->constructorArrayAnnotation->doNew(0, vm);
-  return (jobjectArray)res;
+  UserClassArray* array = vm->upcalls->constructorArrayAnnotation;
+  return (jobjectArray)array->doNew(0, vm);
 }
 }

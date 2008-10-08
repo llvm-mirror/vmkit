@@ -36,13 +36,14 @@ JNIEXPORT jobject JNICALL Java_java_lang_VMThrowable_fillInStackTrace(
 JNIEnv *env,
 jclass clazz,
 #endif
-                                                                      jobject throwable) {
+jobject throwable) {
   Jnjvm* vm = JavaThread::get()->isolate;
   int** stack = (int**)malloc(sizeof(int*) * 100);
   int real_size = mvm::jit::getBacktrace((void**)stack, 100);
   stack[real_size] = 0;
   JavaObject* vmThrowable = vm->upcalls->newVMThrowable->doNew(vm);
-  ((JavaObject**)((uint64)vmThrowable + vm->upcalls->vmDataVMThrowable->ptrOffset))[0] = (JavaObject*)stack;
+  uint64 ptr = (uint64)vmThrowable + vm->upcalls->vmDataVMThrowable->ptrOffset;
+  ((JavaObject**)ptr)[0] = (JavaObject*)stack;
   return (jobject)vmThrowable;
 }
 
@@ -51,7 +52,9 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject* methodName = vm->UTF8ToStr(meth->name);
   Class* cl = meth->classDef;
-  JavaObject* className = vm->UTF8ToStr(cl->name->internalToJava(cl->classLoader->hashUTF8, 0, cl->name->size));
+  const UTF8* internal = cl->name->internalToJava(cl->classLoader->hashUTF8, 0,
+                                                  cl->name->size);
+  JavaObject* className = vm->UTF8ToStr(internal);
   JavaObject* sourceName = 0;
   
   Attribut* sourceAtt = cl->lookupAttribut(Attribut::sourceFileAttribut);
@@ -95,7 +98,8 @@ JNIEnv *env,
 #endif
 jobject vmthrow, jobject throwable) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  int** stack = (int**)vm->upcalls->vmDataVMThrowable->getObjectField((JavaObject*)vmthrow);
+  JavaField* field = vm->upcalls->vmDataVMThrowable;
+  int** stack = (int**)field->getObjectField((JavaObject*)vmthrow);
   uint32 first = 0;
   sint32 i = 0;
   

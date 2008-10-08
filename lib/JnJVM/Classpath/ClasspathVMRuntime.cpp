@@ -32,9 +32,10 @@ extern "C" {
 JNIEXPORT jobject JNICALL Java_java_lang_VMRuntime_mapLibraryName(
 #ifdef NATIVE_JNI
 JNIEnv *env,
-                                                                  jclass clazz,
+jclass clazz,
 #endif
-                                                                  jobject _strLib) {
+jobject _strLib) {
+
   JavaString* strLib = (JavaString*)_strLib;
   Jnjvm* vm = JavaThread::get()->isolate;
 
@@ -48,8 +49,10 @@ JNIEnv *env,
   uint16* elements = (uint16*)alloca(size * sizeof(uint16));
 
   memmove(elements, vm->prelib->elements, lgPre * sizeof(uint16));
-  memmove(&(elements[lgPre]), &(utf8Lib->elements[stLib]), lgLib * sizeof(uint16));
-  memmove(&(elements[lgPre + lgLib]), vm->postlib->elements, lgPost * sizeof(uint16));
+  memmove(&(elements[lgPre]), &(utf8Lib->elements[stLib]), 
+          lgLib * sizeof(uint16));
+  memmove(&(elements[lgPre + lgLib]), vm->postlib->elements,
+           lgPost * sizeof(uint16));
   
   // TODO: find a better place to store the UTF8
   const UTF8* res = vm->bootstrapLoader->readerConstructUTF8(elements, size);
@@ -65,14 +68,10 @@ JNIEXPORT jint JNICALL Java_java_lang_VMRuntime_nativeLoad(
 JNIEnv *env,
 jclass clazz,
 #endif
-                                                           jobject _str,
-                                                           jobject _loader) {
+jobject _str,
+jobject _loader) {
   JavaString* str = (JavaString*)_str;
-#ifndef SERVICE_VM
   Jnjvm* vm = JavaThread::get()->isolate;
-#else
-  Jnjvm* vm = Jnjvm::bootstrapVM;
-#endif
   
   char* buf = str->strToAsciiz();
   
@@ -140,7 +139,7 @@ jclass clazz,
 #endif
 ) {
 #ifdef MULTIPLE_GC
-  return (jlong)mvm::Thread::get()->GC->getFreeMemory();
+  return (jlong)JavaThread::get()->GC->getFreeMemory();
 #else
   return (jlong)Collector::getFreeMemory();
 #endif

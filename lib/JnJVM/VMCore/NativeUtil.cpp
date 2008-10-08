@@ -226,8 +226,7 @@ void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
 
 #undef PRE_LEN
 
-UserCommonClass* NativeUtil::resolvedImplClass(jclass clazz, bool doClinit) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+UserCommonClass* NativeUtil::resolvedImplClass(Jnjvm* vm, jclass clazz, bool doClinit) {
   JavaObject *Cl = (JavaObject*)clazz;
   UserCommonClass* cl = 
     (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField(Cl);
@@ -238,7 +237,7 @@ UserCommonClass* NativeUtil::resolvedImplClass(jclass clazz, bool doClinit) {
 
 void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
                                     JavaObject* obj,
-                                    Typedef* signature) {
+                                    const Typedef* signature) {
 
   if (!signature->isPrimitive()) {
     if (obj && !(obj->classOf->isOfTypeName(signature->getName()))) {

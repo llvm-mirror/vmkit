@@ -20,21 +20,29 @@
 using namespace jnjvm;
 
 extern "C" {
+
+// Define hasClassInitializer because of a buggy implementation in Classpath.
 JNIEXPORT bool JNICALL Java_java_io_VMObjectStreamClass_hasClassInitializer(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz,
 #endif
 jclass Cl) {
-
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, true);
+  
+  verifyNull(Cl);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, true);
   UserClass* methodCl = 0;
   if (cl->lookupMethodDontThrow(Jnjvm::clinitName, Jnjvm::clinitType, true,
                                 false, methodCl))
     return true;
-  else
-    return false;
+  
+  return false;
 }
+
+
+// Redefine some VMObjectStreamClass functions because of a slow implementation
+// in Classpath.
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setBooleanNative(
 #ifdef NATIVE_JNI
@@ -42,8 +50,10 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jboolean val) {
+  verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt8Field((JavaObject*)obj, (uint8)val);
 }
 
@@ -53,8 +63,10 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jbyte val) {
+  verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt8Field((JavaObject*)obj, (uint8)val);
 }
 
@@ -64,8 +76,10 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jchar val) {
+  verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt16Field((JavaObject*)obj, (uint16)val);
 }
 
@@ -75,8 +89,10 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jshort val) {
+  verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt16Field((JavaObject*)obj, (sint16)val);
 }
 
@@ -86,8 +102,10 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jint val) {
+  verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt32Field((JavaObject*)obj, (sint32)val);
 }
 
@@ -97,8 +115,10 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jlong val) {
+  verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setLongField((JavaObject*)obj, (sint64)val);
 }
 
@@ -108,8 +128,10 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jfloat val) {
+  verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setFloatField((JavaObject*)obj, (float)val);
 }
 
@@ -119,8 +141,10 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jdouble val) {
+  verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setDoubleField((JavaObject*)obj, (double)val);
 }
 
@@ -130,8 +154,10 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jobject val) {
+  verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)Field);
+  JavaField* slot = vm->upcalls->fieldSlot;
+  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setObjectField((JavaObject*)obj, (JavaObject*)val);
 }
 
@@ -142,7 +168,7 @@ jclass clazz,
 #endif
 jclass target, jclass constr, jobject cons) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(target, true);
+  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, target, true);
   JavaObject* res = cl->doNew(vm);
   JavaField* field = vm->upcalls->constructorSlot;
   JavaMethod* meth = (JavaMethod*)(field->getInt32Field((JavaObject*)cons));
@@ -157,7 +183,7 @@ jclass thisClass,
 #endif
 jclass arrayType, jint arrayLength) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserCommonClass* base = NativeUtil::resolvedImplClass(arrayType, true);
+  UserCommonClass* base = NativeUtil::resolvedImplClass(vm, arrayType, true);
   JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->getName();
   const UTF8* arrayName = loader->constructArrayName(1, name);
@@ -166,7 +192,8 @@ jclass arrayType, jint arrayLength) {
 }
 
 
-JNIEXPORT bool JNICALL Java_java_util_concurrent_atomic_AtomicLong_VMSupportsCS8(
+JNIEXPORT 
+bool JNICALL Java_java_util_concurrent_atomic_AtomicLong_VMSupportsCS8(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz,

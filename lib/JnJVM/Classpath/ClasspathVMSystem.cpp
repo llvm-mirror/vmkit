@@ -26,13 +26,14 @@ extern "C" {
 JNIEXPORT void JNICALL Java_java_lang_VMSystem_arraycopy(
 #ifdef NATIVE_JNI
 JNIEnv *env,
-                                                          jclass _cl,
+jclass _cl,
 #endif
-                                                          jobject _src,
-                                                          jint sstart,
-                                                          jobject _dst,
-                                                          jint dstart,
-                                                          jint len) {
+jobject _src,
+jint sstart,
+jobject _dst,
+jint dstart,
+jint len) {
+
   jnjvm::Jnjvm *vm = JavaThread::get()->isolate;
   JavaArray* src = (JavaArray*)_src;
   JavaArray* dst = (JavaArray*)_dst;
@@ -100,9 +101,9 @@ JNIEnv *env,
 JNIEXPORT jint JNICALL Java_java_lang_VMSystem_identityHashCode(
 #ifdef NATIVE_JNI
 JNIEnv *env,
-                                                                jclass clazz,
+jclass clazz,
 #endif
-                                                                jobject obj) {
+jobject obj) {
   return (jint)(intptr_t)obj;
 }
 

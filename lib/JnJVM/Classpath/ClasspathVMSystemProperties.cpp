@@ -47,8 +47,7 @@ static void setUnameProp(Jnjvm* vm, JavaObject* prop) {
   }
 }
 
-JNIEXPORT void JNICALL Java_gnu_classpath_VMSystemProperties_preInit(
-                                    
+JNIEXPORT void JNICALL Java_gnu_classpath_VMSystemProperties_preInit(                                    
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz,
@@ -59,15 +58,18 @@ jobject _prop) {
   Jnjvm* vm = JavaThread::get()->isolate;
   const char* tmp;
   setProperty(vm, prop, "java.vm.specification.version", "1.0");
-  setProperty(vm, prop, "java.vm.specification.vendor", "Sun Microsystems, Inc");
-  setProperty(vm, prop, "java.vm.specification.name", "Java Virtual Machine Specification");
+  setProperty(vm, prop, "java.vm.specification.vendor",
+              "Sun Microsystems, Inc");
+  setProperty(vm, prop, "java.vm.specification.name",
+              "Java Virtual Machine Specification");
   setProperty(vm, prop, "java.specification.version", "1.5");
   setProperty(vm, prop, "java.specification.vendor", "Sun Microsystems, Inc");
-  setProperty(vm, prop, "java.specification.name", "Java Platform API Specification");
+  setProperty(vm, prop, "java.specification.name",
+              "Java Platform API Specification");
   setProperty(vm, prop, "java.version", "1.5");
   setProperty(vm, prop, "java.runtime.version", "1.5");
-  setProperty(vm, prop, "java.vendor", "VVM Project");
-  setProperty(vm, prop, "java.vendor.url", "http://vvm.lip6.fr");
+  setProperty(vm, prop, "java.vendor", "The VMKit Project");
+  setProperty(vm, prop, "java.vendor.url", "http://vmkit.llvm.org");
   
   tmp = getenv("JAVA_HOME");
   if (!tmp) tmp = "";
@@ -122,8 +124,8 @@ jobject _prop) {
 
 extern "C" void propertiesPostInit(JavaObject* prop) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  for (std::vector<std::pair<char*, char*> >::iterator i = vm->postProperties.begin(), 
-            e = vm->postProperties.end(); i!= e; i++) {
+  for (std::vector<std::pair<char*, char*> >::iterator i = 
+       vm->postProperties.begin(), e = vm->postProperties.end(); i!= e; i++) {
     setProperty(vm, prop, i->first, i->second);
   }
 }
