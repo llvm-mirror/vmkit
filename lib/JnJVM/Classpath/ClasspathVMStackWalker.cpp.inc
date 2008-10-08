@@ -28,7 +28,7 @@ using namespace jnjvm;
 
 extern "C" {
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
 uint32 getPools(UserConstantPool** pools, uint32 size) {
   unsigned int* top;
   register unsigned int  **cur = &top;
@@ -47,7 +47,7 @@ uint32 getPools(UserConstantPool** pools, uint32 size) {
 }
 #endif
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
 JavaObject* getClassInContext(Jnjvm* vm, Class* cl, UserConstantPool** ctps, uint32& ctpIndex) {
   for (; ctpIndex < 100; ++ctpIndex) {
     UserClass* newCl = ctps[ctpIndex]->getClass();
@@ -98,7 +98,7 @@ jclass clazz,
   Jnjvm* vm = JavaThread::get()->isolate;
   int* ips[100];
   int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 100);
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   UserConstantPool* pools[100];
   getPools(pools, 100);
 #endif
@@ -109,7 +109,7 @@ jclass clazz,
 
   while (i < real_size) {
     JavaMethod* meth = JavaJIT::IPToJavaMethod(ips[i++]);
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
     if (meth && meth->classDef == cl->classDef) {
 #else
     if (meth && meth->classDef == cl) {
@@ -119,7 +119,7 @@ jclass clazz,
     }   
   }
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   return (jobject)recGetClassContext(vm, ips, real_size, first, 0, pools, 0);
 #else
   return (jobject)recGetClassContext(vm, ips, real_size, first, 0);

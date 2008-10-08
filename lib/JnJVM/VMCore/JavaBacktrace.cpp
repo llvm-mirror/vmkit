@@ -61,7 +61,7 @@ void JavaJIT::printBacktrace() {
 
 
 
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
 UserClass* JavaJIT::getCallingClass() {
   int* ips[10];
   int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);

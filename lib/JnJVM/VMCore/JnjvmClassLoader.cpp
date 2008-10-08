@@ -27,7 +27,7 @@
 
 using namespace jnjvm;
 
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
 JnjvmBootstrapLoader* JnjvmClassLoader::bootstrapLoader = 0;
 UserClass* JnjvmBootstrapLoader::SuperArray = 0;
 std::vector<UserClass*> JnjvmBootstrapLoader::InterfacesArray;
@@ -84,7 +84,7 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   javaLoader = loader;
   isolate = I;
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   JavaMethod* meth = bootstrapLoader->upcalls->loadInClassLoader;
   loader->classOf->lookupMethodDontThrow(meth->name, meth->type, false, true,
                                          loadClass);
@@ -146,7 +146,7 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name) {
     JavaString* str = isolate->UTF8ToStr(javaName);
     Classpath* upcalls = bootstrapLoader->upcalls;
     UserClass* forCtp = 0;
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
     forCtp = loadClass;
 #else
     forCtp = upcalls->loadInClassLoader->classDef;

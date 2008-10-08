@@ -122,7 +122,7 @@ public:
 /// class loader finalizer method will be defined.
 ///
 class CommonClass : public mvm::Object {
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
 friend class UserCommonClass;
 #endif
 private:
@@ -305,7 +305,7 @@ public:
   ///
   JnjvmClassLoader* classLoader;
   
-#ifndef MULTIPLE_VM
+#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   /// delegatee - The java/lang/Class object representing this class
   ///
   JavaObject* delegatee;
@@ -566,7 +566,7 @@ public:
   ///
   std::vector<Attribut*> attributs;
  
-#ifndef MULTIPLE_VM
+#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   /// innerClasses - The inner classes of this class.
   ///
   std::vector<Class*> innerClasses;
@@ -605,7 +605,7 @@ public:
   }
 
 
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
   /// doNew - Allocates a Java object whose class is this class.
   ///
   JavaObject* doNew(Jnjvm* vm);
@@ -634,7 +634,7 @@ public:
   /// is inlined when the vm is in a single environment. In a multiple
   /// environment, the static instance is in a hashtable.
   ///
-#ifndef MULTIPLE_VM
+#if !defined(ISOLATE_SHARING) && !defined(ISOLATE)
   JavaObject* _staticInstance;
   
   JavaObject* getStaticInstance() {
@@ -687,7 +687,7 @@ public:
   
   void resolveInnerOuterClasses();
 
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
   Class* getOuterClass() {
     return outerClass;
   }
@@ -1034,7 +1034,7 @@ public:
 } // end namespace jnjvm
 
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
 #include "IsolateCommonClass.h"
 #endif
 

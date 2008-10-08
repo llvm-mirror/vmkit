@@ -40,7 +40,7 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
   JavaMethod* meth = cl->lookupMethod(utf8, sign->keyName, isStatic, true,
                                       methodCl);
 
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
   // A multi environment would have already initialized the class. Besides,
   // a callback does not involve UserClass, therefore we wouldn't know
   // which class to initialize.
@@ -97,7 +97,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
     LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
     uint64_t offset = LMI->getOffset()->getZExtValue();
     assert(meth->classDef->isResolved() && "Class not resolved");
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
     assert(meth->classDef->isReady() && "Class not ready");
 #endif
     assert(meth->classDef->virtualVT && "Class has no VT");
@@ -105,7 +105,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
         "The method's offset is greater than the virtual table size");
     ((void**)meth->classDef->virtualVT)[offset] = val;
   } else {
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
     meth->classDef->initialiseClass(JavaThread::get()->isolate);
 #endif
   }

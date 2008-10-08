@@ -11,7 +11,7 @@
 #ifndef JNJVM_CONFIG_H
 #define JNJVM_CONFIG_H
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
 #define ISOLATE_STATIC
 #else
 

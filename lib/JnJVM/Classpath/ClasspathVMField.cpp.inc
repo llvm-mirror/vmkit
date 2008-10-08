@@ -21,7 +21,7 @@ extern "C" {
 
 
 static UserClass* internalGetClass(Jnjvm* vm, JavaField* field, jobject Field) {
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   jclass Cl = (jclass)vm->upcalls->fieldClass->getInt32Field((JavaObject*)Field);
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
   return cl;
@@ -47,13 +47,8 @@ JNIEnv *env,
 jobject obj) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaField* field = (JavaField*)vm->upcalls->fieldSlot->getInt32Field((JavaObject*)obj);
-#ifdef MULTIPLE_VM
-  jclass Cl = (jclass)vm->upcalls->fieldClass->getInt32Field((JavaObject*)obj);
-  UserClass* fieldCl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
+  UserClass* fieldCl = internalGetClass(vm, field, obj);
   JnjvmClassLoader* loader = fieldCl->classLoader;
-#else
-  JnjvmClassLoader* loader = field->classDef->classLoader;
-#endif
   UserCommonClass* cl = field->getSignature()->assocClass(loader);
   return (jclass)cl->getClassDelegatee(vm);
 }

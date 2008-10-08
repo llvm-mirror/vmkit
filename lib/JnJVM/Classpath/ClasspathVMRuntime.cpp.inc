@@ -125,10 +125,10 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jint par1) {
-#ifndef MULTIPLE_VM
+#if defined(ISOLATE) || defined(ISOLATE_SHARING)
+  // TODO: do a longjmp
   exit(par1);
 #else
-  // TODO: do a longjmp
   exit(par1);
 #endif
 }

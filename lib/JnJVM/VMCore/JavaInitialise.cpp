@@ -33,7 +33,7 @@
 #include "ServiceDomain.h"
 #endif
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
 #include "SharedMaps.h"
 #include "IsolateSharedLoader.h"
 #endif
@@ -53,15 +53,15 @@ static void initialiseVT() {
   INIT(ClassMap);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
-#ifdef SERVICE_VM
-  INIT(ServiceDomain);
-#endif
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   INIT(JnjvmSharedLoader);
   INIT(SharedClassByteMap);
   INIT(UserClass);
   INIT(UserClassArray);
   INIT(UserConstantPool);
+#endif
+#ifdef SERVICE_VM
+  INIT(ServiceDomain);
 #endif
 #undef INIT
 
@@ -80,7 +80,7 @@ static void initialiseVT() {
 
 void Jnjvm::initialiseStatics() {
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   if (!JnjvmSharedLoader::sharedLoader) {
     JnjvmSharedLoader::sharedLoader = JnjvmSharedLoader::createSharedLoader();
   }
@@ -123,7 +123,7 @@ void Jnjvm::initialiseStatics() {
     JCL->loadName(JCL->asciizConstructUTF8("java/lang/Object"), false,
                   false);
   
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   if (!ClassArray::SuperArray) {
     ClassArray::SuperArray = JCL->SuperArray->classDef;
     ClassArray::InterfacesArray.push_back((Class*)JCL->InterfacesArray[0]->classDef);
@@ -230,7 +230,7 @@ void Jnjvm::initialiseStatics() {
 }
 
 void mvm::VirtualMachine::initialiseJVM() {
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
   if (!JnjvmClassLoader::bootstrapLoader) {
     initialiseVT();
     Jnjvm::initialiseStatics();

@@ -264,7 +264,7 @@ CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n,
   this->array = isArray;
   this->primitive = false;
   this->JInfo = 0;
-#ifndef MULTIPLE_VM
+#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   this->delegatee = 0;
 #endif
 }
@@ -286,7 +286,7 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
   bytes = B;
   super = 0;
   ctpInfo = 0;
-#ifndef MULTIPLE_VM
+#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   _staticInstance = 0;
 #endif
 }
@@ -757,7 +757,7 @@ void Class::readClass() {
   readAttributs(reader, attributs);
 }
 
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
 void CommonClass::resolveClass() {
   if (status < resolved) {
     acquire();

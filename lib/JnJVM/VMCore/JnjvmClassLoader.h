@@ -206,7 +206,7 @@ public:
     isolate = 0;
   }
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   UserClass* loadClass;
 #endif
   

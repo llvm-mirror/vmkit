@@ -345,8 +345,9 @@ public:
 #endif
   static llvm::Function* MultiCallNewFunction;
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE
   static llvm::Function* StringLookupFunction;
+#ifdef ISOLATE_SHARING
   static llvm::Function* GetCtpCacheNodeFunction;
   static llvm::Function* GetCtpClassFunction;
   static llvm::Function* EnveloppeLookupFunction;
@@ -355,6 +356,7 @@ public:
   static llvm::Function* StaticCtpLookupFunction;
   static llvm::Function* SpecialCtpLookupFunction;
   static llvm::Function* GetArrayClassFunction;
+#endif
 #endif
 
   static llvm::Function* GetClassDelegateeFunction;

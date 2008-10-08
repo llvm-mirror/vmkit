@@ -249,14 +249,13 @@ public:
   uint16 maxLocals;
   uint32 codeLen;
 
-#if defined(MULTIPLE_VM) || defined(MULTIPLE_GC)
+#if defined(ISOLATE) || defined(MULTIPLE_GC)
   llvm::Value* isolateLocal;
-#endif
-
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
   llvm::Value* ctpCache;
   llvm::Value* getStaticInstanceCtp();
   llvm::Value* getClassCtp();
+#endif
 #endif
 
   static const char* OpcodeNames[256];

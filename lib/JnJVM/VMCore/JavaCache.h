@@ -51,7 +51,7 @@ public:
   /// enveloppe - The container to which this class belongs to.
   Enveloppe* enveloppe;
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   ///definingClass - The class that defined the method being called.
   ///
   UserConstantPool* definingCtp;

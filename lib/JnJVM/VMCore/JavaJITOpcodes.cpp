@@ -1828,7 +1828,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case NEWARRAY :
       case ANEWARRAY : {
         
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
         UserClassArray* dcl = 0;
 #endif
         ConstantInt* sizeElement = 0;
@@ -1838,7 +1838,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         if (bytecodes[i] == NEWARRAY) {
           uint8 id = bytecodes[++i];
           uint8 charId = arrayType(id);
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
           dcl = JavaThread::get()->isolate->arrayClasses[id - 4];
 #else
           std::vector<Value*> args;
@@ -1853,7 +1853,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           sizeElement = LAI.sizeInBytesConstant;
         } else {
           uint16 index = readU2(bytecodes, i);
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
           const UTF8* className = 
             compilingClass->ctpInfo->resolveClassName(index);
         
@@ -1870,7 +1870,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           TheVT = JnjvmModule::ArrayObjectVirtualTableGV;
           sizeElement = mvm::jit::constantPtrSize;
         }
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
         LLVMCommonClassInfo* LCI = module->getClassInfo(dcl);
         valCl = LCI->getVar(this);
 #endif   
@@ -1983,7 +1983,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case CHECKCAST : {
         uint16 index = readU2(bytecodes, i);
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
         CommonClass* dcl =
           compilingClass->ctpInfo->getMethodClassIfLoaded(index);
 #endif
@@ -2000,7 +2000,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
         currentBlock = ifFalse;
         Value* clVar = 0;
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
         if (dcl) {
           LLVMCommonClassInfo* LCI = module->getClassInfo(dcl);
           clVar = LCI->getVar(this);
@@ -2038,7 +2038,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case INSTANCEOF : {
         uint16 index = readU2(bytecodes, i);
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
         CommonClass* dcl =
           compilingClass->ctpInfo->getMethodClassIfLoaded(index);
         
@@ -2100,7 +2100,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint8 dim = readU1(bytecodes, i);
         
         
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
         Value* valCl = getResolvedClass(index, true);
 #else
         JnjvmClassLoader* JCL = compilingClass->classLoader;

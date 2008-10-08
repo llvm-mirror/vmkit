@@ -61,7 +61,7 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
     UserClass* methodCl = 0;
     JavaMethod* dmeth = ocl->lookupMethod(utf8, sign->keyName, false, true,
                                           methodCl);
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
     assert(dmeth->classDef->isReady() &&
            "Class not ready in a virtual lookup.");
 #endif
@@ -73,7 +73,7 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
     
     rcache->methPtr = dmeth->compiledPtr();
     rcache->lastCible = (UserClass*)ocl;
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
     rcache->definingCtp = methodCl->getConstantPool();
 #endif
     
@@ -135,15 +135,18 @@ extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
   return ptr;
 }
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE
 extern "C" void* stringLookup(UserClass* cl, uint32 index) {
   UserConstantPool* ctpInfo = cl->getConstantPool();
   const UTF8* utf8 = ctpInfo->UTF8AtForString(index);
   JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
+#ifdef ISOLATE_SHARING
   ctpInfo->ctpRes[index] = str;
+#endif
   return (void*)str;
 }
 
+#ifdef ISOLATE_SHARING
 extern "C" void* enveloppeLookup(UserClass* cl, uint32 index) {
   UserConstantPool* ctpInfo = cl->getConstantPool();
   Enveloppe* enveloppe = new Enveloppe(ctpInfo, index);
@@ -199,6 +202,8 @@ extern "C" UserConstantPool* specialCtpLookup(UserConstantPool* ctpInfo,
 
 #endif
 
+#endif
+
 #ifndef WITHOUT_VTABLE
 extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
   UserCommonClass* cl = 0;
@@ -223,7 +228,7 @@ extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
     caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
   }
 
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
   assert(dmeth->classDef->isReady() && "Class not ready in a virtual lookup.");
 #endif
 

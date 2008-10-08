@@ -36,7 +36,7 @@
 
 using namespace jnjvm;
 
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
 Class*      Classpath::newThread;
 Class*      Classpath::newVMThread;
 JavaField*  Classpath::assocThread;

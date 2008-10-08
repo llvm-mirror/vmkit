@@ -81,7 +81,7 @@ const char* Jnjvm::dirSeparator = "/";
 const char* Jnjvm::envSeparator = ":";
 const unsigned int Jnjvm::Magic = 0xcafebabe;
 
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE
 /// If we're not in a multi-vm environment, this can be made static.
 std::vector<void*> Jnjvm::nativeLibs;
 JnjvmBootstrapLoader* Jnjvm::bootstrapLoader;
@@ -852,13 +852,13 @@ Jnjvm* Jnjvm::allocateIsolate(void* sp) {
   isolate->hashStr = new StringMap();
   isolate->globalRefsLock = mvm::Lock::allocNormal();
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   isolate->initialiseStatics();
 #endif
   
   isolate->upcalls = isolate->bootstrapLoader->upcalls;
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   isolate->throwable = isolate->upcalls->newThrowable;
 #endif
   isolate->arrayClasses[JavaArray::T_BOOLEAN - 4] = 

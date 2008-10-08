@@ -77,14 +77,14 @@ void JavaJIT::invokeVirtual(uint16 index) {
   Value* VT = CallInst::Create(JnjvmModule::GetVTFunction, args[0], "",
                                currentBlock);
   std::vector<Value*> indexes2; //[3];
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   std::vector<Value*> indexesCtp; //[3];
 #endif
   if (meth) {
     LLVMMethodInfo* LMI = module->getMethodInfo(meth);
     ConstantInt* Offset = LMI->getOffset();
     indexes2.push_back(Offset);
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
     indexesCtp.push_back(ConstantInt::get(Type::Int32Ty,
                                           Offset->getZExtValue() * -1));
 #endif
@@ -93,7 +93,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
     Value* val = getConstantPoolAt(index, JnjvmModule::VirtualLookupFunction,
                                    Type::Int32Ty, args[0], true);
     indexes2.push_back(val);
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
     Value* mul = BinaryOperator::createMul(val, mvm::jit::constantMinusOne,
                                            "", currentBlock);
     indexesCtp.push_back(mul);
@@ -106,7 +106,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
     
   Value* Func = new LoadInst(FuncPtr, "", currentBlock);
   Func = new BitCastInst(Func, LSI->getVirtualPtrType(), "", currentBlock);
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   Value* CTP = GetElementPtrInst::Create(VT, indexesCtp.begin(),
                                              indexesCtp.end(), "",
                                              currentBlock);
@@ -157,7 +157,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   endBlock = createBasicBlock("end block");
   returnType = funcType->getReturnType();
 
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
   Value* lastArg = 0;
   for (Function::arg_iterator i = func->arg_begin(), e = func->arg_end();
        i != e; ++i) {
@@ -224,7 +224,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
 
   uint32 index = 0;
   if (stat) {
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
     Value* val = getClassCtp();
     Value* res = CallInst::Create(JnjvmModule::GetClassDelegateeFunction,
                                   val, "", currentBlock);
@@ -417,7 +417,7 @@ void JavaJIT::monitorExit(Value* obj) {
   currentBlock = EndUnlock;
 }
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
 Value* JavaJIT::getStaticInstanceCtp() {
   Value* cl = getClassCtp();
   std::vector<Value*> indexes; //[3];
@@ -446,7 +446,7 @@ void JavaJIT::beginSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     obj = llvmFunction->arg_begin();
   } else {
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
     LLVMClassInfo* LCI = 
       (LLVMClassInfo*)module->getClassInfo(compilingClass);
     obj = LCI->getStaticVar(this);
@@ -472,7 +472,7 @@ void JavaJIT::endSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     obj = llvmFunction->arg_begin();
   } else {
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
     LLVMClassInfo* LCI = 
       (LLVMClassInfo*)module->getClassInfo(compilingClass);
     obj = LCI->getStaticVar(this);
@@ -547,7 +547,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   
   uint32 index = 0;
   uint32 count = 0;
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
   uint32 max = args.size() - 2;
 #else
   uint32 max = args.size();
@@ -590,7 +590,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
     }
   }
 
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
 #if !defined(SERVICE_VM)
   isolateLocal = args[args.size() - 2];
   ctpCache = args[args.size() - 1];
@@ -715,7 +715,7 @@ llvm::Function* JavaJIT::javaCompile() {
   
   uint32 index = 0;
   uint32 count = 0;
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
   uint32 max = func->arg_size() - 2;
 #else
   uint32 max = func->arg_size();
@@ -757,7 +757,7 @@ llvm::Function* JavaJIT::javaCompile() {
     }
   }
 
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
 #if !defined(SERVICE_VM)
   isolateLocal = i;
   i++;
@@ -923,7 +923,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     if (isVirtual(compilingMethod->access)) {
       argsSync.push_back(llvmFunction->arg_begin());
     } else {
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
       LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(compilingClass);
       Value* arg = LCI->getStaticVar(this);
 #else
@@ -973,7 +973,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
 
     ex->catche = reader.readU2();
 
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
     if (ex->catche) {
       JavaObject* exc = 0;
       UserClass* cl = 0; 
@@ -1086,7 +1086,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     
     Value* cl = 0;
     currentBlock = cur->realTest;
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
     // We're dealing with exceptions, don't catch the exception if the class can
     // not be found.
     if (cur->catche) cl = getResolvedClass(cur->catche, false, false);
@@ -1156,7 +1156,7 @@ void JavaJIT::_ldc(uint16 index) {
   uint8 type = ctpInfo->typeAt(index);
   
   if (type == JavaConstantPool::ConstantString) {
-#ifdef MULTIPLE_VM
+#if defined(ISOLATE) || defined(ISOLATE_SHARING)
     // Lookup the constant pool cache
     Value* val = getConstantPoolAt(index, JnjvmModule::StringLookupFunction,
                                    JnjvmModule::JavaObjectType, 0, false);
@@ -1182,7 +1182,7 @@ void JavaJIT::_ldc(uint16 index) {
     push(ConstantFP::get(Type::FloatTy, ctpInfo->FloatAt(index)),
          false);
   } else if (type == JavaConstantPool::ConstantClass) {
-#ifndef MULTIPLE_VM
+#if !defined(ISOLATE)
     if (ctpInfo->ctpRes[index]) {
       CommonClass* cl = (CommonClass*)(ctpInfo->ctpRes[index]);
       LLVMCommonClassInfo* LCI = module->getClassInfo(cl);
@@ -1193,7 +1193,7 @@ void JavaJIT::_ldc(uint16 index) {
       Value* res = CallInst::Create(JnjvmModule::GetClassDelegateeFunction,
                                     val, "", currentBlock);
       push(res, false);
-#ifndef MULTIPLE_VM
+#if !defined(ISOLATE)
     }
 #endif
   } else {
@@ -1364,12 +1364,12 @@ void JavaJIT::branch(llvm::Value* test, llvm::BasicBlock* ifTrue,
 
 void JavaJIT::makeArgs(FunctionType::param_iterator it,
                        uint32 index, std::vector<Value*>& Args, uint32 nb) {
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
   nb += 1;
 #endif
   Args.reserve(nb + 2);
   Value** args = (Value**)alloca(nb*sizeof(Value*));
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
   args[nb - 1] = isolateLocal;
   sint32 start = nb - 2;
   it--;
@@ -1546,7 +1546,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
 
 
   if (!val) {
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
     const Type* Ty = JnjvmModule::ConstantPoolType;
     Constant* Nil = Constant::getNullValue(Ty);
     GlobalVariable* GV = new GlobalVariable(Ty, false,
@@ -1619,7 +1619,7 @@ void JavaJIT::invokeStatic(uint16 index) {
       ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_STATIC,
                                            signature, meth);
     
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
     Value* newCtpCache = getConstantPoolAt(index,
                                            JnjvmModule::StaticCtpLookupFunction,
                                            JnjvmModule::ConstantPoolType, 0,
@@ -1651,9 +1651,8 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
 
 // This makes unswitch loop very unhappy time-wise, but makes GVN happy
 // number-wise. IMO, it's better to have this than Unswitch.
-#if 1
   std::vector<Value*> Args;
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   Value* CTP = ctpCache;
   Args.push_back(mvm::jit::constantOne);
   Value* Cl = GetElementPtrInst::Create(CTP, Args.begin(), Args.end(), "",
@@ -1693,73 +1692,6 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   } 
   
   return res;
-#else
-
-#ifdef MULTIPLE_VM
-  Value* CTP = ctpCache;
-#else
-  JavaConstantPool* ctp = compilingClass->ctpInfo;
-  LLVMConstantPoolInfo* LCPI = module->getConstantPoolInfo(ctp);
-  Value* CTP = LCPI->getDelegatee(this);
-#endif 
-  std::vector<Value*> indexes; //[3];
-#ifndef MULTIPLE_VM
-  indexes.push_back(ConstantInt::get(Type::Int32Ty, index));
-#else
-  // Add one to the index because of the VT
-  indexes.push_back(ConstantInt::get(Type::Int32Ty, index + 1));
-#endif
-  Value* arg1 = GetElementPtrInst::Create(CTP, indexes.begin(),
-                                          indexes.end(), 
-                                          "", currentBlock);
-  arg1 = new LoadInst(arg1, "", false, currentBlock);
-  Value* test = new ICmpInst(ICmpInst::ICMP_EQ, arg1, mvm::jit::constantPtrNull,
-                             "", currentBlock);
- 
-  BasicBlock* trueCl = createBasicBlock("Ctp OK");
-  BasicBlock* falseCl = createBasicBlock("Ctp Not OK");
-  PHINode* node = llvm::PHINode::Create(mvm::jit::ptrType, "", trueCl);
-  node->addIncoming(arg1, currentBlock);
-  llvm::BranchInst::Create(falseCl, trueCl, test, currentBlock);
-  
-  currentBlock = falseCl;
-  std::vector<Value*> Args;
-#ifdef MULTIPLE_VM
-  std::vector<Value*> Args;
-  Args.push_back(mvm::jit::constantOne);
-  Value* v = GetElementPtrInst::Create(ctpCache, Args.begin(), Args.end(), "",
-                                       currentBlock);
-  v = new LoadInst(v, "", currentBlock);
-  v = new BitCastInst(v, JnjvmModule::JavaClassType, "", currentBlock);
-#else
-  LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(compilingClass);
-  Value* v = LCI->getVar(this);
-#endif
-  Args.push_back(v);
-  ConstantInt* CI = ConstantInt::get(Type::Int32Ty, index);
-  Args.push_back(CI);
-  
-  if (additionalArg)
-    Args.push_back(additionalArg);
-
-  Value* res = 0;
-  if (doThrow) {
-    res = invoke(resolver, Args, "", currentBlock);
-  } else {
-    res = CallInst::Create(resolver, Args.begin(), Args.end(), "",
-                           currentBlock);
-  }
-  node->addIncoming(res, currentBlock);
-
-  llvm::BranchInst::Create(trueCl, currentBlock);
-  currentBlock = trueCl;
-
-  if (returnType == Type::Int32Ty) {
-    return new PtrToIntInst(node, Type::Int32Ty, "", currentBlock);
-  } else {
-    return new BitCastInst(node, returnType, "", currentBlock);
-  } 
-#endif
 }
 
 Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow) {
@@ -1790,7 +1722,7 @@ void JavaJIT::invokeNew(uint16 index) {
   } else {
     LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(cl);
     Size = LCI->getVirtualSize(this);
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
     VT = LCI->getVirtualTable(this);
     Cl = LCI->getVar(this);
     if (!cl->isReady()) {
@@ -1862,7 +1794,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     const Type* type = 0;
     if (stat) {
 
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
       if (field->classDef->isReady()) {
         object = LCI->getStaticVar(this);
         type = LCI->getStaticType();
@@ -2096,7 +2028,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   Value* zero = mvm::jit::constantZero;
   Value* one = mvm::jit::constantOne;
 
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
   // ok now the cache
   Enveloppe* enveloppe = new Enveloppe(compilingClass->ctpInfo, index);
   compilingMethod->caches.push_back(enveloppe);
@@ -2139,7 +2071,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
                         "", ifFalse);
   Value* meth = new BitCastInst(_meth, virtualPtrType, "", 
                                 currentBlock);
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   Value* cache2 = new LoadInst(cachePtr, "", currentBlock);
   Value* newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheNodeFunction,
                                         cache2, "", currentBlock);
@@ -2159,7 +2091,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   _meth = new LoadInst(methPtr, "", currentBlock);
   meth = new BitCastInst(_meth, virtualPtrType, "", currentBlock);
   
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   args.pop_back();
   cache = new LoadInst(cachePtr, "", currentBlock);
   newCtpCache = CallInst::Create(JnjvmModule::GetCtpCacheNodeFunction,

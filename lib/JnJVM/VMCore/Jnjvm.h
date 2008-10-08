@@ -96,7 +96,7 @@ public:
   Collector* GC;
 #endif
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   UserClass* throwable;
 #endif
   std::map<const char, UserClassArray*> arrayClasses;

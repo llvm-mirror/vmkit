@@ -21,7 +21,7 @@
 #ifdef SERVICE_VM
 #include "ServiceDomain.h"
 #endif
-#ifdef MULTIPLE_VM
+#ifdef CODE_SHARING
 #include "SharedMaps.h"
 #include "IsolateSharedLoader.h"
 #endif
@@ -40,7 +40,7 @@ using namespace jnjvm;
   INIT(ClassMap);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
-#ifdef MULTIPLE_VM
+#if defined(ISOLATE_SHARING)
   INIT(JnjvmSharedLoader);
   INIT(SharedClassByteMap);
   INIT(UserClass);
@@ -69,7 +69,7 @@ void JavaArray::TRACER {}
 
 void CommonClass::TRACER {
   classLoader->MARK_AND_TRACE;
-#ifndef MULTIPLE_VM
+#if !defined(ISOLATE)
   delegatee->MARK_AND_TRACE;
 #endif
 }
@@ -77,7 +77,7 @@ void CommonClass::TRACER {
 void Class::TRACER {
   CommonClass::PARENT_TRACER;
   bytes->MARK_AND_TRACE;
-#ifndef MULTIPLE_VM
+#if !defined(ISOLATE)
   _staticInstance->MARK_AND_TRACE;
 #endif
 }
@@ -111,7 +111,7 @@ void Jnjvm::TRACER {
   TRACE_VECTOR(JavaObject*, gc_allocator, globalRefs);
   bootstrapThread->MARK_AND_TRACE;
   bootstrapLoader->MARK_AND_TRACE;
-#ifdef MULTIPLE_VM
+#if defined(ISOLATE_SHARING)
   JnjvmSharedLoader::sharedLoader->MARK_AND_TRACE;
 #endif
 }
@@ -150,7 +150,7 @@ void JnjvmBootstrapLoader::TRACER {
 #undef TRACE_DELEGATEE
 }
 
-#ifdef MULTIPLE_VM
+#if defined(ISOLATE_SHARING)
 void UserClass::TRACER {
   classLoader->MARK_AND_TRACE;
   delegatee->MARK_AND_TRACE;

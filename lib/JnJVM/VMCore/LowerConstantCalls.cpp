@@ -247,7 +247,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           }
           
           std::vector<Value*> indexes; //[3];
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
           ConstantInt* Cons = dyn_cast<ConstantInt>(Index);
           assert(CI && "Wrong use of GetConstantPoolAt");
           uint64 val = Cons->getZExtValue();
@@ -318,7 +318,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         }
 #endif
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
         else if (V == jnjvm::JnjvmModule::GetCtpClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 

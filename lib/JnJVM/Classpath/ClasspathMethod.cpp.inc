@@ -43,7 +43,7 @@ JNIEnv *env,
  jobject Meth) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaMethod* meth = (JavaMethod*)vm->upcalls->methodSlot->getInt32Field((JavaObject*)Meth);
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)Meth);
   UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
   JnjvmClassLoader* loader = cl->classLoader;
@@ -62,7 +62,7 @@ JNIEnv *env,
                                                                           jobject Meth) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaMethod* meth = (JavaMethod*)vm->upcalls->methodSlot->getInt32Field((JavaObject*)Meth);
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)Meth);
   UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
   JnjvmClassLoader* loader = cl->classLoader;
@@ -97,7 +97,7 @@ JNIEnv *env,
       if (!(obj->classOf->isAssignableFrom(cl))) {
         vm->illegalArgumentExceptionForMethod(meth, cl, obj->classOf);
       }
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
       if (isInterface(cl->classDef->access)) {
         cl = obj->classOf->lookupClassFromMethod(meth);
       } else {
@@ -214,7 +214,7 @@ JNIEnv *env,
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaMethod* meth = (JavaMethod*)vm->upcalls->methodSlot->getInt32Field((JavaObject*)_meth);
   UserClass* cl = 0;
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)_meth);
   cl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
 #else

@@ -101,7 +101,7 @@ jobject vmthrow, jobject throwable) {
   
   while (stack[i] != 0) {
     JavaMethod* meth = JavaJIT::IPToJavaMethod(stack[i++]);
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
     if (meth) {
 #else
     if (meth && !meth->classDef->subclassOf(vm->upcalls->newThrowable)) {

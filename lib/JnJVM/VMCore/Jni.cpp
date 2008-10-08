@@ -22,6 +22,23 @@
 
 
 using namespace jnjvm;
+  
+static UserClass* getClassFromStaticMethod(JavaMethod* meth, jclass clazz) {
+#ifdef ISOLATE_SHARING
+  return (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
+#else
+  return meth->classDef;
+#endif
+}
+
+static UserClass* getClassFromVirtualMethod(JavaMethod* meth,
+                                            UserCommonClass* cl) {
+#ifdef ISOLATE_SHARING
+  return cl->lookupClassFromMethod(this);
+#else
+  return meth->classDef;
+#endif
+}
 
 extern "C" const struct JNIInvokeInterface_ JNI_JavaVMTable;
 extern "C" struct JNINativeInterface_ JNI_JNIEnvTable;
@@ -330,12 +347,7 @@ jobject CallObjectMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
   JavaObject* self = (JavaObject*)obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = 0;
-#ifdef MULTIPLE_VM
-  cl = self->classOf->lookupClassFromMethod(meth);
-#else
-  cl = meth->classDef;
-#endif
+  UserClass* cl = getClassFromVirtualMethod(meth, self->classOf);
   JavaObject* res = meth->invokeJavaObjectVirtualAP(vm, cl, self, ap);
   va_end(ap);
   return (jobject)res;
@@ -368,12 +380,7 @@ jboolean CallBooleanMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   JavaObject* self = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = 0;
-#ifdef MULTIPLE_VM
-  cl = self->classOf->lookupClassFromMethod(meth);
-#else
-  cl = meth->classDef;
-#endif
+  UserClass* cl = getClassFromVirtualMethod(meth, self->classOf);
   uint32 res = meth->invokeIntVirtualAP(vm, cl, self, ap);
   va_end(ap);
   return res;
@@ -466,12 +473,7 @@ jint CallIntMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = 0;
-#ifdef MULTIPLE_VM
-  cl = obj->classOf->lookupClassFromMethod(meth);
-#else
-  cl = meth->classDef;
-#endif
+  UserClass* cl = getClassFromVirtualMethod(meth, obj->classOf);
   uint32 res = meth->invokeIntVirtualAP(vm, cl, obj, ap);
   va_end(ap);
   return res;
@@ -526,12 +528,7 @@ jfloat CallFloatMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = 0;
-#ifdef MULTIPLE_VM
-  cl = obj->classOf->lookupClassFromMethod(meth);
-#else
-  cl = meth->classDef;
-#endif
+  UserClass* cl = getClassFromVirtualMethod(meth, obj->classOf);
   jfloat res = meth->invokeFloatVirtualAP(vm, cl, obj, ap);
   va_end(ap);
   return res;
@@ -565,12 +562,7 @@ jdouble CallDoubleMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = 0;
-#ifdef MULTIPLE_VM
-  cl = obj->classOf->lookupClassFromMethod(meth);
-#else
-  cl = meth->classDef;
-#endif
+  UserClass* cl = getClassFromVirtualMethod(meth, obj->classOf);
   jdouble res = meth->invokeDoubleVirtualAP(vm, cl, obj, ap);
   va_end(ap);
   return res;
@@ -588,12 +580,7 @@ jdouble CallDoubleMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = 0;
-#ifdef MULTIPLE_VM
-  cl = obj->classOf->lookupClassFromMethod(meth);
-#else
-  cl = meth->classDef;
-#endif
+  UserClass* cl = getClassFromVirtualMethod(meth, obj->classOf);
   return meth->invokeDoubleVirtualAP(vm, cl, obj, args);
 
   END_EXCEPTION
@@ -619,12 +606,7 @@ void CallVoidMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = 0;
-#ifdef MULTIPLE_VM
-  cl = obj->classOf->lookupClassFromMethod(meth);
-#else
-  cl = meth->classDef;
-#endif
+  UserClass* cl = getClassFromVirtualMethod(meth, obj->classOf);
   meth->invokeIntVirtualAP(vm, cl, obj, ap);
   va_end(ap);
 
@@ -640,12 +622,7 @@ void CallVoidMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = 0;
-#ifdef MULTIPLE_VM
-  cl = obj->classOf->lookupClassFromMethod(meth);
-#else
-  cl = meth->classDef;
-#endif
+  UserClass* cl = getClassFromVirtualMethod(meth, obj->classOf);
   meth->invokeIntVirtualAP(vm, cl, obj, args);
 
   END_EXCEPTION
@@ -866,12 +843,7 @@ void CallNonvirtualVoidMethod(JNIEnv *env, jobject _obj, jclass clazz,
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = 0;
-#ifdef MULTIPLE_VM
-  cl = obj->classOf->lookupClassFromMethod(meth);
-#else
-  cl = meth->classDef;
-#endif
+  UserClass* cl = getClassFromVirtualMethod(meth, obj->classOf);
   meth->invokeIntSpecialAP(vm, cl, obj, ap);
   va_end(ap);
 
@@ -1186,12 +1158,7 @@ jboolean CallStaticBooleanMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
   va_start(ap, methodID);
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = 0;
-#ifdef MULTIPLE_VM
-  cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
-#else
-  cl = meth->classDef;
-#endif
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
   uint32 res = meth->invokeIntStaticAP(vm, cl, ap);
   va_end(ap);
   return res;
@@ -1367,12 +1334,7 @@ void CallStaticVoidMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   va_start(ap, methodID);
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = 0;
-#ifdef MULTIPLE_VM
-  cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
-#else
-  cl = meth->classDef;
-#endif
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
   meth->invokeIntStaticAP(vm, cl, ap);
   va_end(ap);
 
@@ -1387,12 +1349,7 @@ void CallStaticVoidMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserClass* cl = 0;
-#ifdef MULTIPLE_VM
-  cl = (UserClass*)NativeUtil::resolvedImplClass(clazz, true);
-#else
-  cl = meth->classDef;
-#endif
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
   meth->invokeIntStaticAP(vm, cl, args);
 
   END_EXCEPTION

@@ -108,8 +108,10 @@ llvm::Function* JnjvmModule::ReleaseObjectFunction = 0;
 llvm::Function* JnjvmModule::MultiCallNewFunction = 0;
 llvm::Function* JnjvmModule::GetConstantPoolAtFunction = 0;
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE
 llvm::Function* JnjvmModule::StringLookupFunction = 0;
+
+#ifdef ISOLATE_SHARING
 llvm::Function* JnjvmModule::GetCtpCacheNodeFunction = 0;
 llvm::Function* JnjvmModule::GetCtpClassFunction = 0;
 llvm::Function* JnjvmModule::EnveloppeLookupFunction = 0;
@@ -119,6 +121,9 @@ llvm::Function* JnjvmModule::StaticCtpLookupFunction = 0;
 llvm::Function* JnjvmModule::GetArrayClassFunction = 0;
 llvm::Function* JnjvmModule::SpecialCtpLookupFunction = 0;
 #endif
+
+#endif
+
 llvm::Function* JnjvmModule::GetClassDelegateeFunction = 0;
 llvm::Function* JnjvmModule::ArrayLengthFunction = 0;
 llvm::Function* JnjvmModule::GetVTFunction = 0;
@@ -174,7 +179,7 @@ Value* LLVMConstantPoolInfo::getDelegatee(JavaJIT* jit) {
 }
 
 Value* LLVMCommonClassInfo::getDelegatee(JavaJIT* jit) {
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE
   if (!delegateeGV) {
     JavaObject* obj = classDef->getClassDelegatee(JavaThread::get()->isolate);
     Constant* cons = 
@@ -214,7 +219,7 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
     VirtualTable* VT = 0;
     if (meth->name->equals(Jnjvm::finalize)) {
       VT = allocateVT(cl, ++meths);
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE_SHARING
       meth->offset = 0;
       Function* func = cl->classLoader->TheModuleProvider->parseFunction(meth);
       if (!cl->super) meth->canBeInlined = true;
@@ -461,7 +466,7 @@ const Type* LLVMClassInfo::getStaticType() {
   return staticType;
 }
 
-#ifndef MULTIPLE_VM
+#ifndef ISOLATE
 Value* LLVMClassInfo::getStaticVar(JavaJIT* jit) {
   if (!staticVarGV) {
     getStaticType();
@@ -579,7 +584,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
       llvmArgs.push_back(LAI.llvmType);
     }
 
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
     llvmArgs.push_back(JnjvmModule::JnjvmType); // vm
     llvmArgs.push_back(JnjvmModule::ConstantPoolType); // cached constant pool
 #endif
@@ -603,7 +608,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
       llvmArgs.push_back(LAI.llvmType);
     }
 
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
     llvmArgs.push_back(JnjvmModule::JnjvmType); // vm
     llvmArgs.push_back(JnjvmModule::ConstantPoolType); // cached constant pool
 #endif
@@ -630,7 +635,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
       llvmArgs.push_back(LAI.llvmType);
     }
 
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
     llvmArgs.push_back(JnjvmModule::JnjvmType); // vm
     llvmArgs.push_back(JnjvmModule::ConstantPoolType); // cached constant pool
 #endif
@@ -656,11 +661,11 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ptr, *func;
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
   Value* vm = i;
 #endif
   ++i;
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
   Value* ctp = i;
 #endif
   ++i;
@@ -689,7 +694,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
     }
   }
 
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
   Args.push_back(vm);
   Args.push_back(ctp);
 #endif
@@ -716,11 +721,11 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ap, *func;
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
   Value* vm = i;
 #endif
   ++i;
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
   Value* ctp = i;
 #endif
   ++i;
@@ -739,7 +744,7 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
     Args.push_back(new VAArgInst(ap, LAI.llvmType, "", currentBlock));
   }
 
-#if defined(MULTIPLE_VM)
+#if defined(ISOLATE_SHARING)
   Args.push_back(vm);
   Args.push_back(ctp);
 #endif
@@ -1021,8 +1026,9 @@ void JnjvmModule::initialise() {
   ClearExceptionFunction = module->getFunction("JavaThreadClearException");
   
 
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE
   StringLookupFunction = module->getFunction("stringLookup");
+#ifdef ISOLATE_SHARING
   EnveloppeLookupFunction = module->getFunction("enveloppeLookup");
   GetCtpCacheNodeFunction = module->getFunction("getCtpCacheNode");
   GetCtpClassFunction = module->getFunction("getCtpClass");
@@ -1032,6 +1038,7 @@ void JnjvmModule::initialise() {
   StaticCtpLookupFunction = module->getFunction("staticCtpLookup");
   SpecialCtpLookupFunction = module->getFunction("specialCtpLookup");
   GetArrayClassFunction = module->getFunction("getArrayClass");
+#endif
 #endif
   
 #ifdef SERVICE_VM

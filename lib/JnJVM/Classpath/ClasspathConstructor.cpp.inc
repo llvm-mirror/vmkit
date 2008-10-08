@@ -34,7 +34,7 @@ JNIEnv *env,
 jobject cons) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaMethod* meth = (JavaMethod*)(vm->upcalls->constructorSlot->getInt32Field((JavaObject*)cons));
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
   jclass Cl = (jclass)vm->upcalls->constructorClass->getInt32Field((JavaObject*)cons);
   UserCommonClass* cl = NativeUtil::resolvedImplClass(Cl, false);
   JnjvmClassLoader* loader = cl->classLoader;
@@ -116,7 +116,7 @@ jobject cons) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaMethod* meth = (JavaMethod*)vm->upcalls->constructorSlot->getInt32Field((JavaObject*)cons);
   UserClass* cl = 0;
-#ifdef MULTIPLE_VM
+#ifdef ISOLATE_SHARING
     jclass Cl = (jclass)vm->upcalls->methodClass->getInt32Field((JavaObject*)cons);
     cl = (UserClass*)NativeUtil::resolvedImplClass(Cl, false);
 #else

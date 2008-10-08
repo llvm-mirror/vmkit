@@ -150,7 +150,7 @@ public:
   /// equals - Returns whether two UTF8s are equals. When the JnJVM executes
   /// in single mode, equality is just a pointer comparison. When executing
   /// in multiple mode, we compare the contents of the UTF8s.
-#ifndef MULTIPLE_VM
+#if defined(ISOLATE) || defined(ISOLATE_SHARING)
   bool equals(const UTF8* other) const {
     return this == other;
   }
