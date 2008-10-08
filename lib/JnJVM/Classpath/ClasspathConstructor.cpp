@@ -26,7 +26,6 @@ using namespace jnjvm;
 
 extern "C" {
 
-
 JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_getParameterTypes(
 #ifdef NATIVE_JNI
 JNIEnv *env,

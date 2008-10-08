@@ -10,21 +10,9 @@
 
 
 #include "Classpath.h"
-
-#include "ClasspathConstructor.cpp.inc"
-#include "ClasspathMethod.cpp.inc"
-#include "ClasspathVMClass.cpp.inc"
-#include "ClasspathVMClassLoader.cpp.inc"
-#include "ClasspathVMField.cpp.inc"
-#include "ClasspathVMObject.cpp.inc"
-#include "ClasspathVMRuntime.cpp.inc"
-#include "ClasspathVMStackWalker.cpp.inc"
-#include "ClasspathVMSystem.cpp.inc"
-#include "ClasspathVMSystemProperties.cpp.inc"
-#include "ClasspathVMThread.cpp.inc"
-#include "ClasspathVMThrowable.cpp.inc"
-
 #include "JavaClass.h"
+#include "JavaThread.h"
+#include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "NativeUtil.h"
 
