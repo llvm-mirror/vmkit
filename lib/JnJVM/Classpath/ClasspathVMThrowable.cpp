@@ -52,7 +52,7 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject* methodName = vm->UTF8ToStr(meth->name);
   Class* cl = meth->classDef;
-  const UTF8* internal = cl->name->internalToJava(cl->classLoader->hashUTF8, 0,
+  const UTF8* internal = cl->name->internalToJava(vm->hashUTF8, 0,
                                                   cl->name->size);
   JavaObject* className = vm->UTF8ToStr(internal);
   JavaObject* sourceName = 0;

@@ -889,5 +889,12 @@ Jnjvm* Jnjvm::allocateIsolate(void* sp) {
   isolate->primitiveMap[I_DOUBLE] = isolate->upcalls->OfDouble;
   
   isolate->upcalls->initialiseClasspath(bootstrapLoader);
+ 
+#if defined(ISOLATE) || defined(ISOLATE_SHARING)
+  isolate->hashUTF8 = new UTF8Map(&isolate->allocator,
+                                  isolate->upcalls->ArrayOfChar);
+#else
+  isolate->hashUTF8 = isolate->bootstrapLoader->hashUTF8;
+#endif
   return isolate;
 }

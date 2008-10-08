@@ -162,8 +162,7 @@ jobject Cl) {
     (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField((JavaObject*)Cl);
   
   const UTF8* iname = cl->getName();
-  const UTF8* res = iname->internalToJava(cl->classLoader->hashUTF8, 0,
-                                          iname->size);
+  const UTF8* res = iname->internalToJava(vm->hashUTF8, 0, iname->size);
 
   return (jobject)(vm->UTF8ToStr(res));
 }

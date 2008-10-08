@@ -240,7 +240,7 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
                                     const Typedef* signature) {
 
   if (!signature->isPrimitive()) {
-    if (obj && !(obj->classOf->isOfTypeName(signature->getName()))) {
+    if (obj && !(obj->classOf->isOfTypeName(vm, signature->getName()))) {
       vm->illegalArgumentException("wrong type argument");
     }
     ((JavaObject**)buf)[0] = obj;

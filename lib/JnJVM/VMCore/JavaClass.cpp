@@ -497,7 +497,7 @@ bool UserCommonClass::inheritName(const UTF8* Tname) {
   return false;
 }
 
-bool UserCommonClass::isOfTypeName(const UTF8* Tname) {
+bool UserCommonClass::isOfTypeName(Jnjvm* vm, const UTF8* Tname) {
   if (inheritName(Tname)) {
     return true;
   } else if (isArray()) {
@@ -515,7 +515,7 @@ bool UserCommonClass::isOfTypeName(const UTF8* Tname) {
     }
     
     return (Tname->elements[prof] == I_REF) &&  
-      (res && curS->inheritName(Tname->extract(classLoader->hashUTF8, prof + 1,
+      (res && curS->inheritName(Tname->extract(vm->hashUTF8, prof + 1,
                                                len - 1)));
   } else {
     return false;

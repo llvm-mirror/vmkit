@@ -272,6 +272,11 @@ public:
   /// hashStr - Hash map of java/lang/String objects allocated by this JVM.
   ///
   StringMap * hashStr;
+  
+  /// hashUTF8 - Tables of UTF8s defined by this class loader. Shared
+  /// by all class loaders in a no isolation configuration.
+  ///
+  UTF8Map* hashUTF8;
 
 public:
   /// Exceptions - These are the only exceptions VMKit will make.

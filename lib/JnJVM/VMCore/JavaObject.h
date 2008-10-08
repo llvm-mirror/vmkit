@@ -161,13 +161,6 @@ public:
     this->lock = 0;
   }
 
-  /// instanceOfString - Is this object's class of type the given name?
-  ///
-  bool instanceOfString(const UTF8* name) {
-    if (!this) return false;
-    else return this->classOf->isOfTypeName(name);
-  }
-
   /// instanceOf - Is this object's class of type the given class?
   ///
   bool instanceOf(UserCommonClass* cl) {

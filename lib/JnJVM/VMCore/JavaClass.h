@@ -431,7 +431,7 @@ public:
   /// isOfTypeName - Does this class inherits the given name? Equality is on
   /// the name. This function takes into account array classes.
   ///
-  bool isOfTypeName(const UTF8* Tname);
+  bool isOfTypeName(Jnjvm* vm, const UTF8* Tname);
 
   /// implements - Does this class implement the given class? Returns true if
   /// the class is in the interface class hierarchy.

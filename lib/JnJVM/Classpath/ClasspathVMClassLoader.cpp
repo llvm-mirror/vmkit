@@ -98,7 +98,7 @@ jobject pd) {
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
   
   JavaString* str = (JavaString*)_str;
-  const UTF8* name = str->value->javaToInternal(JCL->hashUTF8, str->offset,
+  const UTF8* name = str->value->javaToInternal(vm->hashUTF8, str->offset,
                                                 str->count);
   UserClass* cl = JCL->constructClass(name, (ArrayUInt8*)bytes);
 

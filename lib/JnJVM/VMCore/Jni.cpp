@@ -90,7 +90,7 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   const UTF8* utf8 = loader->asciizConstructUTF8(asciiz);
   sint32 len = utf8->size;
   
-  const UTF8* internal = utf8->javaToInternal(loader->hashUTF8, 0, len);
+  const UTF8* internal = utf8->javaToInternal(vm->hashUTF8, 0, len);
   UserCommonClass* cl = loader->lookupClassFromUTF8(internal, true, true);
   cl->initialiseClass(vm);
   return (jclass)(cl->getClassDelegatee(vm));
@@ -327,15 +327,14 @@ jmethodID GetMethodID(JNIEnv* env, jclass clazz, const char *aname,
   
   BEGIN_EXCEPTION
   
-  // TODO: find a better place for creating UTF8
   Jnjvm* vm = JavaThread::get()->isolate;
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
   const UTF8* name = cl->classLoader->asciizConstructUTF8(aname);
   const UTF8* type = cl->classLoader->asciizConstructUTF8(atype);
   UserClass* methodCl = 0;
   JavaMethod* meth = cl->lookupMethod(
-      name->javaToInternal(cl->classLoader->hashUTF8, 0, name->size),
-      type->javaToInternal(cl->classLoader->hashUTF8, 0, type->size), false,
+      name->javaToInternal(vm->hashUTF8, 0, name->size),
+      type->javaToInternal(vm->hashUTF8, 0, type->size), false,
       true, methodCl);
 
   return (jmethodID)meth;
@@ -1120,15 +1119,14 @@ jmethodID GetStaticMethodID(JNIEnv *env, jclass clazz, const char *aname,
 
   BEGIN_EXCEPTION
   
-  // TODO: find a better place to store the UTF8
   Jnjvm* vm = JavaThread::get()->isolate;
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
   const UTF8* name = cl->classLoader->asciizConstructUTF8(aname);
   const UTF8* type = cl->classLoader->asciizConstructUTF8(atype);
   UserClass* methodCl = 0;
   JavaMethod* meth = cl->lookupMethod(
-      name->javaToInternal(cl->classLoader->hashUTF8, 0, name->size),
-      type->javaToInternal(cl->classLoader->hashUTF8, 0, type->size), true,
+      name->javaToInternal(vm->hashUTF8, 0, name->size),
+      type->javaToInternal(vm->hashUTF8, 0, type->size), true,
       true, methodCl);
 
   return (jmethodID)meth;
