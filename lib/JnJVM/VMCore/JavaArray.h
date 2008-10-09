@@ -147,20 +147,9 @@ public:
   /// of this.
   const UTF8* extract(UTF8Map* map, uint32 start, uint32 len) const;
 
-  /// equals - Returns whether two UTF8s are equals. When the JnJVM executes
-  /// in single mode, equality is just a pointer comparison. When executing
-  /// in multiple mode, we compare the contents of the UTF8s.
-#if defined(ISOLATE) || defined(ISOLATE_SHARING)
   bool equals(const UTF8* other) const {
-    return this == other;
-  }
-
-  bool lessThan(const UTF8* other) const {
-    return this < other;
-  }
-#else
-  bool equals(const UTF8* other) const {
-    if (size != other->size) return false;
+    if (other == this) return true;
+    else if (size != other->size) return false;
     else return !memcmp(elements, other->elements, size * sizeof(uint16));
   }
 
@@ -170,7 +159,6 @@ public:
     else return memcmp((const char*)elements, (const char*)other->elements, 
                        size * sizeof(uint16)) < 0;
   }
-#endif
   
   /// print - Prints the UTF8 for debugging purposes.
   virtual void print(mvm::PrintBuffer* buf) const;
