@@ -21,7 +21,7 @@
 #ifdef SERVICE_VM
 #include "ServiceDomain.h"
 #endif
-#ifdef CODE_SHARING
+#ifdef ISOLATE_SHARING
 #include "SharedMaps.h"
 #include "IsolateSharedLoader.h"
 #endif
@@ -104,8 +104,6 @@ extern "C" void JavaObjectTracer(JavaObject* obj) {
 
 void JavaThread::TRACER {
   javaThread->MARK_AND_TRACE;
-  // FIXME: do I need this?
-  isolate->MARK_AND_TRACE;
   if (pendingException) pendingException->MARK_AND_TRACE;
 }
 
