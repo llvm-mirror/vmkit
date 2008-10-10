@@ -47,7 +47,7 @@ JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
   JCL->allocator = new JavaAllocator();
   
   JCL->hashUTF8 = new UTF8Map(JCL->allocator, 0);
-  JCL->classes = allocator_new(allocator, ClassMap)();
+  JCL->classes = new ClassMap();
   JCL->javaTypes = new TypeMap(); 
   JCL->javaSignatures = new SignMap(); 
   
@@ -77,7 +77,7 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   allocator = &(isolate->allocator);
 
   hashUTF8 = new UTF8Map(allocator, bootstrapLoader->upcalls->ArrayOfChar);
-  classes = allocator_new(allocator, ClassMap)();
+  classes = new ClassMap();
   javaTypes = new TypeMap();
   javaSignatures = new SignMap();
 
@@ -388,6 +388,7 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf, uint32 size
 }
 
 JnjvmClassLoader::~JnjvmClassLoader() {
+  delete classes;
   delete hashUTF8;
   delete javaTypes;
   delete javaSignatures;

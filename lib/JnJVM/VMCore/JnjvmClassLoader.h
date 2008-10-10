@@ -204,6 +204,7 @@ public:
     TheModule = 0;
     TheModuleProvider = 0;
     isolate = 0;
+    classes = 0;
   }
 
 #ifdef ISOLATE_SHARING

@@ -118,8 +118,9 @@ public:
 };
 
 /// CommonClass - This class is the root class of all Java classes. It is
-/// currently GC-allocated in JnJVM, but will be permanently allocated when the
-/// class loader finalizer method will be defined.
+/// GC-allocated because CommonClasses have to be traceable. A java/lang/Class
+/// object that stays in memory has a reference to the class. Same for
+/// super or interfaces.
 ///
 class CommonClass : public mvm::Object {
 #ifdef ISOLATE_SHARING

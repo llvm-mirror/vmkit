@@ -40,7 +40,7 @@ struct ltutf8
 };
 
 template<class Key, class Container, class Compare, class Meta>
-class LockedMap : public mvm::Object {
+class LockedMap {
 public:
   typedef typename std::map<const Key, Container, Compare>::iterator iterator;
   typedef Container (*funcCreate)(Key& V, Meta meta);
@@ -130,7 +130,6 @@ public:
 class ClassMap : 
     public LockedMap<const UTF8*, UserCommonClass*, ltutf8, JnjvmClassLoader* > {
 public:
-  static VirtualTable* VT;
   
   ClassMap() {
     lock = mvm::Lock::allocNormal();
@@ -140,7 +139,6 @@ public:
     delete lock;
   }
   
-  virtual void TRACER;
 };
 
 class StringMap {

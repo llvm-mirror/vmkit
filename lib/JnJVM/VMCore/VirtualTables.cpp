@@ -37,7 +37,6 @@ using namespace jnjvm;
   INIT(JavaObject);
   INIT(JavaThread);
   INIT(Jnjvm);
-  INIT(ClassMap);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
 #if defined(ISOLATE_SHARING)
@@ -68,6 +67,8 @@ void JavaArray::TRACER {}
     (*i)->MARK_AND_TRACE; }}
 
 void CommonClass::TRACER {
+  super->MARK_AND_TRACE;
+  TRACE_VECTOR(Class*, gc_allocator, interfaces);
   classLoader->MARK_AND_TRACE;
 #if !defined(ISOLATE)
   delegatee->MARK_AND_TRACE;
@@ -76,6 +77,8 @@ void CommonClass::TRACER {
 
 void Class::TRACER {
   CommonClass::CALL_TRACER;
+  TRACE_VECTOR(Class*, gc_allocator, innerClasses);
+  outerClass->MARK_AND_TRACE;
   bytes->MARK_AND_TRACE;
 #if !defined(ISOLATE)
   _staticInstance->MARK_AND_TRACE;
@@ -116,20 +119,21 @@ void Jnjvm::TRACER {
 #endif
 }
 
-void ClassMap::TRACER {
-  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
+static void traceClassMap(ClassMap* classes) {
+  for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
+       i!= e; ++i) {
     i->second->MARK_AND_TRACE;
   }
 }
 
 void JnjvmClassLoader::TRACER {
   javaLoader->MARK_AND_TRACE;
-  classes->MARK_AND_TRACE;
+  traceClassMap(classes);
   isolate->MARK_AND_TRACE;
 }
 
 void JnjvmBootstrapLoader::TRACER {
-  classes->MARK_AND_TRACE;
+  traceClassMap(classes);
   
   for (std::vector<ZipArchive*>::iterator i = bootArchives.begin(),
        e = bootArchives.end(); i != e; ++i) {

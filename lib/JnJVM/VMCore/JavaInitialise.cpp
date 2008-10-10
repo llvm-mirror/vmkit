@@ -50,7 +50,6 @@ static void initialiseVT() {
   INIT(ClassArray);
   INIT(JavaThread);
   INIT(Jnjvm);
-  INIT(ClassMap);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
 #ifdef ISOLATE_SHARING

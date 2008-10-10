@@ -90,8 +90,7 @@ bool CommonClass::FieldCmp::operator<(const CommonClass::FieldCmp &cmp) const {
 
 
 CommonClass::~CommonClass() {
-  free(display);
-  free(virtualVT);
+  delete display;
   delete lockVar;
   delete condVar;
 }
@@ -107,6 +106,8 @@ Class::Class() {
   ctpInfo = 0;
   staticVT = 0;
   JInfo = 0;
+  outerClass = 0;
+  innerOuterResolved = false;
 }
 
 Class::~Class() {
@@ -142,6 +143,11 @@ Class::~Class() {
   
   delete ctpInfo;
   free(staticVT);
+
+  // Currently, only regular classes have a heap allocated virtualVT.
+  // Array classes have a C++ allocated virtualVT and primitive classes
+  // do not have a virtualVT.
+  free(virtualVT);
 }
 
 JavaField::~JavaField() {
@@ -257,6 +263,7 @@ ClassPrimitive::byteIdToPrimitive(char id, Classpath* upcalls) {
 CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n,
                          bool isArray) {
   name = n;
+  this->virtualVT = 0;
   this->lockVar = mvm::Lock::allocRecursive();
   this->condVar = mvm::Cond::allocCond();
   this->status = loaded;
@@ -272,7 +279,7 @@ ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n,
                                uint32 nb) : 
   CommonClass(loader, n, false) {
  
-  display = (CommonClass**)malloc(sizeof(CommonClass*));
+  display = new CommonClass*[1];
   display[0] = this;
   primitive = true;
   status = ready;
@@ -286,6 +293,9 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
   super = 0;
   ctpInfo = 0;
   JInfo = 0;
+  outerClass = 0;
+  innerOuterResolved = false;
+  display = 0;
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   _staticInstance = 0;
 #endif
@@ -298,7 +308,7 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
   super = ClassArray::SuperArray;
   interfaces = ClassArray::InterfacesArray;
   depth = 1;
-  display = (CommonClass**)malloc(2 * sizeof(CommonClass*));
+  display = new CommonClass*[2];
   display[0] = ClassArray::SuperArray;
   display[1] = this;
   access = ACC_FINAL | ACC_ABSTRACT | ACC_PUBLIC;
@@ -670,12 +680,12 @@ void UserClass::loadParents() {
   const UTF8* superUTF8 = getSuperUTF8();
   if (superUTF8 == 0) {
     depth = 0;
-    display = (UserCommonClass**)malloc(sizeof(UserCommonClass*));
+    display = new UserCommonClass*[1];
     display[0] = this;
   } else {
     super = classLoader->loadName(superUTF8, true, true);
     depth = super->depth + 1;
-    display = (UserCommonClass**)malloc((depth + 1) * sizeof(UserCommonClass*));
+    display = new UserCommonClass*[depth + 1];
     memcpy(display, super->display, depth * sizeof(UserCommonClass*));
     display[depth] = this;
   }
