@@ -14,6 +14,7 @@
 
 #include "llvm/Function.h"
 
+#include "mvm/JIT.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/VirtualMachine.h"
@@ -121,7 +122,7 @@ public:
   
   mvm::Lock* protectModule;
   FunctionMap* functions;
-  llvm::Module* module;
+  mvm::MvmModule* module;
   N3ModuleProvider* TheModuleProvider;
   VMThread* bootstrapThread;
 

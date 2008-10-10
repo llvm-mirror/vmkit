@@ -112,7 +112,7 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT) {
   if (CE) {
     ConstantInt* C = (ConstantInt*)CE->getOperand(0);
     VirtualTable* Table = (VirtualTable*)C->getZExtValue();
-    // If the class has a finalize method, do not stack allocate the object
+    // If the class has a finalize method, do not stack allocate the object.
     if (!((void**)Table)[0]) {
       std::map<Instruction*, bool> visited;
       if (!(escapes(Alloc, visited))) {
@@ -120,6 +120,10 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT) {
         BitCastInst* BI = new BitCastInst(AI, Alloc->getType(), "", Alloc);
         DOUT << "escape" << Alloc->getParent()->getParent()->getName() << "\n";
         Alloc->replaceAllUsesWith(BI);
+        // If it's an invoke, replace the invoke with a direct branch.
+        if (InvokeInst *CI = dyn_cast<InvokeInst>(Alloc)) {
+          BranchInst::Create(CI->getNormalDest(), Alloc);
+        }
         Alloc->eraseFromParent();
         return true;
       }

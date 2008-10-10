@@ -39,7 +39,7 @@ jclass clazz,
 jobject throwable) {
   Jnjvm* vm = JavaThread::get()->isolate;
   int** stack = (int**)malloc(sizeof(int*) * 100);
-  int real_size = mvm::jit::getBacktrace((void**)stack, 100);
+  int real_size = mvm::MvmModule::getBacktrace((void**)stack, 100);
   stack[real_size] = 0;
   JavaObject* vmThrowable = vm->upcalls->newVMThrowable->doNew(vm);
   uint64 ptr = (uint64)vmThrowable + vm->upcalls->vmDataVMThrowable->ptrOffset;

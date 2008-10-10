@@ -31,16 +31,16 @@ bool N3ModuleProvider::materializeFunction(Function *F, std::string *ErrInfo) {
     return false;
   } else {
     void* res = 
-      mvm::jit::executionEngine->getPointerToGlobalIfAvailable(meth->methPtr);
+      mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(meth->methPtr);
     if (res == 0) {
       meth->classDef->aquire();
       res = 
-        mvm::jit::executionEngine->getPointerToGlobalIfAvailable(meth->methPtr);
+        mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(meth->methPtr);
       if (res == 0) {
         CLIJit::compile(meth->classDef, meth);
-        void* res = mvm::jit::executionEngine->getPointerToGlobal(meth->methPtr);
+        void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(meth->methPtr);
         meth->code = res;
-        mvm::Code* code = mvm::jit::getCodeFromPointer(res);
+        mvm::Code* code = mvm::MvmModule::getCodeFromPointer(res);
         code->setMetaInfo(meth);
       }
       meth->classDef->release();

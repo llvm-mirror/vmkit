@@ -40,9 +40,9 @@ extern const char* GNUClasspathLibs;
 JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
   
   JnjvmBootstrapLoader* JCL = gc_new(JnjvmBootstrapLoader)();
+  JnjvmModule::initialise(); 
   JCL->TheModule = new JnjvmModule("Bootstrap JnJVM");
   JCL->TheModuleProvider = new JnjvmModuleProvider(JCL->TheModule);
-  JCL->TheModule->initialise(); 
   
   JCL->allocator = new JavaAllocator();
   
@@ -70,16 +70,16 @@ JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
                                    Jnjvm* I) {
-  TheModule = JCL.TheModule;
-  TheModuleProvider = JCL.TheModuleProvider;
+  TheModule = new JnjvmModule("Applicative loader");
+  TheModuleProvider = new JnjvmModuleProvider(TheModule);
   bootstrapLoader = JCL.bootstrapLoader;
   
   allocator = &(isolate->allocator);
 
-  hashUTF8 = JCL.hashUTF8;
+  hashUTF8 = new UTF8Map(allocator, bootstrapLoader->upcalls->ArrayOfChar);
   classes = allocator_new(allocator, ClassMap)();
-  javaTypes = JCL.javaTypes;
-  javaSignatures = JCL.javaSignatures;
+  javaTypes = new TypeMap();
+  javaSignatures = new SignMap();
 
   javaLoader = loader;
   isolate = I;
@@ -388,10 +388,10 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf, uint32 size
 }
 
 JnjvmClassLoader::~JnjvmClassLoader() {
-  /*delete hashUTF8;
+  delete hashUTF8;
   delete javaTypes;
   delete javaSignatures;
-  delete TheModuleProvider;*/
+  delete TheModuleProvider;
 }
 
 void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {

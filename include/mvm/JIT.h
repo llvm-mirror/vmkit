@@ -39,9 +39,6 @@ struct JITInfo {
   virtual ~JITInfo() {}
 };
 
-
-namespace jit {
-
 const double MaxDouble = +INFINITY; //1.0 / 0.0;
 const double MinDouble = -INFINITY;//-1.0 / 0.0;
 const double MaxLongDouble =  9223372036854775807.0;
@@ -61,134 +58,139 @@ const float MinIntFloat = (float)-2147483648.0;
 const float NaNFloat = NAN; //(float)(((float)0.0) / (float)0.0);
 const double NaNDouble = NAN; //0.0 / 0.0;
 
-extern llvm::Function* exceptionEndCatch;
-extern llvm::Function* exceptionBeginCatch;
-extern llvm::Function* unwindResume;
-extern llvm::Function* exceptionSelector;
-extern llvm::Function* personality;
-extern llvm::Function* llvmGetException;
+class MvmModule : public llvm::Module {
+public:
+  
+  MvmModule(const std::string& ModuleID);
+  
+  llvm::Function* exceptionEndCatch;
+  llvm::Function* exceptionBeginCatch;
+  llvm::Function* unwindResume;
+  llvm::Function* exceptionSelector;
+  llvm::Function* personality;
+  llvm::Function* llvmGetException;
 
-extern llvm::Function* printFloatLLVM;
-extern llvm::Function* printDoubleLLVM;
-extern llvm::Function* printLongLLVM;
-extern llvm::Function* printIntLLVM;
-extern llvm::Function* printObjectLLVM;
+  llvm::Function* printFloatLLVM;
+  llvm::Function* printDoubleLLVM;
+  llvm::Function* printLongLLVM;
+  llvm::Function* printIntLLVM;
+  llvm::Function* printObjectLLVM;
 
-extern llvm::Function* setjmpLLVM;
+  llvm::Function* setjmpLLVM;
 
-extern llvm::Function* func_llvm_fabs_f32;
-extern llvm::Function* func_llvm_fabs_f64;
-extern llvm::Function* func_llvm_sqrt_f64;
-extern llvm::Function* func_llvm_sin_f64;
-extern llvm::Function* func_llvm_cos_f64;
-extern llvm::Function* func_llvm_tan_f64;
-extern llvm::Function* func_llvm_asin_f64;
-extern llvm::Function* func_llvm_acos_f64;
-extern llvm::Function* func_llvm_atan_f64;
-extern llvm::Function* func_llvm_atan2_f64;
-extern llvm::Function* func_llvm_exp_f64;
-extern llvm::Function* func_llvm_log_f64;
-extern llvm::Function* func_llvm_pow_f64;
-extern llvm::Function* func_llvm_ceil_f64;
-extern llvm::Function* func_llvm_floor_f64;
-extern llvm::Function* func_llvm_rint_f64;
-extern llvm::Function* func_llvm_cbrt_f64;
-extern llvm::Function* func_llvm_cosh_f64;
-extern llvm::Function* func_llvm_expm1_f64;
-extern llvm::Function* func_llvm_hypot_f64;
-extern llvm::Function* func_llvm_log10_f64;
-extern llvm::Function* func_llvm_log1p_f64;
-extern llvm::Function* func_llvm_sinh_f64;
-extern llvm::Function* func_llvm_tanh_f64;
+  llvm::Function* func_llvm_fabs_f32;
+  llvm::Function* func_llvm_fabs_f64;
+  llvm::Function* func_llvm_sqrt_f64;
+  llvm::Function* func_llvm_sin_f64;
+  llvm::Function* func_llvm_cos_f64;
+  llvm::Function* func_llvm_tan_f64;
+  llvm::Function* func_llvm_asin_f64;
+  llvm::Function* func_llvm_acos_f64;
+  llvm::Function* func_llvm_atan_f64;
+  llvm::Function* func_llvm_atan2_f64;
+  llvm::Function* func_llvm_exp_f64;
+  llvm::Function* func_llvm_log_f64;
+  llvm::Function* func_llvm_pow_f64;
+  llvm::Function* func_llvm_ceil_f64;
+  llvm::Function* func_llvm_floor_f64;
+  llvm::Function* func_llvm_rint_f64;
+  llvm::Function* func_llvm_cbrt_f64;
+  llvm::Function* func_llvm_cosh_f64;
+  llvm::Function* func_llvm_expm1_f64;
+  llvm::Function* func_llvm_hypot_f64;
+  llvm::Function* func_llvm_log10_f64;
+  llvm::Function* func_llvm_log1p_f64;
+  llvm::Function* func_llvm_sinh_f64;
+  llvm::Function* func_llvm_tanh_f64;
 
-extern llvm::Function* llvm_memcpy_i32;
-extern llvm::Function* llvm_memset_i32;
-extern llvm::Function* llvm_atomic_lcs_i8;
-extern llvm::Function* llvm_atomic_lcs_i16;
-extern llvm::Function* llvm_atomic_lcs_i32;
-extern llvm::Function* llvm_atomic_lcs_i64;
+  llvm::Function* llvm_memcpy_i32;
+  llvm::Function* llvm_memset_i32;
+  llvm::Function* llvm_atomic_lcs_i8;
+  llvm::Function* llvm_atomic_lcs_i16;
+  llvm::Function* llvm_atomic_lcs_i32;
+  llvm::Function* llvm_atomic_lcs_i64;
 
-extern llvm::ExecutionEngine* executionEngine;
+  static llvm::ExecutionEngine* executionEngine;
+  static mvm::Lock* protectEngine;
 
-extern uint64 getTypeSize(const llvm::Type* type);
-extern void AddStandardCompilePasses(llvm::FunctionPassManager*);
-extern void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
-extern void initialise();
+  static uint64 getTypeSize(const llvm::Type* type);
+  static void AddStandardCompilePasses(llvm::FunctionPassManager*);
+  static void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
+  static void initialise();
+
+  static llvm::ConstantInt* constantInt8Zero;
+  static llvm::ConstantInt* constantZero;
+  static llvm::ConstantInt* constantOne;
+  static llvm::ConstantInt* constantTwo;
+  static llvm::ConstantInt* constantThree;
+  static llvm::ConstantInt* constantFour;
+  static llvm::ConstantInt* constantFive;
+  static llvm::ConstantInt* constantSix;
+  static llvm::ConstantInt* constantSeven;
+  static llvm::ConstantInt* constantEight;
+  static llvm::ConstantInt* constantMinusOne;
+  static llvm::ConstantInt* constantLongMinusOne;
+  static llvm::ConstantInt* constantLongZero;
+  static llvm::ConstantInt* constantLongOne;
+  static llvm::ConstantInt* constantMinInt;
+  static llvm::ConstantInt* constantMaxInt;
+  static llvm::ConstantInt* constantMinLong;
+  static llvm::ConstantInt* constantMaxLong;
+  static llvm::ConstantFP*  constantFloatZero;
+  static llvm::ConstantFP*  constantFloatOne;
+  static llvm::ConstantFP*  constantFloatTwo;
+  static llvm::ConstantFP*  constantDoubleZero;
+  static llvm::ConstantFP*  constantDoubleOne;
+  static llvm::ConstantFP*  constantMaxIntFloat;
+  static llvm::ConstantFP*  constantMinIntFloat;
+  static llvm::ConstantFP*  constantMinLongFloat;
+  static llvm::ConstantFP*  constantMinLongDouble;
+  static llvm::ConstantFP*  constantMaxLongFloat;
+  static llvm::ConstantFP*  constantMaxIntDouble;
+  static llvm::ConstantFP*  constantMinIntDouble;
+  static llvm::ConstantFP*  constantMaxLongDouble;
+  static llvm::ConstantFP*  constantDoubleInfinity;
+  static llvm::ConstantFP*  constantDoubleMinusInfinity;
+  static llvm::ConstantFP*  constantFloatInfinity;
+  static llvm::ConstantFP*  constantFloatMinusInfinity;
+  static llvm::ConstantFP*  constantFloatMinusZero;
+  static llvm::ConstantFP*  constantDoubleMinusZero;
+  static llvm::Constant*    constantPtrNull;
+  static llvm::ConstantInt* constantPtrSize;
+  static const llvm::PointerType* ptrType;
+  static const llvm::PointerType* ptr32Type;
+  static const llvm::PointerType* ptrPtrType;
+  static const llvm::Type* arrayPtrType;
 
 
-extern mvm::Lock* protectEngine;
-extern llvm::ConstantInt* constantInt8Zero;
-extern llvm::ConstantInt* constantZero;
-extern llvm::ConstantInt* constantOne;
-extern llvm::ConstantInt* constantTwo;
-extern llvm::ConstantInt* constantThree;
-extern llvm::ConstantInt* constantFour;
-extern llvm::ConstantInt* constantFive;
-extern llvm::ConstantInt* constantSix;
-extern llvm::ConstantInt* constantSeven;
-extern llvm::ConstantInt* constantEight;
-extern llvm::ConstantInt* constantMinusOne;
-extern llvm::ConstantInt* constantLongMinusOne;
-extern llvm::ConstantInt* constantLongZero;
-extern llvm::ConstantInt* constantLongOne;
-extern llvm::ConstantInt* constantMinInt;
-extern llvm::ConstantInt* constantMaxInt;
-extern llvm::ConstantInt* constantMinLong;
-extern llvm::ConstantInt* constantMaxLong;
-extern llvm::ConstantFP*  constantFloatZero;
-extern llvm::ConstantFP*  constantFloatOne;
-extern llvm::ConstantFP*  constantFloatTwo;
-extern llvm::ConstantFP*  constantDoubleZero;
-extern llvm::ConstantFP*  constantDoubleOne;
-extern llvm::ConstantFP*  constantMaxIntFloat;
-extern llvm::ConstantFP*  constantMinIntFloat;
-extern llvm::ConstantFP*  constantMinLongFloat;
-extern llvm::ConstantFP*  constantMinLongDouble;
-extern llvm::ConstantFP*  constantMaxLongFloat;
-extern llvm::ConstantFP*  constantMaxIntDouble;
-extern llvm::ConstantFP*  constantMinIntDouble;
-extern llvm::ConstantFP*  constantMaxLongDouble;
-extern llvm::ConstantFP*  constantDoubleInfinity;
-extern llvm::ConstantFP*  constantDoubleMinusInfinity;
-extern llvm::ConstantFP*  constantFloatInfinity;
-extern llvm::ConstantFP*  constantFloatMinusInfinity;
-extern llvm::ConstantFP*  constantFloatMinusZero;
-extern llvm::ConstantFP*  constantDoubleMinusZero;
-extern llvm::Constant*    constantPtrNull;
-extern llvm::ConstantInt* constantPtrSize;
-extern const llvm::PointerType* ptrType;
-extern const llvm::PointerType* ptr32Type;
-extern const llvm::PointerType* ptrPtrType;
-extern const llvm::Type* arrayPtrType;
+  static llvm::Module *globalModule;
+  static llvm::ExistingModuleProvider *globalModuleProvider;
+  static mvm::MvmMemoryManager *memoryManager;
 
+  static int disassemble(unsigned int* addr);
 
-extern llvm::Module *globalModule;
-extern llvm::ExistingModuleProvider *globalModuleProvider;
-extern mvm::MvmMemoryManager *memoryManager;
+  static int getBacktrace(void** stack, int size);
+  static Code* getCodeFromPointer(void* addr);
+  static void addMethodInfo(void* end, Code* c);
 
-extern int disassemble(unsigned int* addr);
+  static uint8  (*llvm_atomic_cmp_swap_i8)  ( uint8* ptr,  uint8 cmp,  uint8 val );
+  static uint16 (*llvm_atomic_cmp_swap_i16) ( uint16* ptr, uint16 cmp, uint16 val );
+  static uint32 (*llvm_atomic_cmp_swap_i32) ( uint32* ptr, uint32 cmp, uint32 val );
+  static uint64 (*llvm_atomic_cmp_swap_i64) ( uint64* ptr, uint64 cmp, uint64 val );
 
-extern int getBacktrace(void** stack, int size);
-extern Code* getCodeFromPointer(void* addr);
-extern void addMethodInfo(void* end, Code* c);
+  static llvm::GlobalVariable* executionEnvironment;
+  static mvm::Thread* (*getExecutionEnvironment)();
+  static void (*setExecutionEnvironment)(mvm::Thread*);
 
-extern uint8  (*llvm_atomic_cmp_swap_i8)  ( uint8* ptr,  uint8 cmp,  uint8 val );
-extern uint16 (*llvm_atomic_cmp_swap_i16) ( uint16* ptr, uint16 cmp, uint16 val );
-extern uint32 (*llvm_atomic_cmp_swap_i32) ( uint32* ptr, uint32 cmp, uint32 val );
-extern uint64 (*llvm_atomic_cmp_swap_i64) ( uint64* ptr, uint64 cmp, uint64 val );
-
-extern llvm::GlobalVariable* executionEnvironment;
-extern mvm::Thread* (*getExecutionEnvironment)();
-extern void (*setExecutionEnvironment)(mvm::Thread*);
+};
 
 // TODO: find what macro for gcc < 4.2
 #if 1
 #define __sync_bool_compare_and_swap(ptr, cmp, val) \
-  (mvm::jit::llvm_atomic_cmp_swap_i32((uint32*)(ptr), (uint32)(cmp), (uint32)(val)) == (uint32)(cmp))
+  (mvm::MvmModule::llvm_atomic_cmp_swap_i32((uint32*)(ptr), (uint32)(cmp), (uint32)(val)) == (uint32)(cmp))
 #define __sync_val_compare_and_swap(ptr, cmp,val) \
-  mvm::jit::llvm_atomic_cmp_swap_i32((uint32*)(ptr), (uint32)(cmp), (uint32)(val))
+  mvm::MvmModule::llvm_atomic_cmp_swap_i32((uint32*)(ptr), (uint32)(cmp), (uint32)(val))
 #endif
-} // end namespace jit
 
 } // end namespace mvm
 

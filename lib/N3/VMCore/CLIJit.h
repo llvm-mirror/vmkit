@@ -10,6 +10,7 @@
 #ifndef N3_CLIJit_H
 #define N3_CLIJit_H
 
+#include "mvm/JIT.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Locks.h"
@@ -93,6 +94,7 @@ public:
   llvm::Function* llvmFunction;
   VMMethod* compilingMethod;
   VMClass* compilingClass;
+  mvm::MvmModule* module;
 
   std::vector<llvm::Value*> arguments;
   std::vector<llvm::Value*> locals;

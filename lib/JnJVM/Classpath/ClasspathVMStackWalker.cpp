@@ -103,7 +103,7 @@ jclass clazz,
 ) {
   Jnjvm* vm = JavaThread::get()->isolate;
   int* ips[100];
-  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 100);
+  int real_size = mvm::MvmModule::getBacktrace((void**)(void*)ips, 100);
 #ifdef ISOLATE_SHARING
   UserConstantPool* pools[100];
   getPools(pools, 100);

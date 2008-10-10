@@ -30,7 +30,7 @@ unsigned char *MvmMemoryManager::allocateStub(const GlobalValue* GV,
                                               unsigned Alignment) {
   unsigned char* res = realMemoryManager->allocateStub(GV, StubSize, Alignment); 
   Code* meth = new Code();
-  mvm::jit::addMethodInfo((void*)(res + StubSize), meth);
+  MvmModule::addMethodInfo((void*)(res + StubSize), meth);
   currentMethod = meth;
   meth->FunctionStart = res;
   meth->FunctionEnd = res + StubSize;
@@ -42,7 +42,7 @@ unsigned char *MvmMemoryManager::allocateStub(const GlobalValue* GV,
 void MvmMemoryManager::endFunctionBody(const Function *F, 
                                        unsigned char *FunctionStart,
                                        unsigned char *FunctionEnd) {
-  mvm::jit::addMethodInfo((void*)FunctionEnd, currentMethod);
+  MvmModule::addMethodInfo((void*)FunctionEnd, currentMethod);
   currentMethod->FunctionStart = FunctionStart;
   currentMethod->FunctionEnd = FunctionEnd;
   realMemoryManager->endFunctionBody(F, FunctionStart, FunctionEnd);

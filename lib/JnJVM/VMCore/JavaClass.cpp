@@ -101,12 +101,12 @@ CommonClass::CommonClass() {
   lockVar = 0;
   condVar = 0;
   virtualVT = 0;
-  JInfo = 0;
 }
 
 Class::Class() {
   ctpInfo = 0;
   staticVT = 0;
+  JInfo = 0;
 }
 
 Class::~Class() {
@@ -263,7 +263,6 @@ CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n,
   this->classLoader = loader;
   this->array = isArray;
   this->primitive = false;
-  this->JInfo = 0;
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   this->delegatee = 0;
 #endif
@@ -286,6 +285,7 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
   bytes = B;
   super = 0;
   ctpInfo = 0;
+  JInfo = 0;
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   _staticInstance = 0;
 #endif

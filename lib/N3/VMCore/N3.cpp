@@ -65,9 +65,9 @@ N3* N3::allocateBootstrap() {
 #endif 
   
   std::string str = 
-    mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
+    mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
 
-  vm->module = new llvm::Module("Bootstrap N3");
+  vm->module = new mvm::MvmModule("Bootstrap N3");
   vm->module->setDataLayout(str);
   vm->protectModule = mvm::Lock::allocNormal();
   vm->functions = FunctionMap::allocate();
@@ -78,7 +78,7 @@ N3* N3::allocateBootstrap() {
   vm->bootstrapThread->baseSP = mvm::Thread::get()->baseSP;
 #ifdef MULTIPLE_GC
   vm->bootstrapThread->GC = GC;
-  mvm::jit::memoryManager->addGCForModule(vm->module, GC);
+  mvm::MvmModule::memoryManager->addGCForModule(vm->module, GC);
 #endif
   VMThread::set(vm->bootstrapThread);
 
@@ -100,8 +100,8 @@ N3* N3::allocate(const char* name, N3* parent) {
 #endif 
   
   std::string str = 
-    mvm::jit::executionEngine->getTargetData()->getStringRepresentation();
-  vm->module = new llvm::Module("App Domain");
+    mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
+  vm->module = new mvm::MvmModule("App Domain");
   vm->module->setDataLayout(str);
   vm->protectModule = mvm::Lock::allocNormal();
   vm->functions = FunctionMap::allocate();
@@ -112,7 +112,7 @@ N3* N3::allocate(const char* name, N3* parent) {
   vm->bootstrapThread->baseSP = mvm::Thread::get()->baseSP;
 #ifdef MULTIPLE_GC
   vm->bootstrapThread->GC = GC;
-  mvm::jit::memoryManager->addGCForModule(vm->module, GC);
+  mvm::MvmModule::memoryManager->addGCForModule(vm->module, GC);
 #endif
   VMThread::set(vm->bootstrapThread);
   

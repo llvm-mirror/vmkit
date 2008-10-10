@@ -22,11 +22,11 @@
 
 #ifdef MULTIPLE_GC
 #define TRACER tracer(void* GC)
-#define PARENT_TRACER tracer(GC)
+#define CALL_TRACER tracer(GC)
 #define MARK_AND_TRACE markAndTrace((Collector*)GC)
 #else
 #define TRACER tracer()
-#define PARENT_TRACER tracer()
+#define CALL_TRACER tracer()
 #define MARK_AND_TRACE markAndTrace()
 #endif
 

@@ -50,42 +50,13 @@ public:
 };
 
 
-class LLVMCommonClassInfo : public mvm::JITInfo {
-  
+class LLVMClassInfo : public mvm::JITInfo {
   friend class JnjvmModule;
-
-protected:
+private:
   CommonClass* classDef;
-
-private:
-  /// varGV - The LLVM global variable representing this class.
-  ///
-  llvm::GlobalVariable* varGV;
-
-  /// delegateeGV - The LLVM global variable representing the 
-  /// java/lang/Class instance of this class.
-  llvm::GlobalVariable* delegateeGV;
-
-
-public:
-  llvm::Value* getVar(JavaJIT* jit);
-  llvm::Value* getDelegatee(JavaJIT* jit);
-  
-  LLVMCommonClassInfo(CommonClass* cl) : 
-    classDef(cl),
-    varGV(0),
-    delegateeGV(0)
-    {}
-};
-
-class LLVMClassInfo : public LLVMCommonClassInfo {
-  friend class JnjvmModule;
-private:
   /// virtualSizeLLVM - The LLVM constant size of instances of this class.
   ///
   llvm::ConstantInt* virtualSizeConstant;
-  llvm::GlobalVariable* staticVarGV;
-  llvm::GlobalVariable* virtualTableGV;
   llvm::Function* virtualTracerFunction;
   llvm::Function* staticTracerFunction;
   /// virtualType - The LLVM type of instance of this class.
@@ -97,19 +68,15 @@ private:
   const llvm::Type * staticType;
 public:
   
-  llvm::Value* getStaticVar(JavaJIT* jit);
-  llvm::Value* getVirtualTable(JavaJIT* jit);
   llvm::Value* getVirtualSize(JavaJIT* jit);
   llvm::Function* getStaticTracer();
   llvm::Function* getVirtualTracer();
   const llvm::Type* getVirtualType();
   const llvm::Type* getStaticType();
   
-  LLVMClassInfo(CommonClass* cl) : 
-    LLVMCommonClassInfo(cl),
+  LLVMClassInfo(CommonClass* cl) :
+    classDef(cl),
     virtualSizeConstant(0),
-    staticVarGV(0),
-    virtualTableGV(0),
     virtualTracerFunction(0),
     staticTracerFunction(0),
     virtualType(0),
@@ -209,74 +176,38 @@ public:
 
 };
 
-#ifdef SERVICE_VM
-class LLVMServiceInfo : public mvm::JITInfo {
-private:
-  ServiceDomain* vm;
-  llvm::GlobalVariable* delegateeGV;
-
-public:
-  llvm::Value* getDelegatee(JavaJIT* jit);
-};
-#endif
-
-class LLVMConstantPoolInfo : public mvm::JITInfo {
-private:
-  JavaConstantPool* ctp;
-  llvm::GlobalVariable* delegateeGV;
-
-public:
-  llvm::Value* getDelegatee(JavaJIT* jit);
-
-  LLVMConstantPoolInfo(JavaConstantPool* c) :
-    ctp(c), delegateeGV(0) {}
-};
-
-class LLVMStringInfo : public mvm::JITInfo {
-private:
-  JavaString* str;
-  llvm::GlobalVariable* delegateeGV;
-
-public:
-  llvm::Value* getDelegatee(JavaJIT* jit);
-
-  LLVMStringInfo(JavaString* c) :
-    str(c), delegateeGV(0) {}
-};
-
-class JnjvmModule : public llvm::Module {
+class JnjvmModule : public mvm::MvmModule {
   friend class LLVMClassInfo;
 private:
-  std::map<const CommonClass*, LLVMCommonClassInfo*> classMap;
-  std::map<const Signdef*, LLVMSignatureInfo*> signatureMap;
-  std::map<const JavaField*, LLVMFieldInfo*> fieldMap;
-  std::map<const JavaMethod*, LLVMMethodInfo*> methodMap;
-  std::map<const JavaString*, LLVMStringInfo*> stringMap;
+  std::map<const CommonClass*, llvm::GlobalVariable*> nativeClasses;
+  std::map<const CommonClass*, llvm::GlobalVariable*> javaClasses;
+  std::map<const CommonClass*, llvm::GlobalVariable*> virtualTables;
+  std::map<const Class*, llvm::GlobalVariable*> staticInstances;
+  std::map<const JavaConstantPool*, llvm::GlobalVariable*> constantPools;
+  std::map<const JavaString*, llvm::GlobalVariable*> strings;
 
-#ifdef SERVICE_VM
-  std::map<const ServiceDomain*, LLVMServiceInfo*> serviceMap;
-  typedef std::map<const ServiceDomain*, LLVMServiceInfo*>::iterator
-    class_iterator;
-#endif
+  typedef std::map<const CommonClass*, llvm::GlobalVariable*>::iterator
+    native_class_iterator;  
   
-  typedef std::map<const CommonClass*, LLVMCommonClassInfo*>::iterator
-    class_iterator;  
+  typedef std::map<const CommonClass*, llvm::GlobalVariable*>::iterator
+    java_class_iterator;
   
-  typedef std::map<const Signdef*, LLVMSignatureInfo*>::iterator
-    signature_iterator;  
+  typedef std::map<const CommonClass*, llvm::GlobalVariable*>::iterator
+    virtual_table_iterator;
   
-  typedef std::map<const JavaMethod*, LLVMMethodInfo*>::iterator
-    method_iterator;  
+  typedef std::map<const Class*, llvm::GlobalVariable*>::iterator
+    static_instance_iterator;  
   
-  typedef std::map<const JavaField*, LLVMFieldInfo*>::iterator
-    field_iterator;
+  typedef std::map<const JavaConstantPool*, llvm::GlobalVariable*>::iterator
+    constant_pool_iterator;
   
-  typedef std::map<const JavaString*, LLVMStringInfo*>::iterator
+  typedef std::map<const JavaString*, llvm::GlobalVariable*>::iterator
     string_iterator;
+  
 
 
-  static VirtualTable* makeVT(Class* cl, bool stat);
-  static VirtualTable* allocateVT(Class* cl, CommonClass::method_iterator meths);
+  VirtualTable* makeVT(Class* cl, bool stat);
+  VirtualTable* allocateVT(Class* cl, CommonClass::method_iterator meths);
 
 
 public:
@@ -308,71 +239,71 @@ public:
   static const llvm::Type* ConstantPoolType;
   
 #ifdef WITH_TRACER
-  static llvm::Function* MarkAndTraceFunction;
+  llvm::Function* MarkAndTraceFunction;
   static const llvm::FunctionType* MarkAndTraceType;
-  static llvm::Function* JavaObjectTracerFunction;  
+  llvm::Function* JavaObjectTracerFunction;  
 #endif
   
-  static llvm::Function* GetSJLJBufferFunction;
-  static llvm::Function* InterfaceLookupFunction;
-  static llvm::Function* VirtualFieldLookupFunction;
-  static llvm::Function* StaticFieldLookupFunction;
-  static llvm::Function* PrintExecutionFunction;
-  static llvm::Function* PrintMethodStartFunction;
-  static llvm::Function* PrintMethodEndFunction;
-  static llvm::Function* JniProceedPendingExceptionFunction;
-  static llvm::Function* InitialisationCheckFunction;
-  static llvm::Function* ForceInitialisationCheckFunction;
-  static llvm::Function* ClassLookupFunction;
+  llvm::Function* GetSJLJBufferFunction;
+  llvm::Function* InterfaceLookupFunction;
+  llvm::Function* VirtualFieldLookupFunction;
+  llvm::Function* StaticFieldLookupFunction;
+  llvm::Function* PrintExecutionFunction;
+  llvm::Function* PrintMethodStartFunction;
+  llvm::Function* PrintMethodEndFunction;
+  llvm::Function* JniProceedPendingExceptionFunction;
+  llvm::Function* InitialisationCheckFunction;
+  llvm::Function* ForceInitialisationCheckFunction;
+  llvm::Function* ClassLookupFunction;
 #ifndef WITHOUT_VTABLE
-  static llvm::Function* VirtualLookupFunction;
+  llvm::Function* VirtualLookupFunction;
 #endif
-  static llvm::Function* InstanceOfFunction;
-  static llvm::Function* IsAssignableFromFunction;
-  static llvm::Function* ImplementsFunction;
-  static llvm::Function* InstantiationOfArrayFunction;
-  static llvm::Function* GetDepthFunction;
-  static llvm::Function* GetClassInDisplayFunction;
-  static llvm::Function* GetDisplayFunction;
-  static llvm::Function* AquireObjectFunction;
-  static llvm::Function* ReleaseObjectFunction;
-  static llvm::Function* GetConstantPoolAtFunction;
+  llvm::Function* InstanceOfFunction;
+  llvm::Function* IsAssignableFromFunction;
+  llvm::Function* ImplementsFunction;
+  llvm::Function* InstantiationOfArrayFunction;
+  llvm::Function* GetDepthFunction;
+  llvm::Function* GetClassInDisplayFunction;
+  llvm::Function* GetDisplayFunction;
+  llvm::Function* AquireObjectFunction;
+  llvm::Function* ReleaseObjectFunction;
+  llvm::Function* GetConstantPoolAtFunction;
 #ifdef SERVICE_VM
-  static llvm::Function* AquireObjectInSharedDomainFunction;
-  static llvm::Function* ReleaseObjectInSharedDomainFunction;
-  static llvm::Function* ServiceCallStartFunction;
-  static llvm::Function* ServiceCallStopFunction;
+  llvm::Function* AquireObjectInSharedDomainFunction;
+  llvm::Function* ReleaseObjectInSharedDomainFunction;
+  llvm::Function* ServiceCallStartFunction;
+  llvm::Function* ServiceCallStopFunction;
 #endif
-  static llvm::Function* MultiCallNewFunction;
+  llvm::Function* MultiCallNewFunction;
 
 #ifdef ISOLATE
-  static llvm::Function* StringLookupFunction;
+  llvm::Function* StringLookupFunction;
 #ifdef ISOLATE_SHARING
-  static llvm::Function* GetCtpCacheNodeFunction;
-  static llvm::Function* GetCtpClassFunction;
-  static llvm::Function* EnveloppeLookupFunction;
-  static llvm::Function* GetJnjvmExceptionClassFunction;
-  static llvm::Function* GetJnjvmArrayClassFunction;
-  static llvm::Function* StaticCtpLookupFunction;
-  static llvm::Function* SpecialCtpLookupFunction;
-  static llvm::Function* GetArrayClassFunction;
+  llvm::Function* GetCtpCacheNodeFunction;
+  llvm::Function* GetCtpClassFunction;
+  llvm::Function* EnveloppeLookupFunction;
+  llvm::Function* GetJnjvmExceptionClassFunction;
+  llvm::Function* GetJnjvmArrayClassFunction;
+  llvm::Function* StaticCtpLookupFunction;
+  llvm::Function* SpecialCtpLookupFunction;
+  llvm::Function* GetArrayClassFunction;
 #endif
 #endif
 
-  static llvm::Function* GetClassDelegateeFunction;
-  static llvm::Function* ArrayLengthFunction;
-  static llvm::Function* GetVTFunction;
-  static llvm::Function* GetClassFunction;
-  static llvm::Function* JavaObjectAllocateFunction;
+  llvm::Function* GetClassDelegateeFunction;
+  llvm::Function* ArrayLengthFunction;
+  llvm::Function* GetVTFunction;
+  llvm::Function* GetClassFunction;
+  llvm::Function* JavaObjectAllocateFunction;
 #ifdef MULTIPLE_GC
-  static llvm::Function* GetCollectorFunction;
+  llvm::Function* GetCollectorFunction;
 #endif
-  static llvm::Function* GetVTFromClassFunction;
-  static llvm::Function* GetObjectSizeFromClassFunction;
+  llvm::Function* GetVTFromClassFunction;
+  llvm::Function* GetObjectSizeFromClassFunction;
 
-  static llvm::Function* GetLockFunction;
-  static llvm::Function* GetThreadIDFunction;
-  static llvm::Function* OverflowThinLockFunction;
+  llvm::Function* GetLockFunction;
+  llvm::Function* GetThreadIDFunction;
+  llvm::Function* OverflowThinLockFunction;
 
   static llvm::ConstantInt* OffsetObjectSizeInClassConstant;
   static llvm::ConstantInt* OffsetVTInClassConstant;
@@ -388,19 +319,16 @@ public:
   static llvm::Constant*    MaxArraySizeConstant;
   static llvm::Constant*    JavaObjectSizeConstant;
 
-  static llvm::GlobalVariable* ArrayObjectVirtualTableGV;
-  static llvm::GlobalVariable* JavaObjectVirtualTableGV;
-  
-  static llvm::Function* GetExceptionFunction;
-  static llvm::Function* GetJavaExceptionFunction;
-  static llvm::Function* ThrowExceptionFunction;
-  static llvm::Function* ClearExceptionFunction;
-  static llvm::Function* CompareExceptionFunction;
-  static llvm::Function* NullPointerExceptionFunction;
-  static llvm::Function* IndexOutOfBoundsExceptionFunction;
-  static llvm::Function* ClassCastExceptionFunction;
-  static llvm::Function* OutOfMemoryErrorFunction;
-  static llvm::Function* NegativeArraySizeExceptionFunction;
+  llvm::Function* GetExceptionFunction;
+  llvm::Function* GetJavaExceptionFunction;
+  llvm::Function* ThrowExceptionFunction;
+  llvm::Function* ClearExceptionFunction;
+  llvm::Function* CompareExceptionFunction;
+  llvm::Function* NullPointerExceptionFunction;
+  llvm::Function* IndexOutOfBoundsExceptionFunction;
+  llvm::Function* ClassCastExceptionFunction;
+  llvm::Function* OutOfMemoryErrorFunction;
+  llvm::Function* NegativeArraySizeExceptionFunction;
 
   static void InitField(JavaField* field);
   static void InitField(JavaField* field, JavaObject* obj, uint64 val = 0);
@@ -418,11 +346,7 @@ public:
     return sign->getInfo<LLVMSignatureInfo>();
   }
   
-  static LLVMCommonClassInfo* getClassInfo(CommonClass* cl) {
-    if (cl->isArray() || cl->isPrimitive()) {
-      return cl->getInfo<LLVMCommonClassInfo>();
-    } 
-    
+  static LLVMClassInfo* getClassInfo(Class* cl) {
     return cl->getInfo<LLVMClassInfo>();
   }
 
@@ -434,22 +358,22 @@ public:
     return method->getInfo<LLVMMethodInfo>();
   }
 
-  static LLVMConstantPoolInfo* getConstantPoolInfo(JavaConstantPool* ctp) {
-    return ctp->getInfo<LLVMConstantPoolInfo>();
-  }
-  
   static LLVMAssessorInfo& getTypedefInfo(Typedef* type);
   
-  LLVMStringInfo* getStringInfo(JavaString* str);
-
-#ifdef SERVICE_VM
-  static LLVMServiceInfo* getServiceInfo(ServiceDomain* service) {
-    return service->getInfo<LLVMServiceInfo>();
-  }
-#endif
-  
   explicit JnjvmModule(const std::string &ModuleID);
-  void initialise();
+  static void initialise();
+
+  llvm::Value* getNativeClass(CommonClass* cl, JavaJIT* jit);
+  llvm::Value* getJavaClass(CommonClass* cl, JavaJIT* jit);
+  llvm::Value* getStaticInstance(Class* cl, JavaJIT* jit);
+  llvm::Value* getVirtualTable(CommonClass* cl, JavaJIT* jit);
+  
+  llvm::Value* getString(JavaString* str, JavaJIT* jit);
+  llvm::Value* getConstantPool(JavaConstantPool* ctp, JavaJIT* jit);
+
+private:
+  static llvm::Module* initialModule;
+
 };
 
 }

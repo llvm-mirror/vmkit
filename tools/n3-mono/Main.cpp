@@ -21,7 +21,7 @@ int main(int argc, char **argv, char **envp) {
   llvm::llvm_shutdown_obj X;  
   int base;
     
-  jit::initialise();
+  MvmModule::initialise();
   Object::initialise();
   Thread::initialise();
   Collector::initialise(0, &base);

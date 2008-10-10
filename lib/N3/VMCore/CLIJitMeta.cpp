@@ -231,7 +231,7 @@ GenericValue VMMethod::operator()(va_list ap) {
     }
   }
   
-  return mvm::jit::executionEngine->runFunction(func, args);
+  return mvm::MvmModule::executionEngine->runFunction(func, args);
 }
 
 GenericValue VMMethod::operator()(VMObject* obj, va_list ap) {
@@ -278,7 +278,7 @@ GenericValue VMMethod::operator()(VMObject* obj, va_list ap) {
     }
   }
       
-  return mvm::jit::executionEngine->runFunction(func, args);
+  return mvm::MvmModule::executionEngine->runFunction(func, args);
 }
 
 
@@ -304,7 +304,7 @@ GenericValue VMMethod::operator()(std::vector<GenericValue>& args) {
     classDef->resolveType(true, true, NULL);
   
   Function* func = compiledPtr(NULL);
-  return mvm::jit::executionEngine->runFunction(func, args);
+  return mvm::MvmModule::executionEngine->runFunction(func, args);
 }
 
 GenericValue VMObject::operator()(VMField* field) {
@@ -364,7 +364,7 @@ GlobalVariable* VMCommonClass::llvmVar() {
   if (!_llvmVar) {
     aquire();
     if (!_llvmVar) {
-      const Type* pty = mvm::jit::ptrType;
+      const Type* pty = mvm::MvmModule::ptrType;
       Constant* cons = 
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
                                     pty);
@@ -384,7 +384,7 @@ GlobalVariable* VMField::llvmVar() {
   if (!_llvmVar) {
     classDef->aquire();
     if (!_llvmVar) {
-      const Type* pty = mvm::jit::ptrType;
+      const Type* pty = mvm::MvmModule::ptrType;
       Constant* cons = 
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
                                   pty);
@@ -403,7 +403,7 @@ GlobalVariable* VMMethod::llvmVar() {
   if (!_llvmVar) {
     classDef->aquire();
     if (!_llvmVar) {
-      const Type* pty = mvm::jit::ptrType;
+      const Type* pty = mvm::MvmModule::ptrType;
       Constant* cons = 
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
                                   pty);
@@ -420,5 +420,5 @@ GlobalVariable* VMMethod::llvmVar() {
 }
 
 ConstantInt* VMObject::classOffset() {
-  return mvm::jit::constantOne;
+  return mvm::MvmModule::constantOne;
 }

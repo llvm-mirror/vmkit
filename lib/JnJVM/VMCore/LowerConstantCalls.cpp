@@ -37,6 +37,7 @@ namespace mvm {
   static RegisterPass<LowerConstantCalls> X("LowerConstantCalls",
                                             "Lower Constant calls");
 bool LowerConstantCalls::runOnFunction(Function& F) {
+  JnjvmModule* module = (JnjvmModule*)F.getParent();
   bool Changed = false;
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
@@ -47,87 +48,87 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
       Instruction* CI = Call.getInstruction();
       if (CI) {
         Value* V = Call.getCalledValue();
-        if (V == jnjvm::JnjvmModule::ArrayLengthFunction) {
+        if (V == module->ArrayLengthFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); // get the array
-          Value* array = new BitCastInst(val, jnjvm::JnjvmModule::JavaArrayType,
+          Value* array = new BitCastInst(val, module->JavaArrayType,
                                          "", CI);
           std::vector<Value*> args; //size=  2
-          args.push_back(mvm::jit::constantZero);
-          args.push_back(jnjvm::JnjvmModule::JavaArraySizeOffsetConstant);
+          args.push_back(mvm::MvmModule::constantZero);
+          args.push_back(module->JavaArraySizeOffsetConstant);
           Value* ptr = GetElementPtrInst::Create(array, args.begin(), args.end(),
                                          "", CI);
           Value* load = new LoadInst(ptr, "", CI);
           CI->replaceAllUsesWith(load);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetVTFunction) {
+        } else if (V == module->GetVTFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); // get the object
           std::vector<Value*> indexes; //[3];
-          indexes.push_back(mvm::jit::constantZero);
-          indexes.push_back(mvm::jit::constantZero);
+          indexes.push_back(mvm::MvmModule::constantZero);
+          indexes.push_back(mvm::MvmModule::constantZero);
           Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
                                            indexes.end(), "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetClassFunction) {
+        } else if (V == module->GetClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); // get the object
           std::vector<Value*> args2;
-          args2.push_back(mvm::jit::constantZero);
-          args2.push_back(jnjvm::JnjvmModule::JavaObjectClassOffsetConstant);
+          args2.push_back(mvm::MvmModule::constantZero);
+          args2.push_back(module->JavaObjectClassOffsetConstant);
           Value* classPtr = GetElementPtrInst::Create(val, args2.begin(),
                                                       args2.end(), "",
                                                       CI);
           Value* cl = new LoadInst(classPtr, "", CI);
           CI->replaceAllUsesWith(cl);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetVTFromClassFunction) {
+        } else if (V == module->GetVTFromClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
           std::vector<Value*> indexes; 
-          indexes.push_back(mvm::jit::constantZero);
-          indexes.push_back(jnjvm::JnjvmModule::OffsetVTInClassConstant);
+          indexes.push_back(mvm::MvmModule::constantZero);
+          indexes.push_back(module->OffsetVTInClassConstant);
           Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                    indexes.end(), "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetObjectSizeFromClassFunction) {
+        } else if (V == module->GetObjectSizeFromClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
           std::vector<Value*> indexes; 
-          indexes.push_back(mvm::jit::constantZero);
-          indexes.push_back(JnjvmModule::OffsetObjectSizeInClassConstant);
+          indexes.push_back(mvm::MvmModule::constantZero);
+          indexes.push_back(module->OffsetObjectSizeInClassConstant);
           Value* SizePtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                    indexes.end(), "", CI);
           Value* Size = new LoadInst(SizePtr, "", CI);
           CI->replaceAllUsesWith(Size);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetDepthFunction) {
+        } else if (V == module->GetDepthFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
           std::vector<Value*> indexes; 
-          indexes.push_back(mvm::jit::constantZero);
-          indexes.push_back(JnjvmModule::OffsetDepthInClassConstant);
+          indexes.push_back(mvm::MvmModule::constantZero);
+          indexes.push_back(module->OffsetDepthInClassConstant);
           Value* DepthPtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                       indexes.end(), "", CI);
           Value* Depth = new LoadInst(DepthPtr, "", CI);
           CI->replaceAllUsesWith(Depth);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetDisplayFunction) {
+        } else if (V == module->GetDisplayFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
           std::vector<Value*> indexes; 
-          indexes.push_back(mvm::jit::constantZero);
-          indexes.push_back(JnjvmModule::OffsetDisplayInClassConstant);
+          indexes.push_back(mvm::MvmModule::constantZero);
+          indexes.push_back(module->OffsetDisplayInClassConstant);
           Value* DisplayPtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                         indexes.end(), "", CI);
           Value* Display = new LoadInst(DisplayPtr, "", CI);
           CI->replaceAllUsesWith(Display);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetClassInDisplayFunction) {
+        } else if (V == module->GetClassInDisplayFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
           Value* depth = Call.getArgument(1); 
@@ -135,7 +136,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* Class = new LoadInst(ClassPtr, "", CI);
           CI->replaceAllUsesWith(Class);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::InstanceOfFunction) {
+        } else if (V == module->InstanceOfFunction) {
           ConstantExpr* CE = dyn_cast<ConstantExpr>(Call.getArgument(1));
           if (CE) {
             ConstantInt* C = (ConstantInt*)CE->getOperand(0);
@@ -145,21 +146,21 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             I->getParent()->getTerminator()->eraseFromParent();
             Value* obj = Call.getArgument(0);
             Instruction* cmp = new ICmpInst(ICmpInst::ICMP_EQ, obj,
-                                            JnjvmModule::JavaObjectNullConstant,
+                                            module->JavaObjectNullConstant,
                                             "", CI);
             BasicBlock* ifTrue = BasicBlock::Create("", &F);
             BasicBlock* ifFalse = BasicBlock::Create("", &F);
             BranchInst::Create(ifTrue, ifFalse, cmp, CI);
             PHINode* node = PHINode::Create(Type::Int1Ty, "", ifTrue);
             node->addIncoming(ConstantInt::getFalse(), CI->getParent());
-            Value* objCl = CallInst::Create(JnjvmModule::GetClassFunction, obj,
+            Value* objCl = CallInst::Create(module->GetClassFunction, obj,
                                             "", ifFalse);
             
             if (isInterface(cl->access)) {
               std::vector<Value*> args;
               args.push_back(objCl);
               args.push_back(CE);
-              Value* res = CallInst::Create(JnjvmModule::ImplementsFunction,
+              Value* res = CallInst::Create(module->ImplementsFunction,
                                             args.begin(), args.end(), "",
                                             ifFalse);
               node->addIncoming(res, ifFalse);
@@ -174,7 +175,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                 std::vector<Value*> args;
                 args.push_back(objCl);
                 args.push_back(CE);
-                cmp = CallInst::Create(JnjvmModule::IsAssignableFromFunction,
+                cmp = CallInst::Create(module->IsAssignableFromFunction,
                                        args.begin(), args.end(), "", notEquals);
                 node->addIncoming(cmp, notEquals);
                 BranchInst::Create(ifTrue, notEquals);
@@ -183,7 +184,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                 args.push_back(objCl);
                 args.push_back(CE);
                 Value* res = 
-                  CallInst::Create(JnjvmModule::InstantiationOfArrayFunction,
+                  CallInst::Create(module->InstantiationOfArrayFunction,
                                    args.begin(), args.end(), "", notEquals);
                 node->addIncoming(res, notEquals);
                 BranchInst::Create(ifTrue, notEquals);
@@ -192,10 +193,10 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                 if (cl->isResolved()) {
                   depthCl = ConstantInt::get(Type::Int32Ty, cl->depth);
                 } else {
-                  depthCl = CallInst::Create(JnjvmModule::GetDepthFunction,
+                  depthCl = CallInst::Create(module->GetDepthFunction,
                                              CE, "", notEquals);
                 }
-                Value* depthClObj = CallInst::Create(JnjvmModule::GetDepthFunction,
+                Value* depthClObj = CallInst::Create(module->GetDepthFunction,
                                                      objCl, "", notEquals);
                 Value* cmp = new ICmpInst(ICmpInst::ICMP_ULE, depthCl, depthClObj, "",
                                           notEquals);
@@ -206,14 +207,14 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                 node->addIncoming(ConstantInt::getFalse(), notEquals);
   
                 Value* inDisplay = 
-                  CallInst::Create(JnjvmModule::GetDisplayFunction, objCl,
+                  CallInst::Create(module->GetDisplayFunction, objCl,
                                    "", supDepth);
             
                 std::vector<Value*> args;
                 args.push_back(inDisplay);
                 args.push_back(depthCl);
                 Value* clInDisplay = 
-                  CallInst::Create(JnjvmModule::GetClassInDisplayFunction,
+                  CallInst::Create(module->GetClassInDisplayFunction,
                                    args.begin(), args.end(), "", supDepth);
              
                 cmp = new ICmpInst(ICmpInst::ICMP_EQ, clInDisplay, CE, "",
@@ -229,7 +230,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           }
         }
         
-        else if (V == jnjvm::JnjvmModule::GetConstantPoolAtFunction) {
+        else if (V == module->GetConstantPoolAtFunction) {
           Function* resolver = dyn_cast<Function>(Call.getArgument(0));
           assert(resolver && "Wrong use of GetConstantPoolAt");
           const Type* returnType = resolver->getReturnType();
@@ -259,7 +260,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                                                   indexes.end(),  "", CI);
           arg1 = new LoadInst(arg1, "", false, CI);
           Value* test = new ICmpInst(ICmpInst::ICMP_EQ, arg1,
-                                     mvm::jit::constantPtrNull, "", CI);
+                                     mvm::MvmModule::constantPtrNull, "", CI);
  
           BasicBlock* trueCl = BasicBlock::Create("Ctp OK", &F);
           BasicBlock* falseCl = BasicBlock::Create("Ctp Not OK", &F);
@@ -303,12 +304,12 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           break;
         }
 #ifdef MULTIPLE_GC
-        else if (V == jnjvm::JnjvmModule::GetCollectorFunction) {
+        else if (V == module->GetCollectorFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
           std::vector<Value*> indexes; 
-          indexes.push_back(mvm::jit::constantOne);
-          val = new BitCastInst(val, mvm::jit::ptrPtrType, "", CI);
+          indexes.push_back(mvm::MvmModule::constantOne);
+          val = new BitCastInst(val, mvm::MvmModule::ptrPtrType, "", CI);
           Value* CollectorPtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                           indexes.end(), "",
                                                           CI);
@@ -319,47 +320,47 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 #endif
 
 #ifdef ISOLATE_SHARING
-        else if (V == jnjvm::JnjvmModule::GetCtpClassFunction) {
+        else if (V == module->GetCtpClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
           std::vector<Value*> indexes; 
-          indexes.push_back(mvm::jit::constantZero);
-          indexes.push_back(jnjvm::JnjvmModule::OffsetCtpInClassConstant);
+          indexes.push_back(mvm::MvmModule::constantZero);
+          indexes.push_back(module->OffsetCtpInClassConstant);
           Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                    indexes.end(), "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetCtpCacheNodeFunction) {
+        } else if (V == module->GetCtpCacheNodeFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
           std::vector<Value*> indexes; 
-          indexes.push_back(mvm::jit::constantZero);
-          indexes.push_back(mvm::jit::constantFour);
+          indexes.push_back(mvm::MvmModule::constantZero);
+          indexes.push_back(mvm::MvmModule::constantFour);
           Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                    indexes.end(), "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetJnjvmArrayClassFunction) {
+        } else if (V == module->GetJnjvmArrayClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
           Value* index = Call.getArgument(1); 
           std::vector<Value*> indexes; 
-          indexes.push_back(mvm::jit::constantZero);
-          indexes.push_back(mvm::jit::constantTwo);
+          indexes.push_back(mvm::MvmModule::constantZero);
+          indexes.push_back(mvm::MvmModule::constantTwo);
           indexes.push_back(index);
           Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                    indexes.end(), "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == jnjvm::JnjvmModule::GetJnjvmExceptionClassFunction) {
+        } else if (V == module->GetJnjvmExceptionClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0);
           std::vector<Value*> indexes;
-          indexes.push_back(mvm::jit::constantZero);
-          indexes.push_back(mvm::jit::constantOne);
+          indexes.push_back(mvm::MvmModule::constantZero);
+          indexes.push_back(mvm::MvmModule::constantOne);
           Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
                                                    indexes.end(), "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
@@ -391,6 +392,7 @@ class VISIBILITY_HIDDEN LowerForcedCalls : public FunctionPass {
                                             "Lower Forced calls");
 
 bool LowerForcedCalls::runOnFunction(Function& F) {
+  JnjvmModule* module = (JnjvmModule*)F.getParent();
   bool Changed = false;
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
@@ -399,7 +401,7 @@ bool LowerForcedCalls::runOnFunction(Function& F) {
       II++;
       if (CallInst *CI = dyn_cast<CallInst>(I)) {
         Value* V = CI->getOperand(0);
-        if (V == jnjvm::JnjvmModule::ForceInitialisationCheckFunction) {
+        if (V == module->ForceInitialisationCheckFunction) {
           Changed = true;
           CI->eraseFromParent();
         }

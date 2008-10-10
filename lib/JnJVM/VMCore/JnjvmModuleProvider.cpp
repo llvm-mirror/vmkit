@@ -9,6 +9,7 @@
 
 #include "llvm/LinkAllPasses.h"
 #include "llvm/Analysis/LoopPass.h"
+#include "llvm/Analysis/Verifier.h"
 #include "llvm/Support/MutexGuard.h"
 
 #include "mvm/JIT.h"
@@ -74,7 +75,7 @@ JavaMethod* JnjvmModuleProvider::lookupFunction(Function* F) {
 bool JnjvmModuleProvider::materializeFunction(Function *F, 
                                               std::string *ErrInfo) {
   
-  if (mvm::jit::executionEngine->getPointerToGlobalIfAvailable(F))
+  if (mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(F))
     return false;
 
   if (!(F->hasNotBeenReadFromBitcode())) 
@@ -91,7 +92,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   
   void* val = meth->compiledPtr();
   if (F->isDeclaration())
-    mvm::jit::executionEngine->updateGlobalMapping(F, val);
+    mvm::MvmModule::executionEngine->updateGlobalMapping(F, val);
  
   if (isVirtual(meth->access)) {
     LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
@@ -115,8 +116,8 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
 void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
   Function* func = parseFunction(meth);
   
-  void* res = mvm::jit::executionEngine->getPointerToGlobal(func);
-  mvm::Code* m = mvm::jit::getCodeFromPointer(res);
+  void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
+  mvm::Code* m = mvm::MvmModule::getCodeFromPointer(res);
   if (m) m->setMetaInfo(meth);
   func->deleteBody();
 
@@ -128,7 +129,7 @@ Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
   Function* func = LMI->getMethod();
   if (func->hasNotBeenReadFromBitcode()) {
     // We are jitting. Take the lock.
-    llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
+    llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
     JavaJIT jit;
     jit.compilingClass = meth->classDef;
     jit.compilingMethod = meth;
@@ -138,7 +139,7 @@ Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
       jit.nativeCompile();
     } else {
       jit.javaCompile();
-      mvm::jit::runPasses(func, perFunctionPasses);
+      mvm::MvmModule::runPasses(func, perFunctionPasses);
     }
   }
   return func;
@@ -197,9 +198,15 @@ static void addPass(FunctionPassManager *PM, Pass *P) {
 //     -indvars -loop-unroll -instcombine -gvn -sccp -simplifycfg
 //     -instcombine -condprop -dse -adce -simplifycfg
 //
-static void AddStandardCompilePasses(FunctionPassManager *PM) {
-    llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
-  // LLVM does not allow calling functions from other modules in verifier
+static void AddStandardCompilePasses(JnjvmModule* mod, FunctionPassManager *PM) {
+  llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
+  
+  // TODO: enable this when
+  // - we can call multiple times the makeLLVMModuleContents function generated 
+  //   by llc -march=cpp -cppgen=contents
+  // - intrinsics won't be in the .ll files
+  // - each module will have its declaration of external functions
+  // 
   //PM->add(llvm::createVerifierPass());        // Verify that input is correct
   
   addPass(PM, llvm::createCFGSimplificationPass()); // Clean up disgusting code
@@ -226,7 +233,7 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, createSCCPPass());                 // Constant prop with SCCP
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
  
-  Function* func = JnjvmModule::JavaObjectAllocateFunction;
+  Function* func = mod->JavaObjectAllocateFunction;
   addPass(PM, mvm::createEscapeAnalysisPass(func));
   addPass(PM, mvm::createLowerConstantCallsPass());
   
@@ -245,17 +252,17 @@ static void AddStandardCompilePasses(FunctionPassManager *PM) {
 
 JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
   TheModule = (Module*)m;
-  mvm::jit::protectEngine->lock();
-  mvm::jit::executionEngine->addModuleProvider(this);
-  mvm::jit::protectEngine->unlock();
+  mvm::MvmModule::protectEngine->lock();
+  mvm::MvmModule::executionEngine->addModuleProvider(this);
+  mvm::MvmModule::protectEngine->unlock();
   perFunctionPasses = new llvm::FunctionPassManager(this);
   perFunctionPasses->add(new llvm::TargetData(m));
-  AddStandardCompilePasses(perFunctionPasses);
+  AddStandardCompilePasses(m, perFunctionPasses);
 }
 
 JnjvmModuleProvider::~JnjvmModuleProvider() {
-  mvm::jit::protectEngine->lock();
-  mvm::jit::executionEngine->removeModuleProvider(this);
-  mvm::jit::protectEngine->unlock();
+  mvm::MvmModule::protectEngine->lock();
+  mvm::MvmModule::executionEngine->removeModuleProvider(this);
+  mvm::MvmModule::protectEngine->unlock();
   delete TheModule;
 }

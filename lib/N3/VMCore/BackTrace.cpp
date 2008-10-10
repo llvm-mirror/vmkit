@@ -26,10 +26,10 @@ using namespace n3;
 
 void CLIJit::printBacktrace() {
   int* ips[100];
-  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 100);
+  int real_size = mvm::MvmModule::getBacktrace((void**)(void*)ips, 100);
   int n = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
+    mvm::Code* code = mvm::MvmModule::getCodeFromPointer(ips[n++]);
     if (code) {
       VMMethod* meth = (VMMethod*)code->getMetaInfo();
       if (meth) {
@@ -53,10 +53,10 @@ void CLIJit::printBacktrace() {
 
 Assembly* Assembly::getExecutingAssembly() {
   int* ips[5];
-  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 5);
+  int real_size = mvm::MvmModule::getBacktrace((void**)(void*)ips, 5);
   int n = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
+    mvm::Code* code = mvm::MvmModule::getCodeFromPointer(ips[n++]);
     if (code) {
       VMMethod* meth = (VMMethod*)code->getMetaInfo();
       if (meth) {
@@ -69,11 +69,11 @@ Assembly* Assembly::getExecutingAssembly() {
 
 Assembly* Assembly::getCallingAssembly() {
   int* ips[5];
-  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 5);
+  int real_size = mvm::MvmModule::getBacktrace((void**)(void*)ips, 5);
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
+    mvm::Code* code = mvm::MvmModule::getCodeFromPointer(ips[n++]);
     if (code) {
       VMMethod* meth = (VMMethod*)code->getMetaInfo();
       if (meth && i >= 1) {

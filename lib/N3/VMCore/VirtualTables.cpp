@@ -109,11 +109,11 @@ void Enveloppe::TRACER {
 }
 
 void VMArray::TRACER {
-  VMObject::PARENT_TRACER;
+  VMObject::CALL_TRACER;
 }
 
 void ArrayObject::TRACER {
-  VMObject::PARENT_TRACER;
+  VMObject::CALL_TRACER;
   for (sint32 i = 0; i < size; i++) {
     elements[i]->MARK_AND_TRACE;
   }
@@ -121,7 +121,7 @@ void ArrayObject::TRACER {
 
 #define ARRAYTRACER(name)         \
   void name::TRACER {             \
-    VMObject::PARENT_TRACER;      \
+    VMObject::CALL_TRACER;      \
   }
   
 
@@ -164,7 +164,7 @@ void VMCommonClass::TRACER {
 }
 
 void VMClass::TRACER {
-  VMCommonClass::PARENT_TRACER;
+  VMCommonClass::CALL_TRACER;
   staticInstance->MARK_AND_TRACE;
   virtualInstance->MARK_AND_TRACE;
   TRACE_VECTOR(VMClass*, innerClasses, std::allocator);
@@ -173,17 +173,17 @@ void VMClass::TRACER {
 }
 
 void VMGenericClass::TRACER {
-  VMClass::PARENT_TRACER;
+  VMClass::CALL_TRACER;
   TRACE_VECTOR(VMCommonClass*, genericParams, std::allocator);
 }
 
 void VMClassArray::TRACER {
-  VMCommonClass::PARENT_TRACER;
+  VMCommonClass::CALL_TRACER;
   baseClass->MARK_AND_TRACE;
 }
 
 void VMClassPointer::TRACER {
-  VMCommonClass::PARENT_TRACER;
+  VMCommonClass::CALL_TRACER;
   baseClass->MARK_AND_TRACE;
 }
 
@@ -198,7 +198,7 @@ void VMMethod::TRACER {
 }
 
 void VMGenericMethod::TRACER {
-  VMMethod::PARENT_TRACER;
+  VMMethod::CALL_TRACER;
   TRACE_VECTOR(VMCommonClass*, genericParams, std::allocator);
 }
 
@@ -269,7 +269,7 @@ void Assembly::TRACER {
 }
 
 void N3::TRACER {
-  VirtualMachine::PARENT_TRACER;
+  VirtualMachine::CALL_TRACER;
   hashUTF8->MARK_AND_TRACE;
   hashStr->MARK_AND_TRACE;
   loadedAssemblies->MARK_AND_TRACE;

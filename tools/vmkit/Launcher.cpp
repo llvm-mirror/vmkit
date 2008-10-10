@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
   llvm::llvm_shutdown_obj X;
   int base;
    
-  mvm::jit::initialise();
+  mvm::MvmModule::initialise();
   mvm::Object::initialise();
   mvm::Thread::initialise();
   Collector::initialise(0, &base);

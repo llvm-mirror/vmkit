@@ -75,7 +75,7 @@ void CommonClass::TRACER {
 }
 
 void Class::TRACER {
-  CommonClass::PARENT_TRACER;
+  CommonClass::CALL_TRACER;
   bytes->MARK_AND_TRACE;
 #if !defined(ISOLATE)
   _staticInstance->MARK_AND_TRACE;
@@ -83,7 +83,7 @@ void Class::TRACER {
 }
 
 void ClassArray::TRACER {
-  CommonClass::PARENT_TRACER;
+  CommonClass::CALL_TRACER;
 }
 
 void JavaObject::TRACER {
@@ -181,7 +181,7 @@ void JnjvmSharedLoader::TRACER {
 
 #ifdef SERVICE_VM
 void ServiceDomain::TRACER {
-  JavaIsolate::PARENT_TRACER;
+  JavaIsolate::CALL_TRACER;
   classes->MARK_AND_TRACE;
 }
 #endif

@@ -162,7 +162,7 @@ void convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock) {
 }
 
 static void store(Value* val, Value* local, bool vol, 
-                  BasicBlock* currentBlock) {
+                  BasicBlock* currentBlock, mvm::MvmModule* module) {
   const Type* contained = local->getType()->getContainedType(0);
   if (contained->isSingleValueType()) {
     if (val->getType() != contained) {
@@ -170,32 +170,32 @@ static void store(Value* val, Value* local, bool vol,
     }
     new StoreInst(val, local, vol, currentBlock);
   } else if (isa<PointerType>(val->getType())) {
-    uint64 size = mvm::jit::getTypeSize(contained);
+    uint64 size = module->getTypeSize(contained);
         
     std::vector<Value*> params;
     params.push_back(new BitCastInst(local, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
     params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
     params.push_back(ConstantInt::get(Type::Int32Ty, size));
-    params.push_back(mvm::jit::constantZero);
-    CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
+    params.push_back(module->constantZero);
+    CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
   } else {
     new StoreInst(val, local, vol, currentBlock);
   }
 }
 
-static Value* load(Value* val, const char* name, BasicBlock* currentBlock) {
+static Value* load(Value* val, const char* name, BasicBlock* currentBlock, mvm::MvmModule* module) {
   const Type* contained = val->getType()->getContainedType(0);
   if (contained->isSingleValueType()) {
     return new LoadInst(val, name, currentBlock);
   } else {
-    uint64 size = mvm::jit::getTypeSize(contained);
+    uint64 size = module->getTypeSize(contained);
     Value* ret = new AllocaInst(contained, "", currentBlock); 
     std::vector<Value*> params;
     params.push_back(new BitCastInst(ret, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
     params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
     params.push_back(ConstantInt::get(Type::Int32Ty, size));
-    params.push_back(mvm::jit::constantZero);
-    CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
+    params.push_back(module->constantZero);
+    CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
     return ret;
   }
 }
@@ -247,13 +247,13 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       
       case ADD: {
         Value* val2 = pop();
-        bool isPointer = (val2->getType() == mvm::jit::ptrType);
+        bool isPointer = (val2->getType() == module->ptrType);
         Value* val1 = pop();
-        isPointer |= (val1->getType() == mvm::jit::ptrType);
+        isPointer |= (val1->getType() == module->ptrType);
         verifyType(val1, val2, currentBlock);
         Value* res = BinaryOperator::createAdd(val1, val2, "", currentBlock);
         if (isPointer) {
-          res = new IntToPtrInst(res, mvm::jit::ptrType, "", currentBlock);
+          res = new IntToPtrInst(res, module->ptrType, "", currentBlock);
         }
         push(res);
         break;
@@ -767,52 +767,52 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
       
       case LDC_I4_0 : {
-        push(mvm::jit::constantZero);
+        push(module->constantZero);
         break;
       }
       
       case LDC_I4_1 : {
-        push(mvm::jit::constantOne);
+        push(module->constantOne);
         break;
       }
       
       case LDC_I4_2 : {
-        push(mvm::jit::constantTwo);
+        push(module->constantTwo);
         break;
       }
       
       case LDC_I4_3 : {
-        push(mvm::jit::constantThree);
+        push(module->constantThree);
         break;
       }
       
       case LDC_I4_4 : {
-        push(mvm::jit::constantFour);
+        push(module->constantFour);
         break;
       }
       
       case LDC_I4_5 : {
-        push(mvm::jit::constantFive);
+        push(module->constantFive);
         break;
       }
       
       case LDC_I4_6 : {
-        push(mvm::jit::constantSix);
+        push(module->constantSix);
         break;
       }
       
       case LDC_I4_7 : {
-        push(mvm::jit::constantSeven);
+        push(module->constantSeven);
         break;
       }
       
       case LDC_I4_8 : {
-        push(mvm::jit::constantEight);
+        push(module->constantEight);
         break;
       }
       
       case LDC_I4_M1 : {
-        push(mvm::jit::constantMinusOne);
+        push(module->constantMinusOne);
         break;
       }
       
@@ -895,31 +895,31 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
  
       case LDLOC_S : {
-        Value* val = load(locals[readU1(bytecodes, i)], "", currentBlock);
+        Value* val = load(locals[readU1(bytecodes, i)], "", currentBlock, module);
         push(val);
         break;
       }
       
       case LDLOC_0 : {
-        Value* val = load(locals[0], "", currentBlock);
+        Value* val = load(locals[0], "", currentBlock, module);
         push(val);
         break;
       }
       
       case LDLOC_1 : {
-        Value* val = load(locals[1], "", currentBlock);
+        Value* val = load(locals[1], "", currentBlock, module);
         push(val);
         break;
       }
       
       case LDLOC_2 : {
-        Value* val = load(locals[2], "", currentBlock);
+        Value* val = load(locals[2], "", currentBlock, module);
         push(val);
         break;
       }
       
       case LDLOC_3 : {
-        Value* val = load(locals[3], "", currentBlock);
+        Value* val = load(locals[3], "", currentBlock, module);
         push(val);
         break;
       }
@@ -1199,35 +1199,35 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case STLOC_S : {
         Value* val = pop();
         Value* local = locals[readU1(bytecodes, i)];
-        store(val, local, false, currentBlock);
+        store(val, local, false, currentBlock, module);
         break;
       }
       
       case STLOC_0 : {
         Value* val = pop();
         Value* local = locals[0];
-        store(val, local, false, currentBlock);
+        store(val, local, false, currentBlock, module);
         break;
       }
       
       case STLOC_1 : {
         Value* val = pop();
         Value* local = locals[1];
-        store(val, local, false, currentBlock);
+        store(val, local, false, currentBlock, module);
         break;
       }
       
       case STLOC_2 : {
         Value* val = pop();
         Value* local = locals[2];
-        store(val, local, false, currentBlock);
+        store(val, local, false, currentBlock, module);
         break;
       }
       
       case STLOC_3 : {
         Value* val = pop();
         Value* local = locals[3];
-        store(val, local, false, currentBlock);
+        store(val, local, false, currentBlock, module);
         break;
       }
       
@@ -1293,8 +1293,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
     
 
         std::vector<Value*> ptrs;
-        ptrs.push_back(mvm::jit::constantZero);
-        ptrs.push_back(mvm::jit::constantOne);
+        ptrs.push_back(module->constantZero);
+        ptrs.push_back(module->constantOne);
         Value* ptr = GetElementPtrInst::Create(obj, ptrs.begin(), ptrs.end(), "", 
                                            currentBlock);
 
@@ -1306,14 +1306,14 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         }
         
         
-        uint64 size = mvm::jit::getTypeSize(type->naturalType);
+        uint64 size = module->getTypeSize(type->naturalType);
         
         std::vector<Value*> params;
         params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
         params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
         params.push_back(ConstantInt::get(Type::Int32Ty, size));
-        params.push_back(mvm::jit::constantZero);
-        CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
+        params.push_back(module->constantZero);
+        CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
         
 
         push(obj);
@@ -1351,7 +1351,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
                                    "", ifFalse);
      
         cmp = new ICmpInst(ICmpInst::ICMP_EQ, call,
-                           mvm::jit::constantZero, "", ifFalse);
+                           module->constantZero, "", ifFalse);
 
         BasicBlock* ex = createBasicBlock("false checkcast");
         branch(cmp, ex, ifTrue, ifFalse);
@@ -1408,7 +1408,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
                                    "", ifFalse);
      
         cmp = new ICmpInst(ICmpInst::ICMP_EQ, call,
-                           mvm::jit::constantZero, "", ifFalse);
+                           module->constantZero, "", ifFalse);
 
         BasicBlock* falseInst = createBasicBlock("false isinst");
         BasicBlock* trueInst = createBasicBlock("true isinst");
@@ -1581,7 +1581,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         uint32 index = value & 0xfffffff;
         const UTF8* utf8 = compilingClass->assembly->readUserString(index);
         Value* val = ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, (int64_t)utf8),
-                                               mvm::jit::ptrType);
+                                               module->ptrType);
         Value* res = CallInst::Create(newStringLLVM, val, "", currentBlock);
         /*CLIString * str = 
           (CLIString*)(((N3*)VMThread::get()->vm)->UTF8ToStr(utf8));
@@ -1802,19 +1802,19 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         }
         
         std::vector<Value*> ptrs;
-        ptrs.push_back(mvm::jit::constantZero);
-        ptrs.push_back(mvm::jit::constantOne);
+        ptrs.push_back(module->constantZero);
+        ptrs.push_back(module->constantOne);
         Value* ptr = GetElementPtrInst::Create(obj, ptrs.begin(), ptrs.end(), "", 
                                            currentBlock);
 
-        uint64 size = mvm::jit::getTypeSize(type->naturalType);
+        uint64 size = module->getTypeSize(type->naturalType);
         
         std::vector<Value*> params;
         params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
         params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
         params.push_back(ConstantInt::get(Type::Int32Ty, size));
-        params.push_back(mvm::jit::constantZero);
-        CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
+        params.push_back(module->constantZero);
+        CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
         
 
         push(val);
@@ -1865,7 +1865,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
             args.push_back(one);
             args.push_back(two);
             args.push_back(three);
-            CallInst::Create(mvm::jit::llvm_memcpy_i32,
+            CallInst::Create(module->llvm_memcpy_i32,
                          args.begin(), args.end(), "", currentBlock);
             isVolatile = false;
             break;
@@ -1912,7 +1912,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
             args.push_back(one);
             args.push_back(two);
             args.push_back(three);
-            CallInst::Create(mvm::jit::llvm_memset_i32,
+            CallInst::Create(module->llvm_memset_i32,
                          args.begin(), args.end(), "", currentBlock);
             isVolatile = false;
             break;
@@ -1936,7 +1936,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           case STLOC : {
             Value* val = pop();
             Value* local = locals[readU2(bytecodes, i)];
-            store(val, local, false, currentBlock);
+            store(val, local, false, currentBlock, module);
             break;
           }
           
@@ -1957,15 +1957,15 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
             VMCommonClass* type = assembly->loadType(vm, token, true, false, false,
                                                      true, genClass, genMethod);
             if (type->super == MSCorlib::pValue) {
-              uint64 size = mvm::jit::getTypeSize(type->naturalType);
+              uint64 size = module->getTypeSize(type->naturalType);
         
               std::vector<Value*> params;
-              params.push_back(new BitCastInst(pop(), mvm::jit::ptrType, "",
+              params.push_back(new BitCastInst(pop(), module->ptrType, "",
                                                currentBlock));
-              params.push_back(mvm::jit::constantInt8Zero);
+              params.push_back(module->constantInt8Zero);
               params.push_back(ConstantInt::get(Type::Int32Ty, size));
-              params.push_back(mvm::jit::constantZero);
-              CallInst::Create(mvm::jit::llvm_memset_i32, params.begin(),
+              params.push_back(module->constantZero);
+              CallInst::Create(module->llvm_memset_i32, params.begin(),
                                params.end(), "", currentBlock);
             }
 

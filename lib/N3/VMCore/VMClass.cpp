@@ -251,7 +251,7 @@ void VMCommonClass::clinitClass(VMGenericMethod* genMethod) {
       if (meth) {
         llvm::Function* pred = meth->compiledPtr(genMethod);
         clinit_t res = (clinit_t)
-          (intptr_t)mvm::jit::executionEngine->getPointerToGlobal(pred);
+          (intptr_t)mvm::MvmModule::executionEngine->getPointerToGlobal(pred);
         res();
       }
 
@@ -291,7 +291,7 @@ void VMClass::resolveStaticFields(VMGenericMethod* genMethod) {
 
   VirtualTable* VT = CLIJit::makeVT(cl, true);
 
-  uint64 size = mvm::jit::getTypeSize(cl->staticType->getContainedType(0));
+  uint64 size = mvm::MvmModule::getTypeSize(cl->staticType->getContainedType(0));
   cl->staticInstance = (VMObject*)gc::operator new(size, VT);
   cl->staticInstance->initialise(cl);
 
@@ -320,7 +320,7 @@ void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* ge
     if (super == MSCorlib::pValue) {
       uint32 size = virtualFields.size();
       if (size == 1) {
-        virtualFields[0]->offset = mvm::jit::constantZero;
+        virtualFields[0]->offset = mvm::MvmModule::constantZero;
         ResultTy = virtualFields[0]->signature->naturalType;
       } else if (size == 0) {
         ResultTy = Type::VoidTy;
@@ -460,7 +460,7 @@ void VMCommonClass::resolveVT() {
         if (super != MSCorlib::pEnum && !cl->virtualInstance) {
           VirtualTable* VT = CLIJit::makeVT(cl, false);
   
-          uint64 size = mvm::jit::getTypeSize(cl->virtualType->getContainedType(0));
+          uint64 size = mvm::MvmModule::getTypeSize(cl->virtualType->getContainedType(0));
           cl->virtualInstance = (VMObject*)gc::operator new(size, VT);
           cl->virtualInstance->initialise(cl);
 
@@ -614,14 +614,14 @@ VMField* VMCommonClass::lookupField(const UTF8* name, VMCommonClass* type,
 }
 
 VMObject* VMClass::initialiseObject(VMObject* obj) {
-  uint64 size = mvm::jit::getTypeSize(virtualType->getContainedType(0));
+  uint64 size = mvm::MvmModule::getTypeSize(virtualType->getContainedType(0));
   memcpy(obj, virtualInstance, size);
   return obj;
 }
 
 VMObject* VMClass::doNew() {
   if (status < inClinit) resolveType(true, true, NULL);
-  uint64 size = mvm::jit::getTypeSize(virtualType->getContainedType(0));
+  uint64 size = mvm::MvmModule::getTypeSize(virtualType->getContainedType(0));
   VMObject* res = (VMObject*)
     gc::operator new(size, virtualInstance->getVirtualTable());
   memcpy(res, virtualInstance, size);
@@ -630,7 +630,7 @@ VMObject* VMClass::doNew() {
 
 VMObject* VMClassArray::doNew(uint32 nb) {
   if (status < inClinit) resolveType(true, true, NULL);
-  uint64 size = mvm::jit::getTypeSize(baseClass->naturalType);
+  uint64 size = mvm::MvmModule::getTypeSize(baseClass->naturalType);
   VMArray* res = (VMArray*)
     gc::operator new(size * nb + sizeof(VMObject) + sizeof(sint32), arrayVT);
   memset(res->elements, 0, size * nb);

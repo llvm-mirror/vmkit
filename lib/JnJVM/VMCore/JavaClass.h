@@ -498,18 +498,6 @@ public:
   ///
   CommonClass();
   
-  mvm::JITInfo* JInfo;
-  template<typename Ty> 
-  Ty *getInfo() {
-    if (!JInfo) {
-      JInfo = new Ty(this);
-    }   
-
-    assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
-           "Invalid concrete type or multiple inheritence for getInfo");
-    return static_cast<Ty*>(JInfo);
-  }
-
   void getDeclaredConstructors(std::vector<JavaMethod*>& res, bool publicOnly);
   void getDeclaredMethods(std::vector<JavaMethod*>& res, bool publicOnly);
   void getDeclaredFields(std::vector<JavaField*>& res, bool publicOnly);
@@ -696,6 +684,18 @@ public:
     return &innerClasses;
   }
 #endif
+  
+  mvm::JITInfo* JInfo;
+  template<typename Ty> 
+  Ty *getInfo() {
+    if (!JInfo) {
+      JInfo = new Ty(this);
+    }   
+
+    assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
+           "Invalid concrete type or multiple inheritence for getInfo");
+    return static_cast<Ty*>(JInfo);
+  }
 
    
 };

@@ -188,7 +188,6 @@ uint32 JavaConstantPool::CtpReaderDouble(JavaConstantPool* ctp, Reader& reader,
 JavaConstantPool::JavaConstantPool(Class* cl, Reader& reader) {
   ctpSize = reader.readU2();
   classDef = cl;
-  JInfo = 0;
   
   ctpRes   = new void*[ctpSize];
   ctpDef   = new sint32[ctpSize];

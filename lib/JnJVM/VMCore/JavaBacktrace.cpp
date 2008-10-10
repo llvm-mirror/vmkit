@@ -23,7 +23,7 @@
 using namespace jnjvm;
 
 JavaMethod* JavaJIT::IPToJavaMethod(void* begIp) {
-  mvm::Code* code = mvm::jit::getCodeFromPointer(begIp);
+  mvm::Code* code = mvm::MvmModule::getCodeFromPointer(begIp);
   if (code) {
     JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
     if (meth) {
@@ -35,10 +35,10 @@ JavaMethod* JavaJIT::IPToJavaMethod(void* begIp) {
 
 void JavaJIT::printBacktrace() {
   int* ips[100];
-  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 100);
+  int real_size = mvm::MvmModule::getBacktrace((void**)(void*)ips, 100);
   int n = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
+    mvm::Code* code = mvm::MvmModule::getCodeFromPointer(ips[n++]);
     if (code) {
       JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
       if (meth) {
@@ -64,11 +64,11 @@ void JavaJIT::printBacktrace() {
 #ifndef ISOLATE_SHARING
 UserClass* JavaJIT::getCallingClass() {
   int* ips[10];
-  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
+  int real_size = mvm::MvmModule::getBacktrace((void**)(void*)ips, 10);
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
+    mvm::Code* code = mvm::MvmModule::getCodeFromPointer(ips[n++]);
     if (code) {
       JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
       if (meth) {
@@ -85,11 +85,11 @@ UserClass* JavaJIT::getCallingClass() {
 
 UserClass* JavaJIT::getCallingClassWalker() {
   int* ips[10];
-  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
+  int real_size = mvm::MvmModule::getBacktrace((void**)(void*)ips, 10);
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
+    mvm::Code* code = mvm::MvmModule::getCodeFromPointer(ips[n++]);
     if (code) {
       JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
       if (meth) {
@@ -109,11 +109,11 @@ UserClass* JavaJIT::getCallingClass() {
   Class* res = 0;
 
   int* ips[10];
-  int real_size = mvm::jit::getBacktrace((void**)(void*)ips, 10);
+  int real_size = mvm::MvmModule::getBacktrace((void**)(void*)ips, 10);
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::jit::getCodeFromPointer(ips[n++]);
+    mvm::Code* code = mvm::MvmModule::getCodeFromPointer(ips[n++]);
     if (code) {
       JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
       if (meth) {

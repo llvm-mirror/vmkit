@@ -87,10 +87,10 @@ void CLIJit::invokeInterfaceOrVirtual(uint32 value, VMGenericClass* genClass, VM
   Enveloppe* enveloppe = Enveloppe::allocate(origMeth);
   compilingMethod->caches.push_back(enveloppe);
   
-  Value* zero = mvm::jit::constantZero;
-  Value* one = mvm::jit::constantOne;
-  Value* two = mvm::jit::constantTwo;
-  Value* five = mvm::jit::constantFive;
+  Value* zero = module->constantZero;
+  Value* one = module->constantOne;
+  Value* two = module->constantTwo;
+  Value* five = module->constantFive;
   
   Value* llvmEnv = 
     ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (enveloppe)),

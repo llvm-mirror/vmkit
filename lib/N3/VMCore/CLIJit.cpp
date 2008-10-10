@@ -106,7 +106,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
   Value* GC = ++(block->getParent()->arg_begin());
 #endif
   
-  Constant* zero = mvm::jit::constantZero;
+  Constant* zero = mvm::MvmModule::constantZero;
   for (std::vector<VMField*>::iterator i = fields.begin(), 
             e = fields.end(); i!= e; ++i) {
     VMField* field = *i;
@@ -160,9 +160,9 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
   Argument* GC = ++(func->arg_begin());
 #endif
     // Constant Definitions
-  Constant* const_int32_8 = mvm::jit::constantZero;
-  ConstantInt* const_int32_9 = mvm::jit::constantOne;
-  ConstantInt* const_int32_10 = mvm::jit::constantTwo;
+  Constant* const_int32_8 = mvm::MvmModule::constantZero;
+  ConstantInt* const_int32_9 = mvm::MvmModule::constantOne;
+  ConstantInt* const_int32_10 = mvm::MvmModule::constantTwo;
   
   
   // Function Definitions
@@ -238,7 +238,7 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
     
   }
   
-  void* tracer = mvm::jit::executionEngine->getPointerToGlobal(func);
+  void* tracer = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
   ((void**)res)[VT_TRACER_OFFSET] = tracer;
   cl->virtualTracer = func;
 #endif
@@ -286,7 +286,7 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
   traceClass(cl, block, realArg, fields, (cl->super == MSCorlib::pValue && !stat));
   ReturnInst::Create(block);
 
-  void* tracer = mvm::jit::executionEngine->getPointerToGlobal(func);
+  void* tracer = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
   ((void**)res)[VT_TRACER_OFFSET] = tracer;
   
   if (!stat) {
@@ -423,28 +423,28 @@ Instruction* CLIJit::lowerMathOps(VMMethod* meth,
                                   std::vector<Value*>& args) {
   
   if (meth->name == N3::sqrt) {
-    return CallInst::Create(mvm::jit::func_llvm_sqrt_f64, args[0], "tmp1", 
+    return CallInst::Create(module->func_llvm_sqrt_f64, args[0], "tmp1", 
                             currentBlock);
   } else if (meth->name == N3::sin) {
-    return CallInst::Create(mvm::jit::func_llvm_sin_f64, args[0], "tmp1",
+    return CallInst::Create(module->func_llvm_sin_f64, args[0], "tmp1",
                             currentBlock);
   } else if (meth->name == N3::cos) {
-    return CallInst::Create(mvm::jit::func_llvm_cos_f64, args[0], "tmp1",
+    return CallInst::Create(module->func_llvm_cos_f64, args[0], "tmp1",
                             currentBlock);
   } else if (meth->name == N3::exp) {
-    return CallInst::Create(mvm::jit::func_llvm_exp_f64, args[0], "tmp1",
+    return CallInst::Create(module->func_llvm_exp_f64, args[0], "tmp1",
                             currentBlock);
   } else if (meth->name == N3::log) {
-    return CallInst::Create(mvm::jit::func_llvm_log_f64, args[0], "tmp1",
+    return CallInst::Create(module->func_llvm_log_f64, args[0], "tmp1",
                             currentBlock);
   } else if (meth->name == N3::floor) {
-    return CallInst::Create(mvm::jit::func_llvm_floor_f64, args[0], "tmp1",
+    return CallInst::Create(module->func_llvm_floor_f64, args[0], "tmp1",
                             currentBlock);
   } else if (meth->name == N3::log10) {
-    return CallInst::Create(mvm::jit::func_llvm_log10_f64, args[0], "tmp1",
+    return CallInst::Create(module->func_llvm_log10_f64, args[0], "tmp1",
                             currentBlock);
   } else if (meth->name == N3::pow) {
-    Instruction* val = CallInst::Create(mvm::jit::func_llvm_pow_f64, 
+    Instruction* val = CallInst::Create(module->func_llvm_pow_f64, 
                                         args.begin(), args.end(), "tmp1",
                                         currentBlock);
     return val;
@@ -457,6 +457,7 @@ Instruction* CLIJit::invokeInline(VMMethod* meth,
                                   std::vector<Value*>& args, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   
   CLIJit* jit = gc_new(CLIJit)();
+  jit->module = meth->classDef->vm->module;
   jit->compilingClass = meth->classDef; 
   jit->compilingMethod = meth;
   
@@ -501,8 +502,8 @@ void CLIJit::invoke(uint32 value, VMGenericClass* genClass, VMGenericMethod* gen
     VMClassArray* base = type;
     for (uint32 v = 0; v < dims; ++v) {
       std::vector<Value*> Args;
-      Args.push_back(mvm::jit::constantZero);
-      Args.push_back(mvm::jit::constantTwo);
+      Args.push_back(module->constantZero);
+      Args.push_back(module->constantTwo);
       Args.push_back(args[v]);
       obj = verifyAndComputePtr(obj, args[v], base->naturalType, true);
       if (v != dims - 1) {
@@ -536,22 +537,22 @@ void CLIJit::invoke(uint32 value, VMGenericClass* genClass, VMGenericMethod* gen
              meth->classDef->name == N3::doubleName) {
     if (meth->name == N3::isNan) {
       push(new FCmpInst(FCmpInst::FCMP_UNO, Args[0], 
-                        mvm::jit::constantDoubleZero, "tmp1", currentBlock));
+                        module->constantDoubleZero, "tmp1", currentBlock));
       return;
     } else if (meth->name == N3::testInfinity) {
       BasicBlock* endBlock = createBasicBlock("end test infinity");
       BasicBlock* minusInfinity = createBasicBlock("- infinity");
       BasicBlock* noInfinity = createBasicBlock("no infinity");
       PHINode* node = PHINode::Create(Type::Int32Ty, "", endBlock);
-      node->addIncoming(mvm::jit::constantOne, currentBlock);
-      node->addIncoming(mvm::jit::constantMinusOne, minusInfinity);
-      node->addIncoming(mvm::jit::constantZero, noInfinity);
+      node->addIncoming(module->constantOne, currentBlock);
+      node->addIncoming(module->constantMinusOne, minusInfinity);
+      node->addIncoming(module->constantZero, noInfinity);
       Value* val1 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0],
-                                 mvm::jit::constantDoubleInfinity, "tmp1",
+                                 module->constantDoubleInfinity, "tmp1",
                                  currentBlock); 
       BranchInst::Create(endBlock, minusInfinity, val1, currentBlock);
       Value* val2 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0], 
-                                 mvm::jit::constantDoubleMinusInfinity, "tmp1",
+                                 module->constantDoubleMinusInfinity, "tmp1",
                                  minusInfinity); 
       BranchInst::Create(endBlock, noInfinity, val2, minusInfinity);
       BranchInst::Create(endBlock, noInfinity);
@@ -563,22 +564,22 @@ void CLIJit::invoke(uint32 value, VMGenericClass* genClass, VMGenericMethod* gen
              meth->classDef->name == N3::floatName) {
     if (meth->name == N3::isNan) {
       push(new FCmpInst(FCmpInst::FCMP_UNO, Args[0], 
-                        mvm::jit::constantFloatZero, "tmp1", currentBlock));
+                        module->constantFloatZero, "tmp1", currentBlock));
       return;
     } else if (meth->name == N3::testInfinity) {
       BasicBlock* endBlock = createBasicBlock("end test infinity");
       BasicBlock* minusInfinity = createBasicBlock("- infinity");
       BasicBlock* noInfinity = createBasicBlock("no infinity");
       PHINode* node = PHINode::Create(Type::Int32Ty, "", endBlock);
-      node->addIncoming(mvm::jit::constantOne, currentBlock);
-      node->addIncoming(mvm::jit::constantMinusOne, minusInfinity);
-      node->addIncoming(mvm::jit::constantZero, noInfinity);
+      node->addIncoming(module->constantOne, currentBlock);
+      node->addIncoming(module->constantMinusOne, minusInfinity);
+      node->addIncoming(module->constantZero, noInfinity);
       Value* val1 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0], 
-                                 mvm::jit::constantFloatInfinity, "tmp1",
+                                 module->constantFloatInfinity, "tmp1",
                                  currentBlock);
       BranchInst::Create(endBlock, minusInfinity, val1, currentBlock);
       Value* val2 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0], 
-                                 mvm::jit::constantFloatMinusInfinity, "tmp1",
+                                 module->constantFloatMinusInfinity, "tmp1",
                                  minusInfinity);
       BranchInst::Create(endBlock, noInfinity, val2, minusInfinity);
       BranchInst::Create(endBlock, noInfinity);
@@ -629,14 +630,14 @@ void CLIJit::invokeNew(uint32 value, VMGenericClass* genClass, VMGenericMethod* 
 
   } else if (type->super == MSCorlib::pValue || type->super == MSCorlib::pEnum) {
     obj = new AllocaInst(type->naturalType, "", currentBlock);
-    uint64 size = mvm::jit::getTypeSize(type->naturalType);
+    uint64 size = module->getTypeSize(type->naturalType);
         
     std::vector<Value*> params;
-    params.push_back(new BitCastInst(obj, mvm::jit::ptrType, "", currentBlock));
-    params.push_back(mvm::jit::constantInt8Zero);
+    params.push_back(new BitCastInst(obj, module->ptrType, "", currentBlock));
+    params.push_back(module->constantInt8Zero);
     params.push_back(ConstantInt::get(Type::Int32Ty, size));
-    params.push_back(mvm::jit::constantZero);
-    CallInst::Create(mvm::jit::llvm_memset_i32, params.begin(), params.end(),
+    params.push_back(module->constantZero);
+    CallInst::Create(module->llvm_memset_i32, params.begin(), params.end(),
                      "", currentBlock);
   } else {
     Value* var = new LoadInst(type->llvmVar(), "", currentBlock);
@@ -683,7 +684,7 @@ llvm::Value* CLIJit::getVirtualField(uint32 value, VMGenericClass* genClass, VMG
                             currentBlock);
     }
     std::vector<Value*> args;
-    args.push_back(mvm::jit::constantZero);
+    args.push_back(module->constantZero);
     args.push_back(field->offset);
     Value* ptr = GetElementPtrInst::Create(obj, args.begin(), args.end(), "", 
                                            currentBlock);
@@ -700,7 +701,7 @@ llvm::Value* CLIJit::getStaticField(uint32 value, VMGenericClass* genClass, VMGe
   Value* staticCl = new BitCastInst(call, cl->staticType, "", currentBlock);
   
   std::vector<Value*> args;
-  args.push_back(mvm::jit::constantZero);
+  args.push_back(module->constantZero);
   args.push_back(field->offset);
   Value* ptr = GetElementPtrInst::Create(staticCl, args.begin(), args.end(), "",
                                          currentBlock);
@@ -728,7 +729,7 @@ void CLIJit::setVirtualField(uint32 value, bool isVolatile, VMGenericClass* genC
       obj = new BitCastInst(obj, field->classDef->naturalType, "", currentBlock);
     }
     std::vector<Value*> args;
-    args.push_back(mvm::jit::constantZero);
+    args.push_back(module->constantZero);
     args.push_back(field->offset);
     ptr = GetElementPtrInst::Create(obj, args.begin(), args.end(), "",
                                 currentBlock);
@@ -736,14 +737,14 @@ void CLIJit::setVirtualField(uint32 value, bool isVolatile, VMGenericClass* genC
   
   if (field->signature->super == MSCorlib::pValue &&
       field->signature->virtualFields.size() > 1) {
-    uint64 size = mvm::jit::getTypeSize(field->signature->naturalType);
+    uint64 size = module->getTypeSize(field->signature->naturalType);
         
     std::vector<Value*> params;
     params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
     params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
     params.push_back(ConstantInt::get(Type::Int32Ty, size));
-    params.push_back(mvm::jit::constantZero);
-    CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
+    params.push_back(module->constantZero);
+    CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
 
   } else {
     type = field->signature->naturalType;
@@ -766,7 +767,7 @@ void CLIJit::setStaticField(uint32 value, bool isVolatile, VMGenericClass* genCl
   Value* staticCl = new BitCastInst(call, cl->staticType, "", currentBlock);
   
   std::vector<Value*> args;
-  args.push_back(mvm::jit::constantZero);
+  args.push_back(module->constantZero);
   args.push_back(field->offset);
   Value* ptr = GetElementPtrInst::Create(staticCl, args.begin(), args.end(), "",
                                      currentBlock);
@@ -844,7 +845,7 @@ llvm::Value* CLIJit::verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
     currentBlock = ifTrue;
   }
   
-  Constant* zero = mvm::jit::constantZero;
+  Constant* zero = module->constantZero;
   Value* val = new BitCastInst(obj, arrayType, "", currentBlock);
   
   std::vector<Value*> indexes; //[3];
@@ -859,11 +860,11 @@ llvm::Value* CLIJit::verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
 }
 
 ConstantInt* VMArray::sizeOffset() {
-  return mvm::jit::constantOne;
+  return mvm::MvmModule::constantOne;
 }
 
 ConstantInt* VMArray::elementsOffset() {
-  return mvm::jit::constantTwo;
+  return mvm::MvmModule::constantTwo;
 }
 
 Value* CLIJit::arraySize(Value* array) {
@@ -873,7 +874,7 @@ Value* CLIJit::arraySize(Value* array) {
   return CallInst::Create(arrayLengthLLVM, array, "", currentBlock);
   /*
   std::vector<Value*> args; //size=  2
-  args.push_back(mvm::jit::constantZero);
+  args.push_back(module->constantZero);
   args.push_back(VMArray::sizeOffset());
   Value* ptr = GetElementPtrInst::Create(array, args.begin(), args.end(),
                                      "", currentBlock);
@@ -891,13 +892,13 @@ Function* CLIJit::createDelegate() {
   BasicBlock* entry = createBasicBlock("entry");
   obj = new BitCastInst(obj, MSCorlib::pDelegate->virtualType, "", entry);
   std::vector<Value*> elts;
-  elts.push_back(mvm::jit::constantZero);
-  elts.push_back(mvm::jit::constantOne);
+  elts.push_back(module->constantZero);
+  elts.push_back(module->constantOne);
   Value* targetPtr = GetElementPtrInst::Create(obj, elts.begin(), elts.end(),
                                                "", entry);
   
   elts.pop_back();
-  elts.push_back(mvm::jit::constantTwo);
+  elts.push_back(module->constantTwo);
   Value* handlePtr = GetElementPtrInst::Create(obj, elts.begin(), elts.end(),
                                                "", entry);
 
@@ -1084,16 +1085,16 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat, VMGenericClass* genCl
     }
 
     if (cur->realTest != cur->test) {
-      const PointerType* PointerTy_0 = mvm::jit::ptrType;
+      const PointerType* PointerTy_0 = module->ptrType;
       std::vector<Value*> int32_eh_select_params;
-      Instruction* ptr_eh_ptr = CallInst::Create(mvm::jit::llvmGetException,
+      Instruction* ptr_eh_ptr = CallInst::Create(module->llvmGetException,
                                                  "eh_ptr", cur->test);
       int32_eh_select_params.push_back(ptr_eh_ptr);
       Constant* C = ConstantExpr::getCast(Instruction::BitCast,
-                                          mvm::jit::personality, PointerTy_0);
+                                          module->personality, PointerTy_0);
       int32_eh_select_params.push_back(C);
-      int32_eh_select_params.push_back(mvm::jit::constantPtrNull);
-      CallInst::Create(mvm::jit::exceptionSelector,
+      int32_eh_select_params.push_back(module->constantPtrNull);
+      CallInst::Create(module->exceptionSelector,
                        int32_eh_select_params.begin(),
                        int32_eh_select_params.end(), "eh_select", cur->test);
       BranchInst::Create(cur->realTest, cur->test);
@@ -1107,10 +1108,10 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat, VMGenericClass* genCl
       Value* cpp = CallInst::Create(getCppExceptionLLVM, "", cur->handler);
       Value* exc = CallInst::Create(getCLIExceptionLLVM, "", cur->handler);
       CallInst::Create(clearExceptionLLVM, "", cur->handler);
-      CallInst::Create(mvm::jit::exceptionBeginCatch, cpp, "tmp8",
+      CallInst::Create(module->exceptionBeginCatch, cpp, "tmp8",
                        cur->handler);
       std::vector<Value*> void_28_params;
-      CallInst::Create(mvm::jit::exceptionEndCatch, void_28_params.begin(),
+      CallInst::Create(module->exceptionEndCatch, void_28_params.begin(),
                        void_28_params.end(), "", cur->handler);
       new StoreInst(exc, supplLocal, false, cur->handler);
       
@@ -1133,17 +1134,17 @@ static void printArgs(std::vector<llvm::Value*> args, BasicBlock* insertAt) {
     llvm::Value* arg = *i;
     const llvm::Type* type = arg->getType();
     if (type == Type::Int8Ty || type == Type::Int16Ty || type == Type::Int1Ty) {
-      CallInst::Create(mvm::jit::printIntLLVM, new ZExtInst(arg, Type::Int32Ty, "", insertAt), "", insertAt);
+      CallInst::Create(module->printIntLLVM, new ZExtInst(arg, Type::Int32Ty, "", insertAt), "", insertAt);
     } else if (type == Type::Int32Ty) {
-      CallInst::Create(mvm::jit::printIntLLVM, arg, "", insertAt);
+      CallInst::Create(module->printIntLLVM, arg, "", insertAt);
     } else if (type == Type::Int64Ty) {
-      CallInst::Create(mvm::jit::printLongLLVM, arg, "", insertAt);
+      CallInst::Create(module->printLongLLVM, arg, "", insertAt);
     } else if (type == Type::FloatTy) {
-      CallInst::Create(mvm::jit::printFloatLLVM, arg, "", insertAt);
+      CallInst::Create(module->printFloatLLVM, arg, "", insertAt);
     } else if (type == Type::DoubleTy) {
-      CallInst::Create(mvm::jit::printDoubleLLVM, arg, "", insertAt);
+      CallInst::Create(module->printDoubleLLVM, arg, "", insertAt);
     } else {
-      CallInst::Create(mvm::jit::printIntLLVM, new PtrToIntInst(arg, Type::Int32Ty, "", insertAt), "", insertAt);
+      CallInst::Create(module->printIntLLVM, new PtrToIntInst(arg, Type::Int32Ty, "", insertAt), "", insertAt);
     }
   }
 
@@ -1231,15 +1232,15 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
         new StoreInst(Constant::getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
       } else {
-        uint64 size = mvm::jit::getTypeSize(cl->naturalType);
+        uint64 size = module->getTypeSize(cl->naturalType);
         
         std::vector<Value*> params;
-        params.push_back(new BitCastInst(alloc, mvm::jit::ptrType, "",
+        params.push_back(new BitCastInst(alloc, module->ptrType, "",
                                          currentBlock));
-        params.push_back(mvm::jit::constantInt8Zero);
+        params.push_back(module->constantInt8Zero);
         params.push_back(ConstantInt::get(Type::Int32Ty, size));
-        params.push_back(mvm::jit::constantZero);
-        CallInst::Create(mvm::jit::llvm_memset_i32, params.begin(),
+        params.push_back(module->constantZero);
+        CallInst::Create(module->llvm_memset_i32, params.begin(),
                          params.end(), "", currentBlock);
 
       }
@@ -1278,16 +1279,16 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
     } else if (compilingMethod->structReturn) {
       const Type* lastType = 
         funcType->getContainedType(funcType->getNumContainedTypes() - 1);
-      uint64 size = mvm::jit::getTypeSize(lastType->getContainedType(0));
+      uint64 size = module->getTypeSize(lastType->getContainedType(0));
       Value* obj = --llvmFunction->arg_end();
       std::vector<Value*> params;
-      params.push_back(new BitCastInst(obj, mvm::jit::ptrType, "",
+      params.push_back(new BitCastInst(obj, module->ptrType, "",
                                        currentBlock));
-      params.push_back(new BitCastInst(endNode, mvm::jit::ptrType, "",
+      params.push_back(new BitCastInst(endNode, module->ptrType, "",
                                        currentBlock));
       params.push_back(ConstantInt::get(Type::Int32Ty, size));
-      params.push_back(mvm::jit::constantFour);
-      CallInst::Create(mvm::jit::llvm_memcpy_i32, params.begin(), params.end(),
+      params.push_back(module->constantFour);
+      CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(),
                        "", currentBlock);
       ReturnInst::Create(currentBlock);
     } else {
@@ -1302,7 +1303,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
   } else {
     CallInst* ptr_eh_ptr = CallInst::Create(getCppExceptionLLVM, "eh_ptr", 
                                         endExceptionBlock);
-    CallInst::Create(mvm::jit::unwindResume, ptr_eh_ptr, "", endExceptionBlock);
+    CallInst::Create(module->unwindResume, ptr_eh_ptr, "", endExceptionBlock);
     new UnreachableInst(endExceptionBlock);
   }
   
@@ -1314,7 +1315,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
     new UnreachableInst(unifiedUnreachable);
   }
   
-  mvm::jit::runPasses(llvmFunction, VMThread::get()->perFunctionPasses);
+  module->runPasses(llvmFunction, VMThread::get()->perFunctionPasses);
   
   if (nbe == 0 && codeLen < 50) {
     PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "%s can be inlined\n",
@@ -1408,15 +1409,15 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
         new StoreInst(Constant::getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
       } else {
-        uint64 size = mvm::jit::getTypeSize(cl->naturalType);
+        uint64 size = module->getTypeSize(cl->naturalType);
         
         std::vector<Value*> params;
-        params.push_back(new BitCastInst(alloc, mvm::jit::ptrType, "",
+        params.push_back(new BitCastInst(alloc, module->ptrType, "",
                                          currentBlock));
-        params.push_back(mvm::jit::constantInt8Zero);
+        params.push_back(module->constantInt8Zero);
         params.push_back(ConstantInt::get(Type::Int32Ty, size));
-        params.push_back(mvm::jit::constantZero);
-        CallInst::Create(mvm::jit::llvm_memset_i32, params.begin(),
+        params.push_back(module->constantZero);
+        CallInst::Create(module->llvm_memset_i32, params.begin(),
                          params.end(), "", currentBlock);
 
       }
@@ -1453,7 +1454,7 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   CLIJit* jit = gc_new(CLIJit)();
   jit->compilingClass = cl; 
   jit->compilingMethod = meth;
-
+  jit->module = cl->vm->module;
   Function* func;
   meth->getSignature(dynamic_cast<VMGenericMethod*>(meth));
   
@@ -1485,7 +1486,7 @@ llvm::Function *VMMethod::compiledPtr(VMGenericMethod* genMethod) {
 void VMField::initField(VMObject* obj) {
   VMField* field = this;
   ConstantInt* offset = field->offset;
-  const TargetData* targetData = mvm::jit::executionEngine->getTargetData();
+  const TargetData* targetData = mvm::MvmModule::executionEngine->getTargetData();
   bool stat = isStatic(field->flags);
   const Type* clType = stat ? field->classDef->staticType :
                               field->classDef->virtualType;
@@ -1502,9 +1503,9 @@ void CLIJit::initialise() {
 }
 
 void CLIJit::initialiseAppDomain(N3* vm) {
-  mvm::jit::protectEngine->lock();
-  mvm::jit::executionEngine->addModuleProvider(vm->TheModuleProvider);
-  mvm::jit::protectEngine->unlock();
+  mvm::MvmModule::protectEngine->lock();
+  mvm::MvmModule::executionEngine->addModuleProvider(vm->TheModuleProvider);
+  mvm::MvmModule::protectEngine->unlock();
 }
 
 namespace n3 { 
@@ -1515,10 +1516,10 @@ namespace n3 {
 
 
 void CLIJit::initialiseBootstrapVM(N3* vm) {
-  Module* module = vm->module;
-  mvm::jit::protectEngine->lock();
-  mvm::jit::executionEngine->addModuleProvider(vm->TheModuleProvider);
-  mvm::jit::protectEngine->unlock();
+  mvm::MvmModule* module = vm->module;
+  module->protectEngine->lock();
+  module->executionEngine->addModuleProvider(vm->TheModuleProvider);
+  module->protectEngine->unlock();
     
   n3::llvm_runtime::makeLLVMModuleContents(module);
 
@@ -1736,7 +1737,7 @@ static void addPass(FunctionPassManager *PM, Pass *P) {
 }
 
 void AddStandardCompilePasses(FunctionPassManager *PM) {
-  llvm::MutexGuard locked(mvm::jit::executionEngine->lock);
+  llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
   // LLVM does not allow calling functions from other modules in verifier
   //PM->add(llvm::createVerifierPass());                  // Verify that input is correct
   

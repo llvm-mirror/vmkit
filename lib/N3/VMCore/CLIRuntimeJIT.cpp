@@ -156,7 +156,7 @@ extern "C" CacheNode* n3VirtualLookup(CacheNode* cache, VMObject *obj) {
     }
     
     Function* func = dmeth->compiledPtr(NULL);
-    rcache->methPtr = mvm::jit::executionEngine->getPointerToGlobal(func);
+    rcache->methPtr = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
     rcache->lastCible = (VMClass*)ocl;
     rcache->box = (dmeth->classDef->super == MSCorlib::pValue);
   }
