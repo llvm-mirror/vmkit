@@ -9,7 +9,6 @@
 
 #include <map>
 
-#include "JavaAllocator.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaString.h"

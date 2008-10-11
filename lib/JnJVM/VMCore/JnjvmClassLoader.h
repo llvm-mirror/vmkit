@@ -15,6 +15,7 @@
 
 #include "types.h"
 
+#include "mvm/Allocator.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 
@@ -29,7 +30,6 @@ class UserClassArray;
 class ClassMap;
 class Classpath;
 class UserCommonClass;
-class JavaAllocator;
 class JavaObject;
 class JavaString;
 class Jnjvm;
@@ -96,7 +96,7 @@ public:
   /// allocator - Reference to the memory allocator, which will allocate UTF8s,
   /// signatures and types.
   ///
-  JavaAllocator* allocator;
+  mvm::Allocator* allocator;
    
   
   /// hashUTF8 - Tables of UTF8s defined by this class loader. Shared

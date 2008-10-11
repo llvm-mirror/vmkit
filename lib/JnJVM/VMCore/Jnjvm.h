@@ -14,13 +14,13 @@
 
 #include "types.h"
 
+#include "mvm/Allocator.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 
-#include "JavaAllocator.h"
 #include "JavaTypes.h"
 #include "JnjvmConfig.h"
 
@@ -231,7 +231,7 @@ public:
 
   /// allocator - Memory allocator of this JVM.
   ///
-  JavaAllocator allocator;
+  mvm::Allocator allocator;
   
   /// jniEnv - The JNI environment of this JVM.
   ///

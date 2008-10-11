@@ -121,8 +121,8 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
       PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", printString());
       
       JavaObject* val = 
-        (JavaObject*)vm->allocator.allocateObject(cl->getStaticSize(),
-                                                  cl->getStaticVT());
+        (JavaObject*)vm->allocator.allocateManagedObject(cl->getStaticSize(),
+                                                         cl->getStaticVT());
       val->initialise(cl);
       CommonClass::field_map* map = cl->getStaticFields();
       for (CommonClass::field_iterator i = map->begin(), e = map->end(); i!= e;
@@ -446,7 +446,7 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   ArrayUInt8* bytes = Reader::openFile(vm->bootstrapLoader,
                                        jarFile);
 
-  ZipArchive archive(bytes);
+  ZipArchive archive(bytes, &vm->allocator);
   if (archive.getOfscd() != -1) {
     ZipFile* file = archive.getFile(PATH_MANIFEST);
     if (file) {

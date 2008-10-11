@@ -14,6 +14,7 @@
 #ifndef JNJVM_JAVA_ARRAY_H
 #define JNJVM_JAVA_ARRAY_H
 
+#include "mvm/Allocator.h"
 #include "mvm/PrintBuffer.h"
 
 #include "types.h"
@@ -24,7 +25,6 @@ namespace jnjvm {
 
 class ClassArray;
 class CommonClass;
-class JavaAllocator;
 class JavaObject;
 class Jnjvm;
 
@@ -117,7 +117,7 @@ public:
   /// acons - Allocates an UTF8 in permanent memory. The class argument must be
   /// JavaArray::ofChar.
   static const UTF8* acons(sint32 n, UserClassArray* cl,
-                           JavaAllocator* allocator);
+                           mvm::Allocator* allocator);
 
   /// internalToJava - Creates a copy of the UTF8 at its given offset and size
   /// woth all its '.' replaced by '/'. The JVM bytecode reference classes in
@@ -165,11 +165,8 @@ public:
 
   /// operator new - Redefines the new operator of this class to allocate
   /// its objects in permanent memory, not with the garbage collector.
-  void* operator new(size_t sz, sint32 size);
+  void* operator new(size_t sz, mvm::Allocator* allocator, sint32 size);
 
-  /// operator delete - Redefines the delete operator to remove the object
-  /// from permanent memory.
-  void operator delete(void* obj);
 };
 
 } // end namespace jnjvm

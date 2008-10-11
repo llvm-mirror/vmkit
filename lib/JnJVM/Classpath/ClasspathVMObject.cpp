@@ -41,7 +41,7 @@ jobject _src) {
     size = cl->getVirtualSize();
   }
   JavaObject* res = (JavaObject*)
-    vm->allocator.allocateObject(size, src->getVirtualTable());
+    vm->allocator.allocateManagedObject(size, src->getVirtualTable());
   memcpy(res, src, size);
   res->lock = 0;
   return (jobject)res;

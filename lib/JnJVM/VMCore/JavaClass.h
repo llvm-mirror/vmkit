@@ -15,6 +15,7 @@
 
 #include "types.h"
 
+#include "mvm/Allocator.h"
 #include "mvm/JIT.h"
 #include "mvm/Method.h"
 #include "mvm/Object.h"
@@ -23,7 +24,6 @@
 #include "mvm/Threads/Locks.h"
 
 #include "JavaAccess.h"
-#include "JavaAllocator.h"
 #include "JnjvmClassLoader.h"
 
 namespace jnjvm {
@@ -708,9 +708,9 @@ class ClassArray : public CommonClass {
   /// Reader is a friend because it allocates arrays without a vm.
   friend class Reader;
 private:
-  /// doNew - Allocate a new array with the given loader.
+  /// doNew - Allocate a new array with the given allocator.
   ///
-  JavaArray* doNew(sint32 n, JavaAllocator& allocator);
+  JavaArray* doNew(sint32 n, mvm::Allocator& allocator);
 
 public:
   

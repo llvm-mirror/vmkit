@@ -16,6 +16,7 @@
 
 #include "types.h"
 
+#include "mvm/Allocator.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Locks.h"
@@ -29,7 +30,6 @@
 namespace jnjvm {
 
 class JavaObject;
-class Allocator;
 
 struct ltutf8
 {
@@ -96,7 +96,7 @@ public:
   typedef std::multimap<const uint32, const UTF8*>::iterator iterator;
   
   mvm::Lock* lock;
-  JavaAllocator* allocator;
+  mvm::Allocator* allocator;
   UserClassArray* array;
   std::multimap<const uint32, const UTF8*> map;
   const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
@@ -104,7 +104,7 @@ public:
   const UTF8* lookupAsciiz(const char* asciiz); 
   const UTF8* lookupReader(const uint16* buf, uint32 size);
   
-  UTF8Map(JavaAllocator* A, UserClassArray* cl) {
+  UTF8Map(mvm::Allocator* A, UserClassArray* cl) {
     lock = mvm::Lock::allocNormal();
     allocator = A;
     array = cl;
@@ -113,7 +113,7 @@ public:
   ~UTF8Map() {
     delete lock;
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      delete(i->second);
+      allocator->freePermanentMemory((void*)i->second);
     }
   }
 

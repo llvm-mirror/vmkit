@@ -34,10 +34,6 @@ const unsigned int JavaArray::T_SHORT = 9;
 const unsigned int JavaArray::T_INT = 10;
 const unsigned int JavaArray::T_LONG = 11;
 
-// This will force linking runtime methods
-extern "C" void negativeArraySizeException(sint32 val);
-extern "C" void outOfMemoryError(sint32 val);
-
 void UTF8::print(mvm::PrintBuffer* buf) const {
   for (int i = 0; i < size; i++)
     buf->writeChar((char)elements[i]);
@@ -55,6 +51,8 @@ const UTF8* UTF8::javaToInternal(UTF8Map* map, unsigned int start,
   return map->lookupOrCreateReader(java, len);
 }
 
+// We also define a checked java to internal function to disallow
+// users to load classes with '/'.
 const UTF8* UTF8::checkedJavaToInternal(UTF8Map* map, unsigned int start,
                                         unsigned int len) const {
   uint16* java = (uint16*) alloca(len * sizeof(uint16));
@@ -100,6 +98,7 @@ char* UTF8::UTF8ToAsciiz() const {
   buf->setAt(size, 0);
   return buf->cString();
 #else
+  // To bypass GC-allocation, use malloc here. Only when debugging.
   char* buf = (char*)malloc(size + 1);
   for (sint32 i = 0; i < size; ++i) {
     buf[i] =  elements[i];
@@ -110,23 +109,18 @@ char* UTF8::UTF8ToAsciiz() const {
 }
 
 /// Currently, this uses malloc/free. This should use a custom memory pool.
-void* UTF8::operator new(size_t sz, sint32 size) {
-  return malloc(sz + size * sizeof(uint16));
+void* UTF8::operator new(size_t sz, mvm::Allocator* allocator, sint32 size) {
+  return allocator->allocatePermanentMemory(sz + size * sizeof(uint16));
 }
-
-void UTF8::operator delete(void* obj) {
-  free(obj);
-}
-
 
 const UTF8* UTF8::acons(sint32 n, UserClassArray* cl,
-                        JavaAllocator* allocator) {
-  if (n < 0)
-    negativeArraySizeException(n);
-  else if (n > JavaArray::MaxArraySize)
-    outOfMemoryError(n);                                                  
-  UTF8* res = new (n) UTF8();
+                        mvm::Allocator* allocator) {
+  assert(n >= 0 && "Creating an UTF8 with a size < 0");
+  assert(n <= JavaArray::MaxArraySize && 
+         "Creating an UTF8 with a size too big");
+
+  UTF8* res = new (allocator, n) UTF8();
   res->initialise(cl);
-  res->size = n;                                                          
-  return (const UTF8*)res;                                                         
+  res->size = n; 
+  return (const UTF8*)res;
 }

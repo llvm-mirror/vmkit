@@ -12,12 +12,14 @@
 
 #include <map>
 
+#include "mvm/Allocator.h"
+
 namespace jnjvm {
 
 class ArrayUInt8;
 class JnjvmBootstrapLoader;
 
-struct ZipFile {
+struct ZipFile : public mvm::PermanentObject {
   char* filename;
   int ucsize;
   int csize;
@@ -30,10 +32,12 @@ struct ZipFile {
 
 
 
-class ZipArchive {
+class ZipArchive : public mvm::PermanentObject {
   friend class JnjvmBootstrapLoader;
 private:
   
+  mvm::Allocator* allocator;
+
   struct ltstr
   {
     bool operator()(const char* s1, const char* s2) const
@@ -57,13 +61,13 @@ public:
   ~ZipArchive() {
     for (table_iterator I = filetable.begin(), E = filetable.end(); I != E; 
          ++I) {
-      free((void*)I->first);
-      delete I->second;
+      allocator->freePermanentMemory((void*)I->first);
+      delete(I->second, allocator);
     }
   }
 
   int getOfscd() { return ofscd; }
-  ZipArchive(ArrayUInt8* bytes);
+  ZipArchive(ArrayUInt8* bytes, mvm::Allocator* allocator);
   ZipFile* getFile(const char* filename);
   int readFile(ArrayUInt8* array, const ZipFile* file);
 

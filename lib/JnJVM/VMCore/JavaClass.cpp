@@ -340,13 +340,13 @@ JavaArray* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
   return doNew(n, vm->allocator);
 }
 
-JavaArray* UserClassArray::doNew(sint32 n, JavaAllocator& allocator) {
+JavaArray* UserClassArray::doNew(sint32 n, mvm::Allocator& allocator) {
   UserCommonClass* cl = baseClass();
   assert(cl && virtualVT && "array class not resolved");
 
   uint32 primSize = cl->isPrimitive() ? cl->virtualSize : sizeof(JavaObject*);
   uint32 size = sizeof(JavaObject) + sizeof(sint32) + n * primSize;
-  JavaArray* res = (JavaArray*)allocator.allocateObject(size, virtualVT);
+  JavaArray* res = (JavaArray*)allocator.allocateManagedObject(size, virtualVT);
   res->initialise(this);
   res->size = n;
   return res;
@@ -486,8 +486,9 @@ JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
 JavaObject* UserClass::doNew(Jnjvm* vm) {
   assert(this && "No class when allocating.");
   assert(this->isReady() && "Uninitialized class when allocating.");
-  JavaObject* res = (JavaObject*)vm->allocator.allocateObject(getVirtualSize(),
-                                                              getVirtualVT());
+  JavaObject* res = 
+    (JavaObject*)vm->allocator.allocateManagedObject(getVirtualSize(),
+                                                     getVirtualVT());
   res->classOf = this;
   return res;
 }

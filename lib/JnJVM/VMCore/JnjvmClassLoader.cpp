@@ -13,7 +13,8 @@
 
 #include "debug.h"
 
-#include "JavaAllocator.h"
+#include "mvm/Allocator.h"
+
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
 #include "JavaThread.h"
@@ -44,7 +45,7 @@ JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
   JCL->TheModule = new JnjvmModule("Bootstrap JnJVM");
   JCL->TheModuleProvider = new JnjvmModuleProvider(JCL->TheModule);
   
-  JCL->allocator = new JavaAllocator();
+  JCL->allocator = new mvm::Allocator();
   
   JCL->hashUTF8 = new UTF8Map(JCL->allocator, 0);
   JCL->classes = new ClassMap();
@@ -74,7 +75,7 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   TheModuleProvider = new JnjvmModuleProvider(TheModule);
   bootstrapLoader = JCL.bootstrapLoader;
   
-  allocator = &(isolate->allocator);
+  allocator = new mvm::Allocator();
 
   hashUTF8 = new UTF8Map(allocator, bootstrapLoader->upcalls->ArrayOfChar);
   classes = new ClassMap();
@@ -426,7 +427,7 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
             ArrayUInt8* bytes =
               Reader::openFile(this, rp);
             if (bytes) {
-              ZipArchive *archive = new ZipArchive(bytes);
+              ZipArchive *archive = new(allocator) ZipArchive(bytes, allocator);
               if (archive) {
                 bootArchives.push_back(archive);
               }

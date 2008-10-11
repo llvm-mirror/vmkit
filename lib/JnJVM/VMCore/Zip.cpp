@@ -9,17 +9,19 @@
 
 #include <zlib.h>
 
+#include <mvm/Allocator.h>
+
 #include "JavaArray.h"
 #include "Reader.h"
 #include "Zip.h"
 
 using namespace jnjvm;
 
-ZipArchive::ZipArchive(ArrayUInt8* bytes) {
+ZipArchive::ZipArchive(ArrayUInt8* bytes, mvm::Allocator* allocator) {
   this->bytes = bytes;
+  this->allocator = allocator,
   findOfscd();
-  if (ofscd > -1)
-    addFiles();
+  if (ofscd > -1) addFiles();
 }
 
 ZipFile* ZipArchive::getFile(const char* filename) {
@@ -123,7 +125,7 @@ void ZipArchive::addFiles() {
 
   while (true) {
     if (memcmp(&(reader.bytes->elements[temp]), HDR_CENTRAL, 4)) return;
-    ZipFile* ptr = new ZipFile();
+    ZipFile* ptr = new(allocator) ZipFile();
     reader.cursor = temp + 4 + C_COMPRESSION_METHOD;
     ptr->compressionMethod = readEndianDep2(reader);
     
@@ -144,7 +146,8 @@ void ZipArchive::addFiles() {
         (reader.max - temp) < ptr->filenameLength)
       return;
 
-    ptr->filename = (char*)malloc(ptr->filenameLength + 1);
+    ptr->filename = 
+      (char*)allocator->allocatePermanentMemory(ptr->filenameLength + 1);
     memcpy(ptr->filename, &(reader.bytes->elements[temp]), ptr->filenameLength);
     ptr->filename[ptr->filenameLength] = 0;
 
