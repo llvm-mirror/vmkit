@@ -56,8 +56,8 @@ public:
     return allocator->allocatePermanentMemory(sz);
   }
 
-  void operator delete(void* obj, Allocator* allocator) {
-    allocator->freePermanentMemory(obj);
+  void operator delete(void* ptr) {
+    free(ptr);
   }
 };
 

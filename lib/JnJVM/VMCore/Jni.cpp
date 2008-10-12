@@ -2206,16 +2206,16 @@ void DeleteWeakGlobalRef(JNIEnv* env, jweak ref) {
 
 jobject NewGlobalRef(JNIEnv* env, jobject obj) {
   Jnjvm* vm = NativeUtil::myVM(env);
-  vm->globalRefsLock->lock();
+  vm->globalRefsLock.lock();
   vm->globalRefs.push_back((JavaObject*)obj);
-  vm->globalRefsLock->unlock();
+  vm->globalRefsLock.unlock();
   return obj;
 }
 
 
 void DeleteGlobalRef(JNIEnv* env, jobject globalRef) {
   Jnjvm* vm = NativeUtil::myVM(env);
-  vm->globalRefsLock->lock();
+  vm->globalRefsLock.lock();
   for (std::vector<JavaObject*, gc_allocator<JavaObject*> >::iterator i =
                                                       vm->globalRefs.begin(),
             e = vm->globalRefs.end(); i!= e; ++i) {
@@ -2224,7 +2224,7 @@ void DeleteGlobalRef(JNIEnv* env, jobject globalRef) {
       break;
     }
   }
-  vm->globalRefsLock->unlock();
+  vm->globalRefsLock.unlock();
 }
 
 

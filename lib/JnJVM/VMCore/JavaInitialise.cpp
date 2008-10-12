@@ -9,6 +9,7 @@
 
 #include <vector>
 
+#include "mvm/Allocator.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
@@ -240,17 +241,13 @@ void mvm::VirtualMachine::initialiseJVM() {
 #endif
 }
 
-void Jnjvm::runApplication(int argc, char** argv) {
-  mvm::Thread::set(this->bootstrapThread);
-  this->runMain(argc, argv);
-}
-
 mvm::VirtualMachine* mvm::VirtualMachine::createJVM() {
 #ifdef SERVICE_VM
   ServiceDomain* vm = ServiceDomain::allocateService();
   vm->startExecution();
 #else
-  Jnjvm* vm = Jnjvm::allocateIsolate();
+  mvm::Allocator* allocator = new mvm::Allocator();
+  Jnjvm* vm = gc_new(Jnjvm)(allocator);
 #endif
   return vm;
 }

@@ -90,12 +90,9 @@ public:
 ///
 class Jnjvm : public mvm::VirtualMachine {
 public:
-#ifdef MULTIPLE_GC
-  /// GC - The garbage collector of this JVM.
+  /// allocator - Memory allocator of this JVM.
   ///
-  Collector* GC;
-#endif
-
+  mvm::Allocator* allocator;
 #ifdef ISOLATE_SHARING
   UserClass* throwable;
 #endif
@@ -227,12 +224,8 @@ public:
   /// threadSystem - The thread system to manage non-daemon threads and
   /// control the end of the JVM's execution.
   ///
-  ThreadSystem* threadSystem;
-
-  /// allocator - Memory allocator of this JVM.
-  ///
-  mvm::Allocator allocator;
-  
+  ThreadSystem threadSystem;
+ 
   /// jniEnv - The JNI environment of this JVM.
   ///
   void* jniEnv;
@@ -259,19 +252,15 @@ public:
 
   /// globalRefsLock - Lock for adding a new global reference.
   ///
-  mvm::Lock* globalRefsLock;
+  mvm::LockNormal globalRefsLock;
   
-  /// name - The name of this JVM.
-  ///
-  const char* name;
-
   /// appClassLoader - The bootstrap class loader.
   ///
   JnjvmClassLoader* appClassLoader;
 
   /// hashStr - Hash map of java/lang/String objects allocated by this JVM.
   ///
-  StringMap * hashStr;
+  StringMap* hashStr;
   
   /// hashUTF8 - Tables of UTF8s defined by this class loader. Shared
   /// by all class loaders in a no isolation configuration.
@@ -340,15 +329,9 @@ public:
     return primitiveMap[id];
   }
 
-  /// allocateIsolate - Allocates a new JVM.
+  /// Jnjvm - Allocates a new JVM.
   ///
-  static Jnjvm* allocateIsolate(void* sp = 0);
-  
-  /// runIsolate - Runs an isolate with the given main class and with
-  /// these Java args. This should be called internaly by the javax.isolate
-  /// package.
-  ///
-  static void runIsolate(const char* className, ArrayObject* args);
+  Jnjvm(mvm::Allocator* allocator);
   
   /// runApplication - Runs the application with the given command line.
   /// User-visible function, inherited by the VirtualMachine class.

@@ -477,7 +477,7 @@ public:
   /// isReady - Has this class been initialized?
   ///
   bool isReady() {
-    return status >= inClinit;
+    return status >= clinitParent;
   }
 
   /// isResolved - Has this class been resolved?
@@ -710,7 +710,7 @@ class ClassArray : public CommonClass {
 private:
   /// doNew - Allocate a new array with the given allocator.
   ///
-  JavaArray* doNew(sint32 n, mvm::Allocator& allocator);
+  JavaArray* doNew(sint32 n, mvm::Allocator* allocator);
 
 public:
   

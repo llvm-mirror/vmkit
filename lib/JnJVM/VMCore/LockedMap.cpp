@@ -59,7 +59,7 @@ static bool readerEqual(const UTF8* val, const uint16* buf, sint32 size) {
 }
 
 void UTF8Map::replace(const UTF8* oldUTF8, const UTF8* newUTF8) {
-  lock->lock();
+  lock.lock();
   uint32 key = readerHasher(oldUTF8->elements, oldUTF8->size);
   std::pair<UTF8Map::iterator, UTF8Map::iterator> p = map.equal_range(key);
   
@@ -70,7 +70,7 @@ void UTF8Map::replace(const UTF8* oldUTF8, const UTF8* newUTF8) {
     }
   }
   map.insert(std::make_pair(key, newUTF8));
-  lock->unlock();
+  lock.unlock();
 
 }
 
@@ -78,7 +78,7 @@ const UTF8* UTF8Map::lookupOrCreateAsciiz(const char* asciiz) {
   sint32 size = strlen(asciiz);
   uint32 key = asciizHasher(asciiz, size);
   const UTF8* res = 0;
-  lock->lock();
+  lock.lock();
   
   std::pair<UTF8Map::iterator, UTF8Map::iterator> p = map.equal_range(key);
   
@@ -98,7 +98,7 @@ const UTF8* UTF8Map::lookupOrCreateAsciiz(const char* asciiz) {
     map.insert(std::make_pair(key, res));
   }
   
-  lock->unlock();
+  lock.unlock();
   return res;
 }
 
@@ -106,7 +106,7 @@ const UTF8* UTF8Map::lookupOrCreateReader(const uint16* buf, uint32 len) {
   sint32 size = (sint32)len;
   uint32 key = readerHasher(buf, size);
   const UTF8* res = 0;
-  lock->lock();
+  lock.lock();
   
   std::pair<UTF8Map::iterator, UTF8Map::iterator> p = map.equal_range(key);
 
@@ -124,7 +124,7 @@ const UTF8* UTF8Map::lookupOrCreateReader(const uint16* buf, uint32 len) {
     map.insert(std::make_pair(key, res));
   }
   
-  lock->unlock();
+  lock.unlock();
   return res;
 }
 
@@ -132,7 +132,7 @@ const UTF8* UTF8Map::lookupAsciiz(const char* asciiz) {
   sint32 size = strlen(asciiz);
   uint32 key = asciizHasher(asciiz, size);
   const UTF8* res = 0;
-  lock->lock();
+  lock.lock();
   
   std::pair<UTF8Map::iterator, UTF8Map::iterator> p = map.equal_range(key);
   
@@ -143,7 +143,7 @@ const UTF8* UTF8Map::lookupAsciiz(const char* asciiz) {
     }
   }
 
-  lock->unlock();
+  lock.unlock();
   return res;
 }
 
@@ -151,7 +151,7 @@ const UTF8* UTF8Map::lookupReader(const uint16* buf, uint32 len) {
   sint32 size = (sint32)len;
   uint32 key = readerHasher(buf, size);
   const UTF8* res = 0;
-  lock->lock();
+  lock.lock();
   
   std::pair<UTF8Map::iterator, UTF8Map::iterator> p = map.equal_range(key);
 
@@ -162,7 +162,7 @@ const UTF8* UTF8Map::lookupReader(const uint16* buf, uint32 len) {
     }
   }
 
-  lock->unlock();
+  lock.unlock();
   return res;
 }
 

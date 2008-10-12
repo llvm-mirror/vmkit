@@ -62,7 +62,8 @@ public:
     for (table_iterator I = filetable.begin(), E = filetable.end(); I != E; 
          ++I) {
       allocator->freePermanentMemory((void*)I->first);
-      delete(I->second, allocator);
+      I->second->~ZipFile();
+      allocator->freePermanentMemory((void*)I->second);
     }
   }
 

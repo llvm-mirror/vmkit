@@ -121,8 +121,8 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
       PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", printString());
       
       JavaObject* val = 
-        (JavaObject*)vm->allocator.allocateManagedObject(cl->getStaticSize(),
-                                                         cl->getStaticVT());
+        (JavaObject*)vm->allocator->allocateManagedObject(cl->getStaticSize(),
+                                                          cl->getStaticVT());
       val->initialise(cl);
       CommonClass::field_map* map = cl->getStaticFields();
       for (CommonClass::field_iterator i = map->begin(), e = map->end(); i!= e;
@@ -144,7 +144,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
         }
         if (exc) {
           if (exc->classOf->isAssignableFrom(vm->upcalls->newException)) {
-            JavaThread::get()->isolate->initializerError(exc);
+            vm->initializerError(exc);
           } else {
             JavaThread::throwException(exc);
           }
@@ -353,23 +353,19 @@ JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
 }
 
 Jnjvm::~Jnjvm() {
-#ifdef MULTIPLE_GC
-  GC->destroy();
-  delete GC;
-#endif
-  
-  delete hashStr;  
-  delete globalRefsLock;
-  delete threadSystem;
+  if (hashStr) {
+    hashStr->~StringMap();
+    allocator->freePermanentMemory(hashStr);
+  }
+  if (hashUTF8) {
+    hashUTF8->~UTF8Map();
+    allocator->freePermanentMemory(hashUTF8);
+  }
 }
 
 Jnjvm::Jnjvm() {
-#ifdef MULTIPLE_GC
-  GC = 0;
-#endif
+  hashUTF8 = 0;
   hashStr = 0;
-  globalRefsLock = 0;
-  threadSystem = 0;
 }
 
 #define PATH_MANIFEST "META-INF/MANIFEST.MF"
@@ -446,7 +442,7 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   ArrayUInt8* bytes = Reader::openFile(vm->bootstrapLoader,
                                        jarFile);
 
-  ZipArchive archive(bytes, &vm->allocator);
+  ZipArchive archive(bytes, vm->allocator);
   if (archive.getOfscd() != -1) {
     ZipFile* file = archive.getFile(PATH_MANIFEST);
     if (file) {
@@ -643,9 +639,7 @@ void ClArgumentsInfo::readArgs(int argc, char** argv, Jnjvm* vm) {
 
 
 void Jnjvm::print(mvm::PrintBuffer* buf) const {
-  buf->write("Java isolate: ");
-  buf->write(name);
-
+  buf->write("Java isolate");
 }
 
 JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
@@ -760,18 +754,18 @@ void Jnjvm::executePremain(const char* className, JavaString* args,
 }
 
 void Jnjvm::waitForExit() { 
-  threadSystem->nonDaemonLock->lock();
-  --(threadSystem->nonDaemonThreads);
+  threadSystem.nonDaemonLock->lock();
+  --(threadSystem.nonDaemonThreads);
   
-  while (threadSystem->nonDaemonThreads) {
-    threadSystem->nonDaemonVar->wait(threadSystem->nonDaemonLock);
+  while (threadSystem.nonDaemonThreads) {
+    threadSystem.nonDaemonVar->wait(threadSystem.nonDaemonLock);
   }
 
-  threadSystem->nonDaemonLock->unlock();  
+  threadSystem.nonDaemonLock->unlock();  
   return;
 }
 
-void Jnjvm::runMain(int argc, char** argv) {
+void Jnjvm::runApplication(int argc, char** argv) {
   ClArgumentsInfo info;
 
   info.readArgs(argc, argv, this);
@@ -781,7 +775,13 @@ void Jnjvm::runMain(int argc, char** argv) {
     //                                  " JnJVM Java Virtual Machine\n");
     argv = argv + pos - 1;
     argc = argc - pos + 1;
-    
+  
+    bootstrapThread = allocator_new(&allocator, JavaThread)();
+    bootstrapThread->initialise(0, this);
+    bootstrapThread->baseSP = mvm::Thread::get()->baseSP;
+    JavaThread::set(bootstrapThread); 
+    bootstrapThread->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
+
     loadBootstrap();
 #ifdef SERVICE_VM
     ServiceDomain::initialise((ServiceDomain*)this);
@@ -809,92 +809,47 @@ void Jnjvm::runMain(int argc, char** argv) {
   }
 }
 
-void Jnjvm::runIsolate(const char* className, ArrayObject* args) {
-  int stack;
-  Jnjvm *isolate = allocateIsolate(&stack);
-  isolate->loadBootstrap();
-  isolate->executeClass(className, args);
-  isolate->waitForExit();
-}
+Jnjvm::Jnjvm(mvm::Allocator* A) {
 
-Jnjvm* Jnjvm::allocateIsolate(void* sp) {
-  Jnjvm *isolate= gc_new(Jnjvm)();
-
-#ifdef MULTIPLE_GC
-  isolate->GC = Collector::allocate();
-#endif 
-  isolate->classpath = getenv("CLASSPATH");
-  if (!(isolate->classpath)) {
-    isolate->classpath = ".";
-  }
+  allocator = A;
+  classpath = getenv("CLASSPATH");
+  if (!classpath) classpath = ".";
   
-  isolate->bootstrapThread = allocator_new(&isolate->allocator, JavaThread)();
-  isolate->bootstrapThread->initialise(0, isolate);
-  void* baseSP = sp ? sp : mvm::Thread::get()->baseSP;
-  JavaThread::set(isolate->bootstrapThread);
+  appClassLoader = 0;
+  jniEnv = &JNI_JNIEnvTable;
+  javavmEnv = &JNI_JavaVMTable;
   
-#ifdef MULTIPLE_GC
-  isolate->bootstrapThread->GC = isolate->GC;
-  isolate->GC->inject_my_thread(baseSP);
-#else
-  if (sp) Collector::inject_my_thread(baseSP);
-#endif
-
-  isolate->bootstrapThread->baseSP = baseSP;
-  
-  isolate->bootstrapThread->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
-  isolate->threadSystem = new ThreadSystem();
-  isolate->name = "isolate";
-  isolate->appClassLoader = 0;
-  isolate->jniEnv = &JNI_JNIEnvTable;
-  isolate->javavmEnv = &JNI_JavaVMTable;
-  
-  isolate->hashStr = new StringMap();
-  isolate->globalRefsLock = mvm::Lock::allocNormal();
 
 #ifdef ISOLATE_SHARING
-  isolate->initialiseStatics();
+  initialiseStatics();
 #endif
   
-  isolate->upcalls = isolate->bootstrapLoader->upcalls;
+  upcalls = bootstrapLoader->upcalls;
 
 #ifdef ISOLATE_SHARING
-  isolate->throwable = isolate->upcalls->newThrowable;
+  throwable = upcalls->newThrowable;
 #endif
-  isolate->arrayClasses[JavaArray::T_BOOLEAN - 4] = 
-    isolate->upcalls->ArrayOfBool;
-  isolate->arrayClasses[JavaArray::T_BYTE - 4] = 
-    isolate->upcalls->ArrayOfByte;
-  isolate->arrayClasses[JavaArray::T_CHAR - 4] = 
-    isolate->upcalls->ArrayOfChar;
-  isolate->arrayClasses[JavaArray::T_SHORT - 4] = 
-    isolate->upcalls->ArrayOfShort;
-  isolate->arrayClasses[JavaArray::T_INT - 4] = 
-    isolate->upcalls->ArrayOfInt;
-  isolate->arrayClasses[JavaArray::T_FLOAT - 4] = 
-    isolate->upcalls->ArrayOfFloat;
-  isolate->arrayClasses[JavaArray::T_LONG - 4] = 
-    isolate->upcalls->ArrayOfLong;
-  isolate->arrayClasses[JavaArray::T_DOUBLE - 4] = 
-    isolate->upcalls->ArrayOfDouble;
+  arrayClasses[JavaArray::T_BOOLEAN - 4] = upcalls->ArrayOfBool;
+  arrayClasses[JavaArray::T_BYTE - 4] = upcalls->ArrayOfByte;
+  arrayClasses[JavaArray::T_CHAR - 4] = upcalls->ArrayOfChar;
+  arrayClasses[JavaArray::T_SHORT - 4] = upcalls->ArrayOfShort;
+  arrayClasses[JavaArray::T_INT - 4] = upcalls->ArrayOfInt;
+  arrayClasses[JavaArray::T_FLOAT - 4] = upcalls->ArrayOfFloat;
+  arrayClasses[JavaArray::T_LONG - 4] = upcalls->ArrayOfLong;
+  arrayClasses[JavaArray::T_DOUBLE - 4] = upcalls->ArrayOfDouble;
 
-  isolate->primitiveMap[I_VOID] = isolate->upcalls->OfVoid;
-  isolate->primitiveMap[I_BOOL] = isolate->upcalls->OfBool;
-  isolate->primitiveMap[I_BYTE] = isolate->upcalls->OfByte;
-  isolate->primitiveMap[I_CHAR] = isolate->upcalls->OfChar;
-  isolate->primitiveMap[I_SHORT] = isolate->upcalls->OfShort;
-  isolate->primitiveMap[I_INT] = isolate->upcalls->OfInt;
-  isolate->primitiveMap[I_FLOAT] = isolate->upcalls->OfFloat;
-  isolate->primitiveMap[I_LONG] = isolate->upcalls->OfLong;
-  isolate->primitiveMap[I_DOUBLE] = isolate->upcalls->OfDouble;
+  primitiveMap[I_VOID] = upcalls->OfVoid;
+  primitiveMap[I_BOOL] = upcalls->OfBool;
+  primitiveMap[I_BYTE] = upcalls->OfByte;
+  primitiveMap[I_CHAR] = upcalls->OfChar;
+  primitiveMap[I_SHORT] = upcalls->OfShort;
+  primitiveMap[I_INT] = upcalls->OfInt;
+  primitiveMap[I_FLOAT] = upcalls->OfFloat;
+  primitiveMap[I_LONG] = upcalls->OfLong;
+  primitiveMap[I_DOUBLE] = upcalls->OfDouble;
   
-  isolate->upcalls->initialiseClasspath(bootstrapLoader);
+  upcalls->initialiseClasspath(bootstrapLoader);
  
-#if defined(ISOLATE) || defined(ISOLATE_SHARING)
-  isolate->hashUTF8 = new UTF8Map(&isolate->allocator,
-                                  isolate->upcalls->ArrayOfChar);
-#else
-  isolate->hashUTF8 = isolate->bootstrapLoader->hashUTF8;
-#endif
-  return isolate;
+  hashStr = new(allocator) StringMap();
+  hashUTF8 = new(allocator) UTF8Map(allocator, upcalls->ArrayOfChar);
 }

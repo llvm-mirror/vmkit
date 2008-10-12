@@ -47,10 +47,10 @@ JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
   
   JCL->allocator = new mvm::Allocator();
   
-  JCL->hashUTF8 = new UTF8Map(JCL->allocator, 0);
-  JCL->classes = new ClassMap();
-  JCL->javaTypes = new TypeMap(); 
-  JCL->javaSignatures = new SignMap(); 
+  JCL->hashUTF8 = new(JCL->allocator) UTF8Map(JCL->allocator, 0);
+  JCL->classes = new(JCL->allocator) ClassMap();
+  JCL->javaTypes = new(JCL->allocator) TypeMap(); 
+  JCL->javaSignatures = new(JCL->allocator) SignMap(); 
   
   JCL->bootClasspathEnv = getenv("JNJVM_BOOTCLASSPATH");
   if (!JCL->bootClasspathEnv) {
@@ -74,13 +74,12 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   TheModule = new JnjvmModule("Applicative loader");
   TheModuleProvider = new JnjvmModuleProvider(TheModule);
   bootstrapLoader = JCL.bootstrapLoader;
-  
   allocator = new mvm::Allocator();
-
-  hashUTF8 = new UTF8Map(allocator, bootstrapLoader->upcalls->ArrayOfChar);
-  classes = new ClassMap();
-  javaTypes = new TypeMap();
-  javaSignatures = new SignMap();
+  
+  hashUTF8 = new(allocator) UTF8Map(allocator, bootstrapLoader->upcalls->ArrayOfChar);
+  classes = new(allocator) ClassMap();
+  javaTypes = new(allocator) TypeMap();
+  javaSignatures = new(allocator) SignMap();
 
   javaLoader = loader;
   isolate = I;
@@ -297,7 +296,7 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
 
 UserClass* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes) {
   assert(bytes && "constructing a class without bytes");
-  classes->lock->lock();
+  classes->lock.lock();
   ClassMap::iterator End = classes->map.end();
   ClassMap::iterator I = classes->map.find(name);
   UserClass* res = 0;
@@ -307,7 +306,7 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes)
   } else {
     res = ((UserClass*)(I->second));
   }
-  classes->lock->unlock();
+  classes->lock.unlock();
   return res;
 }
 
@@ -316,7 +315,7 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name,
   assert(baseClass && "constructing an array class without a base class");
   assert(baseClass->classLoader == this && 
          "constructing an array with wrong loader");
-  classes->lock->lock();
+  classes->lock.lock();
   ClassMap::iterator End = classes->map.end();
   ClassMap::iterator I = classes->map.find(name);
   UserClassArray* res = 0;
@@ -326,39 +325,29 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name,
   } else {
     res = ((UserClassArray*)(I->second));
   }
-  classes->lock->unlock();
+  classes->lock.unlock();
   return res;
 }
 
 Typedef* JnjvmClassLoader::constructType(const UTF8* name) {
+  javaTypes->lock.lock();
   Typedef* res = javaTypes->lookup(name);
   if (res == 0) {
     res = Typedef::constructType(name, hashUTF8, isolate);
-    javaTypes->lock->lock();
-    Typedef* tmp = javaTypes->lookup(name);
-    if (tmp == 0) javaTypes->hash(name, res);
-    else {
-      delete res;
-      res = tmp;
-    }
-    javaTypes->lock->unlock();
+    javaTypes->hash(name, res);
   }
+  javaTypes->lock.unlock();
   return res;
 }
 
 Signdef* JnjvmClassLoader::constructSign(const UTF8* name) {
+  javaSignatures->lock.lock();
   Signdef* res = javaSignatures->lookup(name);
   if (res == 0) {
     res = new Signdef(name, this);
-    javaSignatures->lock->lock();
-    Signdef* tmp = javaSignatures->lookup(name);
-    if (tmp == 0) javaSignatures->hash(name, res);
-    else {
-      delete res;
-      res = tmp;
-    }
-    javaSignatures->lock->unlock();
+    javaSignatures->hash(name, res);
   }
+  javaSignatures->lock.unlock();
   return res;
 }
 

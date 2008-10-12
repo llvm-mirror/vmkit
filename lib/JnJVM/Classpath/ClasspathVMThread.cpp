@@ -59,15 +59,15 @@ static void start(arg_thread_t* arg) {
   UserClass* vmthClass = (UserClass*)vmThread->classOf;
   Jnjvm* isolate = intern->isolate;
   JavaObject* thread = isolate->upcalls->assocThread->getObjectField(vmThread);
-  ThreadSystem* ts = isolate->threadSystem;
+  ThreadSystem& ts = isolate->threadSystem;
   bool isDaemon = isolate->upcalls->daemon->getInt8Field(thread);
   intern->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
 
 
   if (!isDaemon) {
-    ts->nonDaemonLock->lock();
-    ts->nonDaemonThreads++;
-    ts->nonDaemonLock->unlock();
+    ts.nonDaemonLock->lock();
+    ts.nonDaemonThreads++;
+    ts.nonDaemonLock->unlock();
   }
   
 #ifdef SERVICE_VM
@@ -81,11 +81,11 @@ static void start(arg_thread_t* arg) {
   isolate->upcalls->runVMThread->invokeIntSpecial(isolate, vmthClass, vmThread);
   
   if (!isDaemon) {
-    ts->nonDaemonLock->lock();
-    ts->nonDaemonThreads--;
-    if (ts->nonDaemonThreads == 0)
-      ts->nonDaemonVar->signal();
-    ts->nonDaemonLock->unlock();
+    ts.nonDaemonLock->lock();
+    ts.nonDaemonThreads--;
+    if (ts.nonDaemonThreads == 0)
+      ts.nonDaemonVar->signal();
+    ts.nonDaemonLock->unlock();
   }
 
 #ifdef SERVICE_VM
