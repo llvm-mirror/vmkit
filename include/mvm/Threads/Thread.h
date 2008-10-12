@@ -13,6 +13,7 @@
 #include "types.h"
 
 #include "MvmGC.h"
+#include "mvm/Allocator.h"
 #include "mvm/JIT.h"
 #include "mvm/Threads/Key.h"
 
@@ -64,9 +65,7 @@ private:
   static mvm::Key<Thread>* threadKey;
  
 public:
-  /// GC - The collector of this thread.
-  ///
-  Collector* GC;
+  Allocator* allocator;
   
   /// baseSP - The base stack pointer.
   ///
@@ -94,6 +93,20 @@ public:
 #else
     mvm::jit::setExecutionEnvironment(th);
 #endif
+  }
+
+private:
+  
+  /// internalClearException - Clear any pending exception.
+  virtual void internalClearException() {
+  }
+
+public:
+
+  /// clearException - Clear any pending exception of the current thread.
+  static void clearException() {
+    Thread* th = Thread::get();
+    th->internalClearException();
   }
 };
 

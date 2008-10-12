@@ -57,11 +57,13 @@ public:
   static VMObject* getCLIException();
   static void* getCppException();
   static void throwException(VMObject*);
-  static void clearException();
   static bool compareException(VMClass*);
 
   llvm::FunctionPassManager* perFunctionPasses;
   std::vector<jmp_buf*> sjlj_buffers;
+  
+private:
+  virtual void internalClearException();
 };
 
 } // end namespace n3

@@ -94,12 +94,6 @@ public:
     __cxa_throw(exc, 0, 0);
   }
   
-  static void clearException() {
-    JavaThread* th = JavaThread::get();
-    th->pendingException = 0;
-    th->internalPendingException = 0;
-  }
-
   static bool compareException(UserClass* cl) {
     JavaObject* pe = JavaThread::get()->pendingException;
     assert(pe && "no pending exception?");
@@ -118,6 +112,12 @@ public:
 #else
     longjmp((__jmp_buf_tag*)sjlj_buffers.back(), 1);
 #endif
+  }
+  
+private:
+  virtual void internalClearException() {
+    pendingException = 0;
+    internalPendingException = 0;
   }
 };
 

@@ -94,10 +94,9 @@ void VMThread::throwException(VMObject* obj) {
   __cxa_throw(exc, 0, 0); 
 }
 
-void VMThread::clearException() {
-  VMThread* th = VMThread::get();
-  th->pendingException = 0;
-  th->internalPendingException = 0;
+void VMThread::internalClearException() {
+  pendingException = 0;
+  internalPendingException = 0;
 }
 
 bool VMThread::compareException(VMClass* cl) {

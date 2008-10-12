@@ -95,8 +95,13 @@ void GCCollector::do_collect() {
     next = cur->next();
     
     destructor_t dest = c->getDestructor();
-    if (dest)
-      dest(c);
+    if (dest) {
+      try {
+        dest(c);
+      } catch(...) {
+        mvm::Thread::clearException();
+      }
+    }
   }
   
   next = 0;
