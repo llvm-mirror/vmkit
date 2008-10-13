@@ -53,7 +53,7 @@ namespace mvm {
   }
 }
 
-void MvmModule::initialise() {
+void MvmModule::initialise(bool Fast) {
   llvm::NoFramePointerElim = true;
   llvm::ExceptionHandling = true;
   globalModule = new llvm::Module("bootstrap module");
@@ -61,7 +61,7 @@ void MvmModule::initialise() {
   memoryManager = new MvmMemoryManager();
   
   executionEngine = ExecutionEngine::createJIT(globalModuleProvider, 0,
-                                               memoryManager);
+                                               memoryManager, Fast);
   Module module("unused");
   mvm::llvm_runtime::makeLLVMModuleContents(&module);
   

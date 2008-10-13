@@ -32,6 +32,11 @@ static llvm::cl::opt<VMType> VMToRun(llvm::cl::desc("Choose VM to run:"),
     clEnumValN(RunNet, "net", "Run the CLI VM"),
    clEnumValEnd));
 
+static llvm::cl::opt<bool> Fast("fast", 
+                     cl::desc("Generate code quickly, "
+                              "potentially sacrificing code quality"),
+                     cl::init(false));
+
 int found(char** argv, int argc, const char* name) {
   int i = 1;
   for (; i < argc; i++) {
@@ -43,12 +48,7 @@ int found(char** argv, int argc, const char* name) {
 int main(int argc, char** argv) {
   llvm::llvm_shutdown_obj X;
   int base;
-   
-  mvm::MvmModule::initialise();
-  mvm::Object::initialise();
-  mvm::Thread::initialise();
-  Collector::initialise(0, &base);
-  Collector::enable(0);
+  
   int pos = found(argv, argc, "-java");
   if (pos) {
     llvm::cl::ParseCommandLineOptions(pos, argv);
@@ -60,6 +60,12 @@ int main(int argc, char** argv) {
       llvm::cl::ParseCommandLineOptions(argc, argv);
     }
   }
+  
+  mvm::MvmModule::initialise(Fast);
+  mvm::Object::initialise();
+  mvm::Thread::initialise();
+  Collector::initialise(0, &base);
+  Collector::enable(0);
   
   if (VMToRun == RunJava) {
 #if WITH_JNJVM

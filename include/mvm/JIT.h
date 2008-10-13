@@ -117,7 +117,7 @@ public:
   static uint64 getTypeSize(const llvm::Type* type);
   static void AddStandardCompilePasses(llvm::FunctionPassManager*);
   static void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
-  static void initialise();
+  static void initialise(bool Fast = false);
 
   static llvm::ConstantInt* constantInt8Zero;
   static llvm::ConstantInt* constantZero;
