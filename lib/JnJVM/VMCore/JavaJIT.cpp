@@ -2018,7 +2018,9 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
 
 #ifndef ISOLATE_SHARING
   // ok now the cache
-  Enveloppe* enveloppe = new Enveloppe(compilingClass->ctpInfo, index);
+  mvm::Allocator* allocator = compilingClass->classLoader->allocator;
+  Enveloppe* enveloppe = 
+    new(allocator) Enveloppe(compilingClass->ctpInfo, index);
   compilingMethod->caches.push_back(enveloppe);
    
   Value* llvmEnv = 

@@ -411,7 +411,8 @@ extern "C" int sys_strnstr(const char *haystack, const char *needle) {
 }
 
 
-static char* findInformation(ArrayUInt8* manifest, const char* entry, uint32 len) {
+static char* findInformation(Jnjvm* vm, ArrayUInt8* manifest, const char* entry,
+                             uint32 len) {
   uint8* ptr = manifest->elements;
   sint32 index = sys_strnstr((char*)ptr, entry);
   if (index != -1) {
@@ -421,7 +422,7 @@ static char* findInformation(ArrayUInt8* manifest, const char* entry, uint32 len
     else end += index;
 
     sint32 length = end - index - 1;
-    char* name = (char*)malloc(length + 1);
+    char* name = (char*)vm->allocator->allocatePermanentMemory(length + 1);
     memcpy(name, &(ptr[index]), length);
     name[length] = 0;
     return name;
@@ -433,14 +434,13 @@ static char* findInformation(ArrayUInt8* manifest, const char* entry, uint32 len
 void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv, 
                                           int i) {
   char* jarFile = argv[i];
-  char* temp = 
-    (char*)malloc(2 + strlen(vm->classpath) + strlen(jarFile));
+  uint32 size = 2 + strlen(vm->classpath) + strlen(jarFile);
+  char* temp = (char*)vm->allocator->allocatePermanentMemory(size);
 
   sprintf(temp, "%s:%s", vm->classpath, jarFile);
   vm->setClasspath(temp);
   
-  ArrayUInt8* bytes = Reader::openFile(vm->bootstrapLoader,
-                                       jarFile);
+  ArrayUInt8* bytes = Reader::openFile(vm->bootstrapLoader, jarFile);
 
   ZipArchive archive(bytes, vm->allocator);
   if (archive.getOfscd() != -1) {
@@ -450,7 +450,7 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
       ArrayUInt8* res = (ArrayUInt8*)array->doNew(file->ucsize, vm);
       int ok = archive.readFile(res, file);
       if (ok) {
-        char* mainClass = findInformation(res, MAIN_CLASS, LENGTH_MAIN_CLASS);
+        char* mainClass = findInformation(vm, res, MAIN_CLASS, LENGTH_MAIN_CLASS);
         if (mainClass) {
           className = mainClass;
         } else {
@@ -776,13 +776,14 @@ void Jnjvm::runApplication(int argc, char** argv) {
     argv = argv + pos - 1;
     argc = argc - pos + 1;
   
-    bootstrapThread = allocator_new(&allocator, JavaThread)();
+    bootstrapThread = allocator_new(allocator, JavaThread)();
     bootstrapThread->initialise(0, this);
     bootstrapThread->baseSP = mvm::Thread::get()->baseSP;
     JavaThread::set(bootstrapThread); 
     bootstrapThread->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
 
     loadBootstrap();
+
 #ifdef SERVICE_VM
     ServiceDomain::initialise((ServiceDomain*)this);
 #endif

@@ -70,9 +70,11 @@ void JavaCond::remove(JavaThread* th) {
 }
 
 LockObj* LockObj::allocate() {
+#ifdef USE_GC_BOEHM
   LockObj* res = new LockObj();
-  res->lock = mvm::Lock::allocRecursive();
-  res->varcond = 0;
+#else
+  LockObj* res = gc_new(LockObj)();
+#endif
   return res;
 }
 
@@ -89,7 +91,7 @@ bool JavaObject::owner() {
 
 void JavaObject::overflowThinlock() {
   LockObj* obj = LockObj::allocate();
-  mvm::LockRecursive::my_lock_all(obj->lock, 257);
+  mvm::LockRecursive::my_lock_all(&obj->lock, 257);
   lock = ((uint32)obj >> 1) | 0x80000000;
 }
 
@@ -149,7 +151,7 @@ LockObj* JavaObject::changeToFatlock() {
     LockObj* obj = LockObj::allocate();
     uint32 val = (((uint32) obj) >> 1) | 0x80000000;
     uint32 count = lock & 0xFF;
-    mvm::LockRecursive::my_lock_all(obj->lock, count + 1);
+    mvm::LockRecursive::my_lock_all(&obj->lock, count + 1);
     lock = val;
     return obj;
   } else {
@@ -177,9 +179,9 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
       thread->interruptFlag = 0;
       thread->isolate->interruptedException(this);
     } else {
-      unsigned int recur = mvm::LockRecursive::recursion_count(l->lock);
+      unsigned int recur = mvm::LockRecursive::recursion_count(&l->lock);
       bool timeout = false;
-      mvm::LockRecursive::my_unlock_all(l->lock);
+      mvm::LockRecursive::my_unlock_all(&l->lock);
       JavaCond* cond = l->getCond();
       cond->wait(thread);
       thread->state = JavaThread::StateWaiting;
@@ -192,7 +194,7 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
 
       bool interrupted = (thread->interruptFlag != 0);
       mutexThread->unlock();
-      mvm::LockRecursive::my_lock_all(l->lock, recur);
+      mvm::LockRecursive::my_lock_all(&l->lock, recur);
 
       if (interrupted || timeout) {
         cond->remove(thread);
@@ -234,14 +236,4 @@ void JavaObject::notifyAll() {
   } else {
     JavaThread::get()->isolate->illegalMonitorStateException(this);
   } 
-}
-
-LockObj::~LockObj() {
-  if (varcond) delete varcond;
-  delete lock;
-}
-
-LockObj::LockObj() {
-  varcond = 0;
-  lock = 0;
 }

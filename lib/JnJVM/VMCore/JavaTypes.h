@@ -12,8 +12,11 @@
 
 #include "types.h"
 
+#include "mvm/Allocator.h"
 #include "mvm/JIT.h"
 #include "mvm/Object.h"
+
+#include "JnjvmClassLoader.h"
 
 namespace jnjvm {
 
@@ -65,7 +68,7 @@ static const char I_SEP = '/';
 /// which has not been loaded yet. Typedefs are hashed on the name of the class.
 /// Hashing is for memory purposes, not for comparison.
 ///
-class Typedef {
+class Typedef : public mvm::PermanentObject {
 public:
   
   /// keyName - The name of the Typedef. It is the representation of a class
@@ -91,10 +94,6 @@ public:
   ///
   virtual UserCommonClass* assocClass(JnjvmClassLoader* loader) const = 0;
  
-  /// Typedef - Create a new Typedef.
-  ///
-  static Typedef* constructType(const UTF8* name, UTF8Map* map, Jnjvm* vm);
-   
   virtual bool trace() const = 0;
   
   virtual bool isPrimitive() const {
@@ -195,22 +194,6 @@ public:
     return charId == I_DOUBLE;
   }
   
-  /// JInfo - Holds info useful for the JIT.
-  ///
-  mvm::JITInfo* JInfo;
-
-  /// getInfo - Get the JIT info of this signature. The info is created lazely.
-  ///
-  template<typename Ty> 
-  Ty *getInfo() {
-    if (!JInfo) {
-      JInfo = new Ty(this);
-    }   
-
-    assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
-           "Invalid concrete type or multiple inheritence for getInfo");
-    return static_cast<Ty*>(JInfo);
-  }
 };
 
 class ArrayTypedef : public Typedef {
@@ -262,7 +245,7 @@ public:
 /// Java signature. Signdefs are hashed for memory purposes, not equality
 /// purposes.
 ///
-class Signdef {
+class Signdef : public mvm::PermanentObject {
 private:
   
   /// _staticCallBuf - A dynamically generated method which calls a static Java
@@ -384,7 +367,7 @@ public:
   template<typename Ty> 
   Ty *getInfo() {
     if (!JInfo) {
-      JInfo = new Ty(this);
+      JInfo = new(initialLoader->allocator) Ty(this);
     }   
 
     assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&

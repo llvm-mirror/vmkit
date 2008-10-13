@@ -108,7 +108,6 @@ char* UTF8::UTF8ToAsciiz() const {
 #endif
 }
 
-/// Currently, this uses malloc/free. This should use a custom memory pool.
 void* UTF8::operator new(size_t sz, mvm::Allocator* allocator, sint32 size) {
   return allocator->allocatePermanentMemory(sz + size * sizeof(uint16));
 }

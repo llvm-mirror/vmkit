@@ -53,6 +53,7 @@ static void initialiseVT() {
   INIT(Jnjvm);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
+  INIT(LockObj);
 #ifdef ISOLATE_SHARING
   INIT(JnjvmSharedLoader);
   INIT(SharedClassByteMap);
@@ -85,9 +86,10 @@ void Jnjvm::initialiseStatics() {
     JnjvmSharedLoader::sharedLoader = JnjvmSharedLoader::createSharedLoader();
   }
 #endif
-  
+ 
+  mvm::Allocator* allocator = new mvm::Allocator();
   JnjvmBootstrapLoader* JCL = bootstrapLoader = 
-    JnjvmBootstrapLoader::createBootstrapLoader();
+    gc_new(JnjvmBootstrapLoader)(allocator);
   
   // Create the name of char arrays.
   const UTF8* utf8OfChar = JCL->asciizConstructUTF8("[C");

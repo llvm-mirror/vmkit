@@ -58,7 +58,7 @@ public:
 
 /// LockObj - This class represents a Java monitor.
 ///
-class LockObj {
+class LockObj : public mvm::Object {
 
   friend class JavaObject;
 
@@ -67,11 +67,11 @@ private:
 
   /// lock - The internal lock of this object lock.
   ///
-  mvm::Lock *lock;
+  mvm::LockRecursive lock;
 
   /// varcond - The condition variable for wait, notify and notifyAll calls.
   ///
-  JavaCond* varcond;
+  JavaCond varcond;
 
   /// allocate - Allocates a lock object. Only the internal lock is allocated.
   ///
@@ -85,32 +85,34 @@ private:
   /// acquire - Acquires the lock.
   ///
   void acquire() {
-    lock->lock();
+    lock.lock();
   }
 
   /// release - Releases the lock.
   ///
   void release() {
-    lock->unlock();
+    lock.unlock();
   }
   
   /// owner - Returns if the current thread owns this lock.
   ///
   bool owner() {
-    return mvm::Lock::selfOwner(lock);
+    return mvm::Lock::selfOwner(&lock);
   }
   
   /// getCond - Returns the conditation variable of this lock, allocating it
   /// if non-existant.
   ///
   JavaCond* getCond() {
-    if (!varcond) varcond = new JavaCond();
-    return varcond;
+    return &varcond;
   }
 
 public:
-  ~LockObj();
-  LockObj();
+
+  static VirtualTable* VT;
+
+  ~LockObj() {}
+  LockObj() {}
 };
 
 

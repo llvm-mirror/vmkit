@@ -27,7 +27,6 @@
 using namespace jnjvm;
 
 Enveloppe::~Enveloppe() {
-  delete cacheLock;
   CacheNode* cache = firstCache;
   CacheNode* next = firstCache;
   while(next) {
@@ -41,15 +40,15 @@ CacheNode::CacheNode(Enveloppe* E) {
   lastCible = 0;
   methPtr = 0;
   next = 0;
+  enveloppe = E;
 #ifdef ISOLATE_SHARING
   definingCtp = 0;
 #endif
-  enveloppe = E;
 }
 
 Enveloppe::Enveloppe(UserConstantPool* ctp, uint32 i) {
-  firstCache = new CacheNode(this);
-  cacheLock = mvm::Lock::allocNormal();
+  mvm::Allocator* allocator = ctp->classDef->classLoader->allocator;
+  firstCache = new(allocator) CacheNode(this);
   ctpInfo = ctp;
   index = i;
 }

@@ -197,7 +197,9 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
                                       CommonClass::method_iterator meths) {
   if (meths == cl->virtualMethods.end()) {
     uint64 size = cl->virtualTableSize;
-    VirtualTable* VT = (VirtualTable*)malloc(size * sizeof(void*));
+    mvm::Allocator* allocator = cl->classLoader->allocator;
+    VirtualTable* VT = (VirtualTable*)
+      allocator->allocatePermanentMemory(size * sizeof(void*));
     if (!VT) JavaThread::get()->isolate->outOfMemoryError(size * sizeof(void*));
     if (cl->super) {
       Class* super = (Class*)cl->super;
@@ -263,7 +265,8 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
 #ifndef WITHOUT_VTABLE
   if (stat) {
 #endif
-    res = (VirtualTable*)malloc(VT_SIZE);
+    mvm::Allocator* allocator = cl->classLoader->allocator;
+    res = (VirtualTable*)allocator->allocatePermanentMemory(VT_SIZE);
     memcpy(res, JavaObject::VT, VT_SIZE);
 #ifndef WITHOUT_VTABLE
   } else {

@@ -189,25 +189,6 @@ Signdef::Signdef(const UTF8* name, JnjvmClassLoader* loader) {
   
 }
 
-Typedef* Typedef::constructType(const UTF8* name, UTF8Map* map, Jnjvm* vm) {
-  short int cur = name->elements[0];
-  Typedef* res = 0;
-  switch (cur) {
-    case I_TAB :
-      res = new ArrayTypedef(name);
-      break;
-    case I_REF :
-      res = new ObjectTypedef(name, map);
-      break;
-    default :
-      UserClassPrimitive* cl = vm->getPrimitiveClass((char)name->elements[0]);
-      assert(cl && "No primitive");
-      bool unsign = (cl == vm->upcalls->OfChar || cl == vm->upcalls->OfBool);
-      res = new PrimitiveTypedef(name, cl, unsign, cur);
-  }
-  return res;
-}
-
 ObjectTypedef::ObjectTypedef(const UTF8* name, UTF8Map* map) {
   keyName = name;
   pseudoAssocClassName = name->extract(map, 1, name->size - 1);

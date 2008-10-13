@@ -38,35 +38,32 @@ std::vector<UserClass*> JnjvmBootstrapLoader::InterfacesArray;
 extern const char* GNUClasspathGlibj;
 extern const char* GNUClasspathLibs;
 
-JnjvmBootstrapLoader* JnjvmBootstrapLoader::createBootstrapLoader() {
+JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::Allocator* A) {
   
-  JnjvmBootstrapLoader* JCL = gc_new(JnjvmBootstrapLoader)();
+  allocator = A;
   JnjvmModule::initialise(); 
-  JCL->TheModule = new JnjvmModule("Bootstrap JnJVM");
-  JCL->TheModuleProvider = new JnjvmModuleProvider(JCL->TheModule);
+  TheModule = new JnjvmModule("Bootstrap JnJVM");
+  TheModuleProvider = new JnjvmModuleProvider(TheModule);
   
-  JCL->allocator = new mvm::Allocator();
+  hashUTF8 = new(allocator) UTF8Map(allocator, 0);
+  classes = new(allocator) ClassMap();
+  javaTypes = new(allocator) TypeMap(); 
+  javaSignatures = new(allocator) SignMap(); 
   
-  JCL->hashUTF8 = new(JCL->allocator) UTF8Map(JCL->allocator, 0);
-  JCL->classes = new(JCL->allocator) ClassMap();
-  JCL->javaTypes = new(JCL->allocator) TypeMap(); 
-  JCL->javaSignatures = new(JCL->allocator) SignMap(); 
-  
-  JCL->bootClasspathEnv = getenv("JNJVM_BOOTCLASSPATH");
-  if (!JCL->bootClasspathEnv) {
-    JCL->bootClasspathEnv = GNUClasspathGlibj;
+  bootClasspathEnv = getenv("JNJVM_BOOTCLASSPATH");
+  if (!bootClasspathEnv) {
+    bootClasspathEnv = GNUClasspathGlibj;
   }
   
-  JCL->libClasspathEnv = getenv("JNJVM_LIBCLASSPATH");
-  if (!JCL->libClasspathEnv) {
-    JCL->libClasspathEnv = GNUClasspathLibs;
+  libClasspathEnv = getenv("JNJVM_LIBCLASSPATH");
+  if (!libClasspathEnv) {
+    libClasspathEnv = GNUClasspathLibs;
   }
   
-  JCL->analyseClasspathEnv(JCL->bootClasspathEnv);
+  analyseClasspathEnv(bootClasspathEnv);
   
-  JCL->upcalls = new Classpath();
-  JCL->bootstrapLoader = JCL;
-  return JCL;
+  upcalls = new(allocator) Classpath();
+  bootstrapLoader = this;
 }
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
@@ -76,7 +73,8 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   bootstrapLoader = JCL.bootstrapLoader;
   allocator = new mvm::Allocator();
   
-  hashUTF8 = new(allocator) UTF8Map(allocator, bootstrapLoader->upcalls->ArrayOfChar);
+  hashUTF8 = new(allocator) UTF8Map(allocator,
+                                    bootstrapLoader->upcalls->ArrayOfChar);
   classes = new(allocator) ClassMap();
   javaTypes = new(allocator) TypeMap();
   javaSignatures = new(allocator) SignMap();
@@ -168,10 +166,11 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
   UserClass* cl = internalLoad(name);
 
   if (!cl && doThrow) {
+    Jnjvm* vm = JavaThread::get()->isolate;
     if (!(name->equals(Jnjvm::NoClassDefFoundError))) {
-      JavaThread::get()->isolate->unknownError("Unable to load NoClassDefFoundError");
+      vm->unknownError("Unable to load NoClassDefFoundError");
     }
-    JavaThread::get()->isolate->noClassDefFoundError("unable to load %s", name->printString());
+    vm->noClassDefFoundError("unable to load %s", name->printString());
   }
 
   if (cl && doResolve) cl->resolveClass();
@@ -243,8 +242,9 @@ UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* name,
   }
 }
 
-UserCommonClass* JnjvmClassLoader::lookupClassFromJavaString(JavaString* str,
-                                              bool doResolve, bool doThrow) {
+UserCommonClass* 
+JnjvmClassLoader::lookupClassFromJavaString(JavaString* str,
+                                            bool doResolve, bool doThrow) {
   
   const UTF8* name = 0;
   
@@ -294,7 +294,8 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
   return ld->constructArray(name, cl);
 }
 
-UserClass* JnjvmClassLoader::constructClass(const UTF8* name, ArrayUInt8* bytes) {
+UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
+                                            ArrayUInt8* bytes) {
   assert(bytes && "constructing a class without bytes");
   classes->lock.lock();
   ClassMap::iterator End = classes->map.end();
@@ -329,11 +330,33 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name,
   return res;
 }
 
+Typedef* JnjvmClassLoader::internalConstructType(const UTF8* name) {
+  short int cur = name->elements[0];
+  Typedef* res = 0;
+  switch (cur) {
+    case I_TAB :
+      res = new(allocator) ArrayTypedef(name);
+      break;
+    case I_REF :
+      res = new(allocator) ObjectTypedef(name, hashUTF8);
+      break;
+    default :
+      UserClassPrimitive* cl = 
+        isolate->getPrimitiveClass((char)name->elements[0]);
+      assert(cl && "No primitive");
+      bool unsign = (cl == isolate->upcalls->OfChar || 
+                     cl == isolate->upcalls->OfBool);
+      res = new(allocator) PrimitiveTypedef(name, cl, unsign, cur);
+  }
+  return res;
+}
+
+
 Typedef* JnjvmClassLoader::constructType(const UTF8* name) {
   javaTypes->lock.lock();
   Typedef* res = javaTypes->lookup(name);
   if (res == 0) {
-    res = Typedef::constructType(name, hashUTF8, isolate);
+    res = internalConstructType(name);
     javaTypes->hash(name, res);
   }
   javaTypes->lock.unlock();
@@ -344,7 +367,7 @@ Signdef* JnjvmClassLoader::constructSign(const UTF8* name) {
   javaSignatures->lock.lock();
   Signdef* res = javaSignatures->lookup(name);
   if (res == 0) {
-    res = new Signdef(name, this);
+    res = new(allocator) Signdef(name, this);
     javaSignatures->hash(name, res);
   }
   javaSignatures->lock.unlock();
@@ -352,7 +375,8 @@ Signdef* JnjvmClassLoader::constructSign(const UTF8* name) {
 }
 
 
-JnjvmClassLoader* JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
+JnjvmClassLoader*
+JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
   
   if (loader == 0)
     return vm->bootstrapLoader;
@@ -362,7 +386,7 @@ JnjvmClassLoader* JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loa
     (JnjvmClassLoader*)(upcalls->vmdataClassLoader->getObjectField(loader));
   
   if (!JCL) {
-    JCL = gc_new(JnjvmClassLoader)(*vm->bootstrapLoader, loader, JavaThread::get()->isolate);
+    JCL = gc_new(JnjvmClassLoader)(*vm->bootstrapLoader, loader, vm);
     (upcalls->vmdataClassLoader->setObjectField(loader, (JavaObject*)JCL));
   }
 
@@ -373,7 +397,8 @@ const UTF8* JnjvmClassLoader::asciizConstructUTF8(const char* asciiz) {
   return hashUTF8->lookupOrCreateAsciiz(asciiz);
 }
 
-const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf, uint32 size) {
+const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf,
+                                                  uint32 size) {
   return hashUTF8->lookupOrCreateReader(buf, size);
 }
 
@@ -407,7 +432,7 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
           stat(rp, &st);
           if ((st.st_mode & S_IFMT) == S_IFDIR) {
             unsigned int len = strlen(rp);
-            char* temp = (char*)malloc(len + 2);
+            char* temp = (char*)allocator->allocatePermanentMemory(len + 2);
             memcpy(temp, rp, len);
             temp[len] = Jnjvm::dirSeparator[0];
             temp[len + 1] = 0;

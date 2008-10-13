@@ -40,16 +40,11 @@ jclass clazz
   return (jobject)(JavaThread::currentThread());
 }
 
-typedef struct arg_thread_t {
-  JavaObject* vmThread;
-  JavaThread* intern;
-} arg_thread_t;
-
-static void start(arg_thread_t* arg) {
+static void start(JavaObject* vmThread) {
   int argc;
-  JavaObject* vmThread = arg->vmThread;
-  JavaThread* intern = arg->intern;
-  free(arg);
+  Classpath* upcalls = vmThread->classOf->classLoader->bootstrapLoader->upcalls;
+  JavaThread* intern = (JavaThread*)upcalls->vmdataVMThread->getObjectField(vmThread);
+  Jnjvm* isolate = intern->isolate;
   mvm::Thread::set(intern);
 #ifdef MULTIPLE_GC
   intern->GC->inject_my_thread(&argc);
@@ -57,7 +52,6 @@ static void start(arg_thread_t* arg) {
   Collector::inject_my_thread(&argc);
 #endif
   UserClass* vmthClass = (UserClass*)vmThread->classOf;
-  Jnjvm* isolate = intern->isolate;
   JavaObject* thread = isolate->upcalls->assocThread->getObjectField(vmThread);
   ThreadSystem& ts = isolate->threadSystem;
   bool isDaemon = isolate->upcalls->daemon->getInt8Field(thread);
@@ -115,14 +109,11 @@ jobject _vmThread, sint64 stackSize) {
   th->initialise(javaThread, vm);
   vm->upcalls->vmdataVMThread->setObjectField(vmThread, (JavaObject*)th);
   int tid = 0;
-  arg_thread_t* arg = (arg_thread_t*)malloc(sizeof(arg_thread_t));
-  arg->intern = th;
-  arg->vmThread = vmThread;
 #ifdef MULTIPLE_GC
   th->GC = mvm::Thread::get()->GC;
 #endif
 
-  mvm::Thread::start(&tid, (int (*)(void *))start, (void*)arg);
+  mvm::Thread::start(&tid, (int (*)(void *))start, (void*)vmThread);
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMThread_interrupt(

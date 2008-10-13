@@ -63,7 +63,7 @@ typedef enum JavaState {
 /// Attribut - This class represents JVM attributes to Java class, methods and
 /// fields located in the .class file.
 ///
-class Attribut {
+class Attribut : public mvm::PermanentObject {
 public:
   
   /// name - The name of the attribut. These are specified in the JVM book.
@@ -521,6 +521,10 @@ public:
   ClassPrimitive(JnjvmClassLoader* loader, const UTF8* name, uint32 nb);
 
   static UserClassPrimitive* byteIdToPrimitive(char id, Classpath* upcalls);
+  
+  void* operator new(size_t sz, mvm::Allocator* allocator) {
+    return allocator->allocatePermanentMemory(sz);
+  }
 
 };
 
@@ -690,7 +694,7 @@ public:
   template<typename Ty> 
   Ty *getInfo() {
     if (!JInfo) {
-      JInfo = new Ty(this);
+      JInfo = new(classLoader->allocator) Ty(this);
     }   
 
     assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
@@ -769,7 +773,7 @@ public:
 
 /// JavaMethod - This class represents Java methods.
 ///
-class JavaMethod {
+class JavaMethod : public mvm::PermanentObject {
   friend class CommonClass;
 private:
 
@@ -912,7 +916,7 @@ public:
   template<typename Ty> 
   Ty *getInfo() {
     if (!JInfo) {
-      JInfo = new Ty(this);
+      JInfo = new(classDef->classLoader->allocator) Ty(this);
     }   
 
     assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
@@ -924,7 +928,7 @@ public:
 
 /// JavaField - This class represents a Java field.
 ///
-class JavaField  {
+class JavaField  : public mvm::PermanentObject {
   friend class CommonClass;
 private:
   /// _signature - The signature of the field. Null if not resolved.
@@ -1021,7 +1025,7 @@ public:
   template<typename Ty> 
   Ty *getInfo() {
     if (!JInfo) {
-      JInfo = new Ty(this);
+      JInfo = new(classDef->classLoader->allocator) Ty(this);
     }   
 
     assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&

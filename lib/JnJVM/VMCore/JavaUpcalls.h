@@ -10,13 +10,16 @@
 #ifndef JNJVM_JAVA_UPCALLS_H
 #define JNJVM_JAVA_UPCALLS_H
 
+#include "mvm/Allocator.h"
+
 #include "JnjvmConfig.h"
 
 #define UPCALL_CLASS(vm, name)                                                 \
   vm->loadName(vm->asciizConstructUTF8(name), false, false)                        
 
 #define UPCALL_PRIMITIVE_CLASS(loader, name, nb)                               \
-  new UserClassPrimitive(loader, loader->asciizConstructUTF8(name), nb)                        
+  new(loader->allocator)                                                       \
+          UserClassPrimitive(loader, loader->asciizConstructUTF8(name), nb)    \
 
 #define UPCALL_FIELD(vm, cl, name, type, acc)                                  \
   UPCALL_CLASS(vm, cl)->constructField(vm->asciizConstructUTF8(name),          \
@@ -54,7 +57,7 @@ class JavaMethod;
 class Class;
 class ClassArray;
 
-class Classpath {
+class Classpath : public mvm::PermanentObject {
 public: 
   ISOLATE_STATIC UserClass*  newClassLoader;
   ISOLATE_STATIC JavaMethod* getSystemClassLoader;

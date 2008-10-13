@@ -24,6 +24,7 @@
 
 #include "types.h"
 
+#include "mvm/Allocator.h"
 #include "mvm/Method.h"
 #include "mvm/MvmMemoryManager.h"
 #include "mvm/Threads/Locks.h"
@@ -35,7 +36,7 @@ class Thread;
 /// JITInfo - This class can be derived from to hold private JIT-specific
 /// information. Objects of type are accessed/created with
 /// <Class>::getInfo and destroyed when the <Class> object is destroyed.
-struct JITInfo {
+struct JITInfo : public mvm::PermanentObject {
   virtual ~JITInfo() {}
 };
 

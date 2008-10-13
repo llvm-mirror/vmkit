@@ -48,6 +48,14 @@ public:
   void freePermanentMemory(void* obj) {
     return free(obj); 
   }
+  
+  void* allocateTemporaryMemory(unsigned int sz) {
+    return malloc(sz); 
+  }
+  
+  void freeTemporaryMemory(void* obj) {
+    return free(obj); 
+  }
 };
 
 class PermanentObject {

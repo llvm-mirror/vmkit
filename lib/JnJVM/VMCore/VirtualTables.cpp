@@ -39,6 +39,7 @@ using namespace jnjvm;
   INIT(Jnjvm);
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
+  INIT(LockObj);
 #if defined(ISOLATE_SHARING)
   INIT(JnjvmSharedLoader);
   INIT(SharedClassByteMap);
@@ -57,6 +58,8 @@ void ArrayObject::TRACER {
   for (sint32 i = 0; i < size; i++) {
     if (elements[i]) elements[i]->MARK_AND_TRACE;
   }
+  LockObj* l = lockObj();
+  if (l) l->MARK_AND_TRACE;
 }
 
 void JavaArray::TRACER {}
@@ -91,6 +94,8 @@ void ClassArray::TRACER {
 
 void JavaObject::TRACER {
   classOf->MARK_AND_TRACE;
+  LockObj* l = lockObj();
+  if (l) l->MARK_AND_TRACE;
 }
 
 #ifdef MULTIPLE_GC
@@ -99,6 +104,8 @@ extern "C" void JavaObjectTracer(JavaObject* obj, Collector* GC) {
 extern "C" void JavaObjectTracer(JavaObject* obj) {
 #endif
   obj->classOf->MARK_AND_TRACE;
+  LockObj* l = obj->lockObj();
+  if (l) l->MARK_AND_TRACE;
 }
 
 

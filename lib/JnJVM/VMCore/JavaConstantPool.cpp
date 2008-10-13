@@ -185,16 +185,23 @@ uint32 JavaConstantPool::CtpReaderDouble(JavaConstantPool* ctp, Reader& reader,
   return 2;
 }
 
-JavaConstantPool::JavaConstantPool(Class* cl, Reader& reader) {
-  ctpSize = reader.readU2();
+
+void* JavaConstantPool::operator new(size_t sz, mvm::Allocator* allocator,
+                                     uint32 ctpSize) {
+  uint32 size = sz + ctpSize * (sizeof(void*) + sizeof(sint32) + sizeof(uint8));
+  return allocator->allocatePermanentMemory(size);
+}
+
+JavaConstantPool::JavaConstantPool(Class* cl, Reader& reader, uint32 size) {
+  ctpSize = size;
   classDef = cl;
   
-  ctpRes   = new void*[ctpSize];
-  ctpDef   = new sint32[ctpSize];
-  ctpType  = new uint8[ctpSize];
-  memset(ctpRes, 0, sizeof(void**) * ctpSize);
-  memset(ctpDef, 0, sizeof(sint32) * ctpSize);
-  memset(ctpType, 0, sizeof(uint8) * ctpSize);
+  ctpType  = (uint8*)((uint64)this + sizeof(JavaConstantPool));
+  ctpDef   = (sint32*)((uint64)ctpType + ctpSize * sizeof(uint8));
+  ctpRes   = (void**)((uint64)ctpDef + ctpSize * sizeof(sint32));
+
+  memset(ctpType, 0, 
+         ctpSize * (sizeof(uint8) + sizeof(sint32) + sizeof(void*)));
 
   uint32 cur = 1;
   while (cur < ctpSize) {

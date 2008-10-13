@@ -21,6 +21,7 @@
 #ifndef JNJVM_JAVA_CACHE_H
 #define JNJVM_JAVA_CACHE_H
 
+#include "mvm/Allocator.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Locks.h"
@@ -36,7 +37,7 @@ class UserClass;
 class UserConstantPool;
 
 /// CacheNode - A {class, method pointer} pair.
-class CacheNode {
+class CacheNode : public mvm::PermanentObject {
 public:
 
   /// methPtr - The method pointer of this cache.
@@ -62,7 +63,7 @@ public:
 };
 
 /// Enveloppe - A reference to the linked list of CacheNode.
-class Enveloppe {
+class Enveloppe : public mvm::PermanentObject {
 public:
   
   /// ~Enveloppe - Deletes all CacheNode in the linked list.
@@ -79,7 +80,7 @@ public:
 
   /// cacheLock - The linked list may be modified by concurrent thread. This
   /// lock ensures that the list stays consistent.
-  mvm::Lock* cacheLock;
+  mvm::LockNormal cacheLock;
 
   /// index - The index in the constant pool of the interface method.
   uint32 index;

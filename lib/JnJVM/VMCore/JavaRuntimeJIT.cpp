@@ -42,7 +42,7 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   ctpInfo->resolveMethod(index, cl, utf8, sign);
   assert(obj->classOf->isReady() && "Class not ready in a virtual lookup.");
 
-  enveloppe->cacheLock->lock();
+  enveloppe->cacheLock.lock();
   CacheNode* rcache = 0;
   CacheNode* tmp = enveloppe->firstCache;
   CacheNode* last = tmp;
@@ -66,7 +66,8 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
            "Class not ready in a virtual lookup.");
 #endif
     if (cache->methPtr) {
-      rcache = new CacheNode(enveloppe);
+      JnjvmClassLoader* loader = ctpInfo->classDef->classLoader;
+      rcache = new(loader->allocator) CacheNode(enveloppe);
     } else {
       rcache = cache;
     }
@@ -86,7 +87,7 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
     rcache->next = f;
   }
   
-  enveloppe->cacheLock->unlock();
+  enveloppe->cacheLock.unlock();
   
   return rcache->methPtr;
 }
@@ -149,7 +150,8 @@ extern "C" void* stringLookup(UserClass* cl, uint32 index) {
 #ifdef ISOLATE_SHARING
 extern "C" void* enveloppeLookup(UserClass* cl, uint32 index) {
   UserConstantPool* ctpInfo = cl->getConstantPool();
-  Enveloppe* enveloppe = new Enveloppe(ctpInfo, index);
+  mvm::Allocator* allocator = cl->classLoader->allocator;
+  Enveloppe* enveloppe = new(allocator) Enveloppe(ctpInfo, index);
   ctpInfo->ctpRes[index] = enveloppe;
   return (void*)enveloppe;
 }
@@ -275,7 +277,8 @@ extern "C" void jniProceedPendingException() {
 
 extern "C" void* getSJLJBuffer() {
   JavaThread* th = JavaThread::get();
-  void** buf = (void**)malloc(sizeof(jmp_buf));
+  mvm::Allocator* allocator = th->isolate->allocator;
+  void** buf = (void**)allocator->allocatePermanentMemory(sizeof(jmp_buf));
   th->sjlj_buffers.push_back((jmp_buf*)buf);
   return (void*)buf;
 }

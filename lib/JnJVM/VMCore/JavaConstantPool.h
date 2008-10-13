@@ -33,7 +33,7 @@ class UTF8;
 /// JavaConstantPool - This class represents a Java constant pool, a place where
 /// a Java class makes external references such as classes and methods and
 /// stores constants such as integers or UTF8s.
-class JavaConstantPool {
+class JavaConstantPool : public mvm::PermanentObject {
 public:
   
   /// classDef - The owning class of this constant pool.
@@ -58,6 +58,10 @@ public:
   ///
   void**  ctpRes; 
   
+  /// operator new - Redefine the operator to allocate the arrays of a
+  /// constant pool inline.
+  void* operator new(size_t sz, mvm::Allocator* allocator, uint32 ctpSize);
+
   /// CtpReaderClass - Reads a class entry.
   static uint32 CtpReaderClass(JavaConstantPool* ctp, Reader& reader,
                                uint32 index);
@@ -254,24 +258,16 @@ public:
 
   /// JavaConstantPool - Default constructor.
   ///
-  JavaConstantPool() {
-    ctpRes = 0;
-    ctpType = 0;
-    ctpDef = 0;
-  }
+  JavaConstantPool() {}
   
   /// JavaConstantPool - Reads the bytecode of the class to get
   /// the initial types and constants definitions.
   ///
-  JavaConstantPool(Class*, Reader& reader);
+  JavaConstantPool(Class*, Reader& reader, uint32 ctpSize);
 
   /// ~JavaConstantPool - Delete the constant pool.
   ///
-  ~JavaConstantPool() {
-    delete ctpRes;
-    delete ctpDef;
-    delete ctpType;
-  }  
+  ~JavaConstantPool() {}  
 };
 
 } // end namespace jnjvm

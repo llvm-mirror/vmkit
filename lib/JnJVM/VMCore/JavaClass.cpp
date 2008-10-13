@@ -279,7 +279,8 @@ ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n,
                                uint32 nb) : 
   CommonClass(loader, n, false) {
  
-  display = new CommonClass*[1];
+  display = (CommonClass**)
+    loader->allocator->allocatePermanentMemory(sizeof(CommonClass*));
   display[0] = this;
   primitive = true;
   status = ready;
@@ -308,7 +309,8 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
   super = ClassArray::SuperArray;
   interfaces = ClassArray::InterfacesArray;
   depth = 1;
-  display = new CommonClass*[2];
+  display = (CommonClass**)
+    loader->allocator->allocatePermanentMemory(2 * sizeof(CommonClass*));
   display[0] = ClassArray::SuperArray;
   display[1] = this;
   access = ACC_FINAL | ACC_ABSTRACT | ACC_PUBLIC;
@@ -625,7 +627,7 @@ JavaMethod* CommonClass::constructMethod(const UTF8* name,
   method_iterator End = map.end();
   method_iterator I = map.find(CC);
   if (I == End) {
-    JavaMethod* method = new JavaMethod();
+    JavaMethod* method = new(classLoader->allocator) JavaMethod();
     method->name = name;
     method->type = type;
     method->classDef = (Class*)this;
@@ -649,7 +651,7 @@ JavaField* CommonClass::constructField(const UTF8* name,
   field_iterator End = map.end();
   field_iterator I = map.find(CC);
   if (I == End) {
-    JavaField* field = new JavaField();
+    JavaField* field = new(classLoader->allocator) JavaField();
     field->name = name;
     field->type = type;
     field->classDef = (Class*)this;
@@ -682,12 +684,15 @@ void UserClass::loadParents() {
   const UTF8* superUTF8 = getSuperUTF8();
   if (superUTF8 == 0) {
     depth = 0;
-    display = new UserCommonClass*[1];
+    display = (CommonClass**)
+      classLoader->allocator->allocatePermanentMemory(sizeof(CommonClass*));
     display[0] = this;
   } else {
     super = classLoader->loadName(superUTF8, true, true);
     depth = super->depth + 1;
-    display = new UserCommonClass*[depth + 1];
+    mvm::Allocator* allocator = classLoader->allocator;
+    display = (CommonClass**)
+      allocator->allocatePermanentMemory(sizeof(CommonClass*) * (depth + 1));
     memcpy(display, super->display, depth * sizeof(UserCommonClass*));
     display[depth] = this;
   }
@@ -703,7 +708,8 @@ void Class::readAttributs(Reader& reader, std::vector<Attribut*>& attr) {
   for (int i = 0; i < nba; i++) {
     const UTF8* attName = ctpInfo->UTF8At(reader.readU2());
     uint32 attLen = reader.readU4();
-    Attribut* att = new Attribut(attName, attLen, reader.cursor);
+    Attribut* att = new(classLoader->allocator) Attribut(attName, attLen,
+                                                         reader.cursor);
     attr.push_back(att);
     reader.seek(attLen, Reader::SeekCur);
   }
@@ -749,7 +755,9 @@ void Class::readClass() {
   }
   minor = reader.readU2();
   major = reader.readU2();
-  ctpInfo = new JavaConstantPool(this, reader);
+  uint32 ctpSize = reader.readU2();
+  ctpInfo = new(classLoader->allocator, ctpSize) JavaConstantPool(this, reader,
+                                                                  ctpSize);
   access = reader.readU2();
   
   if (!isPublic(access)) access |= ACC_PRIVATE;

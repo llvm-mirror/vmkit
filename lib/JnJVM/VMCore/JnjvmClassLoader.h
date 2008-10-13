@@ -66,6 +66,11 @@ private:
   ///
   virtual UserClass* internalLoad(const UTF8* utf8);
   
+  /// internalConstructType - Hashes a Typedef, an internal representation of
+  /// a class still not loaded.
+  ///
+  Typedef* internalConstructType(const UTF8 * name);
+  
   /// JnjvmClassLoader - Allocate a user-defined class loader. Called on
   /// first use of a Java class loader.
   ///
@@ -268,7 +273,8 @@ public:
   /// createBootstrapLoader - Creates the bootstrap loader, first thing
   /// to do before any execution of a JVM.
   ///
-  static JnjvmBootstrapLoader* createBootstrapLoader();
+  JnjvmBootstrapLoader(mvm::Allocator*);
+  JnjvmBootstrapLoader() {}
 
   /// upcalls - Upcall classes, fields and methods so that C++ code can call
   /// Java code.
