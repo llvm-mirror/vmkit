@@ -522,8 +522,8 @@ public:
 
   static UserClassPrimitive* byteIdToPrimitive(char id, Classpath* upcalls);
   
-  void* operator new(size_t sz, mvm::Allocator* allocator) {
-    return allocator->allocatePermanentMemory(sz);
+  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator) {
+    return allocator.Allocate(sz);
   }
 
 };
@@ -714,7 +714,8 @@ class ClassArray : public CommonClass {
 private:
   /// doNew - Allocate a new array with the given allocator.
   ///
-  JavaArray* doNew(sint32 n, mvm::Allocator* allocator);
+  JavaArray* doNew(sint32 n, mvm::BumpPtrAllocator& allocator);
+  JavaArray* doNew(sint32 n, mvm::Allocator& allocator);
 
 public:
   

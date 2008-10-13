@@ -38,9 +38,8 @@ std::vector<UserClass*> JnjvmBootstrapLoader::InterfacesArray;
 extern const char* GNUClasspathGlibj;
 extern const char* GNUClasspathLibs;
 
-JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::Allocator* A) {
+JnjvmBootstrapLoader::JnjvmBootstrapLoader(uint32 memLimit) {
   
-  allocator = A;
   JnjvmModule::initialise(); 
   TheModule = new JnjvmModule("Bootstrap JnJVM");
   TheModuleProvider = new JnjvmModuleProvider(TheModule);
@@ -71,7 +70,6 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   TheModule = new JnjvmModule("Applicative loader");
   TheModuleProvider = new JnjvmModuleProvider(TheModule);
   bootstrapLoader = JCL.bootstrapLoader;
-  allocator = new mvm::Allocator();
   
   hashUTF8 = new(allocator) UTF8Map(allocator,
                                     bootstrapLoader->upcalls->ArrayOfChar);
@@ -403,10 +401,27 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf,
 }
 
 JnjvmClassLoader::~JnjvmClassLoader() {
-  delete classes;
-  delete hashUTF8;
-  delete javaTypes;
-  delete javaSignatures;
+  
+  if (classes) {
+    classes->~ClassMap();
+    allocator.Deallocate(classes);
+  }
+
+  if (hashUTF8) {
+    hashUTF8->~UTF8Map();
+    allocator.Deallocate(hashUTF8);
+  }
+
+  if (javaTypes) {
+    javaTypes->~TypeMap();
+    allocator.Deallocate(javaTypes);
+  }
+
+  if (javaSignatures) {
+    javaSignatures->~SignMap();
+    allocator.Deallocate(javaSignatures);
+  }
+
   delete TheModuleProvider;
 }
 
@@ -432,7 +447,7 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
           stat(rp, &st);
           if ((st.st_mode & S_IFMT) == S_IFDIR) {
             unsigned int len = strlen(rp);
-            char* temp = (char*)allocator->allocatePermanentMemory(len + 2);
+            char* temp = (char*)allocator.Allocate(len + 2);
             memcpy(temp, rp, len);
             temp[len] = Jnjvm::dirSeparator[0];
             temp[len + 1] = 0;

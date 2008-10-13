@@ -117,7 +117,7 @@ public:
   /// acons - Allocates an UTF8 in permanent memory. The class argument must be
   /// JavaArray::ofChar.
   static const UTF8* acons(sint32 n, UserClassArray* cl,
-                           mvm::Allocator* allocator);
+                           mvm::BumpPtrAllocator& allocator);
 
   /// internalToJava - Creates a copy of the UTF8 at its given offset and size
   /// woth all its '.' replaced by '/'. The JVM bytecode reference classes in
@@ -165,7 +165,10 @@ public:
 
   /// operator new - Redefines the new operator of this class to allocate
   /// its objects in permanent memory, not with the garbage collector.
-  void* operator new(size_t sz, mvm::Allocator* allocator, sint32 size);
+  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
+                     sint32 size) {
+    return allocator.Allocate(sz + size * sizeof(uint16));
+  }
 
 };
 

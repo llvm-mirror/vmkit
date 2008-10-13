@@ -12,7 +12,10 @@
 
 #include <cstdlib>
 
+#include "llvm/Support/Allocator.h"
+
 #include "MvmGC.h"
+#include "mvm/Threads/Locks.h"
 
 #ifdef MULTIPLE_GC
 #define allocator_new(alloc, cl) collector_new(cl, alloc.GC)
@@ -58,10 +61,26 @@ public:
   }
 };
 
+class BumpPtrAllocator {
+private:
+  LockNormal TheLock;
+  llvm::BumpPtrAllocator Allocator;
+public:
+  void* Allocate(size_t sz) {
+    TheLock.lock();
+    void* res = Allocator.Allocate(sz, sz % 4 ? sizeof(void*) : 1);
+    TheLock.unlock();
+    return res;
+  }
+
+  void Deallocate(void* obj) {}
+};
+
+
 class PermanentObject {
 public:
-  void* operator new(size_t sz, Allocator* allocator) {
-    return allocator->allocatePermanentMemory(sz);
+  void* operator new(size_t sz, BumpPtrAllocator& allocator) {
+    return allocator.Allocate(sz);
   }
 
   void operator delete(void* ptr) {

@@ -17,9 +17,8 @@
 
 using namespace jnjvm;
 
-ZipArchive::ZipArchive(ArrayUInt8* bytes, mvm::Allocator* allocator) {
+ZipArchive::ZipArchive(ArrayUInt8* bytes, mvm::BumpPtrAllocator& A) : allocator(A) {
   this->bytes = bytes;
-  this->allocator = allocator,
   findOfscd();
   if (ofscd > -1) addFiles();
 }
@@ -146,8 +145,7 @@ void ZipArchive::addFiles() {
         (reader.max - temp) < ptr->filenameLength)
       return;
 
-    ptr->filename = 
-      (char*)allocator->allocatePermanentMemory(ptr->filenameLength + 1);
+    ptr->filename = (char*)allocator.Allocate(ptr->filenameLength + 1);
     memcpy(ptr->filename, &(reader.bytes->elements[temp]), ptr->filenameLength);
     ptr->filename[ptr->filenameLength] = 0;
 

@@ -60,7 +60,8 @@ public:
   
   /// operator new - Redefine the operator to allocate the arrays of a
   /// constant pool inline.
-  void* operator new(size_t sz, mvm::Allocator* allocator, uint32 ctpSize);
+  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
+                     uint32 ctpSize);
 
   /// CtpReaderClass - Reads a class entry.
   static uint32 CtpReaderClass(JavaConstantPool* ctp, Reader& reader,

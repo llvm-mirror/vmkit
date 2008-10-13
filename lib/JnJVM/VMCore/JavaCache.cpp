@@ -29,9 +29,11 @@ using namespace jnjvm;
 Enveloppe::~Enveloppe() {
   CacheNode* cache = firstCache;
   CacheNode* next = firstCache;
+  mvm::BumpPtrAllocator& allocator = ctpInfo->classDef->classLoader->allocator;
   while(next) {
     next = cache->next;
-    delete cache;
+    cache->~CacheNode();
+    allocator.Deallocate(cache);
     cache = next;
   }
 }
@@ -47,7 +49,7 @@ CacheNode::CacheNode(Enveloppe* E) {
 }
 
 Enveloppe::Enveloppe(UserConstantPool* ctp, uint32 i) {
-  mvm::Allocator* allocator = ctp->classDef->classLoader->allocator;
+  mvm::BumpPtrAllocator& allocator = ctp->classDef->classLoader->allocator;
   firstCache = new(allocator) CacheNode(this);
   ctpInfo = ctp;
   index = i;

@@ -87,9 +87,7 @@ void Jnjvm::initialiseStatics() {
   }
 #endif
  
-  mvm::Allocator* allocator = new mvm::Allocator();
-  JnjvmBootstrapLoader* JCL = bootstrapLoader = 
-    gc_new(JnjvmBootstrapLoader)(allocator);
+  JnjvmBootstrapLoader* JCL = bootstrapLoader = gc_new(JnjvmBootstrapLoader)(0);
   
   // Create the name of char arrays.
   const UTF8* utf8OfChar = JCL->asciizConstructUTF8("[C");
@@ -248,8 +246,7 @@ mvm::VirtualMachine* mvm::VirtualMachine::createJVM() {
   ServiceDomain* vm = ServiceDomain::allocateService();
   vm->startExecution();
 #else
-  mvm::Allocator* allocator = new mvm::Allocator();
-  Jnjvm* vm = gc_new(Jnjvm)(allocator);
+  Jnjvm* vm = gc_new(Jnjvm)(0);
 #endif
   return vm;
 }

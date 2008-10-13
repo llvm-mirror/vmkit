@@ -87,7 +87,8 @@ class Jnjvm : public mvm::VirtualMachine {
 public:
   /// allocator - Memory allocator of this JVM.
   ///
-  mvm::Allocator* allocator;
+  mvm::BumpPtrAllocator allocator;
+  mvm::Allocator gcAllocator;
 #ifdef ISOLATE_SHARING
   UserClass* throwable;
 #endif
@@ -326,7 +327,7 @@ public:
 
   /// Jnjvm - Allocates a new JVM.
   ///
-  Jnjvm(mvm::Allocator* allocator);
+  Jnjvm(uint32 memLimit);
   
   /// runApplication - Runs the application with the given command line.
   /// User-visible function, inherited by the VirtualMachine class.

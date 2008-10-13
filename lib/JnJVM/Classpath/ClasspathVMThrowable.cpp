@@ -39,7 +39,7 @@ jclass clazz,
 jobject throwable) {
   Jnjvm* vm = JavaThread::get()->isolate;
   int** stack = 
-    (int**)vm->allocator->allocateTemporaryMemory(sizeof(int*) * 100);
+    (int**)vm->gcAllocator.allocateTemporaryMemory(sizeof(int*) * 100);
   int real_size = mvm::MvmModule::getBacktrace((void**)stack, 100);
   stack[real_size] = 0;
   JavaObject* vmThrowable = vm->upcalls->newVMThrowable->doNew(vm);
@@ -116,7 +116,7 @@ jobject vmthrow, jobject throwable) {
     }
   }
   jobject res = (jobject)recGetStackTrace((int**)(uint32**)stack, first, 0);
-  vm->allocator->freeTemporaryMemory(stack);
+  vm->gcAllocator.freeTemporaryMemory(stack);
   return res;
 }
 

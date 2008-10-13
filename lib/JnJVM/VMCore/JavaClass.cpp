@@ -90,7 +90,7 @@ bool CommonClass::FieldCmp::operator<(const CommonClass::FieldCmp &cmp) const {
 
 
 CommonClass::~CommonClass() {
-  delete display;
+  classLoader->allocator.Deallocate(display);
 }
 
 CommonClass::CommonClass() {
@@ -110,47 +110,57 @@ Class::~Class() {
   for (std::vector<Attribut*>::iterator i = attributs.begin(), 
        e = attributs.end(); i!= e; ++i) {
     Attribut* cur = *i;
-    delete cur;
+    cur->~Attribut();
+    classLoader->allocator.Deallocate(cur);
   }
   
   for (field_iterator i = staticFields.begin(), 
        e = staticFields.end(); i!= e; ++i) {
     JavaField* cur = i->second;
-    delete cur;
+    cur->~JavaField();
+    classLoader->allocator.Deallocate(cur);
   }
   
   for (field_iterator i = virtualFields.begin(), 
        e = virtualFields.end(); i!= e; ++i) {
     JavaField* cur = i->second;
-    delete cur;
+    cur->~JavaField();
+    classLoader->allocator.Deallocate(cur);
   }
   
   for (method_iterator i = virtualMethods.begin(), 
        e = virtualMethods.end(); i!= e; ++i) {
     JavaMethod* cur = i->second;
-    delete cur;
+    cur->~JavaMethod();
+    classLoader->allocator.Deallocate(cur);
   }
   
   for (method_iterator i = staticMethods.begin(), 
        e = staticMethods.end(); i!= e; ++i) {
     JavaMethod* cur = i->second;
-    delete cur;
+    cur->~JavaMethod();
+    classLoader->allocator.Deallocate(cur);
   }
-  
-  delete ctpInfo;
-  free(staticVT);
+ 
+  if (ctpInfo) {
+    ctpInfo->~JavaConstantPool();
+    classLoader->allocator.Deallocate(ctpInfo);
+  }
+
+  classLoader->allocator.Deallocate(staticVT);
 
   // Currently, only regular classes have a heap allocated virtualVT.
   // Array classes have a C++ allocated virtualVT and primitive classes
   // do not have a virtualVT.
-  free(virtualVT);
+  classLoader->allocator.Deallocate(virtualVT);
 }
 
 JavaField::~JavaField() {
   for (std::vector<Attribut*>::iterator i = attributs.begin(), 
        e = attributs.end(); i!= e; ++i) {
     Attribut* cur = *i;
-    delete cur;
+    cur->~Attribut();
+    classDef->classLoader->allocator.Deallocate(cur);
   }
 }
 
@@ -159,13 +169,15 @@ JavaMethod::~JavaMethod() {
   for (std::vector<Attribut*>::iterator i = attributs.begin(), 
        e = attributs.end(); i!= e; ++i) {
     Attribut* cur = *i;
-    delete cur;
+    cur->~Attribut();
+    classDef->classLoader->allocator.Deallocate(cur);
   }
 
   for (std::vector<Enveloppe*>::iterator i = caches.begin(), 
        e = caches.end(); i!= e; ++i) {
     Enveloppe* cur = *i;
-    delete cur;
+    cur->~Enveloppe();
+    classDef->classLoader->allocator.Deallocate(cur);
   }
 }
 
@@ -273,8 +285,7 @@ ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n,
                                uint32 nb) : 
   CommonClass(loader, n, false) {
  
-  display = (CommonClass**)
-    loader->allocator->allocatePermanentMemory(sizeof(CommonClass*));
+  display = (CommonClass**)loader->allocator.Allocate(sizeof(CommonClass*));
   display[0] = this;
   primitive = true;
   status = ready;
@@ -303,8 +314,7 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
   super = ClassArray::SuperArray;
   interfaces = ClassArray::InterfacesArray;
   depth = 1;
-  display = (CommonClass**)
-    loader->allocator->allocatePermanentMemory(2 * sizeof(CommonClass*));
+  display = (CommonClass**)loader->allocator.Allocate(2 * sizeof(CommonClass*));
   display[0] = ClassArray::SuperArray;
   display[1] = this;
   access = ACC_FINAL | ACC_ABSTRACT | ACC_PUBLIC;
@@ -333,17 +343,30 @@ JavaArray* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
   else if (n > JavaArray::MaxArraySize)
     vm->outOfMemoryError(n);
 
-  return doNew(n, vm->allocator);
+  return doNew(n, vm->gcAllocator);
 }
 
-JavaArray* UserClassArray::doNew(sint32 n, mvm::Allocator* allocator) {
+JavaArray* UserClassArray::doNew(sint32 n, mvm::Allocator& allocator) {
   UserCommonClass* cl = baseClass();
   assert(cl && virtualVT && "array class not resolved");
 
   uint32 primSize = cl->isPrimitive() ? cl->virtualSize : sizeof(JavaObject*);
   uint32 size = sizeof(JavaObject) + sizeof(sint32) + n * primSize;
-  JavaArray* res = (JavaArray*)allocator->allocateManagedObject(size,
-                                                                virtualVT);
+  JavaArray* res = (JavaArray*)allocator.allocateManagedObject(size,
+                                                               virtualVT);
+  res->initialise(this);
+  res->size = n;
+  return res;
+}
+
+JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator) {
+  UserCommonClass* cl = baseClass();
+  assert(cl && virtualVT && "array class not resolved");
+
+  uint32 primSize = cl->isPrimitive() ? cl->virtualSize : sizeof(JavaObject*);
+  uint32 size = sizeof(JavaObject) + sizeof(sint32) + n * primSize;
+  JavaArray* res = (JavaArray*)allocator.Allocate(size);
+  ((void**)res)[0] = virtualVT;
   res->initialise(this);
   res->size = n;
   return res;
@@ -484,8 +507,8 @@ JavaObject* UserClass::doNew(Jnjvm* vm) {
   assert(this && "No class when allocating.");
   assert(this->isReady() && "Uninitialized class when allocating.");
   JavaObject* res = 
-    (JavaObject*)vm->allocator->allocateManagedObject(getVirtualSize(),
-                                                      getVirtualVT());
+    (JavaObject*)vm->gcAllocator.allocateManagedObject(getVirtualSize(),
+                                                       getVirtualVT());
   res->classOf = this;
   return res;
 }
@@ -679,14 +702,14 @@ void UserClass::loadParents() {
   if (superUTF8 == 0) {
     depth = 0;
     display = (CommonClass**)
-      classLoader->allocator->allocatePermanentMemory(sizeof(CommonClass*));
+      classLoader->allocator.Allocate(sizeof(CommonClass*));
     display[0] = this;
   } else {
     super = classLoader->loadName(superUTF8, true, true);
     depth = super->depth + 1;
-    mvm::Allocator* allocator = classLoader->allocator;
+    mvm::BumpPtrAllocator& allocator = classLoader->allocator;
     display = (CommonClass**)
-      allocator->allocatePermanentMemory(sizeof(CommonClass*) * (depth + 1));
+      allocator.Allocate(sizeof(CommonClass*) * (depth + 1));
     memcpy(display, super->display, depth * sizeof(UserCommonClass*));
     display[depth] = this;
   }

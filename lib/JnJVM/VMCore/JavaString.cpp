@@ -18,8 +18,7 @@ using namespace jnjvm;
 
 JavaString* JavaString::stringDup(const UTF8*& utf8, Jnjvm* vm) {
   UserClass* cl = vm->upcalls->newString;
-  JavaString* res = 
-    (JavaString*)vm->allocator->allocatePermanentMemory(cl->getVirtualSize());
+  JavaString* res = (JavaString*)vm->allocator.Allocate(cl->getVirtualSize());
 #ifdef ISOLATE_SHARING
   /// Do this for now, but we will have to change it to duplicate the UTF8.
   /// UTF8 that dont have a class are shared UTF8.

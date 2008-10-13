@@ -186,10 +186,11 @@ uint32 JavaConstantPool::CtpReaderDouble(JavaConstantPool* ctp, Reader& reader,
 }
 
 
-void* JavaConstantPool::operator new(size_t sz, mvm::Allocator* allocator,
-                                     uint32 ctpSize) {
+void*
+JavaConstantPool::operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
+                               uint32 ctpSize) {
   uint32 size = sz + ctpSize * (sizeof(void*) + sizeof(sint32) + sizeof(uint8));
-  return allocator->allocatePermanentMemory(size);
+  return allocator.Allocate(size);
 }
 
 JavaConstantPool::JavaConstantPool(Class* cl, Reader& reader, uint32 size) {

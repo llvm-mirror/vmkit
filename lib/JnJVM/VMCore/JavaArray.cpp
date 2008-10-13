@@ -108,12 +108,8 @@ char* UTF8::UTF8ToAsciiz() const {
 #endif
 }
 
-void* UTF8::operator new(size_t sz, mvm::Allocator* allocator, sint32 size) {
-  return allocator->allocatePermanentMemory(sz + size * sizeof(uint16));
-}
-
 const UTF8* UTF8::acons(sint32 n, UserClassArray* cl,
-                        mvm::Allocator* allocator) {
+                        mvm::BumpPtrAllocator& allocator) {
   assert(n >= 0 && "Creating an UTF8 with a size < 0");
   assert(n <= JavaArray::MaxArraySize && 
          "Creating an UTF8 with a size too big");

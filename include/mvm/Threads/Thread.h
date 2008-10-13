@@ -13,11 +13,11 @@
 #include "types.h"
 
 #include "MvmGC.h"
-#include "mvm/Allocator.h"
 #include "mvm/JIT.h"
 #include "mvm/Threads/Key.h"
 
 
+class Allocator;
 class Collector;
 
 namespace mvm {

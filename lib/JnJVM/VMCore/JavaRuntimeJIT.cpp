@@ -269,7 +269,8 @@ extern "C" void jniProceedPendingException() {
   JavaThread* th = JavaThread::get();
   jmp_buf* buf = th->sjlj_buffers.back();
   th->sjlj_buffers.pop_back();
-  free(buf);
+  mvm::Allocator& allocator = th->isolate->gcAllocator;
+  allocator.freeTemporaryMemory(buf);
   if (JavaThread::get()->pendingException) {
     th->throwPendingException();
   }
@@ -277,8 +278,8 @@ extern "C" void jniProceedPendingException() {
 
 extern "C" void* getSJLJBuffer() {
   JavaThread* th = JavaThread::get();
-  mvm::Allocator* allocator = th->isolate->allocator;
-  void** buf = (void**)allocator->allocatePermanentMemory(sizeof(jmp_buf));
+  mvm::Allocator& allocator = th->isolate->gcAllocator;
+  void** buf = (void**)allocator.allocateTemporaryMemory(sizeof(jmp_buf));
   th->sjlj_buffers.push_back((jmp_buf*)buf);
   return (void*)buf;
 }

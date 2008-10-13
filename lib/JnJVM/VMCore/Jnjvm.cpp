@@ -121,8 +121,8 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
       PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", printString());
       
       JavaObject* val = 
-        (JavaObject*)vm->allocator->allocateManagedObject(cl->getStaticSize(),
-                                                          cl->getStaticVT());
+        (JavaObject*)vm->gcAllocator.allocateManagedObject(cl->getStaticSize(),
+                                                           cl->getStaticVT());
       val->initialise(cl);
       CommonClass::field_map* map = cl->getStaticFields();
       for (CommonClass::field_iterator i = map->begin(), e = map->end(); i!= e;
@@ -355,11 +355,11 @@ JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
 Jnjvm::~Jnjvm() {
   if (hashStr) {
     hashStr->~StringMap();
-    allocator->freePermanentMemory(hashStr);
+    allocator.Deallocate(hashStr);
   }
   if (hashUTF8) {
     hashUTF8->~UTF8Map();
-    allocator->freePermanentMemory(hashUTF8);
+    allocator.Deallocate(hashUTF8);
   }
 }
 
@@ -422,7 +422,7 @@ static char* findInformation(Jnjvm* vm, ArrayUInt8* manifest, const char* entry,
     else end += index;
 
     sint32 length = end - index - 1;
-    char* name = (char*)vm->allocator->allocatePermanentMemory(length + 1);
+    char* name = (char*)vm->allocator.Allocate(length + 1);
     memcpy(name, &(ptr[index]), length);
     name[length] = 0;
     return name;
@@ -435,7 +435,7 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
                                           int i) {
   char* jarFile = argv[i];
   uint32 size = 2 + strlen(vm->classpath) + strlen(jarFile);
-  char* temp = (char*)vm->allocator->allocatePermanentMemory(size);
+  char* temp = (char*)vm->allocator.Allocate(size);
 
   sprintf(temp, "%s:%s", vm->classpath, jarFile);
   vm->setClasspath(temp);
@@ -810,9 +810,8 @@ void Jnjvm::runApplication(int argc, char** argv) {
   }
 }
 
-Jnjvm::Jnjvm(mvm::Allocator* A) {
+Jnjvm::Jnjvm(uint32 memLimit) {
 
-  allocator = A;
   classpath = getenv("CLASSPATH");
   if (!classpath) classpath = ".";
   

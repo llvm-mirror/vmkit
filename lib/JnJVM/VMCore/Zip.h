@@ -36,7 +36,7 @@ class ZipArchive : public mvm::PermanentObject {
   friend class JnjvmBootstrapLoader;
 private:
   
-  mvm::Allocator* allocator;
+  mvm::BumpPtrAllocator& allocator;
 
   struct ltstr
   {
@@ -61,14 +61,14 @@ public:
   ~ZipArchive() {
     for (table_iterator I = filetable.begin(), E = filetable.end(); I != E; 
          ++I) {
-      allocator->freePermanentMemory((void*)I->first);
+      allocator.Deallocate((void*)I->first);
       I->second->~ZipFile();
-      allocator->freePermanentMemory((void*)I->second);
+      allocator.Deallocate((void*)I->second);
     }
   }
 
   int getOfscd() { return ofscd; }
-  ZipArchive(ArrayUInt8* bytes, mvm::Allocator* allocator);
+  ZipArchive(ArrayUInt8* bytes, mvm::BumpPtrAllocator& allocator);
   ZipFile* getFile(const char* filename);
   int readFile(ArrayUInt8* array, const ZipFile* file);
 

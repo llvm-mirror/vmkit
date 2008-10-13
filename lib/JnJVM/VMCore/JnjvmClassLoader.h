@@ -101,7 +101,7 @@ public:
   /// allocator - Reference to the memory allocator, which will allocate UTF8s,
   /// signatures and types.
   ///
-  mvm::Allocator* allocator;
+  mvm::BumpPtrAllocator allocator;
    
   
   /// hashUTF8 - Tables of UTF8s defined by this class loader. Shared
@@ -273,7 +273,7 @@ public:
   /// createBootstrapLoader - Creates the bootstrap loader, first thing
   /// to do before any execution of a JVM.
   ///
-  JnjvmBootstrapLoader(mvm::Allocator*);
+  JnjvmBootstrapLoader(uint32 memLimit);
   JnjvmBootstrapLoader() {}
 
   /// upcalls - Upcall classes, fields and methods so that C++ code can call

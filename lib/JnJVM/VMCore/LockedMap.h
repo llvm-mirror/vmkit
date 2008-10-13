@@ -6,6 +6,12 @@
 // License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
+//
+// This file defines thread-safe maps that must be deallocated by the owning
+// object. For example a class loader is responsible for deallocating the
+// types stored in a TypeMap.
+//
+//===----------------------------------------------------------------------===//
 
 #ifndef JNJVM_LOCKED_MAP_H
 #define JNJVM_LOCKED_MAP_H
@@ -96,7 +102,7 @@ public:
   typedef std::multimap<const uint32, const UTF8*>::iterator iterator;
   
   mvm::LockNormal lock;
-  mvm::Allocator* allocator;
+  mvm::BumpPtrAllocator& allocator;
   UserClassArray* array;
   std::multimap<const uint32, const UTF8*> map;
   const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
@@ -104,14 +110,13 @@ public:
   const UTF8* lookupAsciiz(const char* asciiz); 
   const UTF8* lookupReader(const uint16* buf, uint32 size);
   
-  UTF8Map(mvm::Allocator* A, UserClassArray* cl) {
-    allocator = A;
+  UTF8Map(mvm::BumpPtrAllocator& A, UserClassArray* cl) : allocator(A) {
     array = cl;
   }
 
   ~UTF8Map() {
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      allocator->freePermanentMemory((void*)i->second);
+      allocator.Deallocate((void*)i->second);
     }
   }
 
@@ -126,26 +131,11 @@ public:
 };
 
 class ClassMap : 
-    public LockedMap<const UTF8*, UserCommonClass*, ltutf8, JnjvmClassLoader* > {
-public:
-  
-  ClassMap() {}
-
-  ~ClassMap() {}
-  
+  public LockedMap<const UTF8*, UserCommonClass*, ltutf8, JnjvmClassLoader* > {
 };
 
 class StringMap :
   public LockedMap<const UTF8*, JavaString*, ltutf8, Jnjvm*> {
-public:
-  
-  StringMap() {}
-  
-  ~StringMap() {
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      free(i->second);
-    }
-  }  
 };
 
 class TypeMap : public mvm::PermanentObject {
@@ -164,15 +154,6 @@ public:
   inline void hash(const UTF8* k, Typedef* c) {
     map.insert(std::make_pair(k, c));
   }
-  
-  TypeMap() {}
-  
-  ~TypeMap() {
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      delete i->second;
-    }
-  }
-  
 };
 
 class SignMap : public mvm::PermanentObject {
@@ -190,14 +171,6 @@ public:
 
   inline void hash(const UTF8* k, Signdef* c) {
     map.insert(std::make_pair(k, c));
-  }
-  
-  SignMap() {}
-  
-  ~SignMap() {
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      delete i->second;
-    }
   }
   
 };
