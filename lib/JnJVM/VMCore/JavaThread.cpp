@@ -29,13 +29,3 @@ void JavaThread::print(mvm::PrintBuffer* buf) const {
   buf->write("Thread:");
   javaThread->print(buf);
 }
-
-JavaThread::~JavaThread() {
-  delete lock;
-  delete varcond;
-}
-
-JavaThread::JavaThread() {
-  lock = 0;
-  varcond = 0;
-}

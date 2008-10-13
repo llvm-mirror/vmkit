@@ -27,14 +27,14 @@ void JavaCond::notify() {
   for (std::vector<JavaThread*>::iterator i = threads.begin(), 
             e = threads.end(); i!= e;) {
     JavaThread* cur = *i;
-    cur->lock->lock();
+    cur->lock.lock();
     if (cur->interruptFlag != 0) {
-      cur->lock->unlock();
+      cur->lock.unlock();
       ++i;
       continue;
     } else if (cur->javaThread != 0) {
-      cur->varcond->signal();
-      cur->lock->unlock();
+      cur->varcond.signal();
+      cur->lock.unlock();
       threads.erase(i);
       break;
     } else { // dead thread
@@ -48,9 +48,9 @@ void JavaCond::notifyAll() {
   for (std::vector<JavaThread*>::iterator i = threads.begin(),
             e = threads.end(); i!= e; ++i) {
     JavaThread* cur = *i;
-    cur->lock->lock();
-    cur->varcond->signal();
-    cur->lock->unlock();
+    cur->lock.lock();
+    cur->varcond.signal();
+    cur->lock.unlock();
   }
   threads.clear();
 }
@@ -170,12 +170,12 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
   if (owner()) {
     LockObj * l = changeToFatlock();
     JavaThread* thread = JavaThread::get();
-    mvm::Lock* mutexThread = thread->lock;
-    mvm::Cond* varcondThread = thread->varcond;
+    mvm::Lock& mutexThread = thread->lock;
+    mvm::Cond& varcondThread = thread->varcond;
 
-    mutexThread->lock();
+    mutexThread.lock();
     if (thread->interruptFlag != 0) {
-      mutexThread->unlock();
+      mutexThread.unlock();
       thread->interruptFlag = 0;
       thread->isolate->interruptedException(this);
     } else {
@@ -187,13 +187,13 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
       thread->state = JavaThread::StateWaiting;
 
       if (timed) {
-        timeout = varcondThread->timed_wait(mutexThread, info);
+        timeout = varcondThread.timed_wait(&mutexThread, info);
       } else {
-        varcondThread->wait(mutexThread);
+        varcondThread.wait(&mutexThread);
       }
 
       bool interrupted = (thread->interruptFlag != 0);
-      mutexThread->unlock();
+      mutexThread.unlock();
       mvm::LockRecursive::my_lock_all(&l->lock, recur);
 
       if (interrupted || timeout) {

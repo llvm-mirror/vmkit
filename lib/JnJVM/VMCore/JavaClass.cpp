@@ -91,14 +91,10 @@ bool CommonClass::FieldCmp::operator<(const CommonClass::FieldCmp &cmp) const {
 
 CommonClass::~CommonClass() {
   delete display;
-  delete lockVar;
-  delete condVar;
 }
 
 CommonClass::CommonClass() {
   display = 0;
-  lockVar = 0;
-  condVar = 0;
   virtualVT = 0;
 }
 
@@ -264,8 +260,6 @@ CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n,
                          bool isArray) {
   name = n;
   this->virtualVT = 0;
-  this->lockVar = mvm::Lock::allocRecursive();
-  this->condVar = mvm::Cond::allocCond();
   this->status = loaded;
   this->classLoader = loader;
   this->array = isArray;

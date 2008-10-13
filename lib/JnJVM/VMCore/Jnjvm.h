@@ -57,14 +57,14 @@ public:
 
   /// nonDaemonLock - Protection lock for the nonDaemonThreads variable.
   ///
-  mvm::Lock* nonDaemonLock;
+  mvm::LockNormal nonDaemonLock;
 
   /// nonDaemonVar - Condition variable to wake up the initial thread when it
   /// waits for other non-daemon threads to end. The non-daemon thread that
   /// decrements the nonDaemonThreads variable to zero wakes up the initial
   /// thread.
   ///
-  mvm::Cond* nonDaemonVar;
+  mvm::Cond nonDaemonVar;
   
   /// ThreadSystem - Allocates a thread system management, initializing the
   /// lock, the condition variable and setting the initial number of non
@@ -72,17 +72,12 @@ public:
   ///
   ThreadSystem() {
     nonDaemonThreads = 1;
-    nonDaemonLock = mvm::Lock::allocNormal();
-    nonDaemonVar  = mvm::Cond::allocCond();
   }
 
   /// ~ThreadSystem - Destroys the thread system manager. Destroys the lock and
   /// the condition variable.
   ///
-  ~ThreadSystem() {
-    delete nonDaemonLock;
-    delete nonDaemonVar;
-  }
+  ~ThreadSystem() {}
 
 };
 

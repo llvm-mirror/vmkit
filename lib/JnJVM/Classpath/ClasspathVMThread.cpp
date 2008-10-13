@@ -59,9 +59,9 @@ static void start(JavaObject* vmThread) {
 
 
   if (!isDaemon) {
-    ts.nonDaemonLock->lock();
+    ts.nonDaemonLock.lock();
     ts.nonDaemonThreads++;
-    ts.nonDaemonLock->unlock();
+    ts.nonDaemonLock.unlock();
   }
   
 #ifdef SERVICE_VM
@@ -75,11 +75,11 @@ static void start(JavaObject* vmThread) {
   isolate->upcalls->runVMThread->invokeIntSpecial(isolate, vmthClass, vmThread);
   
   if (!isDaemon) {
-    ts.nonDaemonLock->lock();
+    ts.nonDaemonLock.lock();
     ts.nonDaemonThreads--;
     if (ts.nonDaemonThreads == 0)
-      ts.nonDaemonVar->signal();
-    ts.nonDaemonLock->unlock();
+      ts.nonDaemonVar.signal();
+    ts.nonDaemonLock.unlock();
   }
 
 #ifdef SERVICE_VM
@@ -129,16 +129,16 @@ jobject _vmthread) {
   
   JavaField* field = vm->upcalls->vmdataVMThread;
   JavaThread* th = (JavaThread*)field->getObjectField(vmthread);
-  th->lock->lock();
+  th->lock.lock();
   th->interruptFlag = 1;
 
   // here we could also raise a signal for interrupting I/O
   if (th->state == JavaThread::StateWaiting) {
     th->state = JavaThread::StateInterrupted;
-    th->varcond->signal();
+    th->varcond.signal();
   }
   
-  th->lock->unlock();
+  th->lock.unlock();
 }
 
 JNIEXPORT jboolean JNICALL Java_java_lang_VMThread_interrupted(

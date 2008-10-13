@@ -34,8 +34,8 @@ public:
   static VirtualTable *VT;
   JavaObject* javaThread;
   Jnjvm* isolate;
-  mvm::Lock* lock;
-  mvm::Cond* varcond;
+  mvm::LockNormal lock;
+  mvm::Cond varcond;
   JavaObject* pendingException;
   void* internalPendingException;
   uint32 interruptFlag;
@@ -48,14 +48,12 @@ public:
 
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
-  ~JavaThread();
-  JavaThread();
+  ~JavaThread() {}
+  JavaThread() {}
   
   void initialise(JavaObject* thread, Jnjvm* isolate) {
     this->javaThread = thread;
     this->isolate = isolate;
-    this->lock = mvm::Lock::allocNormal();
-    this->varcond = mvm::Cond::allocCond();
     this->interruptFlag = 0;
     this->state = StateRunning;
     this->pendingException = 0;

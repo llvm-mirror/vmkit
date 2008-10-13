@@ -754,14 +754,14 @@ void Jnjvm::executePremain(const char* className, JavaString* args,
 }
 
 void Jnjvm::waitForExit() { 
-  threadSystem.nonDaemonLock->lock();
+  threadSystem.nonDaemonLock.lock();
   --(threadSystem.nonDaemonThreads);
   
   while (threadSystem.nonDaemonThreads) {
-    threadSystem.nonDaemonVar->wait(threadSystem.nonDaemonLock);
+    threadSystem.nonDaemonVar.wait(&threadSystem.nonDaemonLock);
   }
 
-  threadSystem.nonDaemonLock->unlock();  
+  threadSystem.nonDaemonLock.unlock();  
   return;
 }
 

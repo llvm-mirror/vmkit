@@ -296,11 +296,11 @@ public:
   /// lockVar - When multiple threads want to load/resolve/initialize a class,
   /// they must be synchronized so that these steps are only performed once
   /// for a given class.
-  mvm::Lock* lockVar;
+  mvm::LockRecursive lockVar;
 
   /// condVar - Used to wake threads waiting on the load/resolve/initialize
   /// process of this class, done by another thread.
-  mvm::Cond* condVar;
+  mvm::Cond condVar;
   
   /// classLoader - The Jnjvm class loader that loaded the class.
   ///
@@ -364,32 +364,32 @@ public:
   /// acquire - Acquire this class lock.
   ///
   void acquire() {
-    lockVar->lock();
+    lockVar.lock();
   }
   
   /// release - Release this class lock.
   ///
   void release() {
-    lockVar->unlock();  
+    lockVar.unlock();  
   }
 
   /// waitClass - Wait for the class to be loaded/initialized/resolved.
   ///
   void waitClass() {
-    condVar->wait(lockVar);
+    condVar.wait(&lockVar);
   }
   
   /// broadcastClass - Unblock threads that were waiting on the class being
   /// loaded/initialized/resolved.
   ///
   void broadcastClass() {
-    condVar->broadcast();  
+    condVar.broadcast();  
   }
 
   /// ownerClass - Is the current thread the owner of this thread?
   ///
   bool ownerClass() {
-    return mvm::Lock::selfOwner(lockVar);    
+    return mvm::Lock::selfOwner(&lockVar);    
   }
   
   /// lookupMethodDontThrow - Lookup a method in the method map of this class.
