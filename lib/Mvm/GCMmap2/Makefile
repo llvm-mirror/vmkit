@@ -11,4 +11,4 @@ LEVEL = ../../..
 LIBRARYNAME = GCMmap2
 include $(LEVEL)/Makefile.common
 
-CXX.Flags += -I$(PROJ_SRC_ROOT)/lib/Mvm/CommonThread -I(PROJ_SRC_ROOT)/lib/Mvm/Allocator
+CXX.Flags += -I$(PROJ_SRC_ROOT)/lib/Mvm/CommonThread -I$(PROJ_SRC_ROOT)/lib/Mvm/Allocator
