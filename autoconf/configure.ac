@@ -31,7 +31,7 @@ dnl===
 dnl===-----------------------------------------------------------------------===
 dnl Initialize autoconf and define the package name, version number and
 dnl email address for reporting bugs.
-AC_INIT([vmkit],[0.0.1],[nicolas.geoffray@lip6.fr])
+AC_INIT([vmkit],[0.24],[nicolas.geoffray@lip6.fr])
 
 dnl Provide a copyright substitution and ensure the copyright notice is included
 dnl in the output of --version option of the generated configure script.
@@ -180,24 +180,24 @@ AC_ARG_WITH(gc,
 )
 
 if test "x$gc" = "xboehm";  then
-  GC_FLAGS="-I$PWD/lib/Mvm/BoehmGC -DGC_THREADS"
+  GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/BoehmGC -DGC_THREADS"
   AC_DEFINE([USE_GC_BOEHM], [1], [Using the boehm gc])
   AC_SUBST(GC_MMAP2, [0])
   AC_SUBST(GC_BOEHM, [1])
   GC_LIBS=BoehmGC
   case $target_os in
     *linux*)
-      GC_FLAGS="-I$PWD/lib/Mvm/BoehmGC -DGC_THREADS -DGC_LINUX_THREADS"
+      GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/BoehmGC -DGC_THREADS -DGC_LINUX_THREADS"
     ;;
   esac
 else
   GC_LIBS=GCMmap2
   if test "x$gc" = "xmulti-mmap"; then
-    GC_FLAGS="-I$PWD/lib/Mvm/GCMmap2 -DWITH_TRACER -DMULTIPLE_GC"
+    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/GCMmap2 -DWITH_TRACER -DMULTIPLE_GC"
     AC_SUBST([GC_MULTI_MMAP], [1])
     AC_SUBST([GC_SINGLE_MMAP], [0])
   else
-    GC_FLAGS="-I$PWD/lib/Mvm/GCMmap2 -DWITH_TRACER"
+    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/GCMmap2 -DWITH_TRACER"
     AC_SUBST([GC_MULTI_MMAP], [0])
     AC_SUBST([GC_SINGLE_MMAP], [1])
   fi
@@ -226,7 +226,7 @@ if test "x$vmtype" = "xmulti";  then
   ISOLATE_BUILD=1
 else 
   if test "x$vmtype" = "xservice"; then
-    VM_FLAGS="-DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM -I$PWD/lib/Mvm/Allocator"
+    VM_FLAGS="-DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM -I\$(PROJ_SRC_ROOT)/lib/Mvm/Allocator"
     SERVICE_BUILD=1
   fi
 fi

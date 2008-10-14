@@ -38,4 +38,4 @@ ifeq ($(GCLIB), BoehmGC)
   LIBS += -lgc
 endif
 
-include $(LEVEL)/Makefile.rules
+include $(PROJ_SRC_ROOT)/Makefile.rules
