@@ -10,7 +10,7 @@ LEVEL = ../../..
 
 LIBRARYNAME = Mono
 include $(LEVEL)/Makefile.common
-CXX.Flags += -I../VMCore
+CXX.Flags += -I$(PROJ_SRC_DIR)/../VMCore
 
 CXX.Flags += `pkg-config --cflags glib-2.0 gthread-2.0`
 CXX.Flags += `pkg-config --cflags gmodule-2.0`

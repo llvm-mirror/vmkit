@@ -1,4 +1,4 @@
-##===- lib/JnJVM/VMCore/Makefile ---------------------------*- Makefile -*-===##
+##===- lib/N3/VMCore/Makefile ------------------------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #
@@ -11,4 +11,4 @@ LEVEL = ../../..
 LIBRARYNAME = N3
 include $(LEVEL)/Makefile.common
 
-CXX.Flags += -I../LLVMRuntime
+CXX.Flags += -I$(PROJ_SRC_DIR)/../LLVMRuntime

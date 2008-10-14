@@ -10,4 +10,4 @@ LEVEL = ../../..
 
 LIBRARYNAME = PNetLib
 include $(LEVEL)/Makefile.common
-CXX.Flags += -I../VMCore
+CXX.Flags += -I$(PROJ_SRC_DIR)/../VMCore

@@ -13,8 +13,8 @@ LIBRARYNAME = Classpath
 include $(LEVEL)/Makefile.config
 include $(LEVEL)/Makefile.common
 
-CXX.Flags += -I../VMCore $(CLASSPATH_FLAGS)
+CXX.Flags += -I$(PROJ_SRC_DIR)/../VMCore $(CLASSPATH_FLAGS)
 
 ifeq ($(ISOLATE_BUILD), 1)
-  CXX.Flags += -I../Isolate
+  CXX.Flags += -I$(PROJ_SRC_DIR)/../Isolate
 endif

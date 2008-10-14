@@ -10,7 +10,7 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-VMKIT_RUNTIME = runtime.ll
+VMKIT_RUNTIME = $(PROJ_SRC_ROOT)/lib/N3/LLVMRuntime/runtime.ll
 BUILT_SOURCES = LLVMRuntime.inc
 
 include $(LEVEL)/Makefile.common
