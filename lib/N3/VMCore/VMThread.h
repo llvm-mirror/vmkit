@@ -45,7 +45,7 @@ public:
   static const unsigned int StateWaiting;
   static const unsigned int StateInterrupted;
 
-  virtual void print(mvm::PrintBuffer *buf);
+  virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
   ~VMThread();
   VMThread();

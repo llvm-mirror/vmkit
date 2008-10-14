@@ -776,11 +776,7 @@ void Jnjvm::runApplication(int argc, char** argv) {
     argv = argv + pos - 1;
     argc = argc - pos + 1;
   
-    bootstrapThread = allocator_new(allocator, JavaThread)();
-    bootstrapThread->initialise(0, this);
-    bootstrapThread->baseSP = mvm::Thread::get()->baseSP;
-    JavaThread::set(bootstrapThread); 
-    bootstrapThread->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
+    bootstrapThread = gc_new(JavaThread)(0, this, mvm::Thread::get()->baseSP);
 
     loadBootstrap();
 

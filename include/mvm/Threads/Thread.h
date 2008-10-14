@@ -14,18 +14,20 @@
 
 #include "MvmGC.h"
 #include "mvm/JIT.h"
+#include "mvm/Object.h"
 #include "mvm/Threads/Key.h"
 
 
-class Allocator;
 class Collector;
 
 namespace mvm {
 
+class BumpPtrAllocator;
+
 /// Thread - This class is the base of custom virtual machines' Thread classes.
 /// It provides static functions to manage threads. An instance of this class
 /// contains all thread-specific informations.
-class Thread : public gc {
+class Thread : public Object {
 public:
   
   /// yield - Yield the processor to another thread.
@@ -65,7 +67,14 @@ private:
   static mvm::Key<Thread>* threadKey;
  
 public:
-  Allocator* allocator;
+  
+  /// vmAllocator - Virtual machine specific allocator.
+  ///
+  mvm::BumpPtrAllocator* vmAllocator;
+
+  /// threadAllocator - Current allocator for the thread. Useful for things
+  /// like class loaders which do not allocate per-vm.
+  mvm::BumpPtrAllocator* threadAllocator;
   
   /// baseSP - The base stack pointer.
   ///
@@ -98,8 +107,7 @@ public:
 private:
   
   /// internalClearException - Clear any pending exception.
-  virtual void internalClearException() {
-  }
+  virtual void internalClearException() {}
 
 public:
 

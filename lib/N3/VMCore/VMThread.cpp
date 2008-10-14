@@ -29,7 +29,7 @@ const unsigned int VMThread::StateRunning = 0;
 const unsigned int VMThread::StateWaiting = 1;
 const unsigned int VMThread::StateInterrupted = 2;
 
-void VMThread::print(mvm::PrintBuffer* buf) {
+void VMThread::print(mvm::PrintBuffer* buf) const {
   buf->write("Thread:");
   vmThread->print(buf);
 }

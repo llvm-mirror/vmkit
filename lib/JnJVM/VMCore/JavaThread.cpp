@@ -27,5 +27,54 @@ const unsigned int JavaThread::StateInterrupted = 2;
 
 void JavaThread::print(mvm::PrintBuffer* buf) const {
   buf->write("Thread:");
-  javaThread->print(buf);
+  if (javaThread) javaThread->print(buf);
+}
+
+JavaThread::JavaThread(JavaObject* thread, Jnjvm* vm, void* sp) {
+  if (!thread) bootstrap = true;
+  else bootstrap = false;
+  javaThread = thread;
+  isolate = vm;
+  interruptFlag = 0;
+  state = StateRunning;
+  pendingException = 0;
+  vmAllocator = &isolate->allocator;
+  baseSP = sp;
+  mvm::Thread::set(this);
+  threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
+  
+  if (!bootstrap) {
+#ifdef MULTIPLE_GC
+    GC = isolate->GC;
+    GC->inject_my_thread(sp);
+#else
+    Collector::inject_my_thread(sp);
+#endif
+
+#ifdef SERVICE_VM
+    ServiceDomain* domain = (ServiceDomain*)vm;
+    domain->startExecution();
+    domain->lock->lock();
+    domain->numThreads++;
+    domain->lock->unlock();
+#endif
+  }
+
+
+}
+
+JavaThread::~JavaThread() {
+  if (!bootstrap) {
+#ifdef MULTIPLE_GC
+    GC->remove_my_thread();
+#else
+    Collector::remove_my_thread();
+#endif
+#ifdef SERVICE_VM
+    ServiceDomain* vm = (ServiceDomain*)isolate;
+    vm->lock->lock();
+    vm->numThreads--;
+    vm->lock->unlock();
+#endif
+  }
 }

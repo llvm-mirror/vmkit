@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 #include "MvmGC.h"
+#include "mvm/Allocator.h"
 #include "mvm/Method.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
@@ -113,4 +114,14 @@ void NativeString::print(PrintBuffer *buf) const {
     }
   }
   buf->write("\"");
+}
+
+void* mvm::BumpPtrAllocator::VMAllocate(size_t sz) {
+  mvm::BumpPtrAllocator* allocator = mvm::Thread::get()->vmAllocator;
+  return allocator->Allocate(sz);
+}
+
+void* mvm::BumpPtrAllocator::ThreadAllocate(size_t sz) {
+  mvm::BumpPtrAllocator* allocator = mvm::Thread::get()->threadAllocator;
+  return allocator->Allocate(sz);
 }

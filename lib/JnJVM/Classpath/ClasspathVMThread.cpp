@@ -41,22 +41,30 @@ jclass clazz
 }
 
 static void start(JavaObject* vmThread) {
-  int argc;
+  // Get the classpath
   Classpath* upcalls = vmThread->classOf->classLoader->bootstrapLoader->upcalls;
-  JavaThread* intern = (JavaThread*)upcalls->vmdataVMThread->getObjectField(vmThread);
-  Jnjvm* isolate = intern->isolate;
-  mvm::Thread::set(intern);
-#ifdef MULTIPLE_GC
-  intern->GC->inject_my_thread(&argc);
-#else
-  Collector::inject_my_thread(&argc);
-#endif
-  UserClass* vmthClass = (UserClass*)vmThread->classOf;
-  JavaObject* thread = isolate->upcalls->assocThread->getObjectField(vmThread);
-  ThreadSystem& ts = isolate->threadSystem;
-  bool isDaemon = isolate->upcalls->daemon->getInt8Field(thread);
-  intern->threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
 
+  // When starting the thread, the creator placed the vm object in the vmThread
+  Jnjvm* vm = (Jnjvm*)upcalls->vmdataVMThread->getObjectField(vmThread);
+  assert(vm && "Thread Creator did not put the vm");
+ 
+  // Classpath has set this field.
+  JavaObject* javaThread = upcalls->assocThread->getObjectField(vmThread);
+  assert(javaThread && "VMThread with no Java equivalent");
+  
+  // Create the Java thread.Allocating it on stack will make it call the
+  // destructor when the function exists.
+  JavaThread th(javaThread, vm, &upcalls);
+
+  // Ok, now we can set the real value of vmdata, which is the JavaThread
+  // object.
+  vm->upcalls->vmdataVMThread->setObjectField(vmThread, (JavaObject*)(void*)&th);
+
+  UserClass* vmthClass = (UserClass*)vmThread->classOf;
+  ThreadSystem& ts = vm->threadSystem;
+  
+  
+  bool isDaemon = vm->upcalls->daemon->getInt8Field(javaThread);
 
   if (!isDaemon) {
     ts.nonDaemonLock.lock();
@@ -64,15 +72,7 @@ static void start(JavaObject* vmThread) {
     ts.nonDaemonLock.unlock();
   }
   
-#ifdef SERVICE_VM
-  ServiceDomain* vm = (ServiceDomain*)isolate;
-  vm->startExecution();
-  vm->lock->lock();
-  vm->numThreads++;
-  vm->lock->unlock();
-#endif
-  
-  isolate->upcalls->runVMThread->invokeIntSpecial(isolate, vmthClass, vmThread);
+  upcalls->runVMThread->invokeIntSpecial(vm, vmthClass, vmThread);
   
   if (!isDaemon) {
     ts.nonDaemonLock.lock();
@@ -81,18 +81,6 @@ static void start(JavaObject* vmThread) {
       ts.nonDaemonVar.signal();
     ts.nonDaemonLock.unlock();
   }
-
-#ifdef SERVICE_VM
-  vm->lock->lock();
-  vm->numThreads--;
-  vm->lock->unlock();
-#endif
-
-#ifdef MULTIPLE_GC
-  intern->GC->remove_my_thread();
-#else
-  Collector::remove_my_thread();
-#endif
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMThread_start(
@@ -102,16 +90,13 @@ JNIEnv *env,
 jobject _vmThread, sint64 stackSize) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject* vmThread = (JavaObject*)_vmThread;
-  JavaObject* javaThread = vm->upcalls->assocThread->getObjectField(vmThread);
-  assert(javaThread);
+  
+  // Set the vm in the vmData. We do this to give the vm to the created
+  // thread. The created thread will change the field to its JavaThread
+  // object.
+  vm->upcalls->vmdataVMThread->setObjectField(vmThread, (JavaObject*)vm);
 
-  JavaThread* th = allocator_new(vm->allocator, JavaThread)();
-  th->initialise(javaThread, vm);
-  vm->upcalls->vmdataVMThread->setObjectField(vmThread, (JavaObject*)th);
   int tid = 0;
-#ifdef MULTIPLE_GC
-  th->GC = mvm::Thread::get()->GC;
-#endif
 
   mvm::Thread::start(&tid, (int (*)(void *))start, (void*)vmThread);
 }
@@ -123,11 +108,12 @@ JNIEnv *env,
 jobject _vmthread) {
   Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject* vmthread = (JavaObject*)_vmthread;
-
-  while (vm->upcalls->vmdataVMThread->getObjectField(vmthread) == 0)
+  JavaField* field = vm->upcalls->vmdataVMThread; 
+  // It's possible that the thread to be interrupted has not finished
+  // its initialization. Wait until the initialization is done.
+  while (field->getObjectField(vmthread) == 0)
     mvm::Thread::yield();
   
-  JavaField* field = vm->upcalls->vmdataVMThread;
   JavaThread* th = (JavaThread*)field->getObjectField(vmthread);
   th->lock.lock();
   th->interruptFlag = 1;

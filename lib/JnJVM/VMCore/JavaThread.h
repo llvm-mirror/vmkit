@@ -41,6 +41,7 @@ public:
   uint32 interruptFlag;
   uint32 state;
   std::vector<jmp_buf*> sjlj_buffers;
+  bool bootstrap;
 
   static const unsigned int StateRunning;
   static const unsigned int StateWaiting;
@@ -48,16 +49,10 @@ public:
 
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
-  ~JavaThread() {}
-  JavaThread() {}
+  JavaThread() { bootstrap = true; }
+  ~JavaThread();
   
-  void initialise(JavaObject* thread, Jnjvm* isolate) {
-    this->javaThread = thread;
-    this->isolate = isolate;
-    this->interruptFlag = 0;
-    this->state = StateRunning;
-    this->pendingException = 0;
-  }
+  JavaThread(JavaObject* thread, Jnjvm* isolate, void* sp);
 
   static JavaThread* get() {
     return (JavaThread*)mvm::Thread::get();

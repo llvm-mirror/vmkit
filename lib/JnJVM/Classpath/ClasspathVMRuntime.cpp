@@ -21,6 +21,7 @@
 #include "JavaTypes.h"
 #include "JavaThread.h"
 #include "Jnjvm.h"
+#include "LockedMap.h"
 #include "NativeUtil.h"
 
 
@@ -54,8 +55,7 @@ jobject _strLib) {
   memmove(&(elements[lgPre + lgLib]), vm->postlib->elements,
            lgPost * sizeof(uint16));
   
-  // TODO: find a better place to store the UTF8
-  const UTF8* res = vm->bootstrapLoader->readerConstructUTF8(elements, size);
+  const UTF8* res = vm->hashUTF8->lookupOrCreateReader(elements, size);
 
   return (jobject)(vm->UTF8ToStr(res));
   
