@@ -94,7 +94,8 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("Hashtable<>");
   }
-
+  
+  virtual ~LockedMap() {}
 };
 
 class UTF8Map : public mvm::PermanentObject {

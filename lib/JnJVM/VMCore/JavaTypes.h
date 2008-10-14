@@ -115,7 +115,8 @@ public:
   const UTF8* getKey() const {
     return keyName;
   }
-
+  
+  virtual ~Typedef() {}
 };
 
 class PrimitiveTypedef : public Typedef {
