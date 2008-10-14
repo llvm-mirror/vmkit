@@ -511,8 +511,8 @@ dnl Configure a common Makefile
 AC_CONFIG_FILES(Makefile.common)
 AC_CONFIG_FILES(Makefile.config)
 AC_CONFIG_FILES([lib/JnJVM/Classpath/Classpath.h])
-AC_CONFIG_FILES([lib/N3/PNetLib/PNetPath.cpp])
-AC_CONFIG_FILES([lib/N3/Mono/MonoPath.cpp])
+AC_CONFIG_FILES([lib/N3/PNetLib/PNetPath.inc])
+AC_CONFIG_FILES([lib/N3/Mono/MonoPath.inc])
 
 dnl Do special configuration of Makefiles
 AC_CONFIG_MAKEFILE(Makefile)

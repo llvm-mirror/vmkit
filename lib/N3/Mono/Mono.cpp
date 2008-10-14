@@ -23,6 +23,8 @@
 
 #include "number-formatter.h"
 
+#include "MonoPath.inc"
+
 using namespace n3;
 
 extern "C" int System_Environment_get_Platform (void) {

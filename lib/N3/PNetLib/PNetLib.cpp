@@ -28,6 +28,8 @@
 #include "VMObject.h"
 #include "VMThread.h"
 
+#include "PNetPath.inc"
+
 using namespace n3;
 
 #define IL_CONSOLE_NORMAL 0

@@ -7136,9 +7136,9 @@ ac_config_files="$ac_config_files Makefile.config"
 
 ac_config_files="$ac_config_files lib/JnJVM/Classpath/Classpath.h"
 
-ac_config_files="$ac_config_files lib/N3/PNetLib/PNetPath.cpp"
+ac_config_files="$ac_config_files lib/N3/PNetLib/PNetPath.inc"
 
-ac_config_files="$ac_config_files lib/N3/Mono/MonoPath.cpp"
+ac_config_files="$ac_config_files lib/N3/Mono/MonoPath.inc"
 
 
 ac_config_commands="$ac_config_commands Makefile"
@@ -7716,8 +7716,8 @@ do
     "Makefile.common") CONFIG_FILES="$CONFIG_FILES Makefile.common" ;;
     "Makefile.config") CONFIG_FILES="$CONFIG_FILES Makefile.config" ;;
     "lib/JnJVM/Classpath/Classpath.h") CONFIG_FILES="$CONFIG_FILES lib/JnJVM/Classpath/Classpath.h" ;;
-    "lib/N3/PNetLib/PNetPath.cpp") CONFIG_FILES="$CONFIG_FILES lib/N3/PNetLib/PNetPath.cpp" ;;
-    "lib/N3/Mono/MonoPath.cpp") CONFIG_FILES="$CONFIG_FILES lib/N3/Mono/MonoPath.cpp" ;;
+    "lib/N3/PNetLib/PNetPath.inc") CONFIG_FILES="$CONFIG_FILES lib/N3/PNetLib/PNetPath.inc" ;;
+    "lib/N3/Mono/MonoPath.inc") CONFIG_FILES="$CONFIG_FILES lib/N3/Mono/MonoPath.inc" ;;
     "Makefile") CONFIG_COMMANDS="$CONFIG_COMMANDS Makefile" ;;
     "lib/Makefile") CONFIG_COMMANDS="$CONFIG_COMMANDS lib/Makefile" ;;
 
