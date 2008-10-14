@@ -11,4 +11,4 @@ LEVEL = ../../..
 LIBRARYNAME = N3
 include $(LEVEL)/Makefile.common
 
-CXX.Flags += -I$(PROJ_SRC_DIR)/../LLVMRuntime
+CXX.Flags += -I$(PROJ_OBJ_DIR)/../LLVMRuntime
