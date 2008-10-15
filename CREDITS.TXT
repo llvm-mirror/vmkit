@@ -23,6 +23,9 @@ N: Sylvain Marechal
 E: sylvain.marechal@lip6.fr
 D: Original autoconf support
 
+N: Tilmann Scheller
+D: Generics support in N3.
+
 N: Gael Thomas
 E: gael.thomas@lip6.fr
 W: http://www-src.lip6.fr/homepages/Gael.Thomas/
