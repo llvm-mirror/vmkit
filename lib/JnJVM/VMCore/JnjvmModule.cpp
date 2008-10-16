@@ -399,7 +399,8 @@ const Type* LLVMClassInfo::getVirtualType() {
     
     StructType* structType = StructType::get(fields, false);
     virtualType = PointerType::getUnqual(structType);
-    const TargetData* targetData = mvm::MvmModule::executionEngine->getTargetData();
+    ExecutionEngine* engine = mvm::MvmModule::executionEngine;
+    const TargetData* targetData = engine->getTargetData();
     const StructLayout* sl = targetData->getStructLayout(structType);
     
     for (CommonClass::field_iterator i = classDef->virtualFields.begin(),
@@ -445,7 +446,8 @@ const Type* LLVMClassInfo::getStaticType() {
   
     StructType* structType = StructType::get(fields, false);
     staticType = PointerType::getUnqual(structType);
-    const TargetData* targetData = mvm::MvmModule::executionEngine->getTargetData();
+    ExecutionEngine* engine = mvm::MvmModule::executionEngine;
+    const TargetData* targetData = engine->getTargetData();
     const StructLayout* sl = targetData->getStructLayout(structType);
     
     for (CommonClass::field_iterator i = classDef->staticFields.begin(),
@@ -503,7 +505,8 @@ Function* LLVMMethodInfo::getMethod() {
 
 const FunctionType* LLVMMethodInfo::getFunctionType() {
   if (!functionType) {
-    LLVMSignatureInfo* LSI = JnjvmModule::getSignatureInfo(methodDef->getSignature());
+    Signdef* sign = methodDef->getSignature();
+    LLVMSignatureInfo* LSI = JnjvmModule::getSignatureInfo(sign);
     assert(LSI);
     if (isStatic(methodDef->access)) {
       functionType = LSI->getStaticType();
@@ -665,7 +668,8 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   Args.push_back(ctp);
 #endif
 
-  Value* val = CallInst::Create(func, Args.begin(), Args.end(), "", currentBlock);
+  Value* val = CallInst::Create(func, Args.begin(), Args.end(), "",
+                                currentBlock);
   if (res->getFunctionType()->getReturnType() != Type::VoidTy)
     ReturnInst::Create(val, currentBlock);
   else
@@ -680,9 +684,9 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
 
   Function* res = Function::Create(virt ? getVirtualBufType() :
                                           getStaticBufType(),
-                                      GlobalValue::ExternalLinkage,
-                                      signature->printString(),
-                                      signature->initialLoader->TheModule);
+                                   GlobalValue::ExternalLinkage,
+                                   signature->printString(),
+                                   signature->initialLoader->TheModule);
   
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
@@ -715,7 +719,8 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   Args.push_back(ctp);
 #endif
 
-  Value* val = CallInst::Create(func, Args.begin(), Args.end(), "", currentBlock);
+  Value* val = CallInst::Create(func, Args.begin(), Args.end(), "",
+                                currentBlock);
   if (res->getFunctionType()->getReturnType() != Type::VoidTy)
     ReturnInst::Create(val, currentBlock);
   else
@@ -950,7 +955,8 @@ void JnjvmModule::InitField(JavaField* field, JavaObject* obj, uint64 val) {
   }
 }
 
-void JnjvmModule::InitField(JavaField* field, JavaObject* obj, JavaObject* val) {
+void 
+JnjvmModule::InitField(JavaField* field, JavaObject* obj, JavaObject* val) {
   ((JavaObject**)((uint64)obj + field->ptrOffset))[0] = val;
 }
 
