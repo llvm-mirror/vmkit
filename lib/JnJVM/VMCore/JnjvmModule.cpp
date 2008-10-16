@@ -296,7 +296,7 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
 #ifdef WITH_TRACER
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   const Type* type = stat ? LCI->getStaticType() : LCI->getVirtualType();
-  CommonClass::field_map fields = stat ? cl->staticFields : cl->virtualFields;
+  CommonClass::field_map& fields = stat ? cl->staticFields : cl->virtualFields;
  
   Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
                                     GlobalValue::ExternalLinkage,
