@@ -51,10 +51,9 @@ jobject throwable) {
 
 JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  JavaObject* methodName = vm->UTF8ToStr(meth->name);
+  JavaObject* methodName = vm->internalUTF8ToStr(meth->name);
   Class* cl = meth->classDef;
-  const UTF8* internal = cl->name->internalToJava(vm->hashUTF8, 0,
-                                                  cl->name->size);
+  const UTF8* internal = cl->name->internalToJava(vm, 0, cl->name->size);
   JavaObject* className = vm->UTF8ToStr(internal);
   JavaObject* sourceName = 0;
   
@@ -63,7 +62,7 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   if (sourceAtt) {
     Reader reader(sourceAtt, cl->getBytes());
     uint16 index = reader.readU2();
-    sourceName = vm->UTF8ToStr(cl->getConstantPool()->UTF8At(index));
+    sourceName = vm->internalUTF8ToStr(cl->getConstantPool()->UTF8At(index));
   }
 
   bool native = isNative(meth->access);

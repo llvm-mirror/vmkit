@@ -145,13 +145,13 @@ public:
   
   /// lookupClassFromUTF8 - Lookup a class from an UTF8 name and load it.
   ///
-  UserCommonClass* lookupClassFromUTF8(const UTF8* utf8, bool doResolve,
-                                       bool doThrow);
+  UserCommonClass* lookupClassFromUTF8(const UTF8* utf8, Jnjvm* vm,
+                                       bool doResolve, bool doThrow);
   
   /// lookupClassFromJavaString - Lookup a class from a Java String and load it.
   ///
-  UserCommonClass* lookupClassFromJavaString(JavaString* str, bool doResolve,
-                                         bool doThrow);
+  UserCommonClass* lookupClassFromJavaString(JavaString* str, Jnjvm* vm, 
+                                             bool doResolve, bool doThrow);
    
   /// lookupClass - Finds the class of th given name in the class loader's
   /// table.
@@ -217,6 +217,11 @@ public:
 #endif
   
   const UTF8* constructArrayName(uint32 steps, const UTF8* className);
+  
+  virtual JavaString* UTF8ToStr(const UTF8* utf8);
+
+  /// Strings hashed by this classloader.
+  std::vector<JavaString*, gc_allocator<JavaString*> > strings;
 };
 
 /// JnjvmBootstrapLoader - This class is for the bootstrap class loader, which
@@ -275,6 +280,9 @@ public:
   ///
   JnjvmBootstrapLoader(uint32 memLimit);
   JnjvmBootstrapLoader() {}
+  
+  virtual JavaString* UTF8ToStr(const UTF8* utf8);
+
 
   /// upcalls - Upcall classes, fields and methods so that C++ code can call
   /// Java code.

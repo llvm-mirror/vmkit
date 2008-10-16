@@ -318,15 +318,30 @@ void Jnjvm::unknownError(const char* fmt, ...) {
         fmt);
 }
 
+JavaString* Jnjvm::internalUTF8ToStr(const UTF8* utf8) {
+  JavaString* res = hashStr->lookup(utf8);
+  if (!res) {
+    uint32 size = utf8->size;
+    UTF8* tmp = (UTF8*)upcalls->ArrayOfChar->doNew(size, this);
+    uint16* buf = tmp->elements;
+  
+    for (uint32 i = 0; i < size; i++) {
+      buf[i] = utf8->elements[i];
+    }
+  
+    const UTF8* newUTF8 = (const UTF8*)tmp;
+    res = hashStr->lookupOrCreate(newUTF8, this, JavaString::stringDup);
+  }
+  return res;
+}
+
 JavaString* Jnjvm::UTF8ToStr(const UTF8* utf8) { 
   JavaString* res = hashStr->lookupOrCreate(utf8, this, JavaString::stringDup);
   return res;
 }
 
 JavaString* Jnjvm::asciizToStr(const char* asciiz) {
-  // asciizToStr is called by jnjvm code, so utf8s created
-  // by this method are stored in the bootstrap class loader
-  const UTF8* var = bootstrapLoader->asciizConstructUTF8(asciiz);
+  const UTF8* var = asciizToUTF8(asciiz);
   return UTF8ToStr(var);
 }
 
@@ -357,14 +372,9 @@ Jnjvm::~Jnjvm() {
     hashStr->~StringMap();
     allocator.Deallocate(hashStr);
   }
-  if (hashUTF8) {
-    hashUTF8->~UTF8Map();
-    allocator.Deallocate(hashUTF8);
-  }
 }
 
 Jnjvm::Jnjvm() {
-  hashUTF8 = 0;
   hashStr = 0;
 }
 
@@ -666,6 +676,8 @@ void Jnjvm::loadBootstrap() {
   LOAD_CLASS(upcalls->newClass);
   LOAD_CLASS(upcalls->newConstructor);
   LOAD_CLASS(upcalls->newString);
+  uintptr_t* ptr = ((uintptr_t*)upcalls->newString->getVirtualVT());
+  ptr[0] = (uintptr_t)JavaString::stringDestructor;
   LOAD_CLASS(upcalls->newMethod);
   LOAD_CLASS(upcalls->newField);
   LOAD_CLASS(upcalls->newStackTraceElement);
@@ -847,5 +859,28 @@ Jnjvm::Jnjvm(uint32 memLimit) {
   upcalls->initialiseClasspath(bootstrapLoader);
  
   hashStr = new(allocator) StringMap();
-  hashUTF8 = new(allocator) UTF8Map(allocator, upcalls->ArrayOfChar);
+}
+
+const UTF8* Jnjvm::asciizToInternalUTF8(const char* asciiz) {
+  uint32 size = strlen(asciiz);
+  UTF8* tmp = (UTF8*)upcalls->ArrayOfChar->doNew(size, this);
+  uint16* buf = tmp->elements;
+  
+  for (uint32 i = 0; i < size; i++) {
+    if (asciiz[i] == '.') buf[i] = '/';
+    else buf[i] = asciiz[i];
+  }
+  return (const UTF8*)tmp;
+
+}
+  
+const UTF8* Jnjvm::asciizToUTF8(const char* asciiz) {
+  uint32 size = strlen(asciiz);
+  UTF8* tmp = (UTF8*)upcalls->ArrayOfChar->doNew(size, this);
+  uint16* buf = tmp->elements;
+  
+  for (uint32 i = 0; i < size; i++) {
+    buf[i] = asciiz[i];
+  }
+  return (const UTF8*)tmp;
 }

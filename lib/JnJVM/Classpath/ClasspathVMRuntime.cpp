@@ -20,6 +20,7 @@
 #include "JavaString.h"
 #include "JavaTypes.h"
 #include "JavaThread.h"
+#include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "LockedMap.h"
 #include "NativeUtil.h"
@@ -47,7 +48,8 @@ jobject _strLib) {
   sint32 lgPost = vm->postlib->size;
   
   uint32 size = (uint32)(lgPre + lgLib + lgPost);
-  uint16* elements = (uint16*)alloca(size * sizeof(uint16));
+  ArrayUInt16* array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(size, vm);
+  uint16* elements = array->elements;
 
   memmove(elements, vm->prelib->elements, lgPre * sizeof(uint16));
   memmove(&(elements[lgPre]), &(utf8Lib->elements[stLib]), 
@@ -55,9 +57,7 @@ jobject _strLib) {
   memmove(&(elements[lgPre + lgLib]), vm->postlib->elements,
            lgPost * sizeof(uint16));
   
-  const UTF8* res = vm->hashUTF8->lookupOrCreateReader(elements, size);
-
-  return (jobject)(vm->UTF8ToStr(res));
+  return (jobject)(vm->UTF8ToStr((const UTF8*)array));
   
 }
 

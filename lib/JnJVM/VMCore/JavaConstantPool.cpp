@@ -80,40 +80,9 @@ uint32 JavaConstantPool::CtpReaderFloat(JavaConstantPool* ctp, Reader& reader,
   
 uint32 JavaConstantPool::CtpReaderUTF8(JavaConstantPool* ctp, Reader& reader,
                                   uint32 index) { 
+  ctp->ctpDef[index] = reader.cursor;
   uint16 len = reader.readU2();
-  uint16* buf = (uint16*)alloca(len * sizeof(uint16));
-  uint32 n = 0;
-  uint32 i = 0;
-  
-  while (i < len) {
-    uint32 cur = reader.readU1();
-    if (cur & 0x80) {
-      uint32 y = reader.readU1();
-      if (cur & 0x20) {
-        uint32 z = reader.readU1();
-        cur = ((cur & 0x0F) << 12) +
-              ((y & 0x3F) << 6) +
-              (z & 0x3F);
-        i += 3;
-      } else {
-        cur = ((cur & 0x1F) << 6) +
-              (y & 0x3F);
-        i += 2;
-      }
-    } else {
-      ++i;
-    }
-    buf[n] = ((uint16)cur);
-    ++n;
-  }
-  
-  Class* cl = ctp->classDef;
-  const UTF8* utf8 = cl->classLoader->hashUTF8->lookupOrCreateReader(buf, n);
-  ctp->ctpRes[index] = (UTF8*)utf8;
-  
-  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <utf8>\t\t\"%s\"\n", index,
-              utf8->printString());
-
+  reader.cursor += len;
   return 1;
 }
   
@@ -217,6 +186,44 @@ const UTF8* JavaConstantPool::UTF8At(uint32 entry) {
         typeAt(entry) == ConstantUTF8)) {
     JavaThread::get()->isolate->classFormatError(
               "bad constant pool number for utf8 at entry %d", entry);
+  }
+  
+  if (!ctpRes[entry]) {
+    Reader reader(classDef->bytes, ctpDef[entry]);
+    uint32 len = reader.readU2();
+    uint16* buf = (uint16*)alloca(len * sizeof(uint16));
+    uint32 n = 0;
+    uint32 i = 0;
+  
+    while (i < len) {
+      uint32 cur = reader.readU1();
+      if (cur & 0x80) {
+        uint32 y = reader.readU1();
+        if (cur & 0x20) {
+          uint32 z = reader.readU1();
+          cur = ((cur & 0x0F) << 12) +
+                ((y & 0x3F) << 6) +
+                (z & 0x3F);
+          i += 3;
+        } else {
+          cur = ((cur & 0x1F) << 6) +
+                (y & 0x3F);
+          i += 2;
+        }
+      } else {
+        ++i;
+      }
+      buf[n] = ((uint16)cur);
+      ++n;
+    }
+  
+    JnjvmClassLoader* loader = classDef->classLoader;
+    const UTF8* utf8 = loader->hashUTF8->lookupOrCreateReader(buf, n);
+    ctpRes[entry] = (UTF8*)utf8;
+  
+    PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <utf8>\t\t\"%s\"\n", entry,
+                utf8->printString());
+
   }
   return (const UTF8*)ctpRes[entry];
 }
@@ -487,7 +494,8 @@ JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
 }
 
 JavaString* JavaConstantPool::resolveString(const UTF8* utf8, uint16 index) {
-  JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaString* str = vm->internalUTF8ToStr(utf8);
   return str;
 }
 

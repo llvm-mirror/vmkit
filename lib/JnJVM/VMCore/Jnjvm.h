@@ -258,11 +258,6 @@ public:
   ///
   StringMap* hashStr;
   
-  /// hashUTF8 - Tables of UTF8s defined by this class loader. Shared
-  /// by all class loaders in a no isolation configuration.
-  ///
-  UTF8Map* hashUTF8;
-
 public:
   /// Exceptions - These are the only exceptions VMKit will make.
   ///
@@ -298,6 +293,22 @@ public:
   ///
   JavaString* UTF8ToStr(const UTF8* utf8);
   
+  /// UTF8ToStr - Constructs a java/lang/String object from the given internal
+  /// UTF8, thus duplicating the UTF8.
+  ///
+  JavaString* internalUTF8ToStr(const UTF8* utf8);
+  
+  
+  
+  /// asciizToInternalUTF8 - Constructs an UTF8 out of the asciiz and changes
+  /// '.' into '/'.
+  ///
+  const UTF8* asciizToInternalUTF8(const char* asciiz);
+  
+  /// asciizToUTF8 - Constructs an UTF8 out of the asciiz.
+  ///
+  const UTF8* asciizToUTF8(const char* asciiz);
+
   /// ~Jnjvm - Destroy the JVM.
   ///
   ~Jnjvm();

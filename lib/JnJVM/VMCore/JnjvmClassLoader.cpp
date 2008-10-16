@@ -138,7 +138,7 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name) {
   UserCommonClass* cl = lookupClass(name);
   
   if (!cl) {
-    const UTF8* javaName = name->internalToJava(hashUTF8, 0, name->size);
+    const UTF8* javaName = name->internalToJava(isolate, 0, name->size);
     JavaString* str = isolate->UTF8ToStr(javaName);
     Classpath* upcalls = bootstrapLoader->upcalls;
     UserClass* forCtp = 0;
@@ -177,6 +177,7 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
 }
 
 UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* name,
+                                                       Jnjvm* vm,
                                                        bool doResolve,
                                                        bool doThrow) {
   uint32 len = name->size;
@@ -203,8 +204,7 @@ UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* name,
                  (name->elements[origLen - 1] != I_END_REF)) {
               doLoop = false; 
             } else {
-              const UTF8* componentName = name->javaToInternal(hashUTF8,
-                                                               start + 1,
+              const UTF8* componentName = name->javaToInternal(vm, start + 1,
                                                                len - 2);
               if (loadName(componentName, doResolve, doThrow)) {
                 ret = constructArray(name);
@@ -241,19 +241,18 @@ UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* name,
 }
 
 UserCommonClass* 
-JnjvmClassLoader::lookupClassFromJavaString(JavaString* str,
+JnjvmClassLoader::lookupClassFromJavaString(JavaString* str, Jnjvm* vm,
                                             bool doResolve, bool doThrow) {
   
   const UTF8* name = 0;
   
   if (str->value->elements[str->offset] != I_TAB)
-    name = str->value->checkedJavaToInternal(hashUTF8, str->offset,
-                                             str->count);
+    name = str->value->checkedJavaToInternal(vm, str->offset, str->count);
   else
-    name = str->value->javaToInternal(hashUTF8, str->offset, str->count);
+    name = str->value->javaToInternal(vm, str->offset, str->count);
 
   if (name)
-    return lookupClassFromUTF8(name, doResolve, doThrow);
+    return lookupClassFromUTF8(name, vm, doResolve, doThrow);
 
   return 0;
 }
@@ -300,8 +299,9 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
   ClassMap::iterator I = classes->map.find(name);
   UserClass* res = 0;
   if (I == End) {
-    res = allocator_new(allocator, UserClass)(this, name, bytes);
-    classes->map.insert(std::make_pair(name, res));
+    const UTF8* internalName = readerConstructUTF8(name->elements, name->size);
+    res = allocator_new(allocator, UserClass)(this, internalName, bytes);
+    classes->map.insert(std::make_pair(internalName, res));
   } else {
     res = ((UserClass*)(I->second));
   }
@@ -319,8 +319,10 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name,
   ClassMap::iterator I = classes->map.find(name);
   UserClassArray* res = 0;
   if (I == End) {
-    res = allocator_new(allocator, UserClassArray)(this, name, baseClass);
-    classes->map.insert(std::make_pair(name, res));
+    const UTF8* internalName = readerConstructUTF8(name->elements, name->size);
+    res = allocator_new(allocator, UserClassArray)(this, internalName,
+                                                   baseClass);
+    classes->map.insert(std::make_pair(internalName, res));
   } else {
     res = ((UserClassArray*)(I->second));
   }
@@ -425,6 +427,19 @@ JnjvmClassLoader::~JnjvmClassLoader() {
   delete TheModuleProvider;
 }
 
+JavaString* JnjvmClassLoader::UTF8ToStr(const UTF8* val) {
+  JavaString* res = isolate->internalUTF8ToStr(val);
+  strings.push_back(res);
+  return res;
+}
+
+JavaString* JnjvmBootstrapLoader::UTF8ToStr(const UTF8* val) {
+  Jnjvm* vm = JavaThread::get()->isolate;
+  JavaString* res = vm->internalUTF8ToStr(val);
+  strings.push_back(res);
+  return res;
+}
+
 void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
   if (str != 0) {
     unsigned int len = strlen(str);
@@ -470,6 +485,9 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
   }
 }
 
+// constructArrayName can allocate the UTF8 directly in the classloader
+// memory because it is called by safe places, ie only valid names are
+// created.
 const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
                                                  const UTF8* className) {
   uint32 len = className->size;

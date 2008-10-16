@@ -135,6 +135,7 @@ void JnjvmClassLoader::TRACER {
   javaLoader->MARK_AND_TRACE;
   traceClassMap(classes);
   isolate->MARK_AND_TRACE;
+  TRACE_VECTOR(JavaString*, gc_allocator, strings);
 }
 
 void JnjvmBootstrapLoader::TRACER {
@@ -157,6 +158,7 @@ void JnjvmBootstrapLoader::TRACER {
   TRACE_DELEGATEE(upcalls->OfLong);
   TRACE_DELEGATEE(upcalls->OfDouble);
 #undef TRACE_DELEGATEE
+  TRACE_VECTOR(JavaString*, gc_allocator, strings);
 }
 
 #if defined(ISOLATE_SHARING)

@@ -29,6 +29,7 @@ public:
   sint32 offset;
   
   static JavaString* stringDup(const UTF8*& utf8, Jnjvm* vm);
+  static void stringDestructor(JavaString*);
   char* strToAsciiz();
   const UTF8* strToUTF8(Jnjvm* vm);
 };

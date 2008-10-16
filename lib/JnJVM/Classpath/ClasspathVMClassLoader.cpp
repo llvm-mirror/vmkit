@@ -73,7 +73,8 @@ jboolean doResolve) {
   JavaString* str = (JavaString*)_str;
 
   JnjvmClassLoader* JCL = vm->bootstrapLoader;
-  UserCommonClass* cl = JCL->lookupClassFromJavaString(str, doResolve, false);
+  UserCommonClass* cl = JCL->lookupClassFromJavaString(str, vm, doResolve,
+                                                       false);
 
   if (cl != 0)
     return (jclass)cl->getClassDelegatee(vm);
@@ -98,8 +99,7 @@ jobject pd) {
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
   
   JavaString* str = (JavaString*)_str;
-  const UTF8* name = str->value->javaToInternal(vm->hashUTF8, str->offset,
-                                                str->count);
+  const UTF8* name = str->value->javaToInternal(vm, str->offset, str->count);
   UserClass* cl = JCL->constructClass(name, (ArrayUInt8*)bytes);
 
   return (jclass)(cl->getClassDelegatee(vm, (JavaObject*)pd));

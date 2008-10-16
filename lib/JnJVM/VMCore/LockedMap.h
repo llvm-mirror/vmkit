@@ -75,6 +75,17 @@ public:
     map.erase(V);
     lock.unlock();
   }
+  
+  inline void remove(Key V, Container C) {
+    lock.lock();
+    iterator End = map.end();
+    iterator I = map.find(V);
+    
+    if (I != End && I->second == C)
+        map.erase(I);
+    
+    lock.unlock();
+  }
 
   inline Container lookup(Key V) {
     lock.lock();

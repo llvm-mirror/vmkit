@@ -56,7 +56,7 @@ jobject loader) {
   Jnjvm* vm = JavaThread::get()->isolate; 
   JnjvmClassLoader* JCL = 
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
-  UserCommonClass* cl = JCL->lookupClassFromJavaString((JavaString*)str,
+  UserCommonClass* cl = JCL->lookupClassFromJavaString((JavaString*)str, vm,
                                                         true, false);
   if (cl != 0) {
     if (clinit) {
@@ -130,7 +130,7 @@ jboolean publicOnly) {
       // TODO: check parameter types
       UserClass* Meth = vm->upcalls->newMethod;
       JavaObject* tmp = Meth->doNew(vm);
-      JavaString* str = vm->UTF8ToStr(meth->name);
+      JavaString* str = vm->internalUTF8ToStr(meth->name);
       upcalls->initMethod->invokeIntSpecial(vm, Meth, tmp, Cl, str, meth);
       ret->elements[index] = tmp;
     }
@@ -162,7 +162,7 @@ jobject Cl) {
     (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField((JavaObject*)Cl);
   
   const UTF8* iname = cl->getName();
-  const UTF8* res = iname->internalToJava(vm->hashUTF8, 0, iname->size);
+  const UTF8* res = iname->internalToJava(vm, 0, iname->size);
 
   return (jobject)(vm->UTF8ToStr(res));
 }
@@ -293,8 +293,8 @@ jclass Cl, jboolean publicOnly) {
       // TODO: check parameter types
       UserClass* Field = vm->upcalls->newField;
       JavaObject* tmp = Field->doNew(vm);
-      vm->upcalls->initField->invokeIntSpecial(vm, Field, tmp, Cl,
-                                             vm->UTF8ToStr(field->name), field);
+      JavaString* name = vm->internalUTF8ToStr(field->name);
+      vm->upcalls->initField->invokeIntSpecial(vm, Field, tmp, Cl, name, field);
       ret->elements[index] = tmp;
     }
     return (jobject)ret;

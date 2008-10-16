@@ -140,7 +140,7 @@ extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
 extern "C" void* stringLookup(UserClass* cl, uint32 index) {
   UserConstantPool* ctpInfo = cl->getConstantPool();
   const UTF8* utf8 = ctpInfo->UTF8AtForString(index);
-  JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
+  JavaString* str = JavaThread::get()->isolate->internalUTF8ToStr(utf8);
 #ifdef ISOLATE_SHARING
   ctpInfo->ctpRes[index] = str;
 #endif

@@ -112,29 +112,48 @@ public:
 /// instance hashes UTF8. UTF8 are not allocated by the application's garbage
 /// collector, but resides in permanent memory (e.g malloc).
 class UTF8 : public ArrayUInt16 {
-public:
+  friend class UTF8Map;
+private:
+  
+  /// operator new - Redefines the new operator of this class to allocate
+  /// its objects in permanent memory, not with the garbage collector.
+  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
+                     sint32 size) {
+    return allocator.Allocate(sz + size * sizeof(uint16));
+  }
   
   /// acons - Allocates an UTF8 in permanent memory. The class argument must be
   /// JavaArray::ofChar.
   static const UTF8* acons(sint32 n, UserClassArray* cl,
                            mvm::BumpPtrAllocator& allocator);
+public:
+  
 
   /// internalToJava - Creates a copy of the UTF8 at its given offset and size
   /// woth all its '.' replaced by '/'. The JVM bytecode reference classes in
   /// packages with the '.' as the separating character. The JVM language uses
   /// the '/' character.
-  const UTF8* internalToJava(UTF8Map* map, unsigned int start,
+  ///
+  const UTF8* internalToJava(Jnjvm* vm, unsigned int start,
                              unsigned int len) const;
   
   /// javaToInternal - Replaces all '/' into '.'.
-  const UTF8* javaToInternal(UTF8Map* map, unsigned int start,
+  const UTF8* javaToInternal(Jnjvm* vm, unsigned int start,
                              unsigned int len) const;
   
   /// checkedJavaToInternal - Replaces all '/' into '.'. Returns null if the
   /// UTF8 contains a '/', as Java does not allow things like
   /// Class.forName("java/lang/Object")
-  const UTF8* checkedJavaToInternal(UTF8Map* map, unsigned int start,
+  const UTF8* checkedJavaToInternal(Jnjvm* vm, unsigned int start,
                                     unsigned int len) const;
+  
+  /// extract - Creates an UTF8 by extracting the contents at the given size
+  /// of this.
+  const UTF8* extract(Jnjvm* vm, uint32 start, uint32 len) const;
+  
+  /// extract - Similar, but creates it in the map.
+  const UTF8* extract(UTF8Map* map, uint32 start, uint32 len) const;
+
   
   /// UTF8ToAsciiz - Allocates a C string with the contents of this UTF8.
   char* UTF8ToAsciiz() const;
@@ -142,10 +161,6 @@ public:
   char* printString() const {
     return UTF8ToAsciiz();
   }
-
-  /// extract - Creates an UTF8 by extracting the contents at the given size
-  /// of this.
-  const UTF8* extract(UTF8Map* map, uint32 start, uint32 len) const;
 
   bool equals(const UTF8* other) const {
     if (other == this) return true;
@@ -162,13 +177,6 @@ public:
   
   /// print - Prints the UTF8 for debugging purposes.
   virtual void print(mvm::PrintBuffer* buf) const;
-
-  /// operator new - Redefines the new operator of this class to allocate
-  /// its objects in permanent memory, not with the garbage collector.
-  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
-                     sint32 size) {
-    return allocator.Allocate(sz + size * sizeof(uint16));
-  }
 
 };
 

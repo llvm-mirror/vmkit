@@ -16,6 +16,7 @@
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 #include "JavaThread.h"
+#include "JavaUpcalls.h"
 #include "LockedMap.h"
 
 
@@ -39,23 +40,25 @@ void UTF8::print(mvm::PrintBuffer* buf) const {
     buf->writeChar((char)elements[i]);
 }
 
-const UTF8* UTF8::javaToInternal(UTF8Map* map, unsigned int start,
+const UTF8* UTF8::javaToInternal(Jnjvm* vm, unsigned int start,
                                  unsigned int len) const {
-  uint16* java = (uint16*) alloca(len * sizeof(uint16));
+  UTF8* array = (UTF8*)vm->upcalls->ArrayOfChar->doNew(len, vm);
+  uint16* java = array->elements;
   for (uint32 i = 0; i < len; i++) {
     uint16 cur = elements[start + i];
     if (cur == '.') java[i] = '/';
     else java[i] = cur;
   }
 
-  return map->lookupOrCreateReader(java, len);
+  return (const UTF8*)array;
 }
 
 // We also define a checked java to internal function to disallow
 // users to load classes with '/'.
-const UTF8* UTF8::checkedJavaToInternal(UTF8Map* map, unsigned int start,
+const UTF8* UTF8::checkedJavaToInternal(Jnjvm* vm, unsigned int start,
                                         unsigned int len) const {
-  uint16* java = (uint16*) alloca(len * sizeof(uint16));
+  UTF8* array = (UTF8*)vm->upcalls->ArrayOfChar->doNew(len, vm);
+  uint16* java = array->elements;
   for (uint32 i = 0; i < len; i++) {
     uint16 cur = elements[start + i];
     if (cur == '.') java[i] = '/';
@@ -63,19 +66,20 @@ const UTF8* UTF8::checkedJavaToInternal(UTF8Map* map, unsigned int start,
     else java[i] = cur;
   }
 
-  return map->lookupOrCreateReader(java, len);
+  return (const UTF8*)array;
 }
 
-const UTF8* UTF8::internalToJava(UTF8Map* map, unsigned int start,
+const UTF8* UTF8::internalToJava(Jnjvm* vm, unsigned int start,
                                  unsigned int len) const {
-  uint16* java = (uint16*) alloca(len * sizeof(uint16));
+  UTF8* array = (UTF8*)vm->upcalls->ArrayOfChar->doNew(len, vm);
+  uint16* java = array->elements;
   for (uint32 i = 0; i < len; i++) {
     uint16 cur = elements[start + i];
     if (cur == '/') java[i] = '.';
     else java[i] = cur;
   }
 
-  return map->lookupOrCreateReader(java, len);
+  return (const UTF8*)array;
 }
 
 const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
@@ -87,6 +91,18 @@ const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
   }
 
   return map->lookupOrCreateReader(buf, len);
+}
+
+const UTF8* UTF8::extract(Jnjvm* vm, uint32 start, uint32 end) const {
+  uint32 len = end - start;
+  UTF8* array = (UTF8*) vm->upcalls->ArrayOfChar->doNew(len, vm);
+  uint16* buf = array->elements;
+
+  for (uint32 i = 0; i < len; i++) {
+    buf[i] = elements[i + start];
+  }
+
+  return (const UTF8*)array;
 }
 
 char* UTF8::UTF8ToAsciiz() const {

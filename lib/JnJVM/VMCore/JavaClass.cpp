@@ -546,8 +546,7 @@ bool UserCommonClass::isOfTypeName(Jnjvm* vm, const UTF8* Tname) {
     }
     
     return (Tname->elements[prof] == I_REF) &&  
-      (res && curS->inheritName(Tname->extract(vm->hashUTF8, prof + 1,
-                                               len - 1)));
+      (res && curS->inheritName(Tname->extract(vm, prof + 1, len - 1)));
   } else {
     return false;
   }

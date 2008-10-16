@@ -1155,7 +1155,8 @@ void JavaJIT::_ldc(uint16 index) {
     push(val, false);  
 #else
     const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
-    JavaString* str = JavaThread::get()->isolate->UTF8ToStr(utf8);
+    JavaString* str = compilingClass->classLoader->UTF8ToStr(utf8);
+
     Value* val = module->getString(str, this);
     push(val, false);
 #endif

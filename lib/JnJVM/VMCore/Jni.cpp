@@ -87,11 +87,9 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   if (currentClass) loader = currentClass->classLoader;
   else loader = vm->bootstrapLoader;
 
-  const UTF8* utf8 = loader->asciizConstructUTF8(asciiz);
-  sint32 len = utf8->size;
+  const UTF8* utf8 = vm->asciizToInternalUTF8(asciiz);
   
-  const UTF8* internal = utf8->javaToInternal(vm->hashUTF8, 0, len);
-  UserCommonClass* cl = loader->lookupClassFromUTF8(internal, true, true);
+  UserCommonClass* cl = loader->lookupClassFromUTF8(utf8, vm, true, true);
   cl->initialiseClass(vm);
   return (jclass)(cl->getClassDelegatee(vm));
   
@@ -329,13 +327,10 @@ jmethodID GetMethodID(JNIEnv* env, jclass clazz, const char *aname,
   
   Jnjvm* vm = JavaThread::get()->isolate;
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
-  const UTF8* name = cl->classLoader->asciizConstructUTF8(aname);
-  const UTF8* type = cl->classLoader->asciizConstructUTF8(atype);
+  const UTF8* name = vm->asciizToInternalUTF8(aname);
+  const UTF8* type = vm->asciizToInternalUTF8(atype);
   UserClass* methodCl = 0;
-  JavaMethod* meth = cl->lookupMethod(
-      name->javaToInternal(vm->hashUTF8, 0, name->size),
-      type->javaToInternal(vm->hashUTF8, 0, type->size), false,
-      true, methodCl);
+  JavaMethod* meth = cl->lookupMethod(name, type, false, true, methodCl);
 
   return (jmethodID)meth;
 
@@ -1121,13 +1116,10 @@ jmethodID GetStaticMethodID(JNIEnv *env, jclass clazz, const char *aname,
   
   Jnjvm* vm = JavaThread::get()->isolate;
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
-  const UTF8* name = cl->classLoader->asciizConstructUTF8(aname);
-  const UTF8* type = cl->classLoader->asciizConstructUTF8(atype);
+  const UTF8* name = vm->asciizToInternalUTF8(aname);
+  const UTF8* type = vm->asciizToInternalUTF8(atype);
   UserClass* methodCl = 0;
-  JavaMethod* meth = cl->lookupMethod(
-      name->javaToInternal(vm->hashUTF8, 0, name->size),
-      type->javaToInternal(vm->hashUTF8, 0, type->size), true,
-      true, methodCl);
+  JavaMethod* meth = cl->lookupMethod(name, type, true, true, methodCl);
 
   return (jmethodID)meth;
 
