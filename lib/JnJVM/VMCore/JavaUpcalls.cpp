@@ -11,6 +11,7 @@
 
 #include "mvm/JIT.h"
 
+#include "ClasspathReflect.h"
 #include "JavaAccess.h"
 #include "JavaClass.h"
 #include "JavaJIT.h"
@@ -613,9 +614,6 @@ extern "C" JavaString* internString(JavaString* obj) {
 }
 
 extern "C" uint8 isArray(JavaObject* klass) {
-  Jnjvm* vm = JavaThread::get()->isolate;
-  UserCommonClass* cl = 
-    (UserCommonClass*)((vm->upcalls->vmdataClass->getObjectField(klass)));
-
+  UserCommonClass* cl = ((JavaObjectClass*)klass)->getClass();  
   return (uint8)cl->isArray();
 }

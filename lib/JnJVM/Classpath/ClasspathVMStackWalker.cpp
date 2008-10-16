@@ -14,6 +14,7 @@
 
 #include "mvm/JIT.h"
 
+#include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaJIT.h"
@@ -138,10 +139,8 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jclass _Cl) {
-  Jnjvm* vm = JavaThread::get()->isolate;
   JavaObject* Cl = (JavaObject*)_Cl;
-  JavaField* field = vm->upcalls->vmdataClass;
-  UserCommonClass* cl = (UserCommonClass*)field->getObjectField(Cl);
+  UserCommonClass* cl = ((JavaObjectClass*)Cl)->getClass();
   return (jobject)cl->classLoader->getJavaClassLoader();
 }
 

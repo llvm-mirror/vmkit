@@ -17,6 +17,7 @@
 //#include "gc/gc_local_alloc.h"
 #include "gc/gc.h"
 
+#define STATIC_TRACER(type) staticTracer(type* obj)
 #define TRACER tracer()
 #define PARENT_TRACER tracer()
 #define MARK_AND_TRACE markAndTrace()

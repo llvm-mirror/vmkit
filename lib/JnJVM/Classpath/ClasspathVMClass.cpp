@@ -11,6 +11,7 @@
 
 #include "types.h"
 
+#include "ClasspathReflect.h"
 #include "JavaAccess.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
@@ -35,10 +36,7 @@ jclass clazz,
 #endif
 jobject klass) {
 
-  Jnjvm* vm = JavaThread::get()->isolate;
-  JavaField* field = vm->upcalls->vmdataClass;
-  UserCommonClass* cl = 
-    (UserCommonClass*)field->getObjectField((JavaObject*)klass);
+  UserCommonClass* cl = ((JavaObjectClass*)klass)->getClass();
 
   return cl->isArray();
   
@@ -158,8 +156,7 @@ jclass clazz,
 #endif
 jobject Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserCommonClass* cl = 
-    (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField((JavaObject*)Cl);
+  UserCommonClass* cl = ((JavaObjectClass*)Cl)->getClass();
   
   const UTF8* iname = cl->getName();
   const UTF8* res = iname->internalToJava(vm, 0, iname->size);
@@ -173,9 +170,7 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 jclass Cl) {
-  Jnjvm* vm = JavaThread::get()->isolate;
-  UserCommonClass* cl = 
-    (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField((JavaObject*)Cl);
+  UserCommonClass* cl = ((JavaObjectClass*)Cl)->getClass();
   
   return cl->isPrimitive();
 }
@@ -199,8 +194,7 @@ jclass clazz,
 #endif
 jclass Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserCommonClass* cl = 
-    (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField((JavaObject*)Cl);
+  UserCommonClass* cl = ((JavaObjectClass*)Cl)->getClass();
 
   if (cl->isArray()) {
     UserCommonClass* bc = ((UserClassArray*)cl)->baseClass();
@@ -216,9 +210,7 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 jclass Cl) {
-  Jnjvm* vm = JavaThread::get()->isolate;
-  UserCommonClass* cl = 
-    (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField((JavaObject*)Cl);
+  UserCommonClass* cl = ((JavaObjectClass*)Cl)->getClass();
   return (jobject)cl->classLoader->getJavaClassLoader();
 }
 
@@ -228,11 +220,8 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 jclass Cl1, jclass Cl2) {
-  Jnjvm* vm = JavaThread::get()->isolate;
-  UserCommonClass* cl1 = 
-    (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField((JavaObject*)Cl1);
-  UserCommonClass* cl2 = 
-    (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField((JavaObject*)Cl2);
+  UserCommonClass* cl1 = ((JavaObjectClass*)Cl1)->getClass();
+  UserCommonClass* cl2 = ((JavaObjectClass*)Cl2)->getClass();
 
   cl2->resolveClass();
   return cl2->isAssignableFrom(cl1);
@@ -246,8 +235,7 @@ jclass clazz,
 #endif
 jclass Cl) {
   Jnjvm* vm = JavaThread::get()->isolate;
-  UserCommonClass* cl = 
-    (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField((JavaObject*)Cl);
+  UserCommonClass* cl = ((JavaObjectClass*)Cl)->getClass();
   if (cl->isInterface())
     return 0;
   else {
@@ -263,9 +251,7 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 jclass Cl, jobject obj) {
-  Jnjvm* vm = JavaThread::get()->isolate;
-  UserCommonClass* cl = 
-    (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField((JavaObject*)Cl);
+  UserCommonClass* cl = ((JavaObjectClass*)Cl)->getClass();
   return ((JavaObject*)obj)->instanceOf(cl);
 }
 

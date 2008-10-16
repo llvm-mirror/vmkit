@@ -14,7 +14,7 @@ include $(LEVEL)/Makefile.config
 
 include $(LEVEL)/Makefile.common
 
-CXX.Flags += -I$(PROJ_OBJ_DIR)/../LLVMRuntime $(CLASSPATH_FLAGS)
+CXX.Flags += -I$(PROJ_OBJ_DIR)/../LLVMRuntime -I$(PROJ_SRC_DIR)/../Classpath $(CLASSPATH_FLAGS)
 
 ifeq ($(ISOLATE_BUILD), 1)
   CXX.Flags += -I$(PROJ_SRC_DIR)/../Isolate

@@ -15,6 +15,7 @@
 
 #include "mvm/Allocator.h"
 
+#include "ClasspathReflect.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
 #include "JavaThread.h"
@@ -150,7 +151,7 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name) {
     JavaObject* obj = (JavaObject*)
       upcalls->loadInClassLoader->invokeJavaObjectVirtual(isolate, forCtp,
                                                           javaLoader, str);
-    cl = (UserCommonClass*)(upcalls->vmdataClass->getObjectField(obj));
+    cl = (UserCommonClass*)((JavaObjectClass*)obj)->getClass();
   }
   
   if (cl) assert(!cl->isArray());

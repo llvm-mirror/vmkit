@@ -21,10 +21,12 @@
 
 
 #ifdef MULTIPLE_GC
+#define STATIC_TRACER(type) staticTracer(type* obj, void* GC)
 #define TRACER tracer(void* GC)
 #define CALL_TRACER tracer(GC)
 #define MARK_AND_TRACE markAndTrace((Collector*)GC)
 #else
+#define STATIC_TRACER(type) staticTracer(type* obj)
 #define TRACER tracer()
 #define CALL_TRACER tracer()
 #define MARK_AND_TRACE markAndTrace()

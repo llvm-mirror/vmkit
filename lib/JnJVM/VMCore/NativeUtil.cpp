@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
@@ -227,9 +228,7 @@ void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
 #undef PRE_LEN
 
 UserCommonClass* NativeUtil::resolvedImplClass(Jnjvm* vm, jclass clazz, bool doClinit) {
-  JavaObject *Cl = (JavaObject*)clazz;
-  UserCommonClass* cl = 
-    (UserCommonClass*)vm->upcalls->vmdataClass->getObjectField(Cl);
+  UserCommonClass* cl = ((JavaObjectClass*)clazz)->getClass();
   cl->resolveClass();
   if (doClinit) cl->initialiseClass(vm);
   return cl;
