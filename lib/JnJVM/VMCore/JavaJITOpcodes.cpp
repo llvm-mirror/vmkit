@@ -156,8 +156,10 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                      args.end(), "", currentBlock);
     }
 #endif
-
-    if (opinfo->reqSuppl) {
+    
+    // If we're an exception handler and no one has pushed our exception
+    // variable on stack, then do it now.
+    if (opinfo->reqSuppl && stack.size() != 1) {
       push(new LoadInst(supplLocal, "", currentBlock), false);
     }
 
@@ -1655,7 +1657,6 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                     ConstantInt::get(Type::Int64Ty,
                                                      uint64_t (jsrIndex++)),
                                     module->JavaObjectType);
-
         new StoreInst(expr, supplLocal, false, currentBlock);
         BranchInst::Create(opcodeInfos[tmp + readS2(bytecodes, i)].newBlock,
                        currentBlock);

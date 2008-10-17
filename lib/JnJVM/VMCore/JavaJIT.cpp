@@ -894,9 +894,8 @@ llvm::Function* JavaJIT::javaCompile() {
 
 unsigned JavaJIT::readExceptionTable(Reader& reader) {
   BasicBlock* temp = currentBlock;
-  uint16 nbe = reader.readU2();
-  std::vector<Exception*> exceptions;  
-  unsigned sync = isSynchro(compilingMethod->access) ? 1 : 0;
+  sint16 nbe = reader.readU2();
+  sint16 sync = isSynchro(compilingMethod->access) ? 1 : 0;
   nbe += sync;
   if (nbe) {
     supplLocal = new AllocaInst(module->JavaObjectType, "exceptionVar",
@@ -958,8 +957,10 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
   // try clause, which may require compilation. Therefore we release the lock
   // and acquire it after the exception table is read.
   module->executionEngine->lock.release();
+  
+  Exception* exceptions = (Exception*)alloca(sizeof(Exception) * (nbe - sync));
   for (uint16 i = 0; i < nbe - sync; ++i) {
-    Exception* ex = new Exception();
+    Exception* ex = &exceptions[i];
     ex->startpc   = reader.readU2();
     ex->endpc     = reader.readU2();
     ex->handlerpc = reader.readU2();
@@ -1002,24 +1003,23 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
 
     if (!(opcodeInfos[ex->handlerpc].newBlock)) {
       opcodeInfos[ex->handlerpc].newBlock = 
-                    createBasicBlock("handlerException");
+                    createBasicBlock("javaHandler");
     }
     
-    ex->handler = opcodeInfos[ex->handlerpc].newBlock;
+    ex->javaHandler = opcodeInfos[ex->handlerpc].newBlock;
+    ex->nativeHandler = createBasicBlock("nativeHandler");
     opcodeInfos[ex->handlerpc].reqSuppl = true;
 
-    exceptions.push_back(ex);
   }
   module->executionEngine->lock.acquire();
   
   bool first = true;
-  for (std::vector<Exception*>::iterator i = exceptions.begin(),
-    e = exceptions.end(); i!= e; ++i) {
+  for (sint16 i = 0; i < nbe - sync; ++i) {
+    Exception* cur = &exceptions[i];
 
-    Exception* cur = *i;
     Exception* next = 0;
-    if (i + 1 != e) {
-      next = *(i + 1);
+    if (i + 1 != nbe - sync) {
+      next = &exceptions[i + 1];
     }
 
     if (first) {
@@ -1038,17 +1038,15 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
       
   }
 
-  for (std::vector<Exception*>::iterator i = exceptions.begin(),
-    e = exceptions.end(); i!= e; ++i) {
-
-    Exception* cur = *i;
+  for (sint16 i = 0; i < nbe - sync; ++i) {
+    Exception* cur = &exceptions[i];
     Exception* next = 0;
     BasicBlock* bbNext = 0;
     PHINode* nodeNext = 0;
     currentExceptionBlock = opcodeInfos[cur->handlerpc].exceptionBlock;
 
-    if (i + 1 != e) {
-      next = *(i + 1);
+    if (i + 1 != nbe - sync) {
+      next = &exceptions[i + 1];
       if (!(cur->startpc >= next->startpc && cur->endpc <= next->endpc)) {
         bbNext = realEndExceptionBlock;
       } else {
@@ -1091,35 +1089,38 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
 #endif
     Value* cmp = llvm::CallInst::Create(module->CompareExceptionFunction, cl, "",
                                         currentBlock);
-    llvm::BranchInst::Create(cur->handler, bbNext, cmp, currentBlock);
+    llvm::BranchInst::Create(cur->nativeHandler, bbNext, cmp, currentBlock);
     if (nodeNext)
       nodeNext->addIncoming(cur->exceptionPHI, currentBlock);
     
-    if (cur->handler->empty()) {
-      cur->handlerPHI = llvm::PHINode::Create(module->ptrType, "",
-                                              cur->handler);
-      cur->handlerPHI->addIncoming(cur->exceptionPHI, currentBlock);
-      Value* exc = llvm::CallInst::Create(module->GetJavaExceptionFunction,
-                                          "", cur->handler);
-      llvm::CallInst::Create(module->ClearExceptionFunction, "",
-                             cur->handler);
-      llvm::CallInst::Create(module->exceptionBeginCatch, cur->handlerPHI,
-                             "tmp8", cur->handler);
-      std::vector<Value*> void_28_params;
-      llvm::CallInst::Create(module->exceptionEndCatch,
-                             void_28_params.begin(), void_28_params.end(), "",
-                             cur->handler);
-      new StoreInst(exc, supplLocal, false, cur->handler);
+    cur->handlerPHI = llvm::PHINode::Create(module->ptrType, "",
+                                            cur->nativeHandler);
+    cur->handlerPHI->addIncoming(cur->exceptionPHI, currentBlock);
+    Value* exc = llvm::CallInst::Create(module->GetJavaExceptionFunction,
+                                        "", cur->nativeHandler);
+    llvm::CallInst::Create(module->ClearExceptionFunction, "",
+                           cur->nativeHandler);
+    llvm::CallInst::Create(module->exceptionBeginCatch, cur->handlerPHI,
+                           "tmp8", cur->nativeHandler);
+    std::vector<Value*> void_28_params;
+    llvm::CallInst::Create(module->exceptionEndCatch,
+                           void_28_params.begin(), void_28_params.end(), "",
+                           cur->nativeHandler);
+    BranchInst::Create(cur->javaHandler, cur->nativeHandler);
+
+    if (cur->javaHandler->empty()) {
+      PHINode* node = llvm::PHINode::Create(JnjvmModule::JavaObjectType, "",
+                                            cur->javaHandler);
+      node->addIncoming(exc, cur->nativeHandler);
+      
+      new StoreInst(node, supplLocal, false, cur->javaHandler);
     } else {
-      Instruction* insn = cur->handler->begin();
-      ((PHINode*)insn)->addIncoming(cur->exceptionPHI, currentBlock);
+      Instruction* insn = cur->javaHandler->begin();
+      PHINode* node = dyn_cast<PHINode>(insn);
+      assert(node && "malformed exceptions");
+      node->addIncoming(exc, cur->nativeHandler);
     }
      
-  }
-  
-  for (std::vector<Exception*>::iterator i = exceptions.begin(),
-    e = exceptions.end(); i!= e; ++i) {
-    delete *i;
   }
   
   currentBlock = temp;
@@ -1313,6 +1314,7 @@ static void testPHINodes(BasicBlock* dest, BasicBlock* insert, JavaJIT* jit) {
       } else {
         node = llvm::PHINode::Create(cur->getType(), "", dest);
       }
+      assert(node->getType() == cur->getType() && "wrong 1");
       node->addIncoming(cur, insert);
     }
   } else {
@@ -1333,7 +1335,7 @@ static void testPHINodes(BasicBlock* dest, BasicBlock* insert, JavaJIT* jit) {
         } else if (type == Type::Int8Ty || type == Type::Int16Ty) {
           cur = new SExtInst(cur, Type::Int32Ty, "", jit->currentBlock);
         }
-        
+        assert(ins->getType() == cur->getType() && "wrong 2");
         ((PHINode*)ins)->addIncoming(cur, insert);
         ++stackit;
       }

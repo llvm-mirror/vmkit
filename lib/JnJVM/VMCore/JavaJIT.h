@@ -43,7 +43,8 @@ struct Exception {
   UserClass* catchClass;
   llvm::BasicBlock* test;
   llvm::BasicBlock* realTest;
-  llvm::BasicBlock* handler;
+  llvm::BasicBlock* javaHandler;
+  llvm::BasicBlock* nativeHandler;
   llvm::PHINode* exceptionPHI;
   llvm::PHINode* handlerPHI;
 };
