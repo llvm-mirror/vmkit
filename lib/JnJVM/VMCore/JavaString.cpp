@@ -52,5 +52,5 @@ const UTF8* JavaString::strToUTF8(Jnjvm* vm) {
 void JavaString::stringDestructor(JavaString* str) {
   Jnjvm* vm = JavaThread::get()->isolate;
   assert(vm && "No vm when destroying a string");
-  if (str->value) vm->hashStr->remove(str->value, str);
+  if (str->value) vm->hashStr.remove(str->value, str);
 }

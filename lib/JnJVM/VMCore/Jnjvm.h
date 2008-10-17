@@ -23,6 +23,7 @@
 
 #include "JavaTypes.h"
 #include "JnjvmConfig.h"
+#include "LockedMap.h"
 
 namespace jnjvm {
 
@@ -36,7 +37,6 @@ class JavaString;
 class JavaThread;
 class JnjvmBootstrapLoader;
 class JnjvmClassLoader;
-class StringMap;
 class UserClass;
 class UserClassArray;
 class UserClassPrimitive;
@@ -256,7 +256,7 @@ public:
 
   /// hashStr - Hash map of java/lang/String objects allocated by this JVM.
   ///
-  StringMap* hashStr;
+  StringMap hashStr;
   
 public:
   /// Exceptions - These are the only exceptions VMKit will make.
@@ -311,11 +311,11 @@ public:
 
   /// ~Jnjvm - Destroy the JVM.
   ///
-  ~Jnjvm();
+  ~Jnjvm() {}
 
   /// Jnjvm - Allocate a default JVM, for VT initialization.
   ///
-  Jnjvm();
+  Jnjvm() {}
 
   /// addProperty - Adds a new property in the postProperties map.
   ///

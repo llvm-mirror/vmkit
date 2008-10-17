@@ -320,7 +320,7 @@ void Jnjvm::unknownError(const char* fmt, ...) {
 }
 
 JavaString* Jnjvm::internalUTF8ToStr(const UTF8* utf8) {
-  JavaString* res = hashStr->lookup(utf8);
+  JavaString* res = hashStr.lookup(utf8);
   if (!res) {
     uint32 size = utf8->size;
     UTF8* tmp = (UTF8*)upcalls->ArrayOfChar->doNew(size, this);
@@ -331,13 +331,13 @@ JavaString* Jnjvm::internalUTF8ToStr(const UTF8* utf8) {
     }
   
     const UTF8* newUTF8 = (const UTF8*)tmp;
-    res = hashStr->lookupOrCreate(newUTF8, this, JavaString::stringDup);
+    res = hashStr.lookupOrCreate(newUTF8, this, JavaString::stringDup);
   }
   return res;
 }
 
 JavaString* Jnjvm::UTF8ToStr(const UTF8* utf8) { 
-  JavaString* res = hashStr->lookupOrCreate(utf8, this, JavaString::stringDup);
+  JavaString* res = hashStr.lookupOrCreate(utf8, this, JavaString::stringDup);
   return res;
 }
 
@@ -366,17 +366,6 @@ JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
   }
   release();
   return delegatee;
-}
-
-Jnjvm::~Jnjvm() {
-  if (hashStr) {
-    hashStr->~StringMap();
-    allocator.Deallocate(hashStr);
-  }
-}
-
-Jnjvm::Jnjvm() {
-  hashStr = 0;
 }
 
 #define PATH_MANIFEST "META-INF/MANIFEST.MF"
@@ -880,7 +869,6 @@ Jnjvm::Jnjvm(uint32 memLimit) {
   
   upcalls->initialiseClasspath(bootstrapLoader);
  
-  hashStr = new(allocator) StringMap();
 }
 
 const UTF8* Jnjvm::asciizToInternalUTF8(const char* asciiz) {
