@@ -118,6 +118,16 @@ jclass clazz,
   return;
 }
 
+JNIEXPORT void JNICALL Java_java_lang_VMRuntime_runFinalizersOnExit(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+uint8 value
+) {
+  return;
+}
+
 JNIEXPORT void JNICALL Java_java_lang_VMRuntime_exit(
 #ifdef NATIVE_JNI
 JNIEnv *env,
