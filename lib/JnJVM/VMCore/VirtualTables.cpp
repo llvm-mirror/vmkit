@@ -54,7 +54,7 @@ using namespace jnjvm;
 #undef INIT
 
 void ArrayObject::TRACER {
-  classOf->MARK_AND_TRACE;
+  classOf->classLoader->MARK_AND_TRACE;
   for (sint32 i = 0; i < size; i++) {
     if (elements[i]) elements[i]->MARK_AND_TRACE;
   }
@@ -70,8 +70,11 @@ void JavaArray::TRACER {}
     (*i)->MARK_AND_TRACE; }}
 
 void CommonClass::TRACER {
-  super->MARK_AND_TRACE;
-  TRACE_VECTOR(Class*, gc_allocator, interfaces);
+  if (super) super->classLoader->MARK_AND_TRACE;
+  for (std::vector<Class*, gc_allocator<Class*> >::iterator i = interfaces.begin(),
+       e = interfaces.end(); i!= e; ++i) {
+    (*i)->classLoader->MARK_AND_TRACE;
+  }
   classLoader->MARK_AND_TRACE;
 #if !defined(ISOLATE)
   delegatee->MARK_AND_TRACE;
@@ -80,8 +83,6 @@ void CommonClass::TRACER {
 
 void Class::TRACER {
   CommonClass::CALL_TRACER;
-  TRACE_VECTOR(Class*, gc_allocator, innerClasses);
-  outerClass->MARK_AND_TRACE;
   bytes->MARK_AND_TRACE;
 #if !defined(ISOLATE)
   _staticInstance->MARK_AND_TRACE;
@@ -93,7 +94,7 @@ void ClassArray::TRACER {
 }
 
 void JavaObject::TRACER {
-  classOf->MARK_AND_TRACE;
+  classOf->classLoader->MARK_AND_TRACE;
   LockObj* l = lockObj();
   if (l) l->MARK_AND_TRACE;
 }
@@ -103,7 +104,7 @@ extern "C" void JavaObjectTracer(JavaObject* obj, Collector* GC) {
 #else
 extern "C" void JavaObjectTracer(JavaObject* obj) {
 #endif
-  obj->classOf->MARK_AND_TRACE;
+  obj->classOf->classLoader->MARK_AND_TRACE;
   LockObj* l = obj->lockObj();
   if (l) l->MARK_AND_TRACE;
 }
@@ -127,7 +128,7 @@ void Jnjvm::TRACER {
 static void traceClassMap(ClassMap* classes) {
   for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
        i!= e; ++i) {
-    i->second->MARK_AND_TRACE;
+    i->second->CALL_TRACER;
   }
 }
 

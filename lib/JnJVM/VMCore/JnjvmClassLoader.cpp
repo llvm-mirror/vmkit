@@ -301,7 +301,7 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
   UserClass* res = 0;
   if (I == End) {
     const UTF8* internalName = readerConstructUTF8(name->elements, name->size);
-    res = allocator_new(allocator, UserClass)(this, internalName, bytes);
+    res = new(allocator) UserClass(this, internalName, bytes);
     classes->map.insert(std::make_pair(internalName, res));
   } else {
     res = ((UserClass*)(I->second));
@@ -321,8 +321,7 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name,
   UserClassArray* res = 0;
   if (I == End) {
     const UTF8* internalName = readerConstructUTF8(name->elements, name->size);
-    res = allocator_new(allocator, UserClassArray)(this, internalName,
-                                                   baseClass);
+    res = new(allocator) UserClassArray(this, internalName, baseClass);
     classes->map.insert(std::make_pair(internalName, res));
   } else {
     res = ((UserClassArray*)(I->second));

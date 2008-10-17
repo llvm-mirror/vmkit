@@ -122,7 +122,7 @@ public:
 /// object that stays in memory has a reference to the class. Same for
 /// super or interfaces.
 ///
-class CommonClass : public mvm::Object {
+class CommonClass : public mvm::PermanentObject {
 #ifdef ISOLATE_SHARING
 friend class UserCommonClass;
 #endif
@@ -422,6 +422,13 @@ public:
   /// tracer - The tracer of this GC-allocated class.
   ///
   virtual void TRACER;
+  
+  /// printString - Prints the class.
+  char *printString() const {
+    mvm::PrintBuffer *buf = mvm::PrintBuffer::alloc();
+    print(buf);
+    return buf->contents()->cString();
+  }
 
   /// inheritName - Does this class in its class hierarchy inherits
   /// the given name? Equality is on the name. This function does not take
