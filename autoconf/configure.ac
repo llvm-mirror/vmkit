@@ -44,7 +44,7 @@ AC_PREREQ(2.59)
 
 dnl Verify that the source directory is valid. This makes sure that we are
 dnl configuring VMKit and not some other package (it validates --srcdir argument)
-AC_CONFIG_SRCDIR([lib/Mvm/Object.cpp])
+AC_CONFIG_SRCDIR([lib/Mvm/Runtime/Object.cpp])
 
 
 dnl Quit if the source directory has already been configured.

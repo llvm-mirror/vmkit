@@ -580,7 +580,7 @@ PACKAGE_VERSION='0.24'
 PACKAGE_STRING='vmkit 0.24'
 PACKAGE_BUGREPORT='nicolas.geoffray@lip6.fr'
 
-ac_unique_file="lib/Mvm/Object.cpp"
+ac_unique_file="lib/Mvm/Runtime/Object.cpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
