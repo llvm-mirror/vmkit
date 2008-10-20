@@ -500,7 +500,7 @@ public:
   /// ~CommonClass - Free memory used by this class, and remove it from
   /// metadata.
   ///
-  ~CommonClass();
+  virtual ~CommonClass();
 
   /// CommonClass - Default constructor.
   ///
@@ -623,7 +623,7 @@ public:
   ///
   virtual void TRACER;
   
-  ~Class();
+  virtual ~Class();
   Class();
   
   /// lookupAttribut - Look up a JVM attribut of this class.
