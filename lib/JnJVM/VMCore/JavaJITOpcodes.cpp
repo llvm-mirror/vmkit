@@ -775,7 +775,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IADD : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createAdd(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateAdd(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -785,7 +785,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createAdd(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateAdd(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -794,7 +794,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FADD : {
         Value* val2 = pop();
         Value* val1 = pop();
-        push(BinaryOperator::createAdd(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateAdd(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -804,7 +804,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createAdd(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateAdd(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -813,7 +813,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case ISUB : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createSub(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateSub(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -822,7 +822,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createSub(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateSub(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -831,7 +831,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FSUB : {
         Value* val2 = pop();
         Value* val1 = pop();
-        push(BinaryOperator::createSub(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateSub(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -841,7 +841,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createSub(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateSub(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -850,7 +850,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IMUL : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createMul(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateMul(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -860,7 +860,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createMul(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateMul(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -869,7 +869,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FMUL : {
         Value* val2 = pop();
         Value* val1 = pop();
-        push(BinaryOperator::createMul(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateMul(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -879,7 +879,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createMul(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateMul(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -888,7 +888,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IDIV : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createSDiv(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateSDiv(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -898,7 +898,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createSDiv(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateSDiv(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -907,7 +907,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FDIV : {
         Value* val2 = pop();
         Value* val1 = pop();
-        push(BinaryOperator::createFDiv(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateFDiv(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -917,7 +917,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createFDiv(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateFDiv(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -926,7 +926,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IREM : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createSRem(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateSRem(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -936,7 +936,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createSRem(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateSRem(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -945,7 +945,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FREM : {
         Value* val2 = pop();
         Value* val1 = pop();
-        push(BinaryOperator::createFRem(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateFRem(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -955,14 +955,14 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::createFRem(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateFRem(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
       }
 
       case INEG :
-        push(BinaryOperator::createSub(
+        push(BinaryOperator::CreateSub(
                               module->constantZero,
                               popAsInt(), "", currentBlock),
              false);
@@ -970,7 +970,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       
       case LNEG : {
         pop();
-        push(BinaryOperator::createSub(
+        push(BinaryOperator::CreateSub(
                               module->constantLongZero,
                               pop(), "", currentBlock), false);
         push(module->constantZero, false);
@@ -978,14 +978,14 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case FNEG :
-        push(BinaryOperator::createSub(
+        push(BinaryOperator::CreateSub(
                               module->constantFloatMinusZero,
                               pop(), "", currentBlock), false);
         break;
       
       case DNEG : {
         pop();
-        push(BinaryOperator::createSub(
+        push(BinaryOperator::CreateSub(
                               module->constantDoubleMinusZero,
                               pop(), "", currentBlock), false);
         push(module->constantZero, false);
@@ -995,7 +995,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case ISHL : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createShl(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateShl(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -1004,7 +1004,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* val2 = new ZExtInst(pop(), Type::Int64Ty, "", currentBlock);
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
-        push(BinaryOperator::createShl(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateShl(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -1013,7 +1013,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case ISHR : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createAShr(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateAShr(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -1022,7 +1022,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* val2 = new ZExtInst(pop(), Type::Int64Ty, "", currentBlock);
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
-        push(BinaryOperator::createAShr(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateAShr(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -1033,7 +1033,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* val1 = popAsInt();
         Value* mask = ConstantInt::get(Type::Int32Ty, 0x1F);
         val2 = BinaryOperator::CreateAnd(val2, mask, "", currentBlock);
-        push(BinaryOperator::createLShr(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateLShr(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -1044,7 +1044,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         val2 = BinaryOperator::CreateAnd(val2, mask, "", currentBlock);
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
-        push(BinaryOperator::createLShr(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateLShr(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -1053,7 +1053,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IAND : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createAnd(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateAnd(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -1063,7 +1063,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* val2 = pop();
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
-        push(BinaryOperator::createAnd(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateAnd(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -1072,7 +1072,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IOR : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createOr(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateOr(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -1082,7 +1082,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* val2 = pop();
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
-        push(BinaryOperator::createOr(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateOr(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -1091,7 +1091,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IXOR : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::createXor(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateXor(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -1101,7 +1101,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* val2 = pop();
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
-        push(BinaryOperator::createXor(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateXor(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -1110,7 +1110,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IINC : {
         uint16 idx = WREAD_U1(bytecodes, true, i);
         sint16 val = WREAD_S1(bytecodes, false, i);
-        llvm::Value* add = BinaryOperator::createAdd(
+        llvm::Value* add = BinaryOperator::CreateAdd(
             new LoadInst(intLocals[idx], "", currentBlock), 
             ConstantInt::get(Type::Int32Ty, val), "",
             currentBlock);
@@ -1918,10 +1918,10 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         }
         currentBlock = BB2;
         
-        Value* mult = BinaryOperator::createMul(arg1, sizeElement, "",
+        Value* mult = BinaryOperator::CreateMul(arg1, sizeElement, "",
                                                 currentBlock);
         Value* size =
-          BinaryOperator::createAdd(module->JavaObjectSizeConstant, mult,
+          BinaryOperator::CreateAdd(module->JavaObjectSizeConstant, mult,
                                     "", currentBlock);
         std::vector<Value*> args;
         args.push_back(size);

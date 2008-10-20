@@ -251,7 +251,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val1 = pop();
         isPointer |= (val1->getType() == module->ptrType);
         verifyType(val1, val2, currentBlock);
-        Value* res = BinaryOperator::createAdd(val1, val2, "", currentBlock);
+        Value* res = BinaryOperator::CreateAdd(val1, val2, "", currentBlock);
         if (isPointer) {
           res = new IntToPtrInst(res, module->ptrType, "", currentBlock);
         }
@@ -272,7 +272,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case AND: {
         Value* val2 = pop();
         Value* val1 = pop();
-        push(BinaryOperator::createAnd(val1, val2, "", currentBlock));
+        push(BinaryOperator::CreateAnd(val1, val2, "", currentBlock));
         break;
       }
       
@@ -671,9 +671,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* one = pop();
         if (one->getType()->isFloatingPoint()) {
           convertValue(one, two->getType(), currentBlock); 
-          push(BinaryOperator::createFDiv(one, two, "", currentBlock));
+          push(BinaryOperator::CreateFDiv(one, two, "", currentBlock));
         } else {
-          push(BinaryOperator::createSDiv(one, two, "", currentBlock));
+          push(BinaryOperator::CreateSDiv(one, two, "", currentBlock));
         }
         break;
       }
@@ -682,9 +682,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* two = pop();
         Value* one = pop();
         if (one->getType()->isFloatingPoint()) {
-          push(BinaryOperator::createFDiv(one, two, "", currentBlock));
+          push(BinaryOperator::CreateFDiv(one, two, "", currentBlock));
         } else {
-          push(BinaryOperator::createUDiv(one, two, "", currentBlock));
+          push(BinaryOperator::CreateUDiv(one, two, "", currentBlock));
         }
         break;
       }
@@ -1003,7 +1003,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val2 = pop();
         Value* val1 = pop();
         convertValue(val1, val2->getType(), currentBlock); 
-        push(BinaryOperator::createMul(val1, val2, "", currentBlock));
+        push(BinaryOperator::CreateMul(val1, val2, "", currentBlock));
         break;
       }
 
@@ -1019,7 +1019,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
 
       case NEG : {
         Value* val = pop();
-        push(BinaryOperator::createSub(
+        push(BinaryOperator::CreateSub(
                               Constant::getNullValue(val->getType()),
                               val, "", currentBlock));
         break;
@@ -1028,14 +1028,14 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case NOP : break;
 
       case NOT : {
-        push(BinaryOperator::createNot(pop(), "", currentBlock));
+        push(BinaryOperator::CreateNot(pop(), "", currentBlock));
         break;
       }
 
       case OR : {
         Value* two = pop();
         Value* one = pop();
-        push(BinaryOperator::createOr(one, two, "", currentBlock));
+        push(BinaryOperator::CreateOr(one, two, "", currentBlock));
         break;
       }
 
@@ -1048,9 +1048,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* two = pop();
         Value* one = pop();
         if (one->getType()->isFloatingPoint()) {
-          push(BinaryOperator::createFRem(one, two, "", currentBlock));
+          push(BinaryOperator::CreateFRem(one, two, "", currentBlock));
         } else {
-          push(BinaryOperator::createSRem(one, two, "", currentBlock));
+          push(BinaryOperator::CreateSRem(one, two, "", currentBlock));
         }
         break;
       }
@@ -1059,9 +1059,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* two = pop();
         Value* one = pop();
         if (one->getType()->isFloatingPoint()) {
-          push(BinaryOperator::createFRem(one, two, "", currentBlock));
+          push(BinaryOperator::CreateFRem(one, two, "", currentBlock));
         } else {
-          push(BinaryOperator::createURem(one, two, "", currentBlock));
+          push(BinaryOperator::CreateURem(one, two, "", currentBlock));
         }
         break;
       }
@@ -1087,7 +1087,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val2 = pop();
         Value* val1 = pop();
         verifyType(val1, val2, currentBlock);
-        push(BinaryOperator::createShl(val1, val2, "", currentBlock));
+        push(BinaryOperator::CreateShl(val1, val2, "", currentBlock));
         break;
       }
       
@@ -1095,7 +1095,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val2 = pop();
         Value* val1 = pop();
         verifyType(val1, val2, currentBlock);
-        push(BinaryOperator::createAShr(val1, val2, "", currentBlock));
+        push(BinaryOperator::CreateAShr(val1, val2, "", currentBlock));
         break;
       }
       
@@ -1103,7 +1103,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val2 = pop();
         Value* val1 = pop();
         verifyType(val1, val2, currentBlock);
-        push(BinaryOperator::createLShr(val1, val2, "", currentBlock));
+        push(BinaryOperator::CreateLShr(val1, val2, "", currentBlock));
         break;
       }
  
@@ -1235,7 +1235,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val2 = pop();
         Value* val1 = pop();
         verifyType(val1, val2, currentBlock);
-        push(BinaryOperator::createSub(val1, val2, "", currentBlock));
+        push(BinaryOperator::CreateSub(val1, val2, "", currentBlock));
         break;
       }
 
@@ -1269,7 +1269,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* two = pop();
         Value* one = pop();
         convertValue(two, one->getType(), currentBlock);
-        push(BinaryOperator::createXor(one, two, "", currentBlock));
+        push(BinaryOperator::CreateXor(one, two, "", currentBlock));
         break;
       }
 

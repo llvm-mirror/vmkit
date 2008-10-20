@@ -94,7 +94,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
                                    Type::Int32Ty, args[0], true);
     indexes2.push_back(val);
 #ifdef ISOLATE_SHARING
-    Value* mul = BinaryOperator::createMul(val, module->constantMinusOne,
+    Value* mul = BinaryOperator::CreateMul(val, module->constantMinusOne,
                                            "", currentBlock);
     indexesCtp.push_back(mul);
 #endif
@@ -309,7 +309,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   
   // The compare and swap did not pass, look if it's a thin lock
   Value* thinMask = ConstantInt::get(Type::Int32Ty, 0x80000000);
-  Value* isThin = BinaryOperator::createAnd(atomic, thinMask, "",
+  Value* isThin = BinaryOperator::CreateAnd(atomic, thinMask, "",
                                             currentBlock);
   cmp = new ICmpInst(ICmpInst::ICMP_EQ, isThin, module->constantZero, "",
                      currentBlock);
@@ -320,7 +320,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   currentBlock = ThinLockBB;
   Value* idMask = ConstantInt::get(Type::Int32Ty, 0x7FFFFF00);
   Value* cptMask = ConstantInt::get(Type::Int32Ty, 0xFF);
-  Value* IdInLock = BinaryOperator::createAnd(atomic, idMask, "", currentBlock);
+  Value* IdInLock = BinaryOperator::CreateAnd(atomic, idMask, "", currentBlock);
   Value* owner = new ICmpInst(ICmpInst::ICMP_EQ, threadId, IdInLock, "",
                               currentBlock);
 
@@ -330,7 +330,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   currentBlock = OwnerBB;
 
   // OK, we are the owner, now check if the counter will overflow.
-  Value* count = BinaryOperator::createAnd(atomic, cptMask, "", currentBlock);
+  Value* count = BinaryOperator::CreateAnd(atomic, cptMask, "", currentBlock);
   cmp = new ICmpInst(ICmpInst::ICMP_ULT, count, cptMask, "", currentBlock);
 
   BasicBlock* IncCounterBB = createBasicBlock("Increment counter");
@@ -340,7 +340,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   currentBlock = IncCounterBB;
   
   // The counter will not overflow, increment it.
-  Value* Add = BinaryOperator::createAdd(module->constantOne, atomic, "",
+  Value* Add = BinaryOperator::CreateAdd(module->constantOne, atomic, "",
                                          currentBlock);
   new StoreInst(Add, lockPtr, false, currentBlock);
   BranchInst::Create(OK, currentBlock);
@@ -392,7 +392,7 @@ void JavaJIT::monitorExit(Value* obj) {
   currentBlock = NotLockedOnceBB;
   // Look if the lock is thin.
   Value* thinMask = ConstantInt::get(Type::Int32Ty, 0x80000000);
-  Value* isThin = BinaryOperator::createAnd(lock, thinMask, "",
+  Value* isThin = BinaryOperator::CreateAnd(lock, thinMask, "",
                                             currentBlock);
   cmp = new ICmpInst(ICmpInst::ICMP_EQ, isThin, module->constantZero, "",
                      currentBlock);
@@ -402,7 +402,7 @@ void JavaJIT::monitorExit(Value* obj) {
   currentBlock = ThinLockBB;
 
   // Decrement the counter.
-  Value* Sub = BinaryOperator::createSub(lock, module->constantOne, "",
+  Value* Sub = BinaryOperator::CreateSub(lock, module->constantOne, "",
                                          currentBlock);
   new StoreInst(Sub, lockPtr, false, currentBlock);
   BranchInst::Create(EndUnlock, currentBlock);
@@ -1400,7 +1400,7 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
       Constant* const_int32_9 = module->constantZero;
       ConstantInt* const_int32_10 = module->constantMinusOne;
       BinaryOperator* int32_tmpneg = 
-        BinaryOperator::create(Instruction::Sub, const_int32_9, args[0],
+        BinaryOperator::Create(Instruction::Sub, const_int32_9, args[0],
                                "tmpneg", currentBlock);
       ICmpInst* int1_abscond = 
         new ICmpInst(ICmpInst::ICMP_SGT, args[0], const_int32_10, "abscond", 
@@ -1412,7 +1412,7 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
       ConstantInt* const_int64_10 = module->constantLongMinusOne;
       
       BinaryOperator* int64_tmpneg = 
-        BinaryOperator::create(Instruction::Sub, const_int64_9, args[0],
+        BinaryOperator::Create(Instruction::Sub, const_int64_9, args[0],
                                "tmpneg", currentBlock);
 
       ICmpInst* int1_abscond = new ICmpInst(ICmpInst::ICMP_SGT, args[0],
