@@ -37,7 +37,7 @@ public:
     obj->pd->MARK_AND_TRACE;
     obj->signers->MARK_AND_TRACE;
     obj->constructor->MARK_AND_TRACE;
-    obj->vmdata->classLoader->MARK_AND_TRACE;
+    if (obj->vmdata) obj->vmdata->classLoader->MARK_AND_TRACE;
   }
 };
 
@@ -54,7 +54,8 @@ public:
     obj->JavaObject::CALL_TRACER;
     obj->name->MARK_AND_TRACE;
     obj->declaringClass->MARK_AND_TRACE;
-    obj->slot->classDef->classLoader->MARK_AND_TRACE;
+    // No need to see if classDef != NULL, it must be.
+    if (obj->slot) obj->slot->classDef->classLoader->MARK_AND_TRACE;
   }
 
 };
@@ -72,7 +73,7 @@ public:
     obj->JavaObject::CALL_TRACER;
     obj->name->MARK_AND_TRACE;
     obj->declaringClass->MARK_AND_TRACE;
-    obj->slot->classDef->classLoader->MARK_AND_TRACE;
+    if (obj->slot) obj->slot->classDef->classLoader->MARK_AND_TRACE;
   }
 
 };
@@ -87,7 +88,7 @@ public:
   static void STATIC_TRACER(JavaObjectConstructor) {
     obj->JavaObject::CALL_TRACER;
     obj->clazz->MARK_AND_TRACE;
-    obj->slot->classDef->classLoader->MARK_AND_TRACE;
+    if (obj->slot) obj->slot->classDef->classLoader->MARK_AND_TRACE;
   }
 
 };
