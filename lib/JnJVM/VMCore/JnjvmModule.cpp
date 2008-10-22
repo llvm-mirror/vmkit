@@ -124,6 +124,24 @@ Value* JnjvmModule::getString(JavaString* str, JavaJIT* jit) {
   return new LoadInst(varGV, "", jit->currentBlock);
 }
 
+Value* JnjvmModule::getEnveloppe(Enveloppe* enveloppe, JavaJIT* jit) {
+  llvm::GlobalVariable* varGV;
+  enveloppe_iterator SI = enveloppes.find(enveloppe);
+  if (SI != enveloppes.end()) {
+    varGV = SI->second;
+  } else {
+    void* ptr = enveloppe;
+    Constant* cons = 
+      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
+                                JnjvmModule::EnveloppeType);
+    varGV = new GlobalVariable(JnjvmModule::EnveloppeType, true,
+                               GlobalValue::ExternalLinkage,
+                               cons, "", this);
+    enveloppes.insert(std::make_pair(enveloppe, varGV));
+  }
+  return new LoadInst(varGV, "", jit->currentBlock);
+}
+
 Value* JnjvmModule::getJavaClass(CommonClass* cl, JavaJIT* jit) {
   llvm::GlobalVariable* varGV = 0;
   java_class_iterator End = javaClasses.end();

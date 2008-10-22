@@ -2026,10 +2026,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
     new(allocator) Enveloppe(compilingClass->ctpInfo, index);
   compilingMethod->caches.push_back(enveloppe);
    
-  Value* llvmEnv = 
-    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
-                              uint64_t (enveloppe)),
-                              module->EnveloppeType);
+  Value* llvmEnv = module->getEnveloppe(enveloppe, this);
 #else
   Value* llvmEnv = getConstantPoolAt(index,
                                      module->EnveloppeLookupFunction,

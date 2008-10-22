@@ -185,6 +185,7 @@ private:
   std::map<const Class*, llvm::GlobalVariable*> staticInstances;
   std::map<const JavaConstantPool*, llvm::GlobalVariable*> constantPools;
   std::map<const JavaString*, llvm::GlobalVariable*> strings;
+  std::map<const Enveloppe*, llvm::GlobalVariable*> enveloppes;
 
   typedef std::map<const CommonClass*, llvm::GlobalVariable*>::iterator
     native_class_iterator;  
@@ -203,6 +204,10 @@ private:
   
   typedef std::map<const JavaString*, llvm::GlobalVariable*>::iterator
     string_iterator;
+  
+  typedef std::map<const Enveloppe*, llvm::GlobalVariable*>::iterator
+    enveloppe_iterator;
+  
   
 
 
@@ -371,6 +376,7 @@ public:
   llvm::Value* getStaticInstance(Class* cl, JavaJIT* jit);
   llvm::Value* getVirtualTable(CommonClass* cl, JavaJIT* jit);
   
+  llvm::Value* getEnveloppe(Enveloppe* enveloppe, JavaJIT* jit);
   llvm::Value* getString(JavaString* str, JavaJIT* jit);
   llvm::Value* getConstantPool(JavaConstantPool* ctp, JavaJIT* jit);
 
