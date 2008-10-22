@@ -102,6 +102,10 @@ public:
     realMemoryManager->setMemoryExecutable();
   }
 
+  virtual unsigned char* allocateSpace(intptr_t Size, unsigned int Align) {
+    return realMemoryManager->allocateSpace(Size, Align);
+  }
+
 };
 
 } // End mvm namespace
