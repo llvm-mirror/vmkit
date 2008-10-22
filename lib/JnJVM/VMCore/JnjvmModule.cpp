@@ -58,6 +58,7 @@ llvm::ConstantInt*    JnjvmModule::OffsetDepthInClassConstant;
 llvm::ConstantInt*    JnjvmModule::OffsetDisplayInClassConstant;
 llvm::ConstantInt*    JnjvmModule::OffsetStatusInClassConstant;
 llvm::ConstantInt*    JnjvmModule::OffsetCtpInClassConstant;
+llvm::ConstantInt*    JnjvmModule::ClassReadyConstant;
 const llvm::Type*     JnjvmModule::JavaClassType;
 const llvm::Type*     JnjvmModule::VTType;
 llvm::ConstantInt*    JnjvmModule::JavaArrayElementsOffsetConstant;
@@ -924,6 +925,8 @@ void JnjvmModule::initialise() {
   OffsetDepthInClassConstant = mvm::MvmModule::constantFour;
   OffsetStatusInClassConstant = mvm::MvmModule::constantFive;
   OffsetCtpInClassConstant = mvm::MvmModule::constantSix;
+  
+  ClassReadyConstant = ConstantInt::get(Type::Int32Ty, clinitParent);
 
   LLVMAssessorInfo::initialise();
 }
@@ -990,6 +993,7 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID) : MvmModule(ModuleID) {
   InitialisationCheckFunction = module->getFunction("initialisationCheck");
   ForceInitialisationCheckFunction = 
     module->getFunction("forceInitialisationCheck");
+  InitialiseClassFunction = module->getFunction("jnjvmRuntimeInitialiseClass");
   
   GetConstantPoolAtFunction = module->getFunction("getConstantPoolAt");
   ArrayLengthFunction = module->getFunction("arrayLength");

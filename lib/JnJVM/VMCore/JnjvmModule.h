@@ -252,6 +252,7 @@ public:
   llvm::Function* PrintMethodStartFunction;
   llvm::Function* PrintMethodEndFunction;
   llvm::Function* JniProceedPendingExceptionFunction;
+  llvm::Function* InitialiseClassFunction;
   llvm::Function* InitialisationCheckFunction;
   llvm::Function* ForceInitialisationCheckFunction;
   llvm::Function* ClassLookupFunction;
@@ -311,6 +312,8 @@ public:
   static llvm::ConstantInt* OffsetDisplayInClassConstant;
   static llvm::ConstantInt* OffsetStatusInClassConstant;
   static llvm::ConstantInt* OffsetCtpInClassConstant;
+  
+  static llvm::ConstantInt* ClassReadyConstant;
 
   static llvm::Constant* JavaClassNullConstant;
 

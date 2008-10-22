@@ -50,10 +50,8 @@
 ;;;;; Constant calls for Jnjvm runtime internal objects field accesses ;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; initialisationCheck - Checks if the class has been initialized and 
-;;; initializes if not. This is used for initialization barriers in an isolate
-;;; environment, and in some specific scenario in a single environment.
-declare %JavaClass* @initialisationCheck(%JavaClass*) readnone 
+;;; jnjvmRuntimeInitialiseClass - Initialises the class.
+declare %JavaClass* @jnjvmRuntimeInitialiseClass(%JavaClass*) readnone 
 
 ;;; arrayLength - Get the length of an array.
 declare i32 @arrayLength(%JavaObject*) readnone 
@@ -94,6 +92,11 @@ declare i8* @jnjvmVirtualLookup(%CacheNode*, %JavaObject*)
 ;;; multiCallNew - Allocate multi-dimensional arrays. This will go to allocation
 ;;; specific methods.
 declare %JavaObject* @multiCallNew(%JavaClass*, i32, ...)
+
+;;; initialisationCheck - Checks if the class has been initialized and 
+;;; initializes if not. This is used for initialization barriers in an isolate
+;;; environment, and in some specific scenario in a single environment.
+declare %JavaClass* @initialisationCheck(%JavaClass*) readnone 
 
 ;;; forceInitialisationCheck - Force to check initialization. The difference
 ;;; between this function and the initialisationCheck function is that the

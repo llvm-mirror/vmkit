@@ -304,7 +304,7 @@ extern "C" void indexOutOfBoundsException(JavaObject* obj, sint32 index) {
   JavaThread::get()->isolate->indexOutOfBounds(obj, index);
 }
 
-extern "C" UserCommonClass* initialisationCheck(UserCommonClass* cl) {
+extern "C" UserCommonClass* jnjvmRuntimeInitialiseClass(UserCommonClass* cl) {
   cl->initialiseClass(JavaThread::get()->isolate);
   return cl;
 }
