@@ -47,8 +47,6 @@ static void initialiseVT() {
   X fake; \
   X::VT = ((void**)(void*)(&fake))[0]; }
 
-  INIT(Class);
-  INIT(ClassArray);
   INIT(JavaThread);
   INIT(Jnjvm);
   INIT(JnjvmBootstrapLoader);
@@ -110,14 +108,17 @@ void Jnjvm::initialiseStatics() {
   JCL->upcalls->ArrayOfByte = 
     JCL->constructArray(JCL->asciizConstructUTF8("[B"), JCL->upcalls->OfByte);
 
+  JCL->InterfacesArray = 
+    (Class**)JCL->allocator.Allocate(2 * sizeof(UserClass*));
+
   // Now we can create the super and interfaces of arrays.
-  JCL->InterfacesArray.push_back(
+  JCL->InterfacesArray[0] = 
     JCL->loadName(JCL->asciizConstructUTF8("java/lang/Cloneable"), false,
-                  false));
+                  false);
   
-  JCL->InterfacesArray.push_back(
+  JCL->InterfacesArray[1] = 
     JCL->loadName(JCL->asciizConstructUTF8("java/io/Serializable"), false,
-                  false));
+                  false);
   
   JCL->SuperArray = 
     JCL->loadName(JCL->asciizConstructUTF8("java/lang/Object"), false,
@@ -126,8 +127,8 @@ void Jnjvm::initialiseStatics() {
 #ifdef ISOLATE_SHARING
   if (!ClassArray::SuperArray) {
     ClassArray::SuperArray = JCL->SuperArray->classDef;
-    ClassArray::InterfacesArray.push_back((Class*)JCL->InterfacesArray[0]->classDef);
-    ClassArray::InterfacesArray.push_back((Class*)JCL->InterfacesArray[1]->classDef);
+    ClassArray::InterfacesArray[0] = ((Class*)JCL->InterfacesArray[0]->classDef);
+    ClassArray::InterfacesArray[1] = ((Class*)JCL->InterfacesArray[1]->classDef);
   }
 #else
   ClassArray::SuperArray = JCL->SuperArray;

@@ -158,10 +158,9 @@ jint ThrowNew(JNIEnv* env, jclass clazz, const char *msg) {
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
   if (cl->isArray()) assert(0 && "implement me");
   JavaObject* res = ((UserClass*)cl)->doNew(vm);
-  UserClass* methodCl = 0;
   JavaMethod* init = cl->lookupMethod(Jnjvm::initName, 
               cl->classLoader->asciizConstructUTF8("(Ljava/lang/String;)V"),
-              false, true, methodCl);
+              false, true, 0);
   init->invokeIntSpecial(vm, (UserClass*)cl, res, vm->asciizToStr(msg));
   th->pendingException = res;
   th->returnFromNative();
@@ -329,8 +328,7 @@ jmethodID GetMethodID(JNIEnv* env, jclass clazz, const char *aname,
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
   const UTF8* name = vm->asciizToInternalUTF8(aname);
   const UTF8* type = vm->asciizToInternalUTF8(atype);
-  UserClass* methodCl = 0;
-  JavaMethod* meth = cl->lookupMethod(name, type, false, true, methodCl);
+  JavaMethod* meth = cl->lookupMethod(name, type, false, true, 0);
 
   return (jmethodID)meth;
 
@@ -872,10 +870,9 @@ jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name,
   // TODO: find a better place to store the UTF8
   Jnjvm* vm = JavaThread::get()->isolate;
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
-  UserCommonClass* realCl = 0;
   return (jfieldID) 
     cl->lookupField(cl->classLoader->asciizConstructUTF8(name),
-                    cl->classLoader->asciizConstructUTF8(sig), 0, 1, realCl);
+                    cl->classLoader->asciizConstructUTF8(sig), 0, 1, 0);
   
   END_EXCEPTION
   return 0;
@@ -1118,8 +1115,7 @@ jmethodID GetStaticMethodID(JNIEnv *env, jclass clazz, const char *aname,
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
   const UTF8* name = vm->asciizToInternalUTF8(aname);
   const UTF8* type = vm->asciizToInternalUTF8(atype);
-  UserClass* methodCl = 0;
-  JavaMethod* meth = cl->lookupMethod(name, type, true, true, methodCl);
+  JavaMethod* meth = cl->lookupMethod(name, type, true, true, 0);
 
   return (jmethodID)meth;
 
@@ -1369,11 +1365,10 @@ jfieldID GetStaticFieldID(JNIEnv *env, jclass clazz, const char *name,
   // TODO: find a better place to store the UTF8
   Jnjvm* vm = JavaThread::get()->isolate;
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
-  UserCommonClass* realCl = 0;
   return (jfieldID)
     cl->lookupField(cl->classLoader->asciizConstructUTF8(name),
                     cl->classLoader->asciizConstructUTF8(sig), true, true,
-                    realCl);
+                    0);
 
   END_EXCEPTION
   return 0;

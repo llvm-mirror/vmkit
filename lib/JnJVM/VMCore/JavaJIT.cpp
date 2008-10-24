@@ -790,8 +790,10 @@ llvm::Function* JavaJIT::javaCompile() {
   unsigned nbe = readExceptionTable(reader);
   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
-  
-
+  compilingMethod->enveloppes = 
+    new (compilingClass->classLoader->allocator) Enveloppe[nbEnveloppes];
+  compilingMethod->nbEnveloppes = nbEnveloppes;
+  nbEnveloppes = 0;
  
   endBlock = createBasicBlock("end");
 
@@ -2021,12 +2023,10 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
 
 #ifndef ISOLATE_SHARING
   // ok now the cache
-  mvm::BumpPtrAllocator& allocator = compilingClass->classLoader->allocator;
-  Enveloppe* enveloppe = 
-    new(allocator) Enveloppe(compilingClass->ctpInfo, index);
-  compilingMethod->caches.push_back(enveloppe);
+  Enveloppe& enveloppe = compilingMethod->enveloppes[nbEnveloppes++];
+  enveloppe.initialise(compilingClass->ctpInfo, index);
    
-  Value* llvmEnv = module->getEnveloppe(enveloppe, this);
+  Value* llvmEnv = module->getEnveloppe(&enveloppe, this);
 #else
   Value* llvmEnv = getConstantPoolAt(index,
                                      module->EnveloppeLookupFunction,

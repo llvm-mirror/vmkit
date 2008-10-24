@@ -34,10 +34,9 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JnjvmClassLoader* loader,
   
   cl->initialiseClass(vm);
   bool stat = access == ACC_STATIC ? true : false;
-  UserClass* methodCl = 0;
   JavaMethod* method = cl->lookupMethod(loader->asciizConstructUTF8(func), 
                                         loader->asciizConstructUTF8(sign), stat,
-                                        true, methodCl);
+                                        true, 0);
   va_list ap;
   va_start(ap, access);
   if (stat) {
@@ -146,8 +145,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObj
   } \
   \
   verifyNull(obj);\
-  UserClass* methodCl = 0; \
-  JavaMethod* meth = obj->classOf->lookupMethod(name, type, false, true, methodCl);\
+  JavaMethod* meth = obj->classOf->lookupMethod(name, type, false, true, 0);\
   \
   Signdef* sign = getSignature(); \
   void* func = meth->compiledPtr();\

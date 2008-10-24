@@ -32,8 +32,6 @@ using namespace jnjvm;
 
   INIT(JavaArray);
   INIT(ArrayObject);
-  INIT(Class);
-  INIT(ClassArray);
   INIT(JavaObject);
   INIT(JavaThread);
   INIT(Jnjvm);
@@ -70,10 +68,11 @@ void JavaArray::TRACER {}
     (*i)->MARK_AND_TRACE; }}
 
 void CommonClass::TRACER {
-  if (super) super->classLoader->MARK_AND_TRACE;
-  for (std::vector<Class*, gc_allocator<Class*> >::iterator i = interfaces.begin(),
-       e = interfaces.end(); i!= e; ++i) {
-    (*i)->classLoader->MARK_AND_TRACE;
+  if (status >= prepared) {
+    if (super) super->classLoader->MARK_AND_TRACE;
+    for (uint32 i = 0; i < nbInterfaces; ++i) {
+      interfaces[i]->classLoader->MARK_AND_TRACE;
+    }
   }
   classLoader->MARK_AND_TRACE;
 #if !defined(ISOLATE)

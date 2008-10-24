@@ -112,10 +112,9 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
       cl->resolveStaticClass();
       
       status = inClinit;
-      UserClass* methodCl;
       JavaMethod* meth = lookupMethodDontThrow(Jnjvm::clinitName,
                                                Jnjvm::clinitType, true,
-                                               false, methodCl);
+                                               false, 0);
       
       PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
       PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ", 0);
@@ -125,10 +124,9 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
         (JavaObject*)vm->gcAllocator.allocateManagedObject(cl->getStaticSize(),
                                                            cl->getStaticVT());
       val->initialise(cl);
-      CommonClass::field_map* map = cl->getStaticFields();
-      for (CommonClass::field_iterator i = map->begin(), e = map->end(); i!= e;
-           ++i) { 
-        i->second->initField(val, vm);
+      JavaField* fields = cl->getStaticFields();
+      for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
+        fields[i].initField(val, vm);
       }
   
       cl->setStaticInstance(val);

@@ -64,6 +64,10 @@ private:
 
 public:
   
+  JavaJIT() {
+    nbEnveloppes = 0;
+  }
+
   JnjvmModule* module;
 
   static void invokeOnceVoid(Jnjvm* vm, JnjvmClassLoader* loader,
@@ -266,6 +270,10 @@ public:
   static JavaObject* getCallingClassLoader();
   static void printBacktrace();
   static JavaMethod* IPToJavaMethod(void* ip);
+  
+  /// nbEnveloppes - Number of enveloppes (ie invokeinterface) in this
+  /// method.
+  uint32 nbEnveloppes;
 };
 
 enum Opcode {

@@ -15,19 +15,21 @@
 #include "JnjvmConfig.h"
 
 #define UPCALL_CLASS(vm, name)                                                 \
-  vm->loadName(vm->asciizConstructUTF8(name), false, false)                        
+  vm->loadName(vm->asciizConstructUTF8(name), true, false)                        
 
 #define UPCALL_PRIMITIVE_CLASS(loader, name, nb)                               \
   new(loader->allocator)                                                       \
           UserClassPrimitive(loader, loader->asciizConstructUTF8(name), nb)    \
 
 #define UPCALL_FIELD(vm, cl, name, type, acc)                                  \
-  UPCALL_CLASS(vm, cl)->constructField(vm->asciizConstructUTF8(name),          \
-                                       vm->asciizConstructUTF8(type), acc)
+  UPCALL_CLASS(vm, cl)->lookupFieldDontThrow(vm->asciizConstructUTF8(name),    \
+                                             vm->asciizConstructUTF8(type),    \
+                                             isStatic(acc), false, 0)
 
 #define UPCALL_METHOD(vm, cl, name, type, acc)                                 \
-  UPCALL_CLASS(vm, cl)->constructMethod(vm->asciizConstructUTF8(name),         \
-                                        vm->asciizConstructUTF8(type), acc)
+  UPCALL_CLASS(vm, cl)->lookupMethodDontThrow(vm->asciizConstructUTF8(name),   \
+                                              vm->asciizConstructUTF8(type),   \
+                                              isStatic(acc), false, 0)
 
 #define UPCALL_ARRAY_CLASS(loader, name, depth)                                \
   loader->constructArray(                                                      \
@@ -40,14 +42,14 @@
   name = UPCALL_CLASS(loader, "java/lang/reflect/"#name)                   
 
 #define UPCALL_METHOD_EXCEPTION(loader, name) \
-  Init##name = name->constructMethod(loader->asciizConstructUTF8("<init>"), \
-                                     loader->asciizConstructUTF8("(Ljava/lang/String;)V"), \
-                                     ACC_VIRTUAL);
+  Init##name = name->lookupMethodDontThrow(loader->asciizConstructUTF8("<init>"), \
+                                           loader->asciizConstructUTF8("(Ljava/lang/String;)V"), \
+                                           false, false, 0);
 
 #define UPCALL_METHOD_WITH_EXCEPTION(loader, name) \
-  ErrorWithExcp##name = name->constructMethod(loader->asciizConstructUTF8("<init>"), \
+  ErrorWithExcp##name = name->lookupMethodDontThrow(loader->asciizConstructUTF8("<init>"), \
                                      loader->asciizConstructUTF8("(Ljava/lang/Throwable;)V"), \
-                                     ACC_VIRTUAL);
+                                     false, false, 0);
 
 namespace jnjvm {
 

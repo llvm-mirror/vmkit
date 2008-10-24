@@ -212,7 +212,7 @@ private:
 
 
   VirtualTable* makeVT(Class* cl, bool stat);
-  VirtualTable* allocateVT(Class* cl, CommonClass::method_iterator meths);
+  VirtualTable* allocateVT(Class* cl, uint32 index);
 
 
 public:

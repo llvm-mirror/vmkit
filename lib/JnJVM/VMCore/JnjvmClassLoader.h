@@ -289,7 +289,7 @@ public:
   ///
   Classpath* upcalls;
 
-  ISOLATE_STATIC std::vector<UserClass*> InterfacesArray;
+  ISOLATE_STATIC UserClass** InterfacesArray;
   ISOLATE_STATIC UserClass* SuperArray;
 };
 

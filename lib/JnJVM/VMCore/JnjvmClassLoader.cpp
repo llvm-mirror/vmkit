@@ -32,7 +32,7 @@ using namespace jnjvm;
 #ifndef ISOLATE_SHARING
 JnjvmBootstrapLoader* JnjvmClassLoader::bootstrapLoader = 0;
 UserClass* JnjvmBootstrapLoader::SuperArray = 0;
-std::vector<UserClass*> JnjvmBootstrapLoader::InterfacesArray;
+UserClass** JnjvmBootstrapLoader::InterfacesArray;
 #endif
 
 
