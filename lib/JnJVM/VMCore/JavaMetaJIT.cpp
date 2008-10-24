@@ -145,10 +145,9 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObj
   } \
   \
   verifyNull(obj);\
-  JavaMethod* meth = obj->classOf->lookupMethod(name, type, false, true, 0);\
   \
   Signdef* sign = getSignature(); \
-  void* func = meth->compiledPtr();\
+  void* func = (((void***)obj)[0])[offset];\
   return ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(vm, cl->getConstantPool(), func, obj, buf);\
 }\
 \
