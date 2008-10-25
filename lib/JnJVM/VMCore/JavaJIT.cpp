@@ -488,8 +488,7 @@ void JavaJIT::endSynchronize() {
 }
 
 
-Instruction* JavaJIT::inlineCompile(Function* parentFunction, 
-                                    BasicBlock*& curBB,
+Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
                                     BasicBlock* endExBlock,
                                     std::vector<Value*>& args) {
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "inline compile %s\n",
@@ -515,12 +514,10 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   LLVMMethodInfo* LMI = module->getMethodInfo(compilingMethod);
   assert(LMI);
   Function* func = LMI->getMethod();
-  llvmFunction = parentFunction;
 
   returnType = func->getReturnType();
   endBlock = createBasicBlock("end");
 
-  llvmFunction = parentFunction;
   currentBlock = curBB;
   endExceptionBlock = 0;
 
@@ -1506,14 +1503,11 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
 
 Instruction* JavaJIT::invokeInline(JavaMethod* meth, 
                                    std::vector<Value*>& args) {
-  JavaJIT jit;
-  jit.compilingClass = meth->classDef; 
-  jit.compilingMethod = meth;
+  JavaJIT jit(meth, llvmFunction);
   jit.unifiedUnreachable = unifiedUnreachable;
   jit.inlineMethods = inlineMethods;
   jit.inlineMethods[meth] = true;
-  jit.module = module;
-  Instruction* ret = jit.inlineCompile(llvmFunction, currentBlock, 
+  Instruction* ret = jit.inlineCompile(currentBlock, 
                                        currentExceptionBlock, args);
   inlineMethods[meth] = false;
   return ret;

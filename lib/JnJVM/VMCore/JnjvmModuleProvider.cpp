@@ -129,11 +129,7 @@ Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
   if (func->hasNotBeenReadFromBitcode()) {
     // We are jitting. Take the lock.
     llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
-    JavaJIT jit;
-    jit.compilingClass = meth->classDef;
-    jit.compilingMethod = meth;
-    jit.module = (JnjvmModule*)TheModule;
-    jit.llvmFunction = func;
+    JavaJIT jit(meth, func);
     if (isNative(meth->access)) {
       jit.nativeCompile();
     } else {

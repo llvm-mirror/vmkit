@@ -64,8 +64,12 @@ private:
 
 public:
   
-  JavaJIT() {
+  JavaJIT(JavaMethod* meth, llvm::Function* func) {
     nbEnveloppes = 0;
+    compilingMethod = meth;
+    compilingClass = meth->classDef;
+    module = compilingClass->classLoader->TheModule;
+    llvmFunction = func;
   }
 
   JnjvmModule* module;
@@ -78,8 +82,7 @@ public:
   
   llvm::Function* javaCompile();
   llvm::Function* nativeCompile(void* natPtr = 0);
-  llvm::Instruction* inlineCompile(llvm::Function* parentFunction, 
-                                   llvm::BasicBlock*& curBB,
+  llvm::Instruction* inlineCompile(llvm::BasicBlock*& curBB,
                                    llvm::BasicBlock* endExBlock,
                                    std::vector<llvm::Value*>& args);
 
