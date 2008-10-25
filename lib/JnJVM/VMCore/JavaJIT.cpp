@@ -70,9 +70,33 @@ void JavaJIT::invokeVirtual(uint16 index) {
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   FunctionType::param_iterator it  = virtualType->param_end();
   makeArgs(it, index, args, signature->args.size() + 1);
-
-
+  const llvm::Type* retType = virtualType->getReturnType();
+  
   JITVerifyNull(args[0]); 
+  BasicBlock* endBlock = 0;
+  PHINode* node = 0;
+  if (meth && !isAbstract(meth->access) && meth->canBeInlined &&
+      meth != compilingMethod && inlineMethods[meth] == 0) {
+    Value* cl = CallInst::Create(module->GetClassFunction, args[0], "",
+                                  currentBlock);
+    Value* cl2 = module->getNativeClass((Class*)cl, this);
+
+    Value* test = new ICmpInst(ICmpInst::ICMP_EQ, cl, cl2, "", currentBlock);
+
+    BasicBlock* trueBlock = createBasicBlock("true virtual invoke");
+    BasicBlock* falseBlock = createBasicBlock("false virtual invoke");
+    endBlock = createBasicBlock("end virtual invoke");
+    BranchInst::Create(trueBlock, falseBlock, test, currentBlock);
+    currentBlock = trueBlock;
+    Value* res = invokeInline(meth, args);
+    BranchInst::Create(endBlock, currentBlock);
+    if (retType != Type::VoidTy) {
+      node = PHINode::Create(virtualType->getReturnType(), "", endBlock);
+      node->addIncoming(res, currentBlock);
+    }
+    currentBlock = falseBlock;
+  }
+
 
   Value* VT = CallInst::Create(module->GetVTFunction, args[0], "",
                                currentBlock);
@@ -117,7 +141,15 @@ void JavaJIT::invokeVirtual(uint16 index) {
 #endif
   Value* val = invoke(Func, args, "", currentBlock);
   
-  const llvm::Type* retType = virtualType->getReturnType();
+  if (endBlock) {
+    if (node) {
+      node->addIncoming(val, currentBlock);
+      val = node;
+    }
+    BranchInst::Create(endBlock, currentBlock);
+    currentBlock = endBlock;
+  }
+
   if (retType != Type::VoidTy) {
     push(val, retTypedef->isUnsigned());
     if (retType == Type::DoubleTy || retType == Type::Int64Ty) {
