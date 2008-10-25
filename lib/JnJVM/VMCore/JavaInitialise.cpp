@@ -7,8 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <vector>
-
 #include "mvm/Allocator.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Locks.h"
