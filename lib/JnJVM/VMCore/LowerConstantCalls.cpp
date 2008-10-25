@@ -19,7 +19,6 @@
 
 #include "JnjvmModule.h"
 
-#include <iostream>
 using namespace llvm;
 using namespace jnjvm;
 
