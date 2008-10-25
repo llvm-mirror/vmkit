@@ -91,6 +91,7 @@ CommonClass::CommonClass() {
   nbVirtualMethods = 0;
   nbStaticMethods = 0;
   nbInterfaces = 0;
+  access = 0;
 }
 
 Class::Class() : CommonClass() {
@@ -274,6 +275,7 @@ CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n,
   staticMethods = 0;
   virtualFields = 0;
   staticFields = 0;
+  access = 0;
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   this->delegatee = 0;
 #endif
