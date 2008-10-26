@@ -88,10 +88,11 @@ public:
   ///
   mvm::BumpPtrAllocator allocator;
   mvm::Allocator gcAllocator;
-#ifdef ISOLATE_SHARING
+  
+  /// throwable - The java/lang/Throwable class. In an isolate
+  /// environment, generated code references this field.
   UserClass* throwable;
-#endif
-  std::map<const char, UserClassArray*> arrayClasses;
+
 private:
   
   /// bootstrapThread - The initial thread of this JVM.

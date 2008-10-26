@@ -337,11 +337,18 @@ public:
   const UTF8* tanh;
   const UTF8* finalize;
 
-  /// primitiveMap - Map of primitives, hashed by id.
+  /// primitiveMap - Map of primitive classes, hashed by id.
   std::map<const char, UserClassPrimitive*> primitiveMap;
 
   UserClassPrimitive* getPrimitiveClass(char id) {
     return primitiveMap[id];
+  }
+
+  /// arrayTable - Table of array classes.
+  UserClassArray* arrayTable[8];
+
+  UserClassArray* getArrayClass(unsigned id) {
+    return arrayTable[id - 4];
   }
 };
 

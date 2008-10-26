@@ -1840,7 +1840,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           uint8 id = bytecodes[++i];
           uint8 charId = arrayType(id);
 #ifndef ISOLATE_SHARING
-          dcl = JavaThread::get()->isolate->arrayClasses[id - 4];
+          JnjvmBootstrapLoader* loader = 
+            compilingClass->classLoader->bootstrapLoader;
+          dcl = loader->getArrayClass(id);
 #else
           std::vector<Value*> args;
           args.push_back(isolateLocal);

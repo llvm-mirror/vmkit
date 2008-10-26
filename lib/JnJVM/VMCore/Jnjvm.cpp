@@ -795,17 +795,7 @@ Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) {
   bootstrapLoader = loader;
   upcalls = bootstrapLoader->upcalls;
 
-#ifdef ISOLATE_SHARING
   throwable = upcalls->newThrowable;
-#endif
-  arrayClasses[JavaArray::T_BOOLEAN - 4] = upcalls->ArrayOfBool;
-  arrayClasses[JavaArray::T_BYTE - 4] = upcalls->ArrayOfByte;
-  arrayClasses[JavaArray::T_CHAR - 4] = upcalls->ArrayOfChar;
-  arrayClasses[JavaArray::T_SHORT - 4] = upcalls->ArrayOfShort;
-  arrayClasses[JavaArray::T_INT - 4] = upcalls->ArrayOfInt;
-  arrayClasses[JavaArray::T_FLOAT - 4] = upcalls->ArrayOfFloat;
-  arrayClasses[JavaArray::T_LONG - 4] = upcalls->ArrayOfLong;
-  arrayClasses[JavaArray::T_DOUBLE - 4] = upcalls->ArrayOfDouble;
   
   upcalls->initialiseClasspath(bootstrapLoader);
  

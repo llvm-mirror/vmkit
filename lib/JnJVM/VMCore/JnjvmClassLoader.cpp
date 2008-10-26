@@ -218,6 +218,15 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(uint32 memLimit) {
   primitiveMap[I_FLOAT] = upcalls->OfFloat;
   primitiveMap[I_LONG] = upcalls->OfLong;
   primitiveMap[I_DOUBLE] = upcalls->OfDouble;
+
+  arrayTable[JavaArray::T_BOOLEAN - 4] = upcalls->ArrayOfBool;
+  arrayTable[JavaArray::T_BYTE - 4] = upcalls->ArrayOfByte;
+  arrayTable[JavaArray::T_CHAR - 4] = upcalls->ArrayOfChar;
+  arrayTable[JavaArray::T_SHORT - 4] = upcalls->ArrayOfShort;
+  arrayTable[JavaArray::T_INT - 4] = upcalls->ArrayOfInt;
+  arrayTable[JavaArray::T_FLOAT - 4] = upcalls->ArrayOfFloat;
+  arrayTable[JavaArray::T_LONG - 4] = upcalls->ArrayOfLong;
+  arrayTable[JavaArray::T_DOUBLE - 4] = upcalls->ArrayOfDouble;
 }
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
