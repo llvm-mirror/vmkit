@@ -619,12 +619,51 @@ bool UserCommonClass::isAssignableFrom(UserCommonClass* cl) {
   }
 }
 
+void JavaField::InitField(JavaObject* obj, uint64 val) {
+  
+  Typedef* type = getSignature();
+  if (!type->isPrimitive()) {
+    ((sint32*)((uint64)obj + ptrOffset))[0] = (sint32)val;
+    return;
+  }
+
+  PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+  if (prim->isLong()) {
+    ((sint64*)((uint64)obj + ptrOffset))[0] = val;
+  } else if (prim->isInt()) {
+    ((sint32*)((uint64)obj + ptrOffset))[0] = (sint32)val;
+  } else if (prim->isChar()) {
+    ((uint16*)((uint64)obj + ptrOffset))[0] = (uint16)val;
+  } else if (prim->isShort()) {
+    ((sint16*)((uint64)obj + ptrOffset))[0] = (sint16)val;
+  } else if (prim->isByte()) {
+    ((sint8*)((uint64)obj + ptrOffset))[0] = (sint8)val;
+  } else if (prim->isBool()) {
+    ((uint8*)((uint64)obj + ptrOffset))[0] = (uint8)val;
+  } else {
+    // 0 value for everything else
+    ((sint32*)((uint64)obj + ptrOffset))[0] = (sint32)val;
+  }
+}
+
+void JavaField::InitField(JavaObject* obj, JavaObject* val) {
+  ((JavaObject**)((uint64)obj + ptrOffset))[0] = val;
+}
+
+void JavaField::InitField(JavaObject* obj, double val) {
+  ((double*)((uint64)obj + ptrOffset))[0] = val;
+}
+
+void JavaField::InitField(JavaObject* obj, float val) {
+  ((float*)((uint64)obj + ptrOffset))[0] = val;
+}
+
 void JavaField::initField(JavaObject* obj, Jnjvm* vm) {
   const Typedef* type = getSignature();
   Attribut* attribut = lookupAttribut(Attribut::constantAttribut);
 
   if (!attribut) {
-    JnjvmModule::InitField(this, obj);
+    InitField(obj);
   } else {
     Reader reader(attribut, classDef->bytes);
     JavaConstantPool * ctpInfo = classDef->ctpInfo;
@@ -632,18 +671,17 @@ void JavaField::initField(JavaObject* obj, Jnjvm* vm) {
     if (type->isPrimitive()) {
       UserCommonClass* cl = type->assocClass(vm->bootstrapLoader);
       if (cl == vm->upcalls->OfLong) {
-        JnjvmModule::InitField(this, obj, (uint64)ctpInfo->LongAt(idx));
+        InitField(obj, (uint64)ctpInfo->LongAt(idx));
       } else if (cl == vm->upcalls->OfDouble) {
-        JnjvmModule::InitField(this, obj, ctpInfo->DoubleAt(idx));
+        InitField(obj, ctpInfo->DoubleAt(idx));
       } else if (cl == vm->upcalls->OfFloat) {
-        JnjvmModule::InitField(this, obj, ctpInfo->FloatAt(idx));
+        InitField(obj, ctpInfo->FloatAt(idx));
       } else {
-        JnjvmModule::InitField(this, obj, (uint64)ctpInfo->IntegerAt(idx));
+        InitField(obj, (uint64)ctpInfo->IntegerAt(idx));
       }
     } else if (type->isReference()){
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
-      JnjvmModule::InitField(this, obj,
-                         (JavaObject*)ctpInfo->resolveString(utf8, idx));
+      InitField(obj, (JavaObject*)ctpInfo->resolveString(utf8, idx));
     } else {
       JavaThread::get()->isolate->
         unknownError("unknown constant %s\n", type->printString());

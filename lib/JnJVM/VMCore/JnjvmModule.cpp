@@ -941,46 +941,6 @@ void JnjvmModule::initialise() {
   LLVMAssessorInfo::initialise();
 }
 
-void JnjvmModule::InitField(JavaField* field, JavaObject* obj, uint64 val) {
-  
-  Typedef* type = field->getSignature();
-  if (!type->isPrimitive()) {
-    ((sint32*)((uint64)obj + field->ptrOffset))[0] = (sint32)val;
-    return;
-  }
-
-  PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
-  if (prim->isLong()) {
-    ((sint64*)((uint64)obj + field->ptrOffset))[0] = val;
-  } else if (prim->isInt()) {
-    ((sint32*)((uint64)obj + field->ptrOffset))[0] = (sint32)val;
-  } else if (prim->isChar()) {
-    ((uint16*)((uint64)obj + field->ptrOffset))[0] = (uint16)val;
-  } else if (prim->isShort()) {
-    ((sint16*)((uint64)obj + field->ptrOffset))[0] = (sint16)val;
-  } else if (prim->isByte()) {
-    ((sint8*)((uint64)obj + field->ptrOffset))[0] = (sint8)val;
-  } else if (prim->isBool()) {
-    ((uint8*)((uint64)obj + field->ptrOffset))[0] = (uint8)val;
-  } else {
-    // 0 value for everything else
-    ((sint32*)((uint64)obj + field->ptrOffset))[0] = (sint32)val;
-  }
-}
-
-void 
-JnjvmModule::InitField(JavaField* field, JavaObject* obj, JavaObject* val) {
-  ((JavaObject**)((uint64)obj + field->ptrOffset))[0] = val;
-}
-
-void JnjvmModule::InitField(JavaField* field, JavaObject* obj, double val) {
-  ((double*)((uint64)obj + field->ptrOffset))[0] = val;
-}
-
-void JnjvmModule::InitField(JavaField* field, JavaObject* obj, float val) {
-  ((float*)((uint64)obj + field->ptrOffset))[0] = val;
-}
-
 void JnjvmModule::setMethod(JavaMethod* meth, const char* name) {
   llvm::Function* func = getMethodInfo(meth)->getMethod();
   func->setName(name);

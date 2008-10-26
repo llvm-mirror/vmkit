@@ -884,6 +884,14 @@ private:
   /// _signature - The signature of the field. Null if not resolved.
   ///
   Typedef* _signature;
+  
+  /// InitField - Set an initial value to the field of an object.
+  ///
+  void InitField(JavaObject* obj, uint64 val = 0);
+  void InitField(JavaObject* obj, JavaObject* val);
+  void InitField(JavaObject* obj, double val);
+  void InitField(JavaObject* obj, float val);
+
 public:
 
   /// ~JavaField - Destroy the field as well as its attributs.

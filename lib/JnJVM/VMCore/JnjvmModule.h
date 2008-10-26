@@ -338,13 +338,6 @@ public:
   llvm::Function* OutOfMemoryErrorFunction;
   llvm::Function* NegativeArraySizeExceptionFunction;
 
-  static void InitField(JavaField* field);
-  static void InitField(JavaField* field, JavaObject* obj, uint64 val = 0);
-  static void InitField(JavaField* field, JavaObject* obj, JavaObject* val);
-  static void InitField(JavaField* field, JavaObject* obj, double val);
-  static void InitField(JavaField* field, JavaObject* obj, float val);
-
-
   static void resolveVirtualClass(Class* cl);
   static void resolveStaticClass(Class* cl);
   static void setMethod(JavaMethod* meth, const char* name);
