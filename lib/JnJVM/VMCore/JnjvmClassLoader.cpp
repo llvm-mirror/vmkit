@@ -104,17 +104,12 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(uint32 memLimit) {
   
   SuperArray = loadName(asciizConstructUTF8("java/lang/Object"), false,
                         false);
-  
-#ifdef ISOLATE_SHARING
-  if (!ClassArray::SuperArray) {
-    ClassArray::SuperArray = SuperArray->classDef;
-    ClassArray::InterfacesArray[0] = ((Class*)InterfacesArray[0]->classDef);
-    ClassArray::InterfacesArray[1] = ((Class*)InterfacesArray[1]->classDef);
-  }
-#else
-  ClassArray::SuperArray = SuperArray;
-  ClassArray::InterfacesArray = InterfacesArray;
-#endif
+   
+  ClassArray::SuperArray = SuperArray->getInternal();
+  ClassArray::InterfacesArray = 
+    (Class**)allocator.Allocate(2 * sizeof(UserClass*));
+  ClassArray::InterfacesArray[0] = (Class*)InterfacesArray[0]->getInternal();
+  ClassArray::InterfacesArray[1] = (Class*)(InterfacesArray[1]->getInternal());
   
   // And repair the damage: set the interfaces and super of array classes already
   // created.
@@ -246,12 +241,10 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   javaLoader = loader;
   isolate = I;
 
-#ifdef ISOLATE_SHARING
   JavaMethod* meth = bootstrapLoader->upcalls->loadInClassLoader;
   loader->classOf->lookupMethodDontThrow(meth->name, meth->type, false, true,
-                                         loadClass);
+                                         &loadClass);
   assert(loadClass && "Loader does not have a loadClass function");
-#endif
 
 }
 
@@ -307,12 +300,7 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name) {
     const UTF8* javaName = name->internalToJava(isolate, 0, name->size);
     JavaString* str = isolate->UTF8ToStr(javaName);
     Classpath* upcalls = bootstrapLoader->upcalls;
-    UserClass* forCtp = 0;
-#ifdef ISOLATE_SHARING
-    forCtp = loadClass;
-#else
-    forCtp = upcalls->loadInClassLoader->classDef;
-#endif
+    UserClass* forCtp = loadClass;
     JavaObject* obj = (JavaObject*)
       upcalls->loadInClassLoader->invokeJavaObjectVirtual(isolate, forCtp,
                                                           javaLoader, str);

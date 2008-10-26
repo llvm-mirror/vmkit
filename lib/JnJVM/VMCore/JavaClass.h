@@ -473,6 +473,10 @@ public:
   }
   
   UserClassPrimitive* toPrimitive(Jnjvm* vm) const;
+  
+  CommonClass* getInternal() {
+    return this;
+  }
 
 };
 

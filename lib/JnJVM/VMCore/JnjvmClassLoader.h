@@ -212,9 +212,7 @@ public:
     classes = 0;
   }
 
-#ifdef ISOLATE_SHARING
   UserClass* loadClass;
-#endif
   
   const UTF8* constructArrayName(uint32 steps, const UTF8* className);
   
