@@ -796,9 +796,7 @@ Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) {
   upcalls = bootstrapLoader->upcalls;
 
   throwable = upcalls->newThrowable;
-  
-  upcalls->initialiseClasspath(bootstrapLoader);
- 
+   
 }
 
 const UTF8* Jnjvm::asciizToInternalUTF8(const char* asciiz) {

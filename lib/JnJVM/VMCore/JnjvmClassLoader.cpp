@@ -227,6 +227,8 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(uint32 memLimit) {
   arrayTable[JavaArray::T_FLOAT - 4] = upcalls->ArrayOfFloat;
   arrayTable[JavaArray::T_LONG - 4] = upcalls->ArrayOfLong;
   arrayTable[JavaArray::T_DOUBLE - 4] = upcalls->ArrayOfDouble;
+
+  upcalls->initialiseClasspath(this); 
 }
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
