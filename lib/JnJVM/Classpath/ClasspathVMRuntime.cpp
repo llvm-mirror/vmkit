@@ -73,12 +73,14 @@ jobject _str,
 jobject _loader) {
   JavaString* str = (JavaString*)_str;
   Jnjvm* vm = JavaThread::get()->isolate;
-  
+  JnjvmClassLoader* loader = 
+    JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)_loader, vm);
+
   char* buf = str->strToAsciiz();
   
   void* res = dlopen(buf, RTLD_LAZY | RTLD_LOCAL);
   if (res != 0) {
-    vm->nativeLibs.push_back(res);
+    loader->nativeLibs.push_back(res);
     onLoad_t onLoad = (onLoad_t)(intptr_t)dlsym(res, "JNI_OnLoad");
     if (onLoad) onLoad(&vm->javavmEnv, 0);
     return 1;

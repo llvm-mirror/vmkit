@@ -45,9 +45,6 @@ const char* Jnjvm::envSeparator = ":";
 const unsigned int Jnjvm::Magic = 0xcafebabe;
 
 #ifndef ISOLATE
-/// If we're not in a multi-vm environment, this can be made static.
-std::vector<void*> Jnjvm::nativeLibs;
-JnjvmBootstrapLoader* Jnjvm::bootstrapLoader;
 std::map<const char, UserClassPrimitive*> Jnjvm::primitiveMap;
 #endif
 
@@ -789,7 +786,7 @@ void Jnjvm::runApplication(int argc, char** argv) {
   }
 }
 
-Jnjvm::Jnjvm(uint32 memLimit) {
+Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) {
 
   classpath = getenv("CLASSPATH");
   if (!classpath) classpath = ".";
@@ -799,10 +796,7 @@ Jnjvm::Jnjvm(uint32 memLimit) {
   javavmEnv = &JNI_JavaVMTable;
   
 
-#ifdef ISOLATE_SHARING
-  initialiseStatics();
-#endif
-  
+  bootstrapLoader = loader;
   upcalls = bootstrapLoader->upcalls;
 
 #ifdef ISOLATE_SHARING

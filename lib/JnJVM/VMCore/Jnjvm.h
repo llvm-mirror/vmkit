@@ -21,7 +21,6 @@
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 
-#include "JavaTypes.h"
 #include "JnjvmConfig.h"
 #include "LockedMap.h"
 
@@ -177,7 +176,7 @@ public:
   /// bootstraLoader - Bootstrap loader for base classes of this virtual
   /// machine.
   ///
-  ISOLATE_STATIC JnjvmBootstrapLoader* bootstrapLoader;
+  JnjvmBootstrapLoader* bootstrapLoader;
 
   /// upcalls - Upcalls to call Java methods and access Java fields.
   ///
@@ -199,10 +198,6 @@ public:
   /// postProperties - Properties set at runtime and in command line.
   ///
   std::vector< std::pair<char*, char*> > postProperties;
-
-  /// nativeLibs - Native libraries (e.g. '.so') loaded by this JVM.
-  ///
-  ISOLATE_STATIC std::vector<void*> nativeLibs;
 
   /// classpath - The CLASSPATH value, or the paths given in command line.
   ///
@@ -293,18 +288,13 @@ public:
     classpath = cp;
   }
   
-  /// initialiseStatics - Initializes the isolate. The function initialize
-  /// static variables in a single environment.
-  ///
-  ISOLATE_STATIC void initialiseStatics();
-  
   ISOLATE_STATIC UserClassPrimitive* getPrimitiveClass(char id) {
     return primitiveMap[id];
   }
 
   /// Jnjvm - Allocates a new JVM.
   ///
-  Jnjvm(uint32 memLimit);
+  Jnjvm(JnjvmBootstrapLoader* loader);
   
   /// runApplication - Runs the application with the given command line.
   /// User-visible function, inherited by the VirtualMachine class.

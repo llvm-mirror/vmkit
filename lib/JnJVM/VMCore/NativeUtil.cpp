@@ -30,12 +30,6 @@ Jnjvm* NativeUtil::myVM(JNIEnv* env) {
   return JavaThread::get()->isolate;
 }
 
-#if defined(__MACH__)
-#define SELF_HANDLE RTLD_DEFAULT
-#else
-#define SELF_HANDLE 0
-#endif
-
 #define PRE "Java_"
 #define PRE_LEN 5
 
@@ -177,25 +171,6 @@ static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth, char* buf) {
 
 }
 
-static void* loadName(char* buf, bool& jnjvm) {
-  void* res = dlsym(SELF_HANDLE, buf);
-  if (!res) {
-#ifndef SERVICE_VM
-    Jnjvm* vm = JavaThread::get()->isolate;
-#else
-    Jnjvm* vm = Jnjvm::bootstrapVM;
-#endif
-    for (std::vector<void*>::iterator i = vm->nativeLibs.begin(), 
-              e = vm->nativeLibs.end(); i!= e; ++i) {
-      res = dlsym((*i), buf);
-      if (res) break;
-    }
-  } else {
-    jnjvm = true;
-  }
-  return res;
-}
-
 void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
   const UTF8* jniConsClName = cl->name;
   const UTF8* jniConsName = meth->name;
@@ -206,13 +181,13 @@ void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
 
   char* buf = (char*)alloca(3 + PRE_LEN + mnlen + clen + (mtlen << 1));
   jniConsFromMeth(cl, meth, buf);
-  void* res = loadName(buf, jnjvm);
+  void* res = cl->classLoader->loadLib(buf, jnjvm);
   if (!res) {
     buf = jniConsFromMeth2(cl, meth, buf);
-    res = loadName(buf, jnjvm);
+    res = cl->classLoader->loadLib(buf, jnjvm);
     if (!res) {
       buf = jniConsFromMeth3(cl, meth, buf);
-      res = loadName(buf, jnjvm);
+      res = cl->classLoader->loadLib(buf, jnjvm);
       if (!res) {
         printf("Native function %s not found. Probably "
                "not implemented by JnJVM?\n", meth->printString());

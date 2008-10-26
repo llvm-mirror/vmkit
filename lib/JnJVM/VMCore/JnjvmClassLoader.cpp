@@ -7,9 +7,17 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <dlfcn.h>
 #include <limits.h>
 #include <unistd.h>
 #include <sys/stat.h>
+
+
+#if defined(__MACH__)
+#define SELF_HANDLE RTLD_DEFAULT
+#else
+#define SELF_HANDLE 0
+#endif
 
 #include "debug.h"
 
@@ -31,8 +39,6 @@ using namespace jnjvm;
 
 #ifndef ISOLATE_SHARING
 JnjvmBootstrapLoader* JnjvmClassLoader::bootstrapLoader = 0;
-UserClass* JnjvmBootstrapLoader::SuperArray = 0;
-UserClass** JnjvmBootstrapLoader::InterfacesArray;
 #endif
 
 
@@ -653,4 +659,23 @@ const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
   }
 
   return readerConstructUTF8(buf, n);
+}
+
+void* JnjvmClassLoader::loadLib(const char* buf, bool& jnjvm) {
+  void* res = dlsym(SELF_HANDLE, buf);
+  
+  if (!res) {
+    for (std::vector<void*>::iterator i = nativeLibs.begin(),
+              e = nativeLibs.end(); i!= e; ++i) {
+      res = dlsym((*i), buf);
+      if (res) break;
+    }
+  } else {
+    jnjvm = true;
+  }
+  
+  if (!res && this != bootstrapLoader)
+    res = bootstrapLoader->loadLib(buf, jnjvm);
+
+  return res;
 }

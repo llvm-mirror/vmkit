@@ -222,6 +222,12 @@ public:
 
   /// Strings hashed by this classloader.
   std::vector<JavaString*, gc_allocator<JavaString*> > strings;
+  
+  /// nativeLibs - Native libraries (e.g. '.so') loaded by this class loader.
+  ///
+  std::vector<void*> nativeLibs;
+
+  void* loadLib(const char* buf, bool& jnjvm);
 };
 
 /// JnjvmBootstrapLoader - This class is for the bootstrap class loader, which
@@ -288,10 +294,13 @@ public:
   /// Java code.
   ///
   Classpath* upcalls;
+  
+  /// InterfacesArray - The interfaces that array classes implement.
+  ///
+  UserClass** InterfacesArray;
 
-  ISOLATE_STATIC UserClass** InterfacesArray;
-  ISOLATE_STATIC UserClass* SuperArray;
-
+  /// SuperArray - The super of array classes.
+  UserClass* SuperArray;
 
   /// Lists of UTF8s used internaly in VMKit.
   const UTF8* NoClassDefFoundError;

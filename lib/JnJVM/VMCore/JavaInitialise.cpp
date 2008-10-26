@@ -7,26 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/Allocator.h"
 #include "mvm/VirtualMachine.h"
-#include "mvm/Threads/Locks.h"
-#include "mvm/Threads/Thread.h"
 
 #include "JavaArray.h"
-#include "JavaCache.h"
-#include "JavaClass.h"
-#include "JavaConstantPool.h"
-#include "JavaJIT.h"
 #include "JavaObject.h"
-#include "JavaString.h"
 #include "JavaThread.h"
-#include "JavaTypes.h"
-#include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "JnjvmModuleProvider.h"
-#include "NativeUtil.h"
-#include "LockedMap.h"
-#include "Zip.h"
 
 #ifdef SERVICE_VM
 #include "ServiceDomain.h"
@@ -75,35 +61,31 @@ static void initialiseVT() {
 #undef INIT
 }
 
-void Jnjvm::initialiseStatics() {
-
 #ifdef ISOLATE_SHARING
+void mvm::VirtualMachine::initialiseJVM() {
+  initialiseVT();
   if (!JnjvmSharedLoader::sharedLoader) {
     JnjvmSharedLoader::sharedLoader = JnjvmSharedLoader::createSharedLoader();
   }
-#endif
- 
-  bootstrapLoader = gc_new(JnjvmBootstrapLoader)(0);
-}
-
-void mvm::VirtualMachine::initialiseJVM() {
-#ifndef ISOLATE_SHARING
-  if (!JnjvmClassLoader::bootstrapLoader) {
-    initialiseVT();
-    Jnjvm::initialiseStatics();
-    JnjvmClassLoader::bootstrapLoader = Jnjvm::bootstrapLoader;
-  }
-#else
-  initialiseVT(); 
-#endif
 }
 
 mvm::VirtualMachine* mvm::VirtualMachine::createJVM() {
-#ifdef SERVICE_VM
-  ServiceDomain* vm = ServiceDomain::allocateService();
-  vm->startExecution();
-#else
-  Jnjvm* vm = gc_new(Jnjvm)(0);
-#endif
+  JnjvmBootstraLoader* bootstrapLoader = gc_new(JnjvmBootstrapLoader)(0);
+  Jnjvm* vm = gc_new(Jnjvm)(bootstrapLoader);
   return vm;
 }
+#else
+  
+void mvm::VirtualMachine::initialiseJVM() {
+  initialiseVT();
+  if (!JnjvmClassLoader::bootstrapLoader) {
+    JnjvmClassLoader::bootstrapLoader = gc_new(JnjvmBootstrapLoader)(0);
+  }
+}
+
+mvm::VirtualMachine* mvm::VirtualMachine::createJVM() {
+  Jnjvm* vm = gc_new(Jnjvm)(JnjvmClassLoader::bootstrapLoader);
+  return vm;
+}
+
+#endif
