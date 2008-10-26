@@ -208,7 +208,16 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(uint32 memLimit) {
   DEF_UTF8(finalize);
 
 #undef DEF_UTF8
-
+  
+  primitiveMap[I_VOID] = upcalls->OfVoid;
+  primitiveMap[I_BOOL] = upcalls->OfBool;
+  primitiveMap[I_BYTE] = upcalls->OfByte;
+  primitiveMap[I_CHAR] = upcalls->OfChar;
+  primitiveMap[I_SHORT] = upcalls->OfShort;
+  primitiveMap[I_INT] = upcalls->OfInt;
+  primitiveMap[I_FLOAT] = upcalls->OfFloat;
+  primitiveMap[I_LONG] = upcalls->OfLong;
+  primitiveMap[I_DOUBLE] = upcalls->OfDouble;
 }
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
@@ -487,10 +496,10 @@ Typedef* JnjvmClassLoader::internalConstructType(const UTF8* name) {
       break;
     default :
       UserClassPrimitive* cl = 
-        isolate->getPrimitiveClass((char)name->elements[0]);
+        bootstrapLoader->getPrimitiveClass((char)name->elements[0]);
       assert(cl && "No primitive");
-      bool unsign = (cl == isolate->upcalls->OfChar || 
-                     cl == isolate->upcalls->OfBool);
+      bool unsign = (cl == bootstrapLoader->upcalls->OfChar || 
+                     cl == bootstrapLoader->upcalls->OfBool);
       res = new(allocator) PrimitiveTypedef(name, cl, unsign, cur);
   }
   return res;

@@ -94,8 +94,6 @@ public:
   std::map<const char, UserClassArray*> arrayClasses;
 private:
   
-  ISOLATE_STATIC std::map<const char, UserClassPrimitive*> primitiveMap;
-
   /// bootstrapThread - The initial thread of this JVM.
   ///
   JavaThread* bootstrapThread;
@@ -286,10 +284,6 @@ public:
   ///
   void setClasspath(char* cp) {
     classpath = cp;
-  }
-  
-  ISOLATE_STATIC UserClassPrimitive* getPrimitiveClass(char id) {
-    return primitiveMap[id];
   }
 
   /// Jnjvm - Allocates a new JVM.

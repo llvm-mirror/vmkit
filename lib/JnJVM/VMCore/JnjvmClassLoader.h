@@ -337,6 +337,12 @@ public:
   const UTF8* tanh;
   const UTF8* finalize;
 
+  /// primitiveMap - Map of primitives, hashed by id.
+  std::map<const char, UserClassPrimitive*> primitiveMap;
+
+  UserClassPrimitive* getPrimitiveClass(char id) {
+    return primitiveMap[id];
+  }
 };
 
 } // end namespace jnjvm

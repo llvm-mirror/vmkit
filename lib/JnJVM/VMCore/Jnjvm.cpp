@@ -44,10 +44,6 @@ const char* Jnjvm::dirSeparator = "/";
 const char* Jnjvm::envSeparator = ":";
 const unsigned int Jnjvm::Magic = 0xcafebabe;
 
-#ifndef ISOLATE
-std::map<const char, UserClassPrimitive*> Jnjvm::primitiveMap;
-#endif
-
 typedef void (*clinit_t)(Jnjvm* vm, UserConstantPool*);
 
 void UserCommonClass::initialiseClass(Jnjvm* vm) {
@@ -810,16 +806,6 @@ Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) {
   arrayClasses[JavaArray::T_FLOAT - 4] = upcalls->ArrayOfFloat;
   arrayClasses[JavaArray::T_LONG - 4] = upcalls->ArrayOfLong;
   arrayClasses[JavaArray::T_DOUBLE - 4] = upcalls->ArrayOfDouble;
-
-  primitiveMap[I_VOID] = upcalls->OfVoid;
-  primitiveMap[I_BOOL] = upcalls->OfBool;
-  primitiveMap[I_BYTE] = upcalls->OfByte;
-  primitiveMap[I_CHAR] = upcalls->OfChar;
-  primitiveMap[I_SHORT] = upcalls->OfShort;
-  primitiveMap[I_INT] = upcalls->OfInt;
-  primitiveMap[I_FLOAT] = upcalls->OfFloat;
-  primitiveMap[I_LONG] = upcalls->OfLong;
-  primitiveMap[I_DOUBLE] = upcalls->OfDouble;
   
   upcalls->initialiseClasspath(bootstrapLoader);
  
