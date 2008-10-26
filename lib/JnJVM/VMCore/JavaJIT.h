@@ -70,6 +70,8 @@ public:
     compilingClass = meth->classDef;
     module = compilingClass->classLoader->TheModule;
     llvmFunction = func;
+    inlining = false;
+    callsStackWalker = false;
   }
 
   JnjvmModule* module;
@@ -87,6 +89,7 @@ public:
                                    std::vector<llvm::Value*>& args);
 
   std::map<JavaMethod*, bool> inlineMethods;
+  bool inlining;
 
   Class* compilingClass;
   JavaMethod* compilingMethod;
@@ -277,6 +280,9 @@ public:
   /// nbEnveloppes - Number of enveloppes (ie invokeinterface) in this
   /// method.
   uint32 nbEnveloppes;
+
+  bool canBeInlined(JavaMethod* meth);
+  bool callsStackWalker;
 };
 
 enum Opcode {

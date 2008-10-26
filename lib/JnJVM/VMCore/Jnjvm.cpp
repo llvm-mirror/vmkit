@@ -51,6 +51,7 @@ using namespace jnjvm;
   DEF_UTF8(prelib);
   DEF_UTF8(postlib);
   DEF_UTF8(mathName);
+  DEF_UTF8(stackWalkerName);
   DEF_UTF8(abs);
   DEF_UTF8(sqrt);
   DEF_UTF8(sin);

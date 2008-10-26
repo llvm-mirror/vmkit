@@ -183,6 +183,7 @@ public:
   static const UTF8* prelib; 
   static const UTF8* postlib; 
   static const UTF8* mathName;
+  static const UTF8* stackWalkerName;
   static const UTF8* abs;
   static const UTF8* sqrt;
   static const UTF8* sin;

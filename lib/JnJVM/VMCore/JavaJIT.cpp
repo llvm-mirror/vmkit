@@ -50,6 +50,12 @@
 using namespace jnjvm;
 using namespace llvm;
 
+bool JavaJIT::canBeInlined(JavaMethod* meth) {
+  return (meth->canBeInlined &&
+          meth != compilingMethod && inlineMethods[meth] == 0 &&
+          meth->classDef->classLoader == compilingClass->classLoader);
+}
+
 void JavaJIT::invokeVirtual(uint16 index) {
   
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
@@ -75,8 +81,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   JITVerifyNull(args[0]); 
   BasicBlock* endBlock = 0;
   PHINode* node = 0;
-  if (meth && !isAbstract(meth->access) && meth->canBeInlined &&
-      meth != compilingMethod && inlineMethods[meth] == 0) {
+  if (meth && !isAbstract(meth->access) && canBeInlined(meth)) {
     Value* cl = CallInst::Create(module->GetClassFunction, args[0], "",
                                   currentBlock);
     Value* cl2 = module->getNativeClass((Class*)cl, this);
@@ -644,7 +649,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
 #endif
   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
-  
+  nbEnveloppes = 0;
 
   if (returnType != Type::VoidTy) {
     endNode = llvm::PHINode::Create(returnType, "", endBlock);
@@ -684,7 +689,7 @@ llvm::Function* JavaJIT::javaCompile() {
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "compiling %s\n",
               compilingMethod->printString());
 
-
+  
   Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
   
   if (!codeAtt) {
@@ -916,7 +921,7 @@ llvm::Function* JavaJIT::javaCompile() {
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "--> end compiling %s\n",
               compilingMethod->printString());
   
-  if (nbe == 0 && codeLen < 50)
+  if (nbe == 0 && codeLen < 50 && !callsStackWalker)
     compilingMethod->canBeInlined = false;
 
   return llvmFunction;
@@ -1539,6 +1544,7 @@ Instruction* JavaJIT::invokeInline(JavaMethod* meth,
   jit.unifiedUnreachable = unifiedUnreachable;
   jit.inlineMethods = inlineMethods;
   jit.inlineMethods[meth] = true;
+  jit.inlining = true;
   Instruction* ret = jit.inlineCompile(currentBlock, 
                                        currentExceptionBlock, args);
   inlineMethods[meth] = false;
@@ -1596,8 +1602,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
       (Function*)ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
                                                       signature, meth);
 
-    if (meth && meth->canBeInlined && meth != compilingMethod && 
-        inlineMethods[meth] == 0) {
+    if (meth && canBeInlined(meth)) {
       val = invokeInline(meth, args);
     } else {
       val = invoke(func, args, "", currentBlock);
@@ -1635,6 +1640,10 @@ void JavaJIT::invokeStatic(uint16 index) {
     val = lowerMathOps(name, args);
   }
 
+  if (cl->equals(Jnjvm::stackWalkerName)) {
+    callsStackWalker = true;
+  }
+
   if (!val) {
     Function* func = (Function*)
       ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_STATIC,
@@ -1648,8 +1657,7 @@ void JavaJIT::invokeStatic(uint16 index) {
     args.push_back(newCtpCache);
 #endif
 
-    if (meth && meth->canBeInlined && meth != compilingMethod && 
-        inlineMethods[meth] == 0) {
+    if (meth && canBeInlined(meth)) {
       val = invokeInline(meth, args);
     } else {
       val = invoke(func, args, "", currentBlock);
@@ -2050,7 +2058,8 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
 #ifndef ISOLATE_SHARING
   // ok now the cache
   Enveloppe& enveloppe = compilingMethod->enveloppes[nbEnveloppes++];
-  enveloppe.initialise(compilingClass->ctpInfo, index);
+  if (!inlining)
+    enveloppe.initialise(compilingClass->ctpInfo, index);
    
   Value* llvmEnv = module->getEnveloppe(&enveloppe, this);
 #else

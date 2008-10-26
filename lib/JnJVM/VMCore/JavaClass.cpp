@@ -663,6 +663,7 @@ JavaMethod* CommonClass::constructMethod(JavaMethod& method,
   method.canBeInlined = false;
   method.offset = 0;
   method.JInfo = 0;
+  method.enveloppes = 0;
   return &method;
 }
 

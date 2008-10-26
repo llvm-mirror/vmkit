@@ -194,6 +194,7 @@ void Jnjvm::initialiseStatics() {
   Jnjvm::postlib = JCL->asciizConstructUTF8(".so");
 #endif
   Jnjvm::mathName = JCL->asciizConstructUTF8("java/lang/Math");
+  Jnjvm::stackWalkerName = JCL->asciizConstructUTF8("gnu/classpath/VMStackWalker");
   Jnjvm::NoClassDefFoundError = 
     JCL->asciizConstructUTF8("java/lang/NoClassDefFoundError");
 
