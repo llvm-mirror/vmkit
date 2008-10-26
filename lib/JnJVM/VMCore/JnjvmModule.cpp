@@ -276,42 +276,8 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
 #endif
 
 
-VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
+llvm::Function* JnjvmModule::makeTracer(Class* cl, bool stat) {
   
-  VirtualTable* res = 0;
-#ifndef WITHOUT_VTABLE
-  if (stat) {
-#endif
-    mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-    res = (VirtualTable*)allocator.Allocate(VT_SIZE);
-    memcpy(res, JavaObject::VT, VT_SIZE);
-#ifndef WITHOUT_VTABLE
-  } else {
-    if (cl->super) {
-      cl->virtualTableSize = cl->super->virtualTableSize;
-    } else {
-      cl->virtualTableSize = VT_NB_FUNCS;
-    }
-    res = allocateVT(cl, 0);
-  
-    if (!(cl->super)) {
-      uint32 size =  (cl->virtualTableSize - VT_NB_FUNCS) * sizeof(void*);
-#define COPY(CLASS) \
-    memcpy((void*)((unsigned)CLASS::VT + VT_SIZE), \
-           (void*)((unsigned)res + VT_SIZE), size);
-
-      COPY(JavaArray)
-      COPY(JavaObject)
-      COPY(ArrayObject)
-
-#undef COPY
-    }
-  }
-#endif
-  
-
-
-#ifdef WITH_TRACER
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   const Type* type = stat ? LCI->getStaticType() : LCI->getVirtualType();
   JavaField* fields = 0;
@@ -323,7 +289,7 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
     fields = cl->getVirtualFields();
     nbFields = cl->nbVirtualFields;
   }
- 
+  
   Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
                                     GlobalValue::ExternalLinkage,
                                     "markAndTraceObject",
@@ -380,17 +346,57 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
   }
 
   ReturnInst::Create(block);
+  
+  if (!stat) {
+    LCI->virtualTracerFunction = func;
+  } else {
+    LCI->staticTracerFunction = func;
+  }
+
+  return func;
+}
+
+VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
+  
+  VirtualTable* res = 0;
+#ifndef WITHOUT_VTABLE
+  if (stat) {
+#endif
+    mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
+    res = (VirtualTable*)allocator.Allocate(VT_SIZE);
+    memcpy(res, JavaObject::VT, VT_SIZE);
+#ifndef WITHOUT_VTABLE
+  } else {
+    if (cl->super) {
+      cl->virtualTableSize = cl->super->virtualTableSize;
+    } else {
+      cl->virtualTableSize = VT_NB_FUNCS;
+    }
+    res = allocateVT(cl, 0);
+  
+    if (!(cl->super)) {
+      uint32 size =  (cl->virtualTableSize - VT_NB_FUNCS) * sizeof(void*);
+#define COPY(CLASS) \
+    memcpy((void*)((unsigned)CLASS::VT + VT_SIZE), \
+           (void*)((unsigned)res + VT_SIZE), size);
+
+      COPY(JavaArray)
+      COPY(JavaObject)
+      COPY(ArrayObject)
+
+#undef COPY
+    }
+  }
+#endif
+  
+#ifdef WITH_TRACER
+  llvm::Function* func = makeTracer(cl, stat);
 
   void* codePtr = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
   ((void**)res)[VT_TRACER_OFFSET] = codePtr;
   
   func->deleteBody();
 
-  if (!stat) {
-    LCI->virtualTracerFunction = func;
-  } else {
-    LCI->staticTracerFunction = func;
-  }
 #endif
   return res;
 }

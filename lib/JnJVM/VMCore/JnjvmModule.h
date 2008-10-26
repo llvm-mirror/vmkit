@@ -210,7 +210,8 @@ private:
   
   
 
-
+  
+  llvm::Function* makeTracer(Class* cl, bool stat);
   VirtualTable* makeVT(Class* cl, bool stat);
   VirtualTable* allocateVT(Class* cl, uint32 index);
 
