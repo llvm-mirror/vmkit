@@ -44,17 +44,18 @@ jobject _strLib) {
   const UTF8* utf8Lib = strLib->value;
   uint32 stLib = strLib->offset;
   sint32 lgLib = strLib->count;
-  sint32 lgPre = vm->prelib->size;
-  sint32 lgPost = vm->postlib->size;
+  sint32 lgPre = vm->bootstrapLoader->prelib->size;
+  sint32 lgPost = vm->bootstrapLoader->postlib->size;
   
   uint32 size = (uint32)(lgPre + lgLib + lgPost);
   ArrayUInt16* array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(size, vm);
   uint16* elements = array->elements;
 
-  memmove(elements, vm->prelib->elements, lgPre * sizeof(uint16));
+  memmove(elements, vm->bootstrapLoader->prelib->elements,
+          lgPre * sizeof(uint16));
   memmove(&(elements[lgPre]), &(utf8Lib->elements[stLib]), 
           lgLib * sizeof(uint16));
-  memmove(&(elements[lgPre + lgLib]), vm->postlib->elements,
+  memmove(&(elements[lgPre + lgLib]), vm->bootstrapLoader->postlib->elements,
            lgPost * sizeof(uint16));
   
   return (jobject)(vm->UTF8ToStr((const UTF8*)array));

@@ -173,41 +173,6 @@ public:
   /// Magic - The magic number at the beginning of each .class file. 0xcafebabe.
   ///
   static const unsigned int Magic;
-  
-  /// Lists of UTF8s used internaly in VMKit.
-  static const UTF8* NoClassDefFoundError;
-  static const UTF8* initName;
-  static const UTF8* clinitName;
-  static const UTF8* clinitType; 
-  static const UTF8* runName; 
-  static const UTF8* prelib; 
-  static const UTF8* postlib; 
-  static const UTF8* mathName;
-  static const UTF8* stackWalkerName;
-  static const UTF8* abs;
-  static const UTF8* sqrt;
-  static const UTF8* sin;
-  static const UTF8* cos;
-  static const UTF8* tan;
-  static const UTF8* asin;
-  static const UTF8* acos;
-  static const UTF8* atan;
-  static const UTF8* atan2;
-  static const UTF8* exp;
-  static const UTF8* log;
-  static const UTF8* pow;
-  static const UTF8* ceil;
-  static const UTF8* floor;
-  static const UTF8* rint;
-  static const UTF8* cbrt;
-  static const UTF8* cosh;
-  static const UTF8* expm1;
-  static const UTF8* hypot;
-  static const UTF8* log10;
-  static const UTF8* log1p;
-  static const UTF8* sinh;
-  static const UTF8* tanh;
-  static const UTF8* finalize;
  
   /// bootstraLoader - Bootstrap loader for base classes of this virtual
   /// machine.

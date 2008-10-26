@@ -158,7 +158,7 @@ jint ThrowNew(JNIEnv* env, jclass clazz, const char *msg) {
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
   if (cl->isArray()) assert(0 && "implement me");
   JavaObject* res = ((UserClass*)cl)->doNew(vm);
-  JavaMethod* init = cl->lookupMethod(Jnjvm::initName, 
+  JavaMethod* init = cl->lookupMethod(vm->bootstrapLoader->initName, 
               cl->classLoader->asciizConstructUTF8("(Ljava/lang/String;)V"),
               false, true, 0);
   init->invokeIntSpecial(vm, (UserClass*)cl, res, vm->asciizToStr(msg));

@@ -40,45 +40,6 @@
 
 using namespace jnjvm;
 
-#define DEF_UTF8(var) \
-  const UTF8* Jnjvm::var = 0
-  
-  DEF_UTF8(NoClassDefFoundError);
-  DEF_UTF8(initName);
-  DEF_UTF8(clinitName);
-  DEF_UTF8(clinitType);
-  DEF_UTF8(runName);
-  DEF_UTF8(prelib);
-  DEF_UTF8(postlib);
-  DEF_UTF8(mathName);
-  DEF_UTF8(stackWalkerName);
-  DEF_UTF8(abs);
-  DEF_UTF8(sqrt);
-  DEF_UTF8(sin);
-  DEF_UTF8(cos);
-  DEF_UTF8(tan);
-  DEF_UTF8(asin);
-  DEF_UTF8(acos);
-  DEF_UTF8(atan);
-  DEF_UTF8(atan2);
-  DEF_UTF8(exp);
-  DEF_UTF8(log);
-  DEF_UTF8(pow);
-  DEF_UTF8(ceil);
-  DEF_UTF8(floor);
-  DEF_UTF8(rint);
-  DEF_UTF8(cbrt);
-  DEF_UTF8(cosh);
-  DEF_UTF8(expm1);
-  DEF_UTF8(hypot);
-  DEF_UTF8(log10);
-  DEF_UTF8(log1p);
-  DEF_UTF8(sinh);
-  DEF_UTF8(tanh);
-  DEF_UTF8(finalize);
-
-#undef DEF_UTF8
-
 const char* Jnjvm::dirSeparator = "/";
 const char* Jnjvm::envSeparator = ":";
 const unsigned int Jnjvm::Magic = 0xcafebabe;
@@ -113,9 +74,9 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
       cl->resolveStaticClass();
       
       status = inClinit;
-      JavaMethod* meth = lookupMethodDontThrow(Jnjvm::clinitName,
-                                               Jnjvm::clinitType, true,
-                                               false, 0);
+      JavaMethod* meth = lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
+                                               vm->bootstrapLoader->clinitType,
+                                               true, false, 0);
       
       PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
       PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ", 0);

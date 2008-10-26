@@ -897,7 +897,8 @@ void CommonClass::getDeclaredConstructors(std::vector<JavaMethod*>& res,
   for (uint32 i = 0; i < nbVirtualMethods; ++i) {
     JavaMethod* meth = &virtualMethods[i];
     bool pub = isPublic(meth->access);
-    if (meth->name->equals(Jnjvm::initName) && (!publicOnly || pub)) {
+    if (meth->name->equals(classLoader->bootstrapLoader->initName) && 
+        (!publicOnly || pub)) {
       res.push_back(meth);
     }
   }
@@ -908,7 +909,8 @@ void CommonClass::getDeclaredMethods(std::vector<JavaMethod*>& res,
   for (uint32 i = 0; i < nbVirtualMethods; ++i) {
     JavaMethod* meth = &virtualMethods[i];
     bool pub = isPublic(meth->access);
-    if (!(meth->name->equals(Jnjvm::initName)) && (!publicOnly || pub)) {
+    if (!(meth->name->equals(classLoader->bootstrapLoader->initName)) && 
+        (!publicOnly || pub)) {
       res.push_back(meth);
     }
   }
@@ -916,7 +918,8 @@ void CommonClass::getDeclaredMethods(std::vector<JavaMethod*>& res,
   for (uint32 i = 0; i < nbStaticMethods; ++i) {
     JavaMethod* meth = &staticMethods[i];
     bool pub = isPublic(meth->access);
-    if (!(meth->name->equals(Jnjvm::clinitName)) && (!publicOnly || pub)) {
+    if (!(meth->name->equals(classLoader->bootstrapLoader->clinitName)) && 
+        (!publicOnly || pub)) {
       res.push_back(meth);
     }
   }

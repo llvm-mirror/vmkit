@@ -1430,7 +1430,8 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
 
 Instruction* JavaJIT::lowerMathOps(const UTF8* name, 
                                    std::vector<Value*>& args) {
-  if (name->equals(Jnjvm::abs)) {
+  JnjvmBootstrapLoader* loader = compilingClass->classLoader->bootstrapLoader;
+  if (name->equals(loader->abs)) {
     const Type* Ty = args[0]->getType();
     if (Ty == Type::Int32Ty) {
       Constant* const_int32_9 = module->constantZero;
@@ -1464,71 +1465,71 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
       return llvm::CallInst::Create(module->func_llvm_fabs_f64, args[0],
                                     "tmp1", currentBlock);
     }
-  } else if (name->equals(Jnjvm::sqrt)) {
+  } else if (name->equals(loader->sqrt)) {
     return llvm::CallInst::Create(module->func_llvm_sqrt_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::sin)) {
+  } else if (name->equals(loader->sin)) {
     return llvm::CallInst::Create(module->func_llvm_sin_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::cos)) {
+  } else if (name->equals(loader->cos)) {
     return llvm::CallInst::Create(module->func_llvm_cos_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::tan)) {
+  } else if (name->equals(loader->tan)) {
     return llvm::CallInst::Create(module->func_llvm_tan_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::asin)) {
+  } else if (name->equals(loader->asin)) {
     return llvm::CallInst::Create(module->func_llvm_asin_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::acos)) {
+  } else if (name->equals(loader->acos)) {
     return llvm::CallInst::Create(module->func_llvm_acos_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::atan)) {
+  } else if (name->equals(loader->atan)) {
     return llvm::CallInst::Create(module->func_llvm_atan_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::atan2)) {
+  } else if (name->equals(loader->atan2)) {
     return llvm::CallInst::Create(module->func_llvm_atan2_f64, 
                                   args.begin(), args.end(), "tmp1",
                                   currentBlock);
-  } else if (name->equals(Jnjvm::exp)) {
+  } else if (name->equals(loader->exp)) {
     return llvm::CallInst::Create(module->func_llvm_exp_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::log)) {
+  } else if (name->equals(loader->log)) {
     return llvm::CallInst::Create(module->func_llvm_log_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::pow)) {
+  } else if (name->equals(loader->pow)) {
     return llvm::CallInst::Create(module->func_llvm_pow_f64, args.begin(),
                                   args.end(), "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::ceil)) {
+  } else if (name->equals(loader->ceil)) {
     return llvm::CallInst::Create(module->func_llvm_ceil_f64, args[0], "tmp1",
                                   currentBlock);
-  } else if (name->equals(Jnjvm::floor)) {
+  } else if (name->equals(loader->floor)) {
     return llvm::CallInst::Create(module->func_llvm_floor_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::rint)) {
+  } else if (name->equals(loader->rint)) {
     return llvm::CallInst::Create(module->func_llvm_rint_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::cbrt)) {
+  } else if (name->equals(loader->cbrt)) {
     return llvm::CallInst::Create(module->func_llvm_cbrt_f64, args[0], "tmp1",
                                   currentBlock);
-  } else if (name->equals(Jnjvm::cosh)) {
+  } else if (name->equals(loader->cosh)) {
     return llvm::CallInst::Create(module->func_llvm_cosh_f64, args[0], "tmp1",
                                   currentBlock);
-  } else if (name->equals(Jnjvm::expm1)) {
+  } else if (name->equals(loader->expm1)) {
     return llvm::CallInst::Create(module->func_llvm_expm1_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::hypot)) {
+  } else if (name->equals(loader->hypot)) {
     return llvm::CallInst::Create(module->func_llvm_hypot_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::log10)) {
+  } else if (name->equals(loader->log10)) {
     return llvm::CallInst::Create(module->func_llvm_log10_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::log1p)) {
+  } else if (name->equals(loader->log1p)) {
     return llvm::CallInst::Create(module->func_llvm_log1p_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::sinh)) {
+  } else if (name->equals(loader->sinh)) {
     return llvm::CallInst::Create(module->func_llvm_sinh_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::tanh)) {
+  } else if (name->equals(loader->tanh)) {
     return llvm::CallInst::Create(module->func_llvm_tanh_f64, args[0],
                                   "tmp1", currentBlock);
   }
@@ -1567,7 +1568,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
   makeArgs(it, index, args, signature->args.size() + 1);
   JITVerifyNull(args[0]); 
 
-  if (cl->equals(Jnjvm::mathName)) {
+  if (cl->equals(compilingClass->classLoader->bootstrapLoader->mathName)) {
     val = lowerMathOps(name, args);
   }
 
@@ -1636,11 +1637,12 @@ void JavaJIT::invokeStatic(uint16 index) {
   makeArgs(it, index, args, signature->args.size());
   ctpInfo->markAsStaticCall(index);
 
-  if (cl->equals(Jnjvm::mathName)) {
+  JnjvmBootstrapLoader* loader = compilingClass->classLoader->bootstrapLoader;
+  if (cl->equals(loader->mathName)) {
     val = lowerMathOps(name, args);
   }
 
-  if (cl->equals(Jnjvm::stackWalkerName)) {
+  if (cl->equals(loader->stackWalkerName)) {
     callsStackWalker = true;
   }
 

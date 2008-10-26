@@ -291,6 +291,43 @@ public:
 
   ISOLATE_STATIC UserClass** InterfacesArray;
   ISOLATE_STATIC UserClass* SuperArray;
+
+
+  /// Lists of UTF8s used internaly in VMKit.
+  const UTF8* NoClassDefFoundError;
+  const UTF8* initName;
+  const UTF8* clinitName;
+  const UTF8* clinitType; 
+  const UTF8* runName; 
+  const UTF8* prelib; 
+  const UTF8* postlib; 
+  const UTF8* mathName;
+  const UTF8* stackWalkerName;
+  const UTF8* abs;
+  const UTF8* sqrt;
+  const UTF8* sin;
+  const UTF8* cos;
+  const UTF8* tan;
+  const UTF8* asin;
+  const UTF8* acos;
+  const UTF8* atan;
+  const UTF8* atan2;
+  const UTF8* exp;
+  const UTF8* log;
+  const UTF8* pow;
+  const UTF8* ceil;
+  const UTF8* floor;
+  const UTF8* rint;
+  const UTF8* cbrt;
+  const UTF8* cosh;
+  const UTF8* expm1;
+  const UTF8* hypot;
+  const UTF8* log10;
+  const UTF8* log1p;
+  const UTF8* sinh;
+  const UTF8* tanh;
+  const UTF8* finalize;
+
 };
 
 } // end namespace jnjvm

@@ -232,7 +232,7 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
   } else {
     JavaMethod& meth = cl->virtualMethods[index];
     VirtualTable* VT = 0;
-    if (meth.name->equals(Jnjvm::finalize)) {
+    if (meth.name->equals(cl->classLoader->bootstrapLoader->finalize)) {
       VT = allocateVT(cl, ++index);
 #ifndef ISOLATE_SHARING
       meth.offset = 0;

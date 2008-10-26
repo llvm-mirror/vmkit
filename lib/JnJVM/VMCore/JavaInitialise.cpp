@@ -183,23 +183,23 @@ void Jnjvm::initialiseStatics() {
   Attribut::innerClassesAttribut = JCL->asciizConstructUTF8("InnerClasses");
   Attribut::sourceFileAttribut = JCL->asciizConstructUTF8("SourceFile");
   
-  Jnjvm::initName = JCL->asciizConstructUTF8("<init>");
-  Jnjvm::clinitName = JCL->asciizConstructUTF8("<clinit>");
-  Jnjvm::clinitType = JCL->asciizConstructUTF8("()V");
-  Jnjvm::runName = JCL->asciizConstructUTF8("run");
-  Jnjvm::prelib = JCL->asciizConstructUTF8("lib");
+  JCL->initName = JCL->asciizConstructUTF8("<init>");
+  JCL->clinitName = JCL->asciizConstructUTF8("<clinit>");
+  JCL->clinitType = JCL->asciizConstructUTF8("()V");
+  JCL->runName = JCL->asciizConstructUTF8("run");
+  JCL->prelib = JCL->asciizConstructUTF8("lib");
 #if defined(__MACH__)
-  Jnjvm::postlib = JCL->asciizConstructUTF8(".dylib");
+  JCL->postlib = JCL->asciizConstructUTF8(".dylib");
 #else 
-  Jnjvm::postlib = JCL->asciizConstructUTF8(".so");
+  JCL->postlib = JCL->asciizConstructUTF8(".so");
 #endif
-  Jnjvm::mathName = JCL->asciizConstructUTF8("java/lang/Math");
-  Jnjvm::stackWalkerName = JCL->asciizConstructUTF8("gnu/classpath/VMStackWalker");
-  Jnjvm::NoClassDefFoundError = 
+  JCL->mathName = JCL->asciizConstructUTF8("java/lang/Math");
+  JCL->stackWalkerName = JCL->asciizConstructUTF8("gnu/classpath/VMStackWalker");
+  JCL->NoClassDefFoundError = 
     JCL->asciizConstructUTF8("java/lang/NoClassDefFoundError");
 
 #define DEF_UTF8(var) \
-  Jnjvm::var = JCL->asciizConstructUTF8(#var)
+  JCL->var = JCL->asciizConstructUTF8(#var)
   
   DEF_UTF8(abs);
   DEF_UTF8(sqrt);
