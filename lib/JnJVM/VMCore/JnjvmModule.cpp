@@ -75,7 +75,7 @@ Value* JnjvmModule::getNativeClass(CommonClass* classDef) {
                                                  uint64_t (classDef)),
                                 JnjvmModule::JavaClassType);
       
-    varGV = new GlobalVariable(JnjvmModule::JavaClassType, true,
+    varGV = new GlobalVariable(JnjvmModule::JavaClassType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
 
@@ -95,7 +95,7 @@ Value* JnjvmModule::getConstantPool(JavaConstantPool* ctp) {
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
                                 mvm::MvmModule::ptrPtrType);
-    varGV = new GlobalVariable(mvm::MvmModule::ptrPtrType, true,
+    varGV = new GlobalVariable(mvm::MvmModule::ptrPtrType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
     constantPools.insert(std::make_pair(ctp, varGV));
@@ -115,7 +115,7 @@ Value* JnjvmModule::getString(JavaString* str) {
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
                                 JnjvmModule::JavaObjectType);
-    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, true,
+    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
     strings.insert(std::make_pair(str, varGV));
@@ -133,7 +133,7 @@ Value* JnjvmModule::getEnveloppe(Enveloppe* enveloppe) {
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
                                 JnjvmModule::EnveloppeType);
-    varGV = new GlobalVariable(JnjvmModule::EnveloppeType, true,
+    varGV = new GlobalVariable(JnjvmModule::EnveloppeType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
     enveloppes.insert(std::make_pair(enveloppe, varGV));
@@ -151,7 +151,7 @@ Value* JnjvmModule::getJavaClass(CommonClass* cl) {
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(obj)),
                                 JnjvmModule::JavaObjectType);
-    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, true,
+    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
 
@@ -174,7 +174,7 @@ Value* JnjvmModule::getStaticInstance(Class* classDef) {
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                                 uint64_t (obj)), JnjvmModule::JavaObjectType);
       
-    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, true,
+    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
 
@@ -199,7 +199,7 @@ Value* JnjvmModule::getVirtualTable(CommonClass* classDef) {
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                                                  uint64_t(classDef->virtualVT)),
                                 JnjvmModule::VTType);
-    varGV = new GlobalVariable(JnjvmModule::VTType, true,
+    varGV = new GlobalVariable(JnjvmModule::VTType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
     
@@ -243,7 +243,11 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
       } else {
         ExecutionEngine* EE = mvm::MvmModule::executionEngine;
         // LLVM does not allow recursive compilation. Create the code now.
-        ((void**)VT)[0] = EE->getPointerToFunction(func);
+        if (staticCompilation) {
+          ((void**)VT)[0] = func;
+        } else {
+          ((void**)VT)[0] = EE->getPointerToFunction(func);
+        }
       }
 #endif
     } else {
@@ -265,7 +269,11 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
       LLVMMethodInfo* LMI = getMethodInfo(&meth);
       Function* func = LMI->getMethod();
       ExecutionEngine* EE = mvm::MvmModule::executionEngine;
-      ((void**)VT)[offset] = EE->getPointerToFunctionOrStub(func);
+      if (staticCompilation) {
+        ((void**)VT)[offset] = func;
+      } else {
+        ((void**)VT)[offset] = EE->getPointerToFunctionOrStub(func);
+      }
     }
 
     return VT;
@@ -389,11 +397,15 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
   
 #ifdef WITH_TRACER
   llvm::Function* func = makeTracer(cl, stat);
-
-  void* codePtr = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
-  ((void**)res)[VT_TRACER_OFFSET] = codePtr;
   
-  func->deleteBody();
+  if (staticCompilation) {
+    ((void**)res)[VT_TRACER_OFFSET] = func;
+  } else {
+    void* codePtr = mvm::MvmModule::executionEngine->getPointerToFunction(func);
+    ((void**)res)[VT_TRACER_OFFSET] = codePtr;
+    func->deleteBody();
+  }
+  
 
 #endif
   return res;
@@ -955,11 +967,14 @@ void* JnjvmModule::getMethod(JavaMethod* meth) {
   return getMethodInfo(meth)->getMethod();
 }
 
-JnjvmModule::JnjvmModule(const std::string &ModuleID) : MvmModule(ModuleID) {
+JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) : 
+  MvmModule(ModuleID) {
+  
   std::string str = 
     mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
   setDataLayout(str);
-  
+  staticCompilation = sc;
+
   Module* module = initialModule;
    
   InterfaceLookupFunction = module->getFunction("jnjvmVirtualLookup");

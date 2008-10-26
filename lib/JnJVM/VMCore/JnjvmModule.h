@@ -208,13 +208,14 @@ private:
     enveloppe_iterator;
   
   
+  bool staticCompilation;
 
   
   llvm::Function* makeTracer(Class* cl, bool stat);
   VirtualTable* makeVT(Class* cl, bool stat);
   VirtualTable* allocateVT(Class* cl, uint32 index);
 
-
+  
 public:
   
   static llvm::ConstantInt* JavaArraySizeOffsetConstant;
@@ -361,7 +362,7 @@ public:
 
   static LLVMAssessorInfo& getTypedefInfo(Typedef* type);
   
-  explicit JnjvmModule(const std::string &ModuleID);
+  explicit JnjvmModule(const std::string &ModuleID, bool sc = false);
   static void initialise();
 
   llvm::Value* getNativeClass(CommonClass* cl);
