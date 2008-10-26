@@ -100,6 +100,7 @@ void CommandLine::start() {
   } 
 }
 
+#if 0
 extern "C" int startApp(thread_arg_t* arg) {
   int argc = arg->argc;
   char** argv = arg->argv;
@@ -120,6 +121,7 @@ extern "C" int startApp(thread_arg_t* arg) {
 #endif
   return 0;
 }
+#endif
 
 void CommandLine::executeInstr() {
   if (!strcmp(argv[0], "load")) {
@@ -152,6 +154,7 @@ void CommandLine::executeInstr() {
 
   } else {
     create_vm_t func = vmlets[argv[0]];
+    mvm::CompilationUnit* CU = compilers[argv[0]];
     if (!func) {
       fprintf(stderr, "\t Unknown vm %s\n", argv[0]);
     } else {
@@ -163,7 +166,7 @@ void CommandLine::executeInstr() {
       int tid = 0;
       Thread::start(&tid, (int (*)(void *))startApp, thread_arg);
 #else
-      VirtualMachine* VM = func();
+      VirtualMachine* VM = func(CU);
       try {
         VM->runApplication(argc, argv);
       } catch(...) {

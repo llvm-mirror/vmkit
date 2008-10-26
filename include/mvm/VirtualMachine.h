@@ -15,6 +15,7 @@
 #ifndef MVM_VIRTUALMACHINE_H
 #define MVM_VIRTUALMACHINE_H
 
+#include "mvm/CompilationUnit.h"
 #include "mvm/Object.h"
 
 namespace mvm {
@@ -30,11 +31,11 @@ public:
   /// the arguments, hence it is the virtual machine's job to parse them.
   virtual void runApplication(int argc, char** argv) = 0;
 
-  static void initialiseJVM();
-  static VirtualMachine* createJVM();
+  static CompilationUnit* initialiseJVM();
+  static VirtualMachine* createJVM(CompilationUnit* C = 0);
   
-  static void initialiseCLIVM();
-  static VirtualMachine* createCLIVM();
+  static CompilationUnit* initialiseCLIVM();
+  static VirtualMachine* createCLIVM(CompilationUnit* C = 0);
   
 };
 

@@ -26,8 +26,8 @@ int main(int argc, char **argv, char **envp) {
   Thread::initialise();
   Collector::initialise(0, &base);
   
-  VirtualMachine::initialiseJVM();
-  VirtualMachine* vm = VirtualMachine::createJVM();
+  CompilationUnit* CU = VirtualMachine::initialiseJVM();
+  VirtualMachine* vm = VirtualMachine::createJVM(CU);
   vm->runApplication(argc, argv);
 
   return 0;

@@ -69,25 +69,29 @@ int main(int argc, char** argv) {
   
   if (VMToRun == RunJava) {
 #if WITH_JNJVM
-    mvm::VirtualMachine::initialiseJVM();
-    mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM();
+    mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM();
+    mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(CU);
     vm->runApplication(argc, argv);
 #endif
   } else if (VMToRun == RunNet) {
 #if WITH_N3
-    mvm::VirtualMachine::initialiseCLIVM();
-    mvm::VirtualMachine* vm = mvm::VirtualMachine::createCLIVM();
+    mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseCLIVM();
+    mvm::VirtualMachine* vm = mvm::VirtualMachine::createCLIVM(CU);
     vm->runApplication(argc, argv);
 #endif
   } else {
     mvm::CommandLine MyCl;
 #if WITH_JNJVM
-    mvm::VirtualMachine::initialiseJVM();
+    mvm::CompilationUnit* JVMCompiler = 
+      mvm::VirtualMachine::initialiseJVM();
     MyCl.vmlets["java"] = (mvm::VirtualMachine::createJVM);
+    MyCl.compilers["java"] = JVMCompiler;
 #endif
 #if WITH_N3
-    mvm::VirtualMachine::initialiseCLIVM();
+    mvm::CompilationUnit* CLICompiler = 
+      mvm::VirtualMachine::initialiseCLIVM();
     MyCl.vmlets["net"] = (mvm::VirtualMachine::createCLIVM);
+    MyCl.compilers["net"] = CLICompiler;
 #endif
     MyCl.start();
   }

@@ -37,11 +37,6 @@
 
 using namespace jnjvm;
 
-#ifndef ISOLATE_SHARING
-JnjvmBootstrapLoader* JnjvmClassLoader::bootstrapLoader = 0;
-#endif
-
-
 extern const char* GNUClasspathGlibj;
 extern const char* GNUClasspathLibs;
 

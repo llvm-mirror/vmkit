@@ -307,7 +307,7 @@ CommonClass* JavaConstantPool::getMethodClassIfLoaded(uint32 index) {
     const UTF8* name = UTF8At(ctpDef[index]);
     temp = loader->lookupClass(name);
     if (!temp) 
-      temp = JnjvmClassLoader::bootstrapLoader->lookupClass(name);
+      temp = loader->bootstrapLoader->lookupClass(name);
   }
 #endif
   return temp;

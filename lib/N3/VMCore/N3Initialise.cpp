@@ -10,6 +10,7 @@
 
 #include <vector>
 
+#include "mvm/CompilationUnit.h"
 #include "mvm/JIT.h"
 #include "mvm/Threads/Locks.h"
 
@@ -327,11 +328,12 @@ static void initialiseStatics() {
 }
 
 
-void mvm::VirtualMachine::initialiseCLIVM() {
+mvm::CompilationUnit* mvm::VirtualMachine::initialiseCLIVM() {
   if (!N3::bootstrapVM) {
     initialiseVT();
     initialiseStatics();
   }
+  return 0;
 }
 
 void VirtualMachine::runApplication(int argc, char** argv) {
@@ -339,7 +341,7 @@ void VirtualMachine::runApplication(int argc, char** argv) {
   ((N3*)this)->runMain(argc, argv);
 }
 
-mvm::VirtualMachine* mvm::VirtualMachine::createCLIVM() {
+mvm::VirtualMachine* mvm::VirtualMachine::createCLIVM(mvm::CompilationUnit* C) {
   N3* vm = N3::allocate("", N3::bootstrapVM);
   return vm;
 }

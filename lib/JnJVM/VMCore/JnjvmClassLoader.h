@@ -16,6 +16,7 @@
 #include "types.h"
 
 #include "mvm/Allocator.h"
+#include "mvm/CompilationUnit.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 
@@ -49,7 +50,7 @@ class ZipArchive;
 /// its own tables (signatures, UTF8, types) which are mapped to a single
 /// table for non-isolate environments.
 ///
-class JnjvmClassLoader : public mvm::Object {
+class JnjvmClassLoader : public mvm::CompilationUnit {
 private:
    
   
@@ -192,7 +193,7 @@ public:
   /// bootstrapLoader - The bootstrap loader of the JVM. Loads the base
   /// classes.
   ///
-  ISOLATE_STATIC JnjvmBootstrapLoader* bootstrapLoader;
+  JnjvmBootstrapLoader* bootstrapLoader;
   
   /// ~JnjvmClassLoader - Destroy the loader. Depending on the JVM
   /// configuration, this may destroy the tables, JIT module and
