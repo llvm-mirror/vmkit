@@ -64,6 +64,145 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(uint32 memLimit) {
   
   upcalls = new(allocator) Classpath();
   bootstrapLoader = this;
+
+
+  // Create the name of char arrays.
+  const UTF8* utf8OfChar = asciizConstructUTF8("[C");
+
+  // Create the base class of char arrays.
+  upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(this, "char", 2);
+  
+  // Create the char array.
+  upcalls->ArrayOfChar = constructArray(utf8OfChar, upcalls->OfChar);
+
+  // Alright, now we can repair the damage: set the class to the UTF8s created
+  // and set the array class of UTF8s.
+  ((UTF8*)utf8OfChar)->classOf = upcalls->ArrayOfChar;
+  ((UTF8*)upcalls->OfChar->name)->classOf = upcalls->ArrayOfChar;
+  hashUTF8->array = upcalls->ArrayOfChar;
+ 
+  // Create the byte array, so that bytes for classes can be created.
+  upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(this, "byte", 1);
+  upcalls->ArrayOfByte = constructArray(asciizConstructUTF8("[B"),
+                                        upcalls->OfByte);
+
+  InterfacesArray = 
+    (Class**)allocator.Allocate(2 * sizeof(UserClass*));
+
+  // Now we can create the super and interfaces of arrays.
+  InterfacesArray[0] = loadName(asciizConstructUTF8("java/lang/Cloneable"),
+                                false, false);
+  
+  InterfacesArray[1] = loadName(asciizConstructUTF8("java/io/Serializable"),
+                                false, false);
+  
+  SuperArray = loadName(asciizConstructUTF8("java/lang/Object"), false,
+                        false);
+  
+#ifdef ISOLATE_SHARING
+  if (!ClassArray::SuperArray) {
+    ClassArray::SuperArray = SuperArray->classDef;
+    ClassArray::InterfacesArray[0] = ((Class*)InterfacesArray[0]->classDef);
+    ClassArray::InterfacesArray[1] = ((Class*)InterfacesArray[1]->classDef);
+  }
+#else
+  ClassArray::SuperArray = SuperArray;
+  ClassArray::InterfacesArray = InterfacesArray;
+#endif
+  
+  // And repair the damage: set the interfaces and super of array classes already
+  // created.
+  upcalls->ArrayOfChar->setInterfaces(InterfacesArray);
+  upcalls->ArrayOfChar->setSuper(SuperArray);
+  upcalls->ArrayOfByte->setInterfaces(InterfacesArray);
+  upcalls->ArrayOfByte->setSuper(SuperArray);
+  
+  // Yay, create the other primitive types.
+  upcalls->OfBool = UPCALL_PRIMITIVE_CLASS(this, "boolean", 1);
+  upcalls->OfShort = UPCALL_PRIMITIVE_CLASS(this, "short", 2);
+  upcalls->OfInt = UPCALL_PRIMITIVE_CLASS(this, "int", 4);
+  upcalls->OfLong = UPCALL_PRIMITIVE_CLASS(this, "long", 8);
+  upcalls->OfFloat = UPCALL_PRIMITIVE_CLASS(this, "float", 4);
+  upcalls->OfDouble = UPCALL_PRIMITIVE_CLASS(this, "double", 8);
+  upcalls->OfVoid = UPCALL_PRIMITIVE_CLASS(this, "void", 0);
+  
+  // And finally create the primitive arrays.
+  upcalls->ArrayOfInt = constructArray(asciizConstructUTF8("[I"),
+                                       upcalls->OfInt);
+  
+  upcalls->ArrayOfBool = constructArray(asciizConstructUTF8("[Z"),
+                                        upcalls->OfBool);
+  
+  upcalls->ArrayOfLong = constructArray(asciizConstructUTF8("[J"),
+                                        upcalls->OfLong);
+  
+  upcalls->ArrayOfFloat = constructArray(asciizConstructUTF8("[F"),
+                                         upcalls->OfFloat);
+  
+  upcalls->ArrayOfDouble = constructArray(asciizConstructUTF8("[D"),
+                                          upcalls->OfDouble);
+  
+  upcalls->ArrayOfShort = constructArray(asciizConstructUTF8("[S"),
+                                         upcalls->OfShort);
+  
+  upcalls->ArrayOfString = 
+    constructArray(asciizConstructUTF8("[Ljava/lang/String;"));
+  
+  upcalls->ArrayOfObject = 
+    constructArray(asciizConstructUTF8("[Ljava/lang/Object;"));
+  
+  
+  Attribut::codeAttribut = asciizConstructUTF8("Code");
+  Attribut::exceptionsAttribut = asciizConstructUTF8("Exceptions");
+  Attribut::constantAttribut = asciizConstructUTF8("ConstantValue");
+  Attribut::lineNumberTableAttribut = asciizConstructUTF8("LineNumberTable");
+  Attribut::innerClassesAttribut = asciizConstructUTF8("InnerClasses");
+  Attribut::sourceFileAttribut = asciizConstructUTF8("SourceFile");
+  
+  initName = asciizConstructUTF8("<init>");
+  clinitName = asciizConstructUTF8("<clinit>");
+  clinitType = asciizConstructUTF8("()V");
+  runName = asciizConstructUTF8("run");
+  prelib = asciizConstructUTF8("lib");
+#if defined(__MACH__)
+  postlib = asciizConstructUTF8(".dylib");
+#else 
+  postlib = asciizConstructUTF8(".so");
+#endif
+  mathName = asciizConstructUTF8("java/lang/Math");
+  stackWalkerName = asciizConstructUTF8("gnu/classpath/VMStackWalker");
+  NoClassDefFoundError = asciizConstructUTF8("java/lang/NoClassDefFoundError");
+
+#define DEF_UTF8(var) \
+  var = asciizConstructUTF8(#var)
+  
+  DEF_UTF8(abs);
+  DEF_UTF8(sqrt);
+  DEF_UTF8(sin);
+  DEF_UTF8(cos);
+  DEF_UTF8(tan);
+  DEF_UTF8(asin);
+  DEF_UTF8(acos);
+  DEF_UTF8(atan);
+  DEF_UTF8(atan2);
+  DEF_UTF8(exp);
+  DEF_UTF8(log);
+  DEF_UTF8(pow);
+  DEF_UTF8(ceil);
+  DEF_UTF8(floor);
+  DEF_UTF8(rint);
+  DEF_UTF8(cbrt);
+  DEF_UTF8(cosh);
+  DEF_UTF8(expm1);
+  DEF_UTF8(hypot);
+  DEF_UTF8(log10);
+  DEF_UTF8(log1p);
+  DEF_UTF8(sinh);
+  DEF_UTF8(tanh);
+  DEF_UTF8(finalize);
+
+#undef DEF_UTF8
+
 }
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
