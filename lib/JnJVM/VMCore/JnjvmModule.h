@@ -217,7 +217,11 @@ private:
 
   
 public:
-  
+
+  bool isStaticCompiling() {
+    return staticCompilation;
+  }
+
   static llvm::ConstantInt* JavaArraySizeOffsetConstant;
   static llvm::ConstantInt* JavaArrayElementsOffsetConstant;
   static llvm::ConstantInt* JavaObjectLockOffsetConstant;

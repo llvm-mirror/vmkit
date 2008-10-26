@@ -1836,8 +1836,22 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     LLVMFieldInfo* LFI = module->getFieldInfo(field);
     const Type* type = 0;
     if (stat) {
-
+      
 #ifndef ISOLATE_SHARING
+      if (module->isStaticCompiling()) {
+        // Do an initialization check first.
+        Value* Cl = module->getNativeClass(field->classDef);
+        Cl = new LoadInst(Cl, "", currentBlock);
+        Cl = invoke(module->InitialisationCheckFunction, Cl, "",
+                    currentBlock);
+        CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
+                         currentBlock);
+        object = module->getStaticInstance(field->classDef);
+        object = new LoadInst(object, "", currentBlock);
+        type = LCI->getStaticType();
+        return fieldGetter(this, type, object, LFI->getOffset());
+      }
+      
       if (field->classDef->isReady()) {
         object = module->getStaticInstance(field->classDef);
         object = new LoadInst(object, "", currentBlock);
@@ -1854,29 +1868,29 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     }
   }
 
-    const Type* Pty = module->arrayPtrType;
-    Constant* zero = module->constantZero;
+  const Type* Pty = module->arrayPtrType;
+  Constant* zero = module->constantZero;
     
-    Function* func = stat ? module->StaticFieldLookupFunction :
-                            module->VirtualFieldLookupFunction;
+  Function* func = stat ? module->StaticFieldLookupFunction :
+                          module->VirtualFieldLookupFunction;
     
-    const Type* returnType = 0;
-    if (stat)
-      returnType = module->ptrType;
-    else
-      returnType = Type::Int32Ty;
+  const Type* returnType = 0;
+  if (stat)
+    returnType = module->ptrType;
+  else
+    returnType = Type::Int32Ty;
 
-    Value* ptr = getConstantPoolAt(index, func, returnType, 0, true);
-    if (!stat) {
-      Value* tmp = new BitCastInst(object, Pty, "", currentBlock);
-      std::vector<Value*> args;
-      args.push_back(zero);
-      args.push_back(ptr);
-      ptr = GetElementPtrInst::Create(tmp, args.begin(), args.end(), "",
-                                      currentBlock);
-    }
+  Value* ptr = getConstantPoolAt(index, func, returnType, 0, true);
+  if (!stat) {
+    Value* tmp = new BitCastInst(object, Pty, "", currentBlock);
+    std::vector<Value*> args;
+    args.push_back(zero);
+    args.push_back(ptr);
+    ptr = GetElementPtrInst::Create(tmp, args.begin(), args.end(), "",
+                                    currentBlock);
+  }
     
-    return new BitCastInst(ptr, fieldTypePtr, "", currentBlock);
+  return new BitCastInst(ptr, fieldTypePtr, "", currentBlock);
 }
 
 void JavaJIT::convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock,
