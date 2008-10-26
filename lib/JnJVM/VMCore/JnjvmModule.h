@@ -33,7 +33,6 @@ class Class;
 class JavaField;
 class JavaMethod;
 class JavaObject;
-class JavaJIT;
 class JnjvmModule;
 class Signdef;
 
@@ -68,7 +67,7 @@ private:
   const llvm::Type * staticType;
 public:
   
-  llvm::Value* getVirtualSize(JavaJIT* jit);
+  llvm::Value* getVirtualSize();
   llvm::Function* getStaticTracer();
   llvm::Function* getVirtualTracer();
   const llvm::Type* getVirtualType();
@@ -365,14 +364,14 @@ public:
   explicit JnjvmModule(const std::string &ModuleID);
   static void initialise();
 
-  llvm::Value* getNativeClass(CommonClass* cl, JavaJIT* jit);
-  llvm::Value* getJavaClass(CommonClass* cl, JavaJIT* jit);
-  llvm::Value* getStaticInstance(Class* cl, JavaJIT* jit);
-  llvm::Value* getVirtualTable(CommonClass* cl, JavaJIT* jit);
+  llvm::Value* getNativeClass(CommonClass* cl);
+  llvm::Value* getJavaClass(CommonClass* cl);
+  llvm::Value* getStaticInstance(Class* cl);
+  llvm::Value* getVirtualTable(CommonClass* cl);
   
-  llvm::Value* getEnveloppe(Enveloppe* enveloppe, JavaJIT* jit);
-  llvm::Value* getString(JavaString* str, JavaJIT* jit);
-  llvm::Value* getConstantPool(JavaConstantPool* ctp, JavaJIT* jit);
+  llvm::Value* getEnveloppe(Enveloppe* enveloppe);
+  llvm::Value* getString(JavaString* str);
+  llvm::Value* getConstantPool(JavaConstantPool* ctp);
 
 private:
   static llvm::Module* initialModule;

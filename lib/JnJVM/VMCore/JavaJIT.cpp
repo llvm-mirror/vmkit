@@ -84,7 +84,8 @@ void JavaJIT::invokeVirtual(uint16 index) {
   if (meth && !isAbstract(meth->access) && canBeInlined(meth)) {
     Value* cl = CallInst::Create(module->GetClassFunction, args[0], "",
                                   currentBlock);
-    Value* cl2 = module->getNativeClass((Class*)cl, this);
+    Value* cl2 = module->getNativeClass((Class*)cl);
+    cl2 = new LoadInst(cl2, "", currentBlock);
 
     Value* test = new ICmpInst(ICmpInst::ICMP_EQ, cl, cl2, "", currentBlock);
 
@@ -267,7 +268,9 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
                                   val, "", currentBlock);
     nativeArgs.push_back(res);
 #else
-    nativeArgs.push_back(module->getJavaClass(compilingClass, this));
+    Value* cl = module->getJavaClass(compilingClass);
+    cl= new LoadInst(cl, "", currentBlock);
+    nativeArgs.push_back(cl);
 #endif
     index = 2;
   } else {
@@ -482,7 +485,8 @@ void JavaJIT::beginSynchronize() {
     obj = llvmFunction->arg_begin();
   } else {
 #ifndef ISOLATE_SHARING
-    obj = module->getStaticInstance(compilingClass, this);
+    obj = module->getStaticInstance(compilingClass);
+    obj = new LoadInst(obj, "", currentBlock);
 #else
     obj = getStaticInstanceCtp();
 #endif
@@ -506,7 +510,8 @@ void JavaJIT::endSynchronize() {
     obj = llvmFunction->arg_begin();
   } else {
 #ifndef ISOLATE_SHARING
-    obj = module->getStaticInstance(compilingClass, this);
+    obj = module->getStaticInstance(compilingClass);
+    obj = new LoadInst(obj, "", currentBlock);
 #else
     obj = getStaticInstanceCtp();
 #endif
@@ -953,7 +958,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
       argsSync.push_back(llvmFunction->arg_begin());
     } else {
 #ifndef ISOLATE_SHARING
-      Value* arg = module->getStaticInstance(compilingClass, this);
+      Value* arg = module->getStaticInstance(compilingClass);
+      arg = new LoadInst(arg, "", currentBlock);
 #else
       Value* arg = getStaticInstanceCtp();
 #endif
@@ -1121,7 +1127,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
                                isolateLocal, "", currentBlock);
 #else
     assert(cur->catchClass);
-    cl = module->getNativeClass(cur->catchClass, this);
+    cl = module->getNativeClass(cur->catchClass);
+    cl = new LoadInst(cl, "", currentBlock);
 #endif
     Value* cmp = llvm::CallInst::Create(module->CompareExceptionFunction, cl, "",
                                         currentBlock);
@@ -1194,7 +1201,8 @@ void JavaJIT::_ldc(uint16 index) {
     const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
     JavaString* str = compilingClass->classLoader->UTF8ToStr(utf8);
 
-    Value* val = module->getString(str, this);
+    Value* val = module->getString(str);
+    val = new LoadInst(val, "", currentBlock);
     push(val, false);
 #endif
         
@@ -1214,7 +1222,9 @@ void JavaJIT::_ldc(uint16 index) {
 #if !defined(ISOLATE)
     if (ctpInfo->ctpRes[index]) {
       CommonClass* cl = (CommonClass*)(ctpInfo->ctpRes[index]);
-      push(module->getJavaClass(cl, this), false);
+      Value* Val = module->getJavaClass(cl);
+      Val = new LoadInst(Val, "", currentBlock);
+      push(Val, false);
     } else {
 #endif
       Value* val = getResolvedClass(index, false);
@@ -1693,8 +1703,10 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   Args.clear();
 #else
   JavaConstantPool* ctp = compilingClass->ctpInfo;
-  Value* CTP = module->getConstantPool(ctp, this);
-  Value* Cl = module->getNativeClass(compilingClass, this);
+  Value* CTP = module->getConstantPool(ctp);
+  CTP = new LoadInst(CTP, "", currentBlock);
+  Value* Cl = module->getNativeClass(compilingClass);
+  Cl = new LoadInst(Cl, "", currentBlock);
 #endif
 
   Args.push_back(resolver);
@@ -1750,10 +1762,12 @@ void JavaJIT::invokeNew(uint16 index) {
                           currentBlock);
   } else {
     LLVMClassInfo* LCI = module->getClassInfo(cl);
-    Size = LCI->getVirtualSize(this);
+    Size = LCI->getVirtualSize();
 #ifndef ISOLATE_SHARING
-    VT = module->getVirtualTable(cl, this);
-    Cl = module->getNativeClass(cl, this);
+    VT = module->getVirtualTable(cl);
+    VT = new LoadInst(VT, "", currentBlock);
+    Cl = module->getNativeClass(cl);
+    Cl = new LoadInst(Cl, "", currentBlock);
     if (!cl->isReady()) {
       Cl = invoke(module->InitialisationCheckFunction, Cl, "",
                   currentBlock);
@@ -1825,7 +1839,8 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
 
 #ifndef ISOLATE_SHARING
       if (field->classDef->isReady()) {
-        object = module->getStaticInstance(field->classDef, this);
+        object = module->getStaticInstance(field->classDef);
+        object = new LoadInst(object, "", currentBlock);
         type = LCI->getStaticType();
         return fieldGetter(this, type, object, LFI->getOffset());
       }
@@ -2063,7 +2078,8 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
   if (!inlining)
     enveloppe.initialise(compilingClass->ctpInfo, index);
    
-  Value* llvmEnv = module->getEnveloppe(&enveloppe, this);
+  Value* llvmEnv = module->getEnveloppe(&enveloppe);
+  llvmEnv = new LoadInst(llvmEnv, "", currentBlock);
 #else
   Value* llvmEnv = getConstantPoolAt(index,
                                      module->EnveloppeLookupFunction,

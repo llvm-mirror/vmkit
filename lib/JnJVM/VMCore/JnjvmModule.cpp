@@ -8,18 +8,17 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/CallingConv.h"
+#include "llvm/Instructions.h"
 #include "llvm/Support/MutexGuard.h"
 
 
 #include "mvm/JIT.h"
 
-#include "JavaJIT.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 #include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
-#include "LockedMap.h"
 
 
 using namespace jnjvm;
@@ -66,7 +65,7 @@ llvm::ConstantInt*    JnjvmModule::JavaArraySizeOffsetConstant;
 llvm::ConstantInt*    JnjvmModule::JavaObjectLockOffsetConstant;
 llvm::ConstantInt*    JnjvmModule::JavaObjectClassOffsetConstant;
 
-Value* JnjvmModule::getNativeClass(CommonClass* classDef, JavaJIT* jit) {
+Value* JnjvmModule::getNativeClass(CommonClass* classDef) {
   llvm::GlobalVariable* varGV = 0;
   native_class_iterator End = nativeClasses.end();
   native_class_iterator I = nativeClasses.find(classDef);
@@ -84,10 +83,10 @@ Value* JnjvmModule::getNativeClass(CommonClass* classDef, JavaJIT* jit) {
   } else {
     varGV = I->second;
   }   
-  return new LoadInst(varGV, "", jit->currentBlock);
+  return varGV;
 }
 
-Value* JnjvmModule::getConstantPool(JavaConstantPool* ctp, JavaJIT* jit) {
+Value* JnjvmModule::getConstantPool(JavaConstantPool* ctp) {
   llvm::GlobalVariable* varGV = 0;
   constant_pool_iterator End = constantPools.end();
   constant_pool_iterator I = constantPools.find(ctp);
@@ -103,10 +102,10 @@ Value* JnjvmModule::getConstantPool(JavaConstantPool* ctp, JavaJIT* jit) {
   } else {
     varGV = I->second;
   }
-  return new LoadInst(varGV, "", jit->currentBlock);
+  return varGV;
 }
 
-Value* JnjvmModule::getString(JavaString* str, JavaJIT* jit) {
+Value* JnjvmModule::getString(JavaString* str) {
   llvm::GlobalVariable* varGV;
   string_iterator SI = strings.find(str);
   if (SI != strings.end()) {
@@ -121,10 +120,10 @@ Value* JnjvmModule::getString(JavaString* str, JavaJIT* jit) {
                                cons, "", this);
     strings.insert(std::make_pair(str, varGV));
   }
-  return new LoadInst(varGV, "", jit->currentBlock);
+  return varGV;
 }
 
-Value* JnjvmModule::getEnveloppe(Enveloppe* enveloppe, JavaJIT* jit) {
+Value* JnjvmModule::getEnveloppe(Enveloppe* enveloppe) {
   llvm::GlobalVariable* varGV;
   enveloppe_iterator SI = enveloppes.find(enveloppe);
   if (SI != enveloppes.end()) {
@@ -139,10 +138,10 @@ Value* JnjvmModule::getEnveloppe(Enveloppe* enveloppe, JavaJIT* jit) {
                                cons, "", this);
     enveloppes.insert(std::make_pair(enveloppe, varGV));
   }
-  return new LoadInst(varGV, "", jit->currentBlock);
+  return varGV;
 }
 
-Value* JnjvmModule::getJavaClass(CommonClass* cl, JavaJIT* jit) {
+Value* JnjvmModule::getJavaClass(CommonClass* cl) {
   llvm::GlobalVariable* varGV = 0;
   java_class_iterator End = javaClasses.end();
   java_class_iterator I = javaClasses.find(cl);
@@ -160,10 +159,10 @@ Value* JnjvmModule::getJavaClass(CommonClass* cl, JavaJIT* jit) {
   } else {
     varGV = I->second;
   }
-  return new LoadInst(varGV, "", jit->currentBlock);
+  return varGV;
 }
 
-Value* JnjvmModule::getStaticInstance(Class* classDef, JavaJIT* jit) {
+Value* JnjvmModule::getStaticInstance(Class* classDef) {
   llvm::GlobalVariable* varGV = 0;
   static_instance_iterator End = staticInstances.end();
   static_instance_iterator I = staticInstances.find(classDef);
@@ -184,10 +183,10 @@ Value* JnjvmModule::getStaticInstance(Class* classDef, JavaJIT* jit) {
     varGV = I->second;
   }
 
-  return new LoadInst(varGV, "", jit->currentBlock);
+  return varGV;
 }
 
-Value* JnjvmModule::getVirtualTable(CommonClass* classDef, JavaJIT* jit) {
+Value* JnjvmModule::getVirtualTable(CommonClass* classDef) {
   llvm::GlobalVariable* varGV = 0;
   virtual_table_iterator End = virtualTables.end();
   virtual_table_iterator I = virtualTables.find(classDef);
@@ -208,7 +207,7 @@ Value* JnjvmModule::getVirtualTable(CommonClass* classDef, JavaJIT* jit) {
   } else {
     varGV = I->second;
   }
-  return new LoadInst(varGV, "", jit->currentBlock);
+  return varGV;
 }
 
 #ifndef WITHOUT_VTABLE
@@ -218,7 +217,6 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
     uint64 size = cl->virtualTableSize;
     mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
     VirtualTable* VT = (VirtualTable*)allocator.Allocate(size * sizeof(void*));
-    if (!VT) JavaThread::get()->isolate->outOfMemoryError(size * sizeof(void*));
     if (cl->super) {
       Class* super = (Class*)cl->super;
       assert(cl->virtualTableSize >= cl->super->virtualTableSize &&
@@ -485,7 +483,7 @@ const Type* LLVMClassInfo::getStaticType() {
 }
 
 
-Value* LLVMClassInfo::getVirtualSize(JavaJIT* jit) {
+Value* LLVMClassInfo::getVirtualSize() {
   if (!virtualSizeConstant) {
     getVirtualType();
     virtualSizeConstant = 

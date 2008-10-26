@@ -1872,8 +1872,10 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           sizeElement = module->constantPtrSize;
         }
 #ifndef ISOLATE_SHARING
-        valCl = module->getNativeClass(dcl, this);
-        TheVT = module->getVirtualTable(dcl, this);
+        valCl = module->getNativeClass(dcl);
+        valCl = new LoadInst(valCl, "", currentBlock);
+        TheVT = module->getVirtualTable(dcl);
+        TheVT = new LoadInst(TheVT, "", currentBlock);
 #endif   
         llvm::Value* arg1 = popAsInt();
 
@@ -2003,7 +2005,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* clVar = 0;
 #ifndef ISOLATE_SHARING
         if (dcl) {
-          clVar = module->getNativeClass(dcl, this);
+          clVar = module->getNativeClass(dcl);
+          clVar = new LoadInst(clVar, "", currentBlock);
         } else
 #endif
           clVar = getResolvedClass(index, false);
@@ -2044,7 +2047,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         Value* clVar = 0;
         if (dcl) {
-          clVar = module->getNativeClass(dcl, this);
+          clVar = module->getNativeClass(dcl);
+          clVar = new LoadInst(clVar, "", currentBlock);
         } else {
           clVar = getResolvedClass(index, false);
         }
@@ -2109,7 +2113,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         UserClassArray* dcl = JCL->constructArray(className);
         
         compilingClass->ctpInfo->loadClass(index);
-        Value* valCl = module->getNativeClass(dcl ,this);
+        Value* valCl = module->getNativeClass(dcl);
+        valCl = new LoadInst(valCl, "", currentBlock);
 #endif
         Value** args = (Value**)alloca(sizeof(Value*) * (dim + 2));
         args[0] = valCl;
