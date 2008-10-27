@@ -19,6 +19,7 @@
 #include "JavaThread.h"
 #include "Jnjvm.h"
 
+
 using namespace jnjvm;
 
 const unsigned int JavaThread::StateRunning = 0;
@@ -77,4 +78,28 @@ JavaThread::~JavaThread() {
     vm->lock->unlock();
 #endif
   }
+}
+
+// We define these here because gcc compiles the 'throw' keyword
+// differently, whether these are defined in a file or not. Since many
+// cpp files import JavaThread.h, they couldn't use the keyword.
+
+extern "C" void* __cxa_allocate_exception(unsigned);
+extern "C" void __cxa_throw(void*, void*, void*);
+
+void JavaThread::throwException(JavaObject* obj) {
+  JavaThread* th = JavaThread::get();
+  assert(th->pendingException == 0 && "pending exception already there?");
+  th->pendingException = obj;
+  void* exc = __cxa_allocate_exception(0);
+  th->internalPendingException = exc;
+  __cxa_throw(exc, 0, 0);
+}
+
+void JavaThread::throwPendingException() {
+  JavaThread* th = JavaThread::get();
+  assert(th->pendingException);
+  void* exc = __cxa_allocate_exception(0);
+  th->internalPendingException = exc;
+  __cxa_throw(exc, 0, 0);
 }
