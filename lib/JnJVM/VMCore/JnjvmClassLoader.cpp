@@ -314,7 +314,7 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
 
   if (!cl && doThrow) {
     Jnjvm* vm = JavaThread::get()->isolate;
-    if (!(name->equals(bootstrapLoader->NoClassDefFoundError))) {
+    if (name->equals(bootstrapLoader->NoClassDefFoundError)) {
       vm->unknownError("Unable to load NoClassDefFoundError");
     }
     vm->noClassDefFoundError("unable to load %s", name->printString());
