@@ -747,12 +747,13 @@ void Jnjvm::runApplication(int argc, char** argv) {
   info.readArgs(argc, argv, this);
   if (info.className) {
     int pos = info.appArgumentsPos;
-    //llvm::cl::ParseCommandLineOptions(pos, argv,
-    //                                  " JnJVM Java Virtual Machine\n");
+    
     argv = argv + pos - 1;
     argc = argc - pos + 1;
-  
-    bootstrapThread = gc_new(JavaThread)(0, this, mvm::Thread::get()->baseSP);
+    
+    mvm::Thread* oldThread = mvm::Thread::get();
+    JavaThread thread(0, this, oldThread->baseSP);
+    bootstrapThread = &thread;
 
     loadBootstrap();
 
@@ -779,6 +780,7 @@ void Jnjvm::runApplication(int argc, char** argv) {
 
     executeClass(info.className, args);
     waitForExit();
+    mvm::Thread::set(oldThread);
   }
 }
 
