@@ -140,10 +140,6 @@ void JnjvmClassLoader::TRACER {
 void JnjvmBootstrapLoader::TRACER {
   traceClassMap(classes);
   
-  for (std::vector<ZipArchive*>::iterator i = bootArchives.begin(),
-       e = bootArchives.end(); i != e; ++i) {
-    (*i)->bytes->MARK_AND_TRACE;
-  }
 #define TRACE_DELEGATEE(prim) \
   prim->delegatee->MARK_AND_TRACE
 
@@ -157,6 +153,7 @@ void JnjvmBootstrapLoader::TRACER {
   TRACE_DELEGATEE(upcalls->OfLong);
   TRACE_DELEGATEE(upcalls->OfDouble);
 #undef TRACE_DELEGATEE
+  
   TRACE_VECTOR(JavaString*, gc_allocator, strings);
 }
 
