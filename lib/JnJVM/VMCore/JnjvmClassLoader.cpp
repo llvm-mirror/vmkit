@@ -40,11 +40,12 @@ using namespace jnjvm;
 extern const char* GNUClasspathGlibj;
 extern const char* GNUClasspathLibs;
 
-JnjvmBootstrapLoader::JnjvmBootstrapLoader(uint32 memLimit) {
+JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   
   JnjvmModule::initialise(); 
   TheModule = new JnjvmModule("Bootstrap JnJVM");
   TheModuleProvider = new JnjvmModuleProvider(getModule());
+  getModule()->setIsStaticCompiling(staticCompilation);
   
   hashUTF8 = new(allocator) UTF8Map(allocator, 0);
   classes = new(allocator) ClassMap();
@@ -317,7 +318,7 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
     if (name->equals(bootstrapLoader->NoClassDefFoundError)) {
       vm->unknownError("Unable to load NoClassDefFoundError");
     }
-    vm->noClassDefFoundError("unable to load %s", name->printString());
+    vm->noClassDefFoundError(name);
   }
 
   if (cl && doResolve) cl->resolveClass();

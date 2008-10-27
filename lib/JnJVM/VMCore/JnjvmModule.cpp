@@ -444,13 +444,15 @@ const Type* LLVMClassInfo::getVirtualType() {
       field.ptrOffset = sl->getElementOffset(i + 1);
     }
     
-    JnjvmModule* Mod = classDef->classLoader->getModule();
-    VirtualTable* VT = Mod->makeVT((Class*)classDef, false);
-  
     uint64 size = mvm::MvmModule::getTypeSize(structType);
     classDef->virtualSize = (uint32)size;
-    classDef->virtualVT = VT;
     virtualSizeConstant = ConstantInt::get(Type::Int32Ty, size);
+    
+    JnjvmModule* Mod = classDef->classLoader->getModule();
+    if (!Mod->isStaticCompiling()) {
+      classDef->virtualVT = Mod->makeVT((Class*)classDef, false);
+    }
+  
 
   }
 
@@ -483,13 +485,13 @@ const Type* LLVMClassInfo::getStaticType() {
       field.ptrOffset = sl->getElementOffset(i + 1);
     }
     
-
-    JnjvmModule* Mod = cl->classLoader->getModule();
-    VirtualTable* VT = Mod->makeVT((Class*)classDef, true);
-
     uint64 size = mvm::MvmModule::getTypeSize(structType);
     cl->staticSize = size;
-    cl->staticVT = VT;
+    
+    JnjvmModule* Mod = cl->classLoader->getModule();
+    if (!Mod->isStaticCompiling()) {
+      cl->staticVT = Mod->makeVT((Class*)classDef, true);
+    }
   }
   return staticType;
 }

@@ -27,7 +27,6 @@ namespace mvm {
 class CompilationUnit : public mvm::Object {
 public:
   llvm::Module* TheModule;
-
 };
 }
 

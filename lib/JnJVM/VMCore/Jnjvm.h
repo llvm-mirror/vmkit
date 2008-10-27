@@ -242,7 +242,7 @@ public:
   void noSuchMethodError(CommonClass* cl, const UTF8* name);
   void classFormatError(const char* fmt, ...);
   void noClassDefFoundError(JavaObject* obj);
-  void noClassDefFoundError(const char* fmt, ...);
+  void noClassDefFoundError(const UTF8* name);
   void classNotFoundException(JavaString* str);
 
   /// asciizToStr - Constructs a java/lang/String object from the given asciiz.
@@ -295,6 +295,10 @@ public:
   /// User-visible function, inherited by the VirtualMachine class.
   ///
   virtual void runApplication(int argc, char** argv);
+
+  /// compile - Compile the .class, .zip or .jar file to LLVM IR.
+  ///
+  virtual void compile(const char* name);
 
 };
 

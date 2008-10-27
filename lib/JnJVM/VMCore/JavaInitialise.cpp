@@ -62,22 +62,23 @@ static void initialiseVT() {
 }
 
 #ifdef ISOLATE_SHARING
-mvm::CompilationUnit* mvm::VirtualMachine::initialiseJVM() {
+mvm::CompilationUnit* mvm::VirtualMachine::initialiseJVM(bool sc) {
   initialiseVT();
   JnjvmSharedLoader::sharedLoader = JnjvmSharedLoader::createSharedLoader();
   return JnjvmSharedLoader::sharedLoader;
 }
 
 mvm::VirtualMachine* mvm::VirtualMachine::createJVM(mvm::CompilationUnit* C) {
-  JnjvmBootstraLoader* bootstrapLoader = gc_new(JnjvmBootstrapLoader)(0);
+  JnjvmBootstraLoader* bootstrapLoader = gc_new(JnjvmBootstrapLoader)(false);
   Jnjvm* vm = gc_new(Jnjvm)(bootstrapLoader);
   return vm;
 }
 #else
   
-mvm::CompilationUnit* mvm::VirtualMachine::initialiseJVM() {
+mvm::CompilationUnit* 
+mvm::VirtualMachine::initialiseJVM(bool staticCompilation) {
   initialiseVT();
-  return gc_new(JnjvmBootstrapLoader)(0);
+  return gc_new(JnjvmBootstrapLoader)(staticCompilation);
 }
 
 mvm::VirtualMachine* mvm::VirtualMachine::createJVM(mvm::CompilationUnit* C) {

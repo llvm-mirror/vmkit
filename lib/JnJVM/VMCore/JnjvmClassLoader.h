@@ -285,7 +285,7 @@ public:
   /// createBootstrapLoader - Creates the bootstrap loader, first thing
   /// to do before any execution of a JVM.
   ///
-  JnjvmBootstrapLoader(uint32 memLimit);
+  JnjvmBootstrapLoader(bool staticCompilation);
   JnjvmBootstrapLoader() {}
   
   virtual JavaString* UTF8ToStr(const UTF8* utf8);

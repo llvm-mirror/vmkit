@@ -222,6 +222,10 @@ public:
     return staticCompilation;
   }
 
+  void setIsStaticCompiling(bool sc) {
+    staticCompilation = sc;
+  }
+
   static llvm::ConstantInt* JavaArraySizeOffsetConstant;
   static llvm::ConstantInt* JavaArrayElementsOffsetConstant;
   static llvm::ConstantInt* JavaObjectLockOffsetConstant;

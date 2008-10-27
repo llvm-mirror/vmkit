@@ -79,7 +79,7 @@ public:
   static const UTF8* floatName;
   static const UTF8* doubleName;
   static const UTF8* testInfinity;
-
+  
 };
 
 } // end namespace n3

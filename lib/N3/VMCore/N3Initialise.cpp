@@ -341,6 +341,10 @@ void VirtualMachine::runApplication(int argc, char** argv) {
   ((N3*)this)->runMain(argc, argv);
 }
 
+void VirtualMachine::compile(const char* argv) {
+  assert(0 && "This virtual machine does not perform static compilation yet!\n");
+}
+
 mvm::VirtualMachine* mvm::VirtualMachine::createCLIVM(mvm::CompilationUnit* C) {
   N3* vm = N3::allocate("", N3::bootstrapVM);
   return vm;

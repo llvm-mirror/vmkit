@@ -135,9 +135,13 @@ void Jnjvm::error(UserClass* cl, JavaMethod* init, const char* fmt, ...) {
   vsnprintf(tmp, 4096, fmt, ap);
   va_end(ap);
   
-  JavaObject* obj = cl->doNew(this);
-  init->invokeIntSpecial(this, cl, obj, asciizToStr(tmp));
-  JavaThread::throwException(obj);
+  if (cl && !bootstrapLoader->getModule()->isStaticCompiling()) {
+    JavaObject* obj = cl->doNew(this);
+    init->invokeIntSpecial(this, cl, obj, asciizToStr(tmp));
+    JavaThread::throwException(obj);
+  } else {
+    throw std::string(tmp);
+  }
 }
 
 void Jnjvm::arrayStoreException() {
@@ -253,10 +257,10 @@ void Jnjvm::noClassDefFoundError(JavaObject* obj) {
         obj);
 }
 
-void Jnjvm::noClassDefFoundError(const char* fmt, ...) {
+void Jnjvm::noClassDefFoundError(const UTF8* name) {
   error(upcalls->NoClassDefFoundError,
         upcalls->InitNoClassDefFoundError, 
-        fmt);
+        "Unable to load %s", name->UTF8ToAsciiz());
 }
 
 void Jnjvm::classNotFoundException(JavaString* str) {
@@ -823,4 +827,35 @@ const UTF8* Jnjvm::asciizToUTF8(const char* asciiz) {
     buf[i] = asciiz[i];
   }
   return (const UTF8*)tmp;
+}
+
+
+void Jnjvm::compile(const char* name) {
+  bootstrapLoader->analyseClasspathEnv(classpath);
+    
+  mvm::Thread* oldThread = mvm::Thread::get();
+  JavaThread thread(0, this, oldThread->baseSP);
+  bootstrapThread = &thread;
+  
+
+
+  const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(name);
+  UserClass* cl = bootstrapLoader->loadName(utf8, true, true);
+  
+  for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+    JavaMethod& meth = cl->virtualMethods[i];
+    bootstrapLoader->TheModuleProvider->parseFunction(&meth);
+  }
+  
+  for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
+    JavaMethod& meth = cl->staticMethods[i];
+    bootstrapLoader->TheModuleProvider->parseFunction(&meth);
+  }
+    
+  llvm::Module* M = bootstrapLoader->getModule();
+  for (Module::iterator i = M->begin(), e = M->end(); i != e; ++i) {
+    i->setLinkage(llvm::GlobalValue::ExternalLinkage);
+  }
+  
+  mvm::Thread::set(oldThread);
 }

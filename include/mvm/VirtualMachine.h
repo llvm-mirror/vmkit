@@ -30,8 +30,12 @@ public:
   /// runApplication - Run an application. The application name is in
   /// the arguments, hence it is the virtual machine's job to parse them.
   virtual void runApplication(int argc, char** argv) = 0;
+  
+  /// compile - Compile a given file to LLVM.
+  virtual void compile(const char* name) = 0;
+  
 
-  static CompilationUnit* initialiseJVM();
+  static CompilationUnit* initialiseJVM(bool staticCompilation = false);
   static VirtualMachine* createJVM(CompilationUnit* C = 0);
   
   static CompilationUnit* initialiseCLIVM();
