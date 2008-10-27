@@ -430,11 +430,11 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   JavaMethod* internString =
     UPCALL_METHOD(loader, "java/lang/VMString", "intern",
                   "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC); 
-  loader->TheModule->setMethod(internString, "internString");
+  loader->getModule()->setMethod(internString, "internString");
   
   JavaMethod* isArray =
     UPCALL_METHOD(loader, "java/lang/Class", "isArray", "()Z", ACC_VIRTUAL);
-  loader->TheModule->setMethod(isArray, "isArray");
+  loader->getModule()->setMethod(isArray, "isArray");
 
 
   UPCALL_REFLECT_CLASS_EXCEPTION(loader, InvocationTargetException);
@@ -594,17 +594,17 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   JavaMethod* getCallingClass =
     UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "getCallingClass",
                   "()Ljava/lang/Class;", ACC_STATIC);
-  loader->TheModule->setMethod(getCallingClass, "getCallingClass");
+  loader->getModule()->setMethod(getCallingClass, "getCallingClass");
   
   JavaMethod* getCallingClassLoader =
     UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "getCallingClassLoader",
                   "()Ljava/lang/ClassLoader;", ACC_STATIC);
-  loader->TheModule->setMethod(getCallingClassLoader, "getCallingClassLoader");
+  loader->getModule()->setMethod(getCallingClassLoader, "getCallingClassLoader");
   
   JavaMethod* postProperties =
     UPCALL_METHOD(loader, "gnu/classpath/VMSystemProperties", "postInit",
                   "(Ljava/util/Properties;)V", ACC_STATIC);
-  loader->TheModule->setMethod(postProperties, "propertiesPostInit");
+  loader->getModule()->setMethod(postProperties, "propertiesPostInit");
 }
 
 extern "C" JavaString* internString(JavaString* obj) {

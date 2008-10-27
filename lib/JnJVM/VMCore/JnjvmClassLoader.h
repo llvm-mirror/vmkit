@@ -112,7 +112,9 @@ public:
   
   /// TheModule - JIT module for compiling methods.
   ///
-  JnjvmModule* TheModule;
+  JnjvmModule* getModule() {
+    return (JnjvmModule*)TheModule;
+  }
 
   /// TheModuleProvider - JIT module provider for dynamic class loading and
   /// lazy compilation.

@@ -878,7 +878,7 @@ void CommonClass::resolveClass() {
         cl->loadParents();
         cl->acquire();
         cl->status = prepared;
-        classLoader->TheModule->resolveVirtualClass(cl);
+        classLoader->getModule()->resolveVirtualClass(cl);
         cl->status = resolved;
       }
       release();
@@ -981,5 +981,5 @@ void CommonClass::getDeclaredFields(std::vector<JavaField*>& res,
 }
 
 void Class::resolveStaticClass() {
-  classLoader->TheModule->resolveStaticClass((Class*)this);
+  classLoader->getModule()->resolveStaticClass((Class*)this);
 }

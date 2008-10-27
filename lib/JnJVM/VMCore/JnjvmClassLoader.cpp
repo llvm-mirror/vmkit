@@ -44,7 +44,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(uint32 memLimit) {
   
   JnjvmModule::initialise(); 
   TheModule = new JnjvmModule("Bootstrap JnJVM");
-  TheModuleProvider = new JnjvmModuleProvider(TheModule);
+  TheModuleProvider = new JnjvmModuleProvider(getModule());
   
   hashUTF8 = new(allocator) UTF8Map(allocator, 0);
   classes = new(allocator) ClassMap();
@@ -224,7 +224,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(uint32 memLimit) {
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
                                    Jnjvm* I) {
   TheModule = new JnjvmModule("Applicative loader");
-  TheModuleProvider = new JnjvmModuleProvider(TheModule);
+  TheModuleProvider = new JnjvmModuleProvider(getModule());
   bootstrapLoader = JCL.bootstrapLoader;
   
   hashUTF8 = new(allocator) UTF8Map(allocator,

@@ -413,7 +413,7 @@ void* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index,
                                      false, 0);
     if (meth) { 
       // don't throw if no meth, the exception will be thrown just in time
-      JnjvmModule* M = classDef->classLoader->TheModule;
+      JnjvmModule* M = classDef->classLoader->getModule();
       void* F = M->getMethod(meth);
       return F;
     }

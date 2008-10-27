@@ -68,7 +68,7 @@ public:
     nbEnveloppes = 0;
     compilingMethod = meth;
     compilingClass = meth->classDef;
-    module = compilingClass->classLoader->TheModule;
+    module = compilingClass->classLoader->getModule();
     llvmFunction = func;
     inlining = false;
     callsStackWalker = false;

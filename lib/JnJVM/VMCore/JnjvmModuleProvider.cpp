@@ -151,7 +151,7 @@ llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
   }
   
   const llvm::FunctionType* type = 0;
-  JnjvmModule* M = cl->classLoader->TheModule;
+  JnjvmModule* M = cl->classLoader->getModule();
   LLVMSignatureInfo* LSI = M->getSignatureInfo(sign);
   
   if (stat) {
