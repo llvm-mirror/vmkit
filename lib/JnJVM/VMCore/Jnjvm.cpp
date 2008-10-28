@@ -830,6 +830,22 @@ const UTF8* Jnjvm::asciizToUTF8(const char* asciiz) {
 }
 
 
+static void compileClass(Class* cl) {
+
+  for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+    JavaMethod& meth = cl->virtualMethods[i];
+    if (!isAbstract(meth.access))
+      cl->classLoader->TheModuleProvider->parseFunction(&meth);
+  }
+  
+  for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
+    JavaMethod& meth = cl->staticMethods[i];
+    if (!isAbstract(meth.access))
+      cl->classLoader->TheModuleProvider->parseFunction(&meth);
+  }
+}
+
+
 void Jnjvm::compile(const char* name) {
   bootstrapLoader->analyseClasspathEnv(classpath);
     
@@ -837,21 +853,62 @@ void Jnjvm::compile(const char* name) {
   JavaThread thread(0, this, oldThread->baseSP);
   bootstrapThread = &thread;
   
-
-
-  const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(name);
-  UserClass* cl = bootstrapLoader->loadName(utf8, true, true);
   
-  for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
-    JavaMethod& meth = cl->virtualMethods[i];
-    bootstrapLoader->TheModuleProvider->parseFunction(&meth);
-  }
+  uint32 size = strlen(name);
+  if (size > 4 && 
+      (!strcmp(&name[size - 4], ".jar") || !strcmp(&name[size - 4], ".zip"))) {
   
-  for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
-    JavaMethod& meth = cl->staticMethods[i];
-    bootstrapLoader->TheModuleProvider->parseFunction(&meth);
-  }
+
+    std::vector<Class*> classes;
+
+    ArrayUInt8* bytes = Reader::openFile(bootstrapLoader, name);
+    if (!bytes) unknownError("Can't find zip file.");
+    ZipArchive archive(bytes, bootstrapLoader->allocator);
     
+    char* realName = (char*)alloca(4096);
+    for (ZipArchive::table_iterator i = archive.filetable.begin(), 
+         e = archive.filetable.end(); i != e; ++i) {
+      ZipFile* file = i->second;
+      
+      size = strlen(file->filename);
+      if (size > 6 && !strcmp(&(file->filename[size - 6]), ".class")) {
+        UserClassArray* array = bootstrapLoader->upcalls->ArrayOfByte;
+        ArrayUInt8* res = (ArrayUInt8*)array->doNew(file->ucsize,
+                                                    bootstrapLoader->allocator);
+        int ok = archive.readFile(res, file);
+        if (!ok) unknownError("Wrong zip file.");
+      
+        
+        memcpy(realName, file->filename, size);
+        realName[size - 6] = 0;
+        const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
+        Class* cl = bootstrapLoader->constructClass(utf8, res);
+        classes.push_back(cl);
+      }
+    }
+
+    // First resolve everyone so that there can not be unknown references in
+    // constant pools.
+    for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end(); 
+         i != e; ++i) {
+      Class* cl = *i;
+      cl->resolveClass();
+    }
+      
+    for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end(); 
+         i != e; ++i) {
+      Class* cl = *i;
+      if (!cl->isInterface()) compileClass(cl);
+    }
+
+  } else {
+
+    const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(name);
+    UserClass* cl = bootstrapLoader->loadName(utf8, true, true);
+    compileClass(cl);
+  }
+   
+  // Set the linkage to External, so that the printer does not complain.
   llvm::Module* M = bootstrapLoader->getModule();
   for (Module::iterator i = M->begin(), e = M->end(); i != e; ++i) {
     i->setLinkage(llvm::GlobalValue::ExternalLinkage);

@@ -34,6 +34,7 @@ struct ZipFile : public mvm::PermanentObject {
 
 class ZipArchive : public mvm::PermanentObject {
   friend class JnjvmBootstrapLoader;
+  friend class Jnjvm;
 private:
   
   mvm::BumpPtrAllocator& allocator;

@@ -520,7 +520,8 @@ JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
 
 JavaObject* UserClass::doNew(Jnjvm* vm) {
   assert(this && "No class when allocating.");
-  assert(this->isReady() && "Uninitialized class when allocating.");
+  assert((this->isReady() || classLoader->getModule()->isStaticCompiling())
+         && "Uninitialized class when allocating.");
   JavaObject* res = 
     (JavaObject*)vm->gcAllocator.allocateManagedObject(getVirtualSize(),
                                                        getVirtualVT());

@@ -12,7 +12,7 @@ include $(LEVEL)/Makefile.config
 
 TOOLNAME = vmjc
 USEDLIBS = Allocator CommonThread Mvm JnJVM Classpath $(GCLIB)
-LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo
+LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo bitwriter
 
 ifeq ($(ISOLATE_BUILD), 1) 
     USEDLIBS += Isolate

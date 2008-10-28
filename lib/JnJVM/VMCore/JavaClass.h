@@ -660,8 +660,10 @@ public:
 ///
 class ClassArray : public CommonClass {
 
-  /// Reader is a friend because it allocates arrays without a vm.
+  /// Reader and Jnjvm are friends because they may allocate arrays without
+  /// a vm.
   friend class Reader;
+  friend class Jnjvm;
 private:
   /// doNew - Allocate a new array with the given allocator.
   ///

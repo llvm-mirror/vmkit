@@ -23,6 +23,7 @@
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Streams.h"
+#include "llvm/Support/SystemUtils.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/System/Signals.h"
 
@@ -71,7 +72,8 @@ int main(int argc, char **argv) {
     mvm::Object::initialise();
     mvm::Thread::initialise();
     Collector::initialise(0, &base);
-  
+    Collector::enable(0);
+
     mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM(true);
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(CU);
     vm->compile(InputFilename.c_str());
@@ -97,9 +99,9 @@ int main(int argc, char **argv) {
         int Len = IFN.length();
         if (IFN[Len-3] == '.' && IFN[Len-2] == 'b' && IFN[Len-1] == 'c') {
           // Source ends in .bc
-          OutputFilename = std::string(IFN.begin(), IFN.end()-3)+".ll";
+          OutputFilename = std::string(IFN.begin(), IFN.end()-3)+".bc";
         } else {
-          OutputFilename = IFN+".ll";
+          OutputFilename = IFN+".bc";
         }
 
         if (!Force && std::ifstream(OutputFilename.c_str())) {
@@ -121,14 +123,9 @@ int main(int argc, char **argv) {
            << ": sending to stdout instead!\n";
       Out = &std::cout;
     }
-
-    // All that llvm-dis does is write the assembly to a file.
-    if (!DontPrint) {
-      PassManager Passes;
-      raw_os_ostream L(*Out);
-      Passes.add(createPrintModulePass(&L));
-      Passes.run(*CU->TheModule);
-    }
+    
+    if (Force || !CheckBitcodeOutputToConsole(Out,true))
+      WriteBitcodeToFile(CU->TheModule, *Out);
 
     if (Out != &std::cout) {
       ((std::ofstream*)Out)->close();

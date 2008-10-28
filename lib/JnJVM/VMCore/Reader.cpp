@@ -25,7 +25,7 @@ const int Reader::SeekSet = SEEK_SET;
 const int Reader::SeekCur = SEEK_CUR;
 const int Reader::SeekEnd = SEEK_END;
 
-ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, char* path) {
+ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, const char* path) {
   FILE* fp = fopen(path, "r");
   ArrayUInt8* res = 0;
   if (fp != 0) {
@@ -41,7 +41,7 @@ ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, char* path) {
 }
 
 ArrayUInt8* Reader::openZip(JnjvmBootstrapLoader* loader, ZipArchive* archive,
-                            char* filename) {
+                            const char* filename) {
   ArrayUInt8* ret = 0;
   ZipFile* file = archive->getFile(filename);
   if (file != 0) {

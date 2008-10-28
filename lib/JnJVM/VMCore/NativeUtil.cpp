@@ -188,13 +188,6 @@ void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
     if (!res) {
       buf = jniConsFromMeth3(cl, meth, buf);
       res = cl->classLoader->loadLib(buf, jnjvm);
-      if (!res) {
-        printf("Native function %s not found. Probably "
-               "not implemented by JnJVM?\n", meth->printString());
-        JavaJIT::printBacktrace();
-        JavaThread::get()->isolate->unknownError("can not find native method %s",
-                                                 meth->printString());
-      }
     }
   }
   return res;
