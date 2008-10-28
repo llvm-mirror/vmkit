@@ -278,6 +278,16 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
               PHI->addIncoming(Val, falseCl);
               Temp++;
             }
+            
+            // And here we set the phi nodes of the normal dest of the Invoke
+            // instruction. The phi nodes have now the trueCl as basic block.
+            Temp = NBB->getInstList().begin();
+            while (PHINode* PHI = dyn_cast<PHINode>(Temp)) {
+              Value* Val = PHI->getIncomingValueForBlock(CI->getParent());
+              PHI->removeIncomingValue(CI->getParent(), false);
+              PHI->addIncoming(Val, trueCl);
+              Temp++;
+            }
           } else {
             res = CallInst::Create(module->InitialiseClassFunction,
                                    Args.begin(), Args.end(), "",
@@ -351,6 +361,17 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
               PHI->addIncoming(Val, falseCl);
               Temp++;
             }
+
+            // And here we set the phi nodes of the normal dest of the Invoke
+            // instruction. The phi nodes have now the trueCl as basic block.
+            Temp = NBB->getInstList().begin();
+            while (PHINode* PHI = dyn_cast<PHINode>(Temp)) {
+              Value* Val = PHI->getIncomingValueForBlock(CI->getParent());
+              PHI->removeIncomingValue(CI->getParent(), false);
+              PHI->addIncoming(Val, trueCl);
+              Temp++;
+            }
+
           } else {
             res = CallInst::Create(resolver, Args.begin(), Args.end(), "",
                                    falseCl);
