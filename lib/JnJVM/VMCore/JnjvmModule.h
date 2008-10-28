@@ -375,7 +375,7 @@ public:
   static LLVMAssessorInfo& getTypedefInfo(Typedef* type);
   
   explicit JnjvmModule(const std::string &ModuleID, bool sc = false);
-  static void initialise();
+  void initialise();
 
   llvm::Value* getNativeClass(CommonClass* cl);
   llvm::Value* getJavaClass(CommonClass* cl);

@@ -42,7 +42,6 @@ extern const char* GNUClasspathLibs;
 
 JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   
-  JnjvmModule::initialise(); 
   TheModule = new JnjvmModule("Bootstrap JnJVM");
   TheModuleProvider = new JnjvmModuleProvider(getModule());
   getModule()->setIsStaticCompiling(staticCompilation);

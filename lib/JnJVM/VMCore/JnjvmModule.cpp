@@ -909,9 +909,9 @@ namespace jnjvm {
 Module* JnjvmModule::initialModule;
 
 void JnjvmModule::initialise() {
-  initialModule = new Module("Initial jnjvm module");
-  jnjvm::llvm_runtime::makeLLVMModuleContents(initialModule);
-  Module* module = initialModule;
+  jnjvm::llvm_runtime::makeLLVMModuleContents(this);
+  Module* module = this;
+  initialModule = this;
 
   VTType = module->getTypeByName("VT");
 
@@ -1002,6 +1002,7 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
     mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
   setDataLayout(str);
   staticCompilation = sc;
+  if (!VTType) initialise();
 
   Module* module = initialModule;
    
