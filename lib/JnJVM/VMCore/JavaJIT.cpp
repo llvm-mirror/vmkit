@@ -855,9 +855,17 @@ llvm::Function* JavaJIT::javaCompile() {
   pred_iterator PE = pred_end(endBlock);
   if (PI == PE && returnType != Type::VoidTy) {
     Instruction* I = currentBlock->getTerminator();
-    assert(isa<UnreachableInst>(I) && "non terminator before buggy return");
-    I->eraseFromParent();
-    BranchInst::Create(endBlock, currentBlock);
+    
+    assert((isa<UnreachableInst>(I) || isa<InvokeInst>(I)) && 
+           "Malformed end Java block");
+    
+    if (isa<UnreachableInst>(I)) {
+      I->eraseFromParent();
+      BranchInst::Create(endBlock, currentBlock);
+    } else if (InvokeInst* II = dyn_cast<InvokeInst>(I)) {
+      II->setNormalDest(endBlock);
+    }
+
     endNode->addIncoming(Constant::getNullValue(returnType),
                          currentBlock);
   }
