@@ -147,7 +147,8 @@ Value* JnjvmModule::getJavaClass(CommonClass* cl) {
   java_class_iterator I = javaClasses.find(cl);
   if (I == End) {
     
-    JavaObject* obj = cl->getClassDelegatee(JavaThread::get()->isolate);
+    JavaObject* obj = isStaticCompiling() ? 0 : 
+      cl->getClassDelegatee(JavaThread::get()->isolate);
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(obj)),
                                 JnjvmModule::JavaObjectType);
@@ -204,6 +205,31 @@ Value* JnjvmModule::getVirtualTable(CommonClass* classDef) {
                                cons, "", this);
     
     virtualTables.insert(std::make_pair(classDef, varGV));
+  } else {
+    varGV = I->second;
+  }
+  return varGV;
+}
+
+Value* JnjvmModule::getNativeFunction(JavaMethod* meth, void* ptr) {
+  llvm::GlobalVariable* varGV = 0;
+  native_function_iterator End = nativeFunctions.end();
+  native_function_iterator I = nativeFunctions.find(meth);
+  if (I == End) {
+    
+      
+    LLVMSignatureInfo* LSI = getSignatureInfo(meth->getSignature());
+    const llvm::Type* valPtrType = LSI->getNativePtrType();
+
+    Constant* cons = 
+      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t(ptr)),
+                                valPtrType);
+
+    varGV = new GlobalVariable(valPtrType, !staticCompilation,
+                               GlobalValue::ExternalLinkage,
+                               cons, "", this);
+    
+    nativeFunctions.insert(std::make_pair(meth, varGV));
   } else {
     varGV = I->second;
   }

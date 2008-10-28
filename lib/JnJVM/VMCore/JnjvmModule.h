@@ -185,6 +185,7 @@ private:
   std::map<const JavaConstantPool*, llvm::GlobalVariable*> constantPools;
   std::map<const JavaString*, llvm::GlobalVariable*> strings;
   std::map<const Enveloppe*, llvm::GlobalVariable*> enveloppes;
+  std::map<const JavaMethod*, llvm::GlobalVariable*> nativeFunctions;
 
   typedef std::map<const CommonClass*, llvm::GlobalVariable*>::iterator
     native_class_iterator;  
@@ -206,6 +207,9 @@ private:
   
   typedef std::map<const Enveloppe*, llvm::GlobalVariable*>::iterator
     enveloppe_iterator;
+  
+  typedef std::map<const JavaMethod*, llvm::GlobalVariable*>::iterator
+    native_function_iterator;
   
   
   bool staticCompilation;
@@ -381,6 +385,7 @@ public:
   llvm::Value* getEnveloppe(Enveloppe* enveloppe);
   llvm::Value* getString(JavaString* str);
   llvm::Value* getConstantPool(JavaConstantPool* ctp);
+  llvm::Value* getNativeFunction(JavaMethod* meth, void* natPtr);
 
 private:
   static llvm::Module* initialModule;

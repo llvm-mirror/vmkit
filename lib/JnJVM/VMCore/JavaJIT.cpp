@@ -181,11 +181,19 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   natPtr = natPtr ? natPtr :
               NativeUtil::nativeLookup(compilingClass, compilingMethod, jnjvm);
   
+  if (!natPtr && !module->isStaticCompiling()) {
+    fprintf(stderr, "Native function %s not found. Probably "
+               "not implemented by JnJVM?\n", compilingMethod->printString());
+    JavaJIT::printBacktrace();
+    JavaThread::get()->isolate->unknownError("can not find native method %s",
+                                             compilingMethod->printString());
+  }
   
   
   Function* func = llvmFunction;
   if (jnjvm) {
-    module->executionEngine->addGlobalMapping(func, natPtr);
+    if (!module->isStaticCompiling())
+      module->executionEngine->addGlobalMapping(func, natPtr);
     return llvmFunction;
   }
   
@@ -282,15 +290,10 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
     nativeArgs.push_back(i);
   }
   
-  
-  LLVMSignatureInfo* LSI = 
-    module->getSignatureInfo(compilingMethod->getSignature());
-  const llvm::Type* valPtrType = LSI->getNativePtrType();
-  Value* valPtr = 
-    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, (uint64)natPtr),
-                              valPtrType);
+  Value* nativeFunc = module->getNativeFunction(compilingMethod, natPtr);
+  nativeFunc = new LoadInst(nativeFunc, "", currentBlock);
 
-  Value* result = llvm::CallInst::Create(valPtr, nativeArgs.begin(),
+  Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs.begin(),
                                          nativeArgs.end(), "", currentBlock);
 
   if (returnType != Type::VoidTy)
