@@ -52,7 +52,7 @@ using namespace jnjvm;
 #undef INIT
 
 void ArrayObject::TRACER {
-  classOf->classLoader->MARK_AND_TRACE;
+  if (classOf) classOf->classLoader->MARK_AND_TRACE;
   for (sint32 i = 0; i < size; i++) {
     if (elements[i]) elements[i]->MARK_AND_TRACE;
   }
@@ -93,7 +93,7 @@ void ClassArray::TRACER {
 }
 
 void JavaObject::TRACER {
-  classOf->classLoader->MARK_AND_TRACE;
+  if (classOf) classOf->classLoader->MARK_AND_TRACE;
   LockObj* l = lockObj();
   if (l) l->MARK_AND_TRACE;
 }
@@ -103,7 +103,7 @@ extern "C" void JavaObjectTracer(JavaObject* obj, Collector* GC) {
 #else
 extern "C" void JavaObjectTracer(JavaObject* obj) {
 #endif
-  obj->classOf->classLoader->MARK_AND_TRACE;
+  if (obj->classOf) obj->classOf->classLoader->MARK_AND_TRACE;
   LockObj* l = obj->lockObj();
   if (l) l->MARK_AND_TRACE;
 }
