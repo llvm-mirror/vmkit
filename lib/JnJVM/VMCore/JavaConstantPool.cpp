@@ -306,8 +306,8 @@ CommonClass* JavaConstantPool::getMethodClassIfLoaded(uint32 index) {
     assert(loader && "Class has no loader?");
     const UTF8* name = UTF8At(ctpDef[index]);
     temp = loader->lookupClass(name);
-    if (!temp) 
-      temp = JnjvmClassLoader::bootstrapLoader->lookupClass(name);
+    if (!temp && loader != loader->bootstrapLoader)
+      temp = loader->bootstrapLoader->lookupClass(name);
   }
 #endif
   return temp;
@@ -365,10 +365,9 @@ void JavaConstantPool::infoOfMethod(uint32 index, uint32 access,
   const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = getMethodClassIfLoaded(entry >> 16);
   if (cl && cl->status >= classRead) {
-    Class* methodCl = 0;
     // lookup the method
     meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access),
-                                     false, methodCl);
+                                     false, 0);
   } 
 }
 
@@ -410,12 +409,11 @@ void* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index,
   CommonClass* cl = getMethodClassIfLoaded(entry >> 16);
   if (cl && cl->status >= classRead) {
     // lookup the method
-    Class* methodCl = 0;
     meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access),
-                                     false, methodCl);
+                                     false, 0);
     if (meth) { 
       // don't throw if no meth, the exception will be thrown just in time
-      JnjvmModule* M = classDef->classLoader->TheModule;
+      JnjvmModule* M = classDef->classLoader->getModule();
       void* F = M->getMethod(meth);
       return F;
     }
@@ -473,9 +471,8 @@ JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
   const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   CommonClass* cl = getMethodClassIfLoaded(entry >> 16);
   if (cl && cl->status >= resolved) {
-    CommonClass* fieldCl = 0; 
     JavaField* field = cl->lookupFieldDontThrow(utf8, sign->keyName, stat, 
-                                                true, fieldCl);
+                                                true, 0);
     // don't throw if no field, the exception will be thrown just in time  
     if (field) {
       if (!stat) {

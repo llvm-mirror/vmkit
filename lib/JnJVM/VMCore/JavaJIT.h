@@ -64,6 +64,16 @@ private:
 
 public:
   
+  JavaJIT(JavaMethod* meth, llvm::Function* func) {
+    nbEnveloppes = 0;
+    compilingMethod = meth;
+    compilingClass = meth->classDef;
+    module = compilingClass->classLoader->getModule();
+    llvmFunction = func;
+    inlining = false;
+    callsStackWalker = false;
+  }
+
   JnjvmModule* module;
 
   static void invokeOnceVoid(Jnjvm* vm, JnjvmClassLoader* loader,
@@ -74,12 +84,12 @@ public:
   
   llvm::Function* javaCompile();
   llvm::Function* nativeCompile(void* natPtr = 0);
-  llvm::Instruction* inlineCompile(llvm::Function* parentFunction, 
-                                   llvm::BasicBlock*& curBB,
+  llvm::Instruction* inlineCompile(llvm::BasicBlock*& curBB,
                                    llvm::BasicBlock* endExBlock,
                                    std::vector<llvm::Value*>& args);
 
   std::map<JavaMethod*, bool> inlineMethods;
+  bool inlining;
 
   Class* compilingClass;
   JavaMethod* compilingMethod;
@@ -266,6 +276,13 @@ public:
   static JavaObject* getCallingClassLoader();
   static void printBacktrace();
   static JavaMethod* IPToJavaMethod(void* ip);
+  
+  /// nbEnveloppes - Number of enveloppes (ie invokeinterface) in this
+  /// method.
+  uint32 nbEnveloppes;
+
+  bool canBeInlined(JavaMethod* meth);
+  bool callsStackWalker;
 };
 
 enum Opcode {

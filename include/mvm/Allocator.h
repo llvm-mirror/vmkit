@@ -232,6 +232,10 @@ public:
   void operator delete(void* ptr) {
     free(ptr);
   }
+
+  void* operator new [](size_t sz, BumpPtrAllocator& allocator) {
+    return allocator.Allocate(sz);
+  }
 };
 
 } // end namespace mvm

@@ -127,6 +127,7 @@ public:
   VMThread* bootstrapThread;
 
   virtual void runApplication(int argc, char** argv);
+  virtual void compile(const char* name);
 
 };
 

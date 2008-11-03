@@ -10,7 +10,6 @@
 #ifndef JNJVM_JAVA_CLASS_H
 #define JNJVM_JAVA_CLASS_H
 
-#include <map>
 #include <vector>
 
 #include "types.h"
@@ -82,6 +81,7 @@ public:
   /// Attribut - Create an attribut at the given length and offset.
   ///
   Attribut(const UTF8* name, uint32 length, uint32 offset);
+  Attribut() {}
   
   /// codeAttribut - The "Code" JVM attribut. This is a method attribut for
   /// finding the bytecode of a method in the .class file.
@@ -126,26 +126,6 @@ class CommonClass : public mvm::PermanentObject {
 #ifdef ISOLATE_SHARING
 friend class UserCommonClass;
 #endif
-private:
-
-
-/// FieldCmp - Internal class for field and method lookup in a class.
-///
-class FieldCmp {
-public:
-  
-  /// name - The name of the field/method
-  ///
-  const UTF8* name;
-
-  /// type - The type of the field/method.
-  ///
-  const UTF8* type;
-
-  FieldCmp(const UTF8* n, const UTF8* t) : name(n), type(t) {}
-  
-  bool operator<(const FieldCmp &cmp) const;
-};
 
 public:
   
@@ -169,13 +149,12 @@ public:
   ///
   VirtualTable* virtualVT;
   
-  /// display - The class hierarchy of supers for this class. Array classes
-  /// do not need it.
+  /// display - The class hierarchy of supers for this class.
   ///
   CommonClass** display;
   
   /// depth - The depth of this class in its class hierarchy. 
-  /// display[depth] contains the class. Array classes do not need it.
+  /// display[depth] contains the class.
   ///
   uint32 depth;
 
@@ -255,11 +234,13 @@ public:
   
   /// interfaces - The interfaces this class implements.
   ///
-  std::vector<Class*> interfaces;
+  Class** interfaces;
   
-  std::vector<Class*> * getInterfaces() {
-    return &interfaces;
+  Class** getInterfaces() {
+    return interfaces;
   }
+  
+  uint16 nbInterfaces;
   
   /// name - The name of the class.
   ///
@@ -275,22 +256,6 @@ public:
   
   CommonClass* getSuper() {
     return super;
-  }
-
-  /// superUTF8 - The name of the parent of this class.
-  ///
-  const UTF8* superUTF8;
-
-  const UTF8* getSuperUTF8() {
-    return superUTF8;
-  }
-
-  /// interfacesUTF8 - The names of the interfaces this class implements.
-  ///
-  std::vector<const UTF8*> interfacesUTF8;
-  
-  std::vector<const UTF8*>* getInterfacesUTF8() {
-    return &interfacesUTF8;
   }
 
   /// lockVar - When multiple threads want to load/resolve/initialize a class,
@@ -312,49 +277,40 @@ public:
   JavaObject* delegatee;
 #endif
   
-
-  typedef std::map<const FieldCmp, JavaField*, std::less<FieldCmp> >::iterator
-    field_iterator;
-  
-  typedef std::map<const FieldCmp, JavaField*, std::less<FieldCmp> > 
-    field_map;
-  
   /// virtualFields - List of all the virtual fields defined in this class.
   /// This does not contain non-redefined super fields.
-  field_map virtualFields;
-  
+  JavaField* virtualFields;
+  uint16 nbVirtualFields;
+
   /// staticFields - List of all the static fields defined in this class.
   ///
-  field_map staticFields;
-  
-  typedef std::map<const FieldCmp, JavaMethod*, std::less<FieldCmp> >::iterator
-    method_iterator;
-  
-  typedef std::map<const FieldCmp, JavaMethod*, std::less<FieldCmp> > 
-    method_map;
+  JavaField* staticFields;
+  uint16 nbStaticFields;
   
   /// virtualMethods - List of all the virtual methods defined by this class.
   /// This does not contain non-redefined super methods.
-  method_map virtualMethods;
+  JavaMethod* virtualMethods;
+  uint16 nbVirtualMethods;
   
   /// staticMethods - List of all the static methods defined by this class.
   ///
-  method_map staticMethods;
+  JavaMethod* staticMethods;
+  uint16 nbStaticMethods;
   
-  field_map* getStaticFields() { return &staticFields; }
-  field_map* getVirtualFields() { return &virtualFields; }
-  method_map* getStaticMethods() { return &staticMethods; }
-  method_map* getVirtualMethods() { return &virtualMethods; }
+  JavaField* getStaticFields()    { return staticFields; }
+  JavaField* getVirtualFields()   { return virtualFields; }
+  JavaMethod* getStaticMethods()  { return staticMethods; }
+  JavaMethod* getVirtualMethods() { return virtualMethods; }
 
-  /// constructMethod - Add a new method in this class method map.
+  /// constructMethod - Create a new method.
   ///
-  JavaMethod* constructMethod(const UTF8* name, const UTF8* type,
-                              uint32 access);
+  JavaMethod* constructMethod(JavaMethod& method, const UTF8* name,
+                              const UTF8* type, uint32 access);
   
-  /// constructField - Add a new field in this class field map.
+  /// constructField - Create a new field.
   ///
-  JavaField* constructField(const UTF8* name, const UTF8* type,
-                            uint32 access);
+  JavaField* constructField(JavaField& field, const UTF8* name,
+                            const UTF8* type, uint32 access);
 
   /// printClassName - Adds a string representation of this class in the
   /// given buffer.
@@ -396,24 +352,24 @@ public:
   /// Do not throw if the method is not found.
   ///
   JavaMethod* lookupMethodDontThrow(const UTF8* name, const UTF8* type,
-                                    bool isStatic, bool recurse, Class*& cl);
+                                    bool isStatic, bool recurse, Class** cl);
   
   /// lookupMethod - Lookup a method and throw an exception if not found.
   ///
   JavaMethod* lookupMethod(const UTF8* name, const UTF8* type, bool isStatic,
-                           bool recurse, Class*& cl);
+                           bool recurse, Class** cl);
   
   /// lookupFieldDontThrow - Lookup a field in the field map of this class. Do
   /// not throw if the field is not found.
   ///
   JavaField* lookupFieldDontThrow(const UTF8* name, const UTF8* type,
                                   bool isStatic, bool recurse,
-                                  CommonClass*& definingClass);
+                                  CommonClass** definingClass);
   
   /// lookupField - Lookup a field and throw an exception if not found.
   ///
   JavaField* lookupField(const UTF8* name, const UTF8* type, bool isStatic,
-                         bool recurse, CommonClass*& definingClass);
+                         bool recurse, CommonClass** definingClass);
 
   /// print - Print the class for debugging purposes.
   ///
@@ -509,7 +465,7 @@ public:
   void getDeclaredConstructors(std::vector<JavaMethod*>& res, bool publicOnly);
   void getDeclaredMethods(std::vector<JavaMethod*>& res, bool publicOnly);
   void getDeclaredFields(std::vector<JavaField*>& res, bool publicOnly);
-  void setInterfaces(std::vector<Class*> I) {
+  void setInterfaces(Class** I) {
     interfaces = I;
   }
   void setSuper(CommonClass* S) {
@@ -517,6 +473,10 @@ public:
   }
   
   UserClassPrimitive* toPrimitive(Jnjvm* vm) const;
+  
+  CommonClass* getInternal() {
+    return this;
+  }
 
 };
 
@@ -529,10 +489,6 @@ public:
 
   static UserClassPrimitive* byteIdToPrimitive(char id, Classpath* upcalls);
   
-  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator) {
-    return allocator.Allocate(sz);
-  }
-
 };
 
 
@@ -542,18 +498,6 @@ public:
 class Class : public CommonClass {
 public:
   
-  /// VT - The virtual table of this class.
-  ///
-  static VirtualTable* VT;
-
-  /// minor - The minor version of this class.
-  ///
-  unsigned int minor;
-
-  /// major - The major version of this class.
-  ///
-  unsigned int major;
-
   /// bytes - The .class file of this class.
   ///
   ArrayUInt8* bytes;
@@ -564,21 +508,31 @@ public:
 
   /// attributs - JVM attributes of this class.
   ///
-  std::vector<Attribut*> attributs;
+  Attribut* attributs;
+  uint16 nbAttributs;
  
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   /// innerClasses - The inner classes of this class.
   ///
-  std::vector<Class*> innerClasses;
+  Class** innerClasses;
+  uint16 nbInnerClasses;
 
   /// outerClass - The outer class, if this class is an inner class.
   ///
   Class* outerClass;
+  
+  Class* getOuterClass() {
+    return outerClass;
+  }
+
+  Class** getInnerClasses() {
+    return innerClasses;
+  }
 #endif
 
   /// innerAccess - The access of this class, if this class is an inner class.
   ///
-  uint32 innerAccess;
+  uint16 innerAccess;
 
   void setInnerAccess(uint32 access) {
     innerAccess = access;
@@ -662,7 +616,7 @@ public:
 
   /// readAttributs - Reads the attributs of the class.
   ///
-  void readAttributs(Reader& reader, std::vector<Attribut*> & attr);
+  Attribut* readAttributs(Reader& reader, uint16& size);
 
   /// readFields - Reads the fields of the class.
   ///
@@ -687,16 +641,6 @@ public:
   
   void resolveInnerOuterClasses();
 
-#ifndef ISOLATE_SHARING
-  Class* getOuterClass() {
-    return outerClass;
-  }
-
-  std::vector<Class*>* getInnerClasses() {
-    return &innerClasses;
-  }
-#endif
-  
   mvm::JITInfo* JInfo;
   template<typename Ty> 
   Ty *getInfo() {
@@ -716,8 +660,10 @@ public:
 ///
 class ClassArray : public CommonClass {
 
-  /// Reader is a friend because it allocates arrays without a vm.
+  /// Reader and Jnjvm are friends because they may allocate arrays without
+  /// a vm.
   friend class Reader;
+  friend class Jnjvm;
 private:
   /// doNew - Allocate a new array with the given allocator.
   ///
@@ -726,10 +672,6 @@ private:
 
 public:
   
-  /// VT - The virtual table of array classes.
-  ///
-  static VirtualTable* VT;
-
   /// _baseClass - The base class of the array, or null if not resolved.
   ///
   CommonClass*  _baseClass;
@@ -776,7 +718,7 @@ public:
   virtual void TRACER;
 
   static CommonClass* SuperArray;
-  static std::vector<Class*> InterfacesArray;
+  static Class** InterfacesArray;
 };
 
 /// JavaMethod - This class represents Java methods.
@@ -803,16 +745,18 @@ public:
 
   /// access - Java access type of this method (e.g. private, public...).
   ///
-  unsigned int access;
+  uint16 access;
 
   /// attributs - List of Java attributs of this method.
   ///
-  std::vector<Attribut*> attributs;
+  Attribut* attributs;
+  uint16 nbAttributs;
 
   /// caches - List of caches in this method. For all invokeinterface bytecode
   /// there is a corresponding cache.
   ///
-  std::vector<Enveloppe*> caches;
+  Enveloppe* enveloppes;
+  uint16 nbEnveloppes;
   
   /// classDef - The Java class where the method is defined.
   ///
@@ -942,6 +886,14 @@ private:
   /// _signature - The signature of the field. Null if not resolved.
   ///
   Typedef* _signature;
+  
+  /// InitField - Set an initial value to the field of an object.
+  ///
+  void InitField(JavaObject* obj, uint64 val = 0);
+  void InitField(JavaObject* obj, JavaObject* val);
+  void InitField(JavaObject* obj, double val);
+  void InitField(JavaObject* obj, float val);
+
 public:
 
   /// ~JavaField - Destroy the field as well as its attributs.
@@ -950,7 +902,7 @@ public:
 
   /// access - The Java access type of this field (e.g. public, private).
   ///
-  unsigned int access;
+  uint16 access;
 
   /// name - The name of the field.
   ///
@@ -962,7 +914,8 @@ public:
 
   /// attributs - List of Java attributs for this field.
   ///
-  std::vector<Attribut*> attributs;
+  Attribut* attributs;
+  uint16 nbAttributs;
 
   /// classDef - The class where the field is defined.
   ///
@@ -975,7 +928,7 @@ public:
   
   /// num - The index of the field in the field list.
   ///
-  uint32 num;
+  uint16 num;
   
   /// getSignature - Get the signature of this field, resolving it if
   /// necessary.

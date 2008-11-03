@@ -40,54 +40,9 @@
 
 using namespace jnjvm;
 
-#define DEF_UTF8(var) \
-  const UTF8* Jnjvm::var = 0
-  
-  DEF_UTF8(NoClassDefFoundError);
-  DEF_UTF8(initName);
-  DEF_UTF8(clinitName);
-  DEF_UTF8(clinitType);
-  DEF_UTF8(runName);
-  DEF_UTF8(prelib);
-  DEF_UTF8(postlib);
-  DEF_UTF8(mathName);
-  DEF_UTF8(abs);
-  DEF_UTF8(sqrt);
-  DEF_UTF8(sin);
-  DEF_UTF8(cos);
-  DEF_UTF8(tan);
-  DEF_UTF8(asin);
-  DEF_UTF8(acos);
-  DEF_UTF8(atan);
-  DEF_UTF8(atan2);
-  DEF_UTF8(exp);
-  DEF_UTF8(log);
-  DEF_UTF8(pow);
-  DEF_UTF8(ceil);
-  DEF_UTF8(floor);
-  DEF_UTF8(rint);
-  DEF_UTF8(cbrt);
-  DEF_UTF8(cosh);
-  DEF_UTF8(expm1);
-  DEF_UTF8(hypot);
-  DEF_UTF8(log10);
-  DEF_UTF8(log1p);
-  DEF_UTF8(sinh);
-  DEF_UTF8(tanh);
-  DEF_UTF8(finalize);
-
-#undef DEF_UTF8
-
 const char* Jnjvm::dirSeparator = "/";
 const char* Jnjvm::envSeparator = ":";
 const unsigned int Jnjvm::Magic = 0xcafebabe;
-
-#ifndef ISOLATE
-/// If we're not in a multi-vm environment, this can be made static.
-std::vector<void*> Jnjvm::nativeLibs;
-JnjvmBootstrapLoader* Jnjvm::bootstrapLoader;
-std::map<const char, UserClassPrimitive*> Jnjvm::primitiveMap;
-#endif
 
 typedef void (*clinit_t)(Jnjvm* vm, UserConstantPool*);
 
@@ -112,10 +67,9 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
       cl->resolveStaticClass();
       
       status = inClinit;
-      UserClass* methodCl;
-      JavaMethod* meth = lookupMethodDontThrow(Jnjvm::clinitName,
-                                               Jnjvm::clinitType, true,
-                                               false, methodCl);
+      JavaMethod* meth = lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
+                                               vm->bootstrapLoader->clinitType,
+                                               true, false, 0);
       
       PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
       PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ", 0);
@@ -125,10 +79,9 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
         (JavaObject*)vm->gcAllocator.allocateManagedObject(cl->getStaticSize(),
                                                            cl->getStaticVT());
       val->initialise(cl);
-      CommonClass::field_map* map = cl->getStaticFields();
-      for (CommonClass::field_iterator i = map->begin(), e = map->end(); i!= e;
-           ++i) { 
-        i->second->initField(val, vm);
+      JavaField* fields = cl->getStaticFields();
+      for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
+        fields[i].initField(val, vm);
       }
   
       cl->setStaticInstance(val);
@@ -182,9 +135,13 @@ void Jnjvm::error(UserClass* cl, JavaMethod* init, const char* fmt, ...) {
   vsnprintf(tmp, 4096, fmt, ap);
   va_end(ap);
   
-  JavaObject* obj = cl->doNew(this);
-  init->invokeIntSpecial(this, cl, obj, asciizToStr(tmp));
-  JavaThread::throwException(obj);
+  if (cl && !bootstrapLoader->getModule()->isStaticCompiling()) {
+    JavaObject* obj = cl->doNew(this);
+    init->invokeIntSpecial(this, cl, obj, asciizToStr(tmp));
+    JavaThread::throwException(obj);
+  } else {
+    throw std::string(tmp);
+  }
 }
 
 void Jnjvm::arrayStoreException() {
@@ -300,10 +257,10 @@ void Jnjvm::noClassDefFoundError(JavaObject* obj) {
         obj);
 }
 
-void Jnjvm::noClassDefFoundError(const char* fmt, ...) {
+void Jnjvm::noClassDefFoundError(const UTF8* name) {
   error(upcalls->NoClassDefFoundError,
         upcalls->InitNoClassDefFoundError, 
-        fmt);
+        "Unable to load %s", name->UTF8ToAsciiz());
 }
 
 void Jnjvm::classNotFoundException(JavaString* str) {
@@ -794,12 +751,13 @@ void Jnjvm::runApplication(int argc, char** argv) {
   info.readArgs(argc, argv, this);
   if (info.className) {
     int pos = info.appArgumentsPos;
-    //llvm::cl::ParseCommandLineOptions(pos, argv,
-    //                                  " JnJVM Java Virtual Machine\n");
+    
     argv = argv + pos - 1;
     argc = argc - pos + 1;
-  
-    bootstrapThread = gc_new(JavaThread)(0, this, mvm::Thread::get()->baseSP);
+    
+    mvm::Thread* oldThread = mvm::Thread::get();
+    JavaThread thread(0, this, oldThread->baseSP);
+    bootstrapThread = &thread;
 
     loadBootstrap();
 
@@ -826,10 +784,11 @@ void Jnjvm::runApplication(int argc, char** argv) {
 
     executeClass(info.className, args);
     waitForExit();
+    mvm::Thread::set(oldThread);
   }
 }
 
-Jnjvm::Jnjvm(uint32 memLimit) {
+Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) {
 
   classpath = getenv("CLASSPATH");
   if (!classpath) classpath = ".";
@@ -839,36 +798,11 @@ Jnjvm::Jnjvm(uint32 memLimit) {
   javavmEnv = &JNI_JavaVMTable;
   
 
-#ifdef ISOLATE_SHARING
-  initialiseStatics();
-#endif
-  
+  bootstrapLoader = loader;
   upcalls = bootstrapLoader->upcalls;
 
-#ifdef ISOLATE_SHARING
   throwable = upcalls->newThrowable;
-#endif
-  arrayClasses[JavaArray::T_BOOLEAN - 4] = upcalls->ArrayOfBool;
-  arrayClasses[JavaArray::T_BYTE - 4] = upcalls->ArrayOfByte;
-  arrayClasses[JavaArray::T_CHAR - 4] = upcalls->ArrayOfChar;
-  arrayClasses[JavaArray::T_SHORT - 4] = upcalls->ArrayOfShort;
-  arrayClasses[JavaArray::T_INT - 4] = upcalls->ArrayOfInt;
-  arrayClasses[JavaArray::T_FLOAT - 4] = upcalls->ArrayOfFloat;
-  arrayClasses[JavaArray::T_LONG - 4] = upcalls->ArrayOfLong;
-  arrayClasses[JavaArray::T_DOUBLE - 4] = upcalls->ArrayOfDouble;
-
-  primitiveMap[I_VOID] = upcalls->OfVoid;
-  primitiveMap[I_BOOL] = upcalls->OfBool;
-  primitiveMap[I_BYTE] = upcalls->OfByte;
-  primitiveMap[I_CHAR] = upcalls->OfChar;
-  primitiveMap[I_SHORT] = upcalls->OfShort;
-  primitiveMap[I_INT] = upcalls->OfInt;
-  primitiveMap[I_FLOAT] = upcalls->OfFloat;
-  primitiveMap[I_LONG] = upcalls->OfLong;
-  primitiveMap[I_DOUBLE] = upcalls->OfDouble;
-  
-  upcalls->initialiseClasspath(bootstrapLoader);
- 
+   
 }
 
 const UTF8* Jnjvm::asciizToInternalUTF8(const char* asciiz) {
@@ -893,4 +827,92 @@ const UTF8* Jnjvm::asciizToUTF8(const char* asciiz) {
     buf[i] = asciiz[i];
   }
   return (const UTF8*)tmp;
+}
+
+
+static void compileClass(Class* cl) {
+
+  for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+    JavaMethod& meth = cl->virtualMethods[i];
+    if (!isAbstract(meth.access))
+      cl->classLoader->TheModuleProvider->parseFunction(&meth);
+  }
+  
+  for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
+    JavaMethod& meth = cl->staticMethods[i];
+    if (!isAbstract(meth.access))
+      cl->classLoader->TheModuleProvider->parseFunction(&meth);
+  }
+}
+
+
+void Jnjvm::compile(const char* name) {
+  bootstrapLoader->analyseClasspathEnv(classpath);
+    
+  mvm::Thread* oldThread = mvm::Thread::get();
+  JavaThread thread(0, this, oldThread->baseSP);
+  bootstrapThread = &thread;
+  
+  
+  uint32 size = strlen(name);
+  if (size > 4 && 
+      (!strcmp(&name[size - 4], ".jar") || !strcmp(&name[size - 4], ".zip"))) {
+  
+
+    std::vector<Class*> classes;
+
+    ArrayUInt8* bytes = Reader::openFile(bootstrapLoader, name);
+    if (!bytes) unknownError("Can't find zip file.");
+    ZipArchive archive(bytes, bootstrapLoader->allocator);
+    
+    char* realName = (char*)alloca(4096);
+    for (ZipArchive::table_iterator i = archive.filetable.begin(), 
+         e = archive.filetable.end(); i != e; ++i) {
+      ZipFile* file = i->second;
+      
+      size = strlen(file->filename);
+      if (size > 6 && !strcmp(&(file->filename[size - 6]), ".class")) {
+        UserClassArray* array = bootstrapLoader->upcalls->ArrayOfByte;
+        ArrayUInt8* res = (ArrayUInt8*)array->doNew(file->ucsize,
+                                                    bootstrapLoader->allocator);
+        int ok = archive.readFile(res, file);
+        if (!ok) unknownError("Wrong zip file.");
+      
+        
+        memcpy(realName, file->filename, size);
+        realName[size - 6] = 0;
+        const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
+        Class* cl = bootstrapLoader->constructClass(utf8, res);
+        classes.push_back(cl);
+      }
+    }
+
+    // First resolve everyone so that there can not be unknown references in
+    // constant pools.
+    for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end(); 
+         i != e; ++i) {
+      Class* cl = *i;
+      cl->resolveClass();
+    }
+      
+    for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end(); 
+         i != e; ++i) {
+      Class* cl = *i;
+      if (!cl->isInterface()) compileClass(cl);
+    }
+
+  } else {
+
+    const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(name);
+    UserClass* cl = bootstrapLoader->loadName(utf8, true, true);
+    compileClass(cl);
+  }
+   
+  // Set the linkage to External, so that the printer does not complain.
+  llvm::Module* M = bootstrapLoader->getModule();
+  for (Module::iterator i = M->begin(), e = M->end(); i != e; ++i) {
+    i->setLinkage(llvm::GlobalValue::ExternalLinkage);
+  }
+  
+  mvm::Thread::set(oldThread);
 }

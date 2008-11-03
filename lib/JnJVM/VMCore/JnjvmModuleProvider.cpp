@@ -37,9 +37,8 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
   Signdef* sign = 0;
 
   ctpInfo->resolveMethod(index, cl, utf8, sign);
-  Class* methodCl = 0;
   JavaMethod* meth = cl->lookupMethod(utf8, sign->keyName, isStatic, true,
-                                      methodCl);
+                                      0);
 
 #ifndef ISOLATE_SHARING
   // A multi environment would have already initialized the class. Besides,
@@ -130,11 +129,7 @@ Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
   if (func->hasNotBeenReadFromBitcode()) {
     // We are jitting. Take the lock.
     llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
-    JavaJIT jit;
-    jit.compilingClass = meth->classDef;
-    jit.compilingMethod = meth;
-    jit.module = (JnjvmModule*)TheModule;
-    jit.llvmFunction = func;
+    JavaJIT jit(meth, func);
     if (isNative(meth->access)) {
       jit.nativeCompile();
     } else {
@@ -156,7 +151,7 @@ llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
   }
   
   const llvm::FunctionType* type = 0;
-  JnjvmModule* M = cl->classLoader->TheModule;
+  JnjvmModule* M = cl->classLoader->getModule();
   LLVMSignatureInfo* LSI = M->getSignatureInfo(sign);
   
   if (stat) {

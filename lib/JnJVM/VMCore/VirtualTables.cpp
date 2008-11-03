@@ -32,8 +32,6 @@ using namespace jnjvm;
 
   INIT(JavaArray);
   INIT(ArrayObject);
-  INIT(Class);
-  INIT(ClassArray);
   INIT(JavaObject);
   INIT(JavaThread);
   INIT(Jnjvm);
@@ -70,10 +68,11 @@ void JavaArray::TRACER {}
     (*i)->MARK_AND_TRACE; }}
 
 void CommonClass::TRACER {
-  if (super) super->classLoader->MARK_AND_TRACE;
-  for (std::vector<Class*, gc_allocator<Class*> >::iterator i = interfaces.begin(),
-       e = interfaces.end(); i!= e; ++i) {
-    (*i)->classLoader->MARK_AND_TRACE;
+  if (status >= prepared) {
+    if (super) super->classLoader->MARK_AND_TRACE;
+    for (uint32 i = 0; i < nbInterfaces; ++i) {
+      interfaces[i]->classLoader->MARK_AND_TRACE;
+    }
   }
   classLoader->MARK_AND_TRACE;
 #if !defined(ISOLATE)
@@ -118,7 +117,6 @@ void JavaThread::TRACER {
 void Jnjvm::TRACER {
   appClassLoader->MARK_AND_TRACE;
   TRACE_VECTOR(JavaObject*, gc_allocator, globalRefs);
-  bootstrapThread->MARK_AND_TRACE;
   bootstrapLoader->MARK_AND_TRACE;
 #if defined(ISOLATE_SHARING)
   JnjvmSharedLoader::sharedLoader->MARK_AND_TRACE;
@@ -142,10 +140,6 @@ void JnjvmClassLoader::TRACER {
 void JnjvmBootstrapLoader::TRACER {
   traceClassMap(classes);
   
-  for (std::vector<ZipArchive*>::iterator i = bootArchives.begin(),
-       e = bootArchives.end(); i != e; ++i) {
-    (*i)->bytes->MARK_AND_TRACE;
-  }
 #define TRACE_DELEGATEE(prim) \
   prim->delegatee->MARK_AND_TRACE
 
@@ -159,6 +153,7 @@ void JnjvmBootstrapLoader::TRACER {
   TRACE_DELEGATEE(upcalls->OfLong);
   TRACE_DELEGATEE(upcalls->OfDouble);
 #undef TRACE_DELEGATEE
+  
   TRACE_VECTOR(JavaString*, gc_allocator, strings);
 }
 

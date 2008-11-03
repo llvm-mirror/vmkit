@@ -29,7 +29,7 @@
 #endif
 
 typedef int (*boot_t)();
-typedef mvm::VirtualMachine* (*create_vm_t)();
+typedef mvm::VirtualMachine* (*create_vm_t)(mvm::CompilationUnit*);
 
 namespace mvm {
 
@@ -54,6 +54,7 @@ public:
   char _yyChar;
   
   std::map<const char*, create_vm_t, ltstr> vmlets;
+  std::map<const char*, mvm::CompilationUnit*, ltstr> compilers;
 
   CommandLine();
   

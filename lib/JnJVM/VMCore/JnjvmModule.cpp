@@ -8,18 +8,17 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/CallingConv.h"
+#include "llvm/Instructions.h"
 #include "llvm/Support/MutexGuard.h"
 
 
 #include "mvm/JIT.h"
 
-#include "JavaJIT.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 #include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
-#include "LockedMap.h"
 
 
 using namespace jnjvm;
@@ -58,6 +57,7 @@ llvm::ConstantInt*    JnjvmModule::OffsetDepthInClassConstant;
 llvm::ConstantInt*    JnjvmModule::OffsetDisplayInClassConstant;
 llvm::ConstantInt*    JnjvmModule::OffsetStatusInClassConstant;
 llvm::ConstantInt*    JnjvmModule::OffsetCtpInClassConstant;
+llvm::ConstantInt*    JnjvmModule::ClassReadyConstant;
 const llvm::Type*     JnjvmModule::JavaClassType;
 const llvm::Type*     JnjvmModule::VTType;
 llvm::ConstantInt*    JnjvmModule::JavaArrayElementsOffsetConstant;
@@ -65,7 +65,7 @@ llvm::ConstantInt*    JnjvmModule::JavaArraySizeOffsetConstant;
 llvm::ConstantInt*    JnjvmModule::JavaObjectLockOffsetConstant;
 llvm::ConstantInt*    JnjvmModule::JavaObjectClassOffsetConstant;
 
-Value* JnjvmModule::getNativeClass(CommonClass* classDef, JavaJIT* jit) {
+Value* JnjvmModule::getNativeClass(CommonClass* classDef) {
   llvm::GlobalVariable* varGV = 0;
   native_class_iterator End = nativeClasses.end();
   native_class_iterator I = nativeClasses.find(classDef);
@@ -75,7 +75,7 @@ Value* JnjvmModule::getNativeClass(CommonClass* classDef, JavaJIT* jit) {
                                                  uint64_t (classDef)),
                                 JnjvmModule::JavaClassType);
       
-    varGV = new GlobalVariable(JnjvmModule::JavaClassType, true,
+    varGV = new GlobalVariable(JnjvmModule::JavaClassType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
 
@@ -83,10 +83,10 @@ Value* JnjvmModule::getNativeClass(CommonClass* classDef, JavaJIT* jit) {
   } else {
     varGV = I->second;
   }   
-  return new LoadInst(varGV, "", jit->currentBlock);
+  return varGV;
 }
 
-Value* JnjvmModule::getConstantPool(JavaConstantPool* ctp, JavaJIT* jit) {
+Value* JnjvmModule::getConstantPool(JavaConstantPool* ctp) {
   llvm::GlobalVariable* varGV = 0;
   constant_pool_iterator End = constantPools.end();
   constant_pool_iterator I = constantPools.find(ctp);
@@ -95,17 +95,17 @@ Value* JnjvmModule::getConstantPool(JavaConstantPool* ctp, JavaJIT* jit) {
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
                                 mvm::MvmModule::ptrPtrType);
-    varGV = new GlobalVariable(mvm::MvmModule::ptrPtrType, true,
+    varGV = new GlobalVariable(mvm::MvmModule::ptrPtrType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
     constantPools.insert(std::make_pair(ctp, varGV));
   } else {
     varGV = I->second;
   }
-  return new LoadInst(varGV, "", jit->currentBlock);
+  return varGV;
 }
 
-Value* JnjvmModule::getString(JavaString* str, JavaJIT* jit) {
+Value* JnjvmModule::getString(JavaString* str) {
   llvm::GlobalVariable* varGV;
   string_iterator SI = strings.find(str);
   if (SI != strings.end()) {
@@ -115,25 +115,44 @@ Value* JnjvmModule::getString(JavaString* str, JavaJIT* jit) {
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
                                 JnjvmModule::JavaObjectType);
-    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, true,
+    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
     strings.insert(std::make_pair(str, varGV));
   }
-  return new LoadInst(varGV, "", jit->currentBlock);
+  return varGV;
 }
 
-Value* JnjvmModule::getJavaClass(CommonClass* cl, JavaJIT* jit) {
+Value* JnjvmModule::getEnveloppe(Enveloppe* enveloppe) {
+  llvm::GlobalVariable* varGV;
+  enveloppe_iterator SI = enveloppes.find(enveloppe);
+  if (SI != enveloppes.end()) {
+    varGV = SI->second;
+  } else {
+    void* ptr = enveloppe;
+    Constant* cons = 
+      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
+                                JnjvmModule::EnveloppeType);
+    varGV = new GlobalVariable(JnjvmModule::EnveloppeType, !staticCompilation,
+                               GlobalValue::ExternalLinkage,
+                               cons, "", this);
+    enveloppes.insert(std::make_pair(enveloppe, varGV));
+  }
+  return varGV;
+}
+
+Value* JnjvmModule::getJavaClass(CommonClass* cl) {
   llvm::GlobalVariable* varGV = 0;
   java_class_iterator End = javaClasses.end();
   java_class_iterator I = javaClasses.find(cl);
   if (I == End) {
     
-    JavaObject* obj = cl->getClassDelegatee(JavaThread::get()->isolate);
+    JavaObject* obj = isStaticCompiling() ? 0 : 
+      cl->getClassDelegatee(JavaThread::get()->isolate);
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(obj)),
                                 JnjvmModule::JavaObjectType);
-    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, true,
+    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
 
@@ -141,10 +160,10 @@ Value* JnjvmModule::getJavaClass(CommonClass* cl, JavaJIT* jit) {
   } else {
     varGV = I->second;
   }
-  return new LoadInst(varGV, "", jit->currentBlock);
+  return varGV;
 }
 
-Value* JnjvmModule::getStaticInstance(Class* classDef, JavaJIT* jit) {
+Value* JnjvmModule::getStaticInstance(Class* classDef) {
   llvm::GlobalVariable* varGV = 0;
   static_instance_iterator End = staticInstances.end();
   static_instance_iterator I = staticInstances.find(classDef);
@@ -156,7 +175,7 @@ Value* JnjvmModule::getStaticInstance(Class* classDef, JavaJIT* jit) {
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                                 uint64_t (obj)), JnjvmModule::JavaObjectType);
       
-    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, true,
+    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
 
@@ -165,10 +184,10 @@ Value* JnjvmModule::getStaticInstance(Class* classDef, JavaJIT* jit) {
     varGV = I->second;
   }
 
-  return new LoadInst(varGV, "", jit->currentBlock);
+  return varGV;
 }
 
-Value* JnjvmModule::getVirtualTable(CommonClass* classDef, JavaJIT* jit) {
+Value* JnjvmModule::getVirtualTable(CommonClass* classDef) {
   llvm::GlobalVariable* varGV = 0;
   virtual_table_iterator End = virtualTables.end();
   virtual_table_iterator I = virtualTables.find(classDef);
@@ -181,7 +200,7 @@ Value* JnjvmModule::getVirtualTable(CommonClass* classDef, JavaJIT* jit) {
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                                                  uint64_t(classDef->virtualVT)),
                                 JnjvmModule::VTType);
-    varGV = new GlobalVariable(JnjvmModule::VTType, true,
+    varGV = new GlobalVariable(JnjvmModule::VTType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
     
@@ -189,17 +208,41 @@ Value* JnjvmModule::getVirtualTable(CommonClass* classDef, JavaJIT* jit) {
   } else {
     varGV = I->second;
   }
-  return new LoadInst(varGV, "", jit->currentBlock);
+  return varGV;
+}
+
+Value* JnjvmModule::getNativeFunction(JavaMethod* meth, void* ptr) {
+  llvm::GlobalVariable* varGV = 0;
+  native_function_iterator End = nativeFunctions.end();
+  native_function_iterator I = nativeFunctions.find(meth);
+  if (I == End) {
+    
+      
+    LLVMSignatureInfo* LSI = getSignatureInfo(meth->getSignature());
+    const llvm::Type* valPtrType = LSI->getNativePtrType();
+
+    Constant* cons = 
+      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t(ptr)),
+                                valPtrType);
+
+    varGV = new GlobalVariable(valPtrType, !staticCompilation,
+                               GlobalValue::ExternalLinkage,
+                               cons, "", this);
+    
+    nativeFunctions.insert(std::make_pair(meth, varGV));
+  } else {
+    varGV = I->second;
+  }
+  return varGV;
 }
 
 #ifndef WITHOUT_VTABLE
 VirtualTable* JnjvmModule::allocateVT(Class* cl,
-                                      CommonClass::method_iterator meths) {
-  if (meths == cl->virtualMethods.end()) {
+                                      uint32 index) {
+  if (index == cl->nbVirtualMethods) {
     uint64 size = cl->virtualTableSize;
     mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
     VirtualTable* VT = (VirtualTable*)allocator.Allocate(size * sizeof(void*));
-    if (!VT) JavaThread::get()->isolate->outOfMemoryError(size * sizeof(void*));
     if (cl->super) {
       Class* super = (Class*)cl->super;
       assert(cl->virtualTableSize >= cl->super->virtualTableSize &&
@@ -211,14 +254,14 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
     }
     return VT;
   } else {
-    JavaMethod* meth = meths->second;
+    JavaMethod& meth = cl->virtualMethods[index];
     VirtualTable* VT = 0;
-    if (meth->name->equals(Jnjvm::finalize)) {
-      VT = allocateVT(cl, ++meths);
+    if (meth.name->equals(cl->classLoader->bootstrapLoader->finalize)) {
+      VT = allocateVT(cl, ++index);
 #ifndef ISOLATE_SHARING
-      meth->offset = 0;
-      Function* func = cl->classLoader->TheModuleProvider->parseFunction(meth);
-      if (!cl->super) meth->canBeInlined = true;
+      meth.offset = 0;
+      Function* func = cl->classLoader->TheModuleProvider->parseFunction(&meth);
+      if (!cl->super) meth.canBeInlined = true;
       Function::iterator BB = func->begin();
       BasicBlock::iterator I = BB->begin();
       if (isa<ReturnInst>(I)) {
@@ -226,30 +269,37 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
       } else {
         ExecutionEngine* EE = mvm::MvmModule::executionEngine;
         // LLVM does not allow recursive compilation. Create the code now.
-        ((void**)VT)[0] = EE->getPointerToFunction(func);
+        if (staticCompilation) {
+          ((void**)VT)[0] = func;
+        } else {
+          ((void**)VT)[0] = EE->getPointerToFunction(func);
+        }
       }
 #endif
     } else {
     
-      Class* methodCl = 0;
       JavaMethod* parent = cl->super? 
-        cl->super->lookupMethodDontThrow(meth->name, meth->type, false, true,
-                                         methodCl) :
+        cl->super->lookupMethodDontThrow(meth.name, meth.type, false, true,
+                                         0) :
         0;
 
       uint64_t offset = 0;
       if (!parent) {
         offset = cl->virtualTableSize++;
-        meth->offset = offset;
+        meth.offset = offset;
       } else {
         offset = parent->offset;
-        meth->offset = parent->offset;
+        meth.offset = parent->offset;
       }
-      VT = allocateVT(cl, ++meths);
-      LLVMMethodInfo* LMI = getMethodInfo(meth);
+      VT = allocateVT(cl, ++index);
+      LLVMMethodInfo* LMI = getMethodInfo(&meth);
       Function* func = LMI->getMethod();
       ExecutionEngine* EE = mvm::MvmModule::executionEngine;
-      ((void**)VT)[offset] = EE->getPointerToFunctionOrStub(func);
+      if (staticCompilation) {
+        ((void**)VT)[offset] = func;
+      } else {
+        ((void**)VT)[offset] = EE->getPointerToFunctionOrStub(func);
+      }
     }
 
     return VT;
@@ -258,46 +308,20 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
 #endif
 
 
-VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
+llvm::Function* JnjvmModule::makeTracer(Class* cl, bool stat) {
   
-  VirtualTable* res = 0;
-#ifndef WITHOUT_VTABLE
-  if (stat) {
-#endif
-    mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-    res = (VirtualTable*)allocator.Allocate(VT_SIZE);
-    memcpy(res, JavaObject::VT, VT_SIZE);
-#ifndef WITHOUT_VTABLE
-  } else {
-    if (cl->super) {
-      cl->virtualTableSize = cl->super->virtualTableSize;
-    } else {
-      cl->virtualTableSize = VT_NB_FUNCS;
-    }
-    res = allocateVT(cl, cl->virtualMethods.begin());
-  
-    if (!(cl->super)) {
-      uint32 size =  (cl->virtualTableSize - VT_NB_FUNCS) * sizeof(void*);
-#define COPY(CLASS) \
-    memcpy((void*)((unsigned)CLASS::VT + VT_SIZE), \
-           (void*)((unsigned)res + VT_SIZE), size);
-
-      COPY(JavaArray)
-      COPY(JavaObject)
-      COPY(ArrayObject)
-
-#undef COPY
-    }
-  }
-#endif
-  
-
-
-#ifdef WITH_TRACER
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   const Type* type = stat ? LCI->getStaticType() : LCI->getVirtualType();
-  CommonClass::field_map& fields = stat ? cl->staticFields : cl->virtualFields;
- 
+  JavaField* fields = 0;
+  uint32 nbFields = 0;
+  if (stat) {
+    fields = cl->getStaticFields();
+    nbFields = cl->nbStaticFields;
+  } else {
+    fields = cl->getVirtualFields();
+    nbFields = cl->nbVirtualFields;
+  }
+  
   Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
                                     GlobalValue::ExternalLinkage,
                                     "markAndTraceObject",
@@ -329,10 +353,10 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
   }
 #endif
   
-  for (CommonClass::field_iterator i = fields.begin(), e = fields.end();
-       i!= e; ++i) {
-    if (i->second->getSignature()->trace()) {
-      LLVMFieldInfo* LFI = getFieldInfo(i->second);
+  for (uint32 i = 0; i < nbFields; ++i) {
+    JavaField& cur = fields[i];
+    if (cur.getSignature()->trace()) {
+      LLVMFieldInfo* LFI = getFieldInfo(&cur);
       std::vector<Value*> args; //size = 2
       args.push_back(zero);
       args.push_back(LFI->getOffset());
@@ -354,17 +378,61 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
   }
 
   ReturnInst::Create(block);
-
-  void* codePtr = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
-  ((void**)res)[VT_TRACER_OFFSET] = codePtr;
   
-  func->deleteBody();
-
   if (!stat) {
     LCI->virtualTracerFunction = func;
   } else {
     LCI->staticTracerFunction = func;
   }
+
+  return func;
+}
+
+VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
+  
+  VirtualTable* res = 0;
+#ifndef WITHOUT_VTABLE
+  if (stat) {
+#endif
+    mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
+    res = (VirtualTable*)allocator.Allocate(VT_SIZE);
+    memcpy(res, JavaObject::VT, VT_SIZE);
+#ifndef WITHOUT_VTABLE
+  } else {
+    if (cl->super) {
+      cl->virtualTableSize = cl->super->virtualTableSize;
+    } else {
+      cl->virtualTableSize = VT_NB_FUNCS;
+    }
+    res = allocateVT(cl, 0);
+  
+    if (!(cl->super)) {
+      uint32 size =  (cl->virtualTableSize - VT_NB_FUNCS) * sizeof(void*);
+#define COPY(CLASS) \
+    memcpy((void*)((unsigned)CLASS::VT + VT_SIZE), \
+           (void*)((unsigned)res + VT_SIZE), size);
+
+      COPY(JavaArray)
+      COPY(JavaObject)
+      COPY(ArrayObject)
+
+#undef COPY
+    }
+  }
+#endif
+  
+#ifdef WITH_TRACER
+  llvm::Function* func = makeTracer(cl, stat);
+  
+  if (staticCompilation) {
+    ((void**)res)[VT_TRACER_OFFSET] = func;
+  } else {
+    void* codePtr = mvm::MvmModule::executionEngine->getPointerToFunction(func);
+    ((void**)res)[VT_TRACER_OFFSET] = codePtr;
+    func->deleteBody();
+  }
+  
+
 #endif
   return res;
 }
@@ -373,8 +441,6 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
 const Type* LLVMClassInfo::getVirtualType() {
   if (!virtualType) {
     std::vector<const llvm::Type*> fields;
-    JavaField** array = 
-      (JavaField**)alloca(sizeof(JavaField*) * classDef->virtualFields.size());
     
     if (classDef->super) {
       LLVMClassInfo* CLI = 
@@ -384,18 +450,14 @@ const Type* LLVMClassInfo::getVirtualType() {
       fields.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
     }
     
-    for (CommonClass::field_iterator i = classDef->virtualFields.begin(),
-         e = classDef->virtualFields.end(); i!= e; ++i) {
-      JavaField* field = i->second;
-      array[field->num] = field;
-    }
-    
-    
-    for (uint32 index = 0; index < classDef->virtualFields.size(); ++index) {
-      Typedef* type = array[index]->getSignature();
+    for (uint32 i = 0; i < classDef->nbVirtualFields; ++i) {
+      JavaField& field = classDef->virtualFields[i];
+      field.num = i;
+      Typedef* type = field.getSignature();
       LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(type);
       fields.push_back(LAI.llvmType);
     }
+    
     
     StructType* structType = StructType::get(fields, false);
     virtualType = PointerType::getUnqual(structType);
@@ -403,19 +465,20 @@ const Type* LLVMClassInfo::getVirtualType() {
     const TargetData* targetData = engine->getTargetData();
     const StructLayout* sl = targetData->getStructLayout(structType);
     
-    for (CommonClass::field_iterator i = classDef->virtualFields.begin(),
-         e = classDef->virtualFields.end(); i!= e; ++i) {
-      JavaField* field = i->second;
-      field->ptrOffset = sl->getElementOffset(field->num + 1);
+    for (uint32 i = 0; i < classDef->nbVirtualFields; ++i) {
+      JavaField& field = classDef->virtualFields[i];
+      field.ptrOffset = sl->getElementOffset(i + 1);
     }
     
-    JnjvmModule* Mod = classDef->classLoader->TheModule;
-    VirtualTable* VT = Mod->makeVT((Class*)classDef, false);
-  
     uint64 size = mvm::MvmModule::getTypeSize(structType);
     classDef->virtualSize = (uint32)size;
-    classDef->virtualVT = VT;
     virtualSizeConstant = ConstantInt::get(Type::Int32Ty, size);
+    
+    JnjvmModule* Mod = classDef->classLoader->getModule();
+    if (!Mod->isStaticCompiling()) {
+      classDef->virtualVT = Mod->makeVT((Class*)classDef, false);
+    }
+  
 
   }
 
@@ -427,19 +490,12 @@ const Type* LLVMClassInfo::getStaticType() {
   if (!staticType) {
     Class* cl = (Class*)classDef;
     std::vector<const llvm::Type*> fields;
-    JavaField** array = (JavaField**)
-      alloca(sizeof(JavaField*) * (classDef->staticFields.size() + 1));
     fields.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
 
-    for (CommonClass::field_iterator i = classDef->staticFields.begin(),
-         e = classDef->staticFields.end(); i!= e; ++i) {
-      JavaField* field = i->second;
-      array[field->num] = field;
-    }
-
-    for (uint32 index = 0; index < classDef->staticFields.size(); ++index) {
-      JavaField* field = array[index];
-      Typedef* type = field->getSignature();
+    for (uint32 i = 0; i < classDef->nbStaticFields; ++i) {
+      JavaField& field = classDef->staticFields[i];
+      field.num = i;
+      Typedef* type = field.getSignature();
       LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(type);
       fields.push_back(LAI.llvmType);
     }
@@ -450,25 +506,24 @@ const Type* LLVMClassInfo::getStaticType() {
     const TargetData* targetData = engine->getTargetData();
     const StructLayout* sl = targetData->getStructLayout(structType);
     
-    for (CommonClass::field_iterator i = classDef->staticFields.begin(),
-         e = classDef->staticFields.end(); i!= e; ++i) {
-      JavaField* field = i->second;
-      field->ptrOffset = sl->getElementOffset(field->num + 1);
+    for (uint32 i = 0; i < classDef->nbStaticFields; ++i) {
+      JavaField& field = classDef->staticFields[i];
+      field.ptrOffset = sl->getElementOffset(i + 1);
     }
     
-
-    JnjvmModule* Mod = cl->classLoader->TheModule;
-    VirtualTable* VT = Mod->makeVT((Class*)classDef, true);
-
     uint64 size = mvm::MvmModule::getTypeSize(structType);
     cl->staticSize = size;
-    cl->staticVT = VT;
+    
+    JnjvmModule* Mod = cl->classLoader->getModule();
+    if (!Mod->isStaticCompiling()) {
+      cl->staticVT = Mod->makeVT((Class*)classDef, true);
+    }
   }
   return staticType;
 }
 
 
-Value* LLVMClassInfo::getVirtualSize(JavaJIT* jit) {
+Value* LLVMClassInfo::getVirtualSize() {
   if (!virtualSizeConstant) {
     getVirtualType();
     virtualSizeConstant = 
@@ -854,9 +909,9 @@ namespace jnjvm {
 Module* JnjvmModule::initialModule;
 
 void JnjvmModule::initialise() {
-  initialModule = new Module("Initial jnjvm module");
-  jnjvm::llvm_runtime::makeLLVMModuleContents(initialModule);
-  Module* module = initialModule;
+  jnjvm::llvm_runtime::makeLLVMModuleContents(this);
+  Module* module = this;
+  initialModule = this;
 
   VTType = module->getTypeByName("VT");
 
@@ -924,48 +979,10 @@ void JnjvmModule::initialise() {
   OffsetDepthInClassConstant = mvm::MvmModule::constantFour;
   OffsetStatusInClassConstant = mvm::MvmModule::constantFive;
   OffsetCtpInClassConstant = mvm::MvmModule::constantSix;
+  
+  ClassReadyConstant = ConstantInt::get(Type::Int32Ty, clinitParent);
 
   LLVMAssessorInfo::initialise();
-}
-
-void JnjvmModule::InitField(JavaField* field, JavaObject* obj, uint64 val) {
-  
-  Typedef* type = field->getSignature();
-  if (!type->isPrimitive()) {
-    ((sint32*)((uint64)obj + field->ptrOffset))[0] = (sint32)val;
-    return;
-  }
-
-  PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
-  if (prim->isLong()) {
-    ((sint64*)((uint64)obj + field->ptrOffset))[0] = val;
-  } else if (prim->isInt()) {
-    ((sint32*)((uint64)obj + field->ptrOffset))[0] = (sint32)val;
-  } else if (prim->isChar()) {
-    ((uint16*)((uint64)obj + field->ptrOffset))[0] = (uint16)val;
-  } else if (prim->isShort()) {
-    ((sint16*)((uint64)obj + field->ptrOffset))[0] = (sint16)val;
-  } else if (prim->isByte()) {
-    ((sint8*)((uint64)obj + field->ptrOffset))[0] = (sint8)val;
-  } else if (prim->isBool()) {
-    ((uint8*)((uint64)obj + field->ptrOffset))[0] = (uint8)val;
-  } else {
-    // 0 value for everything else
-    ((sint32*)((uint64)obj + field->ptrOffset))[0] = (sint32)val;
-  }
-}
-
-void 
-JnjvmModule::InitField(JavaField* field, JavaObject* obj, JavaObject* val) {
-  ((JavaObject**)((uint64)obj + field->ptrOffset))[0] = val;
-}
-
-void JnjvmModule::InitField(JavaField* field, JavaObject* obj, double val) {
-  ((double*)((uint64)obj + field->ptrOffset))[0] = val;
-}
-
-void JnjvmModule::InitField(JavaField* field, JavaObject* obj, float val) {
-  ((float*)((uint64)obj + field->ptrOffset))[0] = val;
 }
 
 void JnjvmModule::setMethod(JavaMethod* meth, const char* name) {
@@ -978,11 +995,15 @@ void* JnjvmModule::getMethod(JavaMethod* meth) {
   return getMethodInfo(meth)->getMethod();
 }
 
-JnjvmModule::JnjvmModule(const std::string &ModuleID) : MvmModule(ModuleID) {
+JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) : 
+  MvmModule(ModuleID) {
+  
   std::string str = 
     mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
   setDataLayout(str);
-  
+  staticCompilation = sc;
+  if (!VTType) initialise();
+
   Module* module = initialModule;
    
   InterfaceLookupFunction = module->getFunction("jnjvmVirtualLookup");
@@ -990,6 +1011,7 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID) : MvmModule(ModuleID) {
   InitialisationCheckFunction = module->getFunction("initialisationCheck");
   ForceInitialisationCheckFunction = 
     module->getFunction("forceInitialisationCheck");
+  InitialiseClassFunction = module->getFunction("jnjvmRuntimeInitialiseClass");
   
   GetConstantPoolAtFunction = module->getFunction("getConstantPoolAt");
   ArrayLengthFunction = module->getFunction("arrayLength");

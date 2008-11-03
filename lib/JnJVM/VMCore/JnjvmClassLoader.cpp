@@ -7,9 +7,17 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <dlfcn.h>
 #include <limits.h>
 #include <unistd.h>
 #include <sys/stat.h>
+
+
+#if defined(__MACH__)
+#define SELF_HANDLE RTLD_DEFAULT
+#else
+#define SELF_HANDLE 0
+#endif
 
 #include "debug.h"
 
@@ -29,21 +37,14 @@
 
 using namespace jnjvm;
 
-#ifndef ISOLATE_SHARING
-JnjvmBootstrapLoader* JnjvmClassLoader::bootstrapLoader = 0;
-UserClass* JnjvmBootstrapLoader::SuperArray = 0;
-std::vector<UserClass*> JnjvmBootstrapLoader::InterfacesArray;
-#endif
-
-
 extern const char* GNUClasspathGlibj;
 extern const char* GNUClasspathLibs;
 
-JnjvmBootstrapLoader::JnjvmBootstrapLoader(uint32 memLimit) {
+JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   
-  JnjvmModule::initialise(); 
   TheModule = new JnjvmModule("Bootstrap JnJVM");
-  TheModuleProvider = new JnjvmModuleProvider(TheModule);
+  TheModuleProvider = new JnjvmModuleProvider(getModule());
+  getModule()->setIsStaticCompiling(staticCompilation);
   
   hashUTF8 = new(allocator) UTF8Map(allocator, 0);
   classes = new(allocator) ClassMap();
@@ -64,12 +65,166 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(uint32 memLimit) {
   
   upcalls = new(allocator) Classpath();
   bootstrapLoader = this;
+
+
+  // Create the name of char arrays.
+  const UTF8* utf8OfChar = asciizConstructUTF8("[C");
+
+  // Create the base class of char arrays.
+  upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(this, "char", 2);
+  
+  // Create the char array.
+  upcalls->ArrayOfChar = constructArray(utf8OfChar, upcalls->OfChar);
+
+  // Alright, now we can repair the damage: set the class to the UTF8s created
+  // and set the array class of UTF8s.
+  ((UTF8*)utf8OfChar)->classOf = upcalls->ArrayOfChar;
+  ((UTF8*)upcalls->OfChar->name)->classOf = upcalls->ArrayOfChar;
+  hashUTF8->array = upcalls->ArrayOfChar;
+ 
+  // Create the byte array, so that bytes for classes can be created.
+  upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(this, "byte", 1);
+  upcalls->ArrayOfByte = constructArray(asciizConstructUTF8("[B"),
+                                        upcalls->OfByte);
+
+  InterfacesArray = 
+    (Class**)allocator.Allocate(2 * sizeof(UserClass*));
+
+  // Now we can create the super and interfaces of arrays.
+  InterfacesArray[0] = loadName(asciizConstructUTF8("java/lang/Cloneable"),
+                                false, false);
+  
+  InterfacesArray[1] = loadName(asciizConstructUTF8("java/io/Serializable"),
+                                false, false);
+  
+  SuperArray = loadName(asciizConstructUTF8("java/lang/Object"), false,
+                        false);
+   
+  ClassArray::SuperArray = SuperArray->getInternal();
+  ClassArray::InterfacesArray = 
+    (Class**)allocator.Allocate(2 * sizeof(UserClass*));
+  ClassArray::InterfacesArray[0] = (Class*)InterfacesArray[0]->getInternal();
+  ClassArray::InterfacesArray[1] = (Class*)(InterfacesArray[1]->getInternal());
+  
+  // And repair the damage: set the interfaces and super of array classes already
+  // created.
+  upcalls->ArrayOfChar->setInterfaces(InterfacesArray);
+  upcalls->ArrayOfChar->setSuper(SuperArray);
+  upcalls->ArrayOfByte->setInterfaces(InterfacesArray);
+  upcalls->ArrayOfByte->setSuper(SuperArray);
+  
+  // Yay, create the other primitive types.
+  upcalls->OfBool = UPCALL_PRIMITIVE_CLASS(this, "boolean", 1);
+  upcalls->OfShort = UPCALL_PRIMITIVE_CLASS(this, "short", 2);
+  upcalls->OfInt = UPCALL_PRIMITIVE_CLASS(this, "int", 4);
+  upcalls->OfLong = UPCALL_PRIMITIVE_CLASS(this, "long", 8);
+  upcalls->OfFloat = UPCALL_PRIMITIVE_CLASS(this, "float", 4);
+  upcalls->OfDouble = UPCALL_PRIMITIVE_CLASS(this, "double", 8);
+  upcalls->OfVoid = UPCALL_PRIMITIVE_CLASS(this, "void", 0);
+  
+  // And finally create the primitive arrays.
+  upcalls->ArrayOfInt = constructArray(asciizConstructUTF8("[I"),
+                                       upcalls->OfInt);
+  
+  upcalls->ArrayOfBool = constructArray(asciizConstructUTF8("[Z"),
+                                        upcalls->OfBool);
+  
+  upcalls->ArrayOfLong = constructArray(asciizConstructUTF8("[J"),
+                                        upcalls->OfLong);
+  
+  upcalls->ArrayOfFloat = constructArray(asciizConstructUTF8("[F"),
+                                         upcalls->OfFloat);
+  
+  upcalls->ArrayOfDouble = constructArray(asciizConstructUTF8("[D"),
+                                          upcalls->OfDouble);
+  
+  upcalls->ArrayOfShort = constructArray(asciizConstructUTF8("[S"),
+                                         upcalls->OfShort);
+  
+  upcalls->ArrayOfString = 
+    constructArray(asciizConstructUTF8("[Ljava/lang/String;"));
+  
+  upcalls->ArrayOfObject = 
+    constructArray(asciizConstructUTF8("[Ljava/lang/Object;"));
+  
+  
+  Attribut::codeAttribut = asciizConstructUTF8("Code");
+  Attribut::exceptionsAttribut = asciizConstructUTF8("Exceptions");
+  Attribut::constantAttribut = asciizConstructUTF8("ConstantValue");
+  Attribut::lineNumberTableAttribut = asciizConstructUTF8("LineNumberTable");
+  Attribut::innerClassesAttribut = asciizConstructUTF8("InnerClasses");
+  Attribut::sourceFileAttribut = asciizConstructUTF8("SourceFile");
+  
+  initName = asciizConstructUTF8("<init>");
+  clinitName = asciizConstructUTF8("<clinit>");
+  clinitType = asciizConstructUTF8("()V");
+  runName = asciizConstructUTF8("run");
+  prelib = asciizConstructUTF8("lib");
+#if defined(__MACH__)
+  postlib = asciizConstructUTF8(".dylib");
+#else 
+  postlib = asciizConstructUTF8(".so");
+#endif
+  mathName = asciizConstructUTF8("java/lang/Math");
+  stackWalkerName = asciizConstructUTF8("gnu/classpath/VMStackWalker");
+  NoClassDefFoundError = asciizConstructUTF8("java/lang/NoClassDefFoundError");
+
+#define DEF_UTF8(var) \
+  var = asciizConstructUTF8(#var)
+  
+  DEF_UTF8(abs);
+  DEF_UTF8(sqrt);
+  DEF_UTF8(sin);
+  DEF_UTF8(cos);
+  DEF_UTF8(tan);
+  DEF_UTF8(asin);
+  DEF_UTF8(acos);
+  DEF_UTF8(atan);
+  DEF_UTF8(atan2);
+  DEF_UTF8(exp);
+  DEF_UTF8(log);
+  DEF_UTF8(pow);
+  DEF_UTF8(ceil);
+  DEF_UTF8(floor);
+  DEF_UTF8(rint);
+  DEF_UTF8(cbrt);
+  DEF_UTF8(cosh);
+  DEF_UTF8(expm1);
+  DEF_UTF8(hypot);
+  DEF_UTF8(log10);
+  DEF_UTF8(log1p);
+  DEF_UTF8(sinh);
+  DEF_UTF8(tanh);
+  DEF_UTF8(finalize);
+
+#undef DEF_UTF8
+  
+  primitiveMap[I_VOID] = upcalls->OfVoid;
+  primitiveMap[I_BOOL] = upcalls->OfBool;
+  primitiveMap[I_BYTE] = upcalls->OfByte;
+  primitiveMap[I_CHAR] = upcalls->OfChar;
+  primitiveMap[I_SHORT] = upcalls->OfShort;
+  primitiveMap[I_INT] = upcalls->OfInt;
+  primitiveMap[I_FLOAT] = upcalls->OfFloat;
+  primitiveMap[I_LONG] = upcalls->OfLong;
+  primitiveMap[I_DOUBLE] = upcalls->OfDouble;
+
+  arrayTable[JavaArray::T_BOOLEAN - 4] = upcalls->ArrayOfBool;
+  arrayTable[JavaArray::T_BYTE - 4] = upcalls->ArrayOfByte;
+  arrayTable[JavaArray::T_CHAR - 4] = upcalls->ArrayOfChar;
+  arrayTable[JavaArray::T_SHORT - 4] = upcalls->ArrayOfShort;
+  arrayTable[JavaArray::T_INT - 4] = upcalls->ArrayOfInt;
+  arrayTable[JavaArray::T_FLOAT - 4] = upcalls->ArrayOfFloat;
+  arrayTable[JavaArray::T_LONG - 4] = upcalls->ArrayOfLong;
+  arrayTable[JavaArray::T_DOUBLE - 4] = upcalls->ArrayOfDouble;
+
+  upcalls->initialiseClasspath(this); 
 }
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
                                    Jnjvm* I) {
   TheModule = new JnjvmModule("Applicative loader");
-  TheModuleProvider = new JnjvmModuleProvider(TheModule);
+  TheModuleProvider = new JnjvmModuleProvider(getModule());
   bootstrapLoader = JCL.bootstrapLoader;
   
   hashUTF8 = new(allocator) UTF8Map(allocator,
@@ -81,12 +236,10 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   javaLoader = loader;
   isolate = I;
 
-#ifdef ISOLATE_SHARING
   JavaMethod* meth = bootstrapLoader->upcalls->loadInClassLoader;
   loader->classOf->lookupMethodDontThrow(meth->name, meth->type, false, true,
-                                         loadClass);
+                                         &loadClass);
   assert(loadClass && "Loader does not have a loadClass function");
-#endif
 
 }
 
@@ -142,12 +295,7 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name) {
     const UTF8* javaName = name->internalToJava(isolate, 0, name->size);
     JavaString* str = isolate->UTF8ToStr(javaName);
     Classpath* upcalls = bootstrapLoader->upcalls;
-    UserClass* forCtp = 0;
-#ifdef ISOLATE_SHARING
-    forCtp = loadClass;
-#else
-    forCtp = upcalls->loadInClassLoader->classDef;
-#endif
+    UserClass* forCtp = loadClass;
     JavaObject* obj = (JavaObject*)
       upcalls->loadInClassLoader->invokeJavaObjectVirtual(isolate, forCtp,
                                                           javaLoader, str);
@@ -166,10 +314,10 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
 
   if (!cl && doThrow) {
     Jnjvm* vm = JavaThread::get()->isolate;
-    if (!(name->equals(Jnjvm::NoClassDefFoundError))) {
+    if (name->equals(bootstrapLoader->NoClassDefFoundError)) {
       vm->unknownError("Unable to load NoClassDefFoundError");
     }
-    vm->noClassDefFoundError("unable to load %s", name->printString());
+    vm->noClassDefFoundError(name);
   }
 
   if (cl && doResolve) cl->resolveClass();
@@ -342,10 +490,10 @@ Typedef* JnjvmClassLoader::internalConstructType(const UTF8* name) {
       break;
     default :
       UserClassPrimitive* cl = 
-        isolate->getPrimitiveClass((char)name->elements[0]);
+        bootstrapLoader->getPrimitiveClass((char)name->elements[0]);
       assert(cl && "No primitive");
-      bool unsign = (cl == isolate->upcalls->OfChar || 
-                     cl == isolate->upcalls->OfBool);
+      bool unsign = (cl == bootstrapLoader->upcalls->OfChar || 
+                     cl == bootstrapLoader->upcalls->OfBool);
       res = new(allocator) PrimitiveTypedef(name, cl, unsign, cur);
   }
   return res;
@@ -514,4 +662,23 @@ const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
   }
 
   return readerConstructUTF8(buf, n);
+}
+
+void* JnjvmClassLoader::loadLib(const char* buf, bool& jnjvm) {
+  void* res = dlsym(SELF_HANDLE, buf);
+  
+  if (!res) {
+    for (std::vector<void*>::iterator i = nativeLibs.begin(),
+              e = nativeLibs.end(); i!= e; ++i) {
+      res = dlsym((*i), buf);
+      if (res) break;
+    }
+  } else {
+    jnjvm = true;
+  }
+  
+  if (!res && this != bootstrapLoader)
+    res = bootstrapLoader->loadLib(buf, jnjvm);
+
+  return res;
 }

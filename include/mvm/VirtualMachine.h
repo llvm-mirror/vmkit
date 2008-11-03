@@ -15,6 +15,7 @@
 #ifndef MVM_VIRTUALMACHINE_H
 #define MVM_VIRTUALMACHINE_H
 
+#include "mvm/CompilationUnit.h"
 #include "mvm/Object.h"
 
 namespace mvm {
@@ -29,12 +30,16 @@ public:
   /// runApplication - Run an application. The application name is in
   /// the arguments, hence it is the virtual machine's job to parse them.
   virtual void runApplication(int argc, char** argv) = 0;
-
-  static void initialiseJVM();
-  static VirtualMachine* createJVM();
   
-  static void initialiseCLIVM();
-  static VirtualMachine* createCLIVM();
+  /// compile - Compile a given file to LLVM.
+  virtual void compile(const char* name) = 0;
+  
+
+  static CompilationUnit* initialiseJVM(bool staticCompilation = false);
+  static VirtualMachine* createJVM(CompilationUnit* C = 0);
+  
+  static CompilationUnit* initialiseCLIVM();
+  static VirtualMachine* createCLIVM(CompilationUnit* C = 0);
   
 };
 

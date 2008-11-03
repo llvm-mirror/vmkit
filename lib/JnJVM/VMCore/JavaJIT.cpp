@@ -50,6 +50,12 @@
 using namespace jnjvm;
 using namespace llvm;
 
+bool JavaJIT::canBeInlined(JavaMethod* meth) {
+  return (meth->canBeInlined &&
+          meth != compilingMethod && inlineMethods[meth] == 0 &&
+          meth->classDef->classLoader == compilingClass->classLoader);
+}
+
 void JavaJIT::invokeVirtual(uint16 index) {
   
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
@@ -70,9 +76,33 @@ void JavaJIT::invokeVirtual(uint16 index) {
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   FunctionType::param_iterator it  = virtualType->param_end();
   makeArgs(it, index, args, signature->args.size() + 1);
-
-
+  const llvm::Type* retType = virtualType->getReturnType();
+  
   JITVerifyNull(args[0]); 
+  BasicBlock* endBlock = 0;
+  PHINode* node = 0;
+  if (meth && !isAbstract(meth->access) && canBeInlined(meth)) {
+    Value* cl = CallInst::Create(module->GetClassFunction, args[0], "",
+                                  currentBlock);
+    Value* cl2 = module->getNativeClass((Class*)cl);
+    cl2 = new LoadInst(cl2, "", currentBlock);
+
+    Value* test = new ICmpInst(ICmpInst::ICMP_EQ, cl, cl2, "", currentBlock);
+
+    BasicBlock* trueBlock = createBasicBlock("true virtual invoke");
+    BasicBlock* falseBlock = createBasicBlock("false virtual invoke");
+    endBlock = createBasicBlock("end virtual invoke");
+    BranchInst::Create(trueBlock, falseBlock, test, currentBlock);
+    currentBlock = trueBlock;
+    Value* res = invokeInline(meth, args);
+    BranchInst::Create(endBlock, currentBlock);
+    if (retType != Type::VoidTy) {
+      node = PHINode::Create(virtualType->getReturnType(), "", endBlock);
+      node->addIncoming(res, currentBlock);
+    }
+    currentBlock = falseBlock;
+  }
+
 
   Value* VT = CallInst::Create(module->GetVTFunction, args[0], "",
                                currentBlock);
@@ -94,7 +124,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
                                    Type::Int32Ty, args[0], true);
     indexes2.push_back(val);
 #ifdef ISOLATE_SHARING
-    Value* mul = BinaryOperator::createMul(val, module->constantMinusOne,
+    Value* mul = BinaryOperator::CreateMul(val, module->constantMinusOne,
                                            "", currentBlock);
     indexesCtp.push_back(mul);
 #endif
@@ -117,7 +147,15 @@ void JavaJIT::invokeVirtual(uint16 index) {
 #endif
   Value* val = invoke(Func, args, "", currentBlock);
   
-  const llvm::Type* retType = virtualType->getReturnType();
+  if (endBlock) {
+    if (node) {
+      node->addIncoming(val, currentBlock);
+      val = node;
+    }
+    BranchInst::Create(endBlock, currentBlock);
+    currentBlock = endBlock;
+  }
+
   if (retType != Type::VoidTy) {
     push(val, retTypedef->isUnsigned());
     if (retType == Type::DoubleTy || retType == Type::Int64Ty) {
@@ -143,11 +181,19 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   natPtr = natPtr ? natPtr :
               NativeUtil::nativeLookup(compilingClass, compilingMethod, jnjvm);
   
+  if (!natPtr && !module->isStaticCompiling()) {
+    fprintf(stderr, "Native function %s not found. Probably "
+               "not implemented by JnJVM?\n", compilingMethod->printString());
+    JavaJIT::printBacktrace();
+    JavaThread::get()->isolate->unknownError("can not find native method %s",
+                                             compilingMethod->printString());
+  }
   
   
   Function* func = llvmFunction;
   if (jnjvm) {
-    module->executionEngine->addGlobalMapping(func, natPtr);
+    if (!module->isStaticCompiling())
+      module->executionEngine->addGlobalMapping(func, natPtr);
     return llvmFunction;
   }
   
@@ -230,7 +276,9 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
                                   val, "", currentBlock);
     nativeArgs.push_back(res);
 #else
-    nativeArgs.push_back(module->getJavaClass(compilingClass, this));
+    Value* cl = module->getJavaClass(compilingClass);
+    cl= new LoadInst(cl, "", currentBlock);
+    nativeArgs.push_back(cl);
 #endif
     index = 2;
   } else {
@@ -242,15 +290,10 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
     nativeArgs.push_back(i);
   }
   
-  
-  LLVMSignatureInfo* LSI = 
-    module->getSignatureInfo(compilingMethod->getSignature());
-  const llvm::Type* valPtrType = LSI->getNativePtrType();
-  Value* valPtr = 
-    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, (uint64)natPtr),
-                              valPtrType);
+  Value* nativeFunc = module->getNativeFunction(compilingMethod, natPtr);
+  nativeFunc = new LoadInst(nativeFunc, "", currentBlock);
 
-  Value* result = llvm::CallInst::Create(valPtr, nativeArgs.begin(),
+  Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs.begin(),
                                          nativeArgs.end(), "", currentBlock);
 
   if (returnType != Type::VoidTy)
@@ -309,7 +352,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   
   // The compare and swap did not pass, look if it's a thin lock
   Value* thinMask = ConstantInt::get(Type::Int32Ty, 0x80000000);
-  Value* isThin = BinaryOperator::createAnd(atomic, thinMask, "",
+  Value* isThin = BinaryOperator::CreateAnd(atomic, thinMask, "",
                                             currentBlock);
   cmp = new ICmpInst(ICmpInst::ICMP_EQ, isThin, module->constantZero, "",
                      currentBlock);
@@ -320,7 +363,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   currentBlock = ThinLockBB;
   Value* idMask = ConstantInt::get(Type::Int32Ty, 0x7FFFFF00);
   Value* cptMask = ConstantInt::get(Type::Int32Ty, 0xFF);
-  Value* IdInLock = BinaryOperator::createAnd(atomic, idMask, "", currentBlock);
+  Value* IdInLock = BinaryOperator::CreateAnd(atomic, idMask, "", currentBlock);
   Value* owner = new ICmpInst(ICmpInst::ICMP_EQ, threadId, IdInLock, "",
                               currentBlock);
 
@@ -330,7 +373,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   currentBlock = OwnerBB;
 
   // OK, we are the owner, now check if the counter will overflow.
-  Value* count = BinaryOperator::createAnd(atomic, cptMask, "", currentBlock);
+  Value* count = BinaryOperator::CreateAnd(atomic, cptMask, "", currentBlock);
   cmp = new ICmpInst(ICmpInst::ICMP_ULT, count, cptMask, "", currentBlock);
 
   BasicBlock* IncCounterBB = createBasicBlock("Increment counter");
@@ -340,7 +383,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   currentBlock = IncCounterBB;
   
   // The counter will not overflow, increment it.
-  Value* Add = BinaryOperator::createAdd(module->constantOne, atomic, "",
+  Value* Add = BinaryOperator::CreateAdd(module->constantOne, atomic, "",
                                          currentBlock);
   new StoreInst(Add, lockPtr, false, currentBlock);
   BranchInst::Create(OK, currentBlock);
@@ -392,7 +435,7 @@ void JavaJIT::monitorExit(Value* obj) {
   currentBlock = NotLockedOnceBB;
   // Look if the lock is thin.
   Value* thinMask = ConstantInt::get(Type::Int32Ty, 0x80000000);
-  Value* isThin = BinaryOperator::createAnd(lock, thinMask, "",
+  Value* isThin = BinaryOperator::CreateAnd(lock, thinMask, "",
                                             currentBlock);
   cmp = new ICmpInst(ICmpInst::ICMP_EQ, isThin, module->constantZero, "",
                      currentBlock);
@@ -402,7 +445,7 @@ void JavaJIT::monitorExit(Value* obj) {
   currentBlock = ThinLockBB;
 
   // Decrement the counter.
-  Value* Sub = BinaryOperator::createSub(lock, module->constantOne, "",
+  Value* Sub = BinaryOperator::CreateSub(lock, module->constantOne, "",
                                          currentBlock);
   new StoreInst(Sub, lockPtr, false, currentBlock);
   BranchInst::Create(EndUnlock, currentBlock);
@@ -445,7 +488,8 @@ void JavaJIT::beginSynchronize() {
     obj = llvmFunction->arg_begin();
   } else {
 #ifndef ISOLATE_SHARING
-    obj = module->getStaticInstance(compilingClass, this);
+    obj = module->getStaticInstance(compilingClass);
+    obj = new LoadInst(obj, "", currentBlock);
 #else
     obj = getStaticInstanceCtp();
 #endif
@@ -469,7 +513,8 @@ void JavaJIT::endSynchronize() {
     obj = llvmFunction->arg_begin();
   } else {
 #ifndef ISOLATE_SHARING
-    obj = module->getStaticInstance(compilingClass, this);
+    obj = module->getStaticInstance(compilingClass);
+    obj = new LoadInst(obj, "", currentBlock);
 #else
     obj = getStaticInstanceCtp();
 #endif
@@ -488,8 +533,7 @@ void JavaJIT::endSynchronize() {
 }
 
 
-Instruction* JavaJIT::inlineCompile(Function* parentFunction, 
-                                    BasicBlock*& curBB,
+Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
                                     BasicBlock* endExBlock,
                                     std::vector<Value*>& args) {
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "inline compile %s\n",
@@ -515,12 +559,10 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
   LLVMMethodInfo* LMI = module->getMethodInfo(compilingMethod);
   assert(LMI);
   Function* func = LMI->getMethod();
-  llvmFunction = parentFunction;
 
   returnType = func->getReturnType();
   endBlock = createBasicBlock("end");
 
-  llvmFunction = parentFunction;
   currentBlock = curBB;
   endExceptionBlock = 0;
 
@@ -615,7 +657,7 @@ Instruction* JavaJIT::inlineCompile(Function* parentFunction,
 #endif
   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
-  
+  nbEnveloppes = 0;
 
   if (returnType != Type::VoidTy) {
     endNode = llvm::PHINode::Create(returnType, "", endBlock);
@@ -655,7 +697,7 @@ llvm::Function* JavaJIT::javaCompile() {
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "compiling %s\n",
               compilingMethod->printString());
 
-
+  
   Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
   
   if (!codeAtt) {
@@ -790,8 +832,10 @@ llvm::Function* JavaJIT::javaCompile() {
   unsigned nbe = readExceptionTable(reader);
   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
-  
-
+  compilingMethod->enveloppes = 
+    new (compilingClass->classLoader->allocator) Enveloppe[nbEnveloppes];
+  compilingMethod->nbEnveloppes = nbEnveloppes;
+  nbEnveloppes = 0;
  
   endBlock = createBasicBlock("end");
 
@@ -811,9 +855,17 @@ llvm::Function* JavaJIT::javaCompile() {
   pred_iterator PE = pred_end(endBlock);
   if (PI == PE && returnType != Type::VoidTy) {
     Instruction* I = currentBlock->getTerminator();
-    assert(isa<UnreachableInst>(I) && "non terminator before buggy return");
-    I->eraseFromParent();
-    BranchInst::Create(endBlock, currentBlock);
+    
+    assert((isa<UnreachableInst>(I) || isa<InvokeInst>(I)) && 
+           "Malformed end Java block");
+    
+    if (isa<UnreachableInst>(I)) {
+      I->eraseFromParent();
+      BranchInst::Create(endBlock, currentBlock);
+    } else if (InvokeInst* II = dyn_cast<InvokeInst>(I)) {
+      II->setNormalDest(endBlock);
+    }
+
     endNode->addIncoming(Constant::getNullValue(returnType),
                          currentBlock);
   }
@@ -885,7 +937,7 @@ llvm::Function* JavaJIT::javaCompile() {
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "--> end compiling %s\n",
               compilingMethod->printString());
   
-  if (nbe == 0 && codeLen < 50)
+  if (nbe == 0 && codeLen < 50 && !callsStackWalker)
     compilingMethod->canBeInlined = false;
 
   return llvmFunction;
@@ -917,7 +969,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
       argsSync.push_back(llvmFunction->arg_begin());
     } else {
 #ifndef ISOLATE_SHARING
-      Value* arg = module->getStaticInstance(compilingClass, this);
+      Value* arg = module->getStaticInstance(compilingClass);
+      arg = new LoadInst(arg, "", currentBlock);
 #else
       Value* arg = getStaticInstanceCtp();
 #endif
@@ -1085,7 +1138,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
                                isolateLocal, "", currentBlock);
 #else
     assert(cur->catchClass);
-    cl = module->getNativeClass(cur->catchClass, this);
+    cl = module->getNativeClass(cur->catchClass);
+    cl = new LoadInst(cl, "", currentBlock);
 #endif
     Value* cmp = llvm::CallInst::Create(module->CompareExceptionFunction, cl, "",
                                         currentBlock);
@@ -1158,7 +1212,8 @@ void JavaJIT::_ldc(uint16 index) {
     const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
     JavaString* str = compilingClass->classLoader->UTF8ToStr(utf8);
 
-    Value* val = module->getString(str, this);
+    Value* val = module->getString(str);
+    val = new LoadInst(val, "", currentBlock);
     push(val, false);
 #endif
         
@@ -1178,7 +1233,9 @@ void JavaJIT::_ldc(uint16 index) {
 #if !defined(ISOLATE)
     if (ctpInfo->ctpRes[index]) {
       CommonClass* cl = (CommonClass*)(ctpInfo->ctpRes[index]);
-      push(module->getJavaClass(cl, this), false);
+      Value* Val = module->getJavaClass(cl);
+      Val = new LoadInst(Val, "", currentBlock);
+      push(Val, false);
     } else {
 #endif
       Value* val = getResolvedClass(index, false);
@@ -1394,13 +1451,14 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
 
 Instruction* JavaJIT::lowerMathOps(const UTF8* name, 
                                    std::vector<Value*>& args) {
-  if (name->equals(Jnjvm::abs)) {
+  JnjvmBootstrapLoader* loader = compilingClass->classLoader->bootstrapLoader;
+  if (name->equals(loader->abs)) {
     const Type* Ty = args[0]->getType();
     if (Ty == Type::Int32Ty) {
       Constant* const_int32_9 = module->constantZero;
       ConstantInt* const_int32_10 = module->constantMinusOne;
       BinaryOperator* int32_tmpneg = 
-        BinaryOperator::create(Instruction::Sub, const_int32_9, args[0],
+        BinaryOperator::Create(Instruction::Sub, const_int32_9, args[0],
                                "tmpneg", currentBlock);
       ICmpInst* int1_abscond = 
         new ICmpInst(ICmpInst::ICMP_SGT, args[0], const_int32_10, "abscond", 
@@ -1412,7 +1470,7 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
       ConstantInt* const_int64_10 = module->constantLongMinusOne;
       
       BinaryOperator* int64_tmpneg = 
-        BinaryOperator::create(Instruction::Sub, const_int64_9, args[0],
+        BinaryOperator::Create(Instruction::Sub, const_int64_9, args[0],
                                "tmpneg", currentBlock);
 
       ICmpInst* int1_abscond = new ICmpInst(ICmpInst::ICMP_SGT, args[0],
@@ -1428,71 +1486,71 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
       return llvm::CallInst::Create(module->func_llvm_fabs_f64, args[0],
                                     "tmp1", currentBlock);
     }
-  } else if (name->equals(Jnjvm::sqrt)) {
+  } else if (name->equals(loader->sqrt)) {
     return llvm::CallInst::Create(module->func_llvm_sqrt_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::sin)) {
+  } else if (name->equals(loader->sin)) {
     return llvm::CallInst::Create(module->func_llvm_sin_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::cos)) {
+  } else if (name->equals(loader->cos)) {
     return llvm::CallInst::Create(module->func_llvm_cos_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::tan)) {
+  } else if (name->equals(loader->tan)) {
     return llvm::CallInst::Create(module->func_llvm_tan_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::asin)) {
+  } else if (name->equals(loader->asin)) {
     return llvm::CallInst::Create(module->func_llvm_asin_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::acos)) {
+  } else if (name->equals(loader->acos)) {
     return llvm::CallInst::Create(module->func_llvm_acos_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::atan)) {
+  } else if (name->equals(loader->atan)) {
     return llvm::CallInst::Create(module->func_llvm_atan_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::atan2)) {
+  } else if (name->equals(loader->atan2)) {
     return llvm::CallInst::Create(module->func_llvm_atan2_f64, 
                                   args.begin(), args.end(), "tmp1",
                                   currentBlock);
-  } else if (name->equals(Jnjvm::exp)) {
+  } else if (name->equals(loader->exp)) {
     return llvm::CallInst::Create(module->func_llvm_exp_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::log)) {
+  } else if (name->equals(loader->log)) {
     return llvm::CallInst::Create(module->func_llvm_log_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::pow)) {
+  } else if (name->equals(loader->pow)) {
     return llvm::CallInst::Create(module->func_llvm_pow_f64, args.begin(),
                                   args.end(), "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::ceil)) {
+  } else if (name->equals(loader->ceil)) {
     return llvm::CallInst::Create(module->func_llvm_ceil_f64, args[0], "tmp1",
                                   currentBlock);
-  } else if (name->equals(Jnjvm::floor)) {
+  } else if (name->equals(loader->floor)) {
     return llvm::CallInst::Create(module->func_llvm_floor_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::rint)) {
+  } else if (name->equals(loader->rint)) {
     return llvm::CallInst::Create(module->func_llvm_rint_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::cbrt)) {
+  } else if (name->equals(loader->cbrt)) {
     return llvm::CallInst::Create(module->func_llvm_cbrt_f64, args[0], "tmp1",
                                   currentBlock);
-  } else if (name->equals(Jnjvm::cosh)) {
+  } else if (name->equals(loader->cosh)) {
     return llvm::CallInst::Create(module->func_llvm_cosh_f64, args[0], "tmp1",
                                   currentBlock);
-  } else if (name->equals(Jnjvm::expm1)) {
+  } else if (name->equals(loader->expm1)) {
     return llvm::CallInst::Create(module->func_llvm_expm1_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::hypot)) {
+  } else if (name->equals(loader->hypot)) {
     return llvm::CallInst::Create(module->func_llvm_hypot_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::log10)) {
+  } else if (name->equals(loader->log10)) {
     return llvm::CallInst::Create(module->func_llvm_log10_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::log1p)) {
+  } else if (name->equals(loader->log1p)) {
     return llvm::CallInst::Create(module->func_llvm_log1p_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::sinh)) {
+  } else if (name->equals(loader->sinh)) {
     return llvm::CallInst::Create(module->func_llvm_sinh_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(Jnjvm::tanh)) {
+  } else if (name->equals(loader->tanh)) {
     return llvm::CallInst::Create(module->func_llvm_tanh_f64, args[0],
                                   "tmp1", currentBlock);
   }
@@ -1504,14 +1562,12 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
 
 Instruction* JavaJIT::invokeInline(JavaMethod* meth, 
                                    std::vector<Value*>& args) {
-  JavaJIT jit;
-  jit.compilingClass = meth->classDef; 
-  jit.compilingMethod = meth;
+  JavaJIT jit(meth, llvmFunction);
   jit.unifiedUnreachable = unifiedUnreachable;
   jit.inlineMethods = inlineMethods;
   jit.inlineMethods[meth] = true;
-  jit.module = module;
-  Instruction* ret = jit.inlineCompile(llvmFunction, currentBlock, 
+  jit.inlining = true;
+  Instruction* ret = jit.inlineCompile(currentBlock, 
                                        currentExceptionBlock, args);
   inlineMethods[meth] = false;
   return ret;
@@ -1533,7 +1589,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
   makeArgs(it, index, args, signature->args.size() + 1);
   JITVerifyNull(args[0]); 
 
-  if (cl->equals(Jnjvm::mathName)) {
+  if (cl->equals(compilingClass->classLoader->bootstrapLoader->mathName)) {
     val = lowerMathOps(name, args);
   }
 
@@ -1568,8 +1624,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
       (Function*)ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
                                                       signature, meth);
 
-    if (meth && meth->canBeInlined && meth != compilingMethod && 
-        inlineMethods[meth] == 0) {
+    if (meth && canBeInlined(meth)) {
       val = invokeInline(meth, args);
     } else {
       val = invoke(func, args, "", currentBlock);
@@ -1603,8 +1658,13 @@ void JavaJIT::invokeStatic(uint16 index) {
   makeArgs(it, index, args, signature->args.size());
   ctpInfo->markAsStaticCall(index);
 
-  if (cl->equals(Jnjvm::mathName)) {
+  JnjvmBootstrapLoader* loader = compilingClass->classLoader->bootstrapLoader;
+  if (cl->equals(loader->mathName)) {
     val = lowerMathOps(name, args);
+  }
+
+  if (cl->equals(loader->stackWalkerName)) {
+    callsStackWalker = true;
   }
 
   if (!val) {
@@ -1620,8 +1680,7 @@ void JavaJIT::invokeStatic(uint16 index) {
     args.push_back(newCtpCache);
 #endif
 
-    if (meth && meth->canBeInlined && meth != compilingMethod && 
-        inlineMethods[meth] == 0) {
+    if (meth && canBeInlined(meth)) {
       val = invokeInline(meth, args);
     } else {
       val = invoke(func, args, "", currentBlock);
@@ -1655,8 +1714,10 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   Args.clear();
 #else
   JavaConstantPool* ctp = compilingClass->ctpInfo;
-  Value* CTP = module->getConstantPool(ctp, this);
-  Value* Cl = module->getNativeClass(compilingClass, this);
+  Value* CTP = module->getConstantPool(ctp);
+  CTP = new LoadInst(CTP, "", currentBlock);
+  Value* Cl = module->getNativeClass(compilingClass);
+  Cl = new LoadInst(Cl, "", currentBlock);
 #endif
 
   Args.push_back(resolver);
@@ -1712,10 +1773,12 @@ void JavaJIT::invokeNew(uint16 index) {
                           currentBlock);
   } else {
     LLVMClassInfo* LCI = module->getClassInfo(cl);
-    Size = LCI->getVirtualSize(this);
+    Size = LCI->getVirtualSize();
 #ifndef ISOLATE_SHARING
-    VT = module->getVirtualTable(cl, this);
-    Cl = module->getNativeClass(cl, this);
+    VT = module->getVirtualTable(cl);
+    VT = new LoadInst(VT, "", currentBlock);
+    Cl = module->getNativeClass(cl);
+    Cl = new LoadInst(Cl, "", currentBlock);
     if (!cl->isReady()) {
       Cl = invoke(module->InitialisationCheckFunction, Cl, "",
                   currentBlock);
@@ -1784,10 +1847,25 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     LLVMFieldInfo* LFI = module->getFieldInfo(field);
     const Type* type = 0;
     if (stat) {
-
+      
 #ifndef ISOLATE_SHARING
+      if (module->isStaticCompiling()) {
+        // Do an initialization check first.
+        Value* Cl = module->getNativeClass(field->classDef);
+        Cl = new LoadInst(Cl, "", currentBlock);
+        Cl = invoke(module->InitialisationCheckFunction, Cl, "",
+                    currentBlock);
+        CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
+                         currentBlock);
+        object = module->getStaticInstance(field->classDef);
+        object = new LoadInst(object, "", currentBlock);
+        type = LCI->getStaticType();
+        return fieldGetter(this, type, object, LFI->getOffset());
+      }
+      
       if (field->classDef->isReady()) {
-        object = module->getStaticInstance(field->classDef, this);
+        object = module->getStaticInstance(field->classDef);
+        object = new LoadInst(object, "", currentBlock);
         type = LCI->getStaticType();
         return fieldGetter(this, type, object, LFI->getOffset());
       }
@@ -1801,29 +1879,29 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     }
   }
 
-    const Type* Pty = module->arrayPtrType;
-    Constant* zero = module->constantZero;
+  const Type* Pty = module->arrayPtrType;
+  Constant* zero = module->constantZero;
     
-    Function* func = stat ? module->StaticFieldLookupFunction :
-                            module->VirtualFieldLookupFunction;
+  Function* func = stat ? module->StaticFieldLookupFunction :
+                          module->VirtualFieldLookupFunction;
     
-    const Type* returnType = 0;
-    if (stat)
-      returnType = module->ptrType;
-    else
-      returnType = Type::Int32Ty;
+  const Type* returnType = 0;
+  if (stat)
+    returnType = module->ptrType;
+  else
+    returnType = Type::Int32Ty;
 
-    Value* ptr = getConstantPoolAt(index, func, returnType, 0, true);
-    if (!stat) {
-      Value* tmp = new BitCastInst(object, Pty, "", currentBlock);
-      std::vector<Value*> args;
-      args.push_back(zero);
-      args.push_back(ptr);
-      ptr = GetElementPtrInst::Create(tmp, args.begin(), args.end(), "",
-                                      currentBlock);
-    }
+  Value* ptr = getConstantPoolAt(index, func, returnType, 0, true);
+  if (!stat) {
+    Value* tmp = new BitCastInst(object, Pty, "", currentBlock);
+    std::vector<Value*> args;
+    args.push_back(zero);
+    args.push_back(ptr);
+    ptr = GetElementPtrInst::Create(tmp, args.begin(), args.end(), "",
+                                    currentBlock);
+  }
     
-    return new BitCastInst(ptr, fieldTypePtr, "", currentBlock);
+  return new BitCastInst(ptr, fieldTypePtr, "", currentBlock);
 }
 
 void JavaJIT::convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock,
@@ -2021,15 +2099,12 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
 
 #ifndef ISOLATE_SHARING
   // ok now the cache
-  mvm::BumpPtrAllocator& allocator = compilingClass->classLoader->allocator;
-  Enveloppe* enveloppe = 
-    new(allocator) Enveloppe(compilingClass->ctpInfo, index);
-  compilingMethod->caches.push_back(enveloppe);
+  Enveloppe& enveloppe = compilingMethod->enveloppes[nbEnveloppes++];
+  if (!inlining)
+    enveloppe.initialise(compilingClass->ctpInfo, index);
    
-  Value* llvmEnv = 
-    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
-                              uint64_t (enveloppe)),
-                              module->EnveloppeType);
+  Value* llvmEnv = module->getEnveloppe(&enveloppe);
+  llvmEnv = new LoadInst(llvmEnv, "", currentBlock);
 #else
   Value* llvmEnv = getConstantPoolAt(index,
                                      module->EnveloppeLookupFunction,

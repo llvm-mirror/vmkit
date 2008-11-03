@@ -223,7 +223,7 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
 #endif
     }
     BinaryOperator* int32_tmp6 = 
-      BinaryOperator::create(Instruction::Add, int32_i_015_0, const_int32_9,
+      BinaryOperator::Create(Instruction::Add, int32_i_015_0, const_int32_9,
                              "tmp6", label_bb);
     LoadInst* int32_tmp10 = new LoadInst(ptr_tmp918, "tmp10", false, label_bb);
     ICmpInst* int1_tmp12 = new ICmpInst(ICmpInst::ICMP_SGT, int32_tmp10, 

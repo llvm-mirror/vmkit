@@ -88,7 +88,13 @@ public:
   /// Enveloppe - Allocates the linked list with the given constant pool info
   /// at the given index, so as the resolution process knows which interface
   /// method the invokeinterface bytecode references.
-  Enveloppe(UserConstantPool* info, uint32 index);
+  Enveloppe(UserConstantPool* info, uint32 index) {
+    initialise(info, index);
+  }
+
+  Enveloppe() {}
+
+  void initialise(UserConstantPool* info, uint32 index);
 
 };
 

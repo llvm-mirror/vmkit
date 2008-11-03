@@ -33,7 +33,6 @@ class Class;
 class JavaField;
 class JavaMethod;
 class JavaObject;
-class JavaJIT;
 class JnjvmModule;
 class Signdef;
 
@@ -68,7 +67,7 @@ private:
   const llvm::Type * staticType;
 public:
   
-  llvm::Value* getVirtualSize(JavaJIT* jit);
+  llvm::Value* getVirtualSize();
   llvm::Function* getStaticTracer();
   llvm::Function* getVirtualTracer();
   const llvm::Type* getVirtualType();
@@ -185,6 +184,8 @@ private:
   std::map<const Class*, llvm::GlobalVariable*> staticInstances;
   std::map<const JavaConstantPool*, llvm::GlobalVariable*> constantPools;
   std::map<const JavaString*, llvm::GlobalVariable*> strings;
+  std::map<const Enveloppe*, llvm::GlobalVariable*> enveloppes;
+  std::map<const JavaMethod*, llvm::GlobalVariable*> nativeFunctions;
 
   typedef std::map<const CommonClass*, llvm::GlobalVariable*>::iterator
     native_class_iterator;  
@@ -204,14 +205,31 @@ private:
   typedef std::map<const JavaString*, llvm::GlobalVariable*>::iterator
     string_iterator;
   
-
-
-  VirtualTable* makeVT(Class* cl, bool stat);
-  VirtualTable* allocateVT(Class* cl, CommonClass::method_iterator meths);
-
-
-public:
+  typedef std::map<const Enveloppe*, llvm::GlobalVariable*>::iterator
+    enveloppe_iterator;
   
+  typedef std::map<const JavaMethod*, llvm::GlobalVariable*>::iterator
+    native_function_iterator;
+  
+  
+  bool staticCompilation;
+
+  
+  llvm::Function* makeTracer(Class* cl, bool stat);
+  VirtualTable* makeVT(Class* cl, bool stat);
+  VirtualTable* allocateVT(Class* cl, uint32 index);
+
+  
+public:
+
+  bool isStaticCompiling() {
+    return staticCompilation;
+  }
+
+  void setIsStaticCompiling(bool sc) {
+    staticCompilation = sc;
+  }
+
   static llvm::ConstantInt* JavaArraySizeOffsetConstant;
   static llvm::ConstantInt* JavaArrayElementsOffsetConstant;
   static llvm::ConstantInt* JavaObjectLockOffsetConstant;
@@ -252,6 +270,7 @@ public:
   llvm::Function* PrintMethodStartFunction;
   llvm::Function* PrintMethodEndFunction;
   llvm::Function* JniProceedPendingExceptionFunction;
+  llvm::Function* InitialiseClassFunction;
   llvm::Function* InitialisationCheckFunction;
   llvm::Function* ForceInitialisationCheckFunction;
   llvm::Function* ClassLookupFunction;
@@ -311,6 +330,8 @@ public:
   static llvm::ConstantInt* OffsetDisplayInClassConstant;
   static llvm::ConstantInt* OffsetStatusInClassConstant;
   static llvm::ConstantInt* OffsetCtpInClassConstant;
+  
+  static llvm::ConstantInt* ClassReadyConstant;
 
   static llvm::Constant* JavaClassNullConstant;
 
@@ -329,13 +350,6 @@ public:
   llvm::Function* ClassCastExceptionFunction;
   llvm::Function* OutOfMemoryErrorFunction;
   llvm::Function* NegativeArraySizeExceptionFunction;
-
-  static void InitField(JavaField* field);
-  static void InitField(JavaField* field, JavaObject* obj, uint64 val = 0);
-  static void InitField(JavaField* field, JavaObject* obj, JavaObject* val);
-  static void InitField(JavaField* field, JavaObject* obj, double val);
-  static void InitField(JavaField* field, JavaObject* obj, float val);
-
 
   static void resolveVirtualClass(Class* cl);
   static void resolveStaticClass(Class* cl);
@@ -360,16 +374,18 @@ public:
 
   static LLVMAssessorInfo& getTypedefInfo(Typedef* type);
   
-  explicit JnjvmModule(const std::string &ModuleID);
-  static void initialise();
+  explicit JnjvmModule(const std::string &ModuleID, bool sc = false);
+  void initialise();
 
-  llvm::Value* getNativeClass(CommonClass* cl, JavaJIT* jit);
-  llvm::Value* getJavaClass(CommonClass* cl, JavaJIT* jit);
-  llvm::Value* getStaticInstance(Class* cl, JavaJIT* jit);
-  llvm::Value* getVirtualTable(CommonClass* cl, JavaJIT* jit);
+  llvm::Value* getNativeClass(CommonClass* cl);
+  llvm::Value* getJavaClass(CommonClass* cl);
+  llvm::Value* getStaticInstance(Class* cl);
+  llvm::Value* getVirtualTable(CommonClass* cl);
   
-  llvm::Value* getString(JavaString* str, JavaJIT* jit);
-  llvm::Value* getConstantPool(JavaConstantPool* ctp, JavaJIT* jit);
+  llvm::Value* getEnveloppe(Enveloppe* enveloppe);
+  llvm::Value* getString(JavaString* str);
+  llvm::Value* getConstantPool(JavaConstantPool* ctp);
+  llvm::Value* getNativeFunction(JavaMethod* meth, void* natPtr);
 
 private:
   static llvm::Module* initialModule;

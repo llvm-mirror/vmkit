@@ -8,7 +8,7 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ..
 
-PARALLEL_DIRS = vmkit
+PARALLEL_DIRS = vmkit vmjc
 
 include $(LEVEL)/Makefile.config
 

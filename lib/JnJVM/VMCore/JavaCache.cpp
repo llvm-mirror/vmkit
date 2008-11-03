@@ -48,7 +48,7 @@ CacheNode::CacheNode(Enveloppe* E) {
 #endif
 }
 
-Enveloppe::Enveloppe(UserConstantPool* ctp, uint32 i) {
+void Enveloppe::initialise(UserConstantPool* ctp, uint32 i) {
   mvm::BumpPtrAllocator& allocator = ctp->classDef->classLoader->allocator;
   firstCache = new(allocator) CacheNode(this);
   ctpInfo = ctp;

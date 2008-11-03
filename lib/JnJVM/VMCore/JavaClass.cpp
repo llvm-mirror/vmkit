@@ -41,7 +41,7 @@ const UTF8* Attribut::innerClassesAttribut = 0;
 const UTF8* Attribut::sourceFileAttribut = 0;
 
 CommonClass* ClassArray::SuperArray;
-std::vector<Class*> ClassArray::InterfacesArray;
+Class** ClassArray::InterfacesArray;
 
 Attribut::Attribut(const UTF8* name, uint32 length,
                    uint32 offset) {
@@ -53,9 +53,8 @@ Attribut::Attribut(const UTF8* name, uint32 length,
 }
 
 Attribut* Class::lookupAttribut(const UTF8* key ) {
-  for (std::vector<Attribut*>::iterator i = attributs.begin(), 
-       e = attributs.end(); i!= e; ++i) {
-    Attribut* cur = *i;
+  for (uint32 i = 0; i < nbAttributs; ++i) {
+    Attribut* cur = &(attributs[i]);
     if (cur->name->equals(key)) return cur;
   }
 
@@ -63,9 +62,8 @@ Attribut* Class::lookupAttribut(const UTF8* key ) {
 }
 
 Attribut* JavaField::lookupAttribut(const UTF8* key ) {
-  for (std::vector<Attribut*>::iterator i = attributs.begin(), 
-       e = attributs.end(); i!= e;++i) {
-    Attribut* cur = *i;
+  for (uint32 i = 0; i < nbAttributs; ++i) {
+    Attribut* cur = &(attributs[i]);
     if (cur->name->equals(key)) return cur;
   }
 
@@ -73,21 +71,13 @@ Attribut* JavaField::lookupAttribut(const UTF8* key ) {
 }
 
 Attribut* JavaMethod::lookupAttribut(const UTF8* key ) {
-  for (std::vector<Attribut*>::iterator i = attributs.begin(), 
-       e = attributs.end(); i!= e; ++i) {
-    Attribut* cur = *i;
+  for (uint32 i = 0; i < nbAttributs; ++i) {
+    Attribut* cur = &(attributs[i]);
     if (cur->name->equals(key)) return cur;
   }
 
   return 0;
 }
-
-bool CommonClass::FieldCmp::operator<(const CommonClass::FieldCmp &cmp) const {
-  if (name->lessThan(cmp.name)) return true;
-  else if (cmp.name->lessThan(name)) return false;
-  else return type->lessThan(cmp.type);
-}
-
 
 CommonClass::~CommonClass() {
   classLoader->allocator.Deallocate(display);
@@ -96,48 +86,50 @@ CommonClass::~CommonClass() {
 CommonClass::CommonClass() {
   display = 0;
   virtualVT = 0;
+  nbVirtualFields = 0;
+  nbStaticFields = 0;
+  nbVirtualMethods = 0;
+  nbStaticMethods = 0;
+  nbInterfaces = 0;
+  access = 0;
 }
 
-Class::Class() {
+Class::Class() : CommonClass() {
   ctpInfo = 0;
   staticVT = 0;
   JInfo = 0;
   outerClass = 0;
   innerOuterResolved = false;
+  nbInnerClasses = 0;
 }
 
 Class::~Class() {
-  for (std::vector<Attribut*>::iterator i = attributs.begin(), 
-       e = attributs.end(); i!= e; ++i) {
-    Attribut* cur = *i;
+  for (uint32 i = 0; i < nbAttributs; ++i) {
+    Attribut* cur = &(attributs[i]);
     cur->~Attribut();
     classLoader->allocator.Deallocate(cur);
   }
   
-  for (field_iterator i = staticFields.begin(), 
-       e = staticFields.end(); i!= e; ++i) {
-    JavaField* cur = i->second;
+  for (uint32 i = 0; i < nbStaticFields; ++i) {
+    JavaField* cur = &(staticFields[i]);
     cur->~JavaField();
     classLoader->allocator.Deallocate(cur);
   }
   
-  for (field_iterator i = virtualFields.begin(), 
-       e = virtualFields.end(); i!= e; ++i) {
-    JavaField* cur = i->second;
+  for (uint32 i = 0; i < nbVirtualFields; ++i) {
+    JavaField* cur = &(virtualFields[i]);
     cur->~JavaField();
     classLoader->allocator.Deallocate(cur);
   }
   
-  for (method_iterator i = virtualMethods.begin(), 
-       e = virtualMethods.end(); i!= e; ++i) {
-    JavaMethod* cur = i->second;
+  for (uint32 i = 0; i < nbVirtualMethods; ++i) {
+    JavaMethod* cur = &(virtualMethods[i]);
     cur->~JavaMethod();
     classLoader->allocator.Deallocate(cur);
   }
   
-  for (method_iterator i = staticMethods.begin(), 
-       e = staticMethods.end(); i!= e; ++i) {
-    JavaMethod* cur = i->second;
+  for (uint32 i = 0; i < nbStaticMethods; ++i) {
+    JavaMethod* cur = &(staticMethods[i]);
     cur->~JavaMethod();
     classLoader->allocator.Deallocate(cur);
   }
@@ -156,9 +148,8 @@ Class::~Class() {
 }
 
 JavaField::~JavaField() {
-  for (std::vector<Attribut*>::iterator i = attributs.begin(), 
-       e = attributs.end(); i!= e; ++i) {
-    Attribut* cur = *i;
+  for (uint32 i = 0; i < nbAttributs; ++i) {
+    Attribut* cur = &(attributs[i]);
     cur->~Attribut();
     classDef->classLoader->allocator.Deallocate(cur);
   }
@@ -166,16 +157,14 @@ JavaField::~JavaField() {
 
 JavaMethod::~JavaMethod() {
   
-  for (std::vector<Attribut*>::iterator i = attributs.begin(), 
-       e = attributs.end(); i!= e; ++i) {
-    Attribut* cur = *i;
+  for (uint32 i = 0; i < nbAttributs; ++i) {
+    Attribut* cur = &(attributs[i]);
     cur->~Attribut();
     classDef->classLoader->allocator.Deallocate(cur);
   }
-
-  for (std::vector<Enveloppe*>::iterator i = caches.begin(), 
-       e = caches.end(); i!= e; ++i) {
-    Enveloppe* cur = *i;
+  
+  for (uint32 i = 0; i < nbEnveloppes; ++i) {
+    Enveloppe* cur = &(enveloppes[i]);
     cur->~Enveloppe();
     classDef->classLoader->allocator.Deallocate(cur);
   }
@@ -271,11 +260,22 @@ ClassPrimitive::byteIdToPrimitive(char id, Classpath* upcalls) {
 CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n,
                          bool isArray) {
   name = n;
-  this->virtualVT = 0;
-  this->status = loaded;
-  this->classLoader = loader;
-  this->array = isArray;
-  this->primitive = false;
+  virtualVT = 0;
+  status = loaded;
+  classLoader = loader;
+  array = isArray;
+  primitive = false;
+  nbVirtualMethods = 0;
+  nbStaticMethods = 0;
+  nbStaticFields = 0;
+  nbVirtualFields = 0;
+  nbInterfaces = 0;
+  interfaces = 0;
+  virtualMethods = 0;
+  staticMethods = 0;
+  virtualFields = 0;
+  staticFields = 0;
+  access = 0;
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   this->delegatee = 0;
 #endif
@@ -302,6 +302,7 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
   outerClass = 0;
   innerOuterResolved = false;
   display = 0;
+  nbInnerClasses = 0;
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   _staticInstance = 0;
 #endif
@@ -313,6 +314,7 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
   _baseClass = base;
   super = ClassArray::SuperArray;
   interfaces = ClassArray::InterfacesArray;
+  nbInterfaces = 2;
   depth = 1;
   display = (CommonClass**)loader->allocator.Allocate(2 * sizeof(CommonClass*));
   display[0] = ClassArray::SuperArray;
@@ -413,18 +415,26 @@ JavaMethod* CommonClass::lookupMethodDontThrow(const UTF8* name,
                                                const UTF8* type,
                                                bool isStatic,
                                                bool recurse,
-                                               Class*& methodCl) {
+                                               Class** methodCl) {
   
-  CommonClass::FieldCmp CC(name, type);
-  CommonClass::method_map* map = isStatic ? getStaticMethods() :
-                                            getVirtualMethods();
-  CommonClass::method_iterator End = map->end();
-  CommonClass::method_iterator I = map->find(CC);
-  if (I != End) {
-    methodCl = (Class*)this;
-    return I->second;
+  JavaMethod* methods = 0;
+  uint32 nb = 0;
+  if (isStatic) {
+    methods = getStaticMethods();
+    nb = nbStaticMethods;
+  } else {
+    methods = getVirtualMethods();
+    nb = nbVirtualMethods;
   }
   
+  for (uint32 i = 0; i < nb; ++i) {
+    JavaMethod& res = methods[i];
+    if (res.name->equals(name) && res.type->equals(type)) {
+      if (methodCl) *methodCl = (Class*)this;
+      return &res;
+    }
+  }
+
   JavaMethod *cur = 0;
   
   if (recurse) {
@@ -432,11 +442,10 @@ JavaMethod* CommonClass::lookupMethodDontThrow(const UTF8* name,
                                                   recurse, methodCl);
     if (cur) return cur;
     if (isStatic) {
-      std::vector<Class*>* interfaces = getInterfaces();
-      for (std::vector<Class*>::iterator i = interfaces->begin(),
-           e = interfaces->end(); i!= e; i++) {
-        cur = (*i)->lookupMethodDontThrow(name, type, isStatic, recurse,
-                                          methodCl);
+      for (uint16 i = 0; i < nbInterfaces; ++i) {
+        Class* I = interfaces[i];
+        cur = I->lookupMethodDontThrow(name, type, isStatic, recurse,
+                                       methodCl);
         if (cur) return cur;
       }
     }
@@ -447,7 +456,7 @@ JavaMethod* CommonClass::lookupMethodDontThrow(const UTF8* name,
 
 JavaMethod* CommonClass::lookupMethod(const UTF8* name, const UTF8* type,
                                       bool isStatic, bool recurse,
-                                      Class*& methodCl) {
+                                      Class** methodCl) {
   JavaMethod* res = lookupMethodDontThrow(name, type, isStatic, recurse,
                                           methodCl);
   if (!res) {
@@ -459,18 +468,25 @@ JavaMethod* CommonClass::lookupMethod(const UTF8* name, const UTF8* type,
 JavaField*
 CommonClass::lookupFieldDontThrow(const UTF8* name, const UTF8* type,
                                   bool isStatic, bool recurse,
-                                  CommonClass*& definingClass) {
-
-  CommonClass::FieldCmp CC(name, type);
-  CommonClass::field_map* map = isStatic ? getStaticFields() :
-                                           getVirtualFields();
-  CommonClass::field_iterator End = map->end();
-  CommonClass::field_iterator I = map->find(CC);
-  if (I != End) {
-    definingClass = this;
-    return I->second;
+                                  CommonClass** definingClass) {
+  JavaField* fields = 0;
+  uint32 nb = 0;
+  if (isStatic) {
+    fields = getStaticFields();
+    nb = nbStaticFields;
+  } else {
+    fields = getVirtualFields();
+    nb = nbVirtualFields;
   }
   
+  for (uint32 i = 0; i < nb; ++i) {
+    JavaField& res = fields[i];
+    if (res.name->equals(name) && res.type->equals(type)) {
+      if (definingClass) *definingClass = this;
+      return &res;
+    }
+  }
+
   JavaField *cur = 0;
 
   if (recurse) {
@@ -478,11 +494,10 @@ CommonClass::lookupFieldDontThrow(const UTF8* name, const UTF8* type,
                                                  recurse, definingClass);
     if (cur) return cur;
     if (isStatic) {
-      std::vector<Class*>* interfaces = getInterfaces();
-      for (std::vector<Class*>::iterator i = interfaces->begin(),
-           e = interfaces->end(); i!= e; i++) {
-        cur = (*i)->lookupFieldDontThrow(name, type, isStatic, recurse,
-                                         definingClass);
+      for (uint16 i = 0; i < nbInterfaces; ++i) {
+        Class* I = interfaces[i];
+        cur = I->lookupFieldDontThrow(name, type, isStatic, recurse,
+                                      definingClass);
         if (cur) return cur;
       }
     }
@@ -493,7 +508,7 @@ CommonClass::lookupFieldDontThrow(const UTF8* name, const UTF8* type,
 
 JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
                                     bool isStatic, bool recurse,
-                                    CommonClass*& definingClass) {
+                                    CommonClass** definingClass) {
   
   JavaField* res = lookupFieldDontThrow(name, type, isStatic, recurse,
                                         definingClass);
@@ -505,7 +520,8 @@ JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
 
 JavaObject* UserClass::doNew(Jnjvm* vm) {
   assert(this && "No class when allocating.");
-  assert(this->isReady() && "Uninitialized class when allocating.");
+  assert((this->isReady() || classLoader->getModule()->isStaticCompiling())
+         && "Uninitialized class when allocating.");
   JavaObject* res = 
     (JavaObject*)vm->gcAllocator.allocateManagedObject(getVirtualSize(),
                                                        getVirtualVT());
@@ -522,7 +538,7 @@ bool UserCommonClass::inheritName(const UTF8* Tname) {
     if (getSuper()->inheritName(Tname)) return true;
   }
   
-  for (uint32 i = 0; i < interfaces.size(); ++i) {
+  for (uint32 i = 0; i < nbInterfaces; ++i) {
     if (interfaces[i]->inheritName(Tname)) return true;
   }
   return false;
@@ -555,10 +571,10 @@ bool UserCommonClass::isOfTypeName(Jnjvm* vm, const UTF8* Tname) {
 bool UserCommonClass::implements(UserCommonClass* cl) {
   if (this == cl) return true;
   else {
-    for (std::vector<UserClass*>::iterator i = interfaces.begin(),
-         e = interfaces.end(); i!= e; i++) {
-      if (*i == cl) return true;
-      else if ((*i)->implements(cl)) return true;
+    for (uint16 i = 0; i < nbInterfaces; ++i) {
+      Class* I = interfaces[i];
+      if (I == cl) return true;
+      else if (I->implements(cl)) return true;
     }
     if (super) {
       return super->implements(cl);
@@ -604,12 +620,51 @@ bool UserCommonClass::isAssignableFrom(UserCommonClass* cl) {
   }
 }
 
+void JavaField::InitField(JavaObject* obj, uint64 val) {
+  
+  Typedef* type = getSignature();
+  if (!type->isPrimitive()) {
+    ((sint32*)((uint64)obj + ptrOffset))[0] = (sint32)val;
+    return;
+  }
+
+  PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+  if (prim->isLong()) {
+    ((sint64*)((uint64)obj + ptrOffset))[0] = val;
+  } else if (prim->isInt()) {
+    ((sint32*)((uint64)obj + ptrOffset))[0] = (sint32)val;
+  } else if (prim->isChar()) {
+    ((uint16*)((uint64)obj + ptrOffset))[0] = (uint16)val;
+  } else if (prim->isShort()) {
+    ((sint16*)((uint64)obj + ptrOffset))[0] = (sint16)val;
+  } else if (prim->isByte()) {
+    ((sint8*)((uint64)obj + ptrOffset))[0] = (sint8)val;
+  } else if (prim->isBool()) {
+    ((uint8*)((uint64)obj + ptrOffset))[0] = (uint8)val;
+  } else {
+    // 0 value for everything else
+    ((sint32*)((uint64)obj + ptrOffset))[0] = (sint32)val;
+  }
+}
+
+void JavaField::InitField(JavaObject* obj, JavaObject* val) {
+  ((JavaObject**)((uint64)obj + ptrOffset))[0] = val;
+}
+
+void JavaField::InitField(JavaObject* obj, double val) {
+  ((double*)((uint64)obj + ptrOffset))[0] = val;
+}
+
+void JavaField::InitField(JavaObject* obj, float val) {
+  ((float*)((uint64)obj + ptrOffset))[0] = val;
+}
+
 void JavaField::initField(JavaObject* obj, Jnjvm* vm) {
   const Typedef* type = getSignature();
   Attribut* attribut = lookupAttribut(Attribut::constantAttribut);
 
   if (!attribut) {
-    JnjvmModule::InitField(this, obj);
+    InitField(obj);
   } else {
     Reader reader(attribut, classDef->bytes);
     JavaConstantPool * ctpInfo = classDef->ctpInfo;
@@ -617,18 +672,17 @@ void JavaField::initField(JavaObject* obj, Jnjvm* vm) {
     if (type->isPrimitive()) {
       UserCommonClass* cl = type->assocClass(vm->bootstrapLoader);
       if (cl == vm->upcalls->OfLong) {
-        JnjvmModule::InitField(this, obj, (uint64)ctpInfo->LongAt(idx));
+        InitField(obj, (uint64)ctpInfo->LongAt(idx));
       } else if (cl == vm->upcalls->OfDouble) {
-        JnjvmModule::InitField(this, obj, ctpInfo->DoubleAt(idx));
+        InitField(obj, ctpInfo->DoubleAt(idx));
       } else if (cl == vm->upcalls->OfFloat) {
-        JnjvmModule::InitField(this, obj, ctpInfo->FloatAt(idx));
+        InitField(obj, ctpInfo->FloatAt(idx));
       } else {
-        JnjvmModule::InitField(this, obj, (uint64)ctpInfo->IntegerAt(idx));
+        InitField(obj, (uint64)ctpInfo->IntegerAt(idx));
       }
     } else if (type->isReference()){
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
-      JnjvmModule::InitField(this, obj,
-                         (JavaObject*)ctpInfo->resolveString(utf8, idx));
+      InitField(obj, (JavaObject*)ctpInfo->resolveString(utf8, idx));
     } else {
       JavaThread::get()->isolate->
         unknownError("unknown constant %s\n", type->printString());
@@ -636,68 +690,57 @@ void JavaField::initField(JavaObject* obj, Jnjvm* vm) {
   } 
 }
 
-JavaMethod* CommonClass::constructMethod(const UTF8* name,
+JavaMethod* CommonClass::constructMethod(JavaMethod& method,
+                                         const UTF8* name,
                                          const UTF8* type, uint32 access) {
-  method_map& map = isStatic(access) ? staticMethods : virtualMethods;
-  FieldCmp CC(name, type);
-  method_iterator End = map.end();
-  method_iterator I = map.find(CC);
-  if (I == End) {
-    JavaMethod* method = new(classLoader->allocator) JavaMethod();
-    method->name = name;
-    method->type = type;
-    method->classDef = (Class*)this;
-    method->_signature = 0;
-    method->code = 0;
-    method->access = access;
-    method->canBeInlined = false;
-    method->offset = 0;
-    method->JInfo = 0;
-    map.insert(std::make_pair(CC, method));
-    return method;
-  } else {
-    return I->second;
-  }
+  method.name = name;
+  method.type = type;
+  method.classDef = (Class*)this;
+  method._signature = 0;
+  method.code = 0;
+  method.access = access;
+  method.canBeInlined = false;
+  method.offset = 0;
+  method.JInfo = 0;
+  method.enveloppes = 0;
+  return &method;
 }
 
-JavaField* CommonClass::constructField(const UTF8* name,
+JavaField* CommonClass::constructField(JavaField& field,
+                                       const UTF8* name,
                                        const UTF8* type, uint32 access) {
-  field_map& map = isStatic(access) ? staticFields : virtualFields;
-  FieldCmp CC(name, type);
-  field_iterator End = map.end();
-  field_iterator I = map.find(CC);
-  if (I == End) {
-    JavaField* field = new(classLoader->allocator) JavaField();
-    field->name = name;
-    field->type = type;
-    field->classDef = (Class*)this;
-    field->_signature = 0;
-    field->ptrOffset = 0;
-    field->access = access;
-    field->JInfo = 0;
-    map.insert(std::make_pair(CC, field));
-    return field;
-  } else {
-    return I->second;
-  }
+  field.name = name;
+  field.type = type;
+  field.classDef = (Class*)this;
+  field._signature = 0;
+  field.ptrOffset = 0;
+  field.access = access;
+  field.JInfo = 0;
+  return &field;
 }
 
 void Class::readParents(Reader& reader) {
-  unsigned short int superEntry = reader.readU2();
-  const UTF8* super = superEntry ? 
+  uint16 superEntry = reader.readU2();
+  const UTF8* superUTF8 = superEntry ? 
         ctpInfo->resolveClassName(superEntry) : 0;
 
-  unsigned short int nbI = reader.readU2();
-  superUTF8 = super;
+  uint16 nbI = reader.readU2();
+  // Use the super field to store the UTF8. since the field is never
+  // used before actually loading the super, this is harmless.
+  super = (Class*)superUTF8;
+
+  // Use the regular interface array to store the UTF8s. Since this array
+  // is never used before actually loading the interfaces, this is harmless.
+  interfaces = (Class**)
+    classLoader->allocator.Allocate(nbI * sizeof(Class*));
+  nbInterfaces = nbI;
   for (int i = 0; i < nbI; i++)
-    interfacesUTF8.push_back(ctpInfo->resolveClassName(reader.readU2()));
+    interfaces[i] = (Class*)ctpInfo->resolveClassName(reader.readU2());
 
 }
 
 void UserClass::loadParents() {
-  std::vector<const UTF8*>* interfacesUTF8 = getInterfacesUTF8();
-  unsigned nbI = interfacesUTF8->size();
-  const UTF8* superUTF8 = getSuperUTF8();
+  const UTF8* superUTF8 = (const UTF8*)super;
   if (superUTF8 == 0) {
     depth = 0;
     display = (CommonClass**)
@@ -713,48 +756,70 @@ void UserClass::loadParents() {
     display[depth] = this;
   }
 
-  for (unsigned i = 0; i < nbI; i++)
-    interfaces.push_back((UserClass*)classLoader->loadName((*interfacesUTF8)[i],
-                                                           true, true));
+  for (unsigned i = 0; i < nbInterfaces; i++)
+    interfaces[i] = 
+      ((UserClass*)classLoader->loadName((const UTF8*)interfaces[i],
+                                         true, true));
 }
 
-void Class::readAttributs(Reader& reader, std::vector<Attribut*>& attr) {
-  unsigned short int nba = reader.readU2();
+Attribut* Class::readAttributs(Reader& reader, uint16& size) {
+  uint16 nba = reader.readU2();
   
+  Attribut* attributs = new(classLoader->allocator) Attribut[nba];
+
   for (int i = 0; i < nba; i++) {
     const UTF8* attName = ctpInfo->UTF8At(reader.readU2());
     uint32 attLen = reader.readU4();
-    Attribut* att = new(classLoader->allocator) Attribut(attName, attLen,
-                                                         reader.cursor);
-    attr.push_back(att);
+    Attribut& att = attributs[i];
+    att.start = reader.cursor;
+    att.nbb = attLen;
+    att.name = attName;
     reader.seek(attLen, Reader::SeekCur);
   }
+
+  size = nba;
+  return attributs;
 }
 
 void Class::readFields(Reader& reader) {
   uint16 nbFields = reader.readU2();
-  uint32 sindex = 0;
-  uint32 vindex = 0;
+  virtualFields = new (classLoader->allocator) JavaField[nbFields];
+  staticFields = virtualFields + nbFields;
   for (int i = 0; i < nbFields; i++) {
     uint16 access = reader.readU2();
     const UTF8* name = ctpInfo->UTF8At(reader.readU2());
     const UTF8* type = ctpInfo->UTF8At(reader.readU2());
-    JavaField* field = constructField(name, type, access);
-    isStatic(access) ?
-      field->num = sindex++ :
-      field->num = vindex++;
-    readAttributs(reader, field->attributs);
+    JavaField* field = 0;
+    if (isStatic(access)) {
+      --staticFields;
+      field = constructField(staticFields[0], name, type, access);
+      ++nbStaticFields;
+    } else {
+      field = constructField(virtualFields[nbVirtualFields], name, type, access);
+      ++nbVirtualFields;
+    }
+    field->attributs = readAttributs(reader, field->nbAttributs);
   }
 }
 
 void Class::readMethods(Reader& reader) {
   uint16 nbMethods = reader.readU2();
+  virtualMethods = new(classLoader->allocator) JavaMethod[nbMethods];
+  staticMethods = virtualMethods + nbMethods;
   for (int i = 0; i < nbMethods; i++) {
     uint16 access = reader.readU2();
     const UTF8* name = ctpInfo->UTF8At(reader.readU2());
     const UTF8* type = ctpInfo->UTF8At(reader.readU2());
-    JavaMethod* meth = constructMethod(name, type, access);
-    readAttributs(reader, meth->attributs);
+    JavaMethod* meth = 0;
+    if (isStatic(access)) {
+      --staticMethods;
+      meth = constructMethod(staticMethods[0], name, type, access);
+      ++nbStaticMethods;
+    } else {
+      meth = constructMethod(virtualMethods[nbVirtualMethods], name, type, access);
+      ++nbVirtualMethods;
+    }
+    meth->attributs = readAttributs(reader, meth->nbAttributs);
   }
 }
 
@@ -769,8 +834,8 @@ void Class::readClass() {
   if (magic != Jnjvm::Magic) {
     JavaThread::get()->isolate->classFormatError("bad magic number %p", magic);
   }
-  minor = reader.readU2();
-  major = reader.readU2();
+  /* uint16 minor = */ reader.readU2();
+  /* uint16 major = */ reader.readU2();
   uint32 ctpSize = reader.readU2();
   ctpInfo = new(classLoader->allocator, ctpSize) JavaConstantPool(this, reader,
                                                                   ctpSize);
@@ -790,7 +855,7 @@ void Class::readClass() {
   readParents(reader);
   readFields(reader);
   readMethods(reader);
-  readAttributs(reader, attributs);
+  attributs = readAttributs(reader, nbAttributs);
 }
 
 #ifndef ISOLATE_SHARING
@@ -814,7 +879,7 @@ void CommonClass::resolveClass() {
         cl->loadParents();
         cl->acquire();
         cl->status = prepared;
-        classLoader->TheModule->resolveVirtualClass(cl);
+        classLoader->getModule()->resolveVirtualClass(cl);
         cl->status = resolved;
       }
       release();
@@ -839,7 +904,7 @@ void UserClass::resolveInnerOuterClasses() {
     Attribut* attribut = lookupAttribut(Attribut::innerClassesAttribut);
     if (attribut != 0) {
       Reader reader(attribut, getBytes());
-
+      uint16 temp = 0;
       uint16 nbi = reader.readU2();
       for (uint16 i = 0; i < nbi; ++i) {
         uint16 inner = reader.readU2();
@@ -853,8 +918,12 @@ void UserClass::resolveInnerOuterClasses() {
         if (clInner == this) {
           outerClass = clOuter;
         } else if (clOuter == this) {
+          if (!temp) {
+            innerClasses = (Class**)
+              classLoader->allocator.Allocate(nbi * sizeof(Class*));
+          }
           clInner->setInnerAccess(accessFlags);
-          innerClasses.push_back(clInner);
+          innerClasses[nbInnerClasses++] = clInner;
         }
       }
     }
@@ -864,11 +933,11 @@ void UserClass::resolveInnerOuterClasses() {
 
 void CommonClass::getDeclaredConstructors(std::vector<JavaMethod*>& res,
                                           bool publicOnly) {
-  for (CommonClass::method_iterator i = virtualMethods.begin(),
-       e = virtualMethods.end(); i != e; ++i) {
-    JavaMethod* meth = i->second;
+  for (uint32 i = 0; i < nbVirtualMethods; ++i) {
+    JavaMethod* meth = &virtualMethods[i];
     bool pub = isPublic(meth->access);
-    if (meth->name->equals(Jnjvm::initName) && (!publicOnly || pub)) {
+    if (meth->name->equals(classLoader->bootstrapLoader->initName) && 
+        (!publicOnly || pub)) {
       res.push_back(meth);
     }
   }
@@ -876,20 +945,20 @@ void CommonClass::getDeclaredConstructors(std::vector<JavaMethod*>& res,
 
 void CommonClass::getDeclaredMethods(std::vector<JavaMethod*>& res,
                                      bool publicOnly) {
-  for (CommonClass::method_iterator i = virtualMethods.begin(),
-       e = virtualMethods.end(); i != e; ++i) {
-    JavaMethod* meth = i->second;
+  for (uint32 i = 0; i < nbVirtualMethods; ++i) {
+    JavaMethod* meth = &virtualMethods[i];
     bool pub = isPublic(meth->access);
-    if (!(meth->name->equals(Jnjvm::initName)) && (!publicOnly || pub)) {
+    if (!(meth->name->equals(classLoader->bootstrapLoader->initName)) && 
+        (!publicOnly || pub)) {
       res.push_back(meth);
     }
   }
   
-  for (CommonClass::method_iterator i = staticMethods.begin(),
-       e = staticMethods.end(); i != e; ++i) {
-    JavaMethod* meth = i->second;
+  for (uint32 i = 0; i < nbStaticMethods; ++i) {
+    JavaMethod* meth = &staticMethods[i];
     bool pub = isPublic(meth->access);
-    if (!(meth->name->equals(Jnjvm::clinitName)) && (!publicOnly || pub)) {
+    if (!(meth->name->equals(classLoader->bootstrapLoader->clinitName)) && 
+        (!publicOnly || pub)) {
       res.push_back(meth);
     }
   }
@@ -897,17 +966,15 @@ void CommonClass::getDeclaredMethods(std::vector<JavaMethod*>& res,
 
 void CommonClass::getDeclaredFields(std::vector<JavaField*>& res,
                                     bool publicOnly) {
-  for (CommonClass::field_iterator i = virtualFields.begin(),
-       e = virtualFields.end(); i != e; ++i) {
-    JavaField* field = i->second;
+  for (uint32 i = 0; i < nbVirtualFields; ++i) {
+    JavaField* field = &virtualFields[i];
     if (!publicOnly || isPublic(field->access)) {
       res.push_back(field);
     }
   }
   
-  for (CommonClass::field_iterator i = staticFields.begin(),
-       e = staticFields.end(); i != e; ++i) {
-    JavaField* field = i->second;
+  for (uint32 i = 0; i < nbStaticFields; ++i) {
+    JavaField* field = &staticFields[i];
     if (!publicOnly || isPublic(field->access)) {
       res.push_back(field);
     }
@@ -915,5 +982,5 @@ void CommonClass::getDeclaredFields(std::vector<JavaField*>& res,
 }
 
 void Class::resolveStaticClass() {
-  classLoader->TheModule->resolveStaticClass((Class*)this);
+  classLoader->getModule()->resolveStaticClass((Class*)this);
 }

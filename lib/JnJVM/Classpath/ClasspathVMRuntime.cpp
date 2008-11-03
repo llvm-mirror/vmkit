@@ -44,17 +44,18 @@ jobject _strLib) {
   const UTF8* utf8Lib = strLib->value;
   uint32 stLib = strLib->offset;
   sint32 lgLib = strLib->count;
-  sint32 lgPre = vm->prelib->size;
-  sint32 lgPost = vm->postlib->size;
+  sint32 lgPre = vm->bootstrapLoader->prelib->size;
+  sint32 lgPost = vm->bootstrapLoader->postlib->size;
   
   uint32 size = (uint32)(lgPre + lgLib + lgPost);
   ArrayUInt16* array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(size, vm);
   uint16* elements = array->elements;
 
-  memmove(elements, vm->prelib->elements, lgPre * sizeof(uint16));
+  memmove(elements, vm->bootstrapLoader->prelib->elements,
+          lgPre * sizeof(uint16));
   memmove(&(elements[lgPre]), &(utf8Lib->elements[stLib]), 
           lgLib * sizeof(uint16));
-  memmove(&(elements[lgPre + lgLib]), vm->postlib->elements,
+  memmove(&(elements[lgPre + lgLib]), vm->bootstrapLoader->postlib->elements,
            lgPost * sizeof(uint16));
   
   return (jobject)(vm->UTF8ToStr((const UTF8*)array));
@@ -72,12 +73,14 @@ jobject _str,
 jobject _loader) {
   JavaString* str = (JavaString*)_str;
   Jnjvm* vm = JavaThread::get()->isolate;
-  
+  JnjvmClassLoader* loader = 
+    JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)_loader, vm);
+
   char* buf = str->strToAsciiz();
   
   void* res = dlopen(buf, RTLD_LAZY | RTLD_LOCAL);
   if (res != 0) {
-    vm->nativeLibs.push_back(res);
+    loader->nativeLibs.push_back(res);
     onLoad_t onLoad = (onLoad_t)(intptr_t)dlsym(res, "JNI_OnLoad");
     if (onLoad) onLoad(&vm->javavmEnv, 0);
     return 1;

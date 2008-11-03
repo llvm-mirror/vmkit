@@ -20,9 +20,6 @@
 
 #include "JavaObject.h"
 
-extern "C" void* __cxa_allocate_exception(unsigned);
-extern "C" void __cxa_throw(void*, void*, void*);
-
 namespace jnjvm {
 
 class Class;
@@ -69,23 +66,14 @@ public:
     return (void*)
       ((char*)JavaThread::get()->internalPendingException - 8 * sizeof(void*));
   }
-  
-  static void throwException(JavaObject* obj) {
-    JavaThread* th = JavaThread::get();
-    assert(th->pendingException == 0 && "pending exception already there?");
-    th->pendingException = obj;
-    void* exc = __cxa_allocate_exception(0);
-    th->internalPendingException = exc;
-    __cxa_throw(exc, 0, 0);
-  }
+ 
+  /// throwException - Throws the given exception in the current thread.
+  ///
+  static void throwException(JavaObject* obj);
 
-  static void throwPendingException() {
-    JavaThread* th = JavaThread::get();
-    assert(th->pendingException);
-    void* exc = __cxa_allocate_exception(0);
-    th->internalPendingException = exc;
-    __cxa_throw(exc, 0, 0);
-  }
+  /// throwPendingException - Throws a pending exception created by JNI.
+  ///
+  static void throwPendingException();
   
   static bool compareException(UserClass* cl) {
     JavaObject* pe = JavaThread::get()->pendingException;

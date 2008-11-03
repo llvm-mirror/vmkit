@@ -19,7 +19,6 @@
 
 #include "JnjvmModule.h"
 
-#include <iostream>
 using namespace llvm;
 using namespace jnjvm;
 
@@ -228,9 +227,82 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             BranchInst::Create(NBB, ifTrue);
             break;
           }
-        }
-        
-        else if (V == module->GetConstantPoolAtFunction) {
+        } else if (V == module->InitialisationCheckFunction) {
+          Changed = true;
+          
+          BasicBlock* NBB = 0;
+          if (CI->getParent()->getTerminator() != CI) {
+            NBB = II->getParent()->splitBasicBlock(II);
+            CI->getParent()->getTerminator()->eraseFromParent();
+          } else {
+            InvokeInst* Invoke = dyn_cast<InvokeInst>(CI);
+            assert(Invoke && "Last instruction is not an invoke");
+            NBB = Invoke->getNormalDest();
+          }
+          
+          Value* Cl = Call.getArgument(0); 
+          std::vector<Value*> indexes; 
+          indexes.push_back(mvm::MvmModule::constantZero);
+          indexes.push_back(module->OffsetStatusInClassConstant);
+          Value* StatusPtr = GetElementPtrInst::Create(Cl, indexes.begin(),
+                                                       indexes.end(), "", CI);
+          Value* Status = new LoadInst(StatusPtr, "", CI);
+          
+          
+          Value* test = new ICmpInst(ICmpInst::ICMP_UGT, Status,
+                                     jnjvm::JnjvmModule::ClassReadyConstant,
+                                     "", CI);
+ 
+          BasicBlock* trueCl = BasicBlock::Create("Initialized", &F);
+          BasicBlock* falseCl = BasicBlock::Create("Uninitialized", &F);
+          PHINode* node = llvm::PHINode::Create(JnjvmModule::JavaClassType, "", trueCl);
+          node->addIncoming(Cl, CI->getParent());
+          BranchInst::Create(trueCl, falseCl, test, CI);
+  
+          std::vector<Value*> Args;
+          Args.push_back(Cl);
+          
+          Value* res = 0;
+          if (InvokeInst* Invoke = dyn_cast<InvokeInst>(CI)) {
+            BasicBlock* UI = Invoke->getUnwindDest();
+            res = InvokeInst::Create(module->InitialiseClassFunction,
+                                     trueCl, UI, Args.begin(),
+                                     Args.end(), "", falseCl);
+
+            // For some reason, an LLVM pass may add PHI nodes to the
+            // exception destination.
+            BasicBlock::iterator Temp = UI->getInstList().begin();
+            while (PHINode* PHI = dyn_cast<PHINode>(Temp)) {
+              Value* Val = PHI->getIncomingValueForBlock(CI->getParent());
+              PHI->removeIncomingValue(CI->getParent(), false);
+              PHI->addIncoming(Val, falseCl);
+              Temp++;
+            }
+            
+            // And here we set the phi nodes of the normal dest of the Invoke
+            // instruction. The phi nodes have now the trueCl as basic block.
+            Temp = NBB->getInstList().begin();
+            while (PHINode* PHI = dyn_cast<PHINode>(Temp)) {
+              Value* Val = PHI->getIncomingValueForBlock(CI->getParent());
+              PHI->removeIncomingValue(CI->getParent(), false);
+              PHI->addIncoming(Val, trueCl);
+              Temp++;
+            }
+          } else {
+            res = CallInst::Create(module->InitialiseClassFunction,
+                                   Args.begin(), Args.end(), "",
+                                   falseCl);
+            BranchInst::Create(trueCl, falseCl);
+          }
+          
+          node->addIncoming(res, falseCl);
+
+
+          CI->replaceAllUsesWith(node);
+          CI->eraseFromParent();
+          BranchInst::Create(NBB, trueCl);
+          break;
+        } else if (V == module->GetConstantPoolAtFunction) {
           Function* resolver = dyn_cast<Function>(Call.getArgument(0));
           assert(resolver && "Wrong use of GetConstantPoolAt");
           const Type* returnType = resolver->getReturnType();
@@ -289,6 +361,17 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
               PHI->addIncoming(Val, falseCl);
               Temp++;
             }
+
+            // And here we set the phi nodes of the normal dest of the Invoke
+            // instruction. The phi nodes have now the trueCl as basic block.
+            Temp = NBB->getInstList().begin();
+            while (PHINode* PHI = dyn_cast<PHINode>(Temp)) {
+              Value* Val = PHI->getIncomingValueForBlock(CI->getParent());
+              PHI->removeIncomingValue(CI->getParent(), false);
+              PHI->addIncoming(Val, trueCl);
+              Temp++;
+            }
+
           } else {
             res = CallInst::Create(resolver, Args.begin(), Args.end(), "",
                                    falseCl);

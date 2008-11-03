@@ -16,6 +16,7 @@
 #include "types.h"
 
 #include "mvm/Allocator.h"
+#include "mvm/CompilationUnit.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 
@@ -49,7 +50,7 @@ class ZipArchive;
 /// its own tables (signatures, UTF8, types) which are mapped to a single
 /// table for non-isolate environments.
 ///
-class JnjvmClassLoader : public mvm::Object {
+class JnjvmClassLoader : public mvm::CompilationUnit {
 private:
    
   
@@ -111,7 +112,9 @@ public:
   
   /// TheModule - JIT module for compiling methods.
   ///
-  JnjvmModule* TheModule;
+  JnjvmModule* getModule() {
+    return (JnjvmModule*)TheModule;
+  }
 
   /// TheModuleProvider - JIT module provider for dynamic class loading and
   /// lazy compilation.
@@ -192,7 +195,7 @@ public:
   /// bootstrapLoader - The bootstrap loader of the JVM. Loads the base
   /// classes.
   ///
-  ISOLATE_STATIC JnjvmBootstrapLoader* bootstrapLoader;
+  JnjvmBootstrapLoader* bootstrapLoader;
   
   /// ~JnjvmClassLoader - Destroy the loader. Depending on the JVM
   /// configuration, this may destroy the tables, JIT module and
@@ -212,9 +215,7 @@ public:
     classes = 0;
   }
 
-#ifdef ISOLATE_SHARING
   UserClass* loadClass;
-#endif
   
   const UTF8* constructArrayName(uint32 steps, const UTF8* className);
   
@@ -222,6 +223,12 @@ public:
 
   /// Strings hashed by this classloader.
   std::vector<JavaString*, gc_allocator<JavaString*> > strings;
+  
+  /// nativeLibs - Native libraries (e.g. '.so') loaded by this class loader.
+  ///
+  std::vector<void*> nativeLibs;
+
+  void* loadLib(const char* buf, bool& jnjvm);
 };
 
 /// JnjvmBootstrapLoader - This class is for the bootstrap class loader, which
@@ -278,7 +285,7 @@ public:
   /// createBootstrapLoader - Creates the bootstrap loader, first thing
   /// to do before any execution of a JVM.
   ///
-  JnjvmBootstrapLoader(uint32 memLimit);
+  JnjvmBootstrapLoader(bool staticCompilation);
   JnjvmBootstrapLoader() {}
   
   virtual JavaString* UTF8ToStr(const UTF8* utf8);
@@ -288,9 +295,62 @@ public:
   /// Java code.
   ///
   Classpath* upcalls;
+  
+  /// InterfacesArray - The interfaces that array classes implement.
+  ///
+  UserClass** InterfacesArray;
 
-  ISOLATE_STATIC std::vector<UserClass*> InterfacesArray;
-  ISOLATE_STATIC UserClass* SuperArray;
+  /// SuperArray - The super of array classes.
+  UserClass* SuperArray;
+
+  /// Lists of UTF8s used internaly in VMKit.
+  const UTF8* NoClassDefFoundError;
+  const UTF8* initName;
+  const UTF8* clinitName;
+  const UTF8* clinitType; 
+  const UTF8* runName; 
+  const UTF8* prelib; 
+  const UTF8* postlib; 
+  const UTF8* mathName;
+  const UTF8* stackWalkerName;
+  const UTF8* abs;
+  const UTF8* sqrt;
+  const UTF8* sin;
+  const UTF8* cos;
+  const UTF8* tan;
+  const UTF8* asin;
+  const UTF8* acos;
+  const UTF8* atan;
+  const UTF8* atan2;
+  const UTF8* exp;
+  const UTF8* log;
+  const UTF8* pow;
+  const UTF8* ceil;
+  const UTF8* floor;
+  const UTF8* rint;
+  const UTF8* cbrt;
+  const UTF8* cosh;
+  const UTF8* expm1;
+  const UTF8* hypot;
+  const UTF8* log10;
+  const UTF8* log1p;
+  const UTF8* sinh;
+  const UTF8* tanh;
+  const UTF8* finalize;
+
+  /// primitiveMap - Map of primitive classes, hashed by id.
+  std::map<const char, UserClassPrimitive*> primitiveMap;
+
+  UserClassPrimitive* getPrimitiveClass(char id) {
+    return primitiveMap[id];
+  }
+
+  /// arrayTable - Table of array classes.
+  UserClassArray* arrayTable[8];
+
+  UserClassArray* getArrayClass(unsigned id) {
+    return arrayTable[id - 4];
+  }
 };
 
 } // end namespace jnjvm
