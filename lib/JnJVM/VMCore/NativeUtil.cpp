@@ -7,9 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <dlfcn.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include "ClasspathReflect.h"
 #include "JavaArray.h"
@@ -24,25 +21,25 @@
 #include "NativeUtil.h"
 #include "Reader.h"
 
+#include <cstdlib>
+#include <cstring>
+
 using namespace jnjvm;
 
 Jnjvm* NativeUtil::myVM(JNIEnv* env) {
   return JavaThread::get()->isolate;
 }
 
-#define PRE "Java_"
-#define PRE_LEN 5
-
-static char* jniConsFromMeth(CommonClass* cl, JavaMethod* meth, char* buf) {
-  const UTF8* jniConsClName = cl->name;
-  const UTF8* jniConsName = meth->name;
+void JavaMethod::jniConsFromMeth(char* buf) const {
+  const UTF8* jniConsClName = classDef->name;
+  const UTF8* jniConsName = name;
   sint32 clen = jniConsClName->size;
   sint32 mnlen = jniConsName->size;
 
   uint32 cur = 0;
-  char* ptr = &(buf[PRE_LEN]);
+  char* ptr = &(buf[JNI_NAME_PRE_LEN]);
   
-  memcpy(buf, PRE, PRE_LEN);
+  memcpy(buf, JNI_NAME_PRE, JNI_NAME_PRE_LEN);
   
   for (sint32 i =0; i < clen; ++i) {
     cur = jniConsClName->elements[i];
@@ -63,20 +60,19 @@ static char* jniConsFromMeth(CommonClass* cl, JavaMethod* meth, char* buf) {
   
   ptr[0] = 0;
 
-  return buf;
 
 }
 
-static char* jniConsFromMeth2(CommonClass* cl, JavaMethod* meth, char* buf) {
-  const UTF8* jniConsClName = cl->name;
-  const UTF8* jniConsName = meth->name;
+void JavaMethod::jniConsFromMeth2(char* buf) const {
+  const UTF8* jniConsClName = classDef->name;
+  const UTF8* jniConsName = name;
   sint32 clen = jniConsClName->size;
   sint32 mnlen = jniConsName->size;
 
   uint32 cur = 0;
-  char* ptr = &(buf[PRE_LEN]);
+  char* ptr = &(buf[JNI_NAME_PRE_LEN]);
   
-  memcpy(buf, PRE, PRE_LEN);
+  memcpy(buf, JNI_NAME_PRE, JNI_NAME_PRE_LEN);
   
   for (sint32 i =0; i < clen; ++i) {
     cur = jniConsClName->elements[i];
@@ -102,21 +98,20 @@ static char* jniConsFromMeth2(CommonClass* cl, JavaMethod* meth, char* buf) {
   
   ptr[0] = 0;
 
-  return buf;
 
 }
 
-static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth, char* buf) {
-  const UTF8* jniConsClName = cl->name;
-  const UTF8* jniConsName = meth->name;
-  const UTF8* jniConsType = meth->type;
+void JavaMethod::jniConsFromMeth3(char* buf) const {
+  const UTF8* jniConsClName = classDef->name;
+  const UTF8* jniConsName = name;
+  const UTF8* jniConsType = type;
   sint32 clen = jniConsClName->size;
   sint32 mnlen = jniConsName->size;
 
   uint32 cur = 0;
-  char* ptr = &(buf[PRE_LEN]);
+  char* ptr = &(buf[JNI_NAME_PRE_LEN]);
   
-  memcpy(buf, PRE, PRE_LEN);
+  memcpy(buf, JNI_NAME_PRE, JNI_NAME_PRE_LEN);
   
   for (sint32 i =0; i < clen; ++i) {
     cur = jniConsClName->elements[i];
@@ -167,7 +162,6 @@ static char* jniConsFromMeth3(CommonClass* cl, JavaMethod* meth, char* buf) {
 
   ptr[0] = 0;
 
-  return buf;
 
 }
 
@@ -179,23 +173,22 @@ void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
   sint32 mnlen = jniConsName->size;
   sint32 mtlen = jniConsType->size;
 
-  char* buf = (char*)alloca(3 + PRE_LEN + mnlen + clen + (mtlen << 1));
-  jniConsFromMeth(cl, meth, buf);
+  char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + mnlen + clen + (mtlen << 1));
+  meth->jniConsFromMeth(buf);
   void* res = cl->classLoader->loadLib(buf, jnjvm);
   if (!res) {
-    buf = jniConsFromMeth2(cl, meth, buf);
+    meth->jniConsFromMeth2(buf);
     res = cl->classLoader->loadLib(buf, jnjvm);
     if (!res) {
-      buf = jniConsFromMeth3(cl, meth, buf);
+      meth->jniConsFromMeth3(buf);
       res = cl->classLoader->loadLib(buf, jnjvm);
     }
   }
   return res;
 }
 
-#undef PRE_LEN
-
-UserCommonClass* NativeUtil::resolvedImplClass(Jnjvm* vm, jclass clazz, bool doClinit) {
+UserCommonClass* NativeUtil::resolvedImplClass(Jnjvm* vm, jclass clazz,
+                                               bool doClinit) {
   UserCommonClass* cl = ((JavaObjectClass*)clazz)->getClass();
   cl->resolveClass();
   if (doClinit) cl->initialiseClass(vm);

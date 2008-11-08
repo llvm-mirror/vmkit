@@ -801,6 +801,13 @@ public:
   /// printString - Output a string representation of the method.
   ///
   const char* printString() const;
+  
+  /// jniConsFromMeth - Construct the JNI name of this method.
+  ///
+  void jniConsFromMeth(char* buf) const;
+  void jniConsFromMeth2(char* buf) const;
+  void jniConsFromMeth3(char* buf) const;
+  
 
 //===----------------------------------------------------------------------===//
 //
@@ -995,6 +1002,9 @@ public:
            "Invalid concrete type or multiple inheritence for getInfo");
     return static_cast<Ty*>(JInfo);
   }
+
+  #define JNI_NAME_PRE "Java_"
+  #define JNI_NAME_PRE_LEN 5
 
 };
 
