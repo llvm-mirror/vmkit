@@ -425,10 +425,6 @@ extern "C" void JavaThreadClearException() {
   return JavaThread::clearException();
 }
 
-extern "C" uint32 getThreadID() {
-  return JavaThread::get()->threadID;
-}
-
 extern "C" void overflowThinLock(JavaObject* obj) {
   obj->overflowThinlock();
 }
