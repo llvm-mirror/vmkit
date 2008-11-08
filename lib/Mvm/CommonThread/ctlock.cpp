@@ -51,16 +51,16 @@ Lock::~Lock() {
 }
 
 bool Lock::selfOwner() {
-  return owner == Thread::self();
+  return owner == mvm::Thread::get();
 }
 
-int Lock::getOwner() {
+mvm::Thread* Lock::getOwner() {
   return owner;
 }
 
 void LockNormal::lock() {
   pthread_mutex_lock((pthread_mutex_t*)&internalLock);
-  owner = (int)pthread_self();
+  owner = mvm::Thread::get();
 }
 
 void LockNormal::unlock() {
@@ -70,7 +70,7 @@ void LockNormal::unlock() {
 
 void LockRecursive::lock() {
   pthread_mutex_lock((pthread_mutex_t*)&internalLock);
-  if (!owner) owner = (int)pthread_self();
+  if (!owner) owner = mvm::Thread::get();
   ++n;
 }
 

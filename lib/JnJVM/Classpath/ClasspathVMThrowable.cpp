@@ -71,7 +71,8 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   JavaObject* res = newS->doNew(vm);
   vm->upcalls->initStackTraceElement->invokeIntSpecial(vm, newS, res,
                                                        sourceName,
-                                                       (uint32)ip, className,
+                                                       0, // source line
+                                                       className,
                                                        methodName, native);
   return res;
 }

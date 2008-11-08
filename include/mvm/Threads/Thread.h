@@ -69,11 +69,6 @@ public:
   ///
   static void yield(unsigned int* n);
   
-  /// self - The thread id of the current thread, which is specific to the
-  /// underlying implementation.
-  ///
-  static int self(void);
-
   /// kill - Kill the thread with the given pid by sending it a signal.
   ///
   static int kill(int tid, int signo);

@@ -17,11 +17,12 @@ namespace mvm {
 class Cond;
 class LockNormal;
 class LockRecursive;
+class Thread;
 
 class Lock {
   friend class Cond;
 protected:
-  int owner;
+  mvm::Thread* owner;
   pthread_mutex_t internalLock;
 
 public:
@@ -33,7 +34,7 @@ public:
   virtual void unlock() = 0;
 
   bool selfOwner();
-  int getOwner();
+  mvm::Thread* getOwner();
   
 };
 

@@ -51,7 +51,6 @@ VMThread* VMThread::allocate(VMObject* thread, VirtualMachine* vm) {
   key->varcond = new mvm::Cond();
   key->interruptFlag = 0;
   key->state = StateRunning;
-  key->self = mvm::Thread::self();
   key->pendingException = 0;
   key->perFunctionPasses = new llvm::FunctionPassManager(vm->TheModuleProvider);
   key->perFunctionPasses->add(new llvm::TargetData(vm->module));

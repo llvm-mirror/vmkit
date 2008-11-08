@@ -31,10 +31,6 @@ void Thread::yield() {
   }
 }
 
-int Thread::self() {
-  return (int)pthread_self();
-}
-
 int Thread::kill(int tid, int signo) {
   return pthread_kill((pthread_t)tid, signo);
 }
@@ -135,7 +131,6 @@ StackThreadManager TheStackManager;
 /// given routine of th.
 ///
 void Thread::internalThreadStart(mvm::Thread* th) {
-  th->internalThreadID = (void*)pthread_self();
   th->threadID = (int)th & mvm::Thread::IDMask;
   th->baseSP  = &th;
 
@@ -163,11 +158,10 @@ int Thread::start(void (*fct)(mvm::Thread*)) {
   pthread_attr_t attributs;
   pthread_attr_init(&attributs);
   pthread_attr_setstack(&attributs, this, STACK_SIZE);
-  pthread_t tid;
   routine = fct;
-  int res = pthread_create(&tid, &attributs,
+  int res = pthread_create((pthread_t*)(void*)(&internalThreadID), &attributs,
                            (void* (*)(void *))internalThreadStart, this);
-  pthread_detach(*(pthread_t *)tid);
+  pthread_detach((pthread_t)internalThreadID);
   pthread_attr_destroy(&attributs);
   return res;
 }

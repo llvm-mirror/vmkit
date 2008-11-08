@@ -36,7 +36,6 @@ public:
   mvm::Cond* varcond;
   VMObject* pendingException;
   void* internalPendingException;
-  unsigned int self;
   unsigned int interruptFlag;
   unsigned int state;
   
