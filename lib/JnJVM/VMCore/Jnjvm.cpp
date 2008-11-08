@@ -44,7 +44,7 @@ const char* Jnjvm::dirSeparator = "/";
 const char* Jnjvm::envSeparator = ":";
 const unsigned int Jnjvm::Magic = 0xcafebabe;
 
-typedef void (*clinit_t)(Jnjvm* vm, UserConstantPool*);
+typedef void (*clinit_t)(UserConstantPool*);
 
 
 /// initialiseClass - Java class initialisation. Java specification §2.17.5.
@@ -185,7 +185,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
     if (meth) {
       try{
         clinit_t pred = (clinit_t)(intptr_t)meth->compiledPtr();
-        pred(vm, cl->getConstantPool());
+        pred(cl->getConstantPool());
       } catch(...) {
         exc = JavaThread::getJavaException();
         assert(exc && "no exception?");
@@ -239,7 +239,8 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
   }
 }
       
-void Jnjvm::errorWithExcp(UserClass* cl, JavaMethod* init, const JavaObject* excp) {
+void Jnjvm::errorWithExcp(UserClass* cl, JavaMethod* init,
+                          const JavaObject* excp) {
   JavaObject* obj = cl->doNew(this);
   init->invokeIntSpecial(this, cl, obj, excp);
   JavaThread::throwException(obj);
@@ -505,7 +506,8 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
       ArrayUInt8* res = (ArrayUInt8*)array->doNew(file->ucsize, vm);
       int ok = archive.readFile(res, file);
       if (ok) {
-        char* mainClass = findInformation(vm, res, MAIN_CLASS, LENGTH_MAIN_CLASS);
+        char* mainClass = findInformation(vm, res, MAIN_CLASS,
+                                          LENGTH_MAIN_CLASS);
         if (mainClass) {
           className = mainClass;
         } else {
@@ -572,7 +574,7 @@ void ClArgumentsInfo::printInformation() {
     "-agentpath:<pathname>[=<options>]\n"
     "              load native agent library by full pathname\n"
     "-javaagent:<jarpath>[=<options>]\n"
-    "              load Java programming language agent, see java.lang.instrument\n");
+    "       load Java programming language agent, see java.lang.instrument\n");
 }
 
 void ClArgumentsInfo::readArgs(Jnjvm* vm) {
@@ -855,7 +857,7 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
 #endif
   
   ClArgumentsInfo& info = vm->argumentsInfo;
-#if 0
+  
   if (info.agents.size()) {
     assert(0 && "implement me");
     JavaObject* instrumenter = 0;//createInstrumenter();
@@ -866,7 +868,6 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
       vm->executePremain(i->first, args, instrumenter);
     }
   }
-#endif
     
   UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfString;
   ArrayObject* args = (ArrayObject*)array->doNew(info.argc - 2, vm);

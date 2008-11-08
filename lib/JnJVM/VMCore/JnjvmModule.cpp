@@ -635,7 +635,6 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
     }
 
 #if defined(ISOLATE_SHARING)
-    llvmArgs.push_back(JnjvmModule::JnjvmType); // vm
     llvmArgs.push_back(JnjvmModule::ConstantPoolType); // cached constant pool
 #endif
 
@@ -659,7 +658,6 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
     }
 
 #if defined(ISOLATE_SHARING)
-    llvmArgs.push_back(JnjvmModule::JnjvmType); // vm
     llvmArgs.push_back(JnjvmModule::ConstantPoolType); // cached constant pool
 #endif
 
@@ -686,7 +684,6 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
     }
 
 #if defined(ISOLATE_SHARING)
-    llvmArgs.push_back(JnjvmModule::JnjvmType); // vm
     llvmArgs.push_back(JnjvmModule::ConstantPoolType); // cached constant pool
 #endif
 
@@ -711,10 +708,6 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ptr, *func;
-#if defined(ISOLATE_SHARING)
-  Value* vm = i;
-#endif
-  ++i;
 #if defined(ISOLATE_SHARING)
   Value* ctp = i;
 #endif
@@ -745,7 +738,6 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   }
 
 #if defined(ISOLATE_SHARING)
-  Args.push_back(vm);
   Args.push_back(ctp);
 #endif
 
@@ -773,10 +765,6 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ap, *func;
 #if defined(ISOLATE_SHARING)
-  Value* vm = i;
-#endif
-  ++i;
-#if defined(ISOLATE_SHARING)
   Value* ctp = i;
 #endif
   ++i;
@@ -796,7 +784,6 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   }
 
 #if defined(ISOLATE_SHARING)
-  Args.push_back(vm);
   Args.push_back(ctp);
 #endif
 
@@ -837,7 +824,6 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
     std::vector<const llvm::Type*> Args2;
-    Args2.push_back(JnjvmModule::JnjvmType); // vm
     Args2.push_back(JnjvmModule::ConstantPoolType); // ctp
     Args2.push_back(getVirtualPtrType());
     Args2.push_back(JnjvmModule::JavaObjectType);
@@ -853,7 +839,6 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
     std::vector<const llvm::Type*> Args;
-    Args.push_back(JnjvmModule::JnjvmType); // vm
     Args.push_back(JnjvmModule::ConstantPoolType); // ctp
     Args.push_back(getStaticPtrType());
     Args.push_back(PointerType::getUnqual(Type::Int32Ty));

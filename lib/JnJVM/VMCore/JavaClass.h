@@ -885,6 +885,9 @@ public:
     return static_cast<Ty*>(JInfo);
   }
   
+  #define JNI_NAME_PRE "Java_"
+  #define JNI_NAME_PRE_LEN 5
+  
 };
 
 /// JavaField - This class represents a Java field.
@@ -1003,8 +1006,6 @@ public:
     return static_cast<Ty*>(JInfo);
   }
 
-  #define JNI_NAME_PRE "Java_"
-  #define JNI_NAME_PRE_LEN 5
 
 };
 
