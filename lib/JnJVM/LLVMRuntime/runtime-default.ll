@@ -155,10 +155,6 @@ declare i1 @instantiationOfArray(%JavaClass*, %JavaClass*) readnone
 ;;; class.
 declare %JavaObject* @getClassDelegatee(%JavaClass*) readnone 
 
-;;; getThreadID - Returns the thread ID of the current thread. Used for thin
-;;; locks.
-declare i32 @getThreadID() readnone
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Exception methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -169,14 +165,14 @@ declare void @indexOutOfBoundsException(%JavaObject*, i32)
 declare void @negativeArraySizeException(i32)
 declare void @outOfMemoryError(i32)
 
-declare void @JavaThreadThrowException(%JavaObject*)
-declare void @JavaThreadClearException()
-declare i8* @JavaThreadGetException()
+declare void         @JavaThreadThrowException(%JavaObject*)
+declare void         @JavaThreadClearException()
+declare i8*          @JavaThreadGetException()
 declare %JavaObject* @JavaThreadGetJavaException()
-declare i1 @JavaThreadCompareException(%JavaClass*)
+declare i1           @JavaThreadCompareException(%JavaClass*)
 
 declare void @jniProceedPendingException()
-declare i8* @getSJLJBuffer()
+declare i8*  @getSJLJBuffer()
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Debugging methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

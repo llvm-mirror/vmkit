@@ -20,13 +20,13 @@ declare void @printObject(i8*)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 declare void @_Unwind_Resume_or_Rethrow(i8*)
-declare i8* @llvm.eh.exception() nounwind
-declare i32 @llvm.eh.selector.i32(i8*, i8*, ...) nounwind
-declare i64 @llvm.eh.selector.i64(i8*, i8*, ...) nounwind
+declare i8*  @llvm.eh.exception() nounwind
+declare i32  @llvm.eh.selector.i32(i8*, i8*, ...) nounwind
+declare i64  @llvm.eh.selector.i64(i8*, i8*, ...) nounwind
 declare void @__gxx_personality_v0()
-declare i8* @__cxa_begin_catch(i8*)
+declare i8*  @__cxa_begin_catch(i8*)
 declare void @__cxa_end_catch()
-declare i32 @setjmp(i8*)
+declare i32  @setjmp(i8*)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Math ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -55,7 +55,7 @@ declare double @rint(double)
 declare double @hypot(double, double)
 declare double @pow(double, double)
 declare double @atan2(double, double)
-declare float @fabsf(float)
+declare float  @fabsf(float)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Memory ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -63,12 +63,13 @@ declare float @fabsf(float)
 
 declare void @llvm.memcpy.i32(i8 *, i8 *, i32, i32) nounwind
 declare void @llvm.memset.i32(i8 *, i8, i32, i32) nounwind
+declare i8*  @llvm.frameaddress(i32) nounwind readnone
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Atomic ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-declare i8 @llvm.atomic.cmp.swap.i8.p0i8(i8*, i8, i8) nounwind
+declare i8  @llvm.atomic.cmp.swap.i8.p0i8(i8*, i8, i8) nounwind
 declare i16 @llvm.atomic.cmp.swap.i16.p0i16(i16*, i16, i16) nounwind
 declare i32 @llvm.atomic.cmp.swap.i32.p0i32(i32*, i32, i32) nounwind
 declare i64 @llvm.atomic.cmp.swap.i64.p0i64(i64*, i64, i64) nounwind

@@ -1109,7 +1109,6 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
   GetCollectorFunction = module->getFunction("getCollector");
 #endif
   
-  GetThreadIDFunction = module->getFunction("getThreadID");
   GetLockFunction = module->getFunction("getLock");
 }
 

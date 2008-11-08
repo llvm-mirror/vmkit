@@ -321,7 +321,6 @@ public:
   llvm::Function* GetObjectSizeFromClassFunction;
 
   llvm::Function* GetLockFunction;
-  llvm::Function* GetThreadIDFunction;
   llvm::Function* OverflowThinLockFunction;
 
   static llvm::ConstantInt* OffsetObjectSizeInClassConstant;

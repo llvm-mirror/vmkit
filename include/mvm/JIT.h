@@ -106,6 +106,7 @@ public:
 
   llvm::Function* llvm_memcpy_i32;
   llvm::Function* llvm_memset_i32;
+  llvm::Function* llvm_frameaddress;
   llvm::Function* llvm_atomic_lcs_i8;
   llvm::Function* llvm_atomic_lcs_i16;
   llvm::Function* llvm_atomic_lcs_i32;
@@ -158,6 +159,7 @@ public:
   static llvm::ConstantFP*  constantDoubleMinusZero;
   static llvm::Constant*    constantPtrNull;
   static llvm::ConstantInt* constantPtrSize;
+  static llvm::ConstantInt* constantThreadIDMask;
   static const llvm::PointerType* ptrType;
   static const llvm::PointerType* ptr32Type;
   static const llvm::PointerType* ptrPtrType;

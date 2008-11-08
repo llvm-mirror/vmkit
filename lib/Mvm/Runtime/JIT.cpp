@@ -122,6 +122,7 @@ void MvmModule::initialise(bool Fast) {
   constantDoubleMinusInfinity = ConstantFP::get(Type::DoubleTy, MinDouble);
   constantDoubleMinusZero = ConstantFP::get(Type::DoubleTy, -0.0);
   constantFloatMinusZero = ConstantFP::get(Type::FloatTy, -0.0f);
+  constantThreadIDMask = ConstantInt::get(Type::Int32Ty, mvm::Thread::IDMask);
 
   constantPtrNull = Constant::getNullValue(ptrType); 
   constantPtrSize = ConstantInt::get(Type::Int32Ty, sizeof(void*));
@@ -185,7 +186,8 @@ MvmModule::MvmModule(const std::string& ModuleID) : llvm::Module(ModuleID) {
   
   llvm_memcpy_i32 = module->getFunction("llvm.memcpy.i32");
   llvm_memset_i32 = module->getFunction("llvm.memset.i32");
-    
+  llvm_frameaddress = module->getFunction("llvm.frameaddress");
+
   llvm_atomic_lcs_i8 = module->getFunction("llvm.atomic.cmp.swap.i8.p0i8");
   llvm_atomic_lcs_i16 = module->getFunction("llvm.atomic.cmp.swap.i16.p0i16");
   llvm_atomic_lcs_i32 = module->getFunction("llvm.atomic.cmp.swap.i32.p0i32");
@@ -234,6 +236,7 @@ llvm::ConstantFP*  MvmModule::constantFloatMinusZero;
 llvm::ConstantFP*  MvmModule::constantDoubleMinusZero;
 llvm::Constant*    MvmModule::constantPtrNull;
 llvm::ConstantInt* MvmModule::constantPtrSize;
+llvm::ConstantInt* MvmModule::constantThreadIDMask;
 const llvm::PointerType* MvmModule::ptrType;
 const llvm::PointerType* MvmModule::ptr32Type;
 const llvm::PointerType* MvmModule::ptrPtrType;

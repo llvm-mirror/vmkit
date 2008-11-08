@@ -326,8 +326,11 @@ void JavaJIT::monitorEnter(Value* obj) {
   gep.push_back(module->JavaObjectLockOffsetConstant);
   Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
                                              currentBlock);
-  Value* threadId = CallInst::Create(module->GetThreadIDFunction, "",
-                                     currentBlock);
+  Value* threadId = CallInst::Create(module->llvm_frameaddress,
+                                     module->constantZero, "", currentBlock);
+  threadId = new PtrToIntInst(threadId, Type::Int32Ty, "", currentBlock);
+  threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+                                       "", currentBlock);
   std::vector<Value*> atomicArgs;
   atomicArgs.push_back(lockPtr);
   atomicArgs.push_back(module->constantZero);
@@ -411,8 +414,11 @@ void JavaJIT::monitorExit(Value* obj) {
   Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
                                              currentBlock);
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
-  Value* threadId = CallInst::Create(module->GetThreadIDFunction, "",
-                                     currentBlock);
+  Value* threadId = CallInst::Create(module->llvm_frameaddress,
+                                     module->constantZero, "", currentBlock);
+  threadId = new PtrToIntInst(threadId, Type::Int32Ty, "", currentBlock);
+  threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+                                       "", currentBlock);
   
   Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, lock, threadId, "",
                             currentBlock);
