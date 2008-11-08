@@ -19,16 +19,15 @@ using namespace mvm;
 
 int main(int argc, char **argv, char **envp) {
   llvm::llvm_shutdown_obj X;  
-  int base;
     
   MvmModule::initialise();
   Object::initialise();
-  Thread::initialise();
-  Collector::initialise(0, &base);
+  Collector::initialise(0);
   
   CompilationUnit* CU = VirtualMachine::initialiseJVM();
   VirtualMachine* vm = VirtualMachine::createJVM(CU);
   vm->runApplication(argc, argv);
+  vm->waitForExit();
 
   return 0;
 }

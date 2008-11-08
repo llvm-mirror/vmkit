@@ -112,7 +112,7 @@ public:
   llvm::Function* llvm_atomic_lcs_i64;
 
   static llvm::ExecutionEngine* executionEngine;
-  static mvm::Lock* protectEngine;
+  static mvm::LockNormal protectEngine;
 
   static uint64 getTypeSize(const llvm::Type* type);
   static void AddStandardCompilePasses(llvm::FunctionPassManager*);
@@ -178,10 +178,6 @@ public:
   static uint16 (*llvm_atomic_cmp_swap_i16) ( uint16* ptr, uint16 cmp, uint16 val );
   static uint32 (*llvm_atomic_cmp_swap_i32) ( uint32* ptr, uint32 cmp, uint32 val );
   static uint64 (*llvm_atomic_cmp_swap_i64) ( uint64* ptr, uint64 cmp, uint64 val );
-
-  static llvm::GlobalVariable* executionEnvironment;
-  static mvm::Thread* (*getExecutionEnvironment)();
-  static void (*setExecutionEnvironment)(mvm::Thread*);
 
 };
 

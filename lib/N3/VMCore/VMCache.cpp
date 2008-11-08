@@ -61,7 +61,7 @@ Enveloppe* Enveloppe::allocate(VMMethod* meth) {
   Enveloppe* enveloppe = gc_new(Enveloppe)();
   enveloppe->firstCache = CacheNode::allocate();
   enveloppe->firstCache->enveloppe = enveloppe;
-  enveloppe->cacheLock = mvm::Lock::allocNormal();
+  enveloppe->cacheLock = new mvm::LockNormal();
   enveloppe->originalMethod = meth;
   return enveloppe;
 }

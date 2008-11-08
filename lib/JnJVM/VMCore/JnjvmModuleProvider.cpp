@@ -98,7 +98,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
     uint64_t offset = LMI->getOffset()->getZExtValue();
     assert(meth->classDef->isResolved() && "Class not resolved");
 #ifndef ISOLATE_SHARING
-    assert(meth->classDef->isReady() && "Class not ready");
+    assert(meth->classDef->isInitializing() && "Class not ready");
 #endif
     assert(meth->classDef->virtualVT && "Class has no VT");
     assert(meth->classDef->virtualTableSize > offset && 
@@ -247,17 +247,17 @@ static void AddStandardCompilePasses(JnjvmModule* mod, FunctionPassManager *PM) 
 
 JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
   TheModule = (Module*)m;
-  mvm::MvmModule::protectEngine->lock();
+  mvm::MvmModule::protectEngine.lock();
   mvm::MvmModule::executionEngine->addModuleProvider(this);
-  mvm::MvmModule::protectEngine->unlock();
+  mvm::MvmModule::protectEngine.unlock();
   perFunctionPasses = new llvm::FunctionPassManager(this);
   perFunctionPasses->add(new llvm::TargetData(m));
   AddStandardCompilePasses(m, perFunctionPasses);
 }
 
 JnjvmModuleProvider::~JnjvmModuleProvider() {
-  mvm::MvmModule::protectEngine->lock();
+  mvm::MvmModule::protectEngine.lock();
   mvm::MvmModule::executionEngine->removeModuleProvider(this);
-  mvm::MvmModule::protectEngine->unlock();
+  mvm::MvmModule::protectEngine.unlock();
   delete TheModule;
 }

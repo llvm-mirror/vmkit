@@ -92,6 +92,7 @@ Value* JnjvmModule::getConstantPool(JavaConstantPool* ctp) {
   constant_pool_iterator I = constantPools.find(ctp);
   if (I == End) {
     void* ptr = ctp->ctpRes;
+    assert(ptr && "No constant pool found");
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
                                 mvm::MvmModule::ptrPtrType);
@@ -112,6 +113,7 @@ Value* JnjvmModule::getString(JavaString* str) {
     varGV = SI->second;
   } else {
     void* ptr = str;
+    assert(ptr && "No string given");
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
                                 JnjvmModule::JavaObjectType);
@@ -130,6 +132,7 @@ Value* JnjvmModule::getEnveloppe(Enveloppe* enveloppe) {
     varGV = SI->second;
   } else {
     void* ptr = enveloppe;
+    assert(ptr && "No enveloppe given");
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
                                 JnjvmModule::EnveloppeType);
@@ -149,6 +152,7 @@ Value* JnjvmModule::getJavaClass(CommonClass* cl) {
     
     JavaObject* obj = isStaticCompiling() ? 0 : 
       cl->getClassDelegatee(JavaThread::get()->isolate);
+    assert(obj && "Delegatee not created");
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(obj)),
                                 JnjvmModule::JavaObjectType);
@@ -171,6 +175,7 @@ Value* JnjvmModule::getStaticInstance(Class* classDef) {
     LLVMClassInfo* LCI = getClassInfo(classDef);
     LCI->getStaticType();
     JavaObject* obj = ((Class*)classDef)->getStaticInstance();
+    assert(obj && "Getting static instance before it's created!");
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                                 uint64_t (obj)), JnjvmModule::JavaObjectType);
@@ -196,6 +201,7 @@ Value* JnjvmModule::getVirtualTable(CommonClass* classDef) {
       LLVMClassInfo* LCI = getClassInfo((Class*)classDef);
       LCI->getVirtualType();
     }
+    assert(classDef->virtualVT && "Virtual VT not created");
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                                                  uint64_t(classDef->virtualVT)),
@@ -220,6 +226,8 @@ Value* JnjvmModule::getNativeFunction(JavaMethod* meth, void* ptr) {
       
     LLVMSignatureInfo* LSI = getSignatureInfo(meth->getSignature());
     const llvm::Type* valPtrType = LSI->getNativePtrType();
+    
+    assert(ptr && "No native function given");
 
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t(ptr)),
@@ -980,7 +988,7 @@ void JnjvmModule::initialise() {
   OffsetStatusInClassConstant = mvm::MvmModule::constantFive;
   OffsetCtpInClassConstant = mvm::MvmModule::constantSix;
   
-  ClassReadyConstant = ConstantInt::get(Type::Int32Ty, clinitParent);
+  ClassReadyConstant = ConstantInt::get(Type::Int32Ty, ready);
 
   LLVMAssessorInfo::initialise();
 }

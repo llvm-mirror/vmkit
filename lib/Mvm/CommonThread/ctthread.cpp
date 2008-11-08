@@ -7,12 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/Threads/Key.h"
 #include "mvm/Threads/Thread.h"
 
 #include <pthread.h>
 #include <signal.h>
 #include <time.h>
+#include <sys/mman.h>
 
 using namespace mvm;
 
@@ -20,11 +20,7 @@ void Thread::yield() {
   sched_yield();
 }
 
-int Thread::self() {
-  return (int)pthread_self();
-}
-
-void Thread::yield(unsigned int *c) {
+  void Thread::yield(unsigned int *c) {
   if(++(*c) & 3)
     sched_yield();
   else {
@@ -35,44 +31,152 @@ void Thread::yield(unsigned int *c) {
   }
 }
 
+int Thread::self() {
+  return (int)pthread_self();
+}
+
 int Thread::kill(int tid, int signo) {
   return pthread_kill((pthread_t)tid, signo);
+}
+
+int Thread::kill(int signo) {
+  return pthread_kill((pthread_t)internalThreadID, signo);
 }
 
 void Thread::exit(int value) {
   pthread_exit((void*)value);
 }
 
-void* ThreadKey::get()        { 
-  pthread_key_t k = (pthread_key_t)val;
-  return (void *)pthread_getspecific(k);
+// These could be set at runtime.
+#define STACK_SIZE 0x100000
+#define NR_THREADS 255
+
+
+/// StackThreadManager - This class allocates all stacks for threads. Because
+/// we want fast access to thread local data, and can not rely on platform
+/// dependent thread local storage (eg pthread keys are inefficient, tls is
+/// specific to Linux), we put thread local data at the bottom of the 
+/// stack. A simple mask computes the thread local data , based on the current
+/// stack pointer.
+//
+/// The stacks are allocated at boot time. They must all be in the memory range
+/// 0x?0000000 and Ox(?+1)0000000, so that the thread local data can be computed
+/// and threads have a unique ID.
+///
+class StackThreadManager {
+public:
+  uintptr_t baseAddr;
+  uint32 allocPtr;
+  uint32 used[NR_THREADS];
+  LockNormal lock;
+
+  StackThreadManager() {
+    baseAddr = 0;
+    uintptr_t ptr = 0x00000000;
+
+    // Do an mmap at a fixed address. If the mmap fails for a given address
+    // use the next one.
+    while (!baseAddr && ptr != 0xF0000000) {
+      ptr = ptr + 0x10000000;
+#if defined (__MACH__)
+      uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
+#else
+      uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
+#endif
+      baseAddr = (uintptr_t)mmap((void*)ptr, STACK_SIZE * NR_THREADS, 
+                                 PROT_READ | PROT_WRITE, flags, 0, 0);
+      if (baseAddr == (uintptr_t)MAP_FAILED) baseAddr = 0;
+    }
+    if (!baseAddr) {
+      fprintf(stderr, "Can not allocate thread memory\n");
+      abort();
+    }
+    
+    // Protect the page after the first page. The first page contains thread
+    // specific data. The second page has no access rights to catch stack
+    // overflows.
+    uint32 pagesize = getpagesize();
+    for (uint32 i = 0; i < NR_THREADS; ++i) {
+      uintptr_t addr = baseAddr + (i * STACK_SIZE) + pagesize;
+      mprotect((void*)addr, pagesize, PROT_NONE);
+    }
+
+    memset((void*)used, 0, NR_THREADS);
+    allocPtr = 0;
+  }
+
+  uintptr_t allocate() {
+    uint32 start = allocPtr;
+    bool found = false;
+    uint32 myAllocPtr = allocPtr;
+    do {
+      found = __sync_bool_compare_and_swap(&used[myAllocPtr], 0, 1);
+      myAllocPtr++;
+      if (myAllocPtr == NR_THREADS) myAllocPtr = 0;
+    } while (myAllocPtr != start && !found);
+    
+    if (found) {
+      allocPtr = myAllocPtr;
+      return baseAddr + (myAllocPtr - 1) * STACK_SIZE;
+    }
+
+    return 0;
+  }
+
+};
+
+
+/// Static allocate a stack manager. In the future, this should be virtual
+/// machine specific.
+StackThreadManager TheStackManager;
+
+/// internalThreadStart - The initial function called by a thread. Sets some
+/// thread specific data, registers the thread to the GC and calls the
+/// given routine of th.
+///
+void Thread::internalThreadStart(mvm::Thread* th) {
+  th->internalThreadID = (void*)pthread_self();
+  th->threadID = (int)th & mvm::Thread::IDMask;
+  th->baseSP  = &th;
+
+#ifdef MULTIPLE_GC
+  GC->inject_my_thread(th);
+#else
+  Collector::inject_my_thread(th);
+#endif
+  
+  
+  th->routine(th);
+  
+#ifdef MULTIPLE_GC
+  GC->remove_my_thread(th);
+#else
+  Collector::remove_my_thread(th);
+#endif
+
 }
 
-void  ThreadKey::set(void *v) {
-  pthread_key_t k = (pthread_key_t)val;
-  pthread_setspecific(k, v);
-}
-
-ThreadKey::ThreadKey(void (*_destr)(void *)) {
-  pthread_key_create((pthread_key_t*)&val, _destr);
-}
-
-ThreadKey::ThreadKey() {
-  pthread_key_create((pthread_key_t*)&val, NULL);
-}
-
-void ThreadKey::initialise() {
-  pthread_key_create((pthread_key_t*)&val, NULL);
-}
-
-void Thread::initialise() {
-  Thread::threadKey = new mvm::Key<Thread>();
-  Thread* th = new Thread();
-  mvm::Thread::set(th);
-}
-
-int Thread::start(int *tid, int (*fct)(void *), void *arg) {
-  int res = pthread_create((pthread_t *)tid, 0, (void * (*)(void *))fct, arg);
+/// start - Called by the creator of the thread to run the new thread.
+/// The thread is in a detached state, because each virtual machine has
+/// its own way of waiting for created threads.
+int Thread::start(void (*fct)(mvm::Thread*)) {
+  pthread_attr_t attributs;
+  pthread_attr_init(&attributs);
+  pthread_attr_setstack(&attributs, this, STACK_SIZE);
+  pthread_t tid;
+  routine = fct;
+  int res = pthread_create(&tid, &attributs,
+                           (void* (*)(void *))internalThreadStart, this);
   pthread_detach(*(pthread_t *)tid);
+  pthread_attr_destroy(&attributs);
   return res;
+}
+
+
+/// operator new - Get a stack from the stack manager. The Thread object
+/// will be placed in the first page at the bottom of the stack. Hence
+/// Thread objects can not exceed a page.
+void* Thread::operator new(size_t sz) {
+  assert(sz < (size_t)getpagesize() && "Thread local data too big");
+  return (void*)TheStackManager.allocate();
 }

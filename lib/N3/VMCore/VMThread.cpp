@@ -11,7 +11,6 @@
 
 #include "mvm/JIT.h"
 #include "mvm/PrintBuffer.h"
-#include "mvm/Threads/Key.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
@@ -42,18 +41,14 @@ VMThread::VMThread() {
   perFunctionPasses = 0;
 }
 
-VMThread* VMThread::get() {
-  return (VMThread*)mvm::Thread::get();
-}
-
 extern void AddStandardCompilePasses(llvm::FunctionPassManager*);
 
 VMThread* VMThread::allocate(VMObject* thread, VirtualMachine* vm) {
-  VMThread* key = gc_new(VMThread)();
+  VMThread* key = new VMThread();
   key->vmThread = thread;
   key->vm = vm;
-  key->lock = mvm::Lock::allocNormal();
-  key->varcond = mvm::Cond::allocCond();
+  key->lock = new mvm::LockNormal();
+  key->varcond = new mvm::Cond();
   key->interruptFlag = 0;
   key->state = StateRunning;
   key->self = mvm::Thread::self();

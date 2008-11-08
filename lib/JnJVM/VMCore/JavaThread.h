@@ -14,7 +14,6 @@
 
 #include "mvm/Object.h"
 #include "mvm/Threads/Cond.h"
-#include "mvm/Threads/Key.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
@@ -30,6 +29,7 @@ class JavaThread : public mvm::Thread {
 public:
   static VirtualTable *VT;
   JavaObject* javaThread;
+  JavaObject* vmThread;
   Jnjvm* isolate;
   mvm::LockNormal lock;
   mvm::Cond varcond;
@@ -38,18 +38,17 @@ public:
   uint32 interruptFlag;
   uint32 state;
   std::vector<jmp_buf*> sjlj_buffers;
-  bool bootstrap;
 
   static const unsigned int StateRunning;
   static const unsigned int StateWaiting;
   static const unsigned int StateInterrupted;
 
-  virtual void print(mvm::PrintBuffer *buf) const;
+  void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
-  JavaThread() { bootstrap = true; }
+  JavaThread() {}
   ~JavaThread();
   
-  JavaThread(JavaObject* thread, Jnjvm* isolate, void* sp);
+  JavaThread(JavaObject* thread, JavaObject* vmThread, Jnjvm* isolate);
 
   static JavaThread* get() {
     return (JavaThread*)mvm::Thread::get();
@@ -93,6 +92,13 @@ public:
 #else
     longjmp((__jmp_buf_tag*)sjlj_buffers.back(), 1);
 #endif
+  }
+
+  /// printString - Prints the class.
+  char *printString() const {
+    mvm::PrintBuffer *buf = mvm::PrintBuffer::alloc();
+    print(buf);
+    return buf->contents()->cString();
   }
   
 private:

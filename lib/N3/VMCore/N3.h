@@ -22,6 +22,7 @@ class ArrayUInt8;
 class Assembly;
 class AssemblyMap;
 class FunctionMap;
+class N3;
 class N3ModuleProvider;
 class StringMap;
 class UTF8;
@@ -31,6 +32,21 @@ class VMClassArray;
 class VMCommonClass;
 class VMField;
 class VMMethod;
+
+class ClArgumentsInfo {
+public:
+  int argc;
+  char** argv;
+  uint32 appArgumentsPos;
+  char* assembly;
+
+  void readArgs(int argc, char** argv, N3 *vm);
+
+  void printInformation();
+  void nyi();
+  void printVersion();
+};
+
 
 class N3 : public VirtualMachine {
 public:
@@ -43,6 +59,7 @@ public:
   Assembly*     constructAssembly(const UTF8* name);
   Assembly*     lookupAssembly(const UTF8* name);
   
+  ClArgumentsInfo argumentsInfo;
   const char* name;
   StringMap * hashStr;
   AssemblyMap* loadedAssemblies;
@@ -58,7 +75,8 @@ public:
   Assembly* loadAssembly(const UTF8* name, const char* extension);
   void executeAssembly(const char* name, ArrayObject* args);
   void runMain(int argc, char** argv);
-  void waitForExit();
+  virtual void waitForExit();
+  static void mainCLIStart(VMThread* th);
   
   static N3* bootstrapVM;
  

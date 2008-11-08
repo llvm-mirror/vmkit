@@ -113,9 +113,9 @@ public:
   static int siggc();
 
 #ifdef HAVE_PTHREAD
-  STATIC void inject_my_thread(void *base_sp);
-  STATIC inline void  remove_thread(GCThreadCollector *loc) {
-    threads->remove(loc);
+  STATIC void inject_my_thread(mvm::Thread* th);
+  STATIC inline void  remove_thread(mvm::Thread* th) {
+    threads->remove(th);
   }
   STATIC inline int isStable(gc_lock_recovery_fct_t fct, int a0, int a1, int a2, 
                              int a3, int a4, int a5, int a6, int a7) {

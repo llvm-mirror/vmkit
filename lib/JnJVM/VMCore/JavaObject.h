@@ -97,7 +97,7 @@ private:
   /// owner - Returns if the current thread owns this lock.
   ///
   bool owner() {
-    return mvm::Lock::selfOwner(&lock);
+    return lock.selfOwner();
   }
   
   /// getCond - Returns the conditation variable of this lock, allocating it

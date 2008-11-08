@@ -40,7 +40,8 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   uint32 index = enveloppe->index;
   
   ctpInfo->resolveMethod(index, cl, utf8, sign);
-  assert(obj->classOf->isReady() && "Class not ready in a virtual lookup.");
+  assert(obj->classOf->isInitializing() && 
+         "Class not ready in a virtual lookup.");
 
   enveloppe->cacheLock.lock();
   CacheNode* rcache = 0;
@@ -62,7 +63,7 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
     JavaMethod* dmeth = ocl->lookupMethod(utf8, sign->keyName, false, true,
                                           &methodCl);
 #ifndef ISOLATE_SHARING
-    assert(dmeth->classDef->isReady() &&
+    assert(dmeth->classDef->isInitializing() &&
            "Class not ready in a virtual lookup.");
 #endif
     if (cache->methPtr) {
@@ -128,10 +129,13 @@ extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
   JavaField* field = cl->lookupField(utf8, sign->keyName, true, true, &fieldCl);
   
   fieldCl->initialiseClass(JavaThread::get()->isolate);
-  void* ptr = 
-    (void*)((uint64)(((UserClass*)fieldCl)->getStaticInstance()) + field->ptrOffset);
-  ctpInfo->ctpRes[index] = ptr;
+  JavaObject* obj = ((UserClass*)fieldCl)->getStaticInstance();
   
+  assert(obj && "No static instance in static field lookup");
+  
+  void* ptr = (void*)((uint64)obj + field->ptrOffset);
+  ctpInfo->ctpRes[index] = ptr;
+   
   return ptr;
 }
 
@@ -219,7 +223,8 @@ extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
     va_start(ap, index);
     JavaObject* obj = va_arg(ap, JavaObject*);
     va_end(ap);
-    assert(obj->classOf->isReady() && "Class not ready in a virtual lookup.");
+    assert(obj->classOf->isInitializing() && 
+           "Class not ready in a virtual lookup.");
     // Arg, the bytecode is buggy! Perform the lookup on the object class
     // and do not update offset.
     dmeth = obj->classOf->lookupMethod(utf8, sign->keyName, false, true, 0);
@@ -228,7 +233,8 @@ extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
   }
 
 #ifndef ISOLATE_SHARING
-  assert(dmeth->classDef->isReady() && "Class not ready in a virtual lookup.");
+  assert(dmeth->classDef->isInitializing() && 
+         "Class not ready in a virtual lookup.");
 #endif
 
   return (void*)dmeth->offset;

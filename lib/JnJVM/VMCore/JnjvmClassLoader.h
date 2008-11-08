@@ -51,6 +51,7 @@ class ZipArchive;
 /// table for non-isolate environments.
 ///
 class JnjvmClassLoader : public mvm::CompilationUnit {
+  friend class Jnjvm;
 private:
    
   

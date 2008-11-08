@@ -77,7 +77,7 @@ void LockObj::print(mvm::PrintBuffer* buf) const {
 
 LockObj* LockObj::allocate() {
   LockObj* res = gc_new(LockObj)();
-  res->lock = mvm::Lock::allocRecursive();
+  res->lock = new mvm::LockRecursive();
   res->varcond = VMCond::allocate();
   return res;
 }
@@ -91,7 +91,7 @@ void LockObj::release() {
 }
 
 bool LockObj::owner() {
-  return mvm::Lock::selfOwner(lock);
+  return lock->selfOwner();
 }
 
 void VMObject::print(mvm::PrintBuffer* buf) const {
@@ -142,21 +142,21 @@ void VMObject::waitIntern(struct timeval* info, bool timed) {
       thread->interruptFlag = 0;
       thread->vm->interruptedException(this);
     } else {
-      unsigned int recur = mvm::LockRecursive::recursion_count(l->lock);
+      unsigned int recur = l->lock->recursionCount();
       bool timeout = false;
-      mvm::LockRecursive::my_unlock_all(l->lock);
+      l->lock->unlockAll();
       l->varcond->wait(thread);
       thread->state = VMThread::StateWaiting;
 
       if (timed) {
-        timeout = varcondThread->timed_wait(mutexThread, info);
+        timeout = varcondThread->timedWait(mutexThread, info);
       } else {
         varcondThread->wait(mutexThread);
       }
 
       bool interrupted = (thread->interruptFlag != 0);
       mutexThread->unlock();
-      mvm::LockRecursive::my_lock_all(l->lock, recur);
+      l->lock->lockAll(recur);
 
       if (interrupted || timeout) {
         l->varcond->remove(thread);

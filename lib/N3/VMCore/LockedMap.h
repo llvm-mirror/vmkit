@@ -123,7 +123,7 @@ public:
   static VirtualTable* VT; 
   static ClassNameMap* allocate() {
     ClassNameMap* map = gc_new(ClassNameMap)();
-    map->lock = mvm::Lock::allocNormal();
+    map->lock = new mvm::LockNormal();
     return map;
   }
 };
@@ -134,7 +134,7 @@ public:
   static VirtualTable* VT; 
   static ClassTokenMap* allocate() {
     ClassTokenMap* map = gc_new(ClassTokenMap)();
-    map->lock = mvm::Lock::allocNormal();
+    map->lock = new mvm::LockNormal();
     return map;
   }
   
@@ -146,7 +146,7 @@ public:
   static VirtualTable* VT; 
   static FieldTokenMap* allocate() {
     FieldTokenMap* map = gc_new(FieldTokenMap)();
-    map->lock = mvm::Lock::allocNormal();
+    map->lock = new mvm::LockNormal();
     return map;
   }
 };
@@ -157,7 +157,7 @@ public:
   static VirtualTable* VT; 
   static MethodTokenMap* allocate() {
     MethodTokenMap* map = gc_new(MethodTokenMap)();
-    map->lock = mvm::Lock::allocNormal();
+    map->lock = new mvm::LockNormal();
     return map;
   }
 };
@@ -168,7 +168,7 @@ public:
   static VirtualTable* VT; 
   static AssemblyMap* allocate() {
     AssemblyMap* map = gc_new(AssemblyMap)();
-    map->lock = mvm::Lock::allocNormal();
+    map->lock = new mvm::LockNormal();
     return map;
   }
 };
@@ -180,7 +180,7 @@ public:
   static VirtualTable* VT; 
   static StringMap* allocate() {
     StringMap* map = gc_new(StringMap)();
-    map->lock = mvm::Lock::allocRecursive();
+    map->lock = new mvm::LockRecursive();
     return map;
   }
 };
@@ -191,7 +191,7 @@ public:
   static VirtualTable* VT; 
   static FunctionMap* allocate() {
     FunctionMap* map = gc_new(FunctionMap)();
-    map->lock = mvm::Lock::allocNormal();
+    map->lock = new mvm::LockNormal();
     return map;
   }
 };
@@ -222,7 +222,7 @@ public:
   
   static UTF8Map* allocate() {
     UTF8Map* map = gc_new(UTF8Map)();
-    map->lock = mvm::Lock::allocNormal();
+    map->lock = new mvm::LockNormal();
     return map;
   }
 

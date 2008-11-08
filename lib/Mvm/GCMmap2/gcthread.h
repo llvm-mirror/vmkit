@@ -10,42 +10,11 @@
 #ifndef _GC_THREAD_H_
 #define _GC_THREAD_H_
 
-#include "ctcircular.h"
 #include "mvm/Threads/Cond.h"
-#include "mvm/Threads/Key.h"
 #include "mvm/Threads/Locks.h"
-#include "mvm/Threads/Thread.h" // only for self
-
-// class GCAllocator;
+#include "mvm/Threads/Thread.h"
 
 namespace mvm {
-
-class GCThreadCollector : public CircularBase {
-   void              *_base_sp;
-   int                _tid;
-  
-public:
-#ifdef SERVICE_GC
-   void* meta;
-#endif
-  inline GCThreadCollector() {}
-   inline GCThreadCollector(GCThreadCollector *pred, int t, void *p, int m) : CircularBase(pred) {
-    _base_sp = p;
-    _tid = t;
-#ifdef SERVICE_GC
-    meta = 0;
-#endif
-  }
-
-  /* This function is only called in two cases:
-   *   1) When a thread quits, in which case everything is already done.
-  *    2) When the collector quits, in which case all memory is freed.
-  */
-   inline   ~GCThreadCollector() {}
-  
-   inline int          tid()            { return _tid; }
-   inline unsigned int **base_sp()  { return (unsigned int **)_base_sp; }
-};
 
 class GCLockRecovery : public LockNormal {
   gc_lock_recovery_fct_t _fct;
@@ -54,10 +23,11 @@ class GCLockRecovery : public LockNormal {
 public:
   inline GCLockRecovery() { _fct = 0; }
 
-  int verify_recall(gc_lock_recovery_fct_t fct, int a0, int a1, int a2, int a3, int a4, int a5, int a6, int a7);
+  int verify_recall(gc_lock_recovery_fct_t fct, int a0, int a1, int a2, int a3,
+                    int a4, int a5, int a6, int a7);
 
   inline void unlock_dont_recovery() { 
-    if(owner() == Thread::self()) {
+    if(selfOwner()) {
       LockNormal::unlock(); 
     }
   }
@@ -66,8 +36,8 @@ public:
     if(_fct) {
       gc_lock_recovery_fct_t tmp = _fct;
       int l[8];
-      l[0] = _args[0]; l[1] = _args[1]; l[2] = _args[2]; l[3] = _args[3]; 
-      l[4] = _args[4]; l[5] = _args[5]; l[6] = _args[6]; l[7] = _args[7]; 
+      l[0] = _args[0]; l[1] = _args[1]; l[2] = _args[2]; l[3] = _args[3];
+      l[4] = _args[4]; l[5] = _args[5]; l[6] = _args[6]; l[7] = _args[7];
       _fct = 0;
       LockNormal::unlock();
       tmp(l[0], l[1], l[2], l[3], l[4], l[5], l[6], l[7]);
@@ -77,28 +47,44 @@ public:
 };
 
 class GCThread {
-  GCLockRecovery         _globalLock;     /* global lock for gcmalloc */
-  LockNormal              _stackLock;     /* stack lock for synchronization */
-  Cond                    _stackCond;     /* condition for unlocking other tasks (write protect) */
-  Cond                    _collectionCond;/* condition for unblocking the collecter */
-  unsigned int            _nb_threads;    /* number of active threads */
-  unsigned int            _nb_collected;  /* number of threads collected */
-  int                     collector_tid;  /* don't synchonize this one */
+  /// _globalLoc - Global lock for gcmalloc.
+  GCLockRecovery _globalLock;
+
+  /// _stackLock - Stack lock for synchronization.
+  LockNormal _stackLock;         
+  
+  /// _stackCond - Condition for unlocking other tasks (write protect).
+  Cond _stackCond;
+
+  /// _collectionCond - Condition for unblocking the collector.
+  Cond _collectionCond;
+
+  /// _nb_threads - Number of active threads.
+  unsigned int _nb_threads;
+
+  /// _nb_collected - Number of threads collected.
+  unsigned int _nb_collected;
+  
+  /// current_collector - The initiating thread for collection. Don't
+  /// synchonize this one.
+  mvm::Thread* current_collector;  
 
   
 public:
-  GCThreadCollector        base;
-  Key<GCThreadCollector>  _loc;
+  mvm::Thread* base;
+  
   GCThread() {
     _nb_threads = 0;
     _nb_collected = 0;
-    collector_tid = 0;
+    current_collector = 0;
+    base = 0;
   }
 
   inline void lock()   { _globalLock.lock(); }
   inline void unlock() { _globalLock.unlock(); }
   inline void unlock_dont_recovery() { _globalLock.unlock_dont_recovery(); }
-  inline int isStable(gc_lock_recovery_fct_t fct, int a0, int a1, int a2, int a3, int a4, int a5, int a6, int a7) { 
+  inline int isStable(gc_lock_recovery_fct_t fct, int a0, int a1, int a2,
+                      int a3, int a4, int a5, int a6, int a7) { 
     return _globalLock.verify_recall(fct, a0, a1, a2, a3, a4, a5, a6, a7);
   }
 
@@ -110,34 +96,34 @@ public:
   inline void collectionFinished() { _collectionCond.broadcast(); }
   inline void collectorGo() { _stackCond.broadcast(); }
 
-  inline void cancel() { 
-    _nb_collected = _nb_threads;  /* all stacks have been collected */
-    collectorGo();                /* unblock all threads in stack collection */
-    collectionFinished();         /* unblock mutators */
+  inline void cancel() {
+    // all stacks have been collected
+    _nb_collected = _nb_threads;
+    // unblock all threads in stack collection
+    collectorGo();
+    // unblock mutators
+    collectionFinished();         
   }
-
-  inline GCThreadCollector *myloc() { return _loc.get(); }
 
   inline void another_mark() { _nb_collected++; }
 
   void synchronize();
 
-  inline void remove(GCThreadCollector *loc) {
+  inline void remove(mvm::Thread* th) {
     lock();
-    loc->remove();
+    th->remove();
     _nb_threads--;
-    delete loc;
+    if (!_nb_threads) base = 0;
     unlock();
   }
 
-  inline void inject(void *sp, int m) {
-    GCThreadCollector *me = _loc.get();
-    if(me)
-      gcfatal("thread %d is already in pool for allocator %p", Thread::self(), this);
-    lock(); /* the new should be protected */
-    me = new GCThreadCollector(&base, Thread::self(), sp, m);
+  inline void inject(mvm::Thread* th) { 
+    lock(); 
+    if (base)
+      th->append(base);
+    else
+      base = th;
     _nb_threads++;
-    _loc.set(me);
     unlock();
   }
 };

@@ -220,14 +220,15 @@ static void initialiseVT() {
 
 }
 
+VMThread* VMThread::TheThread = 0;
 
 static void initialiseStatics() {
   CLIJit::initialise();
 
-  VMObject::globalLock = mvm::Lock::allocNormal();
+  VMObject::globalLock = new mvm::LockNormal();
 
   N3* vm = N3::bootstrapVM = N3::allocateBootstrap();
-
+  VMThread::TheThread = VMThread::allocate(0, vm);
   
   
   vm->assemblyPath.push_back("");
@@ -337,7 +338,6 @@ mvm::CompilationUnit* mvm::VirtualMachine::initialiseCLIVM() {
 }
 
 void VirtualMachine::runApplication(int argc, char** argv) {
-  mvm::Thread::set(this->bootstrapThread);  
   ((N3*)this)->runMain(argc, argv);
 }
 

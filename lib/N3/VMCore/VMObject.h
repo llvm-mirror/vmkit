@@ -48,7 +48,7 @@ public:
 class LockObj : public mvm::Object {
 public:
   static VirtualTable* VT;
-  mvm::Lock *lock;
+  mvm::LockRecursive *lock;
   VMCond* varcond;
 
   virtual void print(mvm::PrintBuffer* buf) const;

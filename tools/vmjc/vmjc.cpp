@@ -54,7 +54,6 @@ DontPrint("disable-output", cl::desc("Don't output the .ll file"), cl::Hidden);
 
 int main(int argc, char **argv) {
   llvm_shutdown_obj X;  // Call llvm_shutdown() on exit.
-  int base;
   try {
     cl::ParseCommandLineOptions(argc, argv, "vmkit .class -> .ll compiler\n");
     sys::PrintStackTraceOnErrorSignal();
@@ -70,14 +69,13 @@ int main(int argc, char **argv) {
 
     mvm::MvmModule::initialise();
     mvm::Object::initialise();
-    mvm::Thread::initialise();
-    Collector::initialise(0, &base);
+    Collector::initialise(0);
     Collector::enable(0);
 
     mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM(true);
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(CU);
     vm->compile(InputFilename.c_str());
-
+    vm->waitForExit();
 
     if (DontPrint) {
       // Just use stdout.  We won't actually print anything on it.

@@ -78,8 +78,8 @@ void ThreadSystem::print(mvm::PrintBuffer* buf) const {
 ThreadSystem* ThreadSystem::allocateThreadSystem() {
   ThreadSystem* res = gc_new(ThreadSystem)();
   res->nonDaemonThreads = 1;
-  res->nonDaemonLock = mvm::Lock::allocNormal();
-  res->nonDaemonVar  = mvm::Cond::allocCond();
+  res->nonDaemonLock = new mvm::LockNormal();
+  res->nonDaemonVar  = new mvm::Cond();
   return res;
 }
 

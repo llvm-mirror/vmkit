@@ -60,28 +60,16 @@ Assembly* N3::lookupAssembly(const UTF8* name) {
 N3* N3::allocateBootstrap() {
   N3 *vm= gc_new(N3)();
 
-#ifdef MULTIPLE_GC
-  Collector* GC = Collector::allocate();
-#endif 
-  
   std::string str = 
     mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
 
   vm->module = new mvm::MvmModule("Bootstrap N3");
   vm->module->setDataLayout(str);
-  vm->protectModule = mvm::Lock::allocNormal();
+  vm->protectModule = new mvm::LockNormal();
   vm->functions = FunctionMap::allocate();
   vm->TheModuleProvider = new N3ModuleProvider(vm->module, vm->functions);
   CLIJit::initialiseBootstrapVM(vm);
   
-  vm->bootstrapThread = VMThread::allocate(0, vm);
-  vm->bootstrapThread->baseSP = mvm::Thread::get()->baseSP;
-#ifdef MULTIPLE_GC
-  vm->bootstrapThread->GC = GC;
-  mvm::MvmModule::memoryManager->addGCForModule(vm->module, GC);
-#endif
-  VMThread::set(vm->bootstrapThread);
-
   vm->name = "bootstrapN3";
   vm->hashUTF8 = UTF8Map::allocate();
   vm->hashStr = StringMap::allocate();
@@ -95,26 +83,15 @@ N3* N3::allocateBootstrap() {
 N3* N3::allocate(const char* name, N3* parent) {
   N3 *vm= gc_new(N3)();
   
-#ifdef MULTIPLE_GC
-  Collector* GC = Collector::allocate();
-#endif 
-  
   std::string str = 
     mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
   vm->module = new mvm::MvmModule("App Domain");
   vm->module->setDataLayout(str);
-  vm->protectModule = mvm::Lock::allocNormal();
+  vm->protectModule = new mvm::LockNormal();
   vm->functions = FunctionMap::allocate();
   vm->TheModuleProvider = new N3ModuleProvider(vm->module, vm->functions);
   CLIJit::initialiseAppDomain(vm);
 
-  vm->bootstrapThread = VMThread::allocate(0, vm);
-  vm->bootstrapThread->baseSP = mvm::Thread::get()->baseSP;
-#ifdef MULTIPLE_GC
-  vm->bootstrapThread->GC = GC;
-  mvm::MvmModule::memoryManager->addGCForModule(vm->module, GC);
-#endif
-  VMThread::set(vm->bootstrapThread);
   
   vm->threadSystem = ThreadSystem::allocateThreadSystem();
   vm->name = name;
@@ -153,22 +130,6 @@ ArrayUInt8* N3::openAssembly(const UTF8* name, const char* ext) {
   return res;
 }
 
-namespace n3 {
-
-class ClArgumentsInfo {
-public:
-  uint32 appArgumentsPos;
-  char* assembly;
-
-  void readArgs(int argc, char** argv, N3 *vm);
-
-  void printInformation();
-  void nyi();
-  void printVersion();
-};
-
-}
-
 void ClArgumentsInfo::nyi() {
   fprintf(stdout, "Not yet implemented\n");
 }
@@ -203,7 +164,6 @@ void ClArgumentsInfo::readArgs(int argc, char** argv, N3* n3) {
 
 void N3::waitForExit() { 
   threadSystem->nonDaemonLock->lock();
-  --(threadSystem->nonDaemonThreads);
   
   while (threadSystem->nonDaemonThreads) {
     threadSystem->nonDaemonVar->wait(threadSystem->nonDaemonLock);
@@ -249,25 +209,43 @@ void N3::executeAssembly(const char* _name, ArrayObject* args) {
 }
 
 void N3::runMain(int argc, char** argv) {
-  ClArgumentsInfo info;
+  ClArgumentsInfo& info = argumentsInfo;
 
   info.readArgs(argc, argv, this);
   if (info.assembly) {
-    argv = argv + info.appArgumentsPos - 1;
-    argc = argc - info.appArgumentsPos + 1;
+    info.argv = argv + info.appArgumentsPos - 1;
+    info.argc = argc - info.appArgumentsPos + 1;
     
-    MSCorlib::loadBootstrap(this);
     
-    ArrayObject* args = ArrayObject::acons(argc - 2, MSCorlib::arrayString);
-    for (int i = 2; i < argc; ++i) {
-      args->setAt(i - 2, (VMObject*)asciizToStr(argv[i]));
-    }
-    try{
-      executeAssembly(info.assembly, args);
-    }catch(...) {
-      VMObject* exc = VMThread::get()->pendingException;
-      printf("N3 caught %s\n", exc->printString());
-    }
-    waitForExit();
+    bootstrapThread = VMThread::TheThread;
+    bootstrapThread->vm = this;
+    bootstrapThread->start((void (*)(mvm::Thread*))mainCLIStart);
+
+  } else {
+    --(threadSystem->nonDaemonThreads);
   }
+}
+
+void N3::mainCLIStart(VMThread* th) {
+  N3* vm = (N3*)th->vm;
+  MSCorlib::loadBootstrap(vm);
+  
+  ClArgumentsInfo& info = vm->argumentsInfo;  
+  ArrayObject* args = ArrayObject::acons(info.argc - 2, MSCorlib::arrayString);
+  for (int i = 2; i < info.argc; ++i) {
+    args->setAt(i - 2, (VMObject*)vm->asciizToStr(info.argv[i]));
+  }
+  
+  try{
+    vm->executeAssembly(info.assembly, args);
+  }catch(...) {
+    VMObject* exc = th->pendingException;
+    printf("N3 caught %s\n", exc->printString());
+  }
+
+  vm->threadSystem->nonDaemonLock->lock();
+  --(vm->threadSystem->nonDaemonThreads);
+  if (vm->threadSystem->nonDaemonThreads == 0)
+    vm->threadSystem->nonDaemonVar->signal();
+  vm->threadSystem->nonDaemonLock->unlock();
 }

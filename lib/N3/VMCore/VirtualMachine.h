@@ -128,6 +128,9 @@ public:
 
   virtual void runApplication(int argc, char** argv);
   virtual void compile(const char* name);
+  virtual void waitForExit() {
+    // Currently unimplemented.
+  }
 
 };
 

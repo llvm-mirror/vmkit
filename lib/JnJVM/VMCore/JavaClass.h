@@ -52,9 +52,9 @@ typedef enum JavaState {
   classRead = 1,    /// The .class file has been read.
   prepared = 2,     /// The parents of this class has been resolved.
   resolved = 3,     /// The class has been resolved.
-  clinitParent = 4, /// The class is cliniting its parents.
-  inClinit = 5,     /// The class is cliniting.
-  ready = 6,        /// The class is ready to be used.
+  inClinit = 4,     /// The class is cliniting.
+  ready = 5,        /// The class is ready to be used.
+  erroneous = 6,    /// The class is in an erroneous state.
   dontuseenums = 0xffffffff /// dummy value to force the enum to be int32
 }JavaState;
 
@@ -342,11 +342,9 @@ public:
     condVar.broadcast();  
   }
 
-  /// ownerClass - Is the current thread the owner of this thread?
+  /// ownerClass - Who is initializing this class.
   ///
-  bool ownerClass() {
-    return mvm::Lock::selfOwner(&lockVar);    
-  }
+  uint32 ownerClass;
   
   /// lookupMethodDontThrow - Lookup a method in the method map of this class.
   /// Do not throw if the method is not found.
@@ -440,7 +438,11 @@ public:
   /// isReady - Has this class been initialized?
   ///
   bool isReady() {
-    return status >= clinitParent;
+    return status == ready;
+  }
+
+  bool isInitializing() {
+    return status >= inClinit;
   }
 
   /// isResolved - Has this class been resolved?

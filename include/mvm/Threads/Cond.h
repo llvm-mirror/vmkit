@@ -10,27 +10,22 @@
 #ifndef MVM_COND_H
 #define MVM_COND_H
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include "mvm/Threads/Locks.h"
-
 #include <cstdlib>
+#include <pthread.h>
 
 namespace mvm {
 
+class Lock;
+
 class Cond {
-  unsigned int    no_barrier;
-  unsigned int    go; 
-  unsigned int    n_wait;
+  pthread_cond_t internalCond;
 public:
   
-  Cond() : no_barrier(0), go(0), n_wait(0) { }
-  static Cond *allocCond(void);
+  Cond();
+  ~Cond();
   void broadcast(void);
   void wait(Lock *l);
-  int timed_wait(Lock *l, timeval *tv);
+  int timedWait(Lock *l, timeval *tv);
   void signal(void);
 };
 

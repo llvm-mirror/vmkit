@@ -47,7 +47,6 @@ int found(char** argv, int argc, const char* name) {
 
 int main(int argc, char** argv) {
   llvm::llvm_shutdown_obj X;
-  int base;
   
   int pos = found(argv, argc, "-java");
   if (pos) {
@@ -63,8 +62,7 @@ int main(int argc, char** argv) {
   
   mvm::MvmModule::initialise(Fast);
   mvm::Object::initialise();
-  mvm::Thread::initialise();
-  Collector::initialise(0, &base);
+  Collector::initialise(0);
   Collector::enable(0);
   
   if (VMToRun == RunJava) {

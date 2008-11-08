@@ -1503,9 +1503,9 @@ void CLIJit::initialise() {
 }
 
 void CLIJit::initialiseAppDomain(N3* vm) {
-  mvm::MvmModule::protectEngine->lock();
+  mvm::MvmModule::protectEngine.lock();
   mvm::MvmModule::executionEngine->addModuleProvider(vm->TheModuleProvider);
-  mvm::MvmModule::protectEngine->unlock();
+  mvm::MvmModule::protectEngine.unlock();
 }
 
 namespace n3 { 
@@ -1517,9 +1517,9 @@ namespace n3 {
 
 void CLIJit::initialiseBootstrapVM(N3* vm) {
   mvm::MvmModule* module = vm->module;
-  module->protectEngine->lock();
+  module->protectEngine.lock();
   module->executionEngine->addModuleProvider(vm->TheModuleProvider);
-  module->protectEngine->unlock();
+  module->protectEngine.unlock();
     
   n3::llvm_runtime::makeLLVMModuleContents(module);
 

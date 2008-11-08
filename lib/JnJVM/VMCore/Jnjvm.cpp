@@ -46,82 +46,199 @@ const unsigned int Jnjvm::Magic = 0xcafebabe;
 
 typedef void (*clinit_t)(Jnjvm* vm, UserConstantPool*);
 
+
+/// initialiseClass - Java class initialisation. Java specification §2.17.5.
+
 void UserCommonClass::initialiseClass(Jnjvm* vm) {
-  // Primitives are initialized at boot time
+  
+  // Assumes that the Class object has already been verified and prepared and
+  // that the Class object contains state that can indicate one of four
+  // situations:
+  //
+  //  * This Class object is verified and prepared but not initialized.
+  //  * This Class object is being initialized by some particular thread T.
+  //  * This Class object is fully initialized and ready for use.
+  //  * This Class object is in an erroneous state, perhaps because the
+  //    verification step failed or because initialization was attempted and
+  //    failed.
+
+  assert(status >= resolved || ownerClass || status == ready ||
+         status == erroneous && "Class in wrong state");
+  
+  // Primitives are initialized at boot time, arrays are initialized directly.
   if (isArray()) {
     status = ready;
   } else if (status != ready) {
+    
+    // 1. Synchronize on the Class object that represents the class or 
+    //    interface to be initialized. This involves waiting until the
+    //    current thread can obtain the lock for that object
+    //    (Java specification §8.13).
     acquire();
+    uint32 self = mvm::Thread::get()->threadID;
+
+    if (status == inClinit) {
+      // 2. If initialization by some other thread is in progress for the
+      //    class or interface, then wait on this Class object (which 
+      //    temporarily releases the lock). When the current thread awakens
+      //    from the wait, repeat this step.
+      if (ownerClass != self) {
+        while (ownerClass) {
+          waitClass();
+        }
+        release();
+      } else {
+        // 3. If initialization is in progress for the class or interface by
+        //    the current thread, then this must be a recursive request for 
+        //    initialization. Release the lock on the Class object and complete
+        //    normally.
+        release();
+        return;
+      }
+    } 
+    
+    // 4. If the class or interface has already been initialized, then no 
+    //    further action is required. Release the lock on the Class object
+    //    and complete normally.
     if (status == ready) {
       release();
-    } else if (status >= resolved && status != clinitParent &&
-               status != inClinit) {
-      UserClass* cl = (UserClass*)this;
-      status = clinitParent;
-      release();
-      UserCommonClass* super = getSuper();
-      if (super) {
-        super->initialiseClass(vm);
-      }
-      
-      cl->resolveStaticClass();
-      
-      status = inClinit;
-      JavaMethod* meth = lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
-                                               vm->bootstrapLoader->clinitType,
-                                               true, false, 0);
-      
-      PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
-      PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ", 0);
-      PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", printString());
-      
-      JavaObject* val = 
-        (JavaObject*)vm->gcAllocator.allocateManagedObject(cl->getStaticSize(),
-                                                           cl->getStaticVT());
-      val->initialise(cl);
-      JavaField* fields = cl->getStaticFields();
-      for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
-        fields[i].initField(val, vm);
-      }
-  
-      cl->setStaticInstance(val);
-
-      if (meth) {
-        JavaObject* exc = 0;
-        try{
-          clinit_t pred = (clinit_t)(intptr_t)meth->compiledPtr();
-          pred(vm, cl->getConstantPool());
-        } catch(...) {
-          exc = JavaThread::getJavaException();
-          assert(exc && "no exception?");
-          JavaThread::clearException();
-        }
-        if (exc) {
-          if (exc->classOf->isAssignableFrom(vm->upcalls->newException)) {
-            vm->initializerError(exc);
-          } else {
-            JavaThread::throwException(exc);
-          }
-        }
-      }
-      
-      status = ready;
-      broadcastClass();
-    } else if (status < resolved) {
-      release();
-      vm->unknownError("try to clinit a not-read class...");
-    } else {
-      if (!ownerClass()) {
-        while (status < ready) waitClass();
-        release();
-        initialiseClass(vm);
-      } 
-      release();
+      return;
     }
+    
+    // 5. If the Class object is in an erroneous state, then initialization is
+    //    not possible. Release the lock on the Class object and throw a
+    //    NoClassDefFoundError.
+    if (status == erroneous) {
+      release();
+      vm->noClassDefFoundError(name);
+    }
+
+    // 6. Otherwise, record the fact that initialization of the Class object is
+    //    now in progress by the current thread and release the lock on the
+    //    Class object.
+    ownerClass = self;
+    status = inClinit;
+    release();
+  
+
+    // 7. Next, if the Class object represents a class rather than an interface, 
+    //    and the direct superclass of this class has not yet been initialized,
+    //    then recursively perform this entire procedure for the uninitialized 
+    //    superclass. If the initialization of the direct superclass completes 
+    //    abruptly because of a thrown exception, then lock this Class object, 
+    //    label it erroneous, notify all waiting threads, release the lock, 
+    //    and complete abruptly, throwing the same exception that resulted from 
+    //    the initializing the superclass.
+    UserCommonClass* super = getSuper();
+    if (super) {
+      JavaObject *exc = 0;
+      try {
+        super->initialiseClass(vm);
+      } catch(...) {
+        exc = JavaThread::getJavaException();
+        assert(exc && "no exception?");
+        JavaThread::clearException();
+      }
+      
+      if (exc) {
+        acquire();
+        status = erroneous;
+        ownerClass = 0;
+        broadcastClass();
+        release();
+        throw exc;
+      }
+    }
+  
+    // 8. Next, execute either the class variable initializers and static
+    //    initializers of the class or the field initializers of the interface,
+    //    in textual order, as though they were a single block, except that
+    //    final static variables and fields of interfaces whose values are 
+    //    compile-time constants are initialized first.
+
+
+    UserClass* cl = (UserClass*)this;
+    cl->resolveStaticClass();
+      
+      
+    PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
+    PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ", 0);
+    PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", printString());
+      
+    JavaObject* val = 
+      (JavaObject*)vm->gcAllocator.allocateManagedObject(cl->getStaticSize(),
+                                                           cl->getStaticVT());
+    val->initialise(cl);
+    JavaField* fields = cl->getStaticFields();
+    for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
+      fields[i].initField(val, vm);
+    }
+  
+    cl->setStaticInstance(val);
+      
+      
+    JavaMethod* meth = lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
+                                             vm->bootstrapLoader->clinitType,
+                                             true, false, 0);
+
+    JavaObject* exc = 0;
+    if (meth) {
+      try{
+        clinit_t pred = (clinit_t)(intptr_t)meth->compiledPtr();
+        pred(vm, cl->getConstantPool());
+      } catch(...) {
+        exc = JavaThread::getJavaException();
+        assert(exc && "no exception?");
+        JavaThread::clearException();
+      }
+    }
+
+    // 9. If the execution of the initializers completes normally, then lock
+    //    this Class object, label it fully initialized, notify all waiting 
+    //    threads, release the lock, and complete this procedure normally.
+    if (!exc) {
+      acquire();
+      status = ready;
+      ownerClass = 0;
+      broadcastClass();
+      release();
+      return;
+    }
+    
+    // 10. Otherwise, the initializers must have completed abruptly by
+    //     throwing some exception E. If the class of E is not Error or one
+    //     of its subclasses, then create a new instance of the class 
+    //     ExceptionInInitializerError, with E as the argument, and use this
+    //     object in place of E in the following step. But if a new instance of
+    //     ExceptionInInitializerError cannot be created because an
+    //     OutOfMemoryError occurs, then instead use an OutOfMemoryError object
+    //     in place of E in the following step.
+    if (exc->classOf->isAssignableFrom(vm->upcalls->newException)) {
+      Classpath* upcalls = classLoader->bootstrapLoader->upcalls;
+      UserClass* clExcp = upcalls->ExceptionInInitializerError;
+      Jnjvm* vm = JavaThread::get()->isolate;
+      JavaObject* obj = clExcp->doNew(vm);
+      if (!obj) {
+        fprintf(stderr, "implement me");
+        abort();
+      }
+      JavaMethod* init = upcalls->ErrorWithExcpExceptionInInitializerError;
+      init->invokeIntSpecial(vm, clExcp, obj, exc);
+      exc = obj;
+    } 
+
+    // 11. Lock the Class object, label it erroneous, notify all waiting
+    //     threads, release the lock, and complete this procedure abruptly
+    //     with reason E or its replacement as determined in the previous step.
+    acquire();
+    status = erroneous;
+    ownerClass = 0;
+    broadcastClass();
+    release();
+    throw exc;
   }
 }
-
-
+      
 void Jnjvm::errorWithExcp(UserClass* cl, JavaMethod* init, const JavaObject* excp) {
   JavaObject* obj = cl->doNew(this);
   init->invokeIntSpecial(this, cl, obj, excp);
@@ -338,25 +455,6 @@ JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
 extern "C" struct JNINativeInterface JNI_JNIEnvTable;
 extern "C" const struct JNIInvokeInterface JNI_JavaVMTable;
 
-namespace jnjvm {
-
-class ClArgumentsInfo {
-public:
-  uint32 appArgumentsPos;
-  char* className;
-  std::vector< std::pair<char*, char*> > agents;
-
-  void readArgs(int argc, char** argv, Jnjvm *vm);
-  void extractClassFromJar(Jnjvm* vm, int argc, char** argv, int i);
-  void javaAgent(char* cur);
-
-  void printInformation();
-  void nyi();
-  void printVersion();
-};
-
-}
-
 void ClArgumentsInfo::javaAgent(char* cur) {
   assert(0 && "implement me");
 }
@@ -477,7 +575,7 @@ void ClArgumentsInfo::printInformation() {
     "              load Java programming language agent, see java.lang.instrument\n");
 }
 
-void ClArgumentsInfo::readArgs(int argc, char** argv, Jnjvm* vm) {
+void ClArgumentsInfo::readArgs(Jnjvm* vm) {
   className = 0;
   appArgumentsPos = 0;
   sint32 i = 1;
@@ -734,57 +832,71 @@ void Jnjvm::executePremain(const char* className, JavaString* args,
 }
 
 void Jnjvm::waitForExit() { 
+  
   threadSystem.nonDaemonLock.lock();
-  --(threadSystem.nonDaemonThreads);
   
   while (threadSystem.nonDaemonThreads) {
     threadSystem.nonDaemonVar.wait(&threadSystem.nonDaemonLock);
   }
+  
+  threadSystem.nonDaemonLock.unlock();
 
-  threadSystem.nonDaemonLock.unlock();  
   return;
 }
 
-void Jnjvm::runApplication(int argc, char** argv) {
-  ClArgumentsInfo info;
+void Jnjvm::mainJavaStart(JavaThread* thread) {
+  Jnjvm* vm = thread->isolate;
+  vm->bootstrapThread = thread;
 
-  info.readArgs(argc, argv, this);
-  if (info.className) {
-    int pos = info.appArgumentsPos;
-    
-    argv = argv + pos - 1;
-    argc = argc - pos + 1;
-    
-    mvm::Thread* oldThread = mvm::Thread::get();
-    JavaThread thread(0, this, oldThread->baseSP);
-    bootstrapThread = &thread;
-
-    loadBootstrap();
+  vm->loadBootstrap();
 
 #ifdef SERVICE_VM
-    ServiceDomain::initialise((ServiceDomain*)this);
+  ServiceDomain::initialise((ServiceDomain*)vm);
+#endif
+  
+  ClArgumentsInfo& info = vm->argumentsInfo;
+#if 0
+  if (info.agents.size()) {
+    assert(0 && "implement me");
+    JavaObject* instrumenter = 0;//createInstrumenter();
+    for (std::vector< std::pair<char*, char*> >::iterator i = 
+                                                info.agents.begin(),
+            e = info.agents.end(); i!= e; ++i) {
+      JavaString* args = vm->asciizToStr(i->second);
+      vm->executePremain(i->first, args, instrumenter);
+    }
+  }
 #endif
     
-    if (info.agents.size()) {
-      assert(0 && "implement me");
-      JavaObject* instrumenter = 0;//createInstrumenter();
-      for (std::vector< std::pair<char*, char*> >::iterator i = 
-                                                  info.agents.begin(),
-              e = info.agents.end(); i!= e; ++i) {
-        JavaString* args = asciizToStr(i->second);
-        executePremain(i->first, args, instrumenter);
-      }
-    }
-    
-    UserClassArray* array = bootstrapLoader->upcalls->ArrayOfString;
-    ArrayObject* args = (ArrayObject*)array->doNew(argc - 2, this);
-    for (int i = 2; i < argc; ++i) {
-      args->elements[i - 2] = (JavaObject*)asciizToStr(argv[i]);
-    }
+  UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfString;
+  ArrayObject* args = (ArrayObject*)array->doNew(info.argc - 2, vm);
+  for (int i = 2; i < info.argc; ++i) {
+    args->elements[i - 2] = (JavaObject*)vm->asciizToStr(info.argv[i]);
+  }
 
-    executeClass(info.className, args);
-    waitForExit();
-    mvm::Thread::set(oldThread);
+  vm->executeClass(info.className, args);
+  
+  vm->threadSystem.nonDaemonLock.lock();
+  --(vm->threadSystem.nonDaemonThreads);
+  if (vm->threadSystem.nonDaemonThreads == 0)
+      vm->threadSystem.nonDaemonVar.signal();
+  vm->threadSystem.nonDaemonLock.unlock();  
+}
+
+void Jnjvm::runApplication(int argc, char** argv) {
+  argumentsInfo.argc = argc;
+  argumentsInfo.argv = argv;
+  argumentsInfo.readArgs(this);
+  if (argumentsInfo.className) {
+    int pos = argumentsInfo.appArgumentsPos;
+    
+    argumentsInfo.argv = argumentsInfo.argv + pos - 1;
+    argumentsInfo.argc = argumentsInfo.argc - pos + 1;
+    
+    bootstrapThread = new JavaThread(0, 0, this);
+    bootstrapThread->start((void (*)(mvm::Thread*))mainJavaStart);
+  } else {
+    threadSystem.nonDaemonThreads = 0;
   }
 }
 
@@ -845,14 +957,14 @@ static void compileClass(Class* cl) {
   }
 }
 
+static const char* name;
 
-void Jnjvm::compile(const char* name) {
-  bootstrapLoader->analyseClasspathEnv(classpath);
-    
-  mvm::Thread* oldThread = mvm::Thread::get();
-  JavaThread thread(0, this, oldThread->baseSP);
-  bootstrapThread = &thread;
+void Jnjvm::mainCompilerStart(JavaThread* th) {
   
+  Jnjvm* vm = th->isolate;
+  JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
+
+  bootstrapLoader->analyseClasspathEnv(vm->classpath);
   
   uint32 size = strlen(name);
   if (size > 4 && 
@@ -862,7 +974,7 @@ void Jnjvm::compile(const char* name) {
     std::vector<Class*> classes;
 
     ArrayUInt8* bytes = Reader::openFile(bootstrapLoader, name);
-    if (!bytes) unknownError("Can't find zip file.");
+    if (!bytes) vm->unknownError("Can't find zip file.");
     ZipArchive archive(bytes, bootstrapLoader->allocator);
     
     char* realName = (char*)alloca(4096);
@@ -876,7 +988,7 @@ void Jnjvm::compile(const char* name) {
         ArrayUInt8* res = (ArrayUInt8*)array->doNew(file->ucsize,
                                                     bootstrapLoader->allocator);
         int ok = archive.readFile(res, file);
-        if (!ok) unknownError("Wrong zip file.");
+        if (!ok) vm->unknownError("Wrong zip file.");
       
         
         memcpy(realName, file->filename, size);
@@ -914,5 +1026,16 @@ void Jnjvm::compile(const char* name) {
     i->setLinkage(llvm::GlobalValue::ExternalLinkage);
   }
   
-  mvm::Thread::set(oldThread);
+  vm->threadSystem.nonDaemonLock.lock();
+  --(vm->threadSystem.nonDaemonThreads);
+  if (vm->threadSystem.nonDaemonThreads == 0)
+      vm->threadSystem.nonDaemonVar.signal();
+  vm->threadSystem.nonDaemonLock.unlock();  
+  
+}
+
+void Jnjvm::compile(const char* n) {
+  name = n;
+  bootstrapThread = new JavaThread(0, 0, this);
+  bootstrapThread->start((void (*)(mvm::Thread*))mainCompilerStart);
 }

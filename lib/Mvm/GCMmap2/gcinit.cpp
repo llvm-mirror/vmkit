@@ -80,42 +80,9 @@ void GCCollector::destroy() {
   allocator = 0;
 }
 
-
-static void *get_curr_fp(void)
-{
-  register void *fp;
-  asm(
-#  if defined(__ppc__) || defined(__PPC__)
-#   if defined(__MACH__)
-      "mr  %0, r1"
-#   else
-      "mr  %0, 1"
-#   endif
-#  elif defined(__i386__)
-      "movl  %%ebp, %0"
-# elif defined(__amd64__)
-      "movq    %%rbp, %0"
-#  else
-#   error:
-#   error: I do not know how to read the frame pointer on this machine
-#   error:
-#  endif
-      :"=r"(fp):);
-  return fp;
-}
-
-static void *get_base_sp(void)
-{
-  void *fp= 0;
-  for (fp= get_curr_fp();  (*(void **)fp);  fp= *(void **)fp) {}
-  return fp;
-}
-
 #ifdef HAVE_PTHREAD
-void GCCollector::inject_my_thread(void *base_sp) {
-   if(!base_sp)
-     base_sp = get_base_sp();
-  threads->inject(base_sp, current_mark);
+void GCCollector::inject_my_thread(mvm::Thread* th) {
+  threads->inject(th);
 }
 #endif
 

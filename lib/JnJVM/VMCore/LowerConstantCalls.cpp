@@ -249,7 +249,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* Status = new LoadInst(StatusPtr, "", CI);
           
           
-          Value* test = new ICmpInst(ICmpInst::ICMP_UGT, Status,
+          Value* test = new ICmpInst(ICmpInst::ICMP_EQ, Status,
                                      jnjvm::JnjvmModule::ClassReadyConstant,
                                      "", CI);
  

@@ -108,6 +108,12 @@ extern "C" void JavaObjectTracer(JavaObject* obj) {
   if (l) l->MARK_AND_TRACE;
 }
 
+static void traceClassMap(ClassMap* classes) {
+  for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
+       i!= e; ++i) {
+    i->second->CALL_TRACER;
+  }
+}
 
 void JavaThread::TRACER {
   javaThread->MARK_AND_TRACE;
@@ -121,24 +127,7 @@ void Jnjvm::TRACER {
 #if defined(ISOLATE_SHARING)
   JnjvmSharedLoader::sharedLoader->MARK_AND_TRACE;
 #endif
-}
-
-static void traceClassMap(ClassMap* classes) {
-  for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
-       i!= e; ++i) {
-    i->second->CALL_TRACER;
-  }
-}
-
-void JnjvmClassLoader::TRACER {
-  javaLoader->MARK_AND_TRACE;
-  traceClassMap(classes);
-  isolate->MARK_AND_TRACE;
-  TRACE_VECTOR(JavaString*, gc_allocator, strings);
-}
-
-void JnjvmBootstrapLoader::TRACER {
-  traceClassMap(classes);
+  traceClassMap(bootstrapLoader->classes);
   
 #define TRACE_DELEGATEE(prim) \
   prim->delegatee->MARK_AND_TRACE
@@ -154,8 +143,24 @@ void JnjvmBootstrapLoader::TRACER {
   TRACE_DELEGATEE(upcalls->OfDouble);
 #undef TRACE_DELEGATEE
   
+  TRACE_VECTOR(JavaString*, gc_allocator, bootstrapLoader->strings);
+
+  if (bootstrapThread) {
+    bootstrapThread->CALL_TRACER;
+    for (JavaThread* th = (JavaThread*)bootstrapThread->next(); 
+         th != bootstrapThread; th = (JavaThread*)th->next())
+      th->CALL_TRACER;
+  }
+}
+
+void JnjvmClassLoader::TRACER {
+  javaLoader->MARK_AND_TRACE;
+  traceClassMap(classes);
+  isolate->MARK_AND_TRACE;
   TRACE_VECTOR(JavaString*, gc_allocator, strings);
 }
+
+void JnjvmBootstrapLoader::TRACER {}
 
 #if defined(ISOLATE_SHARING)
 void UserClass::TRACER {

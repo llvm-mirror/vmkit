@@ -195,7 +195,7 @@ extern "C" double System_Math_Floor(double val) {
 
 extern "C" void System_GC_Collect() {
 #ifdef MULTIPLE_GC
-  mvm::Thread::get()->GC->collect();
+  VMThread::get()->GC->collect();
 #else
   Collector::collect();
 #endif

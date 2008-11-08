@@ -111,29 +111,18 @@ void Collector::gcStats(size_t &no, size_t &nbb) {
   COLLECTOR gcStats(&no, &nbb);
 }
 
-void Collector::initialise(markerFn marker, void *base_sp) {
-#ifdef MULTIPLE_GC
-  GCCollector* GC = new GCCollector();
-  GCCollector::bootstrapGC = GC;
-  mvm::Thread::get()->GC = GC;
-  GC->initialise(marker);
-  GC->inject_my_thread(base_sp);
-#else
+void Collector::initialise(markerFn marker) {
   GCCollector::initialise(marker);
-  GCCollector::inject_my_thread(base_sp);
-#endif
-  mvm::Thread::get()->baseSP = base_sp;
 }
 
 void Collector::destroy() {
   COLLECTOR destroy();
 }
 
-void Collector::inject_my_thread(void *base_sp) {
+void Collector::inject_my_thread(mvm::Thread* th) {
 #ifdef HAVE_PTHREAD
-  COLLECTOR inject_my_thread(base_sp);
+  COLLECTOR inject_my_thread(th);
 #endif
-  mvm::Thread::get()->baseSP = base_sp;
 }
 
 void Collector::maybeCollect() {
@@ -182,9 +171,9 @@ void Collector::registerMemoryError(void (*func)(unsigned int)){
   //onMemoryError = &COLLECTOR defaultMemoryError;
 }
 
-void Collector::remove_my_thread() {
+void Collector::remove_my_thread(mvm::Thread* th) {
 #ifdef HAVE_PTHREAD
-  COLLECTOR remove_thread(COLLECTOR threads->myloc());
+  COLLECTOR remove_thread(th);
 #endif
 }
 
@@ -200,9 +189,10 @@ void GCThread::waitCollection() {
 #else
 #define COLLECTOR GCCollector::
 #endif
+  mvm::Thread* th = mvm::Thread::get();
   unsigned int cm = COLLECTOR current_mark;
 
-  if(Thread::self() != collector_tid) {
+  if(th != current_collector) {
     collectorGo();
     while((COLLECTOR current_mark == cm) && 
           (COLLECTOR status == COLLECTOR stat_collect))
@@ -224,18 +214,18 @@ void GCCollector::siggc_handler(int) {
 #else
 #define COLLECTOR GCCollector::
 #endif
-  GCThreadCollector     *loc = COLLECTOR threads->myloc();
-  
+  mvm::Thread* th = mvm::Thread::get();
+
   jmp_buf buf;
   setjmp(buf);
   
   COLLECTOR threads->stackLock();
   
-  if(!loc) /* a key is being destroyed */  
+  if(!th) /* The thread is being destroyed */
     COLLECTOR threads->another_mark();
   else {
     register unsigned int  **cur = (unsigned int**)(void*)&buf;
-    register unsigned int  **max = loc->base_sp();
+    register unsigned int  **max = (unsigned int**)th->baseSP;
     
     GCChunkNode *node;
     

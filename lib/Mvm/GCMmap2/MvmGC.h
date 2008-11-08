@@ -32,6 +32,10 @@
 #define MARK_AND_TRACE markAndTrace()
 #endif
 
+namespace mvm {
+  class Thread;
+}
+
 class Collector;
 
 class gc : public gcRoot {
@@ -74,7 +78,7 @@ public:
 #endif
   typedef void (*markerFn)(void*);
   
-  static void  initialise(markerFn mark, void *base_sp);
+  static void  initialise(markerFn mark);
   STATIC void  destroy();
 
   STATIC void           die_if_sigsegv_occured_during_collection(void *addr);
@@ -84,8 +88,8 @@ public:
   STATIC void           gcStats(size_t &no, size_t &nbb);
   STATIC void           maybeCollect();
   STATIC void           collect(void);
-  STATIC void           inject_my_thread(void *sp);
-  STATIC void           remove_my_thread();
+  STATIC void           inject_my_thread(mvm::Thread* th);
+  STATIC void           remove_my_thread(mvm::Thread* th);
 #ifdef MULTIPLE_GC
   static Collector*     allocate();
 #endif

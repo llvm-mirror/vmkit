@@ -92,6 +92,7 @@ CommonClass::CommonClass() {
   nbStaticMethods = 0;
   nbInterfaces = 0;
   access = 0;
+  ownerClass = 0;
 }
 
 Class::Class() : CommonClass() {
@@ -276,6 +277,7 @@ CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n,
   virtualFields = 0;
   staticFields = 0;
   access = 0;
+  ownerClass = 0;
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   this->delegatee = 0;
 #endif
@@ -520,7 +522,8 @@ JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
 
 JavaObject* UserClass::doNew(Jnjvm* vm) {
   assert(this && "No class when allocating.");
-  assert((this->isReady() || classLoader->getModule()->isStaticCompiling())
+  assert((this->isInitializing() || 
+          classLoader->getModule()->isStaticCompiling())
          && "Uninitialized class when allocating.");
   JavaObject* res = 
     (JavaObject*)vm->gcAllocator.allocateManagedObject(getVirtualSize(),

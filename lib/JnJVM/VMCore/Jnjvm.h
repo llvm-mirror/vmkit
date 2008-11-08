@@ -80,6 +80,23 @@ public:
 
 };
 
+class ClArgumentsInfo {
+public:
+  int argc;
+  char** argv;
+  uint32 appArgumentsPos;
+  char* className;
+  std::vector< std::pair<char*, char*> > agents;
+
+  void readArgs(Jnjvm *vm);
+  void extractClassFromJar(Jnjvm* vm, int argc, char** argv, int i);
+  void javaAgent(char* cur);
+
+  void printInformation();
+  void nyi();
+  void printVersion();
+};
+
 /// Jnjvm - A JVM. Each execution of a program allocates a Jnjvm.
 ///
 class Jnjvm : public mvm::VirtualMachine {
@@ -98,7 +115,7 @@ private:
   /// bootstrapThread - The initial thread of this JVM.
   ///
   JavaThread* bootstrapThread;
-  
+
   /// error - Throws an exception in the execution of a JVM for the thread
   /// that calls this functions. This is used internally by Jnjvm to control
   /// which pair class/method are used.
@@ -135,15 +152,15 @@ private:
   ///
   void executePremain(const char* className, JavaString* args,
                       JavaObject* instrumenter);
-  
-  /// waitForExit - Waits that there are no more non-daemon threads in this JVM.
+   
+  /// mainJavaStart - Starts the execution of the application in a Java thread.
   ///
-  void waitForExit();
+  static void mainJavaStart(JavaThread* thread);
   
-  /// runMain - Runs the application with the given command line.
+  /// mainCompileStart - Starts the static compilation of classes in a Java
+  /// thread.
   ///
-  void runMain(int argc, char** argv);
-
+  static void mainCompilerStart(JavaThread* thread);
 
 public:
   
@@ -185,7 +202,11 @@ public:
   /// control the end of the JVM's execution.
   ///
   ThreadSystem threadSystem;
- 
+  
+  /// argumentsInfo - The command line arguments given to the vm
+  ///
+  ClArgumentsInfo argumentsInfo;
+
   /// jniEnv - The JNI environment of this JVM.
   ///
   void* jniEnv;
@@ -257,9 +278,7 @@ public:
   /// UTF8, thus duplicating the UTF8.
   ///
   JavaString* internalUTF8ToStr(const UTF8* utf8);
-  
-  
-  
+     
   /// asciizToInternalUTF8 - Constructs an UTF8 out of the asciiz and changes
   /// '.' into '/'.
   ///
@@ -299,7 +318,11 @@ public:
   /// compile - Compile the .class, .zip or .jar file to LLVM IR.
   ///
   virtual void compile(const char* name);
-
+  
+  /// waitForExit - Waits that there are no more non-daemon threads in this JVM.
+  ///
+  virtual void waitForExit();
+  
 };
 
 } // end namespace jnjvm

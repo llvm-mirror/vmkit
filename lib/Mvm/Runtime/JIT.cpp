@@ -78,14 +78,6 @@ void MvmModule::initialise(bool Fast) {
     (uintptr_t)executionEngine->getPointerToFunction(
       module.getFunction("runtime.llvm.atomic.cmp.swap.i64"));
   
-  executionEnvironment = module.getGlobalVariable("executionEnvironment");
-  getExecutionEnvironment = (mvm::Thread* (*)())
-    (uintptr_t)executionEngine->getPointerToFunction(
-      module.getFunction("getExecutionEnvironment"));
-  setExecutionEnvironment = (void (*)(mvm::Thread*))
-    (uintptr_t)executionEngine->getPointerToFunction(
-      module.getFunction("setExecutionEnvironment"));
-
   // Type declaration
   ptrType = PointerType::getUnqual(Type::Int8Ty);
   ptr32Type = PointerType::getUnqual(Type::Int32Ty);
@@ -134,8 +126,6 @@ void MvmModule::initialise(bool Fast) {
   constantPtrNull = Constant::getNullValue(ptrType); 
   constantPtrSize = ConstantInt::get(Type::Int32Ty, sizeof(void*));
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::Int8Ty, 0));
-
-  protectEngine = mvm::Lock::allocNormal();
 }
 
 
@@ -203,7 +193,7 @@ MvmModule::MvmModule(const std::string& ModuleID) : llvm::Module(ModuleID) {
 }
 
 llvm::ExecutionEngine* MvmModule::executionEngine;
-mvm::Lock* MvmModule::protectEngine;
+mvm::LockNormal MvmModule::protectEngine;
 
 llvm::ConstantInt* MvmModule::constantInt8Zero;
 llvm::ConstantInt* MvmModule::constantZero;
@@ -263,10 +253,6 @@ uint32 (*MvmModule::llvm_atomic_cmp_swap_i32) (uint32* ptr, uint32 cmp,
 uint64 (*MvmModule::llvm_atomic_cmp_swap_i64) (uint64* ptr, uint64 cmp,
                                               uint64 val);
 
-
-llvm::GlobalVariable* MvmModule::executionEnvironment;
-mvm::Thread* (*MvmModule::getExecutionEnvironment)();
-void (*MvmModule::setExecutionEnvironment)(mvm::Thread*);
 
 uint64 MvmModule::getTypeSize(const llvm::Type* type) {
   return executionEngine->getTargetData()->getABITypeSize(type);

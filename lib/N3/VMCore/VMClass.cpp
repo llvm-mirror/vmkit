@@ -56,7 +56,7 @@ void VMCommonClass::broadcastClass() {
 }
 
 bool VMCommonClass::ownerClass() {
-  return mvm::Lock::selfOwner(lockVar);
+  return lockVar->selfOwner();
 }
 
 
@@ -160,8 +160,8 @@ void Property::print(mvm::PrintBuffer* buf) const {
 
 
 void VMCommonClass::initialise(VirtualMachine* vm, bool isArray) {
-  this->lockVar = mvm::Lock::allocRecursive();
-  this->condVar = mvm::Cond::allocCond();
+  this->lockVar = new mvm::LockRecursive();
+  this->condVar = new mvm::Cond();
   this->delegatee = 0;
   this->status = hashed;
   this->vm = vm;

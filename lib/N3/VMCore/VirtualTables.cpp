@@ -209,7 +209,10 @@ void VMField::TRACER {
 }
 
 void VMCond::TRACER {
-  TRACE_VECTOR(VMThread*, threads, std::allocator);
+  for (std::vector<VMThread*, std::allocator<VMThread*> >::iterator i = threads.begin(), e = threads.end();
+       i!= e; ++i) {
+    (*i)->CALL_TRACER; 
+  }
 }
 
 void LockObj::TRACER {
@@ -234,8 +237,12 @@ void VirtualMachine::TRACER {
   threadSystem->MARK_AND_TRACE;
   hashUTF8->MARK_AND_TRACE;
   functions->MARK_AND_TRACE;
-  //protectModule->MARK_AND_TRACE;
-  bootstrapThread->MARK_AND_TRACE;
+  if (bootstrapThread) {
+    bootstrapThread->CALL_TRACER;
+    for (VMThread* th = (VMThread*)bootstrapThread->next(); 
+         th != bootstrapThread; th = (VMThread*)th->next())
+      th->CALL_TRACER;
+  }
 }
 
 void Param::TRACER {

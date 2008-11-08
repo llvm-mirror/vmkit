@@ -10,91 +10,60 @@
 #ifndef MVM_LOCKS_H
 #define MVM_LOCKS_H
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include <pthread.h>
 
 namespace mvm {
 
-class SpinLock {
-   unsigned int value;
-public:
-   SpinLock() { value = 0; }
-  
-   void slock();
-   void sunlock() {
-     value = 0;
-   }
-};
+class Cond;
+class LockNormal;
+class LockRecursive;
 
-class Lock : public SpinLock {
+class Lock {
+  friend class Cond;
 protected:
-  void    (*xlock)(Lock *);
-  void    (*xunlock)(Lock *);
-  int     (*xtrylock)(Lock *);
-
-  int     _owner;
+  int owner;
+  pthread_mutex_t internalLock;
 
 public:
-  inline Lock() { _owner = 0; }
-  inline int  owner() { return _owner; }
-  inline void owner(int o) { _owner = o; }
+  Lock(bool rec);
+  
+  ~Lock();
+  
+  virtual void lock() = 0;
+  virtual void unlock() = 0;
 
-  void lock() { 
-    xlock(this); 
-  }
-
-  void unlock() { 
-    xunlock(this);
-  }
-
-  int trylock() { 
-    int res = xtrylock(this); 
-    return res;
-  }
-
-  static Lock *allocNormal();
-  static Lock *allocRecursive();
-  static void destroy(Lock *);
-
-  static bool selfOwner(Lock *);
-  static int getOwner(Lock *);
+  bool selfOwner();
+  int getOwner();
   
 };
 
 class LockNormal : public Lock {
-  static void    my_lock(Lock *);
-  static void    my_unlock(Lock *);
-  static int    my_trylock(Lock *);
 public:
-  LockNormal() {
-    xlock = my_lock; xunlock = my_unlock; xtrylock = my_trylock;
-  }
+  LockNormal() : Lock(false) {}
+  virtual void lock();
+  virtual void unlock();
 
-  void initialise() {
-    xlock = my_lock; xunlock = my_unlock; xtrylock = my_trylock;
-  }
 };
   
 class LockRecursive : public Lock {
+private:
   int n;
 
-  static void    my_lock(Lock *);
-  static void    my_unlock(Lock *);
-  static int    my_trylock(Lock *);
 public:
-  LockRecursive() {
-    xlock = my_lock; xunlock = my_unlock; xtrylock = my_trylock; n = 0;
+  LockRecursive() : Lock(true) {
+    n = 0;
   }
   
-  void initialise() {
-    xlock = my_lock; xunlock = my_unlock; xtrylock = my_trylock; n = 0;
-  }
+  virtual void lock();
+  virtual void unlock();
   
-  static int recursion_count(Lock *);
-  static int my_unlock_all(Lock *);
-  static void my_lock_all(Lock *, int count);
+  int recursionCount() { 
+    return n;
+  }
+  int unlockAll();
+  void lockAll(int count);
 };
+
 
 } // end namespace mvm
 

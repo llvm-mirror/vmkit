@@ -14,7 +14,6 @@
 #include "mvm/Method.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
-#include "mvm/Threads/Key.h"
 #include "mvm/Threads/Thread.h"
 
 using namespace mvm;
@@ -22,8 +21,6 @@ using namespace mvm;
 
 VirtualTable *NativeString::VT = 0;
 VirtualTable *PrintBuffer::VT = 0;
-
-mvm::Key<mvm::Thread>* mvm::Thread::threadKey = 0;
 
 
 void Object::initialise() {

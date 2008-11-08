@@ -91,7 +91,7 @@ bool JavaObject::owner() {
 
 void JavaObject::overflowThinlock() {
   LockObj* obj = LockObj::allocate();
-  mvm::LockRecursive::my_lock_all(&obj->lock, 257);
+  obj->lock.lockAll(257);
   lock = ((uint32)obj >> 1) | 0x80000000;
 }
 
@@ -151,7 +151,7 @@ LockObj* JavaObject::changeToFatlock() {
     LockObj* obj = LockObj::allocate();
     uint32 val = (((uint32) obj) >> 1) | 0x80000000;
     uint32 count = lock & 0xFF;
-    mvm::LockRecursive::my_lock_all(&obj->lock, count + 1);
+    obj->lock.lockAll(count + 1);
     lock = val;
     return obj;
   } else {
@@ -179,22 +179,22 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
       thread->interruptFlag = 0;
       thread->isolate->interruptedException(this);
     } else {
-      unsigned int recur = mvm::LockRecursive::recursion_count(&l->lock);
+      unsigned int recur = l->lock.recursionCount();
       bool timeout = false;
-      mvm::LockRecursive::my_unlock_all(&l->lock);
+      l->lock.unlockAll();
       JavaCond* cond = l->getCond();
       cond->wait(thread);
       thread->state = JavaThread::StateWaiting;
 
       if (timed) {
-        timeout = varcondThread.timed_wait(&mutexThread, info);
+        timeout = varcondThread.timedWait(&mutexThread, info);
       } else {
         varcondThread.wait(&mutexThread);
       }
 
       bool interrupted = (thread->interruptFlag != 0);
       mutexThread.unlock();
-      mvm::LockRecursive::my_lock_all(&l->lock, recur);
+      l->lock.lockAll(recur);
 
       if (interrupted || timeout) {
         cond->remove(thread);

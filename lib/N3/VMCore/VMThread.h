@@ -16,7 +16,6 @@
 
 #include "mvm/Object.h"
 #include "mvm/Threads/Cond.h"
-#include "mvm/Threads/Key.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
@@ -50,7 +49,12 @@ public:
   ~VMThread();
   VMThread();
   
-  static VMThread* get();
+  // Temporary solution until N3 can cleanly bootstrap itself and
+  // implement threads.
+  static VMThread* TheThread;
+  static VMThread* get() {
+    return TheThread;
+  }
   static VMThread* allocate(VMObject* thread, VirtualMachine* vm);
   static VMObject* currentThread();
   

@@ -21,8 +21,7 @@
 namespace mvm {
 
 /// VirtualMachine - This class is the root of virtual machine classes. It
-/// defines what a VM should be. Currently, a VM only initializes itself
-/// and runs applications.
+/// defines what a VM should be.
 ///
 class VirtualMachine : public mvm::Object {
 public:
@@ -33,7 +32,9 @@ public:
   
   /// compile - Compile a given file to LLVM.
   virtual void compile(const char* name) = 0;
-  
+ 
+  /// waitForExit - Wait until the virtual machine stops its execution.
+  virtual void waitForExit() = 0;
 
   static CompilationUnit* initialiseJVM(bool staticCompilation = false);
   static VirtualMachine* createJVM(CompilationUnit* C = 0);

@@ -9,7 +9,6 @@
 
 #include "mvm/JIT.h"
 #include "mvm/PrintBuffer.h"
-#include "mvm/Threads/Key.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
@@ -31,54 +30,24 @@ void JavaThread::print(mvm::PrintBuffer* buf) const {
   if (javaThread) javaThread->print(buf);
 }
 
-JavaThread::JavaThread(JavaObject* thread, Jnjvm* vm, void* sp) {
-  if (!thread) bootstrap = true;
-  else bootstrap = false;
+JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* vm) {
   javaThread = thread;
+  vmThread = vmth;
   isolate = vm;
   interruptFlag = 0;
   state = StateRunning;
   pendingException = 0;
   vmAllocator = &isolate->allocator;
-  baseSP = sp;
-  mvm::Thread::set(this);
-  threadID = (mvm::Thread::self() << 8) & 0x7FFFFF00;
-  
-  if (!bootstrap) {
-#ifdef MULTIPLE_GC
-    GC = isolate->GC;
-    GC->inject_my_thread(sp);
-#else
-    Collector::inject_my_thread(sp);
-#endif
-
 #ifdef SERVICE_VM
-    ServiceDomain* domain = (ServiceDomain*)vm;
-    domain->startExecution();
-    domain->lock->lock();
-    domain->numThreads++;
-    domain->lock->unlock();
+  ServiceDomain* domain = (ServiceDomain*)vm;
+  domain->startExecution();
+  domain->lock->lock();
+  domain->numThreads++;
+  domain->lock->unlock();
 #endif
-  }
-
-
 }
 
-JavaThread::~JavaThread() {
-  if (!bootstrap) {
-#ifdef MULTIPLE_GC
-    GC->remove_my_thread();
-#else
-    Collector::remove_my_thread();
-#endif
-#ifdef SERVICE_VM
-    ServiceDomain* vm = (ServiceDomain*)isolate;
-    vm->lock->lock();
-    vm->numThreads--;
-    vm->lock->unlock();
-#endif
-  }
-}
+JavaThread::~JavaThread() {}
 
 // We define these here because gcc compiles the 'throw' keyword
 // differently, whether these are defined in a file or not. Since many
