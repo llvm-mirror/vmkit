@@ -152,7 +152,7 @@ Value* JnjvmModule::getJavaClass(CommonClass* cl) {
     
     JavaObject* obj = isStaticCompiling() ? 0 : 
       cl->getClassDelegatee(JavaThread::get()->isolate);
-    assert(obj && "Delegatee not created");
+    assert((obj || isStaticCompiling()) && "Delegatee not created");
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(obj)),
                                 JnjvmModule::JavaObjectType);
@@ -175,7 +175,8 @@ Value* JnjvmModule::getStaticInstance(Class* classDef) {
     LLVMClassInfo* LCI = getClassInfo(classDef);
     LCI->getStaticType();
     JavaObject* obj = ((Class*)classDef)->getStaticInstance();
-    assert(obj && "Getting static instance before it's created!");
+    assert((obj || isStaticCompiling()) && 
+           "Getting static instance before it's created!");
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                                 uint64_t (obj)), JnjvmModule::JavaObjectType);
@@ -201,7 +202,8 @@ Value* JnjvmModule::getVirtualTable(CommonClass* classDef) {
       LLVMClassInfo* LCI = getClassInfo((Class*)classDef);
       LCI->getVirtualType();
     }
-    assert(classDef->virtualVT && "Virtual VT not created");
+    assert((classDef->virtualVT || isStaticCompiling()) && 
+           "Virtual VT not created");
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                                                  uint64_t(classDef->virtualVT)),
@@ -227,7 +229,7 @@ Value* JnjvmModule::getNativeFunction(JavaMethod* meth, void* ptr) {
     LLVMSignatureInfo* LSI = getSignatureInfo(meth->getSignature());
     const llvm::Type* valPtrType = LSI->getNativePtrType();
     
-    assert(ptr && "No native function given");
+    assert((ptr || isStaticCompiling()) && "No native function given");
 
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t(ptr)),
