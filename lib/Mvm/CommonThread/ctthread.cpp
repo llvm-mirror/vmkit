@@ -75,9 +75,9 @@ public:
     while (!baseAddr && ptr != 0xF0000000) {
       ptr = ptr + 0x10000000;
 #if defined (__MACH__)
-      uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
-#else
       uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
+#else
+      uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
 #endif
       baseAddr = (uintptr_t)mmap((void*)ptr, STACK_SIZE * NR_THREADS, 
                                  PROT_READ | PROT_WRITE, flags, 0, 0);
