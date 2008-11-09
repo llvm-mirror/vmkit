@@ -51,6 +51,12 @@ typedef void (*clinit_t)(UserConstantPool*);
 
 void UserCommonClass::initialiseClass(Jnjvm* vm) {
   
+  // Primitives are initialized at boot time, arrays are initialized directly.
+  if (isArray()) {
+    status = ready;
+    return;
+  }
+  
   // Assumes that the Class object has already been verified and prepared and
   // that the Class object contains state that can indicate one of four
   // situations:
@@ -65,10 +71,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
   assert(status >= resolved || ownerClass || status == ready ||
          status == erroneous && "Class in wrong state");
   
-  // Primitives are initialized at boot time, arrays are initialized directly.
-  if (isArray()) {
-    status = ready;
-  } else if (status != ready) {
+  if (status != ready) {
     
     // 1. Synchronize on the Class object that represents the class or 
     //    interface to be initialized. This involves waiting until the
@@ -86,7 +89,6 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
         while (ownerClass) {
           waitClass();
         }
-        release();
       } else {
         // 3. If initialization is in progress for the class or interface by
         //    the current thread, then this must be a recursive request for 
@@ -963,70 +965,75 @@ static const char* name;
 void Jnjvm::mainCompilerStart(JavaThread* th) {
   
   Jnjvm* vm = th->isolate;
-  JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
+  try {
+    JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
 
-  bootstrapLoader->analyseClasspathEnv(vm->classpath);
+    bootstrapLoader->analyseClasspathEnv(vm->classpath);
   
-  uint32 size = strlen(name);
-  if (size > 4 && 
-      (!strcmp(&name[size - 4], ".jar") || !strcmp(&name[size - 4], ".zip"))) {
+    uint32 size = strlen(name);
+    if (size > 4 && 
+       (!strcmp(&name[size - 4], ".jar") || !strcmp(&name[size - 4], ".zip"))) {
   
 
-    std::vector<Class*> classes;
+      std::vector<Class*> classes;
 
-    ArrayUInt8* bytes = Reader::openFile(bootstrapLoader, name);
-    if (!bytes) vm->unknownError("Can't find zip file.");
-    ZipArchive archive(bytes, bootstrapLoader->allocator);
+      ArrayUInt8* bytes = Reader::openFile(bootstrapLoader, name);
+      if (!bytes) vm->unknownError("Can't find zip file.");
+      ZipArchive archive(bytes, bootstrapLoader->allocator);
     
-    char* realName = (char*)alloca(4096);
-    for (ZipArchive::table_iterator i = archive.filetable.begin(), 
-         e = archive.filetable.end(); i != e; ++i) {
-      ZipFile* file = i->second;
+      char* realName = (char*)alloca(4096);
+      for (ZipArchive::table_iterator i = archive.filetable.begin(), 
+           e = archive.filetable.end(); i != e; ++i) {
+        ZipFile* file = i->second;
       
-      size = strlen(file->filename);
-      if (size > 6 && !strcmp(&(file->filename[size - 6]), ".class")) {
-        UserClassArray* array = bootstrapLoader->upcalls->ArrayOfByte;
-        ArrayUInt8* res = (ArrayUInt8*)array->doNew(file->ucsize,
-                                                    bootstrapLoader->allocator);
-        int ok = archive.readFile(res, file);
-        if (!ok) vm->unknownError("Wrong zip file.");
+        size = strlen(file->filename);
+        if (size > 6 && !strcmp(&(file->filename[size - 6]), ".class")) {
+          UserClassArray* array = bootstrapLoader->upcalls->ArrayOfByte;
+          ArrayUInt8* res = 
+            (ArrayUInt8*)array->doNew(file->ucsize, bootstrapLoader->allocator);
+          int ok = archive.readFile(res, file);
+          if (!ok) vm->unknownError("Wrong zip file.");
       
         
-        memcpy(realName, file->filename, size);
-        realName[size - 6] = 0;
-        const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
-        Class* cl = bootstrapLoader->constructClass(utf8, res);
-        classes.push_back(cl);
+          memcpy(realName, file->filename, size);
+          realName[size - 6] = 0;
+          const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
+          Class* cl = bootstrapLoader->constructClass(utf8, res);
+          classes.push_back(cl);
+        }
       }
-    }
 
-    // First resolve everyone so that there can not be unknown references in
-    // constant pools.
-    for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end(); 
-         i != e; ++i) {
-      Class* cl = *i;
-      cl->resolveClass();
-    }
+      // First resolve everyone so that there can not be unknown references in
+      // constant pools.
+      for (std::vector<Class*>::iterator i = classes.begin(),
+           e = classes.end(); i != e; ++i) {
+        Class* cl = *i;
+        cl->resolveClass();
+      }
       
-    for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end(); 
-         i != e; ++i) {
-      Class* cl = *i;
-      if (!cl->isInterface()) compileClass(cl);
+      for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
+           i != e; ++i) {
+        Class* cl = *i;
+        if (!cl->isInterface()) compileClass(cl);
+      }
+
+    } else {
+
+      const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(name);
+      UserClass* cl = bootstrapLoader->loadName(utf8, true, true);
+      compileClass(cl);
+    }
+   
+    // Set the linkage to External, so that the printer does not complain.
+    llvm::Module* M = bootstrapLoader->getModule();
+    for (Module::iterator i = M->begin(), e = M->end(); i != e; ++i) {
+      i->setLinkage(llvm::GlobalValue::ExternalLinkage);
     }
 
-  } else {
+  } catch(std::string str) {
+    fprintf(stderr, "Error : %s\n", str.c_str());
+  }
 
-    const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(name);
-    UserClass* cl = bootstrapLoader->loadName(utf8, true, true);
-    compileClass(cl);
-  }
-   
-  // Set the linkage to External, so that the printer does not complain.
-  llvm::Module* M = bootstrapLoader->getModule();
-  for (Module::iterator i = M->begin(), e = M->end(); i != e; ++i) {
-    i->setLinkage(llvm::GlobalValue::ExternalLinkage);
-  }
-  
   vm->threadSystem.nonDaemonLock.lock();
   --(vm->threadSystem.nonDaemonThreads);
   if (vm->threadSystem.nonDaemonThreads == 0)
