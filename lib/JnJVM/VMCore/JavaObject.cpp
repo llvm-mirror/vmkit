@@ -79,8 +79,7 @@ LockObj* LockObj::allocate() {
 }
 
 bool JavaObject::owner() {
-  uint32 id = mvm::Thread::get()->threadID;
-  if (id == lock) return true;
+  uint32 id = (uint32)mvm::Thread::get();
   if ((lock & 0x7FFFFF00) == id) return true;
   if (lock & 0x80000000) {
     LockObj* obj = (LockObj*)(lock << 1);
@@ -91,57 +90,61 @@ bool JavaObject::owner() {
 
 void JavaObject::overflowThinlock() {
   LockObj* obj = LockObj::allocate();
-  obj->lock.lockAll(257);
+  obj->lock.lockAll(256);
   lock = ((uint32)obj >> 1) | 0x80000000;
 }
 
 void JavaObject::release() {
-  uint32 id = mvm::Thread::get()->threadID;
-  if (lock == id) {
-    lock = 0;
-  } else if (lock & 0x80000000) {
+  uint32 id = (uint32)mvm::Thread::get();
+  if ((lock & 0x7FFFFF00) == id) {
+    --lock;
+  } else {
     LockObj* obj = (LockObj*)(lock << 1);
     obj->release();
-  } else {
-    lock--;
-  }
+  } 
 }
 
 void JavaObject::acquire() {
-  uint32 id = mvm::Thread::get()->threadID;
-  uint32 val = __sync_val_compare_and_swap((uint32*)&lock, 0, id);
-  if (val != 0) {
-    //fat!
-    if (!(val & 0x80000000)) {
-      if ((val & 0x7FFFFF00) == id) {
-        if ((val & 0xFF) != 0xFF) {
-          lock++;
-        } else {
-          overflowThinlock();
-        }
+  uint32 id = (uint32)mvm::Thread::get();
+  if ((lock & 0x7FFFFFFF) == id) {
+    lock |= 1;
+  } else if ((lock & 0x7FFFFF00) == id) {
+    if ((lock & 0xFF) == 0xFF) {
+      overflowThinlock();
+    } else {
+      ++lock;
+    }
+  } else {
+    uint32 currentLock = lock & 0x7FFFFF00;
+    uint32 val = __sync_val_compare_and_swap((uint32*)&lock, currentLock, (id + 1));
+    if (val != currentLock) {
+      //fat!
+      if (val & 0x80000000) {
+end:
+        LockObj* obj = (LockObj*)(lock << 1);
+        obj->acquire();
       } else {
         LockObj* obj = LockObj::allocate();
         uint32 val = ((uint32)obj >> 1) | 0x80000000;
-loop:
         uint32 count = 0;
-        while (lock) {
+loop:
+        while ((lock & 0xFF) != 0) {
           if (lock & 0x80000000) {
 #ifdef USE_GC_BOEHM
             delete obj;
 #endif
             goto end;
           }
-          else mvm::Thread::yield(&count);
+          else {
+            mvm::Thread::yield(&count);
+          }
         }
         
-        uint32 test = __sync_val_compare_and_swap((uint32*)&lock, 0, val);
-        if (test) goto loop;
+        currentLock = lock & 0x7FFFFF00;
+        uint32 test = __sync_val_compare_and_swap(&lock, currentLock, val);
+        if (test != currentLock) goto loop;
         obj->acquire();
       }
-    } else {
-end:
-      LockObj* obj = (LockObj*)(lock << 1);
-      obj->acquire();
     }
   }
 }
@@ -151,7 +154,7 @@ LockObj* JavaObject::changeToFatlock() {
     LockObj* obj = LockObj::allocate();
     uint32 val = (((uint32) obj) >> 1) | 0x80000000;
     uint32 count = lock & 0xFF;
-    obj->lock.lockAll(count + 1);
+    obj->lock.lockAll(count);
     lock = val;
     return obj;
   } else {

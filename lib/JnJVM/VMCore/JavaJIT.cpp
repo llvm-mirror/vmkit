@@ -321,90 +321,45 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
 }
 
 void JavaJIT::monitorEnter(Value* obj) {
+
   std::vector<Value*> gep;
   gep.push_back(module->constantZero);
   gep.push_back(module->JavaObjectLockOffsetConstant);
   Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
                                              currentBlock);
+  Value* lock = new LoadInst(lockPtr, "", currentBlock);
+  Value* lockMask = BinaryOperator::CreateAnd(lock, 
+                                              module->constantThreadFreeMask,
+                                              "", currentBlock);
   Value* threadId = CallInst::Create(module->llvm_frameaddress,
                                      module->constantZero, "", currentBlock);
   threadId = new PtrToIntInst(threadId, Type::Int32Ty, "", currentBlock);
   threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
                                        "", currentBlock);
-  std::vector<Value*> atomicArgs;
-  atomicArgs.push_back(lockPtr);
-  atomicArgs.push_back(module->constantZero);
-  atomicArgs.push_back(threadId);
-
-  // Do the atomic compare and swap.
-  Value* atomic = CallInst::Create(module->llvm_atomic_lcs_i32,
-                                   atomicArgs.begin(), atomicArgs.end(), "",
-                                   currentBlock);
   
-  Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, atomic, module->constantZero, 
-                            "", currentBlock);
+  Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, lockMask, threadId, "",
+                            currentBlock);
   
-  BasicBlock* OK = createBasicBlock("synchronize passed");
-  BasicBlock* NotOK = createBasicBlock("synchronize did not pass");
+  BasicBlock* ThinLockBB = createBasicBlock("thread local");
   BasicBlock* FatLockBB = createBasicBlock("fat lock");
-  BasicBlock* ThinLockBB = createBasicBlock("thin lock");
-
-  BranchInst::Create(OK, NotOK, cmp, currentBlock);
-
-  currentBlock = NotOK;
-  
-  // The compare and swap did not pass, look if it's a thin lock
-  Value* thinMask = ConstantInt::get(Type::Int32Ty, 0x80000000);
-  Value* isThin = BinaryOperator::CreateAnd(atomic, thinMask, "",
-                                            currentBlock);
-  cmp = new ICmpInst(ICmpInst::ICMP_EQ, isThin, module->constantZero, "",
-                     currentBlock);
+  BasicBlock* EndLockBB = createBasicBlock("End lock");
   
   BranchInst::Create(ThinLockBB, FatLockBB, cmp, currentBlock);
 
-  // It's a thin lock. Look if we're the owner of this lock.
   currentBlock = ThinLockBB;
-  Value* idMask = ConstantInt::get(Type::Int32Ty, 0x7FFFFF00);
-  Value* cptMask = ConstantInt::get(Type::Int32Ty, 0xFF);
-  Value* IdInLock = BinaryOperator::CreateAnd(atomic, idMask, "", currentBlock);
-  Value* owner = new ICmpInst(ICmpInst::ICMP_EQ, threadId, IdInLock, "",
-                              currentBlock);
+  Value* increment = BinaryOperator::CreateAdd(lock, module->constantOne, "",
+                                               currentBlock);
+  new StoreInst(increment, lockPtr, false, currentBlock);
+  BranchInst::Create(EndLockBB, currentBlock);
 
-  BasicBlock* OwnerBB = createBasicBlock("owner thread");
-
-  BranchInst::Create(OwnerBB, FatLockBB, owner, currentBlock);
-  currentBlock = OwnerBB;
-
-  // OK, we are the owner, now check if the counter will overflow.
-  Value* count = BinaryOperator::CreateAnd(atomic, cptMask, "", currentBlock);
-  cmp = new ICmpInst(ICmpInst::ICMP_ULT, count, cptMask, "", currentBlock);
-
-  BasicBlock* IncCounterBB = createBasicBlock("Increment counter");
-  BasicBlock* OverflowCounterBB = createBasicBlock("Overflow counter");
-
-  BranchInst::Create(IncCounterBB, OverflowCounterBB, cmp, currentBlock);
-  currentBlock = IncCounterBB;
-  
-  // The counter will not overflow, increment it.
-  Value* Add = BinaryOperator::CreateAdd(module->constantOne, atomic, "",
-                                         currentBlock);
-  new StoreInst(Add, lockPtr, false, currentBlock);
-  BranchInst::Create(OK, currentBlock);
-
-  currentBlock = OverflowCounterBB;
-
-  // The counter will overflow, call this function to create a new lock,
-  // lock it 0x101 times, and pass.
-  CallInst::Create(module->OverflowThinLockFunction, obj, "",
-                   currentBlock);
-  BranchInst::Create(OK, currentBlock);
-  
   currentBlock = FatLockBB;
 
-  // Either it's a fat lock or there is contention.
+  // Either it's a fat lock or there is contention or it's not thread local or
+  // it's locked at least once.
   CallInst::Create(module->AquireObjectFunction, obj, "", currentBlock);
-  BranchInst::Create(OK, currentBlock);
-  currentBlock = OK;
+
+  BranchInst::Create(EndLockBB, currentBlock);
+  currentBlock = EndLockBB;
 }
 
 void JavaJIT::monitorExit(Value* obj) {
@@ -414,51 +369,33 @@ void JavaJIT::monitorExit(Value* obj) {
   Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
                                              currentBlock);
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
+  Value* lockMask = BinaryOperator::CreateAnd(lock, module->constantLockedMask,
+                                              "", currentBlock);
   Value* threadId = CallInst::Create(module->llvm_frameaddress,
                                      module->constantZero, "", currentBlock);
   threadId = new PtrToIntInst(threadId, Type::Int32Ty, "", currentBlock);
   threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
                                        "", currentBlock);
   
-  Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, lock, threadId, "",
+  Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, lockMask, threadId, "",
                             currentBlock);
   
   
   BasicBlock* EndUnlock = createBasicBlock("end unlock");
-  BasicBlock* LockedOnceBB = createBasicBlock("desynchronize thin lock");
-  BasicBlock* NotLockedOnceBB = 
-    createBasicBlock("simple desynchronize did not pass");
+  BasicBlock* ThinLockBB = createBasicBlock("desynchronize thin lock");
   BasicBlock* FatLockBB = createBasicBlock("fat lock");
-  BasicBlock* ThinLockBB = createBasicBlock("thin lock");
-  
-  BranchInst::Create(LockedOnceBB, NotLockedOnceBB, cmp, currentBlock);
-  
-  // Locked once, set zero
-  currentBlock = LockedOnceBB;
-  new StoreInst(module->constantZero, lockPtr, false, currentBlock);
-  BranchInst::Create(EndUnlock, currentBlock);
-
-  currentBlock = NotLockedOnceBB;
-  // Look if the lock is thin.
-  Value* thinMask = ConstantInt::get(Type::Int32Ty, 0x80000000);
-  Value* isThin = BinaryOperator::CreateAnd(lock, thinMask, "",
-                                            currentBlock);
-  cmp = new ICmpInst(ICmpInst::ICMP_EQ, isThin, module->constantZero, "",
-                     currentBlock);
   
   BranchInst::Create(ThinLockBB, FatLockBB, cmp, currentBlock);
   
+  // Locked by the thread, decrement.
   currentBlock = ThinLockBB;
-
-  // Decrement the counter.
-  Value* Sub = BinaryOperator::CreateSub(lock, module->constantOne, "",
-                                         currentBlock);
-  new StoreInst(Sub, lockPtr, false, currentBlock);
+  Value* decrement = BinaryOperator::CreateSub(lock, module->constantOne, "",
+                                               currentBlock);
+  new StoreInst(decrement, lockPtr, false, currentBlock);
   BranchInst::Create(EndUnlock, currentBlock);
 
+  // Either it's a fat lock or there is contention or it's not thread local.
   currentBlock = FatLockBB;
-
-  // Either it's a fat lock or there is contention.
   CallInst::Create(module->ReleaseObjectFunction, obj, "", currentBlock);
   BranchInst::Create(EndUnlock, currentBlock);
   currentBlock = EndUnlock;
@@ -1817,7 +1754,18 @@ void JavaJIT::invokeNew(uint16 index) {
   Value* GEP = GetElementPtrInst::Create(val, gep.begin(), gep.end(), "",
                                          currentBlock);
   new StoreInst(Cl, GEP, currentBlock);
-
+  
+  gep.clear();
+  gep.push_back(module->constantZero);
+  gep.push_back(module->JavaObjectLockOffsetConstant);
+  Value* lockPtr = GetElementPtrInst::Create(val, gep.begin(), gep.end(), "",
+                                             currentBlock);
+  Value* threadId = CallInst::Create(module->llvm_frameaddress,
+                                     module->constantZero, "", currentBlock);
+  threadId = new PtrToIntInst(threadId, Type::Int32Ty, "", currentBlock);
+  threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+                                       "", currentBlock);
+  new StoreInst(threadId, lockPtr, currentBlock);
 
   push(val, false);
 }

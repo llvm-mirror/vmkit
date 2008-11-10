@@ -14,6 +14,7 @@
 
 #include "mvm/Object.h"
 #include "mvm/Threads/Locks.h"
+#include "mvm/Threads/Thread.h"
 
 #include "types.h"
 
@@ -160,7 +161,7 @@ public:
   ///
   void initialise(UserCommonClass* cl) {
     this->classOf = cl; 
-    this->lock = 0;
+    this->lock = (uint32)mvm::Thread::get();
   }
 
   /// instanceOf - Is this object's class of type the given class?

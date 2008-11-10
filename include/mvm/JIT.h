@@ -160,6 +160,8 @@ public:
   static llvm::Constant*    constantPtrNull;
   static llvm::ConstantInt* constantPtrSize;
   static llvm::ConstantInt* constantThreadIDMask;
+  static llvm::ConstantInt* constantLockedMask;
+  static llvm::ConstantInt* constantThreadFreeMask;
   static const llvm::PointerType* ptrType;
   static const llvm::PointerType* ptr32Type;
   static const llvm::PointerType* ptrPtrType;
