@@ -253,18 +253,20 @@ extern "C" void* classLookup(UserClass* caller, uint32 index) {
 
 
 extern "C" void printMethodStart(JavaMethod* meth) {
-  printf("[%d] executing %s\n", mvm::Thread::get(), meth->printString());
+  printf("[%x] executing %s\n", (unsigned)mvm::Thread::get(),
+         meth->printString());
   fflush(stdout);
 }
 
 extern "C" void printMethodEnd(JavaMethod* meth) {
-  printf("[%d] return from %s\n", mvm::Thread::get(), meth->printString());
+  printf("[%x] return from %s\n", (unsigned)mvm::Thread::get(),
+         meth->printString());
   fflush(stdout);
 }
 
 extern "C" void printExecution(char* opcode, uint32 index, JavaMethod* meth) {
-  printf("[%d] executing %s %s at %d\n", mvm::Thread::get(), meth->printString(), 
-                                   opcode, index);
+  printf("[%x] executing %s %s at %d\n", (unsigned)mvm::Thread::get(),
+         meth->printString(), opcode, index);
   fflush(stdout);
 }
 
