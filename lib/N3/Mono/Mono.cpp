@@ -2,8 +2,11 @@
 //
 //                              N3
 //
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// This file is licensed under the University of Illinois Open Source License
+// and the Mono License. See LICENSE.TXT for details.
+// The file also has the following additional copyright:
+//
+// (C) 2008 Ximian, Inc.  http://www.ximian.com
 //
 //===----------------------------------------------------------------------===//
 
