@@ -116,11 +116,11 @@ void JavaObject::acquire() {
     }
   } else {
     uint32 currentLock = lock & 0x7FFFFF00;
-    uint32 val = __sync_val_compare_and_swap((uint32*)&lock, currentLock, (id + 1));
+    uint32 val = __sync_val_compare_and_swap(&lock, currentLock, (id + 1));
     if (val != currentLock) {
-      //fat!
       if (val & 0x80000000) {
 end:
+        //fat lock!
         LockObj* obj = (LockObj*)(lock << 1);
         obj->acquire();
       } else {
