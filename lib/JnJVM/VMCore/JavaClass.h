@@ -344,7 +344,7 @@ public:
 
   /// ownerClass - Who is initializing this class.
   ///
-  uint32 ownerClass;
+  mvm::Thread* ownerClass;
   
   /// lookupMethodDontThrow - Lookup a method in the method map of this class.
   /// Do not throw if the method is not found.

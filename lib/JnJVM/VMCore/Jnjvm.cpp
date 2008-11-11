@@ -78,7 +78,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
     //    current thread can obtain the lock for that object
     //    (Java specification §8.13).
     acquire();
-    uint32 self = mvm::Thread::get()->threadID;
+    mvm::Thread* self = mvm::Thread::get();
 
     if (status == inClinit) {
       // 2. If initialization by some other thread is in progress for the

@@ -328,12 +328,14 @@ void JavaJIT::monitorEnter(Value* obj) {
   Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
                                              currentBlock);
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
+  lock = new PtrToIntInst(lock, module->pointerSizeType, "", currentBlock);
   Value* lockMask = BinaryOperator::CreateAnd(lock, 
                                               module->constantThreadFreeMask,
                                               "", currentBlock);
   Value* threadId = CallInst::Create(module->llvm_frameaddress,
                                      module->constantZero, "", currentBlock);
-  threadId = new PtrToIntInst(threadId, Type::Int32Ty, "", currentBlock);
+  threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
+                              currentBlock);
   threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
                                        "", currentBlock);
   
@@ -349,6 +351,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   currentBlock = ThinLockBB;
   Value* increment = BinaryOperator::CreateAdd(lock, module->constantOne, "",
                                                currentBlock);
+  increment = new IntToPtrInst(increment, module->ptrType, "", currentBlock);
   new StoreInst(increment, lockPtr, false, currentBlock);
   BranchInst::Create(EndLockBB, currentBlock);
 
@@ -369,11 +372,13 @@ void JavaJIT::monitorExit(Value* obj) {
   Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
                                              currentBlock);
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
+  lock = new PtrToIntInst(lock, module->pointerSizeType, "", currentBlock);
   Value* lockMask = BinaryOperator::CreateAnd(lock, module->constantLockedMask,
                                               "", currentBlock);
   Value* threadId = CallInst::Create(module->llvm_frameaddress,
                                      module->constantZero, "", currentBlock);
-  threadId = new PtrToIntInst(threadId, Type::Int32Ty, "", currentBlock);
+  threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
+                              currentBlock);
   threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
                                        "", currentBlock);
   
@@ -391,6 +396,7 @@ void JavaJIT::monitorExit(Value* obj) {
   currentBlock = ThinLockBB;
   Value* decrement = BinaryOperator::CreateSub(lock, module->constantOne, "",
                                                currentBlock);
+  decrement = new IntToPtrInst(decrement, module->ptrType, "", currentBlock);
   new StoreInst(decrement, lockPtr, false, currentBlock);
   BranchInst::Create(EndUnlock, currentBlock);
 
@@ -1762,9 +1768,11 @@ void JavaJIT::invokeNew(uint16 index) {
                                              currentBlock);
   Value* threadId = CallInst::Create(module->llvm_frameaddress,
                                      module->constantZero, "", currentBlock);
-  threadId = new PtrToIntInst(threadId, Type::Int32Ty, "", currentBlock);
+  threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
+                              currentBlock);
   threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
                                        "", currentBlock);
+  threadId = new IntToPtrInst(threadId, module->ptrType, "", currentBlock);
   new StoreInst(threadId, lockPtr, currentBlock);
 
   push(val, false);

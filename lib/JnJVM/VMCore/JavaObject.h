@@ -136,7 +136,7 @@ public:
 
   /// lock - The monitor of this object. Most of the time null.
   ///
-  uint32 lock;
+  uintptr_t lock;
 
   /// wait - Java wait. Makes the current thread waiting on a monitor.
   ///
@@ -161,7 +161,7 @@ public:
   ///
   void initialise(UserCommonClass* cl) {
     this->classOf = cl; 
-    this->lock = (uint32)mvm::Thread::get();
+    this->lock = (uintptr_t)mvm::Thread::get();
   }
 
   /// instanceOf - Is this object's class of type the given class?
@@ -199,8 +199,19 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 
+
+#if (__WORDSIZE == 64)
+  static const uint64_t FatMask = 0x8000000000000000;
+#else
+  static const uint64_t FatMask = 0x80000000;
+#endif
+
+  static const uint64_t ThinMask = 0x7FFFFF00;
+  static const uint64_t ReservedMask = 0X7FFFFFFF;
+  static const uint64_t ThinCountMask = 0xFF;
+
   LockObj* lockObj() {
-    if (lock & 0x80000000) {
+    if (lock & FatMask) {
       return (LockObj*)(lock << 1);
     } else {
       return 0;

@@ -3,7 +3,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; A virtual table is an array of function pointers.
-%VT = type i32**
+%VT = type i8**
 
 ;;; The type of a constant pool. Jnjvm will make this into a i8**
 %ConstantPool = type i8*
@@ -23,7 +23,7 @@
 %JavaClass = type { %VT, i32, %VT ,%JavaClass**, i32, i32, %ConstantPool*, %JavaObject* }
 
 ;;; The root of all Java Objects: a VT, a class and a lock.
-%JavaObject = type { %VT, %JavaClass*, i32 }
+%JavaObject = type { %VT, %JavaClass*, i8* }
 
 ;;; Types for Java arrays. A size of 0 means an undefined size.
 %JavaArray = type { %JavaObject, i32 }
@@ -63,7 +63,7 @@ declare %VT @getVT(%JavaObject*) readnone
 declare %JavaClass* @getClass(%JavaObject*) readnone 
 
 ;;; getLock - Get the lock of an object.
-declare i32* @getLock(%JavaObject*)
+declare i8* @getLock(%JavaObject*)
 
 ;;; getVTFromClass - Get the VT of a class from its runtime representation.
 declare %VT @getVTFromClass(%JavaClass*) readnone 

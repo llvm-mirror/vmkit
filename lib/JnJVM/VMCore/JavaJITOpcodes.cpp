@@ -1958,13 +1958,19 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         gep.clear();
         gep.push_back(module->constantZero);
         gep.push_back(module->JavaObjectLockOffsetConstant);
-        Value* lockPtr = GetElementPtrInst::Create(res, gep.begin(), gep.end(), "",
-                                                   currentBlock);
+        Value* lockPtr = GetElementPtrInst::Create(res, gep.begin(), gep.end(),
+                                                   "", currentBlock);
         Value* threadId = CallInst::Create(module->llvm_frameaddress,
-                                           module->constantZero, "", currentBlock);
-        threadId = new PtrToIntInst(threadId, Type::Int32Ty, "", currentBlock);
-        threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+                                           module->constantZero, "",
+                                           currentBlock);
+        threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
+                                    currentBlock);
+        threadId = BinaryOperator::CreateAnd(threadId,
+                                             module->constantThreadIDMask,
                                              "", currentBlock);
+        threadId = new IntToPtrInst(threadId, module->ptrType, "",
+                                    currentBlock);
+
         new StoreInst(threadId, lockPtr, currentBlock);
 
         push(res, false);

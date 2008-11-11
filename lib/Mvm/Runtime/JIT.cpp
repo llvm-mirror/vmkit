@@ -82,7 +82,8 @@ void MvmModule::initialise(bool Fast) {
   ptrType = PointerType::getUnqual(Type::Int8Ty);
   ptr32Type = PointerType::getUnqual(Type::Int32Ty);
   ptrPtrType = PointerType::getUnqual(ptrType);
-  
+  pointerSizeType = Type::Int32Ty;
+
   // Constant declaration
   constantLongMinusOne = ConstantInt::get(Type::Int64Ty, (uint64_t)-1);
   constantLongZero = ConstantInt::get(Type::Int64Ty, 0);
@@ -244,6 +245,7 @@ llvm::ConstantInt* MvmModule::constantThreadFreeMask;
 const llvm::PointerType* MvmModule::ptrType;
 const llvm::PointerType* MvmModule::ptr32Type;
 const llvm::PointerType* MvmModule::ptrPtrType;
+const llvm::Type* MvmModule::pointerSizeType;
 const llvm::Type* MvmModule::arrayPtrType;
 
 llvm::Module *MvmModule::globalModule;

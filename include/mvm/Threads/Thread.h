@@ -71,7 +71,7 @@ public:
   
   /// kill - Kill the thread with the given pid by sending it a signal.
   ///
-  static int kill(int tid, int signo);
+  static int kill(void* tid, int signo);
   
   /// kill - Kill the given thread by sending it a signal.
   ///
@@ -84,7 +84,10 @@ public:
   /// start - Start the execution of a thread.
   ///
   int start(void (*fct)(mvm::Thread*));
-
+  
+  uint64_t getThreadID() {
+    return (uint64_t)this;
+  }
  
 public:
   
@@ -99,10 +102,6 @@ public:
   /// baseSP - The base stack pointer.
   ///
   void* baseSP;
-  
-  /// threadID - The virtual machine specific thread id.
-  ///
-  uint32 threadID;
   
   /// get - Get the thread specific data of the current thread.
   ///
@@ -132,7 +131,7 @@ public:
     th->internalClearException();
   }
 
-  static const uint32_t IDMask = 0x7FF00000;
+  static const uint64_t IDMask = 0x7FF00000;
 
   void* operator new(size_t sz);
 

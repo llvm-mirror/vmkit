@@ -80,8 +80,8 @@ LockObj* LockObj::allocate() {
 
 bool JavaObject::owner() {
   uint32 id = (uint32)mvm::Thread::get();
-  if ((lock & 0x7FFFFF00) == id) return true;
-  if (lock & 0x80000000) {
+  if ((lock & ThinMask) == id) return true;
+  if (lock & FatMask) {
     LockObj* obj = (LockObj*)(lock << 1);
     return obj->owner();
   }
@@ -91,12 +91,12 @@ bool JavaObject::owner() {
 void JavaObject::overflowThinlock() {
   LockObj* obj = LockObj::allocate();
   obj->lock.lockAll(256);
-  lock = ((uint32)obj >> 1) | 0x80000000;
+  lock = ((uintptr_t)obj >> 1) | FatMask;
 }
 
 void JavaObject::release() {
-  uint32 id = (uint32)mvm::Thread::get();
-  if ((lock & 0x7FFFFF00) == id) {
+  uint64 id = mvm::Thread::get()->getThreadID();
+  if ((lock & ThinMask) == id) {
     --lock;
   } else {
     LockObj* obj = (LockObj*)(lock << 1);
@@ -105,31 +105,31 @@ void JavaObject::release() {
 }
 
 void JavaObject::acquire() {
-  uint32 id = (uint32)mvm::Thread::get();
-  if ((lock & 0x7FFFFFFF) == id) {
+  uint64_t id = mvm::Thread::get()->getThreadID();
+  if ((lock & ReservedMask) == id) {
     lock |= 1;
-  } else if ((lock & 0x7FFFFF00) == id) {
-    if ((lock & 0xFF) == 0xFF) {
+  } else if ((lock & ThinMask) == id) {
+    if ((lock & ThinCountMask) == ThinCountMask) {
       overflowThinlock();
     } else {
       ++lock;
     }
   } else {
-    uint32 currentLock = lock & 0x7FFFFF00;
-    uint32 val = __sync_val_compare_and_swap(&lock, currentLock, (id + 1));
+    uintptr_t currentLock = lock & ThinMask;
+    uintptr_t val = (uintptr_t)__sync_val_compare_and_swap(&lock, currentLock, (id + 1));
     if (val != currentLock) {
-      if (val & 0x80000000) {
+      if (val & FatMask) {
 end:
         //fat lock!
         LockObj* obj = (LockObj*)(lock << 1);
         obj->acquire();
       } else {
         LockObj* obj = LockObj::allocate();
-        uint32 val = ((uint32)obj >> 1) | 0x80000000;
+        val = ((uintptr_t)obj >> 1) | FatMask;
         uint32 count = 0;
 loop:
-        while ((lock & 0xFF) != 0) {
-          if (lock & 0x80000000) {
+        while ((lock & ThinCountMask) != 0) {
+          if (lock & FatMask) {
 #ifdef USE_GC_BOEHM
             delete obj;
 #endif
@@ -140,8 +140,8 @@ loop:
           }
         }
         
-        currentLock = lock & 0x7FFFFF00;
-        uint32 test = __sync_val_compare_and_swap(&lock, currentLock, val);
+        currentLock = lock & ThinMask;
+        uintptr_t test = (uintptr_t)__sync_val_compare_and_swap(&lock, currentLock, val);
         if (test != currentLock) goto loop;
         obj->acquire();
       }
@@ -150,10 +150,10 @@ loop:
 }
 
 LockObj* JavaObject::changeToFatlock() {
-  if (!(lock & 0x80000000)) {
+  if (!(lock & FatMask)) {
     LockObj* obj = LockObj::allocate();
-    uint32 val = (((uint32) obj) >> 1) | 0x80000000;
-    uint32 count = lock & 0xFF;
+    uintptr_t val = ((uintptr_t)obj >> 1) | FatMask;
+    uint32 count = lock & ThinCountMask;
     obj->lock.lockAll(count);
     lock = val;
     return obj;
@@ -182,7 +182,7 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
       thread->interruptFlag = 0;
       thread->isolate->interruptedException(this);
     } else {
-      unsigned int recur = l->lock.recursionCount();
+      uint32_t recur = l->lock.recursionCount();
       bool timeout = false;
       l->lock.unlockAll();
       JavaCond* cond = l->getCond();

@@ -20,7 +20,7 @@ void Thread::yield() {
   sched_yield();
 }
 
-  void Thread::yield(unsigned int *c) {
+void Thread::yield(unsigned int *c) {
   if(++(*c) & 3)
     sched_yield();
   else {
@@ -31,7 +31,7 @@ void Thread::yield() {
   }
 }
 
-int Thread::kill(int tid, int signo) {
+int Thread::kill(void* tid, int signo) {
   return pthread_kill((pthread_t)tid, signo);
 }
 
@@ -97,7 +97,7 @@ public:
       mprotect((void*)addr, pagesize, PROT_NONE);
     }
 
-    memset((void*)used, 0, NR_THREADS);
+    memset((void*)used, 0, NR_THREADS * sizeof(uint32));
     allocPtr = 0;
   }
 
@@ -131,8 +131,7 @@ StackThreadManager TheStackManager;
 /// given routine of th.
 ///
 void Thread::internalThreadStart(mvm::Thread* th) {
-  th->threadID = (int)th & mvm::Thread::IDMask;
-  th->baseSP  = &th;
+  th->baseSP  = (void*)&th;
 
 #ifdef MULTIPLE_GC
   GC->inject_my_thread(th);
