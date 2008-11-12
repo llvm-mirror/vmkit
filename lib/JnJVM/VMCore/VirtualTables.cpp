@@ -75,8 +75,16 @@ void CommonClass::TRACER {
     }
   }
   classLoader->MARK_AND_TRACE;
-#if !defined(ISOLATE)
-  delegatee->MARK_AND_TRACE;
+#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
+  _delegatee->MARK_AND_TRACE;
+#endif
+
+#if defined(ISOLATE)
+  for (uint32 i =0; i < NR_ISOLATES; ++i) {
+    TaskClassMirror &M = IsolateInfo[i];
+    M.delegatee->MARK_AND_TRACE;
+    M.staticInstance->MARK_AND_TRACE;
+  }
 #endif
 }
 
@@ -129,8 +137,16 @@ void Jnjvm::TRACER {
 #endif
   traceClassMap(bootstrapLoader->classes);
   
+#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
 #define TRACE_DELEGATEE(prim) \
-  prim->delegatee->MARK_AND_TRACE
+  prim->_delegatee->MARK_AND_TRACE
+
+#else
+#if defined(ISOLATE)
+#define TRACE_DELEGATEE(prim) \
+  prim->CALL_TRACER;
+#endif
+#endif
 
   TRACE_DELEGATEE(upcalls->OfVoid);
   TRACE_DELEGATEE(upcalls->OfBool);
@@ -142,7 +158,7 @@ void Jnjvm::TRACER {
   TRACE_DELEGATEE(upcalls->OfLong);
   TRACE_DELEGATEE(upcalls->OfDouble);
 #undef TRACE_DELEGATEE
-  
+
   TRACE_VECTOR(JavaString*, gc_allocator, bootstrapLoader->strings);
 
   if (bootstrapThread) {

@@ -33,4 +33,9 @@ class JavaConstantPool;
 #define ISOLATE_STATIC static
 #endif
 
+
+#ifdef ISOLATE
+#define NR_ISOLATES 32
+#endif
+
 #endif // JNJVM_CONFIG_H

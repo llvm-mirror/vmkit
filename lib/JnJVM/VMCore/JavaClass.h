@@ -25,6 +25,8 @@
 #include "JavaAccess.h"
 #include "JnjvmClassLoader.h"
 
+#include "JnjvmConfig.h"
+
 namespace jnjvm {
 
 class ArrayUInt8;
@@ -116,6 +118,16 @@ public:
   static const UTF8* sourceFileAttribut;
   
 };
+
+
+#ifdef ISOLATE
+class TaskClassMirror {
+public:
+  JavaState status;
+  JavaObject* delegatee;
+  JavaObject* staticInstance;
+};
+#endif
 
 /// CommonClass - This class is the root class of all Java classes. It is
 /// GC-allocated because CommonClasses have to be traceable. A java/lang/Class
@@ -270,13 +282,7 @@ public:
   /// classLoader - The Jnjvm class loader that loaded the class.
   ///
   JnjvmClassLoader* classLoader;
-  
-#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
-  /// delegatee - The java/lang/Class object representing this class
-  ///
-  JavaObject* delegatee;
-#endif
-  
+   
   /// virtualFields - List of all the virtual fields defined in this class.
   /// This does not contain non-redefined super fields.
   JavaField* virtualFields;
@@ -346,6 +352,14 @@ public:
   ///
   mvm::Thread* ownerClass;
   
+  mvm::Thread* getOwnerClass() {
+    return ownerClass;
+  }
+
+  void setOwnerClass(mvm::Thread* th) {
+    ownerClass = th;
+  }
+
   /// lookupMethodDontThrow - Lookup a method in the method map of this class.
   /// Do not throw if the method is not found.
   ///
@@ -429,22 +443,7 @@ public:
   ///
   void initialiseClass(Jnjvm* vm);
   
-
-  /// getStatus - Get the resolution/initialization status of this class.
-  ///
-  JavaState getStatus() {
-    return status;
-  }
-  /// isReady - Has this class been initialized?
-  ///
-  bool isReady() {
-    return status == ready;
-  }
-
-  bool isInitializing() {
-    return status >= inClinit;
-  }
-
+ 
   /// isResolved - Has this class been resolved?
   ///
   bool isResolved() {
@@ -480,6 +479,69 @@ public:
     return this;
   }
 
+#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
+  /// delegatee - The java/lang/Class object representing this class
+  ///
+  JavaObject* _delegatee;
+
+  JavaObject* getDelegatee() {
+    return _delegatee;
+  }
+
+  void setDelegatee(JavaObject* val) {
+    _delegatee = val;
+  }
+
+  JavaState getInitializationState() {
+    return status;
+  }
+
+  void setInitializationState(JavaState st) {
+    status = st;
+  }
+  
+  /// isReady - Has this class been initialized?
+  ///
+  bool isReady() {
+    return status == ready;
+  }
+
+  bool isInitializing() {
+    return status >= inClinit;
+  }
+
+#else
+#if defined(ISOLATE)
+  TaskClassMirror IsolateInfo[NR_ISOLATES];
+  
+  TaskClassMirror& getCurrentTaskClassMirror();
+
+  JavaState getInitializationState() {
+    return getCurrentTaskClassMirror().status;
+  }
+  
+  void setInitializationState(JavaState st) {
+    getCurrentTaskClassMirror().status = st;
+  }
+  
+  JavaObject* getDelegatee() {
+    return getCurrentTaskClassMirror().delegatee;
+  }
+
+  void setDelegatee(JavaObject* val) {
+    getCurrentTaskClassMirror().delegatee = val;
+  }
+  
+  bool isReady() {
+    return getCurrentTaskClassMirror().status == ready;
+  }
+
+  bool isInitializing() {
+    return getCurrentTaskClassMirror().status >= inClinit;
+  }
+#endif
+#endif
+
 };
 
 /// ClassPrimitive - This class represents internal classes for primitive
@@ -513,7 +575,7 @@ public:
   Attribut* attributs;
   uint16 nbAttributs;
  
-#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
+#if !defined(ISOLATE_SHARING)
   /// innerClasses - The inner classes of this class.
   ///
   Class** innerClasses;
@@ -600,6 +662,17 @@ public:
   void setStaticInstance(JavaObject* val) {
     _staticInstance = val;
   }
+#else
+#if defined(ISOLATE)
+  JavaObject* getStaticInstance() {
+    return getCurrentTaskClassMirror().staticInstance;
+  }
+
+  void setStaticInstance(JavaObject* val) {
+    getCurrentTaskClassMirror().staticInstance = val;
+  }
+
+#endif
 #endif
 
   

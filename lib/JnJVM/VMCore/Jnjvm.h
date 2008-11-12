@@ -322,7 +322,11 @@ public:
   /// waitForExit - Waits that there are no more non-daemon threads in this JVM.
   ///
   virtual void waitForExit();
-  
+
+#ifdef ISOLATE
+  uint32 IsolateID;
+#endif
+
 };
 
 } // end namespace jnjvm

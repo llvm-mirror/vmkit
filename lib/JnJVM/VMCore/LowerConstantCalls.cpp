@@ -229,7 +229,9 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           }
         } else if (V == module->InitialisationCheckFunction) {
           Changed = true;
-          
+#ifdef ISOLATE
+          Call.setCalledFunction(module->InitialiseClassFunction);
+#else
           BasicBlock* NBB = 0;
           if (CI->getParent()->getTerminator() != CI) {
             NBB = II->getParent()->splitBasicBlock(II);
@@ -302,6 +304,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
           BranchInst::Create(NBB, trueCl);
           break;
+#endif
         } else if (V == module->GetConstantPoolAtFunction) {
           Function* resolver = dyn_cast<Function>(Call.getArgument(0));
           assert(resolver && "Wrong use of GetConstantPoolAt");

@@ -279,7 +279,11 @@ CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n,
   access = 0;
   ownerClass = 0;
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
-  this->delegatee = 0;
+  _delegatee = 0;
+#else
+#if defined(ISOLATE)
+  memset(IsolateInfo, 0, sizeof(TaskClassMirror) * NR_ISOLATES);
+#endif
 #endif
 }
 
@@ -987,3 +991,9 @@ void CommonClass::getDeclaredFields(std::vector<JavaField*>& res,
 void Class::resolveStaticClass() {
   classLoader->getModule()->resolveStaticClass((Class*)this);
 }
+
+#ifdef ISOLATE
+TaskClassMirror& CommonClass::getCurrentTaskClassMirror() {
+  return IsolateInfo[JavaThread::get()->isolate->IsolateID];
+}
+#endif

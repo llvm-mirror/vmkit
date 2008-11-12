@@ -68,10 +68,10 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
   //    verification step failed or because initialization was attempted and
   //    failed.
 
-  assert(status >= resolved || ownerClass || status == ready ||
+  assert(status >= resolved || getOwnerClass() || status == ready ||
          status == erroneous && "Class in wrong state");
   
-  if (status != ready) {
+  if (getInitializationState() != ready) {
     
     // 1. Synchronize on the Class object that represents the class or 
     //    interface to be initialized. This involves waiting until the
@@ -80,13 +80,13 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
     acquire();
     mvm::Thread* self = mvm::Thread::get();
 
-    if (status == inClinit) {
+    if (getInitializationState() == inClinit) {
       // 2. If initialization by some other thread is in progress for the
       //    class or interface, then wait on this Class object (which 
       //    temporarily releases the lock). When the current thread awakens
       //    from the wait, repeat this step.
-      if (ownerClass != self) {
-        while (ownerClass) {
+      if (getOwnerClass() != self) {
+        while (getOwnerClass()) {
           waitClass();
         }
       } else {
@@ -102,7 +102,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
     // 4. If the class or interface has already been initialized, then no 
     //    further action is required. Release the lock on the Class object
     //    and complete normally.
-    if (status == ready) {
+    if (getInitializationState() == ready) {
       release();
       return;
     }
@@ -118,8 +118,8 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
     // 6. Otherwise, record the fact that initialization of the Class object is
     //    now in progress by the current thread and release the lock on the
     //    Class object.
-    ownerClass = self;
-    status = inClinit;
+    setOwnerClass(self);
+    setInitializationState(inClinit);
     release();
   
 
@@ -145,7 +145,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
       if (exc) {
         acquire();
         status = erroneous;
-        ownerClass = 0;
+        setOwnerClass(0);
         broadcastClass();
         release();
         throw exc;
@@ -200,8 +200,8 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
     //    threads, release the lock, and complete this procedure normally.
     if (!exc) {
       acquire();
-      status = ready;
-      ownerClass = 0;
+      setInitializationState(ready);
+      setOwnerClass(0);
       broadcastClass();
       release();
       return;
@@ -234,7 +234,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
     //     with reason E or its replacement as determined in the previous step.
     acquire();
     status = erroneous;
-    ownerClass = 0;
+    setOwnerClass(0);
     broadcastClass();
     release();
     throw exc;
@@ -429,7 +429,7 @@ void Jnjvm::addProperty(char* key, char* value) {
 
 JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
   acquire();
-  if (!(delegatee)) {
+  if (!getDelegatee()) {
     UserClass* cl = vm->upcalls->newClass;
     JavaObject* delegatee = cl->doNew(vm);
     if (!pd) {
@@ -439,10 +439,10 @@ JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
                                                                    delegatee,
                                                                    this, pd);
     }
-    this->delegatee = delegatee;
+    setDelegatee(delegatee);
   }
   release();
-  return delegatee;
+  return getDelegatee();
 }
 
 #define PATH_MANIFEST "META-INF/MANIFEST.MF"
