@@ -278,6 +278,7 @@ CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n,
   staticFields = 0;
   access = 0;
   ownerClass = 0;
+  super = 0;
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   _delegatee = 0;
 #else
