@@ -30,7 +30,6 @@ public:
   static VirtualTable *VT;
   JavaObject* javaThread;
   JavaObject* vmThread;
-  Jnjvm* isolate;
   mvm::LockNormal lock;
   mvm::Cond varcond;
   JavaObject* pendingException;
@@ -53,6 +52,11 @@ public:
   static JavaThread* get() {
     return (JavaThread*)mvm::Thread::get();
   }
+
+  Jnjvm* getJVM() {
+    return (Jnjvm*)vm;
+  }
+
   static JavaObject* currentThread() {
     JavaThread* result = get();
     if (result != 0)

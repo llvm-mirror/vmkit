@@ -151,7 +151,7 @@ Value* JnjvmModule::getJavaClass(CommonClass* cl) {
   if (I == End) {
     
     JavaObject* obj = isStaticCompiling() ? 0 : 
-      cl->getClassDelegatee(JavaThread::get()->isolate);
+      cl->getClassDelegatee(JavaThread::get()->getJVM());
     assert((obj || isStaticCompiling()) && "Delegatee not created");
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(obj)),

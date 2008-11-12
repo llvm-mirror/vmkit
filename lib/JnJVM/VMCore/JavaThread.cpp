@@ -30,14 +30,13 @@ void JavaThread::print(mvm::PrintBuffer* buf) const {
   if (javaThread) javaThread->print(buf);
 }
 
-JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* vm) {
+JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
   javaThread = thread;
   vmThread = vmth;
-  isolate = vm;
+  vm = isolate;
   interruptFlag = 0;
   state = StateRunning;
   pendingException = 0;
-  vmAllocator = &isolate->allocator;
 #ifdef SERVICE_VM
   ServiceDomain* domain = (ServiceDomain*)vm;
   domain->startExecution();

@@ -36,7 +36,7 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getModifiersInternal(
 JNIEnv *env,
 #endif
 jobject obj) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)obj);
   return field->access;
@@ -47,7 +47,7 @@ JNIEXPORT jclass JNICALL Java_java_lang_reflect_Field_getType(
 JNIEnv *env,
 #endif
 jobject obj) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)obj);
   UserClass* fieldCl = internalGetClass(vm, field, obj);
@@ -61,7 +61,7 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getInt(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   const Typedef* type = field->getSignature();
@@ -99,7 +99,7 @@ JNIEXPORT jlong JNICALL Java_java_lang_reflect_Field_getLong(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
@@ -138,7 +138,7 @@ JNIEXPORT jboolean JNICALL Java_java_lang_reflect_Field_getBoolean(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
@@ -170,7 +170,7 @@ JNIEXPORT jfloat JNICALL Java_java_lang_reflect_Field_getFloat(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
@@ -211,7 +211,7 @@ JNIEXPORT jbyte JNICALL Java_java_lang_reflect_Field_getByte(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
@@ -242,7 +242,7 @@ JNIEXPORT jchar JNICALL Java_java_lang_reflect_Field_getChar(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
@@ -274,7 +274,7 @@ JNIEXPORT jshort JNICALL Java_java_lang_reflect_Field_getShort(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
@@ -307,7 +307,7 @@ JNIEXPORT jdouble JNICALL Java_java_lang_reflect_Field_getDouble(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
@@ -349,7 +349,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Field_get(
 JNIEnv *env,
 #endif
 jobject Field, jobject _obj) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
@@ -419,7 +419,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jobject val) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   void** buf = (void**)alloca(sizeof(uint64));
@@ -470,7 +470,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setBoolean(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jboolean val) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   JavaObject* Obj = (JavaObject*)obj;
@@ -499,7 +499,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setByte(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jbyte val) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   JavaObject* Obj = (JavaObject*)obj;
@@ -537,7 +537,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setChar(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jchar val) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
@@ -573,7 +573,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setShort(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jshort val) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
@@ -610,7 +610,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setInt(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jint val) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   JavaObject* Obj = (JavaObject*)obj;
@@ -644,7 +644,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setLong(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jlong val) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   JavaObject* Obj = (JavaObject*)obj;
@@ -676,7 +676,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setFloat(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jfloat val) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   JavaObject* Obj = (JavaObject*)obj;
@@ -706,7 +706,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setDouble(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jdouble val) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   JavaObject* Obj = (JavaObject*)obj;
@@ -735,7 +735,7 @@ JNIEnv *env,
 #endif
 JavaObject* Unsafe,
 JavaObject* Field) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   return (jlong)field->ptrOffset;

@@ -112,15 +112,3 @@ void NativeString::print(PrintBuffer *buf) const {
   }
   buf->write("\"");
 }
-
-void* mvm::BumpPtrAllocator::VMAllocate(size_t sz) {
-  mvm::BumpPtrAllocator* allocator = mvm::Thread::get()->vmAllocator;
-  assert(allocator && "No allocator when vm allocating");
-  return allocator->Allocate(sz);
-}
-
-void* mvm::BumpPtrAllocator::ThreadAllocate(size_t sz) {
-  mvm::BumpPtrAllocator* allocator = mvm::Thread::get()->threadAllocator;
-  assert(allocator && "No allocator when thread allocating");
-  return allocator->Allocate(sz);
-}

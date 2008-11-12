@@ -180,7 +180,7 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
     if (thread->interruptFlag != 0) {
       mutexThread.unlock();
       thread->interruptFlag = 0;
-      thread->isolate->interruptedException(this);
+      thread->getJVM()->interruptedException(this);
     } else {
       uint32_t recur = l->lock.recursionCount();
       bool timeout = false;
@@ -207,11 +207,11 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
 
       if (interrupted) {
         thread->interruptFlag = 0;
-        thread->isolate->interruptedException(this);
+        thread->getJVM()->interruptedException(this);
       }
     }
   } else {
-    JavaThread::get()->isolate->illegalMonitorStateException(this);
+    JavaThread::get()->getJVM()->illegalMonitorStateException(this);
   }
 }
 
@@ -228,7 +228,7 @@ void JavaObject::notify() {
     LockObj * l = changeToFatlock();
     l->getCond()->notify();
   } else {
-    JavaThread::get()->isolate->illegalMonitorStateException(this);
+    JavaThread::get()->getJVM()->illegalMonitorStateException(this);
   }
 }
 
@@ -237,6 +237,6 @@ void JavaObject::notifyAll() {
     LockObj * l = changeToFatlock();
     l->getCond()->notifyAll();
   } else {
-    JavaThread::get()->isolate->illegalMonitorStateException(this);
+    JavaThread::get()->getJVM()->illegalMonitorStateException(this);
   } 
 }

@@ -55,7 +55,7 @@ jclass clazz,
 jobject _prop) {
 
   JavaObject* prop = (JavaObject*)_prop;
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   const char* tmp;
   setProperty(vm, prop, "java.vm.specification.version", "1.0");
   setProperty(vm, prop, "java.vm.specification.vendor",
@@ -123,7 +123,7 @@ jobject _prop) {
 }
 
 extern "C" void propertiesPostInit(JavaObject* prop) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   for (std::vector<std::pair<char*, char*> >::iterator i = 
        vm->postProperties.begin(), e = vm->postProperties.end(); i!= e; i++) {
     setProperty(vm, prop, i->first, i->second);

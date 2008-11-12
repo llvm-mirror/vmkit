@@ -104,7 +104,6 @@ public:
   /// allocator - Memory allocator of this JVM.
   ///
   mvm::BumpPtrAllocator allocator;
-  mvm::Allocator gcAllocator;
   
   /// throwable - The java/lang/Throwable class. In an isolate
   /// environment, generated code references this field.

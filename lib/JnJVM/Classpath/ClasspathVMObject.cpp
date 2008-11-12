@@ -32,7 +32,7 @@ jobject _src) {
   
   JavaObject* src = (JavaObject*)_src;
   UserCommonClass* cl = src->classOf;
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   uint64 size = 0;
   if (cl->isArray()) {
     size = sizeof(JavaArray) + ((JavaArray*)src)->size * 
@@ -55,7 +55,7 @@ jclass clazz,
 jobject _obj) {
   
   JavaObject* obj = (JavaObject*)_obj;
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   return (jobject)(obj->classOf->getClassDelegatee(vm)); 
 }
 

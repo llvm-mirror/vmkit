@@ -467,7 +467,7 @@ JavaMethod* CommonClass::lookupMethod(const UTF8* name, const UTF8* type,
   JavaMethod* res = lookupMethodDontThrow(name, type, isStatic, recurse,
                                           methodCl);
   if (!res) {
-    JavaThread::get()->isolate->noSuchMethodError(this, name);
+    JavaThread::get()->getJVM()->noSuchMethodError(this, name);
   }
   return res;
 }
@@ -520,7 +520,7 @@ JavaField* CommonClass::lookupField(const UTF8* name, const UTF8* type,
   JavaField* res = lookupFieldDontThrow(name, type, isStatic, recurse,
                                         definingClass);
   if (!res) {
-    JavaThread::get()->isolate->noSuchFieldError(this, name);
+    JavaThread::get()->getJVM()->noSuchFieldError(this, name);
   }
   return res;
 }
@@ -692,7 +692,7 @@ void JavaField::initField(JavaObject* obj, Jnjvm* vm) {
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
       InitField(obj, (JavaObject*)ctpInfo->resolveString(utf8, idx));
     } else {
-      JavaThread::get()->isolate->
+      JavaThread::get()->getJVM()->
         unknownError("unknown constant %s\n", type->printString());
     }
   } 
@@ -840,7 +840,7 @@ void Class::readClass() {
   Reader reader(bytes);
   uint32 magic = reader.readU4();
   if (magic != Jnjvm::Magic) {
-    JavaThread::get()->isolate->classFormatError("bad magic number %p", magic);
+    JavaThread::get()->getJVM()->classFormatError("bad magic number %p", magic);
   }
   /* uint16 minor = */ reader.readU2();
   /* uint16 major = */ reader.readU2();
@@ -855,7 +855,7 @@ void Class::readClass() {
     ctpInfo->resolveClassName(reader.readU2());
   
   if (!(thisClassName->equals(name))) {
-    JavaThread::get()->isolate->classFormatError(
+    JavaThread::get()->getJVM()->classFormatError(
         "try to load %s and found class named %s",
         printString(), thisClassName->printString());
   }
@@ -995,6 +995,6 @@ void Class::resolveStaticClass() {
 
 #ifdef ISOLATE
 TaskClassMirror& CommonClass::getCurrentTaskClassMirror() {
-  return IsolateInfo[JavaThread::get()->isolate->IsolateID];
+  return IsolateInfo[JavaThread::get()->getJVM()->IsolateID];
 }
 #endif

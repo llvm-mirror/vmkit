@@ -45,7 +45,7 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
   // a callback does not involve UserClass, therefore we wouldn't know
   // which class to initialize.
   if (!isVirtual(meth->access))
-    cl->initialiseClass(JavaThread::get()->isolate);
+    cl->initialiseClass(JavaThread::get()->getJVM());
 #endif
 
   meth->compiledPtr();
@@ -106,7 +106,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
     ((void**)meth->classDef->virtualVT)[offset] = val;
   } else {
 #ifndef ISOLATE_SHARING
-    meth->classDef->initialiseClass(JavaThread::get()->isolate);
+    meth->classDef->initialiseClass(JavaThread::get()->getJVM());
 #endif
   }
 

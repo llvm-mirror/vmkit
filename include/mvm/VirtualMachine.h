@@ -15,6 +15,7 @@
 #ifndef MVM_VIRTUALMACHINE_H
 #define MVM_VIRTUALMACHINE_H
 
+#include "mvm/Allocator.h"
 #include "mvm/CompilationUnit.h"
 #include "mvm/Object.h"
 
@@ -41,7 +42,9 @@ public:
   
   static CompilationUnit* initialiseCLIVM();
   static VirtualMachine* createCLIVM(CompilationUnit* C = 0);
-  
+
+  mvm::Allocator gcAllocator;
+
 };
 
 

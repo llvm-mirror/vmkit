@@ -30,7 +30,7 @@ jclass clazz,
 jclass Cl) {
   
   verifyNull(Cl);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, true);
   if (cl->lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
                                 vm->bootstrapLoader->clinitType, true,
@@ -51,7 +51,7 @@ jclass clazz,
 #endif
 jobject Field, jobject obj, jboolean val) {
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt8Field((JavaObject*)obj, (uint8)val);
@@ -64,7 +64,7 @@ jclass clazz,
 #endif
 jobject Field, jobject obj, jbyte val) {
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt8Field((JavaObject*)obj, (uint8)val);
@@ -77,7 +77,7 @@ jclass clazz,
 #endif
 jobject Field, jobject obj, jchar val) {
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt16Field((JavaObject*)obj, (uint16)val);
@@ -90,7 +90,7 @@ jclass clazz,
 #endif
 jobject Field, jobject obj, jshort val) {
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt16Field((JavaObject*)obj, (sint16)val);
@@ -103,7 +103,7 @@ jclass clazz,
 #endif
 jobject Field, jobject obj, jint val) {
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt32Field((JavaObject*)obj, (sint32)val);
@@ -116,7 +116,7 @@ jclass clazz,
 #endif
 jobject Field, jobject obj, jlong val) {
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setLongField((JavaObject*)obj, (sint64)val);
@@ -129,7 +129,7 @@ jclass clazz,
 #endif
 jobject Field, jobject obj, jfloat val) {
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setFloatField((JavaObject*)obj, (float)val);
@@ -142,7 +142,7 @@ jclass clazz,
 #endif
 jobject Field, jobject obj, jdouble val) {
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setDoubleField((JavaObject*)obj, (double)val);
@@ -155,7 +155,7 @@ jclass clazz,
 #endif
 jobject Field, jobject obj, jobject val) {
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setObjectField((JavaObject*)obj, (JavaObject*)val);
@@ -167,7 +167,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jclass target, jclass constr, jobject cons) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, target, true);
   JavaObject* res = cl->doNew(vm);
   JavaField* field = vm->upcalls->constructorSlot;
@@ -182,7 +182,7 @@ JNIEnv * env,
 jclass thisClass,
 #endif
 jclass arrayType, jint arrayLength) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* base = NativeUtil::resolvedImplClass(vm, arrayType, true);
   JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->getName();

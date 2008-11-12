@@ -193,7 +193,7 @@ public:
   #define verifyNull(obj) {}
 #else
   #define verifyNull(obj) \
-    if (obj == 0) JavaThread::get()->isolate->nullPointerException("");
+    if (obj == 0) JavaThread::get()->getJVM()->nullPointerException("");
 #endif
   
   virtual void print(mvm::PrintBuffer* buf) const;

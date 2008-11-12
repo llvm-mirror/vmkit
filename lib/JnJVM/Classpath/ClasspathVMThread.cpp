@@ -42,7 +42,7 @@ jclass clazz
 
 static void start(JavaThread* thread) {
 
-  Jnjvm* vm = thread->isolate;
+  Jnjvm* vm = thread->getJVM();
 
   // Ok, now that the thread is created we can set the the value of vmdata,
   // which is the JavaThread object.
@@ -85,7 +85,7 @@ JNIEXPORT void JNICALL Java_java_lang_VMThread_start(
 JNIEnv *env,
 #endif
 jobject _vmThread, sint64 stackSize) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* vmThread = (JavaObject*)_vmThread;
   
   // Classpath has set this field.
@@ -102,7 +102,7 @@ JNIEXPORT void JNICALL Java_java_lang_VMThread_interrupt(
 JNIEnv *env,
 #endif
 jobject _vmthread) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* vmthread = (JavaObject*)_vmthread;
   JavaField* field = vm->upcalls->vmdataVMThread; 
   // It's possible that the thread to be interrupted has not finished
@@ -140,7 +140,7 @@ JNIEXPORT jboolean JNICALL Java_java_lang_VMThread_isInterrupted(
 JNIEnv *env,
 #endif
 jobject _vmthread) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* vmthread = (JavaObject*)_vmthread;
   JavaField* field = vm->upcalls->vmdataVMThread;
   JavaThread* th = (JavaThread*)field->getObjectField(vmthread);

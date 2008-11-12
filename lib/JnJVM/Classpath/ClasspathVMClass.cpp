@@ -51,7 +51,7 @@ jobject str,
 jboolean clinit, 
 jobject loader) {
 
-  Jnjvm* vm = JavaThread::get()->isolate; 
+  Jnjvm* vm = JavaThread::get()->getJVM(); 
   JnjvmClassLoader* JCL = 
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
   UserCommonClass* cl = JCL->lookupClassFromJavaString((JavaString*)str, vm,
@@ -75,7 +75,7 @@ jclass clazz,
 jclass Cl, 
 jboolean publicOnly) {
 
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
 
   if (cl->isArray() || cl->isInterface() || cl->isPrimitive()) {
@@ -108,7 +108,7 @@ jclass clazz,
 jclass Cl, 
 jboolean publicOnly) {
 
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
   Classpath* upcalls = vm->upcalls;
 
@@ -144,7 +144,7 @@ jclass clazz,
 jclass Cl, 
 jboolean ignore) {
 
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
   return cl->getAccess();
 }
@@ -155,7 +155,7 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 jobject Cl) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = ((JavaObjectClass*)Cl)->getClass();
   
   const UTF8* iname = cl->getName();
@@ -181,7 +181,7 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 jclass Cl) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
 
   return cl->isInterface();
@@ -193,7 +193,7 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 jclass Cl) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = ((JavaObjectClass*)Cl)->getClass();
 
   if (cl->isArray()) {
@@ -234,7 +234,7 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 jclass Cl) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = ((JavaObjectClass*)Cl)->getClass();
   if (cl->isInterface())
     return 0;
@@ -261,7 +261,7 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 jclass Cl, jboolean publicOnly) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false)->asClass();
 
   if (!cl) {
@@ -293,7 +293,7 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 jclass Cl) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
   ArrayObject* ret = 
     (ArrayObject*)vm->upcalls->classArrayClass->doNew(cl->nbInterfaces, vm);
@@ -311,7 +311,7 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 jclass Cl) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false)->asClass();
   if (cl) {
     cl->resolveInnerOuterClasses();
@@ -330,7 +330,7 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 jclass Cl, bool publicOnly) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false)->asClass();
   if (cl) {
     cl->resolveInnerOuterClasses();
@@ -364,7 +364,7 @@ jclass clazz,
 #endif
 jclass Cl) {
   // TODO implement me
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClassArray* array = vm->upcalls->constructorArrayAnnotation;
   return (jobjectArray)array->doNew(0, vm);
 }

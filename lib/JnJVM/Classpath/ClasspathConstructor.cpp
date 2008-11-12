@@ -46,7 +46,7 @@ JNIEnv *env,
 #endif
 jobject cons) {
   verifyNull(cons);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = vm->upcalls->constructorSlot;
   JavaMethod* meth = (JavaMethod*)(field->getInt32Field((JavaObject*)cons));
   UserClass* cl = internalGetClass(vm, meth, cons);
@@ -61,7 +61,7 @@ JNIEnv *env,
 #endif
 jobject cons) {
   verifyNull(cons);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = vm->upcalls->constructorSlot;
   JavaMethod* meth = (JavaMethod*)(field->getInt32Field((JavaObject*)cons));
   return meth->access;
@@ -76,7 +76,7 @@ jobject _args,
 jclass Clazz, 
 jint _meth) {
   
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = (JavaMethod*)_meth;
   JavaArray* args = (JavaArray*)_args;
   sint32 nbArgs = args ? args->size : 0;
@@ -135,7 +135,7 @@ JNIEnv *env,
 #endif
 jobject cons) {
   verifyNull(cons);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = vm->upcalls->constructorSlot;
   JavaMethod* meth = (JavaMethod*)field->getInt32Field((JavaObject*)cons);
   UserClass* cl = internalGetClass(vm, meth, cons);

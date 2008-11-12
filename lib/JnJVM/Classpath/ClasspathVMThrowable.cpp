@@ -37,7 +37,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject throwable) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   int** stack = 
     (int**)vm->gcAllocator.allocateTemporaryMemory(sizeof(int*) * 100);
   int real_size = mvm::MvmModule::getBacktrace((void**)stack, 100);
@@ -50,7 +50,7 @@ jobject throwable) {
 
 
 JavaObject* consStackElement(JavaMethod* meth, int* ip) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* methodName = vm->internalUTF8ToStr(meth->name);
   Class* cl = meth->classDef;
   const UTF8* internal = cl->name->internalToJava(vm, 0, cl->name->size);
@@ -78,7 +78,7 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
 }
 
 ArrayObject* recGetStackTrace(int** stack, uint32 first, uint32 rec) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   if (stack[first] != 0) {
     JavaMethod* meth = JavaJIT::IPToJavaMethod(stack[first]);
     if (meth) {
@@ -98,7 +98,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_VMThrowable_getStackTrace(
 JNIEnv *env,
 #endif
 jobject vmthrow, jobject throwable) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = vm->upcalls->vmDataVMThrowable;
   int** stack = (int**)field->getObjectField((JavaObject*)vmthrow);
   uint32 first = 0;

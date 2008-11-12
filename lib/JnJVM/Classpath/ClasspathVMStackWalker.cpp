@@ -102,7 +102,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   int* ips[100];
   int real_size = mvm::MvmModule::getBacktrace((void**)(void*)ips, 100);
 #ifdef ISOLATE_SHARING
@@ -146,7 +146,7 @@ jclass _Cl) {
 
 extern "C" JavaObject* getCallingClass() {
   UserClass* cl = JavaJIT::getCallingClass();
-  if (cl) return cl->getClassDelegatee(JavaThread::get()->isolate);
+  if (cl) return cl->getClassDelegatee(JavaThread::get()->getJVM());
   return 0;
 }
 

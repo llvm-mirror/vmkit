@@ -21,8 +21,7 @@ class Collector;
 
 namespace mvm {
 
-class BumpPtrAllocator;
-
+class VirtualMachine;
 
 class CircularBase {
 	CircularBase	*_next;
@@ -91,14 +90,8 @@ public:
  
 public:
   
-  /// vmAllocator - Virtual machine specific allocator.
-  ///
-  mvm::BumpPtrAllocator* vmAllocator;
+  VirtualMachine* vm;
 
-  /// threadAllocator - Current allocator for the thread. Useful for things
-  /// like class loaders which do not allocate per-vm.
-  mvm::BumpPtrAllocator* threadAllocator;
-  
   /// baseSP - The base stack pointer.
   ///
   void* baseSP;

@@ -61,7 +61,7 @@ uint8 arrayType(unsigned int t) {
   } else if (t == JavaArray::T_DOUBLE) {
     return I_DOUBLE;
   } else {
-    JavaThread::get()->isolate->unknownError("unknown array type %d\n", t);
+    JavaThread::get()->getJVM()->unknownError("unknown array type %d\n", t);
     return 0;
   }
 }
@@ -2181,7 +2181,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
       
       default :
-        JavaThread::get()->isolate->unknownError("unknown bytecode");
+        JavaThread::get()->getJVM()->unknownError("unknown bytecode");
 
     } 
   }
@@ -2527,7 +2527,7 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
 
 
       default :
-        JavaThread::get()->isolate->unknownError("unknown bytecode");
+        JavaThread::get()->getJVM()->unknownError("unknown bytecode");
     }
   }
 }

@@ -128,7 +128,7 @@ extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
   
   JavaField* field = cl->lookupField(utf8, sign->keyName, true, true, &fieldCl);
   
-  fieldCl->initialiseClass(JavaThread::get()->isolate);
+  fieldCl->initialiseClass(JavaThread::get()->getJVM());
   JavaObject* obj = ((UserClass*)fieldCl)->getStaticInstance();
   
   assert(obj && "No static instance in static field lookup");
@@ -143,7 +143,7 @@ extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
 extern "C" void* stringLookup(UserClass* cl, uint32 index) {
   UserConstantPool* ctpInfo = cl->getConstantPool();
   const UTF8* utf8 = ctpInfo->UTF8AtForString(index);
-  JavaString* str = JavaThread::get()->isolate->internalUTF8ToStr(utf8);
+  JavaString* str = JavaThread::get()->getJVM()->internalUTF8ToStr(utf8);
 #ifdef ISOLATE_SHARING
   ctpInfo->ctpRes[index] = str;
 #endif
@@ -164,7 +164,7 @@ extern "C" void* staticCtpLookup(UserClass* cl, uint32 index) {
   JavaConstantPool* shared = ctpInfo->getSharedPool();
   uint32 clIndex = shared->getClassIndexFromMethod(index);
   UserClass* refCl = (UserClass*)ctpInfo->loadClass(clIndex);
-  refCl->initialiseClass(JavaThread::get()->isolate);
+  refCl->initialiseClass(JavaThread::get()->getJVM());
 
   CommonClass* baseCl = 0;
   const UTF8* utf8 = 0;
@@ -274,7 +274,7 @@ extern "C" void jniProceedPendingException() {
   JavaThread* th = JavaThread::get();
   jmp_buf* buf = th->sjlj_buffers.back();
   th->sjlj_buffers.pop_back();
-  mvm::Allocator& allocator = th->isolate->gcAllocator;
+  mvm::Allocator& allocator = th->getJVM()->gcAllocator;
   allocator.freeTemporaryMemory(buf);
   if (JavaThread::get()->pendingException) {
     th->throwPendingException();
@@ -283,45 +283,45 @@ extern "C" void jniProceedPendingException() {
 
 extern "C" void* getSJLJBuffer() {
   JavaThread* th = JavaThread::get();
-  mvm::Allocator& allocator = th->isolate->gcAllocator;
+  mvm::Allocator& allocator = th->getJVM()->gcAllocator;
   void** buf = (void**)allocator.allocateTemporaryMemory(sizeof(jmp_buf));
   th->sjlj_buffers.push_back((jmp_buf*)buf);
   return (void*)buf;
 }
 
 extern "C" void jnjvmNullPointerException() {
-  JavaThread::get()->isolate->nullPointerException("null");
+  JavaThread::get()->getJVM()->nullPointerException("null");
 }
 
 extern "C" void negativeArraySizeException(sint32 val) {
-  JavaThread::get()->isolate->negativeArraySizeException(val);
+  JavaThread::get()->getJVM()->negativeArraySizeException(val);
 }
 
 extern "C" void outOfMemoryError(sint32 val) {
-  JavaThread::get()->isolate->outOfMemoryError(val);
+  JavaThread::get()->getJVM()->outOfMemoryError(val);
 }
 
 extern "C" void jnjvmClassCastException(JavaObject* obj, UserCommonClass* cl) {
-  JavaThread::get()->isolate->classCastException(obj, cl);
+  JavaThread::get()->getJVM()->classCastException(obj, cl);
 }
 
 extern "C" void indexOutOfBoundsException(JavaObject* obj, sint32 index) {
-  JavaThread::get()->isolate->indexOutOfBounds(obj, index);
+  JavaThread::get()->getJVM()->indexOutOfBounds(obj, index);
 }
 
 extern "C" UserCommonClass* jnjvmRuntimeInitialiseClass(UserCommonClass* cl) {
-  cl->initialiseClass(JavaThread::get()->isolate);
+  cl->initialiseClass(JavaThread::get()->getJVM());
   return cl;
 }
 
 extern "C" JavaObject* getClassDelegatee(UserCommonClass* cl) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   return cl->getClassDelegatee(vm);
 }
 
 static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
                                      sint32* dims, Jnjvm* vm) {
-  if (len <= 0) JavaThread::get()->isolate->unknownError("Can not happen");
+  if (len <= 0) JavaThread::get()->getJVM()->unknownError("Can not happen");
   JavaArray* _res = cl->doNew(dims[0], vm);
   if (len > 1) {
     ArrayObject* res = (ArrayObject*)_res;
@@ -336,11 +336,11 @@ static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
       } else {
         for (uint32 i = 1; i < len; ++i) {
           sint32 p = dims[i];
-          if (p < 0) JavaThread::get()->isolate->negativeArraySizeException(p);
+          if (p < 0) JavaThread::get()->getJVM()->negativeArraySizeException(p);
         }
       }
     } else {
-      JavaThread::get()->isolate->unknownError("Can not happen");
+      JavaThread::get()->getJVM()->unknownError("Can not happen");
     }
   }
   return _res;
@@ -353,13 +353,13 @@ extern "C" JavaArray* multiCallNew(UserClassArray* cl, uint32 len, ...) {
   for (uint32 i = 0; i < len; ++i){
     dims[i] = va_arg(ap, int);
   }
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   return multiCallNewIntern(cl, len, dims, vm);
 }
 
 extern "C" void JavaObjectAquire(JavaObject* obj) {
 #ifdef SERVICE_VM
-  ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->isolate;
+  ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->getJVM();
   if (!(vm->GC->isMyObject(obj))) {
     vm->serviceError(vm, "I'm locking an object I don't own");
   }
@@ -371,7 +371,7 @@ extern "C" void JavaObjectAquire(JavaObject* obj) {
 extern "C" void JavaObjectRelease(JavaObject* obj) {
   verifyNull(obj);
 #ifdef SERVICE_VM
-  ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->isolate;
+  ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->getJVM();
   if (!(vm->GC->isMyObject(obj))) {
     vm->serviceError(vm, "I'm unlocking an object I don't own");
   }

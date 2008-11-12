@@ -313,7 +313,7 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
   UserClass* cl = internalLoad(name);
 
   if (!cl && doThrow) {
-    Jnjvm* vm = JavaThread::get()->isolate;
+    Jnjvm* vm = JavaThread::get()->getJVM();
     if (name->equals(bootstrapLoader->NoClassDefFoundError)) {
       vm->unknownError("Unable to load NoClassDefFoundError");
     }
@@ -582,7 +582,7 @@ JavaString* JnjvmClassLoader::UTF8ToStr(const UTF8* val) {
 }
 
 JavaString* JnjvmBootstrapLoader::UTF8ToStr(const UTF8* val) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaString* res = vm->internalUTF8ToStr(val);
   strings.push_back(res);
   return res;

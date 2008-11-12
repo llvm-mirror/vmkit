@@ -218,7 +218,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
     if (exc->classOf->isAssignableFrom(vm->upcalls->newException)) {
       Classpath* upcalls = classLoader->bootstrapLoader->upcalls;
       UserClass* clExcp = upcalls->ExceptionInInitializerError;
-      Jnjvm* vm = JavaThread::get()->isolate;
+      Jnjvm* vm = JavaThread::get()->getJVM();
       JavaObject* obj = clExcp->doNew(vm);
       if (!obj) {
         fprintf(stderr, "implement me");
@@ -849,7 +849,7 @@ void Jnjvm::waitForExit() {
 }
 
 void Jnjvm::mainJavaStart(JavaThread* thread) {
-  Jnjvm* vm = thread->isolate;
+  Jnjvm* vm = thread->getJVM();
   vm->bootstrapThread = thread;
 
   vm->loadBootstrap();
@@ -964,7 +964,7 @@ static const char* name;
 
 void Jnjvm::mainCompilerStart(JavaThread* th) {
   
-  Jnjvm* vm = th->isolate;
+  Jnjvm* vm = th->getJVM();
   try {
     JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
 

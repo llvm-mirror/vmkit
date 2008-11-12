@@ -39,7 +39,7 @@ jclass clazz,
 jobject _strLib) {
 
   JavaString* strLib = (JavaString*)_strLib;
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
 
   const UTF8* utf8Lib = strLib->value;
   uint32 stLib = strLib->offset;
@@ -72,7 +72,7 @@ jclass clazz,
 jobject _str,
 jobject _loader) {
   JavaString* str = (JavaString*)_str;
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JnjvmClassLoader* loader = 
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)_loader, vm);
 

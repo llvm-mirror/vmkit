@@ -66,7 +66,7 @@ void Reader::seek(uint32 pos, int from) {
   
 
   if ((n < start) || (n > end))
-    JavaThread::get()->isolate->unknownError("out of range %d %d", n, end);
+    JavaThread::get()->getJVM()->unknownError("out of range %d %d", n, end);
 
   cursor = n;
 }

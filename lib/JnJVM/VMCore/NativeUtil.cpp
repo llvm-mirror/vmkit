@@ -27,7 +27,7 @@
 using namespace jnjvm;
 
 Jnjvm* NativeUtil::myVM(JNIEnv* env) {
-  return JavaThread::get()->isolate;
+  return JavaThread::get()->getJVM();
 }
 
 void JavaMethod::jniConsFromMeth(char* buf) const {
@@ -339,7 +339,7 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
 }
 
 JavaObject* NativeUtil::getClassType(JnjvmClassLoader* loader, Typedef* type) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* res = type->assocClass(loader);
   assert(res && "No associated class");
   return res->getClassDelegatee(vm);
@@ -347,7 +347,7 @@ JavaObject* NativeUtil::getClassType(JnjvmClassLoader* loader, Typedef* type) {
 
 ArrayObject* NativeUtil::getParameterTypes(JnjvmClassLoader* loader,
                                            JavaMethod* meth) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   std::vector<Typedef*>& args = meth->getSignature()->args;
   ArrayObject* res = 
     (ArrayObject*)vm->upcalls->classArrayClass->doNew(args.size(), vm);
@@ -364,7 +364,7 @@ ArrayObject* NativeUtil::getParameterTypes(JnjvmClassLoader* loader,
 
 ArrayObject* NativeUtil::getExceptionTypes(UserClass* cl, JavaMethod* meth) {
   Attribut* exceptionAtt = meth->lookupAttribut(Attribut::exceptionsAttribut);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   if (exceptionAtt == 0) {
     return (ArrayObject*)vm->upcalls->classArrayClass->doNew(0, vm);
   } else {

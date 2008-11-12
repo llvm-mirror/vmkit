@@ -46,7 +46,7 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Method_getModifiersInternal(
 JNIEnv *env, 
 #endif
  jobject Meth) { 
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->methodSlot;
   JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
   return meth->access;
@@ -57,7 +57,7 @@ JNIEXPORT jclass JNICALL Java_java_lang_reflect_Method_getReturnType(
 JNIEnv *env, 
 #endif
  jobject Meth) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->methodSlot;
   JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
   UserClass* cl = internalGetClass(vm, meth, Meth);
@@ -71,7 +71,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_getParameterTypes(
 JNIEnv *env, 
 #endif
 jobject Meth) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->methodSlot;
   JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
   UserClass* cl = internalGetClass(vm, meth, Meth);
@@ -85,7 +85,7 @@ JNIEnv *env,
 #endif
 jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
 
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = (JavaMethod*)_meth;
   JavaArray* args = (JavaArray*)_args;
   sint32 nbArgs = args ? args->size : 0;
@@ -145,7 +145,7 @@ jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
     \
     if (exc) { \
       if (exc->classOf->isAssignableFrom(vm->upcalls->newException)) { \
-        JavaThread::get()->isolate->invocationTargetException(exc); \
+        JavaThread::get()->getJVM()->invocationTargetException(exc); \
       } else { \
         JavaThread::throwException(exc); \
       } \
@@ -219,7 +219,7 @@ JNIEnv *env,
 #endif
 jobject _meth) {
   verifyNull(_meth);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->methodSlot;
   JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)_meth);
   UserClass* cl = internalGetClass(vm, meth, _meth);

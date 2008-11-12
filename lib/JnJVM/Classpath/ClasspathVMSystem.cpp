@@ -34,7 +34,7 @@ jobject _dst,
 jint dstart,
 jint len) {
 
-  jnjvm::Jnjvm *vm = JavaThread::get()->isolate;
+  jnjvm::Jnjvm *vm = JavaThread::get()->getJVM();
   JavaArray* src = (JavaArray*)_src;
   JavaArray* dst = (JavaArray*)_dst;
 

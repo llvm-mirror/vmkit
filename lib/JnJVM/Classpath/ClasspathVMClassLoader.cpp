@@ -32,7 +32,7 @@ jclass clazz,
 #endif
 jchar byteId) {
   
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClassPrimitive* prim = 
     UserClassPrimitive::byteIdToPrimitive(byteId, vm->upcalls);
   if (!prim)
@@ -50,7 +50,7 @@ jclass clazz,
 jobject loader, 
 jobject _name) {
 
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaString* name = (JavaString*)_name;
   const UTF8* utf8 = name->strToUTF8(vm);
   JnjvmClassLoader* JCL = 
@@ -69,7 +69,7 @@ jclass clazz,
 #endif
 jobject _str, 
 jboolean doResolve) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaString* str = (JavaString*)_str;
 
   JnjvmClassLoader* JCL = vm->bootstrapLoader;
@@ -93,7 +93,7 @@ jobject bytes,
 jint off, 
 jint len, 
 jobject pd) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   
   JnjvmClassLoader* JCL = 
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
@@ -112,7 +112,7 @@ jclass clazz,
 #endif
 jclass Cl) {
   verifyNull(Cl);
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   NativeUtil::resolvedImplClass(vm, Cl, false);
 }
 

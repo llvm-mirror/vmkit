@@ -608,7 +608,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 }
 
 extern "C" JavaString* internString(JavaString* obj) {
-  Jnjvm* vm = JavaThread::get()->isolate;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   const UTF8* utf8 = obj->strToUTF8(vm);
   return vm->UTF8ToStr(utf8);
 }

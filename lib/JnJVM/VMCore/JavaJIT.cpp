@@ -185,8 +185,8 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
     fprintf(stderr, "Native function %s not found. Probably "
                "not implemented by JnJVM?\n", compilingMethod->printString());
     JavaJIT::printBacktrace();
-    JavaThread::get()->isolate->unknownError("can not find native method %s",
-                                             compilingMethod->printString());
+    JavaThread::get()->getJVM()->unknownError("can not find native method %s",
+                                              compilingMethod->printString());
   }
   
   
@@ -263,7 +263,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   uint32 nargs = func->arg_size() + 1 + (stat ? 1 : 0); 
   std::vector<Value*> nativeArgs;
   
-  int64_t jniEnv = (int64_t)&(JavaThread::get()->isolate->jniEnv);
+  int64_t jniEnv = (int64_t)&(JavaThread::get()->getJVM()->jniEnv);
   nativeArgs.push_back(
     ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, jniEnv), 
                               module->ptrType));
@@ -492,7 +492,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
   
   if (!codeAtt) {
-    Jnjvm* vm = JavaThread::get()->isolate;
+    Jnjvm* vm = JavaThread::get()->getJVM();
     vm->unknownError("unable to find the code attribut in %s",
                      compilingMethod->printString());
   }
@@ -650,7 +650,7 @@ llvm::Function* JavaJIT::javaCompile() {
   Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
   
   if (!codeAtt) {
-    Jnjvm* vm = JavaThread::get()->isolate;
+    Jnjvm* vm = JavaThread::get()->getJVM();
     vm->unknownError("unable to find the code attribut in %s",
                      compilingMethod->printString());
   }
@@ -983,7 +983,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
       }
       
       if (exc) {
-        Jnjvm* vm = JavaThread::get()->isolate;
+        Jnjvm* vm = JavaThread::get()->getJVM();
         vm->noClassDefFoundError(exc);
       }
 
@@ -1195,7 +1195,7 @@ void JavaJIT::_ldc(uint16 index) {
     }
 #endif
   } else {
-    JavaThread::get()->isolate->unknownError("unknown type %d", type);
+    JavaThread::get()->getJVM()->unknownError("unknown type %d", type);
   }
 }
 

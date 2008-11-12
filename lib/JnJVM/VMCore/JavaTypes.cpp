@@ -27,10 +27,10 @@ using namespace jnjvm;
 
 static void typeError(const UTF8* name, short int l) {
   if (l != 0) {
-    JavaThread::get()->isolate->
+    JavaThread::get()->getJVM()->
       unknownError("wrong type %d in %s", l, name->printString());
   } else {
-    JavaThread::get()->isolate->
+    JavaThread::get()->getJVM()->
       unknownError("wrong type %s", name->printString());
   }
 }
