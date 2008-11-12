@@ -1723,10 +1723,6 @@ void JavaJIT::invokeNew(uint16 index) {
   std::vector<Value*> args;
   args.push_back(Size);
   args.push_back(VT);
-#ifdef MULTIPLE_GC
-  args.push_back(CallInst::Create(module->GetCollectorFunction,
-                                  isolateLocal, "", currentBlock));
-#endif
   Value* val = invoke(module->JavaObjectAllocateFunction, args, "",
                       currentBlock);
   

@@ -1937,10 +1937,6 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         std::vector<Value*> args;
         args.push_back(size);
         args.push_back(TheVT);
-#ifdef MULTIPLE_GC
-        args.push_back(CallInst::Create(module->GetCollectorFunction,
-                                        isolateLocal, "", currentBlock));
-#endif
         Value* res = invoke(module->JavaObjectAllocateFunction, args, "",
                             currentBlock);
         Value* cast = new BitCastInst(res, module->JavaArrayType, "",
