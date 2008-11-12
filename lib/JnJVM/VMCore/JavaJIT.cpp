@@ -1199,17 +1199,16 @@ void JavaJIT::_ldc(uint16 index) {
   }
 }
 
-void JavaJIT::JITVerifyNull(Value* obj) { 
+void JavaJIT::JITVerifyNull(Value* obj) {
 
-  JavaJIT* jit = this;
   Constant* zero = module->JavaObjectNullConstant;
   Value* test = new ICmpInst(ICmpInst::ICMP_EQ, obj, zero, "",
-                             jit->currentBlock);
+                             currentBlock);
 
-  BasicBlock* exit = jit->createBasicBlock("verifyNullExit");
-  BasicBlock* cont = jit->createBasicBlock("verifyNullCont");
+  BasicBlock* exit = createBasicBlock("verifyNullExit");
+  BasicBlock* cont = createBasicBlock("verifyNullCont");
 
-  llvm::BranchInst::Create(exit, cont, test, jit->currentBlock);
+  llvm::BranchInst::Create(exit, cont, test, currentBlock);
   std::vector<Value*> args;
   if (currentExceptionBlock != endExceptionBlock) {
     llvm::InvokeInst::Create(module->NullPointerExceptionFunction,
@@ -1223,7 +1222,7 @@ void JavaJIT::JITVerifyNull(Value* obj) {
   }
   
 
-  jit->currentBlock = cont;
+  currentBlock = cont;
   
 }
 
