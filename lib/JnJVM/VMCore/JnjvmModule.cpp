@@ -1041,6 +1041,7 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
   ImplementsFunction = module->getFunction("implements");
   InstantiationOfArrayFunction = module->getFunction("instantiationOfArray");
   GetDepthFunction = module->getFunction("getDepth");
+  GetStaticInstanceFunction = module->getFunction("getStaticInstance");
   GetDisplayFunction = module->getFunction("getDisplay");
   GetClassInDisplayFunction = module->getFunction("getClassInDisplay");
   AquireObjectFunction = module->getFunction("JavaObjectAquire");

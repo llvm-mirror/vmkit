@@ -283,6 +283,7 @@ public:
   llvm::Function* InstantiationOfArrayFunction;
   llvm::Function* GetDepthFunction;
   llvm::Function* GetClassInDisplayFunction;
+  llvm::Function* GetStaticInstanceFunction;
   llvm::Function* GetDisplayFunction;
   llvm::Function* AquireObjectFunction;
   llvm::Function* ReleaseObjectFunction;

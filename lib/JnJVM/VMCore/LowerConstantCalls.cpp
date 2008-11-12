@@ -227,6 +227,20 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             BranchInst::Create(NBB, ifTrue);
             break;
           }
+        } else if (V == module->GetStaticInstanceFunction) {
+          Changed = true;
+#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
+          ConstantExpr* CE = dyn_cast<ConstantExpr>(Call.getArgument(0));
+          assert(CE && "Wrong use of GetStaticInstanceFunction");
+          ConstantInt* C = (ConstantInt*)CE->getOperand(0);
+          Class* cl = (Class*)C->getZExtValue();
+          
+          Value* Replace = module->getStaticInstance(cl);
+          Replace = new LoadInst(Replace, "", CI);
+          CI->replaceAllUsesWith(Replace);
+          CI->eraseFromParent();
+#endif
+         
         } else if (V == module->InitialisationCheckFunction) {
           Changed = true;
 #ifdef ISOLATE

@@ -132,6 +132,7 @@ Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
     JavaJIT jit(meth, func);
     if (isNative(meth->access)) {
       jit.nativeCompile();
+      mvm::MvmModule::runPasses(func, perNativeFunctionPasses);
     } else {
       jit.javaCompile();
       mvm::MvmModule::runPasses(func, perFunctionPasses);
@@ -253,6 +254,11 @@ JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
   perFunctionPasses = new llvm::FunctionPassManager(this);
   perFunctionPasses->add(new llvm::TargetData(m));
   AddStandardCompilePasses(m, perFunctionPasses);
+  
+  perNativeFunctionPasses = new llvm::FunctionPassManager(this);
+  perNativeFunctionPasses->add(new llvm::TargetData(m));
+  addPass(perNativeFunctionPasses, createInstructionCombiningPass()); // Cleanup for scalarrepl.
+  addPass(perNativeFunctionPasses, mvm::createLowerConstantCallsPass());
 }
 
 JnjvmModuleProvider::~JnjvmModuleProvider() {
@@ -260,4 +266,6 @@ JnjvmModuleProvider::~JnjvmModuleProvider() {
   mvm::MvmModule::executionEngine->removeModuleProvider(this);
   mvm::MvmModule::protectEngine.unlock();
   delete TheModule;
+  delete perFunctionPasses;
+  delete perNativeFunctionPasses;
 }

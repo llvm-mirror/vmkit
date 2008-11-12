@@ -43,6 +43,7 @@ private:
     reverse_callback_iterator;  
 
   llvm::FunctionPassManager* perFunctionPasses;
+  llvm::FunctionPassManager* perNativeFunctionPasses;
 
 public:
   

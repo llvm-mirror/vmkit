@@ -81,6 +81,9 @@ declare %JavaClass* @getClassInDisplay(%JavaClass**, i32) readnone
 ;;; getDepth - Get the depth of the class.
 declare i32 @getDepth(%JavaClass*) readnone 
 
+;;; getStaticInstance - Get the static instance of this class.
+declare %JavaObject* @getStaticInstance(%JavaClass*) readnone 
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;; Generic Runtime methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -436,24 +436,12 @@ void JavaJIT::beginSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     obj = llvmFunction->arg_begin();
   } else {
-#ifndef ISOLATE_SHARING
-    obj = module->getStaticInstance(compilingClass);
-    obj = new LoadInst(obj, "", currentBlock);
-#else
-    obj = getStaticInstanceCtp();
-#endif
+    Value* cl = module->getNativeClass(compilingClass);
+    cl = new LoadInst(cl, "", currentBlock);
+    obj = CallInst::Create(module->GetStaticInstanceFunction, cl, "",
+                           currentBlock);
   }
-#ifndef SERVICE_VM
   monitorEnter(obj);
-#else
-  if (ServiceDomain::isLockableDomain(compilingClass->isolate)) {
-    llvm::CallInst::Create(module->AquireObjectInSharedDomainFunction,
-                           obj, "", currentBlock);
-  } else {
-    llvm::CallInst::Create(module->AquireObjectFunction,
-                           obj, "", currentBlock);
-  }
-#endif
 }
 
 void JavaJIT::endSynchronize() {
@@ -461,24 +449,12 @@ void JavaJIT::endSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     obj = llvmFunction->arg_begin();
   } else {
-#ifndef ISOLATE_SHARING
-    obj = module->getStaticInstance(compilingClass);
-    obj = new LoadInst(obj, "", currentBlock);
-#else
-    obj = getStaticInstanceCtp();
-#endif
+    Value* cl = module->getNativeClass(compilingClass);
+    cl = new LoadInst(cl, "", currentBlock);
+    obj = CallInst::Create(module->GetStaticInstanceFunction, cl, "",
+                           currentBlock);
   }
-#ifndef SERVICE_VM
   monitorExit(obj);
-#else
-  if (ServiceDomain::isLockableDomain(compilingClass->isolate)) {
-    llvm::CallInst::Create(module->ReleaseObjectInSharedDomainFunction,
-                           argsSync.begin(), argsSync.end(), "", currentBlock);
-  } else {
-    llvm::CallInst::Create(module->ReleaseObjectFunction, argsSync.begin(),
-                           argsSync.end(), "", currentBlock);    
-  }
-#endif
 }
 
 
@@ -917,16 +893,14 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     if (isVirtual(compilingMethod->access)) {
       argsSync.push_back(llvmFunction->arg_begin());
     } else {
-#ifndef ISOLATE_SHARING
-      Value* arg = module->getStaticInstance(compilingClass);
-      arg = new LoadInst(arg, "", currentBlock);
-#else
-      Value* arg = getStaticInstanceCtp();
-#endif
+      Value* cl = module->getNativeClass(compilingClass);
+      cl = new LoadInst(cl, "", currentBlock);
+      Value* arg = CallInst::Create(module->GetStaticInstanceFunction, cl, "",
+                             currentBlock);
       argsSync.push_back(arg);
     }
-    llvm::CallInst::Create(module->ReleaseObjectFunction, argsSync.begin(), argsSync.end(),
-                           "", synchronizeExceptionBlock);
+    llvm::CallInst::Create(module->ReleaseObjectFunction, argsSync.begin(),
+                           argsSync.end(), "", synchronizeExceptionBlock);
 
     llvm::BranchInst::Create(endExceptionBlock, synchronizeExceptionBlock);
     
@@ -1818,15 +1792,17 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
                     currentBlock);
         CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
                          currentBlock);
-        object = module->getStaticInstance(field->classDef);
-        object = new LoadInst(object, "", currentBlock);
+        object = CallInst::Create(module->GetStaticInstanceFunction, Cl, "",
+                                  currentBlock);
         type = LCI->getStaticType();
         return fieldGetter(this, type, object, LFI->getOffset());
       }
       
       if (field->classDef->isReady()) {
-        object = module->getStaticInstance(field->classDef);
-        object = new LoadInst(object, "", currentBlock);
+        Value* Cl = module->getNativeClass(field->classDef);
+        Cl = new LoadInst(Cl, "", currentBlock);
+        object = CallInst::Create(module->GetStaticInstanceFunction, Cl, "",
+                                  currentBlock);
         type = LCI->getStaticType();
         return fieldGetter(this, type, object, LFI->getOffset());
       }
