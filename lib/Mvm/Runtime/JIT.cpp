@@ -93,7 +93,7 @@ void MvmModule::initialise(bool Fast) {
   ptrPtrType = PointerType::getUnqual(ptrType);
   pointerSizeType = module.getPointerSize() == llvm::Module::Pointer32 ?
     Type::Int32Ty : Type::Int64Ty;
-
+  
   // Constant declaration
   constantLongMinusOne = ConstantInt::get(Type::Int64Ty, (uint64_t)-1);
   constantLongZero = ConstantInt::get(Type::Int64Ty, 0);
@@ -133,9 +133,10 @@ void MvmModule::initialise(bool Fast) {
   constantDoubleMinusInfinity = ConstantFP::get(Type::DoubleTy, MinDouble);
   constantDoubleMinusZero = ConstantFP::get(Type::DoubleTy, -0.0);
   constantFloatMinusZero = ConstantFP::get(Type::FloatTy, -0.0f);
-  constantThreadIDMask = ConstantInt::get(Type::Int32Ty, mvm::Thread::IDMask);
-  constantLockedMask = ConstantInt::get(Type::Int32Ty, 0x7FFFFF00);
-  constantThreadFreeMask = ConstantInt::get(Type::Int32Ty, 0x7FFFFFFF);
+  constantThreadIDMask = ConstantInt::get(pointerSizeType, mvm::Thread::IDMask);
+  constantLockedMask = ConstantInt::get(pointerSizeType, 0x7FFFFF00);
+  constantThreadFreeMask = ConstantInt::get(pointerSizeType, 0x7FFFFFFF);
+  constantPtrOne = ConstantInt::get(pointerSizeType, 1);
 
   constantPtrNull = Constant::getNullValue(ptrType); 
   constantPtrSize = ConstantInt::get(Type::Int32Ty, sizeof(void*));
@@ -252,6 +253,7 @@ llvm::ConstantInt* MvmModule::constantPtrSize;
 llvm::ConstantInt* MvmModule::constantThreadIDMask;
 llvm::ConstantInt* MvmModule::constantLockedMask;
 llvm::ConstantInt* MvmModule::constantThreadFreeMask;
+llvm::ConstantInt* MvmModule::constantPtrOne;
 const llvm::PointerType* MvmModule::ptrType;
 const llvm::PointerType* MvmModule::ptr32Type;
 const llvm::PointerType* MvmModule::ptrPtrType;

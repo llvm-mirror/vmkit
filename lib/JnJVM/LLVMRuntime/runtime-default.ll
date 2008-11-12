@@ -181,6 +181,6 @@ declare i8*  @getSJLJBuffer()
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Debugging methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-declare void @printExecution(i32, i32, i32)
-declare void @printMethodStart(i32)
-declare void @printMethodEnd(i32)
+declare void @printExecution(i8*, i32, i8*)
+declare void @printMethodStart(i8*)
+declare void @printMethodEnd(i8*)

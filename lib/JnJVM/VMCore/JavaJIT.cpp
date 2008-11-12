@@ -349,7 +349,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   BranchInst::Create(ThinLockBB, FatLockBB, cmp, currentBlock);
 
   currentBlock = ThinLockBB;
-  Value* increment = BinaryOperator::CreateAdd(lock, module->constantOne, "",
+  Value* increment = BinaryOperator::CreateAdd(lock, module->constantPtrOne, "",
                                                currentBlock);
   increment = new IntToPtrInst(increment, module->ptrType, "", currentBlock);
   new StoreInst(increment, lockPtr, false, currentBlock);
@@ -394,7 +394,7 @@ void JavaJIT::monitorExit(Value* obj) {
   
   // Locked by the thread, decrement.
   currentBlock = ThinLockBB;
-  Value* decrement = BinaryOperator::CreateSub(lock, module->constantOne, "",
+  Value* decrement = BinaryOperator::CreateSub(lock, module->constantPtrOne, "",
                                                currentBlock);
   decrement = new IntToPtrInst(decrement, module->ptrType, "", currentBlock);
   new StoreInst(decrement, lockPtr, false, currentBlock);
@@ -657,7 +657,10 @@ llvm::Function* JavaJIT::javaCompile() {
 #if JNJVM_EXECUTE > 0
     {
     std::vector<llvm::Value*> args;
-    args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
+    args.push_back(ConstantExpr::getIntToPtr(
+          ConstantInt::get(Type::Int64Ty, uint64_t (compilingMethod))),
+          module->ptrType);
+
     llvm::CallInst::Create(module->PrintMethodStartFunction, args.begin(),
                            args.end(), "", currentBlock);
     }
@@ -802,7 +805,9 @@ llvm::Function* JavaJIT::javaCompile() {
 #if JNJVM_EXECUTE > 0
     {
     std::vector<llvm::Value*> args;
-    args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
+    args.push_back(ConstantExpr::getIntToPtr(
+          ConstantInt::get(Type::Int64Ty, uint64_t (compilingMethod))),
+          module->ptrType);
     llvm::CallInst::Create(module->PrintMethodEndFunction, args.begin(),
                            args.end(), "", currentBlock);
     }

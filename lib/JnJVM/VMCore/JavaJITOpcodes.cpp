@@ -148,10 +148,17 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 #if JNJVM_EXECUTE > 1
     {
     std::vector<llvm::Value*> args;
-    args.push_back(ConstantInt::get(Type::Int32Ty, 
-                                    (int64_t)OpcodeNames[bytecodes[i]]));
+    args.push_back(ConstantExpr::getIntToPtr(
+          ConstantInt::get(Type::Int64Ty, (int64_t)OpcodeNames[bytecodes[i]]),
+          module->ptrType));
+
     args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)i));
-    args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
+    
+    args.push_back(ConstantExpr::getIntToPtr(
+          ConstantInt::get(Type::Int64Ty, (int64_t)compilingMethod),
+          module->ptrType));
+    
+    
     CallInst::Create(module->PrintExecutionFunction, args.begin(),
                      args.end(), "", currentBlock);
     }
