@@ -214,19 +214,19 @@ dnl Virtual Machine type
 dnl **************************************************************************
 AC_ARG_WITH(vm-type,
        [AS_HELP_STRING(--with-vm-type=something,
-           [VM type ('single' 'multi' or 'service')])],
+           [VM type ('single' 'isolate' 'isolate-sharing' or 'service')])],
        [[vmtype=$withval]],
        [[ echo Using single as vm type.
                 vmtype=single
        ]]
 )
 
-if test "x$vmtype" = "xmulti";  then
-  VM_FLAGS="-DMULTIPLE_VM"
+if test "x$vmtype" = "xisolate";  then
+  VM_FLAGS="-DISOLATE"
   ISOLATE_BUILD=1
 else 
   if test "x$vmtype" = "xservice"; then
-    VM_FLAGS="-DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM -I\$(PROJ_SRC_ROOT)/lib/Mvm/Allocator"
+    VM_FLAGS="-DISOLATE -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM -I\$(PROJ_SRC_ROOT)/lib/Mvm/Allocator"
     SERVICE_BUILD=1
   fi
 fi

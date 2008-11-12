@@ -1321,7 +1321,8 @@ Optional Packages:
   --with-thread=something Thread type ('common' or 'no')
   --with-gc=something     GC type ('single-mmap' 'multi-mmap' or 'boehm')
   --with-vm-type=something
-                          VM type ('single' 'multi' or 'service')
+                          VM type ('single' 'isolate' 'isolate-sharing' or
+                          'service')
   --with-gnu-classpath-libs=something
                           GNU CLASSPATH libraries (default is
                           /usr/lib/classpath)
@@ -3942,12 +3943,12 @@ else
 fi
 
 
-if test "x$vmtype" = "xmulti";  then
-  VM_FLAGS="-DMULTIPLE_VM"
+if test "x$vmtype" = "xisolate";  then
+  VM_FLAGS="-DISOLATE"
   ISOLATE_BUILD=1
 else
   if test "x$vmtype" = "xservice"; then
-    VM_FLAGS="-DMULTIPLE_VM -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM -I\$(PROJ_SRC_ROOT)/lib/Mvm/Allocator"
+    VM_FLAGS="-DISOLATE -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM -I\$(PROJ_SRC_ROOT)/lib/Mvm/Allocator"
     SERVICE_BUILD=1
   fi
 fi

@@ -12,7 +12,7 @@ DIRS = LLVMRuntime VMCore Classpath
 
 include $(LEVEL)/Makefile.config
 
-ifeq ($(ISOLATE_BUILD), 1) 
+ifeq ($(ISOLATE_SHARING_BUILD), 1) 
     DIRS += Isolate
 endif
 

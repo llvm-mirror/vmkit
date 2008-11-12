@@ -14,7 +14,7 @@ TOOLNAME = jnjvm
 USEDLIBS = Allocator CommonThread Mvm JnJVM Classpath $(GCLIB)
 LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo
 
-ifeq ($(ISOLATE_BUILD), 1) 
+ifeq ($(ISOLATE_SHARING_BUILD), 1) 
     USEDLIBS += Isolate
 endif
 

@@ -17,7 +17,7 @@ ifeq ($(WITH_JNJVM), 1)
 USEDLIBS += JnJVM Classpath
 endif
 
-ifeq ($(ISOLATE_BUILD), 1) 
+ifeq ($(ISOLATE_SHARING_BUILD), 1) 
     USEDLIBS += Isolate
 endif
 
