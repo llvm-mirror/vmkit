@@ -36,7 +36,7 @@ extern "C" void printDouble(double d) {
 }
 
 extern "C" void printLong(sint64 l) {
-  printf("%lld\n", l);
+  printf("%lld\n", (long long int)l);
 }
 
 extern "C" void printInt(sint32 i) {

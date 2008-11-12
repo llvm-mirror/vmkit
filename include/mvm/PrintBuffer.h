@@ -138,7 +138,7 @@ public:
   /// writes8 - Writes a int64.
   inline PrintBuffer *writeS8(sint64 v) {
     char buf[32];
-    sprintf(buf, "%lld", v);
+    sprintf(buf, "%lld", (long long int)v);
     return write(buf);
   }
   

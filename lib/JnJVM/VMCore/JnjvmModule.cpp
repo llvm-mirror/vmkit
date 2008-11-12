@@ -419,8 +419,8 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
     if (!(cl->super)) {
       uint32 size =  (cl->virtualTableSize - VT_NB_FUNCS) * sizeof(void*);
 #define COPY(CLASS) \
-    memcpy((void*)((unsigned)CLASS::VT + VT_SIZE), \
-           (void*)((unsigned)res + VT_SIZE), size);
+    memcpy((void*)((uintptr_t)CLASS::VT + VT_SIZE), \
+           (void*)((uintptr_t)res + VT_SIZE), size);
 
       COPY(JavaArray)
       COPY(JavaObject)

@@ -191,6 +191,11 @@ public:
 };
 
 // TODO: find what macro for gcc < 4.2
+
+#define __sync_bool_compare_and_swap_32(ptr, cmp, val) \
+  (mvm::MvmModule::llvm_atomic_cmp_swap_i32((uint32*)(ptr), (uint32)(cmp), \
+                                            (uint32)(val)) == (uint32)(cmp))
+
 #if (__WORDSIZE == 64)
 
 #define __sync_bool_compare_and_swap(ptr, cmp, val) \

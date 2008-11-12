@@ -106,7 +106,7 @@ public:
     bool found = false;
     uint32 myAllocPtr = allocPtr;
     do {
-      found = __sync_bool_compare_and_swap(&used[myAllocPtr], 0, 1);
+      found = __sync_bool_compare_and_swap_32(&used[myAllocPtr], 0, 1);
       myAllocPtr++;
       if (myAllocPtr == NR_THREADS) myAllocPtr = 0;
     } while (myAllocPtr != start && !found);

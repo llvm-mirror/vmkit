@@ -1727,8 +1727,9 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass elementClass,
   UserClassArray* array = loader->constructArray(arrayName);
   ArrayObject* res = (ArrayObject*)array->doNew(length, vm);
   if (initialElement) {
-    memset(res->elements, (int)initialElement, 
-               length * sizeof(JavaObject*));
+    for (sint32 i = 0; i < length; ++i) {
+      res->elements[i] = (JavaObject*)initialElement;
+    }
   }
   return (jobjectArray)res;
   END_EXCEPTION
@@ -1927,7 +1928,7 @@ jlong *GetLongArrayElements(JNIEnv *env, jlongArray array, jboolean *isCopy) {
   BEGIN_EXCEPTION
 
   if (isCopy) (*isCopy) = false;
-  return ((ArrayLong*)array)->elements;
+  return (jlong*)(void*)(((ArrayLong*)array)->elements);
 
   END_EXCEPTION
   return 0;

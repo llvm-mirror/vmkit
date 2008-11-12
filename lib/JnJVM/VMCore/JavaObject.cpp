@@ -79,7 +79,7 @@ LockObj* LockObj::allocate() {
 }
 
 bool JavaObject::owner() {
-  uint32 id = (uint32)mvm::Thread::get();
+  uint64 id = mvm::Thread::get()->getThreadID();
   if ((lock & ThinMask) == id) return true;
   if (lock & FatMask) {
     LockObj* obj = (LockObj*)(lock << 1);
