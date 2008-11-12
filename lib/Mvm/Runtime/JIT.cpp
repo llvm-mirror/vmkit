@@ -60,9 +60,18 @@ void MvmModule::initialise(bool Fast) {
   globalModuleProvider = new ExistingModuleProvider (globalModule);
   memoryManager = new MvmMemoryManager();
   
+
+
   executionEngine = ExecutionEngine::createJIT(globalModuleProvider, 0,
                                                memoryManager, Fast);
+  
+  std::string str = 
+    executionEngine->getTargetData()->getStringRepresentation();
+  globalModule->setDataLayout(str);
+
+  
   Module module("unused");
+  module.setDataLayout(str);
   mvm::llvm_runtime::makeLLVMModuleContents(&module);
   
   llvm_atomic_cmp_swap_i8 = (uint8 (*)(uint8*, uint8, uint8))
@@ -82,7 +91,8 @@ void MvmModule::initialise(bool Fast) {
   ptrType = PointerType::getUnqual(Type::Int8Ty);
   ptr32Type = PointerType::getUnqual(Type::Int32Ty);
   ptrPtrType = PointerType::getUnqual(ptrType);
-  pointerSizeType = Type::Int32Ty;
+  pointerSizeType = module.getPointerSize() == llvm::Module::Pointer32 ?
+    Type::Int32Ty : Type::Int64Ty;
 
   // Constant declaration
   constantLongMinusOne = ConstantInt::get(Type::Int64Ty, (uint64_t)-1);
@@ -149,9 +159,9 @@ MvmModule::MvmModule(const std::string& ModuleID) : llvm::Module(ModuleID) {
   unwindResume = module->getFunction("_Unwind_Resume_or_Rethrow");
   
   llvmGetException = module->getFunction("llvm.eh.exception");
-  exceptionSelector = sizeof(void*) == 4 ?
+  exceptionSelector = (getPointerSize() == llvm::Module::Pointer32 ?
                 module->getFunction("llvm.eh.selector.i32") : 
-                module->getFunction("llvm.eh.selector.i64");
+                module->getFunction("llvm.eh.selector.i64"));
   
   personality = module->getFunction("__gxx_personality_v0");
   exceptionEndCatch = module->getFunction("__cxa_end_catch");
