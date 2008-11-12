@@ -329,7 +329,9 @@ public:
   static llvm::ConstantInt* OffsetDepthInClassConstant;
   static llvm::ConstantInt* OffsetDisplayInClassConstant;
   static llvm::ConstantInt* OffsetStatusInClassConstant;
-  static llvm::ConstantInt* OffsetCtpInClassConstant;
+  static llvm::ConstantInt* OffsetTaskClassMirrorInClassConstant;
+  static llvm::ConstantInt* OffsetStaticInstanceInTaskClassMirrorConstant;
+  static llvm::ConstantInt* OffsetStatusInTaskClassMirrorConstant;
   
   static llvm::ConstantInt* ClassReadyConstant;
 

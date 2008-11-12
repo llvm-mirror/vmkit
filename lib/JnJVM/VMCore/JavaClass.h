@@ -173,6 +173,10 @@ public:
   /// status - The loading/resolve/initialization state of the class.
   ///
   JavaState status;
+  
+#ifdef ISOLATE
+  TaskClassMirror IsolateInfo[NR_ISOLATES];
+#endif
 
 //===----------------------------------------------------------------------===//
 //
@@ -512,7 +516,6 @@ public:
 
 #else
 #if defined(ISOLATE)
-  TaskClassMirror IsolateInfo[NR_ISOLATES];
   
   TaskClassMirror& getCurrentTaskClassMirror();
 

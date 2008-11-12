@@ -22,6 +22,7 @@
 using namespace llvm;
 using namespace jnjvm;
 
+#include <iostream>
 namespace mvm {
 
   class VISIBILITY_HIDDEN LowerConstantCalls : public FunctionPass {
@@ -229,23 +230,44 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           }
         } else if (V == module->GetStaticInstanceFunction) {
           Changed = true;
-#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
+#if !defined(ISOLATE_SHARING) && !defined(ISOLATE)
           ConstantExpr* CE = dyn_cast<ConstantExpr>(Call.getArgument(0));
           assert(CE && "Wrong use of GetStaticInstanceFunction");
           ConstantInt* C = (ConstantInt*)CE->getOperand(0);
           Class* cl = (Class*)C->getZExtValue();
-          
+
           Value* Replace = module->getStaticInstance(cl);
           Replace = new LoadInst(Replace, "", CI);
           CI->replaceAllUsesWith(Replace);
           CI->eraseFromParent();
+#elif defined(ISOLATE)
+          std::vector<Value*> GEP;
+          GEP.push_back(module->constantZero);
+          GEP.push_back(module->OffsetTaskClassMirrorInClassConstant);
+          Value* TCMArray = GetElementPtrInst::Create(Call.getArgument(0),
+                                                      GEP.begin(), GEP.end(),
+                                                      "", CI);
+          GEP.clear();
+          GEP.push_back(module->constantZero);
+          // TODO get the isolate id
+          GEP.push_back(module->constantZero);
+          Value* TCM = GetElementPtrInst::Create(TCMArray, GEP.begin(),
+                                                 GEP.end(), "", CI);
+          GEP.clear();
+          GEP.push_back(module->constantZero);
+          GEP.push_back(module->OffsetStaticInstanceInTaskClassMirrorConstant);
+          Value* Replace = GetElementPtrInst::Create(TCM, GEP.begin(),
+                                                     GEP.end(), "", CI);
+          Replace = new LoadInst(Replace, "", CI);
+          CI->replaceAllUsesWith(Replace);
+          CI->eraseFromParent();
+#else
+          abort();
 #endif
          
         } else if (V == module->InitialisationCheckFunction) {
           Changed = true;
-#ifdef ISOLATE
-          Call.setCalledFunction(module->InitialiseClassFunction);
-#else
+          
           BasicBlock* NBB = 0;
           if (CI->getParent()->getTerminator() != CI) {
             NBB = II->getParent()->splitBasicBlock(II);
@@ -257,13 +279,33 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           }
           
           Value* Cl = Call.getArgument(0); 
+#if !defined(ISOLATE)
           std::vector<Value*> indexes; 
           indexes.push_back(mvm::MvmModule::constantZero);
           indexes.push_back(module->OffsetStatusInClassConstant);
           Value* StatusPtr = GetElementPtrInst::Create(Cl, indexes.begin(),
                                                        indexes.end(), "", CI);
-          Value* Status = new LoadInst(StatusPtr, "", CI);
+
+#else
+          std::vector<Value*> GEP;
+          GEP.push_back(module->constantZero);
+          GEP.push_back(module->OffsetTaskClassMirrorInClassConstant);
+          Value* TCMArray = GetElementPtrInst::Create(Cl, GEP.begin(),
+                                                      GEP.end(), "", CI);
+          GEP.clear();
+          GEP.push_back(module->constantZero);
+          // TODO get the isolate id
+          GEP.push_back(module->constantZero);
+          Value* TCM = GetElementPtrInst::Create(TCMArray, GEP.begin(),
+                                                 GEP.end(), "", CI);
+          GEP.clear();
+          GEP.push_back(module->constantZero);
+          GEP.push_back(module->OffsetStatusInTaskClassMirrorConstant);
+          Value* StatusPtr = GetElementPtrInst::Create(TCM, GEP.begin(),
+                                                     GEP.end(), "", CI);
+#endif 
           
+          Value* Status = new LoadInst(StatusPtr, "", CI);
           
           Value* test = new ICmpInst(ICmpInst::ICMP_EQ, Status,
                                      jnjvm::JnjvmModule::ClassReadyConstant,
@@ -318,7 +360,6 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
           BranchInst::Create(NBB, trueCl);
           break;
-#endif
         } else if (V == module->GetConstantPoolAtFunction) {
           Function* resolver = dyn_cast<Function>(Call.getArgument(0));
           assert(resolver && "Wrong use of GetConstantPoolAt");

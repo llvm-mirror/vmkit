@@ -46,24 +46,26 @@ const llvm::Type* JnjvmModule::EnveloppeType = 0;
 const llvm::Type* JnjvmModule::JnjvmType = 0;
 const llvm::Type* JnjvmModule::ConstantPoolType = 0;
 
-llvm::Constant*       JnjvmModule::JavaObjectNullConstant;
-llvm::Constant*       JnjvmModule::UTF8NullConstant;
-llvm::Constant*       JnjvmModule::JavaClassNullConstant;
-llvm::Constant*       JnjvmModule::MaxArraySizeConstant;
-llvm::Constant*       JnjvmModule::JavaObjectSizeConstant;
-llvm::ConstantInt*    JnjvmModule::OffsetObjectSizeInClassConstant;
-llvm::ConstantInt*    JnjvmModule::OffsetVTInClassConstant;
-llvm::ConstantInt*    JnjvmModule::OffsetDepthInClassConstant;
-llvm::ConstantInt*    JnjvmModule::OffsetDisplayInClassConstant;
-llvm::ConstantInt*    JnjvmModule::OffsetStatusInClassConstant;
-llvm::ConstantInt*    JnjvmModule::OffsetCtpInClassConstant;
-llvm::ConstantInt*    JnjvmModule::ClassReadyConstant;
-const llvm::Type*     JnjvmModule::JavaClassType;
-const llvm::Type*     JnjvmModule::VTType;
-llvm::ConstantInt*    JnjvmModule::JavaArrayElementsOffsetConstant;
-llvm::ConstantInt*    JnjvmModule::JavaArraySizeOffsetConstant;
-llvm::ConstantInt*    JnjvmModule::JavaObjectLockOffsetConstant;
-llvm::ConstantInt*    JnjvmModule::JavaObjectClassOffsetConstant;
+llvm::Constant*     JnjvmModule::JavaObjectNullConstant;
+llvm::Constant*     JnjvmModule::UTF8NullConstant;
+llvm::Constant*     JnjvmModule::JavaClassNullConstant;
+llvm::Constant*     JnjvmModule::MaxArraySizeConstant;
+llvm::Constant*     JnjvmModule::JavaObjectSizeConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetObjectSizeInClassConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetVTInClassConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetDepthInClassConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetDisplayInClassConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetStatusInClassConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetTaskClassMirrorInClassConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetStaticInstanceInTaskClassMirrorConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetStatusInTaskClassMirrorConstant;
+llvm::ConstantInt*  JnjvmModule::ClassReadyConstant;
+const llvm::Type*   JnjvmModule::JavaClassType;
+const llvm::Type*   JnjvmModule::VTType;
+llvm::ConstantInt*  JnjvmModule::JavaArrayElementsOffsetConstant;
+llvm::ConstantInt*  JnjvmModule::JavaArraySizeOffsetConstant;
+llvm::ConstantInt*  JnjvmModule::JavaObjectLockOffsetConstant;
+llvm::ConstantInt*  JnjvmModule::JavaObjectClassOffsetConstant;
 
 Value* JnjvmModule::getNativeClass(CommonClass* classDef) {
   llvm::GlobalVariable* varGV = 0;
@@ -991,7 +993,9 @@ void JnjvmModule::initialise() {
   OffsetDisplayInClassConstant = mvm::MvmModule::constantThree;
   OffsetDepthInClassConstant = mvm::MvmModule::constantFour;
   OffsetStatusInClassConstant = mvm::MvmModule::constantFive;
-  OffsetCtpInClassConstant = mvm::MvmModule::constantSix;
+  OffsetTaskClassMirrorInClassConstant = mvm::MvmModule::constantSix;
+  OffsetStaticInstanceInTaskClassMirrorConstant = mvm::MvmModule::constantTwo;
+  OffsetStatusInTaskClassMirrorConstant = mvm::MvmModule::constantZero;
   
   ClassReadyConstant = ConstantInt::get(Type::Int32Ty, ready);
 

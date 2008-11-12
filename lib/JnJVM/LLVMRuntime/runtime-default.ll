@@ -10,6 +10,12 @@
 
 %Jnjvm = type {%VT, %JavaClass*, [9 x %JavaClass*]}
 
+;;; The task class mirror in an isolate environment.
+;;; Field 1: The class state
+;;; Field 2: The class delegatee (java/lang/Class)
+;;; Field 3: The static instance
+%TaskClassMirror = type { i32, %JavaObject*, %JavaObject* }
+
 ;;; The type of internal classes. This is not complete, but we only need
 ;;; the first fields for now. 
 ;;; Field 1 - The VT of a class C++ object.
@@ -18,9 +24,9 @@
 ;;; Field 4 - The list of super classes of this class.
 ;;; Field 5 - The depth of the class in its super hierarchy.
 ;;; Field 6 - The class state (resolved, initialized, ...)
-;;; field 7 - The constant pool, only for multi vm environment.
-;;; field 8 - The static instance, only for multi vm environment.
-%JavaClass = type { %VT, i32, %VT ,%JavaClass**, i32, i32, %ConstantPool*, %JavaObject* }
+;;; field 7 - The task class mirror, for an isolate environment
+%JavaClass = type { %VT, i32, %VT ,%JavaClass**, i32, i32,
+                    [0 x %TaskClassMirror] }
 
 ;;; The root of all Java Objects: a VT, a class and a lock.
 %JavaObject = type { %VT, %JavaClass*, i8* }
