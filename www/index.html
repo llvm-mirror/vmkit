@@ -4,7 +4,7 @@
 <html>
 <head>
   <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
-  <title>"vmkit" JVM and .Net runtimes for LLVM</title>
+  <title>"VMKit" JVM and .Net runtimes for LLVM</title>
   <link type="text/css" rel="stylesheet" href="menu.css" />
   <link type="text/css" rel="stylesheet" href="content.css" />
 </head>
@@ -38,7 +38,7 @@
 
 <div id="content">
   <!--*********************************************************************-->
-  <h1>vmkit: JVM and .Net runtimes for LLVM</h1>
+  <h1>VMKit: JVM and .Net runtimes for LLVM</h1>
   <!--*********************************************************************-->
   
   <p>The VMKit project is an implementation of a JVM and CLI virtual machine
@@ -80,26 +80,32 @@
   <h2>Why?</h2>
   <!--=====================================================================-->
   
-  <p>The development of vmkit was started out of a need to factorize virtual
+  <p>The development of VMKit was started out of a need to factorize virtual
      machine development. The JVM and CLI virtual machine have many 
      similarities, but are too high-level to be the basis of a "universal"
      virtual machine. The LLVM IR on the opposite is low-level enough to be 
      able to execute these VMs. VMKit is a proof of concept implementation
      towards that direction.</p>
      
-  <p>An introduction to vmkit (here called LadyVM because it's a port of the 
-     JVM to the Boehm garbage collector) can be found in the following paper:
+  <p>An introduction to VMKit can be found in the following video lectures:
+  <ul>
+    <li><a href="http://llvm.org/devmtg/2008-08/Geoffray_VMKitProject_Lo.3gp">
+        Presentation of VMKit at the 2008 LLVM Developer's Meeting</a>
+    </li>
+  </ul>
+  
   </p>
      
+  <p>A port of VMKit to use the Boehm GC can be found in the following paper:
   <ul>
-    <li><a href="ladyvm.html">LadyVM as a port of vmkit to Boehm's GC</a>
+    <li><a href="ladyvm.html">LadyVM as a port of VMKit to Boehm's GC</a>
     </li>
   </ul>
   
   <p>For an example of what kind of experimental technologies we can
-     implement in a timely fashion with vmkit:</p>
+     implement in a timely fashion with VMKit:</p>
   <ul>
-    <li><a href="osgi.html">Isolation in OSGi with vmkit</a>
+    <li><a href="osgi.html">Isolation in OSGi with VMKit</a>
     </li>
   </ul>
   
@@ -108,7 +114,7 @@
   <!--=====================================================================-->
   
   <p>VMKit is still in its early development stages. If you are looking to
-     experiment virtual machine technologies, vmkit is probably a great solution
+     experiment virtual machine technologies, VMKit is probably a great solution
      for you.  If you want to use it as a drop in JVM or .Net, it is not yet
      ready.</p>
 
@@ -126,7 +132,7 @@
      today.</p>
   
   <p>Once you've done that, please consider <a href="get_involved.html">getting
-     involved in the vmkit community</a>. Currently, vmkit is tightly
+     involved in the VMKit community</a>. Currently, VMKit is tightly
      integrated into the llvm community. You can sign up for the llvm mailing
      list to ask and learn about how the project works.</p>
 </div>
