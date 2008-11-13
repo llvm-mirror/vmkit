@@ -369,7 +369,7 @@ void JavaConstantPool::infoOfMethod(uint32 index, uint32 access,
     // lookup the method
     meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access),
                                      false, 0);
-  } 
+  }
 }
 
 uint32 JavaConstantPool::getClassIndexFromMethod(uint32 index) {
@@ -419,12 +419,19 @@ void* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index,
       return F;
     }
   }
-  
-  // Return the callback.
+ 
+  // If it's static we're not using ctpRes for anything. We can store
+  // the callback. If it's special, the ctpRes contains the offset in
+  // the virtual table, so we can't put the callback and must rely on
+  // the module provider to hash callbacks.
+  if (isStatic(access) && ctpRes[index]) return ctpRes[index];
+
   void* val =
     classDef->classLoader->TheModuleProvider->addCallback(classDef, index, sign,
                                                           isStatic(access));
         
+  if (isStatic(access)) ctpRes[index] = val;
+  
   return val;
 }
 

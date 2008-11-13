@@ -40,7 +40,7 @@ public:
     cl(c), index(i) {}
 };
 
-JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) { 
+JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
   JavaConstantPool* ctpInfo = caller->getConstantPool();
   
 
@@ -108,6 +108,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
 
   return false;
 }
+
 void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
   Function* func = parseFunction(meth);
   
@@ -140,31 +141,28 @@ Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
 llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
                                                  Signdef* sign, bool stat) {
   
-  void* key = &(cl->getConstantPool()->ctpRes[index]);
-   
-  reverse_callback_iterator CI = reverseCallbacks.find(key);
-  if (CI != reverseCallbacks.end()) {
-    return CI->second;
-  }
-  
-  const llvm::FunctionType* type = 0;
   JnjvmModule* M = cl->classLoader->getModule();
+  Function* func = 0;
   LLVMSignatureInfo* LSI = M->getSignatureInfo(sign);
+  if (!stat) {
+    char* name = cl->printString();
+    char* key = (char*)alloca(strlen(name) + 2);
+    sprintf(key, "%s%d", name, index);
+    Function* F = TheModule->getFunction(key);
+    if (F) return F;
   
-  if (stat) {
-    type = LSI->getStaticType();
+    const FunctionType* type = LSI->getVirtualType();
+  
+    func = Function::Create(type, GlobalValue::GhostLinkage, key, TheModule);
   } else {
-    type = LSI->getVirtualType();
+    const llvm::FunctionType* type = LSI->getStaticType();
+    func = Function::Create(type, GlobalValue::GhostLinkage, "staticCallback",
+                            TheModule);
   }
   
-  Function* func = llvm::Function::Create(type, 
-                                          llvm::GlobalValue::GhostLinkage,
-                                          "callback",
-                                          TheModule);
   CallbackInfo* A = new CallbackInfo(cl, index);
   func->addAnnotation(A);
-  reverseCallbacks.insert(std::make_pair(key, func));
-
+  
   return func;
 }
 

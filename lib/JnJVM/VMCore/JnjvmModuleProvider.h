@@ -26,11 +26,6 @@ class JnjvmModuleProvider : public ModuleProvider {
 private:
   JavaMethod* staticLookup(Class* caller, uint32 index);
   
-  std::map<void*, llvm::Function* > reverseCallbacks;
-  
-  typedef std::map<void*, llvm::Function* >::iterator
-    reverse_callback_iterator;  
-
   llvm::FunctionPassManager* perFunctionPasses;
   llvm::FunctionPassManager* perNativeFunctionPasses;
 
