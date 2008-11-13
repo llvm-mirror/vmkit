@@ -231,6 +231,8 @@ static void AddStandardCompilePasses(JnjvmModule* mod, FunctionPassManager *PM) 
  
   Function* func = mod->JavaObjectAllocateFunction;
   addPass(PM, mvm::createEscapeAnalysisPass(func));
+
+  // Do not do GVN after this pass: initialization checks could be removed.
   addPass(PM, mvm::createLowerConstantCallsPass());
   
   // Run instcombine after redundancy elimination to exploit opportunities
@@ -241,8 +243,6 @@ static void AddStandardCompilePasses(JnjvmModule* mod, FunctionPassManager *PM) 
   addPass(PM, createDeadStoreEliminationPass()); // Delete dead stores
   addPass(PM, createAggressiveDCEPass());        // Delete dead instructions
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
-  
-  addPass(PM, mvm::createLowerForcedCallsPass());
   
 }
 

@@ -157,26 +157,30 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
     //    in textual order, as though they were a single block, except that
     //    final static variables and fields of interfaces whose values are 
     //    compile-time constants are initialized first.
-
-
-    UserClass* cl = (UserClass*)this;
-    cl->resolveStaticClass();
-      
-      
+    
     PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
     PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ", 0);
     PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", printString());
-      
-    JavaObject* val = 
-      (JavaObject*)vm->gcAllocator.allocateManagedObject(cl->getStaticSize(),
-                                                           cl->getStaticVT());
-    val->initialise(cl);
+
+
+    UserClass* cl = (UserClass*)this;
+
+#if defined(ISOLATE) || defined(ISOLATE_SHARING)
+    // Isolate environments allocate the static instance on their own, not when
+    // the class is being resolved.
+    JavaObject* val = cl->allocateStaticInstance(vm);
+#else
+    // Single environment allocates the static instance during resolution, so
+    // that compiled code can access it directly (with an initialization
+    // check just before the access)
+    JavaObject* val = cl->getStaticInstance();
+#endif
+    
     JavaField* fields = cl->getStaticFields();
     for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
       fields[i].initField(val, vm);
     }
   
-    cl->setStaticInstance(val);
       
       
     JavaMethod* meth = lookupMethodDontThrow(vm->bootstrapLoader->clinitName,

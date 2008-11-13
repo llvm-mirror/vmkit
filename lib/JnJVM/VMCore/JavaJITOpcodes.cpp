@@ -1934,6 +1934,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* size =
           BinaryOperator::CreateAdd(module->JavaObjectSizeConstant, mult,
                                     "", currentBlock);
+        assert(TheVT && "Not VT");
         std::vector<Value*> args;
         args.push_back(size);
         args.push_back(TheVT);
@@ -2007,10 +2008,6 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case CHECKCAST : {
         uint16 index = readU2(bytecodes, i);
-#ifndef ISOLATE_SHARING
-        CommonClass* dcl =
-          compilingClass->ctpInfo->getMethodClassIfLoaded(index);
-#endif
         
         Value* obj = top();
 
@@ -2025,6 +2022,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         currentBlock = ifFalse;
         Value* clVar = 0;
 #ifndef ISOLATE_SHARING
+        CommonClass* dcl =
+          compilingClass->ctpInfo->getMethodClassIfLoaded(index);
         if (dcl) {
           clVar = module->getNativeClass(dcl);
           clVar = new LoadInst(clVar, "", currentBlock);
@@ -2089,33 +2088,15 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case MONITORENTER : {
         Value* obj = pop();
-#ifdef SERVICE_VM
-        if (ServiceDomain::isLockableDomain(compilingClass->isolate))
-          invoke(module->AquireObjectInSharedDomainFunction, obj, "",
-                 currentBlock); 
-        else
-          invoke(module->AquireObjectFunction, obj, "",
-                 currentBlock); 
-#else
         JITVerifyNull(obj);
         monitorEnter(obj);
-#endif
         break;
       }
 
       case MONITOREXIT : {
         Value* obj = pop();
-#ifdef SERVICE_VM
-        if (ServiceDomain::isLockableDomain(compilingClass->isolate))
-          invoke(module->ReleaseObjectInSharedDomainFunction, obj, "",
-                 currentBlock); 
-        else
-          invoke(module->ReleaseObjectFunction, obj, "",
-                 currentBlock); 
-#else
         JITVerifyNull(obj);
         monitorExit(obj);
-#endif
         break;
       }
 

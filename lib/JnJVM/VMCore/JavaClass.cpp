@@ -698,6 +698,16 @@ void JavaField::initField(JavaObject* obj, Jnjvm* vm) {
   } 
 }
 
+JavaObject* UserClass::allocateStaticInstance(Jnjvm* vm) {
+  JavaObject* val = 
+    (JavaObject*)vm->gcAllocator.allocateManagedObject(getStaticSize(),
+                                                       getStaticVT());
+  val->initialise(this);
+  setStaticInstance(val);
+  return val;
+}
+
+
 JavaMethod* CommonClass::constructMethod(JavaMethod& method,
                                          const UTF8* name,
                                          const UTF8* type, uint32 access) {
@@ -887,7 +897,13 @@ void CommonClass::resolveClass() {
         cl->loadParents();
         cl->acquire();
         cl->status = prepared;
-        classLoader->getModule()->resolveVirtualClass(cl);
+        JnjvmModule *Mod = classLoader->getModule();
+        Mod->resolveVirtualClass(cl);
+        Mod->resolveStaticClass(cl);
+#ifndef ISOLATE
+        // Allocate now so that compiled code can reference it.
+        cl->allocateStaticInstance(JavaThread::get()->getJVM());
+#endif
         cl->status = resolved;
       }
       release();

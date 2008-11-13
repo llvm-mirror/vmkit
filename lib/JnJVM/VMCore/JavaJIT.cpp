@@ -1675,51 +1675,32 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
 
 Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow) {
     
-    Value* node = getConstantPoolAt(index, module->ClassLookupFunction,
-                                    module->JavaClassType, 0, doThrow);
-    
-    if (clinit)
-      return invoke(module->InitialisationCheckFunction, node, "",
-                    currentBlock);
-    else
-      return node;
+  JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
+  Class* cl = (Class*)(ctpInfo->getMethodClassIfLoaded(index));
+  Value* node = 0;
+  if (cl && cl->isResolved()) {
+    node = module->getNativeClass(cl);
+    node = new LoadInst(node, "", currentBlock);
+  } else {
+    node = getConstantPoolAt(index, module->ClassLookupFunction,
+                             module->JavaClassType, 0, doThrow);
+  }
+  
+  if (!(!clinit || (cl && (cl->isReadyForCompilation() || 
+                           compilingClass->subclassOf(cl)))))
+    return invoke(module->InitialisationCheckFunction, node, "",
+                  currentBlock);
+  else
+    return node;
 }
 
 void JavaJIT::invokeNew(uint16 index) {
-  JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   
-  Class* cl = (Class*)(ctpInfo->getMethodClassIfLoaded(index));
-  Value* Size = 0;
-  Value* VT = 0;
-  Value* Cl = 0;
-  if (!cl || !cl->isResolved()) {
-    Cl = getResolvedClass(index, true);
-    Size = CallInst::Create(module->GetObjectSizeFromClassFunction, Cl,
-                            "", currentBlock);
-    VT = CallInst::Create(module->GetVTFromClassFunction, Cl, "",
-                          currentBlock);
-  } else {
-    LLVMClassInfo* LCI = module->getClassInfo(cl);
-    Size = LCI->getVirtualSize();
-#ifndef ISOLATE_SHARING
-    VT = module->getVirtualTable(cl);
-    VT = new LoadInst(VT, "", currentBlock);
-    Cl = module->getNativeClass(cl);
-    Cl = new LoadInst(Cl, "", currentBlock);
-    if (!cl->isReady()) {
-      Cl = invoke(module->InitialisationCheckFunction, Cl, "",
-                  currentBlock);
-      CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
-                       currentBlock);
-    }
-#else
-    Cl = getResolvedClass(index, true);
-    CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
-                     currentBlock);
-    VT = CallInst::Create(module->GetVTFromClassFunction, Cl, "",
-                          currentBlock);
-#endif
-  }
+  Value* Cl = getResolvedClass(index, true);
+  Value* Size = CallInst::Create(module->GetObjectSizeFromClassFunction, Cl,
+                                 "", currentBlock);
+  Value* VT = CallInst::Create(module->GetVTFromClassFunction, Cl, "",
+                               currentBlock);
   std::vector<Value*> args;
   args.push_back(Size);
   args.push_back(VT);
@@ -1783,38 +1764,20 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     LLVMFieldInfo* LFI = module->getFieldInfo(field);
     const Type* type = 0;
     if (stat) {
-      
-#ifndef ISOLATE_SHARING
-      if (module->isStaticCompiling()) {
-        // Do an initialization check first.
-        Value* Cl = module->getNativeClass(field->classDef);
-        Cl = new LoadInst(Cl, "", currentBlock);
+      type = LCI->getStaticType();
+      Value* Cl = module->getNativeClass(field->classDef);
+      Cl = new LoadInst(Cl, "", currentBlock);
+      if (!(compilingClass->subclassOf(field->classDef)) && 
+          !(compilingClass->isReadyForCompilation())) {
         Cl = invoke(module->InitialisationCheckFunction, Cl, "",
                     currentBlock);
-        CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
-                         currentBlock);
-        object = CallInst::Create(module->GetStaticInstanceFunction, Cl, "",
-                                  currentBlock);
-        type = LCI->getStaticType();
-        return fieldGetter(this, type, object, LFI->getOffset());
       }
-      
-      if (field->classDef->isReady()) {
-        Value* Cl = module->getNativeClass(field->classDef);
-        Cl = new LoadInst(Cl, "", currentBlock);
-        object = CallInst::Create(module->GetStaticInstanceFunction, Cl, "",
-                                  currentBlock);
-        type = LCI->getStaticType();
-        return fieldGetter(this, type, object, LFI->getOffset());
-      }
-#else
-      // In a multi environment, we always need to get the ptr in the constant
-      // pool. Therefore, we do nothing here.
-#endif
+      object = CallInst::Create(module->GetStaticInstanceFunction, Cl, "",
+                                currentBlock); 
     } else {
       type = LCI->getVirtualType();
-      return fieldGetter(this, type, object, LFI->getOffset());
     }
+    return fieldGetter(this, type, object, LFI->getOffset());
   }
 
   const Type* Pty = module->arrayPtrType;

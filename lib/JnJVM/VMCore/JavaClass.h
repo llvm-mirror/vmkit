@@ -509,6 +509,10 @@ public:
   bool isReady() {
     return status == ready;
   }
+  
+  bool isReadyForCompilation() {
+    return isReady();
+  }
 
   bool isInitializing() {
     return status >= inClinit;
@@ -537,6 +541,10 @@ public:
   
   bool isReady() {
     return getCurrentTaskClassMirror().status == ready;
+  }
+
+  bool isReadyForCompilation() {
+    return false;
   }
 
   bool isInitializing() {
@@ -677,7 +685,10 @@ public:
 
 #endif
 #endif
-
+  
+  /// allocateStaticInstance - Allocate the static instance of this class.
+  ///
+  JavaObject* allocateStaticInstance(Jnjvm* vm);
   
   /// Class - Create a class in the given virtual machine and with the given
   /// name.

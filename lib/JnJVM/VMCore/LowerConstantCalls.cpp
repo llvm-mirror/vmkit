@@ -22,7 +22,6 @@
 using namespace llvm;
 using namespace jnjvm;
 
-#include <iostream>
 namespace mvm {
 
   class VISIBILITY_HIDDEN LowerConstantCalls : public FunctionPass {
@@ -36,6 +35,34 @@ namespace mvm {
   char LowerConstantCalls::ID = 0;
   static RegisterPass<LowerConstantCalls> X("LowerConstantCalls",
                                             "Lower Constant calls");
+
+
+static ConstantExpr* getClass(JnjvmModule* Mod, CallSite& Call) {
+  ConstantExpr* CE = 0;
+  if (Mod->isStaticCompiling()) {
+    LoadInst* LI = dyn_cast<LoadInst>(Call.getArgument(0));
+    if (!LI) {
+      PHINode* node = dyn_cast<PHINode>(Call.getArgument(0));
+      if (node) {
+        LI = dyn_cast<LoadInst>(node->getIncomingValue(0));
+      }
+    }
+
+    if (LI) {
+      GlobalVariable* GV = dyn_cast<GlobalVariable>(LI->getOperand(0));
+      CE = dyn_cast<ConstantExpr>(GV->getInitializer());
+    }
+  } else {
+    CE = dyn_cast<ConstantExpr>(Call.getArgument(0));
+    if (!CE) {
+      // It has to be a phi for intialization check.
+      PHINode* node = dyn_cast<PHINode>(Call.getArgument(0));
+      if (node) CE = dyn_cast<ConstantExpr>(node->getIncomingValue(0));
+    }
+  }
+  return CE;
+}
+
 bool LowerConstantCalls::runOnFunction(Function& F) {
   JnjvmModule* module = (JnjvmModule*)F.getParent();
   bool Changed = false;
@@ -86,6 +113,21 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
         } else if (V == module->GetVTFromClassFunction) {
           Changed = true;
+#ifndef ISOLATE_SHARING
+          ConstantExpr* CE = getClass(module, Call);
+          if (CE) {
+            Changed = true;
+            ConstantInt* C = (ConstantInt*)CE->getOperand(0);
+            Class* cl = (Class*)C->getZExtValue();
+            if (cl->isResolved()) {
+              Value* VT = module->getVirtualTable(cl);
+              VT = new LoadInst(VT, "", CI);
+              CI->replaceAllUsesWith(VT);
+              CI->eraseFromParent();
+            }
+            continue;
+          }
+#endif
           Value* val = Call.getArgument(0); 
           std::vector<Value*> indexes; 
           indexes.push_back(mvm::MvmModule::constantZero);
@@ -97,6 +139,20 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
         } else if (V == module->GetObjectSizeFromClassFunction) {
           Changed = true;
+#ifndef ISOLATE_SHARING
+          ConstantExpr* CE = getClass(module, Call);
+          if (CE) {
+            ConstantInt* C = (ConstantInt*)CE->getOperand(0);
+            Class* cl = (Class*)C->getZExtValue();
+            if (cl->isResolved()) {
+              LLVMClassInfo* LCI = module->getClassInfo(cl);
+              Value* Size = LCI->getVirtualSize();
+              CI->replaceAllUsesWith(Size);
+              CI->eraseFromParent();
+            }
+            continue;
+          }
+#endif
           Value* val = Call.getArgument(0); 
           std::vector<Value*> indexes; 
           indexes.push_back(mvm::MvmModule::constantZero);
@@ -231,8 +287,9 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         } else if (V == module->GetStaticInstanceFunction) {
           Changed = true;
 #if !defined(ISOLATE_SHARING) && !defined(ISOLATE)
-          ConstantExpr* CE = dyn_cast<ConstantExpr>(Call.getArgument(0));
-          assert(CE && "Wrong use of GetStaticInstanceFunction");
+          ConstantExpr* CE = getClass(module, Call);
+          assert(CE && "Wrong use if GetStaticInstanceFunction");
+          
           ConstantInt* C = (ConstantInt*)CE->getOperand(0);
           Class* cl = (Class*)C->getZExtValue();
 
@@ -240,6 +297,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Replace = new LoadInst(Replace, "", CI);
           CI->replaceAllUsesWith(Replace);
           CI->eraseFromParent();
+
 #elif defined(ISOLATE)
           std::vector<Value*> GEP;
           GEP.push_back(module->constantZero);
@@ -509,6 +567,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
         }
 #endif
+
       }
     }
   }
