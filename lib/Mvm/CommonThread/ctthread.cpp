@@ -133,20 +133,9 @@ StackThreadManager TheStackManager;
 void Thread::internalThreadStart(mvm::Thread* th) {
   th->baseSP  = (void*)&th;
 
-#ifdef MULTIPLE_GC
-  GC->inject_my_thread(th);
-#else
-  Collector::inject_my_thread(th);
-#endif
-  
-  
+  Collector::inject_my_thread(th); 
   th->routine(th);
-  
-#ifdef MULTIPLE_GC
-  GC->remove_my_thread(th);
-#else
   Collector::remove_my_thread(th);
-#endif
 
 }
 

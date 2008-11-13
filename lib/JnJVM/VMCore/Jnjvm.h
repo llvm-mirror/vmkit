@@ -322,10 +322,6 @@ public:
   ///
   virtual void waitForExit();
 
-#ifdef ISOLATE
-  uint32 IsolateID;
-#endif
-
 };
 
 } // end namespace jnjvm

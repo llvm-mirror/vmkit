@@ -358,38 +358,13 @@ extern "C" JavaArray* multiCallNew(UserClassArray* cl, uint32 len, ...) {
 }
 
 extern "C" void JavaObjectAquire(JavaObject* obj) {
-#ifdef SERVICE_VM
-  ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->getJVM();
-  if (!(vm->GC->isMyObject(obj))) {
-    vm->serviceError(vm, "I'm locking an object I don't own");
-  }
-#endif
   obj->acquire();
 }
 
 
 extern "C" void JavaObjectRelease(JavaObject* obj) {
-  verifyNull(obj);
-#ifdef SERVICE_VM
-  ServiceDomain* vm = (ServiceDomain*)JavaThread::get()->getJVM();
-  if (!(vm->GC->isMyObject(obj))) {
-    vm->serviceError(vm, "I'm unlocking an object I don't own");
-  }
-#endif
   obj->release();
 }
-
-#ifdef SERVICE_VM
-extern "C" void JavaObjectAquireInSharedDomain(JavaObject* obj) {
-  verifyNull(obj);
-  obj->acquire();
-}
-
-extern "C" void JavaObjectReleaseInSharedDomain(JavaObject* obj) {
-  verifyNull(obj);
-  obj->release();
-}
-#endif
 
 extern "C" bool instanceOf(JavaObject* obj, UserCommonClass* cl) {
   return obj->instanceOf(cl);

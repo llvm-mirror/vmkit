@@ -50,12 +50,8 @@ void sigsegv_handler(int n, siginfo_t *_info, void *context) {
 #endif
 	
   /* Free the GC if it sisgegv'd. No other collection is possible */
-#ifndef MULTIPLE_GC
   Collector::die_if_sigsegv_occured_during_collection(addr);
-#else
-  mvm::Thread::get()->GC->die_if_sigsegv_occured_during_collection(addr);
-#endif
-	
+
   //	sys_exit(0);
   if(client_sigsegv_handler)
     client_sigsegv_handler(n, addr);

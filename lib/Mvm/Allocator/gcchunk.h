@@ -10,6 +10,8 @@
 #ifndef _GC_CHUNK_H_
 #define _GC_CHUNK_H_
 
+#include "mvm/VirtualMachine.h"
+
 #include "gcmapper.h"
 #include "types.h"
 
@@ -25,8 +27,8 @@ class GCChunkNode {
 	                        /* bit 0-2: la marque */
 	                        /* bit 3: est-on collectable */
 public:
-#ifdef SERVICE_GC
-  void* meta; // who allocated me
+#ifdef SERVICE
+  VirtualMachine* meta; // who allocated me
 #endif
  	static const signed int maskCollectable    = 8;
  	static const signed int maskNotCollectable = 0;

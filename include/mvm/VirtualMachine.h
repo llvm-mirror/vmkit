@@ -42,6 +42,16 @@ public:
   
   static CompilationUnit* initialiseCLIVM();
   static VirtualMachine* createCLIVM(CompilationUnit* C = 0);
+  
+
+#ifdef ISOLATE
+  uint32 IsolateID;
+#endif
+
+#ifdef SERVICE
+  uint64_t memoryUsed;
+  uint64_t gcTriggered;
+#endif
 
   mvm::Allocator gcAllocator;
 

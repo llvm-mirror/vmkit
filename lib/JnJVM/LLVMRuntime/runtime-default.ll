@@ -183,6 +183,8 @@ declare i1           @JavaThreadCompareException(%JavaClass*)
 declare void @jniProceedPendingException()
 declare i8*  @getSJLJBuffer()
 
+declare %JavaObject* @gcmalloc(i32, %VT)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Debugging methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

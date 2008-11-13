@@ -40,11 +40,7 @@ void PrintBuffer::TRACER {
 
 
 PrintBuffer *PrintBuffer::writeObj(const Object *obj) {
-#ifdef MULTIPLE_GC
-  Object *beg = (Object*)mvm::Thread::get()->GC->begOf(obj);
-#else
   Object *beg = (Object*)Collector::begOf(obj);
-#endif
   
   if(beg) {
     if(beg == obj) {

@@ -63,6 +63,23 @@ static ConstantExpr* getClass(JnjvmModule* Mod, CallSite& Call) {
   return CE;
 }
 
+#ifdef ISOLATE
+static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
+  std::vector<Value*> GEP;
+  GEP.push_back(module->constantZero);
+  GEP.push_back(module->OffsetTaskClassMirrorInClassConstant);
+  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP.begin(), GEP.end(),
+                                              "", CI);
+  GEP.clear();
+  GEP.push_back(module->constantZero);
+  // TODO get the isolate id
+  GEP.push_back(module->constantZero);
+  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP.begin(), GEP.end(), "",
+                                         CI);
+  return TCM;
+}
+#endif
+
 bool LowerConstantCalls::runOnFunction(Function& F) {
   JnjvmModule* module = (JnjvmModule*)F.getParent();
   bool Changed = false;
@@ -288,7 +305,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Changed = true;
 #if !defined(ISOLATE_SHARING) && !defined(ISOLATE)
           ConstantExpr* CE = getClass(module, Call);
-          assert(CE && "Wrong use if GetStaticInstanceFunction");
+          assert(CE && "Wrong use of GetStaticInstanceFunction");
           
           ConstantInt* C = (ConstantInt*)CE->getOperand(0);
           Class* cl = (Class*)C->getZExtValue();
@@ -299,19 +316,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
 
 #elif defined(ISOLATE)
+          Value* TCM = getTCM(module, Call.getArgument(0), CI);
           std::vector<Value*> GEP;
-          GEP.push_back(module->constantZero);
-          GEP.push_back(module->OffsetTaskClassMirrorInClassConstant);
-          Value* TCMArray = GetElementPtrInst::Create(Call.getArgument(0),
-                                                      GEP.begin(), GEP.end(),
-                                                      "", CI);
-          GEP.clear();
-          GEP.push_back(module->constantZero);
-          // TODO get the isolate id
-          GEP.push_back(module->constantZero);
-          Value* TCM = GetElementPtrInst::Create(TCMArray, GEP.begin(),
-                                                 GEP.end(), "", CI);
-          GEP.clear();
           GEP.push_back(module->constantZero);
           GEP.push_back(module->OffsetStaticInstanceInTaskClassMirrorConstant);
           Value* Replace = GetElementPtrInst::Create(TCM, GEP.begin(),
@@ -345,18 +351,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                                                        indexes.end(), "", CI);
 
 #else
+          Value* TCM = getTCM(module, Call.getArgument(0), CI);
           std::vector<Value*> GEP;
-          GEP.push_back(module->constantZero);
-          GEP.push_back(module->OffsetTaskClassMirrorInClassConstant);
-          Value* TCMArray = GetElementPtrInst::Create(Cl, GEP.begin(),
-                                                      GEP.end(), "", CI);
-          GEP.clear();
-          GEP.push_back(module->constantZero);
-          // TODO get the isolate id
-          GEP.push_back(module->constantZero);
-          Value* TCM = GetElementPtrInst::Create(TCMArray, GEP.begin(),
-                                                 GEP.end(), "", CI);
-          GEP.clear();
           GEP.push_back(module->constantZero);
           GEP.push_back(module->OffsetStatusInTaskClassMirrorConstant);
           Value* StatusPtr = GetElementPtrInst::Create(TCM, GEP.begin(),

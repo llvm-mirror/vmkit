@@ -27,11 +27,6 @@ int GCCollector::siggc() {
 
 void GCCollector::initialise(Collector::markerFn marker) {
  
-#ifdef SERVICE_GC
-  gcTriggered = 0;
-  memoryUsed = 0;
-  if (this == bootstrapGC) {
-#endif
   used_nodes = new GCChunkNode();
   unused_nodes = new GCChunkNode();
 #ifdef HAVE_PTHREAD
@@ -60,9 +55,6 @@ void GCCollector::initialise(Collector::markerFn marker) {
 
   current_mark = 0;
   status = stat_alloc;
-#ifdef SERVICE_GC
-  }
-#endif
 
   _collect_freq_auto = def_collect_freq_auto;
   _collect_freq_maybe = def_collect_freq_maybe;
