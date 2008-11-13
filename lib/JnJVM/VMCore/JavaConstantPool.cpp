@@ -43,7 +43,8 @@ const uint32 JavaConstantPool::ConstantInterfaceMethodref = 11;
 const uint32 JavaConstantPool::ConstantNameAndType = 12;
 
 
-static uint32 unimplemented(JavaConstantPool* ctp, Reader& reader, uint32 index) {
+static uint32 unimplemented(JavaConstantPool* ctp, Reader& reader,
+                            uint32 index) {
   JavaThread::get()->getJVM()->classFormatError(
                                     "unknown constant pool at index %d", 
                                     index);

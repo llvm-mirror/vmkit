@@ -26,18 +26,7 @@ class JnjvmModuleProvider : public ModuleProvider {
 private:
   JavaMethod* staticLookup(Class* caller, uint32 index);
   
-  std::map<llvm::Function*, JavaMethod*> functions;
-  std::map<llvm::Function*, std::pair<Class*, uint32> > callbacks;
   std::map<void*, llvm::Function* > reverseCallbacks;
-  
-  std::pair<Class*, uint32>* lookupCallback(llvm::Function*);
-  JavaMethod* lookupFunction(llvm::Function*);
-
-  typedef std::map<llvm::Function*, JavaMethod*>::iterator
-    function_iterator;  
-  
-  typedef std::map<llvm::Function*, std::pair<Class*, uint32> >::iterator
-    callback_iterator;  
   
   typedef std::map<void*, llvm::Function* >::iterator
     reverse_callback_iterator;  
@@ -52,7 +41,6 @@ public:
   
   llvm::Function* addCallback(Class* cl, uint32 index, Signdef* sign,
                               bool stat);
-  void addFunction(llvm::Function* F, JavaMethod* meth);
 
   bool materializeFunction(Function *F, std::string *ErrInfo = 0);
   void* materializeFunction(JavaMethod* meth);

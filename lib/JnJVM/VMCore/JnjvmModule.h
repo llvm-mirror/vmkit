@@ -82,7 +82,7 @@ public:
     staticType(0) {}
 };
 
-class LLVMMethodInfo : public mvm::JITInfo {
+class LLVMMethodInfo : public mvm::JITInfo, private llvm::Annotation {
 private:
   JavaMethod* methodDef;
 
@@ -94,12 +94,10 @@ public:
   llvm::Function* getMethod();
   llvm::ConstantInt* getOffset();
   const llvm::FunctionType* getFunctionType();
-  
-  LLVMMethodInfo(JavaMethod* M) : 
-    methodDef(M), 
-    methodFunction(0),
-    offsetConstant(0),
-    functionType(0) {}
+    
+  LLVMMethodInfo(JavaMethod* M); 
+
+  static JavaMethod* get(const Function* F);
 };
 
 class LLVMFieldInfo : public mvm::JITInfo {

@@ -575,7 +575,7 @@ Function* LLVMMethodInfo::getMethod() {
                                         "", Mod);
 
     }
-    JCL->TheModuleProvider->addFunction(methodFunction, methodDef);
+    methodFunction->addAnnotation(this);
   }
   return methodFunction;
 }
@@ -1176,3 +1176,16 @@ LLVMAssessorInfo& JnjvmModule::getTypedefInfo(Typedef* type) {
   return LLVMAssessorInfo::AssessorInfo[type->getKey()->elements[0]];
 }
 
+static AnnotationID JavaMethod_ID(
+  AnnotationManager::getID("Java::JavaMethod"));
+
+
+LLVMMethodInfo::LLVMMethodInfo(JavaMethod* M) : 
+  llvm::Annotation(JavaMethod_ID), methodDef(M), methodFunction(0),
+  offsetConstant(0), functionType(0) {}
+
+JavaMethod* LLVMMethodInfo::get(const llvm::Function* F) {
+  LLVMMethodInfo *MI = (LLVMMethodInfo*)F->getAnnotation(JavaMethod_ID);
+  if (MI) return MI->methodDef;
+  return 0;
+}

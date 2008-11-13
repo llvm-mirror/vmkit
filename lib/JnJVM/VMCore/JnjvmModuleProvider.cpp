@@ -26,6 +26,20 @@
 using namespace llvm;
 using namespace jnjvm;
 
+
+static AnnotationID JavaCallback_ID(
+  AnnotationManager::getID("Java::Callback"));
+
+
+class CallbackInfo: public Annotation {
+public:
+  Class* cl;
+  uint32 index;
+
+  CallbackInfo(Class* c, uint32 i) : Annotation(JavaCallback_ID), 
+    cl(c), index(i) {}
+};
+
 JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) { 
   JavaConstantPool* ctpInfo = caller->getConstantPool();
   
@@ -53,24 +67,6 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
   return meth;
 }
 
-std::pair<Class*, uint32>* JnjvmModuleProvider::lookupCallback(Function* F) {
-  callback_iterator CI = callbacks.find(F);
-  if (CI != callbacks.end()) {
-    return &(CI->second);
-  } else {
-    return 0;
-  }
-}
-
-JavaMethod* JnjvmModuleProvider::lookupFunction(Function* F) {
-  function_iterator CI = functions.find(F);
-  if (CI != functions.end()) {
-    return CI->second;
-  } else {
-    return 0;
-  }
-}
-
 bool JnjvmModuleProvider::materializeFunction(Function *F, 
                                               std::string *ErrInfo) {
   
@@ -80,13 +76,13 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   if (!(F->hasNotBeenReadFromBitcode())) 
     return false;
   
-  JavaMethod* meth = lookupFunction(F);
+  JavaMethod* meth = LLVMMethodInfo::get(F);
   
   if (!meth) {
     // It's a callback
-    std::pair<Class*, uint32> * p = lookupCallback(F);
-    assert(p && "No callback where there should be one");
-    meth = staticLookup(p->first, p->second); 
+    CallbackInfo* CI = (CallbackInfo*)F->getAnnotation(JavaCallback_ID);
+    assert(CI && "No callback where there should be one");
+    meth = staticLookup(CI->cl, CI->index); 
   }
   
   void* val = meth->compiledPtr();
@@ -165,17 +161,12 @@ llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
                                           llvm::GlobalValue::GhostLinkage,
                                           "callback",
                                           TheModule);
-
-  callbacks.insert(std::make_pair(func, std::make_pair(cl, index)));
+  CallbackInfo* A = new CallbackInfo(cl, index);
+  func->addAnnotation(A);
   reverseCallbacks.insert(std::make_pair(key, func));
 
   return func;
 }
-
-void JnjvmModuleProvider::addFunction(Function* F, JavaMethod* meth) {
-  functions.insert(std::make_pair(F, meth));
-}
-
 
 namespace mvm {
   llvm::FunctionPass* createEscapeAnalysisPass(llvm::Function*);
