@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <string.h>
+#include <cstring>
 
 #include "types.h"
 
@@ -22,10 +22,6 @@
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "NativeUtil.h"
-
-#ifdef SERVICE_VM
-#include "ServiceDomain.h"
-#endif
 
 using namespace jnjvm;
 

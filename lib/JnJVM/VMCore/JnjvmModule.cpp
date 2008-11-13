@@ -1089,15 +1089,6 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
 #endif
 #endif
   
-#ifdef SERVICE_VM
-  AquireObjectInSharedDomainFunction = 
-    module->getFunction("JavaObjectAquireInSharedDomain");
-  ReleaseObjectInSharedDomainfunction = 
-    module->getFunction("JavaObjectReleaseInSharedDomain");
-  ServiceCallStartFunction = module->getFunction("serviceCallStart");
-  ServiceCallStopFunction = module->getFunction("serviceCallStop");
-#endif
-    
 #ifdef WITH_TRACER
   MarkAndTraceFunction = module->getFunction("MarkAndTrace");
   JavaObjectTracerFunction = module->getFunction("JavaObjectTracer");

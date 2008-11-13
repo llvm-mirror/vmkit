@@ -37,13 +37,6 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
   interruptFlag = 0;
   state = StateRunning;
   pendingException = 0;
-#ifdef SERVICE_VM
-  ServiceDomain* domain = (ServiceDomain*)vm;
-  domain->startExecution();
-  domain->lock->lock();
-  domain->numThreads++;
-  domain->lock->unlock();
-#endif
 }
 
 JavaThread::~JavaThread() {}

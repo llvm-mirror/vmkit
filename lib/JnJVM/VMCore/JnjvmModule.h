@@ -288,12 +288,6 @@ public:
   llvm::Function* AquireObjectFunction;
   llvm::Function* ReleaseObjectFunction;
   llvm::Function* GetConstantPoolAtFunction;
-#ifdef SERVICE_VM
-  llvm::Function* AquireObjectInSharedDomainFunction;
-  llvm::Function* ReleaseObjectInSharedDomainFunction;
-  llvm::Function* ServiceCallStartFunction;
-  llvm::Function* ServiceCallStopFunction;
-#endif
   llvm::Function* MultiCallNewFunction;
 
 #ifdef ISOLATE

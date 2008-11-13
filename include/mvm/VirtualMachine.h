@@ -51,6 +51,8 @@ public:
 #ifdef SERVICE
   uint64_t memoryUsed;
   uint64_t gcTriggered;
+  uint64_t executionTime;
+  uint64_t numThreads;
 #endif
 
   mvm::Allocator gcAllocator;

@@ -9,12 +9,12 @@
 
 #define JNJVM_LOAD 0
 
-#include <float.h>
-#include <limits.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cfloat>
+#include <climits>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include "debug.h"
 
 #include "mvm/JIT.h"
@@ -33,9 +33,6 @@
 #include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
 #include "Reader.h"
-#ifdef SERVICE_VM
-#include "ServiceDomain.h"
-#endif
 #include "Zip.h"
 
 using namespace jnjvm;
@@ -858,10 +855,6 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
 
   vm->loadBootstrap();
 
-#ifdef SERVICE_VM
-  ServiceDomain::initialise((ServiceDomain*)vm);
-#endif
-  
   ClArgumentsInfo& info = vm->argumentsInfo;
   
   if (info.agents.size()) {

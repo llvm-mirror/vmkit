@@ -36,10 +36,6 @@
 
 #include "OpcodeNames.def"
 
-#ifdef SERVICE_VM
-#include "ServiceDomain.h"
-#endif
-
 using namespace jnjvm;
 using namespace llvm;
 

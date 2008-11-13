@@ -18,9 +18,7 @@
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
 #include "LockedMap.h"
-#ifdef SERVICE_VM
-#include "ServiceDomain.h"
-#endif
+
 #ifdef ISOLATE_SHARING
 #include "SharedMaps.h"
 #include "IsolateSharedLoader.h"
@@ -44,9 +42,6 @@ using namespace jnjvm;
   INIT(UserClass);
   INIT(UserClassArray);
   INIT(UserConstantPool);
-#endif
-#ifdef SERVICE_VM
-  INIT(ServiceDomain);
 #endif
 
 #undef INIT
@@ -204,12 +199,5 @@ void SharedClassByteMap::TRACER {
 
 void JnjvmSharedLoader::TRACER {
   byteClasses->MARK_AND_TRACE;
-}
-#endif
-
-#ifdef SERVICE_VM
-void ServiceDomain::TRACER {
-  JavaIsolate::CALL_TRACER;
-  classes->MARK_AND_TRACE;
 }
 #endif

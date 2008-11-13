@@ -14,10 +14,6 @@
 #include "JavaThread.h"
 #include "Jnjvm.h"
 
-#ifdef SERVICE_VM
-#include "ServiceDomain.h"
-#endif
-
 #ifdef ISOLATE_SHARING
 #include "SharedMaps.h"
 #include "IsolateSharedLoader.h"
@@ -42,9 +38,6 @@ static void initialiseVT() {
   INIT(UserClass);
   INIT(UserClassArray);
   INIT(UserConstantPool);
-#endif
-#ifdef SERVICE_VM
-  INIT(ServiceDomain);
 #endif
 #undef INIT
 

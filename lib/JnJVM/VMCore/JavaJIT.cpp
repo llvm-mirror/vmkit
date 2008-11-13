@@ -12,7 +12,7 @@
 #define JNJVM_COMPILE 0
 #define JNJVM_EXECUTE 0
 
-#include <string.h>
+#include <cstring>
 
 #include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
@@ -42,10 +42,6 @@
 #include "NativeUtil.h"
 #include "Reader.h"
 #include "Zip.h"
-
-#ifdef SERVICE_VM
-#include "ServiceDomain.h"
-#endif
 
 using namespace jnjvm;
 using namespace llvm;

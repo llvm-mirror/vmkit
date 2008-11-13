@@ -17,10 +17,6 @@
 #include "JavaThread.h"
 #include "Jnjvm.h"
 
-#ifdef SERVICE_VM
-#include "ServiceDomain.h"
-#endif
-
 using namespace jnjvm;
 
 void JavaCond::notify() {

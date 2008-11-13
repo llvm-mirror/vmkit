@@ -24,10 +24,6 @@
 #include "Jnjvm.h"
 #include "LockedMap.h"
 
-#ifdef SERVICE_VM
-#include "ServiceDomain.h"
-#endif
-
 using namespace jnjvm;
 
 extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
