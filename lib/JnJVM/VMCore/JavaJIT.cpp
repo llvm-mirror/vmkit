@@ -168,7 +168,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
 #endif
 }
 
-llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
+llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "native compile %s\n",
               compilingMethod->printString());
@@ -193,7 +193,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
   Function* func = llvmFunction;
   if (jnjvm) {
     if (!module->isStaticCompiling())
-      module->executionEngine->addGlobalMapping(func, natPtr);
+      module->executionEngine->addGlobalMapping(func, (void*)natPtr);
     return llvmFunction;
   }
   
@@ -290,7 +290,7 @@ llvm::Function* JavaJIT::nativeCompile(void* natPtr) {
     nativeArgs.push_back(i);
   }
   
-  Value* nativeFunc = module->getNativeFunction(compilingMethod, natPtr);
+  Value* nativeFunc = module->getNativeFunction(compilingMethod, (void*)natPtr);
   nativeFunc = new LoadInst(nativeFunc, "", currentBlock);
 
   Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs.begin(),

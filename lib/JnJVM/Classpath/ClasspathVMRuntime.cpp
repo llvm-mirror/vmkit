@@ -7,8 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <dlfcn.h>
-#include <string.h>
 
 #include "MvmGC.h"
 
@@ -25,6 +23,7 @@
 #include "LockedMap.h"
 #include "NativeUtil.h"
 
+#include <cstring>
 
 using namespace jnjvm;
 
@@ -78,10 +77,10 @@ jobject _loader) {
 
   char* buf = str->strToAsciiz();
   
-  void* res = dlopen(buf, RTLD_LAZY | RTLD_LOCAL);
+  void* res = loader->loadLib(buf);
+  
   if (res != 0) {
-    loader->nativeLibs.push_back(res);
-    onLoad_t onLoad = (onLoad_t)(intptr_t)dlsym(res, "JNI_OnLoad");
+    onLoad_t onLoad = (onLoad_t)loader->loadInLib("JNI_OnLoad", res);
     if (onLoad) onLoad(&vm->javavmEnv, 0);
     return 1;
   } else {
@@ -96,11 +95,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
-#ifdef MULTIPLE_GC
-    mvm::Thread::get()->GC->collect();
-#else
   Collector::collect();
-#endif
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMRuntime_runFinalization(
@@ -151,11 +146,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
-#ifdef MULTIPLE_GC
-  return (jlong)JavaThread::get()->GC->getFreeMemory();
-#else
   return (jlong)Collector::getFreeMemory();
-#endif
 }
 
 JNIEXPORT jlong Java_java_lang_VMRuntime_totalMemory(
@@ -164,11 +155,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
-#ifdef MULTIPLE_GC
-  return (jlong)mvm::Thread::get()->GC->getTotalMemory();
-#else
   return (jlong)Collector::getTotalMemory();
-#endif
 }
 
 JNIEXPORT jlong Java_java_lang_VMRuntime_maxMemory(
@@ -177,11 +164,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
-#ifdef MULTIPLE_GC
-  return (jlong)mvm::Thread::get()->GC->getMaxMemory();
-#else
   return (jlong)Collector::getMaxMemory();
-#endif
 }
 
 JNIEXPORT jint Java_java_lang_VMRuntime_availableProcessors(){

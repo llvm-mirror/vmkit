@@ -315,9 +315,6 @@ public:
   llvm::Function* GetVTFunction;
   llvm::Function* GetClassFunction;
   llvm::Function* JavaObjectAllocateFunction;
-#ifdef MULTIPLE_GC
-  llvm::Function* GetCollectorFunction;
-#endif
   llvm::Function* GetVTFromClassFunction;
   llvm::Function* GetObjectSizeFromClassFunction;
 

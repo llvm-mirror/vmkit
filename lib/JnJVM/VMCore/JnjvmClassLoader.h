@@ -229,7 +229,9 @@ public:
   ///
   std::vector<void*> nativeLibs;
 
-  void* loadLib(const char* buf, bool& jnjvm);
+  intptr_t loadInLib(const char* buf, bool& jnjvm);
+  intptr_t loadInLib(const char* buf, void* handle);
+  void* loadLib(const char* buf);
 };
 
 /// JnjvmBootstrapLoader - This class is for the bootstrap class loader, which

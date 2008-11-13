@@ -664,13 +664,13 @@ const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
   return readerConstructUTF8(buf, n);
 }
 
-void* JnjvmClassLoader::loadLib(const char* buf, bool& jnjvm) {
-  void* res = dlsym(SELF_HANDLE, buf);
+intptr_t JnjvmClassLoader::loadInLib(const char* buf, bool& jnjvm) {
+  uintptr_t res = (uintptr_t)dlsym(SELF_HANDLE, buf);
   
   if (!res) {
     for (std::vector<void*>::iterator i = nativeLibs.begin(),
               e = nativeLibs.end(); i!= e; ++i) {
-      res = dlsym((*i), buf);
+      res = (uintptr_t)dlsym((*i), buf);
       if (res) break;
     }
   } else {
@@ -678,7 +678,17 @@ void* JnjvmClassLoader::loadLib(const char* buf, bool& jnjvm) {
   }
   
   if (!res && this != bootstrapLoader)
-    res = bootstrapLoader->loadLib(buf, jnjvm);
+    res = bootstrapLoader->loadInLib(buf, jnjvm);
 
-  return res;
+  return (intptr_t)res;
+}
+
+void* JnjvmClassLoader::loadLib(const char* buf) {
+  void* handle = dlopen(buf, RTLD_LAZY | RTLD_LOCAL);
+  if (handle) nativeLibs.push_back(handle);
+  return handle;
+}
+
+intptr_t JnjvmClassLoader::loadInLib(const char* name, void* handle) {
+  return (intptr_t)dlsym(handle, name);
 }

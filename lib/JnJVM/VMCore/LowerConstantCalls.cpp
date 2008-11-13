@@ -502,21 +502,6 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           BranchInst::Create(NBB, trueCl);
           break;
         }
-#ifdef MULTIPLE_GC
-        else if (V == module->GetCollectorFunction) {
-          Changed = true;
-          Value* val = Call.getArgument(0); 
-          std::vector<Value*> indexes; 
-          indexes.push_back(mvm::MvmModule::constantOne);
-          val = new BitCastInst(val, mvm::MvmModule::ptrPtrType, "", CI);
-          Value* CollectorPtr = GetElementPtrInst::Create(val, indexes.begin(),
-                                                          indexes.end(), "",
-                                                          CI);
-          Value* Collector = new LoadInst(CollectorPtr, "", CI);
-          CI->replaceAllUsesWith(Collector);
-          CI->eraseFromParent();
-        }
-#endif
 
 #ifdef ISOLATE_SHARING
         else if (V == module->GetCtpClassFunction) {

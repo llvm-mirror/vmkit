@@ -28,7 +28,7 @@ class NativeUtil {
 public:
 
   static Jnjvm* myVM(JNIEnv* env);
-  static void* nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm);
+  static intptr_t nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm);
   static UserCommonClass* resolvedImplClass(Jnjvm* vm, jclass clazz, bool doClinit);
   static void decapsulePrimitive(Jnjvm *vm, void**&buf, JavaObject* obj,
                                  const Typedef* signature);

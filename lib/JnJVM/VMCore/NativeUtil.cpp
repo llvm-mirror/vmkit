@@ -165,7 +165,7 @@ void JavaMethod::jniConsFromMeth3(char* buf) const {
 
 }
 
-void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
+intptr_t NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
   const UTF8* jniConsClName = cl->name;
   const UTF8* jniConsName = meth->name;
   const UTF8* jniConsType = meth->type;
@@ -175,13 +175,13 @@ void* NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm) {
 
   char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + mnlen + clen + (mtlen << 1));
   meth->jniConsFromMeth(buf);
-  void* res = cl->classLoader->loadLib(buf, jnjvm);
+  intptr_t res = cl->classLoader->loadInLib(buf, jnjvm);
   if (!res) {
     meth->jniConsFromMeth2(buf);
-    res = cl->classLoader->loadLib(buf, jnjvm);
+    res = cl->classLoader->loadInLib(buf, jnjvm);
     if (!res) {
       meth->jniConsFromMeth3(buf);
-      res = cl->classLoader->loadLib(buf, jnjvm);
+      res = cl->classLoader->loadInLib(buf, jnjvm);
     }
   }
   return res;

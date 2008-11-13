@@ -83,7 +83,7 @@ public:
   
   
   llvm::Function* javaCompile();
-  llvm::Function* nativeCompile(void* natPtr = 0);
+  llvm::Function* nativeCompile(intptr_t natPtr = 0);
   llvm::Instruction* inlineCompile(llvm::BasicBlock*& curBB,
                                    llvm::BasicBlock* endExBlock,
                                    std::vector<llvm::Value*>& args);
@@ -260,7 +260,7 @@ public:
   uint16 maxLocals;
   uint32 codeLen;
 
-#if defined(ISOLATE) || defined(MULTIPLE_GC)
+#if defined(SERVICE)
   llvm::Value* isolateLocal;
 #if defined(ISOLATE_SHARING)
   llvm::Value* ctpCache;

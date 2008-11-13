@@ -344,26 +344,20 @@ llvm::Function* JnjvmModule::makeTracer(Class* cl, bool stat) {
   BasicBlock* block = BasicBlock::Create("", func);
   llvm::Value* realArg = new BitCastInst(arg, type, "", block);
 
-#ifdef MULTIPLE_GC
-  Value* GC = ++func->arg_begin();
   std::vector<Value*> Args;
   Args.push_back(arg);
+#ifdef MULTIPLE_GC
+  Value* GC = ++func->arg_begin();
   Args.push_back(GC);
+#endif
   if (stat || cl->super == 0) {
     CallInst::Create(JavaObjectTracerFunction, Args.begin(), Args.end(),
                      "", block);
   } else {
-    CallInst::Create(((Class*)cl->super)->virtualTracer, Args.begin(),
+    LLVMClassInfo* LCP = (LLVMClassInfo*)getClassInfo((Class*)(cl->super));
+    CallInst::Create(LCP->getVirtualTracer(), Args.begin(),
                      Args.end(), "", block);
   }
-#else  
-  if (stat || cl->super == 0) {
-    CallInst::Create(JavaObjectTracerFunction, arg, "", block);
-  } else {
-    LLVMClassInfo* LCP = (LLVMClassInfo*)getClassInfo((Class*)(cl->super));
-    CallInst::Create(LCP->getVirtualTracer(), arg, "", block);
-  }
-#endif
   
   for (uint32 i = 0; i < nbFields; ++i) {
     JavaField& cur = fields[i];
@@ -377,15 +371,13 @@ llvm::Function* JnjvmModule::makeTracer(Class* cl, bool stat) {
       Value* val = new LoadInst(ptr, "", block);
       Value* valCast = new BitCastInst(val, JnjvmModule::JavaObjectType, "",
                                        block);
-#ifdef MULTIPLE_GC
       std::vector<Value*> Args;
       Args.push_back(valCast);
+#ifdef MULTIPLE_GC
       Args.push_back(GC);
+#endif
       CallInst::Create(JnjvmModule::MarkAndTraceFunction, Args.begin(),
                        Args.end(), "", block);
-#else
-      CallInst::Create(JnjvmModule::MarkAndTraceFunction, valCast, "", block);
-#endif
     }
   }
 
@@ -1115,10 +1107,6 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
   VirtualLookupFunction = module->getFunction("vtableLookup");
 #endif
 
-#ifdef MULTIPLE_GC
-  GetCollectorFunction = module->getFunction("getCollector");
-#endif
-  
   GetLockFunction = module->getFunction("getLock");
 }
 
