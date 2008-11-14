@@ -83,7 +83,7 @@ jint _meth) {
   sint32 size = meth->getSignature()->args.size();
 
   // Allocate a buffer to store the arguments.
-  void** buf = (void**)alloca(size * sizeof(uint64));
+  uintptr_t buf = (uintptr_t)alloca(size * sizeof(uint64));
   // Record the beginning of the buffer.
   void* startBuf = (void*)buf;
 

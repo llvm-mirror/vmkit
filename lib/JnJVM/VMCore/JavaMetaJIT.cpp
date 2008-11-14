@@ -79,7 +79,7 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JnjvmClassLoader* loader,
     } else{\
       ((JavaObject**)buf)[0] = va_arg(ap, JavaObject*);\
     }\
-    buf += 2; \
+    buf += 8; \
   }\
 
 
@@ -93,7 +93,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObje
   } \
   verifyNull(obj); \
   Signdef* sign = getSignature(); \
-  void** buf = (void**)alloca(sign->args.size() * sizeof(uint64)); \
+  uintptr_t buf = (uintptr_t)alloca(sign->args.size() * sizeof(uint64)); \
   void* _buf = (void*)buf; \
   readArgs(buf, sign, ap); \
   void* func = (((void***)obj)[0])[offset];\
@@ -108,7 +108,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObje
   \
   verifyNull(obj);\
   Signdef* sign = getSignature(); \
-  void** buf = (void**)alloca(sign->args.size() * sizeof(uint64)); \
+  uintptr_t buf = (uintptr_t)alloca(sign->args.size() * sizeof(uint64)); \
   void* _buf = (void*)buf; \
   readArgs(buf, sign, ap); \
   void* func = this->compiledPtr();\
@@ -122,7 +122,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
   } \
   \
   Signdef* sign = getSignature(); \
-  void** buf = (void**)alloca(sign->args.size() * sizeof(uint64)); \
+  uintptr_t buf = (uintptr_t)alloca(sign->args.size() * sizeof(uint64)); \
   void* _buf = (void*)buf; \
   readArgs(buf, sign, ap); \
   void* func = this->compiledPtr();\

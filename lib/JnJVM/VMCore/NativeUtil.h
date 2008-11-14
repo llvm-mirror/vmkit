@@ -29,8 +29,9 @@ public:
 
   static Jnjvm* myVM(JNIEnv* env);
   static intptr_t nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm);
-  static UserCommonClass* resolvedImplClass(Jnjvm* vm, jclass clazz, bool doClinit);
-  static void decapsulePrimitive(Jnjvm *vm, void**&buf, JavaObject* obj,
+  static UserCommonClass* resolvedImplClass(Jnjvm* vm, jclass clazz,
+                                            bool doClinit);
+  static void decapsulePrimitive(Jnjvm *vm, uintptr_t &buf, JavaObject* obj,
                                  const Typedef* signature);
 
   static JavaObject* getClassType(JnjvmClassLoader* loader, Typedef* type);

@@ -422,7 +422,7 @@ jobject Field, jobject obj, jobject val) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
-  void** buf = (void**)alloca(sizeof(uint64));
+  uintptr_t buf = (uintptr_t)alloca(sizeof(uint64));
   void* _buf = (void*)buf;
   const Typedef* type = field->getSignature();
   NativeUtil::decapsulePrimitive(vm, buf, (JavaObject*)val, type);

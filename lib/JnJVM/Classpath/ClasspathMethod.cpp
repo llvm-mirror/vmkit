@@ -92,7 +92,7 @@ jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
   sint32 size = meth->getSignature()->args.size();
   JavaObject* obj = (JavaObject*)_obj;
 
-  void** buf = (void**)alloca(size * sizeof(uint64)); 
+  uintptr_t buf = (uintptr_t)alloca(size * sizeof(uint64)); 
   void* _buf = (void*)buf;
   sint32 index = 0;
   if (nbArgs == size) {
