@@ -720,7 +720,6 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
             e = signature->args.end(); i!= e; ++i) {
   
     LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(*i);
-    const Type* type = LAI.llvmType;
     Value* val = new BitCastInst(ptr, LAI.llvmTypePtr, "", currentBlock);
     Value* arg = new LoadInst(val, "", currentBlock);
     Args.push_back(arg);
