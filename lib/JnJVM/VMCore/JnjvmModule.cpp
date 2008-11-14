@@ -181,9 +181,10 @@ Value* JnjvmModule::getStaticInstance(Class* classDef) {
     if (!obj && !isStaticCompiling()) {
       Class* cl = (Class*)classDef;
       classDef->acquire();
-      if (!(cl->getStaticInstance())) {
+      obj = cl->getStaticInstance();
+      if (!obj) {
         // Allocate now so that compiled code can reference it.
-        cl->allocateStaticInstance(JavaThread::get()->getJVM());
+        obj = cl->allocateStaticInstance(JavaThread::get()->getJVM());
       }
       classDef->release();
     }
