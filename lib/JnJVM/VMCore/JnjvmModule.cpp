@@ -692,7 +692,6 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
 
 Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   
-  ConstantInt* CI = mvm::MvmModule::constantZero;
   std::vector<Value*> Args;
 
   Function* res = Function::Create(virt ? getVirtualBufType() : 
@@ -720,17 +719,13 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   for (std::vector<Typedef*>::iterator i = signature->args.begin(), 
             e = signature->args.end(); i!= e; ++i) {
   
-    ptr = GetElementPtrInst::Create(ptr, CI, "", currentBlock);
     LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(*i);
     const Type* type = LAI.llvmType;
     Value* val = new BitCastInst(ptr, LAI.llvmTypePtr, "", currentBlock);
     Value* arg = new LoadInst(val, "", currentBlock);
     Args.push_back(arg);
-    if (type == Type::Int64Ty || type == Type::DoubleTy) {
-      CI = mvm::MvmModule::constantTwo;
-    } else {
-      CI = mvm::MvmModule::constantOne;
-    }
+    ptr = GetElementPtrInst::Create(ptr, JnjvmModule::constantEight, "",
+                                    currentBlock);
   }
 
 #if defined(ISOLATE_SHARING)
@@ -823,7 +818,7 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
     Args2.push_back(JnjvmModule::ConstantPoolType); // ctp
     Args2.push_back(getVirtualPtrType());
     Args2.push_back(JnjvmModule::JavaObjectType);
-    Args2.push_back(PointerType::getUnqual(Type::Int32Ty));
+    Args2.push_back(JnjvmModule::ptrType);
     LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(signature->ret);
     virtualBufType = FunctionType::get(LAI.llvmType, Args2, false);
   }
@@ -837,7 +832,7 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
     std::vector<const llvm::Type*> Args;
     Args.push_back(JnjvmModule::ConstantPoolType); // ctp
     Args.push_back(getStaticPtrType());
-    Args.push_back(PointerType::getUnqual(Type::Int32Ty));
+    Args.push_back(JnjvmModule::ptrType);
     LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(signature->ret);
     staticBufType = FunctionType::get(LAI.llvmType, Args, false);
   }

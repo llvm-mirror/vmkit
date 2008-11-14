@@ -204,7 +204,7 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
       vm->illegalArgumentException("wrong type argument");
     }
     ((JavaObject**)buf)[0] = obj;
-    buf++;
+    buf += 2;
     return;
   } else if (obj == 0) {
     vm->illegalArgumentException("");
@@ -220,12 +220,12 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
     if (prim->isShort()) {
       if (value == vm->upcalls->OfShort) {
         ((uint16*)buf)[0] = vm->upcalls->shortValue->getInt16Field(obj);
-        buf++;
+        buf += 2;
         return;
       } else if (value == vm->upcalls->OfByte) {
         ((sint16*)buf)[0] = 
           (sint16)vm->upcalls->byteValue->getInt8Field(obj);
-        buf++;
+        buf += 2;
         return;
       } else {
         vm->illegalArgumentException("");
@@ -233,7 +233,7 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
     } else if (prim->isByte()) {
       if (value == vm->upcalls->OfByte) {
         ((uint8*)buf)[0] = vm->upcalls->byteValue->getInt8Field(obj);
-        buf++;
+        buf += 2;
         return;
       } else {
         vm->illegalArgumentException("");
@@ -241,7 +241,7 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
     } else if (prim->isBool()) {
       if (value == vm->upcalls->OfBool) {
         ((uint8*)buf)[0] = vm->upcalls->boolValue->getInt8Field(obj);
-        buf++;
+        buf += 2;
         return;
       } else {
         vm->illegalArgumentException("");
@@ -260,7 +260,7 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
         vm->illegalArgumentException("");
       }
       ((sint32*)buf)[0] = val;
-      buf++;
+      buf += 2;
       return;
     } else if (prim->isChar()) {
       uint16 val = 0;
@@ -270,7 +270,7 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
         vm->illegalArgumentException("");
       }
       ((uint16*)buf)[0] = val;
-      buf++;
+      buf += 2;
       return;
     } else if (prim->isFloat()) {
       float val = 0;
@@ -290,7 +290,7 @@ void NativeUtil::decapsulePrimitive(Jnjvm *vm, void** &buf,
         vm->illegalArgumentException("");
       }
       ((float*)buf)[0] = val;
-      buf++;
+      buf += 2;
       return;
     } else if (prim->isDouble()) {
       double val = 0;

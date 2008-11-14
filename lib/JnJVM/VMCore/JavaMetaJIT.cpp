@@ -58,36 +58,28 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JnjvmClassLoader* loader,
       const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;\
       if (prim->isLong()){\
         ((sint64*)buf)[0] = va_arg(ap, sint64);\
-        buf += 2;\
       } else if (prim->isInt()){ \
         ((sint32*)buf)[0] = va_arg(ap, sint32);\
-        buf++; \
       } else if (prim->isChar()){ \
         ((uint32*)buf)[0] = va_arg(ap, uint32);\
-        buf++; \
       } else if (prim->isShort()){ \
         ((uint32*)buf)[0] = va_arg(ap, uint32);\
-        buf++; \
       } else if (prim->isByte()){ \
         ((uint32*)buf)[0] = va_arg(ap, uint32);\
-        buf++; \
       } else if (prim->isBool()){ \
         ((uint32*)buf)[0] = va_arg(ap, uint32);\
-        buf++;\
       } else if (prim->isFloat()){\
         ((float*)buf)[0] = (float)va_arg(ap, double);\
-        buf++;\
       } else if (prim->isDouble()){\
         ((double*)buf)[0] = va_arg(ap, double);\
-        buf += 2;\
       } else{\
         fprintf(stderr, "Can't happen");\
         abort();\
       }\
     } else{\
       ((JavaObject**)buf)[0] = va_arg(ap, JavaObject*);\
-      buf++; \
     }\
+    buf += 2; \
   }\
 
 
