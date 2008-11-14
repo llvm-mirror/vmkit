@@ -1511,47 +1511,39 @@ void JavaJIT::invokeSpecial(uint16 index) {
   makeArgs(it, index, args, signature->args.size() + 1);
   JITVerifyNull(args[0]); 
 
-  if (cl->equals(compilingClass->classLoader->bootstrapLoader->mathName)) {
-    val = lowerMathOps(name, args);
-  }
-
-
-  if (!val) {
 #if defined(ISOLATE_SHARING)
-    const Type* Ty = module->ConstantPoolType;
-    Constant* Nil = Constant::getNullValue(Ty);
-    GlobalVariable* GV = new GlobalVariable(Ty, false,
-                                            GlobalValue::ExternalLinkage, Nil,
-                                            "", module);
-    Value* res = new LoadInst(GV, "", false, currentBlock);
-    Value* test = new ICmpInst(ICmpInst::ICMP_EQ, res, Nil, "", currentBlock);
+  const Type* Ty = module->ConstantPoolType;
+  Constant* Nil = Constant::getNullValue(Ty);
+  GlobalVariable* GV = new GlobalVariable(Ty, false,
+                                          GlobalValue::ExternalLinkage, Nil,
+                                          "", module);
+  Value* res = new LoadInst(GV, "", false, currentBlock);
+  Value* test = new ICmpInst(ICmpInst::ICMP_EQ, res, Nil, "", currentBlock);
  
-    BasicBlock* trueCl = createBasicBlock("UserCtp OK");
-    BasicBlock* falseCl = createBasicBlock("UserCtp Not OK");
-    PHINode* node = llvm::PHINode::Create(Ty, "", trueCl);
-    node->addIncoming(res, currentBlock);
-    BranchInst::Create(falseCl, trueCl, test, currentBlock);
-    std::vector<Value*> Args;
-    Args.push_back(ctpCache);
-    Args.push_back(ConstantInt::get(Type::Int32Ty, index));
-    Args.push_back(GV);
-    res = CallInst::Create(module->SpecialCtpLookupFunction, Args.begin(),
-                           Args.end(), "", falseCl);
-    node->addIncoming(res, falseCl);
-    BranchInst::Create(trueCl, falseCl);
-    currentBlock = trueCl;
-    args.push_back(node);
+  BasicBlock* trueCl = createBasicBlock("UserCtp OK");
+  BasicBlock* falseCl = createBasicBlock("UserCtp Not OK");
+  PHINode* node = llvm::PHINode::Create(Ty, "", trueCl);
+  node->addIncoming(res, currentBlock);
+  BranchInst::Create(falseCl, trueCl, test, currentBlock);
+  std::vector<Value*> Args;
+  Args.push_back(ctpCache);
+  Args.push_back(ConstantInt::get(Type::Int32Ty, index));
+  Args.push_back(GV);
+  res = CallInst::Create(module->SpecialCtpLookupFunction, Args.begin(),
+                         Args.end(), "", falseCl);
+  node->addIncoming(res, falseCl);
+  BranchInst::Create(trueCl, falseCl);
+  currentBlock = trueCl;
+  args.push_back(node);
 #endif
-    Function* func = 
-      (Function*)ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
+  Function* func =   
+    (Function*)ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
                                                       signature, meth);
 
-    if (meth && canBeInlined(meth)) {
-      val = invokeInline(meth, args);
-    } else {
-      val = invoke(func, args, "", currentBlock);
-    }
-
+  if (meth && canBeInlined(meth)) {
+    val = invokeInline(meth, args);
+  } else {
+    val = invoke(func, args, "", currentBlock);
   }
   
   const llvm::Type* retType = virtualType->getReturnType();
@@ -1585,7 +1577,7 @@ void JavaJIT::invokeStatic(uint16 index) {
     val = lowerMathOps(name, args);
   }
 
-  if (cl->equals(loader->stackWalkerName)) {
+  else if (cl->equals(loader->stackWalkerName)) {
     callsStackWalker = true;
   }
 
@@ -1600,6 +1592,21 @@ void JavaJIT::invokeStatic(uint16 index) {
                                            module->ConstantPoolType, 0,
                                            false);
     args.push_back(newCtpCache);
+#endif
+    
+    // If we're not static compiling or we're not in an isolate environment,
+    // the callback will do the initialization
+#ifndef ISOLATE
+    if (module->isStaticCompiling()) {
+#endif
+      uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
+      Value* Cl = getResolvedClass(clIndex, true); 
+      if (!(meth && compilingClass->subclassOf(meth->classDef))) {
+        CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
+                         currentBlock);
+      }
+#ifndef ISOLATE
+    }
 #endif
 
     if (meth && canBeInlined(meth)) {

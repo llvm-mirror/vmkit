@@ -230,6 +230,11 @@ static void AddStandardCompilePasses(JnjvmModule* mod, FunctionPassManager *PM) 
   addPass(PM, createDeadStoreEliminationPass()); // Delete dead stores
   addPass(PM, createAggressiveDCEPass());        // Delete dead instructions
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+
+#ifndef ISOLATE
+  if (mod->isStaticCompiling())
+#endif
+    addPass(PM, mvm::createLowerForcedCallsPass());    // Remove forced initialization
   
 }
 

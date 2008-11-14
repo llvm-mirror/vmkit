@@ -43,8 +43,8 @@ extern const char* GNUClasspathLibs;
 JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   
   TheModule = new JnjvmModule("Bootstrap JnJVM");
-  TheModuleProvider = new JnjvmModuleProvider(getModule());
   getModule()->setIsStaticCompiling(staticCompilation);
+  TheModuleProvider = new JnjvmModuleProvider(getModule());
   
   hashUTF8 = new(allocator) UTF8Map(allocator, 0);
   classes = new(allocator) ClassMap();
