@@ -10,7 +10,7 @@
 #ifndef JNJVM_JAVA_THREAD_H
 #define JNJVM_JAVA_THREAD_H
 
-#include <setjmp.h>
+#include <csetjmp>
 
 #include "mvm/Object.h"
 #include "mvm/Threads/Cond.h"
