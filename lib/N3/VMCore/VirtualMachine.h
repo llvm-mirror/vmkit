@@ -29,6 +29,7 @@ class FunctionMap;
 class N3ModuleProvider;
 class UTF8;
 class UTF8Map;
+class VMMethod;
 class VMObject;
 class VMThread;
 
@@ -131,6 +132,8 @@ public:
   virtual void waitForExit() {
     // Currently unimplemented.
   }
+
+  VMMethod* lookupFunction(llvm::Function* F);
 
 };
 

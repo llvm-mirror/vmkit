@@ -10,7 +10,7 @@
 #ifndef MVM_JIT_H
 #define MVM_JIT_H
 
-#include <float.h>
+#include <cfloat>
 
 #include "llvm/Constants.h"
 #include "llvm/DerivedTypes.h"
@@ -25,7 +25,6 @@
 #include "types.h"
 
 #include "mvm/Allocator.h"
-#include "mvm/Method.h"
 #include "mvm/MvmMemoryManager.h"
 #include "mvm/Threads/Locks.h"
 
@@ -177,8 +176,8 @@ public:
   static int disassemble(unsigned int* addr);
 
   static int getBacktrace(void** stack, int size);
-  static Code* getCodeFromPointer(void* addr);
-  static void addMethodInfo(void* end, Code* c);
+  static const llvm::Function* getCodeFromPointer(void* addr);
+  static void addMethodInfo(void* end, const llvm::Function* F);
 
   static uint8  (*llvm_atomic_cmp_swap_i8)  (uint8* ptr,  uint8 cmp,
                                              uint8 val);

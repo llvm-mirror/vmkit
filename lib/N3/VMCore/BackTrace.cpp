@@ -8,11 +8,10 @@
 //===----------------------------------------------------------------------===//
 
 
-#include <stdio.h>
+#include <cstdio>
 #include <dlfcn.h>
 
 #include "mvm/JIT.h"
-#include "mvm/Method.h"
 #include "mvm/Object.h"
 
 #include "Assembly.h"
@@ -29,9 +28,9 @@ void CLIJit::printBacktrace() {
   int real_size = mvm::MvmModule::getBacktrace((void**)(void*)ips, 100);
   int n = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::MvmModule::getCodeFromPointer(ips[n++]);
-    if (code) {
-      VMMethod* meth = (VMMethod*)code->getMetaInfo();
+    const llvm::Function* F = mvm::MvmModule::getCodeFromPointer(ips[n++]);
+    if (F) {
+      VMMethod* meth = CLIJit::getMethod(F);
       if (meth) {
         printf("; %p in %s\n",  (void*)ips[n - 1], meth->printString());
       } else {
@@ -56,9 +55,9 @@ Assembly* Assembly::getExecutingAssembly() {
   int real_size = mvm::MvmModule::getBacktrace((void**)(void*)ips, 5);
   int n = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::MvmModule::getCodeFromPointer(ips[n++]);
-    if (code) {
-      VMMethod* meth = (VMMethod*)code->getMetaInfo();
+    const llvm::Function* F = mvm::MvmModule::getCodeFromPointer(ips[n++]);
+    if (F) {
+      VMMethod* meth = CLIJit::getMethod(F);
       if (meth) {
         return meth->classDef->assembly;
       }
@@ -73,9 +72,9 @@ Assembly* Assembly::getCallingAssembly() {
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::MvmModule::getCodeFromPointer(ips[n++]);
-    if (code) {
-      VMMethod* meth = (VMMethod*)code->getMetaInfo();
+    const llvm::Function* F = mvm::MvmModule::getCodeFromPointer(ips[n++]);
+    if (F) {
+      VMMethod* meth = CLIJit::getMethod(F);
       if (meth && i >= 1) {
         return meth->classDef->assembly;
       } else {

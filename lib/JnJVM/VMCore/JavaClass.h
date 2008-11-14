@@ -16,7 +16,6 @@
 
 #include "mvm/Allocator.h"
 #include "mvm/JIT.h"
-#include "mvm/Method.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Cond.h"

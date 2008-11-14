@@ -24,7 +24,6 @@
 #include <llvm/Support/CFG.h>
 
 #include "mvm/JIT.h"
-#include "mvm/Method.h"
 
 #include "debug.h"
 #include "JavaArray.h"

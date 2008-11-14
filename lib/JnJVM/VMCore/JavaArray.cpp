@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <stdarg.h>
-#include <stdlib.h>
+#include <cstdarg>
+#include <cstdlib>
 
 #include "JavaArray.h"
 #include "JavaClass.h"

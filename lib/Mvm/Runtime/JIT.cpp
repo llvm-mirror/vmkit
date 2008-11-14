@@ -15,10 +15,9 @@
 #include "llvm/Support/MutexGuard.h"
 #include "llvm/Target/TargetOptions.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "mvm/JIT.h"
-#include "mvm/Method.h"
 #include "mvm/MvmMemoryManager.h"
 #include "mvm/Object.h"
 #include "mvm/Threads/Thread.h"
@@ -301,25 +300,25 @@ int MvmModule::getBacktrace(void** stack, int size) {
   return cpt;
 }
 
-LockNormal lock;
-std::map<void*, Code*> pointerMap;
+static LockNormal lock;
+static std::map<void*, const llvm::Function*> pointerMap;
 
-Code* MvmModule::getCodeFromPointer(void* Addr) {
+const llvm::Function* MvmModule::getCodeFromPointer(void* Addr) {
   lock.lock();
-  std::map<void*, Code*>::iterator I =
+  std::map<void*, const llvm::Function*>::iterator I =
     pointerMap.lower_bound(Addr);
   
   lock.unlock();
   if (I != pointerMap.end()) {
-    Code* m = I->second;
-    if (Addr >= m->FunctionStart) return m;
+    const llvm::Function* F = I->second;
+    if (Addr >= executionEngine->getPointerToGlobal(F)) return F;
   }
 
   return 0;
 }
 
-void MvmModule::addMethodInfo(void* Addr, Code* C) {
+void MvmModule::addMethodInfo(void* Addr, const llvm::Function* F) {
   lock.lock();
-  pointerMap.insert(std::make_pair(Addr, C));
+  pointerMap.insert(std::make_pair(Addr, F));
   lock.unlock();
 }

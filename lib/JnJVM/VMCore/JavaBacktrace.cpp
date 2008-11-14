@@ -7,28 +7,26 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <stdio.h>
+#include <cstdio>
 #include <dlfcn.h>
 
 #include "mvm/JIT.h"
-#include "mvm/Method.h"
 #include "mvm/Object.h"
 
 #include "JavaClass.h"
 #include "JavaJIT.h"
 #include "JavaThread.h"
 #include "Jnjvm.h"
+#include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
 
 using namespace jnjvm;
 
 JavaMethod* JavaJIT::IPToJavaMethod(void* begIp) {
-  mvm::Code* code = mvm::MvmModule::getCodeFromPointer(begIp);
-  if (code) {
-    JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
-    if (meth) {
-      return meth;
-    }
+  const llvm::Function* F = mvm::MvmModule::getCodeFromPointer(begIp);
+  if (F) {
+    JavaMethod* meth = LLVMMethodInfo::get(F);
+    return meth;
   }
   return 0;
 }
@@ -38,14 +36,9 @@ void JavaJIT::printBacktrace() {
   int real_size = mvm::MvmModule::getBacktrace((void**)(void*)ips, 100);
   int n = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::MvmModule::getCodeFromPointer(ips[n++]);
-    if (code) {
-      JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
-      if (meth) {
-        printf("; %p in %s\n",  (void*)ips[n - 1], meth->printString());
-      } else {
-        printf("; %p in %s\n",  (void*)ips[n - 1], "unknown");
-      }
+    JavaMethod* meth = IPToJavaMethod(ips[n++]);
+    if (meth) {
+      printf("; %p in %s\n",  (void*)ips[n - 1], meth->printString());
     } else {
       Dl_info info;
       int res = dladdr(ips[n++], &info);
@@ -68,15 +61,12 @@ UserClass* JavaJIT::getCallingClass() {
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::MvmModule::getCodeFromPointer(ips[n++]);
-    if (code) {
-      JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
-      if (meth) {
-        if (i == 1) {
-          return meth->classDef;
-        } else {
-          ++i;
-        }
+    JavaMethod* meth = IPToJavaMethod(ips[n++]);
+    if (meth) {
+      if (i == 1) {
+        return meth->classDef;
+      } else {
+        ++i;
       }
     }
   }
@@ -89,15 +79,12 @@ UserClass* JavaJIT::getCallingClassWalker() {
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::MvmModule::getCodeFromPointer(ips[n++]);
-    if (code) {
-      JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
-      if (meth) {
-        if (i == 1) {
-          return meth->classDef;
-        } else {
-          ++i;
-        }
+    JavaMethod* meth = IPToJavaMethod(ips[n++]);
+    if (meth) {
+      if (i == 1) {
+        return meth->classDef;
+      } else {
+        ++i;
       }
     }
   }
@@ -113,16 +100,13 @@ UserClass* JavaJIT::getCallingClass() {
   int n = 0;
   int i = 0;
   while (n < real_size) {
-    mvm::Code* code = mvm::MvmModule::getCodeFromPointer(ips[n++]);
-    if (code) {
-      JavaMethod* meth = (JavaMethod*)code->getMetaInfo();
-      if (meth) {
-        if (i == 1) {
-          res = meth->classDef;
-          break;
-        } else {
-          ++i;
-        }
+    JavaMethod* meth = IPToJavaMethod(ips[n++]);
+    if (meth) {
+      if (i == 1) {
+        res = meth->classDef;
+        break;
+      } else {
+        ++i;
       }
     }
   }

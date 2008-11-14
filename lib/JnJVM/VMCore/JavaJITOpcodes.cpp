@@ -11,7 +11,7 @@
 #define JNJVM_COMPILE 0
 #define JNJVM_EXECUTE 0
 
-#include <string.h>
+#include <cstring>
 
 #include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
@@ -21,7 +21,6 @@
 #include <llvm/Type.h>
 
 #include "mvm/JIT.h"
-#include "mvm/Method.h"
 
 #include "debug.h"
 

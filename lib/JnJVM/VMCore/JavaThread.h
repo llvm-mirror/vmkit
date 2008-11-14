@@ -54,7 +54,7 @@ public:
   }
 
   Jnjvm* getJVM() {
-    return (Jnjvm*)vm;
+    return (Jnjvm*)MyVM;
   }
 
   static JavaObject* currentThread() {

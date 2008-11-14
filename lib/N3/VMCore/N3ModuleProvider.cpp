@@ -11,12 +11,10 @@
 #include <llvm/ModuleProvider.h>
 
 #include "mvm/JIT.h"
-#include "mvm/Method.h"
 
 #include "Assembly.h"
 #include "CLIJit.h"
 #include "N3ModuleProvider.h"
-
 #include "VMClass.h"
 
 using namespace llvm;
@@ -40,8 +38,6 @@ bool N3ModuleProvider::materializeFunction(Function *F, std::string *ErrInfo) {
         CLIJit::compile(meth->classDef, meth);
         void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(meth->methPtr);
         meth->code = res;
-        mvm::Code* code = mvm::MvmModule::getCodeFromPointer(res);
-        code->setMetaInfo(meth);
       }
       meth->classDef->release();
       meth->classDef->resolveStatic(true, NULL);

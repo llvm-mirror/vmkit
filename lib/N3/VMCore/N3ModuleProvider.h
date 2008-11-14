@@ -29,6 +29,10 @@ public:
   bool materializeFunction(Function *F, std::string *ErrInfo = 0);
 
   Module* materializeModule(std::string *ErrInfo = 0) { return TheModule; }
+
+  VMMethod* lookupFunction(Function* F) {
+    return functions->lookup(F);
+  }
 };
 
 } // End n3 namespace

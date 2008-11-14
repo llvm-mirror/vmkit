@@ -29,7 +29,6 @@
 
 
 #include "mvm/JIT.h"
-#include "mvm/Method.h"
 
 #include "Assembly.h"
 #include "CLIAccess.h"
@@ -47,8 +46,6 @@
 
 using namespace llvm;
 using namespace n3;
-
-#include <iostream>
 
 void Exception::print(mvm::PrintBuffer* buf) const {
   buf->write("Exception<>");
@@ -1469,6 +1466,18 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   return func;
 }
 
+static AnnotationID CLIMethod_ID(
+  AnnotationManager::getID("CLI::VMMethod"));
+
+
+class N3Annotation: public llvm::Annotation {
+public:
+  VMMethod* meth;
+
+  N3Annotation(VMMethod* M) : llvm::Annotation(CLIMethod_ID), meth(M) {}
+};
+
+
 llvm::Function *VMMethod::compiledPtr(VMGenericMethod* genMethod) {
   if (methPtr != 0) return methPtr;
   else {
@@ -1477,10 +1486,18 @@ llvm::Function *VMMethod::compiledPtr(VMGenericMethod* genMethod) {
       methPtr = Function::Create(getSignature(genMethod), GlobalValue::GhostLinkage,
                                    printString(), classDef->vm->module);
       classDef->vm->functions->hash(methPtr, this);
+      N3Annotation* A = new N3Annotation(this);
+      methPtr->addAnnotation(A);
     }
     classDef->release();
     return methPtr;
   }
+}
+
+VMMethod* CLIJit::getMethod(const llvm::Function* F) {
+  N3Annotation* A = (N3Annotation*)F->getAnnotation(CLIMethod_ID);
+  if (A) return A->meth;
+  return 0;
 }
 
 void VMField::initField(VMObject* obj) {

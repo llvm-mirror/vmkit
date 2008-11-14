@@ -7,11 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <stdarg.h>
-#include <string.h>
+#include <cstdarg>
+#include <cstring>
 
 #include "mvm/JIT.h"
-#include "mvm/Method.h"
 
 #include "debug.h"
 #include "JavaArray.h"

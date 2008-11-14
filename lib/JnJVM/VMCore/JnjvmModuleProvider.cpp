@@ -113,8 +113,6 @@ void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
   Function* func = parseFunction(meth);
   
   void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
-  mvm::Code* m = mvm::MvmModule::getCodeFromPointer(res);
-  if (m) m->setMetaInfo(meth);
   func->deleteBody();
 
   return res;

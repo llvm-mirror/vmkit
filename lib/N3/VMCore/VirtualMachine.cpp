@@ -159,3 +159,7 @@ VirtualMachine::VirtualMachine() {
   module = 0;
   TheModuleProvider = 0;
 }
+
+VMMethod* VirtualMachine::lookupFunction(Function* F) {
+  return functions->lookup(F);
+}

@@ -12,7 +12,6 @@
 
 #include "types.h"
 
-#include "mvm/Method.h"
 #include "mvm/Object.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Cond.h"

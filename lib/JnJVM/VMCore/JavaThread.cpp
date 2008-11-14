@@ -33,7 +33,7 @@ void JavaThread::print(mvm::PrintBuffer* buf) const {
 JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
   javaThread = thread;
   vmThread = vmth;
-  vm = isolate;
+  MyVM = isolate;
   interruptFlag = 0;
   state = StateRunning;
   pendingException = 0;

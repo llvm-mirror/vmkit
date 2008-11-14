@@ -90,7 +90,7 @@ public:
  
 public:
   
-  VirtualMachine* vm;
+  VirtualMachine* MyVM;
 
   /// baseSP - The base stack pointer.
   ///

@@ -19,17 +19,11 @@ using namespace llvm;
 
 namespace mvm {
 
-class Code;
-
 /// MvmMemoryManager - This class is a wrapper to the default JITMemoryManager
 /// in LLVM. It creates Code objects for backtraces and getting virtual machine
 /// information out of dynamically generated native code.
 ///
 class MvmMemoryManager : public JITMemoryManager {
-  
-  /// currentMethod -  Current method being compiled.
-  ///
-  Code* currentMethod;
   
   /// realMemoryManager - The real allocator 
   JITMemoryManager* realMemoryManager;
@@ -47,7 +41,9 @@ public:
   /// is required to pass back a "valid size".  The JIT will be careful to not
   /// write more than the returned ActualSize bytes of memory. 
   virtual unsigned char *startFunctionBody(const Function *F, 
-                                           uintptr_t &ActualSize);
+                                           uintptr_t &ActualSize) {
+    return realMemoryManager->startFunctionBody(F, ActualSize);
+  }
   
   /// allocateStub - This method is called by the JIT to allocate space for a
   /// function stub (used to handle limited branch displacements) while it is
@@ -58,7 +54,9 @@ public:
   /// but should not be included in the 'actualsize' returned by
   /// startFunctionBody.
   virtual unsigned char *allocateStub(const GlobalValue* GV, unsigned StubSize,
-                                      unsigned Alignment);
+                                      unsigned Alignment) {
+    return realMemoryManager->allocateStub(GV, StubSize, Alignment);
+  }
   
   /// endFunctionBody - This method is called when the JIT is done codegen'ing
   /// the specified function.  At this point we know the size of the JIT
@@ -71,28 +69,39 @@ public:
   
   /// deallocateMemForFunction - Free JIT memory for the specified function.
   /// This is never called when the JIT is currently emitting a function.
-  virtual void deallocateMemForFunction(const Function *F);
+  virtual void deallocateMemForFunction(const Function *F) {
+    return realMemoryManager->deallocateMemForFunction(F);
+  }
   
   /// AllocateGOT - If the current table requires a Global Offset Table, this
   /// method is invoked to allocate it.  This method is required to set HasGOT
   /// to true.
-  virtual void AllocateGOT();
+  virtual void AllocateGOT() {
+    return realMemoryManager->AllocateGOT();
+  }
 
   /// getGOTBase - If this is managing a Global Offset Table, this method should
   /// return a pointer to its base.
-  virtual unsigned char *getGOTBase() const;
+  virtual unsigned char *getGOTBase() const {
+    return realMemoryManager->getGOTBase();
+  }
   
 
   /// startExceptionTable - When we finished JITing the function, if exception
   /// handling is set, we emit the exception table.
   virtual unsigned char* startExceptionTable(const Function* F,
-                                             uintptr_t &ActualSize);
+                                             uintptr_t &ActualSize) {
+    return realMemoryManager->startExceptionTable(F, ActualSize);
+  }
   
   /// endExceptionTable - This method is called when the JIT is done emitting
   /// the exception table.
   virtual void endExceptionTable(const Function *F, unsigned char *TableStart,
                                unsigned char *TableEnd, 
-                               unsigned char* FrameRegister);
+                               unsigned char* FrameRegister) {
+    return realMemoryManager->endExceptionTable(F, TableStart, TableEnd,
+                                                FrameRegister);
+  }
   
   virtual void setMemoryWritable() {
     realMemoryManager->setMemoryWritable();

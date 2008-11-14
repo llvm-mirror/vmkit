@@ -11,7 +11,7 @@
 #define N3_COMPILE 0
 #define N3_EXECUTE 0
 
-#include <string.h>
+#include <cstring>
 
 #include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
@@ -26,7 +26,6 @@
 #include <llvm/Target/TargetOptions.h>
 
 #include "mvm/JIT.h"
-#include "mvm/Method.h"
 
 #include "debug.h"
 
