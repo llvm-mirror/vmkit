@@ -132,7 +132,9 @@ StackThreadManager TheStackManager;
 ///
 void Thread::internalThreadStart(mvm::Thread* th) {
   th->baseSP  = (void*)&th;
-
+#ifdef ISOLATE
+  th->IsolateID = th->vm->IsolateID;
+#endif
   Collector::inject_my_thread(th); 
   th->routine(th);
   Collector::remove_my_thread(th);

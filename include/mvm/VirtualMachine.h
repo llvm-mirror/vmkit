@@ -18,6 +18,7 @@
 #include "mvm/Allocator.h"
 #include "mvm/CompilationUnit.h"
 #include "mvm/Object.h"
+#include "mvm/Threads/Locks.h"
 
 namespace mvm {
 

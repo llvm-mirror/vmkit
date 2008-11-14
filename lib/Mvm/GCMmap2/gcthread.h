@@ -47,7 +47,7 @@ public:
 };
 
 class GCThread {
-  /// _globalLoc - Global lock for gcmalloc.
+  /// _globalLock - Global lock for gcmalloc.
   GCLockRecovery _globalLock;
 
   /// _stackLock - Stack lock for synchronization.
@@ -114,6 +114,9 @@ public:
     th->remove();
     _nb_threads--;
     if (!_nb_threads) base = 0;
+#ifdef SERVICE
+    th->theVM->numThreads--;
+#endif
     unlock();
   }
 
@@ -124,6 +127,9 @@ public:
     else
       base = th;
     _nb_threads++;
+#ifdef SERVICE
+    th->theVM->numThreads++;
+#endif
     unlock();
   }
 };
