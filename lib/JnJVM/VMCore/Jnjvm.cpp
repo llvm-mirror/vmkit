@@ -117,6 +117,20 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
     //    Class object.
     setOwnerClass(self);
     setInitializationState(inClinit);
+    UserClass* cl = (UserClass*)this;
+#if defined(ISOLATE) || defined(ISOLATE_SHARING)
+    // Isolate environments allocate the static instance on their own, not when
+    // the class is being resolved.
+    JavaObject* val = cl->allocateStaticInstance(vm);
+#else
+    // Single environment allocates the static instance during resolution, so
+    // that compiled code can access it directly (with an initialization
+    // check just before the access)
+    JavaObject* val = cl->getStaticInstance();
+    if (!val) {
+      val = cl->allocateStaticInstance(vm);
+    }
+#endif
     release();
   
 
@@ -160,19 +174,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
     PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", printString());
 
 
-    UserClass* cl = (UserClass*)this;
-
-#if defined(ISOLATE) || defined(ISOLATE_SHARING)
-    // Isolate environments allocate the static instance on their own, not when
-    // the class is being resolved.
-    JavaObject* val = cl->allocateStaticInstance(vm);
-#else
-    // Single environment allocates the static instance during resolution, so
-    // that compiled code can access it directly (with an initialization
-    // check just before the access)
-    JavaObject* val = cl->getStaticInstance();
-#endif
-    
+ 
     JavaField* fields = cl->getStaticFields();
     for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
       fields[i].initField(val, vm);

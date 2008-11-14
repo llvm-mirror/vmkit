@@ -900,10 +900,6 @@ void CommonClass::resolveClass() {
         JnjvmModule *Mod = classLoader->getModule();
         Mod->resolveVirtualClass(cl);
         Mod->resolveStaticClass(cl);
-#ifndef ISOLATE
-        // Allocate now so that compiled code can reference it.
-        cl->allocateStaticInstance(JavaThread::get()->getJVM());
-#endif
         cl->status = resolved;
       }
       release();

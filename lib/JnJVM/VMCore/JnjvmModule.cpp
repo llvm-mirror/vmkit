@@ -177,8 +177,17 @@ Value* JnjvmModule::getStaticInstance(Class* classDef) {
     LLVMClassInfo* LCI = getClassInfo(classDef);
     LCI->getStaticType();
     JavaObject* obj = ((Class*)classDef)->getStaticInstance();
-    assert((obj || isStaticCompiling()) && 
-           "Getting static instance before it's created!");
+#ifndef ISOLATE
+    if (!obj && !isStaticCompiling()) {
+      Class* cl = (Class*)classDef;
+      classDef->acquire();
+      if (!(cl->getStaticInstance())) {
+        // Allocate now so that compiled code can reference it.
+        cl->allocateStaticInstance(JavaThread::get()->getJVM());
+      }
+      classDef->release();
+    }
+#endif
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                                 uint64_t (obj)), JnjvmModule::JavaObjectType);
