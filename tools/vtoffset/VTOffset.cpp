@@ -24,12 +24,12 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const {
     printf("in print!\n");
   }
-  virtual int hashCode() {
+  virtual intptr_t hashCode() {
     printf("in hashcode!\n");
     return 1;
   }
 
-  virtual void tracer(size_t sz) {
+  virtual void tracer() {
     printf("in tracer\n");
   }
 
@@ -69,11 +69,16 @@ int main(int argc, char **argv, char **envp) {
   Toto::VT =((void**)(void*)&t)[0];
   toto_t* ptr = (toto_t*)Toto::VT;
   printf("ptr[0] = %d, ptr[1]= %d, ptr[2] = %d ptr[3] = %d ptr[4] = %d ptr[5] = %d\n", ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5]);
+  printf("0 = \n");
   ptr[0](&t);
   //ptr[1](&t); // This should be ~gc
+  printf("2 = \n");
   ptr[2](&t);
+  printf("3 = \n");
   ptr[3](&t);
+  printf("4 = \n");
   ptr[4](&t);
+  printf("5 = \n");
   ptr[5](&t);
 }
 {
@@ -81,7 +86,6 @@ int main(int argc, char **argv, char **envp) {
   Tata::VT =((void**)(void*)&t)[0];
   tata_t* ptr = (tata_t*)Tata::VT;
   printf("ptr[0] = %d, ptr[1]= %d, ptr[2] = %d ptr[3] = %d ptr[4] = %d ptr[5] = %d\n", ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5]);
-  printf("Call des\n");
   ptr[0](&t);
   printf("End\n");
   //ptr[1](&t); // This should be ~gc
