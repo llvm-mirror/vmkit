@@ -37,7 +37,7 @@ template <class T>
 class TJavaArray : public JavaObject {
 public:
   /// size - The (constant) size of the array.
-  sint32 size;
+  ssize_t size;
 
   /// elements - Elements of this array. The size here is different than the
   /// actual size of the Java array. This is to facilitate Java array accesses

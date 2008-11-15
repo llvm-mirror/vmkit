@@ -70,10 +70,24 @@ static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
   GEP.push_back(module->OffsetTaskClassMirrorInClassConstant);
   Value* TCMArray = GetElementPtrInst::Create(Arg, GEP.begin(), GEP.end(),
                                               "", CI);
+
+  Value* threadId = CallInst::Create(module->llvm_frameaddress,
+                                     module->constantZero, "", CI);
+  threadId = new PtrToIntInst(threadId, module->pointerSizeType, "", CI);
+  threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+                                       "", CI);
+  
+  threadId = new IntToPtrInst(threadId, module->ptr32Type, "", CI);
+  
+  GEP.clear();
+  GEP.push_back(module->constantThree);
+  Value* IsolateID = GetElementPtrInst::Create(threadId, GEP.begin(), GEP.end(),
+                                               "", CI);
+  IsolateID = new LoadInst(IsolateID, "", CI);
+
   GEP.clear();
   GEP.push_back(module->constantZero);
-  // TODO get the isolate id
-  GEP.push_back(module->constantZero);
+  GEP.push_back(IsolateID);
   Value* TCM = GetElementPtrInst::Create(TCMArray, GEP.begin(), GEP.end(), "",
                                          CI);
   return TCM;
@@ -103,6 +117,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* ptr = GetElementPtrInst::Create(array, args.begin(), args.end(),
                                          "", CI);
           Value* load = new LoadInst(ptr, "", CI);
+          load = new PtrToIntInst(load, module->pointerSizeType, "", CI);
           CI->replaceAllUsesWith(load);
           CI->eraseFromParent();
         } else if (V == module->GetVTFunction) {

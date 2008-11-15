@@ -32,17 +32,17 @@
 %JavaObject = type { %VT, %JavaClass*, i8* }
 
 ;;; Types for Java arrays. A size of 0 means an undefined size.
-%JavaArray = type { %JavaObject, i32 }
-%ArrayDouble = type { %JavaObject, i32, [0 x double] }
-%ArrayFloat = type { %JavaObject, i32, [0 x float] }
-%ArrayLong = type { %JavaObject, i32, [0 x i64] }
-%ArrayObject = type { %JavaObject, i32, [0 x %JavaObject*] }
-%ArraySInt16 = type { %JavaObject, i32, [0 x i16] }
-%ArraySInt32 = type { %JavaObject, i32, [0 x i32] }
-%ArraySInt8 = type { %JavaObject, i32, [0 x i8] }
-%ArrayUInt16 = type { %JavaObject, i32, [0 x i16] }
-%ArrayUInt32 = type { %JavaObject, i32, [0 x i32] }
-%ArrayUInt8 = type { %JavaObject, i32, [0 x i8] }
+%JavaArray = type { %JavaObject, i8* }
+%ArrayDouble = type { %JavaObject, i8*, [0 x double] }
+%ArrayFloat = type { %JavaObject, i8*, [0 x float] }
+%ArrayLong = type { %JavaObject, i8*, [0 x i64] }
+%ArrayObject = type { %JavaObject, i8*, [0 x %JavaObject*] }
+%ArraySInt16 = type { %JavaObject, i8*, [0 x i16] }
+%ArraySInt32 = type { %JavaObject, i8*, [0 x i32] }
+%ArraySInt8 = type { %JavaObject, i8*, [0 x i8] }
+%ArrayUInt16 = type { %JavaObject, i8*, [0 x i16] }
+%ArrayUInt32 = type { %JavaObject, i8*, [0 x i32] }
+%ArrayUInt8 = type { %JavaObject, i8*, [0 x i8] }
 
 ;;; The CacheNode type. The second field is the last called method. The
 ;;; last field is for multi vm environment.

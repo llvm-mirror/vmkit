@@ -1944,6 +1944,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         gep4.push_back(module->JavaArraySizeOffsetConstant);
         Value* GEP = GetElementPtrInst::Create(cast, gep4.begin(), gep4.end(),
                                                "", currentBlock);
+        
+        arg1 = new IntToPtrInst(arg1, module->ptrType, "", currentBlock);
         new StoreInst(arg1, GEP, currentBlock);
         
         // Set the class
