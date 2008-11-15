@@ -51,6 +51,7 @@ llvm::Constant*     JnjvmModule::UTF8NullConstant;
 llvm::Constant*     JnjvmModule::JavaClassNullConstant;
 llvm::Constant*     JnjvmModule::MaxArraySizeConstant;
 llvm::Constant*     JnjvmModule::JavaObjectSizeConstant;
+llvm::Constant*     JnjvmModule::JavaArraySizeConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetObjectSizeInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetVTInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetDepthInClassConstant;
@@ -977,6 +978,8 @@ void JnjvmModule::initialise() {
   MaxArraySizeConstant = ConstantInt::get(Type::Int32Ty,
                                           JavaArray::MaxArraySize);
   JavaObjectSizeConstant = ConstantInt::get(Type::Int32Ty, sizeof(JavaObject));
+  JavaArraySizeConstant = 
+    ConstantInt::get(Type::Int32Ty, sizeof(JavaObject) + sizeof(ssize_t));
   
   
   JavaArrayElementsOffsetConstant = mvm::MvmModule::constantTwo;

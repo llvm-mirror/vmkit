@@ -1927,7 +1927,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* mult = BinaryOperator::CreateMul(arg1, sizeElement, "",
                                                 currentBlock);
         Value* size =
-          BinaryOperator::CreateAdd(module->JavaObjectSizeConstant, mult,
+          BinaryOperator::CreateAdd(module->JavaArraySizeConstant, mult,
                                     "", currentBlock);
         assert(TheVT && "Not VT");
         std::vector<Value*> args;

@@ -330,6 +330,7 @@ public:
   static llvm::Constant*    UTF8NullConstant;
   static llvm::Constant*    MaxArraySizeConstant;
   static llvm::Constant*    JavaObjectSizeConstant;
+  static llvm::Constant*    JavaArraySizeConstant;
 
   llvm::Function* GetExceptionFunction;
   llvm::Function* GetJavaExceptionFunction;

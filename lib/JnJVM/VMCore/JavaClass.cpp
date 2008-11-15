@@ -360,7 +360,7 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::Allocator& allocator) {
   assert(cl && virtualVT && "array class not resolved");
 
   uint32 primSize = cl->isPrimitive() ? cl->virtualSize : sizeof(JavaObject*);
-  uint32 size = sizeof(JavaObject) + sizeof(sint32) + n * primSize;
+  uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + n * primSize;
   JavaArray* res = (JavaArray*)allocator.allocateManagedObject(size,
                                                                virtualVT);
   res->initialise(this);
@@ -373,7 +373,7 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator) {
   assert(cl && virtualVT && "array class not resolved");
 
   uint32 primSize = cl->isPrimitive() ? cl->virtualSize : sizeof(JavaObject*);
-  uint32 size = sizeof(JavaObject) + sizeof(sint32) + n * primSize;
+  uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + n * primSize;
   JavaArray* res = (JavaArray*)allocator.Allocate(size);
   ((void**)res)[0] = virtualVT;
   res->initialise(this);

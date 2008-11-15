@@ -119,7 +119,8 @@ private:
   /// its objects in permanent memory, not with the garbage collector.
   void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
                      sint32 size) {
-    return allocator.Allocate(sz + size * sizeof(uint16));
+    return allocator.Allocate(sizeof(JavaObject) + sizeof(ssize_t) + 
+                              size * sizeof(uint16));
   }
   
   /// acons - Allocates an UTF8 in permanent memory. The class argument must be
