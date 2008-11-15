@@ -117,7 +117,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* ptr = GetElementPtrInst::Create(array, args.begin(), args.end(),
                                          "", CI);
           Value* load = new LoadInst(ptr, "", CI);
-          load = new PtrToIntInst(load, module->pointerSizeType, "", CI);
+          load = new PtrToIntInst(load, Type::Int32Ty, "", CI);
           CI->replaceAllUsesWith(load);
           CI->eraseFromParent();
         } else if (V == module->GetVTFunction) {
