@@ -10,8 +10,6 @@
 #ifndef MVM_OBJECT_H
 #define MVM_OBJECT_H
 
-#include <assert.h>
-
 #include "types.h"
 #include "MvmGC.h"
 
