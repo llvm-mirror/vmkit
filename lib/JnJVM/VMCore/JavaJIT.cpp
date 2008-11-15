@@ -198,44 +198,6 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   endBlock = createBasicBlock("end block");
   returnType = funcType->getReturnType();
 
-#if defined(ISOLATE_SHARING)
-  Value* lastArg = 0;
-  for (Function::arg_iterator i = func->arg_begin(), e = func->arg_end();
-       i != e; ++i) {
-    lastArg = i;
-  }
-#if !defined(SERVICE_VM)
-  ctpCache = lastArg;
-  lastArg--;
-  isolateLocal = lastArg;
-#else
-  ctpCache = lastArg;
-  lastArg--;
-  if (compilingClass->isolate == Jnjvm::bootstrapVM) {
-    isolateLocal = lastArg;
-  } else {
-    JavaObject* loader = compilingClass->classLoader;
-    ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
-    LLVMServiceInfo* LSI = module->getServiceInfo(vm);
-    isolateLocal = LSI->getDelegatee(this);
-    Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, lastArg, 
-                              isolateLocal, "", currentBlock);
-    BasicBlock* ifTrue = createBasicBlock("true service call");
-    BasicBlock* endBlock = createBasicBlock("end check service call");
-    BranchInst::Create(ifTrue, endBlock, cmp, currentBlock);
-    currentBlock = ifTrue;
-    std::vector<Value*> Args;
-    Args.push_back(lastArg);
-    Args.push_back(isolateLocal);
-    CallInst::Create(module->ServiceCallStartFunction, Args.begin(),
-                     Args.end(), "", currentBlock);
-    BranchInst::Create(endBlock, currentBlock);
-    currentBlock = endBlock;
-  }
-#endif
-#endif
-
-  
   Value* buf = llvm::CallInst::Create(module->GetSJLJBufferFunction,
                                       "", currentBlock);
   Value* test = llvm::CallInst::Create(module->setjmpLLVM, buf, "",
@@ -546,36 +508,6 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     }
   }
 
-#if defined(ISOLATE_SHARING)
-#if !defined(SERVICE_VM)
-  isolateLocal = args[args.size() - 2];
-  ctpCache = args[args.size() - 1];
-#else
-  ctpCache = args[args.size() - 1];
-  if (compilingClass->isolate == Jnjvm::bootstrapVM) {
-    isolateLocal = args[args.size() - 2];
-  } else {
-    JavaObject* loader = compilingClass->classLoader;
-    ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
-    LLVMServiceInfo* LSI = module->getServiceInfo(vm);
-    isolateLocal = LSI->getDelegatee(this);
-    Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, args[args.size() - 1], 
-                              isolateLocal, "", currentBlock);
-    BasicBlock* ifTrue = createBasicBlock("true service call");
-    BasicBlock* endBlock = createBasicBlock("end check service call");
-    BranchInst::Create(ifTrue, endBlock, cmp, currentBlock);
-    currentBlock = ifTrue;
-    std::vector<Value*> Args;
-    Args.push_back(args[args.size()-  2]);
-    Args.push_back(isolateLocal);
-    CallInst::Create(module->ServiceCallStartFunction, Args.begin(),
-                     Args.end(), "", currentBlock);
-    BranchInst::Create(endBlock, currentBlock);
-    currentBlock = endBlock;
-  }
-#endif
-#endif
-  
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
   nbEnveloppes = 0;
 
@@ -588,25 +520,6 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "--> end inline compiling %s\n",
               compilingMethod->printString());
 
-#if defined(SERVICE_VM)
-  if (compilingClass->isolate != Jnjvm::bootstrapVM) {
-    Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, args[args.size() - 1], 
-                              isolateLocal, "", currentBlock);
-    BasicBlock* ifTrue = createBasicBlock("true service call");
-    BasicBlock* newEndBlock = createBasicBlock("end check service call");
-    BranchInst::Create(ifTrue, newEndBlock, cmp, currentBlock);
-    currentBlock = ifTrue;
-    std::vector<Value*> Args;
-    Args.push_back(args[args.size() - 1]);
-    Args.push_back(isolateLocal);
-    CallInst::Create(module->ServiceCallStopFunction, Args.begin(),
-                     Args.end(), "", currentBlock);
-    BranchInst::Create(newEndBlock, currentBlock);
-    currentBlock = newEndBlock;
-    endBlock = currentBlock;
-  }
-#endif
-  
   curBB = endBlock;
   return endNode;
     
@@ -717,41 +630,45 @@ llvm::Function* JavaJIT::javaCompile() {
   }
 
 #if defined(ISOLATE_SHARING)
-#if !defined(SERVICE_VM)
-  isolateLocal = i;
-  i++;
   ctpCache = i;
-#else
-  if (compilingClass->isolate == Jnjvm::bootstrapVM) {
-    isolateLocal = i;
-  } else {
-    JavaObject* loader = compilingClass->classLoader;
-    ServiceDomain* vm = ServiceDomain::getDomainFromLoader(loader);
-    LLVMServiceInfo* LSI = module->getServiceInfo(vm);
-    isolateLocal = LSI->getDelegatee(this);
-    Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, i, isolateLocal, "",
-                              currentBlock);
-    BasicBlock* ifTrue = createBasicBlock("true service call");
-    BasicBlock* endBlock = createBasicBlock("end check service call");
-    BranchInst::Create(ifTrue, endBlock, cmp, currentBlock);
-    currentBlock = ifTrue;
-    std::vector<Value*> Args;
-    Args.push_back(i);
-    Args.push_back(isolateLocal);
-    CallInst::Create(module->ServiceCallStartFunction, Args.begin(),
-                     Args.end(), "", currentBlock);
-    BranchInst::Create(endBlock, currentBlock);
-    currentBlock = endBlock;
-  }
-  i++;
-  ctpCache = i;
-#endif
   Value* addrCtpCache = new AllocaInst(module->ConstantPoolType, "",
                                        currentBlock);
   /// make it volatile to be sure it's on the stack
   new StoreInst(ctpCache, addrCtpCache, true, currentBlock);
 #endif
+ 
+
+#if defined(SERVICE)
+  JnjvmClassLoader* loader = compilingClass->classLoader;
+  Value* cmp = 0;
+  if (loader != loader->bootstrapLoader && isPublic(compilingMethod->access)) {
+    Value* threadId = CallInst::Create(module->llvm_frameaddress,
+                                       module->constantZero, "", currentBlock);
+    threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
+                                currentBlock);
+    threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+                                       "", currentBlock);
   
+    threadId = new IntToPtrInst(threadId, module->ptr32Type, "", currentBlock);
+  
+    GEP.clear();
+    GEP.push_back(module->constantThree);
+    Value* IsolateID = GetElementPtrInst::Create(threadId, GEP.begin(),
+                                                 GEP.end(), "", currentBlock);
+    IsolateID = new LoadInst(IsolateID, "", currentBlock);
+
+    Value* MyID = ConstantInt::get(Type::Int32Ty, loader->isolate->IsolateID);
+    Cmp = new ICmpInst(ICmpInst::ICMP_EQ, IsolateID, MyID, "", currentBlock);
+
+    BasicBlock* EndBB = createBasicBlock("After service check");
+    BasicBlock* ServiceBB = createBasicBlock("Service call");
+
+    BranchInst::Create(EndBB, ServiceBB, Cmp, currentBlock);
+
+    currentBlock = ServiceBB;
+  }
+#endif
+
   unsigned nbe = readExceptionTable(reader);
   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);

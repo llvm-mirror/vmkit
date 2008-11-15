@@ -53,26 +53,10 @@ public:
 };
 
 
-#ifdef ISOLATE
-/// ThreadIsolate - Threads implement this class in an isolate environment
-/// so that the ID can be loaded easely in LLVM compiled code.
-class ThreadIsolate {
-public:
-
-  /// IsolateID - The IsolateID of the virtual machine, put here for fast
-  /// access.
-  uint32 IsolateID;
-};
-#endif
-
 /// Thread - This class is the base of custom virtual machines' Thread classes.
 /// It provides static functions to manage threads. An instance of this class
 /// contains all thread-specific informations.
-class Thread : 
-#ifdef ISOLATE
-  public ThreadIsolate,
-#endif
-  public CircularBase {
+class Thread : public CircularBase {
 public:
   
   /// yield - Yield the processor to another thread.
@@ -105,7 +89,13 @@ public:
   }
  
 public:
-  
+
+#ifdef ISOLATE
+  /// IsolateID - The Isolate ID of the thread's VM.
+  uint32 IsolateID;
+#endif
+
+  /// MyVM - The VM attached to this Thread.
   VirtualMachine* MyVM;
 
   /// baseSP - The base stack pointer.

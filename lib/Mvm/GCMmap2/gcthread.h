@@ -115,7 +115,7 @@ public:
     _nb_threads--;
     if (!_nb_threads) base = 0;
 #ifdef SERVICE
-    th->theVM->numThreads--;
+    th->MyVM->numThreads--;
 #endif
     unlock();
   }
@@ -128,7 +128,7 @@ public:
       base = th;
     _nb_threads++;
 #ifdef SERVICE
-    th->theVM->numThreads++;
+    th->MyVM->numThreads++;
 #endif
     unlock();
   }

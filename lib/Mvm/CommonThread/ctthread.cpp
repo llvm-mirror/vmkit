@@ -7,11 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Thread.h"
 
+#include <csignal>
+#include <ctime>
 #include <pthread.h>
-#include <signal.h>
-#include <time.h>
 #include <sys/mman.h>
 
 using namespace mvm;
@@ -133,7 +134,7 @@ StackThreadManager TheStackManager;
 void Thread::internalThreadStart(mvm::Thread* th) {
   th->baseSP  = (void*)&th;
 #ifdef ISOLATE
-  th->IsolateID = th->vm->IsolateID;
+  th->IsolateID = th->MyVM->IsolateID;
 #endif
   Collector::inject_my_thread(th); 
   th->routine(th);
