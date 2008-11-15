@@ -262,11 +262,12 @@ public:
 
 #if defined(SERVICE)
   llvm::Value* isolateLocal;
+#endif
+
 #if defined(ISOLATE_SHARING)
   llvm::Value* ctpCache;
   llvm::Value* getStaticInstanceCtp();
   llvm::Value* getClassCtp();
-#endif
 #endif
 
   static const char* OpcodeNames[256];
