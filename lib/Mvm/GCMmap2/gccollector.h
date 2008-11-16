@@ -150,7 +150,7 @@ public:
       collect_unprotect();
     }
     
-    register GCChunkNode *header = allocator->alloc_chunk(n + sizeof(gc_header), 1, current_mark & 1);
+    register GCChunkNode *header = allocator->alloc_chunk(n, 1, current_mark & 1);
 #ifdef SERVICE
     VirtualMachine* vm = mvm::Thread::get()->vm;
     header->meta = vm;
@@ -187,7 +187,7 @@ public:
       collect_unprotect();
     }
 
-    GCChunkNode  *res = allocator->realloc_chunk(desc, node, n+sizeof(gc_header));
+    GCChunkNode  *res = allocator->realloc_chunk(desc, node, n);
 
 #ifdef SERVICE
     VirtualMachine* vm = mvm::Thread::get()->vm;

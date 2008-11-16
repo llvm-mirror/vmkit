@@ -44,13 +44,13 @@ public:
   /// alloc - Allocates a NativeString of size len.
   ///
   static inline NativeString *alloc(size_t len) {
-    return (NativeString *)gc::operator new(len, VT);
+    return (NativeString *)gc::operator new(len + sizeof(VirtualTable*), VT);
   }
 
   /// realloc - Reallocate a native string of size len.
   ///
   inline NativeString *realloc(size_t len) {
-    return (NativeString *)gc::realloc(len);
+    return (NativeString *)gc::realloc(len + sizeof(VirtualTable*));
   }
 
   /// setAt - Sets the char c at position pos in the NativeString.
