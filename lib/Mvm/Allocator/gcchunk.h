@@ -28,7 +28,7 @@ class GCChunkNode {
 	                        /* bit 3: est-on collectable */
 public:
 #ifdef SERVICE
-  VirtualMachine* meta; // who allocated me
+  mvm::VirtualMachine* meta; // who allocated me
 #endif
  	static const signed int maskCollectable    = 8;
  	static const signed int maskNotCollectable = 0;

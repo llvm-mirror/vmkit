@@ -241,6 +241,15 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
                                          &loadClass);
   assert(loadClass && "Loader does not have a loadClass function");
 
+#if defined(SERVICE)
+  /// If the appClassLoader is already set in the isolate, then we need
+  /// a new one each time a class loader is allocated.
+  if (isolate->appClassLoader) {
+    isolate = gc_new(Jnjvm)(bootstrapLoader);
+    isolate->appClassLoader = I->appClassLoader;
+  }
+#endif
+
 }
 
 ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {

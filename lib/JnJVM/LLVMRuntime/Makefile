@@ -17,7 +17,7 @@ VMKIT_RUNTIME += $(PROJ_SRC_DIR)/runtime-isolate.ll
 endif
 
 ifeq ($(SERVICE_BUILD), 1)
-VMKIT_RUNTIME += $(PROJ_SRC_DIR)/runtime-service.ll $(PROJ_SRC_DIR)/runtime-isolate.ll $(PROJ_SRC_DIR)/runtime-multi-mmap.ll
+VMKIT_RUNTIME += $(PROJ_SRC_DIR)/runtime-service.ll $(PROJ_SRC_DIR)/runtime-isolate.ll $(PROJ_SRC_DIR)/runtime-single-mmap.ll
 else
 ifeq ($(GC_MULTI_MMAP), 1)
 VMKIT_RUNTIME += $(PROJ_SRC_DIR)/runtime-multi-mmap.ll

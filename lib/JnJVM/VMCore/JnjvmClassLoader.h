@@ -51,6 +51,7 @@ class ZipArchive;
 /// table for non-isolate environments.
 ///
 class JnjvmClassLoader : public mvm::CompilationUnit {
+  friend class JavaJIT;
   friend class Jnjvm;
 private:
    
@@ -84,13 +85,11 @@ protected:
   ///
   ClassMap* classes;
   
-  /// javaTypes - Tables of Typedef defined by this class loader. Shared by all
-  /// class loaders in a no isolation configuration.
+  /// javaTypes - Tables of Typedef defined by this class loader.
   ///
   TypeMap* javaTypes;
 
-  /// javaSignatures - Tables of Signdef defined by this class loader. Shared
-  /// by all class loaders in a no isolation configuration.
+  /// javaSignatures - Tables of Signdef defined by this class loader.
   ///
   SignMap* javaSignatures;
 
@@ -106,10 +105,9 @@ public:
   mvm::BumpPtrAllocator allocator;
    
   
-  /// hashUTF8 - Tables of UTF8s defined by this class loader. Shared
-  /// by all class loaders in a no isolation configuration.
+  /// hashUTF8 - Tables of UTF8s defined by this class loader.
   ///
-  UTF8Map * hashUTF8;
+  UTF8Map* hashUTF8;
   
   /// TheModule - JIT module for compiling methods.
   ///
@@ -198,8 +196,7 @@ public:
   ///
   JnjvmBootstrapLoader* bootstrapLoader;
   
-  /// ~JnjvmClassLoader - Destroy the loader. Depending on the JVM
-  /// configuration, this may destroy the tables, JIT module and
+  /// ~JnjvmClassLoader - Destroy the loader: destroy the tables, JIT module and
   /// module provider.
   ///
   ~JnjvmClassLoader();
@@ -216,21 +213,38 @@ public:
     classes = 0;
   }
 
+  /// loadClass - The user class that defines the loadClass method.
+  ///
   UserClass* loadClass;
-  
+ 
+  /// constructArrayName - Construct an array name based on a class name
+  /// and the number of dimensions.
   const UTF8* constructArrayName(uint32 steps, const UTF8* className);
   
+  /// UTF8ToStr - Constructs a Java string out of the UTF8.
+  ///
   virtual JavaString* UTF8ToStr(const UTF8* utf8);
 
   /// Strings hashed by this classloader.
+  ///
   std::vector<JavaString*, gc_allocator<JavaString*> > strings;
   
   /// nativeLibs - Native libraries (e.g. '.so') loaded by this class loader.
   ///
   std::vector<void*> nativeLibs;
 
+  /// loadInLib - Loads a native function out of the native libraries loaded
+  /// by this class loader. The last argument tells if the returned method
+  /// is defined in jnjvm.
+  ///
   intptr_t loadInLib(const char* buf, bool& jnjvm);
+
+  /// loadInLib - Loads a native function out of the given native library.
+  ///
   intptr_t loadInLib(const char* buf, void* handle);
+
+  /// loadLib - Loads the library with the given name.
+  ///
   void* loadLib(const char* buf);
 };
 

@@ -67,10 +67,20 @@ void GCCollector::do_collect() {
   /* kill everyone */
   GCChunkNode *next = 0;
 
+#ifdef SERVICE
+  Thread* th = Thread::get();
+  VirtualMachine* OldVM = th->MyVM;
+#endif
+
+
   for(cur=finalizable.next(); cur!=&finalizable; cur=next) {
 #ifdef SERVICE
-    VirtualMachine* vm = cur->meta;
-    vm->memoryUsed -= real_nbb(cur);
+    mvm::VirtualMachine* NewVM = cur->meta;
+    if (NewVM) {
+      NewVM->memoryUsed -= real_nbb(cur);
+      th->MyVM = NewVM;
+      th->IsolateID = NewVM->IsolateID;
+    }
 #endif
     register gc_header *c = cur->chunk();
     next = cur->next();
@@ -84,6 +94,10 @@ void GCCollector::do_collect() {
       }
     }
   }
+#ifdef SERVICE
+  th->IsolateID = OldVM->IsolateID;
+  th->MyVM = OldVM;
+#endif
   
   next = 0;
   for(cur=finalizable.next(); cur!=&finalizable; cur=next) {

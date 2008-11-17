@@ -1196,3 +1196,28 @@ JavaMethod* LLVMMethodInfo::get(const llvm::Function* F) {
   if (MI) return MI->methodDef;
   return 0;
 }
+
+#ifdef SERVICE
+Value* JnjvmModule::getIsolate(Jnjvm* isolate) {
+  llvm::GlobalVariable* varGV = 0;
+  isolate_iterator End = isolates.end();
+  isolate_iterator I = isolates.find(isolate);
+  if (I == End) {
+    
+      
+    Constant* cons = 
+      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
+                                                 uint64_t(isolate)),
+                                ptrType);
+
+    varGV = new GlobalVariable(ptrType, !staticCompilation,
+                               GlobalValue::ExternalLinkage,
+                               cons, "", this);
+    
+    isolates.insert(std::make_pair(isolate, varGV));
+  } else {
+    varGV = I->second;
+  }
+  return varGV;
+}
+#endif

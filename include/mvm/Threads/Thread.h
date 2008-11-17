@@ -92,7 +92,7 @@ public:
 
 #ifdef ISOLATE
   /// IsolateID - The Isolate ID of the thread's VM.
-  uint32 IsolateID;
+  size_t IsolateID;
 #endif
 
   /// MyVM - The VM attached to this Thread.

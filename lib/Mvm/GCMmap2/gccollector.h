@@ -145,16 +145,20 @@ public:
     _since_last_collection -= n;
     if(_enable_auto && (_since_last_collection <= 0)) {
 #ifdef SERVICE
-      mvm::Thread::get()->vm->gcTriggered++;
+      if (threads->get_nb_threads()) {
+        mvm::Thread::get()->MyVM->gcTriggered++;
+      }
 #endif
       collect_unprotect();
     }
     
     register GCChunkNode *header = allocator->alloc_chunk(n, 1, current_mark & 1);
 #ifdef SERVICE
-    VirtualMachine* vm = mvm::Thread::get()->vm;
-    header->meta = vm;
-    vm->memoryUsed += n;
+    if (threads->get_nb_threads()) {
+      VirtualMachine* vm = mvm::Thread::get()->MyVM;
+      header->meta = vm;
+      vm->memoryUsed += n;
+    }
 #endif
     header->append(used_nodes);
     //printf("Allocate %d bytes at %p [%p] %d %d\n", n, header->chunk()->_2gc(),
@@ -182,7 +186,9 @@ public:
 
     if(_enable_auto && (_since_last_collection <= 0)) {
 #ifdef SERVICE
-      mvm::Thread::get()->vm->gcTriggered++;
+      if (threads->get_nb_threads()) {
+        mvm::Thread::get()->MyVM->gcTriggered++;
+      }
 #endif
       collect_unprotect();
     }
@@ -190,9 +196,11 @@ public:
     GCChunkNode  *res = allocator->realloc_chunk(desc, node, n);
 
 #ifdef SERVICE
-    VirtualMachine* vm = mvm::Thread::get()->vm;
-    header->meta = vm;
-    vm->memoryUsed += (n - old_sz);
+    if (threads->get_nb_threads()) {
+      VirtualMachine* vm = mvm::Thread::get()->MyVM;
+      res->meta = vm;
+      vm->memoryUsed += (n - old_sz);
+    }
 #endif
 
     if(res != node) {

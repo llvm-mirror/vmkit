@@ -640,32 +640,55 @@ llvm::Function* JavaJIT::javaCompile() {
 
 #if defined(SERVICE)
   JnjvmClassLoader* loader = compilingClass->classLoader;
-  Value* cmp = 0;
+  Value* Cmp = 0;
+  Value* threadId = 0;
+  Value* OldIsolateID = 0;
+  Value* IsolateIDPtr = 0;
+  Value* OldIsolate = 0;
+  Value* IsolatePtr = 0;
   if (loader != loader->bootstrapLoader && isPublic(compilingMethod->access)) {
-    Value* threadId = CallInst::Create(module->llvm_frameaddress,
-                                       module->constantZero, "", currentBlock);
+    threadId = CallInst::Create(module->llvm_frameaddress, module->constantZero,
+                                "", currentBlock);
     threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
                                 currentBlock);
     threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
                                        "", currentBlock);
   
-    threadId = new IntToPtrInst(threadId, module->ptr32Type, "", currentBlock);
-  
-    GEP.clear();
+    threadId = new IntToPtrInst(threadId, module->ptrPtrType, "", currentBlock);
+     
+    std::vector<Value*> GEP;
     GEP.push_back(module->constantThree);
-    Value* IsolateID = GetElementPtrInst::Create(threadId, GEP.begin(),
-                                                 GEP.end(), "", currentBlock);
-    IsolateID = new LoadInst(IsolateID, "", currentBlock);
+    IsolateIDPtr = GetElementPtrInst::Create(threadId, GEP.begin(), GEP.end(),
+                                             "", currentBlock);
+    const Type* realType = PointerType::getUnqual(module->pointerSizeType);
+    IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
+                                   currentBlock);
+    OldIsolateID = new LoadInst(IsolateIDPtr, "", currentBlock);
 
-    Value* MyID = ConstantInt::get(Type::Int32Ty, loader->isolate->IsolateID);
-    Cmp = new ICmpInst(ICmpInst::ICMP_EQ, IsolateID, MyID, "", currentBlock);
+    Value* MyID = ConstantInt::get(module->pointerSizeType,
+                                   loader->isolate->IsolateID);
+    Cmp = new ICmpInst(ICmpInst::ICMP_EQ, OldIsolateID, MyID, "", currentBlock);
 
     BasicBlock* EndBB = createBasicBlock("After service check");
-    BasicBlock* ServiceBB = createBasicBlock("Service call");
+    BasicBlock* ServiceBB = createBasicBlock("Begin service call");
 
     BranchInst::Create(EndBB, ServiceBB, Cmp, currentBlock);
 
     currentBlock = ServiceBB;
+  
+    new StoreInst(MyID, IsolateIDPtr, currentBlock);
+    GEP.clear();
+    GEP.push_back(module->constantFour);
+    IsolatePtr = GetElementPtrInst::Create(threadId, GEP.begin(), GEP.end(), "",
+                                           currentBlock);
+     
+    OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
+    Value* currentIsolate = module->getIsolate(loader->isolate);
+    currentIsolate = new LoadInst(currentIsolate, "", currentBlock);
+    new StoreInst(currentIsolate, IsolatePtr, currentBlock);
+
+    BranchInst::Create(EndBB, currentBlock);
+    currentBlock = EndBB;
   }
 #endif
 
@@ -725,21 +748,20 @@ llvm::Function* JavaJIT::javaCompile() {
     }
 #endif
   
-#if defined(SERVICE_VM)
-  if (compilingClass->isolate != Jnjvm::bootstrapVM) {
-    Value* cmp = new ICmpInst(ICmpInst::ICMP_NE, i, isolateLocal, "",
-                              currentBlock);
-    BasicBlock* ifTrue = createBasicBlock("true service call");
-    BasicBlock* newEndBlock = createBasicBlock("end check service call");
-    BranchInst::Create(ifTrue, newEndBlock, cmp, currentBlock);
-    currentBlock = ifTrue;
-    std::vector<Value*> Args;
-    Args.push_back(i);
-    Args.push_back(isolateLocal);
-    CallInst::Create(module->ServiceCallStopFunction, Args.begin(),
-                     Args.end(), "", currentBlock);
-    BranchInst::Create(newEndBlock, currentBlock);
-    currentBlock = newEndBlock;
+#if defined(SERVICE)
+  if (Cmp) {
+    BasicBlock* EndBB = createBasicBlock("After service check");
+    BasicBlock* ServiceBB = createBasicBlock("End Service call");
+
+    BranchInst::Create(EndBB, ServiceBB, Cmp, currentBlock);
+
+    currentBlock = ServiceBB;
+  
+    new StoreInst(OldIsolateID, IsolateIDPtr, currentBlock);
+    new StoreInst(OldIsolate, IsolatePtr, currentBlock);
+
+    BranchInst::Create(EndBB, currentBlock);
+    currentBlock = EndBB;
   }
 #endif
 

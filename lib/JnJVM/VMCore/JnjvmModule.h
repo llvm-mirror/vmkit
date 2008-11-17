@@ -379,6 +379,14 @@ public:
   llvm::Value* getConstantPool(JavaConstantPool* ctp);
   llvm::Value* getNativeFunction(JavaMethod* meth, void* natPtr);
 
+#ifdef SERVICE
+  std::map<const Jnjvm*, llvm::GlobalVariable*> isolates;
+  typedef std::map<const Jnjvm*, llvm::GlobalVariable*>::iterator
+    isolate_iterator;
+  
+  llvm::Value* getIsolate(Jnjvm* vm);
+#endif
+
 private:
   static llvm::Module* initialModule;
 

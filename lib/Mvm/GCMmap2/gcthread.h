@@ -79,7 +79,10 @@ public:
     current_collector = 0;
     base = 0;
   }
-
+  
+  inline unsigned int get_nb_threads() {
+    return _nb_threads;
+  }
   inline void lock()   { _globalLock.lock(); }
   inline void unlock() { _globalLock.unlock(); }
   inline void unlock_dont_recovery() { _globalLock.unlock_dont_recovery(); }

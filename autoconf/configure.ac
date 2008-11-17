@@ -226,7 +226,7 @@ if test "x$vmtype" = "xisolate";  then
   ISOLATE_BUILD=1
 else 
   if test "x$vmtype" = "xservice"; then
-    VM_FLAGS="-DISOLATE -DSERVICE_GC -DMULTIPLE_GC -DSERVICE_VM -I\$(PROJ_SRC_ROOT)/lib/Mvm/Allocator"
+    VM_FLAGS="-DISOLATE -DSERVICE"
     SERVICE_BUILD=1
   fi
 fi
