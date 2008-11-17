@@ -260,47 +260,12 @@ Value* JnjvmModule::getNativeFunction(JavaMethod* meth, void* ptr) {
 }
 
 #ifndef WITHOUT_VTABLE
-VirtualTable* JnjvmModule::allocateVT(Class* cl,
-                                      uint32 index) {
-  if (index == cl->nbVirtualMethods) {
-    uint64 size = cl->virtualTableSize;
-    mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-    VirtualTable* VT = (VirtualTable*)allocator.Allocate(size * sizeof(void*));
-    if (cl->super) {
-      Class* super = (Class*)cl->super;
-      assert(cl->virtualTableSize >= cl->super->virtualTableSize &&
-        "Super VT bigger than own VT");
-      assert(super->virtualVT && "Super does not have a VT!");
-      memcpy(VT, super->virtualVT, cl->super->virtualTableSize * sizeof(void*));
-    } else {
-      memcpy(VT, JavaObject::VT, VT_SIZE);
-    }
-    return VT;
-  } else {
-    JavaMethod& meth = cl->virtualMethods[index];
-    VirtualTable* VT = 0;
+VirtualTable* JnjvmModule::allocateVT(Class* cl) {
+  for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+    JavaMethod& meth = cl->virtualMethods[i];
     if (meth.name->equals(cl->classLoader->bootstrapLoader->finalize)) {
-      VT = allocateVT(cl, ++index);
-#ifndef ISOLATE_SHARING
       meth.offset = 0;
-      Function* func = cl->classLoader->TheModuleProvider->parseFunction(&meth);
-      if (!cl->super) meth.canBeInlined = true;
-      Function::iterator BB = func->begin();
-      BasicBlock::iterator I = BB->begin();
-      if (isa<ReturnInst>(I)) {
-        ((void**)VT)[0] = 0;
-      } else {
-        ExecutionEngine* EE = mvm::MvmModule::executionEngine;
-        // LLVM does not allow recursive compilation. Create the code now.
-        if (staticCompilation) {
-          ((void**)VT)[0] = func;
-        } else {
-          ((void**)VT)[0] = EE->getPointerToFunction(func);
-        }
-      }
-#endif
     } else {
-    
       JavaMethod* parent = cl->super? 
         cl->super->lookupMethodDontThrow(meth.name, meth.type, false, true,
                                          0) :
@@ -314,19 +279,22 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl,
         offset = parent->offset;
         meth.offset = parent->offset;
       }
-      VT = allocateVT(cl, ++index);
-      LLVMMethodInfo* LMI = getMethodInfo(&meth);
-      Function* func = LMI->getMethod();
-      ExecutionEngine* EE = mvm::MvmModule::executionEngine;
-      if (staticCompilation) {
-        ((void**)VT)[offset] = func;
-      } else {
-        ((void**)VT)[offset] = EE->getPointerToFunctionOrStub(func);
-      }
     }
-
-    return VT;
   }
+
+  uint64 size = cl->virtualTableSize;
+  mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
+  VirtualTable* VT = (VirtualTable*)allocator.Allocate(size * sizeof(void*));
+  if (cl->super) {
+    Class* super = (Class*)cl->super;
+    assert(cl->virtualTableSize >= cl->super->virtualTableSize &&
+      "Super VT bigger than own VT");
+    assert(super->virtualVT && "Super does not have a VT!");
+    memcpy(VT, super->virtualVT, cl->super->virtualTableSize * sizeof(void*));
+  } else {
+    memcpy(VT, JavaObject::VT, VT_SIZE);
+  }
+  return VT;
 }
 #endif
 
@@ -405,13 +373,13 @@ llvm::Function* JnjvmModule::makeTracer(Class* cl, bool stat) {
 
 VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
   
-  VirtualTable* res = 0;
+  VirtualTable* VT = 0;
 #ifndef WITHOUT_VTABLE
   if (stat) {
 #endif
     mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-    res = (VirtualTable*)allocator.Allocate(VT_SIZE);
-    memcpy(res, JavaObject::VT, VT_SIZE);
+    VT = (VirtualTable*)allocator.Allocate(VT_SIZE);
+    memcpy(VT, JavaObject::VT, VT_SIZE);
 #ifndef WITHOUT_VTABLE
   } else {
     if (cl->super) {
@@ -419,13 +387,50 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
     } else {
       cl->virtualTableSize = VT_NB_FUNCS;
     }
-    res = allocateVT(cl, 0);
-  
+
+    // Allocate the virtual table.
+    VT = allocateVT(cl);
+
+    // Fill the virtual table with function pointers.
+    ExecutionEngine* EE = mvm::MvmModule::executionEngine;
+    for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+      JavaMethod& meth = cl->virtualMethods[i];
+      LLVMMethodInfo* LMI = getMethodInfo(&meth);
+      Function* func = LMI->getMethod();
+
+      // Special handling for finalize method. Don't put a finalizer
+      // if there is none, or if it is empty.
+      if (meth.offset == 0) {
+#ifdef ISOLATE_SHARING
+        ((void**)VT)[0] = 0;
+#else
+        Function* func = cl->classLoader->TheModuleProvider->parseFunction(&meth);
+        if (!cl->super) meth.canBeInlined = true;
+        Function::iterator BB = func->begin();
+        BasicBlock::iterator I = BB->begin();
+        if (isa<ReturnInst>(I)) {
+          ((void**)VT)[0] = 0;
+        } else {
+          // LLVM does not allow recursive compilation. Create the code now.
+          ((void**)VT)[0] = EE->getPointerToFunction(func);
+        }
+      }
+#endif
+
+      if (staticCompilation) {
+        ((void**)VT)[meth.offset] = func;
+      } else {
+        ((void**)VT)[meth.offset] = EE->getPointerToFunctionOrStub(func);
+      }
+    }
+ 
+    // If there is no super, then it's the first VT that we allocate. Assign
+    // this VT to native types.
     if (!(cl->super)) {
       uint32 size =  (cl->virtualTableSize - VT_NB_FUNCS) * sizeof(void*);
 #define COPY(CLASS) \
     memcpy((void*)((uintptr_t)CLASS::VT + VT_SIZE), \
-           (void*)((uintptr_t)res + VT_SIZE), size);
+           (void*)((uintptr_t)VT + VT_SIZE), size);
 
       COPY(JavaArray)
       COPY(JavaObject)
@@ -440,16 +445,16 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
   llvm::Function* func = makeTracer(cl, stat);
   
   if (staticCompilation) {
-    ((void**)res)[VT_TRACER_OFFSET] = func;
+    ((void**)VT)[VT_TRACER_OFFSET] = func;
   } else {
     void* codePtr = mvm::MvmModule::executionEngine->getPointerToFunction(func);
-    ((void**)res)[VT_TRACER_OFFSET] = codePtr;
+    ((void**)VT)[VT_TRACER_OFFSET] = codePtr;
     func->deleteBody();
   }
   
 
 #endif
-  return res;
+  return VT;
 }
 
 
