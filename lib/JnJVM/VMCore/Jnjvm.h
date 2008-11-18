@@ -100,6 +100,7 @@ public:
 /// Jnjvm - A JVM. Each execution of a program allocates a Jnjvm.
 ///
 class Jnjvm : public mvm::VirtualMachine {
+  friend class JnjvmClassLoader;
 public:
   /// allocator - Memory allocator of this JVM.
   ///
@@ -289,11 +290,15 @@ public:
 
   /// ~Jnjvm - Destroy the JVM.
   ///
-  ~Jnjvm() {}
+  ~Jnjvm();
 
   /// Jnjvm - Allocate a default JVM, for VT initialization.
   ///
-  Jnjvm() {}
+  Jnjvm() { 
+#ifdef ISOLATE
+    IsolateID = 0;
+#endif
+  }
 
   /// addProperty - Adds a new property in the postProperties map.
   ///
@@ -321,6 +326,11 @@ public:
   /// waitForExit - Waits that there are no more non-daemon threads in this JVM.
   ///
   virtual void waitForExit();
+
+#ifdef ISOLATE
+  static Jnjvm* RunningIsolates[NR_ISOLATES];
+  static mvm::LockNormal IsolateLock;
+#endif
 
 };
 

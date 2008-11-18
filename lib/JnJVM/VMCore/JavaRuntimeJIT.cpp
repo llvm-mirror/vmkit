@@ -401,3 +401,20 @@ extern "C" void JavaThreadClearException() {
 extern "C" void overflowThinLock(JavaObject* obj) {
   obj->overflowThinlock();
 }
+
+#ifdef SERVICE
+
+extern "C" void serviceCallStart(Jnjvm* OldService,
+                                 Jnjvm* NewService) {
+  printf("I have swtich from %d to %d\n", OldService->IsolateID,
+                                          NewService->IsolateID);
+
+  printf("Now the thread id is %d\n", mvm::Thread::get()->IsolateID);
+}
+
+extern "C" void serviceCallStop(Jnjvm* OldService,
+                                Jnjvm* NewService) {
+  printf("End service call\n");
+}
+
+#endif

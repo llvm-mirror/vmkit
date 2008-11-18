@@ -246,7 +246,16 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   /// a new one each time a class loader is allocated.
   if (isolate->appClassLoader) {
     isolate = gc_new(Jnjvm)(bootstrapLoader);
-    isolate->appClassLoader = I->appClassLoader;
+
+    mvm::Thread* th = mvm::Thread::get();
+    mvm::VirtualMachine* OldVM = th->MyVM;
+    th->MyVM = isolate;
+    th->IsolateID = isolate->IsolateID;
+    
+    isolate->loadBootstrap();
+    
+    th->MyVM = OldVM;
+    th->IsolateID = OldVM->IsolateID;
   }
 #endif
 

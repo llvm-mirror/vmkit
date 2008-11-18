@@ -45,6 +45,14 @@
 using namespace jnjvm;
 using namespace llvm;
 
+static bool needsInitialisationCheck(Class* cl, Class* compilingClass) {
+#ifdef SERVICE
+  return true;
+#else
+  return !(cl->isReadyForCompilation() || compilingClass->subclassOf(cl)); 
+#endif
+}
+
 bool JavaJIT::canBeInlined(JavaMethod* meth) {
   return (meth->canBeInlined &&
           meth != compilingMethod && inlineMethods[meth] == 0 &&
@@ -645,6 +653,7 @@ llvm::Function* JavaJIT::javaCompile() {
   Value* OldIsolateID = 0;
   Value* IsolateIDPtr = 0;
   Value* OldIsolate = 0;
+  Value* NewIsolate = 0;
   Value* IsolatePtr = 0;
   if (loader != loader->bootstrapLoader && isPublic(compilingMethod->access)) {
     threadId = CallInst::Create(module->llvm_frameaddress, module->constantZero,
@@ -683,10 +692,15 @@ llvm::Function* JavaJIT::javaCompile() {
                                            currentBlock);
      
     OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
-    Value* currentIsolate = module->getIsolate(loader->isolate);
-    currentIsolate = new LoadInst(currentIsolate, "", currentBlock);
-    new StoreInst(currentIsolate, IsolatePtr, currentBlock);
+    NewIsolate = module->getIsolate(loader->isolate);
+    NewIsolate = new LoadInst(NewIsolate, "", currentBlock);
+    new StoreInst(NewIsolate, IsolatePtr, currentBlock);
 
+    GEP.clear();
+    GEP.push_back(OldIsolate);
+    GEP.push_back(NewIsolate);
+    CallInst::Create(module->ServiceCallStartFunction, GEP.begin(), GEP.end(),
+                     "", currentBlock);
     BranchInst::Create(EndBB, currentBlock);
     currentBlock = EndBB;
   }
@@ -760,6 +774,11 @@ llvm::Function* JavaJIT::javaCompile() {
     new StoreInst(OldIsolateID, IsolateIDPtr, currentBlock);
     new StoreInst(OldIsolate, IsolatePtr, currentBlock);
 
+    std::vector<Value*> GEP;
+    GEP.push_back(OldIsolate);
+    GEP.push_back(NewIsolate);
+    CallInst::Create(module->ServiceCallStopFunction, GEP.begin(), GEP.end(),
+                     "", currentBlock);
     BranchInst::Create(EndBB, currentBlock);
     currentBlock = EndBB;
   }
@@ -1540,7 +1559,7 @@ void JavaJIT::invokeStatic(uint16 index) {
 #endif
       uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
       Value* Cl = getResolvedClass(clIndex, true); 
-      if (!(meth && compilingClass->subclassOf(meth->classDef))) {
+      if (meth && needsInitialisationCheck(meth->classDef, compilingClass)) {
         CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
                          currentBlock);
       }
@@ -1627,8 +1646,7 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow) {
                              module->JavaClassType, 0, doThrow);
   }
   
-  if (!(!clinit || (cl && (cl->isReadyForCompilation() || 
-                           compilingClass->subclassOf(cl)))))
+  if (!(!clinit || (cl && !needsInitialisationCheck(cl, compilingClass))))
     return invoke(module->InitialisationCheckFunction, node, "",
                   currentBlock);
   else
@@ -1708,8 +1726,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
       type = LCI->getStaticType();
       Value* Cl = module->getNativeClass(field->classDef);
       Cl = new LoadInst(Cl, "", currentBlock);
-      if (!(compilingClass->subclassOf(field->classDef)) && 
-          !(compilingClass->isReadyForCompilation())) {
+      if (needsInitialisationCheck(field->classDef, compilingClass)) {
         Cl = invoke(module->InitialisationCheckFunction, Cl, "",
                     currentBlock);
       }

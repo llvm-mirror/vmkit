@@ -1100,7 +1100,12 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
   GetArrayClassFunction = module->getFunction("getArrayClass");
 #endif
 #endif
-  
+ 
+#ifdef SERVICE
+  ServiceCallStartFunction = module->getFunction("serviceCallStart");
+  ServiceCallStopFunction = module->getFunction("serviceCallStop");
+#endif
+
 #ifdef WITH_TRACER
   MarkAndTraceFunction = module->getFunction("MarkAndTrace");
   JavaObjectTracerFunction = module->getFunction("JavaObjectTracer");

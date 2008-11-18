@@ -134,6 +134,7 @@ StackThreadManager TheStackManager;
 void Thread::internalThreadStart(mvm::Thread* th) {
   th->baseSP  = (void*)&th;
 #ifdef ISOLATE
+  assert(th->MyVM && "VM not set in a thread");
   th->IsolateID = th->MyVM->IsolateID;
 #endif
   Collector::inject_my_thread(th); 

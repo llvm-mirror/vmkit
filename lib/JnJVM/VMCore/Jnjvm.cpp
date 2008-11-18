@@ -41,6 +41,12 @@ const char* Jnjvm::dirSeparator = "/";
 const char* Jnjvm::envSeparator = ":";
 const unsigned int Jnjvm::Magic = 0xcafebabe;
 
+#ifdef ISOLATE
+Jnjvm* Jnjvm::RunningIsolates[NR_ISOLATES];
+mvm::LockNormal Jnjvm::IsolateLock;
+#endif
+
+
 typedef void (*clinit_t)(UserConstantPool*);
 
 
@@ -885,6 +891,20 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
   vm->threadSystem.nonDaemonLock.unlock();  
 }
 
+#ifdef SERVICE
+static void serviceCPUMonitor(mvm::Thread* th) {
+  while (true) {
+    sleep(1);
+    for(mvm::Thread* cur = (mvm::Thread*)th->next(); cur != th;
+        cur = (mvm::Thread*)cur->next()) {
+      mvm::VirtualMachine* executingVM = cur->MyVM;
+      assert(executingVM && "Thread with no VM!");
+      ++executingVM->executionTime;
+    }
+  }
+}
+#endif
+
 void Jnjvm::runApplication(int argc, char** argv) {
   argumentsInfo.argc = argc;
   argumentsInfo.argv = argv;
@@ -897,6 +917,10 @@ void Jnjvm::runApplication(int argc, char** argv) {
     
     bootstrapThread = new JavaThread(0, 0, this);
     bootstrapThread->start((void (*)(mvm::Thread*))mainJavaStart);
+#ifdef SERVICE
+    mvm::Thread* th = new JavaThread(0, 0, this);
+    th->start(serviceCPUMonitor);
+#endif
   } else {
     threadSystem.nonDaemonThreads = 0;
   }
@@ -916,7 +940,25 @@ Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) {
   upcalls = bootstrapLoader->upcalls;
 
   throwable = upcalls->newThrowable;
-   
+ 
+#ifdef ISOLATE
+  IsolateLock.lock();
+  for (uint32 i = 0; i < NR_ISOLATES; ++i) {
+    if (RunningIsolates[i] == 0) {
+      RunningIsolates[i] = this;
+      IsolateID = i;
+      break;
+    }
+  }
+  IsolateLock.unlock();
+#endif
+
+}
+
+Jnjvm::~Jnjvm() {
+#ifdef ISOLATE
+  RunningIsolates[IsolateID] = 0;
+#endif
 }
 
 const UTF8* Jnjvm::asciizToInternalUTF8(const char* asciiz) {

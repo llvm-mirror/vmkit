@@ -302,6 +302,11 @@ public:
 #endif
 #endif
 
+#ifdef SERVICE
+  llvm::Function* ServiceCallStartFunction;
+  llvm::Function* ServiceCallStopFunction;
+#endif
+
   llvm::Function* GetClassDelegateeFunction;
   llvm::Function* ArrayLengthFunction;
   llvm::Function* GetVTFunction;

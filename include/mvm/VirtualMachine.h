@@ -46,7 +46,7 @@ public:
   
 
 #ifdef ISOLATE
-  uint32 IsolateID;
+  size_t IsolateID;
 #endif
 
 #ifdef SERVICE
