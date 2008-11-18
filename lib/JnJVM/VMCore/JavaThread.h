@@ -66,8 +66,9 @@ public:
   }
   
   static void* getException() {
+    // 32 = sizeof(_Unwind_Exception) in libgcc...
     return (void*)
-      ((char*)JavaThread::get()->internalPendingException - 8 * sizeof(void*));
+      ((uintptr_t)JavaThread::get()->internalPendingException - 32);
   }
  
   /// throwException - Throws the given exception in the current thread.
