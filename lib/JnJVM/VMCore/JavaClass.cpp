@@ -11,7 +11,7 @@
 
 #include <vector>
 
-#include <string.h>
+#include <cstring>
 
 #include "mvm/JIT.h"
 #include "debug.h"
