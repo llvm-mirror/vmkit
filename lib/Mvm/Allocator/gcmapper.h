@@ -66,28 +66,28 @@ public:
 
 class GCMinAllocStack {
  	uintptr_t		current;
- 	unsigned int		max;
- 	unsigned int		*free_list;
+ 	uintptr_t		max;
+ 	uintptr_t		*free_list;
  	unsigned short	nbb;
 	
 public:
  	inline void initialise(uintptr_t n) { nbb = n; current = max = 0; free_list = 0; }
 
-	inline void fill(unsigned int st, uintptr_t n) {
+	inline void fill(uintptr_t st, uintptr_t n) {
 		current = st;
 		max = st + n;
 	}
 	
  	inline void inject_free(void *ptr) {
- 		*((unsigned int **)ptr) = free_list;
- 		free_list = (unsigned int *)ptr;
+ 		*((uintptr_t **)ptr) = free_list;
+ 		free_list = (uintptr_t *)ptr;
  	}
 
  	inline void *alloc() {
  		register uintptr_t res;
  		if(free_list) {
  			res = (uintptr_t)free_list;
- 			free_list = *((unsigned int **)res);
+ 			free_list = *((uintptr_t **)res);
  		} else {
  			res = current;
  			current += nbb;
