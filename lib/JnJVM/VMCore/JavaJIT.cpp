@@ -574,8 +574,8 @@ llvm::Function* JavaJIT::javaCompile() {
     {
     std::vector<llvm::Value*> args;
     args.push_back(ConstantExpr::getIntToPtr(
-          ConstantInt::get(Type::Int64Ty, uint64_t (compilingMethod))),
-          module->ptrType);
+          ConstantInt::get(Type::Int64Ty, uint64_t (compilingMethod)),
+          module->ptrType));
 
     llvm::CallInst::Create(module->PrintMethodStartFunction, args.begin(),
                            args.end(), "", currentBlock);
@@ -755,8 +755,8 @@ llvm::Function* JavaJIT::javaCompile() {
     {
     std::vector<llvm::Value*> args;
     args.push_back(ConstantExpr::getIntToPtr(
-          ConstantInt::get(Type::Int64Ty, uint64_t (compilingMethod))),
-          module->ptrType);
+          ConstantInt::get(Type::Int64Ty, uint64_t (compilingMethod)),
+          module->ptrType));
     llvm::CallInst::Create(module->PrintMethodEndFunction, args.begin(),
                            args.end(), "", currentBlock);
     }
