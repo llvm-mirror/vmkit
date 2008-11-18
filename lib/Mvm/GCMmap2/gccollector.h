@@ -140,6 +140,12 @@ public:
   }
 
   static inline void *gcmalloc(VirtualTable *vt, size_t n) {
+#if (__WORDSIZE == 64)
+    void* res = malloc(n);
+    memset(res, 0, n);
+    ((void**)res)[0] = vt;
+    return res;
+#else
     lock();
     
     _since_last_collection -= n;
@@ -169,9 +175,14 @@ public:
 
     unlock();
     return p->_2gc();
+#endif
   }
 
   static inline void *gcrealloc(void *ptr, size_t n) {
+#if (__WORDSIZE == 64)
+    void* res = realloc(ptr, n);
+    return res;
+#else
     lock();
     
     GCPage      *desc = GCHash::get(ptr);
@@ -212,6 +223,7 @@ public:
 
     unlock();
     return obj->_2gc();
+#endif
   }
 
   static inline unsigned int enable(unsigned int n)  {
