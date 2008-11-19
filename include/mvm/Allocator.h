@@ -11,6 +11,7 @@
 #define MVM_ALLOCATOR_H
 
 #include <cstdlib>
+#include <cstring>
 #include <limits>
 
 #include "llvm/Support/Allocator.h"
@@ -68,7 +69,7 @@ private:
 public:
   void* Allocate(size_t sz) {
     TheLock.lock();
-    void* res = Allocator.Allocate(sz, sz % 4 ? sizeof(void*) : 1);
+    void* res = Allocator.Allocate(sz, sizeof(void*));
     TheLock.unlock();
     return res;
   }
