@@ -801,10 +801,16 @@ void Jnjvm::loadBootstrap() {
   LOAD_CLASS(upcalls->ClassNotFoundException); 
 #undef LOAD_CLASS
 
+#ifdef SERVICE
+  if (!IsolateID)
+#endif
   mapInitialThread();
   loadAppClassLoader();
   JavaObject* obj = JavaThread::currentThread();
   JavaObject* javaLoader = appClassLoader->getJavaClassLoader();
+#ifdef SERVICE
+  if (!IsolateID)
+#endif
   upcalls->setContextClassLoader->invokeIntSpecial(this, upcalls->newThread,
                                                    obj, javaLoader);
   // load and initialise math since it is responsible for dlopen'ing 
