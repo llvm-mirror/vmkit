@@ -699,8 +699,10 @@ llvm::Function* JavaJIT::javaCompile() {
     GEP.clear();
     GEP.push_back(OldIsolate);
     GEP.push_back(NewIsolate);
+#if DEBUG
     CallInst::Create(module->ServiceCallStartFunction, GEP.begin(), GEP.end(),
                      "", currentBlock);
+#endif
     BranchInst::Create(EndBB, currentBlock);
     currentBlock = EndBB;
   }
@@ -777,8 +779,10 @@ llvm::Function* JavaJIT::javaCompile() {
     std::vector<Value*> GEP;
     GEP.push_back(OldIsolate);
     GEP.push_back(NewIsolate);
+#if DEBUG
     CallInst::Create(module->ServiceCallStopFunction, GEP.begin(), GEP.end(),
                      "", currentBlock);
+#endif
     BranchInst::Create(EndBB, currentBlock);
     currentBlock = EndBB;
   }
@@ -1559,7 +1563,7 @@ void JavaJIT::invokeStatic(uint16 index) {
 #endif
       uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
       Value* Cl = getResolvedClass(clIndex, true); 
-      if (meth && needsInitialisationCheck(meth->classDef, compilingClass)) {
+      if (!meth || needsInitialisationCheck(meth->classDef, compilingClass)) {
         CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
                          currentBlock);
       }
