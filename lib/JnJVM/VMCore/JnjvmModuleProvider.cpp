@@ -93,7 +93,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
     LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
     uint64_t offset = LMI->getOffset()->getZExtValue();
     assert(meth->classDef->isResolved() && "Class not resolved");
-#ifndef ISOLATE_SHARING
+#if !defined(ISOLATE_SHARING) && !defined(SERVICE)
     assert(meth->classDef->isInitializing() && "Class not ready");
 #endif
     assert(meth->classDef->virtualVT && "Class has no VT");
