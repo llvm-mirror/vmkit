@@ -69,7 +69,7 @@ public:
 
   StackThreadManager() {
     baseAddr = 0;
-    uintptr_t ptr = 0x00000000;
+    uintptr_t ptr = 0x10000000;
 
     // Do an mmap at a fixed address. If the mmap fails for a given address
     // use the next one.
