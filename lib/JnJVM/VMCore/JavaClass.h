@@ -527,7 +527,13 @@ public:
   }
   
   void setInitializationState(JavaState st) {
-    getCurrentTaskClassMirror().status = st;
+    if (classLoader == classLoader->bootstrapLoader) {
+      getCurrentTaskClassMirror().status = st;
+    } else {
+      for (uint32 i = 0; i < NR_ISOLATES; ++i) {
+        IsolateInfo[i].status = st;
+      }
+    }
   }
   
   JavaObject* getDelegatee() {
@@ -679,7 +685,13 @@ public:
   }
 
   void setStaticInstance(JavaObject* val) {
-    getCurrentTaskClassMirror().staticInstance = val;
+    if (classLoader == classLoader->bootstrapLoader) {
+      getCurrentTaskClassMirror().staticInstance = val;
+    } else {
+      for (uint32 i = 0; i < NR_ISOLATES; ++i) {
+        IsolateInfo[i].staticInstance = val;
+      }
+    }
   }
 
 #endif
