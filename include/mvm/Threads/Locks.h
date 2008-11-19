@@ -28,7 +28,7 @@ protected:
 public:
   Lock(bool rec);
   
-  ~Lock();
+  virtual ~Lock();
   
   virtual void lock() = 0;
   virtual void unlock() = 0;

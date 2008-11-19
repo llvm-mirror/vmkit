@@ -123,6 +123,8 @@ private:
   virtual void internalClearException() {}
 
 public:
+  
+  virtual ~Thread() {}
 
   /// clearException - Clear any pending exception of the current thread.
   static void clearException() {
