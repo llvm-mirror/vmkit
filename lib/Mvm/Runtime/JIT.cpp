@@ -82,10 +82,12 @@ void MvmModule::initialise(bool Fast) {
   llvm_atomic_cmp_swap_i32 = (uint32 (*)(uint32*, uint32, uint32))
     (uintptr_t)executionEngine->getPointerToFunction(
       module.getFunction("runtime.llvm.atomic.cmp.swap.i32"));
+#if ((!defined(__ppc__) && !defined(__PPC__)) || defined(__ppc64__))
   llvm_atomic_cmp_swap_i64 = (uint64 (*)(uint64*, uint64, uint64))
     (uintptr_t)executionEngine->getPointerToFunction(
       module.getFunction("runtime.llvm.atomic.cmp.swap.i64"));
-  
+#endif
+
   // Type declaration
   ptrType = PointerType::getUnqual(Type::Int8Ty);
   ptr32Type = PointerType::getUnqual(Type::Int32Ty);
