@@ -38,14 +38,14 @@ void JavaJIT::printBacktrace() {
   while (n < real_size) {
     JavaMethod* meth = IPToJavaMethod(ips[n++]);
     if (meth) {
-      printf("; %p in %s\n",  (void*)ips[n - 1], meth->printString());
+      fprintf(stderr, "; %p in %s\n",  (void*)ips[n - 1], meth->printString());
     } else {
       Dl_info info;
       int res = dladdr(ips[n++], &info);
       if (res != 0) {
-        printf("; %p in %s\n",  (void*)ips[n - 1], info.dli_sname);
+        fprintf(stderr, "; %p in %s\n",  (void*)ips[n - 1], info.dli_sname);
       } else {
-        printf("; %p in Unknown\n", (void*)ips[n - 1]);
+        fprintf(stderr, "; %p in Unknown\n", (void*)ips[n - 1]);
       }
     }
   }

@@ -27,23 +27,23 @@ using namespace llvm;
 
 
 extern "C" void printFloat(float f) {
-  printf("%f\n", f);
+  fprintf(stderr, "%f\n", f);
 }
 
 extern "C" void printDouble(double d) {
-  printf("%f\n", d);
+  fprintf(stderr, "%f\n", d);
 }
 
 extern "C" void printLong(sint64 l) {
-  printf("%lld\n", (long long int)l);
+  fprintf(stderr, "%lld\n", (long long int)l);
 }
 
 extern "C" void printInt(sint32 i) {
-  printf("%d\n", i);
+  fprintf(stderr, "%d\n", i);
 }
 
 extern "C" void printObject(mvm::Object* obj) {
-  printf("%s\n", obj->printString());
+  fprintf(stderr, "%s\n", obj->printString());
 }
 
 namespace mvm {
