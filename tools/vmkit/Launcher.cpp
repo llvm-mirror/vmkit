@@ -63,19 +63,20 @@ int main(int argc, char** argv) {
   mvm::MvmModule::initialise(Fast);
   mvm::Object::initialise();
   Collector::initialise(0);
-  Collector::enable(0);
   
   if (VMToRun == RunJava) {
 #if WITH_JNJVM
     mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM();
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(CU);
     vm->runApplication(argc, argv);
+    vm->waitForExit();
 #endif
   } else if (VMToRun == RunNet) {
 #if WITH_N3
     mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseCLIVM();
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createCLIVM(CU);
     vm->runApplication(argc, argv);
+    vm->waitForExit();
 #endif
   } else {
     mvm::CommandLine MyCl;
