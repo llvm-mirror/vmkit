@@ -112,7 +112,9 @@ void JavaObject::acquire() {
     }
   } else {
     uintptr_t currentLock = lock & ThinMask;
-    uintptr_t val = (uintptr_t)__sync_val_compare_and_swap(&lock, currentLock, (id + 1));
+    uintptr_t val = 
+      (uintptr_t)__sync_val_compare_and_swap((uintptr_t)&lock, currentLock, 
+                                             (id + 1));
     if (val != currentLock) {
       if (val & FatMask) {
 end:
@@ -137,7 +139,9 @@ loop:
         }
         
         currentLock = lock & ThinMask;
-        uintptr_t test = (uintptr_t)__sync_val_compare_and_swap(&lock, currentLock, val);
+        uintptr_t test = 
+          (uintptr_t)__sync_val_compare_and_swap((uintptr_t)&lock, currentLock,
+                                                 val);
         if (test != currentLock) goto loop;
         obj->acquire();
       }
