@@ -9,8 +9,10 @@
 
 #include <dlfcn.h>
 
+#include "llvm/CodeGen/LinkAllCodegenComponents.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
+
 
 #include "MvmGC.h"
 #include "mvm/Config/config.h"
