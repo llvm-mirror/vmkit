@@ -8,12 +8,11 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ..
 
-PARALLEL_DIRS = vmkit vmjc
-
 include $(LEVEL)/Makefile.config
 
 ifeq ($(WITH_JNJVM), 1)
   PARALLEL_DIRS += jnjvm
+  PARALLEL_DIRS += vmjc
 endif
 
 ifeq ($(WITH_N3_MONO), 1) 
