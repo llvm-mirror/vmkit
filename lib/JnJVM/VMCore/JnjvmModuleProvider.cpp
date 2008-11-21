@@ -8,8 +8,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/LinkAllPasses.h"
-#include "llvm/Analysis/LoopPass.h"
-#include "llvm/Analysis/Verifier.h"
 #include "llvm/Support/MutexGuard.h"
 
 #include "mvm/JIT.h"
@@ -127,10 +125,12 @@ Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
     JavaJIT jit(meth, func);
     if (isNative(meth->access)) {
       jit.nativeCompile();
-      mvm::MvmModule::runPasses(func, perNativeFunctionPasses);
+      mvm::MvmModule::runPasses(func, JavaNativeFunctionPasses);
     } else {
       jit.javaCompile();
-      mvm::MvmModule::runPasses(func, perFunctionPasses);
+      JnjvmClassLoader* loader = meth->classDef->classLoader;
+      mvm::MvmModule::runPasses(func, loader->FunctionPasses);
+      mvm::MvmModule::runPasses(func, JavaFunctionPasses);
     }
   }
   return func;
@@ -170,87 +170,28 @@ namespace mvm {
   llvm::FunctionPass* createLowerForcedCallsPass();
 }
 
-static void addPass(FunctionPassManager *PM, Pass *P) {
-  // Add the pass to the pass manager...
-  PM->add(P);
-}
-
-// This is equivalent to:
-// opt -simplifycfg -mem2reg -instcombine -jump-threading -scalarrepl -instcombine 
-//     -condprop -simplifycfg -reassociate -licm essai.bc -loop-unswitch 
-//     -indvars -loop-unroll -instcombine -gvn -sccp -simplifycfg
-//     -instcombine -condprop -dse -adce -simplifycfg
-//
-static void AddStandardCompilePasses(JnjvmModule* mod, FunctionPassManager *PM) {
-  llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
-  
-  // TODO: enable this when
-  // - we can call multiple times the makeLLVMModuleContents function generated 
-  //   by llc -march=cpp -cppgen=contents
-  // - intrinsics won't be in the .ll files
-  // - each module will have its declaration of external functions
-  // 
-  //PM->add(llvm::createVerifierPass());        // Verify that input is correct
-  
-  addPass(PM, llvm::createCFGSimplificationPass()); // Clean up disgusting code
-  addPass(PM, llvm::createPromoteMemoryToRegisterPass());// Kill useless allocas
-  
-  addPass(PM, createInstructionCombiningPass()); // Cleanup for scalarrepl.
-  addPass(PM, createJumpThreadingPass());        // Thread jumps.
-  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
-  addPass(PM, createScalarReplAggregatesPass()); // Break up aggregate allocas
-  addPass(PM, createInstructionCombiningPass()); // Combine silly seq's
-  addPass(PM, createCondPropagationPass());      // Propagate conditionals
-  
-  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
-  addPass(PM, createPredicateSimplifierPass());
-  addPass(PM, createReassociatePass());          // Reassociate expressions
-  addPass(PM, createLICMPass());                 // Hoist loop invariants
-  
-  addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
-  addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
-  addPass(PM, createLoopDeletionPass());         // Delete dead loops
-  addPass(PM, createLoopUnrollPass());           // Unroll small loops*/
-  addPass(PM, createInstructionCombiningPass()); // Clean up after the unroller
-  addPass(PM, createGVNPass());                  // Remove redundancies
-  addPass(PM, createSCCPPass());                 // Constant prop with SCCP
-  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
- 
-  Function* func = mod->JavaObjectAllocateFunction;
-  addPass(PM, mvm::createEscapeAnalysisPass(func));
-
-  // Do not do GVN after this pass: initialization checks could be removed.
-  addPass(PM, mvm::createLowerConstantCallsPass());
-  
-  // Run instcombine after redundancy elimination to exploit opportunities
-  // opened up by them.
-  addPass(PM, createInstructionCombiningPass());
-  addPass(PM, createCondPropagationPass());      // Propagate conditionals
-
-  addPass(PM, createDeadStoreEliminationPass()); // Delete dead stores
-  addPass(PM, createAggressiveDCEPass());        // Delete dead instructions
-  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
-
-#ifndef ISOLATE
-  if (mod->isStaticCompiling())
-#endif
-    addPass(PM, mvm::createLowerForcedCallsPass());    // Remove forced initialization
-  
-}
-
 JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
   TheModule = (Module*)m;
   mvm::MvmModule::protectEngine.lock();
   mvm::MvmModule::executionEngine->addModuleProvider(this);
   mvm::MvmModule::protectEngine.unlock();
-  perFunctionPasses = new llvm::FunctionPassManager(this);
-  perFunctionPasses->add(new llvm::TargetData(m));
-  AddStandardCompilePasses(m, perFunctionPasses);
+    
+  JavaNativeFunctionPasses = new llvm::FunctionPassManager(this);
+  JavaNativeFunctionPasses->add(new llvm::TargetData(m));
+  // Inst-combine for folding constant pointer classes.
+  JavaNativeFunctionPasses->add(llvm::createInstructionCombiningPass());
+  // Lower constant calls to lower things like getClass used
+  // on synchronized methods.
+  JavaNativeFunctionPasses->add(mvm::createLowerConstantCallsPass());
   
-  perNativeFunctionPasses = new llvm::FunctionPassManager(this);
-  perNativeFunctionPasses->add(new llvm::TargetData(m));
-  addPass(perNativeFunctionPasses, createInstructionCombiningPass()); // Cleanup for scalarrepl.
-  addPass(perNativeFunctionPasses, mvm::createLowerConstantCallsPass());
+  JavaFunctionPasses = new llvm::FunctionPassManager(this);
+  JavaFunctionPasses->add(new llvm::TargetData(m));
+  Function* func = m->JavaObjectAllocateFunction;
+  // Inst-combine for folding constant pointer classes.
+  JavaFunctionPasses->add(llvm::createInstructionCombiningPass());
+  JavaFunctionPasses->add(mvm::createEscapeAnalysisPass(func));
+  JavaFunctionPasses->add(mvm::createLowerConstantCallsPass());
+  JavaFunctionPasses->add(mvm::createLowerForcedCallsPass());
 }
 
 JnjvmModuleProvider::~JnjvmModuleProvider() {
@@ -258,6 +199,6 @@ JnjvmModuleProvider::~JnjvmModuleProvider() {
   mvm::MvmModule::executionEngine->removeModuleProvider(this);
   mvm::MvmModule::protectEngine.unlock();
   delete TheModule;
-  delete perFunctionPasses;
-  delete perNativeFunctionPasses;
+  delete JavaNativeFunctionPasses;
+  delete JavaFunctionPasses;
 }

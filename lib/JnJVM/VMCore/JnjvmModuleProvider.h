@@ -26,8 +26,8 @@ class JnjvmModuleProvider : public ModuleProvider {
 private:
   JavaMethod* staticLookup(Class* caller, uint32 index);
   
-  llvm::FunctionPassManager* perFunctionPasses;
-  llvm::FunctionPassManager* perNativeFunctionPasses;
+  llvm::FunctionPassManager* JavaFunctionPasses;
+  llvm::FunctionPassManager* JavaNativeFunctionPasses;
 
 public:
   

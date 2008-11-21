@@ -7,10 +7,18 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <dlfcn.h>
-#include <limits.h>
-#include <unistd.h>
+#include <climits>
+#include <cstdlib>
+#include <cstring>
+
+// for dlopen and dlsym
+#include <dlfcn.h> 
+
+// for stat, S_IFMT and S_IFDIR
+#include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
+
 
 
 #if defined(__MACH__)
@@ -45,7 +53,9 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   TheModule = new JnjvmModule("Bootstrap JnJVM");
   getModule()->setIsStaticCompiling(staticCompilation);
   TheModuleProvider = new JnjvmModuleProvider(getModule());
-  
+  FunctionPasses = new FunctionPassManager(TheModuleProvider);
+  FunctionPasses->add(new TargetData(TheModule));
+
   hashUTF8 = new(allocator) UTF8Map(allocator, 0);
   classes = new(allocator) ClassMap();
   javaTypes = new(allocator) TypeMap(); 
@@ -226,6 +236,7 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   TheModule = new JnjvmModule("Applicative loader");
   TheModuleProvider = new JnjvmModuleProvider(getModule());
   bootstrapLoader = JCL.bootstrapLoader;
+  FunctionPasses = bootstrapLoader->FunctionPasses;
   
   hashUTF8 = new(allocator) UTF8Map(allocator,
                                     bootstrapLoader->upcalls->ArrayOfChar);
@@ -591,6 +602,11 @@ JnjvmClassLoader::~JnjvmClassLoader() {
   }
 
   delete TheModuleProvider;
+}
+
+
+JnjvmBootstrapLoader::~JnjvmBootstrapLoader() {
+  delete FunctionPasses;
 }
 
 JavaString* JnjvmClassLoader::UTF8ToStr(const UTF8* val) {

@@ -11,12 +11,17 @@
 #include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
 #include <llvm/Instructions.h>
+#include "llvm/LinkAllPasses.h"
 #include <llvm/Type.h>
+#include "llvm/Analysis/LoopPass.h"
+#include "llvm/Analysis/Verifier.h"
 #include "llvm/Support/MutexGuard.h"
 #include "llvm/Target/TargetOptions.h"
 
+
 #include <cstdio>
 
+#include "mvm/CompilationUnit.h"
 #include "mvm/JIT.h"
 #include "mvm/MvmMemoryManager.h"
 #include "mvm/Object.h"
@@ -323,4 +328,62 @@ void MvmModule::addMethodInfo(void* Addr, const llvm::Function* F) {
   lock.lock();
   pointerMap.insert(std::make_pair(Addr, F));
   lock.unlock();
+}
+
+
+
+static void addPass(FunctionPassManager *PM, Pass *P) {
+  // Add the pass to the pass manager...
+  PM->add(P);
+}
+
+// This is equivalent to:
+// opt -simplifycfg -mem2reg -instcombine -jump-threading -scalarrepl -instcombine 
+//     -condprop -simplifycfg -reassociate -licm essai.bc -loop-unswitch 
+//     -indvars -loop-unroll -instcombine -gvn -sccp -simplifycfg
+//     -instcombine -condprop -dse -adce -simplifycfg
+//
+void CompilationUnit::AddStandardCompilePasses() {
+  // TODO: enable this when
+  // - we can call multiple times the makeLLVMModuleContents function generated 
+  //   by llc -march=cpp -cppgen=contents
+  // - intrinsics won't be in the .ll files
+  // - each module will have its declaration of external functions
+  // 
+  //PM->add(llvm::createVerifierPass());        // Verify that input is correct
+ 
+  FunctionPassManager* PM = FunctionPasses;
+  addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
+  addPass(PM, createPromoteMemoryToRegisterPass());// Kill useless allocas
+  
+  addPass(PM, createInstructionCombiningPass()); // Cleanup for scalarrepl.
+  addPass(PM, createJumpThreadingPass());        // Thread jumps.
+  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+  addPass(PM, createScalarReplAggregatesPass()); // Break up aggregate allocas
+  addPass(PM, createInstructionCombiningPass()); // Combine silly seq's
+  addPass(PM, createCondPropagationPass());      // Propagate conditionals
+  
+  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+  addPass(PM, createPredicateSimplifierPass());
+  addPass(PM, createReassociatePass());          // Reassociate expressions
+  addPass(PM, createLICMPass());                 // Hoist loop invariants
+  
+  addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
+  addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
+  addPass(PM, createLoopDeletionPass());         // Delete dead loops
+  addPass(PM, createLoopUnrollPass());           // Unroll small loops*/
+  addPass(PM, createInstructionCombiningPass()); // Clean up after the unroller
+  addPass(PM, createGVNPass());                  // Remove redundancies
+  addPass(PM, createSCCPPass());                 // Constant prop with SCCP
+  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+ 
+  // Run instcombine after redundancy elimination to exploit opportunities
+  // opened up by them.
+  addPass(PM, createInstructionCombiningPass());
+  addPass(PM, createCondPropagationPass());      // Propagate conditionals
+
+  addPass(PM, createDeadStoreEliminationPass()); // Delete dead stores
+  addPass(PM, createAggressiveDCEPass());        // Delete dead instructions
+  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+
 }

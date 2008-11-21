@@ -15,6 +15,8 @@
 
 #include "llvm/Support/ManagedStatic.h"
 
+
+using namespace llvm;
 using namespace mvm;
 
 int main(int argc, char **argv, char **envp) {
@@ -23,8 +25,9 @@ int main(int argc, char **argv, char **envp) {
   MvmModule::initialise();
   Object::initialise();
   Collector::initialise(0);
-  
+ 
   CompilationUnit* CU = VirtualMachine::initialiseJVM();
+  CU->AddStandardCompilePasses();
   VirtualMachine* vm = VirtualMachine::createJVM(CU);
   vm->runApplication(argc, argv);
   vm->waitForExit();

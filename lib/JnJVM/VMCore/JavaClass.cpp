@@ -387,7 +387,7 @@ void* JavaMethod::compiledPtr() {
     classDef->acquire();
     if (code == 0) {
       code = 
-        classDef->classLoader->TheModuleProvider->materializeFunction(this);
+        classDef->classLoader->getModuleProvider()->materializeFunction(this);
     }
     classDef->release();
     return code;

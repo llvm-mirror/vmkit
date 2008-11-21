@@ -997,13 +997,13 @@ static void compileClass(Class* cl) {
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
     JavaMethod& meth = cl->virtualMethods[i];
     if (!isAbstract(meth.access))
-      cl->classLoader->TheModuleProvider->parseFunction(&meth);
+      cl->classLoader->getModuleProvider()->parseFunction(&meth);
   }
   
   for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
     JavaMethod& meth = cl->staticMethods[i];
     if (!isAbstract(meth.access))
-      cl->classLoader->TheModuleProvider->parseFunction(&meth);
+      cl->classLoader->getModuleProvider()->parseFunction(&meth);
   }
 }
 

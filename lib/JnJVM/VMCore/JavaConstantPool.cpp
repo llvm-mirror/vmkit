@@ -427,8 +427,9 @@ void* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index,
   if (isStatic(access) && ctpRes[index]) return ctpRes[index];
 
   void* val =
-    classDef->classLoader->TheModuleProvider->addCallback(classDef, index, sign,
-                                                          isStatic(access));
+    classDef->classLoader->getModuleProvider()->addCallback(classDef, index,
+                                                            sign,
+                                                            isStatic(access));
         
   if (isStatic(access)) ctpRes[index] = val;
   

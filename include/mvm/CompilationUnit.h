@@ -18,6 +18,7 @@
 #include "mvm/Object.h"
 
 namespace llvm {
+  class FunctionPassManager;
   class Module;
   class ModuleProvider;
 }
@@ -27,6 +28,10 @@ namespace mvm {
 class CompilationUnit : public mvm::Object {
 public:
   llvm::Module* TheModule;
+  llvm::ModuleProvider* TheModuleProvider;
+  llvm::FunctionPassManager* FunctionPasses;
+
+  void AddStandardCompilePasses();
 };
 }
 

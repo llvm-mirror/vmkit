@@ -7,11 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <dlfcn.h>
-
+#include "llvm/LinkAllPasses.h"
+#include "llvm/LinkAllVMCore.h"
 #include "llvm/CodeGen/LinkAllCodegenComponents.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
+#include "llvm/Support/PassNameParser.h"
 
 
 #include "MvmGC.h"
@@ -27,6 +28,14 @@ enum VMType {
   Interactive, RunJava, RunNet
 };
 
+// The OptimizationList is automatically populated with registered Passes by the
+// PassNameParser.
+//
+static llvm::cl::list<const llvm::PassInfo*, bool, llvm::PassNameParser>
+PassList(llvm::cl::desc("Optimizations available:"));
+
+
+
 static llvm::cl::opt<VMType> VMToRun(llvm::cl::desc("Choose VM to run:"),
   llvm::cl::values(
     clEnumValN(Interactive , "i", "Run in interactive mode"),
@@ -38,6 +47,58 @@ static llvm::cl::opt<bool> Fast("fast",
                      cl::desc("Generate code quickly, "
                               "potentially sacrificing code quality"),
                      cl::init(false));
+
+
+static cl::opt<bool> 
+DisableOptimizations("disable-opt", 
+                     cl::desc("Do not run any optimization passes"));
+
+static cl::opt<bool>
+StandardCompileOpts("std-compile-opts", 
+                   cl::desc("Include the standard compile time optimizations"));
+
+inline void addPass(FunctionPassManager *PM, Pass *P) {
+  // Add the pass to the pass manager...
+  PM->add(P);
+}
+
+
+void addCommandLinePass(mvm::CompilationUnit* CU, char** argv) {
+  FunctionPassManager* Passes = CU->FunctionPasses;
+
+  // Create a new optimization pass for each one specified on the command line
+  for (unsigned i = 0; i < PassList.size(); ++i) {
+    // Check to see if -std-compile-opts was specified before this option.  If
+    // so, handle it.
+    if (StandardCompileOpts && 
+        StandardCompileOpts.getPosition() < PassList.getPosition(i)) {
+      if (!DisableOptimizations) CU->AddStandardCompilePasses();
+      StandardCompileOpts = false;
+    }
+      
+    const PassInfo *PassInf = PassList[i];
+    Pass *P = 0;
+    if (PassInf->getNormalCtor())
+      P = PassInf->getNormalCtor()();
+    else
+      cerr << argv[0] << ": cannot create pass: "
+           << PassInf->getPassName() << "\n";
+    if (P) {
+        bool isModulePass = dynamic_cast<ModulePass*>(P) != 0;
+        if (isModulePass) 
+          cerr << argv[0] << ": vmkit does not support module pass: "
+             << PassInf->getPassName() << "\n";
+        else addPass(Passes, P);
+
+    }
+  }
+    
+  // If -std-compile-opts was specified at the end of the pass list, add them.
+  if (StandardCompileOpts) {
+    CU->AddStandardCompilePasses();
+  }    
+
+}
 
 int found(char** argv, int argc, const char* name) {
   int i = 1;
@@ -65,10 +126,11 @@ int main(int argc, char** argv) {
   mvm::MvmModule::initialise(Fast);
   mvm::Object::initialise();
   Collector::initialise(0);
-  
+
   if (VMToRun == RunJava) {
 #if WITH_JNJVM
     mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM();
+    addCommandLinePass(CU, argv);
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(CU);
     vm->runApplication(argc, argv);
     vm->waitForExit();
@@ -85,6 +147,7 @@ int main(int argc, char** argv) {
 #if WITH_JNJVM
     mvm::CompilationUnit* JVMCompiler = 
       mvm::VirtualMachine::initialiseJVM();
+    addCommandLinePass(JVMCompiler, argv);
     MyCl.vmlets["java"] = (mvm::VirtualMachine::createJVM);
     MyCl.compilers["java"] = JVMCompiler;
 #endif

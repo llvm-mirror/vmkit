@@ -404,7 +404,8 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
 #ifdef ISOLATE_SHARING
         ((void**)VT)[0] = 0;
 #else
-        Function* func = cl->classLoader->TheModuleProvider->parseFunction(&meth);
+        JnjvmClassLoader* loader = cl->classLoader;
+        Function* func = loader->getModuleProvider()->parseFunction(&meth);
         if (!cl->super) meth.canBeInlined = true;
         Function::iterator BB = func->begin();
         BasicBlock::iterator I = BB->begin();

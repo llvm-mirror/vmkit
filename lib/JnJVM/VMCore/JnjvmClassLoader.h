@@ -118,7 +118,9 @@ public:
   /// TheModuleProvider - JIT module provider for dynamic class loading and
   /// lazy compilation.
   ///
-  JnjvmModuleProvider* TheModuleProvider;
+  JnjvmModuleProvider* getModuleProvider() {
+    return (JnjvmModuleProvider*)TheModuleProvider;
+  }
 
   /// tracer - Traces a JnjvmClassLoader for GC.
   ///
@@ -211,6 +213,7 @@ public:
     TheModuleProvider = 0;
     isolate = 0;
     classes = 0;
+    FunctionPasses = 0;
   }
 
   /// loadClass - The user class that defines the loadClass method.
@@ -368,6 +371,8 @@ public:
   UserClassArray* getArrayClass(unsigned id) {
     return arrayTable[id - 4];
   }
+
+  ~JnjvmBootstrapLoader();
 };
 
 } // end namespace jnjvm
