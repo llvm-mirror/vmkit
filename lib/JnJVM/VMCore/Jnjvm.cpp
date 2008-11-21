@@ -456,6 +456,7 @@ JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
 
 #define PATH_MANIFEST "META-INF/MANIFEST.MF"
 #define MAIN_CLASS "Main-Class: "
+#define MAIN_LOWER_CLASS "Main-class: "
 #define PREMAIN_CLASS "Premain-Class: "
 #define BOOT_CLASS_PATH "Boot-Class-Path: "
 #define CAN_REDEFINE_CLASS_PATH "Can-Redefine-Classes: "
@@ -519,6 +520,9 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
       if (ok) {
         char* mainClass = findInformation(vm, res, MAIN_CLASS,
                                           LENGTH_MAIN_CLASS);
+        if (!mainClass)
+          mainClass = findInformation(vm, res, MAIN_LOWER_CLASS,
+                                      LENGTH_MAIN_CLASS);
         if (mainClass) {
           className = mainClass;
         } else {
