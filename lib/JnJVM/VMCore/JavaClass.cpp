@@ -533,7 +533,7 @@ JavaObject* UserClass::doNew(Jnjvm* vm) {
   JavaObject* res = 
     (JavaObject*)vm->gcAllocator.allocateManagedObject(getVirtualSize(),
                                                        getVirtualVT());
-  res->classOf = this;
+  res->initialise(this);
   return res;
 }
 
