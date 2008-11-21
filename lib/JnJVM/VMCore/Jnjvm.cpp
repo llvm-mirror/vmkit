@@ -168,7 +168,13 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
         throw exc;
       }
     }
-  
+ 
+#ifdef SERVICE
+    JavaObject* exc = 0;
+    if (classLoader == classLoader->bootstrapLoader || 
+        classLoader->isolate == vm) {
+#endif
+
     // 8. Next, execute either the class variable initializers and static
     //    initializers of the class or the field initializers of the interface,
     //    in textual order, as though they were a single block, except that
@@ -203,6 +209,9 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
         JavaThread::clearException();
       }
     }
+#ifdef SERVICE
+    }
+#endif
 
     // 9. If the execution of the initializers completes normally, then lock
     //    this Class object, label it fully initialized, notify all waiting 

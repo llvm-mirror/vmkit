@@ -36,8 +36,10 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   uint32 index = enveloppe->index;
   
   ctpInfo->resolveMethod(index, cl, utf8, sign);
+#ifndef SERVICE
   assert(obj->classOf->isInitializing() && 
          "Class not ready in a virtual lookup.");
+#endif
 
   enveloppe->cacheLock.lock();
   CacheNode* rcache = 0;
@@ -58,7 +60,7 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
     UserClass* methodCl = 0;
     JavaMethod* dmeth = ocl->lookupMethod(utf8, sign->keyName, false, true,
                                           &methodCl);
-#ifndef ISOLATE_SHARING
+#if !defined(ISOLATE_SHARING) && !defined(SERVICE)
     assert(dmeth->classDef->isInitializing() &&
            "Class not ready in a virtual lookup.");
 #endif
@@ -228,7 +230,7 @@ extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
     caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
   }
 
-#ifndef ISOLATE_SHARING
+#if !defined(ISOLATE_SHARING) && !defined(SERVICE)
   assert(dmeth->classDef->isInitializing() && 
          "Class not ready in a virtual lookup.");
 #endif

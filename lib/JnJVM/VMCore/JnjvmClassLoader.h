@@ -53,6 +53,7 @@ class ZipArchive;
 class JnjvmClassLoader : public mvm::CompilationUnit {
   friend class JavaJIT;
   friend class Jnjvm;
+  friend class UserCommonClass;
 private:
    
   
