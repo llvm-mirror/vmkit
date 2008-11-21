@@ -338,10 +338,10 @@ static void addPass(FunctionPassManager *PM, Pass *P) {
 }
 
 // This is equivalent to:
-// opt -simplifycfg -mem2reg -instcombine -jump-threading -scalarrepl -instcombine 
-//     -condprop -simplifycfg -reassociate -licm essai.bc -loop-unswitch 
-//     -indvars -loop-unroll -instcombine -gvn -sccp -simplifycfg
-//     -instcombine -condprop -dse -adce -simplifycfg
+// opt -simplifycfg -mem2reg -instcombine -jump-threading -scalarrepl
+//     -instcombine -condprop -simplifycfg -reassociate -licm essai.bc
+//     -loop-unswitch -indvars -loop-unroll -instcombine -gvn -sccp
+//     -simplifycfg -instcombine -condprop -dse -adce -simplifycfg
 //
 void CompilationUnit::AddStandardCompilePasses() {
   // TODO: enable this when
