@@ -76,7 +76,7 @@ void LockRecursive::lock() {
 
 void LockRecursive::unlock() {
   --n;
-  owner = 0;
+  if (n == 0) owner = 0;
   pthread_mutex_unlock((pthread_mutex_t*)&internalLock);
 }
 
