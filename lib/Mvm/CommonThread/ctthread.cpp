@@ -73,7 +73,7 @@ public:
 
     // Do an mmap at a fixed address. If the mmap fails for a given address
     // use the next one.
-    while (!baseAddr && ptr != 0xF0000000) {
+    while (!baseAddr && ptr != 0x70000000) {
       ptr = ptr + 0x10000000;
 #if defined (__MACH__)
       uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
