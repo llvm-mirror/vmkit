@@ -1045,6 +1045,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     llvm::CallInst::Create(module->exceptionEndCatch,
                            void_28_params.begin(), void_28_params.end(), "",
                            cur->nativeHandler);
+
     BranchInst::Create(cur->javaHandler, cur->nativeHandler);
 
     if (cur->javaHandler->empty()) {
@@ -1059,6 +1060,64 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
       assert(node && "malformed exceptions");
       node->addIncoming(exc, cur->nativeHandler);
     }
+#if defined(SERVICE)
+  currentBlock = cur->javaHandler;
+  JnjvmClassLoader* loader = compilingClass->classLoader;;
+  Value* Cmp = 0;
+  Value* threadId = 0;
+  Value* OldIsolateID = 0;
+  Value* IsolateIDPtr = 0;
+  Value* OldIsolate = 0;
+  Value* NewIsolate = 0;
+  Value* IsolatePtr = 0;
+  if (loader != loader->bootstrapLoader) {
+    threadId = CallInst::Create(module->llvm_frameaddress, module->constantZero,
+                                "", currentBlock);
+    threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
+                                currentBlock);
+    threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+                                       "", currentBlock);
+  
+    threadId = new IntToPtrInst(threadId, module->ptrPtrType, "", currentBlock);
+     
+    std::vector<Value*> GEP;
+    GEP.push_back(module->constantThree);
+    IsolateIDPtr = GetElementPtrInst::Create(threadId, GEP.begin(), GEP.end(),
+                                             "", currentBlock);
+    const Type* realType = PointerType::getUnqual(module->pointerSizeType);
+    IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
+                                   currentBlock);
+    OldIsolateID = new LoadInst(IsolateIDPtr, "", currentBlock);
+
+    Value* MyID = ConstantInt::get(module->pointerSizeType,
+                                   loader->isolate->IsolateID);
+    Cmp = new ICmpInst(ICmpInst::ICMP_EQ, OldIsolateID, MyID, "", currentBlock);
+
+    BasicBlock* EndBB = createBasicBlock("After service check");
+    BasicBlock* ServiceBB = createBasicBlock("Begin service call");
+
+    BranchInst::Create(EndBB, ServiceBB, Cmp, currentBlock);
+
+    currentBlock = ServiceBB;
+  
+    new StoreInst(MyID, IsolateIDPtr, currentBlock);
+    GEP.clear();
+    GEP.push_back(module->constantFour);
+    IsolatePtr = GetElementPtrInst::Create(threadId, GEP.begin(), GEP.end(), "",
+                                           currentBlock);
+     
+    OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
+    NewIsolate = module->getIsolate(loader->isolate);
+    NewIsolate = new LoadInst(NewIsolate, "", currentBlock);
+    new StoreInst(NewIsolate, IsolatePtr, currentBlock);
+
+    GEP.clear();
+    GEP.push_back(OldIsolate);
+    GEP.push_back(NewIsolate);
+    BranchInst::Create(EndBB, currentBlock);
+    currentBlock = EndBB;
+  }
+#endif
      
   }
   
