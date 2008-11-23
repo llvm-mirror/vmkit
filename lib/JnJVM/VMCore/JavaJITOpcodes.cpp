@@ -1831,9 +1831,6 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case NEWARRAY :
       case ANEWARRAY : {
         
-#ifndef ISOLATE_SHARING
-        UserClassArray* dcl = 0;
-#endif
         ConstantInt* sizeElement = 0;
         Value* TheVT = 0;
         Value* valCl = 0;
@@ -1844,7 +1841,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 #ifndef ISOLATE_SHARING
           JnjvmBootstrapLoader* loader = 
             compilingClass->classLoader->bootstrapLoader;
-          dcl = loader->getArrayClass(id);
+          UserClassArray* dcl = loader->getArrayClass(id);
+          valCl = module->getNativeClass(dcl);
+          valCl = new LoadInst(valCl, "", currentBlock);
 #else
           std::vector<Value*> args;
           args.push_back(isolateLocal);
@@ -1857,28 +1856,15 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           sizeElement = LAI.sizeInBytesConstant;
         } else {
           uint16 index = readU2(bytecodes, i);
-#ifndef ISOLATE_SHARING
-          const UTF8* className = 
-            compilingClass->ctpInfo->resolveClassName(index);
-        
-          JnjvmClassLoader* JCL = compilingClass->classLoader;
-          const UTF8* arrayName = JCL->constructArrayName(1, className);
-        
-          dcl = JCL->constructArray(arrayName);
-#else
-
           valCl = getResolvedClass(index, false);
-          valCl = CallInst::Create(module->GetArrayClassFunction, valCl,
-                                   "", currentBlock);
-#endif
+          const llvm::Type* Ty = PointerType::getUnqual(module->JavaClassType);
+          Value* args[2]= { valCl, Constant::getNullValue(Ty) };
+          valCl = CallInst::Create(module->GetArrayClassFunction, args,
+                                   args + 2, "", currentBlock);
           sizeElement = module->constantPtrSize;
         }
-#ifndef ISOLATE_SHARING
-        valCl = module->getNativeClass(dcl);
-        valCl = new LoadInst(valCl, "", currentBlock);
-        TheVT = module->getVirtualTable(dcl);
-        TheVT = new LoadInst(TheVT, "", currentBlock);
-#endif   
+        TheVT = CallInst::Create(module->GetVTFromClassFunction, valCl, "",
+                                 currentBlock);
         llvm::Value* arg1 = popAsInt();
 
         Value* cmp = new ICmpInst(ICmpInst::ICMP_SLT, arg1,
@@ -1929,7 +1915,6 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* size =
           BinaryOperator::CreateAdd(module->JavaArraySizeConstant, mult,
                                     "", currentBlock);
-        assert(TheVT && "Not VT");
         std::vector<Value*> args;
         args.push_back(size);
         args.push_back(TheVT);
@@ -2017,16 +2002,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
         currentBlock = ifFalse;
-        Value* clVar = 0;
-#ifndef ISOLATE_SHARING
-        CommonClass* dcl =
-          compilingClass->ctpInfo->getMethodClassIfLoaded(index);
-        if (dcl) {
-          clVar = module->getNativeClass(dcl);
-          clVar = new LoadInst(clVar, "", currentBlock);
-        } else
-#endif
-          clVar = getResolvedClass(index, false);
+        Value* clVar = getResolvedClass(index, false);
         
         std::vector<Value*> args;
         args.push_back(obj);
@@ -2058,20 +2034,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case INSTANCEOF : {
         uint16 index = readU2(bytecodes, i);
-#ifndef ISOLATE_SHARING
-        CommonClass* dcl =
-          compilingClass->ctpInfo->getMethodClassIfLoaded(index);
-        
-        Value* clVar = 0;
-        if (dcl) {
-          clVar = module->getNativeClass(dcl);
-          clVar = new LoadInst(clVar, "", currentBlock);
-        } else {
-          clVar = getResolvedClass(index, false);
-        }
-#else
         Value* clVar = getResolvedClass(index, false);
-#endif
+        
         std::vector<Value*> args;
         args.push_back(pop());
         args.push_back(clVar);
@@ -2102,19 +2066,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint8 dim = readU1(bytecodes, i);
         
         
-#ifdef ISOLATE_SHARING
         Value* valCl = getResolvedClass(index, true);
-#else
-        JnjvmClassLoader* JCL = compilingClass->classLoader;
-        const UTF8* className = 
-          compilingClass->ctpInfo->resolveClassName(index);
-
-        UserClassArray* dcl = JCL->constructArray(className);
-        
-        compilingClass->ctpInfo->loadClass(index);
-        Value* valCl = module->getNativeClass(dcl);
-        valCl = new LoadInst(valCl, "", currentBlock);
-#endif
         Value** args = (Value**)alloca(sizeof(Value*) * (dim + 2));
         args[0] = valCl;
         args[1] = ConstantInt::get(Type::Int32Ty, dim);

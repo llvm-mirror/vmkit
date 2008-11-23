@@ -164,6 +164,9 @@ declare i1 @instantiationOfArray(%JavaClass*, %JavaClass*) readnone
 ;;; class.
 declare %JavaObject* @getClassDelegatee(%JavaClass*) readnone 
 
+;;; getArrayClass - Get the array user class of the user class.
+declare %JavaClass* @getArrayClass(%JavaClass*, %JavaClass**) readnone
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Exception methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

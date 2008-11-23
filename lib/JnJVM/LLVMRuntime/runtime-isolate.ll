@@ -32,6 +32,3 @@ declare %JavaClass* @getJnjvmExceptionClass(%Jnjvm*) readnone
 ;;; getJnjvmArrayClass - Get the array user class of the index, for the given
 ;;; isolate.
 declare %JavaClass* @getJnjvmArrayClass(%Jnjvm*, i32) readnone
-
-;;; getArrayClass - Get the array user class of the user class.
-declare %JavaClass* @getArrayClass(%JavaClass*) readnone

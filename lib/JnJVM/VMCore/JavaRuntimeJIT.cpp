@@ -176,14 +176,6 @@ extern "C" void* staticCtpLookup(UserClass* cl, uint32 index) {
   return (void*)methodCl->getConstantPool();
 }
 
-extern "C" UserClassArray* getArrayClass(UserCommonClass* cl) {
-  JnjvmClassLoader* JCL = cl->classLoader;
-  const UTF8* arrayName = JCL->constructArrayName(1, cl->getName());
-        
-  UserClassArray* dcl = JCL->constructArray(arrayName);
-  return dcl;
-}
-
 extern "C" UserConstantPool* specialCtpLookup(UserConstantPool* ctpInfo,
                                               uint32 index,
                                               UserConstantPool** res) {
@@ -355,6 +347,17 @@ extern "C" JavaArray* multiCallNew(UserClassArray* cl, uint32 len, ...) {
   return multiCallNewIntern(cl, len, dims, vm);
 }
 
+extern "C" UserClassArray* getArrayClass(UserCommonClass* cl,
+                                         UserClassArray** dcl) {
+  JnjvmClassLoader* JCL = cl->classLoader;
+  cl->resolveClass();
+  const UTF8* arrayName = JCL->constructArrayName(1, cl->getName());
+  
+  UserClassArray* result = JCL->constructArray(arrayName);
+  if (dcl) *dcl = result;
+  return result;
+}
+
 extern "C" void JavaObjectAquire(JavaObject* obj) {
   obj->acquire();
 }
@@ -368,7 +371,8 @@ extern "C" bool instanceOf(JavaObject* obj, UserCommonClass* cl) {
   return obj->instanceOf(cl);
 }
 
-extern "C" bool instantiationOfArray(UserCommonClass* cl1, UserClassArray* cl2) {
+extern "C" bool instantiationOfArray(UserCommonClass* cl1,
+                                     UserClassArray* cl2) {
   return cl1->instantiationOfArray(cl2);
 }
 

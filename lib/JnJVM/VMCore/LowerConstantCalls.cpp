@@ -145,10 +145,9 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
         } else if (V == module->GetVTFromClassFunction) {
           Changed = true;
-#ifndef ISOLATE_SHARING
+          
           ConstantExpr* CE = getClass(module, Call);
           if (CE) {
-            Changed = true;
             ConstantInt* C = (ConstantInt*)CE->getOperand(0);
             Class* cl = (Class*)C->getZExtValue();
             if (cl->isResolved()) {
@@ -156,10 +155,10 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
               VT = new LoadInst(VT, "", CI);
               CI->replaceAllUsesWith(VT);
               CI->eraseFromParent();
+              continue;
             }
-            continue;
           }
-#endif
+          
           Value* val = Call.getArgument(0); 
           std::vector<Value*> indexes; 
           indexes.push_back(mvm::MvmModule::constantZero);
@@ -171,7 +170,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
         } else if (V == module->GetObjectSizeFromClassFunction) {
           Changed = true;
-#ifndef ISOLATE_SHARING
+          
           ConstantExpr* CE = getClass(module, Call);
           if (CE) {
             ConstantInt* C = (ConstantInt*)CE->getOperand(0);
@@ -181,10 +180,10 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
               Value* Size = LCI->getVirtualSize();
               CI->replaceAllUsesWith(Size);
               CI->eraseFromParent();
+              continue;
             }
-            continue;
           }
-#endif
+          
           Value* val = Call.getArgument(0); 
           std::vector<Value*> indexes; 
           indexes.push_back(mvm::MvmModule::constantZero);
@@ -512,6 +511,60 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
           BranchInst::Create(NBB, trueCl);
           break;
+        } else if (V == module->GetArrayClassFunction) {
+          const llvm::Type* Ty = PointerType::getUnqual(module->JavaClassType);
+          Constant* nullValue = Constant::getNullValue(Ty);
+          // Check if we have already proceed this call.
+          if (Call.getArgument(1) == nullValue) {
+            Changed = true;
+            ConstantExpr* CE = getClass(module, Call);
+            if (CE) {
+              ConstantInt* C = (ConstantInt*)CE->getOperand(0);
+              Class* cl = (Class*)C->getZExtValue();
+              if (cl->isResolved()) {
+                JnjvmClassLoader* JCL = cl->classLoader;
+                const UTF8* arrayName = JCL->constructArrayName(1, cl->name);
+          
+                UserCommonClass* dcl = JCL->constructArray(arrayName);
+                Value* valCl = module->getNativeClass(dcl);
+                valCl = new LoadInst(valCl, "", CI);
+                CI->replaceAllUsesWith(valCl);
+                CI->eraseFromParent();
+                continue;
+              }
+            }
+            
+            BasicBlock* NBB = II->getParent()->splitBasicBlock(II);
+            I->getParent()->getTerminator()->eraseFromParent();
+
+            Constant* init = Constant::getNullValue(module->JavaClassType);
+            GlobalVariable* GV = 
+              new GlobalVariable(module->JavaClassType, false,
+                                 GlobalValue::ExternalLinkage,
+                                 init, "", module);
+
+            Value* LoadedGV = new LoadInst(GV, "", CI);
+            Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, LoadedGV, init,
+                                      "", CI);
+
+            BasicBlock* OKBlock = BasicBlock::Create("", &F);
+            BasicBlock* NotOKBlock = BasicBlock::Create("", &F);
+            PHINode* node = PHINode::Create(module->JavaClassType, "", OKBlock);
+            node->addIncoming(LoadedGV, CI->getParent());
+
+            BranchInst::Create(NotOKBlock, OKBlock, cmp, CI);
+
+            Value* args[2] = { Call.getArgument(0), GV };
+            Value* res = CallInst::Create(module->GetArrayClassFunction, args,
+                                          args + 2, "", NotOKBlock);
+            BranchInst::Create(OKBlock, NotOKBlock);
+            node->addIncoming(res, NotOKBlock);
+            
+            CI->replaceAllUsesWith(node);
+            CI->eraseFromParent();
+            BranchInst::Create(NBB, OKBlock);
+            break;
+          }
         }
 
 #ifdef ISOLATE_SHARING

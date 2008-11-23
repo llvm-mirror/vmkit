@@ -1086,6 +1086,8 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
 
   ClearExceptionFunction = module->getFunction("JavaThreadClearException");
   
+  GetArrayClassFunction = module->getFunction("getArrayClass");
+  
 
 #ifdef ISOLATE
   StringLookupFunction = module->getFunction("stringLookup");
@@ -1098,7 +1100,6 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
   GetJnjvmArrayClassFunction = module->getFunction("getJnjvmArrayClass");
   StaticCtpLookupFunction = module->getFunction("staticCtpLookup");
   SpecialCtpLookupFunction = module->getFunction("specialCtpLookup");
-  GetArrayClassFunction = module->getFunction("getArrayClass");
 #endif
 #endif
  

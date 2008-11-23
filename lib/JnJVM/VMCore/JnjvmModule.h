@@ -287,6 +287,7 @@ public:
   llvm::Function* ReleaseObjectFunction;
   llvm::Function* GetConstantPoolAtFunction;
   llvm::Function* MultiCallNewFunction;
+  llvm::Function* GetArrayClassFunction;
 
 #ifdef ISOLATE
   llvm::Function* StringLookupFunction;
@@ -298,7 +299,6 @@ public:
   llvm::Function* GetJnjvmArrayClassFunction;
   llvm::Function* StaticCtpLookupFunction;
   llvm::Function* SpecialCtpLookupFunction;
-  llvm::Function* GetArrayClassFunction;
 #endif
 #endif
 
