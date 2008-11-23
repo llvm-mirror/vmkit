@@ -22,6 +22,7 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/PassNameParser.h"
 #include "llvm/Support/Streams.h"
 #include "llvm/Support/SystemUtils.h"
 #include "llvm/Support/raw_ostream.h"
@@ -52,6 +53,66 @@ Force("f", cl::desc("Overwrite output files"));
 static cl::opt<bool>
 DontPrint("disable-output", cl::desc("Don't output the .ll file"), cl::Hidden);
 
+
+// The OptimizationList is automatically populated with registered Passes by the
+// PassNameParser.
+//
+static llvm::cl::list<const llvm::PassInfo*, bool, llvm::PassNameParser>
+PassList(llvm::cl::desc("Optimizations available:"));
+
+
+static cl::opt<bool> 
+DisableOptimizations("disable-opt", 
+                     cl::desc("Do not run any optimization passes"));
+
+static cl::opt<bool>
+StandardCompileOpts("std-compile-opts", 
+                   cl::desc("Include the standard compile time optimizations"));
+
+inline void addPass(FunctionPassManager *PM, Pass *P) {
+  // Add the pass to the pass manager...
+  PM->add(P);
+}
+
+
+void addCommandLinePass(mvm::CompilationUnit* CU, char** argv) {
+  FunctionPassManager* Passes = CU->FunctionPasses;
+
+  // Create a new optimization pass for each one specified on the command line
+  for (unsigned i = 0; i < PassList.size(); ++i) {
+    // Check to see if -std-compile-opts was specified before this option.  If
+    // so, handle it.
+    if (StandardCompileOpts && 
+        StandardCompileOpts.getPosition() < PassList.getPosition(i)) {
+      if (!DisableOptimizations) CU->AddStandardCompilePasses();
+      StandardCompileOpts = false;
+    }
+      
+    const PassInfo *PassInf = PassList[i];
+    Pass *P = 0;
+    if (PassInf->getNormalCtor())
+      P = PassInf->getNormalCtor()();
+    else
+      cerr << argv[0] << ": cannot create pass: "
+           << PassInf->getPassName() << "\n";
+    if (P) {
+        bool isModulePass = dynamic_cast<ModulePass*>(P) != 0;
+        if (isModulePass) 
+          cerr << argv[0] << ": vmkit does not support module pass: "
+             << PassInf->getPassName() << "\n";
+        else addPass(Passes, P);
+
+    }
+  }
+    
+  // If -std-compile-opts was specified at the end of the pass list, add them.
+  if (StandardCompileOpts) {
+    CU->AddStandardCompilePasses();
+  }    
+
+}
+
+
 int main(int argc, char **argv) {
   llvm_shutdown_obj X;  // Call llvm_shutdown() on exit.
   try {
@@ -73,6 +134,7 @@ int main(int argc, char **argv) {
     Collector::enable(0);
 
     mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM(true);
+    addCommandLinePass(CU, argv);    
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(CU);
     vm->compile(InputFilename.c_str());
     vm->waitForExit();
