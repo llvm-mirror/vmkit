@@ -81,7 +81,7 @@ public:
       uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
 #endif
       baseAddr = (uintptr_t)mmap((void*)ptr, STACK_SIZE * NR_THREADS, 
-                                 PROT_READ | PROT_WRITE, flags, 0, 0);
+                                 PROT_READ | PROT_WRITE, flags, -1, 0);
       if (baseAddr == (uintptr_t)MAP_FAILED) baseAddr = 0;
     }
     if (!baseAddr) {
