@@ -1061,9 +1061,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
       node->addIncoming(exc, cur->nativeHandler);
     }
 #if defined(SERVICE)
-  currentBlock = cur->javaHandler;
   JnjvmClassLoader* loader = compilingClass->classLoader;;
-  Value* Cmp = 0;
   Value* threadId = 0;
   Value* OldIsolateID = 0;
   Value* IsolateIDPtr = 0;
@@ -1072,50 +1070,38 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
   Value* IsolatePtr = 0;
   if (loader != loader->bootstrapLoader) {
     threadId = CallInst::Create(module->llvm_frameaddress, module->constantZero,
-                                "", currentBlock);
+                                "", cur->javaHandler);
     threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
-                                currentBlock);
+                                cur->javaHandler);
     threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
-                                       "", currentBlock);
+                                       "", cur->javaHandler);
   
-    threadId = new IntToPtrInst(threadId, module->ptrPtrType, "", currentBlock);
+    threadId = new IntToPtrInst(threadId, module->ptrPtrType, "",
+                                cur->javaHandler);
      
     std::vector<Value*> GEP;
     GEP.push_back(module->constantThree);
     IsolateIDPtr = GetElementPtrInst::Create(threadId, GEP.begin(), GEP.end(),
-                                             "", currentBlock);
+                                             "", cur->javaHandler);
     const Type* realType = PointerType::getUnqual(module->pointerSizeType);
     IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
-                                   currentBlock);
-    OldIsolateID = new LoadInst(IsolateIDPtr, "", currentBlock);
+                                   cur->javaHandler);
+    OldIsolateID = new LoadInst(IsolateIDPtr, "", cur->javaHandler);
 
     Value* MyID = ConstantInt::get(module->pointerSizeType,
                                    loader->isolate->IsolateID);
-    Cmp = new ICmpInst(ICmpInst::ICMP_EQ, OldIsolateID, MyID, "", currentBlock);
 
-    BasicBlock* EndBB = createBasicBlock("After service check");
-    BasicBlock* ServiceBB = createBasicBlock("Begin service call");
-
-    BranchInst::Create(EndBB, ServiceBB, Cmp, currentBlock);
-
-    currentBlock = ServiceBB;
-  
-    new StoreInst(MyID, IsolateIDPtr, currentBlock);
+    new StoreInst(MyID, IsolateIDPtr, cur->javaHandler);
     GEP.clear();
     GEP.push_back(module->constantFour);
     IsolatePtr = GetElementPtrInst::Create(threadId, GEP.begin(), GEP.end(), "",
-                                           currentBlock);
+                                           cur->javaHandler);
      
-    OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
+    OldIsolate = new LoadInst(IsolatePtr, "", cur->javaHandler);
     NewIsolate = module->getIsolate(loader->isolate);
-    NewIsolate = new LoadInst(NewIsolate, "", currentBlock);
-    new StoreInst(NewIsolate, IsolatePtr, currentBlock);
+    NewIsolate = new LoadInst(NewIsolate, "", cur->javaHandler);
+    new StoreInst(NewIsolate, IsolatePtr, cur->javaHandler);
 
-    GEP.clear();
-    GEP.push_back(OldIsolate);
-    GEP.push_back(NewIsolate);
-    BranchInst::Create(EndBB, currentBlock);
-    currentBlock = EndBB;
   }
 #endif
      
