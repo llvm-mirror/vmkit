@@ -421,12 +421,15 @@ const char* JavaField::printString() const {
 
 JavaMethod* CommonClass::lookupInterfaceMethodDontThrow(const UTF8* name,
                                                         const UTF8* type) {
-  for (uint16 i = 0; i < nbInterfaces; ++i) {
-    Class* I = interfaces[i];
-    JavaMethod* cur = I->lookupMethodDontThrow(name, type, false, true, 0);
-    if (cur) return cur;
+  JavaMethod* cur = lookupMethodDontThrow(name, type, false, false, 0);
+  if (!cur) {
+    for (uint16 i = 0; i < nbInterfaces; ++i) {
+      Class* I = interfaces[i];
+      cur = I->lookupInterfaceMethodDontThrow(name, type);
+      if (cur) return cur;
+    }
   }
-  return 0;
+  return cur;
 }
 
 JavaMethod* CommonClass::lookupMethodDontThrow(const UTF8* name,
