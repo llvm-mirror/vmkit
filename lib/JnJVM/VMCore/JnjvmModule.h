@@ -373,6 +373,7 @@ public:
   
   explicit JnjvmModule(const std::string &ModuleID, bool sc = false);
   void initialise();
+  void printStats();
 
   llvm::Value* getNativeClass(CommonClass* cl);
   llvm::Value* getJavaClass(CommonClass* cl);
@@ -391,7 +392,7 @@ public:
   
   llvm::Value* getIsolate(Jnjvm* vm);
 #endif
-
+  
 private:
   static llvm::Module* initialModule;
 

@@ -28,6 +28,8 @@ private:
   
   llvm::FunctionPassManager* JavaFunctionPasses;
   llvm::FunctionPassManager* JavaNativeFunctionPasses;
+  
+  uint32 nbCallbacks;
 
 public:
   
@@ -42,6 +44,8 @@ public:
   llvm::Function* parseFunction(JavaMethod* meth);
 
   Module* materializeModule(std::string *ErrInfo = 0) { return TheModule; }
+
+  void printStats();
 };
 
 } // End jnjvm namespace

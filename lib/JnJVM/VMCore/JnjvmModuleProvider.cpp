@@ -158,6 +158,7 @@ llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
                             TheModule);
   }
   
+  ++nbCallbacks;
   CallbackInfo* A = new CallbackInfo(cl, index);
   func->addAnnotation(A);
   
@@ -192,6 +193,7 @@ JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
   JavaFunctionPasses->add(mvm::createEscapeAnalysisPass(func));
   JavaFunctionPasses->add(mvm::createLowerConstantCallsPass());
   JavaFunctionPasses->add(mvm::createLowerForcedCallsPass());
+  nbCallbacks = 0;
 }
 
 JnjvmModuleProvider::~JnjvmModuleProvider() {
@@ -201,4 +203,9 @@ JnjvmModuleProvider::~JnjvmModuleProvider() {
   delete TheModule;
   delete JavaNativeFunctionPasses;
   delete JavaFunctionPasses;
+}
+
+void JnjvmModuleProvider::printStats() {
+  fprintf(stderr, "------------ Info from the module provider -------------\n");
+  fprintf(stderr, "Number of callbacks        : %d\n", nbCallbacks);
 }
