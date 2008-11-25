@@ -104,7 +104,10 @@ public:
   /// signatures and types.
   ///
   mvm::BumpPtrAllocator allocator;
-   
+  
+  /// getClasses - Returns the classes this class loader has loaded.
+  ///
+  ClassMap* getClasses() { return classes; }
   
   /// hashUTF8 - Tables of UTF8s defined by this class loader.
   ///
