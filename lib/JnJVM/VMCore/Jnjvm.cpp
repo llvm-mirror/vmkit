@@ -911,6 +911,11 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
 }
 
 #ifdef SERVICE
+
+#include <signal.h>
+
+extern void terminationHandler(int, siginfo_t*, void*);
+
 static void serviceCPUMonitor(mvm::Thread* th) {
   while (true) {
     sleep(1);
@@ -939,6 +944,9 @@ void Jnjvm::runApplication(int argc, char** argv) {
 #ifdef SERVICE
     mvm::Thread* th = new JavaThread(0, 0, this);
     th->start(serviceCPUMonitor);
+    struct sigaction sa;
+    sa.sa_sigaction = terminationHandler;
+    sigaction(SIGUSR1, &sa, NULL);
 #endif
   } else {
     threadSystem.nonDaemonThreads = 0;
@@ -1089,6 +1097,10 @@ void Jnjvm::mainCompilerStart(JavaThread* th) {
     for (Module::iterator i = M->begin(), e = M->end(); i != e; ++i) {
       i->setLinkage(llvm::GlobalValue::ExternalLinkage);
     }
+
+    // Print stats before quitting.
+    bootstrapLoader->getModule()->printStats();
+    bootstrapLoader->getModuleProvider()->printStats();
 
   } catch(std::string str) {
     fprintf(stderr, "Error : %s\n", str.c_str());
