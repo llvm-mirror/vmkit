@@ -367,7 +367,7 @@ void JavaConstantPool::infoOfMethod(uint32 index, uint32 access,
   if (cl && cl->status >= classRead) {
     // lookup the method
     meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access),
-                                     false, 0);
+                                     true, 0);
   }
 }
 
