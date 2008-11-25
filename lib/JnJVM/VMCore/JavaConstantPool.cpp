@@ -10,9 +10,8 @@
 #define JNJVM_LOAD 0
 
 #include <alloca.h>
-
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 #include "debug.h"
 
