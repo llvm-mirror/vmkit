@@ -70,6 +70,8 @@ void JavaJIT::invokeVirtual(uint16 index) {
       (meth && (isFinal(meth->access) || isPrivate(meth->access))))
     return invokeSpecial(index);
  
+  if (meth && isInterface(meth->classDef->access))
+    return invokeInterfaceOrVirtual(index);
 
 #if !defined(WITHOUT_VTABLE)
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index);

@@ -366,6 +366,14 @@ void JavaConstantPool::infoOfMethod(uint32 index, uint32 access,
     // lookup the method
     meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access),
                                      true, 0);
+    // OK, this is rare, but the Java bytecode may do an invokevirtual on an
+    // interface method. Lookup the method as if it was static.
+    // The caller is responsible for taking any action if the method is
+    // an interface method.
+    
+    if (!meth) {
+      meth = cl->lookupMethodDontThrow(utf8, sign->keyName, true, true, 0);
+    }
   }
 }
 
