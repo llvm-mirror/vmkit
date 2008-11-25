@@ -238,6 +238,7 @@ extern "C" void* classLookup(UserClass* caller, uint32 index) {
   // or classes used in catch clauses do not trigger class initialization.
   // This is really sad, because we need to insert class initialization checks
   // in the LLVM code.
+  assert(cl && "No cl after class lookup");
   return (void*)cl;
 }
 
