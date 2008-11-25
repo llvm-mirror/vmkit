@@ -369,6 +369,13 @@ public:
   JavaMethod* lookupMethodDontThrow(const UTF8* name, const UTF8* type,
                                     bool isStatic, bool recurse, Class** cl);
   
+  /// lookupInterfaceMethodDontThrow - Lookup a method in the interfaces of
+  /// this class.
+  /// Do not throw if the method is not found.
+  ///
+  JavaMethod* lookupInterfaceMethodDontThrow(const UTF8* name,
+                                             const UTF8* type);
+  
   /// lookupMethod - Lookup a method and throw an exception if not found.
   ///
   JavaMethod* lookupMethod(const UTF8* name, const UTF8* type, bool isStatic,

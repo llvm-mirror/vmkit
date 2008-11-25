@@ -69,9 +69,12 @@ void JavaJIT::invokeVirtual(uint16 index) {
   if ((cl && isFinal(cl->access)) || 
       (meth && (isFinal(meth->access) || isPrivate(meth->access))))
     return invokeSpecial(index);
- 
-  if (meth && isInterface(meth->classDef->access))
-    return invokeInterfaceOrVirtual(index);
+
+  // If the method is in fact a method defined in an interface,
+  // call invokeInterfaceOrVirtual instead.
+  if (meth && isInterface(meth->classDef->access)) {
+    return invokeInterfaceOrVirtual(index, true);
+  }
 
 #if !defined(WITHOUT_VTABLE)
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index);
@@ -1979,7 +1982,7 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
 }
 
 
-void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
+void JavaJIT::invokeInterfaceOrVirtual(uint16 index, bool buggyVirtual) {
   
   // Do the usual
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
@@ -2008,7 +2011,9 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index) {
 
 #ifndef ISOLATE_SHARING
   // ok now the cache
-  Enveloppe& enveloppe = compilingMethod->enveloppes[nbEnveloppes++];
+  Enveloppe& enveloppe = buggyVirtual ?
+    *(new (compilingClass->classLoader->allocator) Enveloppe()) :
+    compilingMethod->enveloppes[nbEnveloppes++];
   if (!inlining)
     enveloppe.initialise(compilingClass->ctpInfo, index);
    

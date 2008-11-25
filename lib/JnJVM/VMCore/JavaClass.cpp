@@ -419,6 +419,16 @@ const char* JavaField::printString() const {
   return buf->contents()->cString();
 }
 
+JavaMethod* CommonClass::lookupInterfaceMethodDontThrow(const UTF8* name,
+                                                        const UTF8* type) {
+  for (uint16 i = 0; i < nbInterfaces; ++i) {
+    Class* I = interfaces[i];
+    JavaMethod* cur = I->lookupMethodDontThrow(name, type, false, true, 0);
+    if (cur) return cur;
+  }
+  return 0;
+}
+
 JavaMethod* CommonClass::lookupMethodDontThrow(const UTF8* name,
                                                const UTF8* type,
                                                bool isStatic,

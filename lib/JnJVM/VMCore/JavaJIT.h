@@ -222,7 +222,7 @@ public:
   void makeArgs(llvm::FunctionType::param_iterator it,
                 uint32 index, std::vector<llvm::Value*>& result, uint32 nb);
   void invokeVirtual(uint16 index);
-  void invokeInterfaceOrVirtual(uint16 index);
+  void invokeInterfaceOrVirtual(uint16 index, bool buggyVirtual = false);
   void invokeSpecial(uint16 index);
   void invokeStatic(uint16 index);
   void invokeNew(uint16 index);

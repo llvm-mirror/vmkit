@@ -370,9 +370,8 @@ void JavaConstantPool::infoOfMethod(uint32 index, uint32 access,
     // interface method. Lookup the method as if it was static.
     // The caller is responsible for taking any action if the method is
     // an interface method.
-    
     if (!meth) {
-      meth = cl->lookupMethodDontThrow(utf8, sign->keyName, true, true, 0);
+      meth = cl->lookupInterfaceMethodDontThrow(utf8, sign->keyName);
     }
   }
 }
