@@ -410,7 +410,7 @@ void* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index,
   if (cl && cl->status >= classRead) {
     // lookup the method
     meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access),
-                                     false, 0);
+                                     true, 0);
     if (meth) { 
       // don't throw if no meth, the exception will be thrown just in time
       JnjvmModule* M = classDef->classLoader->getModule();
