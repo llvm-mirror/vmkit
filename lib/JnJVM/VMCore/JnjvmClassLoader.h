@@ -161,10 +161,17 @@ public:
   UserCommonClass* lookupClassFromJavaString(JavaString* str, Jnjvm* vm, 
                                              bool doResolve, bool doThrow);
    
-  /// lookupClass - Finds the class of th given name in the class loader's
+  /// lookupClass - Finds the class of the given name in the class loader's
   /// table.
   ///
   UserCommonClass* lookupClass(const UTF8* utf8);
+  
+  /// lookupClassOrArray - Finds the class of the given name in the class
+  /// loader's table. If the class has not been loaded, and if it's an
+  /// array whose base class is loaded, then this function loads the array class
+  /// and returns it.
+  ///
+  UserCommonClass* lookupClassOrArray(const UTF8* utf8);
 
   /// constructArray - Hashes a runtime representation of a class with
   /// the given name.

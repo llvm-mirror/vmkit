@@ -418,6 +418,70 @@ UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* name,
   }
 }
 
+UserCommonClass* JnjvmClassLoader::lookupClassOrArray(const UTF8* name) {
+  UserCommonClass* temp = lookupClass(name);
+  if (temp) return temp;
+
+  if (this != bootstrapLoader) {
+    temp = bootstrapLoader->lookupClassOrArray(name);
+
+    if (temp) return temp;
+  }
+
+  uint32 len = name->size;
+  uint32 start = 0;
+  uint32 origLen = len;
+  bool doLoop = true;
+
+  if (name->elements[0] == I_TAB) {
+    
+    while (doLoop) {
+      --len;
+      if (len == 0) {
+        doLoop = false;
+      } else {
+        ++start;
+        if (name->elements[start] != I_TAB) {
+          if (name->elements[start] == I_REF) {
+            uint32 size = (uint32)name->size;
+            if ((size == (start + 1)) || (size == (start + 2)) || 
+                 (name->elements[start + 1] == I_TAB) || 
+                 (name->elements[origLen - 1] != I_END_REF)) {
+              doLoop = false; 
+            } else {
+              const UTF8* componentName = name->javaToInternal(isolate,
+                                                               start + 1,
+                                                               len - 2);
+              if (lookupClassOrArray(componentName)) {
+                temp = constructArray(name);
+                doLoop = false;
+              } else {
+                doLoop = false;
+              }
+            }
+          } else {
+            uint16 cur = name->elements[start];
+            if ((cur == I_BOOL || cur == I_BYTE ||
+                 cur == I_CHAR || cur == I_SHORT ||
+                 cur == I_INT || cur == I_FLOAT || 
+                 cur == I_DOUBLE || cur == I_LONG)
+                && ((uint32)name->size) == start + 1) {
+
+              temp = constructArray(name);
+              doLoop = false;
+            } else {
+              doLoop = false;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return temp;
+}
+
+
 UserCommonClass* 
 JnjvmClassLoader::lookupClassFromJavaString(JavaString* str, Jnjvm* vm,
                                             bool doResolve, bool doThrow) {

@@ -305,9 +305,7 @@ CommonClass* JavaConstantPool::getMethodClassIfLoaded(uint32 index) {
     JnjvmClassLoader* loader = classDef->classLoader;
     assert(loader && "Class has no loader?");
     const UTF8* name = UTF8At(ctpDef[index]);
-    temp = loader->lookupClass(name);
-    if (!temp && loader != loader->bootstrapLoader)
-      temp = loader->bootstrapLoader->lookupClass(name);
+    temp = loader->lookupClassOrArray(name);
   }
 #endif
   return temp;
