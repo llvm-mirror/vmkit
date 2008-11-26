@@ -84,15 +84,15 @@ public:
 /// a comparison and not an expensive compare and swap. The template class
 /// TFatLock is a virtual machine specific fat lock.
 ///
-template <class TFatLock>
+template <class TFatLock, class Owner>
 class ThinLock {
   uintptr_t lock;
 
 public:
   /// overflowThinlock - Change the lock of this object to a fat lock because
   /// we have reached 0xFF locks.
-  void overflowThinLock() {
-    TFatLock* obj = TFatLock::allocate();
+  void overflowThinLock(Owner* O = 0) {
+    TFatLock* obj = TFatLock::allocate(O);
     obj->acquireAll(256);
     lock = ((uintptr_t)obj >> 1) | FatMask;
   }
@@ -112,9 +112,9 @@ public:
   
   /// changeToFatlock - Change the lock of this object to a fat lock. The lock
   /// may be in a thin lock or fat lock state.
-  TFatLock* changeToFatlock() {
+  TFatLock* changeToFatlock(Owner* O) {
     if (!(lock & FatMask)) {
-      TFatLock* obj = TFatLock::allocate();
+      TFatLock* obj = TFatLock::allocate(O);
       uintptr_t val = ((uintptr_t)obj >> 1) | FatMask;
       uint32 count = lock & ThinCountMask;
       obj->acquireAll(count);
@@ -127,7 +127,7 @@ public:
  
 
   /// acquire - Acquire the lock.
-  void acquire() {
+  void acquire(Owner* O = 0) {
     uint64_t id = mvm::Thread::get()->getThreadID();
     if ((lock & ReservedMask) == id) {
       lock |= 1;
@@ -149,7 +149,7 @@ end:
           TFatLock* obj = (TFatLock*)(lock << 1);
           obj->acquire();
         } else {
-          TFatLock* obj = TFatLock::allocate();
+          TFatLock* obj = TFatLock::allocate(O);
           val = ((uintptr_t)obj >> 1) | FatMask;
           uint32 count = 0;
 loop:

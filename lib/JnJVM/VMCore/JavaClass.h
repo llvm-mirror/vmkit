@@ -138,6 +138,44 @@ class CommonClass : public mvm::PermanentObject {
 friend class UserCommonClass;
 #endif
 
+private:
+  class FatLock : public mvm::PermanentObject {
+  public:
+    /// lockVar - When multiple threads want to load/resolve/initialize a class,
+    /// they must be synchronized so that these steps are only performed once
+    /// for a given class.
+    mvm::LockRecursive lockVar;
+
+    /// condVar - Used to wake threads waiting on the load/resolve/initialize
+    /// process of this class, done by another thread.
+    mvm::Cond condVar;
+    
+
+    static FatLock* allocate(UserCommonClass* cl) {
+      return new(cl->classLoader->allocator) FatLock();
+    }
+
+    void acquire() {
+      lockVar.lock();
+    }
+
+    void acquireAll(uint32 nb) {
+      lockVar.lockAll(nb);
+    }
+
+    void release() {
+      lockVar.unlock();
+    }
+
+    void broadcast() {
+      condVar.broadcast();
+    }
+
+    void wait() {
+      condVar.wait(&lockVar);
+    }
+  };
+
 public:
   
 //===----------------------------------------------------------------------===//
@@ -211,16 +249,7 @@ public:
   /// super - The parent of this class.
   ///
   CommonClass * super;
-  
-  /// lockVar - When multiple threads want to load/resolve/initialize a class,
-  /// they must be synchronized so that these steps are only performed once
-  /// for a given class.
-  mvm::LockRecursive lockVar;
-
-  /// condVar - Used to wake threads waiting on the load/resolve/initialize
-  /// process of this class, done by another thread.
-  mvm::Cond condVar;
-  
+   
   /// classLoader - The Jnjvm class loader that loaded the class.
   ///
   JnjvmClassLoader* classLoader;
@@ -249,6 +278,11 @@ public:
   ///
   mvm::Thread* ownerClass;
  
+  /// lock - The lock of this class. It should be very rare that this lock
+  /// inflates.
+  ///
+  mvm::ThinLock<FatLock, CommonClass> lock;
+
   // Assessor methods.
   uint32 getVirtualSize()         { return virtualSize; }
   VirtualTable* getVirtualVT()    { return virtualVT; }
@@ -318,26 +352,27 @@ public:
   /// acquire - Acquire this class lock.
   ///
   void acquire() {
-    lockVar.lock();
+    lock.acquire(this);
   }
   
   /// release - Release this class lock.
   ///
   void release() {
-    lockVar.unlock();  
+    lock.release();  
   }
 
   /// waitClass - Wait for the class to be loaded/initialized/resolved.
   ///
   void waitClass() {
-    condVar.wait(&lockVar);
+    FatLock* FL = lock.changeToFatlock(this);
+    FL->wait();
   }
   
   /// broadcastClass - Unblock threads that were waiting on the class being
   /// loaded/initialized/resolved.
   ///
   void broadcastClass() {
-    condVar.broadcast();  
+    lock.broadcast();  
   }
   
   /// getOwnerClass - Get the thread that is currently initializing the class.

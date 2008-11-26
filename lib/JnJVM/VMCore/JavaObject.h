@@ -75,7 +75,7 @@ private:
 public:
   /// allocate - Allocates a lock object. Only the internal lock is allocated.
   ///
-  static LockObj* allocate();
+  static LockObj* allocate(JavaObject*);
   
   /// acquire - Acquires the lock.
   ///
@@ -133,7 +133,7 @@ public:
 
   /// lock - The monitor of this object. Most of the time null.
   ///
-  mvm::ThinLock<LockObj> lock;
+  mvm::ThinLock<LockObj, JavaObject> lock;
 
   /// wait - Java wait. Makes the current thread waiting on a monitor.
   ///

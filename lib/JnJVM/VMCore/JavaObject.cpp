@@ -65,7 +65,7 @@ void JavaCond::remove(JavaThread* th) {
   }
 }
 
-LockObj* LockObj::allocate() {
+LockObj* LockObj::allocate(JavaObject* owner) {
 #ifdef USE_GC_BOEHM
   LockObj* res = new LockObj();
 #else
@@ -83,7 +83,7 @@ void JavaObject::print(mvm::PrintBuffer* buf) const {
 void JavaObject::waitIntern(struct timeval* info, bool timed) {
 
   if (owner()) {
-    LockObj * l = lock.changeToFatlock();
+    LockObj * l = lock.changeToFatlock(this);
     JavaThread* thread = JavaThread::get();
     mvm::Lock& mutexThread = thread->lock;
     mvm::Cond& varcondThread = thread->varcond;
