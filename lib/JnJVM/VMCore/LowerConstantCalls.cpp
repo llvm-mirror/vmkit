@@ -65,11 +65,9 @@ static ConstantExpr* getClass(JnjvmModule* Mod, CallSite& Call) {
 
 #ifdef ISOLATE
 static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
-  std::vector<Value*> GEP;
-  GEP.push_back(module->constantZero);
-  GEP.push_back(module->OffsetTaskClassMirrorInClassConstant);
-  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP.begin(), GEP.end(),
-                                              "", CI);
+  Value* GEP[2] = { module->constantZero,
+                    module->OffsetTaskClassMirrorInClassConstant };
+  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
 
   Value* threadId = CallInst::Create(module->llvm_frameaddress,
                                      module->constantZero, "", CI);
@@ -79,16 +77,13 @@ static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
   
   threadId = new IntToPtrInst(threadId, module->ptr32Type, "", CI);
   
-  GEP.clear();
-  GEP.push_back(module->constantThree);
-  Value* IsolateID = GetElementPtrInst::Create(threadId, GEP.begin(), GEP.end(),
+  Value* IsolateID = GetElementPtrInst::Create(threadId, module->constantThree,
                                                "", CI);
   IsolateID = new LoadInst(IsolateID, "", CI);
 
-  GEP.clear();
-  GEP.push_back(module->constantZero);
-  GEP.push_back(IsolateID);
-  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP.begin(), GEP.end(), "",
+  Value* GEP2[2] = { module->constantZero, IsolateID };
+
+  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, GEP2 + 2, "",
                                          CI);
   return TCM;
 }
@@ -111,11 +106,10 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* val = Call.getArgument(0); // get the array
           Value* array = new BitCastInst(val, module->JavaArrayType,
                                          "", CI);
-          std::vector<Value*> args; //size=  2
-          args.push_back(mvm::MvmModule::constantZero);
-          args.push_back(module->JavaArraySizeOffsetConstant);
-          Value* ptr = GetElementPtrInst::Create(array, args.begin(), args.end(),
-                                         "", CI);
+          Value* args[2] = { module->constantZero, 
+                             module->JavaArraySizeOffsetConstant };
+          Value* ptr = GetElementPtrInst::Create(array, args, args + 2,
+                                                 "", CI);
           Value* load = new LoadInst(ptr, "", CI);
           load = new PtrToIntInst(load, Type::Int32Ty, "", CI);
           CI->replaceAllUsesWith(load);
@@ -123,23 +117,19 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         } else if (V == module->GetVTFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); // get the object
-          std::vector<Value*> indexes; //[3];
-          indexes.push_back(mvm::MvmModule::constantZero);
-          indexes.push_back(mvm::MvmModule::constantZero);
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
-                                           indexes.end(), "", CI);
+          Value* indexes[2] = { module->constantZero, module->constantZero };
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
+                                                   "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
         } else if (V == module->GetClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); // get the object
-          std::vector<Value*> args2;
-          args2.push_back(mvm::MvmModule::constantZero);
-          args2.push_back(module->JavaObjectClassOffsetConstant);
-          Value* classPtr = GetElementPtrInst::Create(val, args2.begin(),
-                                                      args2.end(), "",
-                                                      CI);
+          Value* args2[2] = { module->constantZero,
+                              module->JavaObjectClassOffsetConstant };
+          Value* classPtr = GetElementPtrInst::Create(val, args2, args2 + 2,
+                                                      "", CI);
           Value* cl = new LoadInst(classPtr, "", CI);
           CI->replaceAllUsesWith(cl);
           CI->eraseFromParent();
@@ -160,11 +150,10 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           }
           
           Value* val = Call.getArgument(0); 
-          std::vector<Value*> indexes; 
-          indexes.push_back(mvm::MvmModule::constantZero);
-          indexes.push_back(module->OffsetVTInClassConstant);
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
-                                                   indexes.end(), "", CI);
+          Value* indexes[2] = { module->constantZero, 
+                                module->OffsetVTInClassConstant };
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
+                                                   "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
@@ -185,33 +174,30 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           }
           
           Value* val = Call.getArgument(0); 
-          std::vector<Value*> indexes; 
-          indexes.push_back(mvm::MvmModule::constantZero);
-          indexes.push_back(module->OffsetObjectSizeInClassConstant);
-          Value* SizePtr = GetElementPtrInst::Create(val, indexes.begin(),
-                                                   indexes.end(), "", CI);
+          Value* indexes[2] = { module->constantZero, 
+                                module->OffsetObjectSizeInClassConstant };
+          Value* SizePtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
+                                                     "", CI);
           Value* Size = new LoadInst(SizePtr, "", CI);
           CI->replaceAllUsesWith(Size);
           CI->eraseFromParent();
         } else if (V == module->GetDepthFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
-          std::vector<Value*> indexes; 
-          indexes.push_back(mvm::MvmModule::constantZero);
-          indexes.push_back(module->OffsetDepthInClassConstant);
-          Value* DepthPtr = GetElementPtrInst::Create(val, indexes.begin(),
-                                                      indexes.end(), "", CI);
+          Value* indexes[2] = { module->constantZero,
+                                module->OffsetDepthInClassConstant };
+          Value* DepthPtr = GetElementPtrInst::Create(val, indexes,
+                                                      indexes + 2, "", CI);
           Value* Depth = new LoadInst(DepthPtr, "", CI);
           CI->replaceAllUsesWith(Depth);
           CI->eraseFromParent();
         } else if (V == module->GetDisplayFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
-          std::vector<Value*> indexes; 
-          indexes.push_back(mvm::MvmModule::constantZero);
-          indexes.push_back(module->OffsetDisplayInClassConstant);
-          Value* DisplayPtr = GetElementPtrInst::Create(val, indexes.begin(),
-                                                        indexes.end(), "", CI);
+          Value* indexes[2] = { module->constantZero,
+                                module->OffsetDisplayInClassConstant };
+          Value* DisplayPtr = GetElementPtrInst::Create(val, indexes,
+                                                        indexes + 2, "", CI);
           Value* Display = new LoadInst(DisplayPtr, "", CI);
           CI->replaceAllUsesWith(Display);
           CI->eraseFromParent();
@@ -244,12 +230,9 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                                             "", ifFalse);
             
             if (isInterface(cl->access)) {
-              std::vector<Value*> args;
-              args.push_back(objCl);
-              args.push_back(CE);
+              Value* args[2] = { objCl, CE };
               Value* res = CallInst::Create(module->ImplementsFunction,
-                                            args.begin(), args.end(), "",
-                                            ifFalse);
+                                            args, args + 2, "", ifFalse);
               node->addIncoming(res, ifFalse);
               BranchInst::Create(ifTrue, ifFalse);
             } else {
@@ -259,20 +242,16 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
               node->addIncoming(ConstantInt::getTrue(), ifFalse);
               
               if (cl->status < classRead) {
-                std::vector<Value*> args;
-                args.push_back(objCl);
-                args.push_back(CE);
+                Value* args[2] = { objCl, CE };
                 cmp = CallInst::Create(module->IsAssignableFromFunction,
-                                       args.begin(), args.end(), "", notEquals);
+                                       args, args + 2, "", notEquals);
                 node->addIncoming(cmp, notEquals);
                 BranchInst::Create(ifTrue, notEquals);
               } else if (cl->isArray()) {
-                std::vector<Value*> args;
-                args.push_back(objCl);
-                args.push_back(CE);
+                Value* args[2] = { objCl, CE };
                 Value* res = 
                   CallInst::Create(module->InstantiationOfArrayFunction,
-                                   args.begin(), args.end(), "", notEquals);
+                                   args, args + 2, "", notEquals);
                 node->addIncoming(res, notEquals);
                 BranchInst::Create(ifTrue, notEquals);
               } else {
@@ -297,12 +276,10 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                   CallInst::Create(module->GetDisplayFunction, objCl,
                                    "", supDepth);
             
-                std::vector<Value*> args;
-                args.push_back(inDisplay);
-                args.push_back(depthCl);
+                Value* args[2] = { inDisplay, depthCl };
                 Value* clInDisplay = 
                   CallInst::Create(module->GetClassInDisplayFunction,
-                                   args.begin(), args.end(), "", supDepth);
+                                   args, args + 2, "", supDepth);
              
                 cmp = new ICmpInst(ICmpInst::ICMP_EQ, clInDisplay, CE, "",
                                    supDepth);
@@ -331,11 +308,9 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 
 #elif defined(ISOLATE)
           Value* TCM = getTCM(module, Call.getArgument(0), CI);
-          std::vector<Value*> GEP;
-          GEP.push_back(module->constantZero);
-          GEP.push_back(module->OffsetStaticInstanceInTaskClassMirrorConstant);
-          Value* Replace = GetElementPtrInst::Create(TCM, GEP.begin(),
-                                                     GEP.end(), "", CI);
+          Constant* C = module->OffsetStaticInstanceInTaskClassMirrorConstant;
+          Value* GEP[2] = { module->constantZero, C };
+          Value* Replace = GetElementPtrInst::Create(TCM, GEP, GEP + 2, "", CI);
           Replace = new LoadInst(Replace, "", CI);
           CI->replaceAllUsesWith(Replace);
           CI->eraseFromParent();
@@ -358,19 +333,17 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           
           Value* Cl = Call.getArgument(0); 
 #if !defined(ISOLATE)
-          std::vector<Value*> indexes; 
-          indexes.push_back(mvm::MvmModule::constantZero);
-          indexes.push_back(module->OffsetStatusInClassConstant);
-          Value* StatusPtr = GetElementPtrInst::Create(Cl, indexes.begin(),
-                                                       indexes.end(), "", CI);
+          Value* indexes[2] = { module->constantZero, 
+                                module->OffsetStatusInClassConstant };
+          Value* StatusPtr = GetElementPtrInst::Create(Cl, indexes,
+                                                       indexes + 2, "", CI);
 
 #else
           Value* TCM = getTCM(module, Call.getArgument(0), CI);
-          std::vector<Value*> GEP;
-          GEP.push_back(module->constantZero);
-          GEP.push_back(module->OffsetStatusInTaskClassMirrorConstant);
-          Value* StatusPtr = GetElementPtrInst::Create(TCM, GEP.begin(),
-                                                     GEP.end(), "", CI);
+          Value* GEP[2] = { module->constantZero,
+                            module->OffsetStatusInTaskClassMirrorConstant };
+          Value* StatusPtr = GetElementPtrInst::Create(TCM, GEP, GEP + 2, "",
+                                                       CI);
 #endif 
           
           Value* Status = new LoadInst(StatusPtr, "", CI);
@@ -385,15 +358,14 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           node->addIncoming(Cl, CI->getParent());
           BranchInst::Create(trueCl, falseCl, test, CI);
   
-          std::vector<Value*> Args;
-          Args.push_back(Cl);
           
           Value* res = 0;
           if (InvokeInst* Invoke = dyn_cast<InvokeInst>(CI)) {
+            Value* Args[1] = { Cl };
             BasicBlock* UI = Invoke->getUnwindDest();
             res = InvokeInst::Create(module->InitialiseClassFunction,
-                                     trueCl, UI, Args.begin(),
-                                     Args.end(), "", falseCl);
+                                     trueCl, UI, Args, Args + 1,
+                                     "", falseCl);
 
             // For some reason, an LLVM pass may add PHI nodes to the
             // exception destination.
@@ -416,8 +388,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             }
           } else {
             res = CallInst::Create(module->InitialiseClassFunction,
-                                   Args.begin(), Args.end(), "",
-                                   falseCl);
+                                   Cl, "", falseCl);
             BranchInst::Create(trueCl, falseCl);
           }
           
@@ -445,17 +416,15 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             NBB = Invoke->getNormalDest();
           }
           
-          std::vector<Value*> indexes; //[3];
 #ifdef ISOLATE_SHARING
           ConstantInt* Cons = dyn_cast<ConstantInt>(Index);
           assert(CI && "Wrong use of GetConstantPoolAt");
           uint64 val = Cons->getZExtValue();
-          indexes.push_back(ConstantInt::get(Type::Int32Ty, val + 1));
+          Value* indexes = ConstantInt::get(Type::Int32Ty, val + 1);
 #else
-          indexes.push_back(Index);
+          Value* indexes = Index;
 #endif
-          Value* arg1 = GetElementPtrInst::Create(CTP, indexes.begin(),
-                                                  indexes.end(),  "", CI);
+          Value* arg1 = GetElementPtrInst::Create(CTP, indexes, "", CI);
           arg1 = new LoadInst(arg1, "", false, CI);
           Value* test = new ICmpInst(ICmpInst::ICMP_EQ, arg1,
                                      mvm::MvmModule::constantPtrNull, "", CI);
@@ -571,22 +540,19 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         else if (V == module->GetCtpClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
-          std::vector<Value*> indexes; 
-          indexes.push_back(mvm::MvmModule::constantZero);
-          indexes.push_back(module->OffsetCtpInClassConstant);
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
-                                                   indexes.end(), "", CI);
+          Value* indexes[2] = { module->constantZero, 
+                                module->OffsetCtpInClassConstant };
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes,
+                                                   indexes + 2, "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
         } else if (V == module->GetCtpCacheNodeFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
-          std::vector<Value*> indexes; 
-          indexes.push_back(mvm::MvmModule::constantZero);
-          indexes.push_back(mvm::MvmModule::constantFour);
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
-                                                   indexes.end(), "", CI);
+          Value* indexes[2] = { module->constantZero, module->constantFour };
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes,
+                                                   indexes + 2, "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
@@ -594,23 +560,19 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Changed = true;
           Value* val = Call.getArgument(0); 
           Value* index = Call.getArgument(1); 
-          std::vector<Value*> indexes; 
-          indexes.push_back(mvm::MvmModule::constantZero);
-          indexes.push_back(mvm::MvmModule::constantTwo);
-          indexes.push_back(index);
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
-                                                   indexes.end(), "", CI);
+          Value* indexes[3] = { module->constantZero, module->constantTwo,
+                                index };
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 3,
+                                                   "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
         } else if (V == module->GetJnjvmExceptionClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0);
-          std::vector<Value*> indexes;
-          indexes.push_back(mvm::MvmModule::constantZero);
-          indexes.push_back(mvm::MvmModule::constantOne);
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes.begin(),
-                                                   indexes.end(), "", CI);
+          Value* indexes[2] = { module->constantZero, module->constantOne };
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
+                                                   "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();

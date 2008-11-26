@@ -182,16 +182,7 @@ public:
 // New fields can be added from now, or reordered.
 //
 //===----------------------------------------------------------------------===//
-  
-  
-  uint32 getVirtualSize() {
-    return virtualSize;
-  }
    
-  VirtualTable* getVirtualVT() {
-    return virtualVT;
-  }
-  
   /// virtualTableSize - The size of the virtual table of this class.
   ///
   uint32 virtualTableSize;
@@ -200,79 +191,27 @@ public:
   ///
   uint32 access;
   
-  uint32 getAccess() {
-    return access;
-  }
-
   /// isArray - Is the class an array class?
   ///
   bool array;
   
-  bool isArray() {
-    return array;
-  }
-
-  bool primitive;
-
   /// isPrimitive - Is the class a primitive class?
   ///
-  bool isPrimitive() {
-    return primitive;
-  }
-  
-  /// isInterface - Is the class an interface?
-  ///
-  bool isInterface() {
-    return jnjvm::isInterface(access);
-  }
-  
-  /// asClass - Returns the class as a user-defined class
-  /// if it is not a primitive or an array.
-  UserClass* asClass() {
-    if (!primitive && !array) return (UserClass*)this;
-    return 0;
-  }
-  
-  /// asPrimitiveClass - Returns the class if it's a primitive class.
-  ///
-  UserClassPrimitive* asPrimitiveClass() {
-    if (primitive) return (UserClassPrimitive*)this;
-    return 0;
-  }
-  
-  /// asArrayClass - Returns the class if it's an array class.
-  ///
-  UserClassArray* asArrayClass() {
-    if (array) return (UserClassArray*)this;
-    return 0;
-  }
-  
+  bool primitive;
+ 
   /// interfaces - The interfaces this class implements.
   ///
-  Class** interfaces;
-  
-  Class** getInterfaces() {
-    return interfaces;
-  }
-  
+  Class** interfaces; 
   uint16 nbInterfaces;
   
   /// name - The name of the class.
   ///
   const UTF8* name;
-  
-  const UTF8* getName() {
-    return name;
-  }
- 
+   
   /// super - The parent of this class.
   ///
   CommonClass * super;
   
-  CommonClass* getSuper() {
-    return super;
-  }
-
   /// lockVar - When multiple threads want to load/resolve/initialize a class,
   /// they must be synchronized so that these steps are only performed once
   /// for a given class.
@@ -306,10 +245,60 @@ public:
   JavaMethod* staticMethods;
   uint16 nbStaticMethods;
   
+  /// ownerClass - Who is initializing this class.
+  ///
+  mvm::Thread* ownerClass;
+ 
+  // Assessor methods.
+  uint32 getVirtualSize()         { return virtualSize; }
+  VirtualTable* getVirtualVT()    { return virtualVT; }
+  uint32 getAccess()              { return access;}
+  Class** getInterfaces()         { return interfaces; }
+  const UTF8* getName()           { return name; }
+  CommonClass* getSuper()         { return super; }
   JavaField* getStaticFields()    { return staticFields; }
   JavaField* getVirtualFields()   { return virtualFields; }
   JavaMethod* getStaticMethods()  { return staticMethods; }
   JavaMethod* getVirtualMethods() { return virtualMethods; }
+ 
+  /// isArray - Is the class an array class?
+  ///
+  bool isArray() {
+    return array;
+  }
+  
+  /// isPrimitive - Is the class a primitive class?
+  ///
+  bool isPrimitive() {
+    return primitive;
+  }
+  
+  /// isInterface - Is the class an interface?
+  ///
+  bool isInterface() {
+    return jnjvm::isInterface(access);
+  }
+  
+  /// asClass - Returns the class as a user-defined class
+  /// if it is not a primitive or an array.
+  UserClass* asClass() {
+    if (!primitive && !array) return (UserClass*)this;
+    return 0;
+  }
+  
+  /// asPrimitiveClass - Returns the class if it's a primitive class.
+  ///
+  UserClassPrimitive* asPrimitiveClass() {
+    if (primitive) return (UserClassPrimitive*)this;
+    return 0;
+  }
+  
+  /// asArrayClass - Returns the class if it's an array class.
+  ///
+  UserClassArray* asArrayClass() {
+    if (array) return (UserClassArray*)this;
+    return 0;
+  }
 
   /// constructMethod - Create a new method.
   ///
@@ -350,15 +339,15 @@ public:
   void broadcastClass() {
     condVar.broadcast();  
   }
-
-  /// ownerClass - Who is initializing this class.
-  ///
-  mvm::Thread* ownerClass;
   
+  /// getOwnerClass - Get the thread that is currently initializing the class.
+  ///
   mvm::Thread* getOwnerClass() {
     return ownerClass;
   }
 
+  /// setOwnerClass - Set the thread that is currently initializing the class.
+  ///
   void setOwnerClass(mvm::Thread* th) {
     ownerClass = th;
   }
@@ -402,6 +391,7 @@ public:
   virtual void TRACER;
   
   /// printString - Prints the class.
+  ///
   char *printString() const {
     mvm::PrintBuffer *buf = mvm::PrintBuffer::alloc();
     print(buf);
@@ -472,19 +462,40 @@ public:
   /// CommonClass - Default constructor.
   ///
   CommonClass();
-  
+ 
+  /// getDeclaredConstructors - Returns the methods defined in this class which
+  /// are constructors.
+  ///
   void getDeclaredConstructors(std::vector<JavaMethod*>& res, bool publicOnly);
+
+  /// getDeclaredMethod - Returns the methods defined in this class which are
+  /// not constructors.
+  //
   void getDeclaredMethods(std::vector<JavaMethod*>& res, bool publicOnly);
+  
+  /// getDeclaredFields - Returns the fields defined in this class.
+  ///
   void getDeclaredFields(std::vector<JavaField*>& res, bool publicOnly);
+  
+  /// setInterfaces - Set the interfaces of the class.
+  ///
   void setInterfaces(Class** I) {
     interfaces = I;
   }
+
+  /// setSuper - Set the super of the class.
+  ///
   void setSuper(CommonClass* S) {
     super = S;
   }
   
+  /// toPrimitive - Returns the primitive class which represents
+  /// this class, ie void for java/lang/Void.
+  ///
   UserClassPrimitive* toPrimitive(Jnjvm* vm) const;
-  
+ 
+  /// getInternal - Return the class.
+  ///
   CommonClass* getInternal() {
     return this;
   }
@@ -615,10 +626,6 @@ public:
   ///
   uint16 innerAccess;
 
-  void setInnerAccess(uint32 access) {
-    innerAccess = access;
-  }
-
   /// innerOuterResolved - Is the inner/outer resolution done?
   ///
   bool innerOuterResolved;
@@ -630,6 +637,10 @@ public:
   /// staticVT - The virtual table of the static instance of this class.
   ///
   VirtualTable* staticVT;
+
+  void setInnerAccess(uint32 access) {
+    innerAccess = access;
+  }
   
   uint32 getStaticSize() {
     return staticSize;

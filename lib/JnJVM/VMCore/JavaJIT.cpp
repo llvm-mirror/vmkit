@@ -114,40 +114,36 @@ void JavaJIT::invokeVirtual(uint16 index) {
 
   Value* VT = CallInst::Create(module->GetVTFunction, args[0], "",
                                currentBlock);
-  std::vector<Value*> indexes2; //[3];
+  Value* indexes2; //[3];
 #ifdef ISOLATE_SHARING
-  std::vector<Value*> indexesCtp; //[3];
+  Value* indexesCtp; //[3];
 #endif
   if (meth) {
     LLVMMethodInfo* LMI = module->getMethodInfo(meth);
     ConstantInt* Offset = LMI->getOffset();
-    indexes2.push_back(Offset);
+    indexes2 = Offset;
 #ifdef ISOLATE_SHARING
-    indexesCtp.push_back(ConstantInt::get(Type::Int32Ty,
-                                          Offset->getZExtValue() * -1));
+    indexesCtp = ConstantInt::get(Type::Int32Ty,
+                                  Offset->getZExtValue() * -1);
 #endif
   } else {
     
     Value* val = getConstantPoolAt(index, module->VirtualLookupFunction,
                                    Type::Int32Ty, args[0], true);
-    indexes2.push_back(val);
+    indexes2 = val;
 #ifdef ISOLATE_SHARING
     Value* mul = BinaryOperator::CreateMul(val, module->constantMinusOne,
                                            "", currentBlock);
-    indexesCtp.push_back(mul);
+    indexesCtp = mul;
 #endif
   }
   
-  Value* FuncPtr = GetElementPtrInst::Create(VT, indexes2.begin(),
-                                             indexes2.end(), "",
-                                             currentBlock);
+  Value* FuncPtr = GetElementPtrInst::Create(VT, indexes2, "", currentBlock);
     
   Value* Func = new LoadInst(FuncPtr, "", currentBlock);
   Func = new BitCastInst(Func, LSI->getVirtualPtrType(), "", currentBlock);
 #ifdef ISOLATE_SHARING
-  Value* CTP = GetElementPtrInst::Create(VT, indexesCtp.begin(),
-                                             indexesCtp.end(), "",
-                                             currentBlock);
+  Value* CTP = GetElementPtrInst::Create(VT, indexesCtp, "", currentBlock);
     
   CTP = new LoadInst(CTP, "", currentBlock);
   CTP = new BitCastInst(CTP, module->ConstantPoolType, "", currentBlock);
@@ -291,10 +287,9 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
 void JavaJIT::monitorEnter(Value* obj) {
 
-  std::vector<Value*> gep;
-  gep.push_back(module->constantZero);
-  gep.push_back(module->JavaObjectLockOffsetConstant);
-  Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
+  Value* gep[2] = { module->constantZero,
+                    module->JavaObjectLockOffsetConstant };
+  Value* lockPtr = GetElementPtrInst::Create(obj, gep, gep + 2, "",
                                              currentBlock);
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
   lock = new PtrToIntInst(lock, module->pointerSizeType, "", currentBlock);
@@ -335,10 +330,9 @@ void JavaJIT::monitorEnter(Value* obj) {
 }
 
 void JavaJIT::monitorExit(Value* obj) {
-  std::vector<Value*> gep;
-  gep.push_back(module->constantZero);
-  gep.push_back(module->JavaObjectLockOffsetConstant);
-  Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
+  Value* gep[2] = { module->constantZero,
+                    module->JavaObjectLockOffsetConstant };
+  Value* lockPtr = GetElementPtrInst::Create(obj, gep, gep + 2, "",
                                              currentBlock);
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
   lock = new PtrToIntInst(lock, module->pointerSizeType, "", currentBlock);
@@ -379,19 +373,16 @@ void JavaJIT::monitorExit(Value* obj) {
 #ifdef ISOLATE_SHARING
 Value* JavaJIT::getStaticInstanceCtp() {
   Value* cl = getClassCtp();
-  std::vector<Value*> indexes; //[3];
-  indexes.push_back(module->constantZero);
-  indexes.push_back(module->constantSeven);
-  Value* arg1 = GetElementPtrInst::Create(cl, indexes.begin(),
-                                          indexes.end(),  "", currentBlock);
+  Value* indexes[2] = { module->constantZero, module->constantSeven };
+  Value* arg1 = GetElementPtrInst::Create(cl, indexes, indexes + 2,
+                                          "", currentBlock);
   arg1 = new LoadInst(arg1, "", false, currentBlock);
   return arg1;
   
 }
 
 Value* JavaJIT::getClassCtp() {
-  std::vector<Value*> indexes; //[3];
-  indexes.push_back(module->constantOne);
+  Value* indexes = module->constantOne;
   Value* arg1 = GetElementPtrInst::Create(ctpCache, indexes.begin(),
                                           indexes.end(),  "", currentBlock);
   arg1 = new LoadInst(arg1, "", false, currentBlock);
@@ -576,13 +567,12 @@ llvm::Function* JavaJIT::javaCompile() {
     
 #if JNJVM_EXECUTE > 0
     {
-    std::vector<llvm::Value*> args;
-    args.push_back(ConstantExpr::getIntToPtr(
+    Value* arg = ConstantExpr::getIntToPtr(
           ConstantInt::get(Type::Int64Ty, uint64_t (compilingMethod)),
-          module->ptrType));
+          module->ptrType);
 
-    llvm::CallInst::Create(module->PrintMethodStartFunction, args.begin(),
-                           args.end(), "", currentBlock);
+    llvm::CallInst::Create(module->PrintMethodStartFunction, arg, "",
+                           currentBlock);
     }
 #endif
 
@@ -669,9 +659,7 @@ llvm::Function* JavaJIT::javaCompile() {
   
     threadId = new IntToPtrInst(threadId, module->ptrPtrType, "", currentBlock);
      
-    std::vector<Value*> GEP;
-    GEP.push_back(module->constantThree);
-    IsolateIDPtr = GetElementPtrInst::Create(threadId, GEP.begin(), GEP.end(),
+    IsolateIDPtr = GetElementPtrInst::Create(threadId, module->constantThree,
                                              "", currentBlock);
     const Type* realType = PointerType::getUnqual(module->pointerSizeType);
     IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
@@ -690,9 +678,7 @@ llvm::Function* JavaJIT::javaCompile() {
     currentBlock = ServiceBB;
   
     new StoreInst(MyID, IsolateIDPtr, currentBlock);
-    GEP.clear();
-    GEP.push_back(module->constantFour);
-    IsolatePtr = GetElementPtrInst::Create(threadId, GEP.begin(), GEP.end(), "",
+    IsolatePtr = GetElementPtrInst::Create(threadId, module->constantFour, "",
                                            currentBlock);
      
     OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
@@ -700,11 +686,9 @@ llvm::Function* JavaJIT::javaCompile() {
     NewIsolate = new LoadInst(NewIsolate, "", currentBlock);
     new StoreInst(NewIsolate, IsolatePtr, currentBlock);
 
-    GEP.clear();
-    GEP.push_back(OldIsolate);
-    GEP.push_back(NewIsolate);
 #if DEBUG
-    CallInst::Create(module->ServiceCallStartFunction, GEP.begin(), GEP.end(),
+    Value* GEP[2] = { OldIsolate, NewIsolate };
+    CallInst::Create(module->ServiceCallStartFunction, GEP, GEP + 2,
                      "", currentBlock);
 #endif
     BranchInst::Create(EndBB, currentBlock);
@@ -759,12 +743,10 @@ llvm::Function* JavaJIT::javaCompile() {
 
 #if JNJVM_EXECUTE > 0
     {
-    std::vector<llvm::Value*> args;
-    args.push_back(ConstantExpr::getIntToPtr(
+    Value* arg =  ConstantExpr::getIntToPtr(
           ConstantInt::get(Type::Int64Ty, uint64_t (compilingMethod)),
-          module->ptrType));
-    llvm::CallInst::Create(module->PrintMethodEndFunction, args.begin(),
-                           args.end(), "", currentBlock);
+          module->ptrType);
+    CallInst::Create(module->PrintMethodEndFunction, arg, "", currentBlock);
     }
 #endif
   
@@ -780,11 +762,9 @@ llvm::Function* JavaJIT::javaCompile() {
     new StoreInst(OldIsolateID, IsolateIDPtr, currentBlock);
     new StoreInst(OldIsolate, IsolatePtr, currentBlock);
 
-    std::vector<Value*> GEP;
-    GEP.push_back(OldIsolate);
-    GEP.push_back(NewIsolate);
 #if DEBUG
-    CallInst::Create(module->ServiceCallStopFunction, GEP.begin(), GEP.end(),
+    Value* GEP[2] = { OldIsolate, NewIsolate };
+    CallInst::Create(module->ServiceCallStopFunction, GEP, GEP + 2,
                      "", currentBlock);
 #endif
     BranchInst::Create(EndBB, currentBlock);
@@ -855,34 +835,32 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
           createBasicBlock("trySynchronizeExceptionBlock");
     realEndExceptionBlock = synchronizeExceptionBlock;
     endExceptionBlockCatcher = trySynchronizeExceptionBlock;
-    std::vector<Value*> argsSync;
+    Value* argsSync = 0;
     if (isVirtual(compilingMethod->access)) {
-      argsSync.push_back(llvmFunction->arg_begin());
+      argsSync = llvmFunction->arg_begin();
     } else {
       Value* cl = module->getNativeClass(compilingClass);
       cl = new LoadInst(cl, "", currentBlock);
       Value* arg = CallInst::Create(module->GetStaticInstanceFunction, cl, "",
                              currentBlock);
-      argsSync.push_back(arg);
+      argsSync = arg;
     }
-    llvm::CallInst::Create(module->ReleaseObjectFunction, argsSync.begin(),
-                           argsSync.end(), "", synchronizeExceptionBlock);
+    llvm::CallInst::Create(module->ReleaseObjectFunction, argsSync, "",
+                           synchronizeExceptionBlock);
 
     llvm::BranchInst::Create(endExceptionBlock, synchronizeExceptionBlock);
     
     const PointerType* PointerTy_0 = module->ptrType;
-    std::vector<Value*> int32_eh_select_params;
     Instruction* ptr_eh_ptr = 
       llvm::CallInst::Create(module->llvmGetException, "eh_ptr",
                              trySynchronizeExceptionBlock);
-    int32_eh_select_params.push_back(ptr_eh_ptr);
     Constant* C = ConstantExpr::getCast(Instruction::BitCast,
                                         module->personality, PointerTy_0);
-    int32_eh_select_params.push_back(C);
-    int32_eh_select_params.push_back(module->constantPtrNull);
+    Value* int32_eh_select_params[3] = 
+      { ptr_eh_ptr, C, module->constantPtrNull };
     llvm::CallInst::Create(module->exceptionSelector,
-                           int32_eh_select_params.begin(), 
-                           int32_eh_select_params.end(), 
+                           int32_eh_select_params,
+                           int32_eh_select_params + 3,
                            "eh_select", trySynchronizeExceptionBlock);
 
     llvm::BranchInst::Create(synchronizeExceptionBlock,
@@ -1001,17 +979,15 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
 
     if (cur->realTest != cur->test) {
       const PointerType* PointerTy_0 = module->ptrType;
-      std::vector<Value*> int32_eh_select_params;
       Instruction* ptr_eh_ptr = 
         llvm::CallInst::Create(module->llvmGetException, "eh_ptr", cur->test);
-      int32_eh_select_params.push_back(ptr_eh_ptr);
       Constant* C = ConstantExpr::getCast(Instruction::BitCast,
                                           module->personality, PointerTy_0);
-      int32_eh_select_params.push_back(C);
-      int32_eh_select_params.push_back(module->constantPtrNull);
+      Value* int32_eh_select_params[3] = 
+        { ptr_eh_ptr, C, module->constantPtrNull };
       llvm::CallInst::Create(module->exceptionSelector,
-                             int32_eh_select_params.begin(),
-                             int32_eh_select_params.end(), "eh_select",
+                             int32_eh_select_params,
+                             int32_eh_select_params + 3, "eh_select",
                              cur->test);
       llvm::BranchInst::Create(cur->realTest, cur->test);
       cur->exceptionPHI->addIncoming(ptr_eh_ptr, cur->test);
@@ -1030,8 +1006,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     cl = module->getNativeClass(cur->catchClass);
     cl = new LoadInst(cl, "", currentBlock);
 #endif
-    Value* cmp = llvm::CallInst::Create(module->CompareExceptionFunction, cl, "",
-                                        currentBlock);
+    Value* cmp = CallInst::Create(module->CompareExceptionFunction, cl, "",
+                                  currentBlock);
     llvm::BranchInst::Create(cur->nativeHandler, bbNext, cmp, currentBlock);
     if (nodeNext)
       nodeNext->addIncoming(cur->exceptionPHI, currentBlock);
@@ -1039,22 +1015,18 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     cur->handlerPHI = llvm::PHINode::Create(module->ptrType, "",
                                             cur->nativeHandler);
     cur->handlerPHI->addIncoming(cur->exceptionPHI, currentBlock);
-    Value* exc = llvm::CallInst::Create(module->GetJavaExceptionFunction,
-                                        "", cur->nativeHandler);
-    llvm::CallInst::Create(module->ClearExceptionFunction, "",
-                           cur->nativeHandler);
-    llvm::CallInst::Create(module->exceptionBeginCatch, cur->handlerPHI,
+    Value* exc = CallInst::Create(module->GetJavaExceptionFunction,
+                                  "", cur->nativeHandler);
+    CallInst::Create(module->ClearExceptionFunction, "", cur->nativeHandler);
+    CallInst::Create(module->exceptionBeginCatch, cur->handlerPHI,
                            "tmp8", cur->nativeHandler);
-    std::vector<Value*> void_28_params;
-    llvm::CallInst::Create(module->exceptionEndCatch,
-                           void_28_params.begin(), void_28_params.end(), "",
-                           cur->nativeHandler);
+    CallInst::Create(module->exceptionEndCatch, "", cur->nativeHandler);
 
     BranchInst::Create(cur->javaHandler, cur->nativeHandler);
 
     if (cur->javaHandler->empty()) {
-      PHINode* node = llvm::PHINode::Create(JnjvmModule::JavaObjectType, "",
-                                            cur->javaHandler);
+      PHINode* node = PHINode::Create(JnjvmModule::JavaObjectType, "",
+                                      cur->javaHandler);
       node->addIncoming(exc, cur->nativeHandler);
       
       new StoreInst(node, supplLocal, false, cur->javaHandler);
@@ -1083,9 +1055,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     threadId = new IntToPtrInst(threadId, module->ptrPtrType, "",
                                 cur->javaHandler);
      
-    std::vector<Value*> GEP;
-    GEP.push_back(module->constantThree);
-    IsolateIDPtr = GetElementPtrInst::Create(threadId, GEP.begin(), GEP.end(),
+    IsolateIDPtr = GetElementPtrInst::Create(threadId, module->constantThree,
                                              "", cur->javaHandler);
     const Type* realType = PointerType::getUnqual(module->pointerSizeType);
     IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
@@ -1096,9 +1066,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
                                    loader->isolate->IsolateID);
 
     new StoreInst(MyID, IsolateIDPtr, cur->javaHandler);
-    GEP.clear();
-    GEP.push_back(module->constantFour);
-    IsolatePtr = GetElementPtrInst::Create(threadId, GEP.begin(), GEP.end(), "",
+    IsolatePtr = GetElementPtrInst::Create(threadId, module->constantFour, "",
                                            cur->javaHandler);
      
     OldIsolate = new LoadInst(IsolatePtr, "", cur->javaHandler);
@@ -1194,15 +1162,15 @@ void JavaJIT::JITVerifyNull(Value* obj) {
   BasicBlock* cont = createBasicBlock("verifyNullCont");
 
   llvm::BranchInst::Create(exit, cont, test, currentBlock);
-  std::vector<Value*> args;
   if (currentExceptionBlock != endExceptionBlock) {
-    llvm::InvokeInst::Create(module->NullPointerExceptionFunction,
-                             unifiedUnreachable,
-                             currentExceptionBlock, args.begin(),
-                             args.end(), "", exit);
+    Value** val = 0;
+    InvokeInst::Create(module->NullPointerExceptionFunction,
+                       unifiedUnreachable,
+                       currentExceptionBlock, val, val,
+                       "", exit);
   } else {
     llvm::CallInst::Create(module->NullPointerExceptionFunction,
-                           args.begin(), args.end(), "", exit);
+                           "", exit);
     new UnreachableInst(exit);
   }
   
@@ -1230,17 +1198,15 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
 
     branch(cmp, ifTrue, ifFalse, currentBlock);
     
-    std::vector<Value*>args;
-    args.push_back(obj);
-    args.push_back(index);
+    Value* args[2] = { obj, index };
     if (currentExceptionBlock != endExceptionBlock) {
-      llvm::InvokeInst::Create(module->IndexOutOfBoundsExceptionFunction,
-                               unifiedUnreachable,
-                               currentExceptionBlock, args.begin(),
-                               args.end(), "", ifFalse);
+      InvokeInst::Create(module->IndexOutOfBoundsExceptionFunction,
+                         unifiedUnreachable,
+                         currentExceptionBlock, args, args + 2,
+                         "", ifFalse);
     } else {
-      llvm::CallInst::Create(module->IndexOutOfBoundsExceptionFunction,
-                             args.begin(), args.end(), "", ifFalse);
+      CallInst::Create(module->IndexOutOfBoundsExceptionFunction,
+                       args, args + 2, "", ifFalse);
       new UnreachableInst(ifFalse);
     }
   
@@ -1250,13 +1216,9 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
   Constant* zero = module->constantZero;
   Value* val = new BitCastInst(obj, arrayType, "", currentBlock);
   
-  std::vector<Value*> indexes; //[3];
-  indexes.push_back(zero);
-  indexes.push_back(module->JavaArrayElementsOffsetConstant);
-  indexes.push_back(index);
-  Value* ptr = llvm::GetElementPtrInst::Create(val, indexes.begin(),
-                                               indexes.end(), 
-                                               "", currentBlock);
+  Value* indexes[3] = { zero, module->JavaArrayElementsOffsetConstant, index };
+  Value* ptr = GetElementPtrInst::Create(val, indexes, indexes + 3, "",
+                                         currentBlock);
 
   return ptr;
 
@@ -1643,15 +1605,12 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
 
 // This makes unswitch loop very unhappy time-wise, but makes GVN happy
 // number-wise. IMO, it's better to have this than Unswitch.
-  std::vector<Value*> Args;
 #ifdef ISOLATE_SHARING
   Value* CTP = ctpCache;
-  Args.push_back(module->constantOne);
-  Value* Cl = GetElementPtrInst::Create(CTP, Args.begin(), Args.end(), "",
+  Value* Cl = GetElementPtrInst::Create(CTP, module->ConstantOne, "",
                                         currentBlock);
   Cl = new LoadInst(Cl, "", currentBlock);
   Cl = new BitCastInst(Cl, module->JavaClassType, "", currentBlock);
-  Args.clear();
 #else
   JavaConstantPool* ctp = compilingClass->ctpInfo;
   Value* CTP = module->getConstantPool(ctp);
@@ -1660,6 +1619,7 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   Cl = new LoadInst(Cl, "", currentBlock);
 #endif
 
+  std::vector<Value*> Args;
   Args.push_back(resolver);
   Args.push_back(CTP);
   Args.push_back(Cl);
@@ -1713,25 +1673,20 @@ void JavaJIT::invokeNew(uint16 index) {
                                  "", currentBlock);
   Value* VT = CallInst::Create(module->GetVTFromClassFunction, Cl, "",
                                currentBlock);
-  std::vector<Value*> args;
-  args.push_back(Size);
-  args.push_back(VT);
-  Value* val = invoke(module->JavaObjectAllocateFunction, args, "",
+  
+  Value* val = invoke(module->JavaObjectAllocateFunction, Size, VT, "",
                       currentBlock);
   
   // Set the class
   
-  std::vector<Value*> gep;
-  gep.push_back(module->constantZero);
-  gep.push_back(module->JavaObjectClassOffsetConstant);
-  Value* GEP = GetElementPtrInst::Create(val, gep.begin(), gep.end(), "",
+  Value* gep[2] = { module->constantZero,
+                    module->JavaObjectClassOffsetConstant };
+  Value* GEP = GetElementPtrInst::Create(val, gep, gep + 2, "",
                                          currentBlock);
   new StoreInst(Cl, GEP, currentBlock);
   
-  gep.clear();
-  gep.push_back(module->constantZero);
-  gep.push_back(module->JavaObjectLockOffsetConstant);
-  Value* lockPtr = GetElementPtrInst::Create(val, gep.begin(), gep.end(), "",
+  Value* gep2[2] = { module->constantZero, module->JavaObjectLockOffsetConstant };
+  Value* lockPtr = GetElementPtrInst::Create(val, gep2, gep2 + 2, "",
                                              currentBlock);
   Value* threadId = CallInst::Create(module->llvm_frameaddress,
                                      module->constantZero, "", currentBlock);
@@ -1746,22 +1701,18 @@ void JavaJIT::invokeNew(uint16 index) {
 }
 
 Value* JavaJIT::arraySize(Value* val) {
-  return llvm::CallInst::Create(module->ArrayLengthFunction, val, "",
-                                currentBlock);
+  return CallInst::Create(module->ArrayLengthFunction, val, "", currentBlock);
 }
 
-static llvm::Value* fieldGetter(JavaJIT* jit, const Type* type, Value* object,
-                                Value* offset) {
-  llvm::Value* objectConvert = new BitCastInst(object, type, "",
-                                               jit->currentBlock);
+static Value* fieldGetter(JavaJIT* jit, const Type* type, Value* object,
+                          Value* offset) {
+  Value* objectConvert = new BitCastInst(object, type, "",
+                                         jit->currentBlock);
 
   Constant* zero = jit->module->constantZero;
-  std::vector<Value*> args; // size = 2
-  args.push_back(zero);
-  args.push_back(offset);
+  Value* args[2] = { zero, offset };
   llvm::Value* ptr = llvm::GetElementPtrInst::Create(objectConvert,
-                                                     args.begin(),
-                                                     args.end(), "",
+                                                     args, args + 2, "",
                                                      jit->currentBlock);
   return ptr;  
 }
@@ -1806,11 +1757,8 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
   Value* ptr = getConstantPoolAt(index, func, returnType, 0, true);
   if (!stat) {
     Value* tmp = new BitCastInst(object, Pty, "", currentBlock);
-    std::vector<Value*> args;
-    args.push_back(zero);
-    args.push_back(ptr);
-    ptr = GetElementPtrInst::Create(tmp, args.begin(), args.end(), "",
-                                    currentBlock);
+    Value* args[2] = { zero, ptr };
+    ptr = GetElementPtrInst::Create(tmp, args, args + 2, "", currentBlock);
   }
     
   return new BitCastInst(ptr, fieldTypePtr, "", currentBlock);
@@ -1938,31 +1886,27 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
   if (currentExceptionBlock != endExceptionBlock) {
     BasicBlock* ifNormal = createBasicBlock("no exception block");
     currentBlock = ifNormal;
-    std::vector<Value*> arg;
-    arg.push_back(arg1);
-    return llvm::InvokeInst::Create(F, ifNormal, currentExceptionBlock,
-                                    arg.begin(), arg.end(), Name, InsertAtEnd);
+    Value* arg[1] = { arg1 };
+    return InvokeInst::Create(F, ifNormal, currentExceptionBlock,
+                              arg, arg + 1, Name, InsertAtEnd);
   } else {
-    return llvm::CallInst::Create(F, arg1, Name, InsertAtEnd);
+    return CallInst::Create(F, arg1, Name, InsertAtEnd);
   }
 }
 
 Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
                        const char* Name, BasicBlock *InsertAtEnd) {
 
-  std::vector<Value*> args;
-  args.push_back(arg1);
-  args.push_back(arg2);
+  Value* args[2] = { arg1, arg2 };
   
   // means: is there a handler for me?
   if (currentExceptionBlock != endExceptionBlock) {
     BasicBlock* ifNormal = createBasicBlock("no exception block");
     currentBlock = ifNormal;
-    return llvm::InvokeInst::Create(F, ifNormal, currentExceptionBlock,
-                                    args.begin(), args.end(), Name,
-                                    InsertAtEnd);
+    return InvokeInst::Create(F, ifNormal, currentExceptionBlock,
+                              args, args + 2, Name, InsertAtEnd);
   } else {
-    return llvm::CallInst::Create(F, args.begin(), args.end(), Name, InsertAtEnd);
+    return CallInst::Create(F, args, args + 2, Name, InsertAtEnd);
   }
 }
 
@@ -1972,9 +1916,9 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
   if (currentExceptionBlock != endExceptionBlock) {
     BasicBlock* ifNormal = createBasicBlock("no exception block");
     currentBlock = ifNormal;
-    std::vector<Value*> args;
+    Value* args[1];
     return llvm::InvokeInst::Create(F, ifNormal, currentExceptionBlock,
-                                    args.begin(), args.end(), Name,
+                                    args, args, Name,
                                     InsertAtEnd);
   } else {
     return llvm::CallInst::Create(F, Name, InsertAtEnd);
@@ -2025,20 +1969,15 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index, bool buggyVirtual) {
                                      module->EnveloppeType, 0, false);
 #endif
 
-  std::vector<Value*> args1;
-  args1.push_back(zero);
-  args1.push_back(zero);
-  Value* cachePtr = GetElementPtrInst::Create(llvmEnv, args1.begin(), args1.end(),
-                                          "", currentBlock);
+  Value* args1[2] = { zero, zero };
+  Value* cachePtr = GetElementPtrInst::Create(llvmEnv, args1, args1 + 2,
+                                              "", currentBlock);
   Value* cache = new LoadInst(cachePtr, "", currentBlock);
 
   Value* cl = CallInst::Create(module->GetClassFunction, args[0], "",
                                currentBlock);
-  std::vector<Value*> args3;
-  args3.push_back(zero);
-  args3.push_back(one);
-  Value* lastCiblePtr = GetElementPtrInst::Create(cache, args3.begin(), 
-                                                  args3.end(), "", 
+  Value* args3[2] = { zero, one };
+  Value* lastCiblePtr = GetElementPtrInst::Create(cache, args3, args3 + 2, "",
                                                   currentBlock);
   Value* lastCible = new LoadInst(lastCiblePtr, "", currentBlock);
 
@@ -2067,8 +2006,8 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index, bool buggyVirtual) {
 
   currentBlock = ifTrue;
 
-  Value* methPtr = GetElementPtrInst::Create(cache, args1.begin(), args1.end(),
-                                         "", currentBlock);
+  Value* methPtr = GetElementPtrInst::Create(cache, args1, args1 + 2,
+                                             "", currentBlock);
 
   _meth = new LoadInst(methPtr, "", currentBlock);
   meth = new BitCastInst(_meth, virtualPtrType, "", currentBlock);

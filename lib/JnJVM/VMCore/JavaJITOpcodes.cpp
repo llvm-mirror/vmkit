@@ -142,20 +142,21 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
     }
 #if JNJVM_EXECUTE > 1
     {
-    std::vector<llvm::Value*> args;
-    args.push_back(ConstantExpr::getIntToPtr(
-          ConstantInt::get(Type::Int64Ty, (int64_t)OpcodeNames[bytecodes[i]]),
-          module->ptrType));
+      Value* args[3] = {
+        ConstantExpr::getIntToPtr(
+            ConstantInt::get(Type::Int64Ty, (int64_t)OpcodeNames[bytecodes[i]]),
+            module->ptrType),
 
-    args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)i));
+        ConstantInt::get(Type::Int32Ty, (int64_t)i),
     
-    args.push_back(ConstantExpr::getIntToPtr(
-          ConstantInt::get(Type::Int64Ty, (int64_t)compilingMethod),
-          module->ptrType));
+        ConstantExpr::getIntToPtr(
+            ConstantInt::get(Type::Int64Ty, (int64_t)compilingMethod),
+            module->ptrType) 
+      };
     
     
-    CallInst::Create(module->PrintExecutionFunction, args.begin(),
-                     args.end(), "", currentBlock);
+      CallInst::Create(module->PrintExecutionFunction, args, args + 3, "",
+                       currentBlock);
     }
 #endif
     
@@ -1845,11 +1846,10 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           valCl = module->getNativeClass(dcl);
           valCl = new LoadInst(valCl, "", currentBlock);
 #else
-          std::vector<Value*> args;
-          args.push_back(isolateLocal);
-          args.push_back(ConstantInt::get(Type::Int32Ty, id - 4));
+          Value* args[2] = { isolateLocal,
+                             ConstantInt::get(Type::Int32Ty, id - 4) };
           valCl = CallInst::Create(module->GetJnjvmArrayClassFunction,
-                                   args.begin(), args.end(), "", currentBlock);
+                                   args, args + 2, "", currentBlock);
 #endif
 
           LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[charId];
@@ -1875,16 +1875,15 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         BranchInst::Create(BB1, BB2, cmp, currentBlock);
         currentBlock = BB1;
-        std::vector<Value*> exArgs;
-        exArgs.push_back(arg1);
         if (currentExceptionBlock != endExceptionBlock) {
+          Value* exArgs[1] = { arg1 };
           InvokeInst::Create(module->NegativeArraySizeExceptionFunction, 
                              unifiedUnreachable,
-                             currentExceptionBlock, exArgs.begin(),
-                             exArgs.end(), "", currentBlock);
+                             currentExceptionBlock, exArgs, exArgs + 1,
+                             "", currentBlock);
         } else {
           CallInst::Create(module->NegativeArraySizeExceptionFunction,
-                           exArgs.begin(), exArgs.end(), "", currentBlock);
+                           arg1, "", currentBlock);
           new UnreachableInst(currentBlock);
         }
         currentBlock = BB2;
@@ -1899,13 +1898,14 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         BranchInst::Create(BB1, BB2, cmp, currentBlock);
         currentBlock = BB1;
         if (currentExceptionBlock != endExceptionBlock) {
+          Value* exArgs[1] = { arg1 };
           InvokeInst::Create(module->OutOfMemoryErrorFunction,
                              unifiedUnreachable,
-                             currentExceptionBlock, exArgs.begin(),
-                             exArgs.end(), "", currentBlock);
+                             currentExceptionBlock, exArgs, exArgs + 1,
+                             "", currentBlock);
         } else {
-          CallInst::Create(module->OutOfMemoryErrorFunction,
-                           exArgs.begin(), exArgs.end(), "", currentBlock);
+          CallInst::Create(module->OutOfMemoryErrorFunction, arg1, "",
+                           currentBlock);
           new UnreachableInst(currentBlock);
         }
         currentBlock = BB2;
@@ -1915,36 +1915,29 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* size =
           BinaryOperator::CreateAdd(module->JavaArraySizeConstant, mult,
                                     "", currentBlock);
-        std::vector<Value*> args;
-        args.push_back(size);
-        args.push_back(TheVT);
-        Value* res = invoke(module->JavaObjectAllocateFunction, args, "",
+        Value* res = invoke(module->JavaObjectAllocateFunction, size, TheVT, "",
                             currentBlock);
         Value* cast = new BitCastInst(res, module->JavaArrayType, "",
                                       currentBlock);
 
         // Set the size
-        std::vector<Value*> gep4;
-        gep4.push_back(module->constantZero);
-        gep4.push_back(module->JavaArraySizeOffsetConstant);
-        Value* GEP = GetElementPtrInst::Create(cast, gep4.begin(), gep4.end(),
+        Value* gep4[2] = { module->constantZero,
+                           module->JavaArraySizeOffsetConstant };
+        Value* GEP = GetElementPtrInst::Create(cast, gep4, gep4 + 2,
                                                "", currentBlock);
         
         arg1 = new IntToPtrInst(arg1, module->ptrType, "", currentBlock);
         new StoreInst(arg1, GEP, currentBlock);
         
         // Set the class
-        std::vector<Value*> gep;
-        gep.push_back(module->constantZero);
-        gep.push_back(module->JavaObjectClassOffsetConstant);
-        GEP = GetElementPtrInst::Create(res, gep.begin(), gep.end(), "",
-                                        currentBlock);
+        Value* gep[2] = { module->constantZero,
+                          module->JavaObjectClassOffsetConstant };
+        GEP = GetElementPtrInst::Create(res, gep, gep + 2, "", currentBlock);
         new StoreInst(valCl, GEP, currentBlock);
         
-        gep.clear();
-        gep.push_back(module->constantZero);
-        gep.push_back(module->JavaObjectLockOffsetConstant);
-        Value* lockPtr = GetElementPtrInst::Create(res, gep.begin(), gep.end(),
+        Value* gep1[2] = { module->constantZero,
+                           module->JavaObjectLockOffsetConstant };
+        Value* lockPtr = GetElementPtrInst::Create(res, gep1, gep1 + 2,
                                                    "", currentBlock);
         Value* threadId = CallInst::Create(module->llvm_frameaddress,
                                            module->constantZero, "",
@@ -1973,16 +1966,15 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case ATHROW : {
         llvm::Value* arg = pop();
-        std::vector<Value*> args;
-        args.push_back(arg);
         if (currentExceptionBlock != endExceptionBlock) {
+          Value* args[1] = { arg };
           InvokeInst::Create(module->ThrowExceptionFunction,
                              unifiedUnreachable,
-                             currentExceptionBlock, args.begin(), args.end(),
+                             currentExceptionBlock, args, args + 1,
                              "", currentBlock);
         } else {
-          CallInst::Create(module->ThrowExceptionFunction, args.begin(),
-                           args.end(), "", currentBlock);
+          CallInst::Create(module->ThrowExceptionFunction, arg, "",
+                           currentBlock);
           new UnreachableInst(currentBlock);
         }
         break;
@@ -2004,27 +1996,20 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         currentBlock = ifFalse;
         Value* clVar = getResolvedClass(index, false);
         
-        std::vector<Value*> args;
-        args.push_back(obj);
-        args.push_back(clVar);
-        Value* call = CallInst::Create(module->InstanceOfFunction,
-                                       args.begin(), args.end(),
-                                       "", currentBlock);
+        Value* args[2] = { obj, clVar };
+        Value* call = CallInst::Create(module->InstanceOfFunction, args,
+                                       args + 2, "", currentBlock);
         
         BasicBlock* ex = createBasicBlock("false checkcast");
         BranchInst::Create(ifTrue, ex, call, currentBlock);
 
-        std::vector<Value*> exArgs;
-        exArgs.push_back(obj);
-        exArgs.push_back(clVar);
         if (currentExceptionBlock != endExceptionBlock) {
           InvokeInst::Create(module->ClassCastExceptionFunction,
                              unifiedUnreachable,
-                             currentExceptionBlock, exArgs.begin(),
-                             exArgs.end(), "", ex);
+                             currentExceptionBlock, args, args + 2, "", ex);
         } else {
           CallInst::Create(module->ClassCastExceptionFunction,
-                           exArgs.begin(), exArgs.end(), "", ex);
+                           args, args + 2, "", ex);
           new UnreachableInst(ex);
         }
         
@@ -2036,12 +2021,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint16 index = readU2(bytecodes, i);
         Value* clVar = getResolvedClass(index, false);
         
-        std::vector<Value*> args;
-        args.push_back(pop());
-        args.push_back(clVar);
+        Value* args[2] = { pop(), clVar };
         Value* val = CallInst::Create(module->InstanceOfFunction,
-                                      args.begin(), args.end(), "",
-                                      currentBlock);
+                                      args, args + 2, "", currentBlock);
         push(new ZExtInst(val, Type::Int32Ty, "", currentBlock),
              false);
         break;
