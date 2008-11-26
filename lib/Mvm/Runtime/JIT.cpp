@@ -25,6 +25,7 @@
 #include "mvm/JIT.h"
 #include "mvm/MvmMemoryManager.h"
 #include "mvm/Object.h"
+#include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
 using namespace mvm;
@@ -140,8 +141,8 @@ void MvmModule::initialise(bool Fast) {
   constantDoubleMinusZero = ConstantFP::get(Type::DoubleTy, -0.0);
   constantFloatMinusZero = ConstantFP::get(Type::FloatTy, -0.0f);
   constantThreadIDMask = ConstantInt::get(pointerSizeType, mvm::Thread::IDMask);
-  constantLockedMask = ConstantInt::get(pointerSizeType, 0x7FFFFF00);
-  constantThreadFreeMask = ConstantInt::get(pointerSizeType, 0x7FFFFFFF);
+  constantLockedMask = ConstantInt::get(pointerSizeType, ThinMask);
+  constantThreadFreeMask = ConstantInt::get(pointerSizeType, ReservedMask);
   constantPtrOne = ConstantInt::get(pointerSizeType, 1);
 
   constantPtrNull = Constant::getNullValue(ptrType); 

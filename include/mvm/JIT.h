@@ -24,20 +24,11 @@
 
 #include "types.h"
 
-#include "mvm/Allocator.h"
-#include "mvm/MvmMemoryManager.h"
-#include "mvm/Threads/Locks.h"
-
 namespace mvm {
 
+class LockNormal;
+class MvmMemoryManager;
 class Thread;
-
-/// JITInfo - This class can be derived from to hold private JIT-specific
-/// information. Objects of type are accessed/created with
-/// <Class>::getInfo and destroyed when the <Class> object is destroyed.
-struct JITInfo : public mvm::PermanentObject {
-  virtual ~JITInfo() {}
-};
 
 const double MaxDouble = +INFINITY; //1.0 / 0.0;
 const double MinDouble = -INFINITY;//-1.0 / 0.0;

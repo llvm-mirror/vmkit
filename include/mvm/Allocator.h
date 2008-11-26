@@ -93,6 +93,13 @@ public:
   }
 };
 
+/// JITInfo - This class can be derived from to hold private JIT-specific
+/// information. Objects of type are accessed/created with
+/// <Class>::getInfo and destroyed when the <Class> object is destroyed.
+struct JITInfo : public mvm::PermanentObject {
+  virtual ~JITInfo() {}
+};
+
 } // end namespace mvm
 
 #endif // MVM_ALLOCATOR_H

@@ -60,9 +60,7 @@ public:
 /// LockObj - This class represents a Java monitor.
 ///
 class LockObj : public mvm::Object {
-
   friend class JavaObject;
-
 private:
 
 
@@ -74,19 +72,20 @@ private:
   ///
   JavaCond varcond;
 
+public:
   /// allocate - Allocates a lock object. Only the internal lock is allocated.
   ///
   static LockObj* allocate();
   
-  /// myLock - Returns the lock object of this object, allocating it if
-  /// non-existant. This uses the big lock to make the object lock unique.
-  ///
-  static LockObj* myLock(JavaObject* obj);
-
   /// acquire - Acquires the lock.
   ///
   void acquire() {
     lock.lock();
+  }
+  
+  /// acquireAll - Acquires the lock nb times.
+  void acquireAll(uint32 nb) {
+    lock.lockAll(nb);
   }
 
   /// release - Releases the lock.
@@ -107,8 +106,6 @@ private:
   JavaCond* getCond() {
     return &varcond;
   }
-
-public:
 
   static VirtualTable* VT;
 
@@ -136,7 +133,7 @@ public:
 
   /// lock - The monitor of this object. Most of the time null.
   ///
-  uintptr_t lock;
+  mvm::ThinLock<LockObj> lock;
 
   /// wait - Java wait. Makes the current thread waiting on a monitor.
   ///
@@ -156,12 +153,17 @@ public:
   /// the monitor.
   ///
   void notifyAll();
-  
+ 
+  /// overflowThinLokc - Notify that the thin lock has overflowed.
+  ///
+  void overflowThinLock() {
+    lock.overflowThinLock();
+  }
+
   /// initialise - Initialises the object.
   ///
   void initialise(UserCommonClass* cl) {
     this->classOf = cl; 
-    this->lock = (uintptr_t)mvm::Thread::get();
   }
 
   /// instanceOf - Is this object's class of type the given class?
@@ -172,22 +174,20 @@ public:
   }
 
   /// acquire - Acquire the lock on this object.
-  void acquire();
+  void acquire() {
+    lock.acquire();
+  }
 
   /// release - Release the lock on this object
-  void release();
+  void release() {
+    lock.release();
+  }
 
-  /// changeToFatlock - Change the lock of this object to a fat lock. The lock
-  /// may be in thin lock or in fat lock.
-  LockObj* changeToFatlock();
-
-  /// overflowThinlock -Change the lock of this object to a fat lock because
-  /// we have reached 0xFF locks.
-  void overflowThinlock();
-  
-  /// owner - Returns true if the curren thread is the owner of this object's
+  /// owner - Returns true if the current thread is the owner of this object's
   /// lock.
-  bool owner();
+  bool owner() {
+    return lock.owner();
+  }
 
 #ifdef SIGSEGV_THROW_NULL
   #define verifyNull(obj) {}
@@ -200,22 +200,9 @@ public:
   virtual void TRACER;
 
 
-#if (__WORDSIZE == 64)
-  static const uint64_t FatMask = 0x8000000000000000;
-#else
-  static const uint64_t FatMask = 0x80000000;
-#endif
-
-  static const uint64_t ThinMask = 0x7FFFFF00;
-  static const uint64_t ReservedMask = 0X7FFFFFFF;
-  static const uint64_t ThinCountMask = 0xFF;
-
+  /// lockObj - Get the LockObj if the lock is a fat lock.
   LockObj* lockObj() {
-    if (lock & FatMask) {
-      return (LockObj*)(lock << 1);
-    } else {
-      return 0;
-    }
+    return lock.getFatLock();
   }
 };
 

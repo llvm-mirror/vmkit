@@ -74,94 +74,6 @@ LockObj* LockObj::allocate() {
   return res;
 }
 
-bool JavaObject::owner() {
-  uint64 id = mvm::Thread::get()->getThreadID();
-  if ((lock & ThinMask) == id) return true;
-  if (lock & FatMask) {
-    LockObj* obj = (LockObj*)(lock << 1);
-    return obj->owner();
-  }
-  return false;
-}
-
-void JavaObject::overflowThinlock() {
-  LockObj* obj = LockObj::allocate();
-  obj->lock.lockAll(256);
-  lock = ((uintptr_t)obj >> 1) | FatMask;
-}
-
-void JavaObject::release() {
-  uint64 id = mvm::Thread::get()->getThreadID();
-  if ((lock & ThinMask) == id) {
-    --lock;
-  } else {
-    LockObj* obj = (LockObj*)(lock << 1);
-    obj->release();
-  } 
-}
-
-void JavaObject::acquire() {
-  uint64_t id = mvm::Thread::get()->getThreadID();
-  if ((lock & ReservedMask) == id) {
-    lock |= 1;
-  } else if ((lock & ThinMask) == id) {
-    if ((lock & ThinCountMask) == ThinCountMask) {
-      overflowThinlock();
-    } else {
-      ++lock;
-    }
-  } else {
-    uintptr_t currentLock = lock & ThinMask;
-    uintptr_t val = 
-      (uintptr_t)__sync_val_compare_and_swap((uintptr_t)&lock, currentLock, 
-                                             (id + 1));
-    if (val != currentLock) {
-      if (val & FatMask) {
-end:
-        //fat lock!
-        LockObj* obj = (LockObj*)(lock << 1);
-        obj->acquire();
-      } else {
-        LockObj* obj = LockObj::allocate();
-        val = ((uintptr_t)obj >> 1) | FatMask;
-        uint32 count = 0;
-loop:
-        while ((lock & ThinCountMask) != 0) {
-          if (lock & FatMask) {
-#ifdef USE_GC_BOEHM
-            delete obj;
-#endif
-            goto end;
-          }
-          else {
-            mvm::Thread::yield(&count);
-          }
-        }
-        
-        currentLock = lock & ThinMask;
-        uintptr_t test = 
-          (uintptr_t)__sync_val_compare_and_swap((uintptr_t)&lock, currentLock,
-                                                 val);
-        if (test != currentLock) goto loop;
-        obj->acquire();
-      }
-    }
-  }
-}
-
-LockObj* JavaObject::changeToFatlock() {
-  if (!(lock & FatMask)) {
-    LockObj* obj = LockObj::allocate();
-    uintptr_t val = ((uintptr_t)obj >> 1) | FatMask;
-    uint32 count = lock & ThinCountMask;
-    obj->lock.lockAll(count);
-    lock = val;
-    return obj;
-  } else {
-    return (LockObj*)(lock << 1);
-  }
-}
-
 void JavaObject::print(mvm::PrintBuffer* buf) const {
   buf->write("JavaObject<");
   CommonClass::printClassName(classOf->getName(), buf);
@@ -171,7 +83,7 @@ void JavaObject::print(mvm::PrintBuffer* buf) const {
 void JavaObject::waitIntern(struct timeval* info, bool timed) {
 
   if (owner()) {
-    LockObj * l = changeToFatlock();
+    LockObj * l = lock.changeToFatlock();
     JavaThread* thread = JavaThread::get();
     mvm::Lock& mutexThread = thread->lock;
     mvm::Cond& varcondThread = thread->varcond;
@@ -225,8 +137,8 @@ void JavaObject::timedWait(struct timeval& info) {
 
 void JavaObject::notify() {
   if (owner()) {
-    LockObj * l = changeToFatlock();
-    l->getCond()->notify();
+    LockObj * l = lock.getFatLock();
+    if (l) l->getCond()->notify();
   } else {
     JavaThread::get()->getJVM()->illegalMonitorStateException(this);
   }
@@ -234,8 +146,8 @@ void JavaObject::notify() {
 
 void JavaObject::notifyAll() {
   if (owner()) {
-    LockObj * l = changeToFatlock();
-    l->getCond()->notifyAll();
+    LockObj * l = lock.getFatLock();
+    if (l) l->getCond()->notifyAll();
   } else {
     JavaThread::get()->getJVM()->illegalMonitorStateException(this);
   } 

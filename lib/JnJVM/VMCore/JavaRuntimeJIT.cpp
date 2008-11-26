@@ -363,7 +363,6 @@ extern "C" void JavaObjectAquire(JavaObject* obj) {
   obj->acquire();
 }
 
-
 extern "C" void JavaObjectRelease(JavaObject* obj) {
   obj->release();
 }
@@ -406,7 +405,7 @@ extern "C" void JavaThreadClearException() {
 }
 
 extern "C" void overflowThinLock(JavaObject* obj) {
-  obj->overflowThinlock();
+  obj->overflowThinLock();
 }
 
 #ifdef SERVICE

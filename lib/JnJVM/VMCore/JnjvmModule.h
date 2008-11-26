@@ -97,7 +97,7 @@ public:
     
   LLVMMethodInfo(JavaMethod* M); 
 
-  static JavaMethod* get(const Function* F);
+  static JavaMethod* get(const llvm::Function* F);
 };
 
 class LLVMFieldInfo : public mvm::JITInfo {

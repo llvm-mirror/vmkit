@@ -43,7 +43,7 @@ jobject _src) {
   JavaObject* res = (JavaObject*)
     vm->gcAllocator.allocateManagedObject(size, src->getVirtualTable());
   memcpy(res, src, size);
-  res->lock = JavaThread::get()->getThreadID();
+  res->lock.initialise();
   return (jobject)res;
 } 
 

@@ -13,8 +13,6 @@
 #include "types.h"
 
 #include "MvmGC.h"
-#include "mvm/JIT.h"
-#include "mvm/Object.h"
 
 
 class Collector;

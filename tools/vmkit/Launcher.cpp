@@ -24,6 +24,8 @@
 
 #include "CommandLine.h"
 
+using namespace llvm;
+
 enum VMType {
   Interactive, RunJava, RunNet
 };

@@ -303,7 +303,7 @@ void VMClass::resolveStaticFields(VMGenericMethod* genMethod) {
 }
 
 void VMClass::unifyTypes(VMGenericClass* genClass, VMGenericMethod* genMethod) {
-  PATypeHolder PA = naturalType;
+  llvm::PATypeHolder PA = naturalType;
   for (std::vector<VMField*>::iterator i = virtualFields.begin(), 
        e = virtualFields.end(); i!= e; ++i) {
     (*i)->signature->resolveVirtual(genClass, genMethod);
@@ -323,7 +323,7 @@ void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* ge
         virtualFields[0]->offset = mvm::MvmModule::constantZero;
         ResultTy = virtualFields[0]->signature->naturalType;
       } else if (size == 0) {
-        ResultTy = Type::VoidTy;
+        ResultTy = llvm::Type::VoidTy;
       } else {
         std::vector<const llvm::Type*> Elts;
         uint32 offset = -1;
@@ -336,7 +336,7 @@ void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* ge
         ResultTy = llvm::StructType::get(Elts);
       }
     } else if (super == MSCorlib::pEnum) {
-      ResultTy = Type::Int32Ty; // TODO find max
+      ResultTy = llvm::Type::Int32Ty; // TODO find max
     } else {
       std::vector<const llvm::Type*> Elts;
       Elts.push_back(super->naturalType->getContainedType(0));
@@ -355,9 +355,10 @@ void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* ge
   
   
   if (naturalType->isAbstract()) {
-    const OpaqueType *OldTy = dyn_cast_or_null<OpaqueType>(this->naturalType);
+    const llvm::OpaqueType *OldTy = 
+      llvm::dyn_cast_or_null<llvm::OpaqueType>(this->naturalType);
     if (OldTy) {
-      const_cast<OpaqueType*>(OldTy)->refineAbstractTypeTo(ResultTy);
+      const_cast<llvm::OpaqueType*>(OldTy)->refineAbstractTypeTo(ResultTy);
     }
     naturalType = ResultTy;
   }
