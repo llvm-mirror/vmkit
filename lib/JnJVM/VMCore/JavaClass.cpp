@@ -916,8 +916,8 @@ void CommonClass::resolveClass() {
         Mod->resolveStaticClass(cl);
         cl->status = resolved;
       }
-      release();
       broadcastClass();
+      release();
     } else {
       while (status < resolved) {
         waitClass();
