@@ -55,10 +55,6 @@ typedef void (*clinit_t)(UserConstantPool*);
 void UserCommonClass::initialiseClass(Jnjvm* vm) {
   
   // Primitives are initialized at boot time, arrays are initialized directly.
-  if (isArray()) {
-    status = ready;
-    return;
-  }
   
   // Assumes that the Class object has already been verified and prepared and
   // that the Class object contains state that can indicate one of four

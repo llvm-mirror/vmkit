@@ -333,7 +333,7 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
   } else {
     virtualVT = ArrayObject::VT;
   }
-  status = resolved;
+  status = ready;
 }
 
 void Class::print(mvm::PrintBuffer* buf) const {
