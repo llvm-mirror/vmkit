@@ -127,7 +127,7 @@ extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
   JavaField* field = cl->lookupField(utf8, sign->keyName, true, true, &fieldCl);
   
   fieldCl->initialiseClass(JavaThread::get()->getJVM());
-  JavaObject* obj = ((UserClass*)fieldCl)->getStaticInstance();
+  void* obj = ((UserClass*)fieldCl)->getStaticInstance();
   
   assert(obj && "No static instance in static field lookup");
   

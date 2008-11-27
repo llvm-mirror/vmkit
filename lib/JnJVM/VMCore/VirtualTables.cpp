@@ -78,7 +78,9 @@ void CommonClass::TRACER {
   for (uint32 i =0; i < NR_ISOLATES; ++i) {
     TaskClassMirror &M = IsolateInfo[i];
     M.delegatee->MARK_AND_TRACE;
-    M.staticInstance->MARK_AND_TRACE;
+    if (M.staticInstance) {
+      ((Class*)this)->staticTracer(M.staticInstance);
+    }
   }
 #endif
 }
@@ -87,7 +89,8 @@ void Class::TRACER {
   CommonClass::CALL_TRACER;
   bytes->MARK_AND_TRACE;
 #if !defined(ISOLATE)
-  _staticInstance->MARK_AND_TRACE;
+  if (_staticInstance)
+    staticTracer(_staticInstance);
 #endif
 }
 

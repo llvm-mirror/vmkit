@@ -493,7 +493,7 @@ JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
       } 
 #ifndef ISOLATE_SHARING
       else if (cl->isReady()) {
-        JavaObject* S = field->classDef->getStaticInstance();
+        void* S = field->classDef->getStaticInstance();
         ctpRes[index] = (void*)((uint64)S + field->ptrOffset);
       }
 #endif

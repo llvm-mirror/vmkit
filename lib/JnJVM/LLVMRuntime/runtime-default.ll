@@ -88,7 +88,7 @@ declare %JavaClass* @getClassInDisplay(%JavaClass**, i32) readnone
 declare i32 @getDepth(%JavaClass*) readnone 
 
 ;;; getStaticInstance - Get the static instance of this class.
-declare %JavaObject* @getStaticInstance(%JavaClass*) readnone 
+declare i8* @getStaticInstance(%JavaClass*) readnone 
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -124,7 +124,7 @@ class TaskClassMirror {
 public:
   JavaState status;
   JavaObject* delegatee;
-  JavaObject* staticInstance;
+  mvm::Object* staticInstance;
 };
 #endif
 
@@ -665,27 +665,22 @@ public:
   ///
   bool innerOuterResolved;
   
-  /// staticSize - The size of the static instance of this class.
+  /// setInnerAccess - Set the access flags of this inner class.
   ///
-  uint32 staticSize;
-
-  /// staticVT - The virtual table of the static instance of this class.
-  ///
-  VirtualTable* staticVT;
-
   void setInnerAccess(uint32 access) {
     innerAccess = access;
   }
   
+  /// staticSize - The size of the static instance of this class.
+  ///
+  uint32 staticSize;
+  
+  /// getStaticSize - Get the size of the static instance.
+  ///
   uint32 getStaticSize() {
     return staticSize;
   }
   
-  VirtualTable* getStaticVT() {
-    return staticVT;
-  }
-
-
 #ifndef ISOLATE_SHARING
   /// doNew - Allocates a Java object whose class is this class.
   ///
@@ -711,27 +706,29 @@ public:
   ///
   Attribut* lookupAttribut(const UTF8* key);
   
+  void (*staticTracer)(void*);
+
   /// staticInstance - Get the static instance of this class. A static instance
   /// is inlined when the vm is in a single environment. In a multiple
   /// environment, the static instance is in a hashtable.
   ///
 #if !defined(ISOLATE_SHARING) && !defined(ISOLATE)
-  JavaObject* _staticInstance;
+  void* _staticInstance;
   
-  JavaObject* getStaticInstance() {
+  void* getStaticInstance() {
     return _staticInstance;
   }
   
-  void setStaticInstance(JavaObject* val) {
+  void setStaticInstance(void* val) {
     _staticInstance = val;
   }
 #else
 #if defined(ISOLATE)
-  JavaObject* getStaticInstance() {
+  void* getStaticInstance() {
     return getCurrentTaskClassMirror().staticInstance;
   }
 
-  void setStaticInstance(JavaObject* val) {
+  void setStaticInstance(void* val) {
     getCurrentTaskClassMirror().staticInstance = val;
   }
 
@@ -740,7 +737,7 @@ public:
   
   /// allocateStaticInstance - Allocate the static instance of this class.
   ///
-  JavaObject* allocateStaticInstance(Jnjvm* vm);
+  void* allocateStaticInstance(Jnjvm* vm);
   
   /// Class - Create a class in the given virtual machine and with the given
   /// name.
@@ -1040,10 +1037,10 @@ private:
   
   /// InitField - Set an initial value to the field of an object.
   ///
-  void InitField(JavaObject* obj, uint64 val = 0);
-  void InitField(JavaObject* obj, JavaObject* val);
-  void InitField(JavaObject* obj, double val);
-  void InitField(JavaObject* obj, float val);
+  void InitField(void* obj, uint64 val = 0);
+  void InitField(void* obj, JavaObject* val);
+  void InitField(void* obj, double val);
+  void InitField(void* obj, float val);
 
 public:
 
@@ -1093,7 +1090,7 @@ public:
   /// initField - Init the value of the field in the given object. This is
   /// used for static fields which have a default value.
   ///
-  void initField(JavaObject* obj, Jnjvm* vm);
+  void initField(void* obj, Jnjvm* vm);
 
   /// lookupAttribut - Look up the attribut in the field's list of attributs.
   ///
@@ -1106,7 +1103,7 @@ public:
   /// getVritual*Field - Get a virtual field of an object.
   ///
   #define GETFIELD(TYPE, TYPE_NAME) \
-  TYPE get##TYPE_NAME##Field(JavaObject* obj) { \
+  TYPE get##TYPE_NAME##Field(void* obj) { \
     assert(classDef->isResolved()); \
     void* ptr = (void*)((uint64)obj + ptrOffset); \
     return ((TYPE*)ptr)[0]; \
@@ -1115,7 +1112,7 @@ public:
   /// set*Field - Set a field of an object.
   ///
   #define SETFIELD(TYPE, TYPE_NAME) \
-  void set##TYPE_NAME##Field(JavaObject* obj, TYPE val) { \
+  void set##TYPE_NAME##Field(void* obj, TYPE val) { \
     assert(classDef->isResolved()); \
     void* ptr = (void*)((uint64)obj + ptrOffset); \
     ((TYPE*)ptr)[0] = val; \

@@ -1382,7 +1382,7 @@ jobject GetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   return (jobject)field->getObjectField(Stat);
 
   END_EXCEPTION
@@ -1397,7 +1397,7 @@ jboolean GetStaticBooleanField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   return (jboolean)field->getInt8Field(Stat);
 
   END_EXCEPTION
@@ -1412,7 +1412,7 @@ jbyte GetStaticByteField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   return (jbyte)field->getInt8Field(Stat);
 
   END_EXCEPTION
@@ -1427,7 +1427,7 @@ jchar GetStaticCharField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   return (jchar)field->getInt16Field(Stat);
 
   END_EXCEPTION
@@ -1442,7 +1442,7 @@ jshort GetStaticShortField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   return (jshort)field->getInt16Field(Stat);
 
   END_EXCEPTION
@@ -1457,7 +1457,7 @@ jint GetStaticIntField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   return (jint)field->getInt32Field(Stat);
 
   END_EXCEPTION
@@ -1472,7 +1472,7 @@ jlong GetStaticLongField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   return (jlong)field->getLongField(Stat);
 
   END_EXCEPTION
@@ -1487,7 +1487,7 @@ jfloat GetStaticFloatField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   return (jfloat)field->getFloatField(Stat);
 
   END_EXCEPTION
@@ -1502,7 +1502,7 @@ jdouble GetStaticDoubleField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   return (jdouble)field->getDoubleField(Stat);
 
   END_EXCEPTION
@@ -1518,7 +1518,7 @@ void SetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   field->setObjectField(Stat, (JavaObject*)value);
   
   END_EXCEPTION
@@ -1533,7 +1533,7 @@ void SetStaticBooleanField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   field->setInt8Field(Stat, (uint8)value);
 
   END_EXCEPTION
@@ -1548,7 +1548,7 @@ void SetStaticByteField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   field->setInt8Field(Stat, (sint8)value);
 
   END_EXCEPTION
@@ -1563,7 +1563,7 @@ void SetStaticCharField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   field->setInt16Field(Stat, (uint16)value);
 
   END_EXCEPTION
@@ -1578,7 +1578,7 @@ void SetStaticShortField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   field->setInt16Field(Stat, (sint16)value);
 
   END_EXCEPTION
@@ -1593,7 +1593,7 @@ void SetStaticIntField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   field->setInt32Field(Stat, (sint32)value);
 
   END_EXCEPTION
@@ -1608,7 +1608,7 @@ void SetStaticLongField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   field->setLongField(Stat, (sint64)value);
 
   END_EXCEPTION
@@ -1623,7 +1623,7 @@ void SetStaticFloatField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   field->setFloatField(Stat, (float)value);
 
   END_EXCEPTION
@@ -1638,7 +1638,7 @@ void SetStaticDoubleField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, clazz, true);
-  JavaObject* Stat = cl->getStaticInstance();
+  void* Stat = cl->getStaticInstance();
   field->setDoubleField(Stat, (double)value);
 
   END_EXCEPTION

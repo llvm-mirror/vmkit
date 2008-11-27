@@ -226,7 +226,7 @@ void Classpath::createInitialThread(Jnjvm* vm, JavaObject* th) {
   
   JCL->loadName(threadGroup->getName(), true, true);
   threadGroup->initialiseClass(vm);
-  JavaObject* Stat = threadGroup->getStaticInstance();
+  void* Stat = threadGroup->getStaticInstance();
   JavaObject* RG = rootGroup->getObjectField(Stat);
   group->setObjectField(th, RG);
   groupAddThread->invokeIntSpecial(vm, threadGroup, RG, th);

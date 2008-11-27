@@ -178,7 +178,7 @@ Value* JnjvmModule::getStaticInstance(Class* classDef) {
   if (I == End) {
     LLVMClassInfo* LCI = getClassInfo(classDef);
     LCI->getStaticType();
-    JavaObject* obj = ((Class*)classDef)->getStaticInstance();
+    void* obj = ((Class*)classDef)->getStaticInstance();
 #ifndef ISOLATE
     if (!obj && !isStaticCompiling()) {
       Class* cl = (Class*)classDef;
@@ -193,9 +193,9 @@ Value* JnjvmModule::getStaticInstance(Class* classDef) {
 #endif
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
-                                uint64_t (obj)), JnjvmModule::JavaObjectType);
+                                uint64_t (obj)), ptrType);
       
-    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, !staticCompilation,
+    varGV = new GlobalVariable(ptrType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
 
@@ -330,13 +330,16 @@ llvm::Function* JnjvmModule::makeTracer(Class* cl, bool stat) {
   Value* GC = ++func->arg_begin();
   Args.push_back(GC);
 #endif
-  if (stat || cl->super == 0) {
-    CallInst::Create(JavaObjectTracerFunction, Args.begin(), Args.end(),
-                     "", block);
-  } else {
-    LLVMClassInfo* LCP = (LLVMClassInfo*)getClassInfo((Class*)(cl->super));
-    CallInst::Create(LCP->getVirtualTracer(), Args.begin(),
-                     Args.end(), "", block);
+  if (!stat) {
+    if (cl->super == 0) {
+      CallInst::Create(JavaObjectTracerFunction, Args.begin(), Args.end(),
+                        "", block);
+
+    } else {
+      LLVMClassInfo* LCP = (LLVMClassInfo*)getClassInfo((Class*)(cl->super));
+      CallInst::Create(LCP->getVirtualTracer(), Args.begin(),
+                       Args.end(), "", block);
+    }
   }
   
   for (uint32 i = 0; i < nbFields; ++i) {
@@ -372,79 +375,75 @@ llvm::Function* JnjvmModule::makeTracer(Class* cl, bool stat) {
   return func;
 }
 
-VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
+VirtualTable* JnjvmModule::makeVT(Class* cl) {
   
   VirtualTable* VT = 0;
-#ifndef WITHOUT_VTABLE
-  if (stat) {
-#endif
-    mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-    VT = (VirtualTable*)allocator.Allocate(VT_SIZE);
-    memcpy(VT, JavaObject::VT, VT_SIZE);
-#ifndef WITHOUT_VTABLE
-  } else {
-    if (cl->super) {
-      cl->virtualTableSize = cl->super->virtualTableSize;
-    } else {
-      cl->virtualTableSize = VT_NB_FUNCS;
-    }
-
-    // Allocate the virtual table.
-    VT = allocateVT(cl);
-
-    // Fill the virtual table with function pointers.
-    ExecutionEngine* EE = mvm::MvmModule::executionEngine;
-    for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
-      JavaMethod& meth = cl->virtualMethods[i];
-      LLVMMethodInfo* LMI = getMethodInfo(&meth);
-      Function* func = LMI->getMethod();
-
-      // Special handling for finalize method. Don't put a finalizer
-      // if there is none, or if it is empty.
-      if (meth.offset == 0) {
-#ifdef ISOLATE_SHARING
-        ((void**)VT)[0] = 0;
+#ifdef WITHOUT_VTABLE
+  mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
+  VT = (VirtualTable*)allocator.Allocate(VT_SIZE);
+  memcpy(VT, JavaObject::VT, VT_SIZE);
 #else
-        JnjvmClassLoader* loader = cl->classLoader;
-        Function* func = loader->getModuleProvider()->parseFunction(&meth);
-        if (!cl->super) meth.canBeInlined = true;
-        Function::iterator BB = func->begin();
-        BasicBlock::iterator I = BB->begin();
-        if (isa<ReturnInst>(I)) {
-          ((void**)VT)[0] = 0;
-        } else {
-          // LLVM does not allow recursive compilation. Create the code now.
-          ((void**)VT)[0] = EE->getPointerToFunction(func);
-        }
-      }
-#endif
+  if (cl->super) {
+    cl->virtualTableSize = cl->super->virtualTableSize;
+  } else {
+    cl->virtualTableSize = VT_NB_FUNCS;
+  }
 
-      if (staticCompilation) {
-        ((void**)VT)[meth.offset] = func;
+  // Allocate the virtual table.
+  VT = allocateVT(cl);
+
+  // Fill the virtual table with function pointers.
+  ExecutionEngine* EE = mvm::MvmModule::executionEngine;
+  for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+    JavaMethod& meth = cl->virtualMethods[i];
+    LLVMMethodInfo* LMI = getMethodInfo(&meth);
+    Function* func = LMI->getMethod();
+
+    // Special handling for finalize method. Don't put a finalizer
+    // if there is none, or if it is empty.
+    if (meth.offset == 0) {
+#ifdef ISOLATE_SHARING
+      ((void**)VT)[0] = 0;
+#else
+      JnjvmClassLoader* loader = cl->classLoader;
+      Function* func = loader->getModuleProvider()->parseFunction(&meth);
+      if (!cl->super) meth.canBeInlined = true;
+      Function::iterator BB = func->begin();
+      BasicBlock::iterator I = BB->begin();
+      if (isa<ReturnInst>(I)) {
+        ((void**)VT)[0] = 0;
       } else {
-        ((void**)VT)[meth.offset] = EE->getPointerToFunctionOrStub(func);
+        // LLVM does not allow recursive compilation. Create the code now.
+        ((void**)VT)[0] = EE->getPointerToFunction(func);
       }
     }
+#endif
+
+    if (staticCompilation) {
+      ((void**)VT)[meth.offset] = func;
+    } else {
+      ((void**)VT)[meth.offset] = EE->getPointerToFunctionOrStub(func);
+    }
+  }
  
-    // If there is no super, then it's the first VT that we allocate. Assign
-    // this VT to native types.
-    if (!(cl->super)) {
-      uint32 size =  (cl->virtualTableSize - VT_NB_FUNCS) * sizeof(void*);
+  // If there is no super, then it's the first VT that we allocate. Assign
+  // this VT to native types.
+   if (!(cl->super)) {
+    uint32 size =  (cl->virtualTableSize - VT_NB_FUNCS) * sizeof(void*);
 #define COPY(CLASS) \
     memcpy((void*)((uintptr_t)CLASS::VT + VT_SIZE), \
            (void*)((uintptr_t)VT + VT_SIZE), size);
 
-      COPY(JavaArray)
-      COPY(JavaObject)
-      COPY(ArrayObject)
+    COPY(JavaArray)
+    COPY(JavaObject)
+    COPY(ArrayObject)
 
 #undef COPY
-    }
-  }
+   }
 #endif
   
 #ifdef WITH_TRACER
-  llvm::Function* func = makeTracer(cl, stat);
+  llvm::Function* func = makeTracer(cl, false);
   
   if (staticCompilation) {
     ((void**)VT)[VT_TRACER_OFFSET] = func;
@@ -453,7 +452,6 @@ VirtualTable* JnjvmModule::makeVT(Class* cl, bool stat) {
     ((void**)VT)[VT_TRACER_OFFSET] = codePtr;
     func->deleteBody();
   }
-  
 
 #endif
   return VT;
@@ -474,7 +472,7 @@ const Type* LLVMClassInfo::getVirtualType() {
     
     for (uint32 i = 0; i < classDef->nbVirtualFields; ++i) {
       JavaField& field = classDef->virtualFields[i];
-      field.num = i;
+      field.num = i + 1;
       Typedef* type = field.getSignature();
       LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(type);
       fields.push_back(LAI.llvmType);
@@ -498,7 +496,7 @@ const Type* LLVMClassInfo::getVirtualType() {
     
     JnjvmModule* Mod = classDef->classLoader->getModule();
     if (!Mod->isStaticCompiling()) {
-      classDef->virtualVT = Mod->makeVT((Class*)classDef, false);
+      classDef->virtualVT = Mod->makeVT((Class*)classDef);
     }
   
 
@@ -512,7 +510,6 @@ const Type* LLVMClassInfo::getStaticType() {
   if (!staticType) {
     Class* cl = (Class*)classDef;
     std::vector<const llvm::Type*> fields;
-    fields.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
 
     for (uint32 i = 0; i < classDef->nbStaticFields; ++i) {
       JavaField& field = classDef->staticFields[i];
@@ -530,15 +527,20 @@ const Type* LLVMClassInfo::getStaticType() {
     
     for (uint32 i = 0; i < classDef->nbStaticFields; ++i) {
       JavaField& field = classDef->staticFields[i];
-      field.ptrOffset = sl->getElementOffset(i + 1);
+      field.ptrOffset = sl->getElementOffset(i);
     }
     
     uint64 size = mvm::MvmModule::getTypeSize(structType);
     cl->staticSize = size;
     
     JnjvmModule* Mod = cl->classLoader->getModule();
-    if (!Mod->isStaticCompiling()) {
-      cl->staticVT = Mod->makeVT((Class*)classDef, true);
+    Function* F = Mod->makeTracer(cl, true);
+    if (Mod->isStaticCompiling()) {
+      cl->staticTracer = (void (*)(void*)) (uintptr_t) F;
+    } else {
+      cl->staticTracer = (void (*)(void*)) (uintptr_t)
+        Mod->executionEngine->getPointerToFunction(F);
+      F->deleteBody();
     }
   }
   return staticType;
@@ -627,8 +629,8 @@ ConstantInt* LLVMFieldInfo::getOffset() {
     } else {
       JnjvmModule::resolveVirtualClass(fieldDef->classDef); 
     }
-    // Increment by one because zero is JavaObject
-    offsetConstant = ConstantInt::get(Type::Int32Ty, fieldDef->num + 1);
+    
+    offsetConstant = ConstantInt::get(Type::Int32Ty, fieldDef->num);
   }
   return offsetConstant;
 }

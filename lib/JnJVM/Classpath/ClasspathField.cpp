@@ -66,7 +66,7 @@ jobject Field, jobject obj) {
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   const Typedef* type = field->getSignature();
   
-  JavaObject* Obj = (JavaObject*)obj;
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -103,7 +103,7 @@ jobject Field, jobject obj) {
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
-  JavaObject* Obj = (JavaObject*)obj;
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -142,7 +142,7 @@ jobject Field, jobject obj) {
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
-  JavaObject* Obj = (JavaObject*)obj;
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -174,7 +174,7 @@ jobject Field, jobject obj) {
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
-  JavaObject* Obj = (JavaObject*)obj;
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -215,7 +215,7 @@ jobject Field, jobject obj) {
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
-  JavaObject* Obj = (JavaObject*)obj;
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -246,7 +246,7 @@ jobject Field, jobject obj) {
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
-  JavaObject* Obj = (JavaObject*)obj;
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -278,7 +278,7 @@ jobject Field, jobject obj) {
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
-  JavaObject* Obj = (JavaObject*)obj;
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -311,7 +311,7 @@ jobject Field, jobject obj) {
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
-  JavaObject* Obj = (JavaObject*)obj;
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -353,7 +353,7 @@ jobject Field, jobject _obj) {
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
-  JavaObject* Obj = (JavaObject*)_obj;
+  void* Obj = (void*)_obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -428,7 +428,7 @@ jobject Field, jobject obj, jobject val) {
   NativeUtil::decapsulePrimitive(vm, buf, (JavaObject*)val, type);
 
   
-  JavaObject* Obj = (JavaObject*)obj;
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -473,7 +473,8 @@ jobject Field, jobject obj, jboolean val) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
-  JavaObject* Obj = (JavaObject*)obj;
+  
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -502,7 +503,8 @@ jobject Field, jobject obj, jbyte val) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
-  JavaObject* Obj = (JavaObject*)obj;
+  
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -541,7 +543,7 @@ jobject Field, jobject obj, jchar val) {
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
-  JavaObject* Obj = (JavaObject*)obj;
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -577,7 +579,7 @@ jobject Field, jobject obj, jshort val) {
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   
-  JavaObject* Obj = (JavaObject*)obj;
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -613,7 +615,8 @@ jobject Field, jobject obj, jint val) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
-  JavaObject* Obj = (JavaObject*)obj;
+  
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -647,7 +650,8 @@ jobject Field, jobject obj, jlong val) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
-  JavaObject* Obj = (JavaObject*)obj;
+  
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -679,7 +683,8 @@ jobject Field, jobject obj, jfloat val) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
-  JavaObject* Obj = (JavaObject*)obj;
+  
+  void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);
@@ -709,7 +714,8 @@ jobject Field, jobject obj, jdouble val) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
-  JavaObject* Obj = (JavaObject*)obj;
+  
+  void* Obj = (void*)obj;
 
   if (isStatic(field->access)) {
     UserClass* cl = internalGetClass(vm, field, Field);

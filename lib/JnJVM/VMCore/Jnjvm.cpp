@@ -127,12 +127,12 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
 #if defined(ISOLATE) || defined(ISOLATE_SHARING)
     // Isolate environments allocate the static instance on their own, not when
     // the class is being resolved.
-    JavaObject* val = cl->allocateStaticInstance(vm);
+    void* val = cl->allocateStaticInstance(vm);
 #else
     // Single environment allocates the static instance during resolution, so
     // that compiled code can access it directly (with an initialization
     // check just before the access)
-    JavaObject* val = cl->getStaticInstance();
+    void* val = cl->getStaticInstance();
     if (!val) {
       val = cl->allocateStaticInstance(vm);
     }

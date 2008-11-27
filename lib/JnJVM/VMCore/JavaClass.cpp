@@ -97,7 +97,6 @@ CommonClass::CommonClass() {
 
 Class::Class() : CommonClass() {
   ctpInfo = 0;
-  staticVT = 0;
   JInfo = 0;
   outerClass = 0;
   innerOuterResolved = false;
@@ -140,8 +139,7 @@ Class::~Class() {
     classLoader->allocator.Deallocate(ctpInfo);
   }
 
-  classLoader->allocator.Deallocate(staticVT);
-
+  classLoader->allocator.Deallocate(_staticInstance);
   // Currently, only regular classes have a heap allocated virtualVT.
   // Array classes have a C++ allocated virtualVT and primitive classes
   // do not have a virtualVT.
@@ -310,6 +308,7 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
   innerOuterResolved = false;
   display = 0;
   nbInnerClasses = 0;
+  staticTracer = 0;
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   _staticInstance = 0;
 #endif
@@ -642,7 +641,7 @@ bool UserCommonClass::isAssignableFrom(UserCommonClass* cl) {
   }
 }
 
-void JavaField::InitField(JavaObject* obj, uint64 val) {
+void JavaField::InitField(void* obj, uint64 val) {
   
   Typedef* type = getSignature();
   if (!type->isPrimitive()) {
@@ -669,19 +668,19 @@ void JavaField::InitField(JavaObject* obj, uint64 val) {
   }
 }
 
-void JavaField::InitField(JavaObject* obj, JavaObject* val) {
+void JavaField::InitField(void* obj, JavaObject* val) {
   ((JavaObject**)((uint64)obj + ptrOffset))[0] = val;
 }
 
-void JavaField::InitField(JavaObject* obj, double val) {
+void JavaField::InitField(void* obj, double val) {
   ((double*)((uint64)obj + ptrOffset))[0] = val;
 }
 
-void JavaField::InitField(JavaObject* obj, float val) {
+void JavaField::InitField(void* obj, float val) {
   ((float*)((uint64)obj + ptrOffset))[0] = val;
 }
 
-void JavaField::initField(JavaObject* obj, Jnjvm* vm) {
+void JavaField::initField(void* obj, Jnjvm* vm) {
   const Typedef* type = getSignature();
   Attribut* attribut = lookupAttribut(Attribut::constantAttribut);
 
@@ -712,11 +711,8 @@ void JavaField::initField(JavaObject* obj, Jnjvm* vm) {
   } 
 }
 
-JavaObject* UserClass::allocateStaticInstance(Jnjvm* vm) {
-  JavaObject* val = 
-    (JavaObject*)vm->gcAllocator.allocateManagedObject(getStaticSize(),
-                                                       getStaticVT());
-  val->initialise(this);
+void* UserClass::allocateStaticInstance(Jnjvm* vm) {
+  void* val = classLoader->allocator.Allocate(getStaticSize());
   setStaticInstance(val);
   return val;
 }

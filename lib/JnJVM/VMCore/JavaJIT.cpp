@@ -835,11 +835,9 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     if (isVirtual(compilingMethod->access)) {
       argsSync = llvmFunction->arg_begin();
     } else {
-      Value* cl = module->getNativeClass(compilingClass);
+      Value* cl = module->getJavaClass(compilingClass);
       cl = new LoadInst(cl, "", currentBlock);
-      Value* arg = CallInst::Create(module->GetStaticInstanceFunction, cl, "",
-                             currentBlock);
-      argsSync = arg;
+      argsSync = cl;
     }
     llvm::CallInst::Create(module->ReleaseObjectFunction, argsSync, "",
                            synchronizeExceptionBlock);
