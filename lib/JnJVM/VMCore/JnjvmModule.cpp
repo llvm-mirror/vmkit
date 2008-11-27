@@ -938,8 +938,7 @@ void JnjvmModule::initialise() {
 
   JnjvmType = 
     PointerType::getUnqual(module->getTypeByName("Jnjvm"));
-  ConstantPoolType = 
-    PointerType::getUnqual(module->getTypeByName("ConstantPool"));
+  ConstantPoolType = ptrPtrType;
   
   JavaObjectType = 
     PointerType::getUnqual(module->getTypeByName("JavaObject"));

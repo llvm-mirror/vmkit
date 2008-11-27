@@ -3,10 +3,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; A virtual table is an array of function pointers.
-%VT = type i8**
-
-;;; The type of a constant pool. Jnjvm will make this into a i8**
-%ConstantPool = type i8*
+%VT = type i32 (...)**
 
 %Jnjvm = type {%VT, %JavaClass*, [9 x %JavaClass*]}
 
@@ -46,11 +43,11 @@
 
 ;;; The CacheNode type. The second field is the last called method. The
 ;;; last field is for multi vm environment.
-%CacheNode = type { i8*, %JavaClass*, %CacheNode*, %Enveloppe*, %ConstantPool* }
+%CacheNode = type { i8*, %JavaClass*, %CacheNode*, %Enveloppe*, i8** }
 
 ;;; The Enveloppe type, which contains the first cache and all the info
 ;;; to lookup in the constant pool.
-%Enveloppe = type { %CacheNode*, %ConstantPool*, i8*, i32 }
+%Enveloppe = type { %CacheNode*, i8**, i8*, i32 }
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Constant calls for Jnjvm runtime internal objects field accesses ;;;;;;;;;
@@ -117,7 +114,7 @@ declare void @forceInitialisationCheck(%JavaClass*)
 ;;; getConstantPoolAt - Get the value in the constant pool of this class.
 ;;; This function is removed by Jnjvm after the GVn pass, therefore it does
 ;;; not have an actual implementation.
-declare i8* @getConstantPoolAt(i8* (%JavaClass*, i32, ...)*, %ConstantPool*,
+declare i8* @getConstantPoolAt(i8* (%JavaClass*, i32, ...)*, i8**,
                                %JavaClass*, i32, ...) readnone
 
 ;;; vtableLookup - Look up the offset in a virtual table of a specific
