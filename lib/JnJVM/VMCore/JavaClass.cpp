@@ -40,7 +40,7 @@ const UTF8* Attribut::lineNumberTableAttribut = 0;
 const UTF8* Attribut::innerClassesAttribut = 0;
 const UTF8* Attribut::sourceFileAttribut = 0;
 
-CommonClass* ClassArray::SuperArray;
+Class* ClassArray::SuperArray;
 Class** ClassArray::InterfacesArray;
 
 Attribut::Attribut(const UTF8* name, uint32 length,

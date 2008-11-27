@@ -220,11 +220,7 @@ public:
 // New fields can be added from now, or reordered.
 //
 //===----------------------------------------------------------------------===//
-   
-  /// virtualTableSize - The size of the virtual table of this class.
-  ///
-  uint32 virtualTableSize;
-   
+    
   /// access - {public, private, protected}.
   ///
   uint32 access;
@@ -248,7 +244,7 @@ public:
    
   /// super - The parent of this class.
   ///
-  CommonClass * super;
+  Class * super;
    
   /// classLoader - The Jnjvm class loader that loaded the class.
   ///
@@ -289,7 +285,7 @@ public:
   uint32 getAccess()              { return access;}
   Class** getInterfaces()         { return interfaces; }
   const UTF8* getName()           { return name; }
-  CommonClass* getSuper()         { return super; }
+  Class* getSuper()               { return super; }
   JavaField* getStaticFields()    { return staticFields; }
   JavaField* getVirtualFields()   { return virtualFields; }
   JavaMethod* getStaticMethods()  { return staticMethods; }
@@ -520,7 +516,7 @@ public:
 
   /// setSuper - Set the super of the class.
   ///
-  void setSuper(CommonClass* S) {
+  void setSuper(Class* S) {
     super = S;
   }
   
@@ -670,6 +666,10 @@ public:
   void setInnerAccess(uint32 access) {
     innerAccess = access;
   }
+  
+  /// virtualTableSize - The size of the virtual table of this class.
+  ///
+  uint32 virtualTableSize;
   
   /// staticSize - The size of the static instance of this class.
   ///
@@ -855,7 +855,7 @@ public:
   ///
   virtual void TRACER;
 
-  static CommonClass* SuperArray;
+  static Class* SuperArray;
   static Class** InterfacesArray;
 };
 

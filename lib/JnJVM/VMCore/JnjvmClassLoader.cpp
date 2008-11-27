@@ -110,7 +110,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   SuperArray = loadName(asciizConstructUTF8("java/lang/Object"), false,
                         false);
    
-  ClassArray::SuperArray = SuperArray->getInternal();
+  ClassArray::SuperArray = (Class*)SuperArray->getInternal();
   ClassArray::InterfacesArray = 
     (Class**)allocator.Allocate(2 * sizeof(UserClass*));
   ClassArray::InterfacesArray[0] = (Class*)InterfacesArray[0]->getInternal();
