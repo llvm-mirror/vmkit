@@ -396,10 +396,8 @@ void JavaJIT::beginSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     obj = llvmFunction->arg_begin();
   } else {
-    Value* cl = module->getNativeClass(compilingClass);
-    cl = new LoadInst(cl, "", currentBlock);
-    obj = CallInst::Create(module->GetStaticInstanceFunction, cl, "",
-                           currentBlock);
+    Value* cl = module->getJavaClass(compilingClass);
+    obj = new LoadInst(cl, "", currentBlock);
   }
   monitorEnter(obj);
 }
@@ -409,10 +407,8 @@ void JavaJIT::endSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     obj = llvmFunction->arg_begin();
   } else {
-    Value* cl = module->getNativeClass(compilingClass);
-    cl = new LoadInst(cl, "", currentBlock);
-    obj = CallInst::Create(module->GetStaticInstanceFunction, cl, "",
-                           currentBlock);
+    Value* cl = module->getJavaClass(compilingClass);
+    obj = new LoadInst(cl, "", currentBlock);
   }
   monitorExit(obj);
 }
