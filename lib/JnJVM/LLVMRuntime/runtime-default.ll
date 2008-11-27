@@ -11,7 +11,7 @@
 ;;; Field 1: The class state
 ;;; Field 2: The class delegatee (java/lang/Class)
 ;;; Field 3: The static instance
-%TaskClassMirror = type { i32, %JavaObject*, %JavaObject* }
+%TaskClassMirror = type { i32, %JavaObject*, i8* }
 
 ;;; The type of internal classes. This is not complete, but we only need
 ;;; the first fields for now. 

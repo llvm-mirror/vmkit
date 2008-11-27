@@ -139,7 +139,9 @@ Class::~Class() {
     classLoader->allocator.Deallocate(ctpInfo);
   }
 
+#ifndef ISOLATE
   classLoader->allocator.Deallocate(_staticInstance);
+#endif
   // Currently, only regular classes have a heap allocated virtualVT.
   // Array classes have a C++ allocated virtualVT and primitive classes
   // do not have a virtualVT.

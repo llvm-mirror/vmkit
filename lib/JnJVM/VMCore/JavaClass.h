@@ -124,7 +124,7 @@ class TaskClassMirror {
 public:
   JavaState status;
   JavaObject* delegatee;
-  mvm::Object* staticInstance;
+  void* staticInstance;
 };
 #endif
 
