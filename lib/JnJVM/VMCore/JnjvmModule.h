@@ -251,8 +251,11 @@ public:
   static const llvm::Type* JavaCacheType;
   static const llvm::Type* EnveloppeType;
   static const llvm::Type* CacheNodeType;
-  static const llvm::Type* JnjvmType;
   static const llvm::Type* ConstantPoolType;
+  
+#ifdef ISOLATE_SHARING
+  static const llvm::Type* JnjvmType;
+#endif
   
 #ifdef WITH_TRACER
   llvm::Function* MarkAndTraceFunction;

@@ -44,8 +44,11 @@ const llvm::Type* JnjvmModule::JavaArrayLongType = 0;
 const llvm::Type* JnjvmModule::JavaArrayObjectType = 0;
 const llvm::Type* JnjvmModule::CacheNodeType = 0;
 const llvm::Type* JnjvmModule::EnveloppeType = 0;
-const llvm::Type* JnjvmModule::JnjvmType = 0;
 const llvm::Type* JnjvmModule::ConstantPoolType = 0;
+
+#ifdef ISOLATE_SHARING
+const llvm::Type* JnjvmModule::JnjvmType = 0;
+#endif
 
 llvm::Constant*     JnjvmModule::JavaObjectNullConstant;
 llvm::Constant*     JnjvmModule::UTF8NullConstant;
@@ -936,8 +939,10 @@ void JnjvmModule::initialise() {
 
   VTType = module->getTypeByName("VT");
 
+#ifdef ISOLATE_SHARING
   JnjvmType = 
     PointerType::getUnqual(module->getTypeByName("Jnjvm"));
+#endif
   ConstantPoolType = ptrPtrType;
   
   JavaObjectType = 

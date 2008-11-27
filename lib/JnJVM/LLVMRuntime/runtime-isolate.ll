@@ -1,4 +1,32 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;; Isolate specific types ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+%Jnjvm = type {%VT, %JavaClass*, [9 x %JavaClass*]}
+
+;;; The task class mirror in an isolate environment.
+;;; Field 1: The class state
+;;; Field 2: The class delegatee (java/lang/Class)
+;;; Field 3: The static instance
+%TaskClassMirror = type { i32, %JavaObject*, i8* }
+
+;;; The type of internal classes. This is not complete, but we only need
+;;; the first fields for now. 
+;;; Field 1 - The VT of a class C++ object.
+;;; Field 2 - The size of instances of this class.
+;;; Field 3 - The VT of instances of this class.
+;;; Field 4 - The list of super classes of this class.
+;;; Field 5 - The depth of the class in its super hierarchy.
+;;; Field 6 - The class state (resolved, initialized, ...)
+;;; field 7 - The task class mirror, for an isolate environment
+%JavaClass = type { %VT, i32, %VT ,%JavaClass**, i32, i32,
+                    [0 x %TaskClassMirror] }
+
+;;; The CacheNode type. The second field is the last called method. The
+;;; last field is for multi vm environment.
+%CacheNode = type { i8*, %JavaClass*, %CacheNode*, %Enveloppe*, i8** }
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;; Isolate specific methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
