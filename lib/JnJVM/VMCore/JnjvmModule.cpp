@@ -99,8 +99,8 @@ Value* JnjvmModule::getConstantPool(JavaConstantPool* ctp) {
     assert(ptr && "No constant pool found");
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
-                                mvm::MvmModule::ptrPtrType);
-    varGV = new GlobalVariable(mvm::MvmModule::ptrPtrType, !staticCompilation,
+                                ConstantPoolType);
+    varGV = new GlobalVariable(ConstantPoolType, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
     constantPools.insert(std::make_pair(ctp, varGV));
