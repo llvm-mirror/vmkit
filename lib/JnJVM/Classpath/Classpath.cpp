@@ -32,9 +32,10 @@ jclass Cl) {
   verifyNull(Cl);
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, true);
-  if (cl->lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
-                                vm->bootstrapLoader->clinitType, true,
-                                false, 0))
+  if (!cl->asClass()) return false;
+  if (cl->asClass()->lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
+                                           vm->bootstrapLoader->clinitType, 
+                                           true, false, 0))
     return true;
   
   return false;

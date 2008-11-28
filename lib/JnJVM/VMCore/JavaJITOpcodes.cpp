@@ -1854,17 +1854,18 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
           LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[charId];
           sizeElement = LAI.sizeInBytesConstant;
+          TheVT = module->getPrimitiveArrayVT(this);
         } else {
           uint16 index = readU2(bytecodes, i);
-          valCl = getResolvedClass(index, false);
-          const llvm::Type* Ty = PointerType::getUnqual(module->JavaClassType);
+          valCl = getResolvedCommonClass(index);
+          const llvm::Type* Ty = 
+            PointerType::getUnqual(module->JavaCommonClassType);
           Value* args[2]= { valCl, Constant::getNullValue(Ty) };
           valCl = CallInst::Create(module->GetArrayClassFunction, args,
                                    args + 2, "", currentBlock);
           sizeElement = module->constantPtrSize;
+          TheVT = module->getReferenceArrayVT(this);
         }
-        TheVT = CallInst::Create(module->GetVTFromClassFunction, valCl, "",
-                                 currentBlock);
         llvm::Value* arg1 = popAsInt();
 
         Value* cmp = new ICmpInst(ICmpInst::ICMP_SLT, arg1,
@@ -1994,7 +1995,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
         currentBlock = ifFalse;
-        Value* clVar = getResolvedClass(index, false);
+        Value* clVar = getResolvedCommonClass(index);
         
         Value* args[2] = { obj, clVar };
         Value* call = CallInst::Create(module->InstanceOfFunction, args,
@@ -2019,7 +2020,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case INSTANCEOF : {
         uint16 index = readU2(bytecodes, i);
-        Value* clVar = getResolvedClass(index, false);
+        Value* clVar = getResolvedCommonClass(index);
         
         Value* args[2] = { pop(), clVar };
         Value* val = CallInst::Create(module->InstanceOfFunction,
@@ -2048,7 +2049,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint8 dim = readU1(bytecodes, i);
         
         
-        Value* valCl = getResolvedClass(index, true);
+        Value* valCl = getResolvedCommonClass(index);
         Value** args = (Value**)alloca(sizeof(Value*) * (dim + 2));
         args[0] = valCl;
         args[1] = ConstantInt::get(Type::Int32Ty, dim);

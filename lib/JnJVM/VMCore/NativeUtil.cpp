@@ -190,8 +190,10 @@ intptr_t NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm
 UserCommonClass* NativeUtil::resolvedImplClass(Jnjvm* vm, jclass clazz,
                                                bool doClinit) {
   UserCommonClass* cl = ((JavaObjectClass*)clazz)->getClass();
-  cl->resolveClass();
-  if (doClinit) cl->initialiseClass(vm);
+  if (cl->asClass()) {
+    cl->asClass()->resolveClass();
+    cl->asClass()->initialiseClass(vm);
+  }
   return cl;
 }
 
@@ -377,7 +379,8 @@ ArrayObject* NativeUtil::getExceptionTypes(UserClass* cl, JavaMethod* meth) {
     for (uint16 i = 0; i < nbe; ++i) {
       uint16 idx = reader.readU2();
       UserCommonClass* cl = ctp->loadClass(idx);
-      cl->resolveClass();
+      assert(cl->asClass() && "Wrong exception type");
+      cl->asClass()->resolveClass();
       JavaObject* obj = cl->getClassDelegatee(vm);
       res->elements[i] = obj;
     }

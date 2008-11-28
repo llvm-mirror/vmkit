@@ -22,6 +22,7 @@
 
 namespace jnjvm {
 
+class JavaClass;
 class JavaField;
 class JavaObject;
 class JavaThread;

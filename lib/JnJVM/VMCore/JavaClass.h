@@ -29,14 +29,12 @@
 namespace jnjvm {
 
 class ArrayUInt8;
-class AssessorDesc;
 class Enveloppe;
 class Class;
 class ClassArray;
 class JavaArray;
 class JavaConstantPool;
 class JavaField;
-class JavaJIT;
 class JavaMethod;
 class JavaObject;
 class Signdef;
@@ -51,11 +49,10 @@ class UTF8;
 typedef enum JavaState {
   loaded = 0,       /// The .class file has been found.
   classRead = 1,    /// The .class file has been read.
-  prepared = 2,     /// The parents of this class has been resolved.
-  resolved = 3,     /// The class has been resolved.
-  inClinit = 4,     /// The class is cliniting.
-  ready = 5,        /// The class is ready to be used.
-  erroneous = 6,    /// The class is in an erroneous state.
+  resolved = 2,     /// The class has been resolved.
+  inClinit = 3,     /// The class is cliniting.
+  ready = 4,        /// The class is ready to be used.
+  erroneous = 5,    /// The class is in an erroneous state.
   dontuseenums = 0xffffffff /// dummy value to force the enum to be int32
 }JavaState;
 
@@ -73,11 +70,11 @@ public:
 
   /// start - The offset in the class of this attribut.
   ///
-  unsigned int start;
+  uint32 start;
 
   /// nbb - The size of the attribut.
   ///
-  unsigned int  nbb;
+  uint32 nbb;
 
   /// Attribut - Create an attribut at the given length and offset.
   ///
@@ -119,14 +116,20 @@ public:
 };
 
 
-#ifdef ISOLATE
+/// TaskClassMirror - The isolate specific class information: the initialization
+/// state and the static instance. In a non-isolate environment, there is only
+/// one instance of a TaskClassMirror per Class.
 class TaskClassMirror {
 public:
+  
+  /// status - The initialization state.
+  ///
   JavaState status;
-  JavaObject* delegatee;
+
+  /// staticInstance - Memory that holds the static variables of the class.
+  ///
   void* staticInstance;
 };
-#endif
 
 /// CommonClass - This class is the root class of all Java classes. It is
 /// GC-allocated because CommonClasses have to be traceable. A java/lang/Class
@@ -138,66 +141,16 @@ class CommonClass : public mvm::PermanentObject {
 friend class UserCommonClass;
 #endif
 
-private:
-  class FatLock : public mvm::PermanentObject {
-  public:
-    /// lockVar - When multiple threads want to load/resolve/initialize a class,
-    /// they must be synchronized so that these steps are only performed once
-    /// for a given class.
-    mvm::LockRecursive lockVar;
-
-    /// condVar - Used to wake threads waiting on the load/resolve/initialize
-    /// process of this class, done by another thread.
-    mvm::Cond condVar;
-    
-
-    static FatLock* allocate(UserCommonClass* cl) {
-      return new(cl->classLoader->allocator) FatLock();
-    }
-
-    void acquire() {
-      lockVar.lock();
-    }
-
-    void acquireAll(uint32 nb) {
-      lockVar.lockAll(nb);
-    }
-
-    void release() {
-      lockVar.unlock();
-    }
-
-    void broadcast() {
-      condVar.broadcast();
-    }
-
-    void wait() {
-      condVar.wait(&lockVar);
-    }
-  };
-
 public:
   
 //===----------------------------------------------------------------------===//
 //
-// Do not reorder these fields or add new ones! the LLVM runtime assumes that
-// classes have the following beginning layout.
+// If you want to add new fields or modify the types of fields, you must also
+// change their LLVM representation in LLVMRuntime/runtime-*.ll, and their
+// offsets in JnjvmModule.cpp.
 //
 //===----------------------------------------------------------------------===//
-
-  
-  /// virtualSize - The size of instances of this class. Array classes do
-  /// not need this information, but to simplify accessing this field in
-  /// the JIT, we put this in here.
-  /// 
-  uint32 virtualSize;
-
-  /// virtualVT - The virtual table of instances of this class. Like the
-  /// virtualSize field, array classes do not need this information. But we
-  /// simplify JIT generation to set it here.
-  ///
-  VirtualTable* virtualVT;
-  
+ 
   /// display - The class hierarchy of supers for this class.
   ///
   CommonClass** display;
@@ -207,32 +160,14 @@ public:
   ///
   uint32 depth;
 
-  /// status - The loading/resolve/initialization state of the class.
+  /// delegatees - The java/lang/Class delegatee.
   ///
-  JavaState status;
-  
-#ifdef ISOLATE
-  TaskClassMirror IsolateInfo[NR_ISOLATES];
-#endif
+  JavaObject* delegatee[NR_ISOLATES];
 
-//===----------------------------------------------------------------------===//
-//
-// New fields can be added from now, or reordered.
-//
-//===----------------------------------------------------------------------===//
-    
   /// access - {public, private, protected}.
   ///
-  uint32 access;
+  uint16 access;
   
-  /// isArray - Is the class an array class?
-  ///
-  bool array;
-  
-  /// isPrimitive - Is the class a primitive class?
-  ///
-  bool primitive;
- 
   /// interfaces - The interfaces this class implements.
   ///
   Class** interfaces; 
@@ -249,58 +184,29 @@ public:
   /// classLoader - The Jnjvm class loader that loaded the class.
   ///
   JnjvmClassLoader* classLoader;
-   
-  /// virtualFields - List of all the virtual fields defined in this class.
-  /// This does not contain non-redefined super fields.
-  JavaField* virtualFields;
-  uint16 nbVirtualFields;
 
-  /// staticFields - List of all the static fields defined in this class.
-  ///
-  JavaField* staticFields;
-  uint16 nbStaticFields;
-  
-  /// virtualMethods - List of all the virtual methods defined by this class.
-  /// This does not contain non-redefined super methods.
-  JavaMethod* virtualMethods;
-  uint16 nbVirtualMethods;
-  
-  /// staticMethods - List of all the static methods defined by this class.
-  ///
-  JavaMethod* staticMethods;
-  uint16 nbStaticMethods;
-  
-  /// ownerClass - Who is initializing this class.
-  ///
-  mvm::Thread* ownerClass;
+//===----------------------------------------------------------------------===//
+//
+// End field declaration.
+//
+//===----------------------------------------------------------------------===//
  
-  /// lock - The lock of this class. It should be very rare that this lock
-  /// inflates.
-  ///
-  mvm::ThinLock<FatLock, CommonClass> lock;
-
   // Assessor methods.
-  uint32 getVirtualSize()         { return virtualSize; }
-  VirtualTable* getVirtualVT()    { return virtualVT; }
-  uint32 getAccess()              { return access;}
-  Class** getInterfaces()         { return interfaces; }
-  const UTF8* getName()           { return name; }
-  Class* getSuper()               { return super; }
-  JavaField* getStaticFields()    { return staticFields; }
-  JavaField* getVirtualFields()   { return virtualFields; }
-  JavaMethod* getStaticMethods()  { return staticMethods; }
-  JavaMethod* getVirtualMethods() { return virtualMethods; }
- 
+  uint32 getAccess()      { return access;}
+  Class** getInterfaces() { return interfaces; }
+  const UTF8* getName()   { return name; }
+  Class* getSuper()       { return super; }
+  
   /// isArray - Is the class an array class?
   ///
   bool isArray() {
-    return array;
+    return jnjvm::isArray(access);
   }
   
   /// isPrimitive - Is the class a primitive class?
   ///
   bool isPrimitive() {
-    return primitive;
+    return jnjvm::isPrimitive(access);
   }
   
   /// isInterface - Is the class an interface?
@@ -309,117 +215,46 @@ public:
     return jnjvm::isInterface(access);
   }
   
+  /// isClass - Is the class a real, instantiable class?
+  ///
+  bool isClass() {
+    return jnjvm::isClass(access);
+  }
+
   /// asClass - Returns the class as a user-defined class
   /// if it is not a primitive or an array.
+  ///
   UserClass* asClass() {
-    if (!primitive && !array) return (UserClass*)this;
+    if (isClass()) return (UserClass*)this;
     return 0;
   }
   
   /// asPrimitiveClass - Returns the class if it's a primitive class.
   ///
   UserClassPrimitive* asPrimitiveClass() {
-    if (primitive) return (UserClassPrimitive*)this;
+    if (isPrimitive()) return (UserClassPrimitive*)this;
     return 0;
   }
   
   /// asArrayClass - Returns the class if it's an array class.
   ///
   UserClassArray* asArrayClass() {
-    if (array) return (UserClassArray*)this;
+    if (isArray()) return (UserClassArray*)this;
     return 0;
   }
-
-  /// constructMethod - Create a new method.
-  ///
-  JavaMethod* constructMethod(JavaMethod& method, const UTF8* name,
-                              const UTF8* type, uint32 access);
-  
-  /// constructField - Create a new field.
-  ///
-  JavaField* constructField(JavaField& field, const UTF8* name,
-                            const UTF8* type, uint32 access);
 
   /// printClassName - Adds a string representation of this class in the
   /// given buffer.
   ///
   static void printClassName(const UTF8* name, mvm::PrintBuffer* buf);
-  
-  /// acquire - Acquire this class lock.
-  ///
-  void acquire() {
-    lock.acquire(this);
-  }
-  
-  /// release - Release this class lock.
-  ///
-  void release() {
-    lock.release();  
-  }
-
-  /// waitClass - Wait for the class to be loaded/initialized/resolved.
-  ///
-  void waitClass() {
-    FatLock* FL = lock.changeToFatlock(this);
-    FL->wait();
-  }
-  
-  /// broadcastClass - Unblock threads that were waiting on the class being
-  /// loaded/initialized/resolved.
-  ///
-  void broadcastClass() {
-    lock.broadcast();  
-  }
-  
-  /// getOwnerClass - Get the thread that is currently initializing the class.
-  ///
-  mvm::Thread* getOwnerClass() {
-    return ownerClass;
-  }
-
-  /// setOwnerClass - Set the thread that is currently initializing the class.
-  ///
-  void setOwnerClass(mvm::Thread* th) {
-    ownerClass = th;
-  }
-
-  /// lookupMethodDontThrow - Lookup a method in the method map of this class.
-  /// Do not throw if the method is not found.
-  ///
-  JavaMethod* lookupMethodDontThrow(const UTF8* name, const UTF8* type,
-                                    bool isStatic, bool recurse, Class** cl);
-  
-  /// lookupInterfaceMethodDontThrow - Lookup a method in the interfaces of
-  /// this class.
-  /// Do not throw if the method is not found.
-  ///
-  JavaMethod* lookupInterfaceMethodDontThrow(const UTF8* name,
-                                             const UTF8* type);
-  
-  /// lookupMethod - Lookup a method and throw an exception if not found.
-  ///
-  JavaMethod* lookupMethod(const UTF8* name, const UTF8* type, bool isStatic,
-                           bool recurse, Class** cl);
-  
-  /// lookupFieldDontThrow - Lookup a field in the field map of this class. Do
-  /// not throw if the field is not found.
-  ///
-  JavaField* lookupFieldDontThrow(const UTF8* name, const UTF8* type,
-                                  bool isStatic, bool recurse,
-                                  CommonClass** definingClass);
-  
-  /// lookupField - Lookup a field and throw an exception if not found.
-  ///
-  JavaField* lookupField(const UTF8* name, const UTF8* type, bool isStatic,
-                         bool recurse, CommonClass** definingClass);
-
+   
   /// print - Print the class for debugging purposes.
   ///
-  virtual void print(mvm::PrintBuffer *buf) const;
+  void print(mvm::PrintBuffer *buf) const;
   
   /// tracer - The tracer of this GC-allocated class.
   ///
-  virtual void TRACER;
+  void TRACER;
   
   /// printString - Prints the class.
   ///
@@ -464,22 +299,6 @@ public:
   /// class.
   ///
   JavaObject* getClassDelegatee(Jnjvm* vm, JavaObject* pd = 0);
-
-  /// resolveClass - If the class has not been resolved yet, resolve it.
-  ///
-  void resolveClass();
-
-  /// initialiseClass - If the class has not been initialized yet,
-  /// initialize it.
-  ///
-  void initialiseClass(Jnjvm* vm);
-  
- 
-  /// isResolved - Has this class been resolved?
-  ///
-  bool isResolved() {
-    return status >= resolved;
-  }
   
   /// CommonClass - Create a class with th given name.
   ///
@@ -488,25 +307,11 @@ public:
   /// ~CommonClass - Free memory used by this class, and remove it from
   /// metadata.
   ///
-  virtual ~CommonClass();
+  ~CommonClass();
 
   /// CommonClass - Default constructor.
   ///
   CommonClass();
- 
-  /// getDeclaredConstructors - Returns the methods defined in this class which
-  /// are constructors.
-  ///
-  void getDeclaredConstructors(std::vector<JavaMethod*>& res, bool publicOnly);
-
-  /// getDeclaredMethod - Returns the methods defined in this class which are
-  /// not constructors.
-  //
-  void getDeclaredMethods(std::vector<JavaMethod*>& res, bool publicOnly);
-  
-  /// getDeclaredFields - Returns the fields defined in this class.
-  ///
-  void getDeclaredFields(std::vector<JavaField*>& res, bool publicOnly);
   
   /// setInterfaces - Set the interfaces of the class.
   ///
@@ -530,74 +335,21 @@ public:
   CommonClass* getInternal() {
     return this;
   }
+ 
+  /// setDelegatee - Set the java/lang/Class object of this class.
+  ///
+  JavaObject* setDelegatee(JavaObject* val);
 
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
-  /// delegatee - The java/lang/Class object representing this class
+  /// getDelegatee - Get the java/lang/Class object representing this class.
   ///
-  JavaObject* _delegatee;
-
   JavaObject* getDelegatee() {
-    return _delegatee;
-  }
-
-  void setDelegatee(JavaObject* val) {
-    _delegatee = val;
-  }
-
-  JavaState getInitializationState() {
-    return status;
-  }
-
-  void setInitializationState(JavaState st) {
-    status = st;
-  }
-  
-  /// isReady - Has this class been initialized?
-  ///
-  bool isReady() {
-    return status == ready;
-  }
-  
-  bool isReadyForCompilation() {
-    return isReady();
-  }
-
-  bool isInitializing() {
-    return status >= inClinit;
+    return delegatee[0];
   }
 
 #else
 #if defined(ISOLATE)
-  
-  TaskClassMirror& getCurrentTaskClassMirror();
-
-  JavaState getInitializationState() {
-    return getCurrentTaskClassMirror().status;
-  }
-  
-  void setInitializationState(JavaState st) {
-    getCurrentTaskClassMirror().status = st;
-  }
-  
-  JavaObject* getDelegatee() {
-    return getCurrentTaskClassMirror().delegatee;
-  }
-
-  void setDelegatee(JavaObject* val) {
-    getCurrentTaskClassMirror().delegatee = val;
-  }
-  
-  bool isReady() {
-    return getCurrentTaskClassMirror().status == ready;
-  }
-
-  bool isReadyForCompilation() {
-    return false;
-  }
-
-  bool isInitializing() {
-    return getCurrentTaskClassMirror().status >= inClinit;
-  }
+  JavaObject* getDelegatee();
 #endif
 #endif
 
@@ -608,8 +360,20 @@ public:
 ///
 class ClassPrimitive : public CommonClass {
 public:
+  
+  /// primSize - The primitive size of this class, eg 4 for int.
+  ///
+  uint32 primSize;
+  
+  
+  /// ClassPrimitive - Constructs a primitive class. Only called at boot
+  /// time.
+  ///
   ClassPrimitive(JnjvmClassLoader* loader, const UTF8* name, uint32 nb);
 
+  /// byteIdToPrimitive - Get the primitive class from its byte representation,
+  /// ie int for I.
+  ///
   static UserClassPrimitive* byteIdToPrimitive(char id, Classpath* upcalls);
   
 };
@@ -619,7 +383,91 @@ public:
 /// array or primitive). Theses classes have a constant pool.
 ///
 class Class : public CommonClass {
+
+private:
+
+  /// FatLock - This class is the inflated lock of Class instances. It should
+  /// be very rare that such locks are allocated.
+  class FatLock : public mvm::PermanentObject {
+  public:
+    /// lockVar - When multiple threads want to load/resolve/initialize a class,
+    /// they must be synchronized so that these steps are only performed once
+    /// for a given class.
+    mvm::LockRecursive lockVar;
+
+    /// condVar - Used to wake threads waiting on the load/resolve/initialize
+    /// process of this class, done by another thread.
+    mvm::Cond condVar;
+    
+
+    static FatLock* allocate(UserCommonClass* cl) {
+      return new(cl->classLoader->allocator) FatLock();
+    }
+
+    void acquire() {
+      lockVar.lock();
+    }
+
+    void acquireAll(uint32 nb) {
+      lockVar.lockAll(nb);
+    }
+
+    void release() {
+      lockVar.unlock();
+    }
+
+    void broadcast() {
+      condVar.broadcast();
+    }
+
+    void wait() {
+      condVar.wait(&lockVar);
+    }
+  };
+
 public:
+  
+  /// virtualSize - The size of instances of this class.
+  /// 
+  uint32 virtualSize;
+
+  /// virtualVT - The virtual table of instances of this class.
+  ///
+  VirtualTable* virtualVT;
+  
+  /// IsolateInfo - Per isolate informations for static instances and
+  /// initialization state.
+  ///
+  TaskClassMirror IsolateInfo[NR_ISOLATES];
+   
+  /// lock - The lock of this class. It should be very rare that this lock
+  /// inflates.
+  ///
+  mvm::ThinLock<FatLock, CommonClass> lock;
+  
+  /// virtualFields - List of all the virtual fields defined in this class.
+  /// This does not contain non-redefined super fields.
+  JavaField* virtualFields;
+  uint16 nbVirtualFields;
+
+  /// staticFields - List of all the static fields defined in this class.
+  ///
+  JavaField* staticFields;
+  uint16 nbStaticFields;
+  
+  /// virtualMethods - List of all the virtual methods defined by this class.
+  /// This does not contain non-redefined super methods.
+  JavaMethod* virtualMethods;
+  uint16 nbVirtualMethods;
+  
+  /// staticMethods - List of all the static methods defined by this class.
+  ///
+  JavaMethod* staticMethods;
+  uint16 nbStaticMethods;
+  
+  /// ownerClass - Who is initializing this class.
+  ///
+  mvm::Thread* ownerClass;
   
   /// bytes - The .class file of this class.
   ///
@@ -633,8 +481,7 @@ public:
   ///
   Attribut* attributs;
   uint16 nbAttributs;
- 
-#if !defined(ISOLATE_SHARING)
+  
   /// innerClasses - The inner classes of this class.
   ///
   Class** innerClasses;
@@ -644,15 +491,6 @@ public:
   ///
   Class* outerClass;
   
-  Class* getOuterClass() {
-    return outerClass;
-  }
-
-  Class** getInnerClasses() {
-    return innerClasses;
-  }
-#endif
-
   /// innerAccess - The access of this class, if this class is an inner class.
   ///
   uint16 innerAccess;
@@ -660,12 +498,6 @@ public:
   /// innerOuterResolved - Is the inner/outer resolution done?
   ///
   bool innerOuterResolved;
-  
-  /// setInnerAccess - Set the access flags of this inner class.
-  ///
-  void setInnerAccess(uint32 access) {
-    innerAccess = access;
-  }
   
   /// virtualTableSize - The size of the virtual table of this class.
   ///
@@ -675,6 +507,99 @@ public:
   ///
   uint32 staticSize;
   
+  /// JInfo - JIT specific information.
+  ///
+  mvm::JITInfo* JInfo;
+  
+  /// staticTracer - The dynamically generated function that traces the
+  /// references of the static instance.
+  void (*staticTracer)(void*);
+ 
+  /// Assessor methods.
+  uint32 getVirtualSize()         { return virtualSize; }
+  VirtualTable* getVirtualVT()    { return virtualVT; }
+
+  /// getDeclaredConstructors - Returns the methods defined in this class which
+  /// are constructors.
+  ///
+  void getDeclaredConstructors(std::vector<JavaMethod*>& res, bool publicOnly);
+
+  /// getDeclaredMethod - Returns the methods defined in this class which are
+  /// not constructors.
+  //
+  void getDeclaredMethods(std::vector<JavaMethod*>& res, bool publicOnly);
+  
+  /// getDeclaredFields - Returns the fields defined in this class.
+  ///
+  void getDeclaredFields(std::vector<JavaField*>& res, bool publicOnly);
+  
+  /// getOwnerClass - Get the thread that is currently initializing the class.
+  ///
+  mvm::Thread* getOwnerClass() {
+    return ownerClass;
+  }
+
+  /// setOwnerClass - Set the thread that is currently initializing the class.
+  ///
+  void setOwnerClass(mvm::Thread* th) {
+    ownerClass = th;
+  }
+ 
+  /// getOuterClass - Get the class that contains the definition of this class.
+  ///
+  Class* getOuterClass() {
+    return outerClass;
+  }
+
+  /// getInnterClasses - Get the classes that this class defines.
+  ///
+  Class** getInnerClasses() {
+    return innerClasses;
+  }
+
+  /// lookupMethodDontThrow - Lookup a method in the method map of this class.
+  /// Do not throw if the method is not found.
+  ///
+  JavaMethod* lookupMethodDontThrow(const UTF8* name, const UTF8* type,
+                                    bool isStatic, bool recurse, Class** cl);
+  
+  /// lookupInterfaceMethodDontThrow - Lookup a method in the interfaces of
+  /// this class.
+  /// Do not throw if the method is not found.
+  ///
+  JavaMethod* lookupInterfaceMethodDontThrow(const UTF8* name,
+                                             const UTF8* type);
+  
+  /// lookupMethod - Lookup a method and throw an exception if not found.
+  ///
+  JavaMethod* lookupMethod(const UTF8* name, const UTF8* type, bool isStatic,
+                           bool recurse, Class** cl);
+  
+  /// lookupFieldDontThrow - Lookup a field in the field map of this class. Do
+  /// not throw if the field is not found.
+  ///
+  JavaField* lookupFieldDontThrow(const UTF8* name, const UTF8* type,
+                                  bool isStatic, bool recurse,
+                                  Class** definingClass);
+  
+  /// lookupField - Lookup a field and throw an exception if not found.
+  ///
+  JavaField* lookupField(const UTF8* name, const UTF8* type, bool isStatic,
+                         bool recurse, Class** definingClass);
+   
+  /// Assessor methods.
+  JavaField* getStaticFields()    { return staticFields; }
+  JavaField* getVirtualFields()   { return virtualFields; }
+  JavaMethod* getStaticMethods()  { return staticMethods; }
+  JavaMethod* getVirtualMethods() { return virtualMethods; }
+
+  
+  /// setInnerAccess - Set the access flags of this inner class.
+  ///
+  void setInnerAccess(uint16 access) {
+    innerAccess = access;
+  }
+   
   /// getStaticSize - Get the size of the static instance.
   ///
   uint32 getStaticSize() {
@@ -691,49 +616,16 @@ public:
   ///
   void resolveStaticClass();
 
-  /// print - Prints a string representation of this class in the buffer.
-  ///
-  virtual void print(mvm::PrintBuffer *buf) const;
-
   /// tracer - Tracer function of instances of Class.
   ///
-  virtual void TRACER;
+  void TRACER;
   
-  virtual ~Class();
+  ~Class();
   Class();
   
   /// lookupAttribut - Look up a JVM attribut of this class.
   ///
   Attribut* lookupAttribut(const UTF8* key);
-  
-  void (*staticTracer)(void*);
-
-  /// staticInstance - Get the static instance of this class. A static instance
-  /// is inlined when the vm is in a single environment. In a multiple
-  /// environment, the static instance is in a hashtable.
-  ///
-#if !defined(ISOLATE_SHARING) && !defined(ISOLATE)
-  void* _staticInstance;
-  
-  void* getStaticInstance() {
-    return _staticInstance;
-  }
-  
-  void setStaticInstance(void* val) {
-    _staticInstance = val;
-  }
-#else
-#if defined(ISOLATE)
-  void* getStaticInstance() {
-    return getCurrentTaskClassMirror().staticInstance;
-  }
-
-  void setStaticInstance(void* val) {
-    getCurrentTaskClassMirror().staticInstance = val;
-  }
-
-#endif
-#endif
   
   /// allocateStaticInstance - Allocate the static instance of this class.
   ///
@@ -767,19 +659,25 @@ public:
   /// readClass - Reads the class.
   ///
   void readClass();
-
-  
+ 
+  /// getConstantPool - Get the constant pool of the class.
+  ///
   JavaConstantPool* getConstantPool() {
     return ctpInfo;
   }
 
+  /// getBytes - Get the bytes of the class file.
+  ///
   ArrayUInt8* getBytes() {
     return bytes;
   }
   
+  /// resolveInnerOuterClasses - Resolve the inner/outer information.
+  ///
   void resolveInnerOuterClasses();
 
-  mvm::JITInfo* JInfo;
+  /// getInfo - Get the JIT specific information, allocating one if it
+  /// does not exist.
   template<typename Ty> 
   Ty *getInfo() {
     if (!JInfo) {
@@ -790,6 +688,183 @@ public:
            "Invalid concrete type or multiple inheritence for getInfo");
     return static_cast<Ty*>(JInfo);
   }
+  
+  /// resolveClass - If the class has not been resolved yet, resolve it.
+  ///
+  void resolveClass();
+
+  /// initialiseClass - If the class has not been initialized yet,
+  /// initialize it.
+  ///
+  void initialiseClass(Jnjvm* vm);
+  
+  /// acquire - Acquire this class lock.
+  ///
+  void acquire() {
+    lock.acquire(this);
+  }
+  
+  /// release - Release this class lock.
+  ///
+  void release() {
+    lock.release();  
+  }
+
+  /// waitClass - Wait for the class to be loaded/initialized/resolved.
+  ///
+  void waitClass() {
+    FatLock* FL = lock.changeToFatlock(this);
+    FL->wait();
+  }
+  
+  /// broadcastClass - Unblock threads that were waiting on the class being
+  /// loaded/initialized/resolved.
+  ///
+  void broadcastClass() {
+    lock.broadcast();  
+  }
+  
+#ifndef ISOLATE
+  
+  /// getStaticInstance - Get the memory that holds static variables.
+  ///
+  void* getStaticInstance() {
+    return IsolateInfo[0].staticInstance;
+  }
+  
+  /// setStaticInstance - Set the memory that holds static variables.
+  ///
+  void setStaticInstance(void* val) {
+    IsolateInfo[0].staticInstance = val;
+  }
+  
+  /// getInitializationState - Get the state of the class.
+  ///
+  JavaState getInitializationState() {
+    return IsolateInfo[0].status;
+  }
+
+  /// setInitializationState - Set the state of the class.
+  ///
+  void setInitializationState(JavaState st) {
+    IsolateInfo[0].status = st;
+  }
+  
+  /// isReady - Has this class been initialized?
+  ///
+  bool isReady() {
+    return IsolateInfo[0].status == ready;
+  }
+  
+  /// isReadyForCompilation - Can this class be inlined when JITing?
+  ///
+  bool isReadyForCompilation() {
+    return isReady();
+  }
+
+  /// isInitializing - Is the class currently being initialized?
+  ///
+  bool isInitializing() {
+    return IsolateInfo[0].status >= inClinit;
+  }
+  
+  /// isResolved - Has this class been resolved?
+  ///
+  bool isResolved() {
+    return IsolateInfo[0].status >= resolved;
+  }
+  
+  /// isErroneous - Is the class in an erroneous state.
+  ///
+  bool isErroneous() {
+    return IsolateInfo[0].status == erroneous;
+  }
+
+  /// setResolved - Set the status of the class as resolved.
+  ///
+  void setResolved() {
+    IsolateInfo[0].status = resolved;
+  }
+  
+  /// setErroneous - Set the class as erroneous.
+  ///
+  void setErroneous() {
+    IsolateInfo[0].status = erroneous;
+  }
+  
+  /// setIsRead - The class file has been read.
+  ///
+  void setIsRead() {
+    IsolateInfo[0].status = classRead;
+  }
+
+  /// isResolving - IS the class currently being resolved?
+  ///
+  bool isResolving() {
+    return IsolateInfo[0].status == classRead;
+  }
+  
+#else
+  TaskClassMirror& getCurrentTaskClassMirror();
+  
+  void* getStaticInstance() {
+    return getCurrentTaskClassMirror().staticInstance;
+  }
+
+  void setStaticInstance(void* val) {
+    getCurrentTaskClassMirror().staticInstance = val;
+  }
+
+  JavaState getInitializationState() {
+    return getCurrentTaskClassMirror().status;
+  }
+  
+  void setInitializationState(JavaState st) {
+    getCurrentTaskClassMirror().status = st;
+  }
+  
+  bool isReady() {
+    return getCurrentTaskClassMirror().status == ready;
+  }
+
+  bool isReadyForCompilation() {
+    return false;
+  }
+
+  bool isInitializing() {
+    return getCurrentTaskClassMirror().status >= inClinit;
+  }
+  
+  bool isResolved() {
+    return getCurrentTaskClassMirror().status >= resolved;
+  }
+
+  void setResolved() {
+    for (uint32 i = 0; i < NR_ISOLATES; ++i) {
+      IsolateInfo[i].status = resolved;
+    }
+  }
+  
+  void setIsRead() {
+    for (uint32 i = 0; i < NR_ISOLATES; ++i) {
+      IsolateInfo[i].status = classRead;
+    }
+  }
+  
+  void setErroneous() {
+    for (uint32 i = 0; i < NR_ISOLATES; ++i) {
+      IsolateInfo[i].status = erroneous;
+    }
+  }
+
+  bool isResolving() {
+    return getCurrentTaskClassMirror().status == classRead;
+  }
+  
+  bool isErroneous() {
+    return getCurrentTaskClassMirror().status == erroneous;
+  }
+#endif
 
    
 };
@@ -810,23 +885,20 @@ private:
 
 public:
   
-  /// _baseClass - The base class of the array, or null if not resolved.
+  /// _baseClass - The base class of the array.
   ///
   CommonClass*  _baseClass;
 
-  /// baseClass - Get the base class of this array class. Resolve the array
-  /// class if needed.
+  /// baseClass - Get the base class of this array class.
   ///
   CommonClass* baseClass() {
     return _baseClass;
   }
 
-  
   /// doNew - Allocate a new array in the given vm.
   ///
   JavaArray* doNew(sint32 n, Jnjvm* vm);
   
-
   /// ClassArray - Empty constructor for VT.
   ///
   ClassArray() {}
@@ -836,33 +908,18 @@ public:
   ClassArray(JnjvmClassLoader* loader, const UTF8* name,
              UserCommonClass* baseClass);
   
-
-  /// arrayLoader - Return the class loader of the class with the name 'name'.
-  /// If the class has not been loaded, load it with the given loader and
-  /// return the real class loader that loaded this class.
+  /// SuperArray - The super of class arrays. Namely java/lang/Object.
   ///
-  static JnjvmClassLoader* arrayLoader(const UTF8* name,
-                                       JnjvmClassLoader* loader,
-                                       unsigned int start,
-                                       unsigned int end);
-
-  /// print - Print a string representation of this array class. Used for
-  /// debugging purposes.
-  ///
-  virtual void print(mvm::PrintBuffer *buf) const;
-
-  /// tracer - Tracer of array classes.
-  ///
-  virtual void TRACER;
-
   static Class* SuperArray;
+
+  /// InterfacesArray - The list of interfaces for array classes.
+  ///
   static Class** InterfacesArray;
 };
 
 /// JavaMethod - This class represents Java methods.
 ///
 class JavaMethod : public mvm::PermanentObject {
-  friend class CommonClass;
 private:
 
   /// _signature - The signature of this method. Null if not resolved.
@@ -871,6 +928,10 @@ private:
 
 public:
   
+  /// constructMethod - Create a new method.
+  ///
+  void initialise(Class* cl, const UTF8* name, const UTF8* type, uint16 access);
+   
   /// compiledPtr - Return a pointer to the compiled code of this Java method,
   /// compiling it if necessary.
   ///
@@ -1029,7 +1090,6 @@ public:
 /// JavaField - This class represents a Java field.
 ///
 class JavaField  : public mvm::PermanentObject {
-  friend class CommonClass;
 private:
   /// _signature - The signature of the field. Null if not resolved.
   ///
@@ -1043,6 +1103,10 @@ private:
   void InitField(void* obj, float val);
 
 public:
+  
+  /// constructField - Create a new field.
+  ///
+  void initialise(Class* cl, const UTF8* name, const UTF8* type, uint16 access);
 
   /// ~JavaField - Destroy the field as well as its attributs.
   ///

@@ -687,6 +687,7 @@ GC_MULTI_MMAP
 GC_SINGLE_MMAP
 GC_FLAGS
 GC_LIBS
+SINGLE_BUILD
 SERVICE_BUILD
 ISOLATE_BUILD
 VM_FLAGS
@@ -3946,12 +3947,21 @@ fi
 if test "x$vmtype" = "xisolate";  then
   VM_FLAGS="-DISOLATE"
   ISOLATE_BUILD=1
+  SERVICE_BUILD=0
+  SINGLE_BUILD=0
 else
   if test "x$vmtype" = "xservice"; then
     VM_FLAGS="-DISOLATE -DSERVICE"
     SERVICE_BUILD=1
+    ISOLATE_BUILD=1
+    SINGLE_BUILD=0
+  else
+    SINGLE_BUILD=1
+    ISOLATE_BUILD=0
+    SERVICE_BUILD=0
   fi
 fi
+
 
 
 
@@ -7852,6 +7862,7 @@ GC_MULTI_MMAP!$GC_MULTI_MMAP$ac_delim
 GC_SINGLE_MMAP!$GC_SINGLE_MMAP$ac_delim
 GC_FLAGS!$GC_FLAGS$ac_delim
 GC_LIBS!$GC_LIBS$ac_delim
+SINGLE_BUILD!$SINGLE_BUILD$ac_delim
 SERVICE_BUILD!$SERVICE_BUILD$ac_delim
 ISOLATE_BUILD!$ISOLATE_BUILD$ac_delim
 VM_FLAGS!$VM_FLAGS$ac_delim
@@ -7879,7 +7890,6 @@ FIND!$FIND$ac_delim
 MKDIR!$MKDIR$ac_delim
 MV!$MV$ac_delim
 RANLIB!$RANLIB$ac_delim
-RM!$RM$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -7921,6 +7931,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+RM!$RM$ac_delim
 SED!$SED$ac_delim
 TAR!$TAR$ac_delim
 BINPWD!$BINPWD$ac_delim
@@ -7936,7 +7947,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 13; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 14; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

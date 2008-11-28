@@ -31,11 +31,12 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JnjvmClassLoader* loader,
   UserCommonClass* cl = loader->loadName(loader->asciizConstructUTF8(className),
                                          true, true);
   
-  cl->initialiseClass(vm);
   bool stat = access == ACC_STATIC ? true : false;
-  JavaMethod* method = cl->lookupMethod(loader->asciizConstructUTF8(func), 
-                                        loader->asciizConstructUTF8(sign), stat,
-                                        true, 0);
+  UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
+  lookup->initialiseClass(vm);
+  JavaMethod* method = lookup->lookupMethod(loader->asciizConstructUTF8(func), 
+                                            loader->asciizConstructUTF8(sign),
+                                            stat, true, 0);
   va_list ap;
   va_start(ap, access);
   if (stat) {

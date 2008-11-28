@@ -6,7 +6,7 @@
 %VT = type i32 (...)**
 
 ;;; The root of all Java Objects: a VT, a class and a lock.
-%JavaObject = type { %VT, %JavaClass*, i8* }
+%JavaObject = type { %VT, %JavaCommonClass*, i8* }
 
 ;;; Types for Java arrays. A size of 0 means an undefined size.
 %JavaArray = type { %JavaObject, i8* }
@@ -25,12 +25,28 @@
 ;;; to lookup in the constant pool.
 %Enveloppe = type { %CacheNode*, i8**, i8*, i32 }
 
+;;; The task class mirror.
+;;; Field 1: The class state
+;;; Field 2: The static instance
+%TaskClassMirror = type { i32, i8* }
+
+%Attribut = type { %UTF8*, i32, i32 }
+
+%UTF8 = type { %JavaObject, i8*, [0 x i16] }
+
+
+%JavaField = type { i8*, i16, %UTF8*, %UTF8*, %Attribut*, i16, %JavaClass*, i64,
+                    i16, i8* }
+
+%JavaMethod = type { i8*, i16, %Attribut*, i16, %Enveloppe*, i16, %JavaClass*,
+                     %UTF8*, %UTF8*, i8, i8*, i32, i8* }
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Constant calls for Jnjvm runtime internal objects field accesses ;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; jnjvmRuntimeInitialiseClass - Initialises the class.
-declare %JavaClass* @jnjvmRuntimeInitialiseClass(%JavaClass*) readnone 
+declare %JavaClass* @jnjvmRuntimeInitialiseClass(%JavaClass*) readnone
 
 ;;; arrayLength - Get the length of an array.
 declare i32 @arrayLength(%JavaObject*) readnone 
@@ -39,7 +55,7 @@ declare i32 @arrayLength(%JavaObject*) readnone
 declare %VT @getVT(%JavaObject*) readnone 
 
 ;;; getClass - Get the class of an object.
-declare %JavaClass* @getClass(%JavaObject*) readnone 
+declare %JavaCommonClass* @getClass(%JavaObject*) readnone 
 
 ;;; getLock - Get the lock of an object.
 declare i8* @getLock(%JavaObject*)
@@ -52,13 +68,13 @@ declare %VT @getVTFromClass(%JavaClass*) readnone
 declare i32 @getObjectSizeFromClass(%JavaClass*) readnone 
 
 ;;; getDisplay - Get the display array of this class.
-declare %JavaClass** @getDisplay(%JavaClass*) readnone 
+declare %JavaCommonClass** @getDisplay(%JavaCommonClass*) readnone 
 
 ;;; getClassInDisplay - Get the super class at the given offset.
-declare %JavaClass* @getClassInDisplay(%JavaClass**, i32) readnone 
+declare %JavaCommonClass* @getClassInDisplay(%JavaCommonClass**, i32) readnone 
 
 ;;; getDepth - Get the depth of the class.
-declare i32 @getDepth(%JavaClass*) readnone 
+declare i32 @getDepth(%JavaCommonClass*) readnone 
 
 ;;; getStaticInstance - Get the static instance of this class.
 declare i8* @getStaticInstance(%JavaClass*) readnone 
@@ -73,7 +89,7 @@ declare i8* @jnjvmVirtualLookup(%CacheNode*, %JavaObject*)
 
 ;;; multiCallNew - Allocate multi-dimensional arrays. This will go to allocation
 ;;; specific methods.
-declare %JavaObject* @multiCallNew(%JavaClass*, i32, ...)
+declare %JavaObject* @multiCallNew(%JavaCommonClass*, i32, ...)
 
 ;;; initialisationCheck - Checks if the class has been initialized and 
 ;;; initializes if not. This is used for initialization barriers in an isolate
@@ -122,30 +138,31 @@ declare void @JavaObjectRelease(%JavaObject*)
 declare void @overflowThinLock(%JavaObject*)
 
 ;;; isAssignableFrom - Returns if the objet's class implements the given class.
-declare i1 @instanceOf(%JavaObject*, %JavaClass*) readnone 
+declare i1 @instanceOf(%JavaObject*, %JavaCommonClass*) readnone 
 
 ;;; isAssignableFrom - Returns if the class implements the given class.
-declare i1 @isAssignableFrom(%JavaClass*, %JavaClass*) readnone 
+declare i1 @isAssignableFrom(%JavaCommonClass*, %JavaCommonClass*) readnone 
 
 ;;; implements - Returns if the class implements the given interface.
-declare i1 @implements(%JavaClass*, %JavaClass*) readnone 
+declare i1 @implements(%JavaCommonClass*, %JavaCommonClass*) readnone 
 
 ;;; instantiationOfArray - Returns if the class implements the given array.
-declare i1 @instantiationOfArray(%JavaClass*, %JavaClass*) readnone 
+declare i1 @instantiationOfArray(%JavaCommonClass*, %JavaCommonClass*) readnone
 
 ;;; getClassDelegatee - Returns the java/lang/Class representation of the
 ;;; class.
-declare %JavaObject* @getClassDelegatee(%JavaClass*) readnone 
+declare %JavaObject* @getClassDelegatee(%JavaCommonClass*) readnone 
 
 ;;; getArrayClass - Get the array user class of the user class.
-declare %JavaClass* @getArrayClass(%JavaClass*, %JavaClass**) readnone
+declare %JavaCommonClass* @getArrayClass(%JavaCommonClass*, 
+                                         %JavaCommonClass**) readnone
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Exception methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 declare void @jnjvmNullPointerException()
-declare void @jnjvmClassCastException(%JavaObject*, %JavaClass*)
+declare void @jnjvmClassCastException(%JavaObject*, %JavaCommonClass*)
 declare void @indexOutOfBoundsException(%JavaObject*, i32)
 declare void @negativeArraySizeException(i32)
 declare void @outOfMemoryError(i32)

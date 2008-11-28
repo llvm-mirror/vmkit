@@ -217,6 +217,7 @@ public:
                           const llvm::Type* fieldType, 
                           const llvm::Type* fieldTypePtr);
   llvm::Value* getResolvedClass(uint16 index, bool clinit, bool doThrow = true);
+  llvm::Value* getResolvedCommonClass(uint16 index, bool doThrow = true);
   
   // methods invoke
   void makeArgs(llvm::FunctionType::param_iterator it,

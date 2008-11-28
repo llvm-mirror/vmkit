@@ -57,8 +57,8 @@ jobject loader) {
   UserCommonClass* cl = JCL->lookupClassFromJavaString((JavaString*)str, vm,
                                                         true, false);
   if (cl != 0) {
-    if (clinit) {
-      cl->initialiseClass(vm);
+    if (clinit && cl->asClass()) {
+      cl->asClass()->initialiseClass(vm);
     }
     return (jclass)(cl->getClassDelegatee(vm));
   } else {
@@ -81,8 +81,9 @@ jboolean publicOnly) {
   if (cl->isArray() || cl->isInterface() || cl->isPrimitive()) {
     return (jobject)vm->upcalls->constructorArrayClass->doNew(0, vm);
   } else {
+    UserClass* realCl = (Class*)cl;
     std::vector<JavaMethod*> res;
-    cl->getDeclaredConstructors(res, publicOnly);
+    realCl->getDeclaredConstructors(res, publicOnly);
     
     ArrayObject* ret = 
       (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(res.size(), vm);
@@ -112,11 +113,12 @@ jboolean publicOnly) {
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
   Classpath* upcalls = vm->upcalls;
 
-  if (cl->isArray()) {
+  if (cl->isArray() || cl->isPrimitive()) {
     return (jobject)upcalls->methodArrayClass->doNew(0, vm);
   } else {
     std::vector<JavaMethod*> res;
-    cl->getDeclaredMethods(res, publicOnly);
+    UserClass* realCl = cl->asClass();
+    realCl->getDeclaredMethods(res, publicOnly);
     
     ArrayObject* ret = 
       (ArrayObject*)upcalls->methodArrayClass->doNew(res.size(), vm);
@@ -223,7 +225,7 @@ jclass Cl1, jclass Cl2) {
   UserCommonClass* cl1 = ((JavaObjectClass*)Cl1)->getClass();
   UserCommonClass* cl2 = ((JavaObjectClass*)Cl2)->getClass();
 
-  cl2->resolveClass();
+  if (cl2->asClass()) cl2->asClass()->resolveClass();
   return cl2->isAssignableFrom(cl1);
 
 }
@@ -239,7 +241,7 @@ jclass Cl) {
   if (cl->isInterface())
     return 0;
   else {
-    cl->resolveClass();
+    if (cl->asClass()) cl->asClass()->resolveClass();
     if (cl->getSuper()) return (jobject)cl->getSuper()->getClassDelegatee(vm);
     else return 0;
   }

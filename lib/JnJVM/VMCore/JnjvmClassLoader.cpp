@@ -227,8 +227,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   arrayTable[JavaArray::T_FLOAT - 4] = upcalls->ArrayOfFloat;
   arrayTable[JavaArray::T_LONG - 4] = upcalls->ArrayOfLong;
   arrayTable[JavaArray::T_DOUBLE - 4] = upcalls->ArrayOfDouble;
-
-  upcalls->initialiseClasspath(this); 
 }
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
@@ -248,8 +246,8 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   isolate = I;
 
   JavaMethod* meth = bootstrapLoader->upcalls->loadInClassLoader;
-  loader->classOf->lookupMethodDontThrow(meth->name, meth->type, false, true,
-                                         &loadClass);
+  loader->classOf->asClass()->lookupMethodDontThrow(meth->name, meth->type,
+                                                    false, true, &loadClass);
   assert(loadClass && "Loader does not have a loadClass function");
 
 #if defined(SERVICE)
@@ -386,7 +384,6 @@ UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* name,
                                                                len - 2);
               if (loadName(componentName, doResolve, doThrow)) {
                 ret = constructArray(name);
-                if (doResolve) ret->resolveClass();
                 doLoop = false;
               } else {
                 doLoop = false;
@@ -401,7 +398,6 @@ UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* name,
                 && ((uint32)name->size) == start + 1) {
 
               ret = constructArray(name);
-              ret->resolveClass();
               doLoop = false;
             } else {
               doLoop = false;

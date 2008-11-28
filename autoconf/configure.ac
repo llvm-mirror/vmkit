@@ -224,13 +224,22 @@ AC_ARG_WITH(vm-type,
 if test "x$vmtype" = "xisolate";  then
   VM_FLAGS="-DISOLATE"
   ISOLATE_BUILD=1
+  SERVICE_BUILD=0
+  SINGLE_BUILD=0
 else 
   if test "x$vmtype" = "xservice"; then
     VM_FLAGS="-DISOLATE -DSERVICE"
     SERVICE_BUILD=1
+    ISOLATE_BUILD=1
+    SINGLE_BUILD=0
+  else
+    SINGLE_BUILD=1
+    ISOLATE_BUILD=0
+    SERVICE_BUILD=0
   fi
 fi
 
+AC_SUBST([SINGLE_BUILD])
 AC_SUBST([SERVICE_BUILD])
 AC_SUBST([ISOLATE_BUILD])
 AC_SUBST([VM_FLAGS])

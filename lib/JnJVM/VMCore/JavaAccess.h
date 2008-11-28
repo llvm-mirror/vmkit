@@ -32,6 +32,10 @@ namespace jnjvm {
 #define ACC_ABSTRACT     0x0400
 #define ACC_STRICT       0x0800
 
+#define JNJVM_CLASS      0x1000
+#define JNJVM_ARRAY      0x2000
+#define JNJVM_PRIMITIVE  0x4000
+
 #define MK_VERIFIER(name, flag)                   \
   inline bool name(unsigned int param) {          \
     return (flag & param) != 0;                   \
@@ -47,10 +51,16 @@ MK_VERIFIER(isAbstract,   ACC_ABSTRACT)
 MK_VERIFIER(isProtected,  ACC_PROTECTED)
 MK_VERIFIER(isFinal,      ACC_FINAL)
 MK_VERIFIER(isSuper,      ACC_SUPER)
-  
+
+
 inline bool isVirtual(unsigned int param) {
     return !(ACC_STATIC & param);
 }
+
+MK_VERIFIER(isClass,      JNJVM_CLASS)
+MK_VERIFIER(isPrimitive,  JNJVM_PRIMITIVE)
+MK_VERIFIER(isArray,      JNJVM_ARRAY)
+
 
 #undef MK_VERIFIER
 

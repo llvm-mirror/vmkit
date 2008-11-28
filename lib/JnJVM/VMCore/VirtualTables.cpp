@@ -63,39 +63,27 @@ void JavaArray::TRACER {}
     (*i)->MARK_AND_TRACE; }}
 
 void CommonClass::TRACER {
-  if (status >= prepared) {
-    if (super) super->classLoader->MARK_AND_TRACE;
-    for (uint32 i = 0; i < nbInterfaces; ++i) {
-      interfaces[i]->classLoader->MARK_AND_TRACE;
-    }
+  if (super) super->classLoader->MARK_AND_TRACE;
+  for (uint32 i = 0; i < nbInterfaces; ++i) {
+    interfaces[i]->classLoader->MARK_AND_TRACE;
   }
   classLoader->MARK_AND_TRACE;
-#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
-  _delegatee->MARK_AND_TRACE;
-#endif
-
-#if defined(ISOLATE)
-  for (uint32 i =0; i < NR_ISOLATES; ++i) {
-    TaskClassMirror &M = IsolateInfo[i];
-    M.delegatee->MARK_AND_TRACE;
-    if (M.staticInstance) {
-      ((Class*)this)->staticTracer(M.staticInstance);
-    }
+  for (uint32 i = 0; i < NR_ISOLATES; ++i) {
+    delegatee[i]->MARK_AND_TRACE;
   }
-#endif
+
 }
 
 void Class::TRACER {
   CommonClass::CALL_TRACER;
   bytes->MARK_AND_TRACE;
-#if !defined(ISOLATE)
-  if (_staticInstance)
-    staticTracer(_staticInstance);
-#endif
-}
-
-void ClassArray::TRACER {
-  CommonClass::CALL_TRACER;
+  
+  for (uint32 i =0; i < NR_ISOLATES; ++i) {
+    TaskClassMirror &M = IsolateInfo[i];
+    if (M.staticInstance) {
+      ((Class*)this)->staticTracer(M.staticInstance);
+    }
+  }
 }
 
 void JavaObject::TRACER {
@@ -117,7 +105,9 @@ extern "C" void JavaObjectTracer(JavaObject* obj) {
 static void traceClassMap(ClassMap* classes) {
   for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
        i!= e; ++i) {
-    i->second->CALL_TRACER;
+    CommonClass* cl = i->second;
+    if (cl->isClass()) cl->asClass()->CALL_TRACER;
+    else cl->CALL_TRACER;
   }
 }
 
@@ -133,18 +123,10 @@ void Jnjvm::TRACER {
 #if defined(ISOLATE_SHARING)
   JnjvmSharedLoader::sharedLoader->MARK_AND_TRACE;
 #endif
-  traceClassMap(bootstrapLoader->classes);
+  traceClassMap(bootstrapLoader->getClasses());
   
-#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
-#define TRACE_DELEGATEE(prim) \
-  prim->_delegatee->MARK_AND_TRACE
-
-#else
-#if defined(ISOLATE)
 #define TRACE_DELEGATEE(prim) \
   prim->CALL_TRACER;
-#endif
-#endif
 
   TRACE_DELEGATEE(upcalls->OfVoid);
   TRACE_DELEGATEE(upcalls->OfBool);

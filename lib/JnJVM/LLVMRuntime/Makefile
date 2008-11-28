@@ -32,10 +32,8 @@ endif
 endif
 endif
 
-ifndef $(ISOLATE_BUILD)
-ifndef $(SERVICE_BUILD)
+ifeq ($(SINGLE_BUILD), 1)
 VMKIT_RUNTIME += $(PROJ_SRC_DIR)/runtime-single.ll
-endif
 endif
 
 BUILT_SOURCES = LLVMRuntime.inc

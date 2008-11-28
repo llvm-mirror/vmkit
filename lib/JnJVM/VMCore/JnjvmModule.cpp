@@ -14,6 +14,7 @@
 
 #include "mvm/JIT.h"
 
+#include "JavaJIT.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
@@ -25,6 +26,8 @@
 using namespace jnjvm;
 using namespace llvm;
 
+llvm::Value* JnjvmModule::PrimitiveArrayVT;
+llvm::Value* JnjvmModule::ReferenceArrayVT;
 
 #ifdef WITH_TRACER
 const llvm::FunctionType* JnjvmModule::MarkAndTraceType = 0;
@@ -51,21 +54,18 @@ const llvm::Type* JnjvmModule::JnjvmType = 0;
 #endif
 
 llvm::Constant*     JnjvmModule::JavaObjectNullConstant;
-llvm::Constant*     JnjvmModule::UTF8NullConstant;
-llvm::Constant*     JnjvmModule::JavaClassNullConstant;
 llvm::Constant*     JnjvmModule::MaxArraySizeConstant;
-llvm::Constant*     JnjvmModule::JavaObjectSizeConstant;
 llvm::Constant*     JnjvmModule::JavaArraySizeConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetObjectSizeInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetVTInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetDepthInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetDisplayInClassConstant;
-llvm::ConstantInt*  JnjvmModule::OffsetStatusInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetTaskClassMirrorInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetStaticInstanceInTaskClassMirrorConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetStatusInTaskClassMirrorConstant;
 llvm::ConstantInt*  JnjvmModule::ClassReadyConstant;
 const llvm::Type*   JnjvmModule::JavaClassType;
+const llvm::Type*   JnjvmModule::JavaCommonClassType;
 const llvm::Type*   JnjvmModule::VTType;
 llvm::ConstantInt*  JnjvmModule::JavaArrayElementsOffsetConstant;
 llvm::ConstantInt*  JnjvmModule::JavaArraySizeOffsetConstant;
@@ -77,12 +77,14 @@ Value* JnjvmModule::getNativeClass(CommonClass* classDef) {
   native_class_iterator End = nativeClasses.end();
   native_class_iterator I = nativeClasses.find(classDef);
   if (I == End) {
+    const llvm::Type* Ty = classDef->isClass() ?
+      JavaClassType : JavaCommonClassType;
     Constant* cons = 
       ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                                                  uint64_t (classDef)),
-                                JnjvmModule::JavaClassType);
+                                Ty);
       
-    varGV = new GlobalVariable(JnjvmModule::JavaClassType, !staticCompilation,
+    varGV = new GlobalVariable(Ty, !staticCompilation,
                                GlobalValue::ExternalLinkage,
                                cons, "", this);
 
@@ -210,7 +212,7 @@ Value* JnjvmModule::getStaticInstance(Class* classDef) {
   return varGV;
 }
 
-Value* JnjvmModule::getVirtualTable(CommonClass* classDef) {
+Value* JnjvmModule::getVirtualTable(Class* classDef) {
   llvm::GlobalVariable* varGV = 0;
   virtual_table_iterator End = virtualTables.end();
   virtual_table_iterator I = virtualTables.find(classDef);
@@ -553,6 +555,7 @@ const Type* LLVMClassInfo::getStaticType() {
 Value* LLVMClassInfo::getVirtualSize() {
   if (!virtualSizeConstant) {
     getVirtualType();
+    assert(classDef->virtualSize && "Zero size for a class?");
     virtualSizeConstant = 
       ConstantInt::get(Type::Int32Ty, classDef->virtualSize);
   }
@@ -951,6 +954,9 @@ void JnjvmModule::initialise() {
   JavaArrayType =
     PointerType::getUnqual(module->getTypeByName("JavaArray"));
   
+  JavaCommonClassType =
+    PointerType::getUnqual(module->getTypeByName("JavaCommonClass"));
+  
   JavaClassType =
     PointerType::getUnqual(module->getTypeByName("JavaClass"));
   
@@ -985,12 +991,9 @@ void JnjvmModule::initialise() {
   MarkAndTraceType = module->getFunction("MarkAndTrace")->getFunctionType();
 #endif
  
-  UTF8NullConstant = Constant::getNullValue(JavaArrayUInt16Type); 
-  JavaClassNullConstant = Constant::getNullValue(JavaClassType); 
   JavaObjectNullConstant = Constant::getNullValue(JnjvmModule::JavaObjectType);
   MaxArraySizeConstant = ConstantInt::get(Type::Int32Ty,
                                           JavaArray::MaxArraySize);
-  JavaObjectSizeConstant = ConstantInt::get(Type::Int32Ty, sizeof(JavaObject));
   JavaArraySizeConstant = 
     ConstantInt::get(Type::Int32Ty, sizeof(JavaObject) + sizeof(ssize_t));
   
@@ -1000,18 +1003,41 @@ void JnjvmModule::initialise() {
   JavaObjectLockOffsetConstant = mvm::MvmModule::constantTwo;
   JavaObjectClassOffsetConstant = mvm::MvmModule::constantOne; 
   
+  OffsetDisplayInClassConstant = mvm::MvmModule::constantZero;
+  OffsetDepthInClassConstant = mvm::MvmModule::constantOne;
+  
   OffsetObjectSizeInClassConstant = mvm::MvmModule::constantOne;
   OffsetVTInClassConstant = mvm::MvmModule::constantTwo;
-  OffsetDisplayInClassConstant = mvm::MvmModule::constantThree;
-  OffsetDepthInClassConstant = mvm::MvmModule::constantFour;
-  OffsetStatusInClassConstant = mvm::MvmModule::constantFive;
-  OffsetTaskClassMirrorInClassConstant = mvm::MvmModule::constantSix;
-  OffsetStaticInstanceInTaskClassMirrorConstant = mvm::MvmModule::constantTwo;
+  OffsetTaskClassMirrorInClassConstant = mvm::MvmModule::constantThree;
+  OffsetStaticInstanceInTaskClassMirrorConstant = mvm::MvmModule::constantOne;
   OffsetStatusInTaskClassMirrorConstant = mvm::MvmModule::constantZero;
   
   ClassReadyConstant = ConstantInt::get(Type::Int32Ty, ready);
+  
+  Constant* cons = 
+    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
+                                               uint64(JavaArray::VT)),
+                              VTType);
+  PrimitiveArrayVT = new GlobalVariable(VTType, !staticCompilation, 
+                                        GlobalValue::ExternalLinkage,
+                                        cons, "", this);
+  
+  cons = ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
+                                                    uint64(ArrayObject::VT)),
+                                   VTType);
+  ReferenceArrayVT = new GlobalVariable(VTType, !staticCompilation, 
+                                        GlobalValue::ExternalLinkage,
+                                        cons, "", this);
 
   LLVMAssessorInfo::initialise();
+}
+
+Value* JnjvmModule::getReferenceArrayVT(JavaJIT* JIT) {
+  return new LoadInst(ReferenceArrayVT, "", JIT->currentBlock);
+}
+
+Value* JnjvmModule::getPrimitiveArrayVT(JavaJIT* JIT) {
+  return new LoadInst(PrimitiveArrayVT, "", JIT->currentBlock);
 }
 
 void JnjvmModule::setMethod(JavaMethod* meth, const char* name) {

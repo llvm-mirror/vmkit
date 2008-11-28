@@ -51,12 +51,8 @@ class ZipArchive;
 /// table for non-isolate environments.
 ///
 class JnjvmClassLoader : public mvm::CompilationUnit {
-  friend class JavaJIT;
-  friend class Jnjvm;
-  friend class UserCommonClass;
 private:
-   
-  
+
   /// isolate - Which isolate defined me? Null for the bootstrap class loader.
   ///
   Jnjvm* isolate;
@@ -104,7 +100,11 @@ public:
   /// signatures and types.
   ///
   mvm::BumpPtrAllocator allocator;
-  
+ 
+  /// getIsolate - Returns the isolate that created this class loader.
+  ///
+  Jnjvm* getIsolate() { return isolate; }
+
   /// getClasses - Returns the classes this class loader has loaded.
   ///
   ClassMap* getClasses() { return classes; }

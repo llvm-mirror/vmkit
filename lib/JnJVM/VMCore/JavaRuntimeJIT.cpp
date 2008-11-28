@@ -37,7 +37,8 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   
   ctpInfo->resolveMethod(index, cl, utf8, sign);
 #ifndef SERVICE
-  assert(obj->classOf->isInitializing() && 
+  assert((obj->classOf->isClass() && 
+          obj->classOf->asClass()->isInitializing()) &&
          "Class not ready in a virtual lookup.");
 #endif
 
@@ -58,8 +59,9 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
 
   if (!rcache) {
     UserClass* methodCl = 0;
-    JavaMethod* dmeth = ocl->lookupMethod(utf8, sign->keyName, false, true,
-                                          &methodCl);
+    UserClass* lookup = ocl->isArray() ? ocl->super : ocl->asClass();
+    JavaMethod* dmeth = lookup->lookupMethod(utf8, sign->keyName, false, true,
+                                             &methodCl);
 #if !defined(ISOLATE_SHARING) && !defined(SERVICE)
     assert(dmeth->classDef->isInitializing() &&
            "Class not ready in a virtual lookup.");
@@ -102,8 +104,9 @@ extern "C" void* virtualFieldLookup(UserClass* caller, uint32 index) {
   Typedef* sign = 0;
   
   ctpInfo->resolveField(index, cl, utf8, sign);
-  
-  JavaField* field = cl->lookupField(utf8, sign->keyName, false, true, 0);
+ 
+  UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
+  JavaField* field = lookup->lookupField(utf8, sign->keyName, false, true, 0);
   
   ctpInfo->ctpRes[index] = (void*)field->ptrOffset;
   
@@ -118,13 +121,15 @@ extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
   }
   
   UserCommonClass* cl = 0;
-  UserCommonClass* fieldCl = 0;
+  UserClass* fieldCl = 0;
   const UTF8* utf8 = 0;
   Typedef* sign = 0;
   
   ctpInfo->resolveField(index, cl, utf8, sign);
-  
-  JavaField* field = cl->lookupField(utf8, sign->keyName, true, true, &fieldCl);
+ 
+  assert(cl->asClass() && "Lookup a field of something not an array");
+  JavaField* field = cl->asClass()->lookupField(utf8, sign->keyName, true,
+                                                true, &fieldCl);
   
   fieldCl->initialiseClass(JavaThread::get()->getJVM());
   void* obj = ((UserClass*)fieldCl)->getStaticInstance();
@@ -206,18 +211,22 @@ extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
   Signdef* sign = 0;
   
   caller->getConstantPool()->resolveMethod(index, cl, utf8, sign);
-  JavaMethod* dmeth = cl->lookupMethodDontThrow(utf8, sign->keyName, false,
-                                                true, 0);
+  UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
+  JavaMethod* dmeth = lookup->lookupMethodDontThrow(utf8, sign->keyName, false,
+                                                    true, 0);
   if (!dmeth) {
     va_list ap;
     va_start(ap, index);
     JavaObject* obj = va_arg(ap, JavaObject*);
     va_end(ap);
-    assert(obj->classOf->isInitializing() && 
+    assert((obj->classOf->isClass() && 
+            obj->classOf->asClass()->isInitializing()) &&
            "Class not ready in a virtual lookup.");
     // Arg, the bytecode is buggy! Perform the lookup on the object class
     // and do not update offset.
-    dmeth = obj->classOf->lookupMethod(utf8, sign->keyName, false, true, 0);
+    lookup = obj->classOf->isArray() ? obj->classOf->super : 
+                                       obj->classOf->asClass();
+    dmeth = lookup->lookupMethod(utf8, sign->keyName, false, true, 0);
   } else {
     caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
   }
@@ -300,7 +309,7 @@ extern "C" void indexOutOfBoundsException(JavaObject* obj, sint32 index) {
   JavaThread::get()->getJVM()->indexOutOfBounds(obj, index);
 }
 
-extern "C" UserCommonClass* jnjvmRuntimeInitialiseClass(UserCommonClass* cl) {
+extern "C" UserCommonClass* jnjvmRuntimeInitialiseClass(UserClass* cl) {
   cl->initialiseClass(JavaThread::get()->getJVM());
   return cl;
 }
@@ -351,7 +360,7 @@ extern "C" JavaArray* multiCallNew(UserClassArray* cl, uint32 len, ...) {
 extern "C" UserClassArray* getArrayClass(UserCommonClass* cl,
                                          UserClassArray** dcl) {
   JnjvmClassLoader* JCL = cl->classLoader;
-  cl->resolveClass();
+  if (cl->asClass()) cl->asClass()->resolveClass();
   const UTF8* arrayName = JCL->constructArrayName(1, cl->getName());
   
   UserClassArray* result = JCL->constructArray(arrayName);

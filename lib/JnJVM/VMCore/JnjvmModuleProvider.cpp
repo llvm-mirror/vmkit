@@ -49,15 +49,16 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
   Signdef* sign = 0;
 
   ctpInfo->resolveMethod(index, cl, utf8, sign);
-  JavaMethod* meth = cl->lookupMethod(utf8, sign->keyName, isStatic, true,
-                                      0);
+  UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
+  JavaMethod* meth = lookup->lookupMethod(utf8, sign->keyName, isStatic, true,
+                                          0);
 
 #ifndef ISOLATE_SHARING
   // A multi environment would have already initialized the class. Besides,
   // a callback does not involve UserClass, therefore we wouldn't know
   // which class to initialize.
   if (!isVirtual(meth->access))
-    cl->initialiseClass(JavaThread::get()->getJVM());
+    lookup->initialiseClass(JavaThread::get()->getJVM());
 #endif
 
   meth->compiledPtr();

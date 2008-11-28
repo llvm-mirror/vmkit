@@ -87,6 +87,19 @@ static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
                                          CI);
   return TCM;
 }
+#else
+static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
+  Value* GEP[2] = { module->constantZero,
+                    module->OffsetTaskClassMirrorInClassConstant };
+  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
+  
+  Value* GEP2[2] = { module->constantZero, module->constantZero };
+
+  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, GEP2 + 2, "",
+                                         CI);
+  return TCM;
+
+}
 #endif
 
 bool LowerConstantCalls::runOnFunction(Function& F) {
@@ -149,7 +162,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             }
           }
           
-          Value* val = Call.getArgument(0); 
+          Value* val = Call.getArgument(0);
           Value* indexes[2] = { module->constantZero, 
                                 module->OffsetVTInClassConstant };
           Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
@@ -241,12 +254,9 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
               BranchInst::Create(ifTrue, notEquals, cmp, ifFalse);
               node->addIncoming(ConstantInt::getTrue(), ifFalse);
               
-              if (cl->status < classRead) {
-                Value* args[2] = { objCl, CE };
-                cmp = CallInst::Create(module->IsAssignableFromFunction,
-                                       args, args + 2, "", notEquals);
-                node->addIncoming(cmp, notEquals);
-                BranchInst::Create(ifTrue, notEquals);
+              if (cl->isPrimitive()) {
+                fprintf(stderr, "implement me");
+                abort();
               } else if (cl->isArray()) {
                 Value* args[2] = { objCl, CE };
                 Value* res = 
@@ -256,7 +266,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                 BranchInst::Create(ifTrue, notEquals);
               } else {
                 Value* depthCl;
-                if (cl->isResolved()) {
+                if (cl->asClass()->isResolved()) {
                   depthCl = ConstantInt::get(Type::Int32Ty, cl->depth);
                 } else {
                   depthCl = CallInst::Create(module->GetDepthFunction,
@@ -332,19 +342,11 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           }
           
           Value* Cl = Call.getArgument(0); 
-#if !defined(ISOLATE)
-          Value* indexes[2] = { module->constantZero, 
-                                module->OffsetStatusInClassConstant };
-          Value* StatusPtr = GetElementPtrInst::Create(Cl, indexes,
-                                                       indexes + 2, "", CI);
-
-#else
           Value* TCM = getTCM(module, Call.getArgument(0), CI);
           Value* GEP[2] = { module->constantZero,
                             module->OffsetStatusInTaskClassMirrorConstant };
           Value* StatusPtr = GetElementPtrInst::Create(TCM, GEP, GEP + 2, "",
                                                        CI);
-#endif 
           
           Value* Status = new LoadInst(StatusPtr, "", CI);
           
@@ -481,7 +483,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           BranchInst::Create(NBB, trueCl);
           break;
         } else if (V == module->GetArrayClassFunction) {
-          const llvm::Type* Ty = PointerType::getUnqual(module->JavaClassType);
+          const llvm::Type* Ty = 
+            PointerType::getUnqual(module->JavaCommonClassType);
           Constant* nullValue = Constant::getNullValue(Ty);
           // Check if we have already proceed this call.
           if (Call.getArgument(1) == nullValue) {
@@ -506,9 +509,10 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             BasicBlock* NBB = II->getParent()->splitBasicBlock(II);
             I->getParent()->getTerminator()->eraseFromParent();
 
-            Constant* init = Constant::getNullValue(module->JavaClassType);
+            Constant* init = 
+              Constant::getNullValue(module->JavaCommonClassType);
             GlobalVariable* GV = 
-              new GlobalVariable(module->JavaClassType, false,
+              new GlobalVariable(module->JavaCommonClassType, false,
                                  GlobalValue::ExternalLinkage,
                                  init, "", module);
 
@@ -518,7 +522,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 
             BasicBlock* OKBlock = BasicBlock::Create("", &F);
             BasicBlock* NotOKBlock = BasicBlock::Create("", &F);
-            PHINode* node = PHINode::Create(module->JavaClassType, "", OKBlock);
+            PHINode* node = PHINode::Create(module->JavaCommonClassType, "",
+                                            OKBlock);
             node->addIncoming(LoadedGV, CI->getParent());
 
             BranchInst::Create(NotOKBlock, OKBlock, cmp, CI);

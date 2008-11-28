@@ -52,7 +52,7 @@ typedef void (*clinit_t)(UserConstantPool*);
 
 /// initialiseClass - Java class initialisation. Java specification §2.17.5.
 
-void UserCommonClass::initialiseClass(Jnjvm* vm) {
+void UserClass::initialiseClass(Jnjvm* vm) {
   
   // Primitives are initialized at boot time, arrays are initialized directly.
   
@@ -67,8 +67,8 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
   //    verification step failed or because initialization was attempted and
   //    failed.
 
-  assert(status >= resolved || getOwnerClass() || status == ready ||
-         status == erroneous && "Class in wrong state");
+  assert(isResolved() || getOwnerClass() || isReady() ||
+         isErroneous() && "Class in wrong state");
   
   if (getInitializationState() != ready) {
     
@@ -109,7 +109,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
     // 5. If the Class object is in an erroneous state, then initialization is
     //    not possible. Release the lock on the Class object and throw a
     //    NoClassDefFoundError.
-    if (status == erroneous) {
+    if (isErroneous()) {
       release();
       vm->noClassDefFoundError(name);
     }
@@ -144,7 +144,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
     //    label it erroneous, notify all waiting threads, release the lock, 
     //    and complete abruptly, throwing the same exception that resulted from 
     //    the initializing the superclass.
-    UserCommonClass* super = getSuper();
+    UserClass* super = getSuper();
     if (super) {
       JavaObject *exc = 0;
       try {
@@ -157,7 +157,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
       
       if (exc) {
         acquire();
-        status = erroneous;
+        setErroneous();
         setOwnerClass(0);
         broadcastClass();
         release();
@@ -168,7 +168,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
 #ifdef SERVICE
     JavaObject* exc = 0;
     if (classLoader == classLoader->bootstrapLoader || 
-        classLoader->isolate == vm) {
+        classLoader->getIsolate() == vm) {
 #endif
 
     // 8. Next, execute either the class variable initializers and static
@@ -247,7 +247,7 @@ void UserCommonClass::initialiseClass(Jnjvm* vm) {
     //     threads, release the lock, and complete this procedure abruptly
     //     with reason E or its replacement as determined in the previous step.
     acquire();
-    status = erroneous;
+    setErroneous();
     setOwnerClass(0);
     broadcastClass();
     release();
@@ -442,7 +442,6 @@ void Jnjvm::addProperty(char* key, char* value) {
 }
 
 JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
-  acquire();
   if (!getDelegatee()) {
     UserClass* cl = vm->upcalls->newClass;
     JavaObject* delegatee = cl->doNew(vm);
@@ -455,7 +454,6 @@ JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
     }
     setDelegatee(delegatee);
   }
-  release();
   return getDelegatee();
 }
 
@@ -736,6 +734,12 @@ void Jnjvm::mapInitialThread() {
 
 void Jnjvm::loadBootstrap() {
   JnjvmClassLoader* loader = bootstrapLoader;
+  
+  // Initialise the bootstrap class loader if it's not
+  // done already.
+  if (!bootstrapLoader->upcalls->newString)
+    bootstrapLoader->upcalls->initialiseClasspath(bootstrapLoader);
+  
 #define LOAD_CLASS(cl) \
   cl->resolveClass(); \
   cl->initialiseClass(this);
@@ -826,7 +830,7 @@ void Jnjvm::loadBootstrap() {
   // libjavalang.so and we are optimizing some math operations
   UserCommonClass* math = 
     loader->loadName(loader->asciizConstructUTF8("java/lang/Math"), true, true);
-  math->initialiseClass(this);
+  math->asClass()->initialiseClass(this);
 }
 
 void Jnjvm::executeClass(const char* className, ArrayObject* args) {

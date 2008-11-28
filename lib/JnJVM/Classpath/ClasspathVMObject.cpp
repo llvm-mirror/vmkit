@@ -35,10 +35,16 @@ jobject _src) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   uint64 size = 0;
   if (cl->isArray()) {
-    size = sizeof(JavaArray) + ((JavaArray*)src)->size * 
-            ((UserClassArray*)cl)->baseClass()->getVirtualSize();
+    UserClassArray* array = cl->asArrayClass();
+    UserCommonClass* base = array->baseClass();
+    uint32 primSize = base->isPrimitive() ? 
+      base->asPrimitiveClass()->primSize : sizeof(JavaObject*);
+
+    size = sizeof(JavaObject) + sizeof(ssize_t) + 
+                            ((JavaArray*)src)->size * primSize;
   } else {
-    size = cl->getVirtualSize();
+    assert(cl->isClass() && "Not a class!");
+    size = cl->asClass()->getVirtualSize();
   }
   JavaObject* res = (JavaObject*)
     vm->gcAllocator.allocateManagedObject(size, src->getVirtualTable());

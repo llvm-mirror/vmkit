@@ -287,7 +287,6 @@ CommonClass* JavaConstantPool::loadClass(uint32 index) {
     const UTF8* name = UTF8At(ctpDef[index]);
     if (name->elements[0] == I_TAB) {
       temp = loader->constructArray(name);
-      temp->resolveClass();
     } else {
       // Put into ctpRes because there is only one representation of the class
       temp = loader->loadName(name, true, false);
@@ -362,16 +361,20 @@ void JavaConstantPool::infoOfMethod(uint32 index, uint32 access,
   sint32 ntIndex = entry & 0xFFFF;
   const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = getMethodClassIfLoaded(entry >> 16);
-  if (cl && cl->status >= classRead) {
-    // lookup the method
-    meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access),
-                                     true, 0);
-    // OK, this is rare, but the Java bytecode may do an invokevirtual on an
-    // interface method. Lookup the method as if it was static.
-    // The caller is responsible for taking any action if the method is
-    // an interface method.
-    if (!meth) {
-      meth = cl->lookupInterfaceMethodDontThrow(utf8, sign->keyName);
+  if (cl) {
+    Class* lookup = cl->isArray() ? cl->super : cl->asClass();
+    if (lookup->isResolved()) {
+    
+      // lookup the method
+      meth = lookup->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access),
+                                         true, 0);
+      // OK, this is rare, but the Java bytecode may do an invokevirtual on an
+      // interface method. Lookup the method as if it was static.
+      // The caller is responsible for taking any action if the method is
+      // an interface method.
+      if (!meth) {
+        meth = lookup->lookupInterfaceMethodDontThrow(utf8, sign->keyName);
+      }
     }
   }
 }
@@ -412,15 +415,18 @@ void* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index,
   sint32 ntIndex = entry & 0xFFFF;
   const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   CommonClass* cl = getMethodClassIfLoaded(entry >> 16);
-  if (cl && cl->status >= classRead) {
-    // lookup the method
-    meth = cl->lookupMethodDontThrow(utf8, sign->keyName, isStatic(access),
-                                     true, 0);
-    if (meth) { 
-      // don't throw if no meth, the exception will be thrown just in time
-      JnjvmModule* M = classDef->classLoader->getModule();
-      void* F = M->getMethod(meth);
-      return F;
+  if (cl) {
+    Class* lookup = cl->isArray() ? cl->super : cl->asClass();
+    if (lookup->isResolved()) {
+      // lookup the method
+      meth = lookup->lookupMethodDontThrow(utf8, sign->keyName,
+                                           isStatic(access), true, 0);
+      if (meth) { 
+        // don't throw if no meth, the exception will be thrown just in time
+        JnjvmModule* M = classDef->classLoader->getModule();
+        void* F = M->getMethod(meth);
+        return F;
+      }
     }
   }
  
@@ -462,7 +468,8 @@ void JavaConstantPool::resolveMethod(uint32 index, CommonClass*& cl,
   utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = loadClass(entry >> 16);
   assert(cl && "No class after loadClass");
-  assert(cl->isResolved() && "Class not resolved after loadClass");
+  assert((cl->isClass() && cl->asClass()->isResolved()) && 
+         "Class not resolved after loadClass");
 }
   
 void JavaConstantPool::resolveField(uint32 index, CommonClass*& cl,
@@ -474,7 +481,8 @@ void JavaConstantPool::resolveField(uint32 index, CommonClass*& cl,
   utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = loadClass(entry >> 16);
   assert(cl && "No class after loadClass");
-  assert(cl->isResolved() && "Class not resolved after loadClass");
+  assert((cl->isClass() && cl->asClass()->isResolved()) && 
+         "Class not resolved after loadClass");
 }
 
 JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
@@ -483,22 +491,25 @@ JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
   Typedef* sign = (Typedef*)ctpRes[ntIndex];
   const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   CommonClass* cl = getMethodClassIfLoaded(entry >> 16);
-  if (cl && cl->status >= resolved) {
-    JavaField* field = cl->lookupFieldDontThrow(utf8, sign->keyName, stat, 
-                                                true, 0);
-    // don't throw if no field, the exception will be thrown just in time  
-    if (field) {
-      if (!stat) {
-        ctpRes[index] = (void*)field->ptrOffset;
-      } 
+  if (cl) {
+    Class* lookup = cl->isArray() ? cl->super : cl->asClass();
+    if (lookup->isResolved()) {
+      JavaField* field = lookup->lookupFieldDontThrow(utf8, sign->keyName, stat,
+                                                      true, 0);
+      // don't throw if no field, the exception will be thrown just in time  
+      if (field) {
+        if (!stat) {
+          ctpRes[index] = (void*)field->ptrOffset;
+        } 
 #ifndef ISOLATE_SHARING
-      else if (cl->isReady()) {
-        void* S = field->classDef->getStaticInstance();
-        ctpRes[index] = (void*)((uint64)S + field->ptrOffset);
-      }
+        else if (lookup->isReady()) {
+          void* S = field->classDef->getStaticInstance();
+          ctpRes[index] = (void*)((uint64)S + field->ptrOffset);
+        }
 #endif
+      }
+      return field;
     }
-    return field;
   } 
   return 0;
 }

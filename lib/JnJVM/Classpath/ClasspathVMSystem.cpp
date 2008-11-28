@@ -85,7 +85,7 @@ jint len) {
   }
   
   uint32 size = dstType->isPrimitive() ? 
-                      dstType->virtualSize : sizeof(JavaObject*);
+                  dstType->asPrimitiveClass()->primSize : sizeof(JavaObject*);
   
   assert(size && "Size zero in a arraycopy");
   void* ptrDst = (void*)((int64_t)(dst->elements) + size * dstart);

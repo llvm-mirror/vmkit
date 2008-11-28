@@ -52,7 +52,7 @@ public:
 class LLVMClassInfo : public mvm::JITInfo {
   friend class JnjvmModule;
 private:
-  CommonClass* classDef;
+  Class* classDef;
   /// virtualSizeLLVM - The LLVM constant size of instances of this class.
   ///
   llvm::ConstantInt* virtualSizeConstant;
@@ -73,7 +73,7 @@ public:
   const llvm::Type* getVirtualType();
   const llvm::Type* getStaticType();
   
-  LLVMClassInfo(CommonClass* cl) :
+  LLVMClassInfo(Class* cl) :
     classDef(cl),
     virtualSizeConstant(0),
     virtualTracerFunction(0),
@@ -216,7 +216,9 @@ private:
   llvm::Function* makeTracer(Class* cl, bool stat);
   VirtualTable* makeVT(Class* cl);
   VirtualTable* allocateVT(Class* cl);
-
+  
+  static llvm::Value* PrimitiveArrayVT;
+  static llvm::Value* ReferenceArrayVT;
   
 public:
 
@@ -247,6 +249,7 @@ public:
   static const llvm::Type* VTType;
   static const llvm::Type* JavaObjectType;
   static const llvm::Type* JavaArrayType;
+  static const llvm::Type* JavaCommonClassType;
   static const llvm::Type* JavaClassType;
   static const llvm::Type* JavaCacheType;
   static const llvm::Type* EnveloppeType;
@@ -325,19 +328,14 @@ public:
   static llvm::ConstantInt* OffsetVTInClassConstant;
   static llvm::ConstantInt* OffsetDepthInClassConstant;
   static llvm::ConstantInt* OffsetDisplayInClassConstant;
-  static llvm::ConstantInt* OffsetStatusInClassConstant;
   static llvm::ConstantInt* OffsetTaskClassMirrorInClassConstant;
   static llvm::ConstantInt* OffsetStaticInstanceInTaskClassMirrorConstant;
   static llvm::ConstantInt* OffsetStatusInTaskClassMirrorConstant;
   
   static llvm::ConstantInt* ClassReadyConstant;
 
-  static llvm::Constant* JavaClassNullConstant;
-
   static llvm::Constant*    JavaObjectNullConstant;
-  static llvm::Constant*    UTF8NullConstant;
   static llvm::Constant*    MaxArraySizeConstant;
-  static llvm::Constant*    JavaObjectSizeConstant;
   static llvm::Constant*    JavaArraySizeConstant;
 
   llvm::Function* GetExceptionFunction;
@@ -381,12 +379,15 @@ public:
   llvm::Value* getNativeClass(CommonClass* cl);
   llvm::Value* getJavaClass(CommonClass* cl);
   llvm::Value* getStaticInstance(Class* cl);
-  llvm::Value* getVirtualTable(CommonClass* cl);
+  llvm::Value* getVirtualTable(Class* cl);
   
   llvm::Value* getEnveloppe(Enveloppe* enveloppe);
   llvm::Value* getString(JavaString* str);
   llvm::Value* getConstantPool(JavaConstantPool* ctp);
   llvm::Value* getNativeFunction(JavaMethod* meth, void* natPtr);
+  
+  llvm::Value* getReferenceArrayVT(JavaJIT*);
+  llvm::Value* getPrimitiveArrayVT(JavaJIT*);
 
 #ifdef SERVICE
   std::map<const Jnjvm*, llvm::GlobalVariable*> isolates;

@@ -663,7 +663,7 @@ llvm::Function* JavaJIT::javaCompile() {
     OldIsolateID = new LoadInst(IsolateIDPtr, "", currentBlock);
 
     Value* MyID = ConstantInt::get(module->pointerSizeType,
-                                   loader->isolate->IsolateID);
+                                   loader->getIsolate()->IsolateID);
     Cmp = new ICmpInst(ICmpInst::ICMP_EQ, OldIsolateID, MyID, "", currentBlock);
 
     BasicBlock* EndBB = createBasicBlock("After service check");
@@ -678,7 +678,7 @@ llvm::Function* JavaJIT::javaCompile() {
                                            currentBlock);
      
     OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
-    NewIsolate = module->getIsolate(loader->isolate);
+    NewIsolate = module->getIsolate(loader->getIsolate());
     NewIsolate = new LoadInst(NewIsolate, "", currentBlock);
     new StoreInst(NewIsolate, IsolatePtr, currentBlock);
 
@@ -1057,14 +1057,14 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     OldIsolateID = new LoadInst(IsolateIDPtr, "", cur->javaHandler);
 
     Value* MyID = ConstantInt::get(module->pointerSizeType,
-                                   loader->isolate->IsolateID);
+                                   loader->getIsolate()->IsolateID);
 
     new StoreInst(MyID, IsolateIDPtr, cur->javaHandler);
     IsolatePtr = GetElementPtrInst::Create(threadId, module->constantFour, "",
                                            cur->javaHandler);
      
     OldIsolate = new LoadInst(IsolatePtr, "", cur->javaHandler);
-    NewIsolate = module->getIsolate(loader->isolate);
+    NewIsolate = module->getIsolate(loader->getIsolate());
     NewIsolate = new LoadInst(NewIsolate, "", cur->javaHandler);
     new StoreInst(NewIsolate, IsolatePtr, cur->javaHandler);
 
@@ -1134,7 +1134,7 @@ void JavaJIT::_ldc(uint16 index) {
       push(Val, false);
     } else {
 #endif
-      Value* val = getResolvedClass(index, false);
+      Value* val = getResolvedCommonClass(index, false);
       Value* res = CallInst::Create(module->GetClassDelegateeFunction,
                                     val, "", currentBlock);
       push(res, false);
@@ -1604,7 +1604,6 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   Value* Cl = GetElementPtrInst::Create(CTP, module->ConstantOne, "",
                                         currentBlock);
   Cl = new LoadInst(Cl, "", currentBlock);
-  Cl = new BitCastInst(Cl, module->JavaClassType, "", currentBlock);
 #else
   JavaConstantPool* ctp = compilingClass->ctpInfo;
   Value* CTP = module->getConstantPool(ctp);
@@ -1640,6 +1639,26 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   return res;
 }
 
+Value* JavaJIT::getResolvedCommonClass(uint16 index, bool doThrow) {
+    
+  JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
+  CommonClass* cl = ctpInfo->getMethodClassIfLoaded(index);
+  Value* node = 0;
+  if (cl && (!cl->isClass() || cl->asClass()->isResolved())) {
+    node = module->getNativeClass(cl);
+    node = new LoadInst(node, "", currentBlock);
+    if (node->getType() != module->JavaCommonClassType) {
+      node = new BitCastInst(node, module->JavaCommonClassType, "",
+                             currentBlock);
+    }
+  } else {
+    node = getConstantPoolAt(index, module->ClassLookupFunction,
+                             module->JavaCommonClassType, 0, doThrow);
+  }
+  
+  return node;
+}
+
 Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow) {
     
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
@@ -1650,14 +1669,18 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow) {
     node = new LoadInst(node, "", currentBlock);
   } else {
     node = getConstantPoolAt(index, module->ClassLookupFunction,
-                             module->JavaClassType, 0, doThrow);
+                             module->JavaCommonClassType, 0, doThrow);
   }
   
-  if (!(!clinit || (cl && !needsInitialisationCheck(cl, compilingClass))))
+  if (!(!clinit || (cl && !needsInitialisationCheck(cl, compilingClass)))) {
+    if (node->getType() != module->JavaClassType) {
+      node = new BitCastInst(node, module->JavaClassType, "", currentBlock);
+    }
     return invoke(module->InitialisationCheckFunction, node, "",
                   currentBlock);
-  else
+  } else {
     return node;
+  }
 }
 
 void JavaJIT::invokeNew(uint16 index) {
@@ -1677,6 +1700,7 @@ void JavaJIT::invokeNew(uint16 index) {
                     module->JavaObjectClassOffsetConstant };
   Value* GEP = GetElementPtrInst::Create(val, gep, gep + 2, "",
                                          currentBlock);
+  Cl = new BitCastInst(Cl, module->JavaCommonClassType, "", currentBlock);
   new StoreInst(Cl, GEP, currentBlock);
   
   Value* gep2[2] = { module->constantZero, module->JavaObjectLockOffsetConstant };
