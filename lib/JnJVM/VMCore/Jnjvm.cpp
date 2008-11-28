@@ -1037,6 +1037,7 @@ void Jnjvm::mainCompilerStart(JavaThread* th) {
     JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
 
     bootstrapLoader->analyseClasspathEnv(vm->classpath);
+    bootstrapLoader->upcalls->initialiseClasspath(bootstrapLoader);
   
     uint32 size = strlen(name);
     if (size > 4 && 

@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llvm/BasicBlock.h"
 #include "llvm/CallingConv.h"
 #include "llvm/Instructions.h"
 #include "llvm/Support/MutexGuard.h"
@@ -72,120 +73,196 @@ llvm::ConstantInt*  JnjvmModule::JavaArraySizeOffsetConstant;
 llvm::ConstantInt*  JnjvmModule::JavaObjectLockOffsetConstant;
 llvm::ConstantInt*  JnjvmModule::JavaObjectClassOffsetConstant;
 
-Value* JnjvmModule::getNativeClass(CommonClass* classDef) {
-  llvm::GlobalVariable* varGV = 0;
-  native_class_iterator End = nativeClasses.end();
-  native_class_iterator I = nativeClasses.find(classDef);
-  if (I == End) {
-    const llvm::Type* Ty = classDef->isClass() ?
-      JavaClassType : JavaCommonClassType;
-    Constant* cons = 
-      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
-                                                 uint64_t (classDef)),
-                                Ty);
-      
-    varGV = new GlobalVariable(Ty, !staticCompilation,
-                               GlobalValue::ExternalLinkage,
-                               cons, "", this);
+Value* JnjvmModule::getNativeClass(CommonClass* classDef, Value* Where) {
+  const llvm::Type* Ty = classDef->isClass() ? JavaClassType : 
+                                               JavaCommonClassType;
 
-    nativeClasses.insert(std::make_pair(classDef, varGV));
+  if (staticCompilation) {
+    llvm::GlobalVariable* varGV = 0;
+    native_class_iterator End = nativeClasses.end();
+    native_class_iterator I = nativeClasses.find(classDef);
+    if (I == End) {
+      ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t (classDef));
+      Constant* cons = ConstantExpr::getIntToPtr(CI, Ty);
+      
+      varGV = new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage,
+                                 cons, "", this);
+
+      nativeClasses.insert(std::make_pair(classDef, varGV));
+    } else {
+      varGV = I->second;
+    }
+
+    if (BasicBlock* BB = dyn_cast<BasicBlock>(Where)) {
+      return new LoadInst(varGV, "", BB);
+    } else {
+      assert(dyn_cast<Instruction>(Where) && "Wrong use of module");
+      return new LoadInst(varGV, "", dyn_cast<Instruction>(Where));
+    }
   } else {
-    varGV = I->second;
-  }   
-  return varGV;
+    
+    ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(classDef));
+    return ConstantExpr::getIntToPtr(CI, Ty);
+  }
 }
 
-Value* JnjvmModule::getConstantPool(JavaConstantPool* ctp) {
-  llvm::GlobalVariable* varGV = 0;
-  constant_pool_iterator End = constantPools.end();
-  constant_pool_iterator I = constantPools.find(ctp);
-  if (I == End) {
+Value* JnjvmModule::getConstantPool(JavaConstantPool* ctp, Value* Where) {
+  if (staticCompilation) {
+    llvm::GlobalVariable* varGV = 0;
+    constant_pool_iterator End = constantPools.end();
+    constant_pool_iterator I = constantPools.find(ctp);
+    if (I == End) {
+      void* ptr = ctp->ctpRes;
+      assert(ptr && "No constant pool found");
+      ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(ptr));
+      Constant* cons = ConstantExpr::getIntToPtr(CI, ConstantPoolType);
+      varGV = new GlobalVariable(ConstantPoolType, false,
+                                 GlobalValue::ExternalLinkage,
+                                 cons, "", this);
+      constantPools.insert(std::make_pair(ctp, varGV));
+    } else {
+      varGV = I->second;
+    }
+
+    if (BasicBlock* BB = dyn_cast<BasicBlock>(Where)) {
+      return new LoadInst(varGV, "", BB);
+    } else {
+      assert(dyn_cast<Instruction>(Where) && "Wrong use of module");
+      return new LoadInst(varGV, "", dyn_cast<Instruction>(Where));
+    }
+  } else {
     void* ptr = ctp->ctpRes;
     assert(ptr && "No constant pool found");
-    Constant* cons = 
-      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
-                                ConstantPoolType);
-    varGV = new GlobalVariable(ConstantPoolType, !staticCompilation,
-                               GlobalValue::ExternalLinkage,
-                               cons, "", this);
-    constantPools.insert(std::make_pair(ctp, varGV));
-  } else {
-    varGV = I->second;
+    ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(ptr));
+    return ConstantExpr::getIntToPtr(CI, ConstantPoolType);
   }
-  return varGV;
 }
 
-Value* JnjvmModule::getString(JavaString* str) {
-  llvm::GlobalVariable* varGV;
-  string_iterator SI = strings.find(str);
-  if (SI != strings.end()) {
-    varGV = SI->second;
+Value* JnjvmModule::getString(JavaString* str, Value* Where) {
+  if (staticCompilation) {
+    llvm::GlobalVariable* varGV;
+    string_iterator SI = strings.find(str);
+    if (SI != strings.end()) {
+      varGV = SI->second;
+    } else {
+      assert(str && "No string given");
+      ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64(str));
+      Constant* cons = ConstantExpr::getIntToPtr(CI, JavaObjectType);
+      varGV = new GlobalVariable(JnjvmModule::JavaObjectType, false,
+                                 GlobalValue::ExternalLinkage,
+                                 cons, "", this);
+      strings.insert(std::make_pair(str, varGV));
+    }
+    
+    if (BasicBlock* BB = dyn_cast<BasicBlock>(Where)) {
+      return new LoadInst(varGV, "", BB);
+    } else {
+      assert(dyn_cast<Instruction>(Where) && "Wrong use of module");
+      return new LoadInst(varGV, "", dyn_cast<Instruction>(Where));
+    }
   } else {
-    void* ptr = str;
-    assert(ptr && "No string given");
-    Constant* cons = 
-      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
-                                JnjvmModule::JavaObjectType);
-    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, !staticCompilation,
-                               GlobalValue::ExternalLinkage,
-                               cons, "", this);
-    strings.insert(std::make_pair(str, varGV));
+    assert(str && "No string given");
+    ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64(str));
+    return ConstantExpr::getIntToPtr(CI, JavaObjectType);
   }
-  return varGV;
 }
 
-Value* JnjvmModule::getEnveloppe(Enveloppe* enveloppe) {
-  llvm::GlobalVariable* varGV;
-  enveloppe_iterator SI = enveloppes.find(enveloppe);
-  if (SI != enveloppes.end()) {
-    varGV = SI->second;
+Value* JnjvmModule::getEnveloppe(Enveloppe* enveloppe, Value* Where) {
+  if (staticCompilation) {
+    llvm::GlobalVariable* varGV;
+    enveloppe_iterator SI = enveloppes.find(enveloppe);
+    if (SI != enveloppes.end()) {
+      varGV = SI->second;
+    } else {
+      void* ptr = enveloppe;
+      assert(ptr && "No enveloppe given");
+      ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64(ptr));
+      Constant* cons = ConstantExpr::getIntToPtr(CI, EnveloppeType);
+      varGV = new GlobalVariable(JnjvmModule::EnveloppeType, false,
+                                 GlobalValue::ExternalLinkage,
+                                 cons, "", this);
+      enveloppes.insert(std::make_pair(enveloppe, varGV));
+    }
+  
+    if (BasicBlock* BB = dyn_cast<BasicBlock>(Where)) {
+      return new LoadInst(varGV, "", BB);
+    } else {
+      assert(dyn_cast<Instruction>(Where) && "Wrong use of module");
+      return new LoadInst(varGV, "", dyn_cast<Instruction>(Where));
+    }
   } else {
     void* ptr = enveloppe;
     assert(ptr && "No enveloppe given");
-    Constant* cons = 
-      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(ptr)),
-                                JnjvmModule::EnveloppeType);
-    varGV = new GlobalVariable(JnjvmModule::EnveloppeType, !staticCompilation,
-                               GlobalValue::ExternalLinkage,
-                               cons, "", this);
-    enveloppes.insert(std::make_pair(enveloppe, varGV));
+    ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64(ptr));
+    return ConstantExpr::getIntToPtr(CI, JnjvmModule::EnveloppeType);
   }
-  return varGV;
 }
 
-Value* JnjvmModule::getJavaClass(CommonClass* cl) {
-  llvm::GlobalVariable* varGV = 0;
-  java_class_iterator End = javaClasses.end();
-  java_class_iterator I = javaClasses.find(cl);
-  if (I == End) {
+Value* JnjvmModule::getJavaClass(CommonClass* cl, Value* Where) {
+  if (staticCompilation) {
+    llvm::GlobalVariable* varGV = 0;
+    java_class_iterator End = javaClasses.end();
+    java_class_iterator I = javaClasses.find(cl);
+    if (I == End) {
     
-    JavaObject* obj = isStaticCompiling() ? 0 : 
-      cl->getClassDelegatee(JavaThread::get()->getJVM());
-    assert((obj || isStaticCompiling()) && "Delegatee not created");
-    Constant* cons = 
-      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64(obj)),
-                                JnjvmModule::JavaObjectType);
-    varGV = new GlobalVariable(JnjvmModule::JavaObjectType, !staticCompilation,
-                               GlobalValue::ExternalLinkage,
-                               cons, "", this);
+      Constant* cons = ConstantExpr::getIntToPtr(constantZero, JavaObjectType);
+      varGV = new GlobalVariable(JnjvmModule::JavaObjectType, false,
+                                 GlobalValue::ExternalLinkage,
+                                 cons, "", this);
 
-    javaClasses.insert(std::make_pair(cl, varGV));
+      javaClasses.insert(std::make_pair(cl, varGV));
+    } else {
+      varGV = I->second;
+    }
+  
+    if (BasicBlock* BB = dyn_cast<BasicBlock>(Where)) {
+      return new LoadInst(varGV, "", BB);
+    } else {
+      assert(dyn_cast<Instruction>(Where) && "Wrong use of module");
+      return new LoadInst(varGV, "", dyn_cast<Instruction>(Where));
+    }
   } else {
-    varGV = I->second;
+    JavaObject* obj = cl->getClassDelegatee(JavaThread::get()->getJVM());
+    assert(obj && "Delegatee not created");
+    Constant* CI = ConstantInt::get(Type::Int64Ty, uint64(obj));
+    return ConstantExpr::getIntToPtr(CI, JavaObjectType);
   }
-  return varGV;
 }
 
-Value* JnjvmModule::getStaticInstance(Class* classDef) {
-  llvm::GlobalVariable* varGV = 0;
-  static_instance_iterator End = staticInstances.end();
-  static_instance_iterator I = staticInstances.find(classDef);
-  if (I == End) {
-    LLVMClassInfo* LCI = getClassInfo(classDef);
-    LCI->getStaticType();
+Value* JnjvmModule::getStaticInstance(Class* classDef, Value* Where) {
+#ifdef ISOLATE
+  assert(0 && "Should not be here");
+  abort();
+#endif
+  if (staticCompilation) {
+    llvm::GlobalVariable* varGV = 0;
+    static_instance_iterator End = staticInstances.end();
+    static_instance_iterator I = staticInstances.find(classDef);
+    if (I == End) {
+      LLVMClassInfo* LCI = getClassInfo(classDef);
+      LCI->getStaticType();
+      void* obj = ((Class*)classDef)->getStaticInstance();
+      Constant* CI = ConstantInt::get(Type::Int64Ty, (uint64_t(obj)));
+      Constant* cons = ConstantExpr::getIntToPtr(CI, ptrType);
+      
+      varGV = new GlobalVariable(ptrType, false,
+                                 GlobalValue::ExternalLinkage,
+                                 cons, "", this);
+
+      staticInstances.insert(std::make_pair(classDef, varGV));
+    } else {
+      varGV = I->second;
+    }
+  
+    if (BasicBlock* BB = dyn_cast<BasicBlock>(Where)) {
+      return new LoadInst(varGV, "", BB);
+    } else {
+      assert(dyn_cast<Instruction>(Where) && "Wrong use of module");
+      return new LoadInst(varGV, "", dyn_cast<Instruction>(Where));
+    }
+  } else {
     void* obj = ((Class*)classDef)->getStaticInstance();
-#ifndef ISOLATE
-    if (!obj && !isStaticCompiling()) {
+    if (!obj) {
       Class* cl = (Class*)classDef;
       classDef->acquire();
       obj = cl->getStaticInstance();
@@ -195,74 +272,86 @@ Value* JnjvmModule::getStaticInstance(Class* classDef) {
       }
       classDef->release();
     }
-#endif
-    Constant* cons = 
-      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
-                                uint64_t (obj)), ptrType);
-      
-    varGV = new GlobalVariable(ptrType, !staticCompilation,
-                               GlobalValue::ExternalLinkage,
-                               cons, "", this);
-
-    staticInstances.insert(std::make_pair(classDef, varGV));
-  } else {
-    varGV = I->second;
+    Constant* CI = ConstantInt::get(Type::Int64Ty, (uint64_t(obj)));
+    return ConstantExpr::getIntToPtr(CI, ptrType);
   }
-
-  return varGV;
 }
 
-Value* JnjvmModule::getVirtualTable(Class* classDef) {
-  llvm::GlobalVariable* varGV = 0;
-  virtual_table_iterator End = virtualTables.end();
-  virtual_table_iterator I = virtualTables.find(classDef);
-  if (I == End) {
-    if (!classDef->isArray() && !classDef->isPrimitive()) {
-      LLVMClassInfo* LCI = getClassInfo((Class*)classDef);
-      LCI->getVirtualType();
+Value* JnjvmModule::getVirtualTable(Class* classDef, Value* Where) {
+  if (staticCompilation) {
+    llvm::GlobalVariable* varGV = 0;
+    virtual_table_iterator End = virtualTables.end();
+    virtual_table_iterator I = virtualTables.find(classDef);
+    if (I == End) {
+      void* ptr = classDef->virtualVT;
+      ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(ptr));
+      Constant* cons = ConstantExpr::getIntToPtr(CI, VTType);
+      varGV = new GlobalVariable(JnjvmModule::VTType, false,
+                                 GlobalValue::ExternalLinkage,
+                                 cons, "", this);
+    
+      virtualTables.insert(std::make_pair(classDef, varGV));
+    } else {
+      varGV = I->second;
     }
-    assert((classDef->virtualVT || isStaticCompiling()) && 
-           "Virtual VT not created");
-    Constant* cons = 
-      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
-                                                 uint64_t(classDef->virtualVT)),
-                                JnjvmModule::VTType);
-    varGV = new GlobalVariable(JnjvmModule::VTType, !staticCompilation,
-                               GlobalValue::ExternalLinkage,
-                               cons, "", this);
-    
-    virtualTables.insert(std::make_pair(classDef, varGV));
+  
+    if (BasicBlock* BB = dyn_cast<BasicBlock>(Where)) {
+      return new LoadInst(varGV, "", BB);
+    } else {
+      assert(dyn_cast<Instruction>(Where) && "Wrong use of module");
+      return new LoadInst(varGV, "", dyn_cast<Instruction>(Where));
+    }
   } else {
-    varGV = I->second;
+    LLVMClassInfo* LCI = getClassInfo((Class*)classDef);
+    LCI->getVirtualType();
+    assert(classDef->virtualVT && "Virtual VT not created");
+    void* ptr = classDef->virtualVT;
+    ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(ptr));
+    return ConstantExpr::getIntToPtr(CI, VTType);
   }
-  return varGV;
 }
 
-Value* JnjvmModule::getNativeFunction(JavaMethod* meth, void* ptr) {
-  llvm::GlobalVariable* varGV = 0;
-  native_function_iterator End = nativeFunctions.end();
-  native_function_iterator I = nativeFunctions.find(meth);
-  if (I == End) {
-    
+Value* JnjvmModule::getNativeFunction(JavaMethod* meth, void* ptr,
+                                      Value* Where) {
+  if (staticCompilation) {
+    llvm::GlobalVariable* varGV = 0;
+    native_function_iterator End = nativeFunctions.end();
+    native_function_iterator I = nativeFunctions.find(meth);
+    if (I == End) {
       
+      LLVMSignatureInfo* LSI = getSignatureInfo(meth->getSignature());
+      const llvm::Type* valPtrType = LSI->getNativePtrType();
+    
+      assert((ptr || isStaticCompiling()) && "No native function given");
+
+      Constant* cons = 
+        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t(ptr)),
+                                  valPtrType);
+
+      varGV = new GlobalVariable(valPtrType, false,
+                                 GlobalValue::ExternalLinkage,
+                                 cons, "", this);
+    
+      nativeFunctions.insert(std::make_pair(meth, varGV));
+    } else {
+      varGV = I->second;
+    }
+  
+    if (BasicBlock* BB = dyn_cast<BasicBlock>(Where)) {
+      return new LoadInst(varGV, "", BB);
+    } else {
+      assert(dyn_cast<Instruction>(Where) && "Wrong use of module");
+      return new LoadInst(varGV, "", dyn_cast<Instruction>(Where));
+    }
+  } else {
     LLVMSignatureInfo* LSI = getSignatureInfo(meth->getSignature());
     const llvm::Type* valPtrType = LSI->getNativePtrType();
     
-    assert((ptr || isStaticCompiling()) && "No native function given");
+    assert(ptr && "No native function given");
 
-    Constant* cons = 
-      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t(ptr)),
-                                valPtrType);
-
-    varGV = new GlobalVariable(valPtrType, !staticCompilation,
-                               GlobalValue::ExternalLinkage,
-                               cons, "", this);
-    
-    nativeFunctions.insert(std::make_pair(meth, varGV));
-  } else {
-    varGV = I->second;
+    Constant* CI = ConstantInt::get(Type::Int64Ty, uint64_t(ptr));
+    return ConstantExpr::getIntToPtr(CI, valPtrType);
   }
-  return varGV;
 }
 
 #ifndef WITHOUT_VTABLE
@@ -1013,31 +1102,57 @@ void JnjvmModule::initialise() {
   OffsetStatusInTaskClassMirrorConstant = mvm::MvmModule::constantZero;
   
   ClassReadyConstant = ConstantInt::get(Type::Int32Ty, ready);
-  
-  Constant* cons = 
+ 
+  Constant* consPrim = 
     ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                                                uint64(JavaArray::VT)),
                               VTType);
-  PrimitiveArrayVT = new GlobalVariable(VTType, !staticCompilation, 
-                                        GlobalValue::ExternalLinkage,
-                                        cons, "", this);
   
-  cons = ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
-                                                    uint64(ArrayObject::VT)),
-                                   VTType);
-  ReferenceArrayVT = new GlobalVariable(VTType, !staticCompilation, 
-                                        GlobalValue::ExternalLinkage,
-                                        cons, "", this);
+  Constant* consRef = 
+    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
+                                               uint64(ArrayObject::VT)),
+                              VTType);
+
+  if (staticCompilation) {
+    PrimitiveArrayVT = new GlobalVariable(VTType, false, 
+                                          GlobalValue::ExternalLinkage,
+                                          consPrim, "", this);
+  
+    ReferenceArrayVT = new GlobalVariable(VTType, false, 
+                                          GlobalValue::ExternalLinkage,
+                                          consRef, "", this);
+  } else {
+    PrimitiveArrayVT = consPrim;
+    ReferenceArrayVT = consRef;
+  }
 
   LLVMAssessorInfo::initialise();
 }
 
-Value* JnjvmModule::getReferenceArrayVT(JavaJIT* JIT) {
-  return new LoadInst(ReferenceArrayVT, "", JIT->currentBlock);
+Value* JnjvmModule::getReferenceArrayVT(Value* Where) {
+  if (staticCompilation) {
+    if (BasicBlock* BB = dyn_cast<BasicBlock>(Where)) {
+      return new LoadInst(ReferenceArrayVT, "", BB);
+    } else {
+      assert(dyn_cast<Instruction>(Where) && "Wrong use of module");
+      return new LoadInst(ReferenceArrayVT, "", dyn_cast<Instruction>(Where));
+    }
+  } else {
+    return ReferenceArrayVT;
+  }
 }
 
-Value* JnjvmModule::getPrimitiveArrayVT(JavaJIT* JIT) {
-  return new LoadInst(PrimitiveArrayVT, "", JIT->currentBlock);
+Value* JnjvmModule::getPrimitiveArrayVT(Value* Where) {
+  if (staticCompilation) {
+    if (BasicBlock* BB = dyn_cast<BasicBlock>(Where)) {
+      return new LoadInst(PrimitiveArrayVT, "", BB);
+    } else {
+      assert(dyn_cast<Instruction>(Where) && "Wrong use of module");
+      return new LoadInst(PrimitiveArrayVT, "", dyn_cast<Instruction>(Where));
+    }
+  } else {
+    return PrimitiveArrayVT;
+  }
 }
 
 void JnjvmModule::setMethod(JavaMethod* meth, const char* name) {
@@ -1257,25 +1372,35 @@ JavaMethod* LLVMMethodInfo::get(const llvm::Function* F) {
 
 #ifdef SERVICE
 Value* JnjvmModule::getIsolate(Jnjvm* isolate) {
-  llvm::GlobalVariable* varGV = 0;
-  isolate_iterator End = isolates.end();
-  isolate_iterator I = isolates.find(isolate);
-  if (I == End) {
+  if (staticCompilation) {
+    llvm::GlobalVariable* varGV = 0;
+    isolate_iterator End = isolates.end();
+    isolate_iterator I = isolates.find(isolate);
+    if (I == End) {
     
       
-    Constant* cons = 
-      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
-                                                 uint64_t(isolate)),
-                                ptrType);
+      Constant* cons = 
+        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
+                                                   uint64_t(isolate)),
+                                  ptrType);
 
-    varGV = new GlobalVariable(ptrType, !staticCompilation,
-                               GlobalValue::ExternalLinkage,
-                               cons, "", this);
+      varGV = new GlobalVariable(ptrType, !staticCompilation,
+                                 GlobalValue::ExternalLinkage,
+                                 cons, "", this);
     
-    isolates.insert(std::make_pair(isolate, varGV));
+      isolates.insert(std::make_pair(isolate, varGV));
+    } else {
+      varGV = I->second;
+    }
+    if (BasicBlock* BB = dyn_cast<BasicBlock>(Where)) {
+      return new LoadInst(varGV, "", BB);
+    } else {
+      assert(dyn_cast<Instruction>(Where) && "Wrong use of module");
+      return new LoadInst(varGV, "", dyn_cast<Instruction>(Where));
+    }
   } else {
-    varGV = I->second;
+    ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(isolate));
+    return ConstantExpr::get(CI, ptrType);
   }
-  return varGV;
 }
 #endif

@@ -50,8 +50,7 @@ extern const char* GNUClasspathLibs;
 
 JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   
-  TheModule = new JnjvmModule("Bootstrap JnJVM");
-  getModule()->setIsStaticCompiling(staticCompilation);
+  TheModule = new JnjvmModule("Bootstrap JnJVM", staticCompilation);
   TheModuleProvider = new JnjvmModuleProvider(getModule());
   FunctionPasses = new FunctionPassManager(TheModuleProvider);
   FunctionPasses->add(new TargetData(TheModule));

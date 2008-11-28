@@ -92,8 +92,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   if (meth && !isAbstract(meth->access) && canBeInlined(meth)) {
     Value* cl = CallInst::Create(module->GetClassFunction, args[0], "",
                                   currentBlock);
-    Value* cl2 = module->getNativeClass((Class*)cl);
-    cl2 = new LoadInst(cl2, "", currentBlock);
+    Value* cl2 = module->getNativeClass((Class*)cl, currentBlock);
 
     Value* test = new ICmpInst(ICmpInst::ICMP_EQ, cl, cl2, "", currentBlock);
 
@@ -241,8 +240,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
                                   val, "", currentBlock);
     nativeArgs.push_back(res);
 #else
-    Value* cl = module->getJavaClass(compilingClass);
-    cl= new LoadInst(cl, "", currentBlock);
+    Value* cl = module->getJavaClass(compilingClass, currentBlock);
     nativeArgs.push_back(cl);
 #endif
     index = 2;
@@ -255,8 +253,8 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     nativeArgs.push_back(i);
   }
   
-  Value* nativeFunc = module->getNativeFunction(compilingMethod, (void*)natPtr);
-  nativeFunc = new LoadInst(nativeFunc, "", currentBlock);
+  Value* nativeFunc = module->getNativeFunction(compilingMethod, (void*)natPtr,
+                                                currentBlock);
 
   Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs.begin(),
                                          nativeArgs.end(), "", currentBlock);
@@ -396,8 +394,7 @@ void JavaJIT::beginSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     obj = llvmFunction->arg_begin();
   } else {
-    Value* cl = module->getJavaClass(compilingClass);
-    obj = new LoadInst(cl, "", currentBlock);
+    obj = module->getJavaClass(compilingClass, currentBlock);
   }
   monitorEnter(obj);
 }
@@ -407,8 +404,7 @@ void JavaJIT::endSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     obj = llvmFunction->arg_begin();
   } else {
-    Value* cl = module->getJavaClass(compilingClass);
-    obj = new LoadInst(cl, "", currentBlock);
+    obj = module->getJavaClass(compilingClass, currentBlock);
   }
   monitorExit(obj);
 }
@@ -835,8 +831,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     if (isVirtual(compilingMethod->access)) {
       argsSync = llvmFunction->arg_begin();
     } else {
-      Value* cl = module->getJavaClass(compilingClass);
-      cl = new LoadInst(cl, "", currentBlock);
+      Value* cl = module->getJavaClass(compilingClass,
+                                       synchronizeExceptionBlock);
       argsSync = cl;
     }
     llvm::CallInst::Create(module->ReleaseObjectFunction, argsSync, "",
@@ -997,8 +993,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
                                isolateLocal, "", currentBlock);
 #else
     assert(cur->catchClass);
-    cl = module->getNativeClass(cur->catchClass);
-    cl = new LoadInst(cl, "", currentBlock);
+    cl = module->getNativeClass(cur->catchClass, currentBlock);
 #endif
     Value* cmp = CallInst::Create(module->CompareExceptionFunction, cl, "",
                                   currentBlock);
@@ -1108,8 +1103,7 @@ void JavaJIT::_ldc(uint16 index) {
     const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
     JavaString* str = compilingClass->classLoader->UTF8ToStr(utf8);
 
-    Value* val = module->getString(str);
-    val = new LoadInst(val, "", currentBlock);
+    Value* val = module->getString(str, currentBlock);
     push(val, false);
 #endif
         
@@ -1129,8 +1123,7 @@ void JavaJIT::_ldc(uint16 index) {
 #if !defined(ISOLATE)
     if (ctpInfo->ctpRes[index]) {
       CommonClass* cl = (CommonClass*)(ctpInfo->ctpRes[index]);
-      Value* Val = module->getJavaClass(cl);
-      Val = new LoadInst(Val, "", currentBlock);
+      Value* Val = module->getJavaClass(cl, currentBlock);
       push(Val, false);
     } else {
 #endif
@@ -1606,10 +1599,8 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   Cl = new LoadInst(Cl, "", currentBlock);
 #else
   JavaConstantPool* ctp = compilingClass->ctpInfo;
-  Value* CTP = module->getConstantPool(ctp);
-  CTP = new LoadInst(CTP, "", currentBlock);
-  Value* Cl = module->getNativeClass(compilingClass);
-  Cl = new LoadInst(Cl, "", currentBlock);
+  Value* CTP = module->getConstantPool(ctp, currentBlock);
+  Value* Cl = module->getNativeClass(compilingClass, currentBlock);
 #endif
 
   std::vector<Value*> Args;
@@ -1645,8 +1636,7 @@ Value* JavaJIT::getResolvedCommonClass(uint16 index, bool doThrow) {
   CommonClass* cl = ctpInfo->getMethodClassIfLoaded(index);
   Value* node = 0;
   if (cl && (!cl->isClass() || cl->asClass()->isResolved())) {
-    node = module->getNativeClass(cl);
-    node = new LoadInst(node, "", currentBlock);
+    node = module->getNativeClass(cl, currentBlock);
     if (node->getType() != module->JavaCommonClassType) {
       node = new BitCastInst(node, module->JavaCommonClassType, "",
                              currentBlock);
@@ -1665,8 +1655,7 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow) {
   Class* cl = (Class*)(ctpInfo->getMethodClassIfLoaded(index));
   Value* node = 0;
   if (cl && cl->isResolved()) {
-    node = module->getNativeClass(cl);
-    node = new LoadInst(node, "", currentBlock);
+    node = module->getNativeClass(cl, currentBlock);
   } else {
     node = getConstantPoolAt(index, module->ClassLookupFunction,
                              module->JavaCommonClassType, 0, doThrow);
@@ -1746,8 +1735,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     const Type* type = 0;
     if (stat) {
       type = LCI->getStaticType();
-      Value* Cl = module->getNativeClass(field->classDef);
-      Cl = new LoadInst(Cl, "", currentBlock);
+      Value* Cl = module->getNativeClass(field->classDef, currentBlock);
       if (needsInitialisationCheck(field->classDef, compilingClass)) {
         Cl = invoke(module->InitialisationCheckFunction, Cl, "",
                     currentBlock);
@@ -1979,8 +1967,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index, bool buggyVirtual) {
   if (!inlining)
     enveloppe.initialise(compilingClass->ctpInfo, index);
    
-  Value* llvmEnv = module->getEnveloppe(&enveloppe);
-  llvmEnv = new LoadInst(llvmEnv, "", currentBlock);
+  Value* llvmEnv = module->getEnveloppe(&enveloppe, currentBlock);
 #else
   Value* llvmEnv = getConstantPoolAt(index,
                                      module->EnveloppeLookupFunction,

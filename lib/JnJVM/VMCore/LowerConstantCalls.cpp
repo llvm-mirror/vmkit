@@ -154,8 +154,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             ConstantInt* C = (ConstantInt*)CE->getOperand(0);
             Class* cl = (Class*)C->getZExtValue();
             if (cl->isResolved()) {
-              Value* VT = module->getVirtualTable(cl);
-              VT = new LoadInst(VT, "", CI);
+              Value* VT = module->getVirtualTable(cl, CI);
               CI->replaceAllUsesWith(VT);
               CI->eraseFromParent();
               continue;
@@ -311,8 +310,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           ConstantInt* C = (ConstantInt*)CE->getOperand(0);
           Class* cl = (Class*)C->getZExtValue();
 
-          Value* Replace = module->getStaticInstance(cl);
-          Replace = new LoadInst(Replace, "", CI);
+          Value* Replace = module->getStaticInstance(cl, CI);
           CI->replaceAllUsesWith(Replace);
           CI->eraseFromParent();
 
@@ -498,8 +496,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                 const UTF8* arrayName = JCL->constructArrayName(1, cl->name);
           
                 UserCommonClass* dcl = JCL->constructArray(arrayName);
-                Value* valCl = module->getNativeClass(dcl);
-                valCl = new LoadInst(valCl, "", CI);
+                Value* valCl = module->getNativeClass(dcl, CI);
                 CI->replaceAllUsesWith(valCl);
                 CI->eraseFromParent();
                 continue;
