@@ -302,7 +302,7 @@ public:
   
   /// CommonClass - Create a class with th given name.
   ///
-  CommonClass(JnjvmClassLoader* loader, const UTF8* name, bool isArray);
+  CommonClass(JnjvmClassLoader* loader, const UTF8* name);
   
   /// ~CommonClass - Free memory used by this class, and remove it from
   /// metadata.

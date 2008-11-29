@@ -168,6 +168,9 @@ llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
 
 namespace mvm {
   llvm::FunctionPass* createEscapeAnalysisPass(llvm::Function*);
+}
+
+namespace jnjvm {
   llvm::FunctionPass* createLowerConstantCallsPass();
   llvm::FunctionPass* createLowerForcedCallsPass();
 }
@@ -182,14 +185,14 @@ JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
   JavaNativeFunctionPasses->add(new llvm::TargetData(m));
   // Lower constant calls to lower things like getClass used
   // on synchronized methods.
-  JavaNativeFunctionPasses->add(mvm::createLowerConstantCallsPass());
+  JavaNativeFunctionPasses->add(createLowerConstantCallsPass());
   
   JavaFunctionPasses = new llvm::FunctionPassManager(this);
   JavaFunctionPasses->add(new llvm::TargetData(m));
   Function* func = m->JavaObjectAllocateFunction;
   JavaFunctionPasses->add(mvm::createEscapeAnalysisPass(func));
-  JavaFunctionPasses->add(mvm::createLowerConstantCallsPass());
-  JavaFunctionPasses->add(mvm::createLowerForcedCallsPass());
+  JavaFunctionPasses->add(createLowerConstantCallsPass());
+  JavaFunctionPasses->add(createLowerForcedCallsPass());
   nbCallbacks = 0;
 }
 

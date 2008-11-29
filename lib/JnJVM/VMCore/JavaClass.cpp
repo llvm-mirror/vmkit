@@ -257,8 +257,7 @@ ClassPrimitive::byteIdToPrimitive(char id, Classpath* upcalls) {
   }
 }
 
-CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n,
-                         bool isArray) {
+CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n) {
   name = n;
   classLoader = loader;
   nbInterfaces = 0;
@@ -270,7 +269,7 @@ CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n,
 
 ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n,
                                uint32 nb) : 
-  CommonClass(loader, n, false) {
+  CommonClass(loader, n) {
  
   display = (CommonClass**)loader->allocator.Allocate(sizeof(CommonClass*));
   display[0] = this;
@@ -280,7 +279,7 @@ ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n,
 }
 
 Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) : 
-    CommonClass(loader, n, false) {
+    CommonClass(loader, n) {
   virtualVT = 0;
   bytes = B;
   super = 0;
@@ -306,7 +305,7 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
 
 ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
                        UserCommonClass* base) : 
-    CommonClass(loader, n, true) {
+    CommonClass(loader, n) {
   _baseClass = base;
   super = ClassArray::SuperArray;
   interfaces = ClassArray::InterfacesArray;

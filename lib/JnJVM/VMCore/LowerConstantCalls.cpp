@@ -20,9 +20,8 @@
 #include "JnjvmModule.h"
 
 using namespace llvm;
-using namespace jnjvm;
 
-namespace mvm {
+namespace jnjvm {
 
   class VISIBILITY_HIDDEN LowerConstantCalls : public FunctionPass {
   public:

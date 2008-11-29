@@ -19,8 +19,6 @@ namespace jnjvm {
 
 class Class;
 class CommonClass;
-class Jnjvm;
-class JavaConstantPool;
 class JavaField;
 class JavaMethod;
 class JavaString;
@@ -251,16 +249,10 @@ public:
   
   /// loadClass - Loads the class and returns it. This is called just in time, 
   /// ie when the class will be used and not yet resolved, and also for
-  /// two special instructions when JIIting: exception comparisons, and
-  /// MULTIANEWARRAY. This function is also called by the classpath for
-  /// loading exception classes referenced by a method.
+  /// loading exceptions when JITting catch clauses.
   ///
   CommonClass* loadClass(uint32 index);
 
-  /// JavaConstantPool - Default constructor.
-  ///
-  JavaConstantPool() {}
-  
   /// JavaConstantPool - Reads the bytecode of the class to get
   /// the initial types and constants definitions.
   ///
