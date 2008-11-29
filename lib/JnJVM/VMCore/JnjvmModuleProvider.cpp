@@ -180,8 +180,6 @@ JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
     
   JavaNativeFunctionPasses = new llvm::FunctionPassManager(this);
   JavaNativeFunctionPasses->add(new llvm::TargetData(m));
-  // Inst-combine for folding constant pointer classes.
-  JavaNativeFunctionPasses->add(llvm::createInstructionCombiningPass());
   // Lower constant calls to lower things like getClass used
   // on synchronized methods.
   JavaNativeFunctionPasses->add(mvm::createLowerConstantCallsPass());
@@ -189,8 +187,6 @@ JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
   JavaFunctionPasses = new llvm::FunctionPassManager(this);
   JavaFunctionPasses->add(new llvm::TargetData(m));
   Function* func = m->JavaObjectAllocateFunction;
-  // Inst-combine for folding constant pointer classes.
-  JavaFunctionPasses->add(llvm::createInstructionCombiningPass());
   JavaFunctionPasses->add(mvm::createEscapeAnalysisPass(func));
   JavaFunctionPasses->add(mvm::createLowerConstantCallsPass());
   JavaFunctionPasses->add(mvm::createLowerForcedCallsPass());
