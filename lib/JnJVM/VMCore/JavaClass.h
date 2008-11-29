@@ -1136,7 +1136,7 @@ public:
   /// ptrOffset - The offset of the field when the object containing
   /// the field is casted to an array of bytes.
   ///
-  uint64 ptrOffset;
+  uint32 ptrOffset;
   
   /// num - The index of the field in the field list.
   ///
