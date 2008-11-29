@@ -1371,8 +1371,8 @@ JavaMethod* LLVMMethodInfo::get(const llvm::Function* F) {
 }
 
 #ifdef SERVICE
-Value* JnjvmModule::getIsolate(Jnjvm* isolate) {
-  if (staticCompilation) {
+Value* JnjvmModule::getIsolate(Jnjvm* isolate, Value* Where) {
+  if (staticCompilation) {
     llvm::GlobalVariable* varGV = 0;
     isolate_iterator End = isolates.end();
     isolate_iterator I = isolates.find(isolate);
@@ -1400,7 +1400,7 @@ Value* JnjvmModule::getIsolate(Jnjvm* isolate) {
     }
   } else {
     ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(isolate));
-    return ConstantExpr::get(CI, ptrType);
+    return ConstantExpr::getIntToPtr(CI, ptrType);
   }
 }
 #endif

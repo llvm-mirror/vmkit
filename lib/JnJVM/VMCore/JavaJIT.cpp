@@ -674,8 +674,7 @@ llvm::Function* JavaJIT::javaCompile() {
                                            currentBlock);
      
     OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
-    NewIsolate = module->getIsolate(loader->getIsolate());
-    NewIsolate = new LoadInst(NewIsolate, "", currentBlock);
+    NewIsolate = module->getIsolate(loader->getIsolate(), currentBlock);
     new StoreInst(NewIsolate, IsolatePtr, currentBlock);
 
 #if DEBUG
@@ -1059,8 +1058,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
                                            cur->javaHandler);
      
     OldIsolate = new LoadInst(IsolatePtr, "", cur->javaHandler);
-    NewIsolate = module->getIsolate(loader->getIsolate());
-    NewIsolate = new LoadInst(NewIsolate, "", cur->javaHandler);
+    NewIsolate = module->getIsolate(loader->getIsolate(), currentBlock);
     new StoreInst(NewIsolate, IsolatePtr, cur->javaHandler);
 
   }

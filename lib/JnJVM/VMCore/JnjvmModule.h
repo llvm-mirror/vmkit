@@ -394,7 +394,7 @@ public:
   typedef std::map<const Jnjvm*, llvm::GlobalVariable*>::iterator
     isolate_iterator;
   
-  llvm::Value* getIsolate(Jnjvm* vm);
+  llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
 #endif
   
 private:
