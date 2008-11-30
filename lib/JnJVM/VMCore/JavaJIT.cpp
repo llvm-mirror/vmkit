@@ -769,9 +769,9 @@ llvm::Function* JavaJIT::javaCompile() {
     currentBlock->eraseFromParent();
   } else {
     if (returnType != Type::VoidTy)
-      llvm::ReturnInst::Create(endNode, currentBlock);
+      ReturnInst::Create(endNode, currentBlock);
     else
-      llvm::ReturnInst::Create(currentBlock);
+      ReturnInst::Create(currentBlock);
   }
 
   PI = pred_begin(endExceptionBlock);
@@ -811,10 +811,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
   sint16 nbe = reader.readU2();
   sint16 sync = isSynchro(compilingMethod->access) ? 1 : 0;
   nbe += sync;
-  if (nbe) {
-    supplLocal = new AllocaInst(module->JavaObjectType, "exceptionVar",
-                                currentBlock);
-  }
   
   BasicBlock* realEndExceptionBlock = endExceptionBlock;
   BasicBlock* endExceptionBlockCatcher = endExceptionBlock;
@@ -834,26 +830,25 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
                                        synchronizeExceptionBlock);
       argsSync = cl;
     }
-    llvm::CallInst::Create(module->ReleaseObjectFunction, argsSync, "",
-                           synchronizeExceptionBlock);
+    CallInst::Create(module->ReleaseObjectFunction, argsSync, "",
+                     synchronizeExceptionBlock);
 
-    llvm::BranchInst::Create(endExceptionBlock, synchronizeExceptionBlock);
+    BranchInst::Create(endExceptionBlock, synchronizeExceptionBlock);
     
     const PointerType* PointerTy_0 = module->ptrType;
-    Instruction* ptr_eh_ptr = 
-      llvm::CallInst::Create(module->llvmGetException, "eh_ptr",
-                             trySynchronizeExceptionBlock);
+    Instruction* ptr_eh_ptr = CallInst::Create(module->llvmGetException,
+                                               "eh_ptr",
+                                                trySynchronizeExceptionBlock);
     Constant* C = ConstantExpr::getCast(Instruction::BitCast,
                                         module->personality, PointerTy_0);
     Value* int32_eh_select_params[3] = 
       { ptr_eh_ptr, C, module->constantPtrNull };
-    llvm::CallInst::Create(module->exceptionSelector,
-                           int32_eh_select_params,
-                           int32_eh_select_params + 3,
-                           "eh_select", trySynchronizeExceptionBlock);
+    CallInst::Create(module->exceptionSelector, int32_eh_select_params,
+                     int32_eh_select_params + 3, "eh_select", 
+                     trySynchronizeExceptionBlock);
 
-    llvm::BranchInst::Create(synchronizeExceptionBlock,
-                             trySynchronizeExceptionBlock);
+    BranchInst::Create(synchronizeExceptionBlock,
+                       trySynchronizeExceptionBlock);
 
     for (uint16 i = 0; i < codeLen; ++i) {
       if (opcodeInfos[i].exceptionBlock == endExceptionBlock) {
@@ -994,9 +989,47 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     assert(cur->catchClass);
     cl = module->getNativeClass(cur->catchClass, currentBlock);
 #endif
+    
+#ifdef SERVICE
+  JnjvmClassLoader* loader = compilingClass->classLoader;;
+  if (loader != loader->bootstrapLoader) {
+    Value* threadId = CallInst::Create(module->llvm_frameaddress,
+                                       module->constantZero,
+                                       "", currentBlock);
+    threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
+                                currentBlock);
+    threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+                                         "", currentBlock);
+  
+    threadId = new IntToPtrInst(threadId, module->ptrPtrType, "",
+                                currentBlock);
+     
+    Value* Isolate = GetElementPtrInst::Create(threadId,
+                                               module->constantFour, "",
+                                               currentBlock);
+     
+    Isolate = new LoadInst(IsolatePtr, "", currentBlock);
+    Isolate = new BitCastInst(Isolate, module->ptrPtrType, "", currentBlock);
+    Value* Status = GetElementPtrInst::Create(Isolate, module->constantOne, "",
+                                              currentBlock);
+    Status = new LoadInst(Status, "", currentBlock);
+    Status = new PtrToIntInst(Status, Type::Int32Ty, "", currentBlock);
+
+    Value* stopping = new ICmpInst(ICmpInst::ICMP_EQ, Status,
+                                   module->constantOne, "", currentBlock);
+
+    BasicBlock* raiseBlock = createBasicBlock("raiseBlock");
+    BasicBlock* continueBlock = createBasicBlock("continueBlock");
+    BranchInst::Create(raiseBlock, continueBlock, stopping, currentBlock);
+    currentBlock = raiseBlock;
+    BranchInst::Create(endExceptionBlock, currentBlock); 
+
+    currentBlock = continueBlock;
+#endif
+    
     Value* cmp = CallInst::Create(module->CompareExceptionFunction, cl, "",
                                   currentBlock);
-    llvm::BranchInst::Create(cur->nativeHandler, bbNext, cmp, currentBlock);
+    BranchInst::Create(cur->nativeHandler, bbNext, cmp, currentBlock);
     if (nodeNext)
       nodeNext->addIncoming(cur->exceptionPHI, currentBlock);
     
@@ -1005,10 +1038,10 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     cur->handlerPHI->addIncoming(cur->exceptionPHI, currentBlock);
     Value* exc = CallInst::Create(module->GetJavaExceptionFunction,
                                   "", cur->nativeHandler);
+    CallInst::Create(module->ClearExceptionFunction, "", cur->nativeHandler);
     CallInst::Create(module->exceptionBeginCatch, cur->handlerPHI,
                            "tmp8", cur->nativeHandler);
     CallInst::Create(module->exceptionEndCatch, "", cur->nativeHandler);
-    CallInst::Create(module->ClearExceptionFunction, "", cur->nativeHandler);
 
     BranchInst::Create(cur->javaHandler, cur->nativeHandler);
 
@@ -1017,7 +1050,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
                                       cur->javaHandler);
       node->addIncoming(exc, cur->nativeHandler);
       
-      new StoreInst(node, supplLocal, false, cur->javaHandler);
     } else {
       Instruction* insn = cur->javaHandler->begin();
       PHINode* node = dyn_cast<PHINode>(insn);
@@ -1208,28 +1240,19 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
   return ptr;
 
 }
-
 void JavaJIT::setCurrentBlock(BasicBlock* newBlock) {
 
-  std::vector< std::pair<Value*, bool> > newStack;
+  stack.clear();
   uint32 index = 0;
   for (BasicBlock::iterator i = newBlock->begin(), e = newBlock->end(); i != e;
        ++i, ++index) {
-    // case 2 happens with handlers
-    if (!(isa<PHINode>(i)) || i->getType() == module->ptrType) {
+    if (!(isa<PHINode>(i))) {
       break;
     } else {
-      const llvm::Type* type = i->getType();
-      if (type == Type::Int32Ty || type == Type::Int16Ty || 
-          type == Type::Int8Ty) {
-        newStack.push_back(std::make_pair(i, false));
-      } else {
-        newStack.push_back(std::make_pair(i, stack[index].second));
-      }
+      stack.push_back(std::make_pair(i, false));
     }
   }
   
-  stack = newStack;
   currentBlock = newBlock;
 }
 

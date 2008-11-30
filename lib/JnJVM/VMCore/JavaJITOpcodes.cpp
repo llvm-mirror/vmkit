@@ -132,6 +132,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       if (currentBlock->getTerminator() == 0) {
         branch(opinfo->newBlock, currentBlock);
       }
+      
       setCurrentBlock(opinfo->newBlock);
     }
     currentExceptionBlock = opinfo->exceptionBlock;
@@ -160,12 +161,6 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
     }
 #endif
     
-    // If we're an exception handler and no one has pushed our exception
-    // variable on stack, then do it now.
-    if (opinfo->reqSuppl && stack.size() != 1) {
-      push(new LoadInst(supplLocal, "", currentBlock), false);
-    }
-
     switch (bytecodes[i]) {
       
       case ACONST_NULL : 
@@ -1660,9 +1655,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                     ConstantInt::get(Type::Int64Ty,
                                                      uint64_t (jsrIndex++)),
                                     module->JavaObjectType);
-        new StoreInst(expr, supplLocal, false, currentBlock);
-        BranchInst::Create(opcodeInfos[tmp + readS2(bytecodes, i)].newBlock,
-                       currentBlock);
+        push(expr, false);
+        branch(opcodeInfos[tmp + readS2(bytecodes, i)].newBlock,
+               currentBlock);
         break;
       }
 

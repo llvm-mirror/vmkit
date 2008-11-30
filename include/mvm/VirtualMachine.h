@@ -50,6 +50,7 @@ public:
 #endif
 
 #ifdef SERVICE
+  size_t status;
   uint64_t memoryUsed;
   uint64_t gcTriggered;
   uint64_t executionTime;
