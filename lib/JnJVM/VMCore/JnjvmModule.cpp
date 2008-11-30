@@ -501,14 +501,18 @@ VirtualTable* JnjvmModule::makeVT(Class* cl) {
 #else
       JnjvmClassLoader* loader = cl->classLoader;
       Function* func = loader->getModuleProvider()->parseFunction(&meth);
-      if (!cl->super) meth.canBeInlined = true;
-      Function::iterator BB = func->begin();
-      BasicBlock::iterator I = BB->begin();
-      if (isa<ReturnInst>(I)) {
+      if (!cl->super) {
+        meth.canBeInlined = true;
         ((void**)VT)[0] = 0;
       } else {
-        // LLVM does not allow recursive compilation. Create the code now.
-        ((void**)VT)[0] = EE->getPointerToFunction(func);
+        Function::iterator BB = func->begin();
+        BasicBlock::iterator I = BB->begin();
+        if (isa<ReturnInst>(I)) {
+          ((void**)VT)[0] = 0;
+        } else {
+          // LLVM does not allow recursive compilation. Create the code now.
+          ((void**)VT)[0] = EE->getPointerToFunction(func);
+        }
       }
     }
 #endif
