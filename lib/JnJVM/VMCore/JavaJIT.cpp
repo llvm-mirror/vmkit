@@ -1005,10 +1005,10 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     cur->handlerPHI->addIncoming(cur->exceptionPHI, currentBlock);
     Value* exc = CallInst::Create(module->GetJavaExceptionFunction,
                                   "", cur->nativeHandler);
-    CallInst::Create(module->ClearExceptionFunction, "", cur->nativeHandler);
     CallInst::Create(module->exceptionBeginCatch, cur->handlerPHI,
                            "tmp8", cur->nativeHandler);
     CallInst::Create(module->exceptionEndCatch, "", cur->nativeHandler);
+    CallInst::Create(module->ClearExceptionFunction, "", cur->nativeHandler);
 
     BranchInst::Create(cur->javaHandler, cur->nativeHandler);
 
