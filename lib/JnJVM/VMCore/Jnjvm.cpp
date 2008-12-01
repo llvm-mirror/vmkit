@@ -745,18 +745,24 @@ void Jnjvm::loadBootstrap() {
   cl->initialiseClass(this);
   
   // If a string belongs to the vm hashmap, we must remove it when
-  // it's destroyed. So we change the destructor of java.lang.String
-  // to perform this action.
-  LOAD_CLASS(upcalls->newString);
-  uintptr_t* ptr = ((uintptr_t*)upcalls->newString->getVirtualVT());
-  ptr[VT_DESTRUCTOR_OFFSET] = (uintptr_t)JavaString::stringDestructor;
-  
+  // it's destroyed. So we define a new VT for strings that will be
+  // placed in the hashmap. This VT will have its destructor set so
+  // that the string is removed when deallocated.
+  upcalls->newString->resolveClass();
+  void* stringVT = ((void*)upcalls->newString->getVirtualVT());
+  uint32 size = upcalls->newString->virtualTableSize * sizeof(void*);
+  JavaString::internStringVT = bootstrapLoader->allocator.Allocate(size);
+  memcpy(JavaString::internStringVT, stringVT, size);
+  ((void**)(JavaString::internStringVT))[VT_DESTRUCTOR_OFFSET] = 
+    (void*)(uintptr_t)JavaString::stringDestructor;
+  upcalls->newString->initialiseClass(this);
+
   // To make classes non GC-allocated, we have to bypass the tracer
   // functions of java.lang.Class, java.lang.reflect.Field,
   // java.lang.reflect.Method and java.lang.reflect.constructor. The new
   // tracer functions trace the classloader instead of the class/field/method.
   LOAD_CLASS(upcalls->newClass);
-  ptr = ((uintptr_t*)upcalls->newClass->getVirtualVT());
+  uintptr_t* ptr = ((uintptr_t*)upcalls->newClass->getVirtualVT());
   ptr[VT_TRACER_OFFSET] = (uintptr_t)JavaObjectClass::staticTracer;
 
   LOAD_CLASS(upcalls->newConstructor);

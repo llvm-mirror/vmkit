@@ -32,6 +32,8 @@ public:
   static void stringDestructor(JavaString*);
   char* strToAsciiz();
   const UTF8* strToUTF8(Jnjvm* vm);
+
+  static VirtualTable* internStringVT;
 };
 
 } // end namespace jnjvm

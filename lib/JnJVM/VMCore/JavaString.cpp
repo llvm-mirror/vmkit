@@ -17,10 +17,15 @@
 
 using namespace jnjvm;
 
+VirtualTable* JavaString::internStringVT = 0;
 
 JavaString* JavaString::stringDup(const UTF8*& utf8, Jnjvm* vm) {
   UserClass* cl = vm->upcalls->newString;
   JavaString* res = (JavaString*)cl->doNew(vm);
+  
+  // It's a hashed string, set the destructor so that the string
+  // removes itself from the vm string map.
+  res->setVirtualTable(internStringVT);
 
   // No need to call the Java function: both the Java function and
   // this function do the same thing.
