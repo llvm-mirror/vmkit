@@ -8,7 +8,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <stdarg.h>
+#include <cstdarg>
 
 #include "mvm/JIT.h"
 #include "mvm/Threads/Thread.h"
