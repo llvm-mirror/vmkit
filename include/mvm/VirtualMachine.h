@@ -55,6 +55,8 @@ public:
   uint64_t gcTriggered;
   uint64_t executionTime;
   uint64_t numThreads;
+  CompilationUnit* CU;
+  void stopService();
 #endif
 
   mvm::Allocator gcAllocator;

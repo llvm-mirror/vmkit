@@ -1008,7 +1008,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
                                                module->constantFour, "",
                                                currentBlock);
      
-    Isolate = new LoadInst(IsolatePtr, "", currentBlock);
+    Isolate = new LoadInst(Isolate, "", currentBlock);
     Isolate = new BitCastInst(Isolate, module->ptrPtrType, "", currentBlock);
     Value* Status = GetElementPtrInst::Create(Isolate, module->constantOne, "",
                                               currentBlock);
@@ -1025,6 +1025,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     BranchInst::Create(endExceptionBlock, currentBlock); 
 
     currentBlock = continueBlock;
+  }
 #endif
     
     Value* cmp = CallInst::Create(module->CompareExceptionFunction, cl, "",
@@ -1057,7 +1058,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
       node->addIncoming(exc, cur->nativeHandler);
     }
 #if defined(SERVICE)
-  JnjvmClassLoader* loader = compilingClass->classLoader;;
   Value* threadId = 0;
   Value* OldIsolateID = 0;
   Value* IsolateIDPtr = 0;
