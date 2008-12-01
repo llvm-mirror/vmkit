@@ -157,7 +157,19 @@ public:
 #endif
       collect_unprotect();
     }
-    
+   
+#ifdef SERVICE
+    if (threads->get_nb_threads()) {
+      VirtualMachine* vm = mvm::Thread::get()->MyVM;
+      if (vm->memoryUsed + n > vm->memoryLimit) {
+        fprintf(stderr, "Limite atteinte, tue le bundle\n");
+        unlock();
+        vm->stopService();
+        return 0;
+      }
+    }
+#endif
+
     register GCChunkNode *header = allocator->alloc_chunk(n, 1, current_mark & 1);
 #ifdef SERVICE
     if (threads->get_nb_threads()) {

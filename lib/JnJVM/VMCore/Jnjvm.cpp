@@ -751,10 +751,12 @@ void Jnjvm::loadBootstrap() {
   upcalls->newString->resolveClass();
   void* stringVT = ((void*)upcalls->newString->getVirtualVT());
   uint32 size = upcalls->newString->virtualTableSize * sizeof(void*);
-  JavaString::internStringVT = bootstrapLoader->allocator.Allocate(size);
-  memcpy(JavaString::internStringVT, stringVT, size);
-  ((void**)(JavaString::internStringVT))[VT_DESTRUCTOR_OFFSET] = 
-    (void*)(uintptr_t)JavaString::stringDestructor;
+  if (!JavaString::internStringVT) {
+    JavaString::internStringVT = bootstrapLoader->allocator.Allocate(size);
+    memcpy(JavaString::internStringVT, stringVT, size);
+    ((void**)(JavaString::internStringVT))[VT_DESTRUCTOR_OFFSET] = 
+      (void*)(uintptr_t)JavaString::stringDestructor;
+  }
   upcalls->newString->initialiseClass(this);
 
   // To make classes non GC-allocated, we have to bypass the tracer
@@ -888,6 +890,10 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
 
   vm->loadBootstrap();
 
+#ifdef SERVICE
+  thread->ServiceException = vm->upcalls->newThrowable->doNew(vm);
+#endif
+
   ClArgumentsInfo& info = vm->argumentsInfo;
   
   if (info.agents.size()) {
@@ -920,7 +926,7 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
 
 #include <signal.h>
 
-extern void terminationHandler(int, siginfo_t*, void*);
+extern void terminationHandler(int);
 
 static void serviceCPUMonitor(mvm::Thread* th) {
   while (true) {
@@ -944,16 +950,22 @@ void Jnjvm::runApplication(int argc, char** argv) {
     
     argumentsInfo.argv = argumentsInfo.argv + pos - 1;
     argumentsInfo.argc = argumentsInfo.argc - pos + 1;
+#ifdef SERVICE
+    struct sigaction sa;
+    sigset_t mask;
+    sigfillset(&mask);
+    sigaction(SIGUSR1, 0, &sa);
+    sa.sa_mask = mask;
+    sa.sa_handler = terminationHandler;
+    sa.sa_flags |= SA_RESTART;
+    sigaction(SIGUSR1, &sa, NULL);
+
+    mvm::Thread* th = new JavaThread(0, 0, this);
+    th->start(serviceCPUMonitor);
+#endif
     
     bootstrapThread = new JavaThread(0, 0, this);
     bootstrapThread->start((void (*)(mvm::Thread*))mainJavaStart);
-#ifdef SERVICE
-    mvm::Thread* th = new JavaThread(0, 0, this);
-    th->start(serviceCPUMonitor);
-    struct sigaction sa;
-    sa.sa_sigaction = terminationHandler;
-    sigaction(SIGUSR1, &sa, NULL);
-#endif
   } else {
     threadSystem.nonDaemonThreads = 0;
   }
@@ -984,6 +996,11 @@ Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) {
     }
   }
   IsolateLock.unlock();
+#endif
+
+#ifdef SERVICE
+  memoryLimit = ~0;
+  executionLimit = ~0;
 #endif
 
 }

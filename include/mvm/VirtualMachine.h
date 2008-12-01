@@ -56,7 +56,10 @@ public:
   uint64_t executionTime;
   uint64_t numThreads;
   CompilationUnit* CU;
-  void stopService();
+  virtual void stopService() {}
+
+  uint64_t memoryLimit;
+  uint64_t executionLimit;
 #endif
 
   mvm::Allocator gcAllocator;

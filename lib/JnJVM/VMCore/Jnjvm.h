@@ -332,6 +332,10 @@ public:
   static mvm::LockNormal IsolateLock;
 #endif
 
+#ifdef SERVICE
+  virtual void stopService();
+#endif
+
 };
 
 } // end namespace jnjvm

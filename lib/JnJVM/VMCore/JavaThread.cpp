@@ -16,6 +16,7 @@
 #include "JavaJIT.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
+#include "JavaUpcalls.h"
 #include "Jnjvm.h"
 
 
@@ -37,6 +38,11 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
   interruptFlag = 0;
   state = StateRunning;
   pendingException = 0;
+#ifdef SERVICE
+  if (isolate->upcalls->newThrowable) {
+    ServiceException = isolate->upcalls->newThrowable->doNew(isolate);
+  }
+#endif
 }
 
 JavaThread::~JavaThread() {}

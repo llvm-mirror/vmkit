@@ -105,6 +105,10 @@ public:
     print(buf);
     return buf->contents()->cString();
   }
+
+#ifdef SERVICE
+  JavaObject* ServiceException;
+#endif
   
 private:
   virtual void internalClearException() {
