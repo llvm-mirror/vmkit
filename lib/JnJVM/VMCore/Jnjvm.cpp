@@ -161,7 +161,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
         setOwnerClass(0);
         broadcastClass();
         release();
-        throw exc;
+        JavaThread::throwException(exc);
       }
     }
  
@@ -251,7 +251,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     setOwnerClass(0);
     broadcastClass();
     release();
-    throw exc;
+    JavaThread::throwException(exc);
   }
 }
       
