@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <setjmp.h>
-#include <stdlib.h>
+#include <csetjmp>
+#include <cstdlib>
 
 #include "mvm/GC/GC.h"
 #include "gccollector.h"
