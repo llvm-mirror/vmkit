@@ -1283,6 +1283,22 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
 #endif
 
   GetLockFunction = module->getFunction("getLock");
+  
+  addTypeName("JavaObject", JavaObjectType);
+  addTypeName("JavaArray", JavaArrayType);
+  addTypeName("JavaCommonClass", JavaCommonClassType);
+  addTypeName("JavaClass", JavaClassType);
+  addTypeName("ArrayUInt8", JavaArrayUInt8Type);
+  addTypeName("ArraySInt8", JavaArraySInt8Type);
+  addTypeName("ArrayUInt16", JavaArrayUInt16Type);
+  addTypeName("ArraySInt16", JavaArraySInt16Type);
+  addTypeName("ArraySInt32", JavaArraySInt32Type);
+  addTypeName("ArrayLong", JavaArrayLongType);
+  addTypeName("ArrayFloat", JavaArrayFloatType);
+  addTypeName("ArrayDouble", JavaArrayDoubleType);
+  addTypeName("ArrayObject", JavaArrayObjectType);
+  addTypeName("CacheNode", CacheNodeType); 
+  addTypeName("Enveloppe", EnveloppeType); 
 }
 
 void LLVMAssessorInfo::initialise() {
