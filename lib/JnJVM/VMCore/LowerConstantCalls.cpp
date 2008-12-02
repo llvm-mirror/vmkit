@@ -347,10 +347,14 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           
           ConstantInt* C = (ConstantInt*)CE->getOperand(0);
           Class* cl = (Class*)C->getZExtValue();
-
+          
+          Instruction* R = dyn_cast<Instruction>(Call.getArgument(0));
           Value* Replace = module->getStaticInstance(cl, CI);
           CI->replaceAllUsesWith(Replace);
           CI->eraseFromParent();
+          
+          if (R && !R->getNumUses()) R->eraseFromParent();
+         
 
 #elif defined(ISOLATE)
           Value* TCM = getTCM(module, Call.getArgument(0), CI);
