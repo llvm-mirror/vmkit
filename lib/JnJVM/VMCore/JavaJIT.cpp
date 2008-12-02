@@ -678,7 +678,7 @@ llvm::Function* JavaJIT::javaCompile() {
     new StoreInst(NewIsolate, IsolatePtr, currentBlock);
 
 #if DEBUG
-    Value* GEP[2] = { OldIsolate, NewIsolate };
+    Value* GEP[2] = { OldIsolate, NewIsolate };
     CallInst::Create(module->ServiceCallStartFunction, GEP, GEP + 2,
                      "", currentBlock);
 #endif
@@ -754,7 +754,7 @@ llvm::Function* JavaJIT::javaCompile() {
     new StoreInst(OldIsolate, IsolatePtr, currentBlock);
 
 #if DEBUG
-    Value* GEP[2] = { OldIsolate, NewIsolate };
+    Value* GEP[2] = { OldIsolate, NewIsolate };
     CallInst::Create(module->ServiceCallStopFunction, GEP, GEP + 2,
                      "", currentBlock);
 #endif
