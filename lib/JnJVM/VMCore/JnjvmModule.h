@@ -314,6 +314,7 @@ public:
 #endif
 
   llvm::Function* GetClassDelegateeFunction;
+  llvm::Function* RuntimeDelegateeFunction;
   llvm::Function* ArrayLengthFunction;
   llvm::Function* GetVTFunction;
   llvm::Function* GetClassFunction;

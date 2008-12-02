@@ -314,7 +314,7 @@ extern "C" UserCommonClass* jnjvmRuntimeInitialiseClass(UserClass* cl) {
   return cl;
 }
 
-extern "C" JavaObject* getClassDelegatee(UserCommonClass* cl) {
+extern "C" JavaObject* jnjvmRuntimeDelegatee(UserCommonClass* cl) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   return cl->getClassDelegatee(vm);
 }

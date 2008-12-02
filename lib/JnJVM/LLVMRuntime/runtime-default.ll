@@ -150,8 +150,14 @@ declare i1 @implements(%JavaCommonClass*, %JavaCommonClass*) readnone
 declare i1 @instantiationOfArray(%JavaCommonClass*, %JavaCommonClass*) readnone
 
 ;;; getClassDelegatee - Returns the java/lang/Class representation of the
-;;; class.
+;;; class. This method is lowered to the GEP to the class delegatee in
+;;; the common class.
 declare %JavaObject* @getClassDelegatee(%JavaCommonClass*) readnone 
+
+;;; jnjvmRuntimeDelegatee - Returns the java/lang/Class representation of the
+;;; class. This method is called if the class delegatee has not been created
+;;; yet.
+declare %JavaObject* @jnjvmRuntimeDelegatee(%JavaCommonClass*) readnone 
 
 ;;; getArrayClass - Get the array user class of the user class.
 declare %JavaCommonClass* @getArrayClass(%JavaCommonClass*, 

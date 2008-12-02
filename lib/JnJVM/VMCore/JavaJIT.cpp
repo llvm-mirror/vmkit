@@ -1124,11 +1124,26 @@ void JavaJIT::_ldc(uint16 index) {
   uint8 type = ctpInfo->typeAt(index);
   
   if (type == JavaConstantPool::ConstantString) {
-#if defined(ISOLATE) || defined(ISOLATE_SHARING)
+#if defined(ISOLATE) 
+    if (compilingClass->classLoader != 
+        compilingClass->classLoader->bootstrapLoader) {
+      const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
+      JavaString* str = compilingClass->classLoader->UTF8ToStr(utf8);
+
+      Value* val = module->getString(str, currentBlock);
+      push(val, false);
+    } else {
+    
+      // Lookup the constant pool cache
+      Value* val = getConstantPoolAt(index, module->StringLookupFunction,
+                                     module->JavaObjectType, 0, false);
+      push(val, false);
+    }
+#elif defined(ISOLATE_SHARING)
     // Lookup the constant pool cache
     Value* val = getConstantPoolAt(index, module->StringLookupFunction,
                                    module->JavaObjectType, 0, false);
-    push(val, false);  
+    push(val, false);
 #else
     const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
     JavaString* str = compilingClass->classLoader->UTF8ToStr(utf8);

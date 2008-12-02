@@ -1210,6 +1210,7 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
     module->getFunction("getObjectSizeFromClass");
  
   GetClassDelegateeFunction = module->getFunction("getClassDelegatee");
+  RuntimeDelegateeFunction = module->getFunction("jnjvmRuntimeDelegatee");
   InstanceOfFunction = module->getFunction("instanceOf");
   IsAssignableFromFunction = module->getFunction("isAssignableFrom");
   ImplementsFunction = module->getFunction("implements");

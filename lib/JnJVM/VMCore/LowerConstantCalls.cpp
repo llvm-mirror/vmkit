@@ -101,6 +101,45 @@ static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
 }
 #endif
 
+#ifdef ISOLATE
+static Value* getDelegatee(JnjvmModule* module, Value* Arg, Instruction* CI) {
+  Value* GEP[2] = { module->constantZero,
+                    module->constantTwo };
+  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
+
+  Value* threadId = CallInst::Create(module->llvm_frameaddress,
+                                     module->constantZero, "", CI);
+  threadId = new PtrToIntInst(threadId, module->pointerSizeType, "", CI);
+  threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+                                       "", CI);
+  
+  threadId = new IntToPtrInst(threadId, module->ptr32Type, "", CI);
+  
+  Value* IsolateID = GetElementPtrInst::Create(threadId, module->constantThree,
+                                               "", CI);
+  IsolateID = new LoadInst(IsolateID, "", CI);
+
+  Value* GEP2[2] = { module->constantZero, IsolateID };
+
+  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, GEP2 + 2, "",
+                                         CI);
+  return new LoadInst(TCM, "", CI);
+}
+#else
+static Value* getDelegatee(JnjvmModule* module, Value* Arg, Instruction* CI) {
+  Value* GEP[2] = { module->constantZero,
+                    module->constantTwo };
+  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
+  
+  Value* GEP2[2] = { module->constantZero, module->constantZero };
+
+  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, GEP2 + 2, "",
+                                         CI);
+  return new LoadInst(TCM, "", CI);
+
+}
+#endif
+
 bool LowerConstantCalls::runOnFunction(Function& F) {
   JnjvmModule* module = (JnjvmModule*)F.getParent();
   bool Changed = false;
@@ -324,6 +363,29 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 #else
           abort();
 #endif
+        } else if (V == module->GetClassDelegateeFunction) {
+          Changed = true;
+          BasicBlock* NBB = II->getParent()->splitBasicBlock(II);
+          I->getParent()->getTerminator()->eraseFromParent();
+          Value* Del = getDelegatee(module, Call.getArgument(0), CI);
+          Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, Del, 
+                                    module->JavaObjectNullConstant, "", CI);
+          
+          BasicBlock* NoDelegatee = BasicBlock::Create("No delegatee", &F);
+          BasicBlock* DelegateeOK = BasicBlock::Create("Delegatee OK", &F);
+          BranchInst::Create(NoDelegatee, DelegateeOK, cmp, CI);
+          PHINode* phi = PHINode::Create(module->JavaObjectType, "", DelegateeOK);
+          phi->addIncoming(Del, CI->getParent());
+          
+          Value* Res = CallInst::Create(module->RuntimeDelegateeFunction,
+                                        Call.getArgument(0), "", NoDelegatee);
+          BranchInst::Create(DelegateeOK, NoDelegatee);
+          phi->addIncoming(Res, NoDelegatee);
+
+          CI->replaceAllUsesWith(phi);
+          CI->eraseFromParent();
+          BranchInst::Create(NBB, DelegateeOK);
+          break;
          
         } else if (V == module->InitialisationCheckFunction) {
           Changed = true;
