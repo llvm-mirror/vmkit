@@ -142,12 +142,25 @@ static Value* getDelegatee(JnjvmModule* module, Value* Arg, Instruction* CI) {
 
 bool LowerConstantCalls::runOnFunction(Function& F) {
   JnjvmModule* module = (JnjvmModule*)F.getParent();
+  JavaMethod* meth = LLVMMethodInfo::get(&F);
   bool Changed = false;
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
     for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
       Instruction *I = II;
       II++;
+
+      if (ICmpInst* Cmp = dyn_cast<ICmpInst>(I)) {
+        if (isVirtual(meth->access)) {
+          if (Cmp->getOperand(1) == module->JavaObjectNullConstant && 
+              Cmp->getOperand(0) == F.arg_begin()) {
+            Cmp->replaceAllUsesWith(ConstantInt::getFalse());
+            Cmp->eraseFromParent();
+            continue;
+          }
+        }
+      }
+
       CallSite Call = CallSite::get(I);
       Instruction* CI = Call.getInstruction();
       if (CI) {
