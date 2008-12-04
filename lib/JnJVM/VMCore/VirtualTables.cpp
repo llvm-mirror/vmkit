@@ -114,6 +114,9 @@ static void traceClassMap(ClassMap* classes) {
 void JavaThread::TRACER {
   javaThread->MARK_AND_TRACE;
   if (pendingException) pendingException->MARK_AND_TRACE;
+#ifdef SERVICE
+  ServiceException->MARK_AND_TRACE;
+#endif
 }
 
 void Jnjvm::TRACER {
@@ -141,12 +144,16 @@ void Jnjvm::TRACER {
 
   TRACE_VECTOR(JavaString*, gc_allocator, bootstrapLoader->strings);
 
-  if (bootstrapThread) {
-    bootstrapThread->CALL_TRACER;
-    for (JavaThread* th = (JavaThread*)bootstrapThread->next(); 
-         th != bootstrapThread; th = (JavaThread*)th->next())
-      th->CALL_TRACER;
+  mvm::Thread* th = th->get();
+  th->CALL_TRACER;
+  for (mvm::Thread* cur = (mvm::Thread*)th->next(); cur != th; 
+       cur = (mvm::Thread*)cur->next()) {
+    cur->CALL_TRACER;
   }
+
+#ifdef SERVICE
+  parent->MARK_AND_TRACE;
+#endif
 }
 
 void JnjvmClassLoader::TRACER {

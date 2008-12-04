@@ -933,9 +933,14 @@ static void serviceCPUMonitor(mvm::Thread* th) {
     sleep(1);
     for(mvm::Thread* cur = (mvm::Thread*)th->next(); cur != th;
         cur = (mvm::Thread*)cur->next()) {
-      mvm::VirtualMachine* executingVM = cur->MyVM;
-      assert(executingVM && "Thread with no VM!");
-      ++executingVM->executionTime;
+      if (JavaThread::isJavaThread(cur)) {
+        JavaThread* th = (JavaThread*)cur;
+        if (!(th->StateWaiting)) {
+          mvm::VirtualMachine* executingVM = cur->MyVM;
+          assert(executingVM && "Thread with no VM!");
+          ++executingVM->executionTime;
+        }
+      }
     }
   }
 }
@@ -1001,6 +1006,8 @@ Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) {
 #ifdef SERVICE
   memoryLimit = ~0;
   executionLimit = ~0;
+  parent = this;
+  status = 1;
 #endif
 
 }

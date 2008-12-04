@@ -357,6 +357,13 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator) {
 void* JavaMethod::compiledPtr() {
   if (code != 0) return code;
   else {
+#ifdef SERVICE
+    Jnjvm *vm = classDef->classLoader->getIsolate();
+    if (vm && vm->status == 0) {
+      JavaThread* th = JavaThread::get();
+      th->throwException(th->ServiceException);
+    }
+#endif
     classDef->acquire();
     if (code == 0) {
       code = 

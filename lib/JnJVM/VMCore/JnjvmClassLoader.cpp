@@ -255,6 +255,7 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   if (isolate->appClassLoader) {
     isolate = gc_new(Jnjvm)(bootstrapLoader);
     isolate->memoryLimit = 4000000;
+    isolate->parent = I->parent;
     isolate->CU = this;
     mvm::Thread* th = mvm::Thread::get();
     mvm::VirtualMachine* OldVM = th->MyVM;

@@ -39,13 +39,19 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
   state = StateRunning;
   pendingException = 0;
 #ifdef SERVICE
+  eipIndex = 0;
+  replacedEIPs = new void*[100];
   if (isolate->upcalls->newThrowable) {
     ServiceException = isolate->upcalls->newThrowable->doNew(isolate);
   }
 #endif
 }
 
-JavaThread::~JavaThread() {}
+JavaThread::~JavaThread() {
+#ifdef SERVICE
+  delete replacedEIPs;
+#endif
+}
 
 // We define these here because gcc compiles the 'throw' keyword
 // differently, whether these are defined in a file or not. Since many

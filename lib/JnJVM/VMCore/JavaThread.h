@@ -44,7 +44,11 @@ public:
 
   void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
-  JavaThread() {}
+  JavaThread() {
+#ifdef SERVICE
+    replacedEIPs = 0;
+#endif
+  }
   ~JavaThread();
   
   JavaThread(JavaObject* thread, JavaObject* vmThread, Jnjvm* isolate);
@@ -108,7 +112,13 @@ public:
 
 #ifdef SERVICE
   JavaObject* ServiceException;
+  void** replacedEIPs;
+  uint32_t eipIndex;
 #endif
+
+  static bool isJavaThread(mvm::Thread* th) {
+    return ((void**)th)[0] == VT;
+  }
   
 private:
   virtual void internalClearException() {

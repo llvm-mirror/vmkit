@@ -15,41 +15,7 @@
 
 #include "signal.h"
 
-#include "execinfo.h"
-
 using namespace jnjvm;
-
-static void* StackTrace[256];
-
-// PrintStackTrace - In the case of a program crash or fault, print out a stack
-// trace so that the user has an indication of why and where we died.
-//
-// On glibc systems we have the 'backtrace' function, which works nicely, but
-// doesn't demangle symbols.  
-static void PrintStackTrace() {
-  // Use backtrace() to output a backtrace on Linux systems with glibc.
-  int depth = backtrace(StackTrace, 256);
-  backtrace_symbols_fd(StackTrace, depth, STDERR_FILENO);
-}
-
-
-
-static void throwStoppedBundleException() {
-  void** addr = (void**)__builtin_frame_address(0);
-  fprintf(stderr, "in stopped %p\n", addr);
-  JavaJIT::printBacktrace();
-  PrintStackTrace();
-  fprintf(stderr, "OK\n");
-  JavaThread* th = JavaThread::get();
-  th->throwException(th->ServiceException);
-}
-
-
-static JnjvmClassLoader* stoppedBundle;
-static mvm::LockNormal lock;
-static mvm::Cond cond;
-static mvm::Thread* initiator;
-
 
 #if defined(__MACH__) && !defined(__i386__)
 #define FRAME_IP(fp) (fp[2])
@@ -58,82 +24,99 @@ static mvm::Thread* initiator;
 #endif
 
 
+
+static void throwInlineStoppedBundleException() {
+  void** addr = (void**)__builtin_frame_address(0);
+  JavaThread* th = JavaThread::get();
+  FRAME_IP(addr) = (void**)th->replacedEIPs[--th->eipIndex];
+  th->throwException(th->ServiceException);
+}
+
+static void throwStoppedBundleException() {
+  JavaThread* th = JavaThread::get();
+  th->throwException(th->ServiceException);
+}
+
+
+static mvm::LockNormal lock;
+static mvm::Cond cond;
+static mvm::Thread* initiator = 0;
+static bool Finished = true;
+
 void terminationHandler(int) {
   void** addr = (void**)__builtin_frame_address(0);
-  void* baseSP = mvm::Thread::get()->baseSP;
+  mvm::Thread* th = mvm::Thread::get();
+  JnjvmClassLoader* stoppedBundle = 
+    (JnjvmClassLoader*)(th->stoppingService->CU);
+  void* baseSP = th->baseSP;
+  bool inStack = false;
   while (addr && addr < baseSP && addr < addr[0]) {
     addr = (void**)addr[0];
     void** ptr = (void**)FRAME_IP(addr);
     JavaMethod* meth = JavaJIT::IPToJavaMethod(ptr);
     if (meth) {
       if (meth->classDef->classLoader == stoppedBundle) {
-        fprintf(stderr, "Je change %p!\n", FRAME_IP(addr));
-        JavaJIT::printBacktrace();
-        FRAME_IP(addr) = (void**)(uintptr_t)throwStoppedBundleException;
+        inStack = true;
+        JavaThread* th = JavaThread::get();
+        th->replacedEIPs[th->eipIndex++] = FRAME_IP(addr);
+        FRAME_IP(addr) = (void**)(uintptr_t)throwInlineStoppedBundleException;
       }
     }
   }
-  
-  addr = (void**)__builtin_frame_address(0);
-  while (addr && addr < baseSP && addr < addr[0]) {
-    addr = (void**)addr[0];
-    void** ptr = (void**)FRAME_IP(addr);
-    JavaMethod* meth = JavaJIT::IPToJavaMethod(ptr);
-    if (meth) {
-      if (meth->classDef->classLoader != stoppedBundle) {
-        JavaThread* th = JavaThread::get();
-        th->lock.lock();
-        th->interruptFlag = 1;
 
-        // here we could also raise a signal for interrupting I/O
-        if (th->state == JavaThread::StateWaiting) {
-          th->state = JavaThread::StateInterrupted;
-          th->varcond.signal();
-        }
-  
-        th->lock.unlock();
+  // If the malicious bundle is in the stack, interrupt the thread.
+  if (inStack) {
+    JavaThread* th = JavaThread::get();
+    th->lock.lock();
+    th->interruptFlag = 1;
 
-      }
-      break;
+    // here we could also raise a signal for interrupting I/O
+    if (th->state == JavaThread::StateWaiting) {
+      th->state = JavaThread::StateInterrupted;
+      th->varcond.signal();
     }
+  
+    th->lock.unlock();
+
   }
 
   if (mvm::Thread::get() != initiator) {
     lock.lock();
-    while (stoppedBundle)
+    while (!Finished)
       cond.wait(&lock);
     lock.unlock();
-  } else {
-    fprintf(stderr, "Je suis l'initiateur, je quitte\n");
   }
 }
 
 
 
 void Jnjvm::stopService() {
- 
+  
+  lock.lock();
+  while (!Finished)
+    cond.wait(&lock);
+
+  Finished = false;
+  lock.unlock();
+
   JnjvmClassLoader* bundle = (JnjvmClassLoader*)CU;
   bundle->getIsolate()->status = 1;
-  stoppedBundle = bundle;
   mvm::Thread* th = mvm::Thread::get();
-  th->MyVM->memoryLimit = ~0;
+  th->stoppingService = this;
   initiator = th;
-  fprintf(stderr, "I am %p\n", th);
   for(mvm::Thread* cur = (mvm::Thread*)th->next(); cur != th;
       cur = (mvm::Thread*)cur->next()) {
     mvm::VirtualMachine* executingVM = cur->MyVM;
     assert(executingVM && "Thread with no VM!");
-    fprintf(stderr, "Killing th %p\n", cur);
+    cur->stoppingService = this;
     uint32 res = cur->kill(SIGUSR1);
     assert(res == 0);
 
   }
   
-  fprintf(stderr, "Doing it\n");
   // I have to do it too!
   terminationHandler(0);
-  fprintf(stderr, "OK! bon ben moi je m'en vais\n");
-  /* 
+   
   llvm::TargetJITInfo& TJI = ((llvm::JIT*)mvm::MvmModule::executionEngine)->getJITInfo();
   for (ClassMap::iterator i = bundle->getClasses()->map.begin(), e = bundle->getClasses()->map.end();
        i!= e; ++i) {
@@ -153,8 +136,11 @@ void Jnjvm::stopService() {
       }
     }
   }
-  stoppedBundle = 0;
-  cond.broadcast();*/
+
+  lock.lock();
+  Finished = true;
+  cond.broadcast();
+  lock.unlock();
 }
 
 #endif
