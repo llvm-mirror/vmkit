@@ -16,6 +16,7 @@
 #include "llvm/Support/Debug.h"
 
 #include <map>
+#include "unistd.h"
 
 #include "mvm/GC/GC.h"
 
@@ -26,9 +27,11 @@ namespace {
   class VISIBILITY_HIDDEN EscapeAnalysis : public FunctionPass {
   public:
     static char ID;
+    uint64_t pageSize;
     EscapeAnalysis(Function* alloc = 0) : 
       FunctionPass((intptr_t)&ID) {
       Allocator = alloc;
+      pageSize = getpagesize();
     }
 
     virtual bool runOnFunction(Function &F);
@@ -112,10 +115,12 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT) {
   if (CE) {
     ConstantInt* C = (ConstantInt*)CE->getOperand(0);
     VirtualTable* Table = (VirtualTable*)C->getZExtValue();
+    ConstantInt* CI = dyn_cast<ConstantInt>(Size);
     // If the class has a finalize method, do not stack allocate the object.
-    if (!((void**)Table)[0]) {
+    if (!((void**)Table)[0] && CI) {
       std::map<Instruction*, bool> visited;
-      if (!(escapes(Alloc, visited))) {
+      uint64_t NSize = CI->getZExtValue();
+      if (NSize < pageSize && !(escapes(Alloc, visited))) {
         AllocaInst* AI = new AllocaInst(Type::Int8Ty, Size, "", Alloc);
         BitCastInst* BI = new BitCastInst(AI, Alloc->getType(), "", Alloc);
         DOUT << "escape" << Alloc->getParent()->getParent()->getName() << "\n";
