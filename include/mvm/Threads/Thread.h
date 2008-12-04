@@ -123,6 +123,8 @@ private:
 public:
   
   virtual ~Thread() {}
+  virtual void TRACER {}
+
 
   /// clearException - Clear any pending exception of the current thread.
   static void clearException() {
@@ -135,7 +137,11 @@ public:
   void* operator new(size_t sz);
 
   void (*routine)(mvm::Thread*);
-  
+ 
+#ifdef SERVICE
+  VirtualMachine* stoppingService;  
+#endif
+
 };
 
 
