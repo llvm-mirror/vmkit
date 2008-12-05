@@ -135,7 +135,12 @@ public:
 
   static inline void maybeCollect() {
     if(_enable_auto && 
-       (_since_last_collection <= (_collect_freq_auto - _collect_freq_maybe)))
+#ifdef SERVICE
+       (mvm::Thread::get()->MyVM->_since_last_collection <= (_collect_freq_auto - _collect_freq_maybe))
+#else
+       (_since_last_collection <= (_collect_freq_auto - _collect_freq_maybe))
+#endif
+      )
       collect(); 
   }
 
@@ -147,30 +152,40 @@ public:
     return res;
 #else
     lock();
-    
-    _since_last_collection -= n;
-    if(_enable_auto && (_since_last_collection <= 0)) {
-#ifdef SERVICE
-      if (threads->get_nb_threads()) {
-        mvm::Thread::get()->MyVM->gcTriggered++;
-      }
-#endif
-      collect_unprotect();
-    }
-   
+
 #ifdef SERVICE
     if (threads->get_nb_threads()) {
       VirtualMachine* vm = mvm::Thread::get()->MyVM;
+      vm->_since_last_collection -= n;
+      if (_enable_auto && (vm->_since_last_collection <= 0)) {
+        vm->gcTriggered++;
+        if (vm->gcTriggered > vm->GCLimit) {
+          vm->_since_last_collection += n;
+          unlock();
+          vm->stopService();
+          return 0;
+        }
+        collect_unprotect();
+      }
+      
       if (vm->memoryUsed + n > vm->memoryLimit) {
-        _since_last_collection += n;
+        vm->_since_last_collection += n;
         unlock();
         vm->stopService();
         return 0;
       }
+    } else {
+#endif
+    
+    _since_last_collection -= n;
+    if(_enable_auto && (_since_last_collection <= 0)) {
+      collect_unprotect();
+    }
+#ifdef SERVICE
     }
 #endif
-
     register GCChunkNode *header = allocator->alloc_chunk(n, 1, current_mark & 1);
+
 #ifdef SERVICE
     if (threads->get_nb_threads()) {
       VirtualMachine* vm = mvm::Thread::get()->MyVM;
@@ -204,27 +219,36 @@ public:
       gcfatal("%p isn't a avalid object", ptr);
 
     size_t      old_sz = node->nbb();
-    
-    _since_last_collection -= (n - old_sz);
-
-    if(_enable_auto && (_since_last_collection <= 0)) {
-#ifdef SERVICE
-      if (threads->get_nb_threads()) {
-        mvm::Thread::get()->MyVM->gcTriggered++;
-      }
-#endif
-      collect_unprotect();
-    }
-
 #ifdef SERVICE
     if (threads->get_nb_threads()) {
       VirtualMachine* vm = mvm::Thread::get()->MyVM;
+      vm->_since_last_collection -= (n - old_sz);
+      if (_enable_auto && (vm->_since_last_collection <= 0)) {
+        if (vm->gcTriggered + 1 > vm->GCLimit) {
+          unlock();
+          vm->stopService();
+          return 0;
+        }
+        vm->gcTriggered++;
+        collect_unprotect();
+      }
+      
       if (vm->memoryUsed + (n - old_sz) > vm->memoryLimit) {
-        _since_last_collection += (n - old_sz);
+        vm->_since_last_collection += (n - old_sz);
         unlock();
         vm->stopService();
         return 0;
       }
+    } else {
+#endif
+    
+    _since_last_collection -= (n - old_sz);
+
+    if(_enable_auto && (_since_last_collection <= 0)) {
+      collect_unprotect();
+    }
+
+#ifdef SERVICE
     }
 #endif
 

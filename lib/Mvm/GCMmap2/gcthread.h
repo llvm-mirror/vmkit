@@ -125,14 +125,18 @@ public:
 
   inline void inject(mvm::Thread* th) { 
     lock(); 
+#ifdef SERVICE
+    if (th->MyVM->numThreads + 1 > th->MyVM->threadLimit) {
+      unlock();
+      th->MyVM->stopService();
+    }
+    th->MyVM->numThreads++;
+#endif
     if (base)
       th->append(base);
     else
       base = th;
     _nb_threads++;
-#ifdef SERVICE
-    th->MyVM->numThreads++;
-#endif
     unlock();
   }
 };

@@ -976,7 +976,7 @@ void Jnjvm::runApplication(int argc, char** argv) {
   }
 }
 
-Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) {
+Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) : VirtualMachine() {
 
   classpath = getenv("CLASSPATH");
   if (!classpath) classpath = ".";
@@ -1001,13 +1001,6 @@ Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) {
     }
   }
   IsolateLock.unlock();
-#endif
-
-#ifdef SERVICE
-  memoryLimit = ~0;
-  executionLimit = ~0;
-  parent = this;
-  status = 1;
 #endif
 
 }

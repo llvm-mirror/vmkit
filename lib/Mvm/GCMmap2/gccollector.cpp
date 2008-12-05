@@ -39,7 +39,11 @@ typedef void (*destructor_t)(void*);
 void GCCollector::do_collect() {
   //printf("----- do collect -----\n");
   GCChunkNode  *cur;
+#ifdef SERVICE
+  mvm::Thread::get()->MyVM->_since_last_collection = _collect_freq_auto;
+#else
   _since_last_collection = _collect_freq_auto;
+#endif
 
   current_mark++;
 

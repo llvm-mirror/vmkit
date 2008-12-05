@@ -117,21 +117,24 @@ void Jnjvm::stopService() {
   // I have to do it too!
   terminationHandler(0);
    
-  llvm::TargetJITInfo& TJI = ((llvm::JIT*)mvm::MvmModule::executionEngine)->getJITInfo();
-  for (ClassMap::iterator i = bundle->getClasses()->map.begin(), e = bundle->getClasses()->map.end();
-       i!= e; ++i) {
+  llvm::TargetJITInfo& TJI = 
+    ((llvm::JIT*)mvm::MvmModule::executionEngine)->getJITInfo();
+  for (ClassMap::iterator i = bundle->getClasses()->map.begin(), 
+       e = bundle->getClasses()->map.end(); i!= e; ++i) {
     Class* cl = i->second->asClass();
 
     if (cl) {
       for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
         if (cl->virtualMethods[i].code) {
-          TJI.replaceMachineCodeForFunction(cl->virtualMethods[i].code, (void*)(uintptr_t)throwStoppedBundleException);
+          TJI.replaceMachineCodeForFunction(cl->virtualMethods[i].code,
+                              (void*)(uintptr_t)throwStoppedBundleException);
         }
       }
     
       for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
         if (cl->staticMethods[i].code) {
-          TJI.replaceMachineCodeForFunction(cl->staticMethods[i].code, (void*)(uintptr_t)throwStoppedBundleException);
+          TJI.replaceMachineCodeForFunction(cl->staticMethods[i].code, 
+                              (void*)(uintptr_t)throwStoppedBundleException);
         }
       }
     }

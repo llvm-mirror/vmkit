@@ -26,6 +26,19 @@ namespace mvm {
 /// defines what a VM should be.
 ///
 class VirtualMachine : public mvm::Object {
+protected:
+
+  VirtualMachine() {
+#ifdef SERVICE
+    memoryLimit = ~0;
+    executionLimit = ~0;
+    GCLimit = ~0;
+    threadLimit = ~0;
+    parent = this;
+    status = 1;
+    _since_last_collection = 4*1024*1024;
+#endif
+  }
 public:
   
   /// runApplication - Run an application. The application name is in
@@ -50,7 +63,6 @@ public:
 #endif
 
 #ifdef SERVICE
-  size_t status;
   uint64_t memoryUsed;
   uint64_t gcTriggered;
   uint64_t executionTime;
@@ -60,6 +72,12 @@ public:
 
   uint64_t memoryLimit;
   uint64_t executionLimit;
+  uint64_t threadLimit;
+  uint64_t GCLimit;
+
+  int _since_last_collection;
+  VirtualMachine* parent;
+  uint32 status; 
 #endif
 
   mvm::Allocator gcAllocator;

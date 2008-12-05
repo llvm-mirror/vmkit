@@ -334,8 +334,6 @@ public:
 
 #ifdef SERVICE
   virtual void stopService();
-  Jnjvm* parent;
-  uint32 status;
 #endif
 
 };
