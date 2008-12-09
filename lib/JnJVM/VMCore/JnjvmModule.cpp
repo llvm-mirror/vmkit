@@ -1167,14 +1167,22 @@ void JnjvmModule::setMethod(JavaMethod* meth, const char* name) {
 
 void JnjvmModule::printStats() {
   fprintf(stderr, "----------------- Info from the module -----------------\n");
-  fprintf(stderr, "Number of native classes   : %d\n", nativeClasses.size());
-  fprintf(stderr, "Number of Java classes     : %d\n", javaClasses.size());
-  fprintf(stderr, "Number of virtual tables   : %d\n", virtualTables.size());
-  fprintf(stderr, "Number of static instances : %d\n", staticInstances.size());
-  fprintf(stderr, "Number of constant pools   : %d\n", constantPools.size());
-  fprintf(stderr, "Number of strings          : %d\n", strings.size());
-  fprintf(stderr, "Number of enveloppes       : %d\n", enveloppes.size());
-  fprintf(stderr, "Number of native functions : %d\n", nativeFunctions.size());
+  fprintf(stderr, "Number of native classes   : %llu\n", 
+          (unsigned long long int) nativeClasses.size());
+  fprintf(stderr, "Number of Java classes     : %llu\n",
+          (unsigned long long int) javaClasses.size());
+  fprintf(stderr, "Number of virtual tables   : %llu\n", 
+          (unsigned long long int) virtualTables.size());
+  fprintf(stderr, "Number of static instances : %llu\n", 
+          (unsigned long long int) staticInstances.size());
+  fprintf(stderr, "Number of constant pools   : %llu\n", 
+          (unsigned long long int) constantPools.size());
+  fprintf(stderr, "Number of strings          : %llu\n", 
+          (unsigned long long int) strings.size());
+  fprintf(stderr, "Number of enveloppes       : %llu\n", 
+          (unsigned long long int) enveloppes.size());
+  fprintf(stderr, "Number of native functions : %llu\n", 
+          (unsigned long long int) nativeFunctions.size());
 }
 
 
