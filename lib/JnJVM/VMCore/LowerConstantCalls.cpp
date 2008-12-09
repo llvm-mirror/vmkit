@@ -18,7 +18,7 @@
 #include "mvm/JIT.h"
 
 #include "JnjvmModule.h"
-
+#include <iostream>
 using namespace llvm;
 
 namespace jnjvm {
@@ -36,14 +36,19 @@ namespace jnjvm {
                                             "Lower Constant calls");
 
 
-static ConstantExpr* getClass(JnjvmModule* Mod, CallSite& Call) {
+static ConstantExpr* getClass(JnjvmModule* Mod, Value* obj) {
   ConstantExpr* CE = 0;
   if (Mod->isStaticCompiling()) {
-    LoadInst* LI = dyn_cast<LoadInst>(Call.getArgument(0));
+    LoadInst* LI = dyn_cast<LoadInst>(obj);
     if (!LI) {
-      PHINode* node = dyn_cast<PHINode>(Call.getArgument(0));
+      PHINode* node = dyn_cast<PHINode>(obj);
       if (node) {
         LI = dyn_cast<LoadInst>(node->getIncomingValue(0));
+      } else {
+        GetElementPtrInst* GEP = dyn_cast<GetElementPtrInst>(obj);
+        if (GEP) {
+          return getClass(Mod, GEP->getOperand(0));
+        }
       }
     }
 
@@ -52,10 +57,10 @@ static ConstantExpr* getClass(JnjvmModule* Mod, CallSite& Call) {
       CE = dyn_cast<ConstantExpr>(GV->getInitializer());
     }
   } else {
-    CE = dyn_cast<ConstantExpr>(Call.getArgument(0));
+    CE = dyn_cast<ConstantExpr>(obj);
     if (!CE) {
       // It has to be a phi for intialization check.
-      PHINode* node = dyn_cast<PHINode>(Call.getArgument(0));
+      PHINode* node = dyn_cast<PHINode>(obj);
       if (node) CE = dyn_cast<ConstantExpr>(node->getIncomingValue(0));
     }
   }
@@ -154,9 +159,9 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         if (isVirtual(meth->access)) {
           if (Cmp->getOperand(1) == module->JavaObjectNullConstant && 
               Cmp->getOperand(0) == F.arg_begin()) {
+            Changed = true;
             Cmp->replaceAllUsesWith(ConstantInt::getFalse());
-            Cmp->eraseFromParent();
-            continue;
+            break;
           }
         }
       }
@@ -200,7 +205,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         } else if (V == module->GetVTFromClassFunction) {
           Changed = true;
           
-          ConstantExpr* CE = getClass(module, Call);
+          ConstantExpr* CE = getClass(module, Call.getArgument(0));
           if (CE) {
             ConstantInt* C = (ConstantInt*)CE->getOperand(0);
             Class* cl = (Class*)C->getZExtValue();
@@ -223,7 +228,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         } else if (V == module->GetObjectSizeFromClassFunction) {
           Changed = true;
           
-          ConstantExpr* CE = getClass(module, Call);
+          ConstantExpr* CE = getClass(module, Call.getArgument(0));
           if (CE) {
             ConstantInt* C = (ConstantInt*)CE->getOperand(0);
             Class* cl = (Class*)C->getZExtValue();
@@ -355,7 +360,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         } else if (V == module->GetStaticInstanceFunction) {
           Changed = true;
 #if !defined(ISOLATE_SHARING) && !defined(ISOLATE)
-          ConstantExpr* CE = getClass(module, Call);
+          ConstantExpr* CE = getClass(module, Call.getArgument(0));
           assert(CE && "Wrong use of GetStaticInstanceFunction");
           
           ConstantInt* C = (ConstantInt*)CE->getOperand(0);
@@ -565,7 +570,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           // Check if we have already proceed this call.
           if (Call.getArgument(1) == nullValue) {
             Changed = true;
-            ConstantExpr* CE = getClass(module, Call);
+            ConstantExpr* CE = getClass(module, Call.getArgument(0));
             if (CE) {
               ConstantInt* C = (ConstantInt*)CE->getOperand(0);
               Class* cl = (Class*)C->getZExtValue();
@@ -575,8 +580,17 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           
                 UserCommonClass* dcl = JCL->constructArray(arrayName);
                 Value* valCl = module->getNativeClass(dcl, CI);
+                
+                Instruction* V = dyn_cast<Instruction>(Call.getArgument(0));
                 CI->replaceAllUsesWith(valCl);
                 CI->eraseFromParent();
+
+                if (V) {
+                  Instruction* Op = dyn_cast<Instruction>(V->getOperand(0));
+                  if (!V->getNumUses()) V->eraseFromParent();
+                  if (Op && !Op->getNumUses()) Op->eraseFromParent();
+                }
+                
                 continue;
               }
             }
