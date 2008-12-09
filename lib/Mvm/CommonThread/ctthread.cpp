@@ -8,6 +8,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "mvm/VirtualMachine.h"
+#include "mvm/Threads/Cond.h"
+#include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
 #include <csignal>
@@ -65,7 +67,7 @@ public:
   uintptr_t baseAddr;
   uint32 allocPtr;
   uint32 used[NR_THREADS];
-  LockNormal lock;
+  LockNormal stackLock;
 
   StackThreadManager() {
     baseAddr = 0;
@@ -103,19 +105,21 @@ public:
   }
 
   uintptr_t allocate() {
+    stackLock.lock();
     uint32 start = allocPtr;
-    bool found = false;
-    uint32 myAllocPtr = allocPtr;
+    uint32 myIndex = 0;
     do {
-      found = __sync_bool_compare_and_swap_32(&used[myAllocPtr], 0, 1);
-      myAllocPtr++;
-      if (myAllocPtr == NR_THREADS) myAllocPtr = 0;
-    } while (myAllocPtr != start && !found);
+      if (!used[allocPtr]) {
+        used[allocPtr] = 1;
+        myIndex = allocPtr;
+      }
+      if (++allocPtr == NR_THREADS) allocPtr = 0;
+    } while (!myIndex && allocPtr != start);
+  
+    stackLock.unlock();
     
-    if (found) {
-      allocPtr = myAllocPtr;
-      return baseAddr + (myAllocPtr - 1) * STACK_SIZE;
-    }
+    if (myIndex)
+      return baseAddr + myIndex * STACK_SIZE;
 
     return 0;
   }
@@ -126,6 +130,7 @@ public:
 /// Static allocate a stack manager. In the future, this should be virtual
 /// machine specific.
 StackThreadManager TheStackManager;
+
 
 /// internalThreadStart - The initial function called by a thread. Sets some
 /// thread specific data, registers the thread to the GC and calls the
@@ -164,5 +169,20 @@ int Thread::start(void (*fct)(mvm::Thread*)) {
 /// Thread objects can not exceed a page.
 void* Thread::operator new(size_t sz) {
   assert(sz < (size_t)getpagesize() && "Thread local data too big");
-  return (void*)TheStackManager.allocate();
+  void* res = (void*)TheStackManager.allocate();
+  // Give it a second chance.
+  if (!res) {
+    Collector::collect();
+    res = (void*)TheStackManager.allocate();
+  }
+  return res;
+}
+
+/// operator delete - Remove the stack of the thread from the list of stacks
+/// in use.
+void Thread::operator delete(void* th) {
+  Thread* Th = (Thread*)th;
+  uintptr_t index = ((uintptr_t)Th->baseSP & Thread::IDMask);
+  index = (index & ~TheStackManager.baseAddr) >> 20;
+  TheStackManager.used[index] = 0;
 }

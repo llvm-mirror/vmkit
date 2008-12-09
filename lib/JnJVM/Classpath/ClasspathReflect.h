@@ -93,6 +93,20 @@ public:
 
 };
 
+class JavaObjectVMThread : public JavaObject {
+private:
+  JavaObject* thread;
+  bool running;
+  JavaObject* vmdata;
+
+public:
+  static void staticDestructor(JavaObjectVMThread* obj) {
+    mvm::Thread* th = (mvm::Thread*)obj->vmdata;
+    delete th;
+  }
+
+};
+
 }
 
 #endif

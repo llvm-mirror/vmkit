@@ -780,6 +780,10 @@ void Jnjvm::loadBootstrap() {
   ptr = ((uintptr_t*)upcalls->newField->getVirtualVT());
   ptr[VT_TRACER_OFFSET] = (uintptr_t)JavaObjectField::staticTracer;
   
+  LOAD_CLASS(upcalls->newVMThread);
+  ptr = ((uintptr_t*)upcalls->newVMThread->getVirtualVT());
+  ptr[VT_DESTRUCTOR_OFFSET] = (uintptr_t)JavaObjectVMThread::staticDestructor;
+  
   LOAD_CLASS(upcalls->newStackTraceElement);
   LOAD_CLASS(upcalls->newVMThrowable);
   LOAD_CLASS(upcalls->boolClass);

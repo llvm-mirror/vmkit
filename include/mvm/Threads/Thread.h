@@ -135,6 +135,8 @@ public:
   static const uint64_t IDMask = 0x7FF00000;
 
   void* operator new(size_t sz);
+  
+  void operator delete(void* obj);
 
   void (*routine)(mvm::Thread*);
  

@@ -133,7 +133,7 @@ public:
       lock |= 1;
     } else if ((lock & ThinMask) == id) {
       if ((lock & ThinCountMask) == ThinCountMask) {
-        overflowThinLock();
+        overflowThinLock(O);
       } else {
         ++lock;
       }
