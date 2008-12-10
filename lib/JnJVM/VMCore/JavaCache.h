@@ -33,8 +33,9 @@
 namespace jnjvm {
 
 class Enveloppe;
+class Signdef;
 class UserClass;
-class UserConstantPool;
+class UTF8;
 
 /// CacheNode - A {class, method pointer} pair.
 class CacheNode : public mvm::PermanentObject {
@@ -52,49 +53,69 @@ public:
   /// enveloppe - The container to which this class belongs to.
   Enveloppe* enveloppe;
 
-#ifdef ISOLATE_SHARING
-  ///definingClass - The class that defined the method being called.
-  ///
-  UserConstantPool* definingCtp;
-#endif
-
   /// CacheNode - Creates a CacheNode with empty values.
-  CacheNode(Enveloppe* E);
+  CacheNode(Enveloppe* E) {
+    lastCible = 0;
+    methPtr = 0;
+    next = 0;
+    enveloppe = E;
+  }
 };
 
 /// Enveloppe - A reference to the linked list of CacheNode.
 class Enveloppe : public mvm::PermanentObject {
 public:
   
-  /// ~Enveloppe - Deletes all CacheNode in the linked list.
-  ~Enveloppe();
-
   /// firstCache - The first entry in the linked list, hence the last
   /// class occurence for a given invokeinterface call.
+  ///
   CacheNode *firstCache;
+  
+  /// methodName - The name of the method to be called.
+  ///
+  const UTF8* methodName;
 
-  /// ctpInfo - The constant pool info that owns the invokeinterface
-  /// bytecode. This is used to resolve the interface call at its first
-  /// occurence.
-  UserConstantPool* ctpInfo;
+  /// methodSign - The signature of the method to be called.
+  ///
+  Signdef* methodSign;
 
   /// cacheLock - The linked list may be modified by concurrent thread. This
   /// lock ensures that the list stays consistent.
+  ///
   mvm::LockNormal cacheLock;
 
-  /// index - The index in the constant pool of the interface method.
-  uint32 index;
+  /// allocator - Reference to the allocator in order to know where to allocate
+  /// cache nodes.
+  ///
+  mvm::BumpPtrAllocator* allocator;
+  
+  /// bootCache - The first cache allocated for the enveloppe.
+  ///
+  CacheNode bootCache;
 
-  /// Enveloppe - Allocates the linked list with the given constant pool info
-  /// at the given index, so as the resolution process knows which interface
-  /// method the invokeinterface bytecode references.
-  Enveloppe(UserConstantPool* info, uint32 index) {
-    initialise(info, index);
+  /// Evenloppe - Default constructor. Does nothing.
+  ///
+  Enveloppe() : bootCache(this) {}
+
+  /// Enveloppe - Allocates the linked list with the given name and signature
+  /// so as the resolution process knows which interface method the
+  /// invokeinterface bytecode refers to.
+  ///
+  Enveloppe(mvm::BumpPtrAllocator& Alloc, const UTF8* name, Signdef* sign) : 
+    bootCache(this) {
+    
+    initialise(Alloc, name, sign);
   }
 
-  Enveloppe() {}
-
-  void initialise(UserConstantPool* info, uint32 index);
+  /// initialise - Initialises the enveloppe, and allocates the first cache.
+  ///
+  void initialise(mvm::BumpPtrAllocator& Alloc, const UTF8* name,
+                  Signdef* sign) {
+    allocator = &Alloc;
+    firstCache = &bootCache;
+    methodName = name;
+    methodSign = sign;
+  }
 
 };
 

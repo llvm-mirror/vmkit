@@ -187,7 +187,7 @@ public:
 
   /// infoOfInterfaceOrVirtualMethod - Get the signature of the method
   /// referenced at the given entry.
-  Signdef* infoOfInterfaceOrVirtualMethod(uint32 index);
+  Signdef* infoOfInterfaceOrVirtualMethod(uint32 index, const UTF8*& name);
 
   /// infoOfStaticOrSpecialMethod - Get the JIT representation of a
   /// non-virtual method. Also returns its signature and the Jnjvm

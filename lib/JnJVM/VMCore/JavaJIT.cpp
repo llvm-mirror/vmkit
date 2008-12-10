@@ -77,7 +77,8 @@ void JavaJIT::invokeVirtual(uint16 index) {
   }
 
 #if !defined(WITHOUT_VTABLE)
-  Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index);
+  const UTF8* name = 0;
+  Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
   Typedef* retTypedef = signature->ret;
   std::vector<Value*> args; // size = [signature->nbIn + 3];
   LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
@@ -1972,7 +1973,8 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index, bool buggyVirtual) {
   
   // Do the usual
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
-  Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index);
+  const UTF8* name = 0;
+  Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
   
   LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
@@ -2001,7 +2003,8 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index, bool buggyVirtual) {
     *(new (compilingClass->classLoader->allocator) Enveloppe()) :
     compilingMethod->enveloppes[nbEnveloppes++];
   if (!inlining)
-    enveloppe.initialise(compilingClass->ctpInfo, index);
+    enveloppe.initialise(compilingClass->classLoader->allocator, name,
+                         signature);
    
   Value* llvmEnv = module->getEnveloppe(&enveloppe, currentBlock);
 #else

@@ -14,10 +14,6 @@
                     i16, %JavaClass**, i16, %JavaClass*, i16, i8, i32, i32, i8*,
                     void (i8*)* }
 
-;;; The CacheNode type. The second field is the last called method. The
-;;; last field is for multi vm environment.
-%CacheNode = type { i8*, %JavaCommonClass*, %CacheNode*, %Enveloppe*, i8** }
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;; Isolate specific methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

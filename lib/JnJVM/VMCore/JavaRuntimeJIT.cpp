@@ -28,14 +28,8 @@ using namespace jnjvm;
 
 extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   Enveloppe* enveloppe = cache->enveloppe;
-  UserConstantPool* ctpInfo = enveloppe->ctpInfo;
   UserCommonClass* ocl = obj->classOf;
-  UserCommonClass* cl = 0;
-  const UTF8* utf8 = 0;
-  Signdef* sign = 0;
-  uint32 index = enveloppe->index;
   
-  ctpInfo->resolveMethod(index, cl, utf8, sign);
 #ifndef SERVICE
   assert((obj->classOf->isClass() && 
           obj->classOf->asClass()->isInitializing()) &&
@@ -60,24 +54,24 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   if (!rcache) {
     UserClass* methodCl = 0;
     UserClass* lookup = ocl->isArray() ? ocl->super : ocl->asClass();
-    JavaMethod* dmeth = lookup->lookupMethod(utf8, sign->keyName, false, true,
-                                             &methodCl);
+    JavaMethod* dmeth = lookup->lookupMethod(enveloppe->methodName,
+                                             enveloppe->methodSign->keyName,
+                                             false, true, &methodCl);
+
 #if !defined(ISOLATE_SHARING) && !defined(SERVICE)
     assert(dmeth->classDef->isInitializing() &&
            "Class not ready in a virtual lookup.");
 #endif
-    if (cache->methPtr) {
-      JnjvmClassLoader* loader = ctpInfo->classDef->classLoader;
-      rcache = new(loader->allocator) CacheNode(enveloppe);
+
+    // Are we the first cache?
+    if (cache != &(enveloppe->bootCache)) {
+      rcache = new(*(enveloppe->allocator)) CacheNode(enveloppe);
     } else {
       rcache = cache;
     }
     
     rcache->methPtr = dmeth->compiledPtr();
     rcache->lastCible = (UserClass*)ocl;
-#ifdef ISOLATE_SHARING
-    rcache->definingCtp = methodCl->getConstantPool();
-#endif
     
   }
 

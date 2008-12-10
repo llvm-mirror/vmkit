@@ -12,6 +12,3 @@
                     i16, %JavaClass**, i16, %JavaClass*, i16, i8, i32, i32, i8*,
                     void (i8*)* }
 
-
-;;; The CacheNode type. The second field is the last called method.
-%CacheNode = type { i8*, %JavaCommonClass*, %CacheNode*, %Enveloppe*}

@@ -447,15 +447,18 @@ void* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index,
 }
 
 
-Signdef* JavaConstantPool::infoOfInterfaceOrVirtualMethod(uint32 index) {
+Signdef* JavaConstantPool::infoOfInterfaceOrVirtualMethod(uint32 index,
+                                                          const UTF8*& name) {
 
   uint8 id = typeAt(index);
   if (id != ConstantMethodref && id != ConstantInterfaceMethodref)
     JavaThread::get()->getJVM()->classFormatError(
               "bad constant pool number for method at entry %d", index);
   
-  Signdef* sign = resolveNameAndSign(ctpDef[index] & 0xFFFF);
-  
+  sint32 entry = ctpDef[index];
+  sint32 ntIndex = entry & 0xFFFF;
+  Signdef* sign = resolveNameAndSign(ntIndex); 
+  name = UTF8At(ctpDef[ntIndex] >> 16);
   return sign;
 }
 
