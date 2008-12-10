@@ -10,7 +10,6 @@
 #include "mvm/Object.h"
 
 #include "JavaArray.h"
-#include "JavaCache.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
