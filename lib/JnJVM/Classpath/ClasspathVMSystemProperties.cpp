@@ -8,7 +8,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <string.h>
+#include <cstring>
 #include <sys/utsname.h>
 
 #include "types.h"
@@ -84,7 +84,6 @@ jobject _prop) {
   setProperty(vm, prop, "java.vm.vendor", "VVM Project");
   setProperty(vm, prop, "java.vm.name", "JnJVM");
   setProperty(vm, prop, "java.specification.version", "1.5");
-  setProperty(vm, prop, "java.library.path", JCL->libClasspathEnv);
   setProperty(vm, prop, "java.io.tmpdir", "/tmp");
   
   tmp = getenv("JAVA_COMPILER");
@@ -93,6 +92,8 @@ jobject _prop) {
   
   setProperty(vm, prop, "build.compiler", "gcj");
   setProperty(vm, prop, "gcj.class.path", JCL->bootClasspathEnv);
+  setProperty(vm, prop, "gnu.classpath.boot.library.path",
+              JCL->libClasspathEnv);
   
   setUnameProp(vm, prop);
   
