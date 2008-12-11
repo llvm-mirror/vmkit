@@ -2163,14 +2163,18 @@ void GetStringUTFRegion(JNIEnv* env, jstring str, jsize start, jsize len,
 
 
 void *GetPrimitiveArrayCritical(JNIEnv *env, jarray array, jboolean *isCopy) {
-  assert(0 && "implement me");
+  BEGIN_EXCEPTION
+  
+  if (isCopy) (*isCopy) = false;
+  return ((JavaArray*)array)->elements;
+
+  END_EXCEPTION
   return 0;
 }
 
 
 void ReleasePrimitiveArrayCritical(JNIEnv *env, jarray array, void *carray,
 				   jint mode) {
-  assert(0 && "implement me");
 }
 
 
