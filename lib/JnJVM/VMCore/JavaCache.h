@@ -33,7 +33,6 @@
 namespace jnjvm {
 
 class Enveloppe;
-class Signdef;
 class UserClass;
 class UTF8;
 
@@ -77,7 +76,7 @@ public:
 
   /// methodSign - The signature of the method to be called.
   ///
-  Signdef* methodSign;
+  const UTF8* methodSign;
 
   /// cacheLock - The linked list may be modified by concurrent thread. This
   /// lock ensures that the list stays consistent.
@@ -93,7 +92,7 @@ public:
   ///
   CacheNode bootCache;
 
-  /// Evenloppe - Default constructor. Does nothing.
+  /// Enveloppe - Default constructor. Does nothing.
   ///
   Enveloppe() : bootCache(this) {}
 
@@ -101,7 +100,7 @@ public:
   /// so as the resolution process knows which interface method the
   /// invokeinterface bytecode refers to.
   ///
-  Enveloppe(mvm::BumpPtrAllocator& Alloc, const UTF8* name, Signdef* sign) : 
+  Enveloppe(mvm::BumpPtrAllocator& Alloc, const UTF8* name, const UTF8* sign) :
     bootCache(this) {
     
     initialise(Alloc, name, sign);
@@ -110,7 +109,7 @@ public:
   /// initialise - Initialises the enveloppe, and allocates the first cache.
   ///
   void initialise(mvm::BumpPtrAllocator& Alloc, const UTF8* name,
-                  Signdef* sign) {
+                  const UTF8* sign) {
     allocator = &Alloc;
     firstCache = &bootCache;
     methodName = name;

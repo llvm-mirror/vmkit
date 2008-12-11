@@ -55,7 +55,7 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
     UserClass* methodCl = 0;
     UserClass* lookup = ocl->isArray() ? ocl->super : ocl->asClass();
     JavaMethod* dmeth = lookup->lookupMethod(enveloppe->methodName,
-                                             enveloppe->methodSign->keyName,
+                                             enveloppe->methodSign,
                                              false, true, &methodCl);
 
 #if !defined(ISOLATE_SHARING) && !defined(SERVICE)
