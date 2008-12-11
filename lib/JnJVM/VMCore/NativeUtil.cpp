@@ -192,7 +192,7 @@ UserCommonClass* NativeUtil::resolvedImplClass(Jnjvm* vm, jclass clazz,
   UserCommonClass* cl = ((JavaObjectClass*)clazz)->getClass();
   if (cl->asClass()) {
     cl->asClass()->resolveClass();
-    cl->asClass()->initialiseClass(vm);
+    if (doClinit) cl->asClass()->initialiseClass(vm);
   }
   return cl;
 }
