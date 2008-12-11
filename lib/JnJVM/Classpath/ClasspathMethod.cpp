@@ -8,7 +8,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <string.h>
+#include <cstring>
 
 #include "types.h"
 
@@ -62,7 +62,8 @@ JNIEnv *env,
   JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
   UserClass* cl = internalGetClass(vm, meth, Meth);
   JnjvmClassLoader* loader = cl->classLoader;
-  return (jclass)NativeUtil::getClassType(loader, meth->getSignature()->ret);
+  Typedef* ret = meth->getSignature()->getReturnType();
+  return (jclass)NativeUtil::getClassType(loader, ret);
 }
 
 
@@ -89,12 +90,12 @@ jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
   JavaMethod* meth = (JavaMethod*)_meth;
   JavaArray* args = (JavaArray*)_args;
   sint32 nbArgs = args ? args->size : 0;
-  sint32 size = meth->getSignature()->args.size();
+  Signdef* sign = meth->getSignature();
+  sint32 size = sign->nbArguments;
   JavaObject* obj = (JavaObject*)_obj;
 
   uintptr_t buf = (uintptr_t)alloca(size * sizeof(uint64)); 
   void* _buf = (void*)buf;
-  sint32 index = 0;
   if (nbArgs == size) {
     UserCommonClass* _cl = NativeUtil::resolvedImplClass(vm, Cl, false);
     UserClass* cl = (UserClass*)_cl;
@@ -116,11 +117,10 @@ jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
       cl->initialiseClass(vm);
     }
     
-    Signdef* sign = meth->getSignature();
-    JavaObject** ptr = (JavaObject**)(void*)(args->elements);     
-    for (std::vector<Typedef*>::iterator i = sign->args.begin(),
-         e = sign->args.end(); i != e; ++i, ++index) {
-      NativeUtil::decapsulePrimitive(vm, buf, ptr[index], *i);
+    JavaObject** ptr = (JavaObject**)(void*)(args->elements);
+    Typedef* const* arguments = sign->getArgumentsType();
+    for (sint32 i = 0; i < size; ++i) {
+      NativeUtil::decapsulePrimitive(vm, buf, ptr[i], arguments[i]);
     }
     
     JavaObject* exc = 0;
@@ -152,7 +152,7 @@ jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
     } \
     
     JavaObject* res = 0;
-    Typedef* retType = sign->ret;
+    Typedef* retType = sign->getReturnType();
     if (retType->isPrimitive()) {
       PrimitiveTypedef* prim = (PrimitiveTypedef*)retType;
       if (prim->isVoid()) {

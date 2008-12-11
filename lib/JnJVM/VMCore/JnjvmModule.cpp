@@ -739,12 +739,13 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
     std::vector<const llvm::Type*> llvmArgs;
-    unsigned int size = signature->args.size();
+    uint32 size = signature->nbArguments;
+    Typedef* const* arguments = signature->getArgumentsType();
 
     llvmArgs.push_back(JnjvmModule::JavaObjectType);
 
     for (uint32 i = 0; i < size; ++i) {
-      Typedef* type = signature->args.at(i);
+      Typedef* type = arguments[i];
       LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(type);
       llvmArgs.push_back(LAI.llvmType);
     }
@@ -753,7 +754,8 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
     llvmArgs.push_back(JnjvmModule::ConstantPoolType); // cached constant pool
 #endif
 
-    LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(signature->ret);
+    LLVMAssessorInfo& LAI = 
+      JnjvmModule::getTypedefInfo(signature->getReturnType());
     virtualType = FunctionType::get(LAI.llvmType, llvmArgs, false);
   }
   return virtualType;
@@ -764,10 +766,11 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
     std::vector<const llvm::Type*> llvmArgs;
-    unsigned int size = signature->args.size();
+    uint32 size = signature->nbArguments;
+    Typedef* const* arguments = signature->getArgumentsType();
 
     for (uint32 i = 0; i < size; ++i) {
-      Typedef* type = signature->args.at(i);
+      Typedef* type = arguments[i];
       LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(type);
       llvmArgs.push_back(LAI.llvmType);
     }
@@ -776,7 +779,8 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
     llvmArgs.push_back(JnjvmModule::ConstantPoolType); // cached constant pool
 #endif
 
-    LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(signature->ret);
+    LLVMAssessorInfo& LAI = 
+      JnjvmModule::getTypedefInfo(signature->getReturnType());
     staticType = FunctionType::get(LAI.llvmType, llvmArgs, false);
   }
   return staticType;
@@ -787,13 +791,14 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
     // Lock here because we are called by arbitrary code
     llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
     std::vector<const llvm::Type*> llvmArgs;
-    unsigned int size = signature->args.size();
+    uint32 size = signature->nbArguments;
+    Typedef* const* arguments = signature->getArgumentsType();
     
     llvmArgs.push_back(mvm::MvmModule::ptrType); // JNIEnv
     llvmArgs.push_back(JnjvmModule::JavaObjectType); // Class
 
     for (uint32 i = 0; i < size; ++i) {
-      Typedef* type = signature->args.at(i);
+      Typedef* type = arguments[i];
       LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(type);
       llvmArgs.push_back(LAI.llvmType);
     }
@@ -802,7 +807,8 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
     llvmArgs.push_back(JnjvmModule::ConstantPoolType); // cached constant pool
 #endif
 
-    LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(signature->ret);
+    LLVMAssessorInfo& LAI = 
+      JnjvmModule::getTypedefInfo(signature->getReturnType());
     nativeType = FunctionType::get(LAI.llvmType, llvmArgs, false);
   }
   return nativeType;
@@ -834,11 +840,11 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
     Args.push_back(obj);
   }
   ptr = i;
-
-  for (std::vector<Typedef*>::iterator i = signature->args.begin(), 
-            e = signature->args.end(); i!= e; ++i) {
   
-    LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(*i);
+  Typedef* const* arguments = signature->getArgumentsType();
+  for (uint32 i = 0; i < signature->nbArguments; ++i) {
+  
+    LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(arguments[i]);
     Value* val = new BitCastInst(ptr, LAI.llvmTypePtr, "", currentBlock);
     Value* arg = new LoadInst(val, "", currentBlock);
     Args.push_back(arg);
@@ -886,9 +892,9 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   }
   ap = i;
 
-  for (std::vector<Typedef*>::iterator i = signature->args.begin(),
-       e = signature->args.end(); i!= e; i++) {
-    LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(*i);
+  Typedef* const* arguments = signature->getArgumentsType();
+  for (uint32 i = 0; i < signature->nbArguments; ++i) {
+    LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(arguments[i]);
     Args.push_back(new VAArgInst(ap, LAI.llvmType, "", currentBlock));
   }
 
@@ -937,7 +943,8 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
     Args2.push_back(getVirtualPtrType());
     Args2.push_back(JnjvmModule::JavaObjectType);
     Args2.push_back(JnjvmModule::ptrType);
-    LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(signature->ret);
+    LLVMAssessorInfo& LAI = 
+      JnjvmModule::getTypedefInfo(signature->getReturnType());
     virtualBufType = FunctionType::get(LAI.llvmType, Args2, false);
   }
   return virtualBufType;
@@ -951,7 +958,8 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
     Args.push_back(JnjvmModule::ConstantPoolType); // ctp
     Args.push_back(getStaticPtrType());
     Args.push_back(JnjvmModule::ptrType);
-    LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(signature->ret);
+    LLVMAssessorInfo& LAI = 
+      JnjvmModule::getTypedefInfo(signature->getReturnType());
     staticBufType = FunctionType::get(LAI.llvmType, Args, false);
   }
   return staticBufType;

@@ -8,7 +8,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <string.h>
+#include <cstring>
 
 #include "types.h"
 
@@ -80,14 +80,14 @@ jint _meth) {
   JavaMethod* meth = (JavaMethod*)_meth;
   JavaArray* args = (JavaArray*)_args;
   sint32 nbArgs = args ? args->size : 0;
-  sint32 size = meth->getSignature()->args.size();
+  Signdef* sign = meth->getSignature();
+  sint32 size = sign->nbArguments;
 
   // Allocate a buffer to store the arguments.
   uintptr_t buf = (uintptr_t)alloca(size * sizeof(uint64));
   // Record the beginning of the buffer.
   void* startBuf = (void*)buf;
 
-  sint32 index = 0;
   if (nbArgs == size) {
     UserCommonClass* _cl = NativeUtil::resolvedImplClass(vm, Clazz, false);
     UserClass* cl = _cl->asClass();
@@ -95,12 +95,11 @@ jint _meth) {
       cl->initialiseClass(vm);
       JavaObject* res = cl->doNew(vm);
       JavaObject** ptr = (JavaObject**)(void*)(args->elements);
-      Signdef* sign = meth->getSignature();
       
+      Typedef* const* arguments = sign->getArgumentsType();
       // Store the arguments, unboxing primitives if necessary.
-      for (std::vector<Typedef*>::iterator i = sign->args.begin(),
-           e = sign->args.end(); i != e; ++i, ++index) {
-        NativeUtil::decapsulePrimitive(vm, buf, ptr[index], *i);
+      for (sint32 i = 0; i < size; ++i) {
+        NativeUtil::decapsulePrimitive(vm, buf, ptr[i], arguments[i]);
       }
       
       JavaObject* excp = 0;

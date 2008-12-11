@@ -255,6 +255,7 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   if (isolate->appClassLoader) {
     isolate = gc_new(Jnjvm)(bootstrapLoader);
     isolate->memoryLimit = 4000000;
+    isolate->threadLimit = 10;
     isolate->parent = I->parent;
     isolate->CU = this;
     mvm::Thread* th = mvm::Thread::get();
@@ -601,11 +602,104 @@ Typedef* JnjvmClassLoader::constructType(const UTF8* name) {
   return res;
 }
 
+static void typeError(const UTF8* name, short int l) {
+  if (l != 0) {
+    JavaThread::get()->getJVM()->
+      unknownError("wrong type %d in %s", l, name->printString());
+  } else {
+    JavaThread::get()->getJVM()->
+      unknownError("wrong type %s", name->printString());
+  }
+}
+
+
+static bool analyseIntern(const UTF8* name, uint32 pos, uint32 meth,
+                          uint32& ret) {
+  short int cur = name->elements[pos];
+  switch (cur) {
+    case I_PARD :
+      ret = pos + 1;
+      return true;
+    case I_BOOL :
+      ret = pos + 1;
+      return false;
+    case I_BYTE :
+      ret = pos + 1;
+      return false;
+    case I_CHAR :
+      ret = pos + 1;
+      return false;
+    case I_SHORT :
+      ret = pos + 1;
+      return false;
+    case I_INT :
+      ret = pos + 1;
+      return false;
+    case I_FLOAT :
+      ret = pos + 1;
+      return false;
+    case I_DOUBLE :
+      ret = pos + 1;
+      return false;
+    case I_LONG :
+      ret = pos + 1;
+      return false;
+    case I_VOID :
+      ret = pos + 1;
+      return false;
+    case I_TAB :
+      if (meth == 1) {
+        pos++;
+      } else {
+        while (name->elements[++pos] == I_TAB) {}
+        analyseIntern(name, pos, 1, pos);
+      }
+      ret = pos;
+      return false;
+    case I_REF :
+      if (meth != 2) {
+        while (name->elements[++pos] != I_END_REF) {}
+      }
+      ret = pos + 1;
+      return false;
+    default :
+      typeError(name, cur);
+  }
+  return false;
+}
+
 Signdef* JnjvmClassLoader::constructSign(const UTF8* name) {
   javaSignatures->lock.lock();
   Signdef* res = javaSignatures->lookup(name);
   if (res == 0) {
-    res = new(allocator) Signdef(name, this);
+    std::vector<Typedef*> buf;
+    uint32 len = (uint32)name->size;
+    uint32 pos = 1;
+    uint32 pred = 0;
+
+    while (pos < len) {
+      pred = pos;
+      bool end = analyseIntern(name, pos, 0, pos);
+      if (end) break;
+      else {
+        buf.push_back(constructType(name->extract(hashUTF8, pred, pos)));
+      } 
+    }
+  
+    if (pos == len) {
+      typeError(name, 0);
+    }
+  
+    analyseIntern(name, pos, 0, pred);
+
+    if (pred != len) {
+      typeError(name, 0);
+    }
+    
+    Typedef* ret = constructType(name->extract(hashUTF8, pos, pred));
+    
+    res = new(allocator, buf.size()) Signdef(name, this, buf, ret);
+
     javaSignatures->hash(name, res);
   }
   javaSignatures->lock.unlock();

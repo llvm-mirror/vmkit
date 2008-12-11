@@ -52,28 +52,28 @@ void JavaJIT::invokeOnceVoid(Jnjvm* vm, JnjvmClassLoader* loader,
 
 
 #define readArgs(buf, signature, ap) \
-  for (std::vector<Typedef*>::iterator i = signature->args.begin(), \
-            e = signature->args.end(); i!= e; i++) { \
-    const Typedef* type = *i;\
-    if (type->isPrimitive()){\
+  Typedef* const* arguments = signature->getArgumentsType(); \
+  for (uint32 i = 0; i < signature->nbArguments; ++i) { \
+    const Typedef* type = arguments[i];\
+    if (type->isPrimitive()) {\
       const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;\
-      if (prim->isLong()){\
+      if (prim->isLong()) {\
         ((sint64*)buf)[0] = va_arg(ap, sint64);\
       } else if (prim->isInt()){ \
         ((sint32*)buf)[0] = va_arg(ap, sint32);\
-      } else if (prim->isChar()){ \
+      } else if (prim->isChar()) { \
         ((uint32*)buf)[0] = va_arg(ap, uint32);\
-      } else if (prim->isShort()){ \
+      } else if (prim->isShort()) { \
         ((uint32*)buf)[0] = va_arg(ap, uint32);\
-      } else if (prim->isByte()){ \
+      } else if (prim->isByte()) { \
         ((uint32*)buf)[0] = va_arg(ap, uint32);\
-      } else if (prim->isBool()){ \
+      } else if (prim->isBool()) { \
         ((uint32*)buf)[0] = va_arg(ap, uint32);\
-      } else if (prim->isFloat()){\
+      } else if (prim->isFloat()) {\
         ((float*)buf)[0] = (float)va_arg(ap, double);\
-      } else if (prim->isDouble()){\
+      } else if (prim->isDouble()) {\
         ((double*)buf)[0] = va_arg(ap, double);\
-      } else{\
+      } else {\
         fprintf(stderr, "Can't happen");\
         abort();\
       }\
@@ -94,7 +94,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObje
   } \
   verifyNull(obj); \
   Signdef* sign = getSignature(); \
-  uintptr_t buf = (uintptr_t)alloca(sign->args.size() * sizeof(uint64)); \
+  uintptr_t buf = (uintptr_t)alloca(sign->nbArguments * sizeof(uint64)); \
   void* _buf = (void*)buf; \
   readArgs(buf, sign, ap); \
   void* func = (((void***)obj)[0])[offset];\
@@ -109,7 +109,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObje
   \
   verifyNull(obj);\
   Signdef* sign = getSignature(); \
-  uintptr_t buf = (uintptr_t)alloca(sign->args.size() * sizeof(uint64)); \
+  uintptr_t buf = (uintptr_t)alloca(sign->nbArguments * sizeof(uint64)); \
   void* _buf = (void*)buf; \
   readArgs(buf, sign, ap); \
   void* func = this->compiledPtr();\
@@ -123,7 +123,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
   } \
   \
   Signdef* sign = getSignature(); \
-  uintptr_t buf = (uintptr_t)alloca(sign->args.size() * sizeof(uint64)); \
+  uintptr_t buf = (uintptr_t)alloca(sign->nbArguments * sizeof(uint64)); \
   void* _buf = (void*)buf; \
   readArgs(buf, sign, ap); \
   void* func = this->compiledPtr();\

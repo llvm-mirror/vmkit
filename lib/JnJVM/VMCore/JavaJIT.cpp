@@ -79,12 +79,12 @@ void JavaJIT::invokeVirtual(uint16 index) {
 #if !defined(WITHOUT_VTABLE)
   const UTF8* name = 0;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
-  Typedef* retTypedef = signature->ret;
+  Typedef* retTypedef = signature->getReturnType();
   std::vector<Value*> args; // size = [signature->nbIn + 3];
   LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   FunctionType::param_iterator it  = virtualType->param_end();
-  makeArgs(it, index, args, signature->args.size() + 1);
+  makeArgs(it, index, args, signature->nbArguments + 1);
   const llvm::Type* retType = virtualType->getReturnType();
   
   JITVerifyNull(args[0]); 
@@ -466,8 +466,9 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
 #else
   uint32 max = args.size();
 #endif
-  std::vector<Typedef*>::iterator type = 
-    compilingMethod->getSignature()->args.begin();
+  Signdef* sign = compilingMethod->getSignature();
+  Typedef* const* arguments = sign->getArgumentsType();
+  uint32 type = 0;
   std::vector<Value*>::iterator i = args.begin(); 
 
   if (isVirtual(compilingMethod->access)) {
@@ -480,7 +481,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   
   for (;count < max; ++i, ++index, ++count, ++type) {
     
-    const Typedef* cur = *type;
+    const Typedef* cur = arguments[type];
     const Type* curType = (*i)->getType();
 
     if (curType == Type::Int64Ty){
@@ -588,8 +589,9 @@ llvm::Function* JavaJIT::javaCompile() {
   uint32 max = func->arg_size();
 #endif
   Function::arg_iterator i = func->arg_begin(); 
-  std::vector<Typedef*>::iterator type = 
-    compilingMethod->getSignature()->args.begin();
+  Signdef* sign = compilingMethod->getSignature();
+  Typedef* const* arguments = sign->getArgumentsType();
+  uint32 type = 0;
 
   if (isVirtual(compilingMethod->access)) {
     new StoreInst(i, objectLocals[0], false, currentBlock);
@@ -600,7 +602,7 @@ llvm::Function* JavaJIT::javaCompile() {
 
   for (;count < max; ++i, ++index, ++count, ++type) {
     
-    const Typedef* cur = *type;
+    const Typedef* cur = arguments[type];
     const llvm::Type* curType = i->getType();
 
     if (curType == Type::Int64Ty){
@@ -1505,7 +1507,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
   
   std::vector<Value*> args; 
   FunctionType::param_iterator it  = virtualType->param_end();
-  makeArgs(it, index, args, signature->args.size() + 1);
+  makeArgs(it, index, args, signature->nbArguments + 1);
   JITVerifyNull(args[0]); 
 
 #if defined(ISOLATE_SHARING)
@@ -1545,7 +1547,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
   
   const llvm::Type* retType = virtualType->getReturnType();
   if (retType != Type::VoidTy) {
-    push(val, signature->ret->isUnsigned());
+    push(val, signature->getReturnType()->isUnsigned());
     if (retType == Type::DoubleTy || retType == Type::Int64Ty) {
       push(module->constantZero, false);
     }
@@ -1566,7 +1568,7 @@ void JavaJIT::invokeStatic(uint16 index) {
   
   std::vector<Value*> args; // size = [signature->nbIn + 2]; 
   FunctionType::param_iterator it  = staticType->param_end();
-  makeArgs(it, index, args, signature->args.size());
+  makeArgs(it, index, args, signature->nbArguments);
   ctpInfo->markAsStaticCall(index);
 
   JnjvmBootstrapLoader* loader = compilingClass->classLoader->bootstrapLoader;
@@ -1616,7 +1618,7 @@ void JavaJIT::invokeStatic(uint16 index) {
 
   const llvm::Type* retType = staticType->getReturnType();
   if (retType != Type::VoidTy) {
-    push(val, signature->ret->isUnsigned());
+    push(val, signature->getReturnType()->isUnsigned());
     if (retType == Type::DoubleTy || retType == Type::Int64Ty) {
       push(module->constantZero, false);
     }
@@ -1983,7 +1985,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index, bool buggyVirtual) {
   std::vector<Value*> args; // size = [signature->nbIn + 3];
 
   FunctionType::param_iterator it  = virtualType->param_end();
-  makeArgs(it, index, args, signature->args.size() + 1);
+  makeArgs(it, index, args, signature->nbArguments + 1);
   
   const llvm::Type* retType = virtualType->getReturnType();
   BasicBlock* endBlock = createBasicBlock("end virtual invoke");
@@ -2072,7 +2074,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index, bool buggyVirtual) {
 
   currentBlock = endBlock;
   if (node) {
-    push(node, signature->ret->isUnsigned());
+    push(node, signature->getReturnType()->isUnsigned());
     if (retType == Type::DoubleTy || retType == Type::Int64Ty) {
       push(module->constantZero, false);
     }

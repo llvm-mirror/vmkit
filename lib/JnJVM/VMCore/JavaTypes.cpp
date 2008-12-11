@@ -23,74 +23,6 @@
 
 using namespace jnjvm;
 
-
-
-static void typeError(const UTF8* name, short int l) {
-  if (l != 0) {
-    JavaThread::get()->getJVM()->
-      unknownError("wrong type %d in %s", l, name->printString());
-  } else {
-    JavaThread::get()->getJVM()->
-      unknownError("wrong type %s", name->printString());
-  }
-}
-
-
-static bool analyseIntern(const UTF8* name, uint32 pos, uint32 meth,
-                          uint32& ret) {
-  short int cur = name->elements[pos];
-  switch (cur) {
-    case I_PARD :
-      ret = pos + 1;
-      return true;
-    case I_BOOL :
-      ret = pos + 1;
-      return false;
-    case I_BYTE :
-      ret = pos + 1;
-      return false;
-    case I_CHAR :
-      ret = pos + 1;
-      return false;
-    case I_SHORT :
-      ret = pos + 1;
-      return false;
-    case I_INT :
-      ret = pos + 1;
-      return false;
-    case I_FLOAT :
-      ret = pos + 1;
-      return false;
-    case I_DOUBLE :
-      ret = pos + 1;
-      return false;
-    case I_LONG :
-      ret = pos + 1;
-      return false;
-    case I_VOID :
-      ret = pos + 1;
-      return false;
-    case I_TAB :
-      if (meth == 1) {
-        pos++;
-      } else {
-        while (name->elements[++pos] == I_TAB) {}
-        analyseIntern(name, pos, 1, pos);
-      }
-      ret = pos;
-      return false;
-    case I_REF :
-      if (meth != 2) {
-        while (name->elements[++pos] != I_END_REF) {}
-      }
-      ret = pos + 1;
-      return false;
-    default :
-      typeError(name, cur);
-  }
-  return false;
-}
-
 void PrimitiveTypedef::tPrintBuf(mvm::PrintBuffer* buf) const {
   prim->name->print(buf);
 }
@@ -119,12 +51,12 @@ UserCommonClass* ObjectTypedef::assocClass(JnjvmClassLoader* loader) const {
   return loader->loadName(pseudoAssocClassName, false, true);
 }
 
-void Typedef::humanPrintArgs(const std::vector<Typedef*>* args,
-                             mvm::PrintBuffer* buf) {
+void Signdef::humanPrintArgs(mvm::PrintBuffer* buf) const {
   buf->write("(");
-  for (uint32 i = 0; i < args->size(); i++) {
-    args->at(i)->tPrintBuf(buf);
-    if (i != args->size() - 1) {
+  Typedef* const* arguments = getArgumentsType();
+  for (uint32 i = 0; i < nbArguments; i++) {
+    arguments[i]->tPrintBuf(buf);
+    if (i != nbArguments - 1) {
       buf->write(", ");
     }
   }
@@ -134,58 +66,41 @@ void Typedef::humanPrintArgs(const std::vector<Typedef*>* args,
 const char* Signdef::printString() const {
   mvm::PrintBuffer *buf= mvm::PrintBuffer::alloc();
   buf->write("Signature<");
-  ret->tPrintBuf(buf);
+  getReturnType()->tPrintBuf(buf);
   buf->write("...");
-  Typedef::humanPrintArgs(&args, buf);
+  humanPrintArgs(buf);
   buf->write(">");
   return buf->contents()->cString();
 }
 
 void Signdef::printWithSign(CommonClass* cl, const UTF8* name,
-                            mvm::PrintBuffer* buf) {
-  ret->tPrintBuf(buf);
+                            mvm::PrintBuffer* buf) const {
+  getReturnType()->tPrintBuf(buf);
   buf->write(" ");
   CommonClass::printClassName(cl->name, buf);
   buf->write("::");
   name->print(buf);
-  Typedef::humanPrintArgs(&args, buf);
+  humanPrintArgs(buf);
 }
 
-Signdef::Signdef(const UTF8* name, JnjvmClassLoader* loader) {
-  Signdef* res = this;
-  std::vector<Typedef*> buf;
-  uint32 len = (uint32)name->size;
-  uint32 pos = 1;
-  uint32 pred = 0;
-
-  while (pos < len) {
-    pred = pos;
-    bool end = analyseIntern(name, pos, 0, pos);
-    if (end) break;
-    else {
-      buf.push_back(loader->constructType(name->extract(loader->hashUTF8, pred, pos)));
-    } 
-  }
+Signdef::Signdef(const UTF8* name, JnjvmClassLoader* loader,
+                 std::vector<Typedef*>& args, Typedef* ret) {
   
-  if (pos == len) {
-    typeError(name, 0);
+  arguments[0] = ret;
+  Typedef** myArgs = &(arguments[1]);
+  nbArguments = args.size();
+  uint32 index = 0;
+  for (std::vector<Typedef*>::iterator i = args.begin(), e = args.end();
+       i != e; ++i) {
+    myArgs[index++] = *i;
   }
-  
-  analyseIntern(name, pos, 0, pred);
-
-  if (pred != len) {
-    typeError(name, 0);
-  }
-
-  res->args = buf;
-  res->ret = loader->constructType(name->extract(loader->hashUTF8, pos, pred));
-  res->initialLoader = loader;
-  res->keyName = name;
-  res->_virtualCallBuf = 0;
-  res->_staticCallBuf = 0;
-  res->_virtualCallAP = 0;
-  res->_staticCallAP = 0;
-  res->JInfo = 0;
+  initialLoader = loader;
+  keyName = name;
+  JInfo = 0;
+  _virtualCallBuf = 0;
+  _staticCallBuf = 0;
+  _virtualCallAP = 0;
+  _staticCallAP = 0;
   
 }
 

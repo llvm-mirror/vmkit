@@ -76,11 +76,6 @@ public:
   ///
   const UTF8* keyName;
   
-  /// humanPrintArgs - Prints the list of typedef in a human readable form.
-  ///
-  static void humanPrintArgs(const std::vector<Typedef*>*,
-                             mvm::PrintBuffer* buf);
-
   /// tPrintBuf - Prints the name of the class this Typedef represents.
   ///
   virtual void tPrintBuf(mvm::PrintBuffer* buf) const = 0;
@@ -279,14 +274,6 @@ private:
   
 public:
 
-  /// args - The arguments as Typedef of this signature.
-  ///
-  std::vector<Typedef*> args;
-
-  /// ret - The Typedef return of this signature.
-  ///
-  Typedef* ret;
-
   /// initialLoader - The loader that first loaded this typedef.
   ///
   JnjvmClassLoader* initialLoader;
@@ -302,12 +289,22 @@ public:
   /// printWithSign - Print the signature of a method with the method's class
   /// and name.
   ///
-  void printWithSign(CommonClass* cl, const UTF8* name, mvm::PrintBuffer* buf);
+  void printWithSign(CommonClass* cl, const UTF8* name,
+                     mvm::PrintBuffer* buf) const;
   
   /// Signdef - Create a new Signdef.
   ///
-  Signdef(const UTF8* name, JnjvmClassLoader* loader);
+  Signdef(const UTF8* name, JnjvmClassLoader* loader,
+          std::vector<Typedef*>& args, Typedef* ret);
   
+  /// operator new - Redefines the new operator of this class to allocate
+  /// the arguments in the object itself.
+  ///
+  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
+                     sint32 size) {
+    return allocator.Allocate(sizeof(Signdef) + size * sizeof(Typedef));
+  }
+
   
 //===----------------------------------------------------------------------===//
 //
@@ -375,6 +372,33 @@ public:
            "Invalid concrete type or multiple inheritence for getInfo");
     return static_cast<Ty*>(JInfo);
   }
+  
+  /// nbArguments - The number of arguments in the signature. 
+  ///
+  uint32 nbArguments;
+  
+  /// getReturnType - Get the type of the return of this signature.
+  ///
+  Typedef* getReturnType() const {
+    return arguments[0];
+  }
+
+  /// getArgumentsType - Get the list of arguments of this signature.
+  ///
+  Typedef* const* getArgumentsType() const {
+    return &(arguments[1]);
+  }
+
+private:
+  /// humanPrintArgs - Prints the list of typedef in a human readable form.
+  ///
+  void humanPrintArgs(mvm::PrintBuffer* buf) const;
+  
+  /// arguments - The list of arguments of the signature. First is the return
+  /// type.
+  ///
+  Typedef* arguments[1];
+
     
 };
 

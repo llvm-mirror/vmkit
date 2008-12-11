@@ -350,14 +350,13 @@ JavaObject* NativeUtil::getClassType(JnjvmClassLoader* loader, Typedef* type) {
 ArrayObject* NativeUtil::getParameterTypes(JnjvmClassLoader* loader,
                                            JavaMethod* meth) {
   Jnjvm* vm = JavaThread::get()->getJVM();
-  std::vector<Typedef*>& args = meth->getSignature()->args;
+  Signdef* sign = meth->getSignature();
+  Typedef* const* arguments = sign->getArgumentsType();
   ArrayObject* res = 
-    (ArrayObject*)vm->upcalls->classArrayClass->doNew(args.size(), vm);
+    (ArrayObject*)vm->upcalls->classArrayClass->doNew(sign->nbArguments, vm);
 
-  sint32 index = 0;
-  for (std::vector<Typedef*>::iterator i = args.begin(), e = args.end();
-          i != e; ++i, ++index) {
-    res->elements[index] = getClassType(loader, (*i));
+  for (uint32 index = 0; index < sign->nbArguments; ++index) {
+    res->elements[index] = getClassType(loader, arguments[index]);
   }
 
   return res;
