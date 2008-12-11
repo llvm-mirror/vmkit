@@ -47,7 +47,7 @@ static void setUnameProp(Jnjvm* vm, JavaObject* prop) {
   }
 }
 
-JNIEXPORT void JNICALL Java_gnu_classpath_VMSystemProperties_preInit(                                    
+JNIEXPORT void JNICALL Java_gnu_classpath_VMSystemProperties_preInit(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz,
