@@ -209,8 +209,7 @@ void DeleteLocalRef(JNIEnv *env, jobject localRef) {
 
 
 jboolean IsSameObject(JNIEnv *env, jobject ref1, jobject ref2) {
-  assert(0 && "implement me");
-  return 0;
+  return ref1 == ref2;
 }
 
 
@@ -358,9 +357,19 @@ jobject CallObjectMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 }
 
 
-jobject CallObjectMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
+jobject CallObjectMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                           va_list args) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  JavaObject* obj = (JavaObject*)_obj;
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  return (jobject)meth->invokeJavaObjectVirtualAP(vm, cl, obj, args);
+
+  END_EXCEPTION
+  
   return 0;
 }
 
@@ -391,9 +400,19 @@ jboolean CallBooleanMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
 }
 
 
-jboolean CallBooleanMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
+jboolean CallBooleanMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                             va_list args) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  JavaObject* obj = (JavaObject*)_obj;
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  return (jboolean)meth->invokeIntVirtualAP(vm, cl, obj, args);
+
+  END_EXCEPTION
+  
   return 0;
 }
 
@@ -410,9 +429,19 @@ jbyte CallByteMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
   return 0;
 }
 
-jbyte CallByteMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
+jbyte CallByteMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                       va_list args) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  JavaObject* obj = (JavaObject*)_obj;
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  return (jbyte)meth->invokeIntVirtualAP(vm, cl, obj, args);
+
+  END_EXCEPTION
+  
   return 0;
 }
 
@@ -430,9 +459,19 @@ jchar CallCharMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 }
 
 
-jchar CallCharMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
+jchar CallCharMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                       va_list args) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  JavaObject* obj = (JavaObject*)_obj;
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  return (jchar)meth->invokeIntVirtualAP(vm, cl, obj, args);
+
+  END_EXCEPTION
+  
   return 0;
 }
 
@@ -450,9 +489,19 @@ jshort CallShortMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 }
 
 
-jshort CallShortMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
+jshort CallShortMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                         va_list args) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  JavaObject* obj = (JavaObject*)_obj;
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  return (jshort)meth->invokeIntVirtualAP(vm, cl, obj, args);
+
+  END_EXCEPTION
+  
   return 0;
 }
 
@@ -484,9 +533,19 @@ jint CallIntMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
 }
 
 
-jint CallIntMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
+jint CallIntMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                     va_list args) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  JavaObject* obj = (JavaObject*)_obj;
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  return (jint)meth->invokeIntVirtualAP(vm, cl, obj, args);
+
+  END_EXCEPTION
+  
   return 0;
 }
 
@@ -505,9 +564,19 @@ jlong CallLongMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 }
 
 
-jlong CallLongMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
+jlong CallLongMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                       va_list args) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  JavaObject* obj = (JavaObject*)_obj;
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  return (jlong)meth->invokeLongVirtualAP(vm, cl, obj, args);
+
+  END_EXCEPTION
+  
   return 0;
 }
 
@@ -541,8 +610,18 @@ jfloat CallFloatMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
 
 jfloat CallFloatMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                         va_list args) {
-  assert(0 && "implement me");
-  return 0;
+  
+  BEGIN_EXCEPTION
+  
+  JavaObject* obj = (JavaObject*)_obj;
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  return (jfloat)meth->invokeFloatVirtualAP(vm, cl, obj, args);
+
+  END_EXCEPTION
+  
+  return 0.0f;
 }
 
 
@@ -582,7 +661,7 @@ jdouble CallDoubleMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
-  return meth->invokeDoubleVirtualAP(vm, cl, obj, args);
+  return (jdouble)meth->invokeDoubleVirtualAP(vm, cl, obj, args);
 
   END_EXCEPTION
   return 0.0;
@@ -869,12 +948,11 @@ jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name,
 
   BEGIN_EXCEPTION
 
-  // TODO: find a better place to store the UTF8
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
   return (jfieldID) (cl->asClass() ? 
-    cl->asClass()->lookupField(cl->classLoader->asciizConstructUTF8(name),
-                               cl->classLoader->asciizConstructUTF8(sig), 0, 1,
+    cl->asClass()->lookupField(vm->asciizToUTF8(name),
+                               vm->asciizToUTF8(sig), 0, 1,
                                0) : 0);
   
   END_EXCEPTION
@@ -1128,15 +1206,35 @@ jmethodID GetStaticMethodID(JNIEnv *env, jclass clazz, const char *aname,
 }
 
 
-jobject CallStaticObjectMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
-  assert(0 && "implement me");
+jobject CallStaticObjectMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
+                               ...) {
+  
+  BEGIN_EXCEPTION
+  
+  va_list ap;
+  va_start(ap, methodID);
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  jobject res = (jobject) meth->invokeJavaObjectStaticAP(vm, cl, ap);
+  va_end(ap);
+  return res;
+
+  END_EXCEPTION
   return 0;
 }
 
 
 jobject CallStaticObjectMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                                 va_list args) {
-  assert(0 && "implement me");
+  BEGIN_EXCEPTION
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  return (jobject)meth->invokeJavaObjectStaticAP(vm, cl, args);
+
+  END_EXCEPTION
   return 0;
 }
 
@@ -1169,7 +1267,15 @@ jboolean CallStaticBooleanMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 jboolean CallStaticBooleanMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                                   va_list args) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  return (jboolean)meth->invokeIntStaticAP(vm, cl, args);
+
+  END_EXCEPTION
   return 0;
 }
 
@@ -1182,14 +1288,34 @@ jboolean CallStaticBooleanMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 
 jbyte CallStaticByteMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  va_list ap;
+  va_start(ap, methodID);
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  jbyte res = (jbyte) meth->invokeIntStaticAP(vm, cl, ap);
+  va_end(ap);
+  return res;
+
+  END_EXCEPTION
   return 0;
 }
 
 
 jbyte CallStaticByteMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                             va_list args) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  return (jbyte)meth->invokeIntStaticAP(vm, cl, args);
+
+  END_EXCEPTION
   return 0;
 }
 
@@ -1202,14 +1328,33 @@ jbyte CallStaticByteMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 
 jchar CallStaticCharMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  va_list ap;
+  va_start(ap, methodID);
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  jchar res = (jchar) meth->invokeIntStaticAP(vm, cl, ap);
+  va_end(ap);
+  return res;
+
+  END_EXCEPTION
   return 0;
 }
 
 
 jchar CallStaticCharMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                             va_list args) {
-  assert(0 && "implement me");
+  BEGIN_EXCEPTION
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  return (jchar)meth->invokeIntStaticAP(vm, cl, args);
+
+  END_EXCEPTION
   return 0;
 }
 
@@ -1223,14 +1368,34 @@ jchar CallStaticCharMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 jshort CallStaticShortMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
                              ...) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  va_list ap;
+  va_start(ap, methodID);
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  jshort res = (jshort) meth->invokeIntStaticAP(vm, cl, ap);
+  va_end(ap);
+  return res;
+
+  END_EXCEPTION
   return 0;
 }
 
 
 jshort CallStaticShortMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                               va_list args) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  return (jshort)meth->invokeIntStaticAP(vm, cl, args);
+
+  END_EXCEPTION
   return 0;
 }
 
@@ -1243,14 +1408,34 @@ jshort CallStaticShortMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 
 jint CallStaticIntMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  va_list ap;
+  va_start(ap, methodID);
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  jint res = (jint) meth->invokeIntStaticAP(vm, cl, ap);
+  va_end(ap);
+  return res;
+
+  END_EXCEPTION
   return 0;
 }
 
 
 jint CallStaticIntMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                           va_list args) {
-  assert(0 && "implement me");
+  BEGIN_EXCEPTION
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  return (jint)meth->invokeIntStaticAP(vm, cl, args);
+
+  END_EXCEPTION
+  
   return 0;
 }
 
@@ -1263,14 +1448,35 @@ jint CallStaticIntMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 
 jlong CallStaticLongMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
-  assert(0 && "implement me");
+  
+  BEGIN_EXCEPTION
+  
+  va_list ap;
+  va_start(ap, methodID);
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  jlong res = (jlong) meth->invokeLongStaticAP(vm, cl, ap);
+  va_end(ap);
+  return res;
+
+  END_EXCEPTION
   return 0;
 }
 
 
 jlong CallStaticLongMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
 			    va_list args) {
-  assert(0 && "implement me");
+
+  BEGIN_EXCEPTION
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  return (jlong)meth->invokeLongStaticAP(vm, cl, args);
+
+  END_EXCEPTION
+  
   return 0;
 }
 
@@ -1285,15 +1491,36 @@ jlong CallStaticLongMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 jfloat CallStaticFloatMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
                              ...) {
-  assert(0 && "implement me");
-  return 0;
+  
+  BEGIN_EXCEPTION
+  
+  va_list ap;
+  va_start(ap, methodID);
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  jfloat res = (jfloat) meth->invokeFloatStaticAP(vm, cl, ap);
+  va_end(ap);
+  return res;
+
+  END_EXCEPTION
+  return 0.0f;
 }
 
 
 jfloat CallStaticFloatMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                               va_list args) {
-  assert(0 && "implement me");
-  return 0;
+  
+  BEGIN_EXCEPTION
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  return (jfloat)meth->invokeFloatStaticAP(vm, cl, args);
+
+  END_EXCEPTION
+  
+  return 0.0f;
 }
 
 
@@ -1306,15 +1533,35 @@ jfloat CallStaticFloatMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 jdouble CallStaticDoubleMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
                                ...) {
-  assert(0 && "implement me");
-  return 0;
+  
+  BEGIN_EXCEPTION
+  
+  va_list ap;
+  va_start(ap, methodID);
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  jdouble res = (jdouble) meth->invokeDoubleStaticAP(vm, cl, ap);
+  va_end(ap);
+  return res;
+
+  END_EXCEPTION
+  return 0.0;
 }
 
 
 jdouble CallStaticDoubleMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                                 va_list args) {
-  assert(0 && "implement me");
-  return 0;
+  BEGIN_EXCEPTION
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  return (jdouble)meth->invokeDoubleStaticAP(vm, cl, args);
+
+  END_EXCEPTION
+  
+  return 0.0;
 }
 
 
@@ -1366,12 +1613,11 @@ jfieldID GetStaticFieldID(JNIEnv *env, jclass clazz, const char *name,
   
   BEGIN_EXCEPTION
   
-  // TODO: find a better place to store the UTF8
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
   return (jfieldID) (cl->asClass() ? 
-    cl->asClass()->lookupField(cl->classLoader->asciizConstructUTF8(name),
-                               cl->classLoader->asciizConstructUTF8(sig),
+    cl->asClass()->lookupField(vm->asciizToUTF8(name),
+                               vm->asciizToUTF8(sig),
                                true, true, 0) : 0);
 
   END_EXCEPTION
@@ -2007,97 +2253,113 @@ void ReleaseDoubleArrayElements(JNIEnv *env, jdoubleArray array,
 
 void GetBooleanArrayRegion(JNIEnv *env, jbooleanArray array, jsize start,
 			   jsize len, jboolean *buf) {
-  assert(0 && "implement me");
+  ArrayUInt8* Array = (ArrayUInt8*)array;
+  memcpy(buf, &(Array->elements[start]), len * sizeof(uint8));
 }
 
 
 void GetByteArrayRegion(JNIEnv *env, jbyteArray array, jsize start, jsize len,
 			jbyte *buf) {
-  assert(0 && "implement me");
+  ArraySInt8* Array = (ArraySInt8*)array;
+  memcpy(buf, &(Array->elements[start]), len * sizeof(sint8));
 }
 
 
 void GetCharArrayRegion(JNIEnv *env, jcharArray array, jsize start, jsize len,
 			jchar *buf) {
-  assert(0 && "implement me");
+  ArrayUInt16* Array = (ArrayUInt16*)array;
+  memcpy(buf, &(Array->elements[start]), len * sizeof(uint16));
 }
 
 
 void GetShortArrayRegion(JNIEnv *env, jshortArray array, jsize start,
 			 jsize len, jshort *buf) {
-  assert(0 && "implement me");
+  ArraySInt16* Array = (ArraySInt16*)array;
+  memcpy(buf, &(Array->elements[start]), len * sizeof(sint16));
 }
 
 
 void GetIntArrayRegion(JNIEnv *env, jintArray array, jsize start, jsize len,
 		       jint *buf) {
-  assert(0 && "implement me");
+  ArraySInt32* Array = (ArraySInt32*)array;
+  memcpy(buf, &(Array->elements[start]), len * sizeof(sint32));
 }
 
 
 void GetLongArrayRegion(JNIEnv *env, jlongArray array, jsize start, jsize len,
 		        jlong *buf) {
-  assert(0 && "implement me");
+  ArrayLong* Array = (ArrayLong*)array;
+  memcpy(buf, &(Array->elements[start]), len * sizeof(sint64));
 }
 
 
 void GetFloatArrayRegion(JNIEnv *env, jfloatArray array, jsize start,
 			 jsize len, jfloat *buf) {
-  assert(0 && "implement me");
+  ArrayFloat* Array = (ArrayFloat*)array;
+  memcpy(buf, &(Array->elements[start]), len * sizeof(float));
 }
 
 
 void GetDoubleArrayRegion(JNIEnv *env, jdoubleArray array, jsize start,
 			  jsize len, jdouble *buf) {
-  assert(0 && "implement me");
+  ArrayDouble* Array = (ArrayDouble*)array;
+  memcpy(buf, &(Array->elements[start]), len * sizeof(double));
 }
 
 
 void SetBooleanArrayRegion(JNIEnv *env, jbooleanArray array, jsize start,
 			   jsize len, const jboolean *buf) {
-  assert(0 && "implement me");
+  ArrayUInt8* Array = (ArrayUInt8*)array;
+  memcpy(&(Array->elements[start]), buf, len * sizeof(uint8));
 }
 
 
 void SetByteArrayRegion(JNIEnv *env, jbyteArray array, jsize start, jsize len,
 			                  const jbyte *buf) {
-  assert(0 && "implement me");
+  ArraySInt8* Array = (ArraySInt8*)array;
+  memcpy(&(Array->elements[start]), buf, len * sizeof(sint8));
 }
 
 
 void SetCharArrayRegion(JNIEnv *env, jcharArray array, jsize start, jsize len,
 			                  const jchar *buf) {
-  assert(0 && "implement me");
+  ArrayUInt16* Array = (ArrayUInt16*)array;
+  memcpy(&(Array->elements[start]), buf, len * sizeof(uint16));
 }
 
 
 void SetShortArrayRegion(JNIEnv *env, jshortArray array, jsize start,
 			                   jsize len, const jshort *buf) {
-  assert(0 && "implement me");
+  ArraySInt16* Array = (ArraySInt16*)array;
+  memcpy(&(Array->elements[start]), buf, len * sizeof(sint16));
 }
 
 
 void SetIntArrayRegion(JNIEnv *env, jintArray array, jsize start, jsize len,
 		                   const jint *buf) {
-  assert(0 && "implement me");
+  ArraySInt32* Array = (ArraySInt32*)array;
+  memcpy(&(Array->elements[start]), buf, len * sizeof(sint32));
 }
 
 
 void SetLongArrayRegion(JNIEnv* env, jlongArray array, jsize start, jsize len,
 			                  const jlong *buf) {
-  assert(0 && "implement me");
+  ArrayLong* Array = (ArrayLong*)array;
+  memcpy(&(Array->elements[start]), buf, len * sizeof(sint64));
 }
 
 
 void SetFloatArrayRegion(JNIEnv *env, jfloatArray array, jsize start,
 			                   jsize len, const jfloat *buf) {
-  assert(0 && "implement me");
+  ArrayFloat* Array = (ArrayFloat*)array;
+  memcpy(&(Array->elements[start]), buf, len * sizeof(float));
 }
 
 
 void SetDoubleArrayRegion(JNIEnv *env, jdoubleArray array, jsize start,
 			                    jsize len, const jdouble *buf) {
-  assert(0 && "implement me");
+  ArrayDouble* Array = (ArrayDouble*)array;
+  memcpy(&(Array->elements[start]), buf, len * sizeof(double));
 }
 
 
