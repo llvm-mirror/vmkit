@@ -2113,14 +2113,11 @@ jint UnregisterNatives(JNIEnv *env, jclass clazz) {
   return 0;
 }
 
-extern "C" void JavaObjectAquire(JavaObject* obj);
-extern "C" void JavaObjectRelease(JavaObject* obj);
-
 jint MonitorEnter(JNIEnv *env, jobject obj) {
   
   BEGIN_EXCEPTION
   
-  JavaObjectAquire(((JavaObject*)obj));
+  ((JavaObject*)obj)->acquire();
   return 1;
 
   END_EXCEPTION
@@ -2132,7 +2129,7 @@ jint MonitorExit(JNIEnv *env, jobject obj) {
 
   BEGIN_EXCEPTION
 
-  JavaObjectRelease((JavaObject*)obj);
+  ((JavaObject*)obj)->release();
   return 1;
 
   END_EXCEPTION
