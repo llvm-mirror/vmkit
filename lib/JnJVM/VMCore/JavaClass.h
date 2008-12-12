@@ -1002,8 +1002,7 @@ public:
   /// jniConsFromMeth - Construct the JNI name of this method.
   ///
   void jniConsFromMeth(char* buf) const;
-  void jniConsFromMeth2(char* buf) const;
-  void jniConsFromMeth3(char* buf) const;
+  void jniConsFromMethOverloaded(char* buf) const;
   
 
 //===----------------------------------------------------------------------===//

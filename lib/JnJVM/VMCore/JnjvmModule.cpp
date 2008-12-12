@@ -681,9 +681,9 @@ Function* LLVMMethodInfo::getMethod() {
       sint32 mnlen = jniConsName->size;
       sint32 mtlen = jniConsType->size;
 
-      char* buf = 
-        (char*)alloca(3 + JNI_NAME_PRE_LEN + mnlen + clen + (mtlen << 1));
-      methodDef->jniConsFromMeth3(buf);
+      char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN +
+                                ((mnlen + clen + mtlen) << 1));
+      methodDef->jniConsFromMethOverloaded(buf);
       methodFunction = Function::Create(getFunctionType(), 
                                         GlobalValue::GhostLinkage, buf, Mod);
 
