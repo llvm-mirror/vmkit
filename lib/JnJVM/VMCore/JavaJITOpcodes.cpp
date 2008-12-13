@@ -1684,13 +1684,13 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         i += filled;
         BasicBlock* def = opcodeInfos[tmp + readU4(bytecodes, i)].newBlock;
 
-        uint32 low = readU4(bytecodes, i);
-        uint32 high = readU4(bytecodes, i) + 1;
+        sint32 low = readS4(bytecodes, i);
+        sint32 high = readS4(bytecodes, i) + 1;
         
         Value* index = pop(); 
         
         const llvm::Type* type = index->getType();
-        for (uint32 cur = low; cur < high; ++cur) {
+        for (sint32 cur = low; cur < high; ++cur) {
           Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ,
                                     ConstantInt::get(type, cur), index,
                                     "", currentBlock);
