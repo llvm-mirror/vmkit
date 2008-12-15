@@ -161,6 +161,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
               Cmp->getOperand(0) == F.arg_begin()) {
             Changed = true;
             Cmp->replaceAllUsesWith(ConstantInt::getFalse());
+            Cmp->eraseFromParent();
             break;
           }
         }
