@@ -252,4 +252,18 @@ jobject update) {
   return __sync_bool_compare_and_swap(ptr, expect, update);
 }
 
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_putObjectVolatile(
+#ifdef NATIVE_JNI
+JNIEnv *env, 
+#endif
+jobject unsafe, jobject obj, jlong offset, jobject value) {
+
+  jobject *ptr; 
+
+  ptr = (jobject *) (((uint8 *) obj) + offset);
+
+  *ptr = value;
+
+}
+
 }
