@@ -387,7 +387,7 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl) {
     assert(super->virtualVT && "Super does not have a VT!");
     memcpy(VT, super->virtualVT, cl->super->virtualTableSize * sizeof(void*));
   } else {
-    memcpy(VT, JavaObject::VT, VT_SIZE);
+    VT = JavaObject::VT;
   }
   return VT;
 }
@@ -509,7 +509,7 @@ VirtualTable* JnjvmModule::makeVT(Class* cl) {
         BasicBlock::iterator I = BB->begin();
         if (isa<ReturnInst>(I)) {
           ((void**)VT)[0] = 0;
-        } else {
+        } else if (!staticCompilation) {
           // LLVM does not allow recursive compilation. Create the code now.
           ((void**)VT)[0] = EE->getPointerToFunction(func);
         }
@@ -533,10 +533,10 @@ VirtualTable* JnjvmModule::makeVT(Class* cl) {
            (void*)((uintptr_t)VT + VT_SIZE), size);
 
     COPY(JavaArray)
-    COPY(JavaObject)
     COPY(ArrayObject)
 
 #undef COPY
+
    }
 #endif
   
@@ -1115,27 +1115,23 @@ void JnjvmModule::initialise() {
   
   ClassReadyConstant = ConstantInt::get(Type::Int32Ty, ready);
  
-  Constant* consPrim = 
-    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
-                                               uint64(JavaArray::VT)),
-                              VTType);
-  
-  Constant* consRef = 
-    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
-                                               uint64(ArrayObject::VT)),
-                              VTType);
 
   if (staticCompilation) {
     PrimitiveArrayVT = new GlobalVariable(VTType, false, 
                                           GlobalValue::ExternalLinkage,
-                                          consPrim, "", this);
+                                          0, "", this);
   
     ReferenceArrayVT = new GlobalVariable(VTType, false, 
                                           GlobalValue::ExternalLinkage,
-                                          consRef, "", this);
+                                          0, "", this);
   } else {
-    PrimitiveArrayVT = consPrim;
-    ReferenceArrayVT = consRef;
+    PrimitiveArrayVT = ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
+                                                         uint64(JavaArray::VT)),
+                                                 VTType);
+  
+    ReferenceArrayVT = ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
+                                                       uint64(ArrayObject::VT)),
+                                                 VTType);
   }
 
   LLVMAssessorInfo::initialise();
