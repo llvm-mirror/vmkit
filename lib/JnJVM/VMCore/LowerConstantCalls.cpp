@@ -36,37 +36,6 @@ namespace jnjvm {
                                             "Lower Constant calls");
 
 
-static ConstantExpr* getClass(JnjvmModule* Mod, Value* obj) {
-  ConstantExpr* CE = 0;
-  if (Mod->isStaticCompiling()) {
-    LoadInst* LI = dyn_cast<LoadInst>(obj);
-    if (!LI) {
-      PHINode* node = dyn_cast<PHINode>(obj);
-      if (node) {
-        LI = dyn_cast<LoadInst>(node->getIncomingValue(0));
-      } else {
-        GetElementPtrInst* GEP = dyn_cast<GetElementPtrInst>(obj);
-        if (GEP) {
-          return getClass(Mod, GEP->getOperand(0));
-        }
-      }
-    }
-
-    if (LI) {
-      GlobalVariable* GV = dyn_cast<GlobalVariable>(LI->getOperand(0));
-      CE = dyn_cast<ConstantExpr>(GV->getInitializer());
-    }
-  } else {
-    CE = dyn_cast<ConstantExpr>(obj);
-    if (!CE) {
-      // It has to be a phi for intialization check.
-      PHINode* node = dyn_cast<PHINode>(obj);
-      if (node) CE = dyn_cast<ConstantExpr>(node->getIncomingValue(0));
-    }
-  }
-  return CE;
-}
-
 #ifdef ISOLATE
 static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
   Value* GEP[2] = { module->constantZero,
@@ -91,22 +60,7 @@ static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
                                          CI);
   return TCM;
 }
-#else
-static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
-  Value* GEP[2] = { module->constantZero,
-                    module->OffsetTaskClassMirrorInClassConstant };
-  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
-  
-  Value* GEP2[2] = { module->constantZero, module->constantZero };
 
-  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, GEP2 + 2, "",
-                                         CI);
-  return TCM;
-
-}
-#endif
-
-#ifdef ISOLATE
 static Value* getDelegatee(JnjvmModule* module, Value* Arg, Instruction* CI) {
   Value* GEP[2] = { module->constantZero,
                     module->constantTwo };
@@ -130,7 +84,22 @@ static Value* getDelegatee(JnjvmModule* module, Value* Arg, Instruction* CI) {
                                          CI);
   return new LoadInst(TCM, "", CI);
 }
+
 #else
+
+static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
+  Value* GEP[2] = { module->constantZero,
+                    module->OffsetTaskClassMirrorInClassConstant };
+  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
+  
+  Value* GEP2[2] = { module->constantZero, module->constantZero };
+
+  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, GEP2 + 2, "",
+                                         CI);
+  return TCM;
+
+}
+
 static Value* getDelegatee(JnjvmModule* module, Value* Arg, Instruction* CI) {
   Value* GEP[2] = { module->constantZero,
                     module->constantTwo };
@@ -206,18 +175,6 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         } else if (V == module->GetVTFromClassFunction) {
           Changed = true;
           
-          ConstantExpr* CE = getClass(module, Call.getArgument(0));
-          if (CE) {
-            ConstantInt* C = (ConstantInt*)CE->getOperand(0);
-            Class* cl = (Class*)C->getZExtValue();
-            if (cl->isResolved()) {
-              Value* VT = module->getVirtualTable(cl, CI);
-              CI->replaceAllUsesWith(VT);
-              CI->eraseFromParent();
-              continue;
-            }
-          }
-          
           Value* val = Call.getArgument(0);
           Value* indexes[2] = { module->constantZero, 
                                 module->OffsetVTInClassConstant };
@@ -228,19 +185,6 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
         } else if (V == module->GetObjectSizeFromClassFunction) {
           Changed = true;
-          
-          ConstantExpr* CE = getClass(module, Call.getArgument(0));
-          if (CE) {
-            ConstantInt* C = (ConstantInt*)CE->getOperand(0);
-            Class* cl = (Class*)C->getZExtValue();
-            if (cl->isResolved()) {
-              LLVMClassInfo* LCI = module->getClassInfo(cl);
-              Value* Size = LCI->getVirtualSize();
-              CI->replaceAllUsesWith(Size);
-              CI->eraseFromParent();
-              continue;
-            }
-          }
           
           Value* val = Call.getArgument(0); 
           Value* indexes[2] = { module->constantZero, 
@@ -278,104 +222,10 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* Class = new LoadInst(ClassPtr, "", CI);
           CI->replaceAllUsesWith(Class);
           CI->eraseFromParent();
-        } else if (V == module->InstanceOfFunction) {
-          ConstantExpr* CE = dyn_cast<ConstantExpr>(Call.getArgument(1));
-          if (CE) {
-            ConstantInt* C = (ConstantInt*)CE->getOperand(0);
-            CommonClass* cl = (CommonClass*)C->getZExtValue();
-            Changed = true;
-            BasicBlock* NBB = II->getParent()->splitBasicBlock(II);
-            I->getParent()->getTerminator()->eraseFromParent();
-            Value* obj = Call.getArgument(0);
-            Instruction* cmp = new ICmpInst(ICmpInst::ICMP_EQ, obj,
-                                            module->JavaObjectNullConstant,
-                                            "", CI);
-            BasicBlock* ifTrue = BasicBlock::Create("", &F);
-            BasicBlock* ifFalse = BasicBlock::Create("", &F);
-            BranchInst::Create(ifTrue, ifFalse, cmp, CI);
-            PHINode* node = PHINode::Create(Type::Int1Ty, "", ifTrue);
-            node->addIncoming(ConstantInt::getFalse(), CI->getParent());
-            Value* objCl = CallInst::Create(module->GetClassFunction, obj,
-                                            "", ifFalse);
-            
-            if (isInterface(cl->access)) {
-              Value* args[2] = { objCl, CE };
-              Value* res = CallInst::Create(module->ImplementsFunction,
-                                            args, args + 2, "", ifFalse);
-              node->addIncoming(res, ifFalse);
-              BranchInst::Create(ifTrue, ifFalse);
-            } else {
-              cmp = new ICmpInst(ICmpInst::ICMP_EQ, objCl, CE, "", ifFalse);
-              BasicBlock* notEquals = BasicBlock::Create("", &F);
-              BranchInst::Create(ifTrue, notEquals, cmp, ifFalse);
-              node->addIncoming(ConstantInt::getTrue(), ifFalse);
-              
-              if (cl->isPrimitive()) {
-                fprintf(stderr, "implement me");
-                abort();
-              } else if (cl->isArray()) {
-                Value* args[2] = { objCl, CE };
-                Value* res = 
-                  CallInst::Create(module->InstantiationOfArrayFunction,
-                                   args, args + 2, "", notEquals);
-                node->addIncoming(res, notEquals);
-                BranchInst::Create(ifTrue, notEquals);
-              } else {
-                Value* depthCl;
-                if (cl->asClass()->isResolved()) {
-                  depthCl = ConstantInt::get(Type::Int32Ty, cl->depth);
-                } else {
-                  depthCl = CallInst::Create(module->GetDepthFunction,
-                                             CE, "", notEquals);
-                }
-                Value* depthClObj = CallInst::Create(module->GetDepthFunction,
-                                                     objCl, "", notEquals);
-                Value* cmp = new ICmpInst(ICmpInst::ICMP_ULE, depthCl, depthClObj, "",
-                                          notEquals);
-            
-                BasicBlock* supDepth = BasicBlock::Create("superior depth", &F);
-            
-                BranchInst::Create(supDepth, ifTrue, cmp, notEquals);
-                node->addIncoming(ConstantInt::getFalse(), notEquals);
-  
-                Value* inDisplay = 
-                  CallInst::Create(module->GetDisplayFunction, objCl,
-                                   "", supDepth);
-            
-                Value* args[2] = { inDisplay, depthCl };
-                Value* clInDisplay = 
-                  CallInst::Create(module->GetClassInDisplayFunction,
-                                   args, args + 2, "", supDepth);
-             
-                cmp = new ICmpInst(ICmpInst::ICMP_EQ, clInDisplay, CE, "",
-                                   supDepth);
-                BranchInst::Create(ifTrue, supDepth); 
-                node->addIncoming(cmp, supDepth);
-              }
-            }
-            CI->replaceAllUsesWith(node);
-            CI->eraseFromParent();
-            BranchInst::Create(NBB, ifTrue);
-            break;
-          }
+#if defined(ISOLATE)
         } else if (V == module->GetStaticInstanceFunction) {
           Changed = true;
-#if !defined(ISOLATE_SHARING) && !defined(ISOLATE)
-          ConstantExpr* CE = getClass(module, Call.getArgument(0));
-          assert(CE && "Wrong use of GetStaticInstanceFunction");
-          
-          ConstantInt* C = (ConstantInt*)CE->getOperand(0);
-          Class* cl = (Class*)C->getZExtValue();
-          
-          Instruction* R = dyn_cast<Instruction>(Call.getArgument(0));
-          Value* Replace = module->getStaticInstance(cl, CI);
-          CI->replaceAllUsesWith(Replace);
-          CI->eraseFromParent();
-          
-          if (R && !R->getNumUses()) R->eraseFromParent();
-         
 
-#elif defined(ISOLATE)
           Value* TCM = getTCM(module, Call.getArgument(0), CI);
           Constant* C = module->OffsetStaticInstanceInTaskClassMirrorConstant;
           Value* GEP[2] = { module->constantZero, C };
@@ -383,8 +233,6 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Replace = new LoadInst(Replace, "", CI);
           CI->replaceAllUsesWith(Replace);
           CI->eraseFromParent();
-#else
-          abort();
 #endif
         } else if (V == module->GetClassDelegateeFunction) {
           Changed = true;
@@ -569,33 +417,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             PointerType::getUnqual(module->JavaCommonClassType);
           Constant* nullValue = Constant::getNullValue(Ty);
           // Check if we have already proceed this call.
-          if (Call.getArgument(1) == nullValue) {
-            Changed = true;
-            ConstantExpr* CE = getClass(module, Call.getArgument(0));
-            if (CE) {
-              ConstantInt* C = (ConstantInt*)CE->getOperand(0);
-              Class* cl = (Class*)C->getZExtValue();
-              if (cl->isResolved()) {
-                JnjvmClassLoader* JCL = cl->classLoader;
-                const UTF8* arrayName = JCL->constructArrayName(1, cl->name);
-          
-                UserCommonClass* dcl = JCL->constructArray(arrayName);
-                Value* valCl = module->getNativeClass(dcl, CI);
-                
-                Instruction* V = dyn_cast<Instruction>(Call.getArgument(0));
-                CI->replaceAllUsesWith(valCl);
-                CI->eraseFromParent();
-
-                if (V) {
-                  Instruction* Op = dyn_cast<Instruction>(V->getOperand(0));
-                  if (!V->getNumUses()) V->eraseFromParent();
-                  if (Op && !Op->getNumUses()) Op->eraseFromParent();
-                }
-                
-                continue;
-              }
-            }
-            
+          if (Call.getArgument(1) == nullValue) { 
             BasicBlock* NBB = II->getParent()->splitBasicBlock(II);
             I->getParent()->getTerminator()->eraseFromParent();
 

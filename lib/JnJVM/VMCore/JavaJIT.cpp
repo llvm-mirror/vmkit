@@ -985,7 +985,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
 #ifdef ISOLATE_SHARING
     // We're dealing with exceptions, don't catch the exception if the class can
     // not be found.
-    if (cur->catche) cl = getResolvedClass(cur->catche, false, false);
+    if (cur->catche) cl = getResolvedClass(cur->catche, false, false, 0);
     else cl = CallInst::Create(module->GetJnjvmExceptionClassFunction,
                                isolateLocal, "", currentBlock);
 #else
@@ -1168,20 +1168,17 @@ void JavaJIT::_ldc(uint16 index) {
     push(ConstantFP::get(Type::FloatTy, ctpInfo->FloatAt(index)),
          false);
   } else if (type == JavaConstantPool::ConstantClass) {
-#if !defined(ISOLATE)
-    if (ctpInfo->ctpRes[index]) {
-      CommonClass* cl = (CommonClass*)(ctpInfo->ctpRes[index]);
-      Value* Val = module->getJavaClass(cl, currentBlock);
-      push(Val, false);
-    } else {
+    UserCommonClass* cl = 0;
+    Value* res = getResolvedCommonClass(index, false, &cl);
+
+#ifndef ISOLATE
+    if (cl) res = module->getJavaClass(cl, currentBlock);
+    else
 #endif
-      Value* val = getResolvedCommonClass(index, false);
-      Value* res = CallInst::Create(module->GetClassDelegateeFunction,
-                                    val, "", currentBlock);
-      push(res, false);
-#if !defined(ISOLATE)
-    }
-#endif
+    
+    res = CallInst::Create(module->GetClassDelegateeFunction, res, "",
+                           currentBlock);
+    push(res, false);
   } else {
     JavaThread::get()->getJVM()->unknownError("unknown type %d", type);
   }
@@ -1599,8 +1596,9 @@ void JavaJIT::invokeStatic(uint16 index) {
     if (module->isStaticCompiling()) {
 #endif
       uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
-      Value* Cl = getResolvedClass(clIndex, true); 
-      if (!meth || needsInitialisationCheck(meth->classDef, compilingClass)) {
+      UserClass* cl = 0;
+      Value* Cl = getResolvedClass(clIndex, true, true, &cl);
+      if (!meth || (cl && needsInitialisationCheck(cl, compilingClass))) {
         CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
                          currentBlock);
       }
@@ -1669,12 +1667,14 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   return res;
 }
 
-Value* JavaJIT::getResolvedCommonClass(uint16 index, bool doThrow) {
+Value* JavaJIT::getResolvedCommonClass(uint16 index, bool doThrow,
+                                       UserCommonClass** alreadyResolved) {
     
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   CommonClass* cl = ctpInfo->getMethodClassIfLoaded(index);
   Value* node = 0;
   if (cl && (!cl->isClass() || cl->asClass()->isResolved())) {
+    if (alreadyResolved) *alreadyResolved = cl;
     node = module->getNativeClass(cl, currentBlock);
     if (node->getType() != module->JavaCommonClassType) {
       node = new BitCastInst(node, module->JavaCommonClassType, "",
@@ -1688,12 +1688,14 @@ Value* JavaJIT::getResolvedCommonClass(uint16 index, bool doThrow) {
   return node;
 }
 
-Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow) {
+Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow,
+                                 Class** alreadyResolved) {
     
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   Class* cl = (Class*)(ctpInfo->getMethodClassIfLoaded(index));
   Value* node = 0;
   if (cl && cl->isResolved()) {
+    if (alreadyResolved) (*alreadyResolved) = cl;
     node = module->getNativeClass(cl, currentBlock);
   } else {
     node = getConstantPoolAt(index, module->ClassLookupFunction,
@@ -1713,11 +1715,22 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow) {
 
 void JavaJIT::invokeNew(uint16 index) {
   
-  Value* Cl = getResolvedClass(index, true);
-  Value* Size = CallInst::Create(module->GetObjectSizeFromClassFunction, Cl,
-                                 "", currentBlock);
-  Value* VT = CallInst::Create(module->GetVTFromClassFunction, Cl, "",
-                               currentBlock);
+  Class* cl = 0;
+  Value* Cl = getResolvedClass(index, true, true, &cl);
+          
+  Value* VT = 0;
+  Value* Size = 0;
+  
+  if (cl) {
+    VT = module->getVirtualTable(cl, currentBlock);
+    LLVMClassInfo* LCI = module->getClassInfo(cl);
+    Size = LCI->getVirtualSize();
+  } else {
+    VT = CallInst::Create(module->GetVTFromClassFunction, Cl, "",
+                          currentBlock);
+    Size = CallInst::Create(module->GetObjectSizeFromClassFunction, Cl,
+                            "", currentBlock);
+  }
   
   Value* val = invoke(module->JavaObjectAllocateFunction, Size, VT, "",
                       currentBlock);
@@ -1775,12 +1788,23 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     if (stat) {
       type = LCI->getStaticType();
       Value* Cl = module->getNativeClass(field->classDef, currentBlock);
-      if (needsInitialisationCheck(field->classDef, compilingClass)) {
+      bool needsCheck = needsInitialisationCheck(field->classDef,
+                                                 compilingClass);
+      if (needsCheck) {
         Cl = invoke(module->InitialisationCheckFunction, Cl, "",
                     currentBlock);
       }
+#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
+      if (needsCheck) {
+        CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
+                         currentBlock);
+      }
+
+      object = module->getStaticInstance(field->classDef, currentBlock);
+#else
       object = CallInst::Create(module->GetStaticInstanceFunction, Cl, "",
                                 currentBlock); 
+#endif
     } else {
       type = LCI->getVirtualType();
     }

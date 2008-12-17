@@ -1851,12 +1851,24 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           TheVT = module->getPrimitiveArrayVT(currentBlock);
         } else {
           uint16 index = readU2(bytecodes, i);
-          valCl = getResolvedCommonClass(index);
-          const llvm::Type* Ty = 
-            PointerType::getUnqual(module->JavaCommonClassType);
-          Value* args[2]= { valCl, Constant::getNullValue(Ty) };
-          valCl = CallInst::Create(module->GetArrayClassFunction, args,
-                                   args + 2, "", currentBlock);
+          CommonClass* cl = 0;
+          valCl = getResolvedCommonClass(index, true, &cl);
+
+          if (cl) {
+            JnjvmClassLoader* JCL = cl->classLoader;
+            const UTF8* arrayName = JCL->constructArrayName(1, cl->name);
+          
+            UserCommonClass* dcl = JCL->constructArray(arrayName);
+            valCl = module->getNativeClass(dcl, currentBlock);
+
+          } else {
+            const llvm::Type* Ty = 
+              PointerType::getUnqual(module->JavaCommonClassType);
+            Value* args[2]= { valCl, Constant::getNullValue(Ty) };
+            valCl = CallInst::Create(module->GetArrayClassFunction, args,
+                                     args + 2, "", currentBlock);
+          }
+
           sizeElement = module->constantPtrSize;
           TheVT = module->getReferenceArrayVT(currentBlock);
         }
@@ -1975,52 +1987,132 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
       }
 
-      case CHECKCAST : {
-        uint16 index = readU2(bytecodes, i);
+      case CHECKCAST :
+      case INSTANCEOF : {
         
-        Value* obj = top();
+        bool checkcast = (bytecodes[i] == CHECKCAST);
+        
+        BasicBlock* exceptionCheckcast = 0;
+        BasicBlock* endCheckcast = 0;
+        Value* result = 0;
 
+        uint16 index = readU2(bytecodes, i);
+        UserCommonClass* cl = 0;
+        Value* clVar = getResolvedCommonClass(index, true, &cl);
+        Value* obj = top();
+        Value* args[2] = { obj, clVar };
         Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, obj,
                                   module->JavaObjectNullConstant,
                                   "", currentBlock);
         
-        BasicBlock* ifTrue = createBasicBlock("null checkcast");
-        BasicBlock* ifFalse = createBasicBlock("non null checkcast");
+        if (checkcast) {
+          exceptionCheckcast = createBasicBlock("false checkcast");
 
-        BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
-        currentBlock = ifFalse;
-        Value* clVar = getResolvedCommonClass(index);
         
-        Value* args[2] = { obj, clVar };
-        Value* call = CallInst::Create(module->InstanceOfFunction, args,
-                                       args + 2, "", currentBlock);
-        
-        BasicBlock* ex = createBasicBlock("false checkcast");
-        BranchInst::Create(ifTrue, ex, call, currentBlock);
+          endCheckcast = createBasicBlock("null checkcast");
+          BasicBlock* ifFalse = createBasicBlock("non null checkcast");
 
-        if (currentExceptionBlock != endExceptionBlock) {
-          InvokeInst::Create(module->ClassCastExceptionFunction,
-                             unifiedUnreachable,
-                             currentExceptionBlock, args, args + 2, "", ex);
-        } else {
-          CallInst::Create(module->ClassCastExceptionFunction,
-                           args, args + 2, "", ex);
-          new UnreachableInst(ex);
+          BranchInst::Create(endCheckcast, ifFalse, cmp, currentBlock);
+          
+          if (currentExceptionBlock != endExceptionBlock) {
+            InvokeInst::Create(module->ClassCastExceptionFunction,
+                               unifiedUnreachable,
+                               currentExceptionBlock, args, args + 2, "", 
+                               exceptionCheckcast);
+          } else {
+            CallInst::Create(module->ClassCastExceptionFunction,
+                             args, args + 2, "", exceptionCheckcast);
+            new UnreachableInst(exceptionCheckcast);
+          }
+          currentBlock = ifFalse;
         }
         
-        currentBlock = ifTrue;
-        break;
-      }
+        if (cl) {
 
-      case INSTANCEOF : {
-        uint16 index = readU2(bytecodes, i);
-        Value* clVar = getResolvedCommonClass(index);
-        
-        Value* args[2] = { pop(), clVar };
-        Value* val = CallInst::Create(module->InstanceOfFunction,
-                                      args, args + 2, "", currentBlock);
-        push(new ZExtInst(val, Type::Int32Ty, "", currentBlock),
-             false);
+          BasicBlock* ifTrue = createBasicBlock("true type compare");
+          BasicBlock* ifFalse = createBasicBlock("false type compare");
+          BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
+          PHINode* node = PHINode::Create(Type::Int1Ty, "", ifTrue);
+          node->addIncoming(ConstantInt::getFalse(), currentBlock);
+          Value* objCl = CallInst::Create(module->GetClassFunction, obj, "",
+                                          ifFalse);
+          Value* classArgs[2] = { objCl, clVar };            
+            
+          if (isInterface(cl->access)) {
+            Value* res = CallInst::Create(module->ImplementsFunction,
+                                          classArgs, classArgs + 2, "",
+                                          ifFalse);
+            node->addIncoming(res, ifFalse);
+            BranchInst::Create(ifTrue, ifFalse);
+          } else {
+            cmp = new ICmpInst(ICmpInst::ICMP_EQ, objCl, clVar, "", ifFalse);
+            BasicBlock* notEquals = createBasicBlock("false compare");
+            BranchInst::Create(ifTrue, notEquals, cmp, ifFalse);
+            node->addIncoming(ConstantInt::getTrue(), ifFalse);
+              
+            if (cl->isPrimitive()) {
+              fprintf(stderr, "implement me");
+              abort();
+            } else if (cl->isArray()) {
+              Value* res = 
+                CallInst::Create(module->InstantiationOfArrayFunction,
+                                 classArgs, classArgs + 2, "", notEquals);
+              node->addIncoming(res, notEquals);
+              BranchInst::Create(ifTrue, notEquals);
+            } else {
+              Value* depthCl;
+              if (cl->asClass()->isResolved()) {
+                depthCl = ConstantInt::get(Type::Int32Ty, cl->depth);
+              } else {
+                depthCl = CallInst::Create(module->GetDepthFunction,
+                                           clVar, "", notEquals);
+              }
+              
+              Value* depthClObj = CallInst::Create(module->GetDepthFunction,
+                                                   objCl, "", notEquals);
+              Value* cmp = new ICmpInst(ICmpInst::ICMP_ULE, depthCl, depthClObj,
+                                        "", notEquals);
+            
+              BasicBlock* supDepth = createBasicBlock("superior depth");
+            
+              BranchInst::Create(supDepth, ifTrue, cmp, notEquals);
+              node->addIncoming(ConstantInt::getFalse(), notEquals);
+  
+              Value* inDisplay = CallInst::Create(module->GetDisplayFunction,
+                                                objCl, "", supDepth);
+            
+              Value* displayArgs[2] = { inDisplay, depthCl };
+              Value* clInDisplay = 
+                CallInst::Create(module->GetClassInDisplayFunction, displayArgs,
+                                 displayArgs + 2, "", supDepth);
+             
+              cmp = new ICmpInst(ICmpInst::ICMP_EQ, clInDisplay, clVar, "",
+                                   supDepth);
+             BranchInst::Create(ifTrue, supDepth); 
+            
+             node->addIncoming(cmp, supDepth);
+            }
+          }
+
+          currentBlock = ifTrue;
+          result = node;
+
+        } else {
+          result = CallInst::Create(module->InstanceOfFunction, args,
+                                    args + 2, "", currentBlock);
+
+        }
+
+        if (checkcast) {
+          BranchInst::Create(endCheckcast, exceptionCheckcast, result,
+                             currentBlock);
+          currentBlock = endCheckcast;
+        } else {
+          pop();
+          push(new ZExtInst(result, Type::Int32Ty, "", currentBlock),
+               false);
+        }
+
         break;
       }
 
@@ -2043,7 +2135,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint8 dim = readU1(bytecodes, i);
         
         
-        Value* valCl = getResolvedCommonClass(index);
+        Value* valCl = getResolvedCommonClass(index, true, 0);
         Value** args = (Value**)alloca(sizeof(Value*) * (dim + 2));
         args[0] = valCl;
         args[1] = ConstantInt::get(Type::Int32Ty, dim);

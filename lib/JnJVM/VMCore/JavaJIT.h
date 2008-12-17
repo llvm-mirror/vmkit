@@ -214,8 +214,10 @@ public:
   llvm::Value* ldResolved(uint16 index, bool stat, llvm::Value* object,
                           const llvm::Type* fieldType, 
                           const llvm::Type* fieldTypePtr);
-  llvm::Value* getResolvedClass(uint16 index, bool clinit, bool doThrow = true);
-  llvm::Value* getResolvedCommonClass(uint16 index, bool doThrow = true);
+  llvm::Value* getResolvedClass(uint16 index, bool clinit, bool doThrow,
+                                UserClass** alreadyResolved);
+  llvm::Value* getResolvedCommonClass(uint16 index, bool doThrow,
+                                      UserCommonClass** alreadyResolved);
   
   // methods invoke
   void makeArgs(llvm::FunctionType::param_iterator it,
