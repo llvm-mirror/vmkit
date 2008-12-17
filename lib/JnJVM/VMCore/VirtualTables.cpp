@@ -54,6 +54,21 @@ void ArrayObject::TRACER {
   if (l) l->MARK_AND_TRACE;
 }
 
+#ifdef MULTIPLE_GC
+extern "C" void ArrayObjectTracer(ArrayObject* obj, Collector* GC) {
+#else
+extern "C" void ArrayObjectTracer(ArrayObject* obj) {
+#endif
+  obj->CALL_TRACER;
+}
+
+#ifdef MULTIPLE_GC
+extern "C" void JavaArrayTracer(JavaArray* obj, Collector* GC) {
+#else
+extern "C" void JavaArrayTracer(JavaArray* obj) {
+#endif
+}
+
 void JavaArray::TRACER {}
 
 #define TRACE_VECTOR(type,alloc,name) {                             \
