@@ -2,4 +2,4 @@
 ;;;;;;;;;;;;;;;;;;;; Collector specific methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-declare %JavaObject* @gcmalloc(i32, %VT)
+declare %JavaObject* @gcmalloc(i32, %VT*)

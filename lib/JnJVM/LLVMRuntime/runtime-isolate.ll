@@ -2,13 +2,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;; Isolate specific types ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-%Jnjvm = type {%VT, %JavaClass*, [9 x %JavaClass*]}
+%Jnjvm = type { %VT*, %JavaClass*, [9 x %JavaClass*] }
 
 %JavaCommonClass = type { %JavaCommonClass**, i32, [32 x %JavaObject*],
                           i16, %JavaClass**, i16, %UTF8*, %JavaClass*, i8* }
 
 
-%JavaClass = type { %JavaCommonClass, i32, %VT, [32 x %TaskClassMirror], i8*, 
+%JavaClass = type { %JavaCommonClass, i32, %VT*, [32 x %TaskClassMirror], i8*, 
                     %JavaField*, i16, %JavaField*, i16, %JavaMethod*, i16, 
                     %JavaMethod*, i16, i8*, %ArrayUInt8*, i8*, %Attribut*, 
                     i16, %JavaClass**, i16, %JavaClass*, i16, i8, i32, i32, i8*,

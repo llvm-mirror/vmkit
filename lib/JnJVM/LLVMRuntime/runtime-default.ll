@@ -3,10 +3,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; A virtual table is an array of function pointers.
-%VT = type i32 (...)**
+%VT = type [0 x i32 (...)*]
 
 ;;; The root of all Java Objects: a VT, a class and a lock.
-%JavaObject = type { %VT, %JavaCommonClass*, i8* }
+%JavaObject = type { %VT*, %JavaCommonClass*, i8* }
 
 ;;; Types for Java arrays. A size of 0 means an undefined size.
 %JavaArray = type { %JavaObject, i8* }
@@ -55,7 +55,7 @@ declare %JavaClass* @jnjvmRuntimeInitialiseClass(%JavaClass*) readnone
 declare i32 @arrayLength(%JavaObject*) readnone 
 
 ;;; getVT - Get the VT of the object.
-declare %VT @getVT(%JavaObject*) readnone 
+declare %VT* @getVT(%JavaObject*) readnone 
 
 ;;; getClass - Get the class of an object.
 declare %JavaCommonClass* @getClass(%JavaObject*) readnone 
@@ -64,7 +64,7 @@ declare %JavaCommonClass* @getClass(%JavaObject*) readnone
 declare i8* @getLock(%JavaObject*)
 
 ;;; getVTFromClass - Get the VT of a class from its runtime representation.
-declare %VT @getVTFromClass(%JavaClass*) readnone 
+declare %VT* @getVTFromClass(%JavaClass*) readnone 
 
 ;;; getObjectSizeFromClass - Get the size of a class from its runtime
 ;;; representation.
@@ -185,7 +185,7 @@ declare i1           @JavaThreadCompareException(%JavaClass*)
 declare void @jniProceedPendingException()
 declare i8*  @getSJLJBuffer()
 
-declare %JavaObject* @gcmalloc(i32, %VT)
+declare %JavaObject* @gcmalloc(i32, %VT*)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Debugging methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

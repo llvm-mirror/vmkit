@@ -114,14 +114,16 @@ void JavaJIT::invokeVirtual(uint16 index) {
 
   Value* VT = CallInst::Create(module->GetVTFunction, args[0], "",
                                currentBlock);
-  Value* indexes2; //[3];
+  Value* indexes2[2];
+  indexes2[0] = module->constantZero;
+
 #ifdef ISOLATE_SHARING
   Value* indexesCtp; //[3];
 #endif
   if (meth) {
     LLVMMethodInfo* LMI = module->getMethodInfo(meth);
     ConstantInt* Offset = LMI->getOffset();
-    indexes2 = Offset;
+    indexes2[1] = Offset;
 #ifdef ISOLATE_SHARING
     indexesCtp = ConstantInt::get(Type::Int32Ty,
                                   Offset->getZExtValue() * -1);
@@ -130,7 +132,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
     
     Value* val = getConstantPoolAt(index, module->VirtualLookupFunction,
                                    Type::Int32Ty, args[0], true);
-    indexes2 = val;
+    indexes2[1] = val;
 #ifdef ISOLATE_SHARING
     Value* mul = BinaryOperator::CreateMul(val, module->constantMinusOne,
                                            "", currentBlock);
@@ -138,9 +140,11 @@ void JavaJIT::invokeVirtual(uint16 index) {
 #endif
   }
   
-  Value* FuncPtr = GetElementPtrInst::Create(VT, indexes2, "", currentBlock);
+  Value* FuncPtr = GetElementPtrInst::Create(VT, indexes2, indexes2 + 2, "",
+                                             currentBlock);
     
   Value* Func = new LoadInst(FuncPtr, "", currentBlock);
+  
   Func = new BitCastInst(Func, LSI->getVirtualPtrType(), "", currentBlock);
 #ifdef ISOLATE_SHARING
   Value* CTP = GetElementPtrInst::Create(VT, indexesCtp, "", currentBlock);

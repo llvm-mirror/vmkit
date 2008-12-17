@@ -536,7 +536,7 @@ VirtualTable* JnjvmModule::makeVT(Class* cl) {
     COPY(ArrayObject)
 
 #undef COPY
-
+    
    }
 #endif
   
@@ -1041,7 +1041,7 @@ void JnjvmModule::initialise() {
   Module* module = this;
   initialModule = this;
 
-  VTType = module->getTypeByName("VT");
+  VTType = PointerType::getUnqual(module->getTypeByName("VT"));
 
 #ifdef ISOLATE_SHARING
   JnjvmType = 
