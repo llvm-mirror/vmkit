@@ -38,11 +38,14 @@
 %UTF8 = type { %JavaObject, i8*, [0 x i16] }
 
 
-%JavaField = type { i8*, i16, %UTF8*, %UTF8*, %Attribut*, i16, %JavaClass*, i64,
+%JavaField = type { i8*, i16, %UTF8*, %UTF8*, %Attribut*, i16, %JavaClass*, i32,
                     i16, i8* }
 
 %JavaMethod = type { i8*, i16, %Attribut*, i16, %Enveloppe*, i16, %JavaClass*,
                      %UTF8*, %UTF8*, i8, i8*, i32, i8* }
+
+%JavaClassPrimitive = type { %JavaCommonClass, i32 }
+%JavaClassArray = type { %JavaCommonClass, %JavaCommonClass* }
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Constant calls for Jnjvm runtime internal objects field accesses ;;;;;;;;;

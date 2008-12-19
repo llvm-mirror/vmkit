@@ -28,8 +28,10 @@
 
 namespace jnjvm {
 
+class CacheNode;
 class CommonClass;
 class Class;
+class Enveloppe;
 class JavaField;
 class JavaMethod;
 class JavaObject;
@@ -176,38 +178,42 @@ public:
 class JnjvmModule : public mvm::MvmModule {
   friend class LLVMClassInfo;
 private:
-  std::map<const CommonClass*, llvm::GlobalVariable*> nativeClasses;
-  std::map<const CommonClass*, llvm::GlobalVariable*> javaClasses;
-  std::map<const CommonClass*, llvm::GlobalVariable*> virtualTables;
-  std::map<const Class*, llvm::GlobalVariable*> staticInstances;
-  std::map<const JavaConstantPool*, llvm::GlobalVariable*> constantPools;
-  std::map<const JavaString*, llvm::GlobalVariable*> strings;
-  std::map<const Enveloppe*, llvm::GlobalVariable*> enveloppes;
-  std::map<const JavaMethod*, llvm::GlobalVariable*> nativeFunctions;
+  std::map<const CommonClass*, llvm::Constant*> nativeClasses;
+  std::map<const CommonClass*, llvm::Constant*> javaClasses;
+  std::map<const CommonClass*, llvm::Constant*> virtualTables;
+  std::map<const Class*, llvm::Constant*> staticInstances;
+  std::map<const JavaConstantPool*, llvm::Constant*> constantPools;
+  std::map<const JavaString*, llvm::Constant*> strings;
+  std::map<const Enveloppe*, llvm::Constant*> enveloppes;
+  std::map<const JavaMethod*, llvm::Constant*> nativeFunctions;
+  std::map<const UTF8*, llvm::Constant*> utf8s;
 
-  typedef std::map<const CommonClass*, llvm::GlobalVariable*>::iterator
+  typedef std::map<const CommonClass*, llvm::Constant*>::iterator
     native_class_iterator;  
   
-  typedef std::map<const CommonClass*, llvm::GlobalVariable*>::iterator
+  typedef std::map<const CommonClass*, llvm::Constant*>::iterator
     java_class_iterator;
   
-  typedef std::map<const CommonClass*, llvm::GlobalVariable*>::iterator
+  typedef std::map<const CommonClass*, llvm::Constant*>::iterator
     virtual_table_iterator;
   
-  typedef std::map<const Class*, llvm::GlobalVariable*>::iterator
+  typedef std::map<const Class*, llvm::Constant*>::iterator
     static_instance_iterator;  
   
-  typedef std::map<const JavaConstantPool*, llvm::GlobalVariable*>::iterator
+  typedef std::map<const JavaConstantPool*, llvm::Constant*>::iterator
     constant_pool_iterator;
   
-  typedef std::map<const JavaString*, llvm::GlobalVariable*>::iterator
+  typedef std::map<const JavaString*, llvm::Constant*>::iterator
     string_iterator;
   
-  typedef std::map<const Enveloppe*, llvm::GlobalVariable*>::iterator
+  typedef std::map<const Enveloppe*, llvm::Constant*>::iterator
     enveloppe_iterator;
   
-  typedef std::map<const JavaMethod*, llvm::GlobalVariable*>::iterator
+  typedef std::map<const JavaMethod*, llvm::Constant*>::iterator
     native_function_iterator;
+  
+  typedef std::map<const UTF8*, llvm::Constant*>::iterator
+    utf8_iterator;
   
   
   bool staticCompilation;
@@ -217,8 +223,8 @@ private:
   VirtualTable* makeVT(Class* cl);
   VirtualTable* allocateVT(Class* cl);
   
-  static llvm::Value* PrimitiveArrayVT;
-  static llvm::Value* ReferenceArrayVT;
+  static llvm::Constant* PrimitiveArrayVT;
+  static llvm::Constant* ReferenceArrayVT;
   
 public:
 
@@ -251,10 +257,16 @@ public:
   static const llvm::Type* JavaArrayType;
   static const llvm::Type* JavaCommonClassType;
   static const llvm::Type* JavaClassType;
+  static const llvm::Type* JavaClassArrayType;
+  static const llvm::Type* JavaClassPrimitiveType;
   static const llvm::Type* JavaCacheType;
   static const llvm::Type* EnveloppeType;
   static const llvm::Type* CacheNodeType;
   static const llvm::Type* ConstantPoolType;
+  static const llvm::Type* UTF8Type;
+  static const llvm::Type* JavaMethodType;
+  static const llvm::Type* JavaFieldType;
+  static const llvm::Type* AttributType;
   
 #ifdef ISOLATE_SHARING
   static const llvm::Type* JnjvmType;
@@ -377,18 +389,18 @@ public:
   void initialise();
   void printStats();
 
-  llvm::Value* getNativeClass(CommonClass* cl, llvm::Value* Where);
-  llvm::Value* getJavaClass(CommonClass* cl, llvm::Value* Where);
-  llvm::Value* getStaticInstance(Class* cl, llvm::Value* Where);
-  llvm::Value* getVirtualTable(Class* cl, llvm::Value* Where);
+  llvm::Constant* getNativeClass(CommonClass* cl, llvm::Value* Where);
+  llvm::Constant* getJavaClass(CommonClass* cl, llvm::Value* Where);
+  llvm::Constant* getStaticInstance(Class* cl, llvm::Value* Where);
+  llvm::Constant* getVirtualTable(Class* cl, llvm::Value* Where);
   
-  llvm::Value* getEnveloppe(Enveloppe* enveloppe, llvm::Value* Where);
-  llvm::Value* getString(JavaString* str, llvm::Value* Where);
-  llvm::Value* getConstantPool(JavaConstantPool* ctp, llvm::Value* Where);
-  llvm::Value* getNativeFunction(JavaMethod* meth, void* natPtr, llvm::Value* Where);
+  llvm::Constant* getEnveloppe(Enveloppe* enveloppe, llvm::Value* Where);
+  llvm::Constant* getString(JavaString* str, llvm::Value* Where);
+  llvm::Constant* getConstantPool(JavaConstantPool* ctp, llvm::Value* Where);
+  llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr, llvm::Value* Where);
   
-  llvm::Value* getReferenceArrayVT(llvm::Value* Where);
-  llvm::Value* getPrimitiveArrayVT(llvm::Value* Where);
+  llvm::Constant* getReferenceArrayVT(llvm::Value* Where);
+  llvm::Constant* getPrimitiveArrayVT(llvm::Value* Where);
 
 #ifdef SERVICE
   std::map<const Jnjvm*, llvm::GlobalVariable*> isolates;
@@ -398,9 +410,26 @@ public:
   llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
 #endif
   
+  
 private:
   static llvm::Module* initialModule;
-
+  
+  //--------------- Static compiler specific functions -----------------------//
+  llvm::Constant* CreateConstantFromVT(VirtualTable* VT, uint32 size);
+  llvm::Constant* CreateConstantFromUTF8(const UTF8* val);
+  llvm::Constant* CreateConstantFromEnveloppe(Enveloppe* val);
+  llvm::Constant* CreateConstantFromCacheNode(CacheNode* CN);
+  llvm::Constant* CreateConstantFromCommonClass(CommonClass* cl);
+  llvm::Constant* CreateConstantFromClass(Class* cl);
+  llvm::Constant* CreateConstantFromClassPrimitive(ClassPrimitive* cl);
+  llvm::Constant* CreateConstantFromClassArray(ClassArray* cl);
+  llvm::Constant* CreateConstantFromAttribut(Attribut& attribut);
+  llvm::Constant* CreateConstantFromJavaField(JavaField& field);
+  llvm::Constant* CreateConstantFromJavaMethod(JavaMethod& method);
+  llvm::Constant* CreateConstantFromJavaString(JavaString* str);
+  llvm::Constant* CreateConstantFromJavaClass(CommonClass* cl);
+  llvm::Constant* CreateConstantForJavaObject(CommonClass* cl);
+  llvm::Constant* getUTF8(const UTF8* val);
 };
 
 }

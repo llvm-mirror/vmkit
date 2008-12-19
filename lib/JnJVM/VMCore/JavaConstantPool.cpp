@@ -307,6 +307,10 @@ CommonClass* JavaConstantPool::getMethodClassIfLoaded(uint32 index) {
     temp = loader->lookupClassOrArray(name);
   }
 #endif
+
+  if (!temp && classDef->classLoader->getModule()->isStaticCompiling()) {
+    temp = loadClass(index);
+  }
   return temp;
 }
 

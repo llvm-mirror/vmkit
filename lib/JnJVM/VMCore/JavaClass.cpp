@@ -299,6 +299,7 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
   virtualFields = 0;
   staticFields = 0;
   ownerClass = 0;
+  innerAccess = 0;
   access = JNJVM_CLASS;
   memset(IsolateInfo, 0, sizeof(TaskClassMirror) * NR_ISOLATES);
 }

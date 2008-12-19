@@ -113,7 +113,9 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT) {
   
   ConstantExpr* CE = dyn_cast<ConstantExpr>(VT);
   if (CE) {
-    ConstantInt* C = (ConstantInt*)CE->getOperand(0);
+    ConstantInt* C = dyn_cast<ConstantInt>(CE->getOperand(0));
+    if (!C) return false;
+
     VirtualTable* Table = (VirtualTable*)C->getZExtValue();
     ConstantInt* CI = dyn_cast<ConstantInt>(Size);
     // If the class has a finalize method, do not stack allocate the object.
