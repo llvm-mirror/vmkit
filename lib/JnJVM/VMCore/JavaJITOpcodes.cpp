@@ -1838,7 +1838,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           JnjvmBootstrapLoader* loader = 
             compilingClass->classLoader->bootstrapLoader;
           UserClassArray* dcl = loader->getArrayClass(id);
-          valCl = module->getNativeClass(dcl, currentBlock);
+          valCl = module->getNativeClass(dcl);
 #else
           Value* args[2] = { isolateLocal,
                              ConstantInt::get(Type::Int32Ty, id - 4) };
@@ -1848,7 +1848,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
           LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[charId];
           sizeElement = LAI.sizeInBytesConstant;
-          TheVT = module->getPrimitiveArrayVT(currentBlock);
+          TheVT = module->getPrimitiveArrayVT();
         } else {
           uint16 index = readU2(bytecodes, i);
           CommonClass* cl = 0;
@@ -1859,7 +1859,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             const UTF8* arrayName = JCL->constructArrayName(1, cl->name);
           
             UserCommonClass* dcl = JCL->constructArray(arrayName);
-            valCl = module->getNativeClass(dcl, currentBlock);
+            valCl = module->getNativeClass(dcl);
 
           } else {
             const llvm::Type* Ty = 
@@ -1870,9 +1870,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           }
 
           sizeElement = module->constantPtrSize;
-          TheVT = module->getReferenceArrayVT(currentBlock);
+          TheVT = module->getReferenceArrayVT();
         }
-        llvm::Value* arg1 = popAsInt();
+        Value* arg1 = popAsInt();
 
         Value* cmp = new ICmpInst(ICmpInst::ICMP_SLT, arg1,
                                   module->constantZero, "", currentBlock);

@@ -82,7 +82,7 @@ llvm::ConstantInt*  JnjvmModule::JavaArraySizeOffsetConstant;
 llvm::ConstantInt*  JnjvmModule::JavaObjectLockOffsetConstant;
 llvm::ConstantInt*  JnjvmModule::JavaObjectClassOffsetConstant;
 
-Constant* JnjvmModule::getNativeClass(CommonClass* classDef, Value* Where) {
+Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
 
   if (staticCompilation) {
     native_class_iterator End = nativeClasses.end();
@@ -129,7 +129,7 @@ Constant* JnjvmModule::getNativeClass(CommonClass* classDef, Value* Where) {
   }
 }
 
-Constant* JnjvmModule::getConstantPool(JavaConstantPool* ctp, Value* Where) {
+Constant* JnjvmModule::getConstantPool(JavaConstantPool* ctp) {
   if (staticCompilation) {
     llvm::Constant* varGV = 0;
     constant_pool_iterator End = constantPools.end();
@@ -152,7 +152,7 @@ Constant* JnjvmModule::getConstantPool(JavaConstantPool* ctp, Value* Where) {
   }
 }
 
-Constant* JnjvmModule::getString(JavaString* str, Value* Where) {
+Constant* JnjvmModule::getString(JavaString* str) {
   if (staticCompilation) {
     string_iterator SI = strings.find(str);
     if (SI != strings.end()) {
@@ -180,7 +180,7 @@ Constant* JnjvmModule::getString(JavaString* str, Value* Where) {
   }
 }
 
-Constant* JnjvmModule::getEnveloppe(Enveloppe* enveloppe, Value* Where) {
+Constant* JnjvmModule::getEnveloppe(Enveloppe* enveloppe) {
   if (staticCompilation) {
     enveloppe_iterator SI = enveloppes.find(enveloppe);
     if (SI != enveloppes.end()) {
@@ -203,7 +203,7 @@ Constant* JnjvmModule::getEnveloppe(Enveloppe* enveloppe, Value* Where) {
   }
 }
 
-Constant* JnjvmModule::getJavaClass(CommonClass* cl, Value* Where) {
+Constant* JnjvmModule::getJavaClass(CommonClass* cl) {
   if (staticCompilation) {
     java_class_iterator End = javaClasses.end();
     java_class_iterator I = javaClasses.find(cl);
@@ -234,7 +234,7 @@ Constant* JnjvmModule::getJavaClass(CommonClass* cl, Value* Where) {
   }
 }
 
-Constant* JnjvmModule::getStaticInstance(Class* classDef, Value* Where) {
+Constant* JnjvmModule::getStaticInstance(Class* classDef) {
 #ifdef ISOLATE
   assert(0 && "Should not be here");
   abort();
@@ -275,7 +275,7 @@ Constant* JnjvmModule::getStaticInstance(Class* classDef, Value* Where) {
   }
 }
 
-Constant* JnjvmModule::getVirtualTable(Class* classDef, Value* Where) {
+Constant* JnjvmModule::getVirtualTable(Class* classDef) {
   if (staticCompilation) {
     llvm::Constant* res = 0;
     virtual_table_iterator End = virtualTables.end();
@@ -310,8 +310,7 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef, Value* Where) {
   }
 }
 
-Constant* JnjvmModule::getNativeFunction(JavaMethod* meth, void* ptr,
-                                         Value* Where) {
+Constant* JnjvmModule::getNativeFunction(JavaMethod* meth, void* ptr) {
   if (staticCompilation) {
     llvm::Constant* varGV = 0;
     native_function_iterator End = nativeFunctions.end();
@@ -466,7 +465,7 @@ Constant* JnjvmModule::CreateConstantForJavaObject(CommonClass* cl) {
   std::vector<Constant*> Elmts;
  
   if (cl->isClass()) {
-    Elmts.push_back(getVirtualTable(cl->asClass(), 0));
+    Elmts.push_back(getVirtualTable(cl->asClass()));
   } else {
     ClassArray* clA = cl->asArrayClass();
     if (clA->baseClass()->isPrimitive()) {
@@ -476,7 +475,7 @@ Constant* JnjvmModule::CreateConstantForJavaObject(CommonClass* cl) {
     }
   }
   
-  Constant* Cl = getNativeClass(cl, 0);
+  Constant* Cl = getNativeClass(cl);
   Constant* ClGEPs[2] = { constantZero, constantZero };
   Cl = ConstantExpr::getGetElementPtr(Cl, ClGEPs, 2);
     
@@ -503,7 +502,7 @@ Constant* JnjvmModule::CreateConstantFromJavaClass(CommonClass* cl) {
   Elmts.push_back(Constant::getNullValue(JavaObjectType));
   
   // vmdata
-  Constant* Cl = getNativeClass(cl, 0);
+  Constant* Cl = getNativeClass(cl);
   Cl = ConstantExpr::getCast(Instruction::BitCast, Cl, JavaObjectType);
   Elmts.push_back(Cl);
 
@@ -544,7 +543,7 @@ Constant* JnjvmModule::CreateConstantFromCacheNode(CacheNode* CN) {
   Elmts.push_back(Constant::getNullValue(STy->getContainedType(0)));
   Elmts.push_back(Constant::getNullValue(STy->getContainedType(1)));
   Elmts.push_back(Constant::getNullValue(STy->getContainedType(2)));
-  Elmts.push_back(getEnveloppe(CN->enveloppe, 0));
+  Elmts.push_back(getEnveloppe(CN->enveloppe));
   
   return ConstantStruct::get(STy, Elmts);
 }
@@ -604,7 +603,7 @@ Constant* JnjvmModule::CreateConstantFromCommonClass(CommonClass* cl) {
 
   // display
   for (uint32 i = 0; i <= cl->depth; ++i) {
-    Constant* Cl = getNativeClass(cl->display[i], 0);
+    Constant* Cl = getNativeClass(cl->display[i]);
     if (Cl->getType() != JavaCommonClassType)
       Cl = ConstantExpr::getGetElementPtr(Cl, ClGEPs, 2);
     
@@ -635,7 +634,7 @@ Constant* JnjvmModule::CreateConstantFromCommonClass(CommonClass* cl) {
   // interfaces
   if (cl->nbInterfaces) {
     for (uint32 i = 0; i < cl->nbInterfaces; ++i) {
-      TempElmts.push_back(getNativeClass(cl->interfaces[i], 0));
+      TempElmts.push_back(getNativeClass(cl->interfaces[i]));
     }
 
     ATy = ArrayType::get(JavaClassType, cl->nbInterfaces);
@@ -659,7 +658,7 @@ Constant* JnjvmModule::CreateConstantFromCommonClass(CommonClass* cl) {
 
   // super
   if (cl->super) {
-    CommonClassElts.push_back(getNativeClass(cl->super, 0));
+    CommonClassElts.push_back(getNativeClass(cl->super));
   } else {
     CommonClassElts.push_back(Constant::getNullValue(JavaClassType));
   }
@@ -713,7 +712,7 @@ Constant* JnjvmModule::CreateConstantFromJavaField(JavaField& field) {
   FieldElts.push_back(ConstantInt::get(Type::Int16Ty, field.nbAttributs));
 
   // classDef
-  FieldElts.push_back(getNativeClass(field.classDef, 0));
+  FieldElts.push_back(getNativeClass(field.classDef));
 
   // ptrOffset
   FieldElts.push_back(ConstantInt::get(Type::Int32Ty, field.ptrOffset));
@@ -772,7 +771,7 @@ Constant* JnjvmModule::CreateConstantFromJavaMethod(JavaMethod& method) {
   MethodElts.push_back(ConstantInt::get(Type::Int16Ty, 0));
   
   // classDef
-  MethodElts.push_back(getNativeClass(method.classDef, 0));
+  MethodElts.push_back(getNativeClass(method.classDef));
   
   // name
   MethodElts.push_back(getUTF8(method.name));
@@ -824,7 +823,7 @@ Constant* JnjvmModule::CreateConstantFromClassArray(ClassArray* cl) {
   ClassElts.push_back(CreateConstantFromCommonClass(cl));
 
   // baseClass
-  Constant* Cl = getNativeClass(cl->baseClass(), 0);
+  Constant* Cl = getNativeClass(cl->baseClass());
   if (Cl->getType() != JavaCommonClassType)
     Cl = ConstantExpr::getGetElementPtr(Cl, ClGEPs, 2);
     
@@ -847,7 +846,7 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(ConstantInt::get(Type::Int32Ty, cl->virtualSize));
 
   // virtualTable
-  ClassElts.push_back(getVirtualTable(cl, 0));
+  ClassElts.push_back(getVirtualTable(cl));
 
   // IsolateInfo
   const ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(3));
@@ -857,7 +856,7 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
   assert(TCMTy && "Malformed type");
                        
   TempElts.push_back(ConstantInt::get(Type::Int32Ty, ready)); 
-  TempElts.push_back(getStaticInstance(cl, 0));
+  TempElts.push_back(getStaticInstance(cl));
   Constant* CStr[1] = { ConstantStruct::get(TCMTy, TempElts) };
   TempElts.clear();
   ClassElts.push_back(ConstantArray::get(ATy, CStr, 1));
@@ -988,7 +987,7 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
   // innerClasses
   if (cl->nbInnerClasses) {
     for (uint32 i = 0; i < cl->nbInnerClasses; ++i) {
-      TempElts.push_back(getNativeClass(cl->innerClasses[i], 0));
+      TempElts.push_back(getNativeClass(cl->innerClasses[i]));
     }
 
     ATy = ArrayType::get(JavaClassType, cl->nbInnerClasses);
@@ -1009,7 +1008,7 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
 
   // outerClass
   if (cl->outerClass) {
-    ClassElts.push_back(getNativeClass(cl->outerClass, 0));
+    ClassElts.push_back(getNativeClass(cl->outerClass));
   } else {
     ClassElts.push_back(Constant::getNullValue(JavaClassType));
   }
@@ -1802,11 +1801,11 @@ void JnjvmModule::initialise() {
   LLVMAssessorInfo::initialise();
 }
 
-Constant* JnjvmModule::getReferenceArrayVT(Value* Where) {
+Constant* JnjvmModule::getReferenceArrayVT() {
   return ReferenceArrayVT;
 }
 
-Constant* JnjvmModule::getPrimitiveArrayVT(Value* Where) {
+Constant* JnjvmModule::getPrimitiveArrayVT() {
   return PrimitiveArrayVT;
 }
 

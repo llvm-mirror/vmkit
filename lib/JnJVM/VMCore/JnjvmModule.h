@@ -389,18 +389,18 @@ public:
   void initialise();
   void printStats();
 
-  llvm::Constant* getNativeClass(CommonClass* cl, llvm::Value* Where);
-  llvm::Constant* getJavaClass(CommonClass* cl, llvm::Value* Where);
-  llvm::Constant* getStaticInstance(Class* cl, llvm::Value* Where);
-  llvm::Constant* getVirtualTable(Class* cl, llvm::Value* Where);
+  llvm::Constant* getNativeClass(CommonClass* cl);
+  llvm::Constant* getJavaClass(CommonClass* cl);
+  llvm::Constant* getStaticInstance(Class* cl);
+  llvm::Constant* getVirtualTable(Class* cl);
   
-  llvm::Constant* getEnveloppe(Enveloppe* enveloppe, llvm::Value* Where);
-  llvm::Constant* getString(JavaString* str, llvm::Value* Where);
-  llvm::Constant* getConstantPool(JavaConstantPool* ctp, llvm::Value* Where);
-  llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr, llvm::Value* Where);
+  llvm::Constant* getEnveloppe(Enveloppe* enveloppe);
+  llvm::Constant* getString(JavaString* str);
+  llvm::Constant* getConstantPool(JavaConstantPool* ctp);
+  llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr);
   
-  llvm::Constant* getReferenceArrayVT(llvm::Value* Where);
-  llvm::Constant* getPrimitiveArrayVT(llvm::Value* Where);
+  llvm::Constant* getReferenceArrayVT();
+  llvm::Constant* getPrimitiveArrayVT();
 
 #ifdef SERVICE
   std::map<const Jnjvm*, llvm::GlobalVariable*> isolates;
