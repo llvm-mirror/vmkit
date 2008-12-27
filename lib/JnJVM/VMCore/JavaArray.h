@@ -50,10 +50,6 @@ public:
 class JavaArray : public TJavaArray<void*> {
 public:
 
-  /// VT - The virtual table of Java arrays of primitive types (e.g. int,
-  /// double).
-  static VirtualTable *VT;
-  
   /// MaxArraySize - The maximum size a Java array can have. Allocating an
   /// array with a bigger size than MaxArraySize raises an out of memory
   /// error.
@@ -98,9 +94,6 @@ ARRAYCLASS(ArrayDouble, double);
 /// they have to trace all objects in the array.
 class ArrayObject : public TJavaArray<JavaObject*> {
 public:
-  /// VT - The virtual table of arrays of objects.
-  static VirtualTable *VT;
-
   /// tracer - The tracer method of Java arrays of objects. This method will
   /// trace all objects in the array.
   virtual void TRACER;
@@ -159,16 +152,19 @@ public:
   /// UTF8ToAsciiz - Allocates a C string with the contents of this UTF8.
   char* UTF8ToAsciiz() const;
   
+  /// printString - Allocates a C string with the contents of this UTF8.
   char* printString() const {
     return UTF8ToAsciiz();
   }
 
+  /// equals - Are the two UTF8s equals?
   bool equals(const UTF8* other) const {
     if (other == this) return true;
     else if (size != other->size) return false;
     else return !memcmp(elements, other->elements, size * sizeof(uint16));
   }
 
+  /// lessThan - strcmp-like function for UTF8s, used by hash tables.
   bool lessThan(const UTF8* other) const {
     if (size < other->size) return true;
     else if (size > other->size) return false;

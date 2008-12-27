@@ -33,6 +33,10 @@ using namespace llvm;
 llvm::Constant* JnjvmModule::PrimitiveArrayVT;
 llvm::Constant* JnjvmModule::ReferenceArrayVT;
 
+extern void* JavaArrayVT[];
+extern void* ArrayObjectVT[];
+extern void* JavaObjectVT[];
+
 #ifdef WITH_TRACER
 const llvm::FunctionType* JnjvmModule::MarkAndTraceType = 0;
 #endif
@@ -290,9 +294,13 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef) {
     
       res = ConstantExpr::getCast(Instruction::BitCast, varGV, VTType);
       virtualTables.insert(std::make_pair(classDef, res));
-      
+     
+      Function* Finalizer = ((Function**)classDef->virtualVT)[0];
+      LLVMClassInfo* LCI = getClassInfo((Class*)classDef);
+      Function* Tracer = LCI->getVirtualTracer();
       Constant* C = CreateConstantFromVT(classDef->virtualVT,
-                                         classDef->virtualTableSize);
+                                         classDef->virtualTableSize, Finalizer,
+                                         Tracer);
       varGV->setInitializer(C);
       
       return res;
@@ -376,7 +384,7 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl) {
     assert(super->virtualVT && "Super does not have a VT!");
     memcpy(VT, super->virtualVT, cl->super->virtualTableSize * sizeof(void*));
   } else {
-    VT = JavaObject::VT;
+    VT = JavaObjectVT;
   }
   return VT;
 }
@@ -463,7 +471,8 @@ Constant* JnjvmModule::CreateConstantForJavaObject(CommonClass* cl) {
     dyn_cast<StructType>(JavaObjectType->getContainedType(0));
   
   std::vector<Constant*> Elmts;
- 
+
+  // virtual table
   if (cl->isClass()) {
     Elmts.push_back(getVirtualTable(cl->asClass()));
   } else {
@@ -475,11 +484,14 @@ Constant* JnjvmModule::CreateConstantForJavaObject(CommonClass* cl) {
     }
   }
   
+  // classof
   Constant* Cl = getNativeClass(cl);
   Constant* ClGEPs[2] = { constantZero, constantZero };
   Cl = ConstantExpr::getGetElementPtr(Cl, ClGEPs, 2);
     
   Elmts.push_back(Cl);
+
+  // lock
   Elmts.push_back(Constant::getNullValue(ptrType));
 
   return ConstantStruct::get(STy, Elmts);
@@ -493,6 +505,7 @@ Constant* JnjvmModule::CreateConstantFromJavaClass(CommonClass* cl) {
 
   std::vector<Constant*> Elmts;
 
+  // JavaObject
   Elmts.push_back(CreateConstantForJavaObject(cl));
   
   // signers
@@ -564,8 +577,8 @@ Constant* JnjvmModule::CreateConstantFromEnveloppe(Enveloppe* val) {
   Elmts.push_back(getUTF8(val->methodName));
   Elmts.push_back(getUTF8(val->methodSign));
 
-  Elmts.push_back(Constant::getNullValue(ptrType));
-  Elmts.push_back(Constant::getNullValue(ptrType));
+  Elmts.push_back(Constant::getNullValue(Type::Int8Ty));
+  Elmts.push_back(getNativeClass(val->classDef));
   Elmts.push_back(firstCache);
 
   return ConstantStruct::get(STy, Elmts);
@@ -1082,24 +1095,30 @@ Constant* JnjvmModule::getUTF8(const UTF8* val) {
   }
 }
 
-Constant* JnjvmModule::CreateConstantFromVT(VirtualTable* VT, uint32 size) {
+Constant* JnjvmModule::CreateConstantFromVT(VirtualTable* VT, uint32 size,
+                                            Function* Finalizer,
+                                            Function* Tracer) {
   const ArrayType* ATy = dyn_cast<ArrayType>(VTType->getContainedType(0));
   const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
   ATy = ArrayType::get(PTy, size);
 
   ConstantPointerNull* N = ConstantPointerNull::get(PTy);
   std::vector<Constant*> Elemts;
-      
-  Elemts.push_back(N);  // Destructor
+   
+  // Destructor
+  Elemts.push_back(Finalizer ? 
+      ConstantExpr::getCast(Instruction::BitCast, Finalizer, PTy) : N);
   Elemts.push_back(N);  // Delete
-  Elemts.push_back(N);  // Tracer
+  
+  // Tracer
+  Elemts.push_back(Tracer ? 
+      ConstantExpr::getCast(Instruction::BitCast, Tracer, PTy) : N);
   Elemts.push_back(N);  // Printer
   Elemts.push_back(N);  // Hashcode
 
   for (uint32 i = VT_NB_FUNCS; i < size; ++i) {
     Function* F = ((Function**)VT)[i];
-    Constant* C = ConstantExpr::getCast(Instruction::BitCast, F, PTy);
-    Elemts.push_back(C);
+    Elemts.push_back(ConstantExpr::getCast(Instruction::BitCast, F, PTy));
   }
 
   Constant* Array = ConstantArray::get(ATy, Elemts);
@@ -1113,7 +1132,7 @@ VirtualTable* JnjvmModule::makeVT(Class* cl) {
 #ifdef WITHOUT_VTABLE
   mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
   VT = (VirtualTable*)allocator.Allocate(VT_SIZE);
-  memcpy(VT, JavaObject::VT, VT_SIZE);
+  memcpy(VT, JavaObjectVT, VT_SIZE);
 #else
   if (cl->super) {
     cl->virtualTableSize = cl->super->virtualTableSize;
@@ -1152,8 +1171,8 @@ VirtualTable* JnjvmModule::makeVT(Class* cl) {
           ((void**)VT)[0] = EE->getPointerToFunction(func);
         }
       }
-    }
 #endif
+    }
 
     if (staticCompilation) {
       ((void**)VT)[meth.offset] = func;
@@ -1167,27 +1186,14 @@ VirtualTable* JnjvmModule::makeVT(Class* cl) {
    if (!(cl->super)) {
     uint32 size =  (cl->virtualTableSize - VT_NB_FUNCS) * sizeof(void*);
 #define COPY(CLASS) \
-    memcpy((void*)((uintptr_t)CLASS::VT + VT_SIZE), \
+    memcpy((void*)((uintptr_t)CLASS + VT_SIZE), \
            (void*)((uintptr_t)VT + VT_SIZE), size);
 
-    COPY(JavaArray)
-    COPY(ArrayObject)
+    COPY(JavaArrayVT)
+    COPY(ArrayObjectVT)
 
 #undef COPY
     
-    if (staticCompilation) {
-      Constant* C = CreateConstantFromVT(JavaArray::VT, cl->virtualTableSize);
-      ((GlobalVariable*)PrimitiveArrayVT)->setInitializer(C);
-      PrimitiveArrayVT = ConstantExpr::getCast(Instruction::BitCast, 
-                                               PrimitiveArrayVT, VTType);
-
-
-      C = CreateConstantFromVT(ArrayObject::VT, cl->virtualTableSize);
-      ((GlobalVariable*)ReferenceArrayVT)->setInitializer(C);
-      ReferenceArrayVT = ConstantExpr::getCast(Instruction::BitCast, 
-                                               ReferenceArrayVT, VTType);
-    }
-
    }
 #endif
   
@@ -1783,18 +1789,18 @@ void JnjvmModule::initialise() {
     ATy = ArrayType::get(PTy, 16);
     PrimitiveArrayVT = new GlobalVariable(ATy, true,
                                           GlobalValue::ExternalLinkage,
-                                          0, "PrimitiveArrayVT", this);
+                                          0, "JavaArrayVT", this);
   
     ReferenceArrayVT = new GlobalVariable(ATy, true, 
                                           GlobalValue::ExternalLinkage,
-                                          0, "ReferenceArrayVT", this);
+                                          0, "ArrayObjectVT", this);
   } else {
     PrimitiveArrayVT = ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
-                                                         uint64(JavaArray::VT)),
+                                                         uint64(JavaArrayVT)),
                                                  VTType);
   
     ReferenceArrayVT = ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
-                                                       uint64(ArrayObject::VT)),
+                                                       uint64(ArrayObjectVT)),
                                                  VTType);
   }
 
@@ -1935,6 +1941,8 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
 #ifdef WITH_TRACER
   MarkAndTraceFunction = module->getFunction("MarkAndTrace");
   JavaObjectTracerFunction = module->getFunction("JavaObjectTracer");
+  JavaArrayTracerFunction = module->getFunction("JavaArrayTracer");
+  ArrayObjectTracerFunction = module->getFunction("ArrayObjectTracer");
 #endif
 
 #ifndef WITHOUT_VTABLE

@@ -27,9 +27,6 @@ using namespace jnjvm;
 
 #define INIT(X) VirtualTable* X::VT = 0
 
-  INIT(JavaArray);
-  INIT(ArrayObject);
-  INIT(JavaObject);
   INIT(JavaThread);
   INIT(Jnjvm);
   INIT(JnjvmBootstrapLoader);

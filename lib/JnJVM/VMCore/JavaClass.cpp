@@ -43,6 +43,9 @@ const UTF8* Attribut::sourceFileAttribut = 0;
 Class* ClassArray::SuperArray;
 Class** ClassArray::InterfacesArray;
 
+extern void* JavaArrayVT[];
+extern void* ArrayObjectVT[];
+
 Attribut::Attribut(const UTF8* name, uint32 length,
                    uint32 offset) {
   
@@ -332,7 +335,7 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::Allocator& allocator) {
 
   uint32 primSize = cl->isPrimitive() ? 
     cl->asPrimitiveClass()->primSize : sizeof(JavaObject*);
-  VirtualTable* VT = cl->isPrimitive() ? JavaArray::VT : ArrayObject::VT;
+  VirtualTable* VT = cl->isPrimitive() ? JavaArrayVT : ArrayObjectVT;
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + n * primSize;
   JavaArray* res = (JavaArray*)allocator.allocateManagedObject(size, VT);
   res->initialise(this);
@@ -345,7 +348,7 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator) {
 
   uint32 primSize = cl->isPrimitive() ? 
     cl->asPrimitiveClass()->primSize : sizeof(JavaObject*);
-  VirtualTable* VT = cl->isPrimitive() ? JavaArray::VT : ArrayObject::VT;
+  VirtualTable* VT = cl->isPrimitive() ? JavaArrayVT : ArrayObjectVT;
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + n * primSize;
   
   JavaArray* res = (JavaArray*)allocator.Allocate(size);

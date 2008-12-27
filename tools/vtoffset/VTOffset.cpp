@@ -71,7 +71,7 @@ int main(int argc, char **argv, char **envp) {
   printf("ptr[0] = %d, ptr[1]= %d, ptr[2] = %d ptr[3] = %d ptr[4] = %d ptr[5] = %d\n", ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5]);
   printf("0 = \n");
   ptr[0](&t);
-  //ptr[1](&t); // This should be ~gc
+  //ptr[1](&t); // operator delete
   printf("2 = \n");
   ptr[2](&t);
   printf("3 = \n");
@@ -88,7 +88,7 @@ int main(int argc, char **argv, char **envp) {
   printf("ptr[0] = %d, ptr[1]= %d, ptr[2] = %d ptr[3] = %d ptr[4] = %d ptr[5] = %d\n", ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5]);
   ptr[0](&t);
   printf("End\n");
-  //ptr[1](&t); // This should be ~gc
+  //ptr[1](&t); // operator delete
   ptr[2](&t);
   ptr[3](&t);
   ptr[4](&t);

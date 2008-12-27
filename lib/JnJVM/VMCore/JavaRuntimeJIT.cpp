@@ -36,7 +36,7 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
          "Class not ready in a virtual lookup.");
 #endif
 
-  enveloppe->cacheLock.lock();
+  enveloppe->cacheLock.acquire();
   CacheNode* rcache = 0;
   CacheNode* tmp = enveloppe->firstCache;
   CacheNode* last = tmp;
@@ -65,7 +65,9 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
 
     // Are we the first cache?
     if (cache != &(enveloppe->bootCache)) {
-      rcache = new(*(enveloppe->allocator)) CacheNode(enveloppe);
+      mvm::BumpPtrAllocator& alloc = 
+        enveloppe->classDef->classLoader->allocator;
+      rcache = new(alloc) CacheNode(enveloppe);
     } else {
       rcache = cache;
     }
@@ -82,7 +84,7 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
     rcache->next = f;
   }
   
-  enveloppe->cacheLock.unlock();
+  enveloppe->cacheLock.release();
   
   return rcache->methPtr;
 }

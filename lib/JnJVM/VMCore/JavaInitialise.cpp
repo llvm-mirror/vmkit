@@ -21,6 +21,11 @@
 
 using namespace jnjvm;
 
+
+void* JavaArrayVT[12 + VT_SIZE];
+void* ArrayObjectVT[12 + VT_SIZE];
+void* JavaObjectVT[12 + VT_SIZE];
+
 static void initialiseVT() {
 
 # define INIT(X) { \
@@ -44,9 +49,8 @@ static void initialiseVT() {
 #define INIT(X) { \
   X fake; \
   void* V = ((void**)(void*)(&fake))[0]; \
-  X::VT = (VirtualTable*)malloc(12 * sizeof(void*) + VT_SIZE); \
-  memcpy(X::VT, V, VT_SIZE); \
-  ((void**)X::VT)[0] = 0; }
+  memcpy(X##VT, V, VT_SIZE); \
+  ((void**)X##VT)[0] = 0; }
 
   INIT(JavaObject);
   INIT(JavaArray);

@@ -79,21 +79,6 @@ void MvmModule::initialise(bool Fast) {
   module.setDataLayout(str);
   mvm::llvm_runtime::makeLLVMModuleContents(&module);
   
-  llvm_atomic_cmp_swap_i8 = (uint8 (*)(uint8*, uint8, uint8))
-    (uintptr_t)executionEngine->getPointerToFunction(
-      module.getFunction("runtime.llvm.atomic.cmp.swap.i8"));
-  llvm_atomic_cmp_swap_i16 = (uint16 (*)(uint16*, uint16, uint16))
-    (uintptr_t)executionEngine->getPointerToFunction(
-      module.getFunction("runtime.llvm.atomic.cmp.swap.i16"));
-  llvm_atomic_cmp_swap_i32 = (uint32 (*)(uint32*, uint32, uint32))
-    (uintptr_t)executionEngine->getPointerToFunction(
-      module.getFunction("runtime.llvm.atomic.cmp.swap.i32"));
-#if ((!defined(__ppc__) && !defined(__PPC__)) || defined(__ppc64__))
-  llvm_atomic_cmp_swap_i64 = (uint64 (*)(uint64*, uint64, uint64))
-    (uintptr_t)executionEngine->getPointerToFunction(
-      module.getFunction("runtime.llvm.atomic.cmp.swap.i64"));
-#endif
-
   // Type declaration
   ptrType = PointerType::getUnqual(Type::Int8Ty);
   ptr32Type = PointerType::getUnqual(Type::Int32Ty);
@@ -270,16 +255,6 @@ const llvm::Type* MvmModule::arrayPtrType;
 llvm::Module *MvmModule::globalModule;
 llvm::ExistingModuleProvider *MvmModule::globalModuleProvider;
 mvm::MvmMemoryManager *MvmModule::memoryManager;
-
-
-uint8  (*MvmModule::llvm_atomic_cmp_swap_i8)  (uint8* ptr, uint8 cmp,
-                                              uint8 val);
-uint16 (*MvmModule::llvm_atomic_cmp_swap_i16) (uint16* ptr, uint16 cmp,
-                                              uint16 val);
-uint32 (*MvmModule::llvm_atomic_cmp_swap_i32) (uint32* ptr, uint32 cmp,
-                                              uint32 val);
-uint64 (*MvmModule::llvm_atomic_cmp_swap_i64) (uint64* ptr, uint64 cmp,
-                                              uint64 val);
 
 
 uint64 MvmModule::getTypeSize(const llvm::Type* type) {

@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <cassert>
+
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"

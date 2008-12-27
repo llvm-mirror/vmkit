@@ -12,6 +12,9 @@ include $(LEVEL)/Makefile.config
 
 LIBRARYNAME = Mvm
 VMKIT_RUNTIME = $(PROJ_SRC_DIR)/LLVMRuntime.ll
-BUILT_SOURCES = LLVMRuntime.inc
+VMKIT_ASSEMBLY = $(PROJ_SRC_DIR)/LLVMAssembly.ll
+BUILT_SOURCES = LLVMRuntime.inc LLVMAssembly.s
+
+SOURCES = LLVMAssembly.s $(notdir $(wildcard $(PROJ_SRC_DIR)/*.cpp))
 
 include $(LEVEL)/Makefile.common

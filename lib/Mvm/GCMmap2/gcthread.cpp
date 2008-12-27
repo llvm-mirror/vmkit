@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <cassert>
 #include "gccollector.h"
 
 using namespace mvm;

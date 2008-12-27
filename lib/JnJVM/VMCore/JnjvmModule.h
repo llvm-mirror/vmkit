@@ -276,6 +276,8 @@ public:
   llvm::Function* MarkAndTraceFunction;
   static const llvm::FunctionType* MarkAndTraceType;
   llvm::Function* JavaObjectTracerFunction;  
+  llvm::Function* JavaArrayTracerFunction;  
+  llvm::Function* ArrayObjectTracerFunction;  
 #endif
   
   llvm::Function* GetSJLJBufferFunction;
@@ -415,7 +417,9 @@ private:
   static llvm::Module* initialModule;
   
   //--------------- Static compiler specific functions -----------------------//
-  llvm::Constant* CreateConstantFromVT(VirtualTable* VT, uint32 size);
+  llvm::Constant* CreateConstantFromVT(VirtualTable* VT, uint32 size,
+                                       llvm::Function* Finalizer,
+                                       llvm::Function* Tracer);
   llvm::Constant* CreateConstantFromUTF8(const UTF8* val);
   llvm::Constant* CreateConstantFromEnveloppe(Enveloppe* val);
   llvm::Constant* CreateConstantFromCacheNode(CacheNode* CN);

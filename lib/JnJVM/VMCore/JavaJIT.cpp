@@ -2031,8 +2031,7 @@ void JavaJIT::invokeInterfaceOrVirtual(uint16 index, bool buggyVirtual) {
     *(new (compilingClass->classLoader->allocator) Enveloppe()) :
     compilingMethod->enveloppes[nbEnveloppes++];
   if (!inlining)
-    enveloppe.initialise(compilingClass->classLoader->allocator, name,
-                         signature->keyName);
+    enveloppe.initialise(compilingClass, name, signature->keyName);
    
   Value* llvmEnv = module->getEnveloppe(&enveloppe);
 #else

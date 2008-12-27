@@ -12,10 +12,13 @@
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
+#include <cassert>
 #include <csignal>
+#include <cstdio>
 #include <ctime>
 #include <pthread.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 using namespace mvm;
 

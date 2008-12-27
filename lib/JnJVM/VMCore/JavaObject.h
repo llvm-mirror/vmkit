@@ -126,7 +126,6 @@ private:
 
   
 public:
-  static VirtualTable* VT;
 
   /// classOf - The class of this object.
   ///

@@ -26,7 +26,7 @@
 
 ;;; The Enveloppe type, which contains the first cache and all the info
 ;;; to lookup in the constant pool.
-%Enveloppe = type { %CacheNode*, %UTF8*, %UTF8*, i8*, i8*, %CacheNode }
+%Enveloppe = type { %CacheNode*, %UTF8*, %UTF8*, i8, %JavaClass*, %CacheNode }
 
 ;;; The task class mirror.
 ;;; Field 1: The class state

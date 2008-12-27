@@ -81,12 +81,11 @@ public:
   /// cacheLock - The linked list may be modified by concurrent thread. This
   /// lock ensures that the list stays consistent.
   ///
-  mvm::LockNormal cacheLock;
+  mvm::SpinLock cacheLock;
 
-  /// allocator - Reference to the allocator in order to know where to allocate
-  /// cache nodes.
+  /// classDef - The class that is defining the enveloppe.
   ///
-  mvm::BumpPtrAllocator* allocator;
+  Class* classDef;
   
   /// bootCache - The first cache allocated for the enveloppe.
   ///
@@ -100,17 +99,16 @@ public:
   /// so as the resolution process knows which interface method the
   /// invokeinterface bytecode refers to.
   ///
-  Enveloppe(mvm::BumpPtrAllocator& Alloc, const UTF8* name, const UTF8* sign) :
+  Enveloppe(Class* C, const UTF8* name, const UTF8* sign) :
     bootCache(this) {
     
-    initialise(Alloc, name, sign);
+    initialise(C, name, sign);
   }
 
   /// initialise - Initialises the enveloppe, and allocates the first cache.
   ///
-  void initialise(mvm::BumpPtrAllocator& Alloc, const UTF8* name,
-                  const UTF8* sign) {
-    allocator = &Alloc;
+  void initialise(Class* C, const UTF8* name, const UTF8* sign) {
+    classDef = C;
     firstCache = &bootCache;
     methodName = name;
     methodSign = sign;
