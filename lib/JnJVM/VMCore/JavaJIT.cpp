@@ -1592,21 +1592,13 @@ void JavaJIT::invokeStatic(uint16 index) {
     args.push_back(newCtpCache);
 #endif
     
-    // If we're not static compiling or we're not in an isolate environment,
-    // the callback will do the initialization
-#ifndef ISOLATE
-    if (module->isStaticCompiling()) {
-#endif
-      uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
-      UserClass* cl = 0;
-      Value* Cl = getResolvedClass(clIndex, true, true, &cl);
-      if (!meth || (cl && needsInitialisationCheck(cl, compilingClass))) {
-        CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
-                         currentBlock);
-      }
-#ifndef ISOLATE
+    uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
+    UserClass* cl = 0;
+    Value* Cl = getResolvedClass(clIndex, true, true, &cl);
+    if (!meth || (cl && needsInitialisationCheck(cl, compilingClass))) {
+      CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
+                       currentBlock);
     }
-#endif
 
     if (meth && canBeInlined(meth)) {
       val = invokeInline(meth, args);
