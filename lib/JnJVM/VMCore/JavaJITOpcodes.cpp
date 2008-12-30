@@ -1839,6 +1839,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             compilingClass->classLoader->bootstrapLoader;
           UserClassArray* dcl = loader->getArrayClass(id);
           valCl = module->getNativeClass(dcl);
+          if (valCl->getType() != module->JavaCommonClassType)
+            valCl = new BitCastInst(valCl, module->JavaCommonClassType, "",
+                                    currentBlock);
 #else
           Value* args[2] = { isolateLocal,
                              ConstantInt::get(Type::Int32Ty, id - 4) };
@@ -1860,6 +1863,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           
             UserCommonClass* dcl = JCL->constructArray(arrayName);
             valCl = module->getNativeClass(dcl);
+            if (valCl->getType() != module->JavaCommonClassType)
+              valCl = new BitCastInst(valCl, module->JavaCommonClassType, "",
+                                      currentBlock);
 
           } else {
             const llvm::Type* Ty = 
