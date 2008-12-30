@@ -281,6 +281,8 @@ Constant* JnjvmModule::getStaticInstance(Class* classDef) {
 }
 
 Constant* JnjvmModule::getVirtualTable(Class* classDef) {
+  LLVMClassInfo* LCI = getClassInfo((Class*)classDef);
+  LCI->getVirtualType();
   if (staticCompilation) {
     llvm::Constant* res = 0;
     virtual_table_iterator End = virtualTables.end();
@@ -297,7 +299,6 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef) {
       virtualTables.insert(std::make_pair(classDef, res));
      
       Function* Finalizer = ((Function**)classDef->virtualVT)[0];
-      LLVMClassInfo* LCI = getClassInfo((Class*)classDef);
       Function* Tracer = LCI->getVirtualTracer();
       Constant* C = CreateConstantFromVT(classDef->virtualVT,
                                          classDef->virtualTableSize, Finalizer,
@@ -310,8 +311,6 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef) {
     } 
 
   } else {
-    LLVMClassInfo* LCI = getClassInfo((Class*)classDef);
-    LCI->getVirtualType();
     assert(classDef->virtualVT && "Virtual VT not created");
     void* ptr = classDef->virtualVT;
     ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(ptr));
@@ -1153,7 +1152,7 @@ VirtualTable* JnjvmModule::makeVT(Class* cl) {
 
     // Special handling for finalize method. Don't put a finalizer
     // if there is none, or if it is empty.
-    if (meth.offset == 0) {
+    if (meth.offset == 0 && !staticCompilation) {
 #ifdef ISOLATE_SHARING
       ((void**)VT)[0] = 0;
 #else
@@ -1167,7 +1166,7 @@ VirtualTable* JnjvmModule::makeVT(Class* cl) {
         BasicBlock::iterator I = BB->begin();
         if (isa<ReturnInst>(I)) {
           ((void**)VT)[0] = 0;
-        } else if (!staticCompilation) {
+        } else {
           // LLVM does not allow recursive compilation. Create the code now.
           ((void**)VT)[0] = EE->getPointerToFunction(func);
         }
