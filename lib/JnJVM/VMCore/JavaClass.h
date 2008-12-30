@@ -325,6 +325,7 @@ public:
   ///
   void setSuper(Class* S) {
     super = S;
+    display[0] = (CommonClass*)S;
   }
   
   /// toPrimitive - Returns the primitive class which represents
