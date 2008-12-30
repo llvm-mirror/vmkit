@@ -19,11 +19,8 @@
 #include "llvm/Target/TargetOptions.h"
 
 
-#include <cstdio>
-
 #include "mvm/CompilationUnit.h"
 #include "mvm/JIT.h"
-#include "mvm/MvmMemoryManager.h"
 #include "mvm/Object.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
@@ -31,26 +28,6 @@
 using namespace mvm;
 using namespace llvm;
 
-
-extern "C" void printFloat(float f) {
-  fprintf(stderr, "%f\n", f);
-}
-
-extern "C" void printDouble(double d) {
-  fprintf(stderr, "%f\n", d);
-}
-
-extern "C" void printLong(sint64 l) {
-  fprintf(stderr, "%lld\n", (long long int)l);
-}
-
-extern "C" void printInt(sint32 i) {
-  fprintf(stderr, "%d\n", i);
-}
-
-extern "C" void printObject(mvm::Object* obj) {
-  fprintf(stderr, "%s\n", obj->printString());
-}
 
 namespace mvm {
   namespace llvm_runtime {
@@ -63,12 +40,11 @@ void MvmModule::initialise(bool Fast) {
   llvm::ExceptionHandling = true;
   globalModule = new llvm::Module("bootstrap module");
   globalModuleProvider = new ExistingModuleProvider (globalModule);
-  memoryManager = new MvmMemoryManager();
   
 
 
   executionEngine = ExecutionEngine::createJIT(globalModuleProvider, 0,
-                                               memoryManager, Fast);
+                                               0, Fast);
   
   std::string str = 
     executionEngine->getTargetData()->getStringRepresentation();
@@ -254,7 +230,6 @@ const llvm::Type* MvmModule::arrayPtrType;
 
 llvm::Module *MvmModule::globalModule;
 llvm::ExistingModuleProvider *MvmModule::globalModuleProvider;
-mvm::MvmMemoryManager *MvmModule::memoryManager;
 
 
 uint64 MvmModule::getTypeSize(const llvm::Type* type) {
@@ -265,31 +240,6 @@ void MvmModule::runPasses(llvm::Function* func,
                           llvm::FunctionPassManager* pm) {
   pm->run(*func);
 }
-
-static LockNormal lock;
-static std::map<void*, const llvm::Function*> pointerMap;
-
-const llvm::Function* MvmModule::getCodeFromPointer(void* Addr) {
-  lock.lock();
-  std::map<void*, const llvm::Function*>::iterator I =
-    pointerMap.lower_bound(Addr);
-  
-  lock.unlock();
-  if (I != pointerMap.end()) {
-    const llvm::Function* F = I->second;
-    if (Addr >= executionEngine->getPointerToGlobal(F)) return F;
-  }
-
-  return 0;
-}
-
-void MvmModule::addMethodInfo(void* Addr, const llvm::Function* F) {
-  lock.lock();
-  pointerMap.insert(std::make_pair(Addr, F));
-  lock.unlock();
-}
-
-
 
 static void addPass(FunctionPassManager *PM, Pass *P) {
   // Add the pass to the pass manager...

@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <cstdio>
 #include <cstdlib>
 
 #include "MvmGC.h"
@@ -20,6 +21,26 @@ using namespace mvm;
 
 VirtualTable *NativeString::VT = 0;
 VirtualTable *PrintBuffer::VT = 0;
+
+extern "C" void printFloat(float f) {
+  fprintf(stderr, "%f\n", f);
+}
+
+extern "C" void printDouble(double d) {
+  fprintf(stderr, "%f\n", d);
+}
+
+extern "C" void printLong(sint64 l) {
+  fprintf(stderr, "%lld\n", (long long int)l);
+}
+
+extern "C" void printInt(sint32 i) {
+  fprintf(stderr, "%d\n", i);
+}
+
+extern "C" void printObject(mvm::Object* obj) {
+  fprintf(stderr, "%s\n", obj->printString());
+}
 
 
 void Object::initialise() {
