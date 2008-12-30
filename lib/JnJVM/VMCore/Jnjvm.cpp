@@ -473,16 +473,18 @@ void Jnjvm::addProperty(char* key, char* value) {
   postProperties.push_back(std::make_pair(key, value));
 }
 
+// Mimic what's happening in Classpath when creating a java.lang.Class object.
 JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
   if (!getDelegatee()) {
     UserClass* cl = vm->upcalls->newClass;
-    JavaObject* delegatee = cl->doNew(vm);
-    if (!pd) {
-      vm->upcalls->initClass->invokeIntSpecial(vm, cl, delegatee, this);
+    JavaObjectClass* delegatee = (JavaObjectClass*)cl->doNew(vm);
+    delegatee->vmdata = this;
+    if (!pd && isArray()) {
+      JavaObjectClass* base = (JavaObjectClass*)
+        asArrayClass()->baseClass()->getClassDelegatee(vm, pd);
+      delegatee->pd = base->pd;
     } else {
-      vm->upcalls->initClassWithProtectionDomain->invokeIntSpecial(vm, cl,
-                                                                   delegatee,
-                                                                   this, pd);
+      delegatee->pd = pd;
     }
     setDelegatee(delegatee);
   }
