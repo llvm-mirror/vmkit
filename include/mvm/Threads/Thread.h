@@ -15,31 +15,57 @@
 #include "MvmGC.h"
 
 
-class Collector;
-
 namespace mvm {
 
 class VirtualMachine;
 
+/// CircularBase - This class represents a circular list. Classes that extend
+/// this class automatically place their instances in a circular list.
+///
 class CircularBase {
+  /// _next - The next object in the list.
+  ///
 	CircularBase	*_next;
+
+  /// _prev - The previous object in the list.
+  ///
 	CircularBase	*_prev;
 public:
+
+  /// next - Get the next object in the list.
+  ///
 	inline CircularBase *next() { return _next; }
+
+  /// prev - Get the previous object in the list.
+  ///
 	inline CircularBase *prev() { return _prev; }
 
+  /// next - Set the next object in the list.
+  ///
 	inline void next(CircularBase *n) { _next = n; }
+
+  /// prev - Set the previous object in the list.
+  ///
 	inline void prev(CircularBase *p) { _prev = p; }
 
+  /// CricularBase - Creates the object as a single element in the list.
+  ///
 	inline CircularBase() { alone(); }
+
+  /// CircularBase - Creates the object and place it in the given list.
+  ///
 	inline explicit CircularBase(CircularBase *p) { append(p); }
 
+  /// remove - Remove the object from its list.
+  ///
 	inline void remove() { 
 		_prev->_next = _next; 
 		_next->_prev = _prev;
 		alone();
 	}
 
+  /// append - Add the object in the list.
+  ///
 	inline void append(CircularBase *p) { 
 		_prev = p;
 		_next = p->_next;
@@ -47,6 +73,8 @@ public:
 		_prev->_next = this;
 	}
 
+  /// alone - Set the object as being part of a new empty list.
+  ///
 	inline void alone() { _prev = _next = this; }
 };
 
@@ -124,11 +152,18 @@ private:
   static void internalThreadStart(mvm::Thread* th);
 
   /// internalClearException - Clear any pending exception.
+  ///
   virtual void internalClearException() {}
 
 public:
-  
+ 
+  /// ~Thread - Give the class a home.
+  ///
   virtual ~Thread() {}
+
+  /// tracer - Does nothing. Used for child classes which may defined
+  /// a tracer.
+  ///
   virtual void TRACER {}
 
 
@@ -138,15 +173,26 @@ public:
     th->internalClearException();
   }
 
+  /// IDMask - Apply this mask to the stack pointer to get the Thread object.
+  ///
   static const uint64_t IDMask = 0x7FF00000;
 
+  /// operator new - Allocate the Thread object as well as the stack for this
+  /// Thread. The thread object is inlined in the stack.
+  ///
   void* operator new(size_t sz);
   
+  /// operator delete - Free the stack so that another thread can use it.
+  ///
   void operator delete(void* obj);
 
+  /// routine - The function to invoke when the thread starts.
+  ///
   void (*routine)(mvm::Thread*);
  
 #ifdef SERVICE
+  /// stoppingService - The service that is currently stopping.
+  ///
   VirtualMachine* stoppingService;  
 #endif
 
