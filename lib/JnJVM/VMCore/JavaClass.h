@@ -10,12 +10,10 @@
 #ifndef JNJVM_JAVA_CLASS_H
 #define JNJVM_JAVA_CLASS_H
 
-#include <vector>
 
 #include "types.h"
 
 #include "mvm/Allocator.h"
-#include "mvm/JIT.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Cond.h"
@@ -23,8 +21,10 @@
 
 #include "JavaAccess.h"
 #include "JnjvmClassLoader.h"
-
 #include "JnjvmConfig.h"
+
+#include <cassert>
+#include <vector>
 
 namespace jnjvm {
 

@@ -9,17 +9,10 @@
 
 #include <vector>
 
-#include "mvm/JIT.h"
-
-#include "JavaAccess.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
-#include "JavaConstantPool.h"
-#include "JavaJIT.h"
-#include "JavaThread.h"
 #include "JavaTypes.h"
-#include "JavaUpcalls.h"
-#include "Jnjvm.h"
+#include "JnjvmModule.h"
 
 using namespace jnjvm;
 

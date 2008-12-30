@@ -13,7 +13,6 @@
 
 #include <cstring>
 
-#include "mvm/JIT.h"
 #include "debug.h"
 #include "types.h"
 
@@ -22,12 +21,12 @@
 #include "JavaCache.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
-#include "JavaJIT.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
 #include "Reader.h"

@@ -7,13 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/JIT.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
 #include "JavaClass.h"
-#include "JavaJIT.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
 #include "JavaUpcalls.h"

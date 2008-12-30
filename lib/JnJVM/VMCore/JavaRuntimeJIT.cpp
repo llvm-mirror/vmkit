@@ -10,14 +10,12 @@
 
 #include <cstdarg>
 
-#include "mvm/JIT.h"
 #include "mvm/Threads/Thread.h"
 
 #include "JavaArray.h"
 #include "JavaCache.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
-#include "JavaJIT.h"
 #include "JavaString.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"

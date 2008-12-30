@@ -9,12 +9,9 @@
 
 #include <vector>
 
-#include "mvm/JIT.h"
-
 #include "ClasspathReflect.h"
 #include "JavaAccess.h"
 #include "JavaClass.h"
-#include "JavaJIT.h"
 #include "JavaObject.h"
 #include "JavaString.h"
 #include "JavaThread.h"

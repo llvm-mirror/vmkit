@@ -11,6 +11,7 @@
 #ifndef JNJVM_CLASSLOADER_H
 #define JNJVM_CLASSLOADER_H
 
+#include <map>
 #include <vector>
 
 #include "types.h"

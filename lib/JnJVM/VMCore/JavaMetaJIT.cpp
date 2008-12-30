@@ -10,17 +10,12 @@
 #include <cstdarg>
 #include <cstring>
 
-#include "mvm/JIT.h"
-
 #include "debug.h"
-#include "JavaArray.h"
 #include "JavaClass.h"
-#include "JavaJIT.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
-#include "JnjvmModule.h"
 
 using namespace jnjvm;
 

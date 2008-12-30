@@ -17,19 +17,18 @@
 #include <cstring>
 #include "debug.h"
 
-#include "mvm/JIT.h"
 #include "mvm/Threads/Thread.h"
 
 #include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
-#include "JavaJIT.h"
 #include "JavaString.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
 #include "Reader.h"

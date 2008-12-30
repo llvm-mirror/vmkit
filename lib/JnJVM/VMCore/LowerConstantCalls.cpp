@@ -15,8 +15,6 @@
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/Debug.h"
 
-#include "mvm/JIT.h"
-
 #include "JnjvmModule.h"
 
 using namespace llvm;
