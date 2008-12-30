@@ -1791,9 +1791,7 @@ void JnjvmModule::initialise() {
  
 
   if (staticCompilation) {
-    const ArrayType* ATy = dyn_cast<ArrayType>(VTType->getContainedType(0));
-    const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
-    ATy = ArrayType::get(PTy, 16);
+    const Type* ATy = VTType->getContainedType(0);
     PrimitiveArrayVT = new GlobalVariable(ATy, true,
                                           GlobalValue::ExternalLinkage,
                                           0, "JavaArrayVT", this);
