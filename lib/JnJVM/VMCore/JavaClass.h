@@ -944,6 +944,10 @@ public:
   ///
   void* compiledPtr();
 
+  /// setCompiledPtr - Set the pointer function to the method.
+  ///
+  void setCompiledPtr(void*);
+  
   /// JavaMethod - Delete the method as well as the cache enveloppes and
   /// attributes of the method.
   ///
@@ -958,7 +962,7 @@ public:
   Attribut* attributs;
   uint16 nbAttributs;
 
-  /// caches - List of caches in this method. For all invokeinterface bytecode
+  /// enveloppes - List of caches in this method. For all invokeinterface bytecode
   /// there is a corresponding cache.
   ///
   Enveloppe* enveloppes;

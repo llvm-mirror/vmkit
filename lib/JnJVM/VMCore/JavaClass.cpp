@@ -9,10 +9,6 @@
 
 #define JNJVM_LOAD 0
 
-#include <vector>
-
-#include <cstring>
-
 #include "debug.h"
 #include "types.h"
 
@@ -30,6 +26,9 @@
 #include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
 #include "Reader.h"
+
+#include <cstring>
+#include <vector>
 
 using namespace jnjvm;
 
@@ -372,10 +371,22 @@ void* JavaMethod::compiledPtr() {
     if (code == 0) {
       code = 
         classDef->classLoader->getModuleProvider()->materializeFunction(this);
+      Jnjvm* vm = JavaThread::get()->getJVM();
+      vm->addMethodInFunctionMap(this, code);
     }
     classDef->release();
     return code;
   }
+}
+
+void JavaMethod::setCompiledPtr(void* ptr) {
+  classDef->acquire();
+  assert(code == 0 && "Code of Java method already set!");
+  code = ptr;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  vm->addMethodInFunctionMap(this, code);
+  classDef->classLoader->getModule()->setMethod(this, ptr);
+  classDef->release();
 }
 
 const char* JavaMethod::printString() const {

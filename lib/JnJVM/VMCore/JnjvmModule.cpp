@@ -1819,10 +1819,11 @@ Constant* JnjvmModule::getPrimitiveArrayVT() {
   return PrimitiveArrayVT;
 }
 
-void JnjvmModule::setMethod(JavaMethod* meth, const char* name) {
-  llvm::Function* func = getMethodInfo(meth)->getMethod();
-  func->setName(name);
-  func->setLinkage(llvm::GlobalValue::ExternalLinkage);
+void JnjvmModule::setMethod(JavaMethod* meth, void* ptr) {
+  Function* func = getMethodInfo(meth)->getMethod();
+  assert(ptr && "No value given");
+  executionEngine->addGlobalMapping(func, ptr);
+  func->setLinkage(GlobalValue::ExternalLinkage);
 }
 
 void JnjvmModule::printStats() {
@@ -1846,7 +1847,7 @@ void JnjvmModule::printStats() {
 }
 
 
-void* JnjvmModule::getMethod(JavaMethod* meth) {
+Function* JnjvmModule::getMethod(JavaMethod* meth) {
   return getMethodInfo(meth)->getMethod();
 }
 

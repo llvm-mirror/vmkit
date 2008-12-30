@@ -108,9 +108,6 @@ void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
   
   void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
   func->deleteBody();
-  
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  vm->addMethodInFunctionMap(meth, res);
 
   return res;
 }

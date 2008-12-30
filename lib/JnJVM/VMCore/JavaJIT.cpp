@@ -198,7 +198,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   Function* func = llvmFunction;
   if (jnjvm) {
-    module->executionEngine->addGlobalMapping(func, (void*)natPtr);
+    compilingMethod->setCompiledPtr((void*)natPtr);
     return llvmFunction;
   }
   

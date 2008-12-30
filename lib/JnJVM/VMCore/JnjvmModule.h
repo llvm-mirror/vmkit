@@ -367,8 +367,8 @@ public:
 
   static void resolveVirtualClass(Class* cl);
   static void resolveStaticClass(Class* cl);
-  static void setMethod(JavaMethod* meth, const char* name);
-  static void* getMethod(JavaMethod* meth);
+  static void setMethod(JavaMethod* meth, void* ptr);
+  static llvm::Function* getMethod(JavaMethod* meth);
 
   static LLVMSignatureInfo* getSignatureInfo(Signdef* sign) {
     return sign->getInfo<LLVMSignatureInfo>();

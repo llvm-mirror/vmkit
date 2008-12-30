@@ -123,7 +123,7 @@ jobject _prop) {
   END_NATIVE_EXCEPTION
 }
 
-extern "C" void propertiesPostInit(JavaObject* prop) {
+extern "C" void nativePropertiesPostInit(JavaObject* prop) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 

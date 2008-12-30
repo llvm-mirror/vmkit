@@ -242,6 +242,48 @@ void Classpath::mapInitialThread(Jnjvm* vm) {
   finaliseCreateInitialThread->invokeIntStatic(vm, inheritableThreadLocal, th);
 }
 
+extern "C" JavaString* nativeInternString(JavaString* obj) {
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  const UTF8* utf8 = obj->strToUTF8(vm);
+  return vm->UTF8ToStr(utf8);
+}
+
+extern "C" uint8 nativeIsArray(JavaObject* klass) {
+  UserCommonClass* cl = ((JavaObjectClass*)klass)->getClass();  
+  return (uint8)cl->isArray();
+}
+
+extern "C" JavaObject* nativeGetCallingClass() {
+  
+  JavaObject* res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
+  JavaThread* th = JavaThread::get();
+  UserClass* cl = th->getCallingClass();
+  if (cl) res = cl->getClassDelegatee(th->getJVM());
+
+  END_NATIVE_EXCEPTION
+
+  return res;
+}
+
+extern "C" JavaObject* nativeGetCallingClassLoader() {
+  
+  JavaObject *res = 0;
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+  JavaThread* th = JavaThread::get();
+  UserClass* cl = th->getCallingClass();
+  res = cl->classLoader->getJavaClassLoader();  
+  END_NATIVE_EXCEPTION
+
+  return res;
+}
+
+extern "C" void nativePropertiesPostInit(JavaObject* prop);
+
+
 void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   newClassLoader = 
@@ -427,11 +469,11 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   JavaMethod* internString =
     UPCALL_METHOD(loader, "java/lang/VMString", "intern",
                   "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC); 
-  loader->getModule()->setMethod(internString, "internString");
+  internString->setCompiledPtr((void*)(intptr_t)nativeInternString);
   
   JavaMethod* isArray =
     UPCALL_METHOD(loader, "java/lang/Class", "isArray", "()Z", ACC_VIRTUAL);
-  loader->getModule()->setMethod(isArray, "isArray");
+  isArray->setCompiledPtr((void*)(intptr_t)nativeIsArray);
 
 
   UPCALL_REFLECT_CLASS_EXCEPTION(loader, InvocationTargetException);
@@ -591,26 +633,17 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   JavaMethod* getCallingClass =
     UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "getCallingClass",
                   "()Ljava/lang/Class;", ACC_STATIC);
-  loader->getModule()->setMethod(getCallingClass, "getCallingClass");
+  getCallingClass->setCompiledPtr((void*)(intptr_t)nativeGetCallingClass);
   
   JavaMethod* getCallingClassLoader =
     UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "getCallingClassLoader",
                   "()Ljava/lang/ClassLoader;", ACC_STATIC);
-  loader->getModule()->setMethod(getCallingClassLoader, "getCallingClassLoader");
+  getCallingClassLoader->setCompiledPtr((void*)(intptr_t)
+                                        nativeGetCallingClassLoader);
   
   JavaMethod* postProperties =
     UPCALL_METHOD(loader, "gnu/classpath/VMSystemProperties", "postInit",
                   "(Ljava/util/Properties;)V", ACC_STATIC);
-  loader->getModule()->setMethod(postProperties, "propertiesPostInit");
+  postProperties->setCompiledPtr((void*)(intptr_t)nativePropertiesPostInit);
 }
 
-extern "C" JavaString* internString(JavaString* obj) {
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  const UTF8* utf8 = obj->strToUTF8(vm);
-  return vm->UTF8ToStr(utf8);
-}
-
-extern "C" uint8 isArray(JavaObject* klass) {
-  UserCommonClass* cl = ((JavaObjectClass*)klass)->getClass();  
-  return (uint8)cl->isArray();
-}

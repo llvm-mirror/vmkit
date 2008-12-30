@@ -79,32 +79,4 @@ jclass _Cl) {
   return res;
 }
 
-extern "C" JavaObject* getCallingClass() {
-  
-  JavaObject* res = 0;
-
-  BEGIN_NATIVE_EXCEPTION(0)
-
-  JavaThread* th = JavaThread::get();
-  UserClass* cl = th->getCallingClass();
-  if (cl) res = cl->getClassDelegatee(th->getJVM());
-
-  END_NATIVE_EXCEPTION
-
-  return res;
-}
-
-extern "C" JavaObject* getCallingClassLoader() {
-  
-  JavaObject *res = 0;
-  
-  BEGIN_NATIVE_EXCEPTION(0)
-  JavaThread* th = JavaThread::get();
-  UserClass* cl = th->getCallingClass();
-  res = cl->classLoader->getJavaClassLoader();  
-  END_NATIVE_EXCEPTION
-
-  return res;
-}
-
 }
