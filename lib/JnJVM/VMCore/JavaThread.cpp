@@ -26,11 +26,6 @@ const unsigned int JavaThread::StateRunning = 0;
 const unsigned int JavaThread::StateWaiting = 1;
 const unsigned int JavaThread::StateInterrupted = 2;
 
-void JavaThread::print(mvm::PrintBuffer* buf) const {
-  buf->write("Thread:");
-  if (javaThread) javaThread->print(buf);
-}
-
 JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
   javaThread = thread;
   vmThread = vmth;

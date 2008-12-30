@@ -83,7 +83,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObje
   } \
   if (excp) { \
     th->pendingException = excp; \
-    th->returnFromJava(); \
+    th->throwFromJava(); \
   } \
   th->endJava(); \
   return res; \
@@ -113,7 +113,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObje
   } \
   if (excp) { \
     th->pendingException = excp; \
-    th->returnFromJava(); \
+    th->throwFromJava(); \
   } \
   th->endJava(); \
   return res; \
@@ -142,7 +142,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
   } \
   if (excp) { \
     th->pendingException = excp; \
-    th->returnFromJava(); \
+    th->throwFromJava(); \
   } \
   th->endJava(); \
   return res; \
@@ -170,7 +170,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObj
   } \
   if (excp) { \
     th->pendingException = excp; \
-    th->returnFromJava(); \
+    th->throwFromJava(); \
   } \
   th->endJava(); \
   return res; \
@@ -197,7 +197,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObj
   } \
   if (excp) { \
     th->pendingException = excp; \
-    th->returnFromJava(); \
+    th->throwFromJava(); \
   } \
   th->endJava(); \
   return res; \
@@ -223,7 +223,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* bu
   } \
   if (excp) { \
     th->pendingException = excp; \
-    th->returnFromJava(); \
+    th->throwFromJava(); \
   } \
   th->endJava(); \
   return res; \
@@ -278,7 +278,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObje
   } \
   if (excp) { \
     th->pendingException = excp; \
-    th->returnFromJava(); \
+    th->throwFromJava(); \
   } \
   th->endJava(); \
   return res; \
@@ -305,7 +305,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObje
   } \
   if (excp) { \
     th->pendingException = excp; \
-    th->returnFromJava(); \
+    th->throwFromJava(); \
   } \
   th->endJava(); \
   return res; \
@@ -331,7 +331,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
   } \
   if (excp) { \
     th->pendingException = excp; \
-    th->returnFromJava(); \
+    th->throwFromJava(); \
   } \
   th->endJava(); \
   return res; \
@@ -358,7 +358,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObj
   } \
   if (excp) { \
     th->pendingException = excp; \
-    th->returnFromJava(); \
+    th->throwFromJava(); \
   } \
   th->endJava(); \
   return res; \
@@ -385,7 +385,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObj
   } \
   if (excp) { \
     th->pendingException = excp; \
-    th->returnFromJava(); \
+    th->throwFromJava(); \
   } \
   th->endJava(); \
   return res; \
@@ -411,7 +411,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* bu
   } \
   if (excp) { \
     th->pendingException = excp; \
-    th->returnFromJava(); \
+    th->throwFromJava(); \
   } \
   th->endJava(); \
   return res; \

@@ -37,7 +37,7 @@ class Typedef;
   } \
   if (excp) { \
     __th->pendingException = excp; \
-    __th->returnFromNative(); \
+    __th->throwFromNative(); \
   } \
   __th->endNative();
 
@@ -53,7 +53,7 @@ class Typedef;
   if (excp) { \
     JavaThread* th = JavaThread::get(); \
     th->pendingException = excp; \
-    th->returnFromJNI(); \
+    th->throwFromJNI(); \
   }
 
 class NativeUtil {

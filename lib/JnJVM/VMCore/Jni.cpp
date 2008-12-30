@@ -145,7 +145,7 @@ jint ThrowNew(JNIEnv* env, jclass clazz, const char *msg) {
               false, true, 0);
   init->invokeIntSpecial(vm, realCl, res, vm->asciizToStr(msg));
   th->pendingException = res;
-  th->returnFromJNI();
+  th->throwFromJNI();
   return 1;
   
   END_JNI_EXCEPTION
