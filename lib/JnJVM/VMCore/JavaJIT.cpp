@@ -236,7 +236,8 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
                               currentBlock);
   threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
                                        "", currentBlock);
-  threadId = new IntToPtrInst(threadId, module->JavaThreadType, "", currentBlock);
+  threadId = new IntToPtrInst(threadId, module->JavaThreadType, "",
+                              currentBlock);
 
 
   Value* geps[2] = { module->constantZero, module->constantEight };
