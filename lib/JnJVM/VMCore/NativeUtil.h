@@ -15,12 +15,10 @@
 namespace jnjvm {
 
 class ArrayObject;
-class CommonClass;
 class JavaMethod;
 class JavaObject;
 class Jnjvm;
 class JnjvmClassLoader;
-class Signdef;
 class Typedef;
 
 
@@ -52,18 +50,41 @@ class Typedef;
     th->throwFromJNI(); \
   }
 
+/// NativeUtil - This class groups a set of static function useful when dealing
+/// with Java objects in native code.
+///
 class NativeUtil {
 public:
 
+  /// myVM - Get the current virtual machine.
+  ///
   static Jnjvm* myVM(JNIEnv* env);
-  static intptr_t nativeLookup(CommonClass* cl, JavaMethod* meth, bool& jnjvm);
+
+  /// resolvedImplClass - Return the internal representation of the
+  /// java.lang.Class object. The class must be resolved.
+  //
   static UserCommonClass* resolvedImplClass(Jnjvm* vm, jclass clazz,
                                             bool doClinit);
+
+  /// decapsulePrimitive - Based on the signature argument, decapsule
+  /// obj as a primitive and put it in the buffer.
+  ///
   static void decapsulePrimitive(Jnjvm *vm, uintptr_t &buf, JavaObject* obj,
                                  const Typedef* signature);
 
+  /// getClassType - Return the java.lang.Class of the type, with the given
+  /// class loader.
+  ///
   static JavaObject* getClassType(JnjvmClassLoader* loader, Typedef* type);
+
+  /// getParameterTypes - Get the java.lang.Class of the parameters of
+  /// the method, with the given class loader.
+  ///
   static ArrayObject* getParameterTypes(JnjvmClassLoader* loader, JavaMethod* meth);
+
+  /// getExceptionTypes - Get the java.lang.Class of the exceptions of the
+  /// method, with the given class loader.
+  ///
   static ArrayObject* getExceptionTypes(UserClass* cl, JavaMethod* meth);
 
 };

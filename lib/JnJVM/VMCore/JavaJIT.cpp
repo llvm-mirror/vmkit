@@ -187,7 +187,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   bool jnjvm = false;
   natPtr = natPtr ? natPtr :
-              NativeUtil::nativeLookup(compilingClass, compilingMethod, jnjvm);
+    compilingClass->classLoader->nativeLookup(compilingMethod, jnjvm);
   
   if (!natPtr && !module->isStaticCompiling()) {
     fprintf(stderr, "Native function %s not found. Probably "

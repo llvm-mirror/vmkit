@@ -37,6 +37,7 @@ class JavaConstantPool;
 class JavaField;
 class JavaMethod;
 class JavaObject;
+class Reader;
 class Signdef;
 class Typedef;
 class UTF8;

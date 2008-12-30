@@ -147,26 +147,6 @@ void JavaMethod::jniConsFromMethOverloaded(char* buf) const {
 
 }
 
-intptr_t NativeUtil::nativeLookup(CommonClass* cl, JavaMethod* meth,
-                                  bool& jnjvm) {
-  const UTF8* jniConsClName = cl->name;
-  const UTF8* jniConsName = meth->name;
-  const UTF8* jniConsType = meth->type;
-  sint32 clen = jniConsClName->size;
-  sint32 mnlen = jniConsName->size;
-  sint32 mtlen = jniConsType->size;
-
-  char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + 
-                            ((mnlen + clen + mtlen) << 1));
-  meth->jniConsFromMeth(buf);
-  intptr_t res = cl->classLoader->loadInLib(buf, jnjvm);
-  if (!res) {
-    meth->jniConsFromMethOverloaded(buf);
-    res = cl->classLoader->loadInLib(buf, jnjvm);
-  }
-  return res;
-}
-
 UserCommonClass* NativeUtil::resolvedImplClass(Jnjvm* vm, jclass clazz,
                                                bool doClinit) {
   UserCommonClass* cl = ((JavaObjectClass*)clazz)->getClass();

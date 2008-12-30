@@ -25,19 +25,18 @@
 namespace jnjvm {
 
 class ArrayUInt8;
-class Attribut;
 class UserClass;
 class UserClassArray;
 class ClassMap;
 class Classpath;
 class UserCommonClass;
+class JavaMethod;
 class JavaObject;
 class JavaString;
 class Jnjvm;
 class JnjvmBootstrapLoader;
 class JnjvmModule;
 class JnjvmModuleProvider;
-class Reader;
 class Signdef;
 class SignMap;
 class Typedef;
@@ -260,6 +259,12 @@ public:
   /// loadLib - Loads the library with the given name.
   ///
   void* loadLib(const char* buf);
+
+  /// nativeLookup - Lookup in the class loader a function pointer for the
+  /// method. Also set in the jnjvm parameter is the function is defined in
+  /// JnJVM.
+  ///
+  intptr_t nativeLookup(JavaMethod* meth, bool& jnjvm);
 };
 
 /// JnjvmBootstrapLoader - This class is for the bootstrap class loader, which
