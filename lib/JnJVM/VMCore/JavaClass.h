@@ -354,7 +354,12 @@ public:
   JavaObject* getDelegatee();
 #endif
 #endif
-
+  
+  /// resolvedImplClass - Return the internal representation of the
+  /// java.lang.Class object. The class must be resolved.
+  //
+  static UserCommonClass* resolvedImplClass(Jnjvm* vm, JavaObject* delegatee,
+                                            bool doClinit);
 };
 
 /// ClassPrimitive - This class represents internal classes for primitive

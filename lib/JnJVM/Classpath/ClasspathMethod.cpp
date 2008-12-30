@@ -8,10 +8,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <cstring>
-
 #include "types.h"
 
+#include "Classpath.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
@@ -20,7 +19,6 @@
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
-#include "NativeUtil.h"
 
 using namespace jnjvm;
 
@@ -32,8 +30,8 @@ extern "C" {
 static UserClass* internalGetClass(Jnjvm* vm, JavaMethod* meth, jobject Meth) {
 #ifdef ISOLATE_SHARING
   JavaField* field = vm->upcalls->methodClass;
-  jclass Cl = (jclass)field->getInt32Field((JavaObject*)Meth);
-  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, Cl, false);
+  JavaObject* Cl = (JavaObject*)field->getInt32Field((JavaObject*)Meth);
+  UserClass* cl = (UserClass*)UserCommonClass::resolvedImplClass(vm, Cl, false);
   return cl;
 #else
   return meth->classDef;
@@ -129,7 +127,8 @@ jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
   uintptr_t buf = (uintptr_t)alloca(size * sizeof(uint64)); 
   void* _buf = (void*)buf;
   if (nbArgs == size) {
-    UserCommonClass* _cl = NativeUtil::resolvedImplClass(vm, Cl, false);
+    UserCommonClass* _cl = 
+      UserCommonClass::resolvedImplClass(vm, (JavaObject*)Cl, false);
     UserClass* cl = (UserClass*)_cl;
     
     if (isVirtual(meth->access)) {
@@ -152,7 +151,7 @@ jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
     JavaObject** ptr = (JavaObject**)(void*)(args->elements);
     Typedef* const* arguments = sign->getArgumentsType();
     for (sint32 i = 0; i < size; ++i) {
-      NativeUtil::decapsulePrimitive(vm, buf, ptr[i], arguments[i]);
+      ptr[i]->decapsulePrimitive(vm, buf, arguments[i]);
     }
     
     JavaObject* exc = 0;

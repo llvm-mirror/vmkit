@@ -38,7 +38,6 @@
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "JnjvmModuleProvider.h"
-#include "NativeUtil.h"
 #include "Reader.h"
 #include "Zip.h"
 

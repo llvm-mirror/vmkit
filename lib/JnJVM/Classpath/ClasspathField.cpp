@@ -7,13 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-
+#include "Classpath.h"
 #include "JavaClass.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "NativeUtil.h"
 
 using namespace jnjvm;
 
@@ -23,8 +22,8 @@ extern "C" {
 static UserClass* internalGetClass(Jnjvm* vm, JavaField* field, jobject Field) {
 #ifdef ISOLATE_SHARING
   JavaField* slot = vm->upcalls->fieldClass;
-  jclass Cl = (jclass)slot->getInt32Field((JavaObject*)Field);
-  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, Cl, false);
+  JavaObject* Cl = (JavaObject*)slot->getInt32Field((JavaObject*)Field);
+  UserClass* cl = (UserClass*)UserCommonClass::resolvedImplClass(vm, Cl, false);
   return cl;
 #else
   return field->classDef;
@@ -531,7 +530,7 @@ jobject Field, jobject obj, jobject val) {
   uintptr_t buf = (uintptr_t)alloca(sizeof(uint64));
   void* _buf = (void*)buf;
   const Typedef* type = field->getSignature();
-  NativeUtil::decapsulePrimitive(vm, buf, (JavaObject*)val, type);
+  ((JavaObject*)val)->decapsulePrimitive(vm, buf, type);
 
   
   void* Obj = (void*)obj;

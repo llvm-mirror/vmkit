@@ -7,19 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <string.h>
-
 #include "types.h"
 
+#include "Classpath.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaString.h"
-#include "JavaTypes.h"
 #include "JavaThread.h"
 #include "Jnjvm.h"
-#include "LockedMap.h"
-#include "NativeUtil.h"
 
 using namespace jnjvm;
 
@@ -148,7 +144,7 @@ jclass Cl) {
   
   verifyNull(Cl);
   Jnjvm* vm = JavaThread::get()->getJVM();
-  NativeUtil::resolvedImplClass(vm, Cl, false);
+  UserCommonClass::resolvedImplClass(vm, (JavaObject*)Cl, false);
 
   END_NATIVE_EXCEPTION
 }

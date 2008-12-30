@@ -14,7 +14,6 @@
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "NativeUtil.h"
 
 
 using namespace jnjvm;
@@ -34,7 +33,8 @@ jclass Cl) {
 
   verifyNull(Cl);
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, true);
+  UserCommonClass* cl = 
+    UserCommonClass::resolvedImplClass(vm, (JavaObject*)Cl, true);
   
   if (cl->isClass() && 
       cl->asClass()->lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
@@ -225,7 +225,8 @@ jclass target, jclass constr, jobject cons) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, target, true);
+  UserClass* cl = 
+    (UserClass*)UserCommonClass::resolvedImplClass(vm, (JavaObject*)target, true);
   JavaObject* obj = cl->doNew(vm);
   JavaField* field = vm->upcalls->constructorSlot;
   JavaMethod* meth = (JavaMethod*)(field->getInt32Field((JavaObject*)cons));
@@ -249,7 +250,8 @@ jclass arrayType, jint arrayLength) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* base = NativeUtil::resolvedImplClass(vm, arrayType, true);
+  UserCommonClass* base = 
+    UserCommonClass::resolvedImplClass(vm, (JavaObject*)arrayType, true);
   JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->getName();
   const UTF8* arrayName = loader->constructArrayName(1, name);

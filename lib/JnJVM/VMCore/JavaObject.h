@@ -204,6 +204,12 @@ public:
   LockObj* lockObj() {
     return lock.getFatLock();
   }
+
+  /// decapsulePrimitive - Based on the signature argument, decapsule
+  /// obj as a primitive and put it in the buffer.
+  ///
+  void decapsulePrimitive(Jnjvm* vm, uintptr_t &buf, const Typedef* signature);
+
 };
 
 

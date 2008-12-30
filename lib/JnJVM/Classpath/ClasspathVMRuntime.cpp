@@ -12,16 +12,14 @@
 
 #include "types.h"
 
+#include "Classpath.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaString.h"
-#include "JavaTypes.h"
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "LockedMap.h"
-#include "NativeUtil.h"
 
 #include <cstring>
 

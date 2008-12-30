@@ -7,23 +7,19 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <string.h>
-
 #include "types.h"
 
+#include "Classpath.h"
 #include "ClasspathReflect.h"
 #include "JavaAccess.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
-#include "JavaConstantPool.h"
 #include "JavaObject.h"
 #include "JavaString.h"
 #include "JavaTypes.h"
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "NativeUtil.h"
-#include "Reader.h"
 
 using namespace jnjvm;
 
@@ -88,7 +84,8 @@ jboolean publicOnly) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = 
+    UserCommonClass::resolvedImplClass(vm, (JavaObject*)Cl, false);
 
   if (cl->isArray() || cl->isInterface() || cl->isPrimitive()) {
     result = (jobject)vm->upcalls->constructorArrayClass->doNew(0, vm);
@@ -130,7 +127,8 @@ jboolean publicOnly) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = 
+    UserCommonClass::resolvedImplClass(vm, (JavaObject*)Cl, false);
   Classpath* upcalls = vm->upcalls;
 
   if (cl->isArray() || cl->isPrimitive()) {
@@ -175,7 +173,8 @@ jboolean ignore) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = 
+    UserCommonClass::resolvedImplClass(vm, (JavaObject*)Cl, false);
   res = cl->getAccess();
 
   END_NATIVE_EXCEPTION
@@ -237,7 +236,8 @@ jclass Cl) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = 
+    UserCommonClass::resolvedImplClass(vm, (JavaObject*)Cl, false);
 
   res = cl->isInterface();
 
@@ -369,7 +369,8 @@ jclass Cl, jboolean publicOnly) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false)->asClass();
+  UserClass* cl = 
+    UserCommonClass::resolvedImplClass(vm, (JavaObject*)Cl, false)->asClass();
 
   if (!cl) {
     result = (jobject)vm->upcalls->fieldArrayClass->doNew(0, vm);
@@ -410,7 +411,8 @@ jclass Cl) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = 
+    UserCommonClass::resolvedImplClass(vm, (JavaObject*)Cl, false);
   ArrayObject* ret = 
     (ArrayObject*)vm->upcalls->classArrayClass->doNew(cl->nbInterfaces, vm);
   for (uint16 i = 0; i < cl->nbInterfaces; ++i) {
@@ -436,7 +438,8 @@ jclass Cl) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false)->asClass();
+  UserClass* cl = 
+    UserCommonClass::resolvedImplClass(vm, (JavaObject*)Cl, false)->asClass();
   if (cl) {
     cl->resolveInnerOuterClasses();
     UserClass* outer = cl->getOuterClass();
@@ -464,7 +467,8 @@ jclass Cl, bool publicOnly) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = NativeUtil::resolvedImplClass(vm, Cl, false)->asClass();
+  UserClass* cl = 
+    UserCommonClass::resolvedImplClass(vm, (JavaObject*)Cl, false)->asClass();
   if (cl) {
     cl->resolveInnerOuterClasses();
     UserClassArray* array = vm->upcalls->constructorArrayClass;

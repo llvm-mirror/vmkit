@@ -7,25 +7,20 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <cstring>
 #include <vector>
 
 #include "types.h"
 
-#include "mvm/JIT.h"
-
+#include "Classpath.h"
 #include "JavaAccess.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
-#include "JavaJIT.h"
 #include "JavaObject.h"
 #include "JavaString.h"
-#include "JavaTypes.h"
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "NativeUtil.h"
 #include "Reader.h"
 
 using namespace jnjvm;

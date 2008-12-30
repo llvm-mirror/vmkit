@@ -23,7 +23,6 @@
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 #include "LockedMap.h"
-#include "NativeUtil.h"
 
 using namespace jnjvm;
 

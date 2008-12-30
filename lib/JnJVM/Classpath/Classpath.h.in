@@ -8,7 +8,12 @@
 //===----------------------------------------------------------------------===//
 
 
-const char* GNUClasspathLibs  =  "@classpathlibs@";
-const char* GNUClasspathGlibj =  "@classpathglibj@";
-const char* GNUClasspathVersion = "@classpathversion@";
+#define GNUClasspathLibs "@classpathlibs@";
+#define GNUClasspathGlibj "@classpathglibj@";
+#define GNUClasspathVersion "@classpathversion@";
 
+#ifdef NATIVE_JNI
+#define JNIEXPORT
+#else
+#include <jni.h>
+#endif

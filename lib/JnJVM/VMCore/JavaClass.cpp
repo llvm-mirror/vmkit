@@ -17,6 +17,7 @@
 #include "debug.h"
 #include "types.h"
 
+#include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaCache.h"
 #include "JavaClass.h"
@@ -1070,3 +1071,132 @@ JavaObject* CommonClass::setDelegatee(JavaObject* val) {
 }
 
 #endif
+
+
+
+UserCommonClass* UserCommonClass::resolvedImplClass(Jnjvm* vm,
+                                                    JavaObject* clazz,
+                                                    bool doClinit) {
+  UserCommonClass* cl = ((JavaObjectClass*)clazz)->getClass();
+  if (cl->asClass()) {
+    cl->asClass()->resolveClass();
+    if (doClinit) cl->asClass()->initialiseClass(vm);
+  }
+  return cl;
+}
+
+void JavaMethod::jniConsFromMeth(char* buf) const {
+  const UTF8* jniConsClName = classDef->name;
+  const UTF8* jniConsName = name;
+  sint32 clen = jniConsClName->size;
+  sint32 mnlen = jniConsName->size;
+
+  uint32 cur = 0;
+  char* ptr = &(buf[JNI_NAME_PRE_LEN]);
+  
+  memcpy(buf, JNI_NAME_PRE, JNI_NAME_PRE_LEN);
+  
+  for (sint32 i =0; i < clen; ++i) {
+    cur = jniConsClName->elements[i];
+    if (cur == '/') ptr[0] = '_';
+    else if (cur == '_') {
+      ptr[0] = '_';
+      ptr[1] = '1';
+      ++ptr;
+    }
+    else ptr[0] = (uint8)cur;
+    ++ptr;
+  }
+  
+  ptr[0] = '_';
+  ++ptr;
+  
+  for (sint32 i =0; i < mnlen; ++i) {
+    cur = jniConsName->elements[i];
+    if (cur == '/') ptr[0] = '_';
+    else if (cur == '_') {
+      ptr[0] = '_';
+      ptr[1] = '1';
+      ++ptr;
+    }
+    else ptr[0] = (uint8)cur;
+    ++ptr;
+  }
+  
+  ptr[0] = 0;
+
+
+}
+
+void JavaMethod::jniConsFromMethOverloaded(char* buf) const {
+  const UTF8* jniConsClName = classDef->name;
+  const UTF8* jniConsName = name;
+  const UTF8* jniConsType = type;
+  sint32 clen = jniConsClName->size;
+  sint32 mnlen = jniConsName->size;
+
+  uint32 cur = 0;
+  char* ptr = &(buf[JNI_NAME_PRE_LEN]);
+  
+  memcpy(buf, JNI_NAME_PRE, JNI_NAME_PRE_LEN);
+  
+  for (sint32 i =0; i < clen; ++i) {
+    cur = jniConsClName->elements[i];
+    if (cur == '/') ptr[0] = '_';
+    else if (cur == '_') {
+      ptr[0] = '_';
+      ptr[1] = '1';
+      ++ptr;
+    }
+    else ptr[0] = (uint8)cur;
+    ++ptr;
+  }
+  
+  ptr[0] = '_';
+  ++ptr;
+
+  for (sint32 i =0; i < mnlen; ++i) {
+    cur = jniConsName->elements[i];
+    if (cur == '/') ptr[0] = '_';
+    else if (cur == '_') {
+      ptr[0] = '_';
+      ptr[1] = '1';
+      ++ptr;
+    }
+    else ptr[0] = (uint8)cur;
+    ++ptr;
+  }
+  
+  sint32 i = 0;
+  while (i < jniConsType->size) {
+    char c = jniConsType->elements[i++];
+    if (c == I_PARG) {
+      ptr[0] = '_';
+      ptr[1] = '_';
+      ptr += 2;
+    } else if (c == '/') {
+      ptr[0] = '_';
+      ++ptr;
+    } else if (c == '_') {
+      ptr[0] = '_';
+      ptr[1] = '1';
+      ptr += 2;
+    } else if (c == I_END_REF) {
+      ptr[0] = '_';
+      ptr[1] = '2';
+      ptr += 2;
+    } else if (c == I_TAB) {
+      ptr[0] = '_';
+      ptr[1] = '3';
+      ptr += 2;
+    } else if (c == I_PARD) {
+      break;
+    } else {
+      ptr[0] = c;
+      ++ptr;
+    }
+  }
+
+  ptr[0] = 0;
+
+}

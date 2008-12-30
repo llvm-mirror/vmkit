@@ -8,19 +8,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <cstring>
-
 #include "types.h"
 
+#include "Classpath.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
-#include "JavaTypes.h"
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
-#include "NativeUtil.h"
 
 using namespace jnjvm;
 
@@ -32,8 +29,8 @@ extern "C" {
 static UserClass* internalGetClass(Jnjvm* vm, JavaMethod* meth, jobject Meth) {
 #ifdef ISOLATE_SHARING
   JavaField* field = vm->upcalls->constructorClass;
-  jclass Cl = (jclass)field->getInt32Field((JavaObject*)Meth);
-  UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, Cl, false);
+  JavaObject* Cl = (JavaObject*)field->getInt32Field((JavaObject*)Meth);
+  UserClass* cl = (UserClass*)UserCommonClass::resolvedImplClass(vm, Cl, false);
   return cl;
 #else
   return meth->classDef;
@@ -107,7 +104,8 @@ jobject _cons, jobject _args, jclass Clazz, jint _meth) {
   void* startBuf = (void*)buf;
 
   if (nbArgs == size) {
-    UserCommonClass* _cl = NativeUtil::resolvedImplClass(vm, Clazz, false);
+    UserCommonClass* _cl = 
+      UserCommonClass::resolvedImplClass(vm, (JavaObject*)Clazz, false);
     UserClass* cl = _cl->asClass();
     if (cl) {
       cl->initialiseClass(vm);
@@ -118,7 +116,7 @@ jobject _cons, jobject _args, jclass Clazz, jint _meth) {
       Typedef* const* arguments = sign->getArgumentsType();
       // Store the arguments, unboxing primitives if necessary.
       for (sint32 i = 0; i < size; ++i) {
-        NativeUtil::decapsulePrimitive(vm, buf, ptr[i], arguments[i]);
+        ptr[i]->decapsulePrimitive(vm, buf, arguments[i]);
       }
       
       JavaObject* excp = 0;

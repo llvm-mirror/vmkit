@@ -31,6 +31,7 @@
 
 #include "mvm/Allocator.h"
 
+#include "Classpath.h"
 #include "ClasspathReflect.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
@@ -44,9 +45,6 @@
 #include "Reader.h"
 
 using namespace jnjvm;
-
-extern const char* GNUClasspathGlibj;
-extern const char* GNUClasspathLibs;
 
 JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   

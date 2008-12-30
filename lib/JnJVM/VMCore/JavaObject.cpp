@@ -15,6 +15,7 @@
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
+#include "JavaUpcalls.h"
 #include "Jnjvm.h"
 
 using namespace jnjvm;
@@ -151,4 +152,147 @@ void JavaObject::notifyAll() {
   } else {
     JavaThread::get()->getJVM()->illegalMonitorStateException(this);
   } 
+}
+
+void JavaObject::decapsulePrimitive(Jnjvm *vm, uintptr_t &buf,
+                                    const Typedef* signature) {
+
+  JavaObject* obj = this;
+  if (!signature->isPrimitive()) {
+    if (obj && !(obj->classOf->isOfTypeName(vm, signature->getName()))) {
+      vm->illegalArgumentException("wrong type argument");
+    }
+    ((JavaObject**)buf)[0] = obj;
+    buf += 8;
+    return;
+  } else if (obj == 0) {
+    vm->illegalArgumentException("");
+  } else {
+    UserCommonClass* cl = obj->classOf;
+    UserClassPrimitive* value = cl->toPrimitive(vm);
+    PrimitiveTypedef* prim = (PrimitiveTypedef*)signature;
+
+    if (value == 0) {
+      vm->illegalArgumentException("");
+    }
+    
+    if (prim->isShort()) {
+      if (value == vm->upcalls->OfShort) {
+        ((uint16*)buf)[0] = vm->upcalls->shortValue->getInt16Field(obj);
+        buf += 8;
+        return;
+      } else if (value == vm->upcalls->OfByte) {
+        ((sint16*)buf)[0] = 
+          (sint16)vm->upcalls->byteValue->getInt8Field(obj);
+        buf += 8;
+        return;
+      } else {
+        vm->illegalArgumentException("");
+      }
+    } else if (prim->isByte()) {
+      if (value == vm->upcalls->OfByte) {
+        ((uint8*)buf)[0] = vm->upcalls->byteValue->getInt8Field(obj);
+        buf += 8;
+        return;
+      } else {
+        vm->illegalArgumentException("");
+      }
+    } else if (prim->isBool()) {
+      if (value == vm->upcalls->OfBool) {
+        ((uint8*)buf)[0] = vm->upcalls->boolValue->getInt8Field(obj);
+        buf += 8;
+        return;
+      } else {
+        vm->illegalArgumentException("");
+      }
+    } else if (prim->isInt()) {
+      sint32 val = 0;
+      if (value == vm->upcalls->OfInt) {
+        val = vm->upcalls->intValue->getInt32Field(obj);
+      } else if (value == vm->upcalls->OfByte) {
+        val = (sint32)vm->upcalls->byteValue->getInt8Field(obj);
+      } else if (value == vm->upcalls->OfChar) {
+        val = (uint32)vm->upcalls->charValue->getInt16Field(obj);
+      } else if (value == vm->upcalls->OfShort) {
+        val = (sint32)vm->upcalls->shortValue->getInt16Field(obj);
+      } else {
+        vm->illegalArgumentException("");
+      }
+      ((sint32*)buf)[0] = val;
+      buf += 8;
+      return;
+    } else if (prim->isChar()) {
+      uint16 val = 0;
+      if (value == vm->upcalls->OfChar) {
+        val = (uint16)vm->upcalls->charValue->getInt16Field(obj);
+      } else {
+        vm->illegalArgumentException("");
+      }
+      ((uint16*)buf)[0] = val;
+      buf += 8;
+      return;
+    } else if (prim->isFloat()) {
+      float val = 0;
+      if (value == vm->upcalls->OfFloat) {
+        val = (float)vm->upcalls->floatValue->getFloatField(obj);
+      } else if (value == vm->upcalls->OfByte) {
+        val = (float)(sint32)vm->upcalls->byteValue->getInt8Field(obj);
+      } else if (value == vm->upcalls->OfChar) {
+        val = (float)(uint32)vm->upcalls->charValue->getInt16Field(obj);
+      } else if (value == vm->upcalls->OfShort) {
+        val = (float)(sint32)vm->upcalls->shortValue->getInt16Field(obj);
+      } else if (value == vm->upcalls->OfInt) {
+        val = (float)(sint32)vm->upcalls->intValue->getInt32Field(obj);
+      } else if (value == vm->upcalls->OfLong) {
+        val = (float)vm->upcalls->longValue->getLongField(obj);
+      } else {
+        vm->illegalArgumentException("");
+      }
+      ((float*)buf)[0] = val;
+      buf += 8;
+      return;
+    } else if (prim->isDouble()) {
+      double val = 0;
+      if (value == vm->upcalls->OfDouble) {
+        val = (double)vm->upcalls->doubleValue->getDoubleField(obj);
+      } else if (value == vm->upcalls->OfFloat) {
+        val = (double)vm->upcalls->floatValue->getFloatField(obj);
+      } else if (value == vm->upcalls->OfByte) {
+        val = (double)(sint64)vm->upcalls->byteValue->getInt8Field(obj);
+      } else if (value == vm->upcalls->OfChar) {
+        val = (double)(uint64)vm->upcalls->charValue->getInt16Field(obj);
+      } else if (value == vm->upcalls->OfShort) {
+        val = (double)(sint16)vm->upcalls->shortValue->getInt16Field(obj);
+      } else if (value == vm->upcalls->OfInt) {
+        val = (double)(sint32)vm->upcalls->intValue->getInt32Field(obj);
+      } else if (value == vm->upcalls->OfLong) {
+        val = (double)(sint64)vm->upcalls->longValue->getLongField(obj);
+      } else {
+        vm->illegalArgumentException("");
+      }
+      ((double*)buf)[0] = val;
+      buf += 8;
+      return;
+    } else if (prim->isLong()) {
+      sint64 val = 0;
+      if (value == vm->upcalls->OfByte) {
+        val = (sint64)vm->upcalls->byteValue->getInt8Field(obj);
+      } else if (value == vm->upcalls->OfChar) {
+        val = (sint64)(uint64)vm->upcalls->charValue->getInt16Field(obj);
+      } else if (value == vm->upcalls->OfShort) {
+        val = (sint64)vm->upcalls->shortValue->getInt16Field(obj);
+      } else if (value == vm->upcalls->OfInt) {
+        val = (sint64)vm->upcalls->intValue->getInt32Field(obj);
+      } else if (value == vm->upcalls->OfLong) {
+        val = (sint64)vm->upcalls->intValue->getLongField(obj);
+      } else {
+        vm->illegalArgumentException("");
+      }
+      ((sint64*)buf)[0] = val;
+      buf += 8;
+      return;
+    }
+  }
+  // can not be here
+  return;
 }

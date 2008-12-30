@@ -25,6 +25,36 @@ class Class;
 class JavaObject;
 class Jnjvm;
 
+
+#define BEGIN_NATIVE_EXCEPTION(level) \
+  JavaThread* __th = JavaThread::get(); \
+  __th->startNative(level); \
+  bool __exc = false; \
+  try {
+
+#define END_NATIVE_EXCEPTION \
+  } catch(...) { \
+    __exc = true; \
+  } \
+  if (__exc) { \
+    __th->throwFromNative(); \
+  } \
+  __th->endNative();
+
+#define BEGIN_JNI_EXCEPTION \
+  JavaThread* th = JavaThread::get(); \
+  bool __exc = 0; \
+  try {
+
+#define END_JNI_EXCEPTION \
+  } catch(...) { \
+    __exc = true; \
+  } \
+  if (__exc) { \
+    th->throwFromJNI(); \
+  }
+
+
 /// JavaThread - This class is the internal representation of a Java thread.
 /// It maintains thread-specific information such as its state, the current
 /// exception if there is one, the layout of the stack, etc.
