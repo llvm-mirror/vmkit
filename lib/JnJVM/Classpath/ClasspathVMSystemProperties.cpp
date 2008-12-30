@@ -53,6 +53,8 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject _prop) {
+  
+  BEGIN_NATIVE_EXCEPTION(0)
 
   JavaObject* prop = (JavaObject*)_prop;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -120,15 +122,20 @@ jobject _prop) {
   setProperty(vm, prop, "file.encoding", "ISO8859_1");
   setProperty(vm, prop, "gnu.java.util.zoneinfo.dir", "/usr/share/zoneinfo");
 
-
+  END_NATIVE_EXCEPTION
 }
 
 extern "C" void propertiesPostInit(JavaObject* prop) {
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   for (std::vector<std::pair<char*, char*> >::iterator i = 
        vm->postProperties.begin(), e = vm->postProperties.end(); i!= e; i++) {
     setProperty(vm, prop, i->first, i->second);
   }
+
+  END_NATIVE_EXCEPTION
 }
 
 }

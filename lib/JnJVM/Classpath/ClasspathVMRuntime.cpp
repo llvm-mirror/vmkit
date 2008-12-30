@@ -36,6 +36,10 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject _strLib) {
+  
+  jobject res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
 
   JavaString* strLib = (JavaString*)_strLib;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -57,7 +61,11 @@ jobject _strLib) {
   memmove(&(elements[lgPre + lgLib]), vm->bootstrapLoader->postlib->elements,
            lgPost * sizeof(uint16));
   
-  return (jobject)(vm->UTF8ToStr((const UTF8*)array));
+  res = (jobject)(vm->UTF8ToStr((const UTF8*)array));
+
+  END_NATIVE_EXCEPTION
+
+  return res;
   
 }
 
@@ -70,6 +78,11 @@ jclass clazz,
 #endif
 jobject _str,
 jobject _loader) {
+  
+  jint result = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   JavaString* str = (JavaString*)_str;
   Jnjvm* vm = JavaThread::get()->getJVM();
   JnjvmClassLoader* loader = 
@@ -82,10 +95,14 @@ jobject _loader) {
   if (res != 0) {
     onLoad_t onLoad = (onLoad_t)loader->loadInLib("JNI_OnLoad", res);
     if (onLoad) onLoad(&vm->javavmEnv, 0);
-    return 1;
+    result = 1;
   } else {
-    return 0;
+    result = 0;
   }
+
+  END_NATIVE_EXCEPTION
+
+  return result;
 }
 
 
@@ -95,7 +112,11 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   Collector::collect();
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMRuntime_runFinalization(

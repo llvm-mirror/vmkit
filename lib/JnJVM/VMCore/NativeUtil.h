@@ -24,6 +24,38 @@ class Signdef;
 class Typedef;
 
 
+#define BEGIN_NATIVE_EXCEPTION(level) \
+  JavaObject* excp = 0; \
+  JavaThread* __th = JavaThread::get(); \
+  __th->startNative(level); \
+  try {
+
+#define END_NATIVE_EXCEPTION \
+  } catch(...) { \
+    excp = JavaThread::getJavaException(); \
+    JavaThread::clearException(); \
+  } \
+  if (excp) { \
+    __th->pendingException = excp; \
+    __th->returnFromNative(); \
+  } \
+  __th->endNative();
+
+#define BEGIN_JNI_EXCEPTION \
+  JavaObject* excp = 0; \
+  try {
+
+#define END_JNI_EXCEPTION \
+  } catch(...) { \
+    excp = JavaThread::getJavaException(); \
+    JavaThread::clearException(); \
+  } \
+  if (excp) { \
+    JavaThread* th = JavaThread::get(); \
+    th->pendingException = excp; \
+    th->returnFromJNI(); \
+  }
+
 class NativeUtil {
 public:
 

@@ -736,6 +736,9 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf,
 
 JnjvmClassLoader::~JnjvmClassLoader() {
   
+  if (isolate)
+    isolate->removeMethodsInFunctionMap(this);
+
   if (classes) {
     classes->~ClassMap();
     allocator.Deallocate(classes);

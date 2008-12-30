@@ -46,10 +46,20 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Method_getModifiersInternal(
 JNIEnv *env, 
 #endif
  jobject Meth) { 
+  
+  jint res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->methodSlot;
   JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
-  return meth->access;
+  
+  res = meth->access;
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 JNIEXPORT jclass JNICALL Java_java_lang_reflect_Method_getReturnType(
@@ -57,13 +67,22 @@ JNIEXPORT jclass JNICALL Java_java_lang_reflect_Method_getReturnType(
 JNIEnv *env, 
 #endif
  jobject Meth) {
+
+  jclass res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->methodSlot;
   JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
   UserClass* cl = internalGetClass(vm, meth, Meth);
   JnjvmClassLoader* loader = cl->classLoader;
   Typedef* ret = meth->getSignature()->getReturnType();
-  return (jclass)NativeUtil::getClassType(loader, ret);
+  res = (jclass)NativeUtil::getClassType(loader, ret);
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 
@@ -72,12 +91,21 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_getParameterTypes(
 JNIEnv *env, 
 #endif
 jobject Meth) {
+
+  jobject res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->methodSlot;
   JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
   UserClass* cl = internalGetClass(vm, meth, Meth);
   JnjvmClassLoader* loader = cl->classLoader;
-  return (jobject)(NativeUtil::getParameterTypes(loader, meth));
+  res = (jobject)(NativeUtil::getParameterTypes(loader, meth));
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_invokeNative(
@@ -85,6 +113,10 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_invokeNative(
 JNIEnv *env, 
 #endif
 jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
+  
+  JavaObject* res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = (JavaMethod*)_meth;
@@ -151,7 +183,6 @@ jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
       } \
     } \
     
-    JavaObject* res = 0;
     Typedef* retType = sign->getReturnType();
     if (retType->isPrimitive()) {
       PrimitiveTypedef* prim = (PrimitiveTypedef*)retType;
@@ -205,10 +236,13 @@ jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
       RUN_METH(JavaObject);
       res = val;
     } 
-    return (jobject)res;
+  } else {
+    vm->illegalArgumentExceptionForMethod(meth, 0, 0); 
   }
-  vm->illegalArgumentExceptionForMethod(meth, 0, 0); 
-  return 0;
+
+  END_NATIVE_EXCEPTION
+
+  return (jobject) res;
 }
 
 #undef RUN_METH
@@ -218,12 +252,21 @@ JNIEXPORT jobjectArray JNICALL Java_java_lang_reflect_Method_getExceptionTypes(
 JNIEnv *env, 
 #endif
 jobject _meth) {
+
+  jobjectArray res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   verifyNull(_meth);
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->methodSlot;
   JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)_meth);
   UserClass* cl = internalGetClass(vm, meth, _meth);
-  return (jobjectArray)NativeUtil::getExceptionTypes(cl, meth);
+  res = (jobjectArray)NativeUtil::getExceptionTypes(cl, meth);
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 }

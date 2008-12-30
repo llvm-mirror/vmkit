@@ -27,6 +27,8 @@ using namespace jnjvm;
 
 extern "C" {
 
+// Never throws.
+// Never calls Java code.
 JNIEXPORT jobject JNICALL Java_java_lang_VMThread_currentThread(
 #ifdef NATIVE_JNI
 JNIEnv *env,
@@ -81,6 +83,9 @@ JNIEXPORT void JNICALL Java_java_lang_VMThread_start(
 JNIEnv *env,
 #endif
 jobject _vmThread, sint64 stackSize) {
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* vmThread = (JavaObject*)_vmThread;
   
@@ -91,6 +96,8 @@ jobject _vmThread, sint64 stackSize) {
   JavaThread* th = new JavaThread(javaThread, vmThread, vm);
   if (!th) vm->outOfMemoryError(0);
   th->start((void (*)(mvm::Thread*))start);
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMThread_interrupt(
@@ -98,6 +105,9 @@ JNIEXPORT void JNICALL Java_java_lang_VMThread_interrupt(
 JNIEnv *env,
 #endif
 jobject _vmthread) {
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* vmthread = (JavaObject*)_vmthread;
   JavaField* field = vm->upcalls->vmdataVMThread; 
@@ -117,8 +127,12 @@ jobject _vmthread) {
   }
   
   th->lock.unlock();
+
+  END_NATIVE_EXCEPTION
 }
 
+// Never throws.
+// Never calls Java code.
 JNIEXPORT jboolean JNICALL Java_java_lang_VMThread_interrupted(
 #ifdef NATIVE_JNI
 JNIEnv *env,
@@ -131,6 +145,8 @@ jclass clazz,
   return (jboolean)interrupt;
 }
 
+// Never throws.
+// Never calls Java code.
 JNIEXPORT jboolean JNICALL Java_java_lang_VMThread_isInterrupted(
 #ifdef NATIVE_JNI
 JNIEnv *env,
@@ -143,6 +159,8 @@ jobject _vmthread) {
   return (jboolean)th->interruptFlag;
 }
 
+// Never throws.
+// Never calls Java code.
 JNIEXPORT void JNICALL Java_java_lang_VMThread_nativeSetPriority(
 #ifdef NATIVE_JNI
 JNIEnv *env,
@@ -151,6 +169,8 @@ jobject vmthread, jint prio) {
   // Currently not implemented
 }
 
+// Never throws.
+// Never calls Java code.
 JNIEXPORT void JNICALL Java_java_lang_VMThread_nativeStop(
 #ifdef NATIVE_JNI
 JNIEnv *env,
@@ -159,6 +179,8 @@ jobject vmthread, jobject exc) {
   // Currently not implemented
 }
 
+// Never throws.
+// Never calls Java code.
 JNIEXPORT void JNICALL Java_java_lang_VMThread_yield(
 #ifdef NATIVE_JNI
 JNIEnv *env,

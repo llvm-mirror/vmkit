@@ -22,6 +22,7 @@
 
 using namespace jnjvm;
 
+#if 0
 JavaMethod* JavaJIT::IPToJavaMethod(void* begIp) {
   const llvm::Function* F = mvm::MvmModule::getCodeFromPointer(begIp);
   if (F) {
@@ -141,3 +142,5 @@ JavaObject* JavaJIT::getCallingClassLoader() {
   if (!cl) return 0;
   else return cl->classLoader->getJavaClassLoader();
 }
+
+#endif

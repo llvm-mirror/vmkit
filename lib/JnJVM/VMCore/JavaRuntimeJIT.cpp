@@ -23,10 +23,18 @@
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 #include "LockedMap.h"
+#include "NativeUtil.h"
 
 using namespace jnjvm;
 
+// Throws if the method is not found.
 extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
+
+  void* res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(1)
+
+  
   Enveloppe* enveloppe = cache->enveloppe;
   UserCommonClass* ocl = obj->classOf;
   
@@ -86,10 +94,20 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
   
   enveloppe->cacheLock.release();
   
-  return rcache->methPtr;
+  res = rcache->methPtr;
+  
+  END_NATIVE_EXCEPTION
+
+  return res; 
 }
 
+// Throws if the field is not found.
 extern "C" void* virtualFieldLookup(UserClass* caller, uint32 index) {
+  
+  void* res = 0;
+  
+  BEGIN_NATIVE_EXCEPTION(1)
+
   UserConstantPool* ctpInfo = caller->getConstantPool();
   if (ctpInfo->ctpRes[index]) {
     return ctpInfo->ctpRes[index];
@@ -106,10 +124,20 @@ extern "C" void* virtualFieldLookup(UserClass* caller, uint32 index) {
   
   ctpInfo->ctpRes[index] = (void*)field->ptrOffset;
   
-  return (void*)field->ptrOffset;
+  res = (void*)field->ptrOffset;
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
+// Throws if the field or its class is not found.
 extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
+  
+  void* res = 0;
+  
+  BEGIN_NATIVE_EXCEPTION(1)
+  
   UserConstantPool* ctpInfo = caller->getConstantPool();
   
   if (ctpInfo->ctpRes[index]) {
@@ -135,8 +163,366 @@ extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
   void* ptr = (void*)((uint64)obj + field->ptrOffset);
   ctpInfo->ctpRes[index] = ptr;
    
-  return ptr;
+  res = ptr;
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
+
+#ifndef WITHOUT_VTABLE
+// Throws if the method is not found.
+extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
+  
+  void* res = 0;
+  
+  BEGIN_NATIVE_EXCEPTION(1)
+    
+  UserCommonClass* cl = 0;
+  const UTF8* utf8 = 0;
+  Signdef* sign = 0;
+  
+  caller->getConstantPool()->resolveMethod(index, cl, utf8, sign);
+  UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
+  JavaMethod* dmeth = lookup->lookupMethodDontThrow(utf8, sign->keyName, false,
+                                                    true, 0);
+  if (!dmeth) {
+    va_list ap;
+    va_start(ap, index);
+    JavaObject* obj = va_arg(ap, JavaObject*);
+    va_end(ap);
+    assert((obj->classOf->isClass() && 
+            obj->classOf->asClass()->isInitializing()) &&
+           "Class not ready in a virtual lookup.");
+    // Arg, the bytecode is buggy! Perform the lookup on the object class
+    // and do not update offset.
+    lookup = obj->classOf->isArray() ? obj->classOf->super : 
+                                       obj->classOf->asClass();
+    dmeth = lookup->lookupMethod(utf8, sign->keyName, false, true, 0);
+  } else {
+    caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
+  }
+
+#if !defined(ISOLATE_SHARING) && !defined(SERVICE)
+  assert(dmeth->classDef->isInitializing() && 
+         "Class not ready in a virtual lookup.");
+#endif
+
+  res = (void*)dmeth->offset;
+
+  END_NATIVE_EXCEPTION
+
+  return res;
+}
+#endif
+
+// Throws if the class is not found.
+extern "C" void* classLookup(UserClass* caller, uint32 index) { 
+  
+  void* res = 0;
+  
+  BEGIN_NATIVE_EXCEPTION(1)
+   
+  UserConstantPool* ctpInfo = caller->getConstantPool();
+  UserClass* cl = (UserClass*)ctpInfo->loadClass(index);
+  // We can not initialize here, because bytecodes such as CHECKCAST
+  // or classes used in catch clauses do not trigger class initialization.
+  // This is really sad, because we need to insert class initialization checks
+  // in the LLVM code.
+  assert(cl && "No cl after class lookup");
+  res = (void*)cl;
+
+  END_NATIVE_EXCEPTION
+
+  return res;
+}
+
+// Calls Java code.
+// Throws if initializing the class throws an exception.
+extern "C" UserCommonClass* jnjvmRuntimeInitialiseClass(UserClass* cl) {
+  BEGIN_NATIVE_EXCEPTION(1)
+  
+  cl->initialiseClass(JavaThread::get()->getJVM());
+  
+  END_NATIVE_EXCEPTION
+  return cl;
+}
+
+// Calls Java code.
+extern "C" JavaObject* jnjvmRuntimeDelegatee(UserCommonClass* cl) {
+  JavaObject* res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(1)
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  res = cl->getClassDelegatee(vm);
+  END_NATIVE_EXCEPTION
+
+  return res;
+}
+
+// Throws if one of the dimension is negative.
+static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
+                                     sint32* dims, Jnjvm* vm) {
+  if (len <= 0) JavaThread::get()->getJVM()->unknownError("Can not happen");
+  JavaArray* _res = cl->doNew(dims[0], vm);
+  if (len > 1) {
+    ArrayObject* res = (ArrayObject*)_res;
+    UserCommonClass* _base = cl->baseClass();
+    if (_base->isArray()) {
+      UserClassArray* base = (UserClassArray*)_base;
+      if (dims[0] > 0) {
+        for (sint32 i = 0; i < dims[0]; ++i) {
+          res->elements[i] = multiCallNewIntern(base, (len - 1),
+                                                &dims[1], vm);
+        }
+      } else {
+        for (uint32 i = 1; i < len; ++i) {
+          sint32 p = dims[i];
+          if (p < 0) JavaThread::get()->getJVM()->negativeArraySizeException(p);
+        }
+      }
+    } else {
+      JavaThread::get()->getJVM()->unknownError("Can not happen");
+    }
+  }
+  return _res;
+}
+
+// Throws if one of the dimension is negative.
+extern "C" JavaArray* multiCallNew(UserClassArray* cl, uint32 len, ...) {
+  JavaArray* res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(1)
+
+  va_list ap;
+  va_start(ap, len);
+  sint32* dims = (sint32*)alloca(sizeof(sint32) * len);
+  for (uint32 i = 0; i < len; ++i){
+    dims[i] = va_arg(ap, int);
+  }
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  res = multiCallNewIntern(cl, len, dims, vm);
+
+  END_NATIVE_EXCEPTION
+
+  return res;
+}
+
+// Throws if the class can not be resolved.
+extern "C" UserClassArray* getArrayClass(UserCommonClass* cl,
+                                         UserClassArray** dcl) {
+  UserClassArray* res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(1)
+  
+  JnjvmClassLoader* JCL = cl->classLoader;
+  if (cl->asClass()) cl->asClass()->resolveClass();
+  const UTF8* arrayName = JCL->constructArrayName(1, cl->getName());
+  
+  res = JCL->constructArray(arrayName);
+  if (dcl) *dcl = res;
+
+  END_NATIVE_EXCEPTION
+
+  return res;
+}
+
+// Does not call Java code.
+extern "C" void jniProceedPendingException() {
+  JavaThread* th = JavaThread::get();
+  jmp_buf* buf = th->sjlj_buffers.back();
+  
+  // Remove the buffer.
+  th->sjlj_buffers.pop_back();
+
+  // We're going back to Java, remove the native address.
+  th->addresses.pop_back();
+
+  mvm::Allocator& allocator = th->getJVM()->gcAllocator;
+  allocator.freeTemporaryMemory(buf);
+
+  // If there's an exception, throw it now.
+  if (JavaThread::get()->pendingException) {
+    th->throwPendingException();
+  }
+}
+
+// Never throws.
+extern "C" void* getSJLJBuffer() {
+  JavaThread* th = JavaThread::get();
+  mvm::Allocator& allocator = th->getJVM()->gcAllocator;
+  void** buf = (void**)allocator.allocateTemporaryMemory(sizeof(jmp_buf));
+  th->sjlj_buffers.push_back((jmp_buf*)buf);
+
+  // Start native because the next instruction after setjmp is a call to a
+  // native function.
+  th->startNative(1);
+
+  // Finally, return the buffer that the Java code will use to do the setjmp.
+  return (void*)buf;
+}
+
+// Never throws.
+extern "C" void JavaObjectAquire(JavaObject* obj) {
+  obj->acquire();
+}
+
+// Never throws.
+extern "C" void JavaObjectRelease(JavaObject* obj) {
+  obj->release();
+}
+
+// Never throws.
+extern "C" bool instanceOf(JavaObject* obj, UserCommonClass* cl) {
+  return obj->instanceOf(cl);
+}
+
+// Never throws.
+extern "C" bool instantiationOfArray(UserCommonClass* cl1,
+                                     UserClassArray* cl2) {
+  return cl1->instantiationOfArray(cl2);
+}
+
+// Never throws.
+extern "C" bool implements(UserCommonClass* cl1, UserCommonClass* cl2) {
+  return cl1->implements(cl2);
+}
+
+// Never throws.
+extern "C" bool isAssignableFrom(UserCommonClass* cl1, UserCommonClass* cl2) {
+  return cl1->isAssignableFrom(cl2);
+}
+
+// Never throws.
+extern "C" void* JavaThreadGetException() {
+  return JavaThread::getException();
+}
+
+// Never throws.
+extern "C" JavaObject* JavaThreadGetJavaException() {
+  return JavaThread::getJavaException();
+}
+
+// Does not call any Java code.
+extern "C" void JavaThreadThrowException(JavaObject* obj) {
+  return JavaThread::throwException(obj);
+}
+
+// Never throws.
+extern "C" bool JavaThreadCompareException(UserClass* cl) {
+  return JavaThread::compareException(cl);
+}
+
+// Never throws.
+extern "C" void JavaThreadClearException() {
+  return JavaThread::clearException();
+}
+
+// Never throws.
+extern "C" void overflowThinLock(JavaObject* obj) {
+  obj->overflowThinLock();
+}
+
+// Creates a Java object and then throws it.
+extern "C" void jnjvmNullPointerException() {
+  
+  JavaObject *exc = 0;
+
+  BEGIN_NATIVE_EXCEPTION(1)
+  
+  exc = JavaThread::get()->getJVM()->CreateNullPointerException();
+
+  END_NATIVE_EXCEPTION
+
+  JavaThread::throwException(exc);
+}
+
+// Creates a Java object and then throws it.
+extern "C" void negativeArraySizeException(sint32 val) {
+  JavaObject *exc = 0;
+
+  BEGIN_NATIVE_EXCEPTION(1)
+  
+  exc = JavaThread::get()->getJVM()->CreateNegativeArraySizeException();
+
+  END_NATIVE_EXCEPTION
+
+  JavaThread::throwException(exc);
+}
+
+// Creates a Java object and then throws it.
+extern "C" void outOfMemoryError(sint32 val) {
+  JavaObject *exc = 0;
+
+  BEGIN_NATIVE_EXCEPTION(1)
+  
+  exc = JavaThread::get()->getJVM()->CreateOutOfMemoryError();
+
+  END_NATIVE_EXCEPTION
+
+  JavaThread::throwException(exc);
+}
+
+// Creates a Java object and then throws it.
+extern "C" void jnjvmClassCastException(JavaObject* obj, UserCommonClass* cl) {
+  JavaObject *exc = 0;
+
+  BEGIN_NATIVE_EXCEPTION(1)
+  
+  exc = JavaThread::get()->getJVM()->CreateClassCastException(obj, cl);
+
+  END_NATIVE_EXCEPTION
+
+  JavaThread::throwException(exc);
+}
+
+// Creates a Java object and then throws it.
+extern "C" void indexOutOfBoundsException(JavaObject* obj, sint32 index) {
+  JavaObject *exc = 0;
+
+  BEGIN_NATIVE_EXCEPTION(1)
+  
+  exc = JavaThread::get()->getJVM()->CreateIndexOutOfBoundsException(index);
+
+  END_NATIVE_EXCEPTION
+
+  JavaThread::throwException(exc);
+}
+
+extern "C" void printMethodStart(JavaMethod* meth) {
+  printf("[%p] executing %s\n", (void*)mvm::Thread::get(),
+         meth->printString());
+  fflush(stdout);
+}
+
+extern "C" void printMethodEnd(JavaMethod* meth) {
+  printf("[%p] return from %s\n", (void*)mvm::Thread::get(),
+         meth->printString());
+  fflush(stdout);
+}
+
+extern "C" void printExecution(char* opcode, uint32 index, JavaMethod* meth) {
+  printf("[%p] executing %s %s at %d\n", (void*)mvm::Thread::get(),
+         meth->printString(), opcode, index);
+  fflush(stdout);
+}
+
+#ifdef SERVICE
+
+extern "C" void serviceCallStart(Jnjvm* OldService,
+                                 Jnjvm* NewService) {
+  fprintf(stderr, "I have switched from %d to %d\n", OldService->IsolateID,
+          NewService->IsolateID);
+
+  fprintf(stderr, "Now the thread id is %d\n", mvm::Thread::get()->IsolateID);
+}
+
+extern "C" void serviceCallStop(Jnjvm* OldService,
+                                Jnjvm* NewService) {
+  fprintf(stderr, "End service call\n");
+}
+
+#endif
 
 #ifdef ISOLATE
 extern "C" void* stringLookup(UserClass* cl, uint32 index) {
@@ -197,235 +583,5 @@ extern "C" UserConstantPool* specialCtpLookup(UserConstantPool* ctpInfo,
 }
 
 #endif
-
-#endif
-
-#ifndef WITHOUT_VTABLE
-extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
-  UserCommonClass* cl = 0;
-  const UTF8* utf8 = 0;
-  Signdef* sign = 0;
-  
-  caller->getConstantPool()->resolveMethod(index, cl, utf8, sign);
-  UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
-  JavaMethod* dmeth = lookup->lookupMethodDontThrow(utf8, sign->keyName, false,
-                                                    true, 0);
-  if (!dmeth) {
-    va_list ap;
-    va_start(ap, index);
-    JavaObject* obj = va_arg(ap, JavaObject*);
-    va_end(ap);
-    assert((obj->classOf->isClass() && 
-            obj->classOf->asClass()->isInitializing()) &&
-           "Class not ready in a virtual lookup.");
-    // Arg, the bytecode is buggy! Perform the lookup on the object class
-    // and do not update offset.
-    lookup = obj->classOf->isArray() ? obj->classOf->super : 
-                                       obj->classOf->asClass();
-    dmeth = lookup->lookupMethod(utf8, sign->keyName, false, true, 0);
-  } else {
-    caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
-  }
-
-#if !defined(ISOLATE_SHARING) && !defined(SERVICE)
-  assert(dmeth->classDef->isInitializing() && 
-         "Class not ready in a virtual lookup.");
-#endif
-
-  return (void*)dmeth->offset;
-}
-#endif
-
-extern "C" void* classLookup(UserClass* caller, uint32 index) { 
-  UserConstantPool* ctpInfo = caller->getConstantPool();
-  UserClass* cl = (UserClass*)ctpInfo->loadClass(index);
-  // We can not initialize here, because bytecodes such as CHECKCAST
-  // or classes used in catch clauses do not trigger class initialization.
-  // This is really sad, because we need to insert class initialization checks
-  // in the LLVM code.
-  assert(cl && "No cl after class lookup");
-  return (void*)cl;
-}
-
-
-extern "C" void printMethodStart(JavaMethod* meth) {
-  printf("[%p] executing %s\n", (void*)mvm::Thread::get(),
-         meth->printString());
-  fflush(stdout);
-}
-
-extern "C" void printMethodEnd(JavaMethod* meth) {
-  printf("[%p] return from %s\n", (void*)mvm::Thread::get(),
-         meth->printString());
-  fflush(stdout);
-}
-
-extern "C" void printExecution(char* opcode, uint32 index, JavaMethod* meth) {
-  printf("[%p] executing %s %s at %d\n", (void*)mvm::Thread::get(),
-         meth->printString(), opcode, index);
-  fflush(stdout);
-}
-
-extern "C" void jniProceedPendingException() {
-  JavaThread* th = JavaThread::get();
-  jmp_buf* buf = th->sjlj_buffers.back();
-  th->sjlj_buffers.pop_back();
-  mvm::Allocator& allocator = th->getJVM()->gcAllocator;
-  allocator.freeTemporaryMemory(buf);
-  if (JavaThread::get()->pendingException) {
-    th->throwPendingException();
-  }
-}
-
-extern "C" void* getSJLJBuffer() {
-  JavaThread* th = JavaThread::get();
-  mvm::Allocator& allocator = th->getJVM()->gcAllocator;
-  void** buf = (void**)allocator.allocateTemporaryMemory(sizeof(jmp_buf));
-  th->sjlj_buffers.push_back((jmp_buf*)buf);
-  return (void*)buf;
-}
-
-extern "C" void jnjvmNullPointerException() {
-  JavaThread::get()->getJVM()->nullPointerException("null");
-}
-
-extern "C" void negativeArraySizeException(sint32 val) {
-  JavaThread::get()->getJVM()->negativeArraySizeException(val);
-}
-
-extern "C" void outOfMemoryError(sint32 val) {
-  JavaThread::get()->getJVM()->outOfMemoryError(val);
-}
-
-extern "C" void jnjvmClassCastException(JavaObject* obj, UserCommonClass* cl) {
-  JavaThread::get()->getJVM()->classCastException(obj, cl);
-}
-
-extern "C" void indexOutOfBoundsException(JavaObject* obj, sint32 index) {
-  JavaThread::get()->getJVM()->indexOutOfBounds(obj, index);
-}
-
-extern "C" UserCommonClass* jnjvmRuntimeInitialiseClass(UserClass* cl) {
-  cl->initialiseClass(JavaThread::get()->getJVM());
-  return cl;
-}
-
-extern "C" JavaObject* jnjvmRuntimeDelegatee(UserCommonClass* cl) {
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  return cl->getClassDelegatee(vm);
-}
-
-static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
-                                     sint32* dims, Jnjvm* vm) {
-  if (len <= 0) JavaThread::get()->getJVM()->unknownError("Can not happen");
-  JavaArray* _res = cl->doNew(dims[0], vm);
-  if (len > 1) {
-    ArrayObject* res = (ArrayObject*)_res;
-    UserCommonClass* _base = cl->baseClass();
-    if (_base->isArray()) {
-      UserClassArray* base = (UserClassArray*)_base;
-      if (dims[0] > 0) {
-        for (sint32 i = 0; i < dims[0]; ++i) {
-          res->elements[i] = multiCallNewIntern(base, (len - 1),
-                                                &dims[1], vm);
-        }
-      } else {
-        for (uint32 i = 1; i < len; ++i) {
-          sint32 p = dims[i];
-          if (p < 0) JavaThread::get()->getJVM()->negativeArraySizeException(p);
-        }
-      }
-    } else {
-      JavaThread::get()->getJVM()->unknownError("Can not happen");
-    }
-  }
-  return _res;
-}
-
-extern "C" JavaArray* multiCallNew(UserClassArray* cl, uint32 len, ...) {
-  va_list ap;
-  va_start(ap, len);
-  sint32* dims = (sint32*)alloca(sizeof(sint32) * len);
-  for (uint32 i = 0; i < len; ++i){
-    dims[i] = va_arg(ap, int);
-  }
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  return multiCallNewIntern(cl, len, dims, vm);
-}
-
-extern "C" UserClassArray* getArrayClass(UserCommonClass* cl,
-                                         UserClassArray** dcl) {
-  JnjvmClassLoader* JCL = cl->classLoader;
-  if (cl->asClass()) cl->asClass()->resolveClass();
-  const UTF8* arrayName = JCL->constructArrayName(1, cl->getName());
-  
-  UserClassArray* result = JCL->constructArray(arrayName);
-  if (dcl) *dcl = result;
-  return result;
-}
-
-extern "C" void JavaObjectAquire(JavaObject* obj) {
-  obj->acquire();
-}
-
-extern "C" void JavaObjectRelease(JavaObject* obj) {
-  obj->release();
-}
-
-extern "C" bool instanceOf(JavaObject* obj, UserCommonClass* cl) {
-  return obj->instanceOf(cl);
-}
-
-extern "C" bool instantiationOfArray(UserCommonClass* cl1,
-                                     UserClassArray* cl2) {
-  return cl1->instantiationOfArray(cl2);
-}
-
-extern "C" bool implements(UserCommonClass* cl1, UserCommonClass* cl2) {
-  return cl1->implements(cl2);
-}
-
-extern "C" bool isAssignableFrom(UserCommonClass* cl1, UserCommonClass* cl2) {
-  return cl1->isAssignableFrom(cl2);
-}
-
-extern "C" void* JavaThreadGetException() {
-  return JavaThread::getException();
-}
-
-extern "C" void JavaThreadThrowException(JavaObject* obj) {
-  return JavaThread::throwException(obj);
-}
-
-extern "C" JavaObject* JavaThreadGetJavaException() {
-  return JavaThread::getJavaException();
-}
-
-extern "C" bool JavaThreadCompareException(UserClass* cl) {
-  return JavaThread::compareException(cl);
-}
-
-extern "C" void JavaThreadClearException() {
-  return JavaThread::clearException();
-}
-
-extern "C" void overflowThinLock(JavaObject* obj) {
-  obj->overflowThinLock();
-}
-
-#ifdef SERVICE
-
-extern "C" void serviceCallStart(Jnjvm* OldService,
-                                 Jnjvm* NewService) {
-  fprintf(stderr, "I have switched from %d to %d\n", OldService->IsolateID,
-          NewService->IsolateID);
-
-  fprintf(stderr, "Now the thread id is %d\n", mvm::Thread::get()->IsolateID);
-}
-
-extern "C" void serviceCallStop(Jnjvm* OldService,
-                                Jnjvm* NewService) {
-  fprintf(stderr, "End service call\n");
-}
 
 #endif

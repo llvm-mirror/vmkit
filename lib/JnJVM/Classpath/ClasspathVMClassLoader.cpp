@@ -32,13 +32,21 @@ jclass clazz,
 #endif
 jchar byteId) {
   
+  jobject res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClassPrimitive* prim = 
     UserClassPrimitive::byteIdToPrimitive(byteId, vm->upcalls);
   if (!prim)
     vm->unknownError("unknown byte primitive %c", byteId);
   
-  return (jobject)prim->getClassDelegatee(vm);
+  res = (jobject)prim->getClassDelegatee(vm);
+
+  END_NATIVE_EXCEPTION
+
+  return res;
   
 }
 
@@ -49,6 +57,10 @@ jclass clazz,
 #endif
 jobject loader, 
 jobject _name) {
+  
+  jclass res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaString* name = (JavaString*)_name;
@@ -57,7 +69,11 @@ jobject _name) {
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
   UserCommonClass* cl = JCL->lookupClass(utf8);
 
-  if (cl) return (jclass)(cl->getClassDelegatee(vm));
+  if (cl) res = (jclass)(cl->getClassDelegatee(vm));
+
+  END_NATIVE_EXCEPTION
+
+  return res;
   
   return 0;
 }
@@ -69,6 +85,11 @@ jclass clazz,
 #endif
 jobject _str, 
 jboolean doResolve) {
+
+  jclass res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaString* str = (JavaString*)_str;
 
@@ -77,9 +98,11 @@ jboolean doResolve) {
                                                        false);
 
   if (cl != 0)
-    return (jclass)cl->getClassDelegatee(vm);
+    res = (jclass)cl->getClassDelegatee(vm);
   
-  return 0;
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 JNIEXPORT jclass JNICALL Java_java_lang_VMClassLoader_defineClass(
@@ -93,6 +116,11 @@ jobject bytes,
 jint off, 
 jint len, 
 jobject pd) {
+  
+  jclass res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   
   JnjvmClassLoader* JCL = 
@@ -102,7 +130,11 @@ jobject pd) {
   const UTF8* name = str->value->javaToInternal(vm, str->offset, str->count);
   UserClass* cl = JCL->constructClass(name, (ArrayUInt8*)bytes);
 
-  return (jclass)(cl->getClassDelegatee(vm, (JavaObject*)pd));
+  res = (jclass)(cl->getClassDelegatee(vm, (JavaObject*)pd));
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMClassLoader_resolveClass(
@@ -111,9 +143,14 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jclass Cl) {
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   verifyNull(Cl);
   Jnjvm* vm = JavaThread::get()->getJVM();
   NativeUtil::resolvedImplClass(vm, Cl, false);
+
+  END_NATIVE_EXCEPTION
 }
 
 }

@@ -37,6 +37,7 @@ public:
   uint32 interruptFlag;
   uint32 state;
   std::vector<jmp_buf*> sjlj_buffers;
+  std::vector<void*> addresses;
 
   static const unsigned int StateRunning;
   static const unsigned int StateWaiting;
@@ -94,7 +95,7 @@ public:
     return JavaThread::get()->pendingException;
   }
 
-  void returnFromNative() {
+  void returnFromJNI() {
     assert(sjlj_buffers.size());
 #if defined(__MACH__)
     longjmp((int*)sjlj_buffers.back(), 1);
@@ -102,6 +103,40 @@ public:
     longjmp((__jmp_buf_tag*)sjlj_buffers.back(), 1);
 #endif
   }
+  
+  void returnFromNative() {
+    addresses.pop_back();
+    throwPendingException();
+  }
+  
+  void returnFromJava() {
+    addresses.pop_back();
+    throwPendingException();
+  }
+
+  void startNative(int level);
+  void startJava();
+  
+  void endNative() {
+    addresses.pop_back();
+  }
+
+  void endJava() {
+    addresses.pop_back();
+  }
+
+  /// getCallingClass - Get the Java method that called the last Java
+  /// method on the stack.
+  ///
+  UserClass* getCallingClass();
+    
+  /// printBacktrace - Prints the backtrace of this thread.
+  ///
+  void printBacktrace();
+
+  /// getJavaFrameContext - Fill the vector with Java frames
+  /// currently on the stack.
+  void getJavaFrameContext(std::vector<void*>& context);
 
   /// printString - Prints the class.
   char *printString() const {

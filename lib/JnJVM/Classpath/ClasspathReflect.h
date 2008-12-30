@@ -20,7 +20,7 @@
 namespace jnjvm {
 
 class JavaObjectClass : public JavaObject {
-private:
+public:
   JavaObject* signers;
   JavaObject* pd;
   UserCommonClass* vmdata;

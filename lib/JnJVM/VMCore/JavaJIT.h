@@ -76,12 +76,6 @@ public:
 
   JnjvmModule* module;
 
-  static void invokeOnceVoid(Jnjvm* vm, JnjvmClassLoader* loader,
-                             const char* className,
-                             const char* func, const char* sign,
-                             int access, ...);
-  
-  
   llvm::Function* javaCompile();
   llvm::Function* nativeCompile(intptr_t natPtr = 0);
   llvm::Instruction* inlineCompile(llvm::BasicBlock*& curBB,
@@ -272,12 +266,6 @@ public:
 #endif
 
   static const char* OpcodeNames[256];
-
-  static UserClass* getCallingClass();
-  static UserClass* getCallingClassWalker();
-  static JavaObject* getCallingClassLoader();
-  static void printBacktrace();
-  static JavaMethod* IPToJavaMethod(void* ip);
   
   /// nbEnveloppes - Number of enveloppes (ie invokeinterface) in this
   /// method.

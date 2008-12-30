@@ -1627,6 +1627,7 @@ Function* LLVMSignatureInfo::getVirtualBuf() {
     virtualBufFunction = createFunctionCallBuf(true);
     signature->setVirtualCallBuf((intptr_t)
       mvm::MvmModule::executionEngine->getPointerToGlobal(virtualBufFunction));
+    // Now that it's compiled, we don't need the IR anymore
     virtualBufFunction->deleteBody();
   }
   return virtualBufFunction;
@@ -1639,6 +1640,7 @@ Function* LLVMSignatureInfo::getVirtualAP() {
     virtualAPFunction = createFunctionCallAP(true);
     signature->setVirtualCallAP((intptr_t)
       mvm::MvmModule::executionEngine->getPointerToGlobal(virtualAPFunction));
+    // Now that it's compiled, we don't need the IR anymore
     virtualAPFunction->deleteBody();
   }
   return virtualAPFunction;
@@ -1651,6 +1653,7 @@ Function* LLVMSignatureInfo::getStaticBuf() {
     staticBufFunction = createFunctionCallBuf(false);
     signature->setStaticCallBuf((intptr_t)
       mvm::MvmModule::executionEngine->getPointerToGlobal(staticBufFunction));
+    // Now that it's compiled, we don't need the IR anymore
     staticBufFunction->deleteBody();
   }
   return staticBufFunction;
@@ -1663,6 +1666,7 @@ Function* LLVMSignatureInfo::getStaticAP() {
     staticAPFunction = createFunctionCallAP(false);
     signature->setStaticCallAP((intptr_t)
       mvm::MvmModule::executionEngine->getPointerToGlobal(staticAPFunction));
+    // Now that it's compiled, we don't need the IR anymore
     staticAPFunction->deleteBody();
   }
   return staticAPFunction;

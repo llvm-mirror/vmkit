@@ -45,6 +45,11 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_getParameterTypes(
 JNIEnv *env,
 #endif
 jobject cons) {
+
+  jobject res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   verifyNull(cons);
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = vm->upcalls->constructorSlot;
@@ -52,7 +57,10 @@ jobject cons) {
   UserClass* cl = internalGetClass(vm, meth, cons);
   JnjvmClassLoader* loader = cl->classLoader;
 
-  return (jobject)(NativeUtil::getParameterTypes(loader, meth));
+  res = (jobject)(NativeUtil::getParameterTypes(loader, meth));
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 JNIEXPORT jint JNICALL Java_java_lang_reflect_Constructor_getModifiersInternal(
@@ -60,21 +68,31 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Constructor_getModifiersInternal(
 JNIEnv *env,
 #endif
 jobject cons) {
+
+  jint res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   verifyNull(cons);
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = vm->upcalls->constructorSlot;
   JavaMethod* meth = (JavaMethod*)(field->getInt32Field((JavaObject*)cons));
-  return meth->access;
+  res = meth->access;
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_constructNative(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject _cons,
-jobject _args, 
-jclass Clazz, 
-jint _meth) {
+jobject _cons, jobject _args, jclass Clazz, jint _meth) {
+
+  jobject res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = (JavaMethod*)_meth;
@@ -93,7 +111,8 @@ jint _meth) {
     UserClass* cl = _cl->asClass();
     if (cl) {
       cl->initialiseClass(vm);
-      JavaObject* res = cl->doNew(vm);
+      JavaObject* obj = cl->doNew(vm);
+      res = (jobject) obj;
       JavaObject** ptr = (JavaObject**)(void*)(args->elements);
       
       Typedef* const* arguments = sign->getArgumentsType();
@@ -104,7 +123,7 @@ jint _meth) {
       
       JavaObject* excp = 0;
       try {
-        meth->invokeIntSpecialBuf(vm, cl, res, startBuf);
+        meth->invokeIntSpecialBuf(vm, cl, obj, startBuf);
       }catch(...) {
         excp = JavaThread::getJavaException();
         JavaThread::clearException();
@@ -120,11 +139,16 @@ jint _meth) {
         }
       }
     
-      return (jobject)res;
+    } else {
+      vm->illegalArgumentExceptionForMethod(meth, 0, 0);
     }
+  } else {
+    vm->illegalArgumentExceptionForMethod(meth, 0, 0);
   }
-  vm->illegalArgumentExceptionForMethod(meth, 0, 0); 
-  return 0;
+  
+  END_NATIVE_EXCEPTION
+  
+  return res;
 }
 
 JNIEXPORT 
@@ -133,13 +157,22 @@ jobjectArray JNICALL Java_java_lang_reflect_Constructor_getExceptionTypes(
 JNIEnv *env, 
 #endif
 jobject cons) {
+  
+  jobjectArray res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   verifyNull(cons);
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = vm->upcalls->constructorSlot;
   JavaMethod* meth = (JavaMethod*)field->getInt32Field((JavaObject*)cons);
   UserClass* cl = internalGetClass(vm, meth, cons);
 
-  return (jobjectArray)NativeUtil::getExceptionTypes(cl, meth);
+  res = (jobjectArray)NativeUtil::getExceptionTypes(cl, meth);
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 }

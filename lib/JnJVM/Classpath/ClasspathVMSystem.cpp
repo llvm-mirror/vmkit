@@ -33,6 +33,8 @@ jint sstart,
 jobject _dst,
 jint dstart,
 jint len) {
+  
+  BEGIN_NATIVE_EXCEPTION(0)
 
   jnjvm::Jnjvm *vm = JavaThread::get()->getJVM();
   JavaArray* src = (JavaArray*)_src;
@@ -95,6 +97,8 @@ jint len) {
   if (doThrow)
     vm->arrayStoreException();
   
+  
+  END_NATIVE_EXCEPTION
 
 }
 

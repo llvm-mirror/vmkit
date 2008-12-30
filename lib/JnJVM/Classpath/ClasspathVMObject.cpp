@@ -30,6 +30,10 @@ jclass clazz,
 #endif
 jobject _src) {
   
+  JavaObject* res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   JavaObject* src = (JavaObject*)_src;
   UserCommonClass* cl = src->classOf;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -46,10 +50,13 @@ jobject _src) {
     assert(cl->isClass() && "Not a class!");
     size = cl->asClass()->getVirtualSize();
   }
-  JavaObject* res = (JavaObject*)
+  res = (JavaObject*)
     vm->gcAllocator.allocateManagedObject(size, src->getVirtualTable());
   memcpy(res, src, size);
   res->lock.initialise();
+
+  END_NATIVE_EXCEPTION
+
   return (jobject)res;
 } 
 
@@ -60,9 +67,17 @@ jclass clazz,
 #endif
 jobject _obj) {
   
+  jobject res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   JavaObject* obj = (JavaObject*)_obj;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  return (jobject)(obj->classOf->getClassDelegatee(vm)); 
+  res = (jobject)(obj->classOf->getClassDelegatee(vm)); 
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMObject_notifyAll(
@@ -71,8 +86,13 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject _obj) {
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   JavaObject* obj = (JavaObject*)_obj;
   obj->notifyAll();
+
+  END_NATIVE_EXCEPTION
 }
 
 
@@ -82,6 +102,9 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject _object, jlong ms, jint ns) {
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   uint32 sec = (uint32) (ms / 1000);
   uint32 usec = (ns / 1000) + 1000 * (ms % 1000);
   JavaObject* obj = (JavaObject*)_object;
@@ -93,6 +116,8 @@ jobject _object, jlong ms, jint ns) {
   } else {
     obj->wait();
   }
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMObject_notify(
@@ -101,7 +126,12 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject obj) {
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   ((JavaObject*)obj)->notify();
+
+  END_NATIVE_EXCEPTION
 }
 
 }

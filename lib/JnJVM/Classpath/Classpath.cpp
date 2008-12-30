@@ -29,16 +29,22 @@ jclass clazz,
 #endif
 jclass Cl) {
   
+  bool res = false;
+  BEGIN_NATIVE_EXCEPTION(0)
+
   verifyNull(Cl);
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, true);
-  if (!cl->asClass()) return false;
-  if (cl->asClass()->lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
+  
+  if (cl->isClass() && 
+      cl->asClass()->lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
                                            vm->bootstrapLoader->clinitType, 
                                            true, false, 0))
-    return true;
-  
-  return false;
+    res = true;
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 
@@ -51,11 +57,16 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jboolean val) {
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt8Field((JavaObject*)obj, (uint8)val);
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setByteNative(
@@ -64,11 +75,16 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jbyte val) {
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt8Field((JavaObject*)obj, (uint8)val);
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setCharNative(
@@ -77,11 +93,16 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jchar val) {
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt16Field((JavaObject*)obj, (uint16)val);
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setShortNative(
@@ -90,11 +111,16 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jshort val) {
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt16Field((JavaObject*)obj, (sint16)val);
+  
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setIntNative(
@@ -103,11 +129,16 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jint val) {
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setInt32Field((JavaObject*)obj, (sint32)val);
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setLongNative(
@@ -116,11 +147,16 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jlong val) {
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setLongField((JavaObject*)obj, (sint64)val);
+  
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setFloatNative(
@@ -129,11 +165,16 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jfloat val) {
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setFloatField((JavaObject*)obj, (float)val);
+  
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setDoubleNative(
@@ -142,11 +183,16 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jdouble val) {
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setDoubleField((JavaObject*)obj, (double)val);
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setObjectNative(
@@ -155,11 +201,16 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject Field, jobject obj, jobject val) {
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   verifyNull(obj);
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
   field->setObjectField((JavaObject*)obj, (JavaObject*)val);
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT jobject JNICALL Java_java_io_VMObjectInputStream_allocateObject(
@@ -168,13 +219,22 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jclass target, jclass constr, jobject cons) {
+  
+  jobject res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = (UserClass*)NativeUtil::resolvedImplClass(vm, target, true);
-  JavaObject* res = cl->doNew(vm);
+  JavaObject* obj = cl->doNew(vm);
   JavaField* field = vm->upcalls->constructorSlot;
   JavaMethod* meth = (JavaMethod*)(field->getInt32Field((JavaObject*)cons));
-  meth->invokeIntSpecial(vm, cl, res);
-  return (jobject)res;
+  meth->invokeIntSpecial(vm, cl, obj);
+  res = (jobject)obj;
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 JNIEXPORT jobject JNICALL Java_java_lang_reflect_VMArray_createObjectArray(
@@ -183,16 +243,26 @@ JNIEnv * env,
 jclass thisClass,
 #endif
 jclass arrayType, jint arrayLength) {
+
+  jobject res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* base = NativeUtil::resolvedImplClass(vm, arrayType, true);
   JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->getName();
   const UTF8* arrayName = loader->constructArrayName(1, name);
   UserClassArray* array = loader->constructArray(arrayName, base);
-  return (jobject)array->doNew(arrayLength, vm);
+  res = (jobject)array->doNew(arrayLength, vm);
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 
+// Never throws.
 JNIEXPORT 
 bool JNICALL Java_java_util_concurrent_atomic_AtomicLong_VMSupportsCS8(
 #ifdef NATIVE_JNI
@@ -203,6 +273,7 @@ jclass clazz,
   return false;
 }
 
+// Never throws.
 JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapLong(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
@@ -225,6 +296,7 @@ JavaObject* unsafe, JavaObject* obj, jlong offset, jlong expect, jlong update) {
 
 }
 
+// Never throws.
 JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapInt(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
@@ -238,6 +310,7 @@ JavaObject* unsafe, JavaObject* obj, jlong offset, jint expect, jint update) {
   return __sync_bool_compare_and_swap(ptr, expect, update);
 }
 
+// Never throws.
 JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapObject(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
@@ -252,6 +325,7 @@ jobject update) {
   return __sync_bool_compare_and_swap(ptr, expect, update);
 }
 
+// Never throws.
 JNIEXPORT void JNICALL Java_sun_misc_Unsafe_putObjectVolatile(
 #ifdef NATIVE_JNI
 JNIEnv *env, 

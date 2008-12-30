@@ -51,6 +51,12 @@ public:
 };
 
 
+#if defined(__MACH__) && !defined(__i386__)
+#define FRAME_IP(fp) (fp[2])
+#else
+#define FRAME_IP(fp) (fp[1])
+#endif
+
 /// Thread - This class is the base of custom virtual machines' Thread classes.
 /// It provides static functions to manage threads. An instance of this class
 /// contains all thread-specific informations.

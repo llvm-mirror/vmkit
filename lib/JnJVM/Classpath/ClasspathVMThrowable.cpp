@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <cstring>
+#include <vector>
 
 #include "types.h"
 
@@ -37,19 +38,33 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jobject throwable) {
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  int** stack = 
-    (int**)vm->gcAllocator.allocateTemporaryMemory(sizeof(int*) * 100);
-  int real_size = mvm::MvmModule::getBacktrace((void**)stack, 100);
-  stack[real_size] = 0;
+  
+  jobject res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+ 
+  JavaThread* th = JavaThread::get();
+  Jnjvm* vm = th->getJVM();
+  
+  // Allocate the temporary data.
+  std::vector<void*>* stack = new std::vector<void*>();
+
+  // Get the frame context.
+  th->getJavaFrameContext(*stack);
+  
+  // Set the tempory data in the new VMThrowable object.
   JavaObject* vmThrowable = vm->upcalls->newVMThrowable->doNew(vm);
   uint64 ptr = (uint64)vmThrowable + vm->upcalls->vmDataVMThrowable->ptrOffset;
   ((JavaObject**)ptr)[0] = (JavaObject*)stack;
-  return (jobject)vmThrowable;
+  res = (jobject)vmThrowable;
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 
-JavaObject* consStackElement(JavaMethod* meth, int* ip) {
+static JavaObject* consStackElement(JavaMethod* meth, void* ip) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* methodName = vm->internalUTF8ToStr(meth->name);
   Class* cl = meth->classDef;
@@ -77,47 +92,47 @@ JavaObject* consStackElement(JavaMethod* meth, int* ip) {
   return res;
 }
 
-ArrayObject* recGetStackTrace(int** stack, uint32 first, uint32 rec) {
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  if (stack[first] != 0) {
-    JavaMethod* meth = JavaJIT::IPToJavaMethod(stack[first]);
-    if (meth) {
-      ArrayObject* res = recGetStackTrace(stack, first + 1, rec + 1);
-      res->elements[rec] = consStackElement(meth, stack[first]);
-      return res;
-    } else {
-      return recGetStackTrace(stack, first + 1, rec);
-    }
-  } else {
-    return (ArrayObject*)vm->upcalls->stackTraceArray->doNew(rec, vm);
-  }
-}
-
 JNIEXPORT jobject JNICALL Java_java_lang_VMThrowable_getStackTrace(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
 jobject vmthrow, jobject throwable) {
+
+  jobject result = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = vm->upcalls->vmDataVMThrowable;
-  int** stack = (int**)field->getObjectField((JavaObject*)vmthrow);
-  uint32 first = 0;
-  sint32 i = 0;
+  std::vector<void*>* stack = (std::vector<void*>*)
+    field->getObjectField((JavaObject*)vmthrow);
   
-  while (stack[i] != 0) {
-    JavaMethod* meth = JavaJIT::IPToJavaMethod(stack[i++]);
-#ifdef ISOLATE_SHARING
-    if (meth) {
-#else
-    if (meth && !meth->classDef->subclassOf(vm->upcalls->newThrowable)) {
-#endif
-      first = i - 1;
-      break;
-    }
+  std::vector<void*>::iterator i = stack->begin(), e = stack->end();
+  uint32 index = 0;
+  while (i != e) {
+    JavaMethod* meth = vm->IPToJavaMethod(*i);
+    assert(meth && "Wrong stack trace");
+    if (meth->classDef->subclassOf(vm->upcalls->newThrowable)) {
+      ++i;
+      ++index;
+    } else break;
   }
-  jobject res = (jobject)recGetStackTrace((int**)(uint32**)stack, first, 0);
-  vm->gcAllocator.freeTemporaryMemory(stack);
-  return res;
+
+  ArrayObject* res = (ArrayObject*)
+    vm->upcalls->stackTraceArray->doNew(stack->size() - index, vm);
+  
+  index = 0;
+  for (; i != e; ++i) {
+    JavaMethod* meth = vm->IPToJavaMethod(*i);
+    assert(meth && "Wrong stack trace");
+    res->elements[index++] = consStackElement(meth, *i);
+  }
+  
+  delete stack;
+  result = (jobject)res;
+
+  END_NATIVE_EXCEPTION
+
+  return result;
 }
 
 }

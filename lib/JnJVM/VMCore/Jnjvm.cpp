@@ -47,9 +47,6 @@ mvm::LockNormal Jnjvm::IsolateLock;
 #endif
 
 
-typedef void (*clinit_t)(UserConstantPool*);
-
-
 /// initialiseClass - Java class initialisation. Java specification §2.17.5.
 
 void UserClass::initialiseClass(Jnjvm* vm) {
@@ -197,8 +194,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     JavaObject* exc = 0;
     if (meth) {
       try{
-        clinit_t pred = (clinit_t)(intptr_t)meth->compiledPtr();
-        pred(cl->getConstantPool());
+        meth->invokeIntStatic(vm, cl);
       } catch(...) {
         exc = JavaThread::getJavaException();
         assert(exc && "no exception?");
@@ -262,6 +258,13 @@ void Jnjvm::errorWithExcp(UserClass* cl, JavaMethod* init,
   JavaThread::throwException(obj);
 }
 
+JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
+                               const char* str) {
+  JavaObject* obj = cl->doNew(this);
+  init->invokeIntSpecial(this, cl, obj, str ? asciizToStr(str) : 0);
+  return obj;
+}
+
 void Jnjvm::error(UserClass* cl, JavaMethod* init, const char* fmt, ...) {
   char* tmp = (char*)alloca(4096);
   va_list ap;
@@ -270,8 +273,7 @@ void Jnjvm::error(UserClass* cl, JavaMethod* init, const char* fmt, ...) {
   va_end(ap);
   
   if (cl && !bootstrapLoader->getModule()->isStaticCompiling()) {
-    JavaObject* obj = cl->doNew(this);
-    init->invokeIntSpecial(this, cl, obj, asciizToStr(tmp));
+    JavaObject* obj = CreateError(cl, init, tmp);
     JavaThread::throwException(obj);
   } else {
     throw std::string(tmp);
@@ -300,6 +302,37 @@ void Jnjvm::nullPointerException(const char* fmt, ...) {
   va_end(ap);
   error(upcalls->NullPointerException,
         upcalls->InitNullPointerException, fmt, val);
+}
+
+JavaObject* Jnjvm::CreateIndexOutOfBoundsException(sint32 entry) {
+  
+  char* tmp = (char*)alloca(4096);
+  snprintf(tmp, 4096, "%d", entry);
+
+  return CreateError(upcalls->ArrayIndexOutOfBoundsException,
+                     upcalls->InitArrayIndexOutOfBoundsException, tmp);
+}
+
+JavaObject* Jnjvm::CreateNegativeArraySizeException() {
+  return CreateError(upcalls->NegativeArraySizeException,
+                     upcalls->InitNegativeArraySizeException, 0);
+}
+
+JavaObject* Jnjvm::CreateNullPointerException() {
+  return CreateError(upcalls->NullPointerException,
+                     upcalls->InitNullPointerException, 0);
+}
+
+JavaObject* Jnjvm::CreateOutOfMemoryError() {
+  return CreateError(upcalls->OutOfMemoryError,
+                     upcalls->InitOutOfMemoryError, 
+                     "Java heap space");
+}
+
+JavaObject* Jnjvm::CreateClassCastException(JavaObject* obj,
+                                            UserCommonClass* cl) {
+  return CreateError(upcalls->ClassCastException,
+                     upcalls->InitClassCastException, "");
 }
 
 void Jnjvm::illegalAccessException(const char* msg) {
@@ -846,9 +879,17 @@ void Jnjvm::loadBootstrap() {
 }
 
 void Jnjvm::executeClass(const char* className, ArrayObject* args) {
+  const UTF8* name = appClassLoader->asciizConstructUTF8(className);
+  UserClass* cl = (UserClass*)appClassLoader->loadName(name, true, true);
+  cl->initialiseClass(this);
+  
+  const UTF8* funcSign = 
+    appClassLoader->asciizConstructUTF8("([Ljava/lang/String;)V");
+  const UTF8* funcName = appClassLoader->asciizConstructUTF8("main");
+  JavaMethod* method = cl->lookupMethod(funcName, funcSign, true, true, 0);
+  
   try {
-    JavaJIT::invokeOnceVoid(this, appClassLoader, className, "main",
-                        "([Ljava/lang/String;)V", ACC_STATIC, args);
+    method->invokeIntStatic(this, method->classDef, args);
   }catch(...) {
   }
 
@@ -870,9 +911,16 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
 
 void Jnjvm::executePremain(const char* className, JavaString* args,
                              JavaObject* instrumenter) {
-  JavaJIT::invokeOnceVoid(this, appClassLoader, className, "premain",
-          "(Ljava/lang/String;Ljava/lang/instrument/Instrumentation;)V",
-          ACC_STATIC, args, instrumenter);
+  const UTF8* name = appClassLoader->asciizConstructUTF8(className);
+  UserClass* cl = (UserClass*)appClassLoader->loadName(name, true, true);
+  cl->initialiseClass(this);
+  
+  const UTF8* funcSign = appClassLoader->asciizConstructUTF8(
+      "(Ljava/lang/String;Ljava/lang/instrument/Instrumentation;)V");
+  const UTF8* funcName = appClassLoader->asciizConstructUTF8("premain");
+  JavaMethod* method = cl->lookupMethod(funcName, funcSign, true, true, 0);
+  
+  method->invokeIntStatic(this, method->classDef, args, instrumenter);
 }
 
 void Jnjvm::waitForExit() { 
@@ -1146,4 +1194,42 @@ void Jnjvm::compile(const char* n) {
   name = n;
   bootstrapThread = new JavaThread(0, 0, this);
   bootstrapThread->start((void (*)(mvm::Thread*))mainCompilerStart);
+}
+
+
+
+void Jnjvm::addMethodInFunctionMap(JavaMethod* meth, void* addr) {
+  FunctionMapLock.acquire();
+  JavaFunctionMap.insert(std::make_pair(addr, meth));
+  FunctionMapLock.release();
+}
+
+void Jnjvm::removeMethodsInFunctionMap(JnjvmClassLoader* loader) {
+  // Loop over all methods in the map to find which ones belong
+  // to this class loader.
+  FunctionMapLock.acquire();
+  std::map<void*, JavaMethod*>::iterator temp;
+  for (std::map<void*, JavaMethod*>::iterator i = JavaFunctionMap.begin(), 
+       e = JavaFunctionMap.end(); i != e;) {
+    if (i->second->classDef->classLoader == loader) {
+      temp = i;
+      ++i;
+      JavaFunctionMap.erase(temp);
+    } else {
+      ++i;
+    }
+  }
+  FunctionMapLock.release();
+}
+
+JavaMethod* Jnjvm::IPToJavaMethod(void* Addr) {
+  FunctionMapLock.acquire();
+  std::map<void*, JavaMethod*>::iterator I = JavaFunctionMap.upper_bound(Addr);
+  assert(I != JavaFunctionMap.begin() && "Wrong value in function map");
+  FunctionMapLock.release();
+
+  // Decrement because we had the "greater than" value.
+  I--;
+  return I->second;
+
 }

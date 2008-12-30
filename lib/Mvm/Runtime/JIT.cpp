@@ -266,12 +266,6 @@ void MvmModule::runPasses(llvm::Function* func,
   pm->run(*func);
 }
 
-#if defined(__MACH__) && !defined(__i386__)
-#define FRAME_IP(fp) (fp[2])
-#else
-#define FRAME_IP(fp) (fp[1])
-#endif
-
 int MvmModule::getBacktrace(void** stack, int size) {
   void** addr = (void**)__builtin_frame_address(0);
   int cpt = 0;

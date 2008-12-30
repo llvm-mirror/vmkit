@@ -45,26 +45,6 @@ static UserClass* getClassFromVirtualMethod(Jnjvm* vm,
 extern "C" const struct JNIInvokeInterface_ JNI_JavaVMTable;
 extern "C" struct JNINativeInterface_ JNI_JNIEnvTable;
 
-#define BEGIN_EXCEPTION \
-  JavaObject* excp = 0; \
-  try {
-
-#define END_EXCEPTION \
-  } catch(...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
-  } \
-  if (excp) { \
-    JavaThread* th = JavaThread::get(); \
-    th->pendingException = excp; \
-    th->returnFromNative(); \
-  }
-
-/*
-static void* ptr_jvm = (JavaVM) &JNI_JavaVMTable;
-static void *ptr_env = (void*) &JNI_JNIEnvTable;
-*/
-
 jint GetVersion(JNIEnv *env) {
   return JNI_VERSION_1_4;
 }
@@ -79,11 +59,12 @@ jclass DefineClass(JNIEnv *env, const char *name, jobject loader,
 
 jclass FindClass(JNIEnv *env, const char *asciiz) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JnjvmClassLoader* loader = 0;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* currentClass = JavaJIT::getCallingClass();
+  JavaThread* th = JavaThread::get();
+  Jnjvm* vm = th->getJVM();
+  UserClass* currentClass = th->getCallingClass();
   if (currentClass) loader = currentClass->classLoader;
   else loader = vm->bootstrapLoader;
 
@@ -93,14 +74,14 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   if (cl->asClass()) cl->asClass()->initialiseClass(vm);
   return (jclass)(cl->getClassDelegatee(vm));
   
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
   
 
 jmethodID FromReflectedMethod(JNIEnv *env, jobject method) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = NativeUtil::myVM(env);
   Classpath* upcalls = vm->upcalls;
@@ -115,7 +96,7 @@ jmethodID FromReflectedMethod(JNIEnv *env, jobject method) {
                      meth->printString());
   }
   
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   
   return 0;
 }
@@ -129,7 +110,7 @@ jclass GetSuperclass(JNIEnv *env, jclass sub) {
  
 jboolean IsAssignableFrom(JNIEnv *env, jclass sub, jclass sup) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl2 = NativeUtil::resolvedImplClass(vm, sup, false);
@@ -137,7 +118,7 @@ jboolean IsAssignableFrom(JNIEnv *env, jclass sub, jclass sup) {
 
   return cl1->isAssignableFrom(cl2);
   
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 
   return false;
 }
@@ -151,7 +132,7 @@ jint Throw(JNIEnv *env, jthrowable obj) {
 
 jint ThrowNew(JNIEnv* env, jclass clazz, const char *msg) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
@@ -164,10 +145,10 @@ jint ThrowNew(JNIEnv* env, jclass clazz, const char *msg) {
               false, true, 0);
   init->invokeIntSpecial(vm, realCl, res, vm->asciizToStr(msg));
   th->pendingException = res;
-  th->returnFromNative();
+  th->returnFromJNI();
   return 1;
   
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 
   return 0;
 }
@@ -227,20 +208,20 @@ jint EnsureLocalCapacity(JNIEnv* env, jint capacity) {
 
 jobject AllocObject(JNIEnv *env, jclass clazz) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
   if (cl->isArray()) JavaThread::get()->getJVM()->unknownError("implement me");
   return (jobject)((UserClass*)cl)->doNew(JavaThread::get()->getJVM());
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jobject NewObject(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
     
   va_list ap;
   va_start(ap, methodID);
@@ -252,7 +233,7 @@ jobject NewObject(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   va_end(ap);
   return (jobject)res;
   
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -266,7 +247,7 @@ jobject NewObjectV(JNIEnv* env, jclass clazz, jmethodID methodID,
 
 jobject NewObjectA(JNIEnv* env, jclass clazz, jmethodID methodID,
                    const jvalue *args) {
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = (JavaMethod*)methodID;
@@ -275,20 +256,20 @@ jobject NewObjectA(JNIEnv* env, jclass clazz, jmethodID methodID,
   meth->invokeIntSpecialBuf(vm, cl, res, (void*)args);
   return (jobject)res; 
   
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jclass GetObjectClass(JNIEnv *env, jobject obj) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   verifyNull((JavaObject*)obj);
   Jnjvm* vm = JavaThread::get()->getJVM();
   return (jclass)((JavaObject*)obj)->classOf->getClassDelegatee(vm);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -322,7 +303,7 @@ jobject ToReflectedField(JNIEnv* env, jclass cls, jfieldID fieldID,
 jmethodID GetMethodID(JNIEnv* env, jclass clazz, const char *aname,
 		      const char *atype) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
@@ -333,14 +314,14 @@ jmethodID GetMethodID(JNIEnv* env, jclass clazz, const char *aname,
 
   return (jmethodID)meth;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jobject CallObjectMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   va_list ap;
   va_start(ap, methodID);
@@ -352,7 +333,7 @@ jobject CallObjectMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
   va_end(ap);
   return (jobject)res;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -360,7 +341,7 @@ jobject CallObjectMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 jobject CallObjectMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                           va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
@@ -368,7 +349,7 @@ jobject CallObjectMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
   return (jobject)meth->invokeJavaObjectVirtualAP(vm, cl, obj, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   
   return 0;
 }
@@ -383,7 +364,7 @@ jobject CallObjectMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
 
 jboolean CallBooleanMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   va_list ap;
   va_start(ap, methodID);
@@ -395,7 +376,7 @@ jboolean CallBooleanMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   va_end(ap);
   return res;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -403,7 +384,7 @@ jboolean CallBooleanMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
 jboolean CallBooleanMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                             va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
@@ -411,7 +392,7 @@ jboolean CallBooleanMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
   return (jboolean)meth->invokeIntVirtualAP(vm, cl, obj, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   
   return 0;
 }
@@ -432,7 +413,7 @@ jbyte CallByteMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 jbyte CallByteMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                       va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
@@ -440,7 +421,7 @@ jbyte CallByteMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
   return (jbyte)meth->invokeIntVirtualAP(vm, cl, obj, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   
   return 0;
 }
@@ -462,7 +443,7 @@ jchar CallCharMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 jchar CallCharMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                       va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
@@ -470,7 +451,7 @@ jchar CallCharMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
   return (jchar)meth->invokeIntVirtualAP(vm, cl, obj, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   
   return 0;
 }
@@ -492,7 +473,7 @@ jshort CallShortMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 jshort CallShortMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                         va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
@@ -500,7 +481,7 @@ jshort CallShortMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
   return (jshort)meth->invokeIntVirtualAP(vm, cl, obj, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   
   return 0;
 }
@@ -516,7 +497,7 @@ jshort CallShortMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
 
 jint CallIntMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   va_list ap;
   va_start(ap, methodID);
@@ -528,7 +509,7 @@ jint CallIntMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   va_end(ap);
   return res;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -536,7 +517,7 @@ jint CallIntMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
 jint CallIntMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                     va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
@@ -544,7 +525,7 @@ jint CallIntMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
   return (jint)meth->invokeIntVirtualAP(vm, cl, obj, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   
   return 0;
 }
@@ -567,7 +548,7 @@ jlong CallLongMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 jlong CallLongMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                       va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
@@ -575,7 +556,7 @@ jlong CallLongMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
   return (jlong)meth->invokeLongVirtualAP(vm, cl, obj, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   
   return 0;
 }
@@ -591,7 +572,7 @@ jlong CallLongMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
 
 jfloat CallFloatMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   va_list ap;
   va_start(ap, methodID);
@@ -603,7 +584,7 @@ jfloat CallFloatMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   va_end(ap);
   return res;
 
-  END_EXCEPTION;
+  END_JNI_EXCEPTION;
   return 0.0;
 }
 
@@ -611,7 +592,7 @@ jfloat CallFloatMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
 jfloat CallFloatMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                         va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
@@ -619,7 +600,7 @@ jfloat CallFloatMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
   return (jfloat)meth->invokeFloatVirtualAP(vm, cl, obj, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   
   return 0.0f;
 }
@@ -635,7 +616,7 @@ jfloat CallFloatMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
 
 jdouble CallDoubleMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   va_list ap;
   va_start(ap, methodID);
@@ -647,7 +628,7 @@ jdouble CallDoubleMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   va_end(ap);
   return res;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0.0;
 }
 
@@ -655,7 +636,7 @@ jdouble CallDoubleMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
 jdouble CallDoubleMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                           va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
@@ -663,7 +644,7 @@ jdouble CallDoubleMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
   return (jdouble)meth->invokeDoubleVirtualAP(vm, cl, obj, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0.0;
 
 }
@@ -679,7 +660,7 @@ jdouble CallDoubleMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
 
 void CallVoidMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   va_list ap;
   va_start(ap, methodID);
@@ -690,14 +671,14 @@ void CallVoidMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   meth->invokeIntVirtualAP(vm, cl, obj, ap);
   va_end(ap);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void CallVoidMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
                      va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
@@ -705,7 +686,7 @@ void CallVoidMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
   meth->invokeIntVirtualAP(vm, cl, obj, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
@@ -916,7 +897,7 @@ jdouble CallNonvirtualDoubleMethodA(JNIEnv *env, jobject obj, jclass clazz,
 void CallNonvirtualVoidMethod(JNIEnv *env, jobject _obj, jclass clazz,
                               jmethodID methodID, ...) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   va_list ap;
   va_start(ap, methodID);
@@ -927,7 +908,7 @@ void CallNonvirtualVoidMethod(JNIEnv *env, jobject _obj, jclass clazz,
   meth->invokeIntSpecialAP(vm, cl, obj, ap);
   va_end(ap);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
@@ -946,7 +927,7 @@ void CallNonvirtualVoidMethodA(JNIEnv *env, jobject obj, jclass clazz,
 jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name,
 		    const char *sig)  {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
@@ -955,7 +936,7 @@ jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name,
                                vm->asciizToUTF8(sig), 0, 1,
                                0) : 0);
   
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 
 }
@@ -963,234 +944,234 @@ jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name,
 
 jobject GetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   return (jobject)field->getObjectField(o);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jboolean GetBooleanField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   return (uint8)field->getInt8Field(o);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jbyte GetByteField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   return (sint8)field->getInt8Field(o);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jchar GetCharField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   return (uint16)field->getInt16Field(o);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jshort GetShortField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   return (sint16)field->getInt16Field(o);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jint GetIntField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   return (sint32)field->getInt32Field(o);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jlong GetLongField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   return (sint64)field->getLongField(o);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jfloat GetFloatField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   return field->getFloatField(o);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jdouble GetDoubleField(JNIEnv *env, jobject obj, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   return (jdouble)field->getDoubleField(o);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 void SetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID, jobject value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   field->setObjectField(o, (JavaObject*)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetBooleanField(JNIEnv *env, jobject obj, jfieldID fieldID,
                      jboolean value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   field->setInt8Field(o, (uint8)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetByteField(JNIEnv *env, jobject obj, jfieldID fieldID, jbyte value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   field->setInt8Field(o, (uint8)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetCharField(JNIEnv *env, jobject obj, jfieldID fieldID, jchar value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   field->setInt16Field(o, (uint16)value);
   
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetShortField(JNIEnv *env, jobject obj, jfieldID fieldID, jshort value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   field->setInt16Field(o, (sint16)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetIntField(JNIEnv *env, jobject obj, jfieldID fieldID, jint value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   field->setInt32Field(o, (sint32)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetLongField(JNIEnv *env, jobject obj, jfieldID fieldID, jlong value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   field->setLongField(o, (sint64)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetFloatField(JNIEnv *env, jobject obj, jfieldID fieldID, jfloat value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   field->setFloatField(o, (float)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetDoubleField(JNIEnv *env, jobject obj, jfieldID fieldID, jdouble value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaField* field = (JavaField*)fieldID;
   JavaObject* o = (JavaObject*)obj;
   field->setDoubleField(o, (float)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 jmethodID GetStaticMethodID(JNIEnv *env, jclass clazz, const char *aname,
 			    const char *atype) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
@@ -1201,7 +1182,7 @@ jmethodID GetStaticMethodID(JNIEnv *env, jclass clazz, const char *aname,
 
   return (jmethodID)meth;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -1209,7 +1190,7 @@ jmethodID GetStaticMethodID(JNIEnv *env, jclass clazz, const char *aname,
 jobject CallStaticObjectMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
                                ...) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   va_list ap;
   va_start(ap, methodID);
@@ -1220,21 +1201,21 @@ jobject CallStaticObjectMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
   va_end(ap);
   return res;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jobject CallStaticObjectMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                                 va_list args) {
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   return (jobject)meth->invokeJavaObjectStaticAP(vm, cl, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -1249,7 +1230,7 @@ jobject CallStaticObjectMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 jboolean CallStaticBooleanMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
                                  ...) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   va_list ap;
   va_start(ap, methodID);
@@ -1260,7 +1241,7 @@ jboolean CallStaticBooleanMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
   va_end(ap);
   return res;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -1268,14 +1249,14 @@ jboolean CallStaticBooleanMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
 jboolean CallStaticBooleanMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                                   va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   return (jboolean)meth->invokeIntStaticAP(vm, cl, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -1289,7 +1270,7 @@ jboolean CallStaticBooleanMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 jbyte CallStaticByteMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   va_list ap;
   va_start(ap, methodID);
@@ -1300,7 +1281,7 @@ jbyte CallStaticByteMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   va_end(ap);
   return res;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -1308,14 +1289,14 @@ jbyte CallStaticByteMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
 jbyte CallStaticByteMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                             va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   return (jbyte)meth->invokeIntStaticAP(vm, cl, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -1329,7 +1310,7 @@ jbyte CallStaticByteMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 jchar CallStaticCharMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   va_list ap;
   va_start(ap, methodID);
@@ -1340,21 +1321,21 @@ jchar CallStaticCharMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   va_end(ap);
   return res;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jchar CallStaticCharMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                             va_list args) {
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   return (jchar)meth->invokeIntStaticAP(vm, cl, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -1369,7 +1350,7 @@ jchar CallStaticCharMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 jshort CallStaticShortMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
                              ...) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   va_list ap;
   va_start(ap, methodID);
@@ -1380,7 +1361,7 @@ jshort CallStaticShortMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
   va_end(ap);
   return res;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -1388,14 +1369,14 @@ jshort CallStaticShortMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
 jshort CallStaticShortMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                               va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   return (jshort)meth->invokeIntStaticAP(vm, cl, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -1409,7 +1390,7 @@ jshort CallStaticShortMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 jint CallStaticIntMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   va_list ap;
   va_start(ap, methodID);
@@ -1420,21 +1401,21 @@ jint CallStaticIntMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   va_end(ap);
   return res;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jint CallStaticIntMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                           va_list args) {
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   return (jint)meth->invokeIntStaticAP(vm, cl, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   
   return 0;
 }
@@ -1449,7 +1430,7 @@ jint CallStaticIntMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 jlong CallStaticLongMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   va_list ap;
   va_start(ap, methodID);
@@ -1460,7 +1441,7 @@ jlong CallStaticLongMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   va_end(ap);
   return res;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -1468,14 +1449,14 @@ jlong CallStaticLongMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
 jlong CallStaticLongMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
 			    va_list args) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   return (jlong)meth->invokeLongStaticAP(vm, cl, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   
   return 0;
 }
@@ -1492,7 +1473,7 @@ jlong CallStaticLongMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 jfloat CallStaticFloatMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
                              ...) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   va_list ap;
   va_start(ap, methodID);
@@ -1503,7 +1484,7 @@ jfloat CallStaticFloatMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
   va_end(ap);
   return res;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0.0f;
 }
 
@@ -1511,14 +1492,14 @@ jfloat CallStaticFloatMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
 jfloat CallStaticFloatMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                               va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   return (jfloat)meth->invokeFloatStaticAP(vm, cl, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   
   return 0.0f;
 }
@@ -1534,7 +1515,7 @@ jfloat CallStaticFloatMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 jdouble CallStaticDoubleMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
                                ...) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   va_list ap;
   va_start(ap, methodID);
@@ -1545,21 +1526,21 @@ jdouble CallStaticDoubleMethod(JNIEnv *env, jclass clazz, jmethodID methodID,
   va_end(ap);
   return res;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0.0;
 }
 
 
 jdouble CallStaticDoubleMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                                 va_list args) {
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   return (jdouble)meth->invokeDoubleStaticAP(vm, cl, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   
   return 0.0;
 }
@@ -1574,7 +1555,7 @@ jdouble CallStaticDoubleMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 
 void CallStaticVoidMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   va_list ap;
   va_start(ap, methodID);
@@ -1584,21 +1565,21 @@ void CallStaticVoidMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   meth->invokeIntStaticAP(vm, cl, ap);
   va_end(ap);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void CallStaticVoidMethodV(JNIEnv *env, jclass clazz, jmethodID methodID,
                            va_list args) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   meth->invokeIntStaticAP(vm, cl, args);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
@@ -1611,7 +1592,7 @@ void CallStaticVoidMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 jfieldID GetStaticFieldID(JNIEnv *env, jclass clazz, const char *name,
                           const char *sig) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
@@ -1620,14 +1601,14 @@ jfieldID GetStaticFieldID(JNIEnv *env, jclass clazz, const char *name,
                                vm->asciizToUTF8(sig),
                                true, true, 0) : 0);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jobject GetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1635,14 +1616,14 @@ jobject GetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   void* Stat = cl->getStaticInstance();
   return (jobject)field->getObjectField(Stat);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jboolean GetStaticBooleanField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1650,14 +1631,14 @@ jboolean GetStaticBooleanField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   void* Stat = cl->getStaticInstance();
   return (jboolean)field->getInt8Field(Stat);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jbyte GetStaticByteField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1665,14 +1646,14 @@ jbyte GetStaticByteField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   void* Stat = cl->getStaticInstance();
   return (jbyte)field->getInt8Field(Stat);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jchar GetStaticCharField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1680,14 +1661,14 @@ jchar GetStaticCharField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   void* Stat = cl->getStaticInstance();
   return (jchar)field->getInt16Field(Stat);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jshort GetStaticShortField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1695,14 +1676,14 @@ jshort GetStaticShortField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   void* Stat = cl->getStaticInstance();
   return (jshort)field->getInt16Field(Stat);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jint GetStaticIntField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1710,14 +1691,14 @@ jint GetStaticIntField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   void* Stat = cl->getStaticInstance();
   return (jint)field->getInt32Field(Stat);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jlong GetStaticLongField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1725,14 +1706,14 @@ jlong GetStaticLongField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   void* Stat = cl->getStaticInstance();
   return (jlong)field->getLongField(Stat);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jfloat GetStaticFloatField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1740,14 +1721,14 @@ jfloat GetStaticFloatField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   void* Stat = cl->getStaticInstance();
   return (jfloat)field->getFloatField(Stat);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jdouble GetStaticDoubleField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1755,7 +1736,7 @@ jdouble GetStaticDoubleField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
   void* Stat = cl->getStaticInstance();
   return (jdouble)field->getDoubleField(Stat);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -1763,7 +1744,7 @@ jdouble GetStaticDoubleField(JNIEnv *env, jclass clazz, jfieldID fieldID) {
 void SetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID fieldID,
                           jobject value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1771,14 +1752,14 @@ void SetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   void* Stat = cl->getStaticInstance();
   field->setObjectField(Stat, (JavaObject*)value);
   
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetStaticBooleanField(JNIEnv *env, jclass clazz, jfieldID fieldID,
                            jboolean value) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1786,14 +1767,14 @@ void SetStaticBooleanField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   void* Stat = cl->getStaticInstance();
   field->setInt8Field(Stat, (uint8)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetStaticByteField(JNIEnv *env, jclass clazz, jfieldID fieldID,
                         jbyte value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1801,14 +1782,14 @@ void SetStaticByteField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   void* Stat = cl->getStaticInstance();
   field->setInt8Field(Stat, (sint8)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetStaticCharField(JNIEnv *env, jclass clazz, jfieldID fieldID,
                         jchar value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1816,14 +1797,14 @@ void SetStaticCharField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   void* Stat = cl->getStaticInstance();
   field->setInt16Field(Stat, (uint16)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetStaticShortField(JNIEnv *env, jclass clazz, jfieldID fieldID,
                          jshort value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1831,14 +1812,14 @@ void SetStaticShortField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   void* Stat = cl->getStaticInstance();
   field->setInt16Field(Stat, (sint16)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetStaticIntField(JNIEnv *env, jclass clazz, jfieldID fieldID,
                        jint value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1846,14 +1827,14 @@ void SetStaticIntField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   void* Stat = cl->getStaticInstance();
   field->setInt32Field(Stat, (sint32)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetStaticLongField(JNIEnv *env, jclass clazz, jfieldID fieldID,
                         jlong value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1861,14 +1842,14 @@ void SetStaticLongField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   void* Stat = cl->getStaticInstance();
   field->setLongField(Stat, (sint64)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetStaticFloatField(JNIEnv *env, jclass clazz, jfieldID fieldID,
                          jfloat value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1876,14 +1857,14 @@ void SetStaticFloatField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   void* Stat = cl->getStaticInstance();
   field->setFloatField(Stat, (float)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 void SetStaticDoubleField(JNIEnv *env, jclass clazz, jfieldID fieldID,
                           jdouble value) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -1891,7 +1872,7 @@ void SetStaticDoubleField(JNIEnv *env, jclass clazz, jfieldID fieldID,
   void* Stat = cl->getStaticInstance();
   field->setDoubleField(Stat, (double)value);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
@@ -1920,12 +1901,12 @@ void ReleaseStringChars(JNIEnv *env, jstring str, const jchar *chars) {
 
 jstring NewStringUTF(JNIEnv *env, const char *bytes) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = NativeUtil::myVM(env);
   return (jstring)(vm->asciizToStr(bytes));
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -1938,12 +1919,12 @@ jsize GetStringUTFLength (JNIEnv *env, jstring string) {
 
 const char *GetStringUTFChars(JNIEnv *env, jstring string, jboolean *isCopy) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   if (isCopy != 0) (*isCopy) = true;
   return strdup(((JavaString*)string)->strToAsciiz());
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -1955,18 +1936,18 @@ void ReleaseStringUTFChars(JNIEnv *env, jstring string, const char *utf) {
 
 jsize GetArrayLength(JNIEnv *env, jarray array) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   return ((JavaArray*)array)->size;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass elementClass,
                             jobject initialElement) {
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   Jnjvm* vm = NativeUtil::myVM(env);
   if (length < 0) vm->negativeArraySizeException(length);
   
@@ -1982,20 +1963,20 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass elementClass,
     }
   }
   return (jobjectArray)res;
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jobject GetObjectArrayElement(JNIEnv *env, jobjectArray array, jsize index) {
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   ArrayObject* JA = (ArrayObject*)array;
   if (index >= JA->size)
     JavaThread::get()->getJVM()->indexOutOfBounds(JA, index);
   return (jobject)JA->elements[index];
   
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 
   return 0;
 }
@@ -2004,109 +1985,109 @@ jobject GetObjectArrayElement(JNIEnv *env, jobjectArray array, jsize index) {
 void SetObjectArrayElement(JNIEnv *env, jobjectArray array, jsize index,
                            jobject val) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   ArrayObject* JA = (ArrayObject*)array;
   if (index >= JA->size)
     JavaThread::get()->getJVM()->indexOutOfBounds(JA, index);
   JA->elements[index] = (JavaObject*)val;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
 }
 
 
 jbooleanArray NewBooleanArray(JNIEnv *env, jsize len) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = NativeUtil::myVM(env);
   return (jbooleanArray)vm->upcalls->ArrayOfByte->doNew(len, vm);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jbyteArray NewByteArray(JNIEnv *env, jsize len) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = NativeUtil::myVM(env);
   return (jbyteArray)vm->upcalls->ArrayOfByte->doNew(len, vm);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jcharArray NewCharArray(JNIEnv *env, jsize len) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = NativeUtil::myVM(env);
   return (jcharArray)vm->upcalls->ArrayOfChar->doNew(len, vm);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jshortArray NewShortArray(JNIEnv *env, jsize len) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = NativeUtil::myVM(env);
   return (jshortArray)vm->upcalls->ArrayOfShort->doNew(len, vm);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jintArray NewIntArray(JNIEnv *env, jsize len) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = NativeUtil::myVM(env);
   return (jintArray)vm->upcalls->ArrayOfInt->doNew(len, vm);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jlongArray NewLongArray(JNIEnv *env, jsize len) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = NativeUtil::myVM(env);
   return (jlongArray)vm->upcalls->ArrayOfLong->doNew(len, vm);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jfloatArray NewFloatArray(JNIEnv *env, jsize len) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = NativeUtil::myVM(env);
   return (jfloatArray)vm->upcalls->ArrayOfFloat->doNew(len, vm);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jdoubleArray NewDoubleArray(JNIEnv *env, jsize len) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = NativeUtil::myVM(env);
   return (jdoubleArray)vm->upcalls->ArrayOfDouble->doNew(len, vm);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -2114,36 +2095,36 @@ jdoubleArray NewDoubleArray(JNIEnv *env, jsize len) {
 jboolean *GetBooleanArrayElements(JNIEnv *env, jbooleanArray array,
 				  jboolean *isCopy) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   if (isCopy) (*isCopy) = false;
   return (jboolean*)((ArrayUInt8*)array)->elements;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jbyte *GetByteArrayElements(JNIEnv *env, jbyteArray array, jboolean *isCopy) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   if (isCopy) (*isCopy) = false;
   return ((ArraySInt8*)array)->elements;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jchar *GetCharArrayElements(JNIEnv *env, jcharArray array, jboolean *isCopy) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   if (isCopy) (*isCopy) = false;
   return ((ArrayUInt16*)array)->elements;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -2151,36 +2132,36 @@ jchar *GetCharArrayElements(JNIEnv *env, jcharArray array, jboolean *isCopy) {
 jshort *GetShortArrayElements(JNIEnv *env, jshortArray array,
                               jboolean *isCopy) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   if (isCopy) (*isCopy) = false;
   return ((ArraySInt16*)array)->elements;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jint *GetIntArrayElements(JNIEnv *env, jintArray array, jboolean *isCopy) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   if (isCopy) (*isCopy) = false;
   return ((ArraySInt32*)array)->elements;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jlong *GetLongArrayElements(JNIEnv *env, jlongArray array, jboolean *isCopy) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   if (isCopy) (*isCopy) = false;
   return (jlong*)(void*)(((ArrayLong*)array)->elements);
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -2188,12 +2169,12 @@ jlong *GetLongArrayElements(JNIEnv *env, jlongArray array, jboolean *isCopy) {
 jfloat *GetFloatArrayElements(JNIEnv *env, jfloatArray array,
                               jboolean *isCopy) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   if (isCopy) (*isCopy) = false;
   return ((ArrayFloat*)array)->elements;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -2201,12 +2182,12 @@ jfloat *GetFloatArrayElements(JNIEnv *env, jfloatArray array,
 jdouble *GetDoubleArrayElements(JNIEnv *env, jdoubleArray array,
 				jboolean *isCopy) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   if (isCopy) (*isCopy) = false;
   return ((ArrayDouble*)array)->elements;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -2377,34 +2358,34 @@ jint UnregisterNatives(JNIEnv *env, jclass clazz) {
 
 jint MonitorEnter(JNIEnv *env, jobject obj) {
   
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   ((JavaObject*)obj)->acquire();
   return 1;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jint MonitorExit(JNIEnv *env, jobject obj) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   ((JavaObject*)obj)->release();
   return 1;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
 
 jint GetJavaVM(JNIEnv *env, JavaVM **vm) {
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   Jnjvm* myvm = JavaThread::get()->getJVM();
   (*vm) = (JavaVM*)(void*)(&(myvm->javavmEnv));
   return 0;
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -2422,12 +2403,12 @@ void GetStringUTFRegion(JNIEnv* env, jstring str, jsize start, jsize len,
 
 
 void *GetPrimitiveArrayCritical(JNIEnv *env, jarray array, jboolean *isCopy) {
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
   
   if (isCopy) (*isCopy) = false;
   return ((JavaArray*)array)->elements;
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -2497,7 +2478,7 @@ jobject NewDirectByteBuffer(JNIEnv *env, void *address, jlong capacity) {
 
 void *GetDirectBufferAddress(JNIEnv *env, jobject _buf) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = NativeUtil::myVM(env);
   JavaObject* buf = (JavaObject*)_buf;
@@ -2509,7 +2490,7 @@ void *GetDirectBufferAddress(JNIEnv *env, jobject _buf) {
     return 0;
   }
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -2546,7 +2527,7 @@ jint DetachCurrentThread(JavaVM *vm) {
 
 jint GetEnv(JavaVM *vm, void **env, jint version) {
 
-  BEGIN_EXCEPTION
+  BEGIN_JNI_EXCEPTION
 
   JavaObject* th = JavaThread::currentThread();
   Jnjvm* myvm = JavaThread::get()->getJVM();
@@ -2558,7 +2539,7 @@ jint GetEnv(JavaVM *vm, void **env, jint version) {
     return JNI_EDETACHED;
   }
 
-  END_EXCEPTION
+  END_JNI_EXCEPTION
   return 0;
 }
 

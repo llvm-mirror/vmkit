@@ -76,3 +76,118 @@ void JavaThread::throwPendingException() {
   th->internalPendingException = exc;
   __cxa_throw(exc, 0, 0);
 }
+
+void JavaThread::startNative(int level) {
+  // Call to this function.
+  void** cur = (void**)__builtin_frame_address(0);
+  
+  // Caller (for native Classpath functions).
+  //if (level)
+  cur = (void**)cur[0];
+
+  // When entering, the number of addresses should be odd.
+  // Enable this when finalization gets proper support.
+  // assert((addresses.size() % 2) && "Wrong stack");
+  
+  addresses.push_back(cur);
+}
+
+void JavaThread::startJava() {
+  // Call to this function.
+  void** cur = (void**)__builtin_frame_address(0);
+  
+  // Caller in JavaMetaJIT.cpp
+  cur = (void**)cur[0];
+
+  addresses.push_back(cur);
+}
+
+UserClass* JavaThread::getCallingClass() {
+  // I'm a native function, so try to look at the last Java method.
+  // First Get the caller of this method.
+  void** addr = (void**)addresses.back();
+
+  // Get the caller of the Java getCallingClass method.
+  addr = (void**)addr[0];
+  void* ip = FRAME_IP(addr);
+
+  JavaMethod* meth = getJVM()->IPToJavaMethod(ip);
+
+  if (meth) return meth->classDef;
+  else return 0;
+}
+
+void JavaThread::getJavaFrameContext(std::vector<void*>& context) {
+  std::vector<void*>::iterator it = addresses.end();
+
+  // Loop until we cross the first Java frame.
+  while (it != addresses.begin()) {
+    
+    // Get the last Java frame.
+    void** addr = (void**)*(--it);
+    
+    // Set the iterator to the next native -> Java call.
+    --it;
+
+    do {
+      void* ip = FRAME_IP(addr);
+      context.push_back(ip);
+      addr = (void**)addr[0];
+      // End walking the stack when we cross a native -> Java call. Here
+      // the iterator points to a native -> Java call. We dereference addr twice
+      // because a native -> Java call always contains the signature function.
+    } while (((void***)addr)[0][0] != *it);
+  }  
+}
+
+#include <dlfcn.h>
+
+static void printFunctionInfo(void* ip) {
+  Dl_info info;
+  int res = dladdr(ip, &info);
+  if (res != 0) {
+    fprintf(stderr, "; %p in %s\n",  ip, info.dli_sname);
+  } else {
+    fprintf(stderr, "; %p in Native to Java Frame\n", ip);
+  }
+}
+
+void JavaThread::printBacktrace() {
+  std::vector<void*>::iterator it = addresses.end();
+  Jnjvm* vm = getJVM();
+
+  void** addr = (void**)__builtin_frame_address(0);
+
+  // Loop until we cross the first Java frame.
+  while (it != addresses.begin()) {
+    
+    --it;
+    // Until we hit the last Java frame.
+    while (addr != (void**)*it) {
+      void* ip = FRAME_IP(addr);
+      printFunctionInfo(ip);
+      addr = (void**)addr[0];
+    }
+    
+    // Set the iterator to the next native -> Java call.
+    --it;
+
+    do {
+      void* ip = FRAME_IP(addr);
+      JavaMethod* meth = vm->IPToJavaMethod(ip);
+      assert(meth && "Wrong stack");
+      fprintf(stderr, "; %p in %s\n",  ip, meth->printString());
+      addr = (void**)addr[0];
+      // End walking the stack when we cross a native -> Java call. Here
+      // the iterator points to a native -> Java call. We dereference addr twice
+      // because a native -> Java call always contains the signature function.
+    } while (((void***)addr)[0][0] != *it);
+  }
+
+  while (addr < baseSP && addr < addr[0]) {
+    void* ip = FRAME_IP(addr);
+    printFunctionInfo(ip);
+    addr = (void**)addr[0];
+  }
+
+}

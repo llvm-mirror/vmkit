@@ -192,7 +192,6 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   if (!natPtr && !module->isStaticCompiling()) {
     fprintf(stderr, "Native function %s not found. Probably "
                "not implemented by JnJVM?\n", compilingMethod->printString());
-    JavaJIT::printBacktrace();
     JavaThread::get()->getJVM()->unknownError("can not find native method %s",
                                               compilingMethod->printString());
   }
@@ -862,11 +861,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     }
   }
   
-  // We don't need the lock here, and Java requires to load the classes in the
-  // try clause, which may require compilation. Therefore we release the lock
-  // and acquire it after the exception table is read.
-  module->executionEngine->lock.release();
-  
   Exception* exceptions = (Exception*)alloca(sizeof(Exception) * (nbe - sync));
   for (uint16 i = 0; i < nbe - sync; ++i) {
     Exception* ex = &exceptions[i];
@@ -878,22 +872,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
 
 #ifndef ISOLATE_SHARING
     if (ex->catche) {
-      JavaObject* exc = 0;
-      UserClass* cl = 0; 
-      try {
-        cl = (UserClass*)(compilingClass->ctpInfo->loadClass(ex->catche));
-      } catch(...) {
-        compilingClass->release();
-        exc = JavaThread::getJavaException();
-        assert(exc && "no exception?");
-        JavaThread::clearException();
-      }
-      
-      if (exc) {
-        Jnjvm* vm = JavaThread::get()->getJVM();
-        vm->noClassDefFoundError(exc);
-      }
-
+      UserClass* cl = 
+        (UserClass*)(compilingClass->ctpInfo->isClassLoaded(ex->catche));
       ex->catchClass = cl;
     } else {
       ex->catchClass = Classpath::newThrowable;
@@ -920,7 +900,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     opcodeInfos[ex->handlerpc].reqSuppl = true;
 
   }
-  module->executionEngine->lock.acquire();
   
   bool first = true;
   for (sint16 i = 0; i < nbe - sync; ++i) {
@@ -991,8 +970,10 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     else cl = CallInst::Create(module->GetJnjvmExceptionClassFunction,
                                isolateLocal, "", currentBlock);
 #else
-    assert(cur->catchClass);
-    cl = module->getNativeClass(cur->catchClass);
+    if (cur->catchClass)
+      cl = module->getNativeClass(cur->catchClass);
+    else
+      cl = getResolvedClass(cur->catche, false, false, 0);
 #endif
     
 #ifdef SERVICE
@@ -1693,7 +1674,7 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow,
     node = module->getNativeClass(cl);
   } else {
     node = getConstantPoolAt(index, module->ClassLookupFunction,
-                             module->JavaCommonClassType, 0, doThrow);
+                             module->JavaClassType, 0, doThrow);
   }
   
   if (!(!clinit || (cl && !needsInitialisationCheck(cl, compilingClass)))) {

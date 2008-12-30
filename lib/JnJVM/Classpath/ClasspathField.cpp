@@ -36,10 +36,18 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getModifiersInternal(
 JNIEnv *env,
 #endif
 jobject obj) {
+  jint res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)obj);
-  return field->access;
+  res = field->access;
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 JNIEXPORT jclass JNICALL Java_java_lang_reflect_Field_getType(
@@ -47,13 +55,22 @@ JNIEXPORT jclass JNICALL Java_java_lang_reflect_Field_getType(
 JNIEnv *env,
 #endif
 jobject obj) {
+  
+  jclass res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)obj);
   UserClass* fieldCl = internalGetClass(vm, field, obj);
   JnjvmClassLoader* loader = fieldCl->classLoader;
   UserCommonClass* cl = field->getSignature()->assocClass(loader);
-  return (jclass)cl->getClassDelegatee(vm);
+  res = (jclass)cl->getClassDelegatee(vm);
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getInt(
@@ -61,6 +78,11 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getInt(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
+  
+  jint res = 0;
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -80,17 +102,22 @@ jobject Field, jobject obj) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
 
     if (prim->isInt())
-      return (sint32)field->getInt32Field(Obj);
-    if (prim->isChar())
-      return (uint32)field->getInt16Field(Obj);
-    if (prim->isByte())
-      return (sint32)field->getInt8Field(Obj);
-    if (prim->isShort())
-      return (sint32)field->getInt16Field(Obj);
+      res = (sint32)field->getInt32Field(Obj);
+    else if (prim->isChar())
+      res = (uint32)field->getInt16Field(Obj);
+    else if (prim->isByte())
+      res = (sint32)field->getInt8Field(Obj);
+    else if (prim->isShort())
+      res = (sint32)field->getInt16Field(Obj);
+    else
+      vm->illegalArgumentException("");
+  } else {
+      vm->illegalArgumentException("");
   }
   
-  vm->illegalArgumentException("");
-  return 0;
+  END_NATIVE_EXCEPTION
+  
+  return res;
   
 }
 
@@ -99,6 +126,11 @@ JNIEXPORT jlong JNICALL Java_java_lang_reflect_Field_getLong(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
+
+  jlong res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -118,19 +150,24 @@ jobject Field, jobject obj) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     
     if (prim->isInt())
-      return (sint64)field->getInt32Field(Obj);
-    if (prim->isChar())
-      return (uint64)field->getInt16Field(Obj);
-    if (prim->isByte())
-      return (sint64)field->getInt8Field(Obj);
-    if (prim->isShort())
-      return (sint64)field->getInt16Field(Obj);
-    if (prim->isLong())
-      return (sint64)field->getLongField(Obj);
+      res = (sint64)field->getInt32Field(Obj);
+    else if (prim->isChar())
+      res = (uint64)field->getInt16Field(Obj);
+    else if (prim->isByte())
+      res = (sint64)field->getInt8Field(Obj);
+    else if (prim->isShort())
+      res = (sint64)field->getInt16Field(Obj);
+    else if (prim->isLong())
+      res = (sint64)field->getLongField(Obj);
+    else
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
+  
+  END_NATIVE_EXCEPTION
 
-  vm->illegalArgumentException("");
-  return 0;
+  return res;
 }
 
 JNIEXPORT jboolean JNICALL Java_java_lang_reflect_Field_getBoolean(
@@ -138,6 +175,11 @@ JNIEXPORT jboolean JNICALL Java_java_lang_reflect_Field_getBoolean(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
+
+  jboolean res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -156,12 +198,16 @@ jobject Field, jobject obj) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isBool())  
-      return (uint8)field->getInt8Field(Obj);
+      res = (uint8)field->getInt8Field(Obj);
+    else
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
   
-  vm->illegalArgumentException("");
+  END_NATIVE_EXCEPTION
 
-  return 0;
+  return res;
   
 }
 
@@ -170,6 +216,11 @@ JNIEXPORT jfloat JNICALL Java_java_lang_reflect_Field_getFloat(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
+  
+  jfloat res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -188,22 +239,27 @@ jobject Field, jobject obj) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isByte())
-      return (jfloat)field->getInt8Field(Obj);
-    if (prim->isInt())
-      return (jfloat)field->getInt32Field((JavaObject*)obj);
-    if (prim->isShort())
-      return (jfloat)field->getInt16Field((JavaObject*)obj);
-    if (prim->isLong())
-      return (jfloat)field->getLongField((JavaObject*)obj);
-    if (prim->isChar())
+      res = (jfloat)field->getInt8Field(Obj);
+    else if (prim->isInt())
+      res = (jfloat)field->getInt32Field((JavaObject*)obj);
+    else if (prim->isShort())
+      res = (jfloat)field->getInt16Field((JavaObject*)obj);
+    else if (prim->isLong())
+      res = (jfloat)field->getLongField((JavaObject*)obj);
+    else if (prim->isChar())
       // Cast to uint32 because char is unsigned.
-      return (jfloat)(uint32)field->getInt16Field((JavaObject*)obj);
-    if (prim->isFloat())
-      return (jfloat)field->getFloatField((JavaObject*)obj);
+      res = (jfloat)(uint32)field->getInt16Field((JavaObject*)obj);
+    else if (prim->isFloat())
+      res = (jfloat)field->getFloatField((JavaObject*)obj);
+    else
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
   
-  vm->illegalArgumentException("");
-  return 0.0;
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 JNIEXPORT jbyte JNICALL Java_java_lang_reflect_Field_getByte(
@@ -211,6 +267,11 @@ JNIEXPORT jbyte JNICALL Java_java_lang_reflect_Field_getByte(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
+
+  jbyte res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -229,12 +290,16 @@ jobject Field, jobject obj) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isByte())
-      return (sint8)field->getInt8Field(Obj);
+      res = (sint8)field->getInt8Field(Obj);
+    else
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
   
-  vm->illegalArgumentException("");
+  END_NATIVE_EXCEPTION
   
-  return 0;
+  return res;
 }
 
 JNIEXPORT jchar JNICALL Java_java_lang_reflect_Field_getChar(
@@ -242,6 +307,12 @@ JNIEXPORT jchar JNICALL Java_java_lang_reflect_Field_getChar(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
+  
+  jchar res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+  
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -260,12 +331,16 @@ jobject Field, jobject obj) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isChar())
-      return (uint16)field->getInt16Field((JavaObject*)obj);
+      res = (uint16)field->getInt16Field((JavaObject*)obj);
+    else
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
+
+  END_NATIVE_EXCEPTION
   
-  vm->illegalArgumentException("");
-  
-  return 0;
+  return res;
   
 }
 
@@ -274,6 +349,12 @@ JNIEXPORT jshort JNICALL Java_java_lang_reflect_Field_getShort(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
+
+
+  jshort res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -292,14 +373,18 @@ jobject Field, jobject obj) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isShort())
-      return (sint16)field->getInt16Field(Obj);
-    if (prim->isByte())
-      return (sint16)field->getInt8Field(Obj);
+      res = (sint16)field->getInt16Field(Obj);
+    else if (prim->isByte())
+      res = (sint16)field->getInt8Field(Obj);
+    else
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
   
-  vm->illegalArgumentException("");
-  
-  return 0;
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
   
 JNIEXPORT jdouble JNICALL Java_java_lang_reflect_Field_getDouble(
@@ -307,6 +392,11 @@ JNIEXPORT jdouble JNICALL Java_java_lang_reflect_Field_getDouble(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj) {
+  
+  jdouble res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -325,23 +415,28 @@ jobject Field, jobject obj) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isByte())
-      return (jdouble)(sint64)field->getInt8Field(Obj);
-    if (prim->isInt())
-      return (jdouble)(sint64)field->getInt32Field(Obj);
-    if (prim->isShort())
-      return (jdouble)(sint64)field->getInt16Field(Obj);
-    if (prim->isLong())
-      return (jdouble)(sint64)field->getLongField(Obj);
-    if (prim->isChar())
-      return (jdouble)(uint64)field->getInt16Field(Obj);
-    if (prim->isFloat())
-      return (jdouble)field->getFloatField(Obj);
-    if (prim->isDouble())
-      return (jdouble)field->getDoubleField(Obj);
+      res = (jdouble)(sint64)field->getInt8Field(Obj);
+    else if (prim->isInt())
+      res = (jdouble)(sint64)field->getInt32Field(Obj);
+    else if (prim->isShort())
+      res = (jdouble)(sint64)field->getInt16Field(Obj);
+    else if (prim->isLong())
+      res = (jdouble)(sint64)field->getLongField(Obj);
+    else if (prim->isChar())
+      res = (jdouble)(uint64)field->getInt16Field(Obj);
+    else if (prim->isFloat())
+      res = (jdouble)field->getFloatField(Obj);
+    else if (prim->isDouble())
+      res = (jdouble)field->getDoubleField(Obj);
+    else
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
-  
-  vm->illegalArgumentException("");
-  return 0.0;
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 JNIEXPORT jobject JNICALL Java_java_lang_reflect_Field_get(
@@ -349,6 +444,12 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Field_get(
 JNIEnv *env,
 #endif
 jobject Field, jobject _obj) {
+
+
+  jobject res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -411,6 +512,8 @@ jobject Field, jobject _obj) {
     res =  field->getObjectField(Obj);
   }
 
+  END_NATIVE_EXCEPTION
+
   return (jobject)res;
 }
 
@@ -419,6 +522,9 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jobject val) {
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -442,27 +548,26 @@ jobject Field, jobject obj, jobject val) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isBool())
-      return field->setInt8Field(Obj, ((uint8*)_buf)[0]);
-    if (prim->isByte())
-      return field->setInt8Field(Obj, ((sint8*)_buf)[0]);
-    if (prim->isChar())
-      return field->setInt16Field(Obj, ((uint16*)_buf)[0]);
-    if (prim->isShort())
-      return field->setInt16Field(Obj, ((sint16*)_buf)[0]);
-    if (prim->isInt())
-      return field->setInt32Field(Obj, ((sint32*)_buf)[0]);
-    if (prim->isLong())
-      return field->setLongField(Obj, ((sint64*)_buf)[0]);
-    if (prim->isFloat())
-      return field->setFloatField(Obj, ((float*)_buf)[0]);
-    if (prim->isDouble())
-      return field->setDoubleField(Obj, ((double*)_buf)[0]);
+      field->setInt8Field(Obj, ((uint8*)_buf)[0]);
+    else if (prim->isByte())
+      field->setInt8Field(Obj, ((sint8*)_buf)[0]);
+    else if (prim->isChar())
+      field->setInt16Field(Obj, ((uint16*)_buf)[0]);
+    else if (prim->isShort())
+      field->setInt16Field(Obj, ((sint16*)_buf)[0]);
+    else if (prim->isInt())
+      field->setInt32Field(Obj, ((sint32*)_buf)[0]);
+    else if (prim->isLong())
+      field->setLongField(Obj, ((sint64*)_buf)[0]);
+    else if (prim->isFloat())
+      field->setFloatField(Obj, ((float*)_buf)[0]);
+    else if (prim->isDouble())
+      field->setDoubleField(Obj, ((double*)_buf)[0]);
   } else {
-    return field->setObjectField(Obj, ((JavaObject**)_buf)[0]);
+    field->setObjectField(Obj, ((JavaObject**)_buf)[0]);
   }
 
-  // Unreachable code
-  return;
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setBoolean(
@@ -470,6 +575,9 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setBoolean(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jboolean val) {
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -488,10 +596,14 @@ jobject Field, jobject obj, jboolean val) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isBool())
-      return field->setInt8Field(Obj, (uint8)val);
+      field->setInt8Field(Obj, (uint8)val);
+    else
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
 
-  vm->illegalArgumentException("");
+  END_NATIVE_EXCEPTION
   
 }
 
@@ -500,6 +612,9 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setByte(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jbyte val) {
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -518,20 +633,24 @@ jobject Field, jobject obj, jbyte val) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isByte())
-      return field->setInt8Field(Obj, (sint8)val);
-    if (prim->isShort())
-      return field->setInt16Field(Obj, (sint16)val);
-    if (prim->isInt())
-      return field->setInt32Field(Obj, (sint32)val);
-    if (prim->isLong())
-      return field->setLongField(Obj, (sint64)val);
-    if (prim->isFloat())
-      return field->setFloatField(Obj, (float)val);
-    if (prim->isDouble())
-      return field->setDoubleField(Obj, (double)val);
+      field->setInt8Field(Obj, (sint8)val);
+    else if (prim->isShort())
+      field->setInt16Field(Obj, (sint16)val);
+    else if (prim->isInt())
+      field->setInt32Field(Obj, (sint32)val);
+    else if (prim->isLong())
+      field->setLongField(Obj, (sint64)val);
+    else if (prim->isFloat())
+      field->setFloatField(Obj, (float)val);
+    else if (prim->isDouble())
+      field->setDoubleField(Obj, (double)val);
+    else
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
-  
-  vm->illegalArgumentException("");
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setChar(
@@ -539,6 +658,9 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setChar(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jchar val) {
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -556,18 +678,22 @@ jobject Field, jobject obj, jchar val) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isChar())
-      return field->setInt16Field(Obj, (uint16)val);
-    if (prim->isInt())
-      return field->setInt32Field(Obj, (uint32)val);
-    if (prim->isLong())
-      return field->setLongField(Obj, (uint64)val);
-    if (prim->isFloat())
-      return field->setFloatField(Obj, (float)(uint32)val);
-    if (prim->isDouble())
-      return field->setDoubleField(Obj, (double)(uint64)val);
+      field->setInt16Field(Obj, (uint16)val);
+    else if (prim->isInt())
+      field->setInt32Field(Obj, (uint32)val);
+    else if (prim->isLong())
+      field->setLongField(Obj, (uint64)val);
+    else if (prim->isFloat())
+      field->setFloatField(Obj, (float)(uint32)val);
+    else if (prim->isDouble())
+      field->setDoubleField(Obj, (double)(uint64)val);
+    else
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
-  
-  vm->illegalArgumentException("");
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setShort(
@@ -575,6 +701,9 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setShort(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jshort val) {
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -593,18 +722,22 @@ jobject Field, jobject obj, jshort val) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isShort())
-      return field->setInt16Field(Obj, (sint16)val);
-    if (prim->isInt())
-      return field->setInt32Field(Obj, (sint32)val);
-    if (prim->isLong())
-      return field->setLongField(Obj, (sint64)val);
-    if (prim->isFloat())
-      return field->setFloatField(Obj, (float)val);
-    if (prim->isDouble())
-      return field->setDoubleField(Obj, (double)val);
+      field->setInt16Field(Obj, (sint16)val);
+    else if (prim->isInt())
+      field->setInt32Field(Obj, (sint32)val);
+    else if (prim->isLong())
+      field->setLongField(Obj, (sint64)val);
+    else if (prim->isFloat())
+      field->setFloatField(Obj, (float)val);
+    else if (prim->isDouble())
+      field->setDoubleField(Obj, (double)val);
+    else
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
-  
-  vm->illegalArgumentException("");
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setInt(
@@ -612,6 +745,9 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setInt(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jint val) {
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -630,16 +766,20 @@ jobject Field, jobject obj, jint val) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isInt())
-      return field->setInt32Field(Obj, (sint32)val);
-    if (prim->isLong())
-      return field->setLongField(Obj, (sint64)val);
-    if (prim->isFloat())
-      return field->setFloatField(Obj, (float)val);
-    if (prim->isDouble())
-      return field->setDoubleField(Obj, (double)val);
+      field->setInt32Field(Obj, (sint32)val);
+    else if (prim->isLong())
+      field->setLongField(Obj, (sint64)val);
+    else if (prim->isFloat())
+      field->setFloatField(Obj, (float)val);
+    else if (prim->isDouble())
+      field->setDoubleField(Obj, (double)val);
+    else
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
-  
-  vm->illegalArgumentException("");
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setLong(
@@ -647,6 +787,9 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setLong(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jlong val) {
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -665,14 +808,18 @@ jobject Field, jobject obj, jlong val) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isLong())
-      return field->setLongField(Obj, (sint64)val);
-    if (prim->isFloat())
-      return field->setFloatField(Obj, (float)val);
-    if (prim->isDouble())
-      return field->setDoubleField(Obj, (double)val);
+      field->setLongField(Obj, (sint64)val);
+    else if (prim->isFloat())
+      field->setFloatField(Obj, (float)val);
+    else if (prim->isDouble())
+      field->setDoubleField(Obj, (double)val);
+    else
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
-  
-  vm->illegalArgumentException("");
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setFloat(
@@ -680,6 +827,10 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setFloat(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jfloat val) {
+
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -698,12 +849,16 @@ jobject Field, jobject obj, jfloat val) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isFloat())
-      return field->setFloatField(Obj, (float)val);
-    if (prim->isDouble())
-      return field->setDoubleField(Obj, (double)val);
+      field->setFloatField(Obj, (float)val);
+    else if (prim->isDouble())
+      field->setDoubleField(Obj, (double)val);
+    else 
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
- 
-  vm->illegalArgumentException("");
+
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setDouble(
@@ -711,6 +866,9 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setDouble(
 JNIEnv *env,
 #endif
 jobject Field, jobject obj, jdouble val) {
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* slot = vm->upcalls->fieldSlot;
   JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
@@ -729,12 +887,17 @@ jobject Field, jobject obj, jdouble val) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isDouble())
-      return field->setDoubleField(Obj, (double)val);
+      field->setDoubleField(Obj, (double)val);
+    else
+      vm->illegalArgumentException("");
+  } else {
+    vm->illegalArgumentException("");
   }
-  
-  vm->illegalArgumentException("");
+
+  END_NATIVE_EXCEPTION
 }
 
+// Never throws.
 JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_objectFieldOffset(
 #ifdef NATIVE_JNI
 JNIEnv *env,

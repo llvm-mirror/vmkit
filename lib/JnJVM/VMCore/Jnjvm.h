@@ -115,6 +115,11 @@ private:
   /// bootstrapThread - The initial thread of this JVM.
   ///
   JavaThread* bootstrapThread;
+  
+  /// CreateError - Creates a Java object of the specified exception class
+  /// and calling its <init> function.
+  ///
+  JavaObject* CreateError(UserClass* cl, JavaMethod* meth, const char* str);
 
   /// error - Throws an exception in the execution of a JVM for the thread
   /// that calls this functions. This is used internally by Jnjvm to control
@@ -240,6 +245,16 @@ public:
   StringMap hashStr;
   
 public:
+  
+  /// CreateExceptions - These are the runtime exceptions thrown by Java code
+  /// compiled by VMKit.
+  ///
+  JavaObject* CreateNullPointerException();
+  JavaObject* CreateOutOfMemoryError();
+  JavaObject* CreateIndexOutOfBoundsException(sint32 entry);
+  JavaObject* CreateNegativeArraySizeException();
+  JavaObject* CreateClassCastException(JavaObject* obj, UserCommonClass* cl);
+  
   /// Exceptions - These are the only exceptions VMKit will make.
   ///
   void arrayStoreException();
@@ -326,6 +341,32 @@ public:
   /// waitForExit - Waits that there are no more non-daemon threads in this JVM.
   ///
   virtual void waitForExit();
+  
+private:
+
+  /// JavaFunctionMap - Map of Java method to function pointers. This map is
+  /// used when walking the stack so that VMKit knows which Java method is
+  /// executing on the stack.
+  ///
+  std::map<void*, JavaMethod*> JavaFunctionMap;
+
+  /// FunctionMapLock - Spin lock to protect the JavaFunctionMap.
+  ///
+  mvm::SpinLock FunctionMapLock;
+
+public:
+  /// addMethodInFunctionMap - A new method pointer in the function map.
+  ///
+  void addMethodInFunctionMap(JavaMethod* meth, void* addr);
+  
+  /// removeMethodsInFunctionMap - Removes all methods compiled by this
+  /// class loader from the function map.
+  ///
+  void removeMethodsInFunctionMap(JnjvmClassLoader* loader);
+
+  /// IPToJavaMethod - Map an instruction pointer to the Java method.
+  ///
+  JavaMethod* IPToJavaMethod(void* ip);
 
 #ifdef ISOLATE
   static Jnjvm* RunningIsolates[NR_ISOLATES];
@@ -335,6 +376,7 @@ public:
 #ifdef SERVICE
   virtual void stopService();
 #endif
+
 
 };
 
