@@ -9,11 +9,10 @@
 
 
 #include "MvmGC.h"
-#include "mvm/Sigsegv.h"
 #include "mvm/Threads/Thread.h"
 
-#include <signal.h>
-#include <stdio.h>
+#include <csignal>
+#include <cstdio>
 
 using namespace mvm;
 
