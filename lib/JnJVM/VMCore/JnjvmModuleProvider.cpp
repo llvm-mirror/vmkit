@@ -167,7 +167,6 @@ namespace mvm {
 
 namespace jnjvm {
   llvm::FunctionPass* createLowerConstantCallsPass();
-  llvm::FunctionPass* createLowerForcedCallsPass();
 }
 
 JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
@@ -187,7 +186,6 @@ JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
   Function* func = m->JavaObjectAllocateFunction;
   JavaFunctionPasses->add(mvm::createEscapeAnalysisPass(func));
   JavaFunctionPasses->add(createLowerConstantCallsPass());
-  JavaFunctionPasses->add(createLowerForcedCallsPass());
   nbCallbacks = 0;
 }
 

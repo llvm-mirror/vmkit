@@ -449,8 +449,10 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             BranchInst::Create(NBB, OKBlock);
             break;
           }
+        } else if (V == module->ForceInitialisationCheckFunction) {
+          Changed = true;
+          CI->eraseFromParent();
         }
-
 #ifdef ISOLATE_SHARING
         else if (V == module->GetCtpClassFunction) {
           Changed = true;
@@ -503,42 +505,6 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 
 FunctionPass* createLowerConstantCallsPass() {
   return new LowerConstantCalls();
-}
-  
-class VISIBILITY_HIDDEN LowerForcedCalls : public FunctionPass {
-  public:
-    static char ID;
-    LowerForcedCalls() : FunctionPass((intptr_t)&ID) { }
-
-    virtual bool runOnFunction(Function &F);
-  private:
-  };
-  char LowerForcedCalls::ID = 0;
-  static RegisterPass<LowerForcedCalls> Y("LowerForcedCalls",
-                                            "Lower Forced calls");
-
-bool LowerForcedCalls::runOnFunction(Function& F) {
-  JnjvmModule* module = (JnjvmModule*)F.getParent();
-  bool Changed = false;
-  for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
-    BasicBlock *Cur = BI; 
-    for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
-      Instruction *I = II;
-      II++;
-      if (CallInst *CI = dyn_cast<CallInst>(I)) {
-        Value* V = CI->getOperand(0);
-        if (V == module->ForceInitialisationCheckFunction) {
-          Changed = true;
-          CI->eraseFromParent();
-        }
-      }
-    }
-  }
-  return Changed;
-}
-
-FunctionPass* createLowerForcedCallsPass() {
-  return new LowerForcedCalls();
 }
 
 }
