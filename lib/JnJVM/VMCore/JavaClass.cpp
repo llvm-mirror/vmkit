@@ -983,6 +983,59 @@ void Class::getDeclaredFields(std::vector<JavaField*>& res,
   }
 }
 
+static JavaObject* getClassType(Jnjvm* vm, JnjvmClassLoader* loader,
+                                Typedef* type) {
+  UserCommonClass* res = type->assocClass(loader);
+  assert(res && "No associated class");
+  return res->getClassDelegatee(vm);
+}
+
+ArrayObject* JavaMethod::getParameterTypes(JnjvmClassLoader* loader) {
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  Signdef* sign = getSignature();
+  Typedef* const* arguments = sign->getArgumentsType();
+  ArrayObject* res = 
+    (ArrayObject*)vm->upcalls->classArrayClass->doNew(sign->nbArguments, vm);
+
+  for (uint32 index = 0; index < sign->nbArguments; ++index) {
+    res->elements[index] = getClassType(vm, loader, arguments[index]);
+  }
+
+  return res;
+
+}
+
+JavaObject* JavaMethod::getReturnType(JnjvmClassLoader* loader) {
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  Typedef* ret = getSignature()->getReturnType();
+  return getClassType(vm, loader, ret);
+}
+
+ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
+  Attribut* exceptionAtt = lookupAttribut(Attribut::exceptionsAttribut);
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  if (exceptionAtt == 0) {
+    return (ArrayObject*)vm->upcalls->classArrayClass->doNew(0, vm);
+  } else {
+    UserConstantPool* ctp = classDef->getConstantPool();
+    Reader reader(exceptionAtt, classDef->getBytes());
+    uint16 nbe = reader.readU2();
+    ArrayObject* res = 
+      (ArrayObject*)vm->upcalls->classArrayClass->doNew(nbe, vm);
+
+    for (uint16 i = 0; i < nbe; ++i) {
+      uint16 idx = reader.readU2();
+      UserCommonClass* cl = ctp->loadClass(idx);
+      assert(cl->asClass() && "Wrong exception type");
+      cl->asClass()->resolveClass();
+      JavaObject* obj = cl->getClassDelegatee(vm);
+      res->elements[i] = obj;
+    }
+    return res;
+  }
+}
+
+
 void Class::resolveStaticClass() {
   classLoader->getModule()->resolveStaticClass((Class*)this);
 }

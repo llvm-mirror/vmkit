@@ -28,6 +28,7 @@
 
 namespace jnjvm {
 
+class ArrayObject;
 class ArrayUInt8;
 class Enveloppe;
 class Class;
@@ -1000,10 +1001,30 @@ public:
   ///
   const char* printString() const;
   
-  /// jniConsFromMeth - Construct the JNI name of this method.
+  /// jniConsFromMeth - Construct the JNI name of this method as if
+  /// there is no other function in the class with the same name.
   ///
   void jniConsFromMeth(char* buf) const;
+
+  /// jniConsFromMethOverloaded - Construct the JNI name of this method
+  /// as if its name is overloaded in the class.
+  ///
   void jniConsFromMethOverloaded(char* buf) const;
+  
+  /// getParameterTypes - Get the java.lang.Class of the parameters of
+  /// the method, with the given class loader.
+  ///
+  ArrayObject* getParameterTypes(JnjvmClassLoader* loader);
+
+  /// getExceptionTypes - Get the java.lang.Class of the exceptions of the
+  /// method, with the given class loader.
+  ///
+  ArrayObject* getExceptionTypes(JnjvmClassLoader* loader);
+
+  /// getReturnType - Get the java.lang.Class of the result of the method,
+  /// with the given class loader.
+  ///
+  JavaObject* getReturnType(JnjvmClassLoader* loader);
   
 
 //===----------------------------------------------------------------------===//

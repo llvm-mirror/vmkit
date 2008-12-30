@@ -57,7 +57,7 @@ jobject cons) {
   UserClass* cl = internalGetClass(vm, meth, cons);
   JnjvmClassLoader* loader = cl->classLoader;
 
-  res = (jobject)(NativeUtil::getParameterTypes(loader, meth));
+  res = (jobject)meth->getParameterTypes(loader);
   END_NATIVE_EXCEPTION
 
   return res;
@@ -167,8 +167,9 @@ jobject cons) {
   JavaField* field = vm->upcalls->constructorSlot;
   JavaMethod* meth = (JavaMethod*)field->getInt32Field((JavaObject*)cons);
   UserClass* cl = internalGetClass(vm, meth, cons);
+  JnjvmClassLoader* loader = cl->classLoader;
 
-  res = (jobjectArray)NativeUtil::getExceptionTypes(cl, meth);
+  res = (jobjectArray)meth->getExceptionTypes(loader);
 
   END_NATIVE_EXCEPTION
 

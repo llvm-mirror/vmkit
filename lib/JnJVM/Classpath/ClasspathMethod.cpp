@@ -77,8 +77,7 @@ JNIEnv *env,
   JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
   UserClass* cl = internalGetClass(vm, meth, Meth);
   JnjvmClassLoader* loader = cl->classLoader;
-  Typedef* ret = meth->getSignature()->getReturnType();
-  res = (jclass)NativeUtil::getClassType(loader, ret);
+  res = (jclass)meth->getReturnType(loader);
 
   END_NATIVE_EXCEPTION
 
@@ -101,7 +100,8 @@ jobject Meth) {
   JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
   UserClass* cl = internalGetClass(vm, meth, Meth);
   JnjvmClassLoader* loader = cl->classLoader;
-  res = (jobject)(NativeUtil::getParameterTypes(loader, meth));
+  
+  res = (jobject)(meth->getParameterTypes(loader));
 
   END_NATIVE_EXCEPTION
 
@@ -262,7 +262,8 @@ jobject _meth) {
   JavaField* slot = vm->upcalls->methodSlot;
   JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)_meth);
   UserClass* cl = internalGetClass(vm, meth, _meth);
-  res = (jobjectArray)NativeUtil::getExceptionTypes(cl, meth);
+  JnjvmClassLoader* loader = cl->classLoader;
+  res = (jobjectArray)meth->getExceptionTypes(loader);
 
   END_NATIVE_EXCEPTION
 

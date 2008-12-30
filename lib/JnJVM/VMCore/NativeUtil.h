@@ -72,21 +72,6 @@ public:
   static void decapsulePrimitive(Jnjvm *vm, uintptr_t &buf, JavaObject* obj,
                                  const Typedef* signature);
 
-  /// getClassType - Return the java.lang.Class of the type, with the given
-  /// class loader.
-  ///
-  static JavaObject* getClassType(JnjvmClassLoader* loader, Typedef* type);
-
-  /// getParameterTypes - Get the java.lang.Class of the parameters of
-  /// the method, with the given class loader.
-  ///
-  static ArrayObject* getParameterTypes(JnjvmClassLoader* loader, JavaMethod* meth);
-
-  /// getExceptionTypes - Get the java.lang.Class of the exceptions of the
-  /// method, with the given class loader.
-  ///
-  static ArrayObject* getExceptionTypes(UserClass* cl, JavaMethod* meth);
-
 };
 
 }
