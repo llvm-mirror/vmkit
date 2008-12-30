@@ -122,10 +122,8 @@ public:
  
 public:
 
-#ifdef ISOLATE
   /// IsolateID - The Isolate ID of the thread's VM.
   size_t IsolateID;
-#endif
 
   /// MyVM - The VM attached to this Thread.
   VirtualMachine* MyVM;

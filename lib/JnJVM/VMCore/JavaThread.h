@@ -69,6 +69,10 @@ public:
   ///
   static VirtualTable *VT;
 
+  /// jniEnv - The JNI environment of the thread.
+  ///
+  void* jniEnv;
+
   /// javaThread - The Java representation of this thread.
   ///
   JavaObject* javaThread;

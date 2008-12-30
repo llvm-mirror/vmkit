@@ -31,6 +31,7 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
   interruptFlag = 0;
   state = StateRunning;
   pendingException = 0;
+  jniEnv = isolate->jniEnv;
 #ifdef SERVICE
   eipIndex = 0;
   replacedEIPs = new void*[100];

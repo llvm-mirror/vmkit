@@ -60,6 +60,7 @@ const llvm::Type* JnjvmModule::UTF8Type = 0;
 const llvm::Type* JnjvmModule::JavaFieldType = 0;
 const llvm::Type* JnjvmModule::JavaMethodType = 0;
 const llvm::Type* JnjvmModule::AttributType = 0;
+const llvm::Type* JnjvmModule::JavaThreadType = 0;
 
 #ifdef ISOLATE_SHARING
 const llvm::Type* JnjvmModule::JnjvmType = 0;
@@ -1758,6 +1759,8 @@ void JnjvmModule::initialise() {
     PointerType::getUnqual(module->getTypeByName("UTF8"));
   AttributType =
     PointerType::getUnqual(module->getTypeByName("Attribut"));
+  JavaThreadType =
+    PointerType::getUnqual(module->getTypeByName("JavaThread"));
 
 #ifdef WITH_TRACER
   MarkAndTraceType = module->getFunction("MarkAndTrace")->getFunctionType();

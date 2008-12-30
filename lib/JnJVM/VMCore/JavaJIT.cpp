@@ -230,10 +230,23 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   uint32 nargs = func->arg_size() + 1 + (stat ? 1 : 0); 
   std::vector<Value*> nativeArgs;
   
-  int64_t jniEnv = (int64_t)&(JavaThread::get()->getJVM()->jniEnv);
-  nativeArgs.push_back(
-    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, jniEnv), 
-                              module->ptrType));
+  Value* threadId = CallInst::Create(module->llvm_frameaddress,
+                                     module->constantZero, "", currentBlock);
+  threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
+                              currentBlock);
+  threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+                                       "", currentBlock);
+  threadId = new IntToPtrInst(threadId, module->JavaThreadType, "", currentBlock);
+
+
+  Value* geps[2] = { module->constantZero, module->constantEight };
+
+  Value* jniEnv = GetElementPtrInst::Create(threadId, geps, geps + 2, "",
+                                            currentBlock);
+ 
+  jniEnv = new BitCastInst(jniEnv, module->ptrType, "", currentBlock);
+
+  nativeArgs.push_back(jniEnv);
 
   uint32 index = 0;
   if (stat) {
