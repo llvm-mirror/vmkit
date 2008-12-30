@@ -74,15 +74,44 @@ extern "C" VMObject* System_Type_GetTypeFromHandle(VMCommonClass* cl) {
 
 
 extern "C" VMObject* System_Reflection_Assembly_GetCallingAssembly() {
-  Assembly* ass = Assembly::getCallingAssembly();
-  assert(ass);
-  return ass->getAssemblyDelegatee();
+  // Call to this function.
+  void** cur = (void**)__builtin_frame_address(0);
+  
+  // Stub from CLI to native.
+  cur = (void**)cur[0];
+
+  // The CLI function.
+  cur = (void**)cur[0];
+  
+  // The caller of the CLI function;
+  cur = (void**)cur[0];
+ 
+  VirtualMachine* vm = VMThread::get()->vm;
+
+  VMMethod* meth = vm->IPToMethod<VMMethod>(FRAME_IP(cur));
+
+  assert(meth && "Wrong stack");
+  
+  return meth->classDef->assembly->getAssemblyDelegatee();
 }
 
 extern "C" VMObject* System_Reflection_Assembly_GetExecutingAssembly() {
-  Assembly* ass = Assembly::getExecutingAssembly();
-  assert(ass);
-  return ass->getAssemblyDelegatee();
+  // Call to this function.
+  void** cur = (void**)__builtin_frame_address(0);
+  
+  // Stub from CLI to native.
+  cur = (void**)cur[0];
+
+  // The CLI function.
+  cur = (void**)cur[0];
+  
+  VirtualMachine* vm = VMThread::get()->vm;
+
+  VMMethod* meth = vm->IPToMethod<VMMethod>(FRAME_IP(cur));
+
+  assert(meth && "Wrong stack");
+  
+  return meth->classDef->assembly->getAssemblyDelegatee();
 }
 
 extern "C" void System_Reflection_Assembly_LoadFromFile() {

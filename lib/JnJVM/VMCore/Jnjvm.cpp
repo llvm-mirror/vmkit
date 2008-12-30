@@ -1199,38 +1199,20 @@ void Jnjvm::compile(const char* n) {
 
 
 
-void Jnjvm::addMethodInFunctionMap(JavaMethod* meth, void* addr) {
-  FunctionMapLock.acquire();
-  JavaFunctionMap.insert(std::make_pair(addr, meth));
-  FunctionMapLock.release();
-}
-
 void Jnjvm::removeMethodsInFunctionMap(JnjvmClassLoader* loader) {
   // Loop over all methods in the map to find which ones belong
   // to this class loader.
   FunctionMapLock.acquire();
-  std::map<void*, JavaMethod*>::iterator temp;
-  for (std::map<void*, JavaMethod*>::iterator i = JavaFunctionMap.begin(), 
-       e = JavaFunctionMap.end(); i != e;) {
-    if (i->second->classDef->classLoader == loader) {
+  std::map<void*, void*>::iterator temp;
+  for (std::map<void*, void*>::iterator i = Functions.begin(), 
+       e = Functions.end(); i != e;) {
+    if (((JavaMethod*)i->second)->classDef->classLoader == loader) {
       temp = i;
       ++i;
-      JavaFunctionMap.erase(temp);
+      Functions.erase(temp);
     } else {
       ++i;
     }
   }
   FunctionMapLock.release();
-}
-
-JavaMethod* Jnjvm::IPToJavaMethod(void* Addr) {
-  FunctionMapLock.acquire();
-  std::map<void*, JavaMethod*>::iterator I = JavaFunctionMap.upper_bound(Addr);
-  assert(I != JavaFunctionMap.begin() && "Wrong value in function map");
-  FunctionMapLock.release();
-
-  // Decrement because we had the "greater than" value.
-  I--;
-  return I->second;
-
 }

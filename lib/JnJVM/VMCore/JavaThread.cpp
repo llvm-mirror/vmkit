@@ -106,7 +106,7 @@ UserClass* JavaThread::getCallingClass() {
   addr = (void**)addr[0];
   void* ip = FRAME_IP(addr);
 
-  JavaMethod* meth = getJVM()->IPToJavaMethod(ip);
+  JavaMethod* meth = getJVM()->IPToMethod<JavaMethod>(ip);
 
   return meth->classDef;
 }
@@ -168,7 +168,7 @@ void JavaThread::printBacktrace() {
 
     do {
       void* ip = FRAME_IP(addr);
-      JavaMethod* meth = vm->IPToJavaMethod(ip);
+      JavaMethod* meth = vm->IPToMethod<JavaMethod>(ip);
       assert(meth && "Wrong stack");
       fprintf(stderr, "; %p in %s\n",  ip, meth->printString());
       addr = (void**)addr[0];

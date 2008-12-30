@@ -28,7 +28,6 @@ namespace mvm {
 
 class LockNormal;
 class MvmMemoryManager;
-class Thread;
 
 const double MaxDouble = +INFINITY; //1.0 / 0.0;
 const double MinDouble = -INFINITY;//-1.0 / 0.0;
@@ -166,7 +165,6 @@ public:
 
   static int disassemble(unsigned int* addr);
 
-  static int getBacktrace(void** stack, int size);
   static const llvm::Function* getCodeFromPointer(void* addr);
   static void addMethodInfo(void* end, const llvm::Function* F);
 

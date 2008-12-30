@@ -266,17 +266,6 @@ void MvmModule::runPasses(llvm::Function* func,
   pm->run(*func);
 }
 
-int MvmModule::getBacktrace(void** stack, int size) {
-  void** addr = (void**)__builtin_frame_address(0);
-  int cpt = 0;
-  void* baseSP = mvm::Thread::get()->baseSP;
-  while (addr && cpt < size && addr < baseSP && addr < addr[0]) {
-    addr = (void**)addr[0];
-    stack[cpt++] = (void**)FRAME_IP(addr);
-  }
-  return cpt;
-}
-
 static LockNormal lock;
 static std::map<void*, const llvm::Function*> pointerMap;
 

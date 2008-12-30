@@ -47,7 +47,7 @@ jclass clazz,
   uint32 index = 0;
  
   for (; i != e; ++i) {
-    JavaMethod* meth = vm->IPToJavaMethod(*i);
+    JavaMethod* meth = vm->IPToMethod<JavaMethod>(*i);
     assert(meth && "Wrong stack trace");
     res->elements[index++] = meth->classDef->getClassDelegatee(vm);
   }

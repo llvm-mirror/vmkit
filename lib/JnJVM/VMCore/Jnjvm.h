@@ -342,31 +342,10 @@ public:
   ///
   virtual void waitForExit();
   
-private:
-
-  /// JavaFunctionMap - Map of Java method to function pointers. This map is
-  /// used when walking the stack so that VMKit knows which Java method is
-  /// executing on the stack.
-  ///
-  std::map<void*, JavaMethod*> JavaFunctionMap;
-
-  /// FunctionMapLock - Spin lock to protect the JavaFunctionMap.
-  ///
-  mvm::SpinLock FunctionMapLock;
-
-public:
-  /// addMethodInFunctionMap - A new method pointer in the function map.
-  ///
-  void addMethodInFunctionMap(JavaMethod* meth, void* addr);
-  
   /// removeMethodsInFunctionMap - Removes all methods compiled by this
   /// class loader from the function map.
   ///
   void removeMethodsInFunctionMap(JnjvmClassLoader* loader);
-
-  /// IPToJavaMethod - Map an instruction pointer to the Java method.
-  ///
-  JavaMethod* IPToJavaMethod(void* ip);
 
 #ifdef ISOLATE
   static Jnjvm* RunningIsolates[NR_ISOLATES];

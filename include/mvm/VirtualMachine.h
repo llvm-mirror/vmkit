@@ -20,6 +20,9 @@
 #include "mvm/Object.h"
 #include "mvm/Threads/Locks.h"
 
+#include <cassert>
+#include <map>
+
 namespace mvm {
 
 /// VirtualMachine - This class is the root of virtual machine classes. It
@@ -56,7 +59,41 @@ public:
   
   static CompilationUnit* initialiseCLIVM();
   static VirtualMachine* createCLIVM(CompilationUnit* C = 0);
+ 
+protected:
+
+  /// JavaFunctionMap - Map of Java method to function pointers. This map is
+  /// used when walking the stack so that VMKit knows which Java method is
+  /// executing on the stack.
+  ///
+  std::map<void*, void*> Functions;
+
+  /// FunctionMapLock - Spin lock to protect the JavaFunctionMap.
+  ///
+  mvm::SpinLock FunctionMapLock;
+
+public:
+  /// addMethodInFunctionMap - A new method pointer in the function map.
+  ///
+  template <typename T>
+  void addMethodInFunctionMap(T* meth, void* addr) {
+    FunctionMapLock.acquire();
+    Functions.insert(std::make_pair((void*)addr, meth));
+    FunctionMapLock.release();
+  }
   
+  /// IPToJavaMethod - Map an instruction pointer to the Java method.
+  ///
+  template <typename T> T* IPToMethod(void* ip) {
+    FunctionMapLock.acquire();
+    std::map<void*, void*>::iterator I = Functions.upper_bound(ip);
+    assert(I != Functions.begin() && "Wrong value in function map");
+    FunctionMapLock.release();
+
+    // Decrement because we had the "greater than" value.
+    I--;
+    return (T*)I->second;
+  }
 
 #ifdef ISOLATE
   size_t IsolateID;

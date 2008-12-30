@@ -195,6 +195,18 @@ public:
   VirtualMachine* stoppingService;  
 #endif
 
+  /// getBacktrace - Return the back trace of this thread.
+  ///
+  int getBacktrace(void** stack, int size) {
+    void** addr = (void**)__builtin_frame_address(0);
+    int cpt = 0;
+    while (addr && cpt < size && addr < baseSP && addr < addr[0]) {
+      addr = (void**)addr[0];
+      stack[cpt++] = (void**)FRAME_IP(addr);
+    }
+    return cpt;
+  }
+
 };
 
 

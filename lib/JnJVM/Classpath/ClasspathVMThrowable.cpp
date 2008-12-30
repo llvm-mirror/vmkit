@@ -104,7 +104,7 @@ jobject vmthrow, jobject throwable) {
   std::vector<void*>::iterator i = stack->begin(), e = stack->end();
   uint32 index = 0;
   while (i != e) {
-    JavaMethod* meth = vm->IPToJavaMethod(*i);
+    JavaMethod* meth = vm->IPToMethod<JavaMethod>(*i);
     assert(meth && "Wrong stack trace");
     if (meth->classDef->subclassOf(vm->upcalls->newThrowable)) {
       ++i;
@@ -117,7 +117,7 @@ jobject vmthrow, jobject throwable) {
   
   index = 0;
   for (; i != e; ++i) {
-    JavaMethod* meth = vm->IPToJavaMethod(*i);
+    JavaMethod* meth = vm->IPToMethod<JavaMethod>(*i);
     assert(meth && "Wrong stack trace");
     res->elements[index++] = consStackElement(meth, *i);
   }
