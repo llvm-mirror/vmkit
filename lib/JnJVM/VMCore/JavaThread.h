@@ -150,7 +150,7 @@ public:
 
   /// currentThread - Return the current thread as a Java object.
   ///
-  static JavaObject* currentThread() {
+  JavaObject* currentThread() {
     JavaThread* result = get();
     if (result != 0)
       return result->javaThread;
@@ -160,7 +160,7 @@ public:
  
   /// getException - Return the C++ specific exception object.
   ///
-  static void* getException() {
+  void* getException() {
     // 32 = sizeof(_Unwind_Exception) in libgcc...
     return (void*)
       ((uintptr_t)JavaThread::get()->internalPendingException - 32);
@@ -168,17 +168,17 @@ public:
  
   /// throwException - Throw the given exception in the current thread.
   ///
-  static void throwException(JavaObject* obj);
+  void throwException(JavaObject* obj);
 
   /// throwPendingException - Throw a pending exception created by JNI.
   ///
-  static void throwPendingException();
+  void throwPendingException();
   
   /// compareException - Compare the pending exception's class with the
   /// given class.
   ///
-  static bool compareException(UserClass* cl) {
-    JavaObject* pe = JavaThread::get()->pendingException;
+  bool compareException(UserClass* cl) {
+    JavaObject* pe = pendingException;
     assert(pe && "no pending exception?");
     bool val = pe->classOf->subclassOf(cl);
     return val;
@@ -186,8 +186,8 @@ public:
   
   /// getJavaException - Return the pending exception.
   ///
-  static JavaObject* getJavaException() {
-    return JavaThread::get()->pendingException;
+  JavaObject* getJavaException() {
+    return pendingException;
   }
 
   /// throwFromJNI - Throw an exception after executing JNI code.

@@ -155,6 +155,7 @@ jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
     }
     
     JavaObject* exc = 0;
+    JavaThread* th = JavaThread::get();
 
 #define RUN_METH(TYPE) \
     try{ \
@@ -169,16 +170,16 @@ jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
         val = meth->invoke##TYPE##StaticBuf(vm, cl, _buf); \
       } \
     }catch(...) { \
-      exc = JavaThread::getJavaException(); \
+      exc = th->getJavaException(); \
       assert(exc && "no exception?"); \
-      JavaThread::clearException(); \
+      th->clearException(); \
     } \
     \
     if (exc) { \
       if (exc->classOf->isAssignableFrom(vm->upcalls->newException)) { \
-        JavaThread::get()->getJVM()->invocationTargetException(exc); \
+        th->getJVM()->invocationTargetException(exc); \
       } else { \
-        JavaThread::throwException(exc); \
+        th->throwException(exc); \
       } \
     } \
     

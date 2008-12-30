@@ -168,9 +168,8 @@ public:
 
 
   /// clearException - Clear any pending exception of the current thread.
-  static void clearException() {
-    Thread* th = Thread::get();
-    th->internalClearException();
+  void clearException() {
+    internalClearException();
   }
 
   /// IDMask - Apply this mask to the stack pointer to get the Thread object.

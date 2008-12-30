@@ -394,27 +394,27 @@ extern "C" bool isAssignableFrom(UserCommonClass* cl1, UserCommonClass* cl2) {
 
 // Never throws.
 extern "C" void* JavaThreadGetException() {
-  return JavaThread::getException();
+  return JavaThread::get()->getException();
 }
 
 // Never throws.
 extern "C" JavaObject* JavaThreadGetJavaException() {
-  return JavaThread::getJavaException();
+  return JavaThread::get()->getJavaException();
 }
 
 // Does not call any Java code.
 extern "C" void JavaThreadThrowException(JavaObject* obj) {
-  return JavaThread::throwException(obj);
+  return JavaThread::get()->throwException(obj);
 }
 
 // Never throws.
 extern "C" bool JavaThreadCompareException(UserClass* cl) {
-  return JavaThread::compareException(cl);
+  return JavaThread::get()->compareException(cl);
 }
 
 // Never throws.
 extern "C" void JavaThreadClearException() {
-  return JavaThread::clearException();
+  return JavaThread::get()->clearException();
 }
 
 // Never throws.
@@ -426,66 +426,71 @@ extern "C" void overflowThinLock(JavaObject* obj) {
 extern "C" void jnjvmNullPointerException() {
   
   JavaObject *exc = 0;
+  JavaThread *th = JavaThread::get();
 
   BEGIN_NATIVE_EXCEPTION(1)
   
-  exc = JavaThread::get()->getJVM()->CreateNullPointerException();
+  exc = th->getJVM()->CreateNullPointerException();
 
   END_NATIVE_EXCEPTION
 
-  JavaThread::throwException(exc);
+  th->throwException(exc);
 }
 
 // Creates a Java object and then throws it.
 extern "C" void negativeArraySizeException(sint32 val) {
   JavaObject *exc = 0;
+  JavaThread *th = JavaThread::get();
 
   BEGIN_NATIVE_EXCEPTION(1)
   
-  exc = JavaThread::get()->getJVM()->CreateNegativeArraySizeException();
+  exc = th->getJVM()->CreateNegativeArraySizeException();
 
   END_NATIVE_EXCEPTION
 
-  JavaThread::throwException(exc);
+  th->throwException(exc);
 }
 
 // Creates a Java object and then throws it.
 extern "C" void outOfMemoryError(sint32 val) {
   JavaObject *exc = 0;
+  JavaThread *th = JavaThread::get();
 
   BEGIN_NATIVE_EXCEPTION(1)
   
-  exc = JavaThread::get()->getJVM()->CreateOutOfMemoryError();
+  exc = th->getJVM()->CreateOutOfMemoryError();
 
   END_NATIVE_EXCEPTION
 
-  JavaThread::throwException(exc);
+  th->throwException(exc);
 }
 
 // Creates a Java object and then throws it.
 extern "C" void jnjvmClassCastException(JavaObject* obj, UserCommonClass* cl) {
   JavaObject *exc = 0;
+  JavaThread *th = JavaThread::get();
 
   BEGIN_NATIVE_EXCEPTION(1)
   
-  exc = JavaThread::get()->getJVM()->CreateClassCastException(obj, cl);
+  exc = th->getJVM()->CreateClassCastException(obj, cl);
 
   END_NATIVE_EXCEPTION
 
-  JavaThread::throwException(exc);
+  th->throwException(exc);
 }
 
 // Creates a Java object and then throws it.
 extern "C" void indexOutOfBoundsException(JavaObject* obj, sint32 index) {
   JavaObject *exc = 0;
+  JavaThread *th = JavaThread::get();
 
   BEGIN_NATIVE_EXCEPTION(1)
   
-  exc = JavaThread::get()->getJVM()->CreateIndexOutOfBoundsException(index);
+  exc = th->getJVM()->CreateIndexOutOfBoundsException(index);
 
   END_NATIVE_EXCEPTION
 
-  JavaThread::throwException(exc);
+  th->throwException(exc);
 }
 
 extern "C" void printMethodStart(JavaMethod* meth) {

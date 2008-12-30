@@ -94,7 +94,7 @@ void GCCollector::do_collect() {
       try {
         dest(c);
       } catch(...) {
-        mvm::Thread::clearException();
+        mvm::Thread::get()->clearException();
       }
     }
   }

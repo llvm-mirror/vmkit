@@ -494,7 +494,7 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 jobject throwable) {
-  JavaThread::throwException((JavaObject*)throwable);
+  JavaThread::get()->throwException((JavaObject*)throwable);
 }
 
 JNIEXPORT jobjectArray Java_java_lang_VMClass_getDeclaredAnnotations(

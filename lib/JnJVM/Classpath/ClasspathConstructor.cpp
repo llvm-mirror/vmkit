@@ -120,11 +120,12 @@ jobject _cons, jobject _args, jclass Clazz, jint _meth) {
       }
       
       JavaObject* excp = 0;
+      JavaThread* th = JavaThread::get();
       try {
         meth->invokeIntSpecialBuf(vm, cl, obj, startBuf);
       }catch(...) {
-        excp = JavaThread::getJavaException();
-        JavaThread::clearException();
+        excp = th->getJavaException();
+        th->clearException();
       }
       if (excp) {
         if (excp->classOf->isAssignableFrom(vm->upcalls->newException)) {
@@ -133,7 +134,7 @@ jobject _cons, jobject _args, jclass Clazz, jint _meth) {
           vm->invocationTargetException(excp);
         } else {
           // If it's an error, throw it again.
-          JavaThread::throwException(excp);
+          th->throwException(excp);
         }
       }
     

@@ -29,7 +29,7 @@ JNIEnv *env,
 jclass clazz
 #endif
 ) {
-  return (jobject)(JavaThread::currentThread());
+  return (jobject)(JavaThread::get()->currentThread());
 }
 
 static void start(JavaThread* thread) {

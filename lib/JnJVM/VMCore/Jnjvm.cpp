@@ -74,7 +74,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //    current thread can obtain the lock for that object
     //    (Java specification §8.13).
     acquire();
-    mvm::Thread* self = mvm::Thread::get();
+    JavaThread* self = JavaThread::get();
 
     if (getInitializationState() == inClinit) {
       // 2. If initialization by some other thread is in progress for the
@@ -147,9 +147,9 @@ void UserClass::initialiseClass(Jnjvm* vm) {
       try {
         super->initialiseClass(vm);
       } catch(...) {
-        exc = JavaThread::getJavaException();
+        exc = self->getJavaException();
         assert(exc && "no exception?");
-        JavaThread::clearException();
+        self->clearException();
       }
       
       if (exc) {
@@ -158,7 +158,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
         setOwnerClass(0);
         broadcastClass();
         release();
-        JavaThread::throwException(exc);
+        self->throwException(exc);
       }
     }
  
@@ -196,9 +196,9 @@ void UserClass::initialiseClass(Jnjvm* vm) {
       try{
         meth->invokeIntStatic(vm, cl);
       } catch(...) {
-        exc = JavaThread::getJavaException();
+        exc = self->getJavaException();
         assert(exc && "no exception?");
-        JavaThread::clearException();
+        self->clearException();
       }
     }
 #ifdef SERVICE
@@ -228,7 +228,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     if (exc->classOf->isAssignableFrom(vm->upcalls->newException)) {
       Classpath* upcalls = classLoader->bootstrapLoader->upcalls;
       UserClass* clExcp = upcalls->ExceptionInInitializerError;
-      Jnjvm* vm = JavaThread::get()->getJVM();
+      Jnjvm* vm = self->getJVM();
       JavaObject* obj = clExcp->doNew(vm);
       if (!obj) {
         fprintf(stderr, "implement me");
@@ -247,7 +247,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     setOwnerClass(0);
     broadcastClass();
     release();
-    JavaThread::throwException(exc);
+    self->throwException(exc);
   }
 }
       
@@ -255,7 +255,7 @@ void Jnjvm::errorWithExcp(UserClass* cl, JavaMethod* init,
                           const JavaObject* excp) {
   JavaObject* obj = cl->doNew(this);
   init->invokeIntSpecial(this, cl, obj, excp);
-  JavaThread::throwException(obj);
+  JavaThread::get()->throwException(obj);
 }
 
 JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
@@ -274,7 +274,7 @@ void Jnjvm::error(UserClass* cl, JavaMethod* init, const char* fmt, ...) {
   
   if (cl && !bootstrapLoader->getModule()->isStaticCompiling()) {
     JavaObject* obj = CreateError(cl, init, tmp);
-    JavaThread::throwException(obj);
+    JavaThread::get()->throwException(obj);
   } else {
     throw std::string(tmp);
   }
@@ -864,7 +864,7 @@ void Jnjvm::loadBootstrap() {
 #endif
   mapInitialThread();
   loadAppClassLoader();
-  JavaObject* obj = JavaThread::currentThread();
+  JavaObject* obj = JavaThread::get()->currentThread();
   JavaObject* javaLoader = appClassLoader->getJavaClassLoader();
 #ifdef SERVICE
   if (!IsolateID)
@@ -895,8 +895,9 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
 
   JavaObject* exc = JavaThread::get()->pendingException;
   if (exc) {
-    JavaThread::clearException();
-    JavaObject* obj = JavaThread::currentThread();
+    JavaThread* th = JavaThread::get();
+    th->clearException();
+    JavaObject* obj = th->currentThread();
     JavaObject* group = 
       upcalls->group->getObjectField(obj);
     try{

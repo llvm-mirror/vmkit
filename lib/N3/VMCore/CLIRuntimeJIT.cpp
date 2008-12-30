@@ -77,7 +77,7 @@ extern "C" bool CompareException(VMClass* cl) {
 }
 
 extern "C" void ClearException() {
-  return VMThread::clearException();
+  return VMThread::get()->clearException();
 }
 
 static VMObject* doMultiNewIntern(VMClassArray* cl, uint32 dim, sint32* buf) {

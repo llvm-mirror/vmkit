@@ -2560,8 +2560,9 @@ jint GetEnv(JavaVM *vm, void **env, jint version) {
 
   BEGIN_JNI_EXCEPTION
 
-  JavaObject* th = JavaThread::currentThread();
-  Jnjvm* myvm = JavaThread::get()->getJVM();
+  JavaThread* _th = JavaThread::get();
+  JavaObject* th = _th->currentThread();
+  Jnjvm* myvm = _th->getJVM();
   if (th != 0) {
     (*env) = &(myvm->jniEnv);
     return JNI_OK;
