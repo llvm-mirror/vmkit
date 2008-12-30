@@ -25,34 +25,30 @@ class Typedef;
 
 
 #define BEGIN_NATIVE_EXCEPTION(level) \
-  JavaObject* excp = 0; \
   JavaThread* __th = JavaThread::get(); \
   __th->startNative(level); \
+  bool __exc = false; \
   try {
 
 #define END_NATIVE_EXCEPTION \
   } catch(...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
+    __exc = true; \
   } \
-  if (excp) { \
-    __th->pendingException = excp; \
+  if (__exc) { \
     __th->throwFromNative(); \
   } \
   __th->endNative();
 
 #define BEGIN_JNI_EXCEPTION \
-  JavaObject* excp = 0; \
+  JavaThread* th = JavaThread::get(); \
+  bool __exc = 0; \
   try {
 
 #define END_JNI_EXCEPTION \
   } catch(...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
+    __exc = true; \
   } \
-  if (excp) { \
-    JavaThread* th = JavaThread::get(); \
-    th->pendingException = excp; \
+  if (__exc) { \
     th->throwFromJNI(); \
   }
 

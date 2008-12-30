@@ -130,13 +130,13 @@ jint Throw(JNIEnv *env, jthrowable obj) {
 }
 
 
-jint ThrowNew(JNIEnv* env, jclass clazz, const char *msg) {
+jint ThrowNew(JNIEnv* env, jclass Cl, const char *msg) {
   
   BEGIN_JNI_EXCEPTION
   
-  JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, clazz, true);
+  Jnjvm* vm = NativeUtil::myVM(env);
+  verifyNull(Cl);
+  UserCommonClass* cl = NativeUtil::resolvedImplClass(vm, Cl, true);
   if (!cl->asClass()) assert(0 && "implement me");
   UserClass* realCl = cl->asClass();
   JavaObject* res = realCl->doNew(vm);

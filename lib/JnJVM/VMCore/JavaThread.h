@@ -164,6 +164,7 @@ public:
   ///
   void throwFromJNI() {
     assert(sjlj_buffers.size());
+    internalPendingException = 0;
 #if defined(__MACH__)
     longjmp((int*)sjlj_buffers.back(), 1);
 #else

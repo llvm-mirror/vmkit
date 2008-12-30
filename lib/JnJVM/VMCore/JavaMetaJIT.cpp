@@ -71,18 +71,16 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObje
   void* _buf = (void*)buf; \
   readArgs(buf, sign, ap); \
   void* func = (((void***)obj)[0])[offset];\
-  JavaObject* excp = 0; \
+  bool exc = false; \
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
   try { \
     res = ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(cl->getConstantPool(), func, obj, _buf);\
   } catch (...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
+    exc = true; \
   } \
-  if (excp) { \
-    th->pendingException = excp; \
+  if (exc) { \
     th->throwFromJava(); \
   } \
   th->endJava(); \
@@ -101,18 +99,16 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObje
   void* _buf = (void*)buf; \
   readArgs(buf, sign, ap); \
   void* func = this->compiledPtr();\
-  JavaObject* excp = 0; \
+  bool exc = false; \
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
   try { \
     res = ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(cl->getConstantPool(), func, obj, _buf);\
   } catch (...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
+    exc = true; \
   } \
-  if (excp) { \
-    th->pendingException = excp; \
+  if (exc) { \
     th->throwFromJava(); \
   } \
   th->endJava(); \
@@ -130,18 +126,16 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
   void* _buf = (void*)buf; \
   readArgs(buf, sign, ap); \
   void* func = this->compiledPtr();\
-  JavaObject* excp = 0; \
+  bool exc = false; \
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
   try { \
     res = ((FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf())(cl->getConstantPool(), func, _buf);\
   } catch (...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
+    exc = true; \
   } \
-  if (excp) { \
-    th->pendingException = excp; \
+  if (exc) { \
     th->throwFromJava(); \
   } \
   th->endJava(); \
@@ -158,18 +152,16 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObj
   \
   Signdef* sign = getSignature(); \
   void* func = (((void***)obj)[0])[offset];\
-  JavaObject* excp = 0; \
+  bool exc = false; \
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
   try { \
     res = ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(cl->getConstantPool(), func, obj, buf);\
   } catch (...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
+    exc = true; \
   } \
-  if (excp) { \
-    th->pendingException = excp; \
+  if (exc) { \
     th->throwFromJava(); \
   } \
   th->endJava(); \
@@ -185,18 +177,16 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObj
   verifyNull(obj);\
   void* func = this->compiledPtr();\
   Signdef* sign = getSignature(); \
-  JavaObject* excp = 0; \
+  bool exc = false; \
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
   try { \
     res = ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(cl->getConstantPool(), func, obj, buf);\
   } catch (...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
+    exc = true; \
   } \
-  if (excp) { \
-    th->pendingException = excp; \
+  if (exc) { \
     th->throwFromJava(); \
   } \
   th->endJava(); \
@@ -211,18 +201,16 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* bu
   \
   void* func = this->compiledPtr();\
   Signdef* sign = getSignature(); \
-  JavaObject* excp = 0; \
+  bool exc = false; \
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
   try { \
     res = ((FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf())(cl->getConstantPool(), func, buf);\
   } catch (...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
+    exc = true; \
   } \
-  if (excp) { \
-    th->pendingException = excp; \
+  if (exc) { \
     th->throwFromJava(); \
   } \
   th->endJava(); \
@@ -266,18 +254,16 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObje
   verifyNull(obj); \
   void* func = (((void***)obj)[0])[offset];\
   Signdef* sign = getSignature(); \
-  JavaObject* excp = 0; \
+  bool exc = false; \
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
   try { \
     res = ((FUNC_TYPE_VIRTUAL_AP)sign->getVirtualCallAP())(cl->getConstantPool(), func, obj, ap);\
   } catch (...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
+    exc = true; \
   } \
-  if (excp) { \
-    th->pendingException = excp; \
+  if (exc) { \
     th->throwFromJava(); \
   } \
   th->endJava(); \
@@ -293,18 +279,16 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObje
   verifyNull(obj);\
   void* func = this->compiledPtr();\
   Signdef* sign = getSignature(); \
-  JavaObject* excp = 0; \
+  bool exc = false; \
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
   try { \
     res = ((FUNC_TYPE_VIRTUAL_AP)sign->getVirtualCallAP())(cl->getConstantPool(), func, obj, ap);\
   } catch (...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
+    exc = true; \
   } \
-  if (excp) { \
-    th->pendingException = excp; \
+  if (exc) { \
     th->throwFromJava(); \
   } \
   th->endJava(); \
@@ -319,18 +303,16 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
   \
   void* func = this->compiledPtr();\
   Signdef* sign = getSignature(); \
-  JavaObject* excp = 0; \
+  bool exc = false; \
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
   try { \
     res = ((FUNC_TYPE_STATIC_AP)sign->getStaticCallAP())(cl->getConstantPool(), func, ap);\
   } catch (...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
+    exc = true; \
   } \
-  if (excp) { \
-    th->pendingException = excp; \
+  if (exc) { \
     th->throwFromJava(); \
   } \
   th->endJava(); \
@@ -346,18 +328,16 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObj
   verifyNull(obj);\
   void* func = (((void***)obj)[0])[offset];\
   Signdef* sign = getSignature(); \
-  JavaObject* excp = 0; \
+  bool exc = false; \
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
   try { \
     res = ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(cl->getConstantPool(), func, obj, buf);\
   } catch (...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
+    exc = true; \
   } \
-  if (excp) { \
-    th->pendingException = excp; \
+  if (exc) { \
     th->throwFromJava(); \
   } \
   th->endJava(); \
@@ -373,18 +353,16 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObj
   verifyNull(obj);\
   void* func = this->compiledPtr();\
   Signdef* sign = getSignature(); \
-  JavaObject* excp = 0; \
+  bool exc = 0; \
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
   try { \
     res = ((FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf())(cl->getConstantPool(), func, obj, buf);\
   } catch (...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
+    exc = true; \
   } \
-  if (excp) { \
-    th->pendingException = excp; \
+  if (exc) { \
     th->throwFromJava(); \
   } \
   th->endJava(); \
@@ -399,18 +377,16 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* bu
   \
   void* func = this->compiledPtr();\
   Signdef* sign = getSignature(); \
-  JavaObject* excp = 0; \
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
+  bool exc = false; \
   TYPE res = 0; \
   try { \
     res = ((FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf())(cl->getConstantPool(), func, buf);\
   } catch (...) { \
-    excp = JavaThread::getJavaException(); \
-    JavaThread::clearException(); \
+    exc = true; \
   } \
-  if (excp) { \
-    th->pendingException = excp; \
+  if (exc) { \
     th->throwFromJava(); \
   } \
   th->endJava(); \

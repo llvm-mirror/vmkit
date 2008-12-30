@@ -108,8 +108,7 @@ UserClass* JavaThread::getCallingClass() {
 
   JavaMethod* meth = getJVM()->IPToJavaMethod(ip);
 
-  if (meth) return meth->classDef;
-  else return 0;
+  return meth->classDef;
 }
 
 void JavaThread::getJavaFrameContext(std::vector<void*>& context) {
@@ -128,7 +127,7 @@ void JavaThread::getJavaFrameContext(std::vector<void*>& context) {
       void* ip = FRAME_IP(addr);
       context.push_back(ip);
       addr = (void**)addr[0];
-      // End walking the stack when we cross a native -> Java call. Here
+      // We end walking the stack when we cross a native -> Java call. Here
       // the iterator points to a native -> Java call. We dereference addr twice
       // because a native -> Java call always contains the signature function.
     } while (((void***)addr)[0][0] != *it);

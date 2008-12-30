@@ -8,7 +8,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <string.h>
+#include <cstring>
 
 #include "types.h"
 
@@ -107,7 +107,7 @@ extern "C" JavaObject* getCallingClassLoader() {
   BEGIN_NATIVE_EXCEPTION(0)
   JavaThread* th = JavaThread::get();
   UserClass* cl = th->getCallingClass();
-  if (cl) res = cl->classLoader->getJavaClassLoader();  
+  res = cl->classLoader->getJavaClassLoader();  
   END_NATIVE_EXCEPTION
 
   return res;
