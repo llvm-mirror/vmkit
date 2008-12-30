@@ -12,22 +12,24 @@
 
 #include <map>
 
-#include "llvm/Constant.h"
-#include "llvm/DerivedTypes.h"
-#include "llvm/Function.h"
-#include "llvm/GlobalVariable.h"
-#include "llvm/Module.h"
-#include "llvm/Type.h"
-#include "llvm/Value.h"
-
-#include "mvm/JIT.h"
-
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
 #include "JavaTypes.h"
 
+#include "llvm/Module.h"
+
+namespace llvm {
+  class Constant;
+  class ConstantInt;
+  class Function;
+  class GlobalVariable;
+  class Type;
+  class Value;
+}
+
 namespace jnjvm {
 
+class Attribut;
 class CacheNode;
 class CommonClass;
 class Class;
@@ -36,7 +38,6 @@ class JavaField;
 class JavaMethod;
 class JavaObject;
 class JnjvmModule;
-class Signdef;
 
 class LLVMAssessorInfo {
 public:
