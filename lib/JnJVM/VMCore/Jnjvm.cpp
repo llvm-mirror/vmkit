@@ -880,16 +880,16 @@ void Jnjvm::loadBootstrap() {
 }
 
 void Jnjvm::executeClass(const char* className, ArrayObject* args) {
-  const UTF8* name = appClassLoader->asciizConstructUTF8(className);
-  UserClass* cl = (UserClass*)appClassLoader->loadName(name, true, true);
-  cl->initialiseClass(this);
-  
-  const UTF8* funcSign = 
-    appClassLoader->asciizConstructUTF8("([Ljava/lang/String;)V");
-  const UTF8* funcName = appClassLoader->asciizConstructUTF8("main");
-  JavaMethod* method = cl->lookupMethod(funcName, funcSign, true, true, 0);
-  
   try {
+    const UTF8* name = appClassLoader->asciizConstructUTF8(className);
+    UserClass* cl = (UserClass*)appClassLoader->loadName(name, true, true);
+    cl->initialiseClass(this);
+  
+    const UTF8* funcSign = 
+      appClassLoader->asciizConstructUTF8("([Ljava/lang/String;)V");
+    const UTF8* funcName = appClassLoader->asciizConstructUTF8("main");
+    JavaMethod* method = cl->lookupMethod(funcName, funcSign, true, true, 0);
+  
     method->invokeIntStatic(this, method->classDef, args);
   }catch(...) {
   }
@@ -913,16 +913,20 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
 
 void Jnjvm::executePremain(const char* className, JavaString* args,
                              JavaObject* instrumenter) {
-  const UTF8* name = appClassLoader->asciizConstructUTF8(className);
-  UserClass* cl = (UserClass*)appClassLoader->loadName(name, true, true);
-  cl->initialiseClass(this);
+  try {
+    const UTF8* name = appClassLoader->asciizConstructUTF8(className);
+    UserClass* cl = (UserClass*)appClassLoader->loadName(name, true, true);
+    cl->initialiseClass(this);
   
-  const UTF8* funcSign = appClassLoader->asciizConstructUTF8(
+    const UTF8* funcSign = appClassLoader->asciizConstructUTF8(
       "(Ljava/lang/String;Ljava/lang/instrument/Instrumentation;)V");
-  const UTF8* funcName = appClassLoader->asciizConstructUTF8("premain");
-  JavaMethod* method = cl->lookupMethod(funcName, funcSign, true, true, 0);
+    const UTF8* funcName = appClassLoader->asciizConstructUTF8("premain");
+    JavaMethod* method = cl->lookupMethod(funcName, funcSign, true, true, 0);
   
-  method->invokeIntStatic(this, method->classDef, args, instrumenter);
+    method->invokeIntStatic(this, method->classDef, args, instrumenter);
+  } catch(...) {
+    JavaThread::get()->clearException();
+  }
 }
 
 void Jnjvm::waitForExit() { 
