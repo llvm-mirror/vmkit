@@ -874,6 +874,7 @@ public:
   }
 #endif
 
+  bool isNativeOverloaded(JavaMethod* meth);
    
 };
 

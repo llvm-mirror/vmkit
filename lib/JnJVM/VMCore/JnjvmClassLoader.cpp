@@ -883,17 +883,9 @@ intptr_t JnjvmClassLoader::loadInLib(const char* name, void* handle) {
   return (intptr_t)dlsym(handle, name);
 }
 
-intptr_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& jnjvm) {
+intptr_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& jnjvm,
+                                        char* buf) {
 
-  const UTF8* jniConsClName = meth->classDef->name;
-  const UTF8* jniConsName = meth->name;
-  const UTF8* jniConsType = meth->type;
-  sint32 clen = jniConsClName->size;
-  sint32 mnlen = jniConsName->size;
-  sint32 mtlen = jniConsType->size;
-
-  char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + 
-                            ((mnlen + clen + mtlen) << 1));
   meth->jniConsFromMeth(buf);
   intptr_t res = loadInLib(buf, jnjvm);
   if (!res) {

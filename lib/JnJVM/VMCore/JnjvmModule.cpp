@@ -327,12 +327,25 @@ Constant* JnjvmModule::getNativeFunction(JavaMethod* meth, void* ptr) {
       
       LLVMSignatureInfo* LSI = getSignatureInfo(meth->getSignature());
       const llvm::Type* valPtrType = LSI->getNativeType();
-    
-      assert((ptr || isStaticCompiling()) && "No native function given");
+      
+      const UTF8* jniConsClName = meth->classDef->name;
+      const UTF8* jniConsName = meth->name;
+      const UTF8* jniConsType = meth->type;
+      sint32 clen = jniConsClName->size;
+      sint32 mnlen = jniConsName->size;
+      sint32 mtlen = jniConsType->size;
 
-      varGV = new GlobalVariable(valPtrType, false,
+      char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + 1 +
+                                ((mnlen + clen + mtlen) << 1));
+    
+      if (meth->classDef->isNativeOverloaded(meth))
+        meth->jniConsFromMethOverloaded(buf);
+      else
+        meth->jniConsFromMeth(buf);
+
+      varGV = new GlobalVariable(valPtrType, true,
                                  GlobalValue::ExternalLinkage,
-                                 0, "", this);
+                                 0, buf, this);
     
       nativeFunctions.insert(std::make_pair(meth, varGV));
       return varGV;
@@ -1329,6 +1342,7 @@ Function* LLVMMethodInfo::getMethod() {
     JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
     JnjvmModule* Mod = JCL->getModule();
     if (Mod->isStaticCompiling()) {
+
       const UTF8* jniConsClName = methodDef->classDef->name;
       const UTF8* jniConsName = methodDef->name;
       const UTF8* jniConsType = methodDef->type;
@@ -1336,9 +1350,21 @@ Function* LLVMMethodInfo::getMethod() {
       sint32 mnlen = jniConsName->size;
       sint32 mtlen = jniConsType->size;
 
-      char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN +
+      char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + 1 +
                                 ((mnlen + clen + mtlen) << 1));
-      methodDef->jniConsFromMethOverloaded(buf);
+      
+      if (isNative(methodDef->access)) {
+        bool jnjvm = false;
+        JCL->nativeLookup(methodDef, jnjvm, buf);
+        if (!jnjvm) {
+          methodDef->jniConsFromMethOverloaded(buf + 1);
+          memcpy(buf, "JnJVM", 5);
+        }
+      } else {
+        methodDef->jniConsFromMethOverloaded(buf + 1);
+        memcpy(buf, "JnJVM", 5);
+      }
+
       methodFunction = Function::Create(getFunctionType(), 
                                         GlobalValue::GhostLinkage, buf, Mod);
 

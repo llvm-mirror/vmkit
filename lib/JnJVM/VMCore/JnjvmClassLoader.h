@@ -265,7 +265,7 @@ public:
   /// method. Also set in the jnjvm parameter is the function is defined in
   /// JnJVM.
   ///
-  intptr_t nativeLookup(JavaMethod* meth, bool& jnjvm);
+  intptr_t nativeLookup(JavaMethod* meth, bool& jnjvm, char* buf);
 };
 
 /// JnjvmBootstrapLoader - This class is for the bootstrap class loader, which

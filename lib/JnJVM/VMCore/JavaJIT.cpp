@@ -185,8 +185,19 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   const FunctionType *funcType = llvmFunction->getFunctionType();
   
   bool jnjvm = false;
-  natPtr = natPtr ? natPtr :
-    compilingClass->classLoader->nativeLookup(compilingMethod, jnjvm);
+  
+  const UTF8* jniConsClName = compilingClass->name;
+  const UTF8* jniConsName = compilingMethod->name;
+  const UTF8* jniConsType = compilingMethod->type;
+  sint32 clen = jniConsClName->size;
+  sint32 mnlen = jniConsName->size;
+  sint32 mtlen = jniConsType->size;
+
+  char* functionName = (char*)alloca(3 + JNI_NAME_PRE_LEN + 
+                            ((mnlen + clen + mtlen) << 1));
+  if (!natPtr)
+    natPtr = compilingClass->classLoader->nativeLookup(compilingMethod, jnjvm,
+                                                       functionName);
   
   if (!natPtr && !module->isStaticCompiling()) {
     fprintf(stderr, "Native function %s not found. Probably "
