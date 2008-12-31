@@ -948,7 +948,7 @@ public:
 
   /// setCompiledPtr - Set the pointer function to the method.
   ///
-  void setCompiledPtr(void*);
+  void setCompiledPtr(void*, const char*);
   
   /// JavaMethod - Delete the method as well as the cache enveloppes and
   /// attributes of the method.

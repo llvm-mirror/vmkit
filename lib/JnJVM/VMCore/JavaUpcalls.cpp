@@ -469,11 +469,12 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   JavaMethod* internString =
     UPCALL_METHOD(loader, "java/lang/VMString", "intern",
                   "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC); 
-  internString->setCompiledPtr((void*)(intptr_t)nativeInternString);
+  internString->setCompiledPtr((void*)(intptr_t)nativeInternString,
+                               "nativeInternString");
   
   JavaMethod* isArray =
     UPCALL_METHOD(loader, "java/lang/Class", "isArray", "()Z", ACC_VIRTUAL);
-  isArray->setCompiledPtr((void*)(intptr_t)nativeIsArray);
+  isArray->setCompiledPtr((void*)(intptr_t)nativeIsArray, "nativeIsArray");
 
 
   UPCALL_REFLECT_CLASS_EXCEPTION(loader, InvocationTargetException);
@@ -633,17 +634,20 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   JavaMethod* getCallingClass =
     UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "getCallingClass",
                   "()Ljava/lang/Class;", ACC_STATIC);
-  getCallingClass->setCompiledPtr((void*)(intptr_t)nativeGetCallingClass);
+  getCallingClass->setCompiledPtr((void*)(intptr_t)nativeGetCallingClass,
+                                  "nativeGetCallingClass");
   
   JavaMethod* getCallingClassLoader =
     UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "getCallingClassLoader",
                   "()Ljava/lang/ClassLoader;", ACC_STATIC);
   getCallingClassLoader->setCompiledPtr((void*)(intptr_t)
-                                        nativeGetCallingClassLoader);
+                                        nativeGetCallingClassLoader,
+                                        "nativeGetCallingClassLoader");
   
   JavaMethod* postProperties =
     UPCALL_METHOD(loader, "gnu/classpath/VMSystemProperties", "postInit",
                   "(Ljava/util/Properties;)V", ACC_STATIC);
-  postProperties->setCompiledPtr((void*)(intptr_t)nativePropertiesPostInit);
+  postProperties->setCompiledPtr((void*)(intptr_t)nativePropertiesPostInit,
+                                 "nativePropertiesPostInit");
 }
 

@@ -1353,17 +1353,8 @@ Function* LLVMMethodInfo::getMethod() {
       char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + 1 +
                                 ((mnlen + clen + mtlen) << 1));
       
-      if (isNative(methodDef->access)) {
-        bool jnjvm = false;
-        JCL->nativeLookup(methodDef, jnjvm, buf);
-        if (!jnjvm) {
-          methodDef->jniConsFromMethOverloaded(buf + 1);
-          memcpy(buf, "JnJVM", 5);
-        }
-      } else {
-        methodDef->jniConsFromMethOverloaded(buf + 1);
-        memcpy(buf, "JnJVM", 5);
-      }
+      methodDef->jniConsFromMethOverloaded(buf + 1);
+      memcpy(buf, "JnJVM", 5);
 
       methodFunction = Function::Create(getFunctionType(), 
                                         GlobalValue::GhostLinkage, buf, Mod);
@@ -1845,8 +1836,9 @@ Constant* JnjvmModule::getPrimitiveArrayVT() {
   return PrimitiveArrayVT;
 }
 
-void JnjvmModule::setMethod(JavaMethod* meth, void* ptr) {
+void JnjvmModule::setMethod(JavaMethod* meth, void* ptr, const char* name) {
   Function* func = getMethodInfo(meth)->getMethod();
+  func->setName(name);
   assert(ptr && "No value given");
   executionEngine->addGlobalMapping(func, ptr);
   func->setLinkage(GlobalValue::ExternalLinkage);

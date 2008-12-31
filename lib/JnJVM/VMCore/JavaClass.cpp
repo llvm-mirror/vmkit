@@ -379,13 +379,14 @@ void* JavaMethod::compiledPtr() {
   }
 }
 
-void JavaMethod::setCompiledPtr(void* ptr) {
+void JavaMethod::setCompiledPtr(void* ptr, const char* name) {
   classDef->acquire();
   assert(code == 0 && "Code of Java method already set!");
   code = ptr;
   Jnjvm* vm = JavaThread::get()->getJVM();
   vm->addMethodInFunctionMap(this, code);
-  classDef->classLoader->getModule()->setMethod(this, ptr);
+  classDef->classLoader->getModule()->setMethod(this, ptr, name);
+  access |= ACC_NATIVE;
   classDef->release();
 }
 
