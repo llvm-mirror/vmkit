@@ -1216,13 +1216,13 @@ bool UserClass::isNativeOverloaded(JavaMethod* meth) {
   
   for (uint32 i = 0; i < nbVirtualMethods; ++i) {
     JavaMethod& cur = virtualMethods[i];
-    if (&cur != meth && cur.name->equals(meth->name))
+    if (&cur != meth && isNative(cur.access) && cur.name->equals(meth->name))
       return true;
   }
   
   for (uint32 i = 0; i < nbStaticMethods; ++i) {
     JavaMethod& cur = staticMethods[i];
-    if (&cur != meth && cur.name->equals(meth->name))
+    if (&cur != meth && isNative(cur.access) && cur.name->equals(meth->name))
       return true;
   }
 
