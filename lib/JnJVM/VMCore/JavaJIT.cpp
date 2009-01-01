@@ -48,7 +48,19 @@ static bool needsInitialisationCheck(Class* cl, Class* compilingClass) {
 #ifdef SERVICE
   return true;
 #else
-  return !(cl->isReadyForCompilation() || compilingClass->subclassOf(cl)); 
+
+  if (cl->isReadyForCompilation() || compilingClass->subclassOf(cl)) {
+    return false;
+  }
+
+  if (!cl->needsInitialisationCheck()) {
+    if (!cl->isReady()) {
+      cl->setInitializationState(ready);
+    }
+    return false;
+  }
+
+  return true;
 #endif
 }
 

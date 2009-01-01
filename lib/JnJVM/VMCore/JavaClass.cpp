@@ -896,6 +896,9 @@ void Class::resolveClass() {
       Mod->resolveVirtualClass(this);
       Mod->resolveStaticClass(this);
       setResolved();
+      if (!needsInitialisationCheck()) {
+        setInitializationState(ready);
+      }
       broadcastClass();
       release();
     } else {
@@ -1225,6 +1228,27 @@ bool UserClass::isNativeOverloaded(JavaMethod* meth) {
     if (&cur != meth && isNative(cur.access) && cur.name->equals(meth->name))
       return true;
   }
+
+  return false;
+}
+
+bool UserClass::needsInitialisationCheck() {
+  
+  if (!isClassRead()) return true;
+
+  if (isReady()) return false;
+
+  if (super && super->needsInitialisationCheck())
+    return true;
+
+  if (nbStaticFields) return true;
+
+  JavaMethod* meth = 
+    lookupMethodDontThrow(classLoader->bootstrapLoader->clinitName,
+                          classLoader->bootstrapLoader->clinitType, 
+                          true, false, 0);
+  
+  if (meth) return true;
 
   return false;
 }

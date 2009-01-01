@@ -806,10 +806,14 @@ public:
     IsolateInfo[0].status = classRead;
   }
 
-  /// isResolving - IS the class currently being resolved?
+  /// isResolving - Is the class currently being resolved?
   ///
   bool isResolving() {
     return IsolateInfo[0].status == classRead;
+  }
+
+  bool isClassRead() {
+    return IsolateInfo[0].status >= classRead;
   }
   
 #else
@@ -829,6 +833,10 @@ public:
   
   void setInitializationState(JavaState st) {
     getCurrentTaskClassMirror().status = st;
+  }
+  
+  bool isClassRead() {
+    return getCurrentTaskClassMirror().status >= classRead;
   }
   
   bool isReady() {
@@ -874,7 +882,13 @@ public:
   }
 #endif
 
+  /// isNativeOverloaded - Is the method overloaded with a native function?
+  ///
   bool isNativeOverloaded(JavaMethod* meth);
+
+  /// needsInitialisationCheck - Does the method need an initialisation check?
+  ///
+  bool needsInitialisationCheck();
    
 };
 
