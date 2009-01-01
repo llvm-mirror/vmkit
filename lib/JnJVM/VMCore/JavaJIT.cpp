@@ -910,6 +910,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     if (ex->catche) {
       UserClass* cl = 
         (UserClass*)(compilingClass->ctpInfo->isClassLoaded(ex->catche));
+      assert(cl && "exception class has not been loaded");
       ex->catchClass = cl;
     } else {
       ex->catchClass = Classpath::newThrowable;

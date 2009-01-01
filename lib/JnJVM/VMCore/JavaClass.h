@@ -651,6 +651,11 @@ public:
   /// of the class.
   ///
   void loadParents();
+  
+  /// loadExceptions - Loads and resolves the exception classes used in catch 
+  /// clauses of methods defined in this class.
+  ///
+  void loadExceptions();
 
   /// readAttributs - Reads the attributs of the class.
   ///

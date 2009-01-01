@@ -780,6 +780,44 @@ void UserClass::loadParents() {
                                          true, true));
 }
 
+
+static void internalLoadExceptions(JavaMethod& meth) {
+  
+  Attribut* codeAtt = meth.lookupAttribut(Attribut::codeAttribut);
+   
+  if (codeAtt) {
+    Reader reader(codeAtt, meth.classDef->bytes);
+    //uint16 maxStack =
+    reader.readU2();
+    //uint16 maxLocals = 
+    reader.readU2();
+    uint16 codeLen = reader.readU4();
+  
+    reader.seek(codeLen, Reader::SeekCur);
+
+    uint16 nbe = reader.readU2();
+    for (uint16 i = 0; i < nbe; ++i) {
+      //startpc = 
+      reader.readU2();
+      //endpc=
+      reader.readU2();
+      //handlerpc =
+      reader.readU2();
+
+      uint16 catche = reader.readU2();
+      if (catche) meth.classDef->ctpInfo->loadClass(catche);
+    }
+  }
+}
+
+void UserClass::loadExceptions() {
+  for (uint32 i = 0; i < nbVirtualMethods; ++i)
+    internalLoadExceptions(virtualMethods[i]);
+  
+  for (uint32 i = 0; i < nbStaticMethods; ++i)
+    internalLoadExceptions(staticMethods[i]);
+}
+
 Attribut* Class::readAttributs(Reader& reader, uint16& size) {
   uint16 nba = reader.readU2();
   
@@ -888,9 +926,11 @@ void Class::resolveClass() {
     if (isResolved()) {
       release();
     } else if (!isResolving()) {
+      setOwnerClass(JavaThread::get());
       readClass();
       release();
       loadParents();
+      loadExceptions();
       acquire();
       JnjvmModule *Mod = classLoader->getModule();
       Mod->resolveVirtualClass(this);
@@ -899,9 +939,10 @@ void Class::resolveClass() {
       if (!needsInitialisationCheck()) {
         setInitializationState(ready);
       }
+      setOwnerClass(0);
       broadcastClass();
       release();
-    } else {
+    } else if (JavaThread::get() != getOwnerClass()) {
       while (!isResolved()) {
         waitClass();
       }
