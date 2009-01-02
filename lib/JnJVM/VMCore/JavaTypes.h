@@ -13,7 +13,6 @@
 #include "types.h"
 
 #include "mvm/Allocator.h"
-#include "mvm/JIT.h"
 #include "mvm/Object.h"
 
 #include "JnjvmClassLoader.h"
@@ -274,7 +273,7 @@ private:
   
 public:
 
-  /// initialLoader - The loader that first loaded this typedef.
+  /// initialLoader - The loader that first loaded this signdef.
   ///
   JnjvmClassLoader* initialLoader;
 

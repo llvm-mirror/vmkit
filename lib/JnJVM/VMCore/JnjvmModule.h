@@ -12,6 +12,8 @@
 
 #include <map>
 
+#include "mvm/JIT.h"
+
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
 #include "JavaTypes.h"
