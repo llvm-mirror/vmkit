@@ -8,8 +8,8 @@
 //===----------------------------------------------------------------------===//
 //
 // This utility may be invoked in the following manner:
-//  vmjc [options] x.bc - Read Java bytecode from the x.class file, write llvm
-//                            asm to the x.ll file.
+//  vmjc [options] x - Read Java bytecode from the x.class file, write llvm
+//                     bytecode to the x.bc file.
 //  Options:
 //      --help   - Output information about command line switches
 //
