@@ -260,9 +260,10 @@ public:
   
   /// printString - Prints the class.
   ///
-  char *printString() const {
+  const char *printString(const char* ext = "") const {
     mvm::PrintBuffer *buf = mvm::PrintBuffer::alloc();
     print(buf);
+    buf->write(ext);
     return buf->contents()->cString();
   }
 

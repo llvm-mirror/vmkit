@@ -139,7 +139,7 @@ llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
   Function* func = 0;
   LLVMSignatureInfo* LSI = M->getSignatureInfo(sign);
   if (!stat) {
-    char* name = cl->printString();
+    const char* name = cl->printString();
     char* key = (char*)alloca(strlen(name) + 2);
     sprintf(key, "%s%d", name, index);
     Function* F = TheModule->getFunction(key);

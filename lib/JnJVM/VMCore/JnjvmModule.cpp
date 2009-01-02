@@ -142,15 +142,17 @@ Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
     return ConstantExpr::getIntToPtr(CI, Ty);
   }
 }
-
 GlobalVariable* JnjvmModule::getInitializationState(Value* value) {
 
   initialization_iterator End = initializationStates.end();
   initialization_iterator I = initializationStates.find(value);
   if (I == End) {
+    const char* clName = value->getName().c_str();
+    char* newName = (char*)alloca(strlen(clName) + 9);
+    sprintf(newName, "%s<clinit>", clName);
     GlobalVariable* varGV = new GlobalVariable(Type::Int1Ty, false,
                                                GlobalValue::ExternalLinkage,
-                                               0, "", this);
+                                               0, newName, this);
       
     initializationStates.insert(std::make_pair(value, varGV));
 
@@ -248,7 +250,8 @@ Constant* JnjvmModule::getJavaClass(CommonClass* cl) {
       
       GlobalVariable* varGV = 
         new GlobalVariable(Ty->getContainedType(0), false,
-                           GlobalValue::ExternalLinkage, 0, "", this);
+                           GlobalValue::ExternalLinkage, 0,
+                           cl->printString("<Java.class>"), this);
       
       Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
                                             JavaObjectType);
@@ -284,7 +287,7 @@ Constant* JnjvmModule::getStaticInstance(Class* classDef) {
       const Type* Ty = LCI->getStaticType();
       varGV = new GlobalVariable(Ty->getContainedType(0), false,
                                  GlobalValue::ExternalLinkage,
-                                 0, "", this);
+                                 0, classDef->printString("<Static>"), this);
 
       Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
                                             ptrType);
@@ -329,7 +332,9 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef) {
       ATy = ArrayType::get(PTy, classDef->virtualTableSize);
       GlobalVariable* varGV = new GlobalVariable(ATy, true,
                                                  GlobalValue::ExternalLinkage,
-                                                 0, "", this);
+                                                 0, 
+                                                 classDef->printString("<VT>"),
+                                                 this);
     
       res = ConstantExpr::getCast(Instruction::BitCast, varGV, VTType);
       virtualTables.insert(std::make_pair(classDef, res));
