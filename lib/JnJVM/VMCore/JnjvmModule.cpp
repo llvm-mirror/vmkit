@@ -87,6 +87,12 @@ llvm::ConstantInt*  JnjvmModule::JavaArraySizeOffsetConstant;
 llvm::ConstantInt*  JnjvmModule::JavaObjectLockOffsetConstant;
 llvm::ConstantInt*  JnjvmModule::JavaObjectClassOffsetConstant;
 
+
+static bool isCompiling(Class* cl) {
+  // A class is being static compiled if owner class is not null.
+  return (cl->getOwnerClass() != 0);
+}
+
 Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
 
   if (staticCompilation) {
@@ -109,16 +115,18 @@ Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
       
       nativeClasses.insert(std::make_pair(classDef, varGV));
 
-      Constant* C = 0;
-      if (classDef->isClass()) {
-        C = CreateConstantFromClass((Class*)classDef);
-      } else if (classDef->isPrimitive()) {
-        C = CreateConstantFromClassPrimitive((ClassPrimitive*)classDef);
-      } else {
-        C = CreateConstantFromClassArray((ClassArray*)classDef);
-      }
+      if (classDef->isClass() && isCompiling(classDef->asClass())) {
+        Constant* C = 0;
+        if (classDef->isClass()) {
+          C = CreateConstantFromClass((Class*)classDef);
+        } else if (classDef->isPrimitive()) {
+          C = CreateConstantFromClassPrimitive((ClassPrimitive*)classDef);
+        } else {
+          C = CreateConstantFromClassArray((ClassArray*)classDef);
+        }
 
-      varGV->setInitializer(C);
+        varGV->setInitializer(C);
+      }
 
       return varGV;
 
@@ -246,7 +254,9 @@ Constant* JnjvmModule::getJavaClass(CommonClass* cl) {
                                             JavaObjectType);
     
       javaClasses.insert(std::make_pair(cl, res));
-      varGV->setInitializer(CreateConstantFromJavaClass(cl));
+      if (cl->isClass() && isCompiling(cl->asClass())) {
+        varGV->setInitializer(CreateConstantFromJavaClass(cl));
+      }
       return res;
     } else {
       return I->second;
@@ -309,6 +319,11 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef) {
     virtual_table_iterator End = virtualTables.end();
     virtual_table_iterator I = virtualTables.find(classDef);
     if (I == End) {
+      
+      if (isCompiling(classDef)) {
+        classDef->virtualVT = makeVT(classDef);
+      }
+
       const ArrayType* ATy = dyn_cast<ArrayType>(VTType->getContainedType(0));
       const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
       ATy = ArrayType::get(PTy, classDef->virtualTableSize);
@@ -318,13 +333,16 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef) {
     
       res = ConstantExpr::getCast(Instruction::BitCast, varGV, VTType);
       virtualTables.insert(std::make_pair(classDef, res));
-     
-      Function* Finalizer = ((Function**)classDef->virtualVT)[0];
-      Function* Tracer = LCI->getVirtualTracer();
-      Constant* C = CreateConstantFromVT(classDef->virtualVT,
-                                         classDef->virtualTableSize, Finalizer,
-                                         Tracer);
-      varGV->setInitializer(C);
+    
+      if (isCompiling(classDef)) {
+        classDef->virtualVT = makeVT(classDef);
+        Function* Finalizer = ((Function**)classDef->virtualVT)[0];
+        Function* Tracer = LCI->getVirtualTracer();
+        Constant* C = CreateConstantFromVT(classDef->virtualVT,
+                                           classDef->virtualTableSize,
+                                           Finalizer, Tracer);
+        varGV->setInitializer(C);
+      }
       
       return res;
     } else {
@@ -1076,7 +1094,7 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(Constant::getNullValue(ptrType));
 
   // staticTracer
-  Function* F = (Function*)(uintptr_t)cl->staticTracer;
+  Function* F = makeTracer(cl, true);
   const Type* FTy = STy->getContainedType(STy->getNumContainedTypes() - 1);
   Constant* staticTracer = ConstantExpr::getCast(Instruction::BitCast, F, FTy);
   ClassElts.push_back(staticTracer);
@@ -1169,6 +1187,10 @@ VirtualTable* JnjvmModule::makeVT(Class* cl) {
   memcpy(VT, JavaObjectVT, VT_SIZE);
 #else
   if (cl->super) {
+    if (isStaticCompiling() && !cl->super->virtualVT) {
+      cl->super->virtualVT = makeVT(cl->super);
+    }
+
     cl->virtualTableSize = cl->super->virtualTableSize;
   } else {
     cl->virtualTableSize = VT_NB_FUNCS;
@@ -1284,9 +1306,10 @@ const Type* LLVMClassInfo::getVirtualType() {
     virtualSizeConstant = ConstantInt::get(Type::Int32Ty, size);
     
     JnjvmModule* Mod = classDef->classLoader->getModule();
-    classDef->virtualVT = Mod->makeVT((Class*)classDef);
+    if (!Mod->isStaticCompiling()) {
+      classDef->virtualVT = Mod->makeVT((Class*)classDef);
+    }
   
-
   }
 
   return virtualType;
@@ -1321,10 +1344,8 @@ const Type* LLVMClassInfo::getStaticType() {
     cl->staticSize = size;
     
     JnjvmModule* Mod = cl->classLoader->getModule();
-    Function* F = Mod->makeTracer(cl, true);
-    if (Mod->isStaticCompiling()) {
-      cl->staticTracer = (void (*)(void*)) (uintptr_t) F;
-    } else {
+    if (!Mod->isStaticCompiling()) {
+      Function* F = Mod->makeTracer(cl, true);
       cl->staticTracer = (void (*)(void*)) (uintptr_t)
         Mod->executionEngine->getPointerToFunction(F);
       F->deleteBody();

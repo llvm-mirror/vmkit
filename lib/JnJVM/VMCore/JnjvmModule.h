@@ -421,7 +421,9 @@ public:
   llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
 #endif
   
-  
+
+  void cleanupStaticCompiler(JnjvmClassLoader* loader);
+
 private:
   static llvm::Module* initialModule;
   
