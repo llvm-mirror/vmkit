@@ -190,6 +190,10 @@ private:
   std::map<const Enveloppe*, llvm::Constant*> enveloppes;
   std::map<const JavaMethod*, llvm::Constant*> nativeFunctions;
   std::map<const UTF8*, llvm::Constant*> utf8s;
+  std::map<llvm::Value*, llvm::GlobalVariable*> initializationStates;
+  
+  typedef std::map<llvm::Value*, llvm::GlobalVariable*>::iterator
+    initialization_iterator;
 
   typedef std::map<const CommonClass*, llvm::Constant*>::iterator
     native_class_iterator;  
@@ -404,6 +408,7 @@ public:
   llvm::Constant* getString(JavaString* str);
   llvm::Constant* getConstantPool(JavaConstantPool* ctp);
   llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr);
+  llvm::GlobalVariable* getInitializationState(llvm::Value* Cl);
   
   llvm::Constant* getReferenceArrayVT();
   llvm::Constant* getPrimitiveArrayVT();

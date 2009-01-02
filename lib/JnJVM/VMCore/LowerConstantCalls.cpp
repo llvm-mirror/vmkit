@@ -268,19 +268,25 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             assert(Invoke && "Last instruction is not an invoke");
             NBB = Invoke->getNormalDest();
           }
-          
+         
+          Value* StatusPtr = 0;
+          Value* test = 0;
           Value* Cl = Call.getArgument(0); 
-          Value* TCM = getTCM(module, Call.getArgument(0), CI);
-          Value* GEP[2] = { module->constantZero,
-                            module->OffsetStatusInTaskClassMirrorConstant };
-          Value* StatusPtr = GetElementPtrInst::Create(TCM, GEP, GEP + 2, "",
-                                                       CI);
+          if (module->isStaticCompiling()) {
+            StatusPtr = module->getInitializationState(Cl);
+            test = new LoadInst(StatusPtr, "", CI);
+          } else {
+            Value* TCM = getTCM(module, Call.getArgument(0), CI);
+            Value* GEP[2] = { module->constantZero,
+                              module->OffsetStatusInTaskClassMirrorConstant };
+            StatusPtr = GetElementPtrInst::Create(TCM, GEP, GEP + 2, "", CI);
           
-          Value* Status = new LoadInst(StatusPtr, "", CI);
+            Value* Status = new LoadInst(StatusPtr, "", CI);
+            test = new ICmpInst(ICmpInst::ICMP_EQ, Status,
+                                jnjvm::JnjvmModule::ClassReadyConstant,
+                                "", CI);
+          }
           
-          Value* test = new ICmpInst(ICmpInst::ICMP_EQ, Status,
-                                     jnjvm::JnjvmModule::ClassReadyConstant,
-                                     "", CI);
  
           BasicBlock* trueCl = BasicBlock::Create("Initialized", &F);
           BasicBlock* falseCl = BasicBlock::Create("Uninitialized", &F);
@@ -293,8 +299,16 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           if (InvokeInst* Invoke = dyn_cast<InvokeInst>(CI)) {
             Value* Args[1] = { Cl };
             BasicBlock* UI = Invoke->getUnwindDest();
+
+            BasicBlock* normalDest = 0;
+            if (module->isStaticCompiling()) {
+              normalDest = BasicBlock::Create("Static Initialized", &F);
+            } else {
+              normalDest = trueCl;
+            }
+
             res = InvokeInst::Create(module->InitialiseClassFunction,
-                                     trueCl, UI, Args, Args + 1,
+                                     normalDest, UI, Args, Args + 1,
                                      "", falseCl);
 
             // For some reason, an LLVM pass may add PHI nodes to the
@@ -316,9 +330,18 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
               PHI->addIncoming(Val, trueCl);
               Temp++;
             }
+
+            if (module->isStaticCompiling()) {
+              new StoreInst(ConstantInt::getTrue(), StatusPtr, normalDest);
+              BranchInst::Create(trueCl, normalDest);
+              falseCl = normalDest;
+            }
+
           } else {
             res = CallInst::Create(module->InitialiseClassFunction,
                                    Cl, "", falseCl);
+            if (module->isStaticCompiling())
+              new StoreInst(ConstantInt::getTrue(), StatusPtr, falseCl);
             BranchInst::Create(trueCl, falseCl);
           }
           

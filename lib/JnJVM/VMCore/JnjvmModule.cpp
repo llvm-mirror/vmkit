@@ -134,6 +134,26 @@ Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
   }
 }
 
+GlobalVariable* JnjvmModule::getInitializationState(Value* value) {
+
+  initialization_iterator End = initializationStates.end();
+  initialization_iterator I = initializationStates.find(value);
+  if (I == End) {
+    GlobalVariable* varGV = new GlobalVariable(Type::Int1Ty, false,
+                                               GlobalValue::ExternalLinkage,
+                                               0, "", this);
+      
+    initializationStates.insert(std::make_pair(value, varGV));
+
+    varGV->setInitializer(ConstantInt::getFalse());
+
+    return varGV;
+
+  } else {
+    return I->second;
+  }
+}
+
 Constant* JnjvmModule::getConstantPool(JavaConstantPool* ctp) {
   if (staticCompilation) {
     llvm::Constant* varGV = 0;
