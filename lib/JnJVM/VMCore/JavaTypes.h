@@ -281,9 +281,9 @@ public:
   ///
   const UTF8* keyName;
   
-  /// printString - Print the signature for debugging purposes.
+  /// printString - Print the signature with the following extension.
   ///
-  const char* printString() const;
+  const char* printString(const char* ext = "") const;
 
   /// printWithSign - Print the signature of a method with the method's class
   /// and name.
@@ -353,6 +353,15 @@ public:
 // End of inlined methods of getting dynamically generated functions.
 //
 //===----------------------------------------------------------------------===//
+  
+  /// compileAllStubs - Compile all the native -> Java stubs.
+  ///
+  void compileAllStubs() {
+    getStaticCallBuf();
+    getStaticCallAP();
+    getVirtualCallBuf();
+    getVirtualCallAP();
+  }
 
   
   /// JInfo - Holds info useful for the JIT.

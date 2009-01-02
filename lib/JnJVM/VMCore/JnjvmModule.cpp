@@ -1512,11 +1512,18 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   
   std::vector<Value*> Args;
 
+  JnjvmModule* Mod = signature->initialLoader->getModule();
+  const char* name = 0;
+  if (Mod->isStaticCompiling()) {
+    name = virt ? signature->printString("virtual_buf") :
+                  signature->printString("static_buf");
+  } else {
+    name = "";
+  }
+
   Function* res = Function::Create(virt ? getVirtualBufType() : 
                                           getStaticBufType(),
-                                   GlobalValue::ExternalLinkage,
-                                   signature->printString(),
-                                   signature->initialLoader->TheModule);
+                                   GlobalValue::ExternalLinkage, name, Mod);
   
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
@@ -1562,12 +1569,19 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
 Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   
   std::vector<Value*> Args;
+  
+  JnjvmModule* Mod = signature->initialLoader->getModule();
+  const char* name = 0;
+  if (Mod->isStaticCompiling()) {
+    name = virt ? signature->printString("virtual_ap") :
+                  signature->printString("static_ap");
+  } else {
+    name = "";
+  }
 
   Function* res = Function::Create(virt ? getVirtualBufType() :
                                           getStaticBufType(),
-                                   GlobalValue::ExternalLinkage,
-                                   signature->printString(),
-                                   signature->initialLoader->TheModule);
+                                   GlobalValue::ExternalLinkage, name, Mod);
   
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
@@ -1665,8 +1679,9 @@ Function* LLVMSignatureInfo::getVirtualBuf() {
     virtualBufFunction = createFunctionCallBuf(true);
     signature->setVirtualCallBuf((intptr_t)
       mvm::MvmModule::executionEngine->getPointerToGlobal(virtualBufFunction));
-    // Now that it's compiled, we don't need the IR anymore
-    virtualBufFunction->deleteBody();
+    if (!signature->initialLoader->getModule()->isStaticCompiling())
+      // Now that it's compiled, we don't need the IR anymore
+      virtualBufFunction->deleteBody();
   }
   return virtualBufFunction;
 }
@@ -1678,8 +1693,9 @@ Function* LLVMSignatureInfo::getVirtualAP() {
     virtualAPFunction = createFunctionCallAP(true);
     signature->setVirtualCallAP((intptr_t)
       mvm::MvmModule::executionEngine->getPointerToGlobal(virtualAPFunction));
-    // Now that it's compiled, we don't need the IR anymore
-    virtualAPFunction->deleteBody();
+    if (!signature->initialLoader->getModule()->isStaticCompiling())
+      // Now that it's compiled, we don't need the IR anymore
+      virtualAPFunction->deleteBody();
   }
   return virtualAPFunction;
 }
@@ -1691,8 +1707,9 @@ Function* LLVMSignatureInfo::getStaticBuf() {
     staticBufFunction = createFunctionCallBuf(false);
     signature->setStaticCallBuf((intptr_t)
       mvm::MvmModule::executionEngine->getPointerToGlobal(staticBufFunction));
-    // Now that it's compiled, we don't need the IR anymore
-    staticBufFunction->deleteBody();
+    if (!signature->initialLoader->getModule()->isStaticCompiling())
+      // Now that it's compiled, we don't need the IR anymore
+      staticBufFunction->deleteBody();
   }
   return staticBufFunction;
 }
@@ -1704,8 +1721,9 @@ Function* LLVMSignatureInfo::getStaticAP() {
     staticAPFunction = createFunctionCallAP(false);
     signature->setStaticCallAP((intptr_t)
       mvm::MvmModule::executionEngine->getPointerToGlobal(staticAPFunction));
-    // Now that it's compiled, we don't need the IR anymore
-    staticAPFunction->deleteBody();
+    if (!signature->initialLoader->getModule()->isStaticCompiling())
+      // Now that it's compiled, we don't need the IR anymore
+      staticAPFunction->deleteBody();
   }
   return staticAPFunction;
 }

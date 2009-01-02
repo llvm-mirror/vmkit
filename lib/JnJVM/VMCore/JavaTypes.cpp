@@ -56,12 +56,13 @@ void Signdef::humanPrintArgs(mvm::PrintBuffer* buf) const {
   buf->write(")");
 }
 
-const char* Signdef::printString() const {
+const char* Signdef::printString(const char* ext) const {
   mvm::PrintBuffer *buf= mvm::PrintBuffer::alloc();
   buf->write("Signature<");
   getReturnType()->tPrintBuf(buf);
   buf->write("...");
   humanPrintArgs(buf);
+  buf->write(ext);
   buf->write(">");
   return buf->contents()->cString();
 }
