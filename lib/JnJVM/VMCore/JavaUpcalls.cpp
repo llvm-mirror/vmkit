@@ -7,18 +7,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <vector>
-
 #include "ClasspathReflect.h"
 #include "JavaAccess.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaString.h"
 #include "JavaThread.h"
-#include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "JnjvmModule.h"
 
 #define COMPILE_METHODS(cl) \
   for (CommonClass::method_iterator i = cl->virtualMethods.begin(), \
