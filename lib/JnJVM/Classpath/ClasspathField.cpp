@@ -445,7 +445,7 @@ JNIEnv *env,
 jobject Field, jobject _obj) {
 
 
-  jobject res = 0;
+  jobject result = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
 
@@ -510,10 +510,12 @@ jobject Field, jobject _obj) {
   } else {
     res =  field->getObjectField(Obj);
   }
+  
+  result = (jobject) res;
 
   END_NATIVE_EXCEPTION
 
-  return (jobject)res;
+  return (jobject)result;
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set(
