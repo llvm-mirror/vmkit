@@ -123,9 +123,18 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
       II++;
 
       if (ICmpInst* Cmp = dyn_cast<ICmpInst>(I)) {
-        if (isVirtual(meth->access)) {
-          if (Cmp->getOperand(1) == module->JavaObjectNullConstant && 
-              Cmp->getOperand(0) == F.arg_begin()) {
+        if (Cmp->getOperand(1) == module->JavaObjectNullConstant) {
+          Value* Arg = Cmp->getOperand(0);
+          if (isVirtual(meth->access) && Arg == F.arg_begin()) {
+            Changed = true;
+            Cmp->replaceAllUsesWith(ConstantInt::getFalse());
+            Cmp->eraseFromParent();
+            break;
+          }
+          
+          CallSite Ca = CallSite::get(Arg);
+          Instruction* CI = Ca.getInstruction();
+          if (CI && Ca.getCalledValue() == module->JavaObjectAllocateFunction) {
             Changed = true;
             Cmp->replaceAllUsesWith(ConstantInt::getFalse());
             Cmp->eraseFromParent();
