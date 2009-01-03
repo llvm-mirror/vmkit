@@ -289,6 +289,11 @@ private:
   /// of byte.
   ///
   ArrayUInt8* openName(const UTF8* utf8);
+  
+  /// constructPrimitiveArray - Hashes the primitive array.
+  ///
+  ClassArray* constructPrimitiveArray(ClassArray& cl, const UTF8* name,
+                                      ClassPrimitive* prim);
 
 public:
   

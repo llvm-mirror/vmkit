@@ -37,6 +37,15 @@ extern void* JavaArrayVT[];
 extern void* ArrayObjectVT[];
 extern void* JavaObjectVT[];
 
+extern ClassArray ArrayOfBool;
+extern ClassArray ArrayOfByte;
+extern ClassArray ArrayOfChar;
+extern ClassArray ArrayOfShort;
+extern ClassArray ArrayOfInt;
+extern ClassArray ArrayOfFloat;
+extern ClassArray ArrayOfDouble;
+extern ClassArray ArrayOfLong;
+
 #ifdef WITH_TRACER
 const llvm::FunctionType* JnjvmModule::MarkAndTraceType = 0;
 #endif
@@ -1878,6 +1887,28 @@ void JnjvmModule::initialise() {
     ReferenceArrayVT = new GlobalVariable(ATy, true, 
                                           GlobalValue::ExternalLinkage,
                                           0, "ArrayObjectVT", this);
+
+
+
+    ATy = JavaClassArrayType->getContainedType(0);
+    GlobalVariable* varGV = 0;
+    
+#define PRIMITIVE_ARRAY(name) \
+    varGV = new GlobalVariable(ATy, true, GlobalValue::ExternalLinkage, \
+                               0, #name, this); \
+    arrayClasses.insert(std::make_pair(&name, varGV));
+    
+    PRIMITIVE_ARRAY(ArrayOfBool)
+    PRIMITIVE_ARRAY(ArrayOfByte)
+    PRIMITIVE_ARRAY(ArrayOfChar)
+    PRIMITIVE_ARRAY(ArrayOfShort)
+    PRIMITIVE_ARRAY(ArrayOfInt)
+    PRIMITIVE_ARRAY(ArrayOfFloat)
+    PRIMITIVE_ARRAY(ArrayOfDouble)
+    PRIMITIVE_ARRAY(ArrayOfLong)
+
+#undef PRIMITIVE_ARRAY
+
   } else {
     PrimitiveArrayVT = ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                                                          uint64(JavaArrayVT)),

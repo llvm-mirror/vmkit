@@ -46,6 +46,15 @@
 
 using namespace jnjvm;
 
+ClassArray ArrayOfBool;
+ClassArray ArrayOfByte;
+ClassArray ArrayOfChar;
+ClassArray ArrayOfShort;
+ClassArray ArrayOfInt;
+ClassArray ArrayOfFloat;
+ClassArray ArrayOfDouble;
+ClassArray ArrayOfLong;
+
 JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   
   TheModule = new JnjvmModule("Bootstrap JnJVM", staticCompilation);
@@ -81,7 +90,8 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(this, "char", 2);
   
   // Create the char array.
-  upcalls->ArrayOfChar = constructArray(utf8OfChar, upcalls->OfChar);
+  upcalls->ArrayOfChar = constructPrimitiveArray(ArrayOfChar, utf8OfChar,
+                                                 upcalls->OfChar);
 
   // Alright, now we can repair the damage: set the class to the UTF8s created
   // and set the array class of UTF8s.
@@ -91,8 +101,9 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
  
   // Create the byte array, so that bytes for classes can be created.
   upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(this, "byte", 1);
-  upcalls->ArrayOfByte = constructArray(asciizConstructUTF8("[B"),
-                                        upcalls->OfByte);
+  upcalls->ArrayOfByte = constructPrimitiveArray(ArrayOfByte,
+                                                 asciizConstructUTF8("[B"),
+                                                 upcalls->OfByte);
 
   InterfacesArray = 
     (Class**)allocator.Allocate(2 * sizeof(UserClass*));
@@ -130,23 +141,29 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   upcalls->OfVoid = UPCALL_PRIMITIVE_CLASS(this, "void", 0);
   
   // And finally create the primitive arrays.
-  upcalls->ArrayOfInt = constructArray(asciizConstructUTF8("[I"),
-                                       upcalls->OfInt);
+  upcalls->ArrayOfInt = constructPrimitiveArray(ArrayOfInt,
+                                                asciizConstructUTF8("[I"),
+                                                upcalls->OfInt);
   
-  upcalls->ArrayOfBool = constructArray(asciizConstructUTF8("[Z"),
-                                        upcalls->OfBool);
+  upcalls->ArrayOfBool = constructPrimitiveArray(ArrayOfBool,
+                                                 asciizConstructUTF8("[Z"),
+                                                 upcalls->OfBool);
   
-  upcalls->ArrayOfLong = constructArray(asciizConstructUTF8("[J"),
-                                        upcalls->OfLong);
+  upcalls->ArrayOfLong = constructPrimitiveArray(ArrayOfLong,
+                                                 asciizConstructUTF8("[J"),
+                                                 upcalls->OfLong);
   
-  upcalls->ArrayOfFloat = constructArray(asciizConstructUTF8("[F"),
-                                         upcalls->OfFloat);
+  upcalls->ArrayOfFloat = constructPrimitiveArray(ArrayOfFloat,
+                                                  asciizConstructUTF8("[F"),
+                                                  upcalls->OfFloat);
   
-  upcalls->ArrayOfDouble = constructArray(asciizConstructUTF8("[D"),
-                                          upcalls->OfDouble);
+  upcalls->ArrayOfDouble = constructPrimitiveArray(ArrayOfDouble,
+                                                   asciizConstructUTF8("[D"),
+                                                   upcalls->OfDouble);
   
-  upcalls->ArrayOfShort = constructArray(asciizConstructUTF8("[S"),
-                                         upcalls->OfShort);
+  upcalls->ArrayOfShort = constructPrimitiveArray(ArrayOfShort,
+                                                  asciizConstructUTF8("[S"),
+                                                  upcalls->OfShort);
   
   upcalls->ArrayOfString = 
     constructArray(asciizConstructUTF8("[Ljava/lang/String;"));
@@ -565,6 +582,15 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name,
   }
   classes->lock.unlock();
   return res;
+}
+
+ClassArray* 
+JnjvmBootstrapLoader::constructPrimitiveArray(ClassArray& cl, const UTF8* name,
+                                              ClassPrimitive* baseClass) {
+    
+  cl = ClassArray(this, name, baseClass);
+  classes->map.insert(std::make_pair(name, &cl));
+  return &cl;
 }
 
 Typedef* JnjvmClassLoader::internalConstructType(const UTF8* name) {
