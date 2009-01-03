@@ -88,22 +88,33 @@ llvm::ConstantInt*  JnjvmModule::JavaObjectLockOffsetConstant;
 llvm::ConstantInt*  JnjvmModule::JavaObjectClassOffsetConstant;
 
 
-static bool isCompiling(Class* cl) {
-  // A class is being static compiled if owner class is not null.
-  return (cl->getOwnerClass() != 0);
+bool JnjvmModule::isCompiling(CommonClass* cl) {
+  if (cl->isClass()) {
+    // A class is being static compiled if owner class is not null.
+    return (cl->asClass()->getOwnerClass() != 0);
+  } else if (cl->isArray()) {
+    return isCompiling(cl->asArrayClass()->baseClass());
+  } else {
+    return false;
+  }
 }
 
 Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
 
   if (staticCompilation) {
 
-    if (classDef->isClass()) {
+    if (classDef->isClass() || 
+        (classDef->isArray() && isCompiling(classDef))) {
       native_class_iterator End = nativeClasses.end();
-      native_class_iterator I = nativeClasses.find((Class*)classDef);
+      native_class_iterator I = nativeClasses.find(classDef);
       if (I == End) {
         const llvm::Type* Ty = 0;
-      
-        Ty = JavaClassType->getContainedType(0); 
+        
+        if (classDef->isArray()) {
+          Ty = JavaClassArrayType->getContainedType(0); 
+        } else {
+          Ty = JavaClassType->getContainedType(0); 
+        }
       
         GlobalVariable* varGV = 
           new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage, 0,
@@ -111,8 +122,11 @@ Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
       
         nativeClasses.insert(std::make_pair((Class*)classDef, varGV));
 
-        if (isCompiling(classDef->asClass())) {
+        if (classDef->isClass() && isCompiling(classDef->asClass())) {
           Constant* C = CreateConstantFromClass((Class*)classDef);
+          varGV->setInitializer(C);
+        } else if (classDef->isArray()) {
+          Constant* C = CreateConstantFromClassArray((ClassArray*)classDef);
           varGV->setInitializer(C);
         }
 
@@ -1895,23 +1909,23 @@ void JnjvmModule::setMethod(JavaMethod* meth, void* ptr, const char* name) {
 
 void JnjvmModule::printStats() {
   fprintf(stderr, "----------------- Info from the module -----------------\n");
-  fprintf(stderr, "Number of native classes   : %llu\n", 
+  fprintf(stderr, "Number of native classes            : %llu\n", 
           (unsigned long long int) nativeClasses.size());
-  fprintf(stderr, "Number of Java classes     : %llu\n",
+  fprintf(stderr, "Number of Java classes              : %llu\n",
           (unsigned long long int) javaClasses.size());
-  fprintf(stderr, "Number of array classes    : %llu\n",
+  fprintf(stderr, "Number of external array classes    : %llu\n",
           (unsigned long long int) arrayClasses.size());
-  fprintf(stderr, "Number of virtual tables   : %llu\n", 
+  fprintf(stderr, "Number of virtual tables            : %llu\n", 
           (unsigned long long int) virtualTables.size());
-  fprintf(stderr, "Number of static instances : %llu\n", 
+  fprintf(stderr, "Number of static instances          : %llu\n", 
           (unsigned long long int) staticInstances.size());
-  fprintf(stderr, "Number of constant pools   : %llu\n", 
+  fprintf(stderr, "Number of constant pools            : %llu\n", 
           (unsigned long long int) constantPools.size());
-  fprintf(stderr, "Number of strings          : %llu\n", 
+  fprintf(stderr, "Number of strings                   : %llu\n", 
           (unsigned long long int) strings.size());
-  fprintf(stderr, "Number of enveloppes       : %llu\n", 
+  fprintf(stderr, "Number of enveloppes                : %llu\n", 
           (unsigned long long int) enveloppes.size());
-  fprintf(stderr, "Number of native functions : %llu\n", 
+  fprintf(stderr, "Number of native functions          : %llu\n", 
           (unsigned long long int) nativeFunctions.size());
 }
 

@@ -1192,7 +1192,8 @@ void JavaJIT::_ldc(uint16 index) {
     Value* res = getResolvedCommonClass(index, false, &cl);
 
 #ifndef ISOLATE
-    if (cl && !module->isStaticCompiling()) res = module->getJavaClass(cl);
+    if (cl || (module->isStaticCompiling() && module->isCompiling(cl)))
+      res = module->getJavaClass(cl);
     else
 #endif
     

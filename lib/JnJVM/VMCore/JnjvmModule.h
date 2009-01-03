@@ -181,7 +181,7 @@ public:
 class JnjvmModule : public mvm::MvmModule {
   friend class LLVMClassInfo;
 private:
-  std::map<const Class*, llvm::Constant*> nativeClasses;
+  std::map<const CommonClass*, llvm::Constant*> nativeClasses;
   std::map<const ClassArray*, llvm::GlobalVariable*> arrayClasses;
   std::map<const CommonClass*, llvm::Constant*> javaClasses;
   std::map<const CommonClass*, llvm::Constant*> virtualTables;
@@ -192,7 +192,7 @@ private:
   std::map<const JavaMethod*, llvm::Constant*> nativeFunctions;
   std::map<const UTF8*, llvm::Constant*> utf8s;
   
-  typedef std::map<const Class*, llvm::Constant*>::iterator
+  typedef std::map<const CommonClass*, llvm::Constant*>::iterator
     native_class_iterator;  
   
   typedef std::map<const ClassArray*, llvm::GlobalVariable*>::iterator
@@ -421,7 +421,7 @@ public:
 #endif
   
 
-  void cleanupStaticCompiler(JnjvmClassLoader* loader);
+  bool isCompiling(CommonClass* cl);
 
 private:
   static llvm::Module* initialModule;
