@@ -2085,7 +2085,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
               node->addIncoming(ConstantInt::getFalse(), notEquals);
   
               Value* inDisplay = CallInst::Create(module->GetDisplayFunction,
-                                                objCl, "", supDepth);
+                                                  objCl, "", supDepth);
             
               Value* displayArgs[2] = { inDisplay, depthCl };
               Value* clInDisplay = 
@@ -2094,9 +2094,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
              
               cmp = new ICmpInst(ICmpInst::ICMP_EQ, clInDisplay, clVar, "",
                                    supDepth);
-             BranchInst::Create(ifTrue, supDepth); 
+              BranchInst::Create(ifTrue, supDepth); 
             
-             node->addIncoming(cmp, supDepth);
+              node->addIncoming(cmp, supDepth);
             }
           }
 
