@@ -110,7 +110,7 @@ Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
       }
       
       GlobalVariable* varGV = 
-        new GlobalVariable(Ty, true, GlobalValue::ExternalLinkage, 0,
+        new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage, 0,
                            classDef->printString(), this);
       
       nativeClasses.insert(std::make_pair(classDef, varGV));
@@ -140,28 +140,6 @@ Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
     
     ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(classDef));
     return ConstantExpr::getIntToPtr(CI, Ty);
-  }
-}
-GlobalVariable* JnjvmModule::getInitializationState(Value* value) {
-
-  initialization_iterator End = initializationStates.end();
-  initialization_iterator I = initializationStates.find(value);
-  if (I == End) {
-    const char* clName = value->getName().c_str();
-    char* newName = (char*)alloca(strlen(clName) + 9);
-    sprintf(newName, "%s<clinit>", clName);
-    GlobalVariable* varGV = new GlobalVariable(Type::Int1Ty, false,
-                                               GlobalValue::ExternalLinkage,
-                                               0, newName, this);
-      
-    initializationStates.insert(std::make_pair(value, varGV));
-
-    varGV->setInitializer(ConstantInt::getFalse());
-
-    return varGV;
-
-  } else {
-    return I->second;
   }
 }
 

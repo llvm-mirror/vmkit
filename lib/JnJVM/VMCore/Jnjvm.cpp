@@ -1098,9 +1098,7 @@ static void compileClass(Class* cl) {
   // Use the owner class field of the class so that we know if the class
   // belongs to the list of classes that we are static compiling.
   cl->setOwnerClass(JavaThread::get());
-  llvm::Value* LCL = cl->classLoader->getModule()->getNativeClass(cl);
-  if (cl->needsInitialisationCheck())
-    cl->classLoader->getModule()->getInitializationState(LCL);
+  cl->classLoader->getModule()->getNativeClass(cl);
 
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
     JavaMethod& meth = cl->virtualMethods[i];
