@@ -1192,7 +1192,7 @@ void JavaJIT::_ldc(uint16 index) {
     Value* res = getResolvedCommonClass(index, false, &cl);
 
 #ifndef ISOLATE
-    if (cl) res = module->getJavaClass(cl);
+    if (cl && !module->isStaticCompiling()) res = module->getJavaClass(cl);
     else
 #endif
     
@@ -1688,6 +1688,9 @@ Value* JavaJIT::getResolvedCommonClass(uint16 index, bool doThrow,
   if (cl && (!cl->isClass() || cl->asClass()->isResolved())) {
     if (alreadyResolved) *alreadyResolved = cl;
     node = module->getNativeClass(cl);
+    if (module->isStaticCompiling() && cl->isArray()) {
+      node = new LoadInst(node, "", currentBlock);
+    }
     if (node->getType() != module->JavaCommonClassType) {
       node = new BitCastInst(node, module->JavaCommonClassType, "",
                              currentBlock);

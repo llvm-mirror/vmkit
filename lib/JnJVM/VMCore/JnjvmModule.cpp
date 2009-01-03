@@ -96,44 +96,50 @@ static bool isCompiling(Class* cl) {
 Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
 
   if (staticCompilation) {
-    native_class_iterator End = nativeClasses.end();
-    native_class_iterator I = nativeClasses.find(classDef);
-    if (I == End) {
-      const llvm::Type* Ty = 0;
-      
-      if (classDef->isClass()) {
-        Ty = JavaClassType->getContainedType(0); 
-      } else if (classDef->isPrimitive()) {
-        Ty = JavaClassPrimitiveType->getContainedType(0);
-      } else { 
-        Ty = JavaClassArrayType->getContainedType(0); 
-      }
-      
-      GlobalVariable* varGV = 
-        new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage, 0,
-                           classDef->printString(), this);
-      
-      nativeClasses.insert(std::make_pair(classDef, varGV));
 
-      if (classDef->isClass() && isCompiling(classDef->asClass())) {
-        Constant* C = 0;
-        if (classDef->isClass()) {
-          C = CreateConstantFromClass((Class*)classDef);
-        } else if (classDef->isPrimitive()) {
-          C = CreateConstantFromClassPrimitive((ClassPrimitive*)classDef);
-        } else {
-          C = CreateConstantFromClassArray((ClassArray*)classDef);
+    if (classDef->isClass()) {
+      native_class_iterator End = nativeClasses.end();
+      native_class_iterator I = nativeClasses.find((Class*)classDef);
+      if (I == End) {
+        const llvm::Type* Ty = 0;
+      
+        Ty = JavaClassType->getContainedType(0); 
+      
+        GlobalVariable* varGV = 
+          new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage, 0,
+                             classDef->printString(), this);
+      
+        nativeClasses.insert(std::make_pair((Class*)classDef, varGV));
+
+        if (isCompiling(classDef->asClass())) {
+          Constant* C = CreateConstantFromClass((Class*)classDef);
+          varGV->setInitializer(C);
         }
 
-        varGV->setInitializer(C);
+        return varGV;
+
+      } else {
+        return I->second;
       }
-
-      return varGV;
-
-    } else {
-      return I->second;
+    } else if (classDef->isArray()) {
+      array_class_iterator End = arrayClasses.end();
+      array_class_iterator I = arrayClasses.find((ClassArray*)classDef);
+      if (I == End) {
+        const llvm::Type* Ty = JavaClassArrayType; 
+      
+        GlobalVariable* varGV = 
+          new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage, 0,
+                             "", this);
+      
+        arrayClasses.insert(std::make_pair((ClassArray*)classDef, varGV));
+        return varGV;
+      } else {
+        return I->second;
+      }
+    } else if (classDef->isPrimitive()) {
+      assert(0 && "implement me");
     }
-
+    return 0;
   } else {
     const llvm::Type* Ty = classDef->isClass() ? JavaClassType : 
                                                  JavaCommonClassType;
@@ -1893,6 +1899,8 @@ void JnjvmModule::printStats() {
           (unsigned long long int) nativeClasses.size());
   fprintf(stderr, "Number of Java classes     : %llu\n",
           (unsigned long long int) javaClasses.size());
+  fprintf(stderr, "Number of array classes    : %llu\n",
+          (unsigned long long int) arrayClasses.size());
   fprintf(stderr, "Number of virtual tables   : %llu\n", 
           (unsigned long long int) virtualTables.size());
   fprintf(stderr, "Number of static instances : %llu\n", 
