@@ -35,6 +35,7 @@
 #include "ClasspathReflect.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
+#include "JavaString.h"
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
@@ -43,6 +44,7 @@
 #include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
 #include "Reader.h"
+#include "Zip.h"
 
 using namespace jnjvm;
 

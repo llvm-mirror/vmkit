@@ -18,7 +18,7 @@
 
 #include <map>
 
-#include <string.h>
+#include <cstring>
 
 #include "types.h"
 
@@ -27,15 +27,16 @@
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Locks.h"
 
-#include "JavaArray.h"
-#include "JavaClass.h"
-#include "JavaTypes.h"
-#include "JavaString.h"
-#include "Zip.h"
+#include "JavaArray.h" // for comparing UTF8s
 
 namespace jnjvm {
 
 class JavaObject;
+class JavaString;
+class Signdef;
+class Typedef;
+class UserCommonClass;
+class UserClassArray;
 
 struct ltutf8
 {

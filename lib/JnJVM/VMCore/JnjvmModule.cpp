@@ -18,6 +18,7 @@
 
 #include "JavaCache.h"
 #include "JavaJIT.h"
+#include "JavaString.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"

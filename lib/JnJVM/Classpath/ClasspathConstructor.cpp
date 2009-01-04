@@ -15,6 +15,7 @@
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
+#include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"

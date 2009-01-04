@@ -12,6 +12,7 @@
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
+#include "JavaString.h"
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
