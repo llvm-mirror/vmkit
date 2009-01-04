@@ -16,7 +16,7 @@
 #include "LockedMap.h"
 #include "Zip.h"
 
-#include <string.h>
+#include <cstring>
 
 using namespace jnjvm;
 
