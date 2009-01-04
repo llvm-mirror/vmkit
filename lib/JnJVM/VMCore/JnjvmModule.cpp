@@ -129,7 +129,7 @@ Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
       
         GlobalVariable* varGV = 
           new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage, 0,
-                             classDef->printString(), this);
+                             classDef->name->printString(), this);
       
         nativeClasses.insert(std::make_pair((Class*)classDef, varGV));
 
@@ -259,8 +259,7 @@ Constant* JnjvmModule::getJavaClass(CommonClass* cl) {
       
       GlobalVariable* varGV = 
         new GlobalVariable(Ty->getContainedType(0), false,
-                           GlobalValue::ExternalLinkage, 0,
-                           cl->printString("<Java.class>"), this);
+                           GlobalValue::ExternalLinkage, 0, "", this);
       
       Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
                                             JavaObjectType);
@@ -296,7 +295,7 @@ Constant* JnjvmModule::getStaticInstance(Class* classDef) {
       const Type* Ty = LCI->getStaticType();
       varGV = new GlobalVariable(Ty->getContainedType(0), false,
                                  GlobalValue::ExternalLinkage,
-                                 0, classDef->printString("<Static>"), this);
+                                 0, "", this);
 
       Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
                                             ptrType);
@@ -341,9 +340,7 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef) {
       ATy = ArrayType::get(PTy, classDef->virtualTableSize);
       GlobalVariable* varGV = new GlobalVariable(ATy, true,
                                                  GlobalValue::ExternalLinkage,
-                                                 0, 
-                                                 classDef->printString("<VT>"),
-                                                 this);
+                                                 0, "", this);
     
       res = ConstantExpr::getCast(Instruction::BitCast, varGV, VTType);
       virtualTables.insert(std::make_pair(classDef, res));
