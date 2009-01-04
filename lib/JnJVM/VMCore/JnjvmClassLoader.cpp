@@ -939,3 +939,11 @@ extern "C" void vmjcGetClassArray(JnjvmClassLoader* JCL, ClassArray** ptr,
 extern "C" void vmjcLoadClass(JnjvmClassLoader* JCL, const UTF8* name) {
   JCL->loadName(name, true, true);
 }
+
+extern "C" void vmjcAddUTF8(JnjvmClassLoader* JCL, const UTF8* val) {
+  JCL->hashUTF8->insert(val);
+}
+
+extern "C" void vmjcAddString(JnjvmClassLoader* JCL, JavaString* val) {
+  JCL->strings.push_back(val);
+}

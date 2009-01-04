@@ -2249,11 +2249,34 @@ void JnjvmModule::CreateStaticInitializer() {
   Function* LoadClass = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                          "vmjcLoadClass", this);
 
+  Function* AddUTF8 = Function::Create(FTy, GlobalValue::ExternalLinkage,
+                                       "vmjcAddUTF8", this);
+  
+  llvmArgs.clear();
+  llvmArgs.push_back(ptrType); // class loader
+  llvmArgs.push_back(strings.begin()->second->getType()); // val
+  FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+  
+  Function* AddString = Function::Create(FTy, GlobalValue::ExternalLinkage,
+                                         "vmjcAddString", this);
   
   BasicBlock* currentBlock = BasicBlock::Create("enter", StaticInitializer);
   Function::arg_iterator loader = StaticInitializer->arg_begin();
 
   Value* Args[3];
+  
+  for (utf8_iterator i = utf8s.begin(), e = utf8s.end(); i != e; ++i) {
+    Args[0] = loader;
+    Args[1] = i->second;
+    CallInst::Create(AddUTF8, Args, Args + 2, "", currentBlock);
+  }
+  
+  for (string_iterator i = strings.begin(), e = strings.end(); i != e; ++i) {
+    Args[0] = loader;
+    Args[1] = i->second;
+    CallInst::Create(AddString, Args, Args + 2, "", currentBlock);
+  }
+  
   for (native_class_iterator i = nativeClasses.begin(), 
        e = nativeClasses.end(); i != e; ++i) {
     if (isCompiling(i->first)) {
@@ -2281,6 +2304,7 @@ void JnjvmModule::CreateStaticInitializer() {
       CallInst::Create(GetClassArray, Args, Args + 3, "", currentBlock);
     }
   }
+  
 
   ReturnInst::Create(currentBlock);
 }
