@@ -166,3 +166,7 @@ const UTF8* UTF8Map::lookupReader(const uint16* buf, uint32 len) {
   return res;
 }
 
+
+void UTF8Map::insert(const UTF8* val) {
+  map.insert(std::make_pair(readerHasher(val->elements, val->size), val));
+}
