@@ -1689,7 +1689,11 @@ Value* JavaJIT::getResolvedCommonClass(uint16 index, bool doThrow,
   if (cl && (!cl->isClass() || cl->asClass()->isResolved())) {
     if (alreadyResolved) *alreadyResolved = cl;
     node = module->getNativeClass(cl);
-    if (module->isStaticCompiling() && cl->isArray()) {
+    // Since we only allocate for array classes that we own and
+    // ony primitive arrays are already allocated, verify that the class
+    // array is not external.
+    if (module->isStaticCompiling() && cl->isArray() && 
+        node->getType() != module->JavaClassArrayType) {
       node = new LoadInst(node, "", currentBlock);
     }
     if (node->getType() != module->JavaCommonClassType) {
