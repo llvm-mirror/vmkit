@@ -1293,3 +1293,17 @@ bool UserClass::needsInitialisationCheck() {
 
   return false;
 }
+
+
+void ClassArray::initialiseVT(Class* cl) {
+  uint32 size =  (cl->virtualTableSize - VT_NB_FUNCS) * sizeof(void*);
+  
+  #define COPY(CLASS) \
+    memcpy((void*)((uintptr_t)CLASS + VT_SIZE), \
+           (void*)((uintptr_t)cl->virtualVT + VT_SIZE), size);
+
+    COPY(JavaArrayVT)
+    COPY(ArrayObjectVT)
+
+#undef COPY
+}

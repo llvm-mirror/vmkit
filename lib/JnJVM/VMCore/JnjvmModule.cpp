@@ -332,7 +332,7 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef) {
     if (I == End) {
       
       if (isCompiling(classDef)) {
-        classDef->virtualVT = makeVT(classDef);
+        makeVT(classDef);
       }
 
       const ArrayType* ATy = dyn_cast<ArrayType>(VTType->getContainedType(0));
@@ -348,7 +348,7 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef) {
       virtualTables.insert(std::make_pair(classDef, res));
     
       if (isCompiling(classDef)) {
-        classDef->virtualVT = makeVT(classDef);
+        makeVT(classDef);
         Function* Finalizer = ((Function**)classDef->virtualVT)[0];
         Function* Tracer = LCI->getVirtualTracer();
         Constant* C = CreateConstantFromVT(classDef->virtualVT,
@@ -451,6 +451,7 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl) {
   } else {
     VT = JavaObjectVT;
   }
+  cl->virtualVT = VT;
   return VT;
 }
 #endif
@@ -1193,17 +1194,18 @@ Constant* JnjvmModule::CreateConstantFromVT(VirtualTable* VT, uint32 size,
   return Array;
 }
 
-VirtualTable* JnjvmModule::makeVT(Class* cl) {
+void JnjvmModule::makeVT(Class* cl) {
   
   VirtualTable* VT = 0;
 #ifdef WITHOUT_VTABLE
   mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
   VT = (VirtualTable*)allocator.Allocate(VT_SIZE);
   memcpy(VT, JavaObjectVT, VT_SIZE);
+  cl->virtualVT = VT;
 #else
   if (cl->super) {
     if (isStaticCompiling() && !cl->super->virtualVT) {
-      cl->super->virtualVT = makeVT(cl->super);
+      makeVT(cl->super);
     }
 
     cl->virtualTableSize = cl->super->virtualTableSize;
@@ -1255,16 +1257,7 @@ VirtualTable* JnjvmModule::makeVT(Class* cl) {
   // If there is no super, then it's the first VT that we allocate. Assign
   // this VT to native types.
    if (!(cl->super)) {
-    uint32 size =  (cl->virtualTableSize - VT_NB_FUNCS) * sizeof(void*);
-#define COPY(CLASS) \
-    memcpy((void*)((uintptr_t)CLASS + VT_SIZE), \
-           (void*)((uintptr_t)VT + VT_SIZE), size);
-
-    COPY(JavaArrayVT)
-    COPY(ArrayObjectVT)
-
-#undef COPY
-    
+    ClassArray::initialiseVT(cl);
    }
 #endif
   
@@ -1280,7 +1273,6 @@ VirtualTable* JnjvmModule::makeVT(Class* cl) {
   }
 
 #endif
-  return VT;
 }
 
 
@@ -1322,7 +1314,7 @@ const Type* LLVMClassInfo::getVirtualType() {
     
     JnjvmModule* Mod = classDef->classLoader->getModule();
     if (!Mod->isStaticCompiling()) {
-      classDef->virtualVT = Mod->makeVT((Class*)classDef);
+      Mod->makeVT((Class*)classDef);
     }
   
   }

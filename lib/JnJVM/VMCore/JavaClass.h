@@ -944,6 +944,11 @@ public:
   /// InterfacesArray - The list of interfaces for array classes.
   ///
   static Class** InterfacesArray;
+
+  /// initialiseVT - Initialise the primitive and reference array VT.
+  /// super is the java/lang/Object class.
+  ///
+  static void initialiseVT(Class* super);
 };
 
 /// JavaMethod - This class represents Java methods.
