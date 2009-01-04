@@ -194,32 +194,32 @@ public:
 //===----------------------------------------------------------------------===//
  
   // Assessor methods.
-  uint32 getAccess()      { return access;}
-  Class** getInterfaces() { return interfaces; }
-  const UTF8* getName()   { return name; }
-  Class* getSuper()       { return super; }
+  uint32 getAccess() const      { return access;}
+  Class** getInterfaces() const { return interfaces; }
+  const UTF8* getName() const   { return name; }
+  Class* getSuper() const       { return super; }
   
   /// isArray - Is the class an array class?
   ///
-  bool isArray() {
+  bool isArray() const {
     return jnjvm::isArray(access);
   }
   
   /// isPrimitive - Is the class a primitive class?
   ///
-  bool isPrimitive() {
+  bool isPrimitive() const {
     return jnjvm::isPrimitive(access);
   }
   
   /// isInterface - Is the class an interface?
   ///
-  bool isInterface() {
+  bool isInterface() const {
     return jnjvm::isInterface(access);
   }
   
   /// isClass - Is the class a real, instantiable class?
   ///
-  bool isClass() {
+  bool isClass() const {
     return jnjvm::isClass(access);
   }
 
@@ -920,7 +920,7 @@ public:
 
   /// baseClass - Get the base class of this array class.
   ///
-  CommonClass* baseClass() {
+  CommonClass* baseClass() const {
     return _baseClass;
   }
 
