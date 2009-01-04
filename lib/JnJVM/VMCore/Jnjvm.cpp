@@ -1181,13 +1181,11 @@ void Jnjvm::mainCompilerStart(JavaThread* th) {
     }
    
     // Set the linkage to External, so that the printer does not complain.
-    llvm::Module* M = bootstrapLoader->getModule();
-    for (Module::iterator i = M->begin(), e = M->end(); i != e; ++i) {
-      i->setLinkage(llvm::GlobalValue::ExternalLinkage);
-    }
+    JnjvmModule* M = bootstrapLoader->getModule();
+    M->CreateStaticInitializer();
 
     // Print stats before quitting.
-    bootstrapLoader->getModule()->printStats();
+    M->printStats();
     bootstrapLoader->getModuleProvider()->printStats();
 
   } catch(std::string str) {

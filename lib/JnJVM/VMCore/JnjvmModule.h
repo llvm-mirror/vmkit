@@ -233,6 +233,8 @@ private:
   static llvm::Constant* PrimitiveArrayVT;
   static llvm::Constant* ReferenceArrayVT;
   
+  static llvm::Function* StaticInitializer;
+  
 public:
 
   bool isStaticCompiling() {
@@ -421,7 +423,9 @@ public:
 #endif
   
 
-  bool isCompiling(CommonClass* cl);
+  bool isCompiling(const CommonClass* cl) const;
+  
+  void CreateStaticInitializer();
 
 private:
   static llvm::Module* initialModule;
@@ -444,6 +448,7 @@ private:
   llvm::Constant* CreateConstantFromJavaClass(CommonClass* cl);
   llvm::Constant* CreateConstantForJavaObject(CommonClass* cl);
   llvm::Constant* getUTF8(const UTF8* val);
+
 };
 
 }

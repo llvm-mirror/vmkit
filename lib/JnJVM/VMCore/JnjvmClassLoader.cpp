@@ -920,3 +920,20 @@ intptr_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& jnjvm,
   }
   return res;
 }
+
+
+// Extern "C" functions called by the vmjc static intializer.
+extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
+                                        CommonClass* cl) {
+  JCL->getClasses()->map.insert(std::make_pair(cl->name, cl));
+  cl->classLoader = JCL;
+}
+
+extern "C" void vmjcGetClassArray(JnjvmClassLoader* JCL, ClassArray** ptr,
+                              const UTF8* name) {
+  *ptr = JCL->constructArray(name);
+}
+
+extern "C" void vmjcLoadClass(JnjvmClassLoader* JCL, const UTF8* name) {
+  JCL->loadName(name, true, true);
+}

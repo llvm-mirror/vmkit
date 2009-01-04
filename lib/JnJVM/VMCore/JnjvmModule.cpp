@@ -32,6 +32,7 @@ using namespace llvm;
 
 llvm::Constant* JnjvmModule::PrimitiveArrayVT;
 llvm::Constant* JnjvmModule::ReferenceArrayVT;
+llvm::Function* JnjvmModule::StaticInitializer;
 
 extern void* JavaArrayVT[];
 extern void* ArrayObjectVT[];
@@ -97,12 +98,12 @@ llvm::ConstantInt*  JnjvmModule::JavaObjectLockOffsetConstant;
 llvm::ConstantInt*  JnjvmModule::JavaObjectClassOffsetConstant;
 
 
-bool JnjvmModule::isCompiling(CommonClass* cl) {
+bool JnjvmModule::isCompiling(const CommonClass* cl) const {
   if (cl->isClass()) {
     // A class is being static compiled if owner class is not null.
-    return (cl->asClass()->getOwnerClass() != 0);
+    return (((Class*)cl)->getOwnerClass() != 0);
   } else if (cl->isArray()) {
-    return isCompiling(cl->asArrayClass()->baseClass());
+    return isCompiling(((ClassArray*)cl)->baseClass());
   } else {
     return false;
   }
@@ -702,7 +703,7 @@ Constant* JnjvmModule::CreateConstantFromCommonClass(CommonClass* cl) {
   ATy = dyn_cast<ArrayType>(STy->getContainedType(2));
   assert(ATy && "Malformed type");
 
-  Constant* TCM[1] = { Constant::getNullValue(JavaObjectType) };
+  Constant* TCM[1] = { getJavaClass(cl) };
   CommonClassElts.push_back(ConstantArray::get(ATy, TCM, 1));
   
   // access
@@ -740,8 +741,10 @@ Constant* JnjvmModule::CreateConstantFromCommonClass(CommonClass* cl) {
     CommonClassElts.push_back(Constant::getNullValue(JavaClassType));
   }
 
-  // classLoader
-  CommonClassElts.push_back(Constant::getNullValue(ptrType));
+  // classLoader: store the static initializer, it will be overriden once
+  // the class is loaded.
+  Constant* loader = ConstantExpr::getBitCast(StaticInitializer, ptrType);
+  CommonClassElts.push_back(loader);
  
   return ConstantStruct::get(STy, CommonClassElts);
 }
@@ -1909,6 +1912,13 @@ void JnjvmModule::initialise() {
 
 #undef PRIMITIVE_ARRAY
 
+    std::vector<const llvm::Type*> llvmArgs;
+    llvmArgs.push_back(ptrType); // class loader.
+    const FunctionType* FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+  
+    StaticInitializer = Function::Create(FTy, GlobalValue::InternalLinkage,
+                                         "Init", this);
+
   } else {
     PrimitiveArrayVT = ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
                                                          uint64(JavaArrayVT)),
@@ -2212,3 +2222,72 @@ Value* JnjvmModule::getIsolate(Jnjvm* isolate, Value* Where) {
   }
 }
 #endif
+
+void JnjvmModule::CreateStaticInitializer() {
+
+  // Set the linkage of all functions to External, so that the printer does
+  // not complain.
+  for (Module::iterator i = begin(), e = end(); i != e; ++i) {
+    i->setLinkage(GlobalValue::ExternalLinkage);
+  }
+
+  std::vector<const llvm::Type*> llvmArgs;
+  llvmArgs.push_back(ptrType); // class loader
+  llvmArgs.push_back(JavaCommonClassType); // cl
+  const FunctionType* FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+
+  Function* AddClass = Function::Create(FTy, GlobalValue::ExternalLinkage,
+                                        "vmjcAddPreCompiledClass", this);
+ 
+  llvmArgs.clear();
+  llvmArgs.push_back(ptrType); // class loader
+  llvmArgs.push_back(PointerType::getUnqual(JavaClassArrayType)); // array ptr
+  llvmArgs.push_back(UTF8Type); // name
+  FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+  
+  Function* GetClassArray = Function::Create(FTy, GlobalValue::ExternalLinkage,
+                                             "vmjcGetClassArray", this);
+  
+  llvmArgs.clear();
+  llvmArgs.push_back(ptrType); // class loader
+  llvmArgs.push_back(UTF8Type); // name
+  FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+  
+  Function* LoadClass = Function::Create(FTy, GlobalValue::ExternalLinkage,
+                                         "vmjcLoadClass", this);
+
+  
+  BasicBlock* currentBlock = BasicBlock::Create("enter", StaticInitializer);
+  Function::arg_iterator loader = StaticInitializer->arg_begin();
+
+  Value* Args[3];
+  for (native_class_iterator i = nativeClasses.begin(), 
+       e = nativeClasses.end(); i != e; ++i) {
+    if (isCompiling(i->first)) {
+      Args[0] = loader;
+      Args[1] = ConstantExpr::getBitCast(i->second, JavaCommonClassType);
+      CallInst::Create(AddClass, Args, Args + 2, "", currentBlock);
+    }
+  }
+  
+  for (native_class_iterator i = nativeClasses.begin(), 
+       e = nativeClasses.end(); i != e; ++i) {
+    if (!isCompiling(i->first)) {
+      Args[0] = loader;
+      Args[1] = getUTF8(i->first->name);
+      CallInst::Create(LoadClass, Args, Args + 2, "", currentBlock);
+    }
+  }
+
+  for (array_class_iterator i = arrayClasses.begin(), 
+       e = arrayClasses.end(); i != e; ++i) {
+    if (!(i->first->baseClass()->isPrimitive())) {
+      Args[0] = loader;
+      Args[1] = i->second;
+      Args[2] = getUTF8(i->first->name);
+      CallInst::Create(GetClassArray, Args, Args + 3, "", currentBlock);
+    }
+  }
+
+  ReturnInst::Create(currentBlock);
+}
