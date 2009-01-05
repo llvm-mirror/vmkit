@@ -124,7 +124,7 @@ public:
   
 
   /// internalToJava - Creates a copy of the UTF8 at its given offset and size
-  /// woth all its '.' replaced by '/'. The JVM bytecode reference classes in
+  /// with all its '.' replaced by '/'. The JVM bytecode reference classes in
   /// packages with the '.' as the separating character. The JVM language uses
   /// the '/' character.
   ///
