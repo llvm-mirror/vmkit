@@ -236,6 +236,8 @@ private:
   static llvm::Function* StaticInitializer;
   
 public:
+  
+  static llvm::Function* NativeLoader;
 
   bool isStaticCompiling() {
     return staticCompilation;

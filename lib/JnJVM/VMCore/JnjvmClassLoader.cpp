@@ -23,8 +23,10 @@
 
 #if defined(__MACH__)
 #define SELF_HANDLE RTLD_DEFAULT
+#define BOOTLIBNAME "libvmjc.dylib"
 #else
 #define SELF_HANDLE 0
+#define BOOTLIBNAME "libvmjc.so"
 #endif
 
 #include "debug.h"
@@ -57,6 +59,8 @@ ClassArray ArrayOfFloat;
 ClassArray ArrayOfDouble;
 ClassArray ArrayOfLong;
 
+typedef void (*static_init_t)(JnjvmClassLoader*);
+
 JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   
   TheModule = new JnjvmModule("Bootstrap JnJVM", staticCompilation);
@@ -83,7 +87,20 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   
   upcalls = new(allocator) Classpath();
   bootstrapLoader = this;
+  
 
+  // First, try to find if we have a pre-compiled rt.jar
+  void* handle = dlopen(BOOTLIBNAME, RTLD_LAZY | RTLD_GLOBAL);
+  if (handle) {
+    // Found it!
+    Class* ptr = (Class*)dlsym(handle, "java/lang/Object");
+    if (ptr) {
+      // We have the java/lang/Object class, execute the static initializer.
+      static_init_t init = (static_init_t)(uintptr_t)ptr->classLoader;
+      assert(init && "Loaded the wrong boot library");
+      init(this);
+    }
+  }
 
   // Create the name of char arrays.
   const UTF8* utf8OfChar = asciizConstructUTF8("[C");
@@ -946,4 +963,11 @@ extern "C" void vmjcAddUTF8(JnjvmClassLoader* JCL, const UTF8* val) {
 
 extern "C" void vmjcAddString(JnjvmClassLoader* JCL, JavaString* val) {
   JCL->strings.push_back(val);
+}
+
+extern "C" intptr_t vmjcLoadNative(UserClass* cl, const char* name) {
+  bool jnjvm = false;
+  intptr_t res = cl->classLoader->loadInLib(name, jnjvm);
+  assert(res && "Could not find required native method");
+  return res;
 }

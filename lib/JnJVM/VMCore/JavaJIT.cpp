@@ -295,6 +295,44 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   Value* nativeFunc = module->getNativeFunction(compilingMethod, (void*)natPtr);
 
+  if (module->isStaticCompiling()) {
+    
+    if (compilingClass->isNativeOverloaded(compilingMethod)) {
+      compilingMethod->jniConsFromMethOverloaded(functionName);
+    } else {
+      compilingMethod->jniConsFromMeth(functionName);
+    }
+
+    Constant* Arg = ConstantArray::get(std::string(functionName), true);
+    GlobalVariable* GV = new GlobalVariable(Arg->getType(), true,
+                                            GlobalValue::InternalLinkage, Arg,
+                                            "", module);
+    Arg = ConstantExpr::getBitCast(GV, module->ptrType);
+    Value* Args[2] = { module->getNativeClass(compilingClass), Arg };
+
+    // If the global variable is null, then load it.
+    BasicBlock* unloadedBlock = createBasicBlock("");
+    BasicBlock* endBlock = createBasicBlock("");
+    Value* test = new LoadInst(nativeFunc, "", currentBlock);
+    const llvm::Type* Ty = test->getType();
+    PHINode* node = PHINode::Create(Ty, "", endBlock);
+    node->addIncoming(test, currentBlock);
+    Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, test,
+                              Constant::getNullValue(Ty), "", currentBlock);
+    BranchInst::Create(unloadedBlock, endBlock, cmp, currentBlock);
+    currentBlock = unloadedBlock;
+
+    Value* res = CallInst::Create(module->NativeLoader, Args, Args + 2, "",
+                                  currentBlock);
+
+    res = new BitCastInst(res, Ty, "", currentBlock);
+    new StoreInst(res, nativeFunc, currentBlock);
+    node->addIncoming(res, currentBlock);
+    BranchInst::Create(endBlock, currentBlock);
+    currentBlock = endBlock;
+    nativeFunc = node;
+  }
+
   Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs.begin(),
                                          nativeArgs.end(), "", currentBlock);
 

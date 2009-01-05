@@ -34,6 +34,7 @@ using namespace llvm;
 llvm::Constant* JnjvmModule::PrimitiveArrayVT;
 llvm::Constant* JnjvmModule::ReferenceArrayVT;
 llvm::Function* JnjvmModule::StaticInitializer;
+llvm::Function* JnjvmModule::NativeLoader;
 
 extern void* JavaArrayVT[];
 extern void* ArrayObjectVT[];
@@ -375,26 +376,11 @@ Constant* JnjvmModule::getNativeFunction(JavaMethod* meth, void* ptr) {
     if (I == End) {
       
       LLVMSignatureInfo* LSI = getSignatureInfo(meth->getSignature());
-      const llvm::Type* valPtrType = LSI->getNativeType();
+      const llvm::Type* valPtrType = LSI->getNativePtrType();
       
-      const UTF8* jniConsClName = meth->classDef->name;
-      const UTF8* jniConsName = meth->name;
-      const UTF8* jniConsType = meth->type;
-      sint32 clen = jniConsClName->size;
-      sint32 mnlen = jniConsName->size;
-      sint32 mtlen = jniConsType->size;
-
-      char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + 1 +
-                                ((mnlen + clen + mtlen) << 1));
-    
-      if (meth->classDef->isNativeOverloaded(meth))
-        meth->jniConsFromMethOverloaded(buf);
-      else
-        meth->jniConsFromMeth(buf);
-
       varGV = new GlobalVariable(valPtrType, true,
-                                 GlobalValue::ExternalLinkage,
-                                 0, buf, this);
+                                 GlobalValue::InternalLinkage,
+                                 Constant::getNullValue(valPtrType), "", this);
     
       nativeFunctions.insert(std::make_pair(meth, varGV));
       return varGV;
@@ -1907,6 +1893,15 @@ void JnjvmModule::initialise() {
   
     StaticInitializer = Function::Create(FTy, GlobalValue::InternalLinkage,
                                          "Init", this);
+
+    llvmArgs.clear();
+    llvmArgs.push_back(JavaClassType);
+    llvmArgs.push_back(ptrType);
+    
+    FTy = FunctionType::get(ptrType, llvmArgs, false);
+  
+    NativeLoader = Function::Create(FTy, GlobalValue::ExternalLinkage,
+                                    "vmjcNativeLoader", this);
 
   } else {
     PrimitiveArrayVT = ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
