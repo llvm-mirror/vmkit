@@ -1170,7 +1170,7 @@ void Jnjvm::mainCompilerStart(JavaThread* th) {
       for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
            i != e; ++i) {
         Class* cl = *i;
-        if (!cl->isInterface()) compileClass(cl);
+        compileClass(cl);
       }
 
     } else {
