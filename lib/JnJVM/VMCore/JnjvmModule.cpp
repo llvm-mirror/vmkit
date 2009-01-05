@@ -942,7 +942,7 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
 
     Constant* fields = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
-    fields = new GlobalVariable(ATy, true, GlobalValue::InternalLinkage,
+    fields = new GlobalVariable(ATy, false, GlobalValue::InternalLinkage,
                                 fields, "", this);
     fields = ConstantExpr::getCast(Instruction::BitCast, fields, JavaFieldType);
     ClassElts.push_back(fields);
@@ -963,7 +963,7 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
   
     Constant* fields = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
-    fields = new GlobalVariable(ATy, true, GlobalValue::InternalLinkage,
+    fields = new GlobalVariable(ATy, false, GlobalValue::InternalLinkage,
                                 fields, "", this);
     fields = ConstantExpr::getCast(Instruction::BitCast, fields, JavaFieldType);
     ClassElts.push_back(fields);
@@ -985,7 +985,7 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
 
     Constant* methods = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
-    methods = new GlobalVariable(ATy, true, GlobalValue::InternalLinkage,
+    methods = new GlobalVariable(ATy, false, GlobalValue::InternalLinkage,
                                  methods, "", this);
     methods = ConstantExpr::getCast(Instruction::BitCast, methods,
                                     JavaMethodType);
@@ -1008,7 +1008,7 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
 
     Constant* methods = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
-    methods = new GlobalVariable(ATy, true, GlobalValue::InternalLinkage,
+    methods = new GlobalVariable(ATy, false, GlobalValue::InternalLinkage,
                                  methods, "", this);
     methods = ConstantExpr::getCast(Instruction::BitCast, methods,
                                   JavaMethodType);
