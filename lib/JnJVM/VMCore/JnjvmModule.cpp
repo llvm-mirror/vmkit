@@ -847,10 +847,14 @@ Constant* JnjvmModule::CreateConstantFromJavaMethod(JavaMethod& method) {
   MethodElts.push_back(ConstantInt::get(Type::Int8Ty, method.canBeInlined));
 
   // code
-  LLVMMethodInfo* LMI = getMethodInfo(&method);
-  Function* func = LMI->getMethod();
-  MethodElts.push_back(ConstantExpr::getCast(Instruction::BitCast, func,
-                                             ptrType));
+  if (isAbstract(method.access)) {
+    MethodElts.push_back(Constant::getNullValue(ptrType));
+  } else {
+    LLVMMethodInfo* LMI = getMethodInfo(&method);
+    Function* func = LMI->getMethod();
+    MethodElts.push_back(ConstantExpr::getCast(Instruction::BitCast, func,
+                                               ptrType));
+  }
 
   // offset
   MethodElts.push_back(ConstantInt::get(Type::Int32Ty, method.offset));
