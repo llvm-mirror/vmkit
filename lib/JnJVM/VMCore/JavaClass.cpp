@@ -203,9 +203,7 @@ void CommonClass::printClassName(const UTF8* name, mvm::PrintBuffer* buf) {
 }
 
 void CommonClass::print(mvm::PrintBuffer* buf) const {
-  buf->write("Class<");
   printClassName(name, buf);
-  buf->write(">");
 }
 
 UserClassPrimitive* CommonClass::toPrimitive(Jnjvm* vm) const {
