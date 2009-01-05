@@ -130,7 +130,7 @@ Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
       
         GlobalVariable* varGV = 
           new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage, 0,
-                             classDef->name->printString(), this);
+                             classDef->printString(), this);
       
         nativeClasses.insert(std::make_pair((Class*)classDef, varGV));
 
