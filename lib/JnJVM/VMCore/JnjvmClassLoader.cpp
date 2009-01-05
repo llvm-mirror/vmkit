@@ -100,6 +100,8 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
       assert(init && "Loaded the wrong boot library");
       init(this);
     }
+  } else {
+    fprintf(stderr, "%s\n", dlerror());
   }
 
   // Create the name of char arrays.
@@ -965,7 +967,7 @@ extern "C" void vmjcAddString(JnjvmClassLoader* JCL, JavaString* val) {
   JCL->strings.push_back(val);
 }
 
-extern "C" intptr_t vmjcLoadNative(UserClass* cl, const char* name) {
+extern "C" intptr_t vmjcNativeLoader(UserClass* cl, const char* name) {
   bool jnjvm = false;
   intptr_t res = cl->classLoader->loadInLib(name, jnjvm);
   assert(res && "Could not find required native method");
