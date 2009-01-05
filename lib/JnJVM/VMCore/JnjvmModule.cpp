@@ -291,9 +291,10 @@ Constant* JnjvmModule::getStaticInstance(Class* classDef) {
     if (I == End) {
       LLVMClassInfo* LCI = getClassInfo(classDef);
       const Type* Ty = LCI->getStaticType();
-      varGV = new GlobalVariable(Ty->getContainedType(0), false,
+      Ty = Ty->getContainedType(0);
+      varGV = new GlobalVariable(Ty, false,
                                  GlobalValue::ExternalLinkage,
-                                 0, "", this);
+                                 Constant::getNullValue(Ty), "", this);
 
       Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
                                             ptrType);
