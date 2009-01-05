@@ -22,11 +22,8 @@
 
 namespace jnjvm {
 
-class JavaClass;
-class JavaField;
 class JavaObject;
 class JavaThread;
-class UTF8;
 
 /// JavaCond - This class maintains a list of threads blocked on a wait. 
 /// notify and notifyAll will change the state of one or more of these threads.
