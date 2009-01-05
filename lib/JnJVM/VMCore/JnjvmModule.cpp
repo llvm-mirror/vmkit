@@ -1173,7 +1173,12 @@ Constant* JnjvmModule::CreateConstantFromVT(VirtualTable* VT, uint32 size,
 
   for (uint32 i = VT_NB_FUNCS; i < size; ++i) {
     Function* F = ((Function**)VT)[i];
-    Elemts.push_back(ConstantExpr::getCast(Instruction::BitCast, F, PTy));
+    JavaMethod* meth = LLVMMethodInfo::get(F);
+    if (isAbstract(meth->access)) {
+      Elemts.push_back(Constant::getNullValue(PTy));
+    } else {
+      Elemts.push_back(ConstantExpr::getCast(Instruction::BitCast, F, PTy));
+    }
   }
 
   Constant* Array = ConstantArray::get(ATy, Elemts);
@@ -2243,24 +2248,28 @@ void JnjvmModule::CreateStaticInitializer() {
   
   Function* LoadClass = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                          "vmjcLoadClass", this);
-
-  llvmArgs.clear();
-  llvmArgs.push_back(ptrType); // class loader
-  llvmArgs.push_back(strings.begin()->second->getType()); // val
-  FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
-  
-  Function* AddString = Function::Create(FTy, GlobalValue::ExternalLinkage,
-                                         "vmjcAddString", this);
   
   BasicBlock* currentBlock = BasicBlock::Create("enter", StaticInitializer);
   Function::arg_iterator loader = StaticInitializer->arg_begin();
-
-  Value* Args[3];
   
-  for (string_iterator i = strings.begin(), e = strings.end(); i != e; ++i) {
-    Args[0] = loader;
-    Args[1] = i->second;
-    CallInst::Create(AddString, Args, Args + 2, "", currentBlock);
+  Value* Args[3];
+  // If we have defined some strings.
+  if (strings.begin() != strings.end()) {
+    llvmArgs.clear();
+    llvmArgs.push_back(ptrType); // class loader
+    llvmArgs.push_back(strings.begin()->second->getType()); // val
+    FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+  
+    Function* AddString = Function::Create(FTy, GlobalValue::ExternalLinkage,
+                                           "vmjcAddString", this);
+  
+
+  
+    for (string_iterator i = strings.begin(), e = strings.end(); i != e; ++i) {
+      Args[0] = loader;
+      Args[1] = i->second;
+      CallInst::Create(AddString, Args, Args + 2, "", currentBlock);
+    }
   }
   
   for (native_class_iterator i = nativeClasses.begin(), 
