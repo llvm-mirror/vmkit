@@ -1097,7 +1097,6 @@ const UTF8* Jnjvm::asciizToUTF8(const char* asciiz) {
 static void compileClass(Class* cl) {
   // Use the owner class field of the class so that we know if the class
   // belongs to the list of classes that we are static compiling.
-  cl->setOwnerClass(JavaThread::get());
   cl->classLoader->getModule()->getNativeClass(cl);
 
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
@@ -1165,6 +1164,7 @@ void Jnjvm::mainCompilerStart(JavaThread* th) {
            e = classes.end(); i != e; ++i) {
         Class* cl = *i;
         cl->resolveClass();
+        cl->setOwnerClass(JavaThread::get());
       }
       
       for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
@@ -1177,6 +1177,7 @@ void Jnjvm::mainCompilerStart(JavaThread* th) {
 
       const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(name);
       UserClass* cl = bootstrapLoader->loadName(utf8, true, true);
+      cl->setOwnerClass(JavaThread::get());
       compileClass(cl);
     }
    
