@@ -265,9 +265,7 @@ Constant* JnjvmModule::getJavaClass(CommonClass* cl) {
                                             JavaObjectType);
     
       javaClasses.insert(std::make_pair(cl, res));
-      if (cl->isClass() && isCompiling(cl->asClass())) {
-        varGV->setInitializer(CreateConstantFromJavaClass(cl));
-      }
+      varGV->setInitializer(CreateConstantFromJavaClass(cl));
       return res;
     } else {
       return I->second;
