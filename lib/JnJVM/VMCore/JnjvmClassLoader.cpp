@@ -100,9 +100,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
       assert(init && "Loaded the wrong boot library");
       init(this);
     }
-  } else {
-    fprintf(stderr, "%s\n", dlerror());
-  }
+  } 
 
   // Create the name of char arrays.
   const UTF8* utf8OfChar = asciizConstructUTF8("[C");
