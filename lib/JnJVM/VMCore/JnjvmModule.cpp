@@ -153,8 +153,8 @@ Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
         const llvm::Type* Ty = JavaClassArrayType; 
       
         GlobalVariable* varGV = 
-          new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage, 0,
-                             "", this);
+          new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage,
+                             Constant::getNullValue(Ty), "", this);
       
         arrayClasses.insert(std::make_pair((ClassArray*)classDef, varGV));
         return varGV;
@@ -2246,9 +2246,6 @@ void JnjvmModule::CreateStaticInitializer() {
   Function* LoadClass = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                          "vmjcLoadClass", this);
 
-  Function* AddUTF8 = Function::Create(FTy, GlobalValue::ExternalLinkage,
-                                       "vmjcAddUTF8", this);
-  
   llvmArgs.clear();
   llvmArgs.push_back(ptrType); // class loader
   llvmArgs.push_back(strings.begin()->second->getType()); // val
@@ -2261,12 +2258,6 @@ void JnjvmModule::CreateStaticInitializer() {
   Function::arg_iterator loader = StaticInitializer->arg_begin();
 
   Value* Args[3];
-  
-  for (utf8_iterator i = utf8s.begin(), e = utf8s.end(); i != e; ++i) {
-    Args[0] = loader;
-    Args[1] = i->second;
-    CallInst::Create(AddUTF8, Args, Args + 2, "", currentBlock);
-  }
   
   for (string_iterator i = strings.begin(), e = strings.end(); i != e; ++i) {
     Args[0] = loader;
