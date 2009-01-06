@@ -144,6 +144,10 @@ class ClassMap :
 
 class StringMap :
   public LockedMap<const UTF8*, JavaString*, ltutf8, Jnjvm*> {
+
+public:
+  void insert(JavaString* str);
+
 };
 
 class TypeMap : public mvm::PermanentObject {

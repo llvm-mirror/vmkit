@@ -1051,7 +1051,12 @@ Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) : VirtualMachine() {
   upcalls = bootstrapLoader->upcalls;
 
   throwable = upcalls->newThrowable;
- 
+  
+  for (std::vector<JavaString*>::iterator i = loader->strings.begin(),
+       e = loader->strings.end(); i != e; ++i) {
+    hashStr.insert(*i);
+  }
+
 #ifdef ISOLATE
   IsolateLock.lock();
   for (uint32 i = 0; i < NR_ISOLATES; ++i) {
