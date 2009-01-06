@@ -88,69 +88,15 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   upcalls = new(allocator) Classpath();
   bootstrapLoader = this;
   
-
-  // First, try to find if we have a pre-compiled rt.jar
-  void* handle = dlopen(BOOTLIBNAME, RTLD_LAZY | RTLD_GLOBAL);
-  if (handle) {
-    // Found it!
-    Class* ptr = (Class*)dlsym(handle, "java/lang/Object");
-    if (ptr) {
-      // We have the java/lang/Object class, execute the static initializer.
-      static_init_t init = (static_init_t)(uintptr_t)ptr->classLoader;
-      assert(init && "Loaded the wrong boot library");
-      init(this);
-    }
-  } 
-
-  // Create the name of char arrays.
-  const UTF8* utf8OfChar = asciizConstructUTF8("[C");
-
-  // Create the base class of char arrays.
-  upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(this, "char", 2);
-  
-  // Create the char array.
-  upcalls->ArrayOfChar = constructPrimitiveArray(ArrayOfChar, utf8OfChar,
-                                                 upcalls->OfChar);
-
-  // Alright, now we can repair the damage: set the class to the UTF8s created
-  // and set the array class of UTF8s.
-  ((UTF8*)utf8OfChar)->classOf = upcalls->ArrayOfChar;
-  ((UTF8*)upcalls->OfChar->name)->classOf = upcalls->ArrayOfChar;
-  hashUTF8->array = upcalls->ArrayOfChar;
- 
-  // Create the byte array, so that bytes for classes can be created.
-  upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(this, "byte", 1);
-  upcalls->ArrayOfByte = constructPrimitiveArray(ArrayOfByte,
-                                                 asciizConstructUTF8("[B"),
-                                                 upcalls->OfByte);
-
+  // Allocate interfaces.
   InterfacesArray = 
     (Class**)allocator.Allocate(2 * sizeof(UserClass*));
-
-  // Now we can create the super and interfaces of arrays.
-  InterfacesArray[0] = loadName(asciizConstructUTF8("java/lang/Cloneable"),
-                                false, false);
   
-  InterfacesArray[1] = loadName(asciizConstructUTF8("java/io/Serializable"),
-                                false, false);
-  
-  SuperArray = loadName(asciizConstructUTF8("java/lang/Object"), false,
-                        false);
-   
-  ClassArray::SuperArray = (Class*)SuperArray->getInternal();
   ClassArray::InterfacesArray = 
     (Class**)allocator.Allocate(2 * sizeof(UserClass*));
-  ClassArray::InterfacesArray[0] = (Class*)InterfacesArray[0]->getInternal();
-  ClassArray::InterfacesArray[1] = (Class*)(InterfacesArray[1]->getInternal());
   
-  // And repair the damage: set the interfaces and super of array classes already
-  // created.
-  upcalls->ArrayOfChar->setInterfaces(InterfacesArray);
-  upcalls->ArrayOfChar->setSuper(SuperArray);
-  upcalls->ArrayOfByte->setInterfaces(InterfacesArray);
-  upcalls->ArrayOfByte->setSuper(SuperArray);
-  
-  // Yay, create the other primitive types.
+  // Create the primitive classes.
+  upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(this, "char", 2);
   upcalls->OfBool = UPCALL_PRIMITIVE_CLASS(this, "boolean", 1);
   upcalls->OfShort = UPCALL_PRIMITIVE_CLASS(this, "short", 2);
   upcalls->OfInt = UPCALL_PRIMITIVE_CLASS(this, "int", 4);
@@ -158,8 +104,17 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   upcalls->OfFloat = UPCALL_PRIMITIVE_CLASS(this, "float", 4);
   upcalls->OfDouble = UPCALL_PRIMITIVE_CLASS(this, "double", 8);
   upcalls->OfVoid = UPCALL_PRIMITIVE_CLASS(this, "void", 0);
+  upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(this, "byte", 1);
   
-  // And finally create the primitive arrays.
+  // Create the primitive arrays.
+  upcalls->ArrayOfChar = constructPrimitiveArray(ArrayOfChar,
+                                                 asciizConstructUTF8("[C"),
+                                                 upcalls->OfChar);
+
+  upcalls->ArrayOfByte = constructPrimitiveArray(ArrayOfByte,
+                                                 asciizConstructUTF8("[B"),
+                                                 upcalls->OfByte);
+  
   upcalls->ArrayOfInt = constructPrimitiveArray(ArrayOfInt,
                                                 asciizConstructUTF8("[I"),
                                                 upcalls->OfInt);
@@ -184,13 +139,84 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
                                                   asciizConstructUTF8("[S"),
                                                   upcalls->OfShort);
   
+  // Fill the maps.
+  primitiveMap[I_VOID] = upcalls->OfVoid;
+  primitiveMap[I_BOOL] = upcalls->OfBool;
+  primitiveMap[I_BYTE] = upcalls->OfByte;
+  primitiveMap[I_CHAR] = upcalls->OfChar;
+  primitiveMap[I_SHORT] = upcalls->OfShort;
+  primitiveMap[I_INT] = upcalls->OfInt;
+  primitiveMap[I_FLOAT] = upcalls->OfFloat;
+  primitiveMap[I_LONG] = upcalls->OfLong;
+  primitiveMap[I_DOUBLE] = upcalls->OfDouble;
+
+  arrayTable[JavaArray::T_BOOLEAN - 4] = upcalls->ArrayOfBool;
+  arrayTable[JavaArray::T_BYTE - 4] = upcalls->ArrayOfByte;
+  arrayTable[JavaArray::T_CHAR - 4] = upcalls->ArrayOfChar;
+  arrayTable[JavaArray::T_SHORT - 4] = upcalls->ArrayOfShort;
+  arrayTable[JavaArray::T_INT - 4] = upcalls->ArrayOfInt;
+  arrayTable[JavaArray::T_FLOAT - 4] = upcalls->ArrayOfFloat;
+  arrayTable[JavaArray::T_LONG - 4] = upcalls->ArrayOfLong;
+  arrayTable[JavaArray::T_DOUBLE - 4] = upcalls->ArrayOfDouble;
+
+
+  // Now that native types have been loaded, try to find if we have a
+  // pre-compiled rt.jar
+  void* handle = dlopen(BOOTLIBNAME, RTLD_LAZY | RTLD_GLOBAL);
+  if (handle) {
+    // Found it!
+    SuperArray = (Class*)dlsym(handle, "java.lang.Object");
+    
+    if (SuperArray) {
+      ClassArray::SuperArray = (Class*)SuperArray->getInternal();
+      // We have the java/lang/Object class, execute the static initializer.
+      static_init_t init = (static_init_t)(uintptr_t)SuperArray->classLoader;
+      assert(init && "Loaded the wrong boot library");
+      init(this);
+    } 
+  }
+    
+  // We haven't found a pre-compiled rt.jar, load the root class ourself.
+  if (!SuperArray) {
+    
+    SuperArray = loadName(asciizConstructUTF8("java/lang/Object"), false,
+                          false);
+    ClassArray::SuperArray = (Class*)SuperArray->getInternal();
+    
+  }
+  
+  // Set the super of array classes.
+#define SET_PARENT(CLASS) \
+  CLASS.setSuper(SuperArray); \
+
+  SET_PARENT(ArrayOfBool)
+  SET_PARENT(ArrayOfByte)
+  SET_PARENT(ArrayOfChar)
+  SET_PARENT(ArrayOfShort)
+  SET_PARENT(ArrayOfInt)
+  SET_PARENT(ArrayOfFloat)
+  SET_PARENT(ArrayOfDouble)
+  SET_PARENT(ArrayOfLong)
+#undef SET_PARENT
+  
+  // Initialize interfaces of array classes.
+  InterfacesArray[0] = loadName(asciizConstructUTF8("java/lang/Cloneable"),
+                                false, false);
+  
+  InterfacesArray[1] = loadName(asciizConstructUTF8("java/io/Serializable"),
+                                false, false);
+  
+  ClassArray::InterfacesArray[0] = (Class*)InterfacesArray[0]->getInternal();
+  ClassArray::InterfacesArray[1] = (Class*)(InterfacesArray[1]->getInternal()); 
+ 
+  // Load array classes that JnJVM internally uses.
   upcalls->ArrayOfString = 
     constructArray(asciizConstructUTF8("[Ljava/lang/String;"));
   
   upcalls->ArrayOfObject = 
     constructArray(asciizConstructUTF8("[Ljava/lang/Object;"));
   
-  
+ 
   Attribut::codeAttribut = asciizConstructUTF8("Code");
   Attribut::exceptionsAttribut = asciizConstructUTF8("Exceptions");
   Attribut::constantAttribut = asciizConstructUTF8("ConstantValue");
@@ -242,24 +268,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
 
 #undef DEF_UTF8
   
-  primitiveMap[I_VOID] = upcalls->OfVoid;
-  primitiveMap[I_BOOL] = upcalls->OfBool;
-  primitiveMap[I_BYTE] = upcalls->OfByte;
-  primitiveMap[I_CHAR] = upcalls->OfChar;
-  primitiveMap[I_SHORT] = upcalls->OfShort;
-  primitiveMap[I_INT] = upcalls->OfInt;
-  primitiveMap[I_FLOAT] = upcalls->OfFloat;
-  primitiveMap[I_LONG] = upcalls->OfLong;
-  primitiveMap[I_DOUBLE] = upcalls->OfDouble;
-
-  arrayTable[JavaArray::T_BOOLEAN - 4] = upcalls->ArrayOfBool;
-  arrayTable[JavaArray::T_BYTE - 4] = upcalls->ArrayOfByte;
-  arrayTable[JavaArray::T_CHAR - 4] = upcalls->ArrayOfChar;
-  arrayTable[JavaArray::T_SHORT - 4] = upcalls->ArrayOfShort;
-  arrayTable[JavaArray::T_INT - 4] = upcalls->ArrayOfInt;
-  arrayTable[JavaArray::T_FLOAT - 4] = upcalls->ArrayOfFloat;
-  arrayTable[JavaArray::T_LONG - 4] = upcalls->ArrayOfLong;
-  arrayTable[JavaArray::T_DOUBLE - 4] = upcalls->ArrayOfDouble;
 }
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
