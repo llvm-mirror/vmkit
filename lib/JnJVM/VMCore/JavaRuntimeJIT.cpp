@@ -16,6 +16,7 @@
 #include "JavaCache.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
+#include "JavaJIT.h"
 #include "JavaString.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
@@ -503,9 +504,9 @@ extern "C" void printMethodEnd(JavaMethod* meth) {
   fflush(stdout);
 }
 
-extern "C" void printExecution(char* opcode, uint32 index, JavaMethod* meth) {
+extern "C" void printExecution(uint32 opcode, uint32 index, JavaMethod* meth) {
   printf("[%p] executing %s %s at %d\n", (void*)mvm::Thread::get(),
-         meth->printString(), opcode, index);
+         meth->printString(), JavaJIT::OpcodeNames[opcode], index);
   fflush(stdout);
 }
 

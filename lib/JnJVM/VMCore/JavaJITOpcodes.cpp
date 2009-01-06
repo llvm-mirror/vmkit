@@ -144,10 +144,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 #if JNJVM_EXECUTE > 1
     {
       Value* args[3] = {
-        ConstantExpr::getIntToPtr(
-            ConstantInt::get(Type::Int64Ty, (int64_t)OpcodeNames[bytecodes[i]]),
-            module->ptrType),
-
+        ConstantInt::get(Type::Int32Ty, (int64_t)bytecodes[i]),
         ConstantInt::get(Type::Int32Ty, (int64_t)i),
     
         ConstantExpr::getIntToPtr(
