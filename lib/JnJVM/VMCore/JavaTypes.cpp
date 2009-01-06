@@ -17,7 +17,7 @@
 using namespace jnjvm;
 
 void PrimitiveTypedef::tPrintBuf(mvm::PrintBuffer* buf) const {
-  prim->name->print(buf);
+  prim->name->printUTF8(buf);
 }
 
 void ArrayTypedef::tPrintBuf(mvm::PrintBuffer* buf) const {
@@ -73,7 +73,7 @@ void Signdef::printWithSign(CommonClass* cl, const UTF8* name,
   buf->write(" ");
   CommonClass::printClassName(cl->name, buf);
   buf->write("::");
-  name->print(buf);
+  name->printUTF8(buf);
   humanPrintArgs(buf);
 }
 

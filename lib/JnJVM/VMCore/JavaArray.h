@@ -174,6 +174,9 @@ public:
   
   /// print - Prints the UTF8 for debugging purposes.
   virtual void print(mvm::PrintBuffer* buf) const;
+  
+  /// printUTF8 - Prints the UTF8 for debugging purposes.
+  void printUTF8(mvm::PrintBuffer* buf) const;
 
 };
 

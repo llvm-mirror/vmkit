@@ -35,9 +35,13 @@ const unsigned int JavaArray::T_SHORT = 9;
 const unsigned int JavaArray::T_INT = 10;
 const unsigned int JavaArray::T_LONG = 11;
 
-void UTF8::print(mvm::PrintBuffer* buf) const {
+void UTF8::printUTF8(mvm::PrintBuffer* buf) const {
   for (int i = 0; i < size; i++)
     buf->writeChar((char)elements[i]);
+}
+
+void UTF8::print(mvm::PrintBuffer* buf) const {
+  return printUTF8(buf);
 }
 
 const UTF8* UTF8::javaToInternal(Jnjvm* vm, unsigned int start,

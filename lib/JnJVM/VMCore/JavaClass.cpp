@@ -182,7 +182,7 @@ static void printClassNameIntern(const UTF8* name, unsigned int start,
     if (name->elements[stepsEnd] == I_REF) {
       printClassNameIntern(name, (stepsEnd + 1),(end - 1), buf);
     } else {
-      name->print(buf);
+      name->printUTF8(buf);
     }
     buf->write(" ");
     for (uint32 i = start; i < stepsEnd; i++)
@@ -392,6 +392,7 @@ void JavaMethod::setCompiledPtr(void* ptr, const char* name) {
 const char* JavaMethod::printString() const {
   mvm::PrintBuffer *buf= mvm::PrintBuffer::alloc();
   buf->write("JavaMethod<");
+  fprintf(stderr, "name = %s\n", name->printString());
   ((JavaMethod*)this)->getSignature()->printWithSign(classDef, name, buf);
   buf->write(">");
   return buf->contents()->cString();
@@ -408,7 +409,7 @@ const char* JavaField::printString() const {
   buf->write(" ");
   classDef->print(buf);
   buf->write("::");
-  name->print(buf);
+  name->printUTF8(buf);
   buf->write(">");
   return buf->contents()->cString();
 }
