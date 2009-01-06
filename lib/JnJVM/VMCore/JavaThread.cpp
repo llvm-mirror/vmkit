@@ -130,7 +130,7 @@ void JavaThread::getJavaFrameContext(std::vector<void*>& context) {
       // the iterator points to a native -> Java call. We dereference addr twice
       // because a native -> Java call always contains the signature function.
     } while (((void***)addr)[0][0] != *it);
-  }  
+  }
 }
 
 #include <dlfcn.h>
