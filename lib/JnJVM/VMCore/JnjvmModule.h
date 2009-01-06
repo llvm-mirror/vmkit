@@ -397,7 +397,7 @@ public:
     return method->getInfo<LLVMMethodInfo>();
   }
 
-  static LLVMAssessorInfo& getTypedefInfo(Typedef* type);
+  static LLVMAssessorInfo& getTypedefInfo(const Typedef* type);
   
   explicit JnjvmModule(const std::string &ModuleID, bool sc = false);
   void initialise();
@@ -446,6 +446,7 @@ private:
   llvm::Constant* CreateConstantFromAttribut(Attribut& attribut);
   llvm::Constant* CreateConstantFromJavaField(JavaField& field);
   llvm::Constant* CreateConstantFromJavaMethod(JavaMethod& method);
+  llvm::Constant* CreateConstantFromStaticInstance(Class* cl);
   llvm::Constant* CreateConstantFromJavaString(JavaString* str);
   llvm::Constant* CreateConstantFromJavaClass(CommonClass* cl);
   llvm::Constant* CreateConstantForJavaObject(CommonClass* cl);

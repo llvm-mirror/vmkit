@@ -25,6 +25,7 @@
 #include "Jnjvm.h"
 #include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"
+#include "Reader.h"
 
 #include <cstdio>
 
@@ -280,26 +281,77 @@ Constant* JnjvmModule::getJavaClass(CommonClass* cl) {
   }
 }
 
+Constant* JnjvmModule::CreateConstantFromStaticInstance(Class* cl) {
+  LLVMClassInfo* LCI = getClassInfo(cl);
+  const Type* Ty = LCI->getStaticType();
+  const StructType* STy = dyn_cast<StructType>(Ty->getContainedType(0));
+  
+  std::vector<Constant*> Elts;
+  
+  for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
+    JavaField& field = cl->staticFields[i];
+    const Typedef* type = field.getSignature();
+    LLVMAssessorInfo& LAI = getTypedefInfo(type);
+    const Type* Ty = LAI.llvmType;
+
+    Attribut* attribut = field.lookupAttribut(Attribut::constantAttribut);
+
+    if (!attribut) {
+      Elts.push_back(Constant::getNullValue(Ty));
+    } else {
+      Reader reader(attribut, cl->bytes);
+      JavaConstantPool * ctpInfo = cl->ctpInfo;
+      uint16 idx = reader.readU2();
+      if (type->isPrimitive()) {
+        if (Ty == Type::Int64Ty) {
+          Elts.push_back(ConstantInt::get(Ty, (uint64)ctpInfo->LongAt(idx)));
+        } else if (Ty == Type::DoubleTy) {
+          Elts.push_back(ConstantFP::get(Ty, ctpInfo->DoubleAt(idx)));
+        } else if (Ty == Type::FloatTy) {
+          Elts.push_back(ConstantFP::get(Ty, ctpInfo->FloatAt(idx)));
+        } else {
+          Elts.push_back(ConstantInt::get(Ty, (uint64)ctpInfo->IntegerAt(idx)));
+        }
+      } else if (type->isReference()){
+        const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
+        JavaString* obj = ctpInfo->resolveString(utf8, idx);
+        Elts.push_back(CreateConstantFromJavaString(obj));
+      } else {
+        fprintf(stderr, "Implement me");
+        abort();
+      }
+    }
+  }
+   
+  return ConstantStruct::get(STy, Elts);
+}
+
 Constant* JnjvmModule::getStaticInstance(Class* classDef) {
 #ifdef ISOLATE
   assert(0 && "Should not be here");
   abort();
 #endif
   if (staticCompilation) {
-    llvm::Constant* varGV = 0;
     static_instance_iterator End = staticInstances.end();
     static_instance_iterator I = staticInstances.find(classDef);
     if (I == End) {
+      
       LLVMClassInfo* LCI = getClassInfo(classDef);
       const Type* Ty = LCI->getStaticType();
       Ty = Ty->getContainedType(0);
-      varGV = new GlobalVariable(Ty, false,
-                                 GlobalValue::ExternalLinkage,
-                                 Constant::getNullValue(Ty), "", this);
+      GlobalVariable* varGV = 
+        new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage,
+                           0, classDef->printString("<static>"), this);
 
       Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
                                             ptrType);
       staticInstances.insert(std::make_pair(classDef, res));
+      
+      if (isCompiling(classDef)) { 
+        Constant* C = CreateConstantFromStaticInstance(classDef);
+        varGV->setInitializer(C);
+      }
+
       return res;
     } else {
       return I->second;
@@ -2166,7 +2218,7 @@ void LLVMAssessorInfo::initialise() {
 
 std::map<const char, LLVMAssessorInfo> LLVMAssessorInfo::AssessorInfo;
 
-LLVMAssessorInfo& JnjvmModule::getTypedefInfo(Typedef* type) {
+LLVMAssessorInfo& JnjvmModule::getTypedefInfo(const Typedef* type) {
   return LLVMAssessorInfo::AssessorInfo[type->getKey()->elements[0]];
 }
 
