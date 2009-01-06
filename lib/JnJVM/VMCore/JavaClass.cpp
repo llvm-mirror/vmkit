@@ -640,7 +640,7 @@ void JavaField::InitField(void* obj, uint64 val) {
   
   Typedef* type = getSignature();
   if (!type->isPrimitive()) {
-    ((sint32*)((uint64)obj + ptrOffset))[0] = (sint32)val;
+    ((JavaObject**)((uint64)obj + ptrOffset))[0] = (JavaObject*)val;
     return;
   }
 
