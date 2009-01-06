@@ -392,7 +392,6 @@ void JavaMethod::setCompiledPtr(void* ptr, const char* name) {
 const char* JavaMethod::printString() const {
   mvm::PrintBuffer *buf= mvm::PrintBuffer::alloc();
   buf->write("JavaMethod<");
-  fprintf(stderr, "name = %s\n", name->printString());
   ((JavaMethod*)this)->getSignature()->printWithSign(classDef, name, buf);
   buf->write(">");
   return buf->contents()->cString();
