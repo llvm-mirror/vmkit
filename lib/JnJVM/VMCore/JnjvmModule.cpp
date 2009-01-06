@@ -338,7 +338,9 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef) {
       const ArrayType* ATy = dyn_cast<ArrayType>(VTType->getContainedType(0));
       const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
       ATy = ArrayType::get(PTy, classDef->virtualTableSize);
-      GlobalVariable* varGV = new GlobalVariable(ATy, true,
+      // Do not set a virtual table as a constant, because the runtime may
+      // modify it.
+      GlobalVariable* varGV = new GlobalVariable(ATy, false,
                                                  GlobalValue::ExternalLinkage,
                                                  0, "", this);
     
