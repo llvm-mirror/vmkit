@@ -315,7 +315,9 @@ Constant* JnjvmModule::CreateConstantFromStaticInstance(Class* cl) {
       } else if (type->isReference()){
         const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
         JavaString* obj = ctpInfo->resolveString(utf8, idx);
-        Elts.push_back(CreateConstantFromJavaString(obj));
+        Constant* C = getString(obj);
+        C = ConstantExpr::getBitCast(C, JavaObjectType);
+        Elts.push_back(C);
       } else {
         fprintf(stderr, "Implement me");
         abort();
