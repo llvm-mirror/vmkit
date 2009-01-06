@@ -209,7 +209,7 @@ Constant* JnjvmModule::getString(JavaString* str) {
       LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo((Class*)str->classOf);
       const llvm::Type* Ty = LCI->getVirtualType();
       GlobalVariable* varGV = 
-        new GlobalVariable(Ty->getContainedType(0), true,
+        new GlobalVariable(Ty->getContainedType(0), false,
                            GlobalValue::ExternalLinkage,
                            0, "", this);
       Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
