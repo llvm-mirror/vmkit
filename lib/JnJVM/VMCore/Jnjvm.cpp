@@ -114,6 +114,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //    now in progress by the current thread and release the lock on the
     //    Class object.
     setOwnerClass(self);
+    bool vmjced = (getInitializationState() == vmjc);
     setInitializationState(inClinit);
     UserClass* cl = (UserClass*)this;
 #if defined(ISOLATE) || defined(ISOLATE_SHARING)
@@ -178,10 +179,12 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", printString());
 
 
- 
-    JavaField* fields = cl->getStaticFields();
-    for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
-      fields[i].initField(val, vm);
+
+    if (!vmjced) {
+      JavaField* fields = cl->getStaticFields();
+      for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
+        fields[i].initField(val, vm);
+      }
     }
   
       

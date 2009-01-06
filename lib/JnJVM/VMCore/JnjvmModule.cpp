@@ -979,7 +979,7 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
   const StructType* TCMTy = dyn_cast<StructType>(ATy->getContainedType(0));
   assert(TCMTy && "Malformed type");
 
-  uint32 status = cl->needsInitialisationCheck() ? resolved : ready;
+  uint32 status = cl->needsInitialisationCheck() ? vmjc : ready;
   TempElts.push_back(ConstantInt::get(Type::Int32Ty, status));
   TempElts.push_back(getStaticInstance(cl));
   Constant* CStr[1] = { ConstantStruct::get(TCMTy, TempElts) };

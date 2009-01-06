@@ -52,11 +52,12 @@ typedef enum JavaState {
   loaded = 0,       /// The .class file has been found.
   classRead = 1,    /// The .class file has been read.
   resolved = 2,     /// The class has been resolved.
-  inClinit = 3,     /// The class is cliniting.
-  ready = 4,        /// The class is ready to be used.
-  erroneous = 5,    /// The class is in an erroneous state.
+  vmjc = 3,         /// The class is defined in a shared library.
+  inClinit = 4,     /// The class is cliniting.
+  ready = 5,        /// The class is ready to be used.
+  erroneous = 6,    /// The class is in an erroneous state.
   dontuseenums = 0xffffffff /// dummy value to force the enum to be int32
-}JavaState;
+} JavaState;
 
 
 /// Attribut - This class represents JVM attributes to Java class, methods and
