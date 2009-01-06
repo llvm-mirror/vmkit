@@ -65,7 +65,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; jnjvmRuntimeInitialiseClass - Initialises the class.
-declare %JavaClass* @jnjvmRuntimeInitialiseClass(%JavaClass*) readnone
+declare %JavaClass* @jnjvmRuntimeInitialiseClass(%JavaClass*)
 
 ;;; arrayLength - Get the length of an array.
 declare i32 @arrayLength(%JavaObject*) readnone 
