@@ -191,12 +191,16 @@ private:
   std::map<const Enveloppe*, llvm::Constant*> enveloppes;
   std::map<const JavaMethod*, llvm::Constant*> nativeFunctions;
   std::map<const UTF8*, llvm::Constant*> utf8s;
+  std::map<const JavaMethod*, llvm::Constant*> methods;
+  
+  typedef std::map<const JavaMethod*, llvm::Constant*>::iterator
+    method_iterator;
   
   typedef std::map<const CommonClass*, llvm::Constant*>::iterator
-    native_class_iterator;  
+    native_class_iterator; 
   
   typedef std::map<const ClassArray*, llvm::GlobalVariable*>::iterator
-    array_class_iterator;  
+    array_class_iterator;
   
   typedef std::map<const CommonClass*, llvm::Constant*>::iterator
     java_class_iterator;
@@ -205,7 +209,7 @@ private:
     virtual_table_iterator;
   
   typedef std::map<const Class*, llvm::Constant*>::iterator
-    static_instance_iterator;  
+    static_instance_iterator;
   
   typedef std::map<const JavaConstantPool*, llvm::Constant*>::iterator
     constant_pool_iterator;
@@ -407,6 +411,7 @@ public:
   llvm::Constant* getJavaClass(CommonClass* cl);
   llvm::Constant* getStaticInstance(Class* cl);
   llvm::Constant* getVirtualTable(Class* cl);
+  llvm::Constant* getMethodInClass(JavaMethod* meth);
   
   llvm::Constant* getEnveloppe(Enveloppe* enveloppe);
   llvm::Constant* getString(JavaString* str);

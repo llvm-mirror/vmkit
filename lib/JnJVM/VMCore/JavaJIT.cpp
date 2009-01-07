@@ -637,9 +637,7 @@ llvm::Function* JavaJIT::javaCompile() {
     
 #if JNJVM_EXECUTE > 0
     {
-    Value* arg = ConstantExpr::getIntToPtr(
-          ConstantInt::get(Type::Int64Ty, uint64_t (compilingMethod)),
-          module->ptrType);
+    Value* arg = module->getMethodInClass(compilingMethod);
 
     llvm::CallInst::Create(module->PrintMethodStartFunction, arg, "",
                            currentBlock);
@@ -813,9 +811,7 @@ llvm::Function* JavaJIT::javaCompile() {
 
 #if JNJVM_EXECUTE > 0
     {
-    Value* arg =  ConstantExpr::getIntToPtr(
-          ConstantInt::get(Type::Int64Ty, uint64_t (compilingMethod)),
-          module->ptrType);
+    Value* arg = module->getMethodInClass(compilingMethod); 
     CallInst::Create(module->PrintMethodEndFunction, arg, "", currentBlock);
     }
 #endif

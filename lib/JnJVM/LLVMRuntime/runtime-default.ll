@@ -207,6 +207,6 @@ declare %JavaObject* @gcmalloc(i32, %VT*)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Debugging methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-declare void @printExecution(i32, i32, i8*)
-declare void @printMethodStart(i8*)
-declare void @printMethodEnd(i8*)
+declare void @printExecution(i32, i32, %JavaMethod*)
+declare void @printMethodStart(%JavaMethod*)
+declare void @printMethodEnd(%JavaMethod*)

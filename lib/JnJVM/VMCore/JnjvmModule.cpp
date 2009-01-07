@@ -199,6 +199,50 @@ Constant* JnjvmModule::getConstantPool(JavaConstantPool* ctp) {
   }
 }
 
+Constant* JnjvmModule::getMethodInClass(JavaMethod* meth) {
+  if (staticCompilation) {
+    method_iterator SI = methods.find(meth);
+    if (SI != methods.end()) {
+      return SI->second;
+    } else {
+      Class* cl = meth->classDef;
+      Constant* MOffset = 0;
+      Constant* COffset = 0;
+      
+      if (isVirtual(meth->access)) {
+        COffset = ConstantInt::get(Type::Int32Ty, 9);
+        for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+          if (&cl->virtualMethods[i] == meth) {
+            MOffset = ConstantInt::get(Type::Int32Ty, i);
+            break;
+          }
+        }
+      } else {
+        COffset = ConstantInt::get(Type::Int32Ty, 11);
+        for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
+          if (&cl->staticMethods[i] == meth) {
+            MOffset = ConstantInt::get(Type::Int32Ty, i);
+            break;
+          }
+        }
+      }
+
+      Constant* C = getNativeClass(cl);
+
+      Value* Elts[3]  = { constantZero, COffset, MOffset };
+      
+      Constant* res = ConstantExpr::getGetElementPtr(C, Elts, 3);
+
+      methods.insert(std::make_pair(meth, res));
+      return res;
+    }
+    
+  } else {
+    ConstantInt* CI = ConstantInt::get(Type::Int64Ty, (int64_t)meth);
+    return ConstantExpr::getIntToPtr(CI, JavaMethodType);
+  }
+}
+
 Constant* JnjvmModule::getString(JavaString* str) {
   if (staticCompilation) {
     string_iterator SI = strings.find(str);
