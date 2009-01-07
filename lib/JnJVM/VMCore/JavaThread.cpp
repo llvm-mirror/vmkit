@@ -133,6 +133,18 @@ void JavaThread::getJavaFrameContext(std::vector<void*>& context) {
   }
 }
 
+void JavaThread::printJavaBacktrace() {
+  Jnjvm* vm = getJVM();
+  std::vector<void*> vals;
+  for (std::vector<void*>::iterator i = vals.begin(), e = vals.end(); 
+       i != e; ++i) {
+    JavaMethod* meth = vm->IPToMethod<JavaMethod>(*i);
+    assert(meth && "Wrong stack");
+    fprintf(stderr, "; %p in %s\n",  *i, meth->printString());
+  }
+}
+
+
 #include <dlfcn.h>
 
 static void printFunctionInfo(void* ip) {

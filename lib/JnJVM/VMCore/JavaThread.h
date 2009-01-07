@@ -248,6 +248,11 @@ public:
   /// printBacktrace - Prints the backtrace of this thread.
   ///
   void printBacktrace();
+  
+  /// printJavaBacktrace - Prints the backtrace of this thread. Only prints
+  /// the Java methods on the stack.
+  ///
+  void printJavaBacktrace();
 
   /// getJavaFrameContext - Fill the vector with Java frames
   /// currently on the stack.
