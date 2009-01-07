@@ -1051,13 +1051,14 @@ Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) : VirtualMachine() {
   upcalls = bootstrapLoader->upcalls;
 
   throwable = upcalls->newThrowable;
-  
+ 
   for (std::vector<JavaString*>::iterator i = loader->strings.begin(),
        e = loader->strings.end(); i != e; ++i) {
     hashStr.insert(*i);
   }
 
   ClassMap* classes = bootstrapLoader->getClasses();
+  JnjvmModule* M = bootstrapLoader->getModule();
   for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
        i != e; ++i) {
     CommonClass* cl = i->second;
@@ -1068,6 +1069,7 @@ Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) : VirtualMachine() {
         JavaMethod& meth = C->virtualMethods[i];
         if (!isAbstract(meth.access) && meth.code) {
           addMethodInFunctionMap(&meth, meth.code);
+          M->setMethod(&meth, meth.code, "");
         }
       }
       
@@ -1075,6 +1077,7 @@ Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) : VirtualMachine() {
         JavaMethod& meth = C->staticMethods[i];
         if (!isAbstract(meth.access) && meth.code) {
           addMethodInFunctionMap(&meth, meth.code);
+          M->setMethod(&meth, meth.code, "");
         }
       }
     }
