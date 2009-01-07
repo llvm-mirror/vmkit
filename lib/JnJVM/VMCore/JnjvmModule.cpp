@@ -1395,7 +1395,18 @@ const Type* LLVMClassInfo::getVirtualType() {
     
     JnjvmModule* Mod = classDef->classLoader->getModule();
     if (!Mod->isStaticCompiling()) {
-      Mod->makeVT((Class*)classDef);
+      if (!classDef->virtualVT) {
+        Mod->makeVT((Class*)classDef);
+      } else {
+        // So the class is vmjc'ed. Create the virtual tracer.
+        Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
+                                          GlobalValue::ExternalLinkage,
+                                          "markAndTraceObject", Mod);
+       
+        void* ptr = ((void**)classDef->virtualVT)[VT_TRACER_OFFSET];
+        Mod->executionEngine->addGlobalMapping(func, ptr);
+        virtualTracerFunction = func;
+      }
     }
   
   }
