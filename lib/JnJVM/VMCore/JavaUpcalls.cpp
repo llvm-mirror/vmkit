@@ -300,6 +300,16 @@ extern "C" JavaObject* nativeGetCallerClass(uint32 index) {
   return res;
 }
 
+extern "C" JavaObject* nativeGetAnnotation(JavaObject* obj) {
+  return 0;
+}
+
+extern "C" JavaObject* nativeGetDeclaredAnnotations() {
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClassArray* array = vm->upcalls->constructorArrayAnnotation;
+  return array->doNew(0, vm);
+}
+
 extern "C" void nativePropertiesPostInit(JavaObject* prop);
 
 
@@ -681,5 +691,21 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
                   "(Ljava/util/Properties;)V", ACC_STATIC);
   postProperties->setCompiledPtr((void*)(intptr_t)nativePropertiesPostInit,
                                  "nativePropertiesPostInit");
+
+  // Also implement these twos, implementation in GNU Classpath 0.97.2 is buggy.
+  JavaMethod* getAnnotation =
+    UPCALL_METHOD(loader, "java/lang/reflect/AccessibleObject", "getAnnotation",
+                  "(Ljava/lang/Class;)Ljava/lang/annotation/Annotation;",
+                  ACC_VIRTUAL);
+  getAnnotation->setCompiledPtr((void*)(intptr_t)nativeGetAnnotation,
+                                "nativeGetAnnotation");
+  
+  JavaMethod* getAnnotations =
+    UPCALL_METHOD(loader, "java/lang/reflect/AccessibleObject",
+                  "getDeclaredAnnotations",
+                  "()[Ljava/lang/annotation/Annotation;",
+                  ACC_VIRTUAL);
+  getAnnotations->setCompiledPtr((void*)(intptr_t)nativeGetDeclaredAnnotations,
+                                 "nativeGetDeclaredAnnotations");
 }
 
