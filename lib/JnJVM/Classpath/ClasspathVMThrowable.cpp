@@ -69,7 +69,8 @@ static JavaObject* consStackElement(JavaMethod* meth, void* ip) {
   
   Attribut* sourceAtt = cl->lookupAttribut(Attribut::sourceFileAttribut);
   
-  if (sourceAtt) {
+  // We don't have the bytes if the class was vmjc'ed.
+  if (sourceAtt && cl->getBytes()) {
     Reader reader(sourceAtt, cl->getBytes());
     uint16 index = reader.readU2();
     sourceName = vm->internalUTF8ToStr(cl->getConstantPool()->UTF8At(index));
