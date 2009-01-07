@@ -198,53 +198,34 @@ Constant* JnjvmModule::getConstantPool(JavaConstantPool* ctp) {
     return ConstantExpr::getIntToPtr(CI, ConstantPoolType);
   }
 }
-#include <iostream>
+
 Constant* JnjvmModule::getMethodInClass(JavaMethod* meth) {
   if (staticCompilation) {
-    method_iterator SI = methods.find(meth);
-    if (SI != methods.end()) {
-      return SI->second;
-    } else {
-      Class* cl = meth->classDef;
-      Constant* MOffset = 0;
-      Constant* COffset = 0;
-      uint32 nbMethods;
-      
-      if (isVirtual(meth->access)) {
-        COffset = ConstantInt::get(Type::Int32Ty, 9);
-        nbMethods = cl->nbVirtualMethods;
-        for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
-          if (&cl->virtualMethods[i] == meth) {
-            MOffset = ConstantInt::get(Type::Int32Ty, i);
-            break;
-          }
-        }
-      } else {
-        COffset = ConstantInt::get(Type::Int32Ty, 11);
-        nbMethods = cl->nbStaticMethods;
-        for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
-          if (&cl->staticMethods[i] == meth) {
-            MOffset = ConstantInt::get(Type::Int32Ty, i);
-            break;
-          }
+    Class* cl = meth->classDef;
+    Constant* MOffset = 0;
+    Constant* Array = 0;
+    if (isVirtual(meth->access)) {
+      method_iterator SI = virtualMethods.find(cl);
+      for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+        if (&cl->virtualMethods[i] == meth) {
+          MOffset = ConstantInt::get(Type::Int32Ty, i);
+          break;
         }
       }
-      
-      assert(MOffset && "Offset not found!");
-      Constant* C = getNativeClass(cl);
-
-      Value* Elts[2]  = { constantZero, COffset};
-      Constant* res = ConstantExpr::getGetElementPtr(C, Elts, 2);
-      const Type* ATy = ArrayType::get(JavaMethodType->getContainedType(0),
-                                       nbMethods);
-      ATy = PointerType::getUnqual(ATy);
-      res = ConstantExpr::getBitCast(res, ATy);
-      Elts[0] = constantZero;
-      Elts[1] = MOffset;
-      res = ConstantExpr::getGetElementPtr(res, Elts, 2);
-      methods.insert(std::make_pair(meth, res));
-      return res;
+      Array = SI->second;
+    } else {
+      method_iterator SI = staticMethods.find(cl);
+      for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
+        if (&cl->staticMethods[i] == meth) {
+          MOffset = ConstantInt::get(Type::Int32Ty, i);
+          break;
+        }
+      }
+      Array = SI->second;
     }
+    
+    Constant* GEPs[2] = { constantZero, MOffset };
+    return ConstantExpr::getGetElementPtr(Array, GEPs, 2);
     
   } else {
     ConstantInt* CI = ConstantInt::get(Type::Int64Ty, (int64_t)meth);
@@ -1095,9 +1076,11 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
 
     Constant* methods = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
-    methods = new GlobalVariable(ATy, false, GlobalValue::InternalLinkage,
-                                 methods, "", this);
-    methods = ConstantExpr::getCast(Instruction::BitCast, methods,
+    GlobalVariable* GV = new GlobalVariable(ATy, false,
+                                            GlobalValue::InternalLinkage,
+                                            methods, "", this);
+    virtualMethods.insert(std::make_pair(cl, GV));
+    methods = ConstantExpr::getCast(Instruction::BitCast, GV,
                                     JavaMethodType);
     ClassElts.push_back(methods);
   } else {
@@ -1118,10 +1101,11 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
 
     Constant* methods = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
-    methods = new GlobalVariable(ATy, false, GlobalValue::InternalLinkage,
-                                 methods, "", this);
-    methods = ConstantExpr::getCast(Instruction::BitCast, methods,
-                                  JavaMethodType);
+    GlobalVariable* GV = new GlobalVariable(ATy, false,
+                                            GlobalValue::InternalLinkage,
+                                            methods, "", this);
+    staticMethods.insert(std::make_pair(cl, GV));
+    methods = ConstantExpr::getCast(Instruction::BitCast, GV, JavaMethodType);
     ClassElts.push_back(methods);
   } else {
     ClassElts.push_back(Constant::getNullValue(JavaMethodType));
