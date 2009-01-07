@@ -198,7 +198,7 @@ Constant* JnjvmModule::getConstantPool(JavaConstantPool* ctp) {
     return ConstantExpr::getIntToPtr(CI, ConstantPoolType);
   }
 }
-
+#include <iostream>
 Constant* JnjvmModule::getMethodInClass(JavaMethod* meth) {
   if (staticCompilation) {
     method_iterator SI = methods.find(meth);
@@ -208,9 +208,11 @@ Constant* JnjvmModule::getMethodInClass(JavaMethod* meth) {
       Class* cl = meth->classDef;
       Constant* MOffset = 0;
       Constant* COffset = 0;
+      uint32 nbMethods;
       
       if (isVirtual(meth->access)) {
         COffset = ConstantInt::get(Type::Int32Ty, 9);
+        nbMethods = cl->nbVirtualMethods;
         for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
           if (&cl->virtualMethods[i] == meth) {
             MOffset = ConstantInt::get(Type::Int32Ty, i);
@@ -219,6 +221,7 @@ Constant* JnjvmModule::getMethodInClass(JavaMethod* meth) {
         }
       } else {
         COffset = ConstantInt::get(Type::Int32Ty, 11);
+        nbMethods = cl->nbStaticMethods;
         for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
           if (&cl->staticMethods[i] == meth) {
             MOffset = ConstantInt::get(Type::Int32Ty, i);
@@ -226,13 +229,19 @@ Constant* JnjvmModule::getMethodInClass(JavaMethod* meth) {
           }
         }
       }
-
+      
+      assert(MOffset && "Offset not found!");
       Constant* C = getNativeClass(cl);
 
-      Value* Elts[3]  = { constantZero, COffset, MOffset };
-      
-      Constant* res = ConstantExpr::getGetElementPtr(C, Elts, 3);
-
+      Value* Elts[2]  = { constantZero, COffset};
+      Constant* res = ConstantExpr::getGetElementPtr(C, Elts, 2);
+      const Type* ATy = ArrayType::get(JavaMethodType->getContainedType(0),
+                                       nbMethods);
+      ATy = PointerType::getUnqual(ATy);
+      res = ConstantExpr::getBitCast(res, ATy);
+      Elts[0] = constantZero;
+      Elts[1] = MOffset;
+      res = ConstantExpr::getGetElementPtr(res, Elts, 2);
       methods.insert(std::make_pair(meth, res));
       return res;
     }
