@@ -179,6 +179,7 @@ public:
 };
 
 class JnjvmModule : public mvm::MvmModule {
+  friend class Jnjvm;
   friend class LLVMClassInfo;
 private:
   std::map<const CommonClass*, llvm::Constant*> nativeClasses;

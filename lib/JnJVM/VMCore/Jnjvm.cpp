@@ -1134,6 +1134,8 @@ void Jnjvm::mainCompilerStart(JavaThread* th) {
     bootstrapLoader->upcalls->initialiseClasspath(bootstrapLoader);
   
     uint32 size = strlen(name);
+    JnjvmModule* M = bootstrapLoader->getModule();
+    
     if (size > 4 && 
        (!strcmp(&name[size - 4], ".jar") || !strcmp(&name[size - 4], ".zip"))) {
   
@@ -1173,6 +1175,7 @@ void Jnjvm::mainCompilerStart(JavaThread* th) {
         Class* cl = *i;
         cl->resolveClass();
         cl->setOwnerClass(JavaThread::get());
+        M->makeVT(cl);
       }
       
       for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
@@ -1186,11 +1189,10 @@ void Jnjvm::mainCompilerStart(JavaThread* th) {
       const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(name);
       UserClass* cl = bootstrapLoader->loadName(utf8, true, true);
       cl->setOwnerClass(JavaThread::get());
+      M->makeVT(cl);
       compileClass(cl);
     }
    
-    // Set the linkage to External, so that the printer does not complain.
-    JnjvmModule* M = bootstrapLoader->getModule();
     M->CreateStaticInitializer();
 
     // Print stats before quitting.

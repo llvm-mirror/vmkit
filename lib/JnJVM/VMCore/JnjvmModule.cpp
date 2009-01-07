@@ -419,10 +419,6 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef) {
     virtual_table_iterator I = virtualTables.find(classDef);
     if (I == End) {
       
-      if (isCompiling(classDef)) {
-        makeVT(classDef);
-      }
-
       const ArrayType* ATy = dyn_cast<ArrayType>(VTType->getContainedType(0));
       const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
       ATy = ArrayType::get(PTy, classDef->virtualTableSize);
@@ -436,7 +432,6 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef) {
       virtualTables.insert(std::make_pair(classDef, res));
     
       if (isCompiling(classDef)) {
-        makeVT(classDef);
         Function* Finalizer = ((Function**)classDef->virtualVT)[0];
         Function* Tracer = LCI->getVirtualTracer();
         Constant* C = CreateConstantFromVT(classDef->virtualVT,
