@@ -645,7 +645,7 @@ Constant* JnjvmModule::CreateConstantFromJavaClass(CommonClass* cl) {
   std::vector<Constant*> Elmts;
 
   // JavaObject
-  Elmts.push_back(CreateConstantForJavaObject(cl));
+  Elmts.push_back(CreateConstantForJavaObject(javaClass));
   
   // signers
   Elmts.push_back(Constant::getNullValue(JavaObjectType));
