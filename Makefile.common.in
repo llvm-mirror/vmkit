@@ -27,6 +27,7 @@ CXX.Flags += @GC_FLAGS@ @VM_FLAGS@ -Wno-variadic-macros -fno-omit-frame-pointer 
 
 # GNU Classpath flags
 CLASSPATH_FLAGS = @classpathinclude@
+GLIBJ = @classpathglibj@
 
 # Pnet location
 PNETLIB = @pnetlocalprefix@

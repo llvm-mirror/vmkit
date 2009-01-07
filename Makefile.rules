@@ -34,3 +34,18 @@ clean-local::
 	$(Verb) $(RM) -f LLVMAssembly.s LLVMAssembly.bc
 
 endif
+
+ifndef VMJC
+VMJC      := $(ToolDir)/vmjc$(EXEEXT)
+endif
+
+vmjclib :
+	$(Verb) $(VMJC) -f -std-compile-opts $(GLIBJ)/glibj.zi -o glibj.zip.bc
+	$(Verb) if test -f glibj.zip.bc; then \
+          $(LOPT) -std-compile-opts -f glibj.zip.bc -o glibj-optimized.zip.bc ; \
+          $(Verb) $(LLC) -disable-fp-elim -f glibj-optimized.zip.bc; \
+          $(Verb) $(CC) -fPIC -c glibj-optimized.zip.s; \
+          $(Verb) $(CC) -shared -o libvmjc.so glibj-optimized.zip.o; \
+          $(RM) -f glibj.zip.bc glibj-optimized.zip.bc glibj-optimized.zip.s \
+                   glibj-optimized.zip.o; \
+        fi
