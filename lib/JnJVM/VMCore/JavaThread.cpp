@@ -134,6 +134,64 @@ void JavaThread::getJavaFrameContext(std::vector<void*>& context) {
   }
 }
 
+UserClass* JavaThread::getCallingClassLevel(uint32 level) {
+  std::vector<void*>::iterator it = addresses.end();
+  uint32 index = 0;
+
+  // Loop until we cross the first Java frame.
+  while (it != addresses.begin()) {
+    
+    // Get the last Java frame.
+    void** addr = (void**)*(--it);
+    
+    // Set the iterator to the next native -> Java call.
+    --it;
+
+    do {
+      void* ip = FRAME_IP(addr);
+      if (index == level) {
+        JavaMethod* meth = getJVM()->IPToMethod<JavaMethod>(ip);
+        return meth->classDef;
+      }
+      addr = (void**)addr[0];
+      ++index;
+      // We end walking the stack when we cross a native -> Java call. Here
+      // the iterator points to a native -> Java call. We dereference addr twice
+      // because a native -> Java call always contains the signature function.
+    } while (((void***)addr)[0][0] != *it);
+  }
+  return 0;
+}
+
+JavaObject* JavaThread::getNonNullClassLoader() {
+  std::vector<void*>::iterator it = addresses.end();
+
+  // Loop until we cross the first Java frame.
+  while (it != addresses.begin()) {
+    
+    // Get the last Java frame.
+    void** addr = (void**)*(--it);
+    
+    // Set the iterator to the next native -> Java call.
+    --it;
+
+    do {
+      void* ip = FRAME_IP(addr);
+      JavaMethod* meth = getJVM()->IPToMethod<JavaMethod>(ip);
+      JnjvmClassLoader* loader = meth->classDef->classLoader;
+      JavaObject* obj = loader->getJavaClassLoader();
+      if (obj) return obj;
+      addr = (void**)addr[0];
+      // We end walking the stack when we cross a native -> Java call. Here
+      // the iterator points to a native -> Java call. We dereference addr twice
+      // because a native -> Java call always contains the signature function.
+    } while (((void***)addr)[0][0] != *it);
+  }
+
+  return 0;
+}
+
+
 void JavaThread::printJavaBacktrace() {
   Jnjvm* vm = getJVM();
   std::vector<void*> vals;

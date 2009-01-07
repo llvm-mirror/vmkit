@@ -244,6 +244,16 @@ public:
   /// method on the stack.
   ///
   UserClass* getCallingClass(uint32 level);
+  
+  /// getCallingClassLevel - Get the Java method in the stack at the
+  /// specified level.
+  ///
+  UserClass* getCallingClassLevel(uint32 level);
+  
+  /// getNonNullClassLoader - Get the first non-null class loader on the
+  /// stack.
+  ///
+  JavaObject* getNonNullClassLoader();
     
   /// printBacktrace - Prints the backtrace of this thread.
   ///

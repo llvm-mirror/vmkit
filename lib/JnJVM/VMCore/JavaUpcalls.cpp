@@ -258,7 +258,6 @@ extern "C" JavaObject* nativeGetCallingClass() {
   JavaThread* th = JavaThread::get();
   UserClass* cl = th->getCallingClass(1);
   if (cl) res = cl->getClassDelegatee(th->getJVM());
-
   END_NATIVE_EXCEPTION
 
   return res;
@@ -272,6 +271,30 @@ extern "C" JavaObject* nativeGetCallingClassLoader() {
   JavaThread* th = JavaThread::get();
   UserClass* cl = th->getCallingClass(1);
   res = cl->classLoader->getJavaClassLoader();  
+  END_NATIVE_EXCEPTION
+
+  return res;
+}
+
+extern "C" JavaObject* nativeFirstNonNullClassLoader() {
+  JavaObject *res = 0;
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+  JavaThread* th = JavaThread::get();
+  res = th->getNonNullClassLoader();
+  END_NATIVE_EXCEPTION
+
+  return res;
+}
+
+extern "C" JavaObject* nativeGetCallerClass(uint32 index) {
+  
+  JavaObject *res = 0;
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+  JavaThread* th = JavaThread::get();
+  UserClass* cl = th->getCallingClassLevel(index - 1);
+  if (cl) res = cl->getClassDelegatee(th->getJVM());
   END_NATIVE_EXCEPTION
 
   return res;
@@ -639,6 +662,19 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   getCallingClassLoader->setCompiledPtr((void*)(intptr_t)
                                         nativeGetCallingClassLoader,
                                         "nativeGetCallingClassLoader");
+  
+  JavaMethod* firstNonNullClassLoader =
+    UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "firstNonNullClassLoader",
+                  "()Ljava/lang/ClassLoader;", ACC_STATIC);
+  firstNonNullClassLoader->setCompiledPtr((void*)(intptr_t)
+                                          nativeFirstNonNullClassLoader,
+                                          "nativeFirstNonNullClassLoader");
+  
+  JavaMethod* getCallerClass =
+    UPCALL_METHOD(loader, "sun/reflect/Reflection", "getCallerClass",
+                  "(I)Ljava/lang/Class;", ACC_STATIC);
+  getCallerClass->setCompiledPtr((void*)(intptr_t)nativeGetCallerClass,
+                                 "nativeGetCallerClass");
   
   JavaMethod* postProperties =
     UPCALL_METHOD(loader, "gnu/classpath/VMSystemProperties", "postInit",
