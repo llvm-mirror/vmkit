@@ -96,13 +96,14 @@ void JavaThread::startJava() {
   addresses.push_back(cur);
 }
 
-UserClass* JavaThread::getCallingClass() {
+UserClass* JavaThread::getCallingClass(uint32 level) {
   // I'm a native function, so try to look at the last Java method.
   // First Get the caller of this method.
   void** addr = (void**)addresses.back();
 
   // Get the caller of the Java getCallingClass method.
-  addr = (void**)addr[0];
+  if (level)
+    addr = (void**)addr[0];
   void* ip = FRAME_IP(addr);
 
   JavaMethod* meth = getJVM()->IPToMethod<JavaMethod>(ip);
@@ -136,6 +137,7 @@ void JavaThread::getJavaFrameContext(std::vector<void*>& context) {
 void JavaThread::printJavaBacktrace() {
   Jnjvm* vm = getJVM();
   std::vector<void*> vals;
+  getJavaFrameContext(vals);
   for (std::vector<void*>::iterator i = vals.begin(), e = vals.end(); 
        i != e; ++i) {
     JavaMethod* meth = vm->IPToMethod<JavaMethod>(*i);

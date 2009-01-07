@@ -256,7 +256,7 @@ extern "C" JavaObject* nativeGetCallingClass() {
   BEGIN_NATIVE_EXCEPTION(0)
 
   JavaThread* th = JavaThread::get();
-  UserClass* cl = th->getCallingClass();
+  UserClass* cl = th->getCallingClass(1);
   if (cl) res = cl->getClassDelegatee(th->getJVM());
 
   END_NATIVE_EXCEPTION
@@ -270,7 +270,7 @@ extern "C" JavaObject* nativeGetCallingClassLoader() {
   
   BEGIN_NATIVE_EXCEPTION(0)
   JavaThread* th = JavaThread::get();
-  UserClass* cl = th->getCallingClass();
+  UserClass* cl = th->getCallingClass(1);
   res = cl->classLoader->getJavaClassLoader();  
   END_NATIVE_EXCEPTION
 

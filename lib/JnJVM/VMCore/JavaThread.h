@@ -243,7 +243,7 @@ public:
   /// getCallingClass - Get the Java method that called the last Java
   /// method on the stack.
   ///
-  UserClass* getCallingClass();
+  UserClass* getCallingClass(uint32 level);
     
   /// printBacktrace - Prints the backtrace of this thread.
   ///
