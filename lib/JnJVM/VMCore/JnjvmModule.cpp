@@ -1206,7 +1206,7 @@ Constant* JnjvmModule::CreateConstantFromUTF8(const UTF8* val) {
   const StructType* STy = StructType::get(Elemts);
   
   std::vector<Constant*> Cts;
-  Cts.push_back(Constant::getNullValue(JavaObjectType->getContainedType(0)));
+  Cts.push_back(CreateConstantForJavaObject(&ArrayOfChar));
   Cts.push_back(ConstantInt::get(pointerSizeType, val->size));
   
   std::vector<Constant*> Vals;
