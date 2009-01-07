@@ -1057,6 +1057,30 @@ Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) : VirtualMachine() {
     hashStr.insert(*i);
   }
 
+  ClassMap* classes = bootstrapLoader->getClasses();
+  for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
+       i != e; ++i) {
+    CommonClass* cl = i->second;
+    if (cl->isClass()) {
+      Class* C = cl->asClass();
+      
+      for (uint32 i = 0; i < C->nbVirtualMethods; ++i) {
+        JavaMethod& meth = C->virtualMethods[i];
+        if (!isAbstract(meth.access) && meth.code) {
+          addMethodInFunctionMap(&meth, meth.code);
+        }
+      }
+      
+      for (uint32 i = 0; i < C->nbStaticMethods; ++i) {
+        JavaMethod& meth = C->staticMethods[i];
+        if (!isAbstract(meth.access) && meth.code) {
+          addMethodInFunctionMap(&meth, meth.code);
+        }
+      }
+    }
+  }
+  
+
 #ifdef ISOLATE
   IsolateLock.lock();
   for (uint32 i = 0; i < NR_ISOLATES; ++i) {
