@@ -354,13 +354,14 @@ public:
 //
 //===----------------------------------------------------------------------===//
   
-  /// compileAllStubs - Compile all the native -> Java stubs.
+  /// compileAllStubs - Compile all the native -> Java stubs. 
+  /// TODO: Once LLVM supports va_arg, enable AP.
   ///
   void compileAllStubs() {
     getStaticCallBuf();
-    getStaticCallAP();
+    // getStaticCallAP();
     getVirtualCallBuf();
-    getVirtualCallAP();
+    // getVirtualCallAP();
   }
 
   
