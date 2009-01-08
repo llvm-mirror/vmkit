@@ -39,17 +39,34 @@ ifndef VMJC
 VMJC      := $(ToolDir)/vmjc$(EXEEXT)
 endif
 
-vmjclib :
+
+ifdef VMJC_ASSEMBLY
+
+.PRECIOUS: glibj.zip.s
+
+glibj.zip.s : $(LOPT) $(LLC) $(VMJC)
+
+
+glibj.zip.bc :
+	$(Echo) "Compiling glibj.zip to llvm"
 	$(Verb) if test -d $(GLIBJ); then \
-	  $(Verb) $(VMJC) -f -std-compile-opts $(GLIBJ)/glibj.zip -o glibj.zip.bc; \
+	  $(VMJC) -f -std-compile-opts $(GLIBJ)/glibj.zip -o glibj.zip.bc; \
 	else \
-	  $(Verb) $(VMJC) -f -std-compile-opts $(GLIBJ) -o glibj.zip.bc; \
+	  $(VMJC) -f -std-compile-opts $(GLIBJ) -o glibj.zip.bc; \
 	fi
-	$(Verb) if test -f glibj.zip.bc; then \
-	$(LOPT) -std-compile-opts -f glibj.zip.bc -o glibj-optimized.zip.bc; \
-	$(Verb) $(LLC) -disable-fp-elim -f glibj-optimized.zip.bc; \
-	$(Verb) $(CC) -fPIC -c glibj-optimized.zip.s; \
-	$(Verb) $(CC) -shared -o libvmjc.so glibj-optimized.zip.o; \
-	$(RM) -f glibj.zip.bc glibj-optimized.zip.bc glibj-optimized.zip.s; \
-	$(RM) -f glibj-optimized.zip.o; \
-	fi
+	
+glibj-optimized.zip.bc : glibj.zip.bc
+	$(Echo) "Optimizing glibj.zip"
+	$(Verb) $(LOPT) -std-compile-opts -f glibj.zip.bc -o glibj-optimized.zip.bc
+
+glibj.zip.s : glibj-optimized.zip.bc
+	$(Echo) "Compiling glibj.zip.bc to native"
+	$(Verb) $(LLC) -disable-fp-elim -f glibj-optimized.zip.bc -o glibj.zip.s
+
+$(ObjDir)/%.lo $(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
+	$(Echo) "Compiling $*.s for $(BuildMode) build " $(PIC_FLAG)
+	$(Verb) $(MAYBE_PIC_Compile.CXX) $(DEPEND_OPTIONS) $< -o $(ObjDir)/$*.o
+
+clean-local::
+	$(Verb) $(RM) -f glibj.zip.s glibj.zip.bc glibj-optimized.zip.bc
+endif
