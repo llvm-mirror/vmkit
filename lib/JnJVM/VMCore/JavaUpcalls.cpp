@@ -293,8 +293,13 @@ extern "C" JavaObject* nativeGetCallerClass(uint32 index) {
   
   BEGIN_NATIVE_EXCEPTION(0)
   JavaThread* th = JavaThread::get();
-  UserClass* cl = th->getCallingClassLevel(index - 1);
-  if (cl) res = cl->getClassDelegatee(th->getJVM());
+  Jnjvm* vm = th->getJVM();
+  // Temporary hack because we know llvm inlines a call in the call stack
+  // to this function. And this function is called only in places that
+  // we know.
+  index = vm->bootstrapLoader->nativeHandle ? index - 2 : index - 1;
+  UserClass* cl = th->getCallingClassLevel(index);
+  if (cl) res = cl->getClassDelegatee(vm);
   END_NATIVE_EXCEPTION
 
   return res;

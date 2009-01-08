@@ -162,10 +162,10 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
 
   // Now that native types have been loaded, try to find if we have a
   // pre-compiled rt.jar
-  void* handle = dlopen(BOOTLIBNAME, RTLD_LAZY | RTLD_GLOBAL);
-  if (handle) {
+  nativeHandle = dlopen(BOOTLIBNAME, RTLD_LAZY | RTLD_GLOBAL);
+  if (nativeHandle) {
     // Found it!
-    SuperArray = (Class*)dlsym(handle, "java.lang.Object");
+    SuperArray = (Class*)dlsym(nativeHandle, "java.lang.Object");
     
     if (SuperArray) {
       ClassArray::SuperArray = (Class*)SuperArray->getInternal();
