@@ -426,7 +426,9 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef) {
       // modify it.
       GlobalVariable* varGV = new GlobalVariable(ATy, false,
                                                  GlobalValue::ExternalLinkage,
-                                                 0, "", this);
+                                                 0, 
+                                                 classDef->printString("<VT>"),
+                                                 this);
     
       res = ConstantExpr::getCast(Instruction::BitCast, varGV, VTType);
       virtualTables.insert(std::make_pair(classDef, res));
