@@ -155,7 +155,7 @@ Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
         const llvm::Type* Ty = JavaClassArrayType; 
       
         GlobalVariable* varGV = 
-          new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage,
+          new GlobalVariable(Ty, false, GlobalValue::InternalLinkage,
                              Constant::getNullValue(Ty), "", this);
       
         arrayClasses.insert(std::make_pair((ClassArray*)classDef, varGV));
@@ -182,9 +182,10 @@ Constant* JnjvmModule::getConstantPool(JavaConstantPool* ctp) {
     constant_pool_iterator End = constantPools.end();
     constant_pool_iterator I = constantPools.find(ctp);
     if (I == End) {
-      varGV = new GlobalVariable(ConstantPoolType->getContainedType(0), false,
-                                 GlobalValue::ExternalLinkage,
-                                 0, "", this);
+      const Type* Ty = ConstantPoolType->getContainedType(0);
+      varGV = new GlobalVariable(Ty, false,
+                                 GlobalValue::InternalLinkage,
+                                 Constant::getNullValue(Ty), "", this);
       constantPools.insert(std::make_pair(ctp, varGV));
       return varGV;
     } else {
@@ -244,7 +245,7 @@ Constant* JnjvmModule::getString(JavaString* str) {
       const llvm::Type* Ty = LCI->getVirtualType();
       GlobalVariable* varGV = 
         new GlobalVariable(Ty->getContainedType(0), false,
-                           GlobalValue::ExternalLinkage,
+                           GlobalValue::InternalLinkage,
                            0, "", this);
       Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
                                             JavaObjectType);
@@ -269,7 +270,7 @@ Constant* JnjvmModule::getEnveloppe(Enveloppe* enveloppe) {
     } else {
       GlobalVariable* varGV = 
         new GlobalVariable(EnveloppeType->getContainedType(0), false,
-                           GlobalValue::ExternalLinkage, 0, "", this);
+                           GlobalValue::InternalLinkage, 0, "", this);
       enveloppes.insert(std::make_pair(enveloppe, varGV));
       
       Constant* C = CreateConstantFromEnveloppe(enveloppe);
@@ -295,7 +296,7 @@ Constant* JnjvmModule::getJavaClass(CommonClass* cl) {
       
       GlobalVariable* varGV = 
         new GlobalVariable(Ty->getContainedType(0), false,
-                           GlobalValue::ExternalLinkage, 0, "", this);
+                           GlobalValue::InternalLinkage, 0, "", this);
       
       Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
                                             JavaObjectType);
@@ -542,8 +543,8 @@ llvm::Function* JnjvmModule::makeTracer(Class* cl, bool stat) {
   }
   
   Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
-                                    GlobalValue::ExternalLinkage,
-                                    "markAndTraceObject",
+                                    GlobalValue::InternalLinkage,
+                                    "",
                                     this);
 
   Constant* zero = mvm::MvmModule::constantZero;
@@ -1228,7 +1229,7 @@ Constant* JnjvmModule::getUTF8(const UTF8* val) {
   if (I == End) {
     Constant* C = CreateConstantFromUTF8(val);
     GlobalVariable* varGV = new GlobalVariable(C->getType(), true,
-                                               GlobalValue::ExternalLinkage,
+                                               GlobalValue::InternalLinkage,
                                                C, "", this);
     
     Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
@@ -1496,8 +1497,16 @@ Function* LLVMMethodInfo::getMethod() {
       char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + 1 +
                                 ((mnlen + clen + mtlen) << 1));
       
-      methodDef->jniConsFromMethOverloaded(buf + 1);
-      memcpy(buf, "JnJVM", 5);
+      bool jnjvm = false;
+      if (isNative(methodDef->access)) {
+        // Verify if it's defined by JnJVM
+        JCL->nativeLookup(methodDef, jnjvm, buf);
+      }
+
+      if (!jnjvm) {
+        methodDef->jniConsFromMethOverloaded(buf + 1);
+        memcpy(buf, "JnJVM", 5);
+      }
 
       methodFunction = Function::Create(getFunctionType(), 
                                         GlobalValue::GhostLinkage, buf, Mod);
@@ -1645,7 +1654,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
 
   Function* res = Function::Create(virt ? getVirtualBufType() : 
                                           getStaticBufType(),
-                                   GlobalValue::ExternalLinkage, name, Mod);
+                                   GlobalValue::InternalLinkage, name, Mod);
   
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
@@ -1703,7 +1712,7 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
 
   Function* res = Function::Create(virt ? getVirtualBufType() :
                                           getStaticBufType(),
-                                   GlobalValue::ExternalLinkage, name, Mod);
+                                   GlobalValue::InternalLinkage, name, Mod);
   
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
@@ -2323,12 +2332,6 @@ Value* JnjvmModule::getIsolate(Jnjvm* isolate, Value* Where) {
 #endif
 
 void JnjvmModule::CreateStaticInitializer() {
-
-  // Set the linkage of all functions to External, so that the printer does
-  // not complain.
-  for (Module::iterator i = begin(), e = end(); i != e; ++i) {
-    i->setLinkage(GlobalValue::ExternalLinkage);
-  }
 
   std::vector<const llvm::Type*> llvmArgs;
   llvmArgs.push_back(ptrType); // class loader
