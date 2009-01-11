@@ -541,7 +541,7 @@ static char* findInformation(Jnjvm* vm, ArrayUInt8* manifest, const char* entry,
 
 void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv, 
                                           int i) {
-  char* jarFile = argv[i];
+  jarFile = argv[i];
   uint32 size = 2 + strlen(vm->classpath) + strlen(jarFile);
   char* temp = (char*)vm->allocator.Allocate(size);
 
@@ -761,6 +761,10 @@ JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
       upcalls->getSystemClassLoader->invokeJavaObjectStatic(this, cl);
     appClassLoader = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader,
                                                                     this);
+    if (argumentsInfo.jarFile)
+      appClassLoader->loadLibFromJar(this, argumentsInfo.jarFile,
+                                     argumentsInfo.className);
+    else appClassLoader->loadLibFromFile(this, argumentsInfo.className);
   }
   return appClassLoader;
 }
@@ -1057,32 +1061,7 @@ Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) : VirtualMachine() {
     hashStr.insert(*i);
   }
 
-  ClassMap* classes = bootstrapLoader->getClasses();
-  JnjvmModule* M = bootstrapLoader->getModule();
-  for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
-       i != e; ++i) {
-    CommonClass* cl = i->second;
-    if (cl->isClass()) {
-      Class* C = cl->asClass();
-      
-      for (uint32 i = 0; i < C->nbVirtualMethods; ++i) {
-        JavaMethod& meth = C->virtualMethods[i];
-        if (!isAbstract(meth.access) && meth.code) {
-          addMethodInFunctionMap(&meth, meth.code);
-          M->setMethod(&meth, meth.code, "");
-        }
-      }
-      
-      for (uint32 i = 0; i < C->nbStaticMethods; ++i) {
-        JavaMethod& meth = C->staticMethods[i];
-        if (!isAbstract(meth.access) && meth.code) {
-          addMethodInFunctionMap(&meth, meth.code);
-          M->setMethod(&meth, meth.code, "");
-        }
-      }
-    }
-  }
-  
+  bootstrapLoader->insertAllMethodsInVM(this);  
 
 #ifdef ISOLATE
   IsolateLock.lock();

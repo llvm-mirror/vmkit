@@ -86,6 +86,7 @@ public:
   char** argv;
   uint32 appArgumentsPos;
   char* className;
+  char* jarFile;
   std::vector< std::pair<char*, char*> > agents;
 
   void readArgs(Jnjvm *vm);

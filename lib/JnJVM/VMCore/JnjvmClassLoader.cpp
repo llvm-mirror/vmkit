@@ -9,6 +9,8 @@
 
 #include <climits>
 #include <cstdlib>
+
+// for strrchr
 #include <cstring>
 
 // for dlopen and dlsym
@@ -23,10 +25,10 @@
 
 #if defined(__MACH__)
 #define SELF_HANDLE RTLD_DEFAULT
-#define BOOTLIBNAME "libvmjc.dylib"
+#define DYLD_EXTENSION ".dylib"
 #else
 #define SELF_HANDLE 0
-#define BOOTLIBNAME "libvmjc.so"
+#define DYLD_EXTENSION ".so"
 #endif
 
 #include "debug.h"
@@ -162,7 +164,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
 
   // Now that native types have been loaded, try to find if we have a
   // pre-compiled rt.jar
-  nativeHandle = dlopen(BOOTLIBNAME, RTLD_LAZY | RTLD_GLOBAL);
+  nativeHandle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
   if (nativeHandle) {
     // Found it!
     SuperArray = (Class*)dlsym(nativeHandle, "java.lang.Object");
@@ -946,6 +948,66 @@ intptr_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& jnjvm,
     res = loadInLib(buf, jnjvm);
   }
   return res;
+}
+
+void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
+  JnjvmModule* M = getModule();
+  for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
+       i != e; ++i) {
+    CommonClass* cl = i->second;
+    if (cl->isClass()) {
+      Class* C = cl->asClass();
+      
+      for (uint32 i = 0; i < C->nbVirtualMethods; ++i) {
+        JavaMethod& meth = C->virtualMethods[i];
+        if (!isAbstract(meth.access) && meth.code) {
+          vm->addMethodInFunctionMap(&meth, meth.code);
+          M->setMethod(&meth, meth.code, "");
+        }
+      }
+      
+      for (uint32 i = 0; i < C->nbStaticMethods; ++i) {
+        JavaMethod& meth = C->staticMethods[i];
+        if (!isAbstract(meth.access) && meth.code) {
+          vm->addMethodInFunctionMap(&meth, meth.code);
+          M->setMethod(&meth, meth.code, "");
+        }
+      }
+    }
+  }
+}
+
+void JnjvmClassLoader::loadLibFromJar(Jnjvm* vm, const char* name,
+                                      const char* file) {
+
+  char* soName = (char*)alloca(strlen(name) + strlen(DYLD_EXTENSION));
+  char* ptr = strrchr(name, '/');
+  sprintf(soName, "%s%s", ptr ? ptr + 1 : name, DYLD_EXTENSION);
+  void* handle = dlopen(soName, RTLD_LAZY | RTLD_LOCAL);
+  if (handle) {
+    Class* cl = (Class*)dlsym(handle, file);
+    if (cl) {
+      static_init_t init = (static_init_t)(uintptr_t)cl->classLoader;
+      assert(init && "Loaded the wrong library");
+      init(this);
+      insertAllMethodsInVM(vm);
+    }
+  }
+}
+
+void JnjvmClassLoader::loadLibFromFile(Jnjvm* vm, const char* name) {
+  assert(classes->map.size() == 0);
+  char* soName = (char*)alloca(strlen(name) + strlen(DYLD_EXTENSION));
+  sprintf(soName, "%s%s", name, DYLD_EXTENSION);
+  void* handle = dlopen(soName, RTLD_LAZY | RTLD_LOCAL);
+  if (handle) {
+    Class* cl = (Class*)dlsym(handle, name);
+    if (cl) {
+      static_init_t init = (static_init_t)(uintptr_t)cl->classLoader;
+      init(this);
+      insertAllMethodsInVM(vm);
+    }
+  }
 }
 
 

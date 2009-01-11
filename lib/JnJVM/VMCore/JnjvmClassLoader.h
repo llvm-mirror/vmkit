@@ -266,6 +266,22 @@ public:
   /// JnJVM.
   ///
   intptr_t nativeLookup(JavaMethod* meth, bool& jnjvm, char* buf);
+
+  /// insertAllMethodsInVM - Insert all methods defined by this class loader
+  /// in the VM.
+  ///
+  void insertAllMethodsInVM(Jnjvm* vm);
+
+  /// loadLibFromJar - Try to load the shared library compiled by vmjc with
+  /// this jar file.
+  ///
+  void loadLibFromJar(Jnjvm* vm, const char* name, const char* file);
+
+  /// loadLibFromFile - Try to load the shared library compiled by vmjc with
+  /// this class file.
+  ///
+  void loadLibFromFile(Jnjvm* vm, const char* name);
+
 };
 
 /// JnjvmBootstrapLoader - This class is for the bootstrap class loader, which
