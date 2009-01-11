@@ -150,8 +150,13 @@ llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
     func = Function::Create(type, GlobalValue::GhostLinkage, key, TheModule);
   } else {
     const llvm::FunctionType* type = LSI->getStaticType();
-    func = Function::Create(type, GlobalValue::GhostLinkage, "staticCallback",
-                            TheModule);
+    if (M->isStaticCompiling()) {
+      func = Function::Create(type, GlobalValue::ExternalLinkage, "staticCallback",
+                              TheModule);
+    } else {
+      func = Function::Create(type, GlobalValue::GhostLinkage, "staticCallback",
+                              TheModule);
+    }
   }
   
   ++nbCallbacks;
