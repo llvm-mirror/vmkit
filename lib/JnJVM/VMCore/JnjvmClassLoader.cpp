@@ -1035,9 +1035,18 @@ extern "C" void vmjcAddString(JnjvmClassLoader* JCL, JavaString* val) {
   JCL->strings.push_back(val);
 }
 
-extern "C" intptr_t vmjcNativeLoader(UserClass* cl, const char* name) {
+extern "C" intptr_t vmjcNativeLoader(JavaMethod* meth) {
   bool jnjvm = false;
-  intptr_t res = cl->classLoader->loadInLib(name, jnjvm);
+  const UTF8* jniConsClName = meth->classDef->name;
+  const UTF8* jniConsName = meth->name;
+  const UTF8* jniConsType = meth->type;
+  sint32 clen = jniConsClName->size;
+  sint32 mnlen = jniConsName->size;
+  sint32 mtlen = jniConsType->size;
+
+  char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + 1 +
+                            ((mnlen + clen + mtlen) << 1));
+  intptr_t res = meth->classDef->classLoader->nativeLookup(meth, jnjvm, buf);
   assert(res && "Could not find required native method");
   return res;
 }

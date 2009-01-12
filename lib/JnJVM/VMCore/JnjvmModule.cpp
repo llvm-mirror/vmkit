@@ -2023,8 +2023,7 @@ void JnjvmModule::initialise() {
                                          "Init", this);
 
     llvmArgs.clear();
-    llvmArgs.push_back(JavaClassType);
-    llvmArgs.push_back(ptrType);
+    llvmArgs.push_back(JavaMethodType);
     
     FTy = FunctionType::get(ptrType, llvmArgs, false);
   

@@ -296,20 +296,8 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   Value* nativeFunc = module->getNativeFunction(compilingMethod, (void*)natPtr);
 
   if (module->isStaticCompiling()) {
+    Value* Arg = module->getMethodInClass(compilingMethod); 
     
-    if (compilingClass->isNativeOverloaded(compilingMethod)) {
-      compilingMethod->jniConsFromMethOverloaded(functionName);
-    } else {
-      compilingMethod->jniConsFromMeth(functionName);
-    }
-
-    Constant* Arg = ConstantArray::get(std::string(functionName), true);
-    GlobalVariable* GV = new GlobalVariable(Arg->getType(), true,
-                                            GlobalValue::InternalLinkage, Arg,
-                                            "", module);
-    Arg = ConstantExpr::getBitCast(GV, module->ptrType);
-    Value* Args[2] = { module->getNativeClass(compilingClass), Arg };
-
     // If the global variable is null, then load it.
     BasicBlock* unloadedBlock = createBasicBlock("");
     BasicBlock* endBlock = createBasicBlock("");
@@ -322,8 +310,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     BranchInst::Create(unloadedBlock, endBlock, cmp, currentBlock);
     currentBlock = unloadedBlock;
 
-    Value* res = CallInst::Create(module->NativeLoader, Args, Args + 2, "",
-                                  currentBlock);
+    Value* res = CallInst::Create(module->NativeLoader, Arg, "", currentBlock);
 
     res = new BitCastInst(res, Ty, "", currentBlock);
     new StoreInst(res, nativeFunc, currentBlock);
