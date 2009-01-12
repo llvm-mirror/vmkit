@@ -179,7 +179,6 @@ public:
 };
 
 class JnjvmModule : public mvm::MvmModule {
-  friend class Jnjvm;
   friend class LLVMClassInfo;
 private:
   std::map<const CommonClass*, llvm::Constant*> nativeClasses;
@@ -234,7 +233,7 @@ private:
   
   llvm::Function* makeTracer(Class* cl, bool stat);
   void makeVT(Class* cl);
-  VirtualTable* allocateVT(Class* cl);
+  void allocateVT(Class* cl);
   
   static llvm::Constant* PrimitiveArrayVT;
   static llvm::Constant* ReferenceArrayVT;
@@ -440,9 +439,7 @@ private:
   static llvm::Module* initialModule;
   
   //--------------- Static compiler specific functions -----------------------//
-  llvm::Constant* CreateConstantFromVT(VirtualTable* VT, uint32 size,
-                                       llvm::Function* Finalizer,
-                                       llvm::Function* Tracer);
+  llvm::Constant* CreateConstantFromVT(Class* classDef);
   llvm::Constant* CreateConstantFromUTF8(const UTF8* val);
   llvm::Constant* CreateConstantFromEnveloppe(Enveloppe* val);
   llvm::Constant* CreateConstantFromCacheNode(CacheNode* CN);

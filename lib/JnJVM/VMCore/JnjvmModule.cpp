@@ -435,11 +435,7 @@ Constant* JnjvmModule::getVirtualTable(Class* classDef) {
       virtualTables.insert(std::make_pair(classDef, res));
     
       if (isCompiling(classDef)) {
-        Function* Finalizer = ((Function**)classDef->virtualVT)[0];
-        Function* Tracer = LCI->getVirtualTracer();
-        Constant* C = CreateConstantFromVT(classDef->virtualVT,
-                                           classDef->virtualTableSize,
-                                           Finalizer, Tracer);
+        Constant* C = CreateConstantFromVT(classDef);
         varGV->setInitializer(C);
       }
       
@@ -488,7 +484,7 @@ Constant* JnjvmModule::getNativeFunction(JavaMethod* meth, void* ptr) {
 }
 
 #ifndef WITHOUT_VTABLE
-VirtualTable* JnjvmModule::allocateVT(Class* cl) {
+void JnjvmModule::allocateVT(Class* cl) {
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
     JavaMethod& meth = cl->virtualMethods[i];
     if (meth.name->equals(cl->classLoader->bootstrapLoader->finalize)) {
@@ -522,8 +518,8 @@ VirtualTable* JnjvmModule::allocateVT(Class* cl) {
   } else {
     VT = JavaObjectVT;
   }
+
   cl->virtualVT = VT;
-  return VT;
 }
 #endif
 
@@ -565,8 +561,12 @@ llvm::Function* JnjvmModule::makeTracer(Class* cl, bool stat) {
 
     } else {
       LLVMClassInfo* LCP = (LLVMClassInfo*)getClassInfo((Class*)(cl->super));
-      CallInst::Create(LCP->getVirtualTracer(), Args.begin(),
-                       Args.end(), "", block);
+      Function* F = LCP->virtualTracerFunction;
+      assert((isStaticCompiling() || F) && "No Tracer for super!");
+      if (!F && isStaticCompiling()) {
+        F = makeTracer(cl->super, false);
+      }
+      CallInst::Create(F, Args.begin(), Args.end(), "", block);
     }
   }
   
@@ -1242,9 +1242,9 @@ Constant* JnjvmModule::getUTF8(const UTF8* val) {
   }
 }
 
-Constant* JnjvmModule::CreateConstantFromVT(VirtualTable* VT, uint32 size,
-                                            Function* Finalizer,
-                                            Function* Tracer) {
+Constant* JnjvmModule::CreateConstantFromVT(Class* classDef) {
+  uint32 size = classDef->virtualTableSize;
+  VirtualTable* VT = classDef->virtualVT;
   const ArrayType* ATy = dyn_cast<ArrayType>(VTType->getContainedType(0));
   const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
   ATy = ArrayType::get(PTy, size);
@@ -1253,19 +1253,24 @@ Constant* JnjvmModule::CreateConstantFromVT(VirtualTable* VT, uint32 size,
   std::vector<Constant*> Elemts;
    
   // Destructor
+  JavaMethod* meth = ((JavaMethod**)VT)[0];
+  LLVMMethodInfo* LMI = getMethodInfo(meth);
+  Function* Finalizer = LMI->getMethod();
   Elemts.push_back(Finalizer ? 
       ConstantExpr::getCast(Instruction::BitCast, Finalizer, PTy) : N);
   Elemts.push_back(N);  // Delete
   
   // Tracer
+  Function* Tracer = makeTracer(classDef, false);
   Elemts.push_back(Tracer ? 
       ConstantExpr::getCast(Instruction::BitCast, Tracer, PTy) : N);
   Elemts.push_back(N);  // Printer
   Elemts.push_back(N);  // Hashcode
 
   for (uint32 i = VT_NB_FUNCS; i < size; ++i) {
-    Function* F = ((Function**)VT)[i];
-    JavaMethod* meth = LLVMMethodInfo::get(F);
+    JavaMethod* meth = ((JavaMethod**)VT)[i];
+    LLVMMethodInfo* LMI = getMethodInfo(meth);
+    Function* F = LMI->getMethod();
     if (isAbstract(meth->access)) {
       Elemts.push_back(Constant::getNullValue(PTy));
     } else {
@@ -1298,65 +1303,66 @@ void JnjvmModule::makeVT(Class* cl) {
   }
 
   // Allocate the virtual table.
-  VT = allocateVT(cl);
+  allocateVT(cl);
+  VT = cl->virtualVT;
 
-  // Fill the virtual table with function pointers.
-  ExecutionEngine* EE = mvm::MvmModule::executionEngine;
-  for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
-    JavaMethod& meth = cl->virtualMethods[i];
-    LLVMMethodInfo* LMI = getMethodInfo(&meth);
-    Function* func = LMI->getMethod();
+  if (!staticCompilation) {
+    // Fill the virtual table with function pointers.
+    ExecutionEngine* EE = mvm::MvmModule::executionEngine;
+    for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+      JavaMethod& meth = cl->virtualMethods[i];
+      LLVMMethodInfo* LMI = getMethodInfo(&meth);
+      Function* func = LMI->getMethod();
 
-    // Special handling for finalize method. Don't put a finalizer
-    // if there is none, or if it is empty.
-    if (meth.offset == 0 && !staticCompilation) {
+      // Special handling for finalize method. Don't put a finalizer
+      // if there is none, or if it is empty.
+      if (meth.offset == 0 && !staticCompilation) {
 #ifdef ISOLATE_SHARING
-      ((void**)VT)[0] = 0;
-#else
-      JnjvmClassLoader* loader = cl->classLoader;
-      Function* func = loader->getModuleProvider()->parseFunction(&meth);
-      if (!cl->super) {
-        meth.canBeInlined = true;
         ((void**)VT)[0] = 0;
-      } else {
-        Function::iterator BB = func->begin();
-        BasicBlock::iterator I = BB->begin();
-        if (isa<ReturnInst>(I)) {
+#else
+        JnjvmClassLoader* loader = cl->classLoader;
+        Function* func = loader->getModuleProvider()->parseFunction(&meth);
+        if (!cl->super) {
+          meth.canBeInlined = true;
           ((void**)VT)[0] = 0;
         } else {
-          // LLVM does not allow recursive compilation. Create the code now.
-          ((void**)VT)[0] = EE->getPointerToFunction(func);
+          Function::iterator BB = func->begin();
+          BasicBlock::iterator I = BB->begin();
+          if (isa<ReturnInst>(I)) {
+            ((void**)VT)[0] = 0;
+          } else {
+            // LLVM does not allow recursive compilation. Create the code now.
+            ((void**)VT)[0] = EE->getPointerToFunction(func);
+          }
         }
-      }
 #endif
-    }
-
-    if (staticCompilation) {
-      ((void**)VT)[meth.offset] = func;
-    } else {
+      }
       ((void**)VT)[meth.offset] = EE->getPointerToFunctionOrStub(func);
     }
-  }
- 
-  // If there is no super, then it's the first VT that we allocate. Assign
-  // this VT to native types.
-   if (!(cl->super)) {
-    ClassArray::initialiseVT(cl);
-   }
-#endif
-  
+
 #ifdef WITH_TRACER
-  llvm::Function* func = makeTracer(cl, false);
+    Function* func = makeTracer(cl, false);
   
-  if (staticCompilation) {
-    ((void**)VT)[VT_TRACER_OFFSET] = func;
-  } else {
     void* codePtr = mvm::MvmModule::executionEngine->getPointerToFunction(func);
     ((void**)VT)[VT_TRACER_OFFSET] = codePtr;
     func->deleteBody();
-  }
-
 #endif
+    
+    // If there is no super, then it's the first VT that we allocate. Assign
+    // this VT to native types.
+    if (!(cl->super)) {
+      ClassArray::initialiseVT(cl);
+    }
+
+  } else {
+    for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+      JavaMethod& meth = cl->virtualMethods[i];
+      ((void**)VT)[meth.offset] = &meth;
+    }
+  }
+ 
+#endif
+  
 }
 
 
@@ -1410,6 +1416,8 @@ const Type* LLVMClassInfo::getVirtualType() {
         Mod->executionEngine->addGlobalMapping(func, ptr);
         virtualTracerFunction = func;
       }
+    } else {
+      Mod->makeVT(classDef);
     }
   
   }
