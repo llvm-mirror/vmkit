@@ -17,8 +17,9 @@
 
 #include "llvm/Module.h"
 #include "llvm/PassManager.h"
-#include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/Assembly/PrintModulePass.h"
+#include "llvm/Config/config.h"
+#include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -68,6 +69,10 @@ DisableOptimizations("disable-opt",
 static cl::opt<bool>
 StandardCompileOpts("std-compile-opts", 
                    cl::desc("Include the standard compile time optimizations"));
+
+static cl::opt<std::string>
+TargetTriple("mtriple", cl::desc("Override target triple for module"));
+
 
 inline void addPass(FunctionPassManager *PM, Pass *P) {
   // Add the pass to the pass manager...
@@ -134,6 +139,13 @@ int main(int argc, char **argv) {
     Collector::enable(0);
 
     mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM(true);
+
+    if (!TargetTriple.empty())
+      CU->TheModule->setTargetTriple(TargetTriple);
+    else
+      CU->TheModule->setTargetTriple(LLVM_HOSTTRIPLE);
+
+
     addCommandLinePass(CU, argv);    
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(CU);
     vm->compile(InputFilename.c_str());

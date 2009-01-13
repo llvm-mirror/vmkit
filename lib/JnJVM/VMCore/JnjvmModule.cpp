@@ -2096,9 +2096,7 @@ Function* JnjvmModule::getMethod(JavaMethod* meth) {
 JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) : 
   MvmModule(ModuleID) {
   
-  if (sc) {
-    setDataLayout("");
-  } else {
+  if (!sc) {
     std::string str = 
       executionEngine->getTargetData()->getStringRepresentation();
     setDataLayout(str);
