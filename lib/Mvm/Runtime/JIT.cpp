@@ -233,7 +233,7 @@ llvm::ExistingModuleProvider *MvmModule::globalModuleProvider;
 
 
 uint64 MvmModule::getTypeSize(const llvm::Type* type) {
-  return executionEngine->getTargetData()->getABITypeSize(type);
+  return executionEngine->getTargetData()->getTypePaddedSize(type);
 }
 
 void MvmModule::runPasses(llvm::Function* func,  
