@@ -2079,6 +2079,13 @@ void JnjvmModule::printStats() {
           (unsigned long long int) enveloppes.size());
   fprintf(stderr, "Number of native functions          : %llu\n", 
           (unsigned long long int) nativeFunctions.size());
+  fprintf(stderr, "----------------- Total size in .data ------------------\n");
+  uint64 size = 0;
+  for (Module::const_global_iterator i = global_begin(), e = global_end();
+       i != e; ++i) {
+    size += getTypeSize(i->getType());
+  }
+  fprintf(stderr, "%lluB\n", (unsigned long long int)size);
 }
 
 
