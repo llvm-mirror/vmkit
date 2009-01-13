@@ -1206,6 +1206,24 @@ void Jnjvm::mainCompilerStart(JavaThread* th) {
   } catch(std::string str) {
     fprintf(stderr, "Error : %s\n", str.c_str());
   }
+  
+#define SET_INLINE(NAME) { \
+  const UTF8* name = vm->asciizToUTF8(NAME); \
+  Class* cl = (Class*)vm->bootstrapLoader->lookupClass(name); \
+  if (cl) vm->bootstrapLoader->getModule()->setNoInline(cl); }
+
+  SET_INLINE("java/util/concurrent/atomic/AtomicReferenceFieldUpdater")
+  SET_INLINE("java/util/concurrent/atomic/AtomicReferenceFieldUpdater"
+             "$AtomicReferenceFieldUpdaterImpl")
+  SET_INLINE("java/util/concurrent/atomic/AtomicIntegerFieldUpdater")
+  SET_INLINE("java/util/concurrent/atomic/AtomicIntegerFieldUpdater"
+             "$AtomicIntegerFieldUpdaterImpl")
+  SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater")
+  SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater"
+             "$CASUpdater")
+  SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater"
+             "$LockedUpdater")
+#undef SET_INLINE
 
   vm->threadSystem.nonDaemonLock.lock();
   --(vm->threadSystem.nonDaemonThreads);

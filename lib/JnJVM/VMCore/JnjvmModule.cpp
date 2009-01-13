@@ -2419,3 +2419,23 @@ void JnjvmModule::CreateStaticInitializer() {
 
   ReturnInst::Create(currentBlock);
 }
+
+void JnjvmModule::setNoInline(Class* cl) {
+  for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+    JavaMethod& meth = cl->virtualMethods[i];
+    if (!isAbstract(meth.access)) {
+      LLVMMethodInfo* LMI = getMethodInfo(&meth);
+      Function* func = LMI->getMethod();
+      func->addFnAttr(Attribute::NoInline);
+    }
+  }
+  
+  for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
+    JavaMethod& meth = cl->staticMethods[i];
+    if (!isAbstract(meth.access)) {
+      LLVMMethodInfo* LMI = getMethodInfo(&meth);
+      Function* func = LMI->getMethod();
+      func->addFnAttr(Attribute::NoInline);
+    }
+  }
+}

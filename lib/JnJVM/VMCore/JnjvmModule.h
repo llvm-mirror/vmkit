@@ -434,6 +434,8 @@ public:
   bool isCompiling(const CommonClass* cl) const;
   
   void CreateStaticInitializer();
+  
+  static void setNoInline(Class* cl);
 
 private:
   static llvm::Module* initialModule;
