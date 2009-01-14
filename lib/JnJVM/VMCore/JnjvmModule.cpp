@@ -562,9 +562,13 @@ llvm::Function* JnjvmModule::makeTracer(Class* cl, bool stat) {
     } else {
       LLVMClassInfo* LCP = (LLVMClassInfo*)getClassInfo((Class*)(cl->super));
       Function* F = LCP->virtualTracerFunction;
-      assert((isStaticCompiling() || F) && "No Tracer for super!");
-      if (!F && isStaticCompiling()) {
-        F = makeTracer(cl->super, false);
+      if (!F) {
+        if (isStaticCompiling()) {
+          F = makeTracer(cl->super, false);
+        } else {
+          F = LCP->getVirtualTracer();
+        }
+        assert(F && "Still no virtual tracer for super");
       }
       CallInst::Create(F, Args.begin(), Args.end(), "", block);
     }
@@ -2362,14 +2366,6 @@ void JnjvmModule::CreateStaticInitializer() {
   Function* GetClassArray = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                              "vmjcGetClassArray", this);
   
-  llvmArgs.clear();
-  llvmArgs.push_back(ptrType); // class loader
-  llvmArgs.push_back(UTF8Type); // name
-  FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
-  
-  Function* LoadClass = Function::Create(FTy, GlobalValue::ExternalLinkage,
-                                         "vmjcLoadClass", this);
-  
   BasicBlock* currentBlock = BasicBlock::Create("enter", StaticInitializer);
   Function::arg_iterator loader = StaticInitializer->arg_begin();
   
@@ -2402,15 +2398,6 @@ void JnjvmModule::CreateStaticInitializer() {
     }
   }
   
-  for (native_class_iterator i = nativeClasses.begin(), 
-       e = nativeClasses.end(); i != e; ++i) {
-    if (!isCompiling(i->first)) {
-      Args[0] = loader;
-      Args[1] = getUTF8(i->first->name);
-      CallInst::Create(LoadClass, Args, Args + 2, "", currentBlock);
-    }
-  }
-
   for (array_class_iterator i = arrayClasses.begin(), 
        e = arrayClasses.end(); i != e; ++i) {
     if (!(i->first->baseClass()->isPrimitive())) {
