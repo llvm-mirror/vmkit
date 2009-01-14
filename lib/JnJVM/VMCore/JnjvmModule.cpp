@@ -1833,11 +1833,12 @@ Function* LLVMSignatureInfo::getVirtualBuf() {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR.lock();
     virtualBufFunction = createFunctionCallBuf(true);
-    signature->setVirtualCallBuf((intptr_t)
-      mvm::MvmModule::executionEngine->getPointerToGlobal(virtualBufFunction));
-    if (!signature->initialLoader->getModule()->isStaticCompiling())
+    if (!signature->initialLoader->getModule()->isStaticCompiling()) {
+      signature->setVirtualCallBuf((intptr_t)
+        mvm::MvmModule::executionEngine->getPointerToGlobal(virtualBufFunction));
       // Now that it's compiled, we don't need the IR anymore
       virtualBufFunction->deleteBody();
+    }
     mvm::MvmModule::protectIR.unlock();
   }
   return virtualBufFunction;
@@ -1848,11 +1849,12 @@ Function* LLVMSignatureInfo::getVirtualAP() {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR.lock();
     virtualAPFunction = createFunctionCallAP(true);
-    signature->setVirtualCallAP((intptr_t)
-      mvm::MvmModule::executionEngine->getPointerToGlobal(virtualAPFunction));
-    if (!signature->initialLoader->getModule()->isStaticCompiling())
+    if (!signature->initialLoader->getModule()->isStaticCompiling()) {
+      signature->setVirtualCallAP((intptr_t)
+        mvm::MvmModule::executionEngine->getPointerToGlobal(virtualAPFunction));
       // Now that it's compiled, we don't need the IR anymore
       virtualAPFunction->deleteBody();
+    }
     mvm::MvmModule::protectIR.unlock();
   }
   return virtualAPFunction;
@@ -1863,11 +1865,12 @@ Function* LLVMSignatureInfo::getStaticBuf() {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR.lock();
     staticBufFunction = createFunctionCallBuf(false);
-    signature->setStaticCallBuf((intptr_t)
-      mvm::MvmModule::executionEngine->getPointerToGlobal(staticBufFunction));
-    if (!signature->initialLoader->getModule()->isStaticCompiling())
+    if (!signature->initialLoader->getModule()->isStaticCompiling()) {
+      signature->setStaticCallBuf((intptr_t)
+        mvm::MvmModule::executionEngine->getPointerToGlobal(staticBufFunction));
       // Now that it's compiled, we don't need the IR anymore
       staticBufFunction->deleteBody();
+    }
     mvm::MvmModule::protectIR.unlock();
   }
   return staticBufFunction;
@@ -1878,11 +1881,12 @@ Function* LLVMSignatureInfo::getStaticAP() {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR.lock();
     staticAPFunction = createFunctionCallAP(false);
-    signature->setStaticCallAP((intptr_t)
-      mvm::MvmModule::executionEngine->getPointerToGlobal(staticAPFunction));
-    if (!signature->initialLoader->getModule()->isStaticCompiling())
+    if (!signature->initialLoader->getModule()->isStaticCompiling()) {
+      signature->setStaticCallAP((intptr_t)
+        mvm::MvmModule::executionEngine->getPointerToGlobal(staticAPFunction));
       // Now that it's compiled, we don't need the IR anymore
       staticAPFunction->deleteBody();
+    }
     mvm::MvmModule::protectIR.unlock();
   }
   return staticAPFunction;
@@ -2083,7 +2087,7 @@ void JnjvmModule::setMethod(JavaMethod* meth, void* ptr, const char* name) {
   Function* func = getMethodInfo(meth)->getMethod();
   func->setName(name);
   assert(ptr && "No value given");
-  executionEngine->addGlobalMapping(func, ptr);
+  if (executionEngine) executionEngine->addGlobalMapping(func, ptr);
   func->setLinkage(GlobalValue::ExternalLinkage);
 }
 

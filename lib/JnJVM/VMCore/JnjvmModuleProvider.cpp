@@ -180,9 +180,11 @@ namespace jnjvm {
 
 JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
   TheModule = (Module*)m;
-  mvm::MvmModule::protectEngine.lock();
-  mvm::MvmModule::executionEngine->addModuleProvider(this);
-  mvm::MvmModule::protectEngine.unlock();
+  if (m->executionEngine) {
+    m->protectEngine.lock();
+    m->executionEngine->addModuleProvider(this);
+    m->protectEngine.unlock();
+  }
     
   JavaNativeFunctionPasses = new llvm::FunctionPassManager(this);
   JavaNativeFunctionPasses->add(new llvm::TargetData(m));
@@ -199,9 +201,11 @@ JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
 }
 
 JnjvmModuleProvider::~JnjvmModuleProvider() {
-  mvm::MvmModule::protectEngine.lock();
-  mvm::MvmModule::executionEngine->removeModuleProvider(this);
-  mvm::MvmModule::protectEngine.unlock();
+  if (mvm::MvmModule::executionEngine) {
+    mvm::MvmModule::protectEngine.lock();
+    mvm::MvmModule::executionEngine->removeModuleProvider(this);
+    mvm::MvmModule::protectEngine.unlock();
+  }
   delete TheModule;
   delete JavaNativeFunctionPasses;
   delete JavaFunctionPasses;
