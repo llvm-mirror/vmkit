@@ -1023,10 +1023,6 @@ extern "C" void vmjcGetClassArray(JnjvmClassLoader* JCL, ClassArray** ptr,
   *ptr = JCL->constructArray(name);
 }
 
-extern "C" void vmjcLoadClass(JnjvmClassLoader* JCL, const UTF8* name) {
-  JCL->loadName(name, true, true);
-}
-
 extern "C" void vmjcAddUTF8(JnjvmClassLoader* JCL, const UTF8* val) {
   JCL->hashUTF8->insert(val);
 }
@@ -1049,4 +1045,9 @@ extern "C" intptr_t vmjcNativeLoader(JavaMethod* meth) {
   intptr_t res = meth->classDef->classLoader->nativeLookup(meth, jnjvm, buf);
   assert(res && "Could not find required native method");
   return res;
+}
+
+extern "C" void staticCallback() {
+  fprintf(stderr, "Implement me");
+  abort();
 }
