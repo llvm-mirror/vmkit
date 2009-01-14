@@ -509,10 +509,11 @@ void JnjvmModule::allocateVT(Class* cl) {
     }
   }
 
-  uint64 size = cl->virtualTableSize;
-  mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-  VirtualTable* VT = (VirtualTable*)allocator.Allocate(size * sizeof(void*));
+  VirtualTable* VT = 0;
   if (cl->super) {
+    uint64 size = cl->virtualTableSize;
+    mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
+    VT = (VirtualTable*)allocator.Allocate(size * sizeof(void*));
     Class* super = (Class*)cl->super;
     assert(cl->virtualTableSize >= cl->super->virtualTableSize &&
       "Super VT bigger than own VT");
