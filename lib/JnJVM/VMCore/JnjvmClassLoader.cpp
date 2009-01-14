@@ -177,6 +177,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
       static_init_t init = (static_init_t)(uintptr_t)SuperArray->classLoader;
       assert(init && "Loaded the wrong boot library");
       init(this);
+      ClassArray::initialiseVT(SuperArray);
     } 
   }
     
