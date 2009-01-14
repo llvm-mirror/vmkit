@@ -8,10 +8,11 @@
 //===----------------------------------------------------------------------===//
 
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "llvm/DerivedTypes.h"
 #include "llvm/Instructions.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
 
 #include "mvm/JIT.h"
 #include "mvm/Object.h"

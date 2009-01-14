@@ -33,6 +33,9 @@
 
 #include "debug.h"
 
+// TODO: get rid of that
+#include "llvm/PassManager.h"
+
 #include "mvm/Allocator.h"
 
 #include "Classpath.h"
@@ -68,7 +71,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   TheModule = new JnjvmModule("Bootstrap JnJVM", staticCompilation);
   TheModuleProvider = new JnjvmModuleProvider(getModule());
   FunctionPasses = new FunctionPassManager(TheModuleProvider);
-  FunctionPasses->add(new TargetData(TheModule));
 
   hashUTF8 = new(allocator) UTF8Map(allocator, 0);
   classes = new(allocator) ClassMap();

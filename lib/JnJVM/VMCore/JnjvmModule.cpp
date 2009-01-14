@@ -10,8 +10,10 @@
 #include "llvm/BasicBlock.h"
 #include "llvm/CallingConv.h"
 #include "llvm/Constants.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/Instructions.h"
 #include "llvm/Support/MutexGuard.h"
+#include "llvm/Target/TargetData.h"
 
 
 #include "mvm/JIT.h"

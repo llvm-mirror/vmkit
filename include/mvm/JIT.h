@@ -11,18 +11,23 @@
 #define MVM_JIT_H
 
 #include <cfloat>
+#include <cmath>
 
-#include "llvm/Constants.h"
-#include "llvm/DerivedTypes.h"
-#include "llvm/Function.h"
 #include "llvm/Module.h"
-#include "llvm/ModuleProvider.h"
-#include "llvm/PassManager.h"
-#include "llvm/Type.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/Target/TargetData.h"
 
 #include "types.h"
+
+namespace llvm {
+  class Constant;
+  class ConstantFP;
+  class ConstantInt;
+  class ExecutionEngine;
+  class ExistingModuleProvider;
+  class Function;
+  class FunctionPassManager;
+  class PointerType;
+  class Type;
+}
 
 namespace mvm {
 
@@ -104,7 +109,6 @@ public:
   static mvm::LockNormal protectEngine;
 
   static uint64 getTypeSize(const llvm::Type* type);
-  static void AddStandardCompilePasses(llvm::FunctionPassManager*);
   static void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
   static void initialise(bool Fast = false);
 

@@ -9,6 +9,7 @@
 
 #include "llvm/LinkAllPasses.h"
 #include "llvm/LinkAllVMCore.h"
+#include "llvm/PassManager.h"
 #include "llvm/CodeGen/LinkAllCodegenComponents.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"

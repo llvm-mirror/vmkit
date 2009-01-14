@@ -8,7 +8,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/LinkAllPasses.h"
+#include "llvm/PassManager.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/Support/MutexGuard.h"
+#include "llvm/Target/TargetData.h"
 
 #include "mvm/JIT.h"
 

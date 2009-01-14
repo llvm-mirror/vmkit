@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llvm/DerivedTypes.h"
 #include "llvm/GlobalVariable.h"
 
 #include "mvm/JIT.h"

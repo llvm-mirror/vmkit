@@ -7,16 +7,19 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/CallingConv.h"
+#include <llvm/CallingConv.h>
 #include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
 #include <llvm/Instructions.h>
-#include "llvm/LinkAllPasses.h"
+#include <llvm/LinkAllPasses.h>
+#include <llvm/ModuleProvider.h>
 #include <llvm/Type.h>
-#include "llvm/Analysis/LoopPass.h"
-#include "llvm/Analysis/Verifier.h"
-#include "llvm/Support/MutexGuard.h"
-#include "llvm/Target/TargetOptions.h"
+#include <llvm/Analysis/LoopPass.h>
+#include <llvm/Analysis/Verifier.h>
+#include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/Support/MutexGuard.h>
+#include <llvm/Target/TargetData.h>
+#include <llvm/Target/TargetOptions.h>
 
 
 #include "mvm/CompilationUnit.h"
@@ -263,6 +266,8 @@ void CompilationUnit::AddStandardCompilePasses() {
   //PM->add(llvm::createVerifierPass());        // Verify that input is correct
  
   FunctionPassManager* PM = FunctionPasses;
+  FunctionPasses->add(new TargetData(TheModule));
+
   addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
   addPass(PM, createPromoteMemoryToRegisterPass());// Kill useless allocas
   
