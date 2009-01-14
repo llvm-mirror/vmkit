@@ -1109,8 +1109,7 @@ const UTF8* Jnjvm::asciizToUTF8(const char* asciiz) {
 
 
 static void compileClass(Class* cl) {
-  // Use the owner class field of the class so that we know if the class
-  // belongs to the list of classes that we are static compiling.
+  // Make sure the class is emitted.
   cl->classLoader->getModule()->getNativeClass(cl);
 
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
