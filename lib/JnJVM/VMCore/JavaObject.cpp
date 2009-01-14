@@ -75,11 +75,17 @@ LockObj* LockObj::allocate(JavaObject* owner) {
   return res;
 }
 
-void JavaObject::print(mvm::PrintBuffer* buf) const {
+extern "C" void printJavaObject(const JavaObject* obj, mvm::PrintBuffer* buf) {
   buf->write("JavaObject<");
-  CommonClass::printClassName(classOf->getName(), buf);
+  CommonClass::printClassName(obj->classOf->getName(), buf);
+  fprintf(stderr, "%p\n", ((void**)obj->getVirtualTable())[9]);
   buf->write(">");
 }
+
+void JavaObject::print(mvm::PrintBuffer* buf) const {
+  printJavaObject(this, buf);
+}
+
 
 void JavaObject::waitIntern(struct timeval* info, bool timed) {
 

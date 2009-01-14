@@ -37,6 +37,7 @@ using namespace llvm;
 llvm::Constant* JnjvmModule::PrimitiveArrayVT;
 llvm::Constant* JnjvmModule::ReferenceArrayVT;
 llvm::Function* JnjvmModule::StaticInitializer;
+llvm::Function* JnjvmModule::ObjectPrinter;
 llvm::Function* JnjvmModule::NativeLoader;
 
 extern void* JavaArrayVT[];
@@ -1264,14 +1265,20 @@ Constant* JnjvmModule::CreateConstantFromVT(Class* classDef) {
   Function* Finalizer = LMI->getMethod();
   Elemts.push_back(Finalizer ? 
       ConstantExpr::getCast(Instruction::BitCast, Finalizer, PTy) : N);
-  Elemts.push_back(N);  // Delete
+  
+  // Delete
+  Elemts.push_back(N);
   
   // Tracer
   Function* Tracer = makeTracer(classDef, false);
   Elemts.push_back(Tracer ? 
       ConstantExpr::getCast(Instruction::BitCast, Tracer, PTy) : N);
-  Elemts.push_back(N);  // Printer
-  Elemts.push_back(N);  // Hashcode
+  
+  // Printer
+  Elemts.push_back(ConstantExpr::getBitCast(ObjectPrinter, PTy));
+  
+  // Hashcode
+  Elemts.push_back(N);  
 
   for (uint32 i = VT_NB_FUNCS; i < size; ++i) {
     JavaMethod* meth = ((JavaMethod**)VT)[i];
@@ -2035,6 +2042,11 @@ void JnjvmModule::initialise() {
   
     NativeLoader = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                     "vmjcNativeLoader", this);
+    
+    llvmArgs.clear();
+    FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+    ObjectPrinter = Function::Create(FTy, GlobalValue::ExternalLinkage,
+                                     "printJavaObject", this);
 
   } else {
     PrimitiveArrayVT = ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,

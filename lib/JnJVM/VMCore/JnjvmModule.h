@@ -239,6 +239,7 @@ private:
   static llvm::Constant* ReferenceArrayVT;
   
   static llvm::Function* StaticInitializer;
+  static llvm::Function* ObjectPrinter;
   
 public:
   
