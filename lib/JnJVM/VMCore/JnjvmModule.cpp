@@ -1401,10 +1401,10 @@ const Type* LLVMClassInfo::getVirtualType() {
     }
     
     
+    JnjvmModule* Mod = classDef->classLoader->getModule();
     StructType* structType = StructType::get(fields, false);
     virtualType = PointerType::getUnqual(structType);
-    ExecutionEngine* engine = mvm::MvmModule::executionEngine;
-    const TargetData* targetData = engine->getTargetData();
+    const TargetData* targetData = Mod->TheTargetData;
     const StructLayout* sl = targetData->getStructLayout(structType);
     
     for (uint32 i = 0; i < classDef->nbVirtualFields; ++i) {
@@ -1412,11 +1412,10 @@ const Type* LLVMClassInfo::getVirtualType() {
       field.ptrOffset = sl->getElementOffset(i + 1);
     }
     
-    uint64 size = mvm::MvmModule::getTypeSize(structType);
+    uint64 size = Mod->getTypeSize(structType);
     classDef->virtualSize = (uint32)size;
     virtualSizeConstant = ConstantInt::get(Type::Int32Ty, size);
     
-    JnjvmModule* Mod = classDef->classLoader->getModule();
     if (!Mod->isStaticCompiling()) {
       if (!classDef->virtualVT) {
         Mod->makeVT((Class*)classDef);
@@ -1453,10 +1452,10 @@ const Type* LLVMClassInfo::getStaticType() {
       fields.push_back(LAI.llvmType);
     }
   
+    JnjvmModule* Mod = cl->classLoader->getModule();
     StructType* structType = StructType::get(fields, false);
     staticType = PointerType::getUnqual(structType);
-    ExecutionEngine* engine = mvm::MvmModule::executionEngine;
-    const TargetData* targetData = engine->getTargetData();
+    const TargetData* targetData = Mod->TheTargetData;
     const StructLayout* sl = targetData->getStructLayout(structType);
     
     for (uint32 i = 0; i < classDef->nbStaticFields; ++i) {
@@ -1464,10 +1463,9 @@ const Type* LLVMClassInfo::getStaticType() {
       field.ptrOffset = sl->getElementOffset(i);
     }
     
-    uint64 size = mvm::MvmModule::getTypeSize(structType);
+    uint64 size = Mod->getTypeSize(structType);
     cl->staticSize = size;
     
-    JnjvmModule* Mod = cl->classLoader->getModule();
     if (!Mod->isStaticCompiling()) {
       Function* F = Mod->makeTracer(cl, true);
       cl->staticTracer = (void (*)(void*)) (uintptr_t)

@@ -45,13 +45,14 @@ void MvmModule::initialise(bool Fast) {
   globalModuleProvider = new ExistingModuleProvider (globalModule);
   
 
-
   executionEngine = ExecutionEngine::createJIT(globalModuleProvider, 0,
                                                0, Fast);
   
   std::string str = 
     executionEngine->getTargetData()->getStringRepresentation();
   globalModule->setDataLayout(str);
+  
+  TheTargetData = executionEngine->getTargetData();
 
   
   Module module("unused");
@@ -179,8 +180,6 @@ MvmModule::MvmModule(const std::string& ModuleID) : llvm::Module(ModuleID) {
   llvm_atomic_lcs_i64 = module->getFunction("llvm.atomic.cmp.swap.i64.p0i64");
 }
 
-llvm::ExecutionEngine* MvmModule::executionEngine;
-mvm::LockNormal MvmModule::protectEngine;
 
 llvm::ConstantInt* MvmModule::constantInt8Zero;
 llvm::ConstantInt* MvmModule::constantZero;
@@ -231,12 +230,15 @@ const llvm::PointerType* MvmModule::ptrPtrType;
 const llvm::Type* MvmModule::pointerSizeType;
 const llvm::Type* MvmModule::arrayPtrType;
 
+const llvm::TargetData* MvmModule::TheTargetData;
 llvm::Module *MvmModule::globalModule;
 llvm::ExistingModuleProvider *MvmModule::globalModuleProvider;
+llvm::ExecutionEngine* MvmModule::executionEngine;
+mvm::LockNormal MvmModule::protectEngine;
 
 
 uint64 MvmModule::getTypeSize(const llvm::Type* type) {
-  return executionEngine->getTargetData()->getTypePaddedSize(type);
+  return TheTargetData->getTypePaddedSize(type);
 }
 
 void MvmModule::runPasses(llvm::Function* func,  
@@ -266,7 +268,7 @@ void CompilationUnit::AddStandardCompilePasses() {
   //PM->add(llvm::createVerifierPass());        // Verify that input is correct
  
   FunctionPassManager* PM = FunctionPasses;
-  FunctionPasses->add(new TargetData(TheModule));
+  FunctionPasses->add(new TargetData(*MvmModule::TheTargetData));
 
   addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
   addPass(PM, createPromoteMemoryToRegisterPass());// Kill useless allocas

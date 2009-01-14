@@ -26,6 +26,7 @@ namespace llvm {
   class Function;
   class FunctionPassManager;
   class PointerType;
+  class TargetData;
   class Type;
 }
 
@@ -105,12 +106,7 @@ public:
   llvm::Function* llvm_atomic_lcs_i32;
   llvm::Function* llvm_atomic_lcs_i64;
 
-  static llvm::ExecutionEngine* executionEngine;
-  static mvm::LockNormal protectEngine;
 
-  static uint64 getTypeSize(const llvm::Type* type);
-  static void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
-  static void initialise(bool Fast = false);
 
   static llvm::ConstantInt* constantInt8Zero;
   static llvm::ConstantInt* constantZero;
@@ -161,9 +157,15 @@ public:
   static const llvm::Type* arrayPtrType;
   static const llvm::Type* pointerSizeType;
 
-
+  static llvm::ExecutionEngine* executionEngine;
+  static mvm::LockNormal protectEngine;
   static llvm::Module *globalModule;
   static llvm::ExistingModuleProvider *globalModuleProvider;
+  static const llvm::TargetData* TheTargetData;
+  
+  static uint64 getTypeSize(const llvm::Type* type);
+  static void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
+  static void initialise(bool Fast = false);
 
   static int disassemble(unsigned int* addr);
 
