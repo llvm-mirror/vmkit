@@ -1855,11 +1855,21 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             JnjvmClassLoader* JCL = cl->classLoader;
             const UTF8* arrayName = JCL->constructArrayName(1, cl->name);
           
-            UserCommonClass* dcl = JCL->constructArray(arrayName);
+            UserClassArray* dcl = JCL->constructArray(arrayName);
             valCl = module->getNativeClass(dcl);
-            if (valCl->getType() != module->JavaCommonClassType)
+            
+            // If we're static compiling and the class is not a class we
+            // are compiling, the result of getNativeClass is a pointer to
+            // the class. Load it.
+            if (module->isStaticCompiling() && 
+                valCl->getType() != module->JavaClassArrayType) {
+              valCl = new LoadInst(valCl, "", currentBlock);
+            }
+            
+            if (valCl->getType() != module->JavaCommonClassType) {
               valCl = new BitCastInst(valCl, module->JavaCommonClassType, "",
                                       currentBlock);
+            }
 
           } else {
             const llvm::Type* Ty = 
