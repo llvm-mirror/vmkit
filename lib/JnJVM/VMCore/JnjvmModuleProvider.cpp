@@ -120,7 +120,7 @@ Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
   Function* func = LMI->getMethod();
   if (func->hasNotBeenReadFromBitcode()) {
     // We are jitting. Take the lock.
-    llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
+    mvm::MvmModule::protectIR.lock();
     JavaJIT jit(meth, func);
     if (isNative(meth->access)) {
       jit.nativeCompile();
@@ -131,6 +131,7 @@ Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
       mvm::MvmModule::runPasses(func, loader->FunctionPasses);
       mvm::MvmModule::runPasses(func, JavaFunctionPasses);
     }
+    mvm::MvmModule::protectIR.unlock();
   }
   return func;
 }

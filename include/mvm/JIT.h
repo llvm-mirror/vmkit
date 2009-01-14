@@ -33,6 +33,7 @@ namespace llvm {
 namespace mvm {
 
 class LockNormal;
+class LockRecursive;
 
 const double MaxDouble = +INFINITY; //1.0 / 0.0;
 const double MinDouble = -INFINITY;//-1.0 / 0.0;
@@ -159,6 +160,7 @@ public:
 
   static llvm::ExecutionEngine* executionEngine;
   static mvm::LockNormal protectEngine;
+  static mvm::LockRecursive protectIR;
   static llvm::Module *globalModule;
   static llvm::ExistingModuleProvider *globalModuleProvider;
   static const llvm::TargetData* TheTargetData;

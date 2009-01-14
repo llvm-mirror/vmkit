@@ -235,6 +235,7 @@ llvm::Module *MvmModule::globalModule;
 llvm::ExistingModuleProvider *MvmModule::globalModuleProvider;
 llvm::ExecutionEngine* MvmModule::executionEngine;
 mvm::LockNormal MvmModule::protectEngine;
+mvm::LockRecursive MvmModule::protectIR;
 
 
 uint64 MvmModule::getTypeSize(const llvm::Type* type) {

@@ -1581,7 +1581,7 @@ ConstantInt* LLVMFieldInfo::getOffset() {
 const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
  if (!virtualType) {
     // Lock here because we are called by arbitrary code
-    llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
+    mvm::MvmModule::protectIR.lock();
     std::vector<const llvm::Type*> llvmArgs;
     uint32 size = signature->nbArguments;
     Typedef* const* arguments = signature->getArgumentsType();
@@ -1601,6 +1601,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
     LLVMAssessorInfo& LAI = 
       JnjvmModule::getTypedefInfo(signature->getReturnType());
     virtualType = FunctionType::get(LAI.llvmType, llvmArgs, false);
+    mvm::MvmModule::protectIR.unlock();
   }
   return virtualType;
 }
@@ -1608,7 +1609,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
 const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
  if (!staticType) {
     // Lock here because we are called by arbitrary code
-    llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
+    mvm::MvmModule::protectIR.lock();
     std::vector<const llvm::Type*> llvmArgs;
     uint32 size = signature->nbArguments;
     Typedef* const* arguments = signature->getArgumentsType();
@@ -1626,6 +1627,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
     LLVMAssessorInfo& LAI = 
       JnjvmModule::getTypedefInfo(signature->getReturnType());
     staticType = FunctionType::get(LAI.llvmType, llvmArgs, false);
+    mvm::MvmModule::protectIR.unlock();
   }
   return staticType;
 }
@@ -1633,7 +1635,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
 const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
   if (!nativeType) {
     // Lock here because we are called by arbitrary code
-    llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
+    mvm::MvmModule::protectIR.lock();
     std::vector<const llvm::Type*> llvmArgs;
     uint32 size = signature->nbArguments;
     Typedef* const* arguments = signature->getArgumentsType();
@@ -1654,6 +1656,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
     LLVMAssessorInfo& LAI = 
       JnjvmModule::getTypedefInfo(signature->getReturnType());
     nativeType = FunctionType::get(LAI.llvmType, llvmArgs, false);
+    mvm::MvmModule::protectIR.unlock();
   }
   return nativeType;
 }
@@ -1795,7 +1798,7 @@ const PointerType* LLVMSignatureInfo::getNativePtrType() {
 const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
   if (!virtualBufType) {
     // Lock here because we are called by arbitrary code
-    llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
+    mvm::MvmModule::protectIR.lock();
     std::vector<const llvm::Type*> Args2;
     Args2.push_back(JnjvmModule::ConstantPoolType); // ctp
     Args2.push_back(getVirtualPtrType());
@@ -1804,6 +1807,7 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
     LLVMAssessorInfo& LAI = 
       JnjvmModule::getTypedefInfo(signature->getReturnType());
     virtualBufType = FunctionType::get(LAI.llvmType, Args2, false);
+    mvm::MvmModule::protectIR.unlock();
   }
   return virtualBufType;
 }
@@ -1811,7 +1815,7 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
 const FunctionType* LLVMSignatureInfo::getStaticBufType() {
   if (!staticBufType) {
     // Lock here because we are called by arbitrary code
-    llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
+    mvm::MvmModule::protectIR.lock();
     std::vector<const llvm::Type*> Args;
     Args.push_back(JnjvmModule::ConstantPoolType); // ctp
     Args.push_back(getStaticPtrType());
@@ -1819,6 +1823,7 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
     LLVMAssessorInfo& LAI = 
       JnjvmModule::getTypedefInfo(signature->getReturnType());
     staticBufType = FunctionType::get(LAI.llvmType, Args, false);
+    mvm::MvmModule::protectIR.unlock();
   }
   return staticBufType;
 }
@@ -1826,13 +1831,14 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
 Function* LLVMSignatureInfo::getVirtualBuf() {
   if (!virtualBufFunction) {
     // Lock here because we are called by arbitrary code
-    llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
+    mvm::MvmModule::protectIR.lock();
     virtualBufFunction = createFunctionCallBuf(true);
     signature->setVirtualCallBuf((intptr_t)
       mvm::MvmModule::executionEngine->getPointerToGlobal(virtualBufFunction));
     if (!signature->initialLoader->getModule()->isStaticCompiling())
       // Now that it's compiled, we don't need the IR anymore
       virtualBufFunction->deleteBody();
+    mvm::MvmModule::protectIR.unlock();
   }
   return virtualBufFunction;
 }
@@ -1840,13 +1846,14 @@ Function* LLVMSignatureInfo::getVirtualBuf() {
 Function* LLVMSignatureInfo::getVirtualAP() {
   if (!virtualAPFunction) {
     // Lock here because we are called by arbitrary code
-    llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
+    mvm::MvmModule::protectIR.lock();
     virtualAPFunction = createFunctionCallAP(true);
     signature->setVirtualCallAP((intptr_t)
       mvm::MvmModule::executionEngine->getPointerToGlobal(virtualAPFunction));
     if (!signature->initialLoader->getModule()->isStaticCompiling())
       // Now that it's compiled, we don't need the IR anymore
       virtualAPFunction->deleteBody();
+    mvm::MvmModule::protectIR.unlock();
   }
   return virtualAPFunction;
 }
@@ -1854,13 +1861,14 @@ Function* LLVMSignatureInfo::getVirtualAP() {
 Function* LLVMSignatureInfo::getStaticBuf() {
   if (!staticBufFunction) {
     // Lock here because we are called by arbitrary code
-    llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
+    mvm::MvmModule::protectIR.lock();
     staticBufFunction = createFunctionCallBuf(false);
     signature->setStaticCallBuf((intptr_t)
       mvm::MvmModule::executionEngine->getPointerToGlobal(staticBufFunction));
     if (!signature->initialLoader->getModule()->isStaticCompiling())
       // Now that it's compiled, we don't need the IR anymore
       staticBufFunction->deleteBody();
+    mvm::MvmModule::protectIR.unlock();
   }
   return staticBufFunction;
 }
@@ -1868,29 +1876,32 @@ Function* LLVMSignatureInfo::getStaticBuf() {
 Function* LLVMSignatureInfo::getStaticAP() {
   if (!staticAPFunction) {
     // Lock here because we are called by arbitrary code
-    llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
+    mvm::MvmModule::protectIR.lock();
     staticAPFunction = createFunctionCallAP(false);
     signature->setStaticCallAP((intptr_t)
       mvm::MvmModule::executionEngine->getPointerToGlobal(staticAPFunction));
     if (!signature->initialLoader->getModule()->isStaticCompiling())
       // Now that it's compiled, we don't need the IR anymore
       staticAPFunction->deleteBody();
+    mvm::MvmModule::protectIR.unlock();
   }
   return staticAPFunction;
 }
 
 void JnjvmModule::resolveVirtualClass(Class* cl) {
   // Lock here because we may be called by a class resolver
-  llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
+  mvm::MvmModule::protectIR.lock();
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   LCI->getVirtualType();
+  mvm::MvmModule::protectIR.unlock();
 }
 
 void JnjvmModule::resolveStaticClass(Class* cl) {
   // Lock here because we may be called by a class initializer
-  llvm::MutexGuard locked(mvm::MvmModule::executionEngine->lock);
+  mvm::MvmModule::protectIR.lock();
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   LCI->getStaticType();
+  mvm::MvmModule::protectIR.unlock();
 }
 
 
