@@ -13,6 +13,7 @@
 #include <llvm/Instructions.h>
 #include <llvm/LinkAllPasses.h>
 #include <llvm/ModuleProvider.h>
+#include <llvm/PassManager.h>
 #include <llvm/Type.h>
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/Verifier.h>
@@ -56,8 +57,11 @@ void MvmModule::initialise(bool Fast, Module* M, TargetMachine* T) {
     TheTargetData = executionEngine->getTargetData();
   } else {
     globalModule = M;
+    globalModuleProvider = new ExistingModuleProvider (globalModule);
     TheTargetData = T->getTargetData();
   }
+
+  globalFunctionPasses = new FunctionPassManager(globalModuleProvider);
 
   
   Module module("unused");
@@ -238,6 +242,7 @@ const llvm::Type* MvmModule::arrayPtrType;
 const llvm::TargetData* MvmModule::TheTargetData;
 llvm::Module *MvmModule::globalModule;
 llvm::ExistingModuleProvider *MvmModule::globalModuleProvider;
+llvm::FunctionPassManager* MvmModule::globalFunctionPasses;
 llvm::ExecutionEngine* MvmModule::executionEngine;
 mvm::LockNormal MvmModule::protectEngine;
 mvm::LockRecursive MvmModule::protectIR;
@@ -273,8 +278,8 @@ void CompilationUnit::AddStandardCompilePasses() {
   // 
   //PM->add(llvm::createVerifierPass());        // Verify that input is correct
  
-  FunctionPassManager* PM = FunctionPasses;
-  FunctionPasses->add(new TargetData(*MvmModule::TheTargetData));
+  FunctionPassManager* PM = TheModule->globalFunctionPasses;
+  PM->add(new TargetData(*MvmModule::TheTargetData));
 
   addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
   addPass(PM, createPromoteMemoryToRegisterPass());// Kill useless allocas

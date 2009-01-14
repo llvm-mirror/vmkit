@@ -224,7 +224,6 @@ public:
     TheModuleProvider = 0;
     isolate = 0;
     classes = 0;
-    FunctionPasses = 0;
   }
 
   /// loadClass - The user class that defines the loadClass method.

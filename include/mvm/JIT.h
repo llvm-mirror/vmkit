@@ -109,7 +109,6 @@ public:
   llvm::Function* llvm_atomic_lcs_i64;
 
 
-
   static llvm::ConstantInt* constantInt8Zero;
   static llvm::ConstantInt* constantZero;
   static llvm::ConstantInt* constantOne;
@@ -164,6 +163,7 @@ public:
   static mvm::LockRecursive protectIR;
   static llvm::Module *globalModule;
   static llvm::ExistingModuleProvider *globalModuleProvider;
+  static llvm::FunctionPassManager* globalFunctionPasses;
   static const llvm::TargetData* TheTargetData;
   
   static uint64 getTypeSize(const llvm::Type* type);

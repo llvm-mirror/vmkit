@@ -25,11 +25,12 @@ namespace llvm {
 
 namespace mvm {
 
+class MvmModule;
+
 class CompilationUnit : public mvm::Object {
 public:
-  llvm::Module* TheModule;
+  MvmModule* TheModule;
   llvm::ModuleProvider* TheModuleProvider;
-  llvm::FunctionPassManager* FunctionPasses;
 
   void AddStandardCompilePasses();
 };

@@ -32,10 +32,6 @@
 #endif
 
 #include "debug.h"
-
-// TODO: get rid of that
-#include "llvm/PassManager.h"
-
 #include "mvm/Allocator.h"
 
 #include "Classpath.h"
@@ -70,7 +66,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   
   TheModule = new JnjvmModule("Bootstrap JnJVM", staticCompilation);
   TheModuleProvider = new JnjvmModuleProvider(getModule());
-  FunctionPasses = new FunctionPassManager(TheModuleProvider);
 
   hashUTF8 = new(allocator) UTF8Map(allocator, 0);
   classes = new(allocator) ClassMap();
@@ -280,7 +275,6 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   TheModule = new JnjvmModule("Applicative loader");
   TheModuleProvider = new JnjvmModuleProvider(getModule());
   bootstrapLoader = JCL.bootstrapLoader;
-  FunctionPasses = bootstrapLoader->FunctionPasses;
   
   hashUTF8 = new(allocator) UTF8Map(allocator,
                                     bootstrapLoader->upcalls->ArrayOfChar);
@@ -820,7 +814,6 @@ JnjvmClassLoader::~JnjvmClassLoader() {
 
 
 JnjvmBootstrapLoader::~JnjvmBootstrapLoader() {
-  delete FunctionPasses;
 }
 
 JavaString* JnjvmClassLoader::UTF8ToStr(const UTF8* val) {
