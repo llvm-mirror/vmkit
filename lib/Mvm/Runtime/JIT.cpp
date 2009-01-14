@@ -19,6 +19,7 @@
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/Support/MutexGuard.h>
 #include <llvm/Target/TargetData.h>
+#include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
 
 
@@ -38,25 +39,29 @@ namespace mvm {
   }
 }
 
-void MvmModule::initialise(bool Fast) {
+void MvmModule::initialise(bool Fast, Module* M, TargetMachine* T) {
   llvm::NoFramePointerElim = true;
   llvm::ExceptionHandling = true;
-  globalModule = new llvm::Module("bootstrap module");
-  globalModuleProvider = new ExistingModuleProvider (globalModule);
-  
+  if (!M) {
+    globalModule = new llvm::Module("bootstrap module");
+    globalModuleProvider = new ExistingModuleProvider (globalModule);
 
-  executionEngine = ExecutionEngine::createJIT(globalModuleProvider, 0,
-                                               0, Fast);
+    executionEngine = ExecutionEngine::createJIT(globalModuleProvider, 0,
+                                                 0, Fast);
   
-  std::string str = 
-    executionEngine->getTargetData()->getStringRepresentation();
-  globalModule->setDataLayout(str);
+    std::string str = 
+      executionEngine->getTargetData()->getStringRepresentation();
+    globalModule->setDataLayout(str);
   
-  TheTargetData = executionEngine->getTargetData();
+    TheTargetData = executionEngine->getTargetData();
+  } else {
+    globalModule = M;
+    TheTargetData = T->getTargetData();
+  }
 
   
   Module module("unused");
-  module.setDataLayout(str);
+  module.setDataLayout(globalModule->getDataLayout());
   mvm::llvm_runtime::makeLLVMModuleContents(&module);
   
   // Type declaration
@@ -118,8 +123,8 @@ void MvmModule::initialise(bool Fast) {
 
 MvmModule::MvmModule(const std::string& ModuleID) : llvm::Module(ModuleID) {
   Module* module = this;
-  std::string str = executionEngine->getTargetData()->getStringRepresentation();
-  module->setDataLayout(str);
+  module->setDataLayout(globalModule->getDataLayout());
+  module->setTargetTriple(globalModule->getTargetTriple());
   
   mvm::llvm_runtime::makeLLVMModuleContents(module);
   

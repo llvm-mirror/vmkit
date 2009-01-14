@@ -65,12 +65,13 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
 bool JnjvmModuleProvider::materializeFunction(Function *F, 
                                               std::string *ErrInfo) {
   
+  if (!(F->hasNotBeenReadFromBitcode())) 
+    return false;
+ 
+  assert(mvm::MvmModule::executionEngine && "No execution engine");
   if (mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(F))
     return false;
 
-  if (!(F->hasNotBeenReadFromBitcode())) 
-    return false;
-  
   JavaMethod* meth = LLVMMethodInfo::get(F);
   
   if (!meth) {

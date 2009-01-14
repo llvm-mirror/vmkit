@@ -28,6 +28,9 @@
 #include "llvm/Support/SystemUtils.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/System/Signals.h"
+#include "llvm/Target/TargetData.h"
+#include "llvm/Target/TargetMachineRegistry.h"
+#include "llvm/Target/TargetMachine.h"
 
 #include "MvmGC.h"
 #include "mvm/JIT.h"
@@ -133,21 +136,38 @@ int main(int argc, char **argv) {
       cl::PrintHelpMessage();
       return 0;
     }
+    
+    Module* TheModule = new Module("bootstrap module");
+    if (!TargetTriple.empty())
+      TheModule->setTargetTriple(TargetTriple);
+    else
+      TheModule->setTargetTriple(LLVM_HOSTTRIPLE);
+    
+    // Create the TargetMachine we will be generating code with.
+    std::string Err; 
+    const TargetMachineRegistry::entry *TME = 
+      TargetMachineRegistry::getClosestStaticTargetForModule(*TheModule, Err);
+    if (!TME) {
+      cerr << "Did not get a target machine!\n";
+      exit(1);
+    }
 
-    mvm::MvmModule::initialise();
+    std::string FeatureStr;
+    TargetMachine* TheTarget = TME->CtorFn(*TheModule, FeatureStr);
+
+    // Install information about target datalayout stuff into the module for
+    // optimizer use.
+    TheModule->setDataLayout(TheTarget->getTargetData()->
+                             getStringRepresentation());
+
+
+    mvm::MvmModule::initialise(false, TheModule, TheTarget);
     mvm::Object::initialise();
     Collector::initialise(0);
     Collector::enable(0);
 
     mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM(true);
-
-    if (!TargetTriple.empty())
-      CU->TheModule->setTargetTriple(TargetTriple);
-    else
-      CU->TheModule->setTargetTriple(LLVM_HOSTTRIPLE);
-
-
-    addCommandLinePass(CU, argv);    
+    addCommandLinePass(CU, argv); 
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(CU);
     vm->compile(InputFilename.c_str());
     vm->waitForExit();

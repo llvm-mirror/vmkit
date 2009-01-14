@@ -2128,10 +2128,6 @@ Function* JnjvmModule::getMethod(JavaMethod* meth) {
 JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) : 
   MvmModule(ModuleID) {
   
-  if (!sc) {
-    std::string str = TheTargetData->getStringRepresentation();
-    setDataLayout(str);
-  }
   staticCompilation = sc;
   if (!VTType) initialise();
 
