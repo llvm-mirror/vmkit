@@ -208,26 +208,14 @@ Constant* JnjvmModule::getMethodInClass(JavaMethod* meth) {
     Class* cl = meth->classDef;
     Constant* MOffset = 0;
     Constant* Array = 0;
-    if (isVirtual(meth->access)) {
-      method_iterator SI = virtualMethods.find(cl);
-      for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
-        if (&cl->virtualMethods[i] == meth) {
-          MOffset = ConstantInt::get(Type::Int32Ty, i);
-          break;
-        }
+    method_iterator SI = virtualMethods.find(cl);
+    for (uint32 i = 0; i < cl->nbVirtualMethods + cl->nbStaticMethods; ++i) {
+      if (&cl->virtualMethods[i] == meth) {
+        MOffset = ConstantInt::get(Type::Int32Ty, i);
+        break;
       }
-      Array = SI->second;
-    } else {
-      method_iterator SI = staticMethods.find(cl);
-      for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
-        if (&cl->staticMethods[i] == meth) {
-          MOffset = ConstantInt::get(Type::Int32Ty, i);
-          break;
-        }
-      }
-      Array = SI->second;
     }
-    
+    Array = SI->second; 
     Constant* GEPs[2] = { constantZero, MOffset };
     return ConstantExpr::getGetElementPtr(Array, GEPs, 2);
     
@@ -1130,7 +1118,6 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
     Constant* I[1] = { nbVirtualMethods };
     Constant* C = ConstantExpr::getGetElementPtr(methods, I, 1);
     ClassElts.push_back(C);
-    staticMethods.insert(std::make_pair(cl, C));
   } else {
     ClassElts.push_back(Constant::getNullValue(JavaMethodType));
   }
