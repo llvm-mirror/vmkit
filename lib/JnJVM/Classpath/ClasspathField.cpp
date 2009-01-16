@@ -19,15 +19,11 @@ using namespace jnjvm;
 extern "C" {
 
 
-static UserClass* internalGetClass(Jnjvm* vm, JavaField* field, jobject Field) {
-#ifdef ISOLATE_SHARING
+static UserClass* internalGetClass(Jnjvm* vm, jobject Field) {
   JavaField* slot = vm->upcalls->fieldClass;
   JavaObject* Cl = (JavaObject*)slot->getInt32Field((JavaObject*)Field);
   UserClass* cl = (UserClass*)UserCommonClass::resolvedImplClass(vm, Cl, false);
   return cl;
-#else
-  return field->classDef;
-#endif
 }
 
 JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getModifiersInternal(
@@ -40,8 +36,10 @@ jobject obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)obj);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   res = field->access;
 
   END_NATIVE_EXCEPTION
@@ -60,12 +58,13 @@ jobject obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)obj);
-  UserClass* fieldCl = internalGetClass(vm, field, obj);
-  JnjvmClassLoader* loader = fieldCl->classLoader;
-  UserCommonClass* cl = field->getSignature()->assocClass(loader);
-  res = (jclass)cl->getClassDelegatee(vm);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
+  JnjvmClassLoader* loader = cl->classLoader;
+  UserCommonClass* fieldCl = field->getSignature()->assocClass(loader);
+  res = (jclass)fieldCl->getClassDelegatee(vm);
 
   END_NATIVE_EXCEPTION
 
@@ -83,14 +82,15 @@ jobject Field, jobject obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   const Typedef* type = field->getSignature();
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -131,13 +131,14 @@ jobject Field, jobject obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -180,13 +181,14 @@ jobject Field, jobject obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -221,13 +223,14 @@ jobject Field, jobject obj) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -272,13 +275,14 @@ jobject Field, jobject obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -313,13 +317,14 @@ jobject Field, jobject obj) {
   
   
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -355,13 +360,14 @@ jobject Field, jobject obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -397,13 +403,14 @@ jobject Field, jobject obj) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -450,13 +457,14 @@ jobject Field, jobject _obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, Field);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Field);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)_obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -527,8 +535,10 @@ jobject Field, jobject obj, jobject val) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   uintptr_t buf = (uintptr_t)alloca(sizeof(uint64));
   void* _buf = (void*)buf;
   const Typedef* type = field->getSignature();
@@ -538,7 +548,6 @@ jobject Field, jobject obj, jobject val) {
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -580,13 +589,14 @@ jobject Field, jobject obj, jboolean val) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -617,13 +627,14 @@ jobject Field, jobject obj, jbyte val) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -663,13 +674,14 @@ jobject Field, jobject obj, jchar val) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -706,13 +718,14 @@ jobject Field, jobject obj, jshort val) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -750,13 +763,14 @@ jobject Field, jobject obj, jint val) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -792,13 +806,14 @@ jobject Field, jobject obj, jlong val) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -833,13 +848,14 @@ jobject Field, jobject obj, jfloat val) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
   
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -871,13 +887,14 @@ jobject Field, jobject obj, jdouble val) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, obj);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  JavaField* field = &(cl->virtualFields[index]);
   
   void* Obj = (void*)obj;
 
   if (isStatic(field->access)) {
-    UserClass* cl = internalGetClass(vm, field, Field);
     cl->initialiseClass(vm);
     Obj = cl->getStaticInstance();
   } else {
@@ -903,11 +920,12 @@ JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_objectFieldOffset(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Unsafe,
-JavaObject* Field) {
+jobject Unsafe, jobject Field) {
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, Field);
   JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Field);
+  JavaField* field = &(cl->virtualFields[index]);
   return (jlong)field->ptrOffset;
 }
 

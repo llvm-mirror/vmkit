@@ -191,10 +191,10 @@ private:
   std::map<const Enveloppe*, llvm::Constant*> enveloppes;
   std::map<const JavaMethod*, llvm::Constant*> nativeFunctions;
   std::map<const UTF8*, llvm::Constant*> utf8s;
-  std::map<const Class*, llvm::GlobalVariable*> virtualMethods;
-  std::map<const Class*, llvm::GlobalVariable*> staticMethods;
+  std::map<const Class*, llvm::Constant*> virtualMethods;
+  std::map<const Class*, llvm::Constant*> staticMethods;
   
-  typedef std::map<const Class*, llvm::GlobalVariable*>::iterator
+  typedef std::map<const Class*, llvm::Constant*>::iterator
     method_iterator;
   
   typedef std::map<const CommonClass*, llvm::Constant*>::iterator

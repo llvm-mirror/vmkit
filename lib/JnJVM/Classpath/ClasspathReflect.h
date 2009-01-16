@@ -44,9 +44,9 @@ public:
 class JavaObjectField : public JavaObject {
 private:
   uint8 flag;
-  JavaObject* declaringClass;
+  JavaObjectClass* declaringClass;
   JavaObject* name;
-  JavaField* slot;
+  uint32 slot;
 
 public:
 
@@ -54,8 +54,6 @@ public:
     obj->JavaObject::CALL_TRACER;
     obj->name->MARK_AND_TRACE;
     obj->declaringClass->MARK_AND_TRACE;
-    // No need to see if classDef != NULL, it must be.
-    if (obj->slot) obj->slot->classDef->classLoader->MARK_AND_TRACE;
   }
 
 };
@@ -65,7 +63,7 @@ private:
   uint8 flag;
   JavaObject* declaringClass;
   JavaObject* name;
-  JavaMethod* slot;
+  uint32 slot;
 
 public:
   
@@ -73,7 +71,6 @@ public:
     obj->JavaObject::CALL_TRACER;
     obj->name->MARK_AND_TRACE;
     obj->declaringClass->MARK_AND_TRACE;
-    if (obj->slot) obj->slot->classDef->classLoader->MARK_AND_TRACE;
   }
 
 };
@@ -82,13 +79,12 @@ class JavaObjectConstructor : public JavaObject {
 private:
   uint8 flag;
   JavaObject* clazz;
-  JavaMethod* slot;
+  uint32 slot;
 
 public:
   static void STATIC_TRACER(JavaObjectConstructor) {
     obj->JavaObject::CALL_TRACER;
     obj->clazz->MARK_AND_TRACE;
-    if (obj->slot) obj->slot->classDef->classLoader->MARK_AND_TRACE;
   }
 
 };

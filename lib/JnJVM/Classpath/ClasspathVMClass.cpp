@@ -91,20 +91,32 @@ jboolean publicOnly) {
     result = (jobject)vm->upcalls->constructorArrayClass->doNew(0, vm);
   } else {
     UserClass* realCl = (Class*)cl;
-    std::vector<JavaMethod*> res;
-    realCl->getDeclaredConstructors(res, publicOnly);
+    JnjvmClassLoader* classLoader = cl->classLoader;
+    uint32 size = 0;
     
+    for (uint32 i = 0; i < realCl->nbVirtualMethods; ++i) {
+      JavaMethod* meth = &realCl->virtualMethods[i];
+      bool pub = isPublic(meth->access);
+      if (meth->name->equals(classLoader->bootstrapLoader->initName) && 
+          (!publicOnly || pub)) {
+        ++size;
+      }
+    }
+  
+
     ArrayObject* ret = 
-      (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(res.size(), vm);
+      (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(size, vm);
     sint32 index = 0;
-    for (std::vector<JavaMethod*>::iterator i = res.begin(), e = res.end();
-          i != e; ++i, ++index) {
-      JavaMethod* meth = *i;
-      // TODO: check parameter types
-      UserClass* Cons = vm->upcalls->newConstructor;
-      JavaObject* tmp = Cons->doNew(vm);
-      vm->upcalls->initConstructor->invokeIntSpecial(vm, Cons, tmp, Cl, meth);
-      ret->elements[index] = tmp;
+    for (uint32 i = 0; i < realCl->nbVirtualMethods; ++i) {
+      JavaMethod* meth = &realCl->virtualMethods[i];
+      bool pub = isPublic(meth->access);
+      if (meth->name->equals(classLoader->bootstrapLoader->initName) && 
+          (!publicOnly || pub)) {
+        UserClass* Cons = vm->upcalls->newConstructor;
+        JavaObject* tmp = Cons->doNew(vm);
+        vm->upcalls->initConstructor->invokeIntSpecial(vm, Cons, tmp, Cl, i);
+        ret->elements[index++] = tmp;
+      }
     }
     result = (jobject)ret;
   }
@@ -134,23 +146,37 @@ jboolean publicOnly) {
   if (cl->isArray() || cl->isPrimitive()) {
     result = (jobject)upcalls->methodArrayClass->doNew(0, vm);
   } else {
-    std::vector<JavaMethod*> res;
-    UserClass* realCl = cl->asClass();
-    realCl->getDeclaredMethods(res, publicOnly);
+    UserClass* realCl = (Class*)cl;
+    JnjvmClassLoader* classLoader = cl->classLoader;
+    uint32 size = 0;
+
+    for (uint32 i = 0; i < realCl->nbVirtualMethods + realCl->nbStaticMethods;
+         ++i) {
+      JavaMethod* meth = &realCl->virtualMethods[i];
+      bool pub = isPublic(meth->access);
+      if (!(meth->name->equals(classLoader->bootstrapLoader->initName)) && 
+          (!publicOnly || pub)) {
+        ++size; 
+      }
+    }
+
     
-    ArrayObject* ret = 
-      (ArrayObject*)upcalls->methodArrayClass->doNew(res.size(), vm);
+    ArrayObject* ret = (ArrayObject*)upcalls->methodArrayClass->doNew(size, vm);
 
     sint32 index = 0;
-    for (std::vector<JavaMethod*>::iterator i = res.begin(), e = res.end();
-          i != e; ++i, ++index) {
-      JavaMethod* meth = *i;
-      // TODO: check parameter types
-      UserClass* Meth = vm->upcalls->newMethod;
-      JavaObject* tmp = Meth->doNew(vm);
-      JavaString* str = vm->internalUTF8ToStr(meth->name);
-      upcalls->initMethod->invokeIntSpecial(vm, Meth, tmp, Cl, str, meth);
-      ret->elements[index] = tmp;
+    for (uint32 i = 0; i < realCl->nbVirtualMethods + realCl->nbStaticMethods;
+         ++i) {
+      JavaMethod* meth = &realCl->virtualMethods[i];
+      bool pub = isPublic(meth->access);
+      if (!(meth->name->equals(classLoader->bootstrapLoader->initName)) && 
+          (!publicOnly || pub)) {
+        // TODO: check parameter types
+        UserClass* Meth = vm->upcalls->newMethod;
+        JavaObject* tmp = Meth->doNew(vm);
+        JavaString* str = vm->internalUTF8ToStr(meth->name);
+        upcalls->initMethod->invokeIntSpecial(vm, Meth, tmp, Cl, str, i);
+        ret->elements[index++] = tmp;
+      }
     }
     result = (jobject)ret;
   }
@@ -375,21 +401,29 @@ jclass Cl, jboolean publicOnly) {
   if (!cl) {
     result = (jobject)vm->upcalls->fieldArrayClass->doNew(0, vm);
   } else {
-    std::vector<JavaField*> res;
-    cl->getDeclaredFields(res, publicOnly);
     
+    uint32 size = 0;
+    for (uint32 i = 0; i < cl->nbVirtualFields + cl->nbStaticFields; ++i) {
+      JavaField* field = &cl->virtualFields[i];
+      if (!publicOnly || isPublic(field->access)) {
+        ++size;
+      }
+    }
+
+
     ArrayObject* ret = 
-      (ArrayObject*)vm->upcalls->fieldArrayClass->doNew(res.size(), vm);
+      (ArrayObject*)vm->upcalls->fieldArrayClass->doNew(size, vm);
     sint32 index = 0;
-    for (std::vector<JavaField*>::iterator i = res.begin(), e = res.end();
-          i != e; ++i, ++index) {
-      JavaField* field = *i;
-      // TODO: check parameter types
-      UserClass* Field = vm->upcalls->newField;
-      JavaObject* tmp = Field->doNew(vm);
-      JavaString* name = vm->internalUTF8ToStr(field->name);
-      vm->upcalls->initField->invokeIntSpecial(vm, Field, tmp, Cl, name, field);
-      ret->elements[index] = tmp;
+    for (uint32 i = 0; i < cl->nbVirtualFields + cl->nbStaticFields; ++i) {
+      JavaField* field = &cl->virtualFields[i];
+      if (!publicOnly || isPublic(field->access)) {
+        // TODO: check parameter types
+        UserClass* Field = vm->upcalls->newField;
+        JavaObject* tmp = Field->doNew(vm);
+        JavaString* name = vm->internalUTF8ToStr(field->name);
+        vm->upcalls->initField->invokeIntSpecial(vm, Field, tmp, Cl, name, i);
+        ret->elements[index++] = tmp;
+      }
     }
     result = (jobject)ret;
   }

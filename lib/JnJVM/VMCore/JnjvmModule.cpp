@@ -1029,41 +1029,55 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
   // thinlock
   ClassElts.push_back(Constant::getNullValue(ptrType));
 
+  if (cl->nbVirtualFields + cl->nbStaticFields) {
+    ATy = ArrayType::get(JavaFieldType->getContainedType(0), 
+                         cl->nbVirtualFields + cl->nbStaticFields);
+  }
+
   // virtualFields
   if (cl->nbVirtualFields) {
-    ATy = ArrayType::get(JavaFieldType->getContainedType(0), cl->nbVirtualFields);
 
     for (uint32 i = 0; i < cl->nbVirtualFields; ++i) {
       TempElts.push_back(CreateConstantFromJavaField(cl->virtualFields[i]));
     }
 
-    Constant* fields = ConstantArray::get(ATy, TempElts);
-    TempElts.clear();
-    fields = new GlobalVariable(ATy, false, GlobalValue::InternalLinkage,
-                                fields, "", this);
-    fields = ConstantExpr::getCast(Instruction::BitCast, fields, JavaFieldType);
-    ClassElts.push_back(fields);
-  } else {
-    ClassElts.push_back(Constant::getNullValue(JavaFieldType));
-  }
-
-  // nbVirtualFields
-  ClassElts.push_back(ConstantInt::get(Type::Int16Ty, cl->nbVirtualFields));
+  } 
   
   // staticFields
   if (cl->nbStaticFields) {
-    ATy = ArrayType::get(JavaFieldType->getContainedType(0), cl->nbStaticFields);
 
     for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
       TempElts.push_back(CreateConstantFromJavaField(cl->staticFields[i]));
     }
+
+  }
+
+  Constant* fields = 0;
+  if (cl->nbStaticFields + cl->nbVirtualFields) {
   
-    Constant* fields = ConstantArray::get(ATy, TempElts);
+    fields = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
     fields = new GlobalVariable(ATy, false, GlobalValue::InternalLinkage,
                                 fields, "", this);
     fields = ConstantExpr::getCast(Instruction::BitCast, fields, JavaFieldType);
-    ClassElts.push_back(fields);
+  } else {
+    fields = Constant::getNullValue(JavaFieldType);
+  }
+
+  // virtualFields
+  ClassElts.push_back(fields);
+
+  ConstantInt* nbVirtualFields = 
+    ConstantInt::get(Type::Int16Ty, cl->nbVirtualFields);
+  // nbVirtualFields
+  ClassElts.push_back(nbVirtualFields);
+  
+  // staticFields
+  if (cl->nbStaticFields + cl->nbVirtualFields) {
+    
+    Constant* I[1] = { nbVirtualFields };
+    Constant* C = ConstantExpr::getGetElementPtr(fields, I, 1);
+    ClassElts.push_back(C);
   } else {
     ClassElts.push_back(Constant::getNullValue(JavaFieldType));
   }
@@ -1072,15 +1086,26 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(ConstantInt::get(Type::Int16Ty, cl->nbStaticFields));
   
   // virtualMethods
-  if (cl->nbVirtualMethods) {
+  if (cl->nbVirtualMethods + cl->nbStaticMethods) {
     ATy = ArrayType::get(JavaMethodType->getContainedType(0),
-                         cl->nbVirtualMethods);
+                         cl->nbVirtualMethods + cl->nbStaticMethods);
+  }
 
+  if (cl->nbVirtualMethods) {
     for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
       TempElts.push_back(CreateConstantFromJavaMethod(cl->virtualMethods[i]));
     }
+  }
+    
+  if (cl->nbStaticMethods) {
+    for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
+      TempElts.push_back(CreateConstantFromJavaMethod(cl->staticMethods[i]));
+    }
+  }
 
-    Constant* methods = ConstantArray::get(ATy, TempElts);
+  Constant* methods = 0;
+  if (cl->nbVirtualMethods + cl->nbStaticMethods) {
+    methods = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
     GlobalVariable* GV = new GlobalVariable(ATy, false,
                                             GlobalValue::InternalLinkage,
@@ -1088,31 +1113,24 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
     virtualMethods.insert(std::make_pair(cl, GV));
     methods = ConstantExpr::getCast(Instruction::BitCast, GV,
                                     JavaMethodType);
-    ClassElts.push_back(methods);
   } else {
-    ClassElts.push_back(Constant::getNullValue(JavaMethodType));
+    methods = Constant::getNullValue(JavaMethodType);
   }
 
+  // virtualMethods
+  ClassElts.push_back(methods);
+
+  ConstantInt* nbVirtualMethods = 
+    ConstantInt::get(Type::Int16Ty, cl->nbVirtualMethods);
   // nbVirtualMethods
-  ClassElts.push_back(ConstantInt::get(Type::Int16Ty, cl->nbVirtualMethods));
+  ClassElts.push_back(nbVirtualMethods);
   
   // staticMethods
-  if (cl->nbStaticMethods) {
-    ATy = ArrayType::get(JavaMethodType->getContainedType(0),
-                         cl->nbStaticMethods);
-
-    for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
-      TempElts.push_back(CreateConstantFromJavaMethod(cl->staticMethods[i]));
-    }
-
-    Constant* methods = ConstantArray::get(ATy, TempElts);
-    TempElts.clear();
-    GlobalVariable* GV = new GlobalVariable(ATy, false,
-                                            GlobalValue::InternalLinkage,
-                                            methods, "", this);
-    staticMethods.insert(std::make_pair(cl, GV));
-    methods = ConstantExpr::getCast(Instruction::BitCast, GV, JavaMethodType);
-    ClassElts.push_back(methods);
+  if (cl->nbStaticMethods + cl->nbVirtualMethods) {
+    Constant* I[1] = { nbVirtualMethods };
+    Constant* C = ConstantExpr::getGetElementPtr(methods, I, 1);
+    ClassElts.push_back(C);
+    staticMethods.insert(std::make_pair(cl, C));
   } else {
     ClassElts.push_back(Constant::getNullValue(JavaMethodType));
   }

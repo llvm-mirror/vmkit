@@ -24,18 +24,11 @@ using namespace jnjvm;
 
 extern "C" {
 
-// internalGetClass selects the class of a method depending on the isolate
-// environment. In a sharing environment, the class is located in the 
-// Java object. In regular environment, it is the classDef of the method.
-static UserClass* internalGetClass(Jnjvm* vm, JavaMethod* meth, jobject Meth) {
-#ifdef ISOLATE_SHARING
+static UserClass* internalGetClass(Jnjvm* vm, jobject Meth) {
   JavaField* field = vm->upcalls->methodClass;
   JavaObject* Cl = (JavaObject*)field->getInt32Field((JavaObject*)Meth);
   UserClass* cl = (UserClass*)UserCommonClass::resolvedImplClass(vm, Cl, false);
   return cl;
-#else
-  return meth->classDef;
-#endif
 }
 
 
@@ -50,8 +43,10 @@ JNIEnv *env,
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, Meth);
   JavaField* slot = vm->upcalls->methodSlot;
-  JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Meth);
+  JavaMethod* meth = &(cl->virtualMethods[index]);
   
   res = meth->access;
 
@@ -71,9 +66,10 @@ JNIEnv *env,
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, Meth);
   JavaField* slot = vm->upcalls->methodSlot;
-  JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
-  UserClass* cl = internalGetClass(vm, meth, Meth);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Meth);
+  JavaMethod* meth = &(cl->virtualMethods[index]);
   JnjvmClassLoader* loader = cl->classLoader;
   res = (jclass)meth->getReturnType(loader);
 
@@ -94,9 +90,10 @@ jobject Meth) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, Meth);
   JavaField* slot = vm->upcalls->methodSlot;
-  JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)Meth);
-  UserClass* cl = internalGetClass(vm, meth, Meth);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Meth);
+  JavaMethod* meth = &(cl->virtualMethods[index]);
   JnjvmClassLoader* loader = cl->classLoader;
   
   res = (jobject)(meth->getParameterTypes(loader));
@@ -110,14 +107,17 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_invokeNative(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
-jobject Meth, jobject _obj, jobject _args, jclass Cl, jint _meth) {
+jobject Meth, jobject _obj, jobject _args, jclass Cl, jint index) {
   
   JavaObject* res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaMethod* meth = (JavaMethod*)_meth;
+  UserClass* cl = internalGetClass(vm, Meth);
+  JavaField* slot = vm->upcalls->methodSlot;
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Meth);
+  JavaMethod* meth = &(cl->virtualMethods[index]);
   JavaArray* args = (JavaArray*)_args;
   sint32 nbArgs = args ? args->size : 0;
   Signdef* sign = meth->getSignature();
@@ -251,17 +251,18 @@ JNIEXPORT jobjectArray JNICALL Java_java_lang_reflect_Method_getExceptionTypes(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
-jobject _meth) {
+jobject Meth) {
 
   jobjectArray res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  verifyNull(_meth);
+  verifyNull(Meth);
   Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = internalGetClass(vm, Meth);
   JavaField* slot = vm->upcalls->methodSlot;
-  JavaMethod* meth = (JavaMethod*)slot->getInt32Field((JavaObject*)_meth);
-  UserClass* cl = internalGetClass(vm, meth, _meth);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Meth);
+  JavaMethod* meth = &(cl->virtualMethods[index]);
   JnjvmClassLoader* loader = cl->classLoader;
   res = (jobjectArray)meth->getExceptionTypes(loader);
 
