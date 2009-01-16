@@ -21,7 +21,7 @@ extern "C" {
 
 static UserClass* internalGetClass(Jnjvm* vm, jobject Field) {
   JavaField* slot = vm->upcalls->fieldClass;
-  JavaObject* Cl = (JavaObject*)slot->getInt32Field((JavaObject*)Field);
+  JavaObject* Cl = (JavaObject*)slot->getObjectField((JavaObject*)Field);
   UserClass* cl = (UserClass*)UserCommonClass::resolvedImplClass(vm, Cl, false);
   return cl;
 }
