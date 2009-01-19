@@ -535,9 +535,9 @@ jobject Field, jobject obj, jobject val) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
+  UserClass* cl = internalGetClass(vm, Field);
   JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
+  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Field);
   JavaField* field = &(cl->virtualFields[index]);
   uintptr_t buf = (uintptr_t)alloca(sizeof(uint64));
   void* _buf = (void*)buf;
