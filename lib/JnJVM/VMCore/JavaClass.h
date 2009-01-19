@@ -24,7 +24,6 @@
 #include "JnjvmConfig.h"
 
 #include <cassert>
-#include <vector>
 
 namespace jnjvm {
 
@@ -529,20 +528,6 @@ public:
   uint32 getVirtualSize()         { return virtualSize; }
   VirtualTable* getVirtualVT()    { return virtualVT; }
 
-  /// getDeclaredConstructors - Returns the methods defined in this class which
-  /// are constructors.
-  ///
-  void getDeclaredConstructors(std::vector<JavaMethod*>& res, bool publicOnly);
-
-  /// getDeclaredMethod - Returns the methods defined in this class which are
-  /// not constructors.
-  //
-  void getDeclaredMethods(std::vector<JavaMethod*>& res, bool publicOnly);
-  
-  /// getDeclaredFields - Returns the fields defined in this class.
-  ///
-  void getDeclaredFields(std::vector<JavaField*>& res, bool publicOnly);
-  
   /// getOwnerClass - Get the thread that is currently initializing the class.
   ///
   mvm::Thread* getOwnerClass() {

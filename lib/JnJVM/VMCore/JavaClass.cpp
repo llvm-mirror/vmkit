@@ -28,7 +28,6 @@
 #include "Reader.h"
 
 #include <cstring>
-#include <vector>
 
 using namespace jnjvm;
 
@@ -985,56 +984,6 @@ void UserClass::resolveInnerOuterClasses() {
       }
     }
     innerOuterResolved = true;
-  }
-}
-
-void Class::getDeclaredConstructors(std::vector<JavaMethod*>& res,
-                                          bool publicOnly) {
-  for (uint32 i = 0; i < nbVirtualMethods; ++i) {
-    JavaMethod* meth = &virtualMethods[i];
-    bool pub = isPublic(meth->access);
-    if (meth->name->equals(classLoader->bootstrapLoader->initName) && 
-        (!publicOnly || pub)) {
-      res.push_back(meth);
-    }
-  }
-}
-
-void Class::getDeclaredMethods(std::vector<JavaMethod*>& res,
-                                     bool publicOnly) {
-  for (uint32 i = 0; i < nbVirtualMethods; ++i) {
-    JavaMethod* meth = &virtualMethods[i];
-    bool pub = isPublic(meth->access);
-    if (!(meth->name->equals(classLoader->bootstrapLoader->initName)) && 
-        (!publicOnly || pub)) {
-      res.push_back(meth);
-    }
-  }
-  
-  for (uint32 i = 0; i < nbStaticMethods; ++i) {
-    JavaMethod* meth = &staticMethods[i];
-    bool pub = isPublic(meth->access);
-    if (!(meth->name->equals(classLoader->bootstrapLoader->clinitName)) && 
-        (!publicOnly || pub)) {
-      res.push_back(meth);
-    }
-  }
-}
-
-void Class::getDeclaredFields(std::vector<JavaField*>& res,
-                                    bool publicOnly) {
-  for (uint32 i = 0; i < nbVirtualFields; ++i) {
-    JavaField* field = &virtualFields[i];
-    if (!publicOnly || isPublic(field->access)) {
-      res.push_back(field);
-    }
-  }
-  
-  for (uint32 i = 0; i < nbStaticFields; ++i) {
-    JavaField* field = &staticFields[i];
-    if (!publicOnly || isPublic(field->access)) {
-      res.push_back(field);
-    }
   }
 }
 
