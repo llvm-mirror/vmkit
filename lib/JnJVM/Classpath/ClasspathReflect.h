@@ -56,12 +56,16 @@ public:
     obj->declaringClass->MARK_AND_TRACE;
   }
 
+  JavaField* getInternalField() {
+    return &(((UserClass*)declaringClass->vmdata)->virtualFields[slot]);
+  }
+
 };
 
 class JavaObjectMethod : public JavaObject {
 private:
   uint8 flag;
-  JavaObject* declaringClass;
+  JavaObjectClass* declaringClass;
   JavaObject* name;
   uint32 slot;
 
@@ -72,19 +76,27 @@ public:
     obj->name->MARK_AND_TRACE;
     obj->declaringClass->MARK_AND_TRACE;
   }
+  
+  JavaMethod* getInternalMethod() {
+    return &(((UserClass*)declaringClass->vmdata)->virtualMethods[slot]);
+  }
 
 };
 
 class JavaObjectConstructor : public JavaObject {
 private:
   uint8 flag;
-  JavaObject* clazz;
+  JavaObjectClass* clazz;
   uint32 slot;
 
 public:
   static void STATIC_TRACER(JavaObjectConstructor) {
     obj->JavaObject::CALL_TRACER;
     obj->clazz->MARK_AND_TRACE;
+  }
+  
+  JavaMethod* getInternalMethod() {
+    return &(((UserClass*)clazz->vmdata)->virtualMethods[slot]);
   }
 
 };

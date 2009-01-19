@@ -10,6 +10,7 @@
 
 
 #include "Classpath.h"
+#include "ClasspathReflect.h"
 #include "JavaClass.h"
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
@@ -56,14 +57,12 @@ JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setBooleanNative(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject Field, jobject obj, jboolean val) {
+JavaObjectField* Field, jobject obj, jboolean val) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  JavaField* field = Field->getInternalField();
   field->setInt8Field((JavaObject*)obj, (uint8)val);
 
   END_NATIVE_EXCEPTION
@@ -74,14 +73,12 @@ JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setByteNative(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject Field, jobject obj, jbyte val) {
+JavaObjectField* Field, jobject obj, jbyte val) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  JavaField* field = Field->getInternalField();
   field->setInt8Field((JavaObject*)obj, (uint8)val);
 
   END_NATIVE_EXCEPTION
@@ -92,14 +89,12 @@ JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setCharNative(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject Field, jobject obj, jchar val) {
+JavaObjectField* Field, jobject obj, jchar val) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  JavaField* field = Field->getInternalField();
   field->setInt16Field((JavaObject*)obj, (uint16)val);
 
   END_NATIVE_EXCEPTION
@@ -110,14 +105,12 @@ JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setShortNative(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject Field, jobject obj, jshort val) {
+JavaObjectField* Field, jobject obj, jshort val) {
   
   BEGIN_NATIVE_EXCEPTION(0)
   
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  JavaField* field = Field->getInternalField();
   field->setInt16Field((JavaObject*)obj, (sint16)val);
   
   END_NATIVE_EXCEPTION
@@ -128,14 +121,12 @@ JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setIntNative(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject Field, jobject obj, jint val) {
+JavaObjectField* Field, jobject obj, jint val) {
   
   BEGIN_NATIVE_EXCEPTION(0)
   
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  JavaField* field = Field->getInternalField();
   field->setInt32Field((JavaObject*)obj, (sint32)val);
 
   END_NATIVE_EXCEPTION
@@ -146,14 +137,12 @@ JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setLongNative(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject Field, jobject obj, jlong val) {
+JavaObjectField* Field, jobject obj, jlong val) {
   
   BEGIN_NATIVE_EXCEPTION(0)
   
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  JavaField* field = Field->getInternalField();
   field->setLongField((JavaObject*)obj, (sint64)val);
   
   END_NATIVE_EXCEPTION
@@ -164,14 +153,12 @@ JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setFloatNative(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject Field, jobject obj, jfloat val) {
+JavaObjectField* Field, jobject obj, jfloat val) {
   
   BEGIN_NATIVE_EXCEPTION(0)
   
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  JavaField* field = Field->getInternalField();
   field->setFloatField((JavaObject*)obj, (float)val);
   
   END_NATIVE_EXCEPTION
@@ -182,14 +169,12 @@ JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setDoubleNative(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject Field, jobject obj, jdouble val) {
+JavaObjectField* Field, jobject obj, jdouble val) {
   
   BEGIN_NATIVE_EXCEPTION(0)
   
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  JavaField* field = Field->getInternalField();
   field->setDoubleField((JavaObject*)obj, (double)val);
 
   END_NATIVE_EXCEPTION
@@ -200,14 +185,12 @@ JNIEXPORT void JNICALL Java_java_io_VMObjectStreamClass_setObjectNative(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject Field, jobject obj, jobject val) {
+JavaObjectField* Field, jobject obj, jobject val) {
   
   BEGIN_NATIVE_EXCEPTION(0)
   
   verifyNull(obj);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaField* slot = vm->upcalls->fieldSlot;
-  JavaField* field = (JavaField*)slot->getInt32Field((JavaObject*)Field);
+  JavaField* field = Field->getInternalField();
   field->setObjectField((JavaObject*)obj, (JavaObject*)val);
 
   END_NATIVE_EXCEPTION
