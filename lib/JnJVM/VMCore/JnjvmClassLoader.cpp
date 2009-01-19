@@ -1010,6 +1010,13 @@ void JnjvmClassLoader::loadLibFromFile(Jnjvm* vm, const char* name) {
 // Extern "C" functions called by the vmjc static intializer.
 extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
                                         CommonClass* cl) {
+  // To avoid data alignment in the llvm assembly emitter, we set the
+  // staticMethods and staticFields fields here.
+  if (cl->isClass()) {
+    Class* realCl = cl->asClass();
+    realCl->staticMethods = realCl->virtualMethods + realCl->nbVirtualMethods;
+    realCl->staticFields = realCl->virtualFields + realCl->nbVirtualFields;
+  }
   JCL->getClasses()->map.insert(std::make_pair(cl->name, cl));
   cl->classLoader = JCL;
 }

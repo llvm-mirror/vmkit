@@ -1061,14 +1061,9 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(nbVirtualFields);
   
   // staticFields
-  if (cl->nbStaticFields + cl->nbVirtualFields) {
-    
-    Constant* I[1] = { nbVirtualFields };
-    Constant* C = ConstantExpr::getGetElementPtr(fields, I, 1);
-    ClassElts.push_back(C);
-  } else {
-    ClassElts.push_back(Constant::getNullValue(JavaFieldType));
-  }
+  // Output null, this will be set in  the initializer. Otherwise, the
+  // assembly emitter of LLVM will try to align the data.
+  ClassElts.push_back(Constant::getNullValue(JavaFieldType));
 
   // nbStaticFields
   ClassElts.push_back(ConstantInt::get(Type::Int16Ty, cl->nbStaticFields));
@@ -1114,13 +1109,8 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(nbVirtualMethods);
   
   // staticMethods
-  if (cl->nbStaticMethods + cl->nbVirtualMethods) {
-    Constant* I[1] = { nbVirtualMethods };
-    Constant* C = ConstantExpr::getGetElementPtr(methods, I, 1);
-    ClassElts.push_back(C);
-  } else {
-    ClassElts.push_back(Constant::getNullValue(JavaMethodType));
-  }
+  // Output null, this will be set in  the initializer.
+  ClassElts.push_back(Constant::getNullValue(JavaMethodType));
 
   // nbStaticMethods
   ClassElts.push_back(ConstantInt::get(Type::Int16Ty, cl->nbStaticMethods));
