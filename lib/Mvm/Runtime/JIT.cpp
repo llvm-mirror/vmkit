@@ -245,7 +245,6 @@ llvm::ExistingModuleProvider *MvmModule::globalModuleProvider;
 llvm::FunctionPassManager* MvmModule::globalFunctionPasses;
 llvm::ExecutionEngine* MvmModule::executionEngine;
 mvm::LockNormal MvmModule::protectEngine;
-mvm::LockRecursive MvmModule::protectIR;
 
 
 uint64 MvmModule::getTypeSize(const llvm::Type* type) {
@@ -314,4 +313,12 @@ void CompilationUnit::AddStandardCompilePasses() {
   addPass(PM, createAggressiveDCEPass());        // Delete dead instructions
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
 
+}
+
+void MvmModule::protectIR() {
+  if (executionEngine) executionEngine->lock.acquire();
+}
+
+void MvmModule::unprotectIR() {
+  if (executionEngine) executionEngine->lock.release();
 }

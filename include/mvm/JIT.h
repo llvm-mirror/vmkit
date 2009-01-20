@@ -160,7 +160,6 @@ public:
 
   static llvm::ExecutionEngine* executionEngine;
   static mvm::LockNormal protectEngine;
-  static mvm::LockRecursive protectIR;
   static llvm::Module *globalModule;
   static llvm::ExistingModuleProvider *globalModuleProvider;
   static llvm::FunctionPassManager* globalFunctionPasses;
@@ -172,6 +171,9 @@ public:
                          llvm::TargetMachine* TheTarget = 0);
 
   static int disassemble(unsigned int* addr);
+  
+  static void protectIR();
+  static void unprotectIR();
 
 
 };
