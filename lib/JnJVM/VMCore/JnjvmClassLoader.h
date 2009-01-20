@@ -64,7 +64,7 @@ private:
    
   /// internalLoad - Load the class with the given name.
   ///
-  virtual UserClass* internalLoad(const UTF8* utf8);
+  virtual UserClass* internalLoad(const UTF8* utf8, bool doResolve);
   
   /// internalConstructType - Hashes a Typedef, an internal representation of
   /// a class still not loaded.
@@ -290,7 +290,7 @@ class JnjvmBootstrapLoader : public JnjvmClassLoader {
 private:
   /// internalLoad - Load the class with the given name.
   ///
-  virtual UserClass* internalLoad(const UTF8* utf8);
+  virtual UserClass* internalLoad(const UTF8* utf8, bool doResolve);
      
   /// bootClasspath - List of paths for the base classes.
   ///

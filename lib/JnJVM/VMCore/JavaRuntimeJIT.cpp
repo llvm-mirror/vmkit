@@ -239,7 +239,8 @@ extern "C" void* classLookup(UserClass* caller, uint32 index) {
 // Throws if initializing the class throws an exception.
 extern "C" UserCommonClass* jnjvmRuntimeInitialiseClass(UserClass* cl) {
   BEGIN_NATIVE_EXCEPTION(1)
-  
+ 
+  cl->resolveClass();
   cl->initialiseClass(JavaThread::get()->getJVM());
   
   END_NATIVE_EXCEPTION
