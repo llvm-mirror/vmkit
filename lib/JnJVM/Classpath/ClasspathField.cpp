@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Classpath.h"
+#include "ClasspathReflect.h"
 #include "JavaClass.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
@@ -19,27 +20,16 @@ using namespace jnjvm;
 extern "C" {
 
 
-static UserClass* internalGetClass(Jnjvm* vm, jobject Field) {
-  JavaField* slot = vm->upcalls->fieldClass;
-  JavaObject* Cl = (JavaObject*)slot->getObjectField((JavaObject*)Field);
-  UserClass* cl = (UserClass*)UserCommonClass::resolvedImplClass(vm, Cl, false);
-  return cl;
-}
-
 JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getModifiersInternal(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject obj) {
+JavaObjectField* Field) {
   jint res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  JavaField* field = Field->getInternalField();
   res = field->access;
 
   END_NATIVE_EXCEPTION
@@ -51,17 +41,15 @@ JNIEXPORT jclass JNICALL Java_java_lang_reflect_Field_getType(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject obj) {
+JavaObjectField* Field) {
   
   jclass res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   JnjvmClassLoader* loader = cl->classLoader;
   UserCommonClass* fieldCl = field->getSignature()->assocClass(loader);
   res = (jclass)fieldCl->getClassDelegatee(vm);
@@ -75,17 +63,15 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getInt(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj) {
+JavaObjectField* Field, jobject obj) {
   
   jint res = 0;
   
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   const Typedef* type = field->getSignature();
   
   void* Obj = (void*)obj;
@@ -124,17 +110,15 @@ JNIEXPORT jlong JNICALL Java_java_lang_reflect_Field_getLong(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj) {
+JavaObjectField* Field, jobject obj) {
 
   jlong res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
   
@@ -174,17 +158,15 @@ JNIEXPORT jboolean JNICALL Java_java_lang_reflect_Field_getBoolean(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj) {
+JavaObjectField* Field, jobject obj) {
 
   jboolean res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
   
@@ -216,17 +198,15 @@ JNIEXPORT jfloat JNICALL Java_java_lang_reflect_Field_getFloat(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj) {
+JavaObjectField* Field, jobject obj) {
   
   jfloat res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
   
@@ -268,17 +248,15 @@ JNIEXPORT jbyte JNICALL Java_java_lang_reflect_Field_getByte(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj) {
+JavaObjectField* Field, jobject obj) {
 
   jbyte res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
   
@@ -309,7 +287,7 @@ JNIEXPORT jchar JNICALL Java_java_lang_reflect_Field_getChar(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj) {
+JavaObjectField* Field, jobject obj) {
   
   jchar res = 0;
 
@@ -317,10 +295,8 @@ jobject Field, jobject obj) {
   
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
   
@@ -352,7 +328,7 @@ JNIEXPORT jshort JNICALL Java_java_lang_reflect_Field_getShort(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj) {
+JavaObjectField* Field, jobject obj) {
 
 
   jshort res = 0;
@@ -360,10 +336,8 @@ jobject Field, jobject obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
   
@@ -396,17 +370,15 @@ JNIEXPORT jdouble JNICALL Java_java_lang_reflect_Field_getDouble(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj) {
+JavaObjectField* Field, jobject obj) {
   
   jdouble res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
   
@@ -449,7 +421,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Field_get(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject _obj) {
+JavaObjectField* Field, jobject _obj) {
 
 
   jobject result = 0;
@@ -457,10 +429,8 @@ jobject Field, jobject _obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, Field);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Field);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)_obj;
   
@@ -530,15 +500,13 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj, jobject val) {
+JavaObjectField* Field, jobject obj, jobject val) {
   
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, Field);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Field);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   uintptr_t buf = (uintptr_t)alloca(sizeof(uint64));
   void* _buf = (void*)buf;
   const Typedef* type = field->getSignature();
@@ -584,15 +552,13 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setBoolean(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj, jboolean val) {
+JavaObjectField* Field, jobject obj, jboolean val) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
   
@@ -622,15 +588,13 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setByte(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj, jbyte val) {
+JavaObjectField* Field, jobject obj, jbyte val) {
   
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
   
@@ -669,15 +633,13 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setChar(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj, jchar val) {
+JavaObjectField* Field, jobject obj, jchar val) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
   
@@ -713,15 +675,13 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setShort(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj, jshort val) {
+JavaObjectField* Field, jobject obj, jshort val) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
   
@@ -758,15 +718,13 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setInt(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj, jint val) {
+JavaObjectField* Field, jobject obj, jint val) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
   
@@ -801,15 +759,13 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setLong(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj, jlong val) {
+JavaObjectField* Field, jobject obj, jlong val) {
   
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
   
@@ -842,16 +798,14 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setFloat(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj, jfloat val) {
+JavaObjectField* Field, jobject obj, jfloat val) {
 
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
   
@@ -882,15 +836,13 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setDouble(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Field, jobject obj, jdouble val) {
+JavaObjectField* Field, JavaObject* obj, jdouble val) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, obj);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)obj);
-  JavaField* field = &(cl->virtualFields[index]);
+  UserClass* cl = Field->getClass();
+  JavaField* field = Field->getInternalField();
   
   void* Obj = (void*)obj;
 
@@ -920,12 +872,8 @@ JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_objectFieldOffset(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject Unsafe, jobject Field) {
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, Field);
-  JavaField* slot = vm->upcalls->fieldSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Field);
-  JavaField* field = &(cl->virtualFields[index]);
+JavaObject* Unsafe, JavaObjectField* Field) {
+  JavaField* field = Field->getInternalField();
   return (jlong)field->ptrOffset;
 }
 

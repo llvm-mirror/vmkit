@@ -60,6 +60,10 @@ public:
     return &(((UserClass*)declaringClass->vmdata)->virtualFields[slot]);
   }
 
+  UserClass* getClass() {
+    return declaringClass->vmdata->asClass();
+  }
+
 };
 
 class JavaObjectMethod : public JavaObject {
