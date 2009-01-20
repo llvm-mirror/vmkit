@@ -84,6 +84,10 @@ public:
   JavaMethod* getInternalMethod() {
     return &(((UserClass*)declaringClass->vmdata)->virtualMethods[slot]);
   }
+  
+  UserClass* getClass() {
+    return declaringClass->vmdata->asClass();
+  }
 
 };
 
@@ -101,6 +105,10 @@ public:
   
   JavaMethod* getInternalMethod() {
     return &(((UserClass*)clazz->vmdata)->virtualMethods[slot]);
+  }
+  
+  UserClass* getClass() {
+    return clazz->vmdata->asClass();
   }
 
 };

@@ -201,7 +201,7 @@ JNIEXPORT jobject JNICALL Java_java_io_VMObjectInputStream_allocateObject(
 JNIEnv *env,
 jclass clazz,
 #endif
-jclass target, jclass constr, jobject cons) {
+jclass target, jclass constr, JavaObjectConstructor* cons) {
   
   jobject res = 0;
 
@@ -211,8 +211,7 @@ jclass target, jclass constr, jobject cons) {
   UserClass* cl = 
     (UserClass*)UserCommonClass::resolvedImplClass(vm, (JavaObject*)target, true);
   JavaObject* obj = cl->doNew(vm);
-  JavaField* field = vm->upcalls->constructorSlot;
-  JavaMethod* meth = (JavaMethod*)(field->getInt32Field((JavaObject*)cons));
+  JavaMethod* meth = cons->getInternalMethod();
   meth->invokeIntSpecial(vm, cl, obj);
   res = (jobject)obj;
 

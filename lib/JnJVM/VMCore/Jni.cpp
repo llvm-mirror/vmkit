@@ -9,6 +9,7 @@
 
 #include <jni.h>
 
+#include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
@@ -90,9 +91,9 @@ jmethodID FromReflectedMethod(JNIEnv *env, jobject method) {
   JavaObject* meth = (JavaObject*)method;
   UserCommonClass* cl = meth->classOf;
   if (cl == upcalls->newConstructor)  {
-    return (jmethodID)upcalls->constructorSlot->getInt32Field(meth);
+    return (jmethodID)((JavaObjectMethod*)meth)->getInternalMethod();
   } else if (cl == upcalls->newMethod) {
-    return (jmethodID)upcalls->methodSlot->getInt32Field(meth);
+    return (jmethodID)((JavaObjectConstructor*)meth)->getInternalMethod();
   } else {
     vm->unknownError("%s is not a constructor or a method", 
                      meth->printString());
