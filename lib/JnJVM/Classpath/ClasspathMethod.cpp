@@ -11,6 +11,7 @@
 #include "types.h"
 
 #include "Classpath.h"
+#include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
@@ -24,30 +25,17 @@ using namespace jnjvm;
 
 extern "C" {
 
-static UserClass* internalGetClass(Jnjvm* vm, jobject Meth) {
-  JavaField* field = vm->upcalls->methodClass;
-  JavaObject* Cl = (JavaObject*)field->getObjectField((JavaObject*)Meth);
-  UserClass* cl = (UserClass*)UserCommonClass::resolvedImplClass(vm, Cl, false);
-  return cl;
-}
-
-
 JNIEXPORT jint JNICALL Java_java_lang_reflect_Method_getModifiersInternal(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
- jobject Meth) { 
+JavaObjectMethod* Meth) { 
   
   jint res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, Meth);
-  JavaField* slot = vm->upcalls->methodSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Meth);
-  JavaMethod* meth = &(cl->virtualMethods[index]);
-  
+  JavaMethod* meth = Meth->getInternalMethod(); 
   res = meth->access;
 
   END_NATIVE_EXCEPTION
@@ -59,17 +47,14 @@ JNIEXPORT jclass JNICALL Java_java_lang_reflect_Method_getReturnType(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
- jobject Meth) {
+JavaObjectMethod* Meth) {
 
   jclass res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, Meth);
-  JavaField* slot = vm->upcalls->methodSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Meth);
-  JavaMethod* meth = &(cl->virtualMethods[index]);
+  UserClass* cl = Meth->getClass();
+  JavaMethod* meth = Meth->getInternalMethod(); 
   JnjvmClassLoader* loader = cl->classLoader;
   res = (jclass)meth->getReturnType(loader);
 
@@ -83,17 +68,14 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_getParameterTypes(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
-jobject Meth) {
+JavaObjectMethod* Meth) {
 
   jobject res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, Meth);
-  JavaField* slot = vm->upcalls->methodSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Meth);
-  JavaMethod* meth = &(cl->virtualMethods[index]);
+  UserClass* cl = Meth->getClass();
+  JavaMethod* meth = Meth->getInternalMethod();
   JnjvmClassLoader* loader = cl->classLoader;
   
   res = (jobject)(meth->getParameterTypes(loader));
@@ -107,17 +89,16 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_invokeNative(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
-jobject Meth, jobject _obj, jobject _args, jclass Cl, jint index) {
+JavaObjectMethod* Meth, jobject _obj, jobject _args, jclass Cl, jint index) {
   
   JavaObject* res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, Meth);
-  JavaField* slot = vm->upcalls->methodSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Meth);
-  JavaMethod* meth = &(cl->virtualMethods[index]);
+
+  JavaMethod* meth = Meth->getInternalMethod();
+  
   JavaArray* args = (JavaArray*)_args;
   sint32 nbArgs = args ? args->size : 0;
   Signdef* sign = meth->getSignature();
@@ -140,7 +121,7 @@ jobject Meth, jobject _obj, jobject _args, jclass Cl, jint index) {
       if (isInterface(cl->classDef->access)) {
         cl = obj->classOf->lookupClassFromMethod(meth);
       } else {
-        cl = internalGetClass(vm, meth, Meth);
+        cl = Meth->getClass();
       }
 #endif
 
@@ -251,18 +232,15 @@ JNIEXPORT jobjectArray JNICALL Java_java_lang_reflect_Method_getExceptionTypes(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
-jobject Meth) {
+JavaObjectMethod* Meth) {
 
   jobjectArray res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   verifyNull(Meth);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, Meth);
-  JavaField* slot = vm->upcalls->methodSlot;
-  uint32 index = (uint32)slot->getInt32Field((JavaObject*)Meth);
-  JavaMethod* meth = &(cl->virtualMethods[index]);
+  UserClass* cl = Meth->getClass();
+  JavaMethod* meth = Meth->getInternalMethod();
   JnjvmClassLoader* loader = cl->classLoader;
   res = (jobjectArray)meth->getExceptionTypes(loader);
 

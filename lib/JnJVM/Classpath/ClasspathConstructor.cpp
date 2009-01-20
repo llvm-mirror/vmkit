@@ -11,6 +11,7 @@
 #include "types.h"
 
 #include "Classpath.h"
+#include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
@@ -24,29 +25,19 @@ using namespace jnjvm;
 
 extern "C" {
 
-static UserClass* internalGetClass(Jnjvm* vm, jobject Meth) {
-  JavaField* field = vm->upcalls->constructorClass;
-  JavaObject* Cl = (JavaObject*)field->getObjectField((JavaObject*)Meth);
-  UserClass* cl = (UserClass*)UserCommonClass::resolvedImplClass(vm, Cl, false);
-  return cl;
-}
-
 JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_getParameterTypes(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject cons) {
+JavaObjectConstructor* cons) {
 
   jobject res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   verifyNull(cons);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, cons);
-  JavaField* field = vm->upcalls->constructorSlot;
-  uint32 index = (uint32)(field->getInt32Field((JavaObject*)cons));
-  JavaMethod* meth = &(cl->virtualMethods[index]);
+  UserClass* cl = cons->getClass();
+  JavaMethod* meth = cons->getInternalMethod();
   JnjvmClassLoader* loader = cl->classLoader;
 
   res = (jobject)meth->getParameterTypes(loader);
@@ -59,18 +50,14 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Constructor_getModifiersInternal(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject cons) {
+JavaObjectConstructor* cons) {
 
   jint res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   verifyNull(cons);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, cons);
-  JavaField* field = vm->upcalls->constructorSlot;
-  uint32 index = (uint32)(field->getInt32Field((JavaObject*)cons));
-  JavaMethod* meth = &(cl->virtualMethods[index]);
+  JavaMethod* meth = cons->getInternalMethod();
   res = meth->access;
 
   END_NATIVE_EXCEPTION
@@ -82,15 +69,14 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_constructNative(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject _cons, jobject _args, jclass Clazz, jint index) {
+JavaObjectConstructor* cons, jobject _args, jclass Clazz, jint index) {
 
   jobject res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, _cons);
-  JavaMethod* meth = &(cl->virtualMethods[index]);
+  JavaMethod* meth = cons->getInternalMethod();
   JavaArray* args = (JavaArray*)_args;
   sint32 nbArgs = args ? args->size : 0;
   Signdef* sign = meth->getSignature();
@@ -153,18 +139,15 @@ jobjectArray JNICALL Java_java_lang_reflect_Constructor_getExceptionTypes(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
-jobject cons) {
+JavaObjectConstructor* cons) {
   
   jobjectArray res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
   
   verifyNull(cons);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = internalGetClass(vm, cons);
-  JavaField* field = vm->upcalls->constructorSlot;
-  uint32 index = (uint32)(field->getInt32Field((JavaObject*)cons));
-  JavaMethod* meth = &(cl->virtualMethods[index]);
+  UserClass* cl = cons->getClass();
+  JavaMethod* meth = cons->getInternalMethod();
   JnjvmClassLoader* loader = cl->classLoader;
 
   res = (jobjectArray)meth->getExceptionTypes(loader);
