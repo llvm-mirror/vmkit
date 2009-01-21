@@ -157,6 +157,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
     
     switch (bytecodes[i]) {
       
+      case NOP : break;
+
       case ACONST_NULL : 
         push(module->JavaObjectNullConstant, false);
         break;
@@ -2210,7 +2212,8 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
     PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "\n");
     
     switch (bytecodes[i]) {
-      
+     
+      case NOP :
       case ACONST_NULL : 
       case ICONST_M1 :
       case ICONST_0 :
