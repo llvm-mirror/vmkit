@@ -315,6 +315,8 @@ void CompilationUnit::AddStandardCompilePasses() {
 
 }
 
+// We protect the creation of IR with the executionEngine lock because
+// codegen'ing a function may also create IR objects.
 void MvmModule::protectIR() {
   if (executionEngine) executionEngine->lock.acquire();
 }
