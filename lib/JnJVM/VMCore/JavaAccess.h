@@ -31,6 +31,7 @@ namespace jnjvm {
 #define ACC_INTERFACE    0x0200
 #define ACC_ABSTRACT     0x0400
 #define ACC_STRICT       0x0800
+#define ACC_SYNTHETIC    0x1000
 
 #define JNJVM_CLASS      0x1000
 #define JNJVM_ARRAY      0x2000
@@ -51,6 +52,7 @@ MK_VERIFIER(isAbstract,   ACC_ABSTRACT)
 MK_VERIFIER(isProtected,  ACC_PROTECTED)
 MK_VERIFIER(isFinal,      ACC_FINAL)
 MK_VERIFIER(isSuper,      ACC_SUPER)
+MK_VERIFIER(isSynthetic,  ACC_SYNTHETIC)
 
 
 inline bool isVirtual(unsigned int param) {

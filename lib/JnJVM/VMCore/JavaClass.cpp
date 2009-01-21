@@ -1200,6 +1200,10 @@ void JavaMethod::jniConsFromMethOverloaded(char* buf) const {
     }
   }
 
+  if (isSynthetic(access)) {
+    ptr[0] = 'S';
+    ++ptr;
+  }
   ptr[0] = 0;
 
 }
