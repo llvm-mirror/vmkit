@@ -40,12 +40,12 @@ jint len) {
   verifyNull(src);
   verifyNull(dst);
   
-  if (!(src->classOf->isArray() && dst->classOf->isArray())) {
+  if (!(src->getClass()->isArray() && dst->getClass()->isArray())) {
     vm->arrayStoreException();
   }
   
-  UserClassArray* ts = (UserClassArray*)src->classOf;
-  UserClassArray* td = (UserClassArray*)dst->classOf;
+  UserClassArray* ts = (UserClassArray*)src->getClass();
+  UserClassArray* td = (UserClassArray*)dst->getClass();
   UserCommonClass* dstType = td->baseClass();
   UserCommonClass* srcType = ts->baseClass();
 
@@ -74,7 +74,7 @@ jint len) {
     while (i < sstart + len && !doThrow) {
       JavaObject* cur = ((ArrayObject*)src)->elements[i];
       if (cur) {
-        if (!(cur->classOf->isAssignableFrom(dstType))) {
+        if (!(cur->getClass()->isAssignableFrom(dstType))) {
           doThrow = true;
           len = i;
         }

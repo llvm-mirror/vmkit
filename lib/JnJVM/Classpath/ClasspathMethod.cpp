@@ -114,12 +114,12 @@ JavaObjectMethod* Meth, jobject _obj, jobject _args, jclass Cl, jint index) {
     
     if (isVirtual(meth->access)) {
       verifyNull(obj);
-      if (!(obj->classOf->isAssignableFrom(cl))) {
-        vm->illegalArgumentExceptionForMethod(meth, cl, obj->classOf);
+      if (!(obj->getClass()->isAssignableFrom(cl))) {
+        vm->illegalArgumentExceptionForMethod(meth, cl, obj->getClass());
       }
 #ifdef ISOLATE_SHARING
       if (isInterface(cl->classDef->access)) {
-        cl = obj->classOf->lookupClassFromMethod(meth);
+        cl = obj->getClass()->lookupClassFromMethod(meth);
       } else {
         cl = Meth->getClass();
       }
@@ -157,7 +157,7 @@ JavaObjectMethod* Meth, jobject _obj, jobject _args, jclass Cl, jint index) {
     } \
     \
     if (exc) { \
-      if (exc->classOf->isAssignableFrom(vm->upcalls->newException)) { \
+      if (exc->getClass()->isAssignableFrom(vm->upcalls->newException)) { \
         th->getJVM()->invocationTargetException(exc); \
       } else { \
         th->throwException(exc); \

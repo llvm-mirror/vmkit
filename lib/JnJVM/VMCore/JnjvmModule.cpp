@@ -232,7 +232,7 @@ Constant* JnjvmModule::getString(JavaString* str) {
       return SI->second;
     } else {
       assert(str && "No string given");
-      LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo((Class*)str->classOf);
+      LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo((Class*)str->getClass());
       const llvm::Type* Ty = LCI->getVirtualType();
       GlobalVariable* varGV = 
         new GlobalVariable(Ty->getContainedType(0), false,
@@ -659,7 +659,7 @@ Constant* JnjvmModule::CreateConstantFromJavaClass(CommonClass* cl) {
 }
 
 Constant* JnjvmModule::CreateConstantFromJavaString(JavaString* str) {
-  Class* cl = (Class*)str->classOf;
+  Class* cl = (Class*)str->getClass();
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   const StructType* STy = 
     dyn_cast<StructType>(LCI->getVirtualType()->getContainedType(0));

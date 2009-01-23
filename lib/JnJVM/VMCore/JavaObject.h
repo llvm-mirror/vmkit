@@ -120,13 +120,19 @@ private:
   /// waitIntern - internal wait on a monitor
   ///
   void waitIntern(struct timeval *info, bool timed);
-
   
-public:
-
   /// classOf - The class of this object.
   ///
   UserCommonClass* classOf;
+
+public:
+
+  /// getClass - Returns the class of this object.
+  ///
+  UserCommonClass* getClass() const {
+    return classOf;
+  }
+
 
   /// lock - The monitor of this object. Most of the time null.
   ///

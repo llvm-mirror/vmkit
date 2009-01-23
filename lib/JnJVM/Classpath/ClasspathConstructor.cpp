@@ -112,7 +112,7 @@ JavaObjectConstructor* cons, jobject _args, jclass Clazz, jint index) {
         th->clearException();
       }
       if (excp) {
-        if (excp->classOf->isAssignableFrom(vm->upcalls->newException)) {
+        if (excp->getClass()->isAssignableFrom(vm->upcalls->newException)) {
           // If it's an exception, we encapsule it in an
           // invocationTargetException
           vm->invocationTargetException(excp);

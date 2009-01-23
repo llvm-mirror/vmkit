@@ -26,7 +26,7 @@ extern "C" {
 
 static void setProperty(Jnjvm* vm, JavaObject* prop, const char* key,
                         const char* val) {
-  vm->upcalls->setProperty->invokeIntSpecial(vm, (UserClass*)prop->classOf,
+  vm->upcalls->setProperty->invokeIntSpecial(vm, (UserClass*)prop->getClass(),
                                              prop,
                                              vm->asciizToStr(key),
                                              vm->asciizToStr(val));

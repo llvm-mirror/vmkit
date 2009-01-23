@@ -89,7 +89,7 @@ jmethodID FromReflectedMethod(JNIEnv *env, jobject method) {
   Jnjvm* vm = myVM(env);
   Classpath* upcalls = vm->upcalls;
   JavaObject* meth = (JavaObject*)method;
-  UserCommonClass* cl = meth->classOf;
+  UserCommonClass* cl = meth->getClass();
   if (cl == upcalls->newConstructor)  {
     return (jmethodID)((JavaObjectMethod*)meth)->getInternalMethod();
   } else if (cl == upcalls->newMethod) {
@@ -276,7 +276,7 @@ jclass GetObjectClass(JNIEnv *env, jobject obj) {
 
   verifyNull((JavaObject*)obj);
   Jnjvm* vm = JavaThread::get()->getJVM();
-  return (jclass)((JavaObject*)obj)->classOf->getClassDelegatee(vm);
+  return (jclass)((JavaObject*)obj)->getClass()->getClassDelegatee(vm);
 
   END_JNI_EXCEPTION
   return 0;
@@ -337,7 +337,7 @@ jobject CallObjectMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
   JavaObject* self = (JavaObject*)obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, self->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, self->getClass());
   JavaObject* res = meth->invokeJavaObjectVirtualAP(vm, cl, self, ap);
   va_end(ap);
   return (jobject)res;
@@ -355,7 +355,7 @@ jobject CallObjectMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   return (jobject)meth->invokeJavaObjectVirtualAP(vm, cl, obj, args);
 
   END_JNI_EXCEPTION
@@ -380,7 +380,7 @@ jboolean CallBooleanMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   JavaObject* self = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, self->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, self->getClass());
   uint32 res = meth->invokeIntVirtualAP(vm, cl, self, ap);
   va_end(ap);
   return res;
@@ -398,7 +398,7 @@ jboolean CallBooleanMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   return (jboolean)meth->invokeIntVirtualAP(vm, cl, obj, args);
 
   END_JNI_EXCEPTION
@@ -427,7 +427,7 @@ jbyte CallByteMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   return (jbyte)meth->invokeIntVirtualAP(vm, cl, obj, args);
 
   END_JNI_EXCEPTION
@@ -457,7 +457,7 @@ jchar CallCharMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   return (jchar)meth->invokeIntVirtualAP(vm, cl, obj, args);
 
   END_JNI_EXCEPTION
@@ -487,7 +487,7 @@ jshort CallShortMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   return (jshort)meth->invokeIntVirtualAP(vm, cl, obj, args);
 
   END_JNI_EXCEPTION
@@ -513,7 +513,7 @@ jint CallIntMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   uint32 res = meth->invokeIntVirtualAP(vm, cl, obj, ap);
   va_end(ap);
   return res;
@@ -531,7 +531,7 @@ jint CallIntMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   return (jint)meth->invokeIntVirtualAP(vm, cl, obj, args);
 
   END_JNI_EXCEPTION
@@ -562,7 +562,7 @@ jlong CallLongMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   return (jlong)meth->invokeLongVirtualAP(vm, cl, obj, args);
 
   END_JNI_EXCEPTION
@@ -588,7 +588,7 @@ jfloat CallFloatMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   jfloat res = meth->invokeFloatVirtualAP(vm, cl, obj, ap);
   va_end(ap);
   return res;
@@ -606,7 +606,7 @@ jfloat CallFloatMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   return (jfloat)meth->invokeFloatVirtualAP(vm, cl, obj, args);
 
   END_JNI_EXCEPTION
@@ -632,7 +632,7 @@ jdouble CallDoubleMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   jdouble res = meth->invokeDoubleVirtualAP(vm, cl, obj, ap);
   va_end(ap);
   return res;
@@ -650,7 +650,7 @@ jdouble CallDoubleMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   return (jdouble)meth->invokeDoubleVirtualAP(vm, cl, obj, args);
 
   END_JNI_EXCEPTION
@@ -676,7 +676,7 @@ void CallVoidMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   meth->invokeIntVirtualAP(vm, cl, obj, ap);
   va_end(ap);
 
@@ -692,7 +692,7 @@ void CallVoidMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   meth->invokeIntVirtualAP(vm, cl, obj, args);
 
   END_JNI_EXCEPTION
@@ -913,7 +913,7 @@ void CallNonvirtualVoidMethod(JNIEnv *env, jobject _obj, jclass clazz,
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->classOf);
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   meth->invokeIntSpecialAP(vm, cl, obj, ap);
   va_end(ap);
 

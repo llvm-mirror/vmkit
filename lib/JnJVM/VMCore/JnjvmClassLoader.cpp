@@ -286,8 +286,8 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   isolate = I;
 
   JavaMethod* meth = bootstrapLoader->upcalls->loadInClassLoader;
-  loader->classOf->asClass()->lookupMethodDontThrow(meth->name, meth->type,
-                                                    false, true, &loadClass);
+  loader->getClass()->asClass()->lookupMethodDontThrow(meth->name, meth->type,
+                                                       false, true, &loadClass);
   assert(loadClass && "Loader does not have a loadClass function");
 
 #if defined(SERVICE)

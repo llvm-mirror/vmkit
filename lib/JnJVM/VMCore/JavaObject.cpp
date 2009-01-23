@@ -77,7 +77,7 @@ LockObj* LockObj::allocate(JavaObject* owner) {
 
 extern "C" void printJavaObject(const JavaObject* obj, mvm::PrintBuffer* buf) {
   buf->write("JavaObject<");
-  CommonClass::printClassName(obj->classOf->getName(), buf);
+  CommonClass::printClassName(obj->getClass()->getName(), buf);
   fprintf(stderr, "%p\n", ((void**)obj->getVirtualTable())[9]);
   buf->write(">");
 }

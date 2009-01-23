@@ -227,7 +227,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //     ExceptionInInitializerError cannot be created because an
     //     OutOfMemoryError occurs, then instead use an OutOfMemoryError object
     //     in place of E in the following step.
-    if (exc->classOf->isAssignableFrom(vm->upcalls->newException)) {
+    if (exc->getClass()->isAssignableFrom(vm->upcalls->newException)) {
       Classpath* upcalls = classLoader->bootstrapLoader->upcalls;
       UserClass* clExcp = upcalls->ExceptionInInitializerError;
       Jnjvm* vm = self->getJVM();

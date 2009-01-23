@@ -184,7 +184,7 @@ public:
   bool compareException(UserClass* cl) {
     JavaObject* pe = pendingException;
     assert(pe && "no pending exception?");
-    bool val = pe->classOf->subclassOf(cl);
+    bool val = pe->getClass()->subclassOf(cl);
     return val;
   }
   

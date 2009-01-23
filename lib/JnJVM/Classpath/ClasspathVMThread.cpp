@@ -45,7 +45,7 @@ static void start(JavaThread* thread) {
   assert(javaThread && "Didn't fix the javaThread of a jnjvm thread");
   field->setObjectField(vmThread, (JavaObject*)(void*)thread);
   
-  UserClass* vmthClass = (UserClass*)vmThread->classOf;
+  UserClass* vmthClass = (UserClass*)vmThread->getClass();
   ThreadSystem& ts = vm->threadSystem;
   
   

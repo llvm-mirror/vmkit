@@ -32,7 +32,7 @@ jobject _src) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   JavaObject* src = (JavaObject*)_src;
-  UserCommonClass* cl = src->classOf;
+  UserCommonClass* cl = src->getClass();
   Jnjvm* vm = JavaThread::get()->getJVM();
   uint64 size = 0;
   if (cl->isArray()) {
@@ -70,7 +70,7 @@ jobject _obj) {
 
   JavaObject* obj = (JavaObject*)_obj;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  res = (jobject)(obj->classOf->getClassDelegatee(vm)); 
+  res = (jobject)(obj->getClass()->getClassDelegatee(vm)); 
 
   END_NATIVE_EXCEPTION
 

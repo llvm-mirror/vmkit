@@ -34,11 +34,11 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
 
   
   Enveloppe* enveloppe = cache->enveloppe;
-  UserCommonClass* ocl = obj->classOf;
+  UserCommonClass* ocl = obj->getClass();
   
 #ifndef SERVICE
-  assert((obj->classOf->isClass() && 
-          obj->classOf->asClass()->isInitializing()) &&
+  assert((obj->getClass()->isClass() && 
+          obj->getClass()->asClass()->isInitializing()) &&
          "Class not ready in a virtual lookup.");
 #endif
 
@@ -189,13 +189,13 @@ extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
     va_start(ap, index);
     JavaObject* obj = va_arg(ap, JavaObject*);
     va_end(ap);
-    assert((obj->classOf->isClass() && 
-            obj->classOf->asClass()->isInitializing()) &&
+    assert((obj->getClass()->isClass() && 
+            obj->getClass()->asClass()->isInitializing()) &&
            "Class not ready in a virtual lookup.");
     // Arg, the bytecode is buggy! Perform the lookup on the object class
     // and do not update offset.
-    lookup = obj->classOf->isArray() ? obj->classOf->super : 
-                                       obj->classOf->asClass();
+    lookup = obj->getClass()->isArray() ? obj->getClass()->super : 
+                                       obj->getClass()->asClass();
     dmeth = lookup->lookupMethod(utf8, sign->keyName, false, true, 0);
   } else {
     caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
