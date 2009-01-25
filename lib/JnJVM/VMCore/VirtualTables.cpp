@@ -81,7 +81,11 @@ void CommonClass::TRACER {
   }
   classLoader->MARK_AND_TRACE;
   for (uint32 i = 0; i < NR_ISOLATES; ++i) {
-    delegatee[i]->MARK_AND_TRACE;
+    // If the delegatee was static allocated, we want to trace its fields.
+    if (delegatee[i]) {
+      delegatee[i]->CALL_TRACER;
+      delegatee[i]->MARK_AND_TRACE;
+    }
   }
 
 }
@@ -153,8 +157,15 @@ void Jnjvm::TRACER {
   TRACE_DELEGATEE(upcalls->OfLong);
   TRACE_DELEGATEE(upcalls->OfDouble);
 #undef TRACE_DELEGATEE
-
-  TRACE_VECTOR(JavaString*, gc_allocator, bootstrapLoader->strings);
+  
+  for (std::vector<JavaString*, gc_allocator<JavaString*> >::iterator i = 
+       bootstrapLoader->strings.begin(),
+       e = bootstrapLoader->strings.end(); i!= e; ++i) {
+    (*i)->MARK_AND_TRACE;
+    // If the string was static allocated, we want to trace its lock.
+    LockObj* l = (*i)->lockObj();
+    if (l) l->MARK_AND_TRACE;
+  }
 
   mvm::Thread* th = th->get();
   th->CALL_TRACER;
@@ -172,7 +183,14 @@ void JnjvmClassLoader::TRACER {
   javaLoader->MARK_AND_TRACE;
   traceClassMap(classes);
   isolate->MARK_AND_TRACE;
-  TRACE_VECTOR(JavaString*, gc_allocator, strings);
+  for (std::vector<JavaString*,
+       gc_allocator<JavaString*> >::iterator i = strings.begin(), 
+       e = strings.end(); i!= e; ++i) {
+    (*i)->MARK_AND_TRACE; 
+    // If the string was static allocated, we want to trace its lock.
+    LockObj* l = (*i)->lockObj();
+    if (l) l->MARK_AND_TRACE;
+  }
 }
 
 void JnjvmBootstrapLoader::TRACER {}
