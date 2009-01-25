@@ -625,7 +625,9 @@ Constant* JnjvmModule::CreateConstantForJavaObject(CommonClass* cl) {
   Elmts.push_back(Cl);
 
   // lock
-  Elmts.push_back(Constant::getNullValue(ptrType));
+  Constant* L = ConstantInt::get(Type::Int64Ty,
+                                 JavaThread::get()->getThreadID());
+  Elmts.push_back(ConstantExpr::getIntToPtr(L, ptrType));
 
   return ConstantStruct::get(STy, Elmts);
 }
