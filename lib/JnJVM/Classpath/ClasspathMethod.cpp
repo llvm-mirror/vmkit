@@ -150,17 +150,13 @@ JavaObjectMethod* Meth, jobject _obj, jobject _args, jclass Cl, jint index) {
       } else { \
         val = meth->invoke##TYPE##StaticBuf(vm, cl, _buf); \
       } \
-    }catch(...) { \
+    } catch(...) { \
       exc = th->getJavaException(); \
-      assert(exc && "no exception?"); \
-      th->clearException(); \
-    } \
-    \
-    if (exc) { \
       if (exc->getClass()->isAssignableFrom(vm->upcalls->newException)) { \
+        th->clearException(); \
         th->getJVM()->invocationTargetException(exc); \
       } else { \
-        th->throwException(exc); \
+        th->throwPendingException(); \
       } \
     } \
     

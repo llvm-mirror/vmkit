@@ -107,18 +107,16 @@ JavaObjectConstructor* cons, jobject _args, jclass Clazz, jint index) {
       JavaThread* th = JavaThread::get();
       try {
         meth->invokeIntSpecialBuf(vm, cl, obj, startBuf);
-      }catch(...) {
+      } catch(...) {
         excp = th->getJavaException();
-        th->clearException();
-      }
-      if (excp) {
         if (excp->getClass()->isAssignableFrom(vm->upcalls->newException)) {
+          th->clearException();
           // If it's an exception, we encapsule it in an
           // invocationTargetException
           vm->invocationTargetException(excp);
         } else {
           // If it's an error, throw it again.
-          th->throwException(excp);
+          th->throwPendingException();
         }
       }
     

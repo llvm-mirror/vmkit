@@ -143,22 +143,15 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //    the initializing the superclass.
     UserClass* super = getSuper();
     if (super) {
-      JavaObject *exc = 0;
       try {
         super->initialiseClass(vm);
       } catch(...) {
-        exc = self->getJavaException();
-        assert(exc && "no exception?");
-        self->clearException();
-      }
-      
-      if (exc) {
         acquire();
         setErroneous();
         setOwnerClass(0);
         broadcastClass();
         release();
-        self->throwException(exc);
+        self->throwPendingException();
       }
     }
  

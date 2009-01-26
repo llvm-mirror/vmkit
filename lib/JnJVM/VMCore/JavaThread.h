@@ -29,28 +29,20 @@ class Jnjvm;
 #define BEGIN_NATIVE_EXCEPTION(level) \
   JavaThread* __th = JavaThread::get(); \
   __th->startNative(level); \
-  bool __exc = false; \
   try {
 
 #define END_NATIVE_EXCEPTION \
   } catch(...) { \
-    __exc = true; \
-  } \
-  if (__exc) { \
     __th->throwFromNative(); \
   } \
   __th->endNative();
 
 #define BEGIN_JNI_EXCEPTION \
   JavaThread* th = JavaThread::get(); \
-  bool __exc = 0; \
   try {
 
 #define END_JNI_EXCEPTION \
   } catch(...) { \
-    __exc = true; \
-  } \
-  if (__exc) { \
     th->throwFromJNI(); \
   }
 
@@ -174,7 +166,7 @@ public:
   ///
   void throwException(JavaObject* obj);
 
-  /// throwPendingException - Throw a pending exception created by JNI.
+  /// throwPendingException - Throw a pending exception.
   ///
   void throwPendingException();
   
