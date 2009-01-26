@@ -65,6 +65,8 @@ extern "C" void JavaArrayTracer(JavaArray* obj, Collector* GC) {
 #else
 extern "C" void JavaArrayTracer(JavaArray* obj) {
 #endif
+  LockObj* l = obj->lockObj();
+  if (l) l->MARK_AND_TRACE;
 }
 
 void JavaArray::TRACER {}
