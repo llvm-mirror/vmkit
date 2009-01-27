@@ -14,6 +14,7 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/PassNameParser.h"
+#include "llvm/Target/TargetData.h"
 
 
 #include "MvmGC.h"
@@ -69,6 +70,7 @@ inline void addPass(FunctionPassManager *PM, Pass *P) {
 void addCommandLinePass(mvm::CompilationUnit* CU, char** argv) {
   FunctionPassManager* Passes = CU->TheModule->globalFunctionPasses;
 
+	Passes->add(new TargetData(*CU->TheModule->TheTargetData));
   // Create a new optimization pass for each one specified on the command line
   for (unsigned i = 0; i < PassList.size(); ++i) {
     // Check to see if -std-compile-opts was specified before this option.  If
