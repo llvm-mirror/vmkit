@@ -162,8 +162,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
   // Now that native types have been loaded, try to find if we have a
   // pre-compiled rt.jar
   nativeHandle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
-	fprintf(stderr, "%s\n", dlerror());
-	fprintf(stderr, "alors %p\n", dlsym(0, "JnJVM_java_io_PrintStream_append__Ljava_lang_CharSequence_2II1"));
   if (nativeHandle) {
     // Found it!
     SuperArray = (Class*)dlsym(nativeHandle, "java.lang.Object");
@@ -1006,10 +1004,6 @@ void JnjvmClassLoader::loadLibFromFile(Jnjvm* vm, const char* name) {
   char* soName = (char*)alloca(strlen(name) + strlen(DYLD_EXTENSION));
   sprintf(soName, "%s%s", name, DYLD_EXTENSION);
   void* handle = dlopen(soName, RTLD_LAZY | RTLD_LOCAL);
-	if (!handle) {
-  	handle = dlopen("source.so", RTLD_LAZY | RTLD_LOCAL);
-		fprintf(stderr, "%s\n", dlerror());
-	}
   if (handle) {
     Class* cl = (Class*)dlsym(handle, name);
     if (cl) {
