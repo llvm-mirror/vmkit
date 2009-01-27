@@ -502,12 +502,15 @@ JNIEnv *env,
 #endif
 JavaObjectField* Field, jobject obj, jobject val) {
   
-  BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
   uintptr_t buf = (uintptr_t)alloca(sizeof(uint64));
+  
+  // Do it after alloca
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   void* _buf = (void*)buf;
   const Typedef* type = field->getSignature();
   ((JavaObject*)val)->decapsulePrimitive(vm, buf, type);

@@ -93,7 +93,6 @@ JavaObjectMethod* Meth, jobject _obj, jobject _args, jclass Cl, jint index) {
   
   JavaObject* res = 0;
 
-  BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
 
@@ -105,7 +104,10 @@ JavaObjectMethod* Meth, jobject _obj, jobject _args, jclass Cl, jint index) {
   sint32 size = sign->nbArguments;
   JavaObject* obj = (JavaObject*)_obj;
 
-  uintptr_t buf = (uintptr_t)alloca(size * sizeof(uint64)); 
+  uintptr_t buf = size ? (uintptr_t)alloca(size * sizeof(uint64)) : 0;
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+
   void* _buf = (void*)buf;
   if (nbArgs == size) {
     UserCommonClass* _cl = 

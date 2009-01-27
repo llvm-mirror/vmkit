@@ -79,10 +79,19 @@ public:
 };
 
 
-#if defined(__MACH__) && !defined(__i386__)
+#if defined(__MACH__) && defined(__PPC__)
 #define FRAME_IP(fp) (fp[2])
 #else
 #define FRAME_IP(fp) (fp[1])
+#endif
+
+// Apparently gcc for i386 and family considers __builtin_frame_address(0) to
+// return the caller, not the current function.
+#if defined(__i386__) || defined(i386) || defined(_M_IX86) || \
+    defined(__x86_64__) || defined(_M_AMD64)
+#define FRAME_PTR() __builtin_frame_address(0)
+#else
+#define FRAME_PTR() (((void**)__builtin_frame_address(0))[0])
 #endif
 
 /// Thread - This class is the base of custom virtual machines' Thread classes.

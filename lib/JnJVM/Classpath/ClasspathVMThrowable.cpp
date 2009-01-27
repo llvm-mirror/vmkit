@@ -103,7 +103,9 @@ jobject vmthrow, jobject throwable) {
     field->getObjectField((JavaObject*)vmthrow);
   
   std::vector<void*>::iterator i = stack->begin(), e = stack->end();
-  uint32 index = 0;
+  // remove the VMThrowable.fillInStackTrace method
+  uint32 index = 1;
+  ++i;
   while (i != e) {
     JavaMethod* meth = vm->IPToMethod<JavaMethod>(*i);
     assert(meth && "Wrong stack trace");

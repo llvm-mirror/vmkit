@@ -73,7 +73,6 @@ JavaObjectConstructor* cons, jobject _args, jclass Clazz, jint index) {
 
   jobject res = 0;
 
-  BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = cons->getInternalMethod();
@@ -83,9 +82,12 @@ JavaObjectConstructor* cons, jobject _args, jclass Clazz, jint index) {
   sint32 size = sign->nbArguments;
 
   // Allocate a buffer to store the arguments.
-  uintptr_t buf = (uintptr_t)alloca(size * sizeof(uint64));
+  uintptr_t buf = size ? (uintptr_t)alloca(size * sizeof(uint64)) : 0;
   // Record the beginning of the buffer.
   void* startBuf = (void*)buf;
+  
+  // Do it after alloca
+  BEGIN_NATIVE_EXCEPTION(0)
 
   if (nbArgs == size) {
     UserCommonClass* _cl = 
