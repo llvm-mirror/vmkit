@@ -253,10 +253,10 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   uint32 nargs = func->arg_size() + 1 + (stat ? 1 : 0); 
   std::vector<Value*> nativeArgs;
   
-  Value* threadId = CallInst::Create(module->llvm_frameaddress,
-                                     module->constantZero, "", currentBlock);
-  threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
-                              currentBlock);
+  Value* FrameAddr = CallInst::Create(module->llvm_frameaddress,
+                                     	module->constantZero, "", currentBlock);
+  Value* threadId = new PtrToIntInst(FrameAddr, module->pointerSizeType, "",
+                              			 currentBlock);
   threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
                                        "", currentBlock);
   threadId = new IntToPtrInst(threadId, module->JavaThreadType, "",
@@ -320,6 +320,13 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     nativeFunc = node;
   }
 
+  // When calling a native method, it may do whatever it wants with the
+  // frame pointer. Therefore make sure it's on the stack. x86_64 has
+  // this problem because it passes first arguments in registers.
+  // Therefore, it was overwriting the frame pointer when entering the
+  // native method.
+  Value* Temp = new AllocaInst(module->ptrType, "", currentBlock);
+  new StoreInst(FrameAddr, Temp, currentBlock);
   Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs.begin(),
                                          nativeArgs.end(), "", currentBlock);
 
