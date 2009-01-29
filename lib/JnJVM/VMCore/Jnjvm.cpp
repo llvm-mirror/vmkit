@@ -63,8 +63,8 @@ void UserClass::initialiseClass(Jnjvm* vm) {
   //    verification step failed or because initialization was attempted and
   //    failed.
 
-  assert(isResolved() || getOwnerClass() || isReady() ||
-         isErroneous() && "Class in wrong state");
+  assert((isResolved() || getOwnerClass() || isReady() ||
+         isErroneous()) && "Class in wrong state");
   
   if (getInitializationState() != ready) {
     
