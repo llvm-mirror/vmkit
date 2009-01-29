@@ -187,7 +187,7 @@ if test "x$gc" = "xboehm";  then
   GC_LIBS=BoehmGC
   case $target_os in
     *linux*)
-      GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/BoehmGC -DGC_THREADS -DGC_LINUX_THREADS"
+      GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/BoehmGC -DUSE_GC_BOEHM -DGC_THREADS -DGC_LINUX_THREADS"
     ;;
   esac
 else
