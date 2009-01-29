@@ -516,6 +516,7 @@ void JnjvmModule::allocateVT(Class* cl) {
 #endif
 
 
+#ifdef WITH_TRACER
 llvm::Function* JnjvmModule::makeTracer(Class* cl, bool stat) {
   
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
@@ -598,6 +599,7 @@ llvm::Function* JnjvmModule::makeTracer(Class* cl, bool stat) {
 
   return func;
 }
+#endif
 
 Constant* JnjvmModule::CreateConstantForJavaObject(CommonClass* cl) {
   const StructType* STy = 
@@ -1194,10 +1196,15 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(Constant::getNullValue(ptrType));
 
   // staticTracer
-  Function* F = makeTracer(cl, true);
   const Type* FTy = STy->getContainedType(STy->getNumContainedTypes() - 1);
+#ifdef WITH_TRACER
+  Function* F = makeTracer(cl, true);
   Constant* staticTracer = ConstantExpr::getCast(Instruction::BitCast, F, FTy);
+#else
+  Constant* staticTracer = ConstantExpr::getNullValue(FTy);
+#endif
   ClassElts.push_back(staticTracer);
+
 
   return ConstantStruct::get(STy, ClassElts);
 }
@@ -1268,10 +1275,14 @@ Constant* JnjvmModule::CreateConstantFromVT(Class* classDef) {
   Elemts.push_back(N);
   
   // Tracer
+#ifdef WITH_TRACER
   Function* Tracer = makeTracer(classDef, false);
   Elemts.push_back(Tracer ? 
       ConstantExpr::getCast(Instruction::BitCast, Tracer, PTy) : N);
-  
+#else
+  Elemts.push_back(N);
+#endif
+
   // Printer
   Elemts.push_back(ConstantExpr::getBitCast(ObjectPrinter, PTy));
   
@@ -1327,8 +1338,8 @@ void JnjvmModule::makeVT(Class* cl) {
 
       // Special handling for finalize method. Don't put a finalizer
       // if there is none, or if it is empty.
-      if (meth.offset == 0 && !staticCompilation) {
-#ifdef ISOLATE_SHARING
+      if (meth.offset == 0) {
+#if defined(ISOLATE_SHARING) || defined(USE_GC_BOEHM)
         ((void**)VT)[0] = 0;
 #else
         JnjvmClassLoader* loader = cl->classLoader;
@@ -1347,8 +1358,9 @@ void JnjvmModule::makeVT(Class* cl) {
           }
         }
 #endif
+      } else {
+        ((void**)VT)[meth.offset] = EE->getPointerToFunctionOrStub(func);
       }
-      ((void**)VT)[meth.offset] = EE->getPointerToFunctionOrStub(func);
     }
 
 #ifdef WITH_TRACER
@@ -1417,6 +1429,7 @@ const Type* LLVMClassInfo::getVirtualType() {
       if (!classDef->virtualVT) {
         Mod->makeVT((Class*)classDef);
       } else {
+#ifdef WITH_TRACER
         // So the class is vmjc'ed. Create the virtual tracer.
         Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
                                           GlobalValue::ExternalLinkage,
@@ -1425,6 +1438,7 @@ const Type* LLVMClassInfo::getVirtualType() {
         void* ptr = ((void**)classDef->virtualVT)[VT_TRACER_OFFSET];
         Mod->executionEngine->addGlobalMapping(func, ptr);
         virtualTracerFunction = func;
+#endif
       }
     } else {
       Mod->makeVT(classDef);
@@ -1462,13 +1476,14 @@ const Type* LLVMClassInfo::getStaticType() {
     
     uint64 size = Mod->getTypeSize(structType);
     cl->staticSize = size;
-    
+#ifdef WITH_TRACER
     if (!Mod->isStaticCompiling()) {
       Function* F = Mod->makeTracer(cl, true);
       cl->staticTracer = (void (*)(void*)) (uintptr_t)
         Mod->executionEngine->getPointerToFunction(F);
       F->deleteBody();
     }
+#endif
   }
   return staticType;
 }

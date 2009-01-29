@@ -229,8 +229,10 @@ private:
   
   bool staticCompilation;
 
-  
+#ifdef WITH_TRACER 
   llvm::Function* makeTracer(Class* cl, bool stat);
+#endif
+
   void makeVT(Class* cl);
   void allocateVT(Class* cl);
   

@@ -140,6 +140,13 @@ public:
 
 class ClassMap : 
   public LockedMap<const UTF8*, UserCommonClass*, ltutf8, JnjvmClassLoader* > {
+
+#ifdef USE_GC_BOEHM
+public:
+  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator) {
+    return GC_MALLOC(sz);
+  }
+#endif
 };
 
 class StringMap :

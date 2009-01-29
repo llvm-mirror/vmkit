@@ -905,8 +905,8 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
       upcalls->uncaughtException->invokeIntSpecial(this, upcalls->threadGroup,
                                                    group, obj, exc);
     }catch(...) {
-      printf("Even uncaught exception throwed an exception!\n");
-      assert(0);
+      fprintf(stderr, "Even uncaught exception throwed an exception!\n");
+      abort();
     }
   }
 }
@@ -1049,8 +1049,8 @@ Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) : VirtualMachine() {
 
   throwable = upcalls->newThrowable;
  
-  for (std::vector<JavaString*>::iterator i = loader->strings.begin(),
-       e = loader->strings.end(); i != e; ++i) {
+  for (std::vector<JavaString*, gc_allocator<JavaString*> >::iterator i = 
+       loader->strings.begin(), e = loader->strings.end(); i != e; ++i) {
     hashStr.insert(*i);
   }
 

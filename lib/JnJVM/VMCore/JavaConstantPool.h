@@ -259,7 +259,7 @@ public:
 
   /// ~JavaConstantPool - Delete the constant pool.
   ///
-  ~JavaConstantPool() {}  
+  ~JavaConstantPool() {}
 };
 
 } // end namespace jnjvm

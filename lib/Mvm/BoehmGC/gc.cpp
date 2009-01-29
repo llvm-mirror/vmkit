@@ -12,13 +12,11 @@
 
 using namespace mvm;
 
-void Collector::inject_my_thread(void* base_sp) {
-  mvm::Thread::get()->baseSP = base_sp;
+void Collector::inject_my_thread(mvm::Thread* th) {
   GC_init();
 }
 
-void Collector::initialise(markerFn mark, void *base_sp) {
-  mvm::Thread::get()->baseSP = base_sp;
+void Collector::initialise(markerFn mark) {
   GC_INIT();
 }
 

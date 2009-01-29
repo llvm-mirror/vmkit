@@ -362,6 +362,11 @@ public:
   //
   static UserCommonClass* resolvedImplClass(Jnjvm* vm, JavaObject* delegatee,
                                             bool doClinit);
+#ifdef USE_GC_BOEHM
+  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator) {
+    return GC_MALLOC(sz);
+  }
+#endif
 };
 
 /// ClassPrimitive - This class represents internal classes for primitive

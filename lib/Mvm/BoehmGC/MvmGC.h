@@ -21,6 +21,11 @@
 #define TRACER tracer()
 #define PARENT_TRACER tracer()
 #define MARK_AND_TRACE markAndTrace()
+#define CALL_TRACER tracer()
+
+namespace mvm {
+    class Thread;
+}
 
 extern "C" void * GC_dlopen(const char *path, int mode) throw ();
 
@@ -34,12 +39,12 @@ public:
 
   void markAndTrace() const {}
 
-  size_t  objectSize() const {
+  size_t objectSize() const {
     gc_header * res = (gc_header*)(GC_base((void*)this));
     return (GC_size(res) - sizeof(gc_header));
   }
 
-  void *  operator new(size_t sz, VirtualTable *VT) {
+  void* operator new(size_t sz, VirtualTable *VT) {
     gc_header * res = (gc_header*) GC_MALLOC(sz + sizeof(gc_header));
     res -> _XXX_vt= VT;
     
@@ -50,15 +55,15 @@ public:
     return res->_2gc();
   }
 
-  void *  operator new(size_t sz) {
+  void* operator new(size_t sz) {
     return malloc(sz);
   }
 
-  void    operator delete(void * p) {
+  void operator delete(void * p) {
     //GC_FREE(p);
   }
 
-  void *  realloc(size_t n) {
+  void* realloc(size_t n) {
     void * old = GC_base(this);
     gc_header * res = (gc_header*) GC_REALLOC(old, n + sizeof(gc_header));
     return res->_2gc();
@@ -73,7 +78,7 @@ public:
 
   typedef void (*markerFn)(void*);
   
-  static void initialise(markerFn mark, void *base_sp);
+  static void initialise(markerFn mark);
   static void destroy() {}
 
   static void die_if_sigsegv_occured_during_collection(void *addr){}
@@ -103,9 +108,9 @@ public:
     GC_gcollect();
   }
   
-  static void inject_my_thread(void *sp);
+  static void inject_my_thread(mvm::Thread*);
   
-  static void remove_my_thread() {}
+  static void remove_my_thread(mvm::Thread*) {}
   static Collector* allocate() { return 0; }
 
   static gc* begOf(const void *obj) {
