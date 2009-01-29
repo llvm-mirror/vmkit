@@ -68,6 +68,12 @@ jobject _strLib) {
   
 }
 
+#if defined(__MACH__)
+typedef int* jumpbuf_t;
+#else
+typedef __jmp_buf_tag* jumpbuf_t;
+#endif
+
 typedef int (*onLoad_t)(const void**, void*);
 extern "C" void  jniProceedPendingException();
 
@@ -83,7 +89,7 @@ void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
     th->sjlj_buffers.push_back((jmp_buf*)buf);
 
     th->startNative(1);
-    if (setjmp((__jmp_buf_tag*)buf) == 0) {
+    if (setjmp((jumpbuf_t)buf) == 0) {
       onLoad(&vm->javavmEnv, res);
     }
     jniProceedPendingException();
