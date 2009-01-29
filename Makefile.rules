@@ -22,13 +22,15 @@ ifdef VMKIT_ASSEMBLY
 
 .PRECIOUS: LLVMAssembly.s
 
-LLVMAssembly.s : $(LLVMAS) $(LLC) $(VMKIT_ASSEMBLY)
+LLVMAssembly.o : $(LLVMAS) $(LLC) $(VMKIT_ASSEMBLY)
 
 LLVMAssembly.s : LLVMAssembly.ll
 	$(Echo) "Building LLVM assembly with $(VMKIT_ASSEMBLY)"
 	$(Verb) $(LLVMAS) -f $(<F) -o - | $(LLC) -f -o $@
+
+LLVMAssembly.o : LLVMAssembly.s
 	$(Verb) $(MKDIR) $(BuildMode)
-	$(Verb) $(GAS) $@ -o $(BuildMode)/LLVMAssembly.o
+	$(Verb) $(GAS) LLVMAssembly.s -o $(BuildMode)/LLVMAssembly.o
 
 clean-local::
 	$(Verb) $(RM) -f LLVMAssembly.s LLVMAssembly.bc
