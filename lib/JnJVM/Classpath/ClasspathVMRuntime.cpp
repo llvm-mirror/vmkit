@@ -21,6 +21,7 @@
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 
+#include <csetjmp>
 #include <cstring>
 
 using namespace jnjvm;
@@ -68,7 +69,28 @@ jobject _strLib) {
 }
 
 typedef int (*onLoad_t)(const void**, void*);
+extern "C" void  jniProceedPendingException();
 
+// Calls the JNI_OnLoad function of a dynamic library.
+void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
+
+  onLoad_t onLoad = (onLoad_t)loader->loadInLib("JNI_OnLoad", res);
+  
+  if (onLoad) {
+    JavaThread* th = JavaThread::get();
+    mvm::Allocator& allocator = th->getJVM()->gcAllocator;
+    void** buf = (void**)allocator.allocateTemporaryMemory(sizeof(jmp_buf));
+    th->sjlj_buffers.push_back((jmp_buf*)buf);
+
+    th->startNative(1);
+    if (setjmp((__jmp_buf_tag*)buf) == 0) {
+      onLoad(&vm->javavmEnv, res);
+    }
+    jniProceedPendingException();
+  }
+}
+
+// Never throws.
 JNIEXPORT jint JNICALL Java_java_lang_VMRuntime_nativeLoad(
 #ifdef NATIVE_JNI
 JNIEnv *env,
@@ -77,9 +99,7 @@ jclass clazz,
 jobject _str,
 jobject _loader) {
   
-  jint result = 0;
-
-  BEGIN_NATIVE_EXCEPTION(0)
+  void* res = 0;
 
   JavaString* str = (JavaString*)_str;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -88,19 +108,11 @@ jobject _loader) {
 
   char* buf = str->strToAsciiz();
   
-  void* res = loader->loadLib(buf);
-  
-  if (res != 0) {
-    onLoad_t onLoad = (onLoad_t)loader->loadInLib("JNI_OnLoad", res);
-    if (onLoad) onLoad(&vm->javavmEnv, 0);
-    result = 1;
-  } else {
-    result = 0;
-  }
+  res = loader->loadLib(buf);
+ 
+   if (res) callOnLoad(res, loader, vm);
 
-  END_NATIVE_EXCEPTION
-
-  return result;
+  return res != 0;
 }
 
 
