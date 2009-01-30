@@ -1585,6 +1585,16 @@ void JavaJIT::invokeSpecial(uint16 index) {
     (Function*)ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
                                                       signature, meth);
 
+  if (!meth) {
+    // Make sure the class is loaded before materializing the method.
+    uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
+    UserCommonClass* cl = 0;
+    Value* Cl = getResolvedCommonClass(clIndex, false, &cl);
+    if (!cl) {
+      CallInst::Create(module->ForceLoadedCheckFunction, Cl, "", currentBlock);
+    }
+  }
+
   if (meth && canBeInlined(meth)) {
     val = invokeInline(meth, args);
   } else {

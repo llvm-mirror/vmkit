@@ -122,6 +122,12 @@ declare %JavaClass* @initialisationCheck(%JavaClass*) readnone
 ;;; implementation.
 declare void @forceInitialisationCheck(%JavaClass*)
 
+;;; forceLoadedCheck - Force to check if the class was loaded. Since we do
+;;; not want to run Java code in a callback, we have to make sure the class
+;;; of the method that we want to compile is loaded. This is used for
+;;; the invokespecial bytecode.
+declare void @forceLoadedCheck(%JavaCommonClass*)
+
 ;;; getConstantPoolAt - Get the value in the constant pool of this class.
 ;;; This function is removed by Jnjvm after the GVn pass, therefore it does
 ;;; not have an actual implementation.

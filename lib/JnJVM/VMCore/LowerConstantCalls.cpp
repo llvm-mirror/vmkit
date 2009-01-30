@@ -459,7 +459,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             BranchInst::Create(NBB, OKBlock);
             break;
           }
-        } else if (V == module->ForceInitialisationCheckFunction) {
+        } else if (V == module->ForceInitialisationCheckFunction ||
+                   V == module->ForceLoadedCheckFunction ) {
           Changed = true;
           CI->eraseFromParent();
         }

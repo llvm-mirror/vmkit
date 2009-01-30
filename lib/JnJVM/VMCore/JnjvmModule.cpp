@@ -2147,6 +2147,7 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
    
   InterfaceLookupFunction = module->getFunction("jnjvmVirtualLookup");
   MultiCallNewFunction = module->getFunction("multiCallNew");
+  ForceLoadedCheckFunction = module->getFunction("forceLoadedCheck");
   InitialisationCheckFunction = module->getFunction("initialisationCheck");
   ForceInitialisationCheckFunction = 
     module->getFunction("forceInitialisationCheck");

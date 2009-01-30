@@ -310,6 +310,7 @@ public:
   llvm::Function* InitialiseClassFunction;
   llvm::Function* InitialisationCheckFunction;
   llvm::Function* ForceInitialisationCheckFunction;
+  llvm::Function* ForceLoadedCheckFunction;
   llvm::Function* ClassLookupFunction;
 #ifndef WITHOUT_VTABLE
   llvm::Function* VirtualLookupFunction;
