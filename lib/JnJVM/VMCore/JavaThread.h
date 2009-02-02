@@ -64,6 +64,14 @@ public:
   /// jniEnv - The JNI environment of the thread.
   ///
   void* jniEnv;
+  
+  /// pendingException - The Java exception currently pending.
+  ///
+  JavaObject* pendingException;
+
+  /// internalPendingException - The C++ exception currencty pending.
+  ///
+  void* internalPendingException;
 
   /// javaThread - The Java representation of this thread.
   ///
@@ -81,14 +89,6 @@ public:
   /// a wait.
   ///
   mvm::Cond varcond;
-
-  /// pendingException - The Java exception currently pending.
-  ///
-  JavaObject* pendingException;
-
-  /// internalPendingException - The C++ exception currencty pending.
-  ///
-  void* internalPendingException;
 
   /// interruptFlag - Has this thread been interrupted?
   ///
