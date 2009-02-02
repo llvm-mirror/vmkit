@@ -184,6 +184,20 @@ void JavaJIT::invokeVirtual(uint16 index) {
 #endif
 }
 
+llvm::Value* JavaJIT::getCurrentThread() {
+  Value* FrameAddr = CallInst::Create(module->llvm_frameaddress,
+                                     	module->constantZero, "", currentBlock);
+  Value* threadId = new PtrToIntInst(FrameAddr, module->pointerSizeType, "",
+                              			 currentBlock);
+  threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+                                       "", currentBlock);
+  threadId = new IntToPtrInst(threadId, module->JavaThreadType, "",
+                              currentBlock);
+
+  return threadId;
+}
+
+
 llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "native compile %s\n",
@@ -250,15 +264,8 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   uint32 nargs = func->arg_size() + 1 + (stat ? 1 : 0); 
   std::vector<Value*> nativeArgs;
   
-  Value* FrameAddr = CallInst::Create(module->llvm_frameaddress,
-                                     	module->constantZero, "", currentBlock);
-  Value* threadId = new PtrToIntInst(FrameAddr, module->pointerSizeType, "",
-                              			 currentBlock);
-  threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
-                                       "", currentBlock);
-  threadId = new IntToPtrInst(threadId, module->JavaThreadType, "",
-                              currentBlock);
-
+  
+  Value* threadId = getCurrentThread();
 
   Value* geps[2] = { module->constantZero, module->constantEight };
 
@@ -316,6 +323,9 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     currentBlock = endBlock;
     nativeFunc = node;
   }
+  
+  Value* FrameAddr = CallInst::Create(module->llvm_frameaddress,
+                                     	module->constantZero, "", currentBlock);
 
   // When calling a native method, it may do whatever it wants with the
   // frame pointer. Therefore make sure it's on the stack. x86_64 has
@@ -362,12 +372,9 @@ void JavaJIT::monitorEnter(Value* obj) {
   Value* lockMask = BinaryOperator::CreateAnd(lock, 
                                               module->constantThreadFreeMask,
                                               "", currentBlock);
-  Value* threadId = CallInst::Create(module->llvm_frameaddress,
-                                     module->constantZero, "", currentBlock);
+  Value* threadId = getCurrentThread();
   threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
                               currentBlock);
-  threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
-                                       "", currentBlock);
   
   Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, lockMask, threadId, "",
                             currentBlock);
@@ -404,13 +411,9 @@ void JavaJIT::monitorExit(Value* obj) {
   lock = new PtrToIntInst(lock, module->pointerSizeType, "", currentBlock);
   Value* lockMask = BinaryOperator::CreateAnd(lock, module->constantLockedMask,
                                               "", currentBlock);
-  Value* threadId = CallInst::Create(module->llvm_frameaddress,
-                                     module->constantZero, "", currentBlock);
+  Value* threadId = getCurrentThread();
   threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
                               currentBlock);
-  threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
-                                       "", currentBlock);
-  
   Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, lockMask, threadId, "",
                             currentBlock);
   
@@ -710,14 +713,7 @@ llvm::Function* JavaJIT::javaCompile() {
   Value* NewIsolate = 0;
   Value* IsolatePtr = 0;
   if (loader != loader->bootstrapLoader && isPublic(compilingMethod->access)) {
-    threadId = CallInst::Create(module->llvm_frameaddress, module->constantZero,
-                                "", currentBlock);
-    threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
-                                currentBlock);
-    threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
-                                       "", currentBlock);
-  
-    threadId = new IntToPtrInst(threadId, module->ptrPtrType, "", currentBlock);
+    threadId = getCurrentThread();
      
     IsolateIDPtr = GetElementPtrInst::Create(threadId, module->constantThree,
                                              "", currentBlock);
@@ -1157,18 +1153,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     // catch the exception but resume unwinding.
     JnjvmClassLoader* loader = compilingClass->classLoader;;
     if (loader != loader->bootstrapLoader) {
-      Value* threadId = CallInst::Create(module->llvm_frameaddress,
-                                         module->constantZero,
-                                         "", currentBlock);
-      threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
-                                  currentBlock);
-      threadId = BinaryOperator::CreateAnd(threadId,
-                                           module->constantThreadIDMask,
-                                           "", currentBlock);
-  
-      threadId = new IntToPtrInst(threadId, module->ptrPtrType, "",
-                                  currentBlock);
-     
+      Value* threadId = getCurrentThread();
       Value* Isolate = GetElementPtrInst::Create(threadId,
                                                  module->constantFour, "",
                                                  currentBlock);
@@ -1246,17 +1231,9 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     Value* OldIsolate = 0;
     Value* NewIsolate = 0;
     Value* IsolatePtr = 0;
+    currentBlock = cur->javaHandler;
     if (loader != loader->bootstrapLoader) {
-      threadId = CallInst::Create(module->llvm_frameaddress, 
-                                  module->constantZero, "", cur->javaHandler);
-      threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
-                                  cur->javaHandler);
-      threadId = BinaryOperator::CreateAnd(threadId, 
-                                           module->constantThreadIDMask, "",
-                                           cur->javaHandler);
-  
-      threadId = new IntToPtrInst(threadId, module->ptrPtrType, "",
-                                  cur->javaHandler);
+      threadId = getCurrentThread();
      
       IsolateIDPtr = GetElementPtrInst::Create(threadId, module->constantThree,
                                                "", cur->javaHandler);
@@ -1886,16 +1863,12 @@ void JavaJIT::invokeNew(uint16 index) {
   Cl = new BitCastInst(Cl, module->JavaCommonClassType, "", currentBlock);
   new StoreInst(Cl, GEP, currentBlock);
   
-  Value* gep2[2] = { module->constantZero, module->JavaObjectLockOffsetConstant };
+  Value* gep2[2] = { module->constantZero,
+                     module->JavaObjectLockOffsetConstant };
   Value* lockPtr = GetElementPtrInst::Create(val, gep2, gep2 + 2, "",
                                              currentBlock);
-  Value* threadId = CallInst::Create(module->llvm_frameaddress,
-                                     module->constantZero, "", currentBlock);
-  threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
-                              currentBlock);
-  threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
-                                       "", currentBlock);
-  threadId = new IntToPtrInst(threadId, module->ptrType, "", currentBlock);
+  Value* threadId = getCurrentThread();
+  threadId = new BitCastInst(threadId, module->ptrType, "", currentBlock);
   new StoreInst(threadId, lockPtr, currentBlock);
 
   push(val, false);

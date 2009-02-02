@@ -116,8 +116,9 @@ private:
   llvm::Value* getConstantPoolAt(uint32 index, llvm::Function* resolver,
                                  const llvm::Type* returnType,
                                  llvm::Value* addArg, bool doThrow = true);
- 
-  
+
+  /// getCurrentThread - Emit code to get the current thread.
+  llvm::Value* getCurrentThread();
 
 //===--------------------------- Inline support ---------------------------===//
 
