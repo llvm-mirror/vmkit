@@ -8,9 +8,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <cstdarg>
-
-#include "mvm/Threads/Thread.h"
 
 #include "JavaArray.h"
 #include "JavaCache.h"
@@ -21,7 +18,8 @@
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
-#include "LockedMap.h"
+
+#include <cstdarg>
 
 using namespace jnjvm;
 
