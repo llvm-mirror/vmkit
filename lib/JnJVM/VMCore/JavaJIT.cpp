@@ -1142,6 +1142,23 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     
     currentBlock = cur->tester;
     
+    Value* clVar = 0; 
+#ifdef ISOLATE_SHARING
+    // We're dealing with exceptions, don't catch the exception if the class can
+    // not be found.
+    if (cur->catche) clVar = getResolvedClass(cur->catche, false, false, 0);
+    else clVar = CallInst::Create(module->GetJnjvmExceptionClassFunction,
+                                  isolateLocal, "", currentBlock);
+#else
+    // We know catchClass exists because we have loaded all exceptions catched
+    // by the method when we loaded the class that defined this method.
+    clVar = module->getNativeClass(cur->catchClass);
+#endif
+    if (clVar->getType() != module->JavaCommonClassType) 
+      clVar = new BitCastInst(clVar, module->JavaCommonClassType, "",
+                              currentBlock);
+
+    
 #ifdef SERVICE
     // Verifies that the current isolate is not stopped. If it is, we don't
     // catch the exception but resume unwinding.
@@ -1194,10 +1211,29 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     Value* cmp = new ICmpInst(ICmpInst::ICMP_ULE, depthCl, depthClObj, "",
                               currentBlock);
 
+    BasicBlock* supDepth = createBasicBlock("superior depth");
+            
+    BranchInst::Create(supDepth, bbNext, cmp, currentBlock);
+    
+    if (nodeNext)
+      nodeNext->addIncoming(cur->exceptionPHI, currentBlock);
+  
+    currentBlock = supDepth;
+    Value* inDisplay = CallInst::Create(module->GetDisplayFunction,
+                                        objCl, "", currentBlock);
+            
+    Value* displayArgs[2] = { inDisplay, depthCl };
+    Value* clInDisplay = CallInst::Create(module->GetClassInDisplayFunction,
+                                          displayArgs, displayArgs + 2, "",
+                                          currentBlock);
+             
+    cmp = new ICmpInst(ICmpInst::ICMP_EQ, clInDisplay, clVar, "",
+                       currentBlock);
+    
     // If we are catching this exception, then jump to the nativeHandler,
     // otherwise jump to our next handler.
-    BranchInst::Create(cur->nativeHandler, bbNext, cmp, currentBlock);
-    
+    BranchInst::Create(cur->nativeHandler, bbNext, cmp, currentBlock); 
+
     // Add the incoming value to the next handler, which is the exception we
     // just catched.
     if (nodeNext)
