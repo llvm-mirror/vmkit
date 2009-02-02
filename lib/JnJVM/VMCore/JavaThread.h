@@ -147,11 +147,7 @@ public:
   /// currentThread - Return the current thread as a Java object.
   ///
   JavaObject* currentThread() {
-    JavaThread* result = get();
-    if (result != 0)
-      return result->javaThread;
-    else
-      return 0;
+    return javaThread;
   }
  
   /// throwException - Throw the given exception in the current thread.
@@ -161,16 +157,6 @@ public:
   /// throwPendingException - Throw a pending exception.
   ///
   void throwPendingException();
-  
-  /// compareException - Compare the pending exception's class with the
-  /// given class.
-  ///
-  bool compareException(UserClass* cl) {
-    JavaObject* pe = pendingException;
-    assert(pe && "no pending exception?");
-    bool val = pe->getClass()->subclassOf(cl);
-    return val;
-  }
   
   /// getJavaException - Return the pending exception.
   ///
