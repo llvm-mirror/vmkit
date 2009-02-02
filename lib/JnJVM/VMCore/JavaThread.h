@@ -154,14 +154,6 @@ public:
       return 0;
   }
  
-  /// getException - Return the C++ specific exception object.
-  ///
-  void* getException() {
-    // 32 = sizeof(_Unwind_Exception) in libgcc...
-    return (void*)
-      ((uintptr_t)JavaThread::get()->internalPendingException - 32);
-  }
- 
   /// throwException - Throw the given exception in the current thread.
   ///
   void throwException(JavaObject* obj);

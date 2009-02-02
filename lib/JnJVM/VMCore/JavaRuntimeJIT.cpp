@@ -390,29 +390,9 @@ extern "C" bool isAssignableFrom(UserCommonClass* cl1, UserCommonClass* cl2) {
   return cl1->isAssignableFrom(cl2);
 }
 
-// Never throws.
-extern "C" void* JavaThreadGetException() {
-  return JavaThread::get()->getException();
-}
-
-// Never throws.
-extern "C" JavaObject* JavaThreadGetJavaException() {
-  return JavaThread::get()->getJavaException();
-}
-
 // Does not call any Java code.
 extern "C" void JavaThreadThrowException(JavaObject* obj) {
   return JavaThread::get()->throwException(obj);
-}
-
-// Never throws.
-extern "C" bool JavaThreadCompareException(UserClass* cl) {
-  return JavaThread::get()->compareException(cl);
-}
-
-// Never throws.
-extern "C" void JavaThreadClearException() {
-  return JavaThread::get()->clearException();
 }
 
 // Never throws.

@@ -92,6 +92,8 @@ llvm::ConstantInt*  JnjvmModule::OffsetDisplayInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetTaskClassMirrorInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetStaticInstanceInTaskClassMirrorConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetStatusInTaskClassMirrorConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetJavaExceptionInThreadConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetCXXExceptionInThreadConstant;
 llvm::ConstantInt*  JnjvmModule::ClassReadyConstant;
 const llvm::Type*   JnjvmModule::JavaClassType;
 const llvm::Type*   JnjvmModule::JavaClassPrimitiveType;
@@ -2020,6 +2022,9 @@ void JnjvmModule::initialise() {
   OffsetStaticInstanceInTaskClassMirrorConstant = mvm::MvmModule::constantOne;
   OffsetStatusInTaskClassMirrorConstant = mvm::MvmModule::constantZero;
   
+  OffsetJavaExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 9);
+  OffsetCXXExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 10);
+  
   ClassReadyConstant = ConstantInt::get(Type::Int32Ty, ready);
  
 
@@ -2179,9 +2184,6 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
   VirtualFieldLookupFunction = module->getFunction("virtualFieldLookup");
   StaticFieldLookupFunction = module->getFunction("staticFieldLookup");
   
-  GetExceptionFunction = module->getFunction("JavaThreadGetException");
-  GetJavaExceptionFunction = module->getFunction("JavaThreadGetJavaException");
-  CompareExceptionFunction = module->getFunction("JavaThreadCompareException");
   JniProceedPendingExceptionFunction = 
     module->getFunction("jniProceedPendingException");
   GetSJLJBufferFunction = module->getFunction("getSJLJBuffer");
@@ -2203,8 +2205,6 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
 
   ThrowExceptionFunction = module->getFunction("JavaThreadThrowException");
 
-  ClearExceptionFunction = module->getFunction("JavaThreadClearException");
-  
   GetArrayClassFunction = module->getFunction("getArrayClass");
   
 

@@ -59,7 +59,8 @@ void JavaThread::throwException(JavaObject* obj) {
   assert(th->pendingException == 0 && "pending exception already there?");
   th->pendingException = obj;
   void* exc = __cxa_allocate_exception(0);
-  th->internalPendingException = exc;
+  // 32 = sizeof(_Unwind_Exception) in libgcc...  
+  th->internalPendingException = (void*)((uintptr_t)exc - 32);
   __cxa_throw(exc, 0, 0);
 }
 
@@ -67,7 +68,7 @@ void JavaThread::throwPendingException() {
   JavaThread* th = JavaThread::get();
   assert(th->pendingException);
   void* exc = __cxa_allocate_exception(0);
-  th->internalPendingException = exc;
+  th->internalPendingException = (void*)((uintptr_t)exc - 32);
   __cxa_throw(exc, 0, 0);
 }
 

@@ -836,16 +836,23 @@ llvm::Function* JavaJIT::javaCompile() {
       ReturnInst::Create(currentBlock);
   }
 
+  currentBlock = endExceptionBlock;
   PI = pred_begin(endExceptionBlock);
   PE = pred_end(endExceptionBlock);
   if (PI == PE) {
     endExceptionBlock->eraseFromParent();
   } else {
-    CallInst* ptr_eh_ptr = CallInst::Create(module->GetExceptionFunction,
-                                            "eh_ptr", endExceptionBlock);
-    llvm::CallInst::Create(module->unwindResume, ptr_eh_ptr, "",
-                           endExceptionBlock);
-    new UnreachableInst(endExceptionBlock);
+    Value* threadId = getCurrentThread();
+    Value* geps2[2] = { module->constantZero,
+                        module->OffsetCXXExceptionInThreadConstant };
+    
+    Value* cxxExceptionPtr = GetElementPtrInst::Create(threadId, geps2,
+                                                       geps2 + 2, "",
+                                                       currentBlock);
+    cxxExceptionPtr = new LoadInst(cxxExceptionPtr, "", currentBlock);
+    llvm::CallInst::Create(module->unwindResume, cxxExceptionPtr, "",
+                           currentBlock);
+    new UnreachableInst(currentBlock);
   }
   
   PI = pred_begin(unifiedUnreachable);
@@ -1133,20 +1140,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
       cur->exceptionPHI->addIncoming(ptr_eh_ptr, cur->catcher);
     } 
     
-    // We now implement the tester of the handler.
-    Value* cl = 0;
     currentBlock = cur->tester;
-#ifdef ISOLATE_SHARING
-    // We're dealing with exceptions, don't catch the exception if the class can
-    // not be found.
-    if (cur->catche) cl = getResolvedClass(cur->catche, false, false, 0);
-    else cl = CallInst::Create(module->GetJnjvmExceptionClassFunction,
-                               isolateLocal, "", currentBlock);
-#else
-    // We know catchClass exists because we have loaded all exceptions catched
-    // by the method when we loaded the class that defined this method.
-    cl = module->getNativeClass(cur->catchClass);
-#endif
     
 #ifdef SERVICE
     // Verifies that the current isolate is not stopped. If it is, we don't
@@ -1178,10 +1172,28 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     }
 #endif
    
-    // Compare the exception with the exception class we catch.
-    Value* cmp = CallInst::Create(module->CompareExceptionFunction, cl, "",
-                                  currentBlock);
+    Value* threadId = getCurrentThread();
+    Value* geps[2] = { module->constantZero,
+                       module->OffsetJavaExceptionInThreadConstant };
+
+    Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
+                                                        geps + 2, "",
+                                                        currentBlock);
     
+    // Get the Java exception.
+    Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+
+    Value* objCl = CallInst::Create(module->GetClassFunction, obj, "",
+                                    currentBlock);
+
+    Value* depthCl = ConstantInt::get(Type::Int32Ty, cur->catchClass->depth);
+    Value* depthClObj = CallInst::Create(module->GetDepthFunction, objCl, "",
+                                         currentBlock);
+    
+    // Compare the exception with the exception class we catch.
+    Value* cmp = new ICmpInst(ICmpInst::ICMP_ULE, depthCl, depthClObj, "",
+                              currentBlock);
+
     // If we are catching this exception, then jump to the nativeHandler,
     // otherwise jump to our next handler.
     BranchInst::Create(cur->nativeHandler, bbNext, cmp, currentBlock);
@@ -1190,11 +1202,27 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     // just catched.
     if (nodeNext)
       nodeNext->addIncoming(cur->exceptionPHI, currentBlock);
-   
-    // Get the Java exception and clear it from the execution context.
-    Value* exc = CallInst::Create(module->GetJavaExceptionFunction,
-                                  "", cur->nativeHandler);
-    CallInst::Create(module->ClearExceptionFunction, "", cur->nativeHandler);
+    
+    currentBlock = cur->nativeHandler;
+ 
+    threadId = getCurrentThread();
+    javaExceptionPtr = GetElementPtrInst::Create(threadId, geps, geps + 2, "",
+                                                 currentBlock);
+    
+    // Get the Java exception.
+    Value* exc = new LoadInst(javaExceptionPtr, "", currentBlock);
+    
+    Value* geps2[2] = { module->constantZero,
+                        module->OffsetCXXExceptionInThreadConstant };
+    
+    Value* cxxExceptionPtr = GetElementPtrInst::Create(threadId, geps2,
+                                                       geps2 + 2, "",
+                                                       currentBlock);
+
+    // Clear exceptions.
+    new StoreInst(module->constantPtrNull, cxxExceptionPtr, currentBlock);
+    new StoreInst(module->JavaObjectNullConstant, javaExceptionPtr,
+                  currentBlock);
 
     // Call the CXX begin and end catcher.
     CallInst::Create(module->exceptionBeginCatch, cur->exceptionPHI,

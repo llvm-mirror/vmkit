@@ -199,12 +199,7 @@ declare void @jnjvmClassCastException(%JavaObject*, %JavaCommonClass*)
 declare void @indexOutOfBoundsException(%JavaObject*, i32)
 declare void @negativeArraySizeException(i32)
 declare void @outOfMemoryError(i32)
-
-declare void         @JavaThreadThrowException(%JavaObject*)
-declare void         @JavaThreadClearException()
-declare i8*          @JavaThreadGetException()
-declare %JavaObject* @JavaThreadGetJavaException()
-declare i1           @JavaThreadCompareException(%JavaClass*)
+declare void @JavaThreadThrowException(%JavaObject*)
 
 declare void @jniProceedPendingException()
 declare i8*  @getSJLJBuffer()

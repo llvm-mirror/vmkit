@@ -367,17 +367,16 @@ public:
   static llvm::ConstantInt* OffsetStaticInstanceInTaskClassMirrorConstant;
   static llvm::ConstantInt* OffsetStatusInTaskClassMirrorConstant;
   
+  static llvm::ConstantInt* OffsetJavaExceptionInThreadConstant;
+  static llvm::ConstantInt* OffsetCXXExceptionInThreadConstant;
+  
   static llvm::ConstantInt* ClassReadyConstant;
 
   static llvm::Constant*    JavaObjectNullConstant;
   static llvm::Constant*    MaxArraySizeConstant;
   static llvm::Constant*    JavaArraySizeConstant;
 
-  llvm::Function* GetExceptionFunction;
-  llvm::Function* GetJavaExceptionFunction;
   llvm::Function* ThrowExceptionFunction;
-  llvm::Function* ClearExceptionFunction;
-  llvm::Function* CompareExceptionFunction;
   llvm::Function* NullPointerExceptionFunction;
   llvm::Function* IndexOutOfBoundsExceptionFunction;
   llvm::Function* ClassCastExceptionFunction;
