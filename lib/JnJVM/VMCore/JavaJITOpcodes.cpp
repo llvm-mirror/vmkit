@@ -89,7 +89,7 @@ static inline uint32 readU4(uint8* bytecode, uint32& i) {
   return readS4(bytecode, i);
 }
 
-uint32 JavaJIT::WREAD_U1(uint8* array, bool init, uint32 &i) {
+static inline uint32 WREAD_U1(uint8* array, bool init, uint32 &i, bool& wide) {
   if (wide) {
     wide = init; 
     return readU2(array, i);
@@ -98,7 +98,7 @@ uint32 JavaJIT::WREAD_U1(uint8* array, bool init, uint32 &i) {
   }
 }
 
-sint32 JavaJIT::WREAD_S1(uint8* array, bool init, uint32 &i) {
+static inline sint32 WREAD_S1(uint8* array, bool init, uint32 &i, bool &wide) {
   if (wide) {
     wide = init; 
     return readS2(array, i);
@@ -107,7 +107,7 @@ sint32 JavaJIT::WREAD_S1(uint8* array, bool init, uint32 &i) {
   }
 }
 
-uint32 JavaJIT::WCALC(uint32 n) {
+static inline uint32 WCALC(uint32 n, bool& wide) {
   if (wide) {
     wide = false;
     return n << 1;
@@ -117,7 +117,7 @@ uint32 JavaJIT::WCALC(uint32 n) {
 }
 
 void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
-  wide = false;
+  bool wide = false;
   uint32 jsrIndex = 0;
   for(uint32 i = 0; i < codeLength; ++i) {
     
@@ -133,7 +133,17 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         branch(opinfo->newBlock, currentBlock);
       }
       
-      setCurrentBlock(opinfo->newBlock);
+      stack.clear();
+      for (BasicBlock::iterator i = opinfo->newBlock->begin(),
+           e = opinfo->newBlock->end(); i != e; ++i) {
+        if (!(isa<PHINode>(i))) {
+          break;
+        } else {
+          stack.push_back(std::make_pair(i, false));
+        }
+      }
+  
+      currentBlock = opinfo->newBlock;
     }
     currentExceptionBlock = opinfo->exceptionBlock;
     
@@ -236,42 +246,42 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
 
       case LDC :
-        _ldc(bytecodes[++i]);
+        loadConstant(bytecodes[++i]);
         break;
 
       case LDC_W :
-        _ldc(readS2(bytecodes, i));
+        loadConstant(readS2(bytecodes, i));
         break;
 
       case LDC2_W :
-        _ldc(readS2(bytecodes, i));
+        loadConstant(readS2(bytecodes, i));
         push(module->constantZero, false);
         break;
 
       case ILOAD :
-        push(new LoadInst(intLocals[WREAD_U1(bytecodes, false, i)], "",
+        push(new LoadInst(intLocals[WREAD_U1(bytecodes, false, i, wide)], "",
                           currentBlock), false);
         break;
 
       case LLOAD :
-        push(new LoadInst(longLocals[WREAD_U1(bytecodes, false, i)], "",
+        push(new LoadInst(longLocals[WREAD_U1(bytecodes, false, i, wide)], "",
                           currentBlock), false);
         push(module->constantZero, false);
         break;
 
       case FLOAD :
-        push(new LoadInst(floatLocals[WREAD_U1(bytecodes, false, i)], "",
+        push(new LoadInst(floatLocals[WREAD_U1(bytecodes, false, i, wide)], "",
                           currentBlock), false);
         break;
 
       case DLOAD :
-        push(new LoadInst(doubleLocals[WREAD_U1(bytecodes, false, i)], "",
+        push(new LoadInst(doubleLocals[WREAD_U1(bytecodes, false, i, wide)], "",
                           currentBlock), false);
         push(module->constantZero, false);
         break;
 
       case ALOAD :
-        push(new LoadInst(objectLocals[WREAD_U1(bytecodes, false, i)], "",
+        push(new LoadInst(objectLocals[WREAD_U1(bytecodes, false, i, wide)], "",
                           currentBlock), false);
         break;
       
@@ -461,31 +471,31 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case ISTORE : {
         Value* val = popAsInt();
-        new StoreInst(val, intLocals[WREAD_U1(bytecodes, false, i)], false,
-                      currentBlock);
+        new StoreInst(val, intLocals[WREAD_U1(bytecodes, false, i, wide)],
+                      false, currentBlock);
         break;
       }
       
       case LSTORE :
         pop(); // remove the 0 on the stack
-        new StoreInst(pop(), longLocals[WREAD_U1(bytecodes, false, i)], false,
-                      currentBlock);
+        new StoreInst(pop(), longLocals[WREAD_U1(bytecodes, false, i, wide)],
+                      false, currentBlock);
         break;
       
       case FSTORE :
-        new StoreInst(pop(), floatLocals[WREAD_U1(bytecodes, false, i)], false,
-                      currentBlock);
+        new StoreInst(pop(), floatLocals[WREAD_U1(bytecodes, false, i, wide)],
+                      false, currentBlock);
         break;
       
       case DSTORE :
         pop(); // remove the 0 on the stack
-        new StoreInst(pop(), doubleLocals[WREAD_U1(bytecodes, false, i)], false,
-                      currentBlock);
+        new StoreInst(pop(), doubleLocals[WREAD_U1(bytecodes, false, i, wide)],
+                      false, currentBlock);
         break;
 
       case ASTORE :
-        new StoreInst(pop(), objectLocals[WREAD_U1(bytecodes, false, i)], false,
-                      currentBlock);
+        new StoreInst(pop(), objectLocals[WREAD_U1(bytecodes, false, i, wide)],
+                      false, currentBlock);
         break;
       
       case ISTORE_0 : {
@@ -698,7 +708,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
 
       case DUP :
-        push(top(), topFunc());
+        push(top(), topSign());
         break;
 
       case DUP_X1 : {
@@ -1102,8 +1112,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case IINC : {
-        uint16 idx = WREAD_U1(bytecodes, true, i);
-        sint16 val = WREAD_S1(bytecodes, false, i);
+        uint16 idx = WREAD_U1(bytecodes, true, i, wide);
+        sint16 val = WREAD_S1(bytecodes, false, i, wide);
         llvm::Value* add = BinaryOperator::CreateAdd(
             new LoadInst(intLocals[idx], "", currentBlock), 
             ConstantInt::get(Type::Int32Ty, val), "",
@@ -1710,7 +1720,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         BasicBlock* def = opcodeInfos[tmp + readU4(bytecodes, i)].newBlock;
         uint32 nbs = readU4(bytecodes, i);
         
-        bool unsign = topFunc();
+        bool unsign = topSign();
         Value* key = pop();
         const Type* type = key->getType();
         if (unsign) {
@@ -1731,10 +1741,10 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
       }
       case IRETURN : {
-        bool unsign = topFunc();
+        bool unsign = topSign();
         Value* val = pop();
         assert(val->getType()->isInteger());
-        convertValue(val, returnType, currentBlock, unsign);
+        convertValue(val, endNode->getType(), currentBlock, unsign);
         endNode->addIncoming(val, currentBlock);
         BranchInst::Create(endBlock, currentBlock);
         break;
@@ -1809,7 +1819,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case INVOKEINTERFACE : {
         uint16 index = readU2(bytecodes, i);
-        invokeInterfaceOrVirtual(index);
+        invokeInterface(index);
         i += 2;
         break;
       }
@@ -2202,7 +2212,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 }
 
 void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
-  wide = false;
+  bool wide = false;
   for(uint32 i = 0; i < codeLength; ++i) {
     
     PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
@@ -2244,7 +2254,7 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FLOAD :
       case DLOAD :
       case ALOAD :
-        i += WCALC(1);
+        i += WCALC(1, wide);
         break;
       
       case ILOAD_0 :
@@ -2281,7 +2291,7 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FSTORE :
       case DSTORE :
       case ASTORE :
-        i += WCALC(1);
+        i += WCALC(1, wide);
         break;
       
       case ISTORE_0 :
@@ -2359,7 +2369,7 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       case LXOR : break;
 
       case IINC :
-        i += WCALC(2);
+        i += WCALC(2, wide);
         break;
       
       case I2L :
@@ -2419,7 +2429,6 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
         } else {
           jsrs.push_back(opcodeInfos[tmp + 3].newBlock);
         }
-        opcodeInfos[index].reqSuppl = true;
         break;
       }
 

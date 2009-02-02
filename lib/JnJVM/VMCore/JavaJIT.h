@@ -14,15 +14,12 @@
 #include <map>
 
 #include "llvm/BasicBlock.h"
-#include "llvm/DerivedTypes.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
+#include "llvm/Type.h"
 #include "llvm/Value.h"
 
 #include "types.h"
-
-#include "mvm/Object.h"
-#include "mvm/PrintBuffer.h"
 
 #include "JnjvmModule.h"
 
@@ -30,40 +27,32 @@ namespace jnjvm {
 
 class Class;
 class JavaMethod;
-class JavaObject;
-class Jnjvm;
 class Reader;
 class UTF8;
 
-struct Exception {
-  uint32 startpc;
-  uint32 endpc;
-  uint32 handlerpc;
-  uint16 catche;
-  UserClass* catchClass;
-  llvm::BasicBlock* test;
-  llvm::BasicBlock* realTest;
-  llvm::BasicBlock* javaHandler;
-  llvm::BasicBlock* nativeHandler;
-  llvm::PHINode* exceptionPHI;
-  llvm::PHINode* handlerPHI;
-};
-
+/// Opinfo - This class gives for each opcode if it starts a new block and
+/// its exception destination.
+///
 struct Opinfo {
+
+  /// newBlock - If it is non-null, the block that the instruction starts.
+  ///
   llvm::BasicBlock* newBlock;
-  bool reqSuppl;
+
+  /// exceptionBlock - Never null, the exception destination of the
+  /// instruction.
+  ///
   llvm::BasicBlock* exceptionBlock; 
 };
 
+
+/// JavaJIT - The compilation engine of VMKit. Parses the bycode and returns
+/// its LLVM representation.
+///
 class JavaJIT {
-private:
-
-  llvm::Value* getConstantPoolAt(uint32 index, llvm::Function* resolver,
-                                 const llvm::Type* returnType,
-                                 llvm::Value* addArg, bool doThrow = true);
-
 public:
-  
+ 
+  /// JavaJIT - Default constructor.
   JavaJIT(JavaMethod* meth, llvm::Function* func) {
     nbEnveloppes = 0;
     compilingMethod = meth;
@@ -74,68 +63,163 @@ public:
     callsStackWalker = false;
   }
 
-  JnjvmModule* module;
-
+  /// javaCompile - Compile the Java method.
   llvm::Function* javaCompile();
+  
+  /// nativeCompile - Compile the native method.
   llvm::Function* nativeCompile(intptr_t natPtr = 0);
+
+  /// OpcodeNames - Table for getting the name of a Java instruction
+  /// from its opcode number.
+  static const char* OpcodeNames[256];
+
+private:
+  
+  /// compilingClass - The class that is defining the method being compiled.
+  Class* compilingClass;
+
+  /// compilingMethod - The method being compiled.
+  JavaMethod* compilingMethod;
+
+  /// llvmFunction - The LLVM representation of the method.
+  llvm::Function* llvmFunction;
+  
+  /// module - The LLVM module where lives the compiling LLVM function.
+  JnjvmModule* module;
+  
+  /// locals - The locals of the method.
+  std::vector<llvm::Value*> intLocals;
+  std::vector<llvm::Value*> longLocals;
+  std::vector<llvm::Value*> floatLocals;
+  std::vector<llvm::Value*> doubleLocals;
+  std::vector<llvm::Value*> objectLocals;
+
+  /// endBlock - The block that returns.
+  llvm::BasicBlock* endBlock;
+
+  /// endNode - The result of the method.
+  llvm::PHINode* endNode;
+  
+  /// arraySize - Get the size of the array.
+  llvm::Value* arraySize(llvm::Value* obj) {
+    return llvm::CallInst::Create(module->ArrayLengthFunction, obj, "",
+                                  currentBlock);
+  }
+  
+  /// convertValue - Convert a value to a new type.
+  void convertValue(llvm::Value*& val, const llvm::Type* t1,
+                    llvm::BasicBlock* currentBlock, bool usign);
+ 
+  /// getConstantPoolAt - Return the value at the given index of the constant
+  /// pool. The generated code invokes the resolver if the constant pool
+  /// contains no value at the index.
+  llvm::Value* getConstantPoolAt(uint32 index, llvm::Function* resolver,
+                                 const llvm::Type* returnType,
+                                 llvm::Value* addArg, bool doThrow = true);
+ 
+  /// testPHINodes - Update PHI nodes when branching to a new block.
+  void testPHINodes(llvm::BasicBlock* dest, llvm::BasicBlock* insert);
+  
+
+//===--------------------------- Inline support ---------------------------===//
+
+  /// inlineCompile - Parse the method and start its LLVM representation
+  /// at curBB. endExBlock is the exception destination. args is the
+  /// arguments of the method.
   llvm::Instruction* inlineCompile(llvm::BasicBlock*& curBB,
                                    llvm::BasicBlock* endExBlock,
                                    std::vector<llvm::Value*>& args);
 
+
+  /// inlineMethods - Methods that are currently being inlined. The JIT
+  /// uses this map to not inline a method currently bein inlined.
   std::map<JavaMethod*, bool> inlineMethods;
+
+  /// inlining - Are we JITting a method inline?
   bool inlining;
+  
+  /// canBeInlined - Can this method's body be inlined?
+  bool canBeInlined(JavaMethod* meth);
 
-  Class* compilingClass;
-  JavaMethod* compilingMethod;
-  llvm::Function* llvmFunction;
-  const llvm::Type* returnType;
+  /// callsStackWalker - Is the method calling a stack walker method? If it is,
+  /// then this method can not be inlined.
+  bool callsStackWalker;
 
-  // change into LLVM instructions
+  
+//===------------------------- Bytecode parsing ---------------------------===//
+
+  /// compileOpcodes - Parse the bytecode and create LLVM instructions.
   void compileOpcodes(uint8* bytecodes, uint32 codeLength);
-  // create basic blocks
+
+  /// exploreOpcodes - Parse the bytecode and create the basic blocks.
   void exploreOpcodes(uint8* bytecodes, uint32 codeLength);
+  
+  /// readExceptionTable - Read the exception table in the bytecode. Prepare
+  /// exception destination for all Java instructions and set the exception
+  /// object to handler blocks.
+  unsigned readExceptionTable(Reader& reader, uint32 codeLength);
 
-  // load constant
-  void _ldc(uint16 index);
+  /// loadConstant - Load a constant from the _ldc bytecode.
+  void loadConstant(uint16 index);
 
-  // float comparisons
+//===------------------------- Runtime exceptions -------------------------===//
+  
+  /// JITVerifyNull - Insert a null pointer check in the LLVM code.
+  void JITVerifyNull(llvm::Value* obj);
+  
+  
+  /// verifyAndComputePtr - Computes the address in the array. If out of bounds
+  /// throw an exception.
+  llvm::Value* verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
+                                   const llvm::Type* arrayType,
+                                   bool verif = true);
+
+  /// compareFP - Do float comparisons.
   void compareFP(llvm::Value*, llvm::Value*, const llvm::Type*, bool l);
   
-  // null pointer exception
-  void JITVerifyNull(llvm::Value* obj);
 
-  
-  // stack manipulation
+//===------------------------- Stack manipulation -------------------------===//
+ 
+  /// stack - The compiler stack. We store the value and its sign.
   std::vector< std::pair<llvm::Value*, bool> > stack;
+
+  /// push - Push a new value in the stack.
   void push(llvm::Value* val, bool unsign) {
     stack.push_back(std::make_pair(val, unsign));
   }
 
+  /// push - Push a new value in the stack.
   void push(std::pair<llvm::Value*, bool> pair) {
     stack.push_back(pair);
   }
   
+  /// pop - Pop a value from the stack and return it.
   llvm::Value* pop() {
     llvm::Value * ret = top();
     stack.pop_back();
     return ret; 
   }
 
+  /// top - Return the value on top of the stack.
   llvm::Value* top() {
     return stack.back().first;
   }
   
-  bool topFunc() {
+  /// topSign - Return the sign of the value on top of the stack.
+  bool topSign() {
     return stack.back().second;  
   }
-  
+ 
+  /// stackSize - Return the size of the stack.
   uint32 stackSize() {
     return stack.size();    
   }
   
+  /// popAsInt - Pop a value from the stack and returns it as a Java
+  /// int, ie signed int32.
   llvm::Value* popAsInt() {
     llvm::Value * ret = top();
-    bool unsign = topFunc();
+    bool unsign = topSign();
     stack.pop_back();
 
     if (ret->getType() != llvm::Type::Int32Ty) {
@@ -145,93 +229,143 @@ public:
         ret = new llvm::SExtInst(ret, llvm::Type::Int32Ty, "", currentBlock);
       }
     }
-
     return ret;
-
   }
 
+  /// popPair - Pop the pair on the stack and return it.
   std::pair<llvm::Value*, bool> popPair() {
     std::pair<llvm::Value*, bool> ret = stack.back();
     stack.pop_back();
     return ret;
   }
+
+//===------------------------- Exception support --------------------------===//
   
-  // exceptions
+  /// jsrs - The list of jsrs (jump subroutine) instructions.
   std::vector<llvm::BasicBlock*> jsrs;
-  unsigned readExceptionTable(Reader& reader);
+
+  /// endExceptionBlock - The initial exception block where each handler goes
+  /// if it does not handle the exception.
   llvm::BasicBlock* endExceptionBlock;
+
+  /// currentExceptionBlock - The exception block of the current instruction.
   llvm::BasicBlock* currentExceptionBlock;
+
+  /// unifiedUnreachable - When an exception is thrown, the code after is
+  /// unreachable. All invokes that only throw an exception have the
+  /// unifiedUnreachable block as their normal destination.
   llvm::BasicBlock* unifiedUnreachable;
+
+//===--------------------------- Control flow  ----------------------------===//
+
+  /// opcodeInfos - The informations for each instruction.
   Opinfo* opcodeInfos;
 
-  // block manipulation
+  /// currentBlock - The current block of the JIT.
   llvm::BasicBlock* currentBlock;
+
+  /// createBasicBlock - Create a new basic block.
   llvm::BasicBlock* createBasicBlock(const char* name = "") {
     return llvm::BasicBlock::Create(name, llvmFunction);  
   }
-  void setCurrentBlock(llvm::BasicBlock* block);
-
-  // branches
+  
+  /// branch - Branch based on a boolean value. Update PHI nodes accordingly.
   void branch(llvm::Value* test, llvm::BasicBlock* ifTrue, 
               llvm::BasicBlock* ifFalse, llvm::BasicBlock* insert);
+
+  /// branch - Branch to a new block. Update PHI nodes accordingly.
   void branch(llvm::BasicBlock* where, llvm::BasicBlock* insert);
 
-  // locals
-  std::vector<llvm::Value*> intLocals;
-  std::vector<llvm::Value*> longLocals;
-  std::vector<llvm::Value*> floatLocals;
-  std::vector<llvm::Value*> doubleLocals;
-  std::vector<llvm::Value*> objectLocals;
-
-  // end function
-  llvm::BasicBlock* endBlock;
-  llvm::PHINode* endNode;
-  
-  // array manipulation
-  llvm::Value* verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
-                                   const llvm::Type* arrayType,
-                                   bool verif = true);
-  llvm::Value* arraySize(llvm::Value* obj);
  
+//===-------------------------- Synchronization  --------------------------===//
   
-  // synchronize
+  /// beginSynchronize - Emit synchronization code to acquire the instance
+  /// or the class.
   void beginSynchronize();
+
+  /// endSynchronize - Emit synchronization code to release the instance or the
+  /// class.
   void endSynchronize();
+
+  /// monitorEnter - Emit synchronization code to acquire the lock of the value.
   void monitorEnter(llvm::Value* obj);
+  
+  /// monitorExit - Emit synchronization code to release the lock of the value.
   void monitorExit(llvm::Value* obj);
 
-  // fields invoke
+//===----------------------- Java field accesses  -------------------------===//
+
+  /// getStaticField - Emit code to get the static field declared at the given
+  /// index in the constant pool.
   void getStaticField(uint16 index);
+
+  /// setStaticField - Emit code to set a value to the static field declared
+  /// at the given index in the constant pool.
   void setStaticField(uint16 index);
+
+  /// getVirtualField - Emit code to get the virtual field declared at the given
+  /// index in the constant pool.
   void getVirtualField(uint16 index);
+
+  /// setVirtualField - Emit code to set a value to the virtual field declared
+  /// at the given index in the constant pool.
   void setVirtualField(uint16 index);
+
+  /// ldResolved - Emit code to get a pointer to a field.
   llvm::Value* ldResolved(uint16 index, bool stat, llvm::Value* object,
                           const llvm::Type* fieldType, 
                           const llvm::Type* fieldTypePtr);
-  llvm::Value* getResolvedClass(uint16 index, bool clinit, bool doThrow,
-                                UserClass** alreadyResolved);
+
+//===--------------------- Constant pool accesses  ------------------------===//
+ 
+  /// getResolvedCommonClass - Emit code to get a resolved common class. If the
+  /// constant pool already links to the class, the class is emitted directly.
+  /// Otherwise the JIT installs a resolver which will be called at runtime.
   llvm::Value* getResolvedCommonClass(uint16 index, bool doThrow,
                                       UserCommonClass** alreadyResolved);
   
-  // methods invoke
+  /// getResolvedCommonClass - Similar to getResolvedCommonClass, but the type
+  /// of the returned value is Class.
+  llvm::Value* getResolvedClass(uint16 index, bool clinit, bool doThrow,
+                                UserClass** alreadyResolved);
+
+
+//===----------------------- Java method calls  ---------------------------===//
+  
+  /// makeArgs - Insert the arguments of a method in the vector. The arguments
+  /// are popped from the compilation stack.
   void makeArgs(llvm::FunctionType::param_iterator it,
                 uint32 index, std::vector<llvm::Value*>& result, uint32 nb);
+
+  /// invokeVirtual - Invoke a Java virtual method.
   void invokeVirtual(uint16 index);
-  void invokeInterfaceOrVirtual(uint16 index, bool buggyVirtual = false);
+
+  /// invokeInterface - Invoke a Java interface method. The buggyVirtual
+  /// argument is for buggy java to bytecode compilers which emit a virtual
+  /// call instead of an interface call in some occasions.
+  void invokeInterface(uint16 index, bool buggyVirtual = false);
+
+  /// invokeSpecial - Invoke an instance Java method directly.
   void invokeSpecial(uint16 index);
+
+  /// invokeStatic - Invoke a static Java method.
   void invokeStatic(uint16 index);
+
+  /// invokeNew - Allocate a new object.
   void invokeNew(uint16 index);
+
+  /// invokeInline - Instead of calling the method, inline it.
   llvm::Instruction* invokeInline(JavaMethod* meth, 
                                   std::vector<llvm::Value*>& args);
+
+  /// lowerMathOps - Map Java Math operations to LLVM intrinsics.
   llvm::Instruction* lowerMathOps(const UTF8* name, 
                                   std::vector<llvm::Value*>& args);
 
-
+  /// invoke - invoke the LLVM method of a Java method.
   llvm::Instruction* invoke(llvm::Value *F, std::vector<llvm::Value*>&args,
                             const char* Name,
                             llvm::BasicBlock *InsertAtEnd);
-  // Alternate CallInst ctors w/ two actuals, w/ one actual and no
-  // actuals, respectively.
   llvm::Instruction* invoke(llvm::Value *F, llvm::Value *Actual1,
                             llvm::Value *Actual2, const char* Name,
                             llvm::BasicBlock *InsertAtEnd);
@@ -239,40 +373,30 @@ public:
                             const char* Name, llvm::BasicBlock *InsertAtEnd);
   llvm::Instruction* invoke(llvm::Value *F, const char* Name,
                             llvm::BasicBlock *InsertAtEnd);
-
-  
-  void convertValue(llvm::Value*& val, const llvm::Type* t1,
-                    llvm::BasicBlock* currentBlock, bool usign);
-
-
-  // wide status
-  bool wide;
-  uint32 WREAD_U1(uint8* bytecodes, bool init, uint32 &i);
-  sint32 WREAD_S1(uint8* bytecodes, bool init, uint32 &i);
-  uint32 WCALC(uint32 n);
-
-  uint16 maxStack;
-  uint16 maxLocals;
-  uint32 codeLen;
-
-#if defined(SERVICE)
-  llvm::Value* isolateLocal;
-#endif
-
-#if defined(ISOLATE_SHARING)
-  llvm::Value* ctpCache;
-  llvm::Value* getStaticInstanceCtp();
-  llvm::Value* getClassCtp();
-#endif
-
-  static const char* OpcodeNames[256];
   
   /// nbEnveloppes - Number of enveloppes (ie invokeinterface) in this
   /// method.
   uint32 nbEnveloppes;
 
-  bool canBeInlined(JavaMethod* meth);
-  bool callsStackWalker;
+ 
+
+#if defined(ISOLATE_SHARING)
+//===----------------- Sharing bytecode support ---------------------------===//
+  
+  /// isolateLocal - The Jnjvm object that the method is currently executing.
+  llvm::Value* isolateLocal;
+
+  /// ctpCache - The constant pool cache.
+  llvm::Value* ctpCache;
+
+  /// getStaticInstanceCtp - Get the static instance of the class of the method
+  /// being compiled.
+  llvm::Value* getStaticInstanceCtp();
+
+  /// getClassCtp - Get the class of the method being compiled.
+  llvm::Value* getClassCtp();
+#endif
+  
 };
 
 enum Opcode {

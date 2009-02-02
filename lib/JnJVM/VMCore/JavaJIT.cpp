@@ -82,9 +82,9 @@ void JavaJIT::invokeVirtual(uint16 index) {
     return invokeSpecial(index);
 
   // If the method is in fact a method defined in an interface,
-  // call invokeInterfaceOrVirtual instead.
+  // call invokeInterface instead.
   if (meth && isInterface(meth->classDef->access)) {
-    return invokeInterfaceOrVirtual(index, true);
+    return invokeInterface(index, true);
   }
 
 #if !defined(WITHOUT_VTABLE)
@@ -183,7 +183,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   }
     
 #else
-  return invokeInterfaceOrVirtual(index);
+  return invokeInterface(index);
 #endif
 }
 
@@ -229,7 +229,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   currentBlock = createBasicBlock("start");
   BasicBlock* executeBlock = createBasicBlock("execute");
   endBlock = createBasicBlock("end block");
-  returnType = funcType->getReturnType();
+  const llvm::Type* returnType = funcType->getReturnType();
 
   Value* buf = llvm::CallInst::Create(module->GetSJLJBufferFunction,
                                       "", currentBlock);
@@ -332,19 +332,19 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
   if (returnType != Type::VoidTy)
     endNode->addIncoming(result, currentBlock);
-  llvm::BranchInst::Create(endBlock, currentBlock);
+  BranchInst::Create(endBlock, currentBlock);
 
   currentBlock = endBlock; 
   if (isSynchro(compilingMethod->access))
     endSynchronize();
   
-  llvm::CallInst::Create(module->JniProceedPendingExceptionFunction, "",
-                         currentBlock);
+  CallInst::Create(module->JniProceedPendingExceptionFunction, "",
+                   currentBlock);
   
   if (returnType != Type::VoidTy)
-    llvm::ReturnInst::Create(endNode, currentBlock);
+    ReturnInst::Create(endNode, currentBlock);
   else
-    llvm::ReturnInst::Create(currentBlock);
+    ReturnInst::Create(currentBlock);
   
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "end native compile %s\n",
               compilingMethod->printString());
@@ -497,9 +497,9 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   }
 
   Reader reader(codeAtt, compilingClass->bytes);
-  maxStack = reader.readU2();
-  maxLocals = reader.readU2();
-  codeLen = reader.readU4();
+  /* uint16 maxStack = */ reader.readU2();
+  uint16 maxLocals = reader.readU2();
+  uint32 codeLen = reader.readU4();
   uint32 start = reader.cursor;
   
   reader.seek(codeLen, Reader::SeekCur);
@@ -508,7 +508,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   assert(LMI);
   Function* func = LMI->getMethod();
 
-  returnType = func->getReturnType();
+  const Type* returnType = func->getReturnType();
   endBlock = createBasicBlock("end");
 
   currentBlock = curBB;
@@ -579,7 +579,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   nbEnveloppes = 0;
 
   if (returnType != Type::VoidTy) {
-    endNode = llvm::PHINode::Create(returnType, "", endBlock);
+    endNode = PHINode::Create(returnType, "", endBlock);
   }
 
   compileOpcodes(&compilingClass->bytes->elements[start], codeLen);
@@ -607,15 +607,15 @@ llvm::Function* JavaJIT::javaCompile() {
   }
 
   Reader reader(codeAtt, compilingClass->bytes);
-  maxStack = reader.readU2();
-  maxLocals = reader.readU2();
-  codeLen = reader.readU4();
+  /* uint16 maxStack = */ reader.readU2();
+  uint16 maxLocals = reader.readU2();
+  uint32 codeLen = reader.readU4();
   uint32 start = reader.cursor;
   
   reader.seek(codeLen, Reader::SeekCur);
 
   const FunctionType *funcType = llvmFunction->getFunctionType();
-  returnType = funcType->getReturnType();
+  const Type* returnType = funcType->getReturnType();
   
   Function* func = llvmFunction;
 
@@ -758,7 +758,7 @@ llvm::Function* JavaJIT::javaCompile() {
   }
 #endif
 
-  unsigned nbe = readExceptionTable(reader);
+  unsigned nbe = readExceptionTable(reader, codeLen);
   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
   compilingMethod->enveloppes = 
@@ -874,21 +874,88 @@ llvm::Function* JavaJIT::javaCompile() {
   return llvmFunction;
 }
 
+/// Handler - This class represents an exception handler. It is only needed
+/// when parsing the .class file in the JIT, therefore it is only defined
+/// here. The readExceptionTable function is the only function that makes
+/// use of this class.
+struct Handler {
+  
+  /// startpc - The bytecode number that begins the try clause.
+  uint32 startpc;
 
-unsigned JavaJIT::readExceptionTable(Reader& reader) {
+  /// endpc - The bytecode number that ends the try clause.
+  uint32 endpc;
+
+  /// handlerpc - The bytecode number where the handler code starts.
+  uint32 handlerpc;
+
+  /// catche - Index in the constant pool of the exception class.
+  uint16 catche;
+
+  /// catchClass - The class of the exception: it must always be loaded before
+  /// reading the exception table so that we do not throw an exception
+  /// when compiling.
+  UserClass* catchClass;
+
+  /// catcher - The basic block that catches the exception. The catcher deals
+  /// with LLVM codegen and declares the llvm.select method. This block is the
+  /// destination of invoke instructions that are in the try clause.
+  llvm::BasicBlock* catcher;
+
+  /// tester - The basic block that tests if the exception is handled by this
+  /// handler. If the handler is not the first of a list of handlers with the
+  /// same range, than this block is the catcher block. Otherwise, it is the
+  /// destination of the catcher block and of the handlers that do not handler
+  /// the exception.
+  llvm::BasicBlock* tester;
+
+  /// javaHandler - The Java code that handles the exception. At this point, we
+  /// know we have caught and are handling the exception. The Java exception
+  /// object is the PHI node that begins this block.
+  llvm::BasicBlock* javaHandler;
+
+  /// nativeHandler - The CXX exception-related code that handles the exception.
+  /// The block clears the exception from the execution environment, calls
+  /// the CXX begin and end catch methods and jumps to the Java handler.
+  llvm::BasicBlock* nativeHandler;
+
+  /// exceptionPHI - The CXX exception object for the tester block. The
+  /// tester has incoming blocks, either from the catcher or from other
+  /// handlers that don't handle the exception. Therefore each incoming block
+  /// specifies the CXX exception object that was caught.
+  llvm::PHINode* exceptionPHI;
+};
+
+unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
+
+  // This function uses currentBlock to simplify things. We save the current
+  // value of currentBlock to restore it at the end of the function
   BasicBlock* temp = currentBlock;
+  
   sint16 nbe = reader.readU2();
   sint16 sync = isSynchro(compilingMethod->access) ? 1 : 0;
   nbe += sync;
-  
+ 
+  // realEndExceptionBlock is the block where handlers will resume if
+  // they don't treat the exception. realEndExceptionBlock does not
+  // have to catch the exception.
   BasicBlock* realEndExceptionBlock = endExceptionBlock;
+
+  // endExceptionBlockCatcher is the block where every instruction will
+  // unwind.
   BasicBlock* endExceptionBlockCatcher = endExceptionBlock;
-  currentExceptionBlock = endExceptionBlock;
+
   if (sync) {
+    // synchronizeExceptionBlock is the the block which will release the lock
+    // on the object. trySynchronizeExceptionBlock is the block which will
+    // catch the exception if one is thrown.
     BasicBlock* synchronizeExceptionBlock = 
           createBasicBlock("synchronizeExceptionBlock");
     BasicBlock* trySynchronizeExceptionBlock = 
           createBasicBlock("trySynchronizeExceptionBlock");
+
+    // So synchronizeExceptionBlock becomes the block where every instructions
+    // will unwind.
     realEndExceptionBlock = synchronizeExceptionBlock;
     endExceptionBlockCatcher = trySynchronizeExceptionBlock;
     Value* argsSync = 0;
@@ -898,11 +965,19 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
       Value* cl = module->getJavaClass(compilingClass);
       argsSync = cl;
     }
+
+    // In the synchronizeExceptionBlock: release the object and go to
+    // endExceptionBlock, which will unwind the function.
+    
     CallInst::Create(module->ReleaseObjectFunction, argsSync, "",
                      synchronizeExceptionBlock);
 
     BranchInst::Create(endExceptionBlock, synchronizeExceptionBlock);
-    
+   
+
+    // In the trySynchronizeExceptionBlock: catch the exception and move
+    // to synchronizeExceptionBlock.
+
     const PointerType* PointerTy_0 = module->ptrType;
     Instruction* ptr_eh_ptr = CallInst::Create(module->llvmGetException,
                                                "eh_ptr",
@@ -918,6 +993,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     BranchInst::Create(synchronizeExceptionBlock,
                        trySynchronizeExceptionBlock);
 
+    // Now we can set the unwind destination of all instructions to
+    // the exception catcher.
     for (uint16 i = 0; i < codeLen; ++i) {
       if (opcodeInfos[i].exceptionBlock == endExceptionBlock) {
         opcodeInfos[i].exceptionBlock = trySynchronizeExceptionBlock;
@@ -925,9 +1002,10 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     }
   }
   
-  Exception* exceptions = (Exception*)alloca(sizeof(Exception) * (nbe - sync));
+  // Loop over all handlers in the bytecode to initialize their values.
+  Handler* handlers = (Handler*)alloca(sizeof(Handler) * (nbe - sync));
   for (uint16 i = 0; i < nbe - sync; ++i) {
-    Exception* ex = &exceptions[i];
+    Handler* ex   = &handlers[i];
     ex->startpc   = reader.readU2();
     ex->endpc     = reader.readU2();
     ex->handlerpc = reader.readU2();
@@ -938,6 +1016,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     if (ex->catche) {
       UserClass* cl = 
         (UserClass*)(compilingClass->ctpInfo->isClassLoaded(ex->catche));
+      // When loading the class, we made sure that all exception classes
+      // were loaded, so cl must have a value.
       assert(cl && "exception class has not been loaded");
       ex->catchClass = cl;
     } else {
@@ -945,75 +1025,109 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     }
 #endif
     
-    ex->test = createBasicBlock("testException");
+    ex->catcher = createBasicBlock("testException");
     
-    // We can do this because readExceptionTable is the first function to be
-    // called after creation of Opinfos
+    // Set the unwind destination of the instructions in the range of this
+    // handler to the test block of the handler. If an instruction already has
+    // a handler and thus is not the synchronize or regular end handler block,
+    // leave it as-is.
     for (uint16 i = ex->startpc; i < ex->endpc; ++i) {
       if (opcodeInfos[i].exceptionBlock == endExceptionBlockCatcher) {
-        opcodeInfos[i].exceptionBlock = ex->test;
+        opcodeInfos[i].exceptionBlock = ex->catcher;
       }
     }
 
+    // If the handler pc does not already have a block, create a new one.
     if (!(opcodeInfos[ex->handlerpc].newBlock)) {
-      opcodeInfos[ex->handlerpc].newBlock = 
-                    createBasicBlock("javaHandler");
+      opcodeInfos[ex->handlerpc].newBlock = createBasicBlock("javaHandler");
     }
     
+    // Set the Java handler for this exception.
     ex->javaHandler = opcodeInfos[ex->handlerpc].newBlock;
-    ex->nativeHandler = createBasicBlock("nativeHandler");
-    opcodeInfos[ex->handlerpc].reqSuppl = true;
 
+    // Set the native handler of this exception, which will catch the exception
+    // object.
+    ex->nativeHandler = createBasicBlock("nativeHandler");
   }
-  
+
+  // Loop over all handlers to know which ones have the same range. Handlers
+  // with a same range all verify the exception's class, but only one catches
+  // the exception. This is the reason why we have a tester block
+  // and a catcher block: the first one tests the exception's class, and the
+  // second one catches the exception.
   bool first = true;
   for (sint16 i = 0; i < nbe - sync; ++i) {
-    Exception* cur = &exceptions[i];
+    Handler* cur = &handlers[i];
 
-    Exception* next = 0;
-    if (i + 1 != nbe - sync) {
-      next = &exceptions[i + 1];
-    }
-
+    // If we are the first handler, we must have one block for catching
+    // the exception, and one block for comparing the exception. The former
+    // is catcher and the latter is tester. Handlers that live in
+    // the range of this handler will jump to tester because they
+    // have already catched the exception. The other instructions in the range
+    // of this handler will jump to catcher because the
+    // exception still has to be catched.
     if (first) {
-      cur->realTest = createBasicBlock("realTestException");
+      cur->tester = createBasicBlock("realTestException");
     } else {
-      cur->realTest = cur->test;
+      cur->tester = cur->catcher;
     }
-    
-    cur->exceptionPHI = llvm::PHINode::Create(module->ptrType, "",
-                                              cur->realTest);
+   
+    // Set the exception as a phi node. This PHI has two types of incoming
+    // nodes:
+    // - Handlers within the range: they have already catched the exception
+    //   and verified its type. They are not the right handler for the
+    //   exception, so they jump to this handler
+    // - The testException block of this handler (which is unique). It has
+    //   catched the exception and is now jumping to perform the test.
+    cur->exceptionPHI = PHINode::Create(module->ptrType, "", cur->tester);
 
-    if (next && cur->startpc == next->startpc && cur->endpc == next->endpc)
-      first = false;
-    else
-      first = true;
+    // Look if the next handler has the same range or has a different range.
+    // If it's in the same range, then no need to catch the exception.
+    // Otherwise, it's a new range and we need to catch the exception.
+    if (i + 1 != nbe - sync) {
+      Handler* next = &handlers[i + 1];
       
+      if (cur->startpc == next->startpc && cur->endpc == next->endpc) {
+        first = false;
+      } else {
+        first = true;
+      }
+    } 
   }
+  
 
+  // Loop over all handlers to implement their catcher and tester.
   for (sint16 i = 0; i < nbe - sync; ++i) {
-    Exception* cur = &exceptions[i];
-    Exception* next = 0;
+    Handler* cur = &handlers[i];
     BasicBlock* bbNext = 0;
     PHINode* nodeNext = 0;
     currentExceptionBlock = opcodeInfos[cur->handlerpc].exceptionBlock;
 
+    // Look out where we go if we're not the handler for the exception.
     if (i + 1 != nbe - sync) {
-      next = &exceptions[i + 1];
+      Handler* next = &handlers[i + 1];
       if (!(cur->startpc >= next->startpc && cur->endpc <= next->endpc)) {
+        // If there is no handler to go to (either one that has the same range
+        // or one that contains the range), then we jump to the end handler.
         bbNext = realEndExceptionBlock;
       } else {
-        bbNext = next->realTest;
+        // If there's a handler to goto, we jump to its tester block and record
+        // the exception PHI node to give our exception to the tester.
+        bbNext = next->tester;
         nodeNext = next->exceptionPHI;
       }
     } else {
+      // If there's no handler after us, we jump to the end handler.
       bbNext = realEndExceptionBlock;
     }
 
-    if (cur->realTest != cur->test) {
+    // If the tester and the catcher is not the same, then we must implement
+    // the catcher. The catcher catches the exception, jumps to the tester
+    // and gives the exception as an incoming node the the exceptionPHI.
+    if (cur->tester != cur->catcher) {
       const PointerType* PointerTy_0 = module->ptrType;
       Instruction* ptr_eh_ptr = 
-        llvm::CallInst::Create(module->llvmGetException, "eh_ptr", cur->test);
+        CallInst::Create(module->llvmGetException, "eh_ptr", cur->catcher);
       Constant* C = ConstantExpr::getCast(Instruction::BitCast,
                                           module->personality, PointerTy_0);
       Value* int32_eh_select_params[3] = 
@@ -1021,13 +1135,14 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
       llvm::CallInst::Create(module->exceptionSelector,
                              int32_eh_select_params,
                              int32_eh_select_params + 3, "eh_select",
-                             cur->test);
-      llvm::BranchInst::Create(cur->realTest, cur->test);
-      cur->exceptionPHI->addIncoming(ptr_eh_ptr, cur->test);
+                             cur->catcher);
+      llvm::BranchInst::Create(cur->tester, cur->catcher);
+      cur->exceptionPHI->addIncoming(ptr_eh_ptr, cur->catcher);
     } 
     
+    // We now implement the tester of the handler.
     Value* cl = 0;
-    currentBlock = cur->realTest;
+    currentBlock = cur->tester;
 #ifdef ISOLATE_SHARING
     // We're dealing with exceptions, don't catch the exception if the class can
     // not be found.
@@ -1035,120 +1150,141 @@ unsigned JavaJIT::readExceptionTable(Reader& reader) {
     else cl = CallInst::Create(module->GetJnjvmExceptionClassFunction,
                                isolateLocal, "", currentBlock);
 #else
-    if (cur->catchClass)
-      cl = module->getNativeClass(cur->catchClass);
-    else
-      cl = getResolvedClass(cur->catche, false, false, 0);
+    // We know catchClass exists because we have loaded all exceptions catched
+    // by the method when we loaded the class that defined this method.
+    cl = module->getNativeClass(cur->catchClass);
 #endif
     
 #ifdef SERVICE
-  JnjvmClassLoader* loader = compilingClass->classLoader;;
-  if (loader != loader->bootstrapLoader) {
-    Value* threadId = CallInst::Create(module->llvm_frameaddress,
-                                       module->constantZero,
-                                       "", currentBlock);
-    threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
-                                currentBlock);
-    threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+    // Verifies that the current isolate is not stopped. If it is, we don't
+    // catch the exception but resume unwinding.
+    JnjvmClassLoader* loader = compilingClass->classLoader;;
+    if (loader != loader->bootstrapLoader) {
+      Value* threadId = CallInst::Create(module->llvm_frameaddress,
+                                         module->constantZero,
                                          "", currentBlock);
+      threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
+                                  currentBlock);
+      threadId = BinaryOperator::CreateAnd(threadId,
+                                           module->constantThreadIDMask,
+                                           "", currentBlock);
   
-    threadId = new IntToPtrInst(threadId, module->ptrPtrType, "",
-                                currentBlock);
+      threadId = new IntToPtrInst(threadId, module->ptrPtrType, "",
+                                  currentBlock);
      
-    Value* Isolate = GetElementPtrInst::Create(threadId,
-                                               module->constantFour, "",
-                                               currentBlock);
+      Value* Isolate = GetElementPtrInst::Create(threadId,
+                                                 module->constantFour, "",
+                                                 currentBlock);
      
-    Isolate = new LoadInst(Isolate, "", currentBlock);
-    Isolate = new BitCastInst(Isolate, module->ptrPtrType, "", currentBlock);
-    Value* Status = GetElementPtrInst::Create(Isolate, module->constantOne, "",
-                                              currentBlock);
-    Status = new LoadInst(Status, "", currentBlock);
-    Status = new PtrToIntInst(Status, Type::Int32Ty, "", currentBlock);
+      Isolate = new LoadInst(Isolate, "", currentBlock);
+      Isolate = new BitCastInst(Isolate, module->ptrPtrType, "", currentBlock);
+      Value* Status = GetElementPtrInst::Create(Isolate, module->constantOne, "",
+                                                currentBlock);
+      Status = new LoadInst(Status, "", currentBlock);
+      Status = new PtrToIntInst(Status, Type::Int32Ty, "", currentBlock);
+  
+      Value* stopping = new ICmpInst(ICmpInst::ICMP_EQ, Status,
+                                     module->constantOne, "", currentBlock);
 
-    Value* stopping = new ICmpInst(ICmpInst::ICMP_EQ, Status,
-                                   module->constantOne, "", currentBlock);
+      BasicBlock* raiseBlock = createBasicBlock("raiseBlock");
+      BasicBlock* continueBlock = createBasicBlock("continueBlock");
+      BranchInst::Create(raiseBlock, continueBlock, stopping, currentBlock);
+      currentBlock = raiseBlock;
+      BranchInst::Create(endExceptionBlock, currentBlock); 
 
-    BasicBlock* raiseBlock = createBasicBlock("raiseBlock");
-    BasicBlock* continueBlock = createBasicBlock("continueBlock");
-    BranchInst::Create(raiseBlock, continueBlock, stopping, currentBlock);
-    currentBlock = raiseBlock;
-    BranchInst::Create(endExceptionBlock, currentBlock); 
-
-    currentBlock = continueBlock;
-  }
+      currentBlock = continueBlock;
+    }
 #endif
-    
+   
+    // Compare the exception with the exception class we catch.
     Value* cmp = CallInst::Create(module->CompareExceptionFunction, cl, "",
                                   currentBlock);
+    
+    // If we are catching this exception, then jump to the nativeHandler,
+    // otherwise jump to our next handler.
     BranchInst::Create(cur->nativeHandler, bbNext, cmp, currentBlock);
+    
+    // Add the incoming value to the next handler, which is the exception we
+    // just catched.
     if (nodeNext)
       nodeNext->addIncoming(cur->exceptionPHI, currentBlock);
-    
-    cur->handlerPHI = llvm::PHINode::Create(module->ptrType, "",
-                                            cur->nativeHandler);
-    cur->handlerPHI->addIncoming(cur->exceptionPHI, currentBlock);
+   
+    // Get the Java exception and clear it from the execution context.
     Value* exc = CallInst::Create(module->GetJavaExceptionFunction,
                                   "", cur->nativeHandler);
     CallInst::Create(module->ClearExceptionFunction, "", cur->nativeHandler);
-    CallInst::Create(module->exceptionBeginCatch, cur->handlerPHI,
+
+    // Call the CXX begin and end catcher.
+    CallInst::Create(module->exceptionBeginCatch, cur->exceptionPHI,
                            "tmp8", cur->nativeHandler);
     CallInst::Create(module->exceptionEndCatch, "", cur->nativeHandler);
 
+    // We can now jump to the Java handler!
     BranchInst::Create(cur->javaHandler, cur->nativeHandler);
 
+    // If the Java handler is empty, create a PHI node that will contain the
+    // exception and give our own.
     if (cur->javaHandler->empty()) {
       PHINode* node = PHINode::Create(JnjvmModule::JavaObjectType, "",
                                       cur->javaHandler);
       node->addIncoming(exc, cur->nativeHandler);
       
     } else {
+      // If the Java handler is not empty, then the first instruction is the
+      // PHI node. Give it our own.
       Instruction* insn = cur->javaHandler->begin();
       PHINode* node = dyn_cast<PHINode>(insn);
       assert(node && "malformed exceptions");
       node->addIncoming(exc, cur->nativeHandler);
     }
+
+
 #if defined(SERVICE)
-  Value* threadId = 0;
-  Value* OldIsolateID = 0;
-  Value* IsolateIDPtr = 0;
-  Value* OldIsolate = 0;
-  Value* NewIsolate = 0;
-  Value* IsolatePtr = 0;
-  if (loader != loader->bootstrapLoader) {
-    threadId = CallInst::Create(module->llvm_frameaddress, module->constantZero,
-                                "", cur->javaHandler);
-    threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
-                                cur->javaHandler);
-    threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
-                                       "", cur->javaHandler);
   
-    threadId = new IntToPtrInst(threadId, module->ptrPtrType, "",
-                                cur->javaHandler);
-     
-    IsolateIDPtr = GetElementPtrInst::Create(threadId, module->constantThree,
-                                             "", cur->javaHandler);
-    const Type* realType = PointerType::getUnqual(module->pointerSizeType);
-    IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
-                                   cur->javaHandler);
-    OldIsolateID = new LoadInst(IsolateIDPtr, "", cur->javaHandler);
-
-    Value* MyID = ConstantInt::get(module->pointerSizeType,
-                                   loader->getIsolate()->IsolateID);
-
-    new StoreInst(MyID, IsolateIDPtr, cur->javaHandler);
-    IsolatePtr = GetElementPtrInst::Create(threadId, module->constantFour, "",
+    // Change the isolate we are currently running, now that we have catched
+    // the exception: the exception may have been thrown by another isolate.
+    Value* threadId = 0;
+    Value* OldIsolateID = 0;
+    Value* IsolateIDPtr = 0;
+    Value* OldIsolate = 0;
+    Value* NewIsolate = 0;
+    Value* IsolatePtr = 0;
+    if (loader != loader->bootstrapLoader) {
+      threadId = CallInst::Create(module->llvm_frameaddress, 
+                                  module->constantZero, "", cur->javaHandler);
+      threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
+                                  cur->javaHandler);
+      threadId = BinaryOperator::CreateAnd(threadId, 
+                                           module->constantThreadIDMask, "",
                                            cur->javaHandler);
+  
+      threadId = new IntToPtrInst(threadId, module->ptrPtrType, "",
+                                  cur->javaHandler);
      
-    OldIsolate = new LoadInst(IsolatePtr, "", cur->javaHandler);
-    NewIsolate = module->getIsolate(loader->getIsolate(), currentBlock);
-    new StoreInst(NewIsolate, IsolatePtr, cur->javaHandler);
+      IsolateIDPtr = GetElementPtrInst::Create(threadId, module->constantThree,
+                                               "", cur->javaHandler);
+      const Type* realType = PointerType::getUnqual(module->pointerSizeType);
+      IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
+                                     cur->javaHandler);
+      OldIsolateID = new LoadInst(IsolateIDPtr, "", cur->javaHandler);
 
-  }
+      Value* MyID = ConstantInt::get(module->pointerSizeType,
+                                     loader->getIsolate()->IsolateID);
+
+      new StoreInst(MyID, IsolateIDPtr, cur->javaHandler);
+      IsolatePtr = GetElementPtrInst::Create(threadId, module->constantFour, "",
+                                             cur->javaHandler);
+     
+      OldIsolate = new LoadInst(IsolatePtr, "", cur->javaHandler);
+      NewIsolate = module->getIsolate(loader->getIsolate(), currentBlock);
+      new StoreInst(NewIsolate, IsolatePtr, cur->javaHandler);
+
+    }
 #endif
      
   }
-  
+ 
+  // Restore currentBlock.
   currentBlock = temp;
   return nbe;
 
@@ -1170,7 +1306,7 @@ void JavaJIT::compareFP(Value* val1, Value* val2, const Type* ty, bool l) {
 
 }
 
-void JavaJIT::_ldc(uint16 index) {
+void JavaJIT::loadConstant(uint16 index) {
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   uint8 type = ctpInfo->typeAt(index);
   
@@ -1304,37 +1440,21 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
   return ptr;
 
 }
-void JavaJIT::setCurrentBlock(BasicBlock* newBlock) {
 
-  stack.clear();
-  uint32 index = 0;
-  for (BasicBlock::iterator i = newBlock->begin(), e = newBlock->end(); i != e;
-       ++i, ++index) {
-    if (!(isa<PHINode>(i))) {
-      break;
-    } else {
-      stack.push_back(std::make_pair(i, false));
-    }
-  }
-  
-  currentBlock = newBlock;
-}
-
-static void testPHINodes(BasicBlock* dest, BasicBlock* insert, JavaJIT* jit) {
+void JavaJIT::testPHINodes(BasicBlock* dest, BasicBlock* insert) {
   if(dest->empty()) {
-    for (std::vector< std::pair<Value*, bool> >::iterator i =
-              jit->stack.begin(),
-            e = jit->stack.end(); i!= e; ++i) {
+    for (std::vector< std::pair<Value*, bool> >::iterator i = stack.begin(),
+         e = stack.end(); i!= e; ++i) {
       Value* cur = i->first;
       bool unsign = i->second;
       PHINode* node = 0;
       const Type* type = cur->getType();
       if (unsign) {
         node = llvm::PHINode::Create(Type::Int32Ty, "", dest);
-        cur = new ZExtInst(cur, Type::Int32Ty, "", jit->currentBlock);
+        cur = new ZExtInst(cur, Type::Int32Ty, "", currentBlock);
       } else if (type == Type::Int8Ty || type == Type::Int16Ty) {
         node = llvm::PHINode::Create(Type::Int32Ty, "", dest);
-        cur = new SExtInst(cur, Type::Int32Ty, "", jit->currentBlock);
+        cur = new SExtInst(cur, Type::Int32Ty, "", currentBlock);
       } else {
         node = llvm::PHINode::Create(cur->getType(), "", dest);
       }
@@ -1342,8 +1462,7 @@ static void testPHINodes(BasicBlock* dest, BasicBlock* insert, JavaJIT* jit) {
       node->addIncoming(cur, insert);
     }
   } else {
-    std::vector< std::pair<Value*, bool> >::iterator stackit = 
-      jit->stack.begin();
+    std::vector< std::pair<Value*, bool> >::iterator stackit = stack.begin();
     for (BasicBlock::iterator i = dest->begin(), e = dest->end(); i != e;
          ++i) {
       if (!(isa<PHINode>(i))) {
@@ -1355,9 +1474,9 @@ static void testPHINodes(BasicBlock* dest, BasicBlock* insert, JavaJIT* jit) {
         bool unsign = stackit->second;
         
         if (unsign) {
-          cur = new ZExtInst(cur, Type::Int32Ty, "", jit->currentBlock);
+          cur = new ZExtInst(cur, Type::Int32Ty, "", currentBlock);
         } else if (type == Type::Int8Ty || type == Type::Int16Ty) {
-          cur = new SExtInst(cur, Type::Int32Ty, "", jit->currentBlock);
+          cur = new SExtInst(cur, Type::Int32Ty, "", currentBlock);
         }
         assert(ins->getType() == cur->getType() && "wrong 2");
         ((PHINode*)ins)->addIncoming(cur, insert);
@@ -1368,14 +1487,14 @@ static void testPHINodes(BasicBlock* dest, BasicBlock* insert, JavaJIT* jit) {
 }
 
 void JavaJIT::branch(llvm::BasicBlock* dest, llvm::BasicBlock* insert) {
-  testPHINodes(dest, insert, this);
+  testPHINodes(dest, insert);
   llvm::BranchInst::Create(dest, insert);
 }
 
 void JavaJIT::branch(llvm::Value* test, llvm::BasicBlock* ifTrue,
                      llvm::BasicBlock* ifFalse, llvm::BasicBlock* insert) {  
-  testPHINodes(ifTrue, insert, this);
-  testPHINodes(ifFalse, insert, this);
+  testPHINodes(ifTrue, insert);
+  testPHINodes(ifFalse, insert);
   llvm::BranchInst::Create(ifTrue, ifFalse, test, insert);
 }
 
@@ -1399,7 +1518,7 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
     if (it->get() == Type::Int64Ty || it->get() == Type::DoubleTy) {
       pop();
     }
-    bool unsign = topFunc();
+    bool unsign = topSign();
     Value* tmp = pop();
     
     const Type* type = it->get();
@@ -1817,23 +1936,6 @@ void JavaJIT::invokeNew(uint16 index) {
   push(val, false);
 }
 
-Value* JavaJIT::arraySize(Value* val) {
-  return CallInst::Create(module->ArrayLengthFunction, val, "", currentBlock);
-}
-
-static Value* fieldGetter(JavaJIT* jit, const Type* type, Value* object,
-                          Value* offset) {
-  Value* objectConvert = new BitCastInst(object, type, "",
-                                         jit->currentBlock);
-
-  Constant* zero = jit->module->constantZero;
-  Value* args[2] = { zero, offset };
-  llvm::Value* ptr = llvm::GetElementPtrInst::Create(objectConvert,
-                                                     args, args + 2, "",
-                                                     jit->currentBlock);
-  return ptr;  
-}
-
 Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object, 
                            const Type* fieldType, const Type* fieldTypePtr) {
   JavaConstantPool* info = compilingClass->ctpInfo;
@@ -1866,7 +1968,14 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     } else {
       type = LCI->getVirtualType();
     }
-    return fieldGetter(this, type, object, LFI->getOffset());
+    
+    Value* objectConvert = new BitCastInst(object, type, "", currentBlock);
+
+    Value* args[2] = { module->constantZero, LFI->getOffset() };
+    Value* ptr = llvm::GetElementPtrInst::Create(objectConvert,
+                                                 args, args + 2, "",
+                                                 currentBlock);
+    return ptr;  
   }
 
   const Type* Pty = module->arrayPtrType;
@@ -1919,7 +2028,7 @@ void JavaJIT::convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock
  
 
 void JavaJIT::setStaticField(uint16 index) {
-  bool unsign = topFunc();
+  bool unsign = topSign();
   Value* val = pop(); 
   
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
@@ -1953,7 +2062,7 @@ void JavaJIT::getStaticField(uint16 index) {
 }
 
 void JavaJIT::setVirtualField(uint16 index) {
-  bool unsign = topFunc();
+  bool unsign = topSign();
   Value* val = pop();
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
   LLVMAssessorInfo& LAI = module->getTypedefInfo(sign);
@@ -2053,7 +2162,7 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
 }
 
 
-void JavaJIT::invokeInterfaceOrVirtual(uint16 index, bool buggyVirtual) {
+void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   
   // Do the usual
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
