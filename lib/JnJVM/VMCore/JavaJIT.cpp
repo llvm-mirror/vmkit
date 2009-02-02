@@ -20,7 +20,6 @@
 #include <llvm/Instructions.h>
 #include <llvm/Module.h>
 #include <llvm/Type.h>
-#include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/Support/CFG.h>
 
 #include "mvm/JIT.h"
@@ -37,9 +36,7 @@
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "JnjvmModuleProvider.h"
 #include "Reader.h"
-#include "Zip.h"
 
 using namespace jnjvm;
 using namespace llvm;
@@ -778,7 +775,7 @@ llvm::Function* JavaJIT::javaCompile() {
   compileOpcodes(&compilingClass->bytes->elements[start], codeLen); 
   
   assert(stack.size() == 0 && "Stack not empty after compiling bytecode");
-  // Fix a javac(?) bug where a method only throws an exception and des
+  // Fix a javac(?) bug where a method only throws an exception and does
   // not return.
   pred_iterator PI = pred_begin(endBlock);
   pred_iterator PE = pred_end(endBlock);
@@ -1378,20 +1375,9 @@ void JavaJIT::JITVerifyNull(Value* obj) {
   BasicBlock* exit = createBasicBlock("verifyNullExit");
   BasicBlock* cont = createBasicBlock("verifyNullCont");
 
-  llvm::BranchInst::Create(exit, cont, test, currentBlock);
-  if (currentExceptionBlock != endExceptionBlock) {
-    Value** val = 0;
-    InvokeInst::Create(module->NullPointerExceptionFunction,
-                       unifiedUnreachable,
-                       currentExceptionBlock, val, val,
-                       "", exit);
-  } else {
-    llvm::CallInst::Create(module->NullPointerExceptionFunction,
-                           "", exit);
-    new UnreachableInst(exit);
-  }
-  
-
+  BranchInst::Create(exit, cont, test, currentBlock);
+  currentBlock = exit;
+  throwException(module->NullPointerExceptionFunction, 0, 0);
   currentBlock = cont;
   
 }
@@ -1415,18 +1401,9 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
 
     branch(cmp, ifTrue, ifFalse, currentBlock);
     
+    currentBlock = ifFalse;
     Value* args[2] = { obj, index };
-    if (currentExceptionBlock != endExceptionBlock) {
-      InvokeInst::Create(module->IndexOutOfBoundsExceptionFunction,
-                         unifiedUnreachable,
-                         currentExceptionBlock, args, args + 2,
-                         "", ifFalse);
-    } else {
-      CallInst::Create(module->IndexOutOfBoundsExceptionFunction,
-                       args, args + 2, "", ifFalse);
-      new UnreachableInst(ifFalse);
-    }
-  
+    throwException(module->IndexOutOfBoundsExceptionFunction, args, 2);
     currentBlock = ifTrue;
   }
   
@@ -1484,18 +1461,6 @@ void JavaJIT::testPHINodes(BasicBlock* dest, BasicBlock* insert) {
       }
     }
   }
-}
-
-void JavaJIT::branch(llvm::BasicBlock* dest, llvm::BasicBlock* insert) {
-  testPHINodes(dest, insert);
-  llvm::BranchInst::Create(dest, insert);
-}
-
-void JavaJIT::branch(llvm::Value* test, llvm::BasicBlock* ifTrue,
-                     llvm::BasicBlock* ifFalse, llvm::BasicBlock* insert) {  
-  testPHINodes(ifTrue, insert);
-  testPHINodes(ifFalse, insert);
-  llvm::BranchInst::Create(ifTrue, ifFalse, test, insert);
 }
 
 void JavaJIT::makeArgs(FunctionType::param_iterator it,
@@ -2268,5 +2233,29 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
     if (retType == Type::DoubleTy || retType == Type::Int64Ty) {
       push(module->constantZero, false);
     }
+  }
+}
+
+void JavaJIT::throwException(llvm::Function* F, Value* arg1) {
+  if (currentExceptionBlock != endExceptionBlock) {
+    Value* exArgs[1] = { arg1 };
+    InvokeInst::Create(F, unifiedUnreachable,
+                       currentExceptionBlock, exArgs, exArgs + 1,
+                       "", currentBlock);
+  } else {
+    CallInst::Create(F, arg1, "", currentBlock);
+    new UnreachableInst(currentBlock);
+  }
+}
+
+void JavaJIT::throwException(llvm::Function* F, Value** args,
+                             uint32 nbArgs) {
+  if (currentExceptionBlock != endExceptionBlock) {
+    InvokeInst::Create(F, unifiedUnreachable,
+                       currentExceptionBlock, args, args + nbArgs,
+                       "", currentBlock);
+  } else {
+    CallInst::Create(F, args, args + nbArgs, "", currentBlock);
+    new UnreachableInst(currentBlock);
   }
 }

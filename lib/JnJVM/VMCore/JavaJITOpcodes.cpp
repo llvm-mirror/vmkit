@@ -1904,17 +1904,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         BranchInst::Create(BB1, BB2, cmp, currentBlock);
         currentBlock = BB1;
-        if (currentExceptionBlock != endExceptionBlock) {
-          Value* exArgs[1] = { arg1 };
-          InvokeInst::Create(module->NegativeArraySizeExceptionFunction, 
-                             unifiedUnreachable,
-                             currentExceptionBlock, exArgs, exArgs + 1,
-                             "", currentBlock);
-        } else {
-          CallInst::Create(module->NegativeArraySizeExceptionFunction,
-                           arg1, "", currentBlock);
-          new UnreachableInst(currentBlock);
-        }
+        throwException(module->NegativeArraySizeExceptionFunction, arg1);
         currentBlock = BB2;
         
         cmp = new ICmpInst(ICmpInst::ICMP_SGT, arg1,
@@ -1926,17 +1916,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         BranchInst::Create(BB1, BB2, cmp, currentBlock);
         currentBlock = BB1;
-        if (currentExceptionBlock != endExceptionBlock) {
-          Value* exArgs[1] = { arg1 };
-          InvokeInst::Create(module->OutOfMemoryErrorFunction,
-                             unifiedUnreachable,
-                             currentExceptionBlock, exArgs, exArgs + 1,
-                             "", currentBlock);
-        } else {
-          CallInst::Create(module->OutOfMemoryErrorFunction, arg1, "",
-                           currentBlock);
-          new UnreachableInst(currentBlock);
-        }
+        throwException(module->OutOfMemoryErrorFunction, arg1);
         currentBlock = BB2;
         
         Value* mult = BinaryOperator::CreateMul(arg1, sizeElement, "",
@@ -1995,17 +1975,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case ATHROW : {
         llvm::Value* arg = pop();
-        if (currentExceptionBlock != endExceptionBlock) {
-          Value* args[1] = { arg };
-          InvokeInst::Create(module->ThrowExceptionFunction,
-                             unifiedUnreachable,
-                             currentExceptionBlock, args, args + 1,
-                             "", currentBlock);
-        } else {
-          CallInst::Create(module->ThrowExceptionFunction, arg, "",
-                           currentBlock);
-          new UnreachableInst(currentBlock);
-        }
+        throwException(module->ThrowExceptionFunction, arg);
         break;
       }
 
@@ -2035,17 +2005,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           BasicBlock* ifFalse = createBasicBlock("non null checkcast");
 
           BranchInst::Create(endCheckcast, ifFalse, cmp, currentBlock);
-          
-          if (currentExceptionBlock != endExceptionBlock) {
-            InvokeInst::Create(module->ClassCastExceptionFunction,
-                               unifiedUnreachable,
-                               currentExceptionBlock, args, args + 2, "", 
-                               exceptionCheckcast);
-          } else {
-            CallInst::Create(module->ClassCastExceptionFunction,
-                             args, args + 2, "", exceptionCheckcast);
-            new UnreachableInst(exceptionCheckcast);
-          }
+          currentBlock = exceptionCheckcast;
+          throwException(module->ClassCastExceptionFunction, args, 2);
           currentBlock = ifFalse;
         }
         

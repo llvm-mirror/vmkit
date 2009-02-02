@@ -117,8 +117,6 @@ private:
                                  const llvm::Type* returnType,
                                  llvm::Value* addArg, bool doThrow = true);
  
-  /// testPHINodes - Update PHI nodes when branching to a new block.
-  void testPHINodes(llvm::BasicBlock* dest, llvm::BasicBlock* insert);
   
 
 //===--------------------------- Inline support ---------------------------===//
@@ -256,6 +254,11 @@ private:
   /// unifiedUnreachable block as their normal destination.
   llvm::BasicBlock* unifiedUnreachable;
 
+  /// throwException - Emit code to throw a function.
+  void throwException(llvm::Function* F, llvm::Value** args,
+                      uint32 nbArgs);
+  void throwException(llvm::Function* F, llvm::Value* arg1);
+
 //===--------------------------- Control flow  ----------------------------===//
 
   /// opcodeInfos - The informations for each instruction.
@@ -271,10 +274,20 @@ private:
   
   /// branch - Branch based on a boolean value. Update PHI nodes accordingly.
   void branch(llvm::Value* test, llvm::BasicBlock* ifTrue, 
-              llvm::BasicBlock* ifFalse, llvm::BasicBlock* insert);
+              llvm::BasicBlock* ifFalse, llvm::BasicBlock* insert) {
+    testPHINodes(ifTrue, insert);
+    testPHINodes(ifFalse, insert);
+    llvm::BranchInst::Create(ifTrue, ifFalse, test, insert);
+  }
 
   /// branch - Branch to a new block. Update PHI nodes accordingly.
-  void branch(llvm::BasicBlock* where, llvm::BasicBlock* insert);
+  void branch(llvm::BasicBlock* dest, llvm::BasicBlock* insert) {
+    testPHINodes(dest, insert);
+    llvm::BranchInst::Create(dest, insert);
+  }
+  
+  /// testPHINodes - Update PHI nodes when branching to a new block.
+  void testPHINodes(llvm::BasicBlock* dest, llvm::BasicBlock* insert);
 
  
 //===-------------------------- Synchronization  --------------------------===//
