@@ -255,7 +255,7 @@ private:
   /// unifiedUnreachable block as their normal destination.
   llvm::BasicBlock* unifiedUnreachable;
 
-  /// throwException - Emit code to throw a function.
+  /// throwException - Emit code to throw an exception.
   void throwException(llvm::Function* F, llvm::Value** args,
                       uint32 nbArgs);
   void throwException(llvm::Function* F, llvm::Value* arg1);
