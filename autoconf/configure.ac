@@ -245,6 +245,24 @@ AC_SUBST([ISOLATE_BUILD])
 AC_SUBST([VM_FLAGS])
 
 dnl **************************************************************************
+dnl Exception type
+dnl **************************************************************************
+AC_ARG_WITH(exception-type,
+       [AS_HELP_STRING(--with-exception-type=something,
+           [VM type ('check' or 'dwarf')])],
+       [[exceptiontype=$withval]],
+       [[ echo Using check as exception type.
+                exceptiontype=check
+       ]]
+)
+
+if test "x$exceptiontype" = "xdwarf";  then
+  EXCEPTION_FLAGS="-DDWARF_EXCEPTIONS"
+fi
+
+AC_SUBST([EXCEPTION_FLAGS])
+
+dnl **************************************************************************
 dnl GNU CLASSPATH installation prefix
 dnl **************************************************************************
 
