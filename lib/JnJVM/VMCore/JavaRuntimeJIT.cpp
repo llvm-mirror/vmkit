@@ -338,10 +338,12 @@ extern "C" void jniProceedPendingException() {
   mvm::Allocator& allocator = th->getJVM()->gcAllocator;
   allocator.freeTemporaryMemory(buf);
 
+#ifdef DWARF_EXCEPTIONS
   // If there's an exception, throw it now.
   if (JavaThread::get()->pendingException) {
     th->throwPendingException();
   }
+#endif
 }
 
 // Never throws.
@@ -401,7 +403,7 @@ extern "C" void overflowThinLock(JavaObject* obj) {
 }
 
 // Creates a Java object and then throws it.
-extern "C" void jnjvmNullPointerException() {
+extern "C" JavaObject* jnjvmNullPointerException() {
   
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
@@ -412,11 +414,17 @@ extern "C" void jnjvmNullPointerException() {
 
   END_NATIVE_EXCEPTION
 
+#ifdef DWARF_EXCEPTIONS
   th->throwException(exc);
+#else
+  th->pendingException = exc;
+#endif
+
+  return exc;
 }
 
 // Creates a Java object and then throws it.
-extern "C" void negativeArraySizeException(sint32 val) {
+extern "C" JavaObject* negativeArraySizeException(sint32 val) {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 
@@ -426,11 +434,17 @@ extern "C" void negativeArraySizeException(sint32 val) {
 
   END_NATIVE_EXCEPTION
 
+#ifdef DWARF_EXCEPTIONS
   th->throwException(exc);
+#else
+  th->pendingException = exc;
+#endif
+
+  return exc;
 }
 
 // Creates a Java object and then throws it.
-extern "C" void outOfMemoryError(sint32 val) {
+extern "C" JavaObject* outOfMemoryError(sint32 val) {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 
@@ -440,11 +454,18 @@ extern "C" void outOfMemoryError(sint32 val) {
 
   END_NATIVE_EXCEPTION
 
+#ifdef DWARF_EXCEPTIONS
   th->throwException(exc);
+#else
+  th->pendingException = exc;
+#endif
+
+  return exc;
 }
 
 // Creates a Java object and then throws it.
-extern "C" void jnjvmClassCastException(JavaObject* obj, UserCommonClass* cl) {
+extern "C" JavaObject* jnjvmClassCastException(JavaObject* obj,
+                                               UserCommonClass* cl) {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 
@@ -454,11 +475,18 @@ extern "C" void jnjvmClassCastException(JavaObject* obj, UserCommonClass* cl) {
 
   END_NATIVE_EXCEPTION
 
+#ifdef DWARF_EXCEPTIONS
   th->throwException(exc);
+#else
+  th->pendingException = exc;
+#endif
+
+  return exc;
 }
 
 // Creates a Java object and then throws it.
-extern "C" void indexOutOfBoundsException(JavaObject* obj, sint32 index) {
+extern "C" JavaObject* indexOutOfBoundsException(JavaObject* obj,
+                                                 sint32 index) {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 
@@ -468,7 +496,13 @@ extern "C" void indexOutOfBoundsException(JavaObject* obj, sint32 index) {
 
   END_NATIVE_EXCEPTION
 
+#ifdef DWARF_EXCEPTIONS
   th->throwException(exc);
+#else
+  th->pendingException = exc;
+#endif
+  
+  return exc;
 }
 
 extern "C" void printMethodStart(JavaMethod* meth) {

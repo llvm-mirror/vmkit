@@ -194,11 +194,11 @@ declare %JavaCommonClass* @getArrayClass(%JavaCommonClass*,
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Exception methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-declare void @jnjvmNullPointerException()
-declare void @jnjvmClassCastException(%JavaObject*, %JavaCommonClass*)
-declare void @indexOutOfBoundsException(%JavaObject*, i32)
-declare void @negativeArraySizeException(i32)
-declare void @outOfMemoryError(i32)
+declare %JavaObject* @jnjvmNullPointerException()
+declare %JavaObject* @jnjvmClassCastException(%JavaObject*, %JavaCommonClass*)
+declare %JavaObject* @indexOutOfBoundsException(%JavaObject*, i32)
+declare %JavaObject* @negativeArraySizeException(i32)
+declare %JavaObject* @outOfMemoryError(i32)
 declare void @JavaThreadThrowException(%JavaObject*)
 
 declare void @jniProceedPendingException()

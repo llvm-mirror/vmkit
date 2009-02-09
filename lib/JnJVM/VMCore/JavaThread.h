@@ -179,8 +179,10 @@ public:
   /// throwFromNative - Throw an exception after executing Native code.
   ///
   void throwFromNative() {
+#ifdef DWARF_EXCEPTIONS
     addresses.pop_back();
     throwPendingException();
+#endif
   }
   
   /// throwFromJava - Throw an exception after executing Java code.

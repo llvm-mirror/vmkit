@@ -61,6 +61,7 @@ public:
     llvmFunction = func;
     inlining = false;
     callsStackWalker = false;
+    endNode = 0;
   }
 
   /// javaCompile - Compile the Java method.
@@ -259,7 +260,11 @@ private:
   void throwException(llvm::Function* F, llvm::Value** args,
                       uint32 nbArgs);
   void throwException(llvm::Function* F, llvm::Value* arg1);
+  void throwException(llvm::Value* obj);
 
+  /// finishExceptions - Emit code to unwind the current function if an
+  /// exception is thrown.
+  void finishExceptions();
 //===--------------------------- Control flow  ----------------------------===//
 
   /// opcodeInfos - The informations for each instruction.

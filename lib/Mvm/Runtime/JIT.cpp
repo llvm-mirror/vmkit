@@ -42,7 +42,11 @@ namespace mvm {
 
 void MvmModule::initialise(bool Fast, Module* M, TargetMachine* T) {
   llvm::NoFramePointerElim = true;
+#if DWARF_EXCEPTIONS
   llvm::ExceptionHandling = true;
+#else
+  llvm::ExceptionHandling = false;
+#endif
   if (!M) {
     globalModule = new llvm::Module("bootstrap module");
     globalModuleProvider = new ExistingModuleProvider (globalModule);

@@ -1968,7 +1968,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case ATHROW : {
         llvm::Value* arg = pop();
-        throwException(module->ThrowExceptionFunction, arg);
+        throwException(arg);
         break;
       }
 
