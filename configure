@@ -691,6 +691,7 @@ SINGLE_BUILD
 SERVICE_BUILD
 ISOLATE_BUILD
 VM_FLAGS
+EXCEPTION_FLAGS
 classpathglibj
 classpathlibs
 classpathinclude
@@ -1324,6 +1325,8 @@ Optional Packages:
   --with-vm-type=something
                           VM type ('single' 'isolate' 'isolate-sharing' or
                           'service')
+  --with-exception-type=something
+                          VM type ('check' or 'dwarf')
   --with-gnu-classpath-libs=something
                           GNU CLASSPATH libraries (default is
                           /usr/lib/classpath)
@@ -3964,6 +3967,24 @@ fi
 
 
 
+
+
+
+
+# Check whether --with-exception-type was given.
+if test "${with_exception_type+set}" = set; then
+  withval=$with_exception_type; exceptiontype=$withval
+else
+   echo Using check as exception type.
+                exceptiontype=check
+
+
+fi
+
+
+if test "x$exceptiontype" = "xdwarf";  then
+  EXCEPTION_FLAGS="-DDWARF_EXCEPTIONS"
+fi
 
 
 
@@ -7866,6 +7887,7 @@ SINGLE_BUILD!$SINGLE_BUILD$ac_delim
 SERVICE_BUILD!$SERVICE_BUILD$ac_delim
 ISOLATE_BUILD!$ISOLATE_BUILD$ac_delim
 VM_FLAGS!$VM_FLAGS$ac_delim
+EXCEPTION_FLAGS!$EXCEPTION_FLAGS$ac_delim
 classpathglibj!$classpathglibj$ac_delim
 classpathlibs!$classpathlibs$ac_delim
 classpathinclude!$classpathinclude$ac_delim
@@ -7889,7 +7911,6 @@ DATE!$DATE$ac_delim
 FIND!$FIND$ac_delim
 MKDIR!$MKDIR$ac_delim
 MV!$MV$ac_delim
-RANLIB!$RANLIB$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -7931,6 +7952,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+RANLIB!$RANLIB$ac_delim
 RM!$RM$ac_delim
 SED!$SED$ac_delim
 TAR!$TAR$ac_delim
@@ -7947,7 +7969,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 14; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 15; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
