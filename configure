@@ -681,6 +681,7 @@ OBJEXT
 CPP
 GREP
 EGREP
+WITH_64
 GC_MMAP2
 GC_BOEHM
 GC_MULTI_MMAP
@@ -3876,6 +3877,28 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
+
+
+case $target_cpu in
+  powerpc)
+
+cat >>confdefs.h <<\_ACEOF
+#define WITH_64 0
+_ACEOF
+
+    WITH_64=0
+;;
+  *)
+
+cat >>confdefs.h <<\_ACEOF
+#define WITH_64 1
+_ACEOF
+
+    WITH_64=1
+;;
+esac
+
+
 
 
 # Check whether --with-gc was given.
@@ -7877,6 +7900,7 @@ OBJEXT!$OBJEXT$ac_delim
 CPP!$CPP$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
+WITH_64!$WITH_64$ac_delim
 GC_MMAP2!$GC_MMAP2$ac_delim
 GC_BOEHM!$GC_BOEHM$ac_delim
 GC_MULTI_MMAP!$GC_MULTI_MMAP$ac_delim
@@ -7910,7 +7934,6 @@ CP!$CP$ac_delim
 DATE!$DATE$ac_delim
 FIND!$FIND$ac_delim
 MKDIR!$MKDIR$ac_delim
-MV!$MV$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -7952,6 +7975,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+MV!$MV$ac_delim
 RANLIB!$RANLIB$ac_delim
 RM!$RM$ac_delim
 SED!$SED$ac_delim
@@ -7969,7 +7993,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 15; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 16; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
