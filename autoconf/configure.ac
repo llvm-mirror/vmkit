@@ -168,6 +168,21 @@ if test "x$thread" = xcommon; then
 fi
 
 dnl **************************************************************************
+dnl Architecture
+dnl **************************************************************************
+
+case $target_cpu in
+  powerpc) 
+    AC_DEFINE([WITH_64], [0], [Building on a platform without 64bit cas])
+    AC_SUBST([WITH_64], [0]);;
+  *) 
+    AC_DEFINE([WITH_64], [1], [Building on a platform with 64bit cas])
+    AC_SUBST([WITH_64], [1]);;
+esac
+
+
+
+dnl **************************************************************************
 dnl VVM GC type 
 dnl **************************************************************************
 AC_ARG_WITH(gc,
