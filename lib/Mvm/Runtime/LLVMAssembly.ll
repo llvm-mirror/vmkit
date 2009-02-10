@@ -5,7 +5,6 @@
 declare i8  @llvm.atomic.cmp.swap.i8.p0i8(i8*, i8, i8) nounwind
 declare i16 @llvm.atomic.cmp.swap.i16.p0i16(i16*, i16, i16) nounwind
 declare i32 @llvm.atomic.cmp.swap.i32.p0i32(i32*, i32, i32) nounwind
-declare i64 @llvm.atomic.cmp.swap.i64.p0i64(i64*, i64, i64) nounwind
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;Helper functions for gcc < 4.2 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -29,8 +28,4 @@ nounwind {
   ret i32 %A
 }
 
-define i64 @llvm_atomic_cmp_swap_i64(i64* %ptr, i64 %cmp, i64 %swap)
-nounwind {
-  %A = call i64 @llvm.atomic.cmp.swap.i64.p0i64( i64* %ptr, i64 %cmp, i64 %swap)
-  ret i64 %A
-}
+

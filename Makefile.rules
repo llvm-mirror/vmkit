@@ -24,7 +24,10 @@ ifdef VMKIT_ASSEMBLY
 
 LLVMAssembly.o : $(LLVMAS) $(LLC) $(VMKIT_ASSEMBLY)
 
-LLVMAssembly.s : LLVMAssembly.ll
+LLVMAssembly.gen.ll : $(VMKIT_ASSEMBLY)
+	$(Verb) cat $(VMKIT_ASSEMBLY) > LLVMAssembly.gen.ll
+
+LLVMAssembly.s : LLVMAssembly.gen.ll
 	$(Echo) "Building LLVM assembly with $(VMKIT_ASSEMBLY)"
 	$(Verb) $(LLVMAS) -f $(<F) -o - | $(LLC) -f -o $@
 
@@ -33,7 +36,7 @@ $(ObjDir)/%.lo $(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
 	$(Verb) $(GAS) $< -o $(ObjDir)/$*.o
 
 clean-local::
-	$(Verb) $(RM) -f LLVMAssembly.s LLVMAssembly.bc
+	$(Verb) $(RM) -f LLVMAssembly.s LLVMAssembly.bc LLVMAssembly.gen.ll
 
 endif
 
