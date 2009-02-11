@@ -62,9 +62,11 @@ static bool needsInitialisationCheck(Class* cl, Class* compilingClass) {
 }
 
 bool JavaJIT::canBeInlined(JavaMethod* meth) {
+  JnjvmClassLoader* loader = meth->classDef->classLoader;
   return (meth->canBeInlined &&
           meth != compilingMethod && inlineMethods[meth] == 0 &&
-          meth->classDef->classLoader == compilingClass->classLoader);
+          (loader == compilingClass->classLoader ||
+           loader == compilingClass->classLoader->bootstrapLoader));
 }
 
 void JavaJIT::invokeVirtual(uint16 index) {
@@ -98,10 +100,14 @@ void JavaJIT::invokeVirtual(uint16 index) {
   JITVerifyNull(args[0]); 
   BasicBlock* endBlock = 0;
   PHINode* node = 0;
-  if (meth && !isAbstract(meth->access) && canBeInlined(meth)) {
+#if 0
+  if (meth && !isAbstract(meth->access)) {
     Value* cl = CallInst::Create(module->GetClassFunction, args[0], "",
                                   currentBlock);
     Value* cl2 = module->getNativeClass(meth->classDef);
+    if (cl2->getType() != module->JavaCommonClassType) {
+      cl2 = new BitCastInst(cl2, module->JavaCommonClassType, "", currentBlock);
+    }
 
     Value* test = new ICmpInst(ICmpInst::ICMP_EQ, cl, cl2, "", currentBlock);
 
@@ -110,7 +116,13 @@ void JavaJIT::invokeVirtual(uint16 index) {
     endBlock = createBasicBlock("end virtual invoke");
     BranchInst::Create(trueBlock, falseBlock, test, currentBlock);
     currentBlock = trueBlock;
-    Value* res = invokeInline(meth, args);
+    Value* res = 0;
+    if (canBeInlined(meth)) {
+      res = invokeInline(meth, args);
+    } else {
+      Function* func = module->getMethod(meth);
+      res = invoke(func, args, "", currentBlock);
+    }
     BranchInst::Create(endBlock, currentBlock);
     if (retType != Type::VoidTy) {
       node = PHINode::Create(virtualType->getReturnType(), "", endBlock);
@@ -118,7 +130,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
     }
     currentBlock = falseBlock;
   }
-
+#endif
 
   Value* VT = CallInst::Create(module->GetVTFunction, args[0], "",
                                currentBlock);
@@ -486,8 +498,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
                                     std::vector<Value*>& args) {
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "inline compile %s\n",
               compilingMethod->printString());
-
-
+  
   Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
   
   if (!codeAtt) {
@@ -512,7 +523,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   endBlock = createBasicBlock("end");
 
   currentBlock = curBB;
-  endExceptionBlock = 0;
+  endExceptionBlock = endExBlock;
 
   opcodeInfos = (Opinfo*)alloca(codeLen * sizeof(Opinfo));
   memset(opcodeInfos, 0, codeLen * sizeof(Opinfo));
@@ -574,6 +585,8 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
       new StoreInst(*i, objectLocals[index], false, currentBlock);
     }
   }
+  
+  readExceptionTable(reader, codeLen);
 
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
   nbEnveloppes = 0;
@@ -751,7 +764,7 @@ llvm::Function* JavaJIT::javaCompile() {
   }
 #endif
 
-  unsigned nbe = readExceptionTable(reader, codeLen);
+  readExceptionTable(reader, codeLen);
   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
   compilingMethod->enveloppes = 
@@ -844,8 +857,10 @@ llvm::Function* JavaJIT::javaCompile() {
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "--> end compiling %s\n",
               compilingMethod->printString());
   
-  if (nbe == 0 && codeLen < 50 && !callsStackWalker)
-    compilingMethod->canBeInlined = false;
+#ifndef DWARF_EXCEPTIONS
+  if (codeLen < 5 && !callsStackWalker)
+    compilingMethod->canBeInlined = true;
+#endif
 
   return llvmFunction;
 }
@@ -1193,6 +1208,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
   Signdef* signature = 0;
   const UTF8* name = 0;
   const UTF8* cl = 0;
+
   ctpInfo->nameOfStaticOrSpecialMethod(index, cl, name, signature);
   LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
@@ -1201,6 +1217,14 @@ void JavaJIT::invokeSpecial(uint16 index) {
   std::vector<Value*> args; 
   FunctionType::param_iterator it  = virtualType->param_end();
   makeArgs(it, index, args, signature->nbArguments + 1);
+  
+  Function* func =   
+    (Function*)ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
+                                                      signature, meth);
+  
+  if (meth == compilingClass->classLoader->bootstrapLoader->upcalls->InitObject)
+    return;
+  
   JITVerifyNull(args[0]); 
 
 #if defined(ISOLATE_SHARING)
@@ -1228,9 +1252,6 @@ void JavaJIT::invokeSpecial(uint16 index) {
   currentBlock = trueCl;
   args.push_back(node);
 #endif
-  Function* func =   
-    (Function*)ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
-                                                      signature, meth);
 
   if (!meth) {
     // Make sure the class is loaded before materializing the method.

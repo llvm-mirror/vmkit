@@ -205,6 +205,8 @@ public:
   ISOLATE_STATIC JavaMethod* InitUnknownError;
   ISOLATE_STATIC JavaMethod* InitClassNotFoundException;
 
+  ISOLATE_STATIC JavaMethod* InitObject;
+
   ISOLATE_STATIC JavaMethod* ErrorWithExcpNoClassDefFoundError;
   ISOLATE_STATIC JavaMethod* ErrorWithExcpExceptionInInitializerError;
   ISOLATE_STATIC JavaMethod* ErrorWithExcpInvocationTargetException;

@@ -148,9 +148,8 @@ void JavaJIT::throwException(llvm::Function* F, Value* arg1) {
     BranchInst::Create(currentExceptionBlock, currentBlock);
   } else {
     if (endNode) {
-      const FunctionType *funcType = llvmFunction->getFunctionType();
-      const Type* returnType = funcType->getReturnType();
-      endNode->addIncoming(Constant::getNullValue(returnType), currentBlock);
+      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
+                           currentBlock);
     }
     BranchInst::Create(endBlock, currentBlock);
   }
@@ -172,9 +171,8 @@ void JavaJIT::throwException(Value* obj) {
     BranchInst::Create(currentExceptionBlock, currentBlock);
   } else {
     if (endNode) {
-      const FunctionType *funcType = llvmFunction->getFunctionType();
-      const Type* returnType = funcType->getReturnType();
-      endNode->addIncoming(Constant::getNullValue(returnType), currentBlock);
+      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
+                           currentBlock);
     }
     BranchInst::Create(endBlock, currentBlock);
   }
@@ -190,9 +188,8 @@ void JavaJIT::throwException(llvm::Function* F, Value** args,
     BranchInst::Create(currentExceptionBlock, currentBlock);
   } else {
     if (endNode) {
-      const FunctionType *funcType = llvmFunction->getFunctionType();
-      const Type* returnType = funcType->getReturnType();
-      endNode->addIncoming(Constant::getNullValue(returnType), currentBlock);
+      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
+                           currentBlock);
     }
     BranchInst::Create(endBlock, currentBlock);
   }
@@ -484,9 +481,7 @@ void JavaJIT::finishExceptions() {
     endExceptionBlock->eraseFromParent();
   } else {
     if (endNode) {
-      const FunctionType *funcType = llvmFunction->getFunctionType();
-      const Type* returnType = funcType->getReturnType();
-      endNode->addIncoming(Constant::getNullValue(returnType),
+      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
                            endExceptionBlock);
     }
     BranchInst::Create(endBlock, endExceptionBlock);

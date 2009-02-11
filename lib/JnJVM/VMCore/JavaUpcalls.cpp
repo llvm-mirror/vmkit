@@ -172,6 +172,7 @@ JavaMethod* Classpath::InitOutOfMemoryError;
 JavaMethod* Classpath::InitStackOverflowError;
 JavaMethod* Classpath::InitUnknownError;
 JavaMethod* Classpath::InitClassNotFoundException;
+JavaMethod* Classpath::InitObject;
 
 JavaMethod* Classpath::ErrorWithExcpNoClassDefFoundError;
 JavaMethod* Classpath::ErrorWithExcpExceptionInInitializerError;
@@ -573,6 +574,8 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   UPCALL_METHOD_WITH_EXCEPTION(loader, ExceptionInInitializerError);
   UPCALL_METHOD_WITH_EXCEPTION(loader, InvocationTargetException);
 
+  InitObject = UPCALL_METHOD(loader, "java/lang/Object", "<init>", "()V",
+                             ACC_VIRTUAL);
 
   newThread = 
     UPCALL_CLASS(loader, "java/lang/Thread");
