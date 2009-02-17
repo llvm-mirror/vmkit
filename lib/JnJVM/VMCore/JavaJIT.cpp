@@ -530,14 +530,30 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   for (uint32 i = 0; i < codeLen; ++i) {
     opcodeInfos[i].exceptionBlock = endExBlock;
   }
+
+  BasicBlock* firstBB = llvmFunction->begin();
   
-  for (int i = 0; i < maxLocals; i++) {
-    intLocals.push_back(new AllocaInst(Type::Int32Ty, "", currentBlock));
-    doubleLocals.push_back(new AllocaInst(Type::DoubleTy, "", currentBlock));
-    longLocals.push_back(new AllocaInst(Type::Int64Ty, "", currentBlock));
-    floatLocals.push_back(new AllocaInst(Type::FloatTy, "", currentBlock));
-    objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
-                                          currentBlock));
+  if (firstBB->begin() != firstBB->end()) {
+    Instruction* firstInstruction = firstBB->begin();
+
+    for (int i = 0; i < maxLocals; i++) {
+      intLocals.push_back(new AllocaInst(Type::Int32Ty, "", firstInstruction));
+      doubleLocals.push_back(new AllocaInst(Type::DoubleTy, "",
+                                            firstInstruction));
+      longLocals.push_back(new AllocaInst(Type::Int64Ty, "", firstInstruction));
+      floatLocals.push_back(new AllocaInst(Type::FloatTy, "", firstInstruction));
+      objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
+                                          firstInstruction));
+    }
+  } else {
+    for (int i = 0; i < maxLocals; i++) {
+      intLocals.push_back(new AllocaInst(Type::Int32Ty, "", firstBB));
+      doubleLocals.push_back(new AllocaInst(Type::DoubleTy, "", firstBB));
+      longLocals.push_back(new AllocaInst(Type::Int64Ty, "", firstBB));
+      floatLocals.push_back(new AllocaInst(Type::FloatTy, "", firstBB));
+      objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
+                                            firstBB));
+    }
   }
   
   uint32 index = 0;
