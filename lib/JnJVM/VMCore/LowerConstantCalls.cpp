@@ -280,15 +280,13 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
          
           Value* Cl = Call.getArgument(0); 
           Value* TCM = getTCM(module, Call.getArgument(0), CI);
-          Value* GEP[2] = { module->constantZero,
-                            module->OffsetStatusInTaskClassMirrorConstant };
+          Value* GEP[2] = 
+            { module->constantZero,
+              module->OffsetInitializedInTaskClassMirrorConstant };
           Value* StatusPtr = GetElementPtrInst::Create(TCM, GEP, GEP + 2, "",
                                                        CI);
           
-          Value* Status = new LoadInst(StatusPtr, "", CI);
-          Value* test = new ICmpInst(ICmpInst::ICMP_EQ, Status,
-                                     module->ClassReadyConstant,
-                                     "", CI);
+          Value* test = new LoadInst(StatusPtr, "", CI);
           
           BasicBlock* trueCl = BasicBlock::Create("Initialized", &F);
           BasicBlock* falseCl = BasicBlock::Create("Uninitialized", &F);

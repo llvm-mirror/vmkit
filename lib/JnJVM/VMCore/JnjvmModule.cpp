@@ -92,6 +92,7 @@ llvm::ConstantInt*  JnjvmModule::OffsetDisplayInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetTaskClassMirrorInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetStaticInstanceInTaskClassMirrorConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetStatusInTaskClassMirrorConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetInitializedInTaskClassMirrorConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetJavaExceptionInThreadConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetCXXExceptionInThreadConstant;
 llvm::ConstantInt*  JnjvmModule::ClassReadyConstant;
@@ -2019,13 +2020,14 @@ void JnjvmModule::initialise() {
   OffsetObjectSizeInClassConstant = mvm::MvmModule::constantOne;
   OffsetVTInClassConstant = mvm::MvmModule::constantTwo;
   OffsetTaskClassMirrorInClassConstant = mvm::MvmModule::constantThree;
-  OffsetStaticInstanceInTaskClassMirrorConstant = mvm::MvmModule::constantOne;
+  OffsetStaticInstanceInTaskClassMirrorConstant = mvm::MvmModule::constantTwo;
   OffsetStatusInTaskClassMirrorConstant = mvm::MvmModule::constantZero;
+  OffsetInitializedInTaskClassMirrorConstant = mvm::MvmModule::constantOne;
   
   OffsetJavaExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 9);
   OffsetCXXExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 10);
   
-  ClassReadyConstant = ConstantInt::get(Type::Int32Ty, ready);
+  ClassReadyConstant = ConstantInt::get(Type::Int8Ty, ready);
  
 
   if (staticCompilation) {

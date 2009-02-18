@@ -365,6 +365,7 @@ public:
   static llvm::ConstantInt* OffsetDisplayInClassConstant;
   static llvm::ConstantInt* OffsetTaskClassMirrorInClassConstant;
   static llvm::ConstantInt* OffsetStaticInstanceInTaskClassMirrorConstant;
+  static llvm::ConstantInt* OffsetInitializedInTaskClassMirrorConstant;
   static llvm::ConstantInt* OffsetStatusInTaskClassMirrorConstant;
   
   static llvm::ConstantInt* OffsetJavaExceptionInThreadConstant;

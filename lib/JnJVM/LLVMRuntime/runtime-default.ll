@@ -30,8 +30,9 @@
 
 ;;; The task class mirror.
 ;;; Field 1: The class state
-;;; Field 2: The static instance
-%TaskClassMirror = type { i32, i8* }
+;;; Field 2: The initialization state
+;;; Field 3: The static instance
+%TaskClassMirror = type { i8, i1, i8* }
 
 ;;; Field 0: the VT of threads
 ;;; Field 1: next

@@ -47,16 +47,13 @@ class UTF8;
 /// used (i.e allocating instances of the class, calling methods of the class
 /// and accessing static fields of the class) when it is in the ready state.
 ///
-typedef enum JavaState {
-  loaded = 0,       /// The .class file has been found.
-  classRead = 1,    /// The .class file has been read.
-  resolved = 2,     /// The class has been resolved.
-  vmjc = 3,         /// The class is defined in a shared library.
-  inClinit = 4,     /// The class is cliniting.
-  ready = 5,        /// The class is ready to be used.
-  erroneous = 6,    /// The class is in an erroneous state.
-  dontuseenums = 0xffffffff /// dummy value to force the enum to be int32
-} JavaState;
+#define loaded 0       /// The .class file has been found.
+#define classRead 1    /// The .class file has been read.
+#define resolved 2     /// The class has been resolved.
+#define vmjc 3         /// The class is defined in a shared library.
+#define inClinit 4     /// The class is cliniting.
+#define ready 5        /// The class is ready to be used.
+#define erroneous 6    /// The class is in an erroneous state.
 
 
 /// Attribut - This class represents JVM attributes to Java class, methods and
@@ -124,9 +121,12 @@ public:
 class TaskClassMirror {
 public:
   
-  /// status - The initialization state.
+  /// status - The state.
   ///
-  JavaState status;
+  uint8 status;
+
+  /// initialized - Is the class initialized?
+  bool initialized;
 
   /// staticInstance - Memory that holds the static variables of the class.
   ///
@@ -745,14 +745,15 @@ public:
   
   /// getInitializationState - Get the state of the class.
   ///
-  JavaState getInitializationState() {
+  uint8 getInitializationState() {
     return IsolateInfo[0].status;
   }
 
   /// setInitializationState - Set the state of the class.
   ///
-  void setInitializationState(JavaState st) {
+  void setInitializationState(uint8 st) {
     IsolateInfo[0].status = st;
+    if (st == ready) IsolateInfo[0].initialized = true;
   }
   
   /// isReady - Has this class been initialized?
@@ -824,11 +825,11 @@ public:
     getCurrentTaskClassMirror().staticInstance = val;
   }
 
-  JavaState getInitializationState() {
+  uint8 getInitializationState() {
     return getCurrentTaskClassMirror().status;
   }
   
-  void setInitializationState(JavaState st) {
+  void setInitializationState(uint8 st) {
     getCurrentTaskClassMirror().status = st;
   }
   
