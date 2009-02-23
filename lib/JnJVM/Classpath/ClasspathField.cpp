@@ -223,16 +223,16 @@ JavaObjectField* Field, jobject obj) {
     if (prim->isByte())
       res = (jfloat)field->getInt8Field(Obj);
     else if (prim->isInt())
-      res = (jfloat)field->getInt32Field((JavaObject*)obj);
+      res = (jfloat)field->getInt32Field(Obj);
     else if (prim->isShort())
-      res = (jfloat)field->getInt16Field((JavaObject*)obj);
+      res = (jfloat)field->getInt16Field(Obj);
     else if (prim->isLong())
-      res = (jfloat)field->getLongField((JavaObject*)obj);
+      res = (jfloat)field->getLongField(Obj);
     else if (prim->isChar())
       // Cast to uint32 because char is unsigned.
-      res = (jfloat)(uint32)field->getInt16Field((JavaObject*)obj);
+      res = (jfloat)(uint32)field->getInt16Field(Obj);
     else if (prim->isFloat())
-      res = (jfloat)field->getFloatField((JavaObject*)obj);
+      res = (jfloat)field->getFloatField(Obj);
     else
       vm->illegalArgumentException("");
   } else {
@@ -311,7 +311,7 @@ JavaObjectField* Field, jobject obj) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isChar())
-      res = (uint16)field->getInt16Field((JavaObject*)obj);
+      res = (uint16)field->getInt16Field(Obj);
     else
       vm->illegalArgumentException("");
   } else {
