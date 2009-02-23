@@ -180,6 +180,7 @@ sint32 ZipArchive::readFile(ArrayUInt8* array, const ZipFile* file) {
 
     if (file->compressionMethod == ZIP_STORE) {
       memcpy(ptr, &(reader.bytes->elements[reader.cursor]), file->ucsize);
+      return 1;
     } else if (file->compressionMethod == ZIP_DEFLATE) {
       z_stream stre;
       sint32 err = 0;
