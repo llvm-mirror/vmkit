@@ -312,7 +312,7 @@ Constant* JnjvmModule::getJavaClass(CommonClass* cl) {
 
 JavaObject* JnjvmModule::getFinalObject(llvm::Value* obj) {
   if (staticCompilation) {
-    abort();
+    // TODO
   } else {
     if (ConstantExpr* CE = dyn_cast<ConstantExpr>(obj)) {
       if (ConstantInt* C = dyn_cast<ConstantInt>(CE->getOperand(0))) {
