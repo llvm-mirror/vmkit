@@ -2356,7 +2356,14 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
   ThrowExceptionFunction = module->getFunction("JavaThreadThrowException");
 
   GetArrayClassFunction = module->getFunction("getArrayClass");
-  
+ 
+  GetFinalInt8FieldFunction = module->getFunction("getFinalInt8Field");
+  GetFinalInt16FieldFunction = module->getFunction("getFinalInt16Field");
+  GetFinalInt32FieldFunction = module->getFunction("getFinalInt32Field");
+  GetFinalLongFieldFunction = module->getFunction("getFinalLongField");
+  GetFinalFloatFieldFunction = module->getFunction("getFinalFloatField");
+  GetFinalDoubleFieldFunction = module->getFunction("getFinalDoubleField");
+  GetFinalObjectFieldFunction = module->getFunction("getFinalObjectField");
 
 #ifdef ISOLATE
   StringLookupFunction = module->getFunction("stringLookup");

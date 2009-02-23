@@ -461,6 +461,18 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                    V == module->ForceLoadedCheckFunction ) {
           Changed = true;
           CI->eraseFromParent();
+        } else if (V == module->GetFinalInt8FieldFunction ||
+                   V == module->GetFinalInt16FieldFunction ||
+                   V == module->GetFinalInt32FieldFunction ||
+                   V == module->GetFinalLongFieldFunction ||
+                   V == module->GetFinalFloatFieldFunction ||
+                   V == module->GetFinalDoubleFieldFunction ||
+                   V == module->GetFinalObjectFieldFunction) {
+          Changed = true;
+          Value* val = Call.getArgument(0);
+          Value* res = new LoadInst(val, "", CI);
+          CI->replaceAllUsesWith(res);
+          CI->eraseFromParent();
         }
 #ifdef ISOLATE_SHARING
         else if (V == module->GetCtpClassFunction) {

@@ -191,6 +191,14 @@ declare %JavaObject* @jnjvmRuntimeDelegatee(%JavaCommonClass*) readnone
 declare %JavaCommonClass* @getArrayClass(%JavaCommonClass*, 
                                          %JavaCommonClass**) readnone
 
+declare i8 @getFinalInt8Field(i8*) readnone
+declare i16 @getFinalInt16Field(i16*) readnone
+declare i32 @getFinalInt32Field(i32*) readnone
+declare i64 @getFinalLongField(i64*) readnone
+declare double @getFinalDoubleField(double*) readnone
+declare float @getFinalFloatField(float*) readnone
+declare %JavaObject* @getFinalObjectField(%JavaObject**) readnone
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Exception methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -362,6 +362,14 @@ public:
 
   llvm::Function* GetLockFunction;
   llvm::Function* OverflowThinLockFunction;
+  
+  llvm::Function* GetFinalInt8FieldFunction;
+  llvm::Function* GetFinalInt16FieldFunction;
+  llvm::Function* GetFinalInt32FieldFunction;
+  llvm::Function* GetFinalLongFieldFunction;
+  llvm::Function* GetFinalFloatFieldFunction;
+  llvm::Function* GetFinalDoubleFieldFunction;
+  llvm::Function* GetFinalObjectFieldFunction;
 
   static llvm::ConstantInt* OffsetObjectSizeInClassConstant;
   static llvm::ConstantInt* OffsetVTInClassConstant;

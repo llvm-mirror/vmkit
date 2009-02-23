@@ -1696,8 +1696,43 @@ void JavaJIT::getVirtualField(uint16 index) {
   JITVerifyNull(obj);
   
   Value* ptr = ldResolved(index, false, obj, type, LAI.llvmTypePtr);
+  
+  JnjvmBootstrapLoader* JBL = compilingClass->classLoader->bootstrapLoader;
+  bool final = false;
+  if (!compilingMethod->name->equals(JBL->initName)) {
+    JavaField* field = compilingClass->ctpInfo->lookupField(index, false);
+    if (field) final = isFinal(field->access);
+    if (final) {
+      Function* F = 0;
+      if (sign->isPrimitive()) {
+        const PrimitiveTypedef* prim = (PrimitiveTypedef*)sign;
+        if (prim->isInt()) {
+          F = module->GetFinalInt32FieldFunction;
+        } else if (prim->isByte()) {
+          F = module->GetFinalInt8FieldFunction;
+        } else if (prim->isBool()) {
+          F = module->GetFinalInt8FieldFunction;
+        } else if (prim->isShort()) {
+          F = module->GetFinalInt16FieldFunction;
+        } else if (prim->isChar()) {
+          F = module->GetFinalInt16FieldFunction;
+        } else if (prim->isLong()) {
+          F = module->GetFinalLongFieldFunction;
+        } else if (prim->isFloat()) {
+          F = module->GetFinalFloatFieldFunction;
+        } else if (prim->isDouble()) {
+          F = module->GetFinalDoubleFieldFunction;
+        } else {
+          abort();
+        }
+      } else {
+        F = module->GetFinalObjectFieldFunction;
+      }
+      push(CallInst::Create(F, ptr, "", currentBlock), sign->isUnsigned());
+    }
+  }
 
-  push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned());
+  if (!final) push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned());
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
     push(module->constantZero, false);
   }
