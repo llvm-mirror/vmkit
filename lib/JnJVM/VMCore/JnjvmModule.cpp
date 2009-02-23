@@ -310,6 +310,23 @@ Constant* JnjvmModule::getJavaClass(CommonClass* cl) {
   }
 }
 
+Constant* JnjvmModule::getFinalObject(JavaObject* obj) {
+  if (staticCompilation) {
+    final_object_iterator End = finalObjects.end();
+    final_object_iterator I = finalObjects.find(obj);
+    if (I == End) {
+      abort();
+      return 0;
+    } else {
+      return I->second;
+    }
+  
+  } else {
+    Constant* CI = ConstantInt::get(Type::Int64Ty, uint64(obj));
+    return ConstantExpr::getIntToPtr(CI, JavaObjectType);
+  }
+}
+
 Constant* JnjvmModule::CreateConstantFromStaticInstance(Class* cl) {
   LLVMClassInfo* LCI = getClassInfo(cl);
   const Type* Ty = LCI->getStaticType();
@@ -604,7 +621,7 @@ llvm::Function* JnjvmModule::makeTracer(Class* cl, bool stat) {
 }
 #endif
 
-Constant* JnjvmModule::CreateConstantForJavaObject(CommonClass* cl) {
+Constant* JnjvmModule::CreateConstantForBaseObject(CommonClass* cl) {
   const StructType* STy = 
     dyn_cast<StructType>(JavaObjectType->getContainedType(0));
   
@@ -646,7 +663,7 @@ Constant* JnjvmModule::CreateConstantFromJavaClass(CommonClass* cl) {
   std::vector<Constant*> Elmts;
 
   // JavaObject
-  Elmts.push_back(CreateConstantForJavaObject(javaClass));
+  Elmts.push_back(CreateConstantForBaseObject(javaClass));
   
   // signers
   Elmts.push_back(Constant::getNullValue(JavaObjectType));
@@ -665,6 +682,104 @@ Constant* JnjvmModule::CreateConstantFromJavaClass(CommonClass* cl) {
   return ConstantStruct::get(STy, Elmts);
 }
 
+Constant* JnjvmModule::CreateConstantFromJavaObject(JavaObject* obj) {
+  CommonClass* cl = obj->getClass();
+
+  if (cl->isArray()) {
+    Classpath* upcalls = cl->classLoader->bootstrapLoader->upcalls;
+    CommonClass* subClass = cl->asArrayClass()->baseClass();
+    if (subClass->isPrimitive()) {
+      if (subClass == upcalls->OfBool) {
+        return CreateConstantFromArray<ArrayUInt8>((ArrayUInt8*)obj,
+                                                   Type::Int8Ty);
+      } else if (subClass == upcalls->OfByte) {
+        return CreateConstantFromArray<ArraySInt8>((ArraySInt8*)obj,
+                                                   Type::Int8Ty);
+      } else if (subClass == upcalls->OfShort) {
+        return CreateConstantFromArray<ArraySInt16>((ArraySInt16*)obj,
+                                                    Type::Int16Ty);
+      } else if (subClass == upcalls->OfChar) {
+        return CreateConstantFromArray<ArrayUInt16>((ArrayUInt16*)obj,
+                                                    Type::Int16Ty);
+      } else if (subClass == upcalls->OfInt) {
+        return CreateConstantFromArray<ArraySInt32>((ArraySInt32*)obj,
+                                                    Type::Int32Ty);
+      } else if (subClass == upcalls->OfFloat) {
+        return CreateConstantFromArray<ArrayFloat>((ArrayFloat*)obj,
+                                                   Type::FloatTy);
+      } else if (subClass == upcalls->OfLong) {
+        return CreateConstantFromArray<ArrayLong>((ArrayLong*)obj,
+                                                  Type::Int64Ty);
+      } else if (subClass == upcalls->OfDouble) {
+        return CreateConstantFromArray<ArrayDouble>((ArrayDouble*)obj,
+                                                    Type::DoubleTy);
+      } else {
+        abort();
+      }
+    } else {
+      return CreateConstantFromArray<ArrayObject>((ArrayObject*)obj,
+                                                  JavaObjectType);
+    }
+  } else {
+    
+    std::vector<Constant*> Elmts;
+    
+    // JavaObject
+    Constant* CurConstant = CreateConstantForBaseObject(obj->getClass());
+
+    for (uint32 j = 0; j <= cl->depth; ++j) {
+      std::vector<Constant*> TempElts;
+      Elmts.push_back(CurConstant);
+      TempElts.push_back(CurConstant);
+      Class* curCl = cl->display[j]->asClass();
+      LLVMClassInfo* LCI = getClassInfo(curCl);
+      const StructType* STy = 
+        dyn_cast<StructType>(LCI->getVirtualType()->getContainedType(0));
+
+      for (uint32 i = 0; i < curCl->nbVirtualFields; ++i) {
+        JavaField& field = curCl->virtualFields[i];
+        const Typedef* type = field.getSignature();
+        if (type->isPrimitive()) {
+          const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+          if (prim->isBool() || prim->isByte()) {
+            ConstantInt* CI = ConstantInt::get(Type::Int8Ty,
+                                               field.getInt8Field(obj));
+            TempElts.push_back(CI);
+          } else if (prim->isShort() || prim->isChar()) {
+            ConstantInt* CI = ConstantInt::get(Type::Int16Ty,
+                                               field.getInt16Field(obj));
+            TempElts.push_back(CI);
+          } else if (prim->isInt()) {
+            ConstantInt* CI = ConstantInt::get(Type::Int32Ty,
+                                               field.getInt32Field(obj));
+            TempElts.push_back(CI);
+          } else if (prim->isLong()) {
+            ConstantInt* CI = ConstantInt::get(Type::Int64Ty,
+                                               field.getLongField(obj));
+            TempElts.push_back(CI);
+          } else if (prim->isFloat()) {
+            ConstantInt* CI = ConstantInt::get(Type::FloatTy,
+                                               field.getFloatField(obj));
+            TempElts.push_back(CI);
+          } else if (prim->isDouble()) {
+            ConstantInt* CI = ConstantInt::get(Type::DoubleTy,
+                                               field.getDoubleField(obj));
+            TempElts.push_back(CI);
+          } else {
+            abort();
+          }
+        } else {
+          Constant* C = getFinalObject(field.getObjectField(obj));
+          TempElts.push_back(C);
+        }
+      }
+      CurConstant = ConstantStruct::get(STy, TempElts);
+    }
+
+    return CurConstant;
+  }
+}
+
 Constant* JnjvmModule::CreateConstantFromJavaString(JavaString* str) {
   Class* cl = (Class*)str->getClass();
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
@@ -673,7 +788,7 @@ Constant* JnjvmModule::CreateConstantFromJavaString(JavaString* str) {
 
   std::vector<Constant*> Elmts;
 
-  Elmts.push_back(CreateConstantForJavaObject(cl));
+  Elmts.push_back(CreateConstantForBaseObject(cl));
 
   Constant* Array = getUTF8(str->value);
   Constant* ObjGEPs[2] = { constantZero, constantZero };
@@ -1213,6 +1328,38 @@ Constant* JnjvmModule::CreateConstantFromClass(Class* cl) {
   return ConstantStruct::get(STy, ClassElts);
 }
 
+template<typename T>
+Constant* JnjvmModule::CreateConstantFromArray(T* val, const llvm::Type* Ty) {
+  std::vector<const Type*> Elemts;
+  const ArrayType* ATy = ArrayType::get(Ty, val->size);
+  Elemts.push_back(JavaObjectType->getContainedType(0));
+  Elemts.push_back(pointerSizeType == Type::Int32Ty ? Type::Int32Ty : 
+                                                      Type::Int64Ty);
+
+  Elemts.push_back(ATy);
+
+  const StructType* STy = StructType::get(Elemts);
+  
+  std::vector<Constant*> Cts;
+  Cts.push_back(CreateConstantForBaseObject(val->getClass()));
+  Cts.push_back(ConstantInt::get(pointerSizeType, val->size));
+  
+  std::vector<Constant*> Vals;
+  for (sint32 i = 0; i < val->size; ++i) {
+    if (Ty->isInteger()) {
+      Vals.push_back(ConstantInt::get(Ty, (uint64)val->elements[i]));
+    } else if (Ty->isFloatingPoint()) {
+      Vals.push_back(ConstantFP::get(Ty, (double)(size_t)val->elements[i]));
+    } else {
+      Vals.push_back(getFinalObject((JavaObject*)(size_t)val->elements[i]));
+    }
+  }
+
+  Cts.push_back(ConstantArray::get(ATy, Vals));
+  
+  return ConstantStruct::get(STy, Cts);
+}
+
 Constant* JnjvmModule::CreateConstantFromUTF8(const UTF8* val) {
   std::vector<const Type*> Elemts;
   const ArrayType* ATy = ArrayType::get(Type::Int16Ty, val->size);
@@ -1225,7 +1372,7 @@ Constant* JnjvmModule::CreateConstantFromUTF8(const UTF8* val) {
   const StructType* STy = StructType::get(Elemts);
   
   std::vector<Constant*> Cts;
-  Cts.push_back(CreateConstantForJavaObject(&ArrayOfChar));
+  Cts.push_back(CreateConstantForBaseObject(&ArrayOfChar));
   Cts.push_back(ConstantInt::get(pointerSizeType, val->size));
   
   std::vector<Constant*> Vals;

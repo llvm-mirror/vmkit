@@ -1536,7 +1536,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     Value* ptr = llvm::GetElementPtrInst::Create(objectConvert,
                                                  args, args + 2, "",
                                                  currentBlock);
-    return ptr;  
+    return ptr;
   }
 
   const Type* Pty = module->arrayPtrType;
@@ -1616,7 +1616,51 @@ void JavaJIT::getStaticField(uint16 index) {
   
   Value* ptr = ldResolved(index, true, 0, type, LAI.llvmTypePtr);
   
-  push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned());
+  JnjvmBootstrapLoader* JBL = compilingClass->classLoader->bootstrapLoader;
+  bool final = false;
+  if (!compilingMethod->name->equals(JBL->clinitName)) {
+    JavaField* field = compilingClass->ctpInfo->lookupField(index, true);
+    if (field && field->classDef->isReady()) final = isFinal(field->access);
+    if (final) {
+      void* Obj = field->classDef->getStaticInstance();
+      if (sign->isPrimitive()) {
+        const PrimitiveTypedef* prim = (PrimitiveTypedef*)sign;
+        if (prim->isInt()) {
+          sint32 val = field->getInt32Field(Obj);
+          push(ConstantInt::get(Type::Int32Ty, val), false);
+        } else if (prim->isByte()) {
+          sint8 val = (sint8)field->getInt8Field(Obj);
+          push(ConstantInt::get(Type::Int8Ty, val), false);
+        } else if (prim->isBool()) {
+          uint8 val = (uint8)field->getInt8Field(Obj);
+          push(ConstantInt::get(Type::Int8Ty, val), true);
+        } else if (prim->isShort()) {
+          sint16 val = (sint16)field->getInt16Field(Obj);
+          push(ConstantInt::get(Type::Int16Ty, val), false);
+        } else if (prim->isChar()) {
+          uint16 val = (uint16)field->getInt16Field(Obj);
+          push(ConstantInt::get(Type::Int16Ty, val), true);
+        } else if (prim->isLong()) {
+          sint64 val = (sint64)field->getLongField(Obj);
+          push(ConstantInt::get(Type::Int64Ty, val), false);
+        } else if (prim->isFloat()) {
+          float val = (float)field->getFloatField(Obj);
+          push(ConstantFP::get(Type::FloatTy, val), false);
+        } else if (prim->isDouble()) {
+          double val = (double)field->getDoubleField(Obj);
+          push(ConstantFP::get(Type::DoubleTy, val), false);
+        } else {
+          abort();
+        }
+      } else {
+        JavaObject* val = field->getObjectField(Obj);
+        Value* V = module->getFinalObject(val);
+        push(V, false);
+      }
+    }
+  }
+  
+  if (!final) push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned());
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
     push(module->constantZero, false);
   }

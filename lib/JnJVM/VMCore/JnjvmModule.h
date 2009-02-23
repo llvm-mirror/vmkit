@@ -192,6 +192,10 @@ private:
   std::map<const JavaMethod*, llvm::Constant*> nativeFunctions;
   std::map<const UTF8*, llvm::Constant*> utf8s;
   std::map<const Class*, llvm::Constant*> virtualMethods;
+  std::map<const JavaObject*, llvm::Constant*> finalObjects;
+  
+  typedef std::map<const JavaObject*, llvm::Constant*>::iterator
+    final_object_iterator;
   
   typedef std::map<const Class*, llvm::Constant*>::iterator
     method_iterator;
@@ -411,6 +415,7 @@ public:
   void initialise();
   void printStats();
 
+  llvm::Constant* getFinalObject(JavaObject* obj);
   llvm::Constant* getNativeClass(CommonClass* cl);
   llvm::Constant* getJavaClass(CommonClass* cl);
   llvm::Constant* getStaticInstance(Class* cl);
@@ -458,8 +463,13 @@ private:
   llvm::Constant* CreateConstantFromStaticInstance(Class* cl);
   llvm::Constant* CreateConstantFromJavaString(JavaString* str);
   llvm::Constant* CreateConstantFromJavaClass(CommonClass* cl);
-  llvm::Constant* CreateConstantForJavaObject(CommonClass* cl);
+  llvm::Constant* CreateConstantForBaseObject(CommonClass* cl);
+  llvm::Constant* CreateConstantFromJavaObject(JavaObject* obj);
   llvm::Constant* getUTF8(const UTF8* val);
+  
+  template<typename T>
+  llvm::Constant* CreateConstantFromArray(T* val, const llvm::Type* Ty);
+
 
 };
 
