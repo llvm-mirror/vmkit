@@ -424,6 +424,7 @@ public:
   void printStats();
 
   llvm::Constant* getFinalObject(JavaObject* obj);
+  JavaObject* getFinalObject(llvm::Value* C);
   llvm::Constant* getNativeClass(CommonClass* cl);
   llvm::Constant* getJavaClass(CommonClass* cl);
   llvm::Constant* getStaticInstance(Class* cl);

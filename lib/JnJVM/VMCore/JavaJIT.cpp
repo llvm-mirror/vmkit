@@ -77,18 +77,25 @@ void JavaJIT::invokeVirtual(uint16 index) {
   ctpInfo->infoOfMethod(index, ACC_VIRTUAL, cl, meth);
  
   if ((cl && isFinal(cl->access)) || 
-      (meth && (isFinal(meth->access) || isPrivate(meth->access))))
+      (meth && (isFinal(meth->access) || isPrivate(meth->access)))) {
     return invokeSpecial(index);
+  }
 
   // If the method is in fact a method defined in an interface,
   // call invokeInterface instead.
   if (meth && isInterface(meth->classDef->access)) {
     return invokeInterface(index, true);
   }
-
-#if !defined(WITHOUT_VTABLE)
+  
   const UTF8* name = 0;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
+  Value* obj = stack[signature->nbArguments].first;
+  JavaObject* source = module->getFinalObject(obj);
+  if (source) {
+    return invokeSpecial(index, source->getClass());
+  }
+ 
+#if !defined(WITHOUT_VTABLE)
   Typedef* retTypedef = signature->getReturnType();
   std::vector<Value*> args; // size = [signature->nbIn + 3];
   LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
@@ -96,8 +103,9 @@ void JavaJIT::invokeVirtual(uint16 index) {
   FunctionType::param_iterator it  = virtualType->param_end();
   makeArgs(it, index, args, signature->nbArguments + 1);
   const llvm::Type* retType = virtualType->getReturnType();
-  
-  JITVerifyNull(args[0]); 
+   
+  JITVerifyNull(args[0]);
+
   BasicBlock* endBlock = 0;
   PHINode* node = 0;
 #if 0
@@ -1218,7 +1226,7 @@ Instruction* JavaJIT::invokeInline(JavaMethod* meth,
   return ret;
 }
 
-void JavaJIT::invokeSpecial(uint16 index) {
+void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   JavaMethod* meth = 0;
   Signdef* signature = 0;
@@ -1230,13 +1238,27 @@ void JavaJIT::invokeSpecial(uint16 index) {
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   llvm::Instruction* val = 0;
   
-  std::vector<Value*> args; 
+  std::vector<Value*> args;
   FunctionType::param_iterator it  = virtualType->param_end();
   makeArgs(it, index, args, signature->nbArguments + 1);
+  Function* func = 0;
+
+  if (finalCl) {
+    Class* lookup = finalCl->isArray() ? finalCl->super : finalCl->asClass();
+
+    meth = lookup->lookupMethodDontThrow(name, signature->keyName, false, true,
+                                         0);
+    if (meth) {
+      // don't throw if no meth, the exception will be thrown just in time
+      JnjvmModule* M = compilingClass->classLoader->getModule();
+      func = M->getMethod(meth);
+    }
+  }
   
-  Function* func =   
-    (Function*)ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
-                                                      signature, meth);
+  if (!func) {
+    func = (Function*)ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
+                                                           signature, meth);
+  }
   
   if (meth == compilingClass->classLoader->bootstrapLoader->upcalls->InitObject)
     return;

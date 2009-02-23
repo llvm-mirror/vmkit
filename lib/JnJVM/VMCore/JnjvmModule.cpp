@@ -310,6 +310,21 @@ Constant* JnjvmModule::getJavaClass(CommonClass* cl) {
   }
 }
 
+JavaObject* JnjvmModule::getFinalObject(llvm::Value* obj) {
+  if (staticCompilation) {
+    abort();
+  } else {
+    if (ConstantExpr* CE = dyn_cast<ConstantExpr>(obj)) {
+      if (ConstantInt* C = dyn_cast<ConstantInt>(CE->getOperand(0))) {
+        return (JavaObject*)C->getZExtValue();
+      }
+    }
+  }
+  return 0;
+}
+
+
+
 Constant* JnjvmModule::getFinalObject(JavaObject* obj) {
   if (staticCompilation) {
     final_object_iterator End = finalObjects.end();
