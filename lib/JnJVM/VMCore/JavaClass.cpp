@@ -1092,9 +1092,10 @@ UserCommonClass* UserCommonClass::resolvedImplClass(Jnjvm* vm,
   return cl;
 }
 
-void JavaMethod::jniConsFromMeth(char* buf) const {
-  const UTF8* jniConsClName = classDef->name;
-  const UTF8* jniConsName = name;
+void JavaMethod::jniConsFromMeth(char* buf, const UTF8* jniConsClName,
+                                 const UTF8* jniConsName,
+                                 const UTF8* jniConsType,
+                                 bool synthetic) {
   sint32 clen = jniConsClName->size;
   sint32 mnlen = jniConsName->size;
 
@@ -1135,10 +1136,10 @@ void JavaMethod::jniConsFromMeth(char* buf) const {
 
 }
 
-void JavaMethod::jniConsFromMethOverloaded(char* buf) const {
-  const UTF8* jniConsClName = classDef->name;
-  const UTF8* jniConsName = name;
-  const UTF8* jniConsType = type;
+void JavaMethod::jniConsFromMethOverloaded(char* buf, const UTF8* jniConsClName,
+                                           const UTF8* jniConsName,
+                                           const UTF8* jniConsType,
+                                           bool synthetic) {
   sint32 clen = jniConsClName->size;
   sint32 mnlen = jniConsName->size;
 
@@ -1204,7 +1205,7 @@ void JavaMethod::jniConsFromMethOverloaded(char* buf) const {
     }
   }
 
-  if (isSynthetic(access)) {
+  if (synthetic) {
     ptr[0] = 'S';
     ++ptr;
   }

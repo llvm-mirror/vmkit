@@ -1032,12 +1032,30 @@ public:
   /// jniConsFromMeth - Construct the JNI name of this method as if
   /// there is no other function in the class with the same name.
   ///
-  void jniConsFromMeth(char* buf) const;
+  void jniConsFromMeth(char* buf) const {
+    jniConsFromMeth(buf, classDef->name, name, type, isSynthetic(access));
+  }
 
   /// jniConsFromMethOverloaded - Construct the JNI name of this method
   /// as if its name is overloaded in the class.
   ///
-  void jniConsFromMethOverloaded(char* buf) const;
+  void jniConsFromMethOverloaded(char* buf) const {
+    jniConsFromMethOverloaded(buf, classDef->name, name, type,
+                              isSynthetic(access));
+  }
+  
+  /// jniConsFromMeth - Construct the non-overloaded JNI name with
+  /// the given name and type.
+  ///
+  static void jniConsFromMeth(char* buf, const UTF8* clName, const UTF8* name,
+                              const UTF8* sign, bool synthetic);
+
+  /// jniConsFromMethOverloaded - Construct the overloaded JNI name with
+  /// the given name and type.
+  ///
+  static void jniConsFromMethOverloaded(char* buf, const UTF8* clName,
+                                        const UTF8* name, const UTF8* sign,
+                                        bool synthetic);
   
   /// getParameterTypes - Get the java.lang.Class of the parameters of
   /// the method, with the given class loader.
