@@ -123,7 +123,9 @@ Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
   if (staticCompilation) {
 
     if (classDef->isClass() || 
-        (classDef->isArray() && isCompiling(classDef))) {
+        (classDef->isArray() && isCompiling(classDef)) ||
+        (assumeCompiled && !(classDef->isArray() && 
+          classDef->asArrayClass()->baseClass()->isPrimitive()))) {
       native_class_iterator End = nativeClasses.end();
       native_class_iterator I = nativeClasses.find(classDef);
       if (I == End) {
@@ -139,7 +141,7 @@ Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
           new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage, 0,
                              classDef->printString(), this);
       
-        nativeClasses.insert(std::make_pair((Class*)classDef, varGV));
+        nativeClasses.insert(std::make_pair(classDef, varGV));
 
         if (classDef->isClass() && isCompiling(classDef->asClass())) {
           Constant* C = CreateConstantFromClass((Class*)classDef);
@@ -554,6 +556,10 @@ void JnjvmModule::allocateVT(Class* cl) {
 #ifdef WITH_TRACER
 llvm::Function* JnjvmModule::makeTracer(Class* cl, bool stat) {
   
+  if (isStaticCompiling() && !generateTracers) {
+    return JavaObjectTracerFunction;
+  }
+
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   const Type* type = stat ? LCI->getStaticType() : LCI->getVirtualType();
   JavaField* fields = 0;
@@ -2311,6 +2317,10 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID, bool sc) :
   MvmModule(ModuleID) {
   
   staticCompilation = sc;
+  generateTracers = true;
+  generateStubs = true;
+  enabledException = true;
+  assumeCompiled = false;
   if (!VTType) initialise();
 
   Module* module = initialModule;
