@@ -15,7 +15,6 @@
 #include "mvm/JIT.h"
 
 #include "JavaClass.h"
-#include "JavaConstantPool.h"
 #include "JavaTypes.h"
 
 #include "llvm/Module.h"
@@ -36,6 +35,7 @@ class CacheNode;
 class CommonClass;
 class Class;
 class Enveloppe;
+class JavaConstantPool;
 class JavaField;
 class JavaMethod;
 class JavaObject;
