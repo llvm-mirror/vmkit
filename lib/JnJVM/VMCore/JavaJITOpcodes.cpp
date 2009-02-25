@@ -1896,28 +1896,30 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         }
         Value* arg1 = popAsInt();
 
-        Value* cmp = new ICmpInst(ICmpInst::ICMP_SLT, arg1,
-                                  module->constantZero, "", currentBlock);
+        if (module->hasExceptionsEnabled()) {
+          Value* cmp = new ICmpInst(ICmpInst::ICMP_SLT, arg1,
+                                    module->constantZero, "", currentBlock);
 
-        BasicBlock* BB1 = createBasicBlock("");
-        BasicBlock* BB2 = createBasicBlock("");
+          BasicBlock* BB1 = createBasicBlock("");
+          BasicBlock* BB2 = createBasicBlock("");
 
-        BranchInst::Create(BB1, BB2, cmp, currentBlock);
-        currentBlock = BB1;
-        throwException(module->NegativeArraySizeExceptionFunction, arg1);
-        currentBlock = BB2;
+          BranchInst::Create(BB1, BB2, cmp, currentBlock);
+          currentBlock = BB1;
+          throwException(module->NegativeArraySizeExceptionFunction, arg1);
+          currentBlock = BB2;
         
-        cmp = new ICmpInst(ICmpInst::ICMP_SGT, arg1,
-                           module->MaxArraySizeConstant,
-                           "", currentBlock);
+          cmp = new ICmpInst(ICmpInst::ICMP_SGT, arg1,
+                             module->MaxArraySizeConstant,
+                             "", currentBlock);
 
-        BB1 = createBasicBlock("");
-        BB2 = createBasicBlock("");
+          BB1 = createBasicBlock("");
+          BB2 = createBasicBlock("");
 
-        BranchInst::Create(BB1, BB2, cmp, currentBlock);
-        currentBlock = BB1;
-        throwException(module->OutOfMemoryErrorFunction, arg1);
-        currentBlock = BB2;
+          BranchInst::Create(BB1, BB2, cmp, currentBlock);
+          currentBlock = BB1;
+          throwException(module->OutOfMemoryErrorFunction, arg1);
+          currentBlock = BB2;
+        }
         
         Value* mult = BinaryOperator::CreateMul(arg1, sizeElement, "",
                                                 currentBlock);
@@ -1973,6 +1975,11 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case CHECKCAST :
+        if (!module->hasExceptionsEnabled()) {
+          i += 2;
+          break;
+        }
+
       case INSTANCEOF : {
         
         bool checkcast = (bytecodes[i] == CHECKCAST);

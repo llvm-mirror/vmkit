@@ -882,7 +882,7 @@ llvm::Function* JavaJIT::javaCompile() {
               compilingMethod->printString());
   
 #ifndef DWARF_EXCEPTIONS
-  if (codeLen < 5 && !callsStackWalker)
+  if (codeLen < 5 && !callsStackWalker && !module->isStaticCompiling())
     compilingMethod->canBeInlined = true;
 #endif
 
@@ -970,18 +970,20 @@ void JavaJIT::loadConstant(uint16 index) {
 
 void JavaJIT::JITVerifyNull(Value* obj) {
 
-  Constant* zero = module->JavaObjectNullConstant;
-  Value* test = new ICmpInst(ICmpInst::ICMP_EQ, obj, zero, "",
-                             currentBlock);
+  if (module->hasExceptionsEnabled()) {
+    Constant* zero = module->JavaObjectNullConstant;
+    Value* test = new ICmpInst(ICmpInst::ICMP_EQ, obj, zero, "",
+                               currentBlock);
 
-  BasicBlock* exit = createBasicBlock("verifyNullExit");
-  BasicBlock* cont = createBasicBlock("verifyNullCont");
+    BasicBlock* exit = createBasicBlock("verifyNullExit");
+    BasicBlock* cont = createBasicBlock("verifyNullCont");
 
-  BranchInst::Create(exit, cont, test, currentBlock);
-  currentBlock = exit;
-  throwException(module->NullPointerExceptionFunction, 0, 0);
-  currentBlock = cont;
-  
+    BranchInst::Create(exit, cont, test, currentBlock);
+    currentBlock = exit;
+    throwException(module->NullPointerExceptionFunction, 0, 0);
+    currentBlock = cont;
+  }
+ 
 }
 
 Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
@@ -992,7 +994,7 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
     index = new SExtInst(index, Type::Int32Ty, "", currentBlock);
   }
   
-  if (true) {
+  if (module->hasExceptionsEnabled()) {
     Value* size = arraySize(obj);
     
     Value* cmp = new ICmpInst(ICmpInst::ICMP_ULT, index, size, "",

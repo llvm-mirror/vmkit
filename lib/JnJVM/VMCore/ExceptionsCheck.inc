@@ -4,33 +4,36 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
   
   Instruction* res = CallInst::Create(F, args.begin(), args.end(), Name,
                                       InsertAtEnd);
-  Value* threadId = getCurrentThread();
-  Value* geps[2] = { module->constantZero,
-                     module->OffsetJavaExceptionInThreadConstant };
-
-  Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
-                                                      geps + 2, "",
-                                                      currentBlock);
-    
-  // Get the Java exception.
-  Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
-    
-  BasicBlock* ifNormal = createBasicBlock("no exception block");
   
-  Constant* zero = module->JavaObjectNullConstant;
-  Value* test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "",
-                             currentBlock);
+  if (module->hasExceptionsEnabled()) {
+    Value* threadId = getCurrentThread();
+    Value* geps[2] = { module->constantZero,
+                       module->OffsetJavaExceptionInThreadConstant };
 
-  BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
+    Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
+                                                        geps + 2, "",
+                                                        currentBlock);
+    
+    // Get the Java exception.
+    Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+    
+    BasicBlock* ifNormal = createBasicBlock("no exception block");
+  
+    Constant* zero = module->JavaObjectNullConstant;
+    Value* test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "",
+                               currentBlock);
+
+    BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
 
     
-  if (!currentExceptionBlock->empty()) {
-    Instruction* insn = currentExceptionBlock->begin();
-    PHINode* node = dyn_cast<PHINode>(insn);
-    if (node) node->addIncoming(obj, currentBlock);
+    if (!currentExceptionBlock->empty()) {
+      Instruction* insn = currentExceptionBlock->begin();
+      PHINode* node = dyn_cast<PHINode>(insn);
+      if (node) node->addIncoming(obj, currentBlock);
+    }
+  
+    currentBlock = ifNormal; 
   }
-  
-  currentBlock = ifNormal; 
 
   return res;
 }
@@ -39,32 +42,35 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
                        BasicBlock *InsertAtEnd) {
 
   Instruction* res = CallInst::Create(F, arg1, Name, InsertAtEnd);
-  Value* threadId = getCurrentThread();
-  Value* geps[2] = { module->constantZero,
-                     module->OffsetJavaExceptionInThreadConstant };
-
-  Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
-                                                      geps + 2, "",
-                                                      currentBlock);
-    
-  // Get the Java exception.
-  Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
-    
-  BasicBlock* ifNormal = createBasicBlock("no exception block");
   
-  Constant* zero = module->JavaObjectNullConstant;
-  Value* test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "",
-                             currentBlock);
+  if (module->hasExceptionsEnabled()) {
+    Value* threadId = getCurrentThread();
+    Value* geps[2] = { module->constantZero,
+                       module->OffsetJavaExceptionInThreadConstant };
 
-  BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
+    Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
+                                                        geps + 2, "",
+                                                        currentBlock);
+    
+    // Get the Java exception.
+    Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+    
+    BasicBlock* ifNormal = createBasicBlock("no exception block");
+  
+    Constant* zero = module->JavaObjectNullConstant;
+    Value* test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "",
+                               currentBlock);
+
+    BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
  
-  if (!currentExceptionBlock->empty()) {
-    Instruction* insn = currentExceptionBlock->begin();
-    PHINode* node = dyn_cast<PHINode>(insn);
-    if (node) node->addIncoming(obj, currentBlock);
-  }
+    if (!currentExceptionBlock->empty()) {
+      Instruction* insn = currentExceptionBlock->begin();
+      PHINode* node = dyn_cast<PHINode>(insn);
+      if (node) node->addIncoming(obj, currentBlock);
+    }
   
-  currentBlock = ifNormal;
+    currentBlock = ifNormal;
+  }
 
   return res;
 }
@@ -76,32 +82,34 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
   
   Instruction* res = CallInst::Create(F, args, args + 2, Name, InsertAtEnd);
   
-  Value* threadId = getCurrentThread();
-  Value* geps[2] = { module->constantZero,
-                     module->OffsetJavaExceptionInThreadConstant };
+  if (module->hasExceptionsEnabled()) {
+    Value* threadId = getCurrentThread();
+    Value* geps[2] = { module->constantZero,
+                       module->OffsetJavaExceptionInThreadConstant };
 
-  Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
-                                                      geps + 2, "",
-                                                      currentBlock);
+    Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
+                                                        geps + 2, "",
+                                                        currentBlock);
     
-  // Get the Java exception.
-  Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+    // Get the Java exception.
+    Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
     
-  BasicBlock* ifNormal = createBasicBlock("no exception block");
+    BasicBlock* ifNormal = createBasicBlock("no exception block");
   
-  Constant* zero = module->JavaObjectNullConstant;
-  Value* test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "",
-                             currentBlock);
+    Constant* zero = module->JavaObjectNullConstant;
+    Value* test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "",
+                               currentBlock);
 
-  BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
+    BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
   
-  if (!currentExceptionBlock->empty()) {
-    Instruction* insn = currentExceptionBlock->begin();
-    PHINode* node = dyn_cast<PHINode>(insn);
-    if (node) node->addIncoming(obj, currentBlock);
+    if (!currentExceptionBlock->empty()) {
+      Instruction* insn = currentExceptionBlock->begin();
+      PHINode* node = dyn_cast<PHINode>(insn);
+      if (node) node->addIncoming(obj, currentBlock);
+    }
+
+    currentBlock = ifNormal;
   }
-
-  currentBlock = ifNormal;
 
   return res;
 }
@@ -109,32 +117,35 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
 Instruction* JavaJIT::invoke(Value *F, const char* Name,
                        BasicBlock *InsertAtEnd) {
   Instruction* res = llvm::CallInst::Create(F, Name, InsertAtEnd);
-  Value* threadId = getCurrentThread();
-  Value* geps[2] = { module->constantZero,
-                     module->OffsetJavaExceptionInThreadConstant };
-
-  Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
-                                                      geps + 2, "",
-                                                      currentBlock);
-    
-  // Get the Java exception.
-  Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
-    
-  BasicBlock* ifNormal = createBasicBlock("no exception block");
   
-  Constant* zero = module->JavaObjectNullConstant;
-  Value* test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "",
-                             currentBlock);
+  if (module->hasExceptionsEnabled()) {
+    Value* threadId = getCurrentThread();
+    Value* geps[2] = { module->constantZero,
+                       module->OffsetJavaExceptionInThreadConstant };
 
-  BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
+    Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
+                                                        geps + 2, "",
+                                                        currentBlock);
+    
+    // Get the Java exception.
+    Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+    
+    BasicBlock* ifNormal = createBasicBlock("no exception block");
   
-  if (!currentExceptionBlock->empty()) {
-    Instruction* insn = currentExceptionBlock->begin();
-    PHINode* node = dyn_cast<PHINode>(insn);
-    if (node) node->addIncoming(obj, currentBlock);
+    Constant* zero = module->JavaObjectNullConstant;
+    Value* test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "",
+                               currentBlock);
+
+    BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
+  
+    if (!currentExceptionBlock->empty()) {
+      Instruction* insn = currentExceptionBlock->begin();
+      PHINode* node = dyn_cast<PHINode>(insn);
+      if (node) node->addIncoming(obj, currentBlock);
+    }
+
+    currentBlock = ifNormal;
   }
-
-  currentBlock = ifNormal;
 
   return res;
 }
