@@ -19,6 +19,7 @@
 #include "mvm/JIT.h"
 
 #include "JavaCache.h"
+#include "JavaConstantPool.h"
 #include "JavaJIT.h"
 #include "JavaString.h"
 #include "JavaThread.h"
@@ -164,7 +165,8 @@ Constant* JnjvmModule::getNativeClass(CommonClass* classDef) {
       
         GlobalVariable* varGV = 
           new GlobalVariable(Ty, false, GlobalValue::InternalLinkage,
-                             Constant::getNullValue(Ty), "", this);
+                             Constant::getNullValue(Ty),
+                             classDef->printString(), this);
       
         arrayClasses.insert(std::make_pair((ClassArray*)classDef, varGV));
         return varGV;
@@ -2584,6 +2586,15 @@ void JnjvmModule::CreateStaticInitializer() {
   Function* GetClassArray = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                              "vmjcGetClassArray", this);
   
+  if (!StaticInitializer) {
+    std::vector<const llvm::Type*> llvmArgs;
+    llvmArgs.push_back(ptrType); // class loader.
+    const FunctionType* FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+    
+    StaticInitializer = Function::Create(FTy, GlobalValue::InternalLinkage,
+                                         "Init", this);
+  }
+
   BasicBlock* currentBlock = BasicBlock::Create("enter", StaticInitializer);
   Function::arg_iterator loader = StaticInitializer->arg_begin();
   
@@ -2648,4 +2659,20 @@ void JnjvmModule::setNoInline(Class* cl) {
       func->addFnAttr(Attribute::NoInline);
     }
   }
+}
+
+LLVMSignatureInfo* JnjvmModule::getSignatureInfo(Signdef* sign) {
+  return sign->getInfo<LLVMSignatureInfo>();
+}
+  
+LLVMClassInfo* JnjvmModule::getClassInfo(Class* cl) {
+  return cl->getInfo<LLVMClassInfo>();
+}
+
+LLVMFieldInfo* JnjvmModule::getFieldInfo(JavaField* field) {
+  return field->getInfo<LLVMFieldInfo>();
+}
+  
+LLVMMethodInfo* JnjvmModule::getMethodInfo(JavaMethod* method) {
+  return method->getInfo<LLVMMethodInfo>();
 }

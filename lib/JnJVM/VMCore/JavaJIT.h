@@ -21,6 +21,7 @@
 
 #include "types.h"
 
+#include "JavaClass.h"
 #include "JnjvmModule.h"
 
 namespace jnjvm {

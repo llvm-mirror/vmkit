@@ -20,6 +20,7 @@
 #include "JavaConstantPool.h"
 #include "JavaJIT.h"
 #include "JavaThread.h"
+#include "JavaTypes.h"
 #include "Jnjvm.h"
 #include "JnjvmModule.h"
 #include "JnjvmModuleProvider.h"

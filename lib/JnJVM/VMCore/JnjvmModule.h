@@ -12,10 +12,8 @@
 
 #include <map>
 
+#include "mvm/Allocator.h"
 #include "mvm/JIT.h"
-
-#include "JavaClass.h"
-#include "JavaTypes.h"
 
 #include "llvm/Module.h"
 
@@ -34,12 +32,18 @@ class Attribut;
 class CacheNode;
 class CommonClass;
 class Class;
+class ClassArray;
+class ClassPrimitive;
 class Enveloppe;
 class JavaConstantPool;
 class JavaField;
 class JavaMethod;
 class JavaObject;
+class JavaString;
 class JnjvmModule;
+class Typedef;
+class Signdef;
+class UTF8;
 
 class LLVMAssessorInfo {
 public:
@@ -414,22 +418,10 @@ public:
   static void setMethod(JavaMethod* meth, void* ptr, const char* name);
   static llvm::Function* getMethod(JavaMethod* meth);
 
-  static LLVMSignatureInfo* getSignatureInfo(Signdef* sign) {
-    return sign->getInfo<LLVMSignatureInfo>();
-  }
-  
-  static LLVMClassInfo* getClassInfo(Class* cl) {
-    return cl->getInfo<LLVMClassInfo>();
-  }
-
-  static LLVMFieldInfo* getFieldInfo(JavaField* field) {
-    return field->getInfo<LLVMFieldInfo>();
-  }
-  
-  static LLVMMethodInfo* getMethodInfo(JavaMethod* method) {
-    return method->getInfo<LLVMMethodInfo>();
-  }
-
+  static LLVMSignatureInfo* getSignatureInfo(Signdef* sign);
+  static LLVMClassInfo* getClassInfo(Class* cl);
+  static LLVMFieldInfo* getFieldInfo(JavaField* field);
+  static LLVMMethodInfo* getMethodInfo(JavaMethod* method);
   static LLVMAssessorInfo& getTypedefInfo(const Typedef* type);
   
   explicit JnjvmModule(const std::string &ModuleID, bool sc = false);
