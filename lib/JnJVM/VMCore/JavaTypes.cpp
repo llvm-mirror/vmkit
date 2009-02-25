@@ -21,11 +21,11 @@ void PrimitiveTypedef::tPrintBuf(mvm::PrintBuffer* buf) const {
 }
 
 void ArrayTypedef::tPrintBuf(mvm::PrintBuffer* buf) const {
-  CommonClass::printClassName(keyName, buf);
+  UserCommonClass::printClassName(keyName, buf);
 }
 
 void ObjectTypedef::tPrintBuf(mvm::PrintBuffer* buf) const {
-  CommonClass::printClassName(pseudoAssocClassName, buf);
+  UserCommonClass::printClassName(pseudoAssocClassName, buf);
 }
 
 const char* Typedef::printString() const {
@@ -67,11 +67,11 @@ const char* Signdef::printString(const char* ext) const {
   return buf->contents()->cString();
 }
 
-void Signdef::printWithSign(CommonClass* cl, const UTF8* name,
+void Signdef::printWithSign(UserCommonClass* cl, const UTF8* name,
                             mvm::PrintBuffer* buf) const {
   getReturnType()->tPrintBuf(buf);
   buf->write(" ");
-  CommonClass::printClassName(cl->name, buf);
+  UserCommonClass::printClassName(cl->name, buf);
   buf->write("::");
   name->printUTF8(buf);
   humanPrintArgs(buf);

@@ -13,24 +13,12 @@
 #include "types.h"
 
 #include "mvm/Allocator.h"
-#include "mvm/Object.h"
-
-#include "JnjvmClassLoader.h"
 
 namespace jnjvm {
 
-class Classpath;
-class ClassArray;
-class CommonClass;
-class JavaArray;
-class JavaJIT;
-class JavaObject;
-class Jnjvm;
-class JnjvmBootstrapLoader;
-class JnjvmClassLoader;
-class UserClassArray;
-class UserClassPrimitive;
 class UserCommonClass;
+class JnjvmClassLoader;
+class UserClassPrimitive;
 class UTF8;
 class UTF8Map;
 
@@ -288,7 +276,7 @@ public:
   /// printWithSign - Print the signature of a method with the method's class
   /// and name.
   ///
-  void printWithSign(CommonClass* cl, const UTF8* name,
+  void printWithSign(UserCommonClass* cl, const UTF8* name,
                      mvm::PrintBuffer* buf) const;
   
   /// Signdef - Create a new Signdef.
