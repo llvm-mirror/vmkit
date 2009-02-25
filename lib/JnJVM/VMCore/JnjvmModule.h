@@ -232,6 +232,7 @@ private:
   
   
   bool staticCompilation;
+  bool enabledException;
 
 #ifdef WITH_TRACER 
   llvm::Function* makeTracer(Class* cl, bool stat);
@@ -249,9 +250,21 @@ private:
 public:
   
   static llvm::Function* NativeLoader;
+  
+  bool generateTracers;
+  bool generateStubs;
+  bool assumeCompiled;
 
   bool isStaticCompiling() {
     return staticCompilation;
+  }
+
+  bool hasExceptionsEnabled() {
+    return enabledException;
+  }
+  
+  void disableExceptions() {
+    enabledException = false;
   }
 
   void setIsStaticCompiling(bool sc) {
