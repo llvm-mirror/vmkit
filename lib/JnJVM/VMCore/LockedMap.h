@@ -23,7 +23,6 @@
 #include "types.h"
 
 #include "mvm/Allocator.h"
-#include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Locks.h"
 
@@ -31,7 +30,6 @@
 
 namespace jnjvm {
 
-class JavaObject;
 class JavaString;
 class Signdef;
 class Typedef;
