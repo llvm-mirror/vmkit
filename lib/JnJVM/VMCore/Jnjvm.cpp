@@ -1102,21 +1102,23 @@ const UTF8* Jnjvm::asciizToUTF8(const char* asciiz) {
 
 
 static void compileClass(Class* cl) {
+  JnjvmModule* Mod = cl->classLoader->getModule();
+  
   // Make sure the class is emitted.
-  cl->classLoader->getModule()->getNativeClass(cl);
+  Mod->getNativeClass(cl);
 
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
     JavaMethod& meth = cl->virtualMethods[i];
     if (!isAbstract(meth.access))
       cl->classLoader->getModuleProvider()->parseFunction(&meth);
-    meth.getSignature()->compileAllStubs();
+    if (Mod->generateStubs) meth.getSignature()->compileAllStubs();
   }
   
   for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
     JavaMethod& meth = cl->staticMethods[i];
     if (!isAbstract(meth.access))
       cl->classLoader->getModuleProvider()->parseFunction(&meth);
-    meth.getSignature()->compileAllStubs();
+    if (Mod->generateStubs) meth.getSignature()->compileAllStubs();
   }
 }
 
@@ -1173,6 +1175,17 @@ void Jnjvm::mainCompilerStart(JavaThread* th) {
         Class* cl = *i;
         cl->resolveClass();
         cl->setOwnerClass(JavaThread::get());
+        
+        for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+          LLVMMethodInfo* LMI = M->getMethodInfo(&cl->virtualMethods[i]);
+          LMI->getMethod();
+        }
+
+        for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
+          LLVMMethodInfo* LMI = M->getMethodInfo(&cl->staticMethods[i]);
+          LMI->getMethod();
+        }
+
       }
       
       for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
