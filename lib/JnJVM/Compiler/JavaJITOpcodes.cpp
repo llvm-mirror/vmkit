@@ -33,7 +33,11 @@
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 
-#include "OpcodeNames.def"
+#include "jnjvm/JnjvmModule.h"
+
+#if DEBUG > 0
+#include "jnjvm/OpcodeNames.def"
+#endif
 
 using namespace jnjvm;
 using namespace llvm;

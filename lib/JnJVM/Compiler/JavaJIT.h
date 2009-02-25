@@ -22,12 +22,13 @@
 #include "types.h"
 
 #include "JavaClass.h"
-#include "JnjvmModule.h"
+#include "jnjvm/JnjvmModule.h"
 
 namespace jnjvm {
 
 class Class;
 class JavaMethod;
+class JnjvmModule;
 class Reader;
 class UTF8;
 

@@ -14,7 +14,7 @@ TOOLNAME = vmkit
 USEDLIBS = Allocator CommonThread Mvm $(GCLIB) 
 
 ifeq ($(WITH_JNJVM), 1)
-USEDLIBS += JnJVM Classpath
+USEDLIBS += JnJVM Classpath JnjvmCompiler
 endif
 
 ifeq ($(ISOLATE_SHARING_BUILD), 1) 

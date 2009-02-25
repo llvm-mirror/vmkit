@@ -13,11 +13,12 @@
 #include "JavaCache.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
-#include "JavaJIT.h"
 #include "JavaString.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
+
+#include "jnjvm/OpcodeNames.def"
 
 #include <cstdarg>
 
@@ -519,7 +520,7 @@ extern "C" void printMethodEnd(JavaMethod* meth) {
 
 extern "C" void printExecution(uint32 opcode, uint32 index, JavaMethod* meth) {
   printf("[%p] executing %s %s at %d\n", (void*)mvm::Thread::get(),
-         meth->printString(), JavaJIT::OpcodeNames[opcode], index);
+         meth->printString(), OpcodeNames[opcode], index);
   fflush(stdout);
 }
 

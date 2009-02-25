@@ -38,6 +38,8 @@
 #include "Jnjvm.h"
 #include "Reader.h"
 
+#include "jnjvm/JnjvmModule.h"
+
 using namespace jnjvm;
 using namespace llvm;
 

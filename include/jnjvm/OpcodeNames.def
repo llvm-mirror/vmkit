@@ -10,7 +10,7 @@
 #ifndef OPCODE_NAMES_DEF
 #define OPCODE_NAMES_DEF
 
-const char* jnjvm::JavaJIT::OpcodeNames[256] = {
+static const char* OpcodeNames[256] = {
       "NOP",
       "ACONST_NULL",
       "ICONST_M1",

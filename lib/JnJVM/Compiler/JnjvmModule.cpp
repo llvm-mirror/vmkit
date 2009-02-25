@@ -26,9 +26,10 @@
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "JnjvmModule.h"
-#include "JnjvmModuleProvider.h"
 #include "Reader.h"
+
+#include "jnjvm/JnjvmModule.h"
+#include "jnjvm/JnjvmModuleProvider.h"
 
 #include <cstdio>
 

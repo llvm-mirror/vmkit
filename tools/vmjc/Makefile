@@ -11,7 +11,7 @@ LEVEL = ../..
 include $(LEVEL)/Makefile.config
 
 TOOLNAME = vmjc
-USEDLIBS = Allocator CommonThread Mvm JnJVM Classpath $(GCLIB)
+USEDLIBS = Allocator CommonThread Mvm JnJVM Classpath JnjvmCompiler $(GCLIB)
 LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo bitwriter
 
 include $(LEVEL)/Makefile.common

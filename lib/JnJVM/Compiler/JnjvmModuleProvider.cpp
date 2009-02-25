@@ -22,8 +22,9 @@
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
-#include "JnjvmModule.h"
-#include "JnjvmModuleProvider.h"
+
+#include "jnjvm/JnjvmModule.h"
+#include "jnjvm/JnjvmModuleProvider.h"
 
 using namespace llvm;
 using namespace jnjvm;
