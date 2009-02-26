@@ -341,7 +341,7 @@ protected:
 
 private: 
   
-  void initialise();
+  static void initialise();
   
   bool enabledException;
   
@@ -356,7 +356,7 @@ private:
   
 public:
   
-  JnjvmModule(const std::string &ModuleID, JnjvmModule* Father = 0);
+  JnjvmModule(const std::string &ModuleID);
   
 
   virtual bool isStaticCompiling() = 0;
@@ -409,7 +409,7 @@ public:
 
 class JnjvmModuleJIT : public JnjvmModule {
 public:
-  JnjvmModuleJIT(const std::string &ModuleID, JnjvmModule* Father = 0);
+  JnjvmModuleJIT(const std::string &ModuleID);
   
   virtual bool isStaticCompiling() {
     return false;
@@ -444,7 +444,7 @@ public:
 class JnjvmModuleAOT : public JnjvmModule {
 
 public:
-  JnjvmModuleAOT(const std::string &ModuleID, JnjvmModule* Father = 0);
+  JnjvmModuleAOT(const std::string &ModuleID);
   
   virtual bool isStaticCompiling() {
     return true;

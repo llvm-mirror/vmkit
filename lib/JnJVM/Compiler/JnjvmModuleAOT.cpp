@@ -1194,9 +1194,8 @@ llvm::Function* JnjvmModuleAOT::makeTracer(Class* cl, bool stat) {
 }
 #endif
 
-JnjvmModuleAOT::JnjvmModuleAOT(const std::string& ModuleID,
-                               JnjvmModule* Father) :
-  JnjvmModule(ModuleID, Father) {
+JnjvmModuleAOT::JnjvmModuleAOT(const std::string& ModuleID) :
+  JnjvmModule(ModuleID) {
  
   generateTracers = true;
   generateStubs = true;

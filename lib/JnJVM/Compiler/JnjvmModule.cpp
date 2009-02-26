@@ -259,8 +259,8 @@ namespace jnjvm {
 }
 
 void JnjvmModule::initialise() {
-  jnjvm::llvm_runtime::makeLLVMModuleContents(getLLVMModule());
-  Module* module = getLLVMModule();
+  Module* module = globalModule;
+  jnjvm::llvm_runtime::makeLLVMModuleContents(module);
 
   VTType = PointerType::getUnqual(module->getTypeByName("VT"));
 
@@ -369,37 +369,33 @@ Function* JnjvmModule::getMethod(JavaMethod* meth) {
   return getMethodInfo(meth)->getMethod();
 }
 
-JnjvmModule::JnjvmModule(const std::string &ModuleID, JnjvmModule* Father) :
+JnjvmModule::JnjvmModule(const std::string &ModuleID) :
   MvmModule(ModuleID) {
   
-  Module* module = 0;
-  if (!Father) {
-    assert(!VTType && "Attempting to create a new initial JnjvmModule");
-    enabledException = true;
+  Module* module = getLLVMModule();
+  enabledException = true;
+  if (!VTType) {
     initialise();
-    module = getLLVMModule();
-  } else {
-    enabledException = Father->enabledException;
-    module = getLLVMModule();
-    module->addTypeName("JavaObject", JavaObjectType);
-    module->addTypeName("JavaArray", JavaArrayType);
-    module->addTypeName("JavaCommonClass", JavaCommonClassType);
-    module->addTypeName("JavaClass", JavaClassType);
-    module->addTypeName("JavaClassPrimitive", JavaClassPrimitiveType);
-    module->addTypeName("JavaClassArray", JavaClassArrayType);
-    module->addTypeName("ArrayUInt8", JavaArrayUInt8Type);
-    module->addTypeName("ArraySInt8", JavaArraySInt8Type);
-    module->addTypeName("ArrayUInt16", JavaArrayUInt16Type);
-    module->addTypeName("ArraySInt16", JavaArraySInt16Type);
-    module->addTypeName("ArraySInt32", JavaArraySInt32Type);
-    module->addTypeName("ArrayLong", JavaArrayLongType);
-    module->addTypeName("ArrayFloat", JavaArrayFloatType);
-    module->addTypeName("ArrayDouble", JavaArrayDoubleType);
-    module->addTypeName("ArrayObject", JavaArrayObjectType);
-    module->addTypeName("CacheNode", CacheNodeType); 
-    module->addTypeName("Enveloppe", EnveloppeType);
-    module = Father->getLLVMModule();
+    copyDefinitions(module, globalModule);
   }
+  
+  module->addTypeName("JavaObject", JavaObjectType);
+  module->addTypeName("JavaArray", JavaArrayType);
+  module->addTypeName("JavaCommonClass", JavaCommonClassType);
+  module->addTypeName("JavaClass", JavaClassType);
+  module->addTypeName("JavaClassPrimitive", JavaClassPrimitiveType);
+  module->addTypeName("JavaClassArray", JavaClassArrayType);
+  module->addTypeName("ArrayUInt8", JavaArrayUInt8Type);
+  module->addTypeName("ArraySInt8", JavaArraySInt8Type);
+  module->addTypeName("ArrayUInt16", JavaArrayUInt16Type);
+  module->addTypeName("ArraySInt16", JavaArraySInt16Type);
+  module->addTypeName("ArraySInt32", JavaArraySInt32Type);
+  module->addTypeName("ArrayLong", JavaArrayLongType);
+  module->addTypeName("ArrayFloat", JavaArrayFloatType);
+  module->addTypeName("ArrayDouble", JavaArrayDoubleType);
+  module->addTypeName("ArrayObject", JavaArrayObjectType);
+  module->addTypeName("CacheNode", CacheNodeType); 
+  module->addTypeName("Enveloppe", EnveloppeType);
    
   InterfaceLookupFunction = module->getFunction("jnjvmVirtualLookup");
   MultiCallNewFunction = module->getFunction("multiCallNew");

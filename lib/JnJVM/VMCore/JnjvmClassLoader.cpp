@@ -274,7 +274,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(JnjvmModule* Mod,
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
                                    Jnjvm* I) {
-  TheModule = new JnjvmModuleJIT("Applicative loader", JCL.getModule());
+  TheModule = new JnjvmModuleJIT("Applicative loader");
   TheModuleProvider = new JnjvmModuleProvider(getModule());
   bootstrapLoader = JCL.bootstrapLoader;
   

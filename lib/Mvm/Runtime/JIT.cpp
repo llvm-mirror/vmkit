@@ -68,6 +68,7 @@ void MvmModule::initialise(bool Fast, Module* M, TargetMachine* T) {
 
   globalFunctionPasses = new FunctionPassManager(globalModuleProvider);
 
+  mvm::llvm_runtime::makeLLVMModuleContents(globalModule);
   
   // Type declaration
   ptrType = PointerType::getUnqual(Type::Int8Ty);
@@ -133,8 +134,8 @@ MvmModule::MvmModule(const std::string& ModuleID) {
   TheModule->setDataLayout(globalModule->getDataLayout());
   TheModule->setTargetTriple(globalModule->getTargetTriple());
   
-  mvm::llvm_runtime::makeLLVMModuleContents(module);
-  
+  copyDefinitions(module, globalModule); 
+    
   printFloatLLVM = module->getFunction("printFloat");
   printDoubleLLVM = module->getFunction("printDouble");
   printLongLLVM = module->getFunction("printLong");
@@ -254,7 +255,7 @@ uint64 MvmModule::getTypeSize(const llvm::Type* type) {
   return TheTargetData->getTypePaddedSize(type);
 }
 
-void MvmModule::runPasses(llvm::Function* func,  
+void MvmModule::runPasses(llvm::Function* func,
                           llvm::FunctionPassManager* pm) {
   pm->run(*func);
 }
@@ -273,9 +274,6 @@ static void addPass(FunctionPassManager *PM, Pass *P) {
 //
 void CompilationUnit::AddStandardCompilePasses() {
   // TODO: enable this when
-  // - we can call multiple times the makeLLVMModuleContents function generated 
-  //   by llc -march=cpp -cppgen=contents
-  // - intrinsics won't be in the .ll files
   // - each module will have its declaration of external functions
   // 
   //PM->add(llvm::createVerifierPass());        // Verify that input is correct
@@ -326,4 +324,16 @@ void MvmModule::protectIR() {
 
 void MvmModule::unprotectIR() {
   if (executionEngine) executionEngine->lock.release();
+}
+
+
+void MvmModule::copyDefinitions(Module* Dst, Module* Src) {
+  // Loop over all of the functions in the src module, mapping them over
+  for (Module::const_iterator I = Src->begin(), E = Src->end(); I != E; ++I) {
+    const Function *SF = I;   // SrcFunction
+    assert(SF->isDeclaration() && 
+           "Don't know how top copy functions with body");
+    Function::Create(SF->getFunctionType(), GlobalValue::ExternalLinkage,
+                     SF->getName(), Dst);
+  }
 }

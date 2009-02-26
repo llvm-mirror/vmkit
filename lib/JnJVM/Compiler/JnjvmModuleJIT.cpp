@@ -118,9 +118,8 @@ Constant* JnjvmModuleJIT::getNativeFunction(JavaMethod* meth, void* ptr) {
   return ConstantExpr::getIntToPtr(CI, valPtrType);
 }
 
-JnjvmModuleJIT::JnjvmModuleJIT(const std::string &ModuleID,
-                               JnjvmModule* Father) :
-  JnjvmModule(ModuleID, Father) {
+JnjvmModuleJIT::JnjvmModuleJIT(const std::string &ModuleID) :
+  JnjvmModule(ModuleID) {
    
   ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64(JavaArrayVT));
   PrimitiveArrayVT = ConstantExpr::getIntToPtr(CI, VTType);

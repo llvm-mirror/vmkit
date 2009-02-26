@@ -184,6 +184,7 @@ public:
   static void protectIR();
   static void unprotectIR();
 
+  static void copyDefinitions(llvm::Module* Dst, llvm::Module* Src);
 
 };
 
