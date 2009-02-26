@@ -274,9 +274,9 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(JnjvmModule* Mod,
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
                                    Jnjvm* I) {
-  TheModule = new JnjvmModuleJIT("Applicative loader");
-  TheModuleProvider = new JnjvmModuleProvider(getModule());
   bootstrapLoader = JCL.bootstrapLoader;
+  TheModule = bootstrapLoader->getModule()->Create("Applicative loader");
+  TheModuleProvider = new JnjvmModuleProvider(getModule());
   
   hashUTF8 = new(allocator) UTF8Map(allocator,
                                     bootstrapLoader->upcalls->ArrayOfChar);

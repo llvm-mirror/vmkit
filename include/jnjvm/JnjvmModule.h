@@ -369,6 +369,8 @@ public:
     enabledException = false;
   }
   
+  virtual JnjvmModule* Create(std::string ModuleID) = 0;
+  
   virtual ~JnjvmModule() {}
 
   llvm::Constant* getReferenceArrayVT();
@@ -417,6 +419,10 @@ public:
   
   virtual void makeVT(Class* cl);
   
+  virtual JnjvmModule* Create(std::string ModuleID) {
+    return new JnjvmModuleJIT(ModuleID);
+  }
+  
   virtual llvm::Constant* getFinalObject(JavaObject* obj);
   virtual JavaObject* getFinalObject(llvm::Value* C);
   virtual llvm::Constant* getNativeClass(CommonClass* cl);
@@ -448,6 +454,10 @@ public:
   
   virtual bool isStaticCompiling() {
     return true;
+  }
+  
+  virtual JnjvmModule* Create(std::string ModuleID) {
+    return new JnjvmModuleAOT(ModuleID);
   }
   
   virtual void makeVT(Class* cl);
