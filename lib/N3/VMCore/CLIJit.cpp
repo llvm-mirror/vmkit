@@ -1599,7 +1599,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   getCLIExceptionLLVM = module->getFunction("GetCLIException");
 
 
-  printExecutionLLVM = module->getFunction("printExecution");
+  printExecutionLLVM = module->getFunction("n3PrintExecution");
 
 
   

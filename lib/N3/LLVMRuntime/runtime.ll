@@ -49,5 +49,5 @@ declare i32 @n3InstanceOf(%CLIObject*, i8*)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Debugging methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-declare void @printExecution(i32, i32)
+declare void @n3PrintExecution(i32, i32)
 

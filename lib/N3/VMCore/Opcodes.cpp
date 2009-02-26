@@ -105,8 +105,8 @@ static inline double readDouble(uint8* bytecode, uint32& i) {
 }
 
 
-void CLIJit::printExecution(char* opcode, VMMethod* meth) {
-  printf("executing %s %s\n", meth->printString(), opcode);
+extern "C" void n3PrintExecution(char* opcode, VMMethod* meth) {
+  fprintf(stderr, "executing %s %s\n", meth->printString(), opcode);
 }
 
 
