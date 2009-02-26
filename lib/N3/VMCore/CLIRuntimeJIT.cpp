@@ -28,6 +28,8 @@
 #include "VMObject.h"
 #include "VMThread.h"
 
+#include <cstdarg>
+
 using namespace n3;
 using namespace llvm;
 

@@ -66,16 +66,16 @@ mvm::CompilationUnit* mvm::VirtualMachine::initialiseJVM(bool sc) {
 }
 
 mvm::VirtualMachine* mvm::VirtualMachine::createJVM(mvm::CompilationUnit* C) {
-  JnjvmBootstraLoader* bootstrapLoader = gc_new(JnjvmBootstrapLoader)(false);
+  JnjvmBootstraLoader* bootstrapLoader = gc_new(JnjvmBootstrapLoader)(0, 0);
   Jnjvm* vm = gc_new(Jnjvm)(bootstrapLoader);
   return vm;
 }
 #else
   
 mvm::CompilationUnit* 
-mvm::VirtualMachine::initialiseJVM(bool staticCompilation) {
+mvm::VirtualMachine::initialiseJVM() {
   initialiseVT();
-  return gc_new(JnjvmBootstrapLoader)(staticCompilation);
+  return gc_new(JnjvmBootstrapLoader)(0, 0);
 }
 
 mvm::VirtualMachine* mvm::VirtualMachine::createJVM(mvm::CompilationUnit* C) {

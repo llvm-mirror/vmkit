@@ -12,6 +12,7 @@
 #include <llvm/DerivedTypes.h>
 #include <llvm/Instructions.h>
 #include <llvm/LinkAllPasses.h>
+#include <llvm/Module.h>
 #include <llvm/ModuleProvider.h>
 #include <llvm/PassManager.h>
 #include <llvm/Type.h>
@@ -68,15 +69,11 @@ void MvmModule::initialise(bool Fast, Module* M, TargetMachine* T) {
   globalFunctionPasses = new FunctionPassManager(globalModuleProvider);
 
   
-  Module module("unused");
-  module.setDataLayout(globalModule->getDataLayout());
-  mvm::llvm_runtime::makeLLVMModuleContents(&module);
-  
   // Type declaration
   ptrType = PointerType::getUnqual(Type::Int8Ty);
   ptr32Type = PointerType::getUnqual(Type::Int32Ty);
   ptrPtrType = PointerType::getUnqual(ptrType);
-  pointerSizeType = module.getPointerSize() == llvm::Module::Pointer32 ?
+  pointerSizeType = globalModule->getPointerSize() == Module::Pointer32 ?
     Type::Int32Ty : Type::Int64Ty;
   
   // Constant declaration
@@ -129,10 +126,12 @@ void MvmModule::initialise(bool Fast, Module* M, TargetMachine* T) {
 }
 
 
-MvmModule::MvmModule(const std::string& ModuleID) : llvm::Module(ModuleID) {
-  Module* module = this;
-  module->setDataLayout(globalModule->getDataLayout());
-  module->setTargetTriple(globalModule->getTargetTriple());
+MvmModule::MvmModule(const std::string& ModuleID) {
+  TheModule = new Module(ModuleID);
+  Module* module = TheModule;
+
+  TheModule->setDataLayout(globalModule->getDataLayout());
+  TheModule->setTargetTriple(globalModule->getTargetTriple());
   
   mvm::llvm_runtime::makeLLVMModuleContents(module);
   
@@ -145,7 +144,7 @@ MvmModule::MvmModule(const std::string& ModuleID) : llvm::Module(ModuleID) {
   unwindResume = module->getFunction("_Unwind_Resume_or_Rethrow");
   
   llvmGetException = module->getFunction("llvm.eh.exception");
-  exceptionSelector = (getPointerSize() == llvm::Module::Pointer32 ?
+  exceptionSelector = (module->getPointerSize() == Module::Pointer32 ?
                 module->getFunction("llvm.eh.selector.i32") : 
                 module->getFunction("llvm.eh.selector.i64"));
   

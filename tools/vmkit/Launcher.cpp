@@ -24,8 +24,12 @@
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Thread.h"
 
+#include "jnjvm/JnjvmModule.h"
+#include "jnjvm/JnjvmModuleProvider.h"
+
 #include "CommandLine.h"
 
+using namespace jnjvm;
 using namespace llvm;
 
 enum VMType {
@@ -135,6 +139,8 @@ int main(int argc, char** argv) {
   if (VMToRun == RunJava) {
 #if WITH_JNJVM
     mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM();
+    CU->TheModule = new JnjvmModuleJIT("JITModule");
+    CU->TheModuleProvider = new JnjvmModuleProvider((JnjvmModule*)CU->TheModule);
     addCommandLinePass(CU, argv);
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(CU);
     vm->runApplication(argc, argv);
@@ -152,6 +158,9 @@ int main(int argc, char** argv) {
 #if WITH_JNJVM
     mvm::CompilationUnit* JVMCompiler = 
       mvm::VirtualMachine::initialiseJVM();
+    JVMCompiler->TheModule = new JnjvmModuleJIT("JITModule");
+    JVMCompiler->TheModuleProvider = 
+      new JnjvmModuleProvider((JnjvmModule*)JVMCompiler->TheModule);
     addCommandLinePass(JVMCompiler, argv);
     MyCl.vmlets["java"] = (mvm::VirtualMachine::createJVM);
     MyCl.compilers["java"] = JVMCompiler;

@@ -12,8 +12,7 @@
 
 #include <cfloat>
 #include <cmath>
-
-#include "llvm/Module.h"
+#include <string>
 
 #include "types.h"
 
@@ -25,6 +24,7 @@ namespace llvm {
   class ExistingModuleProvider;
   class Function;
   class FunctionPassManager;
+  class Module;
   class PointerType;
   class TargetData;
   class TargetMachine;
@@ -55,10 +55,19 @@ const float MinIntFloat = (float)-2147483648.0;
 const float NaNFloat = NAN; //(float)(((float)0.0) / (float)0.0);
 const double NaNDouble = NAN; //0.0 / 0.0;
 
-class MvmModule : public llvm::Module {
+class MvmModule {
+protected:
+  llvm::Module* TheModule;
+
 public:
   
-  MvmModule(const std::string& ModuleID);
+  explicit MvmModule(const std::string& ModuleID);
+ 
+  virtual ~MvmModule() {}
+
+  llvm::Module* getLLVMModule() {
+    return TheModule;
+  }
   
   llvm::Function* exceptionEndCatch;
   llvm::Function* exceptionBeginCatch;

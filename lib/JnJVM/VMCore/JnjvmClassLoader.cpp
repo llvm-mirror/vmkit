@@ -63,11 +63,9 @@ ClassArray ArrayOfLong;
 
 typedef void (*static_init_t)(JnjvmClassLoader*);
 
-JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
+JnjvmBootstrapLoader::JnjvmBootstrapLoader(JnjvmModule* Mod,
+                                           JnjvmModuleProvider* MP) {
   
-  TheModule = new JnjvmModule("Bootstrap JnJVM", staticCompilation);
-  TheModuleProvider = new JnjvmModuleProvider(getModule());
-
   hashUTF8 = new(allocator) UTF8Map(allocator, 0);
   classes = new(allocator) ClassMap();
   javaTypes = new(allocator) TypeMap(); 
@@ -269,11 +267,14 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(bool staticCompilation) {
 
 #undef DEF_UTF8
   
+  TheModule = Mod;
+  TheModuleProvider = MP;
+  
 }
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
                                    Jnjvm* I) {
-  TheModule = new JnjvmModule("Applicative loader");
+  TheModule = new JnjvmModuleJIT("Applicative loader", JCL.getModule());
   TheModuleProvider = new JnjvmModuleProvider(getModule());
   bootstrapLoader = JCL.bootstrapLoader;
   

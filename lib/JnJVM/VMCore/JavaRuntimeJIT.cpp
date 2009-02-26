@@ -356,7 +356,7 @@ extern "C" void* getSJLJBuffer() {
 
   // Start native because the next instruction after setjmp is a call to a
   // native function.
-  th->startNative(1);
+  th->startNative(2);
 
   // Finally, return the buffer that the Java code will use to do the setjmp.
   return (void*)buf;

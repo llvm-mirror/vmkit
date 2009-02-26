@@ -16,14 +16,17 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/Module.h"
+#include "llvm/ModuleProvider.h"
 #include "llvm/PassManager.h"
 #include "llvm/Assembly/PrintModulePass.h"
 #include "llvm/Config/config.h"
 #include "llvm/Bitcode/ReaderWriter.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/PassNameParser.h"
+#include "llvm/Support/PluginLoader.h"
 #include "llvm/Support/Streams.h"
 #include "llvm/Support/SystemUtils.h"
 #include "llvm/Support/raw_ostream.h"
@@ -38,11 +41,15 @@
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Thread.h"
 
+#include "jnjvm/JnjvmModule.h"
+#include "jnjvm/JnjvmModuleProvider.h"
+
 #include <iostream>
 #include <fstream>
 #include <memory>
 #include <string>
 
+using namespace jnjvm;
 using namespace llvm;
 
 static cl::opt<std::string>
@@ -76,6 +83,23 @@ StandardCompileOpts("std-compile-opts",
 
 static cl::opt<std::string>
 TargetTriple("mtriple", cl::desc("Override target triple for module"));
+
+static cl::opt<bool>
+DisableExceptions("disable-exceptions",
+              cl::desc("Disable Java exceptions"));
+
+static cl::opt<bool>
+DisableTracers("disable-tracers",
+              cl::desc("Disable Java tracers"));
+
+static cl::opt<bool>
+DisableStubs("disable-stubs",
+              cl::desc("Disable Java stubs"));
+
+static cl::opt<bool>
+AssumeCompiled("assume-compiled",
+              cl::desc("Assume external Java classes are compiled"));
+
 
 
 inline void addPass(FunctionPassManager *PM, Pass *P) {
@@ -166,8 +190,16 @@ int main(int argc, char **argv) {
     Collector::initialise(0);
     Collector::enable(0);
 
-    mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM(true);
-    addCommandLinePass(CU, argv); 
+    mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM();
+    addCommandLinePass(CU, argv);
+    JnjvmModuleAOT* Mod = new JnjvmModuleAOT("AOT");
+    JnjvmModuleProvider* MP = new JnjvmModuleProvider(Mod);
+    CU->TheModule = Mod;
+    CU->TheModuleProvider = MP;
+    if (DisableExceptions) Mod->disableExceptions();
+    if (DisableTracers) Mod->generateTracers = false;
+    if (DisableStubs) Mod->generateStubs = false;
+    if (AssumeCompiled) Mod->assumeCompiled = true;
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(CU);
     vm->compile(InputFilename.c_str());
     vm->waitForExit();
@@ -218,7 +250,7 @@ int main(int argc, char **argv) {
     }
     
     if (Force || !CheckBitcodeOutputToConsole(Out,true))
-      WriteBitcodeToFile(CU->TheModule, *Out);
+      WriteBitcodeToFile(CU->TheModule->getLLVMModule(), *Out);
 
     if (Out != &std::cout) {
       ((std::ofstream*)Out)->close();

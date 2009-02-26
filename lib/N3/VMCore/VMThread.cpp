@@ -53,7 +53,7 @@ VMThread* VMThread::allocate(VMObject* thread, VirtualMachine* vm) {
   key->state = StateRunning;
   key->pendingException = 0;
   key->perFunctionPasses = new llvm::FunctionPassManager(vm->TheModuleProvider);
-  key->perFunctionPasses->add(new llvm::TargetData(vm->module));
+  key->perFunctionPasses->add(new llvm::TargetData(vm->module->getLLVMModule()));
   AddStandardCompilePasses(key->perFunctionPasses);
   return key;
 }

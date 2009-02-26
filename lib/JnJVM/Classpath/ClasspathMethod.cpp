@@ -85,15 +85,13 @@ JavaObjectMethod* Meth) {
   return res;
 }
 
-JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_invokeNative(
-#ifdef NATIVE_JNI
-JNIEnv *env, 
-#endif
-JavaObjectMethod* Meth, jobject _obj, jobject _args, jclass Cl, jint index) {
-  
+static jobject proceed(JavaObjectMethod* Meth, jobject _obj, jobject _args, 
+                       jclass Cl, jint index) __attribute__((noinline));
+
+static jobject proceed(JavaObjectMethod* Meth, jobject _obj, jobject _args, 
+                       jclass Cl, jint index) {
+
   JavaObject* res = 0;
-
-
   Jnjvm* vm = JavaThread::get()->getJVM();
 
   JavaMethod* meth = Meth->getInternalMethod();
@@ -106,7 +104,6 @@ JavaObjectMethod* Meth, jobject _obj, jobject _args, jclass Cl, jint index) {
 
   uintptr_t buf = size ? (uintptr_t)alloca(size * sizeof(uint64)) : 0;
   
-  BEGIN_NATIVE_EXCEPTION(0)
 
   void* _buf = (void*)buf;
   if (nbArgs == size) {
@@ -219,12 +216,28 @@ JavaObjectMethod* Meth, jobject _obj, jobject _args, jclass Cl, jint index) {
     vm->illegalArgumentExceptionForMethod(meth, 0, 0); 
   }
 
+  return (jobject)res;
+}
+
+#undef RUN_METH
+
+JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_invokeNative(
+#ifdef NATIVE_JNI
+JNIEnv *env, 
+#endif
+JavaObjectMethod* Meth, jobject _obj, jobject _args, jclass Cl, jint index) {
+  
+  jobject res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
+  // Create a new function because we use alloca.
+  res = proceed(Meth, _obj, _args, Cl, index);
+  
   END_NATIVE_EXCEPTION
 
   return (jobject) res;
 }
-
-#undef RUN_METH
 
 JNIEXPORT jobjectArray JNICALL Java_java_lang_reflect_Method_getExceptionTypes(
 #ifdef NATIVE_JNI

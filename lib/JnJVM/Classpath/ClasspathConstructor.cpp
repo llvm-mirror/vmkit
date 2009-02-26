@@ -65,15 +65,12 @@ JavaObjectConstructor* cons) {
   return res;
 }
 
-JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_constructNative(
-#ifdef NATIVE_JNI
-JNIEnv *env,
-#endif
-JavaObjectConstructor* cons, jobject _args, jclass Clazz, jint index) {
-
+static jobject proceed(JavaObjectConstructor* cons, jobject _args, jclass Clazz,
+                       jint index) __attribute__ ((noinline));
+ 
+static jobject proceed(JavaObjectConstructor* cons, jobject _args, jclass Clazz,
+                       jint index) {
   jobject res = 0;
-
-  
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = cons->getInternalMethod();
   JavaArray* args = (JavaArray*)_args;
@@ -87,7 +84,6 @@ JavaObjectConstructor* cons, jobject _args, jclass Clazz, jint index) {
   void* startBuf = (void*)buf;
   
   // Do it after alloca
-  BEGIN_NATIVE_EXCEPTION(0)
 
   if (nbArgs == size) {
     UserCommonClass* _cl = 
@@ -128,6 +124,22 @@ JavaObjectConstructor* cons, jobject _args, jclass Clazz, jint index) {
   } else {
     vm->illegalArgumentExceptionForMethod(meth, 0, 0);
   }
+ 
+  return res;
+}
+
+JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_constructNative(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+#endif
+JavaObjectConstructor* cons, jobject _args, jclass Clazz, jint index) {
+
+  jobject res = 0;
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+
+  // Proceed in another function because we are using alloca.
+  res = proceed(cons, _args, Clazz, index);
   
   END_NATIVE_EXCEPTION
   

@@ -1102,7 +1102,7 @@ const UTF8* Jnjvm::asciizToUTF8(const char* asciiz) {
 
 
 static void compileClass(Class* cl) {
-  JnjvmModule* Mod = cl->classLoader->getModule();
+  JnjvmModuleAOT* Mod = (JnjvmModuleAOT*)cl->classLoader->getModule();
   
   // Make sure the class is emitted.
   Mod->getNativeClass(cl);
@@ -1127,14 +1127,14 @@ static const char* name;
 void Jnjvm::mainCompilerStart(JavaThread* th) {
   
   Jnjvm* vm = th->getJVM();
+  JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
+  JnjvmModuleAOT* M = (JnjvmModuleAOT*)bootstrapLoader->getModule();
   try {
-    JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
 
     bootstrapLoader->analyseClasspathEnv(vm->classpath);
     bootstrapLoader->upcalls->initialiseClasspath(bootstrapLoader);
   
     uint32 size = strlen(name);
-    JnjvmModule* M = bootstrapLoader->getModule();
     
     if (size > 4 && 
        (!strcmp(&name[size - 4], ".jar") || !strcmp(&name[size - 4], ".zip"))) {
@@ -1215,7 +1215,7 @@ void Jnjvm::mainCompilerStart(JavaThread* th) {
 #define SET_INLINE(NAME) { \
   const UTF8* name = vm->asciizToUTF8(NAME); \
   Class* cl = (Class*)vm->bootstrapLoader->lookupClass(name); \
-  if (cl) vm->bootstrapLoader->getModule()->setNoInline(cl); }
+  if (cl) M->setNoInline(cl); }
 
   SET_INLINE("java/util/concurrent/atomic/AtomicReferenceFieldUpdater")
   SET_INLINE("java/util/concurrent/atomic/AtomicReferenceFieldUpdater"

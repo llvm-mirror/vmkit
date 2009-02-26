@@ -184,97 +184,8 @@ public:
 
 class JnjvmModule : public mvm::MvmModule {
   friend class LLVMClassInfo;
-private:
-  std::map<const CommonClass*, llvm::Constant*> nativeClasses;
-  std::map<const ClassArray*, llvm::GlobalVariable*> arrayClasses;
-  std::map<const CommonClass*, llvm::Constant*> javaClasses;
-  std::map<const CommonClass*, llvm::Constant*> virtualTables;
-  std::map<const Class*, llvm::Constant*> staticInstances;
-  std::map<const JavaConstantPool*, llvm::Constant*> constantPools;
-  std::map<const JavaString*, llvm::Constant*> strings;
-  std::map<const Enveloppe*, llvm::Constant*> enveloppes;
-  std::map<const JavaMethod*, llvm::Constant*> nativeFunctions;
-  std::map<const UTF8*, llvm::Constant*> utf8s;
-  std::map<const Class*, llvm::Constant*> virtualMethods;
-  std::map<const JavaObject*, llvm::Constant*> finalObjects;
-  
-  typedef std::map<const JavaObject*, llvm::Constant*>::iterator
-    final_object_iterator;
-  
-  typedef std::map<const Class*, llvm::Constant*>::iterator
-    method_iterator;
-  
-  typedef std::map<const CommonClass*, llvm::Constant*>::iterator
-    native_class_iterator; 
-  
-  typedef std::map<const ClassArray*, llvm::GlobalVariable*>::iterator
-    array_class_iterator;
-  
-  typedef std::map<const CommonClass*, llvm::Constant*>::iterator
-    java_class_iterator;
-  
-  typedef std::map<const CommonClass*, llvm::Constant*>::iterator
-    virtual_table_iterator;
-  
-  typedef std::map<const Class*, llvm::Constant*>::iterator
-    static_instance_iterator;
-  
-  typedef std::map<const JavaConstantPool*, llvm::Constant*>::iterator
-    constant_pool_iterator;
-  
-  typedef std::map<const JavaString*, llvm::Constant*>::iterator
-    string_iterator;
-  
-  typedef std::map<const Enveloppe*, llvm::Constant*>::iterator
-    enveloppe_iterator;
-  
-  typedef std::map<const JavaMethod*, llvm::Constant*>::iterator
-    native_function_iterator;
-  
-  typedef std::map<const UTF8*, llvm::Constant*>::iterator
-    utf8_iterator;
-  
-  
-  bool staticCompilation;
-  bool enabledException;
 
-#ifdef WITH_TRACER 
-  llvm::Function* makeTracer(Class* cl, bool stat);
-#endif
-
-  void makeVT(Class* cl);
-  void allocateVT(Class* cl);
-  
-  static llvm::Constant* PrimitiveArrayVT;
-  static llvm::Constant* ReferenceArrayVT;
-  
-  static llvm::Function* StaticInitializer;
-  static llvm::Function* ObjectPrinter;
-  
 public:
-  
-  static llvm::Function* NativeLoader;
-  
-  bool generateTracers;
-  bool generateStubs;
-  bool assumeCompiled;
-
-  bool isStaticCompiling() {
-    return staticCompilation;
-  }
-
-  bool hasExceptionsEnabled() {
-    return enabledException;
-  }
-  
-  void disableExceptions() {
-    enabledException = false;
-  }
-
-  void setIsStaticCompiling(bool sc) {
-    staticCompilation = sc;
-  }
-
   static llvm::ConstantInt* JavaArraySizeOffsetConstant;
   static llvm::ConstantInt* JavaArrayElementsOffsetConstant;
   static llvm::ConstantInt* JavaObjectLockOffsetConstant;
@@ -412,10 +323,59 @@ public:
   llvm::Function* ClassCastExceptionFunction;
   llvm::Function* OutOfMemoryErrorFunction;
   llvm::Function* NegativeArraySizeExceptionFunction;
+  
+  static llvm::Function* NativeLoader;
+
+protected:
+#ifdef WITH_TRACER 
+  llvm::Function* internalMakeTracer(Class* cl, bool stat);
+  virtual llvm::Function* makeTracer(Class* cl, bool stat) {
+    return internalMakeTracer(cl, stat);
+  }
+#endif
+  
+  llvm::Constant* PrimitiveArrayVT;
+  llvm::Constant* ReferenceArrayVT;
+  
+  void internalMakeVT(Class* cl);
+
+private: 
+  
+  void initialise();
+  
+  bool enabledException;
+  
+  /// allocateVT - Allocate a VT for the class. The VT will be the VT of
+  /// instances of the class.
+  void allocateVT(Class* cl);
+
+
+  virtual void makeVT(Class* cl) = 0;
+  
+  
+  
+public:
+  
+  JnjvmModule(const std::string &ModuleID, JnjvmModule* Father = 0);
+  
+
+  virtual bool isStaticCompiling() = 0;
+
+  bool hasExceptionsEnabled() {
+    return enabledException;
+  }
+  
+  void disableExceptions() {
+    enabledException = false;
+  }
+  
+  virtual ~JnjvmModule() {}
+
+  llvm::Constant* getReferenceArrayVT();
+  llvm::Constant* getPrimitiveArrayVT();
 
   static void resolveVirtualClass(Class* cl);
   static void resolveStaticClass(Class* cl);
-  static void setMethod(JavaMethod* meth, void* ptr, const char* name);
   static llvm::Function* getMethod(JavaMethod* meth);
 
   static LLVMSignatureInfo* getSignatureInfo(Signdef* sign);
@@ -424,43 +384,99 @@ public:
   static LLVMMethodInfo* getMethodInfo(JavaMethod* method);
   static LLVMAssessorInfo& getTypedefInfo(const Typedef* type);
   
-  explicit JnjvmModule(const std::string &ModuleID, bool sc = false);
-  void initialise();
-  void printStats();
 
-  llvm::Constant* getFinalObject(JavaObject* obj);
-  JavaObject* getFinalObject(llvm::Value* C);
-  llvm::Constant* getNativeClass(CommonClass* cl);
-  llvm::Constant* getJavaClass(CommonClass* cl);
-  llvm::Constant* getStaticInstance(Class* cl);
-  llvm::Constant* getVirtualTable(Class* cl);
-  llvm::Constant* getMethodInClass(JavaMethod* meth);
+  virtual llvm::Constant* getFinalObject(JavaObject* obj) = 0;
+  virtual JavaObject* getFinalObject(llvm::Value* C) = 0;
+  virtual llvm::Constant* getNativeClass(CommonClass* cl) = 0;
+  virtual llvm::Constant* getJavaClass(CommonClass* cl) = 0;
+  virtual llvm::Constant* getStaticInstance(Class* cl) = 0;
+  virtual llvm::Constant* getVirtualTable(Class* cl) = 0;
+  virtual llvm::Constant* getMethodInClass(JavaMethod* meth) = 0;
   
-  llvm::Constant* getEnveloppe(Enveloppe* enveloppe);
-  llvm::Constant* getString(JavaString* str);
-  llvm::Constant* getConstantPool(JavaConstantPool* ctp);
-  llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr);
+  virtual llvm::Constant* getEnveloppe(Enveloppe* enveloppe) = 0;
+  virtual llvm::Constant* getString(JavaString* str) = 0;
+  virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp) = 0;
+  virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr) = 0;
   
-  llvm::Constant* getReferenceArrayVT();
-  llvm::Constant* getPrimitiveArrayVT();
+  virtual void setMethod(JavaMethod* meth, void* ptr, const char* name) = 0;
+  
 
 #ifdef SERVICE
-  std::map<const Jnjvm*, llvm::GlobalVariable*> isolates;
-  typedef std::map<const Jnjvm*, llvm::GlobalVariable*>::iterator
-    isolate_iterator;
+  virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where) = 0;
+#endif
+
+};
+
+class JnjvmModuleJIT : public JnjvmModule {
+public:
+  JnjvmModuleJIT(const std::string &ModuleID, JnjvmModule* Father = 0);
   
-  llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
+  virtual bool isStaticCompiling() {
+    return false;
+  }
+  
+  virtual void makeVT(Class* cl);
+  
+  virtual llvm::Constant* getFinalObject(JavaObject* obj);
+  virtual JavaObject* getFinalObject(llvm::Value* C);
+  virtual llvm::Constant* getNativeClass(CommonClass* cl);
+  virtual llvm::Constant* getJavaClass(CommonClass* cl);
+  virtual llvm::Constant* getStaticInstance(Class* cl);
+  virtual llvm::Constant* getVirtualTable(Class* cl);
+  virtual llvm::Constant* getMethodInClass(JavaMethod* meth);
+  
+  virtual llvm::Constant* getEnveloppe(Enveloppe* enveloppe);
+  virtual llvm::Constant* getString(JavaString* str);
+  virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp);
+  virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr);
+  
+  virtual void setMethod(JavaMethod* meth, void* ptr, const char* name);
+  
+
+#ifdef SERVICE
+  virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
 #endif
   
+  virtual ~JnjvmModuleJIT() {}
 
-  bool isCompiling(const CommonClass* cl) const;
+};
+
+class JnjvmModuleAOT : public JnjvmModule {
+
+public:
+  JnjvmModuleAOT(const std::string &ModuleID, JnjvmModule* Father = 0);
   
-  void CreateStaticInitializer();
+  virtual bool isStaticCompiling() {
+    return true;
+  }
   
-  static void setNoInline(Class* cl);
+  virtual void makeVT(Class* cl);
+  
+  virtual llvm::Constant* getFinalObject(JavaObject* obj);
+  virtual JavaObject* getFinalObject(llvm::Value* C);
+  virtual llvm::Constant* getNativeClass(CommonClass* cl);
+  virtual llvm::Constant* getJavaClass(CommonClass* cl);
+  virtual llvm::Constant* getStaticInstance(Class* cl);
+  virtual llvm::Constant* getVirtualTable(Class* cl);
+  virtual llvm::Constant* getMethodInClass(JavaMethod* meth);
+  
+  virtual llvm::Constant* getEnveloppe(Enveloppe* enveloppe);
+  virtual llvm::Constant* getString(JavaString* str);
+  virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp);
+  virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr);
+  
+  virtual void setMethod(JavaMethod* meth, void* ptr, const char* name);
+  
+
+#ifdef SERVICE
+  virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
+#endif
+  
+  virtual ~JnjvmModuleAOT() {}
 
 private:
-  static llvm::Module* initialModule;
+  
+  virtual llvm::Function* makeTracer(Class* cl, bool stat);
   
   //--------------- Static compiler specific functions -----------------------//
   llvm::Constant* CreateConstantFromVT(Class* classDef);
@@ -483,6 +499,79 @@ private:
   
   template<typename T>
   llvm::Constant* CreateConstantFromArray(T* val, const llvm::Type* Ty);
+  
+  std::map<const CommonClass*, llvm::Constant*> nativeClasses;
+  std::map<const ClassArray*, llvm::GlobalVariable*> arrayClasses;
+  std::map<const CommonClass*, llvm::Constant*> javaClasses;
+  std::map<const CommonClass*, llvm::Constant*> virtualTables;
+  std::map<const Class*, llvm::Constant*> staticInstances;
+  std::map<const JavaConstantPool*, llvm::Constant*> constantPools;
+  std::map<const JavaString*, llvm::Constant*> strings;
+  std::map<const Enveloppe*, llvm::Constant*> enveloppes;
+  std::map<const JavaMethod*, llvm::Constant*> nativeFunctions;
+  std::map<const UTF8*, llvm::Constant*> utf8s;
+  std::map<const Class*, llvm::Constant*> virtualMethods;
+  std::map<const JavaObject*, llvm::Constant*> finalObjects;
+  
+  typedef std::map<const JavaObject*, llvm::Constant*>::iterator
+    final_object_iterator;
+  
+  typedef std::map<const Class*, llvm::Constant*>::iterator
+    method_iterator;
+  
+  typedef std::map<const CommonClass*, llvm::Constant*>::iterator
+    native_class_iterator; 
+  
+  typedef std::map<const ClassArray*, llvm::GlobalVariable*>::iterator
+    array_class_iterator;
+  
+  typedef std::map<const CommonClass*, llvm::Constant*>::iterator
+    java_class_iterator;
+  
+  typedef std::map<const CommonClass*, llvm::Constant*>::iterator
+    virtual_table_iterator;
+  
+  typedef std::map<const Class*, llvm::Constant*>::iterator
+    static_instance_iterator;
+  
+  typedef std::map<const JavaConstantPool*, llvm::Constant*>::iterator
+    constant_pool_iterator;
+  
+  typedef std::map<const JavaString*, llvm::Constant*>::iterator
+    string_iterator;
+  
+  typedef std::map<const Enveloppe*, llvm::Constant*>::iterator
+    enveloppe_iterator;
+  
+  typedef std::map<const JavaMethod*, llvm::Constant*>::iterator
+    native_function_iterator;
+  
+  typedef std::map<const UTF8*, llvm::Constant*>::iterator
+    utf8_iterator;
+
+#ifdef SERVICE
+  virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
+  std::map<const Jnjvm*, llvm::GlobalVariable*> isolates;
+  typedef std::map<const Jnjvm*, llvm::GlobalVariable*>::iterator
+    isolate_iterator; 
+#endif
+  
+  bool isCompiling(const CommonClass* cl) const;
+
+public:
+  llvm::Function* StaticInitializer;
+  llvm::Function* ObjectPrinter;
+  
+  bool generateTracers;
+  bool generateStubs;
+  bool assumeCompiled;
+  
+  
+  void CreateStaticInitializer();
+  
+  static void setNoInline(Class* cl);
+  
+  void printStats();
 
 
 };

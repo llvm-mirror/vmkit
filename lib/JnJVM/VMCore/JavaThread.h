@@ -194,11 +194,11 @@ public:
 
   /// startNative - Record that we are entering native code.
   ///
-  void startNative(int level);
+  void startNative(int level) __attribute__ ((noinline));
 
   /// startJava - Record that we are entering Java code.
   ///
-  void startJava();
+  void startJava() __attribute__ ((noinline));
   
   /// endNative - Record that we are leaving native code.
   ///
@@ -206,7 +206,7 @@ public:
     addresses.pop_back();
   }
 
-  /// endNative - Record that we are leaving Java code.
+  /// endJava - Record that we are leaving Java code.
   ///
   void endJava() {
     addresses.pop_back();
@@ -229,7 +229,7 @@ public:
     
   /// printBacktrace - Prints the backtrace of this thread.
   ///
-  void printBacktrace();
+  void printBacktrace() __attribute__ ((noinline));
   
   /// printJavaBacktrace - Prints the backtrace of this thread. Only prints
   /// the Java methods on the stack.

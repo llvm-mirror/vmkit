@@ -957,8 +957,7 @@ void JavaJIT::loadConstant(uint16 index) {
     Value* res = getResolvedCommonClass(index, false, &cl);
 
 #ifndef ISOLATE
-    if (cl || (module->isStaticCompiling() && module->isCompiling(cl)))
-      res = module->getJavaClass(cl);
+    if (cl) res = module->getJavaClass(cl);
     else
 #endif
     

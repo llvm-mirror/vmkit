@@ -147,7 +147,7 @@ llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
   LLVMSignatureInfo* LSI = M->getSignatureInfo(sign);
   if (!stat) {
     const char* name = cl->printString();
-    char* key = (char*)alloca(strlen(name) + 2);
+    char* key = (char*)alloca(strlen(name) + 16);
     sprintf(key, "%s%d", name, index);
     Function* F = TheModule->getFunction(key);
     if (F) return F;
@@ -182,7 +182,7 @@ namespace jnjvm {
 }
 
 JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
-  TheModule = (Module*)m;
+  TheModule = m->getLLVMModule();
   if (m->executionEngine) {
     m->protectEngine.lock();
     m->executionEngine->addModuleProvider(this);
@@ -190,13 +190,13 @@ JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
   }
     
   JavaNativeFunctionPasses = new llvm::FunctionPassManager(this);
-  JavaNativeFunctionPasses->add(new llvm::TargetData(m));
+  JavaNativeFunctionPasses->add(new llvm::TargetData(TheModule));
   // Lower constant calls to lower things like getClass used
   // on synchronized methods.
   JavaNativeFunctionPasses->add(createLowerConstantCallsPass());
   
   JavaFunctionPasses = new llvm::FunctionPassManager(this);
-  JavaFunctionPasses->add(new llvm::TargetData(m));
+  JavaFunctionPasses->add(new llvm::TargetData(TheModule));
   Function* func = m->JavaObjectAllocateFunction;
   JavaFunctionPasses->add(mvm::createEscapeAnalysisPass(func));
   JavaFunctionPasses->add(createLowerConstantCallsPass());

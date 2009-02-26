@@ -372,7 +372,7 @@ GlobalVariable* VMCommonClass::llvmVar() {
       _llvmVar = new GlobalVariable(pty, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "",
-                                    vm->module);
+                                    vm->module->getLLVMModule());
     
     }
     release();
@@ -392,7 +392,7 @@ GlobalVariable* VMField::llvmVar() {
       _llvmVar = new GlobalVariable(pty, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "",
-                                    classDef->vm->module);
+                                    classDef->vm->module->getLLVMModule());
     }
     classDef->release();
   }
@@ -411,7 +411,7 @@ GlobalVariable* VMMethod::llvmVar() {
       _llvmVar = new GlobalVariable(pty, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "",
-                                    classDef->vm->module);
+                                    classDef->vm->module->getLLVMModule());
     
     }
     classDef->release();

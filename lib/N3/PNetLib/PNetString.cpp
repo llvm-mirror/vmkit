@@ -57,7 +57,7 @@ GlobalVariable* CLIString::llvmVar() {
       str->_llvmVar = new GlobalVariable(pty, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "",
-                                    vm->module);
+                                    vm->module->getLLVMModule());
     }
   }
   return str->_llvmVar;

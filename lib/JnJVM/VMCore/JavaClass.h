@@ -1080,62 +1080,109 @@ public:
 //===----------------------------------------------------------------------===//
   
   /// This class of methods takes a variable argument list.
-  uint32 invokeIntSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
-  float invokeFloatSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
-  double invokeDoubleSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
-  sint64 invokeLongSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
-  JavaObject* invokeJavaObjectSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
+  uint32 invokeIntSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+    __attribute__ ((noinline));
+  float invokeFloatSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+    __attribute__ ((noinline));
+  double invokeDoubleSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj,
+                               va_list ap)
+    __attribute__ ((noinline));
+  sint64 invokeLongSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                        va_list ap)
+    __attribute__ ((noinline));
   
-  uint32 invokeIntVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
-  float invokeFloatVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
-  double invokeDoubleVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
-  sint64 invokeLongVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
-  JavaObject* invokeJavaObjectVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap);
+  uint32 invokeIntVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+    __attribute__ ((noinline));
+  float invokeFloatVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+    __attribute__ ((noinline));
+  double invokeDoubleVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+    __attribute__ ((noinline));
+  sint64 invokeLongVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+    __attribute__ ((noinline));
   
-  uint32 invokeIntStaticAP(Jnjvm* vm, UserClass*, va_list ap);
-  float invokeFloatStaticAP(Jnjvm* vm, UserClass*, va_list ap);
-  double invokeDoubleStaticAP(Jnjvm* vm, UserClass*, va_list ap);
-  sint64 invokeLongStaticAP(Jnjvm* vm, UserClass*, va_list ap);
-  JavaObject* invokeJavaObjectStaticAP(Jnjvm* vm, UserClass*, va_list ap);
+  uint32 invokeIntStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+    __attribute__ ((noinline));
+  float invokeFloatStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+    __attribute__ ((noinline));
+  double invokeDoubleStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+    __attribute__ ((noinline));
+  sint64 invokeLongStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+    __attribute__ ((noinline));
 
   /// This class of methods takes a buffer which contain the arguments of the
   /// call.
-  uint32 invokeIntSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
-  float invokeFloatSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
-  double invokeDoubleSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
-  sint64 invokeLongSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
-  JavaObject* invokeJavaObjectSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
+  uint32 invokeIntSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
+  float invokeFloatSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
+  double invokeDoubleSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
+  sint64 invokeLongSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
   
-  uint32 invokeIntVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
-  float invokeFloatVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
-  double invokeDoubleVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
-  sint64 invokeLongVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
-  JavaObject* invokeJavaObjectVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf);
+  uint32 invokeIntVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
+  float invokeFloatVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
+  double invokeDoubleVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
+  sint64 invokeLongVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
   
-  uint32 invokeIntStaticBuf(Jnjvm* vm, UserClass*, void* buf);
-  float invokeFloatStaticBuf(Jnjvm* vm, UserClass*, void* buf);
-  double invokeDoubleStaticBuf(Jnjvm* vm, UserClass*, void* buf);
-  sint64 invokeLongStaticBuf(Jnjvm* vm, UserClass*, void* buf);
-  JavaObject* invokeJavaObjectStaticBuf(Jnjvm* vm, UserClass*, void* buf);
+  uint32 invokeIntStaticBuf(Jnjvm* vm, UserClass*, void* buf)
+    __attribute__ ((noinline));
+  float invokeFloatStaticBuf(Jnjvm* vm, UserClass*, void* buf)
+    __attribute__ ((noinline));
+  double invokeDoubleStaticBuf(Jnjvm* vm, UserClass*, void* buf)
+    __attribute__ ((noinline));
+  sint64 invokeLongStaticBuf(Jnjvm* vm, UserClass*, void* buf)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectStaticBuf(Jnjvm* vm, UserClass*, void* buf)
+    __attribute__ ((noinline));
 
   /// This class of methods is variadic.
-  uint32 invokeIntSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
-  float invokeFloatSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
-  double invokeDoubleSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
-  sint64 invokeLongSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
-  JavaObject* invokeJavaObjectSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
+  uint32 invokeIntSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  float invokeFloatSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  double invokeDoubleSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  sint64 invokeLongSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
   
-  uint32 invokeIntVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
-  float invokeFloatVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
-  double invokeDoubleVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
-  sint64 invokeLongVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
-  JavaObject* invokeJavaObjectVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...);
+  uint32 invokeIntVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  float invokeFloatVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  double invokeDoubleVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  sint64 invokeLongVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
   
-  uint32 invokeIntStatic(Jnjvm* vm, UserClass*, ...);
-  float invokeFloatStatic(Jnjvm* vm, UserClass*, ...);
-  double invokeDoubleStatic(Jnjvm* vm, UserClass*, ...);
-  sint64 invokeLongStatic(Jnjvm* vm, UserClass*, ...);
-  JavaObject* invokeJavaObjectStatic(Jnjvm* vm, UserClass*, ...);
+  uint32 invokeIntStatic(Jnjvm* vm, UserClass*, ...)
+    __attribute__ ((noinline));
+  float invokeFloatStatic(Jnjvm* vm, UserClass*, ...)
+    __attribute__ ((noinline));
+  double invokeDoubleStatic(Jnjvm* vm, UserClass*, ...)
+    __attribute__ ((noinline));
+  sint64 invokeLongStatic(Jnjvm* vm, UserClass*, ...)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectStatic(Jnjvm* vm, UserClass*, ...)
+    __attribute__ ((noinline));
   
   mvm::JITInfo* JInfo;
   template<typename Ty> 

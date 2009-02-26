@@ -116,14 +116,14 @@ public:
   /// TheModule - JIT module for compiling methods.
   ///
   JnjvmModule* getModule() {
-    return (JnjvmModule*)TheModule;
+    return reinterpret_cast<JnjvmModule*>(TheModule);
   }
 
   /// TheModuleProvider - JIT module provider for dynamic class loading and
   /// lazy compilation.
   ///
   JnjvmModuleProvider* getModuleProvider() {
-    return (JnjvmModuleProvider*)TheModuleProvider;
+    return reinterpret_cast<JnjvmModuleProvider*>(TheModuleProvider);
   }
 
   /// tracer - Traces a JnjvmClassLoader for GC.
@@ -342,7 +342,7 @@ public:
   /// createBootstrapLoader - Creates the bootstrap loader, first thing
   /// to do before any execution of a JVM.
   ///
-  JnjvmBootstrapLoader(bool staticCompilation);
+  JnjvmBootstrapLoader(JnjvmModule* Mod, JnjvmModuleProvider* MP);
   JnjvmBootstrapLoader() {}
   
   virtual JavaString* UTF8ToStr(const UTF8* utf8);
