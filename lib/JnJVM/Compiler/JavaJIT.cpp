@@ -88,14 +88,16 @@ void JavaJIT::invokeVirtual(uint16 index) {
   if (meth && isInterface(meth->classDef->access)) {
     return invokeInterface(index, true);
   }
-  
+ 
   const UTF8* name = 0;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
+#if 0	
   Value* obj = stack[signature->nbArguments].first;
   JavaObject* source = module->getFinalObject(obj);
   if (source) {
     return invokeSpecial(index, source->getClass());
   }
+#endif
  
 #if !defined(WITHOUT_VTABLE)
   Typedef* retTypedef = signature->getReturnType();
@@ -1684,7 +1686,7 @@ void JavaJIT::getStaticField(uint16 index) {
       }
     }
   }
-  
+
   if (!final) push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned());
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
     push(module->constantZero, false);
@@ -1756,7 +1758,7 @@ void JavaJIT::getVirtualField(uint16 index) {
       push(CallInst::Create(F, ptr, "", currentBlock), sign->isUnsigned());
     }
   }
-
+ 
   if (!final) push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned());
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
     push(module->constantZero, false);
