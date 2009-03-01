@@ -1643,8 +1643,9 @@ void JavaJIT::getStaticField(uint16 index) {
   
   Value* ptr = ldResolved(index, true, 0, type, LAI.llvmTypePtr);
   
-  JnjvmBootstrapLoader* JBL = compilingClass->classLoader->bootstrapLoader;
   bool final = false;
+#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
+  JnjvmBootstrapLoader* JBL = compilingClass->classLoader->bootstrapLoader;
   if (!compilingMethod->name->equals(JBL->clinitName)) {
     JavaField* field = compilingClass->ctpInfo->lookupField(index, true);
     if (field && field->classDef->isReady()) final = isFinal(field->access);
@@ -1686,6 +1687,7 @@ void JavaJIT::getStaticField(uint16 index) {
       }
     }
   }
+#endif
 
   if (!final) push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned());
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
