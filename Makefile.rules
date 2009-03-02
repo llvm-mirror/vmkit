@@ -70,7 +70,7 @@ glibj.zip.s : glibj-optimized.zip.bc
 
 $(ObjDir)/%.lo $(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
 	$(Echo) "Compiling $*.s for $(BuildMode) build " $(PIC_FLAG)
-	$(Verb) $(MAYBE_PIC_Compile.CXX) $(DEPEND_OPTIONS) $< -o $(ObjDir)/$*.o
+	$(Verb) $(Link) $(SharedLinkOptions) $< -o $(ObjDir)/$*.o
 
 clean-local::
 	$(Verb) $(RM) -f glibj.zip.s glibj.zip.bc glibj-optimized.zip.bc
