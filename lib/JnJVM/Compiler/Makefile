@@ -10,6 +10,8 @@ LEVEL = ../../..
 
 LIBRARYNAME = JnjvmCompiler
 
+EXTRA_DIST = ExceptionsCheck.inc ExceptionsDwarf.inc
+
 include $(LEVEL)/Makefile.config
 
 include $(LEVEL)/Makefile.common
