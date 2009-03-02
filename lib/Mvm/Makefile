@@ -10,6 +10,8 @@ LEVEL = ../..
 
 include $(LEVEL)/Makefile.config
 
+EXTRA_DIST = BoehmGC GCMmap2
+
 DIRS = Allocator CommonThread $(GCLIB) Runtime
 
 include $(LEVEL)/Makefile.common
