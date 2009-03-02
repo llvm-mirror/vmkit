@@ -485,8 +485,10 @@ public:
   virtual ~JnjvmModuleAOT() {}
 
 private:
-  
+
+#ifdef WITH_TRACER
   virtual llvm::Function* makeTracer(Class* cl, bool stat);
+#endif
   
   //--------------- Static compiler specific functions -----------------------//
   llvm::Constant* CreateConstantFromVT(Class* classDef);
