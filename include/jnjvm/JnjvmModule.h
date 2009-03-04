@@ -15,13 +15,15 @@
 #include "mvm/Allocator.h"
 #include "mvm/JIT.h"
 
-#include "llvm/Module.h"
+#include "llvm/Support/Annotation.h"
 
 namespace llvm {
   class Constant;
   class ConstantInt;
   class Function;
+  class FunctionType;
   class GlobalVariable;
+  class Module;
   class Type;
   class Value;
 }

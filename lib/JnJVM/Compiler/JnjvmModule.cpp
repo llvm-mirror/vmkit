@@ -11,6 +11,7 @@
 #include "llvm/CallingConv.h"
 #include "llvm/Constants.h"
 #include "llvm/Instructions.h"
+#include "llvm/Module.h"
 
 #include "mvm/JIT.h"
 

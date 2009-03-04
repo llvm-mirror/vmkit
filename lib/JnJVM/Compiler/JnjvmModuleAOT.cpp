@@ -10,6 +10,7 @@
 #include "llvm/BasicBlock.h"
 #include "llvm/Constants.h"
 #include "llvm/Instructions.h"
+#include "llvm/Module.h"
 
 #include "mvm/Threads/Thread.h"
 
