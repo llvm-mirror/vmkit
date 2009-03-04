@@ -66,11 +66,12 @@ glibj-optimized.zip.bc : glibj.zip.bc
 
 glibj.zip.s : glibj-optimized.zip.bc
 	$(Echo) "Compiling glibj.zip.bc to native"
-	$(Verb) $(LLC) -relocation-model=pic -disable-fp-elim -f glibj.zip.bc -o glibj.zip.s
+	$(Verb) $(LLC) -relocation-model=pic -disable-fp-elim -f glibj-optimized.zip.bc -o glibj.zip.s
 
-$(ObjDir)/%.so: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
-	$(Echo) "Compiling $*.s for $(BuildMode) build " $(PIC_FLAG)
-	$(Verb) $(Link) $(SharedLinkOptions) $< -o $(ObjDir)/$*.o
+$(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
+	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
+	$(Verb) if $(Compile.C) $(DEPEND_OPTIONS) $< -o $(ObjDir)/$*.o ; \
+	        $(DEPEND_MOVEFILE)
 
 clean-local::
 	$(Verb) $(RM) -f glibj.zip.s glibj.zip.bc glibj-optimized.zip.bc
