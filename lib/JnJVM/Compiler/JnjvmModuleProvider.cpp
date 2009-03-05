@@ -9,6 +9,7 @@
 
 #include "llvm/LinkAllPasses.h"
 #include "llvm/PassManager.h"
+#include "llvm/Module.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/Support/MutexGuard.h"
 #include "llvm/Target/TargetData.h"
@@ -109,36 +110,6 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   return false;
 }
 
-void* JnjvmModuleProvider::materializeFunction(JavaMethod* meth) {
-  Function* func = parseFunction(meth);
-  
-  void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
-  func->deleteBody();
-
-  return res;
-}
-
-Function* JnjvmModuleProvider::parseFunction(JavaMethod* meth) {
-  JnjvmModule* M = (JnjvmModule*)TheModule;
-  LLVMMethodInfo* LMI = M->getMethodInfo(meth);
-  Function* func = LMI->getMethod();
-  if (func->hasNotBeenReadFromBitcode()) {
-    // We are jitting. Take the lock.
-    M->protectIR();
-    JavaJIT jit(meth, func);
-    if (isNative(meth->access)) {
-      jit.nativeCompile();
-      mvm::MvmModule::runPasses(func, JavaNativeFunctionPasses);
-    } else {
-      jit.javaCompile();
-      mvm::MvmModule::runPasses(func, M->globalFunctionPasses);
-      mvm::MvmModule::runPasses(func, JavaFunctionPasses);
-    }
-    M->unprotectIR();
-  }
-  return func;
-}
-
 llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
                                                  Signdef* sign, bool stat) {
   
@@ -189,17 +160,17 @@ JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
     m->protectEngine.unlock();
   }
     
-  JavaNativeFunctionPasses = new llvm::FunctionPassManager(this);
-  JavaNativeFunctionPasses->add(new llvm::TargetData(TheModule));
+  m->JavaNativeFunctionPasses = new llvm::FunctionPassManager(this);
+  m->JavaNativeFunctionPasses->add(new llvm::TargetData(TheModule));
   // Lower constant calls to lower things like getClass used
   // on synchronized methods.
-  JavaNativeFunctionPasses->add(createLowerConstantCallsPass());
+  m->JavaNativeFunctionPasses->add(createLowerConstantCallsPass());
   
-  JavaFunctionPasses = new llvm::FunctionPassManager(this);
-  JavaFunctionPasses->add(new llvm::TargetData(TheModule));
+  m->JavaFunctionPasses = new llvm::FunctionPassManager(this);
+  m->JavaFunctionPasses->add(new llvm::TargetData(TheModule));
   Function* func = m->JavaObjectAllocateFunction;
-  JavaFunctionPasses->add(mvm::createEscapeAnalysisPass(func));
-  JavaFunctionPasses->add(createLowerConstantCallsPass());
+  m->JavaFunctionPasses->add(mvm::createEscapeAnalysisPass(func));
+  m->JavaFunctionPasses->add(createLowerConstantCallsPass());
   nbCallbacks = 0;
 }
 
@@ -210,8 +181,6 @@ JnjvmModuleProvider::~JnjvmModuleProvider() {
     mvm::MvmModule::protectEngine.unlock();
   }
   delete TheModule;
-  delete JavaNativeFunctionPasses;
-  delete JavaFunctionPasses;
 }
 
 void JnjvmModuleProvider::printStats() {

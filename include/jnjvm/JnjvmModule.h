@@ -21,6 +21,7 @@ namespace llvm {
   class Constant;
   class ConstantInt;
   class Function;
+  class FunctionPassManager;
   class FunctionType;
   class GlobalVariable;
   class Module;
@@ -373,7 +374,7 @@ public:
   
   virtual JnjvmModule* Create(std::string ModuleID) = 0;
   
-  virtual ~JnjvmModule() {}
+  virtual ~JnjvmModule();
 
   llvm::Constant* getReferenceArrayVT();
   llvm::Constant* getPrimitiveArrayVT();
@@ -408,6 +409,13 @@ public:
 #ifdef SERVICE
   virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where) = 0;
 #endif
+  
+  virtual void* materializeFunction(JavaMethod* meth) = 0;
+  llvm::Function* parseFunction(JavaMethod* meth);
+   
+  llvm::FunctionPassManager* JavaFunctionPasses;
+  llvm::FunctionPassManager* JavaNativeFunctionPasses;
+
 
 };
 
@@ -424,6 +432,8 @@ public:
   virtual JnjvmModule* Create(std::string ModuleID) {
     return new JnjvmModuleJIT(ModuleID);
   }
+  
+  virtual void* materializeFunction(JavaMethod* meth);
   
   virtual llvm::Constant* getFinalObject(JavaObject* obj);
   virtual JavaObject* getFinalObject(llvm::Value* C);
@@ -460,6 +470,11 @@ public:
   
   virtual JnjvmModule* Create(std::string ModuleID) {
     return new JnjvmModuleAOT(ModuleID);
+  }
+  
+  virtual void* materializeFunction(JavaMethod* meth) {
+    fprintf(stderr, "Can not materiale a function in AOT mode.");
+    abort();
   }
   
   virtual void makeVT(Class* cl);

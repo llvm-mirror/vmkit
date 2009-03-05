@@ -12,11 +12,13 @@
 #include "llvm/Constants.h"
 #include "llvm/Instructions.h"
 #include "llvm/Module.h"
+#include "llvm/PassManager.h"
 
 #include "mvm/JIT.h"
 
 #include "JavaArray.h"
 #include "JavaClass.h"
+#include "JavaJIT.h"
 #include "JavaTypes.h"
 
 #include "jnjvm/JnjvmModule.h"
@@ -495,4 +497,29 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID) :
 
   GetLockFunction = module->getFunction("getLock");
  
+}
+
+Function* JnjvmModule::parseFunction(JavaMethod* meth) {
+  LLVMMethodInfo* LMI = getMethodInfo(meth);
+  Function* func = LMI->getMethod();
+  if (func->hasNotBeenReadFromBitcode()) {
+    // We are jitting. Take the lock.
+    protectIR();
+    JavaJIT jit(meth, func);
+    if (isNative(meth->access)) {
+      jit.nativeCompile();
+      runPasses(func, JavaNativeFunctionPasses);
+    } else {
+      jit.javaCompile();
+      runPasses(func, globalFunctionPasses);
+      runPasses(func, JavaFunctionPasses);
+    }
+    unprotectIR();
+  }
+  return func;
+}
+
+JnjvmModule::~JnjvmModule() {
+  delete JavaFunctionPasses;
+  delete JavaNativeFunctionPasses;
 }

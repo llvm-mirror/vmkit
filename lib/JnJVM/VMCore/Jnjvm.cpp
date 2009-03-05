@@ -1110,14 +1110,14 @@ static void compileClass(Class* cl) {
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
     JavaMethod& meth = cl->virtualMethods[i];
     if (!isAbstract(meth.access))
-      cl->classLoader->getModuleProvider()->parseFunction(&meth);
+      cl->classLoader->getModule()->parseFunction(&meth);
     if (Mod->generateStubs) meth.getSignature()->compileAllStubs();
   }
   
   for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
     JavaMethod& meth = cl->staticMethods[i];
     if (!isAbstract(meth.access))
-      cl->classLoader->getModuleProvider()->parseFunction(&meth);
+      cl->classLoader->getModule()->parseFunction(&meth);
     if (Mod->generateStubs) meth.getSignature()->compileAllStubs();
   }
 }

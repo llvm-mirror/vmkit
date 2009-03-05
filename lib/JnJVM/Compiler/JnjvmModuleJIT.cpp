@@ -156,7 +156,7 @@ void JnjvmModuleJIT::makeVT(Class* cl) {
       ((void**)VT)[0] = 0;
 #else
       JnjvmClassLoader* loader = cl->classLoader;
-      Function* func = loader->getModuleProvider()->parseFunction(&meth);
+      Function* func = loader->getModule()->parseFunction(&meth);
       if (!cl->super) {
         meth.canBeInlined = true;
         ((void**)VT)[0] = 0;
@@ -198,4 +198,13 @@ void JnjvmModuleJIT::setMethod(JavaMethod* meth, void* ptr, const char* name) {
   assert(ptr && "No value given");
   executionEngine->addGlobalMapping(func, ptr);
   func->setLinkage(GlobalValue::ExternalLinkage);
+}
+
+void* JnjvmModuleJIT::materializeFunction(JavaMethod* meth) {
+  Function* func = parseFunction(meth);
+  
+  void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
+  func->deleteBody();
+
+  return res;
 }

@@ -26,9 +26,6 @@ class JnjvmModuleProvider : public ModuleProvider {
 private:
   JavaMethod* staticLookup(Class* caller, uint32 index);
   
-  llvm::FunctionPassManager* JavaFunctionPasses;
-  llvm::FunctionPassManager* JavaNativeFunctionPasses;
-  
   uint32 nbCallbacks;
 
 public:
@@ -40,8 +37,6 @@ public:
                               bool stat);
 
   bool materializeFunction(Function *F, std::string *ErrInfo = 0);
-  void* materializeFunction(JavaMethod* meth);
-  llvm::Function* parseFunction(JavaMethod* meth);
 
   Module* materializeModule(std::string *ErrInfo = 0) { return TheModule; }
 

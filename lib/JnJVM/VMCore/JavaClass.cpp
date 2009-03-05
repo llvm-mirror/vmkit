@@ -366,8 +366,7 @@ void* JavaMethod::compiledPtr() {
 #endif
     classDef->acquire();
     if (code == 0) {
-      code = 
-        classDef->classLoader->getModuleProvider()->materializeFunction(this);
+      code = classDef->classLoader->getModule()->materializeFunction(this);
       Jnjvm* vm = JavaThread::get()->getJVM();
       vm->addMethodInFunctionMap(this, code);
     }
