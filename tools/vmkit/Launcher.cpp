@@ -140,7 +140,6 @@ int main(int argc, char** argv) {
 #if WITH_JNJVM
     mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM();
     CU->TheModule = new JnjvmModuleJIT("JITModule");
-    CU->TheModuleProvider = new JnjvmModuleProvider((JnjvmModule*)CU->TheModule);
     addCommandLinePass(CU, argv);
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(CU);
     vm->runApplication(argc, argv);
@@ -159,8 +158,6 @@ int main(int argc, char** argv) {
     mvm::CompilationUnit* JVMCompiler = 
       mvm::VirtualMachine::initialiseJVM();
     JVMCompiler->TheModule = new JnjvmModuleJIT("JITModule");
-    JVMCompiler->TheModuleProvider = 
-      new JnjvmModuleProvider((JnjvmModule*)JVMCompiler->TheModule);
     addCommandLinePass(JVMCompiler, argv);
     MyCl.vmlets["java"] = (mvm::VirtualMachine::createJVM);
     MyCl.compilers["java"] = JVMCompiler;

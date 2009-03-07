@@ -37,7 +37,6 @@ class JavaString;
 class Jnjvm;
 class JnjvmBootstrapLoader;
 class JnjvmModule;
-class JnjvmModuleProvider;
 class Signdef;
 class SignMap;
 class Typedef;
@@ -117,13 +116,6 @@ public:
   ///
   JnjvmModule* getModule() {
     return reinterpret_cast<JnjvmModule*>(TheModule);
-  }
-
-  /// TheModuleProvider - JIT module provider for dynamic class loading and
-  /// lazy compilation.
-  ///
-  JnjvmModuleProvider* getModuleProvider() {
-    return reinterpret_cast<JnjvmModuleProvider*>(TheModuleProvider);
   }
 
   /// tracer - Traces a JnjvmClassLoader for GC.
@@ -221,7 +213,6 @@ public:
     javaTypes = 0;
     javaSignatures = 0;
     TheModule = 0;
-    TheModuleProvider = 0;
     isolate = 0;
     classes = 0;
   }
@@ -342,7 +333,7 @@ public:
   /// createBootstrapLoader - Creates the bootstrap loader, first thing
   /// to do before any execution of a JVM.
   ///
-  JnjvmBootstrapLoader(JnjvmModule* Mod, JnjvmModuleProvider* MP);
+  JnjvmBootstrapLoader(JnjvmModule* Mod);
   JnjvmBootstrapLoader() {}
   
   virtual JavaString* UTF8ToStr(const UTF8* utf8);

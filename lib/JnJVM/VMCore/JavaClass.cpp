@@ -23,7 +23,6 @@
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "JnjvmModule.h"
-#include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
 #include "Reader.h"
 

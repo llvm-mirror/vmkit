@@ -1,4 +1,4 @@
-//===--------- JnjvmModule.cpp - Definition of a Jnjvm module -------------===//
+//===--------- JnjvmModuleJIT.cpp - Support for JIT compiling -------------===//
 //
 //                              JnJVM
 //
@@ -11,11 +11,11 @@
 #include "llvm/DerivedTypes.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
+#include "llvm/Module.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 
 #include "JavaConstantPool.h"
 #include "JavaThread.h"
-#include "Jnjvm.h"
 
 #include "jnjvm/JnjvmModule.h"
 #include "jnjvm/JnjvmModuleProvider.h"
@@ -127,6 +127,9 @@ JnjvmModuleJIT::JnjvmModuleJIT(const std::string &ModuleID) :
  
   CI = ConstantInt::get(Type::Int64Ty, uint64(ArrayObjectVT));
   ReferenceArrayVT = ConstantExpr::getIntToPtr(CI, VTType);
+
+  TheModuleProvider = new JnjvmModuleProvider(this);
+  addJavaPasses();
 }
 
 #ifdef SERVICE

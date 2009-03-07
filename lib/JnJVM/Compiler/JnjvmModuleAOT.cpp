@@ -1,4 +1,4 @@
-//===--------- JnjvmModule.cpp - Definition of a Jnjvm module -------------===//
+//===----- JnjvmModuleAOT.cpp - Support for Ahead of Time Compiler --------===//
 //
 //                              JnJVM
 //
@@ -11,6 +11,8 @@
 #include "llvm/Constants.h"
 #include "llvm/Instructions.h"
 #include "llvm/Module.h"
+#include "llvm/ModuleProvider.h"
+#include "llvm/PassManager.h"
 
 #include "mvm/Threads/Thread.h"
 
@@ -1195,6 +1197,14 @@ llvm::Function* JnjvmModuleAOT::makeTracer(Class* cl, bool stat) {
 }
 #endif
 
+namespace mvm {
+  llvm::FunctionPass* createEscapeAnalysisPass(llvm::Function*);
+}
+
+namespace jnjvm {
+  llvm::FunctionPass* createLowerConstantCallsPass();
+}
+
 JnjvmModuleAOT::JnjvmModuleAOT(const std::string& ModuleID) :
   JnjvmModule(ModuleID) {
  
@@ -1251,6 +1261,10 @@ JnjvmModuleAOT::JnjvmModuleAOT(const std::string& ModuleID) :
   FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
   ObjectPrinter = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                    "printJavaObject", getLLVMModule());
+
+  TheModuleProvider = new ExistingModuleProvider(TheModule);
+  addJavaPasses();
+      
 }
 
 void JnjvmModuleAOT::printStats() {
@@ -1414,4 +1428,21 @@ void JnjvmModuleAOT::setMethod(JavaMethod* meth, void* ptr, const char* name) {
   Function* func = getMethodInfo(meth)->getMethod();
   func->setName(name);
   func->setLinkage(GlobalValue::ExternalLinkage);
+}
+
+Function* JnjvmModuleAOT::addCallback(Class* cl, uint16 index,
+                                      Signdef* sign, bool stat) {
+ 
+  fprintf(stderr, "Warning: emitting a callback from %s (%d)\n",
+          cl->printString(), index);
+  Function* func = 0;
+  LLVMSignatureInfo* LSI = getSignatureInfo(sign);
+  
+  const FunctionType* type = stat ? LSI->getStaticType() : 
+                                    LSI->getVirtualType();
+  
+  func = Function::Create(type, GlobalValue::ExternalLinkage, "staticCallback",
+                          TheModule);
+  
+  return func;
 }

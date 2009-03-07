@@ -13,6 +13,7 @@
 #include "llvm/Instructions.h"
 #include "llvm/Module.h"
 #include "llvm/PassManager.h"
+#include "llvm/Target/TargetData.h"
 
 #include "mvm/JIT.h"
 
@@ -522,4 +523,26 @@ Function* JnjvmModule::parseFunction(JavaMethod* meth) {
 JnjvmModule::~JnjvmModule() {
   delete JavaFunctionPasses;
   delete JavaNativeFunctionPasses;
+}
+
+namespace mvm {
+  llvm::FunctionPass* createEscapeAnalysisPass(llvm::Function*);
+}
+
+namespace jnjvm {
+  llvm::FunctionPass* createLowerConstantCallsPass();
+}
+
+void JnjvmModule::addJavaPasses() {
+  JavaNativeFunctionPasses = new FunctionPassManager(TheModuleProvider);
+  JavaNativeFunctionPasses->add(new TargetData(TheModule));
+  // Lower constant calls to lower things like getClass used
+  // on synchronized methods.
+  JavaNativeFunctionPasses->add(createLowerConstantCallsPass());
+  
+  JavaFunctionPasses = new FunctionPassManager(TheModuleProvider);
+  JavaFunctionPasses->add(new TargetData(TheModule));
+  Function* func = JavaObjectAllocateFunction;
+  JavaFunctionPasses->add(mvm::createEscapeAnalysisPass(func));
+  JavaFunctionPasses->add(createLowerConstantCallsPass());
 }

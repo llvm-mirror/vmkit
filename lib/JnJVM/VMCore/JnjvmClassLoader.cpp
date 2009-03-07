@@ -45,7 +45,6 @@
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
 #include "JnjvmModule.h"
-#include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
 #include "Reader.h"
 #include "Zip.h"
@@ -63,8 +62,7 @@ ClassArray ArrayOfLong;
 
 typedef void (*static_init_t)(JnjvmClassLoader*);
 
-JnjvmBootstrapLoader::JnjvmBootstrapLoader(JnjvmModule* Mod,
-                                           JnjvmModuleProvider* MP) {
+JnjvmBootstrapLoader::JnjvmBootstrapLoader(JnjvmModule* Mod) {
   
   hashUTF8 = new(allocator) UTF8Map(allocator, 0);
   classes = new(allocator) ClassMap();
@@ -268,7 +266,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(JnjvmModule* Mod,
 #undef DEF_UTF8
   
   TheModule = Mod;
-  TheModuleProvider = MP;
   
 }
 
@@ -276,7 +273,6 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
                                    Jnjvm* I) {
   bootstrapLoader = JCL.bootstrapLoader;
   TheModule = bootstrapLoader->getModule()->Create("Applicative loader");
-  TheModuleProvider = new JnjvmModuleProvider(getModule());
   
   hashUTF8 = new(allocator) UTF8Map(allocator,
                                     bootstrapLoader->upcalls->ArrayOfChar);
@@ -819,7 +815,7 @@ JnjvmClassLoader::~JnjvmClassLoader() {
     allocator.Deallocate(javaSignatures);
   }
 
-  delete TheModuleProvider;
+  delete TheModule;
 }
 
 

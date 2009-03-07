@@ -188,14 +188,12 @@ public:
   /// referenced at the given entry.
   Signdef* infoOfInterfaceOrVirtualMethod(uint32 index, const UTF8*& name);
 
-  /// infoOfStaticOrSpecialMethod - Get the JIT representation of a
-  /// non-virtual method. Also returns its signature and the Jnjvm
-  /// representation.
+  /// infoOfStaticOrSpecialMethod - Get the JavaMethod of a non-virtual
+  /// method. Return null if not loaded yet.
   ///
-  void* infoOfStaticOrSpecialMethod(uint32 index,
-                                    uint32 access,
-                                    Signdef*& sign,
-                                    JavaMethod*& meth);
+  JavaMethod* infoOfStaticOrSpecialMethod(uint32 index, uint32 access,
+                                          Signdef* sign);
+  
   
   /// nameOfStaticOrSpecialMethod - Get the name and the signature
   /// of a non-virtual method.

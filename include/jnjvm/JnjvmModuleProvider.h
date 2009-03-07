@@ -12,35 +12,21 @@
 
 #include <llvm/ModuleProvider.h>
 
-using namespace llvm;
-
-namespace llvm {
-class FunctionPassManager;
-}
-
 namespace jnjvm {
 
-class JnjvmModule;
+class JnjvmModuleJIT;
 
-class JnjvmModuleProvider : public ModuleProvider {
-private:
-  JavaMethod* staticLookup(Class* caller, uint32 index);
-  
-  uint32 nbCallbacks;
-
+class JnjvmModuleProvider : public llvm::ModuleProvider {
 public:
-  
-  JnjvmModuleProvider(JnjvmModule *m);
+   
+  JnjvmModuleProvider(JnjvmModuleJIT *m);
   ~JnjvmModuleProvider();
-  
-  llvm::Function* addCallback(Class* cl, uint32 index, Signdef* sign,
-                              bool stat);
 
-  bool materializeFunction(Function *F, std::string *ErrInfo = 0);
+  bool materializeFunction(llvm::Function *F, std::string *ErrInfo = 0);
 
-  Module* materializeModule(std::string *ErrInfo = 0) { return TheModule; }
-
-  void printStats();
+  llvm::Module* materializeModule(std::string *ErrInfo = 0) { 
+    return TheModule;
+  }
 };
 
 } // End jnjvm namespace

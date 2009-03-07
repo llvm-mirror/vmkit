@@ -21,7 +21,6 @@
 #include "JavaConstantPool.h"
 #include "Jnjvm.h"
 #include "JnjvmModule.h"
-#include "JnjvmModuleProvider.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "LockedMap.h"
@@ -405,49 +404,29 @@ void JavaConstantPool::nameOfStaticOrSpecialMethod(uint32 index,
   cl = resolveClassName(entry >> 16);
 }
 
-void* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index, 
-                                                    uint32 access,
-                                                    Signdef*& sign,
-                                                    JavaMethod*& meth) {
+JavaMethod* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index, 
+                                                          uint32 access,
+                                                          Signdef* sign) {
   uint8 id = typeAt(index);
   if (id != ConstantMethodref && id != ConstantInterfaceMethodref)
     JavaThread::get()->getJVM()->classFormatError(
               "bad constant pool number for method at entry %d", index);
   
-  sign = resolveNameAndSign(ctpDef[index] & 0xFFFF);
   sint32 entry = ctpDef[index];
   sint32 ntIndex = entry & 0xFFFF;
   const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   CommonClass* cl = getMethodClassIfLoaded(entry >> 16);
+  JavaMethod* meth = 0;
   if (cl) {
     Class* lookup = cl->isArray() ? cl->super : cl->asClass();
     if (lookup->isResolved()) {
       // lookup the method
       meth = lookup->lookupMethodDontThrow(utf8, sign->keyName,
                                            isStatic(access), true, 0);
-      if (meth) { 
-        // don't throw if no meth, the exception will be thrown just in time
-        JnjvmModule* M = classDef->classLoader->getModule();
-        void* F = M->getMethod(meth);
-        return F;
-      }
     }
   }
- 
-  // If it's static we're not using ctpRes for anything. We can store
-  // the callback. If it's special, the ctpRes contains the offset in
-  // the virtual table, so we can't put the callback and must rely on
-  // the module provider to hash callbacks.
-  if (isStatic(access) && ctpRes[index]) return ctpRes[index];
-
-  void* val =
-    classDef->classLoader->getModuleProvider()->addCallback(classDef, index,
-                                                            sign,
-                                                            isStatic(access));
-        
-  if (isStatic(access)) ctpRes[index] = val;
   
-  return val;
+  return meth;
 }
 
 

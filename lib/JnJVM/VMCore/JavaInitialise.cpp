@@ -75,7 +75,7 @@ mvm::VirtualMachine* mvm::VirtualMachine::createJVM(mvm::CompilationUnit* C) {
 mvm::CompilationUnit* 
 mvm::VirtualMachine::initialiseJVM() {
   initialiseVT();
-  return gc_new(JnjvmBootstrapLoader)(0, 0);
+  return gc_new(JnjvmBootstrapLoader)(0);
 }
 
 mvm::VirtualMachine* mvm::VirtualMachine::createJVM(mvm::CompilationUnit* C) {

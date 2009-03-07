@@ -32,7 +32,6 @@ int main(int argc, char **argv, char **envp) {
  
   CompilationUnit* CU = VirtualMachine::initialiseJVM();
   CU->TheModule = new JnjvmModuleJIT("JITModule");
-  CU->TheModuleProvider = new JnjvmModuleProvider((JnjvmModule*)CU->TheModule);
   CU->AddStandardCompilePasses();
   VirtualMachine* vm = VirtualMachine::createJVM(CU);
   vm->runApplication(argc, argv);

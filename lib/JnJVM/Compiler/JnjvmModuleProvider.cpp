@@ -7,19 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/LinkAllPasses.h"
-#include "llvm/PassManager.h"
+#include "llvm/Constants.h"
 #include "llvm/Module.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/Support/MutexGuard.h"
-#include "llvm/Target/TargetData.h"
 
 #include "mvm/JIT.h"
 
 #include "JavaAccess.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
-#include "JavaJIT.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
@@ -34,21 +30,23 @@ using namespace jnjvm;
 static AnnotationID JavaCallback_ID(
   AnnotationManager::getID("Java::Callback"));
 
-
 class CallbackInfo: public Annotation {
 public:
   Class* cl;
-  uint32 index;
+  uint16 index;
+  bool stat;
 
-  CallbackInfo(Class* c, uint32 i) : Annotation(JavaCallback_ID), 
-    cl(c), index(i) {}
+  CallbackInfo(Class* c, uint32 i, bool s) : Annotation(JavaCallback_ID), 
+    cl(c), index(i), stat(s) {}
 };
 
-JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
+static JavaMethod* staticLookup(Function* F) {
+  CallbackInfo* CI = (CallbackInfo*)F->getAnnotation(JavaCallback_ID);
+  assert(CI && "No callback where there should be one");
+  Class* caller = CI->cl;
+  uint16 index = CI->index; 
+  bool isStatic = CI->stat;
   JavaConstantPool* ctpInfo = caller->getConstantPool();
-  
-
-  bool isStatic = ctpInfo->isAStaticCall(index);
 
   CommonClass* cl = 0;
   const UTF8* utf8 = 0;
@@ -60,10 +58,35 @@ JavaMethod* JnjvmModuleProvider::staticLookup(Class* caller, uint32 index) {
                                           0);
 
   assert(lookup->isInitializing() && "Class not ready");
-
-  
+ 
   return meth;
 }
+
+
+
+Function* JnjvmModuleJIT::addCallback(Class* cl, uint16 index,
+                                      Signdef* sign, bool stat) {
+  
+  Function* func = 0;
+  LLVMSignatureInfo* LSI = getSignatureInfo(sign);
+  
+  const char* name = cl->printString();
+  char* key = (char*)alloca(strlen(name) + 16);
+  sprintf(key, "%s%d", name, index);
+  Function* F = TheModule->getFunction(key);
+  if (F) return F;
+  
+  const FunctionType* type = stat ? LSI->getStaticType() : 
+                                    LSI->getVirtualType();
+  
+  func = Function::Create(type, GlobalValue::GhostLinkage, key, TheModule);
+  
+  CallbackInfo* A = new CallbackInfo(cl, index, stat);
+  func->addAnnotation(A);
+  
+  return func;
+}
+
 
 bool JnjvmModuleProvider::materializeFunction(Function *F, 
                                               std::string *ErrInfo) {
@@ -71,7 +94,6 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   if (!(F->hasNotBeenReadFromBitcode())) 
     return false;
  
-  assert(mvm::MvmModule::executionEngine && "No execution engine");
   if (mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(F))
     return false;
 
@@ -79,9 +101,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   
   if (!meth) {
     // It's a callback
-    CallbackInfo* CI = (CallbackInfo*)F->getAnnotation(JavaCallback_ID);
-    assert(CI && "No callback where there should be one");
-    meth = staticLookup(CI->cl, CI->index); 
+    meth = staticLookup(F);
   }
   
   void* val = meth->compiledPtr();
@@ -110,80 +130,15 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   return false;
 }
 
-llvm::Function* JnjvmModuleProvider::addCallback(Class* cl, uint32 index,
-                                                 Signdef* sign, bool stat) {
-  
-  JnjvmModule* M = cl->classLoader->getModule();
-  Function* func = 0;
-  LLVMSignatureInfo* LSI = M->getSignatureInfo(sign);
-  if (!stat) {
-    const char* name = cl->printString();
-    char* key = (char*)alloca(strlen(name) + 16);
-    sprintf(key, "%s%d", name, index);
-    Function* F = TheModule->getFunction(key);
-    if (F) return F;
-  
-    const FunctionType* type = LSI->getVirtualType();
-  
-    func = Function::Create(type, GlobalValue::GhostLinkage, key, TheModule);
-  } else {
-    const llvm::FunctionType* type = LSI->getStaticType();
-    if (M->isStaticCompiling()) {
-      func = Function::Create(type, GlobalValue::ExternalLinkage, "staticCallback",
-                              TheModule);
-    } else {
-      func = Function::Create(type, GlobalValue::GhostLinkage, "staticCallback",
-                              TheModule);
-    }
-  }
-  
-  ++nbCallbacks;
-  CallbackInfo* A = new CallbackInfo(cl, index);
-  func->addAnnotation(A);
-  
-  return func;
-}
-
-namespace mvm {
-  llvm::FunctionPass* createEscapeAnalysisPass(llvm::Function*);
-}
-
-namespace jnjvm {
-  llvm::FunctionPass* createLowerConstantCallsPass();
-}
-
-JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModule *m) {
+JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModuleJIT *m) {
   TheModule = m->getLLVMModule();
-  if (m->executionEngine) {
-    m->protectEngine.lock();
-    m->executionEngine->addModuleProvider(this);
-    m->protectEngine.unlock();
-  }
-    
-  m->JavaNativeFunctionPasses = new llvm::FunctionPassManager(this);
-  m->JavaNativeFunctionPasses->add(new llvm::TargetData(TheModule));
-  // Lower constant calls to lower things like getClass used
-  // on synchronized methods.
-  m->JavaNativeFunctionPasses->add(createLowerConstantCallsPass());
-  
-  m->JavaFunctionPasses = new llvm::FunctionPassManager(this);
-  m->JavaFunctionPasses->add(new llvm::TargetData(TheModule));
-  Function* func = m->JavaObjectAllocateFunction;
-  m->JavaFunctionPasses->add(mvm::createEscapeAnalysisPass(func));
-  m->JavaFunctionPasses->add(createLowerConstantCallsPass());
-  nbCallbacks = 0;
+  m->protectEngine.lock();
+  m->executionEngine->addModuleProvider(this);
+  m->protectEngine.unlock();
 }
 
 JnjvmModuleProvider::~JnjvmModuleProvider() {
-  if (mvm::MvmModule::executionEngine) {
-    mvm::MvmModule::protectEngine.lock();
-    mvm::MvmModule::executionEngine->removeModuleProvider(this);
-    mvm::MvmModule::protectEngine.unlock();
-  }
-  delete TheModule;
-}
-
-void JnjvmModuleProvider::printStats() {
-  fprintf(stderr, "------------ Info from the module provider -------------\n");
-  fprintf(stderr, "Number of callbacks        : %d\n", nbCallbacks);
+  mvm::MvmModule::protectEngine.lock();
+  mvm::MvmModule::executionEngine->removeModuleProvider(this);
+  mvm::MvmModule::protectEngine.unlock();
 }

@@ -39,6 +39,7 @@
 #include "Reader.h"
 
 #include "jnjvm/JnjvmModule.h"
+#include "jnjvm/JnjvmModuleProvider.h"
 
 using namespace jnjvm;
 using namespace llvm;
@@ -1233,6 +1234,7 @@ Instruction* JavaJIT::invokeInline(JavaMethod* meth,
 
 void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
+  JnjvmClassLoader* JCL = compilingClass->classLoader;
   JavaMethod* meth = 0;
   Signdef* signature = 0;
   const UTF8* name = 0;
@@ -1253,16 +1255,10 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
 
     meth = lookup->lookupMethodDontThrow(name, signature->keyName, false, true,
                                          0);
-    if (meth) {
-      // don't throw if no meth, the exception will be thrown just in time
-      JnjvmModule* M = compilingClass->classLoader->getModule();
-      func = M->getMethod(meth);
-    }
   }
   
-  if (!func) {
-    func = (Function*)ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL,
-                                                           signature, meth);
+  if (!meth) {
+    meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL, signature);
   }
   
   if (meth == compilingClass->classLoader->bootstrapLoader->upcalls->InitObject)
@@ -1304,6 +1300,10 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
     if (!cl) {
       CallInst::Create(module->ForceLoadedCheckFunction, Cl, "", currentBlock);
     }
+    func =  JCL->getModule()->addCallback(compilingClass, index,
+                                          signature, false);
+  } else {
+    func = JCL->getModule()->getMethod(meth);
   }
 
   if (meth && canBeInlined(meth)) {
@@ -1324,7 +1324,7 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
 
 void JavaJIT::invokeStatic(uint16 index) {
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
-  JavaMethod* meth = 0;
+  JnjvmClassLoader* JCL = compilingClass->classLoader;
   Signdef* signature = 0;
   const UTF8* name = 0;
   const UTF8* cl = 0;
@@ -1348,10 +1348,17 @@ void JavaJIT::invokeStatic(uint16 index) {
   }
 
   if (!val) {
-    Function* func = (Function*)
-      ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_STATIC,
-                                           signature, meth);
+    JavaMethod* meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_STATIC,
+                                                            signature);
     
+    Function* func = 0;
+    if (meth) {
+      func = JCL->getModule()->getMethod(meth);
+    } else {
+      func = JCL->getModule()->addCallback(compilingClass, index,
+                                           signature, true);
+    }
+
 #if defined(ISOLATE_SHARING)
     Value* newCtpCache = getConstantPoolAt(index,
                                            module->StaticCtpLookupFunction,

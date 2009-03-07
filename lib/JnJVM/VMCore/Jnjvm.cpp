@@ -29,7 +29,6 @@
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "JnjvmModule.h"
-#include "JnjvmModuleProvider.h"
 #include "LockedMap.h"
 #include "Reader.h"
 #include "Zip.h"
@@ -1206,7 +1205,6 @@ void Jnjvm::mainCompilerStart(JavaThread* th) {
 
     // Print stats before quitting.
     M->printStats();
-    bootstrapLoader->getModuleProvider()->printStats();
 
   } catch(std::string str) {
     fprintf(stderr, "Error : %s\n", str.c_str());

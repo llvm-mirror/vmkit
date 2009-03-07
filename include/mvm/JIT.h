@@ -25,6 +25,7 @@ namespace llvm {
   class Function;
   class FunctionPassManager;
   class Module;
+  class ModuleProvider;
   class PointerType;
   class TargetData;
   class TargetMachine;
@@ -58,12 +59,13 @@ const double NaNDouble = NAN; //0.0 / 0.0;
 class MvmModule {
 protected:
   llvm::Module* TheModule;
+  llvm::ModuleProvider* TheModuleProvider;
 
 public:
   
   explicit MvmModule(const std::string& ModuleID);
  
-  virtual ~MvmModule() {}
+  virtual ~MvmModule();
 
   llvm::Module* getLLVMModule() {
     return TheModule;

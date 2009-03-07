@@ -342,6 +342,8 @@ protected:
   
   void internalMakeVT(Class* cl);
 
+  void addJavaPasses();
+
 private: 
   
   static void initialise();
@@ -415,6 +417,9 @@ public:
    
   llvm::FunctionPassManager* JavaFunctionPasses;
   llvm::FunctionPassManager* JavaNativeFunctionPasses;
+  
+  virtual llvm::Function* addCallback(Class* cl, uint16 index, Signdef* sign,
+                                      bool stat) = 0;
 
 
 };
@@ -456,6 +461,9 @@ public:
 #endif
   
   virtual ~JnjvmModuleJIT() {}
+  
+  virtual llvm::Function* addCallback(Class* cl, uint16 index, Signdef* sign,
+                                      bool stat);
 
 };
 
@@ -476,6 +484,9 @@ public:
     fprintf(stderr, "Can not materiale a function in AOT mode.");
     abort();
   }
+  
+  virtual llvm::Function* addCallback(Class* cl, uint16 index, Signdef* sign,
+                                      bool stat);
   
   virtual void makeVT(Class* cl);
   

@@ -337,3 +337,7 @@ void MvmModule::copyDefinitions(Module* Dst, Module* Src) {
                      SF->getName(), Dst);
   }
 }
+
+MvmModule::~MvmModule() {
+  delete TheModuleProvider;
+}

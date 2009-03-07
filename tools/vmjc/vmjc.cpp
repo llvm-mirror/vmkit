@@ -100,6 +100,9 @@ static cl::opt<bool>
 AssumeCompiled("assume-compiled",
               cl::desc("Assume external Java classes are compiled"));
 
+static cl::opt<std::string>
+WithClinit("with-clinit", cl::desc("Clinit the given file"));
+
 
 
 inline void addPass(FunctionPassManager *PM, Pass *P) {
@@ -160,46 +163,59 @@ int main(int argc, char **argv) {
       cl::PrintHelpMessage();
       return 0;
     }
+   
+    JnjvmModule* Mod = 0;
+    if (WithClinit.empty()) {
+      Module* TheModule = new Module("bootstrap module");
+      if (!TargetTriple.empty())
+        TheModule->setTargetTriple(TargetTriple);
+      else
+        TheModule->setTargetTriple(LLVM_HOSTTRIPLE);
     
-    Module* TheModule = new Module("bootstrap module");
-    if (!TargetTriple.empty())
-      TheModule->setTargetTriple(TargetTriple);
-    else
-      TheModule->setTargetTriple(LLVM_HOSTTRIPLE);
-    
-    // Create the TargetMachine we will be generating code with.
-    std::string Err; 
-    const TargetMachineRegistry::entry *TME = 
-      TargetMachineRegistry::getClosestStaticTargetForModule(*TheModule, Err);
-    if (!TME) {
-      cerr << "Did not get a target machine!\n";
-      exit(1);
+      // Create the TargetMachine we will be generating code with.
+      std::string Err; 
+      const TargetMachineRegistry::entry *TME = 
+        TargetMachineRegistry::getClosestStaticTargetForModule(*TheModule, Err);
+      if (!TME) {
+        cerr << "Did not get a target machine!\n";
+        exit(1);
+      }
+
+      std::string FeatureStr;
+      TargetMachine* TheTarget = TME->CtorFn(*TheModule, FeatureStr);
+
+      // Install information about target datalayout stuff into the module for
+      // optimizer use.
+      TheModule->setDataLayout(TheTarget->getTargetData()->
+                               getStringRepresentation());
+
+
+      mvm::MvmModule::initialise(false, TheModule, TheTarget);
+      Mod = new JnjvmModuleAOT("AOT");
+    } else {
+      mvm::MvmModule::initialise(true);
+      Mod = new JnjvmModuleJIT("JIT");
     }
 
-    std::string FeatureStr;
-    TargetMachine* TheTarget = TME->CtorFn(*TheModule, FeatureStr);
-
-    // Install information about target datalayout stuff into the module for
-    // optimizer use.
-    TheModule->setDataLayout(TheTarget->getTargetData()->
-                             getStringRepresentation());
-
-
-    mvm::MvmModule::initialise(false, TheModule, TheTarget);
     mvm::Object::initialise();
     Collector::initialise(0);
     Collector::enable(0);
 
     mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM();
     addCommandLinePass(CU, argv);
-    JnjvmModuleAOT* Mod = new JnjvmModuleAOT("AOT");
-    JnjvmModuleProvider* MP = new JnjvmModuleProvider(Mod);
     CU->TheModule = Mod;
-    CU->TheModuleProvider = MP;
-    if (DisableExceptions) Mod->disableExceptions();
-    if (DisableTracers) Mod->generateTracers = false;
-    if (DisableStubs) Mod->generateStubs = false;
-    if (AssumeCompiled) Mod->assumeCompiled = true;
+
+    if (!WithClinit.empty()) {
+      // TODO
+      Mod = new JnjvmModuleAOT("AOT");
+      CU->TheModule = Mod;
+    }
+    
+    JnjvmModuleAOT* MAOT = (JnjvmModuleAOT*)Mod;
+    if (DisableExceptions) MAOT->disableExceptions();
+    if (DisableTracers) MAOT->generateTracers = false;
+    if (DisableStubs) MAOT->generateStubs = false;
+    if (AssumeCompiled) MAOT->assumeCompiled = true;
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(CU);
     vm->compile(InputFilename.c_str());
     vm->waitForExit();
