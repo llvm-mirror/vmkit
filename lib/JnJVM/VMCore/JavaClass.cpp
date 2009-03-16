@@ -1042,10 +1042,6 @@ ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
 }
 
 
-void Class::resolveStaticClass() {
-  classLoader->getModule()->resolveStaticClass((Class*)this);
-}
-
 #ifdef ISOLATE
 TaskClassMirror& Class::getCurrentTaskClassMirror() {
   return IsolateInfo[JavaThread::get()->getJVM()->IsolateID];

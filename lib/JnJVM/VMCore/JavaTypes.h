@@ -75,25 +75,37 @@ public:
   /// Typedef.
   ///
   virtual UserCommonClass* assocClass(JnjvmClassLoader* loader) const = 0;
- 
+
+  /// trace - Does this type need to be traced by the GC?
+  ///
   virtual bool trace() const = 0;
   
+  /// isPrimitive - Is this type a primitive type?
+  ///
   virtual bool isPrimitive() const {
     return false;
   }
   
+  /// isReference - Is this type a reference type?
+  ///
   virtual bool isReference() const {
     return true;
   }
   
+  /// isUnsigned - Is this type unsigned?
+  ///
   virtual bool isUnsigned() const {
     return false;
   }
 
+  /// getName - Get the name of the type, i.e. java.lang.String or
+  /// I.
   virtual const UTF8* getName() const {
     return keyName;
   }
 
+  /// getKey - Get the name of the type, i.e. Ljava/lang/String; or
+  /// I.
   const UTF8* getKey() const {
     return keyName;
   }

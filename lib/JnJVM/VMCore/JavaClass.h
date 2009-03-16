@@ -194,7 +194,7 @@ public:
 //===----------------------------------------------------------------------===//
  
   // Assessor methods.
-  uint32 getAccess() const      { return access;}
+  uint32 getAccess() const      { return access; }
   Class** getInterfaces() const { return interfaces; }
   const UTF8* getName() const   { return name; }
   Class* getSuper() const       { return super; }
@@ -462,21 +462,33 @@ public:
   /// virtualFields - List of all the virtual fields defined in this class.
   /// This does not contain non-redefined super fields.
   JavaField* virtualFields;
+  
+  /// nbVirtualFields - The number of virtual fields.
+  ///
   uint16 nbVirtualFields;
 
   /// staticFields - List of all the static fields defined in this class.
   ///
   JavaField* staticFields;
+
+  /// nbStaticFields - The number of static fields.
+  ///
   uint16 nbStaticFields;
   
   /// virtualMethods - List of all the virtual methods defined by this class.
   /// This does not contain non-redefined super methods.
   JavaMethod* virtualMethods;
+
+  /// nbVirtualMethods - The number of virtual methods.
+  ///
   uint16 nbVirtualMethods;
   
   /// staticMethods - List of all the static methods defined by this class.
   ///
   JavaMethod* staticMethods;
+
+  /// nbStaticMethods - The number of static methods.
+  ///
   uint16 nbStaticMethods;
   
   /// ownerClass - Who is initializing this class.
@@ -494,11 +506,17 @@ public:
   /// attributs - JVM attributes of this class.
   ///
   Attribut* attributs;
+
+  /// nbAttributs - The number of attributes.
+  ///
   uint16 nbAttributs;
   
   /// innerClasses - The inner classes of this class.
   ///
   Class** innerClasses;
+  
+  /// nbInnerClasses - The number of inner classes.
+  ///
   uint16 nbInnerClasses;
 
   /// outerClass - The outer class, if this class is an inner class.
@@ -529,8 +547,12 @@ public:
   /// references of the static instance.
   void (*staticTracer)(void*);
  
-  /// Assessor methods.
+  /// getVirtualSize - Get the virtual size of instances of this class.
+  ///
   uint32 getVirtualSize()         { return virtualSize; }
+  
+  /// getVirtualVT - Get the virtual VT of instances of this class.
+  ///
   VirtualTable* getVirtualVT()    { return virtualVT; }
 
   /// getOwnerClass - Get the thread that is currently initializing the class.
@@ -612,10 +634,6 @@ public:
   JavaObject* doNew(Jnjvm* vm);
 #endif
   
-  /// resolveStaticClass - Resolve the static type of the class.
-  ///
-  void resolveStaticClass();
-
   /// tracer - Tracer function of instances of Class.
   ///
   void TRACER;
@@ -683,6 +701,7 @@ public:
 
   /// getInfo - Get the JIT specific information, allocating one if it
   /// does not exist.
+  ///
   template<typename Ty> 
   Ty *getInfo() {
     if (!JInfo) {
@@ -731,35 +750,11 @@ public:
   
 #ifndef ISOLATE
   
-  /// getStaticInstance - Get the memory that holds static variables.
+  /// getCurrentTaskClassMirror - Get the class task mirror of the executing
+  /// isolate.
   ///
-  void* getStaticInstance() {
-    return IsolateInfo[0].staticInstance;
-  }
-  
-  /// setStaticInstance - Set the memory that holds static variables.
-  ///
-  void setStaticInstance(void* val) {
-    IsolateInfo[0].staticInstance = val;
-  }
-  
-  /// getInitializationState - Get the state of the class.
-  ///
-  uint8 getInitializationState() {
-    return IsolateInfo[0].status;
-  }
-
-  /// setInitializationState - Set the state of the class.
-  ///
-  void setInitializationState(uint8 st) {
-    IsolateInfo[0].status = st;
-    if (st == ready) IsolateInfo[0].initialized = true;
-  }
-  
-  /// isReady - Has this class been initialized?
-  ///
-  bool isReady() {
-    return IsolateInfo[0].status == ready;
+  TaskClassMirror& getCurrentTaskClassMirror() {
+    return IsolateInfo[0];
   }
   
   /// isReadyForCompilation - Can this class be inlined when JITing?
@@ -767,92 +762,34 @@ public:
   bool isReadyForCompilation() {
     return isReady();
   }
-
-  /// isInitializing - Is the class currently being initialized?
-  ///
-  bool isInitializing() {
-    return IsolateInfo[0].status >= inClinit;
-  }
   
-  /// isResolved - Has this class been resolved?
-  ///
-  bool isResolved() {
-    return IsolateInfo[0].status >= resolved;
-  }
-  
-  /// isErroneous - Is the class in an erroneous state.
-  ///
-  bool isErroneous() {
-    return IsolateInfo[0].status == erroneous;
-  }
-
   /// setResolved - Set the status of the class as resolved.
   ///
   void setResolved() {
-    IsolateInfo[0].status = resolved;
+    getCurrentTaskClassMirror().status = resolved;
   }
   
   /// setErroneous - Set the class as erroneous.
   ///
   void setErroneous() {
-    IsolateInfo[0].status = erroneous;
+    getCurrentTaskClassMirror().status = erroneous;
   }
   
   /// setIsRead - The class file has been read.
   ///
   void setIsRead() {
-    IsolateInfo[0].status = classRead;
-  }
-
-  /// isResolving - Is the class currently being resolved?
-  ///
-  bool isResolving() {
-    return IsolateInfo[0].status == classRead;
-  }
-
-  bool isClassRead() {
-    return IsolateInfo[0].status >= classRead;
+    getCurrentTaskClassMirror().status = classRead;
   }
   
+
 #else
+  
   TaskClassMirror& getCurrentTaskClassMirror();
   
-  void* getStaticInstance() {
-    return getCurrentTaskClassMirror().staticInstance;
-  }
-
-  void setStaticInstance(void* val) {
-    getCurrentTaskClassMirror().staticInstance = val;
-  }
-
-  uint8 getInitializationState() {
-    return getCurrentTaskClassMirror().status;
-  }
-  
-  void setInitializationState(uint8 st) {
-    getCurrentTaskClassMirror().status = st;
-  }
-  
-  bool isClassRead() {
-    return getCurrentTaskClassMirror().status >= classRead;
-  }
-  
-  bool isReady() {
-    return getCurrentTaskClassMirror().status == ready;
-  }
-
   bool isReadyForCompilation() {
     return false;
   }
-
-  bool isInitializing() {
-    return getCurrentTaskClassMirror().status >= inClinit;
-  }
   
-  bool isResolved() {
-    return getCurrentTaskClassMirror().status >= resolved;
-  }
-
   void setResolved() {
     for (uint32 i = 0; i < NR_ISOLATES; ++i) {
       IsolateInfo[i].status = resolved;
@@ -871,15 +808,70 @@ public:
     }
   }
 
-  bool isResolving() {
-    return getCurrentTaskClassMirror().status == classRead;
+#endif
+  
+  /// getStaticInstance - Get the memory that holds static variables.
+  ///
+  void* getStaticInstance() {
+    return getCurrentTaskClassMirror().staticInstance;
   }
   
+  /// setStaticInstance - Set the memory that holds static variables.
+  ///
+  void setStaticInstance(void* val) {
+    getCurrentTaskClassMirror().staticInstance = val;
+  }
+  
+  /// getInitializationState - Get the state of the class.
+  ///
+  uint8 getInitializationState() {
+    return getCurrentTaskClassMirror().status;
+  }
+
+  /// setInitializationState - Set the state of the class.
+  ///
+  void setInitializationState(uint8 st) {
+    TaskClassMirror& TCM = getCurrentTaskClassMirror();
+    TCM.status = st;
+    if (st == ready) TCM.initialized = true;
+  }
+  
+  /// isReady - Has this class been initialized?
+  ///
+  bool isReady() {
+    return getCurrentTaskClassMirror().status == ready;
+  }
+  
+  /// isInitializing - Is the class currently being initialized?
+  ///
+  bool isInitializing() {
+    return getCurrentTaskClassMirror().status >= inClinit;
+  }
+  
+  /// isResolved - Has this class been resolved?
+  ///
+  bool isResolved() {
+    return getCurrentTaskClassMirror().status >= resolved;
+  }
+  
+  /// isErroneous - Is the class in an erroneous state.
+  ///
   bool isErroneous() {
     return getCurrentTaskClassMirror().status == erroneous;
   }
-#endif
 
+  /// isResolving - Is the class currently being resolved?
+  ///
+  bool isResolving() {
+    return getCurrentTaskClassMirror().status == classRead;
+  }
+
+  /// isClassRead - Has the .class file been read?
+  ///
+  bool isClassRead() {
+    return getCurrentTaskClassMirror().status >= classRead;
+  }
+ 
   /// isNativeOverloaded - Is the method overloaded with a native function?
   ///
   bool isNativeOverloaded(JavaMethod* meth);
@@ -898,7 +890,9 @@ class ClassArray : public CommonClass {
   /// a vm.
   friend class Reader;
   friend class Jnjvm;
+
 private:
+  
   /// doNew - Allocate a new array with the given allocator.
   ///
   JavaArray* doNew(sint32 n, mvm::BumpPtrAllocator& allocator);
@@ -979,12 +973,18 @@ public:
   /// attributs - List of Java attributs of this method.
   ///
   Attribut* attributs;
+  
+  /// nbAttributs - The number of attributes.
+  ///
   uint16 nbAttributs;
 
-  /// enveloppes - List of caches in this method. For all invokeinterface bytecode
-  /// there is a corresponding cache.
+  /// enveloppes - List of caches in this method. For all invokeinterface
+  /// bytecode there is a corresponding cache.
   ///
   Enveloppe* enveloppes;
+
+  /// nbEnveloppes - The number of enveloppes.
+  ///
   uint16 nbEnveloppes;
   
   /// classDef - The Java class where the method is defined.
@@ -1085,24 +1085,22 @@ public:
   float invokeFloatSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
     __attribute__ ((noinline));
   double invokeDoubleSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj,
-                               va_list ap)
-    __attribute__ ((noinline));
+                               va_list ap) __attribute__ ((noinline));
   sint64 invokeLongSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
     __attribute__ ((noinline));
   JavaObject* invokeJavaObjectSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj,
-                                        va_list ap)
-    __attribute__ ((noinline));
+                                        va_list ap) __attribute__ ((noinline));
   
   uint32 invokeIntVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
     __attribute__ ((noinline));
   float invokeFloatVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
     __attribute__ ((noinline));
-  double invokeDoubleVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
-    __attribute__ ((noinline));
+  double invokeDoubleVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj,
+                               va_list ap) __attribute__ ((noinline));
   sint64 invokeLongVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
     __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
-    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                        va_list ap) __attribute__ ((noinline));
   
   uint32 invokeIntStaticAP(Jnjvm* vm, UserClass*, va_list ap)
     __attribute__ ((noinline));
@@ -1121,23 +1119,23 @@ public:
     __attribute__ ((noinline));
   float invokeFloatSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
     __attribute__ ((noinline));
-  double invokeDoubleSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
-    __attribute__ ((noinline));
+  double invokeDoubleSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                void* buf) __attribute__ ((noinline));
   sint64 invokeLongSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
     __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
-    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                         void* buf) __attribute__ ((noinline));
   
   uint32 invokeIntVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
     __attribute__ ((noinline));
   float invokeFloatVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
     __attribute__ ((noinline));
-  double invokeDoubleVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
-    __attribute__ ((noinline));
+  double invokeDoubleVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                void* buf) __attribute__ ((noinline));
   sint64 invokeLongVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
     __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
-    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                         void* buf) __attribute__ ((noinline));
   
   uint32 invokeIntStaticBuf(Jnjvm* vm, UserClass*, void* buf)
     __attribute__ ((noinline));
@@ -1159,8 +1157,8 @@ public:
     __attribute__ ((noinline));
   sint64 invokeLongSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
     __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
-    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectSpecial(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                      ...) __attribute__ ((noinline));
   
   uint32 invokeIntVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
     __attribute__ ((noinline));
@@ -1170,8 +1168,8 @@ public:
     __attribute__ ((noinline));
   sint64 invokeLongVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
     __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
-    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectVirtual(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                      ...) __attribute__ ((noinline));
   
   uint32 invokeIntStatic(Jnjvm* vm, UserClass*, ...)
     __attribute__ ((noinline));
@@ -1241,6 +1239,9 @@ public:
   /// attributs - List of Java attributs for this field.
   ///
   Attribut* attributs;
+  
+  /// nbAttributs - The number of attributes.
+  ///
   uint16 nbAttributs;
 
   /// classDef - The class where the field is defined.
