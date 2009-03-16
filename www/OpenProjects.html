@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" 
+          "http://www.w3.org/TR/html4/strict.dtd">
+<!-- Material used from: HTML 4.01 specs: http://www.w3.org/TR/html401/ -->
+<html>
+<head>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+  <title>"VMKit" JVM and .Net runtimes for LLVM</title>
+  <link type="text/css" rel="stylesheet" href="menu.css" />
+  <link type="text/css" rel="stylesheet" href="content.css" />
+</head>
+<body>
+<div id="menu">
+  <div>
+    <a href="http://llvm.org/">LLVM Home</a>
+  </div>
+  
+  <div class="submenu">
+    <label>VMKit Info</label>
+    <a href="index.html">About</a>
+    <a href="get_started.html">Get&nbsp;Started</a>
+    <a href="get_involved.html">Get&nbsp;Involved</a>
+    <a href="OpenProjects.html">Open&nbsp;Projects</a>
+    <a href="releases/index.html">Releases</a>
+  </div>
+  
+  <div class="submenu">
+    <label>Quick Links</label>
+    <a href="http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev">llvm-dev</a>
+    <a href="http://lists.cs.uiuc.edu/mailman/listinfo/vmkit-commits">vmkit-commits</a>
+    <a href="http://llvm.org/bugs/">Bug Reports</a>
+    <a href="http://llvm.org/svn/llvm-project/vmkit/trunk/">Browse Source</a>
+  </div>
+  
+  <div class="submenu">
+    <label>Events</label>
+    <a href="http://llvm.org/devmtg/">August 1, 2008 - LLVM/Clang Developer Meeting</a>
+  </div>
+
+</div>
+
+<div id="content">
+
+<h1>Open VMKit Projects</h1>
+
+<p>Here are a few tasks that are available for newcomers to work on, depending
+on what your interests are. This list is provided to generate ideas, it is not
+intended to be comprehensive. Please ask on llvm-dev for more specifics. </p>
+
+<ul>
+<li><b>Port MMTk to LLVM</b>:
+MMTk is JikesRVM's Garbage Collection framework (http://jikesrvm.org) and
+contains a number of GC implementations that should be independent of the VM.
+MMTk is written in Java, so it is not straightforward to link it with LLVM.
+Fortunately, VMKit recently started support of an ahead of time compiler for
+Java and should be able to compile MMTk to a .ll file and link with C/C++
+projects.
+</li>
+
+<li><b>Support copying collectors in VMKit</b>: 
+VMKit currently has support for conservative GCs (Boehm and Mmap2) which do not
+cooperate with the compiler and thus do not know if a value in the stack is a
+pointer or not. If we want to support copying collectors we need to use LLVM's
+API on garbage collection (http://llvm.org/docs/GarbageCollection.html) and
+modify VMKit's codebase to track uses of GC objects.</li>
+
+<li><b>Port VMKit's JVM to Harmony or OpenJDK</b>:
+VMKit currently uses GNU Classpath for the standard Java classes. Interfacing
+with another library such as Apache Harmony (http://harmony.apache.org) or
+Sun's OpenJDK (http://openjdk.java.net) may help improving support for latest
+benchmarks (http://www.spec.org/jvm2008).</li>
+</ul>
+
+<p>
+On the LLVM side, here are a few interesting projects that would help VMKit:
+</p>
+
+<ul>
+<li><b>Adaptive Optimization System</b>:
+Being able to adaptively optimize JIT-compiled code would dramastically help
+the startup time of VMKit. All the non-adaptive bits are already there in LLVM:
+baseline compiler (with the -fast command line and the simple register
+allocator), optimized compiler (with the linear scan register allocator), and
+a full set of optimizations changeable at runtime. What's left is a system that
+dynamically lookup the hotness of methods and re-compile with optimizations the
+methods that are often executed.
+</li>
+
+<li><b>Type-based alias-analysis</b>:
+Safe languages such as ones supported by VMKit (Java, C#) benefit a lot from
+a type based alias analysis. LLVM currently lacks full support of this feature
+for safe languages.
+</li>
+
+<li><b>Misceallenous Java-related optimizations</b>:
+Removal of array bounds checks, null pointer checks, devirtualization,
+inlining, etc.
+</li>
+</ul>
+
+
+</div>
+</body>
+</html>
+
