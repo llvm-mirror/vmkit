@@ -105,28 +105,28 @@ ObjectTypedef::ObjectTypedef(const UTF8* name, UTF8Map* map) {
 
 intptr_t Signdef::staticCallBuf() {
   if (!_staticCallBuf) {
-    initialLoader->getModule()->staticCallBuf(this);
+    initialLoader->getCompiler()->staticCallBuf(this);
   }
   return _staticCallBuf;
 }
 
 intptr_t Signdef::virtualCallBuf() {
   if (!_virtualCallBuf) {
-    initialLoader->getModule()->virtualCallBuf(this);
+    initialLoader->getCompiler()->virtualCallBuf(this);
   }
   return _virtualCallBuf;
 }
 
 intptr_t Signdef::staticCallAP() {
   if (!_staticCallAP) {
-    initialLoader->getModule()->staticCallAP(this);
+    initialLoader->getCompiler()->staticCallAP(this);
   }
   return _staticCallAP;
 }
 
 intptr_t Signdef::virtualCallAP() {
   if (!_virtualCallAP) {
-    initialLoader->getModule()->virtualCallAP(this);
+    initialLoader->getCompiler()->virtualCallAP(this);
   }
   return _virtualCallAP;
 }

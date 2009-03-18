@@ -267,7 +267,7 @@ void Jnjvm::error(UserClass* cl, JavaMethod* init, const char* fmt, ...) {
   vsnprintf(tmp, 4096, fmt, ap);
   va_end(ap);
   
-  if (cl && !bootstrapLoader->getModule()->isStaticCompiling()) {
+  if (cl && !bootstrapLoader->getCompiler()->isStaticCompiling()) {
     JavaObject* obj = CreateError(cl, init, tmp);
     JavaThread::get()->throwException(obj);
   } else {

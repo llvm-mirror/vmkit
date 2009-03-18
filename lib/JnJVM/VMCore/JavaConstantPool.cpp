@@ -307,7 +307,7 @@ CommonClass* JavaConstantPool::getMethodClassIfLoaded(uint32 index) {
   }
 #endif
 
-  if (!temp && classDef->classLoader->getModule()->isStaticCompiling()) {
+  if (!temp && classDef->classLoader->getCompiler()->isStaticCompiling()) {
     temp = loadClass(index);
   }
   return temp;

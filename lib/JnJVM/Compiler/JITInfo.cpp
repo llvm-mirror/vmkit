@@ -58,7 +58,7 @@ const Type* LLVMClassInfo::getVirtualType() {
     
     
     JavaLLVMCompiler* Mod = 
-      (JavaLLVMCompiler*)classDef->classLoader->getModule();
+      (JavaLLVMCompiler*)classDef->classLoader->getCompiler();
     StructType* structType = StructType::get(fields, false);
     virtualType = PointerType::getUnqual(structType);
     const TargetData* targetData = JnjvmModule::TheTargetData;
@@ -113,7 +113,7 @@ const Type* LLVMClassInfo::getStaticType() {
     }
   
     JavaLLVMCompiler* Mod = 
-      (JavaLLVMCompiler*)cl->classLoader->getModule();
+      (JavaLLVMCompiler*)cl->classLoader->getCompiler();
     StructType* structType = StructType::get(fields, false);
     staticType = PointerType::getUnqual(structType);
     const TargetData* targetData = JnjvmModule::TheTargetData;
@@ -166,7 +166,7 @@ Function* LLVMClassInfo::getVirtualTracer() {
 Function* LLVMMethodInfo::getMethod() {
   if (!methodFunction) {
     JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
-    JavaLLVMCompiler* Mod = (JavaLLVMCompiler*)JCL->getModule();
+    JavaLLVMCompiler* Mod = (JavaLLVMCompiler*)JCL->getCompiler();
     if (Mod->isStaticCompiling()) {
 
       const UTF8* jniConsClName = methodDef->classDef->name;
@@ -223,7 +223,7 @@ const FunctionType* LLVMMethodInfo::getFunctionType() {
 ConstantInt* LLVMMethodInfo::getOffset() {
   if (!offsetConstant) {
     JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
-    JavaCompiler* Mod = JCL->getModule();
+    JavaCompiler* Mod = JCL->getCompiler();
     Mod->resolveVirtualClass(methodDef->classDef);
     offsetConstant = ConstantInt::get(Type::Int32Ty, methodDef->offset);
   }
@@ -233,7 +233,7 @@ ConstantInt* LLVMMethodInfo::getOffset() {
 ConstantInt* LLVMFieldInfo::getOffset() {
   if (!offsetConstant) {
     JnjvmClassLoader* JCL = fieldDef->classDef->classLoader;
-    JavaCompiler* Mod = JCL->getModule();
+    JavaCompiler* Mod = JCL->getCompiler();
     if (isStatic(fieldDef->access)) {
       Mod->resolveStaticClass(fieldDef->classDef); 
     } else {
@@ -334,7 +334,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   std::vector<Value*> Args;
 
   JavaLLVMCompiler* Mod = 
-    (JavaLLVMCompiler*)signature->initialLoader->getModule();
+    (JavaLLVMCompiler*)signature->initialLoader->getCompiler();
   const char* name = 0;
   if (Mod->isStaticCompiling()) {
     name = virt ? signature->printString("virtual_buf") :
@@ -394,7 +394,7 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   std::vector<Value*> Args;
   
   JavaLLVMCompiler* Mod = 
-    (JavaLLVMCompiler*)signature->initialLoader->getModule();
+    (JavaLLVMCompiler*)signature->initialLoader->getCompiler();
   const char* name = 0;
   if (Mod->isStaticCompiling()) {
     name = virt ? signature->printString("virtual_ap") :
@@ -504,7 +504,7 @@ Function* LLVMSignatureInfo::getVirtualBuf() {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR();
     virtualBufFunction = createFunctionCallBuf(true);
-    if (!signature->initialLoader->getModule()->isStaticCompiling()) {
+    if (!signature->initialLoader->getCompiler()->isStaticCompiling()) {
       signature->setVirtualCallBuf((intptr_t)
         mvm::MvmModule::executionEngine->getPointerToGlobal(virtualBufFunction));
       // Now that it's compiled, we don't need the IR anymore
@@ -520,7 +520,7 @@ Function* LLVMSignatureInfo::getVirtualAP() {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR();
     virtualAPFunction = createFunctionCallAP(true);
-    if (!signature->initialLoader->getModule()->isStaticCompiling()) {
+    if (!signature->initialLoader->getCompiler()->isStaticCompiling()) {
       signature->setVirtualCallAP((intptr_t)
         mvm::MvmModule::executionEngine->getPointerToGlobal(virtualAPFunction));
       // Now that it's compiled, we don't need the IR anymore
@@ -536,7 +536,7 @@ Function* LLVMSignatureInfo::getStaticBuf() {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR();
     staticBufFunction = createFunctionCallBuf(false);
-    if (!signature->initialLoader->getModule()->isStaticCompiling()) {
+    if (!signature->initialLoader->getCompiler()->isStaticCompiling()) {
       signature->setStaticCallBuf((intptr_t)
         mvm::MvmModule::executionEngine->getPointerToGlobal(staticBufFunction));
       // Now that it's compiled, we don't need the IR anymore
@@ -552,7 +552,7 @@ Function* LLVMSignatureInfo::getStaticAP() {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR();
     staticAPFunction = createFunctionCallAP(false);
-    if (!signature->initialLoader->getModule()->isStaticCompiling()) {
+    if (!signature->initialLoader->getCompiler()->isStaticCompiling()) {
       signature->setStaticCallAP((intptr_t)
         mvm::MvmModule::executionEngine->getPointerToGlobal(staticAPFunction));
       // Now that it's compiled, we don't need the IR anymore

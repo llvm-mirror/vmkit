@@ -117,7 +117,7 @@ static Value* getDelegatee(JnjvmModule* module, Value* Arg, Instruction* CI) {
 bool LowerConstantCalls::runOnFunction(Function& F) {
   JavaMethod* meth = LLVMMethodInfo::get(&F);
   JavaLLVMCompiler* TheCompiler = 
-    (JavaLLVMCompiler*)meth->classDef->classLoader->getModule();
+    (JavaLLVMCompiler*)meth->classDef->classLoader->getCompiler();
   JnjvmModule* module = TheCompiler->getIntrinsics();
   bool Changed = false;
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 

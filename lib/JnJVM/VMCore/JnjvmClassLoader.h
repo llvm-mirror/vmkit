@@ -116,9 +116,9 @@ public:
   ///
   UTF8Map* hashUTF8;
   
-  /// getModule - Get the Java compiler of this class loader.
+  /// getCompiler - Get the Java compiler of this class loader.
   ///
-  JavaCompiler* getModule() { return TheCompiler; }
+  JavaCompiler* getCompiler() { return TheCompiler; }
 
   /// setCompiler - Set the compiler of classes loaded by this class loader.
   ///

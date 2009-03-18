@@ -1492,7 +1492,7 @@ void mainCompilerStart(JavaThread* th) {
   
   Jnjvm* vm = th->getJVM();
   JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
-  JavaAOTCompiler* M = (JavaAOTCompiler*)bootstrapLoader->getModule();
+  JavaAOTCompiler* M = (JavaAOTCompiler*)bootstrapLoader->getCompiler();
   try {
 
     bootstrapLoader->analyseClasspathEnv(vm->classpath);

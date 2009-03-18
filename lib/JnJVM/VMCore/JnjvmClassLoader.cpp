@@ -273,7 +273,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(JavaCompiler* Comp) {
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
                                    Jnjvm* I) {
   bootstrapLoader = JCL.bootstrapLoader;
-  TheCompiler = bootstrapLoader->getModule()->Create("Applicative loader");
+  TheCompiler = bootstrapLoader->getCompiler()->Create("Applicative loader");
   
   hashUTF8 = new(allocator) UTF8Map(allocator,
                                     bootstrapLoader->upcalls->ArrayOfChar);
@@ -954,7 +954,7 @@ intptr_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& jnjvm,
 }
 
 void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
-  JavaCompiler* M = getModule();
+  JavaCompiler* M = getCompiler();
   for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
        i != e; ++i) {
     CommonClass* cl = i->second;

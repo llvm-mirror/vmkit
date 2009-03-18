@@ -365,7 +365,7 @@ void* JavaMethod::compiledPtr() {
 #endif
     classDef->acquire();
     if (code == 0) {
-      code = classDef->classLoader->getModule()->materializeFunction(this);
+      code = classDef->classLoader->getCompiler()->materializeFunction(this);
       Jnjvm* vm = JavaThread::get()->getJVM();
       vm->addMethodInFunctionMap(this, code);
     }
@@ -380,7 +380,7 @@ void JavaMethod::setCompiledPtr(void* ptr, const char* name) {
     code = ptr;
     Jnjvm* vm = JavaThread::get()->getJVM();
     vm->addMethodInFunctionMap(this, code);
-    classDef->classLoader->getModule()->setMethod(this, ptr, name);
+    classDef->classLoader->getCompiler()->setMethod(this, ptr, name);
   }
   access |= ACC_NATIVE;
   classDef->release();
@@ -533,7 +533,7 @@ JavaField* Class::lookupField(const UTF8* name, const UTF8* type,
 JavaObject* UserClass::doNew(Jnjvm* vm) {
   assert(this && "No class when allocating.");
   assert((this->isInitializing() || 
-          classLoader->getModule()->isStaticCompiling())
+          classLoader->getCompiler()->isStaticCompiling())
          && "Uninitialized class when allocating.");
   JavaObject* res = 
     (JavaObject*)vm->gcAllocator.allocateManagedObject(getVirtualSize(),
@@ -932,7 +932,7 @@ void Class::resolveClass() {
       loadParents();
       loadExceptions();
       acquire();
-      JavaCompiler *Comp = classLoader->getModule();
+      JavaCompiler *Comp = classLoader->getCompiler();
       Comp->resolveVirtualClass(this);
       Comp->resolveStaticClass(this);
       setResolved();
