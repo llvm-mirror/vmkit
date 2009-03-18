@@ -13,7 +13,8 @@ include $(LEVEL)/Makefile.config
 EXTRA_DIST = libvmjc
 
 TOOLNAME = vmjc
-USEDLIBS = Allocator CommonThread Mvm JnJVM Classpath JnjvmCompiler $(GCLIB)
+USEDLIBS = Allocator CommonThread Mvm MvmCompiler JnJVM Classpath \
+	   JnjvmCompiler $(GCLIB)
 LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo bitwriter
 
 include $(LEVEL)/Makefile.common

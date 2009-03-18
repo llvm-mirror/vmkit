@@ -11,7 +11,7 @@ LEVEL = ../..
 include $(LEVEL)/Makefile.config
 
 TOOLNAME = vmkit
-USEDLIBS = Allocator CommonThread Mvm $(GCLIB) 
+USEDLIBS = Allocator CommonThread Mvm MvmCompiler $(GCLIB)
 
 ifeq ($(WITH_JNJVM), 1)
 USEDLIBS += JnJVM Classpath JnjvmCompiler
