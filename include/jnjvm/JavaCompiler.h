@@ -28,6 +28,8 @@ public:
   virtual void virtualCallBuf(Signdef* sign) = 0;
   virtual void staticCallAP(Signdef* sign) = 0;
   virtual void virtualCallAP(Signdef* sign) = 0;
+  
+  virtual ~JavaCompiler() {}
 
 };
 
