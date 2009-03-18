@@ -217,9 +217,7 @@ int main(int argc, char **argv) {
     if (DisableTracers) MAOT->generateTracers = false;
     if (DisableStubs) MAOT->generateStubs = false;
     if (AssumeCompiled) MAOT->assumeCompiled = true;
-    mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(JCL);
-    vm->compile(InputFilename.c_str());
-    vm->waitForExit();
+    MAOT->compileFile(JCL, InputFilename.c_str());
 
     if (DontPrint) {
       // Just use stdout.  We won't actually print anything on it.

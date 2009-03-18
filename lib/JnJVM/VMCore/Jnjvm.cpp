@@ -15,6 +15,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 #include "debug.h"
 
 #include "mvm/Threads/Thread.h"
@@ -22,13 +23,13 @@
 #include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
+#include "JavaCompiler.h"
 #include "JavaConstantPool.h"
 #include "JavaString.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "JnjvmModule.h"
 #include "LockedMap.h"
 #include "Reader.h"
 #include "Zip.h"
@@ -1098,151 +1099,6 @@ const UTF8* Jnjvm::asciizToUTF8(const char* asciiz) {
   }
   return (const UTF8*)tmp;
 }
-
-
-static void compileClass(Class* cl) {
-  JavaAOTCompiler* Mod = (JavaAOTCompiler*)cl->classLoader->getModule();
-  
-  // Make sure the class is emitted.
-  Mod->getNativeClass(cl);
-
-  for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
-    JavaMethod& meth = cl->virtualMethods[i];
-    if (!isAbstract(meth.access))
-      cl->classLoader->getModule()->parseFunction(&meth);
-    if (Mod->generateStubs) meth.getSignature()->compileAllStubs();
-  }
-  
-  for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
-    JavaMethod& meth = cl->staticMethods[i];
-    if (!isAbstract(meth.access))
-      cl->classLoader->getModule()->parseFunction(&meth);
-    if (Mod->generateStubs) meth.getSignature()->compileAllStubs();
-  }
-}
-
-static const char* name;
-
-void Jnjvm::mainCompilerStart(JavaThread* th) {
-  
-  Jnjvm* vm = th->getJVM();
-  JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
-  JavaAOTCompiler* M = (JavaAOTCompiler*)bootstrapLoader->getModule();
-  try {
-
-    bootstrapLoader->analyseClasspathEnv(vm->classpath);
-    bootstrapLoader->upcalls->initialiseClasspath(bootstrapLoader);
-  
-    uint32 size = strlen(name);
-    
-    if (size > 4 && 
-       (!strcmp(&name[size - 4], ".jar") || !strcmp(&name[size - 4], ".zip"))) {
-  
-
-      std::vector<Class*> classes;
-
-      ArrayUInt8* bytes = Reader::openFile(bootstrapLoader, name);
-      if (!bytes) vm->unknownError("Can't find zip file.");
-      ZipArchive archive(bytes, bootstrapLoader->allocator);
-    
-      char* realName = (char*)alloca(4096);
-      for (ZipArchive::table_iterator i = archive.filetable.begin(), 
-           e = archive.filetable.end(); i != e; ++i) {
-        ZipFile* file = i->second;
-      
-        size = strlen(file->filename);
-        if (size > 6 && !strcmp(&(file->filename[size - 6]), ".class")) {
-          UserClassArray* array = bootstrapLoader->upcalls->ArrayOfByte;
-          ArrayUInt8* res = 
-            (ArrayUInt8*)array->doNew(file->ucsize, bootstrapLoader->allocator);
-          int ok = archive.readFile(res, file);
-          if (!ok) vm->unknownError("Wrong zip file.");
-      
-        
-          memcpy(realName, file->filename, size);
-          realName[size - 6] = 0;
-          const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
-          Class* cl = bootstrapLoader->constructClass(utf8, res);
-          classes.push_back(cl);
-        }
-      }
-
-      // First resolve everyone so that there can not be unknown references in
-      // constant pools.
-      for (std::vector<Class*>::iterator i = classes.begin(),
-           e = classes.end(); i != e; ++i) {
-        Class* cl = *i;
-        cl->resolveClass();
-        cl->setOwnerClass(JavaThread::get());
-        
-        for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
-          LLVMMethodInfo* LMI = M->getMethodInfo(&cl->virtualMethods[i]);
-          LMI->getMethod();
-        }
-
-        for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
-          LLVMMethodInfo* LMI = M->getMethodInfo(&cl->staticMethods[i]);
-          LMI->getMethod();
-        }
-
-      }
-      
-      for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
-           i != e; ++i) {
-        Class* cl = *i;
-        compileClass(cl);
-      }
-
-    } else {
-
-      const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(name);
-      UserClass* cl = bootstrapLoader->loadName(utf8, true, true);
-      cl->setOwnerClass(JavaThread::get());
-      compileClass(cl);
-    }
-   
-    M->CreateStaticInitializer();
-
-    // Print stats before quitting.
-    M->printStats();
-
-  } catch(std::string str) {
-    fprintf(stderr, "Error : %s\n", str.c_str());
-  }
-  
-#define SET_INLINE(NAME) { \
-  const UTF8* name = vm->asciizToUTF8(NAME); \
-  Class* cl = (Class*)vm->bootstrapLoader->lookupClass(name); \
-  if (cl) M->setNoInline(cl); }
-
-  SET_INLINE("java/util/concurrent/atomic/AtomicReferenceFieldUpdater")
-  SET_INLINE("java/util/concurrent/atomic/AtomicReferenceFieldUpdater"
-             "$AtomicReferenceFieldUpdaterImpl")
-  SET_INLINE("java/util/concurrent/atomic/AtomicIntegerFieldUpdater")
-  SET_INLINE("java/util/concurrent/atomic/AtomicIntegerFieldUpdater"
-             "$AtomicIntegerFieldUpdaterImpl")
-  SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater")
-  SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater"
-             "$CASUpdater")
-  SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater"
-             "$LockedUpdater")
-#undef SET_INLINE
-
-  vm->threadSystem.nonDaemonLock.lock();
-  --(vm->threadSystem.nonDaemonThreads);
-  if (vm->threadSystem.nonDaemonThreads == 0)
-      vm->threadSystem.nonDaemonVar.signal();
-  vm->threadSystem.nonDaemonLock.unlock();  
-  
-}
-
-void Jnjvm::compile(const char* n) {
-  name = n;
-  bootstrapThread = new JavaThread(0, 0, this);
-  bootstrapThread->start((void (*)(mvm::Thread*))mainCompilerStart);
-}
-
-
 
 void Jnjvm::removeMethodsInFunctionMap(JnjvmClassLoader* loader) {
   // Loop over all methods in the map to find which ones belong

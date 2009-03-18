@@ -33,9 +33,6 @@ struct ZipFile : public mvm::PermanentObject {
 
 
 class ZipArchive : public mvm::PermanentObject {
-  friend class JnjvmBootstrapLoader;
-  friend class Jnjvm;
-private:
   
   mvm::BumpPtrAllocator& allocator;
 
@@ -48,8 +45,12 @@ private:
   };
   
   int ofscd;
+
+public:
   std::map<const char*, ZipFile*, ltstr> filetable;
   typedef std::map<const char*, ZipFile*, ltstr>::iterator table_iterator;
+
+private:
   ArrayUInt8* bytes;
   
   void findOfscd();

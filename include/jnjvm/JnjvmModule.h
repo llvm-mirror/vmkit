@@ -45,6 +45,7 @@ class JavaField;
 class JavaMethod;
 class JavaObject;
 class JavaString;
+class JnjvmClassLoader;
 class JnjvmModule;
 class Typedef;
 class Signdef;
@@ -651,7 +652,11 @@ public:
   
   void printStats();
   
+  void compileFile(JnjvmClassLoader* JCL, const char* name);
+  void compileClass(Class* cl);
 
+private:
+  void compileAllStubs(Signdef* sign);
 };
 
 }

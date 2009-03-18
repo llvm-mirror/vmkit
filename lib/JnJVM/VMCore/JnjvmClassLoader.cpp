@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <string>
 
 
 #if defined(__MACH__)
@@ -37,6 +38,7 @@
 #include "Classpath.h"
 #include "ClasspathReflect.h"
 #include "JavaClass.h"
+#include "JavaCompiler.h"
 #include "JavaConstantPool.h"
 #include "JavaString.h"
 #include "JavaThread.h"
@@ -44,7 +46,6 @@
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
-#include "JnjvmModule.h"
 #include "LockedMap.h"
 #include "Reader.h"
 #include "Zip.h"

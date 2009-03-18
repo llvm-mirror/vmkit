@@ -11,8 +11,8 @@
 
 #include "JavaArray.h"
 #include "JavaClass.h"
+#include "JavaCompiler.h"
 #include "JavaTypes.h"
-#include "JnjvmModule.h"
 
 using namespace jnjvm;
 

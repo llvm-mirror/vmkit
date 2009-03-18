@@ -886,20 +886,13 @@ public:
 ///
 class ClassArray : public CommonClass {
 
-  /// Reader and Jnjvm are friends because they may allocate arrays without
-  /// a vm.
-  friend class Reader;
-  friend class Jnjvm;
-
-private:
+public:
   
   /// doNew - Allocate a new array with the given allocator.
   ///
   JavaArray* doNew(sint32 n, mvm::BumpPtrAllocator& allocator);
   JavaArray* doNew(sint32 n, mvm::Allocator& allocator);
 
-public:
-  
   /// _baseClass - The base class of the array.
   ///
   CommonClass*  _baseClass;

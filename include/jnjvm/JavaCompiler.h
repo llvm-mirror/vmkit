@@ -16,7 +16,6 @@ class JavaCompiler {
 public:
   
   virtual void* materializeFunction(JavaMethod* meth) = 0;
-  virtual llvm::Function* parseFunction(JavaMethod* meth) = 0;
   virtual void setMethod(JavaMethod* meth, void* ptr, const char* name) = 0;
   virtual bool isStaticCompiling() = 0;
   virtual void resolveVirtualClass(Class* cl) = 0;

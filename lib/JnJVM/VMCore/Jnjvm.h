@@ -244,7 +244,7 @@ public:
   /// hashStr - Hash map of java/lang/String objects allocated by this JVM.
   ///
   StringMap hashStr;
-  
+ 
 public:
   
   /// CreateExceptions - These are the runtime exceptions thrown by Java code
@@ -303,6 +303,10 @@ public:
   /// asciizToUTF8 - Constructs an UTF8 out of the asciiz.
   ///
   const UTF8* asciizToUTF8(const char* asciiz);
+  
+  /// setBootstrapThread - Set the bootstrap thread of this VM.
+  ///
+  void setBootstrapThread(JavaThread* th) { bootstrapThread = th; }
 
   /// ~Jnjvm - Destroy the JVM.
   ///
@@ -335,10 +339,6 @@ public:
   ///
   virtual void runApplication(int argc, char** argv);
 
-  /// compile - Compile the .class, .zip or .jar file to LLVM IR.
-  ///
-  virtual void compile(const char* name);
-  
   /// waitForExit - Waits that there are no more non-daemon threads in this JVM.
   ///
   virtual void waitForExit();

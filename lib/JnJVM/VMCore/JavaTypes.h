@@ -353,18 +353,7 @@ public:
 // End of inlined methods of getting dynamically generated functions.
 //
 //===----------------------------------------------------------------------===//
-  
-  /// compileAllStubs - Compile all the native -> Java stubs. 
-  /// TODO: Once LLVM supports va_arg, enable AP.
-  ///
-  void compileAllStubs() {
-    getStaticCallBuf();
-    // getStaticCallAP();
-    getVirtualCallBuf();
-    // getVirtualCallAP();
-  }
-
-  
+    
   /// JInfo - Holds info useful for the JIT.
   ///
   mvm::JITInfo* JInfo;
