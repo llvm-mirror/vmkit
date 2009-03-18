@@ -30,10 +30,10 @@ int main(int argc, char **argv, char **envp) {
   Object::initialise();
   Collector::initialise(0);
  
-  CompilationUnit* CU = VirtualMachine::initialiseJVM();
-  CU->TheModule = new JnjvmModuleJIT("JITModule");
-  CU->AddStandardCompilePasses();
-  VirtualMachine* vm = VirtualMachine::createJVM(CU);
+  JavaJITCompiler* Comp = new JavaJITCompiler("JITModule");
+  mvm::MvmModule::AddStandardCompilePasses();
+  JnjvmClassLoader* JCL = VirtualMachine::initialiseJVM(Comp);
+  VirtualMachine* vm = VirtualMachine::createJVM(JCL);
   vm->runApplication(argc, argv);
   vm->waitForExit();
 

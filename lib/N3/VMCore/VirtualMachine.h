@@ -124,6 +124,7 @@ public:
   mvm::Lock* protectModule;
   FunctionMap* functions;
   mvm::MvmModule* module;
+  llvm::Module* LLVMModule;
   N3ModuleProvider* TheModuleProvider;
   VMThread* bootstrapThread;
 
@@ -134,6 +135,8 @@ public:
   }
 
   VMMethod* lookupFunction(llvm::Function* F);
+
+  llvm::Module* getLLVMModule() { return LLVMModule; }
 
 };
 

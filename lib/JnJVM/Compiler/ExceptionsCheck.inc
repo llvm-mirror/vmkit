@@ -5,7 +5,7 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
   Instruction* res = CallInst::Create(F, args.begin(), args.end(), Name,
                                       InsertAtEnd);
   
-  if (module->hasExceptionsEnabled()) {
+  if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread();
     Value* geps[2] = { module->constantZero,
                        module->OffsetJavaExceptionInThreadConstant };
@@ -43,7 +43,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
 
   Instruction* res = CallInst::Create(F, arg1, Name, InsertAtEnd);
   
-  if (module->hasExceptionsEnabled()) {
+  if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread();
     Value* geps[2] = { module->constantZero,
                        module->OffsetJavaExceptionInThreadConstant };
@@ -82,7 +82,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
   
   Instruction* res = CallInst::Create(F, args, args + 2, Name, InsertAtEnd);
   
-  if (module->hasExceptionsEnabled()) {
+  if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread();
     Value* geps[2] = { module->constantZero,
                        module->OffsetJavaExceptionInThreadConstant };
@@ -118,7 +118,7 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
                        BasicBlock *InsertAtEnd) {
   Instruction* res = llvm::CallInst::Create(F, Name, InsertAtEnd);
   
-  if (module->hasExceptionsEnabled()) {
+  if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread();
     Value* geps[2] = { module->constantZero,
                        module->OffsetJavaExceptionInThreadConstant };
@@ -343,7 +343,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
 #else
     // We know catchClass exists because we have loaded all exceptions catched
     // by the method when we loaded the class that defined this method.
-    clVar = module->getNativeClass(cur->catchClass);
+    clVar = TheCompiler->getNativeClass(cur->catchClass);
 #endif
     if (clVar->getType() != module->JavaCommonClassType) 
       clVar = new BitCastInst(clVar, module->JavaCommonClassType, "",

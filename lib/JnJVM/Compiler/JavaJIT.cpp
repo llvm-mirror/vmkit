@@ -103,7 +103,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
 #if !defined(WITHOUT_VTABLE)
   Typedef* retTypedef = signature->getReturnType();
   std::vector<Value*> args; // size = [signature->nbIn + 3];
-  LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
+  LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   FunctionType::param_iterator it  = virtualType->param_end();
   makeArgs(it, index, args, signature->nbArguments + 1);
@@ -154,7 +154,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   Value* indexesCtp; //[3];
 #endif
   if (meth) {
-    LLVMMethodInfo* LMI = module->getMethodInfo(meth);
+    LLVMMethodInfo* LMI = TheCompiler->getMethodInfo(meth);
     ConstantInt* Offset = LMI->getOffset();
     indexes2[1] = Offset;
 #ifdef ISOLATE_SHARING
@@ -247,7 +247,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     natPtr = compilingClass->classLoader->nativeLookup(compilingMethod, jnjvm,
                                                        functionName);
   
-  if (!natPtr && !module->isStaticCompiling()) {
+  if (!natPtr && !TheCompiler->isStaticCompiling()) {
     fprintf(stderr, "Native function %s not found. Probably "
                "not implemented by JnJVM?\n", compilingMethod->printString());
     JavaThread::get()->getJVM()->unknownError("can not find native method %s",
@@ -309,7 +309,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
                                   val, "", currentBlock);
     nativeArgs.push_back(res);
 #else
-    Value* cl = module->getJavaClass(compilingClass);
+    Value* cl = TheCompiler->getJavaClass(compilingClass);
     nativeArgs.push_back(cl);
 #endif
     index = 2;
@@ -322,10 +322,10 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     nativeArgs.push_back(i);
   }
   
-  Value* nativeFunc = module->getNativeFunction(compilingMethod, (void*)natPtr);
+  Value* nativeFunc = TheCompiler->getNativeFunction(compilingMethod, (void*)natPtr);
 
-  if (module->isStaticCompiling()) {
-    Value* Arg = module->getMethodInClass(compilingMethod); 
+  if (TheCompiler->isStaticCompiling()) {
+    Value* Arg = TheCompiler->getMethodInClass(compilingMethod); 
     
     // If the global variable is null, then load it.
     BasicBlock* unloadedBlock = createBasicBlock("");
@@ -339,7 +339,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     BranchInst::Create(unloadedBlock, endBlock, cmp, currentBlock);
     currentBlock = unloadedBlock;
 
-    Value* res = CallInst::Create(module->NativeLoader, Arg, "", currentBlock);
+    Value* res = CallInst::Create(TheCompiler->NativeLoader, Arg, "", currentBlock);
 
     res = new BitCastInst(res, Ty, "", currentBlock);
     new StoreInst(res, nativeFunc, currentBlock);
@@ -490,7 +490,7 @@ void JavaJIT::beginSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     obj = llvmFunction->arg_begin();
   } else {
-    obj = module->getJavaClass(compilingClass);
+    obj = TheCompiler->getJavaClass(compilingClass);
   }
   monitorEnter(obj);
 }
@@ -500,7 +500,7 @@ void JavaJIT::endSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     obj = llvmFunction->arg_begin();
   } else {
-    obj = module->getJavaClass(compilingClass);
+    obj = TheCompiler->getJavaClass(compilingClass);
   }
   monitorExit(obj);
 }
@@ -528,7 +528,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   
   reader.seek(codeLen, Reader::SeekCur);
   
-  LLVMMethodInfo* LMI = module->getMethodInfo(compilingMethod);
+  LLVMMethodInfo* LMI = TheCompiler->getMethodInfo(compilingMethod);
   assert(LMI);
   Function* func = LMI->getMethod();
 
@@ -887,7 +887,7 @@ llvm::Function* JavaJIT::javaCompile() {
               compilingMethod->printString());
   
 #ifndef DWARF_EXCEPTIONS
-  if (codeLen < 5 && !callsStackWalker && !module->isStaticCompiling())
+  if (codeLen < 5 && !callsStackWalker && !TheCompiler->isStaticCompiling())
     compilingMethod->canBeInlined = true;
 #endif
 
@@ -939,7 +939,7 @@ void JavaJIT::loadConstant(uint16 index) {
     const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
     JavaString* str = compilingClass->classLoader->UTF8ToStr(utf8);
 
-    Value* val = module->getString(str);
+    Value* val = TheCompiler->getString(str);
     push(val, false);
 #endif
         
@@ -960,7 +960,7 @@ void JavaJIT::loadConstant(uint16 index) {
     Value* res = getResolvedCommonClass(index, false, &cl);
 
 #ifndef ISOLATE
-    if (cl) res = module->getJavaClass(cl);
+    if (cl) res = TheCompiler->getJavaClass(cl);
     else
 #endif
     
@@ -974,7 +974,7 @@ void JavaJIT::loadConstant(uint16 index) {
 
 void JavaJIT::JITVerifyNull(Value* obj) {
 
-  if (module->hasExceptionsEnabled()) {
+  if (TheCompiler->hasExceptionsEnabled()) {
     Constant* zero = module->JavaObjectNullConstant;
     Value* test = new ICmpInst(ICmpInst::ICMP_EQ, obj, zero, "",
                                currentBlock);
@@ -998,7 +998,7 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
     index = new SExtInst(index, Type::Int32Ty, "", currentBlock);
   }
   
-  if (module->hasExceptionsEnabled()) {
+  if (TheCompiler->hasExceptionsEnabled()) {
     Value* size = arraySize(obj);
     
     Value* cmp = new ICmpInst(ICmpInst::ICMP_ULT, index, size, "",
@@ -1234,14 +1234,13 @@ Instruction* JavaJIT::invokeInline(JavaMethod* meth,
 
 void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
-  JnjvmClassLoader* JCL = compilingClass->classLoader;
   JavaMethod* meth = 0;
   Signdef* signature = 0;
   const UTF8* name = 0;
   const UTF8* cl = 0;
 
   ctpInfo->nameOfStaticOrSpecialMethod(index, cl, name, signature);
-  LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
+  LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   llvm::Instruction* val = 0;
   
@@ -1300,10 +1299,9 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
     if (!cl) {
       CallInst::Create(module->ForceLoadedCheckFunction, Cl, "", currentBlock);
     }
-    func =  JCL->getModule()->addCallback(compilingClass, index,
-                                          signature, false);
+    func =  TheCompiler->addCallback(compilingClass, index, signature, false);
   } else {
-    func = JCL->getModule()->getMethod(meth);
+    func = TheCompiler->getMethod(meth);
   }
 
   if (meth && canBeInlined(meth)) {
@@ -1324,12 +1322,11 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
 
 void JavaJIT::invokeStatic(uint16 index) {
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
-  JnjvmClassLoader* JCL = compilingClass->classLoader;
   Signdef* signature = 0;
   const UTF8* name = 0;
   const UTF8* cl = 0;
   ctpInfo->nameOfStaticOrSpecialMethod(index, cl, name, signature);
-  LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
+  LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
   const llvm::FunctionType* staticType = LSI->getStaticType();
   llvm::Instruction* val = 0;
   
@@ -1353,10 +1350,9 @@ void JavaJIT::invokeStatic(uint16 index) {
     
     Function* func = 0;
     if (meth) {
-      func = JCL->getModule()->getMethod(meth);
+      func = TheCompiler->getMethod(meth);
     } else {
-      func = JCL->getModule()->addCallback(compilingClass, index,
-                                           signature, true);
+      func = TheCompiler->addCallback(compilingClass, index, signature, true);
     }
 
 #if defined(ISOLATE_SHARING)
@@ -1405,8 +1401,8 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   Cl = new LoadInst(Cl, "", currentBlock);
 #else
   JavaConstantPool* ctp = compilingClass->ctpInfo;
-  Value* CTP = module->getConstantPool(ctp);
-  Value* Cl = module->getNativeClass(compilingClass);
+  Value* CTP = TheCompiler->getConstantPool(ctp);
+  Value* Cl = TheCompiler->getNativeClass(compilingClass);
 #endif
 
   std::vector<Value*> Args;
@@ -1444,11 +1440,11 @@ Value* JavaJIT::getResolvedCommonClass(uint16 index, bool doThrow,
   Value* node = 0;
   if (cl && (!cl->isClass() || cl->asClass()->isResolved())) {
     if (alreadyResolved) *alreadyResolved = cl;
-    node = module->getNativeClass(cl);
+    node = TheCompiler->getNativeClass(cl);
     // Since we only allocate for array classes that we own and
     // ony primitive arrays are already allocated, verify that the class
     // array is not external.
-    if (module->isStaticCompiling() && cl->isArray() && 
+    if (TheCompiler->isStaticCompiling() && cl->isArray() && 
         node->getType() != module->JavaClassArrayType) {
       node = new LoadInst(node, "", currentBlock);
     }
@@ -1472,7 +1468,7 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow,
   Value* node = 0;
   if (cl && cl->isResolved()) {
     if (alreadyResolved) (*alreadyResolved) = cl;
-    node = module->getNativeClass(cl);
+    node = TheCompiler->getNativeClass(cl);
   } else {
     node = getConstantPoolAt(index, module->ClassLookupFunction,
                              module->JavaClassType, 0, doThrow);
@@ -1498,8 +1494,8 @@ void JavaJIT::invokeNew(uint16 index) {
   Value* Size = 0;
   
   if (cl) {
-    VT = module->getVirtualTable(cl);
-    LLVMClassInfo* LCI = module->getClassInfo(cl);
+    VT = TheCompiler->getVirtualTable(cl);
+    LLVMClassInfo* LCI = TheCompiler->getClassInfo(cl);
     Size = LCI->getVirtualSize();
   } else {
     VT = CallInst::Create(module->GetVTFromClassFunction, Cl, "",
@@ -1537,12 +1533,12 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
   
   JavaField* field = info->lookupField(index, stat);
   if (field && field->classDef->isResolved()) {
-    LLVMClassInfo* LCI = (LLVMClassInfo*)module->getClassInfo(field->classDef);
-    LLVMFieldInfo* LFI = module->getFieldInfo(field);
+    LLVMClassInfo* LCI = TheCompiler->getClassInfo(field->classDef);
+    LLVMFieldInfo* LFI = TheCompiler->getFieldInfo(field);
     const Type* type = 0;
     if (stat) {
       type = LCI->getStaticType();
-      Value* Cl = module->getNativeClass(field->classDef);
+      Value* Cl = TheCompiler->getNativeClass(field->classDef);
       bool needsCheck = needsInitialisationCheck(field->classDef,
                                                  compilingClass);
       if (needsCheck) {
@@ -1555,7 +1551,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
                          currentBlock);
       }
 
-      object = module->getStaticInstance(field->classDef);
+      object = TheCompiler->getStaticInstance(field->classDef);
 #else
       object = CallInst::Create(module->GetStaticInstanceFunction, Cl, "",
                                 currentBlock); 
@@ -1627,7 +1623,7 @@ void JavaJIT::setStaticField(uint16 index) {
   Value* val = pop(); 
   
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
-  LLVMAssessorInfo& LAI = module->getTypedefInfo(sign);
+  LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
   
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
@@ -1645,7 +1641,7 @@ void JavaJIT::setStaticField(uint16 index) {
 
 void JavaJIT::getStaticField(uint16 index) {
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
-  LLVMAssessorInfo& LAI = module->getTypedefInfo(sign);
+  LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
   
   Value* ptr = ldResolved(index, true, 0, type, LAI.llvmTypePtr);
@@ -1689,7 +1685,7 @@ void JavaJIT::getStaticField(uint16 index) {
         }
       } else {
         JavaObject* val = field->getObjectField(Obj);
-        Value* V = module->getFinalObject(val);
+        Value* V = TheCompiler->getFinalObject(val);
         push(V, false);
       }
     }
@@ -1706,7 +1702,7 @@ void JavaJIT::setVirtualField(uint16 index) {
   bool unsign = topSign();
   Value* val = pop();
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
-  LLVMAssessorInfo& LAI = module->getTypedefInfo(sign);
+  LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
   
   if (type == Type::Int64Ty || type == Type::DoubleTy) {
@@ -1726,7 +1722,7 @@ void JavaJIT::setVirtualField(uint16 index) {
 
 void JavaJIT::getVirtualField(uint16 index) {
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
-  LLVMAssessorInfo& LAI = module->getTypedefInfo(sign);
+  LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
   Value* obj = pop();
   JITVerifyNull(obj);
@@ -1782,7 +1778,7 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   const UTF8* name = 0;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
   
-  LLVMSignatureInfo* LSI = module->getSignatureInfo(signature);
+  LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   const llvm::PointerType* virtualPtrType = LSI->getVirtualPtrType();
 
@@ -1811,7 +1807,7 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   if (!inlining)
     enveloppe.initialise(compilingClass, name, signature->keyName);
    
-  Value* llvmEnv = module->getEnveloppe(&enveloppe);
+  Value* llvmEnv = TheCompiler->getEnveloppe(&enveloppe);
 #else
   Value* llvmEnv = getConstantPoolAt(index,
                                      module->EnveloppeLookupFunction,

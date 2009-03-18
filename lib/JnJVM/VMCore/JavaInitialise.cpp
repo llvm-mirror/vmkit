@@ -59,26 +59,27 @@ static void initialiseVT() {
 }
 
 #ifdef ISOLATE_SHARING
-mvm::CompilationUnit* mvm::VirtualMachine::initialiseJVM(bool sc) {
+JnjvmClassLoader* mvm::VirtualMachine::initialiseJVM(JavaCompiler* Comp) {
   initialiseVT();
-  JnjvmSharedLoader::sharedLoader = JnjvmSharedLoader::createSharedLoader();
+  JnjvmSharedLoader::sharedLoader = JnjvmSharedLoader::createSharedLoader(Comp);
   return JnjvmSharedLoader::sharedLoader;
 }
 
-mvm::VirtualMachine* mvm::VirtualMachine::createJVM(mvm::CompilationUnit* C) {
-  JnjvmBootstraLoader* bootstrapLoader = gc_new(JnjvmBootstrapLoader)(0, 0);
+mvm::VirtualMachine* mvm::VirtualMachine::createJVM(JnjvClassLoader* JCL) {
+  JnjvmBootstraLoader* bootstrapLoader = 
+    gc_new(JnjvmBootstrapLoader)(JCL->getModule());
   Jnjvm* vm = gc_new(Jnjvm)(bootstrapLoader);
   return vm;
 }
 #else
   
-mvm::CompilationUnit* 
-mvm::VirtualMachine::initialiseJVM() {
+JnjvmClassLoader*
+mvm::VirtualMachine::initialiseJVM(JavaCompiler* Comp) {
   initialiseVT();
-  return gc_new(JnjvmBootstrapLoader)(0);
+  return gc_new(JnjvmBootstrapLoader)(Comp);
 }
 
-mvm::VirtualMachine* mvm::VirtualMachine::createJVM(mvm::CompilationUnit* C) {
+mvm::VirtualMachine* mvm::VirtualMachine::createJVM(JnjvmClassLoader* C) {
   Jnjvm* vm = gc_new(Jnjvm)((JnjvmBootstrapLoader*)C);
   return vm;
 }

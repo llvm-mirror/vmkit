@@ -14,12 +14,10 @@
 
 namespace jnjvm {
 
-class JnjvmModuleJIT;
-
 class JnjvmModuleProvider : public llvm::ModuleProvider {
 public:
    
-  JnjvmModuleProvider(JnjvmModuleJIT *m);
+  JnjvmModuleProvider(llvm::Module* M);
   ~JnjvmModuleProvider();
 
   bool materializeFunction(llvm::Function *F, std::string *ErrInfo = 0);

@@ -17,6 +17,8 @@
 
 #include "llvm/Support/Annotation.h"
 
+#include "JavaCompiler.h"
+
 namespace llvm {
   class Constant;
   class ConstantInt;
@@ -62,7 +64,7 @@ public:
 
 
 class LLVMClassInfo : public mvm::JITInfo {
-  friend class JnjvmModule;
+  friend class JavaLLVMCompiler;
 private:
   Class* classDef;
   /// virtualSizeLLVM - The LLVM constant size of instances of this class.
@@ -186,7 +188,6 @@ public:
 };
 
 class JnjvmModule : public mvm::MvmModule {
-  friend class LLVMClassInfo;
 
 public:
   static llvm::ConstantInt* JavaArraySizeOffsetConstant;
@@ -327,9 +328,23 @@ public:
   llvm::Function* OutOfMemoryErrorFunction;
   llvm::Function* NegativeArraySizeExceptionFunction;
   
-  static llvm::Function* NativeLoader;
+
+  JnjvmModule(llvm::Module*);
+  
+  static void initialise();
+
+};
+
+class JavaLLVMCompiler : public JavaCompiler {
+  friend class LLVMClassInfo;
+
 
 protected:
+
+  llvm::Module* TheModule;
+  llvm::ModuleProvider* TheModuleProvider;
+  JnjvmModule JavaIntrinsics;
+
 #ifdef WITH_TRACER 
   llvm::Function* internalMakeTracer(Class* cl, bool stat);
   virtual llvm::Function* makeTracer(Class* cl, bool stat) {
@@ -346,7 +361,6 @@ protected:
 
 private: 
   
-  static void initialise();
   
   bool enabledException;
   
@@ -361,10 +375,17 @@ private:
   
 public:
   
-  JnjvmModule(const std::string &ModuleID);
+  JavaLLVMCompiler(const std::string &ModuleID);
   
-
   virtual bool isStaticCompiling() = 0;
+
+  llvm::Module* getLLVMModule() {
+    return TheModule;
+  }
+
+  JnjvmModule* getIntrinsics() {
+    return &JavaIntrinsics;
+  }
 
   bool hasExceptionsEnabled() {
     return enabledException;
@@ -374,15 +395,15 @@ public:
     enabledException = false;
   }
   
-  virtual JnjvmModule* Create(std::string ModuleID) = 0;
+  virtual JavaCompiler* Create(std::string ModuleID) = 0;
   
-  virtual ~JnjvmModule();
+  virtual ~JavaLLVMCompiler();
 
   llvm::Constant* getReferenceArrayVT();
   llvm::Constant* getPrimitiveArrayVT();
 
-  static void resolveVirtualClass(Class* cl);
-  static void resolveStaticClass(Class* cl);
+  void resolveVirtualClass(Class* cl);
+  void resolveStaticClass(Class* cl);
   static llvm::Function* getMethod(JavaMethod* meth);
 
   static LLVMSignatureInfo* getSignatureInfo(Signdef* sign);
@@ -420,13 +441,30 @@ public:
   
   virtual llvm::Function* addCallback(Class* cl, uint16 index, Signdef* sign,
                                       bool stat) = 0;
+  
+  virtual void staticCallBuf(Signdef* sign) {
+    getSignatureInfo(sign)->getStaticBuf();
+  }
 
+  virtual void virtualCallBuf(Signdef* sign) {
+    getSignatureInfo(sign)->getVirtualBuf();
+  }
+
+  virtual void staticCallAP(Signdef* sign) {
+    getSignatureInfo(sign)->getStaticAP();
+  }
+
+  virtual void virtualCallAP(Signdef* sign) {
+    getSignatureInfo(sign)->getVirtualAP();
+  }
+  
+  llvm::Function* NativeLoader;
 
 };
 
-class JnjvmModuleJIT : public JnjvmModule {
+class JavaJITCompiler : public JavaLLVMCompiler {
 public:
-  JnjvmModuleJIT(const std::string &ModuleID);
+  JavaJITCompiler(const std::string &ModuleID);
   
   virtual bool isStaticCompiling() {
     return false;
@@ -434,8 +472,8 @@ public:
   
   virtual void makeVT(Class* cl);
   
-  virtual JnjvmModule* Create(std::string ModuleID) {
-    return new JnjvmModuleJIT(ModuleID);
+  virtual JavaCompiler* Create(std::string ModuleID) {
+    return new JavaJITCompiler(ModuleID);
   }
   
   virtual void* materializeFunction(JavaMethod* meth);
@@ -460,24 +498,24 @@ public:
   virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
 #endif
   
-  virtual ~JnjvmModuleJIT() {}
+  virtual ~JavaJITCompiler() {}
   
   virtual llvm::Function* addCallback(Class* cl, uint16 index, Signdef* sign,
                                       bool stat);
 
 };
 
-class JnjvmModuleAOT : public JnjvmModule {
+class JavaAOTCompiler : public JavaLLVMCompiler {
 
 public:
-  JnjvmModuleAOT(const std::string &ModuleID);
+  JavaAOTCompiler(const std::string &ModuleID);
   
   virtual bool isStaticCompiling() {
     return true;
   }
   
-  virtual JnjvmModule* Create(std::string ModuleID) {
-    return new JnjvmModuleAOT(ModuleID);
+  virtual JavaCompiler* Create(std::string ModuleID) {
+    return new JavaAOTCompiler(ModuleID);
   }
   
   virtual void* materializeFunction(JavaMethod* meth) {
@@ -510,7 +548,7 @@ public:
   virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
 #endif
   
-  virtual ~JnjvmModuleAOT() {}
+  virtual ~JavaAOTCompiler() {}
 
 private:
 
@@ -612,7 +650,7 @@ public:
   static void setNoInline(Class* cl);
   
   void printStats();
-
+  
 
 };
 

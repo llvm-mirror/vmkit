@@ -31,8 +31,6 @@ using namespace llvm;
 
 extern void* JavaObjectVT[];
 
-llvm::Function* JnjvmModule::NativeLoader;
-
 #ifdef WITH_TRACER
 const llvm::FunctionType* JnjvmModule::MarkAndTraceType = 0;
 #endif
@@ -87,8 +85,14 @@ llvm::ConstantInt*  JnjvmModule::JavaObjectLockOffsetConstant;
 llvm::ConstantInt*  JnjvmModule::JavaObjectClassOffsetConstant;
 
 
+JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
+  TheModule(new llvm::Module(str)), JavaIntrinsics(TheModule) {
+
+  enabledException = true;
+}
+
 #ifndef WITHOUT_VTABLE
-void JnjvmModule::allocateVT(Class* cl) {
+void JavaLLVMCompiler::allocateVT(Class* cl) {
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
     JavaMethod& meth = cl->virtualMethods[i];
     if (meth.name->equals(cl->classLoader->bootstrapLoader->finalize)) {
@@ -130,9 +134,9 @@ void JnjvmModule::allocateVT(Class* cl) {
 
 
 #ifdef WITH_TRACER
-llvm::Function* JnjvmModule::internalMakeTracer(Class* cl, bool stat) {
+llvm::Function* JavaLLVMCompiler::internalMakeTracer(Class* cl, bool stat) {
   
-  LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
+  LLVMClassInfo* LCI = getClassInfo(cl);
   const Type* type = stat ? LCI->getStaticType() : LCI->getVirtualType();
   JavaField* fields = 0;
   uint32 nbFields = 0;
@@ -161,8 +165,8 @@ llvm::Function* JnjvmModule::internalMakeTracer(Class* cl, bool stat) {
 #endif
   if (!stat) {
     if (cl->super == 0) {
-      CallInst::Create(JavaObjectTracerFunction, Args.begin(), Args.end(),
-                        "", block);
+      CallInst::Create(JavaIntrinsics.JavaObjectTracerFunction, Args.begin(),
+                       Args.end(), "", block);
 
     } else {
       LLVMClassInfo* LCP = (LLVMClassInfo*)getClassInfo((Class*)(cl->super));
@@ -196,7 +200,7 @@ llvm::Function* JnjvmModule::internalMakeTracer(Class* cl, bool stat) {
 #ifdef MULTIPLE_GC
       Args.push_back(GC);
 #endif
-      CallInst::Create(JnjvmModule::MarkAndTraceFunction, Args.begin(),
+      CallInst::Create(JavaIntrinsics.MarkAndTraceFunction, Args.begin(),
                        Args.end(), "", block);
     }
   }
@@ -214,7 +218,7 @@ llvm::Function* JnjvmModule::internalMakeTracer(Class* cl, bool stat) {
 #endif
 
 
-void JnjvmModule::internalMakeVT(Class* cl) {
+void JavaLLVMCompiler::internalMakeVT(Class* cl) {
   
   VirtualTable* VT = 0;
 #ifdef WITHOUT_VTABLE
@@ -239,7 +243,7 @@ void JnjvmModule::internalMakeVT(Class* cl) {
 #endif  
 }
 
-void JnjvmModule::resolveVirtualClass(Class* cl) {
+void JavaLLVMCompiler::resolveVirtualClass(Class* cl) {
   // Lock here because we may be called by a class resolver
   mvm::MvmModule::protectIR();
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
@@ -247,7 +251,7 @@ void JnjvmModule::resolveVirtualClass(Class* cl) {
   mvm::MvmModule::unprotectIR();
 }
 
-void JnjvmModule::resolveStaticClass(Class* cl) {
+void JavaLLVMCompiler::resolveStaticClass(Class* cl) {
   // Lock here because we may be called by a class initializer
   mvm::MvmModule::protectIR();
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
@@ -361,23 +365,21 @@ void JnjvmModule::initialise() {
   LLVMAssessorInfo::initialise();
 }
 
-Constant* JnjvmModule::getReferenceArrayVT() {
+Constant* JavaLLVMCompiler::getReferenceArrayVT() {
   return ReferenceArrayVT;
 }
 
-Constant* JnjvmModule::getPrimitiveArrayVT() {
+Constant* JavaLLVMCompiler::getPrimitiveArrayVT() {
   return PrimitiveArrayVT;
 }
 
-Function* JnjvmModule::getMethod(JavaMethod* meth) {
+Function* JavaLLVMCompiler::getMethod(JavaMethod* meth) {
   return getMethodInfo(meth)->getMethod();
 }
 
-JnjvmModule::JnjvmModule(const std::string &ModuleID) :
-  MvmModule(ModuleID) {
+JnjvmModule::JnjvmModule(llvm::Module* module) :
+  MvmModule(module) {
   
-  Module* module = getLLVMModule();
-  enabledException = true;
   if (!VTType) {
     initialise();
     copyDefinitions(module, globalModule);
@@ -500,29 +502,30 @@ JnjvmModule::JnjvmModule(const std::string &ModuleID) :
  
 }
 
-Function* JnjvmModule::parseFunction(JavaMethod* meth) {
+Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
   LLVMMethodInfo* LMI = getMethodInfo(meth);
   Function* func = LMI->getMethod();
   if (func->hasNotBeenReadFromBitcode()) {
     // We are jitting. Take the lock.
-    protectIR();
+    JnjvmModule::protectIR();
     JavaJIT jit(meth, func);
     if (isNative(meth->access)) {
       jit.nativeCompile();
-      runPasses(func, JavaNativeFunctionPasses);
+      JnjvmModule::runPasses(func, JavaNativeFunctionPasses);
     } else {
       jit.javaCompile();
-      runPasses(func, globalFunctionPasses);
-      runPasses(func, JavaFunctionPasses);
+      JnjvmModule::runPasses(func, JnjvmModule::globalFunctionPasses);
+      JnjvmModule::runPasses(func, JavaFunctionPasses);
     }
-    unprotectIR();
+    JnjvmModule::unprotectIR();
   }
   return func;
 }
 
-JnjvmModule::~JnjvmModule() {
+JavaLLVMCompiler::~JavaLLVMCompiler() {
   delete JavaFunctionPasses;
   delete JavaNativeFunctionPasses;
+  delete TheModuleProvider;
 }
 
 namespace mvm {
@@ -533,7 +536,7 @@ namespace jnjvm {
   llvm::FunctionPass* createLowerConstantCallsPass();
 }
 
-void JnjvmModule::addJavaPasses() {
+void JavaLLVMCompiler::addJavaPasses() {
   JavaNativeFunctionPasses = new FunctionPassManager(TheModuleProvider);
   JavaNativeFunctionPasses->add(new TargetData(TheModule));
   // Lower constant calls to lower things like getClass used
@@ -542,7 +545,7 @@ void JnjvmModule::addJavaPasses() {
   
   JavaFunctionPasses = new FunctionPassManager(TheModuleProvider);
   JavaFunctionPasses->add(new TargetData(TheModule));
-  Function* func = JavaObjectAllocateFunction;
+  Function* func = JavaIntrinsics.JavaObjectAllocateFunction;
   JavaFunctionPasses->add(mvm::createEscapeAnalysisPass(func));
   JavaFunctionPasses->add(createLowerConstantCallsPass());
 }

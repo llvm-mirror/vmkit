@@ -127,12 +127,10 @@ void MvmModule::initialise(bool Fast, Module* M, TargetMachine* T) {
 }
 
 
-MvmModule::MvmModule(const std::string& ModuleID) {
-  TheModule = new Module(ModuleID);
-  Module* module = TheModule;
+MvmModule::MvmModule(llvm::Module* module) {
 
-  TheModule->setDataLayout(globalModule->getDataLayout());
-  TheModule->setTargetTriple(globalModule->getTargetTriple());
+  module->setDataLayout(globalModule->getDataLayout());
+  module->setTargetTriple(globalModule->getTargetTriple());
   
   copyDefinitions(module, globalModule); 
     
@@ -272,13 +270,13 @@ static void addPass(FunctionPassManager *PM, Pass *P) {
 //     -instcombine -gvn -sccp -simplifycfg -instcombine -condprop -dse -adce 
 //     -simplifycfg
 //
-void CompilationUnit::AddStandardCompilePasses() {
+void MvmModule::AddStandardCompilePasses() {
   // TODO: enable this when
   // - each module will have its declaration of external functions
   // 
   //PM->add(llvm::createVerifierPass());        // Verify that input is correct
  
-  FunctionPassManager* PM = TheModule->globalFunctionPasses;
+  FunctionPassManager* PM = globalFunctionPasses;
   PM->add(new TargetData(*MvmModule::TheTargetData));
 
   addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
@@ -336,8 +334,4 @@ void MvmModule::copyDefinitions(Module* Dst, Module* Src) {
     Function::Create(SF->getFunctionType(), GlobalValue::ExternalLinkage,
                      SF->getName(), Dst);
   }
-}
-
-MvmModule::~MvmModule() {
-  delete TheModuleProvider;
 }

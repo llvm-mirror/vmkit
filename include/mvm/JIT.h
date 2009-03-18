@@ -57,20 +57,11 @@ const float NaNFloat = NAN; //(float)(((float)0.0) / (float)0.0);
 const double NaNDouble = NAN; //0.0 / 0.0;
 
 class MvmModule {
-protected:
-  llvm::Module* TheModule;
-  llvm::ModuleProvider* TheModuleProvider;
 
 public:
   
-  explicit MvmModule(const std::string& ModuleID);
+  explicit MvmModule(llvm::Module*);
  
-  virtual ~MvmModule();
-
-  llvm::Module* getLLVMModule() {
-    return TheModule;
-  }
-  
   llvm::Function* exceptionEndCatch;
   llvm::Function* exceptionBeginCatch;
   llvm::Function* unwindResume;
@@ -188,6 +179,7 @@ public:
 
   static void copyDefinitions(llvm::Module* Dst, llvm::Module* Src);
 
+  static void AddStandardCompilePasses();
 };
 
 } // end namespace mvm

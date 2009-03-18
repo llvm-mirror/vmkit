@@ -59,7 +59,8 @@ public:
     nbEnveloppes = 0;
     compilingMethod = meth;
     compilingClass = meth->classDef;
-    module = compilingClass->classLoader->getModule();
+    TheCompiler = (JavaLLVMCompiler*)compilingClass->classLoader->getModule();
+    module = TheCompiler->getIntrinsics();
     llvmFunction = func;
     inlining = false;
     callsStackWalker = false;
@@ -89,6 +90,10 @@ private:
   
   /// module - The LLVM module where lives the compiling LLVM function.
   JnjvmModule* module;
+
+  /// TheCompiler - The LLVM Java compiler.
+  ///
+  JavaLLVMCompiler* TheCompiler;
   
   /// locals - The locals of the method.
   std::vector<llvm::Value*> intLocals;

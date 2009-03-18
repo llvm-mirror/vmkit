@@ -63,11 +63,12 @@ N3* N3::allocateBootstrap() {
   std::string str = 
     mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
 
-  vm->module = new mvm::MvmModule("Bootstrap N3");
-  vm->module->getLLVMModule()->setDataLayout(str);
+  vm->LLVMModule = new llvm::Module("Bootstrap N3");
+  vm->module = new mvm::MvmModule(vm->LLVMModule);
+  vm->getLLVMModule()->setDataLayout(str);
   vm->protectModule = new mvm::LockNormal();
   vm->functions = FunctionMap::allocate();
-  vm->TheModuleProvider = new N3ModuleProvider(vm->module->getLLVMModule(), vm->functions);
+  vm->TheModuleProvider = new N3ModuleProvider(vm->LLVMModule, vm->functions);
   CLIJit::initialiseBootstrapVM(vm);
   
   vm->name = "bootstrapN3";
@@ -85,11 +86,12 @@ N3* N3::allocate(const char* name, N3* parent) {
   
   std::string str = 
     mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
-  vm->module = new mvm::MvmModule("App Domain");
-  vm->module->getLLVMModule()->setDataLayout(str);
+  vm->LLVMModule = new llvm::Module("Bootstrap N3");
+  vm->module = new mvm::MvmModule(vm->LLVMModule);
+  vm->LLVMModule->setDataLayout(str);
   vm->protectModule = new mvm::LockNormal();
   vm->functions = FunctionMap::allocate();
-  vm->TheModuleProvider = new N3ModuleProvider(vm->module->getLLVMModule(), vm->functions);
+  vm->TheModuleProvider = new N3ModuleProvider(vm->LLVMModule, vm->functions);
   CLIJit::initialiseAppDomain(vm);
 
   

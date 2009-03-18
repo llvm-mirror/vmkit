@@ -62,7 +62,7 @@ ClassArray ArrayOfLong;
 
 typedef void (*static_init_t)(JnjvmClassLoader*);
 
-JnjvmBootstrapLoader::JnjvmBootstrapLoader(JnjvmModule* Mod) {
+JnjvmBootstrapLoader::JnjvmBootstrapLoader(JavaCompiler* Comp) {
   
   hashUTF8 = new(allocator) UTF8Map(allocator, 0);
   classes = new(allocator) ClassMap();
@@ -265,14 +265,14 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(JnjvmModule* Mod) {
 
 #undef DEF_UTF8
   
-  TheModule = Mod;
+  TheCompiler = Comp;
   
 }
 
 JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
                                    Jnjvm* I) {
   bootstrapLoader = JCL.bootstrapLoader;
-  TheModule = bootstrapLoader->getModule()->Create("Applicative loader");
+  TheCompiler = bootstrapLoader->getModule()->Create("Applicative loader");
   
   hashUTF8 = new(allocator) UTF8Map(allocator,
                                     bootstrapLoader->upcalls->ArrayOfChar);
@@ -815,7 +815,7 @@ JnjvmClassLoader::~JnjvmClassLoader() {
     allocator.Deallocate(javaSignatures);
   }
 
-  delete TheModule;
+  delete TheCompiler;
 }
 
 
@@ -953,7 +953,7 @@ intptr_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& jnjvm,
 }
 
 void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
-  JnjvmModule* M = getModule();
+  JavaCompiler* M = getModule();
   for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
        i != e; ++i) {
     CommonClass* cl = i->second;

@@ -44,6 +44,8 @@
 #include "jnjvm/JnjvmModule.h"
 #include "jnjvm/JnjvmModuleProvider.h"
 
+#include "../../lib/JnJVM/VMCore/JnjvmClassLoader.h"
+
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -111,8 +113,8 @@ inline void addPass(FunctionPassManager *PM, Pass *P) {
 }
 
 
-void addCommandLinePass(mvm::CompilationUnit* CU, char** argv) {
-  FunctionPassManager* Passes = CU->TheModule->globalFunctionPasses;
+void addCommandLinePass(char** argv) {
+  FunctionPassManager* Passes = mvm::MvmModule::globalFunctionPasses;
 
   // Create a new optimization pass for each one specified on the command line
   for (unsigned i = 0; i < PassList.size(); ++i) {
@@ -120,7 +122,7 @@ void addCommandLinePass(mvm::CompilationUnit* CU, char** argv) {
     // so, handle it.
     if (StandardCompileOpts && 
         StandardCompileOpts.getPosition() < PassList.getPosition(i)) {
-      if (!DisableOptimizations) CU->AddStandardCompilePasses();
+      if (!DisableOptimizations) mvm::MvmModule::AddStandardCompilePasses();
       StandardCompileOpts = false;
     }
       
@@ -143,7 +145,7 @@ void addCommandLinePass(mvm::CompilationUnit* CU, char** argv) {
     
   // If -std-compile-opts was specified at the end of the pass list, add them.
   if (StandardCompileOpts) {
-    CU->AddStandardCompilePasses();
+    mvm::MvmModule::AddStandardCompilePasses();
   }    
 
 }
@@ -164,7 +166,7 @@ int main(int argc, char **argv) {
       return 0;
     }
    
-    JnjvmModule* Mod = 0;
+    JavaCompiler* Comp = 0;
     if (WithClinit.empty()) {
       Module* TheModule = new Module("bootstrap module");
       if (!TargetTriple.empty())
@@ -191,32 +193,31 @@ int main(int argc, char **argv) {
 
 
       mvm::MvmModule::initialise(false, TheModule, TheTarget);
-      Mod = new JnjvmModuleAOT("AOT");
+      Comp = new JavaAOTCompiler("AOT");
     } else {
       mvm::MvmModule::initialise(true);
-      Mod = new JnjvmModuleJIT("JIT");
+      Comp = new JavaJITCompiler("JIT");
     }
 
     mvm::Object::initialise();
     Collector::initialise(0);
     Collector::enable(0);
 
-    mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM();
-    addCommandLinePass(CU, argv);
-    CU->TheModule = Mod;
+    JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
+    addCommandLinePass(argv);
 
     if (!WithClinit.empty()) {
       // TODO
-      Mod = new JnjvmModuleAOT("AOT");
-      CU->TheModule = Mod;
+      Comp = new JavaAOTCompiler("AOT");
+      JCL->setCompiler(Comp);
     }
     
-    JnjvmModuleAOT* MAOT = (JnjvmModuleAOT*)Mod;
+    JavaAOTCompiler* MAOT = (JavaAOTCompiler*)Comp;
     if (DisableExceptions) MAOT->disableExceptions();
     if (DisableTracers) MAOT->generateTracers = false;
     if (DisableStubs) MAOT->generateStubs = false;
     if (AssumeCompiled) MAOT->assumeCompiled = true;
-    mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(CU);
+    mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(JCL);
     vm->compile(InputFilename.c_str());
     vm->waitForExit();
 
@@ -266,7 +267,7 @@ int main(int argc, char **argv) {
     }
     
     if (Force || !CheckBitcodeOutputToConsole(Out,true))
-      WriteBitcodeToFile(CU->TheModule->getLLVMModule(), *Out);
+      WriteBitcodeToFile(MAOT->getLLVMModule(), *Out);
 
     if (Out != &std::cout) {
       ((std::ofstream*)Out)->close();

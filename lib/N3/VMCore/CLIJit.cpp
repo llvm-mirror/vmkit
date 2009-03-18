@@ -151,7 +151,7 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
   Function* func = Function::Create(markAndTraceLLVMType,
                                 GlobalValue::ExternalLinkage,
                                 "markAndTraceObject",
-                                cl->vm->module->getLLVMModule());
+                                cl->vm->getLLVMModule());
   Argument* arg = func->arg_begin();
 #ifdef MULTIPLE_GC 
   Argument* GC = ++(func->arg_begin());
@@ -253,7 +253,7 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
   Function* func = Function::Create(markAndTraceLLVMType,
                                 GlobalValue::ExternalLinkage,
                                 "markAndTraceObject",
-                                cl->vm->module->getLLVMModule());
+                                cl->vm->getLLVMModule());
 
   Argument* arg = func->arg_begin();
 #ifdef MULTIPLE_GC 
@@ -1484,7 +1484,7 @@ llvm::Function *VMMethod::compiledPtr(VMGenericMethod* genMethod) {
     classDef->aquire();
     if (methPtr == 0) {
       methPtr = Function::Create(getSignature(genMethod), GlobalValue::GhostLinkage,
-                                 printString(), classDef->vm->module->getLLVMModule());
+                                 printString(), classDef->vm->getLLVMModule());
       classDef->vm->functions->hash(methPtr, this);
       N3Annotation* A = new N3Annotation(this);
       methPtr->addAnnotation(A);
@@ -1534,7 +1534,7 @@ namespace n3 {
 
 void CLIJit::initialiseBootstrapVM(N3* vm) {
   mvm::MvmModule* M = vm->module;
-  Module* module = M->getLLVMModule();
+  Module* module = vm->getLLVMModule();
   M->protectEngine.lock();
   M->executionEngine->addModuleProvider(vm->TheModuleProvider);
   M->protectEngine.unlock();

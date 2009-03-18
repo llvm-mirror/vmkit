@@ -1,4 +1,4 @@
-//===--------- JnjvmModuleJIT.cpp - Support for JIT compiling -------------===//
+//===--------- JavaJITCompiler.cpp - Support for JIT compiling -------------===//
 //
 //                              JnJVM
 //
@@ -26,46 +26,46 @@ using namespace llvm;
 extern void* JavaArrayVT[];
 extern void* ArrayObjectVT[];
 
-Constant* JnjvmModuleJIT::getNativeClass(CommonClass* classDef) {
-  const llvm::Type* Ty = classDef->isClass() ? JavaClassType : 
-                                               JavaCommonClassType;
+Constant* JavaJITCompiler::getNativeClass(CommonClass* classDef) {
+  const llvm::Type* Ty = classDef->isClass() ? JnjvmModule::JavaClassType :
+                                               JnjvmModule::JavaCommonClassType;
   
   ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(classDef));
   return ConstantExpr::getIntToPtr(CI, Ty);
 }
 
-Constant* JnjvmModuleJIT::getConstantPool(JavaConstantPool* ctp) {
+Constant* JavaJITCompiler::getConstantPool(JavaConstantPool* ctp) {
   void* ptr = ctp->ctpRes;
   assert(ptr && "No constant pool found");
   ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(ptr));
-  return ConstantExpr::getIntToPtr(CI, ConstantPoolType);
+  return ConstantExpr::getIntToPtr(CI, JnjvmModule::ConstantPoolType);
 }
 
-Constant* JnjvmModuleJIT::getMethodInClass(JavaMethod* meth) {
+Constant* JavaJITCompiler::getMethodInClass(JavaMethod* meth) {
   ConstantInt* CI = ConstantInt::get(Type::Int64Ty, (int64_t)meth);
-  return ConstantExpr::getIntToPtr(CI, JavaMethodType);
+  return ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaMethodType);
 }
 
-Constant* JnjvmModuleJIT::getString(JavaString* str) {
+Constant* JavaJITCompiler::getString(JavaString* str) {
   assert(str && "No string given");
   ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64(str));
-  return ConstantExpr::getIntToPtr(CI, JavaObjectType);
+  return ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);
 }
 
-Constant* JnjvmModuleJIT::getEnveloppe(Enveloppe* enveloppe) {
+Constant* JavaJITCompiler::getEnveloppe(Enveloppe* enveloppe) {
   assert(enveloppe && "No enveloppe given");
   ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64(enveloppe));
-  return ConstantExpr::getIntToPtr(CI, EnveloppeType);
+  return ConstantExpr::getIntToPtr(CI, JnjvmModule::EnveloppeType);
 }
 
-Constant* JnjvmModuleJIT::getJavaClass(CommonClass* cl) {
+Constant* JavaJITCompiler::getJavaClass(CommonClass* cl) {
   JavaObject* obj = cl->getClassDelegatee(JavaThread::get()->getJVM());
   assert(obj && "Delegatee not created");
   Constant* CI = ConstantInt::get(Type::Int64Ty, uint64(obj));
-  return ConstantExpr::getIntToPtr(CI, JavaObjectType);
+  return ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);
 }
 
-JavaObject* JnjvmModuleJIT::getFinalObject(llvm::Value* obj) {
+JavaObject* JavaJITCompiler::getFinalObject(llvm::Value* obj) {
   if (ConstantExpr* CE = dyn_cast<ConstantExpr>(obj)) {
     if (ConstantInt* C = dyn_cast<ConstantInt>(CE->getOperand(0))) {
       return (JavaObject*)C->getZExtValue();
@@ -74,12 +74,12 @@ JavaObject* JnjvmModuleJIT::getFinalObject(llvm::Value* obj) {
   return 0;
 }
 
-Constant* JnjvmModuleJIT::getFinalObject(JavaObject* obj) {
+Constant* JavaJITCompiler::getFinalObject(JavaObject* obj) {
   Constant* CI = ConstantInt::get(Type::Int64Ty, uint64(obj));
-  return ConstantExpr::getIntToPtr(CI, JavaObjectType);
+  return ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);
 }
 
-Constant* JnjvmModuleJIT::getStaticInstance(Class* classDef) {
+Constant* JavaJITCompiler::getStaticInstance(Class* classDef) {
 #ifdef ISOLATE
   assert(0 && "Should not be here");
   abort();
@@ -96,20 +96,20 @@ Constant* JnjvmModuleJIT::getStaticInstance(Class* classDef) {
     classDef->release();
   }
   Constant* CI = ConstantInt::get(Type::Int64Ty, (uint64_t(obj)));
-  return ConstantExpr::getIntToPtr(CI, ptrType);
+  return ConstantExpr::getIntToPtr(CI, JnjvmModule::ptrType);
 }
 
-Constant* JnjvmModuleJIT::getVirtualTable(Class* classDef) {
+Constant* JavaJITCompiler::getVirtualTable(Class* classDef) {
   LLVMClassInfo* LCI = getClassInfo((Class*)classDef);
   LCI->getVirtualType();
   
   assert(classDef->virtualVT && "Virtual VT not created");
   void* ptr = classDef->virtualVT;
   ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(ptr));
-  return ConstantExpr::getIntToPtr(CI, VTType);
+  return ConstantExpr::getIntToPtr(CI, JnjvmModule::VTType);
 }
 
-Constant* JnjvmModuleJIT::getNativeFunction(JavaMethod* meth, void* ptr) {
+Constant* JavaJITCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
   LLVMSignatureInfo* LSI = getSignatureInfo(meth->getSignature());
   const llvm::Type* valPtrType = LSI->getNativePtrType();
   
@@ -119,27 +119,27 @@ Constant* JnjvmModuleJIT::getNativeFunction(JavaMethod* meth, void* ptr) {
   return ConstantExpr::getIntToPtr(CI, valPtrType);
 }
 
-JnjvmModuleJIT::JnjvmModuleJIT(const std::string &ModuleID) :
-  JnjvmModule(ModuleID) {
+JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
+  JavaLLVMCompiler(ModuleID) {
    
   ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64(JavaArrayVT));
-  PrimitiveArrayVT = ConstantExpr::getIntToPtr(CI, VTType);
+  PrimitiveArrayVT = ConstantExpr::getIntToPtr(CI, JnjvmModule::VTType);
  
   CI = ConstantInt::get(Type::Int64Ty, uint64(ArrayObjectVT));
-  ReferenceArrayVT = ConstantExpr::getIntToPtr(CI, VTType);
+  ReferenceArrayVT = ConstantExpr::getIntToPtr(CI, JnjvmModule::VTType);
 
-  TheModuleProvider = new JnjvmModuleProvider(this);
+  TheModuleProvider = new JnjvmModuleProvider(TheModule);
   addJavaPasses();
 }
 
 #ifdef SERVICE
-Value* JnjvmModuleJIT::getIsolate(Jnjvm* isolate, Value* Where) {
+Value* JavaJITCompiler::getIsolate(Jnjvm* isolate, Value* Where) {
   ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(isolate));
-  return ConstantExpr::getIntToPtr(CI, ptrType);
+  return ConstantExpr::getIntToPtr(CI, JnjvmModule::ptrType);
 }
 #endif
 
-void JnjvmModuleJIT::makeVT(Class* cl) { 
+void JavaJITCompiler::makeVT(Class* cl) { 
   internalMakeVT(cl);
 
 #ifndef WITHOUT_VTABLE
@@ -158,8 +158,7 @@ void JnjvmModuleJIT::makeVT(Class* cl) {
 #if defined(ISOLATE_SHARING) || defined(USE_GC_BOEHM)
       ((void**)VT)[0] = 0;
 #else
-      JnjvmClassLoader* loader = cl->classLoader;
-      Function* func = loader->getModule()->parseFunction(&meth);
+      Function* func = parseFunction(&meth);
       if (!cl->super) {
         meth.canBeInlined = true;
         ((void**)VT)[0] = 0;
@@ -195,15 +194,15 @@ void JnjvmModuleJIT::makeVT(Class* cl) {
 #endif 
 }
 
-void JnjvmModuleJIT::setMethod(JavaMethod* meth, void* ptr, const char* name) {
+void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
   Function* func = getMethodInfo(meth)->getMethod();
   func->setName(name);
   assert(ptr && "No value given");
-  executionEngine->addGlobalMapping(func, ptr);
+  JnjvmModule::executionEngine->addGlobalMapping(func, ptr);
   func->setLinkage(GlobalValue::ExternalLinkage);
 }
 
-void* JnjvmModuleJIT::materializeFunction(JavaMethod* meth) {
+void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   Function* func = parseFunction(meth);
   
   void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(func);

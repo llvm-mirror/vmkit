@@ -116,7 +116,9 @@ static Value* getDelegatee(JnjvmModule* module, Value* Arg, Instruction* CI) {
 
 bool LowerConstantCalls::runOnFunction(Function& F) {
   JavaMethod* meth = LLVMMethodInfo::get(&F);
-  JnjvmModule* module = meth->classDef->classLoader->getModule();
+  JavaLLVMCompiler* TheCompiler = 
+    (JavaLLVMCompiler*)meth->classDef->classLoader->getModule();
+  JnjvmModule* module = TheCompiler->getIntrinsics();
   bool Changed = false;
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
@@ -434,7 +436,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             GlobalVariable* GV = 
               new GlobalVariable(module->JavaCommonClassType, false,
                                  GlobalValue::ExternalLinkage,
-                                 init, "", module->getLLVMModule());
+                                 init, "", TheCompiler->getLLVMModule());
 
             Value* LoadedGV = new LoadInst(GV, "", CI);
             Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, LoadedGV, init,

@@ -42,7 +42,7 @@ const Type* LLVMClassInfo::getVirtualType() {
     
     if (classDef->super && classDef->super->super) {
       LLVMClassInfo* CLI = 
-        JnjvmModule::getClassInfo((Class*)classDef->super);
+        JavaLLVMCompiler::getClassInfo((Class*)classDef->super);
       fields.push_back(CLI->getVirtualType()->getContainedType(0));
     } else {
       fields.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
@@ -52,15 +52,16 @@ const Type* LLVMClassInfo::getVirtualType() {
       JavaField& field = classDef->virtualFields[i];
       field.num = i + 1;
       Typedef* type = field.getSignature();
-      LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(type);
+      LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(type);
       fields.push_back(LAI.llvmType);
     }
     
     
-    JnjvmModule* Mod = classDef->classLoader->getModule();
+    JavaLLVMCompiler* Mod = 
+      (JavaLLVMCompiler*)classDef->classLoader->getModule();
     StructType* structType = StructType::get(fields, false);
     virtualType = PointerType::getUnqual(structType);
-    const TargetData* targetData = Mod->TheTargetData;
+    const TargetData* targetData = JnjvmModule::TheTargetData;
     const StructLayout* sl = targetData->getStructLayout(structType);
     
     for (uint32 i = 0; i < classDef->nbVirtualFields; ++i) {
@@ -68,7 +69,7 @@ const Type* LLVMClassInfo::getVirtualType() {
       field.ptrOffset = sl->getElementOffset(i + 1);
     }
     
-    uint64 size = Mod->getTypeSize(structType);
+    uint64 size = JnjvmModule::getTypeSize(structType);
     classDef->virtualSize = (uint32)size;
     virtualSizeConstant = ConstantInt::get(Type::Int32Ty, size);
     
@@ -84,7 +85,7 @@ const Type* LLVMClassInfo::getVirtualType() {
                                           Mod->getLLVMModule());
        
         void* ptr = ((void**)classDef->virtualVT)[VT_TRACER_OFFSET];
-        Mod->executionEngine->addGlobalMapping(func, ptr);
+        JnjvmModule::executionEngine->addGlobalMapping(func, ptr);
         virtualTracerFunction = func;
 #endif
       }
@@ -107,14 +108,15 @@ const Type* LLVMClassInfo::getStaticType() {
       JavaField& field = classDef->staticFields[i];
       field.num = i;
       Typedef* type = field.getSignature();
-      LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(type);
+      LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(type);
       fields.push_back(LAI.llvmType);
     }
   
-    JnjvmModule* Mod = cl->classLoader->getModule();
+    JavaLLVMCompiler* Mod = 
+      (JavaLLVMCompiler*)cl->classLoader->getModule();
     StructType* structType = StructType::get(fields, false);
     staticType = PointerType::getUnqual(structType);
-    const TargetData* targetData = Mod->TheTargetData;
+    const TargetData* targetData = JnjvmModule::TheTargetData;
     const StructLayout* sl = targetData->getStructLayout(structType);
     
     for (uint32 i = 0; i < classDef->nbStaticFields; ++i) {
@@ -122,13 +124,13 @@ const Type* LLVMClassInfo::getStaticType() {
       field.ptrOffset = sl->getElementOffset(i);
     }
     
-    uint64 size = Mod->getTypeSize(structType);
+    uint64 size = JnjvmModule::getTypeSize(structType);
     cl->staticSize = size;
 #ifdef WITH_TRACER
     if (!Mod->isStaticCompiling()) {
       Function* F = Mod->makeTracer(cl, true);
       cl->staticTracer = (void (*)(void*)) (uintptr_t)
-        Mod->executionEngine->getPointerToFunction(F);
+        JnjvmModule::executionEngine->getPointerToFunction(F);
       F->deleteBody();
     }
 #endif
@@ -164,7 +166,7 @@ Function* LLVMClassInfo::getVirtualTracer() {
 Function* LLVMMethodInfo::getMethod() {
   if (!methodFunction) {
     JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
-    JnjvmModule* Mod = JCL->getModule();
+    JavaLLVMCompiler* Mod = (JavaLLVMCompiler*)JCL->getModule();
     if (Mod->isStaticCompiling()) {
 
       const UTF8* jniConsClName = methodDef->classDef->name;
@@ -207,7 +209,7 @@ Function* LLVMMethodInfo::getMethod() {
 const FunctionType* LLVMMethodInfo::getFunctionType() {
   if (!functionType) {
     Signdef* sign = methodDef->getSignature();
-    LLVMSignatureInfo* LSI = JnjvmModule::getSignatureInfo(sign);
+    LLVMSignatureInfo* LSI = JavaLLVMCompiler::getSignatureInfo(sign);
     assert(LSI);
     if (isStatic(methodDef->access)) {
       functionType = LSI->getStaticType();
@@ -220,7 +222,9 @@ const FunctionType* LLVMMethodInfo::getFunctionType() {
 
 ConstantInt* LLVMMethodInfo::getOffset() {
   if (!offsetConstant) {
-    JnjvmModule::resolveVirtualClass(methodDef->classDef);
+    JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
+    JavaCompiler* Mod = JCL->getModule();
+    Mod->resolveVirtualClass(methodDef->classDef);
     offsetConstant = ConstantInt::get(Type::Int32Ty, methodDef->offset);
   }
   return offsetConstant;
@@ -228,10 +232,12 @@ ConstantInt* LLVMMethodInfo::getOffset() {
 
 ConstantInt* LLVMFieldInfo::getOffset() {
   if (!offsetConstant) {
+    JnjvmClassLoader* JCL = fieldDef->classDef->classLoader;
+    JavaCompiler* Mod = JCL->getModule();
     if (isStatic(fieldDef->access)) {
-      JnjvmModule::resolveStaticClass(fieldDef->classDef); 
+      Mod->resolveStaticClass(fieldDef->classDef); 
     } else {
-      JnjvmModule::resolveVirtualClass(fieldDef->classDef); 
+      Mod->resolveVirtualClass(fieldDef->classDef); 
     }
     
     offsetConstant = ConstantInt::get(Type::Int32Ty, fieldDef->num);
@@ -251,7 +257,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
 
     for (uint32 i = 0; i < size; ++i) {
       Typedef* type = arguments[i];
-      LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(type);
+      LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(type);
       llvmArgs.push_back(LAI.llvmType);
     }
 
@@ -260,7 +266,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
 #endif
 
     LLVMAssessorInfo& LAI = 
-      JnjvmModule::getTypedefInfo(signature->getReturnType());
+      JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
     virtualType = FunctionType::get(LAI.llvmType, llvmArgs, false);
     mvm::MvmModule::unprotectIR();
   }
@@ -277,7 +283,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
 
     for (uint32 i = 0; i < size; ++i) {
       Typedef* type = arguments[i];
-      LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(type);
+      LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(type);
       llvmArgs.push_back(LAI.llvmType);
     }
 
@@ -286,7 +292,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
 #endif
 
     LLVMAssessorInfo& LAI = 
-      JnjvmModule::getTypedefInfo(signature->getReturnType());
+      JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
     staticType = FunctionType::get(LAI.llvmType, llvmArgs, false);
     mvm::MvmModule::unprotectIR();
   }
@@ -306,7 +312,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
 
     for (uint32 i = 0; i < size; ++i) {
       Typedef* type = arguments[i];
-      LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(type);
+      LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(type);
       llvmArgs.push_back(LAI.llvmType);
     }
 
@@ -315,7 +321,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
 #endif
 
     LLVMAssessorInfo& LAI = 
-      JnjvmModule::getTypedefInfo(signature->getReturnType());
+      JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
     nativeType = FunctionType::get(LAI.llvmType, llvmArgs, false);
     mvm::MvmModule::unprotectIR();
   }
@@ -327,7 +333,8 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   
   std::vector<Value*> Args;
 
-  JnjvmModule* Mod = signature->initialLoader->getModule();
+  JavaLLVMCompiler* Mod = 
+    (JavaLLVMCompiler*)signature->initialLoader->getModule();
   const char* name = 0;
   if (Mod->isStaticCompiling()) {
     name = virt ? signature->printString("virtual_buf") :
@@ -360,7 +367,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   Typedef* const* arguments = signature->getArgumentsType();
   for (uint32 i = 0; i < signature->nbArguments; ++i) {
   
-    LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(arguments[i]);
+    LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(arguments[i]);
     Value* val = new BitCastInst(ptr, LAI.llvmTypePtr, "", currentBlock);
     Value* arg = new LoadInst(val, "", currentBlock);
     Args.push_back(arg);
@@ -386,7 +393,8 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   
   std::vector<Value*> Args;
   
-  JnjvmModule* Mod = signature->initialLoader->getModule();
+  JavaLLVMCompiler* Mod = 
+    (JavaLLVMCompiler*)signature->initialLoader->getModule();
   const char* name = 0;
   if (Mod->isStaticCompiling()) {
     name = virt ? signature->printString("virtual_ap") :
@@ -418,7 +426,7 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
 
   Typedef* const* arguments = signature->getArgumentsType();
   for (uint32 i = 0; i < signature->nbArguments; ++i) {
-    LLVMAssessorInfo& LAI = JnjvmModule::getTypedefInfo(arguments[i]);
+    LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(arguments[i]);
     Args.push_back(new VAArgInst(ap, LAI.llvmType, "", currentBlock));
   }
 
@@ -468,7 +476,7 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
     Args2.push_back(JnjvmModule::JavaObjectType);
     Args2.push_back(JnjvmModule::ptrType);
     LLVMAssessorInfo& LAI = 
-      JnjvmModule::getTypedefInfo(signature->getReturnType());
+      JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
     virtualBufType = FunctionType::get(LAI.llvmType, Args2, false);
     mvm::MvmModule::unprotectIR();
   }
@@ -484,7 +492,7 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
     Args.push_back(getStaticPtrType());
     Args.push_back(JnjvmModule::ptrType);
     LLVMAssessorInfo& LAI = 
-      JnjvmModule::getTypedefInfo(signature->getReturnType());
+      JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
     staticBufType = FunctionType::get(LAI.llvmType, Args, false);
     mvm::MvmModule::unprotectIR();
   }
@@ -626,7 +634,7 @@ void LLVMAssessorInfo::initialise() {
 
 std::map<const char, LLVMAssessorInfo> LLVMAssessorInfo::AssessorInfo;
 
-LLVMAssessorInfo& JnjvmModule::getTypedefInfo(const Typedef* type) {
+LLVMAssessorInfo& JavaLLVMCompiler::getTypedefInfo(const Typedef* type) {
   return LLVMAssessorInfo::AssessorInfo[type->getKey()->elements[0]];
 }
 
@@ -644,18 +652,18 @@ JavaMethod* LLVMMethodInfo::get(const llvm::Function* F) {
   return 0;
 }
 
-LLVMSignatureInfo* JnjvmModule::getSignatureInfo(Signdef* sign) {
+LLVMSignatureInfo* JavaLLVMCompiler::getSignatureInfo(Signdef* sign) {
   return sign->getInfo<LLVMSignatureInfo>();
 }
   
-LLVMClassInfo* JnjvmModule::getClassInfo(Class* cl) {
+LLVMClassInfo* JavaLLVMCompiler::getClassInfo(Class* cl) {
   return cl->getInfo<LLVMClassInfo>();
 }
 
-LLVMFieldInfo* JnjvmModule::getFieldInfo(JavaField* field) {
+LLVMFieldInfo* JavaLLVMCompiler::getFieldInfo(JavaField* field) {
   return field->getInfo<LLVMFieldInfo>();
 }
   
-LLVMMethodInfo* JnjvmModule::getMethodInfo(JavaMethod* method) {
+LLVMMethodInfo* JavaLLVMCompiler::getMethodInfo(JavaMethod* method) {
   return method->getInfo<LLVMMethodInfo>();
 }

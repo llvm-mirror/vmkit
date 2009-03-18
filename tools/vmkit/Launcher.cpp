@@ -71,17 +71,17 @@ inline void addPass(FunctionPassManager *PM, Pass *P) {
 }
 
 
-void addCommandLinePass(mvm::CompilationUnit* CU, char** argv) {
-  FunctionPassManager* Passes = CU->TheModule->globalFunctionPasses;
+void addCommandLinePass(char** argv) {
+  FunctionPassManager* Passes = mvm::MvmModule::globalFunctionPasses;
 
-  Passes->add(new TargetData(*CU->TheModule->TheTargetData));
+  Passes->add(new TargetData(*mvm::MvmModule::TheTargetData));
   // Create a new optimization pass for each one specified on the command line
   for (unsigned i = 0; i < PassList.size(); ++i) {
     // Check to see if -std-compile-opts was specified before this option.  If
     // so, handle it.
     if (StandardCompileOpts && 
         StandardCompileOpts.getPosition() < PassList.getPosition(i)) {
-      if (!DisableOptimizations) CU->AddStandardCompilePasses();
+      if (!DisableOptimizations) mvm::MvmModule::AddStandardCompilePasses();
       StandardCompileOpts = false;
     }
       
@@ -104,7 +104,7 @@ void addCommandLinePass(mvm::CompilationUnit* CU, char** argv) {
     
   // If -std-compile-opts was specified at the end of the pass list, add them.
   if (StandardCompileOpts) {
-    CU->AddStandardCompilePasses();
+    mvm::MvmModule::AddStandardCompilePasses();
   }    
 
 }
@@ -138,10 +138,10 @@ int main(int argc, char** argv) {
 
   if (VMToRun == RunJava) {
 #if WITH_JNJVM
-    mvm::CompilationUnit* CU = mvm::VirtualMachine::initialiseJVM();
-    CU->TheModule = new JnjvmModuleJIT("JITModule");
-    addCommandLinePass(CU, argv);
-    mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(CU);
+    JavaJITCompiler* Comp = new JavaJITCompiler("JITModule");
+    JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
+    addCommandLinePass(argv);
+    mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(JCL);
     vm->runApplication(argc, argv);
     vm->waitForExit();
 #endif
@@ -155,12 +155,11 @@ int main(int argc, char** argv) {
   } else {
     mvm::CommandLine MyCl;
 #if WITH_JNJVM
-    mvm::CompilationUnit* JVMCompiler = 
-      mvm::VirtualMachine::initialiseJVM();
-    JVMCompiler->TheModule = new JnjvmModuleJIT("JITModule");
-    addCommandLinePass(JVMCompiler, argv);
-    MyCl.vmlets["java"] = (mvm::VirtualMachine::createJVM);
-    MyCl.compilers["java"] = JVMCompiler;
+    JavaJITCompiler* Comp = new JavaJITCompiler("JITModule");
+    JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
+    addCommandLinePass(argv);
+    MyCl.vmlets["java"] = (create_vm_t)(mvm::VirtualMachine::createJVM);
+    MyCl.compilers["java"] = (mvm::Object*)JCL;
 #endif
 #if WITH_N3
     mvm::CompilationUnit* CLICompiler = 

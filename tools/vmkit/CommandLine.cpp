@@ -154,7 +154,7 @@ void CommandLine::executeInstr() {
 
   } else {
     create_vm_t func = vmlets[argv[0]];
-    mvm::CompilationUnit* CU = compilers[argv[0]];
+    mvm::Object* CU = compilers[argv[0]];
     if (!func) {
       fprintf(stderr, "\t Unknown vm %s\n", argv[0]);
     } else {

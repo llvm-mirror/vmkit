@@ -105,32 +105,28 @@ ObjectTypedef::ObjectTypedef(const UTF8* name, UTF8Map* map) {
 
 intptr_t Signdef::staticCallBuf() {
   if (!_staticCallBuf) {
-    LLVMSignatureInfo* LSI = initialLoader->getModule()->getSignatureInfo(this);
-    LSI->getStaticBuf();
+    initialLoader->getModule()->staticCallBuf(this);
   }
   return _staticCallBuf;
 }
 
 intptr_t Signdef::virtualCallBuf() {
   if (!_virtualCallBuf) {
-    LLVMSignatureInfo* LSI = initialLoader->getModule()->getSignatureInfo(this);
-    LSI->getVirtualBuf();
+    initialLoader->getModule()->virtualCallBuf(this);
   }
   return _virtualCallBuf;
 }
 
 intptr_t Signdef::staticCallAP() {
   if (!_staticCallAP) {
-    LLVMSignatureInfo* LSI = initialLoader->getModule()->getSignatureInfo(this);
-    LSI->getStaticAP();
+    initialLoader->getModule()->staticCallAP(this);
   }
   return _staticCallAP;
 }
 
 intptr_t Signdef::virtualCallAP() {
   if (!_virtualCallAP) {
-    LLVMSignatureInfo* LSI = initialLoader->getModule()->getSignatureInfo(this);
-    LSI->getVirtualAP();
+    initialLoader->getModule()->virtualCallAP(this);
   }
   return _virtualCallAP;
 }

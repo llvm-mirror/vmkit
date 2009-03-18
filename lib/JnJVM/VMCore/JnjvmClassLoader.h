@@ -31,12 +31,12 @@ class UserClassArray;
 class ClassMap;
 class Classpath;
 class UserCommonClass;
+class JavaCompiler;
 class JavaMethod;
 class JavaObject;
 class JavaString;
 class Jnjvm;
 class JnjvmBootstrapLoader;
-class JnjvmModule;
 class Signdef;
 class SignMap;
 class Typedef;
@@ -49,7 +49,7 @@ class ZipArchive;
 /// its own tables (signatures, UTF8, types) which are mapped to a single
 /// table for non-isolate environments.
 ///
-class JnjvmClassLoader : public mvm::CompilationUnit {
+class JnjvmClassLoader : public mvm::Object {
 private:
 
   /// isolate - Which isolate defined me? Null for the bootstrap class loader.
@@ -60,7 +60,7 @@ private:
   /// bootstrap class loader.
   ///
   JavaObject* javaLoader;
-   
+
   /// internalLoad - Load the class with the given name.
   ///
   virtual UserClass* internalLoad(const UTF8* utf8, bool doResolve);
@@ -76,6 +76,10 @@ private:
   JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader, Jnjvm* isolate);
 
 protected:
+  
+  /// TheCompiler - The Java compiler for this class loader.
+  ///
+  JavaCompiler* TheCompiler;
 
   /// classes - The classes this class loader has loaded.
   ///
@@ -112,11 +116,13 @@ public:
   ///
   UTF8Map* hashUTF8;
   
-  /// TheModule - JIT module for compiling methods.
+  /// getModule - Get the Java compiler of this class loader.
   ///
-  JnjvmModule* getModule() {
-    return reinterpret_cast<JnjvmModule*>(TheModule);
-  }
+  JavaCompiler* getModule() { return TheCompiler; }
+
+  /// setCompiler - Set the compiler of classes loaded by this class loader.
+  ///
+  void setCompiler(JavaCompiler* Comp) { TheCompiler = Comp; }
 
   /// tracer - Traces a JnjvmClassLoader for GC.
   ///
@@ -212,7 +218,7 @@ public:
     hashUTF8 = 0;
     javaTypes = 0;
     javaSignatures = 0;
-    TheModule = 0;
+    TheCompiler = 0;
     isolate = 0;
     classes = 0;
   }
@@ -333,7 +339,7 @@ public:
   /// createBootstrapLoader - Creates the bootstrap loader, first thing
   /// to do before any execution of a JVM.
   ///
-  JnjvmBootstrapLoader(JnjvmModule* Mod);
+  JnjvmBootstrapLoader(JavaCompiler* Comp);
   JnjvmBootstrapLoader() {}
   
   virtual JavaString* UTF8ToStr(const UTF8* utf8);

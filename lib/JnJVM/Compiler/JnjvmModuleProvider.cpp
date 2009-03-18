@@ -64,8 +64,8 @@ static JavaMethod* staticLookup(Function* F) {
 
 
 
-Function* JnjvmModuleJIT::addCallback(Class* cl, uint16 index,
-                                      Signdef* sign, bool stat) {
+Function* JavaJITCompiler::addCallback(Class* cl, uint16 index,
+                                       Signdef* sign, bool stat) {
   
   Function* func = 0;
   LLVMSignatureInfo* LSI = getSignatureInfo(sign);
@@ -111,7 +111,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
     mvm::MvmModule::executionEngine->updateGlobalMapping(F, val);
  
   if (isVirtual(meth->access)) {
-    LLVMMethodInfo* LMI = ((JnjvmModule*)TheModule)->getMethodInfo(meth);
+    LLVMMethodInfo* LMI = JavaLLVMCompiler::getMethodInfo(meth);
     uint64_t offset = LMI->getOffset()->getZExtValue();
     assert(meth->classDef->isResolved() && "Class not resolved");
 #if !defined(ISOLATE_SHARING) && !defined(SERVICE)
@@ -130,15 +130,15 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   return false;
 }
 
-JnjvmModuleProvider::JnjvmModuleProvider(JnjvmModuleJIT *m) {
-  TheModule = m->getLLVMModule();
-  m->protectEngine.lock();
-  m->executionEngine->addModuleProvider(this);
-  m->protectEngine.unlock();
+JnjvmModuleProvider::JnjvmModuleProvider(llvm::Module* m) {
+  TheModule = m;
+  JnjvmModule::protectEngine.lock();
+  JnjvmModule::executionEngine->addModuleProvider(this);
+  JnjvmModule::protectEngine.unlock();
 }
 
 JnjvmModuleProvider::~JnjvmModuleProvider() {
-  mvm::MvmModule::protectEngine.lock();
-  mvm::MvmModule::executionEngine->removeModuleProvider(this);
-  mvm::MvmModule::protectEngine.unlock();
+  JnjvmModule::protectEngine.lock();
+  JnjvmModule::executionEngine->removeModuleProvider(this);
+  JnjvmModule::protectEngine.unlock();
 }

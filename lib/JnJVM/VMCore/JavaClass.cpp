@@ -932,9 +932,9 @@ void Class::resolveClass() {
       loadParents();
       loadExceptions();
       acquire();
-      JnjvmModule *Mod = classLoader->getModule();
-      Mod->resolveVirtualClass(this);
-      Mod->resolveStaticClass(this);
+      JavaCompiler *Comp = classLoader->getModule();
+      Comp->resolveVirtualClass(this);
+      Comp->resolveStaticClass(this);
       setResolved();
       if (!needsInitialisationCheck()) {
         setInitializationState(ready);

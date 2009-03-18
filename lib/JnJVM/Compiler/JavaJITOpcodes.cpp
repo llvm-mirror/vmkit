@@ -1848,7 +1848,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           JnjvmBootstrapLoader* loader = 
             compilingClass->classLoader->bootstrapLoader;
           UserClassArray* dcl = loader->getArrayClass(id);
-          valCl = module->getNativeClass(dcl);
+          valCl = TheCompiler->getNativeClass(dcl);
           if (valCl->getType() != module->JavaCommonClassType)
             valCl = new BitCastInst(valCl, module->JavaCommonClassType, "",
                                     currentBlock);
@@ -1861,7 +1861,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
           LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[charId];
           sizeElement = LAI.sizeInBytesConstant;
-          TheVT = module->getPrimitiveArrayVT();
+          TheVT = TheCompiler->getPrimitiveArrayVT();
         } else {
           uint16 index = readU2(bytecodes, i);
           CommonClass* cl = 0;
@@ -1872,12 +1872,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             const UTF8* arrayName = JCL->constructArrayName(1, cl->name);
           
             UserClassArray* dcl = JCL->constructArray(arrayName);
-            valCl = module->getNativeClass(dcl);
+            valCl = TheCompiler->getNativeClass(dcl);
             
             // If we're static compiling and the class is not a class we
             // are compiling, the result of getNativeClass is a pointer to
             // the class. Load it.
-            if (module->isStaticCompiling() && 
+            if (TheCompiler->isStaticCompiling() && 
                 valCl->getType() != module->JavaClassArrayType) {
               valCl = new LoadInst(valCl, "", currentBlock);
             }
@@ -1896,11 +1896,11 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           }
 
           sizeElement = module->constantPtrSize;
-          TheVT = module->getReferenceArrayVT();
+          TheVT = TheCompiler->getReferenceArrayVT();
         }
         Value* arg1 = popAsInt();
 
-        if (module->hasExceptionsEnabled()) {
+        if (TheCompiler->hasExceptionsEnabled()) {
           Value* cmp = new ICmpInst(ICmpInst::ICMP_SLT, arg1,
                                     module->constantZero, "", currentBlock);
 
@@ -1979,7 +1979,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case CHECKCAST :
-        if (!module->hasExceptionsEnabled()) {
+        if (!TheCompiler->hasExceptionsEnabled()) {
           i += 2;
           break;
         }

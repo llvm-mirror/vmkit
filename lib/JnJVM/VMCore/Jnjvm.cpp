@@ -1101,7 +1101,7 @@ const UTF8* Jnjvm::asciizToUTF8(const char* asciiz) {
 
 
 static void compileClass(Class* cl) {
-  JnjvmModuleAOT* Mod = (JnjvmModuleAOT*)cl->classLoader->getModule();
+  JavaAOTCompiler* Mod = (JavaAOTCompiler*)cl->classLoader->getModule();
   
   // Make sure the class is emitted.
   Mod->getNativeClass(cl);
@@ -1127,7 +1127,7 @@ void Jnjvm::mainCompilerStart(JavaThread* th) {
   
   Jnjvm* vm = th->getJVM();
   JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
-  JnjvmModuleAOT* M = (JnjvmModuleAOT*)bootstrapLoader->getModule();
+  JavaAOTCompiler* M = (JavaAOTCompiler*)bootstrapLoader->getModule();
   try {
 
     bootstrapLoader->analyseClasspathEnv(vm->classpath);

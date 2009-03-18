@@ -23,6 +23,11 @@
 #include <cassert>
 #include <map>
 
+namespace jnjvm {
+  class JavaCompiler;
+  class JnjvmClassLoader;
+}
+
 namespace mvm {
 
 /// VirtualMachine - This class is the root of virtual machine classes. It
@@ -54,8 +59,8 @@ public:
   /// waitForExit - Wait until the virtual machine stops its execution.
   virtual void waitForExit() = 0;
 
-  static CompilationUnit* initialiseJVM();
-  static VirtualMachine* createJVM(CompilationUnit* C = 0);
+  static jnjvm::JnjvmClassLoader* initialiseJVM(jnjvm::JavaCompiler* C = 0);
+  static VirtualMachine* createJVM(jnjvm::JnjvmClassLoader* C = 0);
   
   static CompilationUnit* initialiseCLIVM();
   static VirtualMachine* createCLIVM(CompilationUnit* C = 0);
