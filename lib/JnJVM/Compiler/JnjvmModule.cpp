@@ -508,7 +508,7 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
   if (func->hasNotBeenReadFromBitcode()) {
     // We are jitting. Take the lock.
     JnjvmModule::protectIR();
-    JavaJIT jit(meth, func);
+    JavaJIT jit(this, meth, func);
     if (isNative(meth->access)) {
       jit.nativeCompile();
       JnjvmModule::runPasses(func, JavaNativeFunctionPasses);

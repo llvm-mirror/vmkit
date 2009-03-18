@@ -55,11 +55,11 @@ class JavaJIT {
 public:
  
   /// JavaJIT - Default constructor.
-  JavaJIT(JavaMethod* meth, llvm::Function* func) {
+  JavaJIT(JavaLLVMCompiler* C, JavaMethod* meth, llvm::Function* func) {
     nbEnveloppes = 0;
     compilingMethod = meth;
     compilingClass = meth->classDef;
-    TheCompiler = (JavaLLVMCompiler*)compilingClass->classLoader->getModule();
+    TheCompiler = C;
     module = TheCompiler->getIntrinsics();
     llvmFunction = func;
     inlining = false;

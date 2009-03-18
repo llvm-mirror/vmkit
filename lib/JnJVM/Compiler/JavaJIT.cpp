@@ -322,7 +322,8 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     nativeArgs.push_back(i);
   }
   
-  Value* nativeFunc = TheCompiler->getNativeFunction(compilingMethod, (void*)natPtr);
+  Value* nativeFunc = TheCompiler->getNativeFunction(compilingMethod,
+                                                     (void*)natPtr);
 
   if (TheCompiler->isStaticCompiling()) {
     Value* Arg = TheCompiler->getMethodInClass(compilingMethod); 
@@ -339,7 +340,8 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     BranchInst::Create(unloadedBlock, endBlock, cmp, currentBlock);
     currentBlock = unloadedBlock;
 
-    Value* res = CallInst::Create(TheCompiler->NativeLoader, Arg, "", currentBlock);
+    Value* res = CallInst::Create(TheCompiler->NativeLoader, Arg, "",
+                                  currentBlock);
 
     res = new BitCastInst(res, Ty, "", currentBlock);
     new StoreInst(res, nativeFunc, currentBlock);
@@ -1221,7 +1223,7 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
 
 Instruction* JavaJIT::invokeInline(JavaMethod* meth, 
                                    std::vector<Value*>& args) {
-  JavaJIT jit(meth, llvmFunction);
+  JavaJIT jit(TheCompiler, meth, llvmFunction);
   jit.unifiedUnreachable = unifiedUnreachable;
   jit.inlineMethods = inlineMethods;
   jit.inlineMethods[meth] = true;
