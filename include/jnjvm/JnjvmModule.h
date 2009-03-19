@@ -396,7 +396,7 @@ public:
     enabledException = false;
   }
   
-  virtual JavaCompiler* Create(std::string ModuleID) = 0;
+  virtual JavaCompiler* Create(const std::string& ModuleID) = 0;
   
   virtual ~JavaLLVMCompiler();
 
@@ -473,7 +473,7 @@ public:
   
   virtual void makeVT(Class* cl);
   
-  virtual JavaCompiler* Create(std::string ModuleID) {
+  virtual JavaCompiler* Create(const std::string& ModuleID) {
     return new JavaJITCompiler(ModuleID);
   }
   
@@ -515,7 +515,7 @@ public:
     return true;
   }
   
-  virtual JavaCompiler* Create(std::string ModuleID) {
+  virtual JavaCompiler* Create(const std::string& ModuleID) {
     return new JavaAOTCompiler(ModuleID);
   }
   

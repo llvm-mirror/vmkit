@@ -2,9 +2,7 @@
 #ifndef JAVA_COMPILER_H
 #define JAVA_COMPILER_H
 
-namespace llvm {
-  class Function;
-}
+#include <string>
 
 namespace jnjvm {
 
@@ -21,7 +19,7 @@ public:
   virtual void resolveVirtualClass(Class* cl) = 0;
   virtual void resolveStaticClass(Class* cl) = 0;
 
-  virtual JavaCompiler* Create(std::string) = 0;
+  virtual JavaCompiler* Create(const std::string&) = 0;
 
   virtual void staticCallBuf(Signdef* sign) = 0;
   virtual void virtualCallBuf(Signdef* sign) = 0;
