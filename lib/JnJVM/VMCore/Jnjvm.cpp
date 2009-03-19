@@ -817,6 +817,13 @@ void Jnjvm::loadBootstrap() {
   LOAD_CLASS(upcalls->newVMThread);
   ptr = ((uintptr_t*)upcalls->newVMThread->getVirtualVT());
   ptr[VT_DESTRUCTOR_OFFSET] = (uintptr_t)JavaObjectVMThread::staticDestructor;
+
+#ifdef SERVICE
+  if (!IsolateID)
+#endif
+  // The initialization code of the classes initialized below may require
+  // to get the Java thread, so we create the Java thread object first.
+  mapInitialThread();
   
   LOAD_CLASS(upcalls->newStackTraceElement);
   LOAD_CLASS(upcalls->newVMThrowable);
@@ -860,13 +867,10 @@ void Jnjvm::loadBootstrap() {
   LOAD_CLASS(upcalls->ClassNotFoundException); 
 #undef LOAD_CLASS
 
-#ifdef SERVICE
-  if (!IsolateID)
-#endif
-  mapInitialThread();
   loadAppClassLoader();
   JavaObject* obj = JavaThread::get()->currentThread();
   JavaObject* javaLoader = appClassLoader->getJavaClassLoader();
+
 #ifdef SERVICE
   if (!IsolateID)
 #endif
