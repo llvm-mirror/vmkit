@@ -80,7 +80,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(JavaCompiler* Comp) {
     libClasspathEnv = GNUClasspathLibs;
   }
   
-  analyseClasspathEnv(bootClasspathEnv);
   
   upcalls = new(allocator) Classpath();
   bootstrapLoader = this;
@@ -155,6 +154,12 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(JavaCompiler* Comp) {
   arrayTable[JavaArray::T_FLOAT - 4] = upcalls->ArrayOfFloat;
   arrayTable[JavaArray::T_LONG - 4] = upcalls->ArrayOfLong;
   arrayTable[JavaArray::T_DOUBLE - 4] = upcalls->ArrayOfDouble;
+  
+  // Analyse the boot classpath to locate java/lang/Object. Since the
+  // analyseClasspathEnv function may require to create a Java byte array to
+  // hold the .zip file, we call the function after creation of the
+  // array classes.
+  analyseClasspathEnv(bootClasspathEnv);
 
 
   // Now that native types have been loaded, try to find if we have a
