@@ -331,7 +331,9 @@ void MvmModule::copyDefinitions(Module* Dst, Module* Src) {
     const Function *SF = I;   // SrcFunction
     assert(SF->isDeclaration() && 
            "Don't know how top copy functions with body");
-    Function::Create(SF->getFunctionType(), GlobalValue::ExternalLinkage,
-                     SF->getName(), Dst);
+    Function* F = Function::Create(SF->getFunctionType(),
+                                   GlobalValue::ExternalLinkage,
+                                   SF->getName(), Dst);
+    F->setAttributes(SF->getAttributes());
   }
 }
