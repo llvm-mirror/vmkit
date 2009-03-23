@@ -67,7 +67,7 @@ JnjvmClassLoader* mvm::VirtualMachine::initialiseJVM(JavaCompiler* Comp) {
 
 mvm::VirtualMachine* mvm::VirtualMachine::createJVM(JnjvClassLoader* JCL) {
   JnjvmBootstraLoader* bootstrapLoader = 
-    gc_new(JnjvmBootstrapLoader)(JCL->getModule());
+    gc_new(JnjvmBootstrapLoader)(JCL->getCompiler());
   Jnjvm* vm = gc_new(Jnjvm)(bootstrapLoader);
   return vm;
 }
