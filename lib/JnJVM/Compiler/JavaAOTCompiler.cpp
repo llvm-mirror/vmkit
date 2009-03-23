@@ -1164,9 +1164,12 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(Class* classDef) {
   std::vector<Constant*> Elemts;
    
   // Destructor
+  Function* Finalizer = 0;
   JavaMethod* meth = ((JavaMethod**)VT)[0];
-  LLVMMethodInfo* LMI = getMethodInfo(meth);
-  Function* Finalizer = LMI->getMethod();
+  if (meth) {
+    LLVMMethodInfo* LMI = getMethodInfo(meth);
+    Finalizer = LMI->getMethod();
+  }
   Elemts.push_back(Finalizer ? 
       ConstantExpr::getCast(Instruction::BitCast, Finalizer, PTy) : N);
   
@@ -1442,6 +1445,7 @@ void JavaAOTCompiler::makeVT(Class* cl) {
     JavaMethod& meth = cl->virtualMethods[i];
     ((void**)VT)[meth.offset] = &meth;
   }
+  if (!cl->super) ((void**)VT)[0] = 0;
 #endif 
 }
 
