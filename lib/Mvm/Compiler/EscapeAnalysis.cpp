@@ -9,8 +9,9 @@
 
 
 #include "llvm/Constants.h"
-#include "llvm/Pass.h"
 #include "llvm/Function.h"
+#include "llvm/GlobalVariable.h"
+#include "llvm/Pass.h"
 #include "llvm/Instructions.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/Debug.h"
@@ -67,12 +68,16 @@ bool EscapeAnalysis::runOnFunction(Function& F) {
 
 
 
-static bool escapes(Instruction* Ins, std::map<Instruction*, bool>& visited) {
+static bool escapes(Value* Ins, std::map<Instruction*, bool>& visited) {
   for (Value::use_iterator I = Ins->use_begin(), E = Ins->use_end(); 
        I != E; ++I) {
     if (Instruction* II = dyn_cast<Instruction>(I)) {
-      if (dyn_cast<CallInst>(II)) return true;
-      else if (dyn_cast<InvokeInst>(II)) return true;
+      if (CallInst* CI = dyn_cast<CallInst>(II)) {
+        if (!CI->onlyReadsMemory()) return true;
+      }
+      else if (InvokeInst* CI = dyn_cast<InvokeInst>(II)) {
+        if (!CI->onlyReadsMemory()) return true;
+      }
       else if (dyn_cast<BitCastInst>(II)) {
         if (escapes(II, visited)) return true;
       }
@@ -111,29 +116,45 @@ static bool escapes(Instruction* Ins, std::map<Instruction*, bool>& visited) {
 bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT) {
   Instruction* Alloc = I;
   
-  ConstantExpr* CE = dyn_cast<ConstantExpr>(VT);
-  if (CE) {
-    ConstantInt* C = dyn_cast<ConstantInt>(CE->getOperand(0));
-    if (!C) return false;
-
-    VirtualTable* Table = (VirtualTable*)C->getZExtValue();
-    ConstantInt* CI = dyn_cast<ConstantInt>(Size);
-    // If the class has a finalize method, do not stack allocate the object.
-    if (!((void**)Table)[0] && CI) {
-      std::map<Instruction*, bool> visited;
-      uint64_t NSize = CI->getZExtValue();
-      if (NSize < pageSize && !(escapes(Alloc, visited))) {
-        AllocaInst* AI = new AllocaInst(Type::Int8Ty, Size, "", Alloc);
-        BitCastInst* BI = new BitCastInst(AI, Alloc->getType(), "", Alloc);
-        DOUT << "escape" << Alloc->getParent()->getParent()->getName() << "\n";
-        Alloc->replaceAllUsesWith(BI);
-        // If it's an invoke, replace the invoke with a direct branch.
-        if (InvokeInst *CI = dyn_cast<InvokeInst>(Alloc)) {
-          BranchInst::Create(CI->getNormalDest(), Alloc);
+  ConstantInt* CI = dyn_cast<ConstantInt>(Size);
+  bool hasFinalizer = true;
+  
+  if (CI) {
+    if (ConstantExpr* CE = dyn_cast<ConstantExpr>(VT)) {
+      if (ConstantInt* C = dyn_cast<ConstantInt>(CE->getOperand(0))) {
+        VirtualTable* Table = (VirtualTable*)C->getZExtValue();
+        hasFinalizer = (((void**)Table)[0] != 0);
+      } else {
+        GlobalVariable* GV = dyn_cast<GlobalVariable>(CE->getOperand(0));
+        if (GV->hasInitializer()) {
+          Constant* Init = GV->getInitializer();
+          if (ConstantArray* CA = dyn_cast<ConstantArray>(Init)) {
+            Constant* V = CA->getOperand(0);
+            hasFinalizer = !V->isNullValue();
+          }
         }
-        Alloc->eraseFromParent();
-        return true;
       }
+    }
+  } else {
+    return false;
+  }
+  
+  uint64_t NSize = CI->getZExtValue();
+  // If the class has a finalize method, do not stack allocate the object.
+  if (NSize < pageSize && !hasFinalizer) {
+    std::map<Instruction*, bool> visited;
+    bool esc = escapes(Alloc, visited);
+    if (!esc) {
+      AllocaInst* AI = new AllocaInst(Type::Int8Ty, Size, "", Alloc);
+      BitCastInst* BI = new BitCastInst(AI, Alloc->getType(), "", Alloc);
+      DOUT << "escape" << Alloc->getParent()->getParent()->getName() << "\n";
+      Alloc->replaceAllUsesWith(BI);
+      // If it's an invoke, replace the invoke with a direct branch.
+      if (InvokeInst *CI = dyn_cast<InvokeInst>(Alloc)) {
+        BranchInst::Create(CI->getNormalDest(), Alloc);
+      }
+      Alloc->eraseFromParent();
+      return true;
     }
   }
   return false;
