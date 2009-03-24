@@ -92,13 +92,12 @@ void JavaJIT::invokeVirtual(uint16 index) {
  
   const UTF8* name = 0;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
-#if 0	
-  Value* obj = stack[signature->nbArguments].first;
-  JavaObject* source = module->getFinalObject(obj);
+
+  Value* obj = stack[stack.size() - signature->nbArguments - 1].first;
+  JavaObject* source = TheCompiler->getFinalObject(obj);
   if (source) {
     return invokeSpecial(index, source->getClass());
   }
-#endif
  
 #if !defined(WITHOUT_VTABLE)
   Typedef* retTypedef = signature->getReturnType();
