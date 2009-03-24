@@ -73,10 +73,6 @@ public:
   /// nativeCompile - Compile the native method.
   llvm::Function* nativeCompile(intptr_t natPtr = 0);
 
-  /// OpcodeNames - Table for getting the name of a Java instruction
-  /// from its opcode number.
-  static const char* OpcodeNames[256];
-
 private:
   
   /// compilingClass - The class that is defining the method being compiled.
