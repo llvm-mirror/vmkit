@@ -675,7 +675,7 @@ llvm::Function* JavaJIT::javaCompile() {
     
 #if JNJVM_EXECUTE > 0
     {
-    Value* arg = module->getMethodInClass(compilingMethod);
+    Value* arg = TheCompiler->getMethodInClass(compilingMethod);
 
     llvm::CallInst::Create(module->PrintMethodStartFunction, arg, "",
                            currentBlock);
@@ -841,7 +841,7 @@ llvm::Function* JavaJIT::javaCompile() {
 
 #if JNJVM_EXECUTE > 0
     {
-    Value* arg = module->getMethodInClass(compilingMethod); 
+    Value* arg = TheCompiler->getMethodInClass(compilingMethod); 
     CallInst::Create(module->PrintMethodEndFunction, arg, "", currentBlock);
     }
 #endif
