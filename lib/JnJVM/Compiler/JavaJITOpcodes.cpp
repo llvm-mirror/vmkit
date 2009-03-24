@@ -35,7 +35,7 @@
 
 #include "jnjvm/JnjvmModule.h"
 
-#if DEBUG > 0
+#if DEBUG > 0 && JNJVM_COMPILE > 0
 #include "jnjvm/OpcodeNames.def"
 #endif
 
@@ -160,7 +160,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       Value* args[3] = {
         ConstantInt::get(Type::Int32Ty, (int64_t)bytecodes[i]),
         ConstantInt::get(Type::Int32Ty, (int64_t)i),
-        module->getMethodInClass(compilingMethod)
+        TheCompiler->getMethodInClass(compilingMethod)
       };
     
     
