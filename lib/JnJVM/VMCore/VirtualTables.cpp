@@ -144,31 +144,7 @@ void Jnjvm::TRACER {
 #if defined(ISOLATE_SHARING)
   JnjvmSharedLoader::sharedLoader->MARK_AND_TRACE;
 #endif
-  traceClassMap(bootstrapLoader->getClasses());
   
-#define TRACE_DELEGATEE(prim) \
-  prim->CALL_TRACER;
-
-  TRACE_DELEGATEE(upcalls->OfVoid);
-  TRACE_DELEGATEE(upcalls->OfBool);
-  TRACE_DELEGATEE(upcalls->OfByte);
-  TRACE_DELEGATEE(upcalls->OfChar);
-  TRACE_DELEGATEE(upcalls->OfShort);
-  TRACE_DELEGATEE(upcalls->OfInt);
-  TRACE_DELEGATEE(upcalls->OfFloat);
-  TRACE_DELEGATEE(upcalls->OfLong);
-  TRACE_DELEGATEE(upcalls->OfDouble);
-#undef TRACE_DELEGATEE
-  
-  for (std::vector<JavaString*, gc_allocator<JavaString*> >::iterator i = 
-       bootstrapLoader->strings.begin(),
-       e = bootstrapLoader->strings.end(); i!= e; ++i) {
-    (*i)->MARK_AND_TRACE;
-    // If the string was static allocated, we want to trace its lock.
-    LockObj* l = (*i)->lockObj();
-    if (l) l->MARK_AND_TRACE;
-  }
-
   mvm::Thread* th = th->get();
   th->CALL_TRACER;
   for (mvm::Thread* cur = (mvm::Thread*)th->next(); cur != th; 
@@ -195,7 +171,33 @@ void JnjvmClassLoader::TRACER {
   }
 }
 
-void JnjvmBootstrapLoader::TRACER {}
+void JnjvmBootstrapLoader::TRACER {
+  
+  traceClassMap(classes);
+
+  for (std::vector<JavaString*, gc_allocator<JavaString*> >::iterator i = 
+       bootstrapLoader->strings.begin(),
+       e = bootstrapLoader->strings.end(); i!= e; ++i) {
+    (*i)->MARK_AND_TRACE;
+    // If the string was static allocated, we want to trace its lock.
+    LockObj* l = (*i)->lockObj();
+    if (l) l->MARK_AND_TRACE;
+  }
+
+#define TRACE_DELEGATEE(prim) \
+  prim->CALL_TRACER;
+
+  TRACE_DELEGATEE(upcalls->OfVoid);
+  TRACE_DELEGATEE(upcalls->OfBool);
+  TRACE_DELEGATEE(upcalls->OfByte);
+  TRACE_DELEGATEE(upcalls->OfChar);
+  TRACE_DELEGATEE(upcalls->OfShort);
+  TRACE_DELEGATEE(upcalls->OfInt);
+  TRACE_DELEGATEE(upcalls->OfFloat);
+  TRACE_DELEGATEE(upcalls->OfLong);
+  TRACE_DELEGATEE(upcalls->OfDouble);
+#undef TRACE_DELEGATEE
+}
 
 #if defined(ISOLATE_SHARING)
 void UserClass::TRACER {
