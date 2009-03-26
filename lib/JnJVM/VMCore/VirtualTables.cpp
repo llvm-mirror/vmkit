@@ -19,11 +19,6 @@
 #include "JnjvmClassLoader.h"
 #include "LockedMap.h"
 
-#ifdef ISOLATE_SHARING
-#include "SharedMaps.h"
-#include "IsolateSharedLoader.h"
-#endif
-
 using namespace jnjvm;
 
 #define INIT(X) VirtualTable* X::VT = 0
@@ -33,13 +28,6 @@ using namespace jnjvm;
   INIT(JnjvmBootstrapLoader);
   INIT(JnjvmClassLoader);
   INIT(LockObj);
-#if defined(ISOLATE_SHARING)
-  INIT(JnjvmSharedLoader);
-  INIT(SharedClassByteMap);
-  INIT(UserClass);
-  INIT(UserClassArray);
-  INIT(UserConstantPool);
-#endif
 
 #undef INIT
 
@@ -198,32 +186,3 @@ void JnjvmBootstrapLoader::TRACER {
   TRACE_DELEGATEE(upcalls->OfDouble);
 #undef TRACE_DELEGATEE
 }
-
-#if defined(ISOLATE_SHARING)
-void UserClass::TRACER {
-  classLoader->MARK_AND_TRACE;
-  delegatee->MARK_AND_TRACE;
-  staticInstance->MARK_AND_TRACE;
-  ctpInfo->MARK_AND_TRACE;
-}
-
-void UserClassPrimitive::TRACER {
-  classLoader->MARK_AND_TRACE;
-  delegatee->MARK_AND_TRACE;
-}
-
-void UserClassArray::TRACER {
-  classLoader->MARK_AND_TRACE;
-  delegatee->MARK_AND_TRACE;
-}
-
-void SharedClassByteMap::TRACER {
-  for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-    i->first->MARK_AND_TRACE;
-  }
-}
-
-void JnjvmSharedLoader::TRACER {
-  byteClasses->MARK_AND_TRACE;
-}
-#endif
