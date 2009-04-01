@@ -1,3 +1,11 @@
+//===------- JavaCompiler.h - Jnjvm interface for the compiler ------------===//
+//
+//                           The VMKit project
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
 
 #ifndef JAVA_COMPILER_H
 #define JAVA_COMPILER_H
