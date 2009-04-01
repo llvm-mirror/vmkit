@@ -130,3 +130,39 @@ intptr_t Signdef::virtualCallAP() {
   }
   return _virtualCallAP;
 }
+
+
+void Signdef::nativeName(char* ptr, const char* ext) const {
+  sint32 i = 0;
+  while (i < keyName->size) {
+    char c = keyName->elements[i++];
+    if (c == I_PARG) {
+      ptr[0] = '_';
+      ptr[1] = '_';
+      ptr += 2;
+    } else if (c == '/') {
+      ptr[0] = '_';
+      ++ptr;
+    } else if (c == '_') {
+      ptr[0] = '_';
+      ptr[1] = '1';
+      ptr += 2;
+    } else if (c == I_END_REF) {
+      ptr[0] = '_';
+      ptr[1] = '2';
+      ptr += 2;
+    } else if (c == I_TAB) {
+      ptr[0] = '_';
+      ptr[1] = '3';
+      ptr += 2;
+    } else if (c == I_PARD) {
+      break;
+    } else {
+      ptr[0] = c;
+      ++ptr;
+    }
+  }
+
+  assert(ext && "I need an extension");
+  memcpy(ptr, ext, strlen(ext) + 1);
+}

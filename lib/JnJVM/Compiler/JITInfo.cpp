@@ -335,19 +335,22 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
 
   JavaLLVMCompiler* Mod = 
     (JavaLLVMCompiler*)signature->initialLoader->getCompiler();
-  const char* name = 0;
+  Function* res = 0;
   if (Mod->isStaticCompiling()) {
-    name = virt ? signature->printString("virtual_buf") :
-                  signature->printString("static_buf");
+    const char* type = virt ? "virtual_buf" : "static_buf";
+    char* buf = (char*)alloca((signature->keyName->size << 1) + 1 + 11);
+    signature->nativeName(buf, type);
+    res = Function::Create(virt ? getVirtualBufType() : getStaticBufType(),
+                           GlobalValue::InternalLinkage, buf,
+                           Mod->getLLVMModule());
+  
+
   } else {
-    name = "";
+    res = Function::Create(virt ? getVirtualBufType() : getStaticBufType(),
+                           GlobalValue::InternalLinkage, "",
+                           Mod->getLLVMModule());
   }
 
-  Function* res = Function::Create(virt ? getVirtualBufType() : 
-                                          getStaticBufType(),
-                                   GlobalValue::InternalLinkage, name,
-                                   Mod->getLLVMModule());
-  
   BasicBlock* currentBlock = BasicBlock::Create("enter", res);
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ptr, *func;

@@ -284,6 +284,10 @@ public:
   /// printString - Print the signature with the following extension.
   ///
   const char* printString(const char* ext = "") const;
+  
+  /// nativeName - Get a native name for callbacks emitted AOT.
+  ///
+  void nativeName(char* buf, const char* ext) const;
 
   /// printWithSign - Print the signature of a method with the method's class
   /// and name.
