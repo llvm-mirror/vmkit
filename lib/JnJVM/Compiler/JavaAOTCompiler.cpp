@@ -1532,7 +1532,7 @@ void mainCompilerStart(JavaThread* th) {
           realName[size - 6] = 0;
           const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
           Class* cl = bootstrapLoader->constructClass(utf8, res);
-          classes.push_back(cl);
+          classes.push_back(cl);  
         }
       }
 
@@ -1563,8 +1563,15 @@ void mainCompilerStart(JavaThread* th) {
       }
 
     } else {
+      char* realName = (char*)alloca(size + 1);
+      if (size > 6 && !strcmp(&name[size - 6], ".class")) {
+        memcpy(realName, name, size - 6);
+        realName[size - 6] = 0;
+      } else {
+        memcpy(realName, name, size + 1);
+      }
 
-      const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(name);
+      const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
       UserClass* cl = bootstrapLoader->loadName(utf8, true, true);
       cl->setOwnerClass(JavaThread::get());
       M->compileClass(cl);
@@ -1622,4 +1629,35 @@ void JavaAOTCompiler::compileAllStubs(Signdef* sign) {
   // getStaticCallAP();
   sign->getVirtualCallBuf();
   // getVirtualCallAP();
+}
+
+void JavaAOTCompiler::generateMain(const char* name, bool jit) {
+
+  // Type Definitions
+  std::vector<const Type*> FuncArgs;
+  FuncArgs.push_back(Type::Int32Ty);
+  FuncArgs.push_back(PointerType::getUnqual(JavaIntrinsics.ptrType));
+  
+  FunctionType* FuncTy = FunctionType::get(Type::Int32Ty, FuncArgs, false);
+
+  Function* MainFunc = Function::Create(FuncTy, GlobalValue::ExternalLinkage,
+                                        "main", TheModule);
+  BasicBlock* currentBlock = BasicBlock::Create("enter", MainFunc);
+  
+  Function::arg_iterator FuncVals = MainFunc->arg_begin();
+  Value* Argc = FuncVals++;
+  Value* Argv = FuncVals++;
+  Value* Args[3] = { Argc, Argv, ConstantArray::get(name, true) };
+
+  FuncArgs.push_back(Args[2]->getType());
+
+  FuncTy = FunctionType::get(Type::Int32Ty, FuncArgs, false);
+
+  Function* CalledFunc = 
+    Function::Create(FuncTy, GlobalValue::ExternalLinkage,
+                     jit ? "StartWithJIT" : "StartWithoutJIT", TheModule);
+
+  Value* res = CallInst::Create(CalledFunc, Args, Args + 3, "", currentBlock);
+  ReturnInst::Create(res, currentBlock);
+
 }

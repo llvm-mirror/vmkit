@@ -654,6 +654,7 @@ public:
   
   void compileFile(JnjvmClassLoader* JCL, const char* name);
   void compileClass(Class* cl);
+  void generateMain(const char* name, bool jit);
 
 private:
   void compileAllStubs(Signdef* sign);

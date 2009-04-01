@@ -19,6 +19,7 @@
 #include "debug.h"
 
 #include "mvm/Threads/Thread.h"
+#include "MvmGC.h"
 
 #include "ClasspathReflect.h"
 #include "JavaArray.h"
@@ -1120,4 +1121,24 @@ void Jnjvm::removeMethodsInFunctionMap(JnjvmClassLoader* loader) {
     }
   }
   FunctionMapLock.release();
+}
+
+// Helper function to run Jnjvm without JIT.
+extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
+  mvm::Object::initialise();
+  Collector::initialise(0);
+  
+  char** newArgv = new char*[argc + 1];
+  memcpy(newArgv, argv, argc * sizeof(void*));
+  newArgv[argc] = mainClass;
+ 
+  JavaCompiler* Comp = new JavaCompiler();
+  JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
+  mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(JCL);
+  vm->runApplication(argc + 1, newArgv);
+  vm->waitForExit();
+
+  delete newArgv;
+  
+  return 0; 
 }

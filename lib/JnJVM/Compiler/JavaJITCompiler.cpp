@@ -13,6 +13,10 @@
 #include "llvm/Instructions.h"
 #include "llvm/Module.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/Support/ManagedStatic.h"
+
+#include "MvmGC.h"
+#include "mvm/VirtualMachine.h"
 
 #include "JavaConstantPool.h"
 #include "JavaThread.h"
@@ -209,4 +213,27 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   func->deleteBody();
 
   return res;
+}
+
+// Helper function to run an executable with a JIT
+extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
+  llvm::llvm_shutdown_obj X;  
+   
+  mvm::MvmModule::initialise();
+  mvm::Object::initialise();
+  Collector::initialise(0);
+ 
+  char** newArgv = new char*[argc + 1];
+  memcpy(newArgv, argv, argc * sizeof(void*));
+  newArgv[argc] = mainClass;
+
+  JavaJITCompiler* Comp = new JavaJITCompiler("JITModule");
+  mvm::MvmModule::AddStandardCompilePasses();
+  JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
+  mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(JCL);
+  vm->runApplication(argc + 1, newArgv);
+  vm->waitForExit();
+  
+  delete newArgv;
+  return 0; 
 }

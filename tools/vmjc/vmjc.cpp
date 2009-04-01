@@ -64,6 +64,12 @@ OutputFilename("o", cl::desc("Override output filename"),
 static cl::opt<bool>
 Force("f", cl::desc("Overwrite output files"));
 
+static cl::opt<std::string>
+MainClass("main", cl::desc("Specify main class"));
+
+static cl::opt<bool>
+WithJIT("with-jit", cl::desc("Generate main function with JIT support"));
+
 static cl::opt<bool>
 DontPrint("disable-output", cl::desc("Don't output the .ll file"), cl::Hidden);
 
@@ -218,6 +224,11 @@ int main(int argc, char **argv) {
     if (DisableStubs) MAOT->generateStubs = false;
     if (AssumeCompiled) MAOT->assumeCompiled = true;
     MAOT->compileFile(JCL, InputFilename.c_str());
+
+    if (!MainClass.empty()) {
+      MAOT->generateMain(MainClass.c_str(), WithJIT);
+    }
+
 
     if (DontPrint) {
       // Just use stdout.  We won't actually print anything on it.
