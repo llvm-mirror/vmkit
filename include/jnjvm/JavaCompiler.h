@@ -2,6 +2,8 @@
 #ifndef JAVA_COMPILER_H
 #define JAVA_COMPILER_H
 
+#include <cstdio>
+#include <cstdlib>
 #include <string>
 
 namespace jnjvm {
@@ -13,18 +15,57 @@ class Signdef;
 class JavaCompiler {
 public:
   
-  virtual void* materializeFunction(JavaMethod* meth) = 0;
-  virtual void setMethod(JavaMethod* meth, void* ptr, const char* name) = 0;
-  virtual bool isStaticCompiling() = 0;
-  virtual void resolveVirtualClass(Class* cl) = 0;
-  virtual void resolveStaticClass(Class* cl) = 0;
+  virtual JavaCompiler* Create(const std::string&) {
+    return this;
+  }
+  
+  virtual void* materializeFunction(JavaMethod* meth) {
+    fprintf(stderr, "Materializing a function in an empty compiler");
+    abort();
+    return 0;
+  }
 
-  virtual JavaCompiler* Create(const std::string&) = 0;
+  virtual void setMethod(JavaMethod* meth, void* ptr, const char* name) {
+    fprintf(stderr, "Implement me");
+    abort();
+  }
+  
+  virtual bool isStaticCompiling() {
+    fprintf(stderr, "Checking static compilation in an empty compiler");
+    abort();
+    return false;
+  }
 
-  virtual void staticCallBuf(Signdef* sign) = 0;
-  virtual void virtualCallBuf(Signdef* sign) = 0;
-  virtual void staticCallAP(Signdef* sign) = 0;
-  virtual void virtualCallAP(Signdef* sign) = 0;
+  virtual void resolveVirtualClass(Class* cl) {
+    fprintf(stderr, "Resolving a class in an empty compiler");
+    abort();
+  }
+
+  virtual void resolveStaticClass(Class* cl) {
+    fprintf(stderr, "Resolving a class in an empty compiler");
+    abort();
+  }
+
+
+  virtual void staticCallBuf(Signdef* sign) {
+    fprintf(stderr, "Asking for a callback in an empty compiler");
+    abort();
+  }
+
+  virtual void virtualCallBuf(Signdef* sign) {
+    fprintf(stderr, "Asking for a callback in an empty compiler");
+    abort();
+  }
+
+  virtual void staticCallAP(Signdef* sign) {
+    fprintf(stderr, "Asking for a callback in an empty compiler");
+    abort();
+  }
+
+  virtual void virtualCallAP(Signdef* sign) {
+    fprintf(stderr, "Asking for a callback in an empty compiler");
+    abort();
+  }
   
   virtual ~JavaCompiler() {}
 
