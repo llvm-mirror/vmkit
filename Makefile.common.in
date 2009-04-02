@@ -32,9 +32,9 @@ GLIBJ = @classpathglibj@
 # Pnet location
 PNETLIB = @pnetlocalprefix@
 
-# GC configuration
 LIBS += -lz
 
+# GC configuration
 ifeq ($(GCLIB), BoehmGC)
   LIBS += -lgc
 endif
