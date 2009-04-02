@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
       gccArgv[gccArgc++] = argv[i];
     } else if (argv[i][0] == '-' && argv[i][1] == 'o') {
       gccArgv[gccArgc++] = argv[i++];
-      gccArgv[gccArgc] = argv[i];
+      gccArgv[gccArgc++] = argv[i];
     } else if (argv[i][0] != '-') {
       char* name = argv[i];
       int len = strlen(name);
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
     gccArgv[gccArgc++] = "-lvmjc";
     gccArgv[gccArgc++] = "-lLLVMSupport";
     gccArgv[gccArgc++] = 0;
-    
+
     res = sys::Program::ExecuteAndWait(Prog, gccArgv);
     
   }
