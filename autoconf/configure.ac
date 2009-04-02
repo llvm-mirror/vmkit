@@ -555,6 +555,7 @@ AC_CONFIG_FILES(Makefile.config)
 AC_CONFIG_FILES([lib/JnJVM/Classpath/Classpath.h])
 AC_CONFIG_FILES([lib/N3/PNetLib/PNetPath.inc])
 AC_CONFIG_FILES([lib/N3/Mono/MonoPath.inc])
+AC_CONFIG_FILES([tools/llcj/LinkPaths.h])
 
 dnl Do special configuration of Makefiles
 AC_CONFIG_MAKEFILE(Makefile)
