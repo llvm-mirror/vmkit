@@ -15,6 +15,7 @@ include $(LEVEL)/Makefile.config
 ifeq ($(WITH_JNJVM), 1)
   PARALLEL_DIRS += jnjvm
   PARALLEL_DIRS += vmjc
+  PARALLEL_DIRS += llcj
 endif
 
 ifeq ($(WITH_N3_MONO), 1) 
