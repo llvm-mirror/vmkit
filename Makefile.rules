@@ -75,3 +75,25 @@ $(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
 clean-local::
 	$(Verb) $(RM) -f glibj.zip.s glibj.zip.bc glibj-optimized.zip.bc
 endif
+
+
+
+ifdef VMKIT_BUILD_ARCHIVE
+
+LibName.A := $(LibDir)/lib$(VMKIT_LIBRARYNAME).a
+
+all-local:: $(LibName.A)
+
+$(LibName.A): $(ProjLibsPaths) $(LibDir)/.dir
+	$(Echo) Building $(BuildMode) Archive Library $(notdir $@)
+	-$(Verb) $(RM) -f $@
+	$(Verb) $(Archive) $@ $(ProjLibsPaths)
+	$(Verb) $(Ranlib) $@
+
+clean-local::
+ifneq ($(strip $(LibName.A)),)
+	-$(Verb) $(RM) -f $(LibName.A)
+endif
+
+endif
+
