@@ -1129,7 +1129,7 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   Collector::initialise(0);
   
   char** newArgv = new char*[argc + 1];
-  memcpy(newArgv, argv, argc * sizeof(void*));
+  memcpy(newArgv, argv, argc * sizeof(char*));
   newArgv[argc] = mainClass;
  
   JavaCompiler* Comp = new JavaCompiler();
