@@ -277,6 +277,10 @@ public:
   /// this class file.
   ///
   void loadLibFromFile(Jnjvm* vm, const char* name);
+  
+  /// loadClassFromSelf - Load the main class if we are an executable.
+  ///
+  Class* loadClassFromSelf(Jnjvm* vm, const char* name);
 
 };
 

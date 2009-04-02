@@ -197,7 +197,9 @@ int main(int argc, char **argv) {
     gccArgv[gccArgc++] = "-ljnjvm";
     gccArgv[gccArgc++] = "-lvmjc";
     gccArgv[gccArgc++] = "-lLLVMSupport";
+#if !defined(__MACH__)
     gccArgv[gccArgc++] = "-rdynamic";
+#endif
     gccArgv[gccArgc++] = 0;
 
     res = sys::Program::ExecuteAndWait(Prog, gccArgv);

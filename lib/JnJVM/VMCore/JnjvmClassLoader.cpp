@@ -1020,6 +1020,17 @@ void JnjvmClassLoader::loadLibFromFile(Jnjvm* vm, const char* name) {
   }
 }
 
+Class* JnjvmClassLoader::loadClassFromSelf(Jnjvm* vm, const char* name) {
+  assert(classes->map.size() == 0);
+  Class* cl = (Class*)dlsym(SELF_HANDLE, name);
+  if (cl) {
+    static_init_t init = (static_init_t)(uintptr_t)cl->classLoader;
+    init(this);
+    insertAllMethodsInVM(vm);
+  }
+  return cl;
+}
+
 
 // Extern "C" functions called by the vmjc static intializer.
 extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,

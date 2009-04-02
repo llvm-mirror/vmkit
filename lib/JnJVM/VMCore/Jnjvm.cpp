@@ -886,8 +886,16 @@ void Jnjvm::loadBootstrap() {
 
 void Jnjvm::executeClass(const char* className, ArrayObject* args) {
   try {
-    const UTF8* name = appClassLoader->asciizConstructUTF8(className);
-    UserClass* cl = (UserClass*)appClassLoader->loadName(name, true, true);
+    
+    // First try to see if we are a self-contained executable.
+    UserClass* cl = appClassLoader->loadClassFromSelf(this, className);
+    
+    // If not, load the class.
+    if (!cl) {
+      const UTF8* name = appClassLoader->asciizConstructUTF8(className);
+      cl = (UserClass*)appClassLoader->loadName(name, true, true);
+    }
+    
     cl->initialiseClass(this);
   
     const UTF8* funcSign = 

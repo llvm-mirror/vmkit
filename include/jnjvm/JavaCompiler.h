@@ -37,8 +37,6 @@ public:
   }
   
   virtual bool isStaticCompiling() {
-    fprintf(stderr, "Checking static compilation in an empty compiler");
-    abort();
     return false;
   }
 
