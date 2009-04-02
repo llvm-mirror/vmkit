@@ -74,9 +74,9 @@ mvm::VirtualMachine* mvm::VirtualMachine::createJVM(JnjvClassLoader* JCL) {
 #else
   
 JnjvmClassLoader*
-mvm::VirtualMachine::initialiseJVM(JavaCompiler* Comp) {
+mvm::VirtualMachine::initialiseJVM(JavaCompiler* Comp, bool dlLoad) {
   initialiseVT();
-  return gc_new(JnjvmBootstrapLoader)(Comp);
+  return gc_new(JnjvmBootstrapLoader)(Comp, dlLoad);
 }
 
 mvm::VirtualMachine* mvm::VirtualMachine::createJVM(JnjvmClassLoader* C) {

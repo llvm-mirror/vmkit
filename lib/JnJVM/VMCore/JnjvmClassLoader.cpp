@@ -63,7 +63,7 @@ ClassArray ArrayOfLong;
 
 typedef void (*static_init_t)(JnjvmClassLoader*);
 
-JnjvmBootstrapLoader::JnjvmBootstrapLoader(JavaCompiler* Comp) {
+JnjvmBootstrapLoader::JnjvmBootstrapLoader(JavaCompiler* Comp, bool dlLoad) {
   
   hashUTF8 = new(allocator) UTF8Map(allocator, 0);
   classes = new(allocator) ClassMap();
@@ -164,19 +164,21 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(JavaCompiler* Comp) {
 
   // Now that native types have been loaded, try to find if we have a
   // pre-compiled rt.jar
-  nativeHandle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
-  if (nativeHandle) {
-    // Found it!
-    SuperArray = (Class*)dlsym(nativeHandle, "java.lang.Object");
+  if (dlLoad) {
+    nativeHandle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
+    if (nativeHandle) {
+      // Found it!
+      SuperArray = (Class*)dlsym(nativeHandle, "java.lang.Object");
     
-    if (SuperArray) {
-      ClassArray::SuperArray = (Class*)SuperArray->getInternal();
-      // We have the java/lang/Object class, execute the static initializer.
-      static_init_t init = (static_init_t)(uintptr_t)SuperArray->classLoader;
-      assert(init && "Loaded the wrong boot library");
-      init(this);
-      ClassArray::initialiseVT(SuperArray);
-    } 
+      if (SuperArray) {
+        ClassArray::SuperArray = (Class*)SuperArray->getInternal();
+        // We have the java/lang/Object class, execute the static initializer.
+        static_init_t init = (static_init_t)(uintptr_t)SuperArray->classLoader;
+        assert(init && "Loaded the wrong boot library");
+        init(this);
+        ClassArray::initialiseVT(SuperArray);
+      } 
+    }
   }
     
   // We haven't found a pre-compiled rt.jar, load the root class ourself.

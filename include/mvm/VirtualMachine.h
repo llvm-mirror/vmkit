@@ -56,7 +56,8 @@ public:
   /// waitForExit - Wait until the virtual machine stops its execution.
   virtual void waitForExit() = 0;
 
-  static jnjvm::JnjvmClassLoader* initialiseJVM(jnjvm::JavaCompiler* C = 0);
+  static jnjvm::JnjvmClassLoader* initialiseJVM(jnjvm::JavaCompiler* C,
+                                                bool dlLoad = true);
   static VirtualMachine* createJVM(jnjvm::JnjvmClassLoader* C = 0);
   
   static CompilationUnit* initialiseCLIVM();

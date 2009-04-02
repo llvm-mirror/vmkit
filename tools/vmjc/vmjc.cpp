@@ -111,6 +111,11 @@ AssumeCompiled("assume-compiled",
 static cl::opt<std::string>
 WithClinit("with-clinit", cl::desc("Clinit the given file"));
 
+static cl::opt<bool> 
+PrintStats("print-aot-stats", 
+           cl::desc("Print stats by the AOT compiler"));
+
+
 
 
 inline void addPass(FunctionPassManager *PM, Pass *P) {
@@ -209,7 +214,7 @@ int main(int argc, char **argv) {
     Collector::initialise(0);
     Collector::enable(0);
 
-    JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
+    JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp, false);
     addCommandLinePass(argv);
 
     if (!WithClinit.empty()) {
@@ -229,6 +234,8 @@ int main(int argc, char **argv) {
       MAOT->generateMain(MainClass.c_str(), WithJIT);
     }
 
+    if (PrintStats)
+      MAOT->printStats();
 
     if (DontPrint) {
       // Just use stdout.  We won't actually print anything on it.

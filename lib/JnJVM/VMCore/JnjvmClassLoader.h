@@ -337,9 +337,10 @@ public:
   void analyseClasspathEnv(const char*);
   
   /// createBootstrapLoader - Creates the bootstrap loader, first thing
-  /// to do before any execution of a JVM.
+  /// to do before any execution of a JVM. Also try to load libvmjc.so
+  /// if dlLoad is not false.
   ///
-  JnjvmBootstrapLoader(JavaCompiler* Comp);
+  JnjvmBootstrapLoader(JavaCompiler* Comp, bool dlLoad = true);
   JnjvmBootstrapLoader() {}
   
   virtual JavaString* UTF8ToStr(const UTF8* utf8);
