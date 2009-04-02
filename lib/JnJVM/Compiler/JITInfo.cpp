@@ -341,13 +341,13 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
     char* buf = (char*)alloca((signature->keyName->size << 1) + 1 + 11);
     signature->nativeName(buf, type);
     res = Function::Create(virt ? getVirtualBufType() : getStaticBufType(),
-                           GlobalValue::InternalLinkage, buf,
+                           GlobalValue::ExternalLinkage, buf,
                            Mod->getLLVMModule());
   
 
   } else {
     res = Function::Create(virt ? getVirtualBufType() : getStaticBufType(),
-                           GlobalValue::InternalLinkage, "",
+                           GlobalValue::ExternalLinkage, "",
                            Mod->getLLVMModule());
   }
 

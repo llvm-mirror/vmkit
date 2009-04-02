@@ -34,8 +34,6 @@ public:
   }
 
   virtual void setMethod(JavaMethod* meth, void* ptr, const char* name) {
-    fprintf(stderr, "Implement me");
-    abort();
   }
   
   virtual bool isStaticCompiling() {

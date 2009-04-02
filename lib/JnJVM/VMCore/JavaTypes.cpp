@@ -105,28 +105,48 @@ ObjectTypedef::ObjectTypedef(const UTF8* name, UTF8Map* map) {
 
 intptr_t Signdef::staticCallBuf() {
   if (!_staticCallBuf) {
-    initialLoader->getCompiler()->staticCallBuf(this);
+    char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
+    nativeName(buf, "static_buf");
+    bool unused = false;
+    _staticCallBuf = initialLoader->loadInLib(buf, unused);
+    if (!_staticCallBuf)
+      initialLoader->getCompiler()->staticCallBuf(this);
   }
   return _staticCallBuf;
 }
 
 intptr_t Signdef::virtualCallBuf() {
   if (!_virtualCallBuf) {
-    initialLoader->getCompiler()->virtualCallBuf(this);
+    char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
+    nativeName(buf, "virtual_buf");
+    bool unused = false;
+    _virtualCallBuf = initialLoader->loadInLib(buf, unused);
+    if (!_virtualCallBuf)
+      initialLoader->getCompiler()->virtualCallBuf(this);
   }
   return _virtualCallBuf;
 }
 
 intptr_t Signdef::staticCallAP() {
   if (!_staticCallAP) {
-    initialLoader->getCompiler()->staticCallAP(this);
+    char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
+    nativeName(buf, "static_ap");
+    bool unused = false;
+    _staticCallAP = initialLoader->loadInLib(buf, unused);
+    if (!_staticCallAP)
+      initialLoader->getCompiler()->staticCallAP(this);
   }
   return _staticCallAP;
 }
 
 intptr_t Signdef::virtualCallAP() {
   if (!_virtualCallAP) {
-    initialLoader->getCompiler()->virtualCallAP(this);
+    char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
+    nativeName(buf, "virtual_ap");
+    bool unused = false;
+    _virtualCallAP = initialLoader->loadInLib(buf, unused);
+    if (!_virtualCallAP)
+      initialLoader->getCompiler()->virtualCallAP(this);
   }
   return _virtualCallAP;
 }

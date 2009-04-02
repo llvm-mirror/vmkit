@@ -29,10 +29,12 @@ int main(int argc, char **argv) {
  
   bool runGCC = true;
   char* className = 0;
+  bool shared = false;
 
   for (int i = 1; i < argc; ++i) {
     if (!strcmp(argv[i], "-shared")) {
       gccArgv[gccArgc++] = argv[i];
+      shared = true;
     } else if (!strcmp(argv[i], "-O1") || !strcmp(argv[i], "-O2") ||
                !strcmp(argv[i], "-O3")) {
       opt = argv[i];
@@ -141,7 +143,13 @@ int main(int argc, char **argv) {
   }
 
   if (!res) {
-    sys::Path LlcOut = tempDir;
+    sys::Path LlcOut;
+    
+    if (runGCC)
+      LlcOut= tempDir;
+    else
+      LlcOut = sys::Path(sys::Path::GetCurrentDirectory());
+
     LlcOut.appendComponent(className);
     LlcOut.appendSuffix("s");
    
@@ -153,14 +161,15 @@ int main(int argc, char **argv) {
     }
     
     const char* llcArgv[8];
-    llcArgv[0] = Prog.toString().c_str();
-    llcArgv[1] = Out.toString().c_str();
-    llcArgv[2] = "-relocation-model=pic";
-    llcArgv[3] = "-disable-fp-elim";
-    llcArgv[4] = "-f";
-    llcArgv[5] = "-o";
-    llcArgv[6] = LlcOut.toString().c_str();
-    llcArgv[7] = 0;
+    int i = 0;
+    llcArgv[i++] = Prog.toString().c_str();
+    llcArgv[i++] = Out.toString().c_str();
+    if (shared) llcArgv[i++] = "-relocation-model=pic";
+    llcArgv[i++] = "-disable-fp-elim";
+    llcArgv[i++] = "-f";
+    llcArgv[i++] = "-o";
+    llcArgv[i++] = LlcOut.toString().c_str();
+    llcArgv[i++] = 0;
   
     res = sys::Program::ExecuteAndWait(Prog, llcArgv);
     Out = LlcOut;
@@ -188,6 +197,7 @@ int main(int argc, char **argv) {
     gccArgv[gccArgc++] = "-ljnjvm";
     gccArgv[gccArgc++] = "-lvmjc";
     gccArgv[gccArgc++] = "-lLLVMSupport";
+    gccArgv[gccArgc++] = "-rdynamic";
     gccArgv[gccArgc++] = 0;
 
     res = sys::Program::ExecuteAndWait(Prog, gccArgv);
