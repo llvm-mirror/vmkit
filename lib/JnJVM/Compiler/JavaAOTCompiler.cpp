@@ -1579,9 +1579,6 @@ void mainCompilerStart(JavaThread* th) {
    
     M->CreateStaticInitializer();
 
-    // Print stats before quitting.
-    M->printStats();
-
   } catch(std::string str) {
     fprintf(stderr, "Error : %s\n", str.c_str());
   }
@@ -1643,11 +1640,22 @@ void JavaAOTCompiler::generateMain(const char* name, bool jit) {
   Function* MainFunc = Function::Create(FuncTy, GlobalValue::ExternalLinkage,
                                         "main", TheModule);
   BasicBlock* currentBlock = BasicBlock::Create("enter", MainFunc);
-  
+ 
+  GlobalVariable* GvarArrayStr = new GlobalVariable(
+    ArrayType::get(Type::Int8Ty, strlen(name) + 1), true,
+    GlobalValue::InternalLinkage, 0, "mainClass", TheModule);
+
+
+  Constant* NameArray = ConstantArray::get(name, true);
+  GvarArrayStr->setInitializer(NameArray);
+  Value* Indices[2] = { JavaIntrinsics.constantZero,
+                        JavaIntrinsics.constantZero };
+  Value* ArgName = ConstantExpr::getGetElementPtr(GvarArrayStr, Indices, 2);
+
   Function::arg_iterator FuncVals = MainFunc->arg_begin();
   Value* Argc = FuncVals++;
   Value* Argv = FuncVals++;
-  Value* Args[3] = { Argc, Argv, ConstantArray::get(name, true) };
+  Value* Args[3] = { Argc, Argv, ArgName };
 
   FuncArgs.push_back(Args[2]->getType());
 
@@ -1655,7 +1663,8 @@ void JavaAOTCompiler::generateMain(const char* name, bool jit) {
 
   Function* CalledFunc = 
     Function::Create(FuncTy, GlobalValue::ExternalLinkage,
-                     jit ? "StartWithJIT" : "StartWithoutJIT", TheModule);
+                     jit ? "StartJnjvmWithJIT" : "StartJnjvmWithoutJIT",
+                     TheModule);
 
   Value* res = CallInst::Create(CalledFunc, Args, Args + 3, "", currentBlock);
   ReturnInst::Create(res, currentBlock);
