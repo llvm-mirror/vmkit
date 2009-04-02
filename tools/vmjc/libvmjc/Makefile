@@ -8,9 +8,6 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
-
-LEVEL = ../../..
-
 include $(LEVEL)/Makefile.config
 
 LIBRARYNAME = libvmjc
