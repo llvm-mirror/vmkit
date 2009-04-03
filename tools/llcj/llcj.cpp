@@ -30,11 +30,16 @@ int main(int argc, char **argv) {
   bool runGCC = true;
   char* className = 0;
   bool shared = false;
+  bool withJIT = false;
 
   for (int i = 1; i < argc; ++i) {
     if (!strcmp(argv[i], "-shared")) {
       gccArgv[gccArgc++] = argv[i];
       shared = true;
+    } else if (!strcmp(argv[i], "-with-jit") ||
+               !strcmp(argv[i], "--with-jit")) {
+      withJIT = true;
+      vmjcArgv[vmjcArgc++] = argv[i];
     } else if (!strcmp(argv[i], "-O1") || !strcmp(argv[i], "-O2") ||
                !strcmp(argv[i], "-O3")) {
       opt = argv[i];
@@ -58,9 +63,19 @@ int main(int argc, char **argv) {
       if (len > 4 && (!strcmp(&name[len - 4], ".jar") || 
                       !strcmp(&name[len - 4], ".zip"))) {
         vmjcArgv[vmjcArgc++] = name;
+        char* slash = strrchr(name, '/');
+        if (slash) {
+          name = slash;
+          len = strlen(name);
+        }
         className = strndup(name, len - 4);
       } else if (len > 6 && !strcmp(&name[len - 6], ".class")) {
         vmjcArgv[vmjcArgc++] = name;
+        char* slash = strrchr(name, '/');
+        if (slash) {
+          name = slash;
+          len = strlen(name);
+        }
         className = strndup(name, len - 6);
       } else {
         gccArgv[gccArgc++] = name;
@@ -110,9 +125,9 @@ int main(int argc, char **argv) {
   vmjcArgv[vmjcArgc++] = "-f";
   vmjcArgv[vmjcArgc++] = "-o";
   vmjcArgv[vmjcArgc++] = Out.toString().c_str();
- 
+
   res = sys::Program::ExecuteAndWait(Prog, vmjcArgv);
-  
+
   if (!res && opt) {
     sys::Path OptOut = tempDir;
     OptOut.appendComponent("llvmopt");
@@ -185,7 +200,7 @@ int main(int argc, char **argv) {
 
     gccArgv[0] = Prog.toString().c_str();
     gccArgv[gccArgc++] = Out.toString().c_str();
-    gccArgv[gccArgc++] = LLVMLibs;
+    gccArgv[gccArgc++] = "-L"LLVMLibs"/Release/lib";
     gccArgv[gccArgc++] = VMKITLibs1;
     gccArgv[gccArgc++] = VMKITLibs2;
     gccArgv[gccArgc++] = VMKITLibs3;
@@ -194,7 +209,11 @@ int main(int argc, char **argv) {
     gccArgv[gccArgc++] = "-lm";
     gccArgv[gccArgc++] = "-ldl";
     gccArgv[gccArgc++] = "-lz";
-    gccArgv[gccArgc++] = "-ljnjvm";
+    if (withJIT) {
+      gccArgv[gccArgc++] = "-ljnjvmjit";
+    } else {
+      gccArgv[gccArgc++] = "-ljnjvm";
+    }
     gccArgv[gccArgc++] = "-lvmjc";
     gccArgv[gccArgc++] = "-lLLVMSupport";
 #if !defined(__MACH__)
