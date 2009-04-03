@@ -860,7 +860,7 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
         char* rp = (char*)alloca(PATH_MAX);
         memset(rp, 0, PATH_MAX);
         rp = realpath(buf, rp);
-        if (rp[PATH_MAX - 1] == 0 && strlen(rp) != 0) {
+        if (rp && rp[PATH_MAX - 1] == 0 && strlen(rp) != 0) {
           struct stat st;
           stat(rp, &st);
           if ((st.st_mode & S_IFMT) == S_IFDIR) {
