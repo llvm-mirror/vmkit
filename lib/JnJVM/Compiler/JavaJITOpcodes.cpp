@@ -35,7 +35,7 @@
 
 #include "jnjvm/JnjvmModule.h"
 
-#if DEBUG > 0 && JNJVM_COMPILE > 0
+#if DEBUG > 0 && (JNJVM_COMPILE > 0 || JNJVM_EXECUTE > 0)
 #include "jnjvm/OpcodeNames.def"
 #endif
 
