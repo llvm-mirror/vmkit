@@ -15,10 +15,13 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llvm/LinkAllPasses.h"
+#include "llvm/LinkAllVMCore.h"
 #include "llvm/Module.h"
 #include "llvm/ModuleProvider.h"
 #include "llvm/PassManager.h"
 #include "llvm/Assembly/PrintModulePass.h"
+#include "llvm/CodeGen/LinkAllCodegenComponents.h"
 #include "llvm/Config/config.h"
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
