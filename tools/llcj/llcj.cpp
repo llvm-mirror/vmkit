@@ -68,7 +68,8 @@ int main(int argc, char **argv) {
           name = slash;
           len = strlen(name);
         }
-        className = strndup(name, len - 4);
+        className = strdup(name);
+        className[len - 4] = 0;
       } else if (len > 6 && !strcmp(&name[len - 6], ".class")) {
         vmjcArgv[vmjcArgc++] = name;
         char* slash = strrchr(name, '/');
@@ -76,7 +77,8 @@ int main(int argc, char **argv) {
           name = slash;
           len = strlen(name);
         }
-        className = strndup(name, len - 6);
+        className = strdup(name);
+        className[len - 6] = 0;
       } else {
         gccArgv[gccArgc++] = name;
       }
