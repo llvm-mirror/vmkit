@@ -1002,15 +1002,13 @@ extern void terminationHandler(int);
 static void serviceCPUMonitor(mvm::Thread* th) {
   while (true) {
     sleep(1);
-    for(mvm::Thread* cur = (mvm::Thread*)th->next(); cur != th;
-        cur = (mvm::Thread*)cur->next()) {
-      if (JavaThread::isJavaThread(cur)) {
+    for(JavaThread* cur = (Java*)th->next(); cur != th;
+        cur = (JavaThread*)cur->next()) {
         JavaThread* th = (JavaThread*)cur;
         if (!(th->StateWaiting)) {
           mvm::VirtualMachine* executingVM = cur->MyVM;
           assert(executingVM && "Thread with no VM!");
           ++executingVM->executionTime;
-        }
       }
     }
   }
@@ -1047,7 +1045,8 @@ void Jnjvm::runApplication(int argc, char** argv) {
   }
 }
 
-Jnjvm::Jnjvm(JnjvmBootstrapLoader* loader) : VirtualMachine() {
+Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, JnjvmBootstrapLoader* loader) : 
+  VirtualMachine(), allocator(Alloc) {
 
   classpath = getenv("CLASSPATH");
   if (!classpath) classpath = ".";

@@ -56,11 +56,6 @@ class JavaThread : public mvm::Thread {
 
 public:
   
-  /// VT - The virtual table of JavaThread objects, so that we know
-  /// if a thread is a JavaThread.
-  ///
-  static VirtualTable *VT;
-
   /// jniEnv - The JNI environment of the thread.
   ///
   void* jniEnv;
@@ -268,12 +263,6 @@ public:
   uint32_t eipIndex;
 #endif
 
-  /// isJavaThread - Is the given thread a Java thread?
-  ///
-  static bool isJavaThread(mvm::Thread* th) {
-    return ((void**)th)[0] == VT;
-  }
-  
 };
 
 } // end namespace jnjvm

@@ -17,9 +17,7 @@
 #include "types.h"
 
 #include "mvm/Allocator.h"
-#include "mvm/CompilationUnit.h"
 #include "mvm/Object.h"
-#include "mvm/PrintBuffer.h"
 
 #include "JnjvmConfig.h"
 
@@ -45,11 +43,12 @@ class UTF8;
 class UTF8Map;
 class ZipArchive;
 
+
 /// JnjvmClassLoader - Runtime representation of a class loader. It contains
 /// its own tables (signatures, UTF8, types) which are mapped to a single
 /// table for non-isolate environments.
 ///
-class JnjvmClassLoader : public mvm::Object {
+class JnjvmClassLoader : public mvm::PermanentObject {
 private:
 
   /// isolate - Which isolate defined me? Null for the bootstrap class loader.
@@ -73,9 +72,12 @@ private:
   /// JnjvmClassLoader - Allocate a user-defined class loader. Called on
   /// first use of a Java class loader.
   ///
-  JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader, Jnjvm* isolate);
+  JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc, JnjvmClassLoader& JCL,
+                   JavaObject* loader, Jnjvm* isolate);
 
 protected:
+  
+  JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc) : allocator(Alloc) {}
   
   /// TheCompiler - The Java compiler for this class loader.
   ///
@@ -95,14 +97,10 @@ protected:
 
 public:
   
-  /// VT - The virtual table of this class.
-  ///
-  static VirtualTable* VT;
-  
   /// allocator - Reference to the memory allocator, which will allocate UTF8s,
   /// signatures and types.
   ///
-  mvm::BumpPtrAllocator allocator;
+  mvm::BumpPtrAllocator& allocator;
  
   /// getIsolate - Returns the isolate that created this class loader.
   ///
@@ -127,12 +125,6 @@ public:
   /// tracer - Traces a JnjvmClassLoader for GC.
   ///
   virtual void TRACER;
-  
-  /// print - String representation of the loader for debugging purposes.
-  ///
-  virtual void print(mvm::PrintBuffer* buf) const {
-    buf->write("Java class loader<>");
-  } 
   
   /// getJnjvmLoaderFromJavaObject - Return the Jnjvm runtime representation
   /// of the given class loader.
@@ -212,17 +204,6 @@ public:
   ///
   ~JnjvmClassLoader();
   
-  /// JnjvmClassLoader - Default constructor, zeroes the field.
-  ///
-  JnjvmClassLoader() {
-    hashUTF8 = 0;
-    javaTypes = 0;
-    javaSignatures = 0;
-    TheCompiler = 0;
-    isolate = 0;
-    classes = 0;
-  }
-
   /// loadClass - The user class that defines the loadClass method.
   ///
   UserClass* loadClass;
@@ -313,20 +294,10 @@ private:
 
 public:
   
-  /// VT - The virtual table of this class.
-  ///
-  static VirtualTable* VT;
-  
   /// tracer - Traces instances of this class.
   ///
   virtual void TRACER;
 
-  /// print - String representation of the loader, for debugging purposes.
-  ///
-  virtual void print(mvm::PrintBuffer* buf) const {
-    buf->write("Jnjvm bootstrap loader<>");
-  } 
-  
   /// libClasspathEnv - The paths for dynamic libraries of Classpath, separated
   /// by ':'.
   ///
@@ -344,8 +315,8 @@ public:
   /// to do before any execution of a JVM. Also try to load libvmjc.so
   /// if dlLoad is not false.
   ///
-  JnjvmBootstrapLoader(JavaCompiler* Comp, bool dlLoad = true);
-  JnjvmBootstrapLoader() {}
+  JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc, JavaCompiler* Comp,
+                       bool dlLoad = true);
   
   virtual JavaString* UTF8ToStr(const UTF8* utf8);
 
@@ -416,6 +387,48 @@ public:
   }
 
   ~JnjvmBootstrapLoader();
+};
+
+/// VMClassLoader - The vmdata object that will be placed in and will only
+/// be referenced by the java.lang.Classloader Java object. Having a
+/// separate class between VMClassLoader and JnjvmClassLoader allows to
+/// have a JnjvmClassLoader non-GC object. Also the finalizer of this class
+/// will delete the internal class loader and we do not have to implement
+/// hacks in the java.lang.Classloader finalizer.
+class VMClassLoader : public mvm::Object {
+private:
+  
+  /// JCL - The internal class loader.
+  ///
+  JnjvmClassLoader* JCL;
+
+public:
+
+  /// VT - The VirtualTable for this GC-class.
+  static VirtualTable* VT;
+
+  /// TRACER - Trace the internal class loader.
+  virtual void TRACER {
+    JCL->CALL_TRACER;
+  }
+
+  /// ~VMClassLoader - Delete the internal class loader.
+  ///
+  ~VMClassLoader() {
+    if (JCL) JCL->~JnjvmClassLoader();
+  }
+
+  /// VMClassLoader - Default constructors.
+  ///
+  VMClassLoader(JnjvmClassLoader* J) : JCL(J) {}
+  VMClassLoader() : JCL(0) {}
+
+  /// getClassLoader - Get the internal class loader.
+  ///
+  JnjvmClassLoader* getClassLoader() {
+    return JCL;
+  }
+
 };
 
 } // end namespace jnjvm

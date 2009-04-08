@@ -63,7 +63,10 @@ ClassArray ArrayOfLong;
 
 typedef void (*static_init_t)(JnjvmClassLoader*);
 
-JnjvmBootstrapLoader::JnjvmBootstrapLoader(JavaCompiler* Comp, bool dlLoad) {
+JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
+                                           JavaCompiler* Comp, 
+                                           bool dlLoad) : 
+    JnjvmClassLoader(Alloc) {
   
   hashUTF8 = new(allocator) UTF8Map(allocator, 0);
   classes = new(allocator) ClassMap();
@@ -277,8 +280,9 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(JavaCompiler* Comp, bool dlLoad) {
   
 }
 
-JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
-                                   Jnjvm* I) {
+JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
+                                   JnjvmClassLoader& JCL, JavaObject* loader,
+                                   Jnjvm* I) : allocator(Alloc) {
   bootstrapLoader = JCL.bootstrapLoader;
   TheCompiler = bootstrapLoader->getCompiler()->Create("Applicative loader");
   
@@ -300,7 +304,7 @@ JnjvmClassLoader::JnjvmClassLoader(JnjvmClassLoader& JCL, JavaObject* loader,
   /// If the appClassLoader is already set in the isolate, then we need
   /// a new one each time a class loader is allocated.
   if (isolate->appClassLoader) {
-    isolate = gc_new(Jnjvm)(bootstrapLoader);
+    isolate = new Jnjvm(allocator, bootstrapLoader);
     isolate->memoryLimit = 4000000;
     isolate->threadLimit = 10;
     isolate->parent = I->parent;
@@ -776,14 +780,25 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
   
   if (loader == 0)
     return vm->bootstrapLoader;
-  
+ 
+  JnjvmClassLoader* JCL = 0;
   Classpath* upcalls = vm->bootstrapLoader->upcalls;
-  JnjvmClassLoader* JCL = 
-    (JnjvmClassLoader*)(upcalls->vmdataClassLoader->getObjectField(loader));
+  VMClassLoader* vmdata = 
+    (VMClassLoader*)(upcalls->vmdataClassLoader->getObjectField(loader));
   
-  if (!JCL) {
-    JCL = gc_new(JnjvmClassLoader)(*vm->bootstrapLoader, loader, vm);
-    (upcalls->vmdataClassLoader->setObjectField(loader, (JavaObject*)JCL));
+  if (!vmdata) {
+    loader->acquire();
+    vmdata = 
+      (VMClassLoader*)(upcalls->vmdataClassLoader->getObjectField(loader));
+    if (!vmdata) {
+      mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();    
+      JCL = new(*A) JnjvmClassLoader(*A, *vm->bootstrapLoader, loader, vm);
+      vmdata = gc_new(VMClassLoader)(JCL);
+      (upcalls->vmdataClassLoader->setObjectField(loader, (JavaObject*)vmdata));
+    }
+    loader->release();
+  } else {
+    JCL = vmdata->getClassLoader();
   }
 
   return JCL;
@@ -823,7 +838,13 @@ JnjvmClassLoader::~JnjvmClassLoader() {
     allocator.Deallocate(javaSignatures);
   }
 
+  for (std::vector<void*>::iterator i = nativeLibs.begin(); 
+       i < nativeLibs.end(); ++i) {
+    dlclose(*i);
+  }
+
   delete TheCompiler;
+  delete &allocator;
 }
 
 

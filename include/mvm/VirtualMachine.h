@@ -33,7 +33,7 @@ namespace mvm {
 /// VirtualMachine - This class is the root of virtual machine classes. It
 /// defines what a VM should be.
 ///
-class VirtualMachine : public mvm::Object {
+class VirtualMachine : public mvm::PermanentObject {
 protected:
 
   VirtualMachine() {
@@ -48,7 +48,9 @@ protected:
 #endif
   }
 public:
-  
+
+  virtual void TRACER {}
+
   /// runApplication - Run an application. The application name is in
   /// the arguments, hence it is the virtual machine's job to parse them.
   virtual void runApplication(int argc, char** argv) = 0;

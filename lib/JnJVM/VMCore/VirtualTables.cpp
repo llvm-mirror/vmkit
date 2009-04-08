@@ -1,9 +1,22 @@
 //===--- VirtualTables.cpp - Virtual methods for JnJVM objects ------------===//
 //
-//                              JnJVM
+//                          The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+// 
+// This file contains GC specific tracing functions. It is used by the
+// GCMmap2 garbage collector and may be of use for other GCs. Boehm GC does
+// not use these functions.
+//
+// The file is divided into four parts:
+// (1) Declaration of internal GC classes.
+// (2) Tracing roots of objects: regular object, native array, object array.
+// (3) Tracing a class loader, which involves tracing the Java objects
+//     referenced by classes.
+// (4) Tracing the roots of a program: the JVM and the threads.
 //
 //===----------------------------------------------------------------------===//
 
@@ -21,68 +34,126 @@
 
 using namespace jnjvm;
 
+//===----------------------------------------------------------------------===//
+// List of classes that will be GC-allocated. One should try to keep this
+// list as minimal as possible, and a GC class must be defined only if
+// absolutely necessary. If there is an easy way to avoid it, do it! Only
+// Java classes should be GC classes.
+// Having many GC classes gives more work to the GC for the scanning phase
+// and for the relocation phase (for copying collectors.
+//
+// In JnJVM, we identified two cases where we really need to declare GC
+// classes: the fat lock object and the class loader.
+//
+// For the fat lock there are many design decisions that we could make to
+// make it a non-GC class. We leave this as a TODO.
+//
+// For the class loader, we decided that this was the best solution because
+// otherwise it would involve hacks on the java.lang.Classloader class.
+// Therefore, we create a new GC class with a finalize method that will
+// delete the internal class loader when the Java object class loader is
+// not reachable anymore. This also relies on the java.lang.Classloader class
+// referencing an object of type VMClassLoader (this is the case in GNU
+// Classpath with the vmdata field).
+//===----------------------------------------------------------------------===//
+
 #define INIT(X) VirtualTable* X::VT = 0
 
-  INIT(JavaThread);
-  INIT(Jnjvm);
-  INIT(JnjvmBootstrapLoader);
-  INIT(JnjvmClassLoader);
   INIT(LockObj);
+  INIT(VMClassLoader);
 
 #undef INIT
 
-void ArrayObject::TRACER {
-  if (getClass()) getClass()->classLoader->MARK_AND_TRACE;
+//===----------------------------------------------------------------------===//
+// Root trace methods for Java objects. There are three types of roots:
+// (1) Object whose class is not an array: needs to trace the classloader and
+//     the lock.
+// (2) Object whose class is an array of objects: needs to trace root (1) and
+//     all elements in the array.
+// (3) Object whose class is a native array: only needs to trace the lock. The
+//     classloader is the bootstrap loader and is traced by the JVM.
+//===----------------------------------------------------------------------===//
+
+
+/// Method for scanning the root of an object. This method is called by all
+/// JavObjects except native Java arrays.
+void JavaObject::tracer() {
+  if (getClass()) getClass()->classLoader->getJavaClassLoader()->markAndTrace();
+  LockObj* l = lockObj();
+  if (l) l->markAndTrace();
+}
+
+extern "C" void JavaObjectTracer(JavaObject* obj) {
+  obj->JavaObject::tracer();
+}
+
+/// Method for scanning an array whose elements are JavaObjects. This method is
+/// called by all non-native Java arrays.
+void ArrayObject::tracer() {
+  JavaObject::tracer();
   for (sint32 i = 0; i < size; i++) {
     if (elements[i]) elements[i]->MARK_AND_TRACE;
-  }
-  LockObj* l = lockObj();
-  if (l) l->MARK_AND_TRACE;
+  } 
 }
 
-#ifdef MULTIPLE_GC
-extern "C" void ArrayObjectTracer(ArrayObject* obj, Collector* GC) {
-#else
 extern "C" void ArrayObjectTracer(ArrayObject* obj) {
-#endif
-  obj->CALL_TRACER;
+  obj->ArrayObject::tracer();
 }
 
-#ifdef MULTIPLE_GC
-extern "C" void JavaArrayTracer(JavaArray* obj, Collector* GC) {
-#else
+/// Method for scanning a native array. Only scan the lock. The classloader of
+/// the class is the bootstrap loader and therefore does not need to be
+/// scanned here.
+void JavaArray::tracer() {
+  LockObj* l = lockObj();
+  if (l) l->markAndTrace();
+}
+
 extern "C" void JavaArrayTracer(JavaArray* obj) {
-#endif
-  LockObj* l = obj->lockObj();
-  if (l) l->MARK_AND_TRACE;
+  obj->JavaArray::tracer();
 }
 
-void JavaArray::TRACER {}
 
-#define TRACE_VECTOR(type,alloc,name) {                             \
-  for (std::vector<type, alloc<type> >::iterator i = name.begin(),  \
-       e = name.end(); i!= e; ++i) {                                \
-    (*i)->MARK_AND_TRACE; }}
+//===----------------------------------------------------------------------===//
+// Support for scanning Java objects referenced by classes. All classes must
+// trace:
+// (1) The classloader of the parents (super and interfaces) as well as its
+//     own class loader.
+// (2) The delegatee object (java.lang.Class) if it exists.
+//
+// Additionaly, non-primitive and non-array classes mus trace:
+// (3) The bytes that represent the class file.
+// (4) The static instance.
+// (5) The class loaders referenced indirectly in the class file (TODO).
+//===----------------------------------------------------------------------===//
 
-void CommonClass::TRACER {
-  if (super) super->classLoader->MARK_AND_TRACE;
-  for (uint32 i = 0; i < nbInterfaces; ++i) {
-    interfaces[i]->classLoader->MARK_AND_TRACE;
-  }
-  classLoader->MARK_AND_TRACE;
-  for (uint32 i = 0; i < NR_ISOLATES; ++i) {
-    // If the delegatee was static allocated, we want to trace its fields.
-    if (delegatee[i]) {
-      delegatee[i]->CALL_TRACER;
-      delegatee[i]->MARK_AND_TRACE;
+
+void CommonClass::tracer() {
+  
+  if (super && super->classLoader) {
+    JavaObject* Obj = super->classLoader->getJavaClassLoader();
+    if (Obj) Obj->markAndTrace();
+  
+    for (uint32 i = 0; i < nbInterfaces; ++i) {
+      if (interfaces[i]->classLoader)
+        interfaces[i]->classLoader->getJavaClassLoader()->markAndTrace();
     }
   }
 
+  if (classLoader)
+    classLoader->getJavaClassLoader()->markAndTrace();
+
+  for (uint32 i = 0; i < NR_ISOLATES; ++i) {
+    // If the delegatee was static allocated, we want to trace its fields.
+    if (delegatee[i]) {
+      delegatee[i]->tracer();
+      delegatee[i]->markAndTrace();
+    }
+  }
 }
 
-void Class::TRACER {
-  CommonClass::CALL_TRACER;
-  bytes->MARK_AND_TRACE;
+void Class::tracer() {
+  CommonClass::tracer();
+  bytes->markAndTrace();
   
   for (uint32 i =0; i < NR_ISOLATES; ++i) {
     TaskClassMirror &M = IsolateInfo[i];
@@ -92,88 +163,47 @@ void Class::TRACER {
   }
 }
 
-void JavaObject::TRACER {
-  if (getClass()) getClass()->classLoader->MARK_AND_TRACE;
-  LockObj* l = lockObj();
-  if (l) l->MARK_AND_TRACE;
-}
+//===----------------------------------------------------------------------===//
+// Support for scanning a classloader. A classloader must trace:
+// (1) All the classes it has loaded.
+// (2) All the strings referenced in class files.
+//
+// The class loader does not need to trace its java.lang.Classloader Java object
+// because if we end up here, this means that the Java object is already being
+// scanned. Only the Java object traces the class loader.
+//
+// Additionaly, the bootstrap loader must trace:
+// (3) The delegatees of native array classes. Since these classes are not in
+//     the class map and they are not GC-allocated, we must trace the objects
+//     referenced by the delegatees.
+//===----------------------------------------------------------------------===//
 
-#ifdef MULTIPLE_GC
-extern "C" void JavaObjectTracer(JavaObject* obj, Collector* GC) {
-#else
-extern "C" void JavaObjectTracer(JavaObject* obj) {
-#endif
-  if (obj->getClass()) obj->getClass()->classLoader->MARK_AND_TRACE;
-  LockObj* l = obj->lockObj();
-  if (l) l->MARK_AND_TRACE;
-}
-
-static void traceClassMap(ClassMap* classes) {
+void JnjvmClassLoader::tracer() {
+  
   for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
        i!= e; ++i) {
     CommonClass* cl = i->second;
-    if (cl->isClass()) cl->asClass()->CALL_TRACER;
-    else cl->CALL_TRACER;
+    if (cl->isClass()) cl->asClass()->tracer();
+    else cl->tracer();
   }
-}
-
-void JavaThread::TRACER {
-  javaThread->MARK_AND_TRACE;
-  if (pendingException) pendingException->MARK_AND_TRACE;
-#ifdef SERVICE
-  ServiceException->MARK_AND_TRACE;
-#endif
-}
-
-void Jnjvm::TRACER {
-  appClassLoader->MARK_AND_TRACE;
-  TRACE_VECTOR(JavaObject*, gc_allocator, globalRefs);
-  bootstrapLoader->MARK_AND_TRACE;
-#if defined(ISOLATE_SHARING)
-  JnjvmSharedLoader::sharedLoader->MARK_AND_TRACE;
-#endif
   
-  mvm::Thread* th = th->get();
-  th->CALL_TRACER;
-  for (mvm::Thread* cur = (mvm::Thread*)th->next(); cur != th; 
-       cur = (mvm::Thread*)cur->next()) {
-    cur->CALL_TRACER;
-  }
-
-#ifdef SERVICE
-  parent->MARK_AND_TRACE;
-#endif
-}
-
-void JnjvmClassLoader::TRACER {
-  javaLoader->MARK_AND_TRACE;
-  traceClassMap(classes);
-  isolate->MARK_AND_TRACE;
   for (std::vector<JavaString*,
        gc_allocator<JavaString*> >::iterator i = strings.begin(), 
        e = strings.end(); i!= e; ++i) {
-    (*i)->MARK_AND_TRACE; 
+    (*i)->markAndTrace();
     // If the string was static allocated, we want to trace its lock.
     LockObj* l = (*i)->lockObj();
-    if (l) l->MARK_AND_TRACE;
+    if (l) l->markAndTrace();
   }
+  
 }
 
-void JnjvmBootstrapLoader::TRACER {
-  
-  traceClassMap(classes);
-
-  for (std::vector<JavaString*, gc_allocator<JavaString*> >::iterator i = 
-       bootstrapLoader->strings.begin(),
-       e = bootstrapLoader->strings.end(); i!= e; ++i) {
-    (*i)->MARK_AND_TRACE;
-    // If the string was static allocated, we want to trace its lock.
-    LockObj* l = (*i)->lockObj();
-    if (l) l->MARK_AND_TRACE;
-  }
+void JnjvmBootstrapLoader::tracer() {
+ 
+  JnjvmClassLoader::tracer();
 
 #define TRACE_DELEGATEE(prim) \
-  prim->CALL_TRACER;
+  prim->tracer();
 
   TRACE_DELEGATEE(upcalls->OfVoid);
   TRACE_DELEGATEE(upcalls->OfBool);
@@ -185,4 +215,45 @@ void JnjvmBootstrapLoader::TRACER {
   TRACE_DELEGATEE(upcalls->OfLong);
   TRACE_DELEGATEE(upcalls->OfDouble);
 #undef TRACE_DELEGATEE
+}
+
+//===----------------------------------------------------------------------===//
+// Support for scanning the roots of a program: JVM and threads. The JVM
+// must trace:
+// (1) The bootstrap class loader: where core classes live.
+// (2) The applicative class loader: the JVM may be the ony one referencing it.
+// (3) Global references from JNI.
+//
+// The threads must trace:
+// (1) Their stack (already done by the GC in the case of GCMmap2 or Boehm)
+// (2) Their pending exception if there is one.
+// (3) The java.lang.Thread delegate.
+//===----------------------------------------------------------------------===//
+
+
+void Jnjvm::tracer() {
+  bootstrapLoader->tracer();
+  
+  appClassLoader->getJavaClassLoader()->markAndTrace();
+  
+  for (std::vector<JavaObject*, gc_allocator<JavaObject*> >::iterator 
+       i = globalRefs.begin(), e = globalRefs.end(); i!= e; ++i) {
+    (*i)->markAndTrace(); 
+  }
+
+#if defined(ISOLATE_SHARING)
+  JnjvmSharedLoader::sharedLoader->markAndTrace();
+#endif
+  
+#ifdef SERVICE
+  parent->tracer();
+#endif
+}
+
+void JavaThread::tracer() {
+  if (pendingException) pendingException->markAndTrace();
+  javaThread->markAndTrace();
+#ifdef SERVICE
+  ServiceException->markAndTrace();
+#endif
 }

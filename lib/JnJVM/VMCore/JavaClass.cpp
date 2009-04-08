@@ -739,16 +739,16 @@ void JavaField::initialise(Class* cl, const UTF8* N, const UTF8* T, uint16 A) {
 
 void Class::readParents(Reader& reader) {
   uint16 superEntry = reader.readU2();
-  const UTF8* superUTF8 = superEntry ? 
-        ctpInfo->resolveClassName(superEntry) : 0;
+  // Use the depth field to store the super entry, to not touch super. The
+  // super field is used during GC scanning and must only be of one type.
+  depth = superEntry;
 
   uint16 nbI = reader.readU2();
-  // Use the super field to store the UTF8. since the field is never
-  // used before actually loading the super, this is harmless.
-  super = (Class*)superUTF8;
 
   // Use the regular interface array to store the UTF8s. Since this array
   // is never used before actually loading the interfaces, this is harmless.
+  // During GC scanning, the check is made on super. So the array of
+  // interfaces is not used if super is null.
   interfaces = (Class**)
     classLoader->allocator.Allocate(nbI * sizeof(Class*));
   nbInterfaces = nbI;
@@ -758,7 +758,13 @@ void Class::readParents(Reader& reader) {
 }
 
 void UserClass::loadParents() {
-  const UTF8* superUTF8 = (const UTF8*)super;
+  const UTF8* superUTF8 = depth ? ctpInfo->resolveClassName(depth) : 0;
+  // W prevent the GC from scanning the interfaces until they
+  // are loaded. So we temporarly consider that this class does not
+  // have any interfaces. This is harmless because the class is being
+  // resolved and can not be used elsewhere for getting its interfaces.
+  uint32 realNbInterfaces = nbInterfaces;
+  nbInterfaces = 0;
   if (superUTF8 == 0) {
     depth = 0;
     display = (CommonClass**)
@@ -774,10 +780,13 @@ void UserClass::loadParents() {
     display[depth] = this;
   }
 
-  for (unsigned i = 0; i < nbInterfaces; i++)
+  for (unsigned i = 0; i < realNbInterfaces; i++)
     interfaces[i] = 
       ((UserClass*)classLoader->loadName((const UTF8*)interfaces[i],
                                          true, true));
+
+  // Interfaces are loaded, put the real number back in place.
+  nbInterfaces = realNbInterfaces;
 }
 
 

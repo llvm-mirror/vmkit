@@ -64,13 +64,14 @@ public:
 
 class BumpPtrAllocator {
 private:
-  LockNormal TheLock;
+  SpinLock TheLock;
   llvm::BumpPtrAllocator Allocator;
 public:
   void* Allocate(size_t sz) {
-    TheLock.lock();
+    TheLock.acquire();
     void* res = Allocator.Allocate(sz, sizeof(void*));
-    TheLock.unlock();
+    TheLock.release();
+    memset(res, 0, sz);
     return res;
   }
 

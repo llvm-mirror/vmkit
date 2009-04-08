@@ -56,13 +56,16 @@ void GCCollector::do_collect() {
   mvm::Thread* th = th->get();
   mvm::Thread* tcur = th;
 
-  // First, trace threads.
+  // First, trace the VM.
+  th->MyVM->tracer();
+
+  // Second, trace the threads.
   do {
     th->tracer();
     tcur = (mvm::Thread*)tcur->next();
   } while (tcur != th);
 
-  // Then trace stack objects.
+  // Third, trace stack objects.
   for(cur=used_nodes->next(); cur!=used_nodes; cur=cur->next())
     trace(cur);
 

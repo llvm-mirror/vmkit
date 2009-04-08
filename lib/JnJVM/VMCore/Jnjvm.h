@@ -105,7 +105,7 @@ class Jnjvm : public mvm::VirtualMachine {
 public:
   /// allocator - Memory allocator of this JVM.
   ///
-  mvm::BumpPtrAllocator allocator;
+  mvm::BumpPtrAllocator& allocator;
   
   /// throwable - The java/lang/Throwable class. In an isolate
   /// environment, generated code references this field.
@@ -169,10 +169,6 @@ private:
   static void mainCompilerStart(JavaThread* thread);
 
 public:
-  
-  /// VT - The virtual table of this class.
-  ///
-  static VirtualTable* VT;
   
   /// print - Prints the JVM for debugging purposes.
   ///
@@ -312,14 +308,6 @@ public:
   ///
   ~Jnjvm();
 
-  /// Jnjvm - Allocate a default JVM, for VT initialization.
-  ///
-  Jnjvm() { 
-#ifdef ISOLATE
-    IsolateID = 0;
-#endif
-  }
-
   /// addProperty - Adds a new property in the postProperties map.
   ///
   void addProperty(char* key, char* value);
@@ -332,7 +320,7 @@ public:
 
   /// Jnjvm - Allocates a new JVM.
   ///
-  Jnjvm(JnjvmBootstrapLoader* loader);
+  Jnjvm(mvm::BumpPtrAllocator& Alloc, JnjvmBootstrapLoader* loader);
   
   /// runApplication - Runs the application with the given command line.
   /// User-visible function, inherited by the VirtualMachine class.

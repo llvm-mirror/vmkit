@@ -156,7 +156,7 @@ void VMCommonClass::TRACER {
   TRACE_VECTOR(VMField*, staticFields, std::allocator);
   delegatee->MARK_AND_TRACE;
   TRACE_VECTOR(VMCommonClass*, display, std::allocator);
-  vm->MARK_AND_TRACE;
+  vm->CALL_TRACER;
 
   assembly->MARK_AND_TRACE;
   //funcs->MARK_AND_TRACE;
@@ -227,7 +227,7 @@ void VMObject::TRACER {
 
 void VMThread::TRACER {
   vmThread->MARK_AND_TRACE;
-  vm->MARK_AND_TRACE;
+  vm->CALL_TRACER;
   //lock->MARK_AND_TRACE;
   //varcond->MARK_AND_TRACE;
   pendingException->MARK_AND_TRACE;
@@ -270,7 +270,7 @@ void Assembly::TRACER {
   rsrcSection->MARK_AND_TRACE;
   relocSection->MARK_AND_TRACE;
   CLIHeader->MARK_AND_TRACE;
-  vm->MARK_AND_TRACE;
+  vm->CALL_TRACER;
   delegatee->MARK_AND_TRACE;
   // TODO trace assembly refs...
 }

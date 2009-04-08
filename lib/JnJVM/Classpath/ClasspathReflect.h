@@ -37,7 +37,10 @@ public:
     obj->pd->MARK_AND_TRACE;
     obj->signers->MARK_AND_TRACE;
     obj->constructor->MARK_AND_TRACE;
-    if (obj->vmdata) obj->vmdata->classLoader->MARK_AND_TRACE;
+    if (obj->vmdata) {
+      JavaObject* Obj = obj->vmdata->classLoader->getJavaClassLoader();
+      if (Obj) Obj->MARK_AND_TRACE;
+    }
   }
 };
 
