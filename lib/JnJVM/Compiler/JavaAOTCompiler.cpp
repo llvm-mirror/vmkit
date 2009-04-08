@@ -384,8 +384,7 @@ Constant* JavaAOTCompiler::CreateConstantForBaseObject(CommonClass* cl) {
   Elmts.push_back(Cl);
 
   // lock
-  Constant* L = ConstantInt::get(Type::Int64Ty,
-                                 mvm::Thread::get()->getThreadID());
+  Constant* L = ConstantInt::get(Type::Int64Ty, 0);
   Elmts.push_back(ConstantExpr::getIntToPtr(L, JnjvmModule::ptrType));
 
   return ConstantStruct::get(STy, Elmts);

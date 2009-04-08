@@ -1950,16 +1950,6 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         GEP = GetElementPtrInst::Create(res, gep, gep + 2, "", currentBlock);
         new StoreInst(valCl, GEP, currentBlock);
         
-        Value* gep1[2] = { module->constantZero,
-                           module->JavaObjectLockOffsetConstant };
-        Value* lockPtr = GetElementPtrInst::Create(res, gep1, gep1 + 2,
-                                                   "", currentBlock);
-        Value* threadId = getCurrentThread();
-        
-        threadId = new BitCastInst(threadId, module->ptrType, "", currentBlock);
-
-        new StoreInst(threadId, lockPtr, currentBlock);
-
         push(res, false);
 
         break;

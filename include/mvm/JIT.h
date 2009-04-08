@@ -109,6 +109,7 @@ public:
   llvm::Function* llvm_atomic_lcs_i16;
   llvm::Function* llvm_atomic_lcs_i32;
   llvm::Function* llvm_atomic_lcs_i64;
+  llvm::Function* llvm_atomic_lcs_ptr;
 
 
   static llvm::ConstantInt* constantInt8Zero;
@@ -151,9 +152,9 @@ public:
   static llvm::Constant*    constantPtrNull;
   static llvm::ConstantInt* constantPtrSize;
   static llvm::ConstantInt* constantThreadIDMask;
-  static llvm::ConstantInt* constantLockedMask;
-  static llvm::ConstantInt* constantThreadFreeMask;
+  static llvm::ConstantInt* constantFatMask;
   static llvm::ConstantInt* constantPtrOne;
+  static llvm::ConstantInt* constantPtrZero;
   static const llvm::PointerType* ptrType;
   static const llvm::PointerType* ptr32Type;
   static const llvm::PointerType* ptrPtrType;

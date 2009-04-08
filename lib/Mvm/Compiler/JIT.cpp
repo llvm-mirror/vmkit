@@ -117,9 +117,10 @@ void MvmModule::initialise(bool Fast, Module* M, TargetMachine* T) {
   constantDoubleMinusZero = ConstantFP::get(Type::DoubleTy, -0.0);
   constantFloatMinusZero = ConstantFP::get(Type::FloatTy, -0.0f);
   constantThreadIDMask = ConstantInt::get(pointerSizeType, mvm::Thread::IDMask);
-  constantLockedMask = ConstantInt::get(pointerSizeType, ThinMask);
-  constantThreadFreeMask = ConstantInt::get(pointerSizeType, ReservedMask);
+  constantFatMask = ConstantInt::get(pointerSizeType, 
+      pointerSizeType == Type::Int32Ty ? 0x80000000 : 0x8000000000000000LL);
   constantPtrOne = ConstantInt::get(pointerSizeType, 1);
+  constantPtrZero = ConstantInt::get(pointerSizeType, 0);
 
   constantPtrNull = Constant::getNullValue(ptrType); 
   constantPtrSize = ConstantInt::get(Type::Int32Ty, sizeof(void*));
@@ -189,6 +190,9 @@ MvmModule::MvmModule(llvm::Module* module) {
   llvm_atomic_lcs_i16 = module->getFunction("llvm.atomic.cmp.swap.i16.p0i16");
   llvm_atomic_lcs_i32 = module->getFunction("llvm.atomic.cmp.swap.i32.p0i32");
   llvm_atomic_lcs_i64 = module->getFunction("llvm.atomic.cmp.swap.i64.p0i64");
+
+  llvm_atomic_lcs_ptr = pointerSizeType == Type::Int32Ty ? llvm_atomic_lcs_i32 :
+                                                           llvm_atomic_lcs_i64;
 }
 
 
@@ -232,9 +236,9 @@ llvm::ConstantFP*  MvmModule::constantDoubleMinusZero;
 llvm::Constant*    MvmModule::constantPtrNull;
 llvm::ConstantInt* MvmModule::constantPtrSize;
 llvm::ConstantInt* MvmModule::constantThreadIDMask;
-llvm::ConstantInt* MvmModule::constantLockedMask;
-llvm::ConstantInt* MvmModule::constantThreadFreeMask;
+llvm::ConstantInt* MvmModule::constantFatMask;
 llvm::ConstantInt* MvmModule::constantPtrOne;
+llvm::ConstantInt* MvmModule::constantPtrZero;
 const llvm::PointerType* MvmModule::ptrType;
 const llvm::PointerType* MvmModule::ptr32Type;
 const llvm::PointerType* MvmModule::ptrPtrType;

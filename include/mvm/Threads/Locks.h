@@ -148,13 +148,10 @@ public:
 #endif
 
   static const uint64_t ThinMask = 0x7FFFFF00;
-  static const uint64_t ReservedMask = 0X7FFFFFFF;
   static const uint64_t ThinCountMask = 0xFF;
 
 
-/// ThinLock - This class is an implementation of thin locks with reservation.
-/// The creator of the lock reserves this lock so that a lock only needs
-/// a comparison and not an expensive compare and swap. The template class
+/// ThinLock - This class is an implementation of thin locks. The template class
 /// TFatLock is a virtual machine specific fat lock.
 ///
 template <class TFatLock, class Owner>
@@ -166,7 +163,7 @@ public:
   /// we have reached 0xFF locks.
   void overflowThinLock(Owner* O = 0) {
     TFatLock* obj = TFatLock::allocate(O);
-    obj->acquireAll(256);
+    obj->acquireAll(257);
     lock = ((uintptr_t)obj >> 1) | FatMask;
   }
  
@@ -174,7 +171,7 @@ public:
   /// creating this lock.
   ///
   void initialise() {
-    lock = (uintptr_t)mvm::Thread::get()->getThreadID();
+    lock = 0;
   }
   
   /// ThinLock - Calls initialize.
@@ -188,65 +185,54 @@ public:
   TFatLock* changeToFatlock(Owner* O) {
     if (!(lock & FatMask)) {
       TFatLock* obj = TFatLock::allocate(O);
-      uintptr_t val = ((uintptr_t)obj >> 1) | FatMask;
-      uint32 count = lock & ThinCountMask;
-      obj->acquireAll(count);
+      uint32 val = (((uint32) obj) >> 1) | FatMask;
+      uint32 count = lock & 0xFF;
+      obj->acquireAll(count + 1);
       lock = val;
       return obj;
     } else {
       return (TFatLock*)(lock << 1);
     }
   }
- 
 
   /// acquire - Acquire the lock.
   void acquire(Owner* O = 0) {
     uint64_t id = mvm::Thread::get()->getThreadID();
-    if ((lock & ReservedMask) == id) {
-      lock |= 1;
-    } else if ((lock & ThinMask) == id) {
-      if ((lock & ThinCountMask) == ThinCountMask) {
-        overflowThinLock(O);
-      } else {
-        ++lock;
-      }
-    } else {
-      uintptr_t currentLock = lock & ThinMask;
-      uintptr_t val = 
-        (uintptr_t)__sync_val_compare_and_swap((uintptr_t)&lock, currentLock,
-                                               (id + 1));
-      if (val != currentLock) {
-        if (val & FatMask) {
-end:
-          //fat lock!
-          TFatLock* obj = (TFatLock*)(lock << 1);
-          obj->acquire();
+    uintptr_t val = __sync_val_compare_and_swap((uintptr_t)&lock, 0, id);
+
+    if (val != 0) {
+      //fat!
+      if (!(val & FatMask)) {
+        if ((val & ThinMask) == id) {
+          if ((val & ThinCountMask) != ThinCountMask) {
+            lock++;
+          } else {
+            overflowThinLock(O);
+          }
         } else {
           TFatLock* obj = TFatLock::allocate(O);
-          val = ((uintptr_t)obj >> 1) | FatMask;
-          uint32 count = 0;
+          uintptr_t val = ((uintptr_t)obj >> 1) | FatMask;
 loop:
-          if (lock & FatMask) goto end;
-
-          while ((lock & ThinCountMask) != 0) {
+          uint32 count = 0;
+          while (lock) {
             if (lock & FatMask) {
 #ifdef USE_GC_BOEHM
               delete obj;
 #endif
               goto end;
             }
-            else {
-              mvm::Thread::yield(&count);
-            }
+            else mvm::Thread::yield(&count);
           }
         
-          currentLock = lock & ThinMask;
-          uintptr_t test = 
-            (uintptr_t)__sync_val_compare_and_swap((uintptr_t)&lock,
-                                                   currentLock, val);
-          if (test != currentLock) goto loop;
+          uintptr_t test = __sync_val_compare_and_swap((uintptr_t*)&lock, 0, val);
+          if (test) goto loop;
           obj->acquire();
         }
+      } else {
+
+end:
+        TFatLock* obj = (TFatLock*)(lock << 1);
+        obj->acquire();
       }
     }
   }
@@ -254,12 +240,14 @@ loop:
   /// release - Release the lock.
   void release() {
     uint64 id = mvm::Thread::get()->getThreadID();
-    if ((lock & ThinMask) == id) {
-      --lock;
-    } else {
+    if (lock == id) {
+      lock = 0;
+    } else if (lock & FatMask) {
       TFatLock* obj = (TFatLock*)(lock << 1);
       obj->release();
-    } 
+    } else {
+      lock--;
+    }
   }
 
   /// broadcast - Wakes up all threads waiting for this lock.
@@ -283,7 +271,8 @@ loop:
   /// lock.
   bool owner() {
     uint64 id = mvm::Thread::get()->getThreadID();
-    if ((lock & ThinMask) == id) return true;
+    if (id == lock) return true;
+    if ((lock & 0x7FFFFF00) == id) return true;
     if (lock & FatMask) {
       TFatLock* obj = (TFatLock*)(lock << 1);
       return obj->owner();
