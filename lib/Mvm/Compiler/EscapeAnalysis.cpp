@@ -11,13 +11,15 @@
 #include "llvm/Constants.h"
 #include "llvm/Function.h"
 #include "llvm/GlobalVariable.h"
+#include "llvm/Module.h"
 #include "llvm/Pass.h"
 #include "llvm/Instructions.h"
+#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/Debug.h"
 
+#include <cstddef>
 #include <map>
-#include "unistd.h"
 
 #include "mvm/GC/GC.h"
 
@@ -29,24 +31,38 @@ namespace {
   public:
     static char ID;
     uint64_t pageSize;
-    EscapeAnalysis(Function* alloc = 0) : 
-      FunctionPass((intptr_t)&ID) {
-      Allocator = alloc;
+    EscapeAnalysis() : FunctionPass((intptr_t)&ID) {
       pageSize = getpagesize();
     }
 
+    virtual void getAnalysisUsage(AnalysisUsage &AU) const {
+      AU.addRequired<LoopInfo>();
+    }
+
     virtual bool runOnFunction(Function &F);
+
   private:
-    Function* Allocator;
     bool processMalloc(Instruction* I, Value* Size, Value* VT);
   };
+
   char EscapeAnalysis::ID = 0;
   RegisterPass<EscapeAnalysis> X("EscapeAnalysis", "Escape Analysis Pass");
 
 bool EscapeAnalysis::runOnFunction(Function& F) {
   bool Changed = false;
+  Function* Allocator = F.getParent()->getFunction("gcmalloc");
+  if (!Allocator) return Changed;
+
+  LoopInfo* LI = &getAnalysis<LoopInfo>();
+
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
-    BasicBlock *Cur = BI; 
+    BasicBlock *Cur = BI;
+   
+    // Don't bother if we're in a loop. We rely on the memory manager to
+    // allocate with a bump pointer allocator. Sure we could analyze more
+    // to see if the object could in fact be stack allocated, but just be
+    // lazy for now.
+    if (LI->getLoopFor(Cur)) continue;
 
     for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
       Instruction *I = II;
@@ -162,8 +178,8 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT) {
 }
 
 namespace mvm {
-FunctionPass* createEscapeAnalysisPass(llvm::Function* alloc) {
-
-  return new EscapeAnalysis(alloc);
+FunctionPass* createEscapeAnalysisPass() {
+  return new EscapeAnalysis();
 }
+
 }

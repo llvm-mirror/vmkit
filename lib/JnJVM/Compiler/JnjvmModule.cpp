@@ -529,7 +529,7 @@ JavaLLVMCompiler::~JavaLLVMCompiler() {
 }
 
 namespace mvm {
-  llvm::FunctionPass* createEscapeAnalysisPass(llvm::Function*);
+  llvm::FunctionPass* createEscapeAnalysisPass();
 }
 
 namespace jnjvm {
@@ -545,7 +545,6 @@ void JavaLLVMCompiler::addJavaPasses() {
   
   JavaFunctionPasses = new FunctionPassManager(TheModuleProvider);
   JavaFunctionPasses->add(new TargetData(TheModule));
-  Function* func = JavaIntrinsics.JavaObjectAllocateFunction;
-  JavaFunctionPasses->add(mvm::createEscapeAnalysisPass(func));
+  JavaFunctionPasses->add(mvm::createEscapeAnalysisPass());
   JavaFunctionPasses->add(createLowerConstantCallsPass());
 }
