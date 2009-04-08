@@ -1136,8 +1136,9 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   Collector::initialise(0);
   
   char** newArgv = new char*[argc + 1];
-  memcpy(newArgv, argv, argc * sizeof(char*));
-  newArgv[argc] = mainClass;
+  memcpy(newArgv + 1, argv, argc * sizeof(char*));
+  newArgv[0] = newArgv[1];
+  newArgv[1] = mainClass;
  
   JavaCompiler* Comp = new JavaCompiler();
   JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);

@@ -224,8 +224,9 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   Collector::initialise(0);
  
   char** newArgv = new char*[argc + 1];
-  memcpy(newArgv, argv, argc * sizeof(void*));
-  newArgv[argc] = mainClass;
+  memcpy(newArgv + 1, argv, argc * sizeof(void*));
+  newArgv[0] = newArgv[1];
+  newArgv[1] = mainClass;
 
   JavaJITCompiler* Comp = new JavaJITCompiler("JITModule");
   mvm::MvmModule::AddStandardCompilePasses();
