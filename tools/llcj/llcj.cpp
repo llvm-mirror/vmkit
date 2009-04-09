@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
 
     gccArgv[0] = Prog.toString().c_str();
     gccArgv[gccArgc++] = Out.toString().c_str();
-    gccArgv[gccArgc++] = "-L"LLVMLibs"/Release/lib";
+    gccArgv[gccArgc++] = LLVMLibs;
     gccArgv[gccArgc++] = VMKITLibs1;
     gccArgv[gccArgc++] = VMKITLibs2;
     gccArgv[gccArgc++] = VMKITLibs3;
