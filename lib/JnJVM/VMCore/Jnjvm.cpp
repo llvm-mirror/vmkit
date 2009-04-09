@@ -787,7 +787,8 @@ void Jnjvm::loadBootstrap() {
   void* stringVT = ((void*)upcalls->newString->getVirtualVT());
   uint32 size = upcalls->newString->virtualTableSize * sizeof(void*);
   if (!JavaString::internStringVT) {
-    JavaString::internStringVT = bootstrapLoader->allocator.Allocate(size);
+    JavaString::internStringVT = 
+      (VirtualTable*)bootstrapLoader->allocator.Allocate(size);
     memcpy(JavaString::internStringVT, stringVT, size);
     ((void**)(JavaString::internStringVT))[VT_DESTRUCTOR_OFFSET] = 
       (void*)(uintptr_t)JavaString::stringDestructor;

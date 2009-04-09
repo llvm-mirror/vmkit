@@ -145,7 +145,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
 #endif
 
 VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
-  VirtualTable * res = malloc(VT_SIZE);
+  VirtualTable * res = (VirtualTable*)malloc(VT_SIZE);
   memcpy(res, VMObject::VT, VT_SIZE);
 #ifdef WITH_TRACER  
   Function* func = Function::Create(markAndTraceLLVMType,
@@ -244,7 +244,7 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
 }
 
 VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
-  VirtualTable * res = malloc(VT_SIZE);
+  VirtualTable * res = (VirtualTable*)malloc(VT_SIZE);
   memcpy(res, VMObject::VT, VT_SIZE);
 #ifdef WITH_TRACER  
   const Type* type = stat ? cl->staticType : cl->virtualType;

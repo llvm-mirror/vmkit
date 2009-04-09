@@ -330,7 +330,8 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::Allocator& allocator) {
 
   uint32 primSize = cl->isPrimitive() ? 
     cl->asPrimitiveClass()->primSize : sizeof(JavaObject*);
-  VirtualTable* VT = cl->isPrimitive() ? JavaArrayVT : ArrayObjectVT;
+  VirtualTable* VT = (VirtualTable*) 
+    (cl->isPrimitive() ? JavaArrayVT : ArrayObjectVT);
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + n * primSize;
   JavaArray* res = (JavaArray*)allocator.allocateManagedObject(size, VT);
   res->initialise(this);
@@ -343,7 +344,8 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator) {
 
   uint32 primSize = cl->isPrimitive() ? 
     cl->asPrimitiveClass()->primSize : sizeof(JavaObject*);
-  VirtualTable* VT = cl->isPrimitive() ? JavaArrayVT : ArrayObjectVT;
+  VirtualTable* VT = (VirtualTable*) 
+    (cl->isPrimitive() ? JavaArrayVT : ArrayObjectVT);
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + n * primSize;
   
   JavaArray* res = (JavaArray*)allocator.Allocate(size);

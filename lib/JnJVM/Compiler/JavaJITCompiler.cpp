@@ -148,7 +148,8 @@ void JavaJITCompiler::makeVT(Class* cl) {
 
 #ifndef WITHOUT_VTABLE
   VirtualTable* VT = cl->virtualVT;
-  
+ 
+  assert(VT);
   // Fill the virtual table with function pointers.
   ExecutionEngine* EE = mvm::MvmModule::executionEngine;
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {

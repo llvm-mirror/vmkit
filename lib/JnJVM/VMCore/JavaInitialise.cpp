@@ -30,7 +30,7 @@ static void initialiseVT() {
 
 # define INIT(X) { \
   X fake; \
-  X::VT = ((void**)(void*)(&fake))[0]; }
+  X::VT = ((VirtualTable**)(void*)(&fake))[0]; }
 
   INIT(LockObj);
   INIT(VMClassLoader);

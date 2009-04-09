@@ -125,7 +125,7 @@ void JavaLLVMCompiler::allocateVT(Class* cl) {
     assert(super->virtualVT && "Super does not have a VT!");
     memcpy(VT, super->virtualVT, cl->super->virtualTableSize * sizeof(void*));
   } else {
-    VT = JavaObjectVT;
+    VT = (VirtualTable*)JavaObjectVT;
   }
 
   cl->virtualVT = VT;

@@ -11,11 +11,15 @@
 #ifndef MVM_GC_H
 #define MVM_GC_H
 
-#include <sys/types.h>
+#include <stdint.h>
 
 typedef void (*gc_lock_recovery_fct_t)(int, int, int, int, int, int, int, int);
 
-typedef void VirtualTable;
+struct VirtualTable {
+  uintptr_t destructor;
+  uintptr_t operatorDelete;
+  uintptr_t tracer;
+};
 
 class gcRoot {
 public:
