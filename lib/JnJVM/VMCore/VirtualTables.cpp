@@ -232,7 +232,7 @@ void JnjvmBootstrapLoader::tracer() {
 
 
 void Jnjvm::tracer() {
-	bootstrapLoader->tracer();
+  bootstrapLoader->tracer();
   
   if (appClassLoader) appClassLoader->getJavaClassLoader()->markAndTrace();
   
