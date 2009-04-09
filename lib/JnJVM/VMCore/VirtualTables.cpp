@@ -232,9 +232,9 @@ void JnjvmBootstrapLoader::tracer() {
 
 
 void Jnjvm::tracer() {
-  bootstrapLoader->tracer();
+	bootstrapLoader->tracer();
   
-  appClassLoader->getJavaClassLoader()->markAndTrace();
+  if (appClassLoader) appClassLoader->getJavaClassLoader()->markAndTrace();
   
   for (std::vector<JavaObject*, gc_allocator<JavaObject*> >::iterator 
        i = globalRefs.begin(), e = globalRefs.end(); i!= e; ++i) {
