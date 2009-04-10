@@ -322,6 +322,25 @@ void ClassArray::init(JnjvmClassLoader* loader, const UTF8* n,
   access = ACC_FINAL | ACC_ABSTRACT | ACC_PUBLIC | JNJVM_ARRAY;
 }
 
+void ClassArray::initPrimitive(JnjvmClassLoader* loader, const UTF8* n,
+                               UserCommonClass* base) {
+  CommonClass::init(loader, n);
+  
+  _baseClass = base;
+  super = ClassArray::SuperArray;
+  interfaces = ClassArray::InterfacesArray;
+  nbInterfaces = 2;
+  
+  virtualVT->tracer = (uintptr_t)JavaArrayTracer;
+  virtualVT->cl = this;
+  
+  depth = 1;
+  display = (CommonClass**)loader->allocator.Allocate(2 * sizeof(CommonClass*));
+  display[0] = ClassArray::SuperArray;
+  display[1] = this;
+  access = ACC_FINAL | ACC_ABSTRACT | ACC_PUBLIC | JNJVM_ARRAY;
+}
+
 JavaArray* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
   if (n < 0)
     vm->negativeArraySizeException(n);

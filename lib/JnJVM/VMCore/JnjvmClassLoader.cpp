@@ -52,14 +52,23 @@
 
 using namespace jnjvm;
 
-ClassArray ArrayOfBool;
-ClassArray ArrayOfByte;
-ClassArray ArrayOfChar;
-ClassArray ArrayOfShort;
-ClassArray ArrayOfInt;
-ClassArray ArrayOfFloat;
-ClassArray ArrayOfDouble;
-ClassArray ArrayOfLong;
+JavaVirtualTable ArrayOfBoolVT;
+JavaVirtualTable ArrayOfByteVT;
+JavaVirtualTable ArrayOfCharVT;
+JavaVirtualTable ArrayOfShortVT;
+JavaVirtualTable ArrayOfIntVT;
+JavaVirtualTable ArrayOfFloatVT;
+JavaVirtualTable ArrayOfDoubleVT;
+JavaVirtualTable ArrayOfLongVT;
+
+ClassArray ArrayOfBool(ArrayOfBoolVT);
+ClassArray ArrayOfByte(ArrayOfByteVT);
+ClassArray ArrayOfChar(ArrayOfCharVT);
+ClassArray ArrayOfShort(ArrayOfShortVT);
+ClassArray ArrayOfInt(ArrayOfIntVT);
+ClassArray ArrayOfFloat(ArrayOfFloatVT);
+ClassArray ArrayOfDouble(ArrayOfDoubleVT);
+ClassArray ArrayOfLong(ArrayOfLongVT);
 
 extern "C" void JavaArrayTracer(JavaObject*);
 
@@ -620,10 +629,8 @@ ClassArray*
 JnjvmBootstrapLoader::constructPrimitiveArray(ClassArray& cl, const UTF8* name,
                                               ClassPrimitive* baseClass) {
     
-  cl.CommonClass::init(this, name);
-  cl.ClassArray::init(this, name, baseClass);
+  cl.initPrimitive(this, name, baseClass);
   classes->map.insert(std::make_pair(name, &cl));
-  cl.virtualVT->tracer = (uintptr_t)JavaArrayTracer;
   return &cl;
 }
 

@@ -34,8 +34,6 @@ using namespace jnjvm;
 using namespace llvm;
 
 extern JavaVirtualTable JavaArrayVT;
-extern JavaVirtualTable ArrayObjectVT;
-extern JavaVirtualTable JavaObjectVT;
 
 extern ClassArray ArrayOfBool;
 extern ClassArray ArrayOfByte;
@@ -1277,7 +1275,11 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
 #define PRIMITIVE_ARRAY(name) \
   varGV = new GlobalVariable(ATy, true, GlobalValue::ExternalLinkage, \
                              0, #name, getLLVMModule()); \
-  arrayClasses.insert(std::make_pair(&name, varGV));
+  arrayClasses.insert(std::make_pair(&name, varGV)); \
+  varGV = new GlobalVariable(JnjvmModule::VTType->getContainedType(0), true, \
+                             GlobalValue::ExternalLinkage, \
+                             0, #name"VT", getLLVMModule()); \
+  virtualTables.insert(std::make_pair(name.virtualVT, varGV));
   
   PRIMITIVE_ARRAY(ArrayOfBool)
   PRIMITIVE_ARRAY(ArrayOfByte)

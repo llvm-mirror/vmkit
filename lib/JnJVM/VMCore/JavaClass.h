@@ -915,10 +915,15 @@ public:
   ///
   void init(JnjvmClassLoader* loader, const UTF8* name,
             UserCommonClass* baseClass);
-
-  /// ClassArray - Empty constructor.
+  
+  /// initPrimitive - Initialize the primitive array class.
   ///
-  ClassArray() {}
+  void initPrimitive(JnjvmClassLoader* loader, const UTF8* name,
+                     UserCommonClass* baseClass);
+
+  /// ClassArray - Constructor with a VT.
+  ///
+  ClassArray(JavaVirtualTable& VT) { virtualVT = &VT; }
 
   /// ClassArray - Construct a Java array class with the given name.
   ///
