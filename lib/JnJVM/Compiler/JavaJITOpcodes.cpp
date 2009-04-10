@@ -1861,7 +1861,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
           LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[charId];
           sizeElement = LAI.sizeInBytesConstant;
-          TheVT = TheCompiler->getPrimitiveArrayVT();
+          TheVT = TheCompiler->getVirtualTable(dcl->virtualVT);
         } else {
           uint16 index = readU2(bytecodes, i);
           CommonClass* cl = 0;
@@ -1886,17 +1886,21 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
               valCl = new BitCastInst(valCl, module->JavaCommonClassType, "",
                                       currentBlock);
             }
+            TheVT = TheCompiler->getVirtualTable(dcl->virtualVT);
 
           } else {
             const llvm::Type* Ty = 
-              PointerType::getUnqual(module->JavaCommonClassType);
+              PointerType::getUnqual(module->JavaClassArrayType);
             Value* args[2]= { valCl, Constant::getNullValue(Ty) };
             valCl = CallInst::Create(module->GetArrayClassFunction, args,
                                      args + 2, "", currentBlock);
+            TheVT = CallInst::Create(module->GetVTFromClassArrayFunction, valCl, "",
+                                     currentBlock);
+            valCl = new BitCastInst(valCl, module->JavaCommonClassType, "",
+                                    currentBlock);
           }
 
           sizeElement = module->constantPtrSize;
-          TheVT = TheCompiler->getReferenceArrayVT();
         }
         Value* arg1 = popAsInt();
 
@@ -1943,12 +1947,6 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         arg1 = new IntToPtrInst(arg1, module->ptrType, "", currentBlock);
         new StoreInst(arg1, GEP, currentBlock);
-        
-        // Set the class
-        Value* gep[2] = { module->constantZero,
-                          module->JavaObjectClassOffsetConstant };
-        GEP = GetElementPtrInst::Create(res, gep, gep + 2, "", currentBlock);
-        new StoreInst(valCl, GEP, currentBlock);
         
         push(res, false);
 

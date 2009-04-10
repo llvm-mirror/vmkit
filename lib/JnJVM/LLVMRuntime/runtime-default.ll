@@ -5,8 +5,8 @@
 ;;; A virtual table is an array of function pointers.
 %VT = type [0 x i32 (...)*]
 
-;;; The root of all Java Objects: a VT, a class and a lock.
-%JavaObject = type { %VT*, %JavaCommonClass*, i8* }
+;;; The root of all Java Objects: a VT and a lock.
+%JavaObject = type { %VT*, i8* }
 
 ;;; Types for Java arrays. A size of 0 means an undefined size.
 %JavaArray = type { %JavaObject, i8* }
@@ -61,7 +61,7 @@
                      %UTF8*, %UTF8*, i8, i8*, i32, i8* }
 
 %JavaClassPrimitive = type { %JavaCommonClass, i32 }
-%JavaClassArray = type { %JavaCommonClass, %JavaCommonClass* }
+%JavaClassArray = type { %JavaCommonClass, %JavaCommonClass*, %VT* }
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Constant calls for Jnjvm runtime internal objects field accesses ;;;;;;;;;
@@ -84,6 +84,10 @@ declare i8* @getLock(%JavaObject*)
 
 ;;; getVTFromClass - Get the VT of a class from its runtime representation.
 declare %VT* @getVTFromClass(%JavaClass*) readnone 
+
+;;; getVTFromClassArray - Get the VT of an array class from its runtime
+;;; representation.
+declare %VT* @getVTFromClassArray(%JavaClassArray*) readnone 
 
 ;;; getObjectSizeFromClass - Get the size of a class from its runtime
 ;;; representation.
@@ -188,8 +192,8 @@ declare %JavaObject* @getClassDelegatee(%JavaCommonClass*) readnone
 declare %JavaObject* @jnjvmRuntimeDelegatee(%JavaCommonClass*) readnone 
 
 ;;; getArrayClass - Get the array user class of the user class.
-declare %JavaCommonClass* @getArrayClass(%JavaCommonClass*, 
-                                         %JavaCommonClass**) readnone
+declare %JavaClassArray* @getArrayClass(%JavaCommonClass*, 
+                                        %JavaClassArray**) readnone
 
 declare i8 @getFinalInt8Field(i8*) readnone
 declare i16 @getFinalInt16Field(i16*) readnone

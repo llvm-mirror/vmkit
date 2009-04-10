@@ -57,7 +57,7 @@ public:
 
 /// LockObj - This class represents a Java monitor.
 ///
-class LockObj : public mvm::Object {
+class LockObj : public gc {
   friend class JavaObject;
 private:
 
@@ -105,6 +105,8 @@ public:
     return &varcond;
   }
 
+  /// VT - LockObj is GC-allocated, so we must make the VT explicit.
+  ///
   static VirtualTable* VT;
 
   ~LockObj() {}
@@ -114,25 +116,20 @@ public:
 
 /// JavaObject - This class represents a Java object.
 ///
-class JavaObject : public mvm::Object {
+class JavaObject : public gc {
 private:
   
   /// waitIntern - internal wait on a monitor
   ///
   void waitIntern(struct timeval *info, bool timed);
   
-  /// classOf - The class of this object.
-  ///
-  UserCommonClass* classOf;
-
 public:
 
   /// getClass - Returns the class of this object.
   ///
   UserCommonClass* getClass() const {
-    return classOf;
+    return ((JavaVirtualTable*)getVirtualTable())->cl;
   }
-
 
   /// lock - The monitor of this object. Most of the time null.
   ///
@@ -157,7 +154,7 @@ public:
   ///
   void notifyAll();
  
-  /// overflowThinLokc - Notify that the thin lock has overflowed.
+  /// overflowThinLock - Notify that the thin lock has overflowed.
   ///
   void overflowThinLock() {
     lock.overflowThinLock();
@@ -166,14 +163,13 @@ public:
   /// initialise - Initialises the object.
   ///
   void initialise(UserCommonClass* cl) {
-    this->classOf = cl; 
   }
 
   /// instanceOf - Is this object's class of type the given class?
   ///
   bool instanceOf(UserCommonClass* cl) {
     if (!this) return false;
-    else return this->classOf->isAssignableFrom(cl);
+    else return this->getClass()->isAssignableFrom(cl);
   }
 
   /// acquire - Acquire the lock on this object.
@@ -199,7 +195,6 @@ public:
     if (obj == 0) JavaThread::get()->getJVM()->nullPointerException("");
 #endif
   
-  virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 
 

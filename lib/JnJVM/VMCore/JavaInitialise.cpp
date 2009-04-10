@@ -10,6 +10,7 @@
 #include "mvm/VirtualMachine.h"
 
 #include "JavaArray.h"
+#include "JavaClass.h"
 #include "JavaObject.h"
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
@@ -22,9 +23,7 @@
 using namespace jnjvm;
 
 
-void* JavaArrayVT[12 + VT_SIZE];
-void* ArrayObjectVT[12 + VT_SIZE];
-void* JavaObjectVT[12 + VT_SIZE];
+JavaVirtualTable JavaObjectVT;
 
 static void initialiseVT() {
 
@@ -47,12 +46,10 @@ static void initialiseVT() {
 #define INIT(X) { \
   X fake; \
   void* V = ((void**)(void*)(&fake))[0]; \
-  memcpy(X##VT, V, VT_SIZE); \
-  ((void**)X##VT)[0] = 0; }
+  memcpy(&(X##VT), V, sizeof(VirtualTable)); \
+  X##VT.destructor = 0; }
 
   INIT(JavaObject);
-  INIT(JavaArray);
-  INIT(ArrayObject);
 #undef INIT
 }
 

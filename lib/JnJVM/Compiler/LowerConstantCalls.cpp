@@ -177,10 +177,18 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Changed = true;
           Value* val = Call.getArgument(0); // get the object
           Value* args2[2] = { module->constantZero,
-                              module->JavaObjectClassOffsetConstant };
-          Value* classPtr = GetElementPtrInst::Create(val, args2, args2 + 2,
-                                                      "", CI);
-          Value* cl = new LoadInst(classPtr, "", CI);
+                              module->JavaObjectVTOffsetConstant };
+          Value* VTPtr = GetElementPtrInst::Create(val, args2, args2 + 2,
+                                                   "", CI);
+          Value* VT = new LoadInst(VTPtr, "", CI);
+          Value* args3[2] = { module->constantZero,
+                              module->OffsetClassInVTConstant };
+
+          Value* clPtr = GetElementPtrInst::Create(VT, args3, args3 + 2,
+                                                   "", CI);
+          Value* cl = new LoadInst(clPtr, "", CI);
+          cl = new BitCastInst(cl, module->JavaCommonClassType, "", CI);
+
           CI->replaceAllUsesWith(cl);
           CI->eraseFromParent();
         } else if (V == module->GetVTFromClassFunction) {
@@ -189,6 +197,17 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* val = Call.getArgument(0);
           Value* indexes[2] = { module->constantZero, 
                                 module->OffsetVTInClassConstant };
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
+                                                   "", CI);
+          Value* VT = new LoadInst(VTPtr, "", CI);
+          CI->replaceAllUsesWith(VT);
+          CI->eraseFromParent();
+        } else if (V == module->GetVTFromClassArrayFunction) {
+          Changed = true;
+          
+          Value* val = Call.getArgument(0);
+          Value* indexes[2] = { module->constantZero, 
+                                module->OffsetVTInClassArrayConstant };
           Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
                                                    "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
@@ -432,9 +451,9 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             I->getParent()->getTerminator()->eraseFromParent();
 
             Constant* init = 
-              Constant::getNullValue(module->JavaCommonClassType);
+              Constant::getNullValue(module->JavaClassArrayType);
             GlobalVariable* GV = 
-              new GlobalVariable(module->JavaCommonClassType, false,
+              new GlobalVariable(module->JavaClassArrayType, false,
                                  GlobalValue::ExternalLinkage,
                                  init, "", TheCompiler->getLLVMModule());
 
@@ -444,7 +463,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 
             BasicBlock* OKBlock = BasicBlock::Create("", &F);
             BasicBlock* NotOKBlock = BasicBlock::Create("", &F);
-            PHINode* node = PHINode::Create(module->JavaCommonClassType, "",
+            PHINode* node = PHINode::Create(module->JavaClassArrayType, "",
                                             OKBlock);
             node->addIncoming(LoadedGV, CI->getParent());
 

@@ -1564,9 +1564,16 @@ void JavaJIT::invokeNew(uint16 index) {
   Value* Size = 0;
   
   if (cl) {
-    VT = TheCompiler->getVirtualTable(cl);
+    VT = TheCompiler->getVirtualTable(cl->virtualVT);
     LLVMClassInfo* LCI = TheCompiler->getClassInfo(cl);
     Size = LCI->getVirtualSize();
+    
+    bool needsCheck = needsInitialisationCheck(cl, compilingClass);
+    if (needsCheck) {
+      Cl = invoke(module->ForceInitialisationCheckFunction, Cl, "",
+                  currentBlock);
+    }
+
   } else {
     VT = CallInst::Create(module->GetVTFromClassFunction, Cl, "",
                           currentBlock);
@@ -1576,15 +1583,6 @@ void JavaJIT::invokeNew(uint16 index) {
   
   Value* val = invoke(module->JavaObjectAllocateFunction, Size, VT, "",
                       currentBlock);
-  
-  // Set the class
-  
-  Value* gep[2] = { module->constantZero,
-                    module->JavaObjectClassOffsetConstant };
-  Value* GEP = GetElementPtrInst::Create(val, gep, gep + 2, "",
-                                         currentBlock);
-  Cl = new BitCastInst(Cl, module->JavaCommonClassType, "", currentBlock);
-  new StoreInst(Cl, GEP, currentBlock);
   
   push(val, false);
 }

@@ -40,8 +40,10 @@ const UTF8* Attribut::sourceFileAttribut = 0;
 Class* ClassArray::SuperArray;
 Class** ClassArray::InterfacesArray;
 
-extern void* JavaArrayVT[];
-extern void* ArrayObjectVT[];
+extern JavaVirtualTable JavaObjectVT;
+
+extern "C" void JavaArrayTracer(JavaObject*);
+extern "C" void ArrayObjectTracer(JavaObject*);
 
 Attribut::Attribut(const UTF8* name, uint32 length,
                    uint32 offset) {
@@ -255,7 +257,7 @@ ClassPrimitive::byteIdToPrimitive(char id, Classpath* upcalls) {
   }
 }
 
-CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n) {
+void CommonClass::init(JnjvmClassLoader* loader, const UTF8* n) {
   name = n;
   classLoader = loader;
   nbInterfaces = 0;
@@ -302,13 +304,17 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
   memset(IsolateInfo, 0, sizeof(TaskClassMirror) * NR_ISOLATES);
 }
 
-ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
-                       UserCommonClass* base) : 
-    CommonClass(loader, n) {
+void ClassArray::init(JnjvmClassLoader* loader, const UTF8* n,
+                      UserCommonClass* base) {
   _baseClass = base;
   super = ClassArray::SuperArray;
   interfaces = ClassArray::InterfacesArray;
   nbInterfaces = 2;
+  
+  uint32 size = JavaVirtualTable::getNumMethods();
+  virtualVT = new(loader->allocator, size) JavaVirtualTable(this);
+  virtualVT->tracer = (uintptr_t)ArrayObjectTracer;
+  
   depth = 1;
   display = (CommonClass**)loader->allocator.Allocate(2 * sizeof(CommonClass*));
   display[0] = ClassArray::SuperArray;
@@ -330,8 +336,7 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::Allocator& allocator) {
 
   uint32 primSize = cl->isPrimitive() ? 
     cl->asPrimitiveClass()->primSize : sizeof(JavaObject*);
-  VirtualTable* VT = (VirtualTable*) 
-    (cl->isPrimitive() ? JavaArrayVT : ArrayObjectVT);
+  VirtualTable* VT = virtualVT;
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + n * primSize;
   JavaArray* res = (JavaArray*)allocator.allocateManagedObject(size, VT);
   res->initialise(this);
@@ -344,8 +349,7 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator) {
 
   uint32 primSize = cl->isPrimitive() ? 
     cl->asPrimitiveClass()->primSize : sizeof(JavaObject*);
-  VirtualTable* VT = (VirtualTable*) 
-    (cl->isPrimitive() ? JavaArrayVT : ArrayObjectVT);
+  VirtualTable* VT = virtualVT;
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + n * primSize;
   
   JavaArray* res = (JavaArray*)allocator.Allocate(size);
@@ -537,6 +541,7 @@ JavaObject* UserClass::doNew(Jnjvm* vm) {
   assert((this->isInitializing() || 
           classLoader->getCompiler()->isStaticCompiling())
          && "Uninitialized class when allocating.");
+  assert(getVirtualVT() && "No VT\n");
   JavaObject* res = 
     (JavaObject*)vm->gcAllocator.allocateManagedObject(getVirtualSize(),
                                                        getVirtualVT());
@@ -1257,15 +1262,75 @@ bool UserClass::needsInitialisationCheck() {
 }
 
 
-void ClassArray::initialiseVT(Class* cl) {
-  uint32 size =  (cl->virtualTableSize - VT_NB_FUNCS) * sizeof(void*);
+void ClassArray::initialiseVT() {
+ 
+  Class* cl = ClassArray::SuperArray;
+  assert(cl && "Initializing array VT without a super for arrays");
+  assert(cl->virtualVT->init && "Initializing array VT before JavaObjectVT");
   
-  #define COPY(CLASS) \
-    memcpy((void*)((uintptr_t)CLASS + VT_SIZE), \
-           (void*)((uintptr_t)cl->virtualVT + VT_SIZE), size);
+  // Set the values in the JavaObject VT
+  cl->virtualVT->depth = 0;
+  cl->virtualVT->cl = cl;
+  cl->virtualVT->display = cl->display;
 
-    COPY(JavaArrayVT)
-    COPY(ArrayObjectVT)
+  Classpath* upcalls = cl->classLoader->bootstrapLoader->upcalls;
+
+  #define COPY(CLASS) \
+    memcpy(CLASS->virtualVT->getFirstJavaMethod(), \
+           cl->virtualVT->getFirstJavaMethod(), \
+           sizeof(uintptr_t) * JavaVirtualTable::getNumJavaMethods()); \
+    CLASS->super = cl; \
+    CLASS->display[0] = cl; \
+    CLASS->display[1] = CLASS;
+
+    COPY(upcalls->ArrayOfBool)
+    COPY(upcalls->ArrayOfByte)
+    COPY(upcalls->ArrayOfChar)
+    COPY(upcalls->ArrayOfShort)
+    COPY(upcalls->ArrayOfInt)
+    COPY(upcalls->ArrayOfFloat)
+    COPY(upcalls->ArrayOfDouble)
+    COPY(upcalls->ArrayOfLong)
+    COPY(upcalls->ArrayOfObject)
+    COPY(upcalls->ArrayOfString)
 
 #undef COPY
+
 }
+
+JavaVirtualTable::JavaVirtualTable(Class* C) {
+    
+  // (1) Copy the super VT into the current VT.
+  uint32 size = C->super->virtualTableSize * sizeof(uintptr_t);
+  memcpy(this, C->super->virtualVT, size);
+    
+  // (2) Set the class of this VT.
+  cl = C;
+
+  // (3) Set depth and display for fast dynamic type checking.
+  depth = cl->super->virtualVT->depth + 1;
+  mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
+  display = (CommonClass**)
+    allocator.Allocate(sizeof(CommonClass*) * (depth + 1));   
+  size = depth * sizeof(UserCommonClass*);
+  memcpy(display, cl->super->virtualVT->display, size); 
+  display[depth] = C;
+}
+  
+JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
+    
+  // (1) Copy the super VT into the current VT.
+  uint32 size = getNumMethods() * sizeof(uintptr_t);
+  memcpy(this, &JavaObjectVT, size);
+    
+  // (2) Set the class of this VT.
+  cl = C;
+
+  // (3) Set depth and display for fast dynamic type checking.
+  depth = 1;
+  mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
+  display = (CommonClass**)allocator.Allocate(sizeof(CommonClass*) * 2);
+  display[0] = C->super;
+  display[1] = C;
+}
+

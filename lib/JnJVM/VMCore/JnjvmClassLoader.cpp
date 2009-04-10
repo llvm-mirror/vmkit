@@ -61,6 +61,8 @@ ClassArray ArrayOfFloat;
 ClassArray ArrayOfDouble;
 ClassArray ArrayOfLong;
 
+extern "C" void JavaArrayTracer(JavaObject*);
+
 typedef void (*static_init_t)(JnjvmClassLoader*);
 
 JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
@@ -179,7 +181,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
         static_init_t init = (static_init_t)(uintptr_t)SuperArray->classLoader;
         assert(init && "Loaded the wrong boot library");
         init(this);
-        ClassArray::initialiseVT(SuperArray);
+        ClassArray::initialiseVT();
       } 
     }
   }
@@ -192,20 +194,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
     ClassArray::SuperArray = (Class*)SuperArray->getInternal();
     
   }
-  
-  // Set the super of array classes.
-#define SET_PARENT(CLASS) \
-  CLASS.setSuper(SuperArray); \
-
-  SET_PARENT(ArrayOfBool)
-  SET_PARENT(ArrayOfByte)
-  SET_PARENT(ArrayOfChar)
-  SET_PARENT(ArrayOfShort)
-  SET_PARENT(ArrayOfInt)
-  SET_PARENT(ArrayOfFloat)
-  SET_PARENT(ArrayOfDouble)
-  SET_PARENT(ArrayOfLong)
-#undef SET_PARENT
   
   // Initialize interfaces of array classes.
   InterfacesArray[0] = loadName(asciizConstructUTF8("java/lang/Cloneable"),
@@ -632,8 +620,10 @@ ClassArray*
 JnjvmBootstrapLoader::constructPrimitiveArray(ClassArray& cl, const UTF8* name,
                                               ClassPrimitive* baseClass) {
     
-  cl = ClassArray(this, name, baseClass);
+  cl.CommonClass::init(this, name);
+  cl.ClassArray::init(this, name, baseClass);
   classes->map.insert(std::make_pair(name, &cl));
+  cl.virtualVT->tracer = (uintptr_t)JavaArrayTracer;
   return &cl;
 }
 

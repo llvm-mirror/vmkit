@@ -33,18 +33,6 @@ class PrintBuffer;
 class Object : public gc {
 public:
   
-  /// getVirtualTable - Returns the virtual table of this object.
-  ///
-  VirtualTable* getVirtualTable() const {
-    return ((VirtualTable**)(this))[0];
-  }
-  
-  /// setVirtualTable - Sets the virtual table of this object.
-  ///
-  void setVirtualTable(VirtualTable* VT) {
-    ((VirtualTable**)(this))[0] = VT;
-  }
-
   /// printString - Returns a string representation of this object.
   ///
   char *printString(void) const;

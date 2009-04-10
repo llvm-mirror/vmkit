@@ -33,9 +33,9 @@
 using namespace jnjvm;
 using namespace llvm;
 
-extern void* JavaArrayVT[];
-extern void* ArrayObjectVT[];
-extern void* JavaObjectVT[];
+extern JavaVirtualTable JavaArrayVT;
+extern JavaVirtualTable ArrayObjectVT;
+extern JavaVirtualTable JavaObjectVT;
 
 extern ClassArray ArrayOfBool;
 extern ClassArray ArrayOfByte;
@@ -153,7 +153,7 @@ Constant* JavaAOTCompiler::getString(JavaString* str) {
     return SI->second;
   } else {
     assert(str && "No string given");
-    LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo((Class*)str->getClass());
+    LLVMClassInfo* LCI = getClassInfo((Class*)str->getClass());
     const llvm::Type* Ty = LCI->getVirtualType();
     GlobalVariable* varGV = 
       new GlobalVariable(Ty->getContainedType(0), false,
@@ -302,18 +302,25 @@ Constant* JavaAOTCompiler::getStaticInstance(Class* classDef) {
   }
 }
 
-Constant* JavaAOTCompiler::getVirtualTable(Class* classDef) {
-  LLVMClassInfo* LCI = getClassInfo((Class*)classDef);
-  LCI->getVirtualType();
+Constant* JavaAOTCompiler::getVirtualTable(JavaVirtualTable* VT) {
+  CommonClass* classDef = VT->cl;
+  uint32 size = 0;
+  if (classDef->isClass()) {
+    LLVMClassInfo* LCI = getClassInfo(classDef->asClass());
+    LCI->getVirtualType();
+    size = classDef->asClass()->virtualTableSize;
+  } else {
+    size = classDef->super->virtualTableSize;
+  }
   llvm::Constant* res = 0;
   virtual_table_iterator End = virtualTables.end();
-  virtual_table_iterator I = virtualTables.find(classDef);
+  virtual_table_iterator I = virtualTables.find(VT);
   if (I == End) {
     
     const ArrayType* ATy = 
       dyn_cast<ArrayType>(JnjvmModule::VTType->getContainedType(0));
     const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
-    ATy = ArrayType::get(PTy, classDef->virtualTableSize);
+    ATy = ArrayType::get(PTy, size);
     // Do not set a virtual table as a constant, because the runtime may
     // modify it.
     GlobalVariable* varGV = new GlobalVariable(ATy, false,
@@ -324,10 +331,10 @@ Constant* JavaAOTCompiler::getVirtualTable(Class* classDef) {
   
     res = ConstantExpr::getCast(Instruction::BitCast, varGV,
                                 JnjvmModule::VTType);
-    virtualTables.insert(std::make_pair(classDef, res));
+    virtualTables.insert(std::make_pair(VT, res));
   
     if (isCompiling(classDef)) {
-      Constant* C = CreateConstantFromVT(classDef);
+      Constant* C = CreateConstantFromVT(VT);
       varGV->setInitializer(C);
     }
     
@@ -365,24 +372,11 @@ Constant* JavaAOTCompiler::CreateConstantForBaseObject(CommonClass* cl) {
 
   // virtual table
   if (cl->isClass()) {
-    Elmts.push_back(getVirtualTable(cl->asClass()));
+    Elmts.push_back(getVirtualTable(cl->asClass()->virtualVT));
   } else {
-    ClassArray* clA = cl->asArrayClass();
-    if (clA->baseClass()->isPrimitive()) {
-      Elmts.push_back(PrimitiveArrayVT);
-    } else {
-      Elmts.push_back(ReferenceArrayVT);
-    }
+    Elmts.push_back(getVirtualTable(cl->asArrayClass()->virtualVT));
   }
   
-  // classof
-  Constant* Cl = getNativeClass(cl);
-  Constant* ClGEPs[2] = { JnjvmModule::constantZero,
-                          JnjvmModule::constantZero };
-  Cl = ConstantExpr::getGetElementPtr(Cl, ClGEPs, 2);
-    
-  Elmts.push_back(Cl);
-
   // lock
   Constant* L = ConstantInt::get(Type::Int64Ty, 0);
   Elmts.push_back(ConstantExpr::getIntToPtr(L, JnjvmModule::ptrType));
@@ -848,6 +842,9 @@ Constant* JavaAOTCompiler::CreateConstantFromClassArray(ClassArray* cl) {
     Cl = ConstantExpr::getGetElementPtr(Cl, ClGEPs, 2);
     
   ClassElts.push_back(Cl);
+  
+  // virtualTable
+  ClassElts.push_back(getVirtualTable(cl->virtualVT));
 
   return ConstantStruct::get(STy, ClassElts);
 }
@@ -866,7 +863,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(ConstantInt::get(Type::Int32Ty, cl->virtualSize));
 
   // virtualTable
-  ClassElts.push_back(getVirtualTable(cl));
+  ClassElts.push_back(getVirtualTable(cl->virtualVT));
 
   // IsolateInfo
   const ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(3));
@@ -1151,9 +1148,12 @@ Constant* JavaAOTCompiler::getUTF8(const UTF8* val) {
   }
 }
 
-Constant* JavaAOTCompiler::CreateConstantFromVT(Class* classDef) {
-  uint32 size = classDef->virtualTableSize;
-  VirtualTable* VT = classDef->virtualVT;
+Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
+  CommonClass* classDef = VT->cl;
+  uint32 size = classDef->isArray() ? classDef->super->virtualTableSize : 
+                                      classDef->asClass()->virtualTableSize;
+  JavaVirtualTable* RealVT = classDef->isArray() ? classDef->super->virtualVT :
+                                                   VT;
   const ArrayType* ATy = 
     dyn_cast<ArrayType>(JnjvmModule::VTType->getContainedType(0));
   const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
@@ -1164,7 +1164,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(Class* classDef) {
    
   // Destructor
   Function* Finalizer = 0;
-  JavaMethod* meth = ((JavaMethod**)VT)[0];
+  JavaMethod* meth = (JavaMethod*)(RealVT->destructor);
   if (meth) {
     LLVMMethodInfo* LMI = getMethodInfo(meth);
     Finalizer = LMI->getMethod();
@@ -1177,21 +1177,61 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(Class* classDef) {
   
   // Tracer
 #ifdef WITH_TRACER
-  Function* Tracer = makeTracer(classDef, false);
+  Function* Tracer = 0;
+  if (classDef->isArray()) {
+    if (classDef->asArrayClass()->baseClass()->isPrimitive()) {
+      Tracer = JavaIntrinsics.JavaArrayTracerFunction;
+    } else {
+      Tracer = JavaIntrinsics.ArrayObjectTracerFunction;
+    }
+  } else {
+    Tracer = makeTracer(classDef->asClass(), false);
+  }
+
   Elemts.push_back(Tracer ? 
       ConstantExpr::getCast(Instruction::BitCast, Tracer, PTy) : N);
 #else
   Elemts.push_back(N);
 #endif
 
-  // Printer
-  Elemts.push_back(ConstantExpr::getBitCast(ObjectPrinter, PTy));
-  
-  // Hashcode
-  Elemts.push_back(N);  
+  // Class
+  Elemts.push_back(ConstantExpr::getCast(Instruction::BitCast,
+                                         getNativeClass(classDef), PTy));
 
-  for (uint32 i = VT_NB_FUNCS; i < size; ++i) {
-    JavaMethod* meth = ((JavaMethod**)VT)[i];
+  // depth
+  Elemts.push_back(ConstantExpr::getIntToPtr(
+        ConstantInt::get(Type::Int64Ty, VT->depth), PTy));
+  
+  // display
+  const ArrayType* DTy = ArrayType::get(JnjvmModule::JavaCommonClassType,
+                                        VT->depth + 1);
+  
+  std::vector<Constant*> TempElmts;
+  Constant* ClGEPs[2] = { JnjvmModule::constantZero,
+                          JnjvmModule::constantZero };
+
+  
+  for (uint32 i = 0; i <= VT->depth; ++i) {
+    Constant* Cl = getNativeClass(VT->display[i]);
+    if (Cl->getType() != JnjvmModule::JavaCommonClassType)
+      Cl = ConstantExpr::getGetElementPtr(Cl, ClGEPs, 2);
+    
+    TempElmts.push_back(Cl);
+  }
+
+  Constant* display = ConstantArray::get(DTy, TempElmts);
+  TempElmts.clear();
+  display = new GlobalVariable(DTy, true, GlobalValue::InternalLinkage,
+                               display, "", getLLVMModule());
+
+  display = ConstantExpr::getCast(Instruction::BitCast, display, PTy);
+  
+  Elemts.push_back(display);
+
+  
+  // methods
+  for (uint32 i = JavaVirtualTable::getFirstJavaMethodIndex(); i < size; ++i) {
+    JavaMethod* meth = ((JavaMethod**)RealVT)[i];
     LLVMMethodInfo* LMI = getMethodInfo(meth);
     Function* F = LMI->getMethod();
     if (isAbstract(meth->access)) {
@@ -1231,18 +1271,7 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   generateStubs = true;
   assumeCompiled = false;
 
-  const Type* ATy = JnjvmModule::VTType->getContainedType(0);
-  PrimitiveArrayVT = new GlobalVariable(ATy, true,
-                                        GlobalValue::ExternalLinkage,
-                                        0, "JavaArrayVT", getLLVMModule());
-
-  ReferenceArrayVT = new GlobalVariable(ATy, true, 
-                                        GlobalValue::ExternalLinkage,
-                                        0, "ArrayObjectVT", getLLVMModule());
-
-
-
-  ATy = JnjvmModule::JavaClassArrayType->getContainedType(0);
+  const Type* ATy = JnjvmModule::JavaClassArrayType->getContainedType(0);
   GlobalVariable* varGV = 0;
   
 #define PRIMITIVE_ARRAY(name) \
@@ -1444,7 +1473,11 @@ void JavaAOTCompiler::makeVT(Class* cl) {
     JavaMethod& meth = cl->virtualMethods[i];
     ((void**)VT)[meth.offset] = &meth;
   }
-  if (!cl->super) ((void**)VT)[0] = 0;
+
+  if (!cl->super) {
+    VT->destructor = 0;
+    ClassArray::initialiseVT();
+  }
 #endif 
 }
 

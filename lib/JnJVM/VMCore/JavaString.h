@@ -16,7 +16,6 @@
 
 namespace jnjvm {
 
-class ArrayUInt16;
 class Jnjvm;
 
 class JavaString : public JavaObject {
@@ -33,7 +32,7 @@ public:
   char* strToAsciiz();
   const UTF8* strToUTF8(Jnjvm* vm);
 
-  static VirtualTable* internStringVT;
+  static JavaVirtualTable* internStringVT;
 };
 
 } // end namespace jnjvm

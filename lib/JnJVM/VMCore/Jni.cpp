@@ -95,8 +95,8 @@ jmethodID FromReflectedMethod(JNIEnv *env, jobject method) {
   } else if (cl == upcalls->newMethod) {
     return (jmethodID)((JavaObjectConstructor*)meth)->getInternalMethod();
   } else {
-    vm->unknownError("%s is not a constructor or a method", 
-                     meth->printString());
+    vm->unknownError("Not a constructor or a method: %s",
+                     meth->getClass()->printString());
   }
   
   END_JNI_EXCEPTION

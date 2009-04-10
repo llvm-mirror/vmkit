@@ -19,6 +19,10 @@ struct VirtualTable {
   uintptr_t destructor;
   uintptr_t operatorDelete;
   uintptr_t tracer;
+
+  uintptr_t* getFunctions() {
+    return &destructor;
+  }
 };
 
 class gcRoot {
@@ -29,6 +33,18 @@ public:
 #else
   virtual void      tracer(void) {}
 #endif
+  
+  /// getVirtualTable - Returns the virtual table of this object.
+  ///
+  VirtualTable* getVirtualTable() const {
+    return ((VirtualTable**)(this))[0];
+  }
+  
+  /// setVirtualTable - Sets the virtual table of this object.
+  ///
+  void setVirtualTable(VirtualTable* VT) {
+    ((VirtualTable**)(this))[0] = VT;
+  }
 };
 
 typedef void (*destructor_t)(void*);

@@ -29,7 +29,7 @@ using namespace jnjvm;
 using namespace llvm;
 
 
-extern void* JavaObjectVT[];
+extern JavaVirtualTable JavaObjectVT;
 
 #ifdef WITH_TRACER
 const llvm::FunctionType* JnjvmModule::MarkAndTraceType = 0;
@@ -65,6 +65,7 @@ llvm::Constant*     JnjvmModule::MaxArraySizeConstant;
 llvm::Constant*     JnjvmModule::JavaArraySizeConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetObjectSizeInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetVTInClassConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetVTInClassArrayConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetDepthInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetDisplayInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetTaskClassMirrorInClassConstant;
@@ -82,7 +83,10 @@ const llvm::Type*   JnjvmModule::VTType;
 llvm::ConstantInt*  JnjvmModule::JavaArrayElementsOffsetConstant;
 llvm::ConstantInt*  JnjvmModule::JavaArraySizeOffsetConstant;
 llvm::ConstantInt*  JnjvmModule::JavaObjectLockOffsetConstant;
-llvm::ConstantInt*  JnjvmModule::JavaObjectClassOffsetConstant;
+llvm::ConstantInt*  JnjvmModule::JavaObjectVTOffsetConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetClassInVTConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetDepthInVTConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetDisplayInVTConstant;
 
 
 JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
@@ -114,18 +118,22 @@ void JavaLLVMCompiler::allocateVT(Class* cl) {
     }
   }
 
-  VirtualTable* VT = 0;
+  JavaVirtualTable* VT = 0;
   if (cl->super) {
-    uint64 size = cl->virtualTableSize;
+    uint32 size = cl->virtualTableSize;
     mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-    VT = (VirtualTable*)allocator.Allocate(size * sizeof(void*));
-    Class* super = (Class*)cl->super;
-    assert(cl->virtualTableSize >= cl->super->virtualTableSize &&
+    Class* super = cl->super;
+    assert(cl->virtualTableSize >= super->virtualTableSize &&
       "Super VT bigger than own VT");
     assert(super->virtualVT && "Super does not have a VT!");
-    memcpy(VT, super->virtualVT, cl->super->virtualTableSize * sizeof(void*));
+    VT = new(allocator, size) JavaVirtualTable(cl);
   } else {
-    VT = (VirtualTable*)JavaObjectVT;
+    VT = &JavaObjectVT;
+    VT->depth = 0;
+    VT->display = (CommonClass**)
+      cl->classLoader->allocator.Allocate(sizeof(CommonClass*));
+    VT->display[0] = cl;
+
   }
 
   cl->virtualVT = VT;
@@ -220,10 +228,10 @@ llvm::Function* JavaLLVMCompiler::internalMakeTracer(Class* cl, bool stat) {
 
 void JavaLLVMCompiler::internalMakeVT(Class* cl) {
   
-  VirtualTable* VT = 0;
+  JavaVirtualTable* VT = 0;
 #ifdef WITHOUT_VTABLE
   mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-  VT = (VirtualTable*)allocator.Allocate(VT_SIZE);
+  VT = (JavaVirtualTable*)allocator.Allocate(VT_SIZE);
   memcpy(VT, JavaObjectVT, VT_SIZE);
   cl->virtualVT = VT;
 #else
@@ -234,7 +242,7 @@ void JavaLLVMCompiler::internalMakeVT(Class* cl) {
 
     cl->virtualTableSize = cl->super->virtualTableSize;
   } else {
-    cl->virtualTableSize = VT_NB_FUNCS;
+    cl->virtualTableSize = JavaVirtualTable::getFirstJavaMethodIndex();
   }
 
   // Allocate the virtual table.
@@ -344,14 +352,18 @@ void JnjvmModule::initialise() {
   
   JavaArrayElementsOffsetConstant = mvm::MvmModule::constantTwo;
   JavaArraySizeOffsetConstant = mvm::MvmModule::constantOne;
-  JavaObjectLockOffsetConstant = mvm::MvmModule::constantTwo;
-  JavaObjectClassOffsetConstant = mvm::MvmModule::constantOne; 
+  JavaObjectLockOffsetConstant = mvm::MvmModule::constantOne;
+  JavaObjectVTOffsetConstant = mvm::MvmModule::constantZero;
+  OffsetClassInVTConstant = mvm::MvmModule::constantThree;
+  OffsetDepthInVTConstant = mvm::MvmModule::constantFour;
+  OffsetDisplayInVTConstant = mvm::MvmModule::constantFive;
   
   OffsetDisplayInClassConstant = mvm::MvmModule::constantZero;
   OffsetDepthInClassConstant = mvm::MvmModule::constantOne;
   
   OffsetObjectSizeInClassConstant = mvm::MvmModule::constantOne;
   OffsetVTInClassConstant = mvm::MvmModule::constantTwo;
+  OffsetVTInClassArrayConstant = mvm::MvmModule::constantTwo;
   OffsetTaskClassMirrorInClassConstant = mvm::MvmModule::constantThree;
   OffsetStaticInstanceInTaskClassMirrorConstant = mvm::MvmModule::constantTwo;
   OffsetStatusInTaskClassMirrorConstant = mvm::MvmModule::constantZero;
@@ -363,14 +375,6 @@ void JnjvmModule::initialise() {
   ClassReadyConstant = ConstantInt::get(Type::Int8Ty, ready);
  
   LLVMAssessorInfo::initialise();
-}
-
-Constant* JavaLLVMCompiler::getReferenceArrayVT() {
-  return ReferenceArrayVT;
-}
-
-Constant* JavaLLVMCompiler::getPrimitiveArrayVT() {
-  return PrimitiveArrayVT;
 }
 
 Function* JavaLLVMCompiler::getMethod(JavaMethod* meth) {
@@ -417,6 +421,7 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   GetClassFunction = module->getFunction("getClass");
   ClassLookupFunction = module->getFunction("classLookup");
   GetVTFromClassFunction = module->getFunction("getVTFromClass");
+  GetVTFromClassArrayFunction = module->getFunction("getVTFromClassArray");
   GetObjectSizeFromClassFunction = 
     module->getFunction("getObjectSizeFromClass");
  

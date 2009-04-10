@@ -37,6 +37,7 @@ class JavaConstantPool;
 class JavaField;
 class JavaMethod;
 class JavaObject;
+class JavaVirtualTable;
 class Reader;
 class Signdef;
 class Typedef;
@@ -113,7 +114,6 @@ public:
   static const UTF8* sourceFileAttribut;
   
 };
-
 
 /// TaskClassMirror - The isolate specific class information: the initialization
 /// state and the static instance. In a non-isolate environment, there is only
@@ -305,7 +305,9 @@ public:
   
   /// CommonClass - Create a class with th given name.
   ///
-  CommonClass(JnjvmClassLoader* loader, const UTF8* name);
+  CommonClass(JnjvmClassLoader* loader, const UTF8* name) {
+    init(loader, name);
+  }
   
   /// ~CommonClass - Free memory used by this class, and remove it from
   /// metadata.
@@ -316,19 +318,16 @@ public:
   ///
   CommonClass();
   
+  /// init - initialize the class.
+  ///
+  void init(JnjvmClassLoader* JCL, const UTF8* n);
+  
   /// setInterfaces - Set the interfaces of the class.
   ///
   void setInterfaces(Class** I) {
     interfaces = I;
   }
-
-  /// setSuper - Set the super of the class.
-  ///
-  void setSuper(Class* S) {
-    super = S;
-    display[0] = (CommonClass*)S;
-  }
-  
+ 
   /// toPrimitive - Returns the primitive class which represents
   /// this class, ie void for java/lang/Void.
   ///
@@ -367,6 +366,7 @@ public:
     return GC_MALLOC(sz);
   }
 #endif
+
 };
 
 /// ClassPrimitive - This class represents internal classes for primitive
@@ -447,7 +447,7 @@ public:
 
   /// virtualVT - The virtual table of instances of this class.
   ///
-  VirtualTable* virtualVT;
+  JavaVirtualTable* virtualVT;
   
   /// IsolateInfo - Per isolate informations for static instances and
   /// initialization state.
@@ -553,7 +553,7 @@ public:
   
   /// getVirtualVT - Get the virtual VT of instances of this class.
   ///
-  VirtualTable* getVirtualVT()    { return virtualVT; }
+  JavaVirtualTable* getVirtualVT()    { return virtualVT; }
 
   /// getOwnerClass - Get the thread that is currently initializing the class.
   ///
@@ -897,6 +897,10 @@ public:
   ///
   CommonClass*  _baseClass;
 
+  /// virtualVT - The virtual table of this array class.
+  ///
+  JavaVirtualTable* virtualVT;
+
   /// baseClass - Get the base class of this array class.
   ///
   CommonClass* baseClass() const {
@@ -906,15 +910,22 @@ public:
   /// doNew - Allocate a new array in the given vm.
   ///
   JavaArray* doNew(sint32 n, Jnjvm* vm);
-  
-  /// ClassArray - Empty constructor for VT.
+
+  /// init - Initialize the array class.
+  ///
+  void init(JnjvmClassLoader* loader, const UTF8* name,
+            UserCommonClass* baseClass);
+
+  /// ClassArray - Empty constructor.
   ///
   ClassArray() {}
 
   /// ClassArray - Construct a Java array class with the given name.
   ///
   ClassArray(JnjvmClassLoader* loader, const UTF8* name,
-             UserCommonClass* baseClass);
+             UserCommonClass* baseClass) : CommonClass (loader, name) {
+    init(loader, name, baseClass);
+  }
   
   /// SuperArray - The super of class arrays. Namely java/lang/Object.
   ///
@@ -927,7 +938,8 @@ public:
   /// initialiseVT - Initialise the primitive and reference array VT.
   /// super is the java/lang/Object class.
   ///
-  static void initialiseVT(Class* super);
+  static void initialiseVT();
+  
 };
 
 /// JavaMethod - This class represents Java methods.
@@ -1314,6 +1326,53 @@ public:
     return static_cast<Ty*>(JInfo);
   }
 
+
+};
+
+class JavaVirtualTable : public VirtualTable {
+public:
+  CommonClass* cl;
+  size_t depth;
+  CommonClass** display;
+
+  uintptr_t init;
+  uintptr_t equals;
+  uintptr_t hashCode;
+  uintptr_t toString;
+  uintptr_t clone;
+  uintptr_t getClass;
+  uintptr_t notify;
+  uintptr_t notifyAll;
+  uintptr_t waitIndefinitely;
+  uintptr_t waitMs;
+  uintptr_t waitMsNs;
+
+  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
+                     uint32 nbMethods) {
+    return allocator.Allocate(sizeof(uintptr_t) * (nbMethods));
+  }
+
+  JavaVirtualTable(Class* C);
+  
+  JavaVirtualTable(ClassArray* C);
+
+  JavaVirtualTable() {}
+  
+  uintptr_t* getFirstJavaMethod() {
+    return &init;
+  }
+
+  static uint32_t getFirstJavaMethodIndex() {
+    return 6;
+  }
+   
+  static uint32_t getNumMethods() {
+    return 17;
+  }
+  
+  static uint32_t getNumJavaMethods() {
+    return 11;
+  }
 
 };
 

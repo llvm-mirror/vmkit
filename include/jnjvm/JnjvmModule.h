@@ -45,6 +45,7 @@ class JavaField;
 class JavaMethod;
 class JavaObject;
 class JavaString;
+class JavaVirtualTable;
 class JnjvmClassLoader;
 class JnjvmModule;
 class Typedef;
@@ -194,7 +195,7 @@ public:
   static llvm::ConstantInt* JavaArraySizeOffsetConstant;
   static llvm::ConstantInt* JavaArrayElementsOffsetConstant;
   static llvm::ConstantInt* JavaObjectLockOffsetConstant;
-  static llvm::ConstantInt* JavaObjectClassOffsetConstant;
+  static llvm::ConstantInt* JavaObjectVTOffsetConstant;
 
   static const llvm::Type* JavaArrayUInt8Type;
   static const llvm::Type* JavaArraySInt8Type;
@@ -291,6 +292,7 @@ public:
   llvm::Function* GetClassFunction;
   llvm::Function* JavaObjectAllocateFunction;
   llvm::Function* GetVTFromClassFunction;
+  llvm::Function* GetVTFromClassArrayFunction;
   llvm::Function* GetObjectSizeFromClassFunction;
 
   llvm::Function* GetLockFunction;
@@ -306,6 +308,7 @@ public:
 
   static llvm::ConstantInt* OffsetObjectSizeInClassConstant;
   static llvm::ConstantInt* OffsetVTInClassConstant;
+  static llvm::ConstantInt* OffsetVTInClassArrayConstant;
   static llvm::ConstantInt* OffsetDepthInClassConstant;
   static llvm::ConstantInt* OffsetDisplayInClassConstant;
   static llvm::ConstantInt* OffsetTaskClassMirrorInClassConstant;
@@ -315,6 +318,10 @@ public:
   
   static llvm::ConstantInt* OffsetJavaExceptionInThreadConstant;
   static llvm::ConstantInt* OffsetCXXExceptionInThreadConstant;
+  
+  static llvm::ConstantInt* OffsetClassInVTConstant;
+  static llvm::ConstantInt* OffsetDepthInVTConstant;
+  static llvm::ConstantInt* OffsetDisplayInVTConstant;
   
   static llvm::ConstantInt* ClassReadyConstant;
 
@@ -352,9 +359,6 @@ protected:
     return internalMakeTracer(cl, stat);
   }
 #endif
-  
-  llvm::Constant* PrimitiveArrayVT;
-  llvm::Constant* ReferenceArrayVT;
   
   void internalMakeVT(Class* cl);
 
@@ -400,9 +404,6 @@ public:
   
   virtual ~JavaLLVMCompiler();
 
-  llvm::Constant* getReferenceArrayVT();
-  llvm::Constant* getPrimitiveArrayVT();
-
   void resolveVirtualClass(Class* cl);
   void resolveStaticClass(Class* cl);
   static llvm::Function* getMethod(JavaMethod* meth);
@@ -419,7 +420,7 @@ public:
   virtual llvm::Constant* getNativeClass(CommonClass* cl) = 0;
   virtual llvm::Constant* getJavaClass(CommonClass* cl) = 0;
   virtual llvm::Constant* getStaticInstance(Class* cl) = 0;
-  virtual llvm::Constant* getVirtualTable(Class* cl) = 0;
+  virtual llvm::Constant* getVirtualTable(JavaVirtualTable*) = 0;
   virtual llvm::Constant* getMethodInClass(JavaMethod* meth) = 0;
   
   virtual llvm::Constant* getEnveloppe(Enveloppe* enveloppe) = 0;
@@ -484,7 +485,7 @@ public:
   virtual llvm::Constant* getNativeClass(CommonClass* cl);
   virtual llvm::Constant* getJavaClass(CommonClass* cl);
   virtual llvm::Constant* getStaticInstance(Class* cl);
-  virtual llvm::Constant* getVirtualTable(Class* cl);
+  virtual llvm::Constant* getVirtualTable(JavaVirtualTable*);
   virtual llvm::Constant* getMethodInClass(JavaMethod* meth);
   
   virtual llvm::Constant* getEnveloppe(Enveloppe* enveloppe);
@@ -534,7 +535,7 @@ public:
   virtual llvm::Constant* getNativeClass(CommonClass* cl);
   virtual llvm::Constant* getJavaClass(CommonClass* cl);
   virtual llvm::Constant* getStaticInstance(Class* cl);
-  virtual llvm::Constant* getVirtualTable(Class* cl);
+  virtual llvm::Constant* getVirtualTable(JavaVirtualTable*);
   virtual llvm::Constant* getMethodInClass(JavaMethod* meth);
   
   virtual llvm::Constant* getEnveloppe(Enveloppe* enveloppe);
@@ -558,7 +559,7 @@ private:
 #endif
   
   //--------------- Static compiler specific functions -----------------------//
-  llvm::Constant* CreateConstantFromVT(Class* classDef);
+  llvm::Constant* CreateConstantFromVT(JavaVirtualTable* VT);
   llvm::Constant* CreateConstantFromUTF8(const UTF8* val);
   llvm::Constant* CreateConstantFromEnveloppe(Enveloppe* val);
   llvm::Constant* CreateConstantFromCacheNode(CacheNode* CN);
@@ -582,7 +583,7 @@ private:
   std::map<const CommonClass*, llvm::Constant*> nativeClasses;
   std::map<const ClassArray*, llvm::GlobalVariable*> arrayClasses;
   std::map<const CommonClass*, llvm::Constant*> javaClasses;
-  std::map<const CommonClass*, llvm::Constant*> virtualTables;
+  std::map<const JavaVirtualTable*, llvm::Constant*> virtualTables;
   std::map<const Class*, llvm::Constant*> staticInstances;
   std::map<const JavaConstantPool*, llvm::Constant*> constantPools;
   std::map<const JavaString*, llvm::Constant*> strings;
@@ -607,7 +608,7 @@ private:
   typedef std::map<const CommonClass*, llvm::Constant*>::iterator
     java_class_iterator;
   
-  typedef std::map<const CommonClass*, llvm::Constant*>::iterator
+  typedef std::map<const JavaVirtualTable*, llvm::Constant*>::iterator
     virtual_table_iterator;
   
   typedef std::map<const Class*, llvm::Constant*>::iterator

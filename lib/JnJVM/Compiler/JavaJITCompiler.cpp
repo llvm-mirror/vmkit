@@ -27,8 +27,8 @@
 using namespace jnjvm;
 using namespace llvm;
 
-extern void* JavaArrayVT[];
-extern void* ArrayObjectVT[];
+extern JavaVirtualTable JavaArrayVT;
+extern JavaVirtualTable ArrayObjectVT;
 
 Constant* JavaJITCompiler::getNativeClass(CommonClass* classDef) {
   const llvm::Type* Ty = classDef->isClass() ? JnjvmModule::JavaClassType :
@@ -103,13 +103,13 @@ Constant* JavaJITCompiler::getStaticInstance(Class* classDef) {
   return ConstantExpr::getIntToPtr(CI, JnjvmModule::ptrType);
 }
 
-Constant* JavaJITCompiler::getVirtualTable(Class* classDef) {
-  LLVMClassInfo* LCI = getClassInfo((Class*)classDef);
-  LCI->getVirtualType();
+Constant* JavaJITCompiler::getVirtualTable(JavaVirtualTable* VT) {
+  if (VT->cl->isClass()) {
+    LLVMClassInfo* LCI = getClassInfo(VT->cl->asClass());
+    LCI->getVirtualType();
+  }
   
-  assert(classDef->virtualVT && "Virtual VT not created");
-  void* ptr = classDef->virtualVT;
-  ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(ptr));
+  ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64_t(VT));
   return ConstantExpr::getIntToPtr(CI, JnjvmModule::VTType);
 }
 
@@ -126,12 +126,6 @@ Constant* JavaJITCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
 JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   JavaLLVMCompiler(ModuleID) {
    
-  ConstantInt* CI = ConstantInt::get(Type::Int64Ty, uint64(JavaArrayVT));
-  PrimitiveArrayVT = ConstantExpr::getIntToPtr(CI, JnjvmModule::VTType);
- 
-  CI = ConstantInt::get(Type::Int64Ty, uint64(ArrayObjectVT));
-  ReferenceArrayVT = ConstantExpr::getIntToPtr(CI, JnjvmModule::VTType);
-
   TheModuleProvider = new JnjvmModuleProvider(TheModule);
   addJavaPasses();
 }
@@ -147,7 +141,7 @@ void JavaJITCompiler::makeVT(Class* cl) {
   internalMakeVT(cl);
 
 #ifndef WITHOUT_VTABLE
-  VirtualTable* VT = cl->virtualVT;
+  JavaVirtualTable* VT = cl->virtualVT;
  
   assert(VT);
   // Fill the virtual table with function pointers.
@@ -161,25 +155,26 @@ void JavaJITCompiler::makeVT(Class* cl) {
     // if there is none, or if it is empty.
     if (meth.offset == 0) {
 #if defined(ISOLATE_SHARING) || defined(USE_GC_BOEHM)
-      ((void**)VT)[0] = 0;
+      VT->destructor = 0;
 #else
       Function* func = parseFunction(&meth);
       if (!cl->super) {
         meth.canBeInlined = true;
-        ((void**)VT)[0] = 0;
+        VT->destructor = 0;
       } else {
         Function::iterator BB = func->begin();
         BasicBlock::iterator I = BB->begin();
         if (isa<ReturnInst>(I)) {
-          ((void**)VT)[0] = 0;
+          VT->destructor = 0;
         } else {
           // LLVM does not allow recursive compilation. Create the code now.
-          ((void**)VT)[0] = EE->getPointerToFunction(func);
+          VT->destructor = (uintptr_t)EE->getPointerToFunction(func);
         }
       }
 #endif
     } else {
-      ((void**)VT)[meth.offset] = EE->getPointerToFunctionOrStub(func);
+      VT->getFunctions()[meth.offset] = 
+        (uintptr_t)EE->getPointerToFunctionOrStub(func);
     }
   }
 
@@ -187,14 +182,14 @@ void JavaJITCompiler::makeVT(Class* cl) {
   Function* func = makeTracer(cl, false);
   
   void* codePtr = mvm::MvmModule::executionEngine->getPointerToFunction(func);
-  ((void**)VT)[VT_TRACER_OFFSET] = codePtr;
+  VT->tracer = (uintptr_t)codePtr;
   func->deleteBody();
 #endif
     
   // If there is no super, then it's the first VT that we allocate. Assign
   // this VT to native types.
   if (!(cl->super)) {
-    ClassArray::initialiseVT(cl);
+    ClassArray::initialiseVT();
   }
 #endif 
 }

@@ -75,17 +75,6 @@ LockObj* LockObj::allocate(JavaObject* owner) {
   return res;
 }
 
-extern "C" void printJavaObject(const JavaObject* obj, mvm::PrintBuffer* buf) {
-  buf->write("JavaObject<");
-  CommonClass::printClassName(obj->getClass()->getName(), buf);
-  buf->write(">");
-}
-
-void JavaObject::print(mvm::PrintBuffer* buf) const {
-  printJavaObject(this, buf);
-}
-
-
 void JavaObject::waitIntern(struct timeval* info, bool timed) {
 
   if (owner()) {
@@ -164,7 +153,7 @@ void JavaObject::decapsulePrimitive(Jnjvm *vm, uintptr_t &buf,
 
   JavaObject* obj = this;
   if (!signature->isPrimitive()) {
-    if (obj && !(obj->classOf->isOfTypeName(vm, signature->getName()))) {
+    if (obj && !(obj->getClass()->isOfTypeName(vm, signature->getName()))) {
       vm->illegalArgumentException("wrong type argument");
     }
     ((JavaObject**)buf)[0] = obj;
@@ -173,7 +162,7 @@ void JavaObject::decapsulePrimitive(Jnjvm *vm, uintptr_t &buf,
   } else if (obj == 0) {
     vm->illegalArgumentException("");
   } else {
-    UserCommonClass* cl = obj->classOf;
+    UserCommonClass* cl = obj->getClass();
     UserClassPrimitive* value = cl->toPrimitive(vm);
     PrimitiveTypedef* prim = (PrimitiveTypedef*)signature;
 

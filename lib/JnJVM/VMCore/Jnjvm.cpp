@@ -784,14 +784,17 @@ void Jnjvm::loadBootstrap() {
   // placed in the hashmap. This VT will have its destructor set so
   // that the string is removed when deallocated.
   upcalls->newString->resolveClass();
-  void* stringVT = ((void*)upcalls->newString->getVirtualVT());
-  uint32 size = upcalls->newString->virtualTableSize * sizeof(void*);
   if (!JavaString::internStringVT) {
+    JavaVirtualTable* stringVT = upcalls->newString->getVirtualVT();
+    uint32 size = upcalls->newString->virtualTableSize * sizeof(uintptr_t);
+    
     JavaString::internStringVT = 
-      (VirtualTable*)bootstrapLoader->allocator.Allocate(size);
+      (JavaVirtualTable*)bootstrapLoader->allocator.Allocate(size);
+
     memcpy(JavaString::internStringVT, stringVT, size);
-    ((void**)(JavaString::internStringVT))[VT_DESTRUCTOR_OFFSET] = 
-      (void*)(uintptr_t)JavaString::stringDestructor;
+    
+    JavaString::internStringVT->destructor = 
+      (uintptr_t)JavaString::stringDestructor;
   }
   upcalls->newString->initialiseClass(this);
 
