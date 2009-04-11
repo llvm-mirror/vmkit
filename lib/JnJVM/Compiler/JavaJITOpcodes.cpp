@@ -1894,6 +1894,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             Value* args[2]= { valCl, Constant::getNullValue(Ty) };
             valCl = CallInst::Create(module->GetArrayClassFunction, args,
                                      args + 2, "", currentBlock);
+            TheVT = CallInst::Create(module->GetVTFromClassArrayFunction, valCl, "",
+                                     currentBlock);
           }
 
           sizeElement = module->constantPtrSize;
