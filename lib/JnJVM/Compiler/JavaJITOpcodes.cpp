@@ -1849,9 +1849,6 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             compilingClass->classLoader->bootstrapLoader;
           UserClassArray* dcl = loader->getArrayClass(id);
           valCl = TheCompiler->getNativeClass(dcl);
-          if (valCl->getType() != module->JavaCommonClassType)
-            valCl = new BitCastInst(valCl, module->JavaCommonClassType, "",
-                                    currentBlock);
 #else
           Value* args[2] = { isolateLocal,
                              ConstantInt::get(Type::Int32Ty, id - 4) };
@@ -1861,7 +1858,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
           LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[charId];
           sizeElement = LAI.sizeInBytesConstant;
-          TheVT = TheCompiler->getVirtualTable(dcl->virtualVT);
+          if (TheCompiler->isStaticCompiling()) {
+            TheVT = CallInst::Create(module->GetVTFromClassArrayFunction,
+                                     valCl, "", currentBlock);
+          } else {
+            TheVT = TheCompiler->getVirtualTable(dcl->virtualVT);
+          }
         } else {
           uint16 index = readU2(bytecodes, i);
           CommonClass* cl = 0;
@@ -1880,13 +1882,11 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             if (TheCompiler->isStaticCompiling() && 
                 valCl->getType() != module->JavaClassArrayType) {
               valCl = new LoadInst(valCl, "", currentBlock);
+              TheVT = CallInst::Create(module->GetVTFromClassArrayFunction,
+                                       valCl, "", currentBlock);
+            } else {
+              TheVT = TheCompiler->getVirtualTable(dcl->virtualVT);
             }
-            
-            if (valCl->getType() != module->JavaCommonClassType) {
-              valCl = new BitCastInst(valCl, module->JavaCommonClassType, "",
-                                      currentBlock);
-            }
-            TheVT = TheCompiler->getVirtualTable(dcl->virtualVT);
 
           } else {
             const llvm::Type* Ty = 
@@ -1894,10 +1894,6 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             Value* args[2]= { valCl, Constant::getNullValue(Ty) };
             valCl = CallInst::Create(module->GetArrayClassFunction, args,
                                      args + 2, "", currentBlock);
-            TheVT = CallInst::Create(module->GetVTFromClassArrayFunction, valCl, "",
-                                     currentBlock);
-            valCl = new BitCastInst(valCl, module->JavaCommonClassType, "",
-                                    currentBlock);
           }
 
           sizeElement = module->constantPtrSize;
