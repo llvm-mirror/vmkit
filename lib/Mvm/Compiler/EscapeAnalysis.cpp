@@ -127,6 +127,12 @@ static bool escapes(Value* Ins, std::map<Instruction*, bool>& visited) {
             return true;
           }
         }
+       
+        // We must also consider the value returned by the function.
+        if (II->getType() == Ins->getType()) {
+          if (escapes(II, visited)) return true;
+        }
+
       } else if (dyn_cast<BitCastInst>(II)) {
         if (escapes(II, visited)) return true;
       } else if (StoreInst* SI = dyn_cast<StoreInst>(II)) {
