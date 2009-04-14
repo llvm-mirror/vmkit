@@ -1,6 +1,6 @@
 //===------EscapeAnalysis.cpp - Simple LLVM escape analysis ---------------===//
 //
-//                     The Micro Virtual Machine
+//                     The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source 
 // License. See LICENSE.TXT for details.
@@ -15,6 +15,7 @@
 #include "llvm/Pass.h"
 #include "llvm/Instructions.h"
 #include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Support/CallSite.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/Debug.h"
 
@@ -42,7 +43,7 @@ namespace {
     virtual bool runOnFunction(Function &F);
 
   private:
-    bool processMalloc(Instruction* I, Value* Size, Value* VT);
+    bool processMalloc(Instruction* I, Value* Size, Value* VT, Loop* CurLoop);
   };
 
   char EscapeAnalysis::ID = 0;
@@ -58,22 +59,47 @@ bool EscapeAnalysis::runOnFunction(Function& F) {
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI;
    
-    // Don't bother if we're in a loop. We rely on the memory manager to
-    // allocate with a bump pointer allocator. Sure we could analyze more
-    // to see if the object could in fact be stack allocated, but just be
-    // lazy for now.
-    if (LI->getLoopFor(Cur)) continue;
+    // Get the parent loop if there is one. If the allocation happens in a loop
+    // we must make sure that the allocated value is not used outside of
+    // the loop. If the allocation does not escape and it is only used inside
+    // the loop, we will hoist the allocation in the pre-header of the loop.
+    Loop* CurLoop = LI->getLoopFor(Cur);
+    if (CurLoop) {
+      Loop* NextLoop = CurLoop->getParentLoop();
+      while (NextLoop) {
+        CurLoop = NextLoop;
+        NextLoop = CurLoop->getParentLoop();
+      }
+    }
 
     for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
       Instruction *I = II;
       II++;
-      if (CallInst *CI = dyn_cast<CallInst>(I)) {
-        if (CI->getOperand(0) == Allocator) {
-          Changed |= processMalloc(CI, CI->getOperand(1), CI->getOperand(2));
+      CallSite Call = CallSite::get(I);
+      if (Call.getInstruction() && Call.getCalledValue() == Allocator) {
+
+        if (CurLoop) {
+          bool escapesLoop = false;
+          for (Value::use_iterator U = I->use_begin(), E = I->use_end();
+               U != E; ++U) {
+            if (Instruction* II = dyn_cast<Instruction>(U)) {
+              BasicBlock* BBU = II->getParent();
+              if (!CurLoop->contains(BBU)) {
+                escapesLoop = true;
+                break;
+              }
+            }
+          }
+
+          if (escapesLoop) continue;
         }
-      } else if (InvokeInst *CI = dyn_cast<InvokeInst>(I)) {
-        if (CI->getOperand(0) == Allocator) {
-          Changed |= processMalloc(CI, CI->getOperand(3), CI->getOperand(4));
+
+        if (CallInst *CI = dyn_cast<CallInst>(I)) {
+          Changed |= processMalloc(CI, CI->getOperand(1), CI->getOperand(2),
+                                   CurLoop);
+        } else if (InvokeInst *CI = dyn_cast<InvokeInst>(I)) {
+          Changed |= processMalloc(CI, CI->getOperand(3), CI->getOperand(4),
+                                   CurLoop);
         }
       }
     }
@@ -88,16 +114,22 @@ static bool escapes(Value* Ins, std::map<Instruction*, bool>& visited) {
   for (Value::use_iterator I = Ins->use_begin(), E = Ins->use_end(); 
        I != E; ++I) {
     if (Instruction* II = dyn_cast<Instruction>(I)) {
-      if (CallInst* CI = dyn_cast<CallInst>(II)) {
-        if (!CI->onlyReadsMemory()) return true;
-      }
-      else if (InvokeInst* CI = dyn_cast<InvokeInst>(II)) {
-        if (!CI->onlyReadsMemory()) return true;
-      }
-      else if (dyn_cast<BitCastInst>(II)) {
+      if (II->getOpcode() == Instruction::Call || 
+          II->getOpcode() == Instruction::Invoke) {
+        
+        CallSite CS = CallSite::get(II);
+        if (!CS.onlyReadsMemory()) return true;
+        
+        CallSite::arg_iterator B = CS.arg_begin(), E = CS.arg_end();
+        for (CallSite::arg_iterator A = B; A != E; ++A) {
+          if (A->get() == Ins && 
+              !CS.paramHasAttr(A - B + 1, Attribute::NoCapture)) {
+            return true;
+          }
+        }
+      } else if (dyn_cast<BitCastInst>(II)) {
         if (escapes(II, visited)) return true;
-      }
-      else if (StoreInst* SI = dyn_cast<StoreInst>(II)) {
+      } else if (StoreInst* SI = dyn_cast<StoreInst>(II)) {
         if (AllocaInst * AI = dyn_cast<AllocaInst>(SI->getOperand(1))) {
           if (!visited[AI]) {
             visited[AI] = true;
@@ -106,17 +138,15 @@ static bool escapes(Value* Ins, std::map<Instruction*, bool>& visited) {
         } else if (SI->getOperand(0) == Ins) {
           return true;
         }
-      }
-      else if (dyn_cast<LoadInst>(II)) {
+      } else if (dyn_cast<LoadInst>(II)) {
         if (isa<PointerType>(II->getType())) {
           if (escapes(II, visited)) return true; // allocas
         }
-      }
-      else if (dyn_cast<GetElementPtrInst>(II)) {
+      } else if (dyn_cast<GetElementPtrInst>(II)) {
         if (escapes(II, visited)) return true;
-      }
-      else if (dyn_cast<ReturnInst>(II)) return true;
-      else if (dyn_cast<PHINode>(II)) {
+      } else if (dyn_cast<ReturnInst>(II)) {
+        return true;
+      } else if (dyn_cast<PHINode>(II)) {
         if (!visited[II]) {
           visited[II] = true;
           if (escapes(II, visited)) return true;
@@ -129,7 +159,8 @@ static bool escapes(Value* Ins, std::map<Instruction*, bool>& visited) {
   return false;
 }
 
-bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT) {
+bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT,
+                                   Loop* CurLoop) {
   Instruction* Alloc = I;
   
   ConstantInt* CI = dyn_cast<ConstantInt>(Size);
@@ -154,6 +185,14 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT) {
   } else {
     return false;
   }
+
+  // The object does not have a finalizer and is never used. Remove the
+  // allocation as it will not have side effects.
+  if (!hasFinalizer && !Alloc->getNumUses()) {
+    DOUT << "Escape analysis removes instruction " << *Alloc << ": ";
+    Alloc->eraseFromParent();
+    return true;
+  }
   
   uint64_t NSize = CI->getZExtValue();
   // If the class has a finalize method, do not stack allocate the object.
@@ -161,6 +200,19 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT) {
     std::map<Instruction*, bool> visited;
     bool esc = escapes(Alloc, visited);
     if (!esc) {
+
+      if (CurLoop) {
+        // The object does not escape and is only used in the loop where it
+        // is allocated. We hoist the allocation in the pre-header so that
+        // we don't end up with tons of allocations on the stack.
+        BasicBlock* BB = CurLoop->getLoopPreheader();
+        assert(BB && "No Preheader!");
+        DOUT << "Escape analysis hoisting to " << BB->getName() << ": ";
+        DOUT << *Alloc;
+        Alloc->removeFromParent();
+        BB->getInstList().insert(BB->getTerminator(), Alloc);
+      }
+
       AllocaInst* AI = new AllocaInst(Type::Int8Ty, Size, "", Alloc);
       BitCastInst* BI = new BitCastInst(AI, Alloc->getType(), "", Alloc);
       DOUT << "escape" << Alloc->getParent()->getParent()->getName() << "\n";
