@@ -351,8 +351,6 @@ private:
                                  const llvm::Type* returnType,
                                  llvm::Value* addArg, bool doThrow = true);
 
-  llvm::Value* getResolvedVirtualTable(uint16 index, bool doThrow, bool clinit);
-
 //===----------------------- Java method calls  ---------------------------===//
   
   /// makeArgs - Insert the arguments of a method in the vector. The arguments
