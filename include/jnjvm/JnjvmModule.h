@@ -640,6 +640,8 @@ public:
   bool generateTracers;
   bool generateStubs;
   bool assumeCompiled;
+
+  bool compileRT;
   
   
   void CreateStaticInitializer();

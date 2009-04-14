@@ -1252,6 +1252,7 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   generateTracers = true;
   generateStubs = true;
   assumeCompiled = false;
+  compileRT = false;
 
   std::vector<const llvm::Type*> llvmArgs;
   llvmArgs.push_back(JnjvmModule::ptrType); // class loader.
@@ -1396,12 +1397,10 @@ void JavaAOTCompiler::CreateStaticInitializer() {
   
   for (array_class_iterator i = arrayClasses.begin(), 
        e = arrayClasses.end(); i != e; ++i) {
-    if (!(i->first->baseClass()->isPrimitive())) {
-      Args[0] = loader;
-      Args[1] = i->second;
-      Args[2] = getUTF8(i->first->name);
-      CallInst::Create(GetClassArray, Args, Args + 3, "", currentBlock);
-    }
+    Args[0] = loader;
+    Args[1] = i->second;
+    Args[2] = getUTF8(i->first->name);
+    CallInst::Create(GetClassArray, Args, Args + 3, "", currentBlock);
   }
   
 
@@ -1520,6 +1519,7 @@ void mainCompilerStart(JavaThread* th) {
           realName[size - 6] = 0;
           const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
           Class* cl = bootstrapLoader->constructClass(utf8, res);
+          if (cl == ClassArray::SuperArray) M->compileRT = true;
           classes.push_back(cl);  
         }
       }
