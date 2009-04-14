@@ -33,17 +33,6 @@
 using namespace jnjvm;
 using namespace llvm;
 
-extern JavaVirtualTable JavaArrayVT;
-
-extern ClassArray ArrayOfBool;
-extern ClassArray ArrayOfByte;
-extern ClassArray ArrayOfChar;
-extern ClassArray ArrayOfShort;
-extern ClassArray ArrayOfInt;
-extern ClassArray ArrayOfFloat;
-extern ClassArray ArrayOfDouble;
-extern ClassArray ArrayOfLong;
-
 bool JavaAOTCompiler::isCompiling(const CommonClass* cl) const {
   if (cl->isClass()) {
     // A class is being static compiled if owner class is not null.
@@ -1113,7 +1102,7 @@ Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
   const StructType* STy = StructType::get(Elemts);
   
   std::vector<Constant*> Cts;
-  Cts.push_back(CreateConstantForBaseObject(&ArrayOfChar));
+  Cts.push_back(CreateConstantForBaseObject(val->getClass()));
   Cts.push_back(ConstantInt::get(JnjvmModule::pointerSizeType, val->size));
   
   std::vector<Constant*> Vals;
@@ -1261,29 +1250,6 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   generateTracers = true;
   generateStubs = true;
   assumeCompiled = false;
-
-  const Type* ATy = JnjvmModule::JavaClassArrayType->getContainedType(0);
-  GlobalVariable* varGV = 0;
-  
-#define PRIMITIVE_ARRAY(name) \
-  varGV = new GlobalVariable(ATy, true, GlobalValue::ExternalLinkage, \
-                             0, #name, getLLVMModule()); \
-  arrayClasses.insert(std::make_pair(&name, varGV)); \
-  varGV = new GlobalVariable(JnjvmModule::VTType->getContainedType(0), true, \
-                             GlobalValue::ExternalLinkage, \
-                             0, #name"VT", getLLVMModule()); \
-  virtualTables.insert(std::make_pair(name.virtualVT, varGV));
-  
-  PRIMITIVE_ARRAY(ArrayOfBool)
-  PRIMITIVE_ARRAY(ArrayOfByte)
-  PRIMITIVE_ARRAY(ArrayOfChar)
-  PRIMITIVE_ARRAY(ArrayOfShort)
-  PRIMITIVE_ARRAY(ArrayOfInt)
-  PRIMITIVE_ARRAY(ArrayOfFloat)
-  PRIMITIVE_ARRAY(ArrayOfDouble)
-  PRIMITIVE_ARRAY(ArrayOfLong)
-
-#undef PRIMITIVE_ARRAY
 
   std::vector<const llvm::Type*> llvmArgs;
   llvmArgs.push_back(JnjvmModule::ptrType); // class loader.
@@ -1462,18 +1428,11 @@ void JavaAOTCompiler::setNoInline(Class* cl) {
 
 void JavaAOTCompiler::makeVT(Class* cl) {
   internalMakeVT(cl);
-#ifndef WITHOUT_VTABLE
   VirtualTable* VT = cl->virtualVT;
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
     JavaMethod& meth = cl->virtualMethods[i];
     ((void**)VT)[meth.offset] = &meth;
   }
-
-  if (!cl->super) {
-    VT->destructor = 0;
-    ClassArray::initialiseVT();
-  }
-#endif 
 }
 
 void JavaAOTCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {

@@ -289,7 +289,7 @@ private:
   
   /// constructPrimitiveArray - Hashes the primitive array.
   ///
-  ClassArray* constructPrimitiveArray(ClassArray& cl, const UTF8* name,
+  ClassArray* constructPrimitiveArray(const UTF8* name,
                                       ClassPrimitive* prim);
 
 public:

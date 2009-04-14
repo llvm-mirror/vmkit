@@ -27,9 +27,6 @@
 using namespace jnjvm;
 using namespace llvm;
 
-extern JavaVirtualTable JavaArrayVT;
-extern JavaVirtualTable ArrayObjectVT;
-
 Constant* JavaJITCompiler::getNativeClass(CommonClass* classDef) {
   const llvm::Type* Ty = classDef->isClass() ? JnjvmModule::JavaClassType :
                                                JnjvmModule::JavaCommonClassType;
@@ -88,14 +85,13 @@ Constant* JavaJITCompiler::getStaticInstance(Class* classDef) {
   assert(0 && "Should not be here");
   abort();
 #endif
-  void* obj = ((Class*)classDef)->getStaticInstance();
+  void* obj = classDef->getStaticInstance();
   if (!obj) {
-    Class* cl = (Class*)classDef;
     classDef->acquire();
-    obj = cl->getStaticInstance();
+    obj = classDef->getStaticInstance();
     if (!obj) {
       // Allocate now so that compiled code can reference it.
-      obj = cl->allocateStaticInstance(JavaThread::get()->getJVM());
+      obj = classDef->allocateStaticInstance(JavaThread::get()->getJVM());
     }
     classDef->release();
   }
@@ -140,10 +136,9 @@ Value* JavaJITCompiler::getIsolate(Jnjvm* isolate, Value* Where) {
 void JavaJITCompiler::makeVT(Class* cl) { 
   internalMakeVT(cl);
 
-#ifndef WITHOUT_VTABLE
-  JavaVirtualTable* VT = cl->virtualVT;
- 
-  assert(VT);
+  JavaVirtualTable* VT = cl->virtualVT; 
+  assert(VT && "No VT was allocated!");
+
   // Fill the virtual table with function pointers.
   ExecutionEngine* EE = mvm::MvmModule::executionEngine;
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
@@ -154,22 +149,14 @@ void JavaJITCompiler::makeVT(Class* cl) {
     // Special handling for finalize method. Don't put a finalizer
     // if there is none, or if it is empty.
     if (meth.offset == 0) {
-#if defined(ISOLATE_SHARING) || defined(USE_GC_BOEHM)
-      VT->destructor = 0;
-#else
-      Function* func = parseFunction(&meth);
+#if !defined(ISOLATE_SHARING) && !defined(USE_GC_BOEHM)
       if (!cl->super) {
         meth.canBeInlined = true;
-        VT->destructor = 0;
       } else {
-        Function::iterator BB = func->begin();
-        BasicBlock::iterator I = BB->begin();
-        if (isa<ReturnInst>(I)) {
-          VT->destructor = 0;
-        } else {
           // LLVM does not allow recursive compilation. Create the code now.
+          // TODO: improve this when we have proper initialization.
+          Function* func = parseFunction(&meth);
           VT->destructor = (uintptr_t)EE->getPointerToFunction(func);
-        }
       }
 #endif
     } else {
@@ -186,12 +173,6 @@ void JavaJITCompiler::makeVT(Class* cl) {
   func->deleteBody();
 #endif
     
-  // If there is no super, then it's the first VT that we allocate. Assign
-  // this VT to native types.
-  if (!(cl->super)) {
-    ClassArray::initialiseVT();
-  }
-#endif 
 }
 
 void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
@@ -232,5 +213,5 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   vm->waitForExit();
   
   delete newArgv;
-  return 0; 
+  return 0;
 }

@@ -305,9 +305,7 @@ public:
   
   /// CommonClass - Create a class with th given name.
   ///
-  CommonClass(JnjvmClassLoader* loader, const UTF8* name) {
-    init(loader, name);
-  }
+  CommonClass(JnjvmClassLoader* loader, const UTF8* name);
   
   /// ~CommonClass - Free memory used by this class, and remove it from
   /// metadata.
@@ -317,10 +315,6 @@ public:
   /// CommonClass - Default constructor.
   ///
   CommonClass();
-  
-  /// init - initialize the class.
-  ///
-  void init(JnjvmClassLoader* JCL, const UTF8* n);
   
   /// setInterfaces - Set the interfaces of the class.
   ///
@@ -911,26 +905,10 @@ public:
   ///
   JavaArray* doNew(sint32 n, Jnjvm* vm);
 
-  /// init - Initialize the array class.
-  ///
-  void init(JnjvmClassLoader* loader, const UTF8* name,
-            UserCommonClass* baseClass);
-  
-  /// initPrimitive - Initialize the primitive array class.
-  ///
-  void initPrimitive(JnjvmClassLoader* loader, const UTF8* name,
-                     UserCommonClass* baseClass);
-
-  /// ClassArray - Constructor with a VT.
-  ///
-  ClassArray(JavaVirtualTable& VT) { virtualVT = &VT; }
-
   /// ClassArray - Construct a Java array class with the given name.
   ///
   ClassArray(JnjvmClassLoader* loader, const UTF8* name,
-             UserCommonClass* baseClass) : CommonClass (loader, name) {
-    init(loader, name, baseClass);
-  }
+             UserCommonClass* baseClass);
   
   /// SuperArray - The super of class arrays. Namely java/lang/Object.
   ///

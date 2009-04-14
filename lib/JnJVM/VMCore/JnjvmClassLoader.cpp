@@ -52,26 +52,6 @@
 
 using namespace jnjvm;
 
-JavaVirtualTable ArrayOfBoolVT;
-JavaVirtualTable ArrayOfByteVT;
-JavaVirtualTable ArrayOfCharVT;
-JavaVirtualTable ArrayOfShortVT;
-JavaVirtualTable ArrayOfIntVT;
-JavaVirtualTable ArrayOfFloatVT;
-JavaVirtualTable ArrayOfDoubleVT;
-JavaVirtualTable ArrayOfLongVT;
-
-ClassArray ArrayOfBool(ArrayOfBoolVT);
-ClassArray ArrayOfByte(ArrayOfByteVT);
-ClassArray ArrayOfChar(ArrayOfCharVT);
-ClassArray ArrayOfShort(ArrayOfShortVT);
-ClassArray ArrayOfInt(ArrayOfIntVT);
-ClassArray ArrayOfFloat(ArrayOfFloatVT);
-ClassArray ArrayOfDouble(ArrayOfDoubleVT);
-ClassArray ArrayOfLong(ArrayOfLongVT);
-
-extern "C" void JavaArrayTracer(JavaObject*);
-
 typedef void (*static_init_t)(JnjvmClassLoader*);
 
 JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
@@ -117,36 +97,28 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(this, "byte", 1);
   
   // Create the primitive arrays.
-  upcalls->ArrayOfChar = constructPrimitiveArray(ArrayOfChar,
-                                                 asciizConstructUTF8("[C"),
+  upcalls->ArrayOfChar = constructPrimitiveArray(asciizConstructUTF8("[C"),
                                                  upcalls->OfChar);
 
-  upcalls->ArrayOfByte = constructPrimitiveArray(ArrayOfByte,
-                                                 asciizConstructUTF8("[B"),
+  upcalls->ArrayOfByte = constructPrimitiveArray(asciizConstructUTF8("[B"),
                                                  upcalls->OfByte);
   
-  upcalls->ArrayOfInt = constructPrimitiveArray(ArrayOfInt,
-                                                asciizConstructUTF8("[I"),
+  upcalls->ArrayOfInt = constructPrimitiveArray(asciizConstructUTF8("[I"),
                                                 upcalls->OfInt);
   
-  upcalls->ArrayOfBool = constructPrimitiveArray(ArrayOfBool,
-                                                 asciizConstructUTF8("[Z"),
+  upcalls->ArrayOfBool = constructPrimitiveArray(asciizConstructUTF8("[Z"),
                                                  upcalls->OfBool);
   
-  upcalls->ArrayOfLong = constructPrimitiveArray(ArrayOfLong,
-                                                 asciizConstructUTF8("[J"),
+  upcalls->ArrayOfLong = constructPrimitiveArray(asciizConstructUTF8("[J"),
                                                  upcalls->OfLong);
   
-  upcalls->ArrayOfFloat = constructPrimitiveArray(ArrayOfFloat,
-                                                  asciizConstructUTF8("[F"),
+  upcalls->ArrayOfFloat = constructPrimitiveArray(asciizConstructUTF8("[F"),
                                                   upcalls->OfFloat);
   
-  upcalls->ArrayOfDouble = constructPrimitiveArray(ArrayOfDouble,
-                                                   asciizConstructUTF8("[D"),
+  upcalls->ArrayOfDouble = constructPrimitiveArray(asciizConstructUTF8("[D"),
                                                    upcalls->OfDouble);
   
-  upcalls->ArrayOfShort = constructPrimitiveArray(ArrayOfShort,
-                                                  asciizConstructUTF8("[S"),
+  upcalls->ArrayOfShort = constructPrimitiveArray(asciizConstructUTF8("[S"),
                                                   upcalls->OfShort);
   
   // Fill the maps.
@@ -179,25 +151,31 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   // Now that native types have been loaded, try to find if we have a
   // pre-compiled rt.jar
   if (dlLoad) {
-    nativeHandle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
-    if (nativeHandle) {
-      // Found it!
-      SuperArray = (Class*)dlsym(nativeHandle, "java.lang.Object");
+    SuperArray = (Class*)dlsym(SELF_HANDLE, "java.lang.Object");
+    if (!SuperArray) {
+      nativeHandle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
+      if (nativeHandle) {
+        // Found it!
+        SuperArray = (Class*)dlsym(nativeHandle, "java.lang.Object");
+      }
+    }
     
-      if (SuperArray) {
-        ClassArray::SuperArray = (Class*)SuperArray->getInternal();
-        // We have the java/lang/Object class, execute the static initializer.
-        static_init_t init = (static_init_t)(uintptr_t)SuperArray->classLoader;
-        assert(init && "Loaded the wrong boot library");
-        init(this);
-        ClassArray::initialiseVT();
-      } 
+    if (SuperArray) {
+      ClassArray::SuperArray = (Class*)SuperArray->getInternal();
+      // We have the java/lang/Object class, execute the static initializer.
+      static_init_t init = (static_init_t)(uintptr_t)SuperArray->classLoader;
+      assert(init && "Loaded the wrong boot library");
+      init(this);
+      ClassArray::initialiseVT();
     }
   }
     
   // We haven't found a pre-compiled rt.jar, load the root class ourself.
   if (!SuperArray) {
-    
+   
+    // We can not resolve java.lang.Object yet, because we may not be
+    // running in a Java thread, and we may not have a compiler
+    // available.
     SuperArray = loadName(asciizConstructUTF8("java/lang/Object"), false,
                           false);
     ClassArray::SuperArray = (Class*)SuperArray->getInternal();
@@ -213,13 +191,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   
   ClassArray::InterfacesArray[0] = (Class*)InterfacesArray[0]->getInternal();
   ClassArray::InterfacesArray[1] = (Class*)(InterfacesArray[1]->getInternal()); 
- 
-  // Load array classes that JnJVM internally uses.
-  upcalls->ArrayOfString = 
-    constructArray(asciizConstructUTF8("[Ljava/lang/String;"));
-  
-  upcalls->ArrayOfObject = 
-    constructArray(asciizConstructUTF8("[Ljava/lang/Object;"));
   
  
   Attribut::codeAttribut = asciizConstructUTF8("Code");
@@ -626,12 +597,12 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name,
 }
 
 ClassArray* 
-JnjvmBootstrapLoader::constructPrimitiveArray(ClassArray& cl, const UTF8* name,
+JnjvmBootstrapLoader::constructPrimitiveArray(const UTF8* name,
                                               ClassPrimitive* baseClass) {
     
-  cl.initPrimitive(this, name, baseClass);
-  classes->map.insert(std::make_pair(name, &cl));
-  return &cl;
+  ClassArray* cl = new(allocator) UserClassArray(this, name, baseClass);
+  classes->map.insert(std::make_pair(name, cl));
+  return cl;
 }
 
 Typedef* JnjvmClassLoader::internalConstructType(const UTF8* name) {

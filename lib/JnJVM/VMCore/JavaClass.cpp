@@ -40,9 +40,8 @@ const UTF8* Attribut::sourceFileAttribut = 0;
 Class* ClassArray::SuperArray;
 Class** ClassArray::InterfacesArray;
 
-extern JavaVirtualTable JavaObjectVT;
-
 extern "C" void JavaArrayTracer(JavaObject*);
+extern "C" void JavaObjectTracer(JavaObject*);
 extern "C" void ArrayObjectTracer(JavaObject*);
 
 Attribut::Attribut(const UTF8* name, uint32 length,
@@ -257,7 +256,7 @@ ClassPrimitive::byteIdToPrimitive(char id, Classpath* upcalls) {
   }
 }
 
-void CommonClass::init(JnjvmClassLoader* loader, const UTF8* n) {
+CommonClass::CommonClass(JnjvmClassLoader* loader, const UTF8* n) {
   name = n;
   classLoader = loader;
   nbInterfaces = 0;
@@ -304,8 +303,8 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
   memset(IsolateInfo, 0, sizeof(TaskClassMirror) * NR_ISOLATES);
 }
 
-void ClassArray::init(JnjvmClassLoader* loader, const UTF8* n,
-                      UserCommonClass* base) {
+ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
+                       UserCommonClass* base) : CommonClass(loader, n) {
   _baseClass = base;
   super = ClassArray::SuperArray;
   interfaces = ClassArray::InterfacesArray;
@@ -313,26 +312,6 @@ void ClassArray::init(JnjvmClassLoader* loader, const UTF8* n,
   
   uint32 size = JavaVirtualTable::getNumMethods();
   virtualVT = new(loader->allocator, size) JavaVirtualTable(this);
-  virtualVT->tracer = (uintptr_t)ArrayObjectTracer;
-  
-  depth = 1;
-  display = (CommonClass**)loader->allocator.Allocate(2 * sizeof(CommonClass*));
-  display[0] = ClassArray::SuperArray;
-  display[1] = this;
-  access = ACC_FINAL | ACC_ABSTRACT | ACC_PUBLIC | JNJVM_ARRAY;
-}
-
-void ClassArray::initPrimitive(JnjvmClassLoader* loader, const UTF8* n,
-                               UserCommonClass* base) {
-  CommonClass::init(loader, n);
-  
-  _baseClass = base;
-  super = ClassArray::SuperArray;
-  interfaces = ClassArray::InterfacesArray;
-  nbInterfaces = 2;
-  
-  virtualVT->tracer = (uintptr_t)JavaArrayTracer;
-  virtualVT->cl = this;
   
   depth = 1;
   display = (CommonClass**)loader->allocator.Allocate(2 * sizeof(CommonClass*));
@@ -796,6 +775,7 @@ void UserClass::loadParents() {
     display = (CommonClass**)
       classLoader->allocator.Allocate(sizeof(CommonClass*));
     display[0] = this;
+    virtualTableSize = JavaVirtualTable::getFirstJavaMethodIndex();
   } else {
     super = classLoader->loadName(superUTF8, true, true);
     depth = super->depth + 1;
@@ -804,6 +784,7 @@ void UserClass::loadParents() {
       allocator.Allocate(sizeof(CommonClass*) * (depth + 1));
     memcpy(display, super->display, depth * sizeof(UserCommonClass*));
     display[depth] = this;
+    virtualTableSize = super->virtualTableSize;
   }
 
   for (unsigned i = 0; i < realNbInterfaces; i++)
@@ -855,7 +836,7 @@ void UserClass::loadExceptions() {
 
 Attribut* Class::readAttributs(Reader& reader, uint16& size) {
   uint16 nba = reader.readU2();
-  
+ 
   Attribut* attributs = new(classLoader->allocator) Attribut[nba];
 
   for (int i = 0; i < nba; i++) {
@@ -974,6 +955,7 @@ void Class::resolveClass() {
       if (!needsInitialisationCheck()) {
         setInitializationState(ready);
       }
+      if (!super) ClassArray::initialiseVT();
       setOwnerClass(0);
       broadcastClass();
       release();
@@ -1312,47 +1294,91 @@ void ClassArray::initialiseVT() {
     COPY(upcalls->ArrayOfFloat)
     COPY(upcalls->ArrayOfDouble)
     COPY(upcalls->ArrayOfLong)
-    COPY(upcalls->ArrayOfObject)
-    COPY(upcalls->ArrayOfString)
 
 #undef COPY
-
+ 
+  JnjvmClassLoader* JCL = cl->classLoader;
+  // Load array classes that JnJVM internally uses.
+  upcalls->ArrayOfString = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[Ljava/lang/String;"));
+  
+  upcalls->ArrayOfObject = 
+    JCL->constructArray(JCL->asciizConstructUTF8("[Ljava/lang/Object;"));
 }
 
 JavaVirtualTable::JavaVirtualTable(Class* C) {
+   
+  if (C->super) {
+    // (1) Copy the super VT into the current VT.
+    uint32 size = C->super->virtualTableSize * sizeof(uintptr_t);
+    memcpy(this, C->super->virtualVT, size);
+  
+    // (2) Set the class of this VT.
+    cl = C;
     
-  // (1) Copy the super VT into the current VT.
-  uint32 size = C->super->virtualTableSize * sizeof(uintptr_t);
-  memcpy(this, C->super->virtualVT, size);
+    // (3) Set depth and display for fast dynamic type checking.
+    depth = C->super->virtualVT->depth + 1;
+    mvm::BumpPtrAllocator& allocator = C->classLoader->allocator;
+    display = (JavaVirtualTable**)
+      allocator.Allocate(sizeof(JavaVirtualTable*) * (depth + 1));   
+    size = depth * sizeof(JavaVirtualTable*);
+    memcpy(display, C->super->virtualVT->display, size); 
+    display[depth] = this;
+  } else {
+    // (1) Set the tracer, destructor and delete
+    tracer = (uintptr_t)JavaObjectTracer;
+    destructor = 0;
+    operatorDelete = 0;
     
-  // (2) Set the class of this VT.
-  cl = C;
+    // (2) Set the class of this VT.
+    cl = C;
+    
+    // (3) Set depth and display for fast dynamic type checking.
+    depth = 0;
+    display = (JavaVirtualTable**)
+      C->classLoader->allocator.Allocate(sizeof(JavaVirtualTable*));
+    display[0] = this;
+    destructor = 0;
+  }
+    
 
-  // (3) Set depth and display for fast dynamic type checking.
-  depth = cl->super->virtualVT->depth + 1;
-  mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-  display = (JavaVirtualTable**)
-    allocator.Allocate(sizeof(JavaVirtualTable*) * (depth + 1));   
-  size = depth * sizeof(JavaVirtualTable*);
-  memcpy(display, cl->super->virtualVT->display, size); 
-  display[depth] = this;
 }
   
 JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
+   
+  if (!C->baseClass()->isPrimitive()) {
+    // (1) Copy the super VT into the current VT.
+    uint32 size = getNumMethods() * sizeof(uintptr_t);
+    memcpy(this, C->super->virtualVT, size);
+    tracer = (uintptr_t)ArrayObjectTracer;
     
-  // (1) Copy the super VT into the current VT.
-  uint32 size = getNumMethods() * sizeof(uintptr_t);
-  memcpy(this, &JavaObjectVT, size);
-    
-  // (2) Set the class of this VT.
-  cl = C;
+    // (2) Set the class of this VT.
+    cl = C;
 
-  // (3) Set depth and display for fast dynamic type checking.
-  depth = 1;
-  mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-  display = 
-    (JavaVirtualTable**)allocator.Allocate(sizeof(JavaVirtualTable*) * 2);
-  display[0] = &JavaObjectVT;
-  display[1] = this;
+    // (3) Set depth and display for fast dynamic type checking.
+    depth = 1;
+    mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
+    display = 
+      (JavaVirtualTable**)allocator.Allocate(sizeof(JavaVirtualTable*) * 2);
+    display[0] = C->super->virtualVT;
+    display[1] = this;
+  } else {
+    // (1) Set the tracer, destructor and delete
+    tracer = (uintptr_t)JavaArrayTracer;
+    destructor = 0;
+    operatorDelete = 0;
+    
+    // (2) Set the class of this VT.
+    cl = C;
+    
+    // (3) Set depth and display for fast dynamic type checking. Since
+    // JavaObject has not been loaded yet, don't use super.
+    depth = 1;
+    mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
+    display = 
+      (JavaVirtualTable**)allocator.Allocate(sizeof(JavaVirtualTable*) * 2);
+    display[0] = 0;
+    display[1] = this;
+  }
 }
 

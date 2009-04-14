@@ -23,8 +23,6 @@
 using namespace jnjvm;
 
 
-JavaVirtualTable JavaObjectVT;
-
 static void initialiseVT() {
 
 # define INIT(X) { \
@@ -43,14 +41,6 @@ static void initialiseVT() {
 #endif
 #undef INIT
 
-#define INIT(X) { \
-  X fake; \
-  void* V = ((void**)(void*)(&fake))[0]; \
-  memcpy(&(X##VT), V, sizeof(VirtualTable)); \
-  X##VT.destructor = 0; }
-
-  INIT(JavaObject);
-#undef INIT
 }
 
 #ifdef ISOLATE_SHARING

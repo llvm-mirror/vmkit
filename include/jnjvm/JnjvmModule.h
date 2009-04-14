@@ -369,11 +369,6 @@ private:
   
   bool enabledException;
   
-  /// allocateVT - Allocate a VT for the class. The VT will be the VT of
-  /// instances of the class.
-  void allocateVT(Class* cl);
-
-
   virtual void makeVT(Class* cl) = 0;
   
   

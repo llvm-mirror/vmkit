@@ -28,9 +28,6 @@
 using namespace jnjvm;
 using namespace llvm;
 
-
-extern JavaVirtualTable JavaObjectVT;
-
 #ifdef WITH_TRACER
 const llvm::FunctionType* JnjvmModule::MarkAndTraceType = 0;
 #endif
@@ -94,52 +91,6 @@ JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
 
   enabledException = true;
 }
-
-#ifndef WITHOUT_VTABLE
-void JavaLLVMCompiler::allocateVT(Class* cl) {
-  for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
-    JavaMethod& meth = cl->virtualMethods[i];
-    if (meth.name->equals(cl->classLoader->bootstrapLoader->finalize)) {
-      meth.offset = 0;
-    } else {
-      JavaMethod* parent = cl->super? 
-        cl->super->lookupMethodDontThrow(meth.name, meth.type, false, true,
-                                         0) :
-        0;
-
-      uint64_t offset = 0;
-      if (!parent) {
-        offset = cl->virtualTableSize++;
-        meth.offset = offset;
-      } else {
-        offset = parent->offset;
-        meth.offset = parent->offset;
-      }
-    }
-  }
-
-  JavaVirtualTable* VT = 0;
-  if (cl->super) {
-    uint32 size = cl->virtualTableSize;
-    mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-    Class* super = cl->super;
-    assert(cl->virtualTableSize >= super->virtualTableSize &&
-      "Super VT bigger than own VT");
-    assert(super->virtualVT && "Super does not have a VT!");
-    VT = new(allocator, size) JavaVirtualTable(cl);
-  } else {
-    VT = &JavaObjectVT;
-    VT->depth = 0;
-    VT->display = (JavaVirtualTable**)
-      cl->classLoader->allocator.Allocate(sizeof(JavaVirtualTable*));
-    VT->display[0] = VT;
-
-  }
-
-  cl->virtualVT = VT;
-}
-#endif
-
 
 #ifdef WITH_TRACER
 llvm::Function* JavaLLVMCompiler::internalMakeTracer(Class* cl, bool stat) {
@@ -228,27 +179,30 @@ llvm::Function* JavaLLVMCompiler::internalMakeTracer(Class* cl, bool stat) {
 
 void JavaLLVMCompiler::internalMakeVT(Class* cl) {
   
-  JavaVirtualTable* VT = 0;
-#ifdef WITHOUT_VTABLE
-  mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-  VT = (JavaVirtualTable*)allocator.Allocate(VT_SIZE);
-  memcpy(VT, JavaObjectVT, VT_SIZE);
-  cl->virtualVT = VT;
-#else
-  if (cl->super) {
-    if (isStaticCompiling() && !cl->super->virtualVT) {
-      makeVT(cl->super);
-    }
+  for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+    JavaMethod& meth = cl->virtualMethods[i];
+    if (meth.name->equals(cl->classLoader->bootstrapLoader->finalize)) {
+      meth.offset = 0;
+    } else {
+      JavaMethod* parent = cl->super? 
+        cl->super->lookupMethodDontThrow(meth.name, meth.type, false, true,
+                                         0) :
+        0;
 
-    cl->virtualTableSize = cl->super->virtualTableSize;
-  } else {
-    cl->virtualTableSize = JavaVirtualTable::getFirstJavaMethodIndex();
+      uint64_t offset = 0;
+      if (!parent) {
+        offset = cl->virtualTableSize++;
+        meth.offset = offset;
+      } else {
+        offset = parent->offset;
+        meth.offset = parent->offset;
+      }
+    }
   }
 
-  // Allocate the virtual table.
-  allocateVT(cl);
-  VT = cl->virtualVT;
-#endif  
+  uint32 size = cl->virtualTableSize;
+  mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
+  cl->virtualVT = new(allocator, size) JavaVirtualTable(cl);
 }
 
 void JavaLLVMCompiler::resolveVirtualClass(Class* cl) {
