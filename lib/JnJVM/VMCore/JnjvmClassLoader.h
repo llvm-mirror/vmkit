@@ -287,11 +287,6 @@ private:
   ///
   ArrayUInt8* openName(const UTF8* utf8);
   
-  /// constructPrimitiveArray - Hashes the primitive array.
-  ///
-  ClassArray* constructPrimitiveArray(const UTF8* name,
-                                      ClassPrimitive* prim);
-
 public:
   
   /// tracer - Traces instances of this class.

@@ -97,29 +97,29 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(this, "byte", 1);
   
   // Create the primitive arrays.
-  upcalls->ArrayOfChar = constructPrimitiveArray(asciizConstructUTF8("[C"),
-                                                 upcalls->OfChar);
+  upcalls->ArrayOfChar = constructArray(asciizConstructUTF8("[C"),
+                                        upcalls->OfChar);
 
-  upcalls->ArrayOfByte = constructPrimitiveArray(asciizConstructUTF8("[B"),
-                                                 upcalls->OfByte);
+  upcalls->ArrayOfByte = constructArray(asciizConstructUTF8("[B"),
+                                        upcalls->OfByte);
   
-  upcalls->ArrayOfInt = constructPrimitiveArray(asciizConstructUTF8("[I"),
-                                                upcalls->OfInt);
+  upcalls->ArrayOfInt = constructArray(asciizConstructUTF8("[I"),
+                                       upcalls->OfInt);
   
-  upcalls->ArrayOfBool = constructPrimitiveArray(asciizConstructUTF8("[Z"),
-                                                 upcalls->OfBool);
+  upcalls->ArrayOfBool = constructArray(asciizConstructUTF8("[Z"),
+                                        upcalls->OfBool);
   
-  upcalls->ArrayOfLong = constructPrimitiveArray(asciizConstructUTF8("[J"),
-                                                 upcalls->OfLong);
+  upcalls->ArrayOfLong = constructArray(asciizConstructUTF8("[J"),
+                                        upcalls->OfLong);
   
-  upcalls->ArrayOfFloat = constructPrimitiveArray(asciizConstructUTF8("[F"),
-                                                  upcalls->OfFloat);
+  upcalls->ArrayOfFloat = constructArray(asciizConstructUTF8("[F"),
+                                         upcalls->OfFloat);
   
-  upcalls->ArrayOfDouble = constructPrimitiveArray(asciizConstructUTF8("[D"),
-                                                   upcalls->OfDouble);
+  upcalls->ArrayOfDouble = constructArray(asciizConstructUTF8("[D"),
+                                          upcalls->OfDouble);
   
-  upcalls->ArrayOfShort = constructPrimitiveArray(asciizConstructUTF8("[S"),
-                                                  upcalls->OfShort);
+  upcalls->ArrayOfShort = constructArray(asciizConstructUTF8("[S"),
+                                         upcalls->OfShort);
   
   // Fill the maps.
   primitiveMap[I_VOID] = upcalls->OfVoid;
@@ -594,15 +594,6 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name,
   }
   classes->lock.unlock();
   return res;
-}
-
-ClassArray* 
-JnjvmBootstrapLoader::constructPrimitiveArray(const UTF8* name,
-                                              ClassPrimitive* baseClass) {
-    
-  ClassArray* cl = new(allocator) UserClassArray(this, name, baseClass);
-  classes->map.insert(std::make_pair(name, cl));
-  return cl;
 }
 
 Typedef* JnjvmClassLoader::internalConstructType(const UTF8* name) {
