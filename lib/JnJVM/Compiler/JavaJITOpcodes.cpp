@@ -2009,7 +2009,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           node->addIncoming(ConstantInt::getFalse(), currentBlock);
           Value* objCl = CallInst::Create(module->GetClassFunction, obj, "",
                                           ifFalse);
-          Value* classArgs[2] = { objCl, clVar };            
+          Value* classArgs[2] = { objCl, clVar }; 
             
           if (isInterface(cl->access)) {
             Value* res = CallInst::Create(module->ImplementsFunction,

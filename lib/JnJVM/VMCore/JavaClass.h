@@ -1338,7 +1338,7 @@ class JavaVirtualTable : public VirtualTable {
 public:
   CommonClass* cl;
   size_t depth;
-  CommonClass** display;
+  JavaVirtualTable** display;
 
   uintptr_t init;
   uintptr_t equals;

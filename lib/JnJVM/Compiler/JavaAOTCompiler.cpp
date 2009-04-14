@@ -1201,24 +1201,17 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
         ConstantInt::get(Type::Int64Ty, VT->depth), PTy));
   
   // display
-  const ArrayType* DTy = ArrayType::get(JnjvmModule::JavaCommonClassType,
+  const ArrayType* DTy = ArrayType::get(JnjvmModule::VTType,
                                         VT->depth + 1);
   
   std::vector<Constant*> TempElmts;
-  Constant* ClGEPs[2] = { JnjvmModule::constantZero,
-                          JnjvmModule::constantZero };
-
-  
   for (uint32 i = 0; i <= VT->depth; ++i) {
-    Constant* Cl = getNativeClass(VT->display[i]);
-    if (Cl->getType() != JnjvmModule::JavaCommonClassType)
-      Cl = ConstantExpr::getGetElementPtr(Cl, ClGEPs, 2);
-    
+    Constant* Cl = getVirtualTable(VT->display[i]);
     TempElmts.push_back(Cl);
   }
-
   Constant* display = ConstantArray::get(DTy, TempElmts);
   TempElmts.clear();
+  
   display = new GlobalVariable(DTy, true, GlobalValue::InternalLinkage,
                                display, "", getLLVMModule());
 

@@ -130,9 +130,9 @@ void JavaLLVMCompiler::allocateVT(Class* cl) {
   } else {
     VT = &JavaObjectVT;
     VT->depth = 0;
-    VT->display = (CommonClass**)
-      cl->classLoader->allocator.Allocate(sizeof(CommonClass*));
-    VT->display[0] = cl;
+    VT->display = (JavaVirtualTable**)
+      cl->classLoader->allocator.Allocate(sizeof(JavaVirtualTable*));
+    VT->display[0] = VT;
 
   }
 

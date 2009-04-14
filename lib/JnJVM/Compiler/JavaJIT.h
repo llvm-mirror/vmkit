@@ -114,13 +114,6 @@ private:
   void convertValue(llvm::Value*& val, const llvm::Type* t1,
                     llvm::BasicBlock* currentBlock, bool usign);
  
-  /// getConstantPoolAt - Return the value at the given index of the constant
-  /// pool. The generated code invokes the resolver if the constant pool
-  /// contains no value at the index.
-  llvm::Value* getConstantPoolAt(uint32 index, llvm::Function* resolver,
-                                 const llvm::Type* returnType,
-                                 llvm::Value* addArg, bool doThrow = true);
-
   /// getCurrentThread - Emit code to get the current thread.
   llvm::Value* getCurrentThread();
 
@@ -350,7 +343,15 @@ private:
   /// of the returned value is Class.
   llvm::Value* getResolvedClass(uint16 index, bool clinit, bool doThrow,
                                 UserClass** alreadyResolved);
+  
+  /// getConstantPoolAt - Return the value at the given index of the constant
+  /// pool. The generated code invokes the resolver if the constant pool
+  /// contains no value at the index.
+  llvm::Value* getConstantPoolAt(uint32 index, llvm::Function* resolver,
+                                 const llvm::Type* returnType,
+                                 llvm::Value* addArg, bool doThrow = true);
 
+  llvm::Value* getResolvedVirtualTable(uint16 index, bool doThrow, bool clinit);
 
 //===----------------------- Java method calls  ---------------------------===//
   

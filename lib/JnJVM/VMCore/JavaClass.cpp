@@ -1290,7 +1290,9 @@ void ClassArray::initialiseVT() {
   // Set the values in the JavaObject VT
   cl->virtualVT->depth = 0;
   cl->virtualVT->cl = cl;
-  cl->virtualVT->display = cl->display;
+  cl->virtualVT->display = (JavaVirtualTable**)
+    cl->classLoader->allocator.Allocate(sizeof(JavaVirtualTable*));
+  cl->virtualVT->display[0] = cl->virtualVT;
 
   Classpath* upcalls = cl->classLoader->bootstrapLoader->upcalls;
 
@@ -1329,11 +1331,11 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
   // (3) Set depth and display for fast dynamic type checking.
   depth = cl->super->virtualVT->depth + 1;
   mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-  display = (CommonClass**)
-    allocator.Allocate(sizeof(CommonClass*) * (depth + 1));   
-  size = depth * sizeof(UserCommonClass*);
+  display = (JavaVirtualTable**)
+    allocator.Allocate(sizeof(JavaVirtualTable*) * (depth + 1));   
+  size = depth * sizeof(JavaVirtualTable*);
   memcpy(display, cl->super->virtualVT->display, size); 
-  display[depth] = C;
+  display[depth] = this;
 }
   
 JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
@@ -1348,8 +1350,9 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
   // (3) Set depth and display for fast dynamic type checking.
   depth = 1;
   mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-  display = (CommonClass**)allocator.Allocate(sizeof(CommonClass*) * 2);
-  display[0] = C->super;
-  display[1] = C;
+  display = 
+    (JavaVirtualTable**)allocator.Allocate(sizeof(JavaVirtualTable*) * 2);
+  display[0] = &JavaObjectVT;
+  display[1] = this;
 }
 
