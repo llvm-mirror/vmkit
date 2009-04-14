@@ -1858,11 +1858,11 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
           LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[charId];
           sizeElement = LAI.sizeInBytesConstant;
-          if (TheCompiler->isStaticCompiling() && 
+          if (TheCompiler->isStaticCompiling() &&
               valCl->getType() != module->JavaClassArrayType) {
-              valCl = new LoadInst(valCl, "", currentBlock);
-              TheVT = CallInst::Create(module->GetVTFromClassArrayFunction,
-                                       valCl, "", currentBlock);
+            valCl = new LoadInst(valCl, "", currentBlock);
+            TheVT = CallInst::Create(module->GetVTFromClassArrayFunction,
+                                     valCl, "", currentBlock);
           } else {
             TheVT = TheCompiler->getVirtualTable(dcl->virtualVT);
           }
