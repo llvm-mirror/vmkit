@@ -231,6 +231,14 @@ public:
     return 0;
   }
   
+  /// asClass - Returns the class as a user-defined class
+  /// if it is not a primitive or an array.
+  ///
+  const UserClass* asClass() const {
+    if (isClass()) return (const UserClass*)this;
+    return 0;
+  }
+  
   /// asPrimitiveClass - Returns the class if it's a primitive class.
   ///
   UserClassPrimitive* asPrimitiveClass() {
@@ -238,10 +246,20 @@ public:
     return 0;
   }
   
+  const UserClassPrimitive* asPrimitiveClass() const {
+    if (isPrimitive()) return (const UserClassPrimitive*)this;
+    return 0;
+  }
+  
   /// asArrayClass - Returns the class if it's an array class.
   ///
   UserClassArray* asArrayClass() {
     if (isArray()) return (UserClassArray*)this;
+    return 0;
+  }
+  
+  const UserClassArray* asArrayClass() const {
+    if (isArray()) return (const UserClassArray*)this;
     return 0;
   }
 
@@ -551,7 +569,7 @@ public:
 
   /// getOwnerClass - Get the thread that is currently initializing the class.
   ///
-  mvm::Thread* getOwnerClass() {
+  mvm::Thread* getOwnerClass() const {
     return ownerClass;
   }
 
@@ -563,13 +581,13 @@ public:
  
   /// getOuterClass - Get the class that contains the definition of this class.
   ///
-  Class* getOuterClass() {
+  Class* getOuterClass() const {
     return outerClass;
   }
 
   /// getInnterClasses - Get the classes that this class defines.
   ///
-  Class** getInnerClasses() {
+  Class** getInnerClasses() const {
     return innerClasses;
   }
 
@@ -604,10 +622,10 @@ public:
                          bool recurse, Class** definingClass);
    
   /// Assessor methods.
-  JavaField* getStaticFields()    { return staticFields; }
-  JavaField* getVirtualFields()   { return virtualFields; }
-  JavaMethod* getStaticMethods()  { return staticMethods; }
-  JavaMethod* getVirtualMethods() { return virtualMethods; }
+  JavaField* getStaticFields() const    { return staticFields; }
+  JavaField* getVirtualFields() const   { return virtualFields; }
+  JavaMethod* getStaticMethods() const  { return staticMethods; }
+  JavaMethod* getVirtualMethods() const { return virtualMethods; }
 
   
   /// setInnerAccess - Set the access flags of this inner class.
@@ -618,7 +636,7 @@ public:
    
   /// getStaticSize - Get the size of the static instance.
   ///
-  uint32 getStaticSize() {
+  uint32 getStaticSize() const {
     return staticSize;
   }
   
@@ -679,13 +697,13 @@ public:
  
   /// getConstantPool - Get the constant pool of the class.
   ///
-  JavaConstantPool* getConstantPool() {
+  JavaConstantPool* getConstantPool() const {
     return ctpInfo;
   }
 
   /// getBytes - Get the bytes of the class file.
   ///
-  ArrayUInt8* getBytes() {
+  ArrayUInt8* getBytes() const {
     return bytes;
   }
   
