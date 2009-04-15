@@ -110,17 +110,19 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
       upcalls->OfLong = (ClassPrimitive*)dlsym(nativeHandle, "long");
       upcalls->OfDouble = (ClassPrimitive*)dlsym(nativeHandle, "double");
       
-      // Get the base object arrays.
-      upcalls->ArrayOfString = 
-        constructArray(asciizConstructUTF8("[Ljava/lang/String;"));
-  
-      upcalls->ArrayOfObject = 
-        constructArray(asciizConstructUTF8("[Ljava/lang/Object;"));
       
       // We have the java/lang/Object class, execute the static initializer.
       static_init_t init = (static_init_t)(uintptr_t)SuperArray->classLoader;
       assert(init && "Loaded the wrong boot library");
       init(this);
+      
+      // Get the base object arrays after the init, because init puts arrays
+      // in the class loader map.
+      upcalls->ArrayOfString = 
+        constructArray(asciizConstructUTF8("[Ljava/lang/String;"));
+  
+      upcalls->ArrayOfObject = 
+        constructArray(asciizConstructUTF8("[Ljava/lang/Object;"));
       
 
     }
