@@ -51,6 +51,8 @@ public:
 
   virtual void TRACER {}
 
+  virtual ~VirtualMachine() {}
+
   /// runApplication - Run an application. The application name is in
   /// the arguments, hence it is the virtual machine's job to parse them.
   virtual void runApplication(int argc, char** argv) = 0;
