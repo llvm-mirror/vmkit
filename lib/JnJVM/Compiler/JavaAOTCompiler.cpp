@@ -36,9 +36,11 @@ using namespace llvm;
 bool JavaAOTCompiler::isCompiling(const CommonClass* cl) const {
   if (cl->isClass()) {
     // A class is being static compiled if owner class is not null.
-    return (((Class*)cl)->getOwnerClass() != 0);
+    return cl->asClass()->getOwnerClass() != 0;
   } else if (cl->isArray()) {
-    return isCompiling(((ClassArray*)cl)->baseClass());
+    return isCompiling(cl->asArrayClass()->baseClass());
+  } else if (cl->isPrimitive() && compileRT) {
+    return true;
   } else {
     return false;
   }
@@ -46,10 +48,8 @@ bool JavaAOTCompiler::isCompiling(const CommonClass* cl) const {
 
 Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
 
-  if (classDef->isClass() || 
-      (classDef->isArray() && isCompiling(classDef)) ||
-      (assumeCompiled && !(classDef->isArray() && 
-        classDef->asArrayClass()->baseClass()->isPrimitive()))) {
+  if (classDef->isClass() || isCompiling(classDef) || assumeCompiled) {
+
     native_class_iterator End = nativeClasses.end();
     native_class_iterator I = nativeClasses.find(classDef);
     if (I == End) {
@@ -57,6 +57,8 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
       
       if (classDef->isArray()) {
         Ty = JnjvmModule::JavaClassArrayType->getContainedType(0); 
+      } else if (classDef->isPrimitive()) {
+        Ty = JnjvmModule::JavaClassPrimitiveType->getContainedType(0); 
       } else {
         Ty = JnjvmModule::JavaClassType->getContainedType(0); 
       }
@@ -67,11 +69,15 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
     
       nativeClasses.insert(std::make_pair(classDef, varGV));
 
-      if (classDef->isClass() && isCompiling(classDef->asClass())) {
-        Constant* C = CreateConstantFromClass((Class*)classDef);
+      if (classDef->isClass() && isCompiling(classDef)) {
+        Constant* C = CreateConstantFromClass(classDef->asClass());
         varGV->setInitializer(C);
       } else if (classDef->isArray()) {
-        Constant* C = CreateConstantFromClassArray((ClassArray*)classDef);
+        Constant* C = CreateConstantFromClassArray(classDef->asArrayClass());
+        varGV->setInitializer(C);
+      } else if (classDef->isPrimitive()) {
+        Constant* C = 
+          CreateConstantFromClassPrimitive(classDef->asPrimitiveClass());
         varGV->setInitializer(C);
       }
 
@@ -82,7 +88,7 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
     }
   } else if (classDef->isArray()) {
     array_class_iterator End = arrayClasses.end();
-    array_class_iterator I = arrayClasses.find((ClassArray*)classDef);
+    array_class_iterator I = arrayClasses.find(classDef->asArrayClass());
     if (I == End) {
       const llvm::Type* Ty = JnjvmModule::JavaClassArrayType; 
     
@@ -91,13 +97,13 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
                            Constant::getNullValue(Ty),
                            classDef->printString(), getLLVMModule());
     
-      arrayClasses.insert(std::make_pair((ClassArray*)classDef, varGV));
+      arrayClasses.insert(std::make_pair(classDef->asArrayClass(), varGV));
       return varGV;
     } else {
       return I->second;
     }
-  } else if (classDef->isPrimitive()) {
-    assert(0 && "implement me");
+  } else {
+    assert(0 && "Implement me");
   }
   return 0;
 }
@@ -140,7 +146,7 @@ Constant* JavaAOTCompiler::getString(JavaString* str) {
     return SI->second;
   } else {
     assert(str && "No string given");
-    LLVMClassInfo* LCI = getClassInfo((Class*)str->getClass());
+    LLVMClassInfo* LCI = getClassInfo(str->getClass()->asClass());
     const llvm::Type* Ty = LCI->getVirtualType();
     GlobalVariable* varGV = 
       new GlobalVariable(Ty->getContainedType(0), false,
@@ -176,7 +182,7 @@ Constant* JavaAOTCompiler::getJavaClass(CommonClass* cl) {
   java_class_iterator I = javaClasses.find(cl);
   if (I == End) {
     Class* javaClass = cl->classLoader->bootstrapLoader->upcalls->newClass;
-    LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(javaClass);
+    LLVMClassInfo* LCI = getClassInfo(javaClass);
     const llvm::Type* Ty = LCI->getVirtualType();
     
     GlobalVariable* varGV = 
@@ -342,7 +348,8 @@ Constant* JavaAOTCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
     
     varGV = new GlobalVariable(valPtrType, true,
                                GlobalValue::InternalLinkage,
-                               Constant::getNullValue(valPtrType), "", getLLVMModule());
+                               Constant::getNullValue(valPtrType), "",
+                               getLLVMModule());
   
     nativeFunctions.insert(std::make_pair(meth, varGV));
     return varGV;
@@ -498,8 +505,8 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
-  Class* cl = (Class*)str->getClass();
-  LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
+  Class* cl = str->getClass()->asClass();
+  LLVMClassInfo* LCI = getClassInfo(cl);
   const StructType* STy = 
     dyn_cast<StructType>(LCI->getVirtualType()->getContainedType(0));
 
@@ -1562,30 +1569,45 @@ void mainCompilerStart(JavaThread* th) {
       cl->setOwnerClass(JavaThread::get());
       M->compileClass(cl);
     }
-   
+ 
+    if (M->compileRT) {
+      // Make sure that if we compile RT, the native classes are emitted.
+      M->getNativeClass(bootstrapLoader->upcalls->OfVoid);
+      M->getNativeClass(bootstrapLoader->upcalls->OfBool);
+      M->getNativeClass(bootstrapLoader->upcalls->OfByte);
+      M->getNativeClass(bootstrapLoader->upcalls->OfChar);
+      M->getNativeClass(bootstrapLoader->upcalls->OfShort);
+      M->getNativeClass(bootstrapLoader->upcalls->OfInt);
+      M->getNativeClass(bootstrapLoader->upcalls->OfFloat);
+      M->getNativeClass(bootstrapLoader->upcalls->OfLong);
+      M->getNativeClass(bootstrapLoader->upcalls->OfDouble);
+
+      // Also do not allow inling of some functions.
+#define SET_INLINE(NAME) { \
+      const UTF8* name = vm->asciizToUTF8(NAME); \
+      Class* cl = (Class*)bootstrapLoader->lookupClass(name); \
+      if (cl) M->setNoInline(cl); }
+
+      SET_INLINE("java/util/concurrent/atomic/AtomicReferenceFieldUpdater")
+      SET_INLINE("java/util/concurrent/atomic/AtomicReferenceFieldUpdater"
+                 "$AtomicReferenceFieldUpdaterImpl")
+      SET_INLINE("java/util/concurrent/atomic/AtomicIntegerFieldUpdater")
+      SET_INLINE("java/util/concurrent/atomic/AtomicIntegerFieldUpdater"
+                 "$AtomicIntegerFieldUpdaterImpl")
+      SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater")
+      SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater"
+                 "$CASUpdater")
+      SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater"
+                 "$LockedUpdater")
+#undef SET_INLINE
+    }
+
     M->CreateStaticInitializer();
 
   } catch(std::string str) {
     fprintf(stderr, "Error : %s\n", str.c_str());
   }
   
-#define SET_INLINE(NAME) { \
-  const UTF8* name = vm->asciizToUTF8(NAME); \
-  Class* cl = (Class*)vm->bootstrapLoader->lookupClass(name); \
-  if (cl) M->setNoInline(cl); }
-
-  SET_INLINE("java/util/concurrent/atomic/AtomicReferenceFieldUpdater")
-  SET_INLINE("java/util/concurrent/atomic/AtomicReferenceFieldUpdater"
-             "$AtomicReferenceFieldUpdaterImpl")
-  SET_INLINE("java/util/concurrent/atomic/AtomicIntegerFieldUpdater")
-  SET_INLINE("java/util/concurrent/atomic/AtomicIntegerFieldUpdater"
-             "$AtomicIntegerFieldUpdaterImpl")
-  SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater")
-  SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater"
-             "$CASUpdater")
-  SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater"
-             "$LockedUpdater")
-#undef SET_INLINE
 
   vm->threadSystem.nonDaemonLock.lock();
   --(vm->threadSystem.nonDaemonThreads);
