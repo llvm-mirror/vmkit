@@ -1284,7 +1284,8 @@ void ClassArray::initialiseVT() {
            sizeof(uintptr_t) * JavaVirtualTable::getNumJavaMethods()); \
     CLASS->super = cl; \
     CLASS->display[0] = cl; \
-    CLASS->display[1] = CLASS;
+    CLASS->display[1] = CLASS; \
+    CLASS->virtualVT->display[0] = cl->virtualVT;
 
     COPY(upcalls->ArrayOfBool)
     COPY(upcalls->ArrayOfByte)
