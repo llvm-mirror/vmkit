@@ -85,16 +85,59 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   ClassArray::InterfacesArray = 
     (Class**)allocator.Allocate(2 * sizeof(UserClass*));
   
-  // Create the primitive classes.
-  upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(this, "char", 2);
-  upcalls->OfBool = UPCALL_PRIMITIVE_CLASS(this, "boolean", 1);
-  upcalls->OfShort = UPCALL_PRIMITIVE_CLASS(this, "short", 2);
-  upcalls->OfInt = UPCALL_PRIMITIVE_CLASS(this, "int", 4);
-  upcalls->OfLong = UPCALL_PRIMITIVE_CLASS(this, "long", 8);
-  upcalls->OfFloat = UPCALL_PRIMITIVE_CLASS(this, "float", 4);
-  upcalls->OfDouble = UPCALL_PRIMITIVE_CLASS(this, "double", 8);
-  upcalls->OfVoid = UPCALL_PRIMITIVE_CLASS(this, "void", 0);
-  upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(this, "byte", 1);
+  // Try to find if we have a pre-compiled rt.jar
+  if (dlLoad) {
+    SuperArray = (Class*)dlsym(SELF_HANDLE, "java.lang.Object");
+    if (!SuperArray) {
+      nativeHandle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
+      if (nativeHandle) {
+        // Found it!
+        SuperArray = (Class*)dlsym(nativeHandle, "java.lang.Object");
+      }
+    }
+    
+    if (SuperArray) {
+      ClassArray::SuperArray = (Class*)SuperArray->getInternal();
+      
+      // Get the native classes.
+      upcalls->OfVoid = (ClassPrimitive*)dlsym(nativeHandle, "void");
+      upcalls->OfBool = (ClassPrimitive*)dlsym(nativeHandle, "boolean");
+      upcalls->OfByte = (ClassPrimitive*)dlsym(nativeHandle, "byte");
+      upcalls->OfChar = (ClassPrimitive*)dlsym(nativeHandle, "char");
+      upcalls->OfShort = (ClassPrimitive*)dlsym(nativeHandle, "short");
+      upcalls->OfInt = (ClassPrimitive*)dlsym(nativeHandle, "int");
+      upcalls->OfFloat = (ClassPrimitive*)dlsym(nativeHandle, "float");
+      upcalls->OfLong = (ClassPrimitive*)dlsym(nativeHandle, "long");
+      upcalls->OfDouble = (ClassPrimitive*)dlsym(nativeHandle, "double");
+      
+      // Get the base object arrays.
+      upcalls->ArrayOfString = 
+        constructArray(asciizConstructUTF8("[Ljava/lang/String;"));
+  
+      upcalls->ArrayOfObject = 
+        constructArray(asciizConstructUTF8("[Ljava/lang/Object;"));
+      
+      // We have the java/lang/Object class, execute the static initializer.
+      static_init_t init = (static_init_t)(uintptr_t)SuperArray->classLoader;
+      assert(init && "Loaded the wrong boot library");
+      init(this);
+      
+
+    }
+  }
+   
+  if (!upcalls->OfChar) {
+    // Create the primitive classes.
+    upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(this, "char", 2);
+    upcalls->OfBool = UPCALL_PRIMITIVE_CLASS(this, "boolean", 1);
+    upcalls->OfShort = UPCALL_PRIMITIVE_CLASS(this, "short", 2);
+    upcalls->OfInt = UPCALL_PRIMITIVE_CLASS(this, "int", 4);
+    upcalls->OfLong = UPCALL_PRIMITIVE_CLASS(this, "long", 8);
+    upcalls->OfFloat = UPCALL_PRIMITIVE_CLASS(this, "float", 4);
+    upcalls->OfDouble = UPCALL_PRIMITIVE_CLASS(this, "double", 8);
+    upcalls->OfVoid = UPCALL_PRIMITIVE_CLASS(this, "void", 0);
+    upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(this, "byte", 1);
+  }
   
   // Create the primitive arrays.
   upcalls->ArrayOfChar = constructArray(asciizConstructUTF8("[C"),
@@ -147,29 +190,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   // array classes.
   analyseClasspathEnv(bootClasspathEnv);
 
-
-  // Now that native types have been loaded, try to find if we have a
-  // pre-compiled rt.jar
-  if (dlLoad) {
-    SuperArray = (Class*)dlsym(SELF_HANDLE, "java.lang.Object");
-    if (!SuperArray) {
-      nativeHandle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
-      if (nativeHandle) {
-        // Found it!
-        SuperArray = (Class*)dlsym(nativeHandle, "java.lang.Object");
-      }
-    }
-    
-    if (SuperArray) {
-      ClassArray::SuperArray = (Class*)SuperArray->getInternal();
-      // We have the java/lang/Object class, execute the static initializer.
-      static_init_t init = (static_init_t)(uintptr_t)SuperArray->classLoader;
-      assert(init && "Loaded the wrong boot library");
-      init(this);
-      ClassArray::initialiseVT();
-    }
-  }
-    
+ 
   // We haven't found a pre-compiled rt.jar, load the root class ourself.
   if (!SuperArray) {
    
