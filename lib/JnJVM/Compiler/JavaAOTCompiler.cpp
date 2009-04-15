@@ -357,10 +357,7 @@ Constant* JavaAOTCompiler::CreateConstantForBaseObject(CommonClass* cl) {
   
   std::vector<Constant*> Elmts;
 
-  // virtual table
-  if (!cl) {
-    Elmts.push_back(Constant::getNullValue(JnjvmModule::VTType));
-  } else if (cl->isClass()) {
+  if (cl->isClass()) {
     Elmts.push_back(getVirtualTable(cl->asClass()->virtualVT));
   } else {
     Elmts.push_back(getVirtualTable(cl->asArrayClass()->virtualVT));
@@ -1104,7 +1101,8 @@ Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
   const StructType* STy = StructType::get(Elemts);
   
   std::vector<Constant*> Cts;
-  Cts.push_back(CreateConstantForBaseObject(0));
+  CommonClass* cl = JavaThread::get()->getJVM()->upcalls->ArrayOfChar;
+  Cts.push_back(CreateConstantForBaseObject(cl));
   Cts.push_back(ConstantInt::get(JnjvmModule::pointerSizeType, val->size));
   
   std::vector<Constant*> Vals;
