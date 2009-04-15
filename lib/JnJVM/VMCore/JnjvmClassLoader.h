@@ -202,7 +202,7 @@ public:
   /// ~JnjvmClassLoader - Destroy the loader: destroy the tables, JIT module and
   /// module provider.
   ///
-  ~JnjvmClassLoader();
+  virtual ~JnjvmClassLoader();
   
   /// loadClass - The user class that defines the loadClass method.
   ///
@@ -381,7 +381,7 @@ public:
     return arrayTable[id - 4];
   }
 
-  ~JnjvmBootstrapLoader();
+  virtual ~JnjvmBootstrapLoader();
 };
 
 /// VMClassLoader - The vmdata object that will be placed in and will only
