@@ -84,26 +84,6 @@ CommonClass::~CommonClass() {
   classLoader->allocator.Deallocate(display);
 }
 
-CommonClass::CommonClass() {
-  display = 0;
-  nbInterfaces = 0;
-  access = 0;
-}
-
-Class::Class() : CommonClass() {
-  virtualVT = 0;
-  ctpInfo = 0;
-  JInfo = 0;
-  outerClass = 0;
-  innerOuterResolved = false;
-  nbInnerClasses = 0;
-  nbVirtualFields = 0;
-  nbStaticFields = 0;
-  nbVirtualMethods = 0;
-  nbStaticMethods = 0;
-  ownerClass = 0;
-}
-
 Class::~Class() {
   for (uint32 i = 0; i < nbAttributs; ++i) {
     Attribut* cur = &(attributs[i]);
