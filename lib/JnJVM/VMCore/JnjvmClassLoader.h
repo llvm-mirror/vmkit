@@ -104,11 +104,11 @@ public:
  
   /// getIsolate - Returns the isolate that created this class loader.
   ///
-  Jnjvm* getIsolate() { return isolate; }
+  Jnjvm* getIsolate() const { return isolate; }
 
   /// getClasses - Returns the classes this class loader has loaded.
   ///
-  ClassMap* getClasses() { return classes; }
+  ClassMap* getClasses() const { return classes; }
   
   /// hashUTF8 - Tables of UTF8s defined by this class loader.
   ///
@@ -116,7 +116,7 @@ public:
   
   /// getCompiler - Get the Java compiler of this class loader.
   ///
-  JavaCompiler* getCompiler() { return TheCompiler; }
+  JavaCompiler* getCompiler() const { return TheCompiler; }
 
   /// setCompiler - Set the compiler of classes loaded by this class loader.
   ///
@@ -133,7 +133,7 @@ public:
   
   /// getJavaClassLoader - Return the Java representation of this class loader.
   ///
-  JavaObject* getJavaClassLoader() {
+  JavaObject* getJavaClassLoader() const {
     return javaLoader;
   }
   
