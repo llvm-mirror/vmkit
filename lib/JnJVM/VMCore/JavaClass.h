@@ -935,7 +935,7 @@ public:
   /// initialiseVT - Initialise the primitive and reference array VT.
   /// super is the java/lang/Object class.
   ///
-  static void initialiseVT();
+  static void initialiseVT(Class* javaLangObject);
   
 };
 

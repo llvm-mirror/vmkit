@@ -739,11 +739,11 @@ void Class::readParents(Reader& reader) {
   // interfaces is not used if super is null.
   interfaces = (Class**)
     classLoader->allocator.Allocate(nbI * sizeof(Class*));
-  nbInterfaces = nbI;
   for (int i = 0; i < nbI; i++) {
     const UTF8* name = ctpInfo->resolveClassName(reader.readU2());
     interfaces[i] = classLoader->loadName(name, false, true);
   }
+  nbInterfaces = nbI;
 
 }
 
@@ -932,7 +932,7 @@ void Class::resolveClass() {
       if (!needsInitialisationCheck()) {
         setInitializationState(ready);
       }
-      if (!super) ClassArray::initialiseVT();
+      if (!super) ClassArray::initialiseVT(this);
       setOwnerClass(0);
       broadcastClass();
       release();
@@ -1240,8 +1240,20 @@ bool UserClass::needsInitialisationCheck() {
 }
 
 
-void ClassArray::initialiseVT() {
- 
+void ClassArray::initialiseVT(Class* javaLangObject) {
+
+  ClassArray::SuperArray = javaLangObject;
+  JnjvmClassLoader* JCL = javaLangObject->classLoader;
+  
+  // Initialize interfaces of array classes.
+  ClassArray::InterfacesArray[0] = 
+    JCL->loadName(JCL->asciizConstructUTF8("java/lang/Cloneable"),
+                  false, false);
+  
+  ClassArray::InterfacesArray[1] = 
+    JCL->loadName(JCL->asciizConstructUTF8("java/io/Serializable"),
+                  false, false);
+  
   Class* cl = ClassArray::SuperArray;
   assert(cl && "Initializing array VT without a super for arrays");
   assert(cl->virtualVT->init && "Initializing array VT before JavaObjectVT");
@@ -1275,7 +1287,6 @@ void ClassArray::initialiseVT() {
 
 #undef COPY
  
-  JnjvmClassLoader* JCL = cl->classLoader;
   // Load array classes that JnJVM internally uses.
   upcalls->ArrayOfString = 
     JCL->constructArray(JCL->asciizConstructUTF8("[Ljava/lang/String;"));

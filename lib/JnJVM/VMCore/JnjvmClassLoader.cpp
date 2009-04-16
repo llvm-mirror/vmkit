@@ -77,14 +77,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   
   upcalls = new(allocator) Classpath();
   bootstrapLoader = this;
-  
-  // Allocate interfaces.
-  InterfacesArray = 
-    (Class**)allocator.Allocate(2 * sizeof(UserClass*));
-  
-  ClassArray::InterfacesArray = 
-    (Class**)allocator.Allocate(2 * sizeof(UserClass*));
-  
+   
   // Try to find if we have a pre-compiled rt.jar
   if (dlLoad) {
     SuperArray = (Class*)dlsym(SELF_HANDLE, "java.lang.Object");
@@ -124,11 +117,17 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
       upcalls->ArrayOfObject = 
         constructArray(asciizConstructUTF8("[Ljava/lang/Object;"));
       
+      InterfacesArray = upcalls->ArrayOfObject->interfaces;
+      ClassArray::InterfacesArray = InterfacesArray;
 
     }
   }
    
   if (!upcalls->OfChar) {
+    // Allocate interfaces.
+    InterfacesArray = (Class**)allocator.Allocate(2 * sizeof(UserClass*));
+    ClassArray::InterfacesArray = InterfacesArray;
+
     // Create the primitive classes.
     upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(this, "char", 2);
     upcalls->OfBool = UPCALL_PRIMITIVE_CLASS(this, "boolean", 1);
@@ -191,31 +190,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   // hold the .zip file, we call the function after creation of the
   // array classes.
   analyseClasspathEnv(bootClasspathEnv);
-
- 
-  // We haven't found a pre-compiled rt.jar, load the root class ourself.
-  if (!SuperArray) {
-   
-    // We can not resolve java.lang.Object yet, because we may not be
-    // running in a Java thread, and we may not have a compiler
-    // available.
-    SuperArray = loadName(asciizConstructUTF8("java/lang/Object"), false,
-                          false);
-    ClassArray::SuperArray = (Class*)SuperArray->getInternal();
-    
-  }
   
-  // Initialize interfaces of array classes.
-  InterfacesArray[0] = loadName(asciizConstructUTF8("java/lang/Cloneable"),
-                                false, false);
-  
-  InterfacesArray[1] = loadName(asciizConstructUTF8("java/io/Serializable"),
-                                false, false);
-  
-  ClassArray::InterfacesArray[0] = (Class*)InterfacesArray[0]->getInternal();
-  ClassArray::InterfacesArray[1] = (Class*)(InterfacesArray[1]->getInternal()); 
-  
- 
   Attribut::codeAttribut = asciizConstructUTF8("Code");
   Attribut::exceptionsAttribut = asciizConstructUTF8("Exceptions");
   Attribut::constantAttribut = asciizConstructUTF8("ConstantValue");
