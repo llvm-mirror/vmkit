@@ -724,8 +724,6 @@ void JavaField::initialise(Class* cl, const UTF8* N, const UTF8* T, uint16 A) {
 
 void Class::readParents(Reader& reader) {
   uint16 superEntry = reader.readU2();
-  // Use the depth field to store the super entry, to not touch super. The
-  // super field is used during GC scanning and must only be of one type.
   if (superEntry) {
     const UTF8* superUTF8 = ctpInfo->resolveClassName(superEntry);
     super = classLoader->loadName(superUTF8, false, true);
@@ -733,12 +731,11 @@ void Class::readParents(Reader& reader) {
 
   uint16 nbI = reader.readU2();
 
-  // Use the regular interface array to store the UTF8s. Since this array
-  // is never used before actually loading the interfaces, this is harmless.
-  // During GC scanning, the check is made on super. So the array of
-  // interfaces is not used if super is null.
   interfaces = (Class**)
     classLoader->allocator.Allocate(nbI * sizeof(Class*));
+  
+  // Do not set nbInterfaces yet, we may be interrupted by the GC
+  // in anon-cooperative environment.
   for (int i = 0; i < nbI; i++) {
     const UTF8* name = ctpInfo->resolveClassName(reader.readU2());
     interfaces[i] = classLoader->loadName(name, false, true);
