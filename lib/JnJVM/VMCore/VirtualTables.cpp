@@ -120,10 +120,9 @@ extern "C" void JavaArrayTracer(JavaArray* obj) {
 //     own class loader.
 // (2) The delegatee object (java.lang.Class) if it exists.
 //
-// Additionaly, non-primitive and non-array classes mus trace:
+// Additionaly, non-primitive and non-array classes must trace:
 // (3) The bytes that represent the class file.
 // (4) The static instance.
-// (5) The class loaders referenced indirectly in the class file (TODO).
 //===----------------------------------------------------------------------===//
 
 
@@ -165,15 +164,17 @@ void Class::tracer() {
 
 //===----------------------------------------------------------------------===//
 // Support for scanning a classloader. A classloader must trace:
-// (1) All the classes it has loaded.
-// (2) All the strings referenced in class files.
+// (1) All the classes it has loaded (located in the classmap).
+// (2) All the class it has initiated loading and therefore references (located
+//     in the classmap).
+// (3) All the strings referenced in class files.
 //
 // The class loader does not need to trace its java.lang.Classloader Java object
 // because if we end up here, this means that the Java object is already being
 // scanned. Only the Java object traces the class loader.
 //
 // Additionaly, the bootstrap loader must trace:
-// (3) The delegatees of native array classes. Since these classes are not in
+// (4) The delegatees of native array classes. Since these classes are not in
 //     the class map and they are not GC-allocated, we must trace the objects
 //     referenced by the delegatees.
 //===----------------------------------------------------------------------===//

@@ -401,6 +401,15 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
     vm->noClassDefFoundError(name);
   }
 
+  if (cl && cl->classLoader != this) {
+    classes->lock.lock();
+    ClassMap::iterator End = classes->map.end();
+    ClassMap::iterator I = classes->map.find(name);
+    if (I == End)
+      classes->map.insert(std::make_pair(name, cl));
+    classes->lock.unlock();
+  }
+
   return cl;
 }
 
