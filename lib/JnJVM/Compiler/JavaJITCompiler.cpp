@@ -153,10 +153,7 @@ void JavaJITCompiler::makeVT(Class* cl) {
       if (!cl->super) {
         meth.canBeInlined = true;
       } else {
-          // LLVM does not allow recursive compilation. Create the code now.
-          // TODO: improve this when we have proper initialization.
-          Function* func = parseFunction(&meth);
-          VT->destructor = (uintptr_t)EE->getPointerToFunction(func);
+        VT->destructor = (uintptr_t)EE->getPointerToFunctionOrStub(func);
       }
 #endif
     } else {

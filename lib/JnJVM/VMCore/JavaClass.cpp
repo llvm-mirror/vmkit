@@ -727,6 +727,17 @@ void Class::readParents(Reader& reader) {
   if (superEntry) {
     const UTF8* superUTF8 = ctpInfo->resolveClassName(superEntry);
     super = classLoader->loadName(superUTF8, false, true);
+    depth = super->depth + 1;
+    mvm::BumpPtrAllocator& allocator = classLoader->allocator;
+    display = (CommonClass**)
+      allocator.Allocate(sizeof(CommonClass*) * (depth + 1));
+    memcpy(display, super->display, depth * sizeof(UserCommonClass*));
+    display[depth] = this;
+  } else {
+    depth = 0;
+    display = (CommonClass**)
+      classLoader->allocator.Allocate(sizeof(CommonClass*));
+    display[0] = this;
   }
 
   uint16 nbI = reader.readU2();
@@ -745,25 +756,15 @@ void Class::readParents(Reader& reader) {
 }
 
 void UserClass::loadParents() {
-  if (super == 0) {
-    depth = 0;
-    display = (CommonClass**)
-      classLoader->allocator.Allocate(sizeof(CommonClass*));
-    display[0] = this;
-    virtualTableSize = JavaVirtualTable::getFirstJavaMethodIndex();
-  } else {
+  if (super) {
     super->resolveClass();
-    depth = super->depth + 1;
-    mvm::BumpPtrAllocator& allocator = classLoader->allocator;
-    display = (CommonClass**)
-      allocator.Allocate(sizeof(CommonClass*) * (depth + 1));
-    memcpy(display, super->display, depth * sizeof(UserCommonClass*));
-    display[depth] = this;
     virtualTableSize = super->virtualTableSize;
+  } else {
+    virtualTableSize = JavaVirtualTable::getFirstJavaMethodIndex();
   }
 
   for (unsigned i = 0; i < nbInterfaces; i++)
-    interfaces[i]->resolveClass(); 
+    interfaces[i]->resolveClass();
 }
 
 
@@ -791,7 +792,9 @@ static void internalLoadExceptions(JavaMethod& meth) {
       reader.readU2();
 
       uint16 catche = reader.readU2();
-      if (catche) meth.classDef->ctpInfo->loadClass(catche);
+      if (catche) {
+        meth.classDef->ctpInfo->loadClass(catche, false);
+      }
     }
   }
 }
@@ -913,19 +916,24 @@ void Class::resolveClass() {
       release();
     } else if (!isResolving()) {
       setOwnerClass(JavaThread::get());
-      readClass();
+      setIsResolving();
       release();
+
       loadParents();
-      loadExceptions();
-      acquire();
       JavaCompiler *Comp = classLoader->getCompiler();
       Comp->resolveVirtualClass(this);
       Comp->resolveStaticClass(this);
-      setResolved();
-      if (!needsInitialisationCheck()) {
-        setInitializationState(ready);
-      }
+      loadExceptions();
       if (!super) ClassArray::initialiseVT(this);
+      
+      bool init = needsInitialisationCheck();
+      
+      acquire();
+      if (!init) {
+        setInitializationState(ready);
+      } else {
+        setResolved();
+      }
       setOwnerClass(0);
       broadcastClass();
       release();
@@ -1213,7 +1221,7 @@ bool UserClass::isNativeOverloaded(JavaMethod* meth) {
 
 bool UserClass::needsInitialisationCheck() {
   
-  if (!isClassRead()) return true;
+  if (!isResolved()) return true;
 
   if (isReady()) return false;
 

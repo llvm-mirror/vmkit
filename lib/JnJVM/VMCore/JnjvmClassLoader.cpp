@@ -379,9 +379,9 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
   if (cl && cl->classLoader != this) {
     classes->lock.lock();
     ClassMap::iterator End = classes->map.end();
-    ClassMap::iterator I = classes->map.find(name);
+    ClassMap::iterator I = classes->map.find(cl->name);
     if (I == End)
-      classes->map.insert(std::make_pair(name, cl));
+      classes->map.insert(std::make_pair(cl->name, cl));
     classes->lock.unlock();
   }
 
@@ -562,7 +562,19 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
   UserCommonClass* cl = loadBaseClass(name, 1, name->size - 1);
   assert(cl && "no base class for an array");
   JnjvmClassLoader* ld = cl->classLoader;
-  return ld->constructArray(name, cl);
+  UserClassArray* res = ld->constructArray(name, cl);
+  
+  // We are an initiating clas loader.
+  if (res && res->classLoader != this) {
+    classes->lock.lock();
+    ClassMap::iterator End = classes->map.end();
+    ClassMap::iterator I = classes->map.find(res->name);
+    if (I == End)
+      classes->map.insert(std::make_pair(res->name, res));
+    classes->lock.unlock();
+  }
+
+  return res;
 }
 
 UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
@@ -580,6 +592,12 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
     res = ((UserClass*)(I->second));
   }
   classes->lock.unlock();
+    
+  res->acquire();
+  if (!res->isClassRead()) res->readClass();
+  res->release();
+  
+
   return res;
 }
 

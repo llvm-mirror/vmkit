@@ -278,7 +278,7 @@ const UTF8* JavaConstantPool::resolveClassName(uint32 index) {
   else return UTF8At(ctpDef[index]);
 }
 
-CommonClass* JavaConstantPool::loadClass(uint32 index) {
+CommonClass* JavaConstantPool::loadClass(uint32 index, bool resolve) {
   CommonClass* temp = isClassLoaded(index);
 #ifndef ISOLATE_SHARING
   if (!temp) {
@@ -288,7 +288,7 @@ CommonClass* JavaConstantPool::loadClass(uint32 index) {
       temp = loader->constructArray(name);
     } else {
       // Put into ctpRes because there is only one representation of the class
-      temp = loader->loadName(name, true, false);
+      temp = loader->loadName(name, resolve, false);
     }
     ctpRes[index] = temp;
   }

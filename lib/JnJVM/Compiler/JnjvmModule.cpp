@@ -201,6 +201,14 @@ void JavaLLVMCompiler::internalMakeVT(Class* cl) {
   }
 
   uint32 size = cl->virtualTableSize;
+  if (cl->super) {
+    if (!(cl->virtualTableSize >= cl->super->virtualTableSize)) {
+      fprintf(stderr, "cl = %s et super = %s\n", cl->printString(), cl->super->printString());
+    }
+    assert(cl->virtualTableSize >= cl->super->virtualTableSize &&
+           "Size of virtual table less than super!");
+  }
+
   mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
   cl->virtualVT = new(allocator, size) JavaVirtualTable(cl);
 }

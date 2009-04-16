@@ -248,7 +248,7 @@ public:
   /// ie when the class will be used and not yet resolved, and also for
   /// loading exceptions when JITting catch clauses.
   ///
-  CommonClass* loadClass(uint32 index);
+  CommonClass* loadClass(uint32 index, bool resolve = true);
 
   /// JavaConstantPool - Reads the bytecode of the class to get
   /// the initial types and constants definitions.
