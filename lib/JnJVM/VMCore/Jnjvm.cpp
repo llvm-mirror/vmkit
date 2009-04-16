@@ -1150,7 +1150,7 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   vm->runApplication(argc + 1, newArgv);
   vm->waitForExit();
 
-  delete newArgv;
+  delete[] newArgv;
   
   return 0; 
 }
