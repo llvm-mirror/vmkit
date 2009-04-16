@@ -726,7 +726,10 @@ void Class::readParents(Reader& reader) {
   uint16 superEntry = reader.readU2();
   // Use the depth field to store the super entry, to not touch super. The
   // super field is used during GC scanning and must only be of one type.
-  depth = superEntry;
+  if (superEntry) {
+    const UTF8* superUTF8 = ctpInfo->resolveClassName(superEntry);
+    super = classLoader->loadName(superUTF8, false, true);
+  }
 
   uint16 nbI = reader.readU2();
 
@@ -737,27 +740,26 @@ void Class::readParents(Reader& reader) {
   interfaces = (Class**)
     classLoader->allocator.Allocate(nbI * sizeof(Class*));
   nbInterfaces = nbI;
-  for (int i = 0; i < nbI; i++)
-    interfaces[i] = (Class*)ctpInfo->resolveClassName(reader.readU2());
+  for (int i = 0; i < nbI; i++) {
+    const UTF8* name = ctpInfo->resolveClassName(reader.readU2());
+    interfaces[i] = classLoader->loadName(name, false, true);
+  }
 
 }
 
 void UserClass::loadParents() {
-  const UTF8* superUTF8 = depth ? ctpInfo->resolveClassName(depth) : 0;
   // W prevent the GC from scanning the interfaces until they
   // are loaded. So we temporarly consider that this class does not
   // have any interfaces. This is harmless because the class is being
   // resolved and can not be used elsewhere for getting its interfaces.
-  uint32 realNbInterfaces = nbInterfaces;
-  nbInterfaces = 0;
-  if (superUTF8 == 0) {
+  if (super == 0) {
     depth = 0;
     display = (CommonClass**)
       classLoader->allocator.Allocate(sizeof(CommonClass*));
     display[0] = this;
     virtualTableSize = JavaVirtualTable::getFirstJavaMethodIndex();
   } else {
-    super = classLoader->loadName(superUTF8, true, true);
+    super->resolveClass();
     depth = super->depth + 1;
     mvm::BumpPtrAllocator& allocator = classLoader->allocator;
     display = (CommonClass**)
@@ -767,13 +769,8 @@ void UserClass::loadParents() {
     virtualTableSize = super->virtualTableSize;
   }
 
-  for (unsigned i = 0; i < realNbInterfaces; i++)
-    interfaces[i] = 
-      ((UserClass*)classLoader->loadName((const UTF8*)interfaces[i],
-                                         true, true));
-
-  // Interfaces are loaded, put the real number back in place.
-  nbInterfaces = realNbInterfaces;
+  for (unsigned i = 0; i < nbInterfaces; i++)
+    interfaces[i]->resolveClass(); 
 }
 
 
