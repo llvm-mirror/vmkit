@@ -125,9 +125,16 @@ jobject pd) {
   
   JavaString* str = (JavaString*)_str;
   const UTF8* name = str->value->javaToInternal(vm, str->offset, str->count);
-  UserClass* cl = JCL->constructClass(name, (ArrayUInt8*)bytes);
+  UserCommonClass* cl = JCL->lookupClass(name);
+  
+  if (!cl) {
+    UserClass* cl = JCL->constructClass(name, (ArrayUInt8*)bytes);
 
-  res = (jclass)(cl->getClassDelegatee(vm, (JavaObject*)pd));
+    res = (jclass)(cl->getClassDelegatee(vm, (JavaObject*)pd));
+  } else {
+    JavaObject* obj = vm->CreateLinkageError("duplicate class definition");
+    JavaThread::get()->throwException(obj);
+  }
 
   END_NATIVE_EXCEPTION
 

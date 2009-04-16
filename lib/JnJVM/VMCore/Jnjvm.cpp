@@ -331,6 +331,11 @@ JavaObject* Jnjvm::CreateClassCastException(JavaObject* obj,
                      upcalls->InitClassCastException, "");
 }
 
+JavaObject* Jnjvm::CreateLinkageError(const char* msg) {
+  return CreateError(upcalls->LinkageError,
+                     upcalls->InitLinkageError, msg);
+}
+
 void Jnjvm::illegalAccessException(const char* msg) {
   error(upcalls->IllegalAccessException,
         upcalls->InitIllegalAccessException, msg);

@@ -251,6 +251,7 @@ public:
   JavaObject* CreateIndexOutOfBoundsException(sint32 entry);
   JavaObject* CreateNegativeArraySizeException();
   JavaObject* CreateClassCastException(JavaObject* obj, UserCommonClass* cl);
+  JavaObject* CreateLinkageError(const char* msg = "");
   
   /// Exceptions - These are the only exceptions VMKit will make.
   ///
