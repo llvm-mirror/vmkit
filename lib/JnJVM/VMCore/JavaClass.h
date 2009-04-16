@@ -80,7 +80,7 @@ public:
   ///
   Attribut(const UTF8* name, uint32 length, uint32 offset);
   Attribut() {}
-  
+
   /// codeAttribut - The "Code" JVM attribut. This is a method attribut for
   /// finding the bytecode of a method in the .class file.
   //
@@ -330,10 +330,6 @@ public:
   ///
   ~CommonClass();
 
-  /// CommonClass - Default constructor.
-  ///
-  CommonClass();
-  
   /// setInterfaces - Set the interfaces of the class.
   ///
   void setInterfaces(Class** I) {
@@ -358,7 +354,7 @@ public:
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   /// getDelegatee - Get the java/lang/Class object representing this class.
   ///
-  JavaObject* getDelegatee() {
+  JavaObject* getDelegatee() const {
     return delegatee[0];
   }
 
@@ -561,11 +557,11 @@ public:
  
   /// getVirtualSize - Get the virtual size of instances of this class.
   ///
-  uint32 getVirtualSize()         { return virtualSize; }
+  uint32 getVirtualSize() const { return virtualSize; }
   
   /// getVirtualVT - Get the virtual VT of instances of this class.
   ///
-  JavaVirtualTable* getVirtualVT()    { return virtualVT; }
+  JavaVirtualTable* getVirtualVT() const { return virtualVT; }
 
   /// getOwnerClass - Get the thread that is currently initializing the class.
   ///
@@ -1357,8 +1353,6 @@ public:
   
   JavaVirtualTable(ClassArray* C);
 
-  JavaVirtualTable() {}
-  
   uintptr_t* getFirstJavaMethod() {
     return &init;
   }
