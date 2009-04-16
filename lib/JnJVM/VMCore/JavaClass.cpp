@@ -745,10 +745,6 @@ void Class::readParents(Reader& reader) {
 }
 
 void UserClass::loadParents() {
-  // W prevent the GC from scanning the interfaces until they
-  // are loaded. So we temporarly consider that this class does not
-  // have any interfaces. This is harmless because the class is being
-  // resolved and can not be used elsewhere for getting its interfaces.
   if (super == 0) {
     depth = 0;
     display = (CommonClass**)
