@@ -125,6 +125,11 @@ extern "C" void* virtualFieldLookup(UserClass* caller, uint32 index) {
 
   END_NATIVE_EXCEPTION
 
+  // Since the function is marked readnone, LLVM may move it after the
+  // exception check. Therefore, we trick LLVM to check the return value of the
+  // function.
+  JavaObject* obj = JavaThread::get()->pendingException;
+  if (obj) return (void*)obj;
   return res;
 }
 
@@ -164,6 +169,11 @@ extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
 
   END_NATIVE_EXCEPTION
 
+  // Since the function is marked readnone, LLVM may move it after the
+  // exception check. Therefore, we trick LLVM to check the return value of the
+  // function.
+  JavaObject* obj = JavaThread::get()->pendingException;
+  if (obj) return (void*)obj;
   return res;
 }
 
@@ -209,6 +219,11 @@ extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
 
   END_NATIVE_EXCEPTION
 
+  // Since the function is marked readnone, LLVM may move it after the
+  // exception check. Therefore, we trick LLVM to check the return value of the
+  // function.
+  JavaObject* obj = JavaThread::get()->pendingException;
+  if (obj) return (void*)obj;
   return res;
 }
 #endif
@@ -230,7 +245,12 @@ extern "C" void* classLookup(UserClass* caller, uint32 index) {
   res = (void*)cl;
 
   END_NATIVE_EXCEPTION
-
+  
+  // Since the function is marked readnone, LLVM may move it after the
+  // exception check. Therefore, we trick LLVM to check the return value of the
+  // function.
+  JavaObject* obj = JavaThread::get()->pendingException;
+  if (obj) return (void*)obj;
   return res;
 }
 
@@ -243,6 +263,12 @@ extern "C" UserCommonClass* jnjvmRuntimeInitialiseClass(UserClass* cl) {
   cl->initialiseClass(JavaThread::get()->getJVM());
   
   END_NATIVE_EXCEPTION
+
+  // Since the function is marked readnone, LLVM may move it after the
+  // exception check. Therefore, we trick LLVM to check the return value of the
+  // function.
+  JavaObject* obj = JavaThread::get()->pendingException;
+  if (obj) return (UserCommonClass*)obj;
   return cl;
 }
 
@@ -254,7 +280,12 @@ extern "C" JavaObject* jnjvmRuntimeDelegatee(UserCommonClass* cl) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   res = cl->getClassDelegatee(vm);
   END_NATIVE_EXCEPTION
-
+  
+  // Since the function is marked readnone, LLVM may move it after the
+  // exception check. Therefore, we trick LLVM to check the return value of the
+  // function.
+  JavaObject* obj = JavaThread::get()->pendingException;
+  if (obj) return obj;
   return res;
 }
 
@@ -322,6 +353,11 @@ extern "C" UserClassArray* getArrayClass(UserCommonClass* cl,
 
   END_NATIVE_EXCEPTION
 
+  // Since the function is marked readnone, LLVM may move it after the
+  // exception check. Therefore, we trick LLVM to check the return value of the
+  // function.
+  JavaObject* obj = JavaThread::get()->pendingException;
+  if (obj) return (UserClassArray*)obj;
   return res;
 }
 

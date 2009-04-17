@@ -19,9 +19,21 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
     
     BasicBlock* ifNormal = createBasicBlock("no exception block");
   
+    Value* test = 0;
     Constant* zero = module->JavaObjectNullConstant;
-    Value* test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "",
-                               currentBlock);
+
+    // If F is a runtime intrinsic that does not access memory, use a hack
+    // that will prevent LLVM from moving the exception check: runtime
+    // intrinsics return the exception if an exception was raised.
+    if (F == module->InitialisationCheckFunction || 
+        F == module->GetConstantPoolAtFunction ||
+        F == module->GetArrayClassFunction ||
+        F == module->GetClassDelegateeFunction) {
+      test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
+      test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
+    } else {
+      test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+    }
 
     BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
 
@@ -57,9 +69,17 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
     
     BasicBlock* ifNormal = createBasicBlock("no exception block");
   
+    Value* test = 0;
     Constant* zero = module->JavaObjectNullConstant;
-    Value* test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "",
-                               currentBlock);
+    if (F == module->InitialisationCheckFunction || 
+        F == module->GetConstantPoolAtFunction ||
+        F == module->GetArrayClassFunction ||
+        F == module->GetClassDelegateeFunction) {
+      test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
+      test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
+    } else {
+      test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+    }
 
     BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
  
@@ -95,11 +115,19 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
     Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
     
     BasicBlock* ifNormal = createBasicBlock("no exception block");
-  
+    
+    Value* test = 0;
     Constant* zero = module->JavaObjectNullConstant;
-    Value* test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "",
-                               currentBlock);
-
+    if (F == module->InitialisationCheckFunction || 
+        F == module->GetConstantPoolAtFunction ||
+        F == module->GetArrayClassFunction ||
+        F == module->GetClassDelegateeFunction) {
+      test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
+      test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
+    } else {
+      test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+    }
+  
     BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
   
     if (!currentExceptionBlock->empty()) {
@@ -132,9 +160,17 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
     
     BasicBlock* ifNormal = createBasicBlock("no exception block");
   
+    Value* test = 0;
     Constant* zero = module->JavaObjectNullConstant;
-    Value* test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "",
-                               currentBlock);
+    if (F == module->InitialisationCheckFunction || 
+        F == module->GetConstantPoolAtFunction ||
+        F == module->GetArrayClassFunction ||
+        F == module->GetClassDelegateeFunction) {
+      test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
+      test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
+    } else {
+      test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+    }
 
     BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
   
