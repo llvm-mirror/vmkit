@@ -31,6 +31,8 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
         F == module->GetClassDelegateeFunction) {
       test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
       test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
+      Value* T = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+      test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
       test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
     }
@@ -77,6 +79,8 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
         F == module->GetClassDelegateeFunction) {
       test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
       test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
+      Value* T = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+      test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
       test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
     }
@@ -124,6 +128,8 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
         F == module->GetClassDelegateeFunction) {
       test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
       test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
+      Value* T = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+      test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
       test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
     }
@@ -168,6 +174,8 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
         F == module->GetClassDelegateeFunction) {
       test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
       test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
+      Value* T = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+      test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
       test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
     }
