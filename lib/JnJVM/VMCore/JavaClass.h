@@ -1343,7 +1343,11 @@ class JavaVirtualTable : public VirtualTable {
 public:
   CommonClass* cl;
   size_t depth;
-  JavaVirtualTable** display;
+  size_t offset;
+  size_t cache;
+  JavaVirtualTable* display[8];
+  size_t nbSecondaryTypes;
+  JavaVirtualTable** secondaryTypes;
 
   uintptr_t init;
   uintptr_t equals;
@@ -1356,6 +1360,7 @@ public:
   uintptr_t waitIndefinitely;
   uintptr_t waitMs;
   uintptr_t waitMsNs;
+  uintptr_t virtualMethods[1];
 
   void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
                      uint32 nbMethods) {
@@ -1369,17 +1374,26 @@ public:
   uintptr_t* getFirstJavaMethod() {
     return &init;
   }
-
+  
   static uint32_t getFirstJavaMethodIndex() {
-    return 6;
+    return 17;
   }
    
   static uint32_t getNumMethods() {
-    return 17;
+    return 28;
   }
   
   static uint32_t getNumJavaMethods() {
     return 11;
+  }
+
+  static uint32_t getDisplayLength() {
+    return 8;
+  }
+  
+private:
+  static uint32_t getCacheIndex() {
+    return 6;
   }
 
 };

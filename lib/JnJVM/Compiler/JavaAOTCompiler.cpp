@@ -1196,13 +1196,35 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   Elemts.push_back(ConstantExpr::getIntToPtr(
         ConstantInt::get(Type::Int64Ty, VT->depth), PTy));
   
+  // offset
+  Elemts.push_back(ConstantExpr::getIntToPtr(
+        ConstantInt::get(Type::Int64Ty, VT->offset), PTy));
+  
+  // cache
+  Elemts.push_back(ConstantExpr::getIntToPtr(
+        ConstantInt::get(Type::Int64Ty, VT->cache), PTy));
+  
   // display
+  for (uint32 i = 0; i < JavaVirtualTable::getDisplayLength(); ++i) {
+    if (VT->display[i]) {
+      Constant* Temp = getVirtualTable(VT->display[i]);
+      Temp = ConstantExpr::getBitCast(Temp, PTy);
+      Elemts.push_back(Temp);
+    } else
+      Elemts.push_back(Constant::getNullValue(PTy));
+  }
+  
+  // nbSecondaryTypes
+  Elemts.push_back(ConstantExpr::getIntToPtr(
+        ConstantInt::get(Type::Int64Ty, VT->nbSecondaryTypes), PTy));
+  
+  // secondaryTypes
   const ArrayType* DTy = ArrayType::get(JnjvmModule::VTType,
-                                        VT->depth + 1);
+                                        VT->nbSecondaryTypes);
   
   std::vector<Constant*> TempElmts;
-  for (uint32 i = 0; i <= VT->depth; ++i) {
-    Constant* Cl = getVirtualTable(VT->display[i]);
+  for (uint32 i = 0; i < VT->nbSecondaryTypes; ++i) {
+    Constant* Cl = getVirtualTable(VT->secondaryTypes[i]);
     TempElmts.push_back(Cl);
   }
   Constant* display = ConstantArray::get(DTy, TempElmts);
@@ -1439,6 +1461,7 @@ void JavaAOTCompiler::makeVT(Class* cl) {
     JavaMethod& meth = cl->virtualMethods[i];
     ((void**)VT)[meth.offset] = &meth;
   }
+  if (!cl->super) VT->destructor = 0;
 }
 
 void JavaAOTCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {

@@ -44,13 +44,13 @@ struct ltutf8
   }
 };
 
-template<class Key, class Container, class Compare, class Meta>
+template<class Key, class Container, class Compare, class Meta, class TLock>
 class LockedMap : public mvm::PermanentObject {
 public:
   typedef typename std::map<const Key, Container, Compare>::iterator iterator;
   typedef Container (*funcCreate)(Key& V, Meta meta);
 
-  mvm::LockNormal lock;
+  TLock lock;
   std::map<const Key, Container, Compare,
            gc_allocator<std::pair<const Key, Container> > > map;
   
@@ -137,7 +137,8 @@ public:
 };
 
 class ClassMap : 
-  public LockedMap<const UTF8*, UserCommonClass*, ltutf8, JnjvmClassLoader* > {
+  public LockedMap<const UTF8*, UserCommonClass*, ltutf8, JnjvmClassLoader*,
+                   mvm::LockRecursive > {
 
 #ifdef USE_GC_BOEHM
 public:
@@ -148,7 +149,7 @@ public:
 };
 
 class StringMap :
-  public LockedMap<const UTF8*, JavaString*, ltutf8, Jnjvm*> {
+  public LockedMap<const UTF8*, JavaString*, ltutf8, Jnjvm*, mvm::LockNormal> {
 
 public:
   void insert(JavaString* str);
