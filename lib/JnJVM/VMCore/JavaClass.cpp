@@ -1309,30 +1309,34 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
     
     uint32 length = getDisplayLength() < depth ? getDisplayLength() : depth;
     memcpy(display, superVT->display, length * sizeof(JavaVirtualTable*)); 
+    uint32 outOfDepth = 0;
     if (depth < getDisplayLength()) {
       display[depth] = this;
       offset = getCacheIndex() + depth + 1;
     } else {
       offset = getCacheIndex();
       ++nbSecondaryTypes;
+      outOfDepth = 1;
     }
 
     mvm::BumpPtrAllocator& allocator = C->classLoader->allocator;
     secondaryTypes = (JavaVirtualTable**)
       allocator.Allocate(sizeof(JavaVirtualTable*) * nbSecondaryTypes);  
     
-    if (offset == getCacheIndex()) {
+    if (outOfDepth) {
       secondaryTypes[0] = this;
     }
 
     if (superVT->nbSecondaryTypes) {
-      memcpy(secondaryTypes + 1, superVT->secondaryTypes,
+      memcpy(secondaryTypes + outOfDepth, superVT->secondaryTypes,
              sizeof(JavaVirtualTable*) * superVT->nbSecondaryTypes);
     }
 
     for (uint32 i = 0; i < cl->nbInterfaces; ++i) {
       JavaVirtualTable* cur = cl->interfaces[i]->virtualVT;
-      secondaryTypes[superVT->nbSecondaryTypes + 1 + i] = cur;
+      assert(cur && "Interface not resolved!\n");
+      uint32 index = superVT->nbSecondaryTypes + outOfDepth + i;
+      secondaryTypes[index] = cur;
     }
 
   } else {
