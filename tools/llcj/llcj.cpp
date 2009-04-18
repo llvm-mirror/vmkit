@@ -14,6 +14,10 @@
 
 #include "LinkPaths.h"
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
 using namespace llvm;
 
 int main(int argc, char **argv) {

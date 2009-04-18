@@ -996,7 +996,7 @@ void JnjvmClassLoader::loadLibFromJar(Jnjvm* vm, const char* name,
                                       const char* file) {
 
   char* soName = (char*)alloca(strlen(name) + strlen(DYLD_EXTENSION));
-  char* ptr = strrchr(name, '/');
+  char* ptr = (char*)strrchr(name, '/');
   sprintf(soName, "%s%s", ptr ? ptr + 1 : name, DYLD_EXTENSION);
   void* handle = dlopen(soName, RTLD_LAZY | RTLD_LOCAL);
   if (handle) {

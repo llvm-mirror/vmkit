@@ -512,7 +512,7 @@ void ClArgumentsInfo::javaAgent(char* cur) {
 }
 
 extern "C" int sys_strnstr(const char *haystack, const char *needle) {
-  char * res = strstr(haystack, needle);
+  char * res = (char*)strstr(haystack, needle);
   if (res) return res - haystack;
   else return -1; 
 }

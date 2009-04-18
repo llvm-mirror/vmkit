@@ -21,6 +21,8 @@
 #include "llvm/Function.h"
 #include "llvm/Type.h"
 
+#include <cstdarg>
+
 namespace n3 {
 
 class ArraySInt32;
