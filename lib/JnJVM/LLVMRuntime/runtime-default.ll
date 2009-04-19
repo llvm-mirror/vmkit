@@ -61,7 +61,7 @@
                      %UTF8*, %UTF8*, i8, i8*, i32, i8* }
 
 %JavaClassPrimitive = type { %JavaCommonClass, i32 }
-%JavaClassArray = type { %JavaCommonClass, %JavaCommonClass*, %VT* }
+%JavaClassArray = type { %JavaCommonClass, %JavaCommonClass* }
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Constant calls for Jnjvm runtime internal objects field accesses ;;;;;;;;;
@@ -82,6 +82,10 @@ declare %JavaCommonClass* @getClass(%JavaObject*) readnone
 ;;; getLock - Get the lock of an object.
 declare i8* @getLock(%JavaObject*)
 
+;;; getVTFromCommonClass - Get the VT of a class from its runtime
+;;; representation.
+declare %VT* @getVTFromCommonClass(%JavaCommonClass*) readnone 
+
 ;;; getVTFromClass - Get the VT of a class from its runtime representation.
 declare %VT* @getVTFromClass(%JavaClass*) readnone 
 
@@ -92,6 +96,10 @@ declare %VT* @getVTFromClassArray(%JavaClassArray*) readnone
 ;;; getObjectSizeFromClass - Get the size of a class from its runtime
 ;;; representation.
 declare i32 @getObjectSizeFromClass(%JavaClass*) readnone 
+
+;;; getBaseClassVTFromVT - Get the VT of the base class of an array, or the
+;;; VT of the array class of a regular class.
+declare %VT* @getBaseClassVTFromVT(%VT*) readnone
 
 ;;; getDisplay - Get the display array of this class.
 declare %JavaCommonClass** @getDisplay(%JavaCommonClass*) readnone 
@@ -169,17 +177,8 @@ declare void @JavaObjectRelease(%JavaObject*)
 ;;; overflows
 declare void @overflowThinLock(%JavaObject*)
 
-;;; isAssignableFrom - Returns if the objet's class implements the given class.
-declare i1 @instanceOf(%JavaObject*, %JavaCommonClass*) readnone 
-
-;;; isAssignableFrom - Returns if the class implements the given class.
-declare i1 @isAssignableFrom(%JavaCommonClass*, %JavaCommonClass*) readnone 
-
-;;; implements - Returns if the class implements the given interface.
-declare i1 @implements(%JavaCommonClass*, %JavaCommonClass*) readnone 
-
-;;; instantiationOfArray - Returns if the class implements the given array.
-declare i1 @instantiationOfArray(%JavaCommonClass*, %JavaCommonClass*) readnone
+;;; isAssignableFrom - Returns if a type is a subtype of another type.
+declare i1 @jnjvmIsAssignableFrom(%VT*, %VT*) readnone
 
 ;;; getClassDelegatee - Returns the java/lang/Class representation of the
 ;;; class. This method is lowered to the GEP to the class delegatee in
@@ -212,6 +211,7 @@ declare %JavaObject* @jnjvmClassCastException(%JavaObject*, %JavaCommonClass*)
 declare %JavaObject* @indexOutOfBoundsException(%JavaObject*, i32)
 declare %JavaObject* @negativeArraySizeException(i32)
 declare %JavaObject* @outOfMemoryError(i32)
+declare %JavaObject* @jnjvmArrayStoreException(%VT*)
 declare void @JavaThreadThrowException(%JavaObject*)
 
 declare void @jniProceedPendingException()

@@ -187,6 +187,11 @@ public:
   /// classLoader - The Jnjvm class loader that loaded the class.
   ///
   JnjvmClassLoader* classLoader;
+  
+  /// virtualVT - The virtual table of instances of this class.
+  ///
+  JavaVirtualTable* virtualVT;
+  
 
 //===----------------------------------------------------------------------===//
 //
@@ -454,10 +459,6 @@ public:
   /// 
   uint32 virtualSize;
 
-  /// virtualVT - The virtual table of instances of this class.
-  ///
-  JavaVirtualTable* virtualVT;
-  
   /// IsolateInfo - Per isolate informations for static instances and
   /// initialization state.
   ///
@@ -900,7 +901,13 @@ public:
   /// needsInitialisationCheck - Does the method need an initialisation check?
   ///
   bool needsInitialisationCheck();
-   
+
+private:
+
+  /// makeVT - Create the virtual table of this class.
+  ///
+  void makeVT();
+
 };
 
 /// ClassArray - This class represents Java array classes.
@@ -917,10 +924,6 @@ public:
   /// _baseClass - The base class of the array.
   ///
   CommonClass*  _baseClass;
-
-  /// virtualVT - The virtual table of this array class.
-  ///
-  JavaVirtualTable* virtualVT;
 
   /// baseClass - Get the base class of this array class.
   ///
@@ -1339,16 +1342,52 @@ public:
 
 };
 
+/// JavaVirtualTable - This class is the virtual table of instances of
+/// Java classes. Besides holding function pointers for virtual calls,
+/// it contains a bunch of information useful for fast dynamic type checking.
+/// These are placed here for fast access of information from a Java object
+/// (that only points to the VT, not the class).
+///
 class JavaVirtualTable : public VirtualTable {
 public:
+
+  /// cl - The class which defined this virtual table.
+  ///
   CommonClass* cl;
+
+  /// depth - The super hierarchy depth of the class.
+  ///
   size_t depth;
+
+  /// offset - Offset in the virtual table where this virtual
+  /// table may be pointed. The offset is the cache if the class
+  /// is an interface or depth is too big, or an offset in the display.
+  ///
   size_t offset;
-  size_t cache;
+
+  /// cache - The cached result for better type checks on secondary types.
+  ///
+  JavaVirtualTable* cache;
+
+  /// display - Array of super classes.
+  ///
   JavaVirtualTable* display[8];
+
+  /// nbSecondaryTypes - The length of the secondary type list.
+  ///
   size_t nbSecondaryTypes;
+
+  /// secondaryTypes - The list of secondary types of this type. These
+  /// are the interface and all the supers whose depth is too big.
+  ///
   JavaVirtualTable** secondaryTypes;
 
+  /// baseClass - Holds the base class VT of an array, or the array class VT
+  /// of a regular class.
+  ///
+  JavaVirtualTable* baseClassVT;
+
+  /// Java methods for the virtual table functions.
   uintptr_t init;
   uintptr_t equals;
   uintptr_t hashCode;
@@ -1362,39 +1401,66 @@ public:
   uintptr_t waitMsNs;
   uintptr_t virtualMethods[1];
 
+  /// operator new - Allocates a JavaVirtualTable with the given size. The
+  /// size must contain the additional information for type checking, as well
+  /// as the function pointers.
+  ///
   void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
                      uint32 nbMethods) {
     return allocator.Allocate(sizeof(uintptr_t) * (nbMethods));
   }
 
+  /// JavaVirtualTable - Create JavaVirtualTable objects for classes, array
+  /// classes and primitive classes.
+  ///
   JavaVirtualTable(Class* C);
-  
   JavaVirtualTable(ClassArray* C);
+  JavaVirtualTable(ClassPrimitive* C);
 
+
+  /// getFirstJavaMethod - Get the byte offset of the first Java method
+  /// (<init>).
+  ///
   uintptr_t* getFirstJavaMethod() {
     return &init;
   }
   
+  /// getFirstJavaMethodIndex - Get the word offset of the first Java method.
+  ///
   static uint32_t getFirstJavaMethodIndex() {
-    return 17;
+    return 18;
   }
    
-  static uint32_t getNumMethods() {
-    return 28;
+  /// getBaseSize - Get the size of the java.lang.Object virtual table.
+  ///
+  static uint32_t getBaseSize() {
+    return 29;
   }
   
+  /// getNumJavaMethods - Get the number of methods of the java.lang.Object
+  /// class.
+  ///
   static uint32_t getNumJavaMethods() {
     return 11;
   }
 
+  /// getDisplayLength - Get the length of the display (primary type) array.
+  ///
   static uint32_t getDisplayLength() {
     return 8;
   }
   
-private:
+  /// getCacheIndex - Get the word offset of the type cache.
+  ///
   static uint32_t getCacheIndex() {
     return 6;
   }
+
+  /// isSubtypeOf - Returns true if the given VT is a subtype of the this
+  /// VT.
+  ///
+  bool isSubtypeOf(JavaVirtualTable* VT);
+
 
 };
 

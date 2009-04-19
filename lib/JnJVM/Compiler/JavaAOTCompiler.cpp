@@ -364,11 +364,8 @@ Constant* JavaAOTCompiler::CreateConstantForBaseObject(CommonClass* cl) {
   
   std::vector<Constant*> Elmts;
 
-  if (cl->isClass()) {
-    Elmts.push_back(getVirtualTable(cl->asClass()->virtualVT));
-  } else {
-    Elmts.push_back(getVirtualTable(cl->asArrayClass()->virtualVT));
-  }
+  // VT
+  Elmts.push_back(getVirtualTable(cl->virtualVT));
   
   // lock
   Constant* L = ConstantInt::get(Type::Int64Ty, 0);
@@ -666,7 +663,14 @@ Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
   Constant* loader = ConstantExpr::getBitCast(StaticInitializer,
                                               JnjvmModule::ptrType);
   CommonClassElts.push_back(loader);
- 
+  
+  // virtualTable
+  if (cl->virtualVT) {
+    CommonClassElts.push_back(getVirtualTable(cl->virtualVT));
+  } else {
+    TempTy = JnjvmModule::VTType;
+    CommonClassElts.push_back(Constant::getNullValue(TempTy));
+  }
   return ConstantStruct::get(STy, CommonClassElts);
 }
 
@@ -836,9 +840,6 @@ Constant* JavaAOTCompiler::CreateConstantFromClassArray(ClassArray* cl) {
     
   ClassElts.push_back(Cl);
   
-  // virtualTable
-  ClassElts.push_back(getVirtualTable(cl->virtualVT));
-
   return ConstantStruct::get(STy, ClassElts);
 }
 
@@ -855,11 +856,8 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   // virtualSize
   ClassElts.push_back(ConstantInt::get(Type::Int32Ty, cl->virtualSize));
 
-  // virtualTable
-  ClassElts.push_back(getVirtualTable(cl->virtualVT));
-
   // IsolateInfo
-  const ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(3));
+  const ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(2));
   assert(ATy && "Malformed type");
   
   const StructType* TCMTy = dyn_cast<StructType>(ATy->getContainedType(0));
@@ -1201,8 +1199,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
         ConstantInt::get(Type::Int64Ty, VT->offset), PTy));
   
   // cache
-  Elemts.push_back(ConstantExpr::getIntToPtr(
-        ConstantInt::get(Type::Int64Ty, VT->cache), PTy));
+  Elemts.push_back(N);
   
   // display
   for (uint32 i = 0; i < JavaVirtualTable::getDisplayLength(); ++i) {
@@ -1210,8 +1207,9 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
       Constant* Temp = getVirtualTable(VT->display[i]);
       Temp = ConstantExpr::getBitCast(Temp, PTy);
       Elemts.push_back(Temp);
-    } else
+    } else {
       Elemts.push_back(Constant::getNullValue(PTy));
+    }
   }
   
   // nbSecondaryTypes
@@ -1236,6 +1234,15 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   display = ConstantExpr::getCast(Instruction::BitCast, display, PTy);
   
   Elemts.push_back(display);
+    
+  // baseClassVT
+  if (VT->baseClassVT) {
+    Constant* Temp = getVirtualTable(VT->baseClassVT);
+    Temp = ConstantExpr::getBitCast(Temp, PTy);
+    Elemts.push_back(Temp);
+  } else {
+    Elemts.push_back(Constant::getNullValue(PTy));
+  }
 
   
   // methods
@@ -1455,8 +1462,16 @@ void JavaAOTCompiler::setNoInline(Class* cl) {
 }
 
 void JavaAOTCompiler::makeVT(Class* cl) {
-  internalMakeVT(cl);
-  VirtualTable* VT = cl->virtualVT;
+  JavaVirtualTable* VT = cl->virtualVT;
+  
+  if (cl->super) {
+    // Copy the super VT into the current VT.
+    uint32 size = cl->super->virtualTableSize - 
+        JavaVirtualTable::getFirstJavaMethodIndex();
+    memcpy(VT->getFirstJavaMethod(), cl->super->virtualVT->getFirstJavaMethod(),
+           size * sizeof(uintptr_t));
+  }
+  
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
     JavaMethod& meth = cl->virtualMethods[i];
     ((void**)VT)[meth.offset] = &meth;

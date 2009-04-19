@@ -73,26 +73,7 @@ const Type* LLVMClassInfo::getVirtualType() {
     classDef->virtualSize = (uint32)size;
     virtualSizeConstant = ConstantInt::get(Type::Int32Ty, size);
    
-    if (!Mod->isStaticCompiling()) {
-      if (!classDef->virtualVT) {
-        Mod->makeVT(classDef);
-      } else {
-#ifdef WITH_TRACER
-        // So the class is vmjc'ed. Create the virtual tracer.
-        Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
-                                          GlobalValue::ExternalLinkage,
-                                          "markAndTraceObject",
-                                          Mod->getLLVMModule());
-       
-        uintptr_t ptr = classDef->virtualVT->tracer;
-        JnjvmModule::executionEngine->addGlobalMapping(func, (void*)ptr);
-        virtualTracerFunction = func;
-#endif
-      }
-    } else {
-      Mod->makeVT(classDef);
-    }
-  
+    Mod->makeVT(classDef);
   }
 
   return virtualType;

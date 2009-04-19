@@ -109,7 +109,7 @@ jobject vmthrow, jobject throwable) {
   while (i != e) {
     JavaMethod* meth = vm->IPToMethod<JavaMethod>(*i);
     assert(meth && "Wrong stack trace");
-    if (meth->classDef->subclassOf(vm->upcalls->newThrowable)) {
+    if (meth->classDef->isAssignableFrom(vm->upcalls->newThrowable)) {
       ++i;
       ++index;
     } else break;

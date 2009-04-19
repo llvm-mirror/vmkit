@@ -62,7 +62,6 @@ llvm::Constant*     JnjvmModule::MaxArraySizeConstant;
 llvm::Constant*     JnjvmModule::JavaArraySizeConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetObjectSizeInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetVTInClassConstant;
-llvm::ConstantInt*  JnjvmModule::OffsetVTInClassArrayConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetDepthInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetDisplayInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetTaskClassMirrorInClassConstant;
@@ -84,6 +83,7 @@ llvm::ConstantInt*  JnjvmModule::JavaObjectVTOffsetConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetClassInVTConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetDepthInVTConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetDisplayInVTConstant;
+llvm::ConstantInt*  JnjvmModule::OffsetBaseClassVTInVTConstant;
 
 
 JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
@@ -175,43 +175,6 @@ llvm::Function* JavaLLVMCompiler::internalMakeTracer(Class* cl, bool stat) {
   return func;
 }
 #endif
-
-
-void JavaLLVMCompiler::internalMakeVT(Class* cl) {
-  
-  for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
-    JavaMethod& meth = cl->virtualMethods[i];
-    if (meth.name->equals(cl->classLoader->bootstrapLoader->finalize)) {
-      meth.offset = 0;
-    } else {
-      JavaMethod* parent = cl->super? 
-        cl->super->lookupMethodDontThrow(meth.name, meth.type, false, true,
-                                         0) :
-        0;
-
-      uint64_t offset = 0;
-      if (!parent) {
-        offset = cl->virtualTableSize++;
-        meth.offset = offset;
-      } else {
-        offset = parent->offset;
-        meth.offset = parent->offset;
-      }
-    }
-  }
-
-  uint32 size = cl->virtualTableSize;
-  if (cl->super) {
-    if (!(cl->virtualTableSize >= cl->super->virtualTableSize)) {
-      fprintf(stderr, "cl = %s et super = %s\n", cl->printString(), cl->super->printString());
-    }
-    assert(cl->virtualTableSize >= cl->super->virtualTableSize &&
-           "Size of virtual table less than super!");
-  }
-
-  mvm::BumpPtrAllocator& allocator = cl->classLoader->allocator;
-  cl->virtualVT = new(allocator, size) JavaVirtualTable(cl);
-}
 
 void JavaLLVMCompiler::resolveVirtualClass(Class* cl) {
   // Lock here because we may be called by a class resolver
@@ -319,14 +282,14 @@ void JnjvmModule::initialise() {
   OffsetClassInVTConstant = mvm::MvmModule::constantThree;
   OffsetDepthInVTConstant = mvm::MvmModule::constantFour;
   OffsetDisplayInVTConstant = mvm::MvmModule::constantFive;
+  OffsetBaseClassVTInVTConstant = ConstantInt::get(Type::Int32Ty, 17);
   
   OffsetDisplayInClassConstant = mvm::MvmModule::constantZero;
   OffsetDepthInClassConstant = mvm::MvmModule::constantOne;
   
   OffsetObjectSizeInClassConstant = mvm::MvmModule::constantOne;
-  OffsetVTInClassConstant = mvm::MvmModule::constantTwo;
-  OffsetVTInClassArrayConstant = mvm::MvmModule::constantTwo;
-  OffsetTaskClassMirrorInClassConstant = mvm::MvmModule::constantThree;
+  OffsetVTInClassConstant = ConstantInt::get(Type::Int32Ty, 9);
+  OffsetTaskClassMirrorInClassConstant = mvm::MvmModule::constantTwo;
   OffsetStaticInstanceInTaskClassMirrorConstant = mvm::MvmModule::constantTwo;
   OffsetStatusInTaskClassMirrorConstant = mvm::MvmModule::constantZero;
   OffsetInitializedInTaskClassMirrorConstant = mvm::MvmModule::constantOne;
@@ -384,15 +347,14 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   ClassLookupFunction = module->getFunction("classLookup");
   GetVTFromClassFunction = module->getFunction("getVTFromClass");
   GetVTFromClassArrayFunction = module->getFunction("getVTFromClassArray");
+  GetVTFromCommonClassFunction = module->getFunction("getVTFromCommonClass");
+  GetBaseClassVTFromVTFunction = module->getFunction("getBaseClassVTFromVT");
   GetObjectSizeFromClassFunction = 
     module->getFunction("getObjectSizeFromClass");
  
   GetClassDelegateeFunction = module->getFunction("getClassDelegatee");
   RuntimeDelegateeFunction = module->getFunction("jnjvmRuntimeDelegatee");
-  InstanceOfFunction = module->getFunction("instanceOf");
-  IsAssignableFromFunction = module->getFunction("isAssignableFrom");
-  ImplementsFunction = module->getFunction("implements");
-  InstantiationOfArrayFunction = module->getFunction("instantiationOfArray");
+  IsAssignableFromFunction = module->getFunction("jnjvmIsAssignableFrom");
   GetDepthFunction = module->getFunction("getDepth");
   GetStaticInstanceFunction = module->getFunction("getStaticInstance");
   GetDisplayFunction = module->getFunction("getDisplay");
@@ -416,6 +378,7 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   NegativeArraySizeExceptionFunction = 
     module->getFunction("negativeArraySizeException");
   OutOfMemoryErrorFunction = module->getFunction("outOfMemoryError");
+  ArrayStoreExceptionFunction = module->getFunction("jnjvmArrayStoreException");
 
   JavaObjectAllocateFunction = module->getFunction("gcmalloc");
 

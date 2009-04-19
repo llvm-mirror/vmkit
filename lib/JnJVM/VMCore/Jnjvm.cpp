@@ -325,6 +325,12 @@ JavaObject* Jnjvm::CreateOutOfMemoryError() {
                      "Java heap space");
 }
 
+JavaObject* Jnjvm::CreateArrayStoreException(JavaVirtualTable* VT) {
+  return CreateError(upcalls->ArrayStoreException,
+                     upcalls->InitArrayStoreException,
+                     VT->cl->printString());
+}
+
 JavaObject* Jnjvm::CreateClassCastException(JavaObject* obj,
                                             UserCommonClass* cl) {
   return CreateError(upcalls->ClassCastException,

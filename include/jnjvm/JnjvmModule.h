@@ -66,6 +66,7 @@ public:
 
 
 class LLVMClassInfo : public mvm::JITInfo {
+  friend class JavaJITCompiler;
   friend class JavaLLVMCompiler;
 private:
   Class* classDef;
@@ -253,10 +254,7 @@ public:
 #ifndef WITHOUT_VTABLE
   llvm::Function* VirtualLookupFunction;
 #endif
-  llvm::Function* InstanceOfFunction;
   llvm::Function* IsAssignableFromFunction;
-  llvm::Function* ImplementsFunction;
-  llvm::Function* InstantiationOfArrayFunction;
   llvm::Function* GetDepthFunction;
   llvm::Function* GetClassInDisplayFunction;
   llvm::Function* GetStaticInstanceFunction;
@@ -293,7 +291,9 @@ public:
   llvm::Function* JavaObjectAllocateFunction;
   llvm::Function* GetVTFromClassFunction;
   llvm::Function* GetVTFromClassArrayFunction;
+  llvm::Function* GetVTFromCommonClassFunction;
   llvm::Function* GetObjectSizeFromClassFunction;
+  llvm::Function* GetBaseClassVTFromVTFunction;
 
   llvm::Function* GetLockFunction;
   llvm::Function* OverflowThinLockFunction;
@@ -308,7 +308,6 @@ public:
 
   static llvm::ConstantInt* OffsetObjectSizeInClassConstant;
   static llvm::ConstantInt* OffsetVTInClassConstant;
-  static llvm::ConstantInt* OffsetVTInClassArrayConstant;
   static llvm::ConstantInt* OffsetDepthInClassConstant;
   static llvm::ConstantInt* OffsetDisplayInClassConstant;
   static llvm::ConstantInt* OffsetTaskClassMirrorInClassConstant;
@@ -322,6 +321,7 @@ public:
   static llvm::ConstantInt* OffsetClassInVTConstant;
   static llvm::ConstantInt* OffsetDepthInVTConstant;
   static llvm::ConstantInt* OffsetDisplayInVTConstant;
+  static llvm::ConstantInt* OffsetBaseClassVTInVTConstant;
   
   static llvm::ConstantInt* ClassReadyConstant;
 
@@ -335,6 +335,7 @@ public:
   llvm::Function* ClassCastExceptionFunction;
   llvm::Function* OutOfMemoryErrorFunction;
   llvm::Function* NegativeArraySizeExceptionFunction;
+  llvm::Function* ArrayStoreExceptionFunction;
   
 
   JnjvmModule(llvm::Module*);
@@ -360,8 +361,6 @@ protected:
   }
 #endif
   
-  void internalMakeVT(Class* cl);
-
   void addJavaPasses();
 
 private: 

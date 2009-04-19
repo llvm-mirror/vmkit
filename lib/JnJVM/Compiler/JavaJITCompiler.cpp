@@ -134,10 +134,36 @@ Value* JavaJITCompiler::getIsolate(Jnjvm* isolate, Value* Where) {
 #endif
 
 void JavaJITCompiler::makeVT(Class* cl) { 
-  internalMakeVT(cl);
-
   JavaVirtualTable* VT = cl->virtualVT; 
   assert(VT && "No VT was allocated!");
+
+#ifdef WITH_TRACER
+  if (VT->init) {
+    // So the class is vmjc'ed. Create the virtual tracer.
+    Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
+                                      GlobalValue::ExternalLinkage,
+                                      "markAndTraceObject",
+                                      getLLVMModule());
+       
+    uintptr_t ptr = VT->tracer;
+    JnjvmModule::executionEngine->addGlobalMapping(func, (void*)ptr);
+    LLVMClassInfo* LCI = getClassInfo(cl);
+    LCI->virtualTracerFunction = func;
+
+    // The VT hash already been filled by the AOT compiler so there
+    // is nothing left to do!
+    return;
+  }
+#endif
+  
+  if (cl->super) {
+    // Copy the super VT into the current VT.
+    uint32 size = cl->super->virtualTableSize - 
+        JavaVirtualTable::getFirstJavaMethodIndex();
+    memcpy(VT->getFirstJavaMethod(), cl->super->virtualVT->getFirstJavaMethod(),
+           size * sizeof(uintptr_t));
+  }
+
 
   // Fill the virtual table with function pointers.
   ExecutionEngine* EE = mvm::MvmModule::executionEngine;

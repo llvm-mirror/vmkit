@@ -409,24 +409,9 @@ extern "C" void JavaObjectRelease(JavaObject* obj) {
 }
 
 // Never throws.
-extern "C" bool instanceOf(JavaObject* obj, UserCommonClass* cl) {
-  return obj->instanceOf(cl);
-}
-
-// Never throws.
-extern "C" bool instantiationOfArray(UserCommonClass* cl1,
-                                     UserClassArray* cl2) {
-  return cl1->instantiationOfArray(cl2);
-}
-
-// Never throws.
-extern "C" bool implements(UserCommonClass* cl1, UserCommonClass* cl2) {
-  return cl1->implements(cl2);
-}
-
-// Never throws.
-extern "C" bool isAssignableFrom(UserCommonClass* cl1, UserCommonClass* cl2) {
-  return cl1->isAssignableFrom(cl2);
+extern "C" bool jnjvmIsAssignableFrom(JavaVirtualTable* VT1,
+                                      JavaVirtualTable* VT2) {
+  return VT1->isSubtypeOf(VT2);
 }
 
 // Does not call any Java code.
@@ -542,22 +527,39 @@ extern "C" JavaObject* indexOutOfBoundsException(JavaObject* obj,
   return exc;
 }
 
+// Creates a Java object and then throws it.
+extern "C" JavaObject* jnjvmArrayStoreException(JavaVirtualTable* VT) {
+  JavaObject *exc = 0;
+  JavaThread *th = JavaThread::get();
+
+  BEGIN_NATIVE_EXCEPTION(1)
+  
+  exc = th->getJVM()->CreateArrayStoreException(VT);
+
+  END_NATIVE_EXCEPTION
+
+#ifdef DWARF_EXCEPTIONS
+  th->throwException(exc);
+#else
+  th->pendingException = exc;
+#endif
+  
+  return exc;
+}
+
 extern "C" void printMethodStart(JavaMethod* meth) {
-  printf("[%p] executing %s\n", (void*)mvm::Thread::get(),
+  fprintf(stderr, "[%p] executing %s\n", (void*)mvm::Thread::get(),
          meth->printString());
-  fflush(stdout);
 }
 
 extern "C" void printMethodEnd(JavaMethod* meth) {
-  printf("[%p] return from %s\n", (void*)mvm::Thread::get(),
+  fprintf(stderr, "[%p] return from %s\n", (void*)mvm::Thread::get(),
          meth->printString());
-  fflush(stdout);
 }
 
 extern "C" void printExecution(uint32 opcode, uint32 index, JavaMethod* meth) {
-  printf("[%p] executing %s %s at %d\n", (void*)mvm::Thread::get(),
+  fprintf(stderr, "[%p] executing %s %s at %d\n", (void*)mvm::Thread::get(),
          meth->printString(), OpcodeNames[opcode], index);
-  fflush(stdout);
 }
 
 #ifdef SERVICE

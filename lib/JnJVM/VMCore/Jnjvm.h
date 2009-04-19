@@ -252,6 +252,7 @@ public:
   JavaObject* CreateNegativeArraySizeException();
   JavaObject* CreateClassCastException(JavaObject* obj, UserCommonClass* cl);
   JavaObject* CreateLinkageError(const char* msg = "");
+  JavaObject* CreateArrayStoreException(JavaVirtualTable* VT);
   
   /// Exceptions - These are the only exceptions VMKit will make.
   ///

@@ -195,6 +195,18 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Changed = true;
           
           Value* val = Call.getArgument(0);
+          Value* indexes[3] = { module->constantZero, 
+                                module->constantZero, 
+                                module->OffsetVTInClassConstant };
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 3,
+                                                   "", CI);
+          Value* VT = new LoadInst(VTPtr, "", CI);
+          CI->replaceAllUsesWith(VT);
+          CI->eraseFromParent();
+        } else if (V == module->GetVTFromCommonClassFunction) {
+          Changed = true;
+          
+          Value* val = Call.getArgument(0);
           Value* indexes[2] = { module->constantZero, 
                                 module->OffsetVTInClassConstant };
           Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
@@ -206,11 +218,24 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Changed = true;
           
           Value* val = Call.getArgument(0);
-          Value* indexes[2] = { module->constantZero, 
-                                module->OffsetVTInClassArrayConstant };
+          Value* indexes[3] = { module->constantZero,
+                                module->constantZero,
+                                module->OffsetVTInClassConstant };
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 3,
+                                                   "", CI);
+          Value* VT = new LoadInst(VTPtr, "", CI);
+          CI->replaceAllUsesWith(VT);
+          CI->eraseFromParent();
+        } else if (V == module->GetBaseClassVTFromVTFunction) {
+          Changed = true;
+          
+          Value* val = Call.getArgument(0);
+          Value* indexes[2] = { module->constantZero,
+                                module->OffsetBaseClassVTInVTConstant };
           Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
                                                    "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
+          VT = new BitCastInst(VT, module->VTType, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
         } else if (V == module->GetObjectSizeFromClassFunction) {

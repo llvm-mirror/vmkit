@@ -49,7 +49,7 @@ static bool needsInitialisationCheck(Class* cl, Class* compilingClass) {
   return true;
 #else
 
-  if (cl->isReadyForCompilation() || compilingClass->subclassOf(cl)) {
+  if (cl->isReadyForCompilation() || compilingClass->isAssignableFrom(cl)) {
     return false;
   }
 
