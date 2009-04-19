@@ -565,68 +565,9 @@ bool UserCommonClass::isOfTypeName(Jnjvm* vm, const UTF8* Tname) {
   }
 }
 
-bool UserCommonClass::implements(UserCommonClass* cl) {
-  if (this == cl) return true;
-  else {
-    for (uint16 i = 0; i < nbInterfaces; ++i) {
-      Class* I = interfaces[i];
-      if (I == cl) return true;
-      else if (I->implements(cl)) return true;
-    }
-    if (super) {
-      return super->implements(cl);
-    }
-  }
-  return false;
-}
-
-bool UserCommonClass::instantiationOfArray(UserClassArray* cl) {
-  if (this == cl) return true;
-  else {
-    if (isArray()) {
-      UserCommonClass* baseThis = ((UserClassArray*)this)->baseClass();
-      UserCommonClass* baseCl = ((UserClassArray*)cl)->baseClass();
-
-      if (baseThis->isInterface() && baseCl->isInterface()) {
-        return baseThis->implements(baseCl);
-      } else {
-        return baseThis->isAssignableFrom(baseCl);
-      }
-    }
-  }
-  return false;
-}
-
-bool UserCommonClass::subclassOf(UserCommonClass* cl) {
-  if (cl->depth <= depth) {
-    return display[cl->depth] == cl;
-  } else {
-    return false;
-  }
-}
-
 bool UserCommonClass::isAssignableFrom(UserCommonClass* cl) {
-  bool res = false;
-  if (this == cl) {
-    res = true;
-  } else if (cl->isInterface()) {
-    res = this->implements(cl);
-  } else if (cl->isArray()) {
-    res = this->instantiationOfArray((UserClassArray*)cl);
-  } else {
-    res = this->subclassOf(cl);
-  }
-  if(virtualVT && cl->virtualVT && res != virtualVT->isSubtypeOf(cl->virtualVT)) {
-    fprintf(stderr, "wrong result for %s and %s\n", printString(), cl->printString());
-    fprintf(stderr, "I have offset = %d\n", cl->virtualVT->offset);
-    fprintf(stderr, "I have secondary types = %d\n", virtualVT->nbSecondaryTypes);
-    fprintf(stderr, "I have secondary types = %s\n", virtualVT->secondaryTypes[0]->cl->printString());
-    fprintf(stderr, "I have secondary types = %d\n", virtualVT->secondaryTypes[0]->cl->super->virtualVT->nbSecondaryTypes);
-    fprintf(stderr, "I have secondary types = %s\n", virtualVT->secondaryTypes[0]->cl->super->printString());
-    fprintf(stderr, "I have secondary types = %d\n", virtualVT->secondaryTypes[0]->cl->nbInterfaces);
-    abort();
-  }
-  return res;
+  assert(virtualVT && cl->virtualVT);
+  return virtualVT->isSubtypeOf(cl->virtualVT);
 }
 
 bool JavaVirtualTable::isSubtypeOf(JavaVirtualTable* otherVT) {

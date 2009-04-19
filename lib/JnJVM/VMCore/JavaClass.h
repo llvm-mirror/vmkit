@@ -302,21 +302,6 @@ public:
   ///
   bool isOfTypeName(Jnjvm* vm, const UTF8* Tname);
 
-  /// implements - Does this class implement the given class? Returns true if
-  /// the class is in the interface class hierarchy.
-  ///
-  bool implements(CommonClass* cl);
-  
-  /// instantationOfArray - If this class is an array class, does its subclass
-  /// implements the given array class subclass?
-  ///
-  bool instantiationOfArray(ClassArray* cl);
-  
-  /// subclassOf - If this class is a regular class, is it a subclass of the
-  /// given class?
-  ///
-  bool subclassOf(CommonClass* cl);
-
   /// isAssignableFrom - Is this class assignable from the given class? The
   /// classes may be of any type.
   ///
