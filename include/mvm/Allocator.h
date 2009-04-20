@@ -68,11 +68,15 @@ private:
   llvm::BumpPtrAllocator Allocator;
 public:
   void* Allocate(size_t sz) {
+#ifdef USE_GC_BOEHM
+    return GC_MALLOC(sz);
+#else
     TheLock.acquire();
     void* res = Allocator.Allocate(sz, sizeof(void*));
     TheLock.release();
     memset(res, 0, sz);
     return res;
+#endif
   }
 
   void Deallocate(void* obj) {}
