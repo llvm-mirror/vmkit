@@ -93,8 +93,6 @@ const Type* LLVMClassInfo::getStaticType() {
       fields.push_back(LAI.llvmType);
     }
   
-    JavaLLVMCompiler* Mod = 
-      (JavaLLVMCompiler*)cl->classLoader->getCompiler();
     StructType* structType = StructType::get(fields, false);
     staticType = PointerType::getUnqual(structType);
     const TargetData* targetData = JnjvmModule::TheTargetData;
@@ -108,6 +106,8 @@ const Type* LLVMClassInfo::getStaticType() {
     uint64 size = JnjvmModule::getTypeSize(structType);
     cl->staticSize = size;
 #ifdef WITH_TRACER
+    JavaLLVMCompiler* Mod = 
+      (JavaLLVMCompiler*)cl->classLoader->getCompiler();
     if (!Mod->isStaticCompiling()) {
       Function* F = Mod->makeTracer(cl, true);
       cl->staticTracer = (void (*)(void*)) (uintptr_t)
