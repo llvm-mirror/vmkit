@@ -1544,6 +1544,7 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
 
 JavaVirtualTable::JavaVirtualTable(ClassPrimitive* C) {
   // Only used for subtype checking
+  cl = C;
   depth = 0;
   display[0] = this;
   nbSecondaryTypes = 0;
