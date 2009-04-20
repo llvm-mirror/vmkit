@@ -424,7 +424,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   // The compare and swap did not pass, look if it's a thin lock
   Value* isThin = BinaryOperator::CreateAnd(atomic, module->constantFatMask, "",
                                             currentBlock);
-  cmp = new ICmpInst(ICmpInst::ICMP_EQ, isThin, module->constantZero, "",
+  cmp = new ICmpInst(ICmpInst::ICMP_EQ, isThin, module->constantPtrZero, "",
                      currentBlock);
   
   BranchInst::Create(ThinLockBB, FatLockBB, cmp, currentBlock);
