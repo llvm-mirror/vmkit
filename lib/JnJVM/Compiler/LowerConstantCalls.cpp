@@ -261,7 +261,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
         } else if (V == module->GetDisplayFunction) {
           Changed = true;
-          Value* val = Call.getArgument(0); 
+          Value* val = Call.getArgument(0);
           Value* indexes[2] = { module->constantZero,
                                 module->OffsetDisplayInClassConstant };
           Value* DisplayPtr = GetElementPtrInst::Create(val, indexes,
@@ -271,8 +271,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
         } else if (V == module->GetClassInDisplayFunction) {
           Changed = true;
-          Value* val = Call.getArgument(0); 
-          Value* depth = Call.getArgument(1); 
+          Value* val = Call.getArgument(0);
+          Value* depth = Call.getArgument(1);
           Value* ClassPtr = GetElementPtrInst::Create(val, depth, "", CI);
           Value* Class = new LoadInst(ClassPtr, "", CI);
           CI->replaceAllUsesWith(Class);
