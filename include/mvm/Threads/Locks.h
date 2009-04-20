@@ -185,7 +185,7 @@ public:
   TFatLock* changeToFatlock(Owner* O) {
     if (!(lock & FatMask)) {
       TFatLock* obj = TFatLock::allocate(O);
-      uint32 val = (((uint32) obj) >> 1) | FatMask;
+      size_t val = (((size_t) obj) >> 1) | FatMask;
       uint32 count = lock & 0xFF;
       obj->acquireAll(count + 1);
       lock = val;
