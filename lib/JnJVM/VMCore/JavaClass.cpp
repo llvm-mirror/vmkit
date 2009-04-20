@@ -1349,6 +1349,7 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
       JavaVirtualTable* cur = cl->interfaces[i]->virtualVT;
       memcpy(secondaryTypes + lastIndex, cur->secondaryTypes,
              sizeof(JavaVirtualTable*) * cur->nbSecondaryTypes);
+      lastIndex += cur->nbSecondaryTypes;
     }
 
   } else {
