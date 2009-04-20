@@ -303,7 +303,7 @@ Constant* JavaAOTCompiler::getVirtualTable(JavaVirtualTable* VT) {
     LCI->getVirtualType();
     size = classDef->asClass()->virtualTableSize;
   } else {
-    size = classDef->super->virtualTableSize;
+    size = JavaVirtualTable::getBaseSize();
   }
   llvm::Constant* res = 0;
   virtual_table_iterator End = virtualTables.end();
@@ -1142,10 +1142,11 @@ Constant* JavaAOTCompiler::getUTF8(const UTF8* val) {
 
 Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   CommonClass* classDef = VT->cl;
-  uint32 size = classDef->isArray() ? classDef->super->virtualTableSize : 
-                                      classDef->asClass()->virtualTableSize;
-  JavaVirtualTable* RealVT = classDef->isArray() ? classDef->super->virtualVT :
-                                                   VT;
+  uint32 size = classDef->isClass() ? classDef->asClass()->virtualTableSize :
+                                      JavaVirtualTable::getBaseSize();
+  JavaVirtualTable* RealVT = classDef->isClass() ? 
+    VT : ClassArray::SuperArray->virtualVT;
+
   const ArrayType* ATy = 
     dyn_cast<ArrayType>(JnjvmModule::VTType->getContainedType(0));
   const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
@@ -1176,7 +1177,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
     } else {
       Tracer = JavaIntrinsics.ArrayObjectTracerFunction;
     }
-  } else {
+  } else if (classDef->isClass()) {
     Tracer = makeTracer(classDef->asClass(), false);
   }
 
@@ -1222,6 +1223,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   
   std::vector<Constant*> TempElmts;
   for (uint32 i = 0; i < VT->nbSecondaryTypes; ++i) {
+    assert(VT->secondaryTypes[i] && "No secondary type");
     Constant* Cl = getVirtualTable(VT->secondaryTypes[i]);
     TempElmts.push_back(Cl);
   }
