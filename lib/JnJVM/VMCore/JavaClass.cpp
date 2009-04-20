@@ -1402,6 +1402,7 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
       }
      
       bool newSecondaryTypes = false;
+      bool intf = temp->isInterface();
       if (temp->isPrimitive()) {
         --dim;
         temp = C->super;
@@ -1419,7 +1420,7 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
 
       uint32 length = getDisplayLength() < depth ? getDisplayLength() : depth;
       memcpy(display, superVT->display, length * sizeof(JavaVirtualTable*)); 
-      if (depth < getDisplayLength()) {
+      if (depth < getDisplayLength() && !intf) {
         display[depth] = this;
         offset = getCacheIndex() + depth + 1;
       } else {
