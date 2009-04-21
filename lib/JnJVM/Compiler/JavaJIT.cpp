@@ -49,7 +49,8 @@ static bool needsInitialisationCheck(Class* cl, Class* compilingClass) {
   return true;
 #else
 
-  if (cl->isReadyForCompilation() || compilingClass->isAssignableFrom(cl)) {
+  if (cl->isReadyForCompilation() || 
+      (!cl->isInterface() && compilingClass->isAssignableFrom(cl))) {
     return false;
   }
 
