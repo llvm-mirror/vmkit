@@ -122,9 +122,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
         "The method's offset is greater than the virtual table size");
     ((void**)meth->classDef->virtualVT)[offset] = val;
   } else {
-#ifndef ISOLATE_SHARING
-    meth->classDef->initialiseClass(JavaThread::get()->getJVM());
-#endif
+    assert(meth->classDef->isInitializing() && "Class not ready");
   }
 
   return false;
