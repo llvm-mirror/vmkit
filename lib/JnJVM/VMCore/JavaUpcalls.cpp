@@ -141,6 +141,7 @@ Class* Classpath::OutOfMemoryError;
 Class* Classpath::StackOverflowError;
 Class* Classpath::UnknownError;
 Class* Classpath::ClassNotFoundException;
+Class* Classpath::ArithmeticException;
 
 JavaMethod* Classpath::InitInvocationTargetException;
 JavaMethod* Classpath::InitArrayStoreException;
@@ -172,6 +173,7 @@ JavaMethod* Classpath::InitOutOfMemoryError;
 JavaMethod* Classpath::InitStackOverflowError;
 JavaMethod* Classpath::InitUnknownError;
 JavaMethod* Classpath::InitClassNotFoundException;
+JavaMethod* Classpath::InitArithmeticException;
 JavaMethod* Classpath::InitObject;
 
 JavaMethod* Classpath::ErrorWithExcpNoClassDefFoundError;
@@ -538,6 +540,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   UPCALL_CLASS_EXCEPTION(loader, StackOverflowError);
   UPCALL_CLASS_EXCEPTION(loader, UnknownError);
   UPCALL_CLASS_EXCEPTION(loader, ClassNotFoundException);
+  UPCALL_CLASS_EXCEPTION(loader, ArithmeticException);
   
   UPCALL_METHOD_EXCEPTION(loader, InvocationTargetException);
   UPCALL_METHOD_EXCEPTION(loader, ArrayStoreException);
@@ -569,6 +572,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   UPCALL_METHOD_EXCEPTION(loader, StackOverflowError);
   UPCALL_METHOD_EXCEPTION(loader, UnknownError);
   UPCALL_METHOD_EXCEPTION(loader, ClassNotFoundException);
+  UPCALL_METHOD_EXCEPTION(loader, ArithmeticException);
   
   UPCALL_METHOD_WITH_EXCEPTION(loader, NoClassDefFoundError);
   UPCALL_METHOD_WITH_EXCEPTION(loader, ExceptionInInitializerError);

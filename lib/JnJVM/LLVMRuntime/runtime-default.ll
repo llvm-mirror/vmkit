@@ -216,6 +216,7 @@ declare %JavaObject* @jnjvmIndexOutOfBoundsException(%JavaObject*, i32)
 declare %JavaObject* @jnjvmNegativeArraySizeException(i32)
 declare %JavaObject* @jnjvmOutOfMemoryError(i32)
 declare %JavaObject* @jnjvmArrayStoreException(%VT*)
+declare %JavaObject* @jnjvmArithmeticException()
 declare void @jnjvmThrowException(%JavaObject*)
 
 declare void @jnjvmJNIProceedPendingException()

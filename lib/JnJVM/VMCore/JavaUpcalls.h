@@ -173,6 +173,7 @@ public:
   ISOLATE_STATIC UserClass* StackOverflowError;
   ISOLATE_STATIC UserClass* UnknownError;
   ISOLATE_STATIC UserClass* ClassNotFoundException;
+  ISOLATE_STATIC UserClass* ArithmeticException;
 
   ISOLATE_STATIC JavaMethod* InitInvocationTargetException;
   ISOLATE_STATIC JavaMethod* InitArrayStoreException;
@@ -204,6 +205,7 @@ public:
   ISOLATE_STATIC JavaMethod* InitStackOverflowError;
   ISOLATE_STATIC JavaMethod* InitUnknownError;
   ISOLATE_STATIC JavaMethod* InitClassNotFoundException;
+  ISOLATE_STATIC JavaMethod* InitArithmeticException;
 
   ISOLATE_STATIC JavaMethod* InitObject;
 

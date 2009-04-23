@@ -480,6 +480,26 @@ extern "C" JavaObject* jnjvmOutOfMemoryError(sint32 val) {
 }
 
 // Creates a Java object and then throws it.
+extern "C" JavaObject* jnjvmArithmeticException() {
+  JavaObject *exc = 0;
+  JavaThread *th = JavaThread::get();
+
+  BEGIN_NATIVE_EXCEPTION(1)
+  
+  exc = th->getJVM()->CreateArithmeticException();
+
+  END_NATIVE_EXCEPTION
+
+#ifdef DWARF_EXCEPTIONS
+  th->throwException(exc);
+#else
+  th->pendingException = exc;
+#endif
+
+  return exc;
+}
+
+// Creates a Java object and then throws it.
 extern "C" JavaObject* jnjvmClassCastException(JavaObject* obj,
                                                UserCommonClass* cl) {
   JavaObject *exc = 0;
@@ -541,24 +561,24 @@ extern "C" JavaObject* jnjvmArrayStoreException(JavaVirtualTable* VT) {
   return exc;
 }
 
-extern "C" void printMethodStart(JavaMethod* meth) {
+extern "C" void jnjvmPrintMethodStart(JavaMethod* meth) {
   fprintf(stderr, "[%p] executing %s\n", (void*)mvm::Thread::get(),
          meth->printString());
 }
 
-extern "C" void printMethodEnd(JavaMethod* meth) {
+extern "C" void jnjvmPrintMethodEnd(JavaMethod* meth) {
   fprintf(stderr, "[%p] return from %s\n", (void*)mvm::Thread::get(),
          meth->printString());
 }
 
-extern "C" void printExecution(uint32 opcode, uint32 index, JavaMethod* meth) {
+extern "C" void jnjvmPrintExecution(uint32 opcode, uint32 index, JavaMethod* meth) {
   fprintf(stderr, "[%p] executing %s %s at %d\n", (void*)mvm::Thread::get(),
          meth->printString(), OpcodeNames[opcode], index);
 }
 
 #ifdef SERVICE
 
-extern "C" void serviceCallStart(Jnjvm* OldService,
+extern "C" void jnjvmServiceCallStart(Jnjvm* OldService,
                                  Jnjvm* NewService) {
   fprintf(stderr, "I have switched from %d to %d\n", OldService->IsolateID,
           NewService->IsolateID);
@@ -566,7 +586,7 @@ extern "C" void serviceCallStart(Jnjvm* OldService,
   fprintf(stderr, "Now the thread id is %d\n", mvm::Thread::get()->IsolateID);
 }
 
-extern "C" void serviceCallStop(Jnjvm* OldService,
+extern "C" void jnjvmServiceCallStop(Jnjvm* OldService,
                                 Jnjvm* NewService) {
   fprintf(stderr, "End service call\n");
 }
@@ -574,7 +594,7 @@ extern "C" void serviceCallStop(Jnjvm* OldService,
 #endif
 
 #ifdef ISOLATE
-extern "C" void* stringLookup(UserClass* cl, uint32 index) {
+extern "C" void* jnjvmStringLookup(UserClass* cl, uint32 index) {
   UserConstantPool* ctpInfo = cl->getConstantPool();
   const UTF8* utf8 = ctpInfo->UTF8AtForString(index);
   JavaString* str = JavaThread::get()->getJVM()->internalUTF8ToStr(utf8);
@@ -585,7 +605,7 @@ extern "C" void* stringLookup(UserClass* cl, uint32 index) {
 }
 
 #ifdef ISOLATE_SHARING
-extern "C" void* enveloppeLookup(UserClass* cl, uint32 index) {
+extern "C" void* jnjvmEnveloppeLookup(UserClass* cl, uint32 index) {
   UserConstantPool* ctpInfo = cl->getConstantPool();
   mvm::Allocator* allocator = cl->classLoader->allocator;
   Enveloppe* enveloppe = new(allocator) Enveloppe(ctpInfo, index);
@@ -593,7 +613,7 @@ extern "C" void* enveloppeLookup(UserClass* cl, uint32 index) {
   return (void*)enveloppe;
 }
 
-extern "C" void* staticCtpLookup(UserClass* cl, uint32 index) {
+extern "C" void* jnjvmStaticCtpLookup(UserClass* cl, uint32 index) {
   UserConstantPool* ctpInfo = cl->getConstantPool();
   JavaConstantPool* shared = ctpInfo->getSharedPool();
   uint32 clIndex = shared->getClassIndexFromMethod(index);
@@ -612,9 +632,9 @@ extern "C" void* staticCtpLookup(UserClass* cl, uint32 index) {
   return (void*)methodCl->getConstantPool();
 }
 
-extern "C" UserConstantPool* specialCtpLookup(UserConstantPool* ctpInfo,
-                                              uint32 index,
-                                              UserConstantPool** res) {
+extern "C" UserConstantPool* jnjvmSpecialCtpLookup(UserConstantPool* ctpInfo,
+                                                   uint32 index,
+                                                   UserConstantPool** res) {
   JavaConstantPool* shared = ctpInfo->getSharedPool();
   uint32 clIndex = shared->getClassIndexFromMethod(index);
   UserClass* refCl = (UserClass*)ctpInfo->loadClass(clIndex);

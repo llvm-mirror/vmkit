@@ -335,6 +335,7 @@ public:
   llvm::Function* OutOfMemoryErrorFunction;
   llvm::Function* NegativeArraySizeExceptionFunction;
   llvm::Function* ArrayStoreExceptionFunction;
+  llvm::Function* ArithmeticExceptionFunction;
   
 
   JnjvmModule(llvm::Module*);

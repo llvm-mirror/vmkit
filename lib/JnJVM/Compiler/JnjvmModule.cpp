@@ -375,6 +375,7 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
     module->getFunction("jnjvmNegativeArraySizeException");
   OutOfMemoryErrorFunction = module->getFunction("jnjvmOutOfMemoryError");
   ArrayStoreExceptionFunction = module->getFunction("jnjvmArrayStoreException");
+  ArithmeticExceptionFunction = module->getFunction("jnjvmArithmeticException");
 
   JavaObjectAllocateFunction = module->getFunction("gcmalloc");
 

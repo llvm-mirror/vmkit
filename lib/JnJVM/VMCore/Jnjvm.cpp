@@ -314,6 +314,11 @@ JavaObject* Jnjvm::CreateNegativeArraySizeException() {
                      upcalls->InitNegativeArraySizeException, 0);
 }
 
+JavaObject* Jnjvm::CreateArithmeticException() {
+  return CreateError(upcalls->ArithmeticException,
+                     upcalls->InitArithmeticException, "/ by zero");
+}
+
 JavaObject* Jnjvm::CreateNullPointerException() {
   return CreateError(upcalls->NullPointerException,
                      upcalls->InitNullPointerException, 0);
@@ -881,6 +886,7 @@ void Jnjvm::loadBootstrap() {
   LOAD_CLASS(upcalls->StackOverflowError);
   LOAD_CLASS(upcalls->UnknownError);
   LOAD_CLASS(upcalls->ClassNotFoundException); 
+  LOAD_CLASS(upcalls->ArithmeticException); 
 #undef LOAD_CLASS
 
   loadAppClassLoader();

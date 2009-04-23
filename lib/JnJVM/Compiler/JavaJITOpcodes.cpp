@@ -931,6 +931,18 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IDIV : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
+        if (TheCompiler->hasExceptionsEnabled()) {
+          Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, val2,
+                                    module->constantZero,
+                                    "", currentBlock);
+          BasicBlock* ifFalse = createBasicBlock("non null div");
+          BasicBlock* ifTrue = createBasicBlock("null div");
+
+          BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
+          currentBlock = ifTrue;
+          throwException(module->ArithmeticExceptionFunction, 0, 0);
+          currentBlock = ifFalse;
+        }
         push(BinaryOperator::CreateSDiv(val1, val2, "", currentBlock),
              false);
         break;
@@ -941,6 +953,18 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
+        if (TheCompiler->hasExceptionsEnabled()) {
+          Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, val2,
+                                    module->constantLongZero,
+                                    "", currentBlock);
+          BasicBlock* ifFalse = createBasicBlock("non null div");
+          BasicBlock* ifTrue = createBasicBlock("null div");
+
+          BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
+          currentBlock = ifTrue;
+          throwException(module->ArithmeticExceptionFunction, 0, 0);
+          currentBlock = ifFalse;
+        }
         push(BinaryOperator::CreateSDiv(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
