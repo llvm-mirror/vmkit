@@ -591,7 +591,7 @@ Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
   std::vector<Constant*> TempElmts;
 
   // delegatee
-  const ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(2));
+  const ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(0));
   assert(ATy && "Malformed type");
 
   Constant* TCM[1] = { getJavaClass(cl) };
