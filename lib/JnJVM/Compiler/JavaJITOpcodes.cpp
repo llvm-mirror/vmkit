@@ -2055,10 +2055,33 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* objVT = CallInst::Create(module->GetVTFunction, obj, "",
                                        currentBlock);
         Value* classArgs[2] = { objVT, TheVT };
-          
-        Value* res = CallInst::Create(module->IsAssignableFromFunction,
-                                      classArgs, classArgs + 2, "",
-                                      currentBlock);
+         
+        Value* res = 0;
+        if (cl) {
+          if (cl->isSecondaryClass()) {
+            res = CallInst::Create(module->IsSecondaryClassFunction,
+                                   classArgs, classArgs + 2, "",
+                                   currentBlock);
+          } else {
+            Value* inDisplay = CallInst::Create(module->GetDisplayFunction,
+                                                objVT, "", currentBlock);
+            
+            uint32 depth = cl->virtualVT->depth;
+            ConstantInt* CI = ConstantInt::get(Type::Int32Ty, depth);
+            Value* displayArgs[2] = { inDisplay, CI };
+            Value* VTInDisplay = 
+              CallInst::Create(module->GetVTInDisplayFunction,
+                               displayArgs, displayArgs + 2, "",
+                               currentBlock);
+             
+            res = new ICmpInst(ICmpInst::ICMP_EQ, VTInDisplay, TheVT, "",
+                               currentBlock);
+          }
+        } else {
+          res = CallInst::Create(module->IsAssignableFromFunction,
+                                 classArgs, classArgs + 2, "",
+                                 currentBlock);
+        }
 
         node->addIncoming(res, currentBlock);
         BranchInst::Create(endBlock, currentBlock);

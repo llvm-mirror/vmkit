@@ -526,16 +526,13 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         } else if (V == module->IsSecondaryClassFunction) {
           Changed = true;
           Value* VT1 = Call.getArgument(0);
-          Value* VT2 = Call.getArgument(0);
+          Value* VT2 = Call.getArgument(1);
 
           Value* args[2] = { VT1, VT2 };
           CallInst* res = CallInst::Create(module->IsAssignableFromFunction,
                                            args, args + 2, "", CI);
           CI->replaceAllUsesWith(res);
           CI->eraseFromParent();
-
-
-          break;
         }
 #ifdef ISOLATE_SHARING
         else if (V == module->GetCtpClassFunction) {

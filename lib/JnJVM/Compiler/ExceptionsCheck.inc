@@ -421,23 +421,28 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
 
     uint32 depth = cur->catchClass->virtualVT->depth;
     Value* depthCl = ConstantInt::get(Type::Int32Ty, depth);
-   
+    Value* cmp = 0;
+
     if (depth >= JavaVirtualTable::getDisplayLength()) {
-      assert(0 && "Implement me");
-    }
-    
+      Value* classArgs[2] = { objVT, VTVar };
+          
+      cmp = CallInst::Create(module->IsSecondaryClassFunction,
+                             classArgs, classArgs + 2, "",
+                             currentBlock);
+
+    } else {
+     
+      Value* inDisplay = CallInst::Create(module->GetDisplayFunction,
+                                          objVT, "", currentBlock);
             
-    
-    Value* inDisplay = CallInst::Create(module->GetDisplayFunction,
-                                        objVT, "", currentBlock);
-            
-    Value* displayArgs[2] = { inDisplay, depthCl };
-    Value* VTInDisplay = CallInst::Create(module->GetVTInDisplayFunction,
-                                          displayArgs, displayArgs + 2, "",
-                                          currentBlock);
+      Value* displayArgs[2] = { inDisplay, depthCl };
+      Value* VTInDisplay = CallInst::Create(module->GetVTInDisplayFunction,
+                                            displayArgs, displayArgs + 2, "",
+                                            currentBlock);
              
-    Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, VTInDisplay, VTVar, "",
-                              currentBlock);
+      cmp = new ICmpInst(ICmpInst::ICMP_EQ, VTInDisplay, VTVar, "",
+                         currentBlock);
+    }
    
     // Add the Java exception in the phi node of the handler.
     Instruction* insn = cur->javaHandler->begin();
