@@ -408,12 +408,6 @@ extern "C" void JavaObjectRelease(JavaObject* obj) {
   obj->release();
 }
 
-// Never throws.
-extern "C" bool jnjvmIsAssignableFrom(JavaVirtualTable* VT1,
-                                      JavaVirtualTable* VT2) {
-  return VT1->isSubtypeOf(VT2);
-}
-
 // Does not call any Java code.
 extern "C" void JavaThreadThrowException(JavaObject* obj) {
   return JavaThread::get()->throwException(obj);

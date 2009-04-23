@@ -178,9 +178,9 @@ declare void @JavaObjectRelease(%JavaObject*)
 declare void @overflowThinLock(%JavaObject*)
 
 ;;; isAssignableFrom - Returns if a type is a subtype of another type.
-declare i1 @jnjvmIsAssignableFrom(%VT*, %VT*) readnone
+declare i1 @isAssignableFrom(%VT*, %VT*) readnone
 
-;;; isAssignableFrom - Returns if a type is a secondary super type of
+;;; isSecondaryClass - Returns if a type is a secondary super type of
 ;;; another type.
 declare i1 @isSecondaryClass(%VT*, %VT*) readnone
 

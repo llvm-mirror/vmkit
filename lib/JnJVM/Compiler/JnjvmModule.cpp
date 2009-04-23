@@ -349,7 +349,7 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
  
   GetClassDelegateeFunction = module->getFunction("getClassDelegatee");
   RuntimeDelegateeFunction = module->getFunction("jnjvmRuntimeDelegatee");
-  IsAssignableFromFunction = module->getFunction("jnjvmIsAssignableFrom");
+  IsAssignableFromFunction = module->getFunction("isAssignableFrom");
   IsSecondaryClassFunction = module->getFunction("isSecondaryClass");
   GetDepthFunction = module->getFunction("getDepth");
   GetStaticInstanceFunction = module->getFunction("getStaticInstance");

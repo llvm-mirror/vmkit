@@ -98,7 +98,7 @@ public:
   JavaVirtualTable** secondaryTypes;
 
   /// baseClass - Holds the base class VT of an array, or the array class VT
-  /// of a regular class.
+  /// of a regular class. Used for AASTORE checks.
   ///
   JavaVirtualTable* baseClassVT;
 
@@ -181,7 +181,14 @@ public:
   /// list.
   ///
   static uint32_t getSecondaryTypesIndex() {
-    return 5;
+    return 16;
+  }
+  
+  /// getNumSecondaryTypesIndex - Get the word offset of the number of
+  /// secondary types.
+  ///
+  static uint32_t getNumSecondaryTypesIndex() {
+    return 15;
   }
 
   /// isSubtypeOf - Returns true if the given VT is a subtype of the this

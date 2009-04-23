@@ -523,16 +523,165 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* res = new LoadInst(val, "", CI);
           CI->replaceAllUsesWith(res);
           CI->eraseFromParent();
+        } else if (V == module->IsAssignableFromFunction) {
+          Changed = true;
+          Value* VT1 = Call.getArgument(0);
+          Value* VT2 = Call.getArgument(1);
+          
+          BasicBlock* EndBlock = II->getParent()->splitBasicBlock(II);
+          I->getParent()->getTerminator()->eraseFromParent();
+          
+          BasicBlock* CurEndBlock = BasicBlock::Create("", &F);
+          BasicBlock* FailedBlock = BasicBlock::Create("", &F);
+          PHINode* node = PHINode::Create(Type::Int1Ty, "", CurEndBlock);
+
+          ConstantInt* CC = ConstantInt::get(Type::Int32Ty,
+              JavaVirtualTable::getOffsetIndex());
+          Value* indices[2] = { module->constantZero, CC };
+          Value* Offset = GetElementPtrInst::Create(VT2, indices, indices + 2,
+                                                    "", CI);
+          Offset = new LoadInst(Offset, "", false, CI);
+          Offset = new PtrToIntInst(Offset, Type::Int32Ty, "", CI);
+          indices[1] = Offset;
+          Value* CurVT = GetElementPtrInst::Create(VT1, indices, indices + 2,
+                                                   "", CI);
+          CurVT = new LoadInst(CurVT, "", false, CI);
+          CurVT = new BitCastInst(CurVT, module->VTType, "", CI);
+             
+          Value* res = new ICmpInst(ICmpInst::ICMP_EQ, CurVT, VT2, "", CI);
+
+          node->addIncoming(ConstantInt::getTrue(), CI->getParent());
+          BranchInst::Create(CurEndBlock, FailedBlock, res, CI);
+
+          Value* Args[2] = { VT1, VT2 };
+          res = CallInst::Create(module->IsSecondaryClassFunction, Args,
+                                 Args + 2, "", FailedBlock);
+         
+          node->addIncoming(res, FailedBlock);
+          BranchInst::Create(CurEndBlock, FailedBlock);
+
+          // Branch to the next block.
+          BranchInst::Create(EndBlock, CurEndBlock);
+          
+          // We can now replace the previous instruction.
+          CI->replaceAllUsesWith(node);
+          CI->eraseFromParent();
+          
+          // Reanalyse the current block.
+          break;
+
         } else if (V == module->IsSecondaryClassFunction) {
           Changed = true;
           Value* VT1 = Call.getArgument(0);
           Value* VT2 = Call.getArgument(1);
+            
+          BasicBlock* EndBlock = II->getParent()->splitBasicBlock(II);
+          I->getParent()->getTerminator()->eraseFromParent();
 
-          Value* args[2] = { VT1, VT2 };
-          CallInst* res = CallInst::Create(module->IsAssignableFromFunction,
-                                           args, args + 2, "", CI);
-          CI->replaceAllUsesWith(res);
+
+          BasicBlock* Preheader = BasicBlock::Create("preheader", &F);
+          BasicBlock* BB4 = BasicBlock::Create("BB4", &F);
+          BasicBlock* BB5 = BasicBlock::Create("BB5", &F);
+          BasicBlock* BB6 = BasicBlock::Create("BB6", &F);
+          BasicBlock* BB7 = BasicBlock::Create("BB7", &F);
+          BasicBlock* BB9 = BasicBlock::Create("BB9", &F);
+          const Type* Ty = PointerType::getUnqual(module->VTType);
+          
+          PHINode* resFwd = PHINode::Create(Type::Int32Ty, "", BB7);
+   
+          // This corresponds to:
+          //    if (VT1.cache == VT2 || VT1 == VT2) goto end with true;
+          //    else goto headerLoop;
+          ConstantInt* cacheIndex = 
+            ConstantInt::get(Type::Int32Ty, JavaVirtualTable::getCacheIndex());
+          Value* indices[2] = { module->constantZero, cacheIndex };
+          Instruction* CachePtr = 
+            GetElementPtrInst::Create(VT1, indices, indices + 2, "", CI);
+          CachePtr = new BitCastInst(CachePtr, Ty, "", CI);
+          Value* Cache = new LoadInst(CachePtr, "", false, CI);
+          ICmpInst* cmp1 = new ICmpInst(ICmpInst::ICMP_EQ, Cache, VT2, "", CI);
+          ICmpInst* cmp2 = new ICmpInst(ICmpInst::ICMP_EQ, VT1, VT2, "", CI);
+          BinaryOperator* Or = BinaryOperator::Create(Instruction::Or, cmp1,
+                                                      cmp2, "", CI);
+          BranchInst::Create(BB9, Preheader, Or, CI);
+    
+          // First test failed. Go into the loop. The Preheader looks like this:
+          // headerLoop:
+          //    types = VT1->secondaryTypes;
+          //    size = VT1->nbSecondaryTypes;
+          //    i = 0;
+          //    goto test;
+          ConstantInt* sizeIndex = ConstantInt::get(Type::Int32Ty, 
+              JavaVirtualTable::getNumSecondaryTypesIndex());
+          indices[1] = sizeIndex;
+          Instruction* Size = GetElementPtrInst::Create(VT1, indices,
+                                                        indices + 2, "",
+                                                        Preheader);
+          Size = new LoadInst(Size, "", false, Preheader);
+          Size = new PtrToIntInst(Size, Type::Int32Ty, "", Preheader);
+    
+          ConstantInt* secondaryTypesIndex = ConstantInt::get(Type::Int32Ty, 
+              JavaVirtualTable::getSecondaryTypesIndex());
+          indices[1] = secondaryTypesIndex;
+          Instruction* secondaryTypes = 
+            GetElementPtrInst::Create(VT1, indices, indices + 2, "", Preheader);
+          secondaryTypes = new LoadInst(secondaryTypes, "", false, Preheader);
+          secondaryTypes = new BitCastInst(secondaryTypes, Ty, "", Preheader);
+          BranchInst::Create(BB7, Preheader);
+    
+          // Here is the test if the current secondary type is VT2.
+          // test:
+          //   CurVT = types[i];
+          //   if (CurVT == VT2) goto update cache;
+          //   est goto inc;
+          Instruction* CurVT = GetElementPtrInst::Create(secondaryTypes, resFwd,
+                                                         "", BB4);
+          CurVT = new LoadInst(CurVT, "", false, BB4);
+          cmp1 = new ICmpInst(ICmpInst::ICMP_EQ, CurVT, VT2, "", BB4);
+          BranchInst::Create(BB5, BB6, cmp1, BB4);
+    
+          // Increment i if the previous test failed
+          // inc:
+          //    ++i;
+          //    goto endLoopTest;
+          BinaryOperator* IndVar = 
+            BinaryOperator::CreateAdd(resFwd, module->constantOne, "", BB6);
+          BranchInst::Create(BB7, BB6);
+    
+          // Verify that we haven't reached the end of the loop:
+          // endLoopTest:
+          //    if (i < size) goto test
+          //    else goto end with false
+          resFwd->reserveOperandSpace(2);
+          resFwd->addIncoming(module->constantZero, Preheader);
+          resFwd->addIncoming(IndVar, BB6);
+    
+          cmp1 = new ICmpInst(ICmpInst::ICMP_SGT, Size, resFwd, "", BB7);
+          BranchInst::Create(BB4, BB9, cmp1, BB7);
+   
+          // Update the cache if the result is found.
+          // updateCache:
+          //    VT1->cache = result
+          //    goto end with true
+          new StoreInst(VT2, CachePtr, false, BB5);
+          BranchInst::Create(BB9, BB5);
+
+          // Final block, that gets the result.
+          PHINode* node = PHINode::Create(Type::Int1Ty, "", BB9);
+          node->reserveOperandSpace(3);
+          node->addIncoming(ConstantInt::getTrue(), CI->getParent());
+          node->addIncoming(ConstantInt::getFalse(), BB7);
+          node->addIncoming(ConstantInt::getTrue(), BB5);
+    
+          // Don't forget to jump to the next block.
+          BranchInst::Create(EndBlock, BB9);
+   
+          // We can now replace the previous instruction
+          CI->replaceAllUsesWith(node);
           CI->eraseFromParent();
+
+          // And reanalyse the current block.
+          break;
         }
 #ifdef ISOLATE_SHARING
         else if (V == module->GetCtpClassFunction) {
