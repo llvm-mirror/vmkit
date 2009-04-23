@@ -136,13 +136,6 @@ StackThreadManager TheStackManager;
 
 extern void sigsegvHandler(int, siginfo_t*, void*);
 
-void coucou(int* a) {
-  int * blah = (int*)alloca(16);
-  blah[0] = 3;
-  a[1] = 2;
-  coucou(blah);
-}
-
 /// internalThreadStart - The initial function called by a thread. Sets some
 /// thread specific data, registers the thread to the GC and calls the
 /// given routine of th.
@@ -165,8 +158,6 @@ void Thread::internalThreadStart(mvm::Thread* th) {
   sa.sa_mask = mask;
   sa.sa_sigaction = sigsegvHandler;
   sigaction(SIGSEGV, &sa, NULL);
-
-  coucou((int*)alloca(16));
 
 #ifdef ISOLATE
   assert(th->MyVM && "VM not set in a thread");
