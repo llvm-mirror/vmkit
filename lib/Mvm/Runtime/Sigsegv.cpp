@@ -1,6 +1,6 @@
 //===----------- Sigsegv.cc - Sigsegv default handling --------------------===//
 //
-//                     The Micro Virtual Machine
+//                     The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source 
 // License. See LICENSE.TXT for details.
@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 
-#include "MvmGC.h"
+#include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Thread.h"
 
 #include <csignal>
@@ -16,14 +16,12 @@
 
 using namespace mvm;
 
-void (*client_sigsegv_handler)(int, void *) = 0;
-
 #if defined(__MACH__) && defined(__i386__)
 #include "ucontext.h"
 #endif
 
-void sigsegv_handler(int n, siginfo_t *_info, void *context) {
-  void *addr = _info->si_addr;
+void sigsegvHandler(int n, siginfo_t *_info, void *context) {
+  uintptr_t addr = (uintptr_t)_info->si_addr;
 #if defined(__i386__)
   struct frame {
     struct frame *caller;
@@ -47,16 +45,20 @@ void sigsegv_handler(int n, siginfo_t *_info, void *context) {
   caller->ip = (void *)((ucontext_t*)context)->uc_mcontext.gregs[REG_EIP]; 
 #endif
 #endif
-	
-  /* Free the GC if it sisgegv'd. No other collection is possible */
-  Collector::die_if_sigsegv_occured_during_collection(addr);
 
-  //	sys_exit(0);
-  if(client_sigsegv_handler)
-    client_sigsegv_handler(n, addr);
-  else
-    signal(SIGSEGV, SIG_DFL);
-	
+  mvm::Thread* th = mvm::Thread::get();
+  if (addr > (uintptr_t)th->getThreadID() && addr < (uintptr_t)th->baseSP) {
+    fprintf(stderr, "Stack overflow in VM code or in JNI code. If it is from\n"
+                    "the VM, it is either from the JIT, the GC or the runtime."
+                    "\nThis has to be fixed in the VM: VMKit makes sure that\n"
+                    "the bottom of the stack is always available when entering"
+                    "\nthe VM.\n");
+  } else {
+    fprintf(stderr, "I received a SIGSEGV: either the VM code or an external\n"
+                    "native method is bogus. Aborting...\n");
+  }
+  abort();
+  
 #if defined(__i386__)
   caller->ip = caller_ip; /* restore the caller ip */
 #endif

@@ -13,7 +13,7 @@
 #include "mvm/Threads/Thread.h"
 
 #include <cassert>
-#include <csignal>
+#include <signal.h>
 #include <cstdio>
 #include <ctime>
 #include <pthread.h>
@@ -134,6 +134,14 @@ public:
 /// machine specific.
 StackThreadManager TheStackManager;
 
+extern void sigsegvHandler(int, siginfo_t*, void*);
+
+void coucou(int* a) {
+  int * blah = (int*)alloca(16);
+  blah[0] = 3;
+  a[1] = 2;
+  coucou(blah);
+}
 
 /// internalThreadStart - The initial function called by a thread. Sets some
 /// thread specific data, registers the thread to the GC and calls the
@@ -141,6 +149,25 @@ StackThreadManager TheStackManager;
 ///
 void Thread::internalThreadStart(mvm::Thread* th) {
   th->baseSP  = (void*)&th;
+
+  // Set an alternate stack for handling stack overflows from VM code.
+  stack_t sigsegvStack;
+  sigsegvStack.ss_size = getpagesize();
+  sigsegvStack.ss_flags = 0;
+  sigsegvStack.ss_sp = (void*)th;
+  sigaltstack(&sigsegvStack, NULL);
+
+  // Set the SIGSEGV handler to diagnose errors.
+  struct sigaction sa;
+  sigset_t mask;
+  sigfillset(&mask);
+  sa.sa_flags = SA_ONSTACK | SA_SIGINFO;
+  sa.sa_mask = mask;
+  sa.sa_sigaction = sigsegvHandler;
+  sigaction(SIGSEGV, &sa, NULL);
+
+  coucou((int*)alloca(16));
+
 #ifdef ISOLATE
   assert(th->MyVM && "VM not set in a thread");
   th->IsolateID = th->MyVM->IsolateID;
@@ -150,6 +177,8 @@ void Thread::internalThreadStart(mvm::Thread* th) {
   Collector::remove_my_thread(th);
 
 }
+
+
 
 /// start - Called by the creator of the thread to run the new thread.
 /// The thread is in a detached state, because each virtual machine has
