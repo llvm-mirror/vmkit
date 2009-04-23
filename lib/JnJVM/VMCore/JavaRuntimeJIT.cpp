@@ -25,7 +25,7 @@
 using namespace jnjvm;
 
 // Throws if the method is not found.
-extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
+extern "C" void* jnjvmInterfaceLookup(CacheNode* cache, JavaObject *obj) {
 
   void* res = 0;
 
@@ -99,7 +99,7 @@ extern "C" void* jnjvmVirtualLookup(CacheNode* cache, JavaObject *obj) {
 }
 
 // Throws if the field is not found.
-extern "C" void* virtualFieldLookup(UserClass* caller, uint32 index) {
+extern "C" void* jnjvmVirtualFieldLookup(UserClass* caller, uint32 index) {
   
   void* res = 0;
   
@@ -134,7 +134,7 @@ extern "C" void* virtualFieldLookup(UserClass* caller, uint32 index) {
 }
 
 // Throws if the field or its class is not found.
-extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
+extern "C" void* jnjvmStaticFieldLookup(UserClass* caller, uint32 index) {
   
   void* res = 0;
   
@@ -179,7 +179,7 @@ extern "C" void* staticFieldLookup(UserClass* caller, uint32 index) {
 
 #ifndef WITHOUT_VTABLE
 // Throws if the method is not found.
-extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
+extern "C" void* jnjvmVirtualTableLookup(UserClass* caller, uint32 index, ...) {
   
   void* res = 0;
   
@@ -229,7 +229,7 @@ extern "C" void* vtableLookup(UserClass* caller, uint32 index, ...) {
 #endif
 
 // Throws if the class is not found.
-extern "C" void* classLookup(UserClass* caller, uint32 index) { 
+extern "C" void* jnjvmClassLookup(UserClass* caller, uint32 index) { 
   
   void* res = 0;
   
@@ -318,7 +318,7 @@ static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
 }
 
 // Throws if one of the dimension is negative.
-extern "C" JavaArray* multiCallNew(UserClassArray* cl, uint32 len, ...) {
+extern "C" JavaArray* jnjvmMultiCallNew(UserClassArray* cl, uint32 len, ...) {
   JavaArray* res = 0;
 
   BEGIN_NATIVE_EXCEPTION(1)
@@ -338,8 +338,8 @@ extern "C" JavaArray* multiCallNew(UserClassArray* cl, uint32 len, ...) {
 }
 
 // Throws if the class can not be resolved.
-extern "C" UserClassArray* getArrayClass(UserCommonClass* cl,
-                                         UserClassArray** dcl) {
+extern "C" UserClassArray* jnjvmGetArrayClass(UserCommonClass* cl,
+                                              UserClassArray** dcl) {
   UserClassArray* res = 0;
 
   BEGIN_NATIVE_EXCEPTION(1)
@@ -362,7 +362,7 @@ extern "C" UserClassArray* getArrayClass(UserCommonClass* cl,
 }
 
 // Does not call Java code.
-extern "C" void jniProceedPendingException() {
+extern "C" void jnjvmJNIProceedPendingException() {
   JavaThread* th = JavaThread::get();
   jmp_buf* buf = th->sjlj_buffers.back();
   
@@ -384,7 +384,7 @@ extern "C" void jniProceedPendingException() {
 }
 
 // Never throws.
-extern "C" void* getSJLJBuffer() {
+extern "C" void* jnjvmGetSJLJBuffer() {
   JavaThread* th = JavaThread::get();
   mvm::Allocator& allocator = th->getJVM()->gcAllocator;
   void** buf = (void**)allocator.allocateTemporaryMemory(sizeof(jmp_buf));
@@ -399,22 +399,22 @@ extern "C" void* getSJLJBuffer() {
 }
 
 // Never throws.
-extern "C" void JavaObjectAquire(JavaObject* obj) {
+extern "C" void jnjvmJavaObjectAquire(JavaObject* obj) {
   obj->acquire();
 }
 
 // Never throws.
-extern "C" void JavaObjectRelease(JavaObject* obj) {
+extern "C" void jnjvmJavaObjectRelease(JavaObject* obj) {
   obj->release();
 }
 
 // Does not call any Java code.
-extern "C" void JavaThreadThrowException(JavaObject* obj) {
+extern "C" void jnjvmThrowException(JavaObject* obj) {
   return JavaThread::get()->throwException(obj);
 }
 
 // Never throws.
-extern "C" void overflowThinLock(JavaObject* obj) {
+extern "C" void jnjvmOverflowThinLock(JavaObject* obj) {
   obj->overflowThinLock();
 }
 
@@ -440,7 +440,7 @@ extern "C" JavaObject* jnjvmNullPointerException() {
 }
 
 // Creates a Java object and then throws it.
-extern "C" JavaObject* negativeArraySizeException(sint32 val) {
+extern "C" JavaObject* jnjvmNegativeArraySizeException(sint32 val) {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 
@@ -460,7 +460,7 @@ extern "C" JavaObject* negativeArraySizeException(sint32 val) {
 }
 
 // Creates a Java object and then throws it.
-extern "C" JavaObject* outOfMemoryError(sint32 val) {
+extern "C" JavaObject* jnjvmOutOfMemoryError(sint32 val) {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 
@@ -501,8 +501,8 @@ extern "C" JavaObject* jnjvmClassCastException(JavaObject* obj,
 }
 
 // Creates a Java object and then throws it.
-extern "C" JavaObject* indexOutOfBoundsException(JavaObject* obj,
-                                                 sint32 index) {
+extern "C" JavaObject* jnjvmIndexOutOfBoundsException(JavaObject* obj,
+                                                      sint32 index) {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 

@@ -75,7 +75,7 @@ typedef __jmp_buf_tag* jumpbuf_t;
 #endif
 
 typedef int (*onLoad_t)(const void**, void*);
-extern "C" void  jniProceedPendingException();
+extern "C" void  jnjvmJNIProceedPendingException();
 
 // Calls the JNI_OnLoad function of a dynamic library.
 void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
@@ -92,7 +92,7 @@ void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
     if (setjmp((jumpbuf_t)buf) == 0) {
       onLoad(&vm->javavmEnv, res);
     }
-    jniProceedPendingException();
+    jnjvmJNIProceedPendingException();
   }
 }
 

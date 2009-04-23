@@ -327,8 +327,8 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   module->addTypeName("CacheNode", CacheNodeType); 
   module->addTypeName("Enveloppe", EnveloppeType);
    
-  InterfaceLookupFunction = module->getFunction("jnjvmVirtualLookup");
-  MultiCallNewFunction = module->getFunction("multiCallNew");
+  InterfaceLookupFunction = module->getFunction("jnjvmInterfaceLookup");
+  MultiCallNewFunction = module->getFunction("jnjvmMultiCallNew");
   ForceLoadedCheckFunction = module->getFunction("forceLoadedCheck");
   InitialisationCheckFunction = module->getFunction("initialisationCheck");
   ForceInitialisationCheckFunction = 
@@ -339,7 +339,7 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   ArrayLengthFunction = module->getFunction("arrayLength");
   GetVTFunction = module->getFunction("getVT");
   GetClassFunction = module->getFunction("getClass");
-  ClassLookupFunction = module->getFunction("classLookup");
+  ClassLookupFunction = module->getFunction("jnjvmClassLookup");
   GetVTFromClassFunction = module->getFunction("getVTFromClass");
   GetVTFromClassArrayFunction = module->getFunction("getVTFromClassArray");
   GetVTFromCommonClassFunction = module->getFunction("getVTFromCommonClass");
@@ -355,36 +355,36 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   GetStaticInstanceFunction = module->getFunction("getStaticInstance");
   GetDisplayFunction = module->getFunction("getDisplay");
   GetVTInDisplayFunction = module->getFunction("getVTInDisplay");
-  AquireObjectFunction = module->getFunction("JavaObjectAquire");
-  ReleaseObjectFunction = module->getFunction("JavaObjectRelease");
-  OverflowThinLockFunction = module->getFunction("overflowThinLock");
+  AquireObjectFunction = module->getFunction("jnjvmJavaObjectAquire");
+  ReleaseObjectFunction = module->getFunction("jnjvmJavaObjectRelease");
+  OverflowThinLockFunction = module->getFunction("jnjvmOverflowThinLock");
 
-  VirtualFieldLookupFunction = module->getFunction("virtualFieldLookup");
-  StaticFieldLookupFunction = module->getFunction("staticFieldLookup");
+  VirtualFieldLookupFunction = module->getFunction("jnjvmVirtualFieldLookup");
+  StaticFieldLookupFunction = module->getFunction("jnjvmStaticFieldLookup");
   
   JniProceedPendingExceptionFunction = 
-    module->getFunction("jniProceedPendingException");
-  GetSJLJBufferFunction = module->getFunction("getSJLJBuffer");
+    module->getFunction("jnjvmJNIProceedPendingException");
+  GetSJLJBufferFunction = module->getFunction("jnjvmGetSJLJBuffer");
   
   NullPointerExceptionFunction =
     module->getFunction("jnjvmNullPointerException");
   ClassCastExceptionFunction = module->getFunction("jnjvmClassCastException");
   IndexOutOfBoundsExceptionFunction = 
-    module->getFunction("indexOutOfBoundsException");
+    module->getFunction("jnjvmIndexOutOfBoundsException");
   NegativeArraySizeExceptionFunction = 
-    module->getFunction("negativeArraySizeException");
-  OutOfMemoryErrorFunction = module->getFunction("outOfMemoryError");
+    module->getFunction("jnjvmNegativeArraySizeException");
+  OutOfMemoryErrorFunction = module->getFunction("jnjvmOutOfMemoryError");
   ArrayStoreExceptionFunction = module->getFunction("jnjvmArrayStoreException");
 
   JavaObjectAllocateFunction = module->getFunction("gcmalloc");
 
-  PrintExecutionFunction = module->getFunction("printExecution");
-  PrintMethodStartFunction = module->getFunction("printMethodStart");
-  PrintMethodEndFunction = module->getFunction("printMethodEnd");
+  PrintExecutionFunction = module->getFunction("jnjvmPrintExecution");
+  PrintMethodStartFunction = module->getFunction("jnjvmPrintMethodStart");
+  PrintMethodEndFunction = module->getFunction("jnjvmPrintMethodEnd");
 
-  ThrowExceptionFunction = module->getFunction("JavaThreadThrowException");
+  ThrowExceptionFunction = module->getFunction("jnjvmThrowException");
 
-  GetArrayClassFunction = module->getFunction("getArrayClass");
+  GetArrayClassFunction = module->getFunction("jnjvmGetArrayClass");
  
   GetFinalInt8FieldFunction = module->getFunction("getFinalInt8Field");
   GetFinalInt16FieldFunction = module->getFunction("getFinalInt16Field");
@@ -395,22 +395,22 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   GetFinalObjectFieldFunction = module->getFunction("getFinalObjectField");
 
 #ifdef ISOLATE
-  StringLookupFunction = module->getFunction("stringLookup");
+  StringLookupFunction = module->getFunction("jnjvmStringLookup");
 #ifdef ISOLATE_SHARING
-  EnveloppeLookupFunction = module->getFunction("enveloppeLookup");
+  EnveloppeLookupFunction = module->getFunction("jnjvmEnveloppeLookup");
   GetCtpCacheNodeFunction = module->getFunction("getCtpCacheNode");
   GetCtpClassFunction = module->getFunction("getCtpClass");
   GetJnjvmExceptionClassFunction = 
     module->getFunction("getJnjvmExceptionClass");
   GetJnjvmArrayClassFunction = module->getFunction("getJnjvmArrayClass");
-  StaticCtpLookupFunction = module->getFunction("staticCtpLookup");
-  SpecialCtpLookupFunction = module->getFunction("specialCtpLookup");
+  StaticCtpLookupFunction = module->getFunction("jnjvmStaticCtpLookup");
+  SpecialCtpLookupFunction = module->getFunction("jnjvmSpecialCtpLookup");
 #endif
 #endif
  
 #ifdef SERVICE
-  ServiceCallStartFunction = module->getFunction("serviceCallStart");
-  ServiceCallStopFunction = module->getFunction("serviceCallStop");
+  ServiceCallStartFunction = module->getFunction("jnjvmServiceCallStart");
+  ServiceCallStopFunction = module->getFunction("jnjvmServiceCallStop");
 #endif
 
 #ifdef WITH_TRACER
@@ -421,7 +421,7 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
 #endif
 
 #ifndef WITHOUT_VTABLE
-  VirtualLookupFunction = module->getFunction("vtableLookup");
+  VirtualLookupFunction = module->getFunction("jnjvmVirtualTableLookup");
 #endif
 
   GetLockFunction = module->getFunction("getLock");
