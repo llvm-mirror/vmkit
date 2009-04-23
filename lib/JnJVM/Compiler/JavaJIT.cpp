@@ -883,26 +883,29 @@ llvm::Function* JavaJIT::javaCompile() {
   
   if (isSynchro(compilingMethod->access))
     beginSynchronize();
-  
-  // Variables have been allocated and the lock has been taken. Do the stack
-  // check now: if there is an exception, we will go to the lock release code.
-  currentExceptionBlock = opcodeInfos[0].exceptionBlock;
-  Value* FrameAddr = CallInst::Create(module->llvm_frameaddress,
-                                     	module->constantZero, "", currentBlock);
-  FrameAddr = new PtrToIntInst(FrameAddr, module->pointerSizeType, "",
-                               currentBlock);
-  Value* stackCheck = 
-    BinaryOperator::CreateAnd(FrameAddr, module->constantStackOverflowMask, "",
-                              currentBlock);
+ 
+  if (TheCompiler->hasExceptionsEnabled()) {
+    // Variables have been allocated and the lock has been taken. Do the stack
+    // check now: if there is an exception, we will go to the lock release code.
+    currentExceptionBlock = opcodeInfos[0].exceptionBlock;
+    Value* FrameAddr = CallInst::Create(module->llvm_frameaddress,
+                                       	module->constantZero, "", currentBlock);
+    FrameAddr = new PtrToIntInst(FrameAddr, module->pointerSizeType, "",
+                                 currentBlock);
+    Value* stackCheck = 
+      BinaryOperator::CreateAnd(FrameAddr, module->constantStackOverflowMask,
+                                "", currentBlock);
 
-  stackCheck = new ICmpInst(ICmpInst::ICMP_EQ, stackCheck,
-                            module->constantPtrZero, "", currentBlock);
-  BasicBlock* stackOverflow = createBasicBlock("stack overflow");
-  BasicBlock* noStackOverflow = createBasicBlock("no stack overflow");
-  BranchInst::Create(stackOverflow, noStackOverflow, stackCheck, currentBlock);
-  currentBlock = stackOverflow;
-  throwException(module->StackOverflowErrorFunction, 0, 0);
-  currentBlock = noStackOverflow;
+    stackCheck = new ICmpInst(ICmpInst::ICMP_EQ, stackCheck,
+                              module->constantPtrZero, "", currentBlock);
+    BasicBlock* stackOverflow = createBasicBlock("stack overflow");
+    BasicBlock* noStackOverflow = createBasicBlock("no stack overflow");
+    BranchInst::Create(stackOverflow, noStackOverflow, stackCheck,
+                       currentBlock);
+    currentBlock = stackOverflow;
+    throwException(module->StackOverflowErrorFunction, 0, 0);
+    currentBlock = noStackOverflow;
+  }
 
   compileOpcodes(&compilingClass->bytes->elements[start], codeLen); 
   
