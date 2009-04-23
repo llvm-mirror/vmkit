@@ -2,7 +2,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;; Isolate specific types ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-%JavaCommonClass = type { %JavaCommonClass**, i32, [1 x %JavaObject*], i16,
+%JavaCommonClass = type { [1 x %JavaObject*], i16,
                           %JavaClass**, i16, %UTF8*, %JavaClass*, i8*, %VT* }
 
 

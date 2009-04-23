@@ -102,7 +102,7 @@ static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
 
 static Value* getDelegatee(JnjvmModule* module, Value* Arg, Instruction* CI) {
   Value* GEP[2] = { module->constantZero,
-                    module->constantTwo };
+                    module->constantZero };
   Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
   
   Value* GEP2[2] = { module->constantZero, module->constantZero };
@@ -253,23 +253,25 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Changed = true;
           Value* val = Call.getArgument(0); 
           Value* indexes[2] = { module->constantZero,
-                                module->OffsetDepthInClassConstant };
+                                module->OffsetDepthInVTConstant };
           Value* DepthPtr = GetElementPtrInst::Create(val, indexes,
                                                       indexes + 2, "", CI);
           Value* Depth = new LoadInst(DepthPtr, "", CI);
+          Depth = new PtrToIntInst(Depth, Type::Int32Ty, "", CI);
           CI->replaceAllUsesWith(Depth);
           CI->eraseFromParent();
         } else if (V == module->GetDisplayFunction) {
           Changed = true;
           Value* val = Call.getArgument(0);
           Value* indexes[2] = { module->constantZero,
-                                module->OffsetDisplayInClassConstant };
+                                module->OffsetDisplayInVTConstant };
           Value* DisplayPtr = GetElementPtrInst::Create(val, indexes,
                                                         indexes + 2, "", CI);
-          Value* Display = new LoadInst(DisplayPtr, "", CI);
-          CI->replaceAllUsesWith(Display);
+          const llvm::Type* Ty = PointerType::getUnqual(module->VTType);
+          DisplayPtr = new BitCastInst(DisplayPtr, Ty, "", CI);
+          CI->replaceAllUsesWith(DisplayPtr);
           CI->eraseFromParent();
-        } else if (V == module->GetClassInDisplayFunction) {
+        } else if (V == module->GetVTInDisplayFunction) {
           Changed = true;
           Value* val = Call.getArgument(0);
           Value* depth = Call.getArgument(1);
@@ -521,6 +523,19 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* res = new LoadInst(val, "", CI);
           CI->replaceAllUsesWith(res);
           CI->eraseFromParent();
+        } else if (V == module->IsSecondaryClassFunction) {
+          Changed = true;
+          Value* VT1 = Call.getArgument(0);
+          Value* VT2 = Call.getArgument(0);
+
+          Value* args[2] = { VT1, VT2 };
+          CallInst* res = CallInst::Create(module->IsAssignableFromFunction,
+                                           args, args + 2, "", CI);
+          CI->replaceAllUsesWith(res);
+          CI->eraseFromParent();
+
+
+          break;
         }
 #ifdef ISOLATE_SHARING
         else if (V == module->GetCtpClassFunction) {

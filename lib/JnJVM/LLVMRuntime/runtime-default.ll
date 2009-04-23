@@ -101,14 +101,14 @@ declare i32 @getObjectSizeFromClass(%JavaClass*) readnone
 ;;; VT of the array class of a regular class.
 declare %VT* @getBaseClassVTFromVT(%VT*) readnone
 
-;;; getDisplay - Get the display array of this class.
-declare %JavaCommonClass** @getDisplay(%JavaCommonClass*) readnone 
+;;; getDisplay - Get the display array of this VT.
+declare %VT** @getDisplay(%VT*) readnone 
 
-;;; getClassInDisplay - Get the super class at the given offset.
-declare %JavaCommonClass* @getClassInDisplay(%JavaCommonClass**, i32) readnone 
+;;; getVTInDisplay - Get the super class at the given offset.
+declare %VT* @getVTInDisplay(%VT**, i32) readnone 
 
-;;; getDepth - Get the depth of the class.
-declare i32 @getDepth(%JavaCommonClass*) readnone 
+;;; getDepth - Get the depth of the VT.
+declare i32 @getDepth(%VT*) readnone 
 
 ;;; getStaticInstance - Get the static instance of this class.
 declare i8* @getStaticInstance(%JavaClass*) readnone 
@@ -179,6 +179,10 @@ declare void @overflowThinLock(%JavaObject*)
 
 ;;; isAssignableFrom - Returns if a type is a subtype of another type.
 declare i1 @jnjvmIsAssignableFrom(%VT*, %VT*) readnone
+
+;;; isAssignableFrom - Returns if a type is a secondary super type of
+;;; another type.
+declare i1 @isSecondaryClass(%VT*, %VT*) readnone
 
 ;;; getClassDelegatee - Returns the java/lang/Class representation of the
 ;;; class. This method is lowered to the GEP to the class delegatee in

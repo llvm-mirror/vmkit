@@ -62,8 +62,6 @@ llvm::Constant*     JnjvmModule::MaxArraySizeConstant;
 llvm::Constant*     JnjvmModule::JavaArraySizeConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetObjectSizeInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetVTInClassConstant;
-llvm::ConstantInt*  JnjvmModule::OffsetDepthInClassConstant;
-llvm::ConstantInt*  JnjvmModule::OffsetDisplayInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetTaskClassMirrorInClassConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetStaticInstanceInTaskClassMirrorConstant;
 llvm::ConstantInt*  JnjvmModule::OffsetStatusInTaskClassMirrorConstant;
@@ -281,14 +279,11 @@ void JnjvmModule::initialise() {
   JavaObjectVTOffsetConstant = mvm::MvmModule::constantZero;
   OffsetClassInVTConstant = mvm::MvmModule::constantThree;
   OffsetDepthInVTConstant = mvm::MvmModule::constantFour;
-  OffsetDisplayInVTConstant = mvm::MvmModule::constantFive;
+  OffsetDisplayInVTConstant = mvm::MvmModule::constantSeven;
   OffsetBaseClassVTInVTConstant = ConstantInt::get(Type::Int32Ty, 17);
   
-  OffsetDisplayInClassConstant = mvm::MvmModule::constantZero;
-  OffsetDepthInClassConstant = mvm::MvmModule::constantOne;
-  
   OffsetObjectSizeInClassConstant = mvm::MvmModule::constantOne;
-  OffsetVTInClassConstant = ConstantInt::get(Type::Int32Ty, 9);
+  OffsetVTInClassConstant = ConstantInt::get(Type::Int32Ty, 7);
   OffsetTaskClassMirrorInClassConstant = mvm::MvmModule::constantTwo;
   OffsetStaticInstanceInTaskClassMirrorConstant = mvm::MvmModule::constantTwo;
   OffsetStatusInTaskClassMirrorConstant = mvm::MvmModule::constantZero;
@@ -355,10 +350,11 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   GetClassDelegateeFunction = module->getFunction("getClassDelegatee");
   RuntimeDelegateeFunction = module->getFunction("jnjvmRuntimeDelegatee");
   IsAssignableFromFunction = module->getFunction("jnjvmIsAssignableFrom");
+  IsSecondaryClassFunction = module->getFunction("isSecondaryClass");
   GetDepthFunction = module->getFunction("getDepth");
   GetStaticInstanceFunction = module->getFunction("getStaticInstance");
   GetDisplayFunction = module->getFunction("getDisplay");
-  GetClassInDisplayFunction = module->getFunction("getClassInDisplay");
+  GetVTInDisplayFunction = module->getFunction("getVTInDisplay");
   AquireObjectFunction = module->getFunction("JavaObjectAquire");
   ReleaseObjectFunction = module->getFunction("JavaObjectRelease");
   OverflowThinLockFunction = module->getFunction("overflowThinLock");

@@ -81,7 +81,6 @@ Attribut* JavaMethod::lookupAttribut(const UTF8* key ) {
 }
 
 CommonClass::~CommonClass() {
-  classLoader->allocator.Deallocate(display);
 }
 
 Class::~Class() {
@@ -250,9 +249,6 @@ ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n,
                                uint32 nb) : 
   CommonClass(loader, n) {
  
-  display = (CommonClass**)loader->allocator.Allocate(sizeof(CommonClass*));
-  display[0] = this;
-  depth = 0;
   uint32 size = JavaVirtualTable::getBaseSize();
   virtualVT = new(loader->allocator, size) JavaVirtualTable(this);
   access = ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC | JNJVM_PRIMITIVE;
@@ -268,7 +264,6 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
   JInfo = 0;
   outerClass = 0;
   innerOuterResolved = false;
-  display = 0;
   nbInnerClasses = 0;
   staticTracer = 0;
   nbVirtualMethods = 0;
@@ -295,10 +290,6 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
   uint32 size = JavaVirtualTable::getBaseSize();
   virtualVT = new(loader->allocator, size) JavaVirtualTable(this);
   
-  depth = 1;
-  display = (CommonClass**)loader->allocator.Allocate(2 * sizeof(CommonClass*));
-  display[0] = ClassArray::SuperArray;
-  display[1] = this;
   access = ACC_FINAL | ACC_ABSTRACT | ACC_PUBLIC | JNJVM_ARRAY;
 }
 
@@ -695,18 +686,8 @@ void Class::readParents(Reader& reader) {
   if (superEntry) {
     const UTF8* superUTF8 = ctpInfo->resolveClassName(superEntry);
     super = classLoader->loadName(superUTF8, false, true);
-    depth = super->depth + 1;
-    mvm::BumpPtrAllocator& allocator = classLoader->allocator;
-    display = (CommonClass**)
-      allocator.Allocate(sizeof(CommonClass*) * (depth + 1));
-    memcpy(display, super->display, depth * sizeof(UserCommonClass*));
-    display[depth] = this;
     virtualTableSize = super->virtualTableSize;
   } else {
-    depth = 0;
-    display = (CommonClass**)
-      classLoader->allocator.Allocate(sizeof(CommonClass*));
-    display[0] = this;
     virtualTableSize = JavaVirtualTable::getFirstJavaMethodIndex();
   }
 
@@ -1274,8 +1255,6 @@ void ClassArray::initialiseVT(Class* javaLangObject) {
            javaLangObject->virtualVT->getFirstJavaMethod(), \
            sizeof(uintptr_t) * JavaVirtualTable::getNumJavaMethods()); \
     CLASS->super = javaLangObject; \
-    CLASS->display[0] = javaLangObject; \
-    CLASS->display[1] = CLASS; \
     CLASS->virtualVT->display[0] = javaLangObject->virtualVT; \
     CLASS->virtualVT->secondaryTypes = \
       upcalls->ArrayOfObject->virtualVT->secondaryTypes; \

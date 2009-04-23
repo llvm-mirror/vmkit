@@ -4,7 +4,7 @@
 
 %Jnjvm = type { %VT*, %JavaClass*, [9 x %JavaClass*] }
 
-%JavaCommonClass = type { %JavaCommonClass**, i32, [32 x %JavaObject*],
+%JavaCommonClass = type { [32 x %JavaObject*],
                           i16, %JavaClass**, i16, %UTF8*, %JavaClass*, i8*,
                           %VT* }
 

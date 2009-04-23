@@ -255,10 +255,11 @@ public:
   llvm::Function* VirtualLookupFunction;
 #endif
   llvm::Function* IsAssignableFromFunction;
+  llvm::Function* IsSecondaryClassFunction;
   llvm::Function* GetDepthFunction;
-  llvm::Function* GetClassInDisplayFunction;
-  llvm::Function* GetStaticInstanceFunction;
   llvm::Function* GetDisplayFunction;
+  llvm::Function* GetVTInDisplayFunction;
+  llvm::Function* GetStaticInstanceFunction;
   llvm::Function* AquireObjectFunction;
   llvm::Function* ReleaseObjectFunction;
   llvm::Function* GetConstantPoolAtFunction;
@@ -308,8 +309,6 @@ public:
 
   static llvm::ConstantInt* OffsetObjectSizeInClassConstant;
   static llvm::ConstantInt* OffsetVTInClassConstant;
-  static llvm::ConstantInt* OffsetDepthInClassConstant;
-  static llvm::ConstantInt* OffsetDisplayInClassConstant;
   static llvm::ConstantInt* OffsetTaskClassMirrorInClassConstant;
   static llvm::ConstantInt* OffsetStaticInstanceInTaskClassMirrorConstant;
   static llvm::ConstantInt* OffsetInitializedInTaskClassMirrorConstant;

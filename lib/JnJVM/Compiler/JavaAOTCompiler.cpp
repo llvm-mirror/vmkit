@@ -448,11 +448,11 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
     // JavaObject
     Constant* CurConstant = CreateConstantForBaseObject(obj->getClass());
 
-    for (uint32 j = 0; j <= cl->depth; ++j) {
+    for (uint32 j = 0; j <= cl->virtualVT->depth; ++j) {
       std::vector<Constant*> TempElts;
       Elmts.push_back(CurConstant);
       TempElts.push_back(CurConstant);
-      Class* curCl = cl->display[j]->asClass();
+      Class* curCl = cl->virtualVT->display[j]->cl->asClass();
       LLVMClassInfo* LCI = getClassInfo(curCl);
       const StructType* STy = 
         dyn_cast<StructType>(LCI->getVirtualType()->getContainedType(0));
@@ -584,39 +584,14 @@ Constant* JavaAOTCompiler::CreateConstantFromAttribut(Attribut& attribut) {
 Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
   const StructType* STy = 
     dyn_cast<StructType>(JnjvmModule::JavaCommonClassType->getContainedType(0));
-
-  const ArrayType* ATy = ArrayType::get(JnjvmModule::JavaCommonClassType,
-                                        cl->depth + 1);
   
+  const llvm::Type* TempTy = 0;
+
   std::vector<Constant*> CommonClassElts;
   std::vector<Constant*> TempElmts;
-  Constant* ClGEPs[2] = { JnjvmModule::constantZero,
-                          JnjvmModule::constantZero };
 
-  // display
-  for (uint32 i = 0; i <= cl->depth; ++i) {
-    Constant* Cl = getNativeClass(cl->display[i]);
-    if (Cl->getType() != JnjvmModule::JavaCommonClassType)
-      Cl = ConstantExpr::getGetElementPtr(Cl, ClGEPs, 2);
-    
-    TempElmts.push_back(Cl);
-  }
-
-  Constant* display = ConstantArray::get(ATy, TempElmts);
-  TempElmts.clear();
-  display = new GlobalVariable(ATy, true, GlobalValue::InternalLinkage,
-                               display, "", getLLVMModule());
-
-  const llvm::Type* TempTy = JnjvmModule::JavaCommonClassType;
-  display = ConstantExpr::getCast(Instruction::BitCast, display,
-                                  PointerType::getUnqual(TempTy));
-  CommonClassElts.push_back(display);
-
-  // depth
-  CommonClassElts.push_back(ConstantInt::get(Type::Int32Ty, cl->depth));
-  
   // delegatee
-  ATy = dyn_cast<ArrayType>(STy->getContainedType(2));
+  const ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(2));
   assert(ATy && "Malformed type");
 
   Constant* TCM[1] = { getJavaClass(cl) };

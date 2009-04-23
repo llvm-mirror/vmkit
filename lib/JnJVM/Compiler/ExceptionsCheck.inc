@@ -377,21 +377,10 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
 
     currentBlock = cur->tester;
     
-    Value* clVar = 0; 
-#ifdef ISOLATE_SHARING
-    // We're dealing with exceptions, don't catch the exception if the class can
-    // not be found.
-    if (cur->catche) clVar = getResolvedClass(cur->catche, false, false, 0);
-    else clVar = CallInst::Create(module->GetJnjvmExceptionClassFunction,
-                                  isolateLocal, "", currentBlock);
-#else
-    // We know catchClass exists because we have loaded all exceptions catched
-    // by the method when we loaded the class that defined this method.
-    clVar = TheCompiler->getNativeClass(cur->catchClass);
-#endif
-    if (clVar->getType() != module->JavaCommonClassType) 
-      clVar = new BitCastInst(clVar, module->JavaCommonClassType, "",
-                              currentBlock);
+    assert(cur->catchClass && 
+           "Class not loaded when reading the exception table");
+
+    Value* VTVar = TheCompiler->getVirtualTable(cur->catchClass->virtualVT);
 
     
 #ifdef SERVICE
@@ -425,38 +414,30 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
 #endif
     
     // Get the Java exception.
-    Value* obj = currentBlock->begin(); 
+    Value* obj = currentBlock->begin();
     
-    Value* objCl = CallInst::Create(module->GetClassFunction, obj, "",
+    Value* objVT = CallInst::Create(module->GetVTFunction, obj, "",
                                     currentBlock);
 
-    Value* depthCl = ConstantInt::get(Type::Int32Ty, cur->catchClass->depth);
-    Value* depthClObj = CallInst::Create(module->GetDepthFunction, objCl, "",
-                                         currentBlock);
+    uint32 depth = cur->catchClass->virtualVT->depth;
+    Value* depthCl = ConstantInt::get(Type::Int32Ty, depth);
+   
+    if (depth >= JavaVirtualTable::getDisplayLength()) {
+      assert(0 && "Implement me");
+    }
     
-    // Compare the exception with the exception class we catch.
-    Value* cmp = new ICmpInst(ICmpInst::ICMP_ULE, depthCl, depthClObj, "",
-                              currentBlock);
-
-    BasicBlock* supDepth = createBasicBlock("superior depth");
-    
-    // Add the Java exception in the phi node of the next block.
-    if (javaNode)
-      javaNode->addIncoming(obj, currentBlock);
             
-    BranchInst::Create(supDepth, bbNext, cmp, currentBlock);
     
-    currentBlock = supDepth;
     Value* inDisplay = CallInst::Create(module->GetDisplayFunction,
-                                        objCl, "", currentBlock);
+                                        objVT, "", currentBlock);
             
     Value* displayArgs[2] = { inDisplay, depthCl };
-    Value* clInDisplay = CallInst::Create(module->GetClassInDisplayFunction,
+    Value* VTInDisplay = CallInst::Create(module->GetVTInDisplayFunction,
                                           displayArgs, displayArgs + 2, "",
                                           currentBlock);
              
-    cmp = new ICmpInst(ICmpInst::ICMP_EQ, clInDisplay, clVar, "",
-                       currentBlock);
+    Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, VTInDisplay, VTVar, "",
+                              currentBlock);
    
     // Add the Java exception in the phi node of the handler.
     Instruction* insn = cur->javaHandler->begin();
