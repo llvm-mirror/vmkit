@@ -326,8 +326,7 @@ public:
 //===----------------------------------------------------------------------===//
 
   bool isSecondaryClass() {
-    return isInterface() || 
-      virtualVT->depth >= JavaVirtualTable::getDisplayLength();
+    return virtualVT->offset == JavaVirtualTable::getCacheIndex();
   }
 
   // Assessor methods.
