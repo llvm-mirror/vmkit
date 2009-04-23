@@ -27,17 +27,7 @@ using namespace jnjvm;
 
 extern "C" {
 
-JNIEXPORT jobject JNICALL Java_java_lang_VMThrowable_fillInStackTrace(
-#ifdef NATIVE_JNI
-JNIEnv *env,
-jclass clazz,
-#endif
-jobject throwable) {
-  
-  jobject res = 0;
-
-  BEGIN_NATIVE_EXCEPTION(0)
- 
+JavaObject* internalFillInStackTrace(JavaObject* throwable) {
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   
@@ -51,7 +41,21 @@ jobject throwable) {
   JavaObject* vmThrowable = vm->upcalls->newVMThrowable->doNew(vm);
   uint64 ptr = (uint64)vmThrowable + vm->upcalls->vmDataVMThrowable->ptrOffset;
   ((JavaObject**)ptr)[0] = (JavaObject*)stack;
-  res = (jobject)vmThrowable;
+  return vmThrowable;
+}
+
+JNIEXPORT jobject JNICALL Java_java_lang_VMThrowable_fillInStackTrace(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+jobject throwable) {
+  
+  jobject res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
+  res = (jobject)internalFillInStackTrace((JavaObject*)throwable);
 
   END_NATIVE_EXCEPTION
 

@@ -333,6 +333,7 @@ public:
   llvm::Function* IndexOutOfBoundsExceptionFunction;
   llvm::Function* ClassCastExceptionFunction;
   llvm::Function* OutOfMemoryErrorFunction;
+  llvm::Function* StackOverflowErrorFunction;
   llvm::Function* NegativeArraySizeExceptionFunction;
   llvm::Function* ArrayStoreExceptionFunction;
   llvm::Function* ArithmeticExceptionFunction;

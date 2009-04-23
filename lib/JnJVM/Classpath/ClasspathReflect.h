@@ -17,6 +17,8 @@
 #include <JavaClass.h>
 #include <JavaObject.h>
 
+extern "C" jnjvm::JavaObject* internalFillInStackTrace(jnjvm::JavaObject*);
+
 namespace jnjvm {
 
 class JavaObjectClass : public JavaObject {
@@ -128,6 +130,22 @@ public:
     delete th;
   }
 
+};
+
+
+class JavaObjectThrowable : public JavaObject {
+private:
+  JavaObject* detailedMessage;
+  JavaObject* cause;
+  JavaObject* stackTrace;
+  JavaObject* vmState;
+
+public:
+  void fillInStackTrace() {
+    cause = this;
+    vmState = internalFillInStackTrace(this);
+    stackTrace = 0;
+  }
 };
 
 }

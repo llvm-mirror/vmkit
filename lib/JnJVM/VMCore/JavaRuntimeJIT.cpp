@@ -480,6 +480,26 @@ extern "C" JavaObject* jnjvmOutOfMemoryError(sint32 val) {
 }
 
 // Creates a Java object and then throws it.
+extern "C" JavaObject* jnjvmStackOverflowError() {
+  JavaObject *exc = 0;
+  JavaThread *th = JavaThread::get();
+
+  BEGIN_NATIVE_EXCEPTION(1)
+  
+  exc = th->getJVM()->CreateStackOverflowError();
+
+  END_NATIVE_EXCEPTION
+
+#ifdef DWARF_EXCEPTIONS
+  th->throwException(exc);
+#else
+  th->pendingException = exc;
+#endif
+
+  return exc;
+}
+
+// Creates a Java object and then throws it.
 extern "C" JavaObject* jnjvmArithmeticException() {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();

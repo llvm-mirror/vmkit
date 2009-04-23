@@ -185,6 +185,12 @@ public:
   ///
   static const uint64_t IDMask = 0x7FF00000;
 
+  /// OverflowMask - Apply this mask to implement overflow checks. For
+  /// efficiency, we lower the available size of the stack: it can never go
+  /// under 0xC0000
+  ///
+  static const uint64_t StackOverflowMask = 0xC0000;
+
   /// operator new - Allocate the Thread object as well as the stack for this
   /// Thread. The thread object is inlined in the stack.
   ///

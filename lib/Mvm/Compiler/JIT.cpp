@@ -117,6 +117,8 @@ void MvmModule::initialise(bool Fast, Module* M, TargetMachine* T) {
   constantDoubleMinusZero = ConstantFP::get(Type::DoubleTy, -0.0);
   constantFloatMinusZero = ConstantFP::get(Type::FloatTy, -0.0f);
   constantThreadIDMask = ConstantInt::get(pointerSizeType, mvm::Thread::IDMask);
+  constantStackOverflowMask = 
+    ConstantInt::get(pointerSizeType, mvm::Thread::StackOverflowMask);
   constantFatMask = ConstantInt::get(pointerSizeType, 
       pointerSizeType == Type::Int32Ty ? 0x80000000 : 0x8000000000000000LL);
   constantPtrOne = ConstantInt::get(pointerSizeType, 1);
@@ -236,6 +238,7 @@ llvm::ConstantFP*  MvmModule::constantDoubleMinusZero;
 llvm::Constant*    MvmModule::constantPtrNull;
 llvm::ConstantInt* MvmModule::constantPtrSize;
 llvm::ConstantInt* MvmModule::constantThreadIDMask;
+llvm::ConstantInt* MvmModule::constantStackOverflowMask;
 llvm::ConstantInt* MvmModule::constantFatMask;
 llvm::ConstantInt* MvmModule::constantPtrOne;
 llvm::ConstantInt* MvmModule::constantPtrZero;

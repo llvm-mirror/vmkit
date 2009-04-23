@@ -374,6 +374,7 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   NegativeArraySizeExceptionFunction = 
     module->getFunction("jnjvmNegativeArraySizeException");
   OutOfMemoryErrorFunction = module->getFunction("jnjvmOutOfMemoryError");
+  StackOverflowErrorFunction = module->getFunction("jnjvmStackOverflowError");
   ArrayStoreExceptionFunction = module->getFunction("jnjvmArrayStoreException");
   ArithmeticExceptionFunction = module->getFunction("jnjvmArithmeticException");
 

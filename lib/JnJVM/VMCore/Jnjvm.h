@@ -254,6 +254,7 @@ public:
   JavaObject* CreateLinkageError(const char* msg = "");
   JavaObject* CreateArrayStoreException(JavaVirtualTable* VT);
   JavaObject* CreateArithmeticException();
+  JavaObject* CreateStackOverflowError();
   
   /// Exceptions - These are the only exceptions VMKit will make.
   ///

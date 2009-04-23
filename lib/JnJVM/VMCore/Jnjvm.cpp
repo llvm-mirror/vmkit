@@ -330,6 +330,13 @@ JavaObject* Jnjvm::CreateOutOfMemoryError() {
                      "Java heap space");
 }
 
+JavaObject* Jnjvm::CreateStackOverflowError() {
+  // Don't call init, or else we'll get a new stack overflow error.
+  JavaObject* obj = upcalls->StackOverflowError->doNew(this);
+  ((JavaObjectThrowable*)obj)->fillInStackTrace();
+  return obj;
+}
+
 JavaObject* Jnjvm::CreateArrayStoreException(JavaVirtualTable* VT) {
   return CreateError(upcalls->ArrayStoreException,
                      upcalls->InitArrayStoreException,
@@ -939,8 +946,8 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
       upcalls->uncaughtException->invokeIntSpecial(this, upcalls->threadGroup,
                                                    group, obj, exc);
     }catch(...) {
-      fprintf(stderr, "Even uncaught exception throwed an exception!\n");
-      abort();
+      fprintf(stderr, "Exception in thread \"main\": "
+                      "Can not print stack trace.\n");
     }
   }
 }
