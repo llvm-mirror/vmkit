@@ -906,14 +906,10 @@ void Class::resolveClass() {
       loadExceptions();
       if (!super) ClassArray::initialiseVT(this);
       
-      bool init = needsInitialisationCheck();
+      bool needInit = needsInitialisationCheck();
       
       acquire();
-      if (!init) {
-        setInitializationState(ready);
-      } else {
-        setResolved();
-      }
+      if (needInit) setResolved();
       setOwnerClass(0);
       broadcastClass();
       release();
@@ -1217,6 +1213,7 @@ bool UserClass::needsInitialisationCheck() {
   
   if (meth) return true;
 
+  setInitializationState(ready);
   return false;
 }
 
