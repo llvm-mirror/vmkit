@@ -15,6 +15,7 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
+#include "JavaUpcalls.h"
 #include "Jnjvm.h"
 
 using namespace jnjvm;
@@ -624,3 +625,11 @@ INVOKE(double, Double, double_virtual_ap, double_static_ap, double_virtual_buf, 
 INVOKE(JavaObject*, JavaObject, object_virtual_ap, object_static_ap, object_virtual_buf, object_static_buf)
 
 #undef INVOKE
+
+
+void Jnjvm::invokeFinalizer(gc* _obj) {
+  JavaObject* obj = (JavaObject*)_obj;
+  JavaMethod* meth = upcalls->FinalizeObject;
+  UserClass* cl = obj->getClass()->asClass();
+  meth->invokeIntVirtualBuf(this, cl, obj, 0);
+}

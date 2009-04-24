@@ -131,7 +131,9 @@ public:
   ISOLATE_STATIC JavaMethod* initVMThread;
   ISOLATE_STATIC JavaMethod* runVMThread;
   ISOLATE_STATIC JavaMethod* groupAddThread;
-  ISOLATE_STATIC JavaField* name;
+  ISOLATE_STATIC JavaMethod* initGroup;
+  ISOLATE_STATIC JavaField* groupName;
+  ISOLATE_STATIC JavaField* threadName;
   ISOLATE_STATIC JavaField* priority;
   ISOLATE_STATIC JavaField* daemon;
   ISOLATE_STATIC JavaField* group;
@@ -208,6 +210,7 @@ public:
   ISOLATE_STATIC JavaMethod* InitArithmeticException;
 
   ISOLATE_STATIC JavaMethod* InitObject;
+  ISOLATE_STATIC JavaMethod* FinalizeObject;
 
   ISOLATE_STATIC JavaMethod* ErrorWithExcpNoClassDefFoundError;
   ISOLATE_STATIC JavaMethod* ErrorWithExcpExceptionInInitializerError;
