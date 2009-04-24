@@ -213,8 +213,6 @@ public:
   ISOLATE_STATIC JavaMethod* ErrorWithExcpExceptionInInitializerError;
   ISOLATE_STATIC JavaMethod* ErrorWithExcpInvocationTargetException;
   
-  ISOLATE_STATIC void createInitialThread(Jnjvm* vm, JavaObject* th);
-  ISOLATE_STATIC void mapInitialThread(Jnjvm* vm);
   
 
   ISOLATE_STATIC UserClassArray* ArrayOfByte;
@@ -241,6 +239,13 @@ public:
   ISOLATE_STATIC JavaField* methodClass;
   ISOLATE_STATIC JavaField* fieldClass;
   ISOLATE_STATIC JavaField* constructorClass;
+  
+private:
+  ISOLATE_STATIC void CreateJavaThread(Jnjvm* vm, JavaThread* myth,
+                                       const char* name, JavaObject* Group);
+
+public:
+  ISOLATE_STATIC void InitializeThreading(Jnjvm* vm);
 };
 
 

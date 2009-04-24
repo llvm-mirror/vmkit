@@ -207,38 +207,43 @@ JavaField* Classpath::constructorClass;
 
 #endif
 
-void Classpath::createInitialThread(Jnjvm* vm, JavaObject* th) {
-  JnjvmClassLoader* JCL = vm->bootstrapLoader;
-  JCL->loadName(newVMThread->getName(), true, true);
-  newVMThread->initialiseClass(vm);
+void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
+                                 const char* thName, JavaObject* Group) {
 
+  JavaObject* th = newThread->doNew(vm);
+  myth->javaThread = th;
   JavaObject* vmth = newVMThread->doNew(vm);
-  name->setObjectField(th, (JavaObject*)vm->asciizToStr("main"));
+  
+  name->setObjectField(th, (JavaObject*)vm->asciizToStr(thName));
   priority->setInt32Field(th, (uint32)1);
   daemon->setInt8Field(th, (uint32)0);
   vmThread->setObjectField(th, vmth);
   assocThread->setObjectField(vmth, th);
   running->setInt8Field(vmth, (uint32)1);
+  vmdataVMThread->setObjectField(vmth, (JavaObject*)myth);
   
-  JCL->loadName(threadGroup->getName(), true, true);
-  threadGroup->initialiseClass(vm);
-  void* Stat = threadGroup->getStaticInstance();
-  JavaObject* RG = rootGroup->getObjectField(Stat);
-  group->setObjectField(th, RG);
-  groupAddThread->invokeIntSpecial(vm, threadGroup, RG, th);
+  group->setObjectField(th, Group);
+  groupAddThread->invokeIntSpecial(vm, threadGroup, Group, th);
+  
+  finaliseCreateInitialThread->invokeIntStatic(vm, inheritableThreadLocal, th);
 }
 
-void Classpath::mapInitialThread(Jnjvm* vm) {
-  JnjvmClassLoader* JCL = vm->bootstrapLoader;
-  JCL->loadName(newThread->getName(), true, true);
+void Classpath::InitializeThreading(Jnjvm* vm) {
+  // Resolve and initialize classes first.
+  newThread->resolveClass();
   newThread->initialiseClass(vm);
-  JavaObject* th = newThread->doNew(vm);
-  createInitialThread(vm, th);
-  JavaThread* myth = JavaThread::get();
-  myth->javaThread = th;
-  JavaObject* vmth = vmThread->getObjectField(th);
-  vmdataVMThread->setObjectField(vmth, (JavaObject*)myth);
-  finaliseCreateInitialThread->invokeIntStatic(vm, inheritableThreadLocal, th);
+  
+  newVMThread->resolveClass();
+  newVMThread->initialiseClass(vm);
+  
+  threadGroup->resolveClass();
+  threadGroup->initialiseClass(vm);
+
+  // Create the main thread
+  void* Stat = threadGroup->getStaticInstance();
+  JavaObject* RG = rootGroup->getObjectField(Stat);
+  assert(vm->getBootstrapThread() && "VM did not set its bootstrap thread");
+  CreateJavaThread(vm, vm->getBootstrapThread(), "main", RG);
 }
 
 extern "C" JavaString* nativeInternString(JavaString* obj) {

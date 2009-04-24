@@ -786,10 +786,6 @@ JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
   return appClassLoader;
 }
 
-void Jnjvm::mapInitialThread() {
-  upcalls->mapInitialThread(this);
-}
-
 void Jnjvm::loadBootstrap() {
   JnjvmClassLoader* loader = bootstrapLoader;
   
@@ -851,7 +847,7 @@ void Jnjvm::loadBootstrap() {
 #endif
   // The initialization code of the classes initialized below may require
   // to get the Java thread, so we create the Java thread object first.
-  mapInitialThread();
+  upcalls->InitializeThreading(this);
   
   LOAD_CLASS(upcalls->newStackTraceElement);
   LOAD_CLASS(upcalls->newVMThrowable);

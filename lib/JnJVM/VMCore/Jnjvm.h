@@ -137,11 +137,6 @@ private:
   ///
   JnjvmClassLoader* loadAppClassLoader();
   
-  /// mapInitialThread - Maps the initial native thread to a java/lang/Thread
-  /// object.
-  ///
-  void mapInitialThread();
-
   /// loadBootstrap - Bootstraps the JVM, getting the class loader, initializing
   /// bootstrap classes (e.g. java/lang/Class, java/lang/*Exception) and
   /// mapping the initial thread.
@@ -307,6 +302,10 @@ public:
   /// setBootstrapThread - Set the bootstrap thread of this VM.
   ///
   void setBootstrapThread(JavaThread* th) { bootstrapThread = th; }
+  
+  /// getBootstrapThread - Get the bootstrap thread of this VM.
+  ///
+  JavaThread* getBootstrapThread() const { return bootstrapThread; }
 
   /// ~Jnjvm - Destroy the JVM.
   ///
