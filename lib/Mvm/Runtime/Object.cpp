@@ -170,12 +170,14 @@ void VirtualMachine::growQueue() {
     uint32 newLength = QueueLength * GROW_FACTOR;
     gc** newQueue = new gc*[newLength];
     for (uint32 i = 0; i < QueueLength; ++i) newQueue[i] = FinalizationQueue[i];
+    delete[] FinalizationQueue;
     FinalizationQueue = newQueue;
     QueueLength = newLength;
     
     newLength = ToBeFinalizedLength * GROW_FACTOR;
     newQueue = new gc*[newLength];
     for (uint32 i = 0; i < ToBeFinalizedLength; ++i) newQueue[i] = ToBeFinalized[i];
+    delete[] ToBeFinalized;
     ToBeFinalized = newQueue;
     ToBeFinalizedLength = newLength;
   }
