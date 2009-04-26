@@ -638,5 +638,5 @@ bool Jnjvm::enqueueReference(gc* _obj) {
   JavaObject* obj = (JavaObject*)_obj;
   JavaMethod* meth = upcalls->EnqueueReference;
   UserClass* cl = obj->getClass()->asClass();
-  return (bool)meth->invokeIntVirtualBuf(this, cl, obj, 0);
+  return (bool)meth->invokeIntSpecialBuf(this, cl, obj, 0);
 }
