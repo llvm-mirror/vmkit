@@ -808,7 +808,8 @@ void Class::makeVT() {
   
   for (uint32 i = 0; i < nbVirtualMethods; ++i) {
     JavaMethod& meth = virtualMethods[i];
-    if (meth.name->equals(classLoader->bootstrapLoader->finalize)) {
+    if (meth.name->equals(classLoader->bootstrapLoader->finalize) &&
+        meth.type->equals(classLoader->bootstrapLoader->clinitType)) {
       meth.offset = 0;
     } else {
       JavaMethod* parent = super? 
