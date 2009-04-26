@@ -237,6 +237,7 @@ void JavaJITCompiler::setTracer(JavaVirtualTable* VT, uintptr_t ptr,
   JnjvmModule::executionEngine->addGlobalMapping(func, (void*)ptr);
   LLVMClassInfo* LCI = getClassInfo(VT->cl->asClass());
   LCI->virtualTracerFunction = func;
+  VT->tracer = ptr;
 }
 
 void JavaJITCompiler::setDestructor(JavaVirtualTable* VT, uintptr_t ptr,

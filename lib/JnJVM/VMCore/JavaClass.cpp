@@ -361,13 +361,10 @@ void JavaMethod::setCompiledPtr(void* ptr, const char* name) {
 }
 
 void JavaVirtualTable::setNativeTracer(uintptr_t ptr, const char* name) {
-  tracer = ptr;
   cl->classLoader->getCompiler()->setTracer(this, ptr, name);
 }
 
 void JavaVirtualTable::setNativeDestructor(uintptr_t ptr, const char* name) {
-  destructor = ptr;
-  operatorDelete = ptr;
   cl->classLoader->getCompiler()->setDestructor(this, ptr, name);
 }
 
