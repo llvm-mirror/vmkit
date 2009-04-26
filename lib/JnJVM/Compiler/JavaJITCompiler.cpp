@@ -139,27 +139,11 @@ void JavaJITCompiler::makeVT(Class* cl) {
     
   LLVMClassInfo* LCI = getClassInfo(cl);
 
-#ifdef WITH_TRACER
-  if (VT->tracer) {
-    // So the class has a tracer because either a) the class was vmjced or
-    // b) the boot sequence has set it. Create the tracer as an external
-    // function.
-    Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
-                                      GlobalValue::ExternalLinkage,
-                                      "", getLLVMModule());
-       
-    uintptr_t ptr = VT->tracer;
-    JnjvmModule::executionEngine->addGlobalMapping(func, (void*)ptr);
-    LCI->virtualTracerFunction = func;
-
-  }
-  
   if (VT->init) {
     // The VT hash already been filled by the AOT compiler so there
     // is nothing left to do!
     return;
   }
-#endif
   
   if (cl->super) {
     // Copy the super VT into the current VT.
@@ -167,6 +151,7 @@ void JavaJITCompiler::makeVT(Class* cl) {
         JavaVirtualTable::getFirstJavaMethodIndex();
     memcpy(VT->getFirstJavaMethod(), cl->super->virtualVT->getFirstJavaMethod(),
            size * sizeof(uintptr_t));
+    VT->destructor = cl->super->virtualVT->destructor;
   }
 
 
@@ -180,13 +165,11 @@ void JavaJITCompiler::makeVT(Class* cl) {
     // Special handling for finalize method. Don't put a finalizer
     // if there is none, or if it is empty.
     if (meth.offset == 0) {
-#if !defined(ISOLATE_SHARING) && !defined(USE_GC_BOEHM)
       if (!cl->super) {
         meth.canBeInlined = true;
       } else {
         VT->destructor = (uintptr_t)EE->getPointerToFunctionOrStub(func);
       }
-#endif
     } else {
       VT->getFunctions()[meth.offset] = 
         (uintptr_t)EE->getPointerToFunctionOrStub(func);

@@ -1448,6 +1448,7 @@ void JavaAOTCompiler::makeVT(Class* cl) {
         JavaVirtualTable::getFirstJavaMethodIndex();
     memcpy(VT->getFirstJavaMethod(), cl->super->virtualVT->getFirstJavaMethod(),
            size * sizeof(uintptr_t));
+    VT->destructor = cl->super->virtualVT->destructor;
   }
   
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
