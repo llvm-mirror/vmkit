@@ -179,7 +179,7 @@ public:
   /// alloc - Allocates a default PrintBuffer.
   ///
   static PrintBuffer *alloc(void) {
-    PrintBuffer* pbf = new(&VT) PrintBuffer();
+    PrintBuffer* pbf = (PrintBuffer*)gc::operator new(sizeof(PrintBuffer), &VT);
     pbf->capacity= 32;
     pbf->writePosition= 0;
     pbf->setContents(NativeString::alloc(pbf->capacity));
