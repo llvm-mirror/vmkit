@@ -425,8 +425,11 @@ public:
   virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr) = 0;
   
   virtual void setMethod(JavaMethod* meth, void* ptr, const char* name) = 0;
+  virtual void setTracer(JavaVirtualTable* VT, uintptr_t ptr,
+                         const char* name) = 0;
+  virtual void setDestructor(JavaVirtualTable* VT, uintptr_t ptr,
+                             const char* name) = 0;
   
-
 #ifdef SERVICE
   virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where) = 0;
 #endif
@@ -490,6 +493,10 @@ public:
   virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr);
   
   virtual void setMethod(JavaMethod* meth, void* ptr, const char* name);
+  virtual void setTracer(JavaVirtualTable* VT, uintptr_t ptr,
+                         const char* name);
+  virtual void setDestructor(JavaVirtualTable* VT, uintptr_t ptr,
+                             const char* name);
   
 
 #ifdef SERVICE
@@ -540,6 +547,10 @@ public:
   virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr);
   
   virtual void setMethod(JavaMethod* meth, void* ptr, const char* name);
+  virtual void setTracer(JavaVirtualTable* VT, uintptr_t ptr,
+                         const char* name);
+  virtual void setDestructor(JavaVirtualTable* VT, uintptr_t ptr,
+                             const char* name);
   
 
 #ifdef SERVICE

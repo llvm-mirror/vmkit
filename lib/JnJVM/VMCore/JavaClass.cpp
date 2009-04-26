@@ -360,6 +360,17 @@ void JavaMethod::setCompiledPtr(void* ptr, const char* name) {
   classDef->release();
 }
 
+void JavaVirtualTable::setNativeTracer(uintptr_t ptr, const char* name) {
+  tracer = ptr;
+  cl->classLoader->getCompiler()->setTracer(this, ptr, name);
+}
+
+void JavaVirtualTable::setNativeDestructor(uintptr_t ptr, const char* name) {
+  destructor = ptr;
+  operatorDelete = ptr;
+  cl->classLoader->getCompiler()->setDestructor(this, ptr, name);
+}
+
 const char* JavaMethod::printString() const {
   mvm::PrintBuffer *buf= mvm::PrintBuffer::alloc();
   buf->write("JavaMethod<");

@@ -212,6 +212,26 @@ void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
   func->setLinkage(GlobalValue::ExternalLinkage);
 }
 
+void JavaJITCompiler::setTracer(JavaVirtualTable* VT, uintptr_t ptr,
+                                const char* name) {
+  // So the class has a tracer because either a) the class was vmjced or
+  // b) the boot sequence has set it. Create the tracer as an external
+  // function.
+  Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
+                                    GlobalValue::ExternalLinkage,
+                                    name, getLLVMModule());
+       
+  JnjvmModule::executionEngine->addGlobalMapping(func, (void*)ptr);
+  LLVMClassInfo* LCI = getClassInfo(VT->cl->asClass());
+  LCI->virtualTracerFunction = func;
+}
+
+void JavaJITCompiler::setDestructor(JavaVirtualTable* VT, uintptr_t ptr,
+                                    const char* name) {
+  // Nothing to do: the virtual table has already set its destructor
+  // and no one uses the destructor as a LLVM function.
+}
+
 void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   Function* func = parseFunction(meth);
   

@@ -196,6 +196,15 @@ public:
   ///
   bool isSubtypeOf(JavaVirtualTable* VT);
 
+  /// setNativeTracer - Set the tracer of this virtual table as a method
+  /// defined by JnJVM.
+  ///
+  void setNativeTracer(uintptr_t tracer, const char* name);
+  
+  /// setNativeDestructor - Set the destructor of this virtual table as a method
+  /// defined by JnJVM.
+  ///
+  void setNativeDestructor(uintptr_t tracer, const char* name);
 
 };
 

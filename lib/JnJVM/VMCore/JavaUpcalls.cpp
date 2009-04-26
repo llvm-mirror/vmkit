@@ -377,6 +377,30 @@ extern "C" void nativeInitPhantomReferenceQ(JavaObjectReference* reference,
 
 }
 
+extern "C" void nativeJavaObjectClassTracer(JavaObjectClass* obj) {
+  JavaObjectClass::staticTracer(obj);
+}
+
+extern "C" void nativeJavaObjectFieldTracer(JavaObjectField* obj) {
+  JavaObjectField::staticTracer(obj);
+}
+
+extern "C" void nativeJavaObjectMethodTracer(JavaObjectMethod* obj) {
+  JavaObjectMethod::staticTracer(obj);
+}
+
+extern "C" void nativeJavaObjectConstructorTracer(JavaObjectConstructor* obj) {
+  JavaObjectConstructor::staticTracer(obj);
+}
+
+extern "C" void nativeJavaObjectReferenceTracer(JavaObjectReference* obj) {
+  JavaObjectReference::staticTracer(obj);
+}
+
+extern "C" void nativeJavaObjectVMThreadDestructor(JavaObjectVMThread* obj) {
+  JavaObjectVMThread::staticDestructor(obj);
+}
+
 void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   newClassLoader = 
@@ -787,6 +811,15 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   getAnnotations->setCompiledPtr((void*)(intptr_t)nativeGetDeclaredAnnotations,
                                  "nativeGetDeclaredAnnotations");
 
+//===----------------------------------------------------------------------===//
+//
+// Weak/Soft/Phantom references support. We modify each constructor to register
+// the reference to the VM. Also, the tracer of the Reference class is modified
+// to not trace the referent.
+//
+//===----------------------------------------------------------------------===//
+
+ 
   newReference =
     loader->loadName(loader->asciizConstructUTF8("java/lang/ref/Reference"),
                      false, false);
@@ -835,7 +868,39 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
       (void*)(intptr_t)nativeInitPhantomReferenceQ,
       "nativeInitPhantomReferenceQ");
   
+  newReference->getVirtualVT()->setNativeTracer(
+      (uintptr_t)nativeJavaObjectReferenceTracer,
+      "nativeJavaObjectReferenceTracer");
 
+//===----------------------------------------------------------------------===//
+//
+// To make classes non GC-allocated, we have to bypass the tracer functions of
+// java.lang.Class, java.lang.reflect.Field, java.lang.reflect.Method and
+// java.lang.reflect.constructor. The new tracer functions trace the classloader
+// instead of the class/field/method.
+//
+//===----------------------------------------------------------------------===//
+ 
+  newClass->getVirtualVT()->setNativeTracer(
+      (uintptr_t)nativeJavaObjectClassTracer,
+      "nativeJavaObjectClassTracer");
+  
+  newConstructor->getVirtualVT()->setNativeTracer(
+      (uintptr_t)nativeJavaObjectConstructorTracer,
+      "nativeJavaObjectConstructorTracer");
+  
+  newMethod->getVirtualVT()->setNativeTracer(
+      (uintptr_t)nativeJavaObjectMethodTracer,
+      "nativeJavaObjectMethodTracer");
+  
+  newField->getVirtualVT()->setNativeTracer(
+      (uintptr_t)nativeJavaObjectFieldTracer,
+      "nativeJavaObjectFieldTracer");
+  
+
+  newVMThread->getVirtualVT()->setNativeDestructor(
+      (uintptr_t)nativeJavaObjectVMThreadDestructor,
+      "nativeJavaObjectVMThreadDestructorr");
 }
 
 gc* Jnjvm::getReferent(gc* _obj) {

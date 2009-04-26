@@ -820,32 +820,7 @@ void Jnjvm::loadBootstrap() {
       (uintptr_t)JavaString::stringDestructor;
   }
   upcalls->newString->initialiseClass(this);
-
-  // To make classes non GC-allocated, we have to bypass the tracer
-  // functions of java.lang.Class, java.lang.reflect.Field,
-  // java.lang.reflect.Method and java.lang.reflect.constructor. The new
-  // tracer functions trace the classloader instead of the class/field/method.
-  LOAD_CLASS(upcalls->newClass);
-  uintptr_t* ptr = ((uintptr_t*)upcalls->newClass->getVirtualVT());
-  ptr[VT_TRACER_OFFSET] = (uintptr_t)JavaObjectClass::staticTracer;
-
-  LOAD_CLASS(upcalls->newConstructor);
-  ptr = ((uintptr_t*)upcalls->newConstructor->getVirtualVT());
-  ptr[VT_TRACER_OFFSET] = (uintptr_t)JavaObjectConstructor::staticTracer;
-
-  
-  LOAD_CLASS(upcalls->newMethod);
-  ptr = ((uintptr_t*)upcalls->newMethod->getVirtualVT());
-  ptr[VT_TRACER_OFFSET] = (uintptr_t)JavaObjectMethod::staticTracer;
-  
-  LOAD_CLASS(upcalls->newField);
-  ptr = ((uintptr_t*)upcalls->newField->getVirtualVT());
-  ptr[VT_TRACER_OFFSET] = (uintptr_t)JavaObjectField::staticTracer;
-  
-  LOAD_CLASS(upcalls->newVMThread);
-  ptr = ((uintptr_t*)upcalls->newVMThread->getVirtualVT());
-  ptr[VT_DESTRUCTOR_OFFSET] = (uintptr_t)JavaObjectVMThread::staticDestructor;
-   
+ 
 #ifdef SERVICE
   if (!IsolateID)
 #endif
@@ -853,6 +828,11 @@ void Jnjvm::loadBootstrap() {
   // to get the Java thread, so we create the Java thread object first.
   upcalls->InitializeThreading(this);
   
+  LOAD_CLASS(upcalls->newClass);
+  LOAD_CLASS(upcalls->newConstructor);
+  LOAD_CLASS(upcalls->newField);
+  LOAD_CLASS(upcalls->newMethod);
+  LOAD_CLASS(upcalls->newVMThread);
   LOAD_CLASS(upcalls->newStackTraceElement);
   LOAD_CLASS(upcalls->newVMThrowable);
   LOAD_CLASS(upcalls->boolClass);
