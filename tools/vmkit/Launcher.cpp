@@ -133,7 +133,6 @@ int main(int argc, char** argv) {
   }
   
   mvm::MvmModule::initialise(Fast);
-  mvm::Object::initialise();
   Collector::initialise(0);
 
   if (VMToRun == RunJava) {

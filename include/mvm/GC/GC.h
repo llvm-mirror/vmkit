@@ -23,6 +23,16 @@ struct VirtualTable {
   uintptr_t* getFunctions() {
     return &destructor;
   }
+
+  VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) {
+    destructor = d;
+    operatorDelete = o;
+    tracer = t;
+  }
+
+  VirtualTable() {}
+
+  static void emptyTracer(void*) {}
 };
 
 class gcRoot {

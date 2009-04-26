@@ -1143,7 +1143,6 @@ void Jnjvm::removeMethodsInFunctionMap(JnjvmClassLoader* loader) {
 
 // Helper function to run Jnjvm without JIT.
 extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
-  mvm::Object::initialise();
   Collector::initialise(0);
   
   char** newArgv = new char*[argc + 1];

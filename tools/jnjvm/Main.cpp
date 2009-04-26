@@ -27,7 +27,6 @@ int main(int argc, char **argv, char **envp) {
   llvm::llvm_shutdown_obj X;  
     
   MvmModule::initialise();
-  Object::initialise();
   Collector::initialise(0);
  
   JavaJITCompiler* Comp = new JavaJITCompiler("JITModule");

@@ -32,6 +32,9 @@ static void initialiseVT() {
   INIT(LockObj);
   INIT(VMClassLoader);
 
+  LockObj::VT->destructor = 0;
+  LockObj::VT->operatorDelete = 0;
+  VMClassLoader::VT->operatorDelete = VMClassLoader::VT->destructor;
 #ifdef ISOLATE_SHARING
   INIT(JnjvmSharedLoader);
   INIT(SharedClassByteMap);
