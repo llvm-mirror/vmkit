@@ -54,7 +54,10 @@ public:
   VirtualTable *_XXX_vt;
   inline gcRoot *_2gc() { return (gcRoot *)this; }
   destructor_t getDestructor() {
-    return ((destructor_t*)(this->_XXX_vt))[0];
+    return (destructor_t)this->_XXX_vt->destructor;
+  }
+  destructor_t getDelete() {
+    return (destructor_t)this->_XXX_vt->operatorDelete;
   }
 };
 
