@@ -47,7 +47,9 @@ extern "C" void printObject(mvm::Object* obj) {
 void Object::initialise() {
 # define INIT(X) { \
   X fake; \
-  X::VT = ((VirtualTable**)(void*)(&fake))[0]; }
+  X::VT = ((VirtualTable**)(void*)(&fake))[0]; \
+  X::VT->operatorDelete = 0; \
+  X::VT->destructor = 0; }
   
   INIT(NativeString);
   INIT(PrintBuffer);
@@ -56,7 +58,7 @@ void Object::initialise() {
 }
 
 void PrintBuffer::TRACER {
-  ((PrintBuffer *)this)->contents()->MARK_AND_TRACE;
+  this->contents()->MARK_AND_TRACE;
 }
 
 
