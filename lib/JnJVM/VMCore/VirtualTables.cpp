@@ -57,12 +57,11 @@ using namespace jnjvm;
 // Classpath with the vmdata field).
 //===----------------------------------------------------------------------===//
 
-#define INIT(X) VirtualTable* X::VT = 0
+VirtualTable VMClassLoader::VT((uintptr_t)VMClassLoader::staticDestructor,
+                               (uintptr_t)VMClassLoader::staticDestructor,
+                               (uintptr_t)VMClassLoader::staticTracer);
 
-  INIT(LockObj);
-  INIT(VMClassLoader);
-
-#undef INIT
+VirtualTable LockObj::VT(0, 0, (uintptr_t)VirtualTable::emptyTracer);
 
 //===----------------------------------------------------------------------===//
 // Empty tracer for static tracers of classes that do not declare static
