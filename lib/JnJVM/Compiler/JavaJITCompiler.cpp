@@ -225,8 +225,8 @@ void JavaJITCompiler::setTracer(JavaVirtualTable* VT, uintptr_t ptr,
 
 void JavaJITCompiler::setDestructor(JavaVirtualTable* VT, uintptr_t ptr,
                                     const char* name) {
-  // Nothing to do: the virtual table has already set its destructor
-  // and no one uses the destructor as a LLVM function.
+  VT->destructor = ptr;
+  VT->operatorDelete = ptr;
 }
 
 void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
