@@ -242,6 +242,9 @@ public:
   ISOLATE_STATIC JavaField* methodClass;
   ISOLATE_STATIC JavaField* fieldClass;
   ISOLATE_STATIC JavaField* constructorClass;
+
+  ISOLATE_STATIC JavaMethod* EnqueueReference;
+  ISOLATE_STATIC Class*      newReference;
   
 private:
   ISOLATE_STATIC void CreateJavaThread(Jnjvm* vm, JavaThread* myth,

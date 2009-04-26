@@ -66,6 +66,7 @@ public:
 
 
 class LLVMClassInfo : public mvm::JITInfo {
+  friend class JavaAOTCompiler;
   friend class JavaJITCompiler;
   friend class JavaLLVMCompiler;
 private:

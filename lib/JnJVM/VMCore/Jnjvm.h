@@ -363,6 +363,10 @@ public:
 protected:
   virtual void invokeFinalizer(gc*);
 
+public:
+  virtual void clearReferent(gc*);
+  virtual gc* getReferent(gc*);
+  virtual bool enqueueReference(gc*);
 
 };
 

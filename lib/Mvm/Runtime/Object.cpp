@@ -218,3 +218,44 @@ void VirtualMachine::scanFinalizationQueue() {
   FinalizationQueueLock.release();
 
 }
+
+gc* ReferenceQueue::processReference(gc* reference, VirtualMachine* vm) {
+  if (!Collector::isLive(reference)) {
+    vm->clearReferent(reference);
+    return 0;
+  }
+
+  gc* referent = vm->getReferent(reference);
+
+  if (!referent) return 0;
+
+  if (semantics == SOFT) {
+    // TODO: are we are out of memory? Consider that we always are for now.
+    if (false) {
+      referent->markAndTrace();
+    }
+  } else if (semantics == PHANTOM) {
+    // Nothing to do.
+  }
+
+  if (Collector::isLive(referent)) {
+    return reference;
+  } else {
+    vm->clearReferent(reference);
+    vm->enqueueReference(reference);
+    return 0;
+  }
+}
+
+
+void ReferenceQueue::scan(VirtualMachine* vm) {
+  uint32 NewIndex = 0;
+
+  for (uint32 i = 0; i < CurrentIndex; ++i) {
+    gc* obj = References[i];
+    processReference(obj, vm);
+  }
+
+  CurrentIndex = NewIndex;
+
+}

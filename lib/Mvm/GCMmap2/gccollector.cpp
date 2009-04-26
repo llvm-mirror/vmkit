@@ -78,7 +78,17 @@ void GCCollector::do_collect() {
   threads->collectionFinished();
 #endif
 
-  Thread::get()->MyVM->scanFinalizationQueue();
+  VirtualMachine* vm = Thread::get()->MyVM;
+  
+  // Scan soft and weak reference queues.
+  vm->scanWeakReferencesQueue();
+  vm->scanSoftReferencesQueue();
+
+  // Scan finalization queue.
+  vm->scanFinalizationQueue();
+
+  // Now that the finalization queue has been scanned, scan the phantom queue.
+  vm->scanPhantomReferencesQueue();
   
   /* finalize */
   GCChunkNode  finalizable;
@@ -92,7 +102,8 @@ void GCCollector::do_collect() {
     allocator->reject_chunk(cur);
   }
   status = stat_alloc;
-  
+ 
+  // Collection finished. Wake up the finalizers if they are waiting.
   Thread::get()->MyVM->wakeUpFinalizers();
 
 

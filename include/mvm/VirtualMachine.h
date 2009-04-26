@@ -42,13 +42,57 @@ namespace jnjvm {
 
 namespace mvm {
 
+class VirtualMachine;
+
+class ReferenceQueue {
+private:
+  gc** References;
+  uint32 QueueLength;
+  uint32 CurrentIndex;
+  mvm::SpinLock QueueLock;
+  uint8_t semantics;
+
+  gc* processReference(gc*, VirtualMachine*);
+public:
+
+  static const uint8_t WEAK = 1;
+  static const uint8_t SOFT = 2;
+  static const uint8_t PHANTOM = 3;
+
+  ReferenceQueue(uint8_t s) {
+    References = new gc*[INITIAL_QUEUE_SIZE];
+    QueueLength = INITIAL_QUEUE_SIZE;
+    CurrentIndex = 0;
+    semantics = s;
+  }
+ 
+  void addReference(gc* ref) {
+    QueueLock.acquire();
+    if (CurrentIndex >= QueueLength) {
+      uint32 newLength = QueueLength * GROW_FACTOR;
+      gc** newQueue = new gc*[newLength];
+      for (uint32 i = 0; i < QueueLength; ++i) newQueue[i] = References[i];
+      delete[] References;
+      References = newQueue;
+      QueueLength = newLength;
+    }
+    References[CurrentIndex++] = ref;
+    QueueLock.release();
+  }
+
+  void scan(VirtualMachine* vm);
+};
+
 /// VirtualMachine - This class is the root of virtual machine classes. It
 /// defines what a VM should be.
 ///
 class VirtualMachine : public mvm::PermanentObject {
 protected:
 
-  VirtualMachine() {
+  VirtualMachine() : 
+    WeakReferencesQueue(ReferenceQueue::WEAK),
+    SoftReferencesQueue(ReferenceQueue::SOFT), 
+    PhantomReferencesQueue(ReferenceQueue::PHANTOM) {
 #ifdef SERVICE
     memoryLimit = ~0;
     executionLimit = ~0;
@@ -64,6 +108,7 @@ protected:
     
     ToBeFinalized = new gc*[INITIAL_QUEUE_SIZE];
     ToBeFinalizedLength = INITIAL_QUEUE_SIZE;
+
   }
 public:
 
@@ -183,6 +228,18 @@ private:
     return ToBeFinalizedLength - countFinalized();
   }
 
+  /// WeakReferencesQueue - The queue of weak references.
+  ///
+  ReferenceQueue WeakReferencesQueue;
+
+  /// SoftReferencesQueue - The queue of soft references.
+  ///
+  ReferenceQueue SoftReferencesQueue;
+
+  /// PhantomReferencesQueue - The queue of phantom references.
+  ///
+  ReferenceQueue PhantomReferencesQueue;
+
 protected:
   /// invokeFinalizer - Invoke the finalizer of the object. This may involve
   /// changing the environment, e.g. going to native to Java.
@@ -209,6 +266,60 @@ public:
   /// wakeUpFinalizers - Wake the finalizers.
   ///
   void wakeUpFinalizers() { FinalizationCond.broadcast(); }
+
+  /// scanWeakReferencesQueue - Scan all weak references. Called by the GC
+  /// before scanning the finalization queue.
+  /// 
+  void scanWeakReferencesQueue() {
+    WeakReferencesQueue.scan(this);
+  }
+  
+  /// scanSoftReferencesQueue - Scan all soft references. Called by the GC
+  /// before scanning the finalization queue.
+  ///
+  void scanSoftReferencesQueue() {
+    SoftReferencesQueue.scan(this);
+  }
+  
+  /// scanPhantomReferencesQueue - Scan all phantom references. Called by the GC
+  /// after the finalization queue.
+  ///
+  void scanPhantomReferencesQueue() {
+    PhantomReferencesQueue.scan(this);
+  }
+  
+  /// addWeakReference - Add a weak reference to the queue.
+  ///
+  void addWeakReference(gc* ref) {
+    WeakReferencesQueue.addReference(ref);
+  }
+  
+  /// addSoftReference - Add a weak reference to the queue.
+  ///
+  void addSoftReference(gc* ref) {
+    SoftReferencesQueue.addReference(ref);
+  }
+  
+  /// addPhantomReference - Add a weak reference to the queue.
+  ///
+  void addPhantomReference(gc* ref) {
+    PhantomReferencesQueue.addReference(ref);
+  }
+
+  /// clearReferent - Clear the referent in a reference. Should be overriden
+  /// by the VM.
+  ///
+  virtual void clearReferent(gc*) {}
+
+  /// getReferent - Get the referent of the reference. Should be overriden
+  /// by the VM.
+  //
+  virtual gc* getReferent(gc*) { return 0; }
+
+  /// enqueueReference - Calls the enqueue method. Should be overriden
+  /// by the VM.
+  ///
+  virtual bool enqueueReference(gc*) { return false; }
 
 #ifdef ISOLATE
   size_t IsolateID;

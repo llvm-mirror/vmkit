@@ -208,6 +208,9 @@ JavaField* Classpath::methodClass;
 JavaField* Classpath::fieldClass;
 JavaField* Classpath::constructorClass;
 
+JavaMethod* Classpath::EnqueueReference;
+Class*      Classpath::newReference;
+
 #endif
 
 void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
@@ -335,6 +338,44 @@ extern "C" JavaObject* nativeGetDeclaredAnnotations() {
 
 extern "C" void nativePropertiesPostInit(JavaObject* prop);
 
+
+extern "C" void nativeInitWeakReference(JavaObjectReference* reference,
+                                        JavaObject* referent) {
+  reference->init(referent, 0);
+  JavaThread::get()->getJVM()->addWeakReference(reference);
+
+}
+
+extern "C" void nativeInitWeakReferenceQ(JavaObjectReference* reference,
+                                         JavaObject* referent,
+                                         JavaObject* queue) {
+  reference->init(referent, queue);
+  JavaThread::get()->getJVM()->addWeakReference(reference);
+
+}
+
+extern "C" void nativeInitSoftReference(JavaObjectReference* reference,
+                                        JavaObject* referent) {
+  reference->init(referent, 0);
+  JavaThread::get()->getJVM()->addSoftReference(reference);
+
+}
+
+extern "C" void nativeInitSoftReferenceQ(JavaObjectReference* reference,
+                                         JavaObject* referent,
+                                         JavaObject* queue) {
+  reference->init(referent, queue);
+  JavaThread::get()->getJVM()->addSoftReference(reference);
+
+}
+
+extern "C" void nativeInitPhantomReferenceQ(JavaObjectReference* reference,
+                                            JavaObject* referent,
+                                            JavaObject* queue) {
+  reference->init(referent, queue);
+  JavaThread::get()->getJVM()->addPhantomReference(reference);
+
+}
 
 void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
@@ -745,5 +786,64 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
                   ACC_VIRTUAL);
   getAnnotations->setCompiledPtr((void*)(intptr_t)nativeGetDeclaredAnnotations,
                                  "nativeGetDeclaredAnnotations");
+
+  newReference =
+    loader->loadName(loader->asciizConstructUTF8("java/lang/ref/Reference"),
+                     false, false);
+    
+  assert(!newReference->isResolved() && "Reference class already resolved");
+  JavaVirtualTable* ptr = newReference->getVirtualVT();
+  ptr->tracer = (uintptr_t)JavaObjectReference::staticTracer;
+  
+  EnqueueReference = 
+    UPCALL_METHOD(loader, "java/lang/ref/Reference",  "enqueue", "()Z",
+                  ACC_VIRTUAL);
+ 
+  JavaMethod* initWeakReference =
+    UPCALL_METHOD(loader, "java/lang/ref/WeakReference", "<init>",
+                  "(Ljava/lang/Object;)V",
+                  ACC_VIRTUAL);
+  initWeakReference->setCompiledPtr((void*)(intptr_t)nativeInitWeakReference,
+                                    "nativeInitWeakReference");
+  
+  initWeakReference =
+    UPCALL_METHOD(loader, "java/lang/ref/WeakReference", "<init>",
+                  "(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V",
+                  ACC_VIRTUAL);
+  initWeakReference->setCompiledPtr((void*)(intptr_t)nativeInitWeakReferenceQ,
+                                    "nativeInitWeakReferenceQ");
+  
+  JavaMethod* initSoftReference =
+    UPCALL_METHOD(loader, "java/lang/ref/SoftReference", "<init>",
+                  "(Ljava/lang/Object;)V",
+                  ACC_VIRTUAL);
+  initSoftReference->setCompiledPtr((void*)(intptr_t)nativeInitSoftReference,
+                                    "nativeInitSoftReference");
+  
+  initSoftReference =
+    UPCALL_METHOD(loader, "java/lang/ref/WeakReference", "<init>",
+                  "(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V",
+                  ACC_VIRTUAL);
+  initSoftReference->setCompiledPtr((void*)(intptr_t)nativeInitSoftReferenceQ,
+                                    "nativeInitSoftReferenceQ");
+  
+  JavaMethod* initPhantomReference =
+    UPCALL_METHOD(loader, "java/lang/ref/PhantomReference", "<init>",
+                  "(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V",
+                  ACC_VIRTUAL);
+  initPhantomReference->setCompiledPtr(
+      (void*)(intptr_t)nativeInitPhantomReferenceQ,
+      "nativeInitPhantomReferenceQ");
+  
+
 }
 
+gc* Jnjvm::getReferent(gc* _obj) {
+  JavaObjectReference* obj = (JavaObjectReference*)_obj;
+  return obj->getReferent();
+}
+
+void Jnjvm::clearReferent(gc* _obj) {
+  JavaObjectReference* obj = (JavaObjectReference*)_obj;
+  obj->setReferent(0);
+}

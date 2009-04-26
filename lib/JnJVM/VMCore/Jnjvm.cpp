@@ -845,7 +845,7 @@ void Jnjvm::loadBootstrap() {
   LOAD_CLASS(upcalls->newVMThread);
   ptr = ((uintptr_t*)upcalls->newVMThread->getVirtualVT());
   ptr[VT_DESTRUCTOR_OFFSET] = (uintptr_t)JavaObjectVMThread::staticDestructor;
-
+   
 #ifdef SERVICE
   if (!IsolateID)
 #endif
