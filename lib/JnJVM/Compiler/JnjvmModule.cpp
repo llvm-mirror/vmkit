@@ -105,6 +105,19 @@ llvm::Function* JavaLLVMCompiler::internalMakeTracer(Class* cl, bool stat) {
     nbFields = cl->nbVirtualFields;
   }
   
+  uint32 nbReferenceFields = 0;
+  for (uint32 i = 0; i < nbFields; ++i) {
+    JavaField& cur = fields[i];
+    if (cur.getSignature()->trace()) {
+      ++nbReferenceFields;
+    }
+  }
+
+  if (!nbReferenceFields) {
+    if (stat) return JavaIntrinsics.EmptyTracerFunction;
+    else return getClassInfo(cl->super)->getVirtualTracer();
+  }
+  
   Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
                                     GlobalValue::InternalLinkage,
                                     "", getLLVMModule());
@@ -126,16 +139,9 @@ llvm::Function* JavaLLVMCompiler::internalMakeTracer(Class* cl, bool stat) {
                        Args.end(), "", block);
 
     } else {
-      LLVMClassInfo* LCP = (LLVMClassInfo*)getClassInfo((Class*)(cl->super));
-      Function* F = LCP->virtualTracerFunction;
-      if (!F) {
-        if (isStaticCompiling()) {
-          F = internalMakeTracer(cl->super, false);
-        } else {
-          F = LCP->getVirtualTracer();
-        }
-        assert(F && "Still no virtual tracer for super");
-      }
+      LLVMClassInfo* LCP = getClassInfo(cl->super);
+      Function* F = LCP->getVirtualTracer();
+      assert(F && "Still no virtual tracer for super");
       CallInst::Create(F, Args.begin(), Args.end(), "", block);
     }
   }
@@ -164,12 +170,6 @@ llvm::Function* JavaLLVMCompiler::internalMakeTracer(Class* cl, bool stat) {
 
   ReturnInst::Create(block);
   
-  if (!stat) {
-    LCI->virtualTracerFunction = func;
-  } else {
-    LCI->staticTracerFunction = func;
-  }
-
   return func;
 }
 #endif
@@ -418,6 +418,7 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
 #ifdef WITH_TRACER
   MarkAndTraceFunction = module->getFunction("MarkAndTrace");
   JavaObjectTracerFunction = module->getFunction("JavaObjectTracer");
+  EmptyTracerFunction = module->getFunction("EmptyTracer");
   JavaArrayTracerFunction = module->getFunction("JavaArrayTracer");
   ArrayObjectTracerFunction = module->getFunction("ArrayObjectTracer");
 #endif

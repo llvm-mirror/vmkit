@@ -234,6 +234,7 @@ public:
 #ifdef WITH_TRACER
   llvm::Function* MarkAndTraceFunction;
   static const llvm::FunctionType* MarkAndTraceType;
+  llvm::Function* EmptyTracerFunction;  
   llvm::Function* JavaObjectTracerFunction;  
   llvm::Function* JavaArrayTracerFunction;  
   llvm::Function* ArrayObjectTracerFunction;  
@@ -358,9 +359,7 @@ protected:
 
 #ifdef WITH_TRACER 
   llvm::Function* internalMakeTracer(Class* cl, bool stat);
-  virtual llvm::Function* makeTracer(Class* cl, bool stat) {
-    return internalMakeTracer(cl, stat);
-  }
+  virtual llvm::Function* makeTracer(Class* cl, bool stat)  = 0;
 #endif
   
   void addJavaPasses();
@@ -501,6 +500,10 @@ public:
 
 #ifdef SERVICE
   virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
+#endif
+
+#ifdef WITH_TRACER
+  virtual llvm::Function* makeTracer(Class* cl, bool stat);
 #endif
   
   virtual ~JavaJITCompiler() {}

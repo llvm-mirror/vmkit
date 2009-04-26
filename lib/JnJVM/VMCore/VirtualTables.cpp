@@ -65,6 +65,12 @@ using namespace jnjvm;
 #undef INIT
 
 //===----------------------------------------------------------------------===//
+// Empty tracer for static tracers of classes that do not declare static
+// variables.
+//===----------------------------------------------------------------------===//
+extern "C" void EmptyTracer(void*) {}
+
+//===----------------------------------------------------------------------===//
 // Root trace methods for Java objects. There are three types of roots:
 // (1) Object whose class is not an array: needs to trace the classloader and
 //     the lock.
@@ -156,8 +162,8 @@ void Class::tracer() {
   
   for (uint32 i =0; i < NR_ISOLATES; ++i) {
     TaskClassMirror &M = IsolateInfo[i];
-    if (M.staticInstance) {
-      ((Class*)this)->staticTracer(M.staticInstance);
+    if (M.staticInstance && staticTracer != EmptyTracer) {
+      staticTracer(M.staticInstance);
     }
   }
 }

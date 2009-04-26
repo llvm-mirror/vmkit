@@ -136,6 +136,8 @@ Value* JavaJITCompiler::getIsolate(Jnjvm* isolate, Value* Where) {
 void JavaJITCompiler::makeVT(Class* cl) { 
   JavaVirtualTable* VT = cl->virtualVT; 
   assert(VT && "No VT was allocated!");
+    
+  LLVMClassInfo* LCI = getClassInfo(cl);
 
 #ifdef WITH_TRACER
   if (VT->tracer) {
@@ -148,7 +150,6 @@ void JavaJITCompiler::makeVT(Class* cl) {
        
     uintptr_t ptr = VT->tracer;
     JnjvmModule::executionEngine->addGlobalMapping(func, (void*)ptr);
-    LLVMClassInfo* LCI = getClassInfo(cl);
     LCI->virtualTracerFunction = func;
 
   }
@@ -193,15 +194,27 @@ void JavaJITCompiler::makeVT(Class* cl) {
   }
 
 #ifdef WITH_TRACER
-  if (!VT->tracer) {
-    Function* func = makeTracer(cl, false);
-  
-    void* codePtr = mvm::MvmModule::executionEngine->getPointerToFunction(func);
-    VT->tracer = (uintptr_t)codePtr;
-    func->deleteBody();
+  if (!LCI->virtualTracerFunction) {
+    LCI->virtualTracerFunction = makeTracer(cl, false);
   }
 #endif
     
+}
+
+Function* JavaJITCompiler::makeTracer(Class* cl, bool stat) {
+  Function* F = cl->super || stat ?
+    internalMakeTracer(cl, stat) : JavaIntrinsics.JavaObjectTracerFunction;
+ 
+  assert(F && "No tracer");
+  if (stat) {
+    cl->staticTracer = (void (*)(void*)) (uintptr_t)
+      JnjvmModule::executionEngine->getPointerToFunction(F);
+  } else {
+    void* codePtr = mvm::MvmModule::executionEngine->getPointerToFunction(F);
+    cl->virtualVT->tracer = (uintptr_t)codePtr;
+  }
+  F->deleteBody();
+  return F;
 }
 
 void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
