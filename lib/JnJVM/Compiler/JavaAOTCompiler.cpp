@@ -1480,9 +1480,8 @@ void JavaAOTCompiler::setTracer(JavaVirtualTable* VT, uintptr_t ptr,
 
 void JavaAOTCompiler::setDestructor(JavaVirtualTable* VT, uintptr_t ptr,
                                     const char* name) {
-  // Set the name info directly, the compiler will use the name to
-  // create a LLVM function.
-  VT->destructor = (uintptr_t)name;
+  // Set the name info into the operatorDelete directly, the compiler
+  // will use the name to create a LLVM function.
   VT->operatorDelete = (uintptr_t)name;
 }
 
