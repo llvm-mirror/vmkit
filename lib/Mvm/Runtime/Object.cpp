@@ -187,6 +187,9 @@ void VirtualMachine::scanFinalizationQueue() {
 
     if (!Collector::isLive(obj)) {
       obj->markAndTrace();
+      
+      if (CurrentFinalizedIndex >= ToBeFinalizedLength) growQueue();
+      
       /* Add to object table */
       ToBeFinalized[CurrentFinalizedIndex++] = obj;
     } else {
