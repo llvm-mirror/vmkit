@@ -1016,6 +1016,9 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   // innerOuterResolved
   ClassElts.push_back(ConstantInt::get(Type::Int8Ty, cl->innerOuterResolved));
   
+  // isAnonymous
+  ClassElts.push_back(ConstantInt::get(Type::Int8Ty, cl->isAnonymous));
+  
   // virtualTableSize
   ClassElts.push_back(ConstantInt::get(Type::Int32Ty, cl->virtualTableSize));
   

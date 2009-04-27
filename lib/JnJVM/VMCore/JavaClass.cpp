@@ -947,11 +947,12 @@ void UserClass::resolveInnerOuterClasses() {
       for (uint16 i = 0; i < nbi; ++i) {
         uint16 inner = reader.readU2();
         uint16 outer = reader.readU2();
-        //uint16 innerName = 
-        reader.readU2();
+        uint16 innerName = reader.readU2();
         uint16 accessFlags = reader.readU2();
-        UserClass* clInner = (UserClass*)ctpInfo->loadClass(inner);
-        UserClass* clOuter = (UserClass*)ctpInfo->loadClass(outer);
+        UserClass* clInner = 0;
+        UserClass* clOuter = 0;
+        if (inner) clInner = (UserClass*)ctpInfo->loadClass(inner);
+        if (outer) clOuter = (UserClass*)ctpInfo->loadClass(outer);
 
         if (clInner == this) {
           outerClass = clOuter;
@@ -961,6 +962,7 @@ void UserClass::resolveInnerOuterClasses() {
               classLoader->allocator.Allocate(nbi * sizeof(Class*));
           }
           clInner->setInnerAccess(accessFlags);
+          if (!innerName) isAnonymous = true;
           innerClasses[nbInnerClasses++] = clInner;
         }
       }
