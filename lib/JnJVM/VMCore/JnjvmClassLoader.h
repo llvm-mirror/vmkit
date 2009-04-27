@@ -411,7 +411,7 @@ public:
 
   /// TRACER - Trace the internal class loader.
   static void STATIC_TRACER(VMClassLoader) {
-    obj->JCL->CALL_TRACER;
+    if (obj->JCL) obj->JCL->CALL_TRACER;
   }
 
   /// ~VMClassLoader - Delete the internal class loader.
