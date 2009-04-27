@@ -823,10 +823,12 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   newReference =
     loader->loadName(loader->asciizConstructUTF8("java/lang/ref/Reference"),
                      false, false);
-    
+  
+  newReference->getVirtualVT()->setNativeTracer(
+      (uintptr_t)nativeJavaObjectReferenceTracer,
+      "nativeJavaObjectReferenceTracer");
+  
   assert(!newReference->isResolved() && "Reference class already resolved");
-  JavaVirtualTable* ptr = newReference->getVirtualVT();
-  ptr->tracer = (uintptr_t)JavaObjectReference::staticTracer;
   
   EnqueueReference = 
     UPCALL_METHOD(loader, "java/lang/ref/Reference",  "enqueue", "()Z",
@@ -868,9 +870,6 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
       (void*)(intptr_t)nativeInitPhantomReferenceQ,
       "nativeInitPhantomReferenceQ");
   
-  newReference->getVirtualVT()->setNativeTracer(
-      (uintptr_t)nativeJavaObjectReferenceTracer,
-      "nativeJavaObjectReferenceTracer");
 
 //===----------------------------------------------------------------------===//
 //
