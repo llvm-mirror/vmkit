@@ -432,7 +432,6 @@ void Jnjvm::noSuchMethodError(CommonClass* cl, const UTF8* name) {
 }
 
 void Jnjvm::classFormatError(const char* msg, ...) {
-  JavaThread::get()->printBacktrace();
   error(upcalls->ClassFormatError,
         upcalls->InitClassFormatError, 
         msg);
