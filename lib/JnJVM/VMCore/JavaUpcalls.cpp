@@ -344,6 +344,9 @@ extern "C" void nativeJavaObjectVMThreadDestructor(JavaObjectVMThread* obj) {
   JavaObjectVMThread::staticDestructor(obj);
 }
 
+// Defined in Classpath/ClasspathVMClassLoader.cpp
+extern "C" ArrayObject* nativeGetBootPackages();
+
 void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   newClassLoader = 
@@ -744,6 +747,12 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
                   ACC_VIRTUAL);
   getAnnotations->setCompiledPtr((void*)(intptr_t)nativeGetDeclaredAnnotations,
                                  "nativeGetDeclaredAnnotations");
+  
+  JavaMethod* getBootPackages =
+    UPCALL_METHOD(loader, "java/lang/VMClassLoader", "getBootPackages",
+                  "()[Ljava/lang/String;", ACC_STATIC);
+  getBootPackages->setCompiledPtr((void*)(intptr_t)nativeGetBootPackages,
+                                  "nativeGetBootPackages");
   
   //===----------------------------------------------------------------------===//
   //
