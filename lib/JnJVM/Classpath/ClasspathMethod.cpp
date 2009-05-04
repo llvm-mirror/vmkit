@@ -113,17 +113,17 @@ static jobject proceed(JavaObjectMethod* Meth, jobject _obj, jobject _args,
     
     if (isVirtual(meth->access)) {
       verifyNull(obj);
-      if (!(obj->getClass()->isAssignableFrom(cl))) {
+      UserCommonClass* objCl = obj->getClass();
+      if (!(objCl->isAssignableFrom(cl))) {
         vm->illegalArgumentExceptionForMethod(meth, cl, obj->getClass());
       }
-#ifdef ISOLATE_SHARING
-      if (isInterface(cl->classDef->access)) {
-        cl = obj->getClass()->lookupClassFromMethod(meth);
-      } else {
-        cl = Meth->getClass();
-      }
-#endif
 
+      if (isInterface(cl->access)) {
+        UserClass* methodCl = 0;
+        UserClass* lookup = objCl->isArray() ? objCl->super : objCl->asClass();
+        meth = lookup->lookupMethod(meth->name, meth->type, false, true,
+                                    &methodCl);
+      }
     } else {
       cl->initialiseClass(vm);
     }
