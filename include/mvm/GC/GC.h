@@ -23,6 +23,16 @@ struct VirtualTable {
   uintptr_t* getFunctions() {
     return &destructor;
   }
+
+  VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) {
+    destructor = d;
+    operatorDelete = o;
+    tracer = t;
+  }
+
+  VirtualTable() {}
+
+  static void emptyTracer(void*) {}
 };
 
 class gcRoot {
@@ -54,7 +64,10 @@ public:
   VirtualTable *_XXX_vt;
   inline gcRoot *_2gc() { return (gcRoot *)this; }
   destructor_t getDestructor() {
-    return ((destructor_t*)(this->_XXX_vt))[0];
+    return (destructor_t)this->_XXX_vt->destructor;
+  }
+  destructor_t getDelete() {
+    return (destructor_t)this->_XXX_vt->operatorDelete;
   }
 };
 

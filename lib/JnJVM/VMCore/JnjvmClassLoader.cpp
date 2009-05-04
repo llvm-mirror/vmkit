@@ -769,7 +769,7 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
     if (!vmdata) {
       mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();    
       JCL = new(*A) JnjvmClassLoader(*A, *vm->bootstrapLoader, loader, vm);
-      vmdata = gc_new(VMClassLoader)(JCL);
+      vmdata = VMClassLoader::allocate(JCL);
       (upcalls->vmdataClassLoader->setObjectField(loader, (JavaObject*)vmdata));
     }
     loader->release();
@@ -1039,6 +1039,7 @@ extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
     realCl->staticMethods = realCl->virtualMethods + realCl->nbVirtualMethods;
     realCl->staticFields = realCl->virtualFields + realCl->nbVirtualFields;
   }
+  cl->virtualVT->setNativeTracer(cl->virtualVT->tracer, "");
   JCL->getClasses()->map.insert(std::make_pair(cl->name, cl));
   cl->classLoader = JCL;
 }

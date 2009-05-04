@@ -23,29 +23,8 @@
 using namespace jnjvm;
 
 
-static void initialiseVT() {
-
-# define INIT(X) { \
-  X fake; \
-  X::VT = ((VirtualTable**)(void*)(&fake))[0]; }
-
-  INIT(LockObj);
-  INIT(VMClassLoader);
-
-#ifdef ISOLATE_SHARING
-  INIT(JnjvmSharedLoader);
-  INIT(SharedClassByteMap);
-  INIT(UserClass);
-  INIT(UserClassArray);
-  INIT(UserConstantPool);
-#endif
-#undef INIT
-
-}
-
 #ifdef ISOLATE_SHARING
 JnjvmClassLoader* mvm::VirtualMachine::initialiseJVM(JavaCompiler* Comp) {
-  initialiseVT();
   JnjvmSharedLoader::sharedLoader = JnjvmSharedLoader::createSharedLoader(Comp);
   return JnjvmSharedLoader::sharedLoader;
 }
@@ -62,7 +41,6 @@ mvm::VirtualMachine* mvm::VirtualMachine::createJVM(JnjvClassLoader* JCL) {
   
 JnjvmClassLoader*
 mvm::VirtualMachine::initialiseJVM(JavaCompiler* Comp, bool dlLoad) {
-  initialiseVT();
   mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();
   return new(*A) JnjvmBootstrapLoader(*A, Comp, dlLoad);
 }

@@ -50,12 +50,6 @@ public:
   ///
   virtual intptr_t  hashCode(){ return (intptr_t)this;}
   
-  /// initialise - All virtual machines must call Object::initialise to
-  /// property initialise the PrintBuffer and NativeString classes. These
-  /// classes are mainly used for debugging but also for object hashing.
-  ///
-  static void initialise();
-
 };
 
 } // end namespace mvm

@@ -399,24 +399,30 @@ private:
 
 public:
 
+  static VMClassLoader* allocate(JnjvmClassLoader* J) {
+    VMClassLoader* res = 
+      (VMClassLoader*)gc::operator new(sizeof(VMClassLoader), &VT);
+    res->JCL = J;
+    return res;
+  }
+
   /// VT - The VirtualTable for this GC-class.
-  static VirtualTable* VT;
+  static VirtualTable VT;
 
   /// TRACER - Trace the internal class loader.
-  virtual void TRACER {
-    JCL->CALL_TRACER;
+  static void STATIC_TRACER(VMClassLoader) {
+    if (obj->JCL) obj->JCL->CALL_TRACER;
   }
 
   /// ~VMClassLoader - Delete the internal class loader.
   ///
-  ~VMClassLoader() {
-    if (JCL) JCL->~JnjvmClassLoader();
+  static void staticDestructor(VMClassLoader* obj) {
+    if (obj->JCL) obj->JCL->~JnjvmClassLoader();
   }
 
   /// VMClassLoader - Default constructors.
   ///
   VMClassLoader(JnjvmClassLoader* J) : JCL(J) {}
-  VMClassLoader() : JCL(0) {}
 
   /// getClassLoader - Get the internal class loader.
   ///

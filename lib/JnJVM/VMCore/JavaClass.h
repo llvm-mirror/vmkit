@@ -671,6 +671,10 @@ public:
   ///
   bool innerOuterResolved;
   
+  /// isAnonymous - Is the class an anonymous class?
+  ///
+  bool isAnonymous;
+
   /// virtualTableSize - The size of the virtual table of this class.
   ///
   uint32 virtualTableSize;

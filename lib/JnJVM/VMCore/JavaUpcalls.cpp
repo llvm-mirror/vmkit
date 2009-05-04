@@ -768,5 +768,5 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
  
    newVMThread->getVirtualVT()->setNativeDestructor(
       (uintptr_t)nativeJavaObjectVMThreadDestructor,
-      "nativeJavaObjectVMThreadDestructorr");
+      "nativeJavaObjectVMThreadDestructor");
 }

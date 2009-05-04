@@ -19,8 +19,8 @@
 using namespace mvm;
 
 
-VirtualTable *NativeString::VT = 0;
-VirtualTable *PrintBuffer::VT = 0;
+VirtualTable NativeString::VT(0, 0, (uintptr_t)VirtualTable::emptyTracer);
+VirtualTable PrintBuffer::VT(0, 0, (uintptr_t)PrintBuffer::staticTracer);
 
 extern "C" void printFloat(float f) {
   fprintf(stderr, "%f\n", f);
@@ -40,22 +40,6 @@ extern "C" void printInt(sint32 i) {
 
 extern "C" void printObject(mvm::Object* obj) {
   fprintf(stderr, "%s\n", obj->printString());
-}
-
-
-void Object::initialise() {
-# define INIT(X) { \
-  X fake; \
-  X::VT = ((VirtualTable**)(void*)(&fake))[0]; }
-  
-  INIT(NativeString);
-  INIT(PrintBuffer);
-  
-#undef INIT
-}
-
-void PrintBuffer::TRACER {
-  ((PrintBuffer *)this)->contents()->MARK_AND_TRACE;
 }
 
 

@@ -1016,6 +1016,9 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   // innerOuterResolved
   ClassElts.push_back(ConstantInt::get(Type::Int8Ty, cl->innerOuterResolved));
   
+  // isAnonymous
+  ClassElts.push_back(ConstantInt::get(Type::Int8Ty, cl->isAnonymous));
+  
   // virtualTableSize
   ClassElts.push_back(ConstantInt::get(Type::Int32Ty, cl->virtualTableSize));
   
@@ -1028,7 +1031,8 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   // staticTracer
   const Type* FTy = STy->getContainedType(STy->getNumContainedTypes() - 1);
 #ifdef WITH_TRACER
-  Function* F = makeTracer(cl, true);
+  Function* F = getClassInfo(cl)->getStaticTracer();
+  assert(F && "No static tracer");
   Constant* staticTracer = ConstantExpr::getCast(Instruction::BitCast, F, FTy);
 #else
   Constant* staticTracer = ConstantExpr::getNullValue(FTy);
@@ -1153,7 +1157,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
       Tracer = JavaIntrinsics.ArrayObjectTracerFunction;
     }
   } else if (classDef->isClass()) {
-    Tracer = makeTracer(classDef->asClass(), false);
+    Tracer = getClassInfo(classDef->asClass())->getVirtualTracer();
   }
 
   Elemts.push_back(Tracer ? 
@@ -1241,7 +1245,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
 
 #ifdef WITH_TRACER
 llvm::Function* JavaAOTCompiler::makeTracer(Class* cl, bool stat) {
-  if (!generateTracers) {
+  if (!generateTracers || (!cl->super && !stat)) {
     return JavaIntrinsics.JavaObjectTracerFunction;
   } else {
     return internalMakeTracer(cl, stat);
@@ -1447,13 +1451,19 @@ void JavaAOTCompiler::makeVT(Class* cl) {
         JavaVirtualTable::getFirstJavaMethodIndex();
     memcpy(VT->getFirstJavaMethod(), cl->super->virtualVT->getFirstJavaMethod(),
            size * sizeof(uintptr_t));
+    VT->destructor = cl->super->virtualVT->destructor;
   }
   
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
     JavaMethod& meth = cl->virtualMethods[i];
     ((void**)VT)[meth.offset] = &meth;
   }
+
   if (!cl->super) VT->destructor = 0;
+
+  LLVMClassInfo* LCI = getClassInfo(cl);
+  if (!LCI->virtualTracerFunction) 
+    LCI->virtualTracerFunction = makeTracer(cl, false);
 }
 
 void JavaAOTCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
@@ -1467,16 +1477,15 @@ void JavaAOTCompiler::setTracer(JavaVirtualTable* VT, uintptr_t ptr,
   Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
                                     GlobalValue::ExternalLinkage,
                                     name, getLLVMModule());
-       
+
   LLVMClassInfo* LCI = getClassInfo(VT->cl->asClass());
   LCI->virtualTracerFunction = func;
 }
 
 void JavaAOTCompiler::setDestructor(JavaVirtualTable* VT, uintptr_t ptr,
                                     const char* name) {
-  // Set the name info directly, the compiler will use the name to
-  // create a LLVM function.
-  VT->destructor = (uintptr_t)name;
+  // Set the name info into the operatorDelete directly, the compiler
+  // will use the name to create a LLVM function.
   VT->operatorDelete = (uintptr_t)name;
 }
 
