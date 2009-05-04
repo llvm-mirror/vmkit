@@ -263,13 +263,15 @@ JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
 
 void Jnjvm::error(UserClass* cl, JavaMethod* init, const char* fmt, ...) {
   char* tmp = (char*)alloca(4096);
-  va_list ap;
-  va_start(ap, fmt);
-  vsnprintf(tmp, 4096, fmt, ap);
-  va_end(ap);
+  if (fmt) {
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(tmp, 4096, fmt, ap);
+    va_end(ap);
+  }
   
   if (cl && !bootstrapLoader->getCompiler()->isStaticCompiling()) {
-    JavaObject* obj = CreateError(cl, init, tmp);
+    JavaObject* obj = CreateError(cl, init, fmt ? fmt : 0);
     JavaThread::get()->throwException(obj);
   } else {
     throw std::string(tmp);
@@ -454,6 +456,11 @@ void Jnjvm::classNotFoundException(JavaString* str) {
         upcalls->InitClassNotFoundException, 
         "unable to load %s",
         str->strToAsciiz());
+}
+
+void Jnjvm::instantiationException() {
+  error(upcalls->InstantiationException,
+        upcalls->InitInstantiationException, 0);
 }
 
 void Jnjvm::unknownError(const char* fmt, ...) {

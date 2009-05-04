@@ -73,10 +73,13 @@ static jobject proceed(JavaObjectConstructor* cons, jobject _args, jclass Clazz,
   jobject res = 0;
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = cons->getInternalMethod();
+  UserClass* cl = cons->getClass();
   JavaArray* args = (JavaArray*)_args;
   sint32 nbArgs = args ? args->size : 0;
   Signdef* sign = meth->getSignature();
   sint32 size = sign->nbArguments;
+
+  if (isAbstract(cl->access)) vm->instantiationException();
 
   // Allocate a buffer to store the arguments.
   uintptr_t buf = size ? (uintptr_t)alloca(size * sizeof(uint64)) : 0;

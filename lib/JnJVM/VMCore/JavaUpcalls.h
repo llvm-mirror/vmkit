@@ -161,6 +161,7 @@ public:
   ISOLATE_STATIC UserClass* NoSuchFieldError;
   ISOLATE_STATIC UserClass* NoSuchMethodError;
   ISOLATE_STATIC UserClass* InstantiationError;
+  ISOLATE_STATIC UserClass* InstantiationException;
   ISOLATE_STATIC UserClass* IllegalAccessError;
   ISOLATE_STATIC UserClass* IllegalAccessException;
   ISOLATE_STATIC UserClass* VerifyError;
@@ -193,6 +194,7 @@ public:
   ISOLATE_STATIC JavaMethod* InitNoSuchFieldError;
   ISOLATE_STATIC JavaMethod* InitNoSuchMethodError;
   ISOLATE_STATIC JavaMethod* InitInstantiationError;
+  ISOLATE_STATIC JavaMethod* InitInstantiationException;
   ISOLATE_STATIC JavaMethod* InitIllegalAccessError;
   ISOLATE_STATIC JavaMethod* InitIllegalAccessException;
   ISOLATE_STATIC JavaMethod* InitVerifyError;
