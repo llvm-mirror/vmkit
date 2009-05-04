@@ -10,8 +10,8 @@
 #ifndef MVM_PRINTBUFFER_H
 #define MVM_PRINTBUFFER_H
 
-#include <cstdio> // sprintf
-#include <cstring> // memcpy
+#include <stdio.h> // sprintf
+#include <string.h> // memcpy
 
 #include "types.h"
 #include "mvm/Object.h"
@@ -22,12 +22,12 @@ namespace mvm {
 /// NativeString - This class is the equivalent of a char*, but allocated
 /// by the GC, hence has a virtual table.
 ///
-class NativeString : public gc {
+class NativeString : public Object {
 public:
   
   /// VT - The virtual table of this class.
   ///
-  static VirtualTable VT;
+  static VirtualTable* VT;
 
   /// cString - Returns the C equivalent of the NativeString.
   ///
@@ -44,7 +44,7 @@ public:
   /// alloc - Allocates a NativeString of size len.
   ///
   static inline NativeString *alloc(size_t len) {
-    return (NativeString *)gc::operator new(len + sizeof(VirtualTable*), &VT);
+    return (NativeString *)gc::operator new(len + sizeof(VirtualTable*), VT);
   }
 
   /// realloc - Reallocate a native string of size len.
@@ -69,7 +69,7 @@ public:
 
 /// PrintBuffer - This class is a buffered string.
 ///
-class PrintBuffer : public gc {
+class PrintBuffer : public Object {
 private:
  
   /// _contents - The buffer.
@@ -90,7 +90,7 @@ public:
   
   /// VT - The virtual table of this class.
   ///
-  static VirtualTable VT;
+  static VirtualTable* VT;
   
   
   /// contents - Returns the buffer.
@@ -179,7 +179,7 @@ public:
   /// alloc - Allocates a default PrintBuffer.
   ///
   static PrintBuffer *alloc(void) {
-    PrintBuffer* pbf = (PrintBuffer*)gc::operator new(sizeof(PrintBuffer), &VT);
+    PrintBuffer* pbf = gc_new(PrintBuffer)();
     pbf->capacity= 32;
     pbf->writePosition= 0;
     pbf->setContents(NativeString::alloc(pbf->capacity));
@@ -188,9 +188,7 @@ public:
 
   /// tracer - Traces this PrintBuffer.
   ///
-  static void STATIC_TRACER(PrintBuffer) {
-    obj->contents()->MARK_AND_TRACE;
-  }
+  virtual void TRACER;
 };
 
 } // end namespace mvm

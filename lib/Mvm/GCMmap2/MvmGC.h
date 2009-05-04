@@ -87,7 +87,6 @@ public:
         static int      getTotalMemory(void);
         static void     setMaxMemory(size_t);
         static void     setMinMemory(size_t);
-  static bool isLive(void* ptr);
 };
 
 #endif

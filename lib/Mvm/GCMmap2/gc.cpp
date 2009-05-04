@@ -173,10 +173,6 @@ void Collector::remove_my_thread(mvm::Thread* th) {
 #endif
 }
 
-bool Collector::isLive(void* ptr) {
-  return GCCollector::isLive(ptr);
-}
-
 void GCThread::waitCollection() {
   mvm::Thread* th = mvm::Thread::get();
   unsigned int cm = GCCollector::current_mark;

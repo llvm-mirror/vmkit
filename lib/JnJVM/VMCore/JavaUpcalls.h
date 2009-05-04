@@ -131,9 +131,7 @@ public:
   ISOLATE_STATIC JavaMethod* initVMThread;
   ISOLATE_STATIC JavaMethod* runVMThread;
   ISOLATE_STATIC JavaMethod* groupAddThread;
-  ISOLATE_STATIC JavaMethod* initGroup;
-  ISOLATE_STATIC JavaField* groupName;
-  ISOLATE_STATIC JavaField* threadName;
+  ISOLATE_STATIC JavaField* name;
   ISOLATE_STATIC JavaField* priority;
   ISOLATE_STATIC JavaField* daemon;
   ISOLATE_STATIC JavaField* group;
@@ -210,7 +208,6 @@ public:
   ISOLATE_STATIC JavaMethod* InitArithmeticException;
 
   ISOLATE_STATIC JavaMethod* InitObject;
-  ISOLATE_STATIC JavaMethod* FinalizeObject;
 
   ISOLATE_STATIC JavaMethod* ErrorWithExcpNoClassDefFoundError;
   ISOLATE_STATIC JavaMethod* ErrorWithExcpExceptionInInitializerError;
@@ -242,9 +239,6 @@ public:
   ISOLATE_STATIC JavaField* methodClass;
   ISOLATE_STATIC JavaField* fieldClass;
   ISOLATE_STATIC JavaField* constructorClass;
-
-  ISOLATE_STATIC JavaMethod* EnqueueReference;
-  ISOLATE_STATIC Class*      newReference;
   
 private:
   ISOLATE_STATIC void CreateJavaThread(Jnjvm* vm, JavaThread* myth,

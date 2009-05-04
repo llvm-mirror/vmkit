@@ -50,12 +50,11 @@ class UTF8;
 ///
 #define loaded 0       /// The .class file has been found.
 #define classRead 1    /// The .class file has been read.
-#define resolving 2    /// The class file is being resolved.
-#define resolved 3     /// The class has been resolved.
-#define vmjc 4         /// The class is defined in a shared library.
-#define inClinit 5     /// The class is cliniting.
-#define ready 6        /// The class is ready to be used.
-#define erroneous 7    /// The class is in an erroneous state.
+#define resolved 2     /// The class has been resolved.
+#define vmjc 3         /// The class is defined in a shared library.
+#define inClinit 4     /// The class is cliniting.
+#define ready 5        /// The class is ready to be used.
+#define erroneous 6    /// The class is in an erroneous state.
 
 /// JavaVirtualTable - This class is the virtual table of instances of
 /// Java classes. Besides holding function pointers for virtual calls,
@@ -672,10 +671,6 @@ public:
   ///
   bool innerOuterResolved;
   
-  /// isAnonymous - Is the class an anonymous class?
-  ///
-  bool isAnonymous;
-
   /// virtualTableSize - The size of the virtual table of this class.
   ///
   uint32 virtualTableSize;
@@ -926,12 +921,6 @@ public:
     getCurrentTaskClassMirror().status = classRead;
   }
   
-  /// setIsResolving - The class file is being resolved.
-  ///
-  void setIsResolving() {
-    getCurrentTaskClassMirror().status = resolving;
-  }
-  
 
 #else
   
@@ -950,12 +939,6 @@ public:
   void setIsRead() {
     for (uint32 i = 0; i < NR_ISOLATES; ++i) {
       IsolateInfo[i].status = classRead;
-    }
-  }
-  
-  void setIsResolving() {
-    for (uint32 i = 0; i < NR_ISOLATES; ++i) {
-      IsolateInfo[i].status = resolving;
     }
   }
   
@@ -1020,7 +1003,7 @@ public:
   /// isResolving - Is the class currently being resolved?
   ///
   bool isResolving() {
-    return getCurrentTaskClassMirror().status == resolving;
+    return getCurrentTaskClassMirror().status == classRead;
   }
 
   /// isClassRead - Has the .class file been read?

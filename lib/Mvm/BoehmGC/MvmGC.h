@@ -143,10 +143,6 @@ public:
     if(GC_get_heap_size() < size)
     GC_expand_hp(size - GC_get_heap_size());
   }
-
-  static bool isLive() {
-    return true;
-  }
 };
 
 

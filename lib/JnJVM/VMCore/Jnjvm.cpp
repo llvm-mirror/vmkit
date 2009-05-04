@@ -814,13 +814,9 @@ void Jnjvm::loadBootstrap() {
     
     JavaString::internStringVT->destructor = 
       (uintptr_t)JavaString::stringDestructor;
-    
-    // Tell the finalizer that this is a native destructor.
-    JavaString::internStringVT->operatorDelete = 
-      (uintptr_t)JavaString::stringDestructor;
   }
   upcalls->newString->initialiseClass(this);
- 
+
 #ifdef SERVICE
   if (!IsolateID)
 #endif
@@ -965,7 +961,7 @@ void Jnjvm::waitForExit() {
 
 void Jnjvm::mainJavaStart(JavaThread* thread) {
   Jnjvm* vm = thread->getJVM();
-  vm->mainThread = thread;
+  vm->bootstrapThread = thread;
 
   vm->loadBootstrap();
 
@@ -1046,11 +1042,8 @@ void Jnjvm::runApplication(int argc, char** argv) {
     th->start(serviceCPUMonitor);
 #endif
     
-    finalizerThread = new JavaThread(0, 0, this);
-    finalizerThread->start((void (*)(mvm::Thread*))finalizerStart);
-    
-    mainThread = new JavaThread(0, 0, this);
-    mainThread->start((void (*)(mvm::Thread*))mainJavaStart);
+    bootstrapThread = new JavaThread(0, 0, this);
+    bootstrapThread->start((void (*)(mvm::Thread*))mainJavaStart);
   } else {
     threadSystem.nonDaemonThreads = 0;
   }
@@ -1143,6 +1136,7 @@ void Jnjvm::removeMethodsInFunctionMap(JnjvmClassLoader* loader) {
 
 // Helper function to run Jnjvm without JIT.
 extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
+  mvm::Object::initialise();
   Collector::initialise(0);
   
   char** newArgv = new char*[argc + 1];

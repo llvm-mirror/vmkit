@@ -213,6 +213,7 @@ int main(int argc, char **argv) {
       Comp = new JavaJITCompiler("JIT");
     }
 
+    mvm::Object::initialise();
     Collector::initialise(0);
     Collector::enable(0);
 

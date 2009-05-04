@@ -70,12 +70,7 @@ LockObj* LockObj::allocate(JavaObject* owner) {
 #ifdef USE_GC_BOEHM
   LockObj* res = new LockObj();
 #else
-  LockObj* res = new(&VT) LockObj();
-  // Set the virtual table to change what C++ did: by using the new operator
-  // C++ after the allocation will set its own VT. Since we want to call
-  // the C++ constructor (because it initializes the native data structures
-  // such as LockRecursive), we have to change the VT of this object.
-  res->setVirtualTable(&VT);
+  LockObj* res = gc_new(LockObj)();
 #endif
   return res;
 }

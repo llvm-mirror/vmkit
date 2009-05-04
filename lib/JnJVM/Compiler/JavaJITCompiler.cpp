@@ -136,14 +136,25 @@ Value* JavaJITCompiler::getIsolate(Jnjvm* isolate, Value* Where) {
 void JavaJITCompiler::makeVT(Class* cl) { 
   JavaVirtualTable* VT = cl->virtualVT; 
   assert(VT && "No VT was allocated!");
-    
-  LLVMClassInfo* LCI = getClassInfo(cl);
 
+#ifdef WITH_TRACER
   if (VT->init) {
+    // So the class is vmjc'ed. Create the virtual tracer.
+    Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
+                                      GlobalValue::ExternalLinkage,
+                                      "markAndTraceObject",
+                                      getLLVMModule());
+       
+    uintptr_t ptr = VT->tracer;
+    JnjvmModule::executionEngine->addGlobalMapping(func, (void*)ptr);
+    LLVMClassInfo* LCI = getClassInfo(cl);
+    LCI->virtualTracerFunction = func;
+
     // The VT hash already been filled by the AOT compiler so there
     // is nothing left to do!
     return;
   }
+#endif
   
   if (cl->super) {
     // Copy the super VT into the current VT.
@@ -151,7 +162,6 @@ void JavaJITCompiler::makeVT(Class* cl) {
         JavaVirtualTable::getFirstJavaMethodIndex();
     memcpy(VT->getFirstJavaMethod(), cl->super->virtualVT->getFirstJavaMethod(),
            size * sizeof(uintptr_t));
-    VT->destructor = cl->super->virtualVT->destructor;
   }
 
 
@@ -165,11 +175,13 @@ void JavaJITCompiler::makeVT(Class* cl) {
     // Special handling for finalize method. Don't put a finalizer
     // if there is none, or if it is empty.
     if (meth.offset == 0) {
+#if !defined(ISOLATE_SHARING) && !defined(USE_GC_BOEHM)
       if (!cl->super) {
         meth.canBeInlined = true;
       } else {
         VT->destructor = (uintptr_t)EE->getPointerToFunctionOrStub(func);
       }
+#endif
     } else {
       VT->getFunctions()[meth.offset] = 
         (uintptr_t)EE->getPointerToFunctionOrStub(func);
@@ -177,27 +189,13 @@ void JavaJITCompiler::makeVT(Class* cl) {
   }
 
 #ifdef WITH_TRACER
-  if (!LCI->virtualTracerFunction) {
-    LCI->virtualTracerFunction = makeTracer(cl, false);
-  }
+  Function* func = makeTracer(cl, false);
+  
+  void* codePtr = mvm::MvmModule::executionEngine->getPointerToFunction(func);
+  VT->tracer = (uintptr_t)codePtr;
+  func->deleteBody();
 #endif
     
-}
-
-Function* JavaJITCompiler::makeTracer(Class* cl, bool stat) {
-  Function* F = cl->super || stat ?
-    internalMakeTracer(cl, stat) : JavaIntrinsics.JavaObjectTracerFunction;
- 
-  assert(F && "No tracer");
-  if (stat) {
-    cl->staticTracer = (void (*)(void*)) (uintptr_t)
-      JnjvmModule::executionEngine->getPointerToFunction(F);
-  } else {
-    void* codePtr = mvm::MvmModule::executionEngine->getPointerToFunction(F);
-    cl->virtualVT->tracer = (uintptr_t)codePtr;
-  }
-  F->deleteBody();
-  return F;
 }
 
 void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
@@ -220,22 +218,19 @@ void JavaJITCompiler::setTracer(JavaVirtualTable* VT, uintptr_t ptr,
   JnjvmModule::executionEngine->addGlobalMapping(func, (void*)ptr);
   LLVMClassInfo* LCI = getClassInfo(VT->cl->asClass());
   LCI->virtualTracerFunction = func;
-  VT->tracer = ptr;
 }
 
 void JavaJITCompiler::setDestructor(JavaVirtualTable* VT, uintptr_t ptr,
                                     const char* name) {
-  VT->destructor = ptr;
-  VT->operatorDelete = ptr;
+  // Nothing to do: the virtual table has already set its destructor
+  // and no one uses the destructor as a LLVM function.
 }
 
 void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   Function* func = parseFunction(meth);
   
   void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
-  mvm::MvmModule::protectIR();
   func->deleteBody();
-  mvm::MvmModule::unprotectIR();
 
   return res;
 }
@@ -245,6 +240,7 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   llvm::llvm_shutdown_obj X;  
    
   mvm::MvmModule::initialise();
+  mvm::Object::initialise();
   Collector::initialise(0);
  
   char** newArgv = new char*[argc + 1];

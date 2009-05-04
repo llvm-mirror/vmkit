@@ -28,10 +28,6 @@ JavaString* JavaString::stringDup(const UTF8*& utf8, Jnjvm* vm) {
   // internStringVT exists (in case of AOT).
   if (internStringVT) res->setVirtualTable(internStringVT);
 
-  // The GC did not have this info. Now we do, so inform the finalizers
-  // that this is a finalization candidate.
-  vm->addFinalizationCandidate(res);
-
   // No need to call the Java function: both the Java function and
   // this function do the same thing.
   res->value = utf8;

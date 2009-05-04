@@ -129,6 +129,7 @@ jobject pd) {
   
   if (!cl) {
     UserClass* cl = JCL->constructClass(name, (ArrayUInt8*)bytes);
+    cl->resolveClass();
 
     res = (jclass)(cl->getClassDelegatee(vm, (JavaObject*)pd));
   } else {

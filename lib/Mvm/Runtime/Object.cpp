@@ -14,14 +14,13 @@
 #include "mvm/Allocator.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
-#include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Thread.h"
 
 using namespace mvm;
 
 
-VirtualTable NativeString::VT(0, 0, (uintptr_t)VirtualTable::emptyTracer);
-VirtualTable PrintBuffer::VT(0, 0, (uintptr_t)PrintBuffer::staticTracer);
+VirtualTable *NativeString::VT = 0;
+VirtualTable *PrintBuffer::VT = 0;
 
 extern "C" void printFloat(float f) {
   fprintf(stderr, "%f\n", f);
@@ -41,6 +40,22 @@ extern "C" void printInt(sint32 i) {
 
 extern "C" void printObject(mvm::Object* obj) {
   fprintf(stderr, "%s\n", obj->printString());
+}
+
+
+void Object::initialise() {
+# define INIT(X) { \
+  X fake; \
+  X::VT = ((VirtualTable**)(void*)(&fake))[0]; }
+  
+  INIT(NativeString);
+  INIT(PrintBuffer);
+  
+#undef INIT
+}
+
+void PrintBuffer::TRACER {
+  ((PrintBuffer *)this)->contents()->MARK_AND_TRACE;
 }
 
 
@@ -112,137 +127,4 @@ void NativeString::print(PrintBuffer *buf) const {
     }
   }
   buf->write("\"");
-}
-
-
-void VirtualMachine::finalizerStart(mvm::Thread* th) {
-  VirtualMachine* vm = th->MyVM;
-
-  while (true) {
-    vm->FinalizationLock.lock();
-    while (vm->CurrentFinalizedIndex == 0) {
-      vm->FinalizationCond.wait(&vm->FinalizationLock);
-    }
-    vm->FinalizationLock.unlock();
-
-    while (true) {
-      vm->FinalizationQueueLock.acquire();
-      gc* res = 0;
-      if (vm->CurrentFinalizedIndex != 0) {
-        res = vm->ToBeFinalized[--vm->CurrentFinalizedIndex];
-      }
-      vm->FinalizationQueueLock.release();
-      if (!res) break;
-
-      VirtualTable* VT = res->getVirtualTable();
-      try {
-        if (VT->operatorDelete) {
-          // It's a native method!
-          destructor_t dest = (destructor_t)VT->destructor;
-          dest(res);
-        } else {
-          vm->invokeFinalizer(res);
-        }
-      } catch(...) {
-      }
-    }
-  }
-}
-
-void VirtualMachine::growQueue() {
-  if (CurrentIndex >= QueueLength) {
-    uint32 newLength = QueueLength * GROW_FACTOR;
-    gc** newQueue = new gc*[newLength];
-    for (uint32 i = 0; i < QueueLength; ++i) newQueue[i] = FinalizationQueue[i];
-    delete[] FinalizationQueue;
-    FinalizationQueue = newQueue;
-    QueueLength = newLength;
-    
-    newLength = ToBeFinalizedLength * GROW_FACTOR;
-    newQueue = new gc*[newLength];
-    for (uint32 i = 0; i < ToBeFinalizedLength; ++i) newQueue[i] = ToBeFinalized[i];
-    delete[] ToBeFinalized;
-    ToBeFinalized = newQueue;
-    ToBeFinalizedLength = newLength;
-  }
-}
-
-
-void VirtualMachine::addFinalizationCandidate(gc* obj) {
-  FinalizationQueueLock.acquire();
- 
-  if (CurrentIndex >= QueueLength) {
-    growQueue();
-  }
-  
-  FinalizationQueue[CurrentIndex++] = obj;
-  FinalizationQueueLock.release();
-}
-
-void VirtualMachine::scanFinalizationQueue() {
-  FinalizationQueueLock.acquire();
-  uint32 NewIndex = 0;
-  for (uint32 i = 0; i < CurrentIndex; ++i) {
-    gc* obj = FinalizationQueue[i];
-
-    if (!Collector::isLive(obj)) {
-      obj->markAndTrace();
-      
-      if (CurrentFinalizedIndex >= ToBeFinalizedLength) growQueue();
-      
-      /* Add to object table */
-      ToBeFinalized[CurrentFinalizedIndex++] = obj;
-    } else {
-      FinalizationQueue[NewIndex++] = obj;
-    }
-  }
-  CurrentIndex = NewIndex;
-
-  for (uint32 i = 0; i < CurrentFinalizedIndex; ++i) {
-    gc* obj = ToBeFinalized[i];
-    obj->markAndTrace();
-  }
-  FinalizationQueueLock.release();
-
-}
-
-gc* ReferenceQueue::processReference(gc* reference, VirtualMachine* vm) {
-  if (!Collector::isLive(reference)) {
-    vm->clearReferent(reference);
-    return 0;
-  }
-
-  gc* referent = vm->getReferent(reference);
-
-  if (!referent) return 0;
-
-  if (semantics == SOFT) {
-    // TODO: are we are out of memory? Consider that we always are for now.
-    if (false) {
-      referent->markAndTrace();
-    }
-  } else if (semantics == PHANTOM) {
-    // Nothing to do.
-  }
-
-  if (Collector::isLive(referent)) {
-    return reference;
-  } else {
-    vm->clearReferent(reference);
-    vm->enqueueReference(reference);
-    return 0;
-  }
-}
-
-
-void ReferenceQueue::scan(VirtualMachine* vm) {
-  uint32 NewIndex = 0;
-
-  for (uint32 i = 0; i < CurrentIndex; ++i) {
-    gc* obj = References[i];
-    processReference(obj, vm);
-  }
-
-  CurrentIndex = NewIndex;
-
 }

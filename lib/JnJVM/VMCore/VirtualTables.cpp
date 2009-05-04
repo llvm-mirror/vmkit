@@ -57,17 +57,12 @@ using namespace jnjvm;
 // Classpath with the vmdata field).
 //===----------------------------------------------------------------------===//
 
-VirtualTable VMClassLoader::VT((uintptr_t)VMClassLoader::staticDestructor,
-                               (uintptr_t)VMClassLoader::staticDestructor,
-                               (uintptr_t)VMClassLoader::staticTracer);
+#define INIT(X) VirtualTable* X::VT = 0
 
-VirtualTable LockObj::VT(0, 0, (uintptr_t)VirtualTable::emptyTracer);
+  INIT(LockObj);
+  INIT(VMClassLoader);
 
-//===----------------------------------------------------------------------===//
-// Empty tracer for static tracers of classes that do not declare static
-// variables.
-//===----------------------------------------------------------------------===//
-extern "C" void EmptyTracer(void*) {}
+#undef INIT
 
 //===----------------------------------------------------------------------===//
 // Root trace methods for Java objects. There are three types of roots:
@@ -161,8 +156,8 @@ void Class::tracer() {
   
   for (uint32 i =0; i < NR_ISOLATES; ++i) {
     TaskClassMirror &M = IsolateInfo[i];
-    if (M.staticInstance && staticTracer != EmptyTracer) {
-      staticTracer(M.staticInstance);
+    if (M.staticInstance) {
+      ((Class*)this)->staticTracer(M.staticInstance);
     }
   }
 }

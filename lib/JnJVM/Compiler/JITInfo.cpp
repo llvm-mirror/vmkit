@@ -106,8 +106,14 @@ const Type* LLVMClassInfo::getStaticType() {
     uint64 size = JnjvmModule::getTypeSize(structType);
     cl->staticSize = size;
 #ifdef WITH_TRACER
-    JavaLLVMCompiler* Mod = (JavaLLVMCompiler*)cl->classLoader->getCompiler();
-    staticTracerFunction = Mod->makeTracer(cl, true);
+    JavaLLVMCompiler* Mod = 
+      (JavaLLVMCompiler*)cl->classLoader->getCompiler();
+    if (!Mod->isStaticCompiling()) {
+      Function* F = Mod->makeTracer(cl, true);
+      cl->staticTracer = (void (*)(void*)) (uintptr_t)
+        JnjvmModule::executionEngine->getPointerToFunction(F);
+      F->deleteBody();
+    }
 #endif
   }
   return staticType;

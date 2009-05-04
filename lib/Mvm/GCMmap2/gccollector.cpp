@@ -71,42 +71,63 @@ void GCCollector::do_collect() {
 
   if(_marker)
     _marker(0);
-
-  
   status = stat_finalize;
-#ifdef HAVE_PTHREAD
-  threads->collectionFinished();
-#endif
 
-  VirtualMachine* vm = Thread::get()->MyVM;
-  
-  // Scan soft and weak reference queues.
-  vm->scanWeakReferencesQueue();
-  vm->scanSoftReferencesQueue();
-
-  // Scan finalization queue.
-  vm->scanFinalizationQueue();
-
-  // Now that the finalization queue has been scanned, scan the phantom queue.
-  vm->scanPhantomReferencesQueue();
-  
   /* finalize */
   GCChunkNode  finalizable;
   finalizable.attrape(unused_nodes);
 
+  status = stat_alloc;
+  
+  unlock();
+
   /* kill everyone */
   GCChunkNode *next = 0;
+
+#ifdef SERVICE
+  Thread* th = Thread::get();
+  VirtualMachine* OldVM = th->MyVM;
+#endif
+
+
+  for(cur=finalizable.next(); cur!=&finalizable; cur=next) {
+#ifdef SERVICE
+    mvm::VirtualMachine* NewVM = cur->meta;
+    if (NewVM) {
+      NewVM->memoryUsed -= real_nbb(cur);
+      th->MyVM = NewVM;
+      th->IsolateID = NewVM->IsolateID;
+    }
+#endif
+    register gc_header *c = cur->chunk();
+    next = cur->next();
+    
+    destructor_t dest = c->getDestructor();
+    if (dest) {
+      try {
+        dest(c);
+      } catch(...) {
+        mvm::Thread::get()->clearException();
+      }
+    }
+  }
+#ifdef SERVICE
+  th->IsolateID = OldVM->IsolateID;
+  th->MyVM = OldVM;
+#endif
+  
+  next = 0;
   for(cur=finalizable.next(); cur!=&finalizable; cur=next) {
     //printf("    !!!! reject %p [%p]\n", cur->chunk()->_2gc(), cur);
     next = cur->next();
     allocator->reject_chunk(cur);
   }
-  status = stat_alloc;
- 
-  // Collection finished. Wake up the finalizers if they are waiting.
-  Thread::get()->MyVM->wakeUpFinalizers();
 
+  lock();
 
+#ifdef HAVE_PTHREAD
+  threads->collectionFinished();
+#endif
 }
 
 void GCCollector::collect_unprotect() {

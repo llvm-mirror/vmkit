@@ -361,10 +361,13 @@ void JavaMethod::setCompiledPtr(void* ptr, const char* name) {
 }
 
 void JavaVirtualTable::setNativeTracer(uintptr_t ptr, const char* name) {
+  tracer = ptr;
   cl->classLoader->getCompiler()->setTracer(this, ptr, name);
 }
 
 void JavaVirtualTable::setNativeDestructor(uintptr_t ptr, const char* name) {
+  destructor = ptr;
+  operatorDelete = ptr;
   cl->classLoader->getCompiler()->setDestructor(this, ptr, name);
 }
 
@@ -570,7 +573,9 @@ bool UserCommonClass::isAssignableFrom(UserCommonClass* cl) {
 }
 
 bool JavaVirtualTable::isSubtypeOf(JavaVirtualTable* otherVT) {
-  
+ 
+  assert(this);
+  assert(otherVT);
   if (otherVT == ((JavaVirtualTable**)this)[otherVT->offset]) return true;
   else if (otherVT->offset != getCacheIndex()) return false;
   else if (this == otherVT) return true;
@@ -694,9 +699,6 @@ void Class::readParents(Reader& reader) {
   if (superEntry) {
     const UTF8* superUTF8 = ctpInfo->resolveClassName(superEntry);
     super = classLoader->loadName(superUTF8, false, true);
-    virtualTableSize = super->virtualTableSize;
-  } else {
-    virtualTableSize = JavaVirtualTable::getFirstJavaMethodIndex();
   }
 
   uint16 nbI = reader.readU2();
@@ -715,11 +717,15 @@ void Class::readParents(Reader& reader) {
 }
 
 void UserClass::loadParents() {
-  if (super)
+  if (super == 0) {
+    virtualTableSize = JavaVirtualTable::getFirstJavaMethodIndex();
+  } else  {
     super->resolveClass();
+    virtualTableSize = super->virtualTableSize;
+  }
 
   for (unsigned i = 0; i < nbInterfaces; i++)
-    interfaces[i]->resolveClass();
+    interfaces[i]->resolveClass(); 
 }
 
 
@@ -747,9 +753,7 @@ static void internalLoadExceptions(JavaMethod& meth) {
       reader.readU2();
 
       uint16 catche = reader.readU2();
-      if (catche) {
-        meth.classDef->ctpInfo->loadClass(catche, false);
-      }
+      if (catche) meth.classDef->ctpInfo->loadClass(catche);
     }
   }
 }
@@ -808,8 +812,7 @@ void Class::makeVT() {
   
   for (uint32 i = 0; i < nbVirtualMethods; ++i) {
     JavaMethod& meth = virtualMethods[i];
-    if (meth.name->equals(classLoader->bootstrapLoader->finalize) &&
-        meth.type->equals(classLoader->bootstrapLoader->clinitType)) {
+    if (meth.name->equals(classLoader->bootstrapLoader->finalize)) {
       meth.offset = 0;
     } else {
       JavaMethod* parent = super? 
@@ -892,7 +895,6 @@ void Class::readClass() {
   readParents(reader);
   readFields(reader);
   readMethods(reader);
-  makeVT();
   attributs = readAttributs(reader, nbAttributs);
   setIsRead();
 }
@@ -905,14 +907,19 @@ void Class::resolveClass() {
       release();
     } else if (!isResolving()) {
       setOwnerClass(JavaThread::get());
-      setIsResolving();
+      readClass();
       release();
-
+      
       loadParents();
+      makeVT();
       JavaCompiler *Comp = classLoader->getCompiler();
       Comp->resolveVirtualClass(this);
       Comp->resolveStaticClass(this);
       loadExceptions();
+      setResolved();
+      if (!needsInitialisationCheck()) {
+        setInitializationState(ready);
+      }
       if (!super) ClassArray::initialiseVT(this);
       
       bool needInit = needsInitialisationCheck();
@@ -947,12 +954,11 @@ void UserClass::resolveInnerOuterClasses() {
       for (uint16 i = 0; i < nbi; ++i) {
         uint16 inner = reader.readU2();
         uint16 outer = reader.readU2();
-        uint16 innerName = reader.readU2();
+        //uint16 innerName = 
+        reader.readU2();
         uint16 accessFlags = reader.readU2();
-        UserClass* clInner = 0;
-        UserClass* clOuter = 0;
-        if (inner) clInner = (UserClass*)ctpInfo->loadClass(inner);
-        if (outer) clOuter = (UserClass*)ctpInfo->loadClass(outer);
+        UserClass* clInner = (UserClass*)ctpInfo->loadClass(inner);
+        UserClass* clOuter = (UserClass*)ctpInfo->loadClass(outer);
 
         if (clInner == this) {
           outerClass = clOuter;
@@ -962,7 +968,6 @@ void UserClass::resolveInnerOuterClasses() {
               classLoader->allocator.Allocate(nbi * sizeof(Class*));
           }
           clInner->setInnerAccess(accessFlags);
-          if (!innerName) isAnonymous = true;
           innerClasses[nbInnerClasses++] = clInner;
         }
       }
@@ -1208,7 +1213,7 @@ bool UserClass::isNativeOverloaded(JavaMethod* meth) {
 
 bool UserClass::needsInitialisationCheck() {
   
-  if (!isResolved()) return true;
+  if (!isClassRead()) return true;
 
   if (isReady()) return false;
 
@@ -1305,12 +1310,8 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
       offset = getCacheIndex() + depth + 1;
     } else {
       offset = getCacheIndex();
-      // Add the super in the list of secondary types only if it is
-      // out of depth.
-      if (depth > getDisplayLength()) {
-        ++nbSecondaryTypes;
-        outOfDepth = 1;
-      }
+      ++nbSecondaryTypes;
+      outOfDepth = 1;
     }
 
     mvm::BumpPtrAllocator& allocator = C->classLoader->allocator;
@@ -1366,10 +1367,12 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
   
 JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
   
-  baseClassVT = C->baseClass()->virtualVT;
-  assert(baseClassVT && "Not base VT when creating an array");
+  if (C->baseClass()->isClass())
+    C->baseClass()->asClass()->resolveClass();
 
   if (!C->baseClass()->isPrimitive()) {
+    baseClassVT = C->baseClass()->virtualVT;
+
     // Copy the super VT into the current VT.
     uint32 size = (getBaseSize() - getFirstJavaMethodIndex());
     memcpy(this->getFirstJavaMethod(),
@@ -1385,45 +1388,29 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
     Classpath* upcalls = JCL->bootstrapLoader->upcalls;
     
     if (upcalls->ArrayOfObject) {
-      UserCommonClass* base = C->baseClass();
+      UserCommonClass* temp = C->baseClass();
       uint32 dim = 1;
-      while (base->isArray()) {
-        base = base->asArrayClass()->baseClass();
+      while (temp->isArray()) {
+        temp = temp->asArrayClass()->baseClass();
         ++dim;
       }
      
       bool newSecondaryTypes = false;
-      bool intf = base->isInterface();
-      const UTF8* superName = 0;
-
-      if (base->isPrimitive()) {
-        // If the base class is primitive, then the super is one
-        // dimension below, e.g. the super of int[][] is Object[].
+      bool intf = temp->isInterface();
+      if (temp->isPrimitive()) {
         --dim;
-        superName = JCL->constructArrayName(dim, C->super->name);
-      } else if (base == C->super) {
-        // If the base class is java.lang.Object, then the super is one
-        // dimension below, e.g. the super of Object[][] is Object[].
-        // Also, the class is the first class in the dimension hierarchy,
-        // so it must create a new secondary type list.
+        temp = C->super;
+      } else if (temp == C->super) {
         --dim;
         newSecondaryTypes = true;
-        superName = JCL->constructArrayName(dim, C->super->name);
       } else {
-        // If the base class is any other class, interface or not,
-        // the super is of the dimension of the current array class,
-        // and whose base class is the super of this base class.
-        superName = JCL->constructArrayName(dim, base->super->name);
+        temp = temp->super;
       }
-     
-      // Construct the super array class, e.g. java.lang.Object[] for
-      // java.lang.Class[].
-      ClassArray* super = JCL->constructArray(superName);
+      
+      const UTF8* name = JCL->constructArrayName(dim, temp->name);
+      ClassArray* super = JCL->constructArray(name);
       JavaVirtualTable* superVT = super->virtualVT;
       depth = superVT->depth + 1;
-      
-      // Record if we need to add the super in the list of secondary types.
-      uint32 addSuper = 0;
 
       uint32 length = getDisplayLength() < depth ? getDisplayLength() : depth;
       memcpy(display, superVT->display, length * sizeof(JavaVirtualTable*)); 
@@ -1432,51 +1419,27 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
         offset = getCacheIndex() + depth + 1;
       } else {
         offset = getCacheIndex();
-        // We add the super if the current class is an interface or if the super
-        // class is out of depth.
-        if (intf || depth != getDisplayLength()) addSuper = 1;
       }
         
       mvm::BumpPtrAllocator& allocator = JCL->allocator;
 
       if (!newSecondaryTypes) {
-        if (base->nbInterfaces || addSuper) {
-          // If the base class implements interfaces, we must also add the
-          // arrays of these interfaces, of the same dimension than this array
-          // class and add them to the secondary types list.
-          nbSecondaryTypes = base->nbInterfaces + superVT->nbSecondaryTypes +
-                                addSuper;
-          secondaryTypes = (JavaVirtualTable**)
-            allocator.Allocate(sizeof(JavaVirtualTable*) * nbSecondaryTypes);
-         
-          // Put the super in the list of secondary types.
-          if (addSuper) secondaryTypes[0] = superVT;
-
-          // Copy the list of secondary types of the super.
-          memcpy(secondaryTypes + addSuper, superVT->secondaryTypes,
-                 superVT->nbSecondaryTypes * sizeof(JavaVirtualTable*));
-        
-          // Add our own secondary types: the interfaces of the base class put
-          // in the dimension of the current array class.
-          for (uint32 i = 0; i < base->nbInterfaces; ++i) {
-            const UTF8* name = 
-              JCL->constructArrayName(dim, base->interfaces[i]->name);
-            ClassArray* interface = JCL->constructArray(name);
-            JavaVirtualTable* CurVT = interface->virtualVT;
-            secondaryTypes[i + superVT->nbSecondaryTypes + addSuper] = CurVT;
-          }
-        } else {
-          // If the super is not a secondary type and the base class does not
-          // implement any interface, we can reuse the list of secondary types
-          // of super.
+        if (depth < getDisplayLength()) {
           nbSecondaryTypes = superVT->nbSecondaryTypes;
           secondaryTypes = superVT->secondaryTypes;
+        } else {
+          nbSecondaryTypes = superVT->nbSecondaryTypes + 1;
+          secondaryTypes = (JavaVirtualTable**)
+            allocator.Allocate(sizeof(JavaVirtualTable*) * nbSecondaryTypes);
+          secondaryTypes[0] = this;
+          memcpy(secondaryTypes + 1 , superVT->secondaryTypes,
+                 superVT->nbSecondaryTypes * sizeof(JavaVirtualTable*));
         }
       } else {
 
         // This is an Object[....] array class. It will create the list of
-        // secondary types and all array classes of the same dimension whose
-        // base class does not have interfaces point to this array.
+        // secondary types and all array classes of the same dimension will
+        // point to this array.
 
         // If we're superior than the display limit, we must make room for one
         // slot that will contain the current VT.

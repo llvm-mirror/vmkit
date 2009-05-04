@@ -564,7 +564,6 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
   JnjvmClassLoader* ld = cl->classLoader;
   UserClassArray* res = ld->constructArray(name, cl);
   
-  // We are an initiating clas loader.
   if (res && res->classLoader != this) {
     classes->lock.lock();
     ClassMap::iterator End = classes->map.end();
@@ -573,7 +572,6 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
       classes->map.insert(std::make_pair(res->name, res));
     classes->lock.unlock();
   }
-
   return res;
 }
 
@@ -592,12 +590,6 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
     res = ((UserClass*)(I->second));
   }
   classes->lock.unlock();
-    
-  res->acquire();
-  if (!res->isClassRead()) res->readClass();
-  res->release();
-  
-
   return res;
 }
 
@@ -777,7 +769,7 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
     if (!vmdata) {
       mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();    
       JCL = new(*A) JnjvmClassLoader(*A, *vm->bootstrapLoader, loader, vm);
-      vmdata = VMClassLoader::allocate(JCL);
+      vmdata = gc_new(VMClassLoader)(JCL);
       (upcalls->vmdataClassLoader->setObjectField(loader, (JavaObject*)vmdata));
     }
     loader->release();
@@ -1047,7 +1039,6 @@ extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
     realCl->staticMethods = realCl->virtualMethods + realCl->nbVirtualMethods;
     realCl->staticFields = realCl->virtualFields + realCl->nbVirtualFields;
   }
-  cl->virtualVT->setNativeTracer(cl->virtualVT->tracer, "");
   JCL->getClasses()->map.insert(std::make_pair(cl->name, cl));
   cl->classLoader = JCL;
 }

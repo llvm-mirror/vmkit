@@ -201,10 +201,6 @@ public:
 
 
     unlock();
-
-    if (vt->destructor) 
-      mvm::Thread::get()->MyVM->addFinalizationCandidate((gc*)p->_2gc());
-
     return p->_2gc();
 #endif
   }
@@ -286,13 +282,6 @@ public:
 
   static inline bool isMarked(GCChunkNode *node) { 
     return node->mark() == (current_mark & 1);
-  }
-
-  static bool isLive(void* ptr) {
-    GCChunkNode *node = o2node(ptr);
-
-    if(node && isMarked(node)) return true;
-    else return false;
   }
   
   static inline void mark(GCChunkNode *node) {

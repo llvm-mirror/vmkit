@@ -113,14 +113,10 @@ public:
 
 private:
   
-  /// mainThread - The initial thread of this JVM.
+  /// bootstrapThread - The initial thread of this JVM.
   ///
-  JavaThread* mainThread;
+  JavaThread* bootstrapThread;
   
-  /// finalizerThread - The initial thread of this JVM.
-  ///
-  JavaThread* finalizerThread;
-   
   /// CreateError - Creates a Java object of the specified exception class
   /// and calling its <init> function.
   ///
@@ -305,19 +301,11 @@ public:
   
   /// setBootstrapThread - Set the bootstrap thread of this VM.
   ///
-  void setMainThread(JavaThread* th) { mainThread = th; }
+  void setBootstrapThread(JavaThread* th) { bootstrapThread = th; }
   
   /// getBootstrapThread - Get the bootstrap thread of this VM.
   ///
-  JavaThread* getMainThread() const { return mainThread; }
-  
-  /// setFinalizerThread - Set the first finalizer thread of this VM.
-  ///
-  void setFinalizerThread(JavaThread* th) { finalizerThread = th; }
-  
-  /// getFinalizerThread - Get the finalizer thread of this VM.
-  ///
-  JavaThread* getFinalizerThread() const { return finalizerThread; }
+  JavaThread* getBootstrapThread() const { return bootstrapThread; }
 
   /// ~Jnjvm - Destroy the JVM.
   ///
@@ -360,13 +348,6 @@ public:
   virtual void stopService();
 #endif
 
-protected:
-  virtual void invokeFinalizer(gc*);
-
-public:
-  virtual void clearReferent(gc*);
-  virtual gc* getReferent(gc*);
-  virtual bool enqueueReference(gc*);
 
 };
 

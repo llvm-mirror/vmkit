@@ -18,12 +18,12 @@
 
 #define COMPILE_METHODS(cl) \
   for (CommonClass::method_iterator i = cl->virtualMethods.begin(), \
-            e = cl->virtualMethods.end(); i!= e; ++i) { \
+            e = cl->virtualMethods.end(); i!= e; +i) { \
     i->second->compiledPtr(); \
   } \
   \
   for (CommonClass::method_iterator i = cl->staticMethods.begin(), \
-            e = cl->staticMethods.end(); i!= e; ++i) { \
+            e = cl->staticMethods.end(); i!= e; +i) { \
     i->second->compiledPtr(); \
   }
 
@@ -38,9 +38,7 @@ JavaField*  Classpath::vmdataVMThread;
 JavaMethod* Classpath::finaliseCreateInitialThread;
 JavaMethod* Classpath::initVMThread;
 JavaMethod* Classpath::groupAddThread;
-JavaMethod* Classpath::initGroup;
-JavaField*  Classpath::groupName;
-JavaField*  Classpath::threadName;
+JavaField*  Classpath::name;
 JavaField*  Classpath::priority;
 JavaField*  Classpath::daemon;
 JavaField*  Classpath::group;
@@ -177,7 +175,6 @@ JavaMethod* Classpath::InitUnknownError;
 JavaMethod* Classpath::InitClassNotFoundException;
 JavaMethod* Classpath::InitArithmeticException;
 JavaMethod* Classpath::InitObject;
-JavaMethod* Classpath::FinalizeObject;
 
 JavaMethod* Classpath::ErrorWithExcpNoClassDefFoundError;
 JavaMethod* Classpath::ErrorWithExcpExceptionInInitializerError;
@@ -208,9 +205,6 @@ JavaField* Classpath::methodClass;
 JavaField* Classpath::fieldClass;
 JavaField* Classpath::constructorClass;
 
-JavaMethod* Classpath::EnqueueReference;
-Class*      Classpath::newReference;
-
 #endif
 
 void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
@@ -220,7 +214,7 @@ void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
   myth->javaThread = th;
   JavaObject* vmth = newVMThread->doNew(vm);
   
-  threadName->setObjectField(th, (JavaObject*)vm->asciizToStr(thName));
+  name->setObjectField(th, (JavaObject*)vm->asciizToStr(thName));
   priority->setInt32Field(th, (uint32)1);
   daemon->setInt8Field(th, (uint32)0);
   vmThread->setObjectField(th, vmth);
@@ -245,22 +239,11 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   threadGroup->resolveClass();
   threadGroup->initialiseClass(vm);
 
-  // Create the main thread.
+  // Create the main thread
   void* Stat = threadGroup->getStaticInstance();
   JavaObject* RG = rootGroup->getObjectField(Stat);
-  assert(vm->getMainThread() && "VM did not set its bootstrap thread");
-  CreateJavaThread(vm, vm->getMainThread(), "main", RG);
-
-  // Create the "system" group.
-  JavaObject* SystemGroup = threadGroup->doNew(vm);
-  initGroup->invokeIntSpecial(vm, threadGroup, SystemGroup);
-  JavaObject* systemName = (JavaObject*)vm->asciizToStr("system");
-  groupName->setObjectField(SystemGroup, systemName);
-
-  // And create the finalizer thread.
-  assert(vm->getFinalizerThread() && "VM did not set its finalizer thread");
-  CreateJavaThread(vm, vm->getFinalizerThread(), "Finalizer", SystemGroup);
-
+  assert(vm->getBootstrapThread() && "VM did not set its bootstrap thread");
+  CreateJavaThread(vm, vm->getBootstrapThread(), "main", RG);
 }
 
 extern "C" JavaString* nativeInternString(JavaString* obj) {
@@ -339,44 +322,6 @@ extern "C" JavaObject* nativeGetDeclaredAnnotations() {
 extern "C" void nativePropertiesPostInit(JavaObject* prop);
 
 
-extern "C" void nativeInitWeakReference(JavaObjectReference* reference,
-                                        JavaObject* referent) {
-  reference->init(referent, 0);
-  JavaThread::get()->getJVM()->addWeakReference(reference);
-
-}
-
-extern "C" void nativeInitWeakReferenceQ(JavaObjectReference* reference,
-                                         JavaObject* referent,
-                                         JavaObject* queue) {
-  reference->init(referent, queue);
-  JavaThread::get()->getJVM()->addWeakReference(reference);
-
-}
-
-extern "C" void nativeInitSoftReference(JavaObjectReference* reference,
-                                        JavaObject* referent) {
-  reference->init(referent, 0);
-  JavaThread::get()->getJVM()->addSoftReference(reference);
-
-}
-
-extern "C" void nativeInitSoftReferenceQ(JavaObjectReference* reference,
-                                         JavaObject* referent,
-                                         JavaObject* queue) {
-  reference->init(referent, queue);
-  JavaThread::get()->getJVM()->addSoftReference(reference);
-
-}
-
-extern "C" void nativeInitPhantomReferenceQ(JavaObjectReference* reference,
-                                            JavaObject* referent,
-                                            JavaObject* queue) {
-  reference->init(referent, queue);
-  JavaThread::get()->getJVM()->addPhantomReference(reference);
-
-}
-
 extern "C" void nativeJavaObjectClassTracer(JavaObjectClass* obj) {
   JavaObjectClass::staticTracer(obj);
 }
@@ -391,10 +336,6 @@ extern "C" void nativeJavaObjectMethodTracer(JavaObjectMethod* obj) {
 
 extern "C" void nativeJavaObjectConstructorTracer(JavaObjectConstructor* obj) {
   JavaObjectConstructor::staticTracer(obj);
-}
-
-extern "C" void nativeJavaObjectReferenceTracer(JavaObjectReference* obj) {
-  JavaObjectReference::staticTracer(obj);
 }
 
 extern "C" void nativeJavaObjectVMThreadDestructor(JavaObjectVMThread* obj) {
@@ -664,9 +605,6 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   InitObject = UPCALL_METHOD(loader, "java/lang/Object", "<init>", "()V",
                              ACC_VIRTUAL);
-  
-  FinalizeObject = UPCALL_METHOD(loader, "java/lang/Object", "finalize", "()V",
-                                 ACC_VIRTUAL);
 
   newThread = 
     UPCALL_CLASS(loader, "java/lang/Thread");
@@ -701,15 +639,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_METHOD(loader, "java/lang/ThreadGroup", "addThread",
                   "(Ljava/lang/Thread;)V", ACC_VIRTUAL);
   
-  initGroup = 
-    UPCALL_METHOD(loader, "java/lang/ThreadGroup", "<init>",
-                  "()V", ACC_VIRTUAL);
-  
-  groupName = 
-    UPCALL_FIELD(loader, "java/lang/ThreadGroup", "name", "Ljava/lang/String;",
-                 ACC_VIRTUAL);
-  
-  threadName = 
+  name = 
     UPCALL_FIELD(loader, "java/lang/Thread", "name", "Ljava/lang/String;",
                  ACC_VIRTUAL);
   
@@ -810,104 +740,33 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
                   ACC_VIRTUAL);
   getAnnotations->setCompiledPtr((void*)(intptr_t)nativeGetDeclaredAnnotations,
                                  "nativeGetDeclaredAnnotations");
-
-//===----------------------------------------------------------------------===//
-//
-// Weak/Soft/Phantom references support. We modify each constructor to register
-// the reference to the VM. Also, the tracer of the Reference class is modified
-// to not trace the referent.
-//
-//===----------------------------------------------------------------------===//
-
- 
-  newReference =
-    loader->loadName(loader->asciizConstructUTF8("java/lang/ref/Reference"),
-                     false, false);
   
-  newReference->getVirtualVT()->setNativeTracer(
-      (uintptr_t)nativeJavaObjectReferenceTracer,
-      "nativeJavaObjectReferenceTracer");
-  
-  assert(!newReference->isResolved() && "Reference class already resolved");
-  
-  EnqueueReference = 
-    UPCALL_METHOD(loader, "java/lang/ref/Reference",  "enqueue", "()Z",
-                  ACC_VIRTUAL);
- 
-  JavaMethod* initWeakReference =
-    UPCALL_METHOD(loader, "java/lang/ref/WeakReference", "<init>",
-                  "(Ljava/lang/Object;)V",
-                  ACC_VIRTUAL);
-  initWeakReference->setCompiledPtr((void*)(intptr_t)nativeInitWeakReference,
-                                    "nativeInitWeakReference");
-  
-  initWeakReference =
-    UPCALL_METHOD(loader, "java/lang/ref/WeakReference", "<init>",
-                  "(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V",
-                  ACC_VIRTUAL);
-  initWeakReference->setCompiledPtr((void*)(intptr_t)nativeInitWeakReferenceQ,
-                                    "nativeInitWeakReferenceQ");
-  
-  JavaMethod* initSoftReference =
-    UPCALL_METHOD(loader, "java/lang/ref/SoftReference", "<init>",
-                  "(Ljava/lang/Object;)V",
-                  ACC_VIRTUAL);
-  initSoftReference->setCompiledPtr((void*)(intptr_t)nativeInitSoftReference,
-                                    "nativeInitSoftReference");
-  
-  initSoftReference =
-    UPCALL_METHOD(loader, "java/lang/ref/WeakReference", "<init>",
-                  "(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V",
-                  ACC_VIRTUAL);
-  initSoftReference->setCompiledPtr((void*)(intptr_t)nativeInitSoftReferenceQ,
-                                    "nativeInitSoftReferenceQ");
-  
-  JavaMethod* initPhantomReference =
-    UPCALL_METHOD(loader, "java/lang/ref/PhantomReference", "<init>",
-                  "(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V",
-                  ACC_VIRTUAL);
-  initPhantomReference->setCompiledPtr(
-      (void*)(intptr_t)nativeInitPhantomReferenceQ,
-      "nativeInitPhantomReferenceQ");
-  
-
-//===----------------------------------------------------------------------===//
-//
-// To make classes non GC-allocated, we have to bypass the tracer functions of
-// java.lang.Class, java.lang.reflect.Field, java.lang.reflect.Method and
-// java.lang.reflect.constructor. The new tracer functions trace the classloader
-// instead of the class/field/method.
-//
-//===----------------------------------------------------------------------===//
+  //===----------------------------------------------------------------------===//
+  //
+  // To make classes non GC-allocated, we have to bypass the tracer functions of
+  // java.lang.Class, java.lang.reflect.Field, java.lang.reflect.Method and
+  // java.lang.reflect.constructor. The new tracer functions trace the classloader
+  // instead of the class/field/method.
+  //
+  //===----------------------------------------------------------------------===//
  
   newClass->getVirtualVT()->setNativeTracer(
       (uintptr_t)nativeJavaObjectClassTracer,
-      "nativeJavaObjectClassTracer");
-  
+       "nativeJavaObjectClassTracer");
+
   newConstructor->getVirtualVT()->setNativeTracer(
       (uintptr_t)nativeJavaObjectConstructorTracer,
       "nativeJavaObjectConstructorTracer");
-  
-  newMethod->getVirtualVT()->setNativeTracer(
+
+   newMethod->getVirtualVT()->setNativeTracer(
       (uintptr_t)nativeJavaObjectMethodTracer,
       "nativeJavaObjectMethodTracer");
-  
-  newField->getVirtualVT()->setNativeTracer(
+
+   newField->getVirtualVT()->setNativeTracer(
       (uintptr_t)nativeJavaObjectFieldTracer,
-      "nativeJavaObjectFieldTracer");
-  
-
-  newVMThread->getVirtualVT()->setNativeDestructor(
+      "nativeJavaObjectFieldTracer"); 
+ 
+   newVMThread->getVirtualVT()->setNativeDestructor(
       (uintptr_t)nativeJavaObjectVMThreadDestructor,
-      "nativeJavaObjectVMThreadDestructor");
-}
-
-gc* Jnjvm::getReferent(gc* _obj) {
-  JavaObjectReference* obj = (JavaObjectReference*)_obj;
-  return obj->getReferent();
-}
-
-void Jnjvm::clearReferent(gc* _obj) {
-  JavaObjectReference* obj = (JavaObjectReference*)_obj;
-  obj->setReferent(0);
+      "nativeJavaObjectVMThreadDestructorr");
 }

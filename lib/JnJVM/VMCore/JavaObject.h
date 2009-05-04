@@ -107,7 +107,7 @@ public:
 
   /// VT - LockObj is GC-allocated, so we must make the VT explicit.
   ///
-  static VirtualTable VT;
+  static VirtualTable* VT;
 
   ~LockObj() {}
   LockObj() {}
