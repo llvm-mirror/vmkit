@@ -1563,15 +1563,18 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow,
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   Class* cl = (Class*)(ctpInfo->getMethodClassIfLoaded(index));
   Value* node = 0;
+  bool needsInit = true;
   if (cl && cl->isResolved()) {
     if (alreadyResolved) (*alreadyResolved) = cl;
     node = TheCompiler->getNativeClass(cl);
+    needsInit = needsInitialisationCheck(cl, compilingClass);
   } else {
     node = getConstantPoolAt(index, module->ClassLookupFunction,
                              module->JavaClassType, 0, doThrow);
   }
-  
-  if (!(!clinit || (cl && !needsInitialisationCheck(cl, compilingClass)))) {
+ 
+
+  if (clinit && needsInit) {
     if (node->getType() != module->JavaClassType) {
       node = new BitCastInst(node, module->JavaClassType, "", currentBlock);
     }
