@@ -552,4 +552,28 @@ jclass Cl) {
 
   return res;
 }
+
+JNIEXPORT jboolean Java_java_lang_VMClass_isAnonymousClass(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz, 
+#endif
+jclass Cl) {
+ 
+  jboolean res = false;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+  
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = 
+    UserCommonClass::resolvedImplClass(vm, (JavaObject*)Cl, false)->asClass();
+
+  if (cl) res = cl->isAnonymous;
+
+  END_NATIVE_EXCEPTION
+
+  return res;
+}
+
+
 }
