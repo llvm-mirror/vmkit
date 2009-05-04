@@ -947,7 +947,6 @@ void UserClass::resolveInnerOuterClasses() {
     Attribut* attribut = lookupAttribut(Attribut::innerClassesAttribut);
     if (attribut != 0) {
       Reader reader(attribut, getBytes());
-      uint16 temp = 0;
       uint16 nbi = reader.readU2();
       for (uint16 i = 0; i < nbi; ++i) {
         uint16 inner = reader.readU2();
@@ -962,7 +961,7 @@ void UserClass::resolveInnerOuterClasses() {
         if (clInner == this) {
           outerClass = clOuter;
         } else if (clOuter == this) {
-          if (!temp) {
+          if (!innerClasses) {
             innerClasses = (Class**)
               classLoader->allocator.Allocate(nbi * sizeof(Class*));
           }
