@@ -528,7 +528,8 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 jobject throwable) {
-  JavaThread::get()->throwException((JavaObject*)throwable);
+  assert(throwable && "Using internal VM throw exception without exception");
+  JavaThread::get()->pendingException = (JavaObject*)throwable;
 }
 
 JNIEXPORT jobjectArray Java_java_lang_VMClass_getDeclaredAnnotations(
