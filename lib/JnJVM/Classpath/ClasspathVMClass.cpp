@@ -327,9 +327,12 @@ jclass Cl1, jclass Cl2) {
   
   BEGIN_NATIVE_EXCEPTION(0)
 
+  if (!Cl2) JavaThread::get()->getJVM()->nullPointerException("");
+
   UserCommonClass* cl1 = ((JavaObjectClass*)Cl1)->getClass();
   UserCommonClass* cl2 = ((JavaObjectClass*)Cl2)->getClass();
 
+  if (cl1->isClass()) cl1->asClass()->resolveClass();
   if (cl2->asClass()) cl2->asClass()->resolveClass();
   res = cl2->isAssignableFrom(cl1);
 
