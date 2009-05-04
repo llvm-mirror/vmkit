@@ -260,4 +260,24 @@ JavaObjectMethod* Meth) {
   return res;
 }
 
+JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_getSignature(
+#ifdef NATIVE_JNI
+JNIEnv *env, 
+#endif
+JavaObjectMethod* Meth) {
+
+  jobject result = 0;
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
+  verifyNull(Meth);
+  JavaMethod* meth = Meth->getInternalMethod();
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  result = (jobject)(vm->UTF8ToStr(meth->type));
+  
+  END_NATIVE_EXCEPTION
+
+  return result;
+}
+
 }
