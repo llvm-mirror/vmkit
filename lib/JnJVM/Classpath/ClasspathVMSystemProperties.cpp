@@ -115,8 +115,7 @@ jobject _prop) {
   if (!tmp) tmp = "";
   setProperty(vm, prop, "user.dir", tmp);
   
-  //setProperty(vm, prop, "gnu.classpath.nio.charset.provider.iconv", "true")
-  
+  setProperty(vm, prop, "gnu.classpath.nio.charset.provider.iconv", "true"); 
   setProperty(vm, prop, "file.encoding", "ISO8859_1");
   setProperty(vm, prop, "gnu.java.util.zoneinfo.dir", "/usr/share/zoneinfo");
 
