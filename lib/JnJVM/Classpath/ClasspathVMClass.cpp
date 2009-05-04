@@ -506,10 +506,23 @@ jclass Cl, bool publicOnly) {
   if (cl) {
     cl->resolveInnerOuterClasses();
     UserClassArray* array = vm->upcalls->constructorArrayClass;
-    ArrayObject* res = (ArrayObject*)array->doNew(cl->nbInnerClasses, vm);
+    
+    uint16 sizeArray = 0;
+
+    if (publicOnly) {
+      for (uint16 i = 0; i < cl->nbInnerClasses; ++i) {
+        UserClass* klass = cl->innerClasses[i];
+        if (isPublic(klass->innerAccess)) ++sizeArray;
+      }
+    } else {
+      sizeArray = cl->nbInnerClasses;
+    }
+
+    ArrayObject* res = (ArrayObject*)array->doNew(sizeArray, vm);
     for (uint16 i = 0; i < cl->nbInnerClasses; ++i) {
       UserClass* klass = cl->innerClasses[i];
-      res->elements[i] = klass->getClassDelegatee(vm); 
+      if (!publicOnly || isPublic(klass->innerAccess))
+        res->elements[i] = klass->getClassDelegatee(vm); 
     }
     result = (jobject)res;
   }
