@@ -16,6 +16,8 @@
 
 #include "types.h"
 
+#include "llvm/Target/TargetMachine.h"
+
 namespace llvm {
   class Constant;
   class ConstantFP;
@@ -171,7 +173,8 @@ public:
   
   static uint64 getTypeSize(const llvm::Type* type);
   static void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
-  static void initialise(bool Fast = false, llvm::Module* TheModule = 0,
+  static void initialise(llvm::CodeGenOpt::Level = llvm::CodeGenOpt::Default,
+                         llvm::Module* TheModule = 0,
                          llvm::TargetMachine* TheTarget = 0);
 
   static int disassemble(unsigned int* addr);

@@ -41,7 +41,8 @@ namespace mvm {
   }
 }
 
-void MvmModule::initialise(bool Fast, Module* M, TargetMachine* T) {
+void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
+                           TargetMachine* T) {
   llvm::NoFramePointerElim = true;
 #if DWARF_EXCEPTIONS
   llvm::ExceptionHandling = true;
@@ -53,7 +54,7 @@ void MvmModule::initialise(bool Fast, Module* M, TargetMachine* T) {
     globalModuleProvider = new ExistingModuleProvider (globalModule);
 
     executionEngine = ExecutionEngine::createJIT(globalModuleProvider, 0,
-                                                 0, Fast);
+                                                 0, level);
   
     std::string str = 
       executionEngine->getTargetData()->getStringRepresentation();

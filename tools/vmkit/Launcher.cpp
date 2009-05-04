@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
     }
   }
   
-  mvm::MvmModule::initialise(Fast);
+  mvm::MvmModule::initialise(Fast ? CodeGenOpt::None : CodeGenOpt::Aggressive);
   mvm::Object::initialise();
   Collector::initialise(0);
 

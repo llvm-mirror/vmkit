@@ -206,10 +206,10 @@ int main(int argc, char **argv) {
                                getStringRepresentation());
 
 
-      mvm::MvmModule::initialise(false, TheModule, TheTarget);
+      mvm::MvmModule::initialise(CodeGenOpt::Default, TheModule, TheTarget);
       Comp = new JavaAOTCompiler("AOT");
     } else {
-      mvm::MvmModule::initialise(true);
+      mvm::MvmModule::initialise();
       Comp = new JavaJITCompiler("JIT");
     }
 
