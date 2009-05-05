@@ -58,6 +58,10 @@ int main(int argc, char **argv) {
       gccArgv[gccArgc++] = argv[i];
     } else if (argv[i][0] == '-' && argv[i][1] == 'W') {
       gccArgv[gccArgc++] = argv[i];
+    } else if (argv[i][0] == '-' && argv[i][1] == 'g') {
+      gccArgv[gccArgc++] = argv[i];
+    } else if (argv[i][0] == '-' && argv[i][1] == 'p' && argv[i][2] == 'g') {
+      gccArgv[gccArgc++] = argv[i];
     } else if (argv[i][0] == '-' && argv[i][1] == 'o') {
       gccArgv[gccArgc++] = argv[i++];
       gccArgv[gccArgc++] = argv[i];
