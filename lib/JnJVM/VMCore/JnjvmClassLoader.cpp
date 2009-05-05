@@ -59,6 +59,8 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
                                            bool dlLoad) : 
     JnjvmClassLoader(Alloc) {
   
+	TheCompiler = Comp;
+  
   hashUTF8 = new(allocator) UTF8Map(allocator, 0);
   classes = new(allocator) ClassMap();
   javaTypes = new(allocator) TypeMap(); 
@@ -90,7 +92,9 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
     }
     
     if (SuperArray) {
-      ClassArray::SuperArray = (Class*)SuperArray->getInternal();
+      assert(TheCompiler && 
+					   "Loading libvmjc"DYLD_EXTENSION" requires a compiler");
+			ClassArray::SuperArray = (Class*)SuperArray->getInternal();
       
       // Get the native classes.
       upcalls->OfVoid = (ClassPrimitive*)dlsym(nativeHandle, "void");
@@ -242,7 +246,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
 
 #undef DEF_UTF8
   
-  TheCompiler = Comp;
   
 }
 
@@ -1032,16 +1035,20 @@ Class* JnjvmClassLoader::loadClassFromSelf(Jnjvm* vm, const char* name) {
 // Extern "C" functions called by the vmjc static intializer.
 extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
                                         CommonClass* cl) {
-  // To avoid data alignment in the llvm assembly emitter, we set the
-  // staticMethods and staticFields fields here.
+  cl->classLoader = JCL;
+  
   if (cl->isClass()) {
     Class* realCl = cl->asClass();
+		// To avoid data alignment in the llvm assembly emitter, we set the
+  	// staticMethods and staticFields fields here.
     realCl->staticMethods = realCl->virtualMethods + realCl->nbVirtualMethods;
     realCl->staticFields = realCl->virtualFields + realCl->nbVirtualFields;
+  	cl->virtualVT->setNativeTracer(cl->virtualVT->tracer, "");
   }
-  cl->classLoader = JCL;
-  cl->virtualVT->setNativeTracer(cl->virtualVT->tracer, "");
-  JCL->getClasses()->map.insert(std::make_pair(cl->name, cl));
+
+	if (!cl->isPrimitive())
+	  JCL->getClasses()->map.insert(std::make_pair(cl->name, cl));
+
 }
 
 extern "C" void vmjcGetClassArray(JnjvmClassLoader* JCL, ClassArray** ptr,
