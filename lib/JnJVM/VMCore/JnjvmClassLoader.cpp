@@ -545,7 +545,7 @@ UserCommonClass* JnjvmClassLoader::loadBaseClass(const UTF8* name,
     UserCommonClass* baseClass = loadBaseClass(name, start + 1, len - 1);
     JnjvmClassLoader* loader = baseClass->classLoader;
     const UTF8* arrayName = name->extract(loader->hashUTF8, start, start + len);
-    return loader->constructArray(arrayName);
+    return loader->constructArray(arrayName, baseClass);
   } else if (name->elements[start] == I_REF) {
     const UTF8* componentName = name->extract(hashUTF8,
                                               start + 1, start + len - 1);
@@ -562,10 +562,13 @@ UserCommonClass* JnjvmClassLoader::loadBaseClass(const UTF8* name,
 
 
 UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
+  ClassArray* res = (ClassArray*)lookupClass(name);
+  if (res) return res;
+
   UserCommonClass* cl = loadBaseClass(name, 1, name->size - 1);
   assert(cl && "no base class for an array");
   JnjvmClassLoader* ld = cl->classLoader;
-  UserClassArray* res = ld->constructArray(name, cl);
+  res = ld->constructArray(name, cl);
   
   if (res && res->classLoader != this) {
     classes->lock.lock();

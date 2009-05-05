@@ -1400,13 +1400,14 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
      
       bool newSecondaryTypes = false;
       bool intf = base->isInterface();
-      const UTF8* superName = 0;
-
+      ClassArray* super = 0;
+      
       if (base->isPrimitive()) {
         // If the base class is primitive, then the super is one
         // dimension below, e.g. the super of int[][] is Object[].
         --dim;
-        superName = JCL->constructArrayName(dim, C->super->name);
+        const UTF8* superName = JCL->constructArrayName(dim, C->super->name);
+        super = JCL->constructArray(superName);
       } else if (base == C->super) {
         // If the base class is java.lang.Object, then the super is one
         // dimension below, e.g. the super of Object[][] is Object[].
@@ -1414,17 +1415,17 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
         // so it must create a new secondary type list.
         --dim;
         newSecondaryTypes = true;
-        superName = JCL->constructArrayName(dim, C->super->name);
+        super = C->baseClass()->asArrayClass();
       } else {
         // If the base class is any other class, interface or not,
         // the super is of the dimension of the current array class,
         // and whose base class is the super of this base class.
-        superName = JCL->constructArrayName(dim, base->super->name);
+        const UTF8* superName = JCL->constructArrayName(dim, base->super->name);
+        JnjvmClassLoader* superLoader = base->super->classLoader;
+        super = superLoader->constructArray(superName);
       }
-     
-      // Construct the super array class, e.g. java.lang.Object[] for
-      // java.lang.Class[].
-      ClassArray* super = JCL->constructArray(superName);
+    
+      assert(super && "No super found");
       JavaVirtualTable* superVT = super->virtualVT;
       depth = superVT->depth + 1;
       
