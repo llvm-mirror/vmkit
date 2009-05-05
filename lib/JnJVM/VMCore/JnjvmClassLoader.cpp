@@ -1039,9 +1039,9 @@ extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
     realCl->staticMethods = realCl->virtualMethods + realCl->nbVirtualMethods;
     realCl->staticFields = realCl->virtualFields + realCl->nbVirtualFields;
   }
+  cl->classLoader = JCL;
   cl->virtualVT->setNativeTracer(cl->virtualVT->tracer, "");
   JCL->getClasses()->map.insert(std::make_pair(cl->name, cl));
-  cl->classLoader = JCL;
 }
 
 extern "C" void vmjcGetClassArray(JnjvmClassLoader* JCL, ClassArray** ptr,
