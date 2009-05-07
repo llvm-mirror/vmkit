@@ -91,6 +91,8 @@ void JavaThread::startJava() {
   void** cur = (void**)FRAME_PTR();
   cur = (void**)cur[0];
   
+  // assert(!(addresses.size() % 2) && "Wrong stack");
+  
   addresses.push_back(cur);
 }
 
