@@ -107,21 +107,22 @@ extern "C" void* jnjvmVirtualFieldLookup(UserClass* caller, uint32 index) {
 
   UserConstantPool* ctpInfo = caller->getConstantPool();
   if (ctpInfo->ctpRes[index]) {
-    return ctpInfo->ctpRes[index];
-  }
+    res = ctpInfo->ctpRes[index];
+  } else {
   
-  UserCommonClass* cl = 0;
-  const UTF8* utf8 = 0;
-  Typedef* sign = 0;
+    UserCommonClass* cl = 0;
+    const UTF8* utf8 = 0;
+    Typedef* sign = 0;
   
-  ctpInfo->resolveField(index, cl, utf8, sign);
+    ctpInfo->resolveField(index, cl, utf8, sign);
  
-  UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
-  JavaField* field = lookup->lookupField(utf8, sign->keyName, false, true, 0);
+    UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
+    JavaField* field = lookup->lookupField(utf8, sign->keyName, false, true, 0);
   
-  ctpInfo->ctpRes[index] = (void*)field->ptrOffset;
+    ctpInfo->ctpRes[index] = (void*)field->ptrOffset;
   
-  res = (void*)field->ptrOffset;
+    res = (void*)field->ptrOffset;
+  }
 
   END_NATIVE_EXCEPTION
 
@@ -143,29 +144,30 @@ extern "C" void* jnjvmStaticFieldLookup(UserClass* caller, uint32 index) {
   UserConstantPool* ctpInfo = caller->getConstantPool();
   
   if (ctpInfo->ctpRes[index]) {
-    return ctpInfo->ctpRes[index];
-  }
+    res = ctpInfo->ctpRes[index];
+  } else {
   
-  UserCommonClass* cl = 0;
-  UserClass* fieldCl = 0;
-  const UTF8* utf8 = 0;
-  Typedef* sign = 0;
+    UserCommonClass* cl = 0;
+    UserClass* fieldCl = 0;
+    const UTF8* utf8 = 0;
+    Typedef* sign = 0;
   
-  ctpInfo->resolveField(index, cl, utf8, sign);
+    ctpInfo->resolveField(index, cl, utf8, sign);
  
-  assert(cl->asClass() && "Lookup a field of something not an array");
-  JavaField* field = cl->asClass()->lookupField(utf8, sign->keyName, true,
-                                                true, &fieldCl);
+    assert(cl->asClass() && "Lookup a field of something not an array");
+    JavaField* field = cl->asClass()->lookupField(utf8, sign->keyName, true,
+                                                  true, &fieldCl);
+    
+    fieldCl->initialiseClass(JavaThread::get()->getJVM());
+    void* obj = ((UserClass*)fieldCl)->getStaticInstance();
   
-  fieldCl->initialiseClass(JavaThread::get()->getJVM());
-  void* obj = ((UserClass*)fieldCl)->getStaticInstance();
+    assert(obj && "No static instance in static field lookup");
   
-  assert(obj && "No static instance in static field lookup");
-  
-  void* ptr = (void*)((uint64)obj + field->ptrOffset);
-  ctpInfo->ctpRes[index] = ptr;
+    void* ptr = (void*)((uint64)obj + field->ptrOffset);
+    ctpInfo->ctpRes[index] = ptr;
    
-  res = ptr;
+    res = ptr;
+  }
 
   END_NATIVE_EXCEPTION
 
