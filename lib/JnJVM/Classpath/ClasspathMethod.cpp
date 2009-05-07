@@ -119,6 +119,7 @@ static jobject proceed(JavaObjectMethod* Meth, jobject _obj, jobject _args,
       }
 
       if (isInterface(cl->access)) {
+        cl->initialiseClass(vm);
         UserClass* methodCl = 0;
         UserClass* lookup = objCl->isArray() ? objCl->super : objCl->asClass();
         meth = lookup->lookupMethod(meth->name, meth->type, false, true,
