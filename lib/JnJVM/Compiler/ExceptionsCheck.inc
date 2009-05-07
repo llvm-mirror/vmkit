@@ -15,7 +15,7 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
                                                         currentBlock);
     
     // Get the Java exception.
-    Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+    Value* obj = 0;
     
     BasicBlock* ifNormal = createBasicBlock("no exception block");
   
@@ -29,11 +29,16 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
         F == module->GetConstantPoolAtFunction ||
         F == module->GetArrayClassFunction ||
         F == module->GetClassDelegateeFunction) {
+      // Make the load volatile to force the instruction after the call.
+      // Otherwise, LLVM will merge the load with a previous load because
+      // the function is readnone.
+      obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
       test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
       test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
       Value* T = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
+      obj = new LoadInst(javaExceptionPtr, "", currentBlock);
       test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
     }
 
@@ -67,7 +72,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
                                                         currentBlock);
     
     // Get the Java exception.
-    Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+    Value* obj = 0;
     
     BasicBlock* ifNormal = createBasicBlock("no exception block");
   
@@ -77,11 +82,13 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
         F == module->GetConstantPoolAtFunction ||
         F == module->GetArrayClassFunction ||
         F == module->GetClassDelegateeFunction) {
+      obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
       test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
       test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
       Value* T = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
+      obj = new LoadInst(javaExceptionPtr, "", currentBlock);
       test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
     }
 
@@ -116,7 +123,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
                                                         currentBlock);
     
     // Get the Java exception.
-    Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+    Value* obj = 0;
     
     BasicBlock* ifNormal = createBasicBlock("no exception block");
     
@@ -126,11 +133,13 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
         F == module->GetConstantPoolAtFunction ||
         F == module->GetArrayClassFunction ||
         F == module->GetClassDelegateeFunction) {
+      obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
       test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
       test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
       Value* T = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
+      obj = new LoadInst(javaExceptionPtr, "", currentBlock);
       test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
     }
   
@@ -162,7 +171,7 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
                                                         currentBlock);
     
     // Get the Java exception.
-    Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+    Value* obj = 0;
     
     BasicBlock* ifNormal = createBasicBlock("no exception block");
   
@@ -172,11 +181,13 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
         F == module->GetConstantPoolAtFunction ||
         F == module->GetArrayClassFunction ||
         F == module->GetClassDelegateeFunction) {
+      obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
       test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
       test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
       Value* T = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
+      obj = new LoadInst(javaExceptionPtr, "", currentBlock);
       test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
     }
 
