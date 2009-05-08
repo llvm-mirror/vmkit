@@ -17,6 +17,7 @@
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "Reader.h"
 
 using namespace jnjvm;
 
@@ -120,7 +121,14 @@ jobject pd) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  
+ 
+  // Before creating a class, do a check on the bytes.  
+  Reader reader((ArrayUInt8*)bytes);
+  uint32 magic = reader.readU4();
+  if (magic != Jnjvm::Magic) {
+    JavaThread::get()->getJVM()->classFormatError("bad magic number");
+  }
+
   JnjvmClassLoader* JCL = 
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
   
