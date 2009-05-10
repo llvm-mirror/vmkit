@@ -258,7 +258,7 @@ mvm::LockNormal MvmModule::protectEngine;
 
 
 uint64 MvmModule::getTypeSize(const llvm::Type* type) {
-  return TheTargetData->getTypePaddedSize(type);
+  return TheTargetData->getTypeAllocSize(type);
 }
 
 void MvmModule::runPasses(llvm::Function* func,
