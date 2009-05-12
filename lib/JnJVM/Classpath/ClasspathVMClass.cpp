@@ -44,9 +44,9 @@ JNIEXPORT jclass JNICALL Java_java_lang_VMClass_forName(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject str, 
+JavaString* str, 
 jboolean clinit, 
-jobject loader) {
+JavaObject* loader) {
 
   jclass res = 0;
 
@@ -54,16 +54,16 @@ jobject loader) {
 
   Jnjvm* vm = JavaThread::get()->getJVM(); 
   JnjvmClassLoader* JCL = 
-    JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
-  UserCommonClass* cl = JCL->lookupClassFromJavaString((JavaString*)str, vm,
-                                                        true, false);
+    JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
+  UserCommonClass* cl = JCL->loadClassFromJavaString(str, true, false);
+
   if (cl != 0) {
     if (clinit && cl->asClass()) {
       cl->asClass()->initialiseClass(vm);
     }
     res =(jclass)(cl->getClassDelegatee(vm));
   } else {
-    vm->classNotFoundException((JavaString*)str);
+    vm->classNotFoundException(str);
   }
 
   END_NATIVE_EXCEPTION

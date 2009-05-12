@@ -93,8 +93,7 @@ jboolean doResolve) {
   JavaString* str = (JavaString*)_str;
 
   JnjvmClassLoader* JCL = vm->bootstrapLoader;
-  UserCommonClass* cl = JCL->lookupClassFromJavaString(str, vm, doResolve,
-                                                       false);
+  UserCommonClass* cl = JCL->loadClassFromJavaString(str, doResolve, false);
 
   if (cl != 0)
     res = (jclass)cl->getClassDelegatee(vm);

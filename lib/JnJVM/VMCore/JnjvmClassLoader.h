@@ -75,6 +75,12 @@ private:
   JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc, JnjvmClassLoader& JCL,
                    JavaObject* loader, Jnjvm* isolate);
 
+  /// lookupComponentName - Try to find the component name of the given array
+  /// name. If the component name is not in the table of UTF8s and create is
+  /// false, the function returns 0.
+  ///
+  const UTF8* lookupComponentName(const UTF8* name, bool create, bool& prim);
+
 protected:
   
   JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc) : allocator(Alloc) {}
@@ -143,13 +149,13 @@ public:
   
   /// lookupClassFromUTF8 - Lookup a class from an UTF8 name and load it.
   ///
-  UserCommonClass* lookupClassFromUTF8(const UTF8* utf8, Jnjvm* vm,
-                                       bool doResolve, bool doThrow);
+  UserCommonClass* loadClassFromUserUTF8(const UTF8* utf8,
+                                         bool doResolve, bool doThrow);
   
   /// lookupClassFromJavaString - Lookup a class from a Java String and load it.
   ///
-  UserCommonClass* lookupClassFromJavaString(JavaString* str, Jnjvm* vm, 
-                                             bool doResolve, bool doThrow);
+  UserCommonClass* loadClassFromJavaString(JavaString* str,
+                                           bool doResolve, bool doThrow);
    
   /// lookupClass - Finds the class of the given name in the class loader's
   /// table.

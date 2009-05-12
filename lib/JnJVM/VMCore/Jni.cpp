@@ -69,12 +69,12 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   Jnjvm* vm = th->getJVM();
   UserClass* currentClass = th->getCallingClass(0);
   if (currentClass) loader = currentClass->classLoader;
-  else loader = vm->bootstrapLoader;
+  else loader = vm->appClassLoader;
 
   const UTF8* utf8 = vm->asciizToInternalUTF8(asciiz);
   
-  UserCommonClass* cl = loader->lookupClassFromUTF8(utf8, vm, true, true);
-  if (cl->asClass()) cl->asClass()->initialiseClass(vm);
+  UserCommonClass* cl = loader->loadClassFromUserUTF8(utf8, true, true);
+  if (cl && cl->asClass()) cl->asClass()->initialiseClass(vm);
   return (jclass)(cl->getClassDelegatee(vm));
   
   END_JNI_EXCEPTION

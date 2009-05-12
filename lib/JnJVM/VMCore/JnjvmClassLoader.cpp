@@ -391,145 +391,106 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
   return cl;
 }
 
-UserCommonClass* JnjvmClassLoader::lookupClassFromUTF8(const UTF8* name,
-                                                       Jnjvm* vm,
-                                                       bool doResolve,
-                                                       bool doThrow) {
+
+const UTF8* JnjvmClassLoader::lookupComponentName(const UTF8* name,
+                                                  bool create,
+                                                  bool& prim) {
   uint32 len = name->size;
   uint32 start = 0;
   uint32 origLen = len;
   bool doLoop = true;
-  UserCommonClass* ret = 0;
-
-  if (len == 0) {
-    return 0;
-  } else if (name->elements[0] == I_TAB) {
-    
-    while (doLoop) {
-      --len;
-      if (len == 0) {
-        doLoop = false;
-      } else {
-        ++start;
-        if (name->elements[start] != I_TAB) {
-          if (name->elements[start] == I_REF) {
-            uint32 size = (uint32)name->size;
-            if ((size == (start + 1)) || (size == (start + 2)) || 
-                 (name->elements[start + 1] == I_TAB) || 
-                 (name->elements[origLen - 1] != I_END_REF)) {
-              doLoop = false; 
-            } else {
-              const UTF8* componentName = name->javaToInternal(vm, start + 1,
-                                                               len - 2);
-              if (loadName(componentName, doResolve, doThrow)) {
-                ret = constructArray(name);
-                doLoop = false;
-              } else {
-                doLoop = false;
-              }
-            }
+  
+  while (doLoop) {
+    --len;
+    if (len == 0) {
+      doLoop = false;
+    } else {
+      ++start;
+      if (name->elements[start] != I_TAB) {
+        if (name->elements[start] == I_REF) {
+          uint32 size = (uint32)name->size;
+          if ((size == (start + 1)) || (size == (start + 2)) || 
+              (name->elements[start + 1] == I_TAB) || 
+              (name->elements[origLen - 1] != I_END_REF)) {
+            doLoop = false; 
           } else {
-            uint16 cur = name->elements[start];
-            if ((cur == I_BOOL || cur == I_BYTE ||
-                 cur == I_CHAR || cur == I_SHORT ||
-                 cur == I_INT || cur == I_FLOAT || 
-                 cur == I_DOUBLE || cur == I_LONG)
-                && ((uint32)name->size) == start + 1) {
-
-              ret = constructArray(name);
-              doLoop = false;
-            } else {
-              doLoop = false;
+            const uint16* buf = &(name->elements[start + 1]);
+            uint32 bufLen = len - 2;
+            const UTF8* componentName = hashUTF8->lookupReader(buf, bufLen);
+            if (!componentName && create) {
+              componentName = name->extract(isolate, start + 1, len - 2);
             }
+            return componentName;
           }
+        } else {
+          prim = true;
         }
       }
     }
-
-    return ret;
-
-  } else {
-    return loadName(name, doResolve, doThrow);
   }
+
+  return 0;
 }
 
 UserCommonClass* JnjvmClassLoader::lookupClassOrArray(const UTF8* name) {
-  UserCommonClass* temp = lookupClass(name);
-  if (temp) return temp;
-
-  if (this != bootstrapLoader) {
-    temp = bootstrapLoader->lookupClassOrArray(name);
-
+  if (name->elements[0] != I_TAB) {
+    UserCommonClass* temp = lookupClass(name);
     if (temp) return temp;
   }
 
-  uint32 len = name->size;
-  uint32 start = 0;
-  uint32 origLen = len;
-  bool doLoop = true;
-
+  if (this != bootstrapLoader) {
+    UserCommonClass* temp = bootstrapLoader->lookupClassOrArray(name);
+    if (temp) return temp;
+  }
+  
+  
   if (name->elements[0] == I_TAB) {
-    
-    while (doLoop) {
-      --len;
-      if (len == 0) {
-        doLoop = false;
-      } else {
-        ++start;
-        if (name->elements[start] != I_TAB) {
-          if (name->elements[start] == I_REF) {
-            uint32 size = (uint32)name->size;
-            if ((size == (start + 1)) || (size == (start + 2)) || 
-                 (name->elements[start + 1] == I_TAB) || 
-                 (name->elements[origLen - 1] != I_END_REF)) {
-              doLoop = false; 
-            } else {
-              const UTF8* componentName = name->javaToInternal(isolate,
-                                                               start + 1,
-                                                               len - 2);
-              if (lookupClassOrArray(componentName)) {
-                temp = constructArray(name);
-                doLoop = false;
-              } else {
-                doLoop = false;
-              }
-            }
-          } else {
-            uint16 cur = name->elements[start];
-            if ((cur == I_BOOL || cur == I_BYTE ||
-                 cur == I_CHAR || cur == I_SHORT ||
-                 cur == I_INT || cur == I_FLOAT || 
-                 cur == I_DOUBLE || cur == I_LONG)
-                && ((uint32)name->size) == start + 1) {
-
-              temp = constructArray(name);
-              doLoop = false;
-            } else {
-              doLoop = false;
-            }
-          }
-        }
-      }
+    bool prim = false;
+    const UTF8* componentName = lookupComponentName(name, false, prim);
+    if (prim) return constructArray(name);
+    if (componentName) {
+      UserCommonClass* temp = lookupClass(componentName);
+      if (temp) return constructArray(name);
     }
   }
 
-  return temp;
+  return 0;
+}
+
+UserCommonClass* JnjvmClassLoader::loadClassFromUserUTF8(const UTF8* name,
+                                                         bool doResolve,
+                                                         bool doThrow) {
+  if (name->size == 0) {
+    return 0;
+  } else if (name->elements[0] == I_TAB) {
+    bool prim = false;
+    const UTF8* componentName = lookupComponentName(name, true, prim);
+    if (prim) return constructArray(name);
+    if (componentName) {
+      UserCommonClass* temp = loadName(componentName, doResolve, doThrow);
+      if (temp) return constructArray(name);
+    }
+  } else {
+    return loadName(name, doResolve, doThrow);
+  }
+
+  return 0;
 }
 
 
 UserCommonClass* 
-JnjvmClassLoader::lookupClassFromJavaString(JavaString* str, Jnjvm* vm,
-                                            bool doResolve, bool doThrow) {
+JnjvmClassLoader::loadClassFromJavaString(JavaString* str, bool doResolve,
+                                          bool doThrow) {
   
   const UTF8* name = 0;
   
   if (str->value->elements[str->offset] != I_TAB)
-    name = str->value->checkedJavaToInternal(vm, str->offset, str->count);
+    name = str->value->checkedJavaToInternal(isolate, str->offset, str->count);
   else
-    name = str->value->javaToInternal(vm, str->offset, str->count);
+    name = str->value->javaToInternal(isolate, str->offset, str->count);
 
   if (name)
-    return lookupClassFromUTF8(name, vm, doResolve, doThrow);
+    return loadClassFromUserUTF8(name, doResolve, doThrow);
 
   return 0;
 }
