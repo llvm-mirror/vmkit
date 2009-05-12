@@ -132,7 +132,7 @@ public:
                              unsigned int len) const;
   
   /// javaToInternal - Replaces all '/' into '.'.
-  const UTF8* javaToInternal(Jnjvm* vm, unsigned int start,
+  const UTF8* javaToInternal(UTF8Map* map, unsigned int start,
                              unsigned int len) const;
   
   /// checkedJavaToInternal - Replaces all '/' into '.'. Returns null if the

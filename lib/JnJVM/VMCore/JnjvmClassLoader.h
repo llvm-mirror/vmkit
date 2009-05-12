@@ -161,6 +161,13 @@ public:
   ///
   UserCommonClass* loadClassFromJavaString(JavaString* str,
                                            bool doResolve, bool doThrow);
+  
+  /// lookupClassFromJavaString - Finds the class of the given string name in
+  /// the class loader's table. Do not inline this function, because it
+  /// does an alloca and is called by Classpath functions.
+  ///
+  UserCommonClass* lookupClassFromJavaString(JavaString* str) 
+    __attribute__ ((noinline));
    
   /// lookupClass - Finds the class of the given name in the class loader's
   /// table.

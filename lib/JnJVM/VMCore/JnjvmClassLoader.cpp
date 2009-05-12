@@ -507,16 +507,43 @@ UserCommonClass*
 JnjvmClassLoader::loadClassFromJavaString(JavaString* str, bool doResolve,
                                           bool doThrow) {
   
-  const UTF8* name = 0;
-  
-  if (str->value->elements[str->offset] != I_TAB)
-    name = str->value->checkedJavaToInternal(isolate, str->offset, str->count);
-  else
-    name = str->value->javaToInternal(isolate, str->offset, str->count);
-
-  if (name)
+  UTF8* name = (UTF8*)alloca(sizeof(UTF8) + str->count * sizeof(uint16));
+ 
+  if (name) {
+    name->size = str->count;
+    if (str->value->elements[str->offset] != I_TAB) {
+      for (sint32 i = 0; i < str->count; ++i) {
+        uint16 cur = str->value->elements[str->offset + i];
+        if (cur == '.') name->elements[i] = '/';
+        else if (cur == '/') return 0;
+        else name->elements[i] = cur;
+      }
+    } else {
+      for (sint32 i = 0; i < str->count; ++i) {
+        uint16 cur = str->value->elements[str->offset + i];
+        if (cur == '.') name->elements[i] = '/';
+        else name->elements[i] = cur;
+      }
+    }
+    
     return loadClassFromUserUTF8(name, doResolve, doThrow);
+  }
 
+  return 0;
+}
+
+UserCommonClass* JnjvmClassLoader::lookupClassFromJavaString(JavaString* str) {
+  
+  UTF8* name = (UTF8*)alloca(sizeof(UTF8) + str->count * sizeof(uint16));
+  if (name) {
+    name->size = str->count;
+    for (sint32 i = 0; i < str->count; ++i) {
+      uint16 cur = str->value->elements[str->offset + i];
+      if (cur == '.') name->elements[i] = '/';
+      else name->elements[i] = cur;
+    }
+    return lookupClass(name);
+  }
   return 0;
 }
 

@@ -44,17 +44,17 @@ void UTF8::print(mvm::PrintBuffer* buf) const {
   return printUTF8(buf);
 }
 
-const UTF8* UTF8::javaToInternal(Jnjvm* vm, unsigned int start,
+const UTF8* UTF8::javaToInternal(UTF8Map* map, unsigned int start,
                                  unsigned int len) const {
-  UTF8* array = (UTF8*)vm->upcalls->ArrayOfChar->doNew(len, vm);
-  uint16* java = array->elements;
-  for (uint32 i = 0; i < len; i++) {
+  uint16* java = (uint16*)alloca(sizeof(uint16) * len);
+
+  for (uint32 i = 0; i < len; ++i) {
     uint16 cur = elements[start + i];
     if (cur == '.') java[i] = '/';
     else java[i] = cur;
   }
-
-  return (const UTF8*)array;
+  
+  return map->lookupOrCreateReader(java, len);
 }
 
 // We also define a checked java to internal function to disallow

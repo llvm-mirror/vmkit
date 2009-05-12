@@ -62,11 +62,9 @@ jobject _name) {
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaString* name = (JavaString*)_name;
-  const UTF8* utf8 = name->strToUTF8(vm);
-  const UTF8* internalName = utf8->javaToInternal(vm, 0, utf8->size);
   JnjvmClassLoader* JCL = 
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
-  UserCommonClass* cl = JCL->lookupClass(internalName);
+  UserCommonClass* cl = JCL->lookupClassFromJavaString(name);
 
   if (cl) res = (jclass)(cl->getClassDelegatee(vm));
 
@@ -132,7 +130,8 @@ jobject pd) {
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
   
   JavaString* str = (JavaString*)_str;
-  const UTF8* name = str->value->javaToInternal(vm, str->offset, str->count);
+  const UTF8* name = str->value->javaToInternal(JCL->hashUTF8, str->offset,
+                                                str->count);
   UserCommonClass* cl = JCL->lookupClass(name);
   
   if (!cl) {
