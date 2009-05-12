@@ -147,12 +147,17 @@ public:
   ///
   UserClass* loadName(const UTF8* name, bool doResolve, bool doThrow);
   
-  /// lookupClassFromUTF8 - Lookup a class from an UTF8 name and load it.
+  /// loadClassFromUTF8 - Lookup a class from an UTF8 name and load it.
   ///
   UserCommonClass* loadClassFromUserUTF8(const UTF8* utf8,
                                          bool doResolve, bool doThrow);
   
-  /// lookupClassFromJavaString - Lookup a class from a Java String and load it.
+  /// loadClassFromAsciiz - Lookup a class from an asciiz name and load it.
+  ///
+  UserCommonClass* loadClassFromAsciiz(const char* name,
+                                       bool doResolve, bool doThrow);
+  
+  /// loadClassFromJavaString - Lookup a class from a Java String and load it.
   ///
   UserCommonClass* loadClassFromJavaString(JavaString* str,
                                            bool doResolve, bool doThrow);

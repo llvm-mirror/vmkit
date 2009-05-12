@@ -433,13 +433,11 @@ const UTF8* JnjvmClassLoader::lookupComponentName(const UTF8* name,
 }
 
 UserCommonClass* JnjvmClassLoader::lookupClassOrArray(const UTF8* name) {
-  if (name->elements[0] != I_TAB) {
-    UserCommonClass* temp = lookupClass(name);
-    if (temp) return temp;
-  }
+  UserCommonClass* temp = lookupClass(name);
+  if (temp) return temp;
 
   if (this != bootstrapLoader) {
-    UserCommonClass* temp = bootstrapLoader->lookupClassOrArray(name);
+    temp = bootstrapLoader->lookupClassOrArray(name);
     if (temp) return temp;
   }
   
@@ -475,6 +473,24 @@ UserCommonClass* JnjvmClassLoader::loadClassFromUserUTF8(const UTF8* name,
   }
 
   return 0;
+}
+
+UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
+                                                       bool doResolve,
+                                                       bool doThrow) {
+  const UTF8* name = hashUTF8->lookupAsciiz(asciiz);
+  if (!name) name = bootstrapLoader->hashUTF8->lookupAsciiz(asciiz);
+  if (!name) name = isolate->asciizToUTF8(asciiz);
+  
+  UserCommonClass* temp = lookupClass(name);
+  if (temp) return temp;
+  
+  if (this != bootstrapLoader) {
+    temp = bootstrapLoader->lookupClassOrArray(name);
+    if (temp) return temp;
+  }
+ 
+  return loadClassFromUserUTF8(name, doResolve, doThrow);
 }
 
 

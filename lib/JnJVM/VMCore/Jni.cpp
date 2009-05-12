@@ -71,9 +71,7 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   if (currentClass) loader = currentClass->classLoader;
   else loader = vm->appClassLoader;
 
-  const UTF8* utf8 = vm->asciizToInternalUTF8(asciiz);
-  
-  UserCommonClass* cl = loader->loadClassFromUserUTF8(utf8, true, true);
+  UserCommonClass* cl = loader->loadClassFromAsciiz(asciiz, true, true);
   if (cl && cl->asClass()) cl->asClass()->initialiseClass(vm);
   return (jclass)(cl->getClassDelegatee(vm));
   
@@ -315,13 +313,24 @@ jmethodID GetMethodID(JNIEnv* env, jclass clazz, const char *aname,
   BEGIN_JNI_EXCEPTION
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, (JavaObject*)clazz, true);
-  const UTF8* name = vm->asciizToInternalUTF8(aname);
-  const UTF8* type = vm->asciizToInternalUTF8(atype);
-  JavaMethod* meth = cl->asClass() ? 
-    cl->asClass()->lookupMethod(name, type, false, true, 0) : 0;
+  UserCommonClass* cl = 
+    UserCommonClass::resolvedImplClass(vm, (JavaObject*)clazz, true);
 
-  return (jmethodID)meth;
+  UserClass* realCl = 0;
+  if (cl->isClass()) {
+    realCl = cl->asClass();
+  } else {
+    realCl = cl->super;
+  }
+
+  const UTF8* name = cl->classLoader->hashUTF8->lookupAsciiz(aname);
+  if (name) {
+    const UTF8* type = cl->classLoader->hashUTF8->lookupAsciiz(atype);
+    if (type) {
+      JavaMethod* meth = realCl->lookupMethod(name, type, false, true, 0);
+      return (jmethodID)meth;
+    }
+  }
 
   END_JNI_EXCEPTION
   return 0;
@@ -933,7 +942,7 @@ void CallNonvirtualVoidMethodA(JNIEnv *env, jobject obj, jclass clazz,
 }
 
 
-jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name,
+jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *aname,
 		    const char *sig)  {
 
   BEGIN_JNI_EXCEPTION
@@ -941,10 +950,18 @@ jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name,
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = 
     UserCommonClass::resolvedImplClass(vm, (JavaObject*)clazz, true);
-  return (jfieldID) (cl->asClass() ? 
-    cl->asClass()->lookupField(vm->asciizToUTF8(name),
-                               vm->asciizToUTF8(sig), 0, 1,
-                               0) : 0);
+
+  if (cl->isClass()) {
+    const UTF8* name = cl->classLoader->hashUTF8->lookupAsciiz(aname);
+    if (name) {
+      const UTF8* type = cl->classLoader->hashUTF8->lookupAsciiz(sig);
+      if (type) {
+        JavaField* field = cl->asClass()->lookupField(name, type, false, true,
+                                                      0);
+        return (jfieldID)field;
+      }
+    }
+  }
   
   END_JNI_EXCEPTION
   return 0;
@@ -1186,12 +1203,18 @@ jmethodID GetStaticMethodID(JNIEnv *env, jclass clazz, const char *aname,
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = 
     UserCommonClass::resolvedImplClass(vm, (JavaObject*)clazz, true);
-  const UTF8* name = vm->asciizToInternalUTF8(aname);
-  const UTF8* type = vm->asciizToInternalUTF8(atype);
-  JavaMethod* meth = cl->asClass() ? 
-    cl->asClass()->lookupMethod(name, type, true, true, 0) : 0;
 
-  return (jmethodID)meth;
+  if (cl->isClass()) {
+    const UTF8* name = cl->classLoader->hashUTF8->lookupAsciiz(aname);
+    if (name) {
+      const UTF8* type = cl->classLoader->hashUTF8->lookupAsciiz(atype);
+      if (type) {
+        JavaMethod* meth = cl->asClass()->lookupMethod(name, type, true, true,
+                                                       0);
+        return (jmethodID)meth;
+      }
+    }
+  }
 
   END_JNI_EXCEPTION
   return 0;
@@ -1600,7 +1623,7 @@ void CallStaticVoidMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
 }
 
 
-jfieldID GetStaticFieldID(JNIEnv *env, jclass clazz, const char *name,
+jfieldID GetStaticFieldID(JNIEnv *env, jclass clazz, const char *aname,
                           const char *sig) {
   
   BEGIN_JNI_EXCEPTION
@@ -1608,10 +1631,18 @@ jfieldID GetStaticFieldID(JNIEnv *env, jclass clazz, const char *name,
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = 
     UserCommonClass::resolvedImplClass(vm, (JavaObject*)clazz, true);
-  return (jfieldID) (cl->asClass() ? 
-    cl->asClass()->lookupField(vm->asciizToUTF8(name),
-                               vm->asciizToUTF8(sig),
-                               true, true, 0) : 0);
+  
+  if (cl->isClass()) {
+    const UTF8* name = cl->classLoader->hashUTF8->lookupAsciiz(aname);
+    if (name) {
+      const UTF8* type = cl->classLoader->hashUTF8->lookupAsciiz(sig);
+      if (type) {
+        JavaField* field = cl->asClass()->lookupField(name, type, true, true,
+                                                      0);
+        return (jfieldID)field;
+      }
+    }
+  }
 
   END_JNI_EXCEPTION
   return 0;
@@ -1986,7 +2017,7 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass elementClass,
   JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->getName();
   const UTF8* arrayName = loader->constructArrayName(1, name);
-  UserClassArray* array = loader->constructArray(arrayName);
+  UserClassArray* array = loader->constructArray(arrayName, base);
   ArrayObject* res = (ArrayObject*)array->doNew(length, vm);
   if (initialElement) {
     for (sint32 i = 0; i < length; ++i) {
