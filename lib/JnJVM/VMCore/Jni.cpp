@@ -145,8 +145,8 @@ jint ThrowNew(JNIEnv* env, jclass Cl, const char *msg) {
   UserClass* realCl = cl->asClass();
   JavaObject* res = realCl->doNew(vm);
   JavaMethod* init = realCl->lookupMethod(vm->bootstrapLoader->initName,
-              cl->classLoader->asciizConstructUTF8("(Ljava/lang/String;)V"),
-              false, true, 0);
+                                          vm->bootstrapLoader->initExceptionSig,
+                                          false, true, 0);
   init->invokeIntSpecial(vm, realCl, res, vm->asciizToStr(msg));
   th->pendingException = res;
   th->throwFromJNI();

@@ -203,6 +203,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   Attribut::sourceFileAttribut = asciizConstructUTF8("SourceFile");
   
   initName = asciizConstructUTF8("<init>");
+  initExceptionSig = asciizConstructUTF8("(Ljava/lang/String;)V");
   clinitName = asciizConstructUTF8("<clinit>");
   clinitType = asciizConstructUTF8("()V");
   runName = asciizConstructUTF8("run");

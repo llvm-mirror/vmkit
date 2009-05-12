@@ -348,6 +348,7 @@ public:
   const UTF8* initName;
   const UTF8* clinitName;
   const UTF8* clinitType; 
+  const UTF8* initExceptionSig;
   const UTF8* runName; 
   const UTF8* prelib; 
   const UTF8* postlib; 
