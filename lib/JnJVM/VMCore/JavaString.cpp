@@ -49,7 +49,7 @@ char* JavaString::strToAsciiz() {
 const UTF8* JavaString::strToUTF8(Jnjvm* vm) {
   const UTF8* utf8 = this->value;
   assert(utf8 && "String without an UTF8?");
-  if (offset || (offset + count <= utf8->size)) {
+  if (offset || (offset + count < utf8->size)) {
     return utf8->extract(vm, offset, offset + count);
   } else {
     return utf8;
