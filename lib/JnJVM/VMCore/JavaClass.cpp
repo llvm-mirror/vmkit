@@ -525,23 +525,23 @@ JavaObject* UserClass::doNew(Jnjvm* vm) {
   return res;
 }
 
-bool UserCommonClass::inheritName(const UTF8* Tname) {
-  if (getName()->equals(Tname)) {
+bool UserCommonClass::inheritName(const uint16* buf, uint32 len) {
+  if (getName()->equals(buf, len)) {
     return true;
   } else  if (isPrimitive()) {
     return false;
   } else if (super) {
-    if (getSuper()->inheritName(Tname)) return true;
+    if (getSuper()->inheritName(buf, len)) return true;
   }
   
   for (uint32 i = 0; i < nbInterfaces; ++i) {
-    if (interfaces[i]->inheritName(Tname)) return true;
+    if (interfaces[i]->inheritName(buf, len)) return true;
   }
   return false;
 }
 
-bool UserCommonClass::isOfTypeName(Jnjvm* vm, const UTF8* Tname) {
-  if (inheritName(Tname)) {
+bool UserCommonClass::isOfTypeName(const UTF8* Tname) {
+  if (inheritName(Tname->elements, Tname->size)) {
     return true;
   } else if (isArray()) {
     UserCommonClass* curS = this;
@@ -558,7 +558,7 @@ bool UserCommonClass::isOfTypeName(Jnjvm* vm, const UTF8* Tname) {
     }
     
     return (Tname->elements[prof] == I_REF) &&  
-      (res && curS->inheritName(Tname->extract(vm, prof + 1, len - 1)));
+      (res && curS->inheritName(&(Tname->elements[prof + 1]), len - 1));
   } else {
     return false;
   }

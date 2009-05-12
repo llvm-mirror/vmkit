@@ -440,12 +440,12 @@ public:
   /// the given name? Equality is on the name. This function does not take
   /// into account array classes.
   ///
-  bool inheritName(const UTF8* Tname);
+  bool inheritName(const uint16* buf, uint32 len);
 
   /// isOfTypeName - Does this class inherits the given name? Equality is on
   /// the name. This function takes into account array classes.
   ///
-  bool isOfTypeName(Jnjvm* vm, const UTF8* Tname);
+  bool isOfTypeName(const UTF8* Tname);
 
   /// isAssignableFrom - Is this class assignable from the given class? The
   /// classes may be of any type.

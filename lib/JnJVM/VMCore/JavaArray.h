@@ -157,11 +157,17 @@ public:
     return UTF8ToAsciiz();
   }
 
-  /// equals - Are the two UTF8s equals?
+  /// equals - Are the two UTF8s equal?
   bool equals(const UTF8* other) const {
     if (other == this) return true;
     else if (size != other->size) return false;
     else return !memcmp(elements, other->elements, size * sizeof(uint16));
+  }
+  
+  /// equals - Does the UTF8 equal to the buffer? 
+  bool equals(const uint16* buf, sint32 len) const {
+    if (size != len) return false;
+    else return !memcmp(elements, buf, size * sizeof(uint16));
   }
 
   /// lessThan - strcmp-like function for UTF8s, used by hash tables.

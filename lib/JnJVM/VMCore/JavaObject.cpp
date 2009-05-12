@@ -158,7 +158,7 @@ void JavaObject::decapsulePrimitive(Jnjvm *vm, uintptr_t &buf,
 
   JavaObject* obj = this;
   if (!signature->isPrimitive()) {
-    if (obj && !(obj->getClass()->isOfTypeName(vm, signature->getName()))) {
+    if (obj && !(obj->getClass()->isOfTypeName(signature->getName()))) {
       vm->illegalArgumentException("wrong type argument");
     }
     ((JavaObject**)buf)[0] = obj;
