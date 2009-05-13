@@ -284,7 +284,7 @@ public:
 
   /// UTF8ToStr - Constructs a java/lang/String object from the given UTF8.
   ///
-  JavaString* UTF8ToStr(const UTF8* utf8);
+  JavaString* constructString(const ArrayUInt16* array);
   
   /// UTF8ToStr - Constructs a java/lang/String object from the given internal
   /// UTF8, thus duplicating the UTF8.
@@ -298,7 +298,7 @@ public:
   
   /// asciizToUTF8 - Constructs an UTF8 out of the asciiz.
   ///
-  const UTF8* asciizToUTF8(const char* asciiz);
+  ArrayUInt16* asciizToArray(const char* asciiz);
   
   /// setBootstrapThread - Set the bootstrap thread of this VM.
   ///

@@ -250,8 +250,8 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
 
 extern "C" JavaString* nativeInternString(JavaString* obj) {
   Jnjvm* vm = JavaThread::get()->getJVM();
-  const UTF8* utf8 = obj->strToUTF8(vm);
-  return vm->UTF8ToStr(utf8);
+  const ArrayUInt16* array = obj->strToArray(vm);
+  return vm->constructString(array);
 }
 
 extern "C" uint8 nativeIsArray(JavaObject* klass) {

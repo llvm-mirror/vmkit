@@ -43,7 +43,7 @@ jobject _strLib) {
   JavaString* strLib = (JavaString*)_strLib;
   Jnjvm* vm = JavaThread::get()->getJVM();
 
-  const UTF8* utf8Lib = strLib->value;
+  const ArrayUInt16* utf8Lib = strLib->value;
   uint32 stLib = strLib->offset;
   sint32 lgLib = strLib->count;
   sint32 lgPre = vm->bootstrapLoader->prelib->size;
@@ -60,7 +60,7 @@ jobject _strLib) {
   memmove(&(elements[lgPre + lgLib]), vm->bootstrapLoader->postlib->elements,
            lgPost * sizeof(uint16));
   
-  res = (jobject)(vm->UTF8ToStr((const UTF8*)array));
+  res = (jobject)(vm->constructString(array));
 
   END_NATIVE_EXCEPTION
 

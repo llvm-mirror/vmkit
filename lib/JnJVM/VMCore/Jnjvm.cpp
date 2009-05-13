@@ -473,27 +473,27 @@ JavaString* Jnjvm::internalUTF8ToStr(const UTF8* utf8) {
   JavaString* res = hashStr.lookup(utf8);
   if (!res) {
     uint32 size = utf8->size;
-    UTF8* tmp = (UTF8*)upcalls->ArrayOfChar->doNew(size, this);
+    ArrayUInt16* tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
     uint16* buf = tmp->elements;
   
     for (uint32 i = 0; i < size; i++) {
       buf[i] = utf8->elements[i];
     }
   
-    const UTF8* newUTF8 = (const UTF8*)tmp;
-    res = hashStr.lookupOrCreate(newUTF8, this, JavaString::stringDup);
+    res = hashStr.lookupOrCreate((const ArrayUInt16*&)tmp, this,
+                                 JavaString::stringDup);
   }
   return res;
 }
 
-JavaString* Jnjvm::UTF8ToStr(const UTF8* utf8) { 
-  JavaString* res = hashStr.lookupOrCreate(utf8, this, JavaString::stringDup);
+JavaString* Jnjvm::constructString(const ArrayUInt16* array) { 
+  JavaString* res = hashStr.lookupOrCreate(array, this, JavaString::stringDup);
   return res;
 }
 
 JavaString* Jnjvm::asciizToStr(const char* asciiz) {
-  const UTF8* var = asciizToUTF8(asciiz);
-  return UTF8ToStr(var);
+  ArrayUInt16* var = asciizToArray(asciiz);
+  return constructString(var);
 }
 
 void Jnjvm::addProperty(char* key, char* value) {
@@ -1112,15 +1112,15 @@ const UTF8* Jnjvm::asciizToInternalUTF8(const char* asciiz) {
 
 }
   
-const UTF8* Jnjvm::asciizToUTF8(const char* asciiz) {
+ArrayUInt16* Jnjvm::asciizToArray(const char* asciiz) {
   uint32 size = strlen(asciiz);
-  UTF8* tmp = (UTF8*)upcalls->ArrayOfChar->doNew(size, this);
+  ArrayUInt16* tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
   uint16* buf = tmp->elements;
   
   for (uint32 i = 0; i < size; i++) {
     buf[i] = asciiz[i];
   }
-  return (const UTF8*)tmp;
+  return tmp;
 }
 
 void Jnjvm::removeMethodsInFunctionMap(JnjvmClassLoader* loader) {

@@ -122,10 +122,6 @@ private:
                            mvm::BumpPtrAllocator& allocator);
 public:
   
-
-  /// javaToInternal - Replaces all '/' into '.'.
-  const UTF8* javaToInternal(UTF8Map* map, unsigned int start,
-                             unsigned int len) const;
   
   /// extract - Similar, but creates it in the map.
   const UTF8* extract(UTF8Map* map, uint32 start, uint32 len) const;

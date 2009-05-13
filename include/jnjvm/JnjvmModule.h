@@ -33,6 +33,7 @@ namespace llvm {
 
 namespace jnjvm {
 
+class ArrayUInt16;
 class Attribut;
 class CacheNode;
 class CommonClass;
@@ -570,7 +571,6 @@ private:
   
   //--------------- Static compiler specific functions -----------------------//
   llvm::Constant* CreateConstantFromVT(JavaVirtualTable* VT);
-  llvm::Constant* CreateConstantFromUTF8(const UTF8* val);
   llvm::Constant* CreateConstantFromEnveloppe(Enveloppe* val);
   llvm::Constant* CreateConstantFromCacheNode(CacheNode* CN);
   llvm::Constant* CreateConstantFromCommonClass(CommonClass* cl);
@@ -585,10 +585,10 @@ private:
   llvm::Constant* CreateConstantFromJavaClass(CommonClass* cl);
   llvm::Constant* CreateConstantForBaseObject(CommonClass* cl);
   llvm::Constant* CreateConstantFromJavaObject(JavaObject* obj);
-  llvm::Constant* getUTF8(const UTF8* val);
+  llvm::Constant* getArrayUInt16(const ArrayUInt16* val);
   
   template<typename T>
-  llvm::Constant* CreateConstantFromArray(T* val, const llvm::Type* Ty);
+  llvm::Constant* CreateConstantFromArray(const T* val, const llvm::Type* Ty);
   
   std::map<const CommonClass*, llvm::Constant*> nativeClasses;
   std::map<const ClassArray*, llvm::GlobalVariable*> arrayClasses;
@@ -599,7 +599,7 @@ private:
   std::map<const JavaString*, llvm::Constant*> strings;
   std::map<const Enveloppe*, llvm::Constant*> enveloppes;
   std::map<const JavaMethod*, llvm::Constant*> nativeFunctions;
-  std::map<const UTF8*, llvm::Constant*> utf8s;
+  std::map<const ArrayUInt16*, llvm::Constant*> utf8s;
   std::map<const Class*, llvm::Constant*> virtualMethods;
   std::map<const JavaObject*, llvm::Constant*> finalObjects;
   
@@ -636,7 +636,7 @@ private:
   typedef std::map<const JavaMethod*, llvm::Constant*>::iterator
     native_function_iterator;
   
-  typedef std::map<const UTF8*, llvm::Constant*>::iterator
+  typedef std::map<const ArrayUInt16*, llvm::Constant*>::iterator
     utf8_iterator;
 
 #ifdef SERVICE

@@ -44,6 +44,14 @@ struct ltutf8
   }
 };
 
+struct ltarray16
+{
+  bool operator()(const ArrayUInt16* s1, const ArrayUInt16* s2) const
+  {
+    return ((UTF8*)s1)->lessThan((UTF8*)s2);
+  }
+};
+
 template<class Key, class Container, class Compare, class Meta, class TLock>
 class LockedMap : public mvm::PermanentObject {
 public:
@@ -149,7 +157,8 @@ public:
 };
 
 class StringMap :
-  public LockedMap<const UTF8*, JavaString*, ltutf8, Jnjvm*, mvm::LockNormal> {
+  public LockedMap<const ArrayUInt16*, JavaString*, ltarray16, Jnjvm*,
+                   mvm::LockNormal> {
 
 public:
   void insert(JavaString* str);

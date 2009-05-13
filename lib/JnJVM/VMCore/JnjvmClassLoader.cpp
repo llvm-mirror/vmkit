@@ -499,7 +499,16 @@ UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
                                                        bool doThrow) {
   const UTF8* name = hashUTF8->lookupAsciiz(asciiz);
   if (!name) name = bootstrapLoader->hashUTF8->lookupAsciiz(asciiz);
-  if (!name) name = isolate->asciizToUTF8(asciiz);
+  if (!name) {
+    uint32 size = strlen(asciiz);
+    UTF8* temp = (UTF8*)alloca(sizeof(UTF8) + size * sizeof(uint16));
+    if (!temp) return 0;
+
+    for (uint32 i = 0; i < size; ++i) {
+      temp->elements[i] = asciiz[i];
+    }
+    name = temp;
+  }
   
   UserCommonClass* temp = lookupClass(name);
   if (temp) return temp;

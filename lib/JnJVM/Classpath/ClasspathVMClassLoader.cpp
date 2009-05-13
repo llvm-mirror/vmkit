@@ -130,8 +130,7 @@ jobject pd) {
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
   
   JavaString* str = (JavaString*)_str;
-  const UTF8* name = str->value->javaToInternal(JCL->hashUTF8, str->offset,
-                                                str->count);
+  const UTF8* name = str->javaToInternal(JCL->hashUTF8);
   UserCommonClass* cl = JCL->lookupClass(name);
   
   if (!cl) {

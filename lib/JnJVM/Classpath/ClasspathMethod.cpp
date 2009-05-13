@@ -274,7 +274,7 @@ JavaObjectMethod* Meth) {
   verifyNull(Meth);
   JavaMethod* meth = Meth->getInternalMethod();
   Jnjvm* vm = JavaThread::get()->getJVM();
-  result = (jobject)(vm->UTF8ToStr(meth->type));
+  result = (jobject)(vm->internalUTF8ToStr(meth->type));
   
   END_NATIVE_EXCEPTION
 

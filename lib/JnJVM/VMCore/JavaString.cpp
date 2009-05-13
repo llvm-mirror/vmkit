@@ -19,7 +19,7 @@ using namespace jnjvm;
 
 JavaVirtualTable* JavaString::internStringVT = 0;
 
-JavaString* JavaString::stringDup(const UTF8*& utf8, Jnjvm* vm) {
+JavaString* JavaString::stringDup(const ArrayUInt16*& array, Jnjvm* vm) {
   UserClass* cl = vm->upcalls->newString;
   JavaString* res = (JavaString*)cl->doNew(vm);
   
@@ -30,8 +30,8 @@ JavaString* JavaString::stringDup(const UTF8*& utf8, Jnjvm* vm) {
 
   // No need to call the Java function: both the Java function and
   // this function do the same thing.
-  res->value = utf8;
-  res->count = utf8->size;
+  res->value = array;
+  res->count = array->size;
   res->offset = 0;
   res->cachedHashCode = 0;
   return res;
@@ -46,19 +46,19 @@ char* JavaString::strToAsciiz() {
   return buf->cString();
 }
 
-const UTF8* JavaString::strToUTF8(Jnjvm* vm) {
-  const UTF8* utf8 = this->value;
-  assert(utf8 && "String without an UTF8?");
-  if (offset || (count != utf8->size)) {
-    UTF8* array = (UTF8*) vm->upcalls->ArrayOfChar->doNew(count, vm);
+const ArrayUInt16* JavaString::strToArray(Jnjvm* vm) {
+  assert(value && "String without an array?");
+  if (offset || (count != value->size)) {
+    ArrayUInt16* array = 
+      (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(count, vm);
     uint16* buf = array->elements;
 
     for (sint32 i = 0; i < count; i++) {
       buf[i] = value->elements[i + offset];
     }
-    return (const UTF8*)array;
+    return array;
   } else {
-    return utf8;
+    return value;
   }
 }
 
@@ -69,7 +69,9 @@ void JavaString::stringDestructor(JavaString* str) {
 }
 
 JavaString* JavaString::internalToJava(const UTF8* name, Jnjvm* vm) {
-  UTF8* array = (UTF8*)vm->upcalls->ArrayOfChar->doNew(name->size, vm);
+  ArrayUInt16* array = 
+    (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(name->size, vm);
+  
   uint16* java = array->elements;
   for (sint32 i = 0; i < name->size; i++) {
     uint16 cur = name->elements[i];
@@ -77,5 +79,17 @@ JavaString* JavaString::internalToJava(const UTF8* name, Jnjvm* vm) {
     else java[i] = cur;
   }
 
-  return vm->UTF8ToStr(array);
+  return vm->constructString(array);
+}
+
+const UTF8* JavaString::javaToInternal(UTF8Map* map) const {
+  uint16* java = (uint16*)alloca(sizeof(uint16) * count);
+
+  for (sint32 i = 0; i < count; ++i) {
+    uint16 cur = value->elements[offset + i];
+    if (cur == '.') java[i] = '/';
+    else java[i] = cur;
+  }
+  
+  return map->lookupOrCreateReader(java, count);
 }
