@@ -513,15 +513,19 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
 
   Constant* Array =
     CreateConstantFromArray<ArrayUInt16>(str->value, Type::Int16Ty);
-  Constant* ObjGEPs[2] = { JnjvmModule::constantZero,
-                           JnjvmModule::constantZero };
-  Array = ConstantExpr::getGetElementPtr(Array, ObjGEPs, 2);
-  Elmts.push_back(Array);
   
+
+	GlobalVariable* varGV = new GlobalVariable(Array->getType(), false,
+                                             GlobalValue::InternalLinkage,
+                                             Array, "", getLLVMModule());
+ 
+	Array = ConstantExpr::getBitCast(varGV, JnjvmModule::JavaObjectType);
+
+  Elmts.push_back(Array);
   Elmts.push_back(ConstantInt::get(Type::Int32Ty, str->count));
   Elmts.push_back(ConstantInt::get(Type::Int32Ty, str->cachedHashCode));
   Elmts.push_back(ConstantInt::get(Type::Int32Ty, str->offset));
-  
+ 
   return ConstantStruct::get(STy, Elmts);
 }
 
