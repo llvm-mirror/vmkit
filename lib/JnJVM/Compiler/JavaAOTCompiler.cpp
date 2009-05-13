@@ -511,7 +511,8 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
 
   Elmts.push_back(CreateConstantForBaseObject(cl));
 
-  Constant* Array = getArrayUInt16(str->value);
+  Constant* Array =
+    CreateConstantFromArray<ArrayUInt16>(str->value, Type::Int16Ty);
   Constant* ObjGEPs[2] = { JnjvmModule::constantZero,
                            JnjvmModule::constantZero };
   Array = ConstantExpr::getGetElementPtr(Array, ObjGEPs, 2);
@@ -551,8 +552,8 @@ Constant* JavaAOTCompiler::CreateConstantFromEnveloppe(Enveloppe* val) {
   Elmts.push_back(new GlobalVariable(CNTy, false,
                                      GlobalValue::InternalLinkage,
                                      firstCache, "", getLLVMModule()));
-  Elmts.push_back(getArrayUInt16(val->methodName));
-  Elmts.push_back(getArrayUInt16(val->methodSign));
+  Elmts.push_back(getUTF8(val->methodName));
+  Elmts.push_back(getUTF8(val->methodSign));
 
   Elmts.push_back(Constant::getNullValue(Type::Int8Ty));
   Elmts.push_back(getNativeClass(val->classDef));
@@ -570,7 +571,7 @@ Constant* JavaAOTCompiler::CreateConstantFromAttribut(Attribut& attribut) {
   std::vector<Constant*> Elmts;
 
   // name
-  Elmts.push_back(getArrayUInt16(attribut.name));
+  Elmts.push_back(getUTF8(attribut.name));
 
   // start
   Elmts.push_back(ConstantInt::get(Type::Int32Ty, attribut.start));
@@ -623,7 +624,7 @@ Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
   CommonClassElts.push_back(ConstantInt::get(Type::Int16Ty, cl->nbInterfaces));
 
   // name
-  CommonClassElts.push_back(getArrayUInt16(cl->name));
+  CommonClassElts.push_back(getUTF8(cl->name));
 
   // super
   if (cl->super) {
@@ -663,10 +664,10 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaField(JavaField& field) {
   FieldElts.push_back(ConstantInt::get(Type::Int16Ty, field.access));
 
   // name
-  FieldElts.push_back(getArrayUInt16(field.name));
+  FieldElts.push_back(getUTF8(field.name));
 
   // type
-  FieldElts.push_back(getArrayUInt16(field.type));
+  FieldElts.push_back(getUTF8(field.type));
   
   // attributs 
   if (field.nbAttributs) {
@@ -754,10 +755,10 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   MethodElts.push_back(getNativeClass(method.classDef));
   
   // name
-  MethodElts.push_back(getArrayUInt16(method.name));
+  MethodElts.push_back(getUTF8(method.name));
 
   // type
-  MethodElts.push_back(getArrayUInt16(method.type));
+  MethodElts.push_back(getUTF8(method.type));
   
   // canBeInlined
   MethodElts.push_back(ConstantInt::get(Type::Int8Ty, method.canBeInlined));
@@ -1074,12 +1075,37 @@ Constant* JavaAOTCompiler::CreateConstantFromArray(const T* val, const Type* Ty)
   return ConstantStruct::get(STy, Cts);
 }
 
-Constant* JavaAOTCompiler::getArrayUInt16(const ArrayUInt16* val) {
+Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
+  std::vector<const Type*> Elemts;
+  const ArrayType* ATy = ArrayType::get(Type::Int16Ty, val->size);
+  Elemts.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
+  Elemts.push_back(JnjvmModule::pointerSizeType);
+
+  Elemts.push_back(ATy);
+
+  const StructType* STy = StructType::get(Elemts);
+  
+  std::vector<Constant*> Cts;
+  CommonClass* cl = JavaThread::get()->getJVM()->upcalls->ArrayOfChar;
+  Cts.push_back(CreateConstantForBaseObject(cl));
+  Cts.push_back(ConstantInt::get(JnjvmModule::pointerSizeType, val->size));
+  
+  std::vector<Constant*> Vals;
+  for (sint32 i = 0; i < val->size; ++i) {
+    Vals.push_back(ConstantInt::get(Type::Int16Ty, val->elements[i]));
+  }
+
+  Cts.push_back(ConstantArray::get(ATy, Vals));
+  
+  return ConstantStruct::get(STy, Cts);
+
+}
+
+Constant* JavaAOTCompiler::getUTF8(const UTF8* val) {
   utf8_iterator End = utf8s.end();
   utf8_iterator I = utf8s.find(val);
   if (I == End) {
-    Constant* C = CreateConstantFromArray<ArrayUInt16>(val, Type::Int16Ty);
-
+    Constant* C = CreateConstantFromUTF8(val);
     GlobalVariable* varGV = new GlobalVariable(C->getType(), true,
                                                GlobalValue::InternalLinkage,
                                                C, "", getLLVMModule());
@@ -1389,7 +1415,7 @@ void JavaAOTCompiler::CreateStaticInitializer() {
        e = arrayClasses.end(); i != e; ++i) {
     Args[0] = loader;
     Args[1] = i->second;
-    Args[2] = getArrayUInt16(i->first->name);
+    Args[2] = getUTF8(i->first->name);
     CallInst::Create(GetClassArray, Args, Args + 3, "", currentBlock);
   }
   
