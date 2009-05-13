@@ -324,7 +324,8 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
 
 
 UserClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name,
-                                              bool doResolve) {
+                                              bool doResolve,
+                                              JavaString* strName) {
   
   UserCommonClass* cl = lookupClass(name);
   
@@ -343,17 +344,20 @@ UserClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name,
   return (UserClass*)cl;
 }
 
-UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve) {
+UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
+                                          JavaString* strName) {
   UserCommonClass* cl = lookupClass(name);
   
   if (!cl) {
-    const UTF8* javaName = name->internalToJava(isolate, 0, name->size);
-    JavaString* str = isolate->UTF8ToStr(javaName);
     Classpath* upcalls = bootstrapLoader->upcalls;
     UserClass* forCtp = loadClass;
+    if (!strName) {
+      const UTF8* javaName = name->internalToJava(isolate, 0, name->size);
+      strName = isolate->UTF8ToStr(javaName);
+    }
     JavaObject* obj = (JavaObject*)
       upcalls->loadInClassLoader->invokeJavaObjectVirtual(isolate, forCtp,
-                                                          javaLoader, str,
+                                                          javaLoader, strName,
                                                           doResolve);
     cl = (UserCommonClass*)((JavaObjectClass*)obj)->getClass();
   }
@@ -367,10 +371,10 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve) {
 }
 
 UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
-                                        bool doThrow) {
+                                      bool doThrow, JavaString* strName) {
  
 
-  UserClass* cl = internalLoad(name, doResolve);
+  UserClass* cl = internalLoad(name, doResolve, strName);
 
   if (!cl && doThrow) {
     Jnjvm* vm = JavaThread::get()->getJVM();
@@ -466,7 +470,8 @@ UserCommonClass* JnjvmClassLoader::lookupClassOrArray(const UTF8* name) {
 
 UserCommonClass* JnjvmClassLoader::loadClassFromUserUTF8(const UTF8* name,
                                                          bool doResolve,
-                                                         bool doThrow) {
+                                                         bool doThrow,
+                                                         JavaString* strName) {
   if (name->size == 0) {
     return 0;
   } else if (name->elements[0] == I_TAB) {
@@ -478,7 +483,7 @@ UserCommonClass* JnjvmClassLoader::loadClassFromUserUTF8(const UTF8* name,
       if (temp) return constructArray(name);
     }
   } else {
-    return loadName(name, doResolve, doThrow);
+    return loadName(name, doResolve, doThrow, strName);
   }
 
   return 0;
@@ -526,7 +531,7 @@ JnjvmClassLoader::loadClassFromJavaString(JavaString* str, bool doResolve,
       }
     }
     
-    return loadClassFromUserUTF8(name, doResolve, doThrow);
+    return loadClassFromUserUTF8(name, doResolve, doThrow, str);
   }
 
   return 0;

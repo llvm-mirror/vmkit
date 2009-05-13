@@ -62,7 +62,8 @@ private:
 
   /// internalLoad - Load the class with the given name.
   ///
-  virtual UserClass* internalLoad(const UTF8* utf8, bool doResolve);
+  virtual UserClass* internalLoad(const UTF8* utf8, bool doResolve,
+                                  JavaString* strName = 0);
   
   /// internalConstructType - Hashes a Typedef, an internal representation of
   /// a class still not loaded.
@@ -145,12 +146,14 @@ public:
   
   /// loadName - Loads the class of the given name.
   ///
-  UserClass* loadName(const UTF8* name, bool doResolve, bool doThrow);
+  UserClass* loadName(const UTF8* name, bool doResolve, bool doThrow,
+                      JavaString* strName = 0);
   
   /// loadClassFromUTF8 - Lookup a class from an UTF8 name and load it.
   ///
   UserCommonClass* loadClassFromUserUTF8(const UTF8* utf8,
-                                         bool doResolve, bool doThrow);
+                                         bool doResolve, bool doThrow,
+                                         JavaString* strName = 0);
   
   /// loadClassFromAsciiz - Lookup a class from an asciiz name and load it.
   ///
@@ -290,7 +293,8 @@ class JnjvmBootstrapLoader : public JnjvmClassLoader {
 private:
   /// internalLoad - Load the class with the given name.
   ///
-  virtual UserClass* internalLoad(const UTF8* utf8, bool doResolve);
+  virtual UserClass* internalLoad(const UTF8* utf8, bool doResolve,
+                                  JavaString* strName = 0);
      
   /// bootClasspath - List of paths for the base classes.
   ///
