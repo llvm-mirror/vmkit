@@ -77,10 +77,10 @@ private:
                    JavaObject* loader, Jnjvm* isolate);
 
   /// lookupComponentName - Try to find the component name of the given array
-  /// name. If the component name is not in the table of UTF8s and create is
-  /// false, the function returns 0.
+  /// name. If the component name is not in the table of UTF8s and holder
+  /// is null, the function returns 0.
   ///
-  const UTF8* lookupComponentName(const UTF8* name, bool create, bool& prim);
+  const UTF8* lookupComponentName(const UTF8* name, UTF8* holder, bool& prim);
 
 protected:
   

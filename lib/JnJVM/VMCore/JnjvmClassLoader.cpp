@@ -397,7 +397,7 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
 
 
 const UTF8* JnjvmClassLoader::lookupComponentName(const UTF8* name,
-                                                  bool create,
+                                                  UTF8* holder,
                                                   bool& prim) {
   uint32 len = name->size;
   uint32 start = 0;
@@ -420,9 +420,12 @@ const UTF8* JnjvmClassLoader::lookupComponentName(const UTF8* name,
             const uint16* buf = &(name->elements[start + 1]);
             uint32 bufLen = len - 2;
             const UTF8* componentName = hashUTF8->lookupReader(buf, bufLen);
-            if (!componentName && create) {
-              componentName = name->extract(isolate, start + 1,
-                                            start + len - 1);
+            if (!componentName && holder) {
+              holder->size = len - 1;
+              for (uint32 i = 0; i < len - 1; ++i) {
+                holder->elements[i] = name->elements[start + i];
+              }
+              componentName = holder;
             }
             return componentName;
           }
@@ -456,7 +459,7 @@ UserCommonClass* JnjvmClassLoader::lookupClassOrArray(const UTF8* name) {
   
   if (name->elements[0] == I_TAB) {
     bool prim = false;
-    const UTF8* componentName = lookupComponentName(name, false, prim);
+    const UTF8* componentName = lookupComponentName(name, 0, prim);
     if (prim) return constructArray(name);
     if (componentName) {
       UserCommonClass* temp = lookupClass(componentName);
@@ -475,7 +478,10 @@ UserCommonClass* JnjvmClassLoader::loadClassFromUserUTF8(const UTF8* name,
     return 0;
   } else if (name->elements[0] == I_TAB) {
     bool prim = false;
-    const UTF8* componentName = lookupComponentName(name, true, prim);
+    UTF8* holder = (UTF8*)alloca(sizeof(UTF8) + name->size * sizeof(uint16));
+    if (!holder) return 0;
+    
+    const UTF8* componentName = lookupComponentName(name, holder, prim);
     if (prim) return constructArray(name);
     if (componentName) {
       UserCommonClass* temp = loadName(componentName, doResolve, doThrow);
