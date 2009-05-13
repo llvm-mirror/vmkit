@@ -1404,7 +1404,9 @@ void JavaAOTCompiler::CreateStaticInitializer() {
       CallInst::Create(AddString, Args, Args + 2, "", currentBlock);
     }
   }
-  
+ 
+#if 0
+  // Disable initialization of UTF8s, it makes the Init method too big.
   // If we have defined some UTF8s.
   if (utf8s.begin() != utf8s.end()) {
     llvmArgs.clear();
@@ -1423,7 +1425,8 @@ void JavaAOTCompiler::CreateStaticInitializer() {
       CallInst::Create(AddUTF8, Args, Args + 2, "", currentBlock);
     }
   }
-  
+#endif
+
   for (native_class_iterator i = nativeClasses.begin(), 
        e = nativeClasses.end(); i != e; ++i) {
     if (isCompiling(i->first)) {

@@ -1072,6 +1072,8 @@ extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
                                         CommonClass* cl) {
   cl->classLoader = JCL;
   
+  JCL->hashUTF8->insert(cl->name);
+
   if (cl->isClass()) {
     Class* realCl = cl->asClass();
 		// To avoid data alignment in the llvm assembly emitter, we set the
@@ -1079,6 +1081,30 @@ extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
     realCl->staticMethods = realCl->virtualMethods + realCl->nbVirtualMethods;
     realCl->staticFields = realCl->virtualFields + realCl->nbVirtualFields;
   	cl->virtualVT->setNativeTracer(cl->virtualVT->tracer, "");
+
+    for (uint32 i = 0; i< realCl->nbStaticMethods; ++i) {
+      JavaMethod& meth = realCl->staticMethods[i];
+      JCL->hashUTF8->insert(meth.name);
+      JCL->hashUTF8->insert(meth.type);
+    }
+    
+    for (uint32 i = 0; i< realCl->nbVirtualMethods; ++i) {
+      JavaMethod& meth = realCl->virtualMethods[i];
+      JCL->hashUTF8->insert(meth.name);
+      JCL->hashUTF8->insert(meth.type);
+    }
+    
+    for (uint32 i = 0; i< realCl->nbStaticFields; ++i) {
+      JavaField& field = realCl->staticFields[i];
+      JCL->hashUTF8->insert(field.name);
+      JCL->hashUTF8->insert(field.type);
+    }
+    
+    for (uint32 i = 0; i< realCl->nbVirtualFields; ++i) {
+      JavaField& field = realCl->virtualFields[i];
+      JCL->hashUTF8->insert(field.name);
+      JCL->hashUTF8->insert(field.type);
+    }
   }
 
 	if (!cl->isPrimitive())
@@ -1087,7 +1113,8 @@ extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
 }
 
 extern "C" void vmjcGetClassArray(JnjvmClassLoader* JCL, ClassArray** ptr,
-                              const UTF8* name) {
+                                  const UTF8* name) {
+  JCL->hashUTF8->insert(name);
   *ptr = JCL->constructArray(name);
 }
 
