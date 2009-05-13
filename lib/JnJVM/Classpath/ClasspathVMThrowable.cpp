@@ -67,8 +67,7 @@ static JavaObject* consStackElement(JavaMethod* meth, void* ip) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* methodName = vm->internalUTF8ToStr(meth->name);
   Class* cl = meth->classDef;
-  const UTF8* internal = cl->name->internalToJava(vm, 0, cl->name->size);
-  JavaObject* className = vm->UTF8ToStr(internal);
+  JavaObject* className = JavaString::internalToJava(cl->name, vm);
   JavaObject* sourceName = 0;
   
   Attribut* sourceAtt = cl->lookupAttribut(Attribut::sourceFileAttribut);

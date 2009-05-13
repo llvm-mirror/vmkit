@@ -222,9 +222,7 @@ jobject Cl) {
   UserCommonClass* cl = ((JavaObjectClass*)Cl)->getClass();
   
   const UTF8* iname = cl->getName();
-  const UTF8* res = iname->internalToJava(vm, 0, iname->size);
-
-  result = (jobject)(vm->UTF8ToStr(res));
+  result = (jobject)JavaString::internalToJava(iname, vm);
 
   END_NATIVE_EXCEPTION
 

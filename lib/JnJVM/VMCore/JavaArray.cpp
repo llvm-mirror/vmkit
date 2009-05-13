@@ -57,19 +57,6 @@ const UTF8* UTF8::javaToInternal(UTF8Map* map, unsigned int start,
   return map->lookupOrCreateReader(java, len);
 }
 
-const UTF8* UTF8::internalToJava(Jnjvm* vm, unsigned int start,
-                                 unsigned int len) const {
-  UTF8* array = (UTF8*)vm->upcalls->ArrayOfChar->doNew(len, vm);
-  uint16* java = array->elements;
-  for (uint32 i = 0; i < len; i++) {
-    uint16 cur = elements[start + i];
-    if (cur == '/') java[i] = '.';
-    else java[i] = cur;
-  }
-
-  return (const UTF8*)array;
-}
-
 const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
   uint32 len = end - start;
   uint16* buf = (uint16*)alloca(sizeof(uint16) * len);

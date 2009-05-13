@@ -123,14 +123,6 @@ private:
 public:
   
 
-  /// internalToJava - Creates a copy of the UTF8 at its given offset and size
-  /// with all its '.' replaced by '/'. The JVM bytecode reference classes in
-  /// packages with the '.' as the separating character. The JVM language uses
-  /// the '/' character.
-  ///
-  const UTF8* internalToJava(Jnjvm* vm, unsigned int start,
-                             unsigned int len) const;
-  
   /// javaToInternal - Replaces all '/' into '.'.
   const UTF8* javaToInternal(UTF8Map* map, unsigned int start,
                              unsigned int len) const;

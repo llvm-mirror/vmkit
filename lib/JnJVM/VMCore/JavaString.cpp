@@ -61,3 +61,15 @@ void JavaString::stringDestructor(JavaString* str) {
   assert(vm && "No vm when destroying a string");
   if (str->value) vm->hashStr.remove(str->value, str);
 }
+
+JavaString* JavaString::internalToJava(const UTF8* name, Jnjvm* vm) {
+  UTF8* array = (UTF8*)vm->upcalls->ArrayOfChar->doNew(name->size, vm);
+  uint16* java = array->elements;
+  for (sint32 i = 0; i < name->size; i++) {
+    uint16 cur = name->elements[i];
+    if (cur == '/') java[i] = '.';
+    else java[i] = cur;
+  }
+
+  return vm->UTF8ToStr(array);
+}

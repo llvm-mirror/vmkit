@@ -352,8 +352,7 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
     Classpath* upcalls = bootstrapLoader->upcalls;
     UserClass* forCtp = loadClass;
     if (!strName) {
-      const UTF8* javaName = name->internalToJava(isolate, 0, name->size);
-      strName = isolate->UTF8ToStr(javaName);
+      strName = JavaString::internalToJava(name, isolate);
     }
     JavaObject* obj = (JavaObject*)
       upcalls->loadInClassLoader->invokeJavaObjectVirtual(isolate, forCtp,
