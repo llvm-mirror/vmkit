@@ -1401,6 +1401,25 @@ void JavaAOTCompiler::CreateStaticInitializer() {
     }
   }
   
+  // If we have defined some UTF8s.
+  if (utf8s.begin() != utf8s.end()) {
+    llvmArgs.clear();
+    llvmArgs.push_back(JnjvmModule::ptrType); // class loader
+    llvmArgs.push_back(utf8s.begin()->second->getType()); // val
+    FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+  
+    Function* AddUTF8 = Function::Create(FTy, GlobalValue::ExternalLinkage,
+                                         "vmjcAddUTF8", getLLVMModule());
+  
+
+  
+    for (utf8_iterator i = utf8s.begin(), e = utf8s.end(); i != e; ++i) {
+      Args[0] = loader;
+      Args[1] = i->second;
+      CallInst::Create(AddUTF8, Args, Args + 2, "", currentBlock);
+    }
+  }
+  
   for (native_class_iterator i = nativeClasses.begin(), 
        e = nativeClasses.end(); i != e; ++i) {
     if (isCompiling(i->first)) {
