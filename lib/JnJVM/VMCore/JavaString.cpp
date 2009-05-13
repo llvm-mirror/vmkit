@@ -49,8 +49,14 @@ char* JavaString::strToAsciiz() {
 const UTF8* JavaString::strToUTF8(Jnjvm* vm) {
   const UTF8* utf8 = this->value;
   assert(utf8 && "String without an UTF8?");
-  if (offset || (offset + count < utf8->size)) {
-    return utf8->extract(vm, offset, offset + count);
+  if (offset || (count != utf8->size)) {
+    UTF8* array = (UTF8*) vm->upcalls->ArrayOfChar->doNew(count, vm);
+    uint16* buf = array->elements;
+
+    for (sint32 i = 0; i < count; i++) {
+      buf[i] = value->elements[i + offset];
+    }
+    return (const UTF8*)array;
   } else {
     return utf8;
   }

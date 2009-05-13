@@ -127,10 +127,6 @@ public:
   const UTF8* javaToInternal(UTF8Map* map, unsigned int start,
                              unsigned int len) const;
   
-  /// extract - Creates an UTF8 by extracting the contents at the given size
-  /// of this.
-  const UTF8* extract(Jnjvm* vm, uint32 start, uint32 len) const;
-  
   /// extract - Similar, but creates it in the map.
   const UTF8* extract(UTF8Map* map, uint32 start, uint32 len) const;
 

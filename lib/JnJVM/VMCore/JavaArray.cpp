@@ -68,18 +68,6 @@ const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
   return map->lookupOrCreateReader(buf, len);
 }
 
-const UTF8* UTF8::extract(Jnjvm* vm, uint32 start, uint32 end) const {
-  uint32 len = end - start;
-  UTF8* array = (UTF8*) vm->upcalls->ArrayOfChar->doNew(len, vm);
-  uint16* buf = array->elements;
-
-  for (uint32 i = 0; i < len; i++) {
-    buf[i] = elements[i + start];
-  }
-
-  return (const UTF8*)array;
-}
-
 char* UTF8::UTF8ToAsciiz() const {
 #ifndef DEBUG
   mvm::NativeString* buf = mvm::NativeString::alloc(size + 1);
