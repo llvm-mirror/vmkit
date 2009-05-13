@@ -135,12 +135,6 @@ public:
   const UTF8* javaToInternal(UTF8Map* map, unsigned int start,
                              unsigned int len) const;
   
-  /// checkedJavaToInternal - Replaces all '/' into '.'. Returns null if the
-  /// UTF8 contains a '/', as Java does not allow things like
-  /// Class.forName("java/lang/Object")
-  const UTF8* checkedJavaToInternal(Jnjvm* vm, unsigned int start,
-                                    unsigned int len) const;
-  
   /// extract - Creates an UTF8 by extracting the contents at the given size
   /// of this.
   const UTF8* extract(Jnjvm* vm, uint32 start, uint32 len) const;

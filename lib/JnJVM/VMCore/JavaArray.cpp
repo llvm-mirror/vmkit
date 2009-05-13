@@ -57,22 +57,6 @@ const UTF8* UTF8::javaToInternal(UTF8Map* map, unsigned int start,
   return map->lookupOrCreateReader(java, len);
 }
 
-// We also define a checked java to internal function to disallow
-// users to load classes with '/'.
-const UTF8* UTF8::checkedJavaToInternal(Jnjvm* vm, unsigned int start,
-                                        unsigned int len) const {
-  UTF8* array = (UTF8*)vm->upcalls->ArrayOfChar->doNew(len, vm);
-  uint16* java = array->elements;
-  for (uint32 i = 0; i < len; i++) {
-    uint16 cur = elements[start + i];
-    if (cur == '.') java[i] = '/';
-    else if (cur == '/') return 0;
-    else java[i] = cur;
-  }
-
-  return (const UTF8*)array;
-}
-
 const UTF8* UTF8::internalToJava(Jnjvm* vm, unsigned int start,
                                  unsigned int len) const {
   UTF8* array = (UTF8*)vm->upcalls->ArrayOfChar->doNew(len, vm);
