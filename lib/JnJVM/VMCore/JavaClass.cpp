@@ -310,7 +310,6 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::Allocator& allocator) {
   VirtualTable* VT = virtualVT;
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + n * primSize;
   JavaArray* res = (JavaArray*)allocator.allocateManagedObject(size, VT);
-  res->initialise(this);
   res->size = n;
   return res;
 }
@@ -325,7 +324,6 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator) {
   
   JavaArray* res = (JavaArray*)allocator.Allocate(size);
   ((void**)res)[0] = VT;
-  res->initialise(this);
   res->size = n;
   return res;
 }
@@ -521,7 +519,6 @@ JavaObject* UserClass::doNew(Jnjvm* vm) {
   JavaObject* res = 
     (JavaObject*)vm->gcAllocator.allocateManagedObject(getVirtualSize(),
                                                        getVirtualVT());
-  res->initialise(this);
   return res;
 }
 

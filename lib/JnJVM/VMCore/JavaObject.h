@@ -160,11 +160,6 @@ public:
     lock.overflowThinLock();
   }
 
-  /// initialise - Initialises the object.
-  ///
-  void initialise(UserCommonClass* cl) {
-  }
-
   /// instanceOf - Is this object's class of type the given class?
   ///
   bool instanceOf(UserCommonClass* cl);

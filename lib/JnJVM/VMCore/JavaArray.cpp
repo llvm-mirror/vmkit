@@ -81,7 +81,6 @@ const UTF8* UTF8::acons(sint32 n, UserClassArray* cl,
          "Creating an UTF8 with a size too big");
 
   UTF8* res = new (allocator, n) UTF8();
-  res->initialise(cl);
   res->size = n; 
   return (const UTF8*)res;
 }
