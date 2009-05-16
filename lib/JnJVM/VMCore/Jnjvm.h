@@ -34,6 +34,7 @@ class JavaMethod;
 class JavaObject;
 class JavaString;
 class JavaThread;
+class JavaVirtualTable;
 class JnjvmBootstrapLoader;
 class JnjvmClassLoader;
 class UserClass;

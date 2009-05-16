@@ -18,6 +18,8 @@ namespace jnjvm {
 
 class ArrayUInt16;
 class Jnjvm;
+class UTF8;
+class UTF8Map;
 
 class JavaString : public JavaObject {
 public:

@@ -295,3 +295,12 @@ void JavaObject::decapsulePrimitive(Jnjvm *vm, uintptr_t &buf,
   // can not be here
   return;
 }
+
+bool JavaObject::instanceOf(UserCommonClass* cl) {
+  if (!this) return false;
+  else return this->getClass()->isAssignableFrom(cl);
+}
+
+UserCommonClass* JavaObject::getClass() const {
+  return ((JavaVirtualTable*)getVirtualTable())->cl;
+}

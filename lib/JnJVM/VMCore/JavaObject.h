@@ -18,12 +18,14 @@
 
 #include "types.h"
 
-#include "JavaClass.h"
+#include "JnjvmConfig.h"
 
 namespace jnjvm {
 
 class JavaObject;
 class JavaThread;
+class Jnjvm;
+class Typedef;
 
 /// JavaCond - This class maintains a list of threads blocked on a wait. 
 /// notify and notifyAll will change the state of one or more of these threads.
@@ -127,9 +129,7 @@ public:
 
   /// getClass - Returns the class of this object.
   ///
-  UserCommonClass* getClass() const {
-    return ((JavaVirtualTable*)getVirtualTable())->cl;
-  }
+  UserCommonClass* getClass() const;
 
   /// lock - The monitor of this object. Most of the time null.
   ///
@@ -167,10 +167,7 @@ public:
 
   /// instanceOf - Is this object's class of type the given class?
   ///
-  bool instanceOf(UserCommonClass* cl) {
-    if (!this) return false;
-    else return this->getClass()->isAssignableFrom(cl);
-  }
+  bool instanceOf(UserCommonClass* cl);
 
   /// acquire - Acquire the lock on this object.
   void acquire() {

@@ -18,6 +18,7 @@
 #include "MvmGC.h"
 #include "mvm/VirtualMachine.h"
 
+#include "JavaClass.h"
 #include "JavaConstantPool.h"
 #include "JavaThread.h"
 

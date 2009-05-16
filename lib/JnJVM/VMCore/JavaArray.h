@@ -27,6 +27,7 @@ class ClassArray;
 class CommonClass;
 class JavaObject;
 class Jnjvm;
+class UTF8Map;
 
 /// TJavaArray - Template class to be instantiated by real arrays. All arrays
 ///  have a constant size and an array of element. When JnJVM allocates an

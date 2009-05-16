@@ -14,6 +14,8 @@
 
 #include "mvm/Allocator.h"
 
+#include "JnjvmClassLoader.h"
+
 namespace jnjvm {
 
 class UserCommonClass;
