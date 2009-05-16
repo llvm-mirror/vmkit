@@ -574,12 +574,6 @@ void Jnjvm::classNotFoundException(JavaString* name) {
 }
 
 
-void Jnjvm::unknownError(const char* fmt, ...) {
-  error(upcalls->UnknownError,
-        upcalls->InitUnknownError,  
-        fmt);
-}
-
 void Jnjvm::classFormatError(const char* msg, ...) {
   error(upcalls->ClassFormatError,
         upcalls->InitClassFormatError,

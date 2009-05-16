@@ -275,7 +275,6 @@ public:
   void noClassDefFoundError(const UTF8* name);
   void classNotFoundException(JavaString* str);
 
-  void unknownError(const char* fmt, ...); 
   void classFormatError(const char* fmt, ...);
   
   /// asciizToStr - Constructs a java/lang/String object from the given asciiz.

@@ -295,26 +295,23 @@ extern "C" JavaObject* jnjvmRuntimeDelegatee(UserCommonClass* cl) {
 // Throws if one of the dimension is negative.
 static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
                                      sint32* dims, Jnjvm* vm) {
-  if (len <= 0) JavaThread::get()->getJVM()->unknownError("Can not happen");
+  assert(len <= 0 && "Negative size given by VMKit");
   JavaArray* _res = cl->doNew(dims[0], vm);
   if (len > 1) {
     ArrayObject* res = (ArrayObject*)_res;
     UserCommonClass* _base = cl->baseClass();
-    if (_base->isArray()) {
-      UserClassArray* base = (UserClassArray*)_base;
-      if (dims[0] > 0) {
-        for (sint32 i = 0; i < dims[0]; ++i) {
-          res->elements[i] = multiCallNewIntern(base, (len - 1),
-                                                &dims[1], vm);
-        }
-      } else {
-        for (uint32 i = 1; i < len; ++i) {
-          sint32 p = dims[i];
-          if (p < 0) JavaThread::get()->getJVM()->negativeArraySizeException(p);
-        }
+    assert(_base->isArray() && "Base class not an array");
+    UserClassArray* base = (UserClassArray*)_base;
+    if (dims[0] > 0) {
+      for (sint32 i = 0; i < dims[0]; ++i) {
+        res->elements[i] = multiCallNewIntern(base, (len - 1),
+                                              &dims[1], vm);
       }
     } else {
-      JavaThread::get()->getJVM()->unknownError("Can not happen");
+      for (uint32 i = 1; i < len; ++i) {
+        sint32 p = dims[i];
+        if (p < 0) JavaThread::get()->getJVM()->negativeArraySizeException(p);
+      }
     }
   }
   return _res;

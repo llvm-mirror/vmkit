@@ -378,7 +378,8 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
   if (!cl && doThrow) {
     Jnjvm* vm = JavaThread::get()->getJVM();
     if (name->equals(bootstrapLoader->NoClassDefFoundError)) {
-      vm->unknownError("Unable to load NoClassDefFoundError");
+      fprintf(stderr, "Unable to load NoClassDefFoundError");
+      abort();
     }
     vm->noClassDefFoundError(name);
   }
@@ -686,12 +687,11 @@ Typedef* JnjvmClassLoader::constructType(const UTF8* name) {
 
 static void typeError(const UTF8* name, short int l) {
   if (l != 0) {
-    JavaThread::get()->getJVM()->
-      unknownError("wrong type %d in %s", l, name->printString());
+    fprintf(stderr, "wrong type %d in %s", l, name->printString());
   } else {
-    JavaThread::get()->getJVM()->
-      unknownError("wrong type %s", name->printString());
+    fprintf(stderr, "wrong type %s", name->printString());
   }
+  abort();
 }
 
 

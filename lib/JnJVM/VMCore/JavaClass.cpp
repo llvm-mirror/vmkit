@@ -651,8 +651,10 @@ void JavaField::initField(void* obj, Jnjvm* vm) {
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
       InitField(obj, (JavaObject*)ctpInfo->resolveString(utf8, idx));
     } else {
-      JavaThread::get()->getJVM()->
-        unknownError("unknown constant %s\n", type->printString());
+      fprintf(stderr, "I haven't verified your class file and it's malformed:"
+                      " unknown constant %s!\n",
+                      type->printString());
+      abort();
     }
   } 
 }

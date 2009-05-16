@@ -92,9 +92,6 @@ jmethodID FromReflectedMethod(JNIEnv *env, jobject method) {
     return (jmethodID)((JavaObjectMethod*)meth)->getInternalMethod();
   } else if (cl == upcalls->newMethod) {
     return (jmethodID)((JavaObjectConstructor*)meth)->getInternalMethod();
-  } else {
-    vm->unknownError("Not a constructor or a method: %s",
-                     meth->getClass()->printString());
   }
   
   END_JNI_EXCEPTION
@@ -217,7 +214,8 @@ jobject AllocObject(JNIEnv *env, jclass clazz) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = 
     UserCommonClass::resolvedImplClass(vm, (JavaObject*)clazz, true);
-  if (cl->isArray()) JavaThread::get()->getJVM()->unknownError("implement me");
+  if (cl->isArray()) return 0;
+
   return (jobject)((UserClass*)cl)->doNew(JavaThread::get()->getJVM());
 
   END_JNI_EXCEPTION
