@@ -596,9 +596,10 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
   
   if (!codeAtt) {
-    Jnjvm* vm = JavaThread::get()->getJVM();
-    vm->unknownError("unable to find the code attribut in %s",
-                     compilingMethod->printString());
+    fprintf(stderr, "I haven't verified your class file and it's malformed:"
+                    " no code attribut found for %s!\n",
+                    compilingMethod->printString());
+    abort();
   }
 
   Reader reader(codeAtt, compilingClass->bytes);
@@ -724,9 +725,10 @@ llvm::Function* JavaJIT::javaCompile() {
   Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
   
   if (!codeAtt) {
-    Jnjvm* vm = JavaThread::get()->getJVM();
-    vm->unknownError("unable to find the code attribut in %s",
-                     compilingMethod->printString());
+    fprintf(stderr, "I haven't verified your class file and it's malformed:"
+                    " no code attribut found for %s!\n",
+                    compilingMethod->printString());
+    abort();
   }
 
   Reader reader(codeAtt, compilingClass->bytes);
@@ -1075,7 +1077,10 @@ void JavaJIT::loadConstant(uint16 index) {
                            currentBlock);
     push(res, false);
   } else {
-    JavaThread::get()->getJVM()->unknownError("unknown type %d", type);
+    fprintf(stderr, "I haven't verified your class file and it's malformed:"
+                    " unknown ldc %d in %s!\n", type,
+                    compilingClass->printString());
+    abort();
   }
 }
 

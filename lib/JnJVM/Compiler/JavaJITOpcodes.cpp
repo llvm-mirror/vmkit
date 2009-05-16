@@ -42,7 +42,7 @@
 using namespace jnjvm;
 using namespace llvm;
 
-uint8 arrayType(unsigned int t) {
+uint8 arrayType(JavaMethod* meth, unsigned int t) {
   if (t == JavaArray::T_CHAR) {
     return I_CHAR;
   } else if (t == JavaArray::T_BOOLEAN) {
@@ -60,8 +60,10 @@ uint8 arrayType(unsigned int t) {
   } else if (t == JavaArray::T_DOUBLE) {
     return I_DOUBLE;
   } else {
-    JavaThread::get()->getJVM()->unknownError("unknown array type %d\n", t);
-    return 0;
+    fprintf(stderr, "I haven't verified your class file and it's malformed:"
+                    " unknown array type %d in %s!\n", t,
+                    meth->printString());
+    abort();
   }
 }
 
@@ -1902,7 +1904,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         if (bytecodes[i] == NEWARRAY) {
           uint8 id = bytecodes[++i];
-          uint8 charId = arrayType(id);
+          uint8 charId = arrayType(compilingMethod, id);
 #ifndef ISOLATE_SHARING
           JnjvmBootstrapLoader* loader = 
             compilingClass->classLoader->bootstrapLoader;
@@ -2190,9 +2192,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
       }
       
-      default :
-        JavaThread::get()->getJVM()->unknownError("unknown bytecode");
-
+      default : {
+        fprintf(stderr, "I haven't verified your class file and it's malformed:"
+                    " unknown bytecode %d in %s\n!", bytecodes[i],
+                    compilingClass->printString());
+        abort();
+      }
     } 
   }
 }
@@ -2536,8 +2541,12 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
 
-      default :
-        JavaThread::get()->getJVM()->unknownError("unknown bytecode");
+      default : {
+        fprintf(stderr, "I haven't verified your class file and it's malformed:"
+                    " unknown bytecode %d in %s!\n", bytecodes[i],
+                    compilingClass->printString());
+        abort();
+      }
     }
   }
 }
