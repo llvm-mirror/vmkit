@@ -1572,7 +1572,10 @@ void mainCompilerStart(JavaThread* th) {
       std::vector<Class*> classes;
 
       ArrayUInt8* bytes = Reader::openFile(bootstrapLoader, name);
-      if (!bytes) vm->unknownError("Can't find zip file.");
+      if (!bytes) {
+        fprintf(stderr, "Can't find zip file.");
+        goto end;
+      }
       ZipArchive archive(bytes, bootstrapLoader->allocator);
     
       char* realName = (char*)alloca(4096);
@@ -1586,9 +1589,11 @@ void mainCompilerStart(JavaThread* th) {
           ArrayUInt8* res = 
             (ArrayUInt8*)array->doNew(file->ucsize, bootstrapLoader->allocator);
           int ok = archive.readFile(res, file);
-          if (!ok) vm->unknownError("Wrong zip file.");
+          if (!ok) {
+            fprintf(stderr, "Wrong zip file.");
+            goto end;
+          }
       
-        
           memcpy(realName, file->filename, size);
           realName[size - 6] = 0;
           const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
@@ -1677,6 +1682,7 @@ void mainCompilerStart(JavaThread* th) {
     fprintf(stderr, "Error : %s\n", str.c_str());
   }
   
+end:
 
   vm->threadSystem.nonDaemonLock.lock();
   --(vm->threadSystem.nonDaemonThreads);
