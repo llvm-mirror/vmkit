@@ -29,6 +29,7 @@ namespace jnjvm {
 
 class ArrayObject;
 class ArrayUInt8;
+class ArrayUInt16;
 class Enveloppe;
 class Class;
 class ClassArray;
@@ -1168,6 +1169,10 @@ public:
   /// printString - Output a string representation of the method.
   ///
   const char* printString() const;
+ 
+  /// toString - Return an array of chars, suitable for creating a string.
+  ///
+  ArrayUInt16* toString() const;
   
   /// jniConsFromMeth - Construct the JNI name of this method as if
   /// there is no other function in the class with the same name.

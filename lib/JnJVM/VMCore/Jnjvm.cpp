@@ -333,7 +333,7 @@ JavaObject* Jnjvm::CreateNegativeArraySizeException() {
 JavaObject* Jnjvm::CreateUnsatisfiedLinkError(JavaMethod* meth) {
   return CreateError(upcalls->UnsatisfiedLinkError,
                      upcalls->InitUnsatisfiedLinkError,
-                     (JavaString*)0);
+                     constructString(meth->toString()));
 }
 
 JavaObject* Jnjvm::CreateArithmeticException() {

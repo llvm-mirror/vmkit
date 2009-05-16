@@ -1210,6 +1210,31 @@ bool UserClass::isNativeOverloaded(JavaMethod* meth) {
   return false;
 }
 
+
+ArrayUInt16* JavaMethod::toString() const {
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  uint32 size = classDef->name->size + name->size + type->size + 1;
+  ArrayUInt16* res = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(size, vm);
+  uint32 i = 0;
+ 
+  for (sint32 j = 0; j < classDef->name->size; ++j) {
+    if (classDef->name->elements[j] == '/') res->elements[i++] = '.';
+    else res->elements[i++] = classDef->name->elements[j];
+  }
+
+  res->elements[i++] = '.';
+  
+  for (sint32 j = 0; j < name->size; ++j) {
+    res->elements[i++] = name->elements[j];
+  }
+  
+  for (sint32 j = 0; j < type->size; ++j) {
+    res->elements[i++] = type->elements[j];
+  }
+
+  return res;
+}
+
 bool UserClass::needsInitialisationCheck() {
   
   if (!isClassRead()) return true;
