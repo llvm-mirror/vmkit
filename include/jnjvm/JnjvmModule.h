@@ -339,6 +339,7 @@ public:
   llvm::Function* NegativeArraySizeExceptionFunction;
   llvm::Function* ArrayStoreExceptionFunction;
   llvm::Function* ArithmeticExceptionFunction;
+  llvm::Function* ThrowExceptionFromJITFunction;
   
 
   JnjvmModule(llvm::Module*);

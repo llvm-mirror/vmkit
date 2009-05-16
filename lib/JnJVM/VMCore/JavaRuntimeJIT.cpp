@@ -9,6 +9,7 @@
 //===----------------------------------------------------------------------===//
 
 
+#include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaCache.h"
 #include "JavaClass.h"
@@ -581,6 +582,26 @@ extern "C" JavaObject* jnjvmArrayStoreException(JavaVirtualTable* VT) {
 #endif
   
   return exc;
+}
+
+// Create an exception then throws it.
+extern "C" void jnjvmThrowExceptionFromJIT() {
+  JavaObject *exc = 0;
+  JavaThread *th = JavaThread::get();
+  
+  BEGIN_NATIVE_EXCEPTION(1)
+
+  JavaMethod* meth = th->getCallingMethod();
+  exc = th->getJVM()->CreateUnsatisfiedLinkError(meth);
+
+  END_NATIVE_EXCEPTION
+
+#ifdef DWARF_EXCEPTIONS
+  th->throwException(exc);
+#else
+  th->pendingException = exc;
+#endif
+  
 }
 
 extern "C" void jnjvmPrintMethodStart(JavaMethod* meth) {

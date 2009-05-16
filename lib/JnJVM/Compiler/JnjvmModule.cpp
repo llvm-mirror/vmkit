@@ -428,6 +428,8 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
 #endif
 
   GetLockFunction = module->getFunction("getLock");
+  ThrowExceptionFromJITFunction =
+    module->getFunction("jnjvmThrowExceptionFromJIT");
  
 }
 

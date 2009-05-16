@@ -96,6 +96,19 @@ void JavaThread::startJava() {
   addresses.push_back(cur);
 }
 
+JavaMethod* JavaThread::getCallingMethod() {
+  // I'm a native function, so try to look at the last Java method.
+  // First take the last caller.
+  void** addr = (void**)addresses.back();
+  
+  // Get the IP of the caller.
+  void* ip = FRAME_IP(addr);
+
+  JavaMethod* meth = getJVM()->IPToMethod<JavaMethod>(ip);
+
+  return meth;
+}
+
 UserClass* JavaThread::getCallingClass(uint32 level) {
   // I'm a native function, so try to look at the last Java method.
   // First take the getCallingClass address.

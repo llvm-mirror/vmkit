@@ -252,6 +252,7 @@ public:
   JavaObject* CreateStackOverflowError();
   JavaObject* CreateLinkageError(const char* msg);
   JavaObject* CreateArrayStoreException(JavaVirtualTable* VT);
+  JavaObject* CreateUnsatisfiedLinkError(JavaMethod* meth);
   
   /// Exceptions - These are the only exceptions VMKit will make.
   ///

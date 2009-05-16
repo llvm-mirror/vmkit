@@ -219,6 +219,7 @@ declare %JavaObject* @jnjvmStackOverflowError()
 declare %JavaObject* @jnjvmArrayStoreException(%VT*)
 declare %JavaObject* @jnjvmArithmeticException()
 declare void @jnjvmThrowException(%JavaObject*)
+declare void @jnjvmThrowExceptionFromJIT()
 
 declare void @jnjvmJNIProceedPendingException()
 declare i8*  @jnjvmGetSJLJBuffer()

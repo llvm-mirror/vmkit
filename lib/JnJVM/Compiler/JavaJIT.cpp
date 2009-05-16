@@ -222,6 +222,7 @@ llvm::Value* JavaJIT::getCurrentThread() {
   return threadId;
 }
 
+extern "C" void jnjvmThrowExceptionFromJIT();
 
 llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
@@ -231,6 +232,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   bool stat = isStatic(compilingMethod->access);
 
   const FunctionType *funcType = llvmFunction->getFunctionType();
+  const llvm::Type* returnType = funcType->getReturnType();
   
   bool jnjvm = false;
   
@@ -243,15 +245,24 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
   char* functionName = (char*)alloca(3 + JNI_NAME_PRE_LEN + 
                             ((mnlen + clen + mtlen) << 1));
+  
   if (!natPtr)
     natPtr = compilingClass->classLoader->nativeLookup(compilingMethod, jnjvm,
                                                        functionName);
   
   if (!natPtr && !TheCompiler->isStaticCompiling()) {
-    fprintf(stderr, "Native function %s not found. Probably "
-               "not implemented by JnJVM?\n", compilingMethod->printString());
-    JavaThread::get()->getJVM()->unknownError("can not find native method %s",
-                                              compilingMethod->printString());
+    currentBlock = createBasicBlock("start");
+    CallInst::Create(module->ThrowExceptionFromJITFunction, "", currentBlock);
+    if (returnType != Type::VoidTy)
+      ReturnInst::Create(Constant::getNullValue(returnType), currentBlock);
+    else
+      ReturnInst::Create(currentBlock);
+  
+    PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "end native compile %s\n",
+                compilingMethod->printString());
+  
+    llvmFunction->setLinkage(GlobalValue::ExternalLinkage);
+    return llvmFunction;
   }
   
   
@@ -265,7 +276,6 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   currentBlock = createBasicBlock("start");
   BasicBlock* executeBlock = createBasicBlock("execute");
   endBlock = createBasicBlock("end block");
-  const llvm::Type* returnType = funcType->getReturnType();
 
   Value* buf = llvm::CallInst::Create(module->GetSJLJBufferFunction,
                                       "", currentBlock);

@@ -141,6 +141,11 @@ private:
   JavaObject* vmState;
 
 public:
+
+  void setDetailedMessage(JavaObject* obj) {
+    detailedMessage = obj;
+  }
+
   void fillInStackTrace() {
     cause = this;
     vmState = internalFillInStackTrace(this);

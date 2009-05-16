@@ -37,8 +37,10 @@ jchar byteId) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClassPrimitive* prim = 
     UserClassPrimitive::byteIdToPrimitive(byteId, vm->upcalls);
-  if (!prim)
-    vm->unknownError("unknown byte primitive %c", byteId);
+  if (!prim) {
+    fprintf(stderr, "unknown byte primitive %c", byteId);
+    abort();
+  }
   
   res = (jobject)prim->getClassDelegatee(vm);
 

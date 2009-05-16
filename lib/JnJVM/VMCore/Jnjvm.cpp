@@ -330,6 +330,12 @@ JavaObject* Jnjvm::CreateNegativeArraySizeException() {
                      (JavaString*)0);
 }
 
+JavaObject* Jnjvm::CreateUnsatisfiedLinkError(JavaMethod* meth) {
+  return CreateError(upcalls->UnsatisfiedLinkError,
+                     upcalls->InitUnsatisfiedLinkError,
+                     (JavaString*)0);
+}
+
 JavaObject* Jnjvm::CreateArithmeticException() {
   JavaString* str = asciizToStr("/ by zero");
   return CreateError(upcalls->ArithmeticException,

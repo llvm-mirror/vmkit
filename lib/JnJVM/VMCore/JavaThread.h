@@ -209,10 +209,15 @@ public:
     addresses.pop_back();
   }
 
-  /// getCallingClass - Get the Java method that called the last Java
-  /// method on the stack.
+  /// getCallingClass - Get the Java class that called the last Java
+  /// method that called the Java getCallingClass method.
   ///
   UserClass* getCallingClass(uint32 level);
+  
+  /// getCallingMethod - Get the Java method that called the last Java
+  /// method on the stack.
+  ///
+  JavaMethod* getCallingMethod();
   
   /// getCallingClassLevel - Get the Java method in the stack at the
   /// specified level.
