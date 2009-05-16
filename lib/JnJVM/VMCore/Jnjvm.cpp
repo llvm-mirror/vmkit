@@ -607,7 +607,7 @@ void Jnjvm::classFormatError(UserClass* cl, const UTF8* name) {
     else msg->elements[i++] = name->elements[j];
   }
  
-  assert(i == size + 1 && "Array overflow");
+  assert(i == size && "Array overflow");
 
   JavaString* str = constructString(msg);
   error(upcalls->ClassFormatError, upcalls->InitClassFormatError, str);
