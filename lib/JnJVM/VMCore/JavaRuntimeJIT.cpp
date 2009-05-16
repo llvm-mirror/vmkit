@@ -295,7 +295,7 @@ extern "C" JavaObject* jnjvmRuntimeDelegatee(UserCommonClass* cl) {
 // Throws if one of the dimension is negative.
 static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
                                      sint32* dims, Jnjvm* vm) {
-  assert(len <= 0 && "Negative size given by VMKit");
+  assert(len > 0 && "Negative size given by VMKit");
   JavaArray* _res = cl->doNew(dims[0], vm);
   if (len > 1) {
     ArrayObject* res = (ArrayObject*)_res;
