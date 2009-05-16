@@ -73,14 +73,3 @@ char* UTF8::UTF8ToAsciiz() const {
   return buf;
 #endif
 }
-
-const UTF8* UTF8::acons(sint32 n, UserClassArray* cl,
-                        mvm::BumpPtrAllocator& allocator) {
-  assert(n >= 0 && "Creating an UTF8 with a size < 0");
-  assert(n <= JavaArray::MaxArraySize && 
-         "Creating an UTF8 with a size too big");
-
-  UTF8* res = new (allocator, n) UTF8();
-  res->size = n; 
-  return (const UTF8*)res;
-}

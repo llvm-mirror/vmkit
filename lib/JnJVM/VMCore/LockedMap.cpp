@@ -90,7 +90,7 @@ const UTF8* UTF8Map::lookupOrCreateAsciiz(const char* asciiz) {
   }
 
   if (res == 0) {
-    UTF8* tmp = (UTF8*)UTF8::acons(size, array, allocator);
+    UTF8* tmp = new(allocator, size) UTF8(size);
     for (sint32 i = 0; i < size; i++) {
       tmp->elements[i] = asciiz[i];
     }
@@ -118,7 +118,7 @@ const UTF8* UTF8Map::lookupOrCreateReader(const uint16* buf, uint32 len) {
   }
 
   if (res == 0) {
-    UTF8* tmp = (UTF8*)UTF8::acons(size, array, allocator);
+    UTF8* tmp = new(allocator, size) UTF8(size);
     memcpy(tmp->elements, buf, len * sizeof(uint16));
     res = (const UTF8*)tmp;
     map.insert(std::make_pair(key, res));

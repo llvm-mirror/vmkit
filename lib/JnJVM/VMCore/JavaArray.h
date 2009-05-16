@@ -117,10 +117,10 @@ private:
                               size * sizeof(uint16));
   }
   
-  /// acons - Allocates an UTF8 in permanent memory. The class argument must be
-  /// JavaArray::ofChar.
-  static const UTF8* acons(sint32 n, UserClassArray* cl,
-                           mvm::BumpPtrAllocator& allocator);
+  UTF8(sint32 n) {
+    size = n;
+  }
+
 public:
   
   
