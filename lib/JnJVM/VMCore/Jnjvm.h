@@ -127,7 +127,6 @@ private:
   /// that calls this functions. This is used internally by Jnjvm to control
   /// which pair class/method are used.
   ///
-  void error(UserClass* cl, JavaMethod* meth, const char* fmt, ...);
   void error(UserClass* cl, JavaMethod* meth, JavaString*);
   
   /// errorWithExcp - Throws an exception whose cause is the Java object excp.
@@ -275,7 +274,8 @@ public:
   void noClassDefFoundError(const UTF8* name);
   void classNotFoundException(JavaString* str);
 
-  void classFormatError(const char* fmt, ...);
+  void classFormatError(UserClass* cl, const UTF8* name);
+  void classFormatError(const char* str);
   
   /// asciizToStr - Constructs a java/lang/String object from the given asciiz.
   ///

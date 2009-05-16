@@ -43,9 +43,8 @@ const uint32 JavaConstantPool::ConstantNameAndType = 12;
 
 static uint32 unimplemented(JavaConstantPool* ctp, Reader& reader,
                             uint32 index) {
-  JavaThread::get()->getJVM()->classFormatError(
-                                    "unknown constant pool at index %d", 
-                                    index);
+  fprintf(stderr, "Unimplemented in constant pool: %d\n", index);
+  abort();
   return 1;
 }
 
@@ -181,10 +180,9 @@ JavaConstantPool::JavaConstantPool(Class* cl, Reader& reader, uint32 size) {
 }
 
 const UTF8* JavaConstantPool::UTF8At(uint32 entry) {
-  if (! ((entry > 0) && (entry < ctpSize) && 
-        typeAt(entry) == ConstantUTF8)) {
-    JavaThread::get()->getJVM()->classFormatError(
-              "bad constant pool number for utf8 at entry %d", entry);
+  if (!((entry > 0) && (entry < ctpSize) && typeAt(entry) == ConstantUTF8)) {
+    fprintf(stderr, "Malformed class %s\n", classDef->printString());
+    abort();
   }
   
   if (!ctpRes[entry]) {
@@ -228,46 +226,41 @@ const UTF8* JavaConstantPool::UTF8At(uint32 entry) {
 }
 
 float JavaConstantPool::FloatAt(uint32 entry) {
-  if (! ((entry > 0) && (entry < ctpSize) && 
-        typeAt(entry) == ConstantFloat)) {
-    JavaThread::get()->getJVM()->classFormatError(
-              "bad constant pool number for float at entry %d", entry);
+  if (!((entry > 0) && (entry < ctpSize) && typeAt(entry) == ConstantFloat)) {
+    fprintf(stderr, "Malformed class %s\n", classDef->printString());
+    abort();
   }
   return ((float*)ctpDef)[entry];
 }
 
 sint32 JavaConstantPool::IntegerAt(uint32 entry) {
-  if (! ((entry > 0) && (entry < ctpSize) && 
-        typeAt(entry) == ConstantInteger)) {
-    JavaThread::get()->getJVM()->classFormatError(
-              "bad constant pool number for integer at entry %d", entry);
+  if (!((entry > 0) && (entry < ctpSize) && typeAt(entry) == ConstantInteger)) {
+    fprintf(stderr, "Malformed class %s\n", classDef->printString());
+    abort();
   }
   return ((sint32*)ctpDef)[entry];
 }
 
 sint64 JavaConstantPool::LongAt(uint32 entry) {
-  if (! ((entry > 0) && (entry < ctpSize) && 
-        typeAt(entry) == ConstantLong)) {
-    JavaThread::get()->getJVM()->classFormatError(
-              "bad constant pool number for long at entry %d", entry);
+  if (!((entry > 0) && (entry < ctpSize) && typeAt(entry) == ConstantLong)) {
+    fprintf(stderr, "Malformed class %s\n", classDef->printString());
+    abort();
   }
   return Reader::readLong(ctpDef[entry], ctpDef[entry + 1]);
 }
 
 double JavaConstantPool::DoubleAt(uint32 entry) {
-  if (! ((entry > 0) && (entry < ctpSize) && 
-        typeAt(entry) == ConstantDouble)) {
-    JavaThread::get()->getJVM()->classFormatError(
-              "bad constant pool number for double at entry %d", entry);
+  if (!((entry > 0) && (entry < ctpSize) && typeAt(entry) == ConstantDouble)) {
+    fprintf(stderr, "Malformed class %s\n", classDef->printString());
+    abort();
   }
   return Reader::readDouble(ctpDef[entry], ctpDef[entry + 1]);
 }
 
 CommonClass* JavaConstantPool::isClassLoaded(uint32 entry) {
-  if (! ((entry > 0) && (entry < ctpSize) && 
-        typeAt(entry) == ConstantClass)) {
-    JavaThread::get()->getJVM()->classFormatError(
-              "bad constant pool number for class at entry %d", entry);
+  if (!((entry > 0) && (entry < ctpSize) &&  typeAt(entry) == ConstantClass)) {
+    fprintf(stderr, "Malformed class %s\n", classDef->printString());
+    abort();
   }
   return (CommonClass*)ctpRes[entry];
 }
@@ -317,8 +310,8 @@ Typedef* JavaConstantPool::resolveNameAndType(uint32 index) {
   void* res = ctpRes[index];
   if (!res) {
     if (typeAt(index) != ConstantNameAndType) {
-      JavaThread::get()->getJVM()->classFormatError(
-                "bad constant pool number for name/type at entry %d", index);
+      fprintf(stderr, "Malformed class %s\n", classDef->printString());
+      abort();
     }
     sint32 entry = ctpDef[index];
     const UTF8* type = UTF8At(entry & 0xFFFF);
@@ -333,8 +326,8 @@ Signdef* JavaConstantPool::resolveNameAndSign(uint32 index) {
   void* res = ctpRes[index];
   if (!res) {
     if (typeAt(index) != ConstantNameAndType) {
-      JavaThread::get()->getJVM()->classFormatError(
-                "bad constant pool number for name/type at entry %d", index);
+      fprintf(stderr, "Malformed class %s\n", classDef->printString());
+      abort();
     }
     sint32 entry = ctpDef[index];
     const UTF8* type = UTF8At(entry & 0xFFFF);
@@ -346,18 +339,21 @@ Signdef* JavaConstantPool::resolveNameAndSign(uint32 index) {
 }
 
 Typedef* JavaConstantPool::infoOfField(uint32 index) {
-  if (typeAt(index) != ConstantFieldref)
-    JavaThread::get()->getJVM()->classFormatError(
-              "bad constant pool number for field at entry %d", index);
+  if (typeAt(index) != ConstantFieldref) {
+    fprintf(stderr, "Malformed class %s\n", classDef->printString());
+    abort();
+  }
+
   return resolveNameAndType(ctpDef[index] & 0xFFFF);
 }
 
 void JavaConstantPool::infoOfMethod(uint32 index, uint32 access, 
                                     CommonClass*& cl, JavaMethod*& meth) {
   uint8 id = typeAt(index);
-  if (id != ConstantMethodref && id != ConstantInterfaceMethodref)
-    JavaThread::get()->getJVM()->classFormatError(
-              "bad constant pool number for method at entry %d", index);
+  if (id != ConstantMethodref && id != ConstantInterfaceMethodref) {
+    fprintf(stderr, "Malformed class %s\n", classDef->printString());
+    abort();
+  }
   
   Signdef* sign = resolveNameAndSign(ctpDef[index] & 0xFFFF);
   sint32 entry = ctpDef[index];
@@ -393,9 +389,10 @@ void JavaConstantPool::nameOfStaticOrSpecialMethod(uint32 index,
                                               const UTF8*& name,
                                               Signdef*& sign) {
   uint8 id = typeAt(index);
-  if (id != ConstantMethodref && id != ConstantInterfaceMethodref)
-    JavaThread::get()->getJVM()->classFormatError(
-              "bad constant pool number for method at entry %d", index);
+  if (id != ConstantMethodref && id != ConstantInterfaceMethodref) {
+    fprintf(stderr, "Malformed class %s\n", classDef->printString());
+    abort();
+  }
   
   sign = resolveNameAndSign(ctpDef[index] & 0xFFFF);
   sint32 entry = ctpDef[index];
@@ -408,9 +405,10 @@ JavaMethod* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index,
                                                           uint32 access,
                                                           Signdef* sign) {
   uint8 id = typeAt(index);
-  if (id != ConstantMethodref && id != ConstantInterfaceMethodref)
-    JavaThread::get()->getJVM()->classFormatError(
-              "bad constant pool number for method at entry %d", index);
+  if (id != ConstantMethodref && id != ConstantInterfaceMethodref) {
+    fprintf(stderr, "Malformed class %s\n", classDef->printString());
+    abort();
+  }
   
   sint32 entry = ctpDef[index];
   sint32 ntIndex = entry & 0xFFFF;
@@ -434,9 +432,10 @@ Signdef* JavaConstantPool::infoOfInterfaceOrVirtualMethod(uint32 index,
                                                           const UTF8*& name) {
 
   uint8 id = typeAt(index);
-  if (id != ConstantMethodref && id != ConstantInterfaceMethodref)
-    JavaThread::get()->getJVM()->classFormatError(
-              "bad constant pool number for method at entry %d", index);
+  if (id != ConstantMethodref && id != ConstantInterfaceMethodref) {
+    fprintf(stderr, "Malformed class %s\n", classDef->printString());
+    abort();
+  }
   
   sint32 entry = ctpDef[index];
   sint32 ntIndex = entry & 0xFFFF;

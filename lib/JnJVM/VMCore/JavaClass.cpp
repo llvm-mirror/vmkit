@@ -871,9 +871,8 @@ void Class::readClass() {
 
   Reader reader(bytes);
   uint32 magic = reader.readU4();
-  if (magic != Jnjvm::Magic) {
-    JavaThread::get()->getJVM()->classFormatError("bad magic number %p", magic);
-  }
+  assert(magic == Jnjvm::Magic && "I've created a class but magic is no good!");
+
   /* uint16 minor = */ reader.readU2();
   /* uint16 major = */ reader.readU2();
   uint32 ctpSize = reader.readU2();
@@ -887,9 +886,7 @@ void Class::readClass() {
     ctpInfo->resolveClassName(reader.readU2());
   
   if (!(thisClassName->equals(name))) {
-    JavaThread::get()->getJVM()->classFormatError(
-        "try to load %s and found class named %s",
-        printString(), thisClassName->printString());
+    JavaThread::get()->getJVM()->classFormatError(this, thisClassName);
   }
 
   readParents(reader);

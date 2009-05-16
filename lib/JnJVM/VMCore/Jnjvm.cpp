@@ -268,23 +268,6 @@ JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
   return obj;
 }
 
-void Jnjvm::error(UserClass* cl, JavaMethod* init, const char* fmt, ...) {
-  char* tmp = (char*)alloca(4096);
-  if (fmt) {
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(tmp, 4096, fmt, ap);
-    va_end(ap);
-  }
-  
-  if (cl && !bootstrapLoader->getCompiler()->isStaticCompiling()) {
-    JavaObject* obj = CreateError(cl, init, fmt ? fmt : 0);
-    JavaThread::get()->throwException(obj);
-  } else {
-    throw std::string(tmp);
-  }
-}
-
 void Jnjvm::error(UserClass* cl, JavaMethod* init, JavaString* str) {
   JavaObject* obj = CreateError(cl, init, str);
   JavaThread::get()->throwException(obj);
@@ -573,11 +556,67 @@ void Jnjvm::classNotFoundException(JavaString* name) {
         upcalls->InitClassNotFoundException, str);
 }
 
+void Jnjvm::classFormatError(UserClass* cl, const UTF8* name) {
+  uint32 size = 33 + name->size + cl->name->size;
+  ArrayUInt16* msg = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
+  uint32 i = 0;
 
-void Jnjvm::classFormatError(const char* msg, ...) {
-  error(upcalls->ClassFormatError,
-        upcalls->InitClassFormatError,
-        msg);
+
+  msg->elements[i++] = 't';
+  msg->elements[i++] = 'r';
+  msg->elements[i++] = 'y';
+  msg->elements[i++] = ' ';
+  msg->elements[i++] = 't';
+  msg->elements[i++] = 'o';
+  msg->elements[i++] = ' ';
+  msg->elements[i++] = 'l';
+  msg->elements[i++] = 'o';
+  msg->elements[i++] = 'a';
+  msg->elements[i++] = 'd';
+  msg->elements[i++] = ' ';
+
+  for (sint32 j = 0; j < cl->name->size; ++j) {
+    if (cl->name->elements[j] == '/') msg->elements[i++] = '.';
+    else msg->elements[i++] = cl->name->elements[j];
+  }
+  
+  msg->elements[i++] = 'a';
+  msg->elements[i++] = 'n';
+  msg->elements[i++] = 'd';
+  msg->elements[i++] = ' ';
+  msg->elements[i++] = 'f';
+  msg->elements[i++] = 'o';
+  msg->elements[i++] = 'n';
+  msg->elements[i++] = 'd';
+  msg->elements[i++] = ' ';
+  msg->elements[i++] = 'c';
+  msg->elements[i++] = 'l';
+  msg->elements[i++] = 'a';
+  msg->elements[i++] = 's';
+  msg->elements[i++] = 's';
+  msg->elements[i++] = ' ';
+  msg->elements[i++] = 'n';
+  msg->elements[i++] = 'a';
+  msg->elements[i++] = 'm';
+  msg->elements[i++] = 'e';
+  msg->elements[i++] = 'd';
+  msg->elements[i++] = ' ';
+  
+  for (sint32 j = 0; j < name->size; ++j) {
+    if (name->elements[j] == '/') msg->elements[i++] = '.';
+    else msg->elements[i++] = name->elements[j];
+  }
+ 
+  assert(i == size + 1 && "Array overflow");
+
+  JavaString* str = constructString(msg);
+  error(upcalls->ClassFormatError, upcalls->InitClassFormatError, str);
+}
+
+
+void Jnjvm::classFormatError(const char* msg) {
+  JavaString* str = asciizToStr(msg);
+  error(upcalls->ClassFormatError, upcalls->InitClassFormatError, str);
 }
 
 JavaString* Jnjvm::internalUTF8ToStr(const UTF8* utf8) {
