@@ -115,7 +115,7 @@ static jobject proceed(JavaObjectMethod* Meth, jobject _obj, jobject _args,
       verifyNull(obj);
       UserCommonClass* objCl = obj->getClass();
       if (!(objCl->isAssignableFrom(cl))) {
-        vm->illegalArgumentExceptionForMethod(meth, cl, obj->getClass());
+        vm->illegalArgumentException("<this> is not a valid type");
       }
 
       if (isInterface(cl->access)) {
@@ -214,7 +214,7 @@ static jobject proceed(JavaObjectMethod* Meth, jobject _obj, jobject _args,
       res = val;
     } 
   } else {
-    vm->illegalArgumentExceptionForMethod(meth, 0, 0); 
+    vm->illegalArgumentException("wrong number of arguments"); 
   }
 
   return (jobject)res;

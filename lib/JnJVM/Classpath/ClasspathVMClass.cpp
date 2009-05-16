@@ -325,7 +325,7 @@ jclass Cl1, jclass Cl2) {
   
   BEGIN_NATIVE_EXCEPTION(0)
 
-  if (!Cl2) JavaThread::get()->getJVM()->nullPointerException("");
+  if (!Cl2) JavaThread::get()->getJVM()->nullPointerException();
 
   UserCommonClass* cl1 = ((JavaObjectClass*)Cl1)->getClass();
   UserCommonClass* cl2 = ((JavaObjectClass*)Cl2)->getClass();

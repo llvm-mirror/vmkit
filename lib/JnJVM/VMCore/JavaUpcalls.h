@@ -208,6 +208,8 @@ public:
   ISOLATE_STATIC JavaMethod* InitUnknownError;
   ISOLATE_STATIC JavaMethod* InitClassNotFoundException;
   ISOLATE_STATIC JavaMethod* InitArithmeticException;
+  
+  ISOLATE_STATIC JavaMethod* IntToString;
 
   ISOLATE_STATIC JavaMethod* InitObject;
 

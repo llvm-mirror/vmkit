@@ -297,7 +297,7 @@ JavaArray* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
   if (n < 0)
     vm->negativeArraySizeException(n);
   else if (n > JavaArray::MaxArraySize)
-    vm->outOfMemoryError(n);
+    vm->outOfMemoryError();
 
   return doNew(n, vm->gcAllocator);
 }

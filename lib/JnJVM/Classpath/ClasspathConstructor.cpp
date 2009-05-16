@@ -122,10 +122,10 @@ static jobject proceed(JavaObjectConstructor* cons, jobject _args, jclass Clazz,
       }
     
     } else {
-      vm->illegalArgumentExceptionForMethod(meth, 0, 0);
+      vm->illegalArgumentException("class is not a regular class");
     }
   } else {
-    vm->illegalArgumentExceptionForMethod(meth, 0, 0);
+    vm->illegalArgumentException("wrong number of arguments");
   }
  
   return res;

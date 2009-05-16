@@ -121,12 +121,14 @@ private:
   /// and calling its <init> function.
   ///
   JavaObject* CreateError(UserClass* cl, JavaMethod* meth, const char* str);
+  JavaObject* CreateError(UserClass* cl, JavaMethod* meth, JavaString* str);
 
   /// error - Throws an exception in the execution of a JVM for the thread
   /// that calls this functions. This is used internally by Jnjvm to control
   /// which pair class/method are used.
   ///
   void error(UserClass* cl, JavaMethod* meth, const char* fmt, ...);
+  void error(UserClass* cl, JavaMethod* meth, JavaString*);
   
   /// errorWithExcp - Throws an exception whose cause is the Java object excp.
   ///
@@ -246,38 +248,35 @@ public:
   JavaObject* CreateIndexOutOfBoundsException(sint32 entry);
   JavaObject* CreateNegativeArraySizeException();
   JavaObject* CreateClassCastException(JavaObject* obj, UserCommonClass* cl);
-  JavaObject* CreateLinkageError(const char* msg = "");
-  JavaObject* CreateArrayStoreException(JavaVirtualTable* VT);
   JavaObject* CreateArithmeticException();
   JavaObject* CreateStackOverflowError();
+  JavaObject* CreateLinkageError(const char* msg);
+  JavaObject* CreateArrayStoreException(JavaVirtualTable* VT);
   
   /// Exceptions - These are the only exceptions VMKit will make.
   ///
   void arrayStoreException();
   void indexOutOfBounds(const JavaObject* obj, sint32 entry);
   void negativeArraySizeException(int size);
-  void nullPointerException(const char* fmt, ...);
+  void nullPointerException();
   void illegalAccessException(const char* msg);
   void illegalMonitorStateException(const JavaObject* obj);
   void interruptedException(const JavaObject* obj);
   void initializerError(const JavaObject* excp);
   void invocationTargetException(const JavaObject* obj);
-  void outOfMemoryError(sint32 n);
-  void illegalArgumentExceptionForMethod(JavaMethod* meth, UserCommonClass* required,
-                                         UserCommonClass* given);
-  void illegalArgumentExceptionForField(JavaField* field, UserCommonClass* required,
-                                        UserCommonClass* given);
+  void outOfMemoryError();
+  void noClassDefFoundError(JavaObject* obj);
+  void instantiationException();
   void illegalArgumentException(const char* msg);
   void classCastException(JavaObject* obj, UserCommonClass* cl);
-  void unknownError(const char* fmt, ...); 
   void noSuchFieldError(CommonClass* cl, const UTF8* name);
-  void noSuchMethodError(CommonClass* cl, const UTF8* name);
-  void classFormatError(const char* fmt, ...);
-  void noClassDefFoundError(JavaObject* obj);
+  void noSuchMethodError(CommonClass* cl, const UTF8* name); 
   void noClassDefFoundError(const UTF8* name);
   void classNotFoundException(JavaString* str);
-  void instantiationException();
 
+  void unknownError(const char* fmt, ...); 
+  void classFormatError(const char* fmt, ...);
+  
   /// asciizToStr - Constructs a java/lang/String object from the given asciiz.
   ///
   JavaString* asciizToStr(const char* asciiz);

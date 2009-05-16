@@ -177,6 +177,7 @@ JavaMethod* Classpath::InitUnknownError;
 JavaMethod* Classpath::InitClassNotFoundException;
 JavaMethod* Classpath::InitArithmeticException;
 JavaMethod* Classpath::InitObject;
+JavaMethod* Classpath::IntToString;
 
 JavaMethod* Classpath::ErrorWithExcpNoClassDefFoundError;
 JavaMethod* Classpath::ErrorWithExcpExceptionInInitializerError;
@@ -612,6 +613,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   InitObject = UPCALL_METHOD(loader, "java/lang/Object", "<init>", "()V",
                              ACC_VIRTUAL);
+  
+  IntToString = UPCALL_METHOD(loader, "java/lang/Integer", "toString",
+                              "(II)Ljava/lang/String;", ACC_STATIC);
 
   newThread = 
     UPCALL_CLASS(loader, "java/lang/Thread");

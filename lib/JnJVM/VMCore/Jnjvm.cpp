@@ -261,6 +261,13 @@ JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
   return obj;
 }
 
+JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
+                               JavaString* str) {
+  JavaObject* obj = cl->doNew(this);
+  init->invokeIntSpecial(this, cl, obj, str);
+  return obj;
+}
+
 void Jnjvm::error(UserClass* cl, JavaMethod* init, const char* fmt, ...) {
   char* tmp = (char*)alloca(4096);
   if (fmt) {
@@ -278,58 +285,67 @@ void Jnjvm::error(UserClass* cl, JavaMethod* init, const char* fmt, ...) {
   }
 }
 
+void Jnjvm::error(UserClass* cl, JavaMethod* init, JavaString* str) {
+  JavaObject* obj = CreateError(cl, init, str);
+  JavaThread::get()->throwException(obj);
+}
+
 void Jnjvm::arrayStoreException() {
   error(upcalls->ArrayStoreException,
-        upcalls->InitArrayStoreException, "");
+        upcalls->InitArrayStoreException, (JavaString*)0);
 }
 
 void Jnjvm::indexOutOfBounds(const JavaObject* obj, sint32 entry) {
+  JavaString* str = (JavaString*)
+    upcalls->IntToString->invokeJavaObjectStatic(this, upcalls->intClass,
+                                                 entry, 10);
   error(upcalls->ArrayIndexOutOfBoundsException,
-        upcalls->InitArrayIndexOutOfBoundsException, "%d", entry);
+        upcalls->InitArrayIndexOutOfBoundsException, str);
 }
 
 void Jnjvm::negativeArraySizeException(sint32 size) {
+  JavaString* str = (JavaString*)
+    upcalls->IntToString->invokeJavaObjectStatic(this, upcalls->intClass,
+                                                 size, 10);
   error(upcalls->NegativeArraySizeException,
-        upcalls->InitNegativeArraySizeException, "%d", size);
+        upcalls->InitNegativeArraySizeException, str);
 }
 
-void Jnjvm::nullPointerException(const char* fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  char* val = va_arg(ap, char*);
-  va_end(ap);
+void Jnjvm::nullPointerException() {
   error(upcalls->NullPointerException,
-        upcalls->InitNullPointerException, fmt, val);
+        upcalls->InitNullPointerException, (JavaString*)0);
 }
 
 JavaObject* Jnjvm::CreateIndexOutOfBoundsException(sint32 entry) {
-  
-  char* tmp = (char*)alloca(4096);
-  snprintf(tmp, 4096, "%d", entry);
-
+  JavaString* str = (JavaString*)
+    upcalls->IntToString->invokeJavaObjectStatic(this, upcalls->intClass,
+                                                 entry, 10);
   return CreateError(upcalls->ArrayIndexOutOfBoundsException,
-                     upcalls->InitArrayIndexOutOfBoundsException, tmp);
+                     upcalls->InitArrayIndexOutOfBoundsException, str);
 }
 
 JavaObject* Jnjvm::CreateNegativeArraySizeException() {
   return CreateError(upcalls->NegativeArraySizeException,
-                     upcalls->InitNegativeArraySizeException, 0);
+                     upcalls->InitNegativeArraySizeException,
+                     (JavaString*)0);
 }
 
 JavaObject* Jnjvm::CreateArithmeticException() {
+  JavaString* str = asciizToStr("/ by zero");
   return CreateError(upcalls->ArithmeticException,
-                     upcalls->InitArithmeticException, "/ by zero");
+                     upcalls->InitArithmeticException, str);
 }
 
 JavaObject* Jnjvm::CreateNullPointerException() {
   return CreateError(upcalls->NullPointerException,
-                     upcalls->InitNullPointerException, 0);
+                     upcalls->InitNullPointerException,
+                     (JavaString*)0);
 }
 
 JavaObject* Jnjvm::CreateOutOfMemoryError() {
+  JavaString* str = asciizToStr("Java heap space");
   return CreateError(upcalls->OutOfMemoryError,
-                     upcalls->InitOutOfMemoryError, 
-                     "Java heap space");
+                     upcalls->InitOutOfMemoryError, str);
 }
 
 JavaObject* Jnjvm::CreateStackOverflowError() {
@@ -340,35 +356,40 @@ JavaObject* Jnjvm::CreateStackOverflowError() {
 }
 
 JavaObject* Jnjvm::CreateArrayStoreException(JavaVirtualTable* VT) {
+  JavaString* str = JavaString::internalToJava(VT->cl->name, this);
   return CreateError(upcalls->ArrayStoreException,
-                     upcalls->InitArrayStoreException,
-                     VT->cl->printString());
+                     upcalls->InitArrayStoreException, str);
 }
 
 JavaObject* Jnjvm::CreateClassCastException(JavaObject* obj,
                                             UserCommonClass* cl) {
   return CreateError(upcalls->ClassCastException,
-                     upcalls->InitClassCastException, "");
+                     upcalls->InitClassCastException,
+                     (JavaString*)0);
 }
 
 JavaObject* Jnjvm::CreateLinkageError(const char* msg) {
+  JavaString* str = asciizToStr(msg);
   return CreateError(upcalls->LinkageError,
-                     upcalls->InitLinkageError, msg);
+                     upcalls->InitLinkageError, str);
 }
 
 void Jnjvm::illegalAccessException(const char* msg) {
+  JavaString* str = asciizToStr(msg);
   error(upcalls->IllegalAccessException,
-        upcalls->InitIllegalAccessException, msg);
+        upcalls->InitIllegalAccessException, str);
 }
 
 void Jnjvm::illegalMonitorStateException(const JavaObject* obj) {
   error(upcalls->IllegalMonitorStateException,
-        upcalls->InitIllegalMonitorStateException, "");
+        upcalls->InitIllegalMonitorStateException,
+        (JavaString*)0);
 }
 
 void Jnjvm::interruptedException(const JavaObject* obj) {
   error(upcalls->InterruptedException,
-        upcalls->InitInterruptedException, "");
+        upcalls->InitInterruptedException,
+        (JavaString*)0);
 }
 
 
@@ -384,59 +405,22 @@ void Jnjvm::invocationTargetException(const JavaObject* excp) {
                 excp);
 }
 
-void Jnjvm::outOfMemoryError(sint32 n) {
+void Jnjvm::outOfMemoryError() {
+  JavaString* str = asciizToStr("Java heap space");
   error(upcalls->OutOfMemoryError,
-        upcalls->InitOutOfMemoryError, "%d", n);
-}
-
-void Jnjvm::illegalArgumentExceptionForMethod(JavaMethod* meth, 
-                                              UserCommonClass* required,
-                                              UserCommonClass* given) {
-  error(upcalls->IllegalArgumentException, 
-        upcalls->InitIllegalArgumentException, 
-        "for method %s", meth->printString());
-}
-
-void Jnjvm::illegalArgumentExceptionForField(JavaField* field, 
-                                             UserCommonClass* required,
-                                             UserCommonClass* given) {
-  error(upcalls->IllegalArgumentException, 
-        upcalls->InitIllegalArgumentException, 
-        "for field %s", field->printString());
+        upcalls->InitOutOfMemoryError, str);
 }
 
 void Jnjvm::illegalArgumentException(const char* msg) {
+  JavaString* str = asciizToStr(msg);
   error(upcalls->IllegalArgumentException,
-        upcalls->InitIllegalArgumentException,
-        msg);
+        upcalls->InitIllegalArgumentException, str);
 }
 
 void Jnjvm::classCastException(JavaObject* obj, UserCommonClass* cl) {
   error(upcalls->ClassCastException,
         upcalls->InitClassCastException,
-        "");
-}
-
-void Jnjvm::noSuchFieldError(CommonClass* cl, const UTF8* name) {
-  error(upcalls->NoSuchFieldError,
-        upcalls->InitNoSuchFieldError, 
-        "unable to find %s in %s",
-        name->UTF8ToAsciiz(), cl->name->UTF8ToAsciiz());
-
-}
-
-void Jnjvm::noSuchMethodError(CommonClass* cl, const UTF8* name) {
-  error(upcalls->NoSuchMethodError,
-        upcalls->InitNoSuchMethodError, 
-        "unable to find %s in %s",
-        name->UTF8ToAsciiz(), cl->name->UTF8ToAsciiz());
-
-}
-
-void Jnjvm::classFormatError(const char* msg, ...) {
-  error(upcalls->ClassFormatError,
-        upcalls->InitClassFormatError, 
-        msg);
+        (JavaString*)0);
 }
 
 void Jnjvm::noClassDefFoundError(JavaObject* obj) {
@@ -445,28 +429,155 @@ void Jnjvm::noClassDefFoundError(JavaObject* obj) {
         obj);
 }
 
-void Jnjvm::noClassDefFoundError(const UTF8* name) {
-  error(upcalls->NoClassDefFoundError,
-        upcalls->InitNoClassDefFoundError, 
-        "Unable to load %s", name->UTF8ToAsciiz());
-}
-
-void Jnjvm::classNotFoundException(JavaString* str) {
-  error(upcalls->ClassNotFoundException,
-        upcalls->InitClassNotFoundException, 
-        "unable to load %s",
-        str->strToAsciiz());
-}
-
 void Jnjvm::instantiationException() {
   error(upcalls->InstantiationException,
-        upcalls->InitInstantiationException, 0);
+        upcalls->InitInstantiationException,
+        (JavaString*)0);
 }
+  
+
+static JavaString* CreateNoSuchMsg(CommonClass* cl, const UTF8* name,
+                                   Jnjvm* vm) {
+  ArrayUInt16* msg = (ArrayUInt16*)
+    vm->upcalls->ArrayOfChar->doNew(19 + cl->name->size + name->size, vm);
+  uint32 i = 0;
+
+
+  msg->elements[i++] = 'u';
+  msg->elements[i++] = 'n';
+  msg->elements[i++] = 'a';
+  msg->elements[i++] = 'b';
+  msg->elements[i++] = 'l';
+  msg->elements[i++] = 'e';
+  msg->elements[i++] = ' ';
+  msg->elements[i++] = 't';
+  msg->elements[i++] = 'o';
+  msg->elements[i++] = ' ';
+  msg->elements[i++] = 'f';
+  msg->elements[i++] = 'i';
+  msg->elements[i++] = 'n';
+  msg->elements[i++] = 'd';
+  msg->elements[i++] = ' ';
+
+  for (sint32 j = 0; j < name->size; ++j)
+    msg->elements[i++] = name->elements[j];
+
+  msg->elements[i++] = ' ';
+  msg->elements[i++] = 'i';
+  msg->elements[i++] = 'n';
+  msg->elements[i++] = ' ';
+  
+  for (sint32 j = 0; j < cl->name->size; ++j) {
+    if (cl->name->elements[j] == '/') msg->elements[i++] = '.';
+    else msg->elements[i++] = cl->name->elements[j];
+  }
+
+  JavaString* str = vm->constructString(msg);
+
+  return str;
+}
+
+void Jnjvm::noSuchFieldError(CommonClass* cl, const UTF8* name) { 
+  JavaString* str = CreateNoSuchMsg(cl, name, this);
+  error(upcalls->NoSuchFieldError,
+        upcalls->InitNoSuchFieldError, str);
+}
+
+void Jnjvm::noSuchMethodError(CommonClass* cl, const UTF8* name) {
+  JavaString* str = CreateNoSuchMsg(cl, name, this);
+  error(upcalls->NoSuchMethodError,
+        upcalls->InitNoSuchMethodError, str);
+}
+
+static JavaString* CreateUnableToLoad(const UTF8* name, Jnjvm* vm) {
+  ArrayUInt16* msg = (ArrayUInt16*)
+    vm->upcalls->ArrayOfChar->doNew(15 + name->size, vm);
+  uint32 i = 0;
+
+
+  msg->elements[i++] = 'u';
+  msg->elements[i++] = 'n';
+  msg->elements[i++] = 'a';
+  msg->elements[i++] = 'b';
+  msg->elements[i++] = 'l';
+  msg->elements[i++] = 'e';
+  msg->elements[i++] = ' ';
+  msg->elements[i++] = 't';
+  msg->elements[i++] = 'o';
+  msg->elements[i++] = ' ';
+  msg->elements[i++] = 'l';
+  msg->elements[i++] = 'o';
+  msg->elements[i++] = 'a';
+  msg->elements[i++] = 'd';
+  msg->elements[i++] = ' ';
+
+  for (sint32 j = 0; j < name->size; ++j) {
+    if (name->elements[j] == '/') msg->elements[i++] = '.';
+    else msg->elements[i++] = name->elements[j];
+  }
+
+  JavaString* str = vm->constructString(msg);
+
+  return str;
+}
+
+static JavaString* CreateUnableToLoad(JavaString* name, Jnjvm* vm) {
+  ArrayUInt16* msg = (ArrayUInt16*)
+    vm->upcalls->ArrayOfChar->doNew(15 + name->count, vm);
+  uint32 i = 0;
+
+
+  msg->elements[i++] = 'u';
+  msg->elements[i++] = 'n';
+  msg->elements[i++] = 'a';
+  msg->elements[i++] = 'b';
+  msg->elements[i++] = 'l';
+  msg->elements[i++] = 'e';
+  msg->elements[i++] = ' ';
+  msg->elements[i++] = 't';
+  msg->elements[i++] = 'o';
+  msg->elements[i++] = ' ';
+  msg->elements[i++] = 'l';
+  msg->elements[i++] = 'o';
+  msg->elements[i++] = 'a';
+  msg->elements[i++] = 'd';
+  msg->elements[i++] = ' ';
+
+  for (sint32 j = name->offset; j < name->offset + name->count; ++j) {
+    if (name->value->elements[j] == '/') msg->elements[i++] = '.';
+    else msg->elements[i++] = name->value->elements[j];
+  }
+
+  JavaString* str = vm->constructString(msg);
+
+  return str;
+}
+
+
+
+void Jnjvm::noClassDefFoundError(const UTF8* name) {
+  JavaString* str = CreateUnableToLoad(name, this);
+  error(upcalls->NoClassDefFoundError,
+        upcalls->InitNoClassDefFoundError, str);
+}
+
+void Jnjvm::classNotFoundException(JavaString* name) {
+  JavaString* str = CreateUnableToLoad(name, this);
+  error(upcalls->ClassNotFoundException,
+        upcalls->InitClassNotFoundException, str);
+}
+
 
 void Jnjvm::unknownError(const char* fmt, ...) {
   error(upcalls->UnknownError,
         upcalls->InitUnknownError,  
         fmt);
+}
+
+void Jnjvm::classFormatError(const char* msg, ...) {
+  error(upcalls->ClassFormatError,
+        upcalls->InitClassFormatError,
+        msg);
 }
 
 JavaString* Jnjvm::internalUTF8ToStr(const UTF8* utf8) {
@@ -492,6 +603,7 @@ JavaString* Jnjvm::constructString(const ArrayUInt16* array) {
 }
 
 JavaString* Jnjvm::asciizToStr(const char* asciiz) {
+  assert(asciiz && "No asciiz given");
   ArrayUInt16* var = asciizToArray(asciiz);
   return constructString(var);
 }

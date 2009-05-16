@@ -95,9 +95,9 @@ JavaObjectField* Field, jobject obj) {
     else if (prim->isShort())
       res = (sint32)field->getInt16Field(Obj);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   }
   
   END_NATIVE_EXCEPTION
@@ -144,9 +144,9 @@ JavaObjectField* Field, jobject obj) {
     else if (prim->isLong())
       res = (sint64)field->getLongField(Obj);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
   
   END_NATIVE_EXCEPTION
@@ -183,9 +183,9 @@ JavaObjectField* Field, jobject obj) {
     if (prim->isBool())  
       res = (uint8)field->getInt8Field(Obj);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
   
   END_NATIVE_EXCEPTION
@@ -234,9 +234,9 @@ JavaObjectField* Field, jobject obj) {
     else if (prim->isFloat())
       res = (jfloat)field->getFloatField(Obj);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
   
   END_NATIVE_EXCEPTION
@@ -273,9 +273,9 @@ JavaObjectField* Field, jobject obj) {
     if (prim->isByte())
       res = (sint8)field->getInt8Field(Obj);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
   
   END_NATIVE_EXCEPTION
@@ -313,9 +313,9 @@ JavaObjectField* Field, jobject obj) {
     if (prim->isChar())
       res = (uint16)field->getInt16Field(Obj);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
 
   END_NATIVE_EXCEPTION
@@ -356,9 +356,9 @@ JavaObjectField* Field, jobject obj) {
     else if (prim->isByte())
       res = (sint16)field->getInt8Field(Obj);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
   
   END_NATIVE_EXCEPTION
@@ -407,9 +407,9 @@ JavaObjectField* Field, jobject obj) {
     else if (prim->isDouble())
       res = (jdouble)field->getDoubleField(Obj);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
 
   END_NATIVE_EXCEPTION
@@ -578,9 +578,9 @@ JavaObjectField* Field, jobject obj, jboolean val) {
     if (prim->isBool())
       field->setInt8Field(Obj, (uint8)val);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
 
   END_NATIVE_EXCEPTION
@@ -624,9 +624,9 @@ JavaObjectField* Field, jobject obj, jbyte val) {
     else if (prim->isDouble())
       field->setDoubleField(Obj, (double)val);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
 
   END_NATIVE_EXCEPTION
@@ -666,9 +666,9 @@ JavaObjectField* Field, jobject obj, jchar val) {
     else if (prim->isDouble())
       field->setDoubleField(Obj, (double)(uint64)val);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
 
   END_NATIVE_EXCEPTION
@@ -709,9 +709,9 @@ JavaObjectField* Field, jobject obj, jshort val) {
     else if (prim->isDouble())
       field->setDoubleField(Obj, (double)val);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
 
   END_NATIVE_EXCEPTION
@@ -750,9 +750,9 @@ JavaObjectField* Field, jobject obj, jint val) {
     else if (prim->isDouble())
       field->setDoubleField(Obj, (double)val);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
 
   END_NATIVE_EXCEPTION
@@ -789,9 +789,9 @@ JavaObjectField* Field, jobject obj, jlong val) {
     else if (prim->isDouble())
       field->setDoubleField(Obj, (double)val);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
 
   END_NATIVE_EXCEPTION
@@ -827,9 +827,9 @@ JavaObjectField* Field, jobject obj, jfloat val) {
     else if (prim->isDouble())
       field->setDoubleField(Obj, (double)val);
     else 
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
 
   END_NATIVE_EXCEPTION
@@ -862,9 +862,9 @@ JavaObjectField* Field, JavaObject* obj, jdouble val) {
     if (prim->isDouble())
       field->setDoubleField(Obj, (double)val);
     else
-      vm->illegalArgumentException("");
+      vm->illegalArgumentException("wrong type");
   } else {
-    vm->illegalArgumentException("");
+    vm->illegalArgumentException("wrong type");
   }
 
   END_NATIVE_EXCEPTION

@@ -88,7 +88,7 @@ jobject _vmThread, sint64 stackSize) {
   assert(javaThread && "VMThread with no Java equivalent");
  
   JavaThread* th = new JavaThread(javaThread, vmThread, vm);
-  if (!th) vm->outOfMemoryError(0);
+  if (!th) vm->outOfMemoryError();
   th->start((void (*)(mvm::Thread*))start);
 
   END_NATIVE_EXCEPTION
