@@ -294,7 +294,7 @@ JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
 }
 
 ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
-  char* asciiz = utf8->UTF8ToAsciiz();
+  char* asciiz = utf8->printString();
   uint32 alen = strlen(asciiz);
   ArrayUInt8* res = 0;
   

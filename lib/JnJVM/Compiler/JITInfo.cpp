@@ -373,10 +373,10 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   
   JavaLLVMCompiler* Mod = 
     (JavaLLVMCompiler*)signature->initialLoader->getCompiler();
-  const char* name = 0;
+  std::string name;
   if (Mod->isStaticCompiling()) {
-    name = virt ? signature->printString("virtual_ap") :
-                  signature->printString("static_ap");
+    name += signature->printString();
+    name += virt ? "virtual_ap" : "static_ap";
   } else {
     name = "";
   }

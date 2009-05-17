@@ -70,9 +70,11 @@ Function* JavaJITCompiler::addCallback(Class* cl, uint16 index,
   Function* func = 0;
   LLVMSignatureInfo* LSI = getSignatureInfo(sign);
   
-  const char* name = cl->printString();
-  char* key = (char*)alloca(strlen(name) + 16);
-  sprintf(key, "%s%d", name, index);
+  const UTF8* name = cl->name;
+  char* key = (char*)alloca(name->size + 16);
+  for (sint32 i = 0; i < name->size; ++i)
+    key[i] = name->elements[i];
+  sprintf(key + name->size, "%d", index);
   Function* F = TheModule->getFunction(key);
   if (F) return F;
   

@@ -150,40 +150,6 @@ JavaMethod::~JavaMethod() {
   }
 }
 
-static void printClassNameIntern(const UTF8* name, unsigned int start,
-                                 unsigned int end,  mvm::PrintBuffer* buf) {
-  
-  uint16 first = name->elements[start];
-  if (first == I_TAB) {
-    unsigned int stepsEnd = start;
-    while (name->elements[stepsEnd] == I_TAB) stepsEnd++;
-    if (name->elements[stepsEnd] == I_REF) {
-      printClassNameIntern(name, (stepsEnd + 1),(end - 1), buf);
-    } else {
-      name->printUTF8(buf);
-    }
-    buf->write(" ");
-    for (uint32 i = start; i < stepsEnd; i++)
-      buf->write("[]");
-  } else {
-    char* tmp = (char*)(alloca(1 + (end - start)));
-    for (uint32 i = start; i < end; i++) {
-      short int cur = name->elements[i];
-      tmp[i - start] = (cur == '/' ? '.' : cur);
-    }
-    tmp[end - start] = 0;
-    buf->write(tmp);
-  }
-}
-
-void CommonClass::printClassName(const UTF8* name, mvm::PrintBuffer* buf) {
-  printClassNameIntern(name, 0, name->size, buf);
-}
-
-void CommonClass::print(mvm::PrintBuffer* buf) const {
-  printClassName(name, buf);
-}
-
 UserClassPrimitive* CommonClass::toPrimitive(Jnjvm* vm) const {
   if (this == vm->upcalls->voidClass) {
     return vm->upcalls->OfVoid;
@@ -364,30 +330,6 @@ void JavaVirtualTable::setNativeTracer(uintptr_t ptr, const char* name) {
 
 void JavaVirtualTable::setNativeDestructor(uintptr_t ptr, const char* name) {
   cl->classLoader->getCompiler()->setDestructor(this, ptr, name);
-}
-
-const char* JavaMethod::printString() const {
-  mvm::PrintBuffer *buf= mvm::PrintBuffer::alloc();
-  buf->write("JavaMethod<");
-  ((JavaMethod*)this)->getSignature()->printWithSign(classDef, name, buf);
-  buf->write(">");
-  return buf->contents()->cString();
-}
-
-const char* JavaField::printString() const {
-  mvm::PrintBuffer *buf= mvm::PrintBuffer::alloc();
-  buf->write("JavaField<");
-  if (isStatic(access))
-    buf->write("static ");
-  else
-    buf->write("virtual ");
-  ((JavaField*)this)->getSignature()->tPrintBuf(buf);
-  buf->write(" ");
-  classDef->print(buf);
-  buf->write("::");
-  name->printUTF8(buf);
-  buf->write(">");
-  return buf->contents()->cString();
 }
 
 JavaMethod* Class::lookupInterfaceMethodDontThrow(const UTF8* name,

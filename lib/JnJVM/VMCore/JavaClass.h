@@ -20,6 +20,7 @@
 #include "mvm/Threads/Locks.h"
 
 #include "JavaAccess.h"
+#include "JavaArray.h"
 #include "JnjvmClassLoader.h"
 #include "JnjvmConfig.h"
 
@@ -415,26 +416,14 @@ public:
     return 0;
   }
 
-  /// printClassName - Adds a string representation of this class in the
-  /// given buffer.
-  ///
-  static void printClassName(const UTF8* name, mvm::PrintBuffer* buf);
-   
-  /// print - Print the class for debugging purposes.
-  ///
-  void print(mvm::PrintBuffer *buf) const;
-  
   /// tracer - The tracer of this GC-allocated class.
   ///
   void TRACER;
   
   /// printString - Prints the class.
   ///
-  const char *printString(const char* ext = "") const {
-    mvm::PrintBuffer *buf = mvm::PrintBuffer::alloc();
-    print(buf);
-    buf->write(ext);
-    return buf->contents()->cString();
+  const char *printString() const {
+    return name->printString();
   }
 
   /// inheritName - Does this class in its class hierarchy inherits
@@ -1168,7 +1157,9 @@ public:
   
   /// printString - Output a string representation of the method.
   ///
-  const char* printString() const;
+  const char* printString() const {
+    return name->printString();
+  }
  
   /// toString - Return an array of chars, suitable for creating a string.
   ///
@@ -1422,7 +1413,9 @@ public:
 
   /// printString - Output a string representation of the field.
   ///
-  const char* printString() const;
+  const char* printString() const {
+    return name->printString();
+  }
 
   /// getVritual*Field - Get a virtual field of an object.
   ///

@@ -128,13 +128,8 @@ public:
   const UTF8* extract(UTF8Map* map, uint32 start, uint32 len) const;
 
   
-  /// UTF8ToAsciiz - Allocates a C string with the contents of this UTF8.
-  char* UTF8ToAsciiz() const;
-  
   /// printString - Allocates a C string with the contents of this UTF8.
-  char* printString() const {
-    return UTF8ToAsciiz();
-  }
+  char* printString() const;
 
   /// equals - Are the two UTF8s equal?
   bool equals(const UTF8* other) const {
@@ -157,12 +152,6 @@ public:
                        size * sizeof(uint16)) < 0;
   }
   
-  /// print - Prints the UTF8 for debugging purposes.
-  virtual void print(mvm::PrintBuffer* buf) const;
-  
-  /// printUTF8 - Prints the UTF8 for debugging purposes.
-  void printUTF8(mvm::PrintBuffer* buf) const;
-
 };
 
 } // end namespace jnjvm

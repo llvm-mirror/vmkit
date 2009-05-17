@@ -35,15 +35,6 @@ const unsigned int JavaArray::T_SHORT = 9;
 const unsigned int JavaArray::T_INT = 10;
 const unsigned int JavaArray::T_LONG = 11;
 
-void UTF8::printUTF8(mvm::PrintBuffer* buf) const {
-  for (int i = 0; i < size; i++)
-    buf->writeChar((char)elements[i]);
-}
-
-void UTF8::print(mvm::PrintBuffer* buf) const {
-  return printUTF8(buf);
-}
-
 const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
   uint32 len = end - start;
   uint16* buf = (uint16*)alloca(sizeof(uint16) * len);
@@ -55,7 +46,7 @@ const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
   return map->lookupOrCreateReader(buf, len);
 }
 
-char* UTF8::UTF8ToAsciiz() const {
+char* UTF8::printString() const {
 #ifndef DEBUG
   mvm::NativeString* buf = mvm::NativeString::alloc(size + 1);
   for (sint32 i = 0; i < size; ++i) {

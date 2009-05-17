@@ -65,13 +65,12 @@ public:
   ///
   const UTF8* keyName;
   
-  /// tPrintBuf - Prints the name of the class this Typedef represents.
-  ///
-  virtual void tPrintBuf(mvm::PrintBuffer* buf) const = 0;
-  
   /// printString - Print the Typedef for debugging purposes.
   ///
-  const char* printString() const;
+  const char* printString() const {
+    assert(keyName && "No key name");
+    return keyName->printString();
+  }
   
   /// assocClass - Given the loaded, try to load the class represented by this
   /// Typedef.
@@ -123,11 +122,6 @@ private:
   
 public:
   
-  /// tPrintBuf - Prints the name of the class this Typedef represents.
-  ///
-  virtual void tPrintBuf(mvm::PrintBuffer* buf) const;
-  
-
   virtual bool trace() const {
     return false;
   }
@@ -195,10 +189,6 @@ public:
 
 class ArrayTypedef : public Typedef {
 public:
-  /// tPrintBuf - Prints the name of the class this Typedef represents.
-  ///
-  virtual void tPrintBuf(mvm::PrintBuffer* buf) const;
-
   
   virtual bool trace() const {
     return true;
@@ -219,10 +209,6 @@ private:
   const UTF8* pseudoAssocClassName;
 
 public:
-  /// tPrintBuf - Prints the name of the class this Typedef represents.
-  ///
-  virtual void tPrintBuf(mvm::PrintBuffer* buf) const;
-  
   virtual bool trace() const {
     return true;
   }
@@ -285,18 +271,14 @@ public:
   
   /// printString - Print the signature with the following extension.
   ///
-  const char* printString(const char* ext = "") const;
+  const char* printString() const {
+    return keyName->printString();
+  }
   
   /// nativeName - Get a native name for callbacks emitted AOT.
   ///
   void nativeName(char* buf, const char* ext) const;
 
-  /// printWithSign - Print the signature of a method with the method's class
-  /// and name.
-  ///
-  void printWithSign(UserCommonClass* cl, const UTF8* name,
-                     mvm::PrintBuffer* buf) const;
-  
   /// Signdef - Create a new Signdef.
   ///
   Signdef(const UTF8* name, JnjvmClassLoader* loader,
@@ -394,9 +376,6 @@ public:
   }
 
 private:
-  /// humanPrintArgs - Prints the list of typedef in a human readable form.
-  ///
-  void humanPrintArgs(mvm::PrintBuffer* buf) const;
   
   /// arguments - The list of arguments of the signature. First is the return
   /// type.

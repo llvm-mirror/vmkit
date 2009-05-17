@@ -18,6 +18,7 @@
 
 #include "jnjvm/JnjvmModule.h"
 
+#include "JavaArray.h"
 #include "JavaCache.h"
 #include "JavaConstantPool.h"
 #include "JavaString.h"
@@ -276,9 +277,11 @@ Constant* JavaAOTCompiler::getStaticInstance(Class* classDef) {
     LLVMClassInfo* LCI = getClassInfo(classDef);
     const Type* Ty = LCI->getStaticType();
     Ty = Ty->getContainedType(0);
+    std::string name(classDef->printString());
+    name += "_static";
     GlobalVariable* varGV = 
       new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage,
-                         0, classDef->printString("<static>"), getLLVMModule());
+                         0, name, getLLVMModule());
 
     Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
                                           JnjvmModule::ptrType);
@@ -314,13 +317,13 @@ Constant* JavaAOTCompiler::getVirtualTable(JavaVirtualTable* VT) {
       dyn_cast<ArrayType>(JnjvmModule::VTType->getContainedType(0));
     const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
     ATy = ArrayType::get(PTy, size);
+    std::string name(classDef->printString());
+    name += "_VT";
     // Do not set a virtual table as a constant, because the runtime may
     // modify it.
     GlobalVariable* varGV = new GlobalVariable(ATy, false,
                                                GlobalValue::ExternalLinkage,
-                                               0, 
-                                               classDef->printString("<VT>"),
-                                               getLLVMModule());
+                                               0, name, getLLVMModule());
   
     res = ConstantExpr::getCast(Instruction::BitCast, varGV,
                                 JnjvmModule::VTType);
