@@ -602,18 +602,23 @@ extern "C" void jnjvmThrowExceptionFromJIT() {
 }
 
 extern "C" void jnjvmPrintMethodStart(JavaMethod* meth) {
-  fprintf(stderr, "[%p] executing %s\n", (void*)mvm::Thread::get(),
-         meth->printString());
+  fprintf(stderr, "[%p] executing %s.%s\n", (void*)mvm::Thread::get(),
+          UTF8Buffer(meth->classDef->name).cString(),
+          UTF8Buffer(meth->name).cString());
 }
 
 extern "C" void jnjvmPrintMethodEnd(JavaMethod* meth) {
-  fprintf(stderr, "[%p] return from %s\n", (void*)mvm::Thread::get(),
-         meth->printString());
+  fprintf(stderr, "[%p] return from %s.%s\n", (void*)mvm::Thread::get(),
+          UTF8Buffer(meth->classDef->name).cString(),
+          UTF8Buffer(meth->name).cString());
 }
 
-extern "C" void jnjvmPrintExecution(uint32 opcode, uint32 index, JavaMethod* meth) {
-  fprintf(stderr, "[%p] executing %s %s at %d\n", (void*)mvm::Thread::get(),
-         meth->printString(), OpcodeNames[opcode], index);
+extern "C" void jnjvmPrintExecution(uint32 opcode, uint32 index,
+                                    JavaMethod* meth) {
+  fprintf(stderr, "[%p] executing %s.%s %s at %d\n", (void*)mvm::Thread::get(),
+         UTF8Buffer(meth->classDef->name).cString(),
+         UTF8Buffer(meth->name).cString(),
+         OpcodeNames[opcode], index);
 }
 
 #ifdef SERVICE

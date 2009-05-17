@@ -1981,7 +1981,7 @@ const char *GetStringUTFChars(JNIEnv *env, jstring string, jboolean *isCopy) {
   BEGIN_JNI_EXCEPTION
 
   if (isCopy != 0) (*isCopy) = true;
-  return strdup(((JavaString*)string)->strToAsciiz());
+  return ((JavaString*)string)->strToAsciiz();
 
   END_JNI_EXCEPTION
   return 0;
@@ -1989,7 +1989,7 @@ const char *GetStringUTFChars(JNIEnv *env, jstring string, jboolean *isCopy) {
 
 
 void ReleaseStringUTFChars(JNIEnv *env, jstring string, const char *utf) {
-  free((void*)utf);
+  delete[] utf;
 }
 
 

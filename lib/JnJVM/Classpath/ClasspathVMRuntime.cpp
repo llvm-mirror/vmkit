@@ -116,7 +116,9 @@ jobject _loader) {
   
   res = loader->loadLib(buf);
  
-   if (res) callOnLoad(res, loader, vm);
+  if (res) callOnLoad(res, loader, vm);
+
+  delete[] buf;
 
   return res != 0;
 }

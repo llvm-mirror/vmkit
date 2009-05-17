@@ -65,13 +65,6 @@ public:
   ///
   const UTF8* keyName;
   
-  /// printString - Print the Typedef for debugging purposes.
-  ///
-  const char* printString() const {
-    assert(keyName && "No key name");
-    return keyName->printString();
-  }
-  
   /// assocClass - Given the loaded, try to load the class represented by this
   /// Typedef.
   ///
@@ -268,12 +261,6 @@ public:
   /// keyName - The Java name of the signature, e.g. "()V".
   ///
   const UTF8* keyName;
-  
-  /// printString - Print the signature with the following extension.
-  ///
-  const char* printString() const {
-    return keyName->printString();
-  }
   
   /// nativeName - Get a native name for callbacks emitted AOT.
   ///

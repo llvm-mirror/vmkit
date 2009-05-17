@@ -592,7 +592,7 @@ void JavaField::initField(void* obj, Jnjvm* vm) {
     } else {
       fprintf(stderr, "I haven't verified your class file and it's malformed:"
                       " unknown constant %s!\n",
-                      type->printString());
+                      UTF8Buffer(type->keyName).cString());
       abort();
     }
   } 

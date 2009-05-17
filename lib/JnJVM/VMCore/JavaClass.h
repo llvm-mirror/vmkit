@@ -15,7 +15,6 @@
 
 #include "mvm/Allocator.h"
 #include "mvm/Object.h"
-#include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 
@@ -420,12 +419,6 @@ public:
   ///
   void TRACER;
   
-  /// printString - Prints the class.
-  ///
-  const char *printString() const {
-    return name->printString();
-  }
-
   /// inheritName - Does this class in its class hierarchy inherits
   /// the given name? Equality is on the name. This function does not take
   /// into account array classes.
@@ -1155,12 +1148,6 @@ public:
     return _signature;
   }
   
-  /// printString - Output a string representation of the method.
-  ///
-  const char* printString() const {
-    return name->printString();
-  }
- 
   /// toString - Return an array of chars, suitable for creating a string.
   ///
   ArrayUInt16* toString() const;
@@ -1410,12 +1397,6 @@ public:
   /// lookupAttribut - Look up the attribut in the field's list of attributs.
   ///
   Attribut* lookupAttribut(const UTF8* key);
-
-  /// printString - Output a string representation of the field.
-  ///
-  const char* printString() const {
-    return name->printString();
-  }
 
   /// getVritual*Field - Get a virtual field of an object.
   ///

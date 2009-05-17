@@ -45,22 +45,3 @@ const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
 
   return map->lookupOrCreateReader(buf, len);
 }
-
-char* UTF8::printString() const {
-#ifndef DEBUG
-  mvm::NativeString* buf = mvm::NativeString::alloc(size + 1);
-  for (sint32 i = 0; i < size; ++i) {
-    buf->setAt(i, elements[i]);
-  }
-  buf->setAt(size, 0);
-  return buf->cString();
-#else
-  // To bypass GC-allocation, use malloc here. Only when debugging.
-  char* buf = (char*)malloc(size + 1);
-  for (sint32 i = 0; i < size; ++i) {
-    buf[i] =  elements[i];
-  }
-  buf[size] = 0;
-  return buf;
-#endif
-}

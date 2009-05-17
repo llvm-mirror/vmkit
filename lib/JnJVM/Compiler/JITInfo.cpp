@@ -375,7 +375,7 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
     (JavaLLVMCompiler*)signature->initialLoader->getCompiler();
   std::string name;
   if (Mod->isStaticCompiling()) {
-    name += signature->printString();
+    name += UTF8Buffer(signature->keyName).cString();
     name += virt ? "virtual_ap" : "static_ap";
   } else {
     name = "";

@@ -15,7 +15,6 @@
 #define JNJVM_JAVA_ARRAY_H
 
 #include "mvm/Allocator.h"
-#include "mvm/PrintBuffer.h"
 
 #include "types.h"
 
@@ -105,7 +104,7 @@ public:
 /// of type uint16) with helper functions for manipulating UTF8. Each JVM
 /// instance hashes UTF8. UTF8 are not allocated by the application's garbage
 /// collector, but resides in permanent memory (e.g malloc).
-class UTF8 : public ArrayUInt16 {
+class UTF8 {
   friend class UTF8Map;
 private:
   
@@ -113,8 +112,7 @@ private:
   /// its objects in permanent memory, not with the garbage collector.
   void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
                      sint32 size) {
-    return allocator.Allocate(sizeof(JavaObject) + sizeof(ssize_t) + 
-                              size * sizeof(uint16));
+    return allocator.Allocate(sizeof(ssize_t) + size * sizeof(uint16));
   }
   
   UTF8(sint32 n) {
@@ -122,15 +120,17 @@ private:
   }
 
 public:
-  
+  /// size - The (constant) size of the array.
+  ssize_t size;
+
+  /// elements - Elements of this array. The size here is different than the
+  /// actual size of the Java array. This is to facilitate Java array accesses
+  /// in JnJVM code. The size should be set to zero, but this is invalid C99.
+  uint16 elements[1];
   
   /// extract - Similar, but creates it in the map.
   const UTF8* extract(UTF8Map* map, uint32 start, uint32 len) const;
-
-  
-  /// printString - Allocates a C string with the contents of this UTF8.
-  char* printString() const;
-
+ 
   /// equals - Are the two UTF8s equal?
   bool equals(const UTF8* other) const {
     if (other == this) return true;
@@ -152,6 +152,41 @@ public:
                        size * sizeof(uint16)) < 0;
   }
   
+};
+
+
+/// UTF8Buffer - Helper class to create char* buffers suitable for
+/// printf.
+///
+class UTF8Buffer {
+
+  /// buffer - The buffer that holds a string representation.
+  ///
+  char* buffer;
+public:
+
+  /// UTF8Buffer - Create a buffer with the following UTF8.
+  ///
+  UTF8Buffer(const UTF8* val) {
+    buffer = new char[val->size];
+    for (sint32 i = 0; i < val->size; ++i)
+      buffer[i] = val->elements[i];
+  }
+
+  /// ~UTF8Buffer - Delete the buffer, as well as all dynamically
+  /// allocated memory.
+  ///
+  ~UTF8Buffer() {
+    delete[] buffer;
+  }
+
+  /// cString - Return a C string representation of the buffer, suitable
+  /// for printf.
+  ///
+  const char* cString() {
+    return buffer;
+  }
+
 };
 
 } // end namespace jnjvm

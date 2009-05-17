@@ -294,8 +294,12 @@ JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
 }
 
 ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
-  char* asciiz = utf8->printString();
-  uint32 alen = strlen(asciiz);
+  char* asciiz = (char*)alloca(utf8->size + 1);
+  for (sint32 i = 0; i < utf8->size; ++i) 
+    asciiz[i] = utf8->elements[i];
+  asciiz[utf8->size] = 0;
+  
+  uint32 alen = utf8->size;
   ArrayUInt8* res = 0;
   
   for (std::vector<const char*>::iterator i = bootClasspath.begin(),
@@ -687,9 +691,9 @@ Typedef* JnjvmClassLoader::constructType(const UTF8* name) {
 
 static void typeError(const UTF8* name, short int l) {
   if (l != 0) {
-    fprintf(stderr, "wrong type %d in %s", l, name->printString());
+    fprintf(stderr, "wrong type %d in %s", l, UTF8Buffer(name).cString());
   } else {
-    fprintf(stderr, "wrong type %s", name->printString());
+    fprintf(stderr, "wrong type %s", UTF8Buffer(name).cString());
   }
   abort();
 }

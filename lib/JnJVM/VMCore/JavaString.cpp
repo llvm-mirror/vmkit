@@ -38,12 +38,12 @@ JavaString* JavaString::stringDup(const ArrayUInt16*& array, Jnjvm* vm) {
 }
 
 char* JavaString::strToAsciiz() {
-  mvm::NativeString* buf = mvm::NativeString::alloc(count + 1); 
+  char* buf = new char[count + 1]; 
   for (sint32 i = 0; i < count; ++i) {
-    buf->setAt(i, value->elements[i + offset]);
+    buf[i] = value->elements[i + offset];
   }
-  buf->setAt(count, 0); 
-  return buf->cString();
+  buf[count] =  0; 
+  return buf;
 }
 
 const ArrayUInt16* JavaString::strToArray(Jnjvm* vm) {

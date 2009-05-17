@@ -620,20 +620,16 @@ void Jnjvm::classFormatError(const char* msg) {
 }
 
 JavaString* Jnjvm::internalUTF8ToStr(const UTF8* utf8) {
-  JavaString* res = hashStr.lookup(utf8);
-  if (!res) {
-    uint32 size = utf8->size;
-    ArrayUInt16* tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
-    uint16* buf = tmp->elements;
+  uint32 size = utf8->size;
+  ArrayUInt16* tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
+  uint16* buf = tmp->elements;
   
-    for (uint32 i = 0; i < size; i++) {
-      buf[i] = utf8->elements[i];
-    }
-  
-    res = hashStr.lookupOrCreate((const ArrayUInt16*&)tmp, this,
-                                 JavaString::stringDup);
+  for (uint32 i = 0; i < size; i++) {
+    buf[i] = utf8->elements[i];
   }
-  return res;
+  
+  return hashStr.lookupOrCreate((const ArrayUInt16*&)tmp, this,
+                                JavaString::stringDup);
 }
 
 JavaString* Jnjvm::constructString(const ArrayUInt16* array) { 
@@ -924,10 +920,6 @@ void ClArgumentsInfo::readArgs(Jnjvm* vm) {
   }
 }
 
-
-void Jnjvm::print(mvm::PrintBuffer* buf) const {
-  buf->write("Java isolate");
-}
 
 JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
   if (appClassLoader == 0) {

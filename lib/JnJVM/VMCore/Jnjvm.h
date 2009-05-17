@@ -16,7 +16,6 @@
 
 #include "mvm/Allocator.h"
 #include "mvm/Object.h"
-#include "mvm/PrintBuffer.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
@@ -167,10 +166,6 @@ private:
 
 public:
   
-  /// print - Prints the JVM for debugging purposes.
-  ///
-  virtual void print(mvm::PrintBuffer* buf) const;
-
   /// tracer - Traces instances of this class.
   ///
   virtual void TRACER;

@@ -226,8 +226,9 @@ extern "C" void jnjvmThrowExceptionFromJIT();
 
 llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
-  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "native compile %s\n",
-              compilingMethod->printString());
+  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "native compile %s.%s\n",
+              UTF8Buffer(compilingClass->name).cString(),
+              UTF8Buffer(compilingMethod->name).cString());
   
   bool stat = isStatic(compilingMethod->access);
 
@@ -258,8 +259,9 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     else
       ReturnInst::Create(currentBlock);
   
-    PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "end native compile %s\n",
-                compilingMethod->printString());
+    PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "end native compile %s.%s\n",
+                UTF8Buffer(compilingClass->name).cString(),
+                UTF8Buffer(compilingMethod->name).cString());
   
     llvmFunction->setLinkage(GlobalValue::ExternalLinkage);
     return llvmFunction;
@@ -390,8 +392,9 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   else
     ReturnInst::Create(currentBlock);
   
-  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "end native compile %s\n",
-              compilingMethod->printString());
+  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "end native compile %s.%s\n",
+              UTF8Buffer(compilingClass->name).cString(),
+              UTF8Buffer(compilingMethod->name).cString());
   
   func->setLinkage(GlobalValue::ExternalLinkage);
   
@@ -590,15 +593,17 @@ void JavaJIT::endSynchronize() {
 Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
                                     BasicBlock* endExBlock,
                                     std::vector<Value*>& args) {
-  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "inline compile %s\n",
-              compilingMethod->printString());
+  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "inline compile %s.%s\n",
+              UTF8Buffer(compilingClass->name).cString(),
+              UTF8Buffer(compilingMethod->name).cString());
   
   Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
   
   if (!codeAtt) {
     fprintf(stderr, "I haven't verified your class file and it's malformed:"
-                    " no code attribut found for %s!\n",
-                    compilingMethod->printString());
+                    " no code attribut found for %s.%s!\n",
+                    UTF8Buffer(compilingClass->name).cString(),
+                    UTF8Buffer(compilingMethod->name).cString());
     abort();
   }
 
@@ -708,8 +713,10 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
 
   compileOpcodes(&compilingClass->bytes->elements[start], codeLen);
   
-  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "--> end inline compiling %s\n",
-              compilingMethod->printString());
+  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL,
+              "--> end inline compiling %s.%s\n",
+              UTF8Buffer(compilingClass->name).cString(),
+              UTF8Buffer(compilingMethod->name).cString());
 
   curBB = endBlock;
   return endNode;
@@ -718,16 +725,18 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
 
 
 llvm::Function* JavaJIT::javaCompile() {
-  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "compiling %s\n",
-              compilingMethod->printString());
+  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "compiling %s.%s\n",
+              UTF8Buffer(compilingClass->name).cString(),
+              UTF8Buffer(compilingMethod->name).cString());
 
   
   Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
   
   if (!codeAtt) {
     fprintf(stderr, "I haven't verified your class file and it's malformed:"
-                    " no code attribut found for %s!\n",
-                    compilingMethod->printString());
+                    " no code attribut found for %s.%s!\n",
+                    UTF8Buffer(compilingClass->name).cString(),
+                    UTF8Buffer(compilingMethod->name).cString());
     abort();
   }
 
@@ -1078,8 +1087,9 @@ void JavaJIT::loadConstant(uint16 index) {
     push(res, false);
   } else {
     fprintf(stderr, "I haven't verified your class file and it's malformed:"
-                    " unknown ldc %d in %s!\n", type,
-                    compilingClass->printString());
+                    " unknown ldc %d in %s.%s!\n", type,
+                    UTF8Buffer(compilingClass->name).cString(),
+                    UTF8Buffer(compilingMethod->name).cString());
     abort();
   }
 }

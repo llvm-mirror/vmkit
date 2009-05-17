@@ -61,8 +61,9 @@ uint8 arrayType(JavaMethod* meth, unsigned int t) {
     return I_DOUBLE;
   } else {
     fprintf(stderr, "I haven't verified your class file and it's malformed:"
-                    " unknown array type %d in %s!\n", t,
-                    meth->printString());
+                    " unknown array type %d in %s.%s!\n", t,
+                    UTF8Buffer(meth->classDef->name).cString(),
+                    UTF8Buffer(meth->name).cString());
     abort();
   }
 }
@@ -2194,8 +2195,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       
       default : {
         fprintf(stderr, "I haven't verified your class file and it's malformed:"
-                    " unknown bytecode %d in %s\n!", bytecodes[i],
-                    compilingClass->printString());
+                    " unknown bytecode %d in %s.%s\n!", bytecodes[i],
+                    UTF8Buffer(compilingClass->name).cString(),
+                    UTF8Buffer(compilingMethod->name).cString());
         abort();
       }
     } 
@@ -2543,8 +2545,9 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       default : {
         fprintf(stderr, "I haven't verified your class file and it's malformed:"
-                    " unknown bytecode %d in %s!\n", bytecodes[i],
-                    compilingClass->printString());
+                    " unknown bytecode %d in %s.%s!\n", bytecodes[i],
+                    UTF8Buffer(compilingClass->name).cString(),
+                    UTF8Buffer(compilingMethod->name).cString());
         abort();
       }
     }

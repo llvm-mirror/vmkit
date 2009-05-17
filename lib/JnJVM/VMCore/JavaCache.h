@@ -23,7 +23,6 @@
 
 #include "mvm/Allocator.h"
 #include "mvm/Object.h"
-#include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Locks.h"
 
 #include "types.h"

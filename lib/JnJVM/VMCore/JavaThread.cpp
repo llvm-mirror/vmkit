@@ -7,7 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
@@ -216,7 +215,9 @@ void JavaThread::printJavaBacktrace() {
        i != e; ++i) {
     JavaMethod* meth = vm->IPToMethod<JavaMethod>(*i);
     assert(meth && "Wrong stack");
-    fprintf(stderr, "; %p in %s\n",  *i, meth->printString());
+    fprintf(stderr, "; %p in %s.%s\n",  *i,
+            UTF8Buffer(meth->classDef->name).cString(),
+            UTF8Buffer(meth->name).cString());
   }
 }
 
@@ -257,7 +258,9 @@ void JavaThread::printBacktrace() {
       void* ip = FRAME_IP(addr);
       JavaMethod* meth = vm->IPToMethod<JavaMethod>(ip);
       assert(meth && "Wrong stack");
-      fprintf(stderr, "; %p in %s\n",  ip, meth->printString());
+      fprintf(stderr, "; %p in %s.%s\n",  ip,
+              UTF8Buffer(meth->classDef->name).cString(),
+              UTF8Buffer(meth->name).cString());
       addr = (void**)addr[0];
       // End walking the stack when we cross a native -> Java call. Here
       // the iterator points to a native -> Java call. We dereference addr twice

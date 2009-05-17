@@ -23,7 +23,6 @@
 #include "types.h"
 
 #include "mvm/Allocator.h"
-#include "mvm/PrintBuffer.h"
 #include "mvm/Threads/Locks.h"
 
 #include "JavaArray.h" // for comparing UTF8s
@@ -48,7 +47,10 @@ struct ltarray16
 {
   bool operator()(const ArrayUInt16* s1, const ArrayUInt16* s2) const
   {
-    return ((UTF8*)s1)->lessThan((UTF8*)s2);
+    if (s1->size < s2->size) return true;
+    else if (s1->size > s2->size) return false;
+    else return memcmp((const char*)s1->elements, (const char*)s2->elements,
+                       s1->size * sizeof(uint16)) < 0;
   }
 };
 

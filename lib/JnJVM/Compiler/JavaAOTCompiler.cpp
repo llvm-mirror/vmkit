@@ -66,7 +66,8 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
     
       GlobalVariable* varGV = 
         new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage, 0,
-                           classDef->printString(), getLLVMModule());
+                           UTF8Buffer(classDef->name).cString(),
+                           getLLVMModule());
     
       nativeClasses.insert(std::make_pair(classDef, varGV));
 
@@ -96,7 +97,8 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
       GlobalVariable* varGV = 
         new GlobalVariable(Ty, false, GlobalValue::InternalLinkage,
                            Constant::getNullValue(Ty),
-                           classDef->printString(), getLLVMModule());
+                           UTF8Buffer(classDef->name).cString(),
+                           getLLVMModule());
     
       arrayClasses.insert(std::make_pair(classDef->asArrayClass(), varGV));
       return varGV;
@@ -277,7 +279,7 @@ Constant* JavaAOTCompiler::getStaticInstance(Class* classDef) {
     LLVMClassInfo* LCI = getClassInfo(classDef);
     const Type* Ty = LCI->getStaticType();
     Ty = Ty->getContainedType(0);
-    std::string name(classDef->printString());
+    std::string name(UTF8Buffer(classDef->name).cString());
     name += "_static";
     GlobalVariable* varGV = 
       new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage,
@@ -317,7 +319,7 @@ Constant* JavaAOTCompiler::getVirtualTable(JavaVirtualTable* VT) {
       dyn_cast<ArrayType>(JnjvmModule::VTType->getContainedType(0));
     const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
     ATy = ArrayType::get(PTy, size);
-    std::string name(classDef->printString());
+    std::string name(UTF8Buffer(classDef->name).cString());
     name += "_VT";
     // Do not set a virtual table as a constant, because the runtime may
     // modify it.
@@ -1523,7 +1525,7 @@ Function* JavaAOTCompiler::addCallback(Class* cl, uint16 index,
                                       Signdef* sign, bool stat) {
  
   fprintf(stderr, "Warning: emitting a callback from %s (%d)\n",
-          cl->printString(), index);
+          UTF8Buffer(cl->name).cString(), index);
   Function* func = 0;
   LLVMSignatureInfo* LSI = getSignatureInfo(sign);
   
