@@ -66,7 +66,7 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
     
       GlobalVariable* varGV = 
         new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage, 0,
-                           UTF8Buffer(classDef->name).toClassName()->cString(),
+                           UTF8Buffer(classDef->name).toCompileName()->cString(),
                            getLLVMModule());
     
       nativeClasses.insert(std::make_pair(classDef, varGV));
@@ -97,7 +97,7 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
       GlobalVariable* varGV = 
         new GlobalVariable(Ty, false, GlobalValue::InternalLinkage,
                            Constant::getNullValue(Ty),
-                           UTF8Buffer(classDef->name).toClassName()->cString(),
+                           UTF8Buffer(classDef->name).toCompileName()->cString(),
                            getLLVMModule());
     
       arrayClasses.insert(std::make_pair(classDef->asArrayClass(), varGV));
@@ -279,7 +279,7 @@ Constant* JavaAOTCompiler::getStaticInstance(Class* classDef) {
     LLVMClassInfo* LCI = getClassInfo(classDef);
     const Type* Ty = LCI->getStaticType();
     Ty = Ty->getContainedType(0);
-    std::string name(UTF8Buffer(classDef->name).toClassName()->cString());
+    std::string name(UTF8Buffer(classDef->name).toCompileName()->cString());
     name += "_static";
     GlobalVariable* varGV = 
       new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage,
@@ -319,7 +319,7 @@ Constant* JavaAOTCompiler::getVirtualTable(JavaVirtualTable* VT) {
       dyn_cast<ArrayType>(JnjvmModule::VTType->getContainedType(0));
     const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
     ATy = ArrayType::get(PTy, size);
-    std::string name(UTF8Buffer(classDef->name).toClassName()->cString());
+    std::string name(UTF8Buffer(classDef->name).toCompileName()->cString());
     name += "_VT";
     // Do not set a virtual table as a constant, because the runtime may
     // modify it.

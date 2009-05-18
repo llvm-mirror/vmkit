@@ -82,12 +82,12 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
    
   // Try to find if we have a pre-compiled rt.jar
   if (dlLoad) {
-    SuperArray = (Class*)dlsym(SELF_HANDLE, "java.lang.Object");
+    SuperArray = (Class*)dlsym(SELF_HANDLE, "java_lang_Object");
     if (!SuperArray) {
       nativeHandle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
       if (nativeHandle) {
         // Found it!
-        SuperArray = (Class*)dlsym(nativeHandle, "java.lang.Object");
+        SuperArray = (Class*)dlsym(nativeHandle, "java_lang_Object");
       }
     }
     

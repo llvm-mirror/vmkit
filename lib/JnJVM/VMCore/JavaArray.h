@@ -183,10 +183,29 @@ public:
 
   /// toClassName - Change '/' into '.' in the buffer.
   ///
-  UTF8Buffer* toClassName() {
+  UTF8Buffer* toCompileName() {
     uint32 len = strlen(buffer);
-    for (uint32 i = 0; i < len; ++i)
-      if (buffer[i] == '/') buffer[i] = '.';
+    char* newBuffer = new char[(len << 1) + 1];
+    uint32 j = 0;
+    for (uint32 i = 0; i < len; ++i) {
+      if (buffer[i] == '/') {
+        newBuffer[j++] = '_';
+      } else if (buffer[i] == '_') {
+        newBuffer[j++] = '_';
+        newBuffer[j++] = '1';
+      } else if (buffer[i] == ';') {
+        newBuffer[j++] = '_';
+        newBuffer[j++] = '2';
+      } else if (buffer[i] == '[') {
+        newBuffer[j++] = '_';
+        newBuffer[j++] = '3';
+      } else {
+        newBuffer[j++] = buffer[i];
+      }
+    }
+    newBuffer[j] = 0;
+    delete[] buffer;
+    buffer = newBuffer;
     return this;
   }
 
