@@ -1087,7 +1087,6 @@ Constant* JavaAOTCompiler::CreateConstantFromArray(const T* val, const Type* Ty)
 Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
   std::vector<const Type*> Elemts;
   const ArrayType* ATy = ArrayType::get(Type::Int16Ty, val->size);
-  Elemts.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
   Elemts.push_back(JnjvmModule::pointerSizeType);
 
   Elemts.push_back(ATy);
@@ -1095,8 +1094,6 @@ Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
   const StructType* STy = StructType::get(Elemts);
   
   std::vector<Constant*> Cts;
-  CommonClass* cl = JavaThread::get()->getJVM()->upcalls->ArrayOfChar;
-  Cts.push_back(CreateConstantForBaseObject(cl));
   Cts.push_back(ConstantInt::get(JnjvmModule::pointerSizeType, val->size));
   
   std::vector<Constant*> Vals;
