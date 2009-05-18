@@ -168,9 +168,10 @@ public:
   /// UTF8Buffer - Create a buffer with the following UTF8.
   ///
   UTF8Buffer(const UTF8* val) {
-    buffer = new char[val->size];
+    buffer = new char[val->size + 1];
     for (sint32 i = 0; i < val->size; ++i)
       buffer[i] = val->elements[i];
+    buffer[val->size] = 0;
   }
 
   /// ~UTF8Buffer - Delete the buffer, as well as all dynamically
