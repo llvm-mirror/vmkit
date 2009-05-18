@@ -180,6 +180,15 @@ public:
     delete[] buffer;
   }
 
+  /// toClassName - Change '/' into '.' in the buffer.
+  ///
+  UTF8Buffer* toClassName() {
+    uint32 len = strlen(buffer);
+    for (uint32 i = 0; i < len; ++i)
+      if (buffer[i] == '/') buffer[i] = '.';
+    return this;
+  }
+
   /// cString - Return a C string representation of the buffer, suitable
   /// for printf.
   ///

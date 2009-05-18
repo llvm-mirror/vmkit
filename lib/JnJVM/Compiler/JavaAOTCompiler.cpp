@@ -66,7 +66,7 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
     
       GlobalVariable* varGV = 
         new GlobalVariable(Ty, false, GlobalValue::ExternalLinkage, 0,
-                           UTF8Buffer(classDef->name).cString(),
+                           UTF8Buffer(classDef->name).toClassName()->cString(),
                            getLLVMModule());
     
       nativeClasses.insert(std::make_pair(classDef, varGV));
