@@ -507,6 +507,7 @@ UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
   if (!name) {
     uint32 size = strlen(asciiz);
     UTF8* temp = (UTF8*)alloca(sizeof(UTF8) + size * sizeof(uint16));
+    temp->size = size;
     if (!temp) return 0;
 
     for (uint32 i = 0; i < size; ++i) {
