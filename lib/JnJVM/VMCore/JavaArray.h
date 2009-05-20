@@ -181,7 +181,7 @@ public:
     delete[] buffer;
   }
 
-  /// toClassName - Change '/' into '.' in the buffer.
+  /// toCompileName - Change the utf8 following JNI conventions.
   ///
   UTF8Buffer* toCompileName() {
     uint32 len = strlen(buffer);
