@@ -1699,7 +1699,7 @@ void JavaAOTCompiler::compileFile(JnjvmClassLoader* JCL, const char* n) {
   mvm::BumpPtrAllocator A;
   Jnjvm* vm = new(A) Jnjvm(A, (JnjvmBootstrapLoader*)JCL);
   JavaThread* th = new JavaThread(0, 0, vm);
-  vm->setBootstrapThread(th);
+  vm->setMainThread(th);
   th->start((void (*)(mvm::Thread*))mainCompilerStart);
   vm->waitForExit();
 }

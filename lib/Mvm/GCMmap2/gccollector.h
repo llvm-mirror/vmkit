@@ -70,6 +70,13 @@ public:
   static GCThread *threads;        /* le gestionnaire de thread et de synchro */
   static void (*internMemoryError)(unsigned int);
 
+  static bool isLive(void* ptr) {
+    GCChunkNode *node = o2node(ptr);
+    
+    if(node && isMarked(node)) return true;
+    else return false;
+  }
+
 #ifdef HAVE_PTHREAD
   static inline void  unlock_dont_recovery() { threads->unlock_dont_recovery(); }
   static void die_if_sigsegv_occured_during_collection(void *addr);

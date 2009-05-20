@@ -38,7 +38,9 @@ JavaField*  Classpath::vmdataVMThread;
 JavaMethod* Classpath::finaliseCreateInitialThread;
 JavaMethod* Classpath::initVMThread;
 JavaMethod* Classpath::groupAddThread;
-JavaField*  Classpath::name;
+JavaField*  Classpath::threadName;
+JavaField*  Classpath::groupName;
+JavaMethod* Classpath::initGroup;
 JavaField*  Classpath::priority;
 JavaField*  Classpath::daemon;
 JavaField*  Classpath::group;
@@ -177,6 +179,7 @@ JavaMethod* Classpath::InitUnknownError;
 JavaMethod* Classpath::InitClassNotFoundException;
 JavaMethod* Classpath::InitArithmeticException;
 JavaMethod* Classpath::InitObject;
+JavaMethod* Classpath::FinalizeObject;
 JavaMethod* Classpath::IntToString;
 
 JavaMethod* Classpath::ErrorWithExcpNoClassDefFoundError;
@@ -217,7 +220,7 @@ void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
   myth->javaThread = th;
   JavaObject* vmth = newVMThread->doNew(vm);
   
-  name->setObjectField(th, (JavaObject*)vm->asciizToStr(thName));
+  threadName->setObjectField(th, (JavaObject*)vm->asciizToStr(thName));
   priority->setInt32Field(th, (uint32)1);
   daemon->setInt8Field(th, (uint32)0);
   vmThread->setObjectField(th, vmth);
@@ -245,8 +248,18 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   // Create the main thread
   void* Stat = threadGroup->getStaticInstance();
   JavaObject* RG = rootGroup->getObjectField(Stat);
-  assert(vm->getBootstrapThread() && "VM did not set its bootstrap thread");
-  CreateJavaThread(vm, vm->getBootstrapThread(), "main", RG);
+  assert(vm->getMainThread() && "VM did not set its main thread");
+  CreateJavaThread(vm, vm->getMainThread(), "main", RG);
+
+  // Create the "system" group.
+  JavaObject* SystemGroup = threadGroup->doNew(vm);
+  initGroup->invokeIntSpecial(vm, threadGroup, SystemGroup);
+  JavaObject* systemName = (JavaObject*)vm->asciizToStr("system");
+  groupName->setObjectField(SystemGroup, systemName);
+
+  // And create the finalizer thread.
+  assert(vm->getFinalizerThread() && "VM did not set its finalizer thread");
+  CreateJavaThread(vm, vm->getFinalizerThread(), "Finalizer", SystemGroup);
 }
 
 extern "C" JavaString* nativeInternString(JavaString* obj) {
@@ -614,6 +627,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   InitObject = UPCALL_METHOD(loader, "java/lang/Object", "<init>", "()V",
                              ACC_VIRTUAL);
   
+  FinalizeObject = UPCALL_METHOD(loader, "java/lang/Object", "finalize", "()V",
+                                 ACC_VIRTUAL);
+  
   IntToString = UPCALL_METHOD(loader, "java/lang/Integer", "toString",
                               "(II)Ljava/lang/String;", ACC_STATIC);
 
@@ -650,10 +666,19 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_METHOD(loader, "java/lang/ThreadGroup", "addThread",
                   "(Ljava/lang/Thread;)V", ACC_VIRTUAL);
   
-  name = 
-    UPCALL_FIELD(loader, "java/lang/Thread", "name", "Ljava/lang/String;",
+  initGroup = 
+    UPCALL_METHOD(loader, "java/lang/ThreadGroup", "<init>",
+                  "()V", ACC_VIRTUAL);
+  
+  groupName = 
+    UPCALL_FIELD(loader, "java/lang/ThreadGroup", "name", "Ljava/lang/String;",
                  ACC_VIRTUAL);
   
+  threadName = 
+     UPCALL_FIELD(loader, "java/lang/Thread", "name", "Ljava/lang/String;",
+                  ACC_VIRTUAL);
+   
+
   priority = 
     UPCALL_FIELD(loader,  "java/lang/Thread", "priority", "I", ACC_VIRTUAL);
 

@@ -139,6 +139,9 @@ int Collector::byteOffset(void *obj) {
   return (off-beg);
 }
 
+bool Collector::isLive(void* ptr) {
+  return GCCollector::isLive(ptr);
+}
 
 void Collector::applyFunc(void (*func)(gcRoot *o, void *data), void *data) {
   return GCCollector::applyFunc(func, data);

@@ -964,6 +964,10 @@ void Jnjvm::loadBootstrap() {
     
     JavaString::internStringVT->destructor = 
       (uintptr_t)JavaString::stringDestructor;
+
+    // Tell the finalizer that this is a native destructor.
+    JavaString::internStringVT->operatorDelete = 
+      (uintptr_t)JavaString::stringDestructor;
   }
   upcalls->newString->initialiseClass(this);
 
@@ -1111,7 +1115,7 @@ void Jnjvm::waitForExit() {
 
 void Jnjvm::mainJavaStart(JavaThread* thread) {
   Jnjvm* vm = thread->getJVM();
-  vm->bootstrapThread = thread;
+  vm->mainThread = thread;
 
   vm->loadBootstrap();
 
@@ -1191,9 +1195,12 @@ void Jnjvm::runApplication(int argc, char** argv) {
     mvm::Thread* th = new JavaThread(0, 0, this);
     th->start(serviceCPUMonitor);
 #endif
+  
+    finalizerThread = new JavaThread(0, 0, this);
+    finalizerThread->start((void (*)(mvm::Thread*))finalizerStart);
     
-    bootstrapThread = new JavaThread(0, 0, this);
-    bootstrapThread->start((void (*)(mvm::Thread*))mainJavaStart);
+    mainThread = new JavaThread(0, 0, this);
+    mainThread->start((void (*)(mvm::Thread*))mainJavaStart);
   } else {
     threadSystem.nonDaemonThreads = 0;
   }

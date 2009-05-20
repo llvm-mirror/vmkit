@@ -77,6 +77,7 @@ public:
   static void           inject_my_thread(mvm::Thread* th);
   static void           remove_my_thread(mvm::Thread* th);
 
+  static bool           isLive(void* ptr);
   static gc             *begOf(const void *o);
   static int            byteOffset(void *o);
   inline static bool    isObject(const void *o) { return begOf((void*)o); }

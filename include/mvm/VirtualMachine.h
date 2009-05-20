@@ -18,6 +18,7 @@
 #include "mvm/Allocator.h"
 #include "mvm/CompilationUnit.h"
 #include "mvm/Object.h"
+#include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 
 #include <cassert>
@@ -29,6 +30,13 @@ namespace jnjvm {
 }
 
 namespace mvm {
+
+
+// Same values than JikesRVM
+#define INITIAL_QUEUE_SIZE 256
+#define GROW_FACTOR 2
+
+
 
 /// VirtualMachine - This class is the root of virtual machine classes. It
 /// defines what a VM should be.
@@ -46,6 +54,11 @@ protected:
     status = 1;
     _since_last_collection = 4*1024*1024;
 #endif
+    FinalizationQueue = new gc*[INITIAL_QUEUE_SIZE];
+    QueueLength = INITIAL_QUEUE_SIZE;
+
+    ToBeFinalized = new gc*[INITIAL_QUEUE_SIZE];
+    ToBeFinalizedLength = INITIAL_QUEUE_SIZE;
   }
 public:
 
@@ -66,7 +79,92 @@ public:
   
   static CompilationUnit* initialiseCLIVM();
   static VirtualMachine* createCLIVM(CompilationUnit* C = 0);
- 
+
+    
+private:
+  /// FinalizationQueueLock - A lock to protect access to the queue.
+  ///
+  mvm::SpinLock FinalizationQueueLock;
+
+  /// finalizationQueue - A list of allocated objets that contain a finalize
+  /// method.
+  ///
+  gc** FinalizationQueue;
+
+  /// CurrentIndex - Current index in the queue of finalizable objects.
+  ///
+  uint32 CurrentIndex;
+
+  /// QueueLength - Current length of the queue of finalizable objects.
+  ///
+  uint32 QueueLength;
+
+  /// growQueue - Grow the queue of finalizable objects.
+  ///
+  void growQueue();
+  
+  /// ToBeFinalized - List of objects that are scheduled to be finalized.
+  ///
+  gc** ToBeFinalized;
+  
+  /// ToBeFinalizedLength - Current length of the queue of objects scheduled
+  /// for finalization.
+  ///
+  uint32 ToBeFinalizedLength;
+
+  /// CurrentFinalizedIndex - The current index in the ToBeFinalized queue
+  /// that will be sceduled for finalization.
+  ///
+  uint32 CurrentFinalizedIndex;
+  
+  /// LastFinalizedIndex - The last index in the ToBeFinalized queue whose
+  /// finalize method has been called.
+  ///
+  uint32 LastFinalizedIndex;
+  
+  /// finalizationCond - Condition variable to wake up finalization threads.
+  ///
+  mvm::Cond FinalizationCond;
+
+  /// finalizationLock - Lock for the condition variable.
+  ///
+  mvm::LockNormal FinalizationLock;
+
+protected:
+  /// invokeFinalizer - Invoke the finalizer of the object. This may involve
+  /// changing the environment, e.g. going to native to Java.
+  ///
+  virtual void invokeFinalizer(gc*) {}
+
+
+public:
+  /// finalizerStart - The start function of a finalizer. Will poll the
+  /// finalizationQueue.
+  ///
+  static void finalizerStart(mvm::Thread*);
+
+  /// addFinalizationCandidate - Add an object to the queue of objects with
+  /// a finalization method.
+  ///
+  void addFinalizationCandidate(gc*);
+  
+  /// scanFinalizationQueue - Scan objets with a finalized method and schedule
+  /// them for finalization if they are not live.
+  ///
+  void scanFinalizationQueue();
+
+  /// wakeUpFinalizers - Wake the finalizers.
+  ///
+  void wakeUpFinalizers() { FinalizationCond.broadcast(); }
+
+  void startCollection() {
+    FinalizationQueueLock.acquire();
+  }
+  
+  void endCollection() {
+    FinalizationQueueLock.release();
+  }
+
 protected:
 
   /// JavaFunctionMap - Map of Java method to function pointers. This map is

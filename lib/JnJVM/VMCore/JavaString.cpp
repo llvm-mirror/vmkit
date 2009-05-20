@@ -24,7 +24,7 @@ JavaString* JavaString::stringDup(const ArrayUInt16*& array, Jnjvm* vm) {
   JavaString* res = (JavaString*)cl->doNew(vm);
   
   // It's a hashed string, set the destructor so that the string
-  // removes itself from the vm string map. Do this ony if
+  // removes itself from the vm string map. Do this only if
   // internStringVT exists (in case of AOT).
   if (internStringVT) res->setVirtualTable(internStringVT);
 

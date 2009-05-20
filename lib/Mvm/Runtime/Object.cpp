@@ -14,6 +14,7 @@
 #include "mvm/Allocator.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
+#include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Thread.h"
 
 using namespace mvm;
@@ -111,4 +112,96 @@ void NativeString::print(PrintBuffer *buf) const {
     }
   }
   buf->write("\"");
+}
+
+
+
+
+void VirtualMachine::finalizerStart(mvm::Thread* th) {
+  VirtualMachine* vm = th->MyVM;
+
+  while (true) {
+    vm->FinalizationLock.lock();
+    while (vm->CurrentFinalizedIndex == 0) {
+      vm->FinalizationCond.wait(&vm->FinalizationLock);
+    }
+    vm->FinalizationLock.unlock();
+
+    while (true) {
+      vm->FinalizationQueueLock.acquire();
+      gc* res = 0;
+      if (vm->CurrentFinalizedIndex != 0) {
+        res = vm->ToBeFinalized[--vm->CurrentFinalizedIndex];
+      }
+      vm->FinalizationQueueLock.release();
+      if (!res) break;
+
+      VirtualTable* VT = res->getVirtualTable();
+      try {
+        if (VT->operatorDelete) {
+          // It's a native method!
+          destructor_t dest = (destructor_t)VT->destructor;
+          dest(res);
+        } else {
+          vm->invokeFinalizer(res);
+        }
+      } catch(...) {
+      }
+    }
+  }
+}
+
+void VirtualMachine::growQueue() {
+  if (CurrentIndex >= QueueLength) {
+    uint32 newLength = QueueLength * GROW_FACTOR;
+    gc** newQueue = new gc*[newLength];
+    for (uint32 i = 0; i < QueueLength; ++i) newQueue[i] = FinalizationQueue[i];
+    delete[] FinalizationQueue;
+    FinalizationQueue = newQueue;
+    QueueLength = newLength;
+    
+    newLength = ToBeFinalizedLength * GROW_FACTOR;
+    newQueue = new gc*[newLength];
+    for (uint32 i = 0; i < ToBeFinalizedLength; ++i) newQueue[i] = ToBeFinalized[i];
+    delete[] ToBeFinalized;
+    ToBeFinalized = newQueue;
+    ToBeFinalizedLength = newLength;
+  }
+}
+
+
+void VirtualMachine::addFinalizationCandidate(gc* obj) {
+  FinalizationQueueLock.acquire();
+ 
+  if (CurrentIndex >= QueueLength) {
+    growQueue();
+  }
+  
+  FinalizationQueue[CurrentIndex++] = obj;
+  FinalizationQueueLock.release();
+}
+  
+
+void VirtualMachine::scanFinalizationQueue() {
+  uint32 NewIndex = 0;
+  for (uint32 i = 0; i < CurrentIndex; ++i) {
+    gc* obj = FinalizationQueue[i];
+
+    if (!Collector::isLive(obj)) {
+      obj->markAndTrace();
+      
+      if (CurrentFinalizedIndex >= ToBeFinalizedLength) growQueue();
+      
+      /* Add to object table */
+      ToBeFinalized[CurrentFinalizedIndex++] = obj;
+    } else {
+      FinalizationQueue[NewIndex++] = obj;
+    }
+  }
+  CurrentIndex = NewIndex;
+
+  for (uint32 i = 0; i < CurrentFinalizedIndex; ++i) {
+    gc* obj = ToBeFinalized[i];
+    obj->markAndTrace();
+  }
 }
