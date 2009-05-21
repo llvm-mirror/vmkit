@@ -266,7 +266,8 @@ public:
   void invocationTargetException(const JavaObject* obj);
   void outOfMemoryError();
   void noClassDefFoundError(JavaObject* obj);
-  void instantiationException();
+  void instantiationException(UserCommonClass* cl);
+  void instantiationError(UserCommonClass* cl);
   void illegalArgumentException(const char* msg);
   void classCastException(JavaObject* obj, UserCommonClass* cl);
   void noSuchFieldError(CommonClass* cl, const UTF8* name);

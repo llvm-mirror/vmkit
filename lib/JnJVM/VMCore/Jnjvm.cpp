@@ -418,10 +418,15 @@ void Jnjvm::noClassDefFoundError(JavaObject* obj) {
         obj);
 }
 
-void Jnjvm::instantiationException() {
-  error(upcalls->InstantiationException,
-        upcalls->InitInstantiationException,
-        (JavaString*)0);
+void Jnjvm::instantiationException(UserCommonClass* cl) {
+  JavaString* str = internalUTF8ToStr(cl->name);
+  error(upcalls->InstantiationException, upcalls->InitInstantiationException,
+        str);
+}
+
+void Jnjvm::instantiationError(UserCommonClass* cl) {
+  JavaString* str = internalUTF8ToStr(cl->name);
+  error(upcalls->InstantiationError, upcalls->InitInstantiationError, str);
 }
   
 
@@ -1024,6 +1029,7 @@ void Jnjvm::loadBootstrap() {
   LOAD_CLASS(upcalls->UnknownError);
   LOAD_CLASS(upcalls->ClassNotFoundException); 
   LOAD_CLASS(upcalls->ArithmeticException); 
+  LOAD_CLASS(upcalls->InstantiationException);
 #undef LOAD_CLASS
 
   loadAppClassLoader();
