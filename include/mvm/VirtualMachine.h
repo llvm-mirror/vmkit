@@ -99,9 +99,9 @@ private:
   ///
   uint32 QueueLength;
 
-  /// growQueue - Grow the queue of finalizable objects.
+  /// growFinalizationQueue - Grow the queue of finalizable objects.
   ///
-  void growQueue();
+  void growFinalizationQueue();
   
   /// ToBeFinalized - List of objects that are scheduled to be finalized.
   ///
@@ -117,10 +117,9 @@ private:
   ///
   uint32 CurrentFinalizedIndex;
   
-  /// LastFinalizedIndex - The last index in the ToBeFinalized queue whose
-  /// finalize method has been called.
+  /// growToBeFinalizedQueue - Grow the queue of the to-be finalized objects.
   ///
-  uint32 LastFinalizedIndex;
+  void growToBeFinalizedQueue();
   
   /// finalizationCond - Condition variable to wake up finalization threads.
   ///

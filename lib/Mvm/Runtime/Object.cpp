@@ -152,17 +152,29 @@ void VirtualMachine::finalizerStart(mvm::Thread* th) {
   }
 }
 
-void VirtualMachine::growQueue() {
+void VirtualMachine::growFinalizationQueue() {
   if (CurrentIndex >= QueueLength) {
     uint32 newLength = QueueLength * GROW_FACTOR;
     gc** newQueue = new gc*[newLength];
+    if (!newQueue) {
+      fprintf(stderr, "I don't know how to handle finalizer overflows yet!\n");
+      abort();
+    }
     for (uint32 i = 0; i < QueueLength; ++i) newQueue[i] = FinalizationQueue[i];
     delete[] FinalizationQueue;
     FinalizationQueue = newQueue;
     QueueLength = newLength;
-    
-    newLength = ToBeFinalizedLength * GROW_FACTOR;
-    newQueue = new gc*[newLength];
+  }
+}
+
+void VirtualMachine::growToBeFinalizedQueue() {
+  if (CurrentFinalizedIndex >= ToBeFinalizedLength) {
+    uint32 newLength = ToBeFinalizedLength * GROW_FACTOR;
+    gc** newQueue = new gc*[newLength];
+    if (!newQueue) {
+      fprintf(stderr, "I don't know how to handle finalizer overflows yet!\n");
+      abort();
+    }
     for (uint32 i = 0; i < ToBeFinalizedLength; ++i) newQueue[i] = ToBeFinalized[i];
     delete[] ToBeFinalized;
     ToBeFinalized = newQueue;
@@ -175,7 +187,7 @@ void VirtualMachine::addFinalizationCandidate(gc* obj) {
   FinalizationQueueLock.acquire();
  
   if (CurrentIndex >= QueueLength) {
-    growQueue();
+    growFinalizationQueue();
   }
   
   FinalizationQueue[CurrentIndex++] = obj;
@@ -191,7 +203,8 @@ void VirtualMachine::scanFinalizationQueue() {
     if (!Collector::isLive(obj)) {
       obj->markAndTrace();
       
-      if (CurrentFinalizedIndex >= ToBeFinalizedLength) growQueue();
+      if (CurrentFinalizedIndex >= ToBeFinalizedLength)
+        growToBeFinalizedQueue();
       
       /* Add to object table */
       ToBeFinalized[CurrentFinalizedIndex++] = obj;
