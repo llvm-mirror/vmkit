@@ -147,6 +147,7 @@ void VirtualMachine::finalizerStart(mvm::Thread* th) {
         }
       } catch(...) {
       }
+      th->clearException();
     }
   }
 }
