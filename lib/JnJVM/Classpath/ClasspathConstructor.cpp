@@ -79,7 +79,7 @@ static jobject proceed(JavaObjectConstructor* cons, jobject _args, jclass Clazz,
   Signdef* sign = meth->getSignature();
   sint32 size = sign->nbArguments;
 
-  if (isAbstract(cl->access)) vm->instantiationException();
+  if (isAbstract(cl->access)) vm->instantiationException(cl);
 
   // Allocate a buffer to store the arguments.
   uintptr_t buf = size ? (uintptr_t)alloca(size * sizeof(uint64)) : 0;
