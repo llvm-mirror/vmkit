@@ -413,7 +413,7 @@ public:
 /// have a JnjvmClassLoader non-GC object. Also the finalizer of this class
 /// will delete the internal class loader and we do not have to implement
 /// hacks in the java.lang.Classloader finalizer.
-class VMClassLoader : public mvm::Object {
+class VMClassLoader : public gc {
 private:
   
   /// JCL - The internal class loader.
