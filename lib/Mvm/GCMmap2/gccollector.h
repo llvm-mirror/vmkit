@@ -58,6 +58,7 @@ class GCCollector : public Collector {
   static void do_collect();           
 
   static inline GCChunkNode *o2node(void *p) {
+    if (!p) return 0;
     return GCHash::get(p)->o2node(p, GCChunkNode::maskCollectable);
   }
 
@@ -208,6 +209,12 @@ public:
 
 
     unlock();
+
+    // Having an operatorDelete means being a C++ object.
+    if (vt->destructor && !vt->operatorDelete) {
+      mvm::Thread::get()->MyVM->addFinalizationCandidate((gc*)p->_2gc());
+    }
+
     return p->_2gc();
 #endif
   }

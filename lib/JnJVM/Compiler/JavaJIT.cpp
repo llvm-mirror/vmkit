@@ -1001,8 +1001,9 @@ llvm::Function* JavaJIT::javaCompile() {
   
   func->setLinkage(GlobalValue::ExternalLinkage);
   
-  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "--> end compiling %s\n",
-              compilingMethod->printString());
+  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "--> end compiling %s.%s\n",
+              UTF8Buffer(compilingClass->name).cString(),
+              UTF8Buffer(compilingMethod->name).cString());
   
 #ifndef DWARF_EXCEPTIONS
   if (codeLen < 5 && !callsStackWalker && !TheCompiler->isStaticCompiling())

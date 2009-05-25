@@ -49,11 +49,13 @@ void GCCollector::do_collect() {
 
   unused_nodes->attrape(used_nodes);
 
+  mvm::Thread* th = th->get();
+  th->MyVM->startCollection();
+
 #ifdef HAVE_PTHREAD
   threads->synchronize();
 #endif
 
-  mvm::Thread* th = th->get();
   mvm::Thread* tcur = th;
 
   // First, trace the VM.
@@ -69,6 +71,9 @@ void GCCollector::do_collect() {
   for(cur=used_nodes->next(); cur!=used_nodes; cur=cur->next())
     trace(cur);
 
+  // Fourth, trace the finalization queue.
+  th->MyVM->scanFinalizationQueue();
+
   if(_marker)
     _marker(0);
   status = stat_finalize;
@@ -79,55 +84,26 @@ void GCCollector::do_collect() {
 
   status = stat_alloc;
   
-  unlock();
-
   /* kill everyone */
   GCChunkNode *next = 0;
-
-#ifdef SERVICE
-  Thread* th = Thread::get();
-  VirtualMachine* OldVM = th->MyVM;
-#endif
-
-
-  for(cur=finalizable.next(); cur!=&finalizable; cur=next) {
-#ifdef SERVICE
-    mvm::VirtualMachine* NewVM = cur->meta;
-    if (NewVM) {
-      NewVM->memoryUsed -= real_nbb(cur);
-      th->MyVM = NewVM;
-      th->IsolateID = NewVM->IsolateID;
-    }
-#endif
-    register gc_header *c = cur->chunk();
-    next = cur->next();
-    
-    destructor_t dest = c->getDestructor();
-    if (dest) {
-      try {
-        dest(c);
-      } catch(...) {
-        mvm::Thread::get()->clearException();
-      }
-    }
-  }
-#ifdef SERVICE
-  th->IsolateID = OldVM->IsolateID;
-  th->MyVM = OldVM;
-#endif
-  
-  next = 0;
   for(cur=finalizable.next(); cur!=&finalizable; cur=next) {
     //printf("    !!!! reject %p [%p]\n", cur->chunk()->_2gc(), cur);
+    gcRoot *res = cur->chunk()->_2gc();
+    VirtualTable* VT = res->getVirtualTable();    
+    if (VT->operatorDelete) {
+      destructor_t dest = (destructor_t)VT->destructor;
+      dest(res);
+    }
     next = cur->next();
     allocator->reject_chunk(cur);
   }
 
-  lock();
 
+  th->MyVM->endCollection();
 #ifdef HAVE_PTHREAD
   threads->collectionFinished();
 #endif
+  th->MyVM->wakeUpFinalizers();
 }
 
 void GCCollector::collect_unprotect() {

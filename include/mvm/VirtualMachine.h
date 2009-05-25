@@ -156,11 +156,11 @@ public:
   ///
   void wakeUpFinalizers() { FinalizationCond.broadcast(); }
 
-  void startCollection() {
+  virtual void startCollection() {
     FinalizationQueueLock.acquire();
   }
   
-  void endCollection() {
+  virtual void endCollection() {
     FinalizationQueueLock.release();
   }
 

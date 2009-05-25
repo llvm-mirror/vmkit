@@ -61,7 +61,9 @@ VirtualTable VMClassLoader::VT((uintptr_t)VMClassLoader::staticDestructor,
                                (uintptr_t)VMClassLoader::staticDestructor,
                                (uintptr_t)VMClassLoader::staticTracer);
 
-VirtualTable LockObj::VT(0, 0, (uintptr_t)VirtualTable::emptyTracer);
+VirtualTable LockObj::VT((uintptr_t)LockObj::staticDestructor,
+                         (uintptr_t)LockObj::staticDestructor,
+                         (uintptr_t)VirtualTable::emptyTracer);
 
 //===----------------------------------------------------------------------===//
 // Empty tracer for static tracers of classes that do not declare static
@@ -245,6 +247,12 @@ void Jnjvm::tracer() {
   for (std::vector<JavaObject*, gc_allocator<JavaObject*> >::iterator 
        i = globalRefs.begin(), e = globalRefs.end(); i!= e; ++i) {
     (*i)->markAndTrace(); 
+  }
+  
+  for (StringMap::iterator i = hashStr.map.begin(), e = hashStr.map.end();
+       i!= e; ++i) {
+    JavaString* str = i->second;
+    str->markAndTrace();
   }
 
 #if defined(ISOLATE_SHARING)

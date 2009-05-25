@@ -65,7 +65,7 @@ const ArrayUInt16* JavaString::strToArray(Jnjvm* vm) {
 void JavaString::stringDestructor(JavaString* str) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   assert(vm && "No vm when destroying a string");
-  if (str->value) vm->hashStr.remove(str->value, str);
+  if (str->value) vm->hashStr.removeUnlocked(str->value, str);
 }
 
 JavaString* JavaString::internalToJava(const UTF8* name, Jnjvm* vm) {

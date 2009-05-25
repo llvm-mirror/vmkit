@@ -80,7 +80,7 @@ void JavaThread::startNative(int level) {
 
   // When entering, the number of addresses should be odd.
   // Enable this when finalization gets proper support.
-  // assert((addresses.size() % 2) && "Wrong stack");
+  assert((addresses.size() % 2) && "Wrong stack");
   
   addresses.push_back(cur);
 }
@@ -90,7 +90,7 @@ void JavaThread::startJava() {
   void** cur = (void**)FRAME_PTR();
   cur = (void**)cur[0];
   
-  // assert(!(addresses.size() % 2) && "Wrong stack");
+  assert(!(addresses.size() % 2) && "Wrong stack");
   
   addresses.push_back(cur);
 }

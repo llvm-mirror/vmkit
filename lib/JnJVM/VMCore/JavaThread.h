@@ -198,14 +198,14 @@ public:
   /// endNative - Record that we are leaving native code.
   ///
   void endNative() {
-    //assert(!(addresses.size() % 2) && "Wrong stack");    
+    assert(!(addresses.size() % 2) && "Wrong stack");    
     addresses.pop_back();
   }
 
   /// endJava - Record that we are leaving Java code.
   ///
   void endJava() {
-    //assert((addresses.size() % 2) && "Wrong stack");    
+    assert((addresses.size() % 2) && "Wrong stack");    
     addresses.pop_back();
   }
 

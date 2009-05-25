@@ -111,7 +111,14 @@ public:
   ///
   static VirtualTable VT;
 
-  ~LockObj() {}
+  /// staticDestructor - The destructor of this LockObj, called by the GC.
+  ///
+  static void staticDestructor(LockObj* obj) {
+    obj->lock.~LockRecursive();
+    obj->varcond.~JavaCond();
+  }
+
+  /// LockObj - Empty constructor.
   LockObj() {}
 };
 

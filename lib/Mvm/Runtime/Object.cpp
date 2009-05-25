@@ -136,15 +136,8 @@ void VirtualMachine::finalizerStart(mvm::Thread* th) {
       vm->FinalizationQueueLock.release();
       if (!res) break;
 
-      VirtualTable* VT = res->getVirtualTable();
       try {
-        if (VT->operatorDelete) {
-          // It's a native method!
-          destructor_t dest = (destructor_t)VT->destructor;
-          dest(res);
-        } else {
-          vm->invokeFinalizer(res);
-        }
+        vm->invokeFinalizer(res);
       } catch(...) {
       }
       th->clearException();

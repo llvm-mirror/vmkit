@@ -87,13 +87,16 @@ public:
   
   inline void remove(Key V, Container C) {
     lock.lock();
+    removeUnlocked(V, C); 
+    lock.unlock();
+  }
+  
+  inline void removeUnlocked(Key V, Container C) {
     iterator End = map.end();
     iterator I = map.find(V);
     
     if (I != End && I->second == C)
-        map.erase(I);
-    
-    lock.unlock();
+        map.erase(I); 
   }
 
   inline Container lookup(Key V) {
