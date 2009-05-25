@@ -84,7 +84,12 @@ JavaField*  Classpath::vmDataVMThrowable;
 Class*      Classpath::newVMThrowable;
 JavaField*  Classpath::bufferAddress;
 JavaField*  Classpath::dataPointer32;
+JavaField*  Classpath::dataPointer64;
+Class*      Classpath::newPointer32;
+Class*      Classpath::newPointer64;
+Class*      Classpath::newDirectByteBuffer;
 JavaField*  Classpath::vmdataClassLoader;
+JavaMethod* Classpath::InitDirectByteBuffer;
 Class*      Classpath::newClassLoader;
 
 
@@ -385,7 +390,21 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   
   newException =
     UPCALL_CLASS(loader, "java/lang/Exception");
+
+  newPointer32 = 
+    UPCALL_CLASS(loader, "gnu/classpath/Pointer32");
   
+  newPointer64 = 
+    UPCALL_CLASS(loader, "gnu/classpath/Pointer64");
+ 
+  newDirectByteBuffer =
+    UPCALL_CLASS(loader, "java/nio/DirectByteBufferImpl$ReadWrite");
+
+  InitDirectByteBuffer =
+    UPCALL_METHOD(loader, "java/nio/DirectByteBufferImpl$ReadWrite", "<init>",
+                  "(Ljava/lang/Object;Lgnu/classpath/Pointer;III)V",
+                  ACC_VIRTUAL);
+
   initClass =
     UPCALL_METHOD(loader, "java/lang/Class", "<init>", "(Ljava/lang/Object;)V",
                   ACC_VIRTUAL);
@@ -469,6 +488,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   dataPointer32 =
     UPCALL_FIELD(loader, "gnu/classpath/Pointer32", "data", "I", ACC_VIRTUAL);
+  
+  dataPointer64 =
+    UPCALL_FIELD(loader, "gnu/classpath/Pointer64", "data", "J", ACC_VIRTUAL);
 
   vmdataClassLoader =
     UPCALL_FIELD(loader, "java/lang/ClassLoader", "vmdata", "Ljava/lang/Object;",

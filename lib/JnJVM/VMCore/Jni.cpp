@@ -2525,13 +2525,39 @@ void DeleteGlobalRef(JNIEnv* env, jobject globalRef) {
 
 
 jboolean ExceptionCheck(JNIEnv *env) {
-  assert(0 && "implement me");
-  return 0;
+  if (JavaThread::get()->pendingException) return JNI_TRUE;
+  else return JNI_FALSE;
 }
 
 
 jobject NewDirectByteBuffer(JNIEnv *env, void *address, jlong capacity) {
-  assert(0 && "implement me");
+  
+  BEGIN_JNI_EXCEPTION
+  
+  JavaThread* th = JavaThread::get();
+  Jnjvm* myvm = th->getJVM();
+  UserClass* BB = myvm->upcalls->newDirectByteBuffer;
+
+  JavaObject* res = BB->doNew(myvm);
+
+#if (__WORDSIZE == 32)
+  UserClass* PP = myvm->upcalls->newPointer32;
+  JavaObject* p = PP->doNew(myvm);
+  myvm->upcalls->dataPointer32->setInt32Field(p, (uint32)address);
+#else
+  UserClass* PP = myvm->upcalls->newPointer64;
+  JavaObject* p = PP->doNew(myvm);
+  myvm->upcalls->dataPointer64->setLongField(p, (jlong)address);
+#endif
+
+  myvm->upcalls->InitDirectByteBuffer->invokeIntSpecial(myvm, BB, res, 0, p,
+                                                        (uint32)capacity,
+                                                        (uint32)capacity, 0);
+
+  return (jobject)res;
+  
+  END_JNI_EXCEPTION
+  
   return 0;
 }
 
@@ -2544,7 +2570,11 @@ void *GetDirectBufferAddress(JNIEnv *env, jobject _buf) {
   JavaObject* buf = (JavaObject*)_buf;
   JavaObject* address = vm->upcalls->bufferAddress->getObjectField(buf);
   if (address != 0) {
+#if (__WORDSIZE == 32)
     int res = vm->upcalls->dataPointer32->getInt32Field(address);
+#else
+    jlong res = vm->upcalls->dataPointer64->getLongField(address);
+#endif
     return (void*)res;
   } else {
     return 0;

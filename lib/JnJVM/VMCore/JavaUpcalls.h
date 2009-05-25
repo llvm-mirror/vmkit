@@ -91,9 +91,14 @@ public:
   ISOLATE_STATIC JavaMethod* loadInClassLoader;
   ISOLATE_STATIC JavaMethod* initVMThrowable;
   ISOLATE_STATIC JavaField*  vmDataVMThrowable;
-  ISOLATE_STATIC UserClass*      newVMThrowable;
+  ISOLATE_STATIC UserClass*  newVMThrowable;
   ISOLATE_STATIC JavaField*  bufferAddress;
   ISOLATE_STATIC JavaField*  dataPointer32;
+  ISOLATE_STATIC JavaField*  dataPointer64;
+  ISOLATE_STATIC UserClass*  newPointer32;
+  ISOLATE_STATIC UserClass*  newPointer64;
+  ISOLATE_STATIC UserClass*  newDirectByteBuffer;
+  ISOLATE_STATIC JavaMethod* InitDirectByteBuffer;
   ISOLATE_STATIC JavaField*  vmdataClassLoader;
 
   ISOLATE_STATIC JavaField* boolValue;
