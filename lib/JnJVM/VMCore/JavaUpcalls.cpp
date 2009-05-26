@@ -18,12 +18,12 @@
 
 #define COMPILE_METHODS(cl) \
   for (CommonClass::method_iterator i = cl->virtualMethods.begin(), \
-            e = cl->virtualMethods.end(); i!= e; +i) { \
+            e = cl->virtualMethods.end(); i!= e; ++i) { \
     i->second->compiledPtr(); \
   } \
   \
   for (CommonClass::method_iterator i = cl->staticMethods.begin(), \
-            e = cl->staticMethods.end(); i!= e; +i) { \
+            e = cl->staticMethods.end(); i!= e; ++i) { \
     i->second->compiledPtr(); \
   }
 
@@ -216,6 +216,9 @@ JavaField* Classpath::methodClass;
 JavaField* Classpath::fieldClass;
 JavaField* Classpath::constructorClass;
 
+JavaMethod* Classpath::EnqueueReference;
+Class*      Classpath::newReference;
+
 #endif
 
 void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
@@ -262,9 +265,51 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   JavaObject* systemName = (JavaObject*)vm->asciizToStr("system");
   groupName->setObjectField(SystemGroup, systemName);
 
-  // And create the finalizer thread.
+  // Create the finalizer thread.
   assert(vm->getFinalizerThread() && "VM did not set its finalizer thread");
   CreateJavaThread(vm, vm->getFinalizerThread(), "Finalizer", SystemGroup);
+  
+  // Create the enqueue thread.
+  assert(vm->getEnqueueThread() && "VM did not set its enqueue thread");
+  CreateJavaThread(vm, vm->getEnqueueThread(), "Reference", SystemGroup);
+}
+
+extern "C" void nativeInitWeakReference(JavaObjectReference* reference,
+                                        JavaObject* referent) {
+  reference->init(referent, 0);
+  JavaThread::get()->getJVM()->addWeakReference(reference);
+
+}
+
+extern "C" void nativeInitWeakReferenceQ(JavaObjectReference* reference,
+                                         JavaObject* referent,
+                                         JavaObject* queue) {
+  reference->init(referent, queue);
+  JavaThread::get()->getJVM()->addWeakReference(reference);
+
+}
+
+extern "C" void nativeInitSoftReference(JavaObjectReference* reference,
+                                        JavaObject* referent) {
+  reference->init(referent, 0);
+  JavaThread::get()->getJVM()->addSoftReference(reference);
+
+}
+
+extern "C" void nativeInitSoftReferenceQ(JavaObjectReference* reference,
+                                         JavaObject* referent,
+                                         JavaObject* queue) {
+  reference->init(referent, queue);
+  JavaThread::get()->getJVM()->addSoftReference(reference);
+
+}
+
+extern "C" void nativeInitPhantomReferenceQ(JavaObjectReference* reference,
+                                            JavaObject* referent,
+                                            JavaObject* queue) {
+  reference->init(referent, queue);
+  JavaThread::get()->getJVM()->addPhantomReference(reference);
+
 }
 
 extern "C" JavaString* nativeInternString(JavaString* obj) {
@@ -357,6 +402,10 @@ extern "C" void nativeJavaObjectMethodTracer(JavaObjectMethod* obj) {
 
 extern "C" void nativeJavaObjectConstructorTracer(JavaObjectConstructor* obj) {
   JavaObjectConstructor::staticTracer(obj);
+}
+
+extern "C" void nativeJavaObjectReferenceTracer(JavaObjectReference* obj) {
+  JavaObjectReference::staticTracer(obj);
 }
 
 extern "C" void nativeJavaObjectVMThreadDestructor(JavaObjectVMThread* obj) {
@@ -833,4 +882,63 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
    newVMThread->getVirtualVT()->setNativeDestructor(
       (uintptr_t)nativeJavaObjectVMThreadDestructor,
       "nativeJavaObjectVMThreadDestructor");
+
+   
+  newReference = UPCALL_CLASS(loader, "java/lang/ref/Reference");
+    
+  newReference->getVirtualVT()->setNativeTracer(
+      (uintptr_t)nativeJavaObjectReferenceTracer,
+      "nativeJavaObjectReferenceTracer");
+  
+  EnqueueReference = 
+    UPCALL_METHOD(loader, "java/lang/ref/Reference",  "enqueue", "()Z",
+                  ACC_VIRTUAL);
+ 
+  JavaMethod* initWeakReference =
+    UPCALL_METHOD(loader, "java/lang/ref/WeakReference", "<init>",
+                  "(Ljava/lang/Object;)V",
+                  ACC_VIRTUAL);
+  initWeakReference->setCompiledPtr((void*)(intptr_t)nativeInitWeakReference,
+                                    "nativeInitWeakReference");
+  
+  initWeakReference =
+    UPCALL_METHOD(loader, "java/lang/ref/WeakReference", "<init>",
+                  "(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V",
+                  ACC_VIRTUAL);
+  initWeakReference->setCompiledPtr((void*)(intptr_t)nativeInitWeakReferenceQ,
+                                    "nativeInitWeakReferenceQ");
+  
+  JavaMethod* initSoftReference =
+    UPCALL_METHOD(loader, "java/lang/ref/SoftReference", "<init>",
+                  "(Ljava/lang/Object;)V",
+                  ACC_VIRTUAL);
+  initSoftReference->setCompiledPtr((void*)(intptr_t)nativeInitSoftReference,
+                                    "nativeInitSoftReference");
+  
+  initSoftReference =
+    UPCALL_METHOD(loader, "java/lang/ref/WeakReference", "<init>",
+                  "(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V",
+                  ACC_VIRTUAL);
+  initSoftReference->setCompiledPtr((void*)(intptr_t)nativeInitSoftReferenceQ,
+                                    "nativeInitSoftReferenceQ");
+  
+  JavaMethod* initPhantomReference =
+    UPCALL_METHOD(loader, "java/lang/ref/PhantomReference", "<init>",
+                  "(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V",
+                  ACC_VIRTUAL);
+  initPhantomReference->setCompiledPtr(
+      (void*)(intptr_t)nativeInitPhantomReferenceQ,
+      "nativeInitPhantomReferenceQ");
+  
+
+}
+
+gc* Jnjvm::getReferent(gc* _obj) {
+  JavaObjectReference* obj = (JavaObjectReference*)_obj;
+  return obj->getReferent();
+ }
+ 
+void Jnjvm::clearReferent(gc* _obj) {
+  JavaObjectReference* obj = (JavaObjectReference*)_obj;
+  obj->setReferent(0);
 }

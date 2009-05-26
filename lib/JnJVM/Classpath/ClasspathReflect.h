@@ -153,6 +153,27 @@ public:
   }
 };
 
+class JavaObjectReference : public JavaObject {
+private:
+  JavaObject* referent;
+  JavaObject* queue;
+  JavaObject* nextOnQueue;
+
+public:
+  void init(JavaObject* r, JavaObject* q) {
+    referent = r;
+    queue = q;
+  }
+
+  JavaObject* getReferent() const { return referent; }
+  void setReferent(JavaObject* r) { referent = r; }
+  
+  static void STATIC_TRACER(JavaObjectReference) {
+    obj->queue->MARK_AND_TRACE;
+    obj->nextOnQueue->MARK_AND_TRACE;
+  }
+};
+
 }
 
 #endif

@@ -143,6 +143,10 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  vm->wakeUpFinalizers();
+  // Sleep a bit.
+  sleep(1);
   return;
 }
 

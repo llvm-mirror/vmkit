@@ -1205,6 +1205,9 @@ void Jnjvm::runApplication(int argc, char** argv) {
     finalizerThread = new JavaThread(0, 0, this);
     finalizerThread->start((void (*)(mvm::Thread*))finalizerStart);
     
+    enqueueThread = new JavaThread(0, 0, this);
+    enqueueThread->start((void (*)(mvm::Thread*))enqueueStart);
+    
     mainThread = new JavaThread(0, 0, this);
     mainThread->start((void (*)(mvm::Thread*))mainJavaStart);
   } else {

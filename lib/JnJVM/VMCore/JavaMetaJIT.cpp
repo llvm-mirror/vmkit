@@ -634,3 +634,9 @@ void Jnjvm::invokeFinalizer(gc* _obj) {
   meth->invokeIntVirtualBuf(this, cl, obj, 0);
 }
 
+bool Jnjvm::enqueueReference(gc* _obj) {
+  JavaObject* obj = (JavaObject*)_obj;
+  JavaMethod* meth = upcalls->EnqueueReference;
+  UserClass* cl = obj->getClass()->asClass();
+  return (bool)meth->invokeIntSpecialBuf(this, cl, obj, 0);
+}

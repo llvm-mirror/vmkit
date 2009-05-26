@@ -36,15 +36,72 @@ namespace mvm {
 #define INITIAL_QUEUE_SIZE 256
 #define GROW_FACTOR 2
 
+class VirtualMachine;
+
+class ReferenceQueue {
+private:
+  gc** References;
+  uint32 QueueLength;
+  uint32 CurrentIndex;
+  mvm::SpinLock QueueLock;
+  uint8_t semantics;
+
+  gc* processReference(gc*, VirtualMachine*);
+public:
+
+  static const uint8_t WEAK = 1;
+  static const uint8_t SOFT = 2;
+  static const uint8_t PHANTOM = 3;
+
+  ReferenceQueue(uint8_t s) {
+    References = new gc*[INITIAL_QUEUE_SIZE];
+    QueueLength = INITIAL_QUEUE_SIZE;
+    CurrentIndex = 0;
+    semantics = s;
+  }
+ 
+  void addReference(gc* ref) {
+    QueueLock.acquire();
+    if (CurrentIndex >= QueueLength) {
+      uint32 newLength = QueueLength * GROW_FACTOR;
+      gc** newQueue = new gc*[newLength];
+      if (!newQueue) {
+        fprintf(stderr, "I don't know how to handle reference overflow yet!\n");
+        abort();
+      }
+      for (uint32 i = 0; i < QueueLength; ++i) newQueue[i] = References[i];
+      delete[] References;
+      References = newQueue;
+      QueueLength = newLength;
+    }
+    References[CurrentIndex++] = ref;
+    QueueLock.release();
+  }
+  
+  void acquire() {
+    QueueLock.acquire();
+  }
+
+  void release() {
+    QueueLock.release();
+  }
+
+  void scan(VirtualMachine* vm);
+};
 
 
 /// VirtualMachine - This class is the root of virtual machine classes. It
 /// defines what a VM should be.
 ///
 class VirtualMachine : public mvm::PermanentObject {
+  friend class ReferenceQueue;
+
 protected:
 
-  VirtualMachine() {
+  VirtualMachine() :
+    WeakReferencesQueue(ReferenceQueue::WEAK),
+    SoftReferencesQueue(ReferenceQueue::SOFT), 
+    PhantomReferencesQueue(ReferenceQueue::PHANTOM) {
 #ifdef SERVICE
     memoryLimit = ~0;
     executionLimit = ~0;
@@ -56,9 +113,15 @@ protected:
 #endif
     FinalizationQueue = new gc*[INITIAL_QUEUE_SIZE];
     QueueLength = INITIAL_QUEUE_SIZE;
+    CurrentIndex = 0;
 
     ToBeFinalized = new gc*[INITIAL_QUEUE_SIZE];
     ToBeFinalizedLength = INITIAL_QUEUE_SIZE;
+    CurrentFinalizedIndex = 0;
+    
+    ToEnqueue = new gc*[INITIAL_QUEUE_SIZE];
+    ToEnqueueLength = INITIAL_QUEUE_SIZE;
+    ToEnqueueIndex = 0;
   }
 public:
 
@@ -82,6 +145,19 @@ public:
 
     
 private:
+  /// WeakReferencesQueue - The queue of weak references.
+  ///
+  ReferenceQueue WeakReferencesQueue;
+
+  /// SoftReferencesQueue - The queue of soft references.
+  ///
+  ReferenceQueue SoftReferencesQueue;
+
+  /// PhantomReferencesQueue - The queue of phantom references.
+  ///
+  ReferenceQueue PhantomReferencesQueue;
+
+  
   /// FinalizationQueueLock - A lock to protect access to the queue.
   ///
   mvm::SpinLock FinalizationQueueLock;
@@ -128,6 +204,32 @@ private:
   /// finalizationLock - Lock for the condition variable.
   ///
   mvm::LockNormal FinalizationLock;
+  
+  gc** ToEnqueue;
+  uint32 ToEnqueueLength;
+  uint32 ToEnqueueIndex;
+  
+  /// ToEnqueueLock - A lock to protect access to the queue.
+  ///
+  mvm::LockNormal EnqueueLock;
+  mvm::Cond EnqueueCond;
+  mvm::SpinLock ToEnqueueLock;
+  
+  void addToEnqueue(gc* obj) {
+    if (ToEnqueueIndex >= ToEnqueueLength) {
+      uint32 newLength = ToEnqueueLength * GROW_FACTOR;
+      gc** newQueue = new gc*[newLength];
+      if (!newQueue) {
+        fprintf(stderr, "I don't know how to handle reference overflow yet!\n");
+        abort();
+      }
+      for (uint32 i = 0; i < QueueLength; ++i) newQueue[i] = ToEnqueue[i];
+      delete[] ToEnqueue;
+      ToEnqueue = newQueue;
+      ToEnqueueLength = newLength;
+    }
+    ToEnqueue[ToEnqueueIndex++] = obj;
+  }
 
 protected:
   /// invokeFinalizer - Invoke the finalizer of the object. This may involve
@@ -141,6 +243,11 @@ public:
   /// finalizationQueue.
   ///
   static void finalizerStart(mvm::Thread*);
+  
+  /// enqueueStart - The start function of a thread for references. Will poll
+  /// ToEnqueue.
+  ///
+  static void enqueueStart(mvm::Thread*);
 
   /// addFinalizationCandidate - Add an object to the queue of objects with
   /// a finalization method.
@@ -155,14 +262,81 @@ public:
   /// wakeUpFinalizers - Wake the finalizers.
   ///
   void wakeUpFinalizers() { FinalizationCond.broadcast(); }
+  
+  /// wakeUpEnqueue - Wake the threads for enqueueing.
+  ///
+  void wakeUpEnqueue() { EnqueueCond.broadcast(); }
 
   virtual void startCollection() {
     FinalizationQueueLock.acquire();
+    ToEnqueueLock.acquire();
+    SoftReferencesQueue.acquire();
+    WeakReferencesQueue.acquire();
+    PhantomReferencesQueue.acquire();
   }
   
   virtual void endCollection() {
     FinalizationQueueLock.release();
+    ToEnqueueLock.release();
+    SoftReferencesQueue.release();
+    WeakReferencesQueue.release();
+    PhantomReferencesQueue.release();
   }
+  
+  /// scanWeakReferencesQueue - Scan all weak references. Called by the GC
+  /// before scanning the finalization queue.
+  /// 
+  void scanWeakReferencesQueue() {
+    WeakReferencesQueue.scan(this);
+  }
+  
+  /// scanSoftReferencesQueue - Scan all soft references. Called by the GC
+  /// before scanning the finalization queue.
+  ///
+  void scanSoftReferencesQueue() {
+    SoftReferencesQueue.scan(this);
+  }
+  
+  /// scanPhantomReferencesQueue - Scan all phantom references. Called by the GC
+  /// after the finalization queue.
+  ///
+  void scanPhantomReferencesQueue() {
+    PhantomReferencesQueue.scan(this);
+  }
+  
+  /// addWeakReference - Add a weak reference to the queue.
+  ///
+  void addWeakReference(gc* ref) {
+    WeakReferencesQueue.addReference(ref);
+  }
+  
+  /// addSoftReference - Add a weak reference to the queue.
+  ///
+  void addSoftReference(gc* ref) {
+    SoftReferencesQueue.addReference(ref);
+  }
+  
+  /// addPhantomReference - Add a weak reference to the queue.
+  ///
+  void addPhantomReference(gc* ref) {
+    PhantomReferencesQueue.addReference(ref);
+  }
+
+  /// clearReferent - Clear the referent in a reference. Should be overriden
+  /// by the VM.
+  ///
+  virtual void clearReferent(gc*) {}
+
+  /// getReferent - Get the referent of the reference. Should be overriden
+  /// by the VM.
+  //
+  virtual gc* getReferent(gc*) { return 0; }
+
+  /// enqueueReference - Calls the enqueue method. Should be overriden
+  /// by the VM.
+  ///
+  virtual bool enqueueReference(gc*) { return false; }
+
 
 protected:
 

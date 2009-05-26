@@ -120,7 +120,11 @@ private:
   /// finalizerThread - The thread that finalizes Java objects.
   ///
   JavaThread* finalizerThread;
-  
+ 
+  /// enqueueThread - The thread that enqueue Java references.
+  ///
+  JavaThread* enqueueThread;
+
   /// CreateError - Creates a Java object of the specified exception class
   /// and calling its <init> function.
   ///
@@ -315,6 +319,14 @@ public:
   /// getFinalizerThread - Get the finalizer thread of this VM.
   ///
   JavaThread* getFinalizerThread() const { return finalizerThread; }
+  
+  /// setEnqueueThread - Set the enqueue thread of this VM.
+  ///
+  void setEnqueueThread(JavaThread* th) { enqueueThread = th; }
+  
+  /// getEnqueueThread - Get the enqueue thread of this VM.
+  ///
+  JavaThread* getEnqueueThread() const { return enqueueThread; }
 
   /// ~Jnjvm - Destroy the JVM.
   ///
@@ -366,6 +378,10 @@ public:
     VirtualMachine::endCollection();
     hashStr.lock.unlock();
   }
+
+  virtual void clearReferent(gc*);
+  virtual gc* getReferent(gc*);
+  virtual bool enqueueReference(gc*);
 
 protected:
   virtual void invokeFinalizer(gc*);

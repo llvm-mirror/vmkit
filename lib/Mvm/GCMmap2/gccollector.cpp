@@ -58,21 +58,30 @@ void GCCollector::do_collect() {
 
   mvm::Thread* tcur = th;
 
-  // First, trace the VM.
+  // (1) Trace the VM.
   th->MyVM->tracer();
 
-  // Second, trace the threads.
+  // (2) Trace the threads.
   do {
     th->tracer();
     tcur = (mvm::Thread*)tcur->next();
   } while (tcur != th);
 
-  // Third, trace stack objects.
+  // (3) Trace stack objects.
   for(cur=used_nodes->next(); cur!=used_nodes; cur=cur->next())
     trace(cur);
 
-  // Fourth, trace the finalization queue.
+  // (4) Trace the weak reference queue.
+  th->MyVM->scanWeakReferencesQueue();
+
+  // (5) Trace the soft reference queue.
+  th->MyVM->scanSoftReferencesQueue();
+  
+  // (6) Trace the finalization queue.
   th->MyVM->scanFinalizationQueue();
+
+  // (7) Trace the phantom reference queue.
+  th->MyVM->scanPhantomReferencesQueue();
 
   if(_marker)
     _marker(0);
@@ -104,6 +113,7 @@ void GCCollector::do_collect() {
   threads->collectionFinished();
 #endif
   th->MyVM->wakeUpFinalizers();
+  th->MyVM->wakeUpEnqueue();
 }
 
 void GCCollector::collect_unprotect() {

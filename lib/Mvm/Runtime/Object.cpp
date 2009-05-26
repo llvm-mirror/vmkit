@@ -145,6 +145,34 @@ void VirtualMachine::finalizerStart(mvm::Thread* th) {
   }
 }
 
+void VirtualMachine::enqueueStart(mvm::Thread* th) {
+  VirtualMachine* vm = th->MyVM;
+
+  while (true) {
+    vm->EnqueueLock.lock();
+    while (vm->ToEnqueueIndex == 0) {
+      vm->EnqueueCond.wait(&vm->EnqueueLock);
+    }
+    vm->EnqueueLock.unlock();
+
+    while (true) {
+      vm->ToEnqueueLock.acquire();
+      gc* res = 0;
+      if (vm->ToEnqueueIndex != 0) {
+        res = vm->ToEnqueue[--vm->ToEnqueueIndex];
+      }
+      vm->ToEnqueueLock.release();
+      if (!res) break;
+
+      try {
+        vm->enqueueReference(res);
+      } catch(...) {
+      }
+      th->clearException();
+    }
+  }
+}
+
 void VirtualMachine::growFinalizationQueue() {
   if (CurrentIndex >= QueueLength) {
     uint32 newLength = QueueLength * GROW_FACTOR;
@@ -211,4 +239,45 @@ void VirtualMachine::scanFinalizationQueue() {
     gc* obj = ToBeFinalized[i];
     obj->markAndTrace();
   }
+}
+
+gc* ReferenceQueue::processReference(gc* reference, VirtualMachine* vm) {
+  if (!Collector::isLive(reference)) {
+    vm->clearReferent(reference);
+    return 0;
+  }
+
+  gc* referent = vm->getReferent(reference);
+
+  if (!referent) return 0;
+
+  if (semantics == SOFT) {
+    // TODO: are we are out of memory? Consider that we always are for now.
+    if (false) {
+      referent->markAndTrace();
+    }
+  } else if (semantics == PHANTOM) {
+    // Nothing to do.
+  }
+
+  if (Collector::isLive(referent)) {
+    return reference;
+  } else {
+    vm->clearReferent(reference);
+    vm->addToEnqueue(reference);
+    return 0;
+  }
+}
+
+
+void ReferenceQueue::scan(VirtualMachine* vm) {
+  uint32 NewIndex = 0;
+
+  for (uint32 i = 0; i < CurrentIndex; ++i) {
+    gc* obj = References[i];
+    gc* res = processReference(obj, vm);
+    if (res) References[NewIndex++] = res;
+  }
+
+  CurrentIndex = NewIndex;
 }
