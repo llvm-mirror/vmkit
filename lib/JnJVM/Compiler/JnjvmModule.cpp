@@ -148,7 +148,7 @@ llvm::Function* JavaLLVMCompiler::internalMakeTracer(Class* cl, bool stat) {
   
   for (uint32 i = 0; i < nbFields; ++i) {
     JavaField& cur = fields[i];
-    if (cur.getSignature()->trace()) {
+    if (cur.isReference()) {
       LLVMFieldInfo* LFI = getFieldInfo(&cur);
       std::vector<Value*> args; //size = 2
       args.push_back(zero);

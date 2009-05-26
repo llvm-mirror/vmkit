@@ -194,9 +194,6 @@ public:
     if (obj == 0) JavaThread::get()->getJVM()->nullPointerException();
 #endif
   
-  virtual void TRACER;
-
-
   /// lockObj - Get the LockObj if the lock is a fat lock.
   LockObj* lockObj() {
     return lock.getFatLock();
