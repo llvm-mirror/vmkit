@@ -43,6 +43,7 @@ Class** ClassArray::InterfacesArray;
 extern "C" void JavaArrayTracer(JavaObject*);
 extern "C" void JavaObjectTracer(JavaObject*);
 extern "C" void ArrayObjectTracer(JavaObject*);
+extern "C" void RegularObjectTracer(JavaObject*);
 
 Attribut::Attribut(const UTF8* name, uint32 length,
                    uint32 offset) {
@@ -1252,6 +1253,7 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
   if (C->super) {
     // Set the class of this VT.
     cl = C;
+    tracer = (uintptr_t)RegularObjectTracer;
     
     // Set depth and display for fast dynamic type checking.
     JavaVirtualTable* superVT = C->super->virtualVT;
