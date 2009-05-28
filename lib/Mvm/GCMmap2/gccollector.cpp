@@ -63,7 +63,7 @@ void GCCollector::do_collect() {
 
   // (2) Trace the threads.
   do {
-    th->tracer();
+    tcur->tracer();
     tcur = (mvm::Thread*)tcur->next();
   } while (tcur != th);
 
