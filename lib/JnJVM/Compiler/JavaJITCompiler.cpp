@@ -232,9 +232,11 @@ void JavaJITCompiler::setDestructor(JavaVirtualTable* VT, uintptr_t ptr,
 
 void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   Function* func = parseFunction(meth);
-  
+ 
+  mvm::MvmModule::protectIR();
   void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
   func->deleteBody();
+  mvm::MvmModule::unprotectIR();
 
   return res;
 }
