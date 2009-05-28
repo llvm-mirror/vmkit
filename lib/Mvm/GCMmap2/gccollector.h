@@ -210,8 +210,7 @@ public:
 
     unlock();
 
-    // Having an operatorDelete means being a C++ object.
-    if (vt->destructor && !vt->operatorDelete) {
+    if (vt->destructor) {
       mvm::Thread::get()->MyVM->addFinalizationCandidate((gc*)p->_2gc());
     }
 

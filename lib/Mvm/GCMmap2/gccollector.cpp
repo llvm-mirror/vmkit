@@ -97,12 +97,6 @@ void GCCollector::do_collect() {
   GCChunkNode *next = 0;
   for(cur=finalizable.next(); cur!=&finalizable; cur=next) {
     //printf("    !!!! reject %p [%p]\n", cur->chunk()->_2gc(), cur);
-    gcRoot *res = cur->chunk()->_2gc();
-    VirtualTable* VT = res->getVirtualTable();    
-    if (VT->operatorDelete) {
-      destructor_t dest = (destructor_t)VT->destructor;
-      dest(res);
-    }
     next = cur->next();
     allocator->reject_chunk(cur);
   }

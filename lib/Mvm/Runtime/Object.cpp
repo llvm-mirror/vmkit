@@ -137,7 +137,13 @@ void VirtualMachine::finalizerStart(mvm::Thread* th) {
       if (!res) break;
 
       try {
-        vm->invokeFinalizer(res);
+        VirtualTable* VT = res->getVirtualTable();
+        if (VT->operatorDelete) {
+          destructor_t dest = (destructor_t)VT->destructor;
+          dest(res);
+        } else {
+          vm->invokeFinalizer(res);
+        }
       } catch(...) {
       }
       th->clearException();
