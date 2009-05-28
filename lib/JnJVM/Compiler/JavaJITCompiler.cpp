@@ -177,7 +177,7 @@ void JavaJITCompiler::makeVT(Class* cl) {
     }
   }
 
-#if 0//def WITH_TRACER
+#ifdef WITH_TRACER
   if (!LCI->virtualTracerFunction) {
     LCI->virtualTracerFunction = makeTracer(cl, false);
   }

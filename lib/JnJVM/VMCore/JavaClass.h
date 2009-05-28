@@ -1440,10 +1440,6 @@ public:
     return static_cast<Ty*>(JInfo);
   }
 
-  bool isReference() {
-    uint16 val = type->elements[0];
-    return (val == 'L' || val == '[');
-  }
 
 };
 

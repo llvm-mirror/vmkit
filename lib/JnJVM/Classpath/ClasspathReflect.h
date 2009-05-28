@@ -167,7 +167,11 @@ public:
 
   JavaObject* getReferent() const { return referent; }
   void setReferent(JavaObject* r) { referent = r; }
-
+  
+  static void STATIC_TRACER(JavaObjectReference) {
+    obj->queue->MARK_AND_TRACE;
+    obj->nextOnQueue->MARK_AND_TRACE;
+  }
 };
 
 }

@@ -69,7 +69,6 @@ VirtualTable LockObj::VT((uintptr_t)LockObj::staticDestructor,
 // Empty tracer for static tracers of classes that do not declare static
 // variables.
 //===----------------------------------------------------------------------===//
-
 extern "C" void EmptyTracer(void*) {}
 
 //===----------------------------------------------------------------------===//
@@ -82,87 +81,44 @@ extern "C" void EmptyTracer(void*) {}
 //     classloader is the bootstrap loader and is traced by the JVM.
 //===----------------------------------------------------------------------===//
 
-/// Method for scanning the root of an object.
-extern "C" void JavaObjectTracer(JavaObject* obj) {
-  if (obj->getClass())
-    obj->getClass()->classLoader->getJavaClassLoader()->markAndTrace();
-  LockObj* l = obj->lockObj();
+
+/// Method for scanning the root of an object. This method is called by all
+/// JavObjects except native Java arrays.
+void JavaObject::tracer() {
+  if (getClass()) getClass()->classLoader->getJavaClassLoader()->markAndTrace();
+  LockObj* l = lockObj();
   if (l) l->markAndTrace();
+}
+
+extern "C" void JavaObjectTracer(JavaObject* obj) {
+  obj->JavaObject::tracer();
 }
 
 /// Method for scanning an array whose elements are JavaObjects. This method is
 /// called by all non-native Java arrays.
-extern "C" void ArrayObjectTracer(ArrayObject* obj) {
-  if (obj->getClass())
-    obj->getClass()->classLoader->getJavaClassLoader()->markAndTrace();
-  LockObj* l = obj->lockObj();
-  if (l) l->markAndTrace();
-  for (sint32 i = 0; i < obj->size; i++) {
-    if (obj->elements[i]) obj->elements[i]->MARK_AND_TRACE;
+void ArrayObject::tracer() {
+  JavaObject::tracer();
+  for (sint32 i = 0; i < size; i++) {
+    if (elements[i]) elements[i]->MARK_AND_TRACE;
   } 
+}
+
+extern "C" void ArrayObjectTracer(ArrayObject* obj) {
+  obj->ArrayObject::tracer();
 }
 
 /// Method for scanning a native array. Only scan the lock. The classloader of
 /// the class is the bootstrap loader and therefore does not need to be
 /// scanned here.
+void JavaArray::tracer() {
+  LockObj* l = lockObj();
+  if (l) l->markAndTrace();
+}
+
 extern "C" void JavaArrayTracer(JavaArray* obj) {
-  LockObj* l = obj->lockObj();
-  if (l) l->markAndTrace();
+  obj->JavaArray::tracer();
 }
 
-//===----------------------------------------------------------------------===//
-// Tracer for regular Java objects.
-//===----------------------------------------------------------------------===//
-
-extern "C" void RegularObjectTracer(JavaObject* obj) {
-  LockObj* l = obj->lockObj();
-  if (l) l->markAndTrace();
-  
-  Class* cl = obj->getClass()->asClass();
-  assert(cl && "Not a class in regular tracer");
-  cl->classLoader->getJavaClassLoader()->markAndTrace();
-
-  while (cl->super != 0) {
-    for (uint32 i = 0; i < cl->nbVirtualFields; ++i) {
-      JavaField& field = cl->virtualFields[i];
-      if (field.isReference()) {
-        JavaObject* ptr = field.getObjectField(obj);
-        ptr->markAndTrace();
-      }
-    }
-    cl = cl->super;
-  }
-}
-
-extern "C" void ReferenceObjectTracer(JavaObject* obj) {
-  LockObj* l = obj->lockObj();
-  if (l) l->markAndTrace();
-  
-  Class* cl = obj->getClass()->asClass();
-  assert(cl && "Not a class in reference tracer");
-  cl->classLoader->getJavaClassLoader()->markAndTrace();
-  Classpath* upcalls = cl->classLoader->bootstrapLoader->upcalls;
-  
-
-  while (cl != upcalls->newReference) {
-    for (uint32 i = 0; i < cl->nbVirtualFields; ++i) {
-      JavaField& field = cl->virtualFields[i];
-      if (field.isReference()) {
-        JavaObject* ptr = field.getObjectField(obj);
-        ptr->markAndTrace();
-      }
-    }
-    cl = cl->super;
-  }
-
-  for (uint32 i = 1; i < cl->nbVirtualFields; ++i) {
-    JavaField& field = cl->virtualFields[i];
-    if (field.isReference()) {
-      JavaObject* ptr = field.getObjectField(obj);
-      ptr->markAndTrace();
-    }
-  }
-}
 
 //===----------------------------------------------------------------------===//
 // Support for scanning Java objects referenced by classes. All classes must
@@ -207,15 +163,8 @@ void Class::tracer() {
   
   for (uint32 i =0; i < NR_ISOLATES; ++i) {
     TaskClassMirror &M = IsolateInfo[i];
-    void* Stat = M.staticInstance;
-    if (Stat) {
-      for (uint32 i = 0; i < nbStaticFields; ++i) {
-        JavaField& field = staticFields[i];
-        if (field.isReference()) {
-          JavaObject* ptr = field.getObjectField(Stat);
-          if (ptr) ptr->markAndTrace();
-        }
-      }
+    if (M.staticInstance && staticTracer != EmptyTracer) {
+      staticTracer(M.staticInstance);
     }
   }
 }

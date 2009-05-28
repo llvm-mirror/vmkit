@@ -40,11 +40,9 @@ const UTF8* Attribut::sourceFileAttribut = 0;
 Class* ClassArray::SuperArray;
 Class** ClassArray::InterfacesArray;
 
-extern "C" void ArrayObjectTracer(JavaObject*);
 extern "C" void JavaArrayTracer(JavaObject*);
 extern "C" void JavaObjectTracer(JavaObject*);
-extern "C" void ReferenceObjectTracer(JavaObject*);
-extern "C" void RegularObjectTracer(JavaObject*);
+extern "C" void ArrayObjectTracer(JavaObject*);
 
 Attribut::Attribut(const UTF8* name, uint32 length,
                    uint32 offset) {
@@ -1310,15 +1308,6 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
       memcpy(secondaryTypes + lastIndex, cur->secondaryTypes,
              sizeof(JavaVirtualTable*) * cur->nbSecondaryTypes);
       lastIndex += cur->nbSecondaryTypes;
-    }
-    
-    JnjvmClassLoader* JCL = cl->classLoader;
-    Classpath* upcalls = JCL->bootstrapLoader->upcalls;
-    Class* ref = upcalls->newReference;
-    if (ref && display[1] == ref->virtualVT) {
-      tracer = (uintptr_t)ReferenceObjectTracer;
-    } else {
-      tracer = (uintptr_t)RegularObjectTracer;
     }
 
   } else {
