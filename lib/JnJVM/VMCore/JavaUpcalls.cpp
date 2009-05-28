@@ -404,16 +404,14 @@ extern "C" void nativeJavaObjectConstructorTracer(JavaObjectConstructor* obj) {
   JavaObjectConstructor::staticTracer(obj);
 }
 
-extern "C" void nativeJavaObjectReferenceTracer(JavaObjectReference* obj) {
-  JavaObjectReference::staticTracer(obj);
-}
-
 extern "C" void nativeJavaObjectVMThreadDestructor(JavaObjectVMThread* obj) {
   JavaObjectVMThread::staticDestructor(obj);
 }
 
 // Defined in Classpath/ClasspathVMClassLoader.cpp
 extern "C" ArrayObject* nativeGetBootPackages();
+
+extern "C" void ReferenceObjectTracer(JavaObject*);
 
 void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
@@ -885,11 +883,11 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
    
   newReference = UPCALL_CLASS(loader, "java/lang/ref/Reference");
-    
-  newReference->getVirtualVT()->setNativeTracer(
-      (uintptr_t)nativeJavaObjectReferenceTracer,
-      "nativeJavaObjectReferenceTracer");
   
+  newReference->getVirtualVT()->setNativeTracer(
+      (uintptr_t)ReferenceObjectTracer,
+      "ReferenceObjectTracer");
+
   EnqueueReference = 
     UPCALL_METHOD(loader, "java/lang/ref/Reference",  "enqueue", "()Z",
                   ACC_VIRTUAL);

@@ -134,6 +134,36 @@ extern "C" void RegularObjectTracer(JavaObject* obj) {
   }
 }
 
+extern "C" void ReferenceObjectTracer(JavaObject* obj) {
+  LockObj* l = obj->lockObj();
+  if (l) l->markAndTrace();
+  
+  Class* cl = obj->getClass()->asClass();
+  assert(cl && "Not a class in reference tracer");
+  cl->classLoader->getJavaClassLoader()->markAndTrace();
+  Classpath* upcalls = cl->classLoader->bootstrapLoader->upcalls;
+  
+
+  while (cl != upcalls->newReference) {
+    for (uint32 i = 0; i < cl->nbVirtualFields; ++i) {
+      JavaField& field = cl->virtualFields[i];
+      if (field.isReference()) {
+        JavaObject* ptr = field.getObjectField(obj);
+        ptr->markAndTrace();
+      }
+    }
+    cl = cl->super;
+  }
+
+  for (uint32 i = 1; i < cl->nbVirtualFields; ++i) {
+    JavaField& field = cl->virtualFields[i];
+    if (field.isReference()) {
+      JavaObject* ptr = field.getObjectField(obj);
+      ptr->markAndTrace();
+    }
+  }
+}
+
 //===----------------------------------------------------------------------===//
 // Support for scanning Java objects referenced by classes. All classes must
 // trace:
