@@ -369,16 +369,6 @@ public:
   virtual void stopService();
 #endif
 
-  virtual void startCollection() {
-    VirtualMachine::startCollection();
-    hashStr.lock.lock();
-  }
-  
-  virtual void endCollection() {
-    VirtualMachine::endCollection();
-    hashStr.lock.unlock();
-  }
-
   virtual void clearReferent(gc*);
   virtual gc* getReferent(gc*);
   virtual bool enqueueReference(gc*);
