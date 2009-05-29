@@ -104,6 +104,7 @@ jobject _object, jlong ms, jint ns) {
 
   uint32 sec = (uint32) (ms / 1000);
   uint32 usec = (ns / 1000) + 1000 * (ms % 1000);
+  if (ns && !usec) usec = 1;
   JavaObject* obj = (JavaObject*)_object;
   if (sec || usec) {
     struct timeval t;
