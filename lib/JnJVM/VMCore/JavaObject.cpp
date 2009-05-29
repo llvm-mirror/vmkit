@@ -95,11 +95,12 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
       thread->getJVM()->interruptedException(this);
     } else {
       uint32_t recur = l->lock.recursionCount();
-      bool timeout = false;
-      l->lock.unlockAll();
       JavaCond* cond = l->getCond();
       cond->wait(thread);
       thread->state = JavaThread::StateWaiting;
+      
+      bool timeout = false;
+      l->lock.unlockAll();
 
       if (timed) {
         timeout = varcondThread.timedWait(&mutexThread, info);
