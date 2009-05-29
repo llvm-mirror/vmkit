@@ -46,7 +46,7 @@ public:
 };
 
 /// JavaArray - This class is just a placeholder for constants and for the
-///  virtual table of arrays of primitive types (e.g. double, int).
+/// virtual table of arrays.
 class JavaArray : public TJavaArray<void*> {
 public:
 
@@ -65,14 +65,9 @@ public:
   static const unsigned int T_INT;
   static const unsigned int T_LONG;
   
-  /// tracer - The trace method of Java arrays of primitive types. Since their
-  /// class lives throughout the lifetime of the application, there is no need
-  /// to trace them. Therefore this trace function does nothing.
-  virtual void TRACER;
-  
 };
 
-/// Instantiation of the TJavaArray class for Java arrays of primitive types.
+/// Instantiation of the TJavaArray class for Java arrays.
 #define ARRAYCLASS(name, elmt)                                \
   class name : public TJavaArray<elmt> {                      \
   }
@@ -86,19 +81,9 @@ ARRAYCLASS(ArraySInt32, sint32);
 ARRAYCLASS(ArrayLong,   sint64);
 ARRAYCLASS(ArrayFloat,  float);
 ARRAYCLASS(ArrayDouble, double);
+ARRAYCLASS(ArrayObject, JavaObject*);
 
 #undef ARRAYCLASS
-
-/// ArrayObject - Instantiation of the TJavaArray class for arrays of objects.
-/// Arrays of objects are different than arrays of primitive types because
-/// they have to trace all objects in the array.
-class ArrayObject : public TJavaArray<JavaObject*> {
-public:
-  /// tracer - The tracer method of Java arrays of objects. This method will
-  /// trace all objects in the array.
-  virtual void TRACER;
-};
-
 
 /// UTF8 - The UTF8 class is basically the ArrayUInt16 class (arrays of elements
 /// of type uint16) with helper functions for manipulating UTF8. Each JVM
