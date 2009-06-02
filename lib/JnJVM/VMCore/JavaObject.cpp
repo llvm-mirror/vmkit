@@ -94,13 +94,12 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
       thread->interruptFlag = 0;
       thread->getJVM()->interruptedException(this);
     } else {
-      uint32_t recur = l->lock.recursionCount();
       JavaCond* cond = l->getCond();
       cond->wait(thread);
       thread->state = JavaThread::StateWaiting;
       
       bool timeout = false;
-      l->lock.unlockAll();
+      uint32 recur = l->lock.unlockAll();
 
       if (timed) {
         timeout = varcondThread.timedWait(&mutexThread, info);
@@ -126,6 +125,7 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
   } else {
     JavaThread::get()->getJVM()->illegalMonitorStateException(this);
   }
+  assert(owner() && "Not owner after wait");
 }
 
 void JavaObject::wait() {
@@ -143,6 +143,7 @@ void JavaObject::notify() {
   } else {
     JavaThread::get()->getJVM()->illegalMonitorStateException(this);
   }
+  assert(owner() && "Not owner after notify");
 }
 
 void JavaObject::notifyAll() {
@@ -151,7 +152,9 @@ void JavaObject::notifyAll() {
     if (l) l->getCond()->notifyAll();
   } else {
     JavaThread::get()->getJVM()->illegalMonitorStateException(this);
-  } 
+  }
+
+  assert(owner() && "Not owner after notifyAll");
 }
 
 void JavaObject::decapsulePrimitive(Jnjvm *vm, uintptr_t &buf,

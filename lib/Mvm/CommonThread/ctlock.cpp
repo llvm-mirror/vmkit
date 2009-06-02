@@ -13,12 +13,14 @@
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 #include "cterror.h"
+#include <cerrno>
 #include <sys/time.h>
+#include <pthread.h>
 
 
 using namespace mvm;
 
-Lock::Lock(bool recursive) {
+Lock::Lock() {
   pthread_mutexattr_t attr;
 
   // Initialize the mutex attributes
@@ -27,7 +29,7 @@ Lock::Lock(bool recursive) {
 
   // Initialize the mutex as a recursive mutex, if requested, or normal
   // otherwise.
-  int kind = ( recursive  ? PTHREAD_MUTEX_RECURSIVE : PTHREAD_MUTEX_NORMAL );
+  int kind = PTHREAD_MUTEX_NORMAL;
   errorcode = pthread_mutexattr_settype(&attr, kind);
   assert(errorcode == 0); 
 
@@ -66,30 +68,45 @@ void LockNormal::lock() {
 }
 
 void LockNormal::unlock() {
+  assert(selfOwner() && "Not owner when unlocking");
   owner = 0;
   pthread_mutex_unlock((pthread_mutex_t*)&internalLock);
 }
 
 void LockRecursive::lock() {
-  pthread_mutex_lock((pthread_mutex_t*)&internalLock);
-  if (!owner) owner = mvm::Thread::get();
+  if (!selfOwner()) {
+    pthread_mutex_lock((pthread_mutex_t*)&internalLock);
+    owner = mvm::Thread::get();
+  }
   ++n;
 }
 
 void LockRecursive::unlock() {
+  assert(selfOwner() && "Not owner when unlocking");
   --n;
-  if (n == 0) owner = 0;
-  pthread_mutex_unlock((pthread_mutex_t*)&internalLock);
+  if (n == 0) {
+    owner = 0;
+    pthread_mutex_unlock((pthread_mutex_t*)&internalLock);
+  }
 }
 
 int LockRecursive::unlockAll() {
+  assert(selfOwner() && "Not owner when unlocking all");
   int res = n;
-  while (n) unlock();
+  n = 0;
+  owner = 0;
+  pthread_mutex_unlock((pthread_mutex_t*)&internalLock);
   return res;
 }
 
 void LockRecursive::lockAll(int count) {
-  for (int i = 0; i < count; ++i) lock();
+  if (selfOwner()) {
+    n += count;
+  } else {
+    pthread_mutex_lock((pthread_mutex_t*)&internalLock);
+    owner = mvm::Thread::get();
+    n = count;
+  }
 }
 
 Cond::Cond() {
@@ -106,8 +123,14 @@ void Cond::broadcast() {
 }
 
 void Cond::wait(Lock* l) {
-  pthread_cond_wait((pthread_cond_t*)&internalCond,
-                    (pthread_mutex_t*)&(l->internalLock));
+
+  int n = l->unsafeUnlock();
+
+  int res = pthread_cond_wait((pthread_cond_t*)&internalCond,
+                              (pthread_mutex_t*)&(l->internalLock));
+
+  assert(!res && "Error on wait");
+  l->unsafeLock(n);
 }
 
 void Cond::signal() {
@@ -122,6 +145,15 @@ int Cond::timedWait(Lock* l, struct timeval *ref) {
   gettimeofday(&now, &tz); 
   timeout.tv_sec = now.tv_sec + ref->tv_sec; 
   timeout.tv_nsec = now.tv_usec + ref->tv_usec;
-  return pthread_cond_timedwait((pthread_cond_t*)&internalCond, 
-                                (pthread_mutex_t*)&(l->internalLock), &timeout);
+  
+  int n = l->unsafeUnlock();
+  
+  int res = pthread_cond_timedwait((pthread_cond_t*)&internalCond, 
+                                   (pthread_mutex_t*)&(l->internalLock),
+                                   &timeout);
+  
+  assert((!res || res == ETIMEDOUT) && "Error on timed wait");
+  l->unsafeLock(n);
+
+  return res;
 }

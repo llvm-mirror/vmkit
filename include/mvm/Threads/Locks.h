@@ -11,6 +11,7 @@
 #define MVM_LOCKS_H
 
 #include <pthread.h>
+#include <cassert>
 
 #include "mvm/Threads/Thread.h"
 
@@ -66,6 +67,11 @@ class Thread;
 ///
 class Lock {
   friend class Cond;
+  
+private:
+  virtual void unsafeLock(int n) = 0;
+  virtual int unsafeUnlock() = 0;
+
 protected:
   /// owner - Which thread is currently holding the lock?
   ///
@@ -74,12 +80,13 @@ protected:
   /// internalLock - The lock implementation of the platform.
   ///
   pthread_mutex_t internalLock;
+  
 
 public:
 
   /// Lock - Creates a lock, recursive if rec is true.
   ///
-  Lock(bool rec);
+  Lock();
   
   /// ~Lock - Give it a home.
   ///
@@ -105,8 +112,18 @@ public:
 
 /// LockNormal - A non-recursive lock.
 class LockNormal : public Lock {
+  friend class Cond;
+private:
+  virtual void unsafeLock(int n) {
+    owner = mvm::Thread::get();
+  }
+  
+  virtual int unsafeUnlock() {
+    owner = 0;
+    return 0;
+  }
 public:
-  LockNormal() : Lock(false) {}
+  LockNormal() : Lock() {}
 
   virtual void lock();
   virtual void unlock();
@@ -115,14 +132,27 @@ public:
 
 /// LockRecursive - A recursive lock.
 class LockRecursive : public Lock {
+  friend class Cond;
 private:
   
   /// n - Number of times the lock has been locked.
   ///
   int n;
 
+  virtual void unsafeLock(int a) {
+    n = a;
+    owner = mvm::Thread::get();
+  }
+  
+  virtual int unsafeUnlock() {
+    int ret = n;
+    n = 0;
+    owner = 0;
+    return ret;
+  }
+
 public:
-  LockRecursive() : Lock(true) { n = 0; }
+  LockRecursive() : Lock() { n = 0; }
   
   virtual void lock();
   virtual void unlock();
@@ -186,7 +216,7 @@ public:
     if (!(lock & FatMask)) {
       TFatLock* obj = TFatLock::allocate(O);
       size_t val = (((size_t) obj) >> 1) | FatMask;
-      uint32 count = lock & 0xFF;
+      uint32 count = lock & ThinCountMask;
       obj->acquireAll(count + 1);
       lock = val;
       return obj;
@@ -235,10 +265,13 @@ end:
         obj->acquire();
       }
     }
+
+    assert(owner() && "Not owner after quitting acquire!");
   }
 
   /// release - Release the lock.
   void release() {
+    assert(owner() && "Not owner when entering release!");
     uint64 id = mvm::Thread::get()->getThreadID();
     if (lock == id) {
       lock = 0;
@@ -272,12 +305,21 @@ end:
   bool owner() {
     uint64 id = mvm::Thread::get()->getThreadID();
     if (id == lock) return true;
-    if ((lock & 0x7FFFFF00) == id) return true;
+    if ((lock & ThinMask) == id) return true;
     if (lock & FatMask) {
       TFatLock* obj = (TFatLock*)(lock << 1);
       return obj->owner();
     }
     return false;
+  }
+
+  mvm::Thread* getOwner() {
+    if (lock & FatMask) {
+      TFatLock* obj = (TFatLock*)(lock << 1);
+      return obj->getOwner();
+    } else {
+      return (mvm::Thread*)(lock & ThinMask);
+    }
   }
 
   /// getFatLock - Get the fat lock is the lock is a fat lock, 0 otherwise.

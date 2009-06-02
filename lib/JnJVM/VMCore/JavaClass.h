@@ -388,7 +388,14 @@ private:
     /// condVar - Used to wake threads waiting on the load/resolve/initialize
     /// process of this class, done by another thread.
     mvm::Cond condVar;
-    
+  
+    bool owner() {
+      return lockVar.selfOwner();
+    }
+
+    mvm::Thread* getOwner() {
+      return lockVar.getOwner();
+    }
 
     static FatLock* allocate(UserCommonClass* cl) {
       return new(cl->classLoader->allocator) FatLock();

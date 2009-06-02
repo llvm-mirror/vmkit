@@ -100,6 +100,12 @@ public:
   bool owner() {
     return lock.selfOwner();
   }
+ 
+  /// getOwner - Get the owner of this lock.
+  ///
+  mvm::Thread* getOwner() {
+    return lock.getOwner();
+  }
   
   /// getCond - Returns the conditation variable of this lock, allocating it
   /// if non-existant.
