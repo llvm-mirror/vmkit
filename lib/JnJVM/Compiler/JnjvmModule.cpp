@@ -89,6 +89,32 @@ JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
 
   enabledException = true;
 }
+  
+void JavaLLVMCompiler::traceAllFields(uint32 nbFields, JavaField* fields,
+                                      BasicBlock* block, Value* realArg) {
+  Constant* zero = mvm::MvmModule::constantZero;
+  for (uint32 i = 0; i < nbFields; ++i) {
+    JavaField& cur = fields[i];
+    if (cur.getSignature()->trace()) {
+      LLVMFieldInfo* LFI = getFieldInfo(&cur);
+      std::vector<Value*> args; //size = 2
+      args.push_back(zero);
+      args.push_back(LFI->getOffset());
+      Value* ptr = GetElementPtrInst::Create(realArg, args.begin(), args.end(), 
+                                             "",block);
+      Value* val = new LoadInst(ptr, "", block);
+      Value* valCast = new BitCastInst(val, JnjvmModule::JavaObjectType, "",
+                                       block);
+      std::vector<Value*> Args;
+      Args.push_back(valCast);
+#ifdef MULTIPLE_GC
+      Args.push_back(GC);
+#endif
+      CallInst::Create(JavaIntrinsics.MarkAndTraceFunction, Args.begin(),
+                       Args.end(), "", block);
+    }
+  }
+}
 
 #ifdef WITH_TRACER
 llvm::Function* JavaLLVMCompiler::internalMakeTracer(Class* cl, bool stat) {
@@ -115,14 +141,13 @@ llvm::Function* JavaLLVMCompiler::internalMakeTracer(Class* cl, bool stat) {
 
   if (!nbReferenceFields) {
     if (stat) return JavaIntrinsics.EmptyTracerFunction;
-    else return getClassInfo(cl->super)->getVirtualTracer();
+    else if (cl->super) return getClassInfo(cl->super)->getVirtualTracer();
   }
   
   Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
                                     GlobalValue::InternalLinkage,
                                     "", getLLVMModule());
 
-  Constant* zero = mvm::MvmModule::constantZero;
   Argument* arg = func->arg_begin();
   BasicBlock* block = BasicBlock::Create("", func);
   llvm::Value* realArg = new BitCastInst(arg, type, "", block);
@@ -133,38 +158,18 @@ llvm::Function* JavaLLVMCompiler::internalMakeTracer(Class* cl, bool stat) {
   Value* GC = ++func->arg_begin();
   Args.push_back(GC);
 #endif
-  if (!stat) {
-    if (cl->super == 0) {
-      CallInst::Create(JavaIntrinsics.JavaObjectTracerFunction, Args.begin(),
-                       Args.end(), "", block);
 
-    } else {
-      LLVMClassInfo* LCP = getClassInfo(cl->super);
-      Function* F = LCP->getVirtualTracer();
-      assert(F && "Still no virtual tracer for super");
-      CallInst::Create(F, Args.begin(), Args.end(), "", block);
-    }
-  }
-  
-  for (uint32 i = 0; i < nbFields; ++i) {
-    JavaField& cur = fields[i];
-    if (cur.getSignature()->trace()) {
-      LLVMFieldInfo* LFI = getFieldInfo(&cur);
-      std::vector<Value*> args; //size = 2
-      args.push_back(zero);
-      args.push_back(LFI->getOffset());
-      Value* ptr = GetElementPtrInst::Create(realArg, args.begin(), args.end(), 
-                                             "",block);
-      Value* val = new LoadInst(ptr, "", block);
-      Value* valCast = new BitCastInst(val, JnjvmModule::JavaObjectType, "",
-                                       block);
-      std::vector<Value*> Args;
-      Args.push_back(valCast);
-#ifdef MULTIPLE_GC
-      Args.push_back(GC);
-#endif
-      CallInst::Create(JavaIntrinsics.MarkAndTraceFunction, Args.begin(),
-                       Args.end(), "", block);
+  if (stat) {
+    traceAllFields(nbFields, fields, block, realArg);
+  } else {
+    CallInst::Create(JavaIntrinsics.JavaObjectTracerFunction, Args.begin(),
+                     Args.end(), "", block);
+    Class* cur = cl;
+    while (cur->super != 0) {
+      traceAllFields(cur->nbVirtualFields, cur->virtualFields, block, realArg);
+      cur = cur->super;
+      const Type* Ty = getClassInfo(cur)->getVirtualType();
+      realArg = new BitCastInst(realArg, Ty, "", block);
     }
   }
 
