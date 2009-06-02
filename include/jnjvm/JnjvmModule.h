@@ -20,6 +20,7 @@
 #include "JavaCompiler.h"
 
 namespace llvm {
+  class BasicBlock;
   class Constant;
   class ConstantInt;
   class Function;
@@ -360,6 +361,7 @@ protected:
 
 #ifdef WITH_TRACER 
   llvm::Function* internalMakeTracer(Class* cl, bool stat);
+  void traceAllFields(uint32, JavaField*, llvm::BasicBlock*, llvm::Value*);
   virtual llvm::Function* makeTracer(Class* cl, bool stat)  = 0;
 #endif
   
