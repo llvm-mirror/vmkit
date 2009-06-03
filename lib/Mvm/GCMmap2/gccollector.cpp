@@ -49,7 +49,7 @@ void GCCollector::do_collect() {
 
   unused_nodes->attrape(used_nodes);
 
-  mvm::Thread* th = th->get();
+  mvm::Thread* th = mvm::Thread::get();
   th->MyVM->startCollection();
 
 #ifdef HAVE_PTHREAD
