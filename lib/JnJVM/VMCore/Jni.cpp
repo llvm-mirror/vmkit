@@ -2493,11 +2493,16 @@ jint MonitorEnter(JNIEnv *env, jobject obj) {
   
   BEGIN_JNI_EXCEPTION
   
-  ((JavaObject*)obj)->acquire();
-  return 1;
+  if (obj) {
+    ((JavaObject*)obj)->acquire();
+    return 0;
+  } else {
+    return -1;
+  }
+
 
   END_JNI_EXCEPTION
-  return 0;
+  return -1;
 }
 
 
@@ -2505,11 +2510,22 @@ jint MonitorExit(JNIEnv *env, jobject obj) {
 
   BEGIN_JNI_EXCEPTION
 
-  ((JavaObject*)obj)->release();
-  return 1;
+  JavaObject* Obj = (JavaObject*)obj;
+ 
+  if (Obj) {
+
+    if (!Obj->owner()) {
+      JavaThread::get()->getJVM()->illegalMonitorStateException(Obj);    
+    }
+  
+    Obj->release();
+    return 0;
+  } else {
+    return -1;
+  }
 
   END_JNI_EXCEPTION
-  return 0;
+  return -1;
 }
 
 
