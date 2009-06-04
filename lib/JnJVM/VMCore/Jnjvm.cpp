@@ -726,6 +726,11 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   
   ArrayUInt8* bytes = Reader::openFile(vm->bootstrapLoader, jarFile);
 
+  if (!bytes) {
+    printf("Unable to access jarfile %s\n", jarFile);
+    return;
+  }
+
   ZipArchive archive(bytes, vm->allocator);
   if (archive.getOfscd() != -1) {
     ZipFile* file = archive.getFile(PATH_MANIFEST);
