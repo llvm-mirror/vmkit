@@ -478,9 +478,10 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
 }
 
 Function* LLVMSignatureInfo::getVirtualBuf() {
+  // Lock here because we are called by arbitrary code. Also put that here
+  // because we are waiting on virtualBufFunction to have an address.
+  mvm::MvmModule::protectIR();
   if (!virtualBufFunction) {
-    // Lock here because we are called by arbitrary code
-    mvm::MvmModule::protectIR();
     virtualBufFunction = createFunctionCallBuf(true);
     if (!signature->initialLoader->getCompiler()->isStaticCompiling()) {
       signature->setVirtualCallBuf((intptr_t)
@@ -488,15 +489,16 @@ Function* LLVMSignatureInfo::getVirtualBuf() {
       // Now that it's compiled, we don't need the IR anymore
       virtualBufFunction->deleteBody();
     }
-    mvm::MvmModule::unprotectIR();
   }
+  mvm::MvmModule::unprotectIR();
   return virtualBufFunction;
 }
 
 Function* LLVMSignatureInfo::getVirtualAP() {
+  // Lock here because we are called by arbitrary code. Also put that here
+  // because we are waiting on virtualAPFunction to have an address.
+  mvm::MvmModule::protectIR();
   if (!virtualAPFunction) {
-    // Lock here because we are called by arbitrary code
-    mvm::MvmModule::protectIR();
     virtualAPFunction = createFunctionCallAP(true);
     if (!signature->initialLoader->getCompiler()->isStaticCompiling()) {
       signature->setVirtualCallAP((intptr_t)
@@ -504,15 +506,16 @@ Function* LLVMSignatureInfo::getVirtualAP() {
       // Now that it's compiled, we don't need the IR anymore
       virtualAPFunction->deleteBody();
     }
-    mvm::MvmModule::unprotectIR();
   }
+  mvm::MvmModule::unprotectIR();
   return virtualAPFunction;
 }
 
 Function* LLVMSignatureInfo::getStaticBuf() {
+  // Lock here because we are called by arbitrary code. Also put that here
+  // because we are waiting on staticBufFunction to have an address.
+  mvm::MvmModule::protectIR();
   if (!staticBufFunction) {
-    // Lock here because we are called by arbitrary code
-    mvm::MvmModule::protectIR();
     staticBufFunction = createFunctionCallBuf(false);
     if (!signature->initialLoader->getCompiler()->isStaticCompiling()) {
       signature->setStaticCallBuf((intptr_t)
@@ -520,15 +523,16 @@ Function* LLVMSignatureInfo::getStaticBuf() {
       // Now that it's compiled, we don't need the IR anymore
       staticBufFunction->deleteBody();
     }
-    mvm::MvmModule::unprotectIR();
   }
+  mvm::MvmModule::unprotectIR();
   return staticBufFunction;
 }
 
 Function* LLVMSignatureInfo::getStaticAP() {
+  // Lock here because we are called by arbitrary code. Also put that here
+  // because we are waiting on staticAPFunction to have an address.
+  mvm::MvmModule::protectIR();
   if (!staticAPFunction) {
-    // Lock here because we are called by arbitrary code
-    mvm::MvmModule::protectIR();
     staticAPFunction = createFunctionCallAP(false);
     if (!signature->initialLoader->getCompiler()->isStaticCompiling()) {
       signature->setStaticCallAP((intptr_t)
@@ -536,8 +540,8 @@ Function* LLVMSignatureInfo::getStaticAP() {
       // Now that it's compiled, we don't need the IR anymore
       staticAPFunction->deleteBody();
     }
-    mvm::MvmModule::unprotectIR();
   }
+  mvm::MvmModule::unprotectIR();
   return staticAPFunction;
 }
 
