@@ -18,6 +18,7 @@
 #include <JavaObject.h>
 
 extern "C" jnjvm::JavaObject* internalFillInStackTrace(jnjvm::JavaObject*);
+extern "C" void JavaObjectTracer(jnjvm::JavaObject*);
 
 namespace jnjvm {
 
@@ -35,7 +36,7 @@ public:
   }
 
   static void STATIC_TRACER(JavaObjectClass) {
-    obj->JavaObject::CALL_TRACER;
+    JavaObjectTracer(obj);
     obj->pd->MARK_AND_TRACE;
     obj->signers->MARK_AND_TRACE;
     obj->constructor->MARK_AND_TRACE;
@@ -56,7 +57,7 @@ private:
 public:
 
   static void STATIC_TRACER(JavaObjectField) {
-    obj->JavaObject::CALL_TRACER;
+    JavaObjectTracer(obj);
     obj->name->MARK_AND_TRACE;
     obj->declaringClass->MARK_AND_TRACE;
   }
@@ -81,7 +82,7 @@ private:
 public:
   
   static void STATIC_TRACER(JavaObjectMethod) {
-    obj->JavaObject::CALL_TRACER;
+    JavaObjectTracer(obj);
     obj->name->MARK_AND_TRACE;
     obj->declaringClass->MARK_AND_TRACE;
   }
@@ -104,7 +105,7 @@ private:
 
 public:
   static void STATIC_TRACER(JavaObjectConstructor) {
-    obj->JavaObject::CALL_TRACER;
+    JavaObjectTracer(obj);
     obj->clazz->MARK_AND_TRACE;
   }
   
