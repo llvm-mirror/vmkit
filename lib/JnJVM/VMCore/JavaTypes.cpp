@@ -55,9 +55,12 @@ intptr_t Signdef::staticCallBuf() {
     char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
     nativeName(buf, "static_buf");
     bool unused = false;
-    _staticCallBuf = initialLoader->loadInLib(buf, unused);
-    if (!_staticCallBuf)
+    intptr_t res = initialLoader->loadInLib(buf, unused);
+    if (res) {
+      _staticCallBuf = res;
+    } else {
       initialLoader->getCompiler()->staticCallBuf(this);
+    }
     assert(_staticCallBuf && "No call buf");
   }
   return _staticCallBuf;
@@ -68,9 +71,12 @@ intptr_t Signdef::virtualCallBuf() {
     char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
     nativeName(buf, "virtual_buf");
     bool unused = false;
-    _virtualCallBuf = initialLoader->loadInLib(buf, unused);
-    if (!_virtualCallBuf)
+    intptr_t res = initialLoader->loadInLib(buf, unused);
+    if (res) { 
+      _virtualCallBuf = res;
+    } else {
       initialLoader->getCompiler()->virtualCallBuf(this);
+    }
     assert(_virtualCallBuf && "No call buf");
   }
   return _virtualCallBuf;
@@ -81,9 +87,12 @@ intptr_t Signdef::staticCallAP() {
     char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
     nativeName(buf, "static_ap");
     bool unused = false;
-    _staticCallAP = initialLoader->loadInLib(buf, unused);
-    if (!_staticCallAP)
+    intptr_t res = initialLoader->loadInLib(buf, unused);
+    if (res) {
+      _staticCallAP = res;
+    } else {
       initialLoader->getCompiler()->staticCallAP(this);
+    }
     assert(_staticCallAP && "No call AP");
   }
   return _staticCallAP;
@@ -94,9 +103,12 @@ intptr_t Signdef::virtualCallAP() {
     char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
     nativeName(buf, "virtual_ap");
     bool unused = false;
-    _virtualCallAP = initialLoader->loadInLib(buf, unused);
-    if (!_virtualCallAP)
+    intptr_t res = initialLoader->loadInLib(buf, unused);
+    if (res) {
+      _virtualCallAP = res;
+    } else {
       initialLoader->getCompiler()->virtualCallAP(this);
+    }
     assert(_virtualCallAP && "No call AP");
   }
   return _virtualCallAP;
