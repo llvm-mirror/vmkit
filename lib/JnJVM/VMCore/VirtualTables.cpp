@@ -13,14 +13,12 @@
 //
 // The file is divided into four parts:
 // (1) Declaration of internal GC classes.
-// (2) Tracing roots of objects: regular object, native array, object array.
+// (2) Tracing Java objects: regular object, native array, object array.
 // (3) Tracing a class loader, which involves tracing the Java objects
 //     referenced by classes.
 // (4) Tracing the roots of a program: the JVM and the threads.
 //
 //===----------------------------------------------------------------------===//
-
-#include "mvm/Object.h"
 
 #include "JavaArray.h"
 #include "JavaClass.h"
@@ -69,12 +67,15 @@ VirtualTable LockObj::VT((uintptr_t)LockObj::staticDestructor,
 // Empty tracer for static tracers of classes that do not declare static
 // variables.
 //===----------------------------------------------------------------------===//
+
 extern "C" void EmptyTracer(void*) {}
 
 //===----------------------------------------------------------------------===//
-// Root trace methods for Java objects. There are three types of roots:
-// (1) Object whose class is not an array: needs to trace the classloader and
-//     the lock.
+// Trace methods for Java objects. There are four types of objects:
+// (1) Base object whose class is not an array: needs to trace the classloader
+//     and the lock.
+// (1) Object whose class is not an array: needs to trace the classloader, the
+//     lock and all the virtual fields.
 // (2) Object whose class is an array of objects: needs to trace root (1) and
 //     all elements in the array.
 // (3) Object whose class is a native array: only needs to trace the lock. The
@@ -82,22 +83,25 @@ extern "C" void EmptyTracer(void*) {}
 //===----------------------------------------------------------------------===//
 
 
-/// Method for scanning the root of an object. This method is called by all
-/// JavObjects except native Java arrays.
+/// Method for scanning the root of an object.
 extern "C" void JavaObjectTracer(JavaObject* obj) {
-  if (obj->getClass())
-    obj->getClass()->classLoader->getJavaClassLoader()->markAndTrace();
-  LockObj* l = obj->lockObj();
-  if (l) l->markAndTrace();
+  obj->traceLock();
+  
+  CommonClass* cl = obj->getClass();
+  assert(cl && "No class");
+  cl->classLoader->getJavaClassLoader()->markAndTrace();
 }
 
 /// Method for scanning an array whose elements are JavaObjects. This method is
 /// called by all non-native Java arrays.
 extern "C" void ArrayObjectTracer(ArrayObject* obj) {
-  if (obj->getClass())
-    obj->getClass()->classLoader->getJavaClassLoader()->markAndTrace();
-  LockObj* l = obj->lockObj();
-  if (l) l->markAndTrace();
+  obj->traceLock();
+  
+  CommonClass* cl = obj->getClass();
+  assert(cl && "No class");
+  cl->classLoader->getJavaClassLoader()->markAndTrace();
+  
+
   for (sint32 i = 0; i < obj->size; i++) {
     if (obj->elements[i]) obj->elements[i]->markAndTrace();
   } 
@@ -107,8 +111,27 @@ extern "C" void ArrayObjectTracer(ArrayObject* obj) {
 /// the class is the bootstrap loader and therefore does not need to be
 /// scanned here.
 extern "C" void JavaArrayTracer(JavaArray* obj) {
-  LockObj* l = obj->lockObj();
-  if (l) l->markAndTrace();
+  obj->traceLock();
+}
+
+/// Method for scanning regular objects.
+extern "C" void RegularObjectTracer(JavaObject* obj) {
+  obj->traceLock();
+
+  Class* cl = obj->getClass()->asClass();
+  assert(cl && "Not a class in regular tracer");
+  cl->classLoader->getJavaClassLoader()->markAndTrace();
+
+  while (cl->super != 0) {
+    for (uint32 i = 0; i < cl->nbVirtualFields; ++i) {
+      JavaField& field = cl->virtualFields[i];
+      if (field.isReference()) {
+        JavaObject* ptr = field.getObjectField(obj);
+        ptr->markAndTrace();
+      }
+    }
+    cl = cl->super;
+  }
 }
 
 
@@ -156,7 +179,13 @@ void Class::tracer() {
   for (uint32 i =0; i < NR_ISOLATES; ++i) {
     TaskClassMirror &M = IsolateInfo[i];
     if (M.staticInstance && staticTracer != EmptyTracer) {
-      staticTracer(M.staticInstance);
+      for (uint32 i = 0; i < nbStaticFields; ++i) {
+        JavaField& field = staticFields[i];
+        if (field.isReference()) {
+          JavaObject* ptr = field.getObjectField(M.staticInstance);
+          ptr->markAndTrace();
+        }
+      }
     }
   }
 }

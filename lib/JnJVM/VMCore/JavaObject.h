@@ -364,6 +364,10 @@ public:
   ///
   void decapsulePrimitive(Jnjvm* vm, uintptr_t &buf, const Typedef* signature);
 
+  void traceLock() {
+    LockObj* l = lockObj();
+    if (l) l->markAndTrace();
+  }
 };
 
 

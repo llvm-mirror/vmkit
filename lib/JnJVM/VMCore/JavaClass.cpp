@@ -43,6 +43,7 @@ Class** ClassArray::InterfacesArray;
 extern "C" void JavaArrayTracer(JavaObject*);
 extern "C" void JavaObjectTracer(JavaObject*);
 extern "C" void ArrayObjectTracer(JavaObject*);
+extern "C" void RegularObjectTracer(JavaObject*);
 
 Attribut::Attribut(const UTF8* name, uint32 length,
                    uint32 offset) {
@@ -1250,6 +1251,12 @@ void ClassArray::initialiseVT(Class* javaLangObject) {
 JavaVirtualTable::JavaVirtualTable(Class* C) {
    
   if (C->super) {
+
+    // Set the regular object tracer, destructor and delete.
+    tracer = (uintptr_t)RegularObjectTracer;
+    destructor = 0;
+    operatorDelete = 0;
+    
     // Set the class of this VT.
     cl = C;
     
