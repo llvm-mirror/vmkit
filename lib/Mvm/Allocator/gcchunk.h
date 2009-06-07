@@ -15,15 +15,14 @@
 #include "gcmapper.h"
 #include "types.h"
 
-class gc;        /* object collectable */
-class gc_header; /* entete locale */
+class gcRoot;        /* object collectable */
 
 /* description d'un bout de mémoire */
 class GCChunkNode {
  	GCChunkNode *_prev;     /* bit 0-1: l'age, les autres: le previous */
  	GCChunkNode	*_next;
  	void *       _chunk;
- 	uintptr_t			 _nbb_mark;	/* nbb = 0 <=> ce chunk est libre */
+ 	uintptr_t		 _nbb_mark;	/* nbb = 0 <=> ce chunk est libre */
 	                        /* bit 0-2: la marque */
 	                        /* bit 3: est-on collectable */
 public:
@@ -36,7 +35,7 @@ public:
  	inline GCChunkNode() {}
  	inline ~GCChunkNode() {}
 
- 	inline gc_header	 *	chunk()                { return (gc_header *)_chunk; }
+ 	inline gcRoot	     *	chunk()                { return (gcRoot*)_chunk; }
 
  	inline GCChunkNode *	next()                 { return _next; }
  	inline void						next(GCChunkNode *n)   { _next = n; }
@@ -144,7 +143,7 @@ public:
  			? res : 0;
  	}
 	
- 	inline gc_header *o2header(void *ptr, signed int mask) {
+ 	inline gcRoot *o2header(void *ptr, signed int mask) {
  		register uintptr_t entry = ((uintptr_t)ptr - (uintptr_t)area())/_chunk_nbb;
  		register GCChunkNode *res = _headers + entry;
  		return ((uintptr_t)ptr - (uintptr_t)res->chunk() < res->nbb())

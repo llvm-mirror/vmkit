@@ -13,8 +13,6 @@
 
 #include <stdint.h>
 
-typedef void (*gc_lock_recovery_fct_t)(int, int, int, int, int, int, int, int);
-
 struct VirtualTable {
   uintptr_t destructor;
   uintptr_t operatorDelete;
@@ -38,11 +36,7 @@ struct VirtualTable {
 class gcRoot {
 public:
   virtual           ~gcRoot() {}
-#ifdef MULTIPLE_GC
-  virtual void      tracer(void* GC) {}
-#else
   virtual void      tracer(void) {}
-#endif
   
   /// getVirtualTable - Returns the virtual table of this object.
   ///
@@ -54,20 +48,6 @@ public:
   ///
   void setVirtualTable(VirtualTable* VT) {
     ((VirtualTable**)(this))[0] = VT;
-  }
-};
-
-typedef void (*destructor_t)(void*);
-
-class gc_header {
-public:
-  VirtualTable *_XXX_vt;
-  inline gcRoot *_2gc() { return (gcRoot *)this; }
-  destructor_t getDestructor() {
-    return (destructor_t)this->_XXX_vt->destructor;
-  }
-  destructor_t getDelete() {
-    return (destructor_t)this->_XXX_vt->operatorDelete;
   }
 };
 

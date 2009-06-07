@@ -16,39 +16,9 @@
 
 namespace mvm {
 
-class GCLockRecovery : public LockNormal {
-  gc_lock_recovery_fct_t _fct;
-  int                    _args[8];
-  
-public:
-  inline GCLockRecovery() { _fct = 0; }
-
-  int verify_recall(gc_lock_recovery_fct_t fct, int a0, int a1, int a2, int a3,
-                    int a4, int a5, int a6, int a7);
-
-  inline void unlock_dont_recovery() { 
-    if(selfOwner()) {
-      LockNormal::unlock(); 
-    }
-  }
-
-  inline void unlock() {
-    if(_fct) {
-      gc_lock_recovery_fct_t tmp = _fct;
-      int l[8];
-      l[0] = _args[0]; l[1] = _args[1]; l[2] = _args[2]; l[3] = _args[3];
-      l[4] = _args[4]; l[5] = _args[5]; l[6] = _args[6]; l[7] = _args[7];
-      _fct = 0;
-      LockNormal::unlock();
-      tmp(l[0], l[1], l[2], l[3], l[4], l[5], l[6], l[7]);
-    } else
-      LockNormal::unlock();
-  }
-};
-
 class GCThread {
   /// _globalLock - Global lock for gcmalloc.
-  GCLockRecovery _globalLock;
+  LockNormal _globalLock;
 
   /// _stackLock - Stack lock for synchronization.
   LockNormal _stackLock;         
@@ -85,11 +55,6 @@ public:
   }
   inline void lock()   { _globalLock.lock(); }
   inline void unlock() { _globalLock.unlock(); }
-  inline void unlock_dont_recovery() { _globalLock.unlock_dont_recovery(); }
-  inline int isStable(gc_lock_recovery_fct_t fct, int a0, int a1, int a2,
-                      int a3, int a4, int a5, int a6, int a7) { 
-    return _globalLock.verify_recall(fct, a0, a1, a2, a3, a4, a5, a6, a7);
-  }
 
   inline void stackLock() { _stackLock.lock(); }
   inline void stackUnlock() { _stackLock.unlock(); }

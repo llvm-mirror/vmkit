@@ -79,7 +79,7 @@ class Collector {
   }
 
   static inline size_t real_nbb(GCChunkNode *n) { 
-    return n->nbb() - sizeof(gc_header);
+    return n->nbb() - sizeof(gcRoot);
   }
 
 public:
@@ -114,7 +114,7 @@ public:
   static inline void *begOf(const void *p) {
     GCChunkNode *node = o2node(p);
     if(node)
-      return node->chunk()->_2gc();
+      return node->chunk();
     else
       return 0;
   }
@@ -193,19 +193,17 @@ public:
     }
 #endif
     header->append(used_nodes);
-    //printf("Allocate %d bytes at %p [%p] %d %d\n", n, header->chunk()->_2gc(),
-    //       header, header->nbb(), real_nbb(header));
-    register struct gc_header *p = header->chunk();
-    p->_XXX_vt = vt;
+    register struct gcRoot *p = header->chunk();
+    p->setVirtualTable(vt);
 
 
     unlock();
 
     if (vt->destructor) {
-      mvm::Thread::get()->MyVM->addFinalizationCandidate((gc*)p->_2gc());
+      mvm::Thread::get()->MyVM->addFinalizationCandidate((gc*)p);
     }
 
-    return p->_2gc();
+    return p;
 #endif
   }
 
@@ -271,10 +269,10 @@ public:
       mark(res);
     }
 
-    gc_header *obj = res->chunk();
+    gcRoot *obj = res->chunk();
 
     unlock();
-    return obj->_2gc();
+    return obj;
 #endif
   }
 
@@ -293,8 +291,8 @@ public:
   }
 
   static inline void trace(GCChunkNode *node) {
-    gc_header *o = node->chunk();
-    o->_2gc()->tracer();
+    gcRoot *o = node->chunk();
+    o->tracer();
   }
 
   static inline void markAndTrace(void *ptr) {

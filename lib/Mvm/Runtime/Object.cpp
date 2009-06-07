@@ -114,7 +114,7 @@ void NativeString::print(PrintBuffer *buf) const {
   buf->write("\"");
 }
 
-
+typedef void (*destructor_t)(void*);
 
 
 void VirtualMachine::finalizerStart(mvm::Thread* th) {

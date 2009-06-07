@@ -35,14 +35,3 @@ void GCThread::synchronize() {
 	
   waitStacks();
 }
-
-int GCLockRecovery::verify_recall(gc_lock_recovery_fct_t fct, int a0, int a1,
-                                  int a2, int a3, int a4, int a5, int a6,
-                                  int a7) {
-	if(selfOwner()) {
-    _fct = fct;    _args[0] = a0; _args[1] = a1; _args[2] = a2; _args[3] = a3;
-		_args[4] = a4; _args[5] = a5; _args[6] = a6; _args[7] = a7;
-		return 0;
-	} else
-		return 1;
-}
