@@ -16,8 +16,6 @@
 #define MVM_VIRTUALMACHINE_H
 
 #include "mvm/Allocator.h"
-#include "mvm/CompilationUnit.h"
-#include "mvm/Object.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 
@@ -29,6 +27,8 @@ namespace jnjvm {
   class JnjvmClassLoader;
 }
 
+class gc;
+
 namespace mvm {
 
 
@@ -36,6 +36,7 @@ namespace mvm {
 #define INITIAL_QUEUE_SIZE 256
 #define GROW_FACTOR 2
 
+class CompilationUnit;
 class VirtualMachine;
 
 class ReferenceQueue {
@@ -125,7 +126,7 @@ protected:
   }
 public:
 
-  virtual void TRACER {}
+  virtual void tracer() {}
 
   virtual ~VirtualMachine() {}
 

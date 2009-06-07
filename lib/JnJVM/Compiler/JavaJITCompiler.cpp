@@ -246,7 +246,7 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   llvm::llvm_shutdown_obj X;  
    
   mvm::MvmModule::initialise();
-  Collector::initialise(0);
+  mvm::Collector::initialise();
  
   char** newArgv = new char*[argc + 1];
   memcpy(newArgv + 1, argv, argc * sizeof(void*));

@@ -208,11 +208,11 @@ if test "x$gc" = "xboehm";  then
 else
   GC_LIBS=GCMmap2
   if test "x$gc" = "xmulti-mmap"; then
-    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/GCMmap2 -DWITH_TRACER -DMULTIPLE_GC"
+    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/GCMmap2 -DWITH_TRACER -DMULTIPLE_GC -I\$(PROJ_SRC_ROOT)/lib/Mvm/Allocator"
     AC_SUBST([GC_MULTI_MMAP], [1])
     AC_SUBST([GC_SINGLE_MMAP], [0])
   else
-    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/GCMmap2 -DWITH_TRACER"
+    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/GCMmap2 -DWITH_TRACER -I\$(PROJ_SRC_ROOT)/lib/Mvm/Allocator"
     AC_SUBST([GC_MULTI_MMAP], [0])
     AC_SUBST([GC_SINGLE_MMAP], [1])
   fi

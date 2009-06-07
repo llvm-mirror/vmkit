@@ -16,7 +16,7 @@ void Collector::inject_my_thread(mvm::Thread* th) {
   GC_init();
 }
 
-void Collector::initialise(markerFn mark) {
+void Collector::initialise() {
   GC_INIT();
 }
 

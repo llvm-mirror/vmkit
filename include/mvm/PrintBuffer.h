@@ -188,8 +188,8 @@ public:
 
   /// tracer - Traces this PrintBuffer.
   ///
-  static void STATIC_TRACER(PrintBuffer) {
-    obj->contents()->MARK_AND_TRACE;
+  static void staticTracer(PrintBuffer* obj) {
+    obj->contents()->markAndTrace();
   }
 };
 

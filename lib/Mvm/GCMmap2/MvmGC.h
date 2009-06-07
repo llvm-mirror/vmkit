@@ -11,83 +11,352 @@
 #ifndef MVM_MMAP_GC_H
 #define MVM_MMAP_GC_H
 
+#include "mvm/Config/config.h"
 #include <sys/types.h>
 #include "mvm/GC/GC.h"
 #include "types.h"
+#include "gcalloc.h"
+#include "gcthread.h"
 
 #define gc_allocator std::allocator
 #define gc_new(Class)  __gc_new(Class::VT) Class
 #define __gc_new new
 
 
-#ifdef MULTIPLE_GC
-#define STATIC_TRACER(type) staticTracer(type* obj, void* GC)
-#define TRACER tracer(void* GC)
-#define CALL_TRACER tracer(GC)
-#define MARK_AND_TRACE markAndTrace((Collector*)GC)
-#else
-#define STATIC_TRACER(type) staticTracer(type* obj)
 #define TRACER tracer()
-#define CALL_TRACER tracer()
 #define MARK_AND_TRACE markAndTrace()
-#endif
+#define CALL_TRACER tracer()
 
 namespace mvm {
   class Thread;
 }
 
-class Collector;
+
+
+
+namespace mvm {
+
+class Collector {
+#ifdef HAVE_PTHREAD
+  friend class GCThread;
+#endif
+  static GCAllocator  *allocator;      /* The allocator */
+
+
+  static GCChunkNode  *used_nodes;     /* Used memory nodes */
+  static GCChunkNode  *unused_nodes;   /* Unused memory nodes */
+  static unsigned int   current_mark;
+
+  static int  _collect_freq_auto;      /* Collection frequency in gcmalloc/gcrealloc */
+  static int  _collect_freq_maybe;     /* Collection frequency  in maybeCollect */
+  static int  _since_last_collection;  /* Bytes left since last collection */
+  static bool _enable_auto;            /* Automatic collection? */
+  static bool _enable_maybe;           /* Collection in maybeCollect()? */
+  static bool _enable_collection;      /* collection authorized? */
+  static int  status;
+  
+  
+  enum { stat_collect, stat_finalize, stat_alloc, stat_broken };
+
+#ifdef HAVE_PTHREAD
+  static void  siggc_handler(int);
+  static inline void  lock()   { threads->lock(); }
+  static inline void  unlock() { threads->unlock(); }
+#else
+  static void  siggc_handler(int) { }
+  static inline void  lock()   { }
+  static inline void  unlock() { }
+#endif
+  
+  /* Interface for collection, verifies enable_collect */
+  static void collect_unprotect();    
+  /* The collection */  
+  static void do_collect();           
+
+  static inline GCChunkNode *o2node(const void *p) {
+    if (!p) return 0;
+    return GCHash::get((void*)p)->o2node((void*)p, GCChunkNode::maskCollectable);
+  }
+
+  static inline size_t real_nbb(GCChunkNode *n) { 
+    return n->nbb() - sizeof(gc_header);
+  }
+
+public:
+  static GCThread *threads;        /* le gestionnaire de thread et de synchro */
+  static void (*internMemoryError)(unsigned int);
+
+  static bool isLive(void* ptr) {
+    GCChunkNode *node = o2node(ptr);
+    
+    if(node && isMarked(node)) return true;
+    else return false;
+  }
+
+  static void initialise();
+  static void destroy();
+
+  static int siggc();
+
+  static void inject_my_thread(mvm::Thread* th);
+  static inline void  remove_my_thread(mvm::Thread* th) {
+    threads->remove(th);
+  }
+
+  static inline void *allocate_unprotected(size_t sz) {
+    return allocator->alloc(sz);
+  }
+  
+  static inline void  free_unprotected(void *ptr) {
+    allocator->free(ptr);
+  }
+
+  static inline void *begOf(const void *p) {
+    GCChunkNode *node = o2node(p);
+    if(node)
+      return node->chunk()->_2gc();
+    else
+      return 0;
+  }
+
+  static void gcStats(size_t *no, size_t *nbb);
+
+  static inline size_t objectSize(void *ptr) {
+    GCChunkNode *node = o2node(ptr);
+    return node ? real_nbb(node) : 0;
+  }
+
+  static inline void collect() {
+    lock();
+    collect_unprotect();
+    unlock();
+  }
+
+  static inline void maybeCollect() {
+    if(_enable_auto && 
+#ifdef SERVICE
+       (mvm::Thread::get()->MyVM->_since_last_collection <= (_collect_freq_auto - _collect_freq_maybe))
+#else
+       (_since_last_collection <= (_collect_freq_auto - _collect_freq_maybe))
+#endif
+      )
+      collect(); 
+  }
+
+  static inline void *gcmalloc(VirtualTable *vt, size_t n) {
+#if (__WORDSIZE == 64)
+    void* res = malloc(n);
+    memset(res, 0, n);
+    ((void**)res)[0] = vt;
+    return res;
+#else
+    lock();
+
+#ifdef SERVICE
+    if (threads->get_nb_threads()) {
+      VirtualMachine* vm = mvm::Thread::get()->MyVM;
+      vm->_since_last_collection -= n;
+      if (_enable_auto && (vm->_since_last_collection <= 0)) {
+        vm->gcTriggered++;
+        if (vm->gcTriggered > vm->GCLimit) {
+          vm->_since_last_collection += n;
+          unlock();
+          vm->stopService();
+          return 0;
+        }
+        collect_unprotect();
+      }
+      
+      if (vm->memoryUsed + n > vm->memoryLimit) {
+        vm->_since_last_collection += n;
+        unlock();
+        vm->stopService();
+        return 0;
+      }
+    } else {
+#endif
+    
+    _since_last_collection -= n;
+    if(_enable_auto && (_since_last_collection <= 0)) {
+      collect_unprotect();
+    }
+#ifdef SERVICE
+    }
+#endif
+    register GCChunkNode *header = allocator->alloc_chunk(n, 1, current_mark & 1);
+
+#ifdef SERVICE
+    if (threads->get_nb_threads()) {
+      VirtualMachine* vm = mvm::Thread::get()->MyVM;
+      header->meta = vm;
+      vm->memoryUsed += n;
+    }
+#endif
+    header->append(used_nodes);
+    //printf("Allocate %d bytes at %p [%p] %d %d\n", n, header->chunk()->_2gc(),
+    //       header, header->nbb(), real_nbb(header));
+    register struct gc_header *p = header->chunk();
+    p->_XXX_vt = vt;
+
+
+    unlock();
+
+    if (vt->destructor) {
+      mvm::Thread::get()->MyVM->addFinalizationCandidate((gc*)p->_2gc());
+    }
+
+    return p->_2gc();
+#endif
+  }
+
+  static inline void *gcrealloc(void *ptr, size_t n) {
+#if (__WORDSIZE == 64)
+    void* res = realloc(ptr, n);
+    return res;
+#else
+    lock();
+    
+    GCPage      *desc = GCHash::get(ptr);
+    GCChunkNode  *node = desc->o2node(ptr, GCChunkNode::maskCollectable);
+
+    if(!node)
+      gcfatal("%p isn't a avalid object", ptr);
+
+    size_t      old_sz = node->nbb();
+#ifdef SERVICE
+    if (threads->get_nb_threads()) {
+      VirtualMachine* vm = mvm::Thread::get()->MyVM;
+      vm->_since_last_collection -= (n - old_sz);
+      if (_enable_auto && (vm->_since_last_collection <= 0)) {
+        if (vm->gcTriggered + 1 > vm->GCLimit) {
+          unlock();
+          vm->stopService();
+          return 0;
+        }
+        vm->gcTriggered++;
+        collect_unprotect();
+      }
+      
+      if (vm->memoryUsed + (n - old_sz) > vm->memoryLimit) {
+        vm->_since_last_collection += (n - old_sz);
+        unlock();
+        vm->stopService();
+        return 0;
+      }
+    } else {
+#endif
+    
+    _since_last_collection -= (n - old_sz);
+
+    if(_enable_auto && (_since_last_collection <= 0)) {
+      collect_unprotect();
+    }
+
+#ifdef SERVICE
+    }
+#endif
+
+    GCChunkNode  *res = allocator->realloc_chunk(desc, node, n);
+
+#ifdef SERVICE
+    if (threads->get_nb_threads()) {
+      VirtualMachine* vm = mvm::Thread::get()->MyVM;
+      res->meta = vm;
+      vm->memoryUsed += (n - old_sz);
+    }
+#endif
+
+    if(res != node) {
+      res->append(used_nodes);
+      mark(res);
+    }
+
+    gc_header *obj = res->chunk();
+
+    unlock();
+    return obj->_2gc();
+#endif
+  }
+
+  static inline unsigned int enable(unsigned int n)  {
+    register unsigned int old = _enable_collection;
+    _enable_collection = n; 
+    return old;
+  }
+
+  static inline bool isMarked(GCChunkNode *node) { 
+    return node->mark() == (current_mark & 1);
+  }
+  
+  static inline void mark(GCChunkNode *node) {
+    node->_mark(current_mark & 1);
+  }
+
+  static inline void trace(GCChunkNode *node) {
+    gc_header *o = node->chunk();
+    o->_2gc()->tracer();
+  }
+
+  static inline void markAndTrace(void *ptr) {
+    GCChunkNode *node = o2node(ptr);
+
+    if(node && !isMarked(node)) {
+      mark(node);
+      node->remove();
+      node->prepend(used_nodes);
+    }
+  }
+
+  static int getMaxMemory() {
+    return 0;
+  }
+  
+  static int getFreeMemory() {
+    return 0;
+  }
+  
+  static int getTotalMemory() {
+    return 0;
+  }
+
+  void setMaxMemory(size_t sz){
+  }
+
+  void setMinMemory(size_t sz){
+  }
+
+};
+
+}
+
 
 class gc : public gcRoot {
 public:
  
-#ifndef MULTIPLE_GC
-  void    markAndTrace() const;
-  size_t  objectSize() const;
-  void *  operator new(size_t sz, VirtualTable *VT);
-  void *  operator new(size_t sz);
-  void    operator delete(void *);
-  void *  realloc(size_t n);
+  void markAndTrace() const {
+    mvm::Collector::markAndTrace((void*)this);
+  }
 
-#else
-  void    markAndTrace(Collector* GC) const;
-  size_t  objectSize(Collector* GC) const;
-  void *  operator new(size_t sz, VirtualTable *VT, Collector* GC);
-  void *  operator new(size_t sz, Collector* GC);
-  void    operator delete(void *, Collector* GC);
-  void *  realloc(size_t n, Collector* GC);
-#endif
+  size_t objectSize() const {
+    return mvm::Collector::objectSize((void*)this);
+  }
 
-};
+  void* operator new(size_t sz, VirtualTable *VT) {
+    return mvm::Collector::gcmalloc(VT, sz);
+  }
 
-class Collector {
-public:
-  typedef void (*markerFn)(void*);
-  
-  static void  initialise(markerFn mark);
-  static void  destroy();
+  void* operator new(size_t sz) {
+    return malloc(sz);
+  }
 
-  static void           die_if_sigsegv_occured_during_collection(void *addr);
-  static int            isStable(gc_lock_recovery_fct_t, int, int, int, int,
-                                 int, int, int, int);
-  static unsigned int   enable(unsigned int n);
-  static void           gcStats(size_t &no, size_t &nbb);
-  static void           maybeCollect();
-  static void           collect(void);
-  static void           inject_my_thread(mvm::Thread* th);
-  static void           remove_my_thread(mvm::Thread* th);
+  void operator delete(void *) {
+    gcfatal(0, "never call directly a destructor.....");
+  }
 
-  static bool           isLive(void* ptr);
-  static gc             *begOf(const void *o);
-  static int            byteOffset(void *o);
-  inline static bool    isObject(const void *o) { return begOf((void*)o); }
-        static void     applyFunc(void (*func)(gcRoot *o, void *data), void *data);
-        static void     registerMemoryError(void (*func)(unsigned int));
-        static int      getMaxMemory(void);
-        static int      getFreeMemory(void);
-        static int      getTotalMemory(void);
-        static void     setMaxMemory(size_t);
-        static void     setMinMemory(size_t);
+  void* realloc(size_t n) {
+    return mvm::Collector::gcrealloc(this, n);
+  }
+
 };
 
 #endif

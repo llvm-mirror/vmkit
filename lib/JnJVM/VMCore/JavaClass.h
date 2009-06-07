@@ -266,7 +266,7 @@ public:
 
   /// tracer - The tracer of this GC-allocated class.
   ///
-  void TRACER;
+  void tracer();
   
   /// inheritName - Does this class in its class hierarchy inherits
   /// the given name? Equality is on the name. This function does not take
@@ -619,7 +619,7 @@ public:
   
   /// tracer - Tracer function of instances of Class.
   ///
-  void TRACER;
+  void tracer();
   
   ~Class();
   Class();

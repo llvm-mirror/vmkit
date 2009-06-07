@@ -99,7 +99,7 @@ extern "C" void ArrayObjectTracer(ArrayObject* obj) {
   LockObj* l = obj->lockObj();
   if (l) l->markAndTrace();
   for (sint32 i = 0; i < obj->size; i++) {
-    if (obj->elements[i]) obj->elements[i]->MARK_AND_TRACE;
+    if (obj->elements[i]) obj->elements[i]->markAndTrace();
   } 
 }
 

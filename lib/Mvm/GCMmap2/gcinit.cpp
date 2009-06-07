@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <signal.h>
-#include "gccollector.h"
+#include "MvmGC.h"
 
 using namespace mvm;
 
@@ -21,11 +21,11 @@ static const size_t def_collect_freq_maybe = 512*1024;
 # define SIGGC  SIGPWR
 #endif
 
-int GCCollector::siggc() {
+int Collector::siggc() {
   return SIGGC;
 }
 
-void GCCollector::initialise(Collector::markerFn marker) {
+void Collector::initialise() {
  
   used_nodes = new GCChunkNode();
   unused_nodes = new GCChunkNode();
@@ -49,9 +49,8 @@ void GCCollector::initialise(Collector::markerFn marker) {
 
   allocator = new GCAllocator();
    
-  _marker = marker;
-
   used_nodes->alone();
+  unused_nodes->alone();
 
   current_mark = 0;
   status = stat_alloc;
@@ -67,13 +66,13 @@ void GCCollector::initialise(Collector::markerFn marker) {
 
 }
 
-void GCCollector::destroy() {
+void Collector::destroy() {
   delete allocator;
   allocator = 0;
 }
 
 #ifdef HAVE_PTHREAD
-void GCCollector::inject_my_thread(mvm::Thread* th) {
+void Collector::inject_my_thread(mvm::Thread* th) {
   threads->inject(th);
 }
 #endif

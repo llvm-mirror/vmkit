@@ -76,16 +76,9 @@ static int maxMem = 0;
 class Collector {
 public:
 
-  typedef void (*markerFn)(void*);
-  
-  static void initialise(markerFn mark);
+  static void initialise();
   static void destroy() {}
 
-  static void die_if_sigsegv_occured_during_collection(void *addr){}
-  static int isStable(gc_lock_recovery_fct_t, int, int, int, int,
-                                 int, int, int, int) { 
-    return 1;
-  }
   static unsigned int enable(unsigned int n) {
     int old = GC_dont_gc;
     if(n)

@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
   }
   
   mvm::MvmModule::initialise(Fast ? CodeGenOpt::None : CodeGenOpt::Aggressive);
-  Collector::initialise(0);
+  mvm::Collector::initialise();
 
   if (VMToRun == RunJava) {
 #if WITH_JNJVM

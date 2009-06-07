@@ -72,6 +72,14 @@ public:
  		p->_next = this;
  		_next->_prev = this;
  	}
+	
+  /* ajoute this à p */
+ 	inline void prepend(GCChunkNode *p) {
+ 		_next = p;
+    _prev = p->_prev;
+    p->_prev = this;
+    _prev->_next = this;
+ 	}
 
 	/* enleve this de sa liste */
  	inline void remove() {

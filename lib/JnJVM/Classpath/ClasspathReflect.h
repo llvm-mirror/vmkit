@@ -35,14 +35,14 @@ public:
     return vmdata;
   }
 
-  static void STATIC_TRACER(JavaObjectClass) {
+  static void staticTracer(JavaObjectClass* obj) {
     JavaObjectTracer(obj);
-    obj->pd->MARK_AND_TRACE;
-    obj->signers->MARK_AND_TRACE;
-    obj->constructor->MARK_AND_TRACE;
+    obj->pd->markAndTrace();
+    obj->signers->markAndTrace();
+    obj->constructor->markAndTrace();
     if (obj->vmdata) {
       JavaObject* Obj = obj->vmdata->classLoader->getJavaClassLoader();
-      if (Obj) Obj->MARK_AND_TRACE;
+      if (Obj) Obj->markAndTrace();
     }
   }
 };
@@ -56,10 +56,10 @@ private:
 
 public:
 
-  static void STATIC_TRACER(JavaObjectField) {
+  static void staticTracer(JavaObjectField* obj) {
     JavaObjectTracer(obj);
-    obj->name->MARK_AND_TRACE;
-    obj->declaringClass->MARK_AND_TRACE;
+    obj->name->markAndTrace();
+    obj->declaringClass->markAndTrace();
   }
 
   JavaField* getInternalField() {
@@ -81,10 +81,10 @@ private:
 
 public:
   
-  static void STATIC_TRACER(JavaObjectMethod) {
+  static void staticTracer(JavaObjectMethod* obj) {
     JavaObjectTracer(obj);
-    obj->name->MARK_AND_TRACE;
-    obj->declaringClass->MARK_AND_TRACE;
+    obj->name->markAndTrace();
+    obj->declaringClass->markAndTrace();
   }
   
   JavaMethod* getInternalMethod() {
@@ -104,9 +104,9 @@ private:
   uint32 slot;
 
 public:
-  static void STATIC_TRACER(JavaObjectConstructor) {
+  static void staticTracer(JavaObjectConstructor* obj) {
     JavaObjectTracer(obj);
-    obj->clazz->MARK_AND_TRACE;
+    obj->clazz->markAndTrace();
   }
   
   JavaMethod* getInternalMethod() {
@@ -169,9 +169,9 @@ public:
   JavaObject* getReferent() const { return referent; }
   void setReferent(JavaObject* r) { referent = r; }
   
-  static void STATIC_TRACER(JavaObjectReference) {
-    obj->queue->MARK_AND_TRACE;
-    obj->nextOnQueue->MARK_AND_TRACE;
+  static void staticTracer(JavaObjectReference* obj) {
+    obj->queue->markAndTrace();
+    obj->nextOnQueue->markAndTrace();
   }
 };
 

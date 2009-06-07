@@ -18,6 +18,7 @@
 #include <llvm/Type.h>
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/Verifier.h>
+#include <llvm/Config/config.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/Support/MutexGuard.h>
 #include <llvm/Target/TargetData.h>
@@ -25,9 +26,7 @@
 #include <llvm/Target/TargetOptions.h>
 
 
-#include "mvm/CompilationUnit.h"
 #include "mvm/JIT.h"
-#include "mvm/Object.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
@@ -40,6 +39,11 @@ namespace mvm {
     #include "LLVMRuntime.inc"
   }
 }
+
+const char* MvmModule::getHostTriple() {
+  return LLVM_HOSTTRIPLE;
+}
+
 
 void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
                            TargetMachine* T) {

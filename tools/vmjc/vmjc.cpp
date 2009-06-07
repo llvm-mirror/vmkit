@@ -22,7 +22,6 @@
 #include "llvm/PassManager.h"
 #include "llvm/Assembly/PrintModulePass.h"
 #include "llvm/CodeGen/LinkAllCodegenComponents.h"
-#include "llvm/Config/config.h"
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/Support/CommandLine.h"
@@ -186,7 +185,7 @@ int main(int argc, char **argv) {
       if (!TargetTriple.empty())
         TheModule->setTargetTriple(TargetTriple);
       else
-        TheModule->setTargetTriple(LLVM_HOSTTRIPLE);
+        TheModule->setTargetTriple(mvm::MvmModule::getHostTriple());
     
       // Create the TargetMachine we will be generating code with.
       std::string Err; 
@@ -213,8 +212,8 @@ int main(int argc, char **argv) {
       Comp = new JavaJITCompiler("JIT");
     }
 
-    Collector::initialise(0);
-    Collector::enable(0);
+    mvm::Collector::initialise();
+    mvm::Collector::enable(0);
 
     JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp, false);
     addCommandLinePass(argv);

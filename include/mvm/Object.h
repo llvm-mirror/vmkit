@@ -39,7 +39,7 @@ public:
 
   /// tracer - Default implementation of tracer. Does nothing.
   ///
-  virtual void      TRACER {}
+  virtual void tracer() {}
 
   /// print - Default implementation of print.
   ///

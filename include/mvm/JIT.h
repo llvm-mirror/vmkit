@@ -185,6 +185,8 @@ public:
   static void copyDefinitions(llvm::Module* Dst, llvm::Module* Src);
 
   static void AddStandardCompilePasses();
+
+  static const char* getHostTriple();
 };
 
 } // end namespace mvm

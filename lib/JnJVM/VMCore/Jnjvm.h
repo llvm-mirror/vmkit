@@ -176,7 +176,7 @@ public:
   
   /// tracer - Traces instances of this class.
   ///
-  virtual void TRACER;
+  virtual void tracer();
   
   /// dirSeparator - Directory separator for file paths, e.g. '\' for windows,
   /// '/' for Unix.

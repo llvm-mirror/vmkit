@@ -12,9 +12,6 @@
 
 #include "types.h"
 
-#include "MvmGC.h"
-
-
 namespace mvm {
 
 class VirtualMachine;
@@ -173,7 +170,7 @@ public:
   /// tracer - Does nothing. Used for child classes which may defined
   /// a tracer.
   ///
-  virtual void TRACER {}
+  virtual void tracer() {}
 
 
   /// clearException - Clear any pending exception of the current thread.

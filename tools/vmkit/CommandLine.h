@@ -14,6 +14,7 @@
 
 #include <string.h>
 
+#include "mvm/Object.h"
 #include "mvm/VirtualMachine.h"
 
 #if defined(__APPLE__)

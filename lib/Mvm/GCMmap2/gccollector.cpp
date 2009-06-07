@@ -7,37 +7,32 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "gccollector.h"
+#include "MvmGC.h"
 
 using namespace mvm;
 
-GCAllocator   *GCCollector::allocator = 0;
+GCAllocator   *Collector::allocator = 0;
 #ifdef HAVE_PTHREAD
-GCThread      *GCCollector::threads;
+GCThread      *Collector::threads;
 #endif
 
-GCCollector::markerFn   GCCollector::_marker;
 
+int           Collector::status;
 
-int           GCCollector::status;
+GCChunkNode    *Collector::used_nodes;
+GCChunkNode    *Collector::unused_nodes;
 
-GCChunkNode    *GCCollector::used_nodes;
-GCChunkNode    *GCCollector::unused_nodes;
+unsigned int   Collector::current_mark;
 
-unsigned int   GCCollector::current_mark;
+int  Collector::_collect_freq_auto;
+int  Collector::_collect_freq_maybe;
+int  Collector::_since_last_collection;
 
-int  GCCollector::_collect_freq_auto;
-int  GCCollector::_collect_freq_maybe;
-int  GCCollector::_since_last_collection;
+bool Collector::_enable_auto;
+bool Collector::_enable_maybe;
+bool Collector::_enable_collection;
 
-bool GCCollector::_enable_auto;
-bool GCCollector::_enable_maybe;
-bool GCCollector::_enable_collection;
-
-typedef void (*destructor_t)(void*);
-
-void GCCollector::do_collect() {
-  //printf("----- do collect -----\n");
+void Collector::do_collect() {
   GCChunkNode  *cur;
 #ifdef SERVICE
   mvm::Thread::get()->MyVM->_since_last_collection = _collect_freq_auto;
@@ -52,9 +47,7 @@ void GCCollector::do_collect() {
   mvm::Thread* th = mvm::Thread::get();
   th->MyVM->startCollection();
 
-#ifdef HAVE_PTHREAD
   threads->synchronize();
-#endif
 
   mvm::Thread* tcur = th;
 
@@ -83,59 +76,36 @@ void GCCollector::do_collect() {
   // (7) Trace the phantom reference queue.
   th->MyVM->scanPhantomReferencesQueue();
 
-  if(_marker)
-    _marker(0);
   status = stat_finalize;
 
   /* finalize */
   GCChunkNode  finalizable;
   finalizable.attrape(unused_nodes);
 
-  status = stat_alloc;
   
   /* kill everyone */
   GCChunkNode *next = 0;
   for(cur=finalizable.next(); cur!=&finalizable; cur=next) {
-    //printf("    !!!! reject %p [%p]\n", cur->chunk()->_2gc(), cur);
     next = cur->next();
     allocator->reject_chunk(cur);
   }
 
+  status = stat_alloc;
 
   th->MyVM->endCollection();
-#ifdef HAVE_PTHREAD
   threads->collectionFinished();
-#endif
   th->MyVM->wakeUpFinalizers();
   th->MyVM->wakeUpEnqueue();
 }
 
-void GCCollector::collect_unprotect() {
+void Collector::collect_unprotect() {
   if(_enable_collection && (status == stat_alloc)) {
     status = stat_collect;
     do_collect();
   }
 }
 
-#ifdef HAVE_PTHREAD
-void GCCollector::die_if_sigsegv_occured_during_collection(void *addr) {
-  if(!isStable(0, 0, 0, 0, 0, 0, 0, 0, 0)) {
-    printf("; ****************************************************** ;\n");
-    printf(";         SIGSEGV occured during a collection            ;\n");
-    printf(";   I'm trying to let the allocator in a coherent stat   ;\n");
-    printf("; but the collector is DEAD and will never collect again ;\n");
-    printf("; ****************************************************** ;\n");
-    
-    status = stat_broken;                 /* Collection is finished and no other collection will happend */
-    threads->cancel();                    /* Emulates a full collection to unlock mutators */
-    used_nodes->eat(unused_nodes);        /* All nodes are uses. Finalized are lost */
-    unlock_dont_recovery();               /* Unlocks the GC lock */
-    //gcfatal("SIGSEGV occured during collection at %p", addr);
-  }
-}
-#endif /* HAVE_PTHREAD */
-
-void GCCollector::gcStats(size_t *_no, size_t *_nbb) {
+void Collector::gcStats(size_t *_no, size_t *_nbb) {
    register unsigned int n, tot;
    register GCChunkNode *cur;
    lock();

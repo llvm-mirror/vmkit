@@ -131,7 +131,7 @@ public:
 
   /// tracer - Traces a JnjvmClassLoader for GC.
   ///
-  virtual void TRACER;
+  virtual void tracer();
   
   /// getJnjvmLoaderFromJavaObject - Return the Jnjvm runtime representation
   /// of the given class loader.
@@ -313,7 +313,7 @@ public:
   
   /// tracer - Traces instances of this class.
   ///
-  virtual void TRACER;
+  virtual void tracer();
 
   /// libClasspathEnv - The paths for dynamic libraries of Classpath, separated
   /// by ':'.
@@ -433,8 +433,8 @@ public:
   static VirtualTable VT;
 
   /// TRACER - Trace the internal class loader.
-  static void STATIC_TRACER(VMClassLoader) {
-    if (obj->JCL) obj->JCL->CALL_TRACER;
+  static void staticTracer(VMClassLoader* obj) {
+    if (obj->JCL) obj->JCL->tracer();
   }
 
   /// ~VMClassLoader - Delete the internal class loader.

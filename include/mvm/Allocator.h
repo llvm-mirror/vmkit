@@ -16,50 +16,25 @@
 
 #include "llvm/Support/Allocator.h"
 
-#include "MvmGC.h"
 #include "mvm/Threads/Locks.h"
 
-#ifdef MULTIPLE_GC
-#define allocator_new(alloc, cl) collector_new(cl, alloc.GC)
-#else
-#define allocator_new(alloc, cl) gc_new(cl)
-#endif
+class VirtualTable;
 
 namespace mvm {
 
-class Allocator {
-private:
-#ifdef MULTIPLE_GC
-  Collector* GC;
-#endif
 
+class Allocator {
 public:
   
-#ifndef MULTIPLE_GC
-  void* allocateManagedObject(unsigned int sz, VirtualTable* VT) {
-    return gc::operator new(sz, VT);
-  }
-#else
-  void* allocateManagedObject(unsigned int sz, VirtualTable* VT) {
-    return gc::operator new(sz, VT, GC);
-  }
-#endif
+  void* allocateManagedObject(unsigned int sz, VirtualTable* VT);
   
-  void* allocatePermanentMemory(unsigned int sz) {
-    return malloc(sz); 
-  }
+  void* allocatePermanentMemory(unsigned int sz);
   
-  void freePermanentMemory(void* obj) {
-    return free(obj); 
-  }
+  void freePermanentMemory(void* obj);
   
-  void* allocateTemporaryMemory(unsigned int sz) {
-    return malloc(sz); 
-  }
+  void* allocateTemporaryMemory(unsigned int sz);
   
-  void freeTemporaryMemory(void* obj) {
-    return free(obj); 
-  }
+  void freeTemporaryMemory(void* obj);
 };
 
 class BumpPtrAllocator {

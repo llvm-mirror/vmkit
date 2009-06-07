@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <cassert>
-#include "gccollector.h"
+#include "MvmGC.h"
 
 using namespace mvm;
 
@@ -20,7 +20,7 @@ void GCThread::waitStacks() {
 }
 
 void GCThread::synchronize() {
-	int signo = GCCollector::siggc();
+	int signo = Collector::siggc();
   mvm::Thread* self = mvm::Thread::get();
   assert(self && "No thread local data for this thread");
 	current_collector = self;
@@ -31,7 +31,7 @@ void GCThread::synchronize() {
     cur->kill(signo);
 	}
 
-	GCCollector::siggc_handler(signo);
+	Collector::siggc_handler(signo);
 	
   waitStacks();
 }

@@ -132,7 +132,7 @@ jclass clazz,
 ) {
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Collector::collect();
+  mvm::Collector::collect();
 
   END_NATIVE_EXCEPTION
 }
@@ -189,7 +189,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
-  return (jlong)Collector::getFreeMemory();
+  return (jlong)mvm::Collector::getFreeMemory();
 }
 
 JNIEXPORT jlong Java_java_lang_VMRuntime_totalMemory(
@@ -198,7 +198,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
-  return (jlong)Collector::getTotalMemory();
+  return (jlong)mvm::Collector::getTotalMemory();
 }
 
 JNIEXPORT jlong Java_java_lang_VMRuntime_maxMemory(
@@ -207,7 +207,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
-  return (jlong)Collector::getMaxMemory();
+  return (jlong)mvm::Collector::getMaxMemory();
 }
 
 JNIEXPORT jint Java_java_lang_VMRuntime_availableProcessors(){
