@@ -178,7 +178,7 @@ void Class::tracer() {
   
   for (uint32 i =0; i < NR_ISOLATES; ++i) {
     TaskClassMirror &M = IsolateInfo[i];
-    if (M.staticInstance && staticTracer != EmptyTracer) {
+    if (M.staticInstance) {
       for (uint32 i = 0; i < nbStaticFields; ++i) {
         JavaField& field = staticFields[i];
         if (field.isReference()) {

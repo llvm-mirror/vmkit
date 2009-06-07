@@ -526,10 +526,6 @@ public:
   ///
   mvm::JITInfo* JInfo;
   
-  /// staticTracer - The dynamically generated function that traces the
-  /// references of the static instance.
-  void (*staticTracer)(void*);
- 
   /// getVirtualSize - Get the virtual size of instances of this class.
   ///
   uint32 getVirtualSize() const { return virtualSize; }

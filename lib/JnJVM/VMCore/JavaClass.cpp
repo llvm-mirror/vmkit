@@ -232,7 +232,6 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
   outerClass = 0;
   innerOuterResolved = false;
   nbInnerClasses = 0;
-  staticTracer = 0;
   nbVirtualMethods = 0;
   nbStaticMethods = 0;
   nbStaticFields = 0;

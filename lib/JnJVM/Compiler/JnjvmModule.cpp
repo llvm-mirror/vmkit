@@ -28,10 +28,6 @@
 using namespace jnjvm;
 using namespace llvm;
 
-#ifdef WITH_TRACER
-const llvm::FunctionType* JnjvmModule::MarkAndTraceType = 0;
-#endif
-
 const llvm::Type* JnjvmModule::JavaObjectType = 0;
 const llvm::Type* JnjvmModule::JavaArrayType = 0;
 const llvm::Type* JnjvmModule::JavaArrayUInt8Type = 0;
@@ -90,95 +86,6 @@ JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
   enabledException = true;
 }
   
-void JavaLLVMCompiler::traceAllFields(uint32 nbFields, JavaField* fields,
-                                      BasicBlock* block, Value* realArg) {
-  Constant* zero = mvm::MvmModule::constantZero;
-  for (uint32 i = 0; i < nbFields; ++i) {
-    JavaField& cur = fields[i];
-    if (cur.getSignature()->trace()) {
-      LLVMFieldInfo* LFI = getFieldInfo(&cur);
-      std::vector<Value*> args; //size = 2
-      args.push_back(zero);
-      args.push_back(LFI->getOffset());
-      Value* ptr = GetElementPtrInst::Create(realArg, args.begin(), args.end(), 
-                                             "",block);
-      Value* val = new LoadInst(ptr, "", block);
-      Value* valCast = new BitCastInst(val, JnjvmModule::JavaObjectType, "",
-                                       block);
-      std::vector<Value*> Args;
-      Args.push_back(valCast);
-#ifdef MULTIPLE_GC
-      Args.push_back(GC);
-#endif
-      CallInst::Create(JavaIntrinsics.MarkAndTraceFunction, Args.begin(),
-                       Args.end(), "", block);
-    }
-  }
-}
-
-#ifdef WITH_TRACER
-llvm::Function* JavaLLVMCompiler::internalMakeTracer(Class* cl, bool stat) {
-  
-  LLVMClassInfo* LCI = getClassInfo(cl);
-  const Type* type = stat ? LCI->getStaticType() : LCI->getVirtualType();
-  JavaField* fields = 0;
-  uint32 nbFields = 0;
-  if (stat) {
-    fields = cl->getStaticFields();
-    nbFields = cl->nbStaticFields;
-  } else {
-    fields = cl->getVirtualFields();
-    nbFields = cl->nbVirtualFields;
-  }
-  
-  uint32 nbReferenceFields = 0;
-  for (uint32 i = 0; i < nbFields; ++i) {
-    JavaField& cur = fields[i];
-    if (cur.getSignature()->trace()) {
-      ++nbReferenceFields;
-    }
-  }
-
-  if (!nbReferenceFields) {
-    if (stat) return JavaIntrinsics.EmptyTracerFunction;
-    else if (cl->super) return getClassInfo(cl->super)->getVirtualTracer();
-  }
-  
-  Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
-                                    GlobalValue::InternalLinkage,
-                                    "", getLLVMModule());
-
-  Argument* arg = func->arg_begin();
-  BasicBlock* block = BasicBlock::Create("", func);
-  llvm::Value* realArg = new BitCastInst(arg, type, "", block);
-
-  std::vector<Value*> Args;
-  Args.push_back(arg);
-#ifdef MULTIPLE_GC
-  Value* GC = ++func->arg_begin();
-  Args.push_back(GC);
-#endif
-
-  if (stat) {
-    traceAllFields(nbFields, fields, block, realArg);
-  } else {
-    CallInst::Create(JavaIntrinsics.JavaObjectTracerFunction, Args.begin(),
-                     Args.end(), "", block);
-    Class* cur = cl;
-    while (cur->super != 0) {
-      traceAllFields(cur->nbVirtualFields, cur->virtualFields, block, realArg);
-      cur = cur->super;
-      const Type* Ty = getClassInfo(cur)->getVirtualType();
-      realArg = new BitCastInst(realArg, Ty, "", block);
-    }
-  }
-
-  ReturnInst::Create(block);
-  
-  return func;
-}
-#endif
-
 void JavaLLVMCompiler::resolveVirtualClass(Class* cl) {
   // Lock here because we may be called by a class resolver
   mvm::MvmModule::protectIR();
@@ -267,10 +174,6 @@ void JnjvmModule::initialise() {
   JavaThreadType =
     PointerType::getUnqual(module->getTypeByName("JavaThread"));
 
-#ifdef WITH_TRACER
-  MarkAndTraceType = module->getFunction("MarkAndTrace")->getFunctionType();
-#endif
- 
   JavaObjectNullConstant = Constant::getNullValue(JnjvmModule::JavaObjectType);
   MaxArraySizeConstant = ConstantInt::get(Type::Int32Ty,
                                           JavaArray::MaxArraySize);
@@ -420,13 +323,11 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   ServiceCallStopFunction = module->getFunction("jnjvmServiceCallStop");
 #endif
 
-#ifdef WITH_TRACER
-  MarkAndTraceFunction = module->getFunction("MarkAndTrace");
   JavaObjectTracerFunction = module->getFunction("JavaObjectTracer");
   EmptyTracerFunction = module->getFunction("EmptyTracer");
   JavaArrayTracerFunction = module->getFunction("JavaArrayTracer");
   ArrayObjectTracerFunction = module->getFunction("ArrayObjectTracer");
-#endif
+  RegularObjectTracerFunction = module->getFunction("RegularObjectTracer");
 
 #ifndef WITHOUT_VTABLE
   VirtualLookupFunction = module->getFunction("jnjvmVirtualTableLookup");

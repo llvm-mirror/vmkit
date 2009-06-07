@@ -105,10 +105,6 @@ const Type* LLVMClassInfo::getStaticType() {
     
     uint64 size = JnjvmModule::getTypeSize(structType);
     cl->staticSize = size;
-#ifdef WITH_TRACER
-    JavaLLVMCompiler* Mod = (JavaLLVMCompiler*)cl->classLoader->getCompiler();
-    staticTracerFunction = Mod->makeTracer(cl, true);
-#endif
   }
   return staticType;
 }
@@ -122,20 +118,6 @@ Value* LLVMClassInfo::getVirtualSize() {
       ConstantInt::get(Type::Int32Ty, classDef->virtualSize);
   }
   return virtualSizeConstant;
-}
-
-Function* LLVMClassInfo::getStaticTracer() {
-  if (!staticTracerFunction) {
-    getStaticType();
-  }
-  return staticTracerFunction;
-}
-
-Function* LLVMClassInfo::getVirtualTracer() {
-  if (!virtualTracerFunction) {
-    getVirtualType();
-  }
-  return virtualTracerFunction;
 }
 
 Function* LLVMMethodInfo::getMethod() {

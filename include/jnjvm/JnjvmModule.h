@@ -75,8 +75,6 @@ private:
   /// virtualSizeLLVM - The LLVM constant size of instances of this class.
   ///
   llvm::ConstantInt* virtualSizeConstant;
-  llvm::Function* virtualTracerFunction;
-  llvm::Function* staticTracerFunction;
   /// virtualType - The LLVM type of instance of this class.
   ///
   const llvm::Type * virtualType;
@@ -87,16 +85,12 @@ private:
 public:
   
   llvm::Value* getVirtualSize();
-  llvm::Function* getStaticTracer();
-  llvm::Function* getVirtualTracer();
   const llvm::Type* getVirtualType();
   const llvm::Type* getStaticType();
   
   LLVMClassInfo(Class* cl) :
     classDef(cl),
     virtualSizeConstant(0),
-    virtualTracerFunction(0),
-    staticTracerFunction(0),
     virtualType(0),
     staticType(0) {}
 };
@@ -232,14 +226,11 @@ public:
   static const llvm::Type* JnjvmType;
 #endif
   
-#ifdef WITH_TRACER
-  llvm::Function* MarkAndTraceFunction;
-  static const llvm::FunctionType* MarkAndTraceType;
-  llvm::Function* EmptyTracerFunction;  
-  llvm::Function* JavaObjectTracerFunction;  
-  llvm::Function* JavaArrayTracerFunction;  
-  llvm::Function* ArrayObjectTracerFunction;  
-#endif
+  llvm::Function* EmptyTracerFunction;
+  llvm::Function* JavaObjectTracerFunction;
+  llvm::Function* JavaArrayTracerFunction;
+  llvm::Function* ArrayObjectTracerFunction;
+  llvm::Function* RegularObjectTracerFunction;
   
   llvm::Function* GetSJLJBufferFunction;
   llvm::Function* InterfaceLookupFunction;
@@ -359,12 +350,6 @@ protected:
   llvm::ModuleProvider* TheModuleProvider;
   JnjvmModule JavaIntrinsics;
 
-#ifdef WITH_TRACER 
-  llvm::Function* internalMakeTracer(Class* cl, bool stat);
-  void traceAllFields(uint32, JavaField*, llvm::BasicBlock*, llvm::Value*);
-  virtual llvm::Function* makeTracer(Class* cl, bool stat)  = 0;
-#endif
-  
   void addJavaPasses();
 
 private: 
@@ -505,10 +490,6 @@ public:
   virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
 #endif
 
-#ifdef WITH_TRACER
-  virtual llvm::Function* makeTracer(Class* cl, bool stat);
-#endif
-  
   virtual ~JavaJITCompiler() {}
   
   virtual llvm::Function* addCallback(Class* cl, uint16 index, Signdef* sign,
@@ -567,10 +548,6 @@ public:
 
 private:
 
-#ifdef WITH_TRACER
-  virtual llvm::Function* makeTracer(Class* cl, bool stat);
-#endif
-  
   //--------------- Static compiler specific functions -----------------------//
   llvm::Constant* CreateConstantFromVT(JavaVirtualTable* VT);
   llvm::Constant* CreateConstantFromUTF8(const UTF8* val);
@@ -655,7 +632,6 @@ public:
   llvm::Function* StaticInitializer;
   llvm::Function* ObjectPrinter;
   
-  bool generateTracers;
   bool generateStubs;
   bool assumeCompiled;
 

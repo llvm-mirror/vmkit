@@ -138,8 +138,6 @@ void JavaJITCompiler::makeVT(Class* cl) {
   JavaVirtualTable* VT = cl->virtualVT; 
   assert(VT && "No VT was allocated!");
     
-  LLVMClassInfo* LCI = getClassInfo(cl);
-
   if (VT->init) {
     // The VT hash already been filled by the AOT compiler so there
     // is nothing left to do!
@@ -177,28 +175,6 @@ void JavaJITCompiler::makeVT(Class* cl) {
     }
   }
 
-#ifdef WITH_TRACER
-  if (!LCI->virtualTracerFunction) {
-    LCI->virtualTracerFunction = makeTracer(cl, false);
-  }
-#endif
-    
-}
-
-Function* JavaJITCompiler::makeTracer(Class* cl, bool stat) {
-  Function* F = cl->super || stat ?
-    internalMakeTracer(cl, stat) : JavaIntrinsics.JavaObjectTracerFunction;
- 
-  assert(F && "No tracer");
-  if (stat) {
-    cl->staticTracer = (void (*)(void*)) (uintptr_t)
-      JnjvmModule::executionEngine->getPointerToFunction(F);
-  } else {
-    void* codePtr = mvm::MvmModule::executionEngine->getPointerToFunction(F);
-    cl->virtualVT->tracer = (uintptr_t)codePtr;
-  }
-  F->deleteBody();
-  return F;
 }
 
 void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
@@ -211,16 +187,6 @@ void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
 
 void JavaJITCompiler::setTracer(JavaVirtualTable* VT, uintptr_t ptr,
                                 const char* name) {
-  // So the class has a tracer because either a) the class was vmjced or
-  // b) the boot sequence has set it. Create the tracer as an external
-  // function.
-  Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
-                                    GlobalValue::ExternalLinkage,
-                                    name, getLLVMModule());
-       
-  JnjvmModule::executionEngine->addGlobalMapping(func, (void*)ptr);
-  LLVMClassInfo* LCI = getClassInfo(VT->cl->asClass());
-  LCI->virtualTracerFunction = func;
   VT->tracer = ptr;
 }
 

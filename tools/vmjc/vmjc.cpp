@@ -99,10 +99,6 @@ DisableExceptions("disable-exceptions",
               cl::desc("Disable Java exceptions"));
 
 static cl::opt<bool>
-DisableTracers("disable-tracers",
-              cl::desc("Disable Java tracers"));
-
-static cl::opt<bool>
 DisableStubs("disable-stubs",
               cl::desc("Disable Java stubs"));
 
@@ -226,7 +222,6 @@ int main(int argc, char **argv) {
     
     JavaAOTCompiler* MAOT = (JavaAOTCompiler*)Comp;
     if (DisableExceptions) MAOT->disableExceptions();
-    if (DisableTracers) MAOT->generateTracers = false;
     if (DisableStubs) MAOT->generateStubs = false;
     if (AssumeCompiled) MAOT->assumeCompiled = true;
     MAOT->compileFile(JCL, InputFilename.c_str());

@@ -1038,18 +1038,6 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   // JInfo
   ClassElts.push_back(Constant::getNullValue(JnjvmModule::ptrType));
 
-  // staticTracer
-  const Type* FTy = STy->getContainedType(STy->getNumContainedTypes() - 1);
-#ifdef WITH_TRACER
-  Function* F = getClassInfo(cl)->getStaticTracer();
-  assert(F && "No static tracer");
-  Constant* staticTracer = ConstantExpr::getCast(Instruction::BitCast, F, FTy);
-#else
-  Constant* staticTracer = ConstantExpr::getNullValue(FTy);
-#endif
-  ClassElts.push_back(staticTracer);
-
-
   return ConstantStruct::get(STy, ClassElts);
 }
 
@@ -1155,7 +1143,6 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   Elemts.push_back(N);
   
   // Tracer
-#ifdef WITH_TRACER
   Function* Tracer = 0;
   if (classDef->isArray()) {
     if (classDef->asArrayClass()->baseClass()->isPrimitive()) {
@@ -1164,14 +1151,11 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
       Tracer = JavaIntrinsics.ArrayObjectTracerFunction;
     }
   } else if (classDef->isClass()) {
-    Tracer = getClassInfo(classDef->asClass())->getVirtualTracer();
+    Tracer = JavaIntrinsics.RegularObjectTracerFunction;
   }
 
   Elemts.push_back(Tracer ? 
       ConstantExpr::getCast(Instruction::BitCast, Tracer, PTy) : N);
-#else
-  Elemts.push_back(N);
-#endif
 
   // Class
   Elemts.push_back(ConstantExpr::getCast(Instruction::BitCast,
@@ -1250,16 +1234,6 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   return Array;
 }
 
-#ifdef WITH_TRACER
-llvm::Function* JavaAOTCompiler::makeTracer(Class* cl, bool stat) {
-  if (!generateTracers || (!cl->super && !stat)) {
-    return JavaIntrinsics.JavaObjectTracerFunction;
-  } else {
-    return internalMakeTracer(cl, stat);
-  }
-}
-#endif
-
 namespace mvm {
   llvm::FunctionPass* createEscapeAnalysisPass(llvm::Function*);
 }
@@ -1271,7 +1245,6 @@ namespace jnjvm {
 JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   JavaLLVMCompiler(ModuleID) {
  
-  generateTracers = true;
   generateStubs = true;
   assumeCompiled = false;
   compileRT = false;
@@ -1490,9 +1463,6 @@ void JavaAOTCompiler::makeVT(Class* cl) {
 
   if (!cl->super) VT->destructor = 0;
 
-  LLVMClassInfo* LCI = getClassInfo(cl);
-  if (!LCI->virtualTracerFunction) 
-    LCI->virtualTracerFunction = makeTracer(cl, false);
 }
 
 void JavaAOTCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
@@ -1503,12 +1473,7 @@ void JavaAOTCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
 
 void JavaAOTCompiler::setTracer(JavaVirtualTable* VT, uintptr_t ptr,
                                 const char* name) {
-  Function* func = Function::Create(JnjvmModule::MarkAndTraceType,
-                                    GlobalValue::ExternalLinkage,
-                                    name, getLLVMModule());
-
-  LLVMClassInfo* LCI = getClassInfo(VT->cl->asClass());
-  LCI->virtualTracerFunction = func;
+  VT->tracer = (uintptr_t)name;
 }
 
 void JavaAOTCompiler::setDestructor(JavaVirtualTable* VT, uintptr_t ptr,
