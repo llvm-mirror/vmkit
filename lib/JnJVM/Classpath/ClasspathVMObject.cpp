@@ -38,11 +38,11 @@ jobject _src) {
   if (cl->isArray()) {
     UserClassArray* array = cl->asArrayClass();
     UserCommonClass* base = array->baseClass();
-    uint32 primSize = base->isPrimitive() ? 
-      base->asPrimitiveClass()->primSize : sizeof(JavaObject*);
+    uint32 logSize = base->isPrimitive() ? 
+      base->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2);
 
     size = sizeof(JavaObject) + sizeof(ssize_t) + 
-                            ((JavaArray*)src)->size * primSize;
+                            (((JavaArray*)src)->size << logSize);
   } else {
     assert(cl->isClass() && "Not a class!");
     size = cl->asClass()->getVirtualSize();

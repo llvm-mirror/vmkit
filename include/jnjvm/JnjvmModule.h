@@ -58,7 +58,7 @@ public:
   const llvm::Type* llvmType;
   const llvm::Type* llvmTypePtr;
   llvm::Constant* llvmNullConstant;
-  llvm::ConstantInt* sizeInBytesConstant;
+  llvm::ConstantInt* logSizeInBytesConstant;
   
   static void initialise();
   static std::map<const char, LLVMAssessorInfo> AssessorInfo;

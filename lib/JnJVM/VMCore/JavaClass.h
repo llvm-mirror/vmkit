@@ -351,9 +351,9 @@ public:
 class ClassPrimitive : public CommonClass {
 public:
   
-  /// primSize - The primitive size of this class, eg 4 for int.
+  /// logSize - The log size of this class, eg 2 for int.
   ///
-  uint32 primSize;
+  uint32 logSize;
   
   
   /// ClassPrimitive - Constructs a primitive class. Only called at boot

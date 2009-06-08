@@ -802,7 +802,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClassPrimitive(ClassPrimitive* cl) 
   ClassElts.push_back(CreateConstantFromCommonClass(cl));
 
   // primSize
-  ClassElts.push_back(ConstantInt::get(Type::Int32Ty, cl->primSize));
+  ClassElts.push_back(ConstantInt::get(Type::Int32Ty, cl->logSize));
 
   return ConstantStruct::get(STy, ClassElts);
 }

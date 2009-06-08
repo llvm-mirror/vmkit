@@ -152,7 +152,7 @@ public:
   static llvm::ConstantFP*  constantFloatMinusZero;
   static llvm::ConstantFP*  constantDoubleMinusZero;
   static llvm::Constant*    constantPtrNull;
-  static llvm::ConstantInt* constantPtrSize;
+  static llvm::ConstantInt* constantPtrLogSize;
   static llvm::ConstantInt* constantThreadIDMask;
   static llvm::ConstantInt* constantStackOverflowMask;
   static llvm::ConstantInt* constantFatMask;

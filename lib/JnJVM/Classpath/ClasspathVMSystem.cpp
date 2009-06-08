@@ -83,13 +83,12 @@ jint len) {
     }
   }
   
-  uint32 size = dstType->isPrimitive() ? 
-                  dstType->asPrimitiveClass()->primSize : sizeof(JavaObject*);
-  
-  assert(size && "Size zero in a arraycopy");
-  void* ptrDst = (void*)((int64_t)(dst->elements) + size * dstart);
-  void* ptrSrc = (void*)((int64_t)(src->elements) + size * sstart);
-  memmove(ptrDst, ptrSrc, size * len);
+  uint32 logSize = dstType->isPrimitive() ? 
+    dstType->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2);
+
+  void* ptrDst = (void*)((int64_t)(dst->elements) + (dstart << logSize));
+  void* ptrSrc = (void*)((int64_t)(src->elements) + (sstart << logSize));
+  memmove(ptrDst, ptrSrc, len << logSize);
 
   if (doThrow)
     vm->arrayStoreException();

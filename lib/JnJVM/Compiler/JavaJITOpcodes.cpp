@@ -1919,7 +1919,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 #endif
 
           LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[charId];
-          sizeElement = LAI.sizeInBytesConstant;
+          sizeElement = LAI.logSizeInBytesConstant;
           if (TheCompiler->isStaticCompiling() &&
               valCl->getType() != module->JavaClassArrayType) {
             valCl = new LoadInst(valCl, "", currentBlock);
@@ -1962,7 +1962,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                      currentBlock);
           }
 
-          sizeElement = module->constantPtrSize;
+          sizeElement = module->constantPtrLogSize;
         }
         Value* arg1 = popAsInt();
 
@@ -1991,7 +1991,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           currentBlock = BB2;
         }
         
-        Value* mult = BinaryOperator::CreateMul(arg1, sizeElement, "",
+        Value* mult = BinaryOperator::CreateShl(arg1, sizeElement, "",
                                                 currentBlock);
         Value* size =
           BinaryOperator::CreateAdd(module->JavaArraySizeConstant, mult,

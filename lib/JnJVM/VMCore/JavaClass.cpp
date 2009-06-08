@@ -219,7 +219,7 @@ ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n,
   uint32 size = JavaVirtualTable::getBaseSize();
   virtualVT = new(loader->allocator, size) JavaVirtualTable(this);
   access = ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC | JNJVM_PRIMITIVE;
-  primSize = nb;
+  logSize = nb;
 }
 
 Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) : 
@@ -271,10 +271,10 @@ JavaArray* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
 JavaArray* UserClassArray::doNew(sint32 n, mvm::Allocator& allocator) {
   UserCommonClass* cl = baseClass();
 
-  uint32 primSize = cl->isPrimitive() ? 
-    cl->asPrimitiveClass()->primSize : sizeof(JavaObject*);
+  uint32 logSize = cl->isPrimitive() ? 
+    cl->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2);
   VirtualTable* VT = virtualVT;
-  uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + n * primSize;
+  uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + (n << logSize);
   JavaArray* res = (JavaArray*)allocator.allocateManagedObject(size, VT);
   res->size = n;
   return res;
@@ -283,10 +283,10 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::Allocator& allocator) {
 JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator) {
   UserCommonClass* cl = baseClass();
 
-  uint32 primSize = cl->isPrimitive() ? 
-    cl->asPrimitiveClass()->primSize : sizeof(JavaObject*);
+  uint32 logSize = cl->isPrimitive() ? 
+    cl->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2);
   VirtualTable* VT = virtualVT;
-  uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + n * primSize;
+  uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + (n << logSize);
   
   JavaArray* res = (JavaArray*)allocator.Allocate(size);
   ((void**)res)[0] = VT;

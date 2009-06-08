@@ -130,7 +130,8 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   constantPtrZero = ConstantInt::get(pointerSizeType, 0);
 
   constantPtrNull = Constant::getNullValue(ptrType); 
-  constantPtrSize = ConstantInt::get(Type::Int32Ty, sizeof(void*));
+  constantPtrLogSize = 
+    ConstantInt::get(Type::Int32Ty, sizeof(void*) == 8 ? 3 : 2);
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::Int8Ty, 0));
 }
 
@@ -241,7 +242,7 @@ llvm::ConstantFP*  MvmModule::constantFloatMinusInfinity;
 llvm::ConstantFP*  MvmModule::constantFloatMinusZero;
 llvm::ConstantFP*  MvmModule::constantDoubleMinusZero;
 llvm::Constant*    MvmModule::constantPtrNull;
-llvm::ConstantInt* MvmModule::constantPtrSize;
+llvm::ConstantInt* MvmModule::constantPtrLogSize;
 llvm::ConstantInt* MvmModule::constantThreadIDMask;
 llvm::ConstantInt* MvmModule::constantStackOverflowMask;
 llvm::ConstantInt* MvmModule::constantFatMask;

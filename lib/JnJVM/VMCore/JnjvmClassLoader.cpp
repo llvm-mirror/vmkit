@@ -133,15 +133,15 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
     ClassArray::InterfacesArray = InterfacesArray;
 
     // Create the primitive classes.
-    upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(this, "char", 2);
-    upcalls->OfBool = UPCALL_PRIMITIVE_CLASS(this, "boolean", 1);
-    upcalls->OfShort = UPCALL_PRIMITIVE_CLASS(this, "short", 2);
-    upcalls->OfInt = UPCALL_PRIMITIVE_CLASS(this, "int", 4);
-    upcalls->OfLong = UPCALL_PRIMITIVE_CLASS(this, "long", 8);
-    upcalls->OfFloat = UPCALL_PRIMITIVE_CLASS(this, "float", 4);
-    upcalls->OfDouble = UPCALL_PRIMITIVE_CLASS(this, "double", 8);
+    upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(this, "char", 1);
+    upcalls->OfBool = UPCALL_PRIMITIVE_CLASS(this, "boolean", 0);
+    upcalls->OfShort = UPCALL_PRIMITIVE_CLASS(this, "short", 1);
+    upcalls->OfInt = UPCALL_PRIMITIVE_CLASS(this, "int", 2);
+    upcalls->OfLong = UPCALL_PRIMITIVE_CLASS(this, "long", 3);
+    upcalls->OfFloat = UPCALL_PRIMITIVE_CLASS(this, "float", 2);
+    upcalls->OfDouble = UPCALL_PRIMITIVE_CLASS(this, "double", 3);
     upcalls->OfVoid = UPCALL_PRIMITIVE_CLASS(this, "void", 0);
-    upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(this, "byte", 1);
+    upcalls->OfByte = UPCALL_PRIMITIVE_CLASS(this, "byte", 0);
   }
   
   // Create the primitive arrays.
