@@ -12,6 +12,7 @@
 
 #include <pthread.h>
 #include <cassert>
+#include <cstdio>
 
 #include "mvm/Threads/Thread.h"
 
@@ -353,7 +354,7 @@ public:
   ///
   void acquire() {
     uint32 count = 0;
-    while (!(llvm_atomic_cmp_swap_i8(&locked, 0, 1)))
+    while (llvm_atomic_cmp_swap_i8(&locked, 0, 1))
       mvm::Thread::yield(&count);
   }
 
