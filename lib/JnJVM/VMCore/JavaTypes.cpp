@@ -61,7 +61,6 @@ intptr_t Signdef::staticCallBuf() {
     } else {
       initialLoader->getCompiler()->staticCallBuf(this);
     }
-    assert(_staticCallBuf && "No call buf");
   }
   return _staticCallBuf;
 }
@@ -77,7 +76,6 @@ intptr_t Signdef::virtualCallBuf() {
     } else {
       initialLoader->getCompiler()->virtualCallBuf(this);
     }
-    assert(_virtualCallBuf && "No call buf");
   }
   return _virtualCallBuf;
 }
@@ -93,7 +91,6 @@ intptr_t Signdef::staticCallAP() {
     } else {
       initialLoader->getCompiler()->staticCallAP(this);
     }
-    assert(_staticCallAP && "No call AP");
   }
   return _staticCallAP;
 }
@@ -109,7 +106,6 @@ intptr_t Signdef::virtualCallAP() {
     } else {
       initialLoader->getCompiler()->virtualCallAP(this);
     }
-    assert(_virtualCallAP && "No call AP");
   }
   return _virtualCallAP;
 }
