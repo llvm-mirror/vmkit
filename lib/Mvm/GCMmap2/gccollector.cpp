@@ -61,8 +61,11 @@ void Collector::do_collect() {
   } while (tcur != th);
 
   // (3) Trace stack objects.
-  for(cur=used_nodes->next(); cur!=used_nodes; cur=cur->next())
+  for(cur = used_nodes->next(); cur != used_nodes; cur = cur->next())
     trace(cur);
+
+  // Go back to the previous node.
+  cur = cur->prev();
 
   // (4) Trace the weak reference queue.
   th->MyVM->scanWeakReferencesQueue();
@@ -76,26 +79,31 @@ void Collector::do_collect() {
   // (7) Trace the phantom reference queue.
   th->MyVM->scanPhantomReferencesQueue();
 
-  status = stat_finalize;
+  // (8) Trace the new objects added by queues.
+  for(cur = cur->next(); cur != used_nodes; cur = cur->next())
+    trace(cur);
 
-  /* finalize */
-  GCChunkNode  finalizable;
+
+  // Finalize.
+  GCChunkNode finalizable;
   finalizable.attrape(unused_nodes);
 
+  // We have stopped collecting, go back to alloc state.
+  status = stat_alloc;
   
-  /* kill everyone */
+  // Wake up all threads.
+  th->MyVM->endCollection();
+  threads->collectionFinished();
+  th->MyVM->wakeUpFinalizers();
+  th->MyVM->wakeUpEnqueue();
+  
+  // Kill unreachable objects.
   GCChunkNode *next = 0;
   for(cur=finalizable.next(); cur!=&finalizable; cur=next) {
     next = cur->next();
     allocator->reject_chunk(cur);
   }
 
-  status = stat_alloc;
-
-  th->MyVM->endCollection();
-  threads->collectionFinished();
-  th->MyVM->wakeUpFinalizers();
-  th->MyVM->wakeUpEnqueue();
 }
 
 void Collector::collect_unprotect() {

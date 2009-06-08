@@ -56,7 +56,7 @@ class Collector {
   static int  status;
   
   
-  enum { stat_collect, stat_finalize, stat_alloc, stat_broken };
+  enum { stat_collect, stat_alloc, stat_broken };
 
 #ifdef HAVE_PTHREAD
   static void  siggc_handler(int);
