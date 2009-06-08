@@ -34,7 +34,7 @@ extern "C" void* jnjvmInterfaceLookup(CacheNode* cache, JavaObject *obj) {
 
   
   Enveloppe* enveloppe = cache->enveloppe;
-  UserCommonClass* ocl = obj->getClass();
+  JavaVirtualTable* ovt = (JavaVirtualTable*)obj->getVirtualTable();
   
 #ifndef SERVICE
   assert((obj->getClass()->isClass() && 
@@ -48,7 +48,7 @@ extern "C" void* jnjvmInterfaceLookup(CacheNode* cache, JavaObject *obj) {
   CacheNode* last = tmp;
 
   while (tmp) {
-    if (ocl == tmp->lastCible) {
+    if (ovt == tmp->lastCible) {
       rcache = tmp;
       break;
     } else {
@@ -58,6 +58,7 @@ extern "C" void* jnjvmInterfaceLookup(CacheNode* cache, JavaObject *obj) {
   }
 
   if (!rcache) {
+    UserCommonClass* ocl = ovt->cl;
     UserClass* methodCl = 0;
     UserClass* lookup = ocl->isArray() ? ocl->super : ocl->asClass();
     JavaMethod* dmeth = lookup->lookupMethod(enveloppe->methodName,
@@ -79,7 +80,7 @@ extern "C" void* jnjvmInterfaceLookup(CacheNode* cache, JavaObject *obj) {
     }
     
     rcache->methPtr = dmeth->compiledPtr();
-    rcache->lastCible = (UserClass*)ocl;
+    rcache->lastCible = ovt;
     
   }
 

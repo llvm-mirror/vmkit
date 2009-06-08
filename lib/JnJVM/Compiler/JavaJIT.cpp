@@ -1935,14 +1935,14 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
                                               "", currentBlock);
   Value* cache = new LoadInst(cachePtr, "", currentBlock);
 
-  Value* cl = CallInst::Create(module->GetClassFunction, args[0], "",
+  Value* VT = CallInst::Create(module->GetVTFunction, args[0], "",
                                currentBlock);
   Value* args3[2] = { zero, one };
   Value* lastCiblePtr = GetElementPtrInst::Create(cache, args3, args3 + 2, "",
                                                   currentBlock);
   Value* lastCible = new LoadInst(lastCiblePtr, "", currentBlock);
 
-  Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, cl, lastCible, "", currentBlock);
+  Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, VT, lastCible, "", currentBlock);
   
   BasicBlock* ifTrue = createBasicBlock("cache ok");
   BasicBlock* ifFalse = createBasicBlock("cache not ok");

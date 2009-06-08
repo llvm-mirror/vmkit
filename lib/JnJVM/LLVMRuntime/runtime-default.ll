@@ -22,7 +22,7 @@
 %ArrayUInt8 = type { %JavaObject, i8*, [0 x i8] }
 
 ;;; The CacheNode type. The first field is the last called method.
-%CacheNode = type { i8*, %JavaCommonClass*, %CacheNode*, %Enveloppe* }
+%CacheNode = type { i8*, %VT*, %CacheNode*, %Enveloppe* }
 
 ;;; The Enveloppe type, which contains the first cache and all the info
 ;;; to lookup in the constant pool.

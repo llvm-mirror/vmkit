@@ -32,7 +32,7 @@
 namespace jnjvm {
 
 class Enveloppe;
-class UserClass;
+class JavaVirtualTable;
 class UTF8;
 
 /// CacheNode - A {class, method pointer} pair.
@@ -42,8 +42,8 @@ public:
   /// methPtr - The method pointer of this cache.
   void* methPtr;
 
-  /// lastCible - The class of this cache.
-  UserClass* lastCible;
+  /// lastCible - The VT corresponding to this cache.
+  JavaVirtualTable* lastCible;
 
   /// next - The next cache.
   CacheNode* next;
