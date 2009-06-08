@@ -70,12 +70,12 @@ extern "C" void* jnjvmInterfaceLookup(CacheNode* cache, JavaObject *obj) {
 #endif
 
     // Are we the first cache?
-    if (cache != &(enveloppe->bootCache)) {
+    if (cache == &(enveloppe->bootCache) && cache->lastCible == 0) {
+      rcache = cache;
+    } else {
       mvm::BumpPtrAllocator& alloc = 
         enveloppe->classDef->classLoader->allocator;
       rcache = new(alloc) CacheNode(enveloppe);
-    } else {
-      rcache = cache;
     }
     
     rcache->methPtr = dmeth->compiledPtr();
