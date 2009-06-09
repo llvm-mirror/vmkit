@@ -10,8 +10,6 @@
 #ifndef JNJVM_JAVA_OBJECT_H
 #define JNJVM_JAVA_OBJECT_H
 
-#include <vector>
-
 #include "mvm/Object.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
@@ -28,36 +26,6 @@ class Jnjvm;
 class Typedef;
 class UserCommonClass;
 
-/// JavaCond - This class maintains a list of threads blocked on a wait. 
-/// notify and notifyAll will change the state of one or more of these threads.
-///
-class JavaCond {
-private:
-  
-  /// threads - The list of threads currently waiting.
-  ///
-  std::vector<JavaThread*> threads;
-
-public:
-  
-  /// notify - The Java notify: takes the first thread in the list and wakes
-  /// it up.
-  void notify();
-  
-  /// notifyAll - The Java notifyAll: wakes all threads in the list.
-  ///
-  void notifyAll();
-
-  /// wait - The Java wait: the thread blocks waiting to be notified.
-  ///
-  void wait(JavaThread* th);
-
-  /// remove - Remove the thread from the list. This is called by threads being
-  /// interrupted or timed out on a wait.
-  void remove(JavaThread* th);
-};
-
-
 /// LockObj - This class represents a Java monitor.
 ///
 class LockObj : public gc {
@@ -69,9 +37,9 @@ private:
   ///
   mvm::LockRecursive lock;
 
-  /// varcond - The condition variable for wait, notify and notifyAll calls.
+  /// firstThread - The first thread doing a wait.
   ///
-  JavaCond varcond;
+  JavaThread* firstThread;
 
 public:
   /// allocate - Allocates a lock object. Only the internal lock is allocated.
@@ -107,13 +75,6 @@ public:
     return lock.getOwner();
   }
   
-  /// getCond - Returns the conditation variable of this lock, allocating it
-  /// if non-existant.
-  ///
-  JavaCond* getCond() {
-    return &varcond;
-  }
-
   /// VT - LockObj is GC-allocated, so we must make the VT explicit.
   ///
   static VirtualTable VT;
@@ -122,11 +83,10 @@ public:
   ///
   static void staticDestructor(LockObj* obj) {
     obj->lock.~LockRecursive();
-    obj->varcond.~JavaCond();
   }
 
   /// LockObj - Empty constructor.
-  LockObj() {}
+  LockObj() { firstThread = 0; }
 };
 
 /// JavaVirtualTable - This class is the virtual table of instances of

@@ -7,8 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <vector>
-
 #include "mvm/Threads/Locks.h"
 
 #include "JavaClass.h"
@@ -19,52 +17,6 @@
 #include "Jnjvm.h"
 
 using namespace jnjvm;
-
-void JavaCond::notify() {
-  for (std::vector<JavaThread*>::iterator i = threads.begin(), 
-            e = threads.end(); i!= e;) {
-    JavaThread* cur = *i;
-    cur->lock.lock();
-    if (cur->interruptFlag != 0) {
-      cur->lock.unlock();
-      ++i;
-      continue;
-    } else if (cur->javaThread != 0) {
-      cur->varcond.signal();
-      cur->lock.unlock();
-      threads.erase(i);
-      break;
-    } else { // dead thread
-      ++i;
-      threads.erase(i - 1);
-    }
-  }
-}
-
-void JavaCond::notifyAll() {
-  for (std::vector<JavaThread*>::iterator i = threads.begin(),
-            e = threads.end(); i!= e; ++i) {
-    JavaThread* cur = *i;
-    cur->lock.lock();
-    cur->varcond.signal();
-    cur->lock.unlock();
-  }
-  threads.clear();
-}
-
-void JavaCond::wait(JavaThread* th) {
-  threads.push_back(th);
-}
-
-void JavaCond::remove(JavaThread* th) {
-  for (std::vector<JavaThread*>::iterator i = threads.begin(),
-            e = threads.end(); i!= e; ++i) {
-    if (*i == th) {
-      threads.erase(i);
-      break;
-    }
-  }
-}
 
 LockObj* LockObj::allocate(JavaObject* owner) {
 #ifdef USE_GC_BOEHM
@@ -94,9 +46,22 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
       thread->interruptFlag = 0;
       thread->getJVM()->interruptedException(this);
     } else {
-      JavaCond* cond = l->getCond();
-      cond->wait(thread);
       thread->state = JavaThread::StateWaiting;
+      if (l->firstThread) {
+        l->firstThread->prevWaiting->nextWaiting = thread;
+        thread->prevWaiting = l->firstThread->prevWaiting;
+        thread->nextWaiting = l->firstThread;
+        l->firstThread->prevWaiting = thread;
+        if (l->firstThread->nextWaiting == l->firstThread) 
+          l->firstThread->nextWaiting = thread;
+      } else {
+        l->firstThread = thread;
+        thread->nextWaiting = thread;
+        thread->prevWaiting = thread;
+      }
+      assert(thread->prevWaiting && thread->nextWaiting && "Inconsistent list");
+      assert(l->firstThread->prevWaiting && l->firstThread->nextWaiting &&
+             "Inconsistent list");
       
       bool timeout = false;
       uint32 recur = l->lock.unlockAll();
@@ -112,7 +77,24 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
       l->lock.lockAll(recur);
 
       if (interrupted || timeout) {
-        cond->remove(thread);
+        if (thread->nextWaiting) {
+          if (l->firstThread != thread) {
+            thread->nextWaiting->prevWaiting = thread->prevWaiting;
+            thread->prevWaiting->nextWaiting = thread->nextWaiting;
+            assert(l->firstThread->prevWaiting && 
+                   l->firstThread->nextWaiting && "Inconsistent list");
+          } else if (thread->nextWaiting == thread) {
+            l->firstThread = 0;
+          } else {
+            l->firstThread = thread->nextWaiting;
+            l->firstThread->prevWaiting = thread->prevWaiting;
+            thread->prevWaiting->nextWaiting = l->firstThread;
+            assert(l->firstThread->prevWaiting && 
+                   l->firstThread->nextWaiting && "Inconsistent list");
+          }
+          thread->nextWaiting = 0;
+          thread->prevWaiting = 0;
+        }
       }
 
       thread->state = JavaThread::StateRunning;
@@ -139,7 +121,42 @@ void JavaObject::timedWait(struct timeval& info) {
 void JavaObject::notify() {
   if (owner()) {
     LockObj * l = lock.getFatLock();
-    if (l) l->getCond()->notify();
+    if (l) {
+      JavaThread* cur = l->firstThread;
+      if (cur) {
+        do {
+          cur->lock.lock();
+          if (cur->interruptFlag != 0) {
+            cur->lock.unlock();
+            cur = cur->nextWaiting;
+          } else if (cur->javaThread != 0) {
+            assert(cur->prevWaiting && cur->nextWaiting &&
+                   "Inconsistent list");
+            if (cur != l->firstThread) {
+              cur->prevWaiting->nextWaiting = cur->nextWaiting;
+              cur->nextWaiting->prevWaiting = cur->prevWaiting;
+              assert(l->firstThread->prevWaiting &&
+                     l->firstThread->nextWaiting && "Inconsistent list");
+            } else if (cur->nextWaiting == cur) {
+              l->firstThread = 0;
+            } else {
+              l->firstThread = cur->nextWaiting;
+              l->firstThread->prevWaiting = cur->prevWaiting;
+              cur->prevWaiting->nextWaiting = l->firstThread;
+              assert(l->firstThread->prevWaiting && 
+                     l->firstThread->nextWaiting && "Inconsistent list");
+            }
+            cur->prevWaiting = 0;
+            cur->nextWaiting = 0;
+            cur->varcond.signal();
+            cur->lock.unlock();
+            break;
+          } else {
+            cur->lock.unlock();
+          }
+        } while (cur != l->firstThread);
+      }
+    }
   } else {
     JavaThread::get()->getJVM()->illegalMonitorStateException(this);
   }
@@ -149,7 +166,21 @@ void JavaObject::notify() {
 void JavaObject::notifyAll() {
   if (owner()) {
     LockObj * l = lock.getFatLock();
-    if (l) l->getCond()->notifyAll();
+    if (l) {
+      JavaThread* cur = l->firstThread;
+      if (cur) {
+        do {
+          cur->lock.lock();
+          JavaThread* temp = cur->nextWaiting;
+          cur->prevWaiting = 0;
+          cur->nextWaiting = 0;
+          cur->varcond.signal();
+          cur->lock.unlock();
+          cur = temp;
+        } while (cur != l->firstThread);
+        l->firstThread = 0;
+      }
+    }
   } else {
     JavaThread::get()->getJVM()->illegalMonitorStateException(this);
   }

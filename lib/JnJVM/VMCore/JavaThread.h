@@ -88,7 +88,15 @@ public:
   /// interruptFlag - Has this thread been interrupted?
   ///
   uint32 interruptFlag;
+
+  /// nextWaiting - Next thread waiting on the same monitor.
+  ///
+  JavaThread* nextWaiting;
   
+  /// prevWaiting - Previous thread waiting on the same monitor.
+  ///
+  JavaThread* prevWaiting;
+
   static const unsigned int StateRunning;
   static const unsigned int StateWaiting;
   static const unsigned int StateInterrupted;
