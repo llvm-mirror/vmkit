@@ -1131,10 +1131,18 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
    
   // Destructor
   Function* Finalizer = 0;
-  JavaMethod* meth = (JavaMethod*)(RealVT->destructor);
-  if (meth) {
-    LLVMMethodInfo* LMI = getMethodInfo(meth);
-    Finalizer = LMI->getMethod();
+  if (RealVT->operatorDelete) {
+    char* name = (char*)(RealVT->destructor);
+    std::vector<const Type*> Args;
+    const FunctionType* Ty = FunctionType::get(Type::VoidTy, Args, false);
+    Finalizer = Function::Create(Ty, GlobalValue::InternalLinkage, name,
+                                 getLLVMModule());
+  } else {
+    JavaMethod* meth = (JavaMethod*)(RealVT->destructor);
+    if (meth) {
+      LLVMMethodInfo* LMI = getMethodInfo(meth);
+      Finalizer = LMI->getMethod();
+    }
   }
   Elemts.push_back(Finalizer ? 
       ConstantExpr::getCast(Instruction::BitCast, Finalizer, PTy) : N);
