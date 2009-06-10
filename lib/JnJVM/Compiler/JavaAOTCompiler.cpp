@@ -1135,7 +1135,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
     char* name = (char*)(RealVT->destructor);
     std::vector<const Type*> Args;
     const FunctionType* Ty = FunctionType::get(Type::VoidTy, Args, false);
-    Finalizer = Function::Create(Ty, GlobalValue::InternalLinkage, name,
+    Finalizer = Function::Create(Ty, GlobalValue::ExternalLinkage, name,
                                  getLLVMModule());
   } else {
     JavaMethod* meth = (JavaMethod*)(RealVT->destructor);
