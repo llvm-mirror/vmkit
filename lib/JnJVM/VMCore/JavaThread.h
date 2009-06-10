@@ -24,6 +24,7 @@ namespace jnjvm {
 class Class;
 class JavaObject;
 class Jnjvm;
+class LockObj;
 
 
 #define BEGIN_NATIVE_EXCEPTION(level) \
@@ -76,10 +77,6 @@ public:
   ///
   JavaObject* vmThread;
 
-  /// lock - This lock is used when waiting or being notified or interrupted.
-  ///
-  mvm::LockNormal lock;
-
   /// varcond - Condition variable when the thread needs to be awaken from
   /// a wait.
   ///
@@ -96,6 +93,10 @@ public:
   /// prevWaiting - Previous thread waiting on the same monitor.
   ///
   JavaThread* prevWaiting;
+
+  /// waitsOn - The monitor on which the thread is waiting on.
+  ///
+  LockObj* waitsOn;
 
   static const unsigned int StateRunning;
   static const unsigned int StateWaiting;

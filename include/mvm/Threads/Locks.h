@@ -157,7 +157,8 @@ public:
   
   virtual void lock();
   virtual void unlock();
-  
+  virtual int tryLock();
+
   /// recursionCount - Get the number of times the lock has been locked.
   ///
   int recursionCount() { return n; }

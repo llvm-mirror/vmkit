@@ -105,23 +105,39 @@ jobject _vmthread) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* vmthread = (JavaObject*)_vmthread;
   JavaField* field = vm->upcalls->vmdataVMThread; 
+  
   // It's possible that the thread to be interrupted has not finished
   // its initialization. Wait until the initialization is done.
   while (field->getObjectField(vmthread) == 0)
     mvm::Thread::yield();
   
   JavaThread* th = (JavaThread*)field->getObjectField(vmthread);
-  th->lock.lock();
   th->interruptFlag = 1;
+  LockObj* lock = th->waitsOn;
 
-  // here we could also raise a signal for interrupting I/O
-  if (th->state == JavaThread::StateWaiting) {
+  // If the thread is blocked on a wait. We also verify nextWaiting in case
+  // the thread has been notified.
+  if (lock && th->nextWaiting) {
     th->state = JavaThread::StateInterrupted;
-    th->varcond.signal();
-  }
   
-  th->lock.unlock();
+    // Make sure the thread is waiting.
+    uint32 locked = 0;
+    while (true) {
+      locked = (lock->tryAcquire() == 0);
+      if (locked || (lock->getOwner() != th && lock->getOwner() != 0))
+        break;
+      else mvm::Thread::yield();
+    }
+    
+    // Interrupt the thread.
+    th->varcond.signal();
 
+    // Release the lock if we acquired it.
+    if (locked) lock->release();
+  }
+
+  // Here we could also raise a signal for interrupting I/O
+  
   END_NATIVE_EXCEPTION
 }
 

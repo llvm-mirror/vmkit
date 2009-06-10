@@ -52,6 +52,12 @@ public:
     lock.lock();
   }
   
+  /// tryAcquire - Tries to acquire the lock.
+  ///
+  int tryAcquire() {
+    return lock.tryLock();
+  }
+  
   /// acquireAll - Acquires the lock nb times.
   void acquireAll(uint32 nb) {
     lock.lockAll(nb);

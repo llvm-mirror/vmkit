@@ -37,15 +37,14 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
   if (owner()) {
     LockObj * l = lock.changeToFatlock(this);
     JavaThread* thread = JavaThread::get();
-    mvm::Lock& mutexThread = thread->lock;
+    thread->waitsOn = l;
     mvm::Cond& varcondThread = thread->varcond;
 
-    mutexThread.lock();
     if (thread->interruptFlag != 0) {
-      mutexThread.unlock();
       thread->interruptFlag = 0;
+      thread->waitsOn = 0;
       thread->getJVM()->interruptedException(this);
-    } else {
+    } else { 
       thread->state = JavaThread::StateWaiting;
       if (l->firstThread) {
         l->firstThread->prevWaiting->nextWaiting = thread;
@@ -64,19 +63,20 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
              "Inconsistent list");
       
       bool timeout = false;
-      uint32 recur = l->lock.unlockAll();
 
-      if (timed) {
-        timeout = varcondThread.timedWait(&mutexThread, info);
-      } else {
-        varcondThread.wait(&mutexThread);
+      if (!thread->interruptFlag) {
+        if (timed) {
+          timeout = varcondThread.timedWait(&l->lock, info);
+        } else {
+          varcondThread.wait(&l->lock);
+        }
       }
 
+
       bool interrupted = (thread->interruptFlag != 0);
-      mutexThread.unlock();
-      l->lock.lockAll(recur);
 
       if (interrupted || timeout) {
+        
         if (thread->nextWaiting) {
           if (l->firstThread != thread) {
             thread->nextWaiting->prevWaiting = thread->prevWaiting;
@@ -94,10 +94,15 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
           }
           thread->nextWaiting = 0;
           thread->prevWaiting = 0;
+        } else {
+          assert(!thread->prevWaiting && "Inconstitent state");
+          // Notify lost, notify someone else.
+          notify();
         }
       }
-
+      
       thread->state = JavaThread::StateRunning;
+      thread->waitsOn = 0;
 
       if (interrupted) {
         thread->interruptFlag = 0;
@@ -125,11 +130,10 @@ void JavaObject::notify() {
       JavaThread* cur = l->firstThread;
       if (cur) {
         do {
-          cur->lock.lock();
           if (cur->interruptFlag != 0) {
-            cur->lock.unlock();
             cur = cur->nextWaiting;
-          } else if (cur->javaThread != 0) {
+          } else {
+            assert(cur->javaThread && "No java thread");
             assert(cur->prevWaiting && cur->nextWaiting &&
                    "Inconsistent list");
             if (cur != l->firstThread) {
@@ -149,10 +153,7 @@ void JavaObject::notify() {
             cur->prevWaiting = 0;
             cur->nextWaiting = 0;
             cur->varcond.signal();
-            cur->lock.unlock();
             break;
-          } else {
-            cur->lock.unlock();
           }
         } while (cur != l->firstThread);
       }
@@ -170,12 +171,10 @@ void JavaObject::notifyAll() {
       JavaThread* cur = l->firstThread;
       if (cur) {
         do {
-          cur->lock.lock();
           JavaThread* temp = cur->nextWaiting;
           cur->prevWaiting = 0;
           cur->nextWaiting = 0;
           cur->varcond.signal();
-          cur->lock.unlock();
           cur = temp;
         } while (cur != l->firstThread);
         l->firstThread = 0;

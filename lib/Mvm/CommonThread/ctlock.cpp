@@ -81,6 +81,16 @@ void LockRecursive::lock() {
   ++n;
 }
 
+int LockRecursive::tryLock() {
+  int res = 0;
+  if (!selfOwner()) {
+    res = pthread_mutex_trylock((pthread_mutex_t*)&internalLock);
+    owner = mvm::Thread::get();
+  }
+  ++n;
+  return res;
+}
+
 void LockRecursive::unlock() {
   assert(selfOwner() && "Not owner when unlocking");
   --n;
