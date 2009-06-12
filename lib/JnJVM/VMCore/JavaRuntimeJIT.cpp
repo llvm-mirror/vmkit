@@ -61,9 +61,15 @@ extern "C" void* jnjvmInterfaceLookup(CacheNode* cache, JavaObject *obj) {
     UserCommonClass* ocl = ovt->cl;
     UserClass* methodCl = 0;
     UserClass* lookup = ocl->isArray() ? ocl->super : ocl->asClass();
-    JavaMethod* dmeth = lookup->lookupMethod(enveloppe->methodName,
-                                             enveloppe->methodSign,
-                                             false, true, &methodCl);
+    JavaMethod* dmeth = lookup->lookupMethodDontThrow(enveloppe->methodName,
+                                                      enveloppe->methodSign,
+                                                      false, true, &methodCl);
+
+    if (!dmeth) {
+      enveloppe->cacheLock.release();
+      JavaThread::get()->getJVM()->noSuchMethodError(lookup,
+                                                     enveloppe->methodName);
+    }
 
 #if !defined(ISOLATE_SHARING) && !defined(SERVICE)
     assert(dmeth->classDef->isInitializing() &&
