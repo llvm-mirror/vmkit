@@ -29,6 +29,7 @@ LockObj* LockObj::allocate(JavaObject* owner) {
   // such as LockRecursive), we have to change the VT of this object.
   res->setVirtualTable(&VT);
 #endif
+  assert(!res->firstThread && "Error in constructor");
   return res;
 }
 
@@ -47,12 +48,16 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
     } else { 
       thread->state = JavaThread::StateWaiting;
       if (l->firstThread) {
-        l->firstThread->prevWaiting->nextWaiting = thread;
+        assert(l->firstThread->prevWaiting && l->firstThread->nextWaiting &&
+               "Inconsistent list");
+        if (l->firstThread->nextWaiting == l->firstThread) {
+          l->firstThread->nextWaiting = thread;
+        } else {
+          l->firstThread->prevWaiting->nextWaiting = thread;
+        } 
         thread->prevWaiting = l->firstThread->prevWaiting;
         thread->nextWaiting = l->firstThread;
         l->firstThread->prevWaiting = thread;
-        if (l->firstThread->nextWaiting == l->firstThread) 
-          l->firstThread->nextWaiting = thread;
       } else {
         l->firstThread = thread;
         thread->nextWaiting = thread;
@@ -64,20 +69,24 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
       
       bool timeout = false;
 
-      if (!thread->interruptFlag) {
+      while (!thread->interruptFlag && thread->nextWaiting) {
         if (timed) {
           timeout = varcondThread.timedWait(&l->lock, info);
+          if (timeout) break;
         } else {
           varcondThread.wait(&l->lock);
         }
       }
-
-
+     
+      assert((!l->firstThread || (l->firstThread->prevWaiting && 
+             l->firstThread->nextWaiting)) && "Inconsistent list");
+ 
       bool interrupted = (thread->interruptFlag != 0);
 
       if (interrupted || timeout) {
         
         if (thread->nextWaiting) {
+          assert(thread->prevWaiting && "Inconsistent list");
           if (l->firstThread != thread) {
             thread->nextWaiting->prevWaiting = thread->prevWaiting;
             thread->prevWaiting->nextWaiting = thread->nextWaiting;
@@ -99,6 +108,9 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
           // Notify lost, notify someone else.
           notify();
         }
+      } else {
+        assert(!thread->prevWaiting && !thread->nextWaiting &&
+               "Inconsistent state");
       }
       
       thread->state = JavaThread::StateRunning;
