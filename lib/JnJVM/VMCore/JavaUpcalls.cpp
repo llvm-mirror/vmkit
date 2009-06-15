@@ -415,6 +415,17 @@ extern "C" void nativeJavaObjectVMThreadDestructor(JavaObjectVMThread* obj) {
 // Defined in Classpath/ClasspathVMClassLoader.cpp
 extern "C" ArrayObject* nativeGetBootPackages();
 
+extern "C" JavaString* nativeGetenv(JavaString* str) {
+  char* buf = str->strToAsciiz();
+  char* res = getenv(buf);
+  delete[] buf;
+  if (res) {
+    Jnjvm* vm = JavaThread::get()->getJVM();
+    return vm->asciizToStr(res);
+  }
+  return 0;
+}
+
 void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   newClassLoader = 
@@ -799,6 +810,11 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   
   // Don't compile methods here, we still don't know where to allocate Java
   // strings.
+  
+  JavaMethod* getEnv =
+    UPCALL_METHOD(loader, "java/lang/VMSystem", "getenv",
+                  "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC);
+  getEnv->setCompiledPtr((void*)(intptr_t)nativeGetenv, "nativeGetenv");
 
   JavaMethod* getCallingClass =
     UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "getCallingClass",
