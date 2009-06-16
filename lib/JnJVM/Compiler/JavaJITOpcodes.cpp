@@ -1899,7 +1899,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case NEWARRAY :
       case ANEWARRAY : {
         
-        ConstantInt* sizeElement = 0;
+        Constant* sizeElement = 0;
         Value* TheVT = 0;
         Value* valCl = 0;
 

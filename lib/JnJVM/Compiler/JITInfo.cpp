@@ -177,7 +177,7 @@ const FunctionType* LLVMMethodInfo::getFunctionType() {
   return functionType;
 }
 
-ConstantInt* LLVMMethodInfo::getOffset() {
+Constant* LLVMMethodInfo::getOffset() {
   if (!offsetConstant) {
     JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
     JavaCompiler* Mod = JCL->getCompiler();
@@ -187,7 +187,7 @@ ConstantInt* LLVMMethodInfo::getOffset() {
   return offsetConstant;
 }
 
-ConstantInt* LLVMFieldInfo::getOffset() {
+Constant* LLVMFieldInfo::getOffset() {
   if (!offsetConstant) {
     JnjvmClassLoader* JCL = fieldDef->classDef->classLoader;
     JavaCompiler* Mod = JCL->getCompiler();

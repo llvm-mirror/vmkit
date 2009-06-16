@@ -58,7 +58,7 @@ public:
   const llvm::Type* llvmType;
   const llvm::Type* llvmTypePtr;
   llvm::Constant* llvmNullConstant;
-  llvm::ConstantInt* logSizeInBytesConstant;
+  llvm::Constant* logSizeInBytesConstant;
   
   static void initialise();
   static std::map<const char, LLVMAssessorInfo> AssessorInfo;
@@ -74,7 +74,7 @@ private:
   Class* classDef;
   /// virtualSizeLLVM - The LLVM constant size of instances of this class.
   ///
-  llvm::ConstantInt* virtualSizeConstant;
+  llvm::Constant* virtualSizeConstant;
   /// virtualType - The LLVM type of instance of this class.
   ///
   const llvm::Type * virtualType;
@@ -100,12 +100,12 @@ private:
   JavaMethod* methodDef;
 
   llvm::Function* methodFunction;
-  llvm::ConstantInt* offsetConstant;
+  llvm::Constant* offsetConstant;
   const llvm::FunctionType* functionType;
   
 public:
   llvm::Function* getMethod();
-  llvm::ConstantInt* getOffset();
+  llvm::Constant* getOffset();
   const llvm::FunctionType* getFunctionType();
     
   LLVMMethodInfo(JavaMethod* M); 
@@ -117,10 +117,10 @@ class LLVMFieldInfo : public mvm::JITInfo {
 private:
   JavaField* fieldDef;
   
-  llvm::ConstantInt* offsetConstant;
+  llvm::Constant* offsetConstant;
 
 public:
-  llvm::ConstantInt* getOffset();
+  llvm::Constant* getOffset();
 
   LLVMFieldInfo(JavaField* F) : 
     fieldDef(F), 
@@ -189,10 +189,10 @@ public:
 class JnjvmModule : public mvm::MvmModule {
 
 public:
-  static llvm::ConstantInt* JavaArraySizeOffsetConstant;
-  static llvm::ConstantInt* JavaArrayElementsOffsetConstant;
-  static llvm::ConstantInt* JavaObjectLockOffsetConstant;
-  static llvm::ConstantInt* JavaObjectVTOffsetConstant;
+  static llvm::Constant* JavaArraySizeOffsetConstant;
+  static llvm::Constant* JavaArrayElementsOffsetConstant;
+  static llvm::Constant* JavaObjectLockOffsetConstant;
+  static llvm::Constant* JavaObjectVTOffsetConstant;
 
   static const llvm::Type* JavaArrayUInt8Type;
   static const llvm::Type* JavaArraySInt8Type;
@@ -301,22 +301,22 @@ public:
   llvm::Function* GetFinalDoubleFieldFunction;
   llvm::Function* GetFinalObjectFieldFunction;
 
-  static llvm::ConstantInt* OffsetObjectSizeInClassConstant;
-  static llvm::ConstantInt* OffsetVTInClassConstant;
-  static llvm::ConstantInt* OffsetTaskClassMirrorInClassConstant;
-  static llvm::ConstantInt* OffsetStaticInstanceInTaskClassMirrorConstant;
-  static llvm::ConstantInt* OffsetInitializedInTaskClassMirrorConstant;
-  static llvm::ConstantInt* OffsetStatusInTaskClassMirrorConstant;
+  static llvm::Constant* OffsetObjectSizeInClassConstant;
+  static llvm::Constant* OffsetVTInClassConstant;
+  static llvm::Constant* OffsetTaskClassMirrorInClassConstant;
+  static llvm::Constant* OffsetStaticInstanceInTaskClassMirrorConstant;
+  static llvm::Constant* OffsetInitializedInTaskClassMirrorConstant;
+  static llvm::Constant* OffsetStatusInTaskClassMirrorConstant;
   
-  static llvm::ConstantInt* OffsetJavaExceptionInThreadConstant;
-  static llvm::ConstantInt* OffsetCXXExceptionInThreadConstant;
+  static llvm::Constant* OffsetJavaExceptionInThreadConstant;
+  static llvm::Constant* OffsetCXXExceptionInThreadConstant;
   
-  static llvm::ConstantInt* OffsetClassInVTConstant;
-  static llvm::ConstantInt* OffsetDepthInVTConstant;
-  static llvm::ConstantInt* OffsetDisplayInVTConstant;
-  static llvm::ConstantInt* OffsetBaseClassVTInVTConstant;
+  static llvm::Constant* OffsetClassInVTConstant;
+  static llvm::Constant* OffsetDepthInVTConstant;
+  static llvm::Constant* OffsetDisplayInVTConstant;
+  static llvm::Constant* OffsetBaseClassVTInVTConstant;
   
-  static llvm::ConstantInt* ClassReadyConstant;
+  static llvm::Constant* ClassReadyConstant;
 
   static llvm::Constant*    JavaObjectNullConstant;
   static llvm::Constant*    MaxArraySizeConstant;

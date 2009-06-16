@@ -114,7 +114,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
  
   if (isVirtual(meth->access)) {
     LLVMMethodInfo* LMI = JavaLLVMCompiler::getMethodInfo(meth);
-    uint64_t offset = LMI->getOffset()->getZExtValue();
+    uint64_t offset = dyn_cast<ConstantInt>(LMI->getOffset())->getZExtValue();
     assert(meth->classDef->isResolved() && "Class not resolved");
 #if !defined(ISOLATE_SHARING) && !defined(SERVICE)
     assert(meth->classDef->isInitializing() && "Class not ready");

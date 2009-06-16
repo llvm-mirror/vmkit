@@ -155,7 +155,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
 #endif
   if (meth) {
     LLVMMethodInfo* LMI = TheCompiler->getMethodInfo(meth);
-    ConstantInt* Offset = LMI->getOffset();
+    Constant* Offset = LMI->getOffset();
     indexes2[1] = Offset;
 #ifdef ISOLATE_SHARING
     indexesCtp = ConstantInt::get(Type::Int32Ty,
@@ -1238,7 +1238,7 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
     const Type* Ty = args[0]->getType();
     if (Ty == Type::Int32Ty) {
       Constant* const_int32_9 = module->constantZero;
-      ConstantInt* const_int32_10 = module->constantMinusOne;
+      Constant* const_int32_10 = module->constantMinusOne;
       BinaryOperator* int32_tmpneg = 
         BinaryOperator::Create(Instruction::Sub, const_int32_9, args[0],
                                "tmpneg", currentBlock);
@@ -1249,7 +1249,7 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
                                       "abs", currentBlock);
     } else if (Ty == Type::Int64Ty) {
       Constant* const_int64_9 = module->constantLongZero;
-      ConstantInt* const_int64_10 = module->constantLongMinusOne;
+      Constant* const_int64_10 = module->constantLongMinusOne;
       
       BinaryOperator* int64_tmpneg = 
         BinaryOperator::Create(Instruction::Sub, const_int64_9, args[0],

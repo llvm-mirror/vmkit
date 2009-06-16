@@ -484,12 +484,12 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
                                                field.getLongField(obj));
             TempElts.push_back(CI);
           } else if (prim->isFloat()) {
-            ConstantFP* CF = ConstantFP::get(Type::FloatTy,
-                                             field.getFloatField(obj));
+            Constant* CF = ConstantFP::get(Type::FloatTy,
+                                           field.getFloatField(obj));
             TempElts.push_back(CF);
           } else if (prim->isDouble()) {
-            ConstantFP* CF = ConstantFP::get(Type::DoubleTy,
-                                             field.getDoubleField(obj));
+            Constant* CF = ConstantFP::get(Type::DoubleTy,
+                                           field.getDoubleField(obj));
             TempElts.push_back(CF);
           } else {
             abort();
