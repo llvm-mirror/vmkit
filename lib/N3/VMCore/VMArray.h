@@ -34,8 +34,8 @@ public:
   static const sint32 MaxArraySize;
   static const llvm::Type* llvmType;
 
-  static llvm::ConstantInt* sizeOffset();
-  static llvm::ConstantInt* elementsOffset();
+  static llvm::Constant* sizeOffset();
+  static llvm::Constant* elementsOffset();
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 

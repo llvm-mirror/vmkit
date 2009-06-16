@@ -111,7 +111,8 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
       std::vector<Value*> args; //size = 2
       args.push_back(zero);
       if (boxed) {
-        args.push_back(ConstantInt::get(field->offset->getValue() + 1));
+        ConstantInt* CI = dyn_cast<ConstantInt>(field->offset);
+        args.push_back(ConstantInt::get(CI->getValue() + 1));
       } else {
         args.push_back(field->offset);
       }
@@ -122,7 +123,8 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
       std::vector<Value*> args; //size = 2
       args.push_back(zero);
       if (boxed) {
-        args.push_back(ConstantInt::get(field->offset->getValue() + 1));
+        ConstantInt* CI = dyn_cast<ConstantInt>(field->offset);
+        args.push_back(ConstantInt::get(CI->getValue() + 1));
       } else {
         args.push_back(field->offset);
       }
@@ -158,8 +160,8 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
 #endif
     // Constant Definitions
   Constant* const_int32_8 = mvm::MvmModule::constantZero;
-  ConstantInt* const_int32_9 = mvm::MvmModule::constantOne;
-  ConstantInt* const_int32_10 = mvm::MvmModule::constantTwo;
+  Constant* const_int32_9 = mvm::MvmModule::constantOne;
+  Constant* const_int32_10 = mvm::MvmModule::constantTwo;
   
   
   // Function Definitions
@@ -856,11 +858,11 @@ llvm::Value* CLIJit::verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
 
 }
 
-ConstantInt* VMArray::sizeOffset() {
+Constant* VMArray::sizeOffset() {
   return mvm::MvmModule::constantOne;
 }
 
-ConstantInt* VMArray::elementsOffset() {
+Constant* VMArray::elementsOffset() {
   return mvm::MvmModule::constantTwo;
 }
 
@@ -1502,7 +1504,7 @@ VMMethod* CLIJit::getMethod(const llvm::Function* F) {
 
 void VMField::initField(VMObject* obj) {
   VMField* field = this;
-  ConstantInt* offset = field->offset;
+  Constant* offset = field->offset;
   const TargetData* targetData = mvm::MvmModule::executionEngine->getTargetData();
   bool stat = isStatic(field->flags);
   const Type* clType = stat ? field->classDef->staticType :
@@ -1510,7 +1512,7 @@ void VMField::initField(VMObject* obj) {
   
   const StructLayout* sl =
     targetData->getStructLayout((StructType*)(clType->getContainedType(0)));
-  uint64 ptrOffset = sl->getElementOffset(offset->getZExtValue());
+  uint64 ptrOffset = sl->getElementOffset(dyn_cast<ConstantInt>(offset)->getZExtValue());
   
   field->ptrOffset = ptrOffset;
 

@@ -258,7 +258,7 @@ public:
   virtual void TRACER;
   
   uint32 flags;
-  llvm::ConstantInt* offset;
+  llvm::Constant* offset;
   uint32 token;
   const UTF8* name;
   VMClass* classDef;

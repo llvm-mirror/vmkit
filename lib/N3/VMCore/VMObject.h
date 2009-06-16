@@ -84,7 +84,7 @@ public:
   void notifyAll();
   void initialise(VMCommonClass* cl);
 
-  static llvm::ConstantInt* classOffset();
+  static llvm::Constant* classOffset();
   
   bool instanceOf(VMCommonClass* cl);
 
