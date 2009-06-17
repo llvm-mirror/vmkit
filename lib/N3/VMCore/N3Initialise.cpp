@@ -166,13 +166,15 @@ static void initialiseVT() {
 
 # define INIT(X) { \
   X fake; \
-  X::VT = ((VirtualTable**)(void*)(&fake))[0]; }
+  X::VT = ((VirtualTable**)(void*)(&fake))[0];\
+  ((void**)X::VT)[0] = 0; }
   
   INIT(Assembly);
   INIT(Header);
   INIT(Property);
   INIT(Param);
   INIT(Section);
+  INIT(Stream);
   INIT(Table);
   INIT(VMArray);
   INIT(ArrayUInt8);
@@ -188,6 +190,7 @@ static void initialiseVT() {
   INIT(UTF8);
   INIT(VMCommonClass);
   INIT(VMClass);
+  INIT(VMClassPointer);
   INIT(VMGenericClass);
   INIT(VMClassArray);
   INIT(VMMethod);
@@ -202,6 +205,7 @@ static void initialiseVT() {
   INIT(N3);
   INIT(Reader);
   INIT(UTF8Map);
+  INIT(AssemblyMap);
   INIT(ClassNameMap);
   INIT(ClassTokenMap);
   INIT(FieldTokenMap);
