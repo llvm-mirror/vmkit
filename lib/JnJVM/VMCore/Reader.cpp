@@ -33,7 +33,7 @@ ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, const char* path) {
     long nbb = ftell(fp);
     fseek(fp, 0, SeekSet);
     UserClassArray* array = loader->upcalls->ArrayOfByte;
-    res = (ArrayUInt8*)array->doNew((sint32)nbb, 0);
+    res = (ArrayUInt8*)array->doNew((sint32)nbb, loader->allocator);
     fread(res->elements, nbb, 1, fp);
     fclose(fp);
   }

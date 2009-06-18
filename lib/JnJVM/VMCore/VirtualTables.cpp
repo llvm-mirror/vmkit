@@ -29,7 +29,6 @@
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
 #include "LockedMap.h"
-#include "Zip.h"
 
 using namespace jnjvm;
 
@@ -245,11 +244,6 @@ void JnjvmBootstrapLoader::tracer() {
   TRACE_DELEGATEE(upcalls->OfLong);
   TRACE_DELEGATEE(upcalls->OfDouble);
 #undef TRACE_DELEGATEE
-  
-  for (std::vector<ZipArchive*>::iterator i = bootArchives.begin(),
-       e = bootArchives.end(); i!= e; ++i) {
-    (*i)->bytes->markAndTrace();
-  }
 }
 
 //===----------------------------------------------------------------------===//

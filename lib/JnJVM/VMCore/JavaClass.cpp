@@ -287,9 +287,18 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator) {
     cl->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2);
   VirtualTable* VT = virtualVT;
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + (n << logSize);
-  
-  JavaArray* res = (JavaArray*)allocator.Allocate(size, "Array");
-  ((void**)res)[0] = VT;
+ 
+  JavaArray* res = 0;
+
+  // If the allocator is the boostrap allocator, use it.
+  if (&allocator == &(cl->classLoader->bootstrapLoader->allocator)) {
+    res = (JavaArray*)allocator.Allocate(size, "Array");
+    ((void**)res)[0] = VT;
+  } else {
+    // Otherwise, allocate with the GC.
+    Jnjvm* vm = JavaThread::get()->getJVM();
+    res = (JavaArray*)vm->gcAllocator.allocateManagedObject(size, VT);
+  }
   res->size = n;
   return res;
 }
