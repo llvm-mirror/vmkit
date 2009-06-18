@@ -49,9 +49,9 @@ class ZipArchive : public mvm::PermanentObject {
 public:
   std::map<const char*, ZipFile*, ltstr> filetable;
   typedef std::map<const char*, ZipFile*, ltstr>::iterator table_iterator;
+  ArrayUInt8* bytes;
 
 private:
-  ArrayUInt8* bytes;
   
   void findOfscd();
   void addFiles();
