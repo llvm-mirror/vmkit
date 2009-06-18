@@ -97,7 +97,7 @@ private:
   /// its objects in permanent memory, not with the garbage collector.
   void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
                      sint32 size) {
-    return allocator.Allocate(sizeof(ssize_t) + size * sizeof(uint16));
+    return allocator.Allocate(sizeof(ssize_t) + size * sizeof(uint16), "UTF8");
   }
   
   UTF8(sint32 n) {

@@ -706,7 +706,7 @@ static char* findInformation(Jnjvm* vm, ArrayUInt8* manifest, const char* entry,
     else end += index;
 
     sint32 length = end - index - 1;
-    char* name = (char*)vm->allocator.Allocate(length + 1);
+    char* name = (char*)vm->allocator.Allocate(length + 1, "class name");
     memcpy(name, &(ptr[index]), length);
     name[length] = 0;
     return name;
@@ -719,7 +719,7 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
                                           int i) {
   jarFile = argv[i];
   uint32 size = 2 + strlen(vm->classpath) + strlen(jarFile);
-  char* temp = (char*)vm->allocator.Allocate(size);
+  char* temp = (char*)vm->allocator.Allocate(size, "jar file");
 
   sprintf(temp, "%s:%s", vm->classpath, jarFile);
   vm->setClasspath(temp);
@@ -968,7 +968,7 @@ void Jnjvm::loadBootstrap() {
     uint32 size = upcalls->newString->virtualTableSize * sizeof(uintptr_t);
     
     JavaString::internStringVT = 
-      (JavaVirtualTable*)bootstrapLoader->allocator.Allocate(size);
+      (JavaVirtualTable*)bootstrapLoader->allocator.Allocate(size, "String VT");
 
     memcpy(JavaString::internStringVT, stringVT, size);
     

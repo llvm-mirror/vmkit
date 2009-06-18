@@ -82,7 +82,7 @@ extern "C" void* jnjvmInterfaceLookup(CacheNode* cache, JavaObject *obj) {
     } else {
       mvm::BumpPtrAllocator& alloc = 
         enveloppe->classDef->classLoader->allocator;
-      rcache = new(alloc) CacheNode(enveloppe);
+      rcache = new(alloc, "CacheNode") CacheNode(enveloppe);
     }
     
     rcache->methPtr = dmeth->compiledPtr();

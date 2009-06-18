@@ -276,7 +276,8 @@ public:
   ///
   void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
                      sint32 size) {
-    return allocator.Allocate(sizeof(Signdef) + size * sizeof(Typedef));
+    return allocator.Allocate(sizeof(Signdef) + size * sizeof(Typedef),
+                              "Signdef");
   }
 
   
@@ -338,7 +339,7 @@ public:
   template<typename Ty> 
   Ty *getInfo() {
     if (!JInfo) {
-      JInfo = new(initialLoader->allocator) Ty(this);
+      JInfo = new(initialLoader->allocator, "Sign info") Ty(this);
     }   
 
     assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&

@@ -18,7 +18,7 @@
   vm->loadName(vm->asciizConstructUTF8(name), true, false)                        
 
 #define UPCALL_PRIMITIVE_CLASS(loader, name, nb)                               \
-  new(loader->allocator)                                                       \
+  new(loader->allocator, "Primitive class")                                    \
           UserClassPrimitive(loader, loader->asciizConstructUTF8(name), nb)    \
 
 #define UPCALL_FIELD(vm, cl, name, type, acc)                                  \

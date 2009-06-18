@@ -288,7 +288,7 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator) {
   VirtualTable* VT = virtualVT;
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + (n << logSize);
   
-  JavaArray* res = (JavaArray*)allocator.Allocate(size);
+  JavaArray* res = (JavaArray*)allocator.Allocate(size, "Array");
   ((void**)res)[0] = VT;
   res->size = n;
   return res;
@@ -602,7 +602,8 @@ void* UserClass::allocateStaticInstance(Jnjvm* vm) {
 #ifdef USE_GC_BOEHM
   void* val = GC_MALLOC(getStaticSize());
 #else
-  void* val = classLoader->allocator.Allocate(getStaticSize());
+  void* val = classLoader->allocator.Allocate(getStaticSize(),
+                                              "Static instance");
 #endif
   setStaticInstance(val);
   return val;
@@ -642,7 +643,7 @@ void Class::readParents(Reader& reader) {
   uint16 nbI = reader.readU2();
 
   interfaces = (Class**)
-    classLoader->allocator.Allocate(nbI * sizeof(Class*));
+    classLoader->allocator.Allocate(nbI * sizeof(Class*), "Interfaces");
   
   // Do not set nbInterfaces yet, we may be interrupted by the GC
   // in anon-cooperative environment.
@@ -707,7 +708,7 @@ void UserClass::loadExceptions() {
 Attribut* Class::readAttributs(Reader& reader, uint16& size) {
   uint16 nba = reader.readU2();
  
-  Attribut* attributs = new(classLoader->allocator) Attribut[nba];
+  Attribut* attributs = new(classLoader->allocator, "Attributs") Attribut[nba];
 
   for (int i = 0; i < nba; i++) {
     const UTF8* attName = ctpInfo->UTF8At(reader.readU2());
@@ -725,7 +726,7 @@ Attribut* Class::readAttributs(Reader& reader, uint16& size) {
 
 void Class::readFields(Reader& reader) {
   uint16 nbFields = reader.readU2();
-  virtualFields = new (classLoader->allocator) JavaField[nbFields];
+  virtualFields = new (classLoader->allocator, "Fields") JavaField[nbFields];
   staticFields = virtualFields + nbFields;
   for (int i = 0; i < nbFields; i++) {
     uint16 access = reader.readU2();
@@ -781,7 +782,7 @@ void Class::makeVT() {
 
 void Class::readMethods(Reader& reader) {
   uint16 nbMethods = reader.readU2();
-  virtualMethods = new(classLoader->allocator) JavaMethod[nbMethods];
+  virtualMethods = new(classLoader->allocator, "Methods") JavaMethod[nbMethods];
   staticMethods = virtualMethods + nbMethods;
   for (int i = 0; i < nbMethods; i++) {
     uint16 access = reader.readU2();
@@ -901,7 +902,8 @@ void UserClass::resolveInnerOuterClasses() {
         } else if (clOuter == this) {
           if (!innerClasses) {
             innerClasses = (Class**)
-              classLoader->allocator.Allocate(nbi * sizeof(Class*));
+              classLoader->allocator.Allocate(nbi * sizeof(Class*),
+                                              "Inner classes");
           }
           clInner->setInnerAccess(accessFlags);
           if (!innerName) isAnonymous = true;
@@ -1288,7 +1290,8 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
 
     mvm::BumpPtrAllocator& allocator = C->classLoader->allocator;
     secondaryTypes = (JavaVirtualTable**)
-      allocator.Allocate(sizeof(JavaVirtualTable*) * nbSecondaryTypes);  
+      allocator.Allocate(sizeof(JavaVirtualTable*) * nbSecondaryTypes,
+                         "Secondary types");  
     
     if (outOfDepth) {
       secondaryTypes[0] = this;
@@ -1423,7 +1426,8 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
           nbSecondaryTypes = base->nbInterfaces + superVT->nbSecondaryTypes +
                                 addSuper;
           secondaryTypes = (JavaVirtualTable**)
-            allocator.Allocate(sizeof(JavaVirtualTable*) * nbSecondaryTypes);
+            allocator.Allocate(sizeof(JavaVirtualTable*) * nbSecondaryTypes,
+                               "Secondary types");
          
           // Put the super in the list of secondary types.
           if (addSuper) secondaryTypes[0] = superVT;
@@ -1468,7 +1472,8 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
         nbSecondaryTypes = superVT->nbSecondaryTypes + 2 + outOfDepth;
 
         secondaryTypes = (JavaVirtualTable**)
-          allocator.Allocate(sizeof(JavaVirtualTable*) * nbSecondaryTypes);
+          allocator.Allocate(sizeof(JavaVirtualTable*) * nbSecondaryTypes,
+                             "Secondary types");
         
         // First, copy the list of secondary types from super array.
         memcpy(secondaryTypes + outOfDepth, superVT->secondaryTypes,
@@ -1520,7 +1525,8 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
       
       mvm::BumpPtrAllocator& allocator = JCL->allocator;
       secondaryTypes = (JavaVirtualTable**)
-        allocator.Allocate(sizeof(JavaVirtualTable*) * nbSecondaryTypes);
+        allocator.Allocate(sizeof(JavaVirtualTable*) * nbSecondaryTypes,
+                           "Secondary types");
 
       // The interfaces have already been resolved.
       secondaryTypes[0] = cl->interfaces[0]->virtualVT;

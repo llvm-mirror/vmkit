@@ -160,7 +160,7 @@ public:
   ///
   void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
                      uint32 nbMethods) {
-    return allocator.Allocate(sizeof(uintptr_t) * (nbMethods));
+    return allocator.Allocate(sizeof(uintptr_t) * (nbMethods), "Virtual table");
   }
 
   /// JavaVirtualTable - Create JavaVirtualTable objects for classes, array

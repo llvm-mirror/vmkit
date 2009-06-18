@@ -34,7 +34,7 @@ mvm::VirtualMachine* mvm::VirtualMachine::createJVM(JnjvClassLoader* JCL) {
   mvm::BumpPtrAllocator* C = new mvm::BumpPtrAllocator();
   JnjvmBootstraLoader* bootstrapLoader = 
     new(*C) JnjvmBootstrapLoader(*C, JCL->getCompiler());
-  Jnjvm* vm = new(*A) Jnjvm(*A, bootstrapLoader);
+  Jnjvm* vm = new(*A, "VM") Jnjvm(*A, bootstrapLoader);
   return vm;
 }
 #else
@@ -42,12 +42,12 @@ mvm::VirtualMachine* mvm::VirtualMachine::createJVM(JnjvClassLoader* JCL) {
 JnjvmClassLoader*
 mvm::VirtualMachine::initialiseJVM(JavaCompiler* Comp, bool dlLoad) {
   mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();
-  return new(*A) JnjvmBootstrapLoader(*A, Comp, dlLoad);
+  return new(*A, "Bootstrap loader") JnjvmBootstrapLoader(*A, Comp, dlLoad);
 }
 
 mvm::VirtualMachine* mvm::VirtualMachine::createJVM(JnjvmClassLoader* C) {
   mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();
-  Jnjvm* vm = new(*A) Jnjvm(*A, (JnjvmBootstrapLoader*)C);
+  Jnjvm* vm = new(*A, "VM") Jnjvm(*A, (JnjvmBootstrapLoader*)C);
   return vm;
 }
 

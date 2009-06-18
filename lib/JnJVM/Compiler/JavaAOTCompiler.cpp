@@ -1671,7 +1671,7 @@ end:
 void JavaAOTCompiler::compileFile(JnjvmClassLoader* JCL, const char* n) {
   name = n;
   mvm::BumpPtrAllocator A;
-  Jnjvm* vm = new(A) Jnjvm(A, (JnjvmBootstrapLoader*)JCL);
+  Jnjvm* vm = new(A, "Bootstrap loader") Jnjvm(A, (JnjvmBootstrapLoader*)JCL);
   JavaThread* th = new JavaThread(0, 0, vm);
   vm->setMainThread(th);
   th->start((void (*)(mvm::Thread*))mainCompilerStart);

@@ -398,7 +398,7 @@ private:
     }
 
     static FatLock* allocate(UserCommonClass* cl) {
-      return new(cl->classLoader->allocator) FatLock();
+      return new(cl->classLoader->allocator, "Class fat lock") FatLock();
     }
 
     void acquire() {
@@ -684,7 +684,7 @@ public:
   template<typename Ty> 
   Ty *getInfo() {
     if (!JInfo) {
-      JInfo = new(classLoader->allocator) Ty(this);
+      JInfo = new(classLoader->allocator, "Class JIT info") Ty(this);
     }   
 
     assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
@@ -1161,7 +1161,7 @@ public:
   template<typename Ty> 
   Ty *getInfo() {
     if (!JInfo) {
-      JInfo = new(classDef->classLoader->allocator) Ty(this);
+      JInfo = new(classDef->classLoader->allocator, "Method JIT info") Ty(this);
     }   
 
     assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
@@ -1284,7 +1284,7 @@ public:
   template<typename Ty> 
   Ty *getInfo() {
     if (!JInfo) {
-      JInfo = new(classDef->classLoader->allocator) Ty(this);
+      JInfo = new(classDef->classLoader->allocator, "Field JIT info") Ty(this);
     }   
 
     assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&

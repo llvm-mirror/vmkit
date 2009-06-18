@@ -124,7 +124,7 @@ void ZipArchive::addFiles() {
 
   while (true) {
     if (memcmp(&(reader.bytes->elements[temp]), HDR_CENTRAL, 4)) return;
-    ZipFile* ptr = new(allocator) ZipFile();
+    ZipFile* ptr = new(allocator, "ZipFile") ZipFile();
     reader.cursor = temp + 4 + C_COMPRESSION_METHOD;
     ptr->compressionMethod = readEndianDep2(reader);
     
@@ -145,7 +145,8 @@ void ZipArchive::addFiles() {
         (reader.max - temp) < ptr->filenameLength)
       return;
 
-    ptr->filename = (char*)allocator.Allocate(ptr->filenameLength + 1);
+    ptr->filename = (char*)allocator.Allocate(ptr->filenameLength + 1,
+                                              "Zip file name");
     memcpy(ptr->filename, &(reader.bytes->elements[temp]), ptr->filenameLength);
     ptr->filename[ptr->filenameLength] = 0;
 

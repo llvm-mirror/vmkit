@@ -890,7 +890,8 @@ llvm::Function* JavaJIT::javaCompile() {
   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
   compilingMethod->enveloppes = 
-    new (compilingClass->classLoader->allocator) Enveloppe[nbEnveloppes];
+    new (compilingClass->classLoader->allocator, "Enveloppes")
+    Enveloppe[nbEnveloppes];
   compilingMethod->nbEnveloppes = nbEnveloppes;
   nbEnveloppes = 0;
  
@@ -1918,7 +1919,7 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
 #ifndef ISOLATE_SHARING
   // ok now the cache
   Enveloppe& enveloppe = buggyVirtual ?
-    *(new (compilingClass->classLoader->allocator) Enveloppe()) :
+    *(new (compilingClass->classLoader->allocator, "Enveloppe") Enveloppe()) :
     compilingMethod->enveloppes[nbEnveloppes++];
   if (!inlining)
     enveloppe.initialise(compilingClass, name, signature->keyName);

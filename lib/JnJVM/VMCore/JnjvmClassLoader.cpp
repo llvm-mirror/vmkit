@@ -61,10 +61,10 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   
 	TheCompiler = Comp;
   
-  hashUTF8 = new(allocator) UTF8Map(allocator, 0);
-  classes = new(allocator) ClassMap();
-  javaTypes = new(allocator) TypeMap(); 
-  javaSignatures = new(allocator) SignMap(); 
+  hashUTF8 = new(allocator, "UTF8Map") UTF8Map(allocator, 0);
+  classes = new(allocator, "ClassMap") ClassMap();
+  javaTypes = new(allocator, "TypeMap") TypeMap(); 
+  javaSignatures = new(allocator, "SignMap") SignMap(); 
   
   bootClasspathEnv = getenv("JNJVM_BOOTCLASSPATH");
   if (!bootClasspathEnv) {
@@ -77,7 +77,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   }
   
   
-  upcalls = new(allocator) Classpath();
+  upcalls = new(allocator, "Classpath") Classpath();
   bootstrapLoader = this;
    
   // Try to find if we have a pre-compiled rt.jar
@@ -129,7 +129,8 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
    
   if (!upcalls->OfChar) {
     // Allocate interfaces.
-    InterfacesArray = (Class**)allocator.Allocate(2 * sizeof(UserClass*));
+    InterfacesArray = (Class**)allocator.Allocate(2 * sizeof(UserClass*),
+                                                  "Interface array");
     ClassArray::InterfacesArray = InterfacesArray;
 
     // Create the primitive classes.
@@ -256,11 +257,11 @@ JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
   bootstrapLoader = JCL.bootstrapLoader;
   TheCompiler = bootstrapLoader->getCompiler()->Create("Applicative loader");
   
-  hashUTF8 = new(allocator) UTF8Map(allocator,
-                                    bootstrapLoader->upcalls->ArrayOfChar);
-  classes = new(allocator) ClassMap();
-  javaTypes = new(allocator) TypeMap();
-  javaSignatures = new(allocator) SignMap();
+  hashUTF8 = new(allocator, "UTF8Map")
+    UTF8Map(allocator, bootstrapLoader->upcalls->ArrayOfChar);
+  classes = new(allocator, "ClassMap") ClassMap();
+  javaTypes = new(allocator, "TypeMap") TypeMap();
+  javaSignatures = new(allocator, "SignMap") SignMap();
 
   javaLoader = loader;
   isolate = I;
@@ -628,7 +629,7 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
   UserClass* res = 0;
   if (I == End) {
     const UTF8* internalName = readerConstructUTF8(name->elements, name->size);
-    res = new(allocator) UserClass(this, internalName, bytes);
+    res = new(allocator, "Class") UserClass(this, internalName, bytes);
     classes->map.insert(std::make_pair(internalName, res));
   } else {
     res = ((UserClass*)(I->second));
@@ -648,7 +649,8 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name,
   UserClassArray* res = 0;
   if (I == End) {
     const UTF8* internalName = readerConstructUTF8(name->elements, name->size);
-    res = new(allocator) UserClassArray(this, internalName, baseClass);
+    res = new(allocator, "Array class") UserClassArray(this, internalName,
+                                                       baseClass);
     classes->map.insert(std::make_pair(internalName, res));
   } else {
     res = ((UserClassArray*)(I->second));
@@ -662,10 +664,10 @@ Typedef* JnjvmClassLoader::internalConstructType(const UTF8* name) {
   Typedef* res = 0;
   switch (cur) {
     case I_TAB :
-      res = new(allocator) ArrayTypedef(name);
+      res = new(allocator, "ArrayTypedef") ArrayTypedef(name);
       break;
     case I_REF :
-      res = new(allocator) ObjectTypedef(name, hashUTF8);
+      res = new(allocator, "ObjectTypedef") ObjectTypedef(name, hashUTF8);
       break;
     default :
       UserClassPrimitive* cl = 
@@ -673,7 +675,8 @@ Typedef* JnjvmClassLoader::internalConstructType(const UTF8* name) {
       assert(cl && "No primitive");
       bool unsign = (cl == bootstrapLoader->upcalls->OfChar || 
                      cl == bootstrapLoader->upcalls->OfBool);
-      res = new(allocator) PrimitiveTypedef(name, cl, unsign, cur);
+      res = new(allocator, "PrimitiveTypedef") PrimitiveTypedef(name, cl,
+                                                                unsign, cur);
   }
   return res;
 }
@@ -811,7 +814,8 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
       (VMClassLoader*)(upcalls->vmdataClassLoader->getObjectField(loader));
     if (!vmdata) {
       mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();    
-      JCL = new(*A) JnjvmClassLoader(*A, *vm->bootstrapLoader, loader, vm);
+      JCL = new(*A, "Class loader") JnjvmClassLoader(*A, *vm->bootstrapLoader,
+                                                     loader, vm);
       vmdata = VMClassLoader::allocate(JCL);
       (upcalls->vmdataClassLoader->setObjectField(loader, (JavaObject*)vmdata));
     }
@@ -905,7 +909,7 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
           stat(rp, &st);
           if ((st.st_mode & S_IFMT) == S_IFDIR) {
             unsigned int len = strlen(rp);
-            char* temp = (char*)allocator.Allocate(len + 2);
+            char* temp = (char*)allocator.Allocate(len + 2, "Boot classpath");
             memcpy(temp, rp, len);
             temp[len] = Jnjvm::dirSeparator[0];
             temp[len + 1] = 0;
@@ -914,7 +918,8 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
             ArrayUInt8* bytes =
               Reader::openFile(this, rp);
             if (bytes) {
-              ZipArchive *archive = new(allocator) ZipArchive(bytes, allocator);
+              ZipArchive *archive = new(allocator, "ZipArchive")
+                ZipArchive(bytes, allocator);
               if (archive) {
                 bootArchives.push_back(archive);
               }
