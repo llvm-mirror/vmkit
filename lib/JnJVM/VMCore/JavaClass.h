@@ -875,7 +875,8 @@ public:
   
   /// doNew - Allocate a new array with the given allocator.
   ///
-  JavaArray* doNew(sint32 n, mvm::BumpPtrAllocator& allocator);
+  JavaArray* doNew(sint32 n, mvm::BumpPtrAllocator& allocator,
+                   bool temp = false);
   JavaArray* doNew(sint32 n, mvm::Allocator& allocator);
 
   /// _baseClass - The base class of the array.

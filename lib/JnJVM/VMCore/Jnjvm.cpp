@@ -724,7 +724,7 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   sprintf(temp, "%s:%s", vm->classpath, jarFile);
   vm->setClasspath(temp);
   
-  ArrayUInt8* bytes = Reader::openFile(vm->bootstrapLoader, jarFile);
+  ArrayUInt8* bytes = Reader::openFile(vm->bootstrapLoader, jarFile, true);
 
   if (!bytes) {
     printf("Unable to access jarfile %s\n", jarFile);
@@ -758,6 +758,7 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   } else {
     printf("Can't find archive %s\n", jarFile);
   }
+  free(bytes);
 }
 
 void ClArgumentsInfo::nyi() {

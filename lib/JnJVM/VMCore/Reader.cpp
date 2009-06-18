@@ -25,7 +25,8 @@ const int Reader::SeekSet = SEEK_SET;
 const int Reader::SeekCur = SEEK_CUR;
 const int Reader::SeekEnd = SEEK_END;
 
-ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, const char* path) {
+ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, const char* path,
+                             bool temp) {
   FILE* fp = fopen(path, "r");
   ArrayUInt8* res = 0;
   if (fp != 0) {
@@ -33,7 +34,7 @@ ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, const char* path) {
     long nbb = ftell(fp);
     fseek(fp, 0, SeekSet);
     UserClassArray* array = loader->upcalls->ArrayOfByte;
-    res = (ArrayUInt8*)array->doNew((sint32)nbb, loader->allocator);
+    res = (ArrayUInt8*)array->doNew((sint32)nbb, loader->allocator, temp);
     fread(res->elements, nbb, 1, fp);
     fclose(fp);
   }

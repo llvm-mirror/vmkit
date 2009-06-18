@@ -76,8 +76,10 @@ public:
   static const int SeekCur;
   static const int SeekEnd;
 
-  static ArrayUInt8* openFile(JnjvmBootstrapLoader* loader, const char* path);
-  static ArrayUInt8* openZip(JnjvmBootstrapLoader* loader, ZipArchive* archive, const char* filename);
+  static ArrayUInt8* openFile(JnjvmBootstrapLoader* loader, const char* path,
+                              bool temp = false);
+  static ArrayUInt8* openZip(JnjvmBootstrapLoader* loader, ZipArchive* archive,
+                             const char* filename);
   
   uint8 readU1() {
     return bytes->elements[cursor++];

@@ -280,7 +280,8 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::Allocator& allocator) {
   return res;
 }
 
-JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator) {
+JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator,
+                                 bool temp) {
   UserCommonClass* cl = baseClass();
 
   uint32 logSize = cl->isPrimitive() ? 
@@ -290,15 +291,14 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator) {
  
   JavaArray* res = 0;
 
-  // If the allocator is the boostrap allocator, use it.
-  if (&allocator == &(cl->classLoader->bootstrapLoader->allocator)) {
+  // If the array is not temporary, use the allocator.
+  if (!temp) {
     res = (JavaArray*)allocator.Allocate(size, "Array");
-    ((void**)res)[0] = VT;
   } else {
-    // Otherwise, allocate with the GC.
-    Jnjvm* vm = JavaThread::get()->getJVM();
-    res = (JavaArray*)vm->gcAllocator.allocateManagedObject(size, VT);
+    // Otherwise, allocate with the malloc
+    res = (JavaArray*)malloc(size);
   }
+  ((void**)res)[0] = VT;
   res->size = n;
   return res;
 }
