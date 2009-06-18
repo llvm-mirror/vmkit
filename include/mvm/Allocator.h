@@ -42,7 +42,7 @@ private:
   SpinLock TheLock;
   llvm::BumpPtrAllocator Allocator;
 public:
-  void* Allocate(size_t sz) {
+  void* Allocate(size_t sz, const char* name) {
 #ifdef USE_GC_BOEHM
     return GC_MALLOC(sz);
 #else
@@ -60,16 +60,18 @@ public:
 
 class PermanentObject {
 public:
-  void* operator new(size_t sz, BumpPtrAllocator& allocator) {
-    return allocator.Allocate(sz);
+  void* operator new(size_t sz, BumpPtrAllocator& allocator,
+                     const char* name) {
+    return allocator.Allocate(sz, name);
   }
 
   void operator delete(void* ptr) {
     free(ptr);
   }
 
-  void* operator new [](size_t sz, BumpPtrAllocator& allocator) {
-    return allocator.Allocate(sz);
+  void* operator new [](size_t sz, BumpPtrAllocator& allocator,
+                        const char* name) {
+    return allocator.Allocate(sz, name);
   }
 };
 

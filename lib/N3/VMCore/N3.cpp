@@ -59,7 +59,7 @@ Assembly* N3::lookupAssembly(const UTF8* name) {
 
 N3* N3::allocateBootstrap() {
   mvm::BumpPtrAllocator * A = new mvm::BumpPtrAllocator();
-  N3 *vm= new(*A) N3();
+  N3 *vm= new(*A, "VM") N3();
 
   std::string str = 
     mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
@@ -84,7 +84,7 @@ N3* N3::allocateBootstrap() {
 
 N3* N3::allocate(const char* name, N3* parent) {
   mvm::BumpPtrAllocator * A = new mvm::BumpPtrAllocator();
-  N3 *vm= new(*A) N3();
+  N3 *vm= new(*A, "VM") N3();
   
   std::string str = 
     mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
