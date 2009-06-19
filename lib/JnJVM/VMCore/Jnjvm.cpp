@@ -31,6 +31,7 @@
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "LinkJavaRuntime.h"
 #include "LockedMap.h"
 #include "Reader.h"
 #include "Zip.h"

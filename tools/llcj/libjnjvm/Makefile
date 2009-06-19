@@ -12,6 +12,6 @@ include $(LEVEL)/Makefile.config
 
 VMKIT_LIBRARYNAME = jnjvm
 VMKIT_BUILD_ARCHIVE = 1
-USEDLIBS = Allocator CommonThread Mvm JnJVM Classpath $(GCLIB)
+USEDLIBS = JnJVM.a Classpath.a Allocator.a CommonThread.a Mvm.a $(GCLIB).a
 
 include $(LEVEL)/Makefile.common

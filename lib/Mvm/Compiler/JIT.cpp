@@ -24,7 +24,7 @@
 #include <llvm/Target/TargetData.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
-
+#include <llvm/Target/TargetSelect.h>
 
 #include "mvm/JIT.h"
 #include "mvm/Threads/Locks.h"
@@ -56,6 +56,8 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   if (!M) {
     globalModule = new llvm::Module("bootstrap module");
     globalModuleProvider = new ExistingModuleProvider (globalModule);
+
+    InitializeNativeTarget();
 
     executionEngine = ExecutionEngine::createJIT(globalModuleProvider, 0,
                                                  0, level);

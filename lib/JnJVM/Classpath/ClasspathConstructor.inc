@@ -65,11 +65,12 @@ JavaObjectConstructor* cons) {
   return res;
 }
 
-static jobject proceed(JavaObjectConstructor* cons, jobject _args, jclass Clazz,
-                       jint index) __attribute__ ((noinline));
+static jobject proceedConstructor(JavaObjectConstructor* cons, jobject _args,
+                                  jclass Clazz, jint index) 
+  __attribute__ ((noinline));
  
-static jobject proceed(JavaObjectConstructor* cons, jobject _args, jclass Clazz,
-                       jint index) {
+static jobject proceedConstructor(JavaObjectConstructor* cons, jobject _args,
+                                  jclass Clazz, jint index) {
   jobject res = 0;
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = cons->getInternalMethod();
@@ -142,7 +143,7 @@ JavaObjectConstructor* cons, jobject _args, jclass Clazz, jint index) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   // Proceed in another function because we are using alloca.
-  res = proceed(cons, _args, Clazz, index);
+  res = proceedConstructor(cons, _args, Clazz, index);
   
   END_NATIVE_EXCEPTION
   

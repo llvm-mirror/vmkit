@@ -958,3 +958,17 @@ void Jnjvm::clearReferent(gc* _obj) {
   JavaObjectReference* obj = (JavaObjectReference*)_obj;
   obj->setReferent(0);
 }
+
+#include "ClasspathConstructor.inc"
+#include "Classpath.inc"
+#include "ClasspathField.inc"
+#include "ClasspathMethod.inc"
+#include "ClasspathVMClass.inc"
+#include "ClasspathVMClassLoader.inc"
+#include "ClasspathVMObject.inc"
+#include "ClasspathVMRuntime.inc"
+#include "ClasspathVMStackWalker.inc"
+#include "ClasspathVMSystem.inc"
+#include "ClasspathVMSystemProperties.inc"
+#include "ClasspathVMThread.inc"
+#include "ClasspathVMThrowable.inc"

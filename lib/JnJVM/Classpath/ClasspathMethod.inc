@@ -85,11 +85,12 @@ JavaObjectMethod* Meth) {
   return res;
 }
 
-static jobject proceed(JavaObjectMethod* Meth, jobject _obj, jobject _args, 
-                       jclass Cl, jint index) __attribute__((noinline));
+static jobject proceedMethod(JavaObjectMethod* Meth, jobject _obj,
+                             jobject _args, jclass Cl, jint index) 
+  __attribute__((noinline));
 
-static jobject proceed(JavaObjectMethod* Meth, jobject _obj, jobject _args, 
-                       jclass Cl, jint index) {
+static jobject proceedMethod(JavaObjectMethod* Meth, jobject _obj,
+                             jobject _args, jclass Cl, jint index) {
 
   JavaObject* res = 0;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -233,7 +234,7 @@ JavaObjectMethod* Meth, jobject _obj, jobject _args, jclass Cl, jint index) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   // Create a new function because we use alloca.
-  res = proceed(Meth, _obj, _args, Cl, index);
+  res = proceedMethod(Meth, _obj, _args, Cl, index);
   
   END_NATIVE_EXCEPTION
 

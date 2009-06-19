@@ -12,7 +12,8 @@ include $(LEVEL)/Makefile.config
 
 TOOLNAME = n3-mono
 LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo
-USEDLIBS = Allocator CommonThread Mvm MvmCompiler N3 $(GCLIB) Mono
+USEDLIBS = N3.a Mono.a Allocator.a CommonThread.a Mvm.a MvmCompiler.a \
+	   $(GCLIB).a
 
 include $(LEVEL)/Makefile.common
 

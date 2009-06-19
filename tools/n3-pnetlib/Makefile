@@ -12,7 +12,8 @@ include $(LEVEL)/Makefile.config
 
 TOOLNAME = n3-pnetlib
 LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo
-USEDLIBS = Allocator CommonThread Mvm MvmCompiler N3 $(GCLIB) PNetLib
+USEDLIBS = N3.a PNetLib.a Allocator.a CommonThread.a Mvm.a MvmCompiler.a \
+	   $(GCLIB).a
 
 include $(LEVEL)/Makefile.common
 

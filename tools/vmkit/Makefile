@@ -11,19 +11,20 @@ LEVEL = ../..
 include $(LEVEL)/Makefile.config
 
 TOOLNAME = vmkit
-USEDLIBS = Allocator CommonThread Mvm MvmCompiler $(GCLIB)
 
 ifeq ($(WITH_JNJVM), 1)
-USEDLIBS += JnJVM Classpath JnjvmCompiler
+USEDLIBS += JnJVM.a Classpath.a JnjvmCompiler.a
 endif
 
 ifeq ($(ISOLATE_SHARING_BUILD), 1) 
-    USEDLIBS += Isolate
+    USEDLIBS += Isolate.a
 endif
 
 ifeq ($(WITH_N3_PNETLIB), 1)
-  USEDLIBS += N3 PNetLib
+  USEDLIBS += N3.a PNetLib.a
 endif
+
+USEDLIBS += Allocator.a CommonThread.a Mvm.a MvmCompiler.a $(GCLIB).a
 
 LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo
 
