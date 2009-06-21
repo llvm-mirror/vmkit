@@ -219,10 +219,9 @@ int main(int argc, char **argv) {
     gccArgv[gccArgc++] = "-lm";
     gccArgv[gccArgc++] = "-ldl";
     gccArgv[gccArgc++] = "-lz";
+    gccArgv[gccArgc++] = "-lJnJVM";
     if (withJIT) {
-      gccArgv[gccArgc++] = "-ljnjvmjit";
-    } else {
-      gccArgv[gccArgc++] = "-lJnJVM";
+      gccArgv[gccArgc++] = "-lJnJVMCompiler";
     }
     gccArgv[gccArgc++] = "-lvmjc";
     gccArgv[gccArgc++] = "-lLLVMSupport";

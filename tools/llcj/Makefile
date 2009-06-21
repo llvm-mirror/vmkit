@@ -8,8 +8,6 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../..
 
-DIRS = libjnjvmjit
-
 include $(LEVEL)/Makefile.config
 
 TOOLNAME = llcj
