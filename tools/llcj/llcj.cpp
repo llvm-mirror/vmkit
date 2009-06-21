@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
     if (withJIT) {
       gccArgv[gccArgc++] = "-ljnjvmjit";
     } else {
-      gccArgv[gccArgc++] = "-ljnjvm";
+      gccArgv[gccArgc++] = "-lJnJVM";
     }
     gccArgv[gccArgc++] = "-lvmjc";
     gccArgv[gccArgc++] = "-lLLVMSupport";

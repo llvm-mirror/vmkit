@@ -8,7 +8,7 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../..
 
-DIRS = libjnjvm libjnjvmjit
+DIRS = libjnjvmjit
 
 include $(LEVEL)/Makefile.config
 
