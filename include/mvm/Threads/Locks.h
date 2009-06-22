@@ -361,10 +361,14 @@ public:
       mvm::Thread::yield();
   }
 
+  void lock() { acquire(); }
+
   /// release - Release the spin lock. This must be called by the thread
   /// holding it.
   ///
   void release() { locked = 0; }
+  
+  void unlock() { release(); }
 };
 
 

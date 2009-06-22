@@ -18,7 +18,7 @@ namespace mvm {
 
 class GCThread {
   /// _globalLock - Global lock for gcmalloc.
-  LockNormal _globalLock;
+  SpinLock _globalLock;
 
   /// _stackLock - Stack lock for synchronization.
   LockNormal _stackLock;         
