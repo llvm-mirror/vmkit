@@ -245,7 +245,6 @@ public:
           TFatLock* obj = TFatLock::allocate(O);
           uintptr_t val = ((uintptr_t)obj >> 1) | FatMask;
 loop:
-          uint32 count = 0;
           while (lock) {
             if (lock & FatMask) {
 #ifdef USE_GC_BOEHM
@@ -253,7 +252,7 @@ loop:
 #endif
               goto end;
             }
-            else mvm::Thread::yield(&count);
+            else mvm::Thread::yield();
           }
         
           uintptr_t test = __sync_val_compare_and_swap((uintptr_t*)&lock, 0, val);
@@ -350,13 +349,16 @@ public:
   SpinLock() { locked = 0; }
 
 
-  /// acquire - Acquire the spin lock, doing an active loop. When the lock
-  /// is already held, yield the processor.
+  /// acquire - Acquire the spin lock, doing an active loop.
   ///
   void acquire() {
-    uint32 count = 0;
-    while (llvm_atomic_cmp_swap_i8(&locked, 0, 1))
-      mvm::Thread::yield(&count);
+    for (uint32 count = 0; count < 1000; ++count) {
+      uint8 res = __sync_val_compare_and_swap(&locked, 0, 1);
+      if (!res) return;
+    }
+    
+    while (__sync_val_compare_and_swap(&locked, 0, 1))
+      mvm::Thread::yield();
   }
 
   /// release - Release the spin lock. This must be called by the thread

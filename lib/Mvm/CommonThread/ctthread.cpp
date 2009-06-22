@@ -23,21 +23,6 @@
 
 using namespace mvm;
 
-void Thread::yield() {
-  sched_yield();
-}
-
-void Thread::yield(unsigned int *c) {
-  if(++(*c) & 3)
-    sched_yield();
-  else {
-    struct timespec ts; 
-    ts.tv_sec = 0;
-    ts.tv_nsec = 2000;
-    nanosleep(&ts, 0); 
-  }
-}
-
 int Thread::kill(void* tid, int signo) {
   return pthread_kill((pthread_t)tid, signo);
 }

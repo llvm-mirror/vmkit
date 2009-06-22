@@ -10,6 +10,8 @@
 #ifndef MVM_THREAD_H
 #define MVM_THREAD_H
 
+#include <sched.h>
+
 #include "types.h"
 
 namespace mvm {
@@ -101,12 +103,9 @@ public:
   
   /// yield - Yield the processor to another thread.
   ///
-  static void yield(void);
-  
-  /// yield - Yield the processor to another thread. If the thread has been
-  /// askink for yield already a number of times (n), then do a small sleep.
-  ///
-  static void yield(unsigned int* n);
+  static void yield(void) {
+    sched_yield();
+  }
   
   /// kill - Kill the thread with the given pid by sending it a signal.
   ///
