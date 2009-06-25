@@ -342,7 +342,7 @@ public:
 
   /// locked - Is the spin lock locked?
   ///
-  uint8 locked;
+  uint32 locked;
   
   /// SpinLock - Initialize the lock as not being held.
   ///
