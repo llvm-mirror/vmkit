@@ -177,7 +177,8 @@ int main(int argc, char **argv) {
    
     JavaCompiler* Comp = 0;
     if (WithClinit.empty()) {
-      Module* TheModule = new Module("bootstrap module");
+      Module* TheModule = new Module("bootstrap module",
+                                     *(new llvm::LLVMContext()));
       if (!TargetTriple.empty())
         TheModule->setTargetTriple(TargetTriple);
       else

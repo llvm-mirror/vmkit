@@ -26,6 +26,7 @@ namespace llvm {
   class ExistingModuleProvider;
   class Function;
   class FunctionPassManager;
+  class LLVMContext;
   class Module;
   class ModuleProvider;
   class PointerType;
@@ -167,6 +168,7 @@ public:
   static llvm::ExecutionEngine* executionEngine;
   static mvm::LockNormal protectEngine;
   static llvm::Module *globalModule;
+  static llvm::LLVMContext *globalContext;
   static llvm::ExistingModuleProvider *globalModuleProvider;
   static llvm::FunctionPassManager* globalFunctionPasses;
   static const llvm::TargetData* TheTargetData;

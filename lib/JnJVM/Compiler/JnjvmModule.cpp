@@ -11,6 +11,7 @@
 #include "llvm/CallingConv.h"
 #include "llvm/Constants.h"
 #include "llvm/Instructions.h"
+#include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
 #include "llvm/PassManager.h"
 #include "llvm/Target/TargetData.h"
@@ -81,7 +82,8 @@ llvm::Constant*     JnjvmModule::OffsetBaseClassVTInVTConstant;
 
 
 JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
-  TheModule(new llvm::Module(str)), JavaIntrinsics(TheModule) {
+  TheModule(new llvm::Module(str, *(new llvm::LLVMContext()))),
+  JavaIntrinsics(TheModule) {
 
   enabledException = true;
 }

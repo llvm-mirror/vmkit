@@ -12,6 +12,7 @@
 #include <llvm/DerivedTypes.h>
 #include <llvm/Instructions.h>
 #include <llvm/LinkAllPasses.h>
+#include <llvm/LLVMContext.h>
 #include <llvm/Module.h>
 #include <llvm/ModuleProvider.h>
 #include <llvm/PassManager.h>
@@ -54,7 +55,8 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   llvm::ExceptionHandling = false;
 #endif
   if (!M) {
-    globalModule = new llvm::Module("bootstrap module");
+    globalContext = new llvm::LLVMContext();
+    globalModule = new llvm::Module("bootstrap module", *globalContext);
     globalModuleProvider = new ExistingModuleProvider (globalModule);
 
     InitializeNativeTarget();
@@ -258,6 +260,7 @@ const llvm::Type* MvmModule::arrayPtrType;
 
 const llvm::TargetData* MvmModule::TheTargetData;
 llvm::Module *MvmModule::globalModule;
+llvm::LLVMContext *MvmModule::globalContext;
 llvm::ExistingModuleProvider *MvmModule::globalModuleProvider;
 llvm::FunctionPassManager* MvmModule::globalFunctionPasses;
 llvm::ExecutionEngine* MvmModule::executionEngine;
