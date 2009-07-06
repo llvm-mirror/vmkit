@@ -18,6 +18,7 @@
 #include "Assembly.h"
 #include "CLIJit.h"
 #include "CLIString.h"
+#include "LinkN3Runtime.h"
 #include "LockedMap.h"
 #include "MSCorlib.h"
 #include "N3.h"
@@ -254,3 +255,5 @@ void N3::mainCLIStart(VMThread* th) {
     vm->threadSystem->nonDaemonVar->signal();
   vm->threadSystem->nonDaemonLock->unlock();
 }
+
+#include "MSCorlib.inc"
