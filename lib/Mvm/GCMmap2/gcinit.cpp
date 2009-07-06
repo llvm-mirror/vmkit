@@ -12,8 +12,8 @@
 
 using namespace mvm;
 
-static const size_t  def_collect_freq_auto = 4*1024*1024;
-static const size_t def_collect_freq_maybe = 512*1024;
+static const size_t  def_collect_freq_auto = 64*1024*1024;
+static const size_t def_collect_freq_maybe = 64*1024*1024;
 
 #if defined(__MACH__)
 # define SIGGC  SIGXCPU
