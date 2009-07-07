@@ -1549,7 +1549,7 @@ void mainCompilerStart(JavaThread* th) {
 
       ArrayUInt8* bytes = Reader::openFile(bootstrapLoader, name);
       if (!bytes) {
-        fprintf(stderr, "Can't find zip file.");
+        fprintf(stderr, "Can't find zip file.\n");
         goto end;
       }
       ZipArchive archive(bytes, bootstrapLoader->allocator);
@@ -1566,7 +1566,7 @@ void mainCompilerStart(JavaThread* th) {
             (ArrayUInt8*)array->doNew(file->ucsize, bootstrapLoader->allocator);
           int ok = archive.readFile(res, file);
           if (!ok) {
-            fprintf(stderr, "Wrong zip file.");
+            fprintf(stderr, "Wrong zip file.\n");
             goto end;
           }
       
