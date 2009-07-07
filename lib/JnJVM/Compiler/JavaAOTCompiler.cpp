@@ -1495,8 +1495,17 @@ void JavaAOTCompiler::setDestructor(JavaVirtualTable* VT, uintptr_t ptr,
 Function* JavaAOTCompiler::addCallback(Class* cl, uint16 index,
                                       Signdef* sign, bool stat) {
  
-  fprintf(stderr, "Warning: emitting a callback from %s (%d)\n",
-          UTF8Buffer(cl->name).cString(), index);
+  JavaConstantPool* ctpInfo = cl->ctpInfo;
+  Signdef* signature = 0;
+  const UTF8* name = 0;
+  const UTF8* methCl = 0;
+  ctpInfo->nameOfStaticOrSpecialMethod(index, methCl, name, signature);
+
+
+  fprintf(stderr, "Warning: emitting a callback from %s (%s.%s)\n",
+          UTF8Buffer(cl->name).cString(), UTF8Buffer(methCl).cString(),
+          UTF8Buffer(name).cString());
+
   Function* func = 0;
   LLVMSignatureInfo* LSI = getSignatureInfo(sign);
   
