@@ -563,7 +563,7 @@ void Jnjvm::classNotFoundException(JavaString* name) {
 }
 
 void Jnjvm::classFormatError(UserClass* cl, const UTF8* name) {
-  uint32 size = 33 + name->size + cl->name->size;
+  uint32 size = 35 + name->size + cl->name->size;
   ArrayUInt16* msg = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
   uint32 i = 0;
 
@@ -586,12 +586,14 @@ void Jnjvm::classFormatError(UserClass* cl, const UTF8* name) {
     else msg->elements[i++] = cl->name->elements[j];
   }
   
+  msg->elements[i++] = ' ';
   msg->elements[i++] = 'a';
   msg->elements[i++] = 'n';
   msg->elements[i++] = 'd';
   msg->elements[i++] = ' ';
   msg->elements[i++] = 'f';
   msg->elements[i++] = 'o';
+  msg->elements[i++] = 'u';
   msg->elements[i++] = 'n';
   msg->elements[i++] = 'd';
   msg->elements[i++] = ' ';
