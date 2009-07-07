@@ -1079,14 +1079,25 @@ void JavaMethod::jniConsFromMethOverloaded(char* buf, const UTF8* jniConsClName,
   
   for (sint32 i =0; i < clen; ++i) {
     cur = jniConsClName->elements[i];
-    if (cur == '/') ptr[0] = '_';
-    else if (cur == '_') {
+    if (cur == '/') {
+      ptr[0] = '_';
+      ++ptr;
+    } else if (cur == '_') {
       ptr[0] = '_';
       ptr[1] = '1';
+      ptr += 2;
+    } else if (cur == '$') {
+      ptr[0] = '_';
+      ptr[1] = '0';
+      ptr[2] = '0';
+      ptr[3] = '0';
+      ptr[4] = '2';
+      ptr[5] = '4';
+      ptr += 6;
+    } else {
+      ptr[0] = (uint8)cur;
       ++ptr;
     }
-    else ptr[0] = (uint8)cur;
-    ++ptr;
   }
   
   ptr[0] = '_';
@@ -1118,6 +1129,14 @@ void JavaMethod::jniConsFromMethOverloaded(char* buf, const UTF8* jniConsClName,
       ptr[0] = '_';
       ptr[1] = '1';
       ptr += 2;
+    } else if (c == '$') {
+      ptr[0] = '_';
+      ptr[1] = '0';
+      ptr[2] = '0';
+      ptr[3] = '0';
+      ptr[4] = '2';
+      ptr[5] = '4';
+      ptr += 6;
     } else if (c == I_END_REF) {
       ptr[0] = '_';
       ptr[1] = '2';

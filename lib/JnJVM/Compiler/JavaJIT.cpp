@@ -245,7 +245,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   sint32 mtlen = jniConsType->size;
 
   char* functionName = (char*)alloca(3 + JNI_NAME_PRE_LEN + 
-                            ((mnlen + clen + mtlen) << 1));
+                            ((mnlen + clen + mtlen) << 3));
   
   if (!natPtr)
     natPtr = compilingClass->classLoader->nativeLookup(compilingMethod, jnjvm,
@@ -269,7 +269,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   
   Function* func = llvmFunction;
-  if (jnjvm) {
+  if (jnjvm) {
     compilingMethod->setCompiledPtr((void*)natPtr, functionName);
     return llvmFunction;
   }

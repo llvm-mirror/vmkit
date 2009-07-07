@@ -1146,7 +1146,7 @@ extern "C" intptr_t vmjcNativeLoader(JavaMethod* meth) {
   sint32 mtlen = jniConsType->size;
 
   char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + 1 +
-                            ((mnlen + clen + mtlen) << 1));
+                            ((mnlen + clen + mtlen) << 3));
   intptr_t res = meth->classDef->classLoader->nativeLookup(meth, jnjvm, buf);
   assert(res && "Could not find required native method");
   return res;
