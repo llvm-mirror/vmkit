@@ -840,7 +840,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FADD : {
         Value* val2 = pop();
         Value* val1 = pop();
-        push(BinaryOperator::CreateAdd(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateFAdd(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -850,7 +850,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::CreateAdd(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateFAdd(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -877,7 +877,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FSUB : {
         Value* val2 = pop();
         Value* val1 = pop();
-        push(BinaryOperator::CreateSub(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateFSub(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -887,7 +887,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::CreateSub(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateFSub(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -915,7 +915,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FMUL : {
         Value* val2 = pop();
         Value* val1 = pop();
-        push(BinaryOperator::CreateMul(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateFMul(val1, val2, "", currentBlock),
              false);
         break;
       }
@@ -925,7 +925,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
-        push(BinaryOperator::CreateMul(val1, val2, "", currentBlock),
+        push(BinaryOperator::CreateFMul(val1, val2, "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
