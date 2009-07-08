@@ -39,35 +39,35 @@ using namespace llvm;
 const Type* LLVMClassInfo::getVirtualType() {
   if (!virtualType) {
     std::vector<const llvm::Type*> fields;
+    const TargetData* targetData = JnjvmModule::TheTargetData;
+    const StructLayout* sl = 0;
+    const StructType* structType = 0;
     
     if (classDef->super) {
       LLVMClassInfo* CLI = JavaLLVMCompiler::getClassInfo(classDef->super);
       const llvm::Type* Ty = CLI->getVirtualType()->getContainedType(0);
-
-      if (classDef->super->super) {
-        fields.push_back(Ty);
-      } else {
-        fields.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
+      fields.push_back(Ty);
+    
+      for (uint32 i = 0; i < classDef->nbVirtualFields; ++i) {
+        JavaField& field = classDef->virtualFields[i];
+        field.num = i + 1;
+        Typedef* type = field.getSignature();
+        LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(type);
+        fields.push_back(LAI.llvmType);
       }
+    
+    
+      structType = StructType::get(fields, false);
+      virtualType = PointerType::getUnqual(structType);
+      sl = targetData->getStructLayout(structType);
+    
     } else {
-      fields.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
+      virtualType = JnjvmModule::JavaObjectType;
+      structType = dyn_cast<const StructType>(virtualType->getContainedType(0));
+      sl = targetData->getStructLayout(structType);
+      
     }
     
-    for (uint32 i = 0; i < classDef->nbVirtualFields; ++i) {
-      JavaField& field = classDef->virtualFields[i];
-      field.num = i + 1;
-      Typedef* type = field.getSignature();
-      LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(type);
-      fields.push_back(LAI.llvmType);
-    }
-    
-    
-    JavaLLVMCompiler* Mod = 
-      (JavaLLVMCompiler*)classDef->classLoader->getCompiler();
-    StructType* structType = StructType::get(fields, false);
-    virtualType = PointerType::getUnqual(structType);
-    const TargetData* targetData = JnjvmModule::TheTargetData;
-    const StructLayout* sl = targetData->getStructLayout(structType);
     
     for (uint32 i = 0; i < classDef->nbVirtualFields; ++i) {
       JavaField& field = classDef->virtualFields[i];
@@ -78,6 +78,8 @@ const Type* LLVMClassInfo::getVirtualType() {
     classDef->virtualSize = (uint32)size;
     virtualSizeConstant = ConstantInt::get(Type::Int32Ty, size);
    
+    JavaLLVMCompiler* Mod = 
+      (JavaLLVMCompiler*)classDef->classLoader->getCompiler();
     Mod->makeVT(classDef);
   }
 
