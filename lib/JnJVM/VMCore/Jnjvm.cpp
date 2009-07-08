@@ -953,6 +953,13 @@ JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
 void Jnjvm::loadBootstrap() {
   JnjvmClassLoader* loader = bootstrapLoader;
   
+  // First create system threads.
+  finalizerThread = new JavaThread(0, 0, this);
+  finalizerThread->start((void (*)(mvm::Thread*))finalizerStart);
+    
+  enqueueThread = new JavaThread(0, 0, this);
+  enqueueThread->start((void (*)(mvm::Thread*))enqueueStart);
+  
   // Initialise the bootstrap class loader if it's not
   // done already.
   if (!bootstrapLoader->upcalls->newString)
@@ -1210,13 +1217,7 @@ void Jnjvm::runApplication(int argc, char** argv) {
     mvm::Thread* th = new JavaThread(0, 0, this);
     th->start(serviceCPUMonitor);
 #endif
-  
-    finalizerThread = new JavaThread(0, 0, this);
-    finalizerThread->start((void (*)(mvm::Thread*))finalizerStart);
-    
-    enqueueThread = new JavaThread(0, 0, this);
-    enqueueThread->start((void (*)(mvm::Thread*))enqueueStart);
-    
+   
     mainThread = new JavaThread(0, 0, this);
     mainThread->start((void (*)(mvm::Thread*))mainJavaStart);
   } else {
