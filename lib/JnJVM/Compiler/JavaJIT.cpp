@@ -269,7 +269,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   
   Function* func = llvmFunction;
-  if (jnjvm) {
+  if (jnjvm) {
     compilingMethod->setCompiledPtr((void*)natPtr, functionName);
     return llvmFunction;
   }
