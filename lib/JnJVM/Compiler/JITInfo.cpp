@@ -40,10 +40,15 @@ const Type* LLVMClassInfo::getVirtualType() {
   if (!virtualType) {
     std::vector<const llvm::Type*> fields;
     
-    if (classDef->super && classDef->super->super) {
-      LLVMClassInfo* CLI = 
-        JavaLLVMCompiler::getClassInfo((Class*)classDef->super);
-      fields.push_back(CLI->getVirtualType()->getContainedType(0));
+    if (classDef->super) {
+      LLVMClassInfo* CLI = JavaLLVMCompiler::getClassInfo(classDef->super);
+      const llvm::Type* Ty = CLI->getVirtualType()->getContainedType(0);
+
+      if (classDef->super->super) {
+        fields.push_back(Ty);
+      } else {
+        fields.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
+      }
     } else {
       fields.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
     }

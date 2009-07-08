@@ -37,15 +37,6 @@ public:
   virtual void setMethod(JavaMethod* meth, void* ptr, const char* name) {
   }
   
-  virtual void setTracer(JavaVirtualTable* VT, uintptr_t ptr,
-                         const char* name) {
-  }
-  
-  virtual void setDestructor(JavaVirtualTable* VT, uintptr_t ptr,
-                             const char* name) {
-  }
-  
-  
   virtual bool isStaticCompiling() {
     return false;
   }

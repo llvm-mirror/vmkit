@@ -381,7 +381,7 @@ Constant* JavaAOTCompiler::CreateConstantForBaseObject(CommonClass* cl) {
 
 Constant* JavaAOTCompiler::CreateConstantFromJavaClass(CommonClass* cl) {
   Class* javaClass = cl->classLoader->bootstrapLoader->upcalls->newClass;
-  LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(javaClass);
+  LLVMClassInfo* LCI = getClassInfo(javaClass);
   const StructType* STy = 
     dyn_cast<StructType>(LCI->getVirtualType()->getContainedType(0));
 
@@ -1131,19 +1131,12 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
    
   // Destructor
   Function* Finalizer = 0;
-  if (RealVT->operatorDelete) {
-    char* name = (char*)(RealVT->destructor);
-    std::vector<const Type*> Args;
-    const FunctionType* Ty = FunctionType::get(Type::VoidTy, Args, false);
-    Finalizer = Function::Create(Ty, GlobalValue::ExternalLinkage, name,
-                                 getLLVMModule());
-  } else {
-    JavaMethod* meth = (JavaMethod*)(RealVT->destructor);
-    if (meth) {
-      LLVMMethodInfo* LMI = getMethodInfo(meth);
-      Finalizer = LMI->getMethod();
-    }
+  JavaMethod* meth = (JavaMethod*)(RealVT->destructor);
+  if (meth) {
+    LLVMMethodInfo* LMI = getMethodInfo(meth);
+    Finalizer = LMI->getMethod();
   }
+  
   Elemts.push_back(Finalizer ? 
       ConstantExpr::getCast(Instruction::BitCast, Finalizer, PTy) : N);
   
@@ -1479,19 +1472,6 @@ void JavaAOTCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
   func->setLinkage(GlobalValue::ExternalLinkage);
 }
 
-void JavaAOTCompiler::setTracer(JavaVirtualTable* VT, uintptr_t ptr,
-                                const char* name) {
-  VT->tracer = (uintptr_t)name;
-}
-
-void JavaAOTCompiler::setDestructor(JavaVirtualTable* VT, uintptr_t ptr,
-                                    const char* name) {
-  // Set the name info into the operatorDelete directly, the compiler
-  // will use the name to create a LLVM function.
-  VT->destructor = (uintptr_t)name;
-  VT->operatorDelete = (uintptr_t)name;
-}
-
 Function* JavaAOTCompiler::addCallback(Class* cl, uint16 index,
                                       Signdef* sign, bool stat) {
  
@@ -1544,9 +1524,15 @@ void mainCompilerStart(JavaThread* th) {
   JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
   JavaAOTCompiler* M = (JavaAOTCompiler*)bootstrapLoader->getCompiler();
   try {
-
-    bootstrapLoader->analyseClasspathEnv(vm->classpath);
-    bootstrapLoader->upcalls->initialiseClasspath(bootstrapLoader);
+    
+    if (M->runClinit) {
+      JavaJITCompiler* Comp = new JavaJITCompiler("JIT");
+      bootstrapLoader->setCompiler(Comp);
+      bootstrapLoader->analyseClasspathEnv(vm->classpath);
+    } else {
+      bootstrapLoader->analyseClasspathEnv(vm->classpath);
+      bootstrapLoader->upcalls->initialiseClasspath(bootstrapLoader);
+    }
   
     uint32 size = strlen(name);
     
@@ -1607,6 +1593,18 @@ void mainCompilerStart(JavaThread* th) {
         }
 
       }
+
+      if (M->runClinit) {
+        JavaJITCompiler* Comp = new JavaJITCompiler("JIT");
+        bootstrapLoader->setCompiler(Comp);
+        
+        for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
+             i != e; ++i) {
+          Class* cl = *i;
+          cl->initialiseClass(vm);
+        }
+        bootstrapLoader->setCompiler(M);
+      }
       
       for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
            i != e; ++i) {
@@ -1622,9 +1620,16 @@ void mainCompilerStart(JavaThread* th) {
       } else {
         memcpy(realName, name, size + 1);
       }
-
+     
       const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
       UserClass* cl = bootstrapLoader->loadName(utf8, true, true);
+      
+      if (M->runClinit) {
+        vm->loadBootstrap();
+        cl->initialiseClass(vm);
+        bootstrapLoader->setCompiler(M);
+      }
+      
       cl->setOwnerClass(JavaThread::get());
       M->compileClass(cl);
     }

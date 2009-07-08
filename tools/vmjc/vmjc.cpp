@@ -106,7 +106,7 @@ static cl::opt<bool>
 AssumeCompiled("assume-compiled",
               cl::desc("Assume external Java classes are compiled"));
 
-static cl::opt<std::string>
+static cl::opt<bool>
 WithClinit("with-clinit", cl::desc("Clinit the given file"));
 
 static cl::opt<bool> 
@@ -175,8 +175,7 @@ int main(int argc, char **argv) {
       return 0;
     }
    
-    JavaCompiler* Comp = 0;
-    if (WithClinit.empty()) {
+    if (!WithClinit) {
       Module* TheModule = new Module("bootstrap module",
                                      *(new llvm::LLVMContext()));
       if (!TargetTriple.empty())
@@ -203,11 +202,11 @@ int main(int argc, char **argv) {
 
 
       mvm::MvmModule::initialise(CodeGenOpt::Default, TheModule, TheTarget);
-      Comp = new JavaAOTCompiler("AOT");
     } else {
       mvm::MvmModule::initialise();
-      Comp = new JavaJITCompiler("JIT");
     }
+
+    JavaAOTCompiler* Comp = new JavaAOTCompiler("AOT");
 
     mvm::Collector::initialise();
     mvm::Collector::enable(0);
@@ -215,24 +214,18 @@ int main(int argc, char **argv) {
     JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp, false);
     addCommandLinePass(argv);
 
-    if (!WithClinit.empty()) {
-      // TODO
-      Comp = new JavaAOTCompiler("AOT");
-      JCL->setCompiler(Comp);
-    }
-    
-    JavaAOTCompiler* MAOT = (JavaAOTCompiler*)Comp;
-    if (DisableExceptions) MAOT->disableExceptions();
-    if (DisableStubs) MAOT->generateStubs = false;
-    if (AssumeCompiled) MAOT->assumeCompiled = true;
-    MAOT->compileFile(JCL, InputFilename.c_str());
+    if (DisableExceptions) Comp->disableExceptions();
+    if (DisableStubs) Comp->generateStubs = false;
+    if (AssumeCompiled) Comp->assumeCompiled = true;
+    if (WithClinit) Comp->runClinit = true;
+    Comp->compileFile(JCL, InputFilename.c_str());
 
     if (!MainClass.empty()) {
-      MAOT->generateMain(MainClass.c_str(), WithJIT);
+      Comp->generateMain(MainClass.c_str(), WithJIT);
     }
 
     if (PrintStats)
-      MAOT->printStats();
+      Comp->printStats();
 
     if (DontPrint) {
       // Just use stdout.  We won't actually print anything on it.
@@ -280,7 +273,7 @@ int main(int argc, char **argv) {
     }
     
     if (Force || !CheckBitcodeOutputToConsole(Out,true))
-      WriteBitcodeToFile(MAOT->getLLVMModule(), *Out);
+      WriteBitcodeToFile(Comp->getLLVMModule(), *Out);
 
     if (Out != &std::cout) {
       ((std::ofstream*)Out)->close();

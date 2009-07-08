@@ -185,17 +185,6 @@ void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
   func->setLinkage(GlobalValue::ExternalLinkage);
 }
 
-void JavaJITCompiler::setTracer(JavaVirtualTable* VT, uintptr_t ptr,
-                                const char* name) {
-  VT->tracer = ptr;
-}
-
-void JavaJITCompiler::setDestructor(JavaVirtualTable* VT, uintptr_t ptr,
-                                    const char* name) {
-  VT->destructor = ptr;
-  VT->operatorDelete = ptr;
-}
-
 void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   Function* func = parseFunction(meth);
  

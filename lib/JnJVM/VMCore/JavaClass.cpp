@@ -334,11 +334,12 @@ void JavaMethod::setCompiledPtr(void* ptr, const char* name) {
 }
 
 void JavaVirtualTable::setNativeTracer(uintptr_t ptr, const char* name) {
-  cl->classLoader->getCompiler()->setTracer(this, ptr, name);
+  tracer = ptr;
 }
 
 void JavaVirtualTable::setNativeDestructor(uintptr_t ptr, const char* name) {
-  cl->classLoader->getCompiler()->setDestructor(this, ptr, name);
+  destructor = ptr;
+  operatorDelete = ptr;
 }
 
 JavaMethod* Class::lookupInterfaceMethodDontThrow(const UTF8* name,
