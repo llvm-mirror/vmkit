@@ -146,12 +146,6 @@ private:
   ///
   JnjvmClassLoader* loadAppClassLoader();
   
-  /// loadBootstrap - Bootstraps the JVM, getting the class loader, initializing
-  /// bootstrap classes (e.g. java/lang/Class, java/lang/*Exception) and
-  /// mapping the initial thread.
-  ///
-  void loadBootstrap();
-
   /// executeClass - Executes in the given JVM this main class with the given
   /// Java args.
   ///
@@ -359,6 +353,12 @@ public:
   /// class loader from the function map.
   ///
   void removeMethodsInFunctionMap(JnjvmClassLoader* loader);
+  
+  /// loadBootstrap - Bootstraps the JVM, getting the class loader, initializing
+  /// bootstrap classes (e.g. java/lang/Class, java/lang/*Exception) and
+  /// mapping the initial thread.
+  ///
+  void loadBootstrap();
 
 #ifdef ISOLATE
   static Jnjvm* RunningIsolates[NR_ISOLATES];
