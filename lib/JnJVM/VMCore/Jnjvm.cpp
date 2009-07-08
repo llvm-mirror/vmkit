@@ -945,7 +945,8 @@ JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
     if (argumentsInfo.jarFile)
       appClassLoader->loadLibFromJar(this, argumentsInfo.jarFile,
                                      argumentsInfo.className);
-    else appClassLoader->loadLibFromFile(this, argumentsInfo.className);
+    else if (argumentsInfo.className)
+      appClassLoader->loadLibFromFile(this, argumentsInfo.className);
   }
   return appClassLoader;
 }
