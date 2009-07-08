@@ -210,11 +210,21 @@ JavaObject* JavaAOTCompiler::getFinalObject(llvm::Value* obj) {
 
 
 Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj) {
+  llvm::Constant* varGV = 0;
   final_object_iterator End = finalObjects.end();
   final_object_iterator I = finalObjects.find(obj);
   if (I == End) {
-    abort();
-    return 0;
+    Constant* CO = CreateConstantFromJavaObject(obj);
+    
+    varGV = new GlobalVariable(CO->getType(), true,
+                               GlobalValue::InternalLinkage,
+                               CO, "", getLLVMModule());
+
+    varGV = ConstantExpr::getCast(Instruction::BitCast, varGV,
+                                  JnjvmModule::JavaObjectType);
+  
+    finalObjects.insert(std::make_pair(obj, varGV));
+    return varGV;
   } else {
     return I->second;
   }
@@ -236,7 +246,49 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
     Attribut* attribut = field.lookupAttribut(Attribut::constantAttribut);
 
     if (!attribut) {
-      Elts.push_back(Constant::getNullValue(Ty));
+      void* obj = cl->getStaticInstance();
+      if (obj) {
+        if (type->isPrimitive()) {
+          const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+          if (prim->isBool() || prim->isByte()) {
+            ConstantInt* CI = ConstantInt::get(Type::Int8Ty,
+                                               field.getInt8Field(obj));
+            Elts.push_back(CI);
+          } else if (prim->isShort() || prim->isChar()) {
+            ConstantInt* CI = ConstantInt::get(Type::Int16Ty,
+                                               field.getInt16Field(obj));
+            Elts.push_back(CI);
+          } else if (prim->isInt()) {
+            ConstantInt* CI = ConstantInt::get(Type::Int32Ty,
+                                               field.getInt32Field(obj));
+            Elts.push_back(CI);
+          } else if (prim->isLong()) {
+            ConstantInt* CI = ConstantInt::get(Type::Int64Ty,
+                                               field.getLongField(obj));
+            Elts.push_back(CI);
+          } else if (prim->isFloat()) {
+            Constant* CF = ConstantFP::get(Type::FloatTy,
+                                           field.getFloatField(obj));
+            Elts.push_back(CF);
+          } else if (prim->isDouble()) {
+            Constant* CF = ConstantFP::get(Type::DoubleTy,
+                                           field.getDoubleField(obj));
+            Elts.push_back(CF);
+          } else {
+            abort();
+          }
+        } else {
+          JavaObject* val = field.getObjectField(obj);
+          if (val) {
+            Constant* CO = getFinalObject(val);
+            Elts.push_back(CO);
+          } else {
+            Elts.push_back(Constant::getNullValue(Ty));
+          }
+        }
+      } else {
+        Elts.push_back(Constant::getNullValue(Ty));
+      }
     } else {
       Reader reader(attribut, cl->bytes);
       JavaConstantPool * ctpInfo = cl->ctpInfo;
@@ -453,7 +505,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
     // JavaObject
     Constant* CurConstant = CreateConstantForBaseObject(obj->getClass());
 
-    for (uint32 j = 0; j <= cl->virtualVT->depth; ++j) {
+    for (uint32 j = 0; j < cl->virtualVT->depth; ++j) {
       std::vector<Constant*> TempElts;
       Elmts.push_back(CurConstant);
       TempElts.push_back(CurConstant);
