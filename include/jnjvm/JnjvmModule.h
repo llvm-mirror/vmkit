@@ -93,6 +93,12 @@ public:
     virtualSizeConstant(0),
     virtualType(0),
     staticType(0) {}
+
+  virtual void clear() {
+    virtualType = 0;
+    staticType = 0;
+    virtualSizeConstant = 0;
+  }
 };
 
 class LLVMMethodInfo : public mvm::JITInfo, private llvm::Annotation {
@@ -111,6 +117,12 @@ public:
   LLVMMethodInfo(JavaMethod* M); 
 
   static JavaMethod* get(const llvm::Function* F);
+  
+  virtual void clear() {
+    methodFunction = 0;
+    offsetConstant = 0;
+    functionType = 0;
+  }
 };
 
 class LLVMFieldInfo : public mvm::JITInfo {
@@ -125,6 +137,10 @@ public:
   LLVMFieldInfo(JavaField* F) : 
     fieldDef(F), 
     offsetConstant(0) {}
+
+  virtual void clear() {
+    offsetConstant = 0;
+  }
 };
 
 class LLVMSignatureInfo : public mvm::JITInfo {
@@ -634,7 +650,7 @@ public:
   
   bool generateStubs;
   bool assumeCompiled;
-
+  bool runClinit;
   bool compileRT;
   
   

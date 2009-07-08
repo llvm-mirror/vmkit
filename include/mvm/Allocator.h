@@ -80,6 +80,7 @@ public:
 /// <Class>::getInfo and destroyed when the <Class> object is destroyed.
 struct JITInfo : public mvm::PermanentObject {
   virtual ~JITInfo() {}
+  virtual void clear() {}
 };
 
 } // end namespace mvm

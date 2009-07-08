@@ -692,6 +692,10 @@ public:
     return static_cast<Ty*>(JInfo);
   }
   
+  void clearInfo() {
+    if (JInfo) JInfo->clear();
+  }
+  
   /// resolveClass - If the class has not been resolved yet, resolve it.
   ///
   void resolveClass();
@@ -1170,6 +1174,10 @@ public:
     return static_cast<Ty*>(JInfo);
   }
   
+  void clearInfo() {
+    if (JInfo) JInfo->clear();
+  }
+  
   #define JNI_NAME_PRE "Java_"
   #define JNI_NAME_PRE_LEN 5
   
@@ -1291,6 +1299,10 @@ public:
     assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
            "Invalid concrete type or multiple inheritence for getInfo");
     return static_cast<Ty*>(JInfo);
+  }
+  
+  void clearInfo() {
+    if (JInfo) JInfo->clear();
   }
 
 

@@ -294,6 +294,37 @@ JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
 
 }
 
+void JnjvmClassLoader::setCompiler(JavaCompiler* Comp) {
+  
+  // Set the new compiler.
+  TheCompiler = Comp;
+
+  // Clean up JITInfo of all classes.
+  for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
+       i!= e; ++i) {
+    CommonClass* ccl = i->second;
+    if (ccl->isClass()) {
+      Class* cl = ccl->asClass();
+      cl->clearInfo();
+
+      for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+        cl->virtualMethods[i].clearInfo();
+      }
+      
+      for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
+        cl->staticMethods[i].clearInfo();
+      }
+      
+      for (uint32 i = 0; i < cl->nbVirtualFields; ++i) {
+        cl->virtualFields[i].clearInfo();
+      }
+      for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
+        cl->staticFields[i].clearInfo();
+      }
+    }
+  }
+}
+
 ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
   char* asciiz = (char*)alloca(utf8->size + 1);
   for (sint32 i = 0; i < utf8->size; ++i) 

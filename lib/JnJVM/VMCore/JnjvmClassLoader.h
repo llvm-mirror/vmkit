@@ -127,7 +127,7 @@ public:
 
   /// setCompiler - Set the compiler of classes loaded by this class loader.
   ///
-  void setCompiler(JavaCompiler* Comp) { TheCompiler = Comp; }
+  void setCompiler(JavaCompiler* Comp);
 
   /// tracer - Traces a JnjvmClassLoader for GC.
   ///
