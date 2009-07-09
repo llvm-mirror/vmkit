@@ -52,6 +52,7 @@ JavaObject* loader) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
+  verifyNull(str);
   Jnjvm* vm = JavaThread::get()->getJVM(); 
   JnjvmClassLoader* JCL = 
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
