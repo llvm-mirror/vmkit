@@ -11,6 +11,7 @@
 #define JNJVM_JAVA_THREAD_H
 
 #include <csetjmp>
+#include <vector>
 
 #include "mvm/Object.h"
 #include "mvm/Threads/Cond.h"
@@ -22,6 +23,7 @@
 namespace jnjvm {
 
 class Class;
+class JavaMethod;
 class JavaObject;
 class Jnjvm;
 class LockObj;
