@@ -47,6 +47,7 @@
 #include "jnjvm/JnjvmModuleProvider.h"
 
 #include "../../lib/JnJVM/VMCore/JnjvmClassLoader.h"
+#include "../../lib/JnJVM/VMCore/Jnjvm.h"
 
 #include <iostream>
 #include <fstream>
@@ -113,6 +114,9 @@ static cl::opt<bool>
 PrintStats("print-aot-stats", 
            cl::desc("Print stats by the AOT compiler"));
 
+
+static cl::list<std::string> 
+Properties("D", cl::desc("Set a property"), cl::Prefix, cl::ZeroOrMore);
 
 
 
@@ -218,7 +222,25 @@ int main(int argc, char **argv) {
     if (DisableStubs) Comp->generateStubs = false;
     if (AssumeCompiled) Comp->assumeCompiled = true;
     if (WithClinit) Comp->runClinit = true;
-    Comp->compileFile(JCL, InputFilename.c_str());
+    
+    mvm::BumpPtrAllocator A;
+    Jnjvm* vm = new(A, "Bootstrap loader") Jnjvm(A, (JnjvmBootstrapLoader*)JCL);
+  
+    for (std::vector<std::string>::iterator i = Properties.begin(),
+         e = Properties.end(); i != e; ++i) {
+
+      char* key = new char [(*i).size()+1];
+      strcpy(key, (*i).c_str());
+      char* value = strchr(key, '=');
+      if (!value) {
+        delete[] key;
+      } else {
+        value[0] = 0;
+        vm->addProperty(key, &value[1]);
+      }
+    }
+
+    Comp->compileFile(vm, InputFilename.c_str());
 
     if (!MainClass.empty()) {
       Comp->generateMain(MainClass.c_str(), WithJIT);

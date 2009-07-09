@@ -47,6 +47,7 @@ class JavaMethod;
 class JavaObject;
 class JavaString;
 class JavaVirtualTable;
+class Jnjvm;
 class JnjvmClassLoader;
 class JnjvmModule;
 class Typedef;
@@ -648,7 +649,7 @@ public:
   
   void printStats();
   
-  void compileFile(JnjvmClassLoader* JCL, const char* name);
+  void compileFile(Jnjvm* vm, const char* name);
   void compileClass(Class* cl);
   void generateMain(const char* name, bool jit);
 
