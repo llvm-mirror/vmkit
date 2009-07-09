@@ -1647,8 +1647,7 @@ void mainCompilerStart(JavaThread* th) {
       }
 
       if (M->runClinit) {
-        JavaJITCompiler* Comp = new JavaJITCompiler("JIT");
-        bootstrapLoader->setCompiler(Comp);
+        vm->loadBootstrap();
         
         for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
              i != e; ++i) {
