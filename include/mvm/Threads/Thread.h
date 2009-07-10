@@ -79,7 +79,7 @@ public:
 
 
 
-#if defined(__MACH__) && defined(__PPC__)
+#if defined(__MACH__) && (defined(__PPC__) || defined(__ppc__))
 #define FRAME_IP(fp) (fp[2])
 #else
 #define FRAME_IP(fp) (fp[1])
