@@ -11,6 +11,7 @@
 #define JNJVM_MODULE_H
 
 #include <map>
+#include <vector>
 
 #include "mvm/Allocator.h"
 #include "mvm/JIT.h"
@@ -639,8 +640,9 @@ public:
   
   bool generateStubs;
   bool assumeCompiled;
-  bool runClinit;
   bool compileRT;
+
+  std::vector<std::string>* clinits;
   
   
   void CreateStaticInitializer();

@@ -210,21 +210,31 @@ JavaObject* JavaAOTCompiler::getFinalObject(llvm::Value* obj) {
 
 
 Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj) {
-  llvm::Constant* varGV = 0;
+  llvm::GlobalVariable* varGV = 0;
   final_object_iterator End = finalObjects.end();
   final_object_iterator I = finalObjects.find(obj);
   if (I == End) {
-    Constant* CO = CreateConstantFromJavaObject(obj);
-    
-    varGV = new GlobalVariable(CO->getType(), true,
-                               GlobalValue::InternalLinkage,
-                               CO, "", getLLVMModule());
-
-    varGV = ConstantExpr::getCast(Instruction::BitCast, varGV,
-                                  JnjvmModule::JavaObjectType);
   
-    finalObjects.insert(std::make_pair(obj, varGV));
-    return varGV;
+    if (mvm::Collector::begOf(obj)) {
+
+      const Type* Ty = JnjvmModule::JavaObjectType->getContainedType(0);
+      varGV = new GlobalVariable(Ty, true, GlobalValue::InternalLinkage,
+                                 0, "", getLLVMModule());
+
+  
+      finalObjects.insert(std::make_pair(obj, varGV));
+    
+      Constant* C = ConstantExpr::getBitCast(CreateConstantFromJavaObject(obj),
+                                           Ty);
+    
+      varGV->setInitializer(C);
+      return varGV;
+    } else {
+      Constant* CI = ConstantInt::get(Type::Int64Ty, uint64_t(obj));
+      CI = ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);
+      finalObjects.insert(std::make_pair(obj, CI));
+      return CI;
+    }
   } else {
     return I->second;
   }
@@ -505,7 +515,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
     // JavaObject
     Constant* CurConstant = CreateConstantForBaseObject(obj->getClass());
 
-    for (uint32 j = 0; j < cl->virtualVT->depth; ++j) {
+    for (uint32 j = 1; j <= cl->virtualVT->depth; ++j) {
       std::vector<Constant*> TempElts;
       Elmts.push_back(CurConstant);
       TempElts.push_back(CurConstant);
@@ -547,8 +557,14 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
             abort();
           }
         } else {
-          Constant* C = getFinalObject(field.getObjectField(obj));
-          TempElts.push_back(C);
+          JavaObject* val = field.getObjectField(obj);
+          if (val) {
+            Constant* C = getFinalObject(field.getObjectField(obj));
+            TempElts.push_back(C);
+          } else {
+            const llvm::Type* Ty = JnjvmModule::JavaObjectType;
+            TempElts.push_back(Constant::getNullValue(Ty));
+          }
         }
       }
       CurConstant = ConstantStruct::get(STy, TempElts);
@@ -1115,7 +1131,11 @@ Constant* JavaAOTCompiler::CreateConstantFromArray(const T* val, const Type* Ty)
     } else if (Ty->isFloatingPoint()) {
       Vals.push_back(ConstantFP::get(Ty, (double)(size_t)val->elements[i]));
     } else {
-      Vals.push_back(getFinalObject((JavaObject*)(size_t)val->elements[i]));
+      if (val->elements[i]) {
+        Vals.push_back(getFinalObject((JavaObject*)(size_t)val->elements[i]));
+      } else {
+        Vals.push_back(Constant::getNullValue(JnjvmModule::JavaObjectType));
+      }
     }
   }
 
@@ -1575,10 +1595,11 @@ void mainCompilerStart(JavaThread* th) {
   Jnjvm* vm = th->getJVM();
   JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
   JavaAOTCompiler* M = (JavaAOTCompiler*)bootstrapLoader->getCompiler();
+  JavaJITCompiler* Comp = 0;
   try {
     
-    if (M->runClinit) {
-      JavaJITCompiler* Comp = new JavaJITCompiler("JIT");
+    if (!M->clinits->empty()) {
+      Comp = new JavaJITCompiler("JIT");
       bootstrapLoader->setCompiler(Comp);
       bootstrapLoader->analyseClasspathEnv(vm->classpath);
     } else {
@@ -1646,13 +1667,44 @@ void mainCompilerStart(JavaThread* th) {
 
       }
 
-      if (M->runClinit) {
+      if (!M->clinits->empty()) {
         vm->loadBootstrap();
-        
-        for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
-             i != e; ++i) {
-          Class* cl = *i;
-          cl->initialiseClass(vm);
+
+        for (std::vector<std::string>::iterator i = M->clinits->begin(),
+             e = M->clinits->end(); i != e; ++i) {
+          
+          if (i->at(i->length() - 1) == '*') {
+            for (std::vector<Class*>::iterator ii = classes.begin(),
+                 ee = classes.end(); ii != ee; ++ii) {
+              Class* cl = *ii;
+              if (!strncmp(UTF8Buffer(cl->name).cString(), i->c_str(),
+                           i->length() - 1)) {
+                try {
+                  cl->asClass()->initialiseClass(vm);
+                } catch (...) {
+                  fprintf(stderr, "Error when initializing %s\n",
+                          UTF8Buffer(cl->name).cString());
+                  abort();
+                }
+              }
+            }
+          } else {
+
+            const UTF8* name = bootstrapLoader->asciizConstructUTF8(i->c_str());
+            CommonClass* cl = bootstrapLoader->lookupClass(name);
+            if (cl && cl->isClass()) {
+              try {
+                cl->asClass()->initialiseClass(vm);
+              } catch (...) {
+                fprintf(stderr, "Error when initializing %s\n",
+                        UTF8Buffer(cl->name).cString());
+                abort();
+              }
+            } else {
+              fprintf(stderr, "Class %s does not exist or is an array class.\n",
+                      i->c_str());
+            }
+          }
         }
         bootstrapLoader->setCompiler(M);
       }
@@ -1675,7 +1727,7 @@ void mainCompilerStart(JavaThread* th) {
       const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
       UserClass* cl = bootstrapLoader->loadName(utf8, true, true);
       
-      if (M->runClinit) {
+      if (!M->clinits->empty()) {
         vm->loadBootstrap();
         cl->initialiseClass(vm);
         bootstrapLoader->setCompiler(M);

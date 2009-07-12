@@ -107,9 +107,6 @@ static cl::opt<bool>
 AssumeCompiled("assume-compiled",
               cl::desc("Assume external Java classes are compiled"));
 
-static cl::opt<bool>
-WithClinit("with-clinit", cl::desc("Clinit the given file"));
-
 static cl::opt<bool> 
 PrintStats("print-aot-stats", 
            cl::desc("Print stats by the AOT compiler"));
@@ -117,6 +114,10 @@ PrintStats("print-aot-stats",
 
 static cl::list<std::string> 
 Properties("D", cl::desc("Set a property"), cl::Prefix, cl::ZeroOrMore);
+
+static cl::list<std::string> 
+WithClinit("with-clinit", cl::desc("Set a property"), cl::ZeroOrMore,
+           cl::CommaSeparated);
 
 
 
@@ -179,7 +180,7 @@ int main(int argc, char **argv) {
       return 0;
     }
    
-    if (!WithClinit) {
+    if (WithClinit.empty()) {
       Module* TheModule = new Module("bootstrap module",
                                      *(new llvm::LLVMContext()));
       if (!TargetTriple.empty())
@@ -213,7 +214,6 @@ int main(int argc, char **argv) {
     JavaAOTCompiler* Comp = new JavaAOTCompiler("AOT");
 
     mvm::Collector::initialise();
-    mvm::Collector::enable(0);
 
     JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp, false);
     addCommandLinePass(argv);
@@ -221,7 +221,6 @@ int main(int argc, char **argv) {
     if (DisableExceptions) Comp->disableExceptions();
     if (DisableStubs) Comp->generateStubs = false;
     if (AssumeCompiled) Comp->assumeCompiled = true;
-    if (WithClinit) Comp->runClinit = true;
     
     mvm::BumpPtrAllocator A;
     Jnjvm* vm = new(A, "Bootstrap loader") Jnjvm(A, (JnjvmBootstrapLoader*)JCL);
@@ -240,6 +239,7 @@ int main(int argc, char **argv) {
       }
     }
 
+    Comp->clinits = &WithClinit;
     Comp->compileFile(vm, InputFilename.c_str());
 
     if (!MainClass.empty()) {
