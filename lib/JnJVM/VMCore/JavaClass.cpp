@@ -1110,10 +1110,27 @@ void JavaMethod::jniConsFromMethOverloaded(char* buf, const UTF8* jniConsClName,
     else if (cur == '_') {
       ptr[0] = '_';
       ptr[1] = '1';
+      ptr += 2;
+    } else if (cur == '<') {
+      ptr[0] = '_';
+      ptr[1] = '0';
+      ptr[2] = '0';
+      ptr[3] = '0';
+      ptr[4] = '3';
+      ptr[5] = 'C';
+      ptr += 6;
+    } else if (cur == '>') {
+      ptr[0] = '_';
+      ptr[1] = '0';
+      ptr[2] = '0';
+      ptr[3] = '0';
+      ptr[4] = '3';
+      ptr[5] = 'E';
+      ptr += 6;
+    } else {
+      ptr[0] = (uint8)cur;
       ++ptr;
     }
-    else ptr[0] = (uint8)cur;
-    ++ptr;
   }
   
   sint32 i = 0;

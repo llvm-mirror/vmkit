@@ -184,6 +184,9 @@ public:
       } else if (buffer[i] == '[') {
         newBuffer[j++] = '_';
         newBuffer[j++] = '3';
+      } else if (buffer[i] == '$') {
+        newBuffer[j++] = '_';
+        newBuffer[j++] = '4';
       } else {
         newBuffer[j++] = buffer[i];
       }
