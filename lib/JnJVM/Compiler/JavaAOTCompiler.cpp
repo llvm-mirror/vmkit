@@ -64,10 +64,10 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
         Ty = JnjvmModule::JavaClassType->getContainedType(0); 
       }
     
-      const char* val = UTF8Buffer(classDef->name).toCompileName()->cString();
       GlobalVariable* varGV =
         new GlobalVariable(*getLLVMModule(), Ty, false,
-                           GlobalValue::ExternalLinkage, 0, val);
+                        GlobalValue::ExternalLinkage, 0,
+                        UTF8Buffer(classDef->name).toCompileName()->cString());
     
       nativeClasses.insert(std::make_pair(classDef, varGV));
 
@@ -95,10 +95,10 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
       const llvm::Type* Ty = JnjvmModule::JavaClassArrayType;
       Module& Mod = *getLLVMModule();
     
-      const char* name = UTF8Buffer(classDef->name).toCompileName()->cString();
       GlobalVariable* varGV = 
         new GlobalVariable(Mod, Ty, false, GlobalValue::InternalLinkage,
-                           Mod.getContext().getNullValue(Ty), name);
+                        Mod.getContext().getNullValue(Ty),
+                        UTF8Buffer(classDef->name).toCompileName()->cString());
     
       arrayClasses.insert(std::make_pair(classDef->asArrayClass(), varGV));
       return varGV;
