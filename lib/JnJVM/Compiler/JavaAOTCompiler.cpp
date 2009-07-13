@@ -204,6 +204,12 @@ Constant* JavaAOTCompiler::getJavaClass(CommonClass* cl) {
 }
 
 JavaObject* JavaAOTCompiler::getFinalObject(llvm::Value* obj) {
+  if (Constant* CI = dyn_cast<Constant>(obj)) {
+    reverse_final_object_iterator End = reverseFinalObjects.end();
+    reverse_final_object_iterator I = reverseFinalObjects.find(CI);
+    if (I != End) return I->second;
+  }
+  
   return 0;
 }
 
@@ -218,11 +224,12 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj) {
     if (mvm::Collector::begOf(obj)) {
 
       const Type* Ty = JnjvmModule::JavaObjectType->getContainedType(0);
-      varGV = new GlobalVariable(Ty, true, GlobalValue::InternalLinkage,
+      varGV = new GlobalVariable(Ty, false, GlobalValue::InternalLinkage,
                                  0, "", getLLVMModule());
 
   
       finalObjects.insert(std::make_pair(obj, varGV));
+      reverseFinalObjects.insert(std::make_pair(varGV, obj));
     
       Constant* C = ConstantExpr::getBitCast(CreateConstantFromJavaObject(obj),
                                            Ty);

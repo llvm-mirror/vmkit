@@ -588,9 +588,13 @@ private:
   std::map<const UTF8*, llvm::Constant*> utf8s;
   std::map<const Class*, llvm::Constant*> virtualMethods;
   std::map<const JavaObject*, llvm::Constant*> finalObjects;
+  std::map<const llvm::Constant*, JavaObject*> reverseFinalObjects;
   
   typedef std::map<const JavaObject*, llvm::Constant*>::iterator
     final_object_iterator;
+  
+  typedef std::map<const llvm::Constant*, JavaObject*>::iterator
+    reverse_final_object_iterator;
   
   typedef std::map<const Class*, llvm::Constant*>::iterator
     method_iterator;
