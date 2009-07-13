@@ -1789,6 +1789,11 @@ void mainCompilerStart(JavaThread* th) {
            i != e; ++i) {
         Class* cl = *i;
         cl->setOwnerClass(JavaThread::get());
+      }
+      
+      for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
+           i != e; ++i) {
+        Class* cl = *i;
         M->compileClass(cl);
       }
 
