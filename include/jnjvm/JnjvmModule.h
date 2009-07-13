@@ -384,6 +384,7 @@ public:
   JavaLLVMCompiler(const std::string &ModuleID);
   
   virtual bool isStaticCompiling() = 0;
+  virtual bool emitFunctionName() = 0;
 
   llvm::Module* getLLVMModule() {
     return TheModule;
@@ -466,12 +467,19 @@ public:
 
 class JavaJITCompiler : public JavaLLVMCompiler {
 public:
+
+  bool EmitFunctionName;
+
   JavaJITCompiler(const std::string &ModuleID);
   
   virtual bool isStaticCompiling() {
     return false;
   }
-  
+ 
+  virtual bool emitFunctionName() {
+    return EmitFunctionName;
+  }
+
   virtual void makeVT(Class* cl);
   
   virtual JavaCompiler* Create(const std::string& ModuleID) {
@@ -513,6 +521,10 @@ public:
   JavaAOTCompiler(const std::string &ModuleID);
   
   virtual bool isStaticCompiling() {
+    return true;
+  }
+  
+  virtual bool emitFunctionName() {
     return true;
   }
   

@@ -122,7 +122,12 @@ Constant* JavaJITCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
 
 JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   JavaLLVMCompiler(ModuleID) {
-   
+
+#if DEBUG
+  EmitFunctionName = true;
+#else
+  EmitFunctionName = false;
+#endif
   TheModuleProvider = new JnjvmModuleProvider(TheModule);
   addJavaPasses();
 }

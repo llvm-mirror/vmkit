@@ -131,7 +131,7 @@ Function* LLVMMethodInfo::getMethod() {
   if (!methodFunction) {
     JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
     JavaLLVMCompiler* Mod = (JavaLLVMCompiler*)JCL->getCompiler();
-    if (Mod->isStaticCompiling()) {
+    if (Mod->emitFunctionName()) {
 
       const UTF8* jniConsClName = methodDef->classDef->name;
       const UTF8* jniConsName = methodDef->name;

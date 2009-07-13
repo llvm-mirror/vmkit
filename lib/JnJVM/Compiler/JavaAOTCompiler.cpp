@@ -1646,6 +1646,7 @@ void mainCompilerStart(JavaThread* th) {
     
     if (!M->clinits->empty()) {
       Comp = new JavaJITCompiler("JIT");
+      Comp->EmitFunctionName = true;
       bootstrapLoader->setCompiler(Comp);
       bootstrapLoader->analyseClasspathEnv(vm->classpath);
     } else {

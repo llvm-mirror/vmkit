@@ -41,6 +41,10 @@ public:
     return false;
   }
 
+  virtual bool emitFunctionName() {
+    return false;
+  }
+
   virtual void resolveVirtualClass(Class* cl) {
     fprintf(stderr, "Resolving a class in an empty compiler");
     abort();
