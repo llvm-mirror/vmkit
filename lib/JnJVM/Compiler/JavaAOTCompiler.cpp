@@ -222,20 +222,59 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj) {
   if (I == End) {
   
     if (mvm::Collector::begOf(obj)) {
+      const Type* Ty = 0;
+      CommonClass* cl = obj->getClass();
+      
+      if (cl->isArray()) {
+        Classpath* upcalls = cl->classLoader->bootstrapLoader->upcalls;
+        CommonClass* subClass = cl->asArrayClass()->baseClass();
+        if (subClass->isPrimitive()) {
+          if (subClass == upcalls->OfBool) {
+            Ty = Type::Int8Ty;
+          } else if (subClass == upcalls->OfByte) {
+            Ty = Type::Int8Ty;
+          } else if (subClass == upcalls->OfShort) {
+            Ty = Type::Int16Ty;
+          } else if (subClass == upcalls->OfChar) {
+            Ty = Type::Int16Ty;
+          } else if (subClass == upcalls->OfInt) {
+            Ty = Type::Int32Ty;
+          } else if (subClass == upcalls->OfFloat) {
+            Ty = Type::FloatTy;
+          } else if (subClass == upcalls->OfLong) {
+            Ty = Type::Int64Ty;
+          } else if (subClass == upcalls->OfDouble) {
+            Ty = Type::DoubleTy;
+          } else {
+            abort();
+          }
+        } else {
+          Ty = JnjvmModule::JavaObjectType;
+        }
+        
+        std::vector<const Type*> Elemts;
+        const ArrayType* ATy = ArrayType::get(Ty, ((JavaArray*)obj)->size);
+        Elemts.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
+        Elemts.push_back(JnjvmModule::pointerSizeType);
+        Elemts.push_back(ATy);
+        Ty = StructType::get(Elemts);
 
-      const Type* Ty = JnjvmModule::JavaObjectType->getContainedType(0);
+      } else {
+        LLVMClassInfo* LCI = getClassInfo(cl->asClass());
+        Ty = LCI->getVirtualType()->getContainedType(0);
+      }
+
       varGV = new GlobalVariable(Ty, false, GlobalValue::InternalLinkage,
                                  0, "", getLLVMModule());
 
+      Constant* C = ConstantExpr::getBitCast(varGV,
+                                             JnjvmModule::JavaObjectType);
   
-      finalObjects.insert(std::make_pair(obj, varGV));
-      reverseFinalObjects.insert(std::make_pair(varGV, obj));
+      finalObjects.insert(std::make_pair(obj, C));
+      reverseFinalObjects.insert(std::make_pair(C, obj));
     
-      Constant* C = ConstantExpr::getBitCast(CreateConstantFromJavaObject(obj),
-                                           Ty);
-    
-      varGV->setInitializer(C);
-      return varGV;
+      varGV->setInitializer(CreateConstantFromJavaObject(obj));
+      return C;
     } else {
       Constant* CI = ConstantInt::get(Type::Int64Ty, uint64_t(obj));
       CI = ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);
