@@ -117,7 +117,7 @@ void CLIJit::invokeInterfaceOrVirtual(uint32 value, VMGenericClass* genClass, VM
                                               "", currentBlock);
   Value* lastCible = new LoadInst(lastCiblePtr, "", currentBlock);
 
-  Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, cl, lastCible, "", currentBlock);
+  Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, cl, lastCible, "");
   
   BasicBlock* ifFalse = createBasicBlock("cache not ok");
   BranchInst::Create(callBlock, ifFalse, cmp, currentBlock);

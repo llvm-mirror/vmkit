@@ -133,7 +133,7 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   constantPtrOne = ConstantInt::get(pointerSizeType, 1);
   constantPtrZero = ConstantInt::get(pointerSizeType, 0);
 
-  constantPtrNull = Constant::getNullValue(ptrType); 
+  constantPtrNull = globalContext->getNullValue(ptrType); 
   constantPtrLogSize = 
     ConstantInt::get(Type::Int32Ty, sizeof(void*) == 8 ? 3 : 2);
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::Int8Ty, 0));

@@ -122,7 +122,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
       cl2 = new BitCastInst(cl2, module->JavaCommonClassType, "", currentBlock);
     }
 
-    Value* test = new ICmpInst(ICmpInst::ICMP_EQ, cl, cl2, "", currentBlock);
+    Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, cl, cl2, "");
 
     BasicBlock* trueBlock = createBasicBlock("true virtual invoke");
     BasicBlock* falseBlock = createBasicBlock("false virtual invoke");
@@ -255,7 +255,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     currentBlock = createBasicBlock("start");
     CallInst::Create(module->ThrowExceptionFromJITFunction, "", currentBlock);
     if (returnType != Type::VoidTy)
-      ReturnInst::Create(Constant::getNullValue(returnType), currentBlock);
+      ReturnInst::Create(llvmContext->getNullValue(returnType), currentBlock);
     else
       ReturnInst::Create(currentBlock);
   
@@ -283,13 +283,13 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
                                       "", currentBlock);
   Value* test = llvm::CallInst::Create(module->setjmpLLVM, buf, "",
                                        currentBlock);
-  test = new ICmpInst(ICmpInst::ICMP_EQ, test, module->constantZero, "",
-                      currentBlock);
+  test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test,
+                      module->constantZero, "");
   llvm::BranchInst::Create(executeBlock, endBlock, test, currentBlock);
   
   if (returnType != Type::VoidTy) {
     endNode = llvm::PHINode::Create(returnType, "", endBlock);
-    endNode->addIncoming(Constant::getNullValue(returnType),
+    endNode->addIncoming(llvmContext->getNullValue(returnType),
                          currentBlock);
   }
 
@@ -347,8 +347,8 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     const llvm::Type* Ty = test->getType();
     PHINode* node = PHINode::Create(Ty, "", endBlock);
     node->addIncoming(test, currentBlock);
-    Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, test,
-                              Constant::getNullValue(Ty), "", currentBlock);
+    Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test,
+                              llvmContext->getNullValue(Ty), "");
     BranchInst::Create(unloadedBlock, endBlock, cmp, currentBlock);
     currentBlock = unloadedBlock;
 
@@ -423,8 +423,8 @@ void JavaJIT::monitorEnter(Value* obj) {
                                    atomicArgs.begin(), atomicArgs.end(), "",
                                    currentBlock);
   
-  Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, atomic, module->constantPtrZero,
-                            "", currentBlock);
+  Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, atomic,
+                            module->constantPtrZero, "");
   
   BasicBlock* OK = createBasicBlock("synchronize passed");
   BasicBlock* NotOK = createBasicBlock("synchronize did not pass");
@@ -438,8 +438,8 @@ void JavaJIT::monitorEnter(Value* obj) {
   // The compare and swap did not pass, look if it's a thin lock
   Value* isThin = BinaryOperator::CreateAnd(atomic, module->constantFatMask, "",
                                             currentBlock);
-  cmp = new ICmpInst(ICmpInst::ICMP_EQ, isThin, module->constantPtrZero, "",
-                     currentBlock);
+  cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, isThin,
+                     module->constantPtrZero, "");
   
   BranchInst::Create(ThinLockBB, FatLockBB, cmp, currentBlock);
 
@@ -448,8 +448,8 @@ void JavaJIT::monitorEnter(Value* obj) {
   Value* idMask = ConstantInt::get(module->pointerSizeType, 0x7FFFFF00);
   Value* cptMask = ConstantInt::get(module->pointerSizeType, 0xFF);
   Value* IdInLock = BinaryOperator::CreateAnd(atomic, idMask, "", currentBlock);
-  Value* owner = new ICmpInst(ICmpInst::ICMP_EQ, threadId, IdInLock, "",
-                              currentBlock);
+  Value* owner = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, threadId,
+                              IdInLock, "");
 
   BasicBlock* OwnerBB = createBasicBlock("owner thread");
 
@@ -458,7 +458,7 @@ void JavaJIT::monitorEnter(Value* obj) {
 
   // OK, we are the owner, now check if the counter will overflow.
   Value* count = BinaryOperator::CreateAnd(atomic, cptMask, "", currentBlock);
-  cmp = new ICmpInst(ICmpInst::ICMP_ULT, count, cptMask, "", currentBlock);
+  cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_ULT, count, cptMask, "");
 
   BasicBlock* IncCounterBB = createBasicBlock("Increment counter");
   BasicBlock* OverflowCounterBB = createBasicBlock("Overflow counter");
@@ -503,8 +503,8 @@ void JavaJIT::monitorExit(Value* obj) {
   threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
                               currentBlock);
   
-  Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, lock, threadId, "",
-                            currentBlock);
+  Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, lock, threadId,
+                            "");
   
   
   BasicBlock* EndUnlock = createBasicBlock("end unlock");
@@ -525,8 +525,8 @@ void JavaJIT::monitorExit(Value* obj) {
   // Look if the lock is thin.
   Value* isThin = BinaryOperator::CreateAnd(lock, module->constantFatMask, "",
                                             currentBlock);
-  cmp = new ICmpInst(ICmpInst::ICMP_EQ, isThin, module->constantPtrZero, "",
-                     currentBlock);
+  cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, isThin,
+                     module->constantPtrZero, "");
   
   BranchInst::Create(ThinLockBB, FatLockBB, cmp, currentBlock);
   
@@ -859,7 +859,8 @@ llvm::Function* JavaJIT::javaCompile() {
 
     Value* MyID = ConstantInt::get(module->pointerSizeType,
                                    loader->getIsolate()->IsolateID);
-    Cmp = new ICmpInst(ICmpInst::ICMP_EQ, OldIsolateID, MyID, "", currentBlock);
+    Cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, OldIsolateID, MyID,
+                       "");
 
     BasicBlock* EndBB = createBasicBlock("After service check");
     BasicBlock* ServiceBB = createBasicBlock("Begin service call");
@@ -918,8 +919,8 @@ llvm::Function* JavaJIT::javaCompile() {
       BinaryOperator::CreateAnd(FrameAddr, module->constantStackOverflowMask,
                                 "", currentBlock);
 
-    stackCheck = new ICmpInst(ICmpInst::ICMP_EQ, stackCheck,
-                              module->constantPtrZero, "", currentBlock);
+    stackCheck = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, stackCheck,
+                              module->constantPtrZero, "");
     BasicBlock* stackOverflow = createBasicBlock("stack overflow");
     BasicBlock* noStackOverflow = createBasicBlock("no stack overflow");
     BranchInst::Create(stackOverflow, noStackOverflow, stackCheck,
@@ -942,11 +943,11 @@ llvm::Function* JavaJIT::javaCompile() {
     if (isa<UnreachableInst>(I)) {
       I->eraseFromParent();
       BranchInst::Create(endBlock, currentBlock);
-      endNode->addIncoming(Constant::getNullValue(returnType),
+      endNode->addIncoming(llvmContext->getNullValue(returnType),
                            currentBlock);
     } else if (InvokeInst* II = dyn_cast<InvokeInst>(I)) {
       II->setNormalDest(endBlock);
-      endNode->addIncoming(Constant::getNullValue(returnType),
+      endNode->addIncoming(llvmContext->getNullValue(returnType),
                            currentBlock);
     }
 
@@ -1019,11 +1020,11 @@ void JavaJIT::compareFP(Value* val1, Value* val2, const Type* ty, bool l) {
   Value* zero = module->constantZero;
   Value* minus = module->constantMinusOne;
 
-  Value* c = new FCmpInst(FCmpInst::FCMP_UGT, val1, val2, "", currentBlock);
+  Value* c = new FCmpInst(*currentBlock, FCmpInst::FCMP_UGT, val1, val2, "");
   Value* r = llvm::SelectInst::Create(c, one, zero, "", currentBlock);
-  c = new FCmpInst(FCmpInst::FCMP_ULT, val1, val2, "", currentBlock);
+  c = new FCmpInst(*currentBlock, FCmpInst::FCMP_ULT, val1, val2, "");
   r = llvm::SelectInst::Create(c, minus, r, "", currentBlock);
-  c = new FCmpInst(FCmpInst::FCMP_UNO, val1, val2, "", currentBlock);
+  c = new FCmpInst(*currentBlock, FCmpInst::FCMP_UNO, val1, val2, "");
   r = llvm::SelectInst::Create(c, l ? one : minus, r, "", currentBlock);
 
   push(r, false);
@@ -1100,8 +1101,7 @@ void JavaJIT::JITVerifyNull(Value* obj) {
 
   if (TheCompiler->hasExceptionsEnabled()) {
     Constant* zero = module->JavaObjectNullConstant;
-    Value* test = new ICmpInst(ICmpInst::ICMP_EQ, obj, zero, "",
-                               currentBlock);
+    Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, obj, zero, "");
 
     BasicBlock* exit = createBasicBlock("verifyNullExit");
     BasicBlock* cont = createBasicBlock("verifyNullCont");
@@ -1125,8 +1125,8 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
   if (TheCompiler->hasExceptionsEnabled()) {
     Value* size = arraySize(obj);
     
-    Value* cmp = new ICmpInst(ICmpInst::ICMP_ULT, index, size, "",
-                              currentBlock);
+    Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_ULT, index, size,
+                              "");
 
     BasicBlock* ifTrue =  createBasicBlock("true verifyAndComputePtr");
     BasicBlock* ifFalse = createBasicBlock("false verifyAndComputePtr");
@@ -1244,8 +1244,8 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
         BinaryOperator::Create(Instruction::Sub, const_int32_9, args[0],
                                "tmpneg", currentBlock);
       ICmpInst* int1_abscond = 
-        new ICmpInst(ICmpInst::ICMP_SGT, args[0], const_int32_10, "abscond", 
-                     currentBlock);
+        new ICmpInst(*currentBlock, ICmpInst::ICMP_SGT, args[0], const_int32_10,
+                     "abscond");
       return llvm::SelectInst::Create(int1_abscond, args[0], int32_tmpneg,
                                       "abs", currentBlock);
     } else if (Ty == Type::Int64Ty) {
@@ -1256,9 +1256,8 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
         BinaryOperator::Create(Instruction::Sub, const_int64_9, args[0],
                                "tmpneg", currentBlock);
 
-      ICmpInst* int1_abscond = new ICmpInst(ICmpInst::ICMP_SGT, args[0],
-                                            const_int64_10, "abscond",
-                                            currentBlock);
+      ICmpInst* int1_abscond = new ICmpInst(*currentBlock, ICmpInst::ICMP_SGT,
+                                            args[0], const_int64_10, "abscond");
       
       return llvm::SelectInst::Create(int1_abscond, args[0], int64_tmpneg,
                                       "abs", currentBlock);
@@ -1391,12 +1390,12 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
 
 #if defined(ISOLATE_SHARING)
   const Type* Ty = module->ConstantPoolType;
-  Constant* Nil = Constant::getNullValue(Ty);
+  Constant* Nil = llvmContext->getNullValue(Ty);
   GlobalVariable* GV = new GlobalVariable(Ty, false,
                                           GlobalValue::ExternalLinkage, Nil,
                                           "", module);
   Value* res = new LoadInst(GV, "", false, currentBlock);
-  Value* test = new ICmpInst(ICmpInst::ICMP_EQ, res, Nil, "", currentBlock);
+  Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, res, Nil, "");
  
   BasicBlock* trueCl = createBasicBlock("UserCtp OK");
   BasicBlock* falseCl = createBasicBlock("UserCtp Not OK");
@@ -1943,7 +1942,8 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
                                                   currentBlock);
   Value* lastCible = new LoadInst(lastCiblePtr, "", currentBlock);
 
-  Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, VT, lastCible, "", currentBlock);
+  Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, VT, lastCible,
+                            "");
   
   BasicBlock* ifTrue = createBasicBlock("cache ok");
   BasicBlock* ifFalse = createBasicBlock("cache not ok");

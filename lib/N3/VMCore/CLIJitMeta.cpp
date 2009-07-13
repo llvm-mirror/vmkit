@@ -369,10 +369,9 @@ GlobalVariable* VMCommonClass::llvmVar() {
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
                                     pty);
 
-      _llvmVar = new GlobalVariable(pty, true,
+      _llvmVar = new GlobalVariable(*(vm->getLLVMModule()), pty, true,
                                     GlobalValue::ExternalLinkage,
-                                    cons, "",
-                                    vm->getLLVMModule());
+                                    cons, "");
     
     }
     release();
@@ -389,10 +388,9 @@ GlobalVariable* VMField::llvmVar() {
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
                                   pty);
 
-      _llvmVar = new GlobalVariable(pty, true,
+      _llvmVar = new GlobalVariable(*(classDef->vm->getLLVMModule()), pty, true,
                                     GlobalValue::ExternalLinkage,
-                                    cons, "",
-                                    classDef->vm->getLLVMModule());
+                                    cons, "");
     }
     classDef->release();
   }
@@ -408,10 +406,9 @@ GlobalVariable* VMMethod::llvmVar() {
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
                                   pty);
 
-      _llvmVar = new GlobalVariable(pty, true,
+      _llvmVar = new GlobalVariable(*(classDef->vm->getLLVMModule()), pty, true,
                                     GlobalValue::ExternalLinkage,
-                                    cons, "",
-                                    classDef->vm->getLLVMModule());
+                                    cons, "");
     
     }
     classDef->release();

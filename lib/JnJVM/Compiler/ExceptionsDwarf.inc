@@ -399,8 +399,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
       Status = new LoadInst(Status, "", currentBlock);
       Status = new PtrToIntInst(Status, Type::Int32Ty, "", currentBlock);
   
-      Value* stopping = new ICmpInst(ICmpInst::ICMP_EQ, Status,
-                                     module->constantOne, "", currentBlock);
+      Value* stopping = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, Status,
+                                     module->constantOne, "");
 
       BasicBlock* raiseBlock = createBasicBlock("raiseBlock");
       BasicBlock* continueBlock = createBasicBlock("continueBlock");
@@ -431,8 +431,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
                                          currentBlock);
     
     // Compare the exception with the exception class we catch.
-    Value* cmp = new ICmpInst(ICmpInst::ICMP_ULE, depthCl, depthClObj, "",
-                              currentBlock);
+    Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_ULE, depthCl,
+                              depthClObj, "");
 
     BasicBlock* supDepth = createBasicBlock("superior depth");
             
@@ -450,8 +450,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
                                           displayArgs, displayArgs + 2, "",
                                           currentBlock);
              
-    cmp = new ICmpInst(ICmpInst::ICMP_EQ, clInDisplay, clVar, "",
-                       currentBlock);
+    cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, clInDisplay, clVar,
+                       "");
     
     // If we are catching this exception, then jump to the nativeHandler,
     // otherwise jump to our next handler.

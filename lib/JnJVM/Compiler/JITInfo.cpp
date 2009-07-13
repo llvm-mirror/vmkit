@@ -543,56 +543,56 @@ void LLVMAssessorInfo::initialise() {
   AssessorInfo[I_BOOL].llvmType = Type::Int8Ty;
   AssessorInfo[I_BOOL].llvmTypePtr = PointerType::getUnqual(Type::Int8Ty);
   AssessorInfo[I_BOOL].llvmNullConstant = 
-    Constant::getNullValue(Type::Int8Ty);
+    mvm::MvmModule::globalContext->getNullValue(Type::Int8Ty);
   AssessorInfo[I_BOOL].logSizeInBytesConstant =
     mvm::MvmModule::constantZero;
   
   AssessorInfo[I_BYTE].llvmType = Type::Int8Ty;
   AssessorInfo[I_BYTE].llvmTypePtr = PointerType::getUnqual(Type::Int8Ty);
   AssessorInfo[I_BYTE].llvmNullConstant = 
-    Constant::getNullValue(Type::Int8Ty);
+    mvm::MvmModule::globalContext->getNullValue(Type::Int8Ty);
   AssessorInfo[I_BYTE].logSizeInBytesConstant =
     mvm::MvmModule::constantZero;
   
   AssessorInfo[I_SHORT].llvmType = Type::Int16Ty;
   AssessorInfo[I_SHORT].llvmTypePtr = PointerType::getUnqual(Type::Int16Ty);
   AssessorInfo[I_SHORT].llvmNullConstant = 
-    Constant::getNullValue(Type::Int16Ty);
+    mvm::MvmModule::globalContext->getNullValue(Type::Int16Ty);
   AssessorInfo[I_SHORT].logSizeInBytesConstant =
     mvm::MvmModule::constantOne;
   
   AssessorInfo[I_CHAR].llvmType = Type::Int16Ty;
   AssessorInfo[I_CHAR].llvmTypePtr = PointerType::getUnqual(Type::Int16Ty);
   AssessorInfo[I_CHAR].llvmNullConstant = 
-    Constant::getNullValue(Type::Int16Ty);
+    mvm::MvmModule::globalContext->getNullValue(Type::Int16Ty);
   AssessorInfo[I_CHAR].logSizeInBytesConstant =
     mvm::MvmModule::constantOne;
   
   AssessorInfo[I_INT].llvmType = Type::Int32Ty;
   AssessorInfo[I_INT].llvmTypePtr = PointerType::getUnqual(Type::Int32Ty);
   AssessorInfo[I_INT].llvmNullConstant = 
-    Constant::getNullValue(Type::Int32Ty);
+    mvm::MvmModule::globalContext->getNullValue(Type::Int32Ty);
   AssessorInfo[I_INT].logSizeInBytesConstant =
     mvm::MvmModule::constantTwo;
   
   AssessorInfo[I_FLOAT].llvmType = Type::FloatTy;
   AssessorInfo[I_FLOAT].llvmTypePtr = PointerType::getUnqual(Type::FloatTy);
   AssessorInfo[I_FLOAT].llvmNullConstant = 
-    Constant::getNullValue(Type::FloatTy);
+    mvm::MvmModule::globalContext->getNullValue(Type::FloatTy);
   AssessorInfo[I_FLOAT].logSizeInBytesConstant =
     mvm::MvmModule::constantTwo;
   
   AssessorInfo[I_LONG].llvmType = Type::Int64Ty;
   AssessorInfo[I_LONG].llvmTypePtr = PointerType::getUnqual(Type::Int64Ty);
   AssessorInfo[I_LONG].llvmNullConstant = 
-    Constant::getNullValue(Type::Int64Ty);
+    mvm::MvmModule::globalContext->getNullValue(Type::Int64Ty);
   AssessorInfo[I_LONG].logSizeInBytesConstant =
     mvm::MvmModule::constantThree;
   
   AssessorInfo[I_DOUBLE].llvmType = Type::DoubleTy;
   AssessorInfo[I_DOUBLE].llvmTypePtr = PointerType::getUnqual(Type::DoubleTy);
   AssessorInfo[I_DOUBLE].llvmNullConstant = 
-    Constant::getNullValue(Type::DoubleTy);
+    mvm::MvmModule::globalContext->getNullValue(Type::DoubleTy);
   AssessorInfo[I_DOUBLE].logSizeInBytesConstant =
     mvm::MvmModule::constantThree;
   

@@ -176,7 +176,8 @@ void JnjvmModule::initialise() {
   JavaThreadType =
     PointerType::getUnqual(module->getTypeByName("JavaThread"));
 
-  JavaObjectNullConstant = Constant::getNullValue(JnjvmModule::JavaObjectType);
+  JavaObjectNullConstant =
+    module->getContext().getNullValue(JnjvmModule::JavaObjectType);
   MaxArraySizeConstant = ConstantInt::get(Type::Int32Ty,
                                           JavaArray::MaxArraySize);
   JavaArraySizeConstant = 

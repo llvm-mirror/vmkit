@@ -34,12 +34,12 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
       // the function is readnone.
       obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
       test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
-      test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
-      Value* T = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
+      Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
       obj = new LoadInst(javaExceptionPtr, "", currentBlock);
-      test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
     }
 
     BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
@@ -84,12 +84,12 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
         F == module->GetClassDelegateeFunction) {
       obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
       test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
-      test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
-      Value* T = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
+      Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
       obj = new LoadInst(javaExceptionPtr, "", currentBlock);
-      test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
     }
 
     BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
@@ -135,12 +135,12 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
         F == module->GetClassDelegateeFunction) {
       obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
       test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
-      test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
-      Value* T = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
+      Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
       obj = new LoadInst(javaExceptionPtr, "", currentBlock);
-      test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
     }
   
     BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
@@ -183,12 +183,12 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
         F == module->GetClassDelegateeFunction) {
       obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
       test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
-      test = new ICmpInst(ICmpInst::ICMP_EQ, test, obj, "", currentBlock);
-      Value* T = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
+      Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
       obj = new LoadInst(javaExceptionPtr, "", currentBlock);
-      test = new ICmpInst(ICmpInst::ICMP_NE, obj, zero, "", currentBlock);
+      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
     }
 
     BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
@@ -214,7 +214,7 @@ void JavaJIT::throwException(llvm::Function* F, Value* arg1) {
     BranchInst::Create(currentExceptionBlock, currentBlock);
   } else {
     if (endNode) {
-      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
+      endNode->addIncoming(llvmContext->getNullValue(endNode->getType()),
                            currentBlock);
     }
     BranchInst::Create(endBlock, currentBlock);
@@ -237,7 +237,7 @@ void JavaJIT::throwException(Value* obj) {
     BranchInst::Create(currentExceptionBlock, currentBlock);
   } else {
     if (endNode) {
-      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
+      endNode->addIncoming(llvmContext->getNullValue(endNode->getType()),
                            currentBlock);
     }
     BranchInst::Create(endBlock, currentBlock);
@@ -254,7 +254,7 @@ void JavaJIT::throwException(llvm::Function* F, Value** args,
     BranchInst::Create(currentExceptionBlock, currentBlock);
   } else {
     if (endNode) {
-      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
+      endNode->addIncoming(llvmContext->getNullValue(endNode->getType()),
                            currentBlock);
     }
     BranchInst::Create(endBlock, currentBlock);
@@ -411,8 +411,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
       Status = new LoadInst(Status, "", currentBlock);
       Status = new PtrToIntInst(Status, Type::Int32Ty, "", currentBlock);
   
-      Value* stopping = new ICmpInst(ICmpInst::ICMP_EQ, Status,
-                                     module->constantOne, "", currentBlock);
+      Value* stopping = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, Status,
+                                     module->constantOne, "");
 
       BasicBlock* raiseBlock = createBasicBlock("raiseBlock");
       BasicBlock* continueBlock = createBasicBlock("continueBlock");
@@ -451,8 +451,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
                                             displayArgs, displayArgs + 2, "",
                                             currentBlock);
              
-      cmp = new ICmpInst(ICmpInst::ICMP_EQ, VTInDisplay, VTVar, "",
-                         currentBlock);
+      cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, VTInDisplay, VTVar,
+                         "");
     }
    
     // Add the Java exception in the phi node of the handler.
@@ -533,7 +533,7 @@ void JavaJIT::finishExceptions() {
     endExceptionBlock->eraseFromParent();
   } else {
     if (endNode) {
-      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
+      endNode->addIncoming(llvmContext->getNullValue(endNode->getType()),
                            endExceptionBlock);
     }
     BranchInst::Create(endBlock, endExceptionBlock);
@@ -556,7 +556,7 @@ void JavaJIT::finishExceptions() {
       Instruction* insn = BI->begin();
       PHINode* node = dyn_cast<PHINode>(insn);
       if (node) {
-        node->replaceAllUsesWith(Constant::getNullValue(node->getType()));
+        node->replaceAllUsesWith(llvmContext->getNullValue(node->getType()));
         node->eraseFromParent();
       }
     }

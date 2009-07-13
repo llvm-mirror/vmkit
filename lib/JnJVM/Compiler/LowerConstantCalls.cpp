@@ -296,8 +296,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           BasicBlock* NBB = II->getParent()->splitBasicBlock(II);
           I->getParent()->getTerminator()->eraseFromParent();
           Value* Del = getDelegatee(module, Call.getArgument(0), CI);
-          Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, Del, 
-                                    module->JavaObjectNullConstant, "", CI);
+          Value* cmp = new ICmpInst(CI, ICmpInst::ICMP_EQ, Del, 
+                                    module->JavaObjectNullConstant, "");
           
           BasicBlock* NoDelegatee = BasicBlock::Create("No delegatee", &F);
           BasicBlock* DelegateeOK = BasicBlock::Create("Delegatee OK", &F);
@@ -414,8 +414,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 #endif
           Value* arg1 = GetElementPtrInst::Create(CTP, indexes, "", CI);
           arg1 = new LoadInst(arg1, "", false, CI);
-          Value* test = new ICmpInst(ICmpInst::ICMP_EQ, arg1,
-                                     mvm::MvmModule::constantPtrNull, "", CI);
+          Value* test = new ICmpInst(CI, ICmpInst::ICMP_EQ, arg1,
+                                     mvm::MvmModule::constantPtrNull, "");
  
           BasicBlock* trueCl = BasicBlock::Create("Ctp OK", &F);
           BasicBlock* falseCl = BasicBlock::Create("Ctp Not OK", &F);
@@ -471,22 +471,22 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         } else if (V == module->GetArrayClassFunction) {
           const llvm::Type* Ty = 
             PointerType::getUnqual(module->JavaCommonClassType);
-          Constant* nullValue = Constant::getNullValue(Ty);
+          Constant* nullValue = F.getContext()->getNullValue(Ty);
           // Check if we have already proceed this call.
           if (Call.getArgument(1) == nullValue) { 
             BasicBlock* NBB = II->getParent()->splitBasicBlock(II);
             I->getParent()->getTerminator()->eraseFromParent();
 
             Constant* init = 
-              Constant::getNullValue(module->JavaClassArrayType);
+              F.getContext()->getNullValue(module->JavaClassArrayType);
             GlobalVariable* GV = 
-              new GlobalVariable(module->JavaClassArrayType, false,
-                                 GlobalValue::ExternalLinkage,
-                                 init, "", TheCompiler->getLLVMModule());
+              new GlobalVariable(*(F.getParent()), module->JavaClassArrayType,
+                                 false, GlobalValue::ExternalLinkage,
+                                 init, "");
 
             Value* LoadedGV = new LoadInst(GV, "", CI);
-            Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, LoadedGV, init,
-                                      "", CI);
+            Value* cmp = new ICmpInst(CI, ICmpInst::ICMP_EQ, LoadedGV, init,
+                                      "");
 
             BasicBlock* OKBlock = BasicBlock::Create("", &F);
             BasicBlock* NotOKBlock = BasicBlock::Create("", &F);
@@ -548,7 +548,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CurVT = new LoadInst(CurVT, "", false, CI);
           CurVT = new BitCastInst(CurVT, module->VTType, "", CI);
              
-          Value* res = new ICmpInst(ICmpInst::ICMP_EQ, CurVT, VT2, "", CI);
+          Value* res = new ICmpInst(CI, ICmpInst::ICMP_EQ, CurVT, VT2, "");
 
           node->addIncoming(ConstantInt::getTrue(), CI->getParent());
           BranchInst::Create(CurEndBlock, FailedBlock, res, CI);
@@ -599,8 +599,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             GetElementPtrInst::Create(VT1, indices, indices + 2, "", CI);
           CachePtr = new BitCastInst(CachePtr, Ty, "", CI);
           Value* Cache = new LoadInst(CachePtr, "", false, CI);
-          ICmpInst* cmp1 = new ICmpInst(ICmpInst::ICMP_EQ, Cache, VT2, "", CI);
-          ICmpInst* cmp2 = new ICmpInst(ICmpInst::ICMP_EQ, VT1, VT2, "", CI);
+          ICmpInst* cmp1 = new ICmpInst(CI, ICmpInst::ICMP_EQ, Cache, VT2, "");
+          ICmpInst* cmp2 = new ICmpInst(CI, ICmpInst::ICMP_EQ, VT1, VT2, "");
           BinaryOperator* Or = BinaryOperator::Create(Instruction::Or, cmp1,
                                                       cmp2, "", CI);
           BranchInst::Create(BB9, Preheader, Or, CI);
@@ -637,7 +637,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Instruction* CurVT = GetElementPtrInst::Create(secondaryTypes, resFwd,
                                                          "", BB4);
           CurVT = new LoadInst(CurVT, "", false, BB4);
-          cmp1 = new ICmpInst(ICmpInst::ICMP_EQ, CurVT, VT2, "", BB4);
+          cmp1 = new ICmpInst(*BB4, ICmpInst::ICMP_EQ, CurVT, VT2, "");
           BranchInst::Create(BB5, BB6, cmp1, BB4);
     
           // Increment i if the previous test failed
@@ -656,7 +656,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           resFwd->addIncoming(module->constantZero, Preheader);
           resFwd->addIncoming(IndVar, BB6);
     
-          cmp1 = new ICmpInst(ICmpInst::ICMP_SGT, Size, resFwd, "", BB7);
+          cmp1 = new ICmpInst(*BB7, ICmpInst::ICMP_SGT, Size, resFwd, "");
           BranchInst::Create(BB4, BB9, cmp1, BB7);
    
           // Update the cache if the result is found.

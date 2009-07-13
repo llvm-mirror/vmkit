@@ -184,9 +184,9 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
     LoadInst* int32_tmp1019 = new LoadInst(ptr_tmp918, "tmp1019", false, 
                                            label_entry);
 
-    ICmpInst* int1_tmp1221 = new ICmpInst(ICmpInst::ICMP_SGT, int32_tmp1019, 
-                                          const_int32_8, "tmp1221",
-                                          label_entry);
+    ICmpInst* int1_tmp1221 = new ICmpInst(*label_entry, ICmpInst::ICMP_SGT,
+                                          int32_tmp1019, 
+                                          const_int32_8, "tmp1221");
 
     BranchInst::Create(label_bb, label_return, int1_tmp1221, label_entry);
     
@@ -225,8 +225,8 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
       BinaryOperator::Create(Instruction::Add, int32_i_015_0, const_int32_9,
                              "tmp6", label_bb);
     LoadInst* int32_tmp10 = new LoadInst(ptr_tmp918, "tmp10", false, label_bb);
-    ICmpInst* int1_tmp12 = new ICmpInst(ICmpInst::ICMP_SGT, int32_tmp10, 
-                                        int32_tmp6, "tmp12", label_bb);
+    ICmpInst* int1_tmp12 = new ICmpInst(*label_bb, ICmpInst::ICMP_SGT,
+                                        int32_tmp10, int32_tmp6, "tmp12");
     BranchInst::Create(label_bb, label_return, int1_tmp12, label_bb);
     
     // Block return (label_return)
@@ -535,8 +535,8 @@ void CLIJit::invoke(uint32 value, VMGenericClass* genClass, VMGenericMethod* gen
   } else if (meth->classDef->nameSpace == N3::system && 
              meth->classDef->name == N3::doubleName) {
     if (meth->name == N3::isNan) {
-      push(new FCmpInst(FCmpInst::FCMP_UNO, Args[0], 
-                        module->constantDoubleZero, "tmp1", currentBlock));
+      push(new FCmpInst(*currentBlock, FCmpInst::FCMP_UNO, Args[0], 
+                        module->constantDoubleZero, "tmp1"));
       return;
     } else if (meth->name == N3::testInfinity) {
       BasicBlock* endBlock = createBasicBlock("end test infinity");
@@ -546,13 +546,11 @@ void CLIJit::invoke(uint32 value, VMGenericClass* genClass, VMGenericMethod* gen
       node->addIncoming(module->constantOne, currentBlock);
       node->addIncoming(module->constantMinusOne, minusInfinity);
       node->addIncoming(module->constantZero, noInfinity);
-      Value* val1 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0],
-                                 module->constantDoubleInfinity, "tmp1",
-                                 currentBlock); 
+      Value* val1 = new FCmpInst(*currentBlock, FCmpInst::FCMP_OEQ, Args[0],
+                                 module->constantDoubleInfinity, "tmp1"); 
       BranchInst::Create(endBlock, minusInfinity, val1, currentBlock);
-      Value* val2 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0], 
-                                 module->constantDoubleMinusInfinity, "tmp1",
-                                 minusInfinity); 
+      Value* val2 = new FCmpInst(*minusInfinity, FCmpInst::FCMP_OEQ, Args[0],
+                                 module->constantDoubleMinusInfinity, "tmp1");
       BranchInst::Create(endBlock, noInfinity, val2, minusInfinity);
       BranchInst::Create(endBlock, noInfinity);
       currentBlock = endBlock; 
@@ -562,8 +560,8 @@ void CLIJit::invoke(uint32 value, VMGenericClass* genClass, VMGenericMethod* gen
   } else if (meth->classDef->nameSpace == N3::system && 
              meth->classDef->name == N3::floatName) {
     if (meth->name == N3::isNan) {
-      push(new FCmpInst(FCmpInst::FCMP_UNO, Args[0], 
-                        module->constantFloatZero, "tmp1", currentBlock));
+      push(new FCmpInst(*currentBlock, FCmpInst::FCMP_UNO, Args[0], 
+                        module->constantFloatZero, "tmp1"));
       return;
     } else if (meth->name == N3::testInfinity) {
       BasicBlock* endBlock = createBasicBlock("end test infinity");
@@ -573,13 +571,11 @@ void CLIJit::invoke(uint32 value, VMGenericClass* genClass, VMGenericMethod* gen
       node->addIncoming(module->constantOne, currentBlock);
       node->addIncoming(module->constantMinusOne, minusInfinity);
       node->addIncoming(module->constantZero, noInfinity);
-      Value* val1 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0], 
-                                 module->constantFloatInfinity, "tmp1",
-                                 currentBlock);
+      Value* val1 = new FCmpInst(*currentBlock, FCmpInst::FCMP_OEQ, Args[0],
+                                 module->constantFloatInfinity, "tmp1");
       BranchInst::Create(endBlock, minusInfinity, val1, currentBlock);
-      Value* val2 = new FCmpInst(FCmpInst::FCMP_OEQ, Args[0], 
-                                 module->constantFloatMinusInfinity, "tmp1",
-                                 minusInfinity);
+      Value* val2 = new FCmpInst(*minusInfinity, FCmpInst::FCMP_OEQ, Args[0],
+                                 module->constantFloatMinusInfinity, "tmp1");
       BranchInst::Create(endBlock, noInfinity, val2, minusInfinity);
       BranchInst::Create(endBlock, noInfinity);
       currentBlock = endBlock; 
@@ -748,7 +744,7 @@ void CLIJit::setVirtualField(uint32 value, bool isVolatile, VMGenericClass* genC
   } else {
     type = field->signature->naturalType;
     if (val == constantVMObjectNull) {
-      val = Constant::getNullValue(type);
+      val = llvmFunction->getContext()->getNullValue(type);
     } else if (type != valType) {
       val = changeType(val, type);
     }
@@ -774,7 +770,7 @@ void CLIJit::setStaticField(uint32 value, bool isVolatile, VMGenericClass* genCl
   const Type* type = field->signature->naturalType;
   const Type* valType = val->getType();
   if (val == constantVMObjectNull) {
-    val = Constant::getNullValue(type);
+    val = llvmFunction->getContext()->getNullValue(type);
   } else if (type != valType) {
     val = changeType(val, type);
   }
@@ -783,9 +779,9 @@ void CLIJit::setStaticField(uint32 value, bool isVolatile, VMGenericClass* genCl
 
 void CLIJit::JITVerifyNull(Value* obj) {
   CLIJit* jit = this;
-  Constant* zero = Constant::getNullValue(obj->getType());
-  Value* test = new ICmpInst(ICmpInst::ICMP_EQ, obj, zero, "",
-                             jit->currentBlock);
+  Constant* zero = llvmFunction->getContext()->getNullValue(obj->getType());
+  Value* test = new ICmpInst(*jit->currentBlock, ICmpInst::ICMP_EQ, obj,
+                             zero, "");
 
   BasicBlock* exit = jit->createBasicBlock("verifyNullExit");
   BasicBlock* cont = jit->createBasicBlock("verifyNullCont");
@@ -819,8 +815,8 @@ llvm::Value* CLIJit::verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
   if (true) {
     Value* size = arraySize(obj);
     
-    Value* cmp = new ICmpInst(ICmpInst::ICMP_SLT, index, size, "",
-                              currentBlock);
+    Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_SLT, index,
+                              size, "");
 
     BasicBlock* ifTrue =  createBasicBlock("true verifyAndComputePtr");
     BasicBlock* ifFalse = createBasicBlock("false verifyAndComputePtr");
@@ -1228,7 +1224,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
       cl->resolveType(false, false, genMethod);
       AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
       if (cl->naturalType->isSingleValueType()) {
-        new StoreInst(Constant::getNullValue(cl->naturalType), alloc, false,
+        new StoreInst(llvmFunction->getContext()->getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
       } else {
         uint64 size = module->getTypeSize(cl->naturalType);
@@ -1405,7 +1401,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
       cl->resolveType(false, false, genMethod);
       AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
       if (cl->naturalType->isSingleValueType()) {
-        new StoreInst(Constant::getNullValue(cl->naturalType), alloc, false,
+        new StoreInst(llvmFunction->getContext()->getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
       } else {
         uint64 size = module->getTypeSize(cl->naturalType);
@@ -1606,7 +1602,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
 
 
   
-  constantVMObjectNull = Constant::getNullValue(VMObject::llvmType);
+  constantVMObjectNull = module->getContext().getNullValue(VMObject::llvmType);
 }
 
 Constant* CLIJit::constantVMObjectNull;

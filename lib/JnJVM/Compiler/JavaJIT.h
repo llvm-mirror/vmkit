@@ -16,6 +16,7 @@
 #include "llvm/BasicBlock.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
+#include "llvm/LLVMContext.h"
 #include "llvm/Type.h"
 #include "llvm/Value.h"
 
@@ -62,6 +63,7 @@ public:
     TheCompiler = C;
     module = TheCompiler->getIntrinsics();
     llvmFunction = func;
+    llvmContext = func->getContext();
     inlining = false;
     callsStackWalker = false;
     endNode = 0;
@@ -83,6 +85,9 @@ private:
 
   /// llvmFunction - The LLVM representation of the method.
   llvm::Function* llvmFunction;
+
+  /// llvmContext - The current LLVM context of compilation.
+  llvm::LLVMContext* llvmContext;
   
   /// module - The LLVM module where lives the compiling LLVM function.
   JnjvmModule* module;

@@ -284,9 +284,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* test = 0; \
         verifyType(val1, val2, currentBlock); \
         if (val1->getType()->isFloatingPoint()) { \
-          test = new FCmpInst(FCmpInst::cmpf, val1, val2, "", currentBlock); \
+          test = new FCmpInst(*currentBlock, FCmpInst::cmpf, val1, val2, ""); \
         } else {  \
-          test = new ICmpInst(ICmpInst::cmpi, val1, val2, "", currentBlock); \
+          test = new ICmpInst(*currentBlock, ICmpInst::cmpi, val1, val2, ""); \
         } \
         BasicBlock* ifFalse = createBasicBlock("false BEQ"); \
         branch(test, ifTrue, ifFalse, currentBlock); \
@@ -341,13 +341,13 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
 #define TEST(name, read, cmpf, cmpi, offset) case name : { \
         uint32 tmp = i;       \
         Value* val2 = pop();  \
-        Value* val1 = Constant::getNullValue(val2->getType());  \
+        Value* val1 = llvmFunction->getContext()->getNullValue(val2->getType());  \
         BasicBlock* ifTrue = opcodeInfos[tmp + offset + read(bytecodes, i)].newBlock; \
         Value* test = 0; \
         if (val1->getType()->isFloatingPoint()) { \
-          test = new FCmpInst(FCmpInst::cmpf, val1, val2, "", currentBlock); \
+          test = new FCmpInst(*currentBlock, FCmpInst::cmpf, val1, val2, ""); \
         } else {  \
-          test = new ICmpInst(ICmpInst::cmpi, val1, val2, "", currentBlock); \
+          test = new ICmpInst(*currentBlock, ICmpInst::cmpi, val1, val2, ""); \
         } \
         BasicBlock* ifFalse = createBasicBlock("false BR"); \
         branch(test, ifTrue, ifFalse, currentBlock); \
@@ -1020,7 +1020,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case NEG : {
         Value* val = pop();
         push(BinaryOperator::CreateSub(
-                              Constant::getNullValue(val->getType()),
+                              llvmFunction->getContext()->getNullValue(val->getType()),
                               val, "", currentBlock));
         break;
       }
@@ -1334,9 +1334,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
                                                false, true, genClass, genMethod);
         Value* obj = new BitCastInst(pop(), VMObject::llvmType, "", currentBlock);
 
-        Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, obj, 
-                                  CLIJit::constantVMObjectNull,
-                                  "", currentBlock);
+        Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, obj, 
+                                  CLIJit::constantVMObjectNull, "");
      
         BasicBlock* ifTrue = createBasicBlock("null checkcast");
         BasicBlock* ifFalse = createBasicBlock("non null checkcast");
@@ -1350,8 +1349,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* call = CallInst::Create(instanceOfLLVM, args.begin(), args.end(),
                                    "", ifFalse);
      
-        cmp = new ICmpInst(ICmpInst::ICMP_EQ, call,
-                           module->constantZero, "", ifFalse);
+        cmp = new ICmpInst(*ifFalse, ICmpInst::ICMP_EQ, call,
+                           module->constantZero, "");
 
         BasicBlock* ex = createBasicBlock("false checkcast");
         branch(cmp, ex, ifTrue, ifFalse);
@@ -1383,10 +1382,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
                                                false, true, genClass, genMethod);
         Value* obj = pop();
 
-        Value* cmp = new ICmpInst(ICmpInst::ICMP_EQ, obj, 
-                                  Constant::getNullValue(obj->getType()),
-                                  "", currentBlock);
-        Constant* nullVirtual = Constant::getNullValue(dcl->virtualType);
+        Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, obj, 
+                                  llvmFunction->getContext()->getNullValue(obj->getType()), "");
+        Constant* nullVirtual = llvmFunction->getContext()->getNullValue(dcl->virtualType);
 
      
         BasicBlock* isInstEndBlock = createBasicBlock("end isinst");
@@ -1407,8 +1405,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* call = CallInst::Create(instanceOfLLVM, args.begin(), args.end(),
                                    "", ifFalse);
      
-        cmp = new ICmpInst(ICmpInst::ICMP_EQ, call,
-                           module->constantZero, "", ifFalse);
+        cmp = new ICmpInst(*ifFalse, ICmpInst::ICMP_EQ, call,
+                           module->constantZero, "");
 
         BasicBlock* falseInst = createBasicBlock("false isinst");
         BasicBlock* trueInst = createBasicBlock("true isinst");
@@ -1840,10 +1838,10 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           Value* val1 = pop(); \
           Value* test = 0; \
           if (val1->getType()->isFloatingPoint()) { \
-            test = new FCmpInst(FCmpInst::cmpf, val1, val2, "", currentBlock); \
+            test = new FCmpInst(*currentBlock, FCmpInst::cmpf, val1, val2, ""); \
           } else { \
             convertValue(val2, val1->getType(), currentBlock); \
-            test = new ICmpInst(ICmpInst::cmpi, val1, val2, "", currentBlock); \
+            test = new ICmpInst(*currentBlock, ICmpInst::cmpi, val1, val2, ""); \
           } \
           push(test); \
           break; \

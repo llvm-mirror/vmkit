@@ -53,10 +53,9 @@ GlobalVariable* CLIString::llvmVar() {
       Constant* cons = 
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
                                   pty);
-      str->_llvmVar = new GlobalVariable(pty, true,
+      str->_llvmVar = new GlobalVariable(*(vm->getLLVMModule()), pty, true,
                                     GlobalValue::ExternalLinkage,
-                                    cons, "",
-                                    vm->getLLVMModule());
+                                    cons, "");
     }
   }
   return str->_llvmVar;
