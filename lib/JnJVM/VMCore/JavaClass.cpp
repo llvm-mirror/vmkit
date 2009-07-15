@@ -338,8 +338,10 @@ void JavaVirtualTable::setNativeTracer(uintptr_t ptr, const char* name) {
 }
 
 void JavaVirtualTable::setNativeDestructor(uintptr_t ptr, const char* name) {
-  destructor = ptr;
-  operatorDelete = ptr;
+	if (!cl->classLoader->getCompiler()->isStaticCompiling()) {
+	  destructor = ptr;
+  	operatorDelete = ptr;
+	}
 }
 
 JavaMethod* Class::lookupInterfaceMethodDontThrow(const UTF8* name,
