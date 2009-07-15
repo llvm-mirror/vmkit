@@ -29,6 +29,7 @@
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/PassNameParser.h"
 #include "llvm/Support/PluginLoader.h"
+#include "llvm/Support/RegistryParser.h"
 #include "llvm/Support/Streams.h"
 #include "llvm/Support/SystemUtils.h"
 #include "llvm/Support/raw_ostream.h"
@@ -36,6 +37,7 @@
 #include "llvm/Target/TargetData.h"
 #include "llvm/Target/TargetMachineRegistry.h"
 #include "llvm/Target/TargetMachine.h"
+
 
 #include "MvmGC.h"
 #include "mvm/JIT.h"
@@ -119,6 +121,9 @@ static cl::list<std::string>
 WithClinit("with-clinit", cl::desc("Set a property"), cl::ZeroOrMore,
            cl::CommaSeparated);
 
+static cl::opt<const TargetMachineRegistry::entry*, false,
+               RegistryParser<TargetMachine> >
+MArch("march", cl::desc("Architecture to generate code for:"));
 
 
 inline void addPass(FunctionPassManager *PM, Pass *P) {
@@ -187,26 +192,36 @@ int main(int argc, char **argv) {
         TheModule->setTargetTriple(TargetTriple);
       else
         TheModule->setTargetTriple(mvm::MvmModule::getHostTriple());
-    
-      // Create the TargetMachine we will be generating code with.
-      std::string Err; 
-      const TargetMachineRegistry::entry *TME = 
-        TargetMachineRegistry::getClosestStaticTargetForModule(*TheModule, Err);
-      if (!TME) {
-        cerr << "Did not get a target machine!\n";
-        exit(1);
+   
+
+      // Allocate target machine.  First, check whether the user has
+      // explicitly specified an architecture to compile for.
+      const Target *TheTarget;
+      if (MArch) {
+        TheTarget = &MArch->TheTarget;
+      } else {
+        std::string Err;
+        TheTarget = 
+          TargetRegistry::getClosestStaticTargetForModule(*TheModule, Err);
+        if (TheTarget == 0) {
+          std::cerr << argv[0] << ": error auto-selecting target for module '"
+                    << Err << "'.  Please use the -march option to explicitly "
+                    << "pick a target.\n";
+          return 1;
+        }
       }
 
-      std::string FeatureStr;
-      TargetMachine* TheTarget = TME->CtorFn(*TheModule, FeatureStr);
+      std::string FeaturesStr;
+      TargetMachine *Target =
+        TheTarget->createTargetMachine(*TheModule, FeaturesStr);
 
       // Install information about target datalayout stuff into the module for
       // optimizer use.
-      TheModule->setDataLayout(TheTarget->getTargetData()->
+      TheModule->setDataLayout(Target->getTargetData()->
                                getStringRepresentation());
 
 
-      mvm::MvmModule::initialise(CodeGenOpt::Default, TheModule, TheTarget);
+      mvm::MvmModule::initialise(CodeGenOpt::Default, TheModule, Target);
     } else {
       mvm::MvmModule::initialise();
     }

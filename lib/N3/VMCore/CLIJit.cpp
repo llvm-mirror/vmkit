@@ -102,7 +102,8 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
 #ifdef MULTIPLE_GC
   Value* GC = ++(block->getParent()->arg_begin());
 #endif
-  
+ 
+  Function* llvmFunction = block->getParent();
   Constant* zero = mvm::MvmModule::constantZero;
   for (std::vector<VMField*>::iterator i = fields.begin(), 
             e = fields.end(); i!= e; ++i) {
@@ -112,7 +113,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
       args.push_back(zero);
       if (boxed) {
         ConstantInt* CI = dyn_cast<ConstantInt>(field->offset);
-        args.push_back(ConstantInt::get(CI->getValue() + 1));
+        args.push_back(llvmFunction->getContext()->getConstantInt(CI->getValue() + 1));
       } else {
         args.push_back(field->offset);
       }
@@ -124,7 +125,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
       args.push_back(zero);
       if (boxed) {
         ConstantInt* CI = dyn_cast<ConstantInt>(field->offset);
-        args.push_back(ConstantInt::get(CI->getValue() + 1));
+        args.push_back(llvmFunction->getContext()->getConstantInt(CI->getValue() + 1));
       } else {
         args.push_back(field->offset);
       }
@@ -624,13 +625,13 @@ void CLIJit::invokeNew(uint32 value, VMGenericClass* genClass, VMGenericMethod* 
     return;
 
   } else if (type->super == MSCorlib::pValue || type->super == MSCorlib::pEnum) {
-    obj = new AllocaInst(type->naturalType, "", currentBlock);
+    obj = new AllocaInst(*(llvmFunction->getContext()), type->naturalType, "", currentBlock);
     uint64 size = module->getTypeSize(type->naturalType);
         
     std::vector<Value*> params;
     params.push_back(new BitCastInst(obj, module->ptrType, "", currentBlock));
     params.push_back(module->constantInt8Zero);
-    params.push_back(ConstantInt::get(Type::Int32Ty, size));
+    params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
     params.push_back(module->constantZero);
     CallInst::Create(module->llvm_memset_i32, params.begin(), params.end(),
                      "", currentBlock);
@@ -737,7 +738,7 @@ void CLIJit::setVirtualField(uint32 value, bool isVolatile, VMGenericClass* genC
     std::vector<Value*> params;
     params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
     params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-    params.push_back(ConstantInt::get(Type::Int32Ty, size));
+    params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
     params.push_back(module->constantZero);
     CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
 
@@ -949,7 +950,7 @@ Function* CLIJit::compileNative(VMGenericMethod* genMethod) {
   void* natPtr = NativeUtil::nativeLookup(compilingClass, compilingMethod);
   
   Value* valPtr = 
-    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, (uint64)natPtr),
+    ConstantExpr::getIntToPtr(llvmFunction->getContext()->getConstantInt(Type::Int64Ty, (uint64)natPtr),
                               PointerType::getUnqual(funcType));
   
   Value* result = CallInst::Create(valPtr, nativeArgs.begin(),
@@ -977,7 +978,7 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat, VMGenericClass* genCl
   }
   
    if (nbe) {
-    supplLocal = new AllocaInst(VMObject::llvmType, "exceptionVar",
+    supplLocal = new AllocaInst(*(llvmFunction->getContext()), VMObject::llvmType, "exceptionVar",
                                 currentBlock);
   }
   
@@ -1209,7 +1210,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
     
     const Type* cur = i->getType();
 
-    AllocaInst* alloc = new AllocaInst(cur, "", currentBlock);
+    AllocaInst* alloc = new AllocaInst(*(llvmFunction->getContext()), cur, "", currentBlock);
     new StoreInst(i, alloc, false, currentBlock);
     arguments.push_back(alloc);
   } 
@@ -1222,7 +1223,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
             e = temp.end(); i!= e; ++i) {
       VMCommonClass* cl = *i;
       cl->resolveType(false, false, genMethod);
-      AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
+      AllocaInst* alloc = new AllocaInst(*(llvmFunction->getContext()), cl->naturalType, "", currentBlock);
       if (cl->naturalType->isSingleValueType()) {
         new StoreInst(llvmFunction->getContext()->getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
@@ -1233,7 +1234,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
         params.push_back(new BitCastInst(alloc, module->ptrType, "",
                                          currentBlock));
         params.push_back(module->constantInt8Zero);
-        params.push_back(ConstantInt::get(Type::Int32Ty, size));
+        params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
         params.push_back(module->constantZero);
         CallInst::Create(module->llvm_memset_i32, params.begin(),
                          params.end(), "", currentBlock);
@@ -1281,7 +1282,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
                                        currentBlock));
       params.push_back(new BitCastInst(endNode, module->ptrType, "",
                                        currentBlock));
-      params.push_back(ConstantInt::get(Type::Int32Ty, size));
+      params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
       params.push_back(module->constantFour);
       CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(),
                        "", currentBlock);
@@ -1386,7 +1387,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
     
     const Type* cur = (*i)->getType();
 
-    AllocaInst* alloc = new AllocaInst(cur, "", currentBlock);
+    AllocaInst* alloc = new AllocaInst(*(llvmFunction->getContext()), cur, "", currentBlock);
     new StoreInst(*i, alloc, false, currentBlock);
     arguments.push_back(alloc);
   } 
@@ -1399,7 +1400,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
             e = temp.end(); i!= e; ++i) {
       VMCommonClass* cl = *i;
       cl->resolveType(false, false, genMethod);
-      AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
+      AllocaInst* alloc = new AllocaInst(*(llvmFunction->getContext()), cl->naturalType, "", currentBlock);
       if (cl->naturalType->isSingleValueType()) {
         new StoreInst(llvmFunction->getContext()->getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
@@ -1410,7 +1411,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
         params.push_back(new BitCastInst(alloc, module->ptrType, "",
                                          currentBlock));
         params.push_back(module->constantInt8Zero);
-        params.push_back(ConstantInt::get(Type::Int32Ty, size));
+        params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
         params.push_back(module->constantZero);
         CallInst::Create(module->llvm_memset_i32, params.begin(),
                          params.end(), "", currentBlock);
@@ -1622,7 +1623,7 @@ Value* CLIJit::invoke(Value *F, std::vector<llvm::Value*> args,
       funcType = funcType->getContainedType(0);
     }
     const Type* lastType = funcType->getContainedType(funcType->getNumContainedTypes() - 1);
-    ret = new AllocaInst(lastType->getContainedType(0), "", InsertAtEnd);
+    ret = new AllocaInst(*(llvmFunction->getContext()), lastType->getContainedType(0), "", InsertAtEnd);
     args.push_back(ret);
   }
   Value* val = 0;
@@ -1654,7 +1655,7 @@ Value* CLIJit::invoke(Value *F, Value* arg1, const char* Name,
       funcType = funcType->getContainedType(0);
     }
     const Type* lastType = funcType->getContainedType(funcType->getNumContainedTypes() - 1);
-    ret = new AllocaInst(lastType->getContainedType(0), "", InsertAtEnd);
+    ret = new AllocaInst(*(llvmFunction->getContext()), lastType->getContainedType(0), "", InsertAtEnd);
     args.push_back(ret);
   }
   
@@ -1691,7 +1692,7 @@ Value* CLIJit::invoke(Value *F, Value* arg1, Value* arg2,
       funcType = funcType->getContainedType(0);
     }
     const Type* lastType = funcType->getContainedType(funcType->getNumContainedTypes() - 1);
-    ret = new AllocaInst(lastType->getContainedType(0), "", InsertAtEnd);
+    ret = new AllocaInst(*(llvmFunction->getContext()), lastType->getContainedType(0), "", InsertAtEnd);
     args.push_back(ret);
   }
 
@@ -1720,7 +1721,7 @@ Value* CLIJit::invoke(Value *F, const char* Name,
       funcType = funcType->getContainedType(0);
     }
     const Type* lastType = funcType->getContainedType(funcType->getNumContainedTypes() - 1);
-    ret = new AllocaInst(lastType->getContainedType(0), "", InsertAtEnd);
+    ret = new AllocaInst(*(llvmFunction->getContext()), lastType->getContainedType(0), "", InsertAtEnd);
     args.push_back(ret);
   }
 

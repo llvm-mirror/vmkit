@@ -158,7 +158,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
     Constant* Offset = LMI->getOffset();
     indexes2[1] = Offset;
 #ifdef ISOLATE_SHARING
-    indexesCtp = ConstantInt::get(Type::Int32Ty,
+    indexesCtp = llvmContext->getConstantInt(Type::Int32Ty,
                                   Offset->getZExtValue() * -1);
 #endif
   } else {
@@ -371,7 +371,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   // this problem because it passes first arguments in registers.
   // Therefore, it was overwriting the frame pointer when entering the
   // native method.
-  Value* Temp = new AllocaInst(module->ptrType, "", currentBlock);
+  Value* Temp = new AllocaInst(*llvmContext, module->ptrType, "", currentBlock);
   new StoreInst(FrameAddr, Temp, currentBlock);
   Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs.begin(),
                                          nativeArgs.end(), "", currentBlock);
@@ -445,8 +445,8 @@ void JavaJIT::monitorEnter(Value* obj) {
 
   // It's a thin lock. Look if we're the owner of this lock.
   currentBlock = ThinLockBB;
-  Value* idMask = ConstantInt::get(module->pointerSizeType, 0x7FFFFF00);
-  Value* cptMask = ConstantInt::get(module->pointerSizeType, 0xFF);
+  Value* idMask = llvmContext->getConstantInt(module->pointerSizeType, 0x7FFFFF00);
+  Value* cptMask = llvmContext->getConstantInt(module->pointerSizeType, 0xFF);
   Value* IdInLock = BinaryOperator::CreateAnd(atomic, idMask, "", currentBlock);
   Value* owner = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, threadId,
                               IdInLock, "");
@@ -637,21 +637,21 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     Instruction* firstInstruction = firstBB->begin();
 
     for (int i = 0; i < maxLocals; i++) {
-      intLocals.push_back(new AllocaInst(Type::Int32Ty, "", firstInstruction));
-      doubleLocals.push_back(new AllocaInst(Type::DoubleTy, "",
+      intLocals.push_back(new AllocaInst(*llvmContext, Type::Int32Ty, "", firstInstruction));
+      doubleLocals.push_back(new AllocaInst(*llvmContext, Type::DoubleTy, "",
                                             firstInstruction));
-      longLocals.push_back(new AllocaInst(Type::Int64Ty, "", firstInstruction));
-      floatLocals.push_back(new AllocaInst(Type::FloatTy, "", firstInstruction));
-      objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
+      longLocals.push_back(new AllocaInst(*llvmContext, Type::Int64Ty, "", firstInstruction));
+      floatLocals.push_back(new AllocaInst(*llvmContext, Type::FloatTy, "", firstInstruction));
+      objectLocals.push_back(new AllocaInst(*llvmContext, module->JavaObjectType, "",
                                           firstInstruction));
     }
   } else {
     for (int i = 0; i < maxLocals; i++) {
-      intLocals.push_back(new AllocaInst(Type::Int32Ty, "", firstBB));
-      doubleLocals.push_back(new AllocaInst(Type::DoubleTy, "", firstBB));
-      longLocals.push_back(new AllocaInst(Type::Int64Ty, "", firstBB));
-      floatLocals.push_back(new AllocaInst(Type::FloatTy, "", firstBB));
-      objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
+      intLocals.push_back(new AllocaInst(*llvmContext, Type::Int32Ty, "", firstBB));
+      doubleLocals.push_back(new AllocaInst(*llvmContext, Type::DoubleTy, "", firstBB));
+      longLocals.push_back(new AllocaInst(*llvmContext, Type::Int64Ty, "", firstBB));
+      floatLocals.push_back(new AllocaInst(*llvmContext, Type::FloatTy, "", firstBB));
+      objectLocals.push_back(new AllocaInst(*llvmContext, module->JavaObjectType, "",
                                             firstBB));
     }
   }
@@ -775,11 +775,11 @@ llvm::Function* JavaJIT::javaCompile() {
   
 
   for (int i = 0; i < maxLocals; i++) {
-    intLocals.push_back(new AllocaInst(Type::Int32Ty, "", currentBlock));
-    doubleLocals.push_back(new AllocaInst(Type::DoubleTy, "", currentBlock));
-    longLocals.push_back(new AllocaInst(Type::Int64Ty, "", currentBlock));
-    floatLocals.push_back(new AllocaInst(Type::FloatTy, "", currentBlock));
-    objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
+    intLocals.push_back(new AllocaInst(*llvmContext, Type::Int32Ty, "", currentBlock));
+    doubleLocals.push_back(new AllocaInst(*llvmContext, Type::DoubleTy, "", currentBlock));
+    longLocals.push_back(new AllocaInst(*llvmContext, Type::Int64Ty, "", currentBlock));
+    floatLocals.push_back(new AllocaInst(*llvmContext, Type::FloatTy, "", currentBlock));
+    objectLocals.push_back(new AllocaInst(*llvmContext, module->JavaObjectType, "",
                                           currentBlock));
   }
 
@@ -831,7 +831,7 @@ llvm::Function* JavaJIT::javaCompile() {
 
 #if defined(ISOLATE_SHARING)
   ctpCache = i;
-  Value* addrCtpCache = new AllocaInst(module->ConstantPoolType, "",
+  Value* addrCtpCache = new AllocaInst(*llvmContext, module->ConstantPoolType, "",
                                        currentBlock);
   /// make it volatile to be sure it's on the stack
   new StoreInst(ctpCache, addrCtpCache, true, currentBlock);
@@ -857,7 +857,7 @@ llvm::Function* JavaJIT::javaCompile() {
                                    currentBlock);
     OldIsolateID = new LoadInst(IsolateIDPtr, "", currentBlock);
 
-    Value* MyID = ConstantInt::get(module->pointerSizeType,
+    Value* MyID = llvmContext->getConstantInt(module->pointerSizeType,
                                    loader->getIsolate()->IsolateID);
     Cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, OldIsolateID, MyID,
                        "");
@@ -1065,16 +1065,16 @@ void JavaJIT::loadConstant(uint16 index) {
 #endif
         
   } else if (type == JavaConstantPool::ConstantLong) {
-    push(ConstantInt::get(Type::Int64Ty, ctpInfo->LongAt(index)),
+    push(llvmContext->getConstantInt(Type::Int64Ty, ctpInfo->LongAt(index)),
          false);
   } else if (type == JavaConstantPool::ConstantDouble) {
-    push(ConstantFP::get(Type::DoubleTy, ctpInfo->DoubleAt(index)),
+    push(llvmContext->getConstantFP(Type::DoubleTy, ctpInfo->DoubleAt(index)),
          false);
   } else if (type == JavaConstantPool::ConstantInteger) {
-    push(ConstantInt::get(Type::Int32Ty, ctpInfo->IntegerAt(index)),
+    push(llvmContext->getConstantInt(Type::Int32Ty, ctpInfo->IntegerAt(index)),
          false);
   } else if (type == JavaConstantPool::ConstantFloat) {
-    push(ConstantFP::get(Type::FloatTy, ctpInfo->FloatAt(index)),
+    push(llvmContext->getConstantFP(Type::FloatTy, ctpInfo->FloatAt(index)),
          false);
   } else if (type == JavaConstantPool::ConstantClass) {
     UserCommonClass* cl = 0;
@@ -1404,7 +1404,7 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
   BranchInst::Create(falseCl, trueCl, test, currentBlock);
   std::vector<Value*> Args;
   Args.push_back(ctpCache);
-  Args.push_back(ConstantInt::get(Type::Int32Ty, index));
+  Args.push_back(llvmContext->getConstantInt(Type::Int32Ty, index));
   Args.push_back(GV);
   res = CallInst::Create(module->SpecialCtpLookupFunction, Args.begin(),
                          Args.end(), "", falseCl);
@@ -1532,7 +1532,7 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   Args.push_back(resolver);
   Args.push_back(CTP);
   Args.push_back(Cl);
-  Args.push_back(ConstantInt::get(Type::Int32Ty, index));
+  Args.push_back(llvmContext->getConstantInt(Type::Int32Ty, index));
   if (additionalArg) Args.push_back(additionalArg);
 
   Value* res = 0;
@@ -1774,28 +1774,28 @@ void JavaJIT::getStaticField(uint16 index) {
         const PrimitiveTypedef* prim = (PrimitiveTypedef*)sign;
         if (prim->isInt()) {
           sint32 val = field->getInt32Field(Obj);
-          push(ConstantInt::get(Type::Int32Ty, val), false);
+          push(llvmContext->getConstantInt(Type::Int32Ty, val), false);
         } else if (prim->isByte()) {
           sint8 val = (sint8)field->getInt8Field(Obj);
-          push(ConstantInt::get(Type::Int8Ty, val), false);
+          push(llvmContext->getConstantInt(Type::Int8Ty, val), false);
         } else if (prim->isBool()) {
           uint8 val = (uint8)field->getInt8Field(Obj);
-          push(ConstantInt::get(Type::Int8Ty, val), true);
+          push(llvmContext->getConstantInt(Type::Int8Ty, val), true);
         } else if (prim->isShort()) {
           sint16 val = (sint16)field->getInt16Field(Obj);
-          push(ConstantInt::get(Type::Int16Ty, val), false);
+          push(llvmContext->getConstantInt(Type::Int16Ty, val), false);
         } else if (prim->isChar()) {
           uint16 val = (uint16)field->getInt16Field(Obj);
-          push(ConstantInt::get(Type::Int16Ty, val), true);
+          push(llvmContext->getConstantInt(Type::Int16Ty, val), true);
         } else if (prim->isLong()) {
           sint64 val = (sint64)field->getLongField(Obj);
-          push(ConstantInt::get(Type::Int64Ty, val), false);
+          push(llvmContext->getConstantInt(Type::Int64Ty, val), false);
         } else if (prim->isFloat()) {
           float val = (float)field->getFloatField(Obj);
-          push(ConstantFP::get(Type::FloatTy, val), false);
+          push(llvmContext->getConstantFP(Type::FloatTy, val), false);
         } else if (prim->isDouble()) {
           double val = (double)field->getDoubleField(Obj);
-          push(ConstantFP::get(Type::DoubleTy, val), false);
+          push(llvmContext->getConstantFP(Type::DoubleTy, val), false);
         } else {
           abort();
         }

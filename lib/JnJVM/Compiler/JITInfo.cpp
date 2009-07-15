@@ -42,6 +42,10 @@ const Type* LLVMClassInfo::getVirtualType() {
     const TargetData* targetData = JnjvmModule::TheTargetData;
     const StructLayout* sl = 0;
     const StructType* structType = 0;
+    JavaLLVMCompiler* Mod = 
+      (JavaLLVMCompiler*)classDef->classLoader->getCompiler();
+    Module* LMod = Mod->getLLVMModule();
+    LLVMContext& Context = LMod->getContext();
     
     if (classDef->super) {
       LLVMClassInfo* CLI = JavaLLVMCompiler::getClassInfo(classDef->super);
@@ -76,10 +80,8 @@ const Type* LLVMClassInfo::getVirtualType() {
     
     uint64 size = JnjvmModule::getTypeSize(structType);
     classDef->virtualSize = (uint32)size;
-    virtualSizeConstant = ConstantInt::get(Type::Int32Ty, size);
+    virtualSizeConstant = Context.getConstantInt(Type::Int32Ty, size);
    
-    JavaLLVMCompiler* Mod = 
-      (JavaLLVMCompiler*)classDef->classLoader->getCompiler();
     Mod->makeVT(classDef);
   }
 
@@ -119,10 +121,15 @@ const Type* LLVMClassInfo::getStaticType() {
 
 Value* LLVMClassInfo::getVirtualSize() {
   if (!virtualSizeConstant) {
+    JavaLLVMCompiler* Mod = 
+      (JavaLLVMCompiler*)classDef->classLoader->getCompiler();
+    Module* LMod = Mod->getLLVMModule();
+    LLVMContext& Context = LMod->getContext();
+
     getVirtualType();
     assert(classDef->virtualSize && "Zero size for a class?");
     virtualSizeConstant = 
-      ConstantInt::get(Type::Int32Ty, classDef->virtualSize);
+      Context.getConstantInt(Type::Int32Ty, classDef->virtualSize);
   }
   return virtualSizeConstant;
 }
@@ -187,9 +194,12 @@ const FunctionType* LLVMMethodInfo::getFunctionType() {
 Constant* LLVMMethodInfo::getOffset() {
   if (!offsetConstant) {
     JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
-    JavaCompiler* Mod = JCL->getCompiler();
+    JavaLLVMCompiler* Mod = (JavaLLVMCompiler*)JCL->getCompiler();
+    Module* LMod = Mod->getLLVMModule();
+    LLVMContext& Context = LMod->getContext();
+    
     Mod->resolveVirtualClass(methodDef->classDef);
-    offsetConstant = ConstantInt::get(Type::Int32Ty, methodDef->offset);
+    offsetConstant = Context.getConstantInt(Type::Int32Ty, methodDef->offset);
   }
   return offsetConstant;
 }
@@ -197,14 +207,17 @@ Constant* LLVMMethodInfo::getOffset() {
 Constant* LLVMFieldInfo::getOffset() {
   if (!offsetConstant) {
     JnjvmClassLoader* JCL = fieldDef->classDef->classLoader;
-    JavaCompiler* Mod = JCL->getCompiler();
+    JavaLLVMCompiler* Mod = (JavaLLVMCompiler*)JCL->getCompiler();
+    Module* LMod = Mod->getLLVMModule();
+    LLVMContext& Context = LMod->getContext();
+    
     if (isStatic(fieldDef->access)) {
       Mod->resolveStaticClass(fieldDef->classDef); 
     } else {
       Mod->resolveVirtualClass(fieldDef->classDef); 
     }
     
-    offsetConstant = ConstantInt::get(Type::Int32Ty, fieldDef->num);
+    offsetConstant = Context.getConstantInt(Type::Int32Ty, fieldDef->num);
   }
   return offsetConstant;
 }

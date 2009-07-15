@@ -87,55 +87,55 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     Type::Int32Ty : Type::Int64Ty;
   
   // Constant declaration
-  constantLongMinusOne = ConstantInt::get(Type::Int64Ty, (uint64_t)-1);
-  constantLongZero = ConstantInt::get(Type::Int64Ty, 0);
-  constantLongOne = ConstantInt::get(Type::Int64Ty, 1);
-  constantZero = ConstantInt::get(Type::Int32Ty, 0);
-  constantInt8Zero = ConstantInt::get(Type::Int8Ty, 0);
-  constantOne = ConstantInt::get(Type::Int32Ty, 1);
-  constantTwo = ConstantInt::get(Type::Int32Ty, 2);
-  constantThree = ConstantInt::get(Type::Int32Ty, 3);
-  constantFour = ConstantInt::get(Type::Int32Ty, 4);
-  constantFive = ConstantInt::get(Type::Int32Ty, 5);
-  constantSix = ConstantInt::get(Type::Int32Ty, 6);
-  constantSeven = ConstantInt::get(Type::Int32Ty, 7);
-  constantEight = ConstantInt::get(Type::Int32Ty, 8);
-  constantMinusOne = ConstantInt::get(Type::Int32Ty, (uint64_t)-1);
-  constantMinInt = ConstantInt::get(Type::Int32Ty, MinInt);
-  constantMaxInt = ConstantInt::get(Type::Int32Ty, MaxInt);
-  constantMinLong = ConstantInt::get(Type::Int64Ty, MinLong);
-  constantMaxLong = ConstantInt::get(Type::Int64Ty, MaxLong);
-  constantFloatZero = ConstantFP::get(Type::FloatTy, 0.0f);
-  constantFloatOne = ConstantFP::get(Type::FloatTy, 1.0f);
-  constantFloatTwo = ConstantFP::get(Type::FloatTy, 2.0f);
-  constantDoubleZero = ConstantFP::get(Type::DoubleTy, 0.0);
-  constantDoubleOne = ConstantFP::get(Type::DoubleTy, 1.0);
-  constantMaxIntFloat = ConstantFP::get(Type::FloatTy, MaxIntFloat);
-  constantMinIntFloat = ConstantFP::get(Type::FloatTy, MinIntFloat);
-  constantMinLongFloat = ConstantFP::get(Type::FloatTy, MinLongFloat);
-  constantMinLongDouble = ConstantFP::get(Type::DoubleTy, MinLongDouble);
-  constantMaxLongFloat = ConstantFP::get(Type::FloatTy, MaxLongFloat);
-  constantMaxIntDouble = ConstantFP::get(Type::DoubleTy, MaxIntDouble);
-  constantMinIntDouble = ConstantFP::get(Type::DoubleTy, MinIntDouble);
-  constantMaxLongDouble = ConstantFP::get(Type::DoubleTy, MaxLongDouble);
-  constantMaxLongDouble = ConstantFP::get(Type::DoubleTy, MaxLongDouble);
-  constantFloatInfinity = ConstantFP::get(Type::FloatTy, MaxFloat);
-  constantFloatMinusInfinity = ConstantFP::get(Type::FloatTy, MinFloat);
-  constantDoubleInfinity = ConstantFP::get(Type::DoubleTy, MaxDouble);
-  constantDoubleMinusInfinity = ConstantFP::get(Type::DoubleTy, MinDouble);
-  constantDoubleMinusZero = ConstantFP::get(Type::DoubleTy, -0.0);
-  constantFloatMinusZero = ConstantFP::get(Type::FloatTy, -0.0f);
-  constantThreadIDMask = ConstantInt::get(pointerSizeType, mvm::Thread::IDMask);
+  constantLongMinusOne = globalContext->getConstantInt(Type::Int64Ty, (uint64_t)-1);
+  constantLongZero = globalContext->getConstantInt(Type::Int64Ty, 0);
+  constantLongOne = globalContext->getConstantInt(Type::Int64Ty, 1);
+  constantZero = globalContext->getConstantInt(Type::Int32Ty, 0);
+  constantInt8Zero = globalContext->getConstantInt(Type::Int8Ty, 0);
+  constantOne = globalContext->getConstantInt(Type::Int32Ty, 1);
+  constantTwo = globalContext->getConstantInt(Type::Int32Ty, 2);
+  constantThree = globalContext->getConstantInt(Type::Int32Ty, 3);
+  constantFour = globalContext->getConstantInt(Type::Int32Ty, 4);
+  constantFive = globalContext->getConstantInt(Type::Int32Ty, 5);
+  constantSix = globalContext->getConstantInt(Type::Int32Ty, 6);
+  constantSeven = globalContext->getConstantInt(Type::Int32Ty, 7);
+  constantEight = globalContext->getConstantInt(Type::Int32Ty, 8);
+  constantMinusOne = globalContext->getConstantInt(Type::Int32Ty, (uint64_t)-1);
+  constantMinInt = globalContext->getConstantInt(Type::Int32Ty, MinInt);
+  constantMaxInt = globalContext->getConstantInt(Type::Int32Ty, MaxInt);
+  constantMinLong = globalContext->getConstantInt(Type::Int64Ty, MinLong);
+  constantMaxLong = globalContext->getConstantInt(Type::Int64Ty, MaxLong);
+  constantFloatZero = globalContext->getConstantFP(Type::FloatTy, 0.0f);
+  constantFloatOne = globalContext->getConstantFP(Type::FloatTy, 1.0f);
+  constantFloatTwo = globalContext->getConstantFP(Type::FloatTy, 2.0f);
+  constantDoubleZero = globalContext->getConstantFP(Type::DoubleTy, 0.0);
+  constantDoubleOne = globalContext->getConstantFP(Type::DoubleTy, 1.0);
+  constantMaxIntFloat = globalContext->getConstantFP(Type::FloatTy, MaxIntFloat);
+  constantMinIntFloat = globalContext->getConstantFP(Type::FloatTy, MinIntFloat);
+  constantMinLongFloat = globalContext->getConstantFP(Type::FloatTy, MinLongFloat);
+  constantMinLongDouble = globalContext->getConstantFP(Type::DoubleTy, MinLongDouble);
+  constantMaxLongFloat = globalContext->getConstantFP(Type::FloatTy, MaxLongFloat);
+  constantMaxIntDouble = globalContext->getConstantFP(Type::DoubleTy, MaxIntDouble);
+  constantMinIntDouble = globalContext->getConstantFP(Type::DoubleTy, MinIntDouble);
+  constantMaxLongDouble = globalContext->getConstantFP(Type::DoubleTy, MaxLongDouble);
+  constantMaxLongDouble = globalContext->getConstantFP(Type::DoubleTy, MaxLongDouble);
+  constantFloatInfinity = globalContext->getConstantFP(Type::FloatTy, MaxFloat);
+  constantFloatMinusInfinity = globalContext->getConstantFP(Type::FloatTy, MinFloat);
+  constantDoubleInfinity = globalContext->getConstantFP(Type::DoubleTy, MaxDouble);
+  constantDoubleMinusInfinity = globalContext->getConstantFP(Type::DoubleTy, MinDouble);
+  constantDoubleMinusZero = globalContext->getConstantFP(Type::DoubleTy, -0.0);
+  constantFloatMinusZero = globalContext->getConstantFP(Type::FloatTy, -0.0f);
+  constantThreadIDMask = globalContext->getConstantInt(pointerSizeType, mvm::Thread::IDMask);
   constantStackOverflowMask = 
-    ConstantInt::get(pointerSizeType, mvm::Thread::StackOverflowMask);
-  constantFatMask = ConstantInt::get(pointerSizeType, 
+    globalContext->getConstantInt(pointerSizeType, mvm::Thread::StackOverflowMask);
+  constantFatMask = globalContext->getConstantInt(pointerSizeType, 
       pointerSizeType == Type::Int32Ty ? 0x80000000 : 0x8000000000000000LL);
-  constantPtrOne = ConstantInt::get(pointerSizeType, 1);
-  constantPtrZero = ConstantInt::get(pointerSizeType, 0);
+  constantPtrOne = globalContext->getConstantInt(pointerSizeType, 1);
+  constantPtrZero = globalContext->getConstantInt(pointerSizeType, 0);
 
   constantPtrNull = globalContext->getNullValue(ptrType); 
   constantPtrLogSize = 
-    ConstantInt::get(Type::Int32Ty, sizeof(void*) == 8 ? 3 : 2);
+    globalContext->getConstantInt(Type::Int32Ty, sizeof(void*) == 8 ? 3 : 2);
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::Int8Ty, 0));
 }
 

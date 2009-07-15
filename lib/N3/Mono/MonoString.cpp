@@ -9,6 +9,7 @@
 
 #include "llvm/DerivedTypes.h"
 #include "llvm/GlobalVariable.h"
+#include "llvm/LLVMContext.h"
 
 #include "mvm/JIT.h"
 
@@ -50,10 +51,12 @@ GlobalVariable* CLIString::llvmVar() {
     VirtualMachine* vm = VMThread::get()->vm;
     if (!str->_llvmVar) {
       const Type* pty = mvm::MvmModule::ptrType;
+      Module* Mod = vm->getLLVMModule();
+      LLVMContext& Context = Mod->getContext();
       Constant* cons = 
-        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
+        ConstantExpr::getIntToPtr(Context.getConstantInt(Type::Int64Ty, uint64_t (this)),
                                   pty);
-      str->_llvmVar = new GlobalVariable(*(vm->getLLVMModule()), pty, true,
+      str->_llvmVar = new GlobalVariable(*Mod, pty, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "");
     }

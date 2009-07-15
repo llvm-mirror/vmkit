@@ -92,7 +92,7 @@ void CLIJit::invokeInterfaceOrVirtual(uint32 value, VMGenericClass* genClass, VM
   Value* five = module->constantFive;
   
   Value* llvmEnv = 
-    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (enveloppe)),
+    ConstantExpr::getIntToPtr(llvmFunction->getContext()->getConstantInt(Type::Int64Ty, uint64_t (enveloppe)),
                   Enveloppe::llvmType);
   
   std::vector<Value*> args1;

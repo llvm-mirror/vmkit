@@ -431,7 +431,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
                                     currentBlock);
 
     uint32 depth = cur->catchClass->virtualVT->depth;
-    Value* depthCl = ConstantInt::get(Type::Int32Ty, depth);
+    Value* depthCl = llvmContext->getConstantInt(Type::Int32Ty, depth);
     Value* cmp = 0;
 
     if (depth >= JavaVirtualTable::getDisplayLength()) {

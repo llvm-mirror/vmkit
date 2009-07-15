@@ -161,8 +161,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 #if JNJVM_EXECUTE > 1
     {
       Value* args[3] = {
-        ConstantInt::get(Type::Int32Ty, (int64_t)bytecodes[i]),
-        ConstantInt::get(Type::Int32Ty, (int64_t)i),
+        llvmContext->getConstantInt(Type::Int32Ty, (int64_t)bytecodes[i]),
+        llvmContext->getConstantInt(Type::Int32Ty, (int64_t)i),
         TheCompiler->getMethodInClass(compilingMethod)
       };
     
@@ -241,13 +241,13 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
 
       case BIPUSH : 
-        push(ConstantExpr::getSExt(ConstantInt::get(Type::Int8Ty,
+        push(ConstantExpr::getSExt(llvmContext->getConstantInt(Type::Int8Ty,
                                                     bytecodes[++i]),
                                    Type::Int32Ty), false);
         break;
 
       case SIPUSH :
-        push(ConstantExpr::getSExt(ConstantInt::get(Type::Int16Ty,
+        push(ConstantExpr::getSExt(llvmContext->getConstantInt(Type::Int16Ty,
                                                     readS2(bytecodes, i)),
                                    Type::Int32Ty), false);
         break;
@@ -1098,7 +1098,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IUSHR : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        Value* mask = ConstantInt::get(Type::Int32Ty, 0x1F);
+        Value* mask = llvmContext->getConstantInt(Type::Int32Ty, 0x1F);
         val2 = BinaryOperator::CreateAnd(val2, mask, "", currentBlock);
         push(BinaryOperator::CreateLShr(val1, val2, "", currentBlock),
              false);
@@ -1107,7 +1107,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case LUSHR : {
         Value* val2 = new ZExtInst(pop(), Type::Int64Ty, "", currentBlock);
-        Value* mask = ConstantInt::get(Type::Int64Ty, 0x3F);
+        Value* mask = llvmContext->getConstantInt(Type::Int64Ty, 0x3F);
         val2 = BinaryOperator::CreateAnd(val2, mask, "", currentBlock);
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
@@ -1179,7 +1179,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         sint16 val = WREAD_S1(bytecodes, false, i, wide);
         llvm::Value* add = BinaryOperator::CreateAdd(
             new LoadInst(intLocals[idx], "", currentBlock), 
-            ConstantInt::get(Type::Int32Ty, val), "",
+            llvmContext->getConstantInt(Type::Int32Ty, val), "",
             currentBlock);
         new StoreInst(add, intLocals[idx], false, currentBlock);
         break;
@@ -1715,7 +1715,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case JSR : {
         uint32 tmp = i;
         Value* expr = ConstantExpr::getIntToPtr(
-                                    ConstantInt::get(Type::Int64Ty,
+                                    llvmContext->getConstantInt(Type::Int64Ty,
                                                      uint64_t (jsrIndex++)),
                                     module->JavaObjectType);
         push(expr, false);
@@ -1734,7 +1734,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 index = 0;
         for (std::vector<BasicBlock*>::iterator i = jsrs.begin(), 
             e = jsrs.end(); i!= e; ++i, ++index) {
-          inst->addCase(ConstantInt::get(Type::Int32Ty, index), *i);
+          inst->addCase(llvmContext->getConstantInt(Type::Int32Ty, index), *i);
         }
 
         break;
@@ -1755,7 +1755,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         const llvm::Type* type = index->getType();
         for (sint32 cur = low; cur < high; ++cur) {
           Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
-                                    ConstantInt::get(type, cur), index, "");
+                                    llvmContext->getConstantInt(type, cur), index, "");
           BasicBlock* falseBlock = createBasicBlock("continue tableswitch");
           branch(cmp, opcodeInfos[tmp + readU4(bytecodes, i)].newBlock,
                  falseBlock, currentBlock);
@@ -1785,7 +1785,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           key = new SExtInst(key, Type::Int32Ty, "", currentBlock);
         }
         for (uint32 cur = 0; cur < nbs; ++cur) {
-          Value* val = ConstantInt::get(Type::Int32Ty, readU4(bytecodes, i));
+          Value* val = llvmContext->getConstantInt(Type::Int32Ty, readU4(bytecodes, i));
           Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val, key,
                                     "");
           BasicBlock* falseBlock = createBasicBlock("continue lookupswitch");
@@ -1904,7 +1904,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           valCl = TheCompiler->getNativeClass(dcl);
 #else
           Value* args[2] = { isolateLocal,
-                             ConstantInt::get(Type::Int32Ty, id - 4) };
+                             llvmContext->getConstantInt(Type::Int32Ty, id - 4) };
           valCl = CallInst::Create(module->GetJnjvmArrayClassFunction,
                                    args, args + 2, "", currentBlock);
 #endif
@@ -2055,7 +2055,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         } else {
           BasicBlock* ifFalse = createBasicBlock("false type compare");
           BranchInst::Create(endBlock, ifFalse, cmp, currentBlock);
-          node->addIncoming(ConstantInt::getFalse(), currentBlock);
+          node->addIncoming(llvmContext->getConstantIntFalse(), currentBlock);
           currentBlock = ifFalse;
         }
 
@@ -2083,7 +2083,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                                 objVT, "", currentBlock);
             
             uint32 depth = cl->virtualVT->depth;
-            ConstantInt* CI = ConstantInt::get(Type::Int32Ty, depth);
+            ConstantInt* CI = llvmContext->getConstantInt(Type::Int32Ty, depth);
             Value* displayArgs[2] = { inDisplay, CI };
             Value* VTInDisplay = 
               CallInst::Create(module->GetVTInDisplayFunction,
@@ -2138,7 +2138,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* valCl = getResolvedCommonClass(index, true, 0);
         Value** args = (Value**)alloca(sizeof(Value*) * (dim + 2));
         args[0] = valCl;
-        args[1] = ConstantInt::get(Type::Int32Ty, dim);
+        args[1] = llvmContext->getConstantInt(Type::Int32Ty, dim);
 
         for (int cur = dim + 1; cur >= 2; --cur)
           args[cur] = pop();

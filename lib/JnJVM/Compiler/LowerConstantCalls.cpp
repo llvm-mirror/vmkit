@@ -119,6 +119,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
   JavaLLVMCompiler* TheCompiler = 
     (JavaLLVMCompiler*)meth->classDef->classLoader->getCompiler();
   JnjvmModule* module = TheCompiler->getIntrinsics();
+  LLVMContext* Context = F.getContext();
   bool Changed = false;
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
@@ -408,7 +409,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           ConstantInt* Cons = dyn_cast<ConstantInt>(Index);
           assert(CI && "Wrong use of GetConstantPoolAt");
           uint64 val = Cons->getZExtValue();
-          Value* indexes = ConstantInt::get(Type::Int32Ty, val + 1);
+          Value* indexes = Context->getConstantInt(Type::Int32Ty, val + 1);
 #else
           Value* indexes = Index;
 #endif
@@ -535,7 +536,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           BasicBlock* FailedBlock = BasicBlock::Create("", &F);
           PHINode* node = PHINode::Create(Type::Int1Ty, "", CurEndBlock);
 
-          ConstantInt* CC = ConstantInt::get(Type::Int32Ty,
+          ConstantInt* CC = Context->getConstantInt(Type::Int32Ty,
               JavaVirtualTable::getOffsetIndex());
           Value* indices[2] = { module->constantZero, CC };
           Value* Offset = GetElementPtrInst::Create(VT2, indices, indices + 2,
@@ -593,7 +594,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           //    if (VT1.cache == VT2 || VT1 == VT2) goto end with true;
           //    else goto headerLoop;
           ConstantInt* cacheIndex = 
-            ConstantInt::get(Type::Int32Ty, JavaVirtualTable::getCacheIndex());
+            Context->getConstantInt(Type::Int32Ty, JavaVirtualTable::getCacheIndex());
           Value* indices[2] = { module->constantZero, cacheIndex };
           Instruction* CachePtr = 
             GetElementPtrInst::Create(VT1, indices, indices + 2, "", CI);
@@ -611,7 +612,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           //    size = VT1->nbSecondaryTypes;
           //    i = 0;
           //    goto test;
-          ConstantInt* sizeIndex = ConstantInt::get(Type::Int32Ty, 
+          ConstantInt* sizeIndex = Context->getConstantInt(Type::Int32Ty, 
               JavaVirtualTable::getNumSecondaryTypesIndex());
           indices[1] = sizeIndex;
           Instruction* Size = GetElementPtrInst::Create(VT1, indices,
@@ -620,7 +621,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Size = new LoadInst(Size, "", false, Preheader);
           Size = new PtrToIntInst(Size, Type::Int32Ty, "", Preheader);
     
-          ConstantInt* secondaryTypesIndex = ConstantInt::get(Type::Int32Ty, 
+          ConstantInt* secondaryTypesIndex = Context->getConstantInt(Type::Int32Ty, 
               JavaVirtualTable::getSecondaryTypesIndex());
           indices[1] = secondaryTypesIndex;
           Instruction* secondaryTypes = 

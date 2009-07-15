@@ -364,12 +364,14 @@ GlobalVariable* VMCommonClass::llvmVar() {
   if (!_llvmVar) {
     aquire();
     if (!_llvmVar) {
+      Module* Mod = vm->getLLVMModule();
+      LLVMContext& Context = Mod->getContext();
       const Type* pty = mvm::MvmModule::ptrType;
       Constant* cons = 
-        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
+        ConstantExpr::getIntToPtr(Context.getConstantInt(Type::Int64Ty, uint64_t (this)),
                                     pty);
 
-      _llvmVar = new GlobalVariable(*(vm->getLLVMModule()), pty, true,
+      _llvmVar = new GlobalVariable(*Mod, pty, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "");
     
@@ -384,11 +386,13 @@ GlobalVariable* VMField::llvmVar() {
     classDef->aquire();
     if (!_llvmVar) {
       const Type* pty = mvm::MvmModule::ptrType;
+      Module* Mod = classDef->vm->getLLVMModule();
+      LLVMContext& Context = Mod->getContext();
       Constant* cons = 
-        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
+        ConstantExpr::getIntToPtr(Context.getConstantInt(Type::Int64Ty, uint64_t (this)),
                                   pty);
 
-      _llvmVar = new GlobalVariable(*(classDef->vm->getLLVMModule()), pty, true,
+      _llvmVar = new GlobalVariable(*Mod, pty, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "");
     }
@@ -401,12 +405,14 @@ GlobalVariable* VMMethod::llvmVar() {
   if (!_llvmVar) {
     classDef->aquire();
     if (!_llvmVar) {
+      Module* Mod = classDef->vm->getLLVMModule();
+      LLVMContext& Context = Mod->getContext();
       const Type* pty = mvm::MvmModule::ptrType;
       Constant* cons = 
-        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
+        ConstantExpr::getIntToPtr(Context.getConstantInt(Type::Int64Ty, uint64_t (this)),
                                   pty);
 
-      _llvmVar = new GlobalVariable(*(classDef->vm->getLLVMModule()), pty, true,
+      _llvmVar = new GlobalVariable(*Mod, pty, true,
                                     GlobalValue::ExternalLinkage,
                                     cons, "");
     

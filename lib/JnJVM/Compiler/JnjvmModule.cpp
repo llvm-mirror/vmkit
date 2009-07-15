@@ -113,6 +113,7 @@ namespace jnjvm {
 
 void JnjvmModule::initialise() {
   Module* module = globalModule;
+  LLVMContext& Context = module->getContext();
   jnjvm::llvm_runtime::makeLLVMModuleContents(module);
 
   VTType = PointerType::getUnqual(module->getTypeByName("VT"));
@@ -178,10 +179,10 @@ void JnjvmModule::initialise() {
 
   JavaObjectNullConstant =
     module->getContext().getNullValue(JnjvmModule::JavaObjectType);
-  MaxArraySizeConstant = ConstantInt::get(Type::Int32Ty,
+  MaxArraySizeConstant = Context.getConstantInt(Type::Int32Ty,
                                           JavaArray::MaxArraySize);
   JavaArraySizeConstant = 
-    ConstantInt::get(Type::Int32Ty, sizeof(JavaObject) + sizeof(ssize_t));
+    Context.getConstantInt(Type::Int32Ty, sizeof(JavaObject) + sizeof(ssize_t));
   
   
   JavaArrayElementsOffsetConstant = mvm::MvmModule::constantTwo;
@@ -191,19 +192,19 @@ void JnjvmModule::initialise() {
   OffsetClassInVTConstant = mvm::MvmModule::constantThree;
   OffsetDepthInVTConstant = mvm::MvmModule::constantFour;
   OffsetDisplayInVTConstant = mvm::MvmModule::constantSeven;
-  OffsetBaseClassVTInVTConstant = ConstantInt::get(Type::Int32Ty, 17);
+  OffsetBaseClassVTInVTConstant = Context.getConstantInt(Type::Int32Ty, 17);
   
   OffsetObjectSizeInClassConstant = mvm::MvmModule::constantOne;
-  OffsetVTInClassConstant = ConstantInt::get(Type::Int32Ty, 7);
+  OffsetVTInClassConstant = Context.getConstantInt(Type::Int32Ty, 7);
   OffsetTaskClassMirrorInClassConstant = mvm::MvmModule::constantTwo;
   OffsetStaticInstanceInTaskClassMirrorConstant = mvm::MvmModule::constantTwo;
   OffsetStatusInTaskClassMirrorConstant = mvm::MvmModule::constantZero;
   OffsetInitializedInTaskClassMirrorConstant = mvm::MvmModule::constantOne;
   
-  OffsetJavaExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 9);
-  OffsetCXXExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 10);
+  OffsetJavaExceptionInThreadConstant = Context.getConstantInt(Type::Int32Ty, 9);
+  OffsetCXXExceptionInThreadConstant = Context.getConstantInt(Type::Int32Ty, 10);
   
-  ClassReadyConstant = ConstantInt::get(Type::Int8Ty, ready);
+  ClassReadyConstant = Context.getConstantInt(Type::Int8Ty, ready);
  
   LLVMAssessorInfo::initialise();
 }
