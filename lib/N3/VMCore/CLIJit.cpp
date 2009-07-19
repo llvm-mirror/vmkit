@@ -625,7 +625,7 @@ void CLIJit::invokeNew(uint32 value, VMGenericClass* genClass, VMGenericMethod* 
     return;
 
   } else if (type->super == MSCorlib::pValue || type->super == MSCorlib::pEnum) {
-    obj = new AllocaInst(*(llvmFunction->getContext()), type->naturalType, "", currentBlock);
+    obj = new AllocaInst(type->naturalType, "", currentBlock);
     uint64 size = module->getTypeSize(type->naturalType);
         
     std::vector<Value*> params;
@@ -978,7 +978,7 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat, VMGenericClass* genCl
   }
   
    if (nbe) {
-    supplLocal = new AllocaInst(*(llvmFunction->getContext()), VMObject::llvmType, "exceptionVar",
+    supplLocal = new AllocaInst(VMObject::llvmType, "exceptionVar",
                                 currentBlock);
   }
   
@@ -1210,7 +1210,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
     
     const Type* cur = i->getType();
 
-    AllocaInst* alloc = new AllocaInst(*(llvmFunction->getContext()), cur, "", currentBlock);
+    AllocaInst* alloc = new AllocaInst(cur, "", currentBlock);
     new StoreInst(i, alloc, false, currentBlock);
     arguments.push_back(alloc);
   } 
@@ -1223,7 +1223,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
             e = temp.end(); i!= e; ++i) {
       VMCommonClass* cl = *i;
       cl->resolveType(false, false, genMethod);
-      AllocaInst* alloc = new AllocaInst(*(llvmFunction->getContext()), cl->naturalType, "", currentBlock);
+      AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
       if (cl->naturalType->isSingleValueType()) {
         new StoreInst(llvmFunction->getContext()->getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
@@ -1387,7 +1387,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
     
     const Type* cur = (*i)->getType();
 
-    AllocaInst* alloc = new AllocaInst(*(llvmFunction->getContext()), cur, "", currentBlock);
+    AllocaInst* alloc = new AllocaInst(cur, "", currentBlock);
     new StoreInst(*i, alloc, false, currentBlock);
     arguments.push_back(alloc);
   } 
@@ -1400,7 +1400,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
             e = temp.end(); i!= e; ++i) {
       VMCommonClass* cl = *i;
       cl->resolveType(false, false, genMethod);
-      AllocaInst* alloc = new AllocaInst(*(llvmFunction->getContext()), cl->naturalType, "", currentBlock);
+      AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
       if (cl->naturalType->isSingleValueType()) {
         new StoreInst(llvmFunction->getContext()->getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
@@ -1623,7 +1623,7 @@ Value* CLIJit::invoke(Value *F, std::vector<llvm::Value*> args,
       funcType = funcType->getContainedType(0);
     }
     const Type* lastType = funcType->getContainedType(funcType->getNumContainedTypes() - 1);
-    ret = new AllocaInst(*(llvmFunction->getContext()), lastType->getContainedType(0), "", InsertAtEnd);
+    ret = new AllocaInst(lastType->getContainedType(0), "", InsertAtEnd);
     args.push_back(ret);
   }
   Value* val = 0;
@@ -1655,7 +1655,7 @@ Value* CLIJit::invoke(Value *F, Value* arg1, const char* Name,
       funcType = funcType->getContainedType(0);
     }
     const Type* lastType = funcType->getContainedType(funcType->getNumContainedTypes() - 1);
-    ret = new AllocaInst(*(llvmFunction->getContext()), lastType->getContainedType(0), "", InsertAtEnd);
+    ret = new AllocaInst(lastType->getContainedType(0), "", InsertAtEnd);
     args.push_back(ret);
   }
   
@@ -1692,7 +1692,7 @@ Value* CLIJit::invoke(Value *F, Value* arg1, Value* arg2,
       funcType = funcType->getContainedType(0);
     }
     const Type* lastType = funcType->getContainedType(funcType->getNumContainedTypes() - 1);
-    ret = new AllocaInst(*(llvmFunction->getContext()), lastType->getContainedType(0), "", InsertAtEnd);
+    ret = new AllocaInst(lastType->getContainedType(0), "", InsertAtEnd);
     args.push_back(ret);
   }
 
@@ -1721,7 +1721,7 @@ Value* CLIJit::invoke(Value *F, const char* Name,
       funcType = funcType->getContainedType(0);
     }
     const Type* lastType = funcType->getContainedType(funcType->getNumContainedTypes() - 1);
-    ret = new AllocaInst(*(llvmFunction->getContext()), lastType->getContainedType(0), "", InsertAtEnd);
+    ret = new AllocaInst(lastType->getContainedType(0), "", InsertAtEnd);
     args.push_back(ret);
   }
 

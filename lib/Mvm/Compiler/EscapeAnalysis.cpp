@@ -168,7 +168,6 @@ static bool escapes(Value* Ins, std::map<Instruction*, bool>& visited) {
 bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT,
                                    Loop* CurLoop) {
   Instruction* Alloc = I;
-  LLVMContext* Context = I->getParent()->getContext();
   
   ConstantInt* CI = dyn_cast<ConstantInt>(Size);
   bool hasFinalizer = true;
@@ -220,7 +219,7 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT,
         BB->getInstList().insert(BB->getTerminator(), Alloc);
       }
 
-      AllocaInst* AI = new AllocaInst(*Context, Type::Int8Ty, Size, "", Alloc);
+      AllocaInst* AI = new AllocaInst(Type::Int8Ty, Size, "", Alloc);
       BitCastInst* BI = new BitCastInst(AI, Alloc->getType(), "", Alloc);
       DOUT << "escape" << Alloc->getParent()->getParent()->getName() << "\n";
       Alloc->replaceAllUsesWith(BI);

@@ -191,7 +191,7 @@ static Value* load(Value* val, const char* name, BasicBlock* currentBlock, mvm::
     return new LoadInst(val, name, currentBlock);
   } else {
     uint64 size = module->getTypeSize(contained);
-    Value* ret = new AllocaInst(*(llvmFunction->getContext()), contained, "", currentBlock); 
+    Value* ret = new AllocaInst(contained, "", currentBlock); 
     std::vector<Value*> params;
     params.push_back(new BitCastInst(ret, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
     params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
@@ -1302,7 +1302,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
 
         if (val->getType()->getTypeID() != Type::PointerTyID) {
           convertValue(val, type->naturalType, currentBlock); 
-          Value* tmp = new AllocaInst(*(llvmFunction->getContext()), type->naturalType, "", currentBlock);
+          Value* tmp = new AllocaInst(type->naturalType, "", currentBlock);
           new StoreInst(val, tmp, false, currentBlock);
           val = tmp;
         }
@@ -1794,7 +1794,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
                                                  true, genClass, genMethod);
         assert(type);
 
-        Value* val = new AllocaInst(*(llvmFunction->getContext()), type->naturalType, "", currentBlock);
+        Value* val = new AllocaInst(type->naturalType, "", currentBlock);
         Value* obj = pop();
 
         if (obj->getType() != type->virtualType) {
@@ -1924,7 +1924,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           }
           
           case LOCALLOC : {
-            push(new AllocaInst(*(llvmFunction->getContext()), Type::Int8Ty, pop(), "", currentBlock));
+            push(new AllocaInst(Type::Int8Ty, pop(), "", currentBlock));
             break;
           }
           

@@ -763,7 +763,7 @@ Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
   assert(ATy && "Malformed type");
 
   Constant* TCM[1] = { getJavaClass(cl) };
-  CommonClassElts.push_back(ConstantArray::get(ATy, TCM, 1));
+  CommonClassElts.push_back(Context.getConstantArray(ATy, TCM, 1));
   
   // access
   CommonClassElts.push_back(Context.getConstantInt(Type::Int16Ty, cl->access));
@@ -1022,7 +1022,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   TempElts.push_back(getStaticInstance(cl));
   Constant* CStr[1] = { ConstantStruct::get(TCMTy, TempElts) };
   TempElts.clear();
-  ClassElts.push_back(ConstantArray::get(ATy, CStr, 1));
+  ClassElts.push_back(Context.getConstantArray(ATy, CStr, 1));
 
   // thinlock
   ClassElts.push_back(Context.getNullValue(JnjvmModule::ptrType));

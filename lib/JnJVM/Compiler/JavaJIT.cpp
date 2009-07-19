@@ -280,13 +280,12 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   endBlock = createBasicBlock("end block");
       
   // Allocate currentLocalIndexNumber pointer
-  Value* temp = new AllocaInst(*llvmContext, Type::Int32Ty, "",
+  Value* temp = new AllocaInst(Type::Int32Ty, "",
                                currentBlock);
   new StoreInst(module->constantZero, temp, false, currentBlock);
   
   // Allocate oldCurrentLocalIndexNumber pointer
-  Value* oldCLIN = new AllocaInst(*llvmContext, 
-                                  PointerType::getUnqual(Type::Int32Ty), "",
+  Value* oldCLIN = new AllocaInst(PointerType::getUnqual(Type::Int32Ty), "",
                                   currentBlock);
 
   Value* Args2[2] = { temp, oldCLIN };
@@ -357,7 +356,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
       currentBlock = NotZero;
 
-      Value* temp = new AllocaInst(*llvmContext, module->JavaObjectType, "",
+      Value* temp = new AllocaInst(module->JavaObjectType, "",
                                    currentBlock);
       new StoreInst(i, temp, false, currentBlock);
       node->addIncoming(temp, currentBlock);
@@ -408,7 +407,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   // this problem because it passes first arguments in registers.
   // Therefore, it was overwriting the frame pointer when entering the
   // native method.
-  Value* Temp = new AllocaInst(*llvmContext, module->ptrType, "", currentBlock);
+  Value* Temp = new AllocaInst(module->ptrType, "", currentBlock);
   new StoreInst(FrameAddr, Temp, currentBlock);
   Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs.begin(),
                                          nativeArgs.end(), "", currentBlock);
@@ -691,21 +690,21 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     Instruction* firstInstruction = firstBB->begin();
 
     for (int i = 0; i < maxLocals; i++) {
-      intLocals.push_back(new AllocaInst(*llvmContext, Type::Int32Ty, "", firstInstruction));
-      doubleLocals.push_back(new AllocaInst(*llvmContext, Type::DoubleTy, "",
+      intLocals.push_back(new AllocaInst(Type::Int32Ty, "", firstInstruction));
+      doubleLocals.push_back(new AllocaInst(Type::DoubleTy, "",
                                             firstInstruction));
-      longLocals.push_back(new AllocaInst(*llvmContext, Type::Int64Ty, "", firstInstruction));
-      floatLocals.push_back(new AllocaInst(*llvmContext, Type::FloatTy, "", firstInstruction));
-      objectLocals.push_back(new AllocaInst(*llvmContext, module->JavaObjectType, "",
+      longLocals.push_back(new AllocaInst(Type::Int64Ty, "", firstInstruction));
+      floatLocals.push_back(new AllocaInst(Type::FloatTy, "", firstInstruction));
+      objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
                                           firstInstruction));
     }
   } else {
     for (int i = 0; i < maxLocals; i++) {
-      intLocals.push_back(new AllocaInst(*llvmContext, Type::Int32Ty, "", firstBB));
-      doubleLocals.push_back(new AllocaInst(*llvmContext, Type::DoubleTy, "", firstBB));
-      longLocals.push_back(new AllocaInst(*llvmContext, Type::Int64Ty, "", firstBB));
-      floatLocals.push_back(new AllocaInst(*llvmContext, Type::FloatTy, "", firstBB));
-      objectLocals.push_back(new AllocaInst(*llvmContext, module->JavaObjectType, "",
+      intLocals.push_back(new AllocaInst(Type::Int32Ty, "", firstBB));
+      doubleLocals.push_back(new AllocaInst(Type::DoubleTy, "", firstBB));
+      longLocals.push_back(new AllocaInst(Type::Int64Ty, "", firstBB));
+      floatLocals.push_back(new AllocaInst(Type::FloatTy, "", firstBB));
+      objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
                                             firstBB));
     }
   }
@@ -829,11 +828,11 @@ llvm::Function* JavaJIT::javaCompile() {
   
 
   for (int i = 0; i < maxLocals; i++) {
-    intLocals.push_back(new AllocaInst(*llvmContext, Type::Int32Ty, "", currentBlock));
-    doubleLocals.push_back(new AllocaInst(*llvmContext, Type::DoubleTy, "", currentBlock));
-    longLocals.push_back(new AllocaInst(*llvmContext, Type::Int64Ty, "", currentBlock));
-    floatLocals.push_back(new AllocaInst(*llvmContext, Type::FloatTy, "", currentBlock));
-    objectLocals.push_back(new AllocaInst(*llvmContext, module->JavaObjectType, "",
+    intLocals.push_back(new AllocaInst(Type::Int32Ty, "", currentBlock));
+    doubleLocals.push_back(new AllocaInst(Type::DoubleTy, "", currentBlock));
+    longLocals.push_back(new AllocaInst(Type::Int64Ty, "", currentBlock));
+    floatLocals.push_back(new AllocaInst(Type::FloatTy, "", currentBlock));
+    objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
                                           currentBlock));
   }
 
@@ -885,7 +884,7 @@ llvm::Function* JavaJIT::javaCompile() {
 
 #if defined(ISOLATE_SHARING)
   ctpCache = i;
-  Value* addrCtpCache = new AllocaInst(*llvmContext, module->ConstantPoolType, "",
+  Value* addrCtpCache = new AllocaInst(module->ConstantPoolType, "",
                                        currentBlock);
   /// make it volatile to be sure it's on the stack
   new StoreInst(ctpCache, addrCtpCache, true, currentBlock);
