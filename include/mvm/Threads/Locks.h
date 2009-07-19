@@ -353,7 +353,7 @@ public:
   ///
   void acquire() {
     for (uint32 count = 0; count < 1000; ++count) {
-      uint8 res = __sync_val_compare_and_swap(&locked, 0, 1);
+      uint32 res = __sync_val_compare_and_swap(&locked, 0, 1);
       if (!res) return;
     }
     
