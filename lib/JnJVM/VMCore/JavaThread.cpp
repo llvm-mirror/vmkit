@@ -31,6 +31,9 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
   state = StateRunning;
   pendingException = 0;
   jniEnv = isolate->jniEnv;
+  localJNIRefs = new JNILocalReferences();
+  currentAddedReferences = 0;
+
 #ifdef SERVICE
   eipIndex = 0;
   replacedEIPs = new void*[100];
@@ -79,7 +82,19 @@ void JavaThread::startNative(int level) {
     cur = (void**)cur[0];
 
   // When entering, the number of addresses should be odd.
-  // Enable this when finalization gets proper support.
+  assert((addresses.size() % 2) && "Wrong stack");
+  
+  addresses.push_back(cur);
+}
+
+void JavaThread::startJNI(int level) {
+  // Caller of this function.
+  void** cur = (void**)FRAME_PTR();
+  
+  while (level--)
+    cur = (void**)cur[0];
+
+  // When entering, the number of addresses should be odd.
   assert((addresses.size() % 2) && "Wrong stack");
   
   addresses.push_back(cur);
@@ -274,4 +289,40 @@ void JavaThread::printBacktrace() {
     addr = (void**)addr[0];
   }
 
+}
+
+void JavaThread::printBacktraceAfterSignal() {
+  printBacktrace();
+}
+
+JavaObject** JNILocalReferences::addJNIReference(JavaThread* th,
+                                                 JavaObject* obj) {
+  if (length == MAXIMUM_REFERENCES) {
+    JNILocalReferences* next = new JNILocalReferences();
+    th->localJNIRefs = next;
+    next->prev = this;
+    return next->addJNIReference(th, obj);
+  } else {
+    localReferences[length] = obj;
+    return &localReferences[length++];
+  }
+}
+
+void JNILocalReferences::removeJNIReferences(JavaThread* th, uint32_t num) {
+    
+  if (th->localJNIRefs != this) {
+    delete th->localJNIRefs;
+    th->localJNIRefs = this;
+  }
+
+  if (num > length) {
+    fprintf(stderr, "num = %d et length = %d\n", num, length);
+    if (!prev) {
+      JavaThread::get()->printBacktrace();
+    }
+    assert(prev && "No prev and deleting too much local references");
+    prev->removeJNIReferences(th, num - length);
+  } else {
+    length -= num;
+  }
 }

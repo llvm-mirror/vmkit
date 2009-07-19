@@ -21,7 +21,7 @@
 
 using namespace jnjvm;
 
-#define readArgs(buf, signature, ap) \
+#define readArgs(buf, signature, ap, jni) \
   Typedef* const* arguments = signature->getArgumentsType(); \
   for (uint32 i = 0; i < signature->nbArguments; ++i) { \
     const Typedef* type = arguments[i];\
@@ -48,7 +48,16 @@ using namespace jnjvm;
         abort();\
       }\
     } else{\
-      ((JavaObject**)buf)[0] = va_arg(ap, JavaObject*);\
+      if (jni) { \
+        JavaObject** obj = va_arg(ap, JavaObject**);\
+        if (obj) {\
+          ((JavaObject**)buf)[0] = *obj;\
+        } else {\
+          ((JavaObject**)buf)[0] = 0;\
+        }\
+      } else { \
+        ((JavaObject**)buf)[0] = va_arg(ap, JavaObject*);\
+      } \
     }\
     buf += 8; \
   }\
@@ -59,12 +68,12 @@ using namespace jnjvm;
 #if 1//defined(__PPC__) && !defined(__MACH__)
 #define INVOKE(TYPE, TYPE_NAME, FUNC_TYPE_VIRTUAL_AP, FUNC_TYPE_STATIC_AP, FUNC_TYPE_VIRTUAL_BUF, FUNC_TYPE_STATIC_BUF) \
 \
-TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) { \
+TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap, bool jni) { \
   verifyNull(obj); \
   Signdef* sign = getSignature(); \
   uintptr_t buf = (uintptr_t)alloca(sign->nbArguments * sizeof(uint64)); \
   void* _buf = (void*)buf; \
-  readArgs(buf, sign, ap); \
+  readArgs(buf, sign, ap, jni); \
   void* func = (((void***)obj)[0])[offset];\
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
@@ -78,12 +87,12 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObje
   return res; \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) {\
+TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap, bool jni) {\
   verifyNull(obj);\
   Signdef* sign = getSignature(); \
   uintptr_t buf = (uintptr_t)alloca(sign->nbArguments * sizeof(uint64)); \
   void* _buf = (void*)buf; \
-  readArgs(buf, sign, ap); \
+  readArgs(buf, sign, ap, jni); \
   void* func = this->compiledPtr();\
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
@@ -97,7 +106,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObje
   return res; \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list ap) {\
+TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list ap, bool jni) {\
   if (!cl->isReady()) { \
     cl->resolveClass(); \
     cl->initialiseClass(vm); \
@@ -106,7 +115,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
   Signdef* sign = getSignature(); \
   uintptr_t buf = (uintptr_t)alloca(sign->nbArguments * sizeof(uint64)); \
   void* _buf = (void*)buf; \
-  readArgs(buf, sign, ap); \
+  readArgs(buf, sign, ap, jni); \
   void* func = this->compiledPtr();\
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
@@ -335,12 +344,12 @@ TYPE JavaMethod::invoke##TYPE_NAME##Static(Jnjvm* vm, UserClass* cl, ...) {\
 #if 1//defined(__PPC__) && !defined(__MACH__)
 #define INVOKE(TYPE, TYPE_NAME, FUNC_TYPE_VIRTUAL_AP, FUNC_TYPE_STATIC_AP, FUNC_TYPE_VIRTUAL_BUF, FUNC_TYPE_STATIC_BUF) \
 \
-TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) { \
+TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap, bool jni) { \
   verifyNull(obj); \
   Signdef* sign = getSignature(); \
   uintptr_t buf = (uintptr_t)alloca(sign->nbArguments * sizeof(uint64)); \
   void* _buf = (void*)buf; \
-  readArgs(buf, sign, ap); \
+  readArgs(buf, sign, ap, jni); \
   void* func = (((void***)obj)[0])[offset];\
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
@@ -353,12 +362,12 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObje
   return res; \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) {\
+TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap, bool jni) {\
   verifyNull(obj);\
   Signdef* sign = getSignature(); \
   uintptr_t buf = (uintptr_t)alloca(sign->nbArguments * sizeof(uint64)); \
   void* _buf = (void*)buf; \
-  readArgs(buf, sign, ap); \
+  readArgs(buf, sign, ap, jni); \
   void* func = this->compiledPtr();\
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
@@ -371,7 +380,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObje
   return res; \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list ap) {\
+TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list ap, bool jni) {\
   if (!cl->isReady()) { \
     cl->resolveClass(); \
     cl->initialiseClass(vm); \
@@ -380,7 +389,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
   Signdef* sign = getSignature(); \
   uintptr_t buf = (uintptr_t)alloca(sign->nbArguments * sizeof(uint64)); \
   void* _buf = (void*)buf; \
-  readArgs(buf, sign, ap); \
+  readArgs(buf, sign, ap, jni); \
   void* func = this->compiledPtr();\
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \

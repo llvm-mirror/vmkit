@@ -289,6 +289,11 @@ public:
   ///
   JavaObject* getClassDelegatee(Jnjvm* vm, JavaObject* pd = 0);
   
+  /// getClassDelegateePtr - Return a pointer on the java/lang/Class
+  /// representation of this class. Used for JNI.
+  ///
+  JavaObject* const* getClassDelegateePtr(Jnjvm* vm, JavaObject* pd = 0);
+  
   /// CommonClass - Create a class with th given name.
   ///
   CommonClass(JnjvmClassLoader* loader, const UTF8* name);
@@ -325,10 +330,18 @@ public:
   JavaObject* getDelegatee() const {
     return delegatee[0];
   }
+  
+  /// getDelegatee - Get a pointer on the java/lang/Class object
+  /// representing this class.
+  ///
+  JavaObject* const* getDelegateePtr() const {
+    return delegatee;
+  }
 
 #else
 #if defined(ISOLATE)
   JavaObject* getDelegatee();
+  JavaObject** getDelegateePtr();
 #endif
 #endif
   
@@ -1060,37 +1073,37 @@ public:
 //===----------------------------------------------------------------------===//
   
   /// This class of methods takes a variable argument list.
-  uint32 invokeIntSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+  uint32 invokeIntSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap, bool jni = false)
     __attribute__ ((noinline));
-  float invokeFloatSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+  float invokeFloatSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap, bool jni = false)
     __attribute__ ((noinline));
   double invokeDoubleSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj,
-                               va_list ap) __attribute__ ((noinline));
-  sint64 invokeLongSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+                               va_list ap, bool jni = false) __attribute__ ((noinline));
+  sint64 invokeLongSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap, bool jni = false)
     __attribute__ ((noinline));
   JavaObject* invokeJavaObjectSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj,
-                                        va_list ap) __attribute__ ((noinline));
+                                        va_list ap, bool jni = false) __attribute__ ((noinline));
   
-  uint32 invokeIntVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+  uint32 invokeIntVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap, bool jni = false)
     __attribute__ ((noinline));
-  float invokeFloatVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+  float invokeFloatVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap, bool jni = false)
     __attribute__ ((noinline));
   double invokeDoubleVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj,
-                               va_list ap) __attribute__ ((noinline));
-  sint64 invokeLongVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+                               va_list ap, bool jni = false) __attribute__ ((noinline));
+  sint64 invokeLongVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap, bool jni = false)
     __attribute__ ((noinline));
   JavaObject* invokeJavaObjectVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj,
-                                        va_list ap) __attribute__ ((noinline));
+                                        va_list ap, bool jni = false) __attribute__ ((noinline));
   
-  uint32 invokeIntStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+  uint32 invokeIntStaticAP(Jnjvm* vm, UserClass*, va_list ap, bool jni = false)
     __attribute__ ((noinline));
-  float invokeFloatStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+  float invokeFloatStaticAP(Jnjvm* vm, UserClass*, va_list ap, bool jni = false)
     __attribute__ ((noinline));
-  double invokeDoubleStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+  double invokeDoubleStaticAP(Jnjvm* vm, UserClass*, va_list ap, bool jni = false)
     __attribute__ ((noinline));
-  sint64 invokeLongStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+  sint64 invokeLongStaticAP(Jnjvm* vm, UserClass*, va_list ap, bool jni = false)
     __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+  JavaObject* invokeJavaObjectStaticAP(Jnjvm* vm, UserClass*, va_list ap, bool jni = false)
     __attribute__ ((noinline));
 
   /// This class of methods takes a buffer which contain the arguments of the

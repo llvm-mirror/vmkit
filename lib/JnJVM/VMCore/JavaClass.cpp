@@ -989,6 +989,10 @@ JavaObject* CommonClass::getDelegatee() {
   return delegatee[JavaThread::get()->getJVM()->IsolateID];
 }
 
+JavaObject** CommonClass::getDelegateePtr() {
+  return &(delegatee[JavaThread::get()->getJVM()->IsolateID]);
+}
+
 JavaObject* CommonClass::setDelegatee(JavaObject* val) {
   JavaObject** obj = &(delegatee[JavaThread::get()->getJVM()->IsolateID]);
 

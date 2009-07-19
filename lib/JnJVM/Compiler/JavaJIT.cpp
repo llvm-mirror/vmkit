@@ -278,17 +278,30 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   currentBlock = createBasicBlock("start");
   BasicBlock* executeBlock = createBasicBlock("execute");
   endBlock = createBasicBlock("end block");
+      
+  // Allocate currentLocalIndexNumber pointer
+  Value* temp = new AllocaInst(*llvmContext, Type::Int32Ty, "",
+                               currentBlock);
+  new StoreInst(module->constantZero, temp, false, currentBlock);
+  
+  // Allocate oldCurrentLocalIndexNumber pointer
+  Value* oldCLIN = new AllocaInst(*llvmContext, 
+                                  PointerType::getUnqual(Type::Int32Ty), "",
+                                  currentBlock);
 
-  Value* buf = llvm::CallInst::Create(module->GetSJLJBufferFunction,
-                                      "", currentBlock);
-  Value* test = llvm::CallInst::Create(module->setjmpLLVM, buf, "",
-                                       currentBlock);
+  Value* Args2[2] = { temp, oldCLIN };
+
+  Value* buf = CallInst::Create(module->GetSJLJBufferFunction,
+                                Args2, Args2 + 2, "", currentBlock);
+  Value* test = CallInst::Create(module->setjmpLLVM, buf, "",
+                                 currentBlock);
+
   test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test,
                       module->constantZero, "");
-  llvm::BranchInst::Create(executeBlock, endBlock, test, currentBlock);
+  BranchInst::Create(executeBlock, endBlock, test, currentBlock);
   
   if (returnType != Type::VoidTy) {
-    endNode = llvm::PHINode::Create(returnType, "", endBlock);
+    endNode = PHINode::Create(returnType, "", endBlock);
     endNode->addIncoming(llvmContext->getNullValue(returnType),
                          currentBlock);
   }
@@ -317,21 +330,45 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   if (stat) {
 #ifdef ISOLATE_SHARING
     Value* val = getClassCtp();
-    Value* res = CallInst::Create(module->GetClassDelegateeFunction,
-                                  val, "", currentBlock);
-    nativeArgs.push_back(res);
+    Value* cl = CallInst::Create(module->GetClassDelegateePtrFunction,
+                                 val, "", currentBlock);
 #else
-    Value* cl = TheCompiler->getJavaClass(compilingClass);
-    nativeArgs.push_back(cl);
+    Value* cl = TheCompiler->getJavaClassPtr(compilingClass);
 #endif
+    nativeArgs.push_back(cl);
     index = 2;
   } else {
     index = 1;
   }
   for (Function::arg_iterator i = func->arg_begin(); 
        index < nargs; ++i, ++index) {
-     
-    nativeArgs.push_back(i);
+    
+    if (i->getType() == module->JavaObjectType) {
+      BasicBlock* BB = createBasicBlock("");
+      BasicBlock* NotZero = createBasicBlock("");
+      const Type* Ty = PointerType::getUnqual(module->JavaObjectType);
+      PHINode* node = PHINode::Create(Ty, "", BB);
+
+      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, i,
+                          module->JavaObjectNullConstant, "");
+
+      node->addIncoming(llvmContext->getNullValue(Ty), currentBlock);
+      BranchInst::Create(BB, NotZero, test, currentBlock);
+
+      currentBlock = NotZero;
+
+      Value* temp = new AllocaInst(*llvmContext, module->JavaObjectType, "",
+                                   currentBlock);
+      new StoreInst(i, temp, false, currentBlock);
+      node->addIncoming(temp, currentBlock);
+      BranchInst::Create(BB, currentBlock);
+
+      currentBlock = BB;
+
+      nativeArgs.push_back(node);
+    } else {
+      nativeArgs.push_back(i);
+    }
   }
   
   Value* nativeFunc = TheCompiler->getNativeFunction(compilingMethod,
@@ -376,15 +413,32 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs.begin(),
                                          nativeArgs.end(), "", currentBlock);
 
-  if (returnType != Type::VoidTy)
+  if (returnType == module->JavaObjectType) {
+    const Type* Ty = PointerType::getUnqual(module->JavaObjectType);
+    Constant* C = llvmContext->getNullValue(Ty);
+    Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, result, C, "");
+    BasicBlock* loadBlock = createBasicBlock("");
+
+    endNode->addIncoming(module->JavaObjectNullConstant, currentBlock);
+    BranchInst::Create(endBlock, loadBlock, cmp, currentBlock);
+
+    currentBlock = loadBlock;
+    result = new LoadInst(result, "", currentBlock);
+    
     endNode->addIncoming(result, currentBlock);
+
+  } else if (returnType != Type::VoidTy) {
+    endNode->addIncoming(result, currentBlock);
+  }
+  
   BranchInst::Create(endBlock, currentBlock);
+
 
   currentBlock = endBlock; 
   if (isSynchro(compilingMethod->access))
     endSynchronize();
   
-  CallInst::Create(module->JniProceedPendingExceptionFunction, "",
+  CallInst::Create(module->JniProceedPendingExceptionFunction, oldCLIN, "",
                    currentBlock);
   
   if (returnType != Type::VoidTy)

@@ -218,6 +218,10 @@ public:
     return cpt;
   }
 
+  /// printBacktraceAfterSignal - Print the backtrace during a signal
+  /// handler.
+  ///
+  virtual void printBacktraceAfterSignal() {}
 };
 
 

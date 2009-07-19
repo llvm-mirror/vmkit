@@ -26,7 +26,7 @@
 
 ;;; The Enveloppe type, which contains the first cache and all the info
 ;;; to lookup in the constant pool.
-%Enveloppe = type { %CacheNode*, %UTF8*, %UTF8*, i8, %JavaClass*, %CacheNode }
+%Enveloppe = type { %CacheNode*, %UTF8*, %UTF8*, i32, %JavaClass*, %CacheNode }
 
 ;;; The task class mirror.
 ;;; Field 1: The class state
@@ -221,8 +221,8 @@ declare %JavaObject* @jnjvmArithmeticException()
 declare void @jnjvmThrowException(%JavaObject*)
 declare void @jnjvmThrowExceptionFromJIT()
 
-declare void @jnjvmJNIProceedPendingException()
-declare i8*  @jnjvmGetSJLJBuffer()
+declare void @jnjvmJNIProceedPendingException(i32**)
+declare i8*  @jnjvmGetSJLJBuffer(i32*, i32**)
 
 declare %JavaObject* @gcmalloc(i32, %VT*)
 

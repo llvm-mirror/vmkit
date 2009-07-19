@@ -369,18 +369,19 @@ extern "C" UserClassArray* jnjvmGetArrayClass(UserCommonClass* cl,
 }
 
 // Does not call Java code.
-extern "C" void jnjvmJNIProceedPendingException() {
+extern "C" void jnjvmJNIProceedPendingException(uint32** oldLRN) {
   JavaThread* th = JavaThread::get();
   jmp_buf* buf = th->sjlj_buffers.back();
   
   // Remove the buffer.
   th->sjlj_buffers.pop_back();
-
-  // We're going back to Java, remove the native address.
-  th->addresses.pop_back();
-
   mvm::Allocator& allocator = th->getJVM()->gcAllocator;
   allocator.freeTemporaryMemory(buf);
+
+  // We're going back to Java
+  th->endJNI();
+
+  th->currentAddedReferences = *oldLRN;
 
 #ifdef DWARF_EXCEPTIONS
   // If there's an exception, throw it now.
@@ -391,15 +392,18 @@ extern "C" void jnjvmJNIProceedPendingException() {
 }
 
 // Never throws.
-extern "C" void* jnjvmGetSJLJBuffer() {
+extern "C" void* jnjvmGetSJLJBuffer(uint32* localReferencesNumber,
+                                    uint32** oldLocalReferencesNumber) {
   JavaThread* th = JavaThread::get();
   mvm::Allocator& allocator = th->getJVM()->gcAllocator;
   void** buf = (void**)allocator.allocateTemporaryMemory(sizeof(jmp_buf));
   th->sjlj_buffers.push_back((jmp_buf*)buf);
+  *oldLocalReferencesNumber = th->currentAddedReferences;
+  th->currentAddedReferences = localReferencesNumber;
 
-  // Start native because the next instruction after setjmp is a call to a
-  // native function.
-  th->startNative(2);
+  // Start JNI because the next instruction after setjmp is a call to a
+  // JNI function.
+  th->startJNI(2);
 
   // Finally, return the buffer that the Java code will use to do the setjmp.
   return (void*)buf;

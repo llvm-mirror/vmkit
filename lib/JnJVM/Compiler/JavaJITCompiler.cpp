@@ -73,6 +73,16 @@ Constant* JavaJITCompiler::getJavaClass(CommonClass* cl) {
   return ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);
 }
 
+Constant* JavaJITCompiler::getJavaClassPtr(CommonClass* cl) {
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  JavaObject* const* obj = cl->getClassDelegateePtr(vm);
+  assert(obj && "Delegatee not created");
+  LLVMContext& Context = getLLVMModule()->getContext();
+  Constant* CI = Context.getConstantInt(Type::Int64Ty, uint64(obj));
+  const Type* Ty = PointerType::getUnqual(JnjvmModule::JavaObjectType);
+  return ConstantExpr::getIntToPtr(CI, Ty);
+}
+
 JavaObject* JavaJITCompiler::getFinalObject(llvm::Value* obj) {
   if (ConstantExpr* CE = dyn_cast<ConstantExpr>(obj)) {
     if (ConstantInt* C = dyn_cast<ConstantInt>(CE->getOperand(0))) {

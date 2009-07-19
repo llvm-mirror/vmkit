@@ -21,6 +21,7 @@
 #include "mvm/Threads/Locks.h"
 
 #include "JnjvmConfig.h"
+#include "JNIReferences.h"
 #include "LockedMap.h"
 
 namespace jnjvm {
@@ -221,7 +222,7 @@ public:
 
   /// globalRefs - Global references that JNI wants to protect.
   ///
-  std::vector<JavaObject*, gc_allocator<JavaObject*> > globalRefs;
+  JNIGlobalReferences globalRefs;
 
   /// globalRefsLock - Lock for adding a new global reference.
   ///

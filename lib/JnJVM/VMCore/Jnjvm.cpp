@@ -673,6 +673,12 @@ JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
   return getDelegatee();
 }
 
+JavaObject* const* UserCommonClass::getClassDelegateePtr(Jnjvm* vm, JavaObject* pd) {
+  // Make sure it's created.
+  getClassDelegatee(vm, pd);
+  return getDelegateePtr();
+}
+
 #define PATH_MANIFEST "META-INF/MANIFEST.MF"
 #define MAIN_CLASS "Main-Class: "
 #define MAIN_LOWER_CLASS "Main-class: "

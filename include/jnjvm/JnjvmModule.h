@@ -421,6 +421,7 @@ public:
   virtual JavaObject* getFinalObject(llvm::Value* C) = 0;
   virtual llvm::Constant* getNativeClass(CommonClass* cl) = 0;
   virtual llvm::Constant* getJavaClass(CommonClass* cl) = 0;
+  virtual llvm::Constant* getJavaClassPtr(CommonClass* cl) = 0;
   virtual llvm::Constant* getStaticInstance(Class* cl) = 0;
   virtual llvm::Constant* getVirtualTable(JavaVirtualTable*) = 0;
   virtual llvm::Constant* getMethodInClass(JavaMethod* meth) = 0;
@@ -492,6 +493,7 @@ public:
   virtual JavaObject* getFinalObject(llvm::Value* C);
   virtual llvm::Constant* getNativeClass(CommonClass* cl);
   virtual llvm::Constant* getJavaClass(CommonClass* cl);
+  virtual llvm::Constant* getJavaClassPtr(CommonClass* cl);
   virtual llvm::Constant* getStaticInstance(Class* cl);
   virtual llvm::Constant* getVirtualTable(JavaVirtualTable*);
   virtual llvm::Constant* getMethodInClass(JavaMethod* meth);
@@ -546,6 +548,7 @@ public:
   virtual JavaObject* getFinalObject(llvm::Value* C);
   virtual llvm::Constant* getNativeClass(CommonClass* cl);
   virtual llvm::Constant* getJavaClass(CommonClass* cl);
+  virtual llvm::Constant* getJavaClassPtr(CommonClass* cl);
   virtual llvm::Constant* getStaticInstance(Class* cl);
   virtual llvm::Constant* getVirtualTable(JavaVirtualTable*);
   virtual llvm::Constant* getMethodInClass(JavaMethod* meth);

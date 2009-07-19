@@ -265,9 +265,13 @@ void Jnjvm::tracer() {
   
   if (appClassLoader) appClassLoader->getJavaClassLoader()->markAndTrace();
   
-  for (std::vector<JavaObject*, gc_allocator<JavaObject*> >::iterator 
-       i = globalRefs.begin(), e = globalRefs.end(); i!= e; ++i) {
-    (*i)->markAndTrace(); 
+  JNIGlobalReferences* start = &globalRefs;
+  while (start) {
+    for (uint32 i = 0; i < start->length; ++i) {
+      JavaObject* obj = start->globalReferences[i];
+      obj->markAndTrace(); 
+    }
+    start = start->next;
   }
   
   for (StringMap::iterator i = hashStr.map.begin(), e = hashStr.map.end();
@@ -291,4 +295,13 @@ void JavaThread::tracer() {
 #ifdef SERVICE
   ServiceException->markAndTrace();
 #endif
+  
+  JNILocalReferences* end = localJNIRefs;
+  while (end) {
+    for (uint32 i = 0; i < end->length; ++i) {
+      JavaObject* obj = end->localReferences[i];
+      obj->markAndTrace(); 
+    }
+    end = end->prev;
+  }
 }

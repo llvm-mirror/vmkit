@@ -57,6 +57,7 @@ void sigsegvHandler(int n, siginfo_t *_info, void *context) {
     fprintf(stderr, "I received a SIGSEGV: either the VM code or an external\n"
                     "native method is bogus. Aborting...\n");
   }
+  th->printBacktraceAfterSignal();
   abort();
   
 #if defined(__i386__)

@@ -283,14 +283,21 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
     std::vector<const llvm::Type*> llvmArgs;
     uint32 size = signature->nbArguments;
     Typedef* const* arguments = signature->getArgumentsType();
-    
+   
+    const llvm::Type* Ty = PointerType::getUnqual(JnjvmModule::JavaObjectType);
+
     llvmArgs.push_back(mvm::MvmModule::ptrType); // JNIEnv
-    llvmArgs.push_back(JnjvmModule::JavaObjectType); // Class
+    llvmArgs.push_back(Ty); // Class
 
     for (uint32 i = 0; i < size; ++i) {
       Typedef* type = arguments[i];
       LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(type);
-      llvmArgs.push_back(LAI.llvmType);
+      const llvm::Type* Ty = LAI.llvmType;
+      if (Ty == JnjvmModule::JavaObjectType) {
+        llvmArgs.push_back(LAI.llvmTypePtr);
+      } else {
+        llvmArgs.push_back(LAI.llvmType);
+      }
     }
 
 #if defined(ISOLATE_SHARING)
@@ -299,7 +306,9 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
 
     LLVMAssessorInfo& LAI = 
       JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
-    nativeType = FunctionType::get(LAI.llvmType, llvmArgs, false);
+    const llvm::Type* RetType = LAI.llvmType == JnjvmModule::JavaObjectType ?
+      LAI.llvmTypePtr : LAI.llvmType;
+    nativeType = FunctionType::get(RetType, llvmArgs, false);
     mvm::MvmModule::unprotectIR();
   }
   return nativeType;

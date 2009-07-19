@@ -76,7 +76,8 @@ typedef __jmp_buf_tag* jumpbuf_t;
 #endif
 
 typedef int (*onLoad_t)(const void**, void*);
-extern "C" void  jnjvmJNIProceedPendingException();
+extern "C" void  jnjvmJNIProceedPendingException(uint32** old);
+extern "C" void* jnjvmGetSJLJBuffer(uint32* num, uint32** old);
 
 // Calls the JNI_OnLoad function of a dynamic library.
 void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
@@ -84,16 +85,15 @@ void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
   onLoad_t onLoad = (onLoad_t)loader->loadInLib("JNI_OnLoad", res);
   
   if (onLoad) {
-    JavaThread* th = JavaThread::get();
-    mvm::Allocator& allocator = th->getJVM()->gcAllocator;
-    void** buf = (void**)allocator.allocateTemporaryMemory(sizeof(jmp_buf));
-    th->sjlj_buffers.push_back((jmp_buf*)buf);
-
-    th->startNative(1);
+    uint32 num = 0;
+    uint32* old = 0;
+    void* buf = jnjvmGetSJLJBuffer(&num, &old);
+    
     if (setjmp((jumpbuf_t)buf) == 0) {
       onLoad(&vm->javavmEnv, res);
     }
-    jnjvmJNIProceedPendingException();
+
+    jnjvmJNIProceedPendingException(&old);
   }
 }
 

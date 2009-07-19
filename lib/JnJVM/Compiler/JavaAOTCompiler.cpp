@@ -206,7 +206,28 @@ Constant* JavaAOTCompiler::getJavaClass(CommonClass* cl) {
     return res;
   } else {
     return I->second;
-    }
+  }
+}
+
+Constant* JavaAOTCompiler::getJavaClassPtr(CommonClass* cl) {
+#ifdef ISOLATE
+  abort();
+  return 0;
+#else
+  // Make sure it's emitted.
+  getJavaClass(cl);
+
+  Constant* Cl = getNativeClass(cl);
+
+  Constant* GEP[2] = { JnjvmModule::constantZero, JnjvmModule::constantZero };
+  
+  Constant* TCMArray = ConstantExpr::getGetElementPtr(Cl, GEP, 2);
+    
+  Constant* GEP2[2] = { JnjvmModule::constantZero, JnjvmModule::constantZero };
+
+  Constant* Ptr = ConstantExpr::getGetElementPtr(TCMArray, GEP2, 2);
+  return Ptr;
+#endif
 }
 
 JavaObject* JavaAOTCompiler::getFinalObject(llvm::Value* obj) {

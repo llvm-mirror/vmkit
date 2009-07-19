@@ -19,6 +19,7 @@
 #include "mvm/Threads/Thread.h"
 
 #include "JavaObject.h"
+#include "JNIReferences.h"
 
 namespace jnjvm {
 
@@ -118,6 +119,23 @@ public:
   ///
   std::vector<void*> addresses;
 
+  /// currentAddedReferences - Current number of added local references.
+  ///
+  uint32_t* currentAddedReferences;
+
+  /// localJNIRefs - List of local JNI references.
+  ///
+  JNILocalReferences* localJNIRefs;
+
+
+  JavaObject** pushJNIRef(JavaObject* obj) {
+    if (!obj) return 0;
+    
+    ++(*currentAddedReferences);
+    return localJNIRefs->addJNIReference(this, obj);
+
+  }
+
   /// tracer - Traces GC-objects pointed by this thread object.
   ///
   virtual void tracer();
@@ -201,6 +219,10 @@ public:
   /// startNative - Record that we are entering native code.
   ///
   void startNative(int level) __attribute__ ((noinline));
+  
+  /// startNative - Record that we are entering native code.
+  ///
+  void startJNI(int level) __attribute__ ((noinline));
 
   /// startJava - Record that we are entering Java code.
   ///
@@ -210,6 +232,13 @@ public:
   ///
   void endNative() {
     assert(!(addresses.size() % 2) && "Wrong stack");    
+    addresses.pop_back();
+  }
+
+  void endJNI() {
+    assert(!(addresses.size() % 2) && "Wrong stack");    
+  
+    localJNIRefs->removeJNIReferences(this, *currentAddedReferences);
     addresses.pop_back();
   }
 
@@ -243,6 +272,12 @@ public:
   /// printBacktrace - Prints the backtrace of this thread.
   ///
   void printBacktrace() __attribute__ ((noinline));
+  
+  /// printBacktraceAfterSignal - Prints the backtrace of this thread while
+  /// in a signal handler.
+  ///
+  virtual void printBacktraceAfterSignal() __attribute__ ((noinline));
+  
   
   /// printJavaBacktrace - Prints the backtrace of this thread. Only prints
   /// the Java methods on the stack.
