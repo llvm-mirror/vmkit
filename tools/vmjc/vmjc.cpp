@@ -97,6 +97,9 @@ StandardCompileOpts("std-compile-opts",
 static cl::opt<std::string>
 TargetTriple("mtriple", cl::desc("Override target triple for module"));
 
+static cl::opt<std::string>
+MArch("march", cl::desc("Architecture to generate code for (see --version)"));
+
 static cl::opt<bool>
 DisableExceptions("disable-exceptions",
               cl::desc("Disable Java exceptions"));
@@ -120,10 +123,6 @@ Properties("D", cl::desc("Set a property"), cl::Prefix, cl::ZeroOrMore);
 static cl::list<std::string> 
 WithClinit("with-clinit", cl::desc("Set a property"), cl::ZeroOrMore,
            cl::CommaSeparated);
-
-static cl::opt<const TargetMachineRegistry::entry*, false,
-               RegistryParser<TargetMachine> >
-MArch("march", cl::desc("Architecture to generate code for:"));
 
 
 inline void addPass(FunctionPassManager *PM, Pass *P) {
@@ -192,36 +191,47 @@ int main(int argc, char **argv) {
         TheModule->setTargetTriple(TargetTriple);
       else
         TheModule->setTargetTriple(mvm::MvmModule::getHostTriple());
-   
-
-      // Allocate target machine.  First, check whether the user has
+  
       // explicitly specified an architecture to compile for.
-      const Target *TheTarget;
-      if (MArch) {
-        TheTarget = &MArch->TheTarget;
+      const Target *TheTarget = 0;
+      if (!MArch.empty()) {
+        for (TargetRegistry::iterator it = TargetRegistry::begin(),
+             ie = TargetRegistry::end(); it != ie; ++it) {
+          if (MArch == it->getName()) {
+            TheTarget = &*it;
+            break;
+          }
+        }
+
+        if (!TheTarget) {
+          errs() << argv[0] << ": error: invalid target '" << MArch << "'.\n";
+          return 1;
+        }
       } else {
         std::string Err;
-        TheTarget = 
+        TheTarget =
           TargetRegistry::getClosestStaticTargetForModule(*TheModule, Err);
         if (TheTarget == 0) {
-          std::cerr << argv[0] << ": error auto-selecting target for module '"
-                    << Err << "'.  Please use the -march option to explicitly "
-                    << "pick a target.\n";
+          errs() << argv[0] << ": error auto-selecting target for module '"
+                 << Err << "'.  Please use the -march option to explicitly "
+                 << "pick a target.\n";
           return 1;
         }
       }
 
       std::string FeaturesStr;
-      TargetMachine *Target =
-        TheTarget->createTargetMachine(*TheModule, FeaturesStr);
+      std::auto_ptr<TargetMachine>
+        target(TheTarget->createTargetMachine(*TheModule, FeaturesStr));
+      assert(target.get() && "Could not allocate target machine!");
+      TargetMachine &Target = *target.get();
 
       // Install information about target datalayout stuff into the module for
       // optimizer use.
-      TheModule->setDataLayout(Target->getTargetData()->
+      TheModule->setDataLayout(Target.getTargetData()->
                                getStringRepresentation());
 
 
-      mvm::MvmModule::initialise(CodeGenOpt::Default, TheModule, Target);
+      mvm::MvmModule::initialise(CodeGenOpt::Default, TheModule, &Target);
     } else {
       mvm::MvmModule::initialise();
     }
