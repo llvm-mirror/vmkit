@@ -164,8 +164,9 @@ void addCommandLinePass(char** argv) {
   // If -std-compile-opts was specified at the end of the pass list, add them.
   if (StandardCompileOpts) {
     mvm::MvmModule::AddStandardCompilePasses();
-  }    
+  }
 
+  Passes->doInitialization();
 }
 
 
