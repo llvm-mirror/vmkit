@@ -329,7 +329,8 @@ void MvmModule::AddStandardCompilePasses() {
   addPass(PM, createDeadStoreEliminationPass()); // Delete dead stores
   addPass(PM, createAggressiveDCEPass());        // Delete dead instructions
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
-
+  
+  PM->doInitialization();
 }
 
 // We protect the creation of IR with the executionEngine lock because
