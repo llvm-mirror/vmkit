@@ -231,6 +231,7 @@ uint64 MvmModule::getTypeSize(const llvm::Type* type) {
 
 void MvmModule::runPasses(llvm::Function* func,
                           llvm::FunctionPassManager* pm) {
+  pm->doInitialization();
   pm->run(*func);
 }
 
@@ -288,7 +289,6 @@ void MvmModule::AddStandardCompilePasses() {
   addPass(PM, createAggressiveDCEPass());        // Delete dead instructions
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
   
-  PM->doInitialization();
 }
 
 // We protect the creation of IR with the executionEngine lock because
