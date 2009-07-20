@@ -391,9 +391,9 @@ extern "C" void jnjvmJNIProceedPendingException(uint32** oldLRN, void** oldBuffe
 }
 
 // Never throws.
-extern "C" void jnjvmGetSJLJBuffer(uint32* localReferencesNumber,
-                                   uint32** oldLocalReferencesNumber,
-                                   void* newBuffer, void** oldBuffer) {
+extern "C" void** jnjvmGetSJLJBuffer(uint32* localReferencesNumber,
+                                     uint32** oldLocalReferencesNumber,
+                                     void* newBuffer, void** oldBuffer) {
   JavaThread* th = JavaThread::get();
  
   *oldBuffer = th->currentSjljBuffer;
@@ -407,8 +407,9 @@ extern "C" void jnjvmGetSJLJBuffer(uint32* localReferencesNumber,
   // Start JNI because the next instruction after setjmp is a call to a
   // JNI function.
   th->startJNI(2);
+  void** val = (void**)th->addresses.back();
 
-  return;
+  return val;
 }
 
 // Never throws.
