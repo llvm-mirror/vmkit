@@ -49,6 +49,7 @@ const char* MvmModule::getHostTriple() {
 void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
                            TargetMachine* T) {
   llvm::NoFramePointerElim = true;
+  llvm::DisablePrettyStackTrace = true;
 #if DWARF_EXCEPTIONS
   llvm::ExceptionHandling = true;
 #else
