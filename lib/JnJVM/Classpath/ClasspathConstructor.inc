@@ -31,7 +31,10 @@ JNIEnv *env,
 #endif
 JavaObjectConstructor* cons) {
 
-  jobject res = 0;
+  JavaObject* res = 0;
+  
+  llvm_gcroot(cons, 0);
+  llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
@@ -40,10 +43,10 @@ JavaObjectConstructor* cons) {
   JavaMethod* meth = cons->getInternalMethod();
   JnjvmClassLoader* loader = cl->classLoader;
 
-  res = (jobject)meth->getParameterTypes(loader);
+  res = meth->getParameterTypes(loader);
   END_NATIVE_EXCEPTION
 
-  return res;
+  return (jobject)res;
 }
 
 JNIEXPORT jint JNICALL Java_java_lang_reflect_Constructor_getModifiersInternal(
@@ -52,6 +55,7 @@ JNIEnv *env,
 #endif
 JavaObjectConstructor* cons) {
 
+  llvm_gcroot(cons, 0);
   jint res = 0;
 
   BEGIN_NATIVE_EXCEPTION(0)
@@ -65,17 +69,26 @@ JavaObjectConstructor* cons) {
   return res;
 }
 
-static jobject proceedConstructor(JavaObjectConstructor* cons, jobject _args,
-                                  jclass Clazz, jint index) 
+static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
+                                      JavaArray* args,
+                                      JavaObject* Clazz, jint index) 
   __attribute__ ((noinline));
  
-static jobject proceedConstructor(JavaObjectConstructor* cons, jobject _args,
-                                  jclass Clazz, jint index) {
-  jobject res = 0;
+static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
+                                      JavaArray* args,
+                                      JavaObject* Clazz, jint index) {
+  JavaObject* res = 0;
+  JavaObject* excp = 0;
+
+  llvm_gcroot(cons, 0);
+  llvm_gcroot(args, 0);
+  llvm_gcroot(Clazz, 0);
+  llvm_gcroot(res, 0);
+  llvm_gcroot(excp, 0);
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = cons->getInternalMethod();
   UserClass* cl = cons->getClass();
-  JavaArray* args = (JavaArray*)_args;
   sint32 nbArgs = args ? args->size : 0;
   Signdef* sign = meth->getSignature();
   sint32 size = sign->nbArguments;
@@ -90,13 +103,11 @@ static jobject proceedConstructor(JavaObjectConstructor* cons, jobject _args,
   // Do it after alloca
 
   if (nbArgs == size) {
-    UserCommonClass* _cl = 
-      UserCommonClass::resolvedImplClass(vm, (JavaObject*)Clazz, false);
+    UserCommonClass* _cl = UserCommonClass::resolvedImplClass(vm, Clazz, false);
     UserClass* cl = _cl->asClass();
     if (cl) {
       cl->initialiseClass(vm);
-      JavaObject* obj = cl->doNew(vm);
-      res = (jobject) obj;
+      res = cl->doNew(vm);
       JavaObject** ptr = (JavaObject**)(void*)(args->elements);
       
       Typedef* const* arguments = sign->getArgumentsType();
@@ -105,10 +116,9 @@ static jobject proceedConstructor(JavaObjectConstructor* cons, jobject _args,
         ptr[i]->decapsulePrimitive(vm, buf, arguments[i]);
       }
       
-      JavaObject* excp = 0;
       JavaThread* th = JavaThread::get();
       try {
-        meth->invokeIntSpecialBuf(vm, cl, obj, startBuf);
+        meth->invokeIntSpecialBuf(vm, cl, res, startBuf);
       } catch(...) {
         excp = th->getJavaException();
         if (excp->getClass()->isAssignableFrom(vm->upcalls->newException)) {
@@ -132,18 +142,23 @@ static jobject proceedConstructor(JavaObjectConstructor* cons, jobject _args,
   return res;
 }
 
-JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_constructNative(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Constructor_constructNative(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectConstructor* cons, jobject _args, jclass Clazz, jint index) {
+JavaObjectConstructor* cons, JavaArray* args, JavaObject* Clazz, jint index) {
 
-  jobject res = 0;
+  JavaObject* res = 0;
+
+  llvm_gcroot(res, 0);
+  llvm_gcroot(cons, 0);
+  llvm_gcroot(args, 0);
+  llvm_gcroot(Clazz, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
 
   // Proceed in another function because we are using alloca.
-  res = proceedConstructor(cons, _args, Clazz, index);
+  res = proceedConstructor(cons, args, Clazz, index);
   
   END_NATIVE_EXCEPTION
   
@@ -151,13 +166,16 @@ JavaObjectConstructor* cons, jobject _args, jclass Clazz, jint index) {
 }
 
 JNIEXPORT 
-jobjectArray JNICALL Java_java_lang_reflect_Constructor_getExceptionTypes(
+ArrayObject* JNICALL Java_java_lang_reflect_Constructor_getExceptionTypes(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
 JavaObjectConstructor* cons) {
   
-  jobjectArray res = 0;
+  ArrayObject* res = 0;
+
+  llvm_gcroot(res, 0);
+  llvm_gcroot(cons, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
   
@@ -166,27 +184,30 @@ JavaObjectConstructor* cons) {
   JavaMethod* meth = cons->getInternalMethod();
   JnjvmClassLoader* loader = cl->classLoader;
 
-  res = (jobjectArray)meth->getExceptionTypes(loader);
+  res = (ArrayObject*)meth->getExceptionTypes(loader);
 
   END_NATIVE_EXCEPTION
 
   return res;
 }
 
-JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_getSignature(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Constructor_getSignature(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
 JavaObjectConstructor* Meth) {
 
-  jobject result = 0;
+  JavaObject* result = 0;
+
+  llvm_gcroot(result, 0);
+  llvm_gcroot(Meth, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   verifyNull(Meth);
   JavaMethod* meth = Meth->getInternalMethod();
   Jnjvm* vm = JavaThread::get()->getJVM();
-  result = (jobject)(vm->internalUTF8ToStr(meth->type));
+  result = vm->internalUTF8ToStr(meth->type);
   
   END_NATIVE_EXCEPTION
 

@@ -20,18 +20,19 @@ using namespace jnjvm;
 
 extern "C" {
 
-JNIEXPORT jobject JNICALL Java_java_lang_VMObject_clone(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_VMObject_clone(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz, 
 #endif
-jobject _src) {
+JavaObject* src) {
   
   JavaObject* res = 0;
+  llvm_gcroot(res, 0);
+  llvm_gcroot(src, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  JavaObject* src = (JavaObject*)_src;
   UserCommonClass* cl = src->getClass();
   Jnjvm* vm = JavaThread::get()->getJVM();
   uint64 size = 0;
@@ -54,23 +55,24 @@ jobject _src) {
 
   END_NATIVE_EXCEPTION
 
-  return (jobject)res;
+  return res;
 } 
 
-JNIEXPORT jobject JNICALL Java_java_lang_VMObject_getClass(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_VMObject_getClass(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject _obj) {
+JavaObject* obj) {
   
-  jobject res = 0;
+  JavaObject* res = 0;
+  llvm_gcroot(res, 0);
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  JavaObject* obj = (JavaObject*)_obj;
   Jnjvm* vm = JavaThread::get()->getJVM();
-  res = (jobject)(obj->getClass()->getClassDelegatee(vm)); 
+  res = obj->getClass()->getClassDelegatee(vm);
 
   END_NATIVE_EXCEPTION
 
@@ -82,11 +84,12 @@ JNIEXPORT void JNICALL Java_java_lang_VMObject_notifyAll(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject _obj) {
+JavaObject* obj) {
+
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  JavaObject* obj = (JavaObject*)_obj;
   obj->notifyAll();
 
   END_NATIVE_EXCEPTION
@@ -98,14 +101,15 @@ JNIEXPORT void JNICALL Java_java_lang_VMObject_wait(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject _object, jlong ms, jint ns) {
+JavaObject* obj, jlong ms, jint ns) {
+
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   uint32 sec = (uint32) (ms / 1000);
   uint32 usec = (ns / 1000) + 1000 * (ms % 1000);
   if (ns && !usec) usec = 1;
-  JavaObject* obj = (JavaObject*)_object;
   if (sec || usec) {
     struct timeval t;
     t.tv_sec = sec;
@@ -123,11 +127,13 @@ JNIEXPORT void JNICALL Java_java_lang_VMObject_notify(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject obj) {
+JavaObject* obj) {
+
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  ((JavaObject*)obj)->notify();
+  obj->notify();
 
   END_NATIVE_EXCEPTION
 }

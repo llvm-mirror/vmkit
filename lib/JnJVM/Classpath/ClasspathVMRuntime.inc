@@ -30,28 +30,33 @@ using namespace jnjvm;
 extern "C" {
 
 
-JNIEXPORT jobject JNICALL Java_java_lang_VMRuntime_mapLibraryName(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_VMRuntime_mapLibraryName(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject _strLib) {
+JavaString* strLib) {
   
-  jobject res = 0;
+  JavaObject* res = 0;
+  ArrayUInt16* array = 0;
+  const ArrayUInt16* utf8Lib = 0;
+  llvm_gcroot(res, 0);
+  llvm_gcroot(array, 0);
+  llvm_gcroot(utf8Lib, 0);
+  llvm_gcroot(strLib, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  JavaString* strLib = (JavaString*)_strLib;
   Jnjvm* vm = JavaThread::get()->getJVM();
 
-  const ArrayUInt16* utf8Lib = strLib->value;
+  utf8Lib = strLib->value;
   uint32 stLib = strLib->offset;
   sint32 lgLib = strLib->count;
   sint32 lgPre = vm->bootstrapLoader->prelib->size;
   sint32 lgPost = vm->bootstrapLoader->postlib->size;
   
   uint32 size = (uint32)(lgPre + lgLib + lgPost);
-  ArrayUInt16* array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(size, vm);
+  array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(size, vm);
   uint16* elements = array->elements;
 
   memmove(elements, vm->bootstrapLoader->prelib->elements,
@@ -61,7 +66,7 @@ jobject _strLib) {
   memmove(&(elements[lgPre + lgLib]), vm->bootstrapLoader->postlib->elements,
            lgPost * sizeof(uint16));
   
-  res = (jobject)(vm->constructString(array));
+  res = vm->constructString(array);
 
   END_NATIVE_EXCEPTION
 
@@ -106,15 +111,17 @@ JNIEXPORT jint JNICALL Java_java_lang_VMRuntime_nativeLoad(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject _str,
-jobject _loader) {
+JavaString* str,
+JavaObject* javaLoader) {
   
+  llvm_gcroot(str, 0);
+  llvm_gcroot(javaLoader, 0);
+
   void* res = 0;
 
-  JavaString* str = (JavaString*)_str;
   Jnjvm* vm = JavaThread::get()->getJVM();
   JnjvmClassLoader* loader = 
-    JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)_loader, vm);
+    JnjvmClassLoader::getJnjvmLoaderFromJavaObject(javaLoader, vm);
 
   char* buf = str->strToAsciiz();
   

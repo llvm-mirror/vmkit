@@ -25,17 +25,20 @@ JNIEXPORT void JNICALL Java_java_lang_VMSystem_arraycopy(
 JNIEnv *env,
 jclass _cl,
 #endif
-jobject _src,
+JavaArray* src,
 jint sstart,
-jobject _dst,
+JavaArray* dst,
 jint dstart,
 jint len) {
-  
+
+  JavaObject* cur = 0;
+  llvm_gcroot(src, 0);
+  llvm_gcroot(dst, 0);
+  llvm_gcroot(cur, 0);
+
   BEGIN_NATIVE_EXCEPTION(0)
 
   jnjvm::Jnjvm *vm = JavaThread::get()->getJVM();
-  JavaArray* src = (JavaArray*)_src;
-  JavaArray* dst = (JavaArray*)_dst;
 
   verifyNull(src);
   verifyNull(dst);
@@ -72,7 +75,7 @@ jint len) {
   bool doThrow = false;
   if (!(dstType->isPrimitive())) {
     while (i < sstart + len && !doThrow) {
-      JavaObject* cur = ((ArrayObject*)src)->elements[i];
+      cur = ((ArrayObject*)src)->elements[i];
       if (cur) {
         if (!(cur->getClass()->isAssignableFrom(dstType))) {
           doThrow = true;
@@ -103,7 +106,9 @@ JNIEXPORT jint JNICALL Java_java_lang_VMSystem_identityHashCode(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject obj) {
+JavaObject* obj) {
+
+  llvm_gcroot(obj, 0);
   return (jint)(intptr_t)obj;
 }
 

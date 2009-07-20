@@ -26,6 +26,9 @@ extern "C" {
 
 static void setProperty(Jnjvm* vm, JavaObject* prop, const char* key,
                         const char* val) {
+ 
+  llvm_gcroot(prop, 0);
+                        
   vm->upcalls->setProperty->invokeIntSpecial(vm, (UserClass*)prop->getClass(),
                                              prop,
                                              vm->asciizToStr(key),
@@ -33,6 +36,9 @@ static void setProperty(Jnjvm* vm, JavaObject* prop, const char* key,
 }
 
 static void setUnameProp(Jnjvm* vm, JavaObject* prop) {
+
+  llvm_gcroot(prop, 0);
+
   struct utsname infos;
   uname(&infos);
   setProperty(vm, prop, "os.name", infos.sysname);
@@ -50,11 +56,12 @@ JNIEXPORT void JNICALL Java_gnu_classpath_VMSystemProperties_preInit(
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject _prop) {
+JavaObject* prop) {
+  
+  llvm_gcroot(prop, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
 
-  JavaObject* prop = (JavaObject*)_prop;
   Jnjvm* vm = JavaThread::get()->getJVM();
   const char* tmp;
   setProperty(vm, prop, "java.vm.specification.version", "1.0");
@@ -125,6 +132,8 @@ jobject _prop) {
 }
 
 extern "C" void nativePropertiesPostInit(JavaObject* prop) {
+
+  llvm_gcroot(prop, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 

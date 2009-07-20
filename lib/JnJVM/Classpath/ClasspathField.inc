@@ -27,6 +27,8 @@ JNIEnv *env,
 JavaObjectField* Field) {
   jint res = 0;
 
+  llvm_gcroot(Field, 0);
+
   BEGIN_NATIVE_EXCEPTION(0)
 
   JavaField* field = Field->getInternalField();
@@ -37,13 +39,16 @@ JavaObjectField* Field) {
   return res;
 }
 
-JNIEXPORT jclass JNICALL Java_java_lang_reflect_Field_getType(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Field_getType(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
 JavaObjectField* Field) {
   
-  jclass res = 0;
+  JavaObject* res = 0;
+
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
@@ -52,7 +57,7 @@ JavaObjectField* Field) {
   JavaField* field = Field->getInternalField();
   JnjvmClassLoader* loader = cl->classLoader;
   UserCommonClass* fieldCl = field->getSignature()->assocClass(loader);
-  res = (jclass)fieldCl->getClassDelegatee(vm);
+  res = fieldCl->getClassDelegatee(vm);
 
   END_NATIVE_EXCEPTION
 
@@ -63,9 +68,12 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getInt(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj) {
+JavaObjectField* Field, JavaObject* obj) {
   
   jint res = 0;
+  
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
 
@@ -73,27 +81,27 @@ JavaObjectField* Field, jobject obj) {
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
   const Typedef* type = field->getSignature();
+  bool stat =  isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
   
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
 
     if (prim->isInt())
-      res = (sint32)field->getInt32Field(Obj);
+      res = (sint32)field->getInt32Field(stat ? StatPtr : obj);
     else if (prim->isChar())
-      res = (uint32)field->getInt16Field(Obj);
+      res = (uint32)field->getInt16Field(stat ? StatPtr : obj);
     else if (prim->isByte())
-      res = (sint32)field->getInt8Field(Obj);
+      res = (sint32)field->getInt8Field(stat ? StatPtr : obj);
     else if (prim->isShort())
-      res = (sint32)field->getInt16Field(Obj);
+      res = (sint32)field->getInt16Field(stat ? StatPtr : obj);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -110,23 +118,26 @@ JNIEXPORT jlong JNICALL Java_java_lang_reflect_Field_getLong(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj) {
+JavaObjectField* Field, JavaObject* obj) {
 
   jlong res = 0;
+  
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat =  isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
   
   const Typedef* type = field->getSignature();
@@ -134,15 +145,15 @@ JavaObjectField* Field, jobject obj) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     
     if (prim->isInt())
-      res = (sint64)field->getInt32Field(Obj);
+      res = (sint64)field->getInt32Field(stat ? StatPtr : obj);
     else if (prim->isChar())
-      res = (uint64)field->getInt16Field(Obj);
+      res = (uint64)field->getInt16Field(stat ? StatPtr : obj);
     else if (prim->isByte())
-      res = (sint64)field->getInt8Field(Obj);
+      res = (sint64)field->getInt8Field(stat ? StatPtr : obj);
     else if (prim->isShort())
-      res = (sint64)field->getInt16Field(Obj);
+      res = (sint64)field->getInt16Field(stat ? StatPtr : obj);
     else if (prim->isLong())
-      res = (sint64)field->getLongField(Obj);
+      res = (sint64)field->getLongField(stat ? StatPtr : obj);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -158,30 +169,33 @@ JNIEXPORT jboolean JNICALL Java_java_lang_reflect_Field_getBoolean(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj) {
+JavaObjectField* Field, JavaObject* obj) {
 
   jboolean res = 0;
+  
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
-  
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  bool stat =  isStatic(field->access);
+  void* StatPtr = 0;
+   
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isBool())  
-      res = (uint8)field->getInt8Field(Obj);
+      res = (uint8)field->getInt8Field(stat ? StatPtr : obj);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -198,41 +212,43 @@ JNIEXPORT jfloat JNICALL Java_java_lang_reflect_Field_getFloat(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj) {
+JavaObjectField* Field, JavaObject* obj) {
   
   jfloat res = 0;
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isByte())
-      res = (jfloat)field->getInt8Field(Obj);
+      res = (jfloat)field->getInt8Field(stat ? StatPtr : obj);
     else if (prim->isInt())
-      res = (jfloat)field->getInt32Field(Obj);
+      res = (jfloat)field->getInt32Field(stat ? StatPtr : obj);
     else if (prim->isShort())
-      res = (jfloat)field->getInt16Field(Obj);
+      res = (jfloat)field->getInt16Field(stat ? StatPtr : obj);
     else if (prim->isLong())
-      res = (jfloat)field->getLongField(Obj);
+      res = (jfloat)field->getLongField(stat ? StatPtr : obj);
     else if (prim->isChar())
       // Cast to uint32 because char is unsigned.
-      res = (jfloat)(uint32)field->getInt16Field(Obj);
+      res = (jfloat)(uint32)field->getInt16Field(stat ? StatPtr : obj);
     else if (prim->isFloat())
-      res = (jfloat)field->getFloatField(Obj);
+      res = (jfloat)field->getFloatField(stat ? StatPtr : obj);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -248,30 +264,32 @@ JNIEXPORT jbyte JNICALL Java_java_lang_reflect_Field_getByte(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj) {
+JavaObjectField* Field, JavaObject* obj) {
 
   jbyte res = 0;
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isByte())
-      res = (sint8)field->getInt8Field(Obj);
+      res = (sint8)field->getInt8Field(stat ? StatPtr : obj);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -287,31 +305,32 @@ JNIEXPORT jchar JNICALL Java_java_lang_reflect_Field_getChar(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj) {
+JavaObjectField* Field, JavaObject* obj) {
   
   jchar res = 0;
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isChar())
-      res = (uint16)field->getInt16Field(Obj);
+      res = (uint16)field->getInt16Field(stat ? StatPtr : obj);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -328,33 +347,35 @@ JNIEXPORT jshort JNICALL Java_java_lang_reflect_Field_getShort(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj) {
+JavaObjectField* Field, JavaObject* obj) {
 
 
   jshort res = 0;
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isShort())
-      res = (sint16)field->getInt16Field(Obj);
+      res = (sint16)field->getInt16Field(stat ? StatPtr : obj);
     else if (prim->isByte())
-      res = (sint16)field->getInt8Field(Obj);
+      res = (sint16)field->getInt8Field(stat ? StatPtr : obj);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -370,42 +391,44 @@ JNIEXPORT jdouble JNICALL Java_java_lang_reflect_Field_getDouble(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj) {
+JavaObjectField* Field, JavaObject* obj) {
   
   jdouble res = 0;
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isByte())
-      res = (jdouble)(sint64)field->getInt8Field(Obj);
+      res = (jdouble)(sint64)field->getInt8Field(stat ? StatPtr : obj);
     else if (prim->isInt())
-      res = (jdouble)(sint64)field->getInt32Field(Obj);
+      res = (jdouble)(sint64)field->getInt32Field(stat ? StatPtr : obj);
     else if (prim->isShort())
-      res = (jdouble)(sint64)field->getInt16Field(Obj);
+      res = (jdouble)(sint64)field->getInt16Field(stat? StatPtr : obj);
     else if (prim->isLong())
-      res = (jdouble)(sint64)field->getLongField(Obj);
+      res = (jdouble)(sint64)field->getLongField(stat? StatPtr : obj);
     else if (prim->isChar())
-      res = (jdouble)(uint64)field->getInt16Field(Obj);
+      res = (jdouble)(uint64)field->getInt16Field(stat ? StatPtr : obj);
     else if (prim->isFloat())
-      res = (jdouble)field->getFloatField(Obj);
+      res = (jdouble)field->getFloatField(stat ? StatPtr : obj);
     else if (prim->isDouble())
-      res = (jdouble)field->getDoubleField(Obj);
+      res = (jdouble)field->getDoubleField(stat ? StatPtr : obj);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -417,135 +440,138 @@ JavaObjectField* Field, jobject obj) {
   return res;
 }
 
-JNIEXPORT jobject JNICALL Java_java_lang_reflect_Field_get(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Field_get(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject _obj) {
+JavaObjectField* Field, JavaObject* obj) {
 
 
-  jobject result = 0;
+  JavaObject* res = 0;
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)_obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
   
-  JavaObject* res = 0;
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isBool()) {
-      uint8 val =  field->getInt8Field(Obj);
+      uint8 val = field->getInt8Field(stat ? StatPtr : obj);
       res = vm->upcalls->boolClass->doNew(vm);
       vm->upcalls->boolValue->setInt8Field(res, val);
     }
     else if (prim->isByte()) {
-      sint8 val =  field->getInt8Field(Obj);
+      sint8 val =  field->getInt8Field(stat ? StatPtr : obj);
       res = vm->upcalls->byteClass->doNew(vm);
       vm->upcalls->byteValue->setInt8Field(res, val);
     }
     else if (prim->isChar()) {
-      uint16 val =  field->getInt16Field(Obj);
+      uint16 val =  field->getInt16Field(stat ? StatPtr : obj);
       res = vm->upcalls->charClass->doNew(vm);
       vm->upcalls->charValue->setInt16Field(res, val);
     }
     else if (prim->isShort()) {
-      sint16 val =  field->getInt16Field(Obj);
+      sint16 val =  field->getInt16Field(stat ? StatPtr : obj);
       res = vm->upcalls->shortClass->doNew(vm);
       vm->upcalls->shortValue->setInt16Field(res, val);
     }
     else if (prim->isInt()) {
-      sint32 val =  field->getInt32Field(Obj);
+      sint32 val =  field->getInt32Field(stat ? StatPtr : obj);
       res = vm->upcalls->intClass->doNew(vm);
       vm->upcalls->intValue->setInt32Field(res, val);
     }
     else if (prim->isLong()) {
-      sint64 val =  field->getLongField(Obj);
+      sint64 val =  field->getLongField(stat ? StatPtr : obj);
       res = vm->upcalls->longClass->doNew(vm);
       vm->upcalls->longValue->setLongField(res, val);
     }
     else if (prim->isFloat()) {
-      float val =  field->getFloatField(Obj);
+      float val =  field->getFloatField(stat ? StatPtr : obj);
       res = vm->upcalls->floatClass->doNew(vm);
       vm->upcalls->floatValue->setFloatField(res, val);
     }
     else if (prim->isDouble()) {
-      double val =  field->getDoubleField(Obj);
+      double val =  field->getDoubleField(stat ? StatPtr : obj);
       res = vm->upcalls->doubleClass->doNew(vm);
       vm->upcalls->doubleValue->setDoubleField(res, val);
     }
   } else {
-    res =  field->getObjectField(Obj);
+    res =  field->getObjectField(stat ? StatPtr : obj);
   }
   
-  result = (jobject) res;
-
   END_NATIVE_EXCEPTION
 
-  return (jobject)result;
+  return res;
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj, jobject val) {
+JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
   
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(val, 0);
+  
+  BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
-  uintptr_t buf = (uintptr_t)alloca(sizeof(uint64));
+  uint64_t buf = 0;
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  // Do it after alloca
-  BEGIN_NATIVE_EXCEPTION(0)
   
-  void* _buf = (void*)buf;
-  const Typedef* type = field->getSignature();
-  ((JavaObject*)val)->decapsulePrimitive(vm, buf, type);
-
-  
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
+ 
+  void* _buf = (void*)(&buf);
+  uintptr_t __buf = (uintptr_t)&buf;
+  const Typedef* type = field->getSignature();
+  val->decapsulePrimitive(vm, __buf, type);
   
 
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isBool())
-      field->setInt8Field(Obj, ((uint8*)_buf)[0]);
+      field->setInt8Field(stat ? StatPtr : obj, ((uint8*)_buf)[0]);
     else if (prim->isByte())
-      field->setInt8Field(Obj, ((sint8*)_buf)[0]);
+      field->setInt8Field(stat ? StatPtr : obj, ((sint8*)_buf)[0]);
     else if (prim->isChar())
-      field->setInt16Field(Obj, ((uint16*)_buf)[0]);
+      field->setInt16Field(stat ? StatPtr : obj, ((uint16*)_buf)[0]);
     else if (prim->isShort())
-      field->setInt16Field(Obj, ((sint16*)_buf)[0]);
+      field->setInt16Field(stat ? StatPtr : obj, ((sint16*)_buf)[0]);
     else if (prim->isInt())
-      field->setInt32Field(Obj, ((sint32*)_buf)[0]);
+      field->setInt32Field(stat ? StatPtr : obj, ((sint32*)_buf)[0]);
     else if (prim->isLong())
-      field->setLongField(Obj, ((sint64*)_buf)[0]);
+      field->setLongField(stat ? StatPtr : obj, ((sint64*)_buf)[0]);
     else if (prim->isFloat())
-      field->setFloatField(Obj, ((float*)_buf)[0]);
+      field->setFloatField(stat ? StatPtr : obj, ((float*)_buf)[0]);
     else if (prim->isDouble())
-      field->setDoubleField(Obj, ((double*)_buf)[0]);
+      field->setDoubleField(stat ? StatPtr : obj, ((double*)_buf)[0]);
   } else {
-    field->setObjectField(Obj, ((JavaObject**)_buf)[0]);
+    field->setObjectField(stat ? StatPtr : obj, val);
   }
 
   END_NATIVE_EXCEPTION
@@ -555,28 +581,31 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setBoolean(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj, jboolean val) {
+JavaObjectField* Field, JavaObject* obj, jboolean val) {
+  
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
  
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isBool())
-      field->setInt8Field(Obj, (uint8)val);
+      field->setInt8Field(stat ? StatPtr : obj, (uint8)val);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -591,38 +620,41 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setByte(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj, jbyte val) {
+JavaObjectField* Field, JavaObject* obj, jbyte val) {
+  
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
 
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isByte())
-      field->setInt8Field(Obj, (sint8)val);
+      field->setInt8Field(stat ? StatPtr : obj, (sint8)val);
     else if (prim->isShort())
-      field->setInt16Field(Obj, (sint16)val);
+      field->setInt16Field(stat ? StatPtr : obj, (sint16)val);
     else if (prim->isInt())
-      field->setInt32Field(Obj, (sint32)val);
+      field->setInt32Field(stat ? StatPtr : obj, (sint32)val);
     else if (prim->isLong())
-      field->setLongField(Obj, (sint64)val);
+      field->setLongField(stat ? StatPtr : obj, (sint64)val);
     else if (prim->isFloat())
-      field->setFloatField(Obj, (float)val);
+      field->setFloatField(stat ? StatPtr : obj, (float)val);
     else if (prim->isDouble())
-      field->setDoubleField(Obj, (double)val);
+      field->setDoubleField(stat ? StatPtr : obj, (double)val);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -636,35 +668,38 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setChar(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj, jchar val) {
+JavaObjectField* Field, JavaObject* obj, jchar val) {
+  
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isChar())
-      field->setInt16Field(Obj, (uint16)val);
+      field->setInt16Field(stat ? StatPtr : obj, (uint16)val);
     else if (prim->isInt())
-      field->setInt32Field(Obj, (uint32)val);
+      field->setInt32Field(stat ? StatPtr : obj, (uint32)val);
     else if (prim->isLong())
-      field->setLongField(Obj, (uint64)val);
+      field->setLongField(stat ? StatPtr : obj, (uint64)val);
     else if (prim->isFloat())
-      field->setFloatField(Obj, (float)(uint32)val);
+      field->setFloatField(stat ? StatPtr : obj, (float)(uint32)val);
     else if (prim->isDouble())
-      field->setDoubleField(Obj, (double)(uint64)val);
+      field->setDoubleField(stat ? StatPtr : obj, (double)(uint64)val);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -678,36 +713,39 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setShort(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj, jshort val) {
+JavaObjectField* Field, JavaObject* obj, jshort val) {
+  
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isShort())
-      field->setInt16Field(Obj, (sint16)val);
+      field->setInt16Field(stat ? StatPtr : obj, (sint16)val);
     else if (prim->isInt())
-      field->setInt32Field(Obj, (sint32)val);
+      field->setInt32Field(stat ? StatPtr : obj, (sint32)val);
     else if (prim->isLong())
-      field->setLongField(Obj, (sint64)val);
+      field->setLongField(stat ? StatPtr : obj, (sint64)val);
     else if (prim->isFloat())
-      field->setFloatField(Obj, (float)val);
+      field->setFloatField(stat ? StatPtr : obj, (float)val);
     else if (prim->isDouble())
-      field->setDoubleField(Obj, (double)val);
+      field->setDoubleField(stat ? StatPtr : obj, (double)val);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -721,34 +759,37 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setInt(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj, jint val) {
+JavaObjectField* Field, JavaObject* obj, jint val) {
+  
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isInt())
-      field->setInt32Field(Obj, (sint32)val);
+      field->setInt32Field(stat ? StatPtr : obj, (sint32)val);
     else if (prim->isLong())
-      field->setLongField(Obj, (sint64)val);
+      field->setLongField(stat ? StatPtr : obj, (sint64)val);
     else if (prim->isFloat())
-      field->setFloatField(Obj, (float)val);
+      field->setFloatField(stat ? StatPtr : obj, (float)val);
     else if (prim->isDouble())
-      field->setDoubleField(Obj, (double)val);
+      field->setDoubleField(stat ? StatPtr : obj, (double)val);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -762,32 +803,35 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setLong(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj, jlong val) {
+JavaObjectField* Field, JavaObject* obj, jlong val) {
+  
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
 
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isLong())
-      field->setLongField(Obj, (sint64)val);
+      field->setLongField(stat ? StatPtr : obj, (sint64)val);
     else if (prim->isFloat())
-      field->setFloatField(Obj, (float)val);
+      field->setFloatField(stat ? StatPtr : obj, (float)val);
     else if (prim->isDouble())
-      field->setDoubleField(Obj, (double)val);
+      field->setDoubleField(stat ? StatPtr : obj, (double)val);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -801,31 +845,33 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setFloat(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectField* Field, jobject obj, jfloat val) {
+JavaObjectField* Field, JavaObject* obj, jfloat val) {
 
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-  
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isFloat())
-      field->setFloatField(Obj, (float)val);
+      field->setFloatField(stat ? StatPtr : obj, (float)val);
     else if (prim->isDouble())
-      field->setDoubleField(Obj, (double)val);
+      field->setDoubleField(stat ? StatPtr : obj, (double)val);
     else 
       vm->illegalArgumentException("wrong type");
   } else {
@@ -840,27 +886,30 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setDouble(
 JNIEnv *env,
 #endif
 JavaObjectField* Field, JavaObject* obj, jdouble val) {
+  
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
+  bool stat = isStatic(field->access);
+  void* StatPtr = 0;
   
-  void* Obj = (void*)obj;
-
-  if (isStatic(field->access)) {
+  if (stat) {
     cl->initialiseClass(vm);
-    Obj = cl->getStaticInstance();
+    StatPtr = cl->getStaticInstance();
   } else {
-    verifyNull(Obj);
+    verifyNull(obj);
   }
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isDouble())
-      field->setDoubleField(Obj, (double)val);
+      field->setDoubleField(stat ? StatPtr : obj, (double)val);
     else
       vm->illegalArgumentException("wrong type");
   } else {
@@ -876,6 +925,10 @@ JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_objectFieldOffset(
 JNIEnv *env,
 #endif
 JavaObject* Unsafe, JavaObjectField* Field) {
+  
+  llvm_gcroot(Field, 0);
+  llvm_gcroot(Unsafe, 0);
+
   JavaField* field = Field->getInternalField();
   return (jlong)field->ptrOffset;
 }

@@ -23,14 +23,15 @@ using namespace jnjvm;
 
 extern "C" {
 
-JNIEXPORT jobject JNICALL Java_gnu_classpath_VMStackWalker_getClassContext(
+JNIEXPORT JavaObject* JNICALL Java_gnu_classpath_VMStackWalker_getClassContext(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz,
 #endif
 ) {
 
-  jobject result = 0;
+  ArrayObject* result = 0;
+  llvm_gcroot(result, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
@@ -40,7 +41,7 @@ jclass clazz,
   
   th->getJavaFrameContext(stack);
   
-  ArrayObject* res = (ArrayObject*)
+  result = (ArrayObject*)
     vm->upcalls->stackTraceArray->doNew(stack.size(), vm);
 
   std::vector<void*>::iterator i = stack.begin(), e = stack.end();
@@ -49,30 +50,30 @@ jclass clazz,
   for (; i != e; ++i) {
     JavaMethod* meth = vm->IPToMethod<JavaMethod>(*i);
     assert(meth && "Wrong stack trace");
-    res->elements[index++] = meth->classDef->getClassDelegatee(vm);
+    result->elements[index++] = meth->classDef->getClassDelegatee(vm);
   }
-  
-  result = (jobject)res;
   
   END_NATIVE_EXCEPTION
 
   return result;
 }
 
-JNIEXPORT jobject JNICALL Java_gnu_classpath_VMStackWalker_getClassLoader(
+JNIEXPORT JavaObject* JNICALL Java_gnu_classpath_VMStackWalker_getClassLoader(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz,
 #endif
-jclass _Cl) {
+JavaObject* Cl) {
   
-  jobject res = 0;
+  JavaObject* res = 0;
+  llvm_gcroot(res, 0);
+  llvm_gcroot(Cl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
   
-  JavaObject* Cl = (JavaObject*)_Cl;
-  UserCommonClass* cl = ((JavaObjectClass*)Cl)->getClass();
-  res = (jobject)cl->classLoader->getJavaClassLoader();
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  res = cl->classLoader->getJavaClassLoader();
 
   END_NATIVE_EXCEPTION
 

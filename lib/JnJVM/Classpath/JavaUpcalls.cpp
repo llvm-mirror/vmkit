@@ -223,12 +223,17 @@ Class*      Classpath::newReference;
 
 void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
                                  const char* thName, JavaObject* Group) {
+  JavaObject* vmth = 0;
+  JavaObject* th = 0;
+  llvm_gcroot(Group, 0);
+  llvm_gcroot(vmth, 0);
+  llvm_gcroot(th, 0);
 
-  JavaObject* th = newThread->doNew(vm);
+  th = newThread->doNew(vm);
   myth->javaThread = th;
-  JavaObject* vmth = newVMThread->doNew(vm);
+  vmth = newVMThread->doNew(vm);
   
-  threadName->setObjectField(th, (JavaObject*)vm->asciizToStr(thName));
+  threadName->setObjectField(th, vm->asciizToStr(thName));
   priority->setInt32Field(th, (uint32)1);
   daemon->setInt8Field(th, (uint32)0);
   vmThread->setObjectField(th, vmth);
@@ -243,6 +248,14 @@ void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
 }
 
 void Classpath::InitializeThreading(Jnjvm* vm) {
+
+  JavaObject* RG = 0;
+  JavaObject* SystemGroup = 0;
+  JavaObject* systemName = 0;
+  llvm_gcroot(RG, 0);
+  llvm_gcroot(SystemGroup, 0);
+  llvm_gcroot(systemName, 0);
+
   // Resolve and initialize classes first.
   newThread->resolveClass();
   newThread->initialiseClass(vm);
@@ -255,14 +268,14 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
 
   // Create the main thread
   void* Stat = threadGroup->getStaticInstance();
-  JavaObject* RG = rootGroup->getObjectField(Stat);
+  RG = rootGroup->getObjectField(Stat);
   assert(vm->getMainThread() && "VM did not set its main thread");
   CreateJavaThread(vm, vm->getMainThread(), "main", RG);
 
   // Create the "system" group.
-  JavaObject* SystemGroup = threadGroup->doNew(vm);
+  SystemGroup = threadGroup->doNew(vm);
   initGroup->invokeIntSpecial(vm, threadGroup, SystemGroup);
-  JavaObject* systemName = (JavaObject*)vm->asciizToStr("system");
+  systemName = vm->asciizToStr("system");
   groupName->setObjectField(SystemGroup, systemName);
 
   // Create the finalizer thread.
@@ -276,6 +289,10 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
 
 extern "C" void nativeInitWeakReference(JavaObjectReference* reference,
                                         JavaObject* referent) {
+  
+  llvm_gcroot(reference, 0);
+  llvm_gcroot(referent, 0);
+
   reference->init(referent, 0);
   JavaThread::get()->getJVM()->addWeakReference(reference);
 
@@ -284,6 +301,10 @@ extern "C" void nativeInitWeakReference(JavaObjectReference* reference,
 extern "C" void nativeInitWeakReferenceQ(JavaObjectReference* reference,
                                          JavaObject* referent,
                                          JavaObject* queue) {
+  llvm_gcroot(reference, 0);
+  llvm_gcroot(referent, 0);
+  llvm_gcroot(queue, 0);
+  
   reference->init(referent, queue);
   JavaThread::get()->getJVM()->addWeakReference(reference);
 
@@ -291,6 +312,9 @@ extern "C" void nativeInitWeakReferenceQ(JavaObjectReference* reference,
 
 extern "C" void nativeInitSoftReference(JavaObjectReference* reference,
                                         JavaObject* referent) {
+  llvm_gcroot(reference, 0);
+  llvm_gcroot(referent, 0);
+  
   reference->init(referent, 0);
   JavaThread::get()->getJVM()->addSoftReference(reference);
 
@@ -299,6 +323,10 @@ extern "C" void nativeInitSoftReference(JavaObjectReference* reference,
 extern "C" void nativeInitSoftReferenceQ(JavaObjectReference* reference,
                                          JavaObject* referent,
                                          JavaObject* queue) {
+  llvm_gcroot(reference, 0);
+  llvm_gcroot(referent, 0);
+  llvm_gcroot(queue, 0);
+  
   reference->init(referent, queue);
   JavaThread::get()->getJVM()->addSoftReference(reference);
 
@@ -307,25 +335,36 @@ extern "C" void nativeInitSoftReferenceQ(JavaObjectReference* reference,
 extern "C" void nativeInitPhantomReferenceQ(JavaObjectReference* reference,
                                             JavaObject* referent,
                                             JavaObject* queue) {
+  llvm_gcroot(reference, 0);
+  llvm_gcroot(referent, 0);
+  llvm_gcroot(queue, 0);
+  
   reference->init(referent, queue);
   JavaThread::get()->getJVM()->addPhantomReference(reference);
 
 }
 
 extern "C" JavaString* nativeInternString(JavaString* obj) {
+  const ArrayUInt16* array = 0;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(array, 0);
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
-  const ArrayUInt16* array = obj->strToArray(vm);
+  array = obj->strToArray(vm);
   return vm->constructString(array);
 }
 
-extern "C" uint8 nativeIsArray(JavaObject* klass) {
-  UserCommonClass* cl = ((JavaObjectClass*)klass)->getClass();  
+extern "C" uint8 nativeIsArray(JavaObjectClass* klass) {
+  llvm_gcroot(klass, 0);
+
+  UserCommonClass* cl = klass->getClass();  
   return (uint8)cl->isArray();
 }
 
 extern "C" JavaObject* nativeGetCallingClass() {
   
   JavaObject* res = 0;
+  llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
@@ -340,6 +379,7 @@ extern "C" JavaObject* nativeGetCallingClass() {
 extern "C" JavaObject* nativeGetCallingClassLoader() {
   
   JavaObject *res = 0;
+  llvm_gcroot(res, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
   JavaThread* th = JavaThread::get();
@@ -352,6 +392,7 @@ extern "C" JavaObject* nativeGetCallingClassLoader() {
 
 extern "C" JavaObject* nativeFirstNonNullClassLoader() {
   JavaObject *res = 0;
+  llvm_gcroot(res, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
   JavaThread* th = JavaThread::get();
@@ -364,6 +405,7 @@ extern "C" JavaObject* nativeFirstNonNullClassLoader() {
 extern "C" JavaObject* nativeGetCallerClass(uint32 index) {
   
   JavaObject *res = 0;
+  llvm_gcroot(res, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
   JavaThread* th = JavaThread::get();
@@ -376,6 +418,7 @@ extern "C" JavaObject* nativeGetCallerClass(uint32 index) {
 }
 
 extern "C" JavaObject* nativeGetAnnotation(JavaObject* obj) {
+  llvm_gcroot(obj, 0);
   return 0;
 }
 
@@ -416,6 +459,8 @@ extern "C" void nativeJavaObjectVMThreadDestructor(JavaObjectVMThread* obj) {
 extern "C" ArrayObject* nativeGetBootPackages();
 
 extern "C" JavaString* nativeGetenv(JavaString* str) {
+  llvm_gcroot(str, 0);
+
   char* buf = str->strToAsciiz();
   char* res = getenv(buf);
   delete[] buf;

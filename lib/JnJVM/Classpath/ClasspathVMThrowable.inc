@@ -28,6 +28,11 @@ using namespace jnjvm;
 extern "C" {
 
 JavaObject* internalFillInStackTrace(JavaObject* throwable) {
+  
+  JavaObject* vmThrowable = 0;
+  llvm_gcroot(throwable, 0);
+  llvm_gcroot(vmThrowable, 0);
+
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   
@@ -38,24 +43,26 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
   th->getJavaFrameContext(*stack);
   
   // Set the tempory data in the new VMThrowable object.
-  JavaObject* vmThrowable = vm->upcalls->newVMThrowable->doNew(vm);
+  vmThrowable = vm->upcalls->newVMThrowable->doNew(vm);
   uint64 ptr = (uint64)vmThrowable + vm->upcalls->vmDataVMThrowable->ptrOffset;
   ((JavaObject**)ptr)[0] = (JavaObject*)stack;
   return vmThrowable;
 }
 
-JNIEXPORT jobject JNICALL Java_java_lang_VMThrowable_fillInStackTrace(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_VMThrowable_fillInStackTrace(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject throwable) {
+JavaObject* throwable) {
   
-  jobject res = 0;
+  JavaObject* res = 0;
+  llvm_gcroot(res, 0);
+  llvm_gcroot(throwable, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  res = (jobject)internalFillInStackTrace((JavaObject*)throwable);
+  res = internalFillInStackTrace(throwable);
 
   END_NATIVE_EXCEPTION
 
@@ -64,11 +71,20 @@ jobject throwable) {
 
 
 static JavaObject* consStackElement(JavaMethod* meth, void* ip) {
+
+  JavaString* methodName = 0;
+  JavaString* className = 0;
+  JavaString* sourceName = 0;
+  JavaObject* res = 0;
+  llvm_gcroot(methodName, 0);
+  llvm_gcroot(className, 0);
+  llvm_gcroot(sourceName, 0);
+  llvm_gcroot(res, 0);
+
   Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaObject* methodName = vm->internalUTF8ToStr(meth->name);
+  methodName = vm->internalUTF8ToStr(meth->name);
   Class* cl = meth->classDef;
-  JavaObject* className = JavaString::internalToJava(cl->name, vm);
-  JavaObject* sourceName = 0;
+  className = JavaString::internalToJava(cl->name, vm);
   
   Attribut* sourceAtt = cl->lookupAttribut(Attribut::sourceFileAttribut);
   
@@ -82,7 +98,7 @@ static JavaObject* consStackElement(JavaMethod* meth, void* ip) {
   bool native = isNative(meth->access);
 
   UserClass* newS = vm->upcalls->newStackTraceElement;
-  JavaObject* res = newS->doNew(vm);
+  res = newS->doNew(vm);
   vm->upcalls->initStackTraceElement->invokeIntSpecial(vm, newS, res,
                                                        sourceName,
                                                        0, // source line
@@ -91,19 +107,22 @@ static JavaObject* consStackElement(JavaMethod* meth, void* ip) {
   return res;
 }
 
-JNIEXPORT jobject JNICALL Java_java_lang_VMThrowable_getStackTrace(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_VMThrowable_getStackTrace(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject vmthrow, jobject throwable) {
+JavaObject* vmthrow, JavaObject* throwable) {
 
-  jobject result = 0;
+  ArrayObject* result = 0;
+  llvm_gcroot(vmthrow, 0);
+  llvm_gcroot(throwable, 0);
+  llvm_gcroot(result, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = vm->upcalls->vmDataVMThrowable;
   std::vector<void*>* stack = (std::vector<void*>*)
-    field->getObjectField((JavaObject*)vmthrow);
+    field->getObjectField(vmthrow);
   
   std::vector<void*>::iterator i = stack->begin(), e = stack->end();
   // remove the VMThrowable.fillInStackTrace method
@@ -118,18 +137,17 @@ jobject vmthrow, jobject throwable) {
     } else break;
   }
 
-  ArrayObject* res = (ArrayObject*)
+  result = (ArrayObject*)
     vm->upcalls->stackTraceArray->doNew(stack->size() - index, vm);
   
   index = 0;
   for (; i != e; ++i) {
     JavaMethod* meth = vm->IPToMethod<JavaMethod>(*i);
     assert(meth && "Wrong stack trace");
-    res->elements[index++] = consStackElement(meth, *i);
+    result->elements[index++] = consStackElement(meth, *i);
   }
   
   delete stack;
-  result = (jobject)res;
 
   END_NATIVE_EXCEPTION
 

@@ -20,8 +20,13 @@
 
 class VirtualTable;
 
-namespace mvm {
+#ifdef LLVM_GCC
+extern "C" void llvm_gcroot(const void*, void*) asm("llvm.gcroot");
+#else
+#define llvm_gcroot
+#endif
 
+namespace mvm {
 
 class Allocator {
 public:

@@ -23,26 +23,28 @@ using namespace jnjvm;
 
 extern "C" {
 
-JNIEXPORT jobject JNICALL Java_java_lang_VMClassLoader_getPrimitiveClass(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_VMClassLoader_getPrimitiveClass(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz,
 #endif
 jchar byteId) {
   
-  jobject res = 0;
+  JavaObject* res = 0;
+  llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClassPrimitive* prim = 
     UserClassPrimitive::byteIdToPrimitive(byteId, vm->upcalls);
+  
   if (!prim) {
     fprintf(stderr, "unknown byte primitive %c", byteId);
     abort();
   }
   
-  res = (jobject)prim->getClassDelegatee(vm);
+  res = prim->getClassDelegatee(vm);
 
   END_NATIVE_EXCEPTION
 
@@ -50,25 +52,27 @@ jchar byteId) {
   
 }
 
-JNIEXPORT jclass JNICALL Java_java_lang_VMClassLoader_findLoadedClass(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_VMClassLoader_findLoadedClass(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject loader, 
-jobject _name) {
+JavaObject* loader,
+JavaString* name) {
   
-  jclass res = 0;
+  JavaObject* res = 0;
+  llvm_gcroot(loader, 0);
+  llvm_gcroot(name, 0);
+  llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaString* name = (JavaString*)_name;
   JnjvmClassLoader* JCL = 
-    JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
+    JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
   UserCommonClass* cl = JCL->lookupClassFromJavaString(name);
 
-  if (cl) res = (jclass)(cl->getClassDelegatee(vm));
+  if (cl) res = cl->getClassDelegatee(vm);
 
   END_NATIVE_EXCEPTION
 
@@ -77,69 +81,72 @@ jobject _name) {
   return 0;
 }
 
-JNIEXPORT jclass JNICALL Java_java_lang_VMClassLoader_loadClass(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_VMClassLoader_loadClass(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz,
 #endif
-jobject _str, 
+JavaString* str, 
 jboolean doResolve) {
 
-  jclass res = 0;
+  JavaObject* res = 0;
+  llvm_gcroot(res, 0);
+  llvm_gcroot(str, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaString* str = (JavaString*)_str;
 
   JnjvmClassLoader* JCL = vm->bootstrapLoader;
   UserCommonClass* cl = JCL->loadClassFromJavaString(str, doResolve, false);
 
-  if (cl != 0)
-    res = (jclass)cl->getClassDelegatee(vm);
+  if (cl != 0) res = cl->getClassDelegatee(vm);
   
   END_NATIVE_EXCEPTION
 
   return res;
 }
 
-JNIEXPORT jclass JNICALL Java_java_lang_VMClassLoader_defineClass(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_VMClassLoader_defineClass(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz, 
 #endif
-jobject loader, 
-jobject _str, 
-jobject bytes, 
+JavaObject* loader, 
+JavaString* str, 
+ArrayUInt8* bytes, 
 jint off, 
 jint len, 
-jobject pd) {
+JavaObject* pd) {
   
-  jclass res = 0;
+  JavaObject* res = 0;
+  llvm_gcroot(loader, 0);
+  llvm_gcroot(str, 0);
+  llvm_gcroot(bytes, 0);
+  llvm_gcroot(pd, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
  
   // Before creating a class, do a check on the bytes.  
-  Reader reader((ArrayUInt8*)bytes);
+  Reader reader(bytes);
   uint32 magic = reader.readU4();
   if (magic != Jnjvm::Magic) {
     JavaThread::get()->getJVM()->classFormatError("bad magic number");
   }
 
   JnjvmClassLoader* JCL = 
-    JnjvmClassLoader::getJnjvmLoaderFromJavaObject((JavaObject*)loader, vm);
+    JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
   
-  JavaString* str = (JavaString*)_str;
   const UTF8* name = str->javaToInternal(JCL->hashUTF8);
   UserCommonClass* cl = JCL->lookupClass(name);
   
   if (!cl) {
-    UserClass* cl = JCL->constructClass(name, (ArrayUInt8*)bytes);
+    UserClass* cl = JCL->constructClass(name, bytes);
     cl->resolveClass();
 
-    res = (jclass)(cl->getClassDelegatee(vm, (JavaObject*)pd));
+    res = cl->getClassDelegatee(vm, pd);
   } else {
     JavaObject* obj = vm->CreateLinkageError("duplicate class definition");
     JavaThread::get()->throwException(obj);
@@ -155,13 +162,15 @@ JNIEXPORT void JNICALL Java_java_lang_VMClassLoader_resolveClass(
 JNIEnv *env,
 jclass clazz,
 #endif
-jclass Cl) {
+JavaObject* Cl) {
+ 
+  llvm_gcroot(Cl, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
   
   verifyNull(Cl);
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass::resolvedImplClass(vm, (JavaObject*)Cl, false);
+  UserCommonClass::resolvedImplClass(vm, Cl, false);
 
   END_NATIVE_EXCEPTION
 }
@@ -340,9 +349,11 @@ static const char* bootPackages[NUM_BOOT_PACKAGES] = {
 };
 
 extern "C" ArrayObject* nativeGetBootPackages() {
+  ArrayObject* obj = 0;
+  llvm_gcroot(obj, 0);
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
-  ArrayObject* obj = 
-    (ArrayObject*)vm->upcalls->ArrayOfString->doNew(NUM_BOOT_PACKAGES, vm);
+  obj = (ArrayObject*)vm->upcalls->ArrayOfString->doNew(NUM_BOOT_PACKAGES, vm);
   for (uint32 i = 0; i < NUM_BOOT_PACKAGES; ++i) {
     obj->elements[i] = vm->asciizToStr(bootPackages[i]);
   }

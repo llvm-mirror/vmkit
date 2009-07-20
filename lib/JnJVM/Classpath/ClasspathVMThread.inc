@@ -23,23 +23,26 @@ extern "C" {
 
 // Never throws.
 // Never calls Java code.
-JNIEXPORT jobject JNICALL Java_java_lang_VMThread_currentThread(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_VMThread_currentThread(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 jclass clazz
 #endif
 ) {
-  return (jobject)(JavaThread::get()->currentThread());
+  return JavaThread::get()->currentThread();
 }
 
 static void start(JavaThread* thread) {
+
+  JavaObject* vmThread = 0;
+  llvm_gcroot(vmThread, 0);
 
   Jnjvm* vm = thread->getJVM();
 
   // Ok, now that the thread is created we can set the the value of vmdata,
   // which is the JavaThread object.
   JavaField* field = vm->upcalls->vmdataVMThread;
-  JavaObject* vmThread = thread->vmThread;
+  vmThread = thread->vmThread;
   assert(vmThread && "Didn't fix the vmThread of a jnjvm thread");
   JavaObject* javaThread = thread->javaThread;
   assert(javaThread && "Didn't fix the javaThread of a jnjvm thread");
@@ -76,15 +79,18 @@ JNIEXPORT void JNICALL Java_java_lang_VMThread_start(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject _vmThread, sint64 stackSize) {
+JavaObject* vmThread, sint64 stackSize) {
+
+  JavaObject* javaThread = 0;
+  llvm_gcroot(vmThread, 0);
+  llvm_gcroot(javaThread, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaObject* vmThread = (JavaObject*)_vmThread;
   
   // Classpath has set this field.
-  JavaObject* javaThread = vm->upcalls->assocThread->getObjectField(vmThread);
+  javaThread = vm->upcalls->assocThread->getObjectField(vmThread);
   assert(javaThread && "VMThread with no Java equivalent");
  
   JavaThread* th = new JavaThread(javaThread, vmThread, vm);
@@ -98,12 +104,13 @@ JNIEXPORT void JNICALL Java_java_lang_VMThread_interrupt(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject _vmthread) {
+JavaObject* vmthread) {
+
+  llvm_gcroot(vmthread, 0);  
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaObject* vmthread = (JavaObject*)_vmthread;
   JavaField* field = vm->upcalls->vmdataVMThread; 
   
   // It's possible that the thread to be interrupted has not finished
@@ -161,9 +168,11 @@ JNIEXPORT jboolean JNICALL Java_java_lang_VMThread_isInterrupted(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject _vmthread) {
+JavaObject* vmthread) {
+  
+  llvm_gcroot(vmthread, 0);
+
   Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaObject* vmthread = (JavaObject*)_vmthread;
   JavaField* field = vm->upcalls->vmdataVMThread;
   JavaThread* th = (JavaThread*)field->getObjectField(vmthread);
   return (jboolean)th->interruptFlag;
@@ -175,8 +184,9 @@ JNIEXPORT void JNICALL Java_java_lang_VMThread_nativeSetPriority(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject vmthread, jint prio) {
+JavaObject* vmthread, jint prio) {
   // Currently not implemented
+  llvm_gcroot(vmthread, 0);
 }
 
 // Never throws.
@@ -185,8 +195,9 @@ JNIEXPORT void JNICALL Java_java_lang_VMThread_nativeStop(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-jobject vmthread, jobject exc) {
+JavaObject* vmthread, jobject exc) {
   // Currently not implemented
+  llvm_gcroot(vmthread, 0);
 }
 
 // Never throws.
