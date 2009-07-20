@@ -115,80 +115,79 @@ public:
   llvm::Function* llvm_atomic_lcs_ptr;
 
 
-  static llvm::Constant* constantInt8Zero;
-  static llvm::Constant* constantZero;
-  static llvm::Constant* constantOne;
-  static llvm::Constant* constantTwo;
-  static llvm::Constant* constantThree;
-  static llvm::Constant* constantFour;
-  static llvm::Constant* constantFive;
-  static llvm::Constant* constantSix;
-  static llvm::Constant* constantSeven;
-  static llvm::Constant* constantEight;
-  static llvm::Constant* constantMinusOne;
-  static llvm::Constant* constantLongMinusOne;
-  static llvm::Constant* constantLongZero;
-  static llvm::Constant* constantLongOne;
-  static llvm::Constant* constantMinInt;
-  static llvm::Constant* constantMaxInt;
-  static llvm::Constant* constantMinLong;
-  static llvm::Constant* constantMaxLong;
-  static llvm::Constant*  constantFloatZero;
-  static llvm::Constant*  constantFloatOne;
-  static llvm::Constant*  constantFloatTwo;
-  static llvm::Constant*  constantDoubleZero;
-  static llvm::Constant*  constantDoubleOne;
-  static llvm::Constant*  constantMaxIntFloat;
-  static llvm::Constant*  constantMinIntFloat;
-  static llvm::Constant*  constantMinLongFloat;
-  static llvm::Constant*  constantMinLongDouble;
-  static llvm::Constant*  constantMaxLongFloat;
-  static llvm::Constant*  constantMaxIntDouble;
-  static llvm::Constant*  constantMinIntDouble;
-  static llvm::Constant*  constantMaxLongDouble;
-  static llvm::Constant*  constantDoubleInfinity;
-  static llvm::Constant*  constantDoubleMinusInfinity;
-  static llvm::Constant*  constantFloatInfinity;
-  static llvm::Constant*  constantFloatMinusInfinity;
-  static llvm::Constant*  constantFloatMinusZero;
-  static llvm::Constant*  constantDoubleMinusZero;
-  static llvm::Constant*    constantPtrNull;
-  static llvm::Constant* constantPtrLogSize;
-  static llvm::Constant* constantThreadIDMask;
-  static llvm::Constant* constantStackOverflowMask;
-  static llvm::Constant* constantFatMask;
-  static llvm::Constant* constantPtrOne;
-  static llvm::Constant* constantPtrZero;
-  static const llvm::PointerType* ptrType;
-  static const llvm::PointerType* ptr32Type;
-  static const llvm::PointerType* ptrPtrType;
-  static const llvm::Type* arrayPtrType;
-  static const llvm::Type* pointerSizeType;
+   llvm::Constant* constantInt8Zero;
+   llvm::Constant* constantZero;
+   llvm::Constant* constantOne;
+   llvm::Constant* constantTwo;
+   llvm::Constant* constantThree;
+   llvm::Constant* constantFour;
+   llvm::Constant* constantFive;
+   llvm::Constant* constantSix;
+   llvm::Constant* constantSeven;
+   llvm::Constant* constantEight;
+   llvm::Constant* constantMinusOne;
+   llvm::Constant* constantLongMinusOne;
+   llvm::Constant* constantLongZero;
+   llvm::Constant* constantLongOne;
+   llvm::Constant* constantMinInt;
+   llvm::Constant* constantMaxInt;
+   llvm::Constant* constantMinLong;
+   llvm::Constant* constantMaxLong;
+   llvm::Constant*  constantFloatZero;
+   llvm::Constant*  constantFloatOne;
+   llvm::Constant*  constantFloatTwo;
+   llvm::Constant*  constantDoubleZero;
+   llvm::Constant*  constantDoubleOne;
+   llvm::Constant*  constantMaxIntFloat;
+   llvm::Constant*  constantMinIntFloat;
+   llvm::Constant*  constantMinLongFloat;
+   llvm::Constant*  constantMinLongDouble;
+   llvm::Constant*  constantMaxLongFloat;
+   llvm::Constant*  constantMaxIntDouble;
+   llvm::Constant*  constantMinIntDouble;
+   llvm::Constant*  constantMaxLongDouble;
+   llvm::Constant*  constantDoubleInfinity;
+   llvm::Constant*  constantDoubleMinusInfinity;
+   llvm::Constant*  constantFloatInfinity;
+   llvm::Constant*  constantFloatMinusInfinity;
+   llvm::Constant*  constantFloatMinusZero;
+   llvm::Constant*  constantDoubleMinusZero;
+   llvm::Constant*    constantPtrNull;
+   llvm::Constant* constantPtrLogSize;
+   llvm::Constant* constantThreadIDMask;
+   llvm::Constant* constantStackOverflowMask;
+   llvm::Constant* constantFatMask;
+   llvm::Constant* constantPtrOne;
+   llvm::Constant* constantPtrZero;
+   static const llvm::PointerType* ptrType;
+   static const llvm::PointerType* ptr32Type;
+   static const llvm::PointerType* ptrPtrType;
+   static const llvm::Type* arrayPtrType;
+   static const llvm::Type* pointerSizeType;
 
-  static llvm::ExecutionEngine* executionEngine;
-  static mvm::LockNormal protectEngine;
-  static llvm::Module *globalModule;
-  static llvm::LLVMContext *globalContext;
-  static llvm::ExistingModuleProvider *globalModuleProvider;
-  static llvm::FunctionPassManager* globalFunctionPasses;
-  static const llvm::TargetData* TheTargetData;
+   static llvm::ExecutionEngine* executionEngine;
+   static mvm::LockNormal protectEngine;
+   static llvm::Module *globalModule;
+   static llvm::ExistingModuleProvider *globalModuleProvider;
+   static llvm::FunctionPassManager* globalFunctionPasses;
+   static const llvm::TargetData* TheTargetData;
   
-  static uint64 getTypeSize(const llvm::Type* type);
-  static void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
-  static void initialise(llvm::CodeGenOpt::Level = llvm::CodeGenOpt::Default,
+   static uint64 getTypeSize(const llvm::Type* type);
+   static void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
+   static void initialise(llvm::CodeGenOpt::Level = llvm::CodeGenOpt::Default,
                          llvm::Module* TheModule = 0,
                          llvm::TargetMachine* TheTarget = 0);
 
-  static int disassemble(unsigned int* addr);
+   static int disassemble(unsigned int* addr);
   
-  static void protectIR();
-  static void unprotectIR();
+   static void protectIR();
+   static void unprotectIR();
 
-  static void copyDefinitions(llvm::Module* Dst, llvm::Module* Src);
+   static void copyDefinitions(llvm::Module* Dst, llvm::Module* Src);
 
-  static void AddStandardCompilePasses();
+   static void AddStandardCompilePasses();
 
-  static const char* getHostTriple();
+   static const char* getHostTriple();
 };
 
 } // end namespace mvm

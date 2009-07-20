@@ -142,7 +142,7 @@ Constant* JavaAOTCompiler::getMethodInClass(JavaMethod* meth) {
     }
   }
   Array = SI->second; 
-  Constant* GEPs[2] = { JnjvmModule::constantZero, MOffset };
+  Constant* GEPs[2] = { getIntrinsics()->constantZero, MOffset };
   return ConstantExpr::getGetElementPtr(Array, GEPs, 2);
 }
 
@@ -219,11 +219,13 @@ Constant* JavaAOTCompiler::getJavaClassPtr(CommonClass* cl) {
 
   Constant* Cl = getNativeClass(cl);
 
-  Constant* GEP[2] = { JnjvmModule::constantZero, JnjvmModule::constantZero };
+  Constant* GEP[2] = { getIntrinsics()->constantZero,
+                       getIntrinsics()->constantZero };
   
   Constant* TCMArray = ConstantExpr::getGetElementPtr(Cl, GEP, 2);
     
-  Constant* GEP2[2] = { JnjvmModule::constantZero, JnjvmModule::constantZero };
+  Constant* GEP2[2] = { getIntrinsics()->constantZero,
+                        getIntrinsics()->constantZero };
 
   Constant* Ptr = ConstantExpr::getGetElementPtr(TCMArray, GEP2, 2);
   return Ptr;
@@ -978,8 +980,8 @@ Constant* JavaAOTCompiler::CreateConstantFromClassArray(ClassArray* cl) {
     dyn_cast<StructType>(JnjvmModule::JavaClassArrayType->getContainedType(0));
   
   std::vector<Constant*> ClassElts;
-  Constant* ClGEPs[2] = { JnjvmModule::constantZero,
-                          JnjvmModule::constantZero };
+  Constant* ClGEPs[2] = { getIntrinsics()->constantZero,
+                          getIntrinsics()->constantZero };
   
   // common class
   ClassElts.push_back(CreateConstantFromCommonClass(cl));

@@ -423,5 +423,5 @@ GlobalVariable* VMMethod::llvmVar() {
 }
 
 Constant* VMObject::classOffset() {
-  return mvm::MvmModule::constantOne;
+  return VMThread::get()->vm->module->constantOne;
 }

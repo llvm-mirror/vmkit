@@ -54,31 +54,11 @@ const llvm::Type* JnjvmModule::JavaThreadType = 0;
 const llvm::Type* JnjvmModule::JnjvmType = 0;
 #endif
 
-llvm::Constant*     JnjvmModule::JavaObjectNullConstant;
-llvm::Constant*     JnjvmModule::MaxArraySizeConstant;
-llvm::Constant*     JnjvmModule::JavaArraySizeConstant;
-llvm::Constant*     JnjvmModule::OffsetObjectSizeInClassConstant;
-llvm::Constant*     JnjvmModule::OffsetVTInClassConstant;
-llvm::Constant*     JnjvmModule::OffsetTaskClassMirrorInClassConstant;
-llvm::Constant*     JnjvmModule::OffsetStaticInstanceInTaskClassMirrorConstant;
-llvm::Constant*     JnjvmModule::OffsetStatusInTaskClassMirrorConstant;
-llvm::Constant*     JnjvmModule::OffsetInitializedInTaskClassMirrorConstant;
-llvm::Constant*     JnjvmModule::OffsetJavaExceptionInThreadConstant;
-llvm::Constant*     JnjvmModule::OffsetCXXExceptionInThreadConstant;
-llvm::Constant*     JnjvmModule::ClassReadyConstant;
 const llvm::Type*   JnjvmModule::JavaClassType;
 const llvm::Type*   JnjvmModule::JavaClassPrimitiveType;
 const llvm::Type*   JnjvmModule::JavaClassArrayType;
 const llvm::Type*   JnjvmModule::JavaCommonClassType;
 const llvm::Type*   JnjvmModule::VTType;
-llvm::Constant*     JnjvmModule::JavaArrayElementsOffsetConstant;
-llvm::Constant*     JnjvmModule::JavaArraySizeOffsetConstant;
-llvm::Constant*     JnjvmModule::JavaObjectLockOffsetConstant;
-llvm::Constant*     JnjvmModule::JavaObjectVTOffsetConstant;
-llvm::Constant*     JnjvmModule::OffsetClassInVTConstant;
-llvm::Constant*     JnjvmModule::OffsetDepthInVTConstant;
-llvm::Constant*     JnjvmModule::OffsetDisplayInVTConstant;
-llvm::Constant*     JnjvmModule::OffsetBaseClassVTInVTConstant;
 
 
 JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
@@ -113,7 +93,6 @@ namespace jnjvm {
 
 void JnjvmModule::initialise() {
   Module* module = globalModule;
-  LLVMContext& Context = module->getContext();
   jnjvm::llvm_runtime::makeLLVMModuleContents(module);
 
   VTType = PointerType::getUnqual(module->getTypeByName("VT"));
@@ -176,35 +155,6 @@ void JnjvmModule::initialise() {
     PointerType::getUnqual(module->getTypeByName("Attribut"));
   JavaThreadType =
     PointerType::getUnqual(module->getTypeByName("JavaThread"));
-
-  JavaObjectNullConstant =
-    module->getContext().getNullValue(JnjvmModule::JavaObjectType);
-  MaxArraySizeConstant = Context.getConstantInt(Type::Int32Ty,
-                                          JavaArray::MaxArraySize);
-  JavaArraySizeConstant = 
-    Context.getConstantInt(Type::Int32Ty, sizeof(JavaObject) + sizeof(ssize_t));
-  
-  
-  JavaArrayElementsOffsetConstant = mvm::MvmModule::constantTwo;
-  JavaArraySizeOffsetConstant = mvm::MvmModule::constantOne;
-  JavaObjectLockOffsetConstant = mvm::MvmModule::constantOne;
-  JavaObjectVTOffsetConstant = mvm::MvmModule::constantZero;
-  OffsetClassInVTConstant = mvm::MvmModule::constantThree;
-  OffsetDepthInVTConstant = mvm::MvmModule::constantFour;
-  OffsetDisplayInVTConstant = mvm::MvmModule::constantSeven;
-  OffsetBaseClassVTInVTConstant = Context.getConstantInt(Type::Int32Ty, 17);
-  
-  OffsetObjectSizeInClassConstant = mvm::MvmModule::constantOne;
-  OffsetVTInClassConstant = Context.getConstantInt(Type::Int32Ty, 7);
-  OffsetTaskClassMirrorInClassConstant = mvm::MvmModule::constantTwo;
-  OffsetStaticInstanceInTaskClassMirrorConstant = mvm::MvmModule::constantTwo;
-  OffsetStatusInTaskClassMirrorConstant = mvm::MvmModule::constantZero;
-  OffsetInitializedInTaskClassMirrorConstant = mvm::MvmModule::constantOne;
-  
-  OffsetJavaExceptionInThreadConstant = Context.getConstantInt(Type::Int32Ty, 9);
-  OffsetCXXExceptionInThreadConstant = Context.getConstantInt(Type::Int32Ty, 10);
-  
-  ClassReadyConstant = Context.getConstantInt(Type::Int8Ty, ready);
  
   LLVMAssessorInfo::initialise();
 }
@@ -215,11 +165,41 @@ Function* JavaLLVMCompiler::getMethod(JavaMethod* meth) {
 
 JnjvmModule::JnjvmModule(llvm::Module* module) :
   MvmModule(module) {
+  LLVMContext& Context = module->getContext();
   
   if (!VTType) {
     initialise();
     copyDefinitions(module, globalModule);
   }
+  
+  JavaObjectNullConstant =
+    module->getContext().getNullValue(JnjvmModule::JavaObjectType);
+  MaxArraySizeConstant = Context.getConstantInt(Type::Int32Ty,
+                                          JavaArray::MaxArraySize);
+  JavaArraySizeConstant = 
+    Context.getConstantInt(Type::Int32Ty, sizeof(JavaObject) + sizeof(ssize_t));
+  
+  
+  JavaArrayElementsOffsetConstant = constantTwo;
+  JavaArraySizeOffsetConstant = constantOne;
+  JavaObjectLockOffsetConstant = constantOne;
+  JavaObjectVTOffsetConstant = constantZero;
+  OffsetClassInVTConstant = constantThree;
+  OffsetDepthInVTConstant = constantFour;
+  OffsetDisplayInVTConstant = constantSeven;
+  OffsetBaseClassVTInVTConstant = Context.getConstantInt(Type::Int32Ty, 17);
+  
+  OffsetObjectSizeInClassConstant = constantOne;
+  OffsetVTInClassConstant = Context.getConstantInt(Type::Int32Ty, 7);
+  OffsetTaskClassMirrorInClassConstant = constantTwo;
+  OffsetStaticInstanceInTaskClassMirrorConstant = constantTwo;
+  OffsetStatusInTaskClassMirrorConstant = constantZero;
+  OffsetInitializedInTaskClassMirrorConstant = constantOne;
+  
+  OffsetJavaExceptionInThreadConstant = Context.getConstantInt(Type::Int32Ty, 9);
+  OffsetCXXExceptionInThreadConstant = Context.getConstantInt(Type::Int32Ty, 10);
+  
+  ClassReadyConstant = Context.getConstantInt(Type::Int8Ty, ready);
   
   module->addTypeName("JavaObject", JavaObjectType->getContainedType(0));
   module->addTypeName("JavaArray", JavaArrayType->getContainedType(0));

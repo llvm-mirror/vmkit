@@ -206,10 +206,6 @@ public:
 class JnjvmModule : public mvm::MvmModule {
 
 public:
-  static llvm::Constant* JavaArraySizeOffsetConstant;
-  static llvm::Constant* JavaArrayElementsOffsetConstant;
-  static llvm::Constant* JavaObjectLockOffsetConstant;
-  static llvm::Constant* JavaObjectVTOffsetConstant;
 
   static const llvm::Type* JavaArrayUInt8Type;
   static const llvm::Type* JavaArraySInt8Type;
@@ -317,27 +313,32 @@ public:
   llvm::Function* GetFinalFloatFieldFunction;
   llvm::Function* GetFinalDoubleFieldFunction;
   llvm::Function* GetFinalObjectFieldFunction;
+  
+  llvm::Constant* JavaArraySizeOffsetConstant;
+  llvm::Constant* JavaArrayElementsOffsetConstant;
+  llvm::Constant* JavaObjectLockOffsetConstant;
+  llvm::Constant* JavaObjectVTOffsetConstant;
 
-  static llvm::Constant* OffsetObjectSizeInClassConstant;
-  static llvm::Constant* OffsetVTInClassConstant;
-  static llvm::Constant* OffsetTaskClassMirrorInClassConstant;
-  static llvm::Constant* OffsetStaticInstanceInTaskClassMirrorConstant;
-  static llvm::Constant* OffsetInitializedInTaskClassMirrorConstant;
-  static llvm::Constant* OffsetStatusInTaskClassMirrorConstant;
+  llvm::Constant* OffsetObjectSizeInClassConstant;
+  llvm::Constant* OffsetVTInClassConstant;
+  llvm::Constant* OffsetTaskClassMirrorInClassConstant;
+  llvm::Constant* OffsetStaticInstanceInTaskClassMirrorConstant;
+  llvm::Constant* OffsetInitializedInTaskClassMirrorConstant;
+  llvm::Constant* OffsetStatusInTaskClassMirrorConstant;
   
-  static llvm::Constant* OffsetJavaExceptionInThreadConstant;
-  static llvm::Constant* OffsetCXXExceptionInThreadConstant;
+  llvm::Constant* OffsetJavaExceptionInThreadConstant;
+  llvm::Constant* OffsetCXXExceptionInThreadConstant;
   
-  static llvm::Constant* OffsetClassInVTConstant;
-  static llvm::Constant* OffsetDepthInVTConstant;
-  static llvm::Constant* OffsetDisplayInVTConstant;
-  static llvm::Constant* OffsetBaseClassVTInVTConstant;
+  llvm::Constant* OffsetClassInVTConstant;
+  llvm::Constant* OffsetDepthInVTConstant;
+  llvm::Constant* OffsetDisplayInVTConstant;
+  llvm::Constant* OffsetBaseClassVTInVTConstant;
   
-  static llvm::Constant* ClassReadyConstant;
+  llvm::Constant* ClassReadyConstant;
 
-  static llvm::Constant*    JavaObjectNullConstant;
-  static llvm::Constant*    MaxArraySizeConstant;
-  static llvm::Constant*    JavaArraySizeConstant;
+  llvm::Constant* JavaObjectNullConstant;
+  llvm::Constant* MaxArraySizeConstant;
+  llvm::Constant* JavaArraySizeConstant;
 
   llvm::Function* ThrowExceptionFunction;
   llvm::Function* NullPointerExceptionFunction;

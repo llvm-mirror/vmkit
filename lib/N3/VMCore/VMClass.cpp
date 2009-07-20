@@ -320,7 +320,7 @@ void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* ge
     if (super == MSCorlib::pValue) {
       uint32 size = virtualFields.size();
       if (size == 1) {
-        virtualFields[0]->offset = mvm::MvmModule::constantZero;
+        virtualFields[0]->offset = VMThread::get()->vm->module->constantZero;
         ResultTy = virtualFields[0]->signature->naturalType;
       } else if (size == 0) {
         ResultTy = llvm::Type::VoidTy;

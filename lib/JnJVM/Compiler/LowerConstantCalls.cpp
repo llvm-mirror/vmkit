@@ -416,7 +416,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* arg1 = GetElementPtrInst::Create(CTP, indexes, "", CI);
           arg1 = new LoadInst(arg1, "", false, CI);
           Value* test = new ICmpInst(CI, ICmpInst::ICMP_EQ, arg1,
-                                     mvm::MvmModule::constantPtrNull, "");
+                                     module->constantPtrNull, "");
  
           BasicBlock* trueCl = BasicBlock::Create("Ctp OK", &F);
           BasicBlock* falseCl = BasicBlock::Create("Ctp Not OK", &F);

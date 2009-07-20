@@ -104,7 +104,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
 #endif
  
   Function* llvmFunction = block->getParent();
-  Constant* zero = mvm::MvmModule::constantZero;
+  Constant* zero = cl->vm->module->constantZero;
   for (std::vector<VMField*>::iterator i = fields.begin(), 
             e = fields.end(); i!= e; ++i) {
     VMField* field = *i;
@@ -160,9 +160,9 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
   Argument* GC = ++(func->arg_begin());
 #endif
     // Constant Definitions
-  Constant* const_int32_8 = mvm::MvmModule::constantZero;
-  Constant* const_int32_9 = mvm::MvmModule::constantOne;
-  Constant* const_int32_10 = mvm::MvmModule::constantTwo;
+  Constant* const_int32_8 = cl->vm->module->constantZero;
+  Constant* const_int32_9 = cl->vm->module->constantOne;
+  Constant* const_int32_10 = cl->vm->module->constantTwo;
   
   
   // Function Definitions
@@ -856,11 +856,11 @@ llvm::Value* CLIJit::verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
 }
 
 Constant* VMArray::sizeOffset() {
-  return mvm::MvmModule::constantOne;
+  return VMThread::get()->vm->module->constantOne;
 }
 
 Constant* VMArray::elementsOffset() {
-  return mvm::MvmModule::constantTwo;
+  return VMThread::get()->vm->module->constantTwo;
 }
 
 Value* CLIJit::arraySize(Value* array) {

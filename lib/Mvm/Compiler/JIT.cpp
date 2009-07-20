@@ -55,8 +55,7 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   llvm::ExceptionHandling = false;
 #endif
   if (!M) {
-    globalContext = new llvm::LLVMContext();
-    globalModule = new llvm::Module("bootstrap module", *globalContext);
+    globalModule = new Module("bootstrap module", *(new LLVMContext()));
     globalModuleProvider = new ExistingModuleProvider (globalModule);
 
     InitializeNativeTarget();
@@ -85,6 +84,16 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   ptrPtrType = PointerType::getUnqual(ptrType);
   pointerSizeType = globalModule->getPointerSize() == Module::Pointer32 ?
     Type::Int32Ty : Type::Int64Ty;
+  
+}
+
+
+MvmModule::MvmModule(llvm::Module* module) {
+
+  module->setDataLayout(globalModule->getDataLayout());
+  module->setTargetTriple(globalModule->getTargetTriple());
+  LLVMContext* globalContext = &(module->getContext());
+    
   
   // Constant declaration
   constantLongMinusOne = globalContext->getConstantInt(Type::Int64Ty, (uint64_t)-1);
@@ -137,14 +146,8 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   constantPtrLogSize = 
     globalContext->getConstantInt(Type::Int32Ty, sizeof(void*) == 8 ? 3 : 2);
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::Int8Ty, 0));
-}
 
 
-MvmModule::MvmModule(llvm::Module* module) {
-
-  module->setDataLayout(globalModule->getDataLayout());
-  module->setTargetTriple(globalModule->getTargetTriple());
-  
   copyDefinitions(module, globalModule); 
     
   printFloatLLVM = module->getFunction("printFloat");
@@ -208,50 +211,6 @@ MvmModule::MvmModule(llvm::Module* module) {
 }
 
 
-llvm::Constant* MvmModule::constantInt8Zero;
-llvm::Constant* MvmModule::constantZero;
-llvm::Constant* MvmModule::constantOne;
-llvm::Constant* MvmModule::constantTwo;
-llvm::Constant* MvmModule::constantThree;
-llvm::Constant* MvmModule::constantFour;
-llvm::Constant* MvmModule::constantFive;
-llvm::Constant* MvmModule::constantSix;
-llvm::Constant* MvmModule::constantSeven;
-llvm::Constant* MvmModule::constantEight;
-llvm::Constant* MvmModule::constantMinusOne;
-llvm::Constant* MvmModule::constantLongMinusOne;
-llvm::Constant* MvmModule::constantLongZero;
-llvm::Constant* MvmModule::constantLongOne;
-llvm::Constant* MvmModule::constantMinInt;
-llvm::Constant* MvmModule::constantMaxInt;
-llvm::Constant* MvmModule::constantMinLong;
-llvm::Constant* MvmModule::constantMaxLong;
-llvm::Constant*  MvmModule::constantFloatZero;
-llvm::Constant*  MvmModule::constantFloatOne;
-llvm::Constant*  MvmModule::constantFloatTwo;
-llvm::Constant*  MvmModule::constantDoubleZero;
-llvm::Constant*  MvmModule::constantDoubleOne;
-llvm::Constant*  MvmModule::constantMaxIntFloat;
-llvm::Constant*  MvmModule::constantMinIntFloat;
-llvm::Constant*  MvmModule::constantMinLongFloat;
-llvm::Constant*  MvmModule::constantMinLongDouble;
-llvm::Constant*  MvmModule::constantMaxLongFloat;
-llvm::Constant*  MvmModule::constantMaxIntDouble;
-llvm::Constant*  MvmModule::constantMinIntDouble;
-llvm::Constant*  MvmModule::constantMaxLongDouble;
-llvm::Constant*  MvmModule::constantDoubleInfinity;
-llvm::Constant*  MvmModule::constantDoubleMinusInfinity;
-llvm::Constant*  MvmModule::constantFloatInfinity;
-llvm::Constant*  MvmModule::constantFloatMinusInfinity;
-llvm::Constant*  MvmModule::constantFloatMinusZero;
-llvm::Constant*  MvmModule::constantDoubleMinusZero;
-llvm::Constant*    MvmModule::constantPtrNull;
-llvm::Constant* MvmModule::constantPtrLogSize;
-llvm::Constant* MvmModule::constantThreadIDMask;
-llvm::Constant* MvmModule::constantStackOverflowMask;
-llvm::Constant* MvmModule::constantFatMask;
-llvm::Constant* MvmModule::constantPtrOne;
-llvm::Constant* MvmModule::constantPtrZero;
 const llvm::PointerType* MvmModule::ptrType;
 const llvm::PointerType* MvmModule::ptr32Type;
 const llvm::PointerType* MvmModule::ptrPtrType;
@@ -260,7 +219,6 @@ const llvm::Type* MvmModule::arrayPtrType;
 
 const llvm::TargetData* MvmModule::TheTargetData;
 llvm::Module *MvmModule::globalModule;
-llvm::LLVMContext *MvmModule::globalContext;
 llvm::ExistingModuleProvider *MvmModule::globalModuleProvider;
 llvm::FunctionPassManager* MvmModule::globalFunctionPasses;
 llvm::ExecutionEngine* MvmModule::executionEngine;

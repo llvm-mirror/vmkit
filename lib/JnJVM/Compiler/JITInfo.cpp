@@ -360,7 +360,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
     Value* val = new BitCastInst(ptr, LAI.llvmTypePtr, "", currentBlock);
     Value* arg = new LoadInst(val, "", currentBlock);
     Args.push_back(arg);
-    ptr = GetElementPtrInst::Create(ptr, JnjvmModule::constantEight, "",
+    ptr = GetElementPtrInst::Create(ptr, Mod->getIntrinsics()->constantEight,"",
                                     currentBlock);
   }
 
