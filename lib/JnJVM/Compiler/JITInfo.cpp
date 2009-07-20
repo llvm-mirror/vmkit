@@ -559,80 +559,49 @@ Function* LLVMSignatureInfo::getStaticAP() {
 void LLVMAssessorInfo::initialise() {
   AssessorInfo[I_VOID].llvmType = Type::VoidTy;
   AssessorInfo[I_VOID].llvmTypePtr = 0;
-  AssessorInfo[I_VOID].llvmNullConstant = 0;
   AssessorInfo[I_VOID].logSizeInBytesConstant = 0;
   
   AssessorInfo[I_BOOL].llvmType = Type::Int8Ty;
   AssessorInfo[I_BOOL].llvmTypePtr = PointerType::getUnqual(Type::Int8Ty);
-  AssessorInfo[I_BOOL].llvmNullConstant = 
-    mvm::MvmModule::globalContext->getNullValue(Type::Int8Ty);
-  AssessorInfo[I_BOOL].logSizeInBytesConstant =
-    mvm::MvmModule::constantZero;
+  AssessorInfo[I_BOOL].logSizeInBytesConstant = 0;
   
   AssessorInfo[I_BYTE].llvmType = Type::Int8Ty;
   AssessorInfo[I_BYTE].llvmTypePtr = PointerType::getUnqual(Type::Int8Ty);
-  AssessorInfo[I_BYTE].llvmNullConstant = 
-    mvm::MvmModule::globalContext->getNullValue(Type::Int8Ty);
-  AssessorInfo[I_BYTE].logSizeInBytesConstant =
-    mvm::MvmModule::constantZero;
+  AssessorInfo[I_BYTE].logSizeInBytesConstant = 0;
   
   AssessorInfo[I_SHORT].llvmType = Type::Int16Ty;
   AssessorInfo[I_SHORT].llvmTypePtr = PointerType::getUnqual(Type::Int16Ty);
-  AssessorInfo[I_SHORT].llvmNullConstant = 
-    mvm::MvmModule::globalContext->getNullValue(Type::Int16Ty);
-  AssessorInfo[I_SHORT].logSizeInBytesConstant =
-    mvm::MvmModule::constantOne;
+  AssessorInfo[I_SHORT].logSizeInBytesConstant = 1;
   
   AssessorInfo[I_CHAR].llvmType = Type::Int16Ty;
   AssessorInfo[I_CHAR].llvmTypePtr = PointerType::getUnqual(Type::Int16Ty);
-  AssessorInfo[I_CHAR].llvmNullConstant = 
-    mvm::MvmModule::globalContext->getNullValue(Type::Int16Ty);
-  AssessorInfo[I_CHAR].logSizeInBytesConstant =
-    mvm::MvmModule::constantOne;
+  AssessorInfo[I_CHAR].logSizeInBytesConstant = 1;
   
   AssessorInfo[I_INT].llvmType = Type::Int32Ty;
   AssessorInfo[I_INT].llvmTypePtr = PointerType::getUnqual(Type::Int32Ty);
-  AssessorInfo[I_INT].llvmNullConstant = 
-    mvm::MvmModule::globalContext->getNullValue(Type::Int32Ty);
-  AssessorInfo[I_INT].logSizeInBytesConstant =
-    mvm::MvmModule::constantTwo;
+  AssessorInfo[I_INT].logSizeInBytesConstant = 2;
   
   AssessorInfo[I_FLOAT].llvmType = Type::FloatTy;
   AssessorInfo[I_FLOAT].llvmTypePtr = PointerType::getUnqual(Type::FloatTy);
-  AssessorInfo[I_FLOAT].llvmNullConstant = 
-    mvm::MvmModule::globalContext->getNullValue(Type::FloatTy);
-  AssessorInfo[I_FLOAT].logSizeInBytesConstant =
-    mvm::MvmModule::constantTwo;
+  AssessorInfo[I_FLOAT].logSizeInBytesConstant = 2;
   
   AssessorInfo[I_LONG].llvmType = Type::Int64Ty;
   AssessorInfo[I_LONG].llvmTypePtr = PointerType::getUnqual(Type::Int64Ty);
-  AssessorInfo[I_LONG].llvmNullConstant = 
-    mvm::MvmModule::globalContext->getNullValue(Type::Int64Ty);
-  AssessorInfo[I_LONG].logSizeInBytesConstant =
-    mvm::MvmModule::constantThree;
+  AssessorInfo[I_LONG].logSizeInBytesConstant = 3;
   
   AssessorInfo[I_DOUBLE].llvmType = Type::DoubleTy;
   AssessorInfo[I_DOUBLE].llvmTypePtr = PointerType::getUnqual(Type::DoubleTy);
-  AssessorInfo[I_DOUBLE].llvmNullConstant = 
-    mvm::MvmModule::globalContext->getNullValue(Type::DoubleTy);
-  AssessorInfo[I_DOUBLE].logSizeInBytesConstant =
-    mvm::MvmModule::constantThree;
+  AssessorInfo[I_DOUBLE].logSizeInBytesConstant = 3;
   
   AssessorInfo[I_TAB].llvmType = JnjvmModule::JavaObjectType;
   AssessorInfo[I_TAB].llvmTypePtr =
     PointerType::getUnqual(JnjvmModule::JavaObjectType);
-  AssessorInfo[I_TAB].llvmNullConstant =
-    JnjvmModule::JavaObjectNullConstant;
-  AssessorInfo[I_TAB].logSizeInBytesConstant =
-    mvm::MvmModule::constantPtrLogSize;
+  AssessorInfo[I_TAB].logSizeInBytesConstant = sizeof(JavaObject*) == 8 ? 3 : 2;
   
   AssessorInfo[I_REF].llvmType = JnjvmModule::JavaObjectType;
   AssessorInfo[I_REF].llvmTypePtr =
     PointerType::getUnqual(JnjvmModule::JavaObjectType);
-  AssessorInfo[I_REF].llvmNullConstant =
-    JnjvmModule::JavaObjectNullConstant;
-  AssessorInfo[I_REF].logSizeInBytesConstant =
-    mvm::MvmModule::constantPtrLogSize;
+  AssessorInfo[I_REF].logSizeInBytesConstant = sizeof(JavaObject*) == 8 ? 3 : 2;
 }
 
 std::map<const char, LLVMAssessorInfo> LLVMAssessorInfo::AssessorInfo;

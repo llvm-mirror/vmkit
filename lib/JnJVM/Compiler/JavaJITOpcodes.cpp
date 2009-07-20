@@ -1910,7 +1910,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 #endif
 
           LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[charId];
-          sizeElement = LAI.logSizeInBytesConstant;
+          sizeElement = llvmContext->getConstantInt(Type::Int32Ty,
+                                                    LAI.logSizeInBytesConstant);
           if (TheCompiler->isStaticCompiling() &&
               valCl->getType() != module->JavaClassArrayType) {
             valCl = new LoadInst(valCl, "", currentBlock);
