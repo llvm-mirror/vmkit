@@ -62,7 +62,7 @@ const llvm::Type*   JnjvmModule::VTType;
 
 
 JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
-  TheModule(new llvm::Module(str, *(new llvm::LLVMContext()))),
+  TheModule(new llvm::Module(str, getGlobalContext())),
   JavaIntrinsics(TheModule) {
 
   enabledException = true;

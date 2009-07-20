@@ -55,7 +55,7 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   llvm::ExceptionHandling = false;
 #endif
   if (!M) {
-    globalModule = new Module("bootstrap module", *(new LLVMContext()));
+    globalModule = new Module("bootstrap module", getGlobalContext());
     globalModuleProvider = new ExistingModuleProvider (globalModule);
 
     InitializeNativeTarget();
@@ -231,7 +231,6 @@ uint64 MvmModule::getTypeSize(const llvm::Type* type) {
 
 void MvmModule::runPasses(llvm::Function* func,
                           llvm::FunctionPassManager* pm) {
-  pm->doInitialization();
   pm->run(*func);
 }
 
@@ -288,6 +287,8 @@ void MvmModule::AddStandardCompilePasses() {
   addPass(PM, createDeadStoreEliminationPass()); // Delete dead stores
   addPass(PM, createAggressiveDCEPass());        // Delete dead instructions
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+  
+  PM->doInitialization();
   
 }
 
