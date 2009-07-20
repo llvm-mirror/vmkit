@@ -23,7 +23,7 @@ class VirtualTable;
 #ifdef LLVM_GCC
 extern "C" void llvm_gcroot(const void*, void*) asm("llvm.gcroot");
 #else
-#define llvm_gcroot
+#define llvm_gcroot(a, b)
 #endif
 
 namespace mvm {
