@@ -1021,7 +1021,7 @@ UserCommonClass* UserCommonClass::resolvedImplClass(Jnjvm* vm,
                                                     JavaObject* clazz,
                                                     bool doClinit) {
   UserCommonClass* cl = ((JavaObjectClass*)clazz)->getClass();
-  if (cl->asClass()) {
+  if (cl->isClass()) {
     cl->asClass()->resolveClass();
     if (doClinit) cl->asClass()->initialiseClass(vm);
   }
