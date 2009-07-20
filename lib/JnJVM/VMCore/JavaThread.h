@@ -108,11 +108,11 @@ public:
   /// state - The current state of this thread: Running, Waiting or Interrupted.
   uint32 state;
   
-  /// sjlj_buffers - Setjmp buffers pushed when entering a non-JVM native
+  /// currentSjljBuffers - Current buffer pushed when entering a non-JVM native
   /// function and popped when leaving the function. The buffer is used when
   /// the native function throws an exception through a JNI throwException call.
   ///
-  std::vector<jmp_buf*> sjlj_buffers;
+  void* currentSjljBuffer;
 
   /// addresses - The list of return addresses which represent native/Java cross
   /// calls.
@@ -130,7 +130,7 @@ public:
 
   JavaObject** pushJNIRef(JavaObject* obj) {
     if (!obj) return 0;
-    
+   
     ++(*currentAddedReferences);
     return localJNIRefs->addJNIReference(this, obj);
 
@@ -191,12 +191,12 @@ public:
   /// throwFromJNI - Throw an exception after executing JNI code.
   ///
   void throwFromJNI() {
-    assert(sjlj_buffers.size());
+    assert(currentSjljBuffer);
     internalPendingException = 0;
 #if defined(__MACH__)
-    longjmp((int*)sjlj_buffers.back(), 1);
+    longjmp((int*)currentSjljBuffer, 1);
 #else
-    longjmp((__jmp_buf_tag*)sjlj_buffers.back(), 1);
+    longjmp((__jmp_buf_tag*)currentSjljBuffer, 1);
 #endif
   }
   

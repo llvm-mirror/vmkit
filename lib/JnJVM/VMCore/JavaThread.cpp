@@ -33,6 +33,7 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
   jniEnv = isolate->jniEnv;
   localJNIRefs = new JNILocalReferences();
   currentAddedReferences = 0;
+  currentSjljBuffer = 0;
 
 #ifdef SERVICE
   eipIndex = 0;
@@ -298,6 +299,7 @@ void JavaThread::printBacktraceAfterSignal() {
 JavaObject** JNILocalReferences::addJNIReference(JavaThread* th,
                                                  JavaObject* obj) {
   if (length == MAXIMUM_REFERENCES) {
+    fprintf(stderr, "CREATE\n");
     JNILocalReferences* next = new JNILocalReferences();
     th->localJNIRefs = next;
     next->prev = this;
@@ -317,9 +319,6 @@ void JNILocalReferences::removeJNIReferences(JavaThread* th, uint32_t num) {
 
   if (num > length) {
     fprintf(stderr, "num = %d et length = %d\n", num, length);
-    if (!prev) {
-      JavaThread::get()->printBacktrace();
-    }
     assert(prev && "No prev and deleting too much local references");
     prev->removeJNIReferences(th, num - length);
   } else {

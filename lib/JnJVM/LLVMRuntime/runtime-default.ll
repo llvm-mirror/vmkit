@@ -221,8 +221,8 @@ declare %JavaObject* @jnjvmArithmeticException()
 declare void @jnjvmThrowException(%JavaObject*)
 declare void @jnjvmThrowExceptionFromJIT()
 
-declare void @jnjvmJNIProceedPendingException(i32**)
-declare i8*  @jnjvmGetSJLJBuffer(i32*, i32**)
+declare void @jnjvmJNIProceedPendingException(i32**, i8**)
+declare void @jnjvmGetSJLJBuffer(i32*, i32**, i8*, i8**)
 
 declare %JavaObject* @gcmalloc(i32, %VT*)
 

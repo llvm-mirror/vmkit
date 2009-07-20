@@ -369,19 +369,18 @@ extern "C" UserClassArray* jnjvmGetArrayClass(UserCommonClass* cl,
 }
 
 // Does not call Java code.
-extern "C" void jnjvmJNIProceedPendingException(uint32** oldLRN) {
+extern "C" void jnjvmJNIProceedPendingException(uint32** oldLRN, void** oldBuffer) {
   JavaThread* th = JavaThread::get();
-  jmp_buf* buf = th->sjlj_buffers.back();
   
-  // Remove the buffer.
-  th->sjlj_buffers.pop_back();
-  mvm::Allocator& allocator = th->getJVM()->gcAllocator;
-  allocator.freeTemporaryMemory(buf);
-
   // We're going back to Java
   th->endJNI();
-
+  
+  // Update the buffer.
+  th->currentSjljBuffer = *oldBuffer;
+  
+  // Update the number of references.
   th->currentAddedReferences = *oldLRN;
+
 
 #ifdef DWARF_EXCEPTIONS
   // If there's an exception, throw it now.
@@ -392,12 +391,16 @@ extern "C" void jnjvmJNIProceedPendingException(uint32** oldLRN) {
 }
 
 // Never throws.
-extern "C" void* jnjvmGetSJLJBuffer(uint32* localReferencesNumber,
-                                    uint32** oldLocalReferencesNumber) {
+extern "C" void jnjvmGetSJLJBuffer(uint32* localReferencesNumber,
+                                   uint32** oldLocalReferencesNumber,
+                                   void* newBuffer, void** oldBuffer) {
   JavaThread* th = JavaThread::get();
-  mvm::Allocator& allocator = th->getJVM()->gcAllocator;
-  void** buf = (void**)allocator.allocateTemporaryMemory(sizeof(jmp_buf));
-  th->sjlj_buffers.push_back((jmp_buf*)buf);
+ 
+  *oldBuffer = th->currentSjljBuffer;
+  th->currentSjljBuffer = newBuffer;
+ 
+  memset(newBuffer, 0, sizeof(jmp_buf));
+
   *oldLocalReferencesNumber = th->currentAddedReferences;
   th->currentAddedReferences = localReferencesNumber;
 
@@ -405,8 +408,7 @@ extern "C" void* jnjvmGetSJLJBuffer(uint32* localReferencesNumber,
   // JNI function.
   th->startJNI(2);
 
-  // Finally, return the buffer that the Java code will use to do the setjmp.
-  return (void*)buf;
+  return;
 }
 
 // Never throws.

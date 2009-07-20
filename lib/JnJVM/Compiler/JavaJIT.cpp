@@ -273,11 +273,16 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     compilingMethod->setCompiledPtr((void*)natPtr, functionName);
     return llvmFunction;
   }
-  
+
+
   currentExceptionBlock = endExceptionBlock = 0;
   currentBlock = createBasicBlock("start");
   BasicBlock* executeBlock = createBasicBlock("execute");
   endBlock = createBasicBlock("end block");
+  
+  Constant* sizeB = llvmContext->getConstantInt(Type::Int32Ty, sizeof(jmp_buf));
+  Value* oldJB = new AllocaInst(module->ptrType, "", currentBlock);
+  Value* newJB = new AllocaInst(Type::Int8Ty, sizeB, "", currentBlock);
       
   // Allocate currentLocalIndexNumber pointer
   Value* temp = new AllocaInst(Type::Int32Ty, "",
@@ -288,11 +293,12 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   Value* oldCLIN = new AllocaInst(PointerType::getUnqual(Type::Int32Ty), "",
                                   currentBlock);
 
-  Value* Args2[2] = { temp, oldCLIN };
+  Value* Args4[4] = { temp, oldCLIN, newJB, oldJB };
 
-  Value* buf = CallInst::Create(module->GetSJLJBufferFunction,
-                                Args2, Args2 + 2, "", currentBlock);
-  Value* test = CallInst::Create(module->setjmpLLVM, buf, "",
+  CallInst::Create(module->GetSJLJBufferFunction, Args4, Args4 + 4, "",
+                   currentBlock);
+
+  Value* test = CallInst::Create(module->setjmpLLVM, newJB, "",
                                  currentBlock);
 
   test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test,
@@ -436,9 +442,11 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   currentBlock = endBlock; 
   if (isSynchro(compilingMethod->access))
     endSynchronize();
-  
-  CallInst::Create(module->JniProceedPendingExceptionFunction, oldCLIN, "",
-                   currentBlock);
+ 
+  Value* Args2[2] = { oldCLIN, oldJB };
+
+  CallInst::Create(module->JniProceedPendingExceptionFunction, Args2, Args2 + 2,
+                   "", currentBlock);
   
   if (returnType != Type::VoidTy)
     ReturnInst::Create(endNode, currentBlock);
