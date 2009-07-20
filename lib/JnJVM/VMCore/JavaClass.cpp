@@ -935,11 +935,14 @@ static JavaObject* getClassType(Jnjvm* vm, JnjvmClassLoader* loader,
 }
 
 ArrayObject* JavaMethod::getParameterTypes(JnjvmClassLoader* loader) {
+  
+  ArrayObject* res = 0;
+  llvm_gcroot(res, 0);
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
   Signdef* sign = getSignature();
   Typedef* const* arguments = sign->getArgumentsType();
-  ArrayObject* res = 
-    (ArrayObject*)vm->upcalls->classArrayClass->doNew(sign->nbArguments, vm);
+  res = (ArrayObject*)vm->upcalls->classArrayClass->doNew(sign->nbArguments,vm);
 
   for (uint32 index = 0; index < sign->nbArguments; ++index) {
     res->elements[index] = getClassType(vm, loader, arguments[index]);
@@ -956,6 +959,10 @@ JavaObject* JavaMethod::getReturnType(JnjvmClassLoader* loader) {
 }
 
 ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
+  
+  ArrayObject* res = 0;
+  llvm_gcroot(res, 0);
+  
   Attribut* exceptionAtt = lookupAttribut(Attribut::exceptionsAttribut);
   Jnjvm* vm = JavaThread::get()->getJVM();
   if (exceptionAtt == 0) {
@@ -964,16 +971,14 @@ ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
     UserConstantPool* ctp = classDef->getConstantPool();
     Reader reader(exceptionAtt, classDef->getBytes());
     uint16 nbe = reader.readU2();
-    ArrayObject* res = 
-      (ArrayObject*)vm->upcalls->classArrayClass->doNew(nbe, vm);
+    res = (ArrayObject*)vm->upcalls->classArrayClass->doNew(nbe, vm);
 
     for (uint16 i = 0; i < nbe; ++i) {
       uint16 idx = reader.readU2();
       UserCommonClass* cl = ctp->loadClass(idx);
       assert(cl->asClass() && "Wrong exception type");
       cl->asClass()->resolveClass();
-      JavaObject* obj = cl->getClassDelegatee(vm);
-      res->elements[i] = obj;
+      res->elements[i] = cl->getClassDelegatee(vm);
     }
     return res;
   }
@@ -1020,6 +1025,9 @@ JavaObject* CommonClass::setDelegatee(JavaObject* val) {
 UserCommonClass* UserCommonClass::resolvedImplClass(Jnjvm* vm,
                                                     JavaObject* clazz,
                                                     bool doClinit) {
+
+  llvm_gcroot(clazz, 0);
+
   UserCommonClass* cl = ((JavaObjectClass*)clazz)->getClass();
   if (cl->isClass()) {
     cl->asClass()->resolveClass();
@@ -1204,9 +1212,12 @@ bool UserClass::isNativeOverloaded(JavaMethod* meth) {
 
 
 ArrayUInt16* JavaMethod::toString() const {
+   
   Jnjvm* vm = JavaThread::get()->getJVM();
   uint32 size = classDef->name->size + name->size + type->size + 1;
   ArrayUInt16* res = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(size, vm);
+  llvm_gcroot(res, 0);
+
   uint32 i = 0;
  
   for (sint32 j = 0; j < classDef->name->size; ++j) {
