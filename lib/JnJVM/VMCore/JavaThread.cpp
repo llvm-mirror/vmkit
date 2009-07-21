@@ -24,6 +24,9 @@ const unsigned int JavaThread::StateWaiting = 1;
 const unsigned int JavaThread::StateInterrupted = 2;
 
 JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
+  llvm_gcroot(thread, 0);
+  llvm_gcroot(vmth, 0);
+  
   javaThread = thread;
   vmThread = vmth;
   MyVM = isolate;
@@ -58,6 +61,7 @@ extern "C" void* __cxa_allocate_exception(unsigned);
 extern "C" void __cxa_throw(void*, void*, void*);
 
 void JavaThread::throwException(JavaObject* obj) {
+  llvm_gcroot(obj, 0);
   JavaThread* th = JavaThread::get();
   assert(th->pendingException == 0 && "pending exception already there?");
   th->pendingException = obj;
@@ -195,6 +199,10 @@ UserClass* JavaThread::getCallingClassLevel(uint32 level) {
 }
 
 JavaObject* JavaThread::getNonNullClassLoader() {
+  
+  JavaObject* obj = 0;
+  llvm_gcroot(obj, 0);
+
   std::vector<void*>::iterator it = addresses.end();
 
   // Loop until we cross the first Java frame.
@@ -210,7 +218,7 @@ JavaObject* JavaThread::getNonNullClassLoader() {
       void* ip = FRAME_IP(addr);
       JavaMethod* meth = getJVM()->IPToMethod<JavaMethod>(ip);
       JnjvmClassLoader* loader = meth->classDef->classLoader;
-      JavaObject* obj = loader->getJavaClassLoader();
+      obj = loader->getJavaClassLoader();
       if (obj) return obj;
       addr = (void**)addr[0];
       // We end walking the stack when we cross a native -> Java call. Here
@@ -298,6 +306,8 @@ void JavaThread::printBacktraceAfterSignal() {
 
 JavaObject** JNILocalReferences::addJNIReference(JavaThread* th,
                                                  JavaObject* obj) {
+  llvm_gcroot(obj, 0);
+  
   if (length == MAXIMUM_REFERENCES) {
     JNILocalReferences* next = new JNILocalReferences();
     th->localJNIRefs = next;

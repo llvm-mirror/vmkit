@@ -28,6 +28,8 @@ using namespace jnjvm;
 // Throws if the method is not found.
 extern "C" void* jnjvmInterfaceLookup(CacheNode* cache, JavaObject *obj) {
 
+  llvm_gcroot(obj, 0);
+
   void* res = 0;
 
   BEGIN_NATIVE_EXCEPTION(1)
@@ -285,6 +287,7 @@ extern "C" UserCommonClass* jnjvmRuntimeInitialiseClass(UserClass* cl) {
 // Calls Java code.
 extern "C" JavaObject* jnjvmRuntimeDelegatee(UserCommonClass* cl) {
   JavaObject* res = 0;
+  llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(1)
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -303,9 +306,14 @@ extern "C" JavaObject* jnjvmRuntimeDelegatee(UserCommonClass* cl) {
 static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
                                      sint32* dims, Jnjvm* vm) {
   assert(len > 0 && "Negative size given by VMKit");
+ 
   JavaArray* _res = cl->doNew(dims[0], vm);
+  ArrayObject* res = 0;
+  llvm_gcroot(_res, 0);
+  llvm_gcroot(res, 0);
+
   if (len > 1) {
-    ArrayObject* res = (ArrayObject*)_res;
+    res = (ArrayObject*)_res;
     UserCommonClass* _base = cl->baseClass();
     assert(_base->isArray() && "Base class not an array");
     UserClassArray* base = (UserClassArray*)_base;
@@ -327,6 +335,7 @@ static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
 // Throws if one of the dimension is negative.
 extern "C" JavaArray* jnjvmMultiCallNew(UserClassArray* cl, uint32 len, ...) {
   JavaArray* res = 0;
+  llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(1)
 
@@ -414,11 +423,13 @@ extern "C" void** jnjvmGetSJLJBuffer(uint32* localReferencesNumber,
 
 // Never throws.
 extern "C" void jnjvmJavaObjectAquire(JavaObject* obj) {
+  llvm_gcroot(obj, 0);
   obj->acquire();
 }
 
 // Never throws.
 extern "C" void jnjvmJavaObjectRelease(JavaObject* obj) {
+  llvm_gcroot(obj, 0);
   obj->release();
 }
 
@@ -537,6 +548,9 @@ extern "C" JavaObject* jnjvmArithmeticException() {
 extern "C" JavaObject* jnjvmClassCastException(JavaObject* obj,
                                                UserCommonClass* cl) {
   JavaObject *exc = 0;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(exc, 0);
+  
   JavaThread *th = JavaThread::get();
 
   BEGIN_NATIVE_EXCEPTION(1)
@@ -558,6 +572,9 @@ extern "C" JavaObject* jnjvmClassCastException(JavaObject* obj,
 extern "C" JavaObject* jnjvmIndexOutOfBoundsException(JavaObject* obj,
                                                       sint32 index) {
   JavaObject *exc = 0;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(exc, 0);
+  
   JavaThread *th = JavaThread::get();
 
   BEGIN_NATIVE_EXCEPTION(1)

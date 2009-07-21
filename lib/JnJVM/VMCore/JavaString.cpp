@@ -20,6 +20,8 @@ using namespace jnjvm;
 JavaVirtualTable* JavaString::internStringVT = 0;
 
 JavaString* JavaString::stringDup(const ArrayUInt16*& array, Jnjvm* vm) {
+  llvm_gcroot(array, 0);
+
   UserClass* cl = vm->upcalls->newString;
   JavaString* res = (JavaString*)cl->doNew(vm);
   
@@ -47,6 +49,8 @@ char* JavaString::strToAsciiz() {
 }
 
 const ArrayUInt16* JavaString::strToArray(Jnjvm* vm) {
+  llvm_gcroot(this, 0);
+
   assert(value && "String without an array?");
   if (offset || (count != value->size)) {
     ArrayUInt16* array = 
@@ -63,14 +67,20 @@ const ArrayUInt16* JavaString::strToArray(Jnjvm* vm) {
 }
 
 void JavaString::stringDestructor(JavaString* str) {
+  llvm_gcroot(str, 0);
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
   assert(vm && "No vm when destroying a string");
   if (str->value) vm->hashStr.removeUnlocked(str->value, str);
 }
 
 JavaString* JavaString::internalToJava(const UTF8* name, Jnjvm* vm) {
-  ArrayUInt16* array = 
-    (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(name->size, vm);
+  
+  ArrayUInt16* array = 0;
+  llvm_gcroot(this, 0);
+  llvm_gcroot(array, 0);
+
+  array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(name->size, vm);
   
   uint16* java = array->elements;
   for (sint32 i = 0; i < name->size; i++) {
@@ -83,6 +93,8 @@ JavaString* JavaString::internalToJava(const UTF8* name, Jnjvm* vm) {
 }
 
 const UTF8* JavaString::javaToInternal(UTF8Map* map) const {
+  llvm_gcroot(this, 0);
+  
   uint16* java = (uint16*)alloca(sizeof(uint16) * count);
 
   for (sint32 i = 0; i < count; ++i) {
