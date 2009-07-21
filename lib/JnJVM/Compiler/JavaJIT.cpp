@@ -1850,9 +1850,16 @@ void JavaJIT::getStaticField(uint16 index) {
           abort();
         }
       } else {
-        JavaObject* val = field->getObjectField(Obj);
-        Value* V = TheCompiler->getFinalObject(val);
-        push(V, false);
+        if (TheCompiler->isStaticCompiling()) {
+          JavaObject* val = field->getObjectField(Obj);
+          Value* V = TheCompiler->getFinalObject(val);
+          push(V, false);
+        } else {
+          Value* V = CallInst::Create(module->GetFinalObjectFieldFunction, ptr,
+                                      "", currentBlock);
+          
+          push(V, false);
+        } 
       }
     }
   }
