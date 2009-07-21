@@ -97,9 +97,6 @@ StandardCompileOpts("std-compile-opts",
 static cl::opt<std::string>
 TargetTriple("mtriple", cl::desc("Override target triple for module"));
 
-static cl::opt<std::string>
-MArch("march", cl::desc("Architecture to generate code for (see --version)"));
-
 static cl::opt<bool>
 DisableExceptions("disable-exceptions",
               cl::desc("Disable Java exceptions"));
@@ -185,14 +182,16 @@ int main(int argc, char **argv) {
       return 0;
     }
    
-    if (WithClinit.empty()) {
+    // Disable cross-compiling for now.
+    if (false) {
       Module* TheModule = new Module("bootstrap module",
                                      *(new llvm::LLVMContext()));
       if (!TargetTriple.empty())
         TheModule->setTargetTriple(TargetTriple);
       else
         TheModule->setTargetTriple(mvm::MvmModule::getHostTriple());
-  
+
+#if 0
       // explicitly specified an architecture to compile for.
       const Target *TheTarget = 0;
       if (!MArch.empty()) {
@@ -233,6 +232,7 @@ int main(int argc, char **argv) {
 
 
       mvm::MvmModule::initialise(CodeGenOpt::Default, TheModule, &Target);
+#endif
     } else {
       mvm::MvmModule::initialise();
     }
