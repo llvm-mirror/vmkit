@@ -237,7 +237,7 @@ public:
   
   /// UTF8ToStr - Constructs a Java string out of the UTF8.
   ///
-  virtual JavaString* UTF8ToStr(const UTF8* utf8);
+  virtual JavaString** UTF8ToStr(const UTF8* utf8);
 
   /// Strings hashed by this classloader.
   ///
@@ -337,7 +337,7 @@ public:
   JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc, JavaCompiler* Comp,
                        bool dlLoad = true);
   
-  virtual JavaString* UTF8ToStr(const UTF8* utf8);
+  virtual JavaString** UTF8ToStr(const UTF8* utf8);
 
   /// nativeHandle - Non-null handle if boot classes were static compiled in
   /// a dynamic library

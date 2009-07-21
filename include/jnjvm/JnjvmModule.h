@@ -426,6 +426,7 @@ public:
   
   virtual llvm::Constant* getEnveloppe(Enveloppe* enveloppe) = 0;
   virtual llvm::Constant* getString(JavaString* str) = 0;
+  virtual llvm::Constant* getStringPtr(JavaString** str) = 0;
   virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp) = 0;
   virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr) = 0;
   
@@ -498,6 +499,7 @@ public:
   
   virtual llvm::Constant* getEnveloppe(Enveloppe* enveloppe);
   virtual llvm::Constant* getString(JavaString* str);
+  virtual llvm::Constant* getStringPtr(JavaString** str);
   virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp);
   virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr);
   
@@ -553,6 +555,7 @@ public:
   
   virtual llvm::Constant* getEnveloppe(Enveloppe* enveloppe);
   virtual llvm::Constant* getString(JavaString* str);
+  virtual llvm::Constant* getStringPtr(JavaString** str);
   virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp);
   virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr);
   

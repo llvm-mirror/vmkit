@@ -168,6 +168,11 @@ Constant* JavaAOTCompiler::getString(JavaString* str) {
   }
 }
 
+Constant* JavaAOTCompiler::getStringPtr(JavaString** str) {
+  fprintf(stderr, "Implement me");
+  abort();
+}
+
 Constant* JavaAOTCompiler::getEnveloppe(Enveloppe* enveloppe) {
   enveloppe_iterator SI = enveloppes.find(enveloppe);
   if (SI != enveloppes.end()) {

@@ -1101,20 +1101,23 @@ void JavaJIT::loadConstant(uint16 index) {
     abort();
 #else
     
-    JavaString* str = (JavaString*)ctpInfo->ctpRes[index];
-    if (str) {
+    if (TheCompiler->isStaticCompiling()) {
+      const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
+      JavaString* str = *(compilingClass->classLoader->UTF8ToStr(utf8));
       Value* val = TheCompiler->getString(str);
       push(val, false);
     } else {
-      if (TheCompiler->isStaticCompiling()) {
-        const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
-        JavaString* str = compilingClass->classLoader->UTF8ToStr(utf8);
-        Value* val = TheCompiler->getString(str);
+      JavaString** str = (JavaString**)ctpInfo->ctpRes[index];
+      if (str) {
+        Value* val = TheCompiler->getStringPtr(str);
+        val = new LoadInst(val, "", currentBlock);
         push(val, false);
       } else {
         // Lookup the constant pool cache
+        const llvm::Type* Ty = PointerType::getUnqual(module->JavaObjectType);
         Value* val = getConstantPoolAt(index, module->StringLookupFunction,
-                                       module->JavaObjectType, 0, false);
+                                       Ty, 0, false);
+        val = new LoadInst(val, "", currentBlock);
         push(val, false);
       }
     }

@@ -933,17 +933,15 @@ JnjvmClassLoader::~JnjvmClassLoader() {
 JnjvmBootstrapLoader::~JnjvmBootstrapLoader() {
 }
 
-JavaString* JnjvmClassLoader::UTF8ToStr(const UTF8* val) {
+JavaString** JnjvmClassLoader::UTF8ToStr(const UTF8* val) {
   JavaString* res = isolate->internalUTF8ToStr(val);
-  strings->addString(this, res);
-  return res;
+  return strings->addString(this, res);
 }
 
-JavaString* JnjvmBootstrapLoader::UTF8ToStr(const UTF8* val) {
+JavaString** JnjvmBootstrapLoader::UTF8ToStr(const UTF8* val) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaString* res = vm->internalUTF8ToStr(val);
-  strings->addString(this, res);
-  return res;
+  return strings->addString(this, res);
 }
 
 void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {

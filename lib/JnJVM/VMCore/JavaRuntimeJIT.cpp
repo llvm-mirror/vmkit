@@ -635,7 +635,7 @@ extern "C" void jnjvmThrowExceptionFromJIT() {
 extern "C" void* jnjvmStringLookup(UserClass* cl, uint32 index) {
   UserConstantPool* ctpInfo = cl->getConstantPool();
   const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
-  JavaString* str = cl->classLoader->UTF8ToStr(utf8);
+  JavaString** str = cl->classLoader->UTF8ToStr(utf8);
 #if defined(ISOLATE_SHARING) || !defined(ISOLATE)
   ctpInfo->ctpRes[index] = str;
 #endif

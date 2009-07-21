@@ -58,6 +58,14 @@ Constant* JavaJITCompiler::getString(JavaString* str) {
   return ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);
 }
 
+Constant* JavaJITCompiler::getStringPtr(JavaString** str) {
+  assert(str && "No string given");
+  LLVMContext& Context = getLLVMModule()->getContext();
+  const llvm::Type* Ty = PointerType::getUnqual(JnjvmModule::JavaObjectType);
+  ConstantInt* CI = Context.getConstantInt(Type::Int64Ty, uint64(str));
+  return ConstantExpr::getIntToPtr(CI, Ty);
+}
+
 Constant* JavaJITCompiler::getEnveloppe(Enveloppe* enveloppe) {
   assert(enveloppe && "No enveloppe given");
   LLVMContext& Context = getLLVMModule()->getContext();
