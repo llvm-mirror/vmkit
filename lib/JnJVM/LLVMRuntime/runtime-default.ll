@@ -165,6 +165,10 @@ declare i8* @jnjvmVirtualFieldLookup(%JavaClass*, i32, ...)
 ;;; jnjvmStaticFieldLookup - Look up a specific static field.
 declare i8* @jnjvmStaticFieldLookup(%JavaClass*, i32, ...)
 
+;;; jnjvmStringLookup - Find the isolate-specific string at the given offset in
+;;; the constant pool.
+declare i8* @jnjvmStringLookup(%JavaClass*, i32, ...) readnone
+
 ;;; jnjvmJavaObjectAquire - This function is called when starting a synchronized
 ;;; block or method.
 declare void @jnjvmJavaObjectAquire(%JavaObject*)

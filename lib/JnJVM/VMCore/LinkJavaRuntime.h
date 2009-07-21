@@ -30,6 +30,7 @@ extern "C" void* jnjvmInterfaceLookup(CacheNode* cache, JavaObject *obj);
 extern "C" void* jnjvmVirtualFieldLookup(UserClass* caller, uint32 index);
 extern "C" void* jnjvmStaticFieldLookup(UserClass* caller, uint32 index);
 extern "C" void* jnjvmVirtualTableLookup(UserClass* caller, uint32 index, ...);
+extern "C" void* jnjvmStringLookup(UserClass* cl, uint32 index);
 extern "C" void* jnjvmClassLookup(UserClass* caller, uint32 index);
 extern "C" UserCommonClass* jnjvmRuntimeInitialiseClass(UserClass* cl);
 extern "C" JavaObject* jnjvmRuntimeDelegatee(UserCommonClass* cl);
@@ -68,8 +69,6 @@ extern "C" void jnjvmServiceCallStop(Jnjvm* OldService,
 
 
 
-#ifdef ISOLATE
-extern "C" void* jnjvmStringLookup(UserClass* cl, uint32 index);
 
 #ifdef ISOLATE_SHARING
 extern "C" void* jnjvmEnveloppeLookup(UserClass* cl, uint32 index);
@@ -77,8 +76,6 @@ extern "C" void* jnjvmStaticCtpLookup(UserClass* cl, uint32 index);
 extern "C" UserConstantPool* jnjvmSpecialCtpLookup(UserConstantPool* ctpInfo,
                                                    uint32 index,
                                                    UserConstantPool** res);
-#endif
-
 #endif
 
 
@@ -119,13 +116,11 @@ namespace {
       (void) jnjvmPrintMethodStart(0);
       (void) jnjvmPrintMethodEnd(0);
       (void) jnjvmPrintExecution(0, 0, 0);
+      (void) jnjvmStringLookup(0, 0);
 #ifdef SERVICE
       (void) jnjvmServiceCallStart(0, 0);
       (void) jnjvmServiceCallStop(0, 0);
 #endif
-
-#ifdef ISOLATE
-      (void) jnjvmStringLookup(0, 0);
 
 #ifdef ISOLATE_SHARING
       (void) jnjvmEnveloppeLookup(0, 0);
@@ -133,7 +128,6 @@ namespace {
       (void) jnjvmSpecialCtpLookup(0, 0, 0);
 #endif
 
-#endif
     }
   } ForcePassLinking; // Force link by creating a global definition.
 }

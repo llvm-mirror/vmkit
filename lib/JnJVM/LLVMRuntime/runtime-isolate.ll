@@ -22,10 +22,6 @@
 ;;; jnjvmEnveloppeLookup - Find the enveloppe for the current user class.
 declare i8* @jnjvmEnveloppeLookup(%JavaClass*, i32, ...) readnone
 
-;;; jnjvmStringLookup - Find the isolate-specific string at the given offset in
-;;; the constant pool.
-declare i8* @jnjvmStringLookup(%JavaClass*, i32, ...) readnone
-
 ;;; jnjvmStaticCtpLookup - Find the user constant pool at the given offset in
 ;;; the constant pool.
 declare i8* @jnjvmStaticCtpLookup(%JavaClass*, i32, ...) readnone

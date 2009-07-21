@@ -174,7 +174,8 @@ void CommonClass::tracer() {
 
 void Class::tracer() {
   CommonClass::tracer();
-  bytes->markAndTrace();
+  if (classLoader != classLoader->bootstrapLoader)
+    bytes->markAndTrace();
   
   for (uint32 i =0; i < NR_ISOLATES; ++i) {
     TaskClassMirror &M = IsolateInfo[i];

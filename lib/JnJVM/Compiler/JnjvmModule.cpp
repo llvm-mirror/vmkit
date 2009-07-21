@@ -256,7 +256,7 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
 
   VirtualFieldLookupFunction = module->getFunction("jnjvmVirtualFieldLookup");
   StaticFieldLookupFunction = module->getFunction("jnjvmStaticFieldLookup");
-  
+  StringLookupFunction = module->getFunction("jnjvmStringLookup");
   JniProceedPendingExceptionFunction = 
     module->getFunction("jnjvmJNIProceedPendingException");
   GetSJLJBufferFunction = module->getFunction("jnjvmGetSJLJBuffer");
@@ -291,8 +291,6 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   GetFinalDoubleFieldFunction = module->getFunction("getFinalDoubleField");
   GetFinalObjectFieldFunction = module->getFunction("getFinalObjectField");
 
-#ifdef ISOLATE
-  StringLookupFunction = module->getFunction("jnjvmStringLookup");
 #ifdef ISOLATE_SHARING
   EnveloppeLookupFunction = module->getFunction("jnjvmEnveloppeLookup");
   GetCtpCacheNodeFunction = module->getFunction("getCtpCacheNode");
@@ -302,7 +300,6 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   GetJnjvmArrayClassFunction = module->getFunction("getJnjvmArrayClass");
   StaticCtpLookupFunction = module->getFunction("jnjvmStaticCtpLookup");
   SpecialCtpLookupFunction = module->getFunction("jnjvmSpecialCtpLookup");
-#endif
 #endif
  
 #ifdef SERVICE

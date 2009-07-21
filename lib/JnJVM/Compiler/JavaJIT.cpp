@@ -1097,34 +1097,27 @@ void JavaJIT::loadConstant(uint16 index) {
   uint8 type = ctpInfo->typeAt(index);
   
   if (type == JavaConstantPool::ConstantString) {
-#if defined(ISOLATE) 
-    if (compilingClass->classLoader != 
-        compilingClass->classLoader->bootstrapLoader) {
-      const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
-      JavaString* str = compilingClass->classLoader->UTF8ToStr(utf8);
-
-      Value* val = module->getString(str, currentBlock);
+#if defined(ISOLATE)
+    abort();
+#else
+    
+    JavaString* str = (JavaString*)ctpInfo->ctpRes[index];
+    if (str) {
+      Value* val = TheCompiler->getString(str);
       push(val, false);
     } else {
-    
+      if (TheCompiler->isStaticCompiling()) {
+        const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
+        JavaString* str = compilingClass->classLoader->UTF8ToStr(utf8);
+        Value* val = TheCompiler->getString(str);
+        push(val, false);
+      }
       // Lookup the constant pool cache
       Value* val = getConstantPoolAt(index, module->StringLookupFunction,
                                      module->JavaObjectType, 0, false);
       push(val, false);
     }
-#elif defined(ISOLATE_SHARING)
-    // Lookup the constant pool cache
-    Value* val = getConstantPoolAt(index, module->StringLookupFunction,
-                                   module->JavaObjectType, 0, false);
-    push(val, false);
-#else
-    const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
-    JavaString* str = compilingClass->classLoader->UTF8ToStr(utf8);
-
-    Value* val = TheCompiler->getString(str);
-    push(val, false);
-#endif
-        
+#endif   
   } else if (type == JavaConstantPool::ConstantLong) {
     push(llvmContext->getConstantInt(Type::Int64Ty, ctpInfo->LongAt(index)),
          false);
@@ -1141,11 +1134,6 @@ void JavaJIT::loadConstant(uint16 index) {
     UserCommonClass* cl = 0;
     Value* res = getResolvedCommonClass(index, false, &cl);
 
-#ifndef ISOLATE
-    if (cl) res = TheCompiler->getJavaClass(cl);
-    else
-#endif
-    
     res = CallInst::Create(module->GetClassDelegateeFunction, res, "",
                            currentBlock);
     push(res, false);

@@ -258,6 +258,7 @@ public:
   llvm::Function* ForceInitialisationCheckFunction;
   llvm::Function* ForceLoadedCheckFunction;
   llvm::Function* ClassLookupFunction;
+  llvm::Function* StringLookupFunction;
 #ifndef WITHOUT_VTABLE
   llvm::Function* VirtualLookupFunction;
 #endif
@@ -273,8 +274,6 @@ public:
   llvm::Function* MultiCallNewFunction;
   llvm::Function* GetArrayClassFunction;
 
-#ifdef ISOLATE
-  llvm::Function* StringLookupFunction;
 #ifdef ISOLATE_SHARING
   llvm::Function* GetCtpCacheNodeFunction;
   llvm::Function* GetCtpClassFunction;
@@ -283,7 +282,6 @@ public:
   llvm::Function* GetJnjvmArrayClassFunction;
   llvm::Function* StaticCtpLookupFunction;
   llvm::Function* SpecialCtpLookupFunction;
-#endif
 #endif
 
 #ifdef SERVICE

@@ -632,6 +632,16 @@ extern "C" void jnjvmThrowExceptionFromJIT() {
   
 }
 
+extern "C" void* jnjvmStringLookup(UserClass* cl, uint32 index) {
+  UserConstantPool* ctpInfo = cl->getConstantPool();
+  const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
+  JavaString* str = cl->classLoader->UTF8ToStr(utf8);
+#if defined(ISOLATE_SHARING) || !defined(ISOLATE)
+  ctpInfo->ctpRes[index] = str;
+#endif
+  return (void*)str;
+}
+
 extern "C" void jnjvmPrintMethodStart(JavaMethod* meth) {
   fprintf(stderr, "[%p] executing %s.%s\n", (void*)mvm::Thread::get(),
           UTF8Buffer(meth->classDef->name).cString(),
@@ -669,16 +679,6 @@ extern "C" void jnjvmServiceCallStop(Jnjvm* OldService,
 
 #endif
 
-#ifdef ISOLATE
-extern "C" void* jnjvmStringLookup(UserClass* cl, uint32 index) {
-  UserConstantPool* ctpInfo = cl->getConstantPool();
-  const UTF8* utf8 = ctpInfo->UTF8AtForString(index);
-  JavaString* str = JavaThread::get()->getJVM()->internalUTF8ToStr(utf8);
-#ifdef ISOLATE_SHARING
-  ctpInfo->ctpRes[index] = str;
-#endif
-  return (void*)str;
-}
 
 #ifdef ISOLATE_SHARING
 extern "C" void* jnjvmEnveloppeLookup(UserClass* cl, uint32 index) {
@@ -726,7 +726,5 @@ extern "C" UserConstantPool* jnjvmSpecialCtpLookup(UserConstantPool* ctpInfo,
   *res = methodCl->getConstantPool();
   return methodCl->getConstantPool();
 }
-
-#endif
 
 #endif
