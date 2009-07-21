@@ -1111,11 +1111,12 @@ void JavaJIT::loadConstant(uint16 index) {
         JavaString* str = compilingClass->classLoader->UTF8ToStr(utf8);
         Value* val = TheCompiler->getString(str);
         push(val, false);
+      } else {
+        // Lookup the constant pool cache
+        Value* val = getConstantPoolAt(index, module->StringLookupFunction,
+                                       module->JavaObjectType, 0, false);
+        push(val, false);
       }
-      // Lookup the constant pool cache
-      Value* val = getConstantPoolAt(index, module->StringLookupFunction,
-                                     module->JavaObjectType, 0, false);
-      push(val, false);
     }
 #endif   
   } else if (type == JavaConstantPool::ConstantLong) {
