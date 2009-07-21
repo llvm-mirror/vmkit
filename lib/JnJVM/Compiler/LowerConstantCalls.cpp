@@ -132,7 +132,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* Arg = Cmp->getOperand(0);
           if (isVirtual(meth->access) && Arg == F.arg_begin()) {
             Changed = true;
-            Cmp->replaceAllUsesWith(ConstantInt::getFalse());
+            Cmp->replaceAllUsesWith(Context->getConstantIntFalse());
             Cmp->eraseFromParent();
             break;
           }
@@ -141,7 +141,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Instruction* CI = Ca.getInstruction();
           if (CI && Ca.getCalledValue() == module->JavaObjectAllocateFunction) {
             Changed = true;
-            Cmp->replaceAllUsesWith(ConstantInt::getFalse());
+            Cmp->replaceAllUsesWith(Context->getConstantIntFalse());
             Cmp->eraseFromParent();
             break;
           }
@@ -551,7 +551,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
              
           Value* res = new ICmpInst(CI, ICmpInst::ICMP_EQ, CurVT, VT2, "");
 
-          node->addIncoming(ConstantInt::getTrue(), CI->getParent());
+          node->addIncoming(Context->getConstantIntTrue(), CI->getParent());
           BranchInst::Create(CurEndBlock, FailedBlock, res, CI);
 
           Value* Args[2] = { VT1, VT2 };
@@ -670,9 +670,9 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           // Final block, that gets the result.
           PHINode* node = PHINode::Create(Type::Int1Ty, "", BB9);
           node->reserveOperandSpace(3);
-          node->addIncoming(ConstantInt::getTrue(), CI->getParent());
-          node->addIncoming(ConstantInt::getFalse(), BB7);
-          node->addIncoming(ConstantInt::getTrue(), BB5);
+          node->addIncoming(Context->getConstantIntTrue(), CI->getParent());
+          node->addIncoming(Context->getConstantIntFalse(), BB7);
+          node->addIncoming(Context->getConstantIntTrue(), BB5);
     
           // Don't forget to jump to the next block.
           BranchInst::Create(EndBlock, BB9);
