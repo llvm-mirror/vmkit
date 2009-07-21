@@ -87,6 +87,7 @@ jmethodID FromReflectedMethod(JNIEnv *env, jobject method) {
  
   // Local object references. 
   JavaObject* meth = *(JavaObject**)method;
+  llvm_gcroot(meth, 0);
 
   Jnjvm* vm = myVM(env);
   Classpath* upcalls = vm->upcalls;
@@ -116,6 +117,8 @@ jboolean IsAssignableFrom(JNIEnv *env, jclass _sub, jclass _sup) {
   // Local object references.
   JavaObject* sub = *(JavaObject**)_sub;
   JavaObject* sup = *(JavaObject**)_sup;
+  llvm_gcroot(sub, 0);
+  llvm_gcroot(sup, 0);
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl2 = 
@@ -144,6 +147,9 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
  
   // Local object references.
   JavaObject* Cl = *(JavaObject**)_Cl;
+  JavaObject* res = 0;
+  llvm_gcroot(Cl, 0);
+  llvm_gcroot(res, 0);
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   
@@ -152,7 +158,7 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
   if (!cl->isClass()) return 0;
 
   UserClass* realCl = cl->asClass();
-  JavaObject* res = realCl->doNew(vm);
+  res = realCl->doNew(vm);
   JavaMethod* init = realCl->lookupMethod(vm->bootstrapLoader->initName,
                                           vm->bootstrapLoader->initExceptionSig,
                                           false, true, 0);
@@ -237,6 +243,8 @@ jobject AllocObject(JNIEnv *env, jclass _clazz) {
   // Local object references.  
   JavaObject* clazz = *(JavaObject**)_clazz;
   JavaObject* res = 0;
+  llvm_gcroot(clazz, 0);
+  llvm_gcroot(res, 0);
 
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
@@ -261,6 +269,8 @@ jobject NewObject(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) {
   // Local object references
   JavaObject* clazz = *(JavaObject**)_clazz;
   JavaObject* res = 0;
+  llvm_gcroot(clazz, 0);
+  llvm_gcroot(res, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   JavaThread* th = JavaThread::get();
@@ -339,6 +349,8 @@ jobject NewObjectA(JNIEnv* env, jclass _clazz, jmethodID methodID,
   // Local object references
   JavaObject* clazz = *(JavaObject**)_clazz;
   JavaObject* res = 0;
+  llvm_gcroot(clazz, 0);
+  llvm_gcroot(res, 0);
 
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
@@ -368,6 +380,7 @@ jclass GetObjectClass(JNIEnv *env, jobject _obj) {
 
   // Local object references
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
@@ -417,6 +430,7 @@ jmethodID GetMethodID(JNIEnv* env, jclass _clazz, const char *aname,
  
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
@@ -448,13 +462,16 @@ jobject CallObjectMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  JavaObject* res = 0;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(res, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   
-  JavaObject* res = meth->invokeJavaObjectVirtualAP(vm, cl, obj, ap, true);
+  res = meth->invokeJavaObjectVirtualAP(vm, cl, obj, ap, true);
   va_end(ap);
 
   return (jobject)th->pushJNIRef(res);
@@ -474,6 +491,8 @@ jobject CallObjectMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
   JavaObject* res = 0;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(res, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   JavaThread* th = JavaThread::get();
@@ -509,6 +528,7 @@ jboolean CallBooleanMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   
   // Local object references.  
   JavaObject* self = *(JavaObject**)_obj;
+  llvm_gcroot(self, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -533,6 +553,7 @@ jboolean CallBooleanMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -568,6 +589,7 @@ jbyte CallByteMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -604,8 +626,8 @@ jchar CallCharMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
-
-  
+  llvm_gcroot(obj, 0);
+ 
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
@@ -641,6 +663,7 @@ jshort CallShortMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -673,6 +696,7 @@ jint CallIntMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -697,6 +721,7 @@ jint CallIntMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -735,6 +760,7 @@ jlong CallLongMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -767,6 +793,7 @@ jfloat CallFloatMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -789,6 +816,7 @@ jfloat CallFloatMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -821,6 +849,7 @@ jdouble CallDoubleMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -843,6 +872,8 @@ jdouble CallDoubleMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
+  
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
@@ -874,6 +905,7 @@ void CallVoidMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
 
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -894,6 +926,7 @@ void CallVoidMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1148,6 +1181,7 @@ void CallNonvirtualVoidMethod(JNIEnv *env, jobject _obj, jclass clazz,
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1180,6 +1214,7 @@ jfieldID GetFieldID(JNIEnv *env, jclass _clazz, const char *aname,
 
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
@@ -1209,6 +1244,8 @@ jobject GetObjectField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
   JavaObject* res = 0;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(res, 0);
 
   JavaField* field = (JavaField*)fieldID;
 
@@ -1229,6 +1266,7 @@ jboolean GetBooleanField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
   return (uint8)field->getInt8Field(obj);
@@ -1244,6 +1282,7 @@ jbyte GetByteField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
   return (sint8)field->getInt8Field(obj);
@@ -1259,6 +1298,7 @@ jchar GetCharField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
 
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
   return (uint16)field->getInt16Field(obj);
@@ -1274,6 +1314,7 @@ jshort GetShortField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
   return (sint16)field->getInt16Field(obj);
@@ -1289,6 +1330,7 @@ jint GetIntField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
   return (sint32)field->getInt32Field(obj);
@@ -1304,6 +1346,7 @@ jlong GetLongField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
 
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
   return (sint64)field->getLongField(obj);
@@ -1319,6 +1362,7 @@ jfloat GetFloatField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
   return field->getFloatField(obj);
@@ -1334,6 +1378,7 @@ jdouble GetDoubleField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
 
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
   return (jdouble)field->getDoubleField(obj);
@@ -1350,6 +1395,8 @@ void SetObjectField(JNIEnv *env, jobject _obj, jfieldID fieldID, jobject _value)
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
   JavaObject* value = *(JavaObject**)_value;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(value, 0);
 
   JavaField* field = (JavaField*)fieldID;
   field->setObjectField(obj, value);
@@ -1365,6 +1412,7 @@ void SetBooleanField(JNIEnv *env, jobject _obj, jfieldID fieldID,
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
   field->setInt8Field(obj, (uint8)value);
@@ -1379,6 +1427,7 @@ void SetByteField(JNIEnv *env, jobject _obj, jfieldID fieldID, jbyte value) {
   
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
   field->setInt8Field(obj, (uint8)value);
@@ -1393,6 +1442,7 @@ void SetCharField(JNIEnv *env, jobject _obj, jfieldID fieldID, jchar value) {
 
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
   field->setInt16Field(obj, (uint16)value);
@@ -1407,6 +1457,7 @@ void SetShortField(JNIEnv *env, jobject _obj, jfieldID fieldID, jshort value) {
 
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
   field->setInt16Field(obj, (sint16)value);
@@ -1421,6 +1472,7 @@ void SetIntField(JNIEnv *env, jobject _obj, jfieldID fieldID, jint value) {
 
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
   field->setInt32Field(obj, (sint32)value);
@@ -1435,6 +1487,7 @@ void SetLongField(JNIEnv *env, jobject _obj, jfieldID fieldID, jlong value) {
 
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
   field->setLongField(obj, (sint64)value);
@@ -1449,6 +1502,7 @@ void SetFloatField(JNIEnv *env, jobject _obj, jfieldID fieldID, jfloat value) {
 
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
   field->setFloatField(obj, (float)value);
@@ -1463,6 +1517,7 @@ void SetDoubleField(JNIEnv *env, jobject _obj, jfieldID fieldID, jdouble value) 
 
   // Local object references.
   JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
   field->setDoubleField(obj, (float)value);
@@ -1478,6 +1533,7 @@ jmethodID GetStaticMethodID(JNIEnv *env, jclass _clazz, const char *aname,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
@@ -1510,6 +1566,8 @@ jobject CallStaticObjectMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
   JavaObject* res = 0;
+  llvm_gcroot(clazz, 0);
+  llvm_gcroot(res, 0);
 
 
   JavaMethod* meth = (JavaMethod*)methodID;
@@ -1535,6 +1593,8 @@ jobject CallStaticObjectMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
   JavaObject* res = 0;
+  llvm_gcroot(clazz, 0);
+  llvm_gcroot(res, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   JavaThread* th = JavaThread::get();
@@ -1569,6 +1629,7 @@ jboolean CallStaticBooleanMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1589,6 +1650,7 @@ jboolean CallStaticBooleanMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1614,6 +1676,7 @@ jbyte CallStaticByteMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) 
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   va_list ap;
   va_start(ap, methodID);
@@ -1636,6 +1699,7 @@ jbyte CallStaticByteMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1664,6 +1728,7 @@ jchar CallStaticCharMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) 
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1683,6 +1748,7 @@ jchar CallStaticCharMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1712,6 +1778,7 @@ jshort CallStaticShortMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1732,6 +1799,7 @@ jshort CallStaticShortMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1760,6 +1828,7 @@ jint CallStaticIntMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) {
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1779,6 +1848,7 @@ jint CallStaticIntMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1808,6 +1878,7 @@ jlong CallStaticLongMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) 
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1828,6 +1899,7 @@ jlong CallStaticLongMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1859,6 +1931,7 @@ jfloat CallStaticFloatMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1879,6 +1952,7 @@ jfloat CallStaticFloatMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1909,6 +1983,7 @@ jdouble CallStaticDoubleMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1928,6 +2003,7 @@ jdouble CallStaticDoubleMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1957,6 +2033,7 @@ void CallStaticVoidMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) {
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1975,6 +2052,7 @@ void CallStaticVoidMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1999,6 +2077,7 @@ jfieldID GetStaticFieldID(JNIEnv *env, jclass _clazz, const char *aname,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
@@ -2026,6 +2105,7 @@ jobject GetStaticObjectField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
 
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
@@ -2045,6 +2125,7 @@ jboolean GetStaticBooleanField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2063,6 +2144,7 @@ jbyte GetStaticByteField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2081,6 +2163,7 @@ jchar GetStaticCharField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
 
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2099,6 +2182,7 @@ jshort GetStaticShortField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
 
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2117,6 +2201,7 @@ jint GetStaticIntField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
 
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2135,6 +2220,7 @@ jlong GetStaticLongField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2153,6 +2239,7 @@ jfloat GetStaticFloatField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2171,6 +2258,7 @@ jdouble GetStaticDoubleField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
 
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2191,6 +2279,8 @@ void SetStaticObjectField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
   JavaObject* value = *(JavaObject**)_value;
+  llvm_gcroot(clazz, 0);
+  llvm_gcroot(value, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2227,6 +2317,7 @@ void SetStaticByteField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
 
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2245,6 +2336,7 @@ void SetStaticCharField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2263,6 +2355,7 @@ void SetStaticShortField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2281,6 +2374,7 @@ void SetStaticIntField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2299,6 +2393,7 @@ void SetStaticLongField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2317,6 +2412,7 @@ void SetStaticFloatField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2335,6 +2431,7 @@ void SetStaticDoubleField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
@@ -2399,6 +2496,7 @@ const char *GetStringUTFChars(JNIEnv *env, jstring _string, jboolean *isCopy) {
   
   // Local object references.
   JavaString* string = *(JavaString**)_string;
+  llvm_gcroot(string, 0);
 
   if (isCopy != 0) (*isCopy) = true;
   return string->strToAsciiz();
@@ -2419,6 +2517,7 @@ jsize GetArrayLength(JNIEnv *env, jarray _array) {
   
   // Local object references.
   JavaArray* array = *(JavaArray**)_array;
+  llvm_gcroot(array, 0);
 
   return array->size;
 
@@ -2436,6 +2535,9 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass _elementClass,
   JavaObject* initialElement = _initialElement ? 
     *(JavaObject**)_initialElement : 0;
   ArrayObject* res = 0;
+  llvm_gcroot(elementClass, 0);
+  llvm_gcroot(initialElement, 0);
+  llvm_gcroot(res, 0);
 
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
@@ -2469,6 +2571,8 @@ jobject GetObjectArrayElement(JNIEnv *env, jobjectArray _array, jsize index) {
   // Local object references.
   ArrayObject* array = *(ArrayObject**)_array;
   JavaObject* res = 0;
+  llvm_gcroot(array, 0);
+  llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
@@ -2494,6 +2598,8 @@ void SetObjectArrayElement(JNIEnv *env, jobjectArray _array, jsize index,
   // Local object references.
   ArrayObject* array = *(ArrayObject**)_array;
   JavaObject* val = *(JavaObject**)_val;
+  llvm_gcroot(array, 0);
+  llvm_gcroot(val, 0);
 
   if (index >= array->size)
     JavaThread::get()->getJVM()->indexOutOfBounds(array, index);
@@ -2625,6 +2731,7 @@ jboolean* GetBooleanArrayElements(JNIEnv *env, jbooleanArray _array,
  
   // Local object references.
   ArrayUInt8* array = *(ArrayUInt8**)_array;
+  llvm_gcroot(array, 0);
 
   if (isCopy) (*isCopy) = true;
 
@@ -2645,6 +2752,7 @@ jbyte *GetByteArrayElements(JNIEnv *env, jbyteArray _array, jboolean *isCopy) {
 
   // Local object references.
   ArraySInt8* array = *(ArraySInt8**)_array;
+  llvm_gcroot(array, 0);
 
   if (isCopy) (*isCopy) = true;
 
@@ -2665,6 +2773,7 @@ jchar *GetCharArrayElements(JNIEnv *env, jcharArray _array, jboolean *isCopy) {
   
   // Local object references.
   ArrayUInt16* array = *(ArrayUInt16**)_array;
+  llvm_gcroot(array, 0);
 
   if (isCopy) (*isCopy) = true;
 
@@ -2686,6 +2795,7 @@ jshort *GetShortArrayElements(JNIEnv *env, jshortArray _array,
   
   // Local object references.
   ArraySInt16* array = *(ArraySInt16**)_array;
+  llvm_gcroot(array, 0);
   
   if (isCopy) (*isCopy) = true;
 
@@ -2706,6 +2816,7 @@ jint *GetIntArrayElements(JNIEnv *env, jintArray _array, jboolean *isCopy) {
   
   // Local object references.
   ArraySInt32* array = *(ArraySInt32**)_array;
+  llvm_gcroot(array, 0);
 
   if (isCopy) (*isCopy) = true;
 
@@ -2726,6 +2837,7 @@ jlong *GetLongArrayElements(JNIEnv *env, jlongArray _array, jboolean *isCopy) {
   
   // Local object references.
   ArrayLong* array = *(ArrayLong**)_array;
+  llvm_gcroot(array, 0);
 
   if (isCopy) (*isCopy) = true;
 
@@ -2747,6 +2859,7 @@ jfloat *GetFloatArrayElements(JNIEnv *env, jfloatArray _array,
   
   // Local object references.
   ArrayFloat* array = *(ArrayFloat**)_array;
+  llvm_gcroot(array, 0);
 
   if (isCopy) (*isCopy) = true;
 
@@ -2768,6 +2881,7 @@ jdouble *GetDoubleArrayElements(JNIEnv *env, jdoubleArray _array,
   
   // Local object references.
   ArrayDouble* array = *(ArrayDouble**)_array;
+  llvm_gcroot(array, 0);
   
   if (isCopy) (*isCopy) = true;
 
@@ -2788,6 +2902,7 @@ void ReleaseBooleanArrayElements(JNIEnv *env, jbooleanArray _array,
     free(elems);
   } else {
     JavaArray* array = *(JavaArray**)_array;
+    llvm_gcroot(array, 0);
 
     sint32 len = array->size;
     memcpy(array->elements, elems, len);
@@ -2803,6 +2918,7 @@ void ReleaseByteArrayElements(JNIEnv *env, jbyteArray _array, jbyte *elems,
     free(elems);
   } else {
     JavaArray* array = *(JavaArray**)_array;
+    llvm_gcroot(array, 0);
 
     sint32 len = array->size;
     memcpy(array->elements, elems, len);
@@ -2818,6 +2934,7 @@ void ReleaseCharArrayElements(JNIEnv *env, jcharArray _array, jchar *elems,
     free(elems);
   } else {
     JavaArray* array = *(JavaArray**)_array;
+    llvm_gcroot(array, 0);
 
     sint32 len = array->size << 1;
     memcpy(array->elements, elems, len);
@@ -2833,6 +2950,7 @@ void ReleaseShortArrayElements(JNIEnv *env, jshortArray _array, jshort *elems,
     free(elems);
   } else {
     JavaArray* array = *(JavaArray**)_array;
+    llvm_gcroot(array, 0);
 
     sint32 len = array->size << 1;
     memcpy(array->elements, elems, len);
@@ -2848,6 +2966,7 @@ void ReleaseIntArrayElements(JNIEnv *env, jintArray _array, jint *elems,
     free(elems);
   } else {
     JavaArray* array = *(JavaArray**)_array;
+    llvm_gcroot(array, 0);
 
     sint32 len = array->size << 2;
     memcpy(array->elements, elems, len);
@@ -2863,6 +2982,7 @@ void ReleaseLongArrayElements(JNIEnv *env, jlongArray _array, jlong *elems,
     free(elems);
   } else {
     JavaArray* array = *(JavaArray**)_array;
+    llvm_gcroot(array, 0);
 
     sint32 len = array->size << 3;
     memcpy(array->elements, elems, len);
@@ -2878,6 +2998,7 @@ void ReleaseFloatArrayElements(JNIEnv *env, jfloatArray _array, jfloat *elems,
     free(elems);
   } else {
     JavaArray* array = *(JavaArray**)_array;
+    llvm_gcroot(array, 0);
 
     sint32 len = array->size << 2;
     memcpy(array->elements, elems, len);
@@ -2893,6 +3014,7 @@ void ReleaseDoubleArrayElements(JNIEnv *env, jdoubleArray _array,
     free(elems);
   } else {
     JavaArray* array = *(JavaArray**)_array;
+    llvm_gcroot(array, 0);
 
     sint32 len = array->size << 3;
     memcpy(array->elements, elems, len);
@@ -2905,6 +3027,7 @@ void ReleaseDoubleArrayElements(JNIEnv *env, jdoubleArray _array,
 void GetBooleanArrayRegion(JNIEnv *env, jbooleanArray array, jsize start,
 			   jsize len, jboolean *buf) {
   ArrayUInt8* Array = *(ArrayUInt8**)array;
+  llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(uint8));
 }
 
@@ -2912,6 +3035,7 @@ void GetBooleanArrayRegion(JNIEnv *env, jbooleanArray array, jsize start,
 void GetByteArrayRegion(JNIEnv *env, jbyteArray array, jsize start, jsize len,
 			jbyte *buf) {
   ArraySInt8* Array = *(ArraySInt8**)array;
+  llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(sint8));
 }
 
@@ -2919,6 +3043,7 @@ void GetByteArrayRegion(JNIEnv *env, jbyteArray array, jsize start, jsize len,
 void GetCharArrayRegion(JNIEnv *env, jcharArray array, jsize start, jsize len,
 			jchar *buf) {
   ArrayUInt16* Array = *(ArrayUInt16**)array;
+  llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(uint16));
 }
 
@@ -2926,6 +3051,7 @@ void GetCharArrayRegion(JNIEnv *env, jcharArray array, jsize start, jsize len,
 void GetShortArrayRegion(JNIEnv *env, jshortArray array, jsize start,
 			 jsize len, jshort *buf) {
   ArraySInt16* Array = *(ArraySInt16**)array;
+  llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(sint16));
 }
 
@@ -2933,6 +3059,7 @@ void GetShortArrayRegion(JNIEnv *env, jshortArray array, jsize start,
 void GetIntArrayRegion(JNIEnv *env, jintArray array, jsize start, jsize len,
 		       jint *buf) {
   ArraySInt32* Array = *(ArraySInt32**)array;
+  llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(sint32));
 }
 
@@ -2940,6 +3067,7 @@ void GetIntArrayRegion(JNIEnv *env, jintArray array, jsize start, jsize len,
 void GetLongArrayRegion(JNIEnv *env, jlongArray array, jsize start, jsize len,
 		        jlong *buf) {
   ArrayLong* Array = *(ArrayLong**)array;
+  llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(sint64));
 }
 
@@ -2947,6 +3075,7 @@ void GetLongArrayRegion(JNIEnv *env, jlongArray array, jsize start, jsize len,
 void GetFloatArrayRegion(JNIEnv *env, jfloatArray array, jsize start,
 			 jsize len, jfloat *buf) {
   ArrayFloat* Array = *(ArrayFloat**)array;
+  llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(float));
 }
 
@@ -2954,6 +3083,7 @@ void GetFloatArrayRegion(JNIEnv *env, jfloatArray array, jsize start,
 void GetDoubleArrayRegion(JNIEnv *env, jdoubleArray array, jsize start,
 			  jsize len, jdouble *buf) {
   ArrayDouble* Array = *(ArrayDouble**)array;
+  llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(double));
 }
 
@@ -2961,14 +3091,15 @@ void GetDoubleArrayRegion(JNIEnv *env, jdoubleArray array, jsize start,
 void SetBooleanArrayRegion(JNIEnv *env, jbooleanArray array, jsize start,
 			   jsize len, const jboolean *buf) {
   ArrayUInt8* Array = *(ArrayUInt8**)array;
+  llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(uint8));
 }
 
 
 void SetByteArrayRegion(JNIEnv *env, jbyteArray array, jsize start, jsize len,
 			                  const jbyte *buf) {
-  abort();
   ArraySInt8* Array = *(ArraySInt8**)array;
+  llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(sint8));
 }
 
@@ -2976,6 +3107,7 @@ void SetByteArrayRegion(JNIEnv *env, jbyteArray array, jsize start, jsize len,
 void SetCharArrayRegion(JNIEnv *env, jcharArray array, jsize start, jsize len,
 			                  const jchar *buf) {
   ArrayUInt16* Array = *(ArrayUInt16**)array;
+  llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(uint16));
 }
 
@@ -2983,6 +3115,7 @@ void SetCharArrayRegion(JNIEnv *env, jcharArray array, jsize start, jsize len,
 void SetShortArrayRegion(JNIEnv *env, jshortArray array, jsize start,
 			                   jsize len, const jshort *buf) {
   ArraySInt16* Array = *(ArraySInt16**)array;
+  llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(sint16));
 }
 
@@ -2990,6 +3123,7 @@ void SetShortArrayRegion(JNIEnv *env, jshortArray array, jsize start,
 void SetIntArrayRegion(JNIEnv *env, jintArray array, jsize start, jsize len,
 		                   const jint *buf) {
   ArraySInt32* Array = *(ArraySInt32**)array;
+  llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(sint32));
 }
 
@@ -2997,6 +3131,7 @@ void SetIntArrayRegion(JNIEnv *env, jintArray array, jsize start, jsize len,
 void SetLongArrayRegion(JNIEnv* env, jlongArray array, jsize start, jsize len,
 			                  const jlong *buf) {
   ArrayLong* Array = *(ArrayLong**)array;
+  llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(sint64));
 }
 
@@ -3004,6 +3139,7 @@ void SetLongArrayRegion(JNIEnv* env, jlongArray array, jsize start, jsize len,
 void SetFloatArrayRegion(JNIEnv *env, jfloatArray array, jsize start,
 			                   jsize len, const jfloat *buf) {
   ArrayFloat* Array = *(ArrayFloat**)array;
+  llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(float));
 }
 
@@ -3011,6 +3147,7 @@ void SetFloatArrayRegion(JNIEnv *env, jfloatArray array, jsize start,
 void SetDoubleArrayRegion(JNIEnv *env, jdoubleArray array, jsize start,
 			                    jsize len, const jdouble *buf) {
   ArrayDouble* Array = *(ArrayDouble**)array;
+  llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(double));
 }
 
@@ -3034,6 +3171,7 @@ jint MonitorEnter(JNIEnv *env, jobject _obj) {
   BEGIN_JNI_EXCEPTION
   
   JavaObject* Obj = *(JavaObject**)_obj;
+  llvm_gcroot(Obj, 0);
   
   if (Obj) {
     Obj->acquire();
@@ -3053,6 +3191,7 @@ jint MonitorExit(JNIEnv *env, jobject _obj) {
   BEGIN_JNI_EXCEPTION
 
   JavaObject* Obj = *(JavaObject**)_obj;
+  llvm_gcroot(Obj, 0);
  
   if (Obj) {
 
@@ -3099,6 +3238,7 @@ void *GetPrimitiveArrayCritical(JNIEnv *env, jarray _array, jboolean *isCopy) {
   BEGIN_JNI_EXCEPTION
   
   JavaArray* array = *(JavaArray**)_array;
+  llvm_gcroot(array, 0);
 
   if (isCopy) (*isCopy) = true;
 
@@ -3121,6 +3261,7 @@ void ReleasePrimitiveArrayCritical(JNIEnv *env, jarray _array, void *carray,
     free(carray);
   } else {
     JavaArray* array = *(JavaArray**)_array;
+    llvm_gcroot(array, 0);
 
     UserClassArray* cl = array->getClass()->asArrayClass();
     uint32 logSize = cl->baseClass()->asPrimitiveClass()->logSize;
@@ -3163,6 +3304,7 @@ jobject NewGlobalRef(JNIEnv* env, jobject obj) {
   // Local object references.
   if (obj) {
     JavaObject* Obj = *(JavaObject**)obj;
+    llvm_gcroot(Obj, 0);
 
     Jnjvm* vm = JavaThread::get()->getJVM();
 
@@ -3197,19 +3339,24 @@ jobject NewDirectByteBuffer(JNIEnv *env, void *address, jlong capacity) {
   
   BEGIN_JNI_EXCEPTION
   
+  JavaObject* res = 0;
+  JavaObject* p = 0;
+  llvm_gcroot(res, 0);
+  llvm_gcroot(p, 0);
+
   JavaThread* th = JavaThread::get();
   Jnjvm* myvm = th->getJVM();
   UserClass* BB = myvm->upcalls->newDirectByteBuffer;
 
-  JavaObject* res = BB->doNew(myvm);
+  res = BB->doNew(myvm);
 
 #if (__WORDSIZE == 32)
   UserClass* PP = myvm->upcalls->newPointer32;
-  JavaObject* p = PP->doNew(myvm);
+  p = PP->doNew(myvm);
   myvm->upcalls->dataPointer32->setInt32Field(p, (uint32)address);
 #else
   UserClass* PP = myvm->upcalls->newPointer64;
-  JavaObject* p = PP->doNew(myvm);
+  p = PP->doNew(myvm);
   myvm->upcalls->dataPointer64->setLongField(p, (jlong)address);
 #endif
 
@@ -3231,9 +3378,12 @@ void *GetDirectBufferAddress(JNIEnv *env, jobject _buf) {
  
   // Local object references.
   JavaObject* buf = *(JavaObject**)_buf;
+  JavaObject* address = 0;
+  llvm_gcroot(buf, 0);
+  llvm_gcroot(address, 0);
 
   Jnjvm* vm = myVM(env);
-  JavaObject* address = vm->upcalls->bufferAddress->getObjectField(buf);
+  address = vm->upcalls->bufferAddress->getObjectField(buf);
   if (address != 0) {
 #if (__WORDSIZE == 32)
     int res = vm->upcalls->dataPointer32->getInt32Field(address);
@@ -3291,6 +3441,8 @@ jint GetEnv(JavaVM *vm, void **env, jint version) {
 
   JavaThread* _th = JavaThread::get();
   JavaObject* th = _th->currentThread();
+  llvm_gcroot(th, 0);
+
   Jnjvm* myvm = _th->getJVM();
   if (th != 0) {
     (*env) = &(myvm->jniEnv);
