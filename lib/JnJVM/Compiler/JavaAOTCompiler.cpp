@@ -218,6 +218,7 @@ Constant* JavaAOTCompiler::getJavaClassPtr(CommonClass* cl) {
   getJavaClass(cl);
 
   Constant* Cl = getNativeClass(cl);
+  Cl = ConstantExpr::getBitCast(Cl, JnjvmModule::JavaCommonClassType);
 
   Constant* GEP[2] = { getIntrinsics()->constantZero,
                        getIntrinsics()->constantZero };
@@ -721,7 +722,7 @@ Constant* JavaAOTCompiler::CreateConstantFromEnveloppe(Enveloppe* val) {
   Elmts.push_back(getUTF8(val->methodName));
   Elmts.push_back(getUTF8(val->methodSign));
 
-  Elmts.push_back(Mod.getContext().getNullValue(Type::Int8Ty));
+  Elmts.push_back(Mod.getContext().getNullValue(Type::Int32Ty));
   Elmts.push_back(getNativeClass(val->classDef));
   Elmts.push_back(firstCache);
 
