@@ -130,7 +130,7 @@ JavaObject* pd) {
   Jnjvm* vm = JavaThread::get()->getJVM();
  
   // Before creating a class, do a check on the bytes.  
-  Reader reader(bytes);
+  Reader reader(&bytes);
   uint32 magic = reader.readU4();
   if (magic != Jnjvm::Magic) {
     JavaThread::get()->getJVM()->classFormatError("bad magic number");

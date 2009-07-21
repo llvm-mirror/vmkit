@@ -24,12 +24,14 @@ class ZipArchive;
 
 class Reader {
 public:
-  ArrayUInt8* bytes;
+  // bytes - Pointer to a reference array. The array is not manipulated directly
+  // in order to support copying GC.
+  ArrayUInt8** bytes;
   uint32 min;
   uint32 cursor;
   uint32 max;
 
-  Reader(Attribut* attr, ArrayUInt8* bytes) {
+  Reader(Attribut* attr, ArrayUInt8** bytes) {
     this->bytes = bytes;
     this->cursor = attr->start;
     this->min = attr->start;
@@ -82,11 +84,11 @@ public:
                              const char* filename);
   
   uint8 readU1() {
-    return bytes->elements[cursor++];
+    return (*bytes)->elements[cursor++];
   }
   
   sint8 readS1() {
-    return bytes->elements[cursor++];
+    return (*bytes)->elements[cursor++];
   }
   
   uint16 readU2() {
@@ -119,8 +121,8 @@ public:
     return tmp | ((sint64)(readS8()));
   }
 
-  Reader(ArrayUInt8* array, uint32 start = 0, uint32 end = 0) {
-    if (!end) end = array->size;
+  Reader(ArrayUInt8** array, uint32 start = 0, uint32 end = 0) {
+    if (!end) end = (*array)->size;
     this->bytes = array;
     this->cursor = start;
     this->min = start;

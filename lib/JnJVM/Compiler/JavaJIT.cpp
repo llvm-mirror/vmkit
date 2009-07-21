@@ -668,7 +668,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     abort();
   }
 
-  Reader reader(codeAtt, compilingClass->bytes);
+  Reader reader(codeAtt, &(compilingClass->bytes));
   /* uint16 maxStack = */ reader.readU2();
   uint16 maxLocals = reader.readU2();
   uint32 codeLen = reader.readU4();
@@ -801,7 +801,7 @@ llvm::Function* JavaJIT::javaCompile() {
     abort();
   }
 
-  Reader reader(codeAtt, compilingClass->bytes);
+  Reader reader(codeAtt, &(compilingClass->bytes));
   /* uint16 maxStack = */ reader.readU2();
   uint16 maxLocals = reader.readU2();
   uint32 codeLen = reader.readU4();

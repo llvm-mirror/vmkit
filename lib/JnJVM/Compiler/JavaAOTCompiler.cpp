@@ -379,7 +379,7 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
         Elts.push_back(Mod.getContext().getNullValue(Ty));
       }
     } else {
-      Reader reader(attribut, cl->bytes);
+      Reader reader(attribut, &(cl->bytes));
       JavaConstantPool * ctpInfo = cl->ctpInfo;
       uint16 idx = reader.readU2();
       if (type->isPrimitive()) {

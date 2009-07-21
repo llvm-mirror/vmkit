@@ -687,6 +687,10 @@ public:
     return bytes;
   }
   
+  ArrayUInt8** getBytesPtr() {
+    return &bytes;
+  }
+  
   /// resolveInnerOuterClasses - Resolve the inner/outer information.
   ///
   void resolveInnerOuterClasses();

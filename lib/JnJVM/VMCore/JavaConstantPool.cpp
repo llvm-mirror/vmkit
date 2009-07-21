@@ -187,7 +187,7 @@ const UTF8* JavaConstantPool::UTF8At(uint32 entry) {
   }
   
   if (!ctpRes[entry]) {
-    Reader reader(classDef->bytes, ctpDef[entry]);
+    Reader reader(&(classDef->bytes), ctpDef[entry]);
     uint32 len = reader.readU2();
     uint16* buf = (uint16*)alloca(len * sizeof(uint16));
     uint32 n = 0;
