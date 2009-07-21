@@ -94,8 +94,9 @@ uint32 JavaConstantPool::CtpReaderNameAndType(JavaConstantPool* ctp, Reader& rea
   return 1;
 }
   
-uint32 JavaConstantPool::CtpReaderFieldref(JavaConstantPool* ctp, Reader& reader,
-                                      uint32 index) {
+uint32 JavaConstantPool::CtpReaderFieldref(JavaConstantPool* ctp,
+                                           Reader& reader, uint32 index) {
+
   uint32 entry = reader.readU4();
   ctp->ctpDef[index] = entry;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, 
@@ -105,7 +106,7 @@ uint32 JavaConstantPool::CtpReaderFieldref(JavaConstantPool* ctp, Reader& reader
 }
 
 uint32 JavaConstantPool::CtpReaderString(JavaConstantPool* ctp, Reader& reader,
-                                    uint32 index) {
+                                         uint32 index) {
   uint16 entry = reader.readU2();
   ctp->ctpDef[index] = entry;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <string>\tutf8 is at %d\n",
@@ -113,8 +114,9 @@ uint32 JavaConstantPool::CtpReaderString(JavaConstantPool* ctp, Reader& reader,
   return 1;
 }
   
-uint32 JavaConstantPool::CtpReaderMethodref(JavaConstantPool* ctp, Reader& reader,
-                                       uint32 index) {
+uint32 JavaConstantPool::CtpReaderMethodref(JavaConstantPool* ctp,
+                                            Reader& reader,
+                                            uint32 index) {
   uint32 entry = reader.readU4();
   ctp->ctpDef[index] = entry;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, 
@@ -124,8 +126,8 @@ uint32 JavaConstantPool::CtpReaderMethodref(JavaConstantPool* ctp, Reader& reade
 }
 
 uint32 JavaConstantPool::CtpReaderInterfaceMethodref(JavaConstantPool* ctp,
-                                                Reader& reader,
-                                                uint32 index) {
+                                                     Reader& reader,
+                                                     uint32 index) {
   uint32 entry = reader.readU4();
   ctp->ctpDef[index] = entry;
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, 
@@ -135,7 +137,7 @@ uint32 JavaConstantPool::CtpReaderInterfaceMethodref(JavaConstantPool* ctp,
 }
   
 uint32 JavaConstantPool::CtpReaderLong(JavaConstantPool* ctp, Reader& reader,
-                                  uint32 index) {
+                                       uint32 index) {
   ctp->ctpDef[index + 1] = reader.readU4();
   ctp->ctpDef[index] = reader.readU4();
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <long>%d %d\n", index,
@@ -144,7 +146,7 @@ uint32 JavaConstantPool::CtpReaderLong(JavaConstantPool* ctp, Reader& reader,
 }
 
 uint32 JavaConstantPool::CtpReaderDouble(JavaConstantPool* ctp, Reader& reader,
-                                    uint32 index) {
+                                         uint32 index) {
   ctp->ctpDef[index + 1] = reader.readU4();
   ctp->ctpDef[index] = reader.readU4();
   PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <double>%d %d\n", index,
