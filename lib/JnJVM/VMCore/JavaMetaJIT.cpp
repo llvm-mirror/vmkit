@@ -62,6 +62,12 @@ using namespace jnjvm;
     buf += 8; \
   }\
 
+//===----------------------------------------------------------------------===//
+// We do not need to have special care on the GC-pointers manipulated in these
+// functions (this and the buffer). Once the Java function is called, they
+// are never used (because the buffer is alloca'd and "this" is only used when
+// calling).
+//===----------------------------------------------------------------------===//
 
 #if defined(DWARF_EXCEPTIONS)
 
