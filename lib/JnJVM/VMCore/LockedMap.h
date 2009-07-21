@@ -122,16 +122,13 @@ public:
   
   mvm::LockNormal lock;
   mvm::BumpPtrAllocator& allocator;
-  UserClassArray* array;
   std::multimap<const uint32, const UTF8*> map;
   const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
   const UTF8* lookupOrCreateReader(const uint16* buf, uint32 size);
   const UTF8* lookupAsciiz(const char* asciiz); 
   const UTF8* lookupReader(const uint16* buf, uint32 size);
   
-  UTF8Map(mvm::BumpPtrAllocator& A, UserClassArray* cl) : allocator(A) {
-    array = cl;
-  }
+  UTF8Map(mvm::BumpPtrAllocator& A) : allocator(A) {}
 
   ~UTF8Map() {
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {

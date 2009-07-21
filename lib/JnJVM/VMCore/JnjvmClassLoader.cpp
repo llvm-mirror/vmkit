@@ -61,7 +61,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   
 	TheCompiler = Comp;
   
-  hashUTF8 = new(allocator, "UTF8Map") UTF8Map(allocator, 0);
+  hashUTF8 = new(allocator, "UTF8Map") UTF8Map(allocator);
   classes = new(allocator, "ClassMap") ClassMap();
   javaTypes = new(allocator, "TypeMap") TypeMap(); 
   javaSignatures = new(allocator, "SignMap") SignMap(); 
@@ -257,8 +257,7 @@ JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
   bootstrapLoader = JCL.bootstrapLoader;
   TheCompiler = bootstrapLoader->getCompiler()->Create("Applicative loader");
   
-  hashUTF8 = new(allocator, "UTF8Map")
-    UTF8Map(allocator, bootstrapLoader->upcalls->ArrayOfChar);
+  hashUTF8 = new(allocator, "UTF8Map") UTF8Map(allocator);
   classes = new(allocator, "ClassMap") ClassMap();
   javaTypes = new(allocator, "TypeMap") TypeMap();
   javaSignatures = new(allocator, "SignMap") SignMap();
