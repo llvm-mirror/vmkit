@@ -67,6 +67,7 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     std::string str = 
       executionEngine->getTargetData()->getStringRepresentation();
     globalModule->setDataLayout(str);
+    globalModule->setTargetTriple(getHostTriple());
   
     TheTargetData = executionEngine->getTargetData();
   } else {
