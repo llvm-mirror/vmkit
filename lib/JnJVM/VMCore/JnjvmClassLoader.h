@@ -35,8 +35,10 @@ class JavaObject;
 class JavaString;
 class Jnjvm;
 class JnjvmBootstrapLoader;
+class JnjvmClassLoader;
 class Signdef;
 class SignMap;
+class StringList;
 class Typedef;
 class TypeMap;
 class UTF8;
@@ -239,7 +241,7 @@ public:
 
   /// Strings hashed by this classloader.
   ///
-  std::vector<JavaString*, gc_allocator<JavaString*> > strings;
+  StringList* strings;
   
   /// nativeLibs - Native libraries (e.g. '.so') loaded by this class loader.
   ///
@@ -453,6 +455,37 @@ public:
     return JCL;
   }
 
+};
+
+#define MAXIMUM_STRINGS 100
+
+class StringList : public mvm::PermanentObject {
+  friend class JnjvmClassLoader;
+  friend class Jnjvm;
+
+private:
+  StringList* prev;
+  uint32_t length;
+  JavaString* strings[MAXIMUM_STRINGS];
+
+public:
+  StringList() {
+    prev = 0;
+    length = 0;
+  }
+
+  JavaString** addString(JnjvmClassLoader* JCL, JavaString* obj) {
+    llvm_gcroot(obj, 0);
+    if (length == MAXIMUM_STRINGS) {
+      StringList* next = new(JCL->allocator, "StringList") StringList();
+      next->prev = this;
+      JCL->strings = next;
+      return next->addString(JCL, obj);
+    } else {
+      strings[length] = obj;
+      return &strings[length++];
+    }
+  }
 };
 
 } // end namespace jnjvm

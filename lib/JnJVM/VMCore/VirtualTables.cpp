@@ -217,15 +217,17 @@ void JnjvmClassLoader::tracer() {
     else cl->tracer();
   }
   
-  for (std::vector<JavaString*,
-       gc_allocator<JavaString*> >::iterator i = strings.begin(), 
-       e = strings.end(); i!= e; ++i) {
-    (*i)->markAndTrace();
-    // If the string was static allocated, we want to trace its lock.
-    LockObj* l = (*i)->lockObj();
-    if (l) l->markAndTrace();
+  StringList* end = strings;
+  while (end) {
+    for (uint32 i = 0; i < end->length; ++i) {
+      JavaObject* obj = end->strings[i];
+      obj->markAndTrace(); 
+      // If the string was static allocated, we want to trace its lock.
+      LockObj* l = obj->lockObj();
+      if (l) l->markAndTrace();
+    }
+    end = end->prev;
   }
-  
 }
 
 void JnjvmBootstrapLoader::tracer() {

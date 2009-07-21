@@ -50,6 +50,11 @@
 #include "Reader.h"
 #include "Zip.h"
 
+
+namespace jnjvm {
+
+}
+
 using namespace jnjvm;
 
 typedef void (*static_init_t)(JnjvmClassLoader*);
@@ -64,7 +69,8 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   hashUTF8 = new(allocator, "UTF8Map") UTF8Map(allocator);
   classes = new(allocator, "ClassMap") ClassMap();
   javaTypes = new(allocator, "TypeMap") TypeMap(); 
-  javaSignatures = new(allocator, "SignMap") SignMap(); 
+  javaSignatures = new(allocator, "SignMap") SignMap();
+  strings = new(allocator, "StringList") StringList();
   
   bootClasspathEnv = getenv("JNJVM_BOOTCLASSPATH");
   if (!bootClasspathEnv) {
@@ -261,6 +267,7 @@ JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
   classes = new(allocator, "ClassMap") ClassMap();
   javaTypes = new(allocator, "TypeMap") TypeMap();
   javaSignatures = new(allocator, "SignMap") SignMap();
+  strings = new(allocator, "StringList") StringList();
 
   javaLoader = loader;
   isolate = I;
@@ -928,14 +935,14 @@ JnjvmBootstrapLoader::~JnjvmBootstrapLoader() {
 
 JavaString* JnjvmClassLoader::UTF8ToStr(const UTF8* val) {
   JavaString* res = isolate->internalUTF8ToStr(val);
-  strings.push_back(res);
+  strings->addString(this, res);
   return res;
 }
 
 JavaString* JnjvmBootstrapLoader::UTF8ToStr(const UTF8* val) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaString* res = vm->internalUTF8ToStr(val);
-  strings.push_back(res);
+  strings->addString(this, res);
   return res;
 }
 
@@ -1185,7 +1192,7 @@ extern "C" void vmjcAddUTF8(JnjvmClassLoader* JCL, const UTF8* val) {
 }
 
 extern "C" void vmjcAddString(JnjvmClassLoader* JCL, JavaString* val) {
-  JCL->strings.push_back(val);
+  JCL->strings->addString(JCL, val);
 }
 
 extern "C" intptr_t vmjcNativeLoader(JavaMethod* meth) {

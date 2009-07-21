@@ -1283,10 +1283,14 @@ Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, JnjvmBootstrapLoader* loader) :
   upcalls = bootstrapLoader->upcalls;
 
   throwable = upcalls->newThrowable;
- 
-  for (std::vector<JavaString*, gc_allocator<JavaString*> >::iterator i = 
-       loader->strings.begin(), e = loader->strings.end(); i != e; ++i) {
-    hashStr.insert(*i);
+
+  StringList* end = loader->strings;
+  while (end) {
+    for (uint32 i = 0; i < end->length; ++i) {
+      JavaString* obj = end->strings[i];
+      hashStr.insert(obj);
+    }
+    end = end->prev;
   }
 
   bootstrapLoader->insertAllMethodsInVM(this);  
