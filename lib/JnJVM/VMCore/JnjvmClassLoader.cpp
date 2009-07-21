@@ -341,6 +341,7 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
     char* buf = (char*)alloca(strLen + alen + 7);
 
     sprintf(buf, "%s%s.class", str, asciiz);
+    // This array is not allocated by the GC.
     res = Reader::openFile(this, buf);
     if (res) return res;
   }
@@ -351,6 +352,7 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
     ZipArchive* archive = *i;
     char* buf = (char*)alloca(alen + 7);
     sprintf(buf, "%s.class", asciiz);
+    // This array is not allocated by the GC.
     res = Reader::openZip(this, archive, buf);
     if (res) return res;
   }
@@ -362,10 +364,13 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
 UserClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name,
                                               bool doResolve,
                                               JavaString* strName) {
-  
+ 
+  llvm_gcroot(strName, 0);
+
   UserCommonClass* cl = lookupClass(name);
   
   if (!cl) {
+    // This array is not allocated by the GC.
     ArrayUInt8* bytes = openName(name);
     if (bytes) {
       cl = constructClass(name, bytes);
@@ -382,6 +387,10 @@ UserClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name,
 
 UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
                                           JavaString* strName) {
+  JavaObject* obj = 0;
+  llvm_gcroot(strName, 0);
+  llvm_gcroot(obj, 0);
+  
   UserCommonClass* cl = lookupClass(name);
   
   if (!cl) {
@@ -390,10 +399,8 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
     if (!strName) {
       strName = JavaString::internalToJava(name, isolate);
     }
-    JavaObject* obj = (JavaObject*)
-      upcalls->loadInClassLoader->invokeJavaObjectVirtual(isolate, forCtp,
-                                                          javaLoader, strName,
-                                                          doResolve);
+    obj = upcalls->loadInClassLoader->invokeJavaObjectVirtual(isolate, forCtp,
+                                              javaLoader, strName, doResolve);
     cl = (UserCommonClass*)((JavaObjectClass*)obj)->getClass();
   }
   
@@ -407,7 +414,8 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
 
 UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
                                       bool doThrow, JavaString* strName) {
- 
+  
+  llvm_gcroot(strName, 0);
 
   UserClass* cl = internalLoad(name, doResolve, strName);
 
@@ -511,6 +519,8 @@ UserCommonClass* JnjvmClassLoader::loadClassFromUserUTF8(const UTF8* name,
                                                          bool doResolve,
                                                          bool doThrow,
                                                          JavaString* strName) {
+  llvm_gcroot(strName, 0);
+  
   if (name->size == 0) {
     return 0;
   } else if (name->elements[0] == I_TAB) {
@@ -564,6 +574,8 @@ UserCommonClass*
 JnjvmClassLoader::loadClassFromJavaString(JavaString* str, bool doResolve,
                                           bool doThrow) {
   
+  llvm_gcroot(str, 0);
+  
   UTF8* name = (UTF8*)alloca(sizeof(UTF8) + str->count * sizeof(uint16));
  
   if (name) {
@@ -590,6 +602,8 @@ JnjvmClassLoader::loadClassFromJavaString(JavaString* str, bool doResolve,
 }
 
 UserCommonClass* JnjvmClassLoader::lookupClassFromJavaString(JavaString* str) {
+  
+  llvm_gcroot(str, 0);
   
   UTF8* name = (UTF8*)alloca(sizeof(UTF8) + str->count * sizeof(uint16));
   if (name) {
@@ -653,6 +667,9 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
 
 UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
                                             ArrayUInt8* bytes) {
+  
+  // The array of bytes might be GC-allocated or malloc'd. Consider
+  // that this function can never be interrupted.
   assert(bytes && "constructing a class without bytes");
   classes->lock.lock();
   ClassMap::iterator End = classes->map.end();
@@ -831,12 +848,17 @@ Signdef* JnjvmClassLoader::constructSign(const UTF8* name) {
 JnjvmClassLoader*
 JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
   
+  VMClassLoader* vmdata = 0
+  
+  llvm_gcroot(loader, 0);
+  llvm_gcroot(vmdata, 0);
+  
   if (loader == 0)
     return vm->bootstrapLoader;
  
   JnjvmClassLoader* JCL = 0;
   Classpath* upcalls = vm->bootstrapLoader->upcalls;
-  VMClassLoader* vmdata = 
+  vmdata = 
     (VMClassLoader*)(upcalls->vmdataClassLoader->getObjectField(loader));
   
   if (!vmdata) {

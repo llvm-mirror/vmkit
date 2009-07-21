@@ -19,6 +19,7 @@
 using namespace jnjvm;
 
 LockObj* LockObj::allocate(JavaObject* owner) {
+  llvm_gcroot(owner, 0);
 #ifdef USE_GC_BOEHM
   LockObj* res = new LockObj();
 #else
@@ -34,9 +35,12 @@ LockObj* LockObj::allocate(JavaObject* owner) {
 }
 
 void JavaObject::waitIntern(struct timeval* info, bool timed) {
+  LockObj* l = 0;
+  llvm_gcroot(this, 0);
+  llvm_gcroot(l, 0);
 
   if (owner()) {
-    LockObj * l = lock.changeToFatlock(this);
+    l = lock.changeToFatlock(this);
     JavaThread* thread = JavaThread::get();
     thread->waitsOn = l;
     mvm::Cond& varcondThread = thread->varcond;
@@ -128,16 +132,22 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
 }
 
 void JavaObject::wait() {
+  llvm_gcroot(this, 0);
   waitIntern(0, false);
 }
 
 void JavaObject::timedWait(struct timeval& info) {
+  llvm_gcroot(this, 0);
   waitIntern(&info, true);
 }
 
 void JavaObject::notify() {
+  LockObj* l = 0;
+  llvm_gcroot(this, 0);
+  llvm_gcroot(l, 0);
+
   if (owner()) {
-    LockObj * l = lock.getFatLock();
+    l = lock.getFatLock();
     if (l) {
       JavaThread* cur = l->firstThread;
       if (cur) {
@@ -177,8 +187,12 @@ void JavaObject::notify() {
 }
 
 void JavaObject::notifyAll() {
+  LockObj* l = 0;
+  llvm_gcroot(this, 0);
+  llvm_gcroot(l, 0);
+  
   if (owner()) {
-    LockObj * l = lock.getFatLock();
+    l = lock.getFatLock();
     if (l) {
       JavaThread* cur = l->firstThread;
       if (cur) {
@@ -203,6 +217,8 @@ void JavaObject::decapsulePrimitive(Jnjvm *vm, uintptr_t &buf,
                                     const Typedef* signature) {
 
   JavaObject* obj = this;
+  llvm_gcroot(obj, 0);
+
   if (!signature->isPrimitive()) {
     if (obj && !(obj->getClass()->isOfTypeName(signature->getName()))) {
       vm->illegalArgumentException("wrong type argument");
@@ -343,6 +359,8 @@ void JavaObject::decapsulePrimitive(Jnjvm *vm, uintptr_t &buf,
 }
 
 bool JavaObject::instanceOf(UserCommonClass* cl) {
+  llvm_gcroot(this, 0);
+
   if (!this) return false;
   else return this->getClass()->isAssignableFrom(cl);
 }
