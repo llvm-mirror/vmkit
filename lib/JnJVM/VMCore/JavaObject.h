@@ -49,6 +49,7 @@ public:
   /// acquire - Acquires the lock.
   ///
   void acquire() {
+    llvm_gcroot(this, 0);
     lock.lock();
   }
   
@@ -60,6 +61,7 @@ public:
   
   /// acquireAll - Acquires the lock nb times.
   void acquireAll(uint32 nb) {
+    llvm_gcroot(this, 0);
     lock.lockAll(nb);
   }
 
@@ -299,6 +301,7 @@ public:
 
   /// acquire - Acquire the lock on this object.
   void acquire() {
+    llvm_gcroot(this, 0);
     lock.acquire();
   }
 

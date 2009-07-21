@@ -10,6 +10,8 @@
 #ifndef JNI_REFERENCES_H
 #define JNI_REFERENCES_H
 
+#include "mvm/Allocator.h"
+
 namespace jnjvm {
 
 class JavaObject;
@@ -58,6 +60,7 @@ public:
   }
 
   JavaObject** addJNIReference(JavaObject* obj) {
+    llvm_gcroot(obj, 0);
     if (length == MAXIMUM_REFERENCES) {
       if (!next) {
         next = new JNIGlobalReferences();

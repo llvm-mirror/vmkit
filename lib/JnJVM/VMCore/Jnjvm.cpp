@@ -157,8 +157,11 @@ void UserClass::initialiseClass(Jnjvm* vm) {
       }
     }
  
-#ifdef SERVICE
     JavaObject* exc = 0;
+    JavaObject* obj = 0;
+    llvm_gcroot(exc, 0);
+    llvm_gcroot(obj, 0);
+#ifdef SERVICE
     if (classLoader == classLoader->bootstrapLoader || 
         classLoader->getIsolate() == vm) {
 #endif
@@ -188,7 +191,6 @@ void UserClass::initialiseClass(Jnjvm* vm) {
                                              vm->bootstrapLoader->clinitType,
                                              true, false, 0);
 
-    JavaObject* exc = 0;
     if (meth) {
       try{
         meth->invokeIntStatic(vm, cl);
@@ -226,7 +228,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
       Classpath* upcalls = classLoader->bootstrapLoader->upcalls;
       UserClass* clExcp = upcalls->ExceptionInInitializerError;
       Jnjvm* vm = self->getJVM();
-      JavaObject* obj = clExcp->doNew(vm);
+      obj = clExcp->doNew(vm);
       if (!obj) {
         fprintf(stderr, "implement me");
         abort();
@@ -251,6 +253,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
 void Jnjvm::errorWithExcp(UserClass* cl, JavaMethod* init,
                           const JavaObject* excp) {
   JavaObject* obj = cl->doNew(this);
+  llvm_gcroot(obj, 0);
   init->invokeIntSpecial(this, cl, obj, excp);
   JavaThread::get()->throwException(obj);
 }
@@ -435,6 +438,7 @@ static JavaString* CreateNoSuchMsg(CommonClass* cl, const UTF8* name,
                                    Jnjvm* vm) {
   ArrayUInt16* msg = (ArrayUInt16*)
     vm->upcalls->ArrayOfChar->doNew(19 + cl->name->size + name->size, vm);
+
   uint32 i = 0;
 
 
@@ -630,6 +634,7 @@ void Jnjvm::classFormatError(const char* msg) {
 JavaString* Jnjvm::internalUTF8ToStr(const UTF8* utf8) {
   uint32 size = utf8->size;
   ArrayUInt16* tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
+  llvm_gcroot(tmp, 0);
   uint16* buf = tmp->elements;
   
   for (uint32 i = 0; i < size; i++) {
@@ -657,12 +662,18 @@ void Jnjvm::addProperty(char* key, char* value) {
 
 // Mimic what's happening in Classpath when creating a java.lang.Class object.
 JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
+  JavaObjectClass* delegatee = 0;
+  JavaObjectClass* base = 0;
+  llvm_gcroot(pd, 0);
+  llvm_gcroot(delegatee, 0);
+  llvm_gcroot(base, 0);
+
   if (!getDelegatee()) {
     UserClass* cl = vm->upcalls->newClass;
-    JavaObjectClass* delegatee = (JavaObjectClass*)cl->doNew(vm);
+    delegatee = (JavaObjectClass*)cl->doNew(vm);
     delegatee->vmdata = this;
     if (!pd && isArray()) {
-      JavaObjectClass* base = (JavaObjectClass*)
+      base = (JavaObjectClass*)
         asArrayClass()->baseClass()->getClassDelegatee(vm, pd);
       delegatee->pd = base->pd;
     } else {
@@ -678,6 +689,11 @@ JavaObject* const* UserCommonClass::getClassDelegateePtr(Jnjvm* vm, JavaObject* 
   getClassDelegatee(vm, pd);
   return getDelegateePtr();
 }
+
+//===----------------------------------------------------------------------===//
+// The command line parsing tool does not manipulate any GC-allocated objects.
+//
+//===----------------------------------------------------------------------===//
 
 #define PATH_MANIFEST "META-INF/MANIFEST.MF"
 #define MAIN_CLASS "Main-Class: "
@@ -942,10 +958,12 @@ void ClArgumentsInfo::readArgs(Jnjvm* vm) {
 
 
 JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
+  JavaObject* loader = 0;
+  llvm_gcroot(loader, 0);
+  
   if (appClassLoader == 0) {
     UserClass* cl = upcalls->newClassLoader;
-    JavaObject* loader = 
-      upcalls->getSystemClassLoader->invokeJavaObjectStatic(this, cl);
+    loader = upcalls->getSystemClassLoader->invokeJavaObjectStatic(this, cl);
     appClassLoader = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader,
                                                                     this);
     if (argumentsInfo.jarFile)
@@ -1072,6 +1090,15 @@ void Jnjvm::loadBootstrap() {
 }
 
 void Jnjvm::executeClass(const char* className, ArrayObject* args) {
+  JavaObject* exc = 0;
+  JavaObject* obj = 0;
+  JavaObject* group = 0;
+  
+  llvm_gcroot(args, 0);
+  llvm_gcroot(ex, 0);
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(group, 0);
+
   try {
     
     // First try to see if we are a self-contained executable.
@@ -1094,13 +1121,12 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
   }catch(...) {
   }
 
-  JavaObject* exc = JavaThread::get()->pendingException;
+  exc = JavaThread::get()->pendingException;
   if (exc) {
     JavaThread* th = JavaThread::get();
     th->clearException();
-    JavaObject* obj = th->currentThread();
-    JavaObject* group = 
-      upcalls->group->getObjectField(obj);
+    obj = th->currentThread();
+    group = upcalls->group->getObjectField(obj);
     try{
       upcalls->uncaughtException->invokeIntSpecial(this, upcalls->threadGroup,
                                                    group, obj, exc);
@@ -1113,6 +1139,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
 
 void Jnjvm::executePremain(const char* className, JavaString* args,
                              JavaObject* instrumenter) {
+  llvm_gcroot(instrumenter, 0);
   try {
     const UTF8* name = appClassLoader->asciizConstructUTF8(className);
     UserClass* cl = (UserClass*)appClassLoader->loadName(name, true, true);
@@ -1143,6 +1170,15 @@ void Jnjvm::waitForExit() {
 }
 
 void Jnjvm::mainJavaStart(JavaThread* thread) {
+
+  JavaString* str = 0;
+  JavaObject* instrumenter = 0;
+  ArrayObject* args = 0;
+
+  llvm_gcroot(str, 0);
+  llvm_gcroot(instrumenter, 0);
+  llvm_gcroot(args, 0);
+
   Jnjvm* vm = thread->getJVM();
   vm->mainThread = thread;
 
@@ -1156,17 +1192,17 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
   
   if (info.agents.size()) {
     assert(0 && "implement me");
-    JavaObject* instrumenter = 0;//createInstrumenter();
+    instrumenter = 0;//createInstrumenter();
     for (std::vector< std::pair<char*, char*> >::iterator i = 
                                                 info.agents.begin(),
             e = info.agents.end(); i!= e; ++i) {
-      JavaString* args = vm->asciizToStr(i->second);
-      vm->executePremain(i->first, args, instrumenter);
+      str = vm->asciizToStr(i->second);
+      vm->executePremain(i->first, str, instrumenter);
     }
   }
     
   UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfString;
-  ArrayObject* args = (ArrayObject*)array->doNew(info.argc - 2, vm);
+  args = (ArrayObject*)array->doNew(info.argc - 2, vm);
   for (int i = 2; i < info.argc; ++i) {
     args->elements[i - 2] = (JavaObject*)vm->asciizToStr(info.argv[i]);
   }
