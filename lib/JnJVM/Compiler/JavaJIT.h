@@ -63,7 +63,7 @@ public:
     TheCompiler = C;
     module = TheCompiler->getIntrinsics();
     llvmFunction = func;
-    llvmContext = func->getContext();
+    llvmContext = &func->getContext();
     inlining = false;
     callsStackWalker = false;
     endNode = 0;

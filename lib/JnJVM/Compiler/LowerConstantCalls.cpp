@@ -119,7 +119,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
   JavaLLVMCompiler* TheCompiler = 
     (JavaLLVMCompiler*)meth->classDef->classLoader->getCompiler();
   JnjvmModule* module = TheCompiler->getIntrinsics();
-  LLVMContext* Context = F.getContext();
+  LLVMContext* Context = &F.getContext();
   bool Changed = false;
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
@@ -132,7 +132,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* Arg = Cmp->getOperand(0);
           if (isVirtual(meth->access) && Arg == F.arg_begin()) {
             Changed = true;
-            Cmp->replaceAllUsesWith(Context->getConstantIntFalse());
+            Cmp->replaceAllUsesWith(Context->getFalse());
             Cmp->eraseFromParent();
             break;
           }
@@ -141,7 +141,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Instruction* CI = Ca.getInstruction();
           if (CI && Ca.getCalledValue() == module->JavaObjectAllocateFunction) {
             Changed = true;
-            Cmp->replaceAllUsesWith(Context->getConstantIntFalse());
+            Cmp->replaceAllUsesWith(Context->getFalse());
             Cmp->eraseFromParent();
             break;
           }
@@ -472,14 +472,13 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         } else if (V == module->GetArrayClassFunction) {
           const llvm::Type* Ty = 
             PointerType::getUnqual(module->JavaCommonClassType);
-          Constant* nullValue = F.getContext()->getNullValue(Ty);
+          Constant* nullValue = Context->getNullValue(Ty);
           // Check if we have already proceed this call.
           if (Call.getArgument(1) == nullValue) { 
             BasicBlock* NBB = II->getParent()->splitBasicBlock(II);
             I->getParent()->getTerminator()->eraseFromParent();
 
-            Constant* init = 
-              F.getContext()->getNullValue(module->JavaClassArrayType);
+            Constant* init = Context->getNullValue(module->JavaClassArrayType);
             GlobalVariable* GV = 
               new GlobalVariable(*(F.getParent()), module->JavaClassArrayType,
                                  false, GlobalValue::ExternalLinkage,
@@ -551,7 +550,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
              
           Value* res = new ICmpInst(CI, ICmpInst::ICMP_EQ, CurVT, VT2, "");
 
-          node->addIncoming(Context->getConstantIntTrue(), CI->getParent());
+          node->addIncoming(Context->getTrue(), CI->getParent());
           BranchInst::Create(CurEndBlock, FailedBlock, res, CI);
 
           Value* Args[2] = { VT1, VT2 };
@@ -670,9 +669,9 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           // Final block, that gets the result.
           PHINode* node = PHINode::Create(Type::Int1Ty, "", BB9);
           node->reserveOperandSpace(3);
-          node->addIncoming(Context->getConstantIntTrue(), CI->getParent());
-          node->addIncoming(Context->getConstantIntFalse(), BB7);
-          node->addIncoming(Context->getConstantIntTrue(), BB5);
+          node->addIncoming(Context->getTrue(), CI->getParent());
+          node->addIncoming(Context->getFalse(), BB7);
+          node->addIncoming(Context->getTrue(), BB5);
     
           // Don't forget to jump to the next block.
           BranchInst::Create(EndBlock, BB9);

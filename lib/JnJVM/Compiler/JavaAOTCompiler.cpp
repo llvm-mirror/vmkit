@@ -783,7 +783,7 @@ Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
     }
 
     ATy = ArrayType::get(JnjvmModule::JavaClassType, cl->nbInterfaces);
-    Constant* interfaces = ConstantArray::get(ATy, TempElmts);
+    Constant* interfaces = Context.getConstantArray(ATy, TempElmts);
     interfaces = new GlobalVariable(Mod, ATy, true,
                                     GlobalValue::InternalLinkage,
                                     interfaces, "");
@@ -855,7 +855,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaField(JavaField& field) {
       TempElts.push_back(CreateConstantFromAttribut(field.attributs[i]));
     }
 
-    Constant* attributs = ConstantArray::get(ATy, TempElts);
+    Constant* attributs = Context.getConstantArray(ATy, TempElts);
     TempElts.clear();
     attributs = new GlobalVariable(*getLLVMModule(), ATy, true,
                                    GlobalValue::InternalLinkage,
@@ -909,7 +909,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
       TempElts.push_back(CreateConstantFromAttribut(method.attributs[i]));
     }
 
-    Constant* attributs = ConstantArray::get(ATy, TempElts);
+    Constant* attributs = Context.getConstantArray(ATy, TempElts);
     TempElts.clear();
     attributs = new GlobalVariable(Mod, ATy, true,
                                    GlobalValue::InternalLinkage,
@@ -1061,7 +1061,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   Constant* fields = 0;
   if (cl->nbStaticFields + cl->nbVirtualFields) {
   
-    fields = ConstantArray::get(ATy, TempElts);
+    fields = Context.getConstantArray(ATy, TempElts);
     TempElts.clear();
     fields = new GlobalVariable(Mod, ATy, false,
                                 GlobalValue::InternalLinkage,
@@ -1108,7 +1108,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
 
   Constant* methods = 0;
   if (cl->nbVirtualMethods + cl->nbStaticMethods) {
-    methods = ConstantArray::get(ATy, TempElts);
+    methods = Context.getConstantArray(ATy, TempElts);
     TempElts.clear();
     GlobalVariable* GV = new GlobalVariable(Mod, ATy, false,
                                             GlobalValue::InternalLinkage,
@@ -1153,7 +1153,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
       TempElts.push_back(CreateConstantFromAttribut(cl->attributs[i]));
     }
 
-    Constant* attributs = ConstantArray::get(ATy, TempElts);
+    Constant* attributs = Context.getConstantArray(ATy, TempElts);
     TempElts.clear();
     attributs = new GlobalVariable(*getLLVMModule(), ATy, true,
                                    GlobalValue::InternalLinkage,
@@ -1176,7 +1176,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
 
     const llvm::Type* TempTy = JnjvmModule::JavaClassType;
     ATy = ArrayType::get(TempTy, cl->nbInnerClasses);
-    Constant* innerClasses = ConstantArray::get(ATy, TempElts);
+    Constant* innerClasses = Context.getConstantArray(ATy, TempElts);
     innerClasses = new GlobalVariable(*getLLVMModule(), ATy, true,
                                       GlobalValue::InternalLinkage,
                                       innerClasses, "");
@@ -1253,7 +1253,7 @@ Constant* JavaAOTCompiler::CreateConstantFromArray(const T* val, const Type* Ty)
     }
   }
 
-  Cts.push_back(ConstantArray::get(ATy, Vals));
+  Cts.push_back(Context.getConstantArray(ATy, Vals));
   
   return ConstantStruct::get(STy, Cts);
 }
@@ -1277,7 +1277,7 @@ Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
     Vals.push_back(Context.getConstantInt(Type::Int16Ty, val->elements[i]));
   }
 
-  Cts.push_back(ConstantArray::get(ATy, Vals));
+  Cts.push_back(Context.getConstantArray(ATy, Vals));
   
   return ConstantStruct::get(STy, Cts);
 
@@ -1389,7 +1389,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
     Constant* Cl = getVirtualTable(VT->secondaryTypes[i]);
     TempElmts.push_back(Cl);
   }
-  Constant* display = ConstantArray::get(DTy, TempElmts);
+  Constant* display = Context.getConstantArray(DTy, TempElmts);
   TempElmts.clear();
   
   display = new GlobalVariable(*getLLVMModule(), DTy, true,
@@ -1422,7 +1422,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
     }
   }
 
-  Constant* Array = ConstantArray::get(ATy, Elemts);
+  Constant* Array = Context.getConstantArray(ATy, Elemts);
   
   return Array;
 }

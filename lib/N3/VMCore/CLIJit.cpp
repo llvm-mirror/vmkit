@@ -113,7 +113,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
       args.push_back(zero);
       if (boxed) {
         ConstantInt* CI = dyn_cast<ConstantInt>(field->offset);
-        args.push_back(llvmFunction->getContext()->getConstantInt(CI->getValue() + 1));
+        args.push_back(llvmFunction->getContext().getConstantInt(CI->getValue() + 1));
       } else {
         args.push_back(field->offset);
       }
@@ -125,7 +125,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
       args.push_back(zero);
       if (boxed) {
         ConstantInt* CI = dyn_cast<ConstantInt>(field->offset);
-        args.push_back(llvmFunction->getContext()->getConstantInt(CI->getValue() + 1));
+        args.push_back(llvmFunction->getContext().getConstantInt(CI->getValue() + 1));
       } else {
         args.push_back(field->offset);
       }
@@ -631,7 +631,7 @@ void CLIJit::invokeNew(uint32 value, VMGenericClass* genClass, VMGenericMethod* 
     std::vector<Value*> params;
     params.push_back(new BitCastInst(obj, module->ptrType, "", currentBlock));
     params.push_back(module->constantInt8Zero);
-    params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
+    params.push_back(llvmFunction->getContext().getConstantInt(Type::Int32Ty, size));
     params.push_back(module->constantZero);
     CallInst::Create(module->llvm_memset_i32, params.begin(), params.end(),
                      "", currentBlock);
@@ -738,14 +738,14 @@ void CLIJit::setVirtualField(uint32 value, bool isVolatile, VMGenericClass* genC
     std::vector<Value*> params;
     params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
     params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-    params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
+    params.push_back(llvmFunction->getContext().getConstantInt(Type::Int32Ty, size));
     params.push_back(module->constantZero);
     CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
 
   } else {
     type = field->signature->naturalType;
     if (val == constantVMObjectNull) {
-      val = llvmFunction->getContext()->getNullValue(type);
+      val = llvmFunction->getContext().getNullValue(type);
     } else if (type != valType) {
       val = changeType(val, type);
     }
@@ -771,7 +771,7 @@ void CLIJit::setStaticField(uint32 value, bool isVolatile, VMGenericClass* genCl
   const Type* type = field->signature->naturalType;
   const Type* valType = val->getType();
   if (val == constantVMObjectNull) {
-    val = llvmFunction->getContext()->getNullValue(type);
+    val = llvmFunction->getContext().getNullValue(type);
   } else if (type != valType) {
     val = changeType(val, type);
   }
@@ -780,7 +780,7 @@ void CLIJit::setStaticField(uint32 value, bool isVolatile, VMGenericClass* genCl
 
 void CLIJit::JITVerifyNull(Value* obj) {
   CLIJit* jit = this;
-  Constant* zero = llvmFunction->getContext()->getNullValue(obj->getType());
+  Constant* zero = llvmFunction->getContext().getNullValue(obj->getType());
   Value* test = new ICmpInst(*jit->currentBlock, ICmpInst::ICMP_EQ, obj,
                              zero, "");
 
@@ -950,7 +950,7 @@ Function* CLIJit::compileNative(VMGenericMethod* genMethod) {
   void* natPtr = NativeUtil::nativeLookup(compilingClass, compilingMethod);
   
   Value* valPtr = 
-    ConstantExpr::getIntToPtr(llvmFunction->getContext()->getConstantInt(Type::Int64Ty, (uint64)natPtr),
+    ConstantExpr::getIntToPtr(llvmFunction->getContext().getConstantInt(Type::Int64Ty, (uint64)natPtr),
                               PointerType::getUnqual(funcType));
   
   Value* result = CallInst::Create(valPtr, nativeArgs.begin(),
@@ -1225,7 +1225,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
       cl->resolveType(false, false, genMethod);
       AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
       if (cl->naturalType->isSingleValueType()) {
-        new StoreInst(llvmFunction->getContext()->getNullValue(cl->naturalType), alloc, false,
+        new StoreInst(llvmFunction->getContext().getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
       } else {
         uint64 size = module->getTypeSize(cl->naturalType);
@@ -1234,7 +1234,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
         params.push_back(new BitCastInst(alloc, module->ptrType, "",
                                          currentBlock));
         params.push_back(module->constantInt8Zero);
-        params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
+        params.push_back(llvmFunction->getContext().getConstantInt(Type::Int32Ty, size));
         params.push_back(module->constantZero);
         CallInst::Create(module->llvm_memset_i32, params.begin(),
                          params.end(), "", currentBlock);
@@ -1282,7 +1282,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
                                        currentBlock));
       params.push_back(new BitCastInst(endNode, module->ptrType, "",
                                        currentBlock));
-      params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
+      params.push_back(llvmFunction->getContext().getConstantInt(Type::Int32Ty, size));
       params.push_back(module->constantFour);
       CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(),
                        "", currentBlock);
@@ -1402,7 +1402,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
       cl->resolveType(false, false, genMethod);
       AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
       if (cl->naturalType->isSingleValueType()) {
-        new StoreInst(llvmFunction->getContext()->getNullValue(cl->naturalType), alloc, false,
+        new StoreInst(llvmFunction->getContext().getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
       } else {
         uint64 size = module->getTypeSize(cl->naturalType);
@@ -1411,7 +1411,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
         params.push_back(new BitCastInst(alloc, module->ptrType, "",
                                          currentBlock));
         params.push_back(module->constantInt8Zero);
-        params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
+        params.push_back(llvmFunction->getContext().getConstantInt(Type::Int32Ty, size));
         params.push_back(module->constantZero);
         CallInst::Create(module->llvm_memset_i32, params.begin(),
                          params.end(), "", currentBlock);

@@ -2056,7 +2056,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         } else {
           BasicBlock* ifFalse = createBasicBlock("false type compare");
           BranchInst::Create(endBlock, ifFalse, cmp, currentBlock);
-          node->addIncoming(llvmContext->getConstantIntFalse(), currentBlock);
+          node->addIncoming(llvmContext->getFalse(), currentBlock);
           currentBlock = ifFalse;
         }
 

@@ -176,7 +176,7 @@ static void store(Value* val, Value* local, bool vol,
     std::vector<Value*> params;
     params.push_back(new BitCastInst(local, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
     params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-    params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
+    params.push_back(llvmFunction->getContext().getConstantInt(Type::Int32Ty, size));
     params.push_back(module->constantZero);
     CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
   } else {
@@ -195,7 +195,7 @@ static Value* load(Value* val, const char* name, BasicBlock* currentBlock, mvm::
     std::vector<Value*> params;
     params.push_back(new BitCastInst(ret, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
     params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-    params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
+    params.push_back(llvmFunction->getContext().getConstantInt(Type::Int32Ty, size));
     params.push_back(module->constantZero);
     CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
     return ret;
@@ -230,13 +230,13 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
 #if N3_EXECUTE > 1
     if (bytecodes[i] == 0xFE) {
       std::vector<llvm::Value*> args;
-      args.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, (int64_t)OpcodeNamesFE[bytecodes[i + 1]]));
-      args.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, (int64_t)compilingMethod));
+      args.push_back(llvmFunction->getContext().getConstantInt(Type::Int32Ty, (int64_t)OpcodeNamesFE[bytecodes[i + 1]]));
+      args.push_back(llvmFunction->getContext().getConstantInt(Type::Int32Ty, (int64_t)compilingMethod));
       CallInst::Create(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
     } else {
       std::vector<llvm::Value*> args;
-      args.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, (int64_t)OpcodeNames[bytecodes[i]]));
-      args.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, (int64_t)compilingMethod));
+      args.push_back(llvmFunction->getContext().getConstantInt(Type::Int32Ty, (int64_t)OpcodeNames[bytecodes[i]]));
+      args.push_back(llvmFunction->getContext().getConstantInt(Type::Int32Ty, (int64_t)compilingMethod));
       CallInst::Create(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
     }
 #endif
@@ -343,7 +343,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
 #define TEST(name, read, cmpf, cmpi, offset) case name : { \
         uint32 tmp = i;       \
         Value* val2 = pop();  \
-        Value* val1 = llvmFunction->getContext()->getNullValue(val2->getType());  \
+        Value* val1 = llvmFunction->getContext().getNullValue(val2->getType());  \
         BasicBlock* ifTrue = opcodeInfos[tmp + offset + read(bytecodes, i)].newBlock; \
         Value* test = 0; \
         if (val1->getType()->isFloatingPoint()) { \
@@ -705,7 +705,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         uint32 index = 0; 
         for (std::vector<BasicBlock*>::iterator i = leaves.begin(), 
              e = leaves.end(); i!= e; ++i, ++index) {
-          inst->addCase(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, index), *i); 
+          inst->addCase(llvmFunction->getContext().getConstantInt(Type::Int32Ty, index), *i); 
         }
 
         //currentBlock = bb2;
@@ -749,22 +749,22 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
 
       case LDC_I4 : {
-        push(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, readS4(bytecodes, i)));
+        push(llvmFunction->getContext().getConstantInt(Type::Int32Ty, readS4(bytecodes, i)));
         break;
       }
       
       case LDC_I8 : {
-        push(llvmFunction->getContext()->getConstantInt(Type::Int64Ty, readS8(bytecodes, i)));
+        push(llvmFunction->getContext().getConstantInt(Type::Int64Ty, readS8(bytecodes, i)));
         break;
       }
       
       case LDC_R4 : {
-        push(llvmFunction->getContext()->getConstantFP(Type::FloatTy, readFloat(bytecodes, i)));
+        push(llvmFunction->getContext().getConstantFP(Type::FloatTy, readFloat(bytecodes, i)));
         break;
       }
       
       case LDC_R8 : {
-        push(llvmFunction->getContext()->getConstantFP(Type::DoubleTy, readDouble(bytecodes, i)));
+        push(llvmFunction->getContext().getConstantFP(Type::DoubleTy, readDouble(bytecodes, i)));
         break;
       }
       
@@ -819,7 +819,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
       
       case LDC_I4_S : {
-        push(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, readS1(bytecodes, i)));
+        push(llvmFunction->getContext().getConstantInt(Type::Int32Ty, readS1(bytecodes, i)));
         break;
       }
  
@@ -954,7 +954,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           }
           if (res) {
             Value* expr = ConstantExpr::getIntToPtr(
-                                    llvmFunction->getContext()->getConstantInt(Type::Int64Ty,
+                                    llvmFunction->getContext().getConstantInt(Type::Int64Ty,
                                                      uint64_t (leaveIndex++)),
                                     VMObject::llvmType);
 
@@ -986,7 +986,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           }
           if (res) {
             Value* expr = ConstantExpr::getIntToPtr(
-                                    llvmFunction->getContext()->getConstantInt(Type::Int64Ty,
+                                    llvmFunction->getContext().getConstantInt(Type::Int64Ty,
                                                      uint64_t (leaveIndex++)),
                                     VMObject::llvmType);
 
@@ -1022,7 +1022,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case NEG : {
         Value* val = pop();
         push(BinaryOperator::CreateSub(
-                              llvmFunction->getContext()->getNullValue(val->getType()),
+                              llvmFunction->getContext().getNullValue(val->getType()),
                               val, "", currentBlock));
         break;
       }
@@ -1030,7 +1030,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case NOP : break;
 
       case NOT : {
-        push(BinaryOperator::CreateNot(*(llvmFunction->getContext()), pop(), "", currentBlock));
+        push(BinaryOperator::CreateNot(llvmFunction->getContext(), pop(), "", currentBlock));
         break;
       }
 
@@ -1262,7 +1262,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           sint32 index = next + offset;
           assert(index > 0);
           BasicBlock* BB = opcodeInfos[index].newBlock;
-          SI->addCase(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, t), BB);
+          SI->addCase(llvmFunction->getContext().getConstantInt(Type::Int32Ty, t), BB);
         }
         break;
       }
@@ -1313,7 +1313,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         std::vector<Value*> params;
         params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
         params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-        params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
+        params.push_back(llvmFunction->getContext().getConstantInt(Type::Int32Ty, size));
         params.push_back(module->constantZero);
         CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
         
@@ -1385,8 +1385,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* obj = pop();
 
         Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, obj, 
-                                  llvmFunction->getContext()->getNullValue(obj->getType()), "");
-        Constant* nullVirtual = llvmFunction->getContext()->getNullValue(dcl->virtualType);
+                                  llvmFunction->getContext().getNullValue(obj->getType()), "");
+        Constant* nullVirtual = llvmFunction->getContext().getNullValue(dcl->virtualType);
 
      
         BasicBlock* isInstEndBlock = createBasicBlock("end isinst");
@@ -1580,7 +1580,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         uint32 value = readU4(bytecodes, i);
         uint32 index = value & 0xfffffff;
         const UTF8* utf8 = compilingClass->assembly->readUserString(index);
-        Value* val = ConstantExpr::getIntToPtr(llvmFunction->getContext()->getConstantInt(Type::Int64Ty, (int64_t)utf8),
+        Value* val = ConstantExpr::getIntToPtr(llvmFunction->getContext().getConstantInt(Type::Int64Ty, (int64_t)utf8),
                                                module->ptrType);
         Value* res = CallInst::Create(newStringLLVM, val, "", currentBlock);
         /*CLIString * str = 
@@ -1812,7 +1812,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         std::vector<Value*> params;
         params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
         params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-        params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
+        params.push_back(llvmFunction->getContext().getConstantInt(Type::Int32Ty, size));
         params.push_back(module->constantZero);
         CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
         
@@ -1963,7 +1963,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
               params.push_back(new BitCastInst(pop(), module->ptrType, "",
                                                currentBlock));
               params.push_back(module->constantInt8Zero);
-              params.push_back(llvmFunction->getContext()->getConstantInt(Type::Int32Ty, size));
+              params.push_back(llvmFunction->getContext().getConstantInt(Type::Int32Ty, size));
               params.push_back(module->constantZero);
               CallInst::Create(module->llvm_memset_i32, params.begin(),
                                params.end(), "", currentBlock);
