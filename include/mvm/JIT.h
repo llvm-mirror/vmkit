@@ -113,6 +113,7 @@ public:
   llvm::Function* llvm_atomic_lcs_i32;
   llvm::Function* llvm_atomic_lcs_i64;
   llvm::Function* llvm_atomic_lcs_ptr;
+  llvm::Function* llvm_gc_gcroot;
 
 
    llvm::Constant* constantInt8Zero;

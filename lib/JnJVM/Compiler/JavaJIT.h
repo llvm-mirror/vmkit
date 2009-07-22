@@ -97,11 +97,11 @@ private:
   JavaLLVMCompiler* TheCompiler;
   
   /// locals - The locals of the method.
-  std::vector<llvm::Value*> intLocals;
-  std::vector<llvm::Value*> longLocals;
-  std::vector<llvm::Value*> floatLocals;
-  std::vector<llvm::Value*> doubleLocals;
-  std::vector<llvm::Value*> objectLocals;
+  std::vector<llvm::AllocaInst*> intLocals;
+  std::vector<llvm::AllocaInst*> longLocals;
+  std::vector<llvm::AllocaInst*> floatLocals;
+  std::vector<llvm::AllocaInst*> doubleLocals;
+  std::vector<llvm::AllocaInst*> objectLocals;
 
   /// endBlock - The block that returns.
   llvm::BasicBlock* endBlock;

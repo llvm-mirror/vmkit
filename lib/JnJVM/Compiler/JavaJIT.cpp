@@ -364,6 +364,12 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
       Value* temp = new AllocaInst(module->JavaObjectType, "",
                                    currentBlock);
+      Value* GCArgs[2] = { 
+        new BitCastInst(temp, module->ptrPtrType, "", currentBlock),
+        module->constantPtrNull
+      };
+      CallInst::Create(module->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
+                       currentBlock);
       new StoreInst(i, temp, false, currentBlock);
       node->addIncoming(temp, currentBlock);
       BranchInst::Create(BB, currentBlock);
@@ -651,6 +657,16 @@ void JavaJIT::endSynchronize() {
 }
 
 
+static void removeUnusedLocals(std::vector<AllocaInst*>& locals) {
+  for (std::vector<AllocaInst*>::iterator i = locals.begin(),
+       e = locals.end(); i != e; ++i) {
+    AllocaInst* temp = *i;
+    if (!temp->getNumUses()) {
+      temp->eraseFromParent();
+    }
+  }
+}
+
 Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
                                     BasicBlock* endExBlock,
                                     std::vector<Value*>& args) {
@@ -706,6 +722,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
       objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
                                           firstInstruction));
     }
+
   } else {
     for (int i = 0; i < maxLocals; i++) {
       intLocals.push_back(new AllocaInst(Type::Int32Ty, "", firstBB));
@@ -716,6 +733,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
                                             firstBB));
     }
   }
+      
   
   uint32 index = 0;
   uint32 count = 0;
@@ -780,6 +798,28 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
               UTF8Buffer(compilingMethod->name).cString());
 
   curBB = endBlock;
+
+
+  for (std::vector<AllocaInst*>::iterator i = objectLocals.begin(),
+       e = objectLocals.end(); i != e; ++i) {
+    AllocaInst* temp = *i;
+    if (temp->getNumUses()) {
+      Instruction* I = new BitCastInst(temp, module->ptrPtrType, "");
+      I->insertAfter(temp);
+      Value* GCArgs[2] = { I, module->constantPtrNull };
+      Instruction* C = CallInst::Create(module->llvm_gc_gcroot, GCArgs,
+                                        GCArgs + 2, "");
+      C->insertAfter(I);
+    } else {
+      temp->eraseFromParent();
+    }
+  }
+  removeUnusedLocals(intLocals);
+  removeUnusedLocals(doubleLocals);
+  removeUnusedLocals(floatLocals);
+  removeUnusedLocals(longLocals);
+
+
   return endNode;
     
 }
@@ -843,7 +883,6 @@ llvm::Function* JavaJIT::javaCompile() {
     objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
                                           currentBlock));
   }
-
   
   uint32 index = 0;
   uint32 count = 0;
@@ -1061,6 +1100,26 @@ llvm::Function* JavaJIT::javaCompile() {
   currentBlock = endExceptionBlock;
 
   finishExceptions();
+  
+  for (std::vector<AllocaInst*>::iterator i = objectLocals.begin(),
+       e = objectLocals.end(); i != e; ++i) {
+    AllocaInst* temp = *i;
+    if (temp->getNumUses()) {
+      Instruction* I = new BitCastInst(temp, module->ptrPtrType, "");
+      I->insertAfter(temp);
+      Value* GCArgs[2] = { I, module->constantPtrNull };
+      Instruction* C = CallInst::Create(module->llvm_gc_gcroot, GCArgs,
+                                        GCArgs + 2, "");
+      C->insertAfter(I);
+    } else {
+      temp->eraseFromParent();
+    }
+  }
+  
+  removeUnusedLocals(intLocals);
+  removeUnusedLocals(doubleLocals);
+  removeUnusedLocals(floatLocals);
+  removeUnusedLocals(longLocals);
   
   func->setLinkage(GlobalValue::ExternalLinkage);
   

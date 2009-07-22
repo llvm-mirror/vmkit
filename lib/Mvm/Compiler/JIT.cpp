@@ -202,6 +202,7 @@ MvmModule::MvmModule(llvm::Module* module) {
   llvm_memcpy_i32 = module->getFunction("llvm.memcpy.i32");
   llvm_memset_i32 = module->getFunction("llvm.memset.i32");
   llvm_frameaddress = module->getFunction("llvm.frameaddress");
+  llvm_gc_gcroot = module->getFunction("llvm.gcroot");
 
   llvm_atomic_lcs_i8 = module->getFunction("llvm.atomic.cmp.swap.i8.p0i8");
   llvm_atomic_lcs_i16 = module->getFunction("llvm.atomic.cmp.swap.i16.p0i16");
