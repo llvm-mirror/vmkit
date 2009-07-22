@@ -50,8 +50,9 @@ static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
   
   threadId = new IntToPtrInst(threadId, module->ptr32Type, "", CI);
   
-  Value* IsolateID = GetElementPtrInst::Create(threadId, module->constantThree,
-                                               "", CI);
+  Value* IsolateID = GetElementPtrInst::Create(threadId,
+      module->OffsetIsolateInThreadConstant, "", CI);
+
   IsolateID = new LoadInst(IsolateID, "", CI);
 
   Value* GEP2[2] = { module->constantZero, IsolateID };
@@ -74,8 +75,9 @@ static Value* getDelegatee(JnjvmModule* module, Value* Arg, Instruction* CI) {
   
   threadId = new IntToPtrInst(threadId, module->ptr32Type, "", CI);
   
-  Value* IsolateID = GetElementPtrInst::Create(threadId, module->constantThree,
-                                               "", CI);
+  Value* IsolateID = GetElementPtrInst::Create(threadId, 
+      module->OffsetIsolateInThreadConstant, "", CI);
+
   IsolateID = new LoadInst(IsolateID, "", CI);
 
   Value* GEP2[2] = { module->constantZero, IsolateID };

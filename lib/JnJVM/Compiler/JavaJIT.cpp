@@ -322,7 +322,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   Value* threadId = getCurrentThread();
 
-  Value* geps[2] = { module->constantZero, module->constantEight };
+  Value* geps[2] = { module->constantZero, module->OffsetJNIInThreadConstant };
 
   Value* jniEnv = GetElementPtrInst::Create(threadId, geps, geps + 2, "",
                                             currentBlock);

@@ -138,7 +138,11 @@ public:
   /// baseSP - The base stack pointer.
   ///
   void* baseSP;
-  
+ 
+  /// doYield - Flag to tell the thread to yield for GC reasons.
+  ///
+  bool doYield;
+
   /// get - Get the thread specific data of the current thread.
   ///
   static Thread* get() {

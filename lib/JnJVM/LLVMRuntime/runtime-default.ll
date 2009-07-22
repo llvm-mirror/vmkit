@@ -40,13 +40,14 @@
 ;;; Field 3: IsolateID
 ;;; Field 4: MyVM
 ;;; Field 5: baseSP
-;;; Field 6: internalThreadID
-;;; field 7: routine
-;;; field 8: jnienv
-;;; field 9: Java pendingException
-;;; field 10: CXX pendingException
-%JavaThread = type { %VT*, %JavaThread*, %JavaThread*, i8*, i8*, i8*, i8*, i8*,
-                     i8*, %JavaObject*, i8* }
+;;; Field 6: doYield
+;;; Field 7: internalThreadID
+;;; field 8: routine
+;;; field 9: jnienv
+;;; field 10: Java pendingException
+;;; field 11: CXX pendingException
+%JavaThread = type { %VT*, %JavaThread*, %JavaThread*, i8*, i8*, i8*, i1, i8*,
+                     i8*, i8*, %JavaObject*, i8* }
 
 
 %Attribut = type { %UTF8*, i32, i32 }

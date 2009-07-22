@@ -196,8 +196,11 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   OffsetStatusInTaskClassMirrorConstant = constantZero;
   OffsetInitializedInTaskClassMirrorConstant = constantOne;
   
-  OffsetJavaExceptionInThreadConstant = Context.getConstantInt(Type::Int32Ty, 9);
-  OffsetCXXExceptionInThreadConstant = Context.getConstantInt(Type::Int32Ty, 10);
+  OffsetIsolateInThreadConstant = Context.getConstantInt(Type::Int32Ty, 3);
+  OffsetDoYieldInThreadConstant = Context.getConstantInt(Type::Int32Ty, 6);
+  OffsetJNIInThreadConstant = Context.getConstantInt(Type::Int32Ty, 9);
+  OffsetJavaExceptionInThreadConstant = Context.getConstantInt(Type::Int32Ty, 10);
+  OffsetCXXExceptionInThreadConstant = Context.getConstantInt(Type::Int32Ty, 11);
   
   ClassReadyConstant = Context.getConstantInt(Type::Int8Ty, ready);
   
