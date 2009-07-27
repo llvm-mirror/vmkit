@@ -130,6 +130,7 @@ inline void addPass(FunctionPassManager *PM, Pass *P) {
 
 void addCommandLinePass(char** argv) {
   FunctionPassManager* Passes = mvm::MvmModule::globalFunctionPasses;
+  Passes->add(new TargetData(*mvm::MvmModule::TheTargetData));
 
   // Create a new optimization pass for each one specified on the command line
   for (unsigned i = 0; i < PassList.size(); ++i) {
