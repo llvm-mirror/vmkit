@@ -274,6 +274,8 @@ private:
       default:
         assert(0 && "Can not be here");
     }
+    abort();
+    return 0;
   }
   
   /// topTypeInfo - Return the type of the value on top of the stack.
