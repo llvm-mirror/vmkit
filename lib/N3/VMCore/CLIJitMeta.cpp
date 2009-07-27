@@ -365,10 +365,9 @@ GlobalVariable* VMCommonClass::llvmVar() {
     aquire();
     if (!_llvmVar) {
       Module* Mod = vm->getLLVMModule();
-      LLVMContext& Context = Mod->getContext();
       const Type* pty = mvm::MvmModule::ptrType;
       Constant* cons = 
-        ConstantExpr::getIntToPtr(Context.getConstantInt(Type::Int64Ty, uint64_t (this)),
+        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
                                     pty);
 
       _llvmVar = new GlobalVariable(*Mod, pty, true,
@@ -387,9 +386,8 @@ GlobalVariable* VMField::llvmVar() {
     if (!_llvmVar) {
       const Type* pty = mvm::MvmModule::ptrType;
       Module* Mod = classDef->vm->getLLVMModule();
-      LLVMContext& Context = Mod->getContext();
       Constant* cons = 
-        ConstantExpr::getIntToPtr(Context.getConstantInt(Type::Int64Ty, uint64_t (this)),
+        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
                                   pty);
 
       _llvmVar = new GlobalVariable(*Mod, pty, true,
@@ -406,10 +404,9 @@ GlobalVariable* VMMethod::llvmVar() {
     classDef->aquire();
     if (!_llvmVar) {
       Module* Mod = classDef->vm->getLLVMModule();
-      LLVMContext& Context = Mod->getContext();
       const Type* pty = mvm::MvmModule::ptrType;
       Constant* cons = 
-        ConstantExpr::getIntToPtr(Context.getConstantInt(Type::Int64Ty, uint64_t (this)),
+        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
                                   pty);
 
       _llvmVar = new GlobalVariable(*Mod, pty, true,

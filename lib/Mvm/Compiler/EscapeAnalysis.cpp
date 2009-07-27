@@ -213,7 +213,7 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT,
         // we don't end up with tons of allocations on the stack.
         BasicBlock* BB = CurLoop->getLoopPreheader();
         assert(BB && "No Preheader!");
-        DOUT << "Escape analysis hoisting to " << BB->getName() << ": ";
+        DOUT << "Escape analysis hoisting to " << BB->getNameStr() << ": ";
         DOUT << *Alloc;
         Alloc->removeFromParent();
         BB->getInstList().insert(BB->getTerminator(), Alloc);
@@ -221,7 +221,7 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT,
 
       AllocaInst* AI = new AllocaInst(Type::Int8Ty, Size, "", Alloc);
       BitCastInst* BI = new BitCastInst(AI, Alloc->getType(), "", Alloc);
-      DOUT << "escape" << Alloc->getParent()->getParent()->getName() << "\n";
+      DOUT << "escape" << Alloc->getParent()->getParent()->getNameStr() << "\n";
       Alloc->replaceAllUsesWith(BI);
       // If it's an invoke, replace the invoke with a direct branch.
       if (InvokeInst *CI = dyn_cast<InvokeInst>(Alloc)) {

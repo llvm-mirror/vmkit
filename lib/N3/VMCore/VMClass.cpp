@@ -279,7 +279,7 @@ void VMClass::resolveStaticFields(VMGenericMethod* genMethod) {
   for (std::vector<VMField*>::iterator i = cl->staticFields.begin(),
             e = cl->staticFields.end(); i!= e; ++i) {
     // preincrement because 0 is VMObject
-    (*i)->offset = vm->getLLVMModule()->getContext().getConstantInt(llvm::Type::Int32Ty, ++offset);
+    (*i)->offset = llvm::ConstantInt::get(llvm::Type::Int32Ty, ++offset);
   }
   for (std::vector<VMField*>::iterator i = cl->staticFields.begin(),
             e = cl->staticFields.end(); i!= e; ++i) {
@@ -329,7 +329,7 @@ void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* ge
         uint32 offset = -1;
         for (std::vector<VMField*>::iterator i = virtualFields.begin(), 
           e = virtualFields.end(); i!= e; ++i) {
-          (*i)->offset = vm->getLLVMModule()->getContext().getConstantInt(llvm::Type::Int32Ty, ++offset);
+          (*i)->offset = llvm::ConstantInt::get(llvm::Type::Int32Ty, ++offset);
           const llvm::Type* type = (*i)->signature->naturalType;
           Elts.push_back(type);
         }
@@ -343,7 +343,7 @@ void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* ge
       uint32 offset = 0;
       for (std::vector<VMField*>::iterator i = virtualFields.begin(), 
            e = virtualFields.end(); i!= e; ++i) {
-        (*i)->offset = vm->getLLVMModule()->getContext().getConstantInt(llvm::Type::Int32Ty, ++offset);
+        (*i)->offset = llvm::ConstantInt::get(llvm::Type::Int32Ty, ++offset);
         const llvm::Type* type = (*i)->signature->naturalType;
         Elts.push_back(type);
       }

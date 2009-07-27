@@ -98,24 +98,24 @@ MvmModule::MvmModule(llvm::Module* module) {
     
   
   // Constant declaration
-  constantLongMinusOne = globalContext->getConstantInt(Type::Int64Ty, (uint64_t)-1);
-  constantLongZero = globalContext->getConstantInt(Type::Int64Ty, 0);
-  constantLongOne = globalContext->getConstantInt(Type::Int64Ty, 1);
-  constantZero = globalContext->getConstantInt(Type::Int32Ty, 0);
-  constantInt8Zero = globalContext->getConstantInt(Type::Int8Ty, 0);
-  constantOne = globalContext->getConstantInt(Type::Int32Ty, 1);
-  constantTwo = globalContext->getConstantInt(Type::Int32Ty, 2);
-  constantThree = globalContext->getConstantInt(Type::Int32Ty, 3);
-  constantFour = globalContext->getConstantInt(Type::Int32Ty, 4);
-  constantFive = globalContext->getConstantInt(Type::Int32Ty, 5);
-  constantSix = globalContext->getConstantInt(Type::Int32Ty, 6);
-  constantSeven = globalContext->getConstantInt(Type::Int32Ty, 7);
-  constantEight = globalContext->getConstantInt(Type::Int32Ty, 8);
-  constantMinusOne = globalContext->getConstantInt(Type::Int32Ty, (uint64_t)-1);
-  constantMinInt = globalContext->getConstantInt(Type::Int32Ty, MinInt);
-  constantMaxInt = globalContext->getConstantInt(Type::Int32Ty, MaxInt);
-  constantMinLong = globalContext->getConstantInt(Type::Int64Ty, MinLong);
-  constantMaxLong = globalContext->getConstantInt(Type::Int64Ty, MaxLong);
+  constantLongMinusOne = ConstantInt::get(Type::Int64Ty, (uint64_t)-1);
+  constantLongZero = ConstantInt::get(Type::Int64Ty, 0);
+  constantLongOne = ConstantInt::get(Type::Int64Ty, 1);
+  constantZero = ConstantInt::get(Type::Int32Ty, 0);
+  constantInt8Zero = ConstantInt::get(Type::Int8Ty, 0);
+  constantOne = ConstantInt::get(Type::Int32Ty, 1);
+  constantTwo = ConstantInt::get(Type::Int32Ty, 2);
+  constantThree = ConstantInt::get(Type::Int32Ty, 3);
+  constantFour = ConstantInt::get(Type::Int32Ty, 4);
+  constantFive = ConstantInt::get(Type::Int32Ty, 5);
+  constantSix = ConstantInt::get(Type::Int32Ty, 6);
+  constantSeven = ConstantInt::get(Type::Int32Ty, 7);
+  constantEight = ConstantInt::get(Type::Int32Ty, 8);
+  constantMinusOne = ConstantInt::get(Type::Int32Ty, (uint64_t)-1);
+  constantMinInt = ConstantInt::get(Type::Int32Ty, MinInt);
+  constantMaxInt = ConstantInt::get(Type::Int32Ty, MaxInt);
+  constantMinLong = ConstantInt::get(Type::Int64Ty, MinLong);
+  constantMaxLong = ConstantInt::get(Type::Int64Ty, MaxLong);
   constantFloatZero = globalContext->getConstantFP(Type::FloatTy, 0.0f);
   constantFloatOne = globalContext->getConstantFP(Type::FloatTy, 1.0f);
   constantFloatTwo = globalContext->getConstantFP(Type::FloatTy, 2.0f);
@@ -136,17 +136,17 @@ MvmModule::MvmModule(llvm::Module* module) {
   constantDoubleMinusInfinity = globalContext->getConstantFP(Type::DoubleTy, MinDouble);
   constantDoubleMinusZero = globalContext->getConstantFP(Type::DoubleTy, -0.0);
   constantFloatMinusZero = globalContext->getConstantFP(Type::FloatTy, -0.0f);
-  constantThreadIDMask = globalContext->getConstantInt(pointerSizeType, mvm::Thread::IDMask);
+  constantThreadIDMask = ConstantInt::get(pointerSizeType, mvm::Thread::IDMask);
   constantStackOverflowMask = 
-    globalContext->getConstantInt(pointerSizeType, mvm::Thread::StackOverflowMask);
-  constantFatMask = globalContext->getConstantInt(pointerSizeType, 
+    ConstantInt::get(pointerSizeType, mvm::Thread::StackOverflowMask);
+  constantFatMask = ConstantInt::get(pointerSizeType, 
       pointerSizeType == Type::Int32Ty ? 0x80000000 : 0x8000000000000000LL);
-  constantPtrOne = globalContext->getConstantInt(pointerSizeType, 1);
-  constantPtrZero = globalContext->getConstantInt(pointerSizeType, 0);
+  constantPtrOne = ConstantInt::get(pointerSizeType, 1);
+  constantPtrZero = ConstantInt::get(pointerSizeType, 0);
 
   constantPtrNull = globalContext->getNullValue(ptrType); 
   constantPtrLogSize = 
-    globalContext->getConstantInt(Type::Int32Ty, sizeof(void*) == 8 ? 3 : 2);
+    ConstantInt::get(Type::Int32Ty, sizeof(void*) == 8 ? 3 : 2);
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::Int8Ty, 0));
 
 

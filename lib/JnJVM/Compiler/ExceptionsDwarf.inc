@@ -427,7 +427,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     Value* objCl = CallInst::Create(module->GetClassFunction, obj, "",
                                     currentBlock);
 
-    Value* depthCl = llvmContext->getConstantInt(Type::Int32Ty, cur->catchClass->depth);
+    Value* depthCl = ConstantInt::get(Type::Int32Ty, cur->catchClass->depth);
     Value* depthClObj = CallInst::Create(module->GetDepthFunction, objCl, "",
                                          currentBlock);
     
@@ -530,7 +530,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
                                      cur->javaHandler);
       OldIsolateID = new LoadInst(IsolateIDPtr, "", cur->javaHandler);
 
-      Value* MyID = llvmContext->getConstantInt(module->pointerSizeType,
+      Value* MyID = ConstantInt::get(module->pointerSizeType,
                                      loader->getIsolate()->IsolateID);
 
       new StoreInst(MyID, IsolateIDPtr, cur->javaHandler);
