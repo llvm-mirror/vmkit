@@ -135,22 +135,43 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
     PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "\n");
     
     Opinfo* opinfo = &(opcodeInfos[i]);
+    
     if (opinfo->newBlock) {
       if (currentBlock->getTerminator() == 0) {
         branch(opinfo->newBlock, currentBlock);
       }
       
+      currentBlock = opinfo->newBlock;
+      
       stack.clear();
+      currentStackIndex = 0;
       for (BasicBlock::iterator i = opinfo->newBlock->begin(),
            e = opinfo->newBlock->end(); i != e; ++i) {
         if (!(isa<PHINode>(i))) {
           break;
         } else {
-          stack.push_back(std::make_pair(i, false));
+          ++currentStackIndex;
+          const Type* Ty = i->getType();
+          if (Ty == Type::Int32Ty) {
+            stack.push_back(Int);
+          } else if (Ty == Type::Int64Ty) {
+            stack.push_back(Long);
+          } else if (Ty == Type::FloatTy) {
+            stack.push_back(Float);
+          } else if (Ty == Type::DoubleTy) {
+            stack.push_back(Double);
+          } else if (Ty == module->JavaObjectType) {
+            stack.push_back(Object);
+            if (opinfo->handler) {
+              // If it's a handler, put the exception object in the stack.
+              new StoreInst(i, objectStack[currentStackIndex - 1], "",
+                            currentBlock);
+            }
+          } else {
+            abort();
+          }
         }
       }
-  
-      currentBlock = opinfo->newBlock;
     }
     currentExceptionBlock = opinfo->exceptionBlock;
     
@@ -749,71 +770,78 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
 
       case DUP :
-        push(top(), topSign());
+        push(top(), topIsUnsigned());
         break;
 
       case DUP_X1 : {
-        std::pair<Value*, bool> one = popPair();
-        std::pair<Value*, bool> two = popPair();
-        push(one);
-        push(two);
-        push(one);
+        Value* one = pop();
+        Value* two = pop();
+        
+        push(one, false);
+        push(two, false);
+        push(one, false);
         break;
       }
 
       case DUP_X2 : {
-        std::pair<Value*, bool> one = popPair();
-        std::pair<Value*, bool> two = popPair();
-        std::pair<Value*, bool> three = popPair();
-        push(one);
-        push(three);
-        push(two);
-        push(one);
+        Value* one = pop();
+        Value* two = pop();
+        Value* three = pop();
+        push(one, false);
+        push(three, false);
+        push(two, false);
+        push(one, false);
         break;
       }
 
-      case DUP2 :
-        push(stack[stackSize() - 2]);
-        push(stack[stackSize() - 2]);
+      case DUP2 : {
+        Value* one = pop();
+        Value* two = pop();
+        
+        push(two, false);
+        push(one, false);
+        push(two, false);
+        push(one, false);
         break;
+      }
 
       case DUP2_X1 : {
-        std::pair<Value*, bool> one = popPair();
-        std::pair<Value*, bool> two = popPair();
-        std::pair<Value*, bool> three = popPair();
+        Value* one = pop();
+        Value* two = pop();
+        Value* three = pop();
 
-        push(two);
-        push(one);
+        push(two, false);
+        push(one, false);
 
-        push(three);
-        push(two);
-        push(one);
+        push(three, false);
+        push(two, false);
+        push(one, false);
 
         break;
       }
 
       case DUP2_X2 : {
-        std::pair<Value*, bool> one = popPair();
-        std::pair<Value*, bool> two = popPair();
-        std::pair<Value*, bool> three = popPair();
-        std::pair<Value*, bool> four = popPair();
+        Value* one = pop();
+        Value* two = pop();
+        Value* three = pop();
+        Value* four = pop();
 
-        push(two);
-        push(one);
+        push(two, false);
+        push(one, false);
         
-        push(four);
-        push(three);
-        push(two);
-        push(one);
+        push(four, false);
+        push(three, false);
+        push(two, false);
+        push(one, false);
 
         break;
       }
 
       case SWAP : {
-        std::pair<Value*, bool> one = popPair();
-        std::pair<Value*, bool> two = popPair();
-        push(one);
-        push(two);
+        Value* one = pop();
+        Value* two = pop();
+        push(one, false);
+        push(two, false);
         break;
       }
 
@@ -1776,7 +1804,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         BasicBlock* def = opcodeInfos[tmp + readU4(bytecodes, i)].newBlock;
         uint32 nbs = readU4(bytecodes, i);
         
-        bool unsign = topSign();
+        bool unsign = topIsUnsigned();
         Value* key = pop();
         const Type* type = key->getType();
         if (unsign) {
@@ -1798,7 +1826,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
       }
       case IRETURN : {
-        bool unsign = topSign();
+        bool unsign = topIsUnsigned();
         Value* val = pop();
         assert(val->getType()->isInteger());
         convertValue(val, endNode->getType(), currentBlock, unsign);

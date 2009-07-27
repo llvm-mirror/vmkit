@@ -267,6 +267,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     
     // Set the Java handler for this exception.
     ex->javaHandler = opcodeInfos[ex->handlerpc].newBlock;
+    opcodeInfos[ex->handlerpc].handler = true;
 
     // Set the native handler of this exception, which will catch the exception
     // object.

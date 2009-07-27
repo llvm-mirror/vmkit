@@ -353,6 +353,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     
     // Set the Java handler for this exception.
     ex->javaHandler = opcodeInfos[ex->handlerpc].newBlock;
+    opcodeInfos[ex->handlerpc].handler = true;
     
     if (ex->javaHandler->empty()) {
       PHINode::Create(JnjvmModule::JavaObjectType, "", ex->javaHandler);

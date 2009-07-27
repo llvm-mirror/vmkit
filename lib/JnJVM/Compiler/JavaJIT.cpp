@@ -94,7 +94,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   const UTF8* name = 0;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
 
-  Value* obj = stack[stack.size() - signature->nbArguments - 1].first;
+  Value* obj = objectStack[stack.size() - signature->nbArguments - 1];
   JavaObject* source = TheCompiler->getFinalObject(obj);
   if (source) {
     return invokeSpecial(index, source->getClass());
@@ -666,6 +666,24 @@ static void removeUnusedLocals(std::vector<AllocaInst*>& locals) {
     }
   }
 }
+  
+static void removeUnusedObjects(std::vector<AllocaInst*>& objects,
+                                JnjvmModule* module) {
+  for (std::vector<AllocaInst*>::iterator i = objects.begin(),
+       e = objects.end(); i != e; ++i) {
+    AllocaInst* temp = *i;
+    if (temp->getNumUses()) {
+      Instruction* I = new BitCastInst(temp, module->ptrPtrType, "");
+      I->insertAfter(temp);
+      Value* GCArgs[2] = { I, module->constantPtrNull };
+      Instruction* C = CallInst::Create(module->llvm_gc_gcroot, GCArgs,
+                                        GCArgs + 2, "");
+      C->insertAfter(I);
+    } else {
+      temp->eraseFromParent();
+    }
+  }
+}
 
 Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
                                     BasicBlock* endExBlock,
@@ -685,7 +703,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   }
 
   Reader reader(codeAtt, &(compilingClass->bytes));
-  /* uint16 maxStack = */ reader.readU2();
+  uint16 maxStack = reader.readU2();
   uint16 maxLocals = reader.readU2();
   uint32 codeLen = reader.readU4();
   uint32 start = reader.cursor;
@@ -722,6 +740,15 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
       objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
                                           firstInstruction));
     }
+    for (int i = 0; i < maxStack; i++) {
+      objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
+                                           firstInstruction));
+      intStack.push_back(new AllocaInst(Type::Int32Ty, "", firstInstruction));
+      doubleStack.push_back(new AllocaInst(Type::DoubleTy, "",
+                                           firstInstruction));
+      longStack.push_back(new AllocaInst(Type::Int64Ty, "", firstInstruction));
+      floatStack.push_back(new AllocaInst(Type::FloatTy, "", firstInstruction));
+    }
 
   } else {
     for (int i = 0; i < maxLocals; i++) {
@@ -731,6 +758,15 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
       floatLocals.push_back(new AllocaInst(Type::FloatTy, "", firstBB));
       objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
                                             firstBB));
+    }
+    
+    for (int i = 0; i < maxStack; i++) {
+      objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
+                                           firstBB));
+      intStack.push_back(new AllocaInst(Type::Int32Ty, "", firstBB));
+      doubleStack.push_back(new AllocaInst(Type::DoubleTy, "", firstBB));
+      longStack.push_back(new AllocaInst(Type::Int64Ty, "", firstBB));
+      floatStack.push_back(new AllocaInst(Type::FloatTy, "", firstBB));
     }
   }
       
@@ -800,24 +836,17 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   curBB = endBlock;
 
 
-  for (std::vector<AllocaInst*>::iterator i = objectLocals.begin(),
-       e = objectLocals.end(); i != e; ++i) {
-    AllocaInst* temp = *i;
-    if (temp->getNumUses()) {
-      Instruction* I = new BitCastInst(temp, module->ptrPtrType, "");
-      I->insertAfter(temp);
-      Value* GCArgs[2] = { I, module->constantPtrNull };
-      Instruction* C = CallInst::Create(module->llvm_gc_gcroot, GCArgs,
-                                        GCArgs + 2, "");
-      C->insertAfter(I);
-    } else {
-      temp->eraseFromParent();
-    }
-  }
   removeUnusedLocals(intLocals);
   removeUnusedLocals(doubleLocals);
   removeUnusedLocals(floatLocals);
   removeUnusedLocals(longLocals);
+  removeUnusedLocals(intStack);
+  removeUnusedLocals(doubleStack);
+  removeUnusedLocals(floatStack);
+  removeUnusedLocals(longStack);
+  
+  removeUnusedObjects(objectLocals, module);
+  removeUnusedObjects(objectStack, module);
 
 
   return endNode;
@@ -842,7 +871,7 @@ llvm::Function* JavaJIT::javaCompile() {
   }
 
   Reader reader(codeAtt, &(compilingClass->bytes));
-  /* uint16 maxStack = */ reader.readU2();
+  uint16 maxStack = reader.readU2();
   uint16 maxLocals = reader.readU2();
   uint32 codeLen = reader.readU4();
   uint32 start = reader.cursor;
@@ -882,6 +911,15 @@ llvm::Function* JavaJIT::javaCompile() {
     floatLocals.push_back(new AllocaInst(Type::FloatTy, "", currentBlock));
     objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
                                           currentBlock));
+  }
+  
+  for (int i = 0; i < maxStack; i++) {
+    objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
+                                         currentBlock));
+    intStack.push_back(new AllocaInst(Type::Int32Ty, "", currentBlock));
+    doubleStack.push_back(new AllocaInst(Type::DoubleTy, "", currentBlock));
+    longStack.push_back(new AllocaInst(Type::Int64Ty, "", currentBlock));
+    floatStack.push_back(new AllocaInst(Type::FloatTy, "", currentBlock));
   }
   
   uint32 index = 0;
@@ -1100,26 +1138,18 @@ llvm::Function* JavaJIT::javaCompile() {
   currentBlock = endExceptionBlock;
 
   finishExceptions();
-  
-  for (std::vector<AllocaInst*>::iterator i = objectLocals.begin(),
-       e = objectLocals.end(); i != e; ++i) {
-    AllocaInst* temp = *i;
-    if (temp->getNumUses()) {
-      Instruction* I = new BitCastInst(temp, module->ptrPtrType, "");
-      I->insertAfter(temp);
-      Value* GCArgs[2] = { I, module->constantPtrNull };
-      Instruction* C = CallInst::Create(module->llvm_gc_gcroot, GCArgs,
-                                        GCArgs + 2, "");
-      C->insertAfter(I);
-    } else {
-      temp->eraseFromParent();
-    }
-  }
-  
+   
   removeUnusedLocals(intLocals);
   removeUnusedLocals(doubleLocals);
   removeUnusedLocals(floatLocals);
   removeUnusedLocals(longLocals);
+  removeUnusedLocals(intStack);
+  removeUnusedLocals(doubleStack);
+  removeUnusedLocals(floatStack);
+  removeUnusedLocals(longStack);
+  
+  removeUnusedObjects(objectLocals, module);
+  removeUnusedObjects(objectStack, module);
   
   func->setLinkage(GlobalValue::ExternalLinkage);
   
@@ -1243,7 +1273,7 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
     BasicBlock* ifTrue =  createBasicBlock("true verifyAndComputePtr");
     BasicBlock* ifFalse = createBasicBlock("false verifyAndComputePtr");
 
-    branch(cmp, ifTrue, ifFalse, currentBlock);
+    BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
     
     currentBlock = ifFalse;
     Value* args[2] = { obj, index };
@@ -1260,51 +1290,6 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
 
   return ptr;
 
-}
-
-void JavaJIT::testPHINodes(BasicBlock* dest, BasicBlock* insert) {
-  if(dest->empty()) {
-    for (std::vector< std::pair<Value*, bool> >::iterator i = stack.begin(),
-         e = stack.end(); i!= e; ++i) {
-      Value* cur = i->first;
-      bool unsign = i->second;
-      PHINode* node = 0;
-      const Type* type = cur->getType();
-      if (unsign) {
-        node = llvm::PHINode::Create(Type::Int32Ty, "", dest);
-        cur = new ZExtInst(cur, Type::Int32Ty, "", currentBlock);
-      } else if (type == Type::Int8Ty || type == Type::Int16Ty) {
-        node = llvm::PHINode::Create(Type::Int32Ty, "", dest);
-        cur = new SExtInst(cur, Type::Int32Ty, "", currentBlock);
-      } else {
-        node = llvm::PHINode::Create(cur->getType(), "", dest);
-      }
-      assert(node->getType() == cur->getType() && "wrong 1");
-      node->addIncoming(cur, insert);
-    }
-  } else {
-    std::vector< std::pair<Value*, bool> >::iterator stackit = stack.begin();
-    for (BasicBlock::iterator i = dest->begin(), e = dest->end(); i != e;
-         ++i) {
-      if (!(isa<PHINode>(i))) {
-        break;
-      } else {
-        Instruction* ins = i;
-        Value* cur = stackit->first;
-        const Type* type = cur->getType();
-        bool unsign = stackit->second;
-        
-        if (unsign) {
-          cur = new ZExtInst(cur, Type::Int32Ty, "", currentBlock);
-        } else if (type == Type::Int8Ty || type == Type::Int16Ty) {
-          cur = new SExtInst(cur, Type::Int32Ty, "", currentBlock);
-        }
-        assert(ins->getType() == cur->getType() && "wrong 2");
-        ((PHINode*)ins)->addIncoming(cur, insert);
-        ++stackit;
-      }
-    }
-  }
 }
 
 void JavaJIT::makeArgs(FunctionType::param_iterator it,
@@ -1327,7 +1312,7 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
     if (it->get() == Type::Int64Ty || it->get() == Type::DoubleTy) {
       pop();
     }
-    bool unsign = topSign();
+    bool unsign = topIsUnsigned();
     Value* tmp = pop();
     
     const Type* type = it->get();
@@ -1343,6 +1328,53 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
   }
   
 }
+
+void JavaJIT::addFakePHINodes(BasicBlock* dest, BasicBlock* insert) {
+  if(dest->empty()) {
+    for (std::vector<StackTypeInfo>::iterator i = stack.begin(),
+         e = stack.end(); i!= e; ++i) {
+      switch (*i) {
+        case Int : {
+          PHINode* node = PHINode::Create(Type::Int32Ty, "", dest);
+          node->addIncoming(llvmContext->getNullValue(Type::Int32Ty), insert);
+          break;
+        }
+        case Float : {
+          PHINode* node = PHINode::Create(Type::FloatTy, "", dest);
+          node->addIncoming(llvmContext->getNullValue(Type::FloatTy), insert);
+          break;
+        }
+        case Double : {
+          PHINode* node = PHINode::Create(Type::DoubleTy, "", dest);
+          node->addIncoming(llvmContext->getNullValue(Type::DoubleTy), insert);
+          break;
+        }
+        case Long : {
+          PHINode* node = PHINode::Create(Type::Int64Ty, "", dest);
+          node->addIncoming(llvmContext->getNullValue(Type::Int64Ty), insert);
+          break;
+        }
+        case Object : {
+          PHINode* node = PHINode::Create(module->JavaObjectType, "", dest);
+          node->addIncoming(llvmContext->getNullValue(module->JavaObjectType),
+                            insert);
+          break;
+        }
+        default :
+          abort();
+      }
+    }
+  } else {
+    for (BasicBlock::iterator i = dest->begin(), e = dest->end(); i != e; ++i) {
+      if (PHINode* node = dyn_cast<PHINode>(i)) {
+        node->addIncoming(llvmContext->getNullValue(node->getType()), insert);
+      } else {
+        break;
+      }
+    }
+  }
+}
+
 
 Instruction* JavaJIT::lowerMathOps(const UTF8* name, 
                                    std::vector<Value*>& args) {
@@ -1847,7 +1879,7 @@ void JavaJIT::convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock
  
 
 void JavaJIT::setStaticField(uint16 index) {
-  bool unsign = topSign();
+  bool unsign = topIsUnsigned();
   Value* val = pop(); 
   
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
@@ -1934,7 +1966,7 @@ void JavaJIT::getStaticField(uint16 index) {
 }
 
 void JavaJIT::setVirtualField(uint16 index) {
-  bool unsign = topSign();
+  bool unsign = topIsUnsigned();
   Value* val = pop();
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
