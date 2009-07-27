@@ -35,7 +35,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/System/Signals.h"
 #include "llvm/Target/TargetData.h"
-#include "llvm/Target/TargetMachineRegistry.h"
 #include "llvm/Target/TargetMachine.h"
 
 
