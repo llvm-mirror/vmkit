@@ -1,8 +1,8 @@
 //===--------- Main.cpp - Simple execution of JnJVM -----------------------===//
 //
-//                            JnJVM
+//                          The VMKit project
 //
-// This file is distributed under the University of Pierre et Marie Curie 
+// This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
