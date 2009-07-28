@@ -1215,13 +1215,13 @@ void JavaJIT::loadConstant(uint16 index) {
     push(ConstantInt::get(Type::Int64Ty, ctpInfo->LongAt(index)),
          false);
   } else if (type == JavaConstantPool::ConstantDouble) {
-    push(llvmContext->getConstantFP(Type::DoubleTy, ctpInfo->DoubleAt(index)),
+    push(ConstantFP::get(Type::DoubleTy, ctpInfo->DoubleAt(index)),
          false);
   } else if (type == JavaConstantPool::ConstantInteger) {
     push(ConstantInt::get(Type::Int32Ty, ctpInfo->IntegerAt(index)),
          false);
   } else if (type == JavaConstantPool::ConstantFloat) {
-    push(llvmContext->getConstantFP(Type::FloatTy, ctpInfo->FloatAt(index)),
+    push(ConstantFP::get(Type::FloatTy, ctpInfo->FloatAt(index)),
          false);
   } else if (type == JavaConstantPool::ConstantClass) {
     UserCommonClass* cl = 0;
@@ -1936,10 +1936,10 @@ void JavaJIT::getStaticField(uint16 index) {
           push(ConstantInt::get(Type::Int64Ty, val), false);
         } else if (prim->isFloat()) {
           float val = (float)field->getFloatField(Obj);
-          push(llvmContext->getConstantFP(Type::FloatTy, val), false);
+          push(ConstantFP::get(Type::FloatTy, val), false);
         } else if (prim->isDouble()) {
           double val = (double)field->getDoubleField(Obj);
-          push(llvmContext->getConstantFP(Type::DoubleTy, val), false);
+          push(ConstantFP::get(Type::DoubleTy, val), false);
         } else {
           abort();
         }

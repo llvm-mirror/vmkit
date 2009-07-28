@@ -360,11 +360,11 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
                                                field.getLongField(obj));
             Elts.push_back(CI);
           } else if (prim->isFloat()) {
-            Constant* CF = Context.getConstantFP(Type::FloatTy,
+            Constant* CF = ConstantFP::get(Type::FloatTy,
                                            field.getFloatField(obj));
             Elts.push_back(CF);
           } else if (prim->isDouble()) {
-            Constant* CF = Context.getConstantFP(Type::DoubleTy,
+            Constant* CF = ConstantFP::get(Type::DoubleTy,
                                            field.getDoubleField(obj));
             Elts.push_back(CF);
           } else {
@@ -390,9 +390,9 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
         if (Ty == Type::Int64Ty) {
           Elts.push_back(ConstantInt::get(Ty, (uint64)ctpInfo->LongAt(idx)));
         } else if (Ty == Type::DoubleTy) {
-          Elts.push_back(Context.getConstantFP(Ty, ctpInfo->DoubleAt(idx)));
+          Elts.push_back(ConstantFP::get(Ty, ctpInfo->DoubleAt(idx)));
         } else if (Ty == Type::FloatTy) {
-          Elts.push_back(Context.getConstantFP(Ty, ctpInfo->FloatAt(idx)));
+          Elts.push_back(ConstantFP::get(Ty, ctpInfo->FloatAt(idx)));
         } else {
           Elts.push_back(ConstantInt::get(Ty, (uint64)ctpInfo->IntegerAt(idx)));
         }
@@ -409,7 +409,7 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
     }
   }
    
-  return Context.getConstantStruct(STy, Elts);
+  return ConstantStruct::get(STy, Elts);
 }
 
 Constant* JavaAOTCompiler::getStaticInstance(Class* classDef) {
@@ -524,7 +524,7 @@ Constant* JavaAOTCompiler::CreateConstantForBaseObject(CommonClass* cl) {
   Constant* L = ConstantInt::get(Type::Int64Ty, 0);
   Elmts.push_back(ConstantExpr::getIntToPtr(L, JnjvmModule::ptrType));
 
-  return Context.getConstantStruct(STy, Elmts);
+  return ConstantStruct::get(STy, Elmts);
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromJavaClass(CommonClass* cl) {
@@ -555,7 +555,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaClass(CommonClass* cl) {
   // constructor
   Elmts.push_back(Context.getNullValue(JnjvmModule::JavaObjectType));
 
-  return Context.getConstantStruct(STy, Elmts);
+  return ConstantStruct::get(STy, Elmts);
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
@@ -636,11 +636,11 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
                                                field.getLongField(obj));
             TempElts.push_back(CI);
           } else if (prim->isFloat()) {
-            Constant* CF = Context.getConstantFP(Type::FloatTy,
+            Constant* CF = ConstantFP::get(Type::FloatTy,
                                            field.getFloatField(obj));
             TempElts.push_back(CF);
           } else if (prim->isDouble()) {
-            Constant* CF = Context.getConstantFP(Type::DoubleTy,
+            Constant* CF = ConstantFP::get(Type::DoubleTy,
                                            field.getDoubleField(obj));
             TempElts.push_back(CF);
           } else {
@@ -657,7 +657,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
           }
         }
       }
-      CurConstant = Context.getConstantStruct(STy, TempElts);
+      CurConstant = ConstantStruct::get(STy, TempElts);
     }
 
     return CurConstant;
@@ -691,7 +691,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
   Elmts.push_back(ConstantInt::get(Type::Int32Ty, str->cachedHashCode));
   Elmts.push_back(ConstantInt::get(Type::Int32Ty, str->offset));
  
-  return Context.getConstantStruct(STy, Elmts);
+  return ConstantStruct::get(STy, Elmts);
 }
 
 
@@ -706,7 +706,7 @@ Constant* JavaAOTCompiler::CreateConstantFromCacheNode(CacheNode* CN) {
   Elmts.push_back(Context.getNullValue(STy->getContainedType(2)));
   Elmts.push_back(getEnveloppe(CN->enveloppe));
   
-  return Context.getConstantStruct(STy, Elmts);
+  return ConstantStruct::get(STy, Elmts);
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromEnveloppe(Enveloppe* val) {
@@ -731,7 +731,7 @@ Constant* JavaAOTCompiler::CreateConstantFromEnveloppe(Enveloppe* val) {
   Elmts.push_back(getNativeClass(val->classDef));
   Elmts.push_back(firstCache);
 
-  return Context.getConstantStruct(STy, Elmts);
+  return ConstantStruct::get(STy, Elmts);
   
 }
 
@@ -752,7 +752,7 @@ Constant* JavaAOTCompiler::CreateConstantFromAttribut(Attribut& attribut) {
   // nbb
   Elmts.push_back(ConstantInt::get(Type::Int32Ty, attribut.nbb));
   
-  return Context.getConstantStruct(STy, Elmts);
+  return ConstantStruct::get(STy, Elmts);
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
@@ -823,7 +823,7 @@ Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
     TempTy = JnjvmModule::VTType;
     CommonClassElts.push_back(Mod.getContext().getNullValue(TempTy));
   }
-  return Context.getConstantStruct(STy, CommonClassElts);
+  return ConstantStruct::get(STy, CommonClassElts);
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromJavaField(JavaField& field) {
@@ -883,7 +883,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaField(JavaField& field) {
   //JInfo
   FieldElts.push_back(Mod.getContext().getNullValue(JnjvmModule::ptrType));
   
-  return Context.getConstantStruct(STy, FieldElts); 
+  return ConstantStruct::get(STy, FieldElts); 
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
@@ -961,7 +961,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   //JInfo
   MethodElts.push_back(Context.getNullValue(JnjvmModule::ptrType));
   
-  return Context.getConstantStruct(STy, MethodElts); 
+  return ConstantStruct::get(STy, MethodElts); 
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromClassPrimitive(ClassPrimitive* cl) {
@@ -978,7 +978,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClassPrimitive(ClassPrimitive* cl) 
   // primSize
   ClassElts.push_back(ConstantInt::get(Type::Int32Ty, cl->logSize));
 
-  return Context.getConstantStruct(STy, ClassElts);
+  return ConstantStruct::get(STy, ClassElts);
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromClassArray(ClassArray* cl) {
@@ -1000,7 +1000,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClassArray(ClassArray* cl) {
     
   ClassElts.push_back(Cl);
   
-  return Context.getConstantStruct(STy, ClassElts);
+  return ConstantStruct::get(STy, ClassElts);
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
@@ -1029,7 +1029,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   TempElts.push_back(ConstantInt::get(Type::Int8Ty, status));
   TempElts.push_back(ConstantInt::get(Type::Int1Ty, status == ready ? 1 : 0));
   TempElts.push_back(getStaticInstance(cl));
-  Constant* CStr[1] = { Context.getConstantStruct(TCMTy, TempElts) };
+  Constant* CStr[1] = { ConstantStruct::get(TCMTy, TempElts) };
   TempElts.clear();
   ClassElts.push_back(Context.getConstantArray(ATy, CStr, 1));
 
@@ -1218,7 +1218,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   // JInfo
   ClassElts.push_back(Mod.getContext().getNullValue(JnjvmModule::ptrType));
 
-  return Context.getConstantStruct(STy, ClassElts);
+  return ConstantStruct::get(STy, ClassElts);
 }
 
 template<typename T>
@@ -1244,7 +1244,7 @@ Constant* JavaAOTCompiler::CreateConstantFromArray(const T* val, const Type* Ty)
     if (Ty->isInteger()) {
       Vals.push_back(ConstantInt::get(Ty, (uint64)val->elements[i]));
     } else if (Ty->isFloatingPoint()) {
-      Vals.push_back(Context.getConstantFP(Ty, (double)(size_t)val->elements[i]));
+      Vals.push_back(ConstantFP::get(Ty, (double)(size_t)val->elements[i]));
     } else {
       if (val->elements[i]) {
         Vals.push_back(getFinalObject((JavaObject*)(size_t)val->elements[i]));
@@ -1256,7 +1256,7 @@ Constant* JavaAOTCompiler::CreateConstantFromArray(const T* val, const Type* Ty)
 
   Cts.push_back(Context.getConstantArray(ATy, Vals));
   
-  return Context.getConstantStruct(STy, Cts);
+  return ConstantStruct::get(STy, Cts);
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
@@ -1280,7 +1280,7 @@ Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
 
   Cts.push_back(Context.getConstantArray(ATy, Vals));
   
-  return Context.getConstantStruct(STy, Cts);
+  return ConstantStruct::get(STy, Cts);
 
 }
 
