@@ -326,7 +326,6 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
   const Type* Ty = LCI->getStaticType();
   const StructType* STy = dyn_cast<StructType>(Ty->getContainedType(0));
   Module& Mod = *getLLVMModule();
-  LLVMContext& Context = Mod.getContext();
   
   std::vector<Constant*> Elts;
   
@@ -515,7 +514,6 @@ Constant* JavaAOTCompiler::CreateConstantForBaseObject(CommonClass* cl) {
     dyn_cast<StructType>(JnjvmModule::JavaObjectType->getContainedType(0));
   
   std::vector<Constant*> Elmts;
-  LLVMContext& Context = getLLVMModule()->getContext();
 
   // VT
   Elmts.push_back(getVirtualTable(cl->virtualVT));
@@ -561,7 +559,6 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaClass(CommonClass* cl) {
 Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
   CommonClass* cl = obj->getClass();
   Module& Mod = *getLLVMModule();
-  LLVMContext& Context = getLLVMModule()->getContext();
 
   if (cl->isArray()) {
     Classpath* upcalls = cl->classLoader->bootstrapLoader->upcalls;
@@ -669,7 +666,6 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
   LLVMClassInfo* LCI = getClassInfo(cl);
   const StructType* STy = 
     dyn_cast<StructType>(LCI->getVirtualType()->getContainedType(0));
-  LLVMContext& Context = getLLVMModule()->getContext();
 
   std::vector<Constant*> Elmts;
 
@@ -738,7 +734,6 @@ Constant* JavaAOTCompiler::CreateConstantFromEnveloppe(Enveloppe* val) {
 Constant* JavaAOTCompiler::CreateConstantFromAttribut(Attribut& attribut) {
   const StructType* STy = 
     dyn_cast<StructType>(JnjvmModule::AttributType->getContainedType(0));
-  LLVMContext& Context = getLLVMModule()->getContext();
 
 
   std::vector<Constant*> Elmts;
@@ -968,7 +963,6 @@ Constant* JavaAOTCompiler::CreateConstantFromClassPrimitive(ClassPrimitive* cl) 
   const llvm::Type* JCPTy = 
     JnjvmModule::JavaClassPrimitiveType->getContainedType(0);
   const StructType* STy = dyn_cast<StructType>(JCPTy);
-  LLVMContext& Context = getLLVMModule()->getContext();
   
   std::vector<Constant*> ClassElts;
   
@@ -984,7 +978,6 @@ Constant* JavaAOTCompiler::CreateConstantFromClassPrimitive(ClassPrimitive* cl) 
 Constant* JavaAOTCompiler::CreateConstantFromClassArray(ClassArray* cl) {
   const StructType* STy = 
     dyn_cast<StructType>(JnjvmModule::JavaClassArrayType->getContainedType(0));
-  LLVMContext& Context = getLLVMModule()->getContext();
   
   std::vector<Constant*> ClassElts;
   Constant* ClGEPs[2] = { getIntrinsics()->constantZero,
