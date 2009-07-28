@@ -757,12 +757,12 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
       
       case LDC_R4 : {
-        push(llvmFunction->getContext().getConstantFP(Type::FloatTy, readFloat(bytecodes, i)));
+        push(ConstantFP::get(Type::FloatTy, readFloat(bytecodes, i)));
         break;
       }
       
       case LDC_R8 : {
-        push(llvmFunction->getContext().getConstantFP(Type::DoubleTy, readDouble(bytecodes, i)));
+        push(ConstantFP::get(Type::DoubleTy, readDouble(bytecodes, i)));
         break;
       }
       
