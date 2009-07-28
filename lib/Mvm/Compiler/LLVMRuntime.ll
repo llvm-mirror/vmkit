@@ -74,6 +74,9 @@ declare i16 @llvm.atomic.cmp.swap.i16.p0i16(i16*, i16, i16) nounwind
 declare i32 @llvm.atomic.cmp.swap.i32.p0i32(i32*, i32, i32) nounwind
 declare i64 @llvm.atomic.cmp.swap.i64.p0i64(i64*, i64, i64) nounwind
 
+declare void @unconditionalSafePoint() nounwind
+declare void @conditionalSafePoint() nounwind
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GC ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -368,8 +368,12 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
         new BitCastInst(temp, module->ptrPtrType, "", currentBlock),
         module->constantPtrNull
       };
-      CallInst::Create(module->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
-                       currentBlock);
+      
+      if (TheCompiler->useCooperativeGC()) {
+        CallInst::Create(module->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
+                         currentBlock);
+      }
+      
       new StoreInst(i, temp, false, currentBlock);
       node->addIncoming(temp, currentBlock);
       BranchInst::Create(BB, currentBlock);
@@ -668,17 +672,19 @@ static void removeUnusedLocals(std::vector<AllocaInst*>& locals) {
 }
   
 static void removeUnusedObjects(std::vector<AllocaInst*>& objects,
-                                JnjvmModule* module) {
+                                JnjvmModule* module, bool coop) {
   for (std::vector<AllocaInst*>::iterator i = objects.begin(),
        e = objects.end(); i != e; ++i) {
     AllocaInst* temp = *i;
     if (temp->getNumUses()) {
-      Instruction* I = new BitCastInst(temp, module->ptrPtrType, "");
-      I->insertAfter(temp);
-      Value* GCArgs[2] = { I, module->constantPtrNull };
-      Instruction* C = CallInst::Create(module->llvm_gc_gcroot, GCArgs,
-                                        GCArgs + 2, "");
-      C->insertAfter(I);
+      if (coop) {
+        Instruction* I = new BitCastInst(temp, module->ptrPtrType, "");
+        I->insertAfter(temp);
+        Value* GCArgs[2] = { I, module->constantPtrNull };
+        Instruction* C = CallInst::Create(module->llvm_gc_gcroot, GCArgs,
+                                          GCArgs + 2, "");
+        C->insertAfter(I);
+      }
     } else {
       temp->eraseFromParent();
     }
@@ -845,8 +851,8 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   removeUnusedLocals(floatStack);
   removeUnusedLocals(longStack);
   
-  removeUnusedObjects(objectLocals, module);
-  removeUnusedObjects(objectStack, module);
+  removeUnusedObjects(objectLocals, module, TheCompiler->useCooperativeGC());
+  removeUnusedObjects(objectStack, module, TheCompiler->useCooperativeGC());
 
 
   return endNode;
@@ -1039,7 +1045,27 @@ llvm::Function* JavaJIT::javaCompile() {
   if (returnType != Type::VoidTy) {
     endNode = llvm::PHINode::Create(returnType, "", endBlock);
   }
-  
+ 
+  if (TheCompiler->useCooperativeGC()) {
+    Value* threadId = getCurrentThread();
+     
+    Value* YieldPtr = 
+      GetElementPtrInst::Create(threadId,
+                                module->OffsetDoYieldInThreadConstant,
+                                "", currentBlock);
+
+    Value* Yield = new LoadInst(YieldPtr, "", currentBlock);
+
+    BasicBlock* continueBlock = createBasicBlock("After safe point");
+    BasicBlock* yieldBlock = createBasicBlock("In safe point");
+    BranchInst::Create(yieldBlock, continueBlock, Yield, currentBlock);
+
+    currentBlock = yieldBlock;
+    CallInst::Create(module->conditionalSafePoint, "", currentBlock);
+    BranchInst::Create(continueBlock, currentBlock);
+
+    currentBlock = continueBlock;
+  }
 
   
   if (isSynchro(compilingMethod->access))
@@ -1148,8 +1174,8 @@ llvm::Function* JavaJIT::javaCompile() {
   removeUnusedLocals(floatStack);
   removeUnusedLocals(longStack);
   
-  removeUnusedObjects(objectLocals, module);
-  removeUnusedObjects(objectStack, module);
+  removeUnusedObjects(objectLocals, module, TheCompiler->useCooperativeGC());
+  removeUnusedObjects(objectStack, module, TheCompiler->useCooperativeGC());
   
   func->setLinkage(GlobalValue::ExternalLinkage);
   

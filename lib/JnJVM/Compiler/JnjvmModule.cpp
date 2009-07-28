@@ -66,6 +66,7 @@ JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
   JavaIntrinsics(TheModule) {
 
   enabledException = true;
+  cooperativeGC = false;
 }
   
 void JavaLLVMCompiler::resolveVirtualClass(Class* cl) {

@@ -2423,6 +2423,9 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint16 index = tmp + readU2(bytecodes, i);
         if (!(opcodeInfos[index].newBlock))
           opcodeInfos[index].newBlock = createBasicBlock("GOTO or IF*");
+
+        if (index <= tmp) opcodeInfos[index].backEdge = true;
+
         break;
       }
       
@@ -2455,6 +2458,9 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
           BasicBlock* block = createBasicBlock("tableswitch");
           opcodeInfos[index].newBlock = block;
         }
+        
+        if (index <= tmp) opcodeInfos[index].backEdge = true;
+        
         uint32 low = readU4(bytecodes, i);
         uint32 high = readU4(bytecodes, i) + 1;
         uint32 depl = high - low;
@@ -2464,6 +2470,7 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
             BasicBlock* block = createBasicBlock("tableswitch");
             opcodeInfos[index2].newBlock = block;
           }
+          if (index2 <= tmp) opcodeInfos[index2].backEdge = true;
         }
         i = tmp + 12 + filled + (depl << 2);
         break;
@@ -2478,6 +2485,8 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
           BasicBlock* block = createBasicBlock("tableswitch");
           opcodeInfos[index].newBlock = block;
         }
+        if (index <= tmp) opcodeInfos[index].backEdge = true;
+        
         uint32 nbs = readU4(bytecodes, i);
         for (uint32 cur = 0; cur < nbs; ++cur) {
           i += 4;
@@ -2486,6 +2495,7 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
             BasicBlock* block = createBasicBlock("tableswitch");
             opcodeInfos[index2].newBlock = block;
           }
+          if (index2 <= tmp) opcodeInfos[index2].backEdge = true;
         }
         
         i = tmp + 8 + filled + (nbs << 3);
@@ -2557,6 +2567,7 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint16 index = tmp + readU2(bytecodes, i);
         if (!(opcodeInfos[index].newBlock))
           opcodeInfos[index].newBlock = createBasicBlock("true IF*NULL");
+        if (index <= tmp) opcodeInfos[index].backEdge = true;
         break;
       }
 

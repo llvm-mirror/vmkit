@@ -375,6 +375,7 @@ private:
   
   
   bool enabledException;
+  bool cooperativeGC;
   
   virtual void makeVT(Class* cl) = 0;
   
@@ -398,9 +399,17 @@ public:
   bool hasExceptionsEnabled() {
     return enabledException;
   }
+
+  bool useCooperativeGC() {
+    return cooperativeGC;
+  }
   
   void disableExceptions() {
     enabledException = false;
+  }
+  
+  void disableCooperativeGC() {
+    cooperativeGC = false;
   }
   
   virtual JavaCompiler* Create(const std::string& ModuleID) = 0;

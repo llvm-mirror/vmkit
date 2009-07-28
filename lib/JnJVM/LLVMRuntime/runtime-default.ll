@@ -229,7 +229,6 @@ declare void @jnjvmThrowExceptionFromJIT()
 declare void @jnjvmJNIProceedPendingException(i32**, i8**)
 declare void @jnjvmGetSJLJBuffer(i32*, i32**, i8*, i8**)
 
-declare %JavaObject* @gcmalloc(i32, %VT*)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Debugging methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -238,3 +237,11 @@ declare %JavaObject* @gcmalloc(i32, %VT*)
 declare void @jnjvmPrintExecution(i32, i32, %JavaMethod*)
 declare void @jnjvmPrintMethodStart(%JavaMethod*)
 declare void @jnjvmPrintMethodEnd(%JavaMethod*)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GC methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+declare %JavaObject* @gcmalloc(i32, %VT*)

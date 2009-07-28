@@ -307,3 +307,9 @@ void* Allocator::allocateTemporaryMemory(unsigned int sz) {
 void Allocator::freeTemporaryMemory(void* obj) {
   return free(obj); 
 }
+
+
+
+extern "C" void conditionalSafePoint() {
+  abort();
+}

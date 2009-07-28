@@ -115,6 +115,8 @@ public:
   llvm::Function* llvm_atomic_lcs_ptr;
   llvm::Function* llvm_gc_gcroot;
 
+  llvm::Function* conditionalSafePoint;
+  llvm::Function* unconditionalSafePoint;
 
    llvm::Constant* constantInt8Zero;
    llvm::Constant* constantZero;

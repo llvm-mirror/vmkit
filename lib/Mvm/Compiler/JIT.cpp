@@ -211,6 +211,9 @@ MvmModule::MvmModule(llvm::Module* module) {
 
   llvm_atomic_lcs_ptr = pointerSizeType == Type::Int32Ty ? llvm_atomic_lcs_i32 :
                                                            llvm_atomic_lcs_i64;
+
+  unconditionalSafePoint = module->getFunction("unconditionalSafePoint");
+  conditionalSafePoint = module->getFunction("conditionalSafePoint");
 }
 
 
