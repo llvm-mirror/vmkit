@@ -859,7 +859,6 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     
 }
 
-
 llvm::Function* JavaJIT::javaCompile() {
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "compiling %s.%s\n",
               UTF8Buffer(compilingClass->name).cString(),
@@ -1045,28 +1044,6 @@ llvm::Function* JavaJIT::javaCompile() {
   if (returnType != Type::VoidTy) {
     endNode = llvm::PHINode::Create(returnType, "", endBlock);
   }
- 
-  if (TheCompiler->useCooperativeGC()) {
-    Value* threadId = getCurrentThread();
-     
-    Value* YieldPtr = 
-      GetElementPtrInst::Create(threadId,
-                                module->OffsetDoYieldInThreadConstant,
-                                "", currentBlock);
-
-    Value* Yield = new LoadInst(YieldPtr, "", currentBlock);
-
-    BasicBlock* continueBlock = createBasicBlock("After safe point");
-    BasicBlock* yieldBlock = createBasicBlock("In safe point");
-    BranchInst::Create(yieldBlock, continueBlock, Yield, currentBlock);
-
-    currentBlock = yieldBlock;
-    CallInst::Create(module->conditionalSafePoint, "", currentBlock);
-    BranchInst::Create(continueBlock, currentBlock);
-
-    currentBlock = continueBlock;
-  }
-
   
   if (isSynchro(compilingMethod->access))
     beginSynchronize();
@@ -1092,6 +1069,28 @@ llvm::Function* JavaJIT::javaCompile() {
     currentBlock = stackOverflow;
     throwException(module->StackOverflowErrorFunction, 0, 0);
     currentBlock = noStackOverflow;
+  }
+  
+  if (TheCompiler->useCooperativeGC()) {
+    Value* threadId = getCurrentThread();
+    
+    Value* GEP[2] = { module->constantZero, 
+                      module->OffsetDoYieldInThreadConstant };
+    
+    Value* YieldPtr = GetElementPtrInst::Create(threadId, GEP, GEP + 2, "",
+                                                currentBlock);
+
+    Value* Yield = new LoadInst(YieldPtr, "", currentBlock);
+
+    BasicBlock* continueBlock = createBasicBlock("After safe point");
+    BasicBlock* yieldBlock = createBasicBlock("In safe point");
+    BranchInst::Create(yieldBlock, continueBlock, Yield, currentBlock);
+
+    currentBlock = yieldBlock;
+    CallInst::Create(module->conditionalSafePoint, "", currentBlock);
+    BranchInst::Create(continueBlock, currentBlock);
+
+    currentBlock = continueBlock;
   }
 
   compileOpcodes(&compilingClass->bytes->elements[start], codeLen); 

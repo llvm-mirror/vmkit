@@ -52,10 +52,6 @@ struct Opinfo {
   ///
   bool handler;
 
-  /// backEdge - If the instruction is the first instruction of a basic block
-  /// where a forward opcode branches to, consider the block as a back edge.
-  ///
-  bool backEdge;
 };
 
 

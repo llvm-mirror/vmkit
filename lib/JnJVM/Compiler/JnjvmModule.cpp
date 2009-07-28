@@ -14,6 +14,7 @@
 #include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
 #include "llvm/PassManager.h"
+#include "llvm/Analysis/LoopPass.h"
 #include "llvm/Target/TargetData.h"
 
 #include "mvm/JIT.h"
@@ -356,6 +357,7 @@ JavaLLVMCompiler::~JavaLLVMCompiler() {
 
 namespace mvm {
   llvm::FunctionPass* createEscapeAnalysisPass();
+  llvm::LoopPass* createLoopSafePointsPass();
 }
 
 namespace jnjvm {
@@ -371,6 +373,9 @@ void JavaLLVMCompiler::addJavaPasses() {
   
   JavaFunctionPasses = new FunctionPassManager(TheModuleProvider);
   JavaFunctionPasses->add(new TargetData(TheModule));
+  if (cooperativeGC)
+    JavaFunctionPasses->add(mvm::createLoopSafePointsPass());
+
   JavaFunctionPasses->add(mvm::createEscapeAnalysisPass());
   JavaFunctionPasses->add(createLowerConstantCallsPass());
 }
