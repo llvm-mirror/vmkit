@@ -825,7 +825,6 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaField(JavaField& field) {
   const StructType* STy = 
     dyn_cast<StructType>(JnjvmModule::JavaFieldType->getContainedType(0));
   Module& Mod = *getLLVMModule();
-  LLVMContext& Context = Mod.getContext();
   
   std::vector<Constant*> FieldElts;
   std::vector<Constant*> TempElts;
@@ -1217,7 +1216,6 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
 template<typename T>
 Constant* JavaAOTCompiler::CreateConstantFromArray(const T* val, const Type* Ty) {
   Module& Mod = *getLLVMModule();
-  LLVMContext& Context = Mod.getContext();
   std::vector<const Type*> Elemts;
   const ArrayType* ATy = ArrayType::get(Ty, val->size);
   Elemts.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
@@ -1253,8 +1251,6 @@ Constant* JavaAOTCompiler::CreateConstantFromArray(const T* val, const Type* Ty)
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
-  Module& Mod = *getLLVMModule();
-  LLVMContext& Context = Mod.getContext();
   std::vector<const Type*> Elemts;
   const ArrayType* ATy = ArrayType::get(Type::Int16Ty, val->size);
   Elemts.push_back(JnjvmModule::pointerSizeType);
@@ -1299,7 +1295,6 @@ Constant* JavaAOTCompiler::getUTF8(const UTF8* val) {
 
 Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   Module& Mod = *getLLVMModule();
-  LLVMContext& Context = Mod.getContext();
   CommonClass* classDef = VT->cl;
   uint32 size = classDef->isClass() ? classDef->asClass()->virtualTableSize :
                                       JavaVirtualTable::getBaseSize();
@@ -1926,8 +1921,6 @@ void JavaAOTCompiler::compileAllStubs(Signdef* sign) {
 }
 
 void JavaAOTCompiler::generateMain(const char* name, bool jit) {
-  Module& Mod = *getLLVMModule();
-  LLVMContext& Context = Mod.getContext();
 
   // Type Definitions
   std::vector<const Type*> FuncArgs;
