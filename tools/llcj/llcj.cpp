@@ -231,6 +231,7 @@ int main(int argc, char **argv) {
     gccArgv[gccArgc++] = "-lGCMmap2";
     gccArgv[gccArgc++] = "-lvmjc";
     gccArgv[gccArgc++] = "-lLLVMSupport";
+    gccArgv[gccArgc++] = "-lLLVMSystem";
 #if !defined(__MACH__)
     gccArgv[gccArgc++] = "-rdynamic";
 #endif
