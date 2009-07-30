@@ -1851,6 +1851,11 @@ void mainCompilerStart(JavaThread* th) {
       }
       
       cl->setOwnerClass(JavaThread::get());
+      cl->resolveInnerOuterClasses();
+      for (uint32 i = 0; i < cl->nbInnerClasses; ++i) {
+        cl->innerClasses[i]->setOwnerClass(JavaThread::get());
+        M->compileClass(cl->innerClasses[i]);
+      }
       M->compileClass(cl);
     }
  
