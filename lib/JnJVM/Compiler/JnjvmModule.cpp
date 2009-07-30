@@ -199,9 +199,9 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   
   OffsetIsolateInThreadConstant = ConstantInt::get(Type::Int32Ty, 3);
   OffsetDoYieldInThreadConstant = ConstantInt::get(Type::Int32Ty, 6);
-  OffsetJNIInThreadConstant = ConstantInt::get(Type::Int32Ty, 9);
-  OffsetJavaExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 10);
-  OffsetCXXExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 11);
+  OffsetJNIInThreadConstant = ConstantInt::get(Type::Int32Ty, 12);
+  OffsetJavaExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 13);
+  OffsetCXXExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 14);
   
   ClassReadyConstant = ConstantInt::get(Type::Int8Ty, ready);
   

@@ -39,16 +39,63 @@ void GCThread::waitCollection() {
 
 void Collector::siggc_handler(int) {
   mvm::Thread* th = mvm::Thread::get();
+  th->inGC = true;
 
-  jmp_buf buf;
-  setjmp(buf);
   
   Collector::threads->stackLock();
+
+  if (Collector::threads->cooperative && !th->doYield) {
+    // I was previously blocked, and I'm running late: someone else collected
+    // my stack, and the GC has finished already. Just unlock and return.
+    Collector::threads->stackUnlock();
+    th->inGC = false;
+    return;
+  }
+ 
+  // I woke up while a GC was happening, and no-one has collected my stack yet.
+  // Do it now.
+  if (!th->stackScanned) {
+    jmp_buf buf;
+    setjmp(buf);
   
-  if(!th) /* The thread is being destroyed */
-    Collector::threads->another_mark();
-  else {
-    register unsigned int  **cur = (unsigned int**)(void*)&buf;
+    if(!th) /* The thread is being destroyed */
+      Collector::threads->another_mark();
+    else {
+      register unsigned int  **cur = (unsigned int**)(void*)&buf;
+      register unsigned int  **max = (unsigned int**)th->baseSP;
+    
+      GCChunkNode *node;
+    
+      for(; cur<max; cur++) {
+        if((node = o2node(*cur)) && (!Collector::isMarked(node))) {
+          node->remove();
+          node->append(Collector::used_nodes);
+          Collector::mark(node);
+        }
+      }
+    
+      Collector::threads->another_mark();
+    }
+    th->stackScanned = true;
+  }
+
+  // Wait for the collection to finish.
+  Collector::threads->waitCollection();
+  Collector::threads->stackUnlock();
+  
+  // If the current thread is not the collector thread, this means that the
+  // collection is finished. Set inGC to false.
+  if(th != threads->getCurrentCollector())
+    th->inGC = false;
+}
+
+void Collector::traceForeignThreadStack(mvm::Thread* th, void* endPtr) {
+  Collector::threads->stackLock();
+ 
+  // The thread may have waken up during this GC. In this case, it may also
+  // have collected its stack. Don't scan it then.
+  if (!th->stackScanned) {
+    register unsigned int  **cur = (unsigned int**)endPtr;
     register unsigned int  **max = (unsigned int**)th->baseSP;
     
     GCChunkNode *node;
@@ -60,9 +107,13 @@ void Collector::siggc_handler(int) {
         Collector::mark(node);
       }
     }
-    
     Collector::threads->another_mark();
-    Collector::threads->waitCollection();
+    th->stackScanned = true;
   }
+
   Collector::threads->stackUnlock();
+}
+
+extern "C" void conditionalSafePoint() {
+  Collector::traceStackThread();  
 }

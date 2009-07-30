@@ -63,8 +63,11 @@ mvm::Thread* Lock::getOwner() {
 }
 
 void LockNormal::lock() {
+  Thread* th = Thread::get();
+  th->enterUncooperativeCode();
   pthread_mutex_lock((pthread_mutex_t*)&internalLock);
-  owner = mvm::Thread::get();
+  th->leaveUncooperativeCode();
+  owner = th;
 }
 
 void LockNormal::unlock() {
@@ -75,8 +78,11 @@ void LockNormal::unlock() {
 
 void LockRecursive::lock() {
   if (!selfOwner()) {
+    Thread* th = Thread::get();
+    th->enterUncooperativeCode();
     pthread_mutex_lock((pthread_mutex_t*)&internalLock);
-    owner = mvm::Thread::get();
+    th->leaveUncooperativeCode();
+    owner = th;
   }
   ++n;
 }
@@ -113,8 +119,11 @@ void LockRecursive::lockAll(int count) {
   if (selfOwner()) {
     n += count;
   } else {
+    Thread* th = Thread::get();
+    th->enterUncooperativeCode();
     pthread_mutex_lock((pthread_mutex_t*)&internalLock);
-    owner = mvm::Thread::get();
+    th->leaveUncooperativeCode();
+    owner = th;
     n = count;
   }
 }
@@ -136,8 +145,11 @@ void Cond::wait(Lock* l) {
 
   int n = l->unsafeUnlock();
 
+  Thread* th = Thread::get();
+  th->enterUncooperativeCode();
   int res = pthread_cond_wait((pthread_cond_t*)&internalCond,
                               (pthread_mutex_t*)&(l->internalLock));
+  th->leaveUncooperativeCode();
 
   assert(!res && "Error on wait");
   l->unsafeLock(n);
@@ -158,9 +170,12 @@ int Cond::timedWait(Lock* l, struct timeval *ref) {
   
   int n = l->unsafeUnlock();
   
+  Thread* th = Thread::get();
+  th->enterUncooperativeCode();
   int res = pthread_cond_timedwait((pthread_cond_t*)&internalCond, 
                                    (pthread_mutex_t*)&(l->internalLock),
                                    &timeout);
+  th->leaveUncooperativeCode();
   
   assert((!res || res == ETIMEDOUT) && "Error on timed wait");
   l->unsafeLock(n);

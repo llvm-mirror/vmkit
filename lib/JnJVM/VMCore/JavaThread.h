@@ -240,6 +240,9 @@ public:
   
     localJNIRefs->removeJNIReferences(this, *currentAddedReferences);
     addresses.pop_back();
+   
+    // Go back to cooperative mode.
+    leaveUncooperativeCode();
   }
 
   /// endJava - Record that we are leaving Java code.

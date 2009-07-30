@@ -103,6 +103,9 @@ void JavaThread::startJNI(int level) {
   assert((addresses.size() % 2) && "Wrong stack");
   
   addresses.push_back(cur);
+
+  // Start uncooperative mode.
+  enterUncooperativeCode();
 }
 
 void JavaThread::startJava() {

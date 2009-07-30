@@ -42,12 +42,18 @@ class GCThread {
   
 public:
   mvm::Thread* base;
-  
+  bool cooperative;
+ 
+  mvm::Thread* getCurrentCollector() {
+    return current_collector;
+  }
+
   GCThread() {
     _nb_threads = 0;
     _nb_collected = 0;
     current_collector = 0;
     base = 0;
+    cooperative = false;
   }
   
   inline unsigned int get_nb_threads() {
@@ -61,7 +67,25 @@ public:
 
   void        waitStacks();
   void        waitCollection();
-  inline void collectionFinished() { _collectionCond.broadcast(); }
+ 
+  inline void collectionFinished() {
+    if (cooperative) {
+      // We lock here to make sure no previously blocked in native threads
+      // will join the collection and never go back to running code.
+      stackLock();
+      mvm::Thread* cur = current_collector;
+      do {
+        cur->doYield = false;
+        cur = (mvm::Thread*)cur->next();
+      } while (cur != current_collector);
+      _collectionCond.broadcast();
+      stackUnlock();
+    } else {
+      _collectionCond.broadcast();
+    }
+    current_collector->inGC = false;
+  }
+  
   inline void collectorGo() { _stackCond.broadcast(); }
 
   inline void cancel() {

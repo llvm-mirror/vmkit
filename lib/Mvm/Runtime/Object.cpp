@@ -119,6 +119,8 @@ typedef void (*destructor_t)(void*);
 
 void VirtualMachine::finalizerStart(mvm::Thread* th) {
   VirtualMachine* vm = th->MyVM;
+  gc* res = 0;
+  llvm_gcroot(res, 0);
 
   while (true) {
     vm->FinalizationLock.lock();
@@ -129,7 +131,6 @@ void VirtualMachine::finalizerStart(mvm::Thread* th) {
 
     while (true) {
       vm->FinalizationQueueLock.acquire();
-      gc* res = 0;
       if (vm->CurrentFinalizedIndex != 0) {
         res = vm->ToBeFinalized[--vm->CurrentFinalizedIndex];
       }
@@ -146,6 +147,7 @@ void VirtualMachine::finalizerStart(mvm::Thread* th) {
         }
       } catch(...) {
       }
+      res = 0;
       th->clearException();
     }
   }
@@ -153,6 +155,8 @@ void VirtualMachine::finalizerStart(mvm::Thread* th) {
 
 void VirtualMachine::enqueueStart(mvm::Thread* th) {
   VirtualMachine* vm = th->MyVM;
+  gc* res = 0;
+  llvm_gcroot(res, 0);
 
   while (true) {
     vm->EnqueueLock.lock();
@@ -163,7 +167,6 @@ void VirtualMachine::enqueueStart(mvm::Thread* th) {
 
     while (true) {
       vm->ToEnqueueLock.acquire();
-      gc* res = 0;
       if (vm->ToEnqueueIndex != 0) {
         res = vm->ToEnqueue[--vm->ToEnqueueIndex];
       }
@@ -174,6 +177,7 @@ void VirtualMachine::enqueueStart(mvm::Thread* th) {
         vm->enqueueReference(res);
       } catch(...) {
       }
+      res = 0;
       th->clearException();
     }
   }
@@ -306,10 +310,4 @@ void* Allocator::allocateTemporaryMemory(unsigned int sz) {
   
 void Allocator::freeTemporaryMemory(void* obj) {
   return free(obj); 
-}
-
-
-
-extern "C" void conditionalSafePoint() {
-  abort();
 }

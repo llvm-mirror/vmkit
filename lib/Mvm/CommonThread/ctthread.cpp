@@ -19,6 +19,7 @@
 #include <ctime>
 #include <pthread.h>
 #include <sys/mman.h>
+#include <sched.h>
 #include <unistd.h>
 
 using namespace mvm;
@@ -34,6 +35,21 @@ int Thread::kill(int signo) {
 void Thread::exit(int value) {
   pthread_exit((void*)value);
 }
+
+void Thread::yield(void) {
+  Thread* th = mvm::Thread::get();
+  if (th->isMvmThread()) {
+    if (th->doYield && !th->inGC) th->joinCollection();
+  }
+  sched_yield();
+}
+
+void Thread::joinCollection() {
+  Collector::traceStackThread();
+}
+
+
+uintptr_t Thread::baseAddr = 0;
 
 // These could be set at runtime.
 #define STACK_SIZE 0x100000
@@ -91,6 +107,7 @@ public:
 
     memset((void*)used, 0, NR_THREADS * sizeof(uint32));
     allocPtr = 0;
+    mvm::Thread::baseAddr = baseAddr;
   }
 
   uintptr_t allocate() {

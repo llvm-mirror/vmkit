@@ -10,7 +10,7 @@
 #ifndef MVM_THREAD_H
 #define MVM_THREAD_H
 
-#include <sched.h>
+#include <stdlib.h>
 
 #include "types.h"
 
@@ -103,9 +103,7 @@ public:
   
   /// yield - Yield the processor to another thread.
   ///
-  static void yield(void) {
-    sched_yield();
-  }
+  static void yield(void);
   
   /// kill - Kill the thread with the given pid by sending it a signal.
   ///
@@ -143,6 +141,15 @@ public:
   ///
   bool doYield;
 
+  /// inGC - Flag to tell that the thread is being part of a GC.
+  ///
+  bool inGC;
+
+  /// stackScanned - Flag to tell that the thread's stack has already
+  /// been analyzed.
+  ///
+  bool stackScanned;
+
   /// get - Get the thread specific data of the current thread.
   ///
   static Thread* get() {
@@ -151,6 +158,12 @@ public:
   
 private:
   
+  /// lastSP - If the thread is running native code that can not be
+  /// interrupted, lastSP is not null and contains the value of the
+  /// stack pointer before entering native.
+  ///
+  void* lastSP;
+ 
   /// internalThreadID - The implementation specific thread id.
   ///
   void* internalThreadID;
@@ -164,6 +177,10 @@ private:
   ///
   virtual void internalClearException() {}
 
+  /// joinCollection - Join a collection.
+  ///
+  void joinCollection();
+
 public:
  
   /// ~Thread - Give the class a home.
@@ -174,6 +191,23 @@ public:
   /// a tracer.
   ///
   virtual void tracer() {}
+  
+  void* getLastSP() { return lastSP; }
+  void  setLastSP(void* V) { lastSP = V; }
+
+  void enterUncooperativeCode() {
+    if (isMvmThread()) {
+      lastSP = __builtin_frame_address(0);
+      if (doYield && !inGC) joinCollection();
+    }
+  }
+
+  void leaveUncooperativeCode() {
+    if (isMvmThread()) {
+      lastSP = 0;
+      if (doYield && !inGC) joinCollection();
+    }
+  }
 
 
   /// clearException - Clear any pending exception of the current thread.
@@ -181,9 +215,22 @@ public:
     internalClearException();
   }
 
+  bool isMvmThread() {
+    if (!baseAddr) return false;
+    else return (((uintptr_t)this) & MvmThreadMask) == baseAddr;
+  }
+
+  /// baseAddr - The base address for all threads.
+  static uintptr_t baseAddr;
+
   /// IDMask - Apply this mask to the stack pointer to get the Thread object.
   ///
   static const uint64_t IDMask = 0x7FF00000;
+
+  /// MvmThreadMask - Apply this mask to verify that the current thread was
+  /// created by Mvm.
+  ///
+  static const uint64_t MvmThreadMask = 0xF0000000;
 
   /// OverflowMask - Apply this mask to implement overflow checks. For
   /// efficiency, we lower the available size of the stack: it can never go

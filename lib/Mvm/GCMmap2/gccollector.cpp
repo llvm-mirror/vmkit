@@ -46,6 +46,7 @@ void Collector::do_collect() {
 
   mvm::Thread* th = mvm::Thread::get();
   th->MyVM->startCollection();
+  th->inGC = true;
 
   threads->synchronize();
 
@@ -103,6 +104,7 @@ void Collector::do_collect() {
     next = cur->next();
     allocator->reject_chunk(cur);
   }
+  th->inGC = false;
 
 }
 

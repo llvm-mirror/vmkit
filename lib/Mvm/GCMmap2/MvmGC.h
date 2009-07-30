@@ -81,6 +81,8 @@ class Collector {
   static inline size_t real_nbb(GCChunkNode *n) { 
     return n->nbb() - sizeof(gcRoot);
   }
+  
+  static void traceForeignThreadStack(mvm::Thread* th, void* endPtr);
 
 public:
   static GCThread *threads;        /* le gestionnaire de thread et de synchro */
@@ -97,6 +99,10 @@ public:
   static void destroy();
 
   static int siggc();
+
+  static void traceStackThread() {
+    siggc_handler(0);
+  }
 
   static void inject_my_thread(mvm::Thread* th);
   static inline void  remove_my_thread(mvm::Thread* th) {
