@@ -97,11 +97,15 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   mvm::Thread* th = mvm::Thread::get();
   th->releaseJIT = mvm::MvmModule::releaseJITAfterGC;
 
-  if (!(F->hasNotBeenReadFromBitcode())) 
+  if (!(F->hasNotBeenReadFromBitcode())) {
+    th->releaseJIT = 0;
     return false;
+  }
  
-  if (mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(F))
+  if (mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(F)) {
+    th->releaseJIT = 0;
     return false;
+  }
 
   JavaMethod* meth = LLVMMethodInfo::get(F);
   
@@ -131,6 +135,7 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
     assert(meth->classDef->isInitializing() && "Class not ready");
   }
 
+  th->releaseJIT = 0;
   return false;
 }
 
