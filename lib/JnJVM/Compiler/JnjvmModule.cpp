@@ -72,18 +72,18 @@ JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
   
 void JavaLLVMCompiler::resolveVirtualClass(Class* cl) {
   // Lock here because we may be called by a class resolver
-  mvm::MvmModule::protectIR();
+  bool un = mvm::MvmModule::protectIR();
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   LCI->getVirtualType();
-  mvm::MvmModule::unprotectIR();
+  if (un) mvm::MvmModule::unprotectIR();
 }
 
 void JavaLLVMCompiler::resolveStaticClass(Class* cl) {
   // Lock here because we may be called by a class initializer
-  mvm::MvmModule::protectIR();
+  bool un = mvm::MvmModule::protectIR();
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   LCI->getStaticType();
-  mvm::MvmModule::unprotectIR();
+  if (un) mvm::MvmModule::unprotectIR();
 }
 
 
@@ -332,7 +332,7 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
   Function* func = LMI->getMethod();
   if (func->hasNotBeenReadFromBitcode()) {
     // We are jitting. Take the lock.
-    JnjvmModule::protectIR();
+    bool un = JnjvmModule::protectIR();
     if (func->hasNotBeenReadFromBitcode()) {
       JavaJIT jit(this, meth, func);
       if (isNative(meth->access)) {
@@ -344,7 +344,7 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
         JnjvmModule::runPasses(func, JavaFunctionPasses);
       }
     }
-    JnjvmModule::unprotectIR();
+    if (un) JnjvmModule::unprotectIR();
   }
   return func;
 }

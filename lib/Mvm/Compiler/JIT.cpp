@@ -307,14 +307,19 @@ static void releaseJIT(bool goBack) {
 
 // We protect the creation of IR with the executionEngine lock because
 // codegen'ing a function may also create IR objects.
-void MvmModule::protectIR() {
+bool MvmModule::protectIR() {
   if (executionEngine) {
     mvm::Thread* th = mvm::Thread::get();
+    
+    // If we already own the lock, don't lock it again.
+    if (th->isMvmThread() && th->releaseJIT) return false;
+
     th->enterUncooperativeCode();
     executionEngine->lock.acquire();
     th->leaveUncooperativeCode();
     if (th->isMvmThread()) th->releaseJIT = releaseJIT;
   }
+  return true;
 }
 
 void MvmModule::unprotectIR() {
