@@ -250,12 +250,7 @@ public:
   /// routine - The function to invoke when the thread starts.
   ///
   void (*routine)(mvm::Thread*);
-
-  /// releaseJIT - Function to release any locks held while we are trying to
-  /// join a collection.
-  ///
-  void (*releaseJIT)(bool);
-
+ 
 #ifdef SERVICE
   /// stoppingService - The service that is currently stopping.
   ///

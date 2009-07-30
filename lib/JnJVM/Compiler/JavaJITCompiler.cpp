@@ -209,10 +209,10 @@ void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
 void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   Function* func = parseFunction(meth);
  
-  bool un = mvm::MvmModule::protectIR();
+  mvm::MvmModule::protectIR();
   void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
   func->deleteBody();
-  if (un) mvm::MvmModule::unprotectIR();
+  mvm::MvmModule::unprotectIR();
 
   return res;
 }

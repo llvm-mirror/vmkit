@@ -46,12 +46,11 @@
 ;;; Field 9: lastSP
 ;;; Field 10: internalThreadID
 ;;; field 11: routine
-;;; field 12: releaseJIT
-;;; field 13: jnienv
-;;; field 14: Java pendingException
-;;; field 15: CXX pendingException
+;;; field 12: jnienv
+;;; field 13: Java pendingException
+;;; field 14: CXX pendingException
 %JavaThread = type { %VT*, %JavaThread*, %JavaThread*, i8*, i8*, i8*, i1, i1,
-                     i1, i8*, i8*, i8*, i8*, i8*, %JavaObject*, i8* }
+                     i1, i8*, i8*, i8*, i8*, %JavaObject*, i8* }
 
 
 %Attribut = type { %UTF8*, i32, i32 }

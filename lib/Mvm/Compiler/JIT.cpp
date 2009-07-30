@@ -298,34 +298,19 @@ void MvmModule::AddStandardCompilePasses() {
   
 }
 
-void MvmModule::releaseJITAfterGC(bool goBack) {
-  if (MvmModule::executionEngine) {
-    if (goBack) MvmModule::executionEngine->lock.acquire();
-    else MvmModule::executionEngine->lock.release();
-  }
-}
-
 // We protect the creation of IR with the executionEngine lock because
 // codegen'ing a function may also create IR objects.
-bool MvmModule::protectIR() {
+void MvmModule::protectIR() {
   if (executionEngine) {
     mvm::Thread* th = mvm::Thread::get();
-    
-    // If we already own the lock, don't lock it again.
-    if (th->isMvmThread() && th->releaseJIT) return false;
-
     th->enterUncooperativeCode();
     executionEngine->lock.acquire();
     th->leaveUncooperativeCode();
-    if (th->isMvmThread()) th->releaseJIT = releaseJITAfterGC;
   }
-  return true;
 }
 
 void MvmModule::unprotectIR() {
   if (executionEngine) executionEngine->lock.release();
-  Thread* th = Thread::get();
-  if (th->isMvmThread()) th->releaseJIT = 0;
 }
 
 

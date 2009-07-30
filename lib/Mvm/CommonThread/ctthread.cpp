@@ -45,9 +45,7 @@ void Thread::yield(void) {
 }
 
 void Thread::joinCollection() {
-  if (releaseJIT) releaseJIT(false);
   Collector::traceStackThread();
-  if (releaseJIT) releaseJIT(true);
 }
 
 

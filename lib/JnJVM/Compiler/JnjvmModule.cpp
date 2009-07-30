@@ -72,18 +72,18 @@ JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
   
 void JavaLLVMCompiler::resolveVirtualClass(Class* cl) {
   // Lock here because we may be called by a class resolver
-  bool un = mvm::MvmModule::protectIR();
+  mvm::MvmModule::protectIR();
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   LCI->getVirtualType();
-  if (un) mvm::MvmModule::unprotectIR();
+  mvm::MvmModule::unprotectIR();
 }
 
 void JavaLLVMCompiler::resolveStaticClass(Class* cl) {
   // Lock here because we may be called by a class initializer
-  bool un = mvm::MvmModule::protectIR();
+  mvm::MvmModule::protectIR();
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   LCI->getStaticType();
-  if (un) mvm::MvmModule::unprotectIR();
+  mvm::MvmModule::unprotectIR();
 }
 
 
@@ -199,9 +199,9 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   
   OffsetIsolateInThreadConstant = ConstantInt::get(Type::Int32Ty, 3);
   OffsetDoYieldInThreadConstant = ConstantInt::get(Type::Int32Ty, 6);
-  OffsetJNIInThreadConstant = ConstantInt::get(Type::Int32Ty, 13);
-  OffsetJavaExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 14);
-  OffsetCXXExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 15);
+  OffsetJNIInThreadConstant = ConstantInt::get(Type::Int32Ty, 12);
+  OffsetJavaExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 13);
+  OffsetCXXExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 14);
   
   ClassReadyConstant = ConstantInt::get(Type::Int8Ty, ready);
   
@@ -332,7 +332,7 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
   Function* func = LMI->getMethod();
   if (func->hasNotBeenReadFromBitcode()) {
     // We are jitting. Take the lock.
-    bool un = JnjvmModule::protectIR();
+    JnjvmModule::protectIR();
     if (func->hasNotBeenReadFromBitcode()) {
       JavaJIT jit(this, meth, func);
       if (isNative(meth->access)) {
@@ -344,7 +344,7 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
         JnjvmModule::runPasses(func, JavaFunctionPasses);
       }
     }
-    if (un) JnjvmModule::unprotectIR();
+    JnjvmModule::unprotectIR();
   }
   return func;
 }

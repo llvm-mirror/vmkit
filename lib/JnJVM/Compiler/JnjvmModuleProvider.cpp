@@ -92,20 +92,12 @@ Function* JavaJITCompiler::addCallback(Class* cl, uint16 index,
 
 bool JnjvmModuleProvider::materializeFunction(Function *F, 
                                               std::string *ErrInfo) {
-
-  // When the thread enters here, it _must_ hold the JIT lock.
-  mvm::Thread* th = mvm::Thread::get();
-  th->releaseJIT = mvm::MvmModule::releaseJITAfterGC;
-
-  if (!(F->hasNotBeenReadFromBitcode())) {
-    th->releaseJIT = 0;
+  
+  if (!(F->hasNotBeenReadFromBitcode())) 
     return false;
-  }
  
-  if (mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(F)) {
-    th->releaseJIT = 0;
+  if (mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(F))
     return false;
-  }
 
   JavaMethod* meth = LLVMMethodInfo::get(F);
   
@@ -135,7 +127,6 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
     assert(meth->classDef->isInitializing() && "Class not ready");
   }
 
-  th->releaseJIT = 0;
   return false;
 }
 

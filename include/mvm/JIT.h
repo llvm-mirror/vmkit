@@ -183,7 +183,7 @@ public:
 
    static int disassemble(unsigned int* addr);
   
-   static bool protectIR();
+   static void protectIR();
    static void unprotectIR();
 
    static void copyDefinitions(llvm::Module* Dst, llvm::Module* Src);
@@ -191,8 +191,6 @@ public:
    static void AddStandardCompilePasses();
 
    static const char* getHostTriple();
-
-   static void releaseJITAfterGC(bool);
 };
 
 } // end namespace mvm
