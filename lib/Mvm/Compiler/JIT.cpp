@@ -301,7 +301,12 @@ void MvmModule::AddStandardCompilePasses() {
 // We protect the creation of IR with the executionEngine lock because
 // codegen'ing a function may also create IR objects.
 void MvmModule::protectIR() {
-  if (executionEngine) executionEngine->lock.acquire();
+  if (executionEngine) {
+    mvm::Thread* th = mvm::Thread::get();
+    th->enterUncooperativeCode();
+    executionEngine->lock.acquire();
+    th->leaveUncooperativeCode();
+  }
 }
 
 void MvmModule::unprotectIR() {
