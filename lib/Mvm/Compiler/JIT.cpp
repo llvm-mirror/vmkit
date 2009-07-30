@@ -298,7 +298,7 @@ void MvmModule::AddStandardCompilePasses() {
   
 }
 
-static void releaseJIT(bool goBack) {
+void MvmModule::releaseJITAfterGC(bool goBack) {
   if (MvmModule::executionEngine) {
     if (goBack) MvmModule::executionEngine->lock.acquire();
     else MvmModule::executionEngine->lock.release();
@@ -317,7 +317,7 @@ bool MvmModule::protectIR() {
     th->enterUncooperativeCode();
     executionEngine->lock.acquire();
     th->leaveUncooperativeCode();
-    if (th->isMvmThread()) th->releaseJIT = releaseJIT;
+    if (th->isMvmThread()) th->releaseJIT = releaseJITAfterGC;
   }
   return true;
 }
@@ -325,7 +325,7 @@ bool MvmModule::protectIR() {
 void MvmModule::unprotectIR() {
   if (executionEngine) executionEngine->lock.release();
   Thread* th = Thread::get();
-  if (th->isMvmThread()) th->releaseJIT = releaseJIT;
+  if (th->isMvmThread()) th->releaseJIT = 0;
 }
 
 

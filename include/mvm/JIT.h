@@ -191,6 +191,8 @@ public:
    static void AddStandardCompilePasses();
 
    static const char* getHostTriple();
+
+   static void releaseJITAfterGC(bool);
 };
 
 } // end namespace mvm

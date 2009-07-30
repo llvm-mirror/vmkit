@@ -92,7 +92,11 @@ Function* JavaJITCompiler::addCallback(Class* cl, uint16 index,
 
 bool JnjvmModuleProvider::materializeFunction(Function *F, 
                                               std::string *ErrInfo) {
-  
+
+  // When the thread enters here, it _must_ hold the JIT lock.
+  mvm::Thread* th = mvm::Thread::get();
+  th->releaseJIT = mvm::MvmModule::releaseJITAfterGC;
+
   if (!(F->hasNotBeenReadFromBitcode())) 
     return false;
  
