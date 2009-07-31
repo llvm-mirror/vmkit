@@ -423,7 +423,6 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
 
   if (!cl && doThrow) {
     Jnjvm* vm = JavaThread::get()->getJVM();
-    fprintf(stderr, "Could not found %s\n", UTF8Buffer(name).cString());
     if (name->equals(bootstrapLoader->NoClassDefFoundError)) {
       fprintf(stderr, "Unable to load NoClassDefFoundError");
       abort();
