@@ -51,10 +51,6 @@
 #include "Zip.h"
 
 
-namespace jnjvm {
-
-}
-
 using namespace jnjvm;
 
 typedef void (*static_init_t)(JnjvmClassLoader*);
@@ -427,6 +423,7 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
 
   if (!cl && doThrow) {
     Jnjvm* vm = JavaThread::get()->getJVM();
+    fprintf(stderr, "Could not found %s\n", UTF8Buffer(name).cString());
     if (name->equals(bootstrapLoader->NoClassDefFoundError)) {
       fprintf(stderr, "Unable to load NoClassDefFoundError");
       abort();
