@@ -37,15 +37,25 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
   Jnjvm* vm = th->getJVM();
   
   // Allocate the temporary data.
-  std::vector<void*>* stack = new std::vector<void*>();
+  std::vector<void*> stack;
 
   // Get the frame context.
-  th->getJavaFrameContext(*stack);
+  th->getJavaFrameContext(stack);
+  
+  ClassArray* cl = sizeof(void*) == 4 ? vm->upcalls->ArrayOfInt : 
+                                        vm->upcalls->ArrayOfLong;
+  JavaArray* result = (JavaArray*) cl->doNew(stack.size(), vm);
+  void** tab = (void**)result->elements;
+  uint32 index = 0;
+  for (std::vector<void*>::iterator i = stack.begin(), e = stack.end();
+       i != e; ++i, ++index) {
+    tab[index] = *i;
+  }
   
   // Set the tempory data in the new VMThrowable object.
   vmThrowable = vm->upcalls->newVMThrowable->doNew(vm);
   uint64 ptr = (uint64)vmThrowable + vm->upcalls->vmDataVMThrowable->ptrOffset;
-  ((JavaObject**)ptr)[0] = (JavaObject*)stack;
+  ((JavaObject**)ptr)[0] = result;
   return vmThrowable;
 }
 
@@ -121,34 +131,27 @@ JavaObject* vmthrow, JavaObject* throwable) {
   BEGIN_NATIVE_EXCEPTION(0)
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = vm->upcalls->vmDataVMThrowable;
-  std::vector<void*>* stack = (std::vector<void*>*)
-    field->getObjectField(vmthrow);
+  JavaArray* stack = (JavaArray*)field->getObjectField(vmthrow);
   
-  std::vector<void*>::iterator i = stack->begin(), e = stack->end();
   // remove the VMThrowable.fillInStackTrace method
-  uint32 index = 1;
-  ++i;
-  while (i != e) {
-    JavaMethod* meth = vm->IPToMethod<JavaMethod>(*i);
+  sint32 index = 1;;
+  while (index != stack->size) {
+    JavaMethod* meth = vm->IPToMethod<JavaMethod>(stack->elements[index]);
     assert(meth && "Wrong stack trace");
     if (meth->classDef->isAssignableFrom(vm->upcalls->newThrowable)) {
-      ++i;
       ++index;
     } else break;
   }
 
   result = (ArrayObject*)
-    vm->upcalls->stackTraceArray->doNew(stack->size() - index, vm);
+    vm->upcalls->stackTraceArray->doNew(stack->size - index, vm);
   
-  index = 0;
-  for (; i != e; ++i) {
-    JavaMethod* meth = vm->IPToMethod<JavaMethod>(*i);
+  for (sint32 i = 0; i < result->size; ++i) {
+    JavaMethod* meth = vm->IPToMethod<JavaMethod>(stack->elements[i + index]);
     assert(meth && "Wrong stack trace");
-    result->elements[index++] = consStackElement(meth, *i);
+    result->elements[i] = consStackElement(meth, stack->elements[i + index]);
   }
   
-  delete stack;
-
   END_NATIVE_EXCEPTION
 
   return result;
