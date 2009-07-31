@@ -37,8 +37,8 @@ extern "C" JavaObject* jnjvmRuntimeDelegatee(UserCommonClass* cl);
 extern "C" JavaArray* jnjvmMultiCallNew(UserClassArray* cl, uint32 len, ...);
 extern "C" UserClassArray* jnjvmGetArrayClass(UserCommonClass*,
                                               UserClassArray**);
-extern "C" void jnjvmJNIProceedPendingException();
-extern "C" void* jnjvmGetSJLJBuffer();
+extern "C" void jnjvmEndJNI();
+extern "C" void* jnjvmStartJNI();
 extern "C" void jnjvmJavaObjectAquire(JavaObject* obj);
 extern "C" void jnjvmJavaObjectRelease(JavaObject* obj);
 extern "C" void jnjvmThrowException(JavaObject* obj);
@@ -98,8 +98,8 @@ namespace {
       (void) jnjvmRuntimeDelegatee(0);
       (void) jnjvmMultiCallNew(0, 0);
       (void) jnjvmGetArrayClass(0, 0);
-      (void) jnjvmJNIProceedPendingException();
-      (void) jnjvmGetSJLJBuffer();
+      (void) jnjvmEndJNI();
+      (void) jnjvmStartJNI();
       (void) jnjvmJavaObjectAquire(0);
       (void) jnjvmJavaObjectRelease(0);
       (void) jnjvmThrowException(0);

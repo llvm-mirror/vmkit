@@ -378,7 +378,7 @@ extern "C" UserClassArray* jnjvmGetArrayClass(UserCommonClass* cl,
 }
 
 // Does not call Java code.
-extern "C" void jnjvmJNIProceedPendingException(uint32** oldLRN, void** oldBuffer) {
+extern "C" void jnjvmEndJNI(uint32** oldLRN, void** oldBuffer) {
   JavaThread* th = JavaThread::get();
   
   // We're going back to Java
@@ -400,21 +400,17 @@ extern "C" void jnjvmJNIProceedPendingException(uint32** oldLRN, void** oldBuffe
 }
 
 // Never throws.
-extern "C" void** jnjvmGetSJLJBuffer(uint32* localReferencesNumber,
-                                     uint32** oldLocalReferencesNumber,
-                                     void* newBuffer, void** oldBuffer) {
+extern "C" void** jnjvmStartJNI(uint32* localReferencesNumber,
+                                uint32** oldLocalReferencesNumber,
+                                void* newBuffer, void** oldBuffer) {
   JavaThread* th = JavaThread::get();
  
   *oldBuffer = th->currentSjljBuffer;
   th->currentSjljBuffer = newBuffer;
  
-  memset(newBuffer, 0, sizeof(jmp_buf));
-
   *oldLocalReferencesNumber = th->currentAddedReferences;
   th->currentAddedReferences = localReferencesNumber;
 
-  // Start JNI because the next instruction after setjmp is a call to a
-  // JNI function.
   th->startJNI(2);
   void** val = (void**)th->addresses.back();
 

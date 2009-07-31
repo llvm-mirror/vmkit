@@ -293,11 +293,6 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   Value* oldCLIN = new AllocaInst(PointerType::getUnqual(Type::Int32Ty), "",
                                   currentBlock);
 
-  Value* Args4[4] = { temp, oldCLIN, newJB, oldJB };
-
-  CallInst::Create(module->GetSJLJBufferFunction, Args4, Args4 + 4, "",
-                   currentBlock);
-
   Value* test = CallInst::Create(module->setjmpLLVM, newJB, "",
                                  currentBlock);
 
@@ -415,6 +410,11 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     nativeFunc = node;
   }
   
+  Value* Args4[4] = { temp, oldCLIN, newJB, oldJB };
+
+  CallInst::Create(module->StartJNIFunction, Args4, Args4 + 4, "",
+                   currentBlock);
+  
   Value* FrameAddr = CallInst::Create(module->llvm_frameaddress,
                                      	module->constantZero, "", currentBlock);
 
@@ -455,8 +455,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
  
   Value* Args2[2] = { oldCLIN, oldJB };
 
-  CallInst::Create(module->JniProceedPendingExceptionFunction, Args2, Args2 + 2,
-                   "", currentBlock);
+  CallInst::Create(module->EndJNIFunction, Args2, Args2 + 2, "", currentBlock);
   
   if (returnType != Type::VoidTy)
     ReturnInst::Create(endNode, currentBlock);

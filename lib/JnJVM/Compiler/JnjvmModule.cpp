@@ -261,9 +261,8 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   VirtualFieldLookupFunction = module->getFunction("jnjvmVirtualFieldLookup");
   StaticFieldLookupFunction = module->getFunction("jnjvmStaticFieldLookup");
   StringLookupFunction = module->getFunction("jnjvmStringLookup");
-  JniProceedPendingExceptionFunction = 
-    module->getFunction("jnjvmJNIProceedPendingException");
-  GetSJLJBufferFunction = module->getFunction("jnjvmGetSJLJBuffer");
+  StartJNIFunction = module->getFunction("jnjvmStartJNI");
+  EndJNIFunction = module->getFunction("jnjvmEndJNI");
   
   NullPointerExceptionFunction =
     module->getFunction("jnjvmNullPointerException");

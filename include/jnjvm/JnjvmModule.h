@@ -245,14 +245,14 @@ public:
   llvm::Function* ArrayObjectTracerFunction;
   llvm::Function* RegularObjectTracerFunction;
   
-  llvm::Function* GetSJLJBufferFunction;
+  llvm::Function* StartJNIFunction;
+  llvm::Function* EndJNIFunction;
   llvm::Function* InterfaceLookupFunction;
   llvm::Function* VirtualFieldLookupFunction;
   llvm::Function* StaticFieldLookupFunction;
   llvm::Function* PrintExecutionFunction;
   llvm::Function* PrintMethodStartFunction;
   llvm::Function* PrintMethodEndFunction;
-  llvm::Function* JniProceedPendingExceptionFunction;
   llvm::Function* InitialiseClassFunction;
   llvm::Function* InitialisationCheckFunction;
   llvm::Function* ForceInitialisationCheckFunction;

@@ -229,8 +229,8 @@ declare %JavaObject* @jnjvmArithmeticException()
 declare void @jnjvmThrowException(%JavaObject*)
 declare void @jnjvmThrowExceptionFromJIT()
 
-declare void @jnjvmJNIProceedPendingException(i32**, i8**)
-declare void @jnjvmGetSJLJBuffer(i32*, i32**, i8*, i8**)
+declare void @jnjvmEndJNI(i32**, i8**)
+declare void @jnjvmStartJNI(i32*, i32**, i8*, i8**)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
