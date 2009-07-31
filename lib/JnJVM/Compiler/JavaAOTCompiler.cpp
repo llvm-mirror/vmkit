@@ -1698,6 +1698,49 @@ void JavaAOTCompiler::compileClass(Class* cl) {
   }
 }
 
+
+
+static void extractFiles(ArrayUInt8* bytes,
+                         JavaAOTCompiler* M,
+                         JnjvmBootstrapLoader* bootstrapLoader,
+                         std::vector<Class*>& classes) {
+      
+  ZipArchive archive(bytes, bootstrapLoader->allocator);
+    
+  char* realName = (char*)alloca(4096);
+  for (ZipArchive::table_iterator i = archive.filetable.begin(), 
+       e = archive.filetable.end(); i != e; ++i) {
+    ZipFile* file = i->second;
+     
+    char* name = file->filename;
+    uint32 size = strlen(name);
+    if (size > 6 && !strcmp(&(name[size - 6]), ".class")) {
+      UserClassArray* array = bootstrapLoader->upcalls->ArrayOfByte;
+      ArrayUInt8* res = 
+        (ArrayUInt8*)array->doNew(file->ucsize, bootstrapLoader->allocator);
+      int ok = archive.readFile(res, file);
+      if (!ok) return;
+      
+      memcpy(realName, name, size);
+      realName[size - 6] = 0;
+      const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
+      Class* cl = bootstrapLoader->constructClass(utf8, res);
+      if (cl == ClassArray::SuperArray) M->compileRT = true;
+      classes.push_back(cl);  
+    } else if (size > 4 && (!strcmp(&name[size - 4], ".jar") || 
+                            !strcmp(&name[size - 4], ".zip"))) {
+      UserClassArray* array = bootstrapLoader->upcalls->ArrayOfByte;
+      ArrayUInt8* res = 
+        (ArrayUInt8*)array->doNew(file->ucsize, bootstrapLoader->allocator);
+      int ok = archive.readFile(res, file);
+      if (!ok) return;
+      
+      extractFiles(res, M, bootstrapLoader, classes);
+    }
+  }
+}
+
+
 static const char* name;
 
 void mainCompilerStart(JavaThread* th) {
@@ -1723,40 +1766,16 @@ void mainCompilerStart(JavaThread* th) {
     if (size > 4 && 
        (!strcmp(&name[size - 4], ".jar") || !strcmp(&name[size - 4], ".zip"))) {
   
-
       std::vector<Class*> classes;
-
       ArrayUInt8* bytes = Reader::openFile(bootstrapLoader, name);
+      
       if (!bytes) {
         fprintf(stderr, "Can't find zip file.\n");
         goto end;
       }
-      ZipArchive archive(bytes, bootstrapLoader->allocator);
-    
-      char* realName = (char*)alloca(4096);
-      for (ZipArchive::table_iterator i = archive.filetable.begin(), 
-           e = archive.filetable.end(); i != e; ++i) {
-        ZipFile* file = i->second;
-      
-        size = strlen(file->filename);
-        if (size > 6 && !strcmp(&(file->filename[size - 6]), ".class")) {
-          UserClassArray* array = bootstrapLoader->upcalls->ArrayOfByte;
-          ArrayUInt8* res = 
-            (ArrayUInt8*)array->doNew(file->ucsize, bootstrapLoader->allocator);
-          int ok = archive.readFile(res, file);
-          if (!ok) {
-            fprintf(stderr, "Wrong zip file.\n");
-            goto end;
-          }
-      
-          memcpy(realName, file->filename, size);
-          realName[size - 6] = 0;
-          const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
-          Class* cl = bootstrapLoader->constructClass(utf8, res);
-          if (cl == ClassArray::SuperArray) M->compileRT = true;
-          classes.push_back(cl);  
-        }
-      }
+
+      extractFiles(bytes, M, bootstrapLoader, classes);
+
 
       // First resolve everyone so that there can not be unknown references in
       // constant pools.
