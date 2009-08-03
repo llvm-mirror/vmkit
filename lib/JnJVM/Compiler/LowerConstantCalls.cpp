@@ -134,7 +134,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* Arg = Cmp->getOperand(0);
           if (isVirtual(meth->access) && Arg == F.arg_begin()) {
             Changed = true;
-            Cmp->replaceAllUsesWith(Context->getFalse());
+            Cmp->replaceAllUsesWith(ConstantInt::getFalse(*Context));
             Cmp->eraseFromParent();
             break;
           }
@@ -143,7 +143,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Instruction* CI = Ca.getInstruction();
           if (CI && Ca.getCalledValue() == module->JavaObjectAllocateFunction) {
             Changed = true;
-            Cmp->replaceAllUsesWith(Context->getFalse());
+            Cmp->replaceAllUsesWith(ConstantInt::getFalse(*Context));
             Cmp->eraseFromParent();
             break;
           }
@@ -474,13 +474,13 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         } else if (V == module->GetArrayClassFunction) {
           const llvm::Type* Ty = 
             PointerType::getUnqual(module->JavaCommonClassType);
-          Constant* nullValue = Context->getNullValue(Ty);
+          Constant* nullValue = Constant::getNullValue(Ty);
           // Check if we have already proceed this call.
           if (Call.getArgument(1) == nullValue) { 
             BasicBlock* NBB = II->getParent()->splitBasicBlock(II);
             I->getParent()->getTerminator()->eraseFromParent();
 
-            Constant* init = Context->getNullValue(module->JavaClassArrayType);
+            Constant* init = Constant::getNullValue(module->JavaClassArrayType);
             GlobalVariable* GV = 
               new GlobalVariable(*(F.getParent()), module->JavaClassArrayType,
                                  false, GlobalValue::ExternalLinkage,
@@ -552,7 +552,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
              
           Value* res = new ICmpInst(CI, ICmpInst::ICMP_EQ, CurVT, VT2, "");
 
-          node->addIncoming(Context->getTrue(), CI->getParent());
+          node->addIncoming(ConstantInt::getTrue(*Context), CI->getParent());
           BranchInst::Create(CurEndBlock, FailedBlock, res, CI);
 
           Value* Args[2] = { VT1, VT2 };
@@ -671,9 +671,9 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           // Final block, that gets the result.
           PHINode* node = PHINode::Create(Type::Int1Ty, "", BB9);
           node->reserveOperandSpace(3);
-          node->addIncoming(Context->getTrue(), CI->getParent());
-          node->addIncoming(Context->getFalse(), BB7);
-          node->addIncoming(Context->getTrue(), BB5);
+          node->addIncoming(ConstantInt::getTrue(*Context), CI->getParent());
+          node->addIncoming(ConstantInt::getFalse(*Context), BB7);
+          node->addIncoming(ConstantInt::getTrue(*Context), BB5);
     
           // Don't forget to jump to the next block.
           BranchInst::Create(EndBlock, BB9);
