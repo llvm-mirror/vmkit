@@ -94,7 +94,6 @@ MvmModule::MvmModule(llvm::Module* module) {
 
   module->setDataLayout(globalModule->getDataLayout());
   module->setTargetTriple(globalModule->getTargetTriple());
-  LLVMContext* globalContext = &(module->getContext());
     
   
   // Constant declaration
@@ -144,7 +143,7 @@ MvmModule::MvmModule(llvm::Module* module) {
   constantPtrOne = ConstantInt::get(pointerSizeType, 1);
   constantPtrZero = ConstantInt::get(pointerSizeType, 0);
 
-  constantPtrNull = globalContext->getNullValue(ptrType); 
+  constantPtrNull = Constant::getNullValue(ptrType); 
   constantPtrLogSize = 
     ConstantInt::get(Type::Int32Ty, sizeof(void*) == 8 ? 3 : 2);
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::Int8Ty, 0));

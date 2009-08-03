@@ -214,7 +214,7 @@ void JavaJIT::throwException(llvm::Function* F, Value* arg1) {
     BranchInst::Create(currentExceptionBlock, currentBlock);
   } else {
     if (endNode) {
-      endNode->addIncoming(llvmContext->getNullValue(endNode->getType()),
+      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
                            currentBlock);
     }
     BranchInst::Create(endBlock, currentBlock);
@@ -237,7 +237,7 @@ void JavaJIT::throwException(Value* obj) {
     BranchInst::Create(currentExceptionBlock, currentBlock);
   } else {
     if (endNode) {
-      endNode->addIncoming(llvmContext->getNullValue(endNode->getType()),
+      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
                            currentBlock);
     }
     BranchInst::Create(endBlock, currentBlock);
@@ -254,7 +254,7 @@ void JavaJIT::throwException(llvm::Function* F, Value** args,
     BranchInst::Create(currentExceptionBlock, currentBlock);
   } else {
     if (endNode) {
-      endNode->addIncoming(llvmContext->getNullValue(endNode->getType()),
+      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
                            currentBlock);
     }
     BranchInst::Create(endBlock, currentBlock);
@@ -534,7 +534,7 @@ void JavaJIT::finishExceptions() {
     endExceptionBlock->eraseFromParent();
   } else {
     if (endNode) {
-      endNode->addIncoming(llvmContext->getNullValue(endNode->getType()),
+      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
                            endExceptionBlock);
     }
     BranchInst::Create(endBlock, endExceptionBlock);
@@ -557,7 +557,7 @@ void JavaJIT::finishExceptions() {
       Instruction* insn = BI->begin();
       PHINode* node = dyn_cast<PHINode>(insn);
       if (node) {
-        node->replaceAllUsesWith(llvmContext->getNullValue(node->getType()));
+        node->replaceAllUsesWith(Constant::getNullValue(node->getType()));
         node->eraseFromParent();
       }
     }

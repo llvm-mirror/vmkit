@@ -255,7 +255,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     currentBlock = createBasicBlock("start");
     CallInst::Create(module->ThrowExceptionFromJITFunction, "", currentBlock);
     if (returnType != Type::VoidTy)
-      ReturnInst::Create(llvmContext->getNullValue(returnType), currentBlock);
+      ReturnInst::Create(Constant::getNullValue(returnType), currentBlock);
     else
       ReturnInst::Create(currentBlock);
   
@@ -302,7 +302,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   if (returnType != Type::VoidTy) {
     endNode = PHINode::Create(returnType, "", endBlock);
-    endNode->addIncoming(llvmContext->getNullValue(returnType),
+    endNode->addIncoming(Constant::getNullValue(returnType),
                          currentBlock);
   }
 
@@ -352,7 +352,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, i,
                           module->JavaObjectNullConstant, "");
 
-      node->addIncoming(llvmContext->getNullValue(Ty), currentBlock);
+      node->addIncoming(Constant::getNullValue(Ty), currentBlock);
       BranchInst::Create(BB, NotZero, test, currentBlock);
 
       currentBlock = NotZero;
@@ -395,7 +395,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     PHINode* node = PHINode::Create(Ty, "", endBlock);
     node->addIncoming(test, currentBlock);
     Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test,
-                              llvmContext->getNullValue(Ty), "");
+                              Constant::getNullValue(Ty), "");
     BranchInst::Create(unloadedBlock, endBlock, cmp, currentBlock);
     currentBlock = unloadedBlock;
 
@@ -430,7 +430,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
   if (returnType == module->JavaObjectType) {
     const Type* Ty = PointerType::getUnqual(module->JavaObjectType);
-    Constant* C = llvmContext->getNullValue(Ty);
+    Constant* C = Constant::getNullValue(Ty);
     Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, result, C, "");
     BasicBlock* loadBlock = createBasicBlock("");
 
@@ -1105,11 +1105,11 @@ llvm::Function* JavaJIT::javaCompile() {
     if (isa<UnreachableInst>(I)) {
       I->eraseFromParent();
       BranchInst::Create(endBlock, currentBlock);
-      endNode->addIncoming(llvmContext->getNullValue(returnType),
+      endNode->addIncoming(Constant::getNullValue(returnType),
                            currentBlock);
     } else if (InvokeInst* II = dyn_cast<InvokeInst>(I)) {
       II->setNormalDest(endBlock);
-      endNode->addIncoming(llvmContext->getNullValue(returnType),
+      endNode->addIncoming(Constant::getNullValue(returnType),
                            currentBlock);
     }
 
@@ -1360,27 +1360,27 @@ void JavaJIT::addFakePHINodes(BasicBlock* dest, BasicBlock* insert) {
       switch (*i) {
         case Int : {
           PHINode* node = PHINode::Create(Type::Int32Ty, "", dest);
-          node->addIncoming(llvmContext->getNullValue(Type::Int32Ty), insert);
+          node->addIncoming(Constant::getNullValue(Type::Int32Ty), insert);
           break;
         }
         case Float : {
           PHINode* node = PHINode::Create(Type::FloatTy, "", dest);
-          node->addIncoming(llvmContext->getNullValue(Type::FloatTy), insert);
+          node->addIncoming(Constant::getNullValue(Type::FloatTy), insert);
           break;
         }
         case Double : {
           PHINode* node = PHINode::Create(Type::DoubleTy, "", dest);
-          node->addIncoming(llvmContext->getNullValue(Type::DoubleTy), insert);
+          node->addIncoming(Constant::getNullValue(Type::DoubleTy), insert);
           break;
         }
         case Long : {
           PHINode* node = PHINode::Create(Type::Int64Ty, "", dest);
-          node->addIncoming(llvmContext->getNullValue(Type::Int64Ty), insert);
+          node->addIncoming(Constant::getNullValue(Type::Int64Ty), insert);
           break;
         }
         case Object : {
           PHINode* node = PHINode::Create(module->JavaObjectType, "", dest);
-          node->addIncoming(llvmContext->getNullValue(module->JavaObjectType),
+          node->addIncoming(Constant::getNullValue(module->JavaObjectType),
                             insert);
           break;
         }
@@ -1391,7 +1391,7 @@ void JavaJIT::addFakePHINodes(BasicBlock* dest, BasicBlock* insert) {
   } else {
     for (BasicBlock::iterator i = dest->begin(), e = dest->end(); i != e; ++i) {
       if (PHINode* node = dyn_cast<PHINode>(i)) {
-        node->addIncoming(llvmContext->getNullValue(node->getType()), insert);
+        node->addIncoming(Constant::getNullValue(node->getType()), insert);
       } else {
         break;
       }
@@ -1558,7 +1558,7 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
 
 #if defined(ISOLATE_SHARING)
   const Type* Ty = module->ConstantPoolType;
-  Constant* Nil = llvmContext->getNullValue(Ty);
+  Constant* Nil = Constant::getNullValue(Ty);
   GlobalVariable* GV = new GlobalVariable(Ty, false,
                                           GlobalValue::ExternalLinkage, Nil,
                                           "", module);

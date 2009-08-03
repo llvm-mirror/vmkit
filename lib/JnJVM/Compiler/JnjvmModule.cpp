@@ -174,7 +174,7 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   }
   
   JavaObjectNullConstant =
-    module->getContext().getNullValue(JnjvmModule::JavaObjectType);
+    Constant::getNullValue(JnjvmModule::JavaObjectType);
   MaxArraySizeConstant = ConstantInt::get(Type::Int32Ty,
                                           JavaArray::MaxArraySize);
   JavaArraySizeConstant = 
