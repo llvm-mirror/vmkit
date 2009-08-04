@@ -14,10 +14,14 @@
 
 namespace jnjvm {
 
+class JavaJITCompiler;
+
 class JnjvmModuleProvider : public llvm::ModuleProvider {
 public:
-   
-  JnjvmModuleProvider(llvm::Module* M);
+ 
+  JavaJITCompiler* Comp;
+
+  JnjvmModuleProvider(llvm::Module* M, JavaJITCompiler* C);
   ~JnjvmModuleProvider();
 
   bool materializeFunction(llvm::Function *F, std::string *ErrInfo = 0);

@@ -144,7 +144,7 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
 #else
   EmitFunctionName = false;
 #endif
-  TheModuleProvider = new JnjvmModuleProvider(TheModule);
+  TheModuleProvider = new JnjvmModuleProvider(TheModule, this);
   addJavaPasses();
 }
 

@@ -165,7 +165,7 @@ Function* LLVMMethodInfo::getMethod() {
                                         "", Mod->getLLVMModule());
 
     }
-    methodFunction->addAnnotation(this);
+    Mod->functions.insert(std::make_pair(methodFunction, methodDef));
   }
   return methodFunction;
 }
@@ -597,20 +597,6 @@ std::map<const char, LLVMAssessorInfo> LLVMAssessorInfo::AssessorInfo;
 
 LLVMAssessorInfo& JavaLLVMCompiler::getTypedefInfo(const Typedef* type) {
   return LLVMAssessorInfo::AssessorInfo[type->getKey()->elements[0]];
-}
-
-static AnnotationID JavaMethod_ID(
-  AnnotationManager::getID("Java::JavaMethod"));
-
-
-LLVMMethodInfo::LLVMMethodInfo(JavaMethod* M) : 
-  llvm::Annotation(JavaMethod_ID), methodDef(M), methodFunction(0),
-  offsetConstant(0), functionType(0) {}
-
-JavaMethod* LLVMMethodInfo::get(const llvm::Function* F) {
-  LLVMMethodInfo *MI = (LLVMMethodInfo*)F->getAnnotation(JavaMethod_ID);
-  if (MI) return MI->methodDef;
-  return 0;
 }
 
 LLVMSignatureInfo* JavaLLVMCompiler::getSignatureInfo(Signdef* sign) {

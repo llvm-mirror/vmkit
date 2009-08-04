@@ -26,14 +26,19 @@ namespace jnjvm {
   class VISIBILITY_HIDDEN LowerConstantCalls : public FunctionPass {
   public:
     static char ID;
-    LowerConstantCalls() : FunctionPass((intptr_t)&ID) { }
+    JnjvmModule* module;
+    LowerConstantCalls(JnjvmModule* M) : FunctionPass((intptr_t)&ID),
+      module(M) { }
 
     virtual bool runOnFunction(Function &F);
   private:
   };
   char LowerConstantCalls::ID = 0;
+
+#if 0
   static RegisterPass<LowerConstantCalls> X("LowerConstantCalls",
                                             "Lower Constant calls");
+#endif
 
 
 #ifdef ISOLATE
@@ -117,10 +122,6 @@ static Value* getDelegatee(JnjvmModule* module, Value* Arg, Instruction* CI) {
 #endif
 
 bool LowerConstantCalls::runOnFunction(Function& F) {
-  JavaMethod* meth = LLVMMethodInfo::get(&F);
-  JavaLLVMCompiler* TheCompiler = 
-    (JavaLLVMCompiler*)meth->classDef->classLoader->getCompiler();
-  JnjvmModule* module = TheCompiler->getIntrinsics();
   LLVMContext* Context = &F.getContext();
   bool Changed = false;
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
@@ -132,12 +133,16 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
       if (ICmpInst* Cmp = dyn_cast<ICmpInst>(I)) {
         if (Cmp->getOperand(1) == module->JavaObjectNullConstant) {
           Value* Arg = Cmp->getOperand(0);
+      
+#if 0
+          // Re-enable this once we can get access of the JavaMethod again.
           if (isVirtual(meth->access) && Arg == F.arg_begin()) {
             Changed = true;
             Cmp->replaceAllUsesWith(ConstantInt::getFalse(*Context));
             Cmp->eraseFromParent();
             break;
           }
+#endif
           
           CallSite Ca = CallSite::get(Arg);
           Instruction* CI = Ca.getInstruction();
@@ -735,8 +740,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 }
 
 
-FunctionPass* createLowerConstantCallsPass() {
-  return new LowerConstantCalls();
+FunctionPass* createLowerConstantCallsPass(JnjvmModule* M) {
+  return new LowerConstantCalls(M);
 }
 
 }

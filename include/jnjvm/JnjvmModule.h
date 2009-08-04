@@ -16,8 +16,6 @@
 #include "mvm/Allocator.h"
 #include "mvm/JIT.h"
 
-#include "llvm/Support/Annotation.h"
-
 #include "JavaCompiler.h"
 
 namespace llvm {
@@ -102,7 +100,7 @@ public:
   }
 };
 
-class LLVMMethodInfo : public mvm::JITInfo, private llvm::Annotation {
+class LLVMMethodInfo : public mvm::JITInfo {
 private:
   JavaMethod* methodDef;
 
@@ -110,21 +108,23 @@ private:
   llvm::Constant* offsetConstant;
   const llvm::FunctionType* functionType;
   
+  
 public:
   llvm::Function* getMethod();
   llvm::Constant* getOffset();
   const llvm::FunctionType* getFunctionType();
     
-  LLVMMethodInfo(JavaMethod* M); 
+  LLVMMethodInfo(JavaMethod* M) :  methodDef(M), methodFunction(0),
+    offsetConstant(0), functionType(0) {}
+ 
 
-  static JavaMethod* get(const llvm::Function* F);
-  
   virtual void clear() {
     methodFunction = 0;
     offsetConstant = 0;
     functionType = 0;
   }
 };
+
 
 class LLVMFieldInfo : public mvm::JITInfo {
 private:
@@ -361,6 +361,7 @@ public:
 
 class JavaLLVMCompiler : public JavaCompiler {
   friend class LLVMClassInfo;
+  friend class LLVMMethodInfo;
 
 
 protected:
@@ -379,10 +380,11 @@ private:
   
   virtual void makeVT(Class* cl) = 0;
   
-  
+  std::map<llvm::Function*, JavaMethod*> functions;  
+  typedef std::map<llvm::Function*, JavaMethod*>::iterator function_iterator;
   
 public:
-  
+
   JavaLLVMCompiler(const std::string &ModuleID);
   
   virtual bool isStaticCompiling() = 0;
@@ -415,6 +417,9 @@ public:
   virtual JavaCompiler* Create(const std::string& ModuleID) = 0;
   
   virtual ~JavaLLVMCompiler();
+
+
+  JavaMethod* getJavaMethod(llvm::Function*);
 
   void resolveVirtualClass(Class* cl);
   void resolveStaticClass(Class* cl);
@@ -477,8 +482,24 @@ public:
 
 };
 
+struct CallbackInfo {
+  Class* cl;
+  uint16 index;
+  bool stat;
+
+  CallbackInfo(Class* c, uint32 i, bool s) :
+    cl(c), index(i), stat(s) {}
+
+};
+
+
 class JavaJITCompiler : public JavaLLVMCompiler {
 public:
+
+  std::map<llvm::Function*, CallbackInfo> callbacks;
+
+  typedef std::map<llvm::Function*, CallbackInfo>::iterator callback_iterator;
+
 
   bool EmitFunctionName;
 

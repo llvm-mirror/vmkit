@@ -27,25 +27,10 @@ using namespace llvm;
 using namespace jnjvm;
 
 
-static AnnotationID JavaCallback_ID(
-  AnnotationManager::getID("Java::Callback"));
-
-class CallbackInfo: public Annotation {
-public:
-  Class* cl;
-  uint16 index;
-  bool stat;
-
-  CallbackInfo(Class* c, uint32 i, bool s) : Annotation(JavaCallback_ID), 
-    cl(c), index(i), stat(s) {}
-};
-
-static JavaMethod* staticLookup(Function* F) {
-  CallbackInfo* CI = (CallbackInfo*)F->getAnnotation(JavaCallback_ID);
-  assert(CI && "No callback where there should be one");
-  Class* caller = CI->cl;
-  uint16 index = CI->index; 
-  bool isStatic = CI->stat;
+static JavaMethod* staticLookup(CallbackInfo& F) {
+  Class* caller = F.cl;
+  uint16 index = F.index; 
+  bool isStatic = F.stat;
   JavaConstantPool* ctpInfo = caller->getConstantPool();
 
   CommonClass* cl = 0;
@@ -67,7 +52,7 @@ static JavaMethod* staticLookup(Function* F) {
 Function* JavaJITCompiler::addCallback(Class* cl, uint16 index,
                                        Signdef* sign, bool stat) {
   
-  Function* func = 0;
+  Function* F = 0;
   LLVMSignatureInfo* LSI = getSignatureInfo(sign);
   
   const UTF8* name = cl->name;
@@ -75,18 +60,18 @@ Function* JavaJITCompiler::addCallback(Class* cl, uint16 index,
   for (sint32 i = 0; i < name->size; ++i)
     key[i] = name->elements[i];
   sprintf(key + name->size, "%d", index);
-  Function* F = TheModule->getFunction(key);
+  F = TheModule->getFunction(key);
   if (F) return F;
   
   const FunctionType* type = stat ? LSI->getStaticType() : 
                                     LSI->getVirtualType();
   
-  func = Function::Create(type, GlobalValue::GhostLinkage, key, TheModule);
+  F = Function::Create(type, GlobalValue::GhostLinkage, key, TheModule);
   
-  CallbackInfo* A = new CallbackInfo(cl, index, stat);
-  func->addAnnotation(A);
+  CallbackInfo A(cl, index, stat);
+  callbacks.insert(std::make_pair(F, A));
   
-  return func;
+  return F;
 }
 
 
@@ -99,11 +84,13 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   if (mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(F))
     return false;
 
-  JavaMethod* meth = LLVMMethodInfo::get(F);
+  JavaMethod* meth = Comp->getJavaMethod(F);
   
   if (!meth) {
     // It's a callback
-    meth = staticLookup(F);
+    JavaJITCompiler::callback_iterator I = Comp->callbacks.find(F);
+    assert(I != Comp->callbacks.end() && "No callbacks found");
+    meth = staticLookup(I->second);
   }
   
   void* val = meth->compiledPtr();
@@ -130,7 +117,9 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   return false;
 }
 
-JnjvmModuleProvider::JnjvmModuleProvider(llvm::Module* m) {
+JnjvmModuleProvider::JnjvmModuleProvider(llvm::Module* m,
+                                         JavaJITCompiler* C) {
+  Comp = C;
   TheModule = m;
   JnjvmModule::protectEngine.lock();
   JnjvmModule::executionEngine->addModuleProvider(this);

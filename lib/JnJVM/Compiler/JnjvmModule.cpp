@@ -348,6 +348,13 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
   return func;
 }
 
+JavaMethod* JavaLLVMCompiler::getJavaMethod(llvm::Function* F) {
+  function_iterator E = functions.end();
+  function_iterator I = functions.find(F);
+  if (I == E) return 0;
+  return I->second;
+}
+
 JavaLLVMCompiler::~JavaLLVMCompiler() {
   delete JavaFunctionPasses;
   delete JavaNativeFunctionPasses;
@@ -360,7 +367,7 @@ namespace mvm {
 }
 
 namespace jnjvm {
-  llvm::FunctionPass* createLowerConstantCallsPass();
+  llvm::FunctionPass* createLowerConstantCallsPass(JnjvmModule* M);
 }
 
 void JavaLLVMCompiler::addJavaPasses() {
@@ -368,7 +375,7 @@ void JavaLLVMCompiler::addJavaPasses() {
   JavaNativeFunctionPasses->add(new TargetData(TheModule));
   // Lower constant calls to lower things like getClass used
   // on synchronized methods.
-  JavaNativeFunctionPasses->add(createLowerConstantCallsPass());
+  JavaNativeFunctionPasses->add(createLowerConstantCallsPass(getIntrinsics()));
   
   JavaFunctionPasses = new FunctionPassManager(TheModuleProvider);
   JavaFunctionPasses->add(new TargetData(TheModule));
@@ -376,5 +383,5 @@ void JavaLLVMCompiler::addJavaPasses() {
     JavaFunctionPasses->add(mvm::createLoopSafePointsPass());
 
   JavaFunctionPasses->add(mvm::createEscapeAnalysisPass());
-  JavaFunctionPasses->add(createLowerConstantCallsPass());
+  JavaFunctionPasses->add(createLowerConstantCallsPass(getIntrinsics()));
 }
