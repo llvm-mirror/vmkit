@@ -329,22 +329,23 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
 Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
   LLVMMethodInfo* LMI = getMethodInfo(meth);
   Function* func = LMI->getMethod();
+  
+  // We are jitting. Take the lock.
+  JnjvmModule::protectIR();
   if (func->hasNotBeenReadFromBitcode()) {
-    // We are jitting. Take the lock.
-    JnjvmModule::protectIR();
-    if (func->hasNotBeenReadFromBitcode()) {
-      JavaJIT jit(this, meth, func);
-      if (isNative(meth->access)) {
-        jit.nativeCompile();
-        JnjvmModule::runPasses(func, JavaNativeFunctionPasses);
-      } else {
-        jit.javaCompile();
-        JnjvmModule::runPasses(func, JnjvmModule::globalFunctionPasses);
-        JnjvmModule::runPasses(func, JavaFunctionPasses);
-      }
+    JavaJIT jit(this, meth, func);
+    if (isNative(meth->access)) {
+      jit.nativeCompile();
+      JnjvmModule::runPasses(func, JavaNativeFunctionPasses);
+    } else {
+      jit.javaCompile();
+      JnjvmModule::runPasses(func, JnjvmModule::globalFunctionPasses);
+      JnjvmModule::runPasses(func, JavaFunctionPasses);
     }
-    JnjvmModule::unprotectIR();
+    func->setLinkage(GlobalValue::ExternalLinkage);
   }
+  JnjvmModule::unprotectIR();
+
   return func;
 }
 

@@ -263,7 +263,6 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
                 UTF8Buffer(compilingClass->name).cString(),
                 UTF8Buffer(compilingMethod->name).cString());
   
-    llvmFunction->setLinkage(GlobalValue::ExternalLinkage);
     return llvmFunction;
   }
   
@@ -466,7 +465,6 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
   
-  func->setLinkage(GlobalValue::ExternalLinkage);
   
   return llvmFunction;
 }
@@ -1174,8 +1172,6 @@ llvm::Function* JavaJIT::javaCompile() {
   
   removeUnusedObjects(objectLocals, module, TheCompiler->useCooperativeGC());
   removeUnusedObjects(objectStack, module, TheCompiler->useCooperativeGC());
-  
-  func->setLinkage(GlobalValue::ExternalLinkage);
   
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "--> end compiling %s.%s\n",
               UTF8Buffer(compilingClass->name).cString(),

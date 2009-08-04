@@ -78,11 +78,29 @@ Function* JavaJITCompiler::addCallback(Class* cl, uint16 index,
 bool JnjvmModuleProvider::materializeFunction(Function *F, 
                                               std::string *ErrInfo) {
   
-  if (!(F->hasNotBeenReadFromBitcode())) 
+  // The caller of materializeFunction *must* always hold the JIT lock.
+  // Because we are materializing a function here, we must release the
+  // JIT lock and get the global vmkit lock to be thread-safe.
+  // This prevents jitting the function while someone else is doing it.
+  mvm::MvmModule::executionEngine->lock.release(); 
+  mvm::MvmModule::protectIR();
+
+  // Don't use hasNotBeenReadFromBitcode: materializeFunction is called
+  // by the pass manager, and we don't want another thread to JIT the
+  // function while all passes have not been run.
+  if (!(F->isDeclaration())) {
+    mvm::MvmModule::unprotectIR(); 
+    // Reacquire and go back to the JIT function.
+    mvm::MvmModule::executionEngine->lock.acquire();
     return false;
- 
-  if (mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(F))
+  }
+
+  if (mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(F)) {
+    mvm::MvmModule::unprotectIR(); 
+    // Reacquire and go back to the JIT function.
+    mvm::MvmModule::executionEngine->lock.acquire();
     return false;
+  }
 
   JavaMethod* meth = Comp->getJavaMethod(F);
   
@@ -95,10 +113,6 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   
   void* val = meth->compiledPtr();
 
-
-  if (F->isDeclaration())
-    mvm::MvmModule::executionEngine->updateGlobalMapping(F, val);
- 
   if (isVirtual(meth->access)) {
     LLVMMethodInfo* LMI = JavaLLVMCompiler::getMethodInfo(meth);
     uint64_t offset = dyn_cast<ConstantInt>(LMI->getOffset())->getZExtValue();
@@ -113,6 +127,15 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   } else {
     assert(meth->classDef->isInitializing() && "Class not ready");
   }
+
+  mvm::MvmModule::unprotectIR();
+  
+  // Reacquire to go back to the JIT function.
+  mvm::MvmModule::executionEngine->lock.acquire();
+  
+  if (F->isDeclaration())
+    mvm::MvmModule::executionEngine->updateGlobalMapping(F, val);
+
 
   return false;
 }

@@ -169,7 +169,7 @@ public:
    static const llvm::Type* pointerSizeType;
 
    static llvm::ExecutionEngine* executionEngine;
-   static mvm::LockNormal protectEngine;
+   static mvm::LockRecursive protectEngine;
    static llvm::Module *globalModule;
    static llvm::ExistingModuleProvider *globalModuleProvider;
    static llvm::FunctionPassManager* globalFunctionPasses;
