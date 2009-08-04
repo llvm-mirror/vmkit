@@ -1549,7 +1549,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
         Value* op = pop();
         const Type* type = op->getType();
-        Constant* val = llvmContext->getNullValue(type);
+        Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, op,
                                          val, "");
         BasicBlock* ifFalse = createBasicBlock("false IFEQ");
@@ -1564,7 +1564,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         Value* op = pop();
         const Type* type = op->getType();
-        Constant* val = llvmContext->getNullValue(type);
+        Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, op,
                                          val, "");
         BasicBlock* ifFalse = createBasicBlock("false IFNE");
@@ -1578,7 +1578,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
         Value* op = pop();
         const Type* type = op->getType();
-        Constant* val = llvmContext->getNullValue(type);
+        Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SLT, op,
                                          val, "");
         BasicBlock* ifFalse = createBasicBlock("false IFLT");
@@ -1592,7 +1592,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
         Value* op = pop();
         const Type* type = op->getType();
-        Constant* val = llvmContext->getNullValue(type);
+        Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SGE, op,
                                          val, "");
         BasicBlock* ifFalse = createBasicBlock("false IFGE");
@@ -1606,7 +1606,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
         Value* op = pop();
         const Type* type = op->getType();
-        Constant* val = llvmContext->getNullValue(type);
+        Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SGT, op,
                                          val, "");
         BasicBlock* ifFalse = createBasicBlock("false IFGT");
@@ -1620,7 +1620,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
         Value* op = pop();
         const Type* type = op->getType();
-        Constant* val = llvmContext->getNullValue(type);
+        Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SLE, op,
                                          val, "");
         BasicBlock* ifFalse = createBasicBlock("false IFLE");
@@ -1975,7 +1975,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           } else {
             const llvm::Type* Ty = 
               PointerType::getUnqual(module->JavaClassArrayType);
-            Value* args[2]= { valCl, llvmContext->getNullValue(Ty) };
+            Value* args[2]= { valCl, Constant::getNullValue(Ty) };
             valCl = CallInst::Create(module->GetArrayClassFunction, args,
                                      args + 2, "", currentBlock);
             TheVT = CallInst::Create(module->GetVTFromClassArrayFunction, valCl, "",
@@ -2084,7 +2084,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         } else {
           BasicBlock* ifFalse = createBasicBlock("false type compare");
           BranchInst::Create(endBlock, ifFalse, cmp, currentBlock);
-          node->addIncoming(llvmContext->getFalse(), currentBlock);
+          node->addIncoming(ConstantInt::getFalse(*llvmContext), currentBlock);
           currentBlock = ifFalse;
         }
 
@@ -2188,7 +2188,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IFNULL : {
         uint32 tmp = i;
         llvm::Value* val = pop();
-        Constant* nil = llvmContext->getNullValue(val->getType());
+        Constant* nil = Constant::getNullValue(val->getType());
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val,
                                          nil, "");
         BasicBlock* ifFalse = createBasicBlock("true IFNULL");
@@ -2201,7 +2201,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IFNONNULL : {
         uint32 tmp = i;
         llvm::Value* val = pop();
-        Constant* nil = llvmContext->getNullValue(val->getType());
+        Constant* nil = Constant::getNullValue(val->getType());
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, val,
                                          nil, "");
         BasicBlock* ifFalse = createBasicBlock("false IFNONNULL");
