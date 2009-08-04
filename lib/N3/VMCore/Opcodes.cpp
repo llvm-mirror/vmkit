@@ -341,7 +341,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
 #define TEST(name, read, cmpf, cmpi, offset) case name : { \
         uint32 tmp = i;       \
         Value* val2 = pop();  \
-        Value* val1 = llvmFunction->getContext().getNullValue(val2->getType());  \
+        Value* val1 = Constant::getNullValue(val2->getType());  \
         BasicBlock* ifTrue = opcodeInfos[tmp + offset + read(bytecodes, i)].newBlock; \
         Value* test = 0; \
         if (val1->getType()->isFloatingPoint()) { \
@@ -1020,7 +1020,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case NEG : {
         Value* val = pop();
         push(BinaryOperator::CreateSub(
-                              llvmFunction->getContext().getNullValue(val->getType()),
+                              Constant::getNullValue(val->getType()),
                               val, "", currentBlock));
         break;
       }
@@ -1383,8 +1383,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* obj = pop();
 
         Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, obj, 
-                                  llvmFunction->getContext().getNullValue(obj->getType()), "");
-        Constant* nullVirtual = llvmFunction->getContext().getNullValue(dcl->virtualType);
+                                  Constant::getNullValue(obj->getType()), "");
+        Constant* nullVirtual = Constant::getNullValue(dcl->virtualType);
 
      
         BasicBlock* isInstEndBlock = createBasicBlock("end isinst");

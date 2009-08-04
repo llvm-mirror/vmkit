@@ -744,7 +744,7 @@ void CLIJit::setVirtualField(uint32 value, bool isVolatile, VMGenericClass* genC
   } else {
     type = field->signature->naturalType;
     if (val == constantVMObjectNull) {
-      val = llvmFunction->getContext().getNullValue(type);
+      val = Constant::getNullValue(type);
     } else if (type != valType) {
       val = changeType(val, type);
     }
@@ -770,7 +770,7 @@ void CLIJit::setStaticField(uint32 value, bool isVolatile, VMGenericClass* genCl
   const Type* type = field->signature->naturalType;
   const Type* valType = val->getType();
   if (val == constantVMObjectNull) {
-    val = llvmFunction->getContext().getNullValue(type);
+    val = Constant::getNullValue(type);
   } else if (type != valType) {
     val = changeType(val, type);
   }
@@ -779,7 +779,7 @@ void CLIJit::setStaticField(uint32 value, bool isVolatile, VMGenericClass* genCl
 
 void CLIJit::JITVerifyNull(Value* obj) {
   CLIJit* jit = this;
-  Constant* zero = llvmFunction->getContext().getNullValue(obj->getType());
+  Constant* zero = Constant::getNullValue(obj->getType());
   Value* test = new ICmpInst(*jit->currentBlock, ICmpInst::ICMP_EQ, obj,
                              zero, "");
 
@@ -1224,7 +1224,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
       cl->resolveType(false, false, genMethod);
       AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
       if (cl->naturalType->isSingleValueType()) {
-        new StoreInst(llvmFunction->getContext().getNullValue(cl->naturalType), alloc, false,
+        new StoreInst(Constant::getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
       } else {
         uint64 size = module->getTypeSize(cl->naturalType);
@@ -1401,7 +1401,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
       cl->resolveType(false, false, genMethod);
       AllocaInst* alloc = new AllocaInst(cl->naturalType, "", currentBlock);
       if (cl->naturalType->isSingleValueType()) {
-        new StoreInst(llvmFunction->getContext().getNullValue(cl->naturalType), alloc, false,
+        new StoreInst(Constant::getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
       } else {
         uint64 size = module->getTypeSize(cl->naturalType);
@@ -1464,17 +1464,6 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   return func;
 }
 
-static AnnotationID CLIMethod_ID(
-  AnnotationManager::getID("CLI::VMMethod"));
-
-
-class N3Annotation: public llvm::Annotation {
-public:
-  VMMethod* meth;
-
-  N3Annotation(VMMethod* M) : llvm::Annotation(CLIMethod_ID), meth(M) {}
-};
-
 
 llvm::Function *VMMethod::compiledPtr(VMGenericMethod* genMethod) {
   if (methPtr != 0) return methPtr;
@@ -1484,18 +1473,15 @@ llvm::Function *VMMethod::compiledPtr(VMGenericMethod* genMethod) {
       methPtr = Function::Create(getSignature(genMethod), GlobalValue::GhostLinkage,
                                  printString(), classDef->vm->getLLVMModule());
       classDef->vm->functions->hash(methPtr, this);
-      N3Annotation* A = new N3Annotation(this);
-      methPtr->addAnnotation(A);
     }
     classDef->release();
     return methPtr;
   }
 }
 
-VMMethod* CLIJit::getMethod(const llvm::Function* F) {
-  N3Annotation* A = (N3Annotation*)F->getAnnotation(CLIMethod_ID);
-  if (A) return A->meth;
-  return 0;
+VMMethod* CLIJit::getMethod(llvm::Function* F) { 
+  VMMethod* meth = VMThread::get()->vm->functions->lookup(F);
+  return meth;
 }
 
 void VMField::initField(VMObject* obj) {
@@ -1602,7 +1588,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
 
 
   
-  constantVMObjectNull = module->getContext().getNullValue(VMObject::llvmType);
+  constantVMObjectNull = Constant::getNullValue(VMObject::llvmType);
 }
 
 Constant* CLIJit::constantVMObjectNull;

@@ -222,7 +222,7 @@ public:
   llvm::Instruction* invokeInline(VMMethod* meth, 
                                   std::vector<llvm::Value*>& args, VMGenericClass* genClass, VMGenericMethod* genMethod);
 
-  static VMMethod* getMethod(const llvm::Function* F);
+  static VMMethod* getMethod(llvm::Function* F);
 };
 
 enum Opcode {
