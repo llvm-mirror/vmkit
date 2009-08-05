@@ -112,19 +112,18 @@ public:
 
   uintptr_t allocate() {
     stackLock.lock();
-    uint32 start = allocPtr;
     uint32 myIndex = 0;
     do {
-      if (!used[allocPtr]) {
-        used[allocPtr] = 1;
-        myIndex = allocPtr;
+      if (!used[myIndex]) {
+        used[myIndex] = 1;
+        break;
       }
-      if (++allocPtr == NR_THREADS) allocPtr = 0;
-    } while (!myIndex && allocPtr != start);
+      ++myIndex;
+    } while (myIndex != NR_THREADS);
   
     stackLock.unlock();
     
-    if (myIndex)
+    if (myIndex != NR_THREADS)
       return baseAddr + myIndex * STACK_SIZE;
 
     return 0;
