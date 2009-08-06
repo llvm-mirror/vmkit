@@ -291,7 +291,7 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj) {
         Elemts.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
         Elemts.push_back(JnjvmModule::pointerSizeType);
         Elemts.push_back(ATy);
-        Ty = StructType::get(Elemts);
+        Ty = StructType::get(getLLVMModule()->getContext(), Elemts);
 
       } else {
         LLVMClassInfo* LCI = getClassInfo(cl->asClass());
@@ -1212,7 +1212,7 @@ Constant* JavaAOTCompiler::CreateConstantFromArray(const T* val, const Type* Ty)
 
   Elemts.push_back(ATy);
 
-  const StructType* STy = StructType::get(Elemts);
+  const StructType* STy = StructType::get(getLLVMModule()->getContext(), Elemts);
   
   std::vector<Constant*> Cts;
   Cts.push_back(CreateConstantForBaseObject(val->getClass()));
@@ -1245,7 +1245,8 @@ Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
 
   Elemts.push_back(ATy);
 
-  const StructType* STy = StructType::get(Elemts);
+  const StructType* STy = StructType::get(getLLVMModule()->getContext(),
+                                          Elemts);
   
   std::vector<Constant*> Cts;
   Cts.push_back(ConstantInt::get(JnjvmModule::pointerSizeType, val->size));

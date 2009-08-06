@@ -44,7 +44,8 @@ const Type* LLVMClassInfo::getVirtualType() {
     const StructType* structType = 0;
     JavaLLVMCompiler* Mod = 
       (JavaLLVMCompiler*)classDef->classLoader->getCompiler();
-    
+    LLVMContext& context = Mod->getLLVMModule()->getContext();
+
     if (classDef->super) {
       LLVMClassInfo* CLI = JavaLLVMCompiler::getClassInfo(classDef->super);
       const llvm::Type* Ty = CLI->getVirtualType()->getContainedType(0);
@@ -59,7 +60,7 @@ const Type* LLVMClassInfo::getVirtualType() {
       }
     
     
-      structType = StructType::get(fields, false);
+      structType = StructType::get(context, fields, false);
       virtualType = PointerType::getUnqual(structType);
       sl = targetData->getStructLayout(structType);
     
@@ -91,6 +92,10 @@ const Type* LLVMClassInfo::getStaticType() {
   if (!staticType) {
     Class* cl = (Class*)classDef;
     std::vector<const llvm::Type*> fields;
+    
+    JavaLLVMCompiler* Mod = 
+      (JavaLLVMCompiler*)classDef->classLoader->getCompiler();
+    LLVMContext& context = Mod->getLLVMModule()->getContext();
 
     for (uint32 i = 0; i < classDef->nbStaticFields; ++i) {
       JavaField& field = classDef->staticFields[i];
@@ -100,7 +105,7 @@ const Type* LLVMClassInfo::getStaticType() {
       fields.push_back(LAI.llvmType);
     }
   
-    StructType* structType = StructType::get(fields, false);
+    StructType* structType = StructType::get(context, fields, false);
     staticType = PointerType::getUnqual(structType);
     const TargetData* targetData = JnjvmModule::TheTargetData;
     const StructLayout* sl = targetData->getStructLayout(structType);

@@ -287,7 +287,7 @@ void VMClass::resolveStaticFields(VMGenericMethod* genMethod) {
     fields.push_back((*i)->signature->naturalType);
   }
 
-  cl->staticType = llvm::PointerType::getUnqual(llvm::StructType::get(fields, false));
+  cl->staticType = llvm::PointerType::getUnqual(llvm::StructType::get(vm->LLVMModule->getContext(), fields, false));
 
   VirtualTable* VT = CLIJit::makeVT(cl, true);
 
@@ -333,7 +333,7 @@ void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* ge
           const llvm::Type* type = (*i)->signature->naturalType;
           Elts.push_back(type);
         }
-        ResultTy = llvm::StructType::get(Elts);
+        ResultTy = llvm::StructType::get(vm->LLVMModule->getContext(), Elts);
       }
     } else if (super == MSCorlib::pEnum) {
       ResultTy = llvm::Type::Int32Ty; // TODO find max
@@ -347,7 +347,7 @@ void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* ge
         const llvm::Type* type = (*i)->signature->naturalType;
         Elts.push_back(type);
       }
-      ResultTy = llvm::PointerType::getUnqual(llvm::StructType::get(Elts));
+      ResultTy = llvm::PointerType::getUnqual(llvm::StructType::get(vm->LLVMModule->getContext(), Elts));
     }
   } else {
     ResultTy = VMObject::llvmType;
@@ -372,7 +372,7 @@ void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* ge
          e = virtualFields.end(); i!= e; ++i) {
       Elts.push_back((*i)->signature->naturalType);
     }
-    virtualType = llvm::PointerType::getUnqual(llvm::StructType::get(Elts)); 
+    virtualType = llvm::PointerType::getUnqual(llvm::StructType::get(vm->LLVMModule->getContext(), Elts)); 
   } else {
     virtualType = naturalType;
   }
@@ -386,7 +386,7 @@ void VMClassArray::makeType() {
   arrayFields.push_back(VMObject::llvmType->getContainedType(0));
   arrayFields.push_back(llvm::Type::Int32Ty);
   arrayFields.push_back(llvm::ArrayType::get(baseClass->naturalType, 0));
-  const llvm::Type* type = llvm::PointerType::getUnqual(llvm::StructType::get(arrayFields, false));
+  const llvm::Type* type = llvm::PointerType::getUnqual(llvm::StructType::get(vm->LLVMModule->getContext(), arrayFields, false));
   ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(type);
   naturalType = type;
   virtualType = naturalType;
