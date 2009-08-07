@@ -1856,9 +1856,15 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         BranchInst::Create(endBlock, currentBlock);
         break;
       
-      case RETURN :
+      case RETURN : {
+        // Prevent a javac bug.
+        if (endNode != 0) {
+          endNode->addIncoming(Constant::getNullValue(endNode->getType()),
+                               currentBlock);
+        }
         BranchInst::Create(endBlock, currentBlock);
         break;
+      }
 
       case GETSTATIC : {
         uint16 index = readU2(bytecodes, i);
