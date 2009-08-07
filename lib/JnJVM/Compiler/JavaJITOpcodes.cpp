@@ -2089,7 +2089,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         }
 
         Value* TheVT = 0;
-        if (!cl) {
+        if (!cl || TheCompiler->isStaticCompiling()) {
           TheVT = CallInst::Create(module->GetVTFromCommonClassFunction,
                                    clVar, "", currentBlock);
         } else {

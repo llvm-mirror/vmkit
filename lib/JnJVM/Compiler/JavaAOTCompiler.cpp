@@ -39,7 +39,8 @@ bool JavaAOTCompiler::isCompiling(const CommonClass* cl) const {
     // A class is being static compiled if owner class is not null.
     return cl->asClass()->getOwnerClass() != 0;
   } else if (cl->isArray()) {
-    return isCompiling(cl->asArrayClass()->baseClass());
+    // Only compile an aray if we are compiling rt.jar.
+    return compileRT;
   } else if (cl->isPrimitive() && compileRT) {
     return true;
   } else {
