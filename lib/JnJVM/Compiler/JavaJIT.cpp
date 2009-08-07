@@ -1534,7 +1534,7 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
   std::vector<Value*> args;
   FunctionType::param_iterator it  = virtualType->param_end();
   makeArgs(it, index, args, signature->nbArguments + 1);
-  Function* func = 0;
+  Value* func = 0;
 
   if (finalCl) {
     Class* lookup = finalCl->isArray() ? finalCl->super : finalCl->asClass();
@@ -1635,7 +1635,7 @@ void JavaJIT::invokeStatic(uint16 index) {
     JavaMethod* meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_STATIC,
                                                             signature);
     
-    Function* func = 0;
+    Value* func = 0;
     if (meth) {
       func = TheCompiler->getMethod(meth);
     } else {

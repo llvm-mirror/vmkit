@@ -48,9 +48,8 @@ static JavaMethod* staticLookup(CallbackInfo& F) {
 }
 
 
-
-Function* JavaJITCompiler::addCallback(Class* cl, uint16 index,
-                                       Signdef* sign, bool stat) {
+Value* JavaJITCompiler::addCallback(Class* cl, uint16 index,
+                                    Signdef* sign, bool stat) {
   
   Function* F = 0;
   LLVMSignatureInfo* LSI = getSignatureInfo(sign);

@@ -459,8 +459,8 @@ public:
   llvm::FunctionPassManager* JavaFunctionPasses;
   llvm::FunctionPassManager* JavaNativeFunctionPasses;
   
-  virtual llvm::Function* addCallback(Class* cl, uint16 index, Signdef* sign,
-                                      bool stat) = 0;
+  virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
+                                   bool stat) = 0;
   
   virtual void staticCallBuf(Signdef* sign) {
     getSignatureInfo(sign)->getStaticBuf();
@@ -545,8 +545,8 @@ public:
 
   virtual ~JavaJITCompiler() {}
   
-  virtual llvm::Function* addCallback(Class* cl, uint16 index, Signdef* sign,
-                                      bool stat);
+  virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
+                                   bool stat);
 
 };
 
@@ -572,8 +572,8 @@ public:
     abort();
   }
   
-  virtual llvm::Function* addCallback(Class* cl, uint16 index, Signdef* sign,
-                                      bool stat);
+  virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
+                                   bool stat);
   
   virtual void makeVT(Class* cl);
   
@@ -690,6 +690,7 @@ private:
 public:
   llvm::Function* StaticInitializer;
   llvm::Function* ObjectPrinter;
+  llvm::Function* Callback;
   
   bool generateStubs;
   bool assumeCompiled;

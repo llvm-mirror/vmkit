@@ -1426,6 +1426,11 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
 
   StaticInitializer = Function::Create(FTy, GlobalValue::InternalLinkage,
                                        "Init", getLLVMModule());
+  
+  llvmArgs.clear();
+  FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+  Callback = Function::Create(FTy, GlobalValue::ExternalLinkage,
+                              "staticCallback", getLLVMModule());
 
   llvmArgs.clear();
   llvmArgs.push_back(JnjvmModule::JavaMethodType);
@@ -1643,7 +1648,7 @@ void JavaAOTCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
   func->setLinkage(GlobalValue::ExternalLinkage);
 }
 
-Function* JavaAOTCompiler::addCallback(Class* cl, uint16 index,
+Value* JavaAOTCompiler::addCallback(Class* cl, uint16 index,
                                       Signdef* sign, bool stat) {
  
   JavaConstantPool* ctpInfo = cl->ctpInfo;
@@ -1657,14 +1662,13 @@ Function* JavaAOTCompiler::addCallback(Class* cl, uint16 index,
           UTF8Buffer(cl->name).cString(), UTF8Buffer(methCl).cString(),
           UTF8Buffer(name).cString());
 
-  Function* func = 0;
   LLVMSignatureInfo* LSI = getSignatureInfo(sign);
   
   const FunctionType* type = stat ? LSI->getStaticType() : 
                                     LSI->getVirtualType();
   
-  func = Function::Create(type, GlobalValue::ExternalLinkage, "staticCallback",
-                          TheModule);
+  Value* func = ConstantExpr::getBitCast(Callback,
+                                         PointerType::getUnqual(type));
   
   return func;
 }
