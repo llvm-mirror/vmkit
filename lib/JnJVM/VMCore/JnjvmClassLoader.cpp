@@ -468,9 +468,9 @@ const UTF8* JnjvmClassLoader::lookupComponentName(const UTF8* name,
             uint32 bufLen = len - 2;
             const UTF8* componentName = hashUTF8->lookupReader(buf, bufLen);
             if (!componentName && holder) {
-              holder->size = len - 1;
-              for (uint32 i = 0; i < len - 1; ++i) {
-                holder->elements[i] = name->elements[start + i];
+              holder->size = len - 2;
+              for (uint32 i = 0; i < len - 2; ++i) {
+                holder->elements[i] = name->elements[start + 1 + i];
               }
               componentName = holder;
             }
@@ -593,6 +593,7 @@ JnjvmClassLoader::loadClassFromJavaString(JavaString* str, bool doResolve,
       for (sint32 i = 0; i < str->count; ++i) {
         uint16 cur = str->value->elements[str->offset + i];
         if (cur == '.') name->elements[i] = '/';
+        else if (cur == '/') return 0;
         else name->elements[i] = cur;
       }
     }
