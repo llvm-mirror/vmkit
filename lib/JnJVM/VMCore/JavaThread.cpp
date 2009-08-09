@@ -48,6 +48,7 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
 }
 
 JavaThread::~JavaThread() {
+  delete localJNIRefs;
 #ifdef SERVICE
   delete replacedEIPs;
 #endif
