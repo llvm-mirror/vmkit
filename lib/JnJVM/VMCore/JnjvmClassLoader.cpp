@@ -427,6 +427,11 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
       fprintf(stderr, "Unable to load NoClassDefFoundError");
       abort();
     }
+    if (TheCompiler->isStaticCompiling()) {
+      fprintf(stderr, "Could not find %s, needed for static compiling\n",
+              UTF8Buffer(name).cString());
+      abort();
+    }
     vm->noClassDefFoundError(name);
   }
 
