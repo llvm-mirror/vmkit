@@ -10,8 +10,9 @@
 #include "llvm/BasicBlock.h"
 #include "llvm/CallingConv.h"
 #include "llvm/Constants.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/Instructions.h"
+#include "llvm/Module.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/Support/MutexGuard.h"
 #include "llvm/Target/TargetData.h"
 
@@ -79,7 +80,7 @@ const Type* LLVMClassInfo::getVirtualType() {
     
     uint64 size = JnjvmModule::getTypeSize(structType);
     classDef->virtualSize = (uint32)size;
-    virtualSizeConstant = ConstantInt::get(Type::Int32Ty, size);
+    virtualSizeConstant = ConstantInt::get(Type::getInt32Ty(context), size);
    
     Mod->makeVT(classDef);
   }
@@ -125,9 +126,7 @@ const Type* LLVMClassInfo::getStaticType() {
 Value* LLVMClassInfo::getVirtualSize() {
   if (!virtualSizeConstant) {
     getVirtualType();
-    assert(classDef->virtualSize && "Zero size for a class?");
-    virtualSizeConstant = 
-      ConstantInt::get(Type::Int32Ty, classDef->virtualSize);
+    assert(virtualSizeConstant && "No size for a class?");
   }
   return virtualSizeConstant;
 }
@@ -193,9 +192,11 @@ Constant* LLVMMethodInfo::getOffset() {
   if (!offsetConstant) {
     JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
     JavaLLVMCompiler* Mod = (JavaLLVMCompiler*)JCL->getCompiler();
+    LLVMContext& context = Mod->getLLVMModule()->getContext();
     
     Mod->resolveVirtualClass(methodDef->classDef);
-    offsetConstant = ConstantInt::get(Type::Int32Ty, methodDef->offset);
+    offsetConstant = ConstantInt::get(Type::getInt32Ty(context),
+                                      methodDef->offset);
   }
   return offsetConstant;
 }
@@ -204,6 +205,7 @@ Constant* LLVMFieldInfo::getOffset() {
   if (!offsetConstant) {
     JnjvmClassLoader* JCL = fieldDef->classDef->classLoader;
     JavaLLVMCompiler* Mod = (JavaLLVMCompiler*)JCL->getCompiler();
+    LLVMContext& context = Mod->getLLVMModule()->getContext();
     
     if (isStatic(fieldDef->access)) {
       Mod->resolveStaticClass(fieldDef->classDef); 
@@ -211,7 +213,7 @@ Constant* LLVMFieldInfo::getOffset() {
       Mod->resolveVirtualClass(fieldDef->classDef); 
     }
     
-    offsetConstant = ConstantInt::get(Type::Int32Ty, fieldDef->num);
+    offsetConstant = ConstantInt::get(Type::getInt32Ty(context), fieldDef->num);
   }
   return offsetConstant;
 }
@@ -315,6 +317,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
 
   JavaLLVMCompiler* Mod = 
     (JavaLLVMCompiler*)signature->initialLoader->getCompiler();
+  LLVMContext& context = Mod->getLLVMModule()->getContext();
   Function* res = 0;
   if (Mod->isStaticCompiling()) {
     const char* type = virt ? "virtual_buf" : "static_buf";
@@ -331,7 +334,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
                            Mod->getLLVMModule());
   }
 
-  BasicBlock* currentBlock = BasicBlock::Create("enter", res);
+  BasicBlock* currentBlock = BasicBlock::Create(context, "enter", res);
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ptr, *func;
 #if defined(ISOLATE_SHARING)
@@ -364,10 +367,10 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
 
   Value* val = CallInst::Create(func, Args.begin(), Args.end(), "",
                                 currentBlock);
-  if (res->getFunctionType()->getReturnType() != Type::VoidTy)
-    ReturnInst::Create(val, currentBlock);
+  if (!signature->getReturnType()->isVoid())
+    ReturnInst::Create(context, val, currentBlock);
   else
-    ReturnInst::Create(currentBlock);
+    ReturnInst::Create(context, currentBlock);
   
   return res;
 }
@@ -390,8 +393,9 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
                                           getStaticBufType(),
                                    GlobalValue::InternalLinkage, name,
                                    Mod->getLLVMModule());
+  LLVMContext& context = Mod->getLLVMModule()->getContext();
   
-  BasicBlock* currentBlock = BasicBlock::Create("enter", res);
+  BasicBlock* currentBlock = BasicBlock::Create(context, "enter", res);
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ap, *func;
 #if defined(ISOLATE_SHARING)
@@ -419,10 +423,10 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
 
   Value* val = CallInst::Create(func, Args.begin(), Args.end(), "",
                                 currentBlock);
-  if (res->getFunctionType()->getReturnType() != Type::VoidTy)
-    ReturnInst::Create(val, currentBlock);
+  if (!signature->getReturnType()->isVoid())
+    ReturnInst::Create(context, val, currentBlock);
   else
-    ReturnInst::Create(currentBlock);
+    ReturnInst::Create(context, currentBlock);
   
   return res;
 }
@@ -551,40 +555,48 @@ Function* LLVMSignatureInfo::getStaticAP() {
 }
 
 void LLVMAssessorInfo::initialise() {
-  AssessorInfo[I_VOID].llvmType = Type::VoidTy;
+  AssessorInfo[I_VOID].llvmType = Type::getVoidTy(getGlobalContext());
   AssessorInfo[I_VOID].llvmTypePtr = 0;
   AssessorInfo[I_VOID].logSizeInBytesConstant = 0;
   
-  AssessorInfo[I_BOOL].llvmType = Type::Int8Ty;
-  AssessorInfo[I_BOOL].llvmTypePtr = PointerType::getUnqual(Type::Int8Ty);
+  AssessorInfo[I_BOOL].llvmType = Type::getInt8Ty(getGlobalContext());
+  AssessorInfo[I_BOOL].llvmTypePtr =
+    PointerType::getUnqual(Type::getInt8Ty(getGlobalContext()));
   AssessorInfo[I_BOOL].logSizeInBytesConstant = 0;
   
-  AssessorInfo[I_BYTE].llvmType = Type::Int8Ty;
-  AssessorInfo[I_BYTE].llvmTypePtr = PointerType::getUnqual(Type::Int8Ty);
+  AssessorInfo[I_BYTE].llvmType = Type::getInt8Ty(getGlobalContext());
+  AssessorInfo[I_BYTE].llvmTypePtr =
+    PointerType::getUnqual(Type::getInt8Ty(getGlobalContext()));
   AssessorInfo[I_BYTE].logSizeInBytesConstant = 0;
   
-  AssessorInfo[I_SHORT].llvmType = Type::Int16Ty;
-  AssessorInfo[I_SHORT].llvmTypePtr = PointerType::getUnqual(Type::Int16Ty);
+  AssessorInfo[I_SHORT].llvmType = Type::getInt16Ty(getGlobalContext());
+  AssessorInfo[I_SHORT].llvmTypePtr =
+    PointerType::getUnqual(Type::getInt16Ty(getGlobalContext()));
   AssessorInfo[I_SHORT].logSizeInBytesConstant = 1;
   
-  AssessorInfo[I_CHAR].llvmType = Type::Int16Ty;
-  AssessorInfo[I_CHAR].llvmTypePtr = PointerType::getUnqual(Type::Int16Ty);
+  AssessorInfo[I_CHAR].llvmType = Type::getInt16Ty(getGlobalContext());
+  AssessorInfo[I_CHAR].llvmTypePtr =
+    PointerType::getUnqual(Type::getInt16Ty(getGlobalContext()));
   AssessorInfo[I_CHAR].logSizeInBytesConstant = 1;
   
-  AssessorInfo[I_INT].llvmType = Type::Int32Ty;
-  AssessorInfo[I_INT].llvmTypePtr = PointerType::getUnqual(Type::Int32Ty);
+  AssessorInfo[I_INT].llvmType = Type::getInt32Ty(getGlobalContext());
+  AssessorInfo[I_INT].llvmTypePtr =
+    PointerType::getUnqual(Type::getInt32Ty(getGlobalContext()));
   AssessorInfo[I_INT].logSizeInBytesConstant = 2;
   
-  AssessorInfo[I_FLOAT].llvmType = Type::FloatTy;
-  AssessorInfo[I_FLOAT].llvmTypePtr = PointerType::getUnqual(Type::FloatTy);
+  AssessorInfo[I_FLOAT].llvmType = Type::getFloatTy(getGlobalContext());
+  AssessorInfo[I_FLOAT].llvmTypePtr =
+    PointerType::getUnqual(Type::getFloatTy(getGlobalContext()));
   AssessorInfo[I_FLOAT].logSizeInBytesConstant = 2;
   
-  AssessorInfo[I_LONG].llvmType = Type::Int64Ty;
-  AssessorInfo[I_LONG].llvmTypePtr = PointerType::getUnqual(Type::Int64Ty);
+  AssessorInfo[I_LONG].llvmType = Type::getInt64Ty(getGlobalContext());
+  AssessorInfo[I_LONG].llvmTypePtr =
+    PointerType::getUnqual(Type::getInt64Ty(getGlobalContext()));
   AssessorInfo[I_LONG].logSizeInBytesConstant = 3;
   
-  AssessorInfo[I_DOUBLE].llvmType = Type::DoubleTy;
-  AssessorInfo[I_DOUBLE].llvmTypePtr = PointerType::getUnqual(Type::DoubleTy);
+  AssessorInfo[I_DOUBLE].llvmType = Type::getDoubleTy(getGlobalContext());
+  AssessorInfo[I_DOUBLE].llvmTypePtr =
+    PointerType::getUnqual(Type::getDoubleTy(getGlobalContext()));
   AssessorInfo[I_DOUBLE].logSizeInBytesConstant = 3;
   
   AssessorInfo[I_TAB].llvmType = JnjvmModule::JavaObjectType;

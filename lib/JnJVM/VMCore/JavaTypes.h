@@ -91,6 +91,42 @@ public:
   virtual bool isUnsigned() const {
     return false;
   }
+  
+  virtual bool isVoid() const {
+    return false;
+  }
+
+  virtual bool isLong() const {
+    return false;
+  }
+
+  virtual bool isInt() const {
+    return false;
+  }
+
+  virtual bool isChar() const {
+    return false;
+  }
+
+  virtual bool isShort() const {
+    return false;
+  }
+
+  virtual bool isByte() const {
+    return false;
+  }
+
+  virtual bool isBool() const {
+    return false;
+  }
+
+  virtual bool isFloat() const {
+    return false;
+  }
+
+  virtual bool isDouble() const {
+    return false;
+  }
 
   /// getName - Get the name of the type, i.e. java.lang.String or
   /// I.
@@ -142,39 +178,39 @@ public:
     charId = i;
   }
   
-  bool isVoid() const {
+  virtual bool isVoid() const {
     return charId == I_VOID;
   }
 
-  bool isLong() const {
+  virtual bool isLong() const {
     return charId == I_LONG;
   }
 
-  bool isInt() const {
+  virtual bool isInt() const {
     return charId == I_INT;
   }
 
-  bool isChar() const {
+  virtual bool isChar() const {
     return charId == I_CHAR;
   }
 
-  bool isShort() const {
+  virtual bool isShort() const {
     return charId == I_SHORT;
   }
 
-  bool isByte() const {
+  virtual bool isByte() const {
     return charId == I_BYTE;
   }
 
-  bool isBool() const {
+  virtual bool isBool() const {
     return charId == I_BOOL;
   }
 
-  bool isFloat() const {
+  virtual bool isFloat() const {
     return charId == I_FLOAT;
   }
 
-  bool isDouble() const {
+  virtual bool isDouble() const {
     return charId == I_DOUBLE;
   }
   

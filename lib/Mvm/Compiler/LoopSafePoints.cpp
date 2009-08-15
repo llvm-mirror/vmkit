@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 
+#include "llvm/Module.h"
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/Support/CallSite.h"
 #include "llvm/Support/Compiler.h"
@@ -44,7 +45,8 @@ void LoopSafePoints::insertSafePoint(BasicBlock* BB, Function* SafeFunction,
   I->eraseFromParent();
   
   Value* Ld = new LoadInst(YieldPtr, "", NBB);
-  BasicBlock* yield = BasicBlock::Create("", BB->getParent());
+  BasicBlock* yield = BasicBlock::Create(SafeFunction->getContext(), "",
+                                         BB->getParent());
   BranchInst::Create(yield, SU, Ld, NBB);
 
   CallInst::Create(SafeFunction, "", yield);

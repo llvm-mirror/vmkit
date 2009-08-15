@@ -130,10 +130,10 @@ static void verifyType(Value*& val1, Value*& val2, BasicBlock* currentBlock) {
     } else if (isa<PointerType>(t1) && isa<PointerType>(t2)) {
       val1 = new BitCastInst(val1, VMObject::llvmType, "", currentBlock);
       val2 = new BitCastInst(val2, VMObject::llvmType, "", currentBlock);
-    } else if (t1->isInteger() && t2 == PointerType::getUnqual(Type::Int8Ty)) {
+    } else if (t1->isInteger() && t2 == PointerType::getUnqual(Type::getInt8Ty(getGlobalContext()))) {
       // CLI says that this is fine for some operation
       val2 = new PtrToIntInst(val2, t1, "", currentBlock);
-    } else if (t2->isInteger() && t1 == PointerType::getUnqual(Type::Int8Ty)) {
+    } else if (t2->isInteger() && t1 == PointerType::getUnqual(Type::getInt8Ty(getGlobalContext()))) {
       // CLI says that this is fine for some operation
       val1 = new PtrToIntInst(val1, t2, "", currentBlock);
     }
@@ -173,9 +173,9 @@ static void store(Value* val, Value* local, bool vol,
     uint64 size = module->getTypeSize(contained);
         
     std::vector<Value*> params;
-    params.push_back(new BitCastInst(local, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-    params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-    params.push_back(ConstantInt::get(Type::Int32Ty, size));
+    params.push_back(new BitCastInst(local, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
+    params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
+    params.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), size));
     params.push_back(module->constantZero);
     CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
   } else {
@@ -191,9 +191,9 @@ static Value* load(Value* val, const char* name, BasicBlock* currentBlock, mvm::
     uint64 size = module->getTypeSize(contained);
     Value* ret = new AllocaInst(contained, "", currentBlock); 
     std::vector<Value*> params;
-    params.push_back(new BitCastInst(ret, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-    params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-    params.push_back(ConstantInt::get(Type::Int32Ty, size));
+    params.push_back(new BitCastInst(ret, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
+    params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
+    params.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), size));
     params.push_back(module->constantZero);
     CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
     return ret;
@@ -228,13 +228,13 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
 #if N3_EXECUTE > 1
     if (bytecodes[i] == 0xFE) {
       std::vector<llvm::Value*> args;
-      args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)OpcodeNamesFE[bytecodes[i + 1]]));
-      args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
+      args.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), (int64_t)OpcodeNamesFE[bytecodes[i + 1]]));
+      args.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), (int64_t)compilingMethod));
       CallInst::Create(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
     } else {
       std::vector<llvm::Value*> args;
-      args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)OpcodeNames[bytecodes[i]]));
-      args.push_back(ConstantInt::get(Type::Int32Ty, (int64_t)compilingMethod));
+      args.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), (int64_t)OpcodeNames[bytecodes[i]]));
+      args.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), (int64_t)compilingMethod));
       CallInst::Create(printExecutionLLVM, args.begin(), args.end(), "", currentBlock);
     }
 #endif
@@ -382,10 +382,10 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val = pop();
         const Type* type = val->getType();
         if (type->isFloatingPoint()) {
-          push(new FPToSIInst(val, Type::Int8Ty, "", currentBlock));
-        } else if (type == Type::Int16Ty || type == Type::Int32Ty || 
-                   type == Type::Int64Ty) {
-          push(new TruncInst(val, Type::Int8Ty, "", currentBlock));
+          push(new FPToSIInst(val, Type::getInt8Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt16Ty(getGlobalContext()) || type == Type::getInt32Ty(getGlobalContext()) || 
+                   type == Type::getInt64Ty(getGlobalContext())) {
+          push(new TruncInst(val, Type::getInt8Ty(getGlobalContext()), "", currentBlock));
         } else {
           VMThread::get()->vm->unknownError("implement me");
         }
@@ -396,11 +396,11 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val = pop();
         const Type* type = val->getType();
         if (type->isFloatingPoint()) {
-          push(new FPToSIInst(val, Type::Int16Ty, "", currentBlock));
-        } else if (type == Type::Int32Ty || type == Type::Int64Ty) {
-          push(new TruncInst(val, Type::Int16Ty, "", currentBlock));
-        } else if (type == Type::Int8Ty) {
-          push(new SExtInst(val, Type::Int16Ty, "", currentBlock));
+          push(new FPToSIInst(val, Type::getInt16Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt32Ty(getGlobalContext()) || type == Type::getInt64Ty(getGlobalContext())) {
+          push(new TruncInst(val, Type::getInt16Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt8Ty(getGlobalContext())) {
+          push(new SExtInst(val, Type::getInt16Ty(getGlobalContext()), "", currentBlock));
         } else {
           VMThread::get()->vm->unknownError("implement me");
         }
@@ -411,12 +411,12 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val = pop();
         const Type* type = val->getType();
         if (type->isFloatingPoint()) {
-          push(new FPToSIInst(val, Type::Int32Ty, "", currentBlock));
-        } else if (type == Type::Int64Ty) {
-          push(new TruncInst(val, Type::Int32Ty, "", currentBlock));
-        } else if (type == Type::Int8Ty || type == Type::Int16Ty) {
-          push(new SExtInst(val, Type::Int32Ty, "", currentBlock));
-        } else if (type == Type::Int32Ty) {
+          push(new FPToSIInst(val, Type::getInt32Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt64Ty(getGlobalContext())) {
+          push(new TruncInst(val, Type::getInt32Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt8Ty(getGlobalContext()) || type == Type::getInt16Ty(getGlobalContext())) {
+          push(new SExtInst(val, Type::getInt32Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt32Ty(getGlobalContext())) {
           push(val);
         } else {
           VMThread::get()->vm->unknownError("implement me");
@@ -428,10 +428,10 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val = pop();
         const Type* type = val->getType();
         if (type->isFloatingPoint()) {
-          push(new FPToSIInst(val, Type::Int64Ty, "", currentBlock));
-        } else if (type == Type::Int8Ty || type == Type::Int16Ty || 
-                   type == Type::Int32Ty) {
-          push(new SExtInst(val, Type::Int64Ty, "", currentBlock));
+          push(new FPToSIInst(val, Type::getInt64Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt8Ty(getGlobalContext()) || type == Type::getInt16Ty(getGlobalContext()) || 
+                   type == Type::getInt32Ty(getGlobalContext())) {
+          push(new SExtInst(val, Type::getInt64Ty(getGlobalContext()), "", currentBlock));
         } else {
           VMThread::get()->vm->unknownError("implement me");
         }
@@ -441,10 +441,10 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case CONV_R4 : {
         Value* val = pop();
         const Type* type = val->getType();
-        if (type == Type::DoubleTy) {
-          push(new FPTruncInst(val, Type::FloatTy, "", currentBlock));
+        if (type == Type::getDoubleTy(getGlobalContext())) {
+          push(new FPTruncInst(val, Type::getFloatTy(getGlobalContext()), "", currentBlock));
         } else if (type->isInteger()) {
-          push(new SIToFPInst(val, Type::FloatTy, "", currentBlock));
+          push(new SIToFPInst(val, Type::getFloatTy(getGlobalContext()), "", currentBlock));
         } else {
           VMThread::get()->vm->unknownError("implement me");
         }
@@ -454,11 +454,11 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case CONV_R8 : {
         Value* val = pop();
         const Type* type = val->getType();
-        if (type == Type::FloatTy) {
-          push(new FPExtInst(val, Type::DoubleTy, "", currentBlock));
+        if (type == Type::getFloatTy(getGlobalContext())) {
+          push(new FPExtInst(val, Type::getDoubleTy(getGlobalContext()), "", currentBlock));
         } else if (type->isInteger()) {
-          push(new SIToFPInst(val, Type::DoubleTy, "", currentBlock));
-        } else if (type == Type::DoubleTy) {
+          push(new SIToFPInst(val, Type::getDoubleTy(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getDoubleTy(getGlobalContext())) {
           push(val);
         } else {
           VMThread::get()->vm->unknownError("implement me");
@@ -470,10 +470,10 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val = pop();
         const Type* type = val->getType();
         if (type->isFloatingPoint()) {
-          push(new FPToUIInst(val, Type::Int8Ty, "", currentBlock));
-        } else if (type == Type::Int16Ty || type == Type::Int32Ty || 
-                   type == Type::Int64Ty) {
-          push(new TruncInst(val, Type::Int8Ty, "", currentBlock));
+          push(new FPToUIInst(val, Type::getInt8Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt16Ty(getGlobalContext()) || type == Type::getInt32Ty(getGlobalContext()) || 
+                   type == Type::getInt64Ty(getGlobalContext())) {
+          push(new TruncInst(val, Type::getInt8Ty(getGlobalContext()), "", currentBlock));
         } else {
           VMThread::get()->vm->unknownError("implement me");
         }
@@ -484,11 +484,11 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val = pop();
         const Type* type = val->getType();
         if (type->isFloatingPoint()) {
-          push(new FPToUIInst(val, Type::Int16Ty, "", currentBlock));
-        } else if (type == Type::Int32Ty || type == Type::Int64Ty) {
-          push(new TruncInst(val, Type::Int8Ty, "", currentBlock));
-        } else if (type == Type::Int8Ty) {
-          push(new ZExtInst(val, Type::Int16Ty, "", currentBlock));
+          push(new FPToUIInst(val, Type::getInt16Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt32Ty(getGlobalContext()) || type == Type::getInt64Ty(getGlobalContext())) {
+          push(new TruncInst(val, Type::getInt8Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt8Ty(getGlobalContext())) {
+          push(new ZExtInst(val, Type::getInt16Ty(getGlobalContext()), "", currentBlock));
         } else {
           VMThread::get()->vm->unknownError("implement me");
         }
@@ -499,11 +499,11 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val = pop();
         const Type* type = val->getType();
         if (type->isFloatingPoint()) {
-          push(new FPToUIInst(val, Type::Int32Ty, "", currentBlock));
-        } else if (type == Type::Int64Ty) {
-          push(new TruncInst(val, Type::Int8Ty, "", currentBlock));
-        } else if (type == Type::Int8Ty || type == Type::Int16Ty) {
-          push(new ZExtInst(val, Type::Int16Ty, "", currentBlock));
+          push(new FPToUIInst(val, Type::getInt32Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt64Ty(getGlobalContext())) {
+          push(new TruncInst(val, Type::getInt8Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt8Ty(getGlobalContext()) || type == Type::getInt16Ty(getGlobalContext())) {
+          push(new ZExtInst(val, Type::getInt16Ty(getGlobalContext()), "", currentBlock));
         } else {
           VMThread::get()->vm->unknownError("implement me");
         }
@@ -514,10 +514,10 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val = pop();
         const Type* type = val->getType();
         if (type->isFloatingPoint()) {
-          push(new FPToUIInst(val, Type::Int64Ty, "", currentBlock));
-        } else if (type == Type::Int8Ty || type == Type::Int16Ty || 
-                   type == Type::Int32Ty) {
-          push(new ZExtInst(val, Type::Int64Ty, "", currentBlock));
+          push(new FPToUIInst(val, Type::getInt64Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt8Ty(getGlobalContext()) || type == Type::getInt16Ty(getGlobalContext()) || 
+                   type == Type::getInt32Ty(getGlobalContext())) {
+          push(new ZExtInst(val, Type::getInt64Ty(getGlobalContext()), "", currentBlock));
         } else {
           VMThread::get()->vm->unknownError("implement me");
         }
@@ -529,12 +529,12 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* res = 0;
         
         if (val->getType()->isInteger()) {
-          if (val->getType() != Type::Int64Ty) {
-            val = new ZExtInst(val, Type::Int64Ty, "", currentBlock);
+          if (val->getType() != Type::getInt64Ty(getGlobalContext())) {
+            val = new ZExtInst(val, Type::getInt64Ty(getGlobalContext()), "", currentBlock);
           }
-          res = new IntToPtrInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock);
+          res = new IntToPtrInst(val, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock);
         } else if (!val->getType()->isFloatingPoint()) {
-          res = new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock);
+          res = new BitCastInst(val, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock);
         } else {
           VMThread::get()->vm->unknownError("implement me");
         }
@@ -551,11 +551,11 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case CONV_R_UN : {
         Value* val = pop();
         const Type* type = val->getType();
-        if (type == Type::FloatTy) {
-          push(new FPExtInst(val, Type::DoubleTy, "", currentBlock));
+        if (type == Type::getFloatTy(getGlobalContext())) {
+          push(new FPExtInst(val, Type::getDoubleTy(getGlobalContext()), "", currentBlock));
         } else if (type->isInteger()) {
-          push(new UIToFPInst(val, Type::DoubleTy, "", currentBlock));
-        } else if (type == Type::DoubleTy) {
+          push(new UIToFPInst(val, Type::getDoubleTy(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getDoubleTy(getGlobalContext())) {
           push(val);
         } else {
           VMThread::get()->vm->unknownError("implement me");
@@ -627,12 +627,12 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val = pop();
         const Type* type = val->getType();
         if (type->isFloatingPoint()) {
-          push(new FPToUIInst(val, Type::Int32Ty, "", currentBlock));
-        } else if (type == Type::Int64Ty) {
-          push(new TruncInst(val, Type::Int8Ty, "", currentBlock));
-        } else if (type == Type::Int8Ty || type == Type::Int16Ty) {
-          push(new ZExtInst(val, Type::Int16Ty, "", currentBlock));
-        } else if (type == Type::Int32Ty) {
+          push(new FPToUIInst(val, Type::getInt32Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt64Ty(getGlobalContext())) {
+          push(new TruncInst(val, Type::getInt8Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt8Ty(getGlobalContext()) || type == Type::getInt16Ty(getGlobalContext())) {
+          push(new ZExtInst(val, Type::getInt16Ty(getGlobalContext()), "", currentBlock));
+        } else if (type == Type::getInt32Ty(getGlobalContext())) {
           push(val);
         } else {
           VMThread::get()->vm->unknownError("implement me");
@@ -696,14 +696,14 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
 
       case ENDFINALLY : {
         Value* val = new LoadInst(supplLocal, "", currentBlock);
-        val = new PtrToIntInst(val, Type::Int32Ty, "", currentBlock);
+        val = new PtrToIntInst(val, Type::getInt32Ty(getGlobalContext()), "", currentBlock);
         SwitchInst* inst = SwitchInst::Create(val, leaves[0], 
                                           leaves.size(), currentBlock);
      
         uint32 index = 0; 
         for (std::vector<BasicBlock*>::iterator i = leaves.begin(), 
              e = leaves.end(); i!= e; ++i, ++index) {
-          inst->addCase(ConstantInt::get(Type::Int32Ty, index), *i); 
+          inst->addCase(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), index), *i); 
         }
 
         //currentBlock = bb2;
@@ -747,22 +747,22 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
 
       case LDC_I4 : {
-        push(ConstantInt::get(Type::Int32Ty, readS4(bytecodes, i)));
+        push(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), readS4(bytecodes, i)));
         break;
       }
       
       case LDC_I8 : {
-        push(ConstantInt::get(Type::Int64Ty, readS8(bytecodes, i)));
+        push(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), readS8(bytecodes, i)));
         break;
       }
       
       case LDC_R4 : {
-        push(ConstantFP::get(Type::FloatTy, readFloat(bytecodes, i)));
+        push(ConstantFP::get(Type::getFloatTy(getGlobalContext()), readFloat(bytecodes, i)));
         break;
       }
       
       case LDC_R8 : {
-        push(ConstantFP::get(Type::DoubleTy, readDouble(bytecodes, i)));
+        push(ConstantFP::get(Type::getDoubleTy(getGlobalContext()), readDouble(bytecodes, i)));
         break;
       }
       
@@ -817,14 +817,14 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
       
       case LDC_I4_S : {
-        push(ConstantInt::get(Type::Int32Ty, readS1(bytecodes, i)));
+        push(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), readS1(bytecodes, i)));
         break;
       }
  
       case LDIND_U1 :
       case LDIND_I1 : {
         Value* _val = pop();
-        Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock);
+        Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock);
         push(new LoadInst(val, "", isVolatile, currentBlock));
         isVolatile = false;
         break;
@@ -833,7 +833,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case LDIND_U2 :
       case LDIND_I2 : {
         Value* _val = pop();
-        Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::Int16Ty), "", currentBlock);
+        Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::getInt16Ty(getGlobalContext())), "", currentBlock);
         push(new LoadInst(val, "", isVolatile, currentBlock));
         isVolatile = false;
         break;
@@ -843,9 +843,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case LDIND_I4 : {
         Value* val = pop();
         if (val->getType()->isInteger()) {
-          val = new IntToPtrInst(val, PointerType::getUnqual(Type::Int32Ty), "", currentBlock);
+          val = new IntToPtrInst(val, PointerType::getUnqual(Type::getInt32Ty(getGlobalContext())), "", currentBlock);
         } else {
-          val = new BitCastInst(val, PointerType::getUnqual(Type::Int32Ty), "", currentBlock);
+          val = new BitCastInst(val, PointerType::getUnqual(Type::getInt32Ty(getGlobalContext())), "", currentBlock);
         }
         push(new LoadInst(val, "", isVolatile, currentBlock));
         isVolatile = false;
@@ -854,7 +854,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       
       case LDIND_I8 : {
         Value* _val = pop();
-        Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::Int64Ty), "", currentBlock);
+        Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::getInt64Ty(getGlobalContext())), "", currentBlock);
         push(new LoadInst(val, "", isVolatile, currentBlock));
         isVolatile = false;
         break;
@@ -862,7 +862,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
 
       case LDIND_R4 : {
         Value* _val = pop();
-        Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::FloatTy), "", currentBlock);
+        Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::getFloatTy(getGlobalContext())), "", currentBlock);
         push(new LoadInst(val, "", isVolatile, currentBlock));
         isVolatile = false;
         break;
@@ -870,7 +870,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       
       case LDIND_R8 : {
         Value* _val = pop();
-        Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::DoubleTy), "", currentBlock);
+        Value* val = new BitCastInst(_val, PointerType::getUnqual(Type::getDoubleTy(getGlobalContext())), "", currentBlock);
         push(new LoadInst(val, "", isVolatile, currentBlock));
         isVolatile = false;
         break;
@@ -879,7 +879,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case LDIND_I : {
         Value* _val = pop();
         Value* val = new BitCastInst(_val, PointerType::getUnqual(
-                                        PointerType::getUnqual(Type::Int8Ty)), "", currentBlock);
+                                        PointerType::getUnqual(Type::getInt8Ty(getGlobalContext()))), "", currentBlock);
         push(new LoadInst(val, "", isVolatile, currentBlock));
         isVolatile = false;
         break;
@@ -952,7 +952,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           }
           if (res) {
             Value* expr = ConstantExpr::getIntToPtr(
-                                    ConstantInt::get(Type::Int64Ty,
+                                    ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                                      uint64_t (leaveIndex++)),
                                     VMObject::llvmType);
 
@@ -984,7 +984,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           }
           if (res) {
             Value* expr = ConstantExpr::getIntToPtr(
-                                    ConstantInt::get(Type::Int64Ty,
+                                    ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                                      uint64_t (leaveIndex++)),
                                     VMObject::llvmType);
 
@@ -1028,7 +1028,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case NOP : break;
 
       case NOT : {
-        push(BinaryOperator::CreateNot(llvmFunction->getContext(), pop(), "", currentBlock));
+        push(BinaryOperator::CreateNot(pop(), "", currentBlock));
         break;
       }
 
@@ -1067,7 +1067,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
 
       case RET : {
-        if (compilingMethod->getSignature(genMethod)->getReturnType() != Type::VoidTy) {
+        if (compilingMethod->getSignature(genMethod)->getReturnType() != Type::getVoidTy(getGlobalContext())) {
           Value* val = pop();
           if (val->getType() == PointerType::getUnqual(endNode->getType())) {
             // In case it's a struct
@@ -1118,9 +1118,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case STIND_I1 : {
         Value* val = pop();
         Value* _addr = pop();
-        Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::Int8Ty), "",
+        Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "",
                                       currentBlock);
-        convertValue(val, Type::Int8Ty, currentBlock);
+        convertValue(val, Type::getInt8Ty(getGlobalContext()), currentBlock);
         new StoreInst(val, addr, isVolatile, currentBlock);
         isVolatile = false;
         break;
@@ -1129,7 +1129,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case STIND_I2 : {
         Value* val = pop();
         Value* _addr = pop();
-        Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::Int16Ty), 
+        Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::getInt16Ty(getGlobalContext())), 
                                       "", currentBlock);
         new StoreInst(val, addr, isVolatile, currentBlock);
         isVolatile = false;
@@ -1139,7 +1139,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case STIND_I4 : {
         Value* val = pop();
         Value* _addr = pop();
-        Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::Int32Ty), 
+        Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::getInt32Ty(getGlobalContext())), 
                                       "", currentBlock);
         new StoreInst(val, addr, isVolatile, currentBlock);
         isVolatile = false;
@@ -1149,7 +1149,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case STIND_I8 : {
         Value* val = pop();
         Value* _addr = pop();
-        Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::Int64Ty), 
+        Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::getInt64Ty(getGlobalContext())), 
                                       "", currentBlock);
         new StoreInst(val, addr, isVolatile, currentBlock);
         isVolatile = false;
@@ -1159,7 +1159,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case STIND_R4 : {
         Value* val = pop();
         Value* _addr = pop();
-        Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::FloatTy), 
+        Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::getFloatTy(getGlobalContext())), 
                                       "", currentBlock);
         new StoreInst(val, addr, isVolatile, currentBlock);
         isVolatile = false;
@@ -1169,7 +1169,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case STIND_R8 : {
         Value* val = pop();
         Value* _addr = pop();
-        Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::DoubleTy), 
+        Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::getDoubleTy(getGlobalContext())), 
                                       "", currentBlock);
         new StoreInst(val, addr, isVolatile, currentBlock);
         isVolatile = false;
@@ -1179,7 +1179,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case STIND_I : {
         Value* val = pop();
         Value* _addr = pop();
-        Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::Int32Ty), 
+        Value* addr = new BitCastInst(_addr, PointerType::getUnqual(Type::getInt32Ty(getGlobalContext())), 
                                       "", currentBlock);
         new StoreInst(val, addr, isVolatile, currentBlock);
         isVolatile = false;
@@ -1260,7 +1260,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           sint32 index = next + offset;
           assert(index > 0);
           BasicBlock* BB = opcodeInfos[index].newBlock;
-          SI->addCase(ConstantInt::get(Type::Int32Ty, t), BB);
+          SI->addCase(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), t), BB);
         }
         break;
       }
@@ -1309,9 +1309,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         uint64 size = module->getTypeSize(type->naturalType);
         
         std::vector<Value*> params;
-        params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-        params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-        params.push_back(ConstantInt::get(Type::Int32Ty, size));
+        params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
+        params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
+        params.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), size));
         params.push_back(module->constantZero);
         CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
         
@@ -1360,7 +1360,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           InvokeInst::Create(classCastExceptionLLVM, unifiedUnreachable, currentExceptionBlock, exArgs.begin(), exArgs.end(), "", ex);
         } else {
           CallInst::Create(classCastExceptionLLVM, exArgs.begin(), exArgs.end(), "", ex);
-          new UnreachableInst(ex);
+          new UnreachableInst(getGlobalContext(), ex);
         }
 
         currentBlock = ifTrue;
@@ -1578,7 +1578,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         uint32 value = readU4(bytecodes, i);
         uint32 index = value & 0xfffffff;
         const UTF8* utf8 = compilingClass->assembly->readUserString(index);
-        Value* val = ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, (int64_t)utf8),
+        Value* val = ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), (int64_t)utf8),
                                                module->ptrType);
         Value* res = CallInst::Create(newStringLLVM, val, "", currentBlock);
         /*CLIString * str = 
@@ -1680,7 +1680,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* index = pop();
         Value* obj = pop();
         Value* ptr = verifyAndComputePtr(obj, index, ArraySInt8::llvmType);
-        convertValue(val, Type::Int8Ty, currentBlock);
+        convertValue(val, Type::getInt8Ty(getGlobalContext()), currentBlock);
         new StoreInst(val, ptr, false, currentBlock);
         break;
       }
@@ -1690,7 +1690,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* index = pop();
         Value* obj = pop();
         Value* ptr = verifyAndComputePtr(obj, index, ArraySInt16::llvmType);
-        convertValue(val, Type::Int16Ty, currentBlock);
+        convertValue(val, Type::getInt16Ty(getGlobalContext()), currentBlock);
         new StoreInst(val, ptr, false, currentBlock);
         break;
       }
@@ -1700,7 +1700,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* index = pop();
         Value* obj = pop();
         Value* ptr = verifyAndComputePtr(obj, index, ArraySInt32::llvmType);
-        convertValue(val, Type::Int32Ty, currentBlock);
+        convertValue(val, Type::getInt32Ty(getGlobalContext()), currentBlock);
         new StoreInst(val, ptr, false, currentBlock);
         break;
       }
@@ -1710,7 +1710,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* index = pop();
         Value* obj = pop();
         Value* ptr = verifyAndComputePtr(obj, index, ArrayLong::llvmType);
-        convertValue(val, Type::Int64Ty, currentBlock);
+        convertValue(val, Type::getInt64Ty(getGlobalContext()), currentBlock);
         new StoreInst(val, ptr, false, currentBlock);
         break;
       }
@@ -1720,7 +1720,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* index = pop();
         Value* obj = pop();
         Value* ptr = verifyAndComputePtr(obj, index, ArrayFloat::llvmType);
-        convertValue(val, Type::FloatTy, currentBlock);
+        convertValue(val, Type::getFloatTy(getGlobalContext()), currentBlock);
         new StoreInst(val, ptr, false, currentBlock);
         break;
       }
@@ -1730,7 +1730,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* index = pop();
         Value* obj = pop();
         Value* ptr = verifyAndComputePtr(obj, index, ArrayDouble::llvmType);
-        convertValue(val, Type::DoubleTy, currentBlock);
+        convertValue(val, Type::getDoubleTy(getGlobalContext()), currentBlock);
         new StoreInst(val, ptr, false, currentBlock);
         break;
       }
@@ -1779,7 +1779,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           InvokeInst::Create(throwExceptionLLVM, unifiedUnreachable, currentExceptionBlock, args.begin(), args.end(), "", currentBlock);
         } else {
           CallInst::Create(throwExceptionLLVM, args.begin(), args.end(), "", currentBlock);
-          new UnreachableInst(currentBlock);
+          new UnreachableInst(getGlobalContext(), currentBlock);
         }
         break;
       }
@@ -1808,9 +1808,9 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         uint64 size = module->getTypeSize(type->naturalType);
         
         std::vector<Value*> params;
-        params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-        params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-        params.push_back(ConstantInt::get(Type::Int32Ty, size));
+        params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
+        params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
+        params.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), size));
         params.push_back(module->constantZero);
         CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
         
@@ -1922,7 +1922,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           }
           
           case LOCALLOC : {
-            push(new AllocaInst(Type::Int8Ty, pop(), "", currentBlock));
+            push(new AllocaInst(Type::getInt8Ty(getGlobalContext()), pop(), "", currentBlock));
             break;
           }
           
@@ -1961,7 +1961,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
               params.push_back(new BitCastInst(pop(), module->ptrType, "",
                                                currentBlock));
               params.push_back(module->constantInt8Zero);
-              params.push_back(ConstantInt::get(Type::Int32Ty, size));
+              params.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), size));
               params.push_back(module->constantZero);
               CallInst::Create(module->llvm_memset_i32, params.begin(),
                                params.end(), "", currentBlock);
@@ -1991,7 +1991,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
               InvokeInst::Create(throwExceptionLLVM, unifiedUnreachable, currentExceptionBlock, args.begin(), args.end(), "", currentBlock);
             } else {
               CallInst::Create(throwExceptionLLVM, args.begin(), args.end(), "", currentBlock);
-              new UnreachableInst(currentBlock);
+              new UnreachableInst(getGlobalContext(), currentBlock);
             }
             break;
           }

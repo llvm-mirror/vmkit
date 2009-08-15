@@ -46,7 +46,7 @@ bool LowerArrayLength::runOnFunction(Function& F) {
           Changed = true;
           Value* val = CI->getOperand(1); // get the array
           std::vector<Value*> args; //size=  2
-          args.push_back(ConstantInt::get(Type::Int32Ty, 0));
+          args.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 0));
           args.push_back(n3::VMArray::sizeOffset());
           Value* ptr = GetElementPtrInst::Create(val, args.begin(), args.end(),
                                                  "", CI);

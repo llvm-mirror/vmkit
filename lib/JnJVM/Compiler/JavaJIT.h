@@ -212,28 +212,30 @@ private:
   void push(llvm::Value* val, bool unsign) {
     const llvm::Type* type = val->getType();
     if (unsign) {
-      val = new llvm::ZExtInst(val, llvm::Type::Int32Ty, "", currentBlock);
+      val = new llvm::ZExtInst(val, llvm::Type::getInt32Ty(*llvmContext), "", currentBlock);
       new llvm::StoreInst(val, intStack[currentStackIndex++], false,
                           currentBlock);
       stack.push_back(Int);
-    } else if (type == llvm::Type::Int8Ty || type == llvm::Type::Int16Ty) {
-      val = new llvm::SExtInst(val, llvm::Type::Int32Ty, "", currentBlock);
+    } else if (type == llvm::Type::getInt8Ty(*llvmContext) ||
+               type == llvm::Type::getInt16Ty(*llvmContext)) {
+      val = new llvm::SExtInst(val, llvm::Type::getInt32Ty(*llvmContext), "",
+                               currentBlock);
       new llvm::StoreInst(val, intStack[currentStackIndex++], false,
                           currentBlock);
       stack.push_back(Int);
-    } else if (type == llvm::Type::Int32Ty) {
+    } else if (type == llvm::Type::getInt32Ty(*llvmContext)) {
       new llvm::StoreInst(val, intStack[currentStackIndex++], false,
                           currentBlock);
       stack.push_back(Int);
-    } else if (type == llvm::Type::Int64Ty) {
+    } else if (type == llvm::Type::getInt64Ty(*llvmContext)) {
       new llvm::StoreInst(val, longStack[currentStackIndex++], false,
                           currentBlock);
       stack.push_back(Long);
-    } else if (type == llvm::Type::FloatTy) {
+    } else if (type == llvm::Type::getFloatTy(*llvmContext)) {
       new llvm::StoreInst(val, floatStack[currentStackIndex++], false,
                           currentBlock);
       stack.push_back(Float);
-    } else if (type == llvm::Type::DoubleTy) {
+    } else if (type == llvm::Type::getDoubleTy(*llvmContext)) {
       new llvm::StoreInst(val, doubleStack[currentStackIndex++], false,
                           currentBlock);
       stack.push_back(Double);
@@ -335,7 +337,7 @@ private:
 
   /// createBasicBlock - Create a new basic block.
   llvm::BasicBlock* createBasicBlock(const char* name = "") {
-    return llvm::BasicBlock::Create(name, llvmFunction);  
+    return llvm::BasicBlock::Create(*llvmContext, name, llvmFunction);
   }
  
   /// branch - Branch based on a boolean value. Update PHI nodes accordingly.

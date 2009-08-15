@@ -152,13 +152,13 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         } else {
           ++currentStackIndex;
           const Type* Ty = i->getType();
-          if (Ty == Type::Int32Ty) {
+          if (Ty == Type::getInt32Ty(*llvmContext)) {
             stack.push_back(Int);
-          } else if (Ty == Type::Int64Ty) {
+          } else if (Ty == Type::getInt64Ty(*llvmContext)) {
             stack.push_back(Long);
-          } else if (Ty == Type::FloatTy) {
+          } else if (Ty == Type::getFloatTy(*llvmContext)) {
             stack.push_back(Float);
-          } else if (Ty == Type::DoubleTy) {
+          } else if (Ty == Type::getDoubleTy(*llvmContext)) {
             stack.push_back(Double);
           } else if (Ty == module->JavaObjectType) {
             stack.push_back(Object);
@@ -182,8 +182,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 #if JNJVM_EXECUTE > 1
     {
       Value* args[3] = {
-        ConstantInt::get(Type::Int32Ty, (int64_t)bytecodes[i]),
-        ConstantInt::get(Type::Int32Ty, (int64_t)i),
+        ConstantInt::get(Type::getInt32Ty(*llvmContext), (int64_t)bytecodes[i]),
+        ConstantInt::get(Type::getInt32Ty(*llvmContext), (int64_t)i),
         TheCompiler->getMethodInClass(compilingMethod)
       };
     
@@ -262,15 +262,15 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
 
       case BIPUSH : 
-        push(ConstantExpr::getSExt(ConstantInt::get(Type::Int8Ty,
+        push(ConstantExpr::getSExt(ConstantInt::get(Type::getInt8Ty(*llvmContext),
                                                     bytecodes[++i]),
-                                   Type::Int32Ty), false);
+                                   Type::getInt32Ty(*llvmContext)), false);
         break;
 
       case SIPUSH :
-        push(ConstantExpr::getSExt(ConstantInt::get(Type::Int16Ty,
+        push(ConstantExpr::getSExt(ConstantInt::get(Type::getInt16Ty(*llvmContext),
                                                     readS2(bytecodes, i)),
-                                   Type::Int32Ty), false);
+                                   Type::getInt32Ty(*llvmContext)), false);
         break;
 
       case LDC :
@@ -470,7 +470,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* ptr = verifyAndComputePtr(obj, index,
                                          module->JavaArraySInt8Type);
         Value* val = new LoadInst(ptr, "", currentBlock);
-        push(new SExtInst(val, Type::Int32Ty, "", currentBlock),
+        push(new SExtInst(val, Type::getInt32Ty(*llvmContext), "", currentBlock),
              false);
         break;
       }
@@ -481,7 +481,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* ptr = verifyAndComputePtr(obj, index,
                                          module->JavaArrayUInt16Type);
         Value* val = new LoadInst(ptr, "", currentBlock);
-        push(new ZExtInst(val, Type::Int32Ty, "", currentBlock),
+        push(new ZExtInst(val, Type::getInt32Ty(*llvmContext), "", currentBlock),
              false);
         break;
       }
@@ -492,7 +492,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* ptr = verifyAndComputePtr(obj, index,
                                          module->JavaArraySInt16Type);
         Value* val = new LoadInst(ptr, "", currentBlock);
-        push(new SExtInst(val, Type::Int32Ty, "", currentBlock),
+        push(new SExtInst(val, Type::getInt32Ty(*llvmContext), "", currentBlock),
              false);
         break;
       }
@@ -528,32 +528,32 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       
       case ISTORE_0 : {
         Value* val = pop();
-        if (val->getType() != Type::Int32Ty) // int8 and int16
-          val = new ZExtInst(val, Type::Int32Ty, "", currentBlock);
+        if (val->getType() != Type::getInt32Ty(*llvmContext)) // int8 and int16
+          val = new ZExtInst(val, Type::getInt32Ty(*llvmContext), "", currentBlock);
         new StoreInst(val, intLocals[0], false, currentBlock);
         break;
       }
       
       case ISTORE_1 : {
         Value* val = pop();
-        if (val->getType() != Type::Int32Ty) // int8 and int16
-          val = new ZExtInst(val, Type::Int32Ty, "", currentBlock);
+        if (val->getType() != Type::getInt32Ty(*llvmContext)) // int8 and int16
+          val = new ZExtInst(val, Type::getInt32Ty(*llvmContext), "", currentBlock);
         new StoreInst(val, intLocals[1], false, currentBlock);
         break;
       }
 
       case ISTORE_2 : {
         Value* val = pop();
-        if (val->getType() != Type::Int32Ty) // int8 and int16
-          val = new ZExtInst(val, Type::Int32Ty, "", currentBlock);
+        if (val->getType() != Type::getInt32Ty(*llvmContext)) // int8 and int16
+          val = new ZExtInst(val, Type::getInt32Ty(*llvmContext), "", currentBlock);
         new StoreInst(val, intLocals[2], false, currentBlock);
         break;
       }
 
       case ISTORE_3 : {
         Value* val = pop();
-        if (val->getType() != Type::Int32Ty) // int8 and int16
-          val = new ZExtInst(val, Type::Int32Ty, "", currentBlock);
+        if (val->getType() != Type::getInt32Ty(*llvmContext)) // int8 and int16
+          val = new ZExtInst(val, Type::getInt32Ty(*llvmContext), "", currentBlock);
         new StoreInst(val, intLocals[3], false, currentBlock);
         break;
       }
@@ -718,8 +718,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case BASTORE : {
         Value* val = pop();
-        if (val->getType() != Type::Int8Ty) {
-          val = new TruncInst(val, Type::Int8Ty, "", currentBlock);
+        if (val->getType() != Type::getInt8Ty(*llvmContext)) {
+          val = new TruncInst(val, Type::getInt8Ty(*llvmContext), "", currentBlock);
         }
         Value* index = pop();
         Value* obj = pop();
@@ -732,10 +732,10 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case CASTORE : {
         Value* val = pop();
         const Type* type = val->getType();
-        if (type == Type::Int32Ty) {
-          val = new TruncInst(val, Type::Int16Ty, "", currentBlock);
-        } else if (type == Type::Int8Ty) {
-          val = new ZExtInst(val, Type::Int16Ty, "", currentBlock);
+        if (type == Type::getInt32Ty(*llvmContext)) {
+          val = new TruncInst(val, Type::getInt16Ty(*llvmContext), "", currentBlock);
+        } else if (type == Type::getInt8Ty(*llvmContext)) {
+          val = new ZExtInst(val, Type::getInt16Ty(*llvmContext), "", currentBlock);
         }
         Value* index = pop();
         Value* obj = pop();
@@ -748,10 +748,10 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case SASTORE : {
         Value* val = pop();
         const Type* type = val->getType();
-        if (type == Type::Int32Ty) {
-          val = new TruncInst(val, Type::Int16Ty, "", currentBlock);
-        } else if (type == Type::Int8Ty) {
-          val = new SExtInst(val, Type::Int16Ty, "", currentBlock);
+        if (type == Type::getInt32Ty(*llvmContext)) {
+          val = new TruncInst(val, Type::getInt16Ty(*llvmContext), "", currentBlock);
+        } else if (type == Type::getInt8Ty(*llvmContext)) {
+          val = new SExtInst(val, Type::getInt16Ty(*llvmContext), "", currentBlock);
         }
         Value* index = pop();
         Value* obj = pop();
@@ -1096,7 +1096,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case LSHL : {
-        Value* val2 = new ZExtInst(pop(), Type::Int64Ty, "", currentBlock);
+        Value* val2 = new ZExtInst(pop(), Type::getInt64Ty(*llvmContext), "", currentBlock);
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
         push(BinaryOperator::CreateShl(val1, val2, "", currentBlock),
@@ -1114,7 +1114,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case LSHR : {
-        Value* val2 = new ZExtInst(pop(), Type::Int64Ty, "", currentBlock);
+        Value* val2 = new ZExtInst(pop(), Type::getInt64Ty(*llvmContext), "", currentBlock);
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
         push(BinaryOperator::CreateAShr(val1, val2, "", currentBlock),
@@ -1126,7 +1126,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IUSHR : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        Value* mask = ConstantInt::get(Type::Int32Ty, 0x1F);
+        Value* mask = ConstantInt::get(Type::getInt32Ty(*llvmContext), 0x1F);
         val2 = BinaryOperator::CreateAnd(val2, mask, "", currentBlock);
         push(BinaryOperator::CreateLShr(val1, val2, "", currentBlock),
              false);
@@ -1134,8 +1134,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case LUSHR : {
-        Value* val2 = new ZExtInst(pop(), Type::Int64Ty, "", currentBlock);
-        Value* mask = ConstantInt::get(Type::Int64Ty, 0x3F);
+        Value* val2 = new ZExtInst(pop(), Type::getInt64Ty(*llvmContext), "", currentBlock);
+        Value* mask = ConstantInt::get(Type::getInt64Ty(*llvmContext), 0x3F);
         val2 = BinaryOperator::CreateAnd(val2, mask, "", currentBlock);
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
@@ -1207,44 +1207,44 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         sint16 val = WREAD_S1(bytecodes, false, i, wide);
         llvm::Value* add = BinaryOperator::CreateAdd(
             new LoadInst(intLocals[idx], "", currentBlock), 
-            ConstantInt::get(Type::Int32Ty, val), "",
+            ConstantInt::get(Type::getInt32Ty(*llvmContext), val), "",
             currentBlock);
         new StoreInst(add, intLocals[idx], false, currentBlock);
         break;
       }
 
       case I2L :
-        push(new SExtInst(pop(), llvm::Type::Int64Ty, "", currentBlock),
+        push(new SExtInst(pop(), llvm::Type::getInt64Ty(*llvmContext), "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
 
       case I2F :
-        push(new SIToFPInst(pop(), llvm::Type::FloatTy, "", currentBlock),
+        push(new SIToFPInst(pop(), llvm::Type::getFloatTy(*llvmContext), "", currentBlock),
              false);
         break;
         
       case I2D :
-        push(new SIToFPInst(pop(), llvm::Type::DoubleTy, "", currentBlock),
+        push(new SIToFPInst(pop(), llvm::Type::getDoubleTy(*llvmContext), "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
       
       case L2I :
         pop();
-        push(new TruncInst(pop(), llvm::Type::Int32Ty, "", currentBlock),
+        push(new TruncInst(pop(), llvm::Type::getInt32Ty(*llvmContext), "", currentBlock),
              false);
         break;
       
       case L2F :
         pop();
-        push(new SIToFPInst(pop(), llvm::Type::FloatTy, "", currentBlock),
+        push(new SIToFPInst(pop(), llvm::Type::getFloatTy(*llvmContext), "", currentBlock),
              false);
         break;
       
       case L2D :
         pop();
-        push(new SIToFPInst(pop(), llvm::Type::DoubleTy, "", currentBlock),
+        push(new SIToFPInst(pop(), llvm::Type::getDoubleTy(*llvmContext), "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -1255,7 +1255,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                          val, val, "");
         
         BasicBlock* res = createBasicBlock("F2I");
-        PHINode* node = PHINode::Create(llvm::Type::Int32Ty, "", res);
+        PHINode* node = PHINode::Create(llvm::Type::getInt32Ty(*llvmContext), "", res);
         node->addIncoming(module->constantZero, currentBlock);
         BasicBlock* cont = createBasicBlock("F2I");
 
@@ -1283,7 +1283,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         node->addIncoming(module->constantMinInt, currentBlock);
         
         currentBlock = cont;
-        llvm::Value* newVal = new FPToSIInst(val, Type::Int32Ty, "",
+        llvm::Value* newVal = new FPToSIInst(val, Type::getInt32Ty(*llvmContext), "",
                                              currentBlock);
         BranchInst::Create(res, currentBlock);
 
@@ -1301,7 +1301,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                          val, val, "");
         
         BasicBlock* res = createBasicBlock("F2L");
-        PHINode* node = PHINode::Create(llvm::Type::Int64Ty, "", res);
+        PHINode* node = PHINode::Create(llvm::Type::getInt64Ty(*llvmContext), "", res);
         node->addIncoming(module->constantLongZero, currentBlock);
         BasicBlock* cont = createBasicBlock("F2L");
 
@@ -1328,7 +1328,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         node->addIncoming(module->constantMinLong, currentBlock);
         
         currentBlock = cont;
-        llvm::Value* newVal = new FPToSIInst(val, Type::Int64Ty, "",
+        llvm::Value* newVal = new FPToSIInst(val, Type::getInt64Ty(*llvmContext), "",
                                              currentBlock);
         BranchInst::Create(res, currentBlock);
 
@@ -1342,7 +1342,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case F2D :
-        push(new FPExtInst(pop(), llvm::Type::DoubleTy, "", currentBlock),
+        push(new FPExtInst(pop(), llvm::Type::getDoubleTy(*llvmContext), "", currentBlock),
              false);
         push(module->constantZero, false);
         break;
@@ -1354,7 +1354,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                          val, val, "");
         
         BasicBlock* res = createBasicBlock("D2I");
-        PHINode* node = PHINode::Create(llvm::Type::Int32Ty, "", res);
+        PHINode* node = PHINode::Create(llvm::Type::getInt32Ty(*llvmContext), "", res);
         node->addIncoming(module->constantZero, currentBlock);
         BasicBlock* cont = createBasicBlock("D2I");
 
@@ -1381,7 +1381,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         node->addIncoming(module->constantMinInt, currentBlock);
         
         currentBlock = cont;
-        llvm::Value* newVal = new FPToSIInst(val, Type::Int32Ty, "",
+        llvm::Value* newVal = new FPToSIInst(val, Type::getInt32Ty(*llvmContext), "",
                                              currentBlock);
         BranchInst::Create(res, currentBlock);
 
@@ -1401,7 +1401,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                          val, val, "");
         
         BasicBlock* res = createBasicBlock("D2L");
-        PHINode* node = PHINode::Create(llvm::Type::Int64Ty, "", res);
+        PHINode* node = PHINode::Create(llvm::Type::getInt64Ty(*llvmContext), "", res);
         node->addIncoming(module->constantLongZero, currentBlock);
         BasicBlock* cont = createBasicBlock("D2L");
 
@@ -1429,7 +1429,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         node->addIncoming(module->constantMinLong, currentBlock);
         
         currentBlock = cont;
-        llvm::Value* newVal = new FPToSIInst(val, Type::Int64Ty, "",
+        llvm::Value* newVal = new FPToSIInst(val, Type::getInt64Ty(*llvmContext), "",
                                              currentBlock);
         BranchInst::Create(res, currentBlock);
 
@@ -1444,36 +1444,36 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case D2F :
         pop(); // remove the 0 on the stack
-        push(new FPTruncInst(pop(), llvm::Type::FloatTy, "", currentBlock),
+        push(new FPTruncInst(pop(), llvm::Type::getFloatTy(*llvmContext), "", currentBlock),
              false);
         break;
 
       case I2B : {
         Value* val = pop();
-        if (val->getType() == Type::Int32Ty) {
-          val = new TruncInst(val, llvm::Type::Int8Ty, "", currentBlock);
+        if (val->getType() == Type::getInt32Ty(*llvmContext)) {
+          val = new TruncInst(val, llvm::Type::getInt8Ty(*llvmContext), "", currentBlock);
         }
-        push(new SExtInst(val, llvm::Type::Int32Ty, "", currentBlock),
+        push(new SExtInst(val, llvm::Type::getInt32Ty(*llvmContext), "", currentBlock),
              false);
         break;
       }
 
       case I2C : {
         Value* val = pop();
-        if (val->getType() == Type::Int32Ty) {
-          val = new TruncInst(val, llvm::Type::Int16Ty, "", currentBlock);
+        if (val->getType() == Type::getInt32Ty(*llvmContext)) {
+          val = new TruncInst(val, llvm::Type::getInt16Ty(*llvmContext), "", currentBlock);
         }
-        push(new ZExtInst(val, llvm::Type::Int32Ty, "", currentBlock),
+        push(new ZExtInst(val, llvm::Type::getInt32Ty(*llvmContext), "", currentBlock),
              false);
         break;
       }
 
       case I2S : {
         Value* val = pop();
-        if (val->getType() == Type::Int32Ty) {
-          val = new TruncInst(val, llvm::Type::Int16Ty, "", currentBlock);
+        if (val->getType() == Type::getInt32Ty(*llvmContext)) {
+          val = new TruncInst(val, llvm::Type::getInt16Ty(*llvmContext), "", currentBlock);
         }
-        push(new SExtInst(val, llvm::Type::Int32Ty, "", currentBlock),
+        push(new SExtInst(val, llvm::Type::getInt32Ty(*llvmContext), "", currentBlock),
              false);
         break;
       }
@@ -1489,7 +1489,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         BasicBlock* cont = createBasicBlock("LCMP");
         BasicBlock* res = createBasicBlock("LCMP");
-        PHINode* node = PHINode::Create(llvm::Type::Int32Ty, "", res);
+        PHINode* node = PHINode::Create(llvm::Type::getInt32Ty(*llvmContext), "", res);
         node->addIncoming(module->constantZero, currentBlock);
         
         BranchInst::Create(res, cont, test, currentBlock);
@@ -1512,14 +1512,14 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case FCMPL : {
         llvm::Value* val2 = pop();
         llvm::Value* val1 = pop();
-        compareFP(val1, val2, Type::FloatTy, false);
+        compareFP(val1, val2, Type::getFloatTy(*llvmContext), false);
         break;
       }
 
       case FCMPG : {
         llvm::Value* val2 = pop();
         llvm::Value* val1 = pop();
-        compareFP(val1, val2, Type::FloatTy, true);
+        compareFP(val1, val2, Type::getFloatTy(*llvmContext), true);
         break;
       }
 
@@ -1529,7 +1529,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         pop();
         llvm::Value* val1 = pop();
         
-        compareFP(val1, val2, Type::DoubleTy, false);
+        compareFP(val1, val2, Type::getDoubleTy(*llvmContext), false);
         break;
       }
 
@@ -1539,7 +1539,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         pop();
         llvm::Value* val1 = pop();
         
-        compareFP(val1, val2, Type::DoubleTy, false);
+        compareFP(val1, val2, Type::getDoubleTy(*llvmContext), false);
         break;
       }
 
@@ -1743,7 +1743,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case JSR : {
         uint32 tmp = i;
         Value* expr = ConstantExpr::getIntToPtr(
-                                    ConstantInt::get(Type::Int64Ty,
+                                    ConstantInt::get(Type::getInt64Ty(*llvmContext),
                                                      uint64_t (jsrIndex++)),
                                     module->JavaObjectType);
         push(expr, false);
@@ -1755,14 +1755,14 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case RET : {
         uint8 local = readU1(bytecodes, i);
         Value* _val = new LoadInst(objectLocals[local], "", currentBlock);
-        Value* val = new PtrToIntInst(_val, Type::Int32Ty, "", currentBlock);
+        Value* val = new PtrToIntInst(_val, Type::getInt32Ty(*llvmContext), "", currentBlock);
         SwitchInst* inst = SwitchInst::Create(val, jsrs[0], jsrs.size(),
                                           currentBlock);
         
         uint32 index = 0;
         for (std::vector<BasicBlock*>::iterator i = jsrs.begin(), 
             e = jsrs.end(); i!= e; ++i, ++index) {
-          inst->addCase(ConstantInt::get(Type::Int32Ty, index), *i);
+          inst->addCase(ConstantInt::get(Type::getInt32Ty(*llvmContext), index), *i);
         }
 
         break;
@@ -1808,12 +1808,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* key = pop();
         const Type* type = key->getType();
         if (unsign) {
-          key = new ZExtInst(key, Type::Int32Ty, "", currentBlock);
-        } else if (type == Type::Int8Ty || type == Type::Int16Ty) {
-          key = new SExtInst(key, Type::Int32Ty, "", currentBlock);
+          key = new ZExtInst(key, Type::getInt32Ty(*llvmContext), "", currentBlock);
+        } else if (type == Type::getInt8Ty(*llvmContext) || type == Type::getInt16Ty(*llvmContext)) {
+          key = new SExtInst(key, Type::getInt32Ty(*llvmContext), "", currentBlock);
         }
         for (uint32 cur = 0; cur < nbs; ++cur) {
-          Value* val = ConstantInt::get(Type::Int32Ty, readU4(bytecodes, i));
+          Value* val = ConstantInt::get(Type::getInt32Ty(*llvmContext), readU4(bytecodes, i));
           Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val, key,
                                     "");
           BasicBlock* falseBlock = createBasicBlock("continue lookupswitch");
@@ -1938,13 +1938,13 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           valCl = TheCompiler->getNativeClass(dcl);
 #else
           Value* args[2] = { isolateLocal,
-                             ConstantInt::get(Type::Int32Ty, id - 4) };
+                             ConstantInt::get(Type::getInt32Ty(*llvmContext), id - 4) };
           valCl = CallInst::Create(module->GetJnjvmArrayClassFunction,
                                    args, args + 2, "", currentBlock);
 #endif
 
           LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[charId];
-          sizeElement = ConstantInt::get(Type::Int32Ty,
+          sizeElement = ConstantInt::get(Type::getInt32Ty(*llvmContext),
                                                     LAI.logSizeInBytesConstant);
           if (TheCompiler->isStaticCompiling() &&
               valCl->getType() != module->JavaClassArrayType) {
@@ -2074,7 +2074,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, obj,
                                   module->JavaObjectNullConstant, "");
         BasicBlock* endBlock = createBasicBlock("end type compare");
-        PHINode* node = PHINode::Create(Type::Int1Ty, "", endBlock);
+        PHINode* node = PHINode::Create(Type::getInt1Ty(*llvmContext), "", endBlock);
         
         if (checkcast) {
           exceptionCheckcast = createBasicBlock("false checkcast");
@@ -2118,7 +2118,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                                 objVT, "", currentBlock);
             
             uint32 depth = cl->virtualVT->depth;
-            ConstantInt* CI = ConstantInt::get(Type::Int32Ty, depth);
+            ConstantInt* CI = ConstantInt::get(Type::getInt32Ty(*llvmContext), depth);
             Value* displayArgs[2] = { inDisplay, CI };
             Value* VTInDisplay = 
               CallInst::Create(module->GetVTInDisplayFunction,
@@ -2144,7 +2144,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           currentBlock = endCheckcast;
         } else {
           pop();
-          push(new ZExtInst(node, Type::Int32Ty, "", currentBlock),
+          push(new ZExtInst(node, Type::getInt32Ty(*llvmContext), "", currentBlock),
                false);
         }
 
@@ -2173,7 +2173,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* valCl = getResolvedCommonClass(index, true, 0);
         Value** args = (Value**)alloca(sizeof(Value*) * (dim + 2));
         args[0] = valCl;
-        args[1] = ConstantInt::get(Type::Int32Ty, dim);
+        args[1] = ConstantInt::get(Type::getInt32Ty(*llvmContext), dim);
 
         for (int cur = dim + 1; cur >= 2; --cur)
           args[cur] = pop();

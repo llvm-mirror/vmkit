@@ -137,7 +137,7 @@ Constant* JavaAOTCompiler::getMethodInClass(JavaMethod* meth) {
   method_iterator SI = virtualMethods.find(cl);
   for (uint32 i = 0; i < cl->nbVirtualMethods + cl->nbStaticMethods; ++i) {
     if (&cl->virtualMethods[i] == meth) {
-      MOffset = ConstantInt::get(Type::Int32Ty, i);
+      MOffset = ConstantInt::get(Type::getInt32Ty(getGlobalContext()), i);
       break;
     }
   }
@@ -265,21 +265,21 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj) {
         CommonClass* subClass = cl->asArrayClass()->baseClass();
         if (subClass->isPrimitive()) {
           if (subClass == upcalls->OfBool) {
-            Ty = Type::Int8Ty;
+            Ty = Type::getInt8Ty(getGlobalContext());
           } else if (subClass == upcalls->OfByte) {
-            Ty = Type::Int8Ty;
+            Ty = Type::getInt8Ty(getGlobalContext());
           } else if (subClass == upcalls->OfShort) {
-            Ty = Type::Int16Ty;
+            Ty = Type::getInt16Ty(getGlobalContext());
           } else if (subClass == upcalls->OfChar) {
-            Ty = Type::Int16Ty;
+            Ty = Type::getInt16Ty(getGlobalContext());
           } else if (subClass == upcalls->OfInt) {
-            Ty = Type::Int32Ty;
+            Ty = Type::getInt32Ty(getGlobalContext());
           } else if (subClass == upcalls->OfFloat) {
-            Ty = Type::FloatTy;
+            Ty = Type::getFloatTy(getGlobalContext());
           } else if (subClass == upcalls->OfLong) {
-            Ty = Type::Int64Ty;
+            Ty = Type::getInt64Ty(getGlobalContext());
           } else if (subClass == upcalls->OfDouble) {
-            Ty = Type::DoubleTy;
+            Ty = Type::getDoubleTy(getGlobalContext());
           } else {
             abort();
           }
@@ -312,7 +312,8 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj) {
       varGV->setInitializer(CreateConstantFromJavaObject(obj));
       return C;
     } else {
-      Constant* CI = ConstantInt::get(Type::Int64Ty, uint64_t(obj));
+      Constant* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+                                      uint64_t(obj));
       CI = ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);
       finalObjects.insert(std::make_pair(obj, CI));
       return CI;
@@ -343,28 +344,34 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
         if (type->isPrimitive()) {
           const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
           if (prim->isBool() || prim->isByte()) {
-            ConstantInt* CI = ConstantInt::get(Type::Int8Ty,
-                                               field.getInt8Field(obj));
+            ConstantInt* CI = ConstantInt::get(
+                Type::getInt8Ty(getGlobalContext()),
+                field.getInt8Field(obj));
             Elts.push_back(CI);
           } else if (prim->isShort() || prim->isChar()) {
-            ConstantInt* CI = ConstantInt::get(Type::Int16Ty,
-                                               field.getInt16Field(obj));
+            ConstantInt* CI = ConstantInt::get(
+                Type::getInt16Ty(getGlobalContext()),
+                field.getInt16Field(obj));
             Elts.push_back(CI);
           } else if (prim->isInt()) {
-            ConstantInt* CI = ConstantInt::get(Type::Int32Ty,
-                                               field.getInt32Field(obj));
+            ConstantInt* CI = ConstantInt::get(
+                Type::getInt32Ty(getGlobalContext()),
+                field.getInt32Field(obj));
             Elts.push_back(CI);
           } else if (prim->isLong()) {
-            ConstantInt* CI = ConstantInt::get(Type::Int64Ty,
-                                               field.getLongField(obj));
+            ConstantInt* CI = ConstantInt::get(
+                Type::getInt64Ty(getGlobalContext()),
+                field.getLongField(obj));
             Elts.push_back(CI);
           } else if (prim->isFloat()) {
-            Constant* CF = ConstantFP::get(Type::FloatTy,
-                                           field.getFloatField(obj));
+            Constant* CF = ConstantFP::get(
+                Type::getFloatTy(getGlobalContext()),
+                field.getFloatField(obj));
             Elts.push_back(CF);
           } else if (prim->isDouble()) {
-            Constant* CF = ConstantFP::get(Type::DoubleTy,
-                                           field.getDoubleField(obj));
+            Constant* CF = ConstantFP::get(
+                Type::getDoubleTy(getGlobalContext()),
+                field.getDoubleField(obj));
             Elts.push_back(CF);
           } else {
             abort();
@@ -386,11 +393,11 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
       JavaConstantPool * ctpInfo = cl->ctpInfo;
       uint16 idx = reader.readU2();
       if (type->isPrimitive()) {
-        if (Ty == Type::Int64Ty) {
+        if (Ty == Type::getInt64Ty(getGlobalContext())) {
           Elts.push_back(ConstantInt::get(Ty, (uint64)ctpInfo->LongAt(idx)));
-        } else if (Ty == Type::DoubleTy) {
+        } else if (Ty == Type::getDoubleTy(getGlobalContext())) {
           Elts.push_back(ConstantFP::get(Ty, ctpInfo->DoubleAt(idx)));
-        } else if (Ty == Type::FloatTy) {
+        } else if (Ty == Type::getFloatTy(getGlobalContext())) {
           Elts.push_back(ConstantFP::get(Ty, ctpInfo->FloatAt(idx)));
         } else {
           Elts.push_back(ConstantInt::get(Ty, (uint64)ctpInfo->IntegerAt(idx)));
@@ -519,7 +526,7 @@ Constant* JavaAOTCompiler::CreateConstantForBaseObject(CommonClass* cl) {
   Elmts.push_back(getVirtualTable(cl->virtualVT));
   
   // lock
-  Constant* L = ConstantInt::get(Type::Int64Ty, 0);
+  Constant* L = ConstantInt::get(Type::getInt64Ty(getGlobalContext()), 0);
   Elmts.push_back(ConstantExpr::getIntToPtr(L, JnjvmModule::ptrType));
 
   return ConstantStruct::get(STy, Elmts);
@@ -563,28 +570,28 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
     if (subClass->isPrimitive()) {
       if (subClass == upcalls->OfBool) {
         return CreateConstantFromArray<ArrayUInt8>((ArrayUInt8*)obj,
-                                                   Type::Int8Ty);
+                                        Type::getInt8Ty(getGlobalContext()));
       } else if (subClass == upcalls->OfByte) {
         return CreateConstantFromArray<ArraySInt8>((ArraySInt8*)obj,
-                                                   Type::Int8Ty);
+                                        Type::getInt8Ty(getGlobalContext()));
       } else if (subClass == upcalls->OfShort) {
         return CreateConstantFromArray<ArraySInt16>((ArraySInt16*)obj,
-                                                    Type::Int16Ty);
+                                        Type::getInt16Ty(getGlobalContext()));
       } else if (subClass == upcalls->OfChar) {
         return CreateConstantFromArray<ArrayUInt16>((ArrayUInt16*)obj,
-                                                    Type::Int16Ty);
+                                        Type::getInt16Ty(getGlobalContext()));
       } else if (subClass == upcalls->OfInt) {
         return CreateConstantFromArray<ArraySInt32>((ArraySInt32*)obj,
-                                                    Type::Int32Ty);
+                                        Type::getInt32Ty(getGlobalContext()));
       } else if (subClass == upcalls->OfFloat) {
         return CreateConstantFromArray<ArrayFloat>((ArrayFloat*)obj,
-                                                   Type::FloatTy);
+                                        Type::getFloatTy(getGlobalContext()));
       } else if (subClass == upcalls->OfLong) {
         return CreateConstantFromArray<ArrayLong>((ArrayLong*)obj,
-                                                  Type::Int64Ty);
+                                        Type::getInt64Ty(getGlobalContext()));
       } else if (subClass == upcalls->OfDouble) {
         return CreateConstantFromArray<ArrayDouble>((ArrayDouble*)obj,
-                                                    Type::DoubleTy);
+                                        Type::getDoubleTy(getGlobalContext()));
       } else {
         abort();
       }
@@ -614,27 +621,27 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
         if (type->isPrimitive()) {
           const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
           if (prim->isBool() || prim->isByte()) {
-            ConstantInt* CI = ConstantInt::get(Type::Int8Ty,
+            ConstantInt* CI = ConstantInt::get(Type::getInt8Ty(getGlobalContext()),
                                                field.getInt8Field(obj));
             TempElts.push_back(CI);
           } else if (prim->isShort() || prim->isChar()) {
-            ConstantInt* CI = ConstantInt::get(Type::Int16Ty,
+            ConstantInt* CI = ConstantInt::get(Type::getInt16Ty(getGlobalContext()),
                                                field.getInt16Field(obj));
             TempElts.push_back(CI);
           } else if (prim->isInt()) {
-            ConstantInt* CI = ConstantInt::get(Type::Int32Ty,
+            ConstantInt* CI = ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
                                                field.getInt32Field(obj));
             TempElts.push_back(CI);
           } else if (prim->isLong()) {
-            ConstantInt* CI = ConstantInt::get(Type::Int64Ty,
+            ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                                field.getLongField(obj));
             TempElts.push_back(CI);
           } else if (prim->isFloat()) {
-            Constant* CF = ConstantFP::get(Type::FloatTy,
+            Constant* CF = ConstantFP::get(Type::getFloatTy(getGlobalContext()),
                                            field.getFloatField(obj));
             TempElts.push_back(CF);
           } else if (prim->isDouble()) {
-            Constant* CF = ConstantFP::get(Type::DoubleTy,
+            Constant* CF = ConstantFP::get(Type::getDoubleTy(getGlobalContext()),
                                            field.getDoubleField(obj));
             TempElts.push_back(CF);
           } else {
@@ -669,7 +676,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
   Elmts.push_back(CreateConstantForBaseObject(cl));
 
   Constant* Array =
-    CreateConstantFromArray<ArrayUInt16>(str->value, Type::Int16Ty);
+    CreateConstantFromArray<ArrayUInt16>(str->value, Type::getInt16Ty(getGlobalContext()));
   
 
   Module& Mod = *getLLVMModule();
@@ -680,9 +687,12 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
 	Array = ConstantExpr::getBitCast(varGV, JnjvmModule::JavaObjectType);
 
   Elmts.push_back(Array);
-  Elmts.push_back(ConstantInt::get(Type::Int32Ty, str->count));
-  Elmts.push_back(ConstantInt::get(Type::Int32Ty, str->cachedHashCode));
-  Elmts.push_back(ConstantInt::get(Type::Int32Ty, str->offset));
+  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
+                                   str->count));
+  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
+                                   str->cachedHashCode));
+  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
+                                   str->offset));
  
   return ConstantStruct::get(STy, Elmts);
 }
@@ -717,7 +727,7 @@ Constant* JavaAOTCompiler::CreateConstantFromEnveloppe(Enveloppe* val) {
   Elmts.push_back(getUTF8(val->methodName));
   Elmts.push_back(getUTF8(val->methodSign));
 
-  Elmts.push_back(Constant::getNullValue(Type::Int32Ty));
+  Elmts.push_back(Constant::getNullValue(Type::getInt32Ty(getGlobalContext())));
   Elmts.push_back(getNativeClass(val->classDef));
   Elmts.push_back(firstCache);
 
@@ -736,10 +746,10 @@ Constant* JavaAOTCompiler::CreateConstantFromAttribut(Attribut& attribut) {
   Elmts.push_back(getUTF8(attribut.name));
 
   // start
-  Elmts.push_back(ConstantInt::get(Type::Int32Ty, attribut.start));
+  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), attribut.start));
 
   // nbb
-  Elmts.push_back(ConstantInt::get(Type::Int32Ty, attribut.nbb));
+  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), attribut.nbb));
   
   return ConstantStruct::get(STy, Elmts);
 }
@@ -762,7 +772,7 @@ Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
   CommonClassElts.push_back(ConstantArray::get(ATy, TCM, 1));
   
   // access
-  CommonClassElts.push_back(ConstantInt::get(Type::Int16Ty, cl->access));
+  CommonClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), cl->access));
  
   // interfaces
   if (cl->nbInterfaces) {
@@ -785,7 +795,7 @@ Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
   }
 
   // nbInterfaces
-  CommonClassElts.push_back(ConstantInt::get(Type::Int16Ty, cl->nbInterfaces));
+  CommonClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), cl->nbInterfaces));
 
   // name
   CommonClassElts.push_back(getUTF8(cl->name));
@@ -825,7 +835,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaField(JavaField& field) {
   FieldElts.push_back(Constant::getNullValue(JnjvmModule::ptrType));
   
   // access
-  FieldElts.push_back(ConstantInt::get(Type::Int16Ty, field.access));
+  FieldElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), field.access));
 
   // name
   FieldElts.push_back(getUTF8(field.name));
@@ -855,16 +865,16 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaField(JavaField& field) {
   }
   
   // nbAttributs
-  FieldElts.push_back(ConstantInt::get(Type::Int16Ty, field.nbAttributs));
+  FieldElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), field.nbAttributs));
 
   // classDef
   FieldElts.push_back(getNativeClass(field.classDef));
 
   // ptrOffset
-  FieldElts.push_back(ConstantInt::get(Type::Int32Ty, field.ptrOffset));
+  FieldElts.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), field.ptrOffset));
 
   // num
-  FieldElts.push_back(ConstantInt::get(Type::Int16Ty, field.num));
+  FieldElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), field.num));
 
   //JInfo
   FieldElts.push_back(Constant::getNullValue(JnjvmModule::ptrType));
@@ -884,7 +894,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   MethodElts.push_back(Constant::getNullValue(JnjvmModule::ptrType));
   
   // access
-  MethodElts.push_back(ConstantInt::get(Type::Int16Ty, method.access));
+  MethodElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), method.access));
  
   // attributs
   if (method.nbAttributs) {
@@ -908,7 +918,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   }
   
   // nbAttributs
-  MethodElts.push_back(ConstantInt::get(Type::Int16Ty, method.nbAttributs));
+  MethodElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), method.nbAttributs));
   
   // enveloppes
   // already allocated by the JIT, don't reallocate them.
@@ -916,7 +926,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   
   // nbEnveloppes
   // 0 because we're not allocating here.
-  MethodElts.push_back(ConstantInt::get(Type::Int16Ty, 0));
+  MethodElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), 0));
   
   // classDef
   MethodElts.push_back(getNativeClass(method.classDef));
@@ -928,7 +938,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   MethodElts.push_back(getUTF8(method.type));
   
   // canBeInlined
-  MethodElts.push_back(ConstantInt::get(Type::Int8Ty, method.canBeInlined));
+  MethodElts.push_back(ConstantInt::get(Type::getInt8Ty(getGlobalContext()), method.canBeInlined));
 
   // code
   if (isAbstract(method.access)) {
@@ -941,7 +951,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   }
 
   // offset
-  MethodElts.push_back(ConstantInt::get(Type::Int32Ty, method.offset));
+  MethodElts.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), method.offset));
 
   //JInfo
   MethodElts.push_back(Constant::getNullValue(JnjvmModule::ptrType));
@@ -960,7 +970,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClassPrimitive(ClassPrimitive* cl) 
   ClassElts.push_back(CreateConstantFromCommonClass(cl));
 
   // primSize
-  ClassElts.push_back(ConstantInt::get(Type::Int32Ty, cl->logSize));
+  ClassElts.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), cl->logSize));
 
   return ConstantStruct::get(STy, ClassElts);
 }
@@ -998,7 +1008,8 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(CreateConstantFromCommonClass(cl));
 
   // virtualSize
-  ClassElts.push_back(ConstantInt::get(Type::Int32Ty, cl->virtualSize));
+  ClassElts.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
+                                       cl->virtualSize));
 
   // IsolateInfo
   const ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(2));
@@ -1008,8 +1019,10 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   assert(TCMTy && "Malformed type");
 
   uint32 status = cl->needsInitialisationCheck() ? vmjc : ready;
-  TempElts.push_back(ConstantInt::get(Type::Int8Ty, status));
-  TempElts.push_back(ConstantInt::get(Type::Int1Ty, status == ready ? 1 : 0));
+  TempElts.push_back(ConstantInt::get(Type::getInt8Ty(getGlobalContext()),
+                                      status));
+  TempElts.push_back(ConstantInt::get(Type::getInt1Ty(getGlobalContext()),
+                                      status == ready ? 1 : 0));
   TempElts.push_back(getStaticInstance(cl));
   Constant* CStr[1] = { ConstantStruct::get(TCMTy, TempElts) };
   TempElts.clear();
@@ -1059,7 +1072,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(fields);
 
   ConstantInt* nbVirtualFields = 
-    ConstantInt::get(Type::Int16Ty, cl->nbVirtualFields);
+    ConstantInt::get(Type::getInt16Ty(getGlobalContext()), cl->nbVirtualFields);
   // nbVirtualFields
   ClassElts.push_back(nbVirtualFields);
   
@@ -1069,7 +1082,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(Constant::getNullValue(JnjvmModule::JavaFieldType));
 
   // nbStaticFields
-  ClassElts.push_back(ConstantInt::get(Type::Int16Ty, cl->nbStaticFields));
+  ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), cl->nbStaticFields));
   
   // virtualMethods
   if (cl->nbVirtualMethods + cl->nbStaticMethods) {
@@ -1107,7 +1120,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(methods);
 
   ConstantInt* nbVirtualMethods = 
-    ConstantInt::get(Type::Int16Ty, cl->nbVirtualMethods);
+    ConstantInt::get(Type::getInt16Ty(getGlobalContext()), cl->nbVirtualMethods);
   // nbVirtualMethods
   ClassElts.push_back(nbVirtualMethods);
   
@@ -1116,7 +1129,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(Constant::getNullValue(JnjvmModule::JavaMethodType));
 
   // nbStaticMethods
-  ClassElts.push_back(ConstantInt::get(Type::Int16Ty, cl->nbStaticMethods));
+  ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), cl->nbStaticMethods));
 
   // ownerClass
   ClassElts.push_back(Constant::getNullValue(JnjvmModule::ptrType));
@@ -1149,7 +1162,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   }
   
   // nbAttributs
-  ClassElts.push_back(ConstantInt::get(Type::Int16Ty, cl->nbAttributs));
+  ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), cl->nbAttributs));
   
   // innerClasses
   if (cl->nbInnerClasses) {
@@ -1173,7 +1186,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   }
 
   // nbInnerClasses
-  ClassElts.push_back(ConstantInt::get(Type::Int16Ty, cl->nbInnerClasses));
+  ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), cl->nbInnerClasses));
 
   // outerClass
   if (cl->outerClass) {
@@ -1183,19 +1196,19 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   }
 
   // innerAccess
-  ClassElts.push_back(ConstantInt::get(Type::Int16Ty, cl->innerAccess));
+  ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), cl->innerAccess));
   
   // innerOuterResolved
-  ClassElts.push_back(ConstantInt::get(Type::Int8Ty, cl->innerOuterResolved));
+  ClassElts.push_back(ConstantInt::get(Type::getInt8Ty(getGlobalContext()), cl->innerOuterResolved));
   
   // isAnonymous
-  ClassElts.push_back(ConstantInt::get(Type::Int8Ty, cl->isAnonymous));
+  ClassElts.push_back(ConstantInt::get(Type::getInt8Ty(getGlobalContext()), cl->isAnonymous));
   
   // virtualTableSize
-  ClassElts.push_back(ConstantInt::get(Type::Int32Ty, cl->virtualTableSize));
+  ClassElts.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), cl->virtualTableSize));
   
   // staticSize
-  ClassElts.push_back(ConstantInt::get(Type::Int32Ty, cl->staticSize));
+  ClassElts.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), cl->staticSize));
 
   // JInfo
   ClassElts.push_back(Constant::getNullValue(JnjvmModule::ptrType));
@@ -1241,7 +1254,7 @@ Constant* JavaAOTCompiler::CreateConstantFromArray(const T* val, const Type* Ty)
 
 Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
   std::vector<const Type*> Elemts;
-  const ArrayType* ATy = ArrayType::get(Type::Int16Ty, val->size);
+  const ArrayType* ATy = ArrayType::get(Type::getInt16Ty(getGlobalContext()), val->size);
   Elemts.push_back(JnjvmModule::pointerSizeType);
 
   Elemts.push_back(ATy);
@@ -1254,7 +1267,7 @@ Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
   
   std::vector<Constant*> Vals;
   for (sint32 i = 0; i < val->size; ++i) {
-    Vals.push_back(ConstantInt::get(Type::Int16Ty, val->elements[i]));
+    Vals.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), val->elements[i]));
   }
 
   Cts.push_back(ConstantArray::get(ATy, Vals));
@@ -1333,11 +1346,11 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
 
   // depth
   Elemts.push_back(ConstantExpr::getIntToPtr(
-        ConstantInt::get(Type::Int64Ty, VT->depth), PTy));
+        ConstantInt::get(Type::getInt64Ty(getGlobalContext()), VT->depth), PTy));
   
   // offset
   Elemts.push_back(ConstantExpr::getIntToPtr(
-        ConstantInt::get(Type::Int64Ty, VT->offset), PTy));
+        ConstantInt::get(Type::getInt64Ty(getGlobalContext()), VT->offset), PTy));
   
   // cache
   Elemts.push_back(N);
@@ -1355,7 +1368,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   
   // nbSecondaryTypes
   Elemts.push_back(ConstantExpr::getIntToPtr(
-        ConstantInt::get(Type::Int64Ty, VT->nbSecondaryTypes), PTy));
+        ConstantInt::get(Type::getInt64Ty(getGlobalContext()), VT->nbSecondaryTypes), PTy));
   
   // secondaryTypes
   const ArrayType* DTy = ArrayType::get(JnjvmModule::VTType,
@@ -1422,13 +1435,13 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
 
   std::vector<const llvm::Type*> llvmArgs;
   llvmArgs.push_back(JnjvmModule::ptrType); // class loader.
-  const FunctionType* FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+  const FunctionType* FTy = FunctionType::get(Type::getVoidTy(getGlobalContext()), llvmArgs, false);
 
   StaticInitializer = Function::Create(FTy, GlobalValue::InternalLinkage,
                                        "Init", getLLVMModule());
   
   llvmArgs.clear();
-  FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+  FTy = FunctionType::get(Type::getVoidTy(getGlobalContext()), llvmArgs, false);
   Callback = Function::Create(FTy, GlobalValue::ExternalLinkage,
                               "staticCallback", getLLVMModule());
 
@@ -1441,7 +1454,7 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
                                   "vmjcNativeLoader", getLLVMModule());
   
   llvmArgs.clear();
-  FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+  FTy = FunctionType::get(Type::getVoidTy(getGlobalContext()), llvmArgs, false);
   ObjectPrinter = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                    "printJavaObject", getLLVMModule());
 
@@ -1490,7 +1503,7 @@ Value* JavaAOTCompiler::getIsolate(Jnjvm* isolate, Value* Where) {
   
     
     Constant* cons = 
-      ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty,
+      ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                                  uint64_t(isolate)),
                                 ptrType);
 
@@ -1517,10 +1530,12 @@ void JavaAOTCompiler::CreateStaticInitializer() {
   std::vector<const llvm::Type*> llvmArgs;
   llvmArgs.push_back(JnjvmModule::ptrType); // class loader
   llvmArgs.push_back(JnjvmModule::JavaCommonClassType); // cl
-  const FunctionType* FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+  const FunctionType* FTy =
+    FunctionType::get(Type::getVoidTy(getGlobalContext()), llvmArgs, false);
 
   Function* AddClass = Function::Create(FTy, GlobalValue::ExternalLinkage,
-                                        "vmjcAddPreCompiledClass", getLLVMModule());
+                                        "vmjcAddPreCompiledClass",
+                                        getLLVMModule());
  
   llvmArgs.clear();
   // class loader
@@ -1529,12 +1544,13 @@ void JavaAOTCompiler::CreateStaticInitializer() {
   llvmArgs.push_back(PointerType::getUnqual(JnjvmModule::JavaClassArrayType));
   // name
   llvmArgs.push_back(JnjvmModule::UTF8Type);
-  FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+  FTy = FunctionType::get(Type::getVoidTy(getGlobalContext()), llvmArgs, false);
   
   Function* GetClassArray = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                              "vmjcGetClassArray", getLLVMModule());
   
-  BasicBlock* currentBlock = BasicBlock::Create("enter", StaticInitializer);
+  BasicBlock* currentBlock = BasicBlock::Create(getGlobalContext(), "enter",
+                                                StaticInitializer);
   Function::arg_iterator loader = StaticInitializer->arg_begin();
   
   Value* Args[3];
@@ -1543,7 +1559,7 @@ void JavaAOTCompiler::CreateStaticInitializer() {
     llvmArgs.clear();
     llvmArgs.push_back(JnjvmModule::ptrType); // class loader
     llvmArgs.push_back(strings.begin()->second->getType()); // val
-    FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+    FTy = FunctionType::get(Type::getVoidTy(getGlobalContext()), llvmArgs, false);
   
     Function* AddString = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                            "vmjcAddString", getLLVMModule());
@@ -1564,7 +1580,7 @@ void JavaAOTCompiler::CreateStaticInitializer() {
     llvmArgs.clear();
     llvmArgs.push_back(JnjvmModule::ptrType); // class loader
     llvmArgs.push_back(utf8s.begin()->second->getType()); // val
-    FTy = FunctionType::get(Type::VoidTy, llvmArgs, false);
+    FTy = FunctionType::get(Type::getVoidTy(getGlobalContext()), llvmArgs, false);
   
     Function* AddUTF8 = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                          "vmjcAddUTF8", getLLVMModule());
@@ -1598,7 +1614,7 @@ void JavaAOTCompiler::CreateStaticInitializer() {
   }
   
 
-  ReturnInst::Create(currentBlock);
+  ReturnInst::Create(getGlobalContext(), currentBlock);
 }
 
 void JavaAOTCompiler::setNoInline(Class* cl) {
@@ -1941,21 +1957,24 @@ void JavaAOTCompiler::generateMain(const char* name, bool jit) {
 
   // Type Definitions
   std::vector<const Type*> FuncArgs;
-  FuncArgs.push_back(Type::Int32Ty);
+  FuncArgs.push_back(Type::getInt32Ty(getGlobalContext()));
   FuncArgs.push_back(PointerType::getUnqual(JavaIntrinsics.ptrType));
   
-  FunctionType* FuncTy = FunctionType::get(Type::Int32Ty, FuncArgs, false);
+  FunctionType* FuncTy = FunctionType::get(Type::getInt32Ty(getGlobalContext()),
+                                           FuncArgs, false);
 
   Function* MainFunc = Function::Create(FuncTy, GlobalValue::ExternalLinkage,
                                         "main", TheModule);
-  BasicBlock* currentBlock = BasicBlock::Create("enter", MainFunc);
+  BasicBlock* currentBlock = BasicBlock::Create(getGlobalContext(), "enter",
+                                                MainFunc);
  
   GlobalVariable* GvarArrayStr = new GlobalVariable(
-    *TheModule, ArrayType::get(Type::Int8Ty, strlen(name) + 1), true,
-    GlobalValue::InternalLinkage, 0, "mainClass");
+    *TheModule, ArrayType::get(Type::getInt8Ty(getGlobalContext()),
+                               strlen(name) + 1),
+    true, GlobalValue::InternalLinkage, 0, "mainClass");
 
 
-  Constant* NameArray = ConstantArray::get(name, true);
+  Constant* NameArray = ConstantArray::get(getGlobalContext(), name, true);
   GvarArrayStr->setInitializer(NameArray);
   Value* Indices[2] = { JavaIntrinsics.constantZero,
                         JavaIntrinsics.constantZero };
@@ -1968,7 +1987,7 @@ void JavaAOTCompiler::generateMain(const char* name, bool jit) {
 
   FuncArgs.push_back(Args[2]->getType());
 
-  FuncTy = FunctionType::get(Type::Int32Ty, FuncArgs, false);
+  FuncTy = FunctionType::get(Type::getInt32Ty(getGlobalContext()), FuncArgs, false);
 
   Function* CalledFunc = 
     Function::Create(FuncTy, GlobalValue::ExternalLinkage,
@@ -1976,6 +1995,6 @@ void JavaAOTCompiler::generateMain(const char* name, bool jit) {
                      TheModule);
 
   Value* res = CallInst::Create(CalledFunc, Args, Args + 3, "", currentBlock);
-  ReturnInst::Create(res, currentBlock);
+  ReturnInst::Create(getGlobalContext(), res, currentBlock);
 
 }

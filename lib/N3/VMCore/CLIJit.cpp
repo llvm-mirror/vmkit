@@ -112,7 +112,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
       args.push_back(zero);
       if (boxed) {
         ConstantInt* CI = dyn_cast<ConstantInt>(field->offset);
-        args.push_back(ConstantInt::get(Type::Int32Ty, CI->getValue() + 1));
+        args.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), CI->getValue() + 1));
       } else {
         args.push_back(field->offset);
       }
@@ -124,7 +124,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
       args.push_back(zero);
       if (boxed) {
         ConstantInt* CI = dyn_cast<ConstantInt>(field->offset);
-        args.push_back(ConstantInt::get(Type::Int32Ty, CI->getValue() + 1));
+        args.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), CI->getValue() + 1));
       } else {
         args.push_back(field->offset);
       }
@@ -167,9 +167,9 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
   // Function Definitions
   
   {
-    BasicBlock* label_entry = BasicBlock::Create("entry",func,0);
-    BasicBlock* label_bb = BasicBlock::Create("bb",func,0);
-    BasicBlock* label_return = BasicBlock::Create("return",func,0);
+    BasicBlock* label_entry = BasicBlock::Create(getGlobalContext(), "entry",func,0);
+    BasicBlock* label_bb = BasicBlock::Create(getGlobalContext(), "bb",func,0);
+    BasicBlock* label_return = BasicBlock::Create(getGlobalContext(), "return",func,0);
     
     Value* ptr_v = new BitCastInst(arg, cl->naturalType, "", label_entry);
     
@@ -191,8 +191,8 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
     BranchInst::Create(label_bb, label_return, int1_tmp1221, label_entry);
     
     // Block bb (label_bb)
-    Argument* fwdref_12 = new Argument(IntegerType::get(32));
-    PHINode* int32_i_015_0 = PHINode::Create(Type::Int32Ty, "i.015.0", 
+    Argument* fwdref_12 = new Argument(IntegerType::get(getGlobalContext(), 32));
+    PHINode* int32_i_015_0 = PHINode::Create(Type::getInt32Ty(getGlobalContext()), "i.015.0", 
                                              label_bb);
     int32_i_015_0->reserveOperandSpace(2);
     int32_i_015_0->addIncoming(fwdref_12, label_bb);
@@ -230,7 +230,7 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
     BranchInst::Create(label_bb, label_return, int1_tmp12, label_bb);
     
     // Block return (label_return)
-    ReturnInst::Create(label_return);
+    ReturnInst::Create(getGlobalContext(), label_return);
     
     // Resolve Forward References
     fwdref_12->replaceAllUsesWith(int32_tmp6); delete fwdref_12;
@@ -261,7 +261,7 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
 #ifdef MULTIPLE_GC 
   Argument* GC = ++(func->arg_begin());
 #endif
-  BasicBlock* block = BasicBlock::Create("", func);
+  BasicBlock* block = BasicBlock::Create(getGlobalContext(), "", func);
   llvm::Value* realArg = new BitCastInst(arg, type, "", block);
  
 #ifdef MULTIPLE_GC
@@ -283,7 +283,7 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
 #endif
   
   traceClass(cl, block, realArg, fields, (cl->super == MSCorlib::pValue && !stat));
-  ReturnInst::Create(block);
+  ReturnInst::Create(getGlobalContext(), block);
 
   void* tracer = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
   ((void**)res)[VT_TRACER_OFFSET] = tracer;
@@ -298,7 +298,7 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
 }
 
 BasicBlock* CLIJit::createBasicBlock(const char* name) {
-  return BasicBlock::Create(name, llvmFunction);
+  return BasicBlock::Create(getGlobalContext(), name, llvmFunction);
 }
 
 void CLIJit::setCurrentBlock(BasicBlock* newBlock) {
@@ -386,9 +386,9 @@ Value* CLIJit::changeType(Value* val, const Type* type) {
     } else {
       val = new SExtInst(val, type, "", currentBlock);
     }
-  } else if (type == Type::FloatTy) {
+  } else if (type == Type::getFloatTy(getGlobalContext())) {
     val = new FPTruncInst(val, type, "", currentBlock);
-  } else if (type == Type::DoubleTy) {
+  } else if (type == Type::getDoubleTy(getGlobalContext())) {
     val = new FPExtInst(val, type, "", currentBlock);
   } else {
     val = new BitCastInst(val, type, "", currentBlock);
@@ -542,7 +542,7 @@ void CLIJit::invoke(uint32 value, VMGenericClass* genClass, VMGenericMethod* gen
       BasicBlock* endBlock = createBasicBlock("end test infinity");
       BasicBlock* minusInfinity = createBasicBlock("- infinity");
       BasicBlock* noInfinity = createBasicBlock("no infinity");
-      PHINode* node = PHINode::Create(Type::Int32Ty, "", endBlock);
+      PHINode* node = PHINode::Create(Type::getInt32Ty(getGlobalContext()), "", endBlock);
       node->addIncoming(module->constantOne, currentBlock);
       node->addIncoming(module->constantMinusOne, minusInfinity);
       node->addIncoming(module->constantZero, noInfinity);
@@ -567,7 +567,7 @@ void CLIJit::invoke(uint32 value, VMGenericClass* genClass, VMGenericMethod* gen
       BasicBlock* endBlock = createBasicBlock("end test infinity");
       BasicBlock* minusInfinity = createBasicBlock("- infinity");
       BasicBlock* noInfinity = createBasicBlock("no infinity");
-      PHINode* node = PHINode::Create(Type::Int32Ty, "", endBlock);
+      PHINode* node = PHINode::Create(Type::getInt32Ty(getGlobalContext()), "", endBlock);
       node->addIncoming(module->constantOne, currentBlock);
       node->addIncoming(module->constantMinusOne, minusInfinity);
       node->addIncoming(module->constantZero, noInfinity);
@@ -630,7 +630,7 @@ void CLIJit::invokeNew(uint32 value, VMGenericClass* genClass, VMGenericMethod* 
     std::vector<Value*> params;
     params.push_back(new BitCastInst(obj, module->ptrType, "", currentBlock));
     params.push_back(module->constantInt8Zero);
-    params.push_back(ConstantInt::get(Type::Int32Ty, size));
+    params.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), size));
     params.push_back(module->constantZero);
     CallInst::Create(module->llvm_memset_i32, params.begin(), params.end(),
                      "", currentBlock);
@@ -735,9 +735,9 @@ void CLIJit::setVirtualField(uint32 value, bool isVolatile, VMGenericClass* genC
     uint64 size = module->getTypeSize(field->signature->naturalType);
         
     std::vector<Value*> params;
-    params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-    params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::Int8Ty), "", currentBlock));
-    params.push_back(ConstantInt::get(Type::Int32Ty, size));
+    params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
+    params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
+    params.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), size));
     params.push_back(module->constantZero);
     CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(), "", currentBlock);
 
@@ -796,7 +796,7 @@ void CLIJit::JITVerifyNull(Value* obj) {
   } else {
     CallInst::Create(CLIJit::nullPointerExceptionLLVM, args.begin(),
                  args.end(), "", exit);
-    new UnreachableInst(exit);
+    new UnreachableInst(getGlobalContext(), exit);
   }
 
 
@@ -808,8 +808,8 @@ llvm::Value* CLIJit::verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
                                          bool verif) {
   JITVerifyNull(obj);
   
-  if (index->getType() != Type::Int32Ty) {
-    index = changeType(index, Type::Int32Ty);
+  if (index->getType() != Type::getInt32Ty(getGlobalContext())) {
+    index = changeType(index, Type::getInt32Ty(getGlobalContext()));
   }
   
   if (true) {
@@ -834,7 +834,7 @@ llvm::Value* CLIJit::verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
     } else {
       CallInst::Create(CLIJit::indexOutOfBoundsExceptionLLVM, args.begin(),
                    args.end(), "", ifFalse);
-      new UnreachableInst(ifFalse);
+      new UnreachableInst(getGlobalContext(), ifFalse);
     }
   
     currentBlock = ifTrue;
@@ -899,7 +899,7 @@ Function* CLIJit::createDelegate() {
 
   new StoreInst(target, targetPtr, false, entry); 
   new StoreInst(handle, handlePtr, false, entry);
-  ReturnInst::Create(entry);
+  ReturnInst::Create(getGlobalContext(), entry);
   
   return func;
 }
@@ -949,17 +949,17 @@ Function* CLIJit::compileNative(VMGenericMethod* genMethod) {
   void* natPtr = NativeUtil::nativeLookup(compilingClass, compilingMethod);
   
   Value* valPtr = 
-    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, (uint64)natPtr),
+    ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), (uint64)natPtr),
                               PointerType::getUnqual(funcType));
   
   Value* result = CallInst::Create(valPtr, nativeArgs.begin(),
                                    nativeArgs.end(), "", currentBlock);
   
   
-  if (result->getType() != Type::VoidTy)
-    ReturnInst::Create(result, currentBlock);
+  if (result->getType() != Type::getVoidTy(getGlobalContext()))
+    ReturnInst::Create(getGlobalContext(), result, currentBlock);
   else
-    ReturnInst::Create(currentBlock);
+    ReturnInst::Create(getGlobalContext(), currentBlock);
   
   
   return llvmFunction;
@@ -1128,18 +1128,18 @@ static void printArgs(std::vector<llvm::Value*> args, BasicBlock* insertAt) {
        e = args.end(); i!= e; ++i) {
     llvm::Value* arg = *i;
     const llvm::Type* type = arg->getType();
-    if (type == Type::Int8Ty || type == Type::Int16Ty || type == Type::Int1Ty) {
-      CallInst::Create(module->printIntLLVM, new ZExtInst(arg, Type::Int32Ty, "", insertAt), "", insertAt);
-    } else if (type == Type::Int32Ty) {
+    if (type == Type::getInt8Ty(getGlobalContext()) || type == Type::getInt16Ty(getGlobalContext()) || type == Type::getInt1Ty(getGlobalContext())) {
+      CallInst::Create(module->printIntLLVM, new ZExtInst(arg, Type::getInt32Ty(getGlobalContext()), "", insertAt), "", insertAt);
+    } else if (type == Type::getInt32Ty(getGlobalContext())) {
       CallInst::Create(module->printIntLLVM, arg, "", insertAt);
-    } else if (type == Type::Int64Ty) {
+    } else if (type == Type::getInt64Ty(getGlobalContext())) {
       CallInst::Create(module->printLongLLVM, arg, "", insertAt);
-    } else if (type == Type::FloatTy) {
+    } else if (type == Type::getFloatTy(getGlobalContext())) {
       CallInst::Create(module->printFloatLLVM, arg, "", insertAt);
-    } else if (type == Type::DoubleTy) {
+    } else if (type == Type::getDoubleTy(getGlobalContext())) {
       CallInst::Create(module->printDoubleLLVM, arg, "", insertAt);
     } else {
-      CallInst::Create(module->printIntLLVM, new PtrToIntInst(arg, Type::Int32Ty, "", insertAt), "", insertAt);
+      CallInst::Create(module->printIntLLVM, new PtrToIntInst(arg, Type::getInt32Ty(getGlobalContext()), "", insertAt), "", insertAt);
     }
   }
 
@@ -1233,7 +1233,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
         params.push_back(new BitCastInst(alloc, module->ptrType, "",
                                          currentBlock));
         params.push_back(module->constantInt8Zero);
-        params.push_back(ConstantInt::get(Type::Int32Ty, size));
+        params.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), size));
         params.push_back(module->constantZero);
         CallInst::Create(module->llvm_memset_i32, params.begin(),
                          params.end(), "", currentBlock);
@@ -1248,7 +1248,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
   endBlock = createBasicBlock("end");
 
   const Type* endType = funcType->getReturnType(); 
-  if (endType != Type::VoidTy) {
+  if (endType != Type::getVoidTy(getGlobalContext())) {
     endNode = PHINode::Create(endType, "", endBlock);
   } else if (compilingMethod->structReturn) {
     const Type* lastType = 
@@ -1264,13 +1264,13 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
   if (PI == PE) {
     endBlock->eraseFromParent();
   } else {
-    if (endType != Type::VoidTy) {
+    if (endType != Type::getVoidTy(getGlobalContext())) {
 #if N3_EXECUTE > 1
       std::vector<Value*> args;
       args.push_back(endNode);
       printArgs(args, endBlock);
 #endif
-      ReturnInst::Create(endNode, endBlock);
+      ReturnInst::Create(getGlobalContext(), endNode, endBlock);
     } else if (compilingMethod->structReturn) {
       const Type* lastType = 
         funcType->getContainedType(funcType->getNumContainedTypes() - 1);
@@ -1281,13 +1281,13 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
                                        currentBlock));
       params.push_back(new BitCastInst(endNode, module->ptrType, "",
                                        currentBlock));
-      params.push_back(ConstantInt::get(Type::Int32Ty, size));
+      params.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), size));
       params.push_back(module->constantFour);
       CallInst::Create(module->llvm_memcpy_i32, params.begin(), params.end(),
                        "", currentBlock);
-      ReturnInst::Create(currentBlock);
+      ReturnInst::Create(getGlobalContext(), currentBlock);
     } else {
-      ReturnInst::Create(endBlock);
+      ReturnInst::Create(getGlobalContext(), endBlock);
     }
   }
   
@@ -1299,7 +1299,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
     CallInst* ptr_eh_ptr = CallInst::Create(getCppExceptionLLVM, "eh_ptr", 
                                         endExceptionBlock);
     CallInst::Create(module->unwindResume, ptr_eh_ptr, "", endExceptionBlock);
-    new UnreachableInst(endExceptionBlock);
+    new UnreachableInst(getGlobalContext(), endExceptionBlock);
   }
   
   PI = pred_begin(unifiedUnreachable);
@@ -1307,7 +1307,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
   if (PI == PE) {
     unifiedUnreachable->eraseFromParent();
   } else {
-    new UnreachableInst(unifiedUnreachable);
+    new UnreachableInst(getGlobalContext(), unifiedUnreachable);
   }
   
   module->runPasses(llvmFunction, VMThread::get()->perFunctionPasses);
@@ -1410,7 +1410,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
         params.push_back(new BitCastInst(alloc, module->ptrType, "",
                                          currentBlock));
         params.push_back(module->constantInt8Zero);
-        params.push_back(ConstantInt::get(Type::Int32Ty, size));
+        params.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), size));
         params.push_back(module->constantZero);
         CallInst::Create(module->llvm_memset_i32, params.begin(),
                          params.end(), "", currentBlock);
@@ -1425,7 +1425,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
   endBlock = createBasicBlock("end");
 
   const Type* endType = funcType->getReturnType(); 
-  if (endType != Type::VoidTy) {
+  if (endType != Type::getVoidTy(getGlobalContext())) {
     endNode = PHINode::Create(endType, "", endBlock);
   } else if (compilingMethod->structReturn) {
     const Type* lastType = 

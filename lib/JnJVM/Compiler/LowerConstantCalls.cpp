@@ -169,7 +169,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* ptr = GetElementPtrInst::Create(array, args, args + 2,
                                                  "", CI);
           Value* load = new LoadInst(ptr, "", CI);
-          load = new PtrToIntInst(load, Type::Int32Ty, "", CI);
+          load = new PtrToIntInst(load, Type::getInt32Ty(*Context), "", CI);
           CI->replaceAllUsesWith(load);
           CI->eraseFromParent();
         } else if (V == module->GetVTFunction) {
@@ -265,7 +265,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* DepthPtr = GetElementPtrInst::Create(val, indexes,
                                                       indexes + 2, "", CI);
           Value* Depth = new LoadInst(DepthPtr, "", CI);
-          Depth = new PtrToIntInst(Depth, Type::Int32Ty, "", CI);
+          Depth = new PtrToIntInst(Depth, Type::getInt32Ty(*Context), "", CI);
           CI->replaceAllUsesWith(Depth);
           CI->eraseFromParent();
         } else if (V == module->GetDisplayFunction) {
@@ -307,8 +307,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* cmp = new ICmpInst(CI, ICmpInst::ICMP_EQ, Del, 
                                     module->JavaObjectNullConstant, "");
           
-          BasicBlock* NoDelegatee = BasicBlock::Create("No delegatee", &F);
-          BasicBlock* DelegateeOK = BasicBlock::Create("Delegatee OK", &F);
+          BasicBlock* NoDelegatee = BasicBlock::Create(*Context, "No delegatee", &F);
+          BasicBlock* DelegateeOK = BasicBlock::Create(*Context, "Delegatee OK", &F);
           BranchInst::Create(NoDelegatee, DelegateeOK, cmp, CI);
           PHINode* phi = PHINode::Create(module->JavaObjectType, "", DelegateeOK);
           phi->addIncoming(Del, CI->getParent());
@@ -346,8 +346,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           
           Value* test = new LoadInst(StatusPtr, "", CI);
           
-          BasicBlock* trueCl = BasicBlock::Create("Initialized", &F);
-          BasicBlock* falseCl = BasicBlock::Create("Uninitialized", &F);
+          BasicBlock* trueCl = BasicBlock::Create(*Context, "Initialized", &F);
+          BasicBlock* falseCl = BasicBlock::Create(*Context, "Uninitialized", &F);
           PHINode* node = llvm::PHINode::Create(JnjvmModule::JavaClassType, "", trueCl);
           node->addIncoming(Cl, CI->getParent());
           BranchInst::Create(trueCl, falseCl, test, CI);
@@ -416,7 +416,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           ConstantInt* Cons = dyn_cast<ConstantInt>(Index);
           assert(CI && "Wrong use of GetConstantPoolAt");
           uint64 val = Cons->getZExtValue();
-          Value* indexes = ConstantInt::get(Type::Int32Ty, val + 1);
+          Value* indexes = ConstantInt::get(Type::getInt32Ty(*Context), val + 1);
 #else
           Value* indexes = Index;
 #endif
@@ -425,8 +425,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* test = new ICmpInst(CI, ICmpInst::ICMP_EQ, arg1,
                                      module->constantPtrNull, "");
  
-          BasicBlock* trueCl = BasicBlock::Create("Ctp OK", &F);
-          BasicBlock* falseCl = BasicBlock::Create("Ctp Not OK", &F);
+          BasicBlock* trueCl = BasicBlock::Create(*Context, "Ctp OK", &F);
+          BasicBlock* falseCl = BasicBlock::Create(*Context, "Ctp Not OK", &F);
           PHINode* node = llvm::PHINode::Create(returnType, "", trueCl);
           node->addIncoming(arg1, CI->getParent());
           BranchInst::Create(falseCl, trueCl, test, CI);
@@ -495,8 +495,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             Value* cmp = new ICmpInst(CI, ICmpInst::ICMP_EQ, LoadedGV, init,
                                       "");
 
-            BasicBlock* OKBlock = BasicBlock::Create("", &F);
-            BasicBlock* NotOKBlock = BasicBlock::Create("", &F);
+            BasicBlock* OKBlock = BasicBlock::Create(*Context, "", &F);
+            BasicBlock* NotOKBlock = BasicBlock::Create(*Context, "", &F);
             PHINode* node = PHINode::Create(module->JavaClassArrayType, "",
                                             OKBlock);
             node->addIncoming(LoadedGV, CI->getParent());
@@ -538,17 +538,17 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           BasicBlock* EndBlock = II->getParent()->splitBasicBlock(II);
           I->getParent()->getTerminator()->eraseFromParent();
           
-          BasicBlock* CurEndBlock = BasicBlock::Create("", &F);
-          BasicBlock* FailedBlock = BasicBlock::Create("", &F);
-          PHINode* node = PHINode::Create(Type::Int1Ty, "", CurEndBlock);
+          BasicBlock* CurEndBlock = BasicBlock::Create(*Context, "", &F);
+          BasicBlock* FailedBlock = BasicBlock::Create(*Context, "", &F);
+          PHINode* node = PHINode::Create(Type::getInt1Ty(*Context), "", CurEndBlock);
 
-          ConstantInt* CC = ConstantInt::get(Type::Int32Ty,
+          ConstantInt* CC = ConstantInt::get(Type::getInt32Ty(*Context),
               JavaVirtualTable::getOffsetIndex());
           Value* indices[2] = { module->constantZero, CC };
           Value* Offset = GetElementPtrInst::Create(VT2, indices, indices + 2,
                                                     "", CI);
           Offset = new LoadInst(Offset, "", false, CI);
-          Offset = new PtrToIntInst(Offset, Type::Int32Ty, "", CI);
+          Offset = new PtrToIntInst(Offset, Type::getInt32Ty(*Context), "", CI);
           indices[1] = Offset;
           Value* CurVT = GetElementPtrInst::Create(VT1, indices, indices + 2,
                                                    "", CI);
@@ -586,21 +586,21 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           I->getParent()->getTerminator()->eraseFromParent();
 
 
-          BasicBlock* Preheader = BasicBlock::Create("preheader", &F);
-          BasicBlock* BB4 = BasicBlock::Create("BB4", &F);
-          BasicBlock* BB5 = BasicBlock::Create("BB5", &F);
-          BasicBlock* BB6 = BasicBlock::Create("BB6", &F);
-          BasicBlock* BB7 = BasicBlock::Create("BB7", &F);
-          BasicBlock* BB9 = BasicBlock::Create("BB9", &F);
+          BasicBlock* Preheader = BasicBlock::Create(*Context, "preheader", &F);
+          BasicBlock* BB4 = BasicBlock::Create(*Context, "BB4", &F);
+          BasicBlock* BB5 = BasicBlock::Create(*Context, "BB5", &F);
+          BasicBlock* BB6 = BasicBlock::Create(*Context, "BB6", &F);
+          BasicBlock* BB7 = BasicBlock::Create(*Context, "BB7", &F);
+          BasicBlock* BB9 = BasicBlock::Create(*Context, "BB9", &F);
           const Type* Ty = PointerType::getUnqual(module->VTType);
           
-          PHINode* resFwd = PHINode::Create(Type::Int32Ty, "", BB7);
+          PHINode* resFwd = PHINode::Create(Type::getInt32Ty(*Context), "", BB7);
    
           // This corresponds to:
           //    if (VT1.cache == VT2 || VT1 == VT2) goto end with true;
           //    else goto headerLoop;
           ConstantInt* cacheIndex = 
-            ConstantInt::get(Type::Int32Ty, JavaVirtualTable::getCacheIndex());
+            ConstantInt::get(Type::getInt32Ty(*Context), JavaVirtualTable::getCacheIndex());
           Value* indices[2] = { module->constantZero, cacheIndex };
           Instruction* CachePtr = 
             GetElementPtrInst::Create(VT1, indices, indices + 2, "", CI);
@@ -618,16 +618,16 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           //    size = VT1->nbSecondaryTypes;
           //    i = 0;
           //    goto test;
-          ConstantInt* sizeIndex = ConstantInt::get(Type::Int32Ty, 
+          ConstantInt* sizeIndex = ConstantInt::get(Type::getInt32Ty(*Context), 
               JavaVirtualTable::getNumSecondaryTypesIndex());
           indices[1] = sizeIndex;
           Instruction* Size = GetElementPtrInst::Create(VT1, indices,
                                                         indices + 2, "",
                                                         Preheader);
           Size = new LoadInst(Size, "", false, Preheader);
-          Size = new PtrToIntInst(Size, Type::Int32Ty, "", Preheader);
+          Size = new PtrToIntInst(Size, Type::getInt32Ty(*Context), "", Preheader);
     
-          ConstantInt* secondaryTypesIndex = ConstantInt::get(Type::Int32Ty, 
+          ConstantInt* secondaryTypesIndex = ConstantInt::get(Type::getInt32Ty(*Context), 
               JavaVirtualTable::getSecondaryTypesIndex());
           indices[1] = secondaryTypesIndex;
           Instruction* secondaryTypes = 
@@ -674,7 +674,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           BranchInst::Create(BB9, BB5);
 
           // Final block, that gets the result.
-          PHINode* node = PHINode::Create(Type::Int1Ty, "", BB9);
+          PHINode* node = PHINode::Create(Type::getInt1Ty(*Context), "", BB9);
           node->reserveOperandSpace(3);
           node->addIncoming(ConstantInt::getTrue(*Context), CI->getParent());
           node->addIncoming(ConstantInt::getFalse(*Context), BB7);

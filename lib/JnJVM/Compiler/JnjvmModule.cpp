@@ -175,10 +175,10 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   
   JavaObjectNullConstant =
     Constant::getNullValue(JnjvmModule::JavaObjectType);
-  MaxArraySizeConstant = ConstantInt::get(Type::Int32Ty,
+  MaxArraySizeConstant = ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
                                           JavaArray::MaxArraySize);
-  JavaArraySizeConstant = 
-    ConstantInt::get(Type::Int32Ty, sizeof(JavaObject) + sizeof(ssize_t));
+  JavaArraySizeConstant = ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
+                                          sizeof(JavaObject) + sizeof(ssize_t));
   
   
   JavaArrayElementsOffsetConstant = constantTwo;
@@ -188,22 +188,30 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   OffsetClassInVTConstant = constantThree;
   OffsetDepthInVTConstant = constantFour;
   OffsetDisplayInVTConstant = constantSeven;
-  OffsetBaseClassVTInVTConstant = ConstantInt::get(Type::Int32Ty, 17);
+  OffsetBaseClassVTInVTConstant =
+    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 17);
   
   OffsetObjectSizeInClassConstant = constantOne;
-  OffsetVTInClassConstant = ConstantInt::get(Type::Int32Ty, 7);
+  OffsetVTInClassConstant =
+    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 7);
   OffsetTaskClassMirrorInClassConstant = constantTwo;
   OffsetStaticInstanceInTaskClassMirrorConstant = constantTwo;
   OffsetStatusInTaskClassMirrorConstant = constantZero;
   OffsetInitializedInTaskClassMirrorConstant = constantOne;
   
-  OffsetIsolateInThreadConstant = ConstantInt::get(Type::Int32Ty, 3);
-  OffsetDoYieldInThreadConstant = ConstantInt::get(Type::Int32Ty, 6);
-  OffsetJNIInThreadConstant = ConstantInt::get(Type::Int32Ty, 12);
-  OffsetJavaExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 13);
-  OffsetCXXExceptionInThreadConstant = ConstantInt::get(Type::Int32Ty, 14);
+  OffsetIsolateInThreadConstant =
+    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 3);
+  OffsetDoYieldInThreadConstant =
+    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 6);
+  OffsetJNIInThreadConstant =
+    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 12);
+  OffsetJavaExceptionInThreadConstant =
+    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 13);
+  OffsetCXXExceptionInThreadConstant =
+    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 14);
   
-  ClassReadyConstant = ConstantInt::get(Type::Int8Ty, ready);
+  ClassReadyConstant =
+    ConstantInt::get(Type::getInt8Ty(getGlobalContext()), ready);
   
   module->addTypeName("JavaObject", JavaObjectType->getContainedType(0));
   module->addTypeName("JavaArray", JavaArrayType->getContainedType(0));

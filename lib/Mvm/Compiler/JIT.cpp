@@ -54,9 +54,9 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   llvm::NoFramePointerElim = true;
   llvm::DisablePrettyStackTrace = true;
 #if DWARF_EXCEPTIONS
-  llvm::ExceptionHandling = true;
+  llvm::DwarfExceptionHandling = true;
 #else
-  llvm::ExceptionHandling = false;
+  llvm::DwarfExceptionHandling = false;
 #endif
   if (!M) {
     globalModule = new Module("bootstrap module", getGlobalContext());
@@ -83,12 +83,13 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
 
   mvm::llvm_runtime::makeLLVMModuleContents(globalModule);
   
+  LLVMContext& Context = globalModule->getContext();
   // Type declaration
-  ptrType = PointerType::getUnqual(Type::Int8Ty);
-  ptr32Type = PointerType::getUnqual(Type::Int32Ty);
+  ptrType = PointerType::getUnqual(Type::getInt8Ty(Context));
+  ptr32Type = PointerType::getUnqual(Type::getInt32Ty(Context));
   ptrPtrType = PointerType::getUnqual(ptrType);
   pointerSizeType = globalModule->getPointerSize() == Module::Pointer32 ?
-    Type::Int32Ty : Type::Int64Ty;
+    Type::getInt32Ty(Context) : Type::getInt64Ty(Context);
   
 }
 
@@ -97,59 +98,59 @@ MvmModule::MvmModule(llvm::Module* module) {
 
   module->setDataLayout(globalModule->getDataLayout());
   module->setTargetTriple(globalModule->getTargetTriple());
-    
+  LLVMContext& Context = module->getContext(); 
   
   // Constant declaration
-  constantLongMinusOne = ConstantInt::get(Type::Int64Ty, (uint64_t)-1);
-  constantLongZero = ConstantInt::get(Type::Int64Ty, 0);
-  constantLongOne = ConstantInt::get(Type::Int64Ty, 1);
-  constantZero = ConstantInt::get(Type::Int32Ty, 0);
-  constantInt8Zero = ConstantInt::get(Type::Int8Ty, 0);
-  constantOne = ConstantInt::get(Type::Int32Ty, 1);
-  constantTwo = ConstantInt::get(Type::Int32Ty, 2);
-  constantThree = ConstantInt::get(Type::Int32Ty, 3);
-  constantFour = ConstantInt::get(Type::Int32Ty, 4);
-  constantFive = ConstantInt::get(Type::Int32Ty, 5);
-  constantSix = ConstantInt::get(Type::Int32Ty, 6);
-  constantSeven = ConstantInt::get(Type::Int32Ty, 7);
-  constantEight = ConstantInt::get(Type::Int32Ty, 8);
-  constantMinusOne = ConstantInt::get(Type::Int32Ty, (uint64_t)-1);
-  constantMinInt = ConstantInt::get(Type::Int32Ty, MinInt);
-  constantMaxInt = ConstantInt::get(Type::Int32Ty, MaxInt);
-  constantMinLong = ConstantInt::get(Type::Int64Ty, MinLong);
-  constantMaxLong = ConstantInt::get(Type::Int64Ty, MaxLong);
-  constantFloatZero = ConstantFP::get(Type::FloatTy, 0.0f);
-  constantFloatOne = ConstantFP::get(Type::FloatTy, 1.0f);
-  constantFloatTwo = ConstantFP::get(Type::FloatTy, 2.0f);
-  constantDoubleZero = ConstantFP::get(Type::DoubleTy, 0.0);
-  constantDoubleOne = ConstantFP::get(Type::DoubleTy, 1.0);
-  constantMaxIntFloat = ConstantFP::get(Type::FloatTy, MaxIntFloat);
-  constantMinIntFloat = ConstantFP::get(Type::FloatTy, MinIntFloat);
-  constantMinLongFloat = ConstantFP::get(Type::FloatTy, MinLongFloat);
-  constantMinLongDouble = ConstantFP::get(Type::DoubleTy, MinLongDouble);
-  constantMaxLongFloat = ConstantFP::get(Type::FloatTy, MaxLongFloat);
-  constantMaxIntDouble = ConstantFP::get(Type::DoubleTy, MaxIntDouble);
-  constantMinIntDouble = ConstantFP::get(Type::DoubleTy, MinIntDouble);
-  constantMaxLongDouble = ConstantFP::get(Type::DoubleTy, MaxLongDouble);
-  constantMaxLongDouble = ConstantFP::get(Type::DoubleTy, MaxLongDouble);
-  constantFloatInfinity = ConstantFP::get(Type::FloatTy, MaxFloat);
-  constantFloatMinusInfinity = ConstantFP::get(Type::FloatTy, MinFloat);
-  constantDoubleInfinity = ConstantFP::get(Type::DoubleTy, MaxDouble);
-  constantDoubleMinusInfinity = ConstantFP::get(Type::DoubleTy, MinDouble);
-  constantDoubleMinusZero = ConstantFP::get(Type::DoubleTy, -0.0);
-  constantFloatMinusZero = ConstantFP::get(Type::FloatTy, -0.0f);
+  constantLongMinusOne = ConstantInt::get(Type::getInt64Ty(Context), (uint64_t)-1);
+  constantLongZero = ConstantInt::get(Type::getInt64Ty(Context), 0);
+  constantLongOne = ConstantInt::get(Type::getInt64Ty(Context), 1);
+  constantZero = ConstantInt::get(Type::getInt32Ty(Context), 0);
+  constantInt8Zero = ConstantInt::get(Type::getInt8Ty(Context), 0);
+  constantOne = ConstantInt::get(Type::getInt32Ty(Context), 1);
+  constantTwo = ConstantInt::get(Type::getInt32Ty(Context), 2);
+  constantThree = ConstantInt::get(Type::getInt32Ty(Context), 3);
+  constantFour = ConstantInt::get(Type::getInt32Ty(Context), 4);
+  constantFive = ConstantInt::get(Type::getInt32Ty(Context), 5);
+  constantSix = ConstantInt::get(Type::getInt32Ty(Context), 6);
+  constantSeven = ConstantInt::get(Type::getInt32Ty(Context), 7);
+  constantEight = ConstantInt::get(Type::getInt32Ty(Context), 8);
+  constantMinusOne = ConstantInt::get(Type::getInt32Ty(Context), (uint64_t)-1);
+  constantMinInt = ConstantInt::get(Type::getInt32Ty(Context), MinInt);
+  constantMaxInt = ConstantInt::get(Type::getInt32Ty(Context), MaxInt);
+  constantMinLong = ConstantInt::get(Type::getInt64Ty(Context), MinLong);
+  constantMaxLong = ConstantInt::get(Type::getInt64Ty(Context), MaxLong);
+  constantFloatZero = ConstantFP::get(Type::getFloatTy(Context), 0.0f);
+  constantFloatOne = ConstantFP::get(Type::getFloatTy(Context), 1.0f);
+  constantFloatTwo = ConstantFP::get(Type::getFloatTy(Context), 2.0f);
+  constantDoubleZero = ConstantFP::get(Type::getDoubleTy(Context), 0.0);
+  constantDoubleOne = ConstantFP::get(Type::getDoubleTy(Context), 1.0);
+  constantMaxIntFloat = ConstantFP::get(Type::getFloatTy(Context), MaxIntFloat);
+  constantMinIntFloat = ConstantFP::get(Type::getFloatTy(Context), MinIntFloat);
+  constantMinLongFloat = ConstantFP::get(Type::getFloatTy(Context), MinLongFloat);
+  constantMinLongDouble = ConstantFP::get(Type::getDoubleTy(Context), MinLongDouble);
+  constantMaxLongFloat = ConstantFP::get(Type::getFloatTy(Context), MaxLongFloat);
+  constantMaxIntDouble = ConstantFP::get(Type::getDoubleTy(Context), MaxIntDouble);
+  constantMinIntDouble = ConstantFP::get(Type::getDoubleTy(Context), MinIntDouble);
+  constantMaxLongDouble = ConstantFP::get(Type::getDoubleTy(Context), MaxLongDouble);
+  constantMaxLongDouble = ConstantFP::get(Type::getDoubleTy(Context), MaxLongDouble);
+  constantFloatInfinity = ConstantFP::get(Type::getFloatTy(Context), MaxFloat);
+  constantFloatMinusInfinity = ConstantFP::get(Type::getFloatTy(Context), MinFloat);
+  constantDoubleInfinity = ConstantFP::get(Type::getDoubleTy(Context), MaxDouble);
+  constantDoubleMinusInfinity = ConstantFP::get(Type::getDoubleTy(Context), MinDouble);
+  constantDoubleMinusZero = ConstantFP::get(Type::getDoubleTy(Context), -0.0);
+  constantFloatMinusZero = ConstantFP::get(Type::getFloatTy(Context), -0.0f);
   constantThreadIDMask = ConstantInt::get(pointerSizeType, mvm::Thread::IDMask);
   constantStackOverflowMask = 
     ConstantInt::get(pointerSizeType, mvm::Thread::StackOverflowMask);
   constantFatMask = ConstantInt::get(pointerSizeType, 
-      pointerSizeType == Type::Int32Ty ? 0x80000000 : 0x8000000000000000LL);
+      pointerSizeType == Type::getInt32Ty(Context) ? 0x80000000 : 0x8000000000000000LL);
   constantPtrOne = ConstantInt::get(pointerSizeType, 1);
   constantPtrZero = ConstantInt::get(pointerSizeType, 0);
 
   constantPtrNull = Constant::getNullValue(ptrType); 
   constantPtrLogSize = 
-    ConstantInt::get(Type::Int32Ty, sizeof(void*) == 8 ? 3 : 2);
-  arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::Int8Ty, 0));
+    ConstantInt::get(Type::getInt32Ty(Context), sizeof(void*) == 8 ? 3 : 2);
+  arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::getInt8Ty(Context), 0));
 
 
   copyDefinitions(module, globalModule); 
@@ -211,7 +212,7 @@ MvmModule::MvmModule(llvm::Module* module) {
   llvm_atomic_lcs_i32 = module->getFunction("llvm.atomic.cmp.swap.i32.p0i32");
   llvm_atomic_lcs_i64 = module->getFunction("llvm.atomic.cmp.swap.i64.p0i64");
 
-  llvm_atomic_lcs_ptr = pointerSizeType == Type::Int32Ty ? llvm_atomic_lcs_i32 :
+  llvm_atomic_lcs_ptr = pointerSizeType == Type::getInt32Ty(Context) ? llvm_atomic_lcs_i32 :
                                                            llvm_atomic_lcs_i64;
 
   unconditionalSafePoint = module->getFunction("unconditionalSafePoint");

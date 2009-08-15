@@ -42,7 +42,7 @@ void VMField::operator()(VMObject* obj, float val) {
   if (stat) obj = classDef->staticInstance;
   void* ptr = (void*)((uint64)obj + ptrOffset);
   
-  if (signature->naturalType == Type::FloatTy) {
+  if (signature->naturalType == Type::getFloatTy(getGlobalContext())) {
     ((float*)ptr)[0] = val;
   } else {
     VMThread::get()->vm->unknownError("wrong type in field assignment");
@@ -60,7 +60,7 @@ void VMField::operator()(VMObject* obj, double val) {
   if (stat) obj = classDef->staticInstance;
   void* ptr = (void*)((uint64)obj + ptrOffset);
   
-  if (signature->naturalType == Type::DoubleTy) {
+  if (signature->naturalType == Type::getDoubleTy(getGlobalContext())) {
     ((double*)ptr)[0] = val;
   } else {
     VMThread::get()->vm->unknownError("wrong type in field assignment");
@@ -78,7 +78,7 @@ void VMField::operator()(VMObject* obj, sint64 val) {
   if (stat) obj = classDef->staticInstance;
   void* ptr = (void*)((uint64)obj + ptrOffset);
   
-  if (signature->naturalType == Type::Int64Ty) {
+  if (signature->naturalType == Type::getInt64Ty(getGlobalContext())) {
     ((uint64*)ptr)[0] = val;
   } else {
     VMThread::get()->vm->unknownError("wrong type in field assignment");
@@ -96,7 +96,7 @@ void VMField::operator()(VMObject* obj, sint32 val) {
   if (stat) obj = classDef->staticInstance;
   void* ptr = (void*)((uint64)obj + ptrOffset);
   
-  if (signature->naturalType == Type::Int32Ty) {
+  if (signature->naturalType == Type::getInt32Ty(getGlobalContext())) {
     ((uint32*)ptr)[0] = val;
   } else {
     VMThread::get()->vm->unknownError("wrong type in field assignment");
@@ -131,7 +131,7 @@ void VMField::operator()(VMObject* obj, bool val) {
   if (stat) obj = classDef->staticInstance;
   void* ptr = (void*)((uint64)obj + ptrOffset);
   
-  if (signature->naturalType == Type::Int1Ty) {
+  if (signature->naturalType == Type::getInt1Ty(getGlobalContext())) {
     ((bool*)ptr)[0] = val;
   } else {
     VMThread::get()->vm->unknownError("wrong type in field assignment");
@@ -160,27 +160,27 @@ GenericValue VMField::operator()(VMObject* obj) {
   
   void* ptr = (void*)((uint64)obj + ptrOffset);
   const Type* type = signature->naturalType;
-  if (type == Type::Int8Ty) {
+  if (type == Type::getInt8Ty(getGlobalContext())) {
     GenericValue gv;
     gv.IntVal = APInt(8, ((uint8*)ptr)[0]);
     return gv;
-  } else if (type == Type::Int16Ty) {
+  } else if (type == Type::getInt16Ty(getGlobalContext())) {
     GenericValue gv;
     gv.IntVal = APInt(16, ((uint16*)ptr)[0]);
     return gv;
-  } else if (type == Type::Int32Ty) {
+  } else if (type == Type::getInt32Ty(getGlobalContext())) {
     GenericValue gv;
     gv.IntVal = APInt(32, ((uint32*)ptr)[0]);
     return gv;
-  } else if (type == Type::Int64Ty) {
+  } else if (type == Type::getInt64Ty(getGlobalContext())) {
     GenericValue gv;
     gv.IntVal = APInt(64, ((uint64*)ptr)[0]);
     return gv;
-  } else if (type == Type::DoubleTy) { 
+  } else if (type == Type::getDoubleTy(getGlobalContext())) { 
     GenericValue gv;
     gv.DoubleVal = ((double*)ptr)[0];
     return gv;
-  } else if (type == Type::FloatTy) {
+  } else if (type == Type::getFloatTy(getGlobalContext())) {
     GenericValue gv;
     gv.FloatVal = ((float*)ptr)[0];
     return gv;
@@ -201,27 +201,27 @@ GenericValue VMMethod::operator()(va_list ap) {
   for (Function::arg_iterator i = func->arg_begin(), e = func->arg_end();
        i != e; ++i) {
     const Type* type = i->getType();
-    if (type == Type::Int8Ty) {
+    if (type == Type::getInt8Ty(getGlobalContext())) {
       GenericValue gv;
       gv.IntVal = APInt(8, va_arg(ap, int));
       args.push_back(gv);
-    } else if (type == Type::Int16Ty) {
+    } else if (type == Type::getInt16Ty(getGlobalContext())) {
       GenericValue gv;
       gv.IntVal = APInt(16, va_arg(ap, int));
       args.push_back(gv);
-    } else if (type == Type::Int32Ty) {
+    } else if (type == Type::getInt32Ty(getGlobalContext())) {
       GenericValue gv;
       gv.IntVal = APInt(32, va_arg(ap, int));
       args.push_back(gv);
-    } else if (type == Type::Int64Ty) {
+    } else if (type == Type::getInt64Ty(getGlobalContext())) {
       GenericValue gv1;
       gv1.IntVal = APInt(64, va_arg(ap, uint64));
       args.push_back(gv1);
-    } else if (type == Type::DoubleTy) { 
+    } else if (type == Type::getDoubleTy(getGlobalContext())) { 
       GenericValue gv1;
       gv1.DoubleVal = va_arg(ap, double);
       args.push_back(gv1);
-    } else if (type == Type::FloatTy) {
+    } else if (type == Type::getFloatTy(getGlobalContext())) {
       GenericValue gv;
       gv.FloatVal = (float)(va_arg(ap, double));
       args.push_back(gv);
@@ -248,27 +248,27 @@ GenericValue VMMethod::operator()(VMObject* obj, va_list ap) {
   for (Function::arg_iterator i = ++(func->arg_begin()), e = func->arg_end();
        i != e; ++i) {
     const Type* type = i->getType();
-    if (type == Type::Int8Ty) {
+    if (type == Type::getInt8Ty(getGlobalContext())) {
       GenericValue gv;
       gv.IntVal = APInt(8, va_arg(ap, int));
       args.push_back(gv);
-    } else if (type == Type::Int16Ty) {
+    } else if (type == Type::getInt16Ty(getGlobalContext())) {
       GenericValue gv;
       gv.IntVal = APInt(16, va_arg(ap, int));
       args.push_back(gv);
-    } else if (type == Type::Int32Ty) {
+    } else if (type == Type::getInt32Ty(getGlobalContext())) {
       GenericValue gv;
       gv.IntVal = APInt(32, va_arg(ap, int));
       args.push_back(gv);
-    } else if (type == Type::Int64Ty) {
+    } else if (type == Type::getInt64Ty(getGlobalContext())) {
       GenericValue gv1;
       gv1.IntVal = APInt(64, va_arg(ap, uint64));
       args.push_back(gv1);
-    } else if (type == Type::DoubleTy) { 
+    } else if (type == Type::getDoubleTy(getGlobalContext())) { 
       GenericValue gv1;
       gv1.DoubleVal = va_arg(ap, double);
       args.push_back(gv1);
-    } else if (type == Type::FloatTy) {
+    } else if (type == Type::getFloatTy(getGlobalContext())) {
       GenericValue gv;
       gv.FloatVal = (float)(va_arg(ap, double));
       args.push_back(gv);
@@ -367,7 +367,7 @@ GlobalVariable* VMCommonClass::llvmVar() {
       Module* Mod = vm->getLLVMModule();
       const Type* pty = mvm::MvmModule::ptrType;
       Constant* cons = 
-        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
+        ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), uint64_t (this)),
                                     pty);
 
       _llvmVar = new GlobalVariable(*Mod, pty, true,
@@ -387,7 +387,7 @@ GlobalVariable* VMField::llvmVar() {
       const Type* pty = mvm::MvmModule::ptrType;
       Module* Mod = classDef->vm->getLLVMModule();
       Constant* cons = 
-        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
+        ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), uint64_t (this)),
                                   pty);
 
       _llvmVar = new GlobalVariable(*Mod, pty, true,
@@ -406,7 +406,7 @@ GlobalVariable* VMMethod::llvmVar() {
       Module* Mod = classDef->vm->getLLVMModule();
       const Type* pty = mvm::MvmModule::ptrType;
       Constant* cons = 
-        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
+        ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), uint64_t (this)),
                                   pty);
 
       _llvmVar = new GlobalVariable(*Mod, pty, true,

@@ -92,7 +92,7 @@ void CLIJit::invokeInterfaceOrVirtual(uint32 value, VMGenericClass* genClass, VM
   Value* five = module->constantFive;
   
   Value* llvmEnv = 
-    ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (enveloppe)),
+    ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), uint64_t (enveloppe)),
                   Enveloppe::llvmType);
   
   std::vector<Value*> args1;
@@ -152,7 +152,7 @@ void CLIJit::invokeInterfaceOrVirtual(uint32 value, VMGenericClass* genClass, VM
   Value* ret = invoke(meth, args, "", currentBlock, origMeth->structReturn);
 
 
-  if (ret->getType() != Type::VoidTy) {
+  if (ret->getType() != Type::getVoidTy(getGlobalContext())) {
     push(ret);
   }
 }

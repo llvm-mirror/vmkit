@@ -432,7 +432,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
                                     currentBlock);
 
     uint32 depth = cur->catchClass->virtualVT->depth;
-    Value* depthCl = ConstantInt::get(Type::Int32Ty, depth);
+    Value* depthCl = ConstantInt::get(Type::getInt32Ty(*llvmContext), depth);
     Value* cmp = 0;
 
     if (depth >= JavaVirtualTable::getDisplayLength()) {
@@ -546,7 +546,7 @@ void JavaJIT::finishExceptions() {
   if (PI == PE) {
     unifiedUnreachable->eraseFromParent();
   } else {
-    new UnreachableInst(unifiedUnreachable);
+    new UnreachableInst(*llvmContext, unifiedUnreachable);
   }
   
   for (Function::iterator BI = llvmFunction->begin(), BE = llvmFunction->end();

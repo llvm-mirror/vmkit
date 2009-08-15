@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "llvm/DerivedTypes.h"
+#include "llvm/Module.h"
 
 #include "debug.h"
 #include "types.h"
@@ -168,7 +169,7 @@ void VMCommonClass::initialise(VirtualMachine* vm, bool isArray) {
   this->isArray = isArray;
   this->isPointer = false;
   this->isPrimitive = false;
-  this->naturalType = llvm::OpaqueType::get();
+  this->naturalType = llvm::OpaqueType::get(llvm::getGlobalContext());
 }
 
 const UTF8* VMClassArray::constructArrayName(const UTF8* name, uint32 dims) {
@@ -279,7 +280,7 @@ void VMClass::resolveStaticFields(VMGenericMethod* genMethod) {
   for (std::vector<VMField*>::iterator i = cl->staticFields.begin(),
             e = cl->staticFields.end(); i!= e; ++i) {
     // preincrement because 0 is VMObject
-    (*i)->offset = llvm::ConstantInt::get(llvm::Type::Int32Ty, ++offset);
+    (*i)->offset = llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()), ++offset);
   }
   for (std::vector<VMField*>::iterator i = cl->staticFields.begin(),
             e = cl->staticFields.end(); i!= e; ++i) {
@@ -315,7 +316,7 @@ void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* ge
   const llvm::Type* ResultTy = 0;
   if (hasExplicitLayout(flags)) {
     explicitLayoutSize = assembly->getExplicitLayout(token);
-    ResultTy = llvm::IntegerType::get(explicitLayoutSize);
+    ResultTy = llvm::IntegerType::get(llvm::getGlobalContext(), explicitLayoutSize);
   } else if (super != 0) {
     if (super == MSCorlib::pValue) {
       uint32 size = virtualFields.size();
@@ -323,27 +324,27 @@ void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* ge
         virtualFields[0]->offset = VMThread::get()->vm->module->constantZero;
         ResultTy = virtualFields[0]->signature->naturalType;
       } else if (size == 0) {
-        ResultTy = llvm::Type::VoidTy;
+        ResultTy = llvm::Type::getVoidTy(llvm::getGlobalContext());
       } else {
         std::vector<const llvm::Type*> Elts;
         uint32 offset = -1;
         for (std::vector<VMField*>::iterator i = virtualFields.begin(), 
           e = virtualFields.end(); i!= e; ++i) {
-          (*i)->offset = llvm::ConstantInt::get(llvm::Type::Int32Ty, ++offset);
+          (*i)->offset = llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()), ++offset);
           const llvm::Type* type = (*i)->signature->naturalType;
           Elts.push_back(type);
         }
         ResultTy = llvm::StructType::get(vm->LLVMModule->getContext(), Elts);
       }
     } else if (super == MSCorlib::pEnum) {
-      ResultTy = llvm::Type::Int32Ty; // TODO find max
+      ResultTy = llvm::Type::getInt32Ty(llvm::getGlobalContext()); // TODO find max
     } else {
       std::vector<const llvm::Type*> Elts;
       Elts.push_back(super->naturalType->getContainedType(0));
       uint32 offset = 0;
       for (std::vector<VMField*>::iterator i = virtualFields.begin(), 
            e = virtualFields.end(); i!= e; ++i) {
-        (*i)->offset = llvm::ConstantInt::get(llvm::Type::Int32Ty, ++offset);
+        (*i)->offset = llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()), ++offset);
         const llvm::Type* type = (*i)->signature->naturalType;
         Elts.push_back(type);
       }
@@ -384,7 +385,7 @@ void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* ge
 void VMClassArray::makeType() {
   std::vector<const llvm::Type*> arrayFields;
   arrayFields.push_back(VMObject::llvmType->getContainedType(0));
-  arrayFields.push_back(llvm::Type::Int32Ty);
+  arrayFields.push_back(llvm::Type::getInt32Ty(llvm::getGlobalContext()));
   arrayFields.push_back(llvm::ArrayType::get(baseClass->naturalType, 0));
   const llvm::Type* type = llvm::PointerType::getUnqual(llvm::StructType::get(vm->LLVMModule->getContext(), arrayFields, false));
   ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(type);
@@ -393,7 +394,7 @@ void VMClassArray::makeType() {
 }
 
 void VMClassPointer::makeType() {
-  const llvm::Type* type = (baseClass->naturalType == llvm::Type::VoidTy) ? llvm::Type::Int8Ty : baseClass->naturalType;
+  const llvm::Type* type = (baseClass->naturalType == llvm::Type::getVoidTy(llvm::getGlobalContext())) ? llvm::Type::getInt8Ty(llvm::getGlobalContext()) : baseClass->naturalType;
   const llvm::Type* pType = llvm::PointerType::getUnqual(type);
   ((llvm::OpaqueType*)naturalType)->refineAbstractTypeTo(pType);
   naturalType = pType;
@@ -691,9 +692,9 @@ const llvm::FunctionType* VMMethod::resolveSignature(
       }
     }
 
-    if (!(ret->isSingleValueType()) && ret != llvm::Type::VoidTy) {
+    if (!(ret->isSingleValueType()) && ret != llvm::Type::getVoidTy(llvm::getGlobalContext())) {
       args.push_back(llvm::PointerType::getUnqual(ret));
-      ret = llvm::Type::VoidTy;
+      ret = llvm::Type::getVoidTy(llvm::getGlobalContext());
       structRet = true;
     } else {
       structRet = false;
