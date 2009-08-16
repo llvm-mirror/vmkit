@@ -851,7 +851,8 @@ public:
   /// isResolved - Has this class been resolved?
   ///
   bool isResolved() {
-    return getCurrentTaskClassMirror().status >= resolved;
+    uint8 stat = getCurrentTaskClassMirror().status;
+    return (stat >= resolved && stat != erroneous);
   }
   
   /// isErroneous - Is the class in an erroneous state.

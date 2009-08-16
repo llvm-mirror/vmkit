@@ -817,6 +817,8 @@ void Class::readMethods(Reader& reader) {
 
 void Class::readClass() {
 
+  assert(getInitializationState() == loaded && "Wrong init state");
+  
   PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
   PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "reading ", 0);
   PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", printString());
@@ -850,16 +852,45 @@ void Class::readClass() {
 
 #ifndef ISOLATE_SHARING
 void Class::resolveClass() {
-  if (!isResolved()) {
+  if (!isResolved() && !isErroneous()) {
     acquire();
-    if (isResolved()) {
+    if (isResolved() || isErroneous()) {
       release();
     } else if (!isResolving()) {
       setOwnerClass(JavaThread::get());
-      readClass();
-      release();
       
-      loadParents();
+      JavaObject* exc = 0;
+      try {
+        readClass();
+      } catch (...) {
+        exc = JavaThread::get()->pendingException;
+        JavaThread::get()->clearException();
+      }
+
+      if (exc) {
+        setErroneous();        
+        setOwnerClass(0);
+        broadcastClass();
+        release();
+        JavaThread::get()->throwException(exc);
+      }
+ 
+      release();
+
+      try {
+        loadParents();
+      } catch (...) {
+        setInitializationState(loaded);
+        exc = JavaThread::get()->pendingException;
+        JavaThread::get()->clearException();
+      }
+      
+      if (exc) {
+        setErroneous();        
+        setOwnerClass(0);
+        JavaThread::get()->throwException(exc);
+      }
+      
       makeVT();
       JavaCompiler *Comp = classLoader->getCompiler();
       Comp->resolveVirtualClass(this);
@@ -881,10 +912,21 @@ void Class::resolveClass() {
     } else if (JavaThread::get() != getOwnerClass()) {
       while (!isResolved()) {
         waitClass();
+        if (isErroneous()) break;
       }
       release();
+
     }
   }
+  
+  if (isErroneous()) {
+    JavaThread* th = JavaThread::get();
+    JavaObject* exc = th->getJVM()->CreateLinkageError("");
+    th->throwException(exc);
+
+  }
+  
+  assert(virtualVT && "No virtual VT after resolution");
 }
 #else
 void Class::resolveClass() {
@@ -1029,6 +1071,7 @@ UserCommonClass* UserCommonClass::resolvedImplClass(Jnjvm* vm,
   llvm_gcroot(clazz, 0);
 
   UserCommonClass* cl = ((JavaObjectClass*)clazz)->getClass();
+  assert(cl && "No class in Class object");
   if (cl->isClass()) {
     cl->asClass()->resolveClass();
     if (doClinit) cl->asClass()->initialiseClass(vm);
@@ -1315,6 +1358,8 @@ void ClassArray::initialiseVT(Class* javaLangObject) {
 JavaVirtualTable::JavaVirtualTable(Class* C) {
    
   if (C->super) {
+    
+    assert(C->super->virtualVT && "Super has no VT");
 
     // Set the regular object tracer, destructor and delete.
     tracer = (uintptr_t)RegularObjectTracer;
