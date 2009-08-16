@@ -291,11 +291,7 @@ CommonClass* JavaConstantPool::loadClass(uint32 index, bool resolve) {
       // Put into ctpRes because there is only one representation of the class
       temp = loader->loadName(name, resolve, false);
     }
-    if (!temp && classDef->classLoader->getCompiler()->isStaticCompiling()) {
-      fprintf(stderr, "Could not find class %s while static compiling\n",
-              UTF8Buffer(name).cString());
-      abort();
-    }
+    
     ctpRes[index] = temp;
   }
 #endif
