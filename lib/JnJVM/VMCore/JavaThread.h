@@ -252,6 +252,9 @@ public:
     addresses.pop_back();
   }
 
+  bool isInNative() {
+    return !(addresses.size() % 2);
+  }
   /// getCallingClass - Get the Java class that called the last Java
   /// method that called the Java getCallingClass method.
   ///
