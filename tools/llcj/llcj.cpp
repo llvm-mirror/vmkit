@@ -131,10 +131,10 @@ int main(int argc, char **argv) {
   Out.appendComponent(className);
   Out.appendSuffix("bc");
   
-  vmjcArgv[0] = Prog.toString().c_str();
+  vmjcArgv[0] = Prog.c_str();
   vmjcArgv[vmjcArgc++] = "-f";
   vmjcArgv[vmjcArgc++] = "-o";
-  vmjcArgv[vmjcArgc++] = Out.toString().c_str();
+  vmjcArgv[vmjcArgc++] = Out.c_str();
 
   res = sys::Program::ExecuteAndWait(Prog, vmjcArgv);
 
@@ -151,11 +151,11 @@ int main(int argc, char **argv) {
     }
     
     const char* optArgv[7];
-    optArgv[0] = Prog.toString().c_str();
-    optArgv[1] = Out.toString().c_str();
+    optArgv[0] = Prog.c_str();
+    optArgv[1] = Out.c_str();
     optArgv[2] = "-f";
     optArgv[3] = "-o";
-    optArgv[4] = OptOut.toString().c_str();
+    optArgv[4] = OptOut.c_str();
     if (opt) {
       optArgv[5] = opt;
       optArgv[6] = 0;
@@ -187,13 +187,13 @@ int main(int argc, char **argv) {
     
     const char* llcArgv[8];
     int i = 0;
-    llcArgv[i++] = Prog.toString().c_str();
-    llcArgv[i++] = Out.toString().c_str();
+    llcArgv[i++] = Prog.c_str();
+    llcArgv[i++] = Out.c_str();
     if (shared) llcArgv[i++] = "-relocation-model=pic";
     llcArgv[i++] = "-disable-fp-elim";
     llcArgv[i++] = "-f";
     llcArgv[i++] = "-o";
-    llcArgv[i++] = LlcOut.toString().c_str();
+    llcArgv[i++] = LlcOut.c_str();
     llcArgv[i++] = 0;
   
     res = sys::Program::ExecuteAndWait(Prog, llcArgv);
@@ -208,8 +208,8 @@ int main(int argc, char **argv) {
       goto cleanup;
     }
 
-    gccArgv[0] = Prog.toString().c_str();
-    gccArgv[gccArgc++] = Out.toString().c_str();
+    gccArgv[0] = Prog.c_str();
+    gccArgv[gccArgc++] = Out.c_str();
     gccArgv[gccArgc++] = LLVMLibs;
     gccArgv[gccArgc++] = VMKITLibs1;
     gccArgv[gccArgc++] = VMKITLibs2;

@@ -196,7 +196,7 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT,
   // The object does not have a finalizer and is never used. Remove the
   // allocation as it will not have side effects.
   if (!hasFinalizer && !Alloc->getNumUses()) {
-    DOUT << "Escape analysis removes instruction " << *Alloc << ": ";
+    DEBUG(errs() << "Escape analysis removes instruction " << *Alloc << ": ");
     Alloc->eraseFromParent();
     return true;
   }
@@ -214,8 +214,9 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT,
         // we don't end up with tons of allocations on the stack.
         BasicBlock* BB = CurLoop->getLoopPreheader();
         assert(BB && "No Preheader!");
-        DOUT << "Escape analysis hoisting to " << BB->getNameStr() << ": ";
-        DOUT << *Alloc;
+        DEBUG(errs() << "Escape analysis hoisting to " << BB->getNameStr());
+        DEBUG(errs() << ": ");
+        DEBUG(errs() << *Alloc);
         Alloc->removeFromParent();
         BB->getInstList().insert(BB->getTerminator(), Alloc);
       }
@@ -223,7 +224,8 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT,
       AllocaInst* AI = new AllocaInst(Type::getInt8Ty(Context), Size, "",
                                       Alloc);
       BitCastInst* BI = new BitCastInst(AI, Alloc->getType(), "", Alloc);
-      DOUT << "escape" << Alloc->getParent()->getParent()->getNameStr() << "\n";
+      DEBUG(errs() << "escape");
+      DEBUG(errs() << Alloc->getParent()->getParent()->getNameStr() << "\n");
       Alloc->replaceAllUsesWith(BI);
       // If it's an invoke, replace the invoke with a direct branch.
       if (InvokeInst *CI = dyn_cast<InvokeInst>(Alloc)) {

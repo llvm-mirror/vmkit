@@ -19,11 +19,11 @@
 #include "llvm/DerivedTypes.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
+#include "llvm/PassManager.h"
+#include "llvm/Type.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
-#include "llvm/PassManager.h"
 #include "llvm/Target/TargetData.h"
-#include "llvm/Type.h"
 
 #include "types.h"
 

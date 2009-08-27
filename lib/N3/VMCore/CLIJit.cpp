@@ -11,20 +11,7 @@
 #define N3_COMPILE 0
 #define N3_EXECUTE 0
 
-#include "debug.h"
-#include "types.h"
 
-#include "llvm/CallingConv.h"
-#include <llvm/Constants.h>
-#include <llvm/DerivedTypes.h>
-#include <llvm/Function.h>
-#include <llvm/Instructions.h>
-#include <llvm/LinkAllPasses.h>
-#include <llvm/Module.h>
-#include <llvm/Type.h>
-#include <llvm/Analysis/LoopPass.h>
-#include <llvm/Support/CFG.h>
-#include <llvm/Support/MutexGuard.h>
 
 
 
@@ -43,6 +30,21 @@
 #include "VMCache.h"
 #include "VMClass.h"
 #include "VMThread.h"
+
+#include <llvm/CallingConv.h>
+#include <llvm/Constants.h>
+#include <llvm/DerivedTypes.h>
+#include <llvm/Function.h>
+#include <llvm/Instructions.h>
+#include <llvm/LinkAllPasses.h>
+#include <llvm/Module.h>
+#include <llvm/Type.h>
+#include <llvm/Analysis/LoopPass.h>
+#include <llvm/Support/CFG.h>
+#include <llvm/Support/MutexGuard.h>
+
+#include "debug.h"
+#include "types.h"
 
 using namespace llvm;
 using namespace n3;

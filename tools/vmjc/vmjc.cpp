@@ -30,7 +30,6 @@
 #include "llvm/Support/PassNameParser.h"
 #include "llvm/Support/PluginLoader.h"
 #include "llvm/Support/RegistryParser.h"
-#include "llvm/Support/Streams.h"
 #include "llvm/Support/SystemUtils.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/System/Signals.h"
@@ -75,7 +74,7 @@ static cl::opt<bool>
 WithJIT("with-jit", cl::desc("Generate main function with JIT support"));
 
 static cl::opt<bool>
-DontPrint("disable-output", cl::desc("Don't output the .ll file"), cl::Hidden);
+DisableOutput("disable-output", cl::desc("Disable output"), cl::init(false));
 
 
 // The OptimizationList is automatically populated with registered Passes by the
@@ -146,12 +145,12 @@ void addCommandLinePass(char** argv) {
     if (PassInf->getNormalCtor())
       P = PassInf->getNormalCtor()();
     else
-      cerr << argv[0] << ": cannot create pass: "
+      errs() << argv[0] << ": cannot create pass: "
            << PassInf->getPassName() << "\n";
     if (P) {
         bool isModulePass = dynamic_cast<ModulePass*>(P) != 0;
         if (isModulePass) 
-          cerr << argv[0] << ": vmkit does not support module pass: "
+          errs() << argv[0] << ": vmkit does not support module pass: "
              << PassInf->getPassName() << "\n";
         else addPass(Passes, P);
 
@@ -173,7 +172,6 @@ int main(int argc, char **argv) {
     cl::ParseCommandLineOptions(argc, argv, "vmkit .class -> .ll compiler\n");
     sys::PrintStackTraceOnErrorSignal();
 
-    std::ostream *Out = &std::cout;  // Default to printing to stdout.
     std::string ErrorMessage;
 
     
@@ -275,63 +273,48 @@ int main(int argc, char **argv) {
     if (PrintStats)
       Comp->printStats();
 
-    if (DontPrint) {
-      // Just use stdout.  We won't actually print anything on it.
-    } else if (OutputFilename != "") {   // Specified an output filename?
-      if (OutputFilename != "-") { // Not stdout?
-        if (!Force && std::ifstream(OutputFilename.c_str())) {
-          // If force is not specified, make sure not to overwrite a file!
-          cerr << argv[0] << ": error opening '" << OutputFilename
-               << "': file exists! Sending to standard output.\n";
-        } else {
-          Out = new std::ofstream(OutputFilename.c_str());
-        }
-      }
-    } else {
+    // Infer the output filename if needed.
+    if (OutputFilename.empty()) {
       if (InputFilename == "-") {
         OutputFilename = "-";
       } else {
         std::string IFN = InputFilename;
         int Len = IFN.length();
-        if (IFN[Len-3] == '.' && IFN[Len-2] == 'b' && IFN[Len-1] == 'c') {
-          // Source ends in .bc
-          OutputFilename = std::string(IFN.begin(), IFN.end()-3)+".bc";
+        if (IFN[Len-3] == '.' && IFN[Len-2] == 'l' && IFN[Len-1] == 'l') {
+          // Source ends in .ll
+          OutputFilename = std::string(IFN.begin(), IFN.end()-3);
         } else {
-          OutputFilename = IFN+".bc";
-        }
-
-        if (!Force && std::ifstream(OutputFilename.c_str())) {
-          // If force is not specified, make sure not to overwrite a file!
-          cerr << argv[0] << ": error opening '" << OutputFilename
-               << "': file exists! Sending to standard output.\n";
-        } else {
-          Out = new std::ofstream(OutputFilename.c_str());
-
-          // Make sure that the Out file gets unlinked from the disk if we get a
-          // SIGINT
-          sys::RemoveFileOnSignal(sys::Path(OutputFilename));
-        }
-      }
+          OutputFilename = IFN;   // Append a .bc to it
+        }   
+        OutputFilename += ".bc";
+      }   
     }
-
-    if (!Out->good()) {
-      cerr << argv[0] << ": error opening " << OutputFilename
-           << ": sending to stdout instead!\n";
-      Out = &std::cout;
+  
+    std::string ErrorInfo;
+    std::auto_ptr<raw_ostream> Out 
+    (new raw_fd_ostream(OutputFilename.c_str(), ErrorInfo,
+                        raw_fd_ostream::F_Binary));
+    if (!ErrorInfo.empty()) {
+      errs() << ErrorInfo << '\n';
+      return 1;
     }
-    
-    if (Force || !CheckBitcodeOutputToConsole(Out,true))
-      WriteBitcodeToFile(Comp->getLLVMModule(), *Out);
+  
+  
+    // Make sure that the Out file gets unlinked from the disk if we get a
+    // SIGINT.
+    if (OutputFilename != "-")
+      sys::RemoveFileOnSignal(sys::Path(OutputFilename));
 
-    if (Out != &std::cout) {
-      ((std::ofstream*)Out)->close();
-      delete Out;
-    }
+    if (!DisableOutput)
+      if (Force || !CheckBitcodeOutputToConsole(*Out, true))
+        WriteBitcodeToFile(Comp->getLLVMModule(), *Out);
+
     return 0;
+
   } catch (const std::string& msg) {
-    cerr << argv[0] << ": " << msg << "\n";
+    errs() << argv[0] << ": " << msg << "\n";
   } catch (...) {
-    cerr << argv[0] << ": Unexpected unknown exception occurred.\n";
+    errs() << argv[0] << ": Unexpected unknown exception occurred.\n";
   }
   return 1;
 }

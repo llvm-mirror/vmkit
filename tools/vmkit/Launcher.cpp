@@ -90,12 +90,12 @@ void addCommandLinePass(char** argv) {
     if (PassInf->getNormalCtor())
       P = PassInf->getNormalCtor()();
     else
-      cerr << argv[0] << ": cannot create pass: "
+      errs() << argv[0] << ": cannot create pass: "
            << PassInf->getPassName() << "\n";
     if (P) {
         bool isModulePass = dynamic_cast<ModulePass*>(P) != 0;
         if (isModulePass) 
-          cerr << argv[0] << ": vmkit does not support module pass: "
+          errs() << argv[0] << ": vmkit does not support module pass: "
              << PassInf->getPassName() << "\n";
         else addPass(Passes, P);
 
