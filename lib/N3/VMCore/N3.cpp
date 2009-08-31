@@ -66,7 +66,7 @@ N3* N3::allocateBootstrap() {
   std::string str = 
     mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
 
-  vm->LLVMModule = new llvm::Module("Bootstrap N3", *(new llvm::LLVMContext()));
+  vm->LLVMModule = new llvm::Module("Bootstrap N3", llvm::getGlobalContext());
   vm->module = new mvm::MvmModule(vm->LLVMModule);
   vm->getLLVMModule()->setDataLayout(str);
   vm->protectModule = new mvm::LockNormal();
@@ -90,7 +90,7 @@ N3* N3::allocate(const char* name, N3* parent) {
   
   std::string str = 
     mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
-  vm->LLVMModule = new llvm::Module("Bootstrap N3", *(new llvm::LLVMContext()));
+  vm->LLVMModule = new llvm::Module("Bootstrap N3", llvm::getGlobalContext());
   vm->module = new mvm::MvmModule(vm->LLVMModule);
   vm->LLVMModule->setDataLayout(str);
   vm->protectModule = new mvm::LockNormal();
