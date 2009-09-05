@@ -149,6 +149,21 @@ dnl=== SECTION 3: Command line arguments for the configure script.
 dnl===
 dnl===-----------------------------------------------------------------------===
 
+AC_ARG_WITH(llvmgcc,
+       [AS_HELP_STRING(--with-llvmgcc,
+           [Compile with llvm-gcc])],
+       [[withllvm=yes]],
+       [[withllvm=no]],
+)
+
+if test "x$withllvm" = "xyes";  then
+  WITH_LLVM_GCC=1
+  LLVM_FLAGS=-DWITH_LLVM_GCC
+fi
+
+AC_SUBST([WITH_LLVM_GCC])
+AC_SUBST([LLVM_FLAGS])
+
 AC_ARG_WITH(thread,
        [AS_HELP_STRING(--with-thread=something,
            [Thread type ('common' or 'no')])],
@@ -183,7 +198,7 @@ esac
 
 
 dnl **************************************************************************
-dnl VVM GC type 
+dnl GC type 
 dnl **************************************************************************
 AC_ARG_WITH(gc,
        [AS_HELP_STRING(--with-gc=something,
