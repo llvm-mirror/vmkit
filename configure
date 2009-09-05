@@ -671,6 +671,8 @@ target_cpu
 target_vendor
 target_os
 DYLIB_EXTENSION
+WITH_LLVM_GCC
+LLVM_FLAGS
 CC
 CFLAGS
 LDFLAGS
@@ -1321,6 +1323,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-llvmsrc          Location of LLVM Source Code
   --with-llvmobj          Location of LLVM Object Code
+  --with-llvmgcc          Compile with llvm-gcc
   --with-thread=something Thread type ('common' or 'no')
   --with-gc=something     GC type ('single-mmap' 'multi-mmap' or 'boehm')
   --with-vm-type=something
@@ -2081,6 +2084,23 @@ fi
 { echo "$as_me:$LINENO: result: $vmkit_cv_os_type" >&5
 echo "${ECHO_T}$vmkit_cv_os_type" >&6; }
 
+
+
+
+
+
+# Check whether --with-llvmgcc was given.
+if test "${with_llvmgcc+set}" = set; then
+  withval=$with_llvmgcc; withllvm=yes
+else
+  withllvm=no
+fi
+
+
+if test "x$withllvm" = "xyes";  then
+  WITH_LLVM_GCC=1
+  LLVM_FLAGS=-DWITH_LLVM_GCC
+fi
 
 
 
@@ -7893,6 +7913,8 @@ target_cpu!$target_cpu$ac_delim
 target_vendor!$target_vendor$ac_delim
 target_os!$target_os$ac_delim
 DYLIB_EXTENSION!$DYLIB_EXTENSION$ac_delim
+WITH_LLVM_GCC!$WITH_LLVM_GCC$ac_delim
+LLVM_FLAGS!$LLVM_FLAGS$ac_delim
 CC!$CC$ac_delim
 CFLAGS!$CFLAGS$ac_delim
 LDFLAGS!$LDFLAGS$ac_delim
@@ -7935,8 +7957,6 @@ LN_S!$LN_S$ac_delim
 CMP!$CMP$ac_delim
 CP!$CP$ac_delim
 DATE!$DATE$ac_delim
-FIND!$FIND$ac_delim
-MKDIR!$MKDIR$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -7978,6 +7998,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+FIND!$FIND$ac_delim
+MKDIR!$MKDIR$ac_delim
 MV!$MV$ac_delim
 RANLIB!$RANLIB$ac_delim
 RM!$RM$ac_delim
@@ -7996,7 +8018,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 16; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 18; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -8400,9 +8422,9 @@ echo "$as_me: executing $ac_file commands" >&6;}
 
   case $ac_file$ac_mode in
     "Makefile":C) ${llvm_src}/autoconf/mkinstalldirs `dirname Makefile`
-   ${SHELL} ${llvm_src}/autoconf/install-sh -c ${srcdir}/Makefile Makefile ;;
+   ${SHELL} ${llvm_src}/autoconf/install-sh -m 0644 -c ${srcdir}/Makefile Makefile ;;
     "lib/Makefile":C) ${llvm_src}/autoconf/mkinstalldirs `dirname lib/Makefile`
-   ${SHELL} ${llvm_src}/autoconf/install-sh -c ${srcdir}/lib/Makefile lib/Makefile ;;
+   ${SHELL} ${llvm_src}/autoconf/install-sh -m 0644 -c ${srcdir}/lib/Makefile lib/Makefile ;;
 
   esac
 done # for ac_tag
