@@ -77,7 +77,6 @@ void JavaString::stringDestructor(JavaString* str) {
 JavaString* JavaString::internalToJava(const UTF8* name, Jnjvm* vm) {
   
   ArrayUInt16* array = 0;
-  llvm_gcroot(this, 0);
   llvm_gcroot(array, 0);
 
   array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(name->size, vm);

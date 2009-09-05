@@ -8,9 +8,14 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
-LIBRARYNAME = JnJVM
-
 include $(LEVEL)/Makefile.config
+
+ifeq ($(WITH_LLVM_GCC), 1)
+  MODULE_NAME = JnJVM
+else
+  LIBRARYNAME = JnJVM
+endif
+
 
 include $(LEVEL)/Makefile.common
 

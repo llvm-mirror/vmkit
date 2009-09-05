@@ -8,6 +8,14 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
-LIBRARYNAME = CommonThread
+include $(LEVEL)/Makefile.config
+
+ifeq ($(WITH_LLVM_GCC), 1)
+  MODULE_NAME = CommonThread
+else
+  LIBRARYNAME = CommonThread
+endif
+
+
 include $(LEVEL)/Makefile.common
 

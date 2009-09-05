@@ -27,6 +27,8 @@ extern "C" uint32 llvm_atomic_cmp_swap_i32(uint32* ptr, uint32 cmp,
 extern "C" uint64 llvm_atomic_cmp_swap_i64(uint64* ptr, uint64 cmp,
                                            uint64 val);
 
+#ifndef WITH_LLVM_GCC
+
 // TODO: find what macro for gcc < 4.2
 
 #define __sync_bool_compare_and_swap_32(ptr, cmp, val) \
@@ -57,6 +59,8 @@ extern "C" uint64 llvm_atomic_cmp_swap_i64(uint64* ptr, uint64 cmp,
                            (uint32)(val))
 #endif
 
+
+#endif
 
 class Cond;
 class LockNormal;
@@ -230,7 +234,7 @@ public:
   /// acquire - Acquire the lock.
   void acquire(Owner* O = 0) {
     uint64_t id = mvm::Thread::get()->getThreadID();
-    uintptr_t val = __sync_val_compare_and_swap((uintptr_t)&lock, 0, id);
+    uintptr_t val = __sync_val_compare_and_swap(&lock, 0, id);
 
     if (val != 0) {
       //fat!

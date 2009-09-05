@@ -8,11 +8,16 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
-LIBRARYNAME = JnjvmCompiler
+include $(LEVEL)/Makefile.config
+
+ifeq ($(WITH_LLVM_GCC), 1)
+  MODULE_NAME = JnjvmCompiler
+else
+  LIBRARYNAME = JnjvmCompiler
+endif
 
 EXTRA_DIST = ExceptionsCheck.inc ExceptionsDwarf.inc
 
-include $(LEVEL)/Makefile.config
 
 include $(LEVEL)/Makefile.common
 

@@ -856,7 +856,7 @@ Signdef* JnjvmClassLoader::constructSign(const UTF8* name) {
 JnjvmClassLoader*
 JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
   
-  VMClassLoader* vmdata = 0
+  VMClassLoader* vmdata = 0;
   
   llvm_gcroot(loader, 0);
   llvm_gcroot(vmdata, 0);

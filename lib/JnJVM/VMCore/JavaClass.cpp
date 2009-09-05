@@ -1054,7 +1054,7 @@ JavaObject* CommonClass::setDelegatee(JavaObject* val) {
 
 JavaObject* CommonClass::setDelegatee(JavaObject* val) {
   JavaObject* prev = (JavaObject*)
-    __sync_val_compare_and_swap((uintptr_t)&(delegatee[0]), NULL, val);
+    __sync_val_compare_and_swap(&(delegatee[0]), NULL, val);
 
   if (!prev) return val;
   else return prev;

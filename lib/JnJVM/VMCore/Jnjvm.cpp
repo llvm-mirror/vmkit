@@ -1095,7 +1095,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
   JavaObject* group = 0;
   
   llvm_gcroot(args, 0);
-  llvm_gcroot(ex, 0);
+  llvm_gcroot(exc, 0);
   llvm_gcroot(obj, 0);
   llvm_gcroot(group, 0);
 

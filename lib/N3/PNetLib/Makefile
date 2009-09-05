@@ -8,6 +8,13 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
-LIBRARYNAME = PNetLib
+include $(LEVEL)/Makefile.config
+
+ifeq ($(WITH_LLVM_GCC), 1)
+  MODULE_NAME = PNetLib
+else
+  LIBRARYNAME = PNetLib
+endif
+
 include $(LEVEL)/Makefile.common
 CXX.Flags += -I$(PROJ_SRC_DIR)/../VMCore

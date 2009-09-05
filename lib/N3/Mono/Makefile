@@ -8,7 +8,14 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
-LIBRARYNAME = Mono
+include $(LEVEL)/Makefile.config
+
+ifeq ($(WITH_LLVM_GCC), 1)
+  MODULE_NAME = Mono
+else
+  LIBRARYNAME = Mono
+endif
+
 include $(LEVEL)/Makefile.common
 CXX.Flags += -I$(PROJ_SRC_DIR)/../VMCore
 

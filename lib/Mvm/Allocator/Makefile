@@ -8,6 +8,13 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
-LIBRARYNAME = Allocator
+include $(LEVEL)/Makefile.config
+
+ifeq ($(WITH_LLVM_GCC), 1)
+  MODULE_NAME = Allocator
+else
+  LIBRARYNAME = Allocator
+endif
+
 include $(LEVEL)/Makefile.common
 
