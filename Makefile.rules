@@ -111,7 +111,7 @@ $(TOOLNAME).bc : $(ProjLibsPaths)
 $(TOOLNAME).s : $(TOOLNAME).bc
 	$(Echo) Building $(BuildMode) Assembly file $(notdir $@)
 	$(Verb) $(LOPT) -f $(TOOLNAME).bc -o $(TOOLNAME)-optimized.bc
-	$(Verb) $(LLC) -f $(TOOLNAME)-optimized.bc -o $(TOOLNAME).s
+	$(Verb) $(LLC) -disable-fp-elim -f $(TOOLNAME)-optimized.bc -o $(TOOLNAME).s
 
 $(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
 	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
