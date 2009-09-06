@@ -110,15 +110,15 @@ $(TOOLNAME).bc : $(ProjLibsPaths)
 
 $(TOOLNAME).s : $(TOOLNAME).bc
 	$(Echo) Building $(BuildMode) Assembly file $(notdir $@)
-	$(Verb) $(LOPT) -f $(TOOLNAME).bc -o $(TOOLNAME)-optimized.bc
-	$(Verb) $(LLC) -disable-fp-elim -f $(TOOLNAME)-optimized.bc -o $(TOOLNAME).s
+	$(Verb) $(LOPT) -load=$(LibDir)/StaticGCPass.so -std-compile-opts -StaticGCPass -f $(TOOLNAME).bc -o vmkitoptimized.bc
+	$(Verb) $(LLC) -disable-fp-elim -f vmkitoptimized.bc -o $(TOOLNAME).s
 
 $(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
 	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
 	$(Verb) $(Compile.C) $< -o $(ObjDir)/$*.o
 
 clean-local::
-	$(Verb) $(RM) -f $(TOOLNAME)-optimized.bc $(TOOLNAME).bc $(TOOLNAME).s
+	$(Verb) $(RM) -f vmkitoptimized.bc $(TOOLNAME).bc $(TOOLNAME).s
 
 endif
 endif
