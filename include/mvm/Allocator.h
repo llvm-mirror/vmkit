@@ -21,7 +21,8 @@
 class VirtualTable;
 
 #ifdef WITH_LLVM_GCC
-extern "C" void llvm_gcroot(const void*, void*) asm("llvm.gcroot");
+extern "C" void __llvm_gcroot(const void*, void*) __attribute__((nothrow));
+#define llvm_gcroot(a, b) __llvm_gcroot(&a, b)
 #else
 #define llvm_gcroot(a, b)
 #endif

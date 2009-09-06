@@ -36,11 +36,12 @@ LockObj* LockObj::allocate(JavaObject* owner) {
 
 void JavaObject::waitIntern(struct timeval* info, bool timed) {
   LockObj* l = 0;
-  llvm_gcroot(this, 0);
+  JavaObject* self = this;
+  llvm_gcroot(self, 0);
   llvm_gcroot(l, 0);
 
   if (owner()) {
-    l = lock.changeToFatlock(this);
+    l = self->lock.changeToFatlock(self);
     JavaThread* thread = JavaThread::get();
     thread->waitsOn = l;
     mvm::Cond& varcondThread = thread->varcond;
@@ -48,7 +49,7 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
     if (thread->interruptFlag != 0) {
       thread->interruptFlag = 0;
       thread->waitsOn = 0;
-      thread->getJVM()->interruptedException(this);
+      thread->getJVM()->interruptedException(self);
     } else { 
       thread->state = JavaThread::StateWaiting;
       if (l->firstThread) {
@@ -122,32 +123,35 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
 
       if (interrupted) {
         thread->interruptFlag = 0;
-        thread->getJVM()->interruptedException(this);
+        thread->getJVM()->interruptedException(self);
       }
     }
   } else {
-    JavaThread::get()->getJVM()->illegalMonitorStateException(this);
+    JavaThread::get()->getJVM()->illegalMonitorStateException(self);
   }
   assert(owner() && "Not owner after wait");
 }
 
 void JavaObject::wait() {
-  llvm_gcroot(this, 0);
+  JavaObject* self = this;
+  llvm_gcroot(self, 0);
   waitIntern(0, false);
 }
 
 void JavaObject::timedWait(struct timeval& info) {
-  llvm_gcroot(this, 0);
+  JavaObject* self = this;
+  llvm_gcroot(self, 0);
   waitIntern(&info, true);
 }
 
 void JavaObject::notify() {
   LockObj* l = 0;
-  llvm_gcroot(this, 0);
+  JavaObject* self = this;
+  llvm_gcroot(self, 0);
   llvm_gcroot(l, 0);
 
   if (owner()) {
-    l = lock.getFatLock();
+    l = self->lock.getFatLock();
     if (l) {
       JavaThread* cur = l->firstThread;
       if (cur) {
@@ -181,18 +185,19 @@ void JavaObject::notify() {
       }
     }
   } else {
-    JavaThread::get()->getJVM()->illegalMonitorStateException(this);
+    JavaThread::get()->getJVM()->illegalMonitorStateException(self);
   }
   assert(owner() && "Not owner after notify");
 }
 
 void JavaObject::notifyAll() {
   LockObj* l = 0;
-  llvm_gcroot(this, 0);
+  JavaObject* self = this;
+  llvm_gcroot(self, 0);
   llvm_gcroot(l, 0);
   
   if (owner()) {
-    l = lock.getFatLock();
+    l = self->lock.getFatLock();
     if (l) {
       JavaThread* cur = l->firstThread;
       if (cur) {
@@ -207,7 +212,7 @@ void JavaObject::notifyAll() {
       }
     }
   } else {
-    JavaThread::get()->getJVM()->illegalMonitorStateException(this);
+    JavaThread::get()->getJVM()->illegalMonitorStateException(self);
   }
 
   assert(owner() && "Not owner after notifyAll");
@@ -359,8 +364,9 @@ void JavaObject::decapsulePrimitive(Jnjvm *vm, uintptr_t &buf,
 }
 
 bool JavaObject::instanceOf(UserCommonClass* cl) {
-  llvm_gcroot(this, 0);
+  JavaObject* self = this;
+  llvm_gcroot(self, 0);
 
-  if (!this) return false;
-  else return this->getClass()->isAssignableFrom(cl);
+  if (!self) return false;
+  else return self->getClass()->isAssignableFrom(cl);
 }

@@ -49,8 +49,9 @@ public:
   /// acquire - Acquires the lock.
   ///
   void acquire() {
-    llvm_gcroot(this, 0);
-    lock.lock();
+    LockObj* self = this;
+    llvm_gcroot(self, 0);
+    self->lock.lock();
   }
   
   /// tryAcquire - Tries to acquire the lock.
@@ -61,8 +62,9 @@ public:
   
   /// acquireAll - Acquires the lock nb times.
   void acquireAll(uint32 nb) {
-    llvm_gcroot(this, 0);
-    lock.lockAll(nb);
+    LockObj* self = this;
+    llvm_gcroot(self, 0);
+    self->lock.lockAll(nb);
   }
 
   /// release - Releases the lock.
@@ -301,8 +303,9 @@ public:
 
   /// acquire - Acquire the lock on this object.
   void acquire() {
-    llvm_gcroot(this, 0);
-    lock.acquire();
+    JavaObject* self = this;
+    llvm_gcroot(self, 0);
+    self->lock.acquire();
   }
 
   /// release - Release the lock on this object

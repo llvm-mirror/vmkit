@@ -12,19 +12,44 @@ include $(LEVEL)/Makefile.config
 
 TOOLNAME = vmkit
 
-ifeq ($(WITH_JNJVM), 1)
-USEDLIBS += JnJVM.a Classpath.a JnjvmCompiler.a
-endif
 
-ifeq ($(ISOLATE_SHARING_BUILD), 1) 
+ifeq ($(WITH_LLVM_GCC), 1)
+
+  ifeq ($(WITH_JNJVM), 1)
+    USEDMODULES += JnJVM.bc Classpath.bc JnjvmCompiler.bc
+  endif
+
+  ifeq ($(ISOLATE_SHARING_BUILD), 1) 
+    USEDMODULES += Isolate.bc
+  endif
+
+  ifeq ($(WITH_N3_PNETLIB), 1)
+    USEDMODULES += N3.bc PNetLib.bc
+  endif
+
+  USEDMODULES += Allocator.bc CommonThread.bc Mvm.bc MvmCompiler.bc $(GCLIB).bc
+
+  BUILT_SOURCES = vmkit.s
+  SOURCES = vmkit.s $(notdir $(wildcard $(PROJ_SRC_DIR)/*.cpp))
+
+
+else
+
+  ifeq ($(WITH_JNJVM), 1)
+    USEDLIBS += JnJVM.a Classpath.a JnjvmCompiler.a
+  endif
+
+  ifeq ($(ISOLATE_SHARING_BUILD), 1) 
     USEDLIBS += Isolate.a
-endif
+  endif
 
-ifeq ($(WITH_N3_PNETLIB), 1)
-  USEDLIBS += N3.a PNetLib.a
-endif
+  ifeq ($(WITH_N3_PNETLIB), 1)
+    USEDLIBS += N3.a PNetLib.a
+  endif
 
-USEDLIBS += Allocator.a CommonThread.a Mvm.a MvmCompiler.a $(GCLIB).a
+  USEDLIBS += Allocator.a CommonThread.a Mvm.a MvmCompiler.a $(GCLIB).a
+
+endif
 
 LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo
 

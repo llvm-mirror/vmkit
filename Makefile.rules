@@ -97,3 +97,29 @@ endif
 
 endif
 
+
+
+ifdef TOOLNAME
+ifdef USEDMODULES
+
+ProjLibsPaths   := $(addprefix $(LibDir)/,$(USEDMODULES))
+
+$(TOOLNAME).bc : $(ProjLibsPaths)
+	$(Echo) Building $(BuildMode) Bytecode Module $(notdir $@)
+	$(Verb) $(LLVMLD) -L$(CFERuntimeLibDir) -r -o $@ $(ProjLibsPaths)
+
+$(TOOLNAME).s : $(TOOLNAME).bc
+	$(Echo) Building $(BuildMode) Assembly file $(notdir $@)
+	$(Verb) $(LOPT) -f $(TOOLNAME).bc -o $(TOOLNAME)-optimized.bc
+	$(Verb) $(LLC) -f $(TOOLNAME)-optimized.bc -o $(TOOLNAME).s
+
+$(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
+	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
+	$(Verb) $(Compile.C) $< -o $(ObjDir)/$*.o
+
+clean-local::
+	$(Verb) $(RM) -f $(TOOLNAME)-optimized.bc $(TOOLNAME).bc $(TOOLNAME).s
+
+endif
+endif
+

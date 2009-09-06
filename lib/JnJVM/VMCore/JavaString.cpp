@@ -49,20 +49,21 @@ char* JavaString::strToAsciiz() {
 }
 
 const ArrayUInt16* JavaString::strToArray(Jnjvm* vm) {
-  llvm_gcroot(this, 0);
+  JavaString* self = this;
+  llvm_gcroot(self, 0);
 
-  assert(value && "String without an array?");
-  if (offset || (count != value->size)) {
+  assert(self->value && "String without an array?");
+  if (self->offset || (self->count != self->value->size)) {
     ArrayUInt16* array = 
-      (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(count, vm);
+      (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(self->count, vm);
     uint16* buf = array->elements;
 
     for (sint32 i = 0; i < count; i++) {
-      buf[i] = value->elements[i + offset];
+      buf[i] = self->value->elements[i + self->offset];
     }
     return array;
   } else {
-    return value;
+    return self->value;
   }
 }
 
@@ -92,15 +93,16 @@ JavaString* JavaString::internalToJava(const UTF8* name, Jnjvm* vm) {
 }
 
 const UTF8* JavaString::javaToInternal(UTF8Map* map) const {
-  llvm_gcroot(this, 0);
+  const JavaString* self = this;
+  llvm_gcroot(self, 0);
   
-  uint16* java = (uint16*)alloca(sizeof(uint16) * count);
+  uint16* java = (uint16*)alloca(sizeof(uint16) * self->count);
 
   for (sint32 i = 0; i < count; ++i) {
-    uint16 cur = value->elements[offset + i];
+    uint16 cur = self->value->elements[offset + i];
     if (cur == '.') java[i] = '/';
     else java[i] = cur;
   }
   
-  return map->lookupOrCreateReader(java, count);
+  return map->lookupOrCreateReader(java, self->count);
 }
