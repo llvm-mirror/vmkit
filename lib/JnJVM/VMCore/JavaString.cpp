@@ -19,11 +19,16 @@ using namespace jnjvm;
 
 JavaVirtualTable* JavaString::internStringVT = 0;
 
-JavaString* JavaString::stringDup(const ArrayUInt16*& array, Jnjvm* vm) {
+JavaString* JavaString::stringDup(const ArrayUInt16*& _array, Jnjvm* vm) {
+  
+  JavaString* res = 0;
+  const ArrayUInt16* array = 0;
   llvm_gcroot(array, 0);
+  llvm_gcroot(res, 0);
 
+  array = _array;
   UserClass* cl = vm->upcalls->newString;
-  JavaString* res = (JavaString*)cl->doNew(vm);
+  res = (JavaString*)cl->doNew(vm);
   
   // It's a hashed string, set the destructor so that the string
   // removes itself from the vm string map. Do this only if
