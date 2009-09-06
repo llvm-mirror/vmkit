@@ -135,13 +135,13 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
 void JavaObject::wait() {
   JavaObject* self = this;
   llvm_gcroot(self, 0);
-  waitIntern(0, false);
+  self->waitIntern(0, false);
 }
 
 void JavaObject::timedWait(struct timeval& info) {
   JavaObject* self = this;
   llvm_gcroot(self, 0);
-  waitIntern(&info, true);
+  self->waitIntern(&info, true);
 }
 
 void JavaObject::notify() {
