@@ -99,26 +99,26 @@ endif
 
 
 
-ifdef TOOLNAME
+ifdef MODULESNAME
 ifdef USEDMODULES
 
 ProjLibsPaths   := $(addprefix $(LibDir)/,$(USEDMODULES))
 
-$(TOOLNAME).bc : $(ProjLibsPaths)
+$(MODULESNAME).bc : $(ProjLibsPaths)
 	$(Echo) Building $(BuildMode) Bytecode Module $(notdir $@)
 	$(Verb) $(LLVMLD) -L$(CFERuntimeLibDir) -r -o $@ $(ProjLibsPaths)
 
-$(TOOLNAME).s : $(TOOLNAME).bc
+$(MODULESNAME).s : $(MODULESNAME).bc
 	$(Echo) Building $(BuildMode) Assembly file $(notdir $@)
-	$(Verb) $(LOPT) -load=$(LibDir)/StaticGCPass.so -std-compile-opts -StaticGCPass -f $(TOOLNAME).bc -o vmkitoptimized.bc
-	$(Verb) $(LLC) -disable-fp-elim -f vmkitoptimized.bc -o $(TOOLNAME).s
+	$(Verb) $(LOPT) -load=$(LibDir)/StaticGCPass.so -std-compile-opts -StaticGCPass -f $(MODULESNAME).bc -o vmkitoptimized.bc
+	$(Verb) $(LLC) -disable-fp-elim -f vmkitoptimized.bc -o $(MODULESNAME).s
 
 $(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
 	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
 	$(Verb) $(Compile.C) $< -o $(ObjDir)/$*.o
 
 clean-local::
-	$(Verb) $(RM) -f vmkitoptimized.bc $(TOOLNAME).bc $(TOOLNAME).s
+	$(Verb) $(RM) -f vmkitoptimized.bc $(MODULESNAME).bc $(MODULESNAME).s
 
 endif
 endif

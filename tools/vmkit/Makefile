@@ -15,6 +15,8 @@ TOOLNAME = vmkit
 
 ifeq ($(WITH_LLVM_GCC), 1)
 
+  MODULESNAME = vmkit
+
   ifeq ($(WITH_JNJVM), 1)
     USEDMODULES += JnJVM.bc Classpath.bc JnjvmCompiler.bc
   endif

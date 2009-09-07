@@ -13,8 +13,22 @@ include $(LEVEL)/Makefile.config
 EXTRA_DIST = libvmjc
 
 TOOLNAME = vmjc
-USEDLIBS = JnJVM.a Classpath.a JnjvmCompiler.a Allocator.a CommonThread.a \
-	   Mvm.a MvmCompiler.a $(GCLIB).a
+
+
+ifeq ($(WITH_LLVM_GCC), 1)
+  MODULESNAME = vmkit
+  USEDMODULES = JnJVM.bc Classpath.bc JnjvmCompiler.bc Allocator.bc \
+		CommonThread.bc Mvm.bc MvmCompiler.bc $(GCLIB).bc
+
+  BUILT_SOURCES = vmkit.s
+  SOURCES = vmkit.s $(notdir $(wildcard $(PROJ_SRC_DIR)/*.cpp))
+
+else
+
+  USEDLIBS = JnJVM.a Classpath.a JnjvmCompiler.a Allocator.a CommonThread.a \
+	     Mvm.a MvmCompiler.a $(GCLIB).a
+endif
+
 LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo bitwriter
 
 include $(LEVEL)/Makefile.common

@@ -12,8 +12,17 @@ include $(LEVEL)/Makefile.config
 
 TOOLNAME = n3-pnetlib
 LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo
-USEDLIBS = N3.a PNetLib.a Allocator.a CommonThread.a Mvm.a MvmCompiler.a \
-	   $(GCLIB).a
+
+ifeq ($(WITH_LLVM_GCC), 1)
+  MODULESNAME = vmkit
+  USEDMODULES = N3.bc PNetLibc.bc Allocator.bc CommonThread.bc Mvm.bc \
+		MvmCompiler.bc $(GCLIB).bc
+  BUILT_SOURCES = vmkit.s
+  SOURCES = vmkit.s $(notdir $(wildcard $(PROJ_SRC_DIR)/*.cpp))
+else
+  USEDLIBS = N3.a PNetLib.a Allocator.a CommonThread.a Mvm.a MvmCompiler.a \
+   	     $(GCLIB).a
+endif
 
 include $(LEVEL)/Makefile.common
 

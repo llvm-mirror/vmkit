@@ -14,6 +14,7 @@ TOOLNAME = jnjvm
 
 ifeq ($(WITH_LLVM_GCC), 1)
 
+  MODULESNAME = jnjvm
   USEDMODULES = JnJVM.bc Classpath.bc JnjvmCompiler.bc Allocator.bc CommonThread.bc \
 		Mvm.bc MvmCompiler.bc $(GCLIB).bc
 
