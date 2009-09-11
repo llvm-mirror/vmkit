@@ -16,8 +16,8 @@ LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo
 
 ifeq ($(WITH_LLVM_GCC), 1)
   MODULESNAME = vmkit
-  USEDMODULES = N3.bc Mono.bc Allocator.bc CommonThread.bc Mvm.bc \
-		MvmCompiler.bc $(GCLIB).bc
+  USEDMODULES = Mono.bc Allocator.bc CommonThread.bc Mvm.bc \
+		MvmCompiler.bc N3.bc $(GCLIB).bc
   BUILT_SOURCES = vmkit.s
   SOURCES = vmkit.s $(notdir $(wildcard $(PROJ_SRC_DIR)/*.cpp))
 else
