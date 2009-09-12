@@ -356,8 +356,8 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
       currentBlock = NotZero;
 
-      Value* temp = new AllocaInst(module->JavaObjectType, "",
-                                   currentBlock);
+      Instruction* temp = new AllocaInst(module->JavaObjectType, "",
+                                         func->begin()->begin());
       Value* GCArgs[2] = { 
         new BitCastInst(temp, module->ptrPtrType, "", currentBlock),
         module->constantPtrNull
@@ -365,7 +365,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
       
       if (TheCompiler->useCooperativeGC()) {
         CallInst::Create(module->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
-                         currentBlock);
+                         temp);
       }
       
       new StoreInst(i, temp, false, currentBlock);
