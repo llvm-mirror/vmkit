@@ -26,6 +26,7 @@ namespace llvm {
   class FunctionPassManager;
   class FunctionType;
   class GlobalVariable;
+  class GCFunctionInfo;
   class Module;
   class Type;
   class Value;
@@ -110,15 +111,17 @@ private:
   
   
 public:
+  llvm::GCFunctionInfo* GCInfo;
   llvm::Function* getMethod();
   llvm::Constant* getOffset();
   const llvm::FunctionType* getFunctionType();
     
   LLVMMethodInfo(JavaMethod* M) :  methodDef(M), methodFunction(0),
-    offsetConstant(0), functionType(0) {}
+    offsetConstant(0), functionType(0), GCInfo(0) {}
  
 
   virtual void clear() {
+    GCInfo = 0;
     methodFunction = 0;
     offsetConstant = 0;
     functionType = 0;

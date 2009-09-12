@@ -67,7 +67,7 @@ JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
   JavaIntrinsics(TheModule) {
 
   enabledException = true;
-  cooperativeGC = false;
+  cooperativeGC = true;
 }
   
 void JavaLLVMCompiler::resolveVirtualClass(Class* cl) {
@@ -377,6 +377,7 @@ namespace mvm {
 
 namespace jnjvm {
   llvm::FunctionPass* createLowerConstantCallsPass(JnjvmModule* M);
+  llvm::FunctionPass* createGCInfo(JavaLLVMCompiler* Comp);
 }
 
 void JavaLLVMCompiler::addJavaPasses() {
@@ -385,12 +386,16 @@ void JavaLLVMCompiler::addJavaPasses() {
   // Lower constant calls to lower things like getClass used
   // on synchronized methods.
   JavaNativeFunctionPasses->add(createLowerConstantCallsPass(getIntrinsics()));
+  JavaNativeFunctionPasses->add(createGCInfo(this));
   
   JavaFunctionPasses = new FunctionPassManager(TheModuleProvider);
   JavaFunctionPasses->add(new TargetData(TheModule));
   if (cooperativeGC)
     JavaFunctionPasses->add(mvm::createLoopSafePointsPass());
 
-  JavaFunctionPasses->add(mvm::createEscapeAnalysisPass());
+  // Re-enable this when the pointers in stack-allocated objects can
+  // be given to the GC.
+  //JavaFunctionPasses->add(mvm::createEscapeAnalysisPass());
   JavaFunctionPasses->add(createLowerConstantCallsPass(getIntrinsics()));
+  JavaFunctionPasses->add(createGCInfo(this));
 }

@@ -169,6 +169,11 @@ Function* LLVMMethodInfo::getMethod() {
                                         "", Mod->getLLVMModule());
 
     }
+    
+    if (Mod->useCooperativeGC()) {
+      methodFunction->setGC("vmkit");
+    }
+    
     Mod->functions.insert(std::make_pair(methodFunction, methodDef));
   }
   return methodFunction;
