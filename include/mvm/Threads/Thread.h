@@ -11,6 +11,7 @@
 #define MVM_THREAD_H
 
 #include <stdlib.h>
+#include <vector>
 
 #include "types.h"
 
@@ -273,6 +274,11 @@ public:
   /// handler.
   ///
   virtual void printBacktraceAfterSignal() {}
+
+  /// addresses - The list of return addresses which represent native/app cross
+  /// calls.
+  ///
+  std::vector<void*> addresses;
 };
 
 

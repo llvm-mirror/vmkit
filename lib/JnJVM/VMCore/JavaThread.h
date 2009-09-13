@@ -114,11 +114,6 @@ public:
   ///
   void* currentSjljBuffer;
 
-  /// addresses - The list of return addresses which represent native/Java cross
-  /// calls.
-  ///
-  std::vector<void*> addresses;
-
   /// currentAddedReferences - Current number of added local references.
   ///
   uint32_t* currentAddedReferences;
