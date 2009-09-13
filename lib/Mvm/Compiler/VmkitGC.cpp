@@ -21,6 +21,10 @@ namespace {
   };
 }
 
+namespace mvm {
+  void linkVmkitGC() { }
+}
+
 static GCRegistry::Add<VmkitGC>
 X("vmkit", "VMKit GC for JIT-generated functions");
 

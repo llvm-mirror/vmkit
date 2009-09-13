@@ -39,6 +39,7 @@ namespace mvm {
   namespace llvm_runtime {
     #include "LLVMRuntime.inc"
   }
+  void linkVmkitGC();
 }
 
 const char* MvmModule::getHostTriple() {
@@ -48,6 +49,7 @@ const char* MvmModule::getHostTriple() {
 
 void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
                            TargetMachine* T) {
+  mvm::linkVmkitGC();
   
   llvm_start_multithreaded();
   
