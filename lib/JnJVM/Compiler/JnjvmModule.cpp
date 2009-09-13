@@ -386,7 +386,8 @@ void JavaLLVMCompiler::addJavaPasses() {
   // Lower constant calls to lower things like getClass used
   // on synchronized methods.
   JavaNativeFunctionPasses->add(createLowerConstantCallsPass(getIntrinsics()));
-  JavaNativeFunctionPasses->add(createGCInfo(this));
+  if (cooperativeGC)
+    JavaNativeFunctionPasses->add(createGCInfo(this));
   
   JavaFunctionPasses = new FunctionPassManager(TheModuleProvider);
   JavaFunctionPasses->add(new TargetData(TheModule));
