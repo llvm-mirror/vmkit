@@ -67,7 +67,7 @@ JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
   JavaIntrinsics(TheModule) {
 
   enabledException = true;
-  cooperativeGC = true;
+  cooperativeGC = false;
 }
   
 void JavaLLVMCompiler::resolveVirtualClass(Class* cl) {
@@ -397,5 +397,6 @@ void JavaLLVMCompiler::addJavaPasses() {
   // be given to the GC.
   //JavaFunctionPasses->add(mvm::createEscapeAnalysisPass());
   JavaFunctionPasses->add(createLowerConstantCallsPass(getIntrinsics()));
-  JavaFunctionPasses->add(createGCInfo(this));
+  if (cooperativeGC)
+    JavaFunctionPasses->add(createGCInfo(this));
 }
