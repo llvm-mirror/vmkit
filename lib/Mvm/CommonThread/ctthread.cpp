@@ -48,6 +48,18 @@ void Thread::joinCollection() {
   Collector::traceStackThread();
 }
 
+void Thread::startNative(int level) {
+  // Caller of this function.
+  void** cur = (void**)FRAME_PTR();
+  
+  while (level--)
+    cur = (void**)cur[0];
+
+  // When entering, the number of addresses should be odd.
+  assert((addresses.size() % 2) && "Wrong stack");
+  
+  addresses.push_back(cur);
+}
 
 uintptr_t Thread::baseAddr = 0;
 

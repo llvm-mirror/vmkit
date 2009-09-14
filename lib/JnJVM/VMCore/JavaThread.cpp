@@ -80,19 +80,6 @@ void JavaThread::throwPendingException() {
   __cxa_throw(exc, 0, 0);
 }
 
-void JavaThread::startNative(int level) {
-  // Caller of this function.
-  void** cur = (void**)FRAME_PTR();
-  
-  while (level--)
-    cur = (void**)cur[0];
-
-  // When entering, the number of addresses should be odd.
-  assert((addresses.size() % 2) && "Wrong stack");
-  
-  addresses.push_back(cur);
-}
-
 void JavaThread::startJNI(int level) {
   // Caller of this function.
   void** cur = (void**)FRAME_PTR();

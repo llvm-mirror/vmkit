@@ -10,6 +10,7 @@
 #ifndef MVM_THREAD_H
 #define MVM_THREAD_H
 
+#include <cassert>
 #include <stdlib.h>
 #include <vector>
 
@@ -279,6 +280,18 @@ public:
   /// calls.
   ///
   std::vector<void*> addresses;
+
+  /// startNative - Record that we are entering native code.
+  ///
+  void startNative(int level) __attribute__ ((noinline));
+
+  /// endNative - Record that we are leaving native code.
+  ///
+  void endNative() {
+    assert(!(addresses.size() % 2) && "Wrong stack");    
+    addresses.pop_back();
+  }
+
 };
 
 
