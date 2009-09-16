@@ -55,12 +55,13 @@ char* JavaString::strToAsciiz() {
 
 const ArrayUInt16* JavaString::strToArray(Jnjvm* vm) {
   JavaString* self = this;
+  ArrayUInt16* array = 0;
   llvm_gcroot(self, 0);
+  llvm_gcroot(array, 0);
 
   assert(self->value && "String without an array?");
   if (self->offset || (self->count != self->value->size)) {
-    ArrayUInt16* array = 
-      (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(self->count, vm);
+    array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(self->count, vm);
     uint16* buf = array->elements;
 
     for (sint32 i = 0; i < count; i++) {
