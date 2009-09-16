@@ -197,9 +197,10 @@ public:
   void* getLastSP() { return lastSP; }
   void  setLastSP(void* V) { lastSP = V; }
 
-  void enterUncooperativeCode() {
+  void enterUncooperativeCode(unsigned level = 0) {
     if (isMvmThread()) {
       lastSP = __builtin_frame_address(0);
+      while (level--) lastSP = ((void**)lastSP)[0];
       if (doYield && !inGC) joinCollection();
     }
   }
