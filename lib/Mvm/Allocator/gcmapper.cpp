@@ -34,7 +34,7 @@ static inline void* manual_mremap(void * addr, int old_size, int new_size, int f
 {
   void * res = addr;
   if (new_size < old_size)
-    DO_MUNMAP((void*)((int)addr + new_size), old_size - new_size);
+    DO_MUNMAP((void*)((intptr_t)addr + new_size), old_size - new_size);
   else if (new_size > old_size)
     // Use of MAP_FIXED is discouraged...
     // res = mmap(addr, new_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, MAP_FIXED);
