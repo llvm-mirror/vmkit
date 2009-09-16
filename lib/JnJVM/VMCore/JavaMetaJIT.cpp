@@ -86,12 +86,8 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObje
   Signdef* sign = getSignature(); \
   uintptr_t buf = (uintptr_t)alloca(sign->nbArguments * sizeof(uint64)); \
   void* _buf = (void*)buf; \
-  JavaMethod* meth = this; \
-  if (classDef != cl) {\
-    UserClass* cl2 = 0; \
-    meth = cl->lookupMethodDontThrow(name, type, false, true, &cl2); \
-    assert(cl2 == cl && "Different classes in invoke virtual"); \
-  } \
+  UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
+  JavaMethod* meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
   void* func = meth->compiledPtr(); \
   FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf(); \
   readArgs(buf, sign, ap, jni); \
@@ -154,12 +150,8 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
 TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {\
   verifyNull(obj);\
   Signdef* sign = getSignature(); \
-  JavaMethod* meth = this; \
-  if (classDef != cl) {\
-    UserClass* cl2 = 0; \
-    meth = cl->lookupMethodDontThrow(name, type, false, true, &cl2); \
-    assert(cl2 == cl && "Different classes in invoke virtual"); \
-  } \
+  UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
+  JavaMethod* meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
   void* func = meth->compiledPtr(); \
   FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf(); \
   JavaThread* th = JavaThread::get(); \
@@ -242,12 +234,8 @@ TYPE JavaMethod::invoke##TYPE_NAME##Static(Jnjvm* vm, UserClass* cl, ...) {\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) { \
   verifyNull(obj); \
-  JavaMethod* meth = this; \
-  if (classDef != cl) {\
-    UserClass* cl2 = 0; \
-    meth = cl->lookupMethodDontThrow(name, type, false, true, &cl2); \
-    assert(cl2 == cl && "Different classes in invoke virtual"); \
-  } \
+  UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
+  JavaMethod* meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
   void* func = meth->compiledPtr(); \
   Signdef* sign = getSignature(); \
   FUNC_TYPE_VIRTUAL_AP call = (FUNC_TYPE_VIRTUAL_AP)sign->getVirtualCallAP(); \
@@ -303,12 +291,8 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
 \
 TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {\
   verifyNull(obj);\
-  JavaMethod* meth = this; \
-  if (classDef != cl) {\
-    UserClass* cl2 = 0; \
-    meth = cl->lookupMethodDontThrow(name, type, false, true, &cl2); \
-    assert(cl2 == cl && "Different classes in invoke virtual"); \
-  } \
+  UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
+  JavaMethod* meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
   void* func = meth->compiledPtr(); \
   Signdef* sign = getSignature(); \
   FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf(); \
@@ -398,12 +382,8 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObje
   Signdef* sign = getSignature(); \
   uintptr_t buf = (uintptr_t)alloca(sign->nbArguments * sizeof(uint64)); \
   void* _buf = (void*)buf; \
-  JavaMethod* meth = this; \
-  if (classDef != cl) {\
-    UserClass* cl2 = 0; \
-    meth = cl->lookupMethodDontThrow(name, type, false, true, &cl2); \
-    assert(cl2 == cl && "Different classes in invoke virtual"); \
-  } \
+  UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
+  JavaMethod* meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
   void* func = meth->compiledPtr(); \
   FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf(); \
   readArgs(buf, sign, ap, jni); \
@@ -463,12 +443,8 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
 TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {\
   verifyNull(obj);\
   Signdef* sign = getSignature(); \
-  JavaMethod* meth = this; \
-  if (classDef != cl) {\
-    UserClass* cl2 = 0; \
-    meth = cl->lookupMethodDontThrow(name, type, false, true, &cl2); \
-    assert(cl2 == cl && "Different classes in invoke virtual"); \
-  } \
+  UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
+  JavaMethod* meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
   void* func = meth->compiledPtr(); \
   FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf(); \
   JavaThread* th = JavaThread::get(); \
@@ -506,7 +482,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* bu
   \
   void* func = this->compiledPtr();\
   Signdef* sign = getSignature(); \
-  FUNC_TYPE_STATIC_BUF call = (FUNC_TYPE_STATIC_BUF)sign->getVirtualCallBuf(); \
+  FUNC_TYPE_STATIC_BUF call = (FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf(); \
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
@@ -548,12 +524,8 @@ TYPE JavaMethod::invoke##TYPE_NAME##Static(Jnjvm* vm, UserClass* cl, ...) {\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) { \
   verifyNull(obj); \
-  JavaMethod* meth = this; \
-  if (classDef != cl) {\
-    UserClass* cl2 = 0; \
-    meth = cl->lookupMethodDontThrow(name, type, false, true, &cl2); \
-    assert(cl2 == cl && "Different classes in invoke virtual"); \
-  } \
+  UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
+  JavaMethod* meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
   void* func = meth->compiledPtr(); \
   Signdef* sign = getSignature(); \
   FUNC_TYPE_VIRTUAL_AP call = (FUNC_TYPE_VIRTUAL_AP)sign->getVirtualCallAP(); \
@@ -606,12 +578,8 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
 \
 TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {\
   verifyNull(obj);\
-  JavaMethod* meth = this; \
-  if (classDef != cl) {\
-    UserClass* cl2 = 0; \
-    meth = cl->lookupMethodDontThrow(name, type, false, true, &cl2); \
-    assert(cl2 == cl && "Different classes in invoke virtual"); \
-  } \
+  UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
+  JavaMethod* meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
   void* func = meth->compiledPtr(); \
   Signdef* sign = getSignature(); \
   FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf(); \
