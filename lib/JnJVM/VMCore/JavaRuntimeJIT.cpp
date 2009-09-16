@@ -377,7 +377,7 @@ extern "C" UserClassArray* jnjvmGetArrayClass(UserCommonClass* cl,
   return res;
 }
 
-// Does not call Java code.
+// Does not call Java code. Can not yield a GC.
 extern "C" void jnjvmEndJNI(uint32** oldLRN, void** oldBuffer) {
   JavaThread* th = JavaThread::get();
   
@@ -391,15 +391,9 @@ extern "C" void jnjvmEndJNI(uint32** oldLRN, void** oldBuffer) {
   th->currentAddedReferences = *oldLRN;
 
 
-#ifdef DWARF_EXCEPTIONS
-  // If there's an exception, throw it now.
-  if (JavaThread::get()->pendingException) {
-    th->throwPendingException();
-  }
-#endif
 }
 
-// Never throws.
+// Never throws. Does not call Java code. Can not yied a GC.
 extern "C" void** jnjvmStartJNI(uint32* localReferencesNumber,
                                 uint32** oldLocalReferencesNumber,
                                 void* newBuffer, void** oldBuffer) {
@@ -419,17 +413,25 @@ extern "C" void** jnjvmStartJNI(uint32* localReferencesNumber,
 
 // Never throws.
 extern "C" void jnjvmJavaObjectAquire(JavaObject* obj) {
+  BEGIN_NATIVE_EXCEPTION(1)
+  
   llvm_gcroot(obj, 0);
   obj->acquire();
+
+  END_NATIVE_EXCEPTION
 }
 
 // Never throws.
 extern "C" void jnjvmJavaObjectRelease(JavaObject* obj) {
+  BEGIN_NATIVE_EXCEPTION(1)
+  
   llvm_gcroot(obj, 0);
   obj->release();
+  
+  END_NATIVE_EXCEPTION
 }
 
-// Does not call any Java code.
+// Does not call any Java code. Can not yield a GC.
 extern "C" void jnjvmThrowException(JavaObject* obj) {
   return JavaThread::get()->throwException(obj);
 }
@@ -629,12 +631,20 @@ extern "C" void jnjvmThrowExceptionFromJIT() {
 }
 
 extern "C" void* jnjvmStringLookup(UserClass* cl, uint32 index) {
+  
+  JavaString** str = 0;
+  
+  BEGIN_NATIVE_EXCEPTION(1)
+  
   UserConstantPool* ctpInfo = cl->getConstantPool();
   const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
-  JavaString** str = cl->classLoader->UTF8ToStr(utf8);
+  str = cl->classLoader->UTF8ToStr(utf8);
 #if defined(ISOLATE_SHARING) || !defined(ISOLATE)
   ctpInfo->ctpRes[index] = str;
 #endif
+  
+  END_NATIVE_EXCEPTION
+
   return (void*)str;
 }
 
