@@ -293,8 +293,12 @@ extern "C" void nativeInitWeakReference(JavaObjectReference* reference,
   llvm_gcroot(reference, 0);
   llvm_gcroot(referent, 0);
 
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   reference->init(referent, 0);
   JavaThread::get()->getJVM()->addWeakReference(reference);
+
+  END_NATIVE_EXCEPTION
 
 }
 
@@ -305,8 +309,12 @@ extern "C" void nativeInitWeakReferenceQ(JavaObjectReference* reference,
   llvm_gcroot(referent, 0);
   llvm_gcroot(queue, 0);
   
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   reference->init(referent, queue);
   JavaThread::get()->getJVM()->addWeakReference(reference);
+  
+  END_NATIVE_EXCEPTION
 
 }
 
@@ -315,8 +323,12 @@ extern "C" void nativeInitSoftReference(JavaObjectReference* reference,
   llvm_gcroot(reference, 0);
   llvm_gcroot(referent, 0);
   
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   reference->init(referent, 0);
   JavaThread::get()->getJVM()->addSoftReference(reference);
+  
+  END_NATIVE_EXCEPTION
 
 }
 
@@ -326,9 +338,13 @@ extern "C" void nativeInitSoftReferenceQ(JavaObjectReference* reference,
   llvm_gcroot(reference, 0);
   llvm_gcroot(referent, 0);
   llvm_gcroot(queue, 0);
-  
+ 
+  BEGIN_NATIVE_EXCEPTION(0)
+
   reference->init(referent, queue);
   JavaThread::get()->getJVM()->addSoftReference(reference);
+  
+  END_NATIVE_EXCEPTION
 
 }
 
@@ -339,25 +355,42 @@ extern "C" void nativeInitPhantomReferenceQ(JavaObjectReference* reference,
   llvm_gcroot(referent, 0);
   llvm_gcroot(queue, 0);
   
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   reference->init(referent, queue);
   JavaThread::get()->getJVM()->addPhantomReference(reference);
 
+  END_NATIVE_EXCEPTION
 }
 
 extern "C" JavaString* nativeInternString(JavaString* obj) {
   const ArrayUInt16* array = 0;
+  JavaString* res = 0;
   llvm_gcroot(obj, 0);
   llvm_gcroot(array, 0);
+  llvm_gcroot(res, 0);
+  
+  BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   array = obj->strToArray(vm);
-  return vm->constructString(array);
+  res = vm->constructString(array);
+  
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 extern "C" uint8 nativeIsArray(JavaObjectClass* klass) {
   llvm_gcroot(klass, 0);
+  UserCommonClass* cl = 0;
 
-  UserCommonClass* cl = klass->getClass();  
+  BEGIN_NATIVE_EXCEPTION(0)
+
+  cl = klass->getClass();  
+  
+  END_NATIVE_EXCEPTION
+  
   return (uint8)cl->isArray();
 }
 
@@ -371,6 +404,7 @@ extern "C" JavaObject* nativeGetCallingClass() {
   JavaThread* th = JavaThread::get();
   UserClass* cl = th->getCallingClass(1);
   if (cl) res = cl->getClassDelegatee(th->getJVM());
+  
   END_NATIVE_EXCEPTION
 
   return res;
@@ -382,9 +416,11 @@ extern "C" JavaObject* nativeGetCallingClassLoader() {
   llvm_gcroot(res, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
+  
   JavaThread* th = JavaThread::get();
   UserClass* cl = th->getCallingClass(1);
   res = cl->classLoader->getJavaClassLoader();  
+  
   END_NATIVE_EXCEPTION
 
   return res;
@@ -395,8 +431,10 @@ extern "C" JavaObject* nativeFirstNonNullClassLoader() {
   llvm_gcroot(res, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
+  
   JavaThread* th = JavaThread::get();
   res = th->getNonNullClassLoader();
+  
   END_NATIVE_EXCEPTION
 
   return res;
@@ -408,10 +446,12 @@ extern "C" JavaObject* nativeGetCallerClass(uint32 index) {
   llvm_gcroot(res, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
+  
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   UserClass* cl = th->getCallingClassLevel(index);
   if (cl) res = cl->getClassDelegatee(vm);
+  
   END_NATIVE_EXCEPTION
 
   return res;
@@ -423,9 +463,18 @@ extern "C" JavaObject* nativeGetAnnotation(JavaObject* obj) {
 }
 
 extern "C" JavaObject* nativeGetDeclaredAnnotations() {
+  JavaObject* res = 0;
+  llvm_gcroot(res, 0);
+  
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClassArray* array = vm->upcalls->constructorArrayAnnotation;
-  return array->doNew(0, vm);
+  res = array->doNew(0, vm);
+
+  END_NATIVE_EXCEPTION
+
+  return res;
 }
 
 extern "C" void nativePropertiesPostInit(JavaObject* prop);
@@ -459,16 +508,23 @@ extern "C" void nativeJavaObjectVMThreadDestructor(JavaObjectVMThread* obj) {
 extern "C" ArrayObject* nativeGetBootPackages();
 
 extern "C" JavaString* nativeGetenv(JavaString* str) {
+  JavaString* ret = 0;
   llvm_gcroot(str, 0);
+  llvm_gcroot(ret, 0);
+  
+  BEGIN_NATIVE_EXCEPTION(0)
 
   char* buf = str->strToAsciiz();
   char* res = getenv(buf);
   delete[] buf;
   if (res) {
     Jnjvm* vm = JavaThread::get()->getJVM();
-    return vm->asciizToStr(res);
+    ret = vm->asciizToStr(res);
   }
-  return 0;
+  
+  END_NATIVE_EXCEPTION
+
+  return ret;
 }
 
 void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
