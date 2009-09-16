@@ -352,11 +352,16 @@ extern "C" ArrayObject* nativeGetBootPackages() {
   ArrayObject* obj = 0;
   llvm_gcroot(obj, 0);
   
+  BEGIN_NATIVE_EXCEPTION(0)
+  
   Jnjvm* vm = JavaThread::get()->getJVM();
   obj = (ArrayObject*)vm->upcalls->ArrayOfString->doNew(NUM_BOOT_PACKAGES, vm);
   for (uint32 i = 0; i < NUM_BOOT_PACKAGES; ++i) {
     obj->elements[i] = vm->asciizToStr(bootPackages[i]);
   }
+  
+  END_NATIVE_EXCEPTION
+
   return obj;
 }
 
