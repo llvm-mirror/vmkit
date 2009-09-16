@@ -83,6 +83,7 @@ void JavaThread::throwPendingException() {
 void JavaThread::startJNI(int level) {
   // Caller of this function.
   void** cur = (void**)FRAME_PTR();
+  unsigned level2 = level;
   
   while (level--)
     cur = (void**)cur[0];
@@ -93,7 +94,7 @@ void JavaThread::startJNI(int level) {
   addresses.push_back(cur);
 
   // Start uncooperative mode.
-  enterUncooperativeCode();
+  enterUncooperativeCode(level2);
 }
 
 void JavaThread::startJava() {
