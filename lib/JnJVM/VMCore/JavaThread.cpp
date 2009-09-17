@@ -254,7 +254,7 @@ void JavaThread::printBacktrace() {
   std::vector<void*>::iterator it = addresses.end();
   Jnjvm* vm = getJVM();
 
-  void** addr = (void**)FRAME_PTR();
+  void** addr = getLastSP() ? (void**)getLastSP() : (void**)FRAME_PTR();
 
   // Loop until we cross the first Java frame.
   while (it != addresses.begin()) {
