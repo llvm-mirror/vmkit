@@ -12,8 +12,11 @@
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
 #include "llvm/Module.h"
+#include "llvm/CodeGen/GCStrategy.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/Support/ManagedStatic.h"
+#include "llvm/Support/Debug.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include "MvmGC.h"
 #include "mvm/VirtualMachine.h"
@@ -224,6 +227,20 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   Function* func = parseFunction(meth);
   void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
   func->deleteBody();
+
+  // Update the GC info.
+  LLVMMethodInfo* LMI = getMethodInfo(meth);
+  // If it's not, we know the last GC info is for this method.
+  if (func->hasGC() && !LMI->GCInfo) {
+    GCStrategy::iterator I = mvm::MvmModule::GC->end();
+    I--;
+    DEBUG(errs() << (*I)->getFunction().getName() << '\n');
+    DEBUG(errs() << LMI->getMethod()->getName() << '\n');
+    assert(&(*I)->getFunction() == LMI->getMethod() &&
+           "GC Info and method do not correspond");
+    LMI->GCInfo = *I;
+  }
+
   mvm::MvmModule::unprotectIR();
 
   return res;
