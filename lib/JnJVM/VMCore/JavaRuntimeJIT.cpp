@@ -405,7 +405,7 @@ extern "C" void** jnjvmStartJNI(uint32* localReferencesNumber,
   *oldLocalReferencesNumber = th->currentAddedReferences;
   th->currentAddedReferences = localReferencesNumber;
 
-  th->startJNI(2);
+  th->startJNI(1);
   void** val = (void**)th->addresses.back();
 
   return val;
