@@ -26,6 +26,7 @@ namespace llvm {
   class ExistingModuleProvider;
   class Function;
   class FunctionPassManager;
+  class GCStrategy;
   class LLVMContext;
   class Module;
   class ModuleProvider;
@@ -169,6 +170,7 @@ public:
    static const llvm::Type* pointerSizeType;
 
    static llvm::ExecutionEngine* executionEngine;
+   static llvm::GCStrategy* GC;
    static mvm::LockRecursive protectEngine;
    static llvm::Module *globalModule;
    static llvm::ExistingModuleProvider *globalModuleProvider;

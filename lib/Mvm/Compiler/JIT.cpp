@@ -19,6 +19,7 @@
 #include <llvm/Type.h>
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/Verifier.h>
+#include <llvm/CodeGen/GCStrategy.h>
 #include <llvm/Config/config.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/Support/MutexGuard.h>
@@ -229,6 +230,7 @@ const llvm::Type* MvmModule::pointerSizeType;
 const llvm::Type* MvmModule::arrayPtrType;
 
 const llvm::TargetData* MvmModule::TheTargetData;
+llvm::GCStrategy* MvmModule::GC;
 llvm::Module *MvmModule::globalModule;
 llvm::ExistingModuleProvider *MvmModule::globalModuleProvider;
 llvm::FunctionPassManager* MvmModule::globalFunctionPasses;
