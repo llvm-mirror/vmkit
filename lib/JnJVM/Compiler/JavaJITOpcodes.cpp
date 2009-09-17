@@ -1742,9 +1742,11 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       
       case JSR : {
         uint32 tmp = i;
+        uint32 index = jsrIndex | 1;
+        jsrIndex += 2;
         Value* expr = ConstantExpr::getIntToPtr(
                                     ConstantInt::get(Type::getInt64Ty(*llvmContext),
-                                                     uint64_t (jsrIndex++)),
+                                                     uint64_t (index)),
                                     module->JavaObjectType);
         push(expr, false);
         branch(opcodeInfos[tmp + readS2(bytecodes, i)].newBlock,
@@ -1761,8 +1763,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         
         uint32 index = 0;
         for (std::vector<BasicBlock*>::iterator i = jsrs.begin(), 
-            e = jsrs.end(); i!= e; ++i, ++index) {
-          inst->addCase(ConstantInt::get(Type::getInt32Ty(*llvmContext), index), *i);
+            e = jsrs.end(); i!= e; ++i, index += 2) {
+          inst->addCase(ConstantInt::get(Type::getInt32Ty(*llvmContext), index | 1), *i);
         }
 
         break;
