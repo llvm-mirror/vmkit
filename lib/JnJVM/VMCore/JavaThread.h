@@ -223,10 +223,13 @@ public:
     assert(!(addresses.size() % 2) && "Wrong stack");    
   
     localJNIRefs->removeJNIReferences(this, *currentAddedReferences);
-    addresses.pop_back();
    
     // Go back to cooperative mode.
     leaveUncooperativeCode();
+   
+    // Pop the address after calling leaveUncooperativeCode
+    // to let the thread's call stack coherent.
+    addresses.pop_back();
   }
 
   /// endJava - Record that we are leaving Java code.
