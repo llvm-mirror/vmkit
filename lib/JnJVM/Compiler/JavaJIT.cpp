@@ -270,6 +270,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   Function* func = llvmFunction;
   if (jnjvm) {
     compilingMethod->setCompiledPtr((void*)natPtr, functionName);
+    llvmFunction->clearGC();
     return llvmFunction;
   }
 
@@ -380,6 +381,24 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     }
   }
   
+  
+  Instruction* ResultObject = 0;
+  if (returnType == module->JavaObjectType) {
+    ResultObject = new AllocaInst(module->JavaObjectType, "",
+                                  func->begin()->begin());
+    Value* GCArgs[2] = { 
+      new BitCastInst(ResultObject, module->ptrPtrType, "", ResultObject),
+      module->constantPtrNull
+    };
+      
+    if (TheCompiler->useCooperativeGC()) {
+      CallInst::Create(module->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
+                       ResultObject);
+    }
+    new StoreInst(module->JavaObjectNullConstant, ResultObject, "",
+                  ResultObject);
+  }
+  
   Value* nativeFunc = TheCompiler->getNativeFunction(compilingMethod,
                                                      (void*)natPtr);
 
@@ -414,16 +433,19 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   CallInst::Create(module->StartJNIFunction, Args4, Args4 + 4, "",
                    currentBlock);
   
-  Value* FrameAddr = CallInst::Create(module->llvm_frameaddress,
-                                     	module->constantZero, "", currentBlock);
 
+  // FIXME: Is this still needed?
+  //
   // When calling a native method, it may do whatever it wants with the
   // frame pointer. Therefore make sure it's on the stack. x86_64 has
   // this problem because it passes first arguments in registers.
   // Therefore, it was overwriting the frame pointer when entering the
   // native method.
-  Value* Temp = new AllocaInst(module->ptrType, "", currentBlock);
-  new StoreInst(FrameAddr, Temp, currentBlock);
+  //Value* FrameAddr = CallInst::Create(module->llvm_frameaddress,
+  //                                   	module->constantZero, "", currentBlock);
+  //Value* Temp = new AllocaInst(module->ptrType, "", currentBlock);
+  //new StoreInst(FrameAddr, Temp, currentBlock);
+  
   Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs.begin(),
                                          nativeArgs.end(), "", currentBlock);
 
@@ -438,7 +460,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
     currentBlock = loadBlock;
     result = new LoadInst(result, "", currentBlock);
-    
+    new StoreInst(result, ResultObject, "", currentBlock);
     endNode->addIncoming(result, currentBlock);
 
   } else if (returnType != Type::getVoidTy(getGlobalContext())) {
@@ -662,7 +684,11 @@ static void removeUnusedLocals(std::vector<AllocaInst*>& locals) {
   for (std::vector<AllocaInst*>::iterator i = locals.begin(),
        e = locals.end(); i != e; ++i) {
     AllocaInst* temp = *i;
-    if (!temp->getNumUses()) {
+    unsigned uses = temp->getNumUses();
+    if (!uses) {
+      temp->eraseFromParent();
+    } else if (uses == 1 && dyn_cast<StoreInst>(temp->use_begin())) {
+      dyn_cast<StoreInst>(temp->use_begin())->eraseFromParent();
       temp->eraseFromParent();
     }
   }
@@ -673,7 +699,13 @@ static void removeUnusedObjects(std::vector<AllocaInst*>& objects,
   for (std::vector<AllocaInst*>::iterator i = objects.begin(),
        e = objects.end(); i != e; ++i) {
     AllocaInst* temp = *i;
-    if (temp->getNumUses()) {
+    unsigned uses = temp->getNumUses();
+    if (!uses) {
+      temp->eraseFromParent();
+    } else if (uses == 1 && dyn_cast<StoreInst>(temp->use_begin())) {
+      dyn_cast<StoreInst>(temp->use_begin())->eraseFromParent();
+      temp->eraseFromParent();
+    } else {
       if (coop) {
         Instruction* I = new BitCastInst(temp, module->ptrPtrType, "");
         I->insertAfter(temp);
@@ -682,8 +714,6 @@ static void removeUnusedObjects(std::vector<AllocaInst*>& objects,
                                           GCArgs + 2, "");
         C->insertAfter(I);
       }
-    } else {
-      temp->eraseFromParent();
     }
   }
 }
@@ -736,16 +766,22 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
 
     for (int i = 0; i < maxLocals; i++) {
       intLocals.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", firstInstruction));
+      new StoreInst(Constant::getNullValue(Type::getInt32Ty(*llvmContext)), intLocals.back(), false, firstInstruction);
       doubleLocals.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "",
                                             firstInstruction));
+      new StoreInst(Constant::getNullValue(Type::getDoubleTy(*llvmContext)), doubleLocals.back(), false, firstInstruction);
       longLocals.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", firstInstruction));
+      new StoreInst(Constant::getNullValue(Type::getInt64Ty(*llvmContext)), longLocals.back(), false, firstInstruction);
       floatLocals.push_back(new AllocaInst(Type::getFloatTy(getGlobalContext()), "", firstInstruction));
+      new StoreInst(Constant::getNullValue(Type::getFloatTy(*llvmContext)), floatLocals.back(), false, firstInstruction);
       objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
                                           firstInstruction));
+      new StoreInst(Constant::getNullValue(module->JavaObjectType), objectLocals.back(), false, firstInstruction);
     }
     for (int i = 0; i < maxStack; i++) {
       objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
                                            firstInstruction));
+      new StoreInst(Constant::getNullValue(module->JavaObjectType), objectStack.back(), false, firstInstruction);
       intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", firstInstruction));
       doubleStack.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "",
                                            firstInstruction));
@@ -756,16 +792,22 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   } else {
     for (int i = 0; i < maxLocals; i++) {
       intLocals.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", firstBB));
+      new StoreInst(Constant::getNullValue(Type::getInt32Ty(*llvmContext)), intLocals.back(), false, firstBB);
       doubleLocals.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "", firstBB));
+      new StoreInst(Constant::getNullValue(Type::getDoubleTy(*llvmContext)), doubleLocals.back(), false, firstBB);
       longLocals.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", firstBB));
+      new StoreInst(Constant::getNullValue(Type::getInt64Ty(*llvmContext)), longLocals.back(), false, firstBB);
       floatLocals.push_back(new AllocaInst(Type::getFloatTy(getGlobalContext()), "", firstBB));
+      new StoreInst(Constant::getNullValue(Type::getFloatTy(*llvmContext)), floatLocals.back(), false, firstBB);
       objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
                                             firstBB));
+      new StoreInst(Constant::getNullValue(module->JavaObjectType), objectLocals.back(), false, firstBB);
     }
     
     for (int i = 0; i < maxStack; i++) {
       objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
                                            firstBB));
+      new StoreInst(Constant::getNullValue(module->JavaObjectType), objectStack.back(), false, firstBB);
       intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", firstBB));
       doubleStack.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "", firstBB));
       longStack.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", firstBB));
@@ -908,16 +950,22 @@ llvm::Function* JavaJIT::javaCompile() {
 
   for (int i = 0; i < maxLocals; i++) {
     intLocals.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", currentBlock));
+    new StoreInst(Constant::getNullValue(Type::getInt32Ty(*llvmContext)), intLocals.back(), false, currentBlock);
     doubleLocals.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "", currentBlock));
+    new StoreInst(Constant::getNullValue(Type::getDoubleTy(*llvmContext)), doubleLocals.back(), false, currentBlock);
     longLocals.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", currentBlock));
+    new StoreInst(Constant::getNullValue(Type::getInt64Ty(*llvmContext)), longLocals.back(), false, currentBlock);
     floatLocals.push_back(new AllocaInst(Type::getFloatTy(getGlobalContext()), "", currentBlock));
+    new StoreInst(Constant::getNullValue(Type::getFloatTy(*llvmContext)), floatLocals.back(), false, currentBlock);
     objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
                                           currentBlock));
+    new StoreInst(Constant::getNullValue(module->JavaObjectType), objectLocals.back(), false, currentBlock);
   }
   
   for (int i = 0; i < maxStack; i++) {
     objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
                                          currentBlock));
+    new StoreInst(Constant::getNullValue(module->JavaObjectType), objectStack.back(), false, currentBlock);
     intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", currentBlock));
     doubleStack.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "", currentBlock));
     longStack.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", currentBlock));
