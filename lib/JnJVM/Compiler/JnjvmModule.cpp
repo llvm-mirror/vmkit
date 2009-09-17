@@ -377,7 +377,6 @@ namespace mvm {
 
 namespace jnjvm {
   llvm::FunctionPass* createLowerConstantCallsPass(JnjvmModule* M);
-  llvm::FunctionPass* createGCInfo(JavaLLVMCompiler* Comp);
 }
 
 void JavaLLVMCompiler::addJavaPasses() {
@@ -386,8 +385,6 @@ void JavaLLVMCompiler::addJavaPasses() {
   // Lower constant calls to lower things like getClass used
   // on synchronized methods.
   JavaNativeFunctionPasses->add(createLowerConstantCallsPass(getIntrinsics()));
-  if (cooperativeGC)
-    JavaNativeFunctionPasses->add(createGCInfo(this));
   
   JavaFunctionPasses = new FunctionPassManager(TheModuleProvider);
   JavaFunctionPasses->add(new TargetData(TheModule));
@@ -398,6 +395,4 @@ void JavaLLVMCompiler::addJavaPasses() {
   // be given to the GC.
   //JavaFunctionPasses->add(mvm::createEscapeAnalysisPass());
   JavaFunctionPasses->add(createLowerConstantCallsPass(getIntrinsics()));
-  if (cooperativeGC)
-    JavaFunctionPasses->add(createGCInfo(this));
 }
