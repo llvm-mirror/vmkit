@@ -442,7 +442,10 @@ public:
   /// ~VMClassLoader - Delete the internal class loader.
   ///
   static void staticDestructor(VMClassLoader* obj) {
-    if (obj->JCL) obj->JCL->~JnjvmClassLoader();
+    if (obj->JCL) {
+      obj->JCL->~JnjvmClassLoader();
+      delete &(obj->JCL->allocator);
+    }
   }
 
   /// VMClassLoader - Default constructors.

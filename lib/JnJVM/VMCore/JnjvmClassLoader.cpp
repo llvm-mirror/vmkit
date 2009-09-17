@@ -898,7 +898,7 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf,
 }
 
 JnjvmClassLoader::~JnjvmClassLoader() {
-  
+
   if (isolate)
     isolate->removeMethodsInFunctionMap(this);
 
@@ -928,7 +928,9 @@ JnjvmClassLoader::~JnjvmClassLoader() {
   }
 
   delete TheCompiler;
-  delete &allocator;
+
+  // Don't delete the allocator. The caller of this method must
+  // delete it after the current object is deleted.
 }
 
 
