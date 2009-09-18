@@ -52,7 +52,7 @@ GlobalVariable* CLIString::llvmVar() {
     if (!str->_llvmVar) {
       const Type* pty = mvm::MvmModule::ptrType;
       Constant* cons = 
-        ConstantExpr::getIntToPtr(ConstantInt::get(Type::Int64Ty, uint64_t (this)),
+        ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), uint64_t (this)),
                                   pty);
       str->_llvmVar = new GlobalVariable(*(vm->getLLVMModule()), pty, true,
                                     GlobalValue::ExternalLinkage,

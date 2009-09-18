@@ -691,38 +691,38 @@ extern "C" VMObject* System_Reflection_ClrHelpers_GetSemantics(mvm::Object* item
 }
 
 static void decapsulePrimitive(VMObject* arg, const llvm::Type* type, std::vector<llvm::GenericValue>& args) {
-  if (type == llvm::Type::Int1Ty) {
+  if (type == llvm::Type::getInt1Ty(llvm::getGlobalContext())) {
     llvm::GenericValue gv;
     gv.IntVal = llvm::APInt(1, (bool)((uint32*)arg)[VALUE_OFFSET]);
     args.push_back(gv);
-  } else if (type == llvm::Type::Int8Ty) {
+  } else if (type == llvm::Type::getInt8Ty(llvm::getGlobalContext())) {
     llvm::GenericValue gv;
     gv.IntVal = llvm::APInt(8, (uint8)((uint32*)arg)[VALUE_OFFSET]);
     args.push_back(gv);
-  } else if (type == llvm::Type::Int16Ty) {
+  } else if (type == llvm::Type::getInt16Ty(llvm::getGlobalContext())) {
     llvm::GenericValue gv;
     gv.IntVal = llvm::APInt(16, (uint16)((uint32*)arg)[VALUE_OFFSET]);
     args.push_back(gv);
-  } else if (type == llvm::Type::Int32Ty) {
+  } else if (type == llvm::Type::getInt32Ty(llvm::getGlobalContext())) {
     llvm::GenericValue gv;
     gv.IntVal = llvm::APInt(32, (uint32)((uint32*)arg)[VALUE_OFFSET]);
     args.push_back(gv);
-  } else if (type == llvm::Type::Int64Ty) {
+  } else if (type == llvm::Type::getInt64Ty(llvm::getGlobalContext())) {
     llvm::GenericValue gv;
     uint32* ptr = &((uint32*)arg)[VALUE_OFFSET];
     gv.IntVal = llvm::APInt(64, ((uint64*)ptr)[0]);
     args.push_back(gv);
-  } else if (type == llvm::Type::FloatTy) {
+  } else if (type == llvm::Type::getFloatTy(llvm::getGlobalContext())) {
     llvm::GenericValue gv;
     float* ptr = &((float*)arg)[VALUE_OFFSET];
     gv.FloatVal = ((float*)ptr)[0];
     args.push_back(gv);
-  } else if (type == llvm::Type::DoubleTy) {
+  } else if (type == llvm::Type::getDoubleTy(llvm::getGlobalContext())) {
     llvm::GenericValue gv;
     uint32* ptr = &((uint32*)arg)[VALUE_OFFSET];
     gv.DoubleVal = ((double*)ptr)[0];
     args.push_back(gv);
-  } else if (type == llvm::PointerType::getUnqual(llvm::Type::Int8Ty)) {
+  } else if (type == llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(llvm::getGlobalContext()))) {
     llvm::GenericValue gv(((void**)arg)[VALUE_OFFSET]);
     args.push_back(gv);
   } else {
@@ -759,7 +759,7 @@ extern "C" VMObject* System_Reflection_ClrMethod_Invoke(VMObject* Method, VMObje
   
   for ( ;i != e; ++i, ++index) {
     const llvm::Type* type = i->getType();
-    if (llvm::isa<llvm::PointerType>(type) && type != llvm::PointerType::getUnqual(llvm::Type::Int8Ty)) {
+    if (llvm::isa<llvm::PointerType>(type) && type != llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(llvm::getGlobalContext()))) {
       llvm::GenericValue gv(args->elements[index]);
       gvargs.push_back(gv);
     } else {
