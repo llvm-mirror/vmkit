@@ -101,6 +101,8 @@ extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
     jmp_buf buf;
     
     if (setjmp((jumpbuf_t)buf) == 0) {
+      // Push an unmeaningful value in the addresses field to let the
+      // stack consistent with Java frames/native frames.
       th->addresses.push_back(0);
       jnjvmStartJNI(&num, &old, (void*)buf, &oldBuf);
       onLoad(&vm->javavmEnv, res);
