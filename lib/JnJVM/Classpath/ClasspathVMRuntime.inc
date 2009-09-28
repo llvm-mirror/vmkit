@@ -85,10 +85,14 @@ extern "C" void  jnjvmEndJNI(uint32** old, void** oldBuf);
 extern "C" void  jnjvmStartJNI(uint32* num, uint32** old, void* newBuf,
                                void** oldBuf);
 
+extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm)
+  __attribute__ ((noinline));
+
 // Calls the JNI_OnLoad function of a dynamic library.
-void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
+extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
 
   onLoad_t onLoad = (onLoad_t)loader->loadInLib("JNI_OnLoad", res);
+  JavaThread* th = JavaThread::get();
   
   if (onLoad) {
     uint32 num = 0;
@@ -97,11 +101,13 @@ void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
     jmp_buf buf;
     
     if (setjmp((jumpbuf_t)buf) == 0) {
+      th->addresses.push_back(0);
       jnjvmStartJNI(&num, &old, (void*)buf, &oldBuf);
       onLoad(&vm->javavmEnv, res);
     }
 
     jnjvmEndJNI(&old, &oldBuf);
+    th->addresses.pop_back();
   }
 }
 
@@ -114,10 +120,13 @@ jclass clazz,
 JavaString* str,
 JavaObject* javaLoader) {
   
+  
   llvm_gcroot(str, 0);
   llvm_gcroot(javaLoader, 0);
 
   void* res = 0;
+  
+  BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JnjvmClassLoader* loader = 
@@ -130,6 +139,8 @@ JavaObject* javaLoader) {
   if (res) callOnLoad(res, loader, vm);
 
   delete[] buf;
+  
+  END_NATIVE_EXCEPTION
 
   return res != 0;
 }
