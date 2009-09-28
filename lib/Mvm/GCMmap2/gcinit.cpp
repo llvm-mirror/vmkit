@@ -29,16 +29,10 @@ void Collector::initialise() {
  
   used_nodes = new GCChunkNode();
   unused_nodes = new GCChunkNode();
-#ifdef HAVE_PTHREAD
   threads = new GCThread();
-#endif
   
   struct sigaction sa;
   sigset_t mask;
-
-#ifdef HAVE_PTHREAD
-  //on_fatal = unlock_dont_recovery;
-#endif
 
   sigaction(SIGGC, 0, &sa);
   sigfillset(&mask);
@@ -71,9 +65,7 @@ void Collector::destroy() {
   allocator = 0;
 }
 
-#ifdef HAVE_PTHREAD
 void Collector::inject_my_thread(mvm::Thread* th) {
   threads->inject(th);
 }
-#endif
 

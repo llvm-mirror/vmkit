@@ -246,9 +246,15 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   return res;
 }
 
+llvm::GCFunctionInfo*
+JavaJITStackScanner::IPToGCFunctionInfo(mvm::VirtualMachine* vm, void* ip) {
+  JavaMethod* method = vm->IPToMethod<JavaMethod>(ip);
+  return method->getInfo<LLVMMethodInfo>()->GCInfo;
+}
+
 // Helper function to run an executable with a JIT
 extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
-  llvm::llvm_shutdown_obj X;  
+  llvm::llvm_shutdown_obj X; 
    
   mvm::MvmModule::initialise();
   mvm::Collector::initialise();

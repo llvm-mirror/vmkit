@@ -11,7 +11,6 @@
 #ifndef MVM_MMAP_GC_H
 #define MVM_MMAP_GC_H
 
-#include "mvm/Config/config.h"
 #include <sys/types.h>
 #include "mvm/GC/GC.h"
 #include "types.h"
@@ -28,18 +27,11 @@
 #define CALL_TRACER tracer()
 
 namespace mvm {
-  class Thread;
-}
 
-
-
-
-namespace mvm {
+class Thread;
 
 class Collector {
-#ifdef HAVE_PTHREAD
   friend class GCThread;
-#endif
   static GCAllocator  *allocator;      /* The allocator */
 
 
@@ -58,15 +50,9 @@ class Collector {
   
   enum { stat_collect, stat_alloc, stat_broken };
 
-#ifdef HAVE_PTHREAD
   static void  siggc_handler(int);
   static inline void  lock()   { threads->lock(); }
   static inline void  unlock() { threads->unlock(); }
-#else
-  static void  siggc_handler(int) { }
-  static inline void  lock()   { }
-  static inline void  unlock() { }
-#endif
   
   /* Interface for collection, verifies enable_collect */
   static void collect_unprotect();    
@@ -82,7 +68,7 @@ class Collector {
     return n->nbb() - sizeof(gcRoot);
   }
   
-  static void traceForeignThreadStack(mvm::Thread* th, void* endPtr);
+  static void traceForeignThreadStack(mvm::Thread* th);
 
 public:
   static GCThread *threads;        /* le gestionnaire de thread et de synchro */
@@ -94,6 +80,8 @@ public:
     if(node && isMarked(node)) return true;
     else return false;
   }
+  
+  static void scanObject(void* obj);
 
   static void initialise();
   static void destroy();

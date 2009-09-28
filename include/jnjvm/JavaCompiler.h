@@ -14,6 +14,8 @@
 #include <cstdlib>
 #include <string>
 
+#include "mvm/GC/GC.h"
+
 namespace jnjvm {
 
 class Class;
@@ -78,6 +80,9 @@ public:
   
   virtual ~JavaCompiler() {}
 
+  virtual mvm::StackScanner* createStackScanner() {
+    return new mvm::UnpreciseStackScanner();
+  }
 };
 
 }

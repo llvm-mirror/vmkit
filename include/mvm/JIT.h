@@ -18,6 +18,8 @@
 
 #include "llvm/Target/TargetMachine.h"
 
+#include "mvm/GC/GC.h"
+
 namespace llvm {
   class Constant;
   class ConstantFP;
@@ -26,6 +28,7 @@ namespace llvm {
   class ExistingModuleProvider;
   class Function;
   class FunctionPassManager;
+  class GCFunctionInfo;
   class GCStrategy;
   class LLVMContext;
   class Module;
@@ -40,6 +43,7 @@ namespace mvm {
 
 class LockNormal;
 class LockRecursive;
+class VirtualMachine;
 
 const double MaxDouble = +INFINITY; //1.0 / 0.0;
 const double MinDouble = -INFINITY;//-1.0 / 0.0;
@@ -194,6 +198,14 @@ public:
 
    static const char* getHostTriple();
 };
+
+class JITStackScanner : public StackScanner {
+public:
+  virtual void scanStack(mvm::Thread* th);
+  virtual llvm::GCFunctionInfo* IPToGCFunctionInfo(VirtualMachine* vm,
+                                                   void* ip) = 0;
+};
+
 
 } // end namespace mvm
 

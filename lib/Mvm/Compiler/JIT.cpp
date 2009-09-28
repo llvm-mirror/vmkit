@@ -22,6 +22,7 @@
 #include <llvm/CodeGen/GCStrategy.h>
 #include <llvm/Config/config.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/Support/Debug.h>
 #include <llvm/Support/MutexGuard.h>
 #include <llvm/Target/TargetData.h>
 #include <llvm/Target/TargetMachine.h>
@@ -31,6 +32,9 @@
 #include "mvm/JIT.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
+#include "mvm/VirtualMachine.h"
+#include "mvm/GC/GC.h"
+#include "MvmGC.h"
 
 using namespace mvm;
 using namespace llvm;
@@ -337,4 +341,105 @@ void MvmModule::copyDefinitions(Module* Dst, Module* Src) {
                                    SF->getName(), Dst);
     F->setAttributes(SF->getAttributes());
   }
+}
+
+void JITStackScanner::scanStack(mvm::Thread* th) {
+  std::vector<void*>::iterator it = th->addresses.end();
+  VirtualMachine* vm = th->MyVM;
+
+  void** addr = mvm::Thread::get() == th ? (void**)FRAME_PTR() : (void**)th->getLastSP();
+  void** oldAddr = addr;
+
+  // Loop until we cross the first Java frame.
+  while (it != th->addresses.begin()) {
+    
+    --it;
+    // Until we hit the last Java frame.
+    do {
+      void* ip = FRAME_IP(addr);
+      camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+      if (CF) { 
+        //char* spaddr = (char*)addr + CF->FrameSize + sizeof(void*);
+        uintptr_t spaddr = (uintptr_t)addr[0];
+        for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
+          Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+        }
+      }
+      
+      oldAddr = addr;
+      addr = (void**)addr[0];
+    } while (oldAddr != (void**)*it && addr != (void**)*it);
+    
+    // Set the iterator to the next native -> Java call.
+    --it;
+
+    // See if we're from JNI.
+    if (*it == 0) {
+      --it;
+      addr = (void**)*it;
+      --it;
+      if (*it == 0) {
+        void* ip = FRAME_IP(addr);
+        camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+        if (CF) { 
+          //char* spaddr = (char*)addr + CF->FrameSize + sizeof(void*);
+          uintptr_t spaddr = (uintptr_t)addr[0];
+          for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
+            Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+          }
+        }
+        addr = (void**)addr[0];
+        continue;
+      }
+    }
+
+    do {
+      void* ip = FRAME_IP(addr);
+      bool isStub = ((unsigned char*)ip)[0] == 0xCD;
+      if (isStub) ip = addr[2];
+      camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+      if (CF) {
+        //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
+        uintptr_t spaddr = (uintptr_t)addr[0];
+        for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
+          Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+        }
+      } else {
+        llvm::GCFunctionInfo* GFI = IPToGCFunctionInfo(vm, ip);
+        
+        if (GFI) {
+          DEBUG(llvm::errs() << GFI->getFunction().getName() << '\n');
+          // All safe points have the same informations currently in LLVM.
+          llvm::GCFunctionInfo::iterator J = GFI->begin();
+          //uintptr_t spaddr = (uintptr_t)addr + GFI->getFrameSize() + sizeof(void*);
+          uintptr_t spaddr = (uintptr_t)addr[0];
+          for (llvm::GCFunctionInfo::live_iterator K = GFI->live_begin(J),
+               KE = GFI->live_end(J); K != KE; ++K) {
+            intptr_t obj = *(intptr_t*)(spaddr + K->StackOffset);
+            // Verify that obj does cnot come from a JSR bytecode.
+            if (!(obj & 1)) Collector::scanObject((void*)obj);
+          }
+        }
+      }
+      
+      addr = (void**)addr[0];
+      // End walking the stack when we cross a native -> Java call. Here
+      // the iterator points to a native -> Java call. We dereference addr twice
+      // because a native -> Java call always contains the signature function.
+    } while (((void***)addr)[0][0] != *it);
+  }
+
+  while (addr < th->baseSP && addr < addr[0]) {
+    void* ip = FRAME_IP(addr);
+    camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+    if (CF) { 
+      //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
+      uintptr_t spaddr = (uintptr_t)addr[0];
+      for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
+        Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+      }
+    }
+    addr = (void**)addr[0];
+  }
+
 }

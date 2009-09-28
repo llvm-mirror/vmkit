@@ -18,6 +18,7 @@
 #include "mvm/Allocator.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
+#include "mvm/GC/GC.h"
 
 #include <cassert>
 #include <map>
@@ -53,6 +54,8 @@ public:
   static const uint8_t WEAK = 1;
   static const uint8_t SOFT = 2;
   static const uint8_t PHANTOM = 3;
+
+
 
   ReferenceQueue(uint8_t s) {
     References = new gc*[INITIAL_QUEUE_SIZE];
@@ -144,6 +147,7 @@ public:
   static CompilationUnit* initialiseCLIVM();
   static VirtualMachine* createCLIVM(CompilationUnit* C = 0);
 
+  static StaticGCMap GCMap;
     
 private:
   /// WeakReferencesQueue - The queue of weak references.
@@ -351,6 +355,10 @@ protected:
   ///
   mvm::SpinLock FunctionMapLock;
 
+  /// scanner - Scanner of threads' stacks.
+  ///
+  mvm::StackScanner* scanner;
+
 public:
   /// addMethodInFunctionMap - A new method pointer in the function map.
   ///
@@ -367,11 +375,20 @@ public:
     FunctionMapLock.acquire();
     std::map<void*, void*>::iterator I = Functions.upper_bound(ip);
     assert(I != Functions.begin() && "Wrong value in function map");
-    FunctionMapLock.release();
 
     // Decrement because we had the "greater than" value.
     I--;
+    
+    FunctionMapLock.release();
     return (T*)I->second;
+  }
+
+  void setScanner(mvm::StackScanner* s) {
+    scanner = s;
+  }
+
+  mvm::StackScanner* getScanner() {
+    return scanner;
   }
 
 #ifdef ISOLATE

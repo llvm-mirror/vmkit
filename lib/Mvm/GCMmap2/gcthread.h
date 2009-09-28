@@ -70,7 +70,7 @@ public:
  
   inline void collectionFinished() {
     if (cooperative) {
-      // We lock here to make sure no previously blocked in native threads
+      // We lock here to make sure no threads previously blocked in native
       // will join the collection and never go back to running code.
       stackLock();
       mvm::Thread* cur = current_collector;

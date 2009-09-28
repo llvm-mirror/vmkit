@@ -1357,6 +1357,19 @@ void Jnjvm::removeMethodsInFunctionMap(JnjvmClassLoader* loader) {
   FunctionMapLock.release();
 }
 
+
+/// JavaStaticCompiler - Compiler for AOT-compiled programs that
+/// do not use the JIT.
+class JavaStaticCompiler : public JavaCompiler {
+public:
+#ifdef WITH_LLVM_GCC
+  virtual mvm::StackScanner* createStackScanner() {
+    return new mvm::CamlStackScanner();
+  }
+#endif
+};
+
+
 // Helper function to run Jnjvm without JIT.
 extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   mvm::Collector::initialise();
@@ -1366,7 +1379,7 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   newArgv[0] = newArgv[1];
   newArgv[1] = mainClass;
  
-  JavaCompiler* Comp = new JavaCompiler();
+  JavaCompiler* Comp = new JavaStaticCompiler();
   JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
   mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(JCL);
   vm->runApplication(argc + 1, newArgv);

@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "mvm/VirtualMachine.h"
+#include "jnjvm/JavaCompiler.h"
 
 #include "JavaArray.h"
 #include "JavaClass.h"
@@ -35,6 +36,7 @@ mvm::VirtualMachine* mvm::VirtualMachine::createJVM(JnjvClassLoader* JCL) {
   JnjvmBootstraLoader* bootstrapLoader = 
     new(*C) JnjvmBootstrapLoader(*C, JCL->getCompiler());
   Jnjvm* vm = new(*A, "VM") Jnjvm(*A, bootstrapLoader);
+  vm->scanner = JCL->getCompiler()->createStackScanner();
   return vm;
 }
 #else
@@ -48,6 +50,7 @@ mvm::VirtualMachine::initialiseJVM(JavaCompiler* Comp, bool dlLoad) {
 mvm::VirtualMachine* mvm::VirtualMachine::createJVM(JnjvmClassLoader* C) {
   mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();
   Jnjvm* vm = new(*A, "VM") Jnjvm(*A, (JnjvmBootstrapLoader*)C);
+  vm->scanner = C->getCompiler()->createStackScanner();
   return vm;
 }
 

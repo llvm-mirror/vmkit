@@ -48,7 +48,7 @@ void GCThread::synchronize() {
       void* val = cur->getLastSP();
       // If val is null, this means that the thread woke up, and is
       // joining the collection. We are sure the thread will scan its stack.
-      if (val) Collector::traceForeignThreadStack(cur, val);
+      if (val) Collector::traceForeignThreadStack(cur);
 	  }
 
     // Finally, scan my stack too!

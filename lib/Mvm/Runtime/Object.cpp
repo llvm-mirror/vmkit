@@ -9,6 +9,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <csetjmp>
 
 #include "MvmGC.h"
 #include "mvm/Allocator.h"
@@ -311,3 +312,102 @@ void* Allocator::allocateTemporaryMemory(unsigned int sz) {
 void Allocator::freeTemporaryMemory(void* obj) {
   return free(obj); 
 }
+
+StaticGCMap VirtualMachine::GCMap;
+
+void CamlStackScanner::scanStack(mvm::Thread* th) {
+  std::vector<void*>::iterator it = th->addresses.end();
+
+  void** addr = mvm::Thread::get() == th ? (void**)FRAME_PTR() : (void**)th->getLastSP();
+  void** oldAddr = addr;
+
+  // Loop until we cross the first Java frame.
+  while (it != th->addresses.begin()) {
+    
+    --it;
+    // Until we hit the last Java frame.
+    do {
+      void* ip = FRAME_IP(addr);
+      camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+      if (CF) { 
+        //char* spaddr = (char*)addr + CF->FrameSize + sizeof(void*);
+        uintptr_t spaddr = (uintptr_t)addr[0];
+        for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
+          Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+        }
+      }
+      oldAddr = addr;
+      addr = (void**)addr[0];
+    } while (oldAddr != (void**)*it && addr != (void**)*it);
+    
+    // Set the iterator to the next native -> Java call.
+    --it;
+
+    // See if we're from JNI.
+    if (*it == 0) {
+      --it;
+      addr = (void**)*it;
+      --it;
+      if (*it == 0) {
+        void* ip = FRAME_IP(addr);
+        camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+        if (CF) { 
+          //char* spaddr = (char*)addr + CF->FrameSize + sizeof(void*);
+          uintptr_t spaddr = (uintptr_t)addr[0];
+          for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
+            Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+          }
+        }
+        addr = (void**)addr[0];
+        continue;
+      }
+    }
+
+    do {
+      void* ip = FRAME_IP(addr);
+      bool isStub = ((unsigned char*)ip)[0] == 0xCD;
+      if (isStub) ip = addr[2];
+      camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+      if (CF) {
+        //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
+        uintptr_t spaddr = (uintptr_t)addr[0];
+        for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
+          Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+        }
+      }
+      
+      addr = (void**)addr[0];
+      // End walking the stack when we cross a native -> Java call. Here
+      // the iterator points to a native -> Java call. We dereference addr twice
+      // because a native -> Java call always contains the signature function.
+    } while (((void***)addr)[0][0] != *it);
+  }
+
+  while (addr < th->baseSP && addr < addr[0]) {
+    void* ip = FRAME_IP(addr);
+    camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+    if (CF) { 
+      //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
+      uintptr_t spaddr = (uintptr_t)addr[0];
+      for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
+        Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+      }
+    }
+    addr = (void**)addr[0];
+  }
+}
+
+
+void UnpreciseStackScanner::scanStack(mvm::Thread* th) {
+  register unsigned int  **max = (unsigned int**)(void*)th->baseSP;
+  if (mvm::Thread::get() != th) {
+    register unsigned int  **cur = (unsigned int**)th->getLastSP();
+    for(; cur<max; cur++) Collector::scanObject(*cur);
+  } else {
+    jmp_buf buf;
+    setjmp(buf);
+    register unsigned int  **cur = (unsigned int**)&buf;
+    for(; cur<max; cur++) Collector::scanObject(*cur);
+  }
+}
+

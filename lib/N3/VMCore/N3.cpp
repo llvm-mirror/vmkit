@@ -78,7 +78,7 @@ N3* N3::allocateBootstrap() {
   vm->hashUTF8 = UTF8Map::allocate();
   vm->hashStr = StringMap::allocate();
   vm->loadedAssemblies = AssemblyMap::allocate();
-  
+  vm->scanner = new mvm::UnpreciseStackScanner(); 
   
   return vm;
 }
@@ -87,6 +87,7 @@ N3* N3::allocateBootstrap() {
 N3* N3::allocate(const char* name, N3* parent) {
   mvm::BumpPtrAllocator * A = new mvm::BumpPtrAllocator();
   N3 *vm= new(*A, "VM") N3();
+  vm->scanner = new mvm::UnpreciseStackScanner(); 
   
   std::string str = 
     mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();

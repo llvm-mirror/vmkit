@@ -12,9 +12,7 @@
 using namespace mvm;
 
 GCAllocator   *Collector::allocator = 0;
-#ifdef HAVE_PTHREAD
 GCThread      *Collector::threads;
-#endif
 
 
 int           Collector::status;
