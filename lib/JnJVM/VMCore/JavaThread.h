@@ -43,13 +43,32 @@ class LockObj;
 
 #define BEGIN_JNI_EXCEPTION \
   JavaThread* th = JavaThread::get(); \
+  void* SP = th->getLastSP(); \
+  th->leaveUncooperativeCode(); \
+  th->addresses.push_back(0); \
+  th->startNative(0); \
   try {
 
 #define END_JNI_EXCEPTION \
   } catch(...) { \
+    fprintf(stderr, "I have caught something here\n"); \
+    th->endNative(); \
+    th->addresses.pop_back(); \
+    th->enterUncooperativeCode(SP); \
     th->throwFromJNI(); \
   }
 
+#define RETURN_FROM_JNI(a) {\
+  th->endNative(); \
+  th->addresses.pop_back(); \
+  th->enterUncooperativeCode(SP); \
+  return (a); } \
+
+#define RETURN_VOID_FROM_JNI {\
+  th->endNative(); \
+  th->addresses.pop_back(); \
+  th->enterUncooperativeCode(SP); \
+  return; } \
 
 /// JavaThread - This class is the internal representation of a Java thread.
 /// It maintains thread-specific information such as its state, the current

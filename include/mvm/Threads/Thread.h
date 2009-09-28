@@ -204,6 +204,13 @@ public:
       if (doYield && !inGC) joinCollection();
     }
   }
+  
+  void enterUncooperativeCode(void* SP) {
+    if (isMvmThread()) {
+      lastSP = SP;
+      if (doYield && !inGC) joinCollection();
+    }
+  }
 
   void leaveUncooperativeCode() {
     if (isMvmThread()) {

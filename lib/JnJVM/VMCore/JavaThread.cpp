@@ -149,6 +149,17 @@ void JavaThread::getJavaFrameContext(std::vector<void*>& context) {
     
     // Set the iterator to the next native -> Java call.
     --it;
+    
+    // See if we're from JNI.
+    if (*it == 0) {
+      --it;
+      addr = (void**)*it;
+      --it;
+      if (*it == 0) {
+        addr = (void**)addr[0];
+        continue;
+      }
+    }
 
     do {
       void* ip = FRAME_IP(addr);
@@ -173,6 +184,17 @@ UserClass* JavaThread::getCallingClassLevel(uint32 level) {
     
     // Set the iterator to the next native -> Java call.
     --it;
+    
+    // See if we're from JNI.
+    if (*it == 0) {
+      --it;
+      addr = (void**)*it;
+      --it;
+      if (*it == 0) {
+        addr = (void**)addr[0];
+        continue;
+      }
+    }
 
     do {
       void* ip = FRAME_IP(addr);
@@ -205,6 +227,17 @@ JavaObject* JavaThread::getNonNullClassLoader() {
     
     // Set the iterator to the next native -> Java call.
     --it;
+    
+    // See if we're from JNI.
+    if (*it == 0) {
+      --it;
+      addr = (void**)*it;
+      --it;
+      if (*it == 0) {
+        addr = (void**)addr[0];
+        continue;
+      }
+    }
 
     do {
       void* ip = FRAME_IP(addr);
@@ -255,20 +288,35 @@ void JavaThread::printBacktrace() {
   Jnjvm* vm = getJVM();
 
   void** addr = getLastSP() ? (void**)getLastSP() : (void**)FRAME_PTR();
+  void** oldAddr = addr;
 
   // Loop until we cross the first Java frame.
   while (it != addresses.begin()) {
     
     --it;
     // Until we hit the last Java frame.
-    while (addr != (void**)*it) {
+    do {
       void* ip = FRAME_IP(addr);
       printFunctionInfo(ip);
+      oldAddr = addr;
       addr = (void**)addr[0];
-    }
+    } while (oldAddr != (void**)*it && addr != (void**)*it);
     
     // Set the iterator to the next native -> Java call.
     --it;
+
+    // See if we're from JNI.
+    if (*it == 0) {
+      --it;
+      addr = (void**)*it;
+      --it;
+      if (*it == 0) {
+        void* ip = FRAME_IP(addr);
+        printFunctionInfo(ip);
+        addr = (void**)addr[0];
+        continue;
+      }
+    }
 
     do {
       void* ip = FRAME_IP(addr);

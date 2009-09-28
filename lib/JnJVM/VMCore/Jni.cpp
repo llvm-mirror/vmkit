@@ -74,10 +74,10 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   UserCommonClass* cl = loader->loadClassFromAsciiz(asciiz, true, true);
   if (cl && cl->asClass()) cl->asClass()->initialiseClass(vm);
   jclass res = (jclass)cl->getClassDelegateePtr(vm);
-  return res;
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
   
 
@@ -93,14 +93,16 @@ jmethodID FromReflectedMethod(JNIEnv *env, jobject method) {
   Classpath* upcalls = vm->upcalls;
   UserCommonClass* cl = meth->getClass();
   if (cl == upcalls->newConstructor)  {
-    return (jmethodID)((JavaObjectMethod*)meth)->getInternalMethod();
+    jmethodID res = (jmethodID)((JavaObjectMethod*)meth)->getInternalMethod();
+    RETURN_FROM_JNI(res);
   } else if (cl == upcalls->newMethod) {
-    return (jmethodID)((JavaObjectConstructor*)meth)->getInternalMethod();
+    jmethodID res = (jmethodID)((JavaObjectConstructor*)meth)->getInternalMethod();
+    RETURN_FROM_JNI(res);
   }
   
   END_JNI_EXCEPTION
   
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -126,11 +128,12 @@ jboolean IsAssignableFrom(JNIEnv *env, jclass _sub, jclass _sup) {
   UserCommonClass* cl1 = 
     UserCommonClass::resolvedImplClass(vm, sub, false);
 
-  return cl1->isAssignableFrom(cl2);
+  jboolean res = (jboolean)cl1->isAssignableFrom(cl2);
+  RETURN_FROM_JNI(res);
   
   END_JNI_EXCEPTION
 
-  return false;
+  RETURN_FROM_JNI(false);
 }
 
 
@@ -155,7 +158,7 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
   
   verifyNull(Cl);
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, true);
-  if (!cl->isClass()) return 0;
+  if (!cl->isClass()) RETURN_FROM_JNI(0);
 
   UserClass* realCl = cl->asClass();
   res = realCl->doNew(vm);
@@ -164,17 +167,32 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
                                           false, true, 0);
   init->invokeIntSpecial(vm, realCl, res, vm->asciizToStr(msg));
   th->pendingException = res;
+  
+  th->endNative();
+  th->addresses.pop_back();
+  th->enterUncooperativeCode(SP);
   th->throwFromJNI();
-  return 1;
+  
+  RETURN_FROM_JNI(1);
   
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
 jthrowable ExceptionOccurred(JNIEnv *env) {
-  return (jthrowable)JavaThread::get()->pendingException;
+  
+  BEGIN_JNI_EXCEPTION
+
+  JavaObject* obj = JavaThread::get()->pendingException;
+  llvm_gcroot(obj, 0);
+  jthrowable res = (jthrowable)th->pushJNIRef(obj);
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -214,11 +232,18 @@ void DeleteLocalRef(JNIEnv *env, jobject localRef) {
 
 
 jboolean IsSameObject(JNIEnv *env, jobject ref1, jobject ref2) {
+  
+  BEGIN_JNI_EXCEPTION
 
   JavaObject* Ref1 = *(JavaObject**)ref1;
   JavaObject* Ref2 = *(JavaObject**)ref2;
+  llvm_gcroot(Ref1, 0);
+  llvm_gcroot(Ref2, 0);
 
-  return Ref1 == Ref2;
+  RETURN_FROM_JNI(Ref1 == Ref2);
+  
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(false);
 }
 
 
@@ -250,15 +275,16 @@ jobject AllocObject(JNIEnv *env, jclass _clazz) {
   Jnjvm* vm = th->getJVM();
 
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  if (!cl->isClass()) return 0;
+  if (!cl->isClass()) RETURN_FROM_JNI(0);
 
   // Store local reference
   res = cl->asClass()->doNew(vm);
-  
-  return (jobject)th->pushJNIRef(res);
+ 
+  jobject ret = (jobject)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -276,7 +302,7 @@ jobject NewObject(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) {
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  if (!cl->isClass()) return 0;
+  if (!cl->isClass()) RETURN_FROM_JNI(0);
   
   // Store local reference
   res = cl->asClass()->doNew(vm);
@@ -285,11 +311,12 @@ jobject NewObject(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) {
   va_start(ap, methodID);
   meth->invokeIntSpecialAP(vm, cl->asClass(), res, ap, true);
   va_end(ap);
-  
-  return (jobject)th->pushJNIRef(res);
+ 
+  jobject ret = (jobject)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
   
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -367,10 +394,11 @@ jobject NewObjectA(JNIEnv* env, jclass _clazz, jmethodID methodID,
 
   meth->invokeIntSpecialBuf(vm, cl->asClass(), res, (void*)buf);
 
-  return (jobject)th->pushJNIRef(res); 
+  jobject ret = (jobject)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
   
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -386,10 +414,11 @@ jclass GetObjectClass(JNIEnv *env, jobject _obj) {
   Jnjvm* vm = th->getJVM();
   
   // Store local reference
-  return (jclass)obj->getClass()->getClassDelegateePtr(vm);
+  jclass res = (jclass)obj->getClass()->getClassDelegateePtr(vm);
+  RETURN_FROM_JNI(res);
   
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -442,12 +471,12 @@ jmethodID GetMethodID(JNIEnv* env, jclass _clazz, const char *aname,
     const UTF8* type = cl->classLoader->hashUTF8->lookupAsciiz(atype);
     if (type) {
       JavaMethod* meth = realCl->lookupMethod(name, type, false, true, 0);
-      return (jmethodID)meth;
+      RETURN_FROM_JNI((jmethodID)meth);
     }
   }
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -474,10 +503,11 @@ jobject CallObjectMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   res = meth->invokeJavaObjectVirtualAP(vm, cl, obj, ap, true);
   va_end(ap);
 
-  return (jobject)th->pushJNIRef(res);
+  jobject ret = (jobject)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -501,11 +531,13 @@ jobject CallObjectMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   
   // Store local reference.
   res = meth->invokeJavaObjectVirtualAP(vm, cl, obj, args, true);
-  return (jobject)th->pushJNIRef(res);
+  
+  jobject ret = (jobject)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
   
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -537,10 +569,10 @@ jboolean CallBooleanMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   uint32 res = meth->invokeIntVirtualAP(vm, cl, self, ap, true);
   va_end(ap);
 
-  return res;
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -558,11 +590,12 @@ jboolean CallBooleanMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
-  return (jboolean)meth->invokeIntVirtualAP(vm, cl, obj, args, true);
+  jboolean res = (jboolean)meth->invokeIntVirtualAP(vm, cl, obj, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
   
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -594,11 +627,12 @@ jbyte CallByteMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
-  return (jbyte)meth->invokeIntVirtualAP(vm, cl, obj, args, true);
+  jbyte res = (jbyte)meth->invokeIntVirtualAP(vm, cl, obj, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
   
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -631,11 +665,12 @@ jchar CallCharMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
-  return (jchar)meth->invokeIntVirtualAP(vm, cl, obj, args, true);
+  jchar res = (jchar)meth->invokeIntVirtualAP(vm, cl, obj, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
   
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -668,11 +703,12 @@ jshort CallShortMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
-  return (jshort)meth->invokeIntVirtualAP(vm, cl, obj, args, true);
+  jshort res = (jshort)meth->invokeIntVirtualAP(vm, cl, obj, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
   
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -705,10 +741,10 @@ jint CallIntMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   uint32 res = meth->invokeIntVirtualAP(vm, cl, obj, ap, true);
   va_end(ap);
   
-  return res;
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -727,11 +763,12 @@ jint CallIntMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   
-  return (jint)meth->invokeIntVirtualAP(vm, cl, obj, args, true);
+  jint res = (jint)meth->invokeIntVirtualAP(vm, cl, obj, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
   
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -765,11 +802,12 @@ jlong CallLongMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
-  return (jlong)meth->invokeLongVirtualAP(vm, cl, obj, args, true);
+  jlong res = (jlong)meth->invokeLongVirtualAP(vm, cl, obj, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
   
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -800,10 +838,10 @@ jfloat CallFloatMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   jfloat res = meth->invokeFloatVirtualAP(vm, cl, obj, ap, true);
   va_end(ap);
-  return res;
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION;
-  return 0.0;
+  RETURN_FROM_JNI(0.0);
 }
 
 
@@ -821,11 +859,12 @@ jfloat CallFloatMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
-  return (jfloat)meth->invokeFloatVirtualAP(vm, cl, obj, args, true);
+  jfloat res = (jfloat)meth->invokeFloatVirtualAP(vm, cl, obj, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
   
-  return 0.0f;
+  RETURN_FROM_JNI(0.0f);
 }
 
 
@@ -856,10 +895,10 @@ jdouble CallDoubleMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   jdouble res = meth->invokeDoubleVirtualAP(vm, cl, obj, ap, true);
   va_end(ap);
-  return res;
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0.0;
+  RETURN_FROM_JNI(0.0);
 }
 
 
@@ -877,10 +916,11 @@ jdouble CallDoubleMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
-  return (jdouble)meth->invokeDoubleVirtualAP(vm, cl, obj, args, true);
+  jdouble res = (jdouble)meth->invokeDoubleVirtualAP(vm, cl, obj, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0.0;
+  RETURN_FROM_JNI(0.0);
 
 }
 
@@ -913,7 +953,11 @@ void CallVoidMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   meth->invokeIntVirtualAP(vm, cl, obj, ap, true);
   va_end(ap);
 
+  RETURN_VOID_FROM_JNI;
+
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -932,8 +976,12 @@ void CallVoidMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   meth->invokeIntVirtualAP(vm, cl, obj, args, true);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -1188,8 +1236,12 @@ void CallNonvirtualVoidMethod(JNIEnv *env, jobject _obj, jclass clazz,
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   meth->invokeIntSpecialAP(vm, cl, obj, ap, true);
   va_end(ap);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -1226,13 +1278,13 @@ jfieldID GetFieldID(JNIEnv *env, jclass _clazz, const char *aname,
       if (type) {
         JavaField* field = cl->asClass()->lookupField(name, type, false, true,
                                                       0);
-        return (jfieldID)field;
+        RETURN_FROM_JNI((jfieldID)field);
       }
     }
   }
   
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 
 }
 
@@ -1253,10 +1305,11 @@ jobject GetObjectField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   res = field->getObjectField(obj);
 
   JavaThread* th = JavaThread::get();
-  return (jobject)th->pushJNIRef(res);
+  jobject ret = (jobject)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1269,10 +1322,11 @@ jboolean GetBooleanField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
-  return (uint8)field->getInt8Field(obj);
+  uint8 res = (uint8)field->getInt8Field(obj);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1285,10 +1339,11 @@ jbyte GetByteField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
-  return (sint8)field->getInt8Field(obj);
+  sint8 res = (sint8)field->getInt8Field(obj);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1301,10 +1356,11 @@ jchar GetCharField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
-  return (uint16)field->getInt16Field(obj);
+  uint16 res = (uint16)field->getInt16Field(obj);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1317,10 +1373,11 @@ jshort GetShortField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
-  return (sint16)field->getInt16Field(obj);
+  sint16 res = (sint16)field->getInt16Field(obj);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1333,10 +1390,11 @@ jint GetIntField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
-  return (sint32)field->getInt32Field(obj);
+  sint32 res = (sint32)field->getInt32Field(obj);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1349,10 +1407,11 @@ jlong GetLongField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
-  return (sint64)field->getLongField(obj);
+  sint64 res = (sint64)field->getLongField(obj);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1365,10 +1424,11 @@ jfloat GetFloatField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
-  return field->getFloatField(obj);
+  jfloat res = (jfloat)field->getFloatField(obj);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1381,10 +1441,11 @@ jdouble GetDoubleField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
-  return (jdouble)field->getDoubleField(obj);
+  jdouble res = (jdouble)field->getDoubleField(obj);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1400,8 +1461,12 @@ void SetObjectField(JNIEnv *env, jobject _obj, jfieldID fieldID, jobject _value)
 
   JavaField* field = (JavaField*)fieldID;
   field->setObjectField(obj, value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -1416,8 +1481,12 @@ void SetBooleanField(JNIEnv *env, jobject _obj, jfieldID fieldID,
 
   JavaField* field = (JavaField*)fieldID;
   field->setInt8Field(obj, (uint8)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -1431,8 +1500,12 @@ void SetByteField(JNIEnv *env, jobject _obj, jfieldID fieldID, jbyte value) {
   
   JavaField* field = (JavaField*)fieldID;
   field->setInt8Field(obj, (uint8)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -1447,7 +1520,11 @@ void SetCharField(JNIEnv *env, jobject _obj, jfieldID fieldID, jchar value) {
   JavaField* field = (JavaField*)fieldID;
   field->setInt16Field(obj, (uint16)value);
   
+  RETURN_VOID_FROM_JNI;
+  
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -1461,8 +1538,12 @@ void SetShortField(JNIEnv *env, jobject _obj, jfieldID fieldID, jshort value) {
   
   JavaField* field = (JavaField*)fieldID;
   field->setInt16Field(obj, (sint16)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -1476,8 +1557,12 @@ void SetIntField(JNIEnv *env, jobject _obj, jfieldID fieldID, jint value) {
   
   JavaField* field = (JavaField*)fieldID;
   field->setInt32Field(obj, (sint32)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -1491,8 +1576,12 @@ void SetLongField(JNIEnv *env, jobject _obj, jfieldID fieldID, jlong value) {
   
   JavaField* field = (JavaField*)fieldID;
   field->setLongField(obj, (sint64)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -1506,8 +1595,12 @@ void SetFloatField(JNIEnv *env, jobject _obj, jfieldID fieldID, jfloat value) {
   
   JavaField* field = (JavaField*)fieldID;
   field->setFloatField(obj, (float)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -1521,8 +1614,12 @@ void SetDoubleField(JNIEnv *env, jobject _obj, jfieldID fieldID, jdouble value) 
   
   JavaField* field = (JavaField*)fieldID;
   field->setDoubleField(obj, (float)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -1545,13 +1642,13 @@ jmethodID GetStaticMethodID(JNIEnv *env, jclass _clazz, const char *aname,
       if (type) {
         JavaMethod* meth = cl->asClass()->lookupMethod(name, type, true, true,
                                                        0);
-        return (jmethodID)meth;
+        RETURN_FROM_JNI((jmethodID)meth);
       }
     }
   }
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1579,10 +1676,11 @@ jobject CallStaticObjectMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
   res = meth->invokeJavaObjectStaticAP(vm, cl, ap, true);
   va_end(ap);
   
-  return (jobject)th->pushJNIRef(res);
+  jobject ret = (jobject)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1604,10 +1702,11 @@ jobject CallStaticObjectMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   // Store local reference.
   res = meth->invokeJavaObjectStaticAP(vm, cl, args, true);
 
-  return (jobject)th->pushJNIRef(res);
+  jobject ret = (jobject)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1636,10 +1735,10 @@ jboolean CallStaticBooleanMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   uint32 res = meth->invokeIntStaticAP(vm, cl, ap, true);
   va_end(ap);
-  return res;
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1655,10 +1754,11 @@ jboolean CallStaticBooleanMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  return (jboolean)meth->invokeIntStaticAP(vm, cl, args, true);
+  jboolean res = (jboolean)meth->invokeIntStaticAP(vm, cl, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1685,10 +1785,10 @@ jbyte CallStaticByteMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) 
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   jbyte res = (jbyte) meth->invokeIntStaticAP(vm, cl, ap, true);
   va_end(ap);
-  return res;
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1704,10 +1804,11 @@ jbyte CallStaticByteMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  return (jbyte)meth->invokeIntStaticAP(vm, cl, args, true);
+  jbyte res = (jbyte)meth->invokeIntStaticAP(vm, cl, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1735,10 +1836,10 @@ jchar CallStaticCharMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) 
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   jchar res = (jchar) meth->invokeIntStaticAP(vm, cl, ap, true);
   va_end(ap);
-  return res;
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1753,10 +1854,11 @@ jchar CallStaticCharMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  return (jchar)meth->invokeIntStaticAP(vm, cl, args, true);
+  jchar res = (jchar)meth->invokeIntStaticAP(vm, cl, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1785,10 +1887,10 @@ jshort CallStaticShortMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   jshort res = (jshort) meth->invokeIntStaticAP(vm, cl, ap, true);
   va_end(ap);
-  return res;
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1804,10 +1906,11 @@ jshort CallStaticShortMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  return (jshort)meth->invokeIntStaticAP(vm, cl, args, true);
+  jshort res = (jshort)meth->invokeIntStaticAP(vm, cl, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1835,10 +1938,10 @@ jint CallStaticIntMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) {
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   jint res = (jint) meth->invokeIntStaticAP(vm, cl, ap, true);
   va_end(ap);
-  return res;
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1853,11 +1956,12 @@ jint CallStaticIntMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  return (jint)meth->invokeIntStaticAP(vm, cl, args, true);
+  jint res = (jint)meth->invokeIntStaticAP(vm, cl, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
   
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1885,10 +1989,10 @@ jlong CallStaticLongMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) 
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   jlong res = (jlong) meth->invokeLongStaticAP(vm, cl, ap, true);
   va_end(ap);
-  return res;
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1904,11 +2008,12 @@ jlong CallStaticLongMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  return (jlong)meth->invokeLongStaticAP(vm, cl, args, true);
+  jlong res = (jlong)meth->invokeLongStaticAP(vm, cl, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
   
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1938,10 +2043,10 @@ jfloat CallStaticFloatMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   jfloat res = (jfloat) meth->invokeFloatStaticAP(vm, cl, ap, true);
   va_end(ap);
-  return res;
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0.0f;
+  RETURN_FROM_JNI(0.0f);
 }
 
 
@@ -1957,11 +2062,12 @@ jfloat CallStaticFloatMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  return (jfloat)meth->invokeFloatStaticAP(vm, cl, args, true);
+  jfloat res = (jfloat)meth->invokeFloatStaticAP(vm, cl, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
   
-  return 0.0f;
+  RETURN_FROM_JNI(0.0f);
 }
 
 
@@ -1990,10 +2096,10 @@ jdouble CallStaticDoubleMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   jdouble res = (jdouble) meth->invokeDoubleStaticAP(vm, cl, ap, true);
   va_end(ap);
-  return res;
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0.0;
+  RETURN_FROM_JNI(0.0);
 }
 
 
@@ -2008,11 +2114,12 @@ jdouble CallStaticDoubleMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   JavaMethod* meth = (JavaMethod*)methodID;
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  return (jdouble)meth->invokeDoubleStaticAP(vm, cl, args, true);
+  jdouble res = (jdouble)meth->invokeDoubleStaticAP(vm, cl, args, true);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
   
-  return 0.0;
+  RETURN_FROM_JNI(0.0);
 }
 
 
@@ -2041,7 +2148,11 @@ void CallStaticVoidMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) {
   meth->invokeIntStaticAP(vm, cl, ap, true);
   va_end(ap);
 
+  RETURN_VOID_FROM_JNI;
+
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -2058,8 +2169,12 @@ void CallStaticVoidMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
   meth->invokeIntStaticAP(vm, cl, args, true);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -2089,13 +2204,13 @@ jfieldID GetStaticFieldID(JNIEnv *env, jclass _clazz, const char *aname,
       if (type) {
         JavaField* field = cl->asClass()->lookupField(name, type, true, true,
                                                       0);
-        return (jfieldID)field;
+        RETURN_FROM_JNI((jfieldID)field);
       }
     }
   }
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2105,17 +2220,21 @@ jobject GetStaticObjectField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   
   // Local object references.
   JavaObject* clazz = *(JavaObject**)_clazz;
+  JavaObject* obj = 0;
   llvm_gcroot(clazz, 0);
+  llvm_gcroot(obj, 0);
 
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   JavaField* field = (JavaField*)fieldID;
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
-  return (jobject)th->pushJNIRef(field->getObjectField(Stat));
+  obj = field->getObjectField(Stat);
+  jobject res = (jobject)th->pushJNIRef(obj);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2131,10 +2250,11 @@ jboolean GetStaticBooleanField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   JavaField* field = (JavaField*)fieldID;
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
-  return (jboolean)field->getInt8Field(Stat);
+  jboolean res = (jboolean)field->getInt8Field(Stat);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2150,10 +2270,11 @@ jbyte GetStaticByteField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   JavaField* field = (JavaField*)fieldID;
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
-  return (jbyte)field->getInt8Field(Stat);
+  jbyte res = (jbyte)field->getInt8Field(Stat);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2169,10 +2290,11 @@ jchar GetStaticCharField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   JavaField* field = (JavaField*)fieldID;
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
-  return (jchar)field->getInt16Field(Stat);
+  jchar res = (jchar)field->getInt16Field(Stat);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2188,10 +2310,11 @@ jshort GetStaticShortField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   JavaField* field = (JavaField*)fieldID;
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
-  return (jshort)field->getInt16Field(Stat);
+  jshort res = (jshort)field->getInt16Field(Stat);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2207,10 +2330,11 @@ jint GetStaticIntField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   JavaField* field = (JavaField*)fieldID;
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
-  return (jint)field->getInt32Field(Stat);
+  jint res = (jint)field->getInt32Field(Stat);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2226,10 +2350,11 @@ jlong GetStaticLongField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   JavaField* field = (JavaField*)fieldID;
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
-  return (jlong)field->getLongField(Stat);
+  jlong res = (jlong)field->getLongField(Stat);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2245,10 +2370,11 @@ jfloat GetStaticFloatField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   JavaField* field = (JavaField*)fieldID;
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
-  return (jfloat)field->getFloatField(Stat);
+  jfloat res = (jfloat)field->getFloatField(Stat);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2264,10 +2390,11 @@ jdouble GetStaticDoubleField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   JavaField* field = (JavaField*)fieldID;
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
-  return (jdouble)field->getDoubleField(Stat);
+  jdouble res = (jdouble)field->getDoubleField(Stat);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2288,7 +2415,11 @@ void SetStaticObjectField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   void* Stat = cl->asClass()->getStaticInstance();
   field->setObjectField(Stat, value);
   
+  RETURN_VOID_FROM_JNI;
+  
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -2305,8 +2436,12 @@ void SetStaticBooleanField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
   field->setInt8Field(Stat, (uint8)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -2324,8 +2459,12 @@ void SetStaticByteField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
   field->setInt8Field(Stat, (sint8)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -2343,8 +2482,12 @@ void SetStaticCharField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
   field->setInt16Field(Stat, (uint16)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -2362,8 +2505,12 @@ void SetStaticShortField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
   field->setInt16Field(Stat, (sint16)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -2381,8 +2528,12 @@ void SetStaticIntField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
   field->setInt32Field(Stat, (sint32)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -2400,8 +2551,12 @@ void SetStaticLongField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
   field->setLongField(Stat, (sint64)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -2419,8 +2574,12 @@ void SetStaticFloatField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
   field->setFloatField(Stat, (float)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -2438,8 +2597,12 @@ void SetStaticDoubleField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   void* Stat = cl->asClass()->getStaticInstance();
   field->setDoubleField(Stat, (double)value);
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -2476,10 +2639,13 @@ jstring NewStringUTF(JNIEnv *env, const char *bytes) {
 
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  return (jstring)th->pushJNIRef(vm->asciizToStr(bytes));
+  JavaObject* obj = vm->asciizToStr(bytes);
+  llvm_gcroot(obj, 0);
+  jstring ret = (jstring)th->pushJNIRef(obj);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2499,10 +2665,11 @@ const char *GetStringUTFChars(JNIEnv *env, jstring _string, jboolean *isCopy) {
   llvm_gcroot(string, 0);
 
   if (isCopy != 0) (*isCopy) = true;
-  return string->strToAsciiz();
+  const char* res = string->strToAsciiz();
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2519,10 +2686,10 @@ jsize GetArrayLength(JNIEnv *env, jarray _array) {
   JavaArray* array = *(JavaArray**)_array;
   llvm_gcroot(array, 0);
 
-  return array->size;
+  RETURN_FROM_JNI(array->size);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2557,10 +2724,12 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass _elementClass,
       res->elements[i] = initialElement;
     }
   }
-  return (jobjectArray)th->pushJNIRef(res);
+  
+  jobjectArray ret = (jobjectArray)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2582,11 +2751,12 @@ jobject GetObjectArrayElement(JNIEnv *env, jobjectArray _array, jsize index) {
   // Store local refererence.
   res = array->elements[index];
   
-  return (jobject)th->pushJNIRef(res);
+  jobject ret = (jobject)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
   
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2606,8 +2776,12 @@ void SetObjectArrayElement(JNIEnv *env, jobjectArray _array, jsize index,
   
   // Store global reference.
   array->elements[index] = val;
+  
+  RETURN_VOID_FROM_JNI;
 
   END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -2618,11 +2792,13 @@ jbooleanArray NewBooleanArray(JNIEnv *env, jsize len) {
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   JavaObject* res = vm->upcalls->ArrayOfBool->doNew(len, vm);
-  return (jbooleanArray)th->pushJNIRef(res);
+  llvm_gcroot(res, 0);
+  jbooleanArray ret = (jbooleanArray)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2633,10 +2809,12 @@ jbyteArray NewByteArray(JNIEnv *env, jsize len) {
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   JavaObject* res = vm->upcalls->ArrayOfByte->doNew(len, vm);
-  return (jbyteArray)th->pushJNIRef(res);
+  llvm_gcroot(res, 0);
+  jbyteArray ret = (jbyteArray)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2647,10 +2825,12 @@ jcharArray NewCharArray(JNIEnv *env, jsize len) {
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   JavaObject* res = vm->upcalls->ArrayOfChar->doNew(len, vm);
-  return (jcharArray)th->pushJNIRef(res);
+  llvm_gcroot(res, 0);
+  jcharArray ret = (jcharArray)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2661,10 +2841,12 @@ jshortArray NewShortArray(JNIEnv *env, jsize len) {
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   JavaObject* res = vm->upcalls->ArrayOfShort->doNew(len, vm);
-  return (jshortArray)th->pushJNIRef(res);
+  llvm_gcroot(res, 0);
+  jshortArray ret = (jshortArray)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2675,10 +2857,12 @@ jintArray NewIntArray(JNIEnv *env, jsize len) {
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   JavaObject* res = vm->upcalls->ArrayOfInt->doNew(len, vm);
-  return (jintArray)th->pushJNIRef(res);
+  llvm_gcroot(res, 0);
+  jintArray ret = (jintArray)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2689,10 +2873,12 @@ jlongArray NewLongArray(JNIEnv *env, jsize len) {
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   JavaObject* res = vm->upcalls->ArrayOfLong->doNew(len, vm);
-  return (jlongArray)th->pushJNIRef(res);
+  llvm_gcroot(res, 0);
+  jlongArray ret = (jlongArray)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2703,10 +2889,12 @@ jfloatArray NewFloatArray(JNIEnv *env, jsize len) {
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   JavaObject* res = vm->upcalls->ArrayOfFloat->doNew(len, vm);
-  return (jfloatArray)th->pushJNIRef(res);
+  llvm_gcroot(res, 0);
+  jfloatArray ret = (jfloatArray)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2717,10 +2905,12 @@ jdoubleArray NewDoubleArray(JNIEnv *env, jsize len) {
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   JavaObject* res = vm->upcalls->ArrayOfDouble->doNew(len, vm);
-  return (jdoubleArray)th->pushJNIRef(res);
+  llvm_gcroot(res, 0);
+  jdoubleArray ret = (jdoubleArray)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2739,10 +2929,10 @@ jboolean* GetBooleanArrayElements(JNIEnv *env, jbooleanArray _array,
   void* buffer = malloc(len);
   memcpy(buffer, array->elements, len);
 
-  return (jboolean*)buffer;
+  RETURN_FROM_JNI((jboolean*)buffer);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2760,10 +2950,10 @@ jbyte *GetByteArrayElements(JNIEnv *env, jbyteArray _array, jboolean *isCopy) {
   void* buffer = malloc(len);
   memcpy(buffer, array->elements, len);
 
-  return (jbyte*)buffer;
+  RETURN_FROM_JNI((jbyte*)buffer);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2781,10 +2971,10 @@ jchar *GetCharArrayElements(JNIEnv *env, jcharArray _array, jboolean *isCopy) {
   void* buffer = malloc(len);
   memcpy(buffer, array->elements, len);
 
-  return (jchar*)buffer;
+  RETURN_FROM_JNI((jchar*)buffer);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2803,10 +2993,10 @@ jshort *GetShortArrayElements(JNIEnv *env, jshortArray _array,
   void* buffer = malloc(len);
   memcpy(buffer, array->elements, len);
 
-  return (jshort*)buffer;
+  RETURN_FROM_JNI((jshort*)buffer);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2824,10 +3014,10 @@ jint *GetIntArrayElements(JNIEnv *env, jintArray _array, jboolean *isCopy) {
   void* buffer = malloc(len);
   memcpy(buffer, array->elements, len);
 
-  return (jint*)buffer;
+  RETURN_FROM_JNI((jint*)buffer);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2845,10 +3035,10 @@ jlong *GetLongArrayElements(JNIEnv *env, jlongArray _array, jboolean *isCopy) {
   void* buffer = malloc(len);
   memcpy(buffer, array->elements, len);
 
-  return (jlong*)buffer;
+  RETURN_FROM_JNI((jlong*)buffer);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2867,10 +3057,10 @@ jfloat *GetFloatArrayElements(JNIEnv *env, jfloatArray _array,
   void* buffer = malloc(len);
   memcpy(buffer, array->elements, len);
 
-  return (jfloat*)buffer;
+  RETURN_FROM_JNI((jfloat*)buffer);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2889,15 +3079,18 @@ jdouble *GetDoubleArrayElements(JNIEnv *env, jdoubleArray _array,
   void* buffer = malloc(len);
   memcpy(buffer, array->elements, len);
 
-  return (jdouble*)buffer;
+  RETURN_FROM_JNI((jdouble*)buffer);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
 void ReleaseBooleanArrayElements(JNIEnv *env, jbooleanArray _array,
 				 jboolean *elems, jint mode) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
@@ -2909,11 +3102,18 @@ void ReleaseBooleanArrayElements(JNIEnv *env, jbooleanArray _array,
 
     if (mode == 0) free(elems);
   }
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void ReleaseByteArrayElements(JNIEnv *env, jbyteArray _array, jbyte *elems,
 			      jint mode) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
@@ -2925,11 +3125,18 @@ void ReleaseByteArrayElements(JNIEnv *env, jbyteArray _array, jbyte *elems,
 
     if (mode == 0) free(elems);
   }
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void ReleaseCharArrayElements(JNIEnv *env, jcharArray _array, jchar *elems,
 			      jint mode) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
@@ -2941,11 +3148,18 @@ void ReleaseCharArrayElements(JNIEnv *env, jcharArray _array, jchar *elems,
 
     if (mode == 0) free(elems);
   }
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void ReleaseShortArrayElements(JNIEnv *env, jshortArray _array, jshort *elems,
 			       jint mode) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
@@ -2957,11 +3171,18 @@ void ReleaseShortArrayElements(JNIEnv *env, jshortArray _array, jshort *elems,
 
     if (mode == 0) free(elems);
   }
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void ReleaseIntArrayElements(JNIEnv *env, jintArray _array, jint *elems,
 			     jint mode) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
@@ -2973,11 +3194,18 @@ void ReleaseIntArrayElements(JNIEnv *env, jintArray _array, jint *elems,
 
     if (mode == 0) free(elems);
   }
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void ReleaseLongArrayElements(JNIEnv *env, jlongArray _array, jlong *elems,
 			      jint mode) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
@@ -2989,11 +3217,17 @@ void ReleaseLongArrayElements(JNIEnv *env, jlongArray _array, jlong *elems,
 
     if (mode == 0) free(elems);
   }
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void ReleaseFloatArrayElements(JNIEnv *env, jfloatArray _array, jfloat *elems,
 			       jint mode) {
+  BEGIN_JNI_EXCEPTION
+  
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
@@ -3005,11 +3239,18 @@ void ReleaseFloatArrayElements(JNIEnv *env, jfloatArray _array, jfloat *elems,
 
     if (mode == 0) free(elems);
   }
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void ReleaseDoubleArrayElements(JNIEnv *env, jdoubleArray _array,
 				jdouble *elems, jint mode) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
@@ -3021,134 +3262,249 @@ void ReleaseDoubleArrayElements(JNIEnv *env, jdoubleArray _array,
 
     if (mode == 0) free(elems);
   }
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void GetBooleanArrayRegion(JNIEnv *env, jbooleanArray array, jsize start,
 			   jsize len, jboolean *buf) {
+  BEGIN_JNI_EXCEPTION
+  
   ArrayUInt8* Array = *(ArrayUInt8**)array;
   llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(uint8));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void GetByteArrayRegion(JNIEnv *env, jbyteArray array, jsize start, jsize len,
 			jbyte *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArraySInt8* Array = *(ArraySInt8**)array;
   llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(sint8));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void GetCharArrayRegion(JNIEnv *env, jcharArray array, jsize start, jsize len,
 			jchar *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArrayUInt16* Array = *(ArrayUInt16**)array;
   llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(uint16));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void GetShortArrayRegion(JNIEnv *env, jshortArray array, jsize start,
 			 jsize len, jshort *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArraySInt16* Array = *(ArraySInt16**)array;
   llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(sint16));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void GetIntArrayRegion(JNIEnv *env, jintArray array, jsize start, jsize len,
 		       jint *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArraySInt32* Array = *(ArraySInt32**)array;
   llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(sint32));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void GetLongArrayRegion(JNIEnv *env, jlongArray array, jsize start, jsize len,
 		        jlong *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArrayLong* Array = *(ArrayLong**)array;
   llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(sint64));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void GetFloatArrayRegion(JNIEnv *env, jfloatArray array, jsize start,
 			 jsize len, jfloat *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArrayFloat* Array = *(ArrayFloat**)array;
   llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(float));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void GetDoubleArrayRegion(JNIEnv *env, jdoubleArray array, jsize start,
 			  jsize len, jdouble *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArrayDouble* Array = *(ArrayDouble**)array;
   llvm_gcroot(Array, 0);
   memcpy(buf, &(Array->elements[start]), len * sizeof(double));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void SetBooleanArrayRegion(JNIEnv *env, jbooleanArray array, jsize start,
 			   jsize len, const jboolean *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArrayUInt8* Array = *(ArrayUInt8**)array;
   llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(uint8));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void SetByteArrayRegion(JNIEnv *env, jbyteArray array, jsize start, jsize len,
 			                  const jbyte *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArraySInt8* Array = *(ArraySInt8**)array;
   llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(sint8));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void SetCharArrayRegion(JNIEnv *env, jcharArray array, jsize start, jsize len,
 			                  const jchar *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArrayUInt16* Array = *(ArrayUInt16**)array;
   llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(uint16));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void SetShortArrayRegion(JNIEnv *env, jshortArray array, jsize start,
 			                   jsize len, const jshort *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArraySInt16* Array = *(ArraySInt16**)array;
   llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(sint16));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void SetIntArrayRegion(JNIEnv *env, jintArray array, jsize start, jsize len,
 		                   const jint *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArraySInt32* Array = *(ArraySInt32**)array;
   llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(sint32));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void SetLongArrayRegion(JNIEnv* env, jlongArray array, jsize start, jsize len,
 			                  const jlong *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArrayLong* Array = *(ArrayLong**)array;
   llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(sint64));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void SetFloatArrayRegion(JNIEnv *env, jfloatArray array, jsize start,
 			                   jsize len, const jfloat *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArrayFloat* Array = *(ArrayFloat**)array;
   llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(float));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void SetDoubleArrayRegion(JNIEnv *env, jdoubleArray array, jsize start,
 			                    jsize len, const jdouble *buf) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   ArrayDouble* Array = *(ArrayDouble**)array;
   llvm_gcroot(Array, 0);
   memcpy(&(Array->elements[start]), buf, len * sizeof(double));
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -3175,14 +3531,14 @@ jint MonitorEnter(JNIEnv *env, jobject _obj) {
   
   if (Obj) {
     Obj->acquire();
-    return 0;
+    RETURN_FROM_JNI(0);
   } else {
-    return -1;
+    RETURN_FROM_JNI(-1);
   }
 
 
   END_JNI_EXCEPTION
-  return -1;
+  RETURN_FROM_JNI(-1);
 }
 
 
@@ -3200,13 +3556,13 @@ jint MonitorExit(JNIEnv *env, jobject _obj) {
     }
   
     Obj->release();
-    return 0;
+    RETURN_FROM_JNI(0);
   } else {
-    return -1;
+    RETURN_FROM_JNI(-1);
   }
 
   END_JNI_EXCEPTION
-  return -1;
+  RETURN_FROM_JNI(-1);
 }
 
 
@@ -3214,9 +3570,9 @@ jint GetJavaVM(JNIEnv *env, JavaVM **vm) {
   BEGIN_JNI_EXCEPTION
   Jnjvm* myvm = JavaThread::get()->getJVM();
   (*vm) = (JavaVM*)(void*)(&(myvm->javavmEnv));
-  return 0;
+  RETURN_FROM_JNI(0);
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -3248,15 +3604,18 @@ void *GetPrimitiveArrayCritical(JNIEnv *env, jarray _array, jboolean *isCopy) {
   void* buffer = malloc(len);
   memcpy(buffer, array->elements, len);
 
-  return (jchar*)buffer;
+  RETURN_FROM_JNI((jchar*)buffer);
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
 void ReleasePrimitiveArrayCritical(JNIEnv *env, jarray _array, void *carray,
 				   jint mode) {
+  
+  BEGIN_JNI_EXCEPTION
+  
   if (mode == JNI_ABORT) {
     free(carray);
   } else {
@@ -3270,6 +3629,10 @@ void ReleasePrimitiveArrayCritical(JNIEnv *env, jarray _array, void *carray,
 
     if (mode == 0) free(carray);
   }
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -3301,6 +3664,8 @@ void DeleteWeakGlobalRef(JNIEnv* env, jweak ref) {
 
 jobject NewGlobalRef(JNIEnv* env, jobject obj) {
   
+  BEGIN_JNI_EXCEPTION
+  
   // Local object references.
   if (obj) {
     JavaObject* Obj = *(JavaObject**)obj;
@@ -3313,25 +3678,42 @@ jobject NewGlobalRef(JNIEnv* env, jobject obj) {
     JavaObject** res = vm->globalRefs.addJNIReference(Obj);
     vm->globalRefsLock.unlock();
 
-    return (jobject)res;
+    RETURN_FROM_JNI((jobject)res);
   } else {
-    return 0;
+    RETURN_FROM_JNI(0);
   }
+  
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(0);
 }
 
 
 void DeleteGlobalRef(JNIEnv* env, jobject globalRef) {
   
+  BEGIN_JNI_EXCEPTION
+  
   Jnjvm* vm = myVM(env);
   vm->globalRefsLock.lock();
   vm->globalRefs.removeJNIReference((JavaObject**)globalRef);
   vm->globalRefsLock.unlock();
+  
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
 jboolean ExceptionCheck(JNIEnv *env) {
-  if (JavaThread::get()->pendingException) return JNI_TRUE;
-  else return JNI_FALSE;
+  BEGIN_JNI_EXCEPTION
+  
+  if (JavaThread::get()->pendingException) {
+    RETURN_FROM_JNI(JNI_TRUE);
+  } else {
+    RETURN_FROM_JNI(JNI_FALSE);
+  }
+  
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(false);
 }
 
 
@@ -3364,11 +3746,12 @@ jobject NewDirectByteBuffer(JNIEnv *env, void *address, jlong capacity) {
                                                         (uint32)capacity,
                                                         (uint32)capacity, 0);
 
-  return (jobject)th->pushJNIRef(res);
+  jobject ret = (jobject)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
   
   END_JNI_EXCEPTION
   
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -3390,13 +3773,13 @@ void *GetDirectBufferAddress(JNIEnv *env, jobject _buf) {
 #else
     jlong res = vm->upcalls->dataPointer64->getLongField(address);
 #endif
-    return (void*)res;
+    RETURN_FROM_JNI((void*)res);
   } else {
-    return 0;
+    RETURN_FROM_JNI(0);
   }
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -3440,20 +3823,20 @@ jint GetEnv(JavaVM *vm, void **env, jint version) {
   BEGIN_JNI_EXCEPTION
 
   JavaThread* _th = JavaThread::get();
-  JavaObject* th = _th->currentThread();
-  llvm_gcroot(th, 0);
+  JavaObject* obj = _th->currentThread();
+  llvm_gcroot(obj, 0);
 
   Jnjvm* myvm = _th->getJVM();
-  if (th != 0) {
+  if (obj != 0) {
     (*env) = &(myvm->jniEnv);
-    return JNI_OK;
+    RETURN_FROM_JNI(JNI_OK);
   } else {
     (*env) = 0;
-    return JNI_EDETACHED;
+    RETURN_FROM_JNI(JNI_EDETACHED);
   }
 
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
