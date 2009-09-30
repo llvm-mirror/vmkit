@@ -365,7 +365,7 @@ void CamlStackScanner::scanStack(mvm::Thread* th) {
 
     do {
       void* ip = FRAME_IP(addr);
-      bool isStub = ((unsigned char*)ip)[0] == 0xCD;
+      bool isStub = ((unsigned char*)ip)[0] == 0xCE;
       if (isStub) ip = addr[2];
       camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
       if (CF) {
