@@ -23,10 +23,10 @@ public:
   
   Cond();
   ~Cond();
-  void broadcast(void);
-  void wait(Lock *l);
-  int timedWait(Lock *l, timeval *tv);
-  void signal(void);
+  void broadcast(void) __attribute__ ((noinline));
+  void wait(Lock *l) __attribute__ ((noinline));
+  int timedWait(Lock *l, timeval *tv) __attribute__ ((noinline));
+  void signal(void) __attribute__ ((noinline));
 };
 
 } // end namespace mvm
