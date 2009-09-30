@@ -197,25 +197,40 @@ public:
   void* getLastSP() { return lastSP; }
   void  setLastSP(void* V) { lastSP = V; }
 
-  void enterUncooperativeCode(unsigned level = 0) {
+  void enterUncooperativeCode(unsigned level = 0) __attribute__ ((noinline)) {
     if (isMvmThread()) {
-      lastSP = __builtin_frame_address(0);
-      while (level--) lastSP = ((void**)lastSP)[0];
-      if (doYield && !inGC) joinCollection();
+      if (!inGC) {
+        assert(!lastSP && "SP already set when entering uncooperative code");
+        ++level;
+        void* temp = __builtin_frame_address(0);
+        while (level--) temp = ((void**)temp)[0];
+        lastSP = temp;
+        if (doYield) joinCollection();
+        assert(lastSP && "No last SP when entering uncooperative code");
+      }
     }
   }
   
   void enterUncooperativeCode(void* SP) {
     if (isMvmThread()) {
-      lastSP = SP;
-      if (doYield && !inGC) joinCollection();
+      if (!inGC) {
+        assert(!lastSP && "SP already set when entering uncooperative code");
+        lastSP = SP;
+        if (doYield) joinCollection();
+        assert(lastSP && "No last SP when entering uncooperative code");
+      }
     }
   }
 
   void leaveUncooperativeCode() {
     if (isMvmThread()) {
-      lastSP = 0;
-      if (doYield && !inGC) joinCollection();
+      if (!inGC) {
+        assert(lastSP && "No last SP when leaving uncooperative code");
+        if (doYield) joinCollection();
+        lastSP = 0;
+        if (doYield) joinCollection();
+        assert(!lastSP && "SP has a value after leaving uncooperative code");
+      }
     }
   }
 
