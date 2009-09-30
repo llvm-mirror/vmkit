@@ -163,6 +163,8 @@ void JavaThread::getJavaFrameContext(std::vector<void*>& context) {
 
     do {
       void* ip = FRAME_IP(addr);
+      bool isStub = ((unsigned char*)ip)[0] == 0xCE;
+      if (isStub) ip = addr[2];
       context.push_back(ip);
       addr = (void**)addr[0];
       // We end walking the stack when we cross a native -> Java call. Here
@@ -198,6 +200,8 @@ UserClass* JavaThread::getCallingClassLevel(uint32 level) {
 
     do {
       void* ip = FRAME_IP(addr);
+      bool isStub = ((unsigned char*)ip)[0] == 0xCE;
+      if (isStub) ip = addr[2];
       if (index == level) {
         JavaMethod* meth = getJVM()->IPToMethod<JavaMethod>(ip);
         return meth->classDef;
@@ -241,6 +245,8 @@ JavaObject* JavaThread::getNonNullClassLoader() {
 
     do {
       void* ip = FRAME_IP(addr);
+      bool isStub = ((unsigned char*)ip)[0] == 0xCE;
+      if (isStub) ip = addr[2];
       JavaMethod* meth = getJVM()->IPToMethod<JavaMethod>(ip);
       JnjvmClassLoader* loader = meth->classDef->classLoader;
       obj = loader->getJavaClassLoader();
@@ -320,6 +326,8 @@ void JavaThread::printBacktrace() {
 
     do {
       void* ip = FRAME_IP(addr);
+      bool isStub = ((unsigned char*)ip)[0] == 0xCE;
+      if (isStub) ip = addr[2];
       JavaMethod* meth = vm->IPToMethod<JavaMethod>(ip);
       assert(meth && "Wrong stack");
       fprintf(stderr, "; %p in %s.%s\n",  ip,

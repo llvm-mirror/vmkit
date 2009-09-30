@@ -347,7 +347,8 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
   std::vector<void*>::iterator it = th->addresses.end();
   VirtualMachine* vm = th->MyVM;
 
-  void** addr = mvm::Thread::get() == th ? (void**)FRAME_PTR() : (void**)th->getLastSP();
+  void** addr = mvm::Thread::get() == th ? 
+    (void**)FRAME_PTR() : (void**)th->getLastSP();
   void** oldAddr = addr;
 
   // Loop until we cross the first Java frame.
@@ -395,7 +396,7 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
 
     do {
       void* ip = FRAME_IP(addr);
-      bool isStub = ((unsigned char*)ip)[0] == 0xCD;
+      bool isStub = ((unsigned char*)ip)[0] == 0xCE;
       if (isStub) ip = addr[2];
       camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
       if (CF) {
@@ -416,7 +417,7 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
           for (llvm::GCFunctionInfo::live_iterator K = GFI->live_begin(J),
                KE = GFI->live_end(J); K != KE; ++K) {
             intptr_t obj = *(intptr_t*)(spaddr + K->StackOffset);
-            // Verify that obj does cnot come from a JSR bytecode.
+            // Verify that obj does not come from a JSR bytecode.
             if (!(obj & 1)) Collector::scanObject((void*)obj);
           }
         }
