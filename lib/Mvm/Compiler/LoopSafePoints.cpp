@@ -25,9 +25,14 @@ namespace {
 
     virtual bool runOnLoop(Loop* L, LPPassManager& LPM);
 
+    virtual void getAnalysisUsage(AnalysisUsage &AU) const {
+      AU.addRequired<LoopInfo>();
+    }
+
+
   private:
     void insertSafePoint(BasicBlock* BB, Function* SafeFunction,
-                         Value* YieldPtr);
+                         Value* YieldPtr, Loop* L, LoopInfo* LI);
   };
 
   char LoopSafePoints::ID = 0;
@@ -35,9 +40,10 @@ namespace {
                                  "Add safe points in loop headers");
 
 void LoopSafePoints::insertSafePoint(BasicBlock* BB, Function* SafeFunction,
-                                     Value* YieldPtr) {
+                                     Value* YieldPtr, Loop* L, LoopInfo* LI) {
   Instruction* I = BB->getFirstNonPHI();
   BasicBlock* NBB = BB->splitBasicBlock(I);
+  L->addBasicBlockToLoop(NBB, LI->getBase());
 
   NBB = NBB->getSinglePredecessor();
   I = NBB->getTerminator();
@@ -47,14 +53,20 @@ void LoopSafePoints::insertSafePoint(BasicBlock* BB, Function* SafeFunction,
   Value* Ld = new LoadInst(YieldPtr, "", NBB);
   BasicBlock* yield = BasicBlock::Create(SafeFunction->getContext(), "",
                                          BB->getParent());
+  
   BranchInst::Create(yield, SU, Ld, NBB);
 
   CallInst::Create(SafeFunction, "", yield);
   BranchInst::Create(SU, yield);
+
+  L->addBasicBlockToLoop(yield, LI->getBase());
+
 }
 
+
 bool LoopSafePoints::runOnLoop(Loop* L, LPPassManager& LPM) {
- 
+
+  LoopInfo* LI = &getAnalysis<LoopInfo>();
   BasicBlock* Header = L->getHeader();
   Function *F = Header->getParent();  
   Function* SafeFunction =
@@ -101,18 +113,18 @@ bool LoopSafePoints::runOnLoop(Loop* L, LPPassManager& LPM) {
       bool containsSecond = L->contains(Second);
 
       if (!containsFirst) {
-        insertSafePoint(Second, SafeFunction, YieldPtr);
+        insertSafePoint(Second, SafeFunction, YieldPtr, L, LI);
         return true;
       }
       
       if (!containsSecond) {
-        insertSafePoint(First, SafeFunction, YieldPtr);
+        insertSafePoint(First, SafeFunction, YieldPtr, L, LI);
         return true;
       }
     }
   }
   
-  insertSafePoint(Header, SafeFunction, YieldPtr);
+  insertSafePoint(Header, SafeFunction, YieldPtr, L, LI);
   return true;
 }
 
