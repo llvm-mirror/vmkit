@@ -165,7 +165,7 @@ int main(int argc, char** argv) {
     mvm::CompilationUnit* CLICompiler = 
       mvm::VirtualMachine::initialiseCLIVM();
     MyCl.vmlets["net"] = (create_vm_t)(mvm::VirtualMachine::createCLIVM);
-    MyCl.compilers["net"] = CLICompiler;
+    MyCl.compilers["net"] = (mvm::Object*)CLICompiler;
 #endif
     MyCl.start();
   }

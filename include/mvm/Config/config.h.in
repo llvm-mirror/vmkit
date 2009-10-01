@@ -9,6 +9,9 @@
 /* Define to 1 if you have the `gc' library (-lgc). */
 #undef HAVE_LIBGC
 
+/* Define to 1 if you are not using finalizers */
+#undef WITHOUT_FINALIZER
+
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #undef HAVE_LIBPTHREAD
 

@@ -21,7 +21,7 @@ ifeq ($(WITH_LLVM_GCC), 1)
   SOURCES = vmkit.s $(notdir $(wildcard $(PROJ_SRC_DIR)/*.cpp))
 else
   USEDLIBS = N3.a PNetLib.a Allocator.a CommonThread.a Mvm.a MvmCompiler.a \
-   	     $(GCLIB).a
+		     $(GCLIB).a
 endif
 
 include $(LEVEL)/Makefile.common

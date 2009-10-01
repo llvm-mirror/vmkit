@@ -164,10 +164,18 @@ const llvm::Type* UTF8::llvmType = 0;
 
 static void initialiseVT() {
 
-# define INIT(X) { \
-  X fake; \
-  X::VT = ((VirtualTable**)(void*)(&fake))[0];\
-  ((void**)X::VT)[0] = 0; }
+#if defined(WITHOUT_FINALIZER)
+# define INIT(X) {																\
+		X fake;																				\
+		X::VT = ((VirtualTable**)(void*)(&fake))[0];	\
+	}
+#else
+# define INIT(X) {																\
+		X fake;																				\
+		X::VT = ((VirtualTable**)(void*)(&fake))[0];	\
+		((void**)X::VT)[0] = 0;												\
+	}
+#endif
   
   INIT(Assembly);
   INIT(Header);

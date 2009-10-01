@@ -12,6 +12,7 @@
 #define MVM_MMAP_GC_H
 
 #include <sys/types.h>
+#include "mvm/Config/config.h"
 #include "mvm/GC/GC.h"
 #include "types.h"
 #include "gcalloc.h"
@@ -193,9 +194,11 @@ public:
 
     unlock();
 
+#if !defined(WITHOUT_FINALIZER)
     if (vt->destructor) {
       mvm::Thread::get()->MyVM->addFinalizationCandidate((gc*)p);
     }
+#endif
 
     return p;
 #endif
