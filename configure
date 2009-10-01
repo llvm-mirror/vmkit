@@ -4021,11 +4021,7 @@ fi
 
 
 if test ! "x$withfinalizer" = "xyes";  then
-
-cat >>confdefs.h <<\_ACEOF
-#define WITHOUT_FINALIZER 1
-_ACEOF
-
+  VM_FLAGS="$VM_FLAGS -DWITHOUT_FINALIZER"
 fi
 
 

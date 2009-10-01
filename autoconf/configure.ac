@@ -190,7 +190,7 @@ AC_ARG_WITH(finalizer,
 )
 
 if test ! "x$withfinalizer" = "xyes";  then
-  AC_DEFINE(WITHOUT_FINALIZER, [1], [Not using finalizer])
+  VM_FLAGS="$VM_FLAGS -DWITHOUT_FINALIZER"
 fi
 
 dnl **************************************************************************
