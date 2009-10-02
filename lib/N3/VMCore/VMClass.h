@@ -193,9 +193,8 @@ public:
   void makeType();
 };
 
-class VMMethod : public mvm::Object {
+class VMMethod : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
   
@@ -239,16 +238,14 @@ public:
 //       add flag to VMMethod instead
 class VMGenericMethod : public VMMethod {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 
   std::vector<VMCommonClass*> genericParams;
 };
 
-class VMField : public mvm::Object {
+class VMField : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
   
@@ -279,9 +276,8 @@ public:
   llvm::GlobalVariable* _llvmVar;
 };
 
-class Param : public mvm::Object {
+class Param : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 

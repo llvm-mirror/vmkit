@@ -107,7 +107,7 @@ static inline double readDouble(uint8* bytecode, uint32& i) {
 
 
 extern "C" void n3PrintExecution(char* opcode, VMMethod* meth) {
-  fprintf(stderr, "executing %s %s\n", meth->printString(), opcode);
+  fprintf(stderr, "executing %s %s\n", mvm::PrintBuffer::objectToString(meth), opcode);
 }
 
 

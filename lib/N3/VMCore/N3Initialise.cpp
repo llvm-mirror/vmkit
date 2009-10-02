@@ -178,7 +178,6 @@ static void initialiseVT() {
 #endif
   
   INIT(Property);
-  INIT(Param);
   INIT(VMArray);
   INIT(ArrayUInt8);
   INIT(ArraySInt8);
@@ -191,9 +190,6 @@ static void initialiseVT() {
   INIT(ArrayDouble);
   INIT(ArrayObject);
   INIT(UTF8);
-  INIT(VMMethod);
-  INIT(VMGenericMethod);
-  INIT(VMField);
   INIT(VMCond);
   INIT(LockObj);
   INIT(VMObject);

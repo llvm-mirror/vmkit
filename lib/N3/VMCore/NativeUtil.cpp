@@ -47,7 +47,7 @@ static void* makeFull(VMCommonClass* cl, VMMethod* meth) {
   
   if (!res) {
     VMThread::get()->vm->error("unable to find native method %s",
-                               meth->printString());
+                               mvm::PrintBuffer::objectToString(meth));
   }
 
   return res;

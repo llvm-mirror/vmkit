@@ -1472,7 +1472,7 @@ llvm::Function *VMMethod::compiledPtr(VMGenericMethod* genMethod) {
     classDef->aquire();
     if (methPtr == 0) {
       methPtr = Function::Create(getSignature(genMethod), GlobalValue::GhostLinkage,
-                                 printString(), classDef->vm->getLLVMModule());
+                                 mvm::PrintBuffer::objectToString(this), classDef->vm->getLLVMModule());
       classDef->vm->functions->hash(methPtr, this);
     }
     classDef->release();

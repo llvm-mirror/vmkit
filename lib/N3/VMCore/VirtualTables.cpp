@@ -38,9 +38,6 @@ using namespace n3;
   INIT(ArrayDouble);
   INIT(ArrayObject);
   INIT(UTF8);
-  INIT(VMMethod);
-  INIT(VMGenericMethod);
-  INIT(VMField);
   INIT(VMCond);
   INIT(LockObj);
   INIT(VMObject);
@@ -48,7 +45,6 @@ using namespace n3;
   INIT(ThreadSystem);
   INIT(CLIString);
   INIT(Property);
-  INIT(Param);
   INIT(CacheNode);
   INIT(Enveloppe);
   INIT(Opinfo);
@@ -61,7 +57,7 @@ void Opinfo::TRACER {
 }
 
 void CLIJit::TRACER {
-  compilingMethod->MARK_AND_TRACE;
+  compilingMethod->CALL_TRACER;
   compilingClass->CALL_TRACER;
 }
 
@@ -84,7 +80,7 @@ void CacheNode::TRACER {
 void Enveloppe::TRACER {
   firstCache->MARK_AND_TRACE;
   //cacheLock->MARK_AND_TRACE;
-  originalMethod->MARK_AND_TRACE;
+  originalMethod->CALL_TRACER;
 }
 
 void VMArray::TRACER {
@@ -135,10 +131,10 @@ void VMCommonClass::TRACER {
   CALL_TRACER_VECTOR(VMClass*, interfaces, std::allocator);
   //lockVar->MARK_AND_TRACE;
   //condVar->MARK_AND_TRACE;
-  TRACE_VECTOR(VMMethod*, virtualMethods, std::allocator);
-  TRACE_VECTOR(VMMethod*, staticMethods, std::allocator);
-  TRACE_VECTOR(VMField*, virtualFields, std::allocator);
-  TRACE_VECTOR(VMField*, staticFields, std::allocator);
+  CALL_TRACER_VECTOR(VMMethod*, virtualMethods, std::allocator);
+  CALL_TRACER_VECTOR(VMMethod*, staticMethods, std::allocator);
+  CALL_TRACER_VECTOR(VMField*, virtualFields, std::allocator);
+  CALL_TRACER_VECTOR(VMField*, staticFields, std::allocator);
   delegatee->MARK_AND_TRACE;
   CALL_TRACER_VECTOR(VMCommonClass*, display, std::allocator);
   vm->CALL_TRACER;
@@ -154,7 +150,7 @@ void VMClass::TRACER {
   virtualInstance->MARK_AND_TRACE;
   CALL_TRACER_VECTOR(VMClass*, innerClasses, std::allocator);
   outerClass->CALL_TRACER;
-  TRACE_VECTOR(VMMethod*, genericMethods, std::allocator);
+  CALL_TRACER_VECTOR(VMMethod*, genericMethods, std::allocator);
 }
 
 void VMGenericClass::TRACER {
@@ -177,7 +173,7 @@ void VMMethod::TRACER {
   delegatee->MARK_AND_TRACE;
   //signature->MARK_AND_TRACE;
   classDef->CALL_TRACER;
-  TRACE_VECTOR(Param*, params, gc_allocator);
+  CALL_TRACER_VECTOR(Param*, params, gc_allocator);
   TRACE_VECTOR(Enveloppe*, caches, gc_allocator);
   name->MARK_AND_TRACE;
 }
@@ -231,7 +227,7 @@ void VirtualMachine::TRACER {
 }
 
 void Param::TRACER {
-  method->MARK_AND_TRACE;
+  method->CALL_TRACER;
   name->MARK_AND_TRACE;
 }
 

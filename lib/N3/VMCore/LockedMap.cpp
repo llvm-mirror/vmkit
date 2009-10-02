@@ -75,7 +75,7 @@ const UTF8* UTF8Map::lookupOrCreateAsciiz(const char* asciiz) {
   }
 
   if (res == 0) {
-    UTF8* tmp = UTF8::acons(size, MSCorlib::arrayChar);
+    UTF8* tmp = (UTF8 *)UTF8::acons(size, MSCorlib::arrayChar);
     for (sint32 i = 0; i < size; i++) {
       tmp->setAt(i, asciiz[i]);
     }

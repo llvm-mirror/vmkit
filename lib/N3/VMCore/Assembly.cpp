@@ -387,7 +387,7 @@ VMGenericClass* Assembly::constructGenericClass(const UTF8* name,
 }
 
 static VMField* fieldDup(uint32& key, Assembly* ass) {
-  VMField* field = gc_new(VMField)();
+  VMField* field = new(ass->allocator, "VMField") VMField();
   field->token = key;
   return field;
 }
@@ -414,14 +414,14 @@ VMField*  Assembly::constructField(VMClass* cl, const UTF8* name,
 }
 
 static VMMethod* methodDup(uint32& key, Assembly* ass) {
-  VMMethod* meth = gc_new(VMMethod)();
+  VMMethod* meth = new(ass->allocator, "VMMethod") VMMethod();
   meth->token = key;
   meth->canBeInlined = false;
   return meth;
 }
 
 static VMGenericMethod* genMethodDup(uint32& key, Assembly* ass) {
-  VMGenericMethod* meth = gc_new(VMGenericMethod)();
+  VMGenericMethod* meth = new(ass->allocator, "VMGenericMethod") VMGenericMethod();
   meth->token = key;
   meth->canBeInlined = false;
   return meth;
@@ -1415,7 +1415,7 @@ Param* Assembly::readParam(uint32 index, VMMethod* meth) {
   uint32 name       = paramArray[CONSTANT_PARAM_NAME];
   uint32 sequence   = paramArray[CONSTANT_PARAM_SEQUENCE];
   
-  Param* param = gc_new(Param)();
+  Param* param = new(allocator, "Param") Param();
   param->flags = flags;
   param->sequence = sequence;
   param->name = readString(meth->classDef->vm, stringOffset + name);
@@ -1779,7 +1779,7 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClas
       } else {
         type->resolveType(false, false, genMethod);
         
-        VMMethod* meth = gc_new(VMMethod)() ;
+        VMMethod* meth = new(allocator, "VMMethod") VMMethod() ;
         bool virt = extractMethodSignature(offset, type, args, genClass, genMethod);
         bool structReturn = false;
         const llvm::FunctionType* signature = VMMethod::resolveSignature(args,
