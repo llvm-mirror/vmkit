@@ -182,7 +182,7 @@ static VMCommonClass* METHOD_ElementTypeArray(uint32 op, Assembly* ass,
   uint32 numSizes = ass->uncompressSignature(offset);
 
   if (numSizes != 0) {
-    printf("type = %s\n", cl->printString());
+    printf("type = %s\n", mvm::PrintBuffer::objectToString(cl));
     VMThread::get()->vm->error("implement me");
   }
 
@@ -302,7 +302,7 @@ static VMCommonClass* METHOD_ElementTypeMvar(uint32 op, Assembly* ass,
     // of generic methods we need create a placeholder for each of them,
     // this is done by creating a dummy VMClass which has the assembly field
     // set to NULL, the token field is used to store the generic argument number
-    VMClass* cl = gc_new(VMClass)();
+    VMClass* cl = new(ass->allocator, "VMClass") VMClass();
     cl->token = number;
     cl->assembly = ass;
     cl->nameSpace = ass->name;

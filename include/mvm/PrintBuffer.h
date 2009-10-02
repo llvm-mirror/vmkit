@@ -186,6 +186,13 @@ public:
     return pbf;
   }
 
+	template <typename T> 
+	static char *objectToString(T *obj) {
+		PrintBuffer *buf = alloc();
+		obj->print(buf);
+		return buf->contents()->cString();
+	}
+
   /// tracer - Traces this PrintBuffer.
   ///
   static void staticTracer(PrintBuffer* obj) {

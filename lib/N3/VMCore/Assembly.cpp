@@ -244,7 +244,7 @@ void Assembly::print(mvm::PrintBuffer* buf) const {
 }
 
 static VMCommonClass* arrayDup(ClassNameCmp &cmp, Assembly* ass) {
-  VMClassArray* cl = gc_new(VMClassArray)();
+  VMClassArray* cl = new(ass->allocator, "VMClassArray") VMClassArray();
   cl->initialise(ass->vm, true);
   cl->name = cmp.name;
   cl->nameSpace = cmp.nameSpace;
@@ -280,7 +280,7 @@ VMClassArray* Assembly::constructArray(VMCommonClass* base, uint32 dims) {
 }
 
 static VMCommonClass* pointerDup(ClassNameCmp &cmp, Assembly* ass) {
-  VMClassPointer* cl = gc_new(VMClassPointer)();
+  VMClassPointer* cl = new(ass->allocator, "VMClassPointer") VMClassPointer();
   cl->initialise(ass->vm, false);
   cl->isPointer = true;
   cl->name = cmp.name;
@@ -317,7 +317,7 @@ VMClassArray* Assembly::constructArray(const UTF8* name, const UTF8* nameSpace,
 }
 
 static VMCommonClass* classDup(ClassNameCmp &cmp, Assembly* ass) {
-  VMClass* cl = gc_new(VMClass)();
+  VMClass* cl = new(ass->allocator, "VMClass") VMClass();
   cl->initialise(ass->vm, false);
   cl->name = cmp.name;
   cl->nameSpace = cmp.nameSpace;
@@ -341,7 +341,7 @@ VMClass* Assembly::constructClass(const UTF8* name,
 }
 
 static VMCommonClass* genClassDup(ClassNameCmp &cmp, Assembly* ass) {
-  VMClass* cl = gc_new(VMGenericClass)();
+  VMClass* cl = new(ass->allocator, "VMGenericClass") VMGenericClass();
   cl->initialise(ass->vm, false);
   cl->name = cmp.name;
   cl->nameSpace = cmp.nameSpace;

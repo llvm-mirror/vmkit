@@ -563,7 +563,7 @@ VMMethod* VMCommonClass::lookupMethod(const UTF8* name,
   if (!res) {
     VMThread::get()->vm->error(VirtualMachine::MissingMethodException, 
                                "unable to find %s in %s",
-                               name->printString(), this->printString());
+                               mvm::PrintBuffer::objectToString(name), mvm::PrintBuffer::objectToString(this));
   }
   return res;
 }
@@ -610,7 +610,7 @@ VMField* VMCommonClass::lookupField(const UTF8* name, VMCommonClass* type,
   if (!res) {
     VMThread::get()->vm->error(VirtualMachine::MissingFieldException, 
                                "unable to find %s in %s",
-                               name->printString(), this->printString());
+                               mvm::PrintBuffer::objectToString(name), mvm::PrintBuffer::objectToString(this));
   }
   return res;
 }

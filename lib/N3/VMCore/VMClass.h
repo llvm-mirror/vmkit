@@ -44,9 +44,8 @@ typedef enum VMClassState {
 }VMClassState;
 
 
-class VMCommonClass : public mvm::Object {
+class VMCommonClass : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 
@@ -131,7 +130,6 @@ public:
 
 class VMClass : public VMCommonClass {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
   
@@ -157,7 +155,6 @@ public:
 //       add flag to VMClass instead
 class VMGenericClass : public VMClass {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 
@@ -166,7 +163,6 @@ public:
 
 class VMClassArray : public VMCommonClass {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 
@@ -188,7 +184,6 @@ public:
 
 class VMClassPointer : public VMCommonClass {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 

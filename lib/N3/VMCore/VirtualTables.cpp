@@ -38,11 +38,6 @@ using namespace n3;
   INIT(ArrayDouble);
   INIT(ArrayObject);
   INIT(UTF8);
-  INIT(VMCommonClass);
-  INIT(VMClass);
-  INIT(VMGenericClass);
-  INIT(VMClassArray);
-  INIT(VMClassPointer);
   INIT(VMMethod);
   INIT(VMGenericMethod);
   INIT(VMField);
@@ -67,7 +62,7 @@ void Opinfo::TRACER {
 
 void CLIJit::TRACER {
   compilingMethod->MARK_AND_TRACE;
-  compilingClass->MARK_AND_TRACE;
+  compilingClass->CALL_TRACER;
 }
 
 void ThreadSystem::TRACER {
@@ -81,7 +76,7 @@ void Reader::TRACER {
 
 void CacheNode::TRACER {
   ((mvm::Object*)methPtr)->MARK_AND_TRACE;
-  lastCible->MARK_AND_TRACE;
+  lastCible->CALL_TRACER;
   next->MARK_AND_TRACE;
   enveloppe->MARK_AND_TRACE;
 }
@@ -136,8 +131,8 @@ ARRAYTRACER(ArrayDouble)
 void VMCommonClass::TRACER {
   name->MARK_AND_TRACE;
   nameSpace->MARK_AND_TRACE;
-  super->MARK_AND_TRACE;
-  TRACE_VECTOR(VMClass*, interfaces, std::allocator);
+  super->CALL_TRACER;
+  CALL_TRACER_VECTOR(VMClass*, interfaces, std::allocator);
   //lockVar->MARK_AND_TRACE;
   //condVar->MARK_AND_TRACE;
   TRACE_VECTOR(VMMethod*, virtualMethods, std::allocator);
@@ -145,7 +140,7 @@ void VMCommonClass::TRACER {
   TRACE_VECTOR(VMField*, virtualFields, std::allocator);
   TRACE_VECTOR(VMField*, staticFields, std::allocator);
   delegatee->MARK_AND_TRACE;
-  TRACE_VECTOR(VMCommonClass*, display, std::allocator);
+  CALL_TRACER_VECTOR(VMCommonClass*, display, std::allocator);
   vm->CALL_TRACER;
 
   assembly->CALL_TRACER;
@@ -157,31 +152,31 @@ void VMClass::TRACER {
   VMCommonClass::CALL_TRACER;
   staticInstance->MARK_AND_TRACE;
   virtualInstance->MARK_AND_TRACE;
-  TRACE_VECTOR(VMClass*, innerClasses, std::allocator);
-  outerClass->MARK_AND_TRACE;
+  CALL_TRACER_VECTOR(VMClass*, innerClasses, std::allocator);
+  outerClass->CALL_TRACER;
   TRACE_VECTOR(VMMethod*, genericMethods, std::allocator);
 }
 
 void VMGenericClass::TRACER {
   VMClass::CALL_TRACER;
-  TRACE_VECTOR(VMCommonClass*, genericParams, std::allocator);
+  CALL_TRACER_VECTOR(VMCommonClass*, genericParams, std::allocator);
 }
 
 void VMClassArray::TRACER {
   VMCommonClass::CALL_TRACER;
-  baseClass->MARK_AND_TRACE;
+  baseClass->CALL_TRACER;
 }
 
 void VMClassPointer::TRACER {
   VMCommonClass::CALL_TRACER;
-  baseClass->MARK_AND_TRACE;
+  baseClass->CALL_TRACER;
 }
 
 
 void VMMethod::TRACER {
   delegatee->MARK_AND_TRACE;
   //signature->MARK_AND_TRACE;
-  classDef->MARK_AND_TRACE;
+  classDef->CALL_TRACER;
   TRACE_VECTOR(Param*, params, gc_allocator);
   TRACE_VECTOR(Enveloppe*, caches, gc_allocator);
   name->MARK_AND_TRACE;
@@ -189,12 +184,12 @@ void VMMethod::TRACER {
 
 void VMGenericMethod::TRACER {
   VMMethod::CALL_TRACER;
-  TRACE_VECTOR(VMCommonClass*, genericParams, std::allocator);
+  CALL_TRACER_VECTOR(VMCommonClass*, genericParams, std::allocator);
 }
 
 void VMField::TRACER {
-  signature->MARK_AND_TRACE;
-  classDef->MARK_AND_TRACE;
+  signature->CALL_TRACER;
+  classDef->CALL_TRACER;
   name->MARK_AND_TRACE;
 }
 
@@ -211,7 +206,7 @@ void LockObj::TRACER {
 }
 
 void VMObject::TRACER {
-  classOf->MARK_AND_TRACE;
+  classOf->CALL_TRACER;
   lockObj->MARK_AND_TRACE;
 }
 
@@ -241,7 +236,7 @@ void Param::TRACER {
 }
 
 void Property::TRACER {
-  type->MARK_AND_TRACE;
+  type->CALL_TRACER;
   //signature->MARK_AND_TRACE;
   name->MARK_AND_TRACE;
   delegatee->MARK_AND_TRACE;
@@ -295,7 +290,7 @@ void CLIString::TRACER {
 }
 
 void Exception::TRACER {
-  catchClass->MARK_AND_TRACE;
+  catchClass->CALL_TRACER;
 }
 
 #ifdef MULTIPLE_GC
@@ -303,7 +298,7 @@ extern "C" void CLIObjectTracer(VMObject* obj, Collector* GC) {
 #else
 extern "C" void CLIObjectTracer(VMObject* obj) {
 #endif
-  obj->classOf->MARK_AND_TRACE;
+  obj->classOf->CALL_TRACER;
   obj->lockObj->MARK_AND_TRACE;
 }
 

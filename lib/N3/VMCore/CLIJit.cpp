@@ -608,7 +608,7 @@ void CLIJit::invokeNew(uint32 value, VMGenericClass* genClass, VMGenericMethod* 
     
   Value* obj = 0;
   if (type->isPointer) {
-    VMThread::get()->vm->error("implement me %s", type->printString());
+    VMThread::get()->vm->error("implement me %s", mvm::PrintBuffer::objectToString(type));
   } else if (type->isArray) {
     VMClassArray* arrayType = (VMClassArray*)type;
     Value* valCl = new LoadInst(arrayType->llvmVar(), "", currentBlock);
@@ -920,8 +920,7 @@ Function* CLIJit::compileIntern() {
     else if (name == N3::invokeName) return invokeDelegate();
     else VMThread::get()->vm->error("implement me");
   } else {
-    VMThread::get()->vm->error("implement me %s",
-                               compilingClass->printString());
+    VMThread::get()->vm->error("implement me %s", mvm::PrintBuffer::objectToString(compilingClass));
   }
   return 0;
 }

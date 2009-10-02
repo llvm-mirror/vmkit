@@ -191,11 +191,6 @@ static void initialiseVT() {
   INIT(ArrayDouble);
   INIT(ArrayObject);
   INIT(UTF8);
-  INIT(VMCommonClass);
-  INIT(VMClass);
-  INIT(VMClassPointer);
-  INIT(VMGenericClass);
-  INIT(VMClassArray);
   INIT(VMMethod);
   INIT(VMGenericMethod);
   INIT(VMField);
