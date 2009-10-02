@@ -47,8 +47,8 @@ VMObject* N3::UTF8ToStr(const UTF8* utf8) {
 }
 
 static Assembly* assemblyDup(const UTF8*& name, N3* vm) {
-  Assembly* res = Assembly::allocate(name);
-  return res;
+	mvm::BumpPtrAllocator *a = new mvm::BumpPtrAllocator();
+  return new(*a, "Assembly") Assembly(*a, name);
 }
 
 Assembly* N3::constructAssembly(const UTF8* name) {
@@ -59,26 +59,30 @@ Assembly* N3::lookupAssembly(const UTF8* name) {
   return loadedAssemblies->lookup(name);
 }
 
+N3::N3(mvm::BumpPtrAllocator &allocator, const char *name) : VirtualMachine(allocator) {
+	this->name =              name;
+
+  this->scanner =           new mvm::UnpreciseStackScanner(); 
+  this->LLVMModule =        new llvm::Module(name, llvm::getGlobalContext());
+  this->module =            new mvm::MvmModule(this->LLVMModule);
+
+  this->LLVMModule->setDataLayout(mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation());
+  this->protectModule =     new mvm::LockNormal();
+
+  this->functions =         new(allocator, "FunctionMap") FunctionMap();
+  this->hashStr =           new(allocator, "StringMap")   StringMap();
+  this->loadedAssemblies =  new(allocator, "AssemblyMap") AssemblyMap();
+
+  this->TheModuleProvider = new N3ModuleProvider(this->LLVMModule, this->functions);
+}
+
 N3* N3::allocateBootstrap() {
   mvm::BumpPtrAllocator *a = new mvm::BumpPtrAllocator();
-  N3 *vm= new(*a, "VM") N3(*a);
-
-  std::string str = 
-    mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
-
-  vm->LLVMModule = new llvm::Module("Bootstrap N3", llvm::getGlobalContext());
-  vm->module = new mvm::MvmModule(vm->LLVMModule);
-  vm->getLLVMModule()->setDataLayout(str);
-  vm->protectModule = new mvm::LockNormal();
-  vm->functions = FunctionMap::allocate(vm->allocator);
-  vm->TheModuleProvider = new N3ModuleProvider(vm->LLVMModule, vm->functions);
-  CLIJit::initialiseBootstrapVM(vm);
+  N3 *vm= new(*a, "VM") N3(*a, "bootstrapN3");
   
-  vm->name = "bootstrapN3";
-  vm->hashUTF8 = UTF8Map::allocate(vm->allocator);
-  vm->hashStr = StringMap::allocate(vm->allocator);
-  vm->loadedAssemblies = AssemblyMap::allocate(vm->allocator);
-  vm->scanner = new mvm::UnpreciseStackScanner(); 
+  vm->hashUTF8 =         new(vm->allocator, "UTF8Map")     UTF8Map();
+
+  CLIJit::initialiseBootstrapVM(vm);
   
   return vm;
 }
@@ -86,28 +90,17 @@ N3* N3::allocateBootstrap() {
 
 N3* N3::allocate(const char* name, N3* parent) {
   mvm::BumpPtrAllocator *a = new mvm::BumpPtrAllocator();
-  N3 *vm= new(*a, "VM") N3(*a);
-  vm->scanner = new mvm::UnpreciseStackScanner(); 
-  
-  std::string str = 
-    mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
-  vm->LLVMModule = new llvm::Module("Bootstrap N3", llvm::getGlobalContext());
-  vm->module = new mvm::MvmModule(vm->LLVMModule);
-  vm->LLVMModule->setDataLayout(str);
-  vm->protectModule = new mvm::LockNormal();
-  vm->functions = FunctionMap::allocate(vm->allocator);
-  vm->TheModuleProvider = new N3ModuleProvider(vm->LLVMModule, vm->functions);
-  CLIJit::initialiseAppDomain(vm);
+  N3 *vm= new(*a, "VM") N3(*a, name);
 
+  vm->hashUTF8 = parent->hashUTF8;
   
   vm->threadSystem = ThreadSystem::allocateThreadSystem();
-  vm->name = name;
-  vm->hashUTF8 = parent->hashUTF8;
-  vm->hashStr = StringMap::allocate(vm->allocator);
-  vm->loadedAssemblies = AssemblyMap::allocate(vm->allocator);
+
   vm->assemblyPath = parent->assemblyPath;
   vm->coreAssembly = parent->coreAssembly;
   vm->loadedAssemblies->hash(parent->coreAssembly->name, parent->coreAssembly);
+
+  CLIJit::initialiseAppDomain(vm);
   
   return vm; 
 }

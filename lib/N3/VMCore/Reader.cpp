@@ -104,25 +104,23 @@ sint64 Reader::readS8() {
   return tmp | (((sint64)(readS8())) << 32);
 }
 
-Reader* Reader::allocateReader(ArrayUInt8* array, uint32 start,
-                               uint32 end) {
-  Reader* reader = gc_new(Reader)();
-  if (!end) end = array->size;
-  reader->bytes = array;
-  reader->cursor = start;
-  reader->min = start;
-  reader->max = start + end;
-  return reader;
+Reader::Reader(ArrayUInt8* array, uint32 start, uint32 end) {
+  if (!end) 
+		end = array->size;
 
+  bytes = array;
+  cursor = start;
+  min = start;
+  max = start + end;
 }
 
 unsigned int Reader::tell() {
   return cursor - min;
 }
 
-Reader* Reader::derive(uint32 nbb) {
-  return allocateReader(bytes, cursor, nbb);
-}
+// Reader* Reader::derive(uint32 nbb) {
+//   return new(allocator, "Reader") Reader(allocator, bytes, cursor, nbb);
+// }
 
 void Reader::seek(uint32 pos, int from) {
   uint32 n = 0;

@@ -464,17 +464,15 @@ VMMethod* Assembly::constructMethod(VMClass* cl, const UTF8* name,
   return meth;
 }
 
-Assembly* Assembly::allocate(const UTF8* name) {
-	mvm::BumpPtrAllocator *a = new mvm::BumpPtrAllocator();
-  Assembly* ass = new(*a, "Assembly") Assembly(*a);
-  ass->loadedNameClasses = ClassNameMap::allocate(ass->allocator);
-  ass->loadedTokenClasses = ClassTokenMap::allocate(ass->allocator);
-  ass->loadedTokenMethods = MethodTokenMap::allocate(ass->allocator);
-  ass->loadedTokenFields = FieldTokenMap::allocate(ass->allocator);
-  ass->assemblyRefs = 0;
-  ass->isRead = false;
-  ass->name = name;
-  return ass;
+Assembly::Assembly(mvm::BumpPtrAllocator &allocator, const UTF8 *name) : allocator(allocator) {
+  this->loadedNameClasses =  new(allocator, "ClassNameMap")   ClassNameMap();
+  this->loadedTokenClasses = new(allocator, "ClassTokenMap")  ClassTokenMap();
+  this->loadedTokenMethods = new(allocator, "MethodTokenMap") MethodTokenMap();
+  this->loadedTokenFields =  new(allocator, "FieldTokenMap")  FieldTokenMap();
+
+  this->assemblyRefs = 0;
+  this->isRead = false;
+  this->name = name;
 }
 
 static void unimplemented(uint32 index,
@@ -669,7 +667,7 @@ void Section::read(Reader* reader, N3* vm) {
   characteristics   = reader->readU4();
 }
 
-void Header::read(Reader* reader, N3* vm) {
+void Header::read(mvm::BumpPtrAllocator &allocator, Reader* reader, N3* vm) {
   uint32 start = reader->cursor;
   signature = reader->readU4();
   major = reader->readU2();
@@ -686,7 +684,7 @@ void Header::read(Reader* reader, N3* vm) {
     uint32 len = 
       strlen((char*)(&(reader->bytes->elements[reader->cursor])));
 
-    Stream* stream = gc_new(Stream)();
+    Stream* stream = new(allocator, "Stream") Stream();
     char* str = (char*)malloc(len + 1);
     memcpy(str, &(reader->bytes->elements[reader->cursor]), len + 1);
     reader->cursor += (len + (4 - (len % 4)));
@@ -788,7 +786,7 @@ void Assembly::readTables(Reader* reader) {
   uint32 offset = 0;
 
   for (uint32 i = 0; i < 32; ++i) {
-    Table* table = gc_new(Table)();
+    Table* table = new(allocator, "Table") Table();
     if ((1 << i) & validLow) {
       table->rowsNumber = reader->readU4();
       ++tableNumber;
@@ -799,7 +797,7 @@ void Assembly::readTables(Reader* reader) {
   }
 
   for (uint32 i = 0; i < 32; ++i) {
-    Table* table = gc_new(Table)();
+    Table* table = new(allocator, "Table") Table();
     if ((1 << i) & validHigh) {
       table->rowsNumber = reader->readU4();
       ++tableNumber;
@@ -824,14 +822,18 @@ void Assembly::readTables(Reader* reader) {
   }
 }
 
+Reader *Assembly::newReader(ArrayUInt8* array, uint32 start, uint32 end) { 
+	return new(allocator, "Reader") Reader(array, start, end); 
+}
+
 void Assembly::read() {
-  Reader* reader = Reader::allocateReader(bytes);
+  Reader* reader = newReader(bytes);
   PRINT_DEBUG(DEBUG_LOAD, 1, LIGHT_GREEN, "Reading %s::%s", vm->printString(),
               this->printString());
 
-  textSection = gc_new(Section)();
-  rsrcSection = gc_new(Section)();
-  relocSection = gc_new(Section)();
+  textSection =  new(allocator, "Section") Section();
+  rsrcSection =  new(allocator, "Section") Section();
+  relocSection = new(allocator, "Section") Section();
 
   reader->seek(TEXT_SECTION_HEADER, Reader::SeekSet);
   textSection->read(reader, vm);
@@ -857,8 +859,8 @@ void Assembly::read() {
   reader->seek(textSection->rawAddress + (mdRva - textSection->virtualAddress),
                Reader::SeekSet);
 
-  CLIHeader = gc_new(Header)();
-  CLIHeader->read(reader, vm);
+  CLIHeader = new (allocator, "Header") Header();
+  CLIHeader->read(allocator, reader, vm);
 
   reader->seek(CLIHeader->tildStream->realOffset, Reader::SeekSet);
 

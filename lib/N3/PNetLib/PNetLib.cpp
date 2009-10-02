@@ -840,7 +840,7 @@ static VMObject* createResourceStream(Assembly* ass, sint32 posn) {
   uint32 length = 0;
   uint32 pad = 0;
   
-  Reader* reader = Reader::allocateReader(ass->bytes);
+  Reader* reader = ass->newReader(ass->bytes);
   section = textSection->rawAddress + (resRva - textSection->virtualAddress);
 
   reader->seek(section, Reader::SeekSet);

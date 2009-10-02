@@ -50,17 +50,12 @@ using namespace n3;
   INIT(LockObj);
   INIT(VMObject);
   INIT(VMThread);
-  INIT(Section);
-  INIT(Stream);
-  INIT(Table);
-  INIT(Header);
   INIT(ThreadSystem);
   INIT(CLIString);
   INIT(Property);
   INIT(Param);
   INIT(CacheNode);
   INIT(Enveloppe);
-  INIT(Reader);
   INIT(Opinfo);
   INIT(CLIJit);
   INIT(Exception);
@@ -131,6 +126,12 @@ ARRAYTRACER(ArrayDouble)
   for (std::vector<type, alloc<type> >::iterator i = name.begin(), e = name.end(); \
        i!= e; ++i) {                                                    \
     (*i)->MARK_AND_TRACE; }}
+
+#define CALL_TRACER_VECTOR(type, name, alloc) { \
+  for (std::vector<type, alloc<type> >::iterator i = name.begin(), e = name.end(); \
+       i!= e; ++i) {                                                    \
+    (*i)->CALL_TRACER; }}
+
 
 void VMCommonClass::TRACER {
   name->MARK_AND_TRACE;
@@ -255,10 +256,10 @@ void Assembly::TRACER {
   //condVar->MARK_AND_TRACE;
   name->MARK_AND_TRACE;
   bytes->MARK_AND_TRACE;
-  textSection->MARK_AND_TRACE;
-  rsrcSection->MARK_AND_TRACE;
-  relocSection->MARK_AND_TRACE;
-  CLIHeader->MARK_AND_TRACE;
+  textSection->CALL_TRACER;
+  rsrcSection->CALL_TRACER;
+  relocSection->CALL_TRACER;
+  CLIHeader->CALL_TRACER;
   vm->CALL_TRACER;
   delegatee->MARK_AND_TRACE;
   // TODO trace assembly refs...
@@ -282,12 +283,12 @@ void Table::TRACER {
 
 void Header::TRACER {
   versionName->MARK_AND_TRACE;
-  tildStream->MARK_AND_TRACE;
-  stringStream->MARK_AND_TRACE;
-  usStream->MARK_AND_TRACE;
-  blobStream->MARK_AND_TRACE;
-  guidStream->MARK_AND_TRACE;
-  TRACE_VECTOR(Table*, tables, gc_allocator);
+  tildStream->CALL_TRACER;
+  stringStream->CALL_TRACER;
+  usStream->CALL_TRACER;
+  blobStream->CALL_TRACER;
+  guidStream->CALL_TRACER;
+  CALL_TRACER_VECTOR(Table*, tables, gc_allocator);
 }
 
 void CLIString::TRACER {

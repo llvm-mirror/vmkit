@@ -19,13 +19,14 @@
 namespace n3 {
 
 
-class Reader : public mvm::Object {
+class Reader : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
   ArrayUInt8* bytes;
   uint32 min;
   uint32 cursor;
   uint32 max;
+
+  Reader(ArrayUInt8* array, uint32 start = 0, uint32 end = 0);
 
   static double readDouble(int first, int second);
   static sint64 readLong(int first, int second);
@@ -43,10 +44,8 @@ public:
   sint32 readS4();
   uint64 readU8();
   sint64 readS8();
-  static Reader* allocateReader(ArrayUInt8* array, uint32 start = 0,
-                                uint32 end = 0);
   unsigned int tell();
-  Reader* derive(uint32 nbb);
+	//  Reader* derive(uint32 nbb);
   void seek(uint32 pos, int from);
 
   virtual void print(mvm::PrintBuffer* buf) const;

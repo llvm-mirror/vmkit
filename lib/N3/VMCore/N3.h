@@ -53,8 +53,6 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 
-	N3(mvm::BumpPtrAllocator &allocator) : VirtualMachine(allocator) {}
-
   VMObject*     asciizToStr(const char* asciiz);
   VMObject*     UTF8ToStr(const UTF8* utf8);
   Assembly*     constructAssembly(const UTF8* name);
@@ -67,6 +65,10 @@ public:
   std::vector<const char*> assemblyPath;
   Assembly* coreAssembly;
 
+private:
+	N3(mvm::BumpPtrAllocator &allocator, const char *name);
+
+public:
 
   static N3* allocateBootstrap();
   static N3* allocate(const char* name, N3* parent);

@@ -177,12 +177,8 @@ static void initialiseVT() {
 	}
 #endif
   
-  INIT(Header);
   INIT(Property);
   INIT(Param);
-  INIT(Section);
-  INIT(Stream);
-  INIT(Table);
   INIT(VMArray);
   INIT(ArrayUInt8);
   INIT(ArraySInt8);
@@ -207,9 +203,7 @@ static void initialiseVT() {
   INIT(LockObj);
   INIT(VMObject);
   INIT(VMThread);
-  //mvm::Key<VMThread>::VT = mvm::ThreadKey::VT;
   INIT(ThreadSystem);
-  INIT(Reader);
   INIT(CLIString);
   INIT(CLIJit);
   INIT(CacheNode);

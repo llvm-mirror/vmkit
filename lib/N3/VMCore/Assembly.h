@@ -52,9 +52,8 @@ class VMObject;
 class VMGenericClass;
 class VMGenericMethod;
 
-class Section : public mvm::Object {
+class Section : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
   
@@ -72,9 +71,8 @@ public:
   void read(Reader* reader, N3* vm);
 };
 
-class Stream : public mvm::Object {
+class Stream : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 
@@ -83,9 +81,8 @@ public:
   uint32 size;
 };
 
-class Table : public mvm::Object {
+class Table : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 
@@ -101,9 +98,8 @@ public:
 };
 
 
-class Header : public mvm::Object {
+class Header : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 
@@ -123,7 +119,7 @@ public:
   Stream* guidStream;
   std::vector<Table*, gc_allocator<Table*> > tables;
   
-  void read(Reader* reader, N3* vm);
+  void read(mvm::BumpPtrAllocator &allocator, Reader* reader, N3* vm);
 };
 
 typedef void (*maskVector_t)(uint32 index,
@@ -189,9 +185,8 @@ public:
 
 	mvm::BumpPtrAllocator &allocator;
 
-	Assembly(mvm::BumpPtrAllocator &Alloc) : allocator(Alloc) {}
+	Assembly(mvm::BumpPtrAllocator &Alloc, const UTF8* name);
 
-  static Assembly* allocate(const UTF8* name);
   static const UTF8* readUTF8(VirtualMachine* vm, uint32 len, Reader* reader);
   static const UTF8* readUTF16(VirtualMachine* vm, uint32 len, Reader* reader);
   static const UTF8* readUTF8(VirtualMachine* vm, uint32 len, ArrayUInt8* bytes,
@@ -207,6 +202,8 @@ public:
   static signatureVector_t signatureVector[0x46];
   static const char* signatureNames[0x46];
   
+
+	Reader *newReader(ArrayUInt8* array, uint32 start = 0, uint32 end = 0);
 
   uint32 uncompressSignature(uint32& offset);
   uint32 getTypeDefTokenFromMethod(uint32 token);
@@ -267,7 +264,6 @@ public:
   ArrayObject* getCustomAttributes(uint32 token, VMCommonClass* cl);
 private:
     VMMethod *instantiateGenericMethod(std::vector<VMCommonClass*> *genArgs, VMCommonClass *type, const UTF8 *& name, std::vector<VMCommonClass*> & args, uint32 token, bool virt, VMGenericClass* genClass);
-
 
 };
 
