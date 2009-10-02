@@ -48,7 +48,6 @@ public:
 
 class VirtualMachine : public mvm::VirtualMachine {
 public:
-  static VirtualTable* VT;
   ThreadSystem* threadSystem; 
  
   const UTF8*   asciizConstructUTF8(const char* asciiz);
@@ -119,7 +118,7 @@ public:
   }
 
   ~VirtualMachine();
-  VirtualMachine();
+  VirtualMachine(mvm::BumpPtrAllocator &allocator);
   
   mvm::Lock* protectModule;
   FunctionMap* functions;

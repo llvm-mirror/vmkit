@@ -155,7 +155,8 @@ VirtualMachine::~VirtualMachine() {
   delete TheModuleProvider;
 }
 
-VirtualMachine::VirtualMachine() {
+VirtualMachine::VirtualMachine(mvm::BumpPtrAllocator &allocator)
+	: mvm::VirtualMachine(allocator) {
   module = 0;
   TheModuleProvider = 0;
 }

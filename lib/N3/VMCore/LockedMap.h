@@ -37,7 +37,7 @@ class VMField;
 class UTF8;
 
 template<class Key, class Container, class Compare, class Upcall>
-class LockedMap : public mvm::Object {
+class LockedMap : public mvm::PermanentObject {
 public:
   typedef typename std::map<const Key, Container*, Compare>::iterator iterator;
   typedef Container* (*funcCreate)(Key& V, Upcall* ass);
@@ -92,7 +92,7 @@ public:
   virtual void TRACER {
     //lock->MARK_AND_TRACE;
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->second->MARK_AND_TRACE;
+      i->second->CALL_TRACER;
     }
   }
 
@@ -120,9 +120,8 @@ public:
 class ClassNameMap : 
   public LockedMap<ClassNameCmp, VMCommonClass, std::less<ClassNameCmp>, Assembly > {
 public:
-  static VirtualTable* VT; 
-  static ClassNameMap* allocate() {
-    ClassNameMap* map = gc_new(ClassNameMap)();
+  static ClassNameMap* allocate(mvm::BumpPtrAllocator &allocator) {
+    ClassNameMap* map = new(allocator, "ClassNameMap") ClassNameMap();
     map->lock = new mvm::LockNormal();
     return map;
   }
@@ -131,9 +130,8 @@ public:
 class ClassTokenMap : 
   public LockedMap<uint32, VMCommonClass, std::less<uint32>, Assembly > {
 public:
-  static VirtualTable* VT; 
-  static ClassTokenMap* allocate() {
-    ClassTokenMap* map = gc_new(ClassTokenMap)();
+  static ClassTokenMap* allocate(mvm::BumpPtrAllocator &allocator) {
+    ClassTokenMap* map = new(allocator, "ClassTokenMap") ClassTokenMap();
     map->lock = new mvm::LockNormal();
     return map;
   }
@@ -143,9 +141,8 @@ public:
 class FieldTokenMap : 
   public LockedMap<uint32, VMField, std::less<uint32>, Assembly > {
 public:
-  static VirtualTable* VT; 
-  static FieldTokenMap* allocate() {
-    FieldTokenMap* map = gc_new(FieldTokenMap)();
+  static FieldTokenMap* allocate(mvm::BumpPtrAllocator &allocator) {
+    FieldTokenMap* map = new(allocator, "FieldTokenMap") FieldTokenMap();
     map->lock = new mvm::LockNormal();
     return map;
   }
@@ -154,9 +151,8 @@ public:
 class MethodTokenMap : 
   public LockedMap<uint32, VMMethod, std::less<uint32>, Assembly > {
 public:
-  static VirtualTable* VT; 
-  static MethodTokenMap* allocate() {
-    MethodTokenMap* map = gc_new(MethodTokenMap)();
+  static MethodTokenMap* allocate(mvm::BumpPtrAllocator &allocator) {
+    MethodTokenMap* map = new(allocator, "MethodTokenMap") MethodTokenMap();
     map->lock = new mvm::LockNormal();
     return map;
   }
@@ -165,9 +161,8 @@ public:
 class AssemblyMap : 
   public LockedMap<const UTF8*, Assembly, std::less<const UTF8*>, N3 > {
 public:
-  static VirtualTable* VT; 
-  static AssemblyMap* allocate() {
-    AssemblyMap* map = gc_new(AssemblyMap)();
+  static AssemblyMap* allocate(mvm::BumpPtrAllocator &allocator) {
+    AssemblyMap* map = new(allocator, "AssemblyMap") AssemblyMap();
     map->lock = new mvm::LockNormal();
     return map;
   }
@@ -177,9 +172,8 @@ public:
 class StringMap :
     public LockedMap<const UTF8*, CLIString, std::less<const UTF8*>, N3 > { 
 public:
-  static VirtualTable* VT; 
-  static StringMap* allocate() {
-    StringMap* map = gc_new(StringMap)();
+  static StringMap* allocate(mvm::BumpPtrAllocator &allocator) {
+    StringMap* map = new(allocator, "StringMap") StringMap();
     map->lock = new mvm::LockRecursive();
     return map;
   }
@@ -188,9 +182,8 @@ public:
 class FunctionMap :
     public LockedMap<llvm::Function*, VMMethod, std::less<llvm::Function*>, N3 > { 
 public:
-  static VirtualTable* VT; 
-  static FunctionMap* allocate() {
-    FunctionMap* map = gc_new(FunctionMap)();
+  static FunctionMap* allocate(mvm::BumpPtrAllocator &allocator) {
+    FunctionMap* map = new(allocator, "FunctionMap") FunctionMap();
     map->lock = new mvm::LockNormal();
     return map;
   }
@@ -198,14 +191,14 @@ public:
 
 
 
-class UTF8Map : public mvm::Object {
+class UTF8Map : public mvm::PermanentObject {
 public:
   typedef std::multimap<const uint32, const UTF8*>::iterator iterator;
   
   mvm::Lock* lock;
   std::multimap<uint32, const UTF8*, std::less<uint32>,
                 gc_allocator<std::pair<const uint32, const UTF8*> > > map;
-  static VirtualTable* VT;
+
   const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
   const UTF8* lookupOrCreateReader(const uint16* buf, uint32 size);
   
@@ -220,8 +213,8 @@ public:
     buf->write("UTF8 Hashtable<>");
   }
   
-  static UTF8Map* allocate() {
-    UTF8Map* map = gc_new(UTF8Map)();
+  static UTF8Map* allocate(mvm::BumpPtrAllocator &allocator) {
+    UTF8Map* map = new(allocator, "UTF8Map") UTF8Map();
     map->lock = new mvm::LockNormal();
     return map;
   }

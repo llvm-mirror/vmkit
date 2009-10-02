@@ -104,10 +104,6 @@ public:
 class Jnjvm : public mvm::VirtualMachine {
   friend class JnjvmClassLoader;
 public:
-  /// allocator - Memory allocator of this JVM.
-  ///
-  mvm::BumpPtrAllocator& allocator;
-  
   /// throwable - The java/lang/Throwable class. In an isolate
   /// environment, generated code references this field.
   UserClass* throwable;

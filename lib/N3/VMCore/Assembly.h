@@ -133,9 +133,8 @@ typedef void (*maskVector_t)(uint32 index,
 typedef VMCommonClass* (*signatureVector_t)(uint32 op, Assembly* ass,
                                             uint32& offset, VMGenericClass* genClass, VMGenericMethod* genMethod);
 
-class Assembly : public mvm::Object {
+class Assembly : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 
@@ -187,6 +186,10 @@ public:
   uint32 entryPoint;
   uint32 resRva;
   uint32 resSize;
+
+	mvm::BumpPtrAllocator &allocator;
+
+	Assembly(mvm::BumpPtrAllocator &Alloc) : allocator(Alloc) {}
 
   static Assembly* allocate(const UTF8* name);
   static const UTF8* readUTF8(VirtualMachine* vm, uint32 len, Reader* reader);

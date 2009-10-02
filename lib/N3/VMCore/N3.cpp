@@ -60,8 +60,8 @@ Assembly* N3::lookupAssembly(const UTF8* name) {
 }
 
 N3* N3::allocateBootstrap() {
-  mvm::BumpPtrAllocator * A = new mvm::BumpPtrAllocator();
-  N3 *vm= new(*A, "VM") N3();
+  mvm::BumpPtrAllocator *a = new mvm::BumpPtrAllocator();
+  N3 *vm= new(*a, "VM") N3(*a);
 
   std::string str = 
     mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation();
@@ -70,14 +70,14 @@ N3* N3::allocateBootstrap() {
   vm->module = new mvm::MvmModule(vm->LLVMModule);
   vm->getLLVMModule()->setDataLayout(str);
   vm->protectModule = new mvm::LockNormal();
-  vm->functions = FunctionMap::allocate();
+  vm->functions = FunctionMap::allocate(vm->allocator);
   vm->TheModuleProvider = new N3ModuleProvider(vm->LLVMModule, vm->functions);
   CLIJit::initialiseBootstrapVM(vm);
   
   vm->name = "bootstrapN3";
-  vm->hashUTF8 = UTF8Map::allocate();
-  vm->hashStr = StringMap::allocate();
-  vm->loadedAssemblies = AssemblyMap::allocate();
+  vm->hashUTF8 = UTF8Map::allocate(vm->allocator);
+  vm->hashStr = StringMap::allocate(vm->allocator);
+  vm->loadedAssemblies = AssemblyMap::allocate(vm->allocator);
   vm->scanner = new mvm::UnpreciseStackScanner(); 
   
   return vm;
@@ -85,8 +85,8 @@ N3* N3::allocateBootstrap() {
 
 
 N3* N3::allocate(const char* name, N3* parent) {
-  mvm::BumpPtrAllocator * A = new mvm::BumpPtrAllocator();
-  N3 *vm= new(*A, "VM") N3();
+  mvm::BumpPtrAllocator *a = new mvm::BumpPtrAllocator();
+  N3 *vm= new(*a, "VM") N3(*a);
   vm->scanner = new mvm::UnpreciseStackScanner(); 
   
   std::string str = 
@@ -95,7 +95,7 @@ N3* N3::allocate(const char* name, N3* parent) {
   vm->module = new mvm::MvmModule(vm->LLVMModule);
   vm->LLVMModule->setDataLayout(str);
   vm->protectModule = new mvm::LockNormal();
-  vm->functions = FunctionMap::allocate();
+  vm->functions = FunctionMap::allocate(vm->allocator);
   vm->TheModuleProvider = new N3ModuleProvider(vm->LLVMModule, vm->functions);
   CLIJit::initialiseAppDomain(vm);
 
@@ -103,8 +103,8 @@ N3* N3::allocate(const char* name, N3* parent) {
   vm->threadSystem = ThreadSystem::allocateThreadSystem();
   vm->name = name;
   vm->hashUTF8 = parent->hashUTF8;
-  vm->hashStr = StringMap::allocate();
-  vm->loadedAssemblies = AssemblyMap::allocate();
+  vm->hashStr = StringMap::allocate(vm->allocator);
+  vm->loadedAssemblies = AssemblyMap::allocate(vm->allocator);
   vm->assemblyPath = parent->assemblyPath;
   vm->coreAssembly = parent->coreAssembly;
   vm->loadedAssemblies->hash(parent->coreAssembly->name, parent->coreAssembly);

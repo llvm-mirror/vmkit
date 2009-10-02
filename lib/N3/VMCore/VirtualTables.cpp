@@ -50,21 +50,10 @@ using namespace n3;
   INIT(LockObj);
   INIT(VMObject);
   INIT(VMThread);
-  INIT(VirtualMachine);
-  INIT(UTF8Map);
-  INIT(ClassNameMap);
-  INIT(ClassTokenMap);
-  INIT(FieldTokenMap);
-  INIT(MethodTokenMap);
-  INIT(StringMap);
-  INIT(FunctionMap);
-  INIT(N3);
-  INIT(Assembly);
   INIT(Section);
   INIT(Stream);
   INIT(Table);
   INIT(Header);
-  INIT(AssemblyMap);
   INIT(ThreadSystem);
   INIT(CLIString);
   INIT(Property);
@@ -158,7 +147,7 @@ void VMCommonClass::TRACER {
   TRACE_VECTOR(VMCommonClass*, display, std::allocator);
   vm->CALL_TRACER;
 
-  assembly->MARK_AND_TRACE;
+  assembly->CALL_TRACER;
   //funcs->MARK_AND_TRACE;
   TRACE_VECTOR(Property*, properties, gc_allocator);
 }
@@ -235,8 +224,8 @@ void VMThread::TRACER {
 
 void VirtualMachine::TRACER {
   threadSystem->MARK_AND_TRACE;
-  hashUTF8->MARK_AND_TRACE;
-  functions->MARK_AND_TRACE;
+  hashUTF8->CALL_TRACER;
+  functions->CALL_TRACER;
   if (bootstrapThread) {
     bootstrapThread->CALL_TRACER;
     for (VMThread* th = (VMThread*)bootstrapThread->next(); 
@@ -258,10 +247,10 @@ void Property::TRACER {
 }
 
 void Assembly::TRACER {
-  loadedNameClasses->MARK_AND_TRACE;
-  loadedTokenClasses->MARK_AND_TRACE;
-  loadedTokenMethods->MARK_AND_TRACE;
-  loadedTokenFields->MARK_AND_TRACE;
+  loadedNameClasses->CALL_TRACER;
+  loadedTokenClasses->CALL_TRACER;
+  loadedTokenMethods->CALL_TRACER;
+  loadedTokenFields->CALL_TRACER;
   //lockVar->MARK_AND_TRACE;
   //condVar->MARK_AND_TRACE;
   name->MARK_AND_TRACE;
@@ -277,9 +266,9 @@ void Assembly::TRACER {
 
 void N3::TRACER {
   VirtualMachine::CALL_TRACER;
-  hashUTF8->MARK_AND_TRACE;
-  hashStr->MARK_AND_TRACE;
-  loadedAssemblies->MARK_AND_TRACE;
+  hashUTF8->CALL_TRACER;
+  hashStr->CALL_TRACER;
+  loadedAssemblies->CALL_TRACER;
 }
 
 void Section::TRACER {

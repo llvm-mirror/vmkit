@@ -102,7 +102,8 @@ class VirtualMachine : public mvm::PermanentObject {
 
 protected:
 
-  VirtualMachine() :
+  VirtualMachine(mvm::BumpPtrAllocator &Alloc) :
+		allocator(Alloc),
     WeakReferencesQueue(ReferenceQueue::WEAK),
     SoftReferencesQueue(ReferenceQueue::SOFT), 
     PhantomReferencesQueue(ReferenceQueue::PHANTOM) {
@@ -128,6 +129,8 @@ protected:
     ToEnqueueIndex = 0;
   }
 public:
+
+  mvm::BumpPtrAllocator& allocator;
 
   virtual void tracer() {}
 

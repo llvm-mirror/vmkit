@@ -465,11 +465,12 @@ VMMethod* Assembly::constructMethod(VMClass* cl, const UTF8* name,
 }
 
 Assembly* Assembly::allocate(const UTF8* name) {
-  Assembly* ass = gc_new(Assembly)();
-  ass->loadedNameClasses = ClassNameMap::allocate();
-  ass->loadedTokenClasses = ClassTokenMap::allocate();
-  ass->loadedTokenMethods = MethodTokenMap::allocate();
-  ass->loadedTokenFields = FieldTokenMap::allocate();
+	mvm::BumpPtrAllocator *a = new mvm::BumpPtrAllocator();
+  Assembly* ass = new(*a, "Assembly") Assembly(*a);
+  ass->loadedNameClasses = ClassNameMap::allocate(ass->allocator);
+  ass->loadedTokenClasses = ClassTokenMap::allocate(ass->allocator);
+  ass->loadedTokenMethods = MethodTokenMap::allocate(ass->allocator);
+  ass->loadedTokenFields = FieldTokenMap::allocate(ass->allocator);
   ass->assemblyRefs = 0;
   ass->isRead = false;
   ass->name = name;

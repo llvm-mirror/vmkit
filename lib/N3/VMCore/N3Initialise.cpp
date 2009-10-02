@@ -177,7 +177,6 @@ static void initialiseVT() {
 	}
 #endif
   
-  INIT(Assembly);
   INIT(Header);
   INIT(Property);
   INIT(Param);
@@ -210,17 +209,7 @@ static void initialiseVT() {
   INIT(VMThread);
   //mvm::Key<VMThread>::VT = mvm::ThreadKey::VT;
   INIT(ThreadSystem);
-  INIT(N3);
   INIT(Reader);
-  INIT(UTF8Map);
-  INIT(AssemblyMap);
-  INIT(ClassNameMap);
-  INIT(ClassTokenMap);
-  INIT(FieldTokenMap);
-  INIT(MethodTokenMap);
-  INIT(StringMap);
-  INIT(FunctionMap);
-  INIT(VirtualMachine);
   INIT(CLIString);
   INIT(CLIJit);
   INIT(CacheNode);
