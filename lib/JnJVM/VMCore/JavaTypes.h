@@ -21,8 +21,6 @@ namespace jnjvm {
 class UserCommonClass;
 class JnjvmClassLoader;
 class UserClassPrimitive;
-class UTF8;
-class UTF8Map;
 
 #define VOID_ID 0
 #define BOOL_ID 1

@@ -15,6 +15,7 @@
 
 #include "mvm/Allocator.h"
 #include "mvm/JIT.h"
+#include "mvm/UTF8.h"
 
 #include "JavaCompiler.h"
 
@@ -52,7 +53,8 @@ class JnjvmClassLoader;
 class JnjvmModule;
 class Typedef;
 class Signdef;
-class UTF8;
+
+using mvm::UTF8;
 
 class LLVMAssessorInfo {
 public:

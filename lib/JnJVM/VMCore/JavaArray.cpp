@@ -34,14 +34,3 @@ const unsigned int JavaArray::T_BYTE = 8;
 const unsigned int JavaArray::T_SHORT = 9;
 const unsigned int JavaArray::T_INT = 10;
 const unsigned int JavaArray::T_LONG = 11;
-
-const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
-  uint32 len = end - start;
-  uint16* buf = (uint16*)alloca(sizeof(uint16) * len);
-
-  for (uint32 i = 0; i < len; i++) {
-    buf[i] = elements[i + start];
-  }
-
-  return map->lookupOrCreateReader(buf, len);
-}

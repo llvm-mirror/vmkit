@@ -41,7 +41,6 @@ class UserClass;
 class UserClassArray;
 class UserClassPrimitive;
 class UserCommonClass;
-class UTF8;
 
 /// ThreadSystem - Thread management of a JVM. Each JVM has one thread
 /// management system to count the number of non-daemon threads it owns.

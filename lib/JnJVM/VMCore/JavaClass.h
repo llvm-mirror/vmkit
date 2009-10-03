@@ -42,7 +42,6 @@ class JavaVirtualTable;
 class Reader;
 class Signdef;
 class Typedef;
-class UTF8;
 
 
 /// JavaState - List of states a Java class can have. A class is ready to be

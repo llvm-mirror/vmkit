@@ -16,6 +16,8 @@
 
 #include "types.h"
 
+#include "UTF8.h"
+
 #include "mvm/Allocator.h"
 #include "mvm/Object.h"
 
@@ -41,8 +43,6 @@ class SignMap;
 class StringList;
 class Typedef;
 class TypeMap;
-class UTF8;
-class UTF8Map;
 class ZipArchive;
 
 

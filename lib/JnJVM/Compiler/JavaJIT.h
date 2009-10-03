@@ -31,7 +31,6 @@ class Class;
 class JavaMethod;
 class JnjvmModule;
 class Reader;
-class UTF8;
 
 /// Opinfo - This class gives for each opcode if it starts a new block and
 /// its exception destination.

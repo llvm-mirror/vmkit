@@ -20,13 +20,14 @@
 
 #include "JavaObject.h"
 
+#include "UTF8.h"
+
 namespace jnjvm {
 
 class ClassArray;
 class CommonClass;
 class JavaObject;
 class Jnjvm;
-class UTF8Map;
 
 /// TJavaArray - Template class to be instantiated by real arrays. All arrays
 ///  have a constant size and an array of element. When JnJVM allocates an
@@ -84,127 +85,6 @@ ARRAYCLASS(ArrayDouble, double);
 ARRAYCLASS(ArrayObject, JavaObject*);
 
 #undef ARRAYCLASS
-
-/// UTF8 - The UTF8 class is basically the ArrayUInt16 class (arrays of elements
-/// of type uint16) with helper functions for manipulating UTF8. Each JVM
-/// instance hashes UTF8. UTF8 are not allocated by the application's garbage
-/// collector, but resides in permanent memory (e.g malloc).
-class UTF8 {
-  friend class UTF8Map;
-private:
-  
-  /// operator new - Redefines the new operator of this class to allocate
-  /// its objects in permanent memory, not with the garbage collector.
-  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
-                     sint32 size) {
-    return allocator.Allocate(sizeof(ssize_t) + size * sizeof(uint16), "UTF8");
-  }
-  
-  UTF8(sint32 n) {
-    size = n;
-  }
-
-public:
-  /// size - The (constant) size of the array.
-  ssize_t size;
-
-  /// elements - Elements of this array. The size here is different than the
-  /// actual size of the Java array. This is to facilitate Java array accesses
-  /// in JnJVM code. The size should be set to zero, but this is invalid C99.
-  uint16 elements[1];
-  
-  /// extract - Similar, but creates it in the map.
-  const UTF8* extract(UTF8Map* map, uint32 start, uint32 len) const;
- 
-  /// equals - Are the two UTF8s equal?
-  bool equals(const UTF8* other) const {
-    if (other == this) return true;
-    else if (size != other->size) return false;
-    else return !memcmp(elements, other->elements, size * sizeof(uint16));
-  }
-  
-  /// equals - Does the UTF8 equal to the buffer? 
-  bool equals(const uint16* buf, sint32 len) const {
-    if (size != len) return false;
-    else return !memcmp(elements, buf, size * sizeof(uint16));
-  }
-
-  /// lessThan - strcmp-like function for UTF8s, used by hash tables.
-  bool lessThan(const UTF8* other) const {
-    if (size < other->size) return true;
-    else if (size > other->size) return false;
-    else return memcmp((const char*)elements, (const char*)other->elements, 
-                       size * sizeof(uint16)) < 0;
-  }
-  
-};
-
-
-/// UTF8Buffer - Helper class to create char* buffers suitable for
-/// printf.
-///
-class UTF8Buffer {
-
-  /// buffer - The buffer that holds a string representation.
-  ///
-  char* buffer;
-public:
-
-  /// UTF8Buffer - Create a buffer with the following UTF8.
-  ///
-  UTF8Buffer(const UTF8* val) {
-    buffer = new char[val->size + 1];
-    for (sint32 i = 0; i < val->size; ++i)
-      buffer[i] = val->elements[i];
-    buffer[val->size] = 0;
-  }
-
-  /// ~UTF8Buffer - Delete the buffer, as well as all dynamically
-  /// allocated memory.
-  ///
-  ~UTF8Buffer() {
-    delete[] buffer;
-  }
-
-  /// toCompileName - Change the utf8 following JNI conventions.
-  ///
-  UTF8Buffer* toCompileName() {
-    uint32 len = strlen(buffer);
-    char* newBuffer = new char[(len << 1) + 1];
-    uint32 j = 0;
-    for (uint32 i = 0; i < len; ++i) {
-      if (buffer[i] == '/') {
-        newBuffer[j++] = '_';
-      } else if (buffer[i] == '_') {
-        newBuffer[j++] = '_';
-        newBuffer[j++] = '1';
-      } else if (buffer[i] == ';') {
-        newBuffer[j++] = '_';
-        newBuffer[j++] = '2';
-      } else if (buffer[i] == '[') {
-        newBuffer[j++] = '_';
-        newBuffer[j++] = '3';
-      } else if (buffer[i] == '$') {
-        newBuffer[j++] = '_';
-        newBuffer[j++] = '4';
-      } else {
-        newBuffer[j++] = buffer[i];
-      }
-    }
-    newBuffer[j] = 0;
-    delete[] buffer;
-    buffer = newBuffer;
-    return this;
-  }
-
-  /// cString - Return a C string representation of the buffer, suitable
-  /// for printf.
-  ///
-  const char* cString() {
-    return buffer;
-  }
-
-};
 
 } // end namespace jnjvm
 

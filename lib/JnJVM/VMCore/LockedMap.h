@@ -24,6 +24,7 @@
 
 #include "mvm/Allocator.h"
 #include "mvm/Threads/Locks.h"
+#include "UTF8.h"
 
 #include "JavaArray.h" // for comparing UTF8s
 
@@ -114,36 +115,6 @@ public:
   }
 
   ~LockedMap() {}
-};
-
-class UTF8Map : public mvm::PermanentObject {
-public:
-  typedef std::multimap<const uint32, const UTF8*>::iterator iterator;
-  
-  mvm::LockNormal lock;
-  mvm::BumpPtrAllocator& allocator;
-  std::multimap<const uint32, const UTF8*> map;
-  const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
-  const UTF8* lookupOrCreateReader(const uint16* buf, uint32 size);
-  const UTF8* lookupAsciiz(const char* asciiz); 
-  const UTF8* lookupReader(const uint16* buf, uint32 size);
-  
-  UTF8Map(mvm::BumpPtrAllocator& A) : allocator(A) {}
-
-  ~UTF8Map() {
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      allocator.Deallocate((void*)i->second);
-    }
-  }
-
-  void copy(UTF8Map* newMap) {
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      newMap->map.insert(*i);
-    }
-  }
-  
-  void replace(const UTF8* oldUTF8, const UTF8* newUTF8);
-  void insert(const UTF8* val);
 };
 
 class ClassMap : 

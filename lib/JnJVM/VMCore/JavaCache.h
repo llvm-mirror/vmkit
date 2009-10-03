@@ -28,12 +28,12 @@
 #include "types.h"
 
 #include "JnjvmConfig.h"
+#include "UTF8.h"
 
 namespace jnjvm {
 
 class Enveloppe;
 class JavaVirtualTable;
-class UTF8;
 
 /// CacheNode - A {class, method pointer} pair.
 class CacheNode : public mvm::PermanentObject {
