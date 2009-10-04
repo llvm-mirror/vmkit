@@ -270,7 +270,7 @@ public:
 
   /// lock - The monitor of this object. Most of the time null.
   ///
-  mvm::ThinLock<LockObj, JavaObject> lock;
+  mvm::ThinLock<LockObj, JavaObject, mvm::FatLockWithGC> lock;
 
   /// wait - Java wait. Makes the current thread waiting on a monitor.
   ///

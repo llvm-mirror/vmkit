@@ -187,18 +187,45 @@ public:
   static const uint64_t ThinCountMask = 0xFF;
 
 
+
+#ifdef WITH_LLVM_GCC
+extern "C" void __llvm_gcroot(const void**, void*) __attribute__((nothrow));
+#define llvm_gcroot(a, b) __llvm_gcroot((const void**)&a, b)
+#else
+#define llvm_gcroot(a, b)
+#endif
+
+  class FatLockNoGC {
+  public:
+    static void gcroot(void* val, void* unused) 
+      __attribute__ ((always_inline)) {}
+  };
+  
+  class FatLockWithGC {
+  public:
+    static void gcroot(void* val, void* unused) 
+      __attribute__ ((always_inline)) {
+      llvm_gcroot(val, unused);
+    }
+  };
+
+
 /// ThinLock - This class is an implementation of thin locks. The template class
 /// TFatLock is a virtual machine specific fat lock.
 ///
-template <class TFatLock, class Owner>
+template <class TFatLock, class Owner, class IsGC>
 class ThinLock {
   uintptr_t lock;
 
 public:
+
+
+
   /// overflowThinlock - Change the lock of this object to a fat lock because
   /// we have reached 0xFF locks.
   void overflowThinLock(Owner* O = 0) {
     TFatLock* obj = TFatLock::allocate(O);
+    IsGC::gcroot(obj, 0);
     obj->acquireAll(257);
     lock = ((uintptr_t)obj >> 1) | FatMask;
   }
@@ -221,6 +248,7 @@ public:
   TFatLock* changeToFatlock(Owner* O) {
     if (!(lock & FatMask)) {
       TFatLock* obj = TFatLock::allocate(O);
+      IsGC::gcroot(obj, 0);
       size_t val = (((size_t) obj) >> 1) | FatMask;
       uint32 count = lock & ThinCountMask;
       obj->acquireAll(count + 1);
@@ -247,6 +275,7 @@ public:
           }
         } else {
           TFatLock* obj = TFatLock::allocate(O);
+          IsGC::gcroot(obj, 0);
           uintptr_t val = ((uintptr_t)obj >> 1) | FatMask;
 loop:
           while (lock) {
@@ -282,6 +311,7 @@ end:
       lock = 0;
     } else if (lock & FatMask) {
       TFatLock* obj = (TFatLock*)(lock << 1);
+      IsGC::gcroot(obj, 0);
       obj->release();
     } else {
       lock--;
@@ -293,6 +323,7 @@ end:
   void broadcast() {
     if (lock & FatMask) {
       TFatLock* obj = (TFatLock*)(lock << 1);
+      IsGC::gcroot(obj, 0);
       obj->broadcast();
     }
   }
@@ -301,6 +332,7 @@ end:
   void signal() {
     if (lock & FatMask) {
       TFatLock* obj = (TFatLock*)(lock << 1);
+      IsGC::gcroot(obj, 0);
       obj->signal();
     }
   }
@@ -313,6 +345,7 @@ end:
     if ((lock & ThinMask) == id) return true;
     if (lock & FatMask) {
       TFatLock* obj = (TFatLock*)(lock << 1);
+      IsGC::gcroot(obj, 0);
       return obj->owner();
     }
     return false;
@@ -321,6 +354,7 @@ end:
   mvm::Thread* getOwner() {
     if (lock & FatMask) {
       TFatLock* obj = (TFatLock*)(lock << 1);
+      IsGC::gcroot(obj, 0);
       return obj->getOwner();
     } else {
       return (mvm::Thread*)(lock & ThinMask);

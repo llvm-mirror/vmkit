@@ -387,7 +387,7 @@ public:
 class Class : public CommonClass {
 
 private:
-
+ 
   /// FatLock - This class is the inflated lock of Class instances. It should
   /// be very rare that such locks are allocated.
   class FatLock : public mvm::PermanentObject {
@@ -448,7 +448,7 @@ public:
   /// lock - The lock of this class. It should be very rare that this lock
   /// inflates.
   ///
-  mvm::ThinLock<FatLock, CommonClass> lock;
+  mvm::ThinLock<FatLock, CommonClass, mvm::FatLockNoGC> lock;
   
   /// virtualFields - List of all the virtual fields defined in this class.
   /// This does not contain non-redefined super fields.
