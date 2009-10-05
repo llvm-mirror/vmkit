@@ -325,7 +325,7 @@ static void initialiseFunctions(Module* M) {
 
 static bool removePotentialNullCheck(BasicBlock* Cur, Value* Obj) {
   BasicBlock* BB = Cur->getUniquePredecessor();
-  LLVMContext* Context = Cur->getParent()->getContext();
+  LLVMContext& Context = Cur->getParent()->getContext();
   if (BB) {
     Instruction* T = BB->getTerminator();
     if (dyn_cast<BranchInst>(T) && T != BB->begin()) {
@@ -335,8 +335,8 @@ static bool removePotentialNullCheck(BasicBlock* Cur, Value* Obj) {
       if (ICmpInst* IE = dyn_cast<ICmpInst>(BIE)) {
         if (IE->getPredicate() == ICmpInst::ICMP_EQ &&
             IE->getOperand(0) == Obj &&
-            IE->getOperand(1) == Context->getNullValue(Obj->getType())) {
-          BIE->replaceAllUsesWith(ConstantInt::getFalse());
+            IE->getOperand(1) == Constant::getNullValue(Obj->getType())) {
+          BIE->replaceAllUsesWith(ConstantInt::getFalse(Context));
           BIE->eraseFromParent();
           return true;
         }
@@ -352,11 +352,11 @@ bool LowerMagic::runOnFunction(Function& F) {
   bool Changed = false;
   const llvm::Type* pointerSizeType = 
     globalModule->getPointerSize() == llvm::Module::Pointer32 ?
-      Type::Int32Ty : Type::Int64Ty;
+      Type::getInt32Ty(Context) : Type::getInt64Ty(Context);
   
   initialiseFunctions(globalModule);
   if (!CASPtr || CASPtr->getParent() != globalModule) {
-    if (pointerSizeType == Type::Int32Ty) {
+    if (pointerSizeType == Type::getInt32Ty(Context)) {
       CASPtr = globalModule->getFunction("llvm.atomic.cmp.swap.i32.p0i32");
     } else {
       CASPtr = globalModule->getFunction("llvm.atomic.cmp.swap.i64.p0i64");
@@ -374,8 +374,8 @@ bool LowerMagic::runOnFunction(Function& F) {
       if (CI) {
         Value* V = Call.getCalledValue();
         if (Function* FCur = dyn_cast<Function>(V)) {
-          const char* name = FCur->getNameStart();
-          unsigned len = FCur->getNameLen();
+          const char* name = FCur->getName().data();
+          unsigned len = FCur->getName().size();
           if (len > strlen(AddressClass) && 
               !memcmp(AddressClass, name, strlen(AddressClass))) {
             
@@ -385,42 +385,42 @@ bool LowerMagic::runOnFunction(Function& F) {
               removePotentialNullCheck(Cur, Call.getArgument(0));
             }
 
-            if (!strcmp(FCur->getNameStart(), AddressZeroMethod)) {
-              Constant* N = Context.getNullValue(FCur->getReturnType());
+            if (!strcmp(FCur->getName().data(), AddressZeroMethod)) {
+              Constant* N = Constant::getNullValue(FCur->getReturnType());
               CI->replaceAllUsesWith(N);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressMaxMethod)) {
-              ConstantInt* M = Context.getConstantInt(Type::Int64Ty, (uint64_t)-1);
+            } else if (!strcmp(FCur->getName().data(), AddressMaxMethod)) {
+              ConstantInt* M = ConstantInt::get(Type::getInt64Ty(Context), (uint64_t)-1);
               Constant* N = ConstantExpr::getIntToPtr(M, FCur->getReturnType());
               CI->replaceAllUsesWith(N);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressStoreObjectReferenceMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressStoreAddressMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressStoreShortMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressStoreByteMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressStoreIntMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressStoreWordMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressStoreObjectReferenceMethod) ||
+                       !strcmp(FCur->getName().data(), AddressStoreAddressMethod) ||
+                       !strcmp(FCur->getName().data(), AddressStoreShortMethod) ||
+                       !strcmp(FCur->getName().data(), AddressStoreByteMethod) ||
+                       !strcmp(FCur->getName().data(), AddressStoreIntMethod) ||
+                       !strcmp(FCur->getName().data(), AddressStoreWordMethod)) {
               Value* Addr = Call.getArgument(0);
               Value* Obj = Call.getArgument(1);
               const llvm::Type* Ty = PointerType::getUnqual(Obj->getType());
               Addr = new BitCastInst(Addr, Ty, "", CI);
               new StoreInst(Obj, Addr, CI);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressLoadObjectReferenceMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressLoadAddressMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressLoadWordMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressLoadShortMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressLoadByteMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressLoadIntMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressPrepareWordMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressLoadObjectReferenceMethod) ||
+                       !strcmp(FCur->getName().data(), AddressLoadAddressMethod) ||
+                       !strcmp(FCur->getName().data(), AddressLoadWordMethod) ||
+                       !strcmp(FCur->getName().data(), AddressLoadShortMethod) ||
+                       !strcmp(FCur->getName().data(), AddressLoadByteMethod) ||
+                       !strcmp(FCur->getName().data(), AddressLoadIntMethod) ||
+                       !strcmp(FCur->getName().data(), AddressPrepareWordMethod)) {
               Value* Addr = Call.getArgument(0);
               const Type* Ty = PointerType::getUnqual(FCur->getReturnType());
               Addr = new BitCastInst(Addr, Ty, "", CI);
               Value* LD = new LoadInst(Addr, "", CI);
               CI->replaceAllUsesWith(LD);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressDiffMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressMinusExtentMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressDiffMethod) ||
+                       !strcmp(FCur->getName().data(), AddressMinusExtentMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -429,7 +429,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new IntToPtrInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressPlusOffsetMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressPlusOffsetMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -438,7 +438,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new IntToPtrInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressPlusIntMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressPlusIntMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -448,7 +448,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new IntToPtrInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressMinusIntMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressMinusIntMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -458,7 +458,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new IntToPtrInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressLTMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressLTMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -467,7 +467,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressGTMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressGTMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -476,7 +476,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressEQMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressEQMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -485,7 +485,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressNEMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressNEMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -494,7 +494,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressLEMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressLEMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -503,7 +503,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressGEMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressGEMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -512,13 +512,13 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressToObjectReferenceMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressToWordMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressToObjectReferenceMethod) ||
+                       !strcmp(FCur->getName().data(), AddressToWordMethod)) {
               Value* Val = Call.getArgument(0);
               Val = new BitCastInst(Val, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressAttemptWordAtOffsetMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressAttemptWordAtOffsetMethod)) {
               Value* Ptr = Call.getArgument(0);
               Value* Old = Call.getArgument(1);
               Value* Val = Call.getArgument(2);
@@ -539,7 +539,7 @@ bool LowerMagic::runOnFunction(Function& F) {
 
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressAttemptWordMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressAttemptWordMethod)) {
               Value* Ptr = Call.getArgument(0);
               Value* Old = Call.getArgument(1);
               Value* Val = Call.getArgument(2);
@@ -556,13 +556,13 @@ bool LowerMagic::runOnFunction(Function& F) {
 
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressPrepareWordAtOffsetMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressLoadWordAtOffsetMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressLoadAddressAtOffsetMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressLoadObjectReferenceAtOffsetMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressLoadByteAtOffsetMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressLoadIntAtOffsetMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressLoadShortAtOffsetMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressPrepareWordAtOffsetMethod) ||
+                       !strcmp(FCur->getName().data(), AddressLoadWordAtOffsetMethod) ||
+                       !strcmp(FCur->getName().data(), AddressLoadAddressAtOffsetMethod) ||
+                       !strcmp(FCur->getName().data(), AddressLoadObjectReferenceAtOffsetMethod) ||
+                       !strcmp(FCur->getName().data(), AddressLoadByteAtOffsetMethod) ||
+                       !strcmp(FCur->getName().data(), AddressLoadIntAtOffsetMethod) ||
+                       !strcmp(FCur->getName().data(), AddressLoadShortAtOffsetMethod)) {
               Value* Ptr = Call.getArgument(0);
               Value* Offset = Call.getArgument(1);
 
@@ -575,10 +575,10 @@ bool LowerMagic::runOnFunction(Function& F) {
 
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressStoreWordAtOffsetMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressStoreAddressAtOffsetMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressStoreByteAtOffsetMethod) ||
-                       !strcmp(FCur->getNameStart(), AddressStoreShortAtOffsetMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressStoreWordAtOffsetMethod) ||
+                       !strcmp(FCur->getName().data(), AddressStoreAddressAtOffsetMethod) ||
+                       !strcmp(FCur->getName().data(), AddressStoreByteAtOffsetMethod) ||
+                       !strcmp(FCur->getName().data(), AddressStoreShortAtOffsetMethod)) {
               Value* Ptr = Call.getArgument(0);
               Value* Val = Call.getArgument(1);
               Value* Offset = Call.getArgument(2);
@@ -591,7 +591,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               new StoreInst(Val, Ptr, CI);
 
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressPlusExtentMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressPlusExtentMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -600,28 +600,28 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new IntToPtrInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressIsZeroMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressIsZeroMethod)) {
               Value* Val = Call.getArgument(0);
-              Constant* N = Context.getNullValue(Val->getType());
+              Constant* N = Constant::getNullValue(Val->getType());
               Value* Res = new ICmpInst(CI, ICmpInst::ICMP_EQ, Val, N, "");
               Res = new ZExtInst(Res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressToLongMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressToLongMethod)) {
               Value* Val = Call.getArgument(0);
-              Val = new PtrToIntInst(Val, Type::Int64Ty, "", CI);
+              Val = new PtrToIntInst(Val, Type::getInt64Ty(Context), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressFromIntZeroExtendMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressFromIntZeroExtendMethod)) {
               Value* Val = Call.getArgument(0);
-              if (pointerSizeType != Type::Int32Ty)
+              if (pointerSizeType != Type::getInt32Ty(Context))
                 Val = new ZExtInst(Val, pointerSizeType, "", CI);
               Val = new IntToPtrInst(Val, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), AddressToIntMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressToIntMethod)) {
               Value* Val = Call.getArgument(0);
-              Val = new PtrToIntInst(Val, Type::Int32Ty, "", CI);
+              Val = new PtrToIntInst(Val, Type::getInt32Ty(Context), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
             } else {
@@ -638,10 +638,10 @@ bool LowerMagic::runOnFunction(Function& F) {
               removePotentialNullCheck(Cur, Call.getArgument(0));
             }
 
-            if (!strcmp(FCur->getNameStart(), ExtentToWordMethod)) {
+            if (!strcmp(FCur->getName().data(), ExtentToWordMethod)) {
               CI->replaceAllUsesWith(Call.getArgument(0));
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentMinusExtentMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ExtentMinusExtentMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -650,7 +650,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new IntToPtrInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentPlusExtentMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ExtentPlusExtentMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -659,7 +659,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new IntToPtrInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentPlusIntMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ExtentPlusIntMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -669,7 +669,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new IntToPtrInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentMinusIntMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ExtentMinusIntMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -679,26 +679,26 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new IntToPtrInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentFromIntZeroExtendMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ExtentFromIntZeroExtendMethod)) {
               Value* Val = Call.getArgument(0);
-              if (pointerSizeType != Type::Int32Ty)
+              if (pointerSizeType != Type::getInt32Ty(Context))
                 Val = new ZExtInst(Val, pointerSizeType, "", CI);
               Val = new IntToPtrInst(Val, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentFromIntSignExtendMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ExtentFromIntSignExtendMethod)) {
               Value* Val = Call.getArgument(0);
-              if (pointerSizeType != Type::Int32Ty)
+              if (pointerSizeType != Type::getInt32Ty(Context))
                 Val = new SExtInst(Val, pointerSizeType, "", CI);
               Val = new IntToPtrInst(Val, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentOneMethod)) {
-              Constant* N = Context.getConstantInt(pointerSizeType, 1);
+            } else if (!strcmp(FCur->getName().data(), ExtentOneMethod)) {
+              Constant* N = ConstantInt::get(pointerSizeType, 1);
               N = ConstantExpr::getIntToPtr(N, FCur->getReturnType());
               CI->replaceAllUsesWith(N);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentNEMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ExtentNEMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -707,7 +707,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentEQMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ExtentEQMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -716,7 +716,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentGTMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ExtentGTMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -725,7 +725,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentLTMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ExtentLTMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -734,22 +734,22 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentZeroMethod)) {
-              Constant* N = Context.getNullValue(FCur->getReturnType());
+            } else if (!strcmp(FCur->getName().data(), ExtentZeroMethod)) {
+              Constant* N = Constant::getNullValue(FCur->getReturnType());
               CI->replaceAllUsesWith(N);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentToLongMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ExtentToLongMethod)) {
               Value* Val = Call.getArgument(0);
-              Val = new PtrToIntInst(Val, Type::Int64Ty, "", CI);
+              Val = new PtrToIntInst(Val, Type::getInt64Ty(Context), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentToIntMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ExtentToIntMethod)) {
               Value* Val = Call.getArgument(0);
-              Val = new PtrToIntInst(Val, Type::Int32Ty, "", CI);
+              Val = new PtrToIntInst(Val, Type::getInt32Ty(Context), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ExtentMaxMethod)) {
-              ConstantInt* M = Context.getConstantInt(Type::Int64Ty, (uint64_t)-1);
+            } else if (!strcmp(FCur->getName().data(), ExtentMaxMethod)) {
+              ConstantInt* M = ConstantInt::get(Type::getInt64Ty(Context), (uint64_t)-1);
               Constant* N = ConstantExpr::getIntToPtr(M, FCur->getReturnType());
               CI->replaceAllUsesWith(N);
               CI->eraseFromParent();
@@ -766,7 +766,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               removePotentialNullCheck(Cur, Call.getArgument(0));
             }
             
-            if (!strcmp(FCur->getNameStart(), OffsetSLTMethod)) {
+            if (!strcmp(FCur->getName().data(), OffsetSLTMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -775,16 +775,16 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), OffsetToWordMethod)) {
+            } else if (!strcmp(FCur->getName().data(), OffsetToWordMethod)) {
               Value* Val = Call.getArgument(0);
               Val = new BitCastInst(Val, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), OffsetZeroMethod)) {
-              Constant* N = Context.getNullValue(FCur->getReturnType());
+            } else if (!strcmp(FCur->getName().data(), OffsetZeroMethod)) {
+              Constant* N = Constant::getNullValue(FCur->getReturnType());
               CI->replaceAllUsesWith(N);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), OffsetSGTMethod)) {
+            } else if (!strcmp(FCur->getName().data(), OffsetSGTMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -793,7 +793,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), OffsetSGEMethod)) {
+            } else if (!strcmp(FCur->getName().data(), OffsetSGEMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -802,7 +802,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), OffsetSLEMethod)) {
+            } else if (!strcmp(FCur->getName().data(), OffsetSLEMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -811,7 +811,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), OffsetEQMethod)) {
+            } else if (!strcmp(FCur->getName().data(), OffsetEQMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -820,21 +820,21 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), OffsetFromIntSignExtendMethod)) {
+            } else if (!strcmp(FCur->getName().data(), OffsetFromIntSignExtendMethod)) {
               Value* Val = Call.getArgument(0);
-              if (pointerSizeType != Type::Int32Ty)
+              if (pointerSizeType != Type::getInt32Ty(Context))
                 Val = new SExtInst(Val, pointerSizeType, "", CI);
               Val = new IntToPtrInst(Val, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), OffsetFromIntZeroExtendMethod)) {
+            } else if (!strcmp(FCur->getName().data(), OffsetFromIntZeroExtendMethod)) {
               Value* Val = Call.getArgument(0);
-              if (pointerSizeType != Type::Int32Ty)
+              if (pointerSizeType != Type::getInt32Ty(Context))
                 Val = new ZExtInst(Val, pointerSizeType, "", CI);
               Val = new IntToPtrInst(Val, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), OffsetPlusIntMethod)) {
+            } else if (!strcmp(FCur->getName().data(), OffsetPlusIntMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -844,24 +844,24 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new IntToPtrInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), OffsetToIntMethod)) {
+            } else if (!strcmp(FCur->getName().data(), OffsetToIntMethod)) {
               Value* Val = Call.getArgument(0);
-              Val = new PtrToIntInst(Val, Type::Int32Ty, "", CI);
+              Val = new PtrToIntInst(Val, Type::getInt32Ty(Context), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), OffsetToLongMethod)) {
+            } else if (!strcmp(FCur->getName().data(), OffsetToLongMethod)) {
               Value* Val = Call.getArgument(0);
-              Val = new PtrToIntInst(Val, Type::Int64Ty, "", CI);
+              Val = new PtrToIntInst(Val, Type::getInt64Ty(Context), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), OffsetIsZeroMethod)) {
+            } else if (!strcmp(FCur->getName().data(), OffsetIsZeroMethod)) {
               Value* Val = Call.getArgument(0);
-              Constant* N = Context.getNullValue(Val->getType());
+              Constant* N = Constant::getNullValue(Val->getType());
               Value* Res = new ICmpInst(CI, ICmpInst::ICMP_EQ, Val, N, "");
               Res = new ZExtInst(Res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), OffsetMinusIntMethod)) {
+            } else if (!strcmp(FCur->getName().data(), OffsetMinusIntMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -871,7 +871,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new IntToPtrInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), OffsetMinusOffsetMethod)) {
+            } else if (!strcmp(FCur->getName().data(), OffsetMinusOffsetMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -893,28 +893,28 @@ bool LowerMagic::runOnFunction(Function& F) {
               removePotentialNullCheck(Cur, Call.getArgument(0));
             }
 
-            if (!strcmp(FCur->getNameStart(), ObjectReferenceNullReferenceMethod)) {
-              Constant* N = Context.getNullValue(FCur->getReturnType());
+            if (!strcmp(FCur->getName().data(), ObjectReferenceNullReferenceMethod)) {
+              Constant* N = Constant::getNullValue(FCur->getReturnType());
               CI->replaceAllUsesWith(N);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ObjectReferenceFromObjectMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ObjectReferenceFromObjectMethod)) {
               Value* Val = Call.getArgument(0);
               Val = new BitCastInst(Val, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ObjectReferenceToAddressMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ObjectReferenceToAddressMethod)) {
               Value* Val = Call.getArgument(0);
               Val = new BitCastInst(Val, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ObjectReferenceToObjectMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ObjectReferenceToObjectMethod)) {
               Value* Val = Call.getArgument(0);
               Val = new BitCastInst(Val, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), ObjectReferenceIsNullMethod)) {
+            } else if (!strcmp(FCur->getName().data(), ObjectReferenceIsNullMethod)) {
               Value* Val = Call.getArgument(0);
-              Constant* N = Context.getNullValue(Val->getType());
+              Constant* N = Constant::getNullValue(Val->getType());
               Value* Res = new ICmpInst(CI, ICmpInst::ICMP_EQ, Val, N, "");
               Res = new ZExtInst(Res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Res);
@@ -932,7 +932,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               removePotentialNullCheck(Cur, Call.getArgument(0));
             }
              
-            if (!strcmp(FCur->getNameStart(), WordOrMethod)) {
+            if (!strcmp(FCur->getName().data(), WordOrMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -941,7 +941,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               Res = new IntToPtrInst(Res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordAndMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordAndMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -950,7 +950,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               Res = new IntToPtrInst(Res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordXorMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordXorMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -959,7 +959,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               Res = new IntToPtrInst(Res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordRshlMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordRshlMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -969,7 +969,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               Res = new IntToPtrInst(Res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordLshMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordLshMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -979,37 +979,37 @@ bool LowerMagic::runOnFunction(Function& F) {
               Res = new IntToPtrInst(Res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordToIntMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordToIntMethod)) {
               Value* Val = Call.getArgument(0);
-              Val = new PtrToIntInst(Val, Type::Int32Ty, "", CI);
+              Val = new PtrToIntInst(Val, Type::getInt32Ty(Context), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordNotMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordNotMethod)) {
               Value* Val = Call.getArgument(0);
               Val = new PtrToIntInst(Val, pointerSizeType, "", CI);
-              Constant* M1 = Context.getConstantInt(pointerSizeType, -1);
+              Constant* M1 = ConstantInt::get(pointerSizeType, -1);
               Value* Res = BinaryOperator::CreateXor(Val, M1, "", CI);
               Res = new IntToPtrInst(Res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordZeroMethod)) {
-              Constant* N = Context.getNullValue(FCur->getReturnType());
+            } else if (!strcmp(FCur->getName().data(), WordZeroMethod)) {
+              Constant* N = Constant::getNullValue(FCur->getReturnType());
               CI->replaceAllUsesWith(N);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordOneMethod)) {
-              Constant* N = Context.getConstantInt(pointerSizeType, 1);
+            } else if (!strcmp(FCur->getName().data(), WordOneMethod)) {
+              Constant* N = ConstantInt::get(pointerSizeType, 1);
               N = ConstantExpr::getIntToPtr(N, FCur->getReturnType());
               CI->replaceAllUsesWith(N);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordToAddressMethod) ||
-                       !strcmp(FCur->getNameStart(), WordToOffsetMethod) ||
-                       !strcmp(FCur->getNameStart(), WordToExtentMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordToAddressMethod) ||
+                       !strcmp(FCur->getName().data(), WordToOffsetMethod) ||
+                       !strcmp(FCur->getName().data(), WordToExtentMethod)) {
               Value* Val = Call.getArgument(0);
               Val = new BitCastInst(Val, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordMinusWordMethod) ||
-                       !strcmp(FCur->getNameStart(), WordMinusExtentMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordMinusWordMethod) ||
+                       !strcmp(FCur->getName().data(), WordMinusExtentMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -1018,7 +1018,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new IntToPtrInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordPlusWordMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordPlusWordMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -1027,7 +1027,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new IntToPtrInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordLTMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordLTMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -1036,7 +1036,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordLEMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordLEMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -1045,7 +1045,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordGEMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordGEMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -1054,7 +1054,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordEQMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordEQMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -1063,7 +1063,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordGTMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordGTMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -1072,7 +1072,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordNEMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordNEMethod)) {
               Value* Val1 = Call.getArgument(0);
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
@@ -1081,34 +1081,34 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordFromIntSignExtendMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordFromIntSignExtendMethod)) {
               Value* Val = Call.getArgument(0);
-              if (pointerSizeType != Type::Int32Ty)
+              if (pointerSizeType != Type::getInt32Ty(Context))
                 Val = new SExtInst(Val, pointerSizeType, "", CI);
               Val = new IntToPtrInst(Val, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordFromIntZeroExtendMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordFromIntZeroExtendMethod)) {
               Value* Val = Call.getArgument(0);
-              if (pointerSizeType != Type::Int32Ty)
+              if (pointerSizeType != Type::getInt32Ty(Context))
                 Val = new ZExtInst(Val, pointerSizeType, "", CI);
               Val = new IntToPtrInst(Val, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordIsZeroMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordIsZeroMethod)) {
               Value* Val = Call.getArgument(0);
-              Constant* N = Context.getNullValue(Val->getType());
+              Constant* N = Constant::getNullValue(Val->getType());
               Value* Res = new ICmpInst(CI, ICmpInst::ICMP_EQ, Val, N, "");
               Res = new ZExtInst(Res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordToLongMethod)) {
+            } else if (!strcmp(FCur->getName().data(), WordToLongMethod)) {
               Value* Val = Call.getArgument(0);
-              Val = new PtrToIntInst(Val, Type::Int64Ty, "", CI);
+              Val = new PtrToIntInst(Val, Type::getInt64Ty(Context), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getNameStart(), WordMaxMethod)) {
-              ConstantInt* M = Context.getConstantInt(Type::Int64Ty, (uint64_t)-1);
+            } else if (!strcmp(FCur->getName().data(), WordMaxMethod)) {
+              ConstantInt* M = ConstantInt::get(Type::getInt64Ty(Context), (uint64_t)-1);
               Constant* N = ConstantExpr::getIntToPtr(M, FCur->getReturnType());
               CI->replaceAllUsesWith(N);
               CI->eraseFromParent();

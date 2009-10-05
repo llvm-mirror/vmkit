@@ -43,9 +43,9 @@ bool LowerJavaRT::runOnModule(Module& M) {
   for (Module::iterator I = M.begin(), E = M.end(); I != E;) {
     GlobalValue& GV = *I;
     ++I;
-    if (!strncmp(GV.getName().c_str(), "JnJVM_java", 10) ||
-        !strncmp(GV.getName().c_str(), "java", 4)) {
-      GV.replaceAllUsesWith(M.getContext().getNullValue(GV.getType()));
+    if (!strncmp(GV.getName().data(), "JnJVM_java", 10) ||
+        !strncmp(GV.getName().data(), "java", 4)) {
+      GV.replaceAllUsesWith(Constant::getNullValue(GV.getType()));
       GV.eraseFromParent();
     }
   }
@@ -54,9 +54,9 @@ bool LowerJavaRT::runOnModule(Module& M) {
        I != E;) {
     GlobalValue& GV = *I;
     ++I;
-    if (!strncmp(GV.getName().c_str(), "JnJVM_java", 10) ||
-        !strncmp(GV.getName().c_str(), "java", 4)) {
-      GV.replaceAllUsesWith(M.getContext().getNullValue(GV.getType()));
+    if (!strncmp(GV.getName().data(), "JnJVM_java", 10) ||
+        !strncmp(GV.getName().data(), "java", 4)) {
+      GV.replaceAllUsesWith(Constant::getNullValue(GV.getType()));
       GV.eraseFromParent();
     }
   }
