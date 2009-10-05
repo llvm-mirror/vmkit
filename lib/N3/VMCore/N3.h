@@ -129,6 +129,7 @@ public:
 
 	// usefull string, uint16 and utf8 functions
 
+	char*            arrayToAsciiz(const ArrayUInt16 *array);
 	ArrayUInt16*     asciizToArray(const char *asciiz);          // done
 	ArrayUInt16*     bufToArray(const uint16 *buf, uint32 len);  // done
 	ArrayUInt16*     UTF8ToArray(const UTF8 *utf8);              // done

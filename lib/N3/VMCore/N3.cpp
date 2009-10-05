@@ -361,7 +361,7 @@ void N3::mainCLIStart(VMThread* th) {
   MSCorlib::loadBootstrap(vm);
   
   ClArgumentsInfo& info = vm->argumentsInfo;  
-  ArrayObject* args = ArrayObject::acons(info.argc - 2, MSCorlib::arrayString);
+  ArrayObject* args = (ArrayObject*)MSCorlib::arrayString->doNew(info.argc-2);
   for (int i = 2; i < info.argc; ++i) {
     args->setAt(i - 2, (VMObject*)vm->arrayToString(vm->asciizToArray(info.argv[i])));
   }
@@ -413,8 +413,17 @@ const UTF8* N3::arrayToUTF8(const ArrayUInt16 *array) {
 }
 
 CLIString *N3::arrayToString(const ArrayUInt16 *array) {
-	const UTF8 *utf8 = arrayToUTF8(array);
-  return (CLIString*)CLIString::stringDup(utf8, this);
+  return (CLIString*)CLIString::stringDup(array, this);
+}
+
+char* N3::arrayToAsciiz(const ArrayUInt16 *array) {
+	int size = array->size;
+  mvm::NativeString* buf = mvm::NativeString::alloc(size + 1);
+  for (sint32 i = 0; i < size; ++i) {
+    buf->setAt(i, array->elements[i]);
+  }
+  buf->setAt(size, 0);
+  return buf->cString();
 }
 
 #include "MSCorlib.inc"

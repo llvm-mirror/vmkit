@@ -34,9 +34,8 @@ public:
   llvm::GlobalVariable* llvmVar();
 
   
-  static CLIString* stringDup(const UTF8*& utf8, N3* vm);
-  const  UTF8* strToUTF8(N3* vm);
-	ArrayUInt16 *strToArray(N3 *vm) const;
+  static CLIString* stringDup(const ArrayUInt16*& array, N3* vm);
+	const ArrayUInt16 *strToArray(N3 *vm) const;
 };
 
 } // end namespace jnjvm

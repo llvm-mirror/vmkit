@@ -277,18 +277,14 @@ static void initialiseStatics() {
 
   MSCorlib::loadStringClass(vm);
 
-  MSCorlib::arrayString = ass->constructArray(vm->asciizToUTF8("String"),
-                                        System, 1);
+  MSCorlib::arrayString = ass->constructArray(vm->asciizToUTF8("String"), System, 1);
   MSCorlib::arrayString->baseClass = MSCorlib::pString;
   
-  MSCorlib::arrayByte = ass->constructArray(vm->asciizToUTF8("Byte"),
-                                        System, 1);
+  MSCorlib::arrayByte = ass->constructArray(vm->asciizToUTF8("Byte"), System, 1);
   MSCorlib::arrayByte->baseClass = MSCorlib::pUInt8;
   
-  MSCorlib::arrayObject = ass->constructArray(vm->asciizToUTF8("Object"),
-                                        System, 1);
+  MSCorlib::arrayObject = ass->constructArray(vm->asciizToUTF8("Object"), System, 1);
   MSCorlib::arrayObject->baseClass = MSCorlib::pObject;
-  
 
   N3::clinitName = vm->asciizToUTF8(".cctor");
   N3::ctorName = vm->asciizToUTF8(".ctor");

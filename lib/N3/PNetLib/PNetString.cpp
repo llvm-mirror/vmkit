@@ -24,25 +24,21 @@ using namespace n3;
 using namespace llvm;
 
 
-CLIString* CLIString::stringDup(const UTF8*& utf8, N3* vm) {
+CLIString* CLIString::stringDup(const ArrayUInt16*& array, N3* vm) {
   PNetString* obj = (PNetString*)(*MSCorlib::pString)();
-  obj->capacity = utf8->size;
-  obj->length = utf8->size;
-  if (utf8->size == 0) {
+  obj->capacity = array->size;
+  obj->length = array->size;
+  if (array->size == 0) {
     obj->firstChar = 0;
   } else {
-    obj->firstChar = utf8->at(0);
+    obj->firstChar = array->at(0);
   }
-  obj->value = utf8; 
+  obj->value = array; 
   return obj;
 }
 
-const UTF8* CLIString::strToUTF8(N3* vm) {
-  return (UTF8*)((PNetString*)this)->value;
-}
-
-ArrayUInt16* CLIString::strToArray(N3* vm) const {
-  return (ArrayUInt16*)((PNetString*)this)->value;
+const ArrayUInt16* CLIString::strToArray(N3* vm) const {
+  return ((PNetString*)this)->value;
 }
 
 GlobalVariable* CLIString::llvmVar() {

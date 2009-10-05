@@ -176,17 +176,17 @@ extern "C" VMObject* System_Globalization_CultureInfo_InternalCultureName() {
 
 static const ArrayUInt16* newBuilder(N3* vm, PNetString* value, uint32 length) {
   uint32 valueLength = value ? value->length : 0;
-  const UTF8* utf8 = value ? value->value : 0;
+  const ArrayUInt16* array = value ? value->value : 0;
   uint32 roundLength = (7 + length) & 0xfffffff8;
   uint16* buf = (uint16*)alloca(roundLength * sizeof(uint16));
   uint32 strLength = 0;
 
   if (value != 0) {
     if (valueLength <= roundLength) {
-      memcpy(buf, utf8->elements, valueLength * sizeof(uint16));
+      memcpy(buf, array->elements, valueLength * sizeof(uint16));
       strLength = valueLength;
     } else {
-      memcpy(buf, utf8->elements, roundLength * sizeof(uint16));
+      memcpy(buf, array->elements, roundLength * sizeof(uint16));
       strLength = roundLength;
     }
   }
@@ -209,7 +209,7 @@ extern "C" VMObject* Platform_SysCharInfo_GetNewLine() {
 extern "C" void System_String_CopyToChecked(PNetString* str, sint32 sstart, 
                                             ArrayUInt16* dest, sint32 dstart,
                                             sint32 count) {
-  const UTF8* value = str->value;
+  const ArrayUInt16* value = str->value;
   memcpy(&dest->elements[dstart], &value->elements[sstart], count << 1);
 }
 
@@ -264,8 +264,7 @@ extern "C" PNetString* System_String_NewString(uint32 size) {
 
 extern "C" void System_String_Copy_3(PNetString* dest, sint32 pos, 
                                      PNetString* src) {
-  ArrayUInt16* arr = ArrayUInt16::acons(pos + src->value->size, 
-                                        (VMClassArray*)MSCorlib::pChar);
+  ArrayUInt16* arr = (ArrayUInt16*)MSCorlib::arrayChar->doNew(pos + src->value->size);
   
   for (sint32 i = 0; i < pos; ++i) {
     arr->setAt(i, dest->value->at(i));
@@ -275,34 +274,52 @@ extern "C" void System_String_Copy_3(PNetString* dest, sint32 pos,
     arr->setAt(pos + i, src->value->at(i));
   }
 
-  dest->value = ((UTF8*)arr)->extract(VMThread::get()->vm, 0, pos + src->value->size);
+  dest->value = arr;
   dest->length = dest->value->size;
 }
 
 extern "C" void System_String_Copy_5(PNetString* dest, sint32 destPos, 
                                      PNetString* src, sint32 srcPos, 
                                      sint32 length) {
-  const UTF8* utf8Src = src->value->extract(VMThread::get()->vm, srcPos, 
-                                            srcPos + length);
-  if (destPos == 0) {
-    dest->value = utf8Src;
-    dest->length = dest->value->size;
-  } else {
-    const UTF8* utf8Dest = dest->value->extract(VMThread::get()->vm, 0, 
-                                                destPos);
-    sint32 len1 = utf8Dest->size;
-    sint32 len2 = utf8Src->size;
-    uint16* buf = (uint16*)alloca((len1 + len2) * sizeof(uint16));
+	const ArrayUInt16 *arraySrc = src->value;
 
-    memcpy(buf, utf8Dest->elements, len1 * sizeof(uint16));
-    memcpy(buf + len1, utf8Dest->elements, len2 * sizeof(uint16));
+	if(destPos == 0 && srcPos == 0 && length == src->length) {
+		dest->value = arraySrc;
+		dest->length = length;
+	} else {
+		sint32 newLength = destPos + length;
 
-    const UTF8* utf8 = VMThread::get()->vm->bufToUTF8(buf, 
-                                                                len1 + len2);
-    dest->value = utf8;
-    dest->length = dest->value->size;
-  }
+		if(newLength <= dest->length) {
+			memcpy((uint16*)dest->value->elements + destPos, (uint16*)src->value->elements + srcPos, length<<1);
+		} else {
+			uint16 *buf = (uint16*)alloca(newLength<<1);
+			memcpy(buf,           (uint16*)dest->value->elements, destPos<<1);
+			memcpy(buf + destPos, (uint16*)src->value->elements + srcPos, length<<1);
+			dest->length = newLength;
+			dest->value  = VMThread::get()->vm->bufToArray(buf, newLength);
+		}
+	}
 }
+//   const UTF8* utf8Src = src->value->extract(VMThread::get()->vm, srcPos, 
+//                                             srcPos + length);
+//   if (destPos == 0) {
+//     dest->value = utf8Src;
+//     dest->length = dest->value->size;
+//   } else {
+//     const UTF8* utf8Dest = dest->value->extract(VMThread::get()->vm, 0, 
+//                                                 destPos);
+//     sint32 len1 = utf8Dest->size;
+//     sint32 len2 = utf8Src->size;
+//     uint16* buf = (uint16*)alloca((len1 + len2) * sizeof(uint16));
+
+//     memcpy(buf, utf8Dest->elements, len1 * sizeof(uint16));
+//     memcpy(buf + len1, utf8Dest->elements, len2 * sizeof(uint16));
+
+//     const UTF8* utf8 = VMThread::get()->vm->bufToUTF8(buf, 
+//                                                                 len1 + len2);
+//     dest->value = utf8;
+//     dest->length = dest->value->size;
+//   }
 
 extern "C" void System_Threading_Monitor_Enter(VMObject* obj) {
   obj->aquire();
@@ -336,9 +353,9 @@ extern "C" sint32 System_String_IndexOf(PNetString* str, uint16 value,
   }
 
   sint32 i = startIndex;
-  const UTF8* utf8 = str->value;
+  const ArrayUInt16* array = str->value;
   while (i < startIndex + count) {
-    if (utf8->at(i) == value) return i;
+    if (array->at(i) == value) return i;
     else ++i;
   }
 
@@ -347,9 +364,9 @@ extern "C" sint32 System_String_IndexOf(PNetString* str, uint16 value,
 
 extern "C" sint32 System_String_GetHashCode(PNetString* str) {
   sint32 hash = 0;
-  const UTF8* utf8 = str->value;
-  for (sint32 i = 0; i < utf8->size; ++i) {
-    hash += ((hash << 5) + utf8->elements[i]);
+  const ArrayUInt16* array = str->value;
+  for (sint32 i = 0; i < array->size; ++i) {
+    hash += ((hash << 5) + array->elements[i]);
   }
   return hash;
 }
@@ -360,17 +377,17 @@ extern "C" VMObject* System_Text_StringBuilder_Insert_System_Text_StringBuilder_
                                                       uint16 value) {
   N3* vm = (N3*)(VMThread::get()->vm);
   PNetString* buildString = obj->buildString;
-  const UTF8* utf8 = buildString->value;
+  const ArrayUInt16* array = buildString->value;
   sint32 strLength = buildString->length;
   sint32 length = (index + 1) > strLength ? index + 1 : strLength + 1;
   uint16* buf = (uint16*)alloca(length * sizeof(uint16));
 
   if (index != 0) {
-    memcpy(buf, utf8->elements, index * sizeof(uint16));
+    memcpy(buf, array->elements, index * sizeof(uint16));
   }
 
   if (strLength > index) {
-    memcpy(&(buf[index + 1]), &(utf8->elements[index]), 
+    memcpy(&(buf[index + 1]), &(array->elements[index]), 
                (strLength - index) * sizeof(uint16));
   }
 
@@ -387,23 +404,23 @@ extern "C" VMObject* System_Text_StringBuilder_Insert_System_Text_StringBuilder_
                                                       PNetString* str) {
   N3* vm = (N3*)(VMThread::get()->vm);
   PNetString* buildString = obj->buildString;
-  const UTF8* strUtf8 = str->value;
-  const UTF8* buildUtf8 = buildString->value;
+  const ArrayUInt16* strArray = str->value;
+  const ArrayUInt16* buildArray = buildString->value;
   sint32 strLength = str->length;
   sint32 buildLength = buildString->length;
   sint32 length = strLength + buildLength;
   uint16* buf = (uint16*)alloca(length * sizeof(uint16));
 
   if (index != 0) {
-    memcpy(buf, buildUtf8->elements, index * sizeof(uint16));
+    memcpy(buf, buildArray->elements, index * sizeof(uint16));
   }
 
   if (strLength != 0) {
-    memcpy(&(buf[index]), strUtf8->elements, strLength * sizeof(uint16));
+    memcpy(&(buf[index]), strArray->elements, strLength * sizeof(uint16));
   }
     
   if (buildLength - index > 0) {
-    memcpy(&(buf[strLength + index]), &(buildUtf8->elements[index]), 
+    memcpy(&(buf[strLength + index]), &(buildArray->elements[index]), 
                (buildLength - index) * sizeof(uint16));
   }
 
@@ -418,11 +435,11 @@ extern "C" VMObject* System_Text_StringBuilder_Append_System_Text_StringBuilder_
                                                 uint16 value) {
   N3* vm = (N3*)(VMThread::get()->vm);
   PNetString* buildString = obj->buildString;
-  const UTF8* utf8 = buildString->value;
+  const ArrayUInt16* array = buildString->value;
   sint32 length = buildString->length;
   uint16* buf = (uint16*)alloca((length + 1) * sizeof(uint16));
 
-  memcpy(buf, utf8->elements, length * sizeof(uint16));
+  memcpy(buf, array->elements, length * sizeof(uint16));
 
   buf[length] = value;
   PNetString* val = (PNetString*)vm->arrayToString(vm->bufToArray(buf, length + 1));
@@ -436,15 +453,15 @@ extern "C" VMObject* System_Text_StringBuilder_Append_System_Text_StringBuilder_
                                                 PNetString* str) {
   N3* vm = (N3*)(VMThread::get()->vm);
   PNetString* buildString = obj->buildString;
-  const UTF8* buildUtf8 = buildString->value;
-  const UTF8* strUtf8 = str->value;
+  const ArrayUInt16* buildArray = buildString->value;
+  const ArrayUInt16* strArray = str->value;
   sint32 buildLength = buildString->length;
   sint32 strLength = str->length;
   sint32 length = buildLength + strLength;
   uint16* buf = (uint16*)alloca(length * sizeof(uint16));
 
-  memcpy(buf, buildUtf8->elements, buildLength * sizeof(uint16));
-  memcpy(&(buf[buildLength]), strUtf8->elements, strLength * sizeof(uint16));
+  memcpy(buf, buildArray->elements, buildLength * sizeof(uint16));
+  memcpy(&(buf[buildLength]), strArray->elements, strLength * sizeof(uint16));
 
   PNetString* val = (PNetString*)vm->arrayToString(vm->bufToArray(buf, length));
   obj->buildString = val;
@@ -505,7 +522,7 @@ extern "C" sint32 System_String_FindInRange(PNetString* obj, sint32 srcFirst,
 
 extern "C" VMObject* System_Reflection_Assembly_LoadFromName(PNetString* str, sint32 & error, VMObject* parent) {
   N3* vm = (N3*)(VMThread::get()->vm);
-  Assembly* ass = vm->loadAssembly(str->value, "dll");
+  Assembly* ass = vm->loadAssembly(vm->arrayToUTF8(str->value), "dll");
   if (!ass) vm->error("unfound assembly %s\n", str->value->printString());
   error = 0;
   return ass->getAssemblyDelegatee();
@@ -513,14 +530,14 @@ extern "C" VMObject* System_Reflection_Assembly_LoadFromName(PNetString* str, si
 
 extern "C" PNetString* System_String_Concat_2(PNetString* str1, PNetString* str2) {
   N3* vm = (N3*)(VMThread::get()->vm);
-  const UTF8* u1 = str1->value;
-  const UTF8* u2 = str2->value;
+  const ArrayUInt16* a1 = str1->value;
+  const ArrayUInt16* a2 = str2->value;
   sint32 len1 = str1->length;
   sint32 len2 = str2->length;
   uint16* buf = (uint16*)alloca((len1 + len2) * sizeof(uint16));
 
-  memcpy(buf, u1->elements, len1 * sizeof(uint16));
-  memcpy(&(buf[len1]), u2->elements, len2 * sizeof(uint16));
+  memcpy(buf, a1->elements, len1 * sizeof(uint16));
+  memcpy(&(buf[len1]), a2->elements, len2 * sizeof(uint16));
   
   PNetString* val = (PNetString*)vm->arrayToString(vm->bufToArray(buf, len1 + len2));
   
@@ -529,17 +546,17 @@ extern "C" PNetString* System_String_Concat_2(PNetString* str1, PNetString* str2
 
 extern "C" PNetString* System_String_Concat_3(PNetString* str1, PNetString* str2, PNetString* str3) {
   N3* vm = (N3*)(VMThread::get()->vm);
-  const UTF8* u1 = str1->value;
-  const UTF8* u2 = str2->value;
-  const UTF8* u3 = str3->value;
+  const ArrayUInt16* a1 = str1->value;
+  const ArrayUInt16* a2 = str2->value;
+  const ArrayUInt16* a3 = str3->value;
   sint32 len1 = str1->length;
   sint32 len2 = str2->length;
   sint32 len3 = str3->length;
   uint16* buf = (uint16*)alloca((len1 + len2 + len3) * sizeof(uint16));
 
-  memcpy(buf, u1->elements, len1 * sizeof(uint16));
-  memcpy(&(buf[len1]), u2->elements, len2 * sizeof(uint16));
-  memcpy(&(buf[len1 + len2]), u3->elements, len3 * sizeof(uint16));
+  memcpy(buf, a1->elements, len1 * sizeof(uint16));
+  memcpy(&(buf[len1]), a2->elements, len2 * sizeof(uint16));
+  memcpy(&(buf[len1 + len2]), a3->elements, len3 * sizeof(uint16));
   
   PNetString* val = (PNetString*)vm->arrayToString(vm->bufToArray(buf, len1 + len2 + len3));
   
@@ -547,18 +564,18 @@ extern "C" PNetString* System_String_Concat_3(PNetString* str1, PNetString* str2
 }
 
 extern "C" void System_String_RemoveSpace(PNetString* str, sint32 index, sint32 length) {
-  const UTF8* utf8 = str->value;
+  const ArrayUInt16* array = str->value;
   sint32 strLength = str->length;
   uint16* buf = (uint16*)alloca(strLength * sizeof(uint16));
   sint32 j = index;
 
   if (index != 0) {
-    memcpy(buf, utf8->elements, index * sizeof(uint16));
+    memcpy(buf, array->elements, index * sizeof(uint16));
   }
   
   // 32 is space
   for (sint32 i = 0; i < length; ++i) {
-    uint16 cur = utf8->elements[index + i];
+    uint16 cur = array->elements[index + i];
     if (cur != 32) {
       buf[j] = cur;
     } else {
@@ -567,22 +584,21 @@ extern "C" void System_String_RemoveSpace(PNetString* str, sint32 index, sint32 
   }
 
   if (strLength > (index + length)) {
-    memcpy(&(buf[j]), &(utf8->elements[index + length]), (strLength - (index + length)) * sizeof(uint16));
+    memcpy(&(buf[j]), &(array->elements[index + length]), (strLength - (index + length)) * sizeof(uint16));
   }
 
-  const UTF8* res = VMThread::get()->vm->bufToUTF8(buf, j);
+  const ArrayUInt16* res = VMThread::get()->vm->bufToArray(buf, j);
   str->value = res;
   str->length = j;
 }
 
 extern "C" void System_String__ctor_3(PNetString* str, uint16 ch, sint32 count) {
-  ArrayUInt16* array = ArrayUInt16::acons(count, MSCorlib::arrayChar);
+  ArrayUInt16* array = (ArrayUInt16*)MSCorlib::arrayChar->doNew(count);
   for (sint32 i = 0; i < count; ++i) {
     array->elements[i] = ch;
   }
 
-  const UTF8* utf8 = VMThread::get()->vm->bufToUTF8(array->elements, array->size);
-  str->value = utf8;
+  str->value = array;
   str->length = array->size;
   str->capacity = array->size;
 }
@@ -603,8 +619,8 @@ void* sys_memrchr(const void* s, int c, size_t n) {
 
 extern "C" VMObject* System_Reflection_Assembly_GetType(VMObject* obj, PNetString* str, bool onError, bool ignoreCase) {
   Assembly* ass = ASSEMBLY_VALUE(obj);
-  const UTF8* utf8 = str->value;
-  char* asciiz = utf8->UTF8ToAsciiz();
+  const ArrayUInt16* array = str->value;
+  char* asciiz = ass->vm->arrayToAsciiz(array);
   char* index = (char*)sys_memrchr(asciiz, '.', strlen(asciiz));
   N3* vm = ass->vm;
   
@@ -628,7 +644,8 @@ static bool parameterMatch(std::vector<VMCommonClass*> params, ArrayObject* type
 extern "C" VMObject* System_Reflection_ClrType_GetMemberImpl(VMObject* Type, PNetString* str, sint32 memberTypes, sint32 bindingFlags, VMObject* binder, 
                                                    sint32 callingConventions, ArrayObject* types, VMObject* modifiers) {
   VMCommonClass* type = (VMCommonClass*)((*MSCorlib::typeClrType)(Type).PointerVal);
-  const UTF8* name = str->value;
+  N3* vm = (N3*)(VMThread::get()->vm);
+  const UTF8* name = vm->arrayToUTF8(str->value);
   if (memberTypes == MEMBER_TYPES_PROPERTY) {
     std::vector<Property*, gc_allocator<Property*> > properties = 
                                                     type->properties;
@@ -873,20 +890,20 @@ static VMObject* createResourceStream(Assembly* ass, sint32 posn) {
       
 extern "C" VMObject* System_Reflection_Assembly_GetManifestResourceStream(VMObject* Ass, PNetString* str) {
   Assembly* ass = (Assembly*)(*MSCorlib::assemblyAssemblyReflection)(Ass).PointerVal;
-  const UTF8* utf8 = str->value;
+  N3* vm = (N3*)(VMThread::get()->vm);
+  const UTF8* id = vm->arrayToUTF8(str->value);
   Header* header = ass->CLIHeader;
   uint32 stringOffset = header->stringStream->realOffset;
   Table* manTable  = header->tables[CONSTANT_ManifestResource];
   uint32 manRows   = manTable->rowsNumber;
   sint32 pos = -1;
   uint32 i = 0;
-  N3* vm = VMThread::get()->vm;
   
   while ((pos == -1) && (i < manRows)) {
     uint32 nameOffset = manTable->readIndexInRow(i + 1, CONSTANT_MANIFEST_RESOURCE_NAME, ass->bytes);
     const UTF8* name = ass->readString(vm, stringOffset + nameOffset);
 
-    if (name == utf8) {
+    if (name == id) {
       pos = i;
     } else {
       ++i;
@@ -907,26 +924,26 @@ extern "C" ArrayObject* System_Reflection_ClrHelpers_GetCustomAttributes(Assembl
 
 extern "C" VMObject* System_Globalization_TextInfo_ToLower(VMObject* obj, PNetString* str) {
   verifyNull(str);
-  const UTF8* utf8 = str->value;
+  const ArrayUInt16* array = str->value;
   uint32 length = str->length;
 
   uint16* buf = (uint16*)alloca(length * sizeof(uint16));
 
   N3* vm = VMThread::get()->vm;
 
-  memcpy(buf, utf8->elements, length * sizeof(uint16));
-  ILUnicodeStringToLower((void*)buf, (void*)utf8->elements, length);
+  memcpy(buf, array->elements, length * sizeof(uint16));
+  ILUnicodeStringToLower((void*)buf, (void*)array->elements, length);
   const ArrayUInt16* res = vm->bufToArray(buf, length);
   return ((N3*)vm)->arrayToString(res);
 }
 
 extern "C" VMObject* System_String_Replace(PNetString* str, uint16 c1, uint16 c2) {
-  const UTF8* utf8 = str->value;
+  const ArrayUInt16* array = str->value;
   uint32 length = str->length;
   if ((c1 == c2) || length == 0) return str;
 
   uint16* buf = (uint16*)alloca(length * sizeof(uint16));
-  memcpy(buf, utf8->elements, length * sizeof(uint16));
+  memcpy(buf, array->elements, length * sizeof(uint16));
   for (uint32 i = 0; i < length; ++i) {
     if (buf[i] == c1) buf[i] = c2;
   }
@@ -982,17 +999,17 @@ extern "C" sint32 System_String_CompareInternal(PNetString* strA, sint32 indexA,
 }
 
 extern "C" void System_String_CharFill(PNetString* str, sint32 start, sint32 count, char ch) {
-  const UTF8* utf8 = str->value;
+  const ArrayUInt16* array = str->value;
   sint32 length = start + count;
   uint16* buf = (uint16*)alloca(length * sizeof(uint16));
 
-  memcpy(buf, utf8->elements, start * sizeof(uint16));
+  memcpy(buf, array->elements, start * sizeof(uint16));
   for (sint32 i = 0; i < count; ++i) {
     buf[i + start] = ch;
   }
   
   N3* vm = VMThread::get()->vm;
-  const UTF8* val = vm->bufToUTF8(buf, length);
+  const ArrayUInt16* val = vm->bufToArray(buf, length);
   str->value = val;
   str->length = length;
 }
