@@ -330,9 +330,11 @@ void JavaThread::printBacktrace() {
       if (isStub) ip = addr[2];
       JavaMethod* meth = vm->IPToMethod<JavaMethod>(ip);
       assert(meth && "Wrong stack");
-      fprintf(stderr, "; %p in %s.%s\n",  ip,
+      fprintf(stderr, "; %p in %s.%s",  ip,
               UTF8Buffer(meth->classDef->name).cString(),
               UTF8Buffer(meth->name).cString());
+      if (isStub) fprintf(stderr, " (from stub)");
+      fprintf(stderr, "\n");
       addr = (void**)addr[0];
       // End walking the stack when we cross a native -> Java call. Here
       // the iterator points to a native -> Java call. We dereference addr twice
