@@ -314,8 +314,6 @@ void* JavaMethod::compiledPtr() {
     }
 #endif
     code = classDef->classLoader->getCompiler()->materializeFunction(this);
-    Jnjvm* vm = JavaThread::get()->getJVM();
-    vm->addMethodInFunctionMap(this, code);
   }
   
   return code;

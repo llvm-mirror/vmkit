@@ -14,6 +14,7 @@
 #include "llvm/Module.h"
 #include "llvm/CodeGen/GCStrategy.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/JITEventListener.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
@@ -24,12 +25,34 @@
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
 #include "JavaThread.h"
+#include "Jnjvm.h"
 
 #include "jnjvm/JnjvmModule.h"
 #include "jnjvm/JnjvmModuleProvider.h"
 
 using namespace jnjvm;
 using namespace llvm;
+
+class JavaJITListener : public llvm::JITEventListener {
+  JavaMethod* currentCompiledMethod;
+public:
+  virtual void NotifyFunctionEmitted(const Function &F,
+                                     void *Code, size_t Size,
+                                     const EmittedFunctionDetails &Details) {
+    if (currentCompiledMethod) {
+      assert(JavaLLVMCompiler::getMethod(currentCompiledMethod) == &F &&
+             "Method mismatch");
+      Jnjvm* vm = JavaThread::get()->getJVM();
+      vm->addMethodInFunctionMap(currentCompiledMethod, Code);
+    }
+  }
+
+  void setCurrentCompiledMethod(JavaMethod* meth) {
+    currentCompiledMethod = meth;
+  }
+};
+
+static JavaJITListener* JITListener = 0;
 
 Constant* JavaJITCompiler::getNativeClass(CommonClass* classDef) {
   const llvm::Type* Ty = classDef->isClass() ? JnjvmModule::JavaClassType :
@@ -161,6 +184,11 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
 #endif
   TheModuleProvider = new JnjvmModuleProvider(TheModule, this);
   addJavaPasses();
+
+  if (!JITListener) {
+    JITListener = new JavaJITListener();
+    mvm::MvmModule::executionEngine->RegisterJITEventListener(JITListener);
+  }
 }
 
 #ifdef SERVICE
@@ -225,7 +253,9 @@ void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
 void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   mvm::MvmModule::protectIR();
   Function* func = parseFunction(meth);
+  JITListener->setCurrentCompiledMethod(meth);
   void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
+  JITListener->setCurrentCompiledMethod(0);
   func->deleteBody();
 
   // Update the GC info.

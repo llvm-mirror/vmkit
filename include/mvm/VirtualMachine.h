@@ -382,8 +382,9 @@ public:
     // Decrement because we had the "greater than" value.
     I--;
     
+    T* res = (T*)I->second;
     FunctionMapLock.release();
-    return (T*)I->second;
+    return res;
   }
 
   void setScanner(mvm::StackScanner* s) {
