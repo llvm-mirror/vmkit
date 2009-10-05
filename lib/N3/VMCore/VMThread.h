@@ -21,7 +21,7 @@
 
 namespace n3 {
 
-class VirtualMachine;
+class N3;
 class VMClass;
 class VMGenericClass;
 class VMObject;
@@ -31,7 +31,7 @@ class VMThread : public mvm::Thread {
 public:
   static VirtualTable *VT;
   VMObject* vmThread;
-  VirtualMachine* vm;
+  N3* vm;
   mvm::Lock* lock;
   mvm::Cond* varcond;
   VMObject* pendingException;
@@ -54,7 +54,7 @@ public:
   static VMThread* get() {
     return TheThread;
   }
-  static VMThread* allocate(VMObject* thread, VirtualMachine* vm);
+  static VMThread* allocate(VMObject* thread, N3* vm);
   static VMObject* currentThread();
   
   static VMObject* getCLIException();

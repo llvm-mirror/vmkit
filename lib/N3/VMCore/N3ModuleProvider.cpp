@@ -15,9 +15,9 @@
 #include "Assembly.h"
 #include "CLIJit.h"
 #include "N3ModuleProvider.h"
-#include "VirtualMachine.h"
 #include "VMClass.h"
 #include "VMThread.h"
+#include "N3.h"
 
 using namespace llvm;
 using namespace n3;
@@ -40,7 +40,7 @@ bool N3ModuleProvider::materializeFunction(Function *F, std::string *ErrInfo) {
         CLIJit::compile(meth->classDef, meth);
         void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(meth->methPtr);
         meth->code = res;
-        VirtualMachine* vm = VMThread::get()->vm;
+        N3* vm = VMThread::get()->vm;
         vm->addMethodInFunctionMap(meth, res);
       }
       meth->classDef->release();

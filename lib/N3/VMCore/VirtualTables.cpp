@@ -15,7 +15,6 @@
 #include "LockedMap.h"
 #include "N3.h"
 #include "Reader.h"
-#include "VirtualMachine.h"
 #include "VMArray.h"
 #include "VMCache.h"
 #include "VMClass.h"
@@ -214,18 +213,6 @@ void VMThread::TRACER {
   pendingException->MARK_AND_TRACE;
 }
 
-void VirtualMachine::TRACER {
-  threadSystem->MARK_AND_TRACE;
-  hashUTF8->CALL_TRACER;
-  functions->CALL_TRACER;
-  if (bootstrapThread) {
-    bootstrapThread->CALL_TRACER;
-    for (VMThread* th = (VMThread*)bootstrapThread->next(); 
-         th != bootstrapThread; th = (VMThread*)th->next())
-      th->CALL_TRACER;
-  }
-}
-
 void Param::TRACER {
   method->CALL_TRACER;
   name->MARK_AND_TRACE;
@@ -257,7 +244,15 @@ void Assembly::TRACER {
 }
 
 void N3::TRACER {
-  VirtualMachine::CALL_TRACER;
+  threadSystem->MARK_AND_TRACE;
+  hashUTF8->CALL_TRACER;
+  functions->CALL_TRACER;
+  if (bootstrapThread) {
+    bootstrapThread->CALL_TRACER;
+    for (VMThread* th = (VMThread*)bootstrapThread->next(); 
+         th != bootstrapThread; th = (VMThread*)th->next())
+      th->CALL_TRACER;
+  }
   hashUTF8->CALL_TRACER;
   hashStr->CALL_TRACER;
   loadedAssemblies->CALL_TRACER;

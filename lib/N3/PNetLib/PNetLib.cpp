@@ -45,6 +45,7 @@
 #include "VMClass.h"
 #include "VMObject.h"
 #include "VMThread.h"
+#include "CLIString.h"
 
 #include "PNetPath.inc"
 
@@ -164,16 +165,16 @@ extern "C" VMObject* System_Globalization_CultureInfo_InternalCultureName() {
   char* val = ILGetCultureName();
   N3* vm = (N3*)(VMThread::get()->vm);
   if (val) {
-    VMObject* ret = vm->asciizToStr(val);
+    VMObject* ret = vm->arrayToString(vm->asciizToArray(val));
     free(val);
     return ret;
   } else {
-    VMObject* ret = vm->asciizToStr("iv");
+    VMObject* ret = vm->arrayToString(vm->asciizToArray("iv"));
     return ret;
   }
 }
 
-static const UTF8* newBuilder(N3* vm, PNetString* value, uint32 length) {
+static const ArrayUInt16* newBuilder(N3* vm, PNetString* value, uint32 length) {
   uint32 valueLength = value ? value->length : 0;
   const UTF8* utf8 = value ? value->value : 0;
   uint32 roundLength = (7 + length) & 0xfffffff8;
@@ -190,20 +191,19 @@ static const UTF8* newBuilder(N3* vm, PNetString* value, uint32 length) {
     }
   }
 
-  return vm->readerConstructUTF8(buf, strLength);
-
+  return vm->bufToArray(buf, strLength);
 }
 
 extern "C" VMObject* System_String_NewBuilder(PNetString* value, 
                                                uint32 length) {
   N3* vm = (N3*)(VMThread::get()->vm);
-  PNetString* str = (PNetString*)vm->UTF8ToStr(newBuilder(vm, value, length));
+  PNetString* str = (PNetString*)vm->arrayToString(newBuilder(vm, value, length));
   return str;
 }
 
 extern "C" VMObject* Platform_SysCharInfo_GetNewLine() {
   N3* vm = (N3*)(VMThread::get()->vm);
-  return vm->asciizToStr("\n");
+  return vm->arrayToString(vm->asciizToArray("\n"));
 }
 
 extern "C" void System_String_CopyToChecked(PNetString* str, sint32 sstart, 
@@ -297,7 +297,7 @@ extern "C" void System_String_Copy_5(PNetString* dest, sint32 destPos,
     memcpy(buf, utf8Dest->elements, len1 * sizeof(uint16));
     memcpy(buf + len1, utf8Dest->elements, len2 * sizeof(uint16));
 
-    const UTF8* utf8 = VMThread::get()->vm->readerConstructUTF8(buf, 
+    const UTF8* utf8 = VMThread::get()->vm->bufToUTF8(buf, 
                                                                 len1 + len2);
     dest->value = utf8;
     dest->length = dest->value->size;
@@ -375,7 +375,7 @@ extern "C" VMObject* System_Text_StringBuilder_Insert_System_Text_StringBuilder_
   }
 
   buf[index] = value;
-  PNetString* str = (PNetString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, length));
+  PNetString* str = (PNetString*)vm->arrayToString(vm->bufToArray(buf, length));
   obj->buildString = str;
   
   return obj;
@@ -407,7 +407,7 @@ extern "C" VMObject* System_Text_StringBuilder_Insert_System_Text_StringBuilder_
                (buildLength - index) * sizeof(uint16));
   }
 
-  PNetString* val = (PNetString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, length));
+  PNetString* val = (PNetString*)vm->arrayToString(vm->bufToArray(buf, length));
   obj->buildString = val;
 
   return obj;
@@ -425,7 +425,7 @@ extern "C" VMObject* System_Text_StringBuilder_Append_System_Text_StringBuilder_
   memcpy(buf, utf8->elements, length * sizeof(uint16));
 
   buf[length] = value;
-  PNetString* val = (PNetString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, length + 1));
+  PNetString* val = (PNetString*)vm->arrayToString(vm->bufToArray(buf, length + 1));
   obj->buildString = val;
   return obj;
 }
@@ -446,7 +446,7 @@ extern "C" VMObject* System_Text_StringBuilder_Append_System_Text_StringBuilder_
   memcpy(buf, buildUtf8->elements, buildLength * sizeof(uint16));
   memcpy(&(buf[buildLength]), strUtf8->elements, strLength * sizeof(uint16));
 
-  PNetString* val = (PNetString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, length));
+  PNetString* val = (PNetString*)vm->arrayToString(vm->bufToArray(buf, length));
   obj->buildString = val;
   return obj;
 }
@@ -522,7 +522,7 @@ extern "C" PNetString* System_String_Concat_2(PNetString* str1, PNetString* str2
   memcpy(buf, u1->elements, len1 * sizeof(uint16));
   memcpy(&(buf[len1]), u2->elements, len2 * sizeof(uint16));
   
-  PNetString* val = (PNetString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, len1 + len2));
+  PNetString* val = (PNetString*)vm->arrayToString(vm->bufToArray(buf, len1 + len2));
   
   return val;
 }
@@ -541,7 +541,7 @@ extern "C" PNetString* System_String_Concat_3(PNetString* str1, PNetString* str2
   memcpy(&(buf[len1]), u2->elements, len2 * sizeof(uint16));
   memcpy(&(buf[len1 + len2]), u3->elements, len3 * sizeof(uint16));
   
-  PNetString* val = (PNetString*)vm->UTF8ToStr(vm->readerConstructUTF8(buf, len1 + len2 + len3));
+  PNetString* val = (PNetString*)vm->arrayToString(vm->bufToArray(buf, len1 + len2 + len3));
   
   return val;
 }
@@ -570,7 +570,7 @@ extern "C" void System_String_RemoveSpace(PNetString* str, sint32 index, sint32 
     memcpy(&(buf[j]), &(utf8->elements[index + length]), (strLength - (index + length)) * sizeof(uint16));
   }
 
-  const UTF8* res = VMThread::get()->vm->readerConstructUTF8(buf, j);
+  const UTF8* res = VMThread::get()->vm->bufToUTF8(buf, j);
   str->value = res;
   str->length = j;
 }
@@ -581,7 +581,7 @@ extern "C" void System_String__ctor_3(PNetString* str, uint16 ch, sint32 count) 
     array->elements[i] = ch;
   }
 
-  const UTF8* utf8 = VMThread::get()->vm->readerConstructUTF8(array->elements, array->size);
+  const UTF8* utf8 = VMThread::get()->vm->bufToUTF8(array->elements, array->size);
   str->value = utf8;
   str->length = array->size;
   str->capacity = array->size;
@@ -610,7 +610,7 @@ extern "C" VMObject* System_Reflection_Assembly_GetType(VMObject* obj, PNetStrin
   
   index[0] = 0;
   ++index;
-  VMCommonClass* cl = ass->loadTypeFromName(vm->asciizConstructUTF8(index), vm->asciizConstructUTF8(asciiz), true, true, true, onError);
+  VMCommonClass* cl = ass->loadTypeFromName(vm->asciizToUTF8(index), vm->asciizToUTF8(asciiz), true, true, true, onError);
   if (!cl) VMThread::get()->vm->error("implement me");
   return cl->getClassDelegatee();
 }
@@ -679,8 +679,8 @@ extern "C" VMObject* System_Reflection_ClrHelpers_GetSemantics(mvm::Object* item
       char* asciiz = prop->name->UTF8ToAsciiz();
       char* buf = (char*)alloca(strlen(asciiz) + 5);
       sprintf(buf, "get_%s", asciiz);
-      VirtualMachine* vm = VMThread::get()->vm;
-      VMMethod* meth = prop->type->lookupMethod(vm->asciizConstructUTF8(buf), prop->parameters, true, false);
+      N3* vm = VMThread::get()->vm;
+      VMMethod* meth = prop->type->lookupMethod(vm->asciizToUTF8(buf), prop->parameters, true, false);
       assert(meth);
       return meth->getMethodDelegatee();
     }
@@ -880,7 +880,7 @@ extern "C" VMObject* System_Reflection_Assembly_GetManifestResourceStream(VMObje
   uint32 manRows   = manTable->rowsNumber;
   sint32 pos = -1;
   uint32 i = 0;
-  VirtualMachine* vm = VMThread::get()->vm;
+  N3* vm = VMThread::get()->vm;
   
   while ((pos == -1) && (i < manRows)) {
     uint32 nameOffset = manTable->readIndexInRow(i + 1, CONSTANT_MANIFEST_RESOURCE_NAME, ass->bytes);
@@ -912,12 +912,12 @@ extern "C" VMObject* System_Globalization_TextInfo_ToLower(VMObject* obj, PNetSt
 
   uint16* buf = (uint16*)alloca(length * sizeof(uint16));
 
-  VirtualMachine* vm = VMThread::get()->vm;
+  N3* vm = VMThread::get()->vm;
 
   memcpy(buf, utf8->elements, length * sizeof(uint16));
   ILUnicodeStringToLower((void*)buf, (void*)utf8->elements, length);
-  const UTF8* res = vm->readerConstructUTF8(buf, length);
-  return ((N3*)vm)->UTF8ToStr(res);
+  const ArrayUInt16* res = vm->bufToArray(buf, length);
+  return ((N3*)vm)->arrayToString(res);
 }
 
 extern "C" VMObject* System_String_Replace(PNetString* str, uint16 c1, uint16 c2) {
@@ -932,8 +932,8 @@ extern "C" VMObject* System_String_Replace(PNetString* str, uint16 c1, uint16 c2
   }
   
   N3* vm = (N3*)VMThread::get()->vm;
-  const UTF8* res = vm->readerConstructUTF8(buf, length);
-  return vm->UTF8ToStr(res);
+  const ArrayUInt16* res = vm->bufToArray(buf, length);
+  return vm->arrayToString(res);
 }
 
 extern "C" uint32 System_Reflection_ClrResourceStream_ResourceRead(Assembly* assembly, uint64 position, ArrayUInt8* buffer, uint32 offset, uint32 count) {
@@ -991,8 +991,8 @@ extern "C" void System_String_CharFill(PNetString* str, sint32 start, sint32 cou
     buf[i + start] = ch;
   }
   
-  VirtualMachine* vm = VMThread::get()->vm;
-  const UTF8* val = vm->readerConstructUTF8(buf, length);
+  N3* vm = VMThread::get()->vm;
+  const UTF8* val = vm->bufToUTF8(buf, length);
   str->value = val;
   str->length = length;
 }

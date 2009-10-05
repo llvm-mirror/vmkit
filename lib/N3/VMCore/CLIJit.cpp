@@ -25,7 +25,6 @@
 #include "N3.h"
 #include "N3ModuleProvider.h"
 #include "Reader.h"
-#include "VirtualMachine.h"
 #include "VMArray.h"
 #include "VMCache.h"
 #include "VMClass.h"
@@ -478,12 +477,12 @@ void CLIJit::invoke(uint32 value, VMGenericClass* genClass, VMGenericMethod* gen
 
   if (meth->classDef->isArray) {
     uint8 func = 0;
-    VirtualMachine* vm = VMThread::get()->vm;
-    if (meth->name == vm->asciizConstructUTF8("Set")) {
+    N3* vm = VMThread::get()->vm;
+    if (meth->name == vm->asciizToUTF8("Set")) {
       func = 0;
-    } else if (meth->name == vm->asciizConstructUTF8("Get")) {
+    } else if (meth->name == vm->asciizToUTF8("Get")) {
       func = 1;
-    } else if (meth->name == vm->asciizConstructUTF8("Address")) {
+    } else if (meth->name == vm->asciizToUTF8("Address")) {
       func = 2;
     } else {
       vm->error("implement me %s", meth->name->printString());

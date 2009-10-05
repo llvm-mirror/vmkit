@@ -37,18 +37,18 @@ CLIString* CLIString::stringDup(const UTF8*& utf8, N3* vm) {
   return obj;
 }
 
-char* CLIString::strToAsciiz() {
-  return ((PNetString*)this)->value->UTF8ToAsciiz();
+const UTF8* CLIString::strToUTF8(N3* vm) {
+  return (UTF8*)((PNetString*)this)->value;
 }
 
-const UTF8* CLIString::strToUTF8(N3* vm) {
-  return ((PNetString*)this)->value;
+ArrayUInt16* CLIString::strToArray(N3* vm) const {
+  return (ArrayUInt16*)((PNetString*)this)->value;
 }
 
 GlobalVariable* CLIString::llvmVar() {
   PNetString* str = (PNetString*)this;
   if (!str->_llvmVar) {
-    VirtualMachine* vm = VMThread::get()->vm;
+    N3* vm = VMThread::get()->vm;
     if (!str->_llvmVar) {
       const Type* pty = mvm::MvmModule::ptrType;
       Constant* cons = 

@@ -19,12 +19,13 @@
 
 #include "VMObject.h"
 
+#include "UTF8.h"
+
 namespace n3 {
 
 class VMClassArray;
 class VMCommonClass;
 class VMObject;
-class VirtualMachine;
 
 class VMArray : public VMObject {
 public:
@@ -84,27 +85,6 @@ public:
   virtual void TRACER;
 };
 
-class UTF8 : public VMObject {
-public:
-  static VirtualTable* VT;
-  sint32 size;
-  uint16 elements[1];
-
-  static const llvm::Type* llvmType;
-  static UTF8* acons(sint32 n, VMClassArray* cl);
-  void initialise(VMCommonClass* atype, sint32 n);
-  
-  unsigned short int at(sint32) const;
-  void setAt(sint32, uint16);
-  
-  virtual void print(mvm::PrintBuffer* buf) const;
-
-  char* UTF8ToAsciiz() const;
-  static const UTF8* asciizConstruct(VirtualMachine *vm, const char* asciiz);
-  static const UTF8* readerConstruct(VirtualMachine *vm, uint16* buf, uint32 n);
-
-  const UTF8* extract(VirtualMachine *vm, uint32 start, uint32 len) const;
-};
 
 } // end namespace n3
 

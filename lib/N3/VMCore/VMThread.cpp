@@ -20,7 +20,7 @@
 #include "VMClass.h"
 #include "VMObject.h"
 #include "VMThread.h"
-#include "VirtualMachine.h"
+#include "N3.h"
 
 using namespace n3;
 
@@ -43,7 +43,7 @@ VMThread::VMThread() {
 
 extern void AddStandardCompilePasses(llvm::FunctionPassManager*);
 
-VMThread* VMThread::allocate(VMObject* thread, VirtualMachine* vm) {
+VMThread* VMThread::allocate(VMObject* thread, N3* vm) {
   VMThread* key = new VMThread();
   key->vmThread = thread;
   key->vm = vm;

@@ -23,7 +23,6 @@
 #include "N3.h"
 #include "N3ModuleProvider.h"
 #include "Reader.h"
-#include "VirtualMachine.h"
 #include "VMArray.h"
 #include "VMCache.h"
 #include "VMClass.h"
@@ -220,7 +219,7 @@ static void initialiseStatics() {
   vm->assemblyPath.push_back("");
   vm->assemblyPath.push_back(MSCorlib::libsPath);
   
-  const UTF8* mscorlib = vm->asciizConstructUTF8("mscorlib");
+  const UTF8* mscorlib = vm->asciizToUTF8("mscorlib");
   Assembly* ass = vm->loadAssembly(mscorlib, "dll");
   if (ass == 0)
     VMThread::get()->vm->error("can not load mscorlib.dll. Abort");
@@ -228,8 +227,8 @@ static void initialiseStatics() {
   vm->coreAssembly = ass;
 
   // Array initialization
-  const UTF8* System = vm->asciizConstructUTF8("System");
-  const UTF8* utf8OfChar = vm->asciizConstructUTF8("Char");
+  const UTF8* System = vm->asciizToUTF8("System");
+  const UTF8* utf8OfChar = vm->asciizToUTF8("Char");
   
   MSCorlib::arrayChar = ass->constructArray(utf8OfChar, System, 1);
   ((UTF8*)System)->classOf = MSCorlib::arrayChar;
@@ -238,8 +237,8 @@ static void initialiseStatics() {
 
 #define INIT(var, nameSpace, name, type, prim) {\
   var = (VMClass*)vm->coreAssembly->loadTypeFromName( \
-                                           vm->asciizConstructUTF8(name),     \
-                                           vm->asciizConstructUTF8(nameSpace),\
+                                           vm->asciizToUTF8(name),     \
+                                           vm->asciizToUTF8(nameSpace),\
                                            false, false, false, true); \
   var->isPrimitive = prim; \
   if (type) { \
@@ -275,40 +274,42 @@ static void initialiseStatics() {
   MSCorlib::arrayChar->baseClass = MSCorlib::pChar;
   VMClassArray::SuperArray = MSCorlib::pArray;
   MSCorlib::arrayChar->super = MSCorlib::pArray;
-  
+
   MSCorlib::loadStringClass(vm);
 
-  MSCorlib::arrayString = ass->constructArray(vm->asciizConstructUTF8("String"),
+  MSCorlib::arrayString = ass->constructArray(vm->asciizToUTF8("String"),
                                         System, 1);
   MSCorlib::arrayString->baseClass = MSCorlib::pString;
   
-  MSCorlib::arrayByte = ass->constructArray(vm->asciizConstructUTF8("Byte"),
+  MSCorlib::arrayByte = ass->constructArray(vm->asciizToUTF8("Byte"),
                                         System, 1);
   MSCorlib::arrayByte->baseClass = MSCorlib::pUInt8;
   
-  MSCorlib::arrayObject = ass->constructArray(vm->asciizConstructUTF8("Object"),
+  MSCorlib::arrayObject = ass->constructArray(vm->asciizToUTF8("Object"),
                                         System, 1);
   MSCorlib::arrayObject->baseClass = MSCorlib::pObject;
   
 
-  N3::clinitName = vm->asciizConstructUTF8(".cctor");
-  N3::ctorName = vm->asciizConstructUTF8(".ctor");
-  N3::invokeName = vm->asciizConstructUTF8("Invoke");
-  N3::math = vm->asciizConstructUTF8("Math");
-  N3::system = vm->asciizConstructUTF8("System");
-  N3::sqrt = vm->asciizConstructUTF8("Sqrt");
-  N3::sin = vm->asciizConstructUTF8("Sin");
-  N3::cos = vm->asciizConstructUTF8("Cos");
-  N3::exp = vm->asciizConstructUTF8("Exp");
-  N3::log = vm->asciizConstructUTF8("Log");
-  N3::floor = vm->asciizConstructUTF8("Floor");
-  N3::log10 = vm->asciizConstructUTF8("Log10");
-  N3::isNan = vm->asciizConstructUTF8("IsNaN");
-  N3::pow = vm->asciizConstructUTF8("Pow");
-  N3::floatName = vm->asciizConstructUTF8("Float");
-  N3::doubleName = vm->asciizConstructUTF8("Double");
-  N3::testInfinity = vm->asciizConstructUTF8("TestInfinity");
+  N3::clinitName = vm->asciizToUTF8(".cctor");
+  N3::ctorName = vm->asciizToUTF8(".ctor");
+  N3::invokeName = vm->asciizToUTF8("Invoke");
+  N3::math = vm->asciizToUTF8("Math");
+  N3::system = vm->asciizToUTF8("System");
+  N3::sqrt = vm->asciizToUTF8("Sqrt");
+  N3::sin = vm->asciizToUTF8("Sin");
+  N3::cos = vm->asciizToUTF8("Cos");
+  N3::exp = vm->asciizToUTF8("Exp");
+  N3::log = vm->asciizToUTF8("Log");
+  N3::floor = vm->asciizToUTF8("Floor");
+  N3::log10 = vm->asciizToUTF8("Log10");
+  N3::isNan = vm->asciizToUTF8("IsNaN");
+  N3::pow = vm->asciizToUTF8("Pow");
+  N3::floatName = vm->asciizToUTF8("Float");
+  N3::doubleName = vm->asciizToUTF8("Double");
+  N3::testInfinity = vm->asciizToUTF8("TestInfinity");
   
+
+	MSCorlib::pArray->resolveType(1, 0, 0);
 
   MSCorlib::initialise(vm);
    
@@ -323,11 +324,11 @@ mvm::CompilationUnit* mvm::VirtualMachine::initialiseCLIVM() {
   return 0;
 }
 
-void VirtualMachine::runApplication(int argc, char** argv) {
+void N3::runApplication(int argc, char** argv) {
   ((N3*)this)->runMain(argc, argv);
 }
 
-void VirtualMachine::compile(const char* argv) {
+void N3::compile(const char* argv) {
   assert(0 && "This virtual machine does not perform static compilation yet!\n");
 }
 

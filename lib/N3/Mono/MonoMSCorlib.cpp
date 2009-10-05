@@ -21,8 +21,8 @@ using namespace n3;
 
 void MSCorlib::loadStringClass(N3* vm) {
   VMClass* type = (VMClass*)vm->coreAssembly->loadTypeFromName(
-                                           vm->asciizConstructUTF8("String"),
-                                           vm->asciizConstructUTF8("System"),
+                                           vm->asciizToUTF8("String"),
+                                           vm->asciizToUTF8("System"),
                                            false, false, false, true);
   MSCorlib::pString = type;
   MSCorlib::pObject->resolveType(true, false, NULL);
@@ -43,8 +43,8 @@ void MSCorlib::initialise(N3* vm) {
   VMClass* realClrType = 0;
   #define INIT(var, nameSpace, name, type, prim) {\
   var = (VMClass*)vm->coreAssembly->loadTypeFromName( \
-                                           vm->asciizConstructUTF8(name),     \
-                                           vm->asciizConstructUTF8(nameSpace),\
+                                           vm->asciizToUTF8(name),     \
+                                           vm->asciizToUTF8(nameSpace),\
                                            false, false, false, true); \
   var->isPrimitive = prim; \
   if (type) { \
@@ -65,7 +65,7 @@ void MSCorlib::initialise(N3* vm) {
   
   {
   MSCorlib::clrType->resolveType(false, false, NULL);
-  MSCorlib::typeClrType = realClrType->lookupField(vm->asciizConstructUTF8("_impl"), runtimeTypeHandle, false, false);
+  MSCorlib::typeClrType = realClrType->lookupField(vm->asciizToUTF8("_impl"), runtimeTypeHandle, false, false);
   }
 
 /*
@@ -74,8 +74,8 @@ void MSCorlib::initialise(N3* vm) {
   std::vector<VMCommonClass*> args;
   args.push_back(MSCorlib::pVoid);
   args.push_back(MSCorlib::assemblyReflection);
-  MSCorlib::ctorAssemblyReflection = MSCorlib::assemblyReflection->lookupMethod(vm->asciizConstructUTF8(".ctor"), args, false, false);
-  MSCorlib::assemblyAssemblyReflection = MSCorlib::assemblyReflection->lookupField(vm->asciizConstructUTF8("privateData"), MSCorlib::pIntPtr, false, false);
+  MSCorlib::ctorAssemblyReflection = MSCorlib::assemblyReflection->lookupMethod(vm->asciizToUTF8(".ctor"), args, false, false);
+  MSCorlib::assemblyAssemblyReflection = MSCorlib::assemblyReflection->lookupField(vm->asciizToUTF8("privateData"), MSCorlib::pIntPtr, false, false);
   }
   
   {
@@ -83,8 +83,8 @@ void MSCorlib::initialise(N3* vm) {
   std::vector<VMCommonClass*> args;
   args.push_back(MSCorlib::pVoid);
   args.push_back(MSCorlib::propertyType);
-  MSCorlib::ctorPropertyType = MSCorlib::propertyType->lookupMethod(vm->asciizConstructUTF8(".ctor"), args, false, false);
-  MSCorlib::propertyPropertyType = MSCorlib::propertyType->lookupField(vm->asciizConstructUTF8("privateData"), MSCorlib::pIntPtr, false, false);
+  MSCorlib::ctorPropertyType = MSCorlib::propertyType->lookupMethod(vm->asciizToUTF8(".ctor"), args, false, false);
+  MSCorlib::propertyPropertyType = MSCorlib::propertyType->lookupField(vm->asciizToUTF8("privateData"), MSCorlib::pIntPtr, false, false);
   }
   
   {
@@ -92,8 +92,8 @@ void MSCorlib::initialise(N3* vm) {
   std::vector<VMCommonClass*> args;
   args.push_back(MSCorlib::pVoid);
   args.push_back(MSCorlib::methodType);
-  MSCorlib::ctorMethodType = MSCorlib::methodType->lookupMethod(vm->asciizConstructUTF8(".ctor"), args, false, false);
-  MSCorlib::methodMethodType = MSCorlib::methodType->lookupField(vm->asciizConstructUTF8("privateData"), MSCorlib::pIntPtr, false, false);
+  MSCorlib::ctorMethodType = MSCorlib::methodType->lookupMethod(vm->asciizToUTF8(".ctor"), args, false, false);
+  MSCorlib::methodMethodType = MSCorlib::methodType->lookupField(vm->asciizToUTF8("privateData"), MSCorlib::pIntPtr, false, false);
   }
   
   {
@@ -104,13 +104,13 @@ void MSCorlib::initialise(N3* vm) {
   args.push_back(MSCorlib::pIntPtr);
   args.push_back(MSCorlib::pSInt64);
   args.push_back(MSCorlib::pSInt64);
-  MSCorlib::ctorResourceStreamType = MSCorlib::resourceStreamType->lookupMethod(vm->asciizConstructUTF8(".ctor"), args, false, false);
+  MSCorlib::ctorResourceStreamType = MSCorlib::resourceStreamType->lookupMethod(vm->asciizToUTF8(".ctor"), args, false, false);
   }
   
   VMCommonClass* voidPtr = vm->coreAssembly->constructPointer(MSCorlib::pVoid, 1);
 #define INIT(var, cl, type) {\
     cl->resolveType(false, false); \
-    var = cl->lookupField(vm->asciizConstructUTF8("value_"), type, false, false); \
+    var = cl->lookupField(vm->asciizToUTF8("value_"), type, false, false); \
   }
   
   INIT(MSCorlib::ctorBoolean,  MSCorlib::pBoolean, MSCorlib::pBoolean);
@@ -164,8 +164,8 @@ VMObject* Assembly::getAssemblyDelegatee() {
 
 void MSCorlib::loadBootstrap(N3* vm) {
   VMClass* cl = (VMClass*)vm->coreAssembly->loadTypeFromName(
-                                        vm->asciizConstructUTF8("Thread"),
-                                        vm->asciizConstructUTF8("System.Threading"),
+                                        vm->asciizToUTF8("Thread"),
+                                        vm->asciizToUTF8("System.Threading"),
                                         true, true, true, true);
   VMObject* th = (*cl)();
   VMThread* myth = VMThread::get();

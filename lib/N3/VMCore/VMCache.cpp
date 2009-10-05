@@ -21,7 +21,6 @@
 #include "CLIJit.h"
 #include "MSCorlib.h"
 #include "N3.h"
-#include "VirtualMachine.h"
 #include "VMArray.h"
 #include "VMCache.h"
 #include "VMClass.h"

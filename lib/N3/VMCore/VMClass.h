@@ -31,13 +31,13 @@ class Enveloppe;
 class Param;
 class Property;
 class UTF8;
-class VirtualMachine;
 class VMClass;
 class VMField;
 class VMMethod;
 class VMObject;
 class VMGenericClass;
 class VMGenericMethod;
+class N3;
 
 typedef enum VMClassState {
   hashed = 0, loaded, prepared, readed, virtual_resolved, static_resolved, clinitParent, inClinit, ready
@@ -56,7 +56,7 @@ public:
   std::vector<VMClass*> interfaces;
   std::vector<uint32> interfacesToken;
   VMCommonClass* super;
-  VirtualMachine* vm;
+  N3* vm;
   const UTF8* name;
   const UTF8* nameSpace;
   mvm::Lock* lockVar;
@@ -86,7 +86,7 @@ public:
   void broadcastClass();
   bool ownerClass();
 
-  void initialise(VirtualMachine* vm, bool isArray);
+  void initialise(N3* vm, bool isArray);
 
   const llvm::Type* naturalType;  // true type
   const llvm::Type* virtualType;  // true type or box

@@ -110,9 +110,10 @@ System_Text_Encoding_InternalCodePage (gint32 *int_code_page)
 		*int_code_page |= 0x10000000;
 	free (codepage);
 	
-	if (want_name && *int_code_page == -1)
-		return (MonoString*)(((N3*)VMThread::get()->vm)->asciizToStr(cset));
-	else
+	if (want_name && *int_code_page == -1) {
+		N3 *vm = (N3*)VMThread::get()->vm;
+		return (MonoString*)(vm->arrayToString(vm->asciizToArray(cset)));
+	} else
 		return NULL;
 }
 
@@ -157,10 +158,11 @@ extern "C" MonoFileType System_IO_MonoIO_GetFileType(void* handle, int* error) {
 extern "C" MonoString *
 System_Environment_get_NewLine (void)
 {
+	N3 *vm = (N3*)VMThread::get()->vm;
 #if defined (PLATFORM_WIN32)
-	return (MonoString*)((N3*)VMThread::get()->vm)->asciizToStr("\r\n");
+	return (MonoString*)(vm->arrayToString(vm->asciizToArray("\r\n")));
 #else
-	return (MonoString*)((N3*)VMThread::get()->vm)->asciizToStr("\n");
+	return (MonoString*)(vm->arrayToString(vm->asciizToArray("\n")));
 #endif
 }
 
@@ -279,7 +281,7 @@ System_Threading_Thread_SetCachedCurrentCulture (VMObject* thread, VMObject *cul
 extern "C" void
 System_String__ctor(MonoString* str, ArrayUInt16* array, sint32 startIndex, sint32 count) {
   VirtualMachine* vm = VMThread::get()->vm;
-  const UTF8* utf8 = vm->readerConstructUTF8(&(array->elements[startIndex]), count);
+  const UTF8* utf8 = vm->bufToUTF8(&(array->elements[startIndex]), count);
   str->length = count;
   str->startChar = array->elements[startIndex];
   str->value = utf8;
@@ -331,8 +333,8 @@ System_String_InternalJoin (MonoString *separator, VMArray * value, sint32 sinde
 	}
   
   N3* vm = (N3*)VMThread::get()->vm;
-  const UTF8* utf8 = vm->readerConstructUTF8(dest, length);
-	return (MonoString*)vm->UTF8ToStr(utf8);
+  const ArrayUInt16* array = vm->bufToArray(dest, length);
+	return (MonoString*)vm->arrayToString(array);
 }
 
 extern "C" MonoString *

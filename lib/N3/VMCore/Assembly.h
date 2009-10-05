@@ -28,6 +28,7 @@ namespace llvm {
 
 namespace n3 {
 
+class ArrayUInt16;
 class ArrayUInt8;
 class ArrayObject;
 class Assembly;
@@ -40,7 +41,6 @@ class Param;
 class Property;
 class Reader;
 class UTF8;
-class VirtualMachine;
 class VMClass;
 class VMGenericClass;
 class VMClassArray;
@@ -187,13 +187,13 @@ public:
 
 	Assembly(mvm::BumpPtrAllocator &Alloc, const UTF8* name);
 
-  static const UTF8* readUTF8(VirtualMachine* vm, uint32 len, Reader* reader);
-  static const UTF8* readUTF16(VirtualMachine* vm, uint32 len, Reader* reader);
-  static const UTF8* readUTF8(VirtualMachine* vm, uint32 len, ArrayUInt8* bytes,
+  static const UTF8* readUTF8(N3* vm, uint32 len, Reader* reader);
+  static const UTF8* readUTF8(N3* vm, uint32 len, ArrayUInt8* bytes,
                               uint32& offset);
-  static const UTF8* readUTF16(VirtualMachine* vm, uint32 len, 
-                               ArrayUInt8* bytes, uint32& offset);
-  const UTF8* readString(VirtualMachine* vm, uint32 offset);
+  static const ArrayUInt16* readUTF16(N3* vm, uint32 len, Reader* reader);
+  static const ArrayUInt16* readUTF16(N3* vm, uint32 len, 
+																			ArrayUInt8* bytes, uint32& offset);
+  const UTF8*        readString(N3* vm, uint32 offset);
   void read();
   void readTables(Reader* reader);
 
@@ -253,7 +253,7 @@ public:
   uint32 getTypedefTokenFromMethod(uint32 token);
   VMMethod* readMemberRefAsMethod(uint32 token, std::vector<VMCommonClass*>* genArgs, VMGenericClass* genClass, VMGenericMethod* genMethod);
 
-  const UTF8* readUserString(uint32 token); 
+  const ArrayUInt16* readUserString(uint32 token); 
   uint32 getExplicitLayout(uint32 token);
   uint32 getRVAFromField(uint32 token);
   

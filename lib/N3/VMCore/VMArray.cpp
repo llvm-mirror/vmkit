@@ -9,11 +9,11 @@
 
 #include <stdlib.h>
 
-#include "VirtualMachine.h"
 #include "VMArray.h"
 #include "VMClass.h"
 #include "VMObject.h"
 #include "VMThread.h"
+#include "N3.h"
 
 
 using namespace n3;
@@ -166,54 +166,7 @@ void ArrayObject::print(mvm::PrintBuffer *buf) const {
 }
 
 
-AT(UTF8, uint16)
-INITIALISE(UTF8)
-
 #undef AT
 #undef INITIALISE
 #undef ACONS
 #undef ARRAYCLASS
-
-UTF8* UTF8::acons(sint32 n, VMClassArray* atype) {
-  if (n < 0)
-    VMThread::get()->vm->negativeArraySizeException(n);
-  else if (n > VMArray::MaxArraySize)
-    VMThread::get()->vm->outOfMemoryError(n);
-  uint32 size = sizeof(VMObject) + sizeof(sint32) + n * sizeof(uint16);
-  UTF8* res = (UTF8*)gc::operator new(size, UTF8::VT);
-  res->initialise(atype, n);
-  return res;
-}
-
-void UTF8::print(mvm::PrintBuffer* buf) const {
-  for (int i = 0; i < size; i++)
-    buf->writeChar((char)elements[i]);
-}
-
-const UTF8* UTF8::extract(VirtualMachine *vm, uint32 start, uint32 end) const {
-  uint32 len = end - start;
-  uint16* buf = (uint16*)alloca(sizeof(uint16) * len);
-
-  for (uint32 i = 0; i < len; i++) {
-    buf[i] = at(i + start);
-  }
-
-  return readerConstruct(vm, buf, len);
-}
-
-const UTF8* UTF8::asciizConstruct(VirtualMachine* vm, const char* asciiz) {
-  return vm->asciizConstructUTF8(asciiz);
-}
-
-const UTF8* UTF8::readerConstruct(VirtualMachine* vm, uint16* buf, uint32 n) {
-  return vm->readerConstructUTF8(buf, n);
-}
-
-char* UTF8::UTF8ToAsciiz() const {
-  mvm::NativeString* buf = mvm::NativeString::alloc(size + 1);
-  for (sint32 i = 0; i < size; ++i) {
-    buf->setAt(i, elements[i]);
-  }
-  buf->setAt(size, 0);
-  return buf->cString();
-}

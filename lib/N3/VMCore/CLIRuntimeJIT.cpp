@@ -53,10 +53,9 @@ extern "C" void indexOutOfBounds() {
   assert(0 && "implement index out of bounds exception");
 }
 
-extern "C" VMObject* newString(const UTF8* utf8) {
-  CLIString * str = 
-    (CLIString*)(((N3*)VMThread::get()->vm)->UTF8ToStr(utf8));
-  return str;
+extern "C" VMObject* newString(const ArrayUInt16* utf8) {
+	N3 *vm = (N3*)VMThread::get()->vm;
+  return vm->arrayToString(utf8);
 }
 
 extern "C" bool n3InstanceOf(VMObject* obj, VMCommonClass* cl) {
@@ -147,7 +146,7 @@ extern "C" CacheNode* n3VirtualLookup(CacheNode* cache, VMObject *obj) {
                                     strlen(nameAsciiz) + 
                                     strlen(nameSpaceAsciiz));
       sprintf(buf, "%s.%s.%s", nameSpaceAsciiz, nameAsciiz, methAsciiz);
-      const UTF8* newName = VMThread::get()->vm->asciizConstructUTF8(buf);
+      const UTF8* newName = VMThread::get()->vm->asciizToUTF8(buf);
       dmeth = ocl->lookupMethod(newName, orig->parameters, false, true);
     }
     

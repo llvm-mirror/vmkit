@@ -18,7 +18,6 @@
 #include "MSCorlib.h"
 #include "N3.h"
 #include "Reader.h"
-#include "VirtualMachine.h"
 #include "VMClass.h"
 #include "VMObject.h"
 #include "VMThread.h"
@@ -702,13 +701,13 @@ void Header::read(mvm::BumpPtrAllocator &allocator, Reader* reader, N3* vm) {
   }
 }
 
-const UTF8* Assembly::readUTF16(VirtualMachine* vm, uint32 len, 
+const ArrayUInt16* Assembly::readUTF16(N3* vm, uint32 len, 
                                 Reader* reader) {
   return readUTF16(vm, len, reader->bytes, reader->cursor);
 }
 
-const UTF8* Assembly::readUTF16(VirtualMachine* vm, uint32 len, 
-                                ArrayUInt8* bytes, uint32 &offset) {
+const ArrayUInt16* Assembly::readUTF16(N3* vm, uint32 len, 
+																			 ArrayUInt8* bytes, uint32 &offset) {
   uint32 realLen = len >> 1;
   uint16* buf = (uint16*)alloca(len);
   uint32 i = 0;
@@ -717,16 +716,14 @@ const UTF8* Assembly::readUTF16(VirtualMachine* vm, uint32 len,
     buf[i] = cur;
     ++i;
   }
-  const UTF8* utf8 = UTF8::readerConstruct(vm, buf, realLen);
-
-  return utf8;
+	return vm->bufToArray(buf, realLen); 
 }
 
-const UTF8* Assembly::readUTF8(VirtualMachine* vm, uint32 len, Reader* reader) {
+const UTF8* Assembly::readUTF8(N3* vm, uint32 len, Reader* reader) {
   return readUTF8(vm, len, reader->bytes, reader->cursor);
 }
 
-const UTF8* Assembly::readUTF8(VirtualMachine* vm, uint32 len,
+const UTF8* Assembly::readUTF8(N3* vm, uint32 len,
                                ArrayUInt8* bytes, uint32 &offset) {
   uint16* buf = (uint16*)alloca(len * sizeof(uint16));
   uint32 n = 0;
@@ -759,7 +756,7 @@ const UTF8* Assembly::readUTF8(VirtualMachine* vm, uint32 len,
   return utf8;
 }
 
-const UTF8* Assembly::readString(VirtualMachine* vm, uint32 offset) {
+const UTF8* Assembly::readString(N3* vm, uint32 offset) {
   uint32 end = offset;
   uint32 cur = 0;
   while ((cur = READ_U1(bytes, end)) != 0) {}
@@ -1840,7 +1837,7 @@ VMMethod* Assembly::readMethodSpec(uint32 token, VMGenericClass* genClass, VMGen
   return NULL;
 }
 
-const UTF8* Assembly::readUserString(uint32 token) {
+const ArrayUInt16* Assembly::readUserString(uint32 token) {
   uint32 offset = CLIHeader->usStream->realOffset + token;
 
   uint8 size = READ_U1(bytes, offset);
@@ -1855,8 +1852,7 @@ const UTF8* Assembly::readUserString(uint32 token) {
     }
   }
 
-  const UTF8* res = readUTF16((N3*)(VMThread::get()->vm), size, bytes, offset);
-  return res;
+  return readUTF16((N3*)(VMThread::get()->vm), size, bytes, offset);
 }
 
 uint32 Assembly::getRVAFromField(uint32 token) {

@@ -21,6 +21,7 @@ namespace n3 {
 
 class UTF8;
 class N3;
+class ArrayUInt16;
 
 class CLIString : public VMObject {
 public:
@@ -34,9 +35,8 @@ public:
 
   
   static CLIString* stringDup(const UTF8*& utf8, N3* vm);
-  char* strToAsciiz();
-  const UTF8* strToUTF8(N3* vm);
-
+  const  UTF8* strToUTF8(N3* vm);
+	ArrayUInt16 *strToArray(N3 *vm) const;
 };
 
 } // end namespace jnjvm

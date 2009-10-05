@@ -24,6 +24,8 @@
 #include "CLIString.h"
 #include "VMArray.h"
 
+#include "UTF8.h"
+
 namespace n3 {
 
 class Assembly;
@@ -156,35 +158,6 @@ public:
 class FunctionMap : public LockedMap<llvm::Function*, VMMethod, std::less<llvm::Function*>, N3 > { 
 public:
 	FunctionMap() : LockedMap<llvm::Function*, VMMethod, std::less<llvm::Function*>, N3 >(new mvm::LockNormal()) {}
-};
-
-
-
-class UTF8Map : public mvm::PermanentObject {
-public:
-  typedef std::multimap<const uint32, const UTF8*>::iterator iterator;
-  
-  mvm::Lock* lock;
-  std::multimap<uint32, const UTF8*, std::less<uint32>,
-                gc_allocator<std::pair<const uint32, const UTF8*> > > map;
-
-  const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
-  const UTF8* lookupOrCreateReader(const uint16* buf, uint32 size);
-  
-  UTF8Map() {
-    lock = new mvm::LockNormal();
-  }
-  
-  virtual void TRACER {
-    //lock->MARK_AND_TRACE;
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->second->MARK_AND_TRACE;
-    }
-  }
-
-  virtual void print(mvm::PrintBuffer* buf) const {
-    buf->write("UTF8 Hashtable<>");
-  }
 };
 
 } // end namespace n3

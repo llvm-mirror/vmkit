@@ -8,58 +8,97 @@
 //===----------------------------------------------------------------------===//
 
 
-#include "llvm/LLVMContext.h"
+#include <vector>
+#include <stdarg.h>
+
+#include "llvm/Function.h"
 #include "llvm/Module.h"
+#include "llvm/LLVMContext.h"
 #include "llvm/Support/CommandLine.h"
 
+#include "mvm/Object.h"
+#include "mvm/PrintBuffer.h"
+#include "mvm/Threads/Cond.h"
+#include "mvm/Threads/Locks.h"
 #include "mvm/JIT.h"
 
 #include "types.h"
+
 #include "Assembly.h"
-#include "CLIJit.h"
-#include "CLIString.h"
 #include "LinkN3Runtime.h"
 #include "LockedMap.h"
 #include "MSCorlib.h"
 #include "N3.h"
 #include "N3ModuleProvider.h"
 #include "Reader.h"
-#include "VirtualMachine.h"
+#include "VMArray.h"
 #include "VMClass.h"
 #include "VMObject.h"
 #include "VMThread.h"
+#include "CLIJit.h"
+#include "CLIString.h"
+
 
 using namespace n3;
 
-void N3::print(mvm::PrintBuffer* buf) const {
-  buf->write("N3 virtual machine<>");
+#define DECLARE_EXCEPTION(EXCP) \
+  const char* N3::EXCP = #EXCP
+
+DECLARE_EXCEPTION(SystemException);
+DECLARE_EXCEPTION(OverFlowException);
+DECLARE_EXCEPTION(OutOfMemoryException);
+DECLARE_EXCEPTION(IndexOutOfRangeException);
+DECLARE_EXCEPTION(NullReferenceException);
+DECLARE_EXCEPTION(SynchronizationLocException);
+DECLARE_EXCEPTION(ThreadInterruptedException);
+DECLARE_EXCEPTION(MissingMethodException);
+DECLARE_EXCEPTION(MissingFieldException);
+DECLARE_EXCEPTION(ArrayTypeMismatchException);
+DECLARE_EXCEPTION(ArgumentException);
+
+/*
+DECLARE_EXCEPTION(ArithmeticException);
+DECLARE_EXCEPTION(InvocationTargetException);
+DECLARE_EXCEPTION(ArrayStoreException);
+DECLARE_EXCEPTION(ClassCastException);
+DECLARE_EXCEPTION(ArrayIndexOutOfBoundsException);
+DECLARE_EXCEPTION(SecurityException);
+DECLARE_EXCEPTION(ClassFormatError);
+DECLARE_EXCEPTION(ClassCircularityError);
+DECLARE_EXCEPTION(NoClassDefFoundError);
+DECLARE_EXCEPTION(UnsupportedClassVersionError);
+DECLARE_EXCEPTION(NoSuchFieldError);
+DECLARE_EXCEPTION(NoSuchMethodError);
+DECLARE_EXCEPTION(InstantiationError);
+DECLARE_EXCEPTION(IllegalAccessError);
+DECLARE_EXCEPTION(IllegalAccessException);
+DECLARE_EXCEPTION(VerifyError);
+DECLARE_EXCEPTION(ExceptionInInitializerError);
+DECLARE_EXCEPTION(LinkageError);
+DECLARE_EXCEPTION(AbstractMethodError);
+DECLARE_EXCEPTION(UnsatisfiedLinkError);
+DECLARE_EXCEPTION(InternalError);
+DECLARE_EXCEPTION(StackOverflowError);
+DECLARE_EXCEPTION(ClassNotFoundException);
+*/
+
+#undef DECLARE_EXCEPTION
+
+void ThreadSystem::print(mvm::PrintBuffer* buf) const {
+  buf->write("ThreadSystem<>");
 }
 
-VMObject* N3::asciizToStr(const char* asciiz) {
-  const UTF8* var = asciizConstructUTF8(asciiz);
-  return UTF8ToStr(var);
-}
-
-VMObject* N3::UTF8ToStr(const UTF8* utf8) {
-  VMObject* res = CLIString::stringDup(utf8, this);
-  //VMObject* res = hashStr->lookupOrCreate(utf8, this, CLIString::stringDup);
+ThreadSystem* ThreadSystem::allocateThreadSystem() {
+  ThreadSystem* res = gc_new(ThreadSystem)();
+  res->nonDaemonThreads = 1;
+  res->nonDaemonLock = new mvm::LockNormal();
+  res->nonDaemonVar  = new mvm::Cond();
   return res;
 }
 
-static Assembly* assemblyDup(const UTF8*& name, N3* vm) {
-	mvm::BumpPtrAllocator *a = new mvm::BumpPtrAllocator();
-  return new(*a, "Assembly") Assembly(*a, name);
-}
-
-Assembly* N3::constructAssembly(const UTF8* name) {
-  return loadedAssemblies->lookupOrCreate(name, this, assemblyDup);
-}
-
-Assembly* N3::lookupAssembly(const UTF8* name) {
-  return loadedAssemblies->lookup(name);
-}
-
-N3::N3(mvm::BumpPtrAllocator &allocator, const char *name) : VirtualMachine(allocator) {
+N3::N3(mvm::BumpPtrAllocator &allocator, const char *name) : mvm::VirtualMachine(allocator) {
+  this->module =            0;
+  this->TheModuleProvider = 0;
 	this->name =              name;
 
   this->scanner =           new mvm::UnpreciseStackScanner(); 
@@ -75,6 +114,97 @@ N3::N3(mvm::BumpPtrAllocator &allocator, const char *name) : VirtualMachine(allo
 
   this->TheModuleProvider = new N3ModuleProvider(this->LLVMModule, this->functions);
 }
+
+N3::~N3() {
+  delete module;
+  delete TheModuleProvider;
+}
+
+void N3::error(const char* className, const char* fmt, va_list ap) {
+  fprintf(stderr, "Internal exception of type %s during bootstrap: ", className);
+  vfprintf(stderr, fmt, ap);
+  throw 1;
+}
+
+void N3::indexOutOfBounds(const VMObject* obj, sint32 entry) {
+  error(IndexOutOfRangeException, "%d", entry);
+}
+
+void N3::negativeArraySizeException(sint32 size) {
+  error(OverFlowException, "%d", size);
+}
+
+void N3::nullPointerException(const char* fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  error(NullReferenceException, fmt, va_arg(ap, char*));
+}
+
+
+void N3::illegalMonitorStateException(const VMObject* obj) {
+  error(SynchronizationLocException, "");
+}
+
+void N3::interruptedException(const VMObject* obj) {
+  error(ThreadInterruptedException, "");
+}
+
+void N3::outOfMemoryError(sint32 n) {
+  error(OutOfMemoryException, "");
+}
+
+void N3::arrayStoreException() {
+  error(ArrayTypeMismatchException, "");
+}
+
+void N3::illegalArgumentException(const char* name) {
+  error(ArgumentException, name);
+}
+
+void N3::unknownError(const char* fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  error(SystemException, fmt, ap);
+}
+
+void N3::error(const char* fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  error(SystemException, fmt, ap);
+}
+
+void N3::error(const char* name, const char* fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  error(name, fmt, ap);
+}
+
+
+
+
+using namespace n3;
+
+void N3::print(mvm::PrintBuffer* buf) const {
+  buf->write("N3 virtual machine<>");
+}
+
+static Assembly* assemblyDup(const UTF8*& name, N3* vm) {
+	mvm::BumpPtrAllocator *a = new mvm::BumpPtrAllocator();
+  return new(*a, "Assembly") Assembly(*a, name);
+}
+
+Assembly* N3::constructAssembly(const UTF8* name) {
+  return loadedAssemblies->lookupOrCreate(name, this, assemblyDup);
+}
+
+Assembly* N3::lookupAssembly(const UTF8* name) {
+  return loadedAssemblies->lookup(name);
+}
+
+VMMethod* N3::lookupFunction(Function* F) {
+  return functions->lookup(F);
+}
+
 
 N3* N3::allocateBootstrap() {
   mvm::BumpPtrAllocator *a = new mvm::BumpPtrAllocator();
@@ -190,7 +320,7 @@ Assembly* N3::loadAssembly(const UTF8* name, const char* ext) {
 }
 
 void N3::executeAssembly(const char* _name, ArrayObject* args) {
-  const UTF8* name = asciizConstructUTF8(_name);
+  const UTF8* name = asciizToUTF8(_name);
   Assembly* assembly = loadAssembly(name, 0);
   if (assembly == 0) {
     error("Can not find assembly %s", _name);
@@ -233,7 +363,7 @@ void N3::mainCLIStart(VMThread* th) {
   ClArgumentsInfo& info = vm->argumentsInfo;  
   ArrayObject* args = ArrayObject::acons(info.argc - 2, MSCorlib::arrayString);
   for (int i = 2; i < info.argc; ++i) {
-    args->setAt(i - 2, (VMObject*)vm->asciizToStr(info.argv[i]));
+    args->setAt(i - 2, (VMObject*)vm->arrayToString(vm->asciizToArray(info.argv[i])));
   }
   
   try{
@@ -248,6 +378,43 @@ void N3::mainCLIStart(VMThread* th) {
   if (vm->threadSystem->nonDaemonThreads == 0)
     vm->threadSystem->nonDaemonVar->signal();
   vm->threadSystem->nonDaemonLock->unlock();
+}
+
+
+
+ArrayUInt16* N3::asciizToArray(const char* asciiz) {
+	uint32 len = strlen(asciiz);
+	ArrayUInt16 *res = (ArrayUInt16*)MSCorlib::arrayChar->doNew(len);
+	for(uint32 i=0; i<len; i++)
+		res->elements[i] = asciiz[i];
+	return res;
+}
+
+ArrayUInt16* N3::bufToArray(const uint16* buf, uint32 size) {
+	ArrayUInt16 *res = (ArrayUInt16*)MSCorlib::arrayChar->doNew(size);
+	memcpy(res->elements, buf, size<<1);
+	return res;
+}
+
+ArrayUInt16* N3::UTF8ToArray(const UTF8 *utf8) {
+  return bufToArray(utf8->elements, utf8->size);
+}
+
+const UTF8* N3::asciizToUTF8(const char* asciiz) {
+  return hashUTF8->lookupOrCreateAsciiz(asciiz);
+}
+
+const UTF8* N3::bufToUTF8(const uint16* buf, uint32 len) {
+  return hashUTF8->lookupOrCreateReader(buf, len);
+}
+
+const UTF8* N3::arrayToUTF8(const ArrayUInt16 *array) {
+  return bufToUTF8(array->elements, array->size);
+}
+
+CLIString *N3::arrayToString(const ArrayUInt16 *array) {
+	const UTF8 *utf8 = arrayToUTF8(array);
+  return (CLIString*)CLIString::stringDup(utf8, this);
 }
 
 #include "MSCorlib.inc"

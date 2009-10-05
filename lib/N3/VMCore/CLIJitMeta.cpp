@@ -19,7 +19,7 @@
 #include "CLIAccess.h"
 #include "CLIJit.h"
 #include "CLIString.h"
-#include "VirtualMachine.h"
+#include "N3.h"
 #include "VMClass.h"
 #include "VMObject.h"
 #include "VMThread.h"

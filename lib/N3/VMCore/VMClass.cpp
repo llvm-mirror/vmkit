@@ -25,7 +25,6 @@
 #include "CLIJit.h"
 #include "MSCorlib.h"
 #include "N3.h"
-#include "VirtualMachine.h"
 #include "VMArray.h"
 #include "VMClass.h"
 #include "VMThread.h"
@@ -160,7 +159,7 @@ void Property::print(mvm::PrintBuffer* buf) const {
 }
 
 
-void VMCommonClass::initialise(VirtualMachine* vm, bool isArray) {
+void VMCommonClass::initialise(N3* vm, bool isArray) {
   this->lockVar = new mvm::LockRecursive();
   this->condVar = new mvm::Cond();
   this->delegatee = 0;
@@ -181,7 +180,7 @@ const UTF8* VMClassArray::constructArrayName(const UTF8* name, uint32 dims) {
     sprintf(res, "%s[]", res);
   }
 
-  return VMThread::get()->vm->asciizConstructUTF8(res);
+  return VMThread::get()->vm->asciizToUTF8(res);
 }
 
 const UTF8* VMClassPointer::constructPointerName(const UTF8* name, uint32 dims) {
@@ -193,7 +192,7 @@ const UTF8* VMClassPointer::constructPointerName(const UTF8* name, uint32 dims) 
     sprintf(res, "%s*", res);
   }
 
-  return VMThread::get()->vm->asciizConstructUTF8(res);
+  return VMThread::get()->vm->asciizToUTF8(res);
 }
 
 
@@ -221,6 +220,7 @@ void VMCommonClass::loadParents(VMGenericClass* genClass, VMGenericMethod* genMe
 typedef void (*clinit_t)(void);
 
 void VMCommonClass::clinitClass(VMGenericMethod* genMethod) {
+	//	printf("----- clinit: %s\n", mvm::PrintBuffer::objectToString(this));
   VMCommonClass* cl = this; 
   if (cl->status < ready) {
     cl->aquire();
@@ -401,6 +401,7 @@ void VMClassPointer::makeType() {
 }
 
 void VMCommonClass::resolveVirtual(VMGenericClass* genClass, VMGenericMethod *genMethod) {
+	//	printf("Resolve virtual: %s\n", mvm::PrintBuffer::objectToString(this));
   VMCommonClass* cl = this;
   
   if (cl->status < virtual_resolved) {
@@ -415,7 +416,9 @@ void VMCommonClass::resolveVirtual(VMGenericClass* genClass, VMGenericMethod *ge
       if (cl->isArray) {
         VMClassArray* arrayCl = (VMClassArray*)cl;
         VMCommonClass* baseClass =  arrayCl->baseClass;
+				//				printf("Resolveing base class: %s\n", mvm::PrintBuffer::objectToString(baseClass));
         baseClass->resolveType(false, false, genMethod);
+				//  			printf("Resolveing base class: %s done\n", mvm::PrintBuffer::objectToString(baseClass));
         arrayCl->makeType();
         cl->status = virtual_resolved;
       } else if (cl->isPointer) {
@@ -476,11 +479,13 @@ void VMCommonClass::resolveVT() {
 }
 
 void VMCommonClass::resolveType(bool stat, bool clinit, VMGenericMethod* genMethod) {
+	//	printf("Resolve type: %s %d %d\n", mvm::PrintBuffer::objectToString(this), stat, clinit);
   resolveVirtual(dynamic_cast<VMGenericClass*>(this), genMethod);
   if (stat) resolveStatic(clinit, genMethod);
 }
 
 void VMCommonClass::resolveStatic(bool clinit, VMGenericMethod* genMethod) {
+	//	printf("Resolve static: %s %d\n", mvm::PrintBuffer::objectToString(this), clinit);
   VMCommonClass* cl = this;
   if (cl->status < static_resolved) {
     cl->aquire();
@@ -489,6 +494,8 @@ void VMCommonClass::resolveStatic(bool clinit, VMGenericMethod* genMethod) {
       cl->release();
     } else if (status < virtual_resolved) {
       cl->release();
+			//			printf("Will throw an exception: %s....\n", mvm::PrintBuffer::objectToString(this));
+			//			((char *)0)[0] = 22;
       VMThread::get()->vm->unknownError("try to resolve static of a not virtual-resolved class");
     } else if (status == virtual_resolved) {
       if (cl->isArray) {
@@ -561,7 +568,7 @@ VMMethod* VMCommonClass::lookupMethod(const UTF8* name,
   
   VMMethod* res = lookupMethodDontThrow(name, args, isStatic, recurse);
   if (!res) {
-    VMThread::get()->vm->error(VirtualMachine::MissingMethodException, 
+    VMThread::get()->vm->error(N3::MissingMethodException, 
                                "unable to find %s in %s",
                                mvm::PrintBuffer::objectToString(name), mvm::PrintBuffer::objectToString(this));
   }
@@ -608,7 +615,7 @@ VMField* VMCommonClass::lookupField(const UTF8* name, VMCommonClass* type,
   
   VMField* res = lookupFieldDontThrow(name, type, isStatic, recurse);
   if (!res) {
-    VMThread::get()->vm->error(VirtualMachine::MissingFieldException, 
+    VMThread::get()->vm->error(N3::MissingFieldException, 
                                "unable to find %s in %s",
                                mvm::PrintBuffer::objectToString(name), mvm::PrintBuffer::objectToString(this));
   }

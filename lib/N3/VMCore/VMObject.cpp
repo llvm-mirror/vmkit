@@ -14,7 +14,7 @@
 #include "VMClass.h"
 #include "VMObject.h"
 #include "VMThread.h"
-#include "VirtualMachine.h"
+#include "N3.h"
 
 using namespace n3;
 
