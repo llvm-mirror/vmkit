@@ -168,7 +168,7 @@ System_Environment_get_NewLine (void)
 
 extern "C" void
 System_String_InternalCopyTo(MonoString* str, sint32 sindex, VMArray* dest, sint32 destIndex, sint32 count) {
-  const UTF8* contents = str->value;
+  const ArrayUInt16* contents = str->value;
   memcpy(&dest->elements[destIndex], &contents->elements[sindex], count * sizeof(uint16));
 }
 
@@ -280,11 +280,11 @@ System_Threading_Thread_SetCachedCurrentCulture (VMObject* thread, VMObject *cul
 
 extern "C" void
 System_String__ctor(MonoString* str, ArrayUInt16* array, sint32 startIndex, sint32 count) {
-  VirtualMachine* vm = VMThread::get()->vm;
-  const UTF8* utf8 = vm->bufToUTF8(&(array->elements[startIndex]), count);
+  N3* vm = VMThread::get()->vm;
+  const ArrayUInt16* value = vm->bufToArray(&(array->elements[startIndex]), count);
   str->length = count;
   str->startChar = array->elements[startIndex];
-  str->value = utf8;
+  str->value = value;
 }
 
 extern "C" MonoString * 

@@ -25,30 +25,26 @@ using namespace n3;
 using namespace llvm;
 
 
-CLIString* CLIString::stringDup(const UTF8*& utf8, N3* vm) {
+CLIString* CLIString::stringDup(const ArrayUInt16*& array, N3* vm) {
   MonoString* obj = (MonoString*)(*MSCorlib::pString)();
-  obj->length = utf8->size;
-  if (utf8->size == 0) {
+  obj->length = array->size;
+  if (array->size == 0) {
     obj->startChar = 0;
   } else {
-    obj->startChar = utf8->at(0);
+    obj->startChar = array->at(0);
   }
-  obj->value = utf8; 
+  obj->value = array; 
   return obj;
 }
 
-char* CLIString::strToAsciiz() {
-  return ((MonoString*)this)->value->UTF8ToAsciiz();
-}
-
-const UTF8* CLIString::strToUTF8(N3* vm) {
-  return ((MonoString*)this)->value;
+const ArrayUInt16* CLIString::strToArray(N3* vm) const {
+  return ((MonoString *)this)->value;
 }
 
 GlobalVariable* CLIString::llvmVar() {
   MonoString* str = (MonoString*)this;
   if (!str->_llvmVar) {
-    VirtualMachine* vm = VMThread::get()->vm;
+    N3* vm = VMThread::get()->vm;
     if (!str->_llvmVar) {
       const Type* pty = mvm::MvmModule::ptrType;
       Module* Mod = vm->getLLVMModule();
