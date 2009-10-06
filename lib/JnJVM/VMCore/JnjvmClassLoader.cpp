@@ -1026,12 +1026,12 @@ const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
 }
 
 intptr_t JnjvmClassLoader::loadInLib(const char* buf, bool& jnjvm) {
-  uintptr_t res = (uintptr_t)dlsym(SELF_HANDLE, buf);
+  uintptr_t res = (uintptr_t)TheCompiler->loadMethod(SELF_HANDLE, buf);
   
   if (!res) {
     for (std::vector<void*>::iterator i = nativeLibs.begin(),
               e = nativeLibs.end(); i!= e; ++i) {
-      res = (uintptr_t)dlsym((*i), buf);
+      res = (uintptr_t)TheCompiler->loadMethod((*i), buf);
       if (res) break;
     }
   } else {
@@ -1051,7 +1051,7 @@ void* JnjvmClassLoader::loadLib(const char* buf) {
 }
 
 intptr_t JnjvmClassLoader::loadInLib(const char* name, void* handle) {
-  return (intptr_t)dlsym(handle, name);
+  return (intptr_t)TheCompiler->loadMethod(handle, name);
 }
 
 intptr_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& jnjvm,
