@@ -40,7 +40,7 @@ AC_COPYRIGHT([Copyright (c) 2003-2008 Universite Pierre et Marie Curie.])
 
 dnl Indicate that we require autoconf 2.59 or later. Ths is needed because we
 dnl use some autoconf macros only available in 2.59.
-AC_PREREQ(2.63)
+AC_PREREQ(2.59)
 
 dnl Verify that the source directory is valid. This makes sure that we are
 dnl configuring VMKit and not some other package (it validates --srcdir argument)
@@ -432,8 +432,9 @@ AC_PATH_PROG(TAR,  [tar],  [gtar])
 AC_PATH_PROG(BINPWD,[pwd],  [pwd])
 AC_PATH_PROG(CAT,[cat],  [cat])
 
-AC_PATH_PROG(LLVMAS,[llvm-as],  [llvm-as])
-AC_PATH_PROG(LLC,[llc],  [llc])
+AC_PATH_PROG(LLVMAS, [llvm-as],  [llvm-as])
+AC_PATH_PROG(LLC, [llc],  [llc])
+AC_PATH_PROG(ANT, [ant])
 
 dnl Find the install program
 AC_PROG_INSTALL
@@ -537,18 +538,6 @@ dnl===-----------------------------------------------------------------------===
 
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
-AC_DIAGNOSE([obsolete],[your code may safely assume C89 semantics that RETSIGTYPE is void.
-Remove this warning and the `AC_CACHE_CHECK' when you adjust the code.])dnl
-AC_CACHE_CHECK([return type of signal handlers],[ac_cv_type_signal],[AC_COMPILE_IFELSE(
-[AC_LANG_PROGRAM([#include <sys/types.h>
-#include <signal.h>
-],
-		 [return *(signal (0, 0)) (0) == 1;])],
-		   [ac_cv_type_signal=int],
-		   [ac_cv_type_signal=void])])
-AC_DEFINE_UNQUOTED([RETSIGTYPE],[$ac_cv_type_signal],[Define as the return type of signal handlers
-		    (`int' or `void').])
-
 AC_STRUCT_TM
 AC_CHECK_TYPES([int64_t],,AC_MSG_ERROR([Type int64_t required but not found]))
 AC_CHECK_TYPES([uint64_t],,
