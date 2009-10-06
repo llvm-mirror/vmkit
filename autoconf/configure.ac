@@ -35,8 +35,8 @@ AC_INIT([vmkit],[0.26svn],[nicolas.geoffray@lip6.fr])
 
 dnl Provide a copyright substitution and ensure the copyright notice is included
 dnl in the output of --version option of the generated configure script.
-AC_SUBST(VMKIT_COPYRIGHT,["Copyright (c) 2003-2008 Universite Pierre et Marie Curie."])
-AC_COPYRIGHT([Copyright (c) 2003-2008 Universite Pierre et Marie Curie.])
+AC_SUBST(VMKIT_COPYRIGHT,["Copyright (c) 2003-2009 Universite Pierre et Marie Curie."])
+AC_COPYRIGHT([Copyright (c) 2003-2009 Universite Pierre et Marie Curie.])
 
 dnl Indicate that we require autoconf 2.59 or later. Ths is needed because we
 dnl use some autoconf macros only available in 2.59.
