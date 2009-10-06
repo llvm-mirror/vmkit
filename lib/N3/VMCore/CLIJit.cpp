@@ -1754,7 +1754,6 @@ void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, createCondPropagationPass());      // Propagate conditionals
   
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
-  addPass(PM, createPredicateSimplifierPass());
   addPass(PM, createReassociatePass());          // Reassociate expressions
   addPass(PM, createLICMPass());                 // Hoist loop invariants
   
