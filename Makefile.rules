@@ -124,8 +124,8 @@ endif
 endif
 
 ifdef RUN_ANT
+ifdef ANT
 
-ANT = ant
 
 all::
 	$(Verb) $(ANT)
@@ -133,7 +133,8 @@ all::
 	$(Verb) $(VMJC) -std-compile-opts -load=$(LibDir)/MMTKRuntime$(SHLIBEXT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -LowerMagic -verify $(JARNAME).jar -disable-exceptions -disable-cooperativegc -with-clinit=org/mmtk/vm/VM,org/mmtk/utility/*,org/mmtk/policy/*,org/j3/config/* -Dmmtk.hostjvm=org.j3.mmtk.Factory -o $(JARNAME).bc
 	$(Verb) $(LOPT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -std-compile-opts -LowerJavaRT -f $(JARNAME).bc -o $(JARNAME)-optimized.bc
 
+    
+endif
 clean-local::
 	$(Verb) $(RM) -rf classes $(JARNAME).jar $(JARNAME).bc $(JARNAME)-optimized.bc
-    
 endif
