@@ -350,6 +350,8 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
   void** addr = mvm::Thread::get() == th ? 
     (void**)FRAME_PTR() : (void**)th->getLastSP();
   void** oldAddr = addr;
+  DEBUG(fprintf(stderr, "%p trace %p\n", (void*)mvm::Thread::get(), (void*)th));
+  DEBUG(th->printBacktraceAfterSignal());
 
   // Loop until we cross the first Java frame.
   while (it != th->addresses.begin()) {
