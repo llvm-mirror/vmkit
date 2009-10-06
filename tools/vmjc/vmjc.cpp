@@ -100,6 +100,11 @@ DisableExceptions("disable-exceptions",
               cl::desc("Disable Java exceptions"));
 
 static cl::opt<bool>
+DisableCooperativeGC("disable-cooperativegc",
+              cl::desc("Disable cooperative garbage collection"));
+
+
+static cl::opt<bool>
 DisableStubs("disable-stubs",
               cl::desc("Disable Java stubs"));
 
@@ -245,6 +250,7 @@ int main(int argc, char **argv) {
     if (DisableExceptions) Comp->disableExceptions();
     if (DisableStubs) Comp->generateStubs = false;
     if (AssumeCompiled) Comp->assumeCompiled = true;
+    if (DisableCooperativeGC) Comp->disableCooperativeGC();
     
     mvm::BumpPtrAllocator A;
     Jnjvm* vm = new(A, "Bootstrap loader") Jnjvm(A, (JnjvmBootstrapLoader*)JCL);
