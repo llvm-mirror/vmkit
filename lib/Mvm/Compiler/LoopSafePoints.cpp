@@ -97,7 +97,7 @@ bool LoopSafePoints::runOnLoop(Loop* L, LPPassManager& LPM) {
     if (YieldPtr) break;
   }
 
-  assert(YieldPtr && "Could not find initial yield pointer.");
+  if (!YieldPtr) return false;
 
   TerminatorInst* TI = Header->getTerminator();
   
