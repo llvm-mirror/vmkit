@@ -304,3 +304,14 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   delete[] newArgv;
   return 0;
 }
+
+void* JavaJITCompiler::loadMethod(void* handle, const char* symbol) {
+  Function* F = mvm::MvmModule::globalModule->getFunction(symbol);
+  if (F) {
+    void* res = mvm::MvmModule::executionEngine->getPointerToFunction(F);
+    return res;
+  }
+
+  return JavaCompiler::loadMethod(handle, symbol);
+}
+

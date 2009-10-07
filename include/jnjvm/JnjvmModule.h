@@ -482,7 +482,7 @@ public:
   virtual void virtualCallAP(Signdef* sign) {
     getSignatureInfo(sign)->getVirtualAP();
   }
-  
+
   llvm::Function* NativeLoader;
 
 };
@@ -566,6 +566,8 @@ public:
     return new mvm::UnpreciseStackScanner();
   }
 #endif
+  
+  virtual void* loadMethod(void* handle, const char* symbol);
 
 };
 
