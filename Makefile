@@ -9,9 +9,16 @@
 
 LEVEL := .
 
+include $(LEVEL)/Makefile.config
+
 # Top-Level vmkit Build Stages:
 #
 DIRS := lib tools
+
+ifeq ($(WITH_LLVM_GCC), 1)
+  DIRS += mmtk
+endif
+
 EXTRA_DIST=include
 
 include $(LEVEL)/Makefile.common
