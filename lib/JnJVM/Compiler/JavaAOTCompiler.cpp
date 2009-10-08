@@ -1010,9 +1010,13 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   // virtualSize
   ClassElts.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
                                        cl->virtualSize));
+  
+  // alginment
+  ClassElts.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
+                                       cl->alignment));
 
   // IsolateInfo
-  const ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(2));
+  const ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(3));
   assert(ATy && "Malformed type");
   
   const StructType* TCMTy = dyn_cast<StructType>(ATy->getContainedType(0));
