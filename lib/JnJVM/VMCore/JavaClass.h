@@ -440,6 +440,10 @@ public:
   /// 
   uint32 virtualSize;
 
+  /// aligment - Alignment of instances of this class.
+  ///
+  uint32 alignment;
+
   /// IsolateInfo - Per isolate informations for static instances and
   /// initialization state.
   ///

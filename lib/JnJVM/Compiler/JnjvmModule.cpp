@@ -194,8 +194,8 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   OffsetObjectSizeInClassConstant = constantOne;
   OffsetVTInClassConstant =
     ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 7);
-  OffsetTaskClassMirrorInClassConstant = constantTwo;
-  OffsetStaticInstanceInTaskClassMirrorConstant = constantTwo;
+  OffsetTaskClassMirrorInClassConstant = constantThree;
+  OffsetStaticInstanceInTaskClassMirrorConstant = constantThree;
   OffsetStatusInTaskClassMirrorConstant = constantZero;
   OffsetInitializedInTaskClassMirrorConstant = constantOne;
   
