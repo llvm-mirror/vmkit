@@ -51,7 +51,6 @@ class LockObj;
 
 #define END_JNI_EXCEPTION \
   } catch(...) { \
-    fprintf(stderr, "I have caught something here\n"); \
     th->endNative(); \
     th->addresses.pop_back(); \
     th->enterUncooperativeCode(SP); \
