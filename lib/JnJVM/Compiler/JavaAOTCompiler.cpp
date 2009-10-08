@@ -1998,3 +1998,18 @@ void JavaAOTCompiler::generateMain(const char* name, bool jit) {
   ReturnInst::Create(getGlobalContext(), res, currentBlock);
 
 }
+
+
+// Use a FakeFunction to return from loadMethod, so that the compiler thinks
+// the method is defined by J3.
+extern "C" void __JavaAOTFakeFunction__() {}
+
+void* JavaAOTCompiler::loadMethod(void* handle, const char* symbol) {
+  Function* F = mvm::MvmModule::globalModule->getFunction(symbol);
+  if (F) {
+    return (void*)(uintptr_t)__JavaAOTFakeFunction__;
+  }
+
+  return JavaCompiler::loadMethod(handle, symbol);
+}
+

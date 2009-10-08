@@ -621,6 +621,8 @@ public:
 #endif
   
   virtual ~JavaAOTCompiler() {}
+  
+  virtual void* loadMethod(void* handle, const char* symbol);
 
 private:
 
