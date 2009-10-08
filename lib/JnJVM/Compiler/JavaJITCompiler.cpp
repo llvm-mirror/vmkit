@@ -50,6 +50,10 @@ public:
   void setCurrentCompiledMethod(JavaMethod* meth) {
     currentCompiledMethod = meth;
   }
+
+  JavaJITListener() {
+    currentCompiledMethod = 0;
+  }
 };
 
 static JavaJITListener* JITListener = 0;
