@@ -186,6 +186,7 @@ public:
    static void initialise(llvm::CodeGenOpt::Level = llvm::CodeGenOpt::Default,
                          llvm::Module* TheModule = 0,
                          llvm::TargetMachine* TheTarget = 0);
+   static void loadBytecodeFile(const std::string& str);
 
    static int disassemble(unsigned int* addr);
   
