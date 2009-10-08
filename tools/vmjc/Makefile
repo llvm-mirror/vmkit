@@ -29,6 +29,6 @@ else
 	     Mvm.a MvmCompiler.a $(GCLIB).a
 endif
 
-LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo bitwriter
+LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo bitwriter bitreader asmparser linker
 
 include $(LEVEL)/Makefile.common

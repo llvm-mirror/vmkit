@@ -11,7 +11,7 @@ LEVEL = ../..
 include $(LEVEL)/Makefile.config
 
 TOOLNAME = n3-pnetlib
-LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo
+LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo bitreader asmparser linker
 
 ifeq ($(WITH_LLVM_GCC), 1)
   MODULESNAME = vmkit

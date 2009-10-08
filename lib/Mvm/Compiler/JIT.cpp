@@ -12,6 +12,7 @@
 #include <llvm/DerivedTypes.h>
 #include <llvm/Instructions.h>
 #include <llvm/LinkAllPasses.h>
+#include <llvm/Linker.h>
 #include <llvm/LLVMContext.h>
 #include <llvm/Module.h>
 #include <llvm/ModuleProvider.h>
@@ -19,11 +20,15 @@
 #include <llvm/Type.h>
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/Verifier.h>
+#include <llvm/Assembly/Parser.h>
 #include <llvm/CodeGen/GCStrategy.h>
 #include <llvm/Config/config.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include "llvm/Support/CommandLine.h"
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/IRReader.h>
 #include <llvm/Support/MutexGuard.h>
+#include "llvm/Support/SourceMgr.h"
 #include <llvm/Target/TargetData.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
@@ -40,6 +45,10 @@ using namespace mvm;
 using namespace llvm;
 
 
+static cl::list<std::string> 
+LoadBytecodeFiles("load-bc", cl::desc("Load bytecode file"), cl::ZeroOrMore,
+                  cl::CommaSeparated);
+
 namespace mvm {
   namespace llvm_runtime {
     #include "LLVMRuntime.inc"
@@ -51,6 +60,17 @@ const char* MvmModule::getHostTriple() {
   return LLVM_HOSTTRIPLE;
 }
 
+void MvmModule::loadBytecodeFile(const std::string& str) {
+  SMDiagnostic Err;
+  Module* M = ParseIRFile(str, Err, getGlobalContext());
+  if (M) {
+    M->setTargetTriple(getHostTriple());
+    Linker::LinkModules(globalModule, M, 0);
+    delete M;
+  } else {
+    Err.Print("load bytecode", errs());
+  }
+}
 
 void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
                            TargetMachine* T) {
@@ -97,7 +117,12 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   ptrPtrType = PointerType::getUnqual(ptrType);
   pointerSizeType = globalModule->getPointerSize() == Module::Pointer32 ?
     Type::getInt32Ty(Context) : Type::getInt64Ty(Context);
-  
+ 
+  for (std::vector<std::string>::iterator i = LoadBytecodeFiles.begin(),
+       e = LoadBytecodeFiles.end(); i != e; ++i) {
+    loadBytecodeFile(*i); 
+  }
+
 }
 
 
@@ -333,12 +358,12 @@ void MvmModule::copyDefinitions(Module* Dst, Module* Src) {
   // Loop over all of the functions in the src module, mapping them over
   for (Module::const_iterator I = Src->begin(), E = Src->end(); I != E; ++I) {
     const Function *SF = I;   // SrcFunction
-    assert(SF->isDeclaration() && 
-           "Don't know how top copy functions with body");
-    Function* F = Function::Create(SF->getFunctionType(),
-                                   GlobalValue::ExternalLinkage,
-                                   SF->getName(), Dst);
-    F->setAttributes(SF->getAttributes());
+    if (SF->isDeclaration()) {
+      Function* F = Function::Create(SF->getFunctionType(),
+                                     GlobalValue::ExternalLinkage,
+                                     SF->getName(), Dst);
+      F->setAttributes(SF->getAttributes());
+    }
   }
 }
 

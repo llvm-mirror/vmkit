@@ -53,7 +53,7 @@ else
 
 endif
 
-LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo
+LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo bitreader asmparser linker
 
 include $(LEVEL)/Makefile.common
 
