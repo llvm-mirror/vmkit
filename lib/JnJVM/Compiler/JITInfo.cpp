@@ -80,6 +80,7 @@ const Type* LLVMClassInfo::getVirtualType() {
     
     uint64 size = JnjvmModule::getTypeSize(structType);
     classDef->virtualSize = (uint32)size;
+    classDef->alignment = sl->getAlignment();
     virtualSizeConstant = ConstantInt::get(Type::getInt32Ty(context), size);
    
     Mod->makeVT(classDef);
