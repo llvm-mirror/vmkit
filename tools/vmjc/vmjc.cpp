@@ -121,7 +121,7 @@ static cl::list<std::string>
 Properties("D", cl::desc("Set a property"), cl::Prefix, cl::ZeroOrMore);
 
 static cl::list<std::string> 
-WithClinit("with-clinit", cl::desc("Set a property"), cl::ZeroOrMore,
+WithClinit("with-clinit", cl::desc("Classes to clinit"), cl::ZeroOrMore,
            cl::CommaSeparated);
 
 
