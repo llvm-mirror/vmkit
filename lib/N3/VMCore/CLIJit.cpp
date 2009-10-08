@@ -1547,8 +1547,8 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
     PointerType::getUnqual(module->getTypeByName("ArrayFloat"));
   ArrayObject::llvmType = 
     PointerType::getUnqual(module->getTypeByName("ArrayObject"));
-  UTF8::llvmType = 
-    PointerType::getUnqual(module->getTypeByName("ArrayUInt16"));
+	//  UTF8::llvmType = 
+	//    PointerType::getUnqual(module->getTypeByName("ArrayUInt16"));
   CacheNode::llvmType = 
     PointerType::getUnqual(module->getTypeByName("CacheNode"));
   Enveloppe::llvmType = 

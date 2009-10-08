@@ -157,9 +157,6 @@ const llvm::Type* ArrayFloat::llvmType = 0;
 const llvm::Type* ArrayDouble::llvmType = 0;
 const llvm::Type* ArrayLong::llvmType = 0;
 const llvm::Type* ArrayObject::llvmType = 0;
-const llvm::Type* UTF8::llvmType = 0;
-
-
 
 static void initialiseVT() {
 
@@ -188,7 +185,12 @@ static void initialiseVT() {
   INIT(ArrayFloat);
   INIT(ArrayDouble);
   INIT(ArrayObject);
-  INIT(UTF8);
+
+	{
+		UTF8 fake(0);																				
+		UTF8::VT = ((VirtualTable**)(void*)(&fake))[0];	
+	}
+
   INIT(VMCond);
   INIT(LockObj);
   INIT(VMObject);

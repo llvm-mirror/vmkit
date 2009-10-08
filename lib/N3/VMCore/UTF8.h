@@ -10,6 +10,7 @@ namespace mvm {
 
 namespace n3 {
 	class VMClassArray;
+	class UTF8Map;
 	class N3;
 
 class UTF8 : public VMObject {
@@ -17,21 +18,23 @@ public:
   static VirtualTable* VT;
   sint32 size;
   uint16 elements[1];
+  
+  /// operator new - Redefines the new operator of this class to allocate
+  /// its objects in permanent memory, not with the garbage collector.
+  void* operator new(size_t sz, sint32 n) {
+    return gc::operator new(sizeof(VMObject) + sizeof(sint32) + n * sizeof(uint16), UTF8::VT);
+  }
+  
+  UTF8(sint32 n) {
+    size = n;
+  }
 
-  static const llvm::Type* llvmType;
-  static UTF8* acons(sint32 n, VMClassArray* cl);
-  void initialise(VMCommonClass* atype, sint32 n);
-  
-  unsigned short int at(sint32) const;
-  void setAt(sint32, uint16);
-  
   virtual void print(mvm::PrintBuffer* buf) const;
 
-  char* UTF8ToAsciiz() const;
   static const UTF8* asciizConstruct(N3 *vm, const char* asciiz);
   static const UTF8* readerConstruct(N3 *vm, uint16* buf, uint32 n);
 
-  const UTF8* extract(N3 *vm, uint32 start, uint32 len) const;
+  const UTF8* extract(UTF8Map *vm, uint32 start, uint32 len) const;
 };
 
 class UTF8Map : public mvm::PermanentObject {
@@ -103,6 +106,61 @@ public:
 		delete [] buf;
 	}
 };
+
+
+/// UTF8Buffer - Helper class to create char* buffers suitable for
+/// printf.
+///
+class UTF8Buffer {
+
+  /// buffer - The buffer that holds a string representation.
+  ///
+  char* buffer;
+public:
+
+  /// UTF8Buffer - Create a buffer with the following UTF8.
+  ///
+  UTF8Buffer(const UTF8* val) {
+    buffer = new char[val->size + 1];
+    for (sint32 i = 0; i < val->size; ++i)
+      buffer[i] = val->elements[i];
+    buffer[val->size] = 0;
+		printf("buffer: %s (%d)\n", buffer, val->size);
+  }
+
+  /// ~UTF8Buffer - Delete the buffer, as well as all dynamically
+  /// allocated memory.
+  ///
+  ~UTF8Buffer() {
+		printf("Destructor :(\n");
+    delete[] buffer;
+  }
+
+  /// replaceWith - replace the content of the buffer and free the old buffer
+  ///
+	void replaceWith(char *buffer) {
+		delete[] this->buffer;
+		this->buffer = buffer;
+	}
+
+
+  /// cString - Return a C string representation of the buffer, suitable
+  /// for printf.
+  ///
+  const char* cString() {
+		printf("cString: %s\n", buffer);
+    return buffer;
+  }
+};
+
+inline char *_utf8ToAsciiz(const UTF8 *val, char *buffer) {
+	for (sint32 i = 0; i < val->size; ++i)
+		buffer[i] = val->elements[i];
+	buffer[val->size] = 0;
+	return buffer;
+}
+
+#define utf8ToAsciiz(utf8) _utf8ToAsciiz(utf8, (char*)alloca(utf8->size + 1))
 
 }
 

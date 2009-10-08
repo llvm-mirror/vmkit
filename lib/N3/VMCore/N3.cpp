@@ -236,9 +236,9 @@ N3* N3::allocate(const char* name, N3* parent) {
 }
 
 ArrayUInt8* N3::openAssembly(const UTF8* name, const char* ext) {
-  char* asciiz = name->UTF8ToAsciiz();
+  const char* asciiz = utf8ToAsciiz(name);
   uint32 alen = strlen(asciiz);
- 
+
   ArrayUInt8* res = 0;
   uint32 idx = 0;
 

@@ -363,12 +363,12 @@ VMGenericClass* Assembly::constructGenericClass(const UTF8* name,
   }
   uint16* buf = (uint16*) alloca(sizeof(uint16) * size);
   for (i = 0; i < name->size; i++) {
-    buf[i] = name->at(i);
+    buf[i] = name->elements[i];
   }
   buf[i++] = '<';
   for (std::vector<VMCommonClass*>::iterator it = genArgs.begin(), e = genArgs.end(); it!= e; ++it) {
     for (int j = 0; j < (*it)->name->size; i++, j++) {
-      buf[i] = (*it)->name->at(j);
+      buf[i] = (*it)->name->elements[j];
     }
     buf[i++] = ',';
   }
@@ -1253,7 +1253,7 @@ ArrayObject* Assembly::getCustomAttributes(uint32 token, VMCommonClass* cl) {
     }
   }
 
-  ArrayObject* res = ArrayObject::acons(vec.size(), MSCorlib::arrayObject);
+  ArrayObject* res = (ArrayObject*)MSCorlib::arrayObject->doNew(vec.size());
   for (uint32 i = 0; i < vec.size(); ++i)
     res->elements[i] = vec[i];
   
