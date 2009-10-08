@@ -123,6 +123,7 @@ clean-local::
 endif
 endif
 
+ifeq ($(WITH_LLVM_GCC), 1)
 ifdef RUN_ANT
 ifdef ANT
 
@@ -137,4 +138,5 @@ all::
 endif
 clean-local::
 	$(Verb) $(RM) -rf classes $(JARNAME).jar $(JARNAME).bc $(JARNAME)-optimized.bc
+endif
 endif
