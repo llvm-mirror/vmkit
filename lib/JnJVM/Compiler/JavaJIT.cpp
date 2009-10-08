@@ -387,16 +387,16 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     ResultObject = new AllocaInst(module->JavaObjectType, "",
                                   func->begin()->begin());
     Value* GCArgs[2] = { 
-      new BitCastInst(ResultObject, module->ptrPtrType, "", ResultObject),
+      new BitCastInst(ResultObject, module->ptrPtrType, "", currentBlock),
       module->constantPtrNull
     };
       
     if (TheCompiler->useCooperativeGC()) {
       CallInst::Create(module->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
-                       ResultObject);
+                       currentBlock);
     }
     new StoreInst(module->JavaObjectNullConstant, ResultObject, "",
-                  ResultObject);
+                  currentBlock);
   }
   
   Value* nativeFunc = TheCompiler->getNativeFunction(compilingMethod,
