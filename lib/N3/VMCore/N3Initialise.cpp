@@ -189,6 +189,7 @@ static void initialiseVT() {
 	{
 		UTF8 fake(0);																				
 		UTF8::VT = ((VirtualTable**)(void*)(&fake))[0];	
+		((void**)UTF8::VT)[0] = 0;
 	}
 
   INIT(VMCond);
