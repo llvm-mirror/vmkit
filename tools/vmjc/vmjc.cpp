@@ -297,9 +297,8 @@ int main(int argc, char **argv) {
     }
   
     std::string ErrorInfo;
-    std::auto_ptr<raw_ostream> Out 
-    (new raw_fd_ostream(OutputFilename.c_str(), ErrorInfo,
-                        raw_fd_ostream::F_Binary));
+    raw_ostream* Out 
+    (new raw_fd_ostream(OutputFilename.c_str(), true, Force, ErrorInfo));
     if (!ErrorInfo.empty()) {
       errs() << ErrorInfo << '\n';
       return 1;
@@ -312,7 +311,7 @@ int main(int argc, char **argv) {
       sys::RemoveFileOnSignal(sys::Path(OutputFilename));
 
     if (!DisableOutput)
-      if (Force || !CheckBitcodeOutputToConsole(*Out, true))
+      if (Force || !CheckBitcodeOutputToConsole(Out, true))
         WriteBitcodeToFile(Comp->getLLVMModule(), *Out);
 
     return 0;
