@@ -8,6 +8,8 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
+EXTRA_DIST = MSCorlib.inc
+
 include $(LEVEL)/Makefile.config
 
 ifeq ($(WITH_LLVM_GCC), 1)
