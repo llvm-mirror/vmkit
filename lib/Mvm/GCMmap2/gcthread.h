@@ -53,7 +53,11 @@ public:
     _nb_collected = 0;
     current_collector = 0;
     base = 0;
+#ifdef WITH_LLVM_GCC
+    cooperative = true;
+#else
     cooperative = false;
+#endif
   }
   
   inline unsigned int get_nb_threads() {
