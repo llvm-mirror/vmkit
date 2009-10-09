@@ -1324,7 +1324,6 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-llvmsrc          Location of LLVM Source Code
   --with-llvmobj          Location of LLVM Object Code
-  --with-llvmgcc          Compile with llvm-gcc
   --with-thread=something Thread type ('common' or 'no')
   --with-finalizer        Compile with finalizer (default yes)
   --with-gc=something     GC type ('single-mmap' 'multi-mmap' or 'boehm')
@@ -2090,19 +2089,7 @@ echo "${ECHO_T}$vmkit_cv_os_type" >&6; }
 
 
 
-
-# Check whether --with-llvmgcc was given.
-if test "${with_llvmgcc+set}" = set; then
-  withval=$with_llvmgcc; withllvm=yes
-else
-  withllvm=no
-fi
-
-
-if test "x$withllvm" = "xyes";  then
-  WITH_LLVM_GCC=1
-  LLVM_FLAGS=-DWITH_LLVM_GCC
-fi
+WITH_LLVM_GCC=0
 
 
 
