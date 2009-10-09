@@ -149,17 +149,7 @@ dnl=== SECTION 3: Command line arguments for the configure script.
 dnl===
 dnl===-----------------------------------------------------------------------===
 
-AC_ARG_WITH(llvmgcc,
-       [AS_HELP_STRING(--with-llvmgcc,
-           [Compile with llvm-gcc])],
-       [[withllvm=yes]],
-       [[withllvm=no]],
-)
-
-if test "x$withllvm" = "xyes";  then
-  WITH_LLVM_GCC=1
-  LLVM_FLAGS=-DWITH_LLVM_GCC
-fi
+WITH_LLVM_GCC=0
 
 AC_SUBST([WITH_LLVM_GCC])
 AC_SUBST([LLVM_FLAGS])
