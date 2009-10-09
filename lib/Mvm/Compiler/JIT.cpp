@@ -26,7 +26,6 @@
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include "llvm/Support/CommandLine.h"
 #include <llvm/Support/Debug.h>
-#include <llvm/Support/IRReader.h>
 #include <llvm/Support/MutexGuard.h>
 #include "llvm/Support/SourceMgr.h"
 #include <llvm/Target/TargetData.h>
@@ -62,7 +61,7 @@ const char* MvmModule::getHostTriple() {
 
 void MvmModule::loadBytecodeFile(const std::string& str) {
   SMDiagnostic Err;
-  Module* M = ParseIRFile(str, Err, getGlobalContext());
+  Module* M = ParseAssemblyFile(str, Err, getGlobalContext());
   if (M) {
     M->setTargetTriple(getHostTriple());
     Linker::LinkModules(globalModule, M, 0);
