@@ -18,6 +18,8 @@
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
+#include "MutatorThread.h"
+
 #include "JavaObject.h"
 #include "JNIReferences.h"
 
@@ -73,7 +75,7 @@ class LockObj;
 /// It maintains thread-specific information such as its state, the current
 /// exception if there is one, the layout of the stack, etc.
 ///
-class JavaThread : public mvm::Thread {
+class JavaThread : public mvm::MutatorThread {
 
 
 public:
