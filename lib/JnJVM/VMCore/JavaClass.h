@@ -19,7 +19,7 @@
 #include "mvm/Threads/Locks.h"
 
 #include "JavaAccess.h"
-#include "JavaArray.h"
+#include "JavaObject.h"
 #include "JnjvmClassLoader.h"
 #include "JnjvmConfig.h"
 
