@@ -71,15 +71,12 @@ public:
 };
 
 
-class CLIJit : public mvm::Object {
+class CLIJit {
 public:
-  
-  static VirtualTable* VT; 
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("CLIJit");
   }
   virtual void TRACER;
-  
   
   static const char* OpcodeNames[0xE1];
   static const char* OpcodeNamesFE[0x23];

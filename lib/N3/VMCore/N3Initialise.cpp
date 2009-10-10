@@ -190,7 +190,6 @@ static void initialiseVT() {
   INIT(VMObject);
   INIT(ThreadSystem);
   INIT(CLIString);
-  INIT(CLIJit);
   INIT(CacheNode);
   INIT(Enveloppe);
   INIT(Opinfo);

@@ -45,7 +45,6 @@ using namespace n3;
   INIT(CacheNode);
   INIT(Enveloppe);
   INIT(Opinfo);
-  INIT(CLIJit);
   INIT(Exception);
   
 #undef INIT

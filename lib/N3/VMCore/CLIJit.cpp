@@ -456,7 +456,7 @@ Instruction* CLIJit::lowerMathOps(VMMethod* meth,
 Instruction* CLIJit::invokeInline(VMMethod* meth, 
                                   std::vector<Value*>& args, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   
-  CLIJit* jit = gc_new(CLIJit)();
+  CLIJit* jit = new CLIJit();
   jit->module = meth->classDef->vm->module;
   jit->compilingClass = meth->classDef; 
   jit->compilingMethod = meth;
@@ -467,7 +467,8 @@ Instruction* CLIJit::invokeInline(VMMethod* meth,
   Instruction* ret = jit->inlineCompile(llvmFunction, currentBlock, 
                                         currentExceptionBlock, args, dynamic_cast<VMGenericClass*>(jit->compilingClass), genMethod);
   inlineMethods[meth] = false;
-  
+
+	delete jit;
   return ret;
 }
 
@@ -1446,7 +1447,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
 
 
 Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
-  CLIJit* jit = gc_new(CLIJit)();
+  CLIJit* jit = new CLIJit();
   jit->compilingClass = cl; 
   jit->compilingMethod = meth;
   jit->module = cl->vm->module;
@@ -1460,7 +1461,8 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   } else {
     func = jit->compileFatOrTiny(dynamic_cast<VMGenericClass*>(cl), dynamic_cast<VMGenericMethod*>(meth));
   }
-  
+
+	delete jit;
   return func;
 }
 
