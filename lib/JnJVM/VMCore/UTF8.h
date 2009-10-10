@@ -4,6 +4,7 @@
 #include "types.h"
 
 #include "mvm/UTF8.h"
+#include "mvm/PrintBuffer.h"
 
 namespace jnjvm {
 	using mvm::UTF8;
@@ -12,10 +13,10 @@ namespace jnjvm {
 /// UTF8Buffer - Helper class to create char* buffers suitable for
 /// printf.
 ///
-class UTF8Buffer : public mvm::UTF8Buffer {
+class UTF8Buffer : public mvm::PrintBuffer {
 public:
   /// UTF8Buffer - Create a buffer with the following UTF8.
-  UTF8Buffer(const UTF8* val) : mvm::UTF8Buffer(val) {}
+  UTF8Buffer(const UTF8* val) : mvm::PrintBuffer(val) {}
 
   /// toCompileName - Change the utf8 following JNI conventions.
   ///

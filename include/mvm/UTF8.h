@@ -134,48 +134,6 @@ public:
 	}
 };
 
-/// UTF8Buffer - Helper class to create char* buffers suitable for
-/// printf.
-///
-class UTF8Buffer {
-
-  /// buffer - The buffer that holds a string representation.
-  ///
-  char* buffer;
-public:
-
-  /// UTF8Buffer - Create a buffer with the following UTF8.
-  ///
-  UTF8Buffer(const UTF8* val) {
-    buffer = new char[val->size + 1];
-    for (sint32 i = 0; i < val->size; ++i)
-      buffer[i] = val->elements[i];
-    buffer[val->size] = 0;
-  }
-
-  /// ~UTF8Buffer - Delete the buffer, as well as all dynamically
-  /// allocated memory.
-  ///
-  ~UTF8Buffer() {
-    delete[] buffer;
-  }
-
-  /// replaceWith - replace the content of the buffer and free the old buffer
-  ///
-	void replaceWith(char *buffer) {
-		delete[] this->buffer;
-		this->buffer = buffer;
-	}
-
-
-  /// cString - Return a C string representation of the buffer, suitable
-  /// for printf.
-  ///
-  const char* cString() {
-    return buffer;
-  }
-};
-
 } // end namespace mvm
 
 #endif

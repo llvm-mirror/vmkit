@@ -152,6 +152,14 @@ public:
 		obj->print(this);
 		return this;
 	}
+
+
+  /// replaceWith - replace the content of the buffer and free the old buffer
+  ///
+	void replaceWith(char *buffer) {
+		delete[] this->contents;
+		this->contents = buffer;
+	}
 };
 
 } // end namespace mvm
