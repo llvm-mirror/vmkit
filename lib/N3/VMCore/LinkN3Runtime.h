@@ -11,10 +11,13 @@
 #ifndef JNJVM_LINK_N3_RUNTIME_H
 #define JNJVM_LINK_N3_RUNTIME_H
 
+namespace mvm {
+	class UTF8;
+}
 
 namespace n3 {
+	using mvm::UTF8;
   class CacheNode;
-  class UTF8;
   class VMClass;
   class VMClassArray;
   class VMCommonClass;

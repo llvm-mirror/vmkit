@@ -26,7 +26,15 @@ namespace llvm {
   class GenericValue;
 }
 
+namespace mvm {
+	class UTF8;
+	class UTF8Map;
+}
+
 namespace n3 {
+
+using mvm::UTF8;
+using mvm::UTF8Map;
 
 class ArrayUInt16;
 class ArrayUInt8;
@@ -40,7 +48,6 @@ class N3;
 class Param;
 class Property;
 class Reader;
-class UTF8;
 class VMClass;
 class VMGenericClass;
 class VMClassArray;

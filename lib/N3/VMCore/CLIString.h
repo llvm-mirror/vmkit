@@ -19,7 +19,6 @@
 
 namespace n3 {
 
-class UTF8;
 class N3;
 class ArrayUInt16;
 

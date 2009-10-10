@@ -373,7 +373,7 @@ VMGenericClass* Assembly::constructGenericClass(const UTF8* name,
     buf[i++] = ',';
   }
   buf[i] = '>';
-  const UTF8* genName = UTF8::readerConstruct(VMThread::get()->vm, buf, size);
+  const UTF8* genName = VMThread::get()->vm->bufToUTF8(buf, size);
   //printf("%s\n", mvm::PrintBuffer(genName).cString());
   
   ClassNameCmp CC(genName, nameSpace);
@@ -751,7 +751,7 @@ const UTF8* Assembly::readUTF8(N3* vm, uint32 len,
     ++n;
   }
 
-  const UTF8* utf8 = UTF8::readerConstruct(vm, buf, n);
+  const UTF8* utf8 = vm->bufToUTF8(buf, n);
 
   return utf8;
 }

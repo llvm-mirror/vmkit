@@ -172,7 +172,8 @@ void VMCommonClass::initialise(N3* vm, bool isArray) {
 }
 
 const UTF8* VMClassArray::constructArrayName(const UTF8* name, uint32 dims) {
-  const char* asciiz = utf8ToAsciiz(name);
+	mvm::PrintBuffer _asciiz(name);
+  const char* asciiz = _asciiz.cString();
   char* res = (char*)alloca(strlen(asciiz) + (dims * 2) + 1);
   sprintf(res, asciiz);
 
@@ -184,7 +185,8 @@ const UTF8* VMClassArray::constructArrayName(const UTF8* name, uint32 dims) {
 }
 
 const UTF8* VMClassPointer::constructPointerName(const UTF8* name, uint32 dims) {
-  const char* asciiz = utf8ToAsciiz(name);
+	mvm::PrintBuffer _asciiz(name);
+  const char* asciiz = _asciiz.cString();
   char* res = (char*)alloca(strlen(asciiz) + (dims * 2) + 1);
   sprintf(res, asciiz);
 

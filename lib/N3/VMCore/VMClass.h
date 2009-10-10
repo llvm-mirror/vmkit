@@ -23,14 +23,18 @@
 
 #include <cstdarg>
 
+namespace mvm {
+	class UTF8;
+}
+
 namespace n3 {
+using mvm::UTF8;
 
 class ArraySInt32;
 class Assembly;
 class Enveloppe;
 class Param;
 class Property;
-class UTF8;
 class VMClass;
 class VMField;
 class VMMethod;

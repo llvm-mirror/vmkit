@@ -210,7 +210,7 @@ N3* N3::allocateBootstrap() {
   mvm::BumpPtrAllocator *a = new mvm::BumpPtrAllocator();
   N3 *vm= new(*a, "VM") N3(*a, "bootstrapN3");
   
-  vm->hashUTF8 =         new(vm->allocator, "UTF8Map")     UTF8Map();
+  vm->hashUTF8 =         new(vm->allocator, "UTF8Map")     UTF8Map(vm->allocator);
 
   CLIJit::initialiseBootstrapVM(vm);
   
@@ -236,7 +236,8 @@ N3* N3::allocate(const char* name, N3* parent) {
 }
 
 ArrayUInt8* N3::openAssembly(const UTF8* name, const char* ext) {
-  const char* asciiz = utf8ToAsciiz(name);
+	mvm::PrintBuffer _asciiz = mvm::PrintBuffer(name);
+  const char* asciiz = _asciiz.cString();
   uint32 alen = strlen(asciiz);
 
   ArrayUInt8* res = 0;

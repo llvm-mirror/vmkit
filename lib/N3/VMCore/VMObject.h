@@ -27,7 +27,6 @@ class VMCommonClass;
 class VMField;
 class VMObject;
 class VMThread;
-class UTF8;
 
 class VMCond : public mvm::Object {
 public:

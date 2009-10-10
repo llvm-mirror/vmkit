@@ -22,7 +22,6 @@ namespace n3 {
 
 class Assembly;
 class Enveloppe;
-class UTF8;
 class VMClass;
 
 class CacheNode : public mvm::Object {

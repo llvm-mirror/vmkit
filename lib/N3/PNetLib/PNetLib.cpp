@@ -694,7 +694,8 @@ extern "C" VMObject* System_Reflection_ClrHelpers_GetSemantics(mvm::Object* item
   if (item->getVirtualTable() == Property::VT) {
     Property* prop = (Property*)item;
     if (attributes == METHOD_SEMANTIC_ATTRIBUTES_GETTER) {
-      const char* asciiz = utf8ToAsciiz(prop->name);
+			mvm::PrintBuffer _asciiz(prop->name);
+      const char* asciiz = _asciiz.cString();
       char* buf = (char*)alloca(strlen(asciiz) + 5);
       sprintf(buf, "get_%s", asciiz);
       N3* vm = VMThread::get()->vm;

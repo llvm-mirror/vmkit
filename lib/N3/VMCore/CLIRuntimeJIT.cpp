@@ -138,9 +138,12 @@ extern "C" CacheNode* n3VirtualLookup(CacheNode* cache, VMObject *obj) {
                                                  orig->parameters,
                                                  false, true);
     if (dmeth == 0) {
-      const char* methAsciiz = utf8ToAsciiz(orig->name);
-      const char* nameAsciiz = utf8ToAsciiz(orig->classDef->name);
-      const char* nameSpaceAsciiz = utf8ToAsciiz(orig->classDef->nameSpace);
+			mvm::PrintBuffer _methAsciiz(orig->name);
+      mvm::PrintBuffer _nameAsciiz(orig->classDef->name);
+      mvm::PrintBuffer _nameSpaceAsciiz(orig->classDef->nameSpace);
+      const char* methAsciiz = _methAsciiz.cString();
+      const char* nameAsciiz = _nameAsciiz.cString();
+      const char* nameSpaceAsciiz = _nameSpaceAsciiz.cString();
 
       char *buf = (char*)alloca(3 + strlen(methAsciiz) + 
                                     strlen(nameAsciiz) + 

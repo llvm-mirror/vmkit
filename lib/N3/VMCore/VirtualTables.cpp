@@ -36,7 +36,6 @@ using namespace n3;
   INIT(ArrayFloat);
   INIT(ArrayDouble);
   INIT(ArrayObject);
-  INIT(UTF8);
   INIT(VMCond);
   INIT(LockObj);
   INIT(VMObject);
@@ -124,8 +123,6 @@ ARRAYTRACER(ArrayDouble)
 
 
 void VMCommonClass::TRACER {
-  name->MARK_AND_TRACE;
-  nameSpace->MARK_AND_TRACE;
   super->CALL_TRACER;
   CALL_TRACER_VECTOR(VMClass*, interfaces, std::allocator);
   //lockVar->MARK_AND_TRACE;
@@ -174,7 +171,6 @@ void VMMethod::TRACER {
   classDef->CALL_TRACER;
   CALL_TRACER_VECTOR(Param*, params, gc_allocator);
   TRACE_VECTOR(Enveloppe*, caches, gc_allocator);
-  name->MARK_AND_TRACE;
 }
 
 void VMGenericMethod::TRACER {
@@ -185,7 +181,6 @@ void VMGenericMethod::TRACER {
 void VMField::TRACER {
   signature->CALL_TRACER;
   classDef->CALL_TRACER;
-  name->MARK_AND_TRACE;
 }
 
 void VMCond::TRACER {
@@ -215,13 +210,11 @@ void VMThread::TRACER {
 
 void Param::TRACER {
   method->CALL_TRACER;
-  name->MARK_AND_TRACE;
 }
 
 void Property::TRACER {
   type->CALL_TRACER;
   //signature->MARK_AND_TRACE;
-  name->MARK_AND_TRACE;
   delegatee->MARK_AND_TRACE;
 }
 
@@ -232,7 +225,6 @@ void Assembly::TRACER {
   loadedTokenFields->CALL_TRACER;
   //lockVar->MARK_AND_TRACE;
   //condVar->MARK_AND_TRACE;
-  name->MARK_AND_TRACE;
   bytes->MARK_AND_TRACE;
   textSection->CALL_TRACER;
   rsrcSection->CALL_TRACER;
@@ -245,7 +237,6 @@ void Assembly::TRACER {
 
 void N3::TRACER {
   threadSystem->MARK_AND_TRACE;
-  hashUTF8->CALL_TRACER;
   functions->CALL_TRACER;
   if (bootstrapThread) {
     bootstrapThread->CALL_TRACER;
@@ -253,7 +244,6 @@ void N3::TRACER {
          th != bootstrapThread; th = (VMThread*)th->next())
       th->CALL_TRACER;
   }
-  hashUTF8->CALL_TRACER;
   hashStr->CALL_TRACER;
   loadedAssemblies->CALL_TRACER;
 }
@@ -268,7 +258,6 @@ void Table::TRACER {
 }
 
 void Header::TRACER {
-  versionName->MARK_AND_TRACE;
   tildStream->CALL_TRACER;
   stringStream->CALL_TRACER;
   usStream->CALL_TRACER;

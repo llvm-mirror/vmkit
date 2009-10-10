@@ -36,7 +36,6 @@ class VMField;
 class VMObject;
 class VMMethod;
 class VMField;
-class UTF8;
 
 template<class Key, class Container, class Compare, class Upcall>
 class LockedMap : public mvm::PermanentObject {

@@ -308,7 +308,7 @@ static VMCommonClass* METHOD_ElementTypeMvar(uint32 op, Assembly* ass,
     cl->nameSpace = ass->name;
     char *tmp = (char *) alloca(100);
     snprintf(tmp, 100, "!!%d", number);
-    cl->name = UTF8::asciizConstruct(VMThread::get()->vm, tmp);
+    cl->name = VMThread::get()->vm->asciizToUTF8(tmp);
     return cl;
   } else {
     return currGenericMethod->genericParams[number];

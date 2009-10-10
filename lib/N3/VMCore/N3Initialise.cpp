@@ -185,15 +185,6 @@ static void initialiseVT() {
   INIT(ArrayFloat);
   INIT(ArrayDouble);
   INIT(ArrayObject);
-
-	{
-		UTF8 fake(0);																				
-		UTF8::VT = ((VirtualTable**)(void*)(&fake))[0];	
-#if !defined(WITHOUT_FINALIZER)
-		((void**)UTF8::VT)[0] = 0;
-#endif
-	}
-
   INIT(VMCond);
   INIT(LockObj);
   INIT(VMObject);
@@ -236,9 +227,6 @@ static void initialiseStatics() {
   const UTF8* utf8OfChar = vm->asciizToUTF8("Char");
   
   MSCorlib::arrayChar = ass->constructArray(utf8OfChar, System, 1);
-  ((UTF8*)System)->classOf = MSCorlib::arrayChar;
-  ((UTF8*)utf8OfChar)->classOf = MSCorlib::arrayChar;
-  ((UTF8*)mscorlib)->classOf = MSCorlib::arrayChar;
 
 #define INIT(var, nameSpace, name, type, prim) {\
   var = (VMClass*)vm->coreAssembly->loadTypeFromName( \

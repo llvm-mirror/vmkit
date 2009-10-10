@@ -25,8 +25,14 @@
 
 #include "types.h"
 
-namespace n3 {
+namespace mvm {
+	class UTF8;
+	class UTF8Map;
+}
 
+namespace n3 {
+using mvm::UTF8;
+using mvm::UTF8Map;
 class ArrayObject;
 class ArrayUInt8;
 class Assembly;
@@ -34,8 +40,6 @@ class AssemblyMap;
 class N3;
 class N3ModuleProvider;
 class StringMap;
-class UTF8;
-class UTF8Map;
 class VMClass;
 class VMClassArray;
 class VMCommonClass;
@@ -43,8 +47,6 @@ class VMField;
 class VMMethod;
 class FunctionMap;
 class N3ModuleProvider;
-class UTF8;
-class UTF8Map;
 class VMMethod;
 class VMObject;
 class VMThread;

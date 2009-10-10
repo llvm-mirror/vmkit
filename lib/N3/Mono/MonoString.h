@@ -19,8 +19,6 @@
 
 namespace n3 {
 
-class UTF8;
-
 class MonoString : public CLIString {
 public:
   
