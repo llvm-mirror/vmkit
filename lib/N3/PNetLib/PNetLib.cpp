@@ -522,8 +522,11 @@ extern "C" sint32 System_String_FindInRange(PNetString* obj, sint32 srcFirst,
 
 extern "C" VMObject* System_Reflection_Assembly_LoadFromName(PNetString* str, sint32 & error, VMObject* parent) {
   N3* vm = (N3*)(VMThread::get()->vm);
-  Assembly* ass = vm->loadAssembly(vm->arrayToUTF8(str->value), "dll");
-  if (!ass) vm->error("unfound assembly %s\n", mvm::PrintBuffer(str->value).cString());
+  Assembly* ass = vm->constructAssembly(vm->arrayToUTF8(str->value));
+
+	if(!ass->resolve(1, "dll"))
+		vm->error("unfound assembly %s\n", mvm::PrintBuffer(str->value).cString());
+
   error = 0;
   return ass->getAssemblyDelegatee();
 }

@@ -136,6 +136,17 @@ typedef void (*maskVector_t)(uint32 index,
 typedef VMCommonClass* (*signatureVector_t)(uint32 op, Assembly* ass,
                                             uint32& offset, VMGenericClass* genClass, VMGenericMethod* genMethod);
 
+// class ByteCode : mvm::PermanentObject {
+// public:
+// 	ByteCode(mvm::BumpPtrAllocator &allocator, int size) {
+// 		this->size = size;
+// 		this->elements = mvm::BumpPtrAllocator::operator new(0, "ByteCode", size * sizeof(uint8));
+// 	}
+
+// 	uint32 size;
+// 	uint8  *elements;
+// };
+
 class Assembly : public mvm::PermanentObject {
 public:
   virtual void print(mvm::PrintBuffer* buf) const;
@@ -160,26 +171,27 @@ public:
   VMMethod* lookupMethodFromToken(uint32 token);
   VMField* lookupFieldFromToken(uint32 token);
   
+  VMObject*     getAssemblyDelegatee();
+
   ClassNameMap* loadedNameClasses;
   ClassTokenMap* loadedTokenClasses;
   MethodTokenMap* loadedTokenMethods;
   FieldTokenMap* loadedTokenFields;
   
-  mvm::Lock* lockVar;
-  mvm::Cond* condVar;
-  const UTF8* name;
-  ArrayUInt8* bytes;
-  Section* textSection;
-  Section* rsrcSection;
-  Section* relocSection;
-  Header* CLIHeader;
-  N3* vm;
-  VMObject* delegatee;
-  Assembly** assemblyRefs;
-  VMObject* getAssemblyDelegatee();
+  N3*           vm;
+  mvm::Lock*    lockVar;
+  mvm::Cond*    condVar;
+  const UTF8*   name;
+  ArrayUInt8*   bytes;
+  Section*      textSection;
+  Section*      rsrcSection;
+  Section*      relocSection;
+  Header*       CLIHeader;
+  VMObject*     delegatee;
+  Assembly**    assemblyRefs;
 
   uint32 CLIHeaderLocation;
-  bool isRead;
+  volatile bool isRead;
   uint32 cb;
   uint32 major;
   uint32 minor;
@@ -192,7 +204,10 @@ public:
 
 	mvm::BumpPtrAllocator &allocator;
 
-	Assembly(mvm::BumpPtrAllocator &Alloc, const UTF8* name);
+	Assembly(mvm::BumpPtrAllocator &Alloc, N3 *vm, const UTF8* name);
+
+	int open(const char *ext);
+  int resolve(int doResolve, const char *ext);
 
   static const UTF8* readUTF8(N3* vm, uint32 len, Reader* reader);
   static const UTF8* readUTF8(N3* vm, uint32 len, ArrayUInt8* bytes,
@@ -201,7 +216,6 @@ public:
   static const ArrayUInt16* readUTF16(N3* vm, uint32 len, 
 																			ArrayUInt8* bytes, uint32& offset);
   const UTF8*        readString(N3* vm, uint32 offset);
-  void read();
   void readTables(Reader* reader);
 
   static maskVector_t maskVector[64];

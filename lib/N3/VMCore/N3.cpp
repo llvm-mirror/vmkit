@@ -190,7 +190,7 @@ void N3::print(mvm::PrintBuffer* buf) const {
 
 static Assembly* assemblyDup(const UTF8*& name, N3* vm) {
 	mvm::BumpPtrAllocator *a = new mvm::BumpPtrAllocator();
-  return new(*a, "Assembly") Assembly(*a, name);
+  return new(*a, "Assembly") Assembly(*a, vm, name);
 }
 
 Assembly* N3::constructAssembly(const UTF8* name) {
@@ -233,32 +233,6 @@ N3* N3::allocate(const char* name, N3* parent) {
   CLIJit::initialiseAppDomain(vm);
   
   return vm; 
-}
-
-ArrayUInt8* N3::openAssembly(const UTF8* name, const char* ext) {
-	mvm::PrintBuffer _asciiz = mvm::PrintBuffer(name);
-  const char* asciiz = _asciiz.cString();
-  uint32 alen = strlen(asciiz);
-
-  ArrayUInt8* res = 0;
-  uint32 idx = 0;
-
-  while ((res == 0) && (idx < assemblyPath.size())) {
-    const char* cur = assemblyPath[idx];
-    uint32 strLen = strlen(cur);
-    char* buf = (char*)alloca(strLen + alen + 16);
-
-    if (ext != 0) {
-      sprintf(buf, "%s%s.%s", cur, asciiz, ext);
-    } else {
-      sprintf(buf, "%s%s", cur, asciiz);
-    }
-    
-    res = Reader::openFile(buf);
-    ++idx;
-  }
-
-  return res;
 }
 
 void ClArgumentsInfo::nyi() {
@@ -305,28 +279,14 @@ void N3::waitForExit() {
   return;
 }
 
-Assembly* N3::loadAssembly(const UTF8* name, const char* ext) {
-  Assembly* ass = lookupAssembly(name);
-  if (ass == 0 || !ass->isRead) {
-    ArrayUInt8* bytes = openAssembly(name, ext);
-    if (bytes != 0) {
-      if (ass == 0) ass = constructAssembly(name);
-      ass->bytes = bytes;
-      ass->vm = this;
-      ass->read();
-      ass->isRead = true;
-    }
-  }
-  return ass;
-}
-
 void N3::executeAssembly(const char* _name, ArrayObject* args) {
   const UTF8* name = asciizToUTF8(_name);
-  Assembly* assembly = loadAssembly(name, 0);
-  if (assembly == 0) {
+  Assembly* assembly = constructAssembly(name);
+
+	if(!assembly->resolve(1, 0))
     error("Can not find assembly %s", _name);
-  } else {
-    uint32 entryPoint = assembly->entryPoint;
+	else {
+		uint32 entryPoint = assembly->entryPoint;
     uint32 table = entryPoint >> 24;
     if (table != CONSTANT_MethodDef) {
       error("Entry point does not point to a method");

@@ -116,27 +116,24 @@ public:
   virtual void waitForExit();
 
 	// non virtual methods
-  ArrayUInt8*   openAssembly(const UTF8* name, const char* extension);
-  Assembly*     loadAssembly(const UTF8* name, const char* extension);
   void          executeAssembly(const char* name, ArrayObject* args);
   void          runMain(int argc, char** argv);
 
   VMMethod*     lookupFunction(llvm::Function* F);
 
   llvm::Module* getLLVMModule() { return LLVMModule; }  
-  
 
-  Assembly*     constructAssembly(const UTF8* name);
-  Assembly*     lookupAssembly(const UTF8* name);
+  Assembly*        constructAssembly(const UTF8* name);
+  Assembly*        lookupAssembly(const UTF8* name);
 
 	// usefull string, uint16 and utf8 functions
 
-	ArrayUInt16*     asciizToArray(const char *asciiz);          // done
-	ArrayUInt16*     bufToArray(const uint16 *buf, uint32 len);  // done
-	ArrayUInt16*     UTF8ToArray(const UTF8 *utf8);              // done
-	const UTF8*      asciizToUTF8(const char *asciiz);           // done
-	const UTF8*      bufToUTF8(const uint16 *buf, uint32 len);   // done
-	const UTF8*      arrayToUTF8(const ArrayUInt16 *array);      // done
+	ArrayUInt16*     asciizToArray(const char *asciiz);
+	ArrayUInt16*     bufToArray(const uint16 *buf, uint32 len);
+	ArrayUInt16*     UTF8ToArray(const UTF8 *utf8);
+	const UTF8*      asciizToUTF8(const char *asciiz);
+	const UTF8*      bufToUTF8(const uint16 *buf, uint32 len);
+	const UTF8*      arrayToUTF8(const ArrayUInt16 *array);
 	CLIString*       arrayToString(const ArrayUInt16 *array);
 
   /*

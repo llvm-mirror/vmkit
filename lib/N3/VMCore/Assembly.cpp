@@ -463,7 +463,8 @@ VMMethod* Assembly::constructMethod(VMClass* cl, const UTF8* name,
   return meth;
 }
 
-Assembly::Assembly(mvm::BumpPtrAllocator &allocator, const UTF8 *name) : allocator(allocator) {
+Assembly::Assembly(mvm::BumpPtrAllocator &allocator, N3 *vm, const UTF8 *name) : allocator(allocator) {
+	this->lockVar = new mvm::LockRecursive();
   this->loadedNameClasses =  new(allocator, "ClassNameMap")   ClassNameMap();
   this->loadedTokenClasses = new(allocator, "ClassTokenMap")  ClassTokenMap();
   this->loadedTokenMethods = new(allocator, "MethodTokenMap") MethodTokenMap();
@@ -471,6 +472,7 @@ Assembly::Assembly(mvm::BumpPtrAllocator &allocator, const UTF8 *name) : allocat
 
   this->assemblyRefs = 0;
   this->isRead = false;
+	this->vm = vm;
   this->name = name;
 }
 
@@ -823,45 +825,85 @@ Reader *Assembly::newReader(ArrayUInt8* array, uint32 start, uint32 end) {
 	return new(allocator, "Reader") Reader(array, start, end); 
 }
 
-void Assembly::read() {
-  Reader* reader = newReader(bytes);
-  PRINT_DEBUG(DEBUG_LOAD, 1, LIGHT_GREEN, "Reading %s::%s", mvm::PrintBuffer(vm).cString(),
-              mvm::PrintBuffer(this).cString());
+int Assembly::resolve(int doResolve, const char *ext) {
+	if(!bytes)
+		open(ext);
 
-  textSection =  new(allocator, "Section") Section();
-  rsrcSection =  new(allocator, "Section") Section();
-  relocSection = new(allocator, "Section") Section();
+	if(bytes && doResolve && !isRead) {
+		lockVar->lock();
+		if(!isRead) {
+			Reader* reader = newReader(bytes);
+			PRINT_DEBUG(DEBUG_LOAD, 1, LIGHT_GREEN, "Reading %s::%s", mvm::PrintBuffer(vm).cString(),
+									mvm::PrintBuffer(this).cString());
 
-  reader->seek(TEXT_SECTION_HEADER, Reader::SeekSet);
-  textSection->read(reader, vm);
-  rsrcSection->read(reader, vm);
-  relocSection->read(reader, vm);
+			textSection =  new(allocator, "Section") Section();
+			rsrcSection =  new(allocator, "Section") Section();
+			relocSection = new(allocator, "Section") Section();
 
-  reader->seek(CLI_HEADER, Reader::SeekSet);
-  CLIHeaderLocation = reader->readU4();
-  reader->seek(textSection->rawAddress + 
-                  (CLIHeaderLocation - textSection->virtualAddress),
-               Reader::SeekSet);
+			reader->seek(TEXT_SECTION_HEADER, Reader::SeekSet);
+			textSection->read(reader, vm);
+			rsrcSection->read(reader, vm);
+			relocSection->read(reader, vm);
 
-  cb          = reader->readU4();
-  major       = reader->readU2();
-  minor       = reader->readU2();
-  mdRva       = reader->readU4();
-  mdSize      = reader->readU4();
-  flags       = reader->readU4();
-  entryPoint  = reader->readU4();
-  resRva      = reader->readU4();
-  resSize     = reader->readU4();
+			reader->seek(CLI_HEADER, Reader::SeekSet);
+			CLIHeaderLocation = reader->readU4();
+			reader->seek(textSection->rawAddress + 
+									 (CLIHeaderLocation - textSection->virtualAddress),
+									 Reader::SeekSet);
+
+			cb          = reader->readU4();
+			major       = reader->readU2();
+			minor       = reader->readU2();
+			mdRva       = reader->readU4();
+			mdSize      = reader->readU4();
+			flags       = reader->readU4();
+			entryPoint  = reader->readU4();
+			resRva      = reader->readU4();
+			resSize     = reader->readU4();
   
-  reader->seek(textSection->rawAddress + (mdRva - textSection->virtualAddress),
-               Reader::SeekSet);
+			reader->seek(textSection->rawAddress + (mdRva - textSection->virtualAddress),
+									 Reader::SeekSet);
 
-  CLIHeader = new (allocator, "Header") Header();
-  CLIHeader->read(allocator, reader, vm);
+			CLIHeader = new (allocator, "Header") Header();
+			CLIHeader->read(allocator, reader, vm);
 
-  reader->seek(CLIHeader->tildStream->realOffset, Reader::SeekSet);
+			reader->seek(CLIHeader->tildStream->realOffset, Reader::SeekSet);
 
-  readTables(reader);
+			readTables(reader);
+
+			isRead = 1;
+		}
+		lockVar->unlock();
+	}
+
+	return bytes ? (doResolve ? isRead : 1) : 0;
+}
+
+int Assembly::open(const char *ext) {
+	lockVar->lock();
+	mvm::PrintBuffer _asciiz = mvm::PrintBuffer(name);
+	const char* asciiz = _asciiz.cString();
+	uint32 alen = strlen(asciiz);
+
+	uint32 idx = 0;
+
+	while ((bytes == 0) && (idx < vm->assemblyPath.size())) {
+		const char* cur = vm->assemblyPath[idx];
+		uint32 strLen = strlen(cur);
+		char* buf = (char*)alloca(strLen + alen + 16);
+
+		if (ext != 0) {
+			sprintf(buf, "%s%s.%s", cur, asciiz, ext);
+		} else {
+			sprintf(buf, "%s%s", cur, asciiz);
+		}
+			
+		bytes = Reader::openFile(buf);
+		++idx;
+	}
+	lockVar->unlock();
+
+	return bytes ? 1 : 0;
 }
 
 uint32 Assembly::getTypeDefTokenFromMethod(uint32 token) {
@@ -963,8 +1005,11 @@ Assembly* Assembly::readAssemblyRef(N3* vm, uint32 index) {
     const UTF8* name = 
       readString(vm, stringOffset + assArray[CONSTANT_ASSEMBLY_REF_NAME]);
     
-    ref = vm->loadAssembly(name, "dll");
-    if (ref == 0) VMThread::get()->vm->error("implement me");
+    ref = vm->constructAssembly(name);
+
+    if(!ref->resolve(1, "dll"))
+			 VMThread::get()->vm->error("implement me");
+
     assemblyRefs[index - 1] = ref;
   }
   return ref;

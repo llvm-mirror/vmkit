@@ -211,18 +211,12 @@ static void initialiseStatics() {
   vm->assemblyPath.push_back("");
   vm->assemblyPath.push_back(MSCorlib::libsPath);
   
-  const UTF8* mscorlib = vm->asciizToUTF8("mscorlib");
-  Assembly* ass = vm->loadAssembly(mscorlib, "dll");
-  if (ass == 0)
+  Assembly* ass = vm->constructAssembly(vm->asciizToUTF8("mscorlib"));
+
+  if(!ass->resolve(1, "dll"))
     VMThread::get()->vm->error("can not load mscorlib.dll. Abort");
 
   vm->coreAssembly = ass;
-
-  // Array initialization
-  const UTF8* System = vm->asciizToUTF8("System");
-  const UTF8* utf8OfChar = vm->asciizToUTF8("Char");
-  
-  MSCorlib::arrayChar = ass->constructArray(utf8OfChar, System, 1);
 
 #define INIT(var, nameSpace, name, type, prim) {\
   var = (VMClass*)vm->coreAssembly->loadTypeFromName( \
@@ -258,46 +252,37 @@ static void initialiseStatics() {
   INIT(MSCorlib::pDelegate, "System", "Delegate", 0, false);
 
 #undef INIT
-  
 
-  MSCorlib::arrayChar->baseClass = MSCorlib::pChar;
-  VMClassArray::SuperArray = MSCorlib::pArray;
-  MSCorlib::arrayChar->super = MSCorlib::pArray;
+  VMClassArray::SuperArray       = MSCorlib::pArray;
 
   MSCorlib::loadStringClass(vm);
 
-  MSCorlib::arrayString = ass->constructArray(vm->asciizToUTF8("String"), System, 1);
-  MSCorlib::arrayString->baseClass = MSCorlib::pString;
-  
-  MSCorlib::arrayByte = ass->constructArray(vm->asciizToUTF8("Byte"), System, 1);
-  MSCorlib::arrayByte->baseClass = MSCorlib::pUInt8;
-  
-  MSCorlib::arrayObject = ass->constructArray(vm->asciizToUTF8("Object"), System, 1);
-  MSCorlib::arrayObject->baseClass = MSCorlib::pObject;
+  MSCorlib::arrayChar   = ass->constructArray(MSCorlib::pChar,   1);
+  MSCorlib::arrayString = ass->constructArray(MSCorlib::pString, 1);
+  MSCorlib::arrayByte   = ass->constructArray(MSCorlib::pUInt8,  1);
+  MSCorlib::arrayObject = ass->constructArray(MSCorlib::pObject, 1);
 
-  N3::clinitName = vm->asciizToUTF8(".cctor");
-  N3::ctorName = vm->asciizToUTF8(".ctor");
-  N3::invokeName = vm->asciizToUTF8("Invoke");
-  N3::math = vm->asciizToUTF8("Math");
-  N3::system = vm->asciizToUTF8("System");
-  N3::sqrt = vm->asciizToUTF8("Sqrt");
-  N3::sin = vm->asciizToUTF8("Sin");
-  N3::cos = vm->asciizToUTF8("Cos");
-  N3::exp = vm->asciizToUTF8("Exp");
-  N3::log = vm->asciizToUTF8("Log");
-  N3::floor = vm->asciizToUTF8("Floor");
-  N3::log10 = vm->asciizToUTF8("Log10");
-  N3::isNan = vm->asciizToUTF8("IsNaN");
-  N3::pow = vm->asciizToUTF8("Pow");
-  N3::floatName = vm->asciizToUTF8("Float");
-  N3::doubleName = vm->asciizToUTF8("Double");
-  N3::testInfinity = vm->asciizToUTF8("TestInfinity");
-  
+  N3::clinitName        = vm->asciizToUTF8(".cctor");
+  N3::ctorName          = vm->asciizToUTF8(".ctor");
+  N3::invokeName        = vm->asciizToUTF8("Invoke");
+  N3::math              = vm->asciizToUTF8("Math");
+  N3::system            = vm->asciizToUTF8("System");
+  N3::sqrt              = vm->asciizToUTF8("Sqrt");
+  N3::sin               = vm->asciizToUTF8("Sin");
+  N3::cos               = vm->asciizToUTF8("Cos");
+  N3::exp               = vm->asciizToUTF8("Exp");
+  N3::log               = vm->asciizToUTF8("Log");
+  N3::floor             = vm->asciizToUTF8("Floor");
+  N3::log10             = vm->asciizToUTF8("Log10");
+  N3::isNan             = vm->asciizToUTF8("IsNaN");
+  N3::pow               = vm->asciizToUTF8("Pow");
+  N3::floatName         = vm->asciizToUTF8("Float");
+  N3::doubleName        = vm->asciizToUTF8("Double");
+  N3::testInfinity      = vm->asciizToUTF8("TestInfinity");
 
 	MSCorlib::pArray->resolveType(1, 0, 0);
 
   MSCorlib::initialise(vm);
-   
 }
 
 
