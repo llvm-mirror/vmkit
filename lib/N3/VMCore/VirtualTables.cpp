@@ -39,7 +39,6 @@ using namespace n3;
   INIT(VMCond);
   INIT(LockObj);
   INIT(VMObject);
-  INIT(VMThread);
   INIT(ThreadSystem);
   INIT(CLIString);
   INIT(Property);

@@ -33,29 +33,24 @@ void VMThread::print(mvm::PrintBuffer* buf) const {
   vmThread->print(buf);
 }
 
+extern void AddStandardCompilePasses(llvm::FunctionPassManager*);
+
 VMThread::~VMThread() {
   delete perFunctionPasses;
 }
 
-VMThread::VMThread() {
-  perFunctionPasses = 0;
-}
-
-extern void AddStandardCompilePasses(llvm::FunctionPassManager*);
-
-VMThread* VMThread::allocate(VMObject* thread, N3* vm) {
-  VMThread* key = new VMThread();
-  key->vmThread = thread;
-  key->vm = vm;
-  key->lock = new mvm::LockNormal();
-  key->varcond = new mvm::Cond();
-  key->interruptFlag = 0;
-  key->state = StateRunning;
-  key->pendingException = 0;
-  key->perFunctionPasses = new llvm::FunctionPassManager(vm->TheModuleProvider);
-  key->perFunctionPasses->add(new llvm::TargetData(vm->getLLVMModule()));
-  AddStandardCompilePasses(key->perFunctionPasses);
-  return key;
+VMThread::VMThread(VMObject* thread, N3* vm) {
+  this->perFunctionPasses = 0;
+  this->vmThread = thread;
+  this->vm = vm;
+  this->lock = new mvm::LockNormal();
+  this->varcond = new mvm::Cond();
+  this->interruptFlag = 0;
+  this->state = StateRunning;
+  this->pendingException = 0;
+  this->perFunctionPasses = new llvm::FunctionPassManager(vm->TheModuleProvider);
+  this->perFunctionPasses->add(new llvm::TargetData(vm->getLLVMModule()));
+  AddStandardCompilePasses(this->perFunctionPasses);
 }
 
 VMObject* VMThread::currentThread() {

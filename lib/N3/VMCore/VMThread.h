@@ -17,7 +17,7 @@
 #include "mvm/Object.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
-#include "mvm/Threads/Thread.h"
+#include "MutatorThread.h"
 
 namespace n3 {
 
@@ -27,9 +27,8 @@ class VMGenericClass;
 class VMObject;
 class VMGenericMethod;
 
-class VMThread : public mvm::Thread {
+class VMThread : public mvm::MutatorThread {
 public:
-  static VirtualTable *VT;
   VMObject* vmThread;
   N3* vm;
   mvm::Lock* lock;
@@ -46,7 +45,7 @@ public:
   virtual void print(mvm::PrintBuffer *buf) const;
   virtual void TRACER;
   ~VMThread();
-  VMThread();
+  VMThread(VMObject *thread, N3 *vm);
   
   // Temporary solution until N3 can cleanly bootstrap itself and
   // implement threads.
@@ -54,7 +53,6 @@ public:
   static VMThread* get() {
     return TheThread;
   }
-  static VMThread* allocate(VMObject* thread, N3* vm);
   static VMObject* currentThread();
   
   static VMObject* getCLIException();

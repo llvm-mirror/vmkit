@@ -188,7 +188,6 @@ static void initialiseVT() {
   INIT(VMCond);
   INIT(LockObj);
   INIT(VMObject);
-  INIT(VMThread);
   INIT(ThreadSystem);
   INIT(CLIString);
   INIT(CLIJit);
@@ -209,7 +208,7 @@ static void initialiseStatics() {
   VMObject::globalLock = new mvm::LockNormal();
 
   N3* vm = N3::bootstrapVM = N3::allocateBootstrap();
-  VMThread::TheThread = VMThread::allocate(0, vm);
+  VMThread::TheThread = new VMThread(0, vm);
   
   
   vm->assemblyPath.push_back("");
