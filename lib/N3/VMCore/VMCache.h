@@ -24,9 +24,8 @@ class Assembly;
 class Enveloppe;
 class VMClass;
 
-class CacheNode : public mvm::Object {
+class CacheNode : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
 
@@ -38,13 +37,11 @@ public:
   
   static const llvm::Type* llvmType;
 
-  static CacheNode* allocate();
-
+  static CacheNode* allocate(mvm::BumpPtrAllocator &allocator);
 };
 
-class Enveloppe : public mvm::Object {
+class Enveloppe : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
   virtual void TRACER;
   virtual void print(mvm::PrintBuffer* buf) const;
   
@@ -54,7 +51,7 @@ public:
 
   static const llvm::Type* llvmType;
 
-  static Enveloppe* allocate(VMMethod* orig);
+  static Enveloppe* allocate(mvm::BumpPtrAllocator &allocator, VMMethod* orig);
 
 };
 

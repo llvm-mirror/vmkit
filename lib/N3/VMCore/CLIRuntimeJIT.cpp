@@ -27,6 +27,7 @@
 #include "VMClass.h"
 #include "VMObject.h"
 #include "VMThread.h"
+#include "Assembly.h"
 
 #include <cstdarg>
 
@@ -154,7 +155,7 @@ extern "C" CacheNode* n3VirtualLookup(CacheNode* cache, VMObject *obj) {
     }
     
     if (cache->methPtr) {
-      rcache = CacheNode::allocate();
+      rcache = CacheNode::allocate(orig->classDef->assembly->allocator);
       rcache->enveloppe = enveloppe;
     } else {
       rcache = cache;

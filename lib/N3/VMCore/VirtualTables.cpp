@@ -42,8 +42,6 @@ using namespace n3;
   INIT(ThreadSystem);
   INIT(CLIString);
   INIT(Property);
-  INIT(CacheNode);
-  INIT(Enveloppe);
   INIT(Opinfo);
   INIT(Exception);
   
@@ -69,12 +67,12 @@ void Reader::TRACER {
 void CacheNode::TRACER {
   ((mvm::Object*)methPtr)->MARK_AND_TRACE;
   lastCible->CALL_TRACER;
-  next->MARK_AND_TRACE;
-  enveloppe->MARK_AND_TRACE;
+  next->CALL_TRACER;
+  enveloppe->CALL_TRACER;
 }
 
 void Enveloppe::TRACER {
-  firstCache->MARK_AND_TRACE;
+  firstCache->CALL_TRACER;
   //cacheLock->MARK_AND_TRACE;
   originalMethod->CALL_TRACER;
 }
@@ -168,7 +166,7 @@ void VMMethod::TRACER {
   //signature->MARK_AND_TRACE;
   classDef->CALL_TRACER;
   CALL_TRACER_VECTOR(Param*, params, gc_allocator);
-  TRACE_VECTOR(Enveloppe*, caches, gc_allocator);
+  CALL_TRACER_VECTOR(Enveloppe*, caches, gc_allocator);
 }
 
 void VMGenericMethod::TRACER {

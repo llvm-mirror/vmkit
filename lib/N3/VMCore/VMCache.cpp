@@ -47,17 +47,17 @@ void Enveloppe::print(mvm::PrintBuffer* buf) const {
   buf->write("Enveloppe<>");
 }
 
-CacheNode* CacheNode::allocate() {
-  CacheNode* cache = gc_new(CacheNode)();
+CacheNode* CacheNode::allocate(mvm::BumpPtrAllocator &allocator) {
+  CacheNode* cache = new(allocator, "CacheNode") CacheNode();
   cache->lastCible = 0;
   cache->methPtr = 0;
   cache->next = 0;
   return cache;
 }
 
-Enveloppe* Enveloppe::allocate(VMMethod* meth) {
-  Enveloppe* enveloppe = gc_new(Enveloppe)();
-  enveloppe->firstCache = CacheNode::allocate();
+Enveloppe* Enveloppe::allocate(mvm::BumpPtrAllocator &allocator, VMMethod* meth) {
+  Enveloppe* enveloppe = new(allocator, "Enveloppe") Enveloppe();
+  enveloppe->firstCache = CacheNode::allocate(allocator);
   enveloppe->firstCache->enveloppe = enveloppe;
   enveloppe->cacheLock = new mvm::LockNormal();
   enveloppe->originalMethod = meth;
@@ -82,7 +82,7 @@ void CLIJit::invokeInterfaceOrVirtual(uint32 value, VMGenericClass* genClass, VM
   JITVerifyNull(argObj);
 
   // ok now the cache
-  Enveloppe* enveloppe = Enveloppe::allocate(origMeth);
+  Enveloppe* enveloppe = Enveloppe::allocate(origMeth->classDef->assembly->allocator, origMeth);
   compilingMethod->caches.push_back(enveloppe);
   
   Value* zero = module->constantZero;
