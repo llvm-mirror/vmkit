@@ -56,12 +56,6 @@ void CLIJit::TRACER {
 }
 
 void ThreadSystem::TRACER {
-  //nonDaemonLock->MARK_AND_TRACE;
-  //nonDaemonVar->MARK_AND_TRACE;
-}
-
-void Reader::TRACER {
-  bytes->MARK_AND_TRACE;
 }
 
 void CacheNode::TRACER {
@@ -221,7 +215,6 @@ void Assembly::TRACER {
   loadedTokenFields->CALL_TRACER;
   //lockVar->MARK_AND_TRACE;
   //condVar->MARK_AND_TRACE;
-  bytes->MARK_AND_TRACE;
   textSection->CALL_TRACER;
   rsrcSection->CALL_TRACER;
   relocSection->CALL_TRACER;

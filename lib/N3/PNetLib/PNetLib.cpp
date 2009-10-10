@@ -960,7 +960,7 @@ extern "C" VMObject* System_String_Replace(PNetString* str, uint16 c1, uint16 c2
 
 extern "C" uint32 System_Reflection_ClrResourceStream_ResourceRead(Assembly* assembly, uint64 position, ArrayUInt8* buffer, uint32 offset, uint32 count) {
   uint32 resRva = assembly->resRva;
-  ArrayUInt8* bytes = assembly->bytes;
+  ByteCode* bytes = assembly->bytes;
   Section* textSection = assembly->textSection;
   uint32 section = 0;
 

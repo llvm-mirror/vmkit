@@ -53,16 +53,19 @@ const int Reader::SeekSet = SEEK_SET;
 const int Reader::SeekCur = SEEK_CUR;
 const int Reader::SeekEnd = SEEK_END;
 
-ArrayUInt8* Reader::openFile(char* path) {
+ByteCode::ByteCode(mvm::BumpPtrAllocator &allocator, int size) {
+	this->size = size;
+	this->elements = (uint8*)allocator.Allocate(size * sizeof(uint8), "uint8[]");
+}
+
+ByteCode* Reader::openFile(mvm::BumpPtrAllocator &allocator, char* path) {
   FILE* fp = fopen(path, "r");
-  ArrayUInt8* res = 0;
+  ByteCode* res = 0;
   if (fp != 0) {
     fseek(fp, 0, SeekEnd);
     long nbb = ftell(fp);
     fseek(fp, 0, SeekSet);
-		//		printf("---> %p\n", MSCorlib::arrayByte);
-		//		MSCorlib::arrayByte->doNew(nbb);
-    res = ArrayUInt8::acons(nbb, MSCorlib::arrayByte);
+		res = new(allocator, "ByteCode") ByteCode(allocator, nbb);
     fread(res->elements, nbb, 1, fp);
     fclose(fp);
   }
@@ -70,7 +73,9 @@ ArrayUInt8* Reader::openFile(char* path) {
 }
 
 uint8 Reader::readU1() {
-  return bytes->at(cursor++);
+	if(cursor >= (uint32)bytes->size)
+		VMThread::get()->vm->error("readU1 outside the buffer");
+  return bytes->elements[cursor++];
 }
 
 sint8 Reader::readS1() {
@@ -107,7 +112,7 @@ sint64 Reader::readS8() {
   return tmp | (((sint64)(readS8())) << 32);
 }
 
-Reader::Reader(ArrayUInt8* array, uint32 start, uint32 end) {
+Reader::Reader(ByteCode* array, uint32 start, uint32 end) {
   if (!end) 
 		end = array->size;
 

@@ -619,7 +619,7 @@ const char* Assembly::maskVectorName[64] = {
 #define EXTRACT_SIZE(bitmask, index) \
   (1 + (3 & (bitmask >> (index << 1))))
 
-void Table::readRow(uint32* result, uint32 row, ArrayUInt8* array) {
+void Table::readRow(uint32* result, uint32 row, ByteCode* array) {
   uint32 rowOffset = offset + ((row - 1) * rowSize);
   for (uint32 i = 0; i < count; ++i) {
     uint32 size = EXTRACT_SIZE(sizeMask, i);
@@ -632,7 +632,7 @@ void Table::readRow(uint32* result, uint32 row, ArrayUInt8* array) {
   }
 }
 
-uint32 Table::readIndexInRow(uint32 row, uint32 index, ArrayUInt8* array) {
+uint32 Table::readIndexInRow(uint32 row, uint32 index, ByteCode* array) {
   uint32 indexOffset = offset + ((row - 1) * rowSize);
   for (uint32 i = 0; i < index; ++i) {
     indexOffset += EXTRACT_SIZE(sizeMask, i);
@@ -709,7 +709,7 @@ const ArrayUInt16* Assembly::readUTF16(N3* vm, uint32 len,
 }
 
 const ArrayUInt16* Assembly::readUTF16(N3* vm, uint32 len, 
-																			 ArrayUInt8* bytes, uint32 &offset) {
+																			 ByteCode* bytes, uint32 &offset) {
   uint32 realLen = len >> 1;
   uint16* buf = (uint16*)alloca(len);
   uint32 i = 0;
@@ -726,7 +726,7 @@ const UTF8* Assembly::readUTF8(N3* vm, uint32 len, Reader* reader) {
 }
 
 const UTF8* Assembly::readUTF8(N3* vm, uint32 len,
-                               ArrayUInt8* bytes, uint32 &offset) {
+                               ByteCode* bytes, uint32 &offset) {
   uint16* buf = (uint16*)alloca(len * sizeof(uint16));
   uint32 n = 0;
   uint32 i = 0;
@@ -821,7 +821,7 @@ void Assembly::readTables(Reader* reader) {
   }
 }
 
-Reader *Assembly::newReader(ArrayUInt8* array, uint32 start, uint32 end) { 
+Reader *Assembly::newReader(ByteCode* array, uint32 start, uint32 end) { 
 	return new(allocator, "Reader") Reader(array, start, end); 
 }
 
@@ -898,7 +898,7 @@ int Assembly::open(const char *ext) {
 			sprintf(buf, "%s%s", cur, asciiz);
 		}
 			
-		bytes = Reader::openFile(buf);
+		bytes = Reader::openFile(allocator, buf);
 		++idx;
 	}
 	lockVar->unlock();

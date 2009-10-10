@@ -22,6 +22,8 @@
 #include "llvm/DerivedTypes.h"
 #include "llvm/Type.h"
 
+#include "VMArray.h"
+
 namespace llvm {
   class GenericValue;
 }
@@ -58,6 +60,7 @@ class VMMethod;
 class VMObject;
 class VMGenericClass;
 class VMGenericMethod;
+class ByteCode;
 
 class Section : public mvm::PermanentObject {
 public:
@@ -99,8 +102,8 @@ public:
   uint32 count;
   uint32 sizeMask;
 
-  void readRow(uint32* result, uint32 row, ArrayUInt8* array);
-  uint32 readIndexInRow(uint32 row, uint32 index, ArrayUInt8* array);
+  void readRow(uint32* result, uint32 row, ByteCode* array);
+  uint32 readIndexInRow(uint32 row, uint32 index, ByteCode* array);
 
 };
 
@@ -135,17 +138,6 @@ typedef void (*maskVector_t)(uint32 index,
 
 typedef VMCommonClass* (*signatureVector_t)(uint32 op, Assembly* ass,
                                             uint32& offset, VMGenericClass* genClass, VMGenericMethod* genMethod);
-
-// class ByteCode : mvm::PermanentObject {
-// public:
-// 	ByteCode(mvm::BumpPtrAllocator &allocator, int size) {
-// 		this->size = size;
-// 		this->elements = mvm::BumpPtrAllocator::operator new(0, "ByteCode", size * sizeof(uint8));
-// 	}
-
-// 	uint32 size;
-// 	uint8  *elements;
-// };
 
 class Assembly : public mvm::PermanentObject {
 public:
@@ -182,7 +174,7 @@ public:
   mvm::Lock*    lockVar;
   mvm::Cond*    condVar;
   const UTF8*   name;
-  ArrayUInt8*   bytes;
+  ByteCode*     bytes;
   Section*      textSection;
   Section*      rsrcSection;
   Section*      relocSection;
@@ -210,11 +202,9 @@ public:
   int resolve(int doResolve, const char *ext);
 
   static const UTF8* readUTF8(N3* vm, uint32 len, Reader* reader);
-  static const UTF8* readUTF8(N3* vm, uint32 len, ArrayUInt8* bytes,
-                              uint32& offset);
+  static const UTF8* readUTF8(N3* vm, uint32 len, ByteCode* bytes, uint32& offset);
   static const ArrayUInt16* readUTF16(N3* vm, uint32 len, Reader* reader);
-  static const ArrayUInt16* readUTF16(N3* vm, uint32 len, 
-																			ArrayUInt8* bytes, uint32& offset);
+  static const ArrayUInt16* readUTF16(N3* vm, uint32 len, ByteCode* bytes, uint32& offset);
   const UTF8*        readString(N3* vm, uint32 offset);
   void readTables(Reader* reader);
 
@@ -224,7 +214,7 @@ public:
   static const char* signatureNames[0x46];
   
 
-	Reader *newReader(ArrayUInt8* array, uint32 start = 0, uint32 end = 0);
+	Reader *newReader(ByteCode* array, uint32 start = 0, uint32 end = 0);
 
   uint32 uncompressSignature(uint32& offset);
   uint32 getTypeDefTokenFromMethod(uint32 token);

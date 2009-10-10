@@ -49,7 +49,7 @@ extern "C" void System_Runtime_CompilerServices_RuntimeHelpers_InitializeArray(
 
   uint32 size = array->size;
   uint32 offset = inSection->rawAddress + (rva - inSection->virtualAddress);
-  ArrayUInt8* bytes = ass->bytes;
+  ByteCode* bytes = ass->bytes;
 
   if (bs == MSCorlib::pChar) {
     for (uint32 i = 0; i < size; ++i) {

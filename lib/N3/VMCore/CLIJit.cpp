@@ -968,7 +968,7 @@ Function* CLIJit::compileNative(VMGenericMethod* genMethod) {
 
 uint32 CLIJit::readExceptionTable(uint32 offset, bool fat, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   Assembly* ass = compilingClass->assembly;
-  ArrayUInt8* bytes = ass->bytes;
+  ByteCode* bytes = ass->bytes;
   uint32 nbe = 0;
   if (fat) {
     nbe = (READ_U3(bytes, offset) - 4) / 24;
@@ -1151,7 +1151,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "tiny or fat compile %s\n",
               mvm::PrintBuffer(compilingMethod).cString());
   uint32 offset = compilingMethod->offset;
-  ArrayUInt8* bytes = compilingClass->assembly->bytes;
+	ByteCode* bytes = compilingClass->assembly->bytes;
   uint8 header = READ_U1(bytes, offset);
   bool tiny = false;
   uint32 localVarSig = 0;
@@ -1329,7 +1329,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "tiny or fat inline compile %s\n",
               mvm::PrintBuffer(compilingMethod).cString());
   uint32 offset = compilingMethod->offset;
-  ArrayUInt8* bytes = compilingClass->assembly->bytes;
+  ByteCode* bytes = compilingClass->assembly->bytes;
   uint8 header = READ_U1(bytes, offset);
   bool tiny = false;
   uint32 localVarSig = 0;
