@@ -99,6 +99,7 @@ class Thread;
 class StackScanner {
 public:
   virtual void scanStack(mvm::Thread* th) = 0;
+  virtual ~StackScanner() {}
 };
 
 class UnpreciseStackScanner : public StackScanner {
