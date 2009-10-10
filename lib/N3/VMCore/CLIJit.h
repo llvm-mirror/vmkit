@@ -56,9 +56,8 @@ public:
   virtual void TRACER;
 };
 
-class Opinfo : public mvm::Object {
+class Opinfo {
 public:
-  static VirtualTable* VT; 
   llvm::BasicBlock* newBlock;
   llvm::BasicBlock* exceptionBlock;
   bool reqSuppl;
@@ -67,7 +66,6 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("Opinfo");
   }
-  virtual void TRACER;
 };
 
 

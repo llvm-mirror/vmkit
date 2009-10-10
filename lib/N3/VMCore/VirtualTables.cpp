@@ -42,13 +42,9 @@ using namespace n3;
   INIT(ThreadSystem);
   INIT(CLIString);
   INIT(Property);
-  INIT(Opinfo);
   INIT(Exception);
   
 #undef INIT
-
-void Opinfo::TRACER {
-}
 
 void CLIJit::TRACER {
   compilingMethod->CALL_TRACER;
@@ -213,12 +209,6 @@ void Assembly::TRACER {
   loadedTokenClasses->CALL_TRACER;
   loadedTokenMethods->CALL_TRACER;
   loadedTokenFields->CALL_TRACER;
-  //lockVar->MARK_AND_TRACE;
-  //condVar->MARK_AND_TRACE;
-  textSection->CALL_TRACER;
-  rsrcSection->CALL_TRACER;
-  relocSection->CALL_TRACER;
-  CLIHeader->CALL_TRACER;
   vm->CALL_TRACER;
   delegatee->MARK_AND_TRACE;
   // TODO trace assembly refs...
@@ -235,24 +225,6 @@ void N3::TRACER {
   }
   hashStr->CALL_TRACER;
   loadedAssemblies->CALL_TRACER;
-}
-
-void Section::TRACER {
-}
-
-void Stream::TRACER {
-}
-
-void Table::TRACER {
-}
-
-void Header::TRACER {
-  tildStream->CALL_TRACER;
-  stringStream->CALL_TRACER;
-  usStream->CALL_TRACER;
-  blobStream->CALL_TRACER;
-  guidStream->CALL_TRACER;
-  CALL_TRACER_VECTOR(Table*, tables, gc_allocator);
 }
 
 void CLIString::TRACER {

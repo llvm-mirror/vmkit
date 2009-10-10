@@ -65,7 +65,6 @@ class ByteCode;
 class Section : public mvm::PermanentObject {
 public:
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
   
   char* name;
   uint32 virtualSize;
@@ -84,7 +83,6 @@ public:
 class Stream : public mvm::PermanentObject {
 public:
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
 
   char* name;
   uint32 realOffset;
@@ -94,7 +92,6 @@ public:
 class Table : public mvm::PermanentObject {
 public:
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
 
   uint32 offset;
   uint32 rowsNumber;
@@ -111,7 +108,6 @@ public:
 class Header : public mvm::PermanentObject {
 public:
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
 
   uint32 signature;
   uint32 major;
