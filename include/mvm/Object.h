@@ -32,11 +32,6 @@ class PrintBuffer;
 ///
 class Object : public gc {
 public:
-  
-  /// printString - Returns a string representation of this object.
-  ///
-  char *printString(void) const;
-
   /// tracer - Default implementation of tracer. Does nothing.
   ///
   virtual void tracer() {}

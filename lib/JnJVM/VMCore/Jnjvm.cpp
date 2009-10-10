@@ -174,7 +174,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     
     PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
     PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ", 0);
-    PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", printString());
+    PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", mvm::PrintString(this).cString());
 
 
 

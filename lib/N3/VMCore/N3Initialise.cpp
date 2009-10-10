@@ -189,6 +189,9 @@ static void initialiseVT() {
 	{
 		UTF8 fake(0);																				
 		UTF8::VT = ((VirtualTable**)(void*)(&fake))[0];	
+#if !defined(WITHOUT_FINALIZER)
+		((void**)UTF8::VT)[0] = 0;
+#endif
 	}
 
   INIT(VMCond);

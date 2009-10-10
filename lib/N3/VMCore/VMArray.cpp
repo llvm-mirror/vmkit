@@ -159,7 +159,7 @@ void ArrayDouble::print(mvm::PrintBuffer *buf) const {
 void ArrayObject::print(mvm::PrintBuffer *buf) const {
   buf->write("Array<");
   for (int i = 0; i < size; i++) {
-    buf->writeObj(elements[i]);
+		elements[i]->print(buf);
     buf->write(" ");
   }
   buf->write(">");

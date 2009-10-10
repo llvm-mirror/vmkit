@@ -246,8 +246,8 @@ void VMCommonClass::clinitClass(VMGenericMethod* genMethod) {
       
       PRINT_DEBUG(N3_LOAD, 0, COLOR_NORMAL, "%s", "; ");
       PRINT_DEBUG(N3_LOAD, 0, LIGHT_GREEN, "%s", "clinit ");
-      PRINT_DEBUG(N3_LOAD, 0, COLOR_NORMAL, "%s::%s\n", printString(),
-                  cl->printString());
+      PRINT_DEBUG(N3_LOAD, 0, COLOR_NORMAL, "%s::%s\n", mvm::PrintBuffer(this).cString(),
+                  mvm::PrintBuffer(cl).cString());
       
       if (meth) {
         llvm::Function* pred = meth->compiledPtr(genMethod);
@@ -570,7 +570,7 @@ VMMethod* VMCommonClass::lookupMethod(const UTF8* name,
   if (!res) {
     VMThread::get()->vm->error(N3::MissingMethodException, 
                                "unable to find %s in %s",
-                               mvm::PrintBuffer::objectToString(name), mvm::PrintBuffer::objectToString(this));
+                               mvm::PrintBuffer(name).cString(), mvm::PrintBuffer(this).cString());
   }
   return res;
 }
@@ -617,7 +617,7 @@ VMField* VMCommonClass::lookupField(const UTF8* name, VMCommonClass* type,
   if (!res) {
     VMThread::get()->vm->error(N3::MissingFieldException, 
                                "unable to find %s in %s",
-                               mvm::PrintBuffer::objectToString(name), mvm::PrintBuffer::objectToString(this));
+                               mvm::PrintBuffer(name).cString(), mvm::PrintBuffer(this).cString());
   }
   return res;
 }

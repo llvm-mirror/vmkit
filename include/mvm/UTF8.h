@@ -6,6 +6,7 @@
 
 namespace mvm {
 
+class PrintBuffer;
 class UTF8Map;
 
 class UTF8 {
@@ -14,8 +15,8 @@ private:
   
   /// operator new - Redefines the new operator of this class to allocate
   /// its objects in permanent memory, not with the garbage collector.
-  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator, sint32 size) {
-    return allocator.Allocate(sizeof(ssize_t) + size * sizeof(uint16), "UTF8");
+  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator, sint32 n) {
+    return allocator.Allocate(sizeof(UTF8) + (n - 1) * sizeof(uint16), "UTF8");
   }
   
   UTF8(sint32 n) {
@@ -54,7 +55,8 @@ public:
     else return memcmp((const char*)elements, (const char*)other->elements, 
                        size * sizeof(uint16)) < 0;
   }
-  
+
+	virtual void print(PrintBuffer *pb) const;
 };
 
 

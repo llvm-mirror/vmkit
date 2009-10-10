@@ -15,66 +15,18 @@
 
 #include "types.h"
 #include "mvm/Object.h"
+#include "mvm/UTF8.h"
 
 namespace mvm {
 
-
-/// NativeString - This class is the equivalent of a char*, but allocated
-/// by the GC, hence has a virtual table.
-///
-class NativeString : public gc {
-public:
-  
-  /// VT - The virtual table of this class.
-  ///
-  static VirtualTable VT;
-
-  /// cString - Returns the C equivalent of the NativeString.
-  ///
-  inline char *cString() { return (char *)(this + 1); }
-
-  /// readString - Copies the C string to a newly allocated NativeString.
-  inline static NativeString *readString(char *cStr) {
-    size_t nbb = strlen(cStr);
-    NativeString * res = alloc(nbb + 1);
-    memcpy(res->cString(), cStr, nbb + 1);
-    return res;
-  }
-
-  /// alloc - Allocates a NativeString of size len.
-  ///
-  static inline NativeString *alloc(size_t len) {
-    return (NativeString *)gc::operator new(len + sizeof(VirtualTable*), &VT);
-  }
-
-  /// realloc - Reallocate a native string of size len.
-  ///
-  inline NativeString *realloc(size_t len) {
-    return (NativeString *)gc::realloc(len + sizeof(VirtualTable*));
-  }
-
-  /// setAt - Sets the char c at position pos in the NativeString.
-  ///
-  inline void setAt(int pos, char c) {
-    cString()[pos] = c;
-  }
-
-public:
-  
-  /// print - Just prints the NativeString.
-  ///
-  virtual void print(PrintBuffer *buf) const;
-
-};
-
 /// PrintBuffer - This class is a buffered string.
 ///
-class PrintBuffer : public gc {
-private:
+class PrintBuffer {
+public:
  
-  /// _contents - The buffer.
+  /// contents - The buffer.
   ///
-  NativeString* _contents;
+  char* contents;
 
   /// capacity - The capacity of the current buffer.
   ///
@@ -85,40 +37,64 @@ private:
   ///
   uint32  writePosition;
 
+	void init() {
+		capacity = 256;
+		contents = new char[capacity];
+		writePosition = 0;
+	}
 
 public:
-  
-  /// VT - The virtual table of this class.
-  ///
-  static VirtualTable VT;
-  
-  
-  /// contents - Returns the buffer.
-  ///
-  NativeString* contents() {
-    return _contents;
-  }
+	PrintBuffer() {
+		init();
+	}
 
-  /// setContents - Sets the buffer.
-  ///
-  void setContents(NativeString* n) {
-    _contents = n;
-  }
+	template <class T>
+	PrintBuffer(const T *obj) {
+		init();
+		writeObj(obj);
+	}
+
+	~PrintBuffer() {
+		delete contents;
+	}
+	
+	char *cString() {
+		return contents;
+	}
+
+	void ensureCapacity(uint32 len) {
+		uint32 size = writePosition + len + 1;
+    if (size >= capacity) {
+      while (size >= capacity)
+        capacity*= 4;
+			char *newContents = new char[capacity];
+			memcpy(newContents, contents, writePosition);
+			delete[] contents;
+			contents = newContents;
+    }
+	}
 
   /// write - Writes to this PrintBuffer.
   ///
-  inline PrintBuffer *write(const char *string) {
-    size_t len= strlen(string);
-    if ((writePosition + len + 1) >= capacity) {
-      while ((writePosition + len + 1) >= capacity)
-        capacity*= 4;
-      setContents(contents()->realloc(capacity));
-    }
-    strcpy(contents()->cString() + writePosition, string);
+  virtual PrintBuffer *write(const char *string) {
+    uint32 len= strlen(string);
+		ensureCapacity(len);
+    strcpy(cString() + writePosition, string);
     writePosition+= len;
     return this;
   }
-  
+
+  /// writeChar - Writes a char.
+  inline PrintBuffer *writeUTF8(const UTF8 *utf8) {
+		uint32 len = utf8->size;
+		ensureCapacity(len);
+		for(uint32 i=0; i<len; i++) {
+			//			printf("%d/%d: '%c (%d)'\n", i, len, utf8->elements[i], utf8->elements[i]);
+			contents[writePosition + i] = utf8->elements[i];
+		}
+		contents[writePosition += len] = 0;
+		return this;
+  }
 
   /// writeChar - Writes a char.
   inline PrintBuffer *writeChar(char v) {
@@ -126,7 +102,6 @@ public:
     sprintf(buf, "%c", v);
     return write(buf);
   }
-  
 
   /// writeChar - Writes a int32.
   inline PrintBuffer *writeS4(int v) {
@@ -172,32 +147,11 @@ public:
 
   /// writeObj - Writes an Object to the buffer.
   ///
-  PrintBuffer *writeObj(const Object *);
-
-public:
-  
-  /// alloc - Allocates a default PrintBuffer.
-  ///
-  static PrintBuffer *alloc(void) {
-    PrintBuffer* pbf = (PrintBuffer*)gc::operator new(sizeof(PrintBuffer), &VT);
-    pbf->capacity= 32;
-    pbf->writePosition= 0;
-    pbf->setContents(NativeString::alloc(pbf->capacity));
-    return pbf;
-  }
-
-	template <typename T> 
-	static char *objectToString(T *obj) {
-		PrintBuffer *buf = alloc();
-		obj->print(buf);
-		return buf->contents()->cString();
+	template <class T>
+  inline PrintBuffer *writeObj(const T *obj) {
+		obj->print(this);
+		return this;
 	}
-
-  /// tracer - Traces this PrintBuffer.
-  ///
-  static void staticTracer(PrintBuffer* obj) {
-    obj->contents()->markAndTrace();
-  }
 };
 
 } // end namespace mvm

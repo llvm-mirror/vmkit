@@ -523,7 +523,7 @@ extern "C" sint32 System_String_FindInRange(PNetString* obj, sint32 srcFirst,
 extern "C" VMObject* System_Reflection_Assembly_LoadFromName(PNetString* str, sint32 & error, VMObject* parent) {
   N3* vm = (N3*)(VMThread::get()->vm);
   Assembly* ass = vm->loadAssembly(vm->arrayToUTF8(str->value), "dll");
-  if (!ass) vm->error("unfound assembly %s\n", str->value->printString());
+  if (!ass) vm->error("unfound assembly %s\n", mvm::PrintBuffer(str->value).cString());
   error = 0;
   return ass->getAssemblyDelegatee();
 }
@@ -620,7 +620,8 @@ void* sys_memrchr(const void* s, int c, size_t n) {
 extern "C" VMObject* System_Reflection_Assembly_GetType(VMObject* obj, PNetString* str, bool onError, bool ignoreCase) {
   Assembly* ass = ASSEMBLY_VALUE(obj);
   const ArrayUInt16* array = str->value;
-  char* asciiz = ass->vm->arrayToAsciiz(array);
+	mvm::PrintBuffer pb(array);
+  char* asciiz = pb.cString();
   char* index = (char*)sys_memrchr(asciiz, '.', strlen(asciiz));
   N3* vm = ass->vm;
   
@@ -758,7 +759,7 @@ extern "C" VMObject* System_Reflection_ClrMethod_Invoke(VMObject* Method, VMObje
 
   if ((obj != 0) && virt) {
     if (!(obj->classOf->isAssignableFrom(type))) {
-      VMThread::get()->vm->illegalArgumentException(meth->name->printString());
+      VMThread::get()->vm->illegalArgumentException(mvm::PrintBuffer(meth->name).cString());
     }
     verifyNull(obj);
   }

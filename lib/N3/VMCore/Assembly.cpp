@@ -374,7 +374,7 @@ VMGenericClass* Assembly::constructGenericClass(const UTF8* name,
   }
   buf[i] = '>';
   const UTF8* genName = UTF8::readerConstruct(VMThread::get()->vm, buf, size);
-  //printf("%s\n", genName->printString());
+  //printf("%s\n", mvm::PrintBuffer(genName).cString());
   
   ClassNameCmp CC(genName, nameSpace);
   VMGenericClass* cl = (VMGenericClass*) loadedNameClasses->lookupOrCreate(CC, this, genClassDup);
@@ -825,8 +825,8 @@ Reader *Assembly::newReader(ArrayUInt8* array, uint32 start, uint32 end) {
 
 void Assembly::read() {
   Reader* reader = newReader(bytes);
-  PRINT_DEBUG(DEBUG_LOAD, 1, LIGHT_GREEN, "Reading %s::%s", vm->printString(),
-              this->printString());
+  PRINT_DEBUG(DEBUG_LOAD, 1, LIGHT_GREEN, "Reading %s::%s", mvm::PrintBuffer(vm).cString(),
+              mvm::PrintBuffer(this).cString());
 
   textSection =  new(allocator, "Section") Section();
   rsrcSection =  new(allocator, "Section") Section();

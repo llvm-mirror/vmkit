@@ -485,7 +485,7 @@ void CLIJit::invoke(uint32 value, VMGenericClass* genClass, VMGenericMethod* gen
     } else if (meth->name == vm->asciizToUTF8("Address")) {
       func = 2;
     } else {
-      vm->error("implement me %s", meth->name->printString());
+      vm->error("implement me %s", mvm::PrintBuffer(meth->name).cString());
     }
       
     VMClassArray* type = (VMClassArray*)meth->classDef;
@@ -607,7 +607,7 @@ void CLIJit::invokeNew(uint32 value, VMGenericClass* genClass, VMGenericMethod* 
     
   Value* obj = 0;
   if (type->isPointer) {
-    VMThread::get()->vm->error("implement me %s", mvm::PrintBuffer::objectToString(type));
+    VMThread::get()->vm->error("implement me %s", mvm::PrintBuffer(type).cString());
   } else if (type->isArray) {
     VMClassArray* arrayType = (VMClassArray*)type;
     Value* valCl = new LoadInst(arrayType->llvmVar(), "", currentBlock);
@@ -911,7 +911,7 @@ Function* CLIJit::invokeDelegate() {
 
 Function* CLIJit::compileIntern() {
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "intern compile %s\n",
-              compilingMethod->printString());
+              mvm::PrintBuffer(compilingMethod).cString());
 
   if (compilingClass->subclassOf(MSCorlib::pDelegate)) {
     const UTF8* name = compilingMethod->name;
@@ -919,14 +919,14 @@ Function* CLIJit::compileIntern() {
     else if (name == N3::invokeName) return invokeDelegate();
     else VMThread::get()->vm->error("implement me");
   } else {
-    VMThread::get()->vm->error("implement me %s", mvm::PrintBuffer::objectToString(compilingClass));
+    VMThread::get()->vm->error("implement me %s", mvm::PrintBuffer(compilingClass).cString());
   }
   return 0;
 }
 
 Function* CLIJit::compileNative(VMGenericMethod* genMethod) {
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "native compile %s\n",
-              compilingMethod->printString());
+              mvm::PrintBuffer(compilingMethod));
     
   const FunctionType *funcType = compilingMethod->getSignature(genMethod);
   
@@ -1148,7 +1148,7 @@ static void printArgs(std::vector<llvm::Value*> args, BasicBlock* insertAt) {
 
 Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* genMethod) {
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "tiny or fat compile %s\n",
-              compilingMethod->printString());
+              mvm::PrintBuffer(compilingMethod).cString());
   uint32 offset = compilingMethod->offset;
   ArrayUInt8* bytes = compilingClass->assembly->bytes;
   uint8 header = READ_U1(bytes, offset);
@@ -1314,7 +1314,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
   
   if (nbe == 0 && codeLen < 50) {
     PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "%s can be inlined\n",
-                compilingMethod->printString());
+                mvm::PrintBuffer(compilingMethod).cString());
     compilingMethod->canBeInlined = true;
   }
   
@@ -1326,7 +1326,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
                                    std::vector<Value*>& args, VMGenericClass* genClass, VMGenericMethod* genMethod) {
   
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "tiny or fat inline compile %s\n",
-              compilingMethod->printString());
+              mvm::PrintBuffer(compilingMethod).cString());
   uint32 offset = compilingMethod->offset;
   ArrayUInt8* bytes = compilingClass->assembly->bytes;
   uint8 header = READ_U1(bytes, offset);
@@ -1439,7 +1439,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
   
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL,
               "end tiny or fat inline compile %s\n",
-              compilingMethod->printString());
+              mvm::PrintBuffer(compilingMethod).cString());
   
   return endNode;
 }
@@ -1471,7 +1471,7 @@ llvm::Function *VMMethod::compiledPtr(VMGenericMethod* genMethod) {
     classDef->aquire();
     if (methPtr == 0) {
       methPtr = Function::Create(getSignature(genMethod), GlobalValue::GhostLinkage,
-                                 mvm::PrintBuffer::objectToString(this), classDef->vm->getLLVMModule());
+                                 mvm::PrintBuffer(this).cString(), classDef->vm->getLLVMModule());
       classDef->vm->functions->hash(methPtr, this);
     }
     classDef->release();

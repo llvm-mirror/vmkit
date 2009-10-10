@@ -107,7 +107,7 @@ static inline double readDouble(uint8* bytecode, uint32& i) {
 
 
 extern "C" void n3PrintExecution(char* opcode, VMMethod* meth) {
-  fprintf(stderr, "executing %s %s\n", mvm::PrintBuffer::objectToString(meth), opcode);
+  fprintf(stderr, "executing %s %s\n", mvm::PrintBuffer(meth).cString(), opcode);
 }
 
 
@@ -208,7 +208,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
     if (bytecodes[i] != 0xFE) {
       PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5x] %-5d ", i,
                   bytecodes[i]);
-      PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "compiling %s::", compilingMethod->printString());
+      PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "compiling %s::", mvm::PrintBuffer(compilingMethod).cString());
       PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]]);
       PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "\n");
     }
@@ -1827,7 +1827,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case 0xFE : {
         PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5x] %-5d ", i,
                     bytecodes[i + 1]);
-        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "compiling %s::", compilingMethod->printString());
+        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "compiling %s::", mvm::PrintBuffer(compilingMethod).cString());
         PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNamesFE[bytecodes[i + 1]]);
         PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "\n");
 
@@ -2023,7 +2023,7 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
     if (bytecodes[i] != 0xFE) {
       PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5x] %-5d ", i,
                   bytecodes[i]);
-      PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "exploring %s::", compilingMethod->printString());
+      PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "exploring %s::", mvm::PrintBuffer(compilingMethod).cString());
       PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]]);
       PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "\n");
     }
@@ -2467,7 +2467,7 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       
         PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "\t[at %5x] %-5d ", i,
                     bytecodes[i + 1]);
-        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "exploring %s::", compilingMethod->printString());
+        PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "exploring %s::", mvm::PrintBuffer(compilingMethod).cString());
         PRINT_DEBUG(N3_COMPILE, 1, LIGHT_CYAN, OpcodeNamesFE[bytecodes[i + 1]]);
         PRINT_DEBUG(N3_COMPILE, 1, LIGHT_BLUE, "\n");
       

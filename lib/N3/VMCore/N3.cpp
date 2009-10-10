@@ -370,7 +370,7 @@ void N3::mainCLIStart(VMThread* th) {
     vm->executeAssembly(info.assembly, args);
   }catch(...) {
     VMObject* exc = th->pendingException;
-    printf("N3 caught %s\n", exc->printString());
+    printf("N3 caught %s\n", mvm::PrintBuffer(exc).cString());
   }
 
   vm->threadSystem->nonDaemonLock->lock();
@@ -414,16 +414,6 @@ const UTF8* N3::arrayToUTF8(const ArrayUInt16 *array) {
 
 CLIString *N3::arrayToString(const ArrayUInt16 *array) {
   return (CLIString*)CLIString::stringDup(array, this);
-}
-
-char* N3::arrayToAsciiz(const ArrayUInt16 *array) {
-	int size = array->size;
-  mvm::NativeString* buf = mvm::NativeString::alloc(size + 1);
-  for (sint32 i = 0; i < size; ++i) {
-    buf->setAt(i, array->elements[i]);
-  }
-  buf->setAt(size, 0);
-  return buf->cString();
 }
 
 #include "MSCorlib.inc"
