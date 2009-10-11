@@ -13,7 +13,7 @@
 #include "llvm/DerivedTypes.h"
 #include "llvm/Module.h"
 
-#include "debug.h"
+#include "N3Debug.h"
 #include "types.h"
 #include "mvm/JIT.h"
 #include "mvm/PrintBuffer.h"

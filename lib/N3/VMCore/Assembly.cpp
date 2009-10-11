@@ -9,7 +9,7 @@
 
 #include <vector>
 
-#include "debug.h"
+#include "N3Debug.h"
 #include "types.h"
 
 #include "Assembly.h"
@@ -833,7 +833,7 @@ int Assembly::resolve(int doResolve, const char *ext) {
 		lockVar->lock();
 		if(!isRead) {
 			Reader* reader = newReader(bytes);
-			PRINT_DEBUG(DEBUG_LOAD, 1, LIGHT_GREEN, "Reading %s::%s", mvm::PrintBuffer(vm).cString(),
+			PRINT_DEBUG(N3_LOAD, 1, LIGHT_GREEN, "Reading %s::%s", mvm::PrintBuffer(vm).cString(),
 									mvm::PrintBuffer(this).cString());
 
 			textSection =  new(allocator, "Section") Section();

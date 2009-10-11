@@ -283,50 +283,39 @@ extern "C" void System_String_Copy_5(PNetString* dest, sint32 destPos,
                                      sint32 length) {
 	const ArrayUInt16 *arraySrc = src->value;
 
+	//	printf("Copy %p %p %d %d %d (%p %d)\n", (void *)dest, (void *)src, destPos, srcPos, length, (void *)dest->value, dest->length);
+
 	if(destPos == 0 && srcPos == 0 && length == src->length) {
 		dest->value = arraySrc;
 		dest->length = length;
 	} else {
-		sint32 newLength = destPos + length;
+		sint32 top       = destPos + length;
+		uint16 *buf      = (uint16*)alloca((top < dest->length ? dest->length : top) * sizeof(uint16));
 
-		if(newLength <= dest->length) {
-			memcpy((uint16*)dest->value->elements + destPos, (uint16*)src->value->elements + srcPos, length<<1);
-		} else {
-			uint16 *buf = (uint16*)alloca(newLength<<1);
-			memcpy(buf,           (uint16*)dest->value->elements, destPos<<1);
-			memcpy(buf + destPos, (uint16*)src->value->elements + srcPos, length<<1);
-			dest->length = newLength;
-			dest->value  = VMThread::get()->vm->bufToArray(buf, newLength);
-		}
+		if(destPos)
+			memcpy(buf, dest->value->elements, destPos * sizeof(uint16));
+
+		memcpy(buf + destPos, src->value->elements + srcPos, length * sizeof(uint16));
+
+		if(top <= dest->length)
+			memcpy(buf + top, dest->value->elements + top, (dest->length - top) * sizeof(uint16));
+		else
+			dest->length = top;
+
+		dest->value  = VMThread::get()->vm->bufToArray(buf, dest->length);
 	}
+	//		printf("---> %s\n", mvm::PrintBuffer(VMThread::get()->vm->arrayToUTF8(dest->value)).cString());
 }
-//   const UTF8* utf8Src = src->value->extract(VMThread::get()->vm, srcPos, 
-//                                             srcPos + length);
-//   if (destPos == 0) {
-//     dest->value = utf8Src;
-//     dest->length = dest->value->size;
-//   } else {
-//     const UTF8* utf8Dest = dest->value->extract(VMThread::get()->vm, 0, 
-//                                                 destPos);
-//     sint32 len1 = utf8Dest->size;
-//     sint32 len2 = utf8Src->size;
-//     uint16* buf = (uint16*)alloca((len1 + len2) * sizeof(uint16));
-
-//     memcpy(buf, utf8Dest->elements, len1 * sizeof(uint16));
-//     memcpy(buf + len1, utf8Dest->elements, len2 * sizeof(uint16));
-
-//     const UTF8* utf8 = VMThread::get()->vm->bufToUTF8(buf, 
-//                                                                 len1 + len2);
-//     dest->value = utf8;
-//     dest->length = dest->value->size;
-//   }
 
 extern "C" void System_Threading_Monitor_Enter(VMObject* obj) {
+	//	printf("Take lock on: %p\n", (void *)obj);
   obj->aquire();
 }
 
 extern "C" void System_Threading_Monitor_Exit(VMObject* obj) {
+	//	printf("Release lock on: %p\n", (void *)obj);
   obj->unlock();
+	//	printf("Release lock on: %p done\n", (void *)obj);
 }
 
 

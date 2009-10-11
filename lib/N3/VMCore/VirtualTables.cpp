@@ -150,7 +150,6 @@ void VMClassPointer::TRACER {
   baseClass->CALL_TRACER;
 }
 
-
 void VMMethod::TRACER {
   delegatee->MARK_AND_TRACE;
   //signature->MARK_AND_TRACE;

@@ -7,9 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG 0
-#define N3_COMPILE 0
-#define N3_EXECUTE 0
+#include "N3Debug.h"
 
 #include <cstring>
 
@@ -27,8 +25,6 @@
 #include <llvm/Target/TargetOptions.h>
 
 #include "mvm/JIT.h"
-
-#include "debug.h"
 
 #include "Assembly.h"
 #include "CLIJit.h"

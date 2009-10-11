@@ -7,14 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG 0
-#define N3_COMPILE 0
-#define N3_EXECUTE 0
-
-
-
-
-
 #include "mvm/JIT.h"
 
 #include "Assembly.h"
@@ -42,7 +34,8 @@
 #include <llvm/Support/CFG.h>
 #include <llvm/Support/MutexGuard.h>
 
-#include "debug.h"
+#include "N3Debug.h"
+
 #include "types.h"
 
 using namespace llvm;
@@ -927,7 +920,7 @@ Function* CLIJit::compileIntern() {
 
 Function* CLIJit::compileNative(VMGenericMethod* genMethod) {
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "native compile %s\n",
-              mvm::PrintBuffer(compilingMethod));
+              mvm::PrintBuffer(compilingMethod).cString());
     
   const FunctionType *funcType = compilingMethod->getSignature(genMethod);
   
@@ -1125,22 +1118,24 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat, VMGenericClass* genCl
 
 #if N3_EXECUTE > 1
 static void printArgs(std::vector<llvm::Value*> args, BasicBlock* insertAt) {
+	N3 *vm = VMThread::get()->vm;
+
   for (std::vector<llvm::Value*>::iterator i = args.begin(),
        e = args.end(); i!= e; ++i) {
     llvm::Value* arg = *i;
     const llvm::Type* type = arg->getType();
     if (type == Type::getInt8Ty(getGlobalContext()) || type == Type::getInt16Ty(getGlobalContext()) || type == Type::getInt1Ty(getGlobalContext())) {
-      CallInst::Create(module->printIntLLVM, new ZExtInst(arg, Type::getInt32Ty(getGlobalContext()), "", insertAt), "", insertAt);
+      CallInst::Create(vm->module->printIntLLVM, new ZExtInst(arg, Type::getInt32Ty(getGlobalContext()), "", insertAt), "", insertAt);
     } else if (type == Type::getInt32Ty(getGlobalContext())) {
-      CallInst::Create(module->printIntLLVM, arg, "", insertAt);
+      CallInst::Create(vm->module->printIntLLVM, arg, "", insertAt);
     } else if (type == Type::getInt64Ty(getGlobalContext())) {
-      CallInst::Create(module->printLongLLVM, arg, "", insertAt);
+      CallInst::Create(vm->module->printLongLLVM, arg, "", insertAt);
     } else if (type == Type::getFloatTy(getGlobalContext())) {
-      CallInst::Create(module->printFloatLLVM, arg, "", insertAt);
+      CallInst::Create(vm->module->printFloatLLVM, arg, "", insertAt);
     } else if (type == Type::getDoubleTy(getGlobalContext())) {
-      CallInst::Create(module->printDoubleLLVM, arg, "", insertAt);
+      CallInst::Create(vm->module->printDoubleLLVM, arg, "", insertAt);
     } else {
-      CallInst::Create(module->printIntLLVM, new PtrToIntInst(arg, Type::getInt32Ty(getGlobalContext()), "", insertAt), "", insertAt);
+      CallInst::Create(vm->module->printIntLLVM, new PtrToIntInst(arg, Type::getInt32Ty(getGlobalContext()), "", insertAt), "", insertAt);
     }
   }
 
@@ -1463,6 +1458,7 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   }
 
 	delete jit;
+	//	printf("Compiling: %s\n", mvm::PrintBuffer(meth).cString());
   return func;
 }
 

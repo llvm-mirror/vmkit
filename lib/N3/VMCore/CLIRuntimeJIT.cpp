@@ -118,7 +118,7 @@ extern "C" CacheNode* n3VirtualLookup(CacheNode* cache, VMObject *obj) {
   Enveloppe* enveloppe = cache->enveloppe;
   VMCommonClass* ocl = obj->classOf;
   VMMethod* orig = enveloppe->originalMethod;
-  
+
   CacheNode* rcache = 0;
   CacheNode* tmp = enveloppe->firstCache;
   CacheNode* last = tmp;
