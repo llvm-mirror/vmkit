@@ -57,6 +57,7 @@ public:
   }
 
 	virtual void print(PrintBuffer *pb) const;
+	virtual ~UTF8() {}
 };
 
 

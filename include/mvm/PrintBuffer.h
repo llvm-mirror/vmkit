@@ -54,7 +54,7 @@ public:
 		writeObj(obj);
 	}
 
-	~PrintBuffer() {
+	virtual ~PrintBuffer() {
 		delete contents;
 	}
 	
