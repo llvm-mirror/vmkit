@@ -283,7 +283,6 @@ public:
 class Param : public mvm::PermanentObject {
 public:
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
 
   uint32 flags;
   uint32 sequence;

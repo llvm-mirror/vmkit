@@ -34,7 +34,6 @@ namespace n3 {
 using mvm::UTF8;
 using mvm::UTF8Map;
 class ArrayObject;
-class ArrayUInt8;
 class Assembly;
 class AssemblyMap;
 class N3;
@@ -50,7 +49,7 @@ class N3ModuleProvider;
 class VMMethod;
 class VMObject;
 class VMThread;
-class ArrayUInt16;
+class ArrayChar;
 class CLIString;
 
 class ThreadSystem : public mvm::PermanentObject {
@@ -92,7 +91,6 @@ public:
   ThreadSystem*            threadSystem; 
   VMThread*                bootstrapThread;
 
-  StringMap*               hashStr;
   UTF8Map*                 hashUTF8;
 
   mvm::Lock*               protectModule;
@@ -126,13 +124,13 @@ public:
 
 	// usefull string, uint16 and utf8 functions
 
-	ArrayUInt16*     asciizToArray(const char *asciiz);
-	ArrayUInt16*     bufToArray(const uint16 *buf, uint32 len);
-	ArrayUInt16*     UTF8ToArray(const UTF8 *utf8);
+	ArrayChar*       asciizToArray(const char *asciiz);
+	ArrayChar*       bufToArray(const uint16 *buf, uint32 len);
+	ArrayChar*       UTF8ToArray(const UTF8 *utf8);
 	const UTF8*      asciizToUTF8(const char *asciiz);
 	const UTF8*      bufToUTF8(const uint16 *buf, uint32 len);
-	const UTF8*      arrayToUTF8(const ArrayUInt16 *array);
-	CLIString*       arrayToString(const ArrayUInt16 *array);
+	const UTF8*      arrayToUTF8(const ArrayChar *array);
+	CLIString*       arrayToString(const ArrayChar *array);
 
   /*
   void          illegalAccessException(const char* msg);

@@ -38,7 +38,7 @@ namespace n3 {
 using mvm::UTF8;
 using mvm::UTF8Map;
 
-class ArrayUInt16;
+class ArrayChar;
 class ArrayUInt8;
 class ArrayObject;
 class Assembly;
@@ -199,8 +199,8 @@ public:
 
   static const UTF8* readUTF8(N3* vm, uint32 len, Reader* reader);
   static const UTF8* readUTF8(N3* vm, uint32 len, ByteCode* bytes, uint32& offset);
-  static const ArrayUInt16* readUTF16(N3* vm, uint32 len, Reader* reader);
-  static const ArrayUInt16* readUTF16(N3* vm, uint32 len, ByteCode* bytes, uint32& offset);
+  static const ArrayChar* readUTF16(N3* vm, uint32 len, Reader* reader);
+  static const ArrayChar* readUTF16(N3* vm, uint32 len, ByteCode* bytes, uint32& offset);
   const UTF8*        readString(N3* vm, uint32 offset);
   void readTables(Reader* reader);
 
@@ -260,7 +260,7 @@ public:
   uint32 getTypedefTokenFromMethod(uint32 token);
   VMMethod* readMemberRefAsMethod(uint32 token, std::vector<VMCommonClass*>* genArgs, VMGenericClass* genClass, VMGenericMethod* genMethod);
 
-  const ArrayUInt16* readUserString(uint32 token); 
+  const ArrayChar* readUserString(uint32 token); 
   uint32 getExplicitLayout(uint32 token);
   uint32 getRVAFromField(uint32 token);
   

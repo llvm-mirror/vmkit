@@ -25,19 +25,19 @@ using namespace n3;
 using namespace llvm;
 
 
-CLIString* CLIString::stringDup(const ArrayUInt16*& array, N3* vm) {
+CLIString* CLIString::stringDup(const ArrayChar*& array, N3* vm) {
   MonoString* obj = (MonoString*)(*MSCorlib::pString)();
   obj->length = array->size;
   if (array->size == 0) {
     obj->startChar = 0;
   } else {
-    obj->startChar = array->at(0);
+    obj->startChar = array->elements[0];
   }
   obj->value = array; 
   return obj;
 }
 
-const ArrayUInt16* CLIString::strToArray(N3* vm) const {
+const ArrayChar* CLIString::strToArray(N3* vm) const {
   return ((MonoString *)this)->value;
 }
 

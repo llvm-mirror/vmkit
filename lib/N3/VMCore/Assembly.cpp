@@ -703,12 +703,12 @@ void Header::read(mvm::BumpPtrAllocator &allocator, Reader* reader, N3* vm) {
   }
 }
 
-const ArrayUInt16* Assembly::readUTF16(N3* vm, uint32 len, 
+const ArrayChar* Assembly::readUTF16(N3* vm, uint32 len, 
                                 Reader* reader) {
   return readUTF16(vm, len, reader->bytes, reader->cursor);
 }
 
-const ArrayUInt16* Assembly::readUTF16(N3* vm, uint32 len, 
+const ArrayChar* Assembly::readUTF16(N3* vm, uint32 len, 
 																			 ByteCode* bytes, uint32 &offset) {
   uint32 realLen = len >> 1;
   uint16* buf = (uint16*)alloca(len);
@@ -1882,7 +1882,7 @@ VMMethod* Assembly::readMethodSpec(uint32 token, VMGenericClass* genClass, VMGen
   return NULL;
 }
 
-const ArrayUInt16* Assembly::readUserString(uint32 token) {
+const ArrayChar* Assembly::readUserString(uint32 token) {
   uint32 offset = CLIHeader->usStream->realOffset + token;
 
   uint8 size = READ_U1(bytes, offset);

@@ -30,7 +30,8 @@ const unsigned int VMThread::StateInterrupted = 2;
 
 void VMThread::print(mvm::PrintBuffer* buf) const {
   buf->write("Thread:");
-  vmThread->print(buf);
+	declare_gcroot(VMObject *, th) = vmThread;
+  th->print(buf);
 }
 
 extern void AddStandardCompilePasses(llvm::FunctionPassManager*);
@@ -40,6 +41,7 @@ VMThread::~VMThread() {
 }
 
 VMThread::VMThread(VMObject* thread, N3* vm) {
+	llvm_gcroot(thread, 0);
   this->perFunctionPasses = 0;
   this->vmThread = thread;
   this->vm = vm;
@@ -55,9 +57,10 @@ VMThread::VMThread(VMObject* thread, N3* vm) {
 
 VMObject* VMThread::currentThread() {
   VMThread* result = get();
-  if (result != 0)
-    return result->vmThread;
-  else
+  if (result != 0) {
+		declare_gcroot(VMObject *, res) = result->vmThread;
+    return res;
+  } else
     return 0;
 }
 

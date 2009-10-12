@@ -149,6 +149,7 @@ llvm::Function* CLIJit::newStringLLVM;
 
 const llvm::Type* ArrayUInt8::llvmType = 0;
 const llvm::Type* ArraySInt8::llvmType = 0;
+const llvm::Type* ArrayChar::llvmType = 0;
 const llvm::Type* ArrayUInt16::llvmType = 0;
 const llvm::Type* ArraySInt16::llvmType = 0;
 const llvm::Type* ArrayUInt32::llvmType = 0;
@@ -178,6 +179,7 @@ static void initialiseVT() {
   INIT(VMArray);
   INIT(ArrayUInt8);
   INIT(ArraySInt8);
+  INIT(ArrayChar);
   INIT(ArrayUInt16);
   INIT(ArraySInt16);
   INIT(ArrayUInt32);

@@ -28,6 +28,7 @@ using namespace n3;
   INIT(VMArray);
   INIT(ArrayUInt8);
   INIT(ArraySInt8);
+  INIT(ArrayChar);
   INIT(ArrayUInt16);
   INIT(ArraySInt16);
   INIT(ArrayUInt32);
@@ -42,22 +43,24 @@ using namespace n3;
   
 #undef INIT
 
-void CLIJit::TRACER {
-  compilingMethod->CALL_TRACER;
-  compilingClass->CALL_TRACER;
+#ifdef MULTIPLE_GC
+extern "C" void CLIObjectTracer(VMObject* obj, Collector* GC) {
+#else
+extern "C" void CLIObjectTracer(VMObject* obj) {
+#endif
+  obj->lockObj->MARK_AND_TRACE;
 }
 
-void CacheNode::TRACER {
-  ((mvm::Object*)methPtr)->MARK_AND_TRACE;
-  lastCible->CALL_TRACER;
-  next->CALL_TRACER;
-  enveloppe->CALL_TRACER;
+// N3 Objects
+void LockObj::TRACER {
 }
 
-void Enveloppe::TRACER {
-  firstCache->CALL_TRACER;
-  //cacheLock->MARK_AND_TRACE;
-  originalMethod->CALL_TRACER;
+void VMObject::TRACER {
+  lockObj->MARK_AND_TRACE;
+}
+
+void CLIString::TRACER {
+	VMObject::CALL_TRACER;
 }
 
 void VMArray::TRACER {
@@ -79,6 +82,7 @@ void ArrayObject::TRACER {
 
 ARRAYTRACER(ArrayUInt8)
 ARRAYTRACER(ArraySInt8)
+ARRAYTRACER(ArrayChar)
 ARRAYTRACER(ArrayUInt16)
 ARRAYTRACER(ArraySInt16)
 ARRAYTRACER(ArrayUInt32)
@@ -88,7 +92,6 @@ ARRAYTRACER(ArrayFloat)
 ARRAYTRACER(ArrayDouble)
 
 #undef ARRAYTRACER
-
 
 #define TRACE_VECTOR(type, name, alloc) { \
   for (std::vector<type, alloc<type> >::iterator i = name.begin(), e = name.end(); \
@@ -100,32 +103,35 @@ ARRAYTRACER(ArrayDouble)
        i!= e; ++i) {                                                    \
     (*i)->CALL_TRACER; }}
 
-
-// root of tracing
+// internal objects
 void VMThread::TRACER {
-  vmThread->MARK_AND_TRACE;
-  vm->CALL_TRACER;
-  //lock->MARK_AND_TRACE;
-  //varcond->MARK_AND_TRACE;
+	declare_gcroot(VMObject*, th) = vmThread;
+  th->MARK_AND_TRACE;
   pendingException->MARK_AND_TRACE;
+	// I suppose that the vm is already traced by the gc
+	//  vm->CALL_TRACER;
 }
 
+void N3::TRACER {
+	// If I understand, the gc already call trace for all VMThread
+//   if (bootstrapThread) {
+//     bootstrapThread->CALL_TRACER;
+//     for (VMThread* th = (VMThread*)bootstrapThread->next(); 
+//          th != bootstrapThread; th = (VMThread*)th->next())
+//       th->CALL_TRACER;
+//   }
+  loadedAssemblies->CALL_TRACER;
+}
+
+void Assembly::TRACER {
+  loadedNameClasses->CALL_TRACER;
+  delegatee->MARK_AND_TRACE;
+}
 
 void VMCommonClass::TRACER {
-  super->CALL_TRACER;
-  CALL_TRACER_VECTOR(VMClass*, interfaces, std::allocator);
-  //lockVar->MARK_AND_TRACE;
-  //condVar->MARK_AND_TRACE;
-  CALL_TRACER_VECTOR(VMMethod*, virtualMethods, std::allocator);
-  CALL_TRACER_VECTOR(VMMethod*, staticMethods, std::allocator);
-  CALL_TRACER_VECTOR(VMField*, virtualFields, std::allocator);
-  CALL_TRACER_VECTOR(VMField*, staticFields, std::allocator);
   delegatee->MARK_AND_TRACE;
-  CALL_TRACER_VECTOR(VMCommonClass*, display, std::allocator);
-  vm->CALL_TRACER;
-
-  assembly->CALL_TRACER;
-  //funcs->MARK_AND_TRACE;
+	CALL_TRACER_VECTOR(VMMethod*, virtualMethods, std::allocator);
+	CALL_TRACER_VECTOR(VMMethod*, staticMethods, std::allocator);
   CALL_TRACER_VECTOR(Property*, properties, gc_allocator);
 }
 
@@ -133,93 +139,32 @@ void VMClass::TRACER {
   VMCommonClass::CALL_TRACER;
   staticInstance->MARK_AND_TRACE;
   virtualInstance->MARK_AND_TRACE;
-  CALL_TRACER_VECTOR(VMClass*, innerClasses, std::allocator);
-  outerClass->CALL_TRACER;
-  CALL_TRACER_VECTOR(VMMethod*, genericMethods, std::allocator);
 }
 
 void VMGenericClass::TRACER {
   VMClass::CALL_TRACER;
-  CALL_TRACER_VECTOR(VMCommonClass*, genericParams, std::allocator);
 }
 
 void VMClassArray::TRACER {
   VMCommonClass::CALL_TRACER;
-  baseClass->CALL_TRACER;
 }
 
 void VMClassPointer::TRACER {
   VMCommonClass::CALL_TRACER;
-  baseClass->CALL_TRACER;
 }
 
 void VMMethod::TRACER {
   delegatee->MARK_AND_TRACE;
-  //signature->MARK_AND_TRACE;
-  classDef->CALL_TRACER;
-  CALL_TRACER_VECTOR(Param*, params, gc_allocator);
-  CALL_TRACER_VECTOR(Enveloppe*, caches, gc_allocator);
 }
 
 void VMGenericMethod::TRACER {
   VMMethod::CALL_TRACER;
-  CALL_TRACER_VECTOR(VMCommonClass*, genericParams, std::allocator);
-}
-
-void VMField::TRACER {
-  signature->CALL_TRACER;
-  classDef->CALL_TRACER;
-}
-
-void LockObj::TRACER {
-}
-
-void VMObject::TRACER {
-  classOf->CALL_TRACER;
-  lockObj->MARK_AND_TRACE;
-}
-
-void Param::TRACER {
-  method->CALL_TRACER;
 }
 
 void Property::TRACER {
-  type->CALL_TRACER;
-  //signature->MARK_AND_TRACE;
   delegatee->MARK_AND_TRACE;
 }
 
-void Assembly::TRACER {
-  loadedNameClasses->CALL_TRACER;
-  loadedTokenClasses->CALL_TRACER;
-  loadedTokenMethods->CALL_TRACER;
-  loadedTokenFields->CALL_TRACER;
-  vm->CALL_TRACER;
-  delegatee->MARK_AND_TRACE;
-  // TODO trace assembly refs...
+// never called but it simplifies the definition of LockedMap
+void VMField::TRACER {
 }
-
-void N3::TRACER {
-  functions->CALL_TRACER;
-  if (bootstrapThread) {
-    bootstrapThread->CALL_TRACER;
-    for (VMThread* th = (VMThread*)bootstrapThread->next(); 
-         th != bootstrapThread; th = (VMThread*)th->next())
-      th->CALL_TRACER;
-  }
-  hashStr->CALL_TRACER;
-  loadedAssemblies->CALL_TRACER;
-}
-
-void CLIString::TRACER {
-}
-
-#ifdef MULTIPLE_GC
-extern "C" void CLIObjectTracer(VMObject* obj, Collector* GC) {
-#else
-extern "C" void CLIObjectTracer(VMObject* obj) {
-#endif
-  obj->classOf->CALL_TRACER;
-  obj->lockObj->MARK_AND_TRACE;
-}
-

@@ -174,9 +174,9 @@ extern "C" VMObject* System_Globalization_CultureInfo_InternalCultureName() {
   }
 }
 
-static const ArrayUInt16* newBuilder(N3* vm, PNetString* value, uint32 length) {
+static const ArrayChar* newBuilder(N3* vm, PNetString* value, uint32 length) {
   uint32 valueLength = value ? value->length : 0;
-  const ArrayUInt16* array = value ? value->value : 0;
+  const ArrayChar* array = value ? value->value : 0;
   uint32 roundLength = (7 + length) & 0xfffffff8;
   uint16* buf = (uint16*)alloca(roundLength * sizeof(uint16));
   uint32 strLength = 0;
@@ -207,9 +207,9 @@ extern "C" VMObject* Platform_SysCharInfo_GetNewLine() {
 }
 
 extern "C" void System_String_CopyToChecked(PNetString* str, sint32 sstart, 
-                                            ArrayUInt16* dest, sint32 dstart,
+                                            ArrayChar* dest, sint32 dstart,
                                             sint32 count) {
-  const ArrayUInt16* value = str->value;
+  const ArrayChar* value = str->value;
   memcpy(&dest->elements[dstart], &value->elements[sstart], count << 1);
 }
 
@@ -236,7 +236,7 @@ extern "C" void Platform_Stdio_StdWrite(sint32 fd, ArrayUInt8* value,
   }
 }
 
-extern "C" sint32 System_Text_DefaultEncoding_InternalGetBytes(ArrayUInt16* chars,
+extern "C" sint32 System_Text_DefaultEncoding_InternalGetBytes(ArrayChar* chars,
             sint32 charIndex, sint32 charCount, ArrayUInt8* bytes, sint32 byteIndex) {
   
   return ILAnsiGetBytes(&chars->elements[charIndex], charCount, &bytes->elements[byteIndex], bytes->size - byteIndex);
@@ -264,14 +264,14 @@ extern "C" PNetString* System_String_NewString(uint32 size) {
 
 extern "C" void System_String_Copy_3(PNetString* dest, sint32 pos, 
                                      PNetString* src) {
-  ArrayUInt16* arr = (ArrayUInt16*)MSCorlib::arrayChar->doNew(pos + src->value->size);
+  ArrayChar* arr = (ArrayChar*)MSCorlib::arrayChar->doNew(pos + src->value->size);
   
   for (sint32 i = 0; i < pos; ++i) {
-    arr->setAt(i, dest->value->at(i));
+    arr->elements[i] = dest->value->elements[i];
   }
-
+	
   for (sint32 i = 0; i < src->length; ++i) {
-    arr->setAt(pos + i, src->value->at(i));
+    arr->elements[pos + i] = src->value->elements[i];
   }
 
   dest->value = arr;
@@ -281,7 +281,7 @@ extern "C" void System_String_Copy_3(PNetString* dest, sint32 pos,
 extern "C" void System_String_Copy_5(PNetString* dest, sint32 destPos, 
                                      PNetString* src, sint32 srcPos, 
                                      sint32 length) {
-	const ArrayUInt16 *arraySrc = src->value;
+	const ArrayChar *arraySrc = src->value;
 
 	//	printf("Copy %p %p %d %d %d (%p %d)\n", (void *)dest, (void *)src, destPos, srcPos, length, (void *)dest->value, dest->length);
 
@@ -308,11 +308,11 @@ extern "C" void System_String_Copy_5(PNetString* dest, sint32 destPos,
 }
 
 extern "C" void System_Threading_Monitor_Enter(VMObject* obj) {
-	obj->aquire();
+	//	obj->aquire();
 }
 
 extern "C" void System_Threading_Monitor_Exit(VMObject* obj) {
-	obj->unlock();
+	//	obj->unlock();
 }
 
 
@@ -325,7 +325,7 @@ extern "C" sint32 Platform_SysCharInfo_GetUnicodeCategory(char c) {
 }
 
 extern "C" uint16 System_String_GetChar(PNetString* str, sint32 index) {
-  return str->value->at(index);
+  return str->value->elements[index];
 }
 
 extern "C" sint32 System_String_IndexOf(PNetString* str, uint16 value, 
@@ -339,9 +339,9 @@ extern "C" sint32 System_String_IndexOf(PNetString* str, uint16 value,
   }
 
   sint32 i = startIndex;
-  const ArrayUInt16* array = str->value;
+  const ArrayChar* array = str->value;
   while (i < startIndex + count) {
-    if (array->at(i) == value) return i;
+    if (array->elements[i] == value) return i;
     else ++i;
   }
 
@@ -350,7 +350,7 @@ extern "C" sint32 System_String_IndexOf(PNetString* str, uint16 value,
 
 extern "C" sint32 System_String_GetHashCode(PNetString* str) {
   sint32 hash = 0;
-  const ArrayUInt16* array = str->value;
+  const ArrayChar* array = str->value;
   for (sint32 i = 0; i < array->size; ++i) {
     hash += ((hash << 5) + array->elements[i]);
   }
@@ -363,7 +363,7 @@ extern "C" VMObject* System_Text_StringBuilder_Insert_System_Text_StringBuilder_
                                                       uint16 value) {
   N3* vm = (N3*)(VMThread::get()->vm);
   PNetString* buildString = obj->buildString;
-  const ArrayUInt16* array = buildString->value;
+  const ArrayChar* array = buildString->value;
   sint32 strLength = buildString->length;
   sint32 length = (index + 1) > strLength ? index + 1 : strLength + 1;
   uint16* buf = (uint16*)alloca(length * sizeof(uint16));
@@ -390,8 +390,8 @@ extern "C" VMObject* System_Text_StringBuilder_Insert_System_Text_StringBuilder_
                                                       PNetString* str) {
   N3* vm = (N3*)(VMThread::get()->vm);
   PNetString* buildString = obj->buildString;
-  const ArrayUInt16* strArray = str->value;
-  const ArrayUInt16* buildArray = buildString->value;
+  const ArrayChar* strArray = str->value;
+  const ArrayChar* buildArray = buildString->value;
   sint32 strLength = str->length;
   sint32 buildLength = buildString->length;
   sint32 length = strLength + buildLength;
@@ -421,7 +421,7 @@ extern "C" VMObject* System_Text_StringBuilder_Append_System_Text_StringBuilder_
                                                 uint16 value) {
   N3* vm = (N3*)(VMThread::get()->vm);
   PNetString* buildString = obj->buildString;
-  const ArrayUInt16* array = buildString->value;
+  const ArrayChar* array = buildString->value;
   sint32 length = buildString->length;
   uint16* buf = (uint16*)alloca((length + 1) * sizeof(uint16));
 
@@ -439,8 +439,8 @@ extern "C" VMObject* System_Text_StringBuilder_Append_System_Text_StringBuilder_
                                                 PNetString* str) {
   N3* vm = (N3*)(VMThread::get()->vm);
   PNetString* buildString = obj->buildString;
-  const ArrayUInt16* buildArray = buildString->value;
-  const ArrayUInt16* strArray = str->value;
+  const ArrayChar* buildArray = buildString->value;
+  const ArrayChar* strArray = str->value;
   sint32 buildLength = buildString->length;
   sint32 strLength = str->length;
   sint32 length = buildLength + strLength;
@@ -519,8 +519,8 @@ extern "C" VMObject* System_Reflection_Assembly_LoadFromName(PNetString* str, si
 
 extern "C" PNetString* System_String_Concat_2(PNetString* str1, PNetString* str2) {
   N3* vm = (N3*)(VMThread::get()->vm);
-  const ArrayUInt16* a1 = str1->value;
-  const ArrayUInt16* a2 = str2->value;
+  const ArrayChar* a1 = str1->value;
+  const ArrayChar* a2 = str2->value;
   sint32 len1 = str1->length;
   sint32 len2 = str2->length;
   uint16* buf = (uint16*)alloca((len1 + len2) * sizeof(uint16));
@@ -535,9 +535,9 @@ extern "C" PNetString* System_String_Concat_2(PNetString* str1, PNetString* str2
 
 extern "C" PNetString* System_String_Concat_3(PNetString* str1, PNetString* str2, PNetString* str3) {
   N3* vm = (N3*)(VMThread::get()->vm);
-  const ArrayUInt16* a1 = str1->value;
-  const ArrayUInt16* a2 = str2->value;
-  const ArrayUInt16* a3 = str3->value;
+  const ArrayChar* a1 = str1->value;
+  const ArrayChar* a2 = str2->value;
+  const ArrayChar* a3 = str3->value;
   sint32 len1 = str1->length;
   sint32 len2 = str2->length;
   sint32 len3 = str3->length;
@@ -553,7 +553,7 @@ extern "C" PNetString* System_String_Concat_3(PNetString* str1, PNetString* str2
 }
 
 extern "C" void System_String_RemoveSpace(PNetString* str, sint32 index, sint32 length) {
-  const ArrayUInt16* array = str->value;
+  const ArrayChar* array = str->value;
   sint32 strLength = str->length;
   uint16* buf = (uint16*)alloca(strLength * sizeof(uint16));
   sint32 j = index;
@@ -576,13 +576,13 @@ extern "C" void System_String_RemoveSpace(PNetString* str, sint32 index, sint32 
     memcpy(&(buf[j]), &(array->elements[index + length]), (strLength - (index + length)) * sizeof(uint16));
   }
 
-  const ArrayUInt16* res = VMThread::get()->vm->bufToArray(buf, j);
+  const ArrayChar* res = VMThread::get()->vm->bufToArray(buf, j);
   str->value = res;
   str->length = j;
 }
 
 extern "C" void System_String__ctor_3(PNetString* str, uint16 ch, sint32 count) {
-  ArrayUInt16* array = (ArrayUInt16*)MSCorlib::arrayChar->doNew(count);
+  ArrayChar* array = (ArrayChar*)MSCorlib::arrayChar->doNew(count);
   for (sint32 i = 0; i < count; ++i) {
     array->elements[i] = ch;
   }
@@ -607,8 +607,9 @@ void* sys_memrchr(const void* s, int c, size_t n) {
 }
 
 extern "C" VMObject* System_Reflection_Assembly_GetType(VMObject* obj, PNetString* str, bool onError, bool ignoreCase) {
+	printf("Get type\n");
   Assembly* ass = ASSEMBLY_VALUE(obj);
-  const ArrayUInt16* array = str->value;
+  const ArrayChar* array = str->value;
 	mvm::PrintBuffer pb(array);
   char* asciiz = pb.cString();
   char* index = (char*)sys_memrchr(asciiz, '.', strlen(asciiz));
@@ -916,7 +917,7 @@ extern "C" ArrayObject* System_Reflection_ClrHelpers_GetCustomAttributes(Assembl
 
 extern "C" VMObject* System_Globalization_TextInfo_ToLower(VMObject* obj, PNetString* str) {
   verifyNull(str);
-  const ArrayUInt16* array = str->value;
+  const ArrayChar* array = str->value;
   uint32 length = str->length;
 
   uint16* buf = (uint16*)alloca(length * sizeof(uint16));
@@ -925,12 +926,12 @@ extern "C" VMObject* System_Globalization_TextInfo_ToLower(VMObject* obj, PNetSt
 
   memcpy(buf, array->elements, length * sizeof(uint16));
   ILUnicodeStringToLower((void*)buf, (void*)array->elements, length);
-  const ArrayUInt16* res = vm->bufToArray(buf, length);
+  const ArrayChar* res = vm->bufToArray(buf, length);
   return ((N3*)vm)->arrayToString(res);
 }
 
 extern "C" VMObject* System_String_Replace(PNetString* str, uint16 c1, uint16 c2) {
-  const ArrayUInt16* array = str->value;
+  const ArrayChar* array = str->value;
   uint32 length = str->length;
   if ((c1 == c2) || length == 0) return str;
 
@@ -941,7 +942,7 @@ extern "C" VMObject* System_String_Replace(PNetString* str, uint16 c1, uint16 c2
   }
   
   N3* vm = (N3*)VMThread::get()->vm;
-  const ArrayUInt16* res = vm->bufToArray(buf, length);
+  const ArrayChar* res = vm->bufToArray(buf, length);
   return vm->arrayToString(res);
 }
 
@@ -991,7 +992,7 @@ extern "C" sint32 System_String_CompareInternal(PNetString* strA, sint32 indexA,
 }
 
 extern "C" void System_String_CharFill(PNetString* str, sint32 start, sint32 count, char ch) {
-  const ArrayUInt16* array = str->value;
+  const ArrayChar* array = str->value;
   sint32 length = start + count;
   uint16* buf = (uint16*)alloca(length * sizeof(uint16));
 
@@ -1001,7 +1002,7 @@ extern "C" void System_String_CharFill(PNetString* str, sint32 start, sint32 cou
   }
   
   N3* vm = VMThread::get()->vm;
-  const ArrayUInt16* val = vm->bufToArray(buf, length);
+  const ArrayChar* val = vm->bufToArray(buf, length);
   str->value = val;
   str->length = length;
 }
@@ -1064,5 +1065,6 @@ extern "C" sint32 System_String_InternalOrdinal(PNetString *strA, sint32 indexA,
 }
 
 extern "C" VMObject* System_Threading_Thread_InternalCurrentThread() {
-  return VMThread::get()->vmThread;
+	declare_gcroot(VMObject*, res) = VMThread::get()->vmThread;
+  return res;
 }

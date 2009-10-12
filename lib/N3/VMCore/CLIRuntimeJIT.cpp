@@ -54,7 +54,7 @@ extern "C" void indexOutOfBounds() {
   assert(0 && "implement index out of bounds exception");
 }
 
-extern "C" VMObject* newString(const ArrayUInt16* utf8) {
+extern "C" VMObject* newString(const ArrayChar* utf8) {
 	N3 *vm = (N3*)VMThread::get()->vm;
   return vm->arrayToString(utf8);
 }

@@ -51,16 +51,13 @@ public:                                                               \
   static const llvm::Type* llvmType;                                  \
   sint32 size;                                                        \
   elmt elements[1];                                                   \
-  static name *acons(sint32 n, VMClassArray* cl);                     \
-  void initialise(VMCommonClass* atype, sint32 n);                    \
-  elmt at(sint32) const;                                              \
-  void setAt(sint32, elmt);                                           \
   virtual void print(mvm::PrintBuffer* buf) const;                    \
   virtual void TRACER;                                     \
 }
 
 ARRAYCLASS(ArrayUInt8,  uint8);
 ARRAYCLASS(ArraySInt8,  sint8);
+ARRAYCLASS(ArrayChar,   uint16);
 ARRAYCLASS(ArrayUInt16, uint16);
 ARRAYCLASS(ArraySInt16, sint16);
 ARRAYCLASS(ArrayUInt32, uint32);
@@ -68,22 +65,9 @@ ARRAYCLASS(ArraySInt32, sint32);
 ARRAYCLASS(ArrayLong,   sint64);
 ARRAYCLASS(ArrayFloat,  float);
 ARRAYCLASS(ArrayDouble, double);
+ARRAYCLASS(ArrayObject, VMObject*);
 
 #undef ARRAYCLASS
-
-class ArrayObject : public VMObject {
-public:
-  static VirtualTable* VT;
-  static const llvm::Type* llvmType;
-  sint32 size;
-  VMObject* elements[1];
-  static ArrayObject *acons(sint32 n, VMClassArray* cl);
-  void initialise(VMCommonClass* atype, sint32 n);
-  VMObject* at(sint32) const;
-  void setAt(sint32, VMObject*);
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
-};
 
 
 } // end namespace n3

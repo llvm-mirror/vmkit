@@ -27,7 +27,6 @@ class VMClass;
 class CacheNode : public mvm::PermanentObject {
 public:
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
 
   void* methPtr;
   VMClass* lastCible;
@@ -42,7 +41,6 @@ public:
 
 class Enveloppe : public mvm::PermanentObject {
 public:
-  virtual void TRACER;
   virtual void print(mvm::PrintBuffer* buf) const;
   
   CacheNode *firstCache;

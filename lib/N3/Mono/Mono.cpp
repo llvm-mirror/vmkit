@@ -168,7 +168,7 @@ System_Environment_get_NewLine (void)
 
 extern "C" void
 System_String_InternalCopyTo(MonoString* str, sint32 sindex, VMArray* dest, sint32 destIndex, sint32 count) {
-  const ArrayUInt16* contents = str->value;
+  const ArrayChar* contents = str->value;
   memcpy(&dest->elements[destIndex], &contents->elements[sindex], count * sizeof(uint16));
 }
 
@@ -244,7 +244,8 @@ System_NumberFormatter_GetFormatterTables (guint64 const **mantissas,
 }
 
 extern "C" VMObject* System_Threading_Thread_CurrentThread_internal() {
-  return VMThread::get()->vmThread;
+	declare_gcroot(VMObject*, res) = VMThread::get()->vmThread;
+  return res;
 }
 
 extern "C" VMObject*
@@ -279,9 +280,9 @@ System_Threading_Thread_SetCachedCurrentCulture (VMObject* thread, VMObject *cul
 }
 
 extern "C" void
-System_String__ctor(MonoString* str, ArrayUInt16* array, sint32 startIndex, sint32 count) {
+System_String__ctor(MonoString* str, ArrayChar* array, sint32 startIndex, sint32 count) {
   N3* vm = VMThread::get()->vm;
-  const ArrayUInt16* value = vm->bufToArray(&(array->elements[startIndex]), count);
+  const ArrayChar* value = vm->bufToArray(&(array->elements[startIndex]), count);
   str->length = count;
   str->startChar = array->elements[startIndex];
   str->value = value;
@@ -333,7 +334,7 @@ System_String_InternalJoin (MonoString *separator, VMArray * value, sint32 sinde
 	}
   
   N3* vm = (N3*)VMThread::get()->vm;
-  const ArrayUInt16* array = vm->bufToArray(dest, length);
+  const ArrayChar* array = vm->bufToArray(dest, length);
 	return (MonoString*)vm->arrayToString(array);
 }
 

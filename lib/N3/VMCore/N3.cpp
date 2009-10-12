@@ -107,7 +107,6 @@ N3::N3(mvm::BumpPtrAllocator &allocator, const char *name) : mvm::VirtualMachine
   this->protectModule =     new mvm::LockNormal();
 
   this->functions =         new(allocator, "FunctionMap") FunctionMap();
-  this->hashStr =           new(allocator, "StringMap")   StringMap();
   this->loadedAssemblies =  new(allocator, "AssemblyMap") AssemblyMap();
 
   this->TheModuleProvider = new N3ModuleProvider(this->LLVMModule, this->functions);
@@ -322,7 +321,7 @@ void N3::mainCLIStart(VMThread* th) {
   ClArgumentsInfo& info = vm->argumentsInfo;  
   ArrayObject* args = (ArrayObject*)MSCorlib::arrayString->doNew(info.argc-2);
   for (int i = 2; i < info.argc; ++i) {
-    args->setAt(i - 2, (VMObject*)vm->arrayToString(vm->asciizToArray(info.argv[i])));
+    args->elements[i - 2] = (VMObject*)vm->arrayToString(vm->asciizToArray(info.argv[i]));
   }
   
   try{
@@ -341,21 +340,21 @@ void N3::mainCLIStart(VMThread* th) {
 
 
 
-ArrayUInt16* N3::asciizToArray(const char* asciiz) {
+ArrayChar* N3::asciizToArray(const char* asciiz) {
 	uint32 len = strlen(asciiz);
-	ArrayUInt16 *res = (ArrayUInt16*)MSCorlib::arrayChar->doNew(len);
+	ArrayChar *res = (ArrayChar*)MSCorlib::arrayChar->doNew(len);
 	for(uint32 i=0; i<len; i++)
 		res->elements[i] = asciiz[i];
 	return res;
 }
 
-ArrayUInt16* N3::bufToArray(const uint16* buf, uint32 size) {
-	ArrayUInt16 *res = (ArrayUInt16*)MSCorlib::arrayChar->doNew(size);
+ArrayChar* N3::bufToArray(const uint16* buf, uint32 size) {
+	ArrayChar *res = (ArrayChar*)MSCorlib::arrayChar->doNew(size);
 	memcpy(res->elements, buf, size<<1);
 	return res;
 }
 
-ArrayUInt16* N3::UTF8ToArray(const UTF8 *utf8) {
+ArrayChar* N3::UTF8ToArray(const UTF8 *utf8) {
   return bufToArray(utf8->elements, utf8->size);
 }
 
@@ -367,11 +366,11 @@ const UTF8* N3::bufToUTF8(const uint16* buf, uint32 len) {
   return hashUTF8->lookupOrCreateReader(buf, len);
 }
 
-const UTF8* N3::arrayToUTF8(const ArrayUInt16 *array) {
+const UTF8* N3::arrayToUTF8(const ArrayChar *array) {
   return bufToUTF8(array->elements, array->size);
 }
 
-CLIString *N3::arrayToString(const ArrayUInt16 *array) {
+CLIString *N3::arrayToString(const ArrayChar *array) {
   return (CLIString*)CLIString::stringDup(array, this);
 }
 

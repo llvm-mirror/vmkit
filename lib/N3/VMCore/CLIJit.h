@@ -77,7 +77,6 @@ public:
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("CLIJit");
   }
-  virtual void TRACER;
   
   static const char* OpcodeNames[0xE1];
   static const char* OpcodeNamesFE[0x23];

@@ -19,7 +19,7 @@
 
 namespace n3 {
 
-class ArrayUInt16;
+class ArrayChar;
 
 class PNetString : public CLIString {
 public:
@@ -28,7 +28,7 @@ public:
   sint32 capacity;
   sint32 length;
   uint8 firstChar;
-  const ArrayUInt16* value;
+  const ArrayChar* value;
   llvm::GlobalVariable* _llvmVar;
 
 };

@@ -20,7 +20,7 @@
 namespace n3 {
 
 class N3;
-class ArrayUInt16;
+class ArrayChar;
 
 class CLIString : public VMObject {
 public:
@@ -33,8 +33,8 @@ public:
   llvm::GlobalVariable* llvmVar();
 
   
-  static CLIString* stringDup(const ArrayUInt16*& array, N3* vm);
-	const ArrayUInt16 *strToArray(N3 *vm) const;
+  static CLIString* stringDup(const ArrayChar*& array, N3* vm);
+	const ArrayChar *strToArray(N3 *vm) const;
 };
 
 } // end namespace jnjvm

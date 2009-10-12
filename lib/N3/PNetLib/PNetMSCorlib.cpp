@@ -179,7 +179,7 @@ static void mapInitialThread(N3* vm) {
   args.push_back(MSCorlib::pIntPtr);
   VMMethod* meth = cl->lookupMethod(vm->asciizToUTF8(".ctor"), args, 
                                     false, false);
-  VMThread* myth = VMThread::get();
+  declare_gcroot(VMThread*, myth) = VMThread::get();
   (*meth)(th, myth);
   myth->vmThread = th;
 }

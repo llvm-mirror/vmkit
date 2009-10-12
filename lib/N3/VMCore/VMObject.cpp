@@ -31,14 +31,17 @@ void VMCond::notify() {
     if (cur->interruptFlag != 0) {
       cur->lock->unlock();
       continue;
-    } else if (cur->vmThread != 0) {
-      cur->varcond->signal();
-      cur->lock->unlock();
-      threads.erase(i);
-      break;
-    } else { // dead thread
-      threads.erase(i);
-    }
+    } else {
+			declare_gcroot(VMObject *, th) = cur->vmThread;
+			if (th != 0) {
+				cur->varcond->signal();
+				cur->lock->unlock();
+				threads.erase(i);
+				break;
+			} else { // dead thread
+				threads.erase(i);
+			}
+		}
   }
 }
 

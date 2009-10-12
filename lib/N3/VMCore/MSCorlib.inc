@@ -157,7 +157,7 @@ extern "C" void System_Array_InternalCopy(VMArray* src, sint32 sstart,
   } else if (srcType->super != MSCorlib::pValue && srcType->super != MSCorlib::pEnum) {
     sint32 i = sstart;
     while (i < sstart + len && !doThrow) {
-      VMObject* cur = ((ArrayObject*)src)->at(i);
+      VMObject* cur = ((ArrayObject*)src)->elements[i];
       if (cur) {
         if (!(cur->classOf->isAssignableFrom(dstType))) {
           doThrow = true;

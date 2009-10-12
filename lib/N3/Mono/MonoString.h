@@ -25,7 +25,7 @@ public:
   // !!! mono layout !!!
   sint32 length;
   uint8 startChar;
-  const ArrayUInt16* value;
+  const ArrayChar* value;
   llvm::GlobalVariable* _llvmVar;
 
 };

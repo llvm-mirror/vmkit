@@ -27,6 +27,8 @@ extern "C" void __llvm_gcroot(const void**, void*) __attribute__((nothrow));
 #define llvm_gcroot(a, b)
 #endif
 
+#define declare_gcroot(type, name) type name; llvm_gcroot(name, 0); name
+
 namespace mvm {
 
 class Allocator {

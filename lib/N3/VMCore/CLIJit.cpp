@@ -140,6 +140,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
 }
 #endif
 
+
 VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
   VirtualTable * res = (VirtualTable*)malloc(VT_SIZE);
   memcpy(res, VMObject::VT, VT_SIZE);
@@ -236,6 +237,28 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
   cl->virtualTracer = func;
 #endif
 
+
+	if     (cl->baseClass == MSCorlib::pChar) {
+		((void**)res)[VT_PRINT_OFFSET] = ((void **)ArrayChar::VT)[VT_PRINT_OFFSET];
+ 	} else if(cl->baseClass == MSCorlib::pSInt8)
+ 		((void**)res)[VT_PRINT_OFFSET] = ((void **)ArraySInt8::VT)[VT_PRINT_OFFSET];
+ 	else if(cl->baseClass == MSCorlib::pUInt8)
+ 		((void**)res)[VT_PRINT_OFFSET] = ((void **)ArrayUInt8::VT)[VT_PRINT_OFFSET];
+ 	else if(cl->baseClass == MSCorlib::pSInt16)
+ 		((void**)res)[VT_PRINT_OFFSET] = ((void **)ArraySInt16::VT)[VT_PRINT_OFFSET];
+ 	else if(cl->baseClass == MSCorlib::pUInt16)
+ 		((void**)res)[VT_PRINT_OFFSET] = ((void **)ArrayUInt16::VT)[VT_PRINT_OFFSET];
+ 	else if(cl->baseClass == MSCorlib::pSInt32)
+ 		((void**)res)[VT_PRINT_OFFSET] = ((void **)ArraySInt32::VT)[VT_PRINT_OFFSET];
+ 	else if(cl->baseClass == MSCorlib::pUInt32)
+ 		((void**)res)[VT_PRINT_OFFSET] = ((void **)ArrayUInt32::VT)[VT_PRINT_OFFSET];
+ 	else if(cl->baseClass == MSCorlib::pSInt64)
+ 		((void**)res)[VT_PRINT_OFFSET] = ((void **)ArrayLong::VT)[VT_PRINT_OFFSET];
+ 	else if(cl->baseClass == MSCorlib::pFloat)
+ 		((void**)res)[VT_PRINT_OFFSET] = ((void **)ArrayFloat::VT)[VT_PRINT_OFFSET];
+ 	else if(cl->baseClass == MSCorlib::pDouble)
+ 		((void**)res)[VT_PRINT_OFFSET] = ((void **)ArrayDouble::VT)[VT_PRINT_OFFSET];
+
   return res;
 }
 
@@ -288,6 +311,7 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
     cl->staticTracer = func;
   }
 #endif
+
   return res;
 }
 
@@ -1532,6 +1556,8 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
     PointerType::getUnqual(module->getTypeByName("ArrayUInt8"));
   ArraySInt8::llvmType = 
     PointerType::getUnqual(module->getTypeByName("ArraySInt8"));
+  ArrayChar::llvmType = 
+    PointerType::getUnqual(module->getTypeByName("ArrayUInt16")); // should be ArrayChar... but it does not work? 
   ArrayUInt16::llvmType = 
     PointerType::getUnqual(module->getTypeByName("ArrayUInt16"));
   ArraySInt16::llvmType = 
@@ -1546,13 +1572,11 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
     PointerType::getUnqual(module->getTypeByName("ArrayFloat"));
   ArrayObject::llvmType = 
     PointerType::getUnqual(module->getTypeByName("ArrayObject"));
-	//  UTF8::llvmType = 
-	//    PointerType::getUnqual(module->getTypeByName("ArrayUInt16"));
   CacheNode::llvmType = 
     PointerType::getUnqual(module->getTypeByName("CacheNode"));
   Enveloppe::llvmType = 
     PointerType::getUnqual(module->getTypeByName("Enveloppe"));
-  
+
 #ifdef WITH_TRACER
   markAndTraceLLVM = module->getFunction("MarkAndTrace");
   markAndTraceLLVMType = markAndTraceLLVM->getFunctionType();
