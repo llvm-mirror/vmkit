@@ -16,24 +16,25 @@
 
 namespace mvm {
 
-extern "C" size_t MMTkMutatorSize;
-extern "C" size_t MMTkCollectorSize;
-
-extern "C" void JnJVM_org_j3_config_Selected_00024Mutator__0003Cinit_0003E__(uintptr_t);
-extern "C" void JnJVM_org_j3_config_Selected_00024Collector__0003Cinit_0003E__(uintptr_t);
-
-
 class MutatorThread : public mvm::Thread {
 public:
   mvm::BumpPtrAllocator Allocator;
   uintptr_t MutatorContext;
   uintptr_t CollectorContext;
 
+  static uint32_t MMTkMutatorSize;
+  static uint32_t MMTkCollectorSize;
+
+  static void (*MutatorInit)(uintptr_t);
+  static void (*CollectorInit)(uintptr_t);
+
+
   MutatorThread() {
     MutatorContext = (uintptr_t)Allocator.Allocate(MMTkMutatorSize, "Mutator");
-    JnJVM_org_j3_config_Selected_00024Mutator__0003Cinit_0003E__(MutatorContext);
-    CollectorContext = (uintptr_t)Allocator.Allocate(MMTkCollectorSize, "Collector");
-    JnJVM_org_j3_config_Selected_00024Collector__0003Cinit_0003E__(CollectorContext);
+    MutatorInit(MutatorContext);
+    CollectorContext = 
+      (uintptr_t)Allocator.Allocate(MMTkCollectorSize, "Collector");
+    CollectorInit(CollectorContext);
   }
 
   static MutatorThread* get() {
