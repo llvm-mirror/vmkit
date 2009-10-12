@@ -40,20 +40,19 @@ class VMObject;
 class VMGenericClass;
 class VMGenericMethod;
 
-class Exception : public mvm::Object {
+class ExceptionBlockDesc : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
-  uint32 tryOffset;
-  uint32 tryLength;
-  uint32 handlerOffset;
-  uint32 handlerLength;
-  VMCommonClass* catchClass;
-  llvm::BasicBlock* test;
-  llvm::BasicBlock* realTest;
-  llvm::BasicBlock* handler;
+	static VirtualTable* VT;
+	uint32 tryOffset;
+	uint32 tryLength;
+	uint32 handlerOffset;
+	uint32 handlerLength;
+	VMCommonClass* catchClass;
+	llvm::BasicBlock* test;
+	llvm::BasicBlock* realTest;
+	llvm::BasicBlock* handler;
 
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
+	virtual void print(mvm::PrintBuffer* buf) const;
 };
 
 class Opinfo {
@@ -69,8 +68,12 @@ public:
 };
 
 
-class CLIJit {
+class CLIJit : public mvm::PermanentObject {
 public:
+	mvm::BumpPtrAllocator &allocator;
+
+	CLIJit(mvm::BumpPtrAllocator &a) : allocator(a) {}
+
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("CLIJit");
   }
@@ -115,13 +118,14 @@ public:
   llvm::Value* top();
   
   // exceptions
-  llvm::BasicBlock* endExceptionBlock;
-  llvm::BasicBlock* currentExceptionBlock;
-  llvm::BasicBlock* unifiedUnreachable;
-  std::vector<Exception*> exceptions;
-  std::vector<Exception*> finallyHandlers;
+  llvm::BasicBlock*                endExceptionBlock;
+  llvm::BasicBlock*                currentExceptionBlock;
+  llvm::BasicBlock*                unifiedUnreachable;
+  std::vector<ExceptionBlockDesc*> exceptions;
+  std::vector<ExceptionBlockDesc*> finallyHandlers;
+
   uint32 readExceptionTable(uint32 offset, bool fat, VMGenericClass* genClass, VMGenericMethod* genMethod);
-  std::vector<llvm::BasicBlock*> leaves; 
+  std::vector<llvm::BasicBlock*>   leaves; 
   llvm::Value* supplLocal;
 
   // calls

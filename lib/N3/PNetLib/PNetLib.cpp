@@ -308,14 +308,11 @@ extern "C" void System_String_Copy_5(PNetString* dest, sint32 destPos,
 }
 
 extern "C" void System_Threading_Monitor_Enter(VMObject* obj) {
-	//	printf("Take lock on: %p\n", (void *)obj);
-  obj->aquire();
+	obj->aquire();
 }
 
 extern "C" void System_Threading_Monitor_Exit(VMObject* obj) {
-	//	printf("Release lock on: %p\n", (void *)obj);
-  obj->unlock();
-	//	printf("Release lock on: %p done\n", (void *)obj);
+	obj->unlock();
 }
 
 
@@ -683,21 +680,22 @@ extern "C" VMObject* System_Reflection_ClrType_GetMemberImpl(VMObject* Type, PNe
 }
 
 extern "C" VMObject* System_Reflection_ClrHelpers_GetSemantics(mvm::Object* item, uint32 attributes, bool nonPublic) {
-  if (item->getVirtualTable() == Property::VT) {
-    Property* prop = (Property*)item;
-    if (attributes == METHOD_SEMANTIC_ATTRIBUTES_GETTER) {
-			mvm::PrintBuffer _asciiz(prop->name);
-      const char* asciiz = _asciiz.cString();
-      char* buf = (char*)alloca(strlen(asciiz) + 5);
-      sprintf(buf, "get_%s", asciiz);
-      N3* vm = VMThread::get()->vm;
-      VMMethod* meth = prop->type->lookupMethod(vm->asciizToUTF8(buf), prop->parameters, true, false);
-      assert(meth);
-      return meth->getMethodDelegatee();
-    }
-  } else {
-    VMThread::get()->vm->error("implement me");
-  }
+	VMThread::get()->vm->error("implement me: System_Reflection_ClrHelpers_GetSemantics");
+//   if (item->getVirtualTable() == Property::VT) {
+//     Property* prop = (Property*)item;
+//     if (attributes == METHOD_SEMANTIC_ATTRIBUTES_GETTER) {
+// 			mvm::PrintBuffer _asciiz(prop->name);
+//       const char* asciiz = _asciiz.cString();
+//       char* buf = (char*)alloca(strlen(asciiz) + 5);
+//       sprintf(buf, "get_%s", asciiz);
+//       N3* vm = VMThread::get()->vm;
+//       VMMethod* meth = prop->type->lookupMethod(vm->asciizToUTF8(buf), prop->parameters, true, false);
+//       assert(meth);
+//       return meth->getMethodDelegatee();
+//     }
+//   } else {
+//     VMThread::get()->vm->error("implement me");
+//   }
   return 0;
 }
 

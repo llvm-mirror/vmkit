@@ -1354,7 +1354,7 @@ Property* Assembly::readProperty(uint32 index, VMCommonClass* cl, VMGenericClass
   uint32 nameIndex  = propArray[CONSTANT_PROPERTY_NAME];
   uint32 type       = propArray[CONSTANT_PROPERTY_TYPE];
 
-  Property* prop = gc_new(Property)();
+  Property* prop = new(allocator, "Property") Property();
   prop->name = readString(VMThread::get()->vm, stringOffset + nameIndex);
   prop->flags = flags;
   prop->type = cl;

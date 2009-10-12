@@ -937,10 +937,10 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         assert(bb);
         stack.clear();
         if (finallyHandlers.size()) {
-          Exception* res = 0;
-          for (std::vector<Exception*>::iterator i = finallyHandlers.begin(), 
+          ExceptionBlockDesc* res = 0;
+          for (std::vector<ExceptionBlockDesc*>::iterator i = finallyHandlers.begin(), 
                e = finallyHandlers.end(); i!= e; ++i) {
-            Exception* ex = (*i);
+            ExceptionBlockDesc* ex = (*i);
             if (tmp >= ex->tryOffset && tmp < ex->tryOffset + ex->tryLength) {
               res = ex;
               break;
@@ -969,10 +969,10 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         assert(bb);
         stack.clear();
         if (finallyHandlers.size()) {
-          Exception* res = 0;
-          for (std::vector<Exception*>::iterator i = finallyHandlers.begin(), 
+          ExceptionBlockDesc* res = 0;
+          for (std::vector<ExceptionBlockDesc*>::iterator i = finallyHandlers.begin(), 
                e = finallyHandlers.end(); i!= e; ++i) {
-            Exception* ex = (*i);
+            ExceptionBlockDesc* ex = (*i);
             if (tmp >= ex->tryOffset && tmp < ex->tryOffset + ex->tryLength) {
               res = ex;
               break;

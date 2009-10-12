@@ -41,8 +41,6 @@ using namespace n3;
   INIT(VMObject);
   INIT(ThreadSystem);
   INIT(CLIString);
-  INIT(Property);
-  INIT(Exception);
   
 #undef INIT
 
@@ -123,7 +121,7 @@ void VMCommonClass::TRACER {
 
   assembly->CALL_TRACER;
   //funcs->MARK_AND_TRACE;
-  TRACE_VECTOR(Property*, properties, gc_allocator);
+  CALL_TRACER_VECTOR(Property*, properties, gc_allocator);
 }
 
 void VMClass::TRACER {
@@ -227,10 +225,6 @@ void N3::TRACER {
 }
 
 void CLIString::TRACER {
-}
-
-void Exception::TRACER {
-  catchClass->CALL_TRACER;
 }
 
 #ifdef MULTIPLE_GC

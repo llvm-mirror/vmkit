@@ -41,7 +41,7 @@
 using namespace llvm;
 using namespace n3;
 
-void Exception::print(mvm::PrintBuffer* buf) const {
+void ExceptionBlockDesc::print(mvm::PrintBuffer* buf) const {
   buf->write("Exception<>");
 }
 
@@ -447,9 +447,9 @@ Instruction* CLIJit::lowerMathOps(VMMethod* meth,
 }
 
 Instruction* CLIJit::invokeInline(VMMethod* meth, 
-                                  std::vector<Value*>& args, VMGenericClass* genClass, VMGenericMethod* genMethod) {
-  
-  CLIJit* jit = new CLIJit();
+                                  std::vector<Value*>& args, VMGenericClass* genClass, VMGenericMethod* genMethod) {  
+	mvm::BumpPtrAllocator *a = new mvm::BumpPtrAllocator();
+  CLIJit* jit = new(*a, "CLIJit") CLIJit(*a);
   jit->module = meth->classDef->vm->module;
   jit->compilingClass = meth->classDef; 
   jit->compilingMethod = meth;
@@ -461,7 +461,7 @@ Instruction* CLIJit::invokeInline(VMMethod* meth,
                                         currentExceptionBlock, args, dynamic_cast<VMGenericClass*>(jit->compilingClass), genMethod);
   inlineMethods[meth] = false;
 
-	delete jit;
+	delete a;
   return ret;
 }
 
@@ -979,7 +979,7 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat, VMGenericClass* genCl
   // TODO synchronized
 
   for (uint32 i = 0; i < nbe; ++i) {
-    Exception* ex = gc_new(Exception)();
+    ExceptionBlockDesc* ex = new(allocator, "ExceptionBlockDesc") ExceptionBlockDesc();
     uint32 flags = 0;
     uint32 classToken = 0;
     if (fat) {
@@ -1031,11 +1031,11 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat, VMGenericClass* genCl
   }
   
   bool first = true;
-  for (std::vector<Exception*>::iterator i = exceptions.begin(),
+  for (std::vector<ExceptionBlockDesc*>::iterator i = exceptions.begin(),
     e = exceptions.end(); i!= e; ++i) {
 
-    Exception* cur = *i;
-    Exception* next = 0;
+    ExceptionBlockDesc* cur = *i;
+    ExceptionBlockDesc* next = 0;
     if (i + 1 != e) {
       next = *(i + 1);
     }
@@ -1054,11 +1054,11 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat, VMGenericClass* genCl
       
   }
 
-  for (std::vector<Exception*>::iterator i = exceptions.begin(),
+  for (std::vector<ExceptionBlockDesc*>::iterator i = exceptions.begin(),
     e = exceptions.end(); i!= e; ++i) {
 
-    Exception* cur = *i;
-    Exception* next = 0;
+    ExceptionBlockDesc* cur = *i;
+    ExceptionBlockDesc* next = 0;
     BasicBlock* bbNext = 0;
     if (i + 1 != e) {
       next = *(i + 1);
@@ -1442,7 +1442,8 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
 
 
 Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
-  CLIJit* jit = new CLIJit();
+	mvm::BumpPtrAllocator *a = new mvm::BumpPtrAllocator();
+  CLIJit* jit = new(*a, "CLIJit") CLIJit(*a);
   jit->compilingClass = cl; 
   jit->compilingMethod = meth;
   jit->module = cl->vm->module;
@@ -1457,7 +1458,7 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
     func = jit->compileFatOrTiny(dynamic_cast<VMGenericClass*>(cl), dynamic_cast<VMGenericMethod*>(meth));
   }
 
-	delete jit;
+	delete a;
 	//	printf("Compiling: %s\n", mvm::PrintBuffer(meth).cString());
   return func;
 }

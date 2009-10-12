@@ -291,9 +291,8 @@ public:
   const UTF8* name;
 };
 
-class Property : public mvm::Object {
+class Property : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
   
