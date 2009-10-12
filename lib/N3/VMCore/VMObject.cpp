@@ -23,10 +23,6 @@ void VMObject::initialise(VMCommonClass* cl) {
   this->lockObj = 0;
 }
 
-VMCond* VMCond::allocate() {
-  return gc_new(VMCond)();
-}
-
 void VMCond::notify() {
   for (std::vector<VMThread*>::iterator i = threads.begin(), 
             e = threads.end(); i!= e; ++i) {
@@ -77,21 +73,19 @@ void LockObj::print(mvm::PrintBuffer* buf) const {
 
 LockObj* LockObj::allocate() {
   LockObj* res = gc_new(LockObj)();
-  res->lock = new mvm::LockRecursive();
-  res->varcond = VMCond::allocate();
   return res;
 }
 
 void LockObj::aquire() {
-  lock->lock();
+  lock.lock();
 }
 
 void LockObj::release() {
-  lock->unlock();
+  lock.unlock();
 }
 
 bool LockObj::owner() {
-  return lock->selfOwner();
+  return lock.selfOwner();
 }
 
 void VMObject::print(mvm::PrintBuffer* buf) const {
@@ -142,10 +136,10 @@ void VMObject::waitIntern(struct timeval* info, bool timed) {
       thread->interruptFlag = 0;
       thread->vm->interruptedException(this);
     } else {
-      unsigned int recur = l->lock->recursionCount();
+      unsigned int recur = l->lock.recursionCount();
       bool timeout = false;
-      l->lock->unlockAll();
-      l->varcond->wait(thread);
+      l->lock.unlockAll();
+      l->varcond.wait(thread);
       thread->state = VMThread::StateWaiting;
 
       if (timed) {
@@ -156,10 +150,10 @@ void VMObject::waitIntern(struct timeval* info, bool timed) {
 
       bool interrupted = (thread->interruptFlag != 0);
       mutexThread->unlock();
-      l->lock->lockAll(recur);
+      l->lock.lockAll(recur);
 
       if (interrupted || timeout) {
-        l->varcond->remove(thread);
+        l->varcond.remove(thread);
       }
 
       thread->state = VMThread::StateRunning;
@@ -185,7 +179,7 @@ void VMObject::timedWait(struct timeval& info) {
 void VMObject::notify() {
   LockObj* l = myLock(this);
   if (l->owner()) {
-    l->varcond->notify();
+    l->varcond.notify();
   } else {
     VMThread::get()->vm->illegalMonitorStateException(this);
   }
@@ -194,7 +188,7 @@ void VMObject::notify() {
 void VMObject::notifyAll() {
   LockObj* l = myLock(this);
   if (l->owner()) {
-    l->varcond->notifyAll();
+    l->varcond.notifyAll();
   } else {
     VMThread::get()->vm->illegalMonitorStateException(this);
   } 

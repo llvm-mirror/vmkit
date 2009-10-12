@@ -36,10 +36,8 @@ using namespace n3;
   INIT(ArrayFloat);
   INIT(ArrayDouble);
   INIT(ArrayObject);
-  INIT(VMCond);
   INIT(LockObj);
   INIT(VMObject);
-  INIT(ThreadSystem);
   INIT(CLIString);
   
 #undef INIT
@@ -47,9 +45,6 @@ using namespace n3;
 void CLIJit::TRACER {
   compilingMethod->CALL_TRACER;
   compilingClass->CALL_TRACER;
-}
-
-void ThreadSystem::TRACER {
 }
 
 void CacheNode::TRACER {
@@ -104,6 +99,16 @@ ARRAYTRACER(ArrayDouble)
   for (std::vector<type, alloc<type> >::iterator i = name.begin(), e = name.end(); \
        i!= e; ++i) {                                                    \
     (*i)->CALL_TRACER; }}
+
+
+// root of tracing
+void VMThread::TRACER {
+  vmThread->MARK_AND_TRACE;
+  vm->CALL_TRACER;
+  //lock->MARK_AND_TRACE;
+  //varcond->MARK_AND_TRACE;
+  pendingException->MARK_AND_TRACE;
+}
 
 
 void VMCommonClass::TRACER {
@@ -166,29 +171,12 @@ void VMField::TRACER {
   classDef->CALL_TRACER;
 }
 
-void VMCond::TRACER {
-  for (std::vector<VMThread*, std::allocator<VMThread*> >::iterator i = threads.begin(), e = threads.end();
-       i!= e; ++i) {
-    (*i)->CALL_TRACER; 
-  }
-}
-
 void LockObj::TRACER {
-  //lock->MARK_AND_TRACE;
-  varcond->MARK_AND_TRACE;
 }
 
 void VMObject::TRACER {
   classOf->CALL_TRACER;
   lockObj->MARK_AND_TRACE;
-}
-
-void VMThread::TRACER {
-  vmThread->MARK_AND_TRACE;
-  vm->CALL_TRACER;
-  //lock->MARK_AND_TRACE;
-  //varcond->MARK_AND_TRACE;
-  pendingException->MARK_AND_TRACE;
 }
 
 void Param::TRACER {
@@ -212,7 +200,6 @@ void Assembly::TRACER {
 }
 
 void N3::TRACER {
-  threadSystem->MARK_AND_TRACE;
   functions->CALL_TRACER;
   if (bootstrapThread) {
     bootstrapThread->CALL_TRACER;

@@ -173,9 +173,7 @@ static void initialiseVT() {
 	}
 #endif
   
-  INIT(VMCond);
   INIT(LockObj);
-
   INIT(VMObject);
   INIT(VMArray);
   INIT(ArrayUInt8);

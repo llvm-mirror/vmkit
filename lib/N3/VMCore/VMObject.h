@@ -28,27 +28,21 @@ class VMField;
 class VMObject;
 class VMThread;
 
-class VMCond : public mvm::Object {
+class VMCond {
 public:
-  static VirtualTable* VT;
   std::vector<VMThread*> threads;
   
-  static VMCond* allocate();
-
   void notify();
   void notifyAll();
   void wait(VMThread* th);
   void remove(VMThread* th);
-
-  virtual void TRACER;
 };
-
 
 class LockObj : public mvm::Object {
 public:
   static VirtualTable* VT;
-  mvm::LockRecursive *lock;
-  VMCond* varcond;
+  mvm::LockRecursive   lock;
+  VMCond               varcond;
 
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
