@@ -88,12 +88,10 @@ void ThreadSystem::print(mvm::PrintBuffer* buf) const {
   buf->write("ThreadSystem<>");
 }
 
-ThreadSystem* ThreadSystem::allocateThreadSystem() {
-  ThreadSystem* res = gc_new(ThreadSystem)();
-  res->nonDaemonThreads = 1;
-  res->nonDaemonLock = new mvm::LockNormal();
-  res->nonDaemonVar  = new mvm::Cond();
-  return res;
+ThreadSystem::ThreadSystem() {
+  nonDaemonThreads = 1;
+  nonDaemonLock = new mvm::LockNormal();
+  nonDaemonVar  = new mvm::Cond();
 }
 
 N3::N3(mvm::BumpPtrAllocator &allocator, const char *name) : mvm::VirtualMachine(allocator) {
@@ -224,7 +222,7 @@ N3* N3::allocate(const char* name, N3* parent) {
 
   vm->hashUTF8 = parent->hashUTF8;
   
-  vm->threadSystem = ThreadSystem::allocateThreadSystem();
+  vm->threadSystem = new(*a, "ThreadSystem") ThreadSystem();
 
   vm->assemblyPath = parent->assemblyPath;
   vm->coreAssembly = parent->coreAssembly;

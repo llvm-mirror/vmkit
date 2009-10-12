@@ -189,7 +189,6 @@ static void initialiseVT() {
   INIT(ArrayDouble);
   INIT(ArrayObject);
   INIT(CLIString);
-  INIT(ThreadSystem);
 
 #undef INIT
 

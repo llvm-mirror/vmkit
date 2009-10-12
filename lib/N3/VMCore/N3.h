@@ -53,17 +53,15 @@ class VMThread;
 class ArrayUInt16;
 class CLIString;
 
-class ThreadSystem : public mvm::Object {
+class ThreadSystem : public mvm::PermanentObject {
 public:
-  static VirtualTable* VT;
+	ThreadSystem();
+
   uint16 nonDaemonThreads;
   mvm::Lock* nonDaemonLock;
   mvm::Cond* nonDaemonVar;
 
   virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
-
-  static ThreadSystem* allocateThreadSystem();
 };
 
 class ClArgumentsInfo {
