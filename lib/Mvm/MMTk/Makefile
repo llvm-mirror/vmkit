@@ -1,4 +1,4 @@
-##===- lib/Mvm/Makefile ------------------------------------*- Makefile -*-===##
+##===- lib/Mvm/MMTk/Makefile -------------------------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #
@@ -6,12 +6,14 @@
 # License. See LICENSE.TXT for details.
 # 
 ##===----------------------------------------------------------------------===##
-LEVEL = ../..
+LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-EXTRA_DIST = BoehmGC GCMmap2 MMTk
-
-DIRS = Allocator CommonThread $(GCLIB) Runtime Compiler StaticGCPass
+ifeq ($(WITH_LLVM_GCC), 1)
+  MODULE_NAME = MMTk
+else
+  LIBRARYNAME = MMTk
+endif
 
 include $(LEVEL)/Makefile.common
