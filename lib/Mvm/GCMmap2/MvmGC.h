@@ -92,11 +92,6 @@ public:
     siggc_handler(0);
   }
 
-  static void inject_my_thread(mvm::Thread* th);
-  static inline void  remove_my_thread(mvm::Thread* th) {
-    threads->remove(th);
-  }
-
   static inline void *allocate_unprotected(size_t sz) {
     return allocator->alloc(sz);
   }

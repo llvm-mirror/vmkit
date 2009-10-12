@@ -13,17 +13,22 @@
 using namespace mvm;
 
 void GCThread::waitStacks() {
+  mvm::Thread* self = mvm::Thread::get();
 	_stackLock.lock();
-	while(_nb_collected < _nb_threads)
+	while(_nb_collected < self->MyVM->NumberOfThreads)
 		_stackCond.wait(&_stackLock);
 	_stackLock.unlock();
 }
 
 void GCThread::synchronize() {
-	
+  
+  mvm::Thread* self = mvm::Thread::get();
+  assert(self && "No thread local data for this thread");
+
+  // Lock thread lock, so that we can traverse the thread list safely.
+  self->MyVM->ThreadLock.lock();
+
   if (cooperative) {
-    mvm::Thread* self = mvm::Thread::get();
-    assert(self && "No thread local data for this thread");
 	  current_collector = self;
 	  _nb_collected = 0;
  	 
@@ -74,4 +79,6 @@ void GCThread::synchronize() {
 	
     waitStacks();
   }
+  
+  self->MyVM->ThreadLock.unlock();
 }

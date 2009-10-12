@@ -109,10 +109,6 @@ public:
 
 private:
   
-  /// mainThread - The initial thread of this JVM.
-  ///
-  JavaThread* mainThread;
-  
   /// finalizerThread - The thread that finalizes Java objects.
   ///
   JavaThread* finalizerThread;
@@ -293,14 +289,6 @@ public:
   /// asciizToUTF8 - Constructs an UTF8 out of the asciiz.
   ///
   ArrayUInt16* asciizToArray(const char* asciiz);
-  
-  /// setMainThread - Set the main thread of this VM.
-  ///
-  void setMainThread(JavaThread* th) { mainThread = th; }
-  
-  /// getMainThread - Get the main thread of this VM.
-  ///
-  JavaThread* getMainThread() const { return mainThread; }
   
   /// setFinalizerThread - Set the finalizer thread of this VM.
   ///

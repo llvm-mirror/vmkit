@@ -127,10 +127,59 @@ protected:
     ToEnqueue = new gc*[INITIAL_QUEUE_SIZE];
     ToEnqueueLength = INITIAL_QUEUE_SIZE;
     ToEnqueueIndex = 0;
+    
+    mainThread = 0;
+    NumberOfThreads = 0;
   }
 public:
 
+  /// allocator - Bump pointer allocator to allocate permanent memory
+  /// related to this VM.
+  ///
   mvm::BumpPtrAllocator& allocator;
+
+  /// mainThread - The main thread of this VM.
+  ///
+  mvm::Thread* mainThread;
+
+  /// NumberOfThreads - The number of threads that currently run under this VM.
+  ///
+  uint32_t NumberOfThreads;
+
+  /// ThreadLock - Lock to create or destroy a new thread.
+  ///
+  mvm::SpinLock ThreadLock;
+  
+  /// setMainThread - Set the main thread of this VM.
+  ///
+  void setMainThread(mvm::Thread* th) { mainThread = th; }
+  
+  /// getMainThread - Get the main thread of this VM.
+  ///
+  mvm::Thread* getMainThread() const { return mainThread; }
+
+  /// addThread - Add a new thread to the list of threads.
+  ///
+  void addThread(mvm::Thread* th) {
+    ThreadLock.lock();
+    NumberOfThreads++;
+    if (th != mainThread) {
+      if (mainThread) th->append(mainThread);
+      else mainThread = th;
+    }
+    ThreadLock.unlock();
+  }
+  
+  /// removeThread - Remove the thread from the list of threads.
+  ///
+  void removeThread(mvm::Thread* th) {
+    ThreadLock.lock();
+    NumberOfThreads--;
+    th->remove();
+    if (!NumberOfThreads) mainThread = 0;
+    ThreadLock.unlock();
+  }
+
 
   virtual void tracer() {}
 

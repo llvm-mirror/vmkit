@@ -173,13 +173,13 @@ void Thread::internalThreadStart(mvm::Thread* th) {
   sa.sa_sigaction = sigsegvHandler;
   sigaction(SIGSEGV, &sa, NULL);
 
-#ifdef ISOLATE
   assert(th->MyVM && "VM not set in a thread");
+#ifdef ISOLATE
   th->IsolateID = th->MyVM->IsolateID;
 #endif
-  Collector::inject_my_thread(th); 
+  th->MyVM->addThread(th); 
   th->routine(th);
-  Collector::remove_my_thread(th);
+  th->MyVM->removeThread(th);
 
 }
 

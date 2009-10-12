@@ -65,7 +65,3 @@ void Collector::destroy() {
   allocator = 0;
 }
 
-void Collector::inject_my_thread(mvm::Thread* th) {
-  threads->inject(th);
-}
-

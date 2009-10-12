@@ -29,9 +29,6 @@ class GCThread {
   /// _collectionCond - Condition for unblocking the collector.
   Cond _collectionCond;
 
-  /// _nb_threads - Number of active threads.
-  unsigned int _nb_threads;
-
   /// _nb_collected - Number of threads collected.
   unsigned int _nb_collected;
   
@@ -41,7 +38,6 @@ class GCThread {
 
   
 public:
-  mvm::Thread* base;
   bool cooperative;
  
   mvm::Thread* getCurrentCollector() {
@@ -49,10 +45,8 @@ public:
   }
 
   GCThread() {
-    _nb_threads = 0;
     _nb_collected = 0;
     current_collector = 0;
-    base = 0;
 #ifdef WITH_LLVM_GCC
     cooperative = true;
 #else
@@ -60,9 +54,6 @@ public:
 #endif
   }
   
-  inline unsigned int get_nb_threads() {
-    return _nb_threads;
-  }
   inline void lock()   { _globalLock.lock(); }
   inline void unlock() { _globalLock.unlock(); }
 
@@ -92,46 +83,10 @@ public:
   
   inline void collectorGo() { _stackCond.broadcast(); }
 
-  inline void cancel() {
-    // all stacks have been collected
-    _nb_collected = _nb_threads;
-    // unblock all threads in stack collection
-    collectorGo();
-    // unblock mutators
-    collectionFinished();         
-  }
-
   inline void another_mark() { _nb_collected++; }
 
   void synchronize();
 
-  inline void remove(mvm::Thread* th) {
-    lock();
-    th->remove();
-    _nb_threads--;
-    if (!_nb_threads) base = 0;
-#ifdef SERVICE
-    th->MyVM->numThreads--;
-#endif
-    unlock();
-  }
-
-  inline void inject(mvm::Thread* th) { 
-    lock(); 
-#ifdef SERVICE
-    if (th->MyVM->numThreads + 1 > th->MyVM->threadLimit) {
-      unlock();
-      th->MyVM->stopService();
-    }
-    th->MyVM->numThreads++;
-#endif
-    if (base)
-      th->append(base);
-    else
-      base = th;
-    _nb_threads++;
-    unlock();
-  }
 };
 
 }
