@@ -607,7 +607,6 @@ void* sys_memrchr(const void* s, int c, size_t n) {
 }
 
 extern "C" VMObject* System_Reflection_Assembly_GetType(VMObject* obj, PNetString* str, bool onError, bool ignoreCase) {
-	printf("Get type\n");
   Assembly* ass = ASSEMBLY_VALUE(obj);
   const ArrayChar* array = str->value;
 	mvm::PrintBuffer pb(array);
@@ -681,23 +680,20 @@ extern "C" VMObject* System_Reflection_ClrType_GetMemberImpl(VMObject* Type, PNe
 }
 
 extern "C" VMObject* System_Reflection_ClrHelpers_GetSemantics(mvm::Object* item, uint32 attributes, bool nonPublic) {
-	VMThread::get()->vm->error("implement me: System_Reflection_ClrHelpers_GetSemantics");
-//   if (item->getVirtualTable() == Property::VT) {
-//     Property* prop = (Property*)item;
-//     if (attributes == METHOD_SEMANTIC_ATTRIBUTES_GETTER) {
-// 			mvm::PrintBuffer _asciiz(prop->name);
-//       const char* asciiz = _asciiz.cString();
-//       char* buf = (char*)alloca(strlen(asciiz) + 5);
-//       sprintf(buf, "get_%s", asciiz);
-//       N3* vm = VMThread::get()->vm;
-//       VMMethod* meth = prop->type->lookupMethod(vm->asciizToUTF8(buf), prop->parameters, true, false);
-//       assert(meth);
-//       return meth->getMethodDelegatee();
-//     }
-//   } else {
-//     VMThread::get()->vm->error("implement me");
-//   }
-  return 0;
+	if (attributes == METHOD_SEMANTIC_ATTRIBUTES_GETTER) {
+		Property* prop = (Property*)item;
+		mvm::PrintBuffer _asciiz(prop->name);
+		const char* asciiz = _asciiz.cString();
+		char* buf = (char*)alloca(strlen(asciiz) + 5);
+		sprintf(buf, "get_%s", asciiz);
+		N3* vm = VMThread::get()->vm;
+		VMMethod* meth = prop->type->lookupMethod(vm->asciizToUTF8(buf), prop->parameters, true, false);
+		assert(meth);
+		return meth->getMethodDelegatee();
+	} else {
+		VMThread::get()->vm->error("implement me: GetSemantics: %d", attributes);
+		return 0;
+	}
 }
 
 static void decapsulePrimitive(VMObject* arg, const llvm::Type* type, std::vector<llvm::GenericValue>& args) {
