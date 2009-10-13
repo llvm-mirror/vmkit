@@ -225,6 +225,7 @@ if test "x$gc" = "xboehm";  then
   AC_DEFINE([USE_GC_BOEHM], [1], [Using the boehm gc])
   AC_SUBST(GC_MMAP2, [0])
   AC_SUBST(GC_BOEHM, [1])
+  AC_SUBST(GC_MMTK, [0])
   GC_LIBS=BoehmGC
   case $target_os in
     *linux*)
@@ -238,8 +239,9 @@ else
     AC_SUBST([GC_SINGLE_MMAP], [1])
     AC_SUBST(GC_MMAP2, [0])
     AC_SUBST(GC_BOEHM, [0])
+    AC_SUBST(GC_MMTK, [1])
     GC_LIBS=MMTk
-    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk"
+    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk -DWITH_MMTK"
   else
     GC_LIBS=GCMmap2
     if test "x$gc" = "xmulti-mmap"; then
@@ -254,6 +256,7 @@ else
     AC_DEFINE([USE_GC_MMAP2], [1], [Using the gcmmap2])
     AC_SUBST(GC_MMAP2, [1])
     AC_SUBST(GC_BOEHM, [0])
+    AC_SUBST(GC_MMTK, [0])
   fi
 fi
   
