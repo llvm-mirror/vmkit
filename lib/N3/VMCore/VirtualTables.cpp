@@ -25,21 +25,13 @@ using namespace n3;
 
 #define INIT(X) VirtualTable* X::VT = 0
 
-  INIT(VMArray);
-  INIT(ArrayUInt8);
-  INIT(ArraySInt8);
-  INIT(ArrayChar);
-  INIT(ArrayUInt16);
-  INIT(ArraySInt16);
-  INIT(ArrayUInt32);
-  INIT(ArraySInt32);
-  INIT(ArrayLong);
-  INIT(ArrayFloat);
-  INIT(ArrayDouble);
-  INIT(ArrayObject);
-  INIT(LockObj);
-  INIT(VMObject);
-  INIT(CLIString);
+INIT(LockObj);
+INIT(VMObject);
+INIT(CLIString);
+
+#define INIT_ARRAY(name, elmt, size, printer, pre, sep, post)	INIT(Array##name);
+ON_ARRAY_CLASSES(INIT_ARRAY)
+#undef INIT_ARRAY
   
 #undef INIT
 
@@ -62,36 +54,6 @@ void VMObject::TRACER {
 void CLIString::TRACER {
 	VMObject::CALL_TRACER;
 }
-
-void VMArray::TRACER {
-  VMObject::CALL_TRACER;
-}
-
-void ArrayObject::TRACER {
-  VMObject::CALL_TRACER;
-  for (sint32 i = 0; i < size; i++) {
-    elements[i]->MARK_AND_TRACE;
-  }
-}
-
-#define ARRAYTRACER(name)         \
-  void name::TRACER {             \
-    VMObject::CALL_TRACER;      \
-  }
-  
-
-ARRAYTRACER(ArrayUInt8)
-ARRAYTRACER(ArraySInt8)
-ARRAYTRACER(ArrayChar)
-ARRAYTRACER(ArrayUInt16)
-ARRAYTRACER(ArraySInt16)
-ARRAYTRACER(ArrayUInt32)
-ARRAYTRACER(ArraySInt32)
-ARRAYTRACER(ArrayLong)
-ARRAYTRACER(ArrayFloat)
-ARRAYTRACER(ArrayDouble)
-
-#undef ARRAYTRACER
 
 #define TRACE_VECTOR(type, name, alloc) { \
   for (std::vector<type, alloc<type> >::iterator i = name.begin(), e = name.end(); \
@@ -165,6 +127,6 @@ void Property::TRACER {
   delegatee->MARK_AND_TRACE;
 }
 
-// never called but it simplifies the definition of LockedMap
+// useless (never called or used) but it simplifies the definition of LockedMap
 void VMField::TRACER {
 }

@@ -20,9 +20,9 @@ using namespace n3;
 
 const sint32 VMArray::MaxArraySize = 268435455;
 
-#define PRINT(name, printer, pre, sep, post)														\
-	void name::print(mvm::PrintBuffer *buf) const	{												\
-		declare_gcroot(const name *, self) = this;													\
+#define DEFINE_ARRAY_PRINT(name, elmt, nbb, printer, pre, sep, post)		\
+	void Array##name::do_print(const Array##name *self, mvm::PrintBuffer *buf) { \
+		llvm_gcroot(self, 0);																								\
 	  buf->write(pre);																										\
 	  for(int i=0; i<self->size; i++) {																		\
 	    if(i)																															\
@@ -32,27 +32,6 @@ const sint32 VMArray::MaxArraySize = 268435455;
 		buf->write(post);																										\
 	}
 
-#define ARRAYCLASS(name, elmt, size, printer, pre, sep, post)						\
-	PRINT(name, printer, pre, sep, post)
+ON_ARRAY_CLASSES(DEFINE_ARRAY_PRINT)
 
-ARRAYCLASS(ArrayUInt8,  uint8,     1, writeS4,   "Array<", " ", ">")
-ARRAYCLASS(ArraySInt8,  sint8,     1, writeS4,   "Array<", " ", ">")
-ARRAYCLASS(ArrayChar,   uint16,    2, writeChar, "",       "",  "")
-ARRAYCLASS(ArrayUInt16, uint16,    2, writeS4,   "Array<", " ", ">")
-ARRAYCLASS(ArraySInt16, sint16,    2, writeS4,   "Array<", " ", ">")
-ARRAYCLASS(ArrayUInt32, uint32,    4, writeS4,   "Array<", " ", ">")
-ARRAYCLASS(ArraySInt32, sint32,    4, writeS4,   "Array<", " ", ">")
-ARRAYCLASS(ArrayLong,   sint64,    8, writeS8,   "Array<", " ", ">")
-ARRAYCLASS(ArrayFloat,  float,     4, writeFP,   "Array<", " ", ">")
-ARRAYCLASS(ArrayDouble, double,    8, writeFP,   "Array<", " ", ">")
-ARRAYCLASS(ArrayObject, VMObject*, 4, writeObj,  "Array<", " ", ">")
-
-void VMArray::print(mvm::PrintBuffer *buf) const {
-  assert(0 && "should not be here");
-}
-
-#undef PRINT
-#undef AT
-#undef INITIALISE
-#undef ACONS
-#undef ARRAYCLASS
+#undef DEFINE_ARRAY_PRINT

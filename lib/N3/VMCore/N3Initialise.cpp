@@ -146,18 +146,12 @@ llvm::Function* CLIJit::getCLIExceptionLLVM;
 llvm::Function* CLIJit::getCppExceptionLLVM;
 llvm::Function* CLIJit::newStringLLVM;
 
+#define DEFINE_ARRAY_LLVM_TYPE(name, elmt, size, printer, pre, sep, post)	\
+	const llvm::Type* Array##name::llvmType = 0;
 
-const llvm::Type* ArrayUInt8::llvmType = 0;
-const llvm::Type* ArraySInt8::llvmType = 0;
-const llvm::Type* ArrayChar::llvmType = 0;
-const llvm::Type* ArrayUInt16::llvmType = 0;
-const llvm::Type* ArraySInt16::llvmType = 0;
-const llvm::Type* ArrayUInt32::llvmType = 0;
-const llvm::Type* ArraySInt32::llvmType = 0;
-const llvm::Type* ArrayFloat::llvmType = 0;
-const llvm::Type* ArrayDouble::llvmType = 0;
-const llvm::Type* ArrayLong::llvmType = 0;
-const llvm::Type* ArrayObject::llvmType = 0;
+ON_ARRAY_CLASSES(DEFINE_ARRAY_LLVM_TYPE)
+
+#undef DEFINE_ARRAY_LLVM_TYPE
 
 static void initialiseVT() {
 
@@ -176,19 +170,11 @@ static void initialiseVT() {
   
   INIT(LockObj);
   INIT(VMObject);
-  INIT(VMArray);
-  INIT(ArrayUInt8);
-  INIT(ArraySInt8);
-  INIT(ArrayChar);
-  INIT(ArrayUInt16);
-  INIT(ArraySInt16);
-  INIT(ArrayUInt32);
-  INIT(ArraySInt32);
-  INIT(ArrayLong);
-  INIT(ArrayFloat);
-  INIT(ArrayDouble);
-  INIT(ArrayObject);
   INIT(CLIString);
+
+#define INIT_ARRAY(name, elmt, nbb, printer, pre, sep, post)	INIT(Array##name)
+	ON_ARRAY_CLASSES(INIT_ARRAY);
+#undef INIT_ARRAY
 
 #undef INIT
 

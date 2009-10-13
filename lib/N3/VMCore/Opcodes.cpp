@@ -1448,7 +1448,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case LDELEM_I8 : {
         Value* index = pop();
         Value* obj = pop();
-        Value* ptr = verifyAndComputePtr(obj, index, ArrayLong::llvmType);
+        Value* ptr = verifyAndComputePtr(obj, index, ArrayUInt64::llvmType);
         push(new LoadInst(ptr, "", currentBlock));
         break;
       }
@@ -1705,7 +1705,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val = pop();
         Value* index = pop();
         Value* obj = pop();
-        Value* ptr = verifyAndComputePtr(obj, index, ArrayLong::llvmType);
+        Value* ptr = verifyAndComputePtr(obj, index, ArrayUInt64::llvmType);
         convertValue(val, Type::getInt64Ty(getGlobalContext()), currentBlock);
         new StoreInst(val, ptr, false, currentBlock);
         break;

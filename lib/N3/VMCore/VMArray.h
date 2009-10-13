@@ -27,47 +27,53 @@ class VMClassArray;
 class VMCommonClass;
 class VMObject;
 
+	// never allocate a VMArray, it is just a C++ type to access N3 object
 class VMArray : public VMObject {
+	void *operator new(size_t n) { return VMObject::operator new(n, 0); }
+
 public:
-  static VirtualTable* VT;
   sint32 size;
   void* elements[1];
+
   static const sint32 MaxArraySize;
   static const llvm::Type* llvmType;
-
   static llvm::Constant* sizeOffset();
   static llvm::Constant* elementsOffset();
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
-
 };
 
-typedef VMArray* (*arrayCtor_t)(uint32 len, VMCommonClass* cl);
+#define ON_ARRAY_PRIMITIVE_CLASSES(_)													\
+	_(UInt8,  uint8,     1, writeS4,   "Array<", " ", ">") \
+	_(SInt8,  sint8,     1, writeS4,   "Array<", " ", ">") \
+	_(Char,   uint16,    2, writeChar, "",       "",  "")  \
+	_(UInt16, uint16,    2, writeS4,   "Array<", " ", ">") \
+	_(SInt16, sint16,    2, writeS4,   "Array<", " ", ">") \
+	_(UInt32, uint32,    4, writeS4,   "Array<", " ", ">") \
+	_(SInt32, sint32,    4, writeS4,   "Array<", " ", ">") \
+	_(UInt64, uint64,    8, writeS8,   "Array<", " ", ">") \
+	_(SInt64, sint64,    8, writeS8,   "Array<", " ", ">") \
+	_(Float,  float,     4, writeFP,   "Array<", " ", ">") \
+	_(Double, double,    8, writeFP,   "Array<", " ", ">")
 
-#define ARRAYCLASS(name, elmt)                                        \
-class name : public VMObject {                                        \
-public:                                                               \
-  static VirtualTable* VT;                                            \
-  static const llvm::Type* llvmType;                                  \
-  sint32 size;                                                        \
-  elmt elements[1];                                                   \
-  virtual void print(mvm::PrintBuffer* buf) const;                    \
-  virtual void TRACER;                                     \
-}
+#define ON_ARRAY_CLASSES(_)																		\
+	ON_ARRAY_PRIMITIVE_CLASSES(_)																\
+	_(Object, VMObject*, 4, writeObj,  "Array<", " ", ">")
 
-ARRAYCLASS(ArrayUInt8,  uint8);
-ARRAYCLASS(ArraySInt8,  sint8);
-ARRAYCLASS(ArrayChar,   uint16);
-ARRAYCLASS(ArrayUInt16, uint16);
-ARRAYCLASS(ArraySInt16, sint16);
-ARRAYCLASS(ArrayUInt32, uint32);
-ARRAYCLASS(ArraySInt32, sint32);
-ARRAYCLASS(ArrayLong,   sint64);
-ARRAYCLASS(ArrayFloat,  float);
-ARRAYCLASS(ArrayDouble, double);
-ARRAYCLASS(ArrayObject, VMObject*);
 
-#undef ARRAYCLASS
+	// never allocate a VMArray, it is just a C++ type to access N3 object
+#define DEFINE_ARRAY_CLASS(name, elmt, nbb, printer, pre, sep, post)		\
+	class Array##name : public VMObject {																	\
+		void *operator new(size_t n) { return VMObject::operator new(n, 0); } \
+	public:																																\
+	  static VirtualTable* VT;                                            \
+		static const llvm::Type* llvmType;                                  \
+		sint32 size;                                                        \
+		elmt elements[1];                                                   \
+		static void do_print(const Array##name *self, mvm::PrintBuffer* buf); \
+	};
+
+ON_ARRAY_CLASSES(DEFINE_ARRAY_CLASS)
+
+#undef DEFINE_ARRAY_CLASS
 
 
 } // end namespace n3
