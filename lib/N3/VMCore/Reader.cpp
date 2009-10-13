@@ -74,7 +74,7 @@ ByteCode* Reader::openFile(mvm::BumpPtrAllocator &allocator, char* path) {
 
 uint8 Reader::readU1() {
 	if(cursor >= (uint32)bytes->size)
-		VMThread::get()->vm->error("readU1 outside the buffer");
+		VMThread::get()->getVM()->error("readU1 outside the buffer");
   return bytes->elements[cursor++];
 }
 
@@ -141,7 +141,7 @@ void Reader::seek(uint32 pos, int from) {
   
 
   if ((n < start) || (n > end))
-    VMThread::get()->vm->unknownError("out of range %d %d", n, end);
+    VMThread::get()->getVM()->unknownError("out of range %d %d", n, end);
 
   cursor = n;
 }

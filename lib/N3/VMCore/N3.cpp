@@ -306,7 +306,7 @@ void N3::runMain(int argc, char** argv) {
     
     
     bootstrapThread = VMThread::TheThread;
-    bootstrapThread->vm = this;
+    bootstrapThread->MyVM = this;
     bootstrapThread->start((void (*)(mvm::Thread*))mainCLIStart);
 
   } else {
@@ -315,7 +315,7 @@ void N3::runMain(int argc, char** argv) {
 }
 
 void N3::mainCLIStart(VMThread* th) {
-  N3* vm = (N3*)th->vm;
+  N3* vm = (N3*)th->getVM();
   MSCorlib::loadBootstrap(vm);
   
   ClArgumentsInfo& info = vm->argumentsInfo;  

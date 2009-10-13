@@ -44,7 +44,7 @@ VMThread::VMThread(VMObject* thread, N3* vm) {
 	llvm_gcroot(thread, 0);
   this->perFunctionPasses = 0;
   this->vmThread = thread;
-  this->vm = vm;
+  this->MyVM = vm;
   this->lock = new mvm::LockNormal();
   this->varcond = new mvm::Cond();
   this->interruptFlag = 0;

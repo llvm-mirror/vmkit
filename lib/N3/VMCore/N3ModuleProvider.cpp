@@ -40,7 +40,7 @@ bool N3ModuleProvider::materializeFunction(Function *F, std::string *ErrInfo) {
         CLIJit::compile(meth->classDef, meth);
         void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(meth->methPtr);
         meth->code = res;
-        N3* vm = VMThread::get()->vm;
+        N3* vm = VMThread::get()->getVM();
         vm->addMethodInFunctionMap(meth, res);
       }
       meth->classDef->release();

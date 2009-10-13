@@ -55,7 +55,7 @@ extern "C" void indexOutOfBounds() {
 }
 
 extern "C" VMObject* newString(const ArrayChar* utf8) {
-	N3 *vm = (N3*)VMThread::get()->vm;
+	N3 *vm = (N3*)VMThread::get()->getVM();
   return vm->arrayToString(utf8);
 }
 
@@ -84,9 +84,9 @@ extern "C" void ClearException() {
 }
 
 static VMObject* doMultiNewIntern(VMClassArray* cl, uint32 dim, sint32* buf) {
-  if (dim <= 0) VMThread::get()->vm->error("Can't happen");
+  if (dim <= 0) VMThread::get()->getVM()->error("Can't happen");
   sint32 n = buf[0];
-  if (n < 0) VMThread::get()->vm->negativeArraySizeException(n);
+  if (n < 0) VMThread::get()->getVM()->negativeArraySizeException(n);
   
   VMArray* res = (VMArray*)cl->doNew(n);
   if (dim > 1) {
@@ -97,7 +97,7 @@ static VMObject* doMultiNewIntern(VMClassArray* cl, uint32 dim, sint32* buf) {
       }   
     }   
     for (uint32 i = 1; i < dim; ++i) {
-      if (buf[i] < 0) VMThread::get()->vm->negativeArraySizeException(buf[i]);
+      if (buf[i] < 0) VMThread::get()->getVM()->negativeArraySizeException(buf[i]);
     }   
   }
   return res;
@@ -150,7 +150,7 @@ extern "C" CacheNode* n3VirtualLookup(CacheNode* cache, VMObject *obj) {
                                     strlen(nameAsciiz) + 
                                     strlen(nameSpaceAsciiz));
       sprintf(buf, "%s.%s.%s", nameSpaceAsciiz, nameAsciiz, methAsciiz);
-      const UTF8* newName = VMThread::get()->vm->asciizToUTF8(buf);
+      const UTF8* newName = VMThread::get()->getVM()->asciizToUTF8(buf);
       dmeth = ocl->lookupMethod(newName, orig->parameters, false, true);
     }
     

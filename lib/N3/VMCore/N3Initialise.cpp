@@ -211,7 +211,7 @@ static void initialiseStatics() {
   Assembly* ass = vm->constructAssembly(vm->asciizToUTF8("mscorlib"));
 
   if(!ass->resolve(1, "dll"))
-    VMThread::get()->vm->error("can not load mscorlib.dll. Abort");
+    VMThread::get()->getVM()->error("can not load mscorlib.dll. Abort");
 
   vm->coreAssembly = ass;
 

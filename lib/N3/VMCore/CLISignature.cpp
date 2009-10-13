@@ -24,7 +24,7 @@ using namespace n3;
 
 static VMCommonClass* METHOD_ElementTypeEnd(uint32 op, Assembly* ass,
     uint32& offset, VMGenericClass* genClass, VMGenericMethod* genMethod) {
-  VMThread::get()->vm->error("implement me");
+  VMThread::get()->getVM()->error("implement me");
   return 0;
 }
 
@@ -128,12 +128,12 @@ static VMCommonClass* METHOD_ElementTypeValueType(uint32 op, Assembly* ass,
     table = CONSTANT_TypeSpec;
     break;
   default:
-    VMThread::get()->vm->error("unknown TypeDefOrRefEncoded %d", index);
+    VMThread::get()->getVM()->error("unknown TypeDefOrRefEncoded %d", index);
     break;
   }
 
   token = (table << 24) + index;
-  VMCommonClass* cl = ass->loadType((N3*) (VMThread::get()->vm), token, false,
+  VMCommonClass* cl = ass->loadType((N3*) (VMThread::get()->getVM()), token, false,
       false, false, true, genClass, genMethod);
   return cl;
 }
@@ -156,12 +156,12 @@ static VMCommonClass* METHOD_ElementTypeClass(uint32 op, Assembly* ass,
     table = CONSTANT_TypeSpec;
     break;
   default:
-    VMThread::get()->vm->error("unknown TypeDefOrRefEncoded %d", index);
+    VMThread::get()->getVM()->error("unknown TypeDefOrRefEncoded %d", index);
     break;
   }
 
   token = (table << 24) + index;
-  VMCommonClass* cl = ass->loadType((N3*) (VMThread::get()->vm), token, false,
+  VMCommonClass* cl = ass->loadType((N3*) (VMThread::get()->getVM()), token, false,
       false, false, true, genClass, genMethod);
   return cl;
 }
@@ -183,7 +183,7 @@ static VMCommonClass* METHOD_ElementTypeArray(uint32 op, Assembly* ass,
 
   if (numSizes != 0) {
     printf("type = %s\n", mvm::PrintBuffer(cl).cString());
-    VMThread::get()->vm->error("implement me");
+    VMThread::get()->getVM()->error("implement me");
   }
 
   for (uint32 i = 0; i < numSizes; ++i) {
@@ -192,7 +192,7 @@ static VMCommonClass* METHOD_ElementTypeArray(uint32 op, Assembly* ass,
 
   uint32 numObounds = ass->uncompressSignature(offset);
   if (numObounds != 0)
-    VMThread::get()->vm->error("implement me");
+    VMThread::get()->getVM()->error("implement me");
 
   for (uint32 i = 0; i < numObounds; ++i) {
     ass->uncompressSignature(offset);
@@ -247,12 +247,12 @@ static VMCommonClass* METHOD_ElementTypeGenericInst(uint32 op, Assembly* ass,
     table = CONSTANT_TypeSpec;
     break;
   default:
-    VMThread::get()->vm->error("unknown TypeDefOrRefEncoded %d", index);
+    VMThread::get()->getVM()->error("unknown TypeDefOrRefEncoded %d", index);
     break;
   }
 
   token = (table << 24) + index;
-  VMCommonClass* cl = ass->loadType((N3*) (VMThread::get()->vm), token, false,
+  VMCommonClass* cl = ass->loadType((N3*) (VMThread::get()->getVM()), token, false,
       false, false, true, args, genClass, genMethod);
   // restore endOffset
   offset = endOffset;
@@ -277,7 +277,7 @@ static VMCommonClass* METHOD_ElementTypeU(uint32 op, Assembly* ass,
 
 static VMCommonClass* METHOD_ElementTypeFnptr(uint32 op, Assembly* ass,
     uint32& offset, VMGenericClass* genClass, VMGenericMethod* genMethod) {
-  VMThread::get()->vm->error("implement me");
+  VMThread::get()->getVM()->error("implement me");
   return 0;
 }
 
@@ -308,7 +308,7 @@ static VMCommonClass* METHOD_ElementTypeMvar(uint32 op, Assembly* ass,
     cl->nameSpace = ass->name;
     char *tmp = (char *) alloca(100);
     snprintf(tmp, 100, "!!%d", number);
-    cl->name = VMThread::get()->vm->asciizToUTF8(tmp);
+    cl->name = VMThread::get()->getVM()->asciizToUTF8(tmp);
     return cl;
   } else {
     return currGenericMethod->genericParams[number];
@@ -317,31 +317,31 @@ static VMCommonClass* METHOD_ElementTypeMvar(uint32 op, Assembly* ass,
 
 static VMCommonClass* METHOD_ElementTypeCmodReqd(uint32 op, Assembly* ass,
     uint32& offset, VMGenericClass* genClass, VMGenericMethod* genMethod) {
-  VMThread::get()->vm->error("implement me");
+  VMThread::get()->getVM()->error("implement me");
   return 0;
 }
 
 static VMCommonClass* METHOD_ElementTypeCmodOpt(uint32 op, Assembly* ass,
     uint32& offset, VMGenericClass* genClass, VMGenericMethod* genMethod) {
-  VMThread::get()->vm->error("implement me");
+  VMThread::get()->getVM()->error("implement me");
   return 0;
 }
 
 static VMCommonClass* METHOD_ElementTypeInternal(uint32 op, Assembly* ass,
     uint32& offset, VMGenericClass* genClass, VMGenericMethod* genMethod) {
-  VMThread::get()->vm->error("implement me");
+  VMThread::get()->getVM()->error("implement me");
   return 0;
 }
 
 static VMCommonClass* METHOD_ElementTypeModifier(uint32 op, Assembly* ass,
     uint32& offset, VMGenericClass* genClass, VMGenericMethod* genMethod) {
-  VMThread::get()->vm->error("implement me");
+  VMThread::get()->getVM()->error("implement me");
   return 0;
 }
 
 static VMCommonClass* METHOD_ElementTypeSentinel(uint32 op, Assembly* ass,
     uint32& offset, VMGenericClass* genClass, VMGenericMethod* genMethod) {
-  VMThread::get()->vm->error("implement me");
+  VMThread::get()->getVM()->error("implement me");
   return 0;
 }
 
@@ -352,7 +352,7 @@ static VMCommonClass* METHOD_ElementTypePinned(uint32 op, Assembly* ass,
 
 static VMCommonClass* unimplemented(uint32 op, Assembly* ass, uint32& offset,
     VMGenericClass* genClass, VMGenericMethod* genMethod) {
-  VMThread::get()->vm->error("unknown signature");
+  VMThread::get()->getVM()->error("unknown signature");
   return 0;
 }
 
@@ -474,7 +474,7 @@ void Assembly::methodSpecSignature(uint32& offset,
   uint32 genericSig = uncompressSignature(offset);
 
   if (genericSig != 0x0a) {
-    VMThread::get()->vm->error("unknown methodSpec sig %x", genericSig);
+    VMThread::get()->getVM()->error("unknown methodSpec sig %x", genericSig);
   }
 
   uint32 genArgCount = uncompressSignature(offset);
@@ -492,7 +492,7 @@ void Assembly::localVarSignature(uint32& offset,
   uint32 nbLocals = uncompressSignature(offset);
 
   if (localSig != 0x7) {
-    VMThread::get()->vm->error("unknown local sig %x", localSig);
+    VMThread::get()->getVM()->error("unknown local sig %x", localSig);
   }
 
   for (uint32 i = 0; i < nbLocals; ++i) {
@@ -510,7 +510,7 @@ VMCommonClass* Assembly::extractFieldSignature(uint32& offset, VMGenericClass* g
   uint32 fieldSig = uncompressSignature(offset);
 
   if (fieldSig != 0x6) {
-    VMThread::get()->vm->error("unknown field sig %x", fieldSig);
+    VMThread::get()->getVM()->error("unknown field sig %x", fieldSig);
   }
 
   // TODO implement support for custom modifiers

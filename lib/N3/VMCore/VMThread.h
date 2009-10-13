@@ -30,7 +30,11 @@ class VMGenericMethod;
 class VMThread : public mvm::MutatorThread {
 public:
   VMObject* vmThread;
-  N3* vm;
+  
+  N3* getVM() {
+    return (N3*)MyVM;
+  }
+  
   mvm::Lock* lock;
   mvm::Cond* varcond;
   VMObject* pendingException;

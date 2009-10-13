@@ -135,14 +135,14 @@ void MSCorlib::initialise(N3* vm) {
 
 VMObject* Property::getPropertyDelegatee() {
   if (!delegatee) {
-    VMThread::get()->vm->error("implement me");  
+    VMThread::get()->getVM()->error("implement me");  
   }
   return delegatee;
 }
 
 VMObject* VMMethod::getMethodDelegatee() {
   if (!delegatee) {
-    VMThread::get()->vm->error("implement me");  
+    VMThread::get()->getVM()->error("implement me");  
   }
   return delegatee;
 }
@@ -157,7 +157,7 @@ VMObject* VMCommonClass::getClassDelegatee() {
 
 VMObject* Assembly::getAssemblyDelegatee() {
   if (!delegatee) {
-    VMThread::get()->vm->error("implement me");  
+    VMThread::get()->getVM()->error("implement me");  
   }
   return delegatee;
 }

@@ -64,7 +64,7 @@ extern "C" void System_Runtime_CompilerServices_RuntimeHelpers_InitializeArray(
       ((ArrayDouble*)array)->elements[i] = READ_U8(bytes, offset);
     }
   } else {
-    VMThread::get()->vm->error("implement me");
+    VMThread::get()->getVM()->error("implement me");
   }
 }
 
@@ -86,7 +86,7 @@ extern "C" VMObject* System_Reflection_Assembly_GetCallingAssembly() {
   // The caller of the CLI function;
   cur = (void**)cur[0];
  
-  N3* vm = VMThread::get()->vm;
+  N3* vm = VMThread::get()->getVM();
 
   VMMethod* meth = vm->IPToMethod<VMMethod>(FRAME_IP(cur));
 
@@ -105,7 +105,7 @@ extern "C" VMObject* System_Reflection_Assembly_GetExecutingAssembly() {
   // The CLI function.
   cur = (void**)cur[0];
   
-  N3* vm = VMThread::get()->vm;
+  N3* vm = VMThread::get()->getVM();
 
   VMMethod* meth = vm->IPToMethod<VMMethod>(FRAME_IP(cur));
 
@@ -115,13 +115,13 @@ extern "C" VMObject* System_Reflection_Assembly_GetExecutingAssembly() {
 }
 
 extern "C" void System_Reflection_Assembly_LoadFromFile() {
-  VMThread::get()->vm->error("implement me");
+  VMThread::get()->getVM()->error("implement me");
 }
 
 extern "C" void System_Array_InternalCopy(VMArray* src, sint32 sstart, 
                                           VMArray* dst, sint32 dstart, 
                                           sint32 len) {
-  N3* vm = (N3*)(VMThread::get()->vm);
+  N3* vm = (N3*)(VMThread::get()->getVM());
   verifyNull(src);
   verifyNull(dst);
   
@@ -185,7 +185,7 @@ extern "C" sint32 System_Array_GetRank(VMObject* arr) {
   if (arr->classOf->isArray) {
     return ((VMClassArray*)(arr->classOf))->dims;
   } else {
-    VMThread::get()->vm->error("implement me");
+    VMThread::get()->getVM()->error("implement me");
     return 0;
   }
 }
@@ -195,7 +195,7 @@ extern "C" sint32 System_Array_GetLength(VMObject* arr) {
   if (arr->classOf->isArray) {
     return ((VMArray*)arr)->size;
   } else {
-    VMThread::get()->vm->error("implement me");
+    VMThread::get()->getVM()->error("implement me");
     return 0;
   }
 }
@@ -210,7 +210,7 @@ extern "C" VMObject* System_Object_GetType(VMObject* obj) {
 }
 
 extern "C" double System_Decimal_ToDouble(void* ptr) {
-  VMThread::get()->vm->error("implement me");
+  VMThread::get()->getVM()->error("implement me");
   return 0.0;
 }
 

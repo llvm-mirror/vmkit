@@ -50,7 +50,7 @@ static void* makeFull(VMCommonClass* cl, VMMethod* meth) {
   void* res = dlsym(0, buf);
   
   if (!res) {
-    VMThread::get()->vm->error("unable to find native method %s",
+    VMThread::get()->getVM()->error("unable to find native method %s",
                                mvm::PrintBuffer(meth).cString());
   }
 

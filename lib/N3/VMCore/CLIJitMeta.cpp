@@ -45,7 +45,7 @@ void VMField::operator()(VMObject* obj, float val) {
   if (signature->naturalType == Type::getFloatTy(getGlobalContext())) {
     ((float*)ptr)[0] = val;
   } else {
-    VMThread::get()->vm->unknownError("wrong type in field assignment");
+    VMThread::get()->getVM()->unknownError("wrong type in field assignment");
   }
 
   return;
@@ -63,7 +63,7 @@ void VMField::operator()(VMObject* obj, double val) {
   if (signature->naturalType == Type::getDoubleTy(getGlobalContext())) {
     ((double*)ptr)[0] = val;
   } else {
-    VMThread::get()->vm->unknownError("wrong type in field assignment");
+    VMThread::get()->getVM()->unknownError("wrong type in field assignment");
   }
 
   return;
@@ -81,7 +81,7 @@ void VMField::operator()(VMObject* obj, sint64 val) {
   if (signature->naturalType == Type::getInt64Ty(getGlobalContext())) {
     ((uint64*)ptr)[0] = val;
   } else {
-    VMThread::get()->vm->unknownError("wrong type in field assignment");
+    VMThread::get()->getVM()->unknownError("wrong type in field assignment");
   }
   
   return;
@@ -99,7 +99,7 @@ void VMField::operator()(VMObject* obj, sint32 val) {
   if (signature->naturalType == Type::getInt32Ty(getGlobalContext())) {
     ((uint32*)ptr)[0] = val;
   } else {
-    VMThread::get()->vm->unknownError("wrong type in field assignment");
+    VMThread::get()->getVM()->unknownError("wrong type in field assignment");
   }
 
   return;
@@ -117,7 +117,7 @@ void VMField::operator()(VMObject* obj, VMObject* val) {
   if (llvm::isa<PointerType>(signature->naturalType)) {
     ((VMObject**)ptr)[0] = val;
   } else {
-    VMThread::get()->vm->unknownError("wrong type in field assignment");
+    VMThread::get()->getVM()->unknownError("wrong type in field assignment");
   }
 
   return;
@@ -134,7 +134,7 @@ void VMField::operator()(VMObject* obj, bool val) {
   if (signature->naturalType == Type::getInt1Ty(getGlobalContext())) {
     ((bool*)ptr)[0] = val;
   } else {
-    VMThread::get()->vm->unknownError("wrong type in field assignment");
+    VMThread::get()->getVM()->unknownError("wrong type in field assignment");
   }
 
   return;
@@ -420,5 +420,5 @@ GlobalVariable* VMMethod::llvmVar() {
 }
 
 Constant* VMObject::classOffset() {
-  return VMThread::get()->vm->module->constantOne;
+  return VMThread::get()->getVM()->module->constantOne;
 }

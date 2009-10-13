@@ -495,7 +495,7 @@ void CLIJit::invoke(uint32 value, VMGenericClass* genClass, VMGenericMethod* gen
 
   if (meth->classDef->isArray) {
     uint8 func = 0;
-    N3* vm = VMThread::get()->vm;
+    N3* vm = VMThread::get()->getVM();
     if (meth->name == vm->asciizToUTF8("Set")) {
       func = 0;
     } else if (meth->name == vm->asciizToUTF8("Get")) {
@@ -625,7 +625,7 @@ void CLIJit::invokeNew(uint32 value, VMGenericClass* genClass, VMGenericMethod* 
     
   Value* obj = 0;
   if (type->isPointer) {
-    VMThread::get()->vm->error("implement me %s", mvm::PrintBuffer(type).cString());
+    VMThread::get()->getVM()->error("implement me %s", mvm::PrintBuffer(type).cString());
   } else if (type->isArray) {
     VMClassArray* arrayType = (VMClassArray*)type;
     Value* valCl = new LoadInst(arrayType->llvmVar(), "", currentBlock);
@@ -874,11 +874,11 @@ llvm::Value* CLIJit::verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
 }
 
 Constant* VMArray::sizeOffset() {
-  return VMThread::get()->vm->module->constantOne;
+  return VMThread::get()->getVM()->module->constantOne;
 }
 
 Constant* VMArray::elementsOffset() {
-  return VMThread::get()->vm->module->constantTwo;
+  return VMThread::get()->getVM()->module->constantTwo;
 }
 
 Value* CLIJit::arraySize(Value* array) {
@@ -923,7 +923,7 @@ Function* CLIJit::createDelegate() {
   return func;
 }
 Function* CLIJit::invokeDelegate() {
-  VMThread::get()->vm->error("implement me");
+  VMThread::get()->getVM()->error("implement me");
   return 0;
 }
 
@@ -935,9 +935,9 @@ Function* CLIJit::compileIntern() {
     const UTF8* name = compilingMethod->name;
     if (name == N3::ctorName) return createDelegate();
     else if (name == N3::invokeName) return invokeDelegate();
-    else VMThread::get()->vm->error("implement me");
+    else VMThread::get()->getVM()->error("implement me");
   } else {
-    VMThread::get()->vm->error("implement me %s", mvm::PrintBuffer(compilingClass).cString());
+    VMThread::get()->getVM()->error("implement me %s", mvm::PrintBuffer(compilingClass).cString());
   }
   return 0;
 }
@@ -1032,7 +1032,7 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat, VMGenericClass* genCl
     if (flags == CONSTANT_COR_ILEXCEPTION_CLAUSE_EXCEPTION) {
       ex->test = createBasicBlock("testException");
       if (classToken) {
-        ex->catchClass = ass->loadType((N3*)VMThread::get()->vm, classToken,
+        ex->catchClass = ass->loadType((N3*)VMThread::get()->getVM(), classToken,
                                        true, false, false, true, genClass, genMethod);
       } else {
         ex->catchClass = MSCorlib::pException;
@@ -1050,7 +1050,7 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat, VMGenericClass* genCl
       ex->catchClass = 0;
       finallyHandlers.push_back(ex);
     } else {
-      VMThread::get()->vm->error("implement me");
+      VMThread::get()->getVM()->error("implement me");
     }
   }
   
@@ -1142,7 +1142,7 @@ uint32 CLIJit::readExceptionTable(uint32 offset, bool fat, VMGenericClass* genCl
 
 #if N3_EXECUTE > 1
 static void printArgs(std::vector<llvm::Value*> args, BasicBlock* insertAt) {
-	N3 *vm = VMThread::get()->vm;
+	N3 *vm = VMThread::get()->getVM();
 
   for (std::vector<llvm::Value*>::iterator i = args.begin(),
        e = args.end(); i!= e; ++i) {
@@ -1182,7 +1182,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
     tiny = true;
     codeLen = (header & 0xfffc) >> 2;
   } else if ((header & 3) != CONSTANT_CorILMethod_FatFormat) {
-    VMThread::get()->vm->error("unknown Method Format");
+    VMThread::get()->getVM()->error("unknown Method Format");
   } else {
     header += (READ_U1(bytes, offset) << 8); //header
     maxStack = READ_U2(bytes, offset);
@@ -1359,7 +1359,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
     tiny = true;
     codeLen = (header & 0xfffc) >> 2;
   } else if ((header & 3) != CONSTANT_CorILMethod_FatFormat) {
-    VMThread::get()->vm->error("unknown Method Format");
+    VMThread::get()->getVM()->error("unknown Method Format");
   } else {
     header += (READ_U1(bytes, offset) << 8); //header
     maxStack = READ_U2(bytes, offset);
@@ -1503,7 +1503,7 @@ llvm::Function *VMMethod::compiledPtr(VMGenericMethod* genMethod) {
 }
 
 VMMethod* CLIJit::getMethod(llvm::Function* F) { 
-  VMMethod* meth = VMThread::get()->vm->functions->lookup(F);
+  VMMethod* meth = VMThread::get()->getVM()->functions->lookup(F);
   return meth;
 }
 

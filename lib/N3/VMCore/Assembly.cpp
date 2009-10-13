@@ -307,7 +307,7 @@ VMClassPointer* Assembly::constructPointer(VMCommonClass* base, uint32 dims) {
 
 VMClassArray* Assembly::constructArray(const UTF8* name, const UTF8* nameSpace,
                                        uint32 dims) {
-  assert(this == ((N3*)VMThread::get()->vm)->coreAssembly);
+  assert(this == ((N3*)VMThread::get()->getVM())->coreAssembly);
   ClassNameCmp CC(VMClassArray::constructArrayName(name, dims),
                   nameSpace);
   VMClassArray* cl = (VMClassArray*)(loadedNameClasses->lookupOrCreate(CC, this, arrayDup));
@@ -373,7 +373,7 @@ VMGenericClass* Assembly::constructGenericClass(const UTF8* name,
     buf[i++] = ',';
   }
   buf[i] = '>';
-  const UTF8* genName = VMThread::get()->vm->bufToUTF8(buf, size);
+  const UTF8* genName = VMThread::get()->getVM()->bufToUTF8(buf, size);
   //printf("%s\n", mvm::PrintBuffer(genName).cString());
   
   ClassNameCmp CC(genName, nameSpace);
@@ -479,7 +479,7 @@ Assembly::Assembly(mvm::BumpPtrAllocator &allocator, N3 *vm, const UTF8 *name) :
 static void unimplemented(uint32 index,
                           std::vector<Table*, gc_allocator<Table*> >& tables,
                           uint32 heapSizes) {
-  VMThread::get()->vm->error("Unknown table %x", index);
+  VMThread::get()->getVM()->error("Unknown table %x", index);
 }
 
 maskVector_t Assembly::maskVector[64] = {
@@ -624,10 +624,10 @@ void Table::readRow(uint32* result, uint32 row, ByteCode* array) {
   for (uint32 i = 0; i < count; ++i) {
     uint32 size = EXTRACT_SIZE(sizeMask, i);
     switch(size) {
-      case 1: VMThread::get()->vm->error("implement me"); break;
+      case 1: VMThread::get()->getVM()->error("implement me"); break;
       case 2: result[i] = READ_U2(array, rowOffset); break;
       case 4: result[i] = READ_U4(array, rowOffset); break;
-      default: VMThread::get()->vm->error("unknown size %d", size); break;
+      default: VMThread::get()->getVM()->error("unknown size %d", size); break;
     }
   }
 }
@@ -641,10 +641,10 @@ uint32 Table::readIndexInRow(uint32 row, uint32 index, ByteCode* array) {
   uint32 size = EXTRACT_SIZE(sizeMask, index);
 
   switch(size) {
-    case 1: VMThread::get()->vm->error("implement me"); break;
+    case 1: VMThread::get()->getVM()->error("implement me"); break;
     case 2: return READ_U2(array, indexOffset);
     case 4: return READ_U4(array, indexOffset);
-    default: VMThread::get()->vm->error("unknown size %d", size); break;
+    default: VMThread::get()->getVM()->error("unknown size %d", size); break;
   }
 
   // unreachable
@@ -699,7 +699,7 @@ void Header::read(mvm::BumpPtrAllocator &allocator, Reader* reader, N3* vm) {
     else if (!(strcmp(str, "#US"))) usStream = stream;
     else if (!(strcmp(str, "#Blob"))) blobStream = stream;
     else if (!(strcmp(str, "#GUID"))) guidStream = stream;
-    else VMThread::get()->vm->error("invalid stream %s", str);
+    else VMThread::get()->getVM()->error("invalid stream %s", str);
   }
 }
 
@@ -1008,7 +1008,7 @@ Assembly* Assembly::readAssemblyRef(N3* vm, uint32 index) {
     ref = vm->constructAssembly(name);
 
     if(!ref->resolve(1, "dll"))
-			 VMThread::get()->vm->error("implement me");
+			 VMThread::get()->getVM()->error("implement me");
 
     assemblyRefs[index - 1] = ref;
   }
@@ -1033,17 +1033,17 @@ VMCommonClass* Assembly::readTypeRef(N3* vm, uint32 index) {
   VMCommonClass* type = 0;
   
   switch (val) {
-    case 0: VMThread::get()->vm->error("implement me %d %d", val, entry); break;
-    case 1: VMThread::get()->vm->error("implement me %d, %d", val, entry); break;
+    case 0: VMThread::get()->getVM()->error("implement me %d %d", val, entry); break;
+    case 1: VMThread::get()->getVM()->error("implement me %d, %d", val, entry); break;
     case 2: {
       Assembly* refAssembly = readAssemblyRef(vm, entry);
       type = refAssembly->getClassFromName(vm, readString(vm, stringOffset + name), 
                                            readString(vm, stringOffset + nameSpace));
       break;
     }
-    case 3: VMThread::get()->vm->error("implement me %d %d",val, entry); break;
+    case 3: VMThread::get()->getVM()->error("implement me %d %d",val, entry); break;
     default: 
-      VMThread::get()->vm->error("unkknown resolution scope %x", val);
+      VMThread::get()->getVM()->error("unkknown resolution scope %x", val);
       break;
   }
   return type;
@@ -1102,11 +1102,11 @@ VMClass* Assembly::readTypeDef(N3* vm, uint32 index, std::vector<VMCommonClass*>
       break;
     }
     case 2: {
-      VMThread::get()->vm->error("implement me");
+      VMThread::get()->getVM()->error("implement me");
       break;
     }
     default: {
-      VMThread::get()->vm->error("implement me");
+      VMThread::get()->getVM()->error("implement me");
       break;
     }
   }
@@ -1138,7 +1138,7 @@ void Assembly::getInterfacesFromTokenType(std::vector<uint32>& tokens,
         case 0: interfaceToken += (CONSTANT_TypeDef << 24); break;
         case 1: interfaceToken += (CONSTANT_TypeRef << 24); break;
         case 2: interfaceToken += (CONSTANT_TypeSpec << 24); break;
-        default: VMThread::get()->vm->error("unknown table %x", table); break;
+        default: VMThread::get()->getVM()->error("unknown table %x", table); break;
       }
       tokens.push_back(interfaceToken);
     }
@@ -1167,11 +1167,11 @@ VMCommonClass* Assembly::loadType(N3* vm, uint32 token, bool resolve,
     } else if (table == CONSTANT_TypeSpec) {
       type = readTypeSpec(vm, index, genClass, genMethod);
     } else {
-      VMThread::get()->vm->error("implement me %x", token);
+      VMThread::get()->getVM()->error("implement me %x", token);
     }
   }
 
-  if (type == 0) VMThread::get()->vm->error("implement me");
+  if (type == 0) VMThread::get()->getVM()->error("implement me");
   if (type->status == hashed) {
     type->aquire();
     if (type->status == hashed) {
@@ -1245,7 +1245,7 @@ void Assembly::readCustomAttributes(uint32 offset, std::vector<llvm::GenericValu
   uncompressSignature(offset);
   uint16 prolog = READ_U2(bytes, offset);
 
-  if (prolog != 0x1) VMThread::get()->vm->error("unknown prolog");
+  if (prolog != 0x1) VMThread::get()->getVM()->error("unknown prolog");
 
   uint32 start = meth->virt ? 1 : 0;
 
@@ -1255,7 +1255,7 @@ void Assembly::readCustomAttributes(uint32 offset, std::vector<llvm::GenericValu
       gv.IntVal = llvm::APInt(32, READ_U4(bytes, offset));
       args.push_back(gv);
     } else {
-      VMThread::get()->vm->error("implement me");
+      VMThread::get()->getVM()->error("implement me");
     }
   }
 
@@ -1276,7 +1276,7 @@ ArrayObject* Assembly::getCustomAttributes(uint32 token, VMCommonClass* cl) {
 
     switch(table) {
       default: 
-        VMThread::get()->vm->error("implement me"); 
+        VMThread::get()->getVM()->error("implement me"); 
         break;
       case 2: 
         cons = getMethodFromToken(index + (CONSTANT_MethodDef << 24), NULL, NULL);
@@ -1355,7 +1355,7 @@ Property* Assembly::readProperty(uint32 index, VMCommonClass* cl, VMGenericClass
   uint32 type       = propArray[CONSTANT_PROPERTY_TYPE];
 
   Property* prop = new(allocator, "Property") Property();
-  prop->name = readString(VMThread::get()->vm, stringOffset + nameIndex);
+  prop->name = readString(VMThread::get()->getVM(), stringOffset + nameIndex);
   prop->flags = flags;
   prop->type = cl;
   uint32 offset = blobOffset + type;
@@ -1472,9 +1472,9 @@ VMCommonClass* Assembly::loadTypeFromName(const UTF8* name,
                                           bool clinit, bool dothrow) {
   VMCommonClass* cl = lookupClassFromName(name, nameSpace);
   if (cl == 0 || cl->status == hashed) {
-    cl = getClassFromName(((N3*)VMThread::get()->vm), name, nameSpace);
+    cl = getClassFromName(((N3*)VMThread::get()->getVM()), name, nameSpace);
     
-    if (cl == 0) VMThread::get()->vm->error("implement me");
+    if (cl == 0) VMThread::get()->getVM()->error("implement me");
 
     if (cl->status == hashed) {
       cl->aquire();
@@ -1495,7 +1495,7 @@ void Assembly::readSignature(uint32 localVarSig,
   uint32 table = localVarSig >> 24;
   uint32 index = localVarSig & 0xffff;
   if (table != CONSTANT_StandaloneSig) {
-    VMThread::get()->vm->error("locals do not point to a StandAloneSig table");
+    VMThread::get()->getVM()->error("locals do not point to a StandAloneSig table");
   }
   Table* signatures = CLIHeader->tables[CONSTANT_StandaloneSig];
   uint32* array = (uint32*)alloca(sizeof(uint32) * signatures->rowSize);
@@ -1518,16 +1518,16 @@ VMField* Assembly::getFieldFromToken(uint32 token, bool stat, VMGenericClass* ge
         uint32 newTable = typeToken >> 24;
         switch (newTable) {
           case CONSTANT_TypeDef : {
-            loadType((N3*)(VMThread::get()->vm), typeToken, true, true, false,
+            loadType((N3*)(VMThread::get()->getVM()), typeToken, true, true, false,
                      true, genClass, genMethod);
             field = lookupFieldFromToken(token);
             if (!field) {
-              VMThread::get()->vm->error("implement me");
+              VMThread::get()->getVM()->error("implement me");
             }
             break;
           }
           default : {
-            VMThread::get()->vm->error("implement me");
+            VMThread::get()->getVM()->error("implement me");
           }
         }
         break;
@@ -1539,7 +1539,7 @@ VMField* Assembly::getFieldFromToken(uint32 token, bool stat, VMGenericClass* ge
       }
 
       default : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
       }
     }
   }
@@ -1590,7 +1590,7 @@ uint32 Assembly::getExplicitLayout(uint32 token) {
   }
 
   if (!found)
-    VMThread::get()->vm->error("implement me");
+    VMThread::get()->getVM()->error("implement me");
 
   return size;
 }
@@ -1605,7 +1605,7 @@ VMField* Assembly::readMemberRefAsField(uint32 token, bool stat, VMGenericClass*
   uint32 stringOffset = CLIHeader->stringStream->realOffset;
   uint32 blobOffset   = CLIHeader->blobStream->realOffset;
   
-  const UTF8* name = readString((N3*)(VMThread::get()->vm), stringOffset + 
+  const UTF8* name = readString((N3*)(VMThread::get()->getVM()), stringOffset + 
                                           memberArray[CONSTANT_MEMBERREF_NAME]);
   
 
@@ -1618,28 +1618,28 @@ VMField* Assembly::readMemberRefAsField(uint32 token, bool stat, VMGenericClass*
   switch (table) {
     case 0 : {
       uint32 typeToken = index + (CONSTANT_TypeDef << 24);
-      type = loadType(((N3*)VMThread::get()->vm), typeToken,
+      type = loadType(((N3*)VMThread::get()->getVM()), typeToken,
                                      true, false, false, true, genClass, genMethod);
 	  break;
     }
 
     case 1 : {
       uint32 typeToken = index + (CONSTANT_TypeRef << 24);
-      type = loadType(((N3*)VMThread::get()->vm), typeToken,
+      type = loadType(((N3*)VMThread::get()->getVM()), typeToken,
                                      true, false, false, true, genClass, genMethod);
       break;
     }
 
     case 2:
-    case 3: VMThread::get()->vm->error("implement me"); break;
+    case 3: VMThread::get()->getVM()->error("implement me"); break;
     case 4: {
       uint32 typeToken = index + (CONSTANT_TypeSpec << 24);
-      type = loadType(((N3*)VMThread::get()->vm), typeToken,
+      type = loadType(((N3*)VMThread::get()->getVM()), typeToken,
                                        true, false, false, true, genClass, genMethod);
       break;
     }
     default:
-      VMThread::get()->vm->error("unknown MemberRefParent tag %d", table);
+      VMThread::get()->getVM()->error("unknown MemberRefParent tag %d", table);
       
   }
 
@@ -1672,16 +1672,16 @@ VMMethod* Assembly::getMethodFromToken(uint32 token, VMGenericClass* genClass, V
         uint32 newTable = typeToken >> 24;
         switch (newTable) {
           case CONSTANT_TypeDef : {
-            loadType((N3*)(VMThread::get()->vm), typeToken, true, true, false,
+            loadType((N3*)(VMThread::get()->getVM()), typeToken, true, true, false,
                      true, genClass, genMethod);
             meth = lookupMethodFromToken(token);
             if (!meth) {
-              VMThread::get()->vm->error("implement me");
+              VMThread::get()->getVM()->error("implement me");
             }
             break;
           }
           default : {
-            VMThread::get()->vm->error("implement me");
+            VMThread::get()->getVM()->error("implement me");
           }
         }
         break;
@@ -1698,7 +1698,7 @@ VMMethod* Assembly::getMethodFromToken(uint32 token, VMGenericClass* genClass, V
       }
 
       default : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
       }
     }
   }
@@ -1740,7 +1740,7 @@ VMMethod *Assembly::instantiateGenericMethod(
     VMClass* cl = dynamic_cast<VMClass*> (type);
 
     if (cl == NULL) {
-      VMThread::get()->vm->error(
+      VMThread::get()->getVM()->error(
           "Only instances of generic classes are allowed.");
     }
 
@@ -1774,7 +1774,7 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClas
   uint32 stringOffset = CLIHeader->stringStream->realOffset;
   uint32 blobOffset   = CLIHeader->blobStream->realOffset;
   
-  const UTF8* name = readString((N3*)(VMThread::get()->vm), stringOffset + 
+  const UTF8* name = readString((N3*)(VMThread::get()->getVM()), stringOffset + 
                                           memberArray[CONSTANT_MEMBERREF_NAME]);
   
   uint32 offset = blobOffset + memberArray[CONSTANT_MEMBERREF_SIGNATURE];
@@ -1788,7 +1788,7 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClas
   switch (table) {
     case 0 : {
       uint32 typeToken = index + (CONSTANT_TypeDef << 24);
-      VMCommonClass* type = loadType(((N3*)(VMThread::get()->vm)), typeToken, true, false, false, true, genClass, genMethod);
+      VMCommonClass* type = loadType(((N3*)(VMThread::get()->getVM())), typeToken, true, false, false, true, genClass, genMethod);
       bool virt = extractMethodSignature(offset, type, args, genClass, genMethod);
       VMMethod *meth = instantiateGenericMethod(genArgs, type, name, args, token, virt, genClass);
       return meth;
@@ -1796,7 +1796,7 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClas
 
     case 1 : {
       uint32 typeToken = index + (CONSTANT_TypeRef << 24);
-      VMCommonClass* type = loadType(((N3*)VMThread::get()->vm), typeToken,
+      VMCommonClass* type = loadType(((N3*)VMThread::get()->getVM()), typeToken,
                                      true, false, false, true, genClass, genMethod);
       bool virt = extractMethodSignature(offset, type, args, genClass, genMethod);
       VMMethod *meth = instantiateGenericMethod(genArgs, type, name, args, token, virt, genClass);
@@ -1804,7 +1804,7 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClas
     }
 
     case 2:
-    case 3: VMThread::get()->vm->error("implement me %d", table); break;
+    case 3: VMThread::get()->getVM()->error("implement me %d", table); break;
     case 4: {
       VMClass* type = (VMClass*) readTypeSpec(vm, index, genClass, genMethod);
         
@@ -1836,7 +1836,7 @@ VMMethod* Assembly::readMemberRefAsMethod(uint32 token, std::vector<VMCommonClas
       }
     }
     default:
-      VMThread::get()->vm->error("unknown MemberRefParent tag %d", table);
+      VMThread::get()->getVM()->error("unknown MemberRefParent tag %d", table);
       
   }
 
@@ -1868,7 +1868,7 @@ VMMethod* Assembly::readMethodSpec(uint32 token, VMGenericClass* genClass, VMGen
   switch (table) {
     case 0 : {
       methodToken = index + (CONSTANT_MethodDef << 24);
-      VMThread::get()->vm->error("implement me");
+      VMThread::get()->getVM()->error("implement me");
       break;
     }
     case 1 : {
@@ -1876,7 +1876,7 @@ VMMethod* Assembly::readMethodSpec(uint32 token, VMGenericClass* genClass, VMGen
       return readMemberRefAsMethod(methodToken, &genArgs, genClass, genMethod);
     }
     default:
-      VMThread::get()->vm->error("Invalid MethodSpec!");
+      VMThread::get()->getVM()->error("Invalid MethodSpec!");
   }
   
   return NULL;
@@ -1897,7 +1897,7 @@ const ArrayChar* Assembly::readUserString(uint32 token) {
     }
   }
 
-  return readUTF16((N3*)(VMThread::get()->vm), size, bytes, offset);
+  return readUTF16((N3*)(VMThread::get()->getVM()), size, bytes, offset);
 }
 
 uint32 Assembly::getRVAFromField(uint32 token) {

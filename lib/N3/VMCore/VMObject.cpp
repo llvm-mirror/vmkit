@@ -137,7 +137,7 @@ void VMObject::waitIntern(struct timeval* info, bool timed) {
     if (thread->interruptFlag != 0) {
       mutexThread->unlock();
       thread->interruptFlag = 0;
-      thread->vm->interruptedException(this);
+      thread->getVM()->interruptedException(this);
     } else {
       unsigned int recur = l->lock.recursionCount();
       bool timeout = false;
@@ -163,11 +163,11 @@ void VMObject::waitIntern(struct timeval* info, bool timed) {
 
       if (interrupted) {
         thread->interruptFlag = 0;
-        thread->vm->interruptedException(this);
+        thread->getVM()->interruptedException(this);
       }
     }
   } else {
-    VMThread::get()->vm->illegalMonitorStateException(this);
+    VMThread::get()->getVM()->illegalMonitorStateException(this);
   }
 }
 
@@ -184,7 +184,7 @@ void VMObject::notify() {
   if (l->owner()) {
     l->varcond.notify();
   } else {
-    VMThread::get()->vm->illegalMonitorStateException(this);
+    VMThread::get()->getVM()->illegalMonitorStateException(this);
   }
 }
 
@@ -193,7 +193,7 @@ void VMObject::notifyAll() {
   if (l->owner()) {
     l->varcond.notifyAll();
   } else {
-    VMThread::get()->vm->illegalMonitorStateException(this);
+    VMThread::get()->getVM()->illegalMonitorStateException(this);
   } 
 }
 

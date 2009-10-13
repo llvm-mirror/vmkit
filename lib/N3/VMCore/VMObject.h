@@ -86,7 +86,7 @@ public:
   #define verifyNull(obj) {}
 #else
   #define verifyNull(obj) \
-    if (obj == 0) VMThread::get()->vm->nullPointerException("");
+    if (obj == 0) VMThread::get()->getVM()->nullPointerException("");
 #endif
   
   llvm::GenericValue operator()(VMField* field);

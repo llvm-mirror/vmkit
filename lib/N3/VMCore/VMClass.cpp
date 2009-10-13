@@ -181,7 +181,7 @@ const UTF8* VMClassArray::constructArrayName(const UTF8* name, uint32 dims) {
     sprintf(res, "%s[]", res);
   }
 
-  return VMThread::get()->vm->asciizToUTF8(res);
+  return VMThread::get()->getVM()->asciizToUTF8(res);
 }
 
 const UTF8* VMClassPointer::constructPointerName(const UTF8* name, uint32 dims) {
@@ -194,7 +194,7 @@ const UTF8* VMClassPointer::constructPointerName(const UTF8* name, uint32 dims) 
     sprintf(res, "%s*", res);
   }
 
-  return VMThread::get()->vm->asciizToUTF8(res);
+  return VMThread::get()->getVM()->asciizToUTF8(res);
 }
 
 
@@ -262,7 +262,7 @@ void VMCommonClass::clinitClass(VMGenericMethod* genMethod) {
       cl->broadcastClass();
     } else if (status < static_resolved) {
       cl->release();
-      VMThread::get()->vm->unknownError("try to clinit a not-readed class...");
+      VMThread::get()->getVM()->unknownError("try to clinit a not-readed class...");
     } else {
       if (!cl->ownerClass()) {
         while (status < ready) cl->waitClass();
@@ -323,7 +323,7 @@ void VMClass::resolveVirtualFields(VMGenericClass* genClass, VMGenericMethod* ge
     if (super == MSCorlib::pValue) {
       uint32 size = virtualFields.size();
       if (size == 1) {
-        virtualFields[0]->offset = VMThread::get()->vm->module->constantZero;
+        virtualFields[0]->offset = VMThread::get()->getVM()->module->constantZero;
         ResultTy = virtualFields[0]->signature->naturalType;
       } else if (size == 0) {
         ResultTy = llvm::Type::getVoidTy(llvm::getGlobalContext());
@@ -413,7 +413,7 @@ void VMCommonClass::resolveVirtual(VMGenericClass* genClass, VMGenericMethod *ge
       cl->release();
     } else if (status <  loaded) {
       cl->release();
-      VMThread::get()->vm->unknownError("try to resolve a not-readed class");
+      VMThread::get()->getVM()->unknownError("try to resolve a not-readed class");
     } else if (status == loaded) {
       if (cl->isArray) {
         VMClassArray* arrayCl = (VMClassArray*)cl;
@@ -498,7 +498,7 @@ void VMCommonClass::resolveStatic(bool clinit, VMGenericMethod* genMethod) {
       cl->release();
 			//			printf("Will throw an exception: %s....\n", mvm::PrintBuffer::objectToString(this));
 			//			((char *)0)[0] = 22;
-      VMThread::get()->vm->unknownError("try to resolve static of a not virtual-resolved class");
+      VMThread::get()->getVM()->unknownError("try to resolve static of a not virtual-resolved class");
     } else if (status == virtual_resolved) {
       if (cl->isArray) {
         VMClassArray* arrayCl = (VMClassArray*)cl;
@@ -570,7 +570,7 @@ VMMethod* VMCommonClass::lookupMethod(const UTF8* name,
   
   VMMethod* res = lookupMethodDontThrow(name, args, isStatic, recurse);
   if (!res) {
-    VMThread::get()->vm->error(N3::MissingMethodException, 
+    VMThread::get()->getVM()->error(N3::MissingMethodException, 
                                "unable to find %s in %s",
                                mvm::PrintBuffer(name).cString(), mvm::PrintBuffer(this).cString());
   }
@@ -617,7 +617,7 @@ VMField* VMCommonClass::lookupField(const UTF8* name, VMCommonClass* type,
   
   VMField* res = lookupFieldDontThrow(name, type, isStatic, recurse);
   if (!res) {
-    VMThread::get()->vm->error(N3::MissingFieldException, 
+    VMThread::get()->getVM()->error(N3::MissingFieldException, 
                                "unable to find %s in %s",
                                mvm::PrintBuffer(name).cString(), mvm::PrintBuffer(this).cString());
   }
@@ -774,7 +774,7 @@ bool VMCommonClass::isAssignableFrom(VMCommonClass* cl) {
   } else if (cl->isArray) {
     return this->instantiationOfArray(cl);
   } else if (cl->isPointer){
-    VMThread::get()->vm->error("implement me");
+    VMThread::get()->getVM()->error("implement me");
     return false;
   } else {
     return this->subclassOf(cl);

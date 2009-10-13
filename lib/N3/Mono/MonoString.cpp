@@ -44,7 +44,7 @@ const ArrayChar* CLIString::strToArray(N3* vm) const {
 GlobalVariable* CLIString::llvmVar() {
   MonoString* str = (MonoString*)this;
   if (!str->_llvmVar) {
-    N3* vm = VMThread::get()->vm;
+    N3* vm = VMThread::get()->getVM();
     if (!str->_llvmVar) {
       const Type* pty = mvm::MvmModule::ptrType;
       Module* Mod = vm->getLLVMModule();

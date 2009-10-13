@@ -256,12 +256,12 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
       
       case ADD_OVF: {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case ADD_OVF_UN: {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
@@ -365,12 +365,12 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
 
       case CALLI: {
-        VMThread::get()->vm->unknownError("implement me");
+        VMThread::get()->getVM()->unknownError("implement me");
         break;
       }
 
       case CKFINITE : {
-        VMThread::get()->vm->unknownError("implement me");
+        VMThread::get()->getVM()->unknownError("implement me");
         break;
       }
 
@@ -383,7 +383,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
                    type == Type::getInt64Ty(getGlobalContext())) {
           push(new TruncInst(val, Type::getInt8Ty(getGlobalContext()), "", currentBlock));
         } else {
-          VMThread::get()->vm->unknownError("implement me");
+          VMThread::get()->getVM()->unknownError("implement me");
         }
         break;
       }
@@ -398,7 +398,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         } else if (type == Type::getInt8Ty(getGlobalContext())) {
           push(new SExtInst(val, Type::getInt16Ty(getGlobalContext()), "", currentBlock));
         } else {
-          VMThread::get()->vm->unknownError("implement me");
+          VMThread::get()->getVM()->unknownError("implement me");
         }
         break;
       }
@@ -415,7 +415,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         } else if (type == Type::getInt32Ty(getGlobalContext())) {
           push(val);
         } else {
-          VMThread::get()->vm->unknownError("implement me");
+          VMThread::get()->getVM()->unknownError("implement me");
         }
         break;
       }
@@ -429,7 +429,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
                    type == Type::getInt32Ty(getGlobalContext())) {
           push(new SExtInst(val, Type::getInt64Ty(getGlobalContext()), "", currentBlock));
         } else {
-          VMThread::get()->vm->unknownError("implement me");
+          VMThread::get()->getVM()->unknownError("implement me");
         }
         break;
       }
@@ -442,7 +442,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         } else if (type->isInteger()) {
           push(new SIToFPInst(val, Type::getFloatTy(getGlobalContext()), "", currentBlock));
         } else {
-          VMThread::get()->vm->unknownError("implement me");
+          VMThread::get()->getVM()->unknownError("implement me");
         }
         break;
       }
@@ -457,7 +457,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         } else if (type == Type::getDoubleTy(getGlobalContext())) {
           push(val);
         } else {
-          VMThread::get()->vm->unknownError("implement me");
+          VMThread::get()->getVM()->unknownError("implement me");
         }
         break;
       }
@@ -471,7 +471,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
                    type == Type::getInt64Ty(getGlobalContext())) {
           push(new TruncInst(val, Type::getInt8Ty(getGlobalContext()), "", currentBlock));
         } else {
-          VMThread::get()->vm->unknownError("implement me");
+          VMThread::get()->getVM()->unknownError("implement me");
         }
         break;
       }
@@ -486,7 +486,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         } else if (type == Type::getInt8Ty(getGlobalContext())) {
           push(new ZExtInst(val, Type::getInt16Ty(getGlobalContext()), "", currentBlock));
         } else {
-          VMThread::get()->vm->unknownError("implement me");
+          VMThread::get()->getVM()->unknownError("implement me");
         }
         break;
       }
@@ -501,7 +501,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         } else if (type == Type::getInt8Ty(getGlobalContext()) || type == Type::getInt16Ty(getGlobalContext())) {
           push(new ZExtInst(val, Type::getInt16Ty(getGlobalContext()), "", currentBlock));
         } else {
-          VMThread::get()->vm->unknownError("implement me");
+          VMThread::get()->getVM()->unknownError("implement me");
         }
         break;
       }
@@ -515,7 +515,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
                    type == Type::getInt32Ty(getGlobalContext())) {
           push(new ZExtInst(val, Type::getInt64Ty(getGlobalContext()), "", currentBlock));
         } else {
-          VMThread::get()->vm->unknownError("implement me");
+          VMThread::get()->getVM()->unknownError("implement me");
         }
         break;
       }
@@ -532,7 +532,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         } else if (!val->getType()->isFloatingPoint()) {
           res = new BitCastInst(val, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock);
         } else {
-          VMThread::get()->vm->unknownError("implement me");
+          VMThread::get()->getVM()->unknownError("implement me");
         }
         
         push(res);
@@ -540,7 +540,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
 
       case CONV_U : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
@@ -554,68 +554,68 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         } else if (type == Type::getDoubleTy(getGlobalContext())) {
           push(val);
         } else {
-          VMThread::get()->vm->unknownError("implement me");
+          VMThread::get()->getVM()->unknownError("implement me");
         }
         break;
       }
       
       case CONV_OVF_I1 : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_I2 : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_I4 : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_I8 : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_U1 : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_U2 : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_U4 : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_U8 : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_I : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_U : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_I1_UN : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_I2_UN : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
@@ -631,33 +631,33 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         } else if (type == Type::getInt32Ty(getGlobalContext())) {
           push(val);
         } else {
-          VMThread::get()->vm->unknownError("implement me");
+          VMThread::get()->getVM()->unknownError("implement me");
         }
         break;
       }
       
       case CONV_OVF_I8_UN : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_U1_UN : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_U2_UN : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_U4_UN : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case CONV_OVF_U8_UN : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
@@ -708,7 +708,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
       
       case JMP : {
-        VMThread::get()->vm->error("implement me"); 
+        VMThread::get()->getVM()->error("implement me"); 
         break;
       }
  
@@ -1004,12 +1004,12 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
 
       case MUL_OVF : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case MUL_OVF_UN : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
 
@@ -1236,12 +1236,12 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
 
       case SUB_OVF : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case SUB_OVF_UN : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
 
@@ -1272,7 +1272,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case BOX : {
         uint32 token = readU4(bytecodes, i);
         Assembly* assembly = compilingClass->assembly;
-        N3* vm = (N3*)(VMThread::get()->vm);
+        N3* vm = (N3*)(VMThread::get()->getVM());
         VMCommonClass* type = assembly->loadType(vm, token, true, false, false,
                                                  true, genClass, genMethod);
         assert(type);
@@ -1324,7 +1324,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
 
       case CASTCLASS : {
         Assembly* assembly = compilingClass->assembly;
-        N3* vm = (N3*)(VMThread::get()->vm);
+        N3* vm = (N3*)(VMThread::get()->getVM());
         uint32 token = readU4(bytecodes, i);
         VMCommonClass* dcl = assembly->loadType(vm, token, true, false,
                                                false, true, genClass, genMethod);
@@ -1366,13 +1366,13 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         
 
       case CPOBJ : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;  
       }
        
       case ISINST : {
         Assembly* assembly = compilingClass->assembly;
-        N3* vm = (N3*)(VMThread::get()->vm);
+        N3* vm = (N3*)(VMThread::get()->getVM());
         uint32 token = readU4(bytecodes, i);
         VMCommonClass* dcl = assembly->loadType(vm, token, true, false,
                                                false, true, genClass, genMethod);
@@ -1420,12 +1420,12 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
       
       case LDELEM : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;  
       }
       
       case LDELEM_I1 : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;  
       }
 
@@ -1511,7 +1511,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
 
       case LDELEMA : {
         Assembly* assembly = compilingClass->assembly;
-        N3* vm = (N3*)(VMThread::get()->vm);
+        N3* vm = (N3*)(VMThread::get()->getVM());
         uint32 token = readU4(bytecodes, i);
         VMCommonClass* cl = assembly->loadType(vm, token, true, false,
                                                false, true, genClass, genMethod);
@@ -1545,7 +1545,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
 
       case LDOBJ : {
         Assembly* assembly = compilingClass->assembly;
-        N3* vm = (N3*)(VMThread::get()->vm);
+        N3* vm = (N3*)(VMThread::get()->getVM());
         uint32 token = readU4(bytecodes, i);
         VMCommonClass* cl = assembly->loadType(vm, token, true, false,
                                                false, true, genClass, genMethod);
@@ -1578,7 +1578,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
                                                module->ptrType);
         Value* res = CallInst::Create(newStringLLVM, val, "", currentBlock);
         /*CLIString * str = 
-          (CLIString*)(((N3*)VMThread::get()->vm)->UTF8ToStr(utf8));
+          (CLIString*)(((N3*)VMThread::get()->getVM())->UTF8ToStr(utf8));
         GlobalVariable* gv = str->llvmVar();
         push(new BitCastInst(new LoadInst(gv, "", currentBlock), 
                              MSCorlib::pString->naturalType, "", currentBlock));*/
@@ -1590,14 +1590,14 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         uint32 token = readU4(bytecodes, i);
         uint32 table = token >> 24;
         Assembly* assembly = compilingClass->assembly;
-        N3* vm = (N3*)(VMThread::get()->vm);
+        N3* vm = (N3*)(VMThread::get()->getVM());
         switch (table) {
           case CONSTANT_Field : {
             uint32 typeToken = assembly->getTypedefTokenFromField(token);
             assembly->loadType(vm, typeToken, true, true, false, true, genClass, genMethod);
             VMField* field = assembly->lookupFieldFromToken(token);
             if (!field) {
-              VMThread::get()->vm->error("implement me");
+              VMThread::get()->getVM()->error("implement me");
             }
             Value* arg = new LoadInst(field->llvmVar(), "", currentBlock);
             push(arg);
@@ -1609,7 +1609,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
             assembly->loadType(vm, typeToken, true, true, false, true, genClass, genMethod);
             VMMethod* meth = assembly->lookupMethodFromToken(token);
             if (!meth) {
-              VMThread::get()->vm->error("implement me");
+              VMThread::get()->getVM()->error("implement me");
             }
             Value* arg = new LoadInst(meth->llvmVar(), "", currentBlock);
             push(arg);
@@ -1626,20 +1626,20 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           }
 
           default :
-            VMThread::get()->vm->error("implement me");
+            VMThread::get()->getVM()->error("implement me");
         }
         break;
       }
       
       case MKREFANY : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
 
       case NEWARR : {
         uint32 value = readU4(bytecodes, i);
         Assembly* ass = compilingClass->assembly;
-        VMCommonClass* baseType = ass->loadType((N3*)(VMThread::get()->vm),
+        VMCommonClass* baseType = ass->loadType((N3*)(VMThread::get()->getVM()),
                                                 value, true, false, false, 
                                                 true, genClass, genMethod);
 
@@ -1662,12 +1662,12 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
       
       case REFANYVAL : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case STELEM : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
 
@@ -1732,7 +1732,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
 
       case STELEM_I : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
 
@@ -1754,7 +1754,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
 
       case STOBJ : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         isVolatile = false;
         break;
       }
@@ -1783,7 +1783,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case UNBOX : {
         uint32 token = readU4(bytecodes, i);
         Assembly* assembly = compilingClass->assembly;
-        N3* vm = (N3*)(VMThread::get()->vm);
+        N3* vm = (N3*)(VMThread::get()->getVM());
         VMCommonClass* type = assembly->loadType(vm, token, true, false, false,
                                                  true, genClass, genMethod);
         assert(type);
@@ -1816,7 +1816,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       }
       
       case UNBOX_ANY : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
 
@@ -1866,7 +1866,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           }
       
           case ENDFILTER: {
-            VMThread::get()->vm->error("implement me");
+            VMThread::get()->getVM()->error("implement me");
             break;
           }
           
@@ -1882,18 +1882,18 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           
           case LDFTN : {
             Assembly* assembly = compilingClass->assembly;
-            N3* vm = (N3*)(VMThread::get()->vm);
+            N3* vm = (N3*)(VMThread::get()->getVM());
             uint32 token = readU4(bytecodes, i);
             uint32 table = token >> 24;
             if (table == CONSTANT_MethodDef) {
               uint32 typeToken = assembly->getTypedefTokenFromMethod(token);
               assembly->loadType(vm, typeToken, true, false,  false, true, genClass, genMethod);
               VMMethod* meth = assembly->lookupMethodFromToken(token);
-              if (!meth) VMThread::get()->vm->error("implement me");
+              if (!meth) VMThread::get()->getVM()->error("implement me");
               Value* arg = new LoadInst(meth->llvmVar(), "", currentBlock);
               push(arg);
             } else {
-              VMThread::get()->vm->error("implement me");
+              VMThread::get()->getVM()->error("implement me");
             }
             break;
           }
@@ -1940,14 +1940,14 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           }
       
           case ARGLIST : {
-            VMThread::get()->vm->error("implement me");
+            VMThread::get()->getVM()->error("implement me");
             break;
           }
       
           case INITOBJ : {
             uint32 token = readU4(bytecodes, i);
             Assembly* assembly = compilingClass->assembly;
-            N3* vm = (N3*)(VMThread::get()->vm);
+            N3* vm = (N3*)(VMThread::get()->getVM());
             VMCommonClass* type = assembly->loadType(vm, token, true, false, false,
                                                      true, genClass, genMethod);
             if (type->super == MSCorlib::pValue) {
@@ -1967,12 +1967,12 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           }
           
           case LDVIRTFTN : {
-            VMThread::get()->vm->error("implement me");
+            VMThread::get()->getVM()->error("implement me");
             break;
           }
           
           case REFANYTYPE : {
-            VMThread::get()->vm->error("implement me");
+            VMThread::get()->getVM()->error("implement me");
             break;
           }
           
@@ -1993,7 +1993,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           }
         
           case SIZEOF : {
-            VMThread::get()->vm->error("implement me");
+            VMThread::get()->getVM()->error("implement me");
             break;
           }
 
@@ -2002,13 +2002,13 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
             break;
           }
           default :
-            VMThread::get()->vm->unknownError("unknown bytecode");
+            VMThread::get()->getVM()->unknownError("unknown bytecode");
         } 
         break;
       }
 
       default :
-        VMThread::get()->vm->unknownError("unknown bytecode");
+        VMThread::get()->getVM()->unknownError("unknown bytecode");
     } 
   }
 }
@@ -2096,12 +2096,12 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case CALLI: {
-        VMThread::get()->vm->unknownError("implement me");
+        VMThread::get()->getVM()->unknownError("implement me");
         break;
       }
 
       case CKFINITE : {
-        VMThread::get()->vm->unknownError("implement me");
+        VMThread::get()->getVM()->unknownError("implement me");
         break;
       }
 
@@ -2142,7 +2142,7 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       case ENDFINALLY : break;
       
       case JMP : {
-        VMThread::get()->vm->error("implement me"); 
+        VMThread::get()->getVM()->error("implement me"); 
         break;
       }
  
@@ -2328,7 +2328,7 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case CPOBJ : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;  
       }
        
@@ -2338,12 +2338,12 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
       
       case LDELEM : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;  
       }
       
       case LDELEM_I1 : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;  
       }
 
@@ -2397,7 +2397,7 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
       
       case MKREFANY : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
 
@@ -2412,12 +2412,12 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
       
       case REFANYVAL : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
       
       case STELEM : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
 
@@ -2436,7 +2436,7 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case STOBJ : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
 
@@ -2455,7 +2455,7 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
       
       case UNBOX_ANY : {
-        VMThread::get()->vm->error("implement me");
+        VMThread::get()->getVM()->error("implement me");
         break;
       }
 
@@ -2477,7 +2477,7 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
           case CPBLK : break;
       
           case ENDFILTER: {
-            VMThread::get()->vm->error("implement me");
+            VMThread::get()->getVM()->error("implement me");
             break;
           }
           
@@ -2521,7 +2521,7 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
           }
       
           case ARGLIST : {
-            VMThread::get()->vm->error("implement me");
+            VMThread::get()->getVM()->error("implement me");
             break;
           }
       
@@ -2531,12 +2531,12 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
           }
           
           case LDVIRTFTN : {
-            VMThread::get()->vm->error("implement me");
+            VMThread::get()->getVM()->error("implement me");
             break;
           }
           
           case REFANYTYPE : {
-            VMThread::get()->vm->error("implement me");
+            VMThread::get()->getVM()->error("implement me");
             break;
           }
           
@@ -2545,7 +2545,7 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
           }
         
           case SIZEOF : {
-            VMThread::get()->vm->error("implement me");
+            VMThread::get()->getVM()->error("implement me");
             break;
           }
 
@@ -2553,13 +2553,13 @@ void CLIJit::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
             break;
           }
           default :
-            VMThread::get()->vm->unknownError("unknown bytecode");
+            VMThread::get()->getVM()->unknownError("unknown bytecode");
         } 
         break;
       }
       
       default :
-        VMThread::get()->vm->unknownError("unknown bytecode");
+        VMThread::get()->getVM()->unknownError("unknown bytecode");
     }
   }
 }
