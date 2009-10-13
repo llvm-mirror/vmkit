@@ -56,8 +56,7 @@ public:
                        size * sizeof(uint16)) < 0;
   }
 
-	virtual void print(PrintBuffer *pb) const;
-	virtual ~UTF8() {}
+	void print(PrintBuffer *pb) const;
 };
 
 
