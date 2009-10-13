@@ -484,7 +484,7 @@ Constant* JavaAOTCompiler::getVirtualTable(JavaVirtualTable* VT) {
                                 JnjvmModule::VTType);
     virtualTables.insert(std::make_pair(VT, res));
   
-    if (isCompiling(classDef)) {
+    if (isCompiling(classDef) || assumeCompiled) {
       Constant* C = CreateConstantFromVT(VT);
       varGV->setInitializer(C);
     }
