@@ -12,6 +12,12 @@ include $(LEVEL)/Makefile.config
 
 VMKIT_RUNTIME = $(PROJ_SRC_DIR)/runtime-default.ll
 
+ifeq ($(GC_MMTK), 1)
+VMKIT_RUNTIME += $(PROJ_SRC_DIR)/runtime-mmtk-thread.ll
+else
+VMKIT_RUNTIME += $(PROJ_SRC_DIR)/runtime-default-thread.ll
+endif
+
 ifeq ($(ISOLATE_BUILD), 1)
 VMKIT_RUNTIME += $(PROJ_SRC_DIR)/runtime-isolate.ll
 endif

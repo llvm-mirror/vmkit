@@ -388,7 +388,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     // catch the exception but resume unwinding.
     JnjvmClassLoader* loader = compilingClass->classLoader;;
     if (loader != loader->bootstrapLoader) {
-      Value* threadId = getCurrentThread();
+      Value* threadId = getCurrentThread(module->MutatorThreadType);
       Value* Isolate = GetElementPtrInst::Create(threadId,
                                                  module->constantFour, "",
                                                  currentBlock);
@@ -413,7 +413,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     }
 #endif
    
-    Value* threadId = getCurrentThread();
+    Value* threadId = getCurrentThread(module->JavaThreadType);
     Value* geps[2] = { module->constantZero,
                        module->OffsetJavaExceptionInThreadConstant };
 
@@ -465,7 +465,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     
     currentBlock = cur->nativeHandler;
  
-    threadId = getCurrentThread();
+    threadId = getCurrentThread(module->JavaThreadType);
     javaExceptionPtr = GetElementPtrInst::Create(threadId, geps, geps + 2, "",
                                                  currentBlock);
     
@@ -521,7 +521,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     Value* IsolatePtr = 0;
     currentBlock = cur->javaHandler;
     if (loader != loader->bootstrapLoader) {
-      threadId = getCurrentThread();
+      threadId = getCurrentThread(module->MutatorThreadType);
      
       IsolateIDPtr = GetElementPtrInst::Create(threadId, module->constantThree,
                                                "", cur->javaHandler);
@@ -558,7 +558,7 @@ void JavaJIT::finishExceptions() {
   if (PI == PE) {
     endExceptionBlock->eraseFromParent();
   } else {
-    Value* threadId = getCurrentThread();
+    Value* threadId = getCurrentThread(module->JavaThreadType);
     Value* geps2[2] = { module->constantZero,
                         module->OffsetCXXExceptionInThreadConstant };
     

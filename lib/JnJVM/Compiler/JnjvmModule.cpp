@@ -50,6 +50,7 @@ const llvm::Type* JnjvmModule::JavaFieldType = 0;
 const llvm::Type* JnjvmModule::JavaMethodType = 0;
 const llvm::Type* JnjvmModule::AttributType = 0;
 const llvm::Type* JnjvmModule::JavaThreadType = 0;
+const llvm::Type* JnjvmModule::MutatorThreadType = 0;
 
 #ifdef ISOLATE_SHARING
 const llvm::Type* JnjvmModule::JnjvmType = 0;
@@ -161,6 +162,8 @@ void JnjvmModule::initialise() {
     PointerType::getUnqual(module->getTypeByName("Attribut"));
   JavaThreadType =
     PointerType::getUnqual(module->getTypeByName("JavaThread"));
+  MutatorThreadType =
+    PointerType::getUnqual(module->getTypeByName("MutatorThread"));
  
   LLVMAssessorInfo::initialise();
 }
@@ -208,11 +211,11 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   OffsetDoYieldInThreadConstant =
     ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 6);
   OffsetJNIInThreadConstant =
-    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 13);
+    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 1);
   OffsetJavaExceptionInThreadConstant =
-    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 14);
+    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 2);
   OffsetCXXExceptionInThreadConstant =
-    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 15);
+    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 3);
   
   ClassReadyConstant =
     ConstantInt::get(Type::getInt8Ty(getGlobalContext()), ready);

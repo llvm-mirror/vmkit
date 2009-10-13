@@ -126,7 +126,7 @@ private:
                     llvm::BasicBlock* currentBlock, bool usign);
  
   /// getCurrentThread - Emit code to get the current thread.
-  llvm::Value* getCurrentThread();
+  llvm::Value* getCurrentThread(const llvm::Type* Ty);
 
 //===--------------------------- Inline support ---------------------------===//
 

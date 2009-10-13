@@ -6,7 +6,7 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
                                       InsertAtEnd);
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* threadId = getCurrentThread();
+    Value* threadId = getCurrentThread(module->JavaThreadType);
     Value* geps[2] = { module->constantZero,
                        module->OffsetJavaExceptionInThreadConstant };
 
@@ -63,7 +63,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
   Instruction* res = CallInst::Create(F, arg1, Name, InsertAtEnd);
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* threadId = getCurrentThread();
+    Value* threadId = getCurrentThread(module->JavaThreadType);
     Value* geps[2] = { module->constantZero,
                        module->OffsetJavaExceptionInThreadConstant };
 
@@ -114,7 +114,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
   Instruction* res = CallInst::Create(F, args, args + 2, Name, InsertAtEnd);
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* threadId = getCurrentThread();
+    Value* threadId = getCurrentThread(module->JavaThreadType);
     Value* geps[2] = { module->constantZero,
                        module->OffsetJavaExceptionInThreadConstant };
 
@@ -162,7 +162,7 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
   Instruction* res = llvm::CallInst::Create(F, Name, InsertAtEnd);
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* threadId = getCurrentThread();
+    Value* threadId = getCurrentThread(module->JavaThreadType);
     Value* geps[2] = { module->constantZero,
                        module->OffsetJavaExceptionInThreadConstant };
 
@@ -222,7 +222,7 @@ void JavaJIT::throwException(llvm::Function* F, Value* arg1) {
 }
 
 void JavaJIT::throwException(Value* obj) {
-  Value* threadId = getCurrentThread();
+  Value* threadId = getCurrentThread(module->JavaThreadType);
   Value* geps[2] = { module->constantZero,
                      module->OffsetJavaExceptionInThreadConstant };
 
@@ -400,7 +400,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     // catch the exception but resume unwinding.
     JnjvmClassLoader* loader = compilingClass->classLoader;;
     if (loader != loader->bootstrapLoader) {
-      Value* threadId = getCurrentThread();
+      Value* threadId = getCurrentThread(module->MutatorThreadType);
       Value* Isolate = GetElementPtrInst::Create(threadId,
                                                  module->constantFour, "",
                                                  currentBlock);
@@ -475,7 +475,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     // First thing in the handler: clear the exception.
     Value* geps[2] = { module->constantZero,
                        module->OffsetJavaExceptionInThreadConstant };
-    Value* threadId = getCurrentThread();
+    Value* threadId = getCurrentThread(module->JavaThreadType);
     Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
                                                         geps + 2, "",
                                                         currentBlock);
@@ -496,7 +496,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     Value* IsolatePtr = 0;
     currentBlock = cur->javaHandler;
     if (loader != loader->bootstrapLoader) {
-      threadId = getCurrentThread();
+      threadId = getCurrentThread(module->MutatorThreadType);
      
       IsolateIDPtr = GetElementPtrInst::Create(threadId, module->constantThree,
                                                "", cur->javaHandler);

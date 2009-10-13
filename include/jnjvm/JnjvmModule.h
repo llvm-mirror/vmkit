@@ -239,6 +239,7 @@ public:
   static const llvm::Type* JavaFieldType;
   static const llvm::Type* AttributType;
   static const llvm::Type* JavaThreadType;
+  static const llvm::Type* MutatorThreadType;
   
 #ifdef ISOLATE_SHARING
   static const llvm::Type* JnjvmType;

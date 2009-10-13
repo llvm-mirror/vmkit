@@ -34,26 +34,7 @@
 ;;; Field 3: The static instance
 %TaskClassMirror = type { i8, i1, i8* }
 
-%Vector = type {i32, i8*, i8*}
-
-;;; Field 0: the VT of threads
-;;; Field 1: next
-;;; Field 2: prev
-;;; Field 3: IsolateID
-;;; Field 4: MyVM
-;;; Field 5: baseSP
-;;; Field 6: doYield
-;;; Field 7: inGC
-;;; Field 8: stackScanned
-;;; Field 9: lastSP
-;;; Field 10: internalThreadID
-;;; field 11: routine
-;;; field 12: addresses
-;;; field 13: jnienv
-;;; field 14: Java pendingException
-;;; field 15: CXX pendingException
-%JavaThread = type { %VT*, %JavaThread*, %JavaThread*, i8*, i8*, i8*, i1, i1,
-                     i1, i8*, i8*, i8*, %Vector, i8*, %JavaObject*, i8* }
+%JavaThread = type { %MutatorThread, i8*, %JavaObject*, i8* }
 
 
 %Attribut = type { %UTF8*, i32, i32 }
