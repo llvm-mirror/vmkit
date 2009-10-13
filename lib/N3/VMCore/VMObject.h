@@ -19,6 +19,8 @@
 #include "mvm/Object.h"
 #include "mvm/Threads/Locks.h"
 
+#include "mvm/GC/GC.h"
+
 #include "types.h"
 
 namespace n3 {
@@ -28,26 +30,32 @@ class VMField;
 class VMObject;
 class VMThread;
 
-class VMCond {
+struct N3VirtualTable : VirtualTable {
+	uintptr_t  print;
+	uintptr_t  hashcode;
+
+  N3VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t, uintptr_t p, uintptr_t h) : VirtualTable(d, o, t) {
+		print = p;
+		hashcode = h;
+  }
+};
+
+class LockObj : public mvm::Object {
 public:
+  static N3VirtualTable* VT;
+  mvm::LockRecursive     lock;
   std::vector<VMThread*> threads;
+
+  static LockObj* allocate();
+
+  virtual void print(mvm::PrintBuffer* buf) const;
+  virtual void TRACER;
   
   void notify();
   void notifyAll();
   void wait(VMThread* th);
   void remove(VMThread* th);
-};
 
-class LockObj : public mvm::Object {
-public:
-  static VirtualTable* VT;
-  mvm::LockRecursive   lock;
-  VMCond               varcond;
-
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
-
-  static LockObj* allocate();
   void aquire();
   void release();
   bool owner();
@@ -57,7 +65,7 @@ public:
 
 class VMObject : public mvm::Object {
 public:
-  static VirtualTable* VT;
+  static N3VirtualTable* VT;
   VMCommonClass* classOf;
   LockObj* lockObj;
 

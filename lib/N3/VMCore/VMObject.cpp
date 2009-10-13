@@ -23,7 +23,7 @@ void VMObject::initialise(VMCommonClass* cl) {
   this->lockObj = 0;
 }
 
-void VMCond::notify() {
+void LockObj::notify() {
   for (std::vector<VMThread*>::iterator i = threads.begin(), 
             e = threads.end(); i!= e; ++i) {
     VMThread* cur = *i;
@@ -45,7 +45,7 @@ void VMCond::notify() {
   }
 }
 
-void VMCond::notifyAll() {
+void LockObj::notifyAll() {
   for (std::vector<VMThread*>::iterator i = threads.begin(),
             e = threads.end(); i!= e; ++i) {
     VMThread* cur = *i;
@@ -56,11 +56,11 @@ void VMCond::notifyAll() {
   }
 }
 
-void VMCond::wait(VMThread* th) {
+void LockObj::wait(VMThread* th) {
   threads.push_back(th);
 }
 
-void VMCond::remove(VMThread* th) {
+void LockObj::remove(VMThread* th) {
   for (std::vector<VMThread*>::iterator i = threads.begin(),
             e = threads.end(); i!= e; ++i) {
     if (*i == th) {
@@ -142,7 +142,7 @@ void VMObject::waitIntern(struct timeval* info, bool timed) {
       unsigned int recur = l->lock.recursionCount();
       bool timeout = false;
       l->lock.unlockAll();
-      l->varcond.wait(thread);
+      l->wait(thread);
       thread->state = VMThread::StateWaiting;
 
       if (timed) {
@@ -156,7 +156,7 @@ void VMObject::waitIntern(struct timeval* info, bool timed) {
       l->lock.lockAll(recur);
 
       if (interrupted || timeout) {
-        l->varcond.remove(thread);
+        l->remove(thread);
       }
 
       thread->state = VMThread::StateRunning;
@@ -182,7 +182,7 @@ void VMObject::timedWait(struct timeval& info) {
 void VMObject::notify() {
   LockObj* l = myLock(this);
   if (l->owner()) {
-    l->varcond.notify();
+    l->notify();
   } else {
     VMThread::get()->getVM()->illegalMonitorStateException(this);
   }
@@ -191,7 +191,7 @@ void VMObject::notify() {
 void VMObject::notifyAll() {
   LockObj* l = myLock(this);
   if (l->owner()) {
-    l->varcond.notifyAll();
+    l->notifyAll();
   } else {
     VMThread::get()->getVM()->illegalMonitorStateException(this);
   } 

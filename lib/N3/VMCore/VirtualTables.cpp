@@ -23,7 +23,7 @@
 
 using namespace n3;
 
-#define INIT(X) VirtualTable* X::VT = 0
+#define INIT(X) N3VirtualTable* X::VT = 0
 
 INIT(LockObj);
 INIT(VMObject);

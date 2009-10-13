@@ -42,7 +42,6 @@ class VMGenericMethod;
 
 class ExceptionBlockDesc : public mvm::PermanentObject {
 public:
-	static VirtualTable* VT;
 	uint32 tryOffset;
 	uint32 tryLength;
 	uint32 handlerOffset;
@@ -81,8 +80,8 @@ public:
   static const char* OpcodeNames[0xE1];
   static const char* OpcodeNamesFE[0x23];
 
-  static VirtualTable* makeVT(VMClass* cl, bool isStatic);
-  static VirtualTable* makeArrayVT(VMClassArray* cl);
+  static N3VirtualTable* makeVT(VMClass* cl, bool isStatic);
+  static N3VirtualTable* makeArrayVT(VMClassArray* cl);
   
   static void printExecution(char*, n3::VMMethod*);
   void compileOpcodes(uint8*, uint32, VMGenericClass* genClass, VMGenericMethod* genMethod);

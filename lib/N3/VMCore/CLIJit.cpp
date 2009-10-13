@@ -141,8 +141,8 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
 #endif
 
 
-VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
-  VirtualTable * res = (VirtualTable*)malloc(VT_SIZE);
+N3VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
+  N3VirtualTable * res = (N3VirtualTable*)malloc(VT_SIZE);
   memcpy(res, VMObject::VT, VT_SIZE);
 #ifdef WITH_TRACER  
   Function* func = Function::Create(markAndTraceLLVMType,
@@ -249,17 +249,17 @@ VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
   return res;
 }
 
-VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
-  VirtualTable * res = (VirtualTable*)malloc(VT_SIZE);
+N3VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
+  N3VirtualTable * res = (N3VirtualTable*)malloc(VT_SIZE);
   memcpy(res, VMObject::VT, VT_SIZE);
 #ifdef WITH_TRACER  
   const Type* type = stat ? cl->staticType : cl->virtualType;
   std::vector<VMField*> &fields = stat ? cl->staticFields : cl->virtualFields;
   
   Function* func = Function::Create(markAndTraceLLVMType,
-                                GlobalValue::ExternalLinkage,
-                                "markAndTraceObject",
-                                cl->vm->getLLVMModule());
+																		GlobalValue::ExternalLinkage,
+																		"markAndTraceObject",
+																		cl->vm->getLLVMModule());
 
   Argument* arg = func->arg_begin();
 #ifdef MULTIPLE_GC 
@@ -298,7 +298,7 @@ VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
     cl->staticTracer = func;
   }
 #endif
-
+	
   return res;
 }
 

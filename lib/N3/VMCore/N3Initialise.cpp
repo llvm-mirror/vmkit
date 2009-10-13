@@ -158,12 +158,12 @@ static void initialiseVT() {
 #if defined(WITHOUT_FINALIZER)
 # define INIT(X) {																\
 		X fake;																				\
-		X::VT = ((VirtualTable**)(void*)(&fake))[0];	\
+		X::VT = ((N3VirtualTable**)(void*)(&fake))[0];	\
 	}
 #else
 # define INIT(X) {																\
 		X fake;																				\
-		X::VT = ((VirtualTable**)(void*)(&fake))[0];	\
+		X::VT = ((N3VirtualTable**)(void*)(&fake))[0];	\
 		((void**)X::VT)[0] = 0;												\
 	}
 #endif

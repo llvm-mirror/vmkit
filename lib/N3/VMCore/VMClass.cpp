@@ -292,7 +292,7 @@ void VMClass::resolveStaticFields(VMGenericMethod* genMethod) {
 
   cl->staticType = llvm::PointerType::getUnqual(llvm::StructType::get(vm->LLVMModule->getContext(), fields, false));
 
-  VirtualTable* VT = CLIJit::makeVT(cl, true);
+  N3VirtualTable* VT = CLIJit::makeVT(cl, true);
 
   uint64 size = mvm::MvmModule::getTypeSize(cl->staticType->getContainedType(0));
   cl->staticInstance = (VMObject*)gc::operator new(size, VT);
@@ -465,7 +465,7 @@ void VMCommonClass::resolveVT() {
         // We check for virtual instance because the string class has a 
         // bigger size than the class declares.
         if (super != MSCorlib::pEnum && !cl->virtualInstance) {
-          VirtualTable* VT = CLIJit::makeVT(cl, false);
+          N3VirtualTable* VT = CLIJit::makeVT(cl, false);
   
           uint64 size = mvm::MvmModule::getTypeSize(cl->virtualType->getContainedType(0));
           cl->virtualInstance = (VMObject*)gc::operator new(size, VT);

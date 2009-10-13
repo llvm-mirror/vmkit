@@ -24,7 +24,7 @@ class ArrayChar;
 
 class CLIString : public VMObject {
 public:
-  static VirtualTable* VT;
+  static N3VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("CLI string");
   }
