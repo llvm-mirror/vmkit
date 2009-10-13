@@ -100,7 +100,9 @@ namespace jnjvm {
 
 void JnjvmModule::initialise() {
   Module* module = globalModule;
-  jnjvm::llvm_runtime::makeLLVMModuleContents(module);
+  
+  if (!module->getTypeByName("JavaThread"))
+    jnjvm::llvm_runtime::makeLLVMModuleContents(module);
 
   VTType = PointerType::getUnqual(module->getTypeByName("VT"));
 
