@@ -203,7 +203,7 @@ public:
   virtual void TRACER;
   
   uint32 flags;
-  uint32 offset;
+	uint32 offsetInTextSection;
   uint32 implFlags;
   uint32 token;
 

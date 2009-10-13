@@ -39,6 +39,7 @@ class VMMethod;
 class VMObject;
 class VMGenericClass;
 class VMGenericMethod;
+class N3VirtualTable;
 
 class ExceptionBlockDesc : public mvm::PermanentObject {
 public:

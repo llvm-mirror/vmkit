@@ -1156,7 +1156,7 @@ static void printArgs(std::vector<llvm::Value*> args, BasicBlock* insertAt) {
 Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* genMethod) {
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "tiny or fat compile %s\n",
               mvm::PrintBuffer(compilingMethod).cString());
-  uint32 offset = compilingMethod->offset;
+  uint32 offset = compilingMethod->offsetInTextSection;
 	ByteCode* bytes = compilingClass->assembly->bytes;
   uint8 header = READ_U1(bytes, offset);
   bool tiny = false;
@@ -1334,7 +1334,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
   
   PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "tiny or fat inline compile %s\n",
               mvm::PrintBuffer(compilingMethod).cString());
-  uint32 offset = compilingMethod->offset;
+  uint32 offset = compilingMethod->offsetInTextSection;
   ByteCode* bytes = compilingClass->assembly->bytes;
   uint8 header = READ_U1(bytes, offset);
   bool tiny = false;
@@ -1463,7 +1463,7 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   
   if (isInternal(meth->implFlags)) {
     func = jit->compileNative(dynamic_cast<VMGenericMethod*>(meth));
-  } else if (meth->offset == 0) {
+  } else if (meth->offsetInTextSection == 0) {
     func = jit->compileIntern();
   } else {
     func = jit->compileFatOrTiny(dynamic_cast<VMGenericClass*>(cl), dynamic_cast<VMGenericMethod*>(meth));

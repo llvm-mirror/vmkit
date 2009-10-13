@@ -1400,10 +1400,10 @@ VMMethod* Assembly::readMethodDef(uint32 index, VMCommonClass* cl,
   meth->implFlags = implFlags;
 
   if (rva) {
-    meth->offset = textSection->rawAddress + 
-                   (rva - textSection->virtualAddress);
+    meth->offsetInTextSection = textSection->rawAddress + 
+			(rva - textSection->virtualAddress);
   } else {
-    meth->offset = 0;
+    meth->offsetInTextSection = 0;
   }
 
   if (paramList && paramTable != 0 && paramList <= paramSize) {
