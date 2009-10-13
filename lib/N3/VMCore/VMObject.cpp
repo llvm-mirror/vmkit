@@ -32,7 +32,7 @@ void VMCond::notify() {
       cur->lock->unlock();
       continue;
     } else {
-			declare_gcroot(VMObject *, th) = cur->vmThread;
+			declare_gcroot(VMObject *, th) = cur->ooo_appThread;
 			if (th != 0) {
 				cur->varcond->signal();
 				cur->lock->unlock();

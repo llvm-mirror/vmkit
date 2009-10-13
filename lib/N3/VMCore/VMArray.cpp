@@ -32,6 +32,18 @@ const sint32 VMArray::MaxArraySize = 268435455;
 		buf->write(post);																										\
 	}
 
-ON_ARRAY_CLASSES(DEFINE_ARRAY_PRINT)
+ON_ARRAY_PRIMITIVE_CLASSES(DEFINE_ARRAY_PRINT)
+
+void ArrayObject::do_print(const ArrayObject *self, mvm::PrintBuffer *buf) { 
+	llvm_gcroot(self, 0);																								
+	buf->write("Array<");
+	for(int i=0; i<self->size; i++) {
+		if(i)
+			buf->write(" ");
+		declare_gcroot(VMObject*, cur) = self->elements[i];
+		buf->writeObj(cur);
+	}
+	buf->write(">");
+}
 
 #undef DEFINE_ARRAY_PRINT
