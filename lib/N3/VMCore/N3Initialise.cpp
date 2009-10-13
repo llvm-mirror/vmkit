@@ -190,7 +190,6 @@ static void initialiseStatics() {
   N3* vm = N3::bootstrapVM = N3::allocateBootstrap();
   VMThread::TheThread = new VMThread(0, vm);
   
-  
   vm->assemblyPath.push_back("");
   vm->assemblyPath.push_back(MSCorlib::libsPath);
   

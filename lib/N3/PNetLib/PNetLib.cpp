@@ -1061,6 +1061,6 @@ extern "C" sint32 System_String_InternalOrdinal(PNetString *strA, sint32 indexA,
 }
 
 extern "C" VMObject* System_Threading_Thread_InternalCurrentThread() {
-	declare_gcroot(VMObject*, res) = VMThread::get()->vmThread;
-  return res;
+	declare_gcroot(VMObject*, appThread) = VMThread::get()->ooo_appThread;
+  return appThread;
 }

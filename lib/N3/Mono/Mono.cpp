@@ -244,8 +244,8 @@ System_NumberFormatter_GetFormatterTables (guint64 const **mantissas,
 }
 
 extern "C" VMObject* System_Threading_Thread_CurrentThread_internal() {
-	declare_gcroot(VMObject*, res) = VMThread::get()->vmThread;
-  return res;
+	declare_gcroot(VMObject*, appThread) = VMThread::get()->ooo_appThread;
+  return appThread;
 }
 
 extern "C" VMObject*

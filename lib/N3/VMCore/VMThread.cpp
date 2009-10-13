@@ -29,9 +29,9 @@ const unsigned int VMThread::StateWaiting = 1;
 const unsigned int VMThread::StateInterrupted = 2;
 
 void VMThread::print(mvm::PrintBuffer* buf) const {
-  buf->write("Thread:");
-	declare_gcroot(VMObject *, th) = vmThread;
-  th->print(buf);
+  buf->write("Thread<>");
+	declare_gcroot(VMObject *, appThread) = ooo_appThread;
+  appThread->print(buf);
 }
 
 extern void AddStandardCompilePasses(llvm::FunctionPassManager*);
@@ -40,10 +40,10 @@ VMThread::~VMThread() {
   delete perFunctionPasses;
 }
 
-VMThread::VMThread(VMObject* thread, N3* vm) {
-	llvm_gcroot(thread, 0);
+VMThread::VMThread(VMObject* appThread, N3* vm) {
+	llvm_gcroot(appThread, 0);
   this->perFunctionPasses = 0;
-  this->vmThread = thread;
+  this->ooo_appThread = appThread;
   this->MyVM = vm;
   this->lock = new mvm::LockNormal();
   this->varcond = new mvm::Cond();
@@ -58,8 +58,8 @@ VMThread::VMThread(VMObject* thread, N3* vm) {
 VMObject* VMThread::currentThread() {
   VMThread* result = get();
   if (result != 0) {
-		declare_gcroot(VMObject *, res) = result->vmThread;
-    return res;
+		declare_gcroot(VMObject *, appThread) = result->ooo_appThread;
+    return appThread;
   } else
     return 0;
 }

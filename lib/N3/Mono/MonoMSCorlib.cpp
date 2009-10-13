@@ -167,8 +167,6 @@ void MSCorlib::loadBootstrap(N3* vm) {
                                         vm->asciizToUTF8("Thread"),
                                         vm->asciizToUTF8("System.Threading"),
                                         true, true, true, true);
-  VMObject* th = (*cl)();
-  declare_gcroot(VMThread*, myth) = VMThread::get();
-  myth->vmThread = th;
-
+  declare_gcroot(VMObject*, appThread) = (*cl)();
+  VMThread::get()->ooo_appThread = appThread;
 }

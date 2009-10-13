@@ -29,7 +29,7 @@ class VMGenericMethod;
 
 class VMThread : public mvm::MutatorThread {
 public:
-  VMObject* vmThread;
+  VMObject* ooo_appThread;
   
   N3* getVM() {
     return (N3*)MyVM;

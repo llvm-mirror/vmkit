@@ -67,8 +67,8 @@ void CLIString::TRACER {
 
 // internal objects
 void VMThread::TRACER {
-	declare_gcroot(VMObject*, th) = vmThread;
-  th->MARK_AND_TRACE;
+	declare_gcroot(VMObject*, appThread) = ooo_appThread;
+  appThread->MARK_AND_TRACE;
   pendingException->MARK_AND_TRACE;
 	// I suppose that the vm is already traced by the gc
 	//  vm->CALL_TRACER;

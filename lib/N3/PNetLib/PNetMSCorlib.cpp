@@ -172,16 +172,16 @@ static void mapInitialThread(N3* vm) {
                                         vm->asciizToUTF8("Thread"),
                                         vm->asciizToUTF8("System.Threading"),
                                         true, true, true, true);
-  VMObject* th = (*cl)();
+	declare_gcroot(VMObject*, appThread) = (*cl)();
   std::vector<VMCommonClass*> args;
   args.push_back(MSCorlib::pVoid);
   args.push_back(cl);
   args.push_back(MSCorlib::pIntPtr);
   VMMethod* meth = cl->lookupMethod(vm->asciizToUTF8(".ctor"), args, 
                                     false, false);
-  declare_gcroot(VMThread*, myth) = VMThread::get();
-  (*meth)(th, myth);
-  myth->vmThread = th;
+  VMThread* myth = VMThread::get();
+  (*meth)(appThread, myth);
+  myth->ooo_appThread = appThread;
 }
 
 void MSCorlib::loadBootstrap(N3* vm) {
