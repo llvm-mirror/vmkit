@@ -1,5 +1,5 @@
-%Vector = type {i32, i8*, i8*}
-%BumpPtrAllocator = type { i32, i32, i8*, i8*, i8*, i8*, i32 }
+%Vector = type {i8*, i8*, i8*}
+%BumpPtrAllocator = type { i32, i8*, i8*, i8*, i8*, i8*, i8*, i8* }
 
 ;;; Field 0: the VT of threads
 ;;; Field 1: next
@@ -18,4 +18,5 @@
 ;;; field 14: MutatorContext
 ;;; field 15: CollectorContext
 %MutatorThread = type { %VT*, %JavaThread*, %JavaThread*, i8*, i8*, i8*, i1, i1,
-                        i1, i8*, i8*, i8*, %Vector, %BumpPtrAllocator, i8*, i8* }
+                        i1, i8*, i8*, i8*, %Vector, %BumpPtrAllocator, i8*, i8*,
+                        i8* }
