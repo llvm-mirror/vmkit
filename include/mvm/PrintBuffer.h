@@ -54,6 +54,12 @@ public:
 		writeObj(obj);
 	}
 
+	PrintBuffer(const Object *obj) {
+		llvm_gcroot(obj, 0);
+		init();
+		writeObj(obj);
+	}
+
 	virtual ~PrintBuffer() {
 		delete contents;
 	}
@@ -145,10 +151,18 @@ public:
     return this;
   }
 
-  /// writeObj - Writes an Object to the buffer.
+  /// writeObj - Writes anything (except an object) to the buffer.
   ///
 	template <class T>
   inline PrintBuffer *writeObj(const T *obj) {
+		obj->print(this);
+		return this;
+	}
+
+  /// writeObj - Writes a gc Object to the buffer.
+  ///
+  inline PrintBuffer *writeObj(const Object *obj) {
+		llvm_gcroot(obj, 0);
 		obj->print(this);
 		return this;
 	}

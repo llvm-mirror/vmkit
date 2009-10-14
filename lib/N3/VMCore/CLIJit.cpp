@@ -143,7 +143,8 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
 
 N3VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
 	VMClass *super = (VMClass*)cl->super;
-  N3VirtualTable * res = new(super->vtSize) N3VirtualTable(super->virtualInstance->getN3VirtualTable(), super->vtSize);
+  N3VirtualTable * res = 
+		new(cl->assembly->allocator, super->vtSize) N3VirtualTable(super->virtualInstance->getN3VirtualTable(), super->vtSize);
 
 #ifdef WITH_TRACER  
   Function* func = Function::Create(markAndTraceLLVMType,
@@ -254,8 +255,8 @@ N3VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
 	int n                = N3VirtualTable::baseVtSize();
   N3VirtualTable * res =
 		stat || !cl->super ?
-		new(n)          N3VirtualTable(VMObject::VT, n) :
-		new(cl->vtSize) N3VirtualTable(((VMClass *)cl->super)->virtualInstance->getN3VirtualTable(), n, cl->vtSize);
+		new(cl->assembly->allocator, n)          N3VirtualTable(VMObject::VT, n) :
+		new(cl->assembly->allocator, cl->vtSize) N3VirtualTable(((VMClass *)cl->super)->virtualInstance->getN3VirtualTable(), n, cl->vtSize);
 		
 
 #ifdef WITH_TRACER  

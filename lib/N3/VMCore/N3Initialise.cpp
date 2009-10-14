@@ -168,9 +168,7 @@ static void initialiseVT() {
 	}
 #endif
   
-  INIT(LockObj);
   INIT(VMObject);
-  INIT(CLIString);
 
 #undef INIT
 

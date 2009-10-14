@@ -25,7 +25,6 @@ using namespace n3;
 
 #define INIT(X) N3VirtualTable* X::VT = 0
 
-INIT(LockObj);
 INIT(VMObject);
 INIT(CLIString);
 
@@ -40,15 +39,8 @@ extern "C" void CLIObjectTracer(VMObject* obj) {
 }
 
 // N3 Objects
-void LockObj::TRACER {
-}
-
 void VMObject::TRACER {
   lockObj->MARK_AND_TRACE;
-}
-
-void CLIString::TRACER {
-	VMObject::CALL_TRACER;
 }
 
 #define TRACE_VECTOR(type, name, alloc) { \

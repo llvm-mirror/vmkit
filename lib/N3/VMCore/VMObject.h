@@ -34,7 +34,7 @@ struct N3VirtualTable : VirtualTable {
 	uintptr_t  print;
 	uintptr_t  hashcode;
 
-	void *operator new(size_t size, size_t totalVtSize);
+	void *operator new(size_t size, mvm::BumpPtrAllocator &allocator, size_t totalVtSize);
 
   N3VirtualTable();
   N3VirtualTable(N3VirtualTable *vmobjVt, uint32 baseVtSize, uint32 totalVtSize=-1);
@@ -52,11 +52,8 @@ public:
 
   static LockObj* allocate();
 
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
-
 	static void _destroy(LockObj *);
-	static void _print(LockObj *);
+	static void _print(const LockObj *, mvm::PrintBuffer *);
   
   void notify();
   void notifyAll();

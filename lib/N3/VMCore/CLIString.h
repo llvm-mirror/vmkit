@@ -23,12 +23,12 @@ class N3;
 class ArrayChar;
 
 class CLIString : public VMObject {
+	CLIString() {}
 public:
   static N3VirtualTable* VT;
   virtual void print(mvm::PrintBuffer* buf) const {
     buf->write("CLI string");
   }
-  virtual void TRACER;
   
   llvm::GlobalVariable* llvmVar();
 
