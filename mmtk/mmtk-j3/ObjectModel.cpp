@@ -20,10 +20,12 @@ extern "C" intptr_t Java_org_j3_mmtk_ObjectModel_GC_1HEADER_1OFFSET__ () {
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_readAvailableBitsWord__Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* OM, JavaObject* obj) {
+  abort();
   return ((uintptr_t*)obj)[1];
 }
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_writeAvailableBitsWord__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Word_2 (JavaObject* OM, JavaObject* obj, uintptr_t val) {
+  abort();
   ((uintptr_t*)obj)[1] = val;
 }
 

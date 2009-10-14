@@ -13,6 +13,7 @@
 using namespace jnjvm;
 
 extern "C" void Java_org_j3_mmtk_ReferenceProcessor_scan__Lorg_mmtk_plan_TraceLocal_2Z () {
+  abort();
 }
 
 extern "C" void Java_org_j3_mmtk_ReferenceProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z () { abort(); }

@@ -12,11 +12,11 @@
 using namespace jnjvm;
 
 extern "C" JavaObject* Java_org_j3_mmtk_ActivePlan_getNextMutator__ (JavaObject* A) {
-  return 0;
+  abort();
 }
 
 extern "C" void Java_org_j3_mmtk_ActivePlan_resetMutatorIterator__ (JavaObject* A) {
-  return;
+  abort();
 }
 
 extern "C" void Java_org_j3_mmtk_ActivePlan_collectorCount__ () { abort(); }

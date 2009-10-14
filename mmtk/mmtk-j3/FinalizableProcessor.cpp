@@ -23,4 +23,5 @@ Java_org_j3_mmtk_FinalizableProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z () {
 
 extern "C" void
 Java_org_j3_mmtk_FinalizableProcessor_scan__Lorg_mmtk_plan_TraceLocal_2Z () {
+  abort();
 }

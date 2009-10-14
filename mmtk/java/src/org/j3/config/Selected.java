@@ -52,6 +52,8 @@ public class Selected {
   {
     private static final Mutator bootstrapThread = new Mutator();
 
+    public Mutator() {}
+
     @Inline
     public static native Mutator get();
   }

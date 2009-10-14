@@ -19,28 +19,31 @@ extern "C" void JnJVM_org_mmtk_plan_Plan_collectionComplete__();
 
 
 extern "C" bool Java_org_j3_mmtk_Collection_isEmergencyAllocation__ (JavaObject* C) {
-  return false;
+  abort();
 }
 
 extern "C" void Java_org_j3_mmtk_Collection_reportAllocationSuccess__ (JavaObject* C) {
+  abort();
 }
 
 
 extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (JavaObject* C, int why) {
+  abort();
   JnJVM_org_mmtk_plan_Plan_setCollectionTriggered__();
   JnJVM_org_j3_config_Selected_00024Collector_staticCollect__();
   JnJVM_org_mmtk_plan_Plan_collectionComplete__();
 }
 
 extern "C" int Java_org_j3_mmtk_Collection_rendezvous__I (JavaObject* C, int where) {
-  return 1;
+  abort();
 }
 
 extern "C" int Java_org_j3_mmtk_Collection_maximumCollectionAttempt__ (JavaObject* C) {
-  return 1;
+  abort();
 }
 
 extern "C" void Java_org_j3_mmtk_Collection_prepareCollector__Lorg_mmtk_plan_CollectorContext_2 (JavaObject* C, JavaObject* CC) {
+  abort();
 }
 
 
