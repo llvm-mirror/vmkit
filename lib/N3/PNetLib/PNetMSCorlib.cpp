@@ -32,8 +32,8 @@ void MSCorlib::loadStringClass(N3* vm) {
 
   uint64 size = mvm::MvmModule::getTypeSize(type->virtualType->getContainedType(0)) + sizeof(const UTF8*) + sizeof(llvm::GlobalVariable*);
   type->virtualInstance = 
-    (VMObject*)gc::operator new(size, type->virtualInstance->getVirtualTable());
-  type->virtualInstance->initialise(type);
+    (VMObject*)gc::operator new(size, VMObject::getN3VirtualTable(type->virtualInstance));
+	VMObject::initialise(type->virtualInstance, type);
 }
 
 

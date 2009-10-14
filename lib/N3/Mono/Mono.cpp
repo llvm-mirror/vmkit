@@ -119,11 +119,11 @@ System_Text_Encoding_InternalCodePage (gint32 *int_code_page)
 
 extern "C" void System_Threading_Monitor_Monitor_exit(VMObject* obj) {
   // TODO: There's a bug in the bootstrap, see why
-  if (LockObj::owner(obj->lockObj)) obj->unlock();
+  if (LockObj::owner(obj->lockObj)) VMObject::unlock(obj);
 }
 
 extern "C" bool System_Threading_Monitor_Monitor_try_enter(VMObject* obj, int ms) {
-  obj->aquire();
+	VMObject::aquire(obj);
   return true;
 }
 
@@ -262,7 +262,7 @@ System_Threading_Thread_GetSerializedCurrentCulture (VMObject *obj)
 
 extern "C" VMObject* System_Object_MemberwiseClone(VMObject* obj) {
   uint64 size = obj->objectSize();
-  VMObject* res = (VMObject*)gc::operator new(size, obj->getVirtualTable());
+  VMObject* res = ((VMClass*)obj->classOf)->doNew();
   memcpy(res, obj, size);
   res->lockObj = 0;
   return res;

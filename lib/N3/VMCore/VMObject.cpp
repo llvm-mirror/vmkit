@@ -130,20 +130,6 @@ bool LockObj::owner(LockObj *self) {
   return self->lock->selfOwner();
 }
 
-void VMObject::initialise(VMCommonClass* cl) {
-  this->classOf = cl;
-  this->lockObj = 0;
-}
-
-void VMObject::_print(const VMObject *self, mvm::PrintBuffer* buf) {
-	llvm_gcroot(self, 0);
-  buf->write("VMObject<");
-  self->classOf->print(buf);
-	buf->write("@0x");
-	buf->writePtr((void*)self->hashCode());
-  buf->write(">");
-}
-
 static LockObj* myLock(VMObject* obj) {
 	llvm_gcroot(obj, 0);
   verifyNull(obj);
@@ -160,19 +146,37 @@ static LockObj* myLock(VMObject* obj) {
   return lock;
 }
 
-void VMObject::aquire() {
-	declare_gcroot(LockObj*, lock) = myLock(this);
+void VMObject::initialise(VMObject* self, VMCommonClass* cl) {
+	llvm_gcroot(self, 0);
+  self->classOf = cl;
+  self->lockObj = 0;
+}
+
+void VMObject::_print(const VMObject *self, mvm::PrintBuffer* buf) {
+	llvm_gcroot(self, 0);
+  buf->write("VMObject<");
+  self->classOf->print(buf);
+	buf->write("@0x");
+	buf->writePtr((void*)self->hashCode());
+  buf->write(">");
+}
+
+void VMObject::aquire(VMObject* self) {
+	llvm_gcroot(self, 0);
+	declare_gcroot(LockObj*, lock) = myLock(self);
 	LockObj::aquire(lock);
 }
 
-void VMObject::unlock() {
-  verifyNull(this);
-	declare_gcroot(LockObj*, lock) = myLock(this);
+void VMObject::unlock(VMObject* self) {
+	llvm_gcroot(self, 0);
+  verifyNull(self);
+	declare_gcroot(LockObj*, lock) = myLock(self);
 	LockObj::release(lock);
 }
 
-void VMObject::waitIntern(struct timeval* info, bool timed) {
-  declare_gcroot(LockObj *, l) = myLock(this);
+void VMObject::waitIntern(VMObject* self, struct timeval* info, bool timed) {
+	llvm_gcroot(self, 0);
+  declare_gcroot(LockObj *, l) = myLock(self);
   bool owner = LockObj::owner(l);
 
   if (owner) {
@@ -184,7 +188,7 @@ void VMObject::waitIntern(struct timeval* info, bool timed) {
     if (thread->interruptFlag != 0) {
       mutexThread->unlock();
       thread->interruptFlag = 0;
-      thread->getVM()->interruptedException(this);
+      thread->getVM()->interruptedException(self);
     } else {
       unsigned int recur = l->lock->recursionCount();
       bool timeout = false;
@@ -210,41 +214,46 @@ void VMObject::waitIntern(struct timeval* info, bool timed) {
 
       if (interrupted) {
         thread->interruptFlag = 0;
-        thread->getVM()->interruptedException(this);
+        thread->getVM()->interruptedException(self);
       }
     }
   } else {
-    VMThread::get()->getVM()->illegalMonitorStateException(this);
+    VMThread::get()->getVM()->illegalMonitorStateException(self);
   }
 }
 
-void VMObject::wait() {
-  waitIntern(0, false);
+void VMObject::wait(VMObject* self) {
+	llvm_gcroot(self, 0);
+  waitIntern(self, 0, false);
 }
 
-void VMObject::timedWait(struct timeval& info) {
-  waitIntern(&info, false);
+void VMObject::timedWait(VMObject* self, struct timeval& info) {
+	llvm_gcroot(self, 0);
+  waitIntern(self, &info, false);
 }
 
-void VMObject::notify() {
-  declare_gcroot(LockObj*, l) = myLock(this);
+void VMObject::notify(VMObject* self) {
+	llvm_gcroot(self, 0);
+  declare_gcroot(LockObj*, l) = myLock(self);
   if (LockObj::owner(l)) {
 		LockObj::notify(l);
   } else {
-    VMThread::get()->getVM()->illegalMonitorStateException(this);
+    VMThread::get()->getVM()->illegalMonitorStateException(self);
   }
 }
 
-void VMObject::notifyAll() {
-  declare_gcroot(LockObj*, l) = myLock(this);
+void VMObject::notifyAll(VMObject* self) {
+	llvm_gcroot(self, 0);
+  declare_gcroot(LockObj*, l) = myLock(self);
   if (LockObj::owner(l)) {
 		LockObj::notifyAll(l);
   } else {
-    VMThread::get()->getVM()->illegalMonitorStateException(this);
+    VMThread::get()->getVM()->illegalMonitorStateException(self);
   } 
 }
 
-bool VMObject::instanceOf(VMCommonClass* cl) {
-  if (!this) return false;
-  else return this->classOf->isAssignableFrom(cl);
+bool VMObject::instanceOf(VMObject* self, VMCommonClass* cl) {
+	llvm_gcroot(self, 0);
+  if (!self) return false;
+  else return self->classOf->isAssignableFrom(cl);
 }

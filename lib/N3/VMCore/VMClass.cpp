@@ -296,7 +296,7 @@ void VMClass::resolveStaticFields(VMGenericMethod* genMethod) {
 
   uint64 size = mvm::MvmModule::getTypeSize(cl->staticType->getContainedType(0));
   cl->staticInstance = (VMObject*)gc::operator new(size, VT);
-  cl->staticInstance->initialise(cl);
+	VMObject::initialise(cl->staticInstance, cl);
 
   for (std::vector<VMField*>::iterator i = cl->staticFields.begin(),
             e = cl->staticFields.end(); i!= e; ++i) {
@@ -478,7 +478,7 @@ void VMCommonClass::resolveVT() {
   
 			uint64 size = mvm::MvmModule::getTypeSize(cl->virtualType->getContainedType(0));
 			cl->virtualInstance = (VMObject*)gc::operator new(size, VT);
-			cl->virtualInstance->initialise(cl);
+			VMObject::initialise(cl->virtualInstance, cl);
 			
 			for (std::vector<VMField*>::iterator i = cl->virtualFields.begin(),
 						 e = cl->virtualFields.end(); i!= e; ++i) {
@@ -643,7 +643,7 @@ VMObject* VMClass::doNew() {
   if (status < inClinit) resolveType(true, true, NULL);
   uint64 size = mvm::MvmModule::getTypeSize(virtualType->getContainedType(0));
   VMObject* res = (VMObject*)
-    gc::operator new(size, virtualInstance->getVirtualTable());
+    gc::operator new(size, VMObject::getN3VirtualTable(virtualInstance));
   memcpy(res, virtualInstance, size);
   return res;
 }
@@ -654,7 +654,7 @@ VMObject* VMClassArray::doNew(uint32 nb) {
   VMArray* res = (VMArray*)
     gc::operator new(size * nb + sizeof(VMObject) + sizeof(sint32), arrayVT);
   memset(res->elements, 0, size * nb);
-  res->initialise(this);
+	VMObject::initialise(res, this);
   res->size = nb;
   return res;
 }

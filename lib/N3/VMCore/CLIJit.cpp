@@ -144,7 +144,7 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
 N3VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
 	VMClass *super = (VMClass*)cl->super;
   N3VirtualTable * res = 
-		new(cl->assembly->allocator, super->vtSize) N3VirtualTable(super->virtualInstance->getN3VirtualTable(), super->vtSize);
+		new(cl->assembly->allocator, super->vtSize) N3VirtualTable(VMObject::getN3VirtualTable(super->virtualInstance), super->vtSize);
 
 #ifdef WITH_TRACER  
   Function* func = Function::Create(markAndTraceLLVMType,
@@ -254,19 +254,21 @@ N3VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
 N3VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
 	int n                = N3VirtualTable::baseVtSize();
   N3VirtualTable * res =
-		stat ?      new(cl->assembly->allocator, n)          N3VirtualTable((uintptr_t)0, 
-																																				(uintptr_t)0, 
-																																				(uintptr_t)VMObject::_trace, 
-																																				(uintptr_t)VMObject::_print, 
-																																				(uintptr_t)mvm::Object::default_hashCode) : (
-		cl->super ? new(cl->assembly->allocator, cl->vtSize) N3VirtualTable(((VMClass *)cl->super)->virtualInstance->getN3VirtualTable(), 
-																																				n, 
-																																				cl->vtSize) :
-		            new(cl->assembly->allocator, cl->vtSize) N3VirtualTable((uintptr_t)0, 
-																																				(uintptr_t)0, 
-																																				(uintptr_t)VMObject::_trace, 
-																																				(uintptr_t)VMObject::_print, 
-																																				(uintptr_t)mvm::Object::default_hashCode));
+		stat ?       
+		new(cl->assembly->allocator, n)          N3VirtualTable((uintptr_t)0, 
+																														(uintptr_t)0, 
+																														(uintptr_t)VMObject::_trace, 
+																														(uintptr_t)VMObject::_print, 
+																														(uintptr_t)mvm::Object::default_hashCode) : 
+		(cl->super ? 
+		 new(cl->assembly->allocator, cl->vtSize) N3VirtualTable(VMObject::getN3VirtualTable(((VMClass *)cl->super)->virtualInstance), 
+																														 n, 
+																														 cl->vtSize) :
+		 new(cl->assembly->allocator, cl->vtSize) N3VirtualTable((uintptr_t)0, 
+																														 (uintptr_t)0, 
+																														 (uintptr_t)VMObject::_trace, 
+																														 (uintptr_t)VMObject::_print, 
+																														 (uintptr_t)mvm::Object::default_hashCode));
 		
 
 #ifdef WITH_TRACER  

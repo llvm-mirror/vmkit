@@ -60,7 +60,7 @@ extern "C" VMObject* newString(const ArrayChar* utf8) {
 }
 
 extern "C" bool n3InstanceOf(VMObject* obj, VMCommonClass* cl) {
-  return obj->instanceOf(cl);
+  return VMObject::instanceOf(obj, cl);
 }
 
 extern "C" void* GetCppException() {

@@ -70,27 +70,27 @@ public:
   VMCommonClass* classOf;
   LockObj*       lockObj;
 
-  static mvm::Lock* globalLock;
+  static mvm::Lock*        globalLock;
   static const llvm::Type* llvmType;
 
 	static void _print(const VMObject *, mvm::PrintBuffer *);
 	static void _trace(VMObject *);
   
-  void aquire();
-  void unlock();
-  void waitIntern(struct timeval *info, bool timed);
-  void wait();
-  void timedWait(struct timeval &info);
-  void notify();
-  void notifyAll();
-  void initialise(VMCommonClass* cl);
+  static void aquire(VMObject *self);
+  static void unlock(VMObject *self);
+  static void waitIntern(VMObject *self, struct timeval *info, bool timed);
+  static void wait(VMObject *self);
+  static void timedWait(VMObject *self, struct timeval &info);
+  static void notify(VMObject *self);
+  static void notifyAll(VMObject *self);
+  static void initialise(VMObject *self, VMCommonClass* cl);
 
   static llvm::Constant* classOffset();
   
-  bool instanceOf(VMCommonClass* cl);
+  static bool instanceOf(VMObject *self, VMCommonClass* cl);
 
 
-	N3VirtualTable *getN3VirtualTable() { return (N3VirtualTable*)getVirtualTable(); }
+	static N3VirtualTable *getN3VirtualTable(VMObject *self) { llvm_gcroot(self, 0); return *((N3VirtualTable**)self); }
 
 #ifdef SIGSEGV_THROW_NULL
   #define verifyNull(obj) {}
