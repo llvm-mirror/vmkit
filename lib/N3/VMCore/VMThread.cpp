@@ -49,7 +49,7 @@ VMThread::VMThread(VMObject* appThread, N3* vm) {
   this->varcond = new mvm::Cond();
   this->interruptFlag = 0;
   this->state = StateRunning;
-  this->pendingException = 0;
+  this->ooo_pendingException = 0;
   this->perFunctionPasses = new llvm::FunctionPassManager(vm->TheModuleProvider);
   this->perFunctionPasses->add(new llvm::TargetData(vm->getLLVMModule()));
   AddStandardCompilePasses(this->perFunctionPasses);
@@ -70,7 +70,8 @@ void* VMThread::getCppException() {
 
 VMObject* VMThread::getCLIException() {
   VMThread* th = VMThread::get();
-  return th->pendingException;
+	declare_gcroot(VMObject *, pendingException) = th->ooo_pendingException;
+  return pendingException;
 }
 
 extern "C" void* __cxa_allocate_exception(unsigned);
@@ -78,21 +79,22 @@ extern "C" void __cxa_throw(void*, void*, void*);
 
 
 void VMThread::throwException(VMObject* obj) {
+	llvm_gcroot(obj, 0);
   VMThread* th = VMThread::get();
-  assert(th->pendingException == 0 && "pending exception already there?");
-  th->pendingException = obj;
+  assert(th->ooo_pendingException == 0 && "pending exception already there?");
+  th->ooo_pendingException = obj;
   void* exc = __cxa_allocate_exception(0);
   th->internalPendingException = exc;
   __cxa_throw(exc, 0, 0); 
 }
 
 void VMThread::internalClearException() {
-  pendingException = 0;
+  ooo_pendingException = 0;
   internalPendingException = 0;
 }
 
 bool VMThread::compareException(VMClass* cl) {
-  VMObject* pe = VMThread::get()->pendingException;
+  declare_gcroot(VMObject*, pe) = VMThread::get()->ooo_pendingException;
   assert(pe && "no pending exception?");
   return pe->classOf->subclassOf(cl);
 }

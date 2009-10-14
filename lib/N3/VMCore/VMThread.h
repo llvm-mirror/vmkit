@@ -35,10 +35,10 @@ public:
     return (N3*)MyVM;
   }
   
-  mvm::Lock* lock;
-  mvm::Cond* varcond;
-  VMObject* pendingException;
-  void* internalPendingException;
+  mvm::Lock*   lock;
+  mvm::Cond*   varcond;
+  VMObject*    ooo_pendingException;
+  void*        internalPendingException;
   unsigned int interruptFlag;
   unsigned int state;
   

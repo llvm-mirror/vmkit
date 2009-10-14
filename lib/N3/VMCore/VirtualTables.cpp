@@ -29,7 +29,6 @@ extern "C" void CLIObjectTracer(VMObject* obj) {
 
 // N3 Objects
 void VMObject::_trace(VMObject *self) {
-	llvm_gcroot(self, 0);
   self->lockObj->MARK_AND_TRACE;
 }
 
@@ -46,7 +45,7 @@ void VMObject::_trace(VMObject *self) {
 // internal objects
 void VMThread::TRACER {
   ooo_appThread->MARK_AND_TRACE;
-  pendingException->MARK_AND_TRACE;
+  ooo_pendingException->MARK_AND_TRACE;
 	// I suppose that the vm is already traced by the gc
 	//  vm->CALL_TRACER;
 }

@@ -327,7 +327,7 @@ void N3::mainCLIStart(VMThread* th) {
   try{
     vm->executeAssembly(info.assembly, args);
   }catch(...) {
-    VMObject* exc = th->pendingException;
+    declare_gcroot(VMObject*, exc) = th->ooo_pendingException;
     printf("N3 caught %s\n", mvm::PrintBuffer(exc).cString());
   }
 

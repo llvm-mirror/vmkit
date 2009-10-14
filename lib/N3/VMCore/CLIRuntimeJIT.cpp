@@ -72,7 +72,8 @@ extern "C" void ThrowException(VMObject* obj) {
 }
 
 extern "C" VMObject* GetCLIException() {
-  return VMThread::getCLIException();
+	declare_gcroot(VMObject*, res) = VMThread::getCLIException();
+  return res;
 }
 
 extern "C" bool CompareException(VMClass* cl) {
