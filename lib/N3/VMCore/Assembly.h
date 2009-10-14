@@ -175,7 +175,7 @@ public:
   Section*      rsrcSection;
   Section*      relocSection;
   Header*       CLIHeader;
-  VMObject*     delegatee;
+  VMObject*     ooo_delegatee;
   Assembly**    assemblyRefs;
 
   uint32 CLIHeaderLocation;

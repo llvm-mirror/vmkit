@@ -63,7 +63,7 @@ void N3::TRACER {
 
 void Assembly::TRACER {
   loadedNameClasses->CALL_TRACER;
-  delegatee->MARK_AND_TRACE;
+  ooo_delegatee->MARK_AND_TRACE;
 }
 
 void VMCommonClass::TRACER {

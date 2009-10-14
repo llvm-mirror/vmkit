@@ -514,7 +514,8 @@ extern "C" VMObject* System_Reflection_Assembly_LoadFromName(PNetString* str, si
 		vm->error("unfound assembly %s\n", mvm::PrintBuffer(str->value).cString());
 
   error = 0;
-  return ass->getAssemblyDelegatee();
+	declare_gcroot(VMObject*, delegatee) = ass->getAssemblyDelegatee();
+  return delegatee;
 }
 
 extern "C" PNetString* System_String_Concat_2(PNetString* str1, PNetString* str2) {

@@ -159,6 +159,8 @@ VMObject* VMCommonClass::getClassDelegatee() {
 }
 
 VMObject* Assembly::getAssemblyDelegatee() {
+	declare_gcroot(VMObject*, delegatee) = ooo_delegatee;
+
   if (!delegatee) {
     delegatee = (*MSCorlib::assemblyReflection)();
     (*MSCorlib::ctorAssemblyReflection)(delegatee);
