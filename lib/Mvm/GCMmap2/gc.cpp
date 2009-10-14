@@ -52,7 +52,7 @@ void Collector::scanObject(void* obj) {
   if (obj) {
     GCChunkNode *node = o2node(obj);
 
-#if 0//def WITH_LLVM_GCC
+#ifdef WITH_LLVM_GCC
     assert(node && "No node in precise GC mode");
 #endif
   
