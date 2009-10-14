@@ -64,7 +64,6 @@ public:
 	class Array##name : public VMObject {																	\
 		void *operator new(size_t n) { return VMObject::operator new(n, 0); } \
 	public:																																\
-  	static N3VirtualTable* VT;                                            \
 		static const llvm::Type* llvmType;                                  \
 		sint32 size;                                                        \
 		elmt elements[1];                                                   \

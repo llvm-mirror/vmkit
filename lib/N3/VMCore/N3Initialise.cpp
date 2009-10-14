@@ -172,10 +172,6 @@ static void initialiseVT() {
   INIT(VMObject);
   INIT(CLIString);
 
-#define INIT_ARRAY(name, elmt, nbb, printer, pre, sep, post)	INIT(Array##name)
-	ON_ARRAY_CLASSES(INIT_ARRAY);
-#undef INIT_ARRAY
-
 #undef INIT
 
 }

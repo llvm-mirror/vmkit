@@ -48,9 +48,10 @@ extern "C" void write_str(PrintBuffer* buf, char* a) {
   buf->write(a);
 }
 
-void Object::print(PrintBuffer *buf) const {
+void Object::default_print(const gc *o, PrintBuffer *buf) {
+	llvm_gcroot(o, 0);
   buf->write("<Object@");
-  buf->writePtr((void*)this);
+  buf->writePtr((void*)o);
   buf->write(">");
 }
 

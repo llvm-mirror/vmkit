@@ -29,10 +29,6 @@ INIT(LockObj);
 INIT(VMObject);
 INIT(CLIString);
 
-#define INIT_ARRAY(name, elmt, size, printer, pre, sep, post)	INIT(Array##name);
-ON_ARRAY_CLASSES(INIT_ARRAY)
-#undef INIT_ARRAY
-  
 #undef INIT
 
 #ifdef MULTIPLE_GC

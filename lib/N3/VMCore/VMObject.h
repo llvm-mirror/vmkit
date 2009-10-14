@@ -45,6 +45,7 @@ struct N3VirtualTable : VirtualTable {
 
 class LockObj : public mvm::Object {
 public:
+	static N3VirtualTable  _VT;
   static N3VirtualTable* VT;
   mvm::LockRecursive     lock;
   std::vector<VMThread*> threads;
@@ -53,6 +54,9 @@ public:
 
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
+
+	static void _destroy(LockObj *);
+	static void _print(LockObj *);
   
   void notify();
   void notifyAll();

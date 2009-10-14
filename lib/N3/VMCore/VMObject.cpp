@@ -18,6 +18,8 @@
 
 using namespace n3;
 
+N3VirtualTable LockObj::_VT(LockObj::_destroy, 0, mvm::no_tracer, LockObj::_print, )
+
 void *N3VirtualTable::operator new(size_t size, size_t totalVtSize) {
 	//printf("Allocate N3VirtualTable with %d elements\n", totalVtSize);
 	return malloc(totalVtSize * sizeof(uintptr_t));
