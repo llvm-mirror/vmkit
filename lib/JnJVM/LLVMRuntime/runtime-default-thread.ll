@@ -1,4 +1,4 @@
-%Vector = type {i32, i8*, i8*}
+%Vector = type {i8*, i8*, i8*}
 
 ;;; Field 0: the VT of threads
 ;;; Field 1: next
