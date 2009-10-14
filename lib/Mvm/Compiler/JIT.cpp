@@ -39,6 +39,7 @@
 #include "mvm/Threads/Thread.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/GC/GC.h"
+#include "MutatorThread.h"
 #include "MvmGC.h"
 
 using namespace mvm;
@@ -92,7 +93,7 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     InitializeNativeTarget();
 
     executionEngine = ExecutionEngine::createJIT(globalModuleProvider, 0,
-                                                 0, level);
+                                                 0, level, false);
   
     std::string str = 
       executionEngine->getTargetData()->getStringRepresentation();
@@ -123,6 +124,42 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     loadBytecodeFile(*i); 
   }
 
+#ifdef WITH_MMTK
+  llvm::GlobalVariable* GV = globalModule->getGlobalVariable("MMTkCollectorSize", false);
+  if (GV && executionEngine) {
+    ConstantInt* C = dyn_cast<ConstantInt>(GV->getInitializer());
+    uint64_t val = C->getZExtValue();
+    MutatorThread::MMTkCollectorSize = val;
+  
+    GV = globalModule->getGlobalVariable("MMTkMutatorSize", false);
+    assert(GV && "Could not find MMTkMutatorSize");
+    C = dyn_cast<ConstantInt>(GV->getInitializer());
+    val = C->getZExtValue();
+    MutatorThread::MMTkMutatorSize = val;
+
+    Function* F = globalModule->getFunction("JnJVM_org_j3_config_Selected_00024Mutator__0003Cinit_0003E__");
+    assert(F && "Could not find <init> from Mutator");
+    MutatorThread::MutatorInit = (MutatorThread::MMTkInitType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+  
+    F = globalModule->getFunction("JnJVM_org_j3_config_Selected_00024Collector__0003Cinit_0003E__");
+    assert(F && "Could not find <init> from Collector");
+    MutatorThread::CollectorInit = (MutatorThread::MMTkInitType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+
+    GlobalAlias* GA = dyn_cast<GlobalAlias>(globalModule->getNamedValue("MMTkAlloc"));
+    assert(GA && "Could not find MMTkAlloc alias");
+    F = dyn_cast<Function>(GA->getAliasee());
+    gc::MMTkGCAllocator = (gc::MMTkAllocType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+  
+    GA = dyn_cast<GlobalAlias>(globalModule->getNamedValue("MMTkPostAlloc"));
+    assert(GA && "Could not find MMTkPostAlloc alias");
+    F = dyn_cast<Function>(GA->getAliasee());
+    gc::MMTkGCPostAllocator = (gc::MMTkPostAllocType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+  }
+#endif
 }
 
 
