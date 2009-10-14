@@ -33,6 +33,7 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
   interruptFlag = 0;
   state = StateRunning;
   pendingException = 0;
+  internalPendingException = 0;
   jniEnv = isolate->jniEnv;
   localJNIRefs = new JNILocalReferences();
   currentAddedReferences = 0;
