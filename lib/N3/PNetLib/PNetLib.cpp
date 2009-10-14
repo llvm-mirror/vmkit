@@ -679,7 +679,7 @@ extern "C" VMObject* System_Reflection_ClrType_GetMemberImpl(VMObject* Type, PNe
   return 0;
 }
 
-extern "C" VMObject* System_Reflection_ClrHelpers_GetSemantics(mvm::Object* item, uint32 attributes, bool nonPublic) {
+extern "C" VMObject* System_Reflection_ClrHelpers_GetSemantics(uintptr_t item, uint32 attributes, bool nonPublic) {
 	if (attributes == METHOD_SEMANTIC_ATTRIBUTES_GETTER) {
 		Property* prop = (Property*)item;
 		mvm::PrintBuffer _asciiz(prop->name);

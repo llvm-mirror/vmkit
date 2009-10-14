@@ -36,7 +36,7 @@ void CacheNode::print(mvm::PrintBuffer* buf) const {
   if (lastCible) {
     lastCible->print(buf);
     buf->write(" -- ");
-    ((mvm::Object*)((void**)methPtr - 1))->print(buf);
+		buf->writePtr(methPtr - 1);
   }
   buf->write(" in ");
   enveloppe->print(buf);
