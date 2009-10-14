@@ -36,6 +36,10 @@ extern "C" void printInt(sint32 i) {
   fprintf(stderr, "%d\n", i);
 }
 
+extern "C" void printObject(void* ptr) {
+  fprintf(stderr, "%p\n", ptr);
+}
+
 extern "C" void write_ptr(PrintBuffer* buf, void* obj) {
   buf->writePtr(obj);
 }
