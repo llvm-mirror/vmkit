@@ -46,22 +46,21 @@ struct N3VirtualTable : VirtualTable {
 class LockObj : public mvm::Object {
 public:
 	static N3VirtualTable  _VT;
-  mvm::LockRecursive     lock;
-  std::vector<VMThread*> threads;
+  mvm::LockRecursive     *lock;
+  std::vector<VMThread*> *threads;
 
   static LockObj* allocate();
-
 	static void _destroy(LockObj *);
 	static void _print(const LockObj *, mvm::PrintBuffer *);
   
-  void notify();
-  void notifyAll();
-  void wait(VMThread* th);
-  void remove(VMThread* th);
+  static void notify(LockObj*);
+  static void notifyAll(LockObj*);
+  static void wait(LockObj*, VMThread* th);
+  static void remove(LockObj*, VMThread* th);
 
-  void aquire();
-  void release();
-  bool owner();
+  static void aquire(LockObj*);
+  static void release(LockObj*);
+  static bool owner(LockObj*);
 };
 
 #define VALUE_OFFSET 3
@@ -69,7 +68,7 @@ public:
 class VMObject : public mvm::Object {
 public:
   VMCommonClass* classOf;
-  LockObj* lockObj;
+  LockObj*       lockObj;
 
   static mvm::Lock* globalLock;
   static const llvm::Type* llvmType;

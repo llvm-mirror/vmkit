@@ -240,7 +240,7 @@ N3VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
 #endif
 
 #define CASE_ARRAY(name, elmt, nbb, printer, pre, sep, post)						\
-	if(cl->baseClass == MSCorlib::p##name) {													\
+	if(cl->baseClass == MSCorlib::p##name) {															\
 		((void**)res)[VT_PRINT_OFFSET] = ((void **)(unsigned int)Array##name::do_print); \
   } else
 	

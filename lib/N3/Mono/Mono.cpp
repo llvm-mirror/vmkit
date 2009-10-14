@@ -119,7 +119,7 @@ System_Text_Encoding_InternalCodePage (gint32 *int_code_page)
 
 extern "C" void System_Threading_Monitor_Monitor_exit(VMObject* obj) {
   // TODO: There's a bug in the bootstrap, see why
-  if (obj->lockObj->owner()) obj->unlock();
+  if (LockObj::owner(obj->lockObj)) obj->unlock();
 }
 
 extern "C" bool System_Threading_Monitor_Monitor_try_enter(VMObject* obj, int ms) {

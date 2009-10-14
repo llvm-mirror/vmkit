@@ -45,14 +45,11 @@ uint32 N3VirtualTable::baseVtSize() {
 	return sizeof(N3VirtualTable) / sizeof(uintptr_t);
 }
 
-void VMObject::initialise(VMCommonClass* cl) {
-  this->classOf = cl;
-  this->lockObj = 0;
-}
-
 
 LockObj* LockObj::allocate() {
-  LockObj* res = new(&_VT) LockObj();
+  declare_gcroot(LockObj*, res) = new(&_VT) LockObj();
+	res->threads = new std::vector<VMThread*>();
+	res->lock    = new mvm::LockRecursive();
   return res;
 }
 
@@ -63,11 +60,14 @@ void LockObj::_print(const LockObj *self, mvm::PrintBuffer* buf) {
 
 void LockObj::_destroy(LockObj *self) {
 	llvm_gcroot(self, 0);
+	delete self->threads;
+	delete self->lock;
 }
 
-void LockObj::notify() {
-  for (std::vector<VMThread*>::iterator i = threads.begin(), 
-            e = threads.end(); i!= e; ++i) {
+void LockObj::notify(LockObj *self) {
+	llvm_gcroot(self, 0);
+  for (std::vector<VMThread*>::iterator i = self->threads->begin(), 
+				 e = self->threads->end(); i!= e; ++i) {
     VMThread* cur = *i;
     cur->lock->lock();
     if (cur->interruptFlag != 0) {
@@ -78,50 +78,61 @@ void LockObj::notify() {
 			if (th != 0) {
 				cur->varcond->signal();
 				cur->lock->unlock();
-				threads.erase(i);
+				self->threads->erase(i);
 				break;
 			} else { // dead thread
-				threads.erase(i);
+				self->threads->erase(i);
 			}
 		}
   }
 }
 
-void LockObj::notifyAll() {
-  for (std::vector<VMThread*>::iterator i = threads.begin(),
-            e = threads.end(); i!= e; ++i) {
+void LockObj::notifyAll(LockObj *self) {
+	llvm_gcroot(self, 0);
+  for (std::vector<VMThread*>::iterator i = self->threads->begin(),
+				 e = self->threads->end(); i!= e; ++i) {
     VMThread* cur = *i;
     cur->lock->lock();
     cur->varcond->signal();
     cur->lock->unlock();
-    threads.erase(i);
+    self->threads->erase(i);
   }
 }
 
-void LockObj::wait(VMThread* th) {
-  threads.push_back(th);
+void LockObj::wait(LockObj *self, VMThread* th) {
+	llvm_gcroot(self, 0);
+  self->threads->push_back(th);
 }
 
-void LockObj::remove(VMThread* th) {
-  for (std::vector<VMThread*>::iterator i = threads.begin(),
-            e = threads.end(); i!= e; ++i) {
+void LockObj::remove(LockObj *self, VMThread* th) {
+	llvm_gcroot(self, 0);
+  for (std::vector<VMThread*>::iterator i = self->threads->begin(),
+				 e = self->threads->end(); i!= e; ++i) {
     if (*i == th) {
-      threads.erase(i);
+      self->threads->erase(i);
       break;
     }
   }
 }
 
-void LockObj::aquire() {
-  lock.lock();
+void LockObj::aquire(LockObj *self) {
+	llvm_gcroot(self, 0);
+  self->lock->lock();
 }
 
-void LockObj::release() {
-  lock.unlock();
+void LockObj::release(LockObj *self) {
+	llvm_gcroot(self, 0);
+  self->lock->unlock();
 }
 
-bool LockObj::owner() {
-  return lock.selfOwner();
+bool LockObj::owner(LockObj *self) {
+	llvm_gcroot(self, 0);
+  return self->lock->selfOwner();
+}
+
+void VMObject::initialise(VMCommonClass* cl) {
+  this->classOf = cl;
+  this->lockObj = 0;
 }
 
 void VMObject::_print(const VMObject *self, mvm::PrintBuffer* buf) {
@@ -134,29 +145,35 @@ void VMObject::_print(const VMObject *self, mvm::PrintBuffer* buf) {
 }
 
 static LockObj* myLock(VMObject* obj) {
+	llvm_gcroot(obj, 0);
   verifyNull(obj);
-  if (obj->lockObj == 0) {
+	declare_gcroot(LockObj*, lock) = obj->lockObj;
+  if (lock == 0) {
     VMObject::globalLock->lock();
-    if (obj->lockObj == 0) {
-      obj->lockObj = LockObj::allocate();
+		lock = obj->lockObj;
+    if (lock == 0) {
+			lock = LockObj::allocate();
+      obj->lockObj = lock;
     }
     VMObject::globalLock->unlock();
   }
-  return obj->lockObj;
+  return lock;
 }
 
 void VMObject::aquire() {
-  myLock(this)->aquire();
+	declare_gcroot(LockObj*, lock) = myLock(this);
+	LockObj::aquire(lock);
 }
 
 void VMObject::unlock() {
   verifyNull(this);
-  lockObj->release();
+	declare_gcroot(LockObj*, lock) = myLock(this);
+	LockObj::release(lock);
 }
 
 void VMObject::waitIntern(struct timeval* info, bool timed) {
-  LockObj * l = myLock(this);
-  bool owner = l->owner();
+  declare_gcroot(LockObj *, l) = myLock(this);
+  bool owner = LockObj::owner(l);
 
   if (owner) {
     VMThread* thread = VMThread::get();
@@ -169,10 +186,10 @@ void VMObject::waitIntern(struct timeval* info, bool timed) {
       thread->interruptFlag = 0;
       thread->getVM()->interruptedException(this);
     } else {
-      unsigned int recur = l->lock.recursionCount();
+      unsigned int recur = l->lock->recursionCount();
       bool timeout = false;
-      l->lock.unlockAll();
-      l->wait(thread);
+      l->lock->unlockAll();
+			LockObj::wait(l, thread);
       thread->state = VMThread::StateWaiting;
 
       if (timed) {
@@ -183,10 +200,10 @@ void VMObject::waitIntern(struct timeval* info, bool timed) {
 
       bool interrupted = (thread->interruptFlag != 0);
       mutexThread->unlock();
-      l->lock.lockAll(recur);
+      l->lock->lockAll(recur);
 
       if (interrupted || timeout) {
-        l->remove(thread);
+				LockObj::remove(l, thread);
       }
 
       thread->state = VMThread::StateRunning;
@@ -210,18 +227,18 @@ void VMObject::timedWait(struct timeval& info) {
 }
 
 void VMObject::notify() {
-  LockObj* l = myLock(this);
-  if (l->owner()) {
-    l->notify();
+  declare_gcroot(LockObj*, l) = myLock(this);
+  if (LockObj::owner(l)) {
+		LockObj::notify(l);
   } else {
     VMThread::get()->getVM()->illegalMonitorStateException(this);
   }
 }
 
 void VMObject::notifyAll() {
-  LockObj* l = myLock(this);
-  if (l->owner()) {
-    l->notifyAll();
+  declare_gcroot(LockObj*, l) = myLock(this);
+  if (LockObj::owner(l)) {
+		LockObj::notifyAll(l);
   } else {
     VMThread::get()->getVM()->illegalMonitorStateException(this);
   } 
