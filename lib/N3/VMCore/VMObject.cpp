@@ -18,6 +18,27 @@
 
 using namespace n3;
 
+void *N3VirtualTable::operator new(size_t size, size_t totalVtSize) {
+	//printf("Allocate N3VirtualTable with %d elements\n", totalVtSize);
+	return malloc(totalVtSize * sizeof(uintptr_t));
+}
+
+N3VirtualTable::N3VirtualTable() {
+}
+
+N3VirtualTable::N3VirtualTable(N3VirtualTable *baseVt, uint32 baseVtSize, uint32 totalSize) {
+	memcpy(this, baseVt, baseVtSize * sizeof(uintptr_t));
+}
+
+N3VirtualTable::N3VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t, uintptr_t p, uintptr_t h) : VirtualTable(d, o, t) {
+	print = p;
+	hashcode = h;
+}
+
+uint32 N3VirtualTable::baseVtSize() {
+	return sizeof(N3VirtualTable) / sizeof(uintptr_t);
+}
+
 void VMObject::initialise(VMCommonClass* cl) {
   this->classOf = cl;
   this->lockObj = 0;

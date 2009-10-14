@@ -263,6 +263,7 @@ static void initialiseStatics() {
   N3::testInfinity      = vm->asciizToUTF8("TestInfinity");
 
 	MSCorlib::pArray->resolveType(1, 0, 0);
+	MSCorlib::pArray->resolveVT();
 
   MSCorlib::initialise(vm);
 }

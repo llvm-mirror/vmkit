@@ -34,10 +34,13 @@ struct N3VirtualTable : VirtualTable {
 	uintptr_t  print;
 	uintptr_t  hashcode;
 
-  N3VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t, uintptr_t p, uintptr_t h) : VirtualTable(d, o, t) {
-		print = p;
-		hashcode = h;
-  }
+	void *operator new(size_t size, size_t totalVtSize);
+
+  N3VirtualTable();
+  N3VirtualTable(N3VirtualTable *vmobjVt, uint32 baseVtSize, uint32 totalVtSize=-1);
+  N3VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t, uintptr_t p, uintptr_t h);
+
+	static uint32 baseVtSize();
 };
 
 class LockObj : public mvm::Object {
@@ -89,6 +92,8 @@ public:
   
   bool instanceOf(VMCommonClass* cl);
 
+
+	N3VirtualTable *getN3VirtualTable() { return (N3VirtualTable*)getVirtualTable(); }
 
 #ifdef SIGSEGV_THROW_NULL
   #define verifyNull(obj) {}

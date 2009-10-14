@@ -147,6 +147,7 @@ public:
   std::vector<VMClass*> innerClasses;
   VMClass* outerClass;
   std::vector<VMMethod*> genericMethods;
+	uint32 vtSize; // in number of methods
   
   VMObject* operator()();
   VMObject* doNew();
@@ -201,7 +202,8 @@ class VMMethod : public mvm::PermanentObject {
 public:
   virtual void print(mvm::PrintBuffer* buf) const;
   virtual void TRACER;
-  
+
+	uint32 offsetInVt;
   uint32 flags;
 	uint32 offsetInTextSection;
   uint32 implFlags;

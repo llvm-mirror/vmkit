@@ -142,8 +142,9 @@ static void traceClass(VMCommonClass* cl, BasicBlock* block, Value* arg,
 
 
 N3VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
-  N3VirtualTable * res = (N3VirtualTable*)malloc(VT_SIZE);
-  memcpy(res, VMObject::VT, VT_SIZE);
+	VMClass *super = (VMClass*)cl->super;
+  N3VirtualTable * res = new(super->vtSize) N3VirtualTable(super->virtualInstance->getN3VirtualTable(), super->vtSize);
+
 #ifdef WITH_TRACER  
   Function* func = Function::Create(markAndTraceLLVMType,
                                 GlobalValue::ExternalLinkage,
@@ -250,8 +251,13 @@ N3VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
 }
 
 N3VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
-  N3VirtualTable * res = (N3VirtualTable*)malloc(VT_SIZE);
-  memcpy(res, VMObject::VT, VT_SIZE);
+	int n                = N3VirtualTable::baseVtSize();
+  N3VirtualTable * res =
+		stat || !cl->super ?
+		new(n)          N3VirtualTable(VMObject::VT, n) :
+		new(cl->vtSize) N3VirtualTable(((VMClass *)cl->super)->virtualInstance->getN3VirtualTable(), n, cl->vtSize);
+		
+
 #ifdef WITH_TRACER  
   const Type* type = stat ? cl->staticType : cl->virtualType;
   std::vector<VMField*> &fields = stat ? cl->staticFields : cl->virtualFields;

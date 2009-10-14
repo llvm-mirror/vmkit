@@ -453,31 +453,40 @@ void VMCommonClass::resolveVirtual(VMGenericClass* genClass, VMGenericMethod *ge
 
 void VMCommonClass::resolveVT() {
   VMCommonClass* cl = this;
-      if (cl->isArray) {
-        VMClassArray* arrayCl = (VMClassArray*)cl;
-        arrayCl->baseClass->resolveVT();
-        arrayCl->arrayVT = CLIJit::makeArrayVT(arrayCl);
-      } else if (cl->isPointer) {
-      } else {
-        VMClass* cl = (VMClass*)this;
-        if (super) super->resolveVT();
-        
-        // We check for virtual instance because the string class has a 
-        // bigger size than the class declares.
-        if (super != MSCorlib::pEnum && !cl->virtualInstance) {
-          N3VirtualTable* VT = CLIJit::makeVT(cl, false);
-  
-          uint64 size = mvm::MvmModule::getTypeSize(cl->virtualType->getContainedType(0));
-          cl->virtualInstance = (VMObject*)gc::operator new(size, VT);
-          cl->virtualInstance->initialise(cl);
+	if (cl->isArray) {
+		VMClassArray* arrayCl = (VMClassArray*)cl;
+		arrayCl->baseClass->resolveVT();
+		//		printf("Making vt of %s\n", mvm::PrintBuffer(this).cString());
+		arrayCl->arrayVT = CLIJit::makeArrayVT(arrayCl);
+	} else if (cl->isPointer) {
+	} else {
+		VMClass* cl = (VMClass*)this;
+		if (super)
+			super->resolveVT();
 
-          for (std::vector<VMField*>::iterator i = cl->virtualFields.begin(),
-               e = cl->virtualFields.end(); i!= e; ++i) {
-    
-            (*i)->initField(cl->virtualInstance);
-          }
-        }
-      }
+		// We check for virtual instance because the string class has a 
+		// bigger size than the class declares.
+		if (super != MSCorlib::pEnum && !cl->virtualInstance) {
+			cl->vtSize = super ? ((VMClass*)super)->vtSize : sizeof(N3VirtualTable) / sizeof(uintptr_t);
+      for (std::vector<VMMethod*>::iterator i = virtualMethods.begin(), 
+						 e = virtualMethods.end(); i!= e; ++i) {
+        (*i)->offsetInVt = cl->vtSize++;
+			}
+
+			//			printf("Making vt of %s with %d elements\n", mvm::PrintBuffer(this).cString(), cl->vtSize);
+			N3VirtualTable* VT = CLIJit::makeVT(cl, false);
+  
+			uint64 size = mvm::MvmModule::getTypeSize(cl->virtualType->getContainedType(0));
+			cl->virtualInstance = (VMObject*)gc::operator new(size, VT);
+			cl->virtualInstance->initialise(cl);
+			
+			for (std::vector<VMField*>::iterator i = cl->virtualFields.begin(),
+						 e = cl->virtualFields.end(); i!= e; ++i) {
+				
+				(*i)->initField(cl->virtualInstance);
+			}
+		}
+	}
 }
 
 void VMCommonClass::resolveType(bool stat, bool clinit, VMGenericMethod* genMethod) {
