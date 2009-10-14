@@ -121,7 +121,7 @@ public:
   
   /// start - Start the execution of a thread.
   ///
-  int start(void (*fct)(mvm::Thread*));
+  virtual int start(void (*fct)(mvm::Thread*));
   
   uint64_t getThreadID() {
     return (uint64_t)this;

@@ -21,26 +21,40 @@ public:
   mvm::BumpPtrAllocator Allocator;
   uintptr_t MutatorContext;
   uintptr_t CollectorContext;
+  
+  /// realRoutine - The function to invoke when the thread starts.
+  ///
+  void (*realRoutine)(mvm::Thread*);
+ 
 
   static uint32_t MMTkMutatorSize;
   static uint32_t MMTkCollectorSize;
 
-  static void (*MutatorInit)(uintptr_t);
-  static void (*CollectorInit)(uintptr_t);
+  typedef void (*MMTkInitType)(uintptr_t);
+  static MMTkInitType MutatorInit;
+  static MMTkInitType CollectorInit;
 
 
-  MutatorThread() {
-    MutatorContext = (uintptr_t)Allocator.Allocate(MMTkMutatorSize, "Mutator");
-    MutatorInit(MutatorContext);
-    CollectorContext = 
-      (uintptr_t)Allocator.Allocate(MMTkCollectorSize, "Collector");
-    CollectorInit(CollectorContext);
+  static void init(Thread* _th) {
+    MutatorThread* th = (MutatorThread*)_th;
+    th->MutatorContext =
+      (uintptr_t)th->Allocator.Allocate(MMTkMutatorSize, "Mutator");
+    MutatorInit(th->MutatorContext);
+    th->CollectorContext = 
+      (uintptr_t)th->Allocator.Allocate(MMTkCollectorSize, "Collector");
+    CollectorInit(th->CollectorContext);
+    th->realRoutine(_th);
   }
 
   static MutatorThread* get() {
     return (MutatorThread*)mvm::Thread::get();
   }
 
+  virtual int start(void (*fct)(mvm::Thread*)) {
+    realRoutine = fct;
+    routine = init;
+    return Thread::start(init);
+  }
 };
 
 }
