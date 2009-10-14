@@ -252,7 +252,8 @@ extern "C" VMObject* System_Reflection_ClrType_GetElementType(VMObject* Klass) {
     VMThread::get()->getVM()->error("implement me");
     return 0;
   } else {
-    return ((VMClassArray*)cl)->baseClass->getClassDelegatee();
+		declare_gcroot(VMObject *, delegatee) = ((VMClassArray*)cl)->baseClass->getClassDelegatee();
+    return delegatee;
   }
 }
 
@@ -619,7 +620,8 @@ extern "C" VMObject* System_Reflection_Assembly_GetType(VMObject* obj, PNetStrin
   ++index;
   VMCommonClass* cl = ass->loadTypeFromName(vm->asciizToUTF8(index), vm->asciizToUTF8(asciiz), true, true, true, onError);
   if (!cl) VMThread::get()->getVM()->error("implement me");
-  return cl->getClassDelegatee();
+	declare_gcroot(VMObject *, delegatee) = cl->getClassDelegatee();
+  return delegatee;
 }
 
 static bool parameterMatch(std::vector<VMCommonClass*> params, ArrayObject* types, bool virt) {

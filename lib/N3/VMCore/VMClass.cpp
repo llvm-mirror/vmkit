@@ -162,7 +162,7 @@ void Property::print(mvm::PrintBuffer* buf) const {
 void VMCommonClass::initialise(N3* vm, bool isArray) {
   this->lockVar = new mvm::LockRecursive();
   this->condVar = new mvm::Cond();
-  this->delegatee = 0;
+  this->ooo_delegatee = 0;
   this->status = hashed;
   this->vm = vm;
   this->isArray = isArray;

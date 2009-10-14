@@ -67,7 +67,7 @@ void Assembly::TRACER {
 }
 
 void VMCommonClass::TRACER {
-  delegatee->MARK_AND_TRACE;
+  ooo_delegatee->MARK_AND_TRACE;
 	CALL_TRACER_VECTOR(VMMethod*, virtualMethods, std::allocator);
 	CALL_TRACER_VECTOR(VMMethod*, staticMethods, std::allocator);
   CALL_TRACER_VECTOR(Property*, properties, gc_allocator);

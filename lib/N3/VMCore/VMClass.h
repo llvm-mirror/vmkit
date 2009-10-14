@@ -65,7 +65,7 @@ public:
   const UTF8* nameSpace;
   mvm::Lock* lockVar;
   mvm::Cond* condVar;
-  VMObject* delegatee;
+  VMObject* ooo_delegatee;
   std::vector<VMCommonClass*> display;
   Assembly* assembly;
   std::vector<Property*, gc_allocator<Property*> > properties;

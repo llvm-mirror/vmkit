@@ -150,8 +150,10 @@ VMObject* VMMethod::getMethodDelegatee() {
 }
 
 VMObject* VMCommonClass::getClassDelegatee() {
+	declare_gcroot(VMObject*, delegatee) = ooo_delegatee;
+
   if (!delegatee) {
-    delegatee = (*MSCorlib::clrType)();
+    ooo_delegatee = delegatee = (*MSCorlib::clrType)();
     (*MSCorlib::ctorClrType)(delegatee);
     (*MSCorlib::typeClrType)(delegatee, (VMObject*)this);
   }
@@ -162,7 +164,7 @@ VMObject* Assembly::getAssemblyDelegatee() {
 	declare_gcroot(VMObject*, delegatee) = ooo_delegatee;
 
   if (!delegatee) {
-    delegatee = (*MSCorlib::assemblyReflection)();
+    ooo_delegatee = delegatee = (*MSCorlib::assemblyReflection)();
     (*MSCorlib::ctorAssemblyReflection)(delegatee);
     (*MSCorlib::assemblyAssemblyReflection)(delegatee, (VMObject*)this);
   }
