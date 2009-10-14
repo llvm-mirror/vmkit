@@ -22,8 +22,7 @@ N3VirtualTable LockObj::_VT((uintptr_t)LockObj::_destroy,
 														(uintptr_t)0, 
 														(uintptr_t)mvm::Object::default_tracer, 
 														(uintptr_t)LockObj::_print, 
-														(uintptr_t)mvm::Object::default_hashcode);
-N3VirtualTable *LockObj::VT = &_VT;
+														(uintptr_t)mvm::Object::default_hashCode);
 
 void *N3VirtualTable::operator new(size_t size, mvm::BumpPtrAllocator &allocator, size_t totalVtSize) {
 	//printf("Allocate N3VirtualTable with %d elements\n", totalVtSize);
@@ -39,7 +38,7 @@ N3VirtualTable::N3VirtualTable(N3VirtualTable *baseVt, uint32 baseVtSize, uint32
 
 N3VirtualTable::N3VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t, uintptr_t p, uintptr_t h) : VirtualTable(d, o, t) {
 	print = p;
-	hashcode = h;
+	hashCode = h;
 }
 
 uint32 N3VirtualTable::baseVtSize() {
@@ -53,7 +52,7 @@ void VMObject::initialise(VMCommonClass* cl) {
 
 
 LockObj* LockObj::allocate() {
-  LockObj* res = gc_new(LockObj)();
+  LockObj* res = new(&_VT) LockObj();
   return res;
 }
 
@@ -125,16 +124,13 @@ bool LockObj::owner() {
   return lock.selfOwner();
 }
 
-void VMObject::print(mvm::PrintBuffer* buf) const {
+void VMObject::_print(const VMObject *self, mvm::PrintBuffer* buf) {
+	llvm_gcroot(self, 0);
   buf->write("VMObject<");
-  classOf->print(buf);
+  self->classOf->print(buf);
+	buf->write("@0x");
+	buf->writePtr((void*)self->hashCode());
   buf->write(">");
-}
-
-VMObject* VMObject::allocate(VMCommonClass* cl) {
-  VMObject* res = gc_new(VMObject)();
-  res->classOf = cl;
-  return res;
 }
 
 static LockObj* myLock(VMObject* obj) {

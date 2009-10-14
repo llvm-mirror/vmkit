@@ -240,11 +240,11 @@ N3VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
 #endif
 
 #define CASE_ARRAY(name, elmt, nbb, printer, pre, sep, post)						\
-	else if(cl->baseClass == MSCorlib::p##name) {													\
+	if(cl->baseClass == MSCorlib::p##name) {													\
 		((void**)res)[VT_PRINT_OFFSET] = ((void **)(unsigned int)Array##name::do_print); \
-  }
+  } else
 	
-	if(0) {} ON_ARRAY_CLASSES(CASE_ARRAY)
+	ON_ARRAY_CLASSES(CASE_ARRAY) {}
 
 #undef CASE_ARRAY
 
@@ -254,9 +254,19 @@ N3VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
 N3VirtualTable* CLIJit::makeVT(VMClass* cl, bool stat) {
 	int n                = N3VirtualTable::baseVtSize();
   N3VirtualTable * res =
-		stat || !cl->super ?
-		new(cl->assembly->allocator, n)          N3VirtualTable(VMObject::VT, n) :
-		new(cl->assembly->allocator, cl->vtSize) N3VirtualTable(((VMClass *)cl->super)->virtualInstance->getN3VirtualTable(), n, cl->vtSize);
+		stat ?      new(cl->assembly->allocator, n)          N3VirtualTable((uintptr_t)0, 
+																																				(uintptr_t)0, 
+																																				(uintptr_t)VMObject::_trace, 
+																																				(uintptr_t)VMObject::_print, 
+																																				(uintptr_t)mvm::Object::default_hashCode) : (
+		cl->super ? new(cl->assembly->allocator, cl->vtSize) N3VirtualTable(((VMClass *)cl->super)->virtualInstance->getN3VirtualTable(), 
+																																				n, 
+																																				cl->vtSize) :
+		            new(cl->assembly->allocator, cl->vtSize) N3VirtualTable((uintptr_t)0, 
+																																				(uintptr_t)0, 
+																																				(uintptr_t)VMObject::_trace, 
+																																				(uintptr_t)VMObject::_print, 
+																																				(uintptr_t)mvm::Object::default_hashCode));
 		
 
 #ifdef WITH_TRACER  

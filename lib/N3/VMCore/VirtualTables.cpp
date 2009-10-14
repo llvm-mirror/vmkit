@@ -23,24 +23,14 @@
 
 using namespace n3;
 
-#define INIT(X) N3VirtualTable* X::VT = 0
-
-INIT(VMObject);
-INIT(CLIString);
-
-#undef INIT
-
-#ifdef MULTIPLE_GC
-extern "C" void CLIObjectTracer(VMObject* obj, Collector* GC) {
-#else
 extern "C" void CLIObjectTracer(VMObject* obj) {
-#endif
-  obj->lockObj->MARK_AND_TRACE;
+	VMObject::_trace(obj);
 }
 
 // N3 Objects
-void VMObject::TRACER {
-  lockObj->MARK_AND_TRACE;
+void VMObject::_trace(VMObject *self) {
+	llvm_gcroot(self, 0);
+  self->lockObj->MARK_AND_TRACE;
 }
 
 #define TRACE_VECTOR(type, name, alloc) { \

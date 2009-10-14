@@ -33,7 +33,7 @@ class PrintBuffer;
 class Object : public gc {
 public:
 	static void     default_tracer(gc *o)                    {}
-	static intptr_t default_hashcode(gc *o)                  { return (intptr_t)o; }
+	static intptr_t default_hashCode(const gc *o)            { return (intptr_t)o; }
 	static void     default_print(const gc *o, PrintBuffer *buf);
 
   /// tracer - Default implementation of tracer. Does nothing.
@@ -47,7 +47,7 @@ public:
   /// hashCode - Default implementation of hashCode. Returns the address
   /// of this object.
   ///
-  virtual intptr_t  hashCode(){ return default_hashcode(this);}
+  virtual intptr_t  hashCode() const { return default_hashCode(this);}
   
 };
 

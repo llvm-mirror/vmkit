@@ -32,7 +32,7 @@ class VMThread;
 
 struct N3VirtualTable : VirtualTable {
 	uintptr_t  print;
-	uintptr_t  hashcode;
+	uintptr_t  hashCode;
 
 	void *operator new(size_t size, mvm::BumpPtrAllocator &allocator, size_t totalVtSize);
 
@@ -46,7 +46,6 @@ struct N3VirtualTable : VirtualTable {
 class LockObj : public mvm::Object {
 public:
 	static N3VirtualTable  _VT;
-  static N3VirtualTable* VT;
   mvm::LockRecursive     lock;
   std::vector<VMThread*> threads;
 
@@ -69,17 +68,15 @@ public:
 
 class VMObject : public mvm::Object {
 public:
-  static N3VirtualTable* VT;
   VMCommonClass* classOf;
   LockObj* lockObj;
 
   static mvm::Lock* globalLock;
   static const llvm::Type* llvmType;
+
+	static void _print(const VMObject *, mvm::PrintBuffer *);
+	static void _trace(VMObject *);
   
-  virtual void print(mvm::PrintBuffer* buf) const;
-  virtual void TRACER;
-  
-  static VMObject* allocate(VMCommonClass* cl);
   void aquire();
   void unlock();
   void waitIntern(struct timeval *info, bool timed);
