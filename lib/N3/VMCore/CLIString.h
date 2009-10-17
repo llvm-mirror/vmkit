@@ -29,11 +29,10 @@ public:
     buf->write("CLI string");
   }
   
-  llvm::GlobalVariable* llvmVar();
+  static llvm::GlobalVariable* llvmVar(CLIString *self);
 
   
-  static CLIString* stringDup(const ArrayChar*& array, N3* vm);
-	const ArrayChar *strToArray(N3 *vm) const;
+  static CLIString* stringDup(const ArrayChar* array, N3* vm);
 };
 
 } // end namespace jnjvm

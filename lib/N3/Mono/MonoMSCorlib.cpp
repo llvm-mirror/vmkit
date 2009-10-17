@@ -134,33 +134,43 @@ void MSCorlib::initialise(N3* vm) {
 }
 
 VMObject* Property::getPropertyDelegatee() {
+	declare_gcroot(VMObject*, delegatee) = ooo_delegatee;
+
   if (!delegatee) {
     VMThread::get()->getVM()->error("implement me");  
   }
+
   return delegatee;
 }
 
 VMObject* VMMethod::getMethodDelegatee() {
+	declare_gcroot(VMObject*, delegatee) = ooo_delegatee;
+
   if (!delegatee) {
     VMThread::get()->getVM()->error("implement me");  
   }
+
   return delegatee;
 }
 
 VMObject* VMCommonClass::getClassDelegatee() {
 	declare_gcroot(VMObject*, delegatee) = ooo_delegatee;
+
   if (!delegatee) {
     ooo_delegatee = delegatee = MSCorlib::clrType->doNew();
     MSCorlib::typeClrType->setIntPtr(delegatee, (int*)this);
   }
+
   return delegatee;
 }
 
 VMObject* Assembly::getAssemblyDelegatee() {
 	declare_gcroot(VMObject*, delegatee) = ooo_delegatee;
+
   if (!delegatee) {
     VMThread::get()->getVM()->error("implement me");  
   }
+
   return delegatee;
 }
 

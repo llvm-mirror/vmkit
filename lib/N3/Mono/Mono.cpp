@@ -121,10 +121,12 @@ System_Text_Encoding_InternalCodePage (gint32 *int_code_page)
 
 extern "C" void System_Threading_Monitor_Monitor_exit(VMObject* obj) {
   // TODO: There's a bug in the bootstrap, see why
+	llvm_gcroot(obj, 0);
   if (LockObj::owner(obj->lockObj)) VMObject::unlock(obj);
 }
 
 extern "C" bool System_Threading_Monitor_Monitor_try_enter(VMObject* obj, int ms) {
+	llvm_gcroot(obj, 0);
 	VMObject::aquire(obj);
   return true;
 }
@@ -173,15 +175,19 @@ System_Environment_get_NewLine (void)
 
 extern "C" void
 System_String_InternalCopyTo(MonoString* str, sint32 sindex, VMArray* dest, sint32 destIndex, sint32 count) {
-  const ArrayChar* contents = str->value;
+	llvm_gcroot(str, 0);
+	llvm_gcroot(dest, 0);
+  declare_gcroot(const ArrayChar*, contents) = str->value;
   memcpy(&dest->elements[destIndex], &contents->elements[sindex], count * sizeof(uint16));
 }
 
 extern "C" uint16 System_String_get_Chars(MonoString* str, sint32 offset) {
+	llvm_gcroot(str, 0);
   return str->value->elements[offset];
 }
 
 static sint32 byteLength(VMArray* array) {
+	llvm_gcroot(array, 0);
   VMClassArray* cl = (VMClassArray*)array->classOf;
   VMCommonClass* base = cl->baseClass;
   uint32 size = base->naturalType->getPrimitiveSizeInBits() / 8;  
@@ -189,6 +195,8 @@ static sint32 byteLength(VMArray* array) {
 }
 
 extern "C" bool System_Buffer_BlockCopyInternal (VMArray* src, int src_offset, VMArray* dest, int dest_offset, int count) {
+	llvm_gcroot(src, 0);
+	llvm_gcroot(dest, 0);
   uint8 *src_buf, *dest_buf;
 
 	/* watch out for integer overflow */
@@ -208,6 +216,7 @@ extern "C" bool System_Buffer_BlockCopyInternal (VMArray* src, int src_offset, V
 }
 
 extern "C" sint32 System_Buffer_ByteLengthInternal(VMArray* array) {
+	llvm_gcroot(array, 0);
   return byteLength(array);
 }
 
@@ -216,6 +225,7 @@ System_IO_MonoIO_Write (void* handle, ArrayUInt8 *src,
 				  sint32 src_offset, sint32 count,
 				  sint32 *error)
 {
+	llvm_gcroot(src, 0);
   char* buffer = (char*)alloca( 1024);//(count + 8) * sizeof(uint16));
 	uint32 n = 0;
 
@@ -256,16 +266,19 @@ extern "C" VMObject* System_Threading_Thread_CurrentThread_internal() {
 extern "C" VMObject*
 System_Threading_Thread_GetCachedCurrentCulture (VMObject *obj)
 {
+	llvm_gcroot(obj, 0);
 	return 0;
 }
 
 extern "C" VMObject*
 System_Threading_Thread_GetSerializedCurrentCulture (VMObject *obj)
 {
+	llvm_gcroot(obj, 0);
 	return 0;
 }
 
 extern "C" VMObject* System_Object_MemberwiseClone(VMObject* obj) {
+	llvm_gcroot(obj, 0);
   uint64 size = obj->objectSize();
   declare_gcroot(VMObject*, res) = ((VMClass*)obj->classOf)->doNew();
   memcpy(res, obj, size);
@@ -276,16 +289,21 @@ extern "C" VMObject* System_Object_MemberwiseClone(VMObject* obj) {
 extern "C" bool
 System_Globalization_CultureInfo_construct_internal_locale_from_current_locale (VMObject *ci)
 {
+	llvm_gcroot(ci, 0);
 	return false;
 }
 
 extern "C" void
 System_Threading_Thread_SetCachedCurrentCulture (VMObject* thread, VMObject *culture)
 {
+	llvm_gcroot(thread, 0);
+	llvm_gcroot(culture, 0);
 }
 
 extern "C" void
 System_String__ctor(MonoString* str, ArrayChar* array, sint32 startIndex, sint32 count) {
+	llvm_gcroot(str, 0);
+	llvm_gcroot(array, 0);
   N3* vm = VMThread::get()->getVM();
   declare_gcroot(const ArrayChar*, value) = vm->bufToArray(&(array->elements[startIndex]), count);
   str->length = count;
@@ -296,7 +314,9 @@ System_String__ctor(MonoString* str, ArrayChar* array, sint32 startIndex, sint32
 extern "C" MonoString * 
 System_String_InternalJoin (MonoString *separator, VMArray * value, sint32 sindex, sint32 count)
 {
-	MonoString *current;
+	llvm_gcroot(separator, 0);
+	llvm_gcroot(value, 0);
+	declare_gcroot(MonoString*, current) = 0;
 	sint32 length;
 	sint32 pos;
 	sint32 insertlen;
