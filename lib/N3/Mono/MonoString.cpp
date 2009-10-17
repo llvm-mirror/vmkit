@@ -26,7 +26,7 @@ using namespace llvm;
 
 
 CLIString* CLIString::stringDup(const ArrayChar*& array, N3* vm) {
-  MonoString* obj = (MonoString*)(*MSCorlib::pString)();
+  declare_gcroot(MonoString*, obj) = (MonoString*)MSCorlib::pString->doNew();
   obj->length = array->size;
   if (array->size == 0) {
     obj->startChar = 0;
@@ -38,7 +38,8 @@ CLIString* CLIString::stringDup(const ArrayChar*& array, N3* vm) {
 }
 
 const ArrayChar* CLIString::strToArray(N3* vm) const {
-  return ((MonoString *)this)->value;
+	declare_gcroot(const ArrayChar*, res) = ((MonoString *)this)->value;
+  return res;
 }
 
 GlobalVariable* CLIString::llvmVar() {

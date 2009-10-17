@@ -112,7 +112,9 @@ System_Text_Encoding_InternalCodePage (gint32 *int_code_page)
 	
 	if (want_name && *int_code_page == -1) {
 		N3 *vm = (N3*)VMThread::get()->getVM();
-		return (MonoString*)(vm->arrayToString(vm->asciizToArray(cset)));
+		declare_gcroot(ArrayChar*, array_res) = vm->asciizToArray(cset);
+		declare_gcroot(MonoString*, res) = (MonoString*)(vm->arrayToString(array_res));
+		return res;
 	} else
 		return NULL;
 }
@@ -160,10 +162,13 @@ System_Environment_get_NewLine (void)
 {
 	N3 *vm = (N3*)VMThread::get()->getVM();
 #if defined (PLATFORM_WIN32)
-	return (MonoString*)(vm->arrayToString(vm->asciizToArray("\r\n")));
+	declare_gcroot(ArrayChar*, array) = vm->asciizToArray("\r\n");
 #else
-	return (MonoString*)(vm->arrayToString(vm->asciizToArray("\n")));
+	declare_gcroot(ArrayChar*, array) = vm->asciizToArray("\n");
 #endif
+
+	declare_gcroot(MonoString*, res) = (MonoString*)vm->arrayToString(array);
+	return res;
 }
 
 extern "C" void
@@ -262,7 +267,7 @@ System_Threading_Thread_GetSerializedCurrentCulture (VMObject *obj)
 
 extern "C" VMObject* System_Object_MemberwiseClone(VMObject* obj) {
   uint64 size = obj->objectSize();
-  VMObject* res = ((VMClass*)obj->classOf)->doNew();
+  declare_gcroot(VMObject*, res) = ((VMClass*)obj->classOf)->doNew();
   memcpy(res, obj, size);
   res->lockObj = 0;
   return res;
@@ -282,7 +287,7 @@ System_Threading_Thread_SetCachedCurrentCulture (VMObject* thread, VMObject *cul
 extern "C" void
 System_String__ctor(MonoString* str, ArrayChar* array, sint32 startIndex, sint32 count) {
   N3* vm = VMThread::get()->getVM();
-  const ArrayChar* value = vm->bufToArray(&(array->elements[startIndex]), count);
+  declare_gcroot(const ArrayChar*, value) = vm->bufToArray(&(array->elements[startIndex]), count);
   str->length = count;
   str->startChar = array->elements[startIndex];
   str->value = value;
@@ -334,14 +339,15 @@ System_String_InternalJoin (MonoString *separator, VMArray * value, sint32 sinde
 	}
   
   N3* vm = (N3*)VMThread::get()->getVM();
-  const ArrayChar* array = vm->bufToArray(dest, length);
-	return (MonoString*)vm->arrayToString(array);
+  declare_gcroot(const ArrayChar*, array) = vm->bufToArray(dest, length);
+	declare_gcroot(MonoString*, res) = (MonoString*)vm->arrayToString(array);
+	return res;
 }
 
 extern "C" MonoString *
 System_String_InternalAllocateStr (sint32 length)
 {
-  MonoString* str = (MonoString*)(MSCorlib::pString->doNew());
+  declare_gcroot(MonoString*, str) = (MonoString*)MSCorlib::pString->doNew();
   str->length = length;
   return str;
 }

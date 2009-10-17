@@ -92,7 +92,7 @@ void VMClassPointer::TRACER {
 }
 
 void VMMethod::TRACER {
-  delegatee->MARK_AND_TRACE;
+  ooo_delegatee->MARK_AND_TRACE;
 }
 
 void VMGenericMethod::TRACER {
@@ -100,7 +100,7 @@ void VMGenericMethod::TRACER {
 }
 
 void Property::TRACER {
-  delegatee->MARK_AND_TRACE;
+  ooo_delegatee->MARK_AND_TRACE;
 }
 
 // useless (never called or used) but it simplifies the definition of LockedMap

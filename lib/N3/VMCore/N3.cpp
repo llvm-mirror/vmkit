@@ -291,7 +291,7 @@ void N3::executeAssembly(const char* _name, ArrayObject* args) {
       uint32 typeToken = assembly->getTypeDefTokenFromMethod(entryPoint);
       assembly->loadType(this, typeToken, true, true, true ,true, NULL, NULL);
       VMMethod* mainMeth = assembly->lookupMethodFromToken(entryPoint);
-      (*mainMeth)(args);
+      mainMeth->compileToNative()->invokeGeneric(args);
     }
   }
 }
@@ -319,9 +319,11 @@ void N3::mainCLIStart(VMThread* th) {
   MSCorlib::loadBootstrap(vm);
   
   ClArgumentsInfo& info = vm->argumentsInfo;  
-  ArrayObject* args = (ArrayObject*)MSCorlib::arrayString->doNew(info.argc-2);
+  declare_gcroot(ArrayObject*, args) = (ArrayObject*)MSCorlib::arrayString->doNew(info.argc-2);
   for (int i = 2; i < info.argc; ++i) {
-    args->elements[i - 2] = (VMObject*)vm->arrayToString(vm->asciizToArray(info.argv[i]));
+		declare_gcroot(ArrayChar*, arg_array) = vm->asciizToArray(info.argv[i]);
+		declare_gcroot(VMObject*, arg) = vm->arrayToString(arg_array);
+    args->elements[i - 2] = arg;
   }
   
   try{
@@ -342,20 +344,21 @@ void N3::mainCLIStart(VMThread* th) {
 
 ArrayChar* N3::asciizToArray(const char* asciiz) {
 	uint32 len = strlen(asciiz);
-	ArrayChar *res = (ArrayChar*)MSCorlib::arrayChar->doNew(len);
+	declare_gcroot(ArrayChar*, res) = (ArrayChar*)MSCorlib::arrayChar->doNew(len);
 	for(uint32 i=0; i<len; i++)
 		res->elements[i] = asciiz[i];
 	return res;
 }
 
 ArrayChar* N3::bufToArray(const uint16* buf, uint32 size) {
-	ArrayChar *res = (ArrayChar*)MSCorlib::arrayChar->doNew(size);
+	declare_gcroot(ArrayChar*, res) = (ArrayChar*)MSCorlib::arrayChar->doNew(size);
 	memcpy(res->elements, buf, size<<1);
 	return res;
 }
 
 ArrayChar* N3::UTF8ToArray(const UTF8 *utf8) {
-  return bufToArray(utf8->elements, utf8->size);
+	declare_gcroot(ArrayChar*, res) = bufToArray(utf8->elements, utf8->size);
+  return res;
 }
 
 const UTF8* N3::asciizToUTF8(const char* asciiz) {
@@ -371,7 +374,8 @@ const UTF8* N3::arrayToUTF8(const ArrayChar *array) {
 }
 
 CLIString *N3::arrayToString(const ArrayChar *array) {
-  return (CLIString*)CLIString::stringDup(array, this);
+  declare_gcroot(CLIString*, res) = (CLIString*)CLIString::stringDup(array, this);
+	return res;
 }
 
 #include "MSCorlib.inc"

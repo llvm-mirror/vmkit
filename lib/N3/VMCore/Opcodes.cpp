@@ -1573,7 +1573,8 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case LDSTR : {
         uint32 value = readU4(bytecodes, i);
         uint32 index = value & 0xfffffff;
-        const ArrayChar* array = compilingClass->assembly->readUserString(index);
+				// must modify this opcode
+        declare_gcroot(const ArrayChar*, array) = compilingClass->assembly->readUserString(index);
         Value* val = ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), (int64_t)array),
                                                module->ptrType);
         Value* res = CallInst::Create(newStringLLVM, val, "", currentBlock);

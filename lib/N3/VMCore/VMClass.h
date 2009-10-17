@@ -151,7 +151,6 @@ public:
   std::vector<VMMethod*> genericMethods;
 	uint32 vtSize; // in number of methods
   
-  VMObject* operator()();
   VMObject* doNew();
   VMObject* initialiseObject(VMObject*);
 
@@ -211,7 +210,7 @@ public:
   uint32 implFlags;
   uint32 token;
 
-  VMObject* delegatee;
+  VMObject* ooo_delegatee;
   VMObject* getMethodDelegatee();
   std::vector<Param*, gc_allocator<Param*> > params;
   std::vector<Enveloppe*, gc_allocator<Enveloppe*> > caches;
@@ -231,6 +230,7 @@ public:
 
 	llvm::GenericValue invokeGeneric(std::vector<llvm::GenericValue>& args);
 	llvm::GenericValue invokeGeneric(va_list ap);
+	llvm::GenericValue invokeGeneric(...);
 
 #define DEFINE_CALLER(name, type) \
   type invoke##name(...);
@@ -307,7 +307,7 @@ public:
   const llvm::FunctionType* getSignature(VMGenericMethod* genMethod);
   bool virt;
   const UTF8* name;
-  VMObject* delegatee;
+  VMObject* ooo_delegatee;
   uint32 flags;
   VMObject* getPropertyDelegatee();
 };

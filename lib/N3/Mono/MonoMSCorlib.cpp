@@ -150,7 +150,7 @@ VMObject* VMMethod::getMethodDelegatee() {
 VMObject* VMCommonClass::getClassDelegatee() {
 	declare_gcroot(VMObject*, delegatee) = ooo_delegatee;
   if (!delegatee) {
-    ooo_delegatee = delegatee = (*MSCorlib::clrType)();
+    ooo_delegatee = delegatee = MSCorlib::clrType->doNew();
     MSCorlib::typeClrType->setIntPtr(delegatee, (int*)this);
   }
   return delegatee;
@@ -169,6 +169,6 @@ void MSCorlib::loadBootstrap(N3* vm) {
                                         vm->asciizToUTF8("Thread"),
                                         vm->asciizToUTF8("System.Threading"),
                                         true, true, true, true);
-  declare_gcroot(VMObject*, appThread) = (*cl)();
+  declare_gcroot(VMObject*, appThread) = cl->doNew();
   VMThread::get()->ooo_appThread = appThread;
 }

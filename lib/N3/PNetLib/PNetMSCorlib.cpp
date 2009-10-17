@@ -132,20 +132,26 @@ void MSCorlib::initialise(N3* vm) {
 }
 
 VMObject* Property::getPropertyDelegatee() {
+	declare_gcroot(VMObject*, delegatee) = ooo_delegatee;
+
   if (!delegatee) {
-    delegatee = (*MSCorlib::propertyType)();
-    (*MSCorlib::ctorPropertyType)(delegatee);
+    ooo_delegatee = delegatee = MSCorlib::propertyType->doNew();
+    MSCorlib::ctorPropertyType->compileToNative()->invokeVoid(delegatee);
     MSCorlib::propertyPropertyType->setIntPtr(delegatee, (int*)this);
   }
+
   return delegatee;
 }
 
 VMObject* VMMethod::getMethodDelegatee() {
+	declare_gcroot(VMObject*, delegatee) = ooo_delegatee;
+
   if (!delegatee) {
-    delegatee = (*MSCorlib::methodType)();
-    (*MSCorlib::ctorMethodType)(delegatee);
+    ooo_delegatee = delegatee = MSCorlib::methodType->doNew();
+    MSCorlib::ctorMethodType->compileToNative()->invokeVoid(delegatee);
     MSCorlib::methodMethodType->setIntPtr(delegatee, (int*)this);
   }
+
   return delegatee;
 }
 
@@ -153,10 +159,11 @@ VMObject* VMCommonClass::getClassDelegatee() {
 	declare_gcroot(VMObject*, delegatee) = ooo_delegatee;
 
   if (!delegatee) {
-    ooo_delegatee = delegatee = (*MSCorlib::clrType)();
-    (*MSCorlib::ctorClrType)(delegatee);
+    ooo_delegatee = delegatee = MSCorlib::clrType->doNew();
+    MSCorlib::ctorClrType->compileToNative()->invokeVoid(delegatee);
     MSCorlib::typeClrType->setIntPtr(delegatee, (int*)this);
   }
+
   return delegatee;
 }
 
@@ -164,10 +171,11 @@ VMObject* Assembly::getAssemblyDelegatee() {
 	declare_gcroot(VMObject*, delegatee) = ooo_delegatee;
 
   if (!delegatee) {
-    ooo_delegatee = delegatee = (*MSCorlib::assemblyReflection)();
-    (*MSCorlib::ctorAssemblyReflection)(delegatee);
+    ooo_delegatee = delegatee = MSCorlib::assemblyReflection->doNew();
+    MSCorlib::ctorAssemblyReflection->compileToNative()->invokeVoid(delegatee);
     MSCorlib::assemblyAssemblyReflection->setIntPtr(delegatee, (int*)this);
   }
+
   return delegatee;
 }
 
@@ -176,15 +184,16 @@ static void mapInitialThread(N3* vm) {
                                         vm->asciizToUTF8("Thread"),
                                         vm->asciizToUTF8("System.Threading"),
                                         true, true, true, true);
-	declare_gcroot(VMObject*, appThread) = (*cl)();
+	declare_gcroot(VMObject*, appThread) = cl->doNew();
+
   std::vector<VMCommonClass*> args;
   args.push_back(MSCorlib::pVoid);
   args.push_back(cl);
   args.push_back(MSCorlib::pIntPtr);
-  VMMethod* meth = cl->lookupMethod(vm->asciizToUTF8(".ctor"), args, 
+  VMMethod* ctor = cl->lookupMethod(vm->asciizToUTF8(".ctor"), args, 
                                     false, false);
   VMThread* myth = VMThread::get();
-  (*meth)(appThread, myth);
+  ctor->compileToNative()->invokeVoid(appThread, myth);
   myth->ooo_appThread = appThread;
 }
 

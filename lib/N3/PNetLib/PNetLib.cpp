@@ -164,14 +164,16 @@ extern "C" uint32 System_Globalization_CultureInfo_InternalCultureID() {
 extern "C" VMObject* System_Globalization_CultureInfo_InternalCultureName() {
   char* val = ILGetCultureName();
   N3* vm = (N3*)(VMThread::get()->getVM());
+	declare_gcroot(ArrayChar*, array) = 0;
+
   if (val) {
-    VMObject* ret = vm->arrayToString(vm->asciizToArray(val));
+    array = vm->asciizToArray(val);
     free(val);
-    return ret;
   } else {
-    VMObject* ret = vm->arrayToString(vm->asciizToArray("iv"));
-    return ret;
+    array = vm->asciizToArray("iv");
   }
+	declare_gcroot(VMObject*, res) = vm->arrayToString(array);
+	return res;
 }
 
 static const ArrayChar* newBuilder(N3* vm, PNetString* value, uint32 length) {
@@ -191,19 +193,22 @@ static const ArrayChar* newBuilder(N3* vm, PNetString* value, uint32 length) {
     }
   }
 
-  return vm->bufToArray(buf, strLength);
+	declare_gcroot(ArrayChar*, array_res) = vm->bufToArray(buf, strLength);
+  return array_res;
 }
 
 extern "C" VMObject* System_String_NewBuilder(PNetString* value, 
                                                uint32 length) {
   N3* vm = (N3*)(VMThread::get()->getVM());
-  PNetString* str = (PNetString*)vm->arrayToString(newBuilder(vm, value, length));
+  declare_gcroot(PNetString*, str) = (PNetString*)vm->arrayToString(newBuilder(vm, value, length));
   return str;
 }
 
 extern "C" VMObject* Platform_SysCharInfo_GetNewLine() {
   N3* vm = (N3*)(VMThread::get()->getVM());
-  return vm->arrayToString(vm->asciizToArray("\n"));
+	declare_gcroot(ArrayChar*, array) = vm->asciizToArray("\n");
+  declare_gcroot(VMObject*, res) = vm->arrayToString(array);
+	return res;
 }
 
 extern "C" void System_String_CopyToChecked(PNetString* str, sint32 sstart, 
@@ -258,14 +263,14 @@ extern "C" VMObject* System_Reflection_ClrType_GetElementType(VMObject* Klass) {
 }
 
 extern "C" PNetString* System_String_NewString(uint32 size) {
-  PNetString* str = (PNetString*)(MSCorlib::pString->doNew());
+  declare_gcroot(PNetString*, str) = (PNetString*)MSCorlib::pString->doNew();
   str->length = size;
   return str;
 }
 
 extern "C" void System_String_Copy_3(PNetString* dest, sint32 pos, 
                                      PNetString* src) {
-  ArrayChar* arr = (ArrayChar*)MSCorlib::arrayChar->doNew(pos + src->value->size);
+  declare_gcroot(ArrayChar*, arr) = (ArrayChar*)MSCorlib::arrayChar->doNew(pos + src->value->size);
   
   for (sint32 i = 0; i < pos; ++i) {
     arr->elements[i] = dest->value->elements[i];
@@ -303,7 +308,8 @@ extern "C" void System_String_Copy_5(PNetString* dest, sint32 destPos,
 		else
 			dest->length = top;
 
-		dest->value  = VMThread::get()->getVM()->bufToArray(buf, dest->length);
+		declare_gcroot(ArrayChar*, array) = VMThread::get()->getVM()->bufToArray(buf, dest->length);
+		dest->value  = array;
 	}
 	//		printf("---> %s\n", mvm::PrintBuffer(VMThread::get()->getVM()->arrayToUTF8(dest->value)).cString());
 }
@@ -379,7 +385,8 @@ extern "C" VMObject* System_Text_StringBuilder_Insert_System_Text_StringBuilder_
   }
 
   buf[index] = value;
-  PNetString* str = (PNetString*)vm->arrayToString(vm->bufToArray(buf, length));
+	declare_gcroot(ArrayChar*, array_res) = vm->bufToArray(buf, length);
+  declare_gcroot(PNetString*, str) = (PNetString*)vm->arrayToString(array_res);
   obj->buildString = str;
   
   return obj;
@@ -411,7 +418,8 @@ extern "C" VMObject* System_Text_StringBuilder_Insert_System_Text_StringBuilder_
                (buildLength - index) * sizeof(uint16));
   }
 
-  PNetString* val = (PNetString*)vm->arrayToString(vm->bufToArray(buf, length));
+	declare_gcroot(ArrayChar*, array_res) = vm->bufToArray(buf, length);
+  declare_gcroot(PNetString*, val) = (PNetString*)vm->arrayToString(array_res);
   obj->buildString = val;
 
   return obj;
@@ -429,7 +437,8 @@ extern "C" VMObject* System_Text_StringBuilder_Append_System_Text_StringBuilder_
   memcpy(buf, array->elements, length * sizeof(uint16));
 
   buf[length] = value;
-  PNetString* val = (PNetString*)vm->arrayToString(vm->bufToArray(buf, length + 1));
+	declare_gcroot(ArrayChar*, array_res) = vm->bufToArray(buf, length + 1);
+	declare_gcroot(PNetString*, val) = (PNetString*)vm->arrayToString(array_res);
   obj->buildString = val;
   return obj;
 }
@@ -450,7 +459,8 @@ extern "C" VMObject* System_Text_StringBuilder_Append_System_Text_StringBuilder_
   memcpy(buf, buildArray->elements, buildLength * sizeof(uint16));
   memcpy(&(buf[buildLength]), strArray->elements, strLength * sizeof(uint16));
 
-  PNetString* val = (PNetString*)vm->arrayToString(vm->bufToArray(buf, length));
+	declare_gcroot(ArrayChar*, array_res) = vm->bufToArray(buf, length);
+  declare_gcroot(PNetString*, val) = (PNetString*)vm->arrayToString(array_res);
   obj->buildString = val;
   return obj;
 }
@@ -530,7 +540,8 @@ extern "C" PNetString* System_String_Concat_2(PNetString* str1, PNetString* str2
   memcpy(buf, a1->elements, len1 * sizeof(uint16));
   memcpy(&(buf[len1]), a2->elements, len2 * sizeof(uint16));
   
-  PNetString* val = (PNetString*)vm->arrayToString(vm->bufToArray(buf, len1 + len2));
+	declare_gcroot(ArrayChar*, array_res) = vm->bufToArray(buf, len1 + len2);
+  declare_gcroot(PNetString*, val) = (PNetString*)vm->arrayToString(array_res);
   
   return val;
 }
@@ -549,7 +560,8 @@ extern "C" PNetString* System_String_Concat_3(PNetString* str1, PNetString* str2
   memcpy(&(buf[len1]), a2->elements, len2 * sizeof(uint16));
   memcpy(&(buf[len1 + len2]), a3->elements, len3 * sizeof(uint16));
   
-  PNetString* val = (PNetString*)vm->arrayToString(vm->bufToArray(buf, len1 + len2 + len3));
+	declare_gcroot(ArrayChar*, array_res) = vm->bufToArray(buf, len1 + len2 + len3);
+  declare_gcroot(PNetString*, val) = (PNetString*)vm->arrayToString(array_res);
   
   return val;
 }
@@ -578,13 +590,13 @@ extern "C" void System_String_RemoveSpace(PNetString* str, sint32 index, sint32 
     memcpy(&(buf[j]), &(array->elements[index + length]), (strLength - (index + length)) * sizeof(uint16));
   }
 
-  const ArrayChar* res = VMThread::get()->getVM()->bufToArray(buf, j);
+  declare_gcroot(const ArrayChar*, res) = VMThread::get()->getVM()->bufToArray(buf, j);
   str->value = res;
   str->length = j;
 }
 
 extern "C" void System_String__ctor_3(PNetString* str, uint16 ch, sint32 count) {
-  ArrayChar* array = (ArrayChar*)MSCorlib::arrayChar->doNew(count);
+  declare_gcroot(ArrayChar*, array) = (ArrayChar*)MSCorlib::arrayChar->doNew(count);
   for (sint32 i = 0; i < count; ++i) {
     array->elements[i] = ch;
   }
@@ -778,12 +790,12 @@ extern "C" VMObject* System_Reflection_ClrMethod_Invoke(VMObject* Method, VMObje
   
   llvm::GenericValue gv;
   try{
-    gv = (*meth)(gvargs);
+    gv = meth->compileToNative()->invokeGeneric(gvargs);
   }catch(...) {
     assert(0);
   }
   
-  VMObject* res = 0;
+  declare_gcroot(VMObject*, res) = 0;
   VMCommonClass* retType = meth->parameters[0];
 
 #define CONSTRUCT_RES(name, type, gv_extractor)										\
@@ -793,7 +805,7 @@ extern "C" VMObject* System_Reflection_ClrMethod_Invoke(VMObject* Method, VMObje
 	}
 
   if (retType == MSCorlib::pVoid) {
-    res = (*MSCorlib::pVoid)();
+    res = MSCorlib::pVoid->doNew();
   } ON_PRIMITIVES(CONSTRUCT_RES, _F_NTE) else {
     if (retType->super == MSCorlib::pValue || retType->super == MSCorlib::pEnum)
       VMThread::get()->getVM()->error("implement me");
@@ -839,8 +851,8 @@ static VMObject* createResourceStream(Assembly* ass, sint32 posn) {
   length = reader->readU4();
   if (length > (sectionLen - 4)) return 0;
 
-  VMObject* res = (*MSCorlib::resourceStreamType)();
-  (*MSCorlib::ctorResourceStreamType)(res, ass, (uint64)start, (uint64)length);
+  declare_gcroot(VMObject*, res) = MSCorlib::resourceStreamType->doNew();
+  MSCorlib::ctorResourceStreamType->compileToNative()->invokeVoid(res, ass, (uint64)start, (uint64)length);
 
   return res;
 }
@@ -890,8 +902,9 @@ extern "C" VMObject* System_Globalization_TextInfo_ToLower(VMObject* obj, PNetSt
 
   memcpy(buf, array->elements, length * sizeof(uint16));
   ILUnicodeStringToLower((void*)buf, (void*)array->elements, length);
-  const ArrayChar* res = vm->bufToArray(buf, length);
-  return ((N3*)vm)->arrayToString(res);
+  declare_gcroot(const ArrayChar*, res) = vm->bufToArray(buf, length);
+  declare_gcroot(VMObject*, res_str) = vm->arrayToString(res);
+	return res_str;
 }
 
 extern "C" VMObject* System_String_Replace(PNetString* str, uint16 c1, uint16 c2) {
@@ -906,8 +919,9 @@ extern "C" VMObject* System_String_Replace(PNetString* str, uint16 c1, uint16 c2
   }
   
   N3* vm = (N3*)VMThread::get()->getVM();
-  const ArrayChar* res = vm->bufToArray(buf, length);
-  return vm->arrayToString(res);
+  declare_gcroot(const ArrayChar*, res) = vm->bufToArray(buf, length);
+  declare_gcroot(VMObject*, res_str) = vm->arrayToString(res);
+	return res_str;
 }
 
 extern "C" uint32 System_Reflection_ClrResourceStream_ResourceRead(Assembly* assembly, uint64 position, ArrayUInt8* buffer, uint32 offset, uint32 count) {
@@ -966,7 +980,7 @@ extern "C" void System_String_CharFill(PNetString* str, sint32 start, sint32 cou
   }
   
   N3* vm = VMThread::get()->getVM();
-  const ArrayChar* val = vm->bufToArray(buf, length);
+  declare_gcroot(const ArrayChar*, val) = vm->bufToArray(buf, length);
   str->value = val;
   str->length = length;
 }

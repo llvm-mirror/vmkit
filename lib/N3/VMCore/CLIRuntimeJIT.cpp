@@ -29,6 +29,8 @@
 #include "VMThread.h"
 #include "Assembly.h"
 
+#include "mvm/GC/GC.h"
+
 #include <cstdarg>
 
 using namespace n3;
@@ -56,7 +58,8 @@ extern "C" void indexOutOfBounds() {
 
 extern "C" VMObject* newString(const ArrayChar* utf8) {
 	N3 *vm = (N3*)VMThread::get()->getVM();
-  return vm->arrayToString(utf8);
+  declare_gcroot(VMObject*, res) = vm->arrayToString(utf8);
+	return res;
 }
 
 extern "C" bool n3InstanceOf(VMObject* obj, VMCommonClass* cl) {
@@ -89,7 +92,7 @@ static VMObject* doMultiNewIntern(VMClassArray* cl, uint32 dim, sint32* buf) {
   sint32 n = buf[0];
   if (n < 0) VMThread::get()->getVM()->negativeArraySizeException(n);
   
-  VMArray* res = (VMArray*)cl->doNew(n);
+  declare_gcroot(VMArray*, res) = (VMArray*)cl->doNew(n);
   if (dim > 1) {
     VMCommonClass* base = cl->baseClass;
     if (n > 0) {
@@ -182,9 +185,11 @@ extern "C" CacheNode* n3VirtualLookup(CacheNode* cache, VMObject *obj) {
 }
 
 extern "C" VMObject* newObject(VMClass* cl) {
-  return cl->doNew();
+	declare_gcroot(VMObject*, res) = cl->doNew();
+  return res;
 }
 
 extern "C" VMObject* newArray(VMClassArray* cl, sint32 nb) {
-  return cl->doNew(nb);
+	declare_gcroot(VMObject*, res) = cl->doNew(nb);
+  return res;
 }

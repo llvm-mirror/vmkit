@@ -705,7 +705,8 @@ void Header::read(mvm::BumpPtrAllocator &allocator, Reader* reader, N3* vm) {
 
 const ArrayChar* Assembly::readUTF16(N3* vm, uint32 len, 
                                 Reader* reader) {
-  return readUTF16(vm, len, reader->bytes, reader->cursor);
+	declare_gcroot(const ArrayChar*, res) = readUTF16(vm, len, reader->bytes, reader->cursor);
+  return res;
 }
 
 const ArrayChar* Assembly::readUTF16(N3* vm, uint32 len, 
@@ -718,7 +719,8 @@ const ArrayChar* Assembly::readUTF16(N3* vm, uint32 len,
     buf[i] = cur;
     ++i;
   }
-	return vm->bufToArray(buf, realLen); 
+	declare_gcroot(ArrayChar*, res) = vm->bufToArray(buf, realLen); 
+	return res;
 }
 
 const UTF8* Assembly::readUTF8(N3* vm, uint32 len, Reader* reader) {
@@ -1289,7 +1291,7 @@ ArrayObject* Assembly::getCustomAttributes(uint32 token, VMCommonClass* cl) {
     if (cl == cons->classDef) {
       uint32 blobOffset = CLIHeader->blobStream->realOffset;
       std::vector<llvm::GenericValue> args;
-      VMObject* obj = (*cons->classDef)();
+      declare_gcroot(VMObject*, obj) = cons->classDef->doNew();
       args.push_back(llvm::GenericValue(obj));
       readCustomAttributes(blobOffset + attrArray[CONSTANT_CUSTOM_ATTRIBUTE_VALUE], args, cons);
 
@@ -1298,7 +1300,7 @@ ArrayObject* Assembly::getCustomAttributes(uint32 token, VMCommonClass* cl) {
     }
   }
 
-  ArrayObject* res = (ArrayObject*)MSCorlib::arrayObject->doNew(vec.size());
+  declare_gcroot(ArrayObject*, res) = (ArrayObject*)MSCorlib::arrayObject->doNew(vec.size());
   for (uint32 i = 0; i < vec.size(); ++i)
     res->elements[i] = vec[i];
   
@@ -1897,7 +1899,8 @@ const ArrayChar* Assembly::readUserString(uint32 token) {
     }
   }
 
-  return readUTF16((N3*)(VMThread::get()->getVM()), size, bytes, offset);
+	declare_gcroot(const ArrayChar*, res) = readUTF16((N3*)(VMThread::get()->getVM()), size, bytes, offset);
+  return res;
 }
 
 uint32 Assembly::getRVAFromField(uint32 token) {

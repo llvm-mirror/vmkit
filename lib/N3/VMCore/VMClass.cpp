@@ -642,8 +642,7 @@ VMObject* VMClass::initialiseObject(VMObject* obj) {
 VMObject* VMClass::doNew() {
   if (status < inClinit) resolveType(true, true, NULL);
   uint64 size = mvm::MvmModule::getTypeSize(virtualType->getContainedType(0));
-  VMObject* res = (VMObject*)
-    gc::operator new(size, VMObject::getN3VirtualTable(virtualInstance));
+  declare_gcroot(VMObject*, res) = (VMObject*)gc::operator new(size, VMObject::getN3VirtualTable(virtualInstance));
   memcpy(res, virtualInstance, size);
   return res;
 }
@@ -651,8 +650,7 @@ VMObject* VMClass::doNew() {
 VMObject* VMClassArray::doNew(uint32 nb) {
   if (status < inClinit) resolveType(true, true, NULL);
   uint64 size = mvm::MvmModule::getTypeSize(baseClass->naturalType);
-  VMArray* res = (VMArray*)
-    gc::operator new(size * nb + sizeof(VMObject) + sizeof(sint32), arrayVT);
+  declare_gcroot(VMArray*, res) = (VMArray*)gc::operator new(size * nb + sizeof(VMObject) + sizeof(sint32), arrayVT);
   memset(res->elements, 0, size * nb);
 	VMObject::initialise(res, this);
   res->size = nb;
