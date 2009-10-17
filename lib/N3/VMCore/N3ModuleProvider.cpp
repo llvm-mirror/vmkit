@@ -26,26 +26,12 @@ using namespace n3;
 bool N3ModuleProvider::materializeFunction(Function *F, std::string *ErrInfo) {
   if (!F->empty()) return false;
   VMMethod* meth = functions->lookup(F);
+
   if (!meth) {
     // VT methods
     return false;
   } else {
-    void* res = 
-      mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(meth->methPtr);
-    if (res == 0) {
-      meth->classDef->aquire();
-      res = 
-        mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(meth->methPtr);
-      if (res == 0) {
-        CLIJit::compile(meth->classDef, meth);
-        void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(meth->methPtr);
-        meth->code = res;
-        N3* vm = VMThread::get()->getVM();
-        vm->addMethodInFunctionMap(meth, res);
-      }
-      meth->classDef->release();
-      meth->classDef->resolveStatic(true, NULL);
-    }
+		meth->compileToNative();
     return false;
   }
 }

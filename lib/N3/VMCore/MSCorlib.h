@@ -10,6 +10,8 @@
 #ifndef N3_MSCORLIB_H
 #define N3_MSCORLIB_H
 
+#include "N3MetaType.h"
+
 namespace n3 {
 
 class N3;
@@ -44,47 +46,27 @@ public:
 
   static VMClass* resourceStreamType;
   static VMMethod* ctorResourceStreamType;
+
+#define DEF_TYPE(name, type)        \
+	static VMClass* p##name;
+
+#define DEF_ARRAY_AND_TYPE(name, type) \
+	DEF_TYPE(name, type) \
+  static VMClassArray* array##name; \
+	static VMField* ctor##name;
+
+	ON_TYPES(DEF_ARRAY_AND_TYPE, _F_NT)
+	ON_STRING(DEF_ARRAY_AND_TYPE, _F_NT)
+	ON_VOID(DEF_TYPE, _F_NT)
+
+#undef DEF_ARRAY_AND_TYPE
+#undef DEF_TYPE
  
-  static VMClass* pVoid;
-  static VMClass* pBoolean;
-  static VMClass* pChar;
-  static VMClass* pSInt8;
-  static VMClass* pUInt8;
-  static VMClass* pSInt16;
-  static VMClass* pUInt16;
-  static VMClass* pSInt32;
-  static VMClass* pUInt32;
-  static VMClass* pSInt64;
-  static VMClass* pUInt64;
-  static VMClass* pFloat;
-  static VMClass* pDouble;
-  static VMClass* pIntPtr;
-  static VMClass* pUIntPtr;
-  static VMClass* pString;
-  static VMClass* pObject;
   static VMClass* pValue;
   static VMClass* pEnum;
   static VMClass* pArray;
   static VMClass* pDelegate;
   static VMClass* pException;
-  static VMClassArray* arrayChar;
-  static VMClassArray* arrayString;
-  static VMClassArray* arrayByte;
-  static VMClassArray* arrayObject;
-  static VMField* ctorBoolean;
-  static VMField* ctorUInt8;
-  static VMField* ctorSInt8;
-  static VMField* ctorChar;
-  static VMField* ctorSInt16;
-  static VMField* ctorUInt16;
-  static VMField* ctorSInt32;
-  static VMField* ctorUInt32;
-  static VMField* ctorSInt64;
-  static VMField* ctorUInt64;
-  static VMField* ctorIntPtr;
-  static VMField* ctorUIntPtr;
-  static VMField* ctorDouble;
-  static VMField* ctorFloat;
 };
 
 } // end namespace n3

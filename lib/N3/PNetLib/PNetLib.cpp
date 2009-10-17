@@ -247,7 +247,7 @@ extern "C" void Platform_Stdio_StdFlush(sint32 fd) {
 }
 
 extern "C" VMObject* System_Reflection_ClrType_GetElementType(VMObject* Klass) {
-  VMCommonClass* cl = (VMCommonClass*)((*Klass)(MSCorlib::typeClrType).PointerVal);
+  VMCommonClass* cl = (VMCommonClass*)MSCorlib::typeClrType->getIntPtr(Klass);
   if (!cl->isArray) {
     VMThread::get()->getVM()->error("implement me");
     return 0;
@@ -628,7 +628,7 @@ static bool parameterMatch(std::vector<VMCommonClass*> params, ArrayObject* type
   uint32 v = virt ? 1 : 0;
   if (types->size + v + 1 != params.size()) return false;
   for (sint32 i = 0; i < types->size; ++i) {
-    VMCommonClass* cur = (VMCommonClass*)(*MSCorlib::typeClrType)(types->elements[i]).PointerVal;
+    VMCommonClass* cur = (VMCommonClass*)MSCorlib::typeClrType->getIntPtr(types->elements[i]);
     if (cur != params[i + 1 + v]) return false;
   }
   return true;
@@ -636,7 +636,7 @@ static bool parameterMatch(std::vector<VMCommonClass*> params, ArrayObject* type
 
 extern "C" VMObject* System_Reflection_ClrType_GetMemberImpl(VMObject* Type, PNetString* str, sint32 memberTypes, sint32 bindingFlags, VMObject* binder, 
                                                    sint32 callingConventions, ArrayObject* types, VMObject* modifiers) {
-  VMCommonClass* type = (VMCommonClass*)((*MSCorlib::typeClrType)(Type).PointerVal);
+  VMCommonClass* type = (VMCommonClass*)MSCorlib::typeClrType->getIntPtr(Type);
   N3* vm = (N3*)(VMThread::get()->getVM());
   const UTF8* name = vm->arrayToUTF8(str->value);
   if (memberTypes == MEMBER_TYPES_PROPERTY) {
@@ -740,7 +740,7 @@ static void decapsulePrimitive(VMObject* arg, const llvm::Type* type, std::vecto
 }
 
 extern "C" VMObject* System_Reflection_ClrMethod_Invoke(VMObject* Method, VMObject* obj, sint32 invokeAttr, VMObject* binder, ArrayObject* args, VMObject* culture) {
-  VMMethod* meth = (VMMethod*)(*MSCorlib::methodMethodType)(Method).PointerVal;
+  VMMethod* meth = (VMMethod*)MSCorlib::methodMethodType->getIntPtr(Method);
   meth->getSignature(NULL);
   meth->compiledPtr(NULL);
   llvm::Function* func = CLIJit::compile(meth->classDef, meth);
@@ -785,51 +785,16 @@ extern "C" VMObject* System_Reflection_ClrMethod_Invoke(VMObject* Method, VMObje
   
   VMObject* res = 0;
   VMCommonClass* retType = meth->parameters[0];
+
+#define CONSTRUCT_RES(name, type, gv_extractor)										\
+	else if(retType == MSCorlib::p##name) {													\
+		res = MSCorlib::p##name->doNew();															\
+		MSCorlib::ctor##name->set##name(res, (type)gv.gv_extractor);	\
+	}
+
   if (retType == MSCorlib::pVoid) {
     res = (*MSCorlib::pVoid)();
-  } else if (retType == MSCorlib::pBoolean) {
-    res = (*MSCorlib::pBoolean)();
-    (*MSCorlib::ctorBoolean)(res, gv.IntVal.getBoolValue());
-  } else if (retType == MSCorlib::pUInt8) {
-    res = (*MSCorlib::pUInt8)();
-    (*MSCorlib::ctorUInt8)(res, (uint8)gv.IntVal.getZExtValue());
-  } else if (retType == MSCorlib::pSInt8) {
-    res = (*MSCorlib::pSInt8)();
-    (*MSCorlib::ctorSInt8)(res, (uint8)gv.IntVal.getSExtValue());
-  } else if (retType == MSCorlib::pChar) {
-    res = (*MSCorlib::pChar)();
-    (*MSCorlib::ctorChar)(res, (uint16)gv.IntVal.getZExtValue());
-  } else if (retType == MSCorlib::pSInt16) {
-    res = (*MSCorlib::pSInt16)();
-    (*MSCorlib::ctorSInt16)(res, (sint16)gv.IntVal.getSExtValue());
-  } else if (retType == MSCorlib::pUInt16) {
-    res = (*MSCorlib::pUInt16)();
-    (*MSCorlib::ctorUInt16)(res, (uint16)gv.IntVal.getZExtValue());
-  } else if (retType == MSCorlib::pSInt32) {
-    res = (*MSCorlib::pSInt32)();
-    (*MSCorlib::ctorSInt32)(res, (sint32)gv.IntVal.getSExtValue());
-  } else if (retType == MSCorlib::pUInt32) {
-    res = (*MSCorlib::pUInt32)();
-    (*MSCorlib::ctorUInt32)(res, (sint32)gv.IntVal.getZExtValue());
-  } else if (retType == MSCorlib::pSInt64) {
-    res = (*MSCorlib::pSInt64)();
-    (*MSCorlib::ctorSInt64)(res, (sint64)gv.IntVal.getSExtValue());
-  } else if (retType == MSCorlib::pUInt64) {
-    res = (*MSCorlib::pUInt64)();
-    (*MSCorlib::ctorUInt64)(res, (sint64)gv.IntVal.getZExtValue());
-  } else if (retType == MSCorlib::pIntPtr) {
-    res = (*MSCorlib::pIntPtr)();
-    (*MSCorlib::ctorIntPtr)(res, (void*)gv.IntVal.getSExtValue());
-  } else if (retType == MSCorlib::pUIntPtr) {
-    res = (*MSCorlib::pUIntPtr)();
-    (*MSCorlib::ctorUIntPtr)(res, (void*)gv.IntVal.getZExtValue());
-  } else if (retType == MSCorlib::pFloat) {
-    res = (*MSCorlib::pFloat)();
-    (*MSCorlib::ctorFloat)(res, gv.FloatVal);
-  } else if (retType == MSCorlib::pDouble) {
-    res = (*MSCorlib::pDouble)();
-    (*MSCorlib::ctorDouble)(res, gv.DoubleVal);
-  } else {
+  } ON_PRIMITIVES(CONSTRUCT_RES, _F_NTE) else {
     if (retType->super == MSCorlib::pValue || retType->super == MSCorlib::pEnum)
       VMThread::get()->getVM()->error("implement me");
     res = (VMObject*)gv.PointerVal;
@@ -881,7 +846,7 @@ static VMObject* createResourceStream(Assembly* ass, sint32 posn) {
 }
       
 extern "C" VMObject* System_Reflection_Assembly_GetManifestResourceStream(VMObject* Ass, PNetString* str) {
-  Assembly* ass = (Assembly*)(*MSCorlib::assemblyAssemblyReflection)(Ass).PointerVal;
+  Assembly* ass = (Assembly*)MSCorlib::assemblyAssemblyReflection->getIntPtr(Ass);
   N3* vm = (N3*)(VMThread::get()->getVM());
   const UTF8* id = vm->arrayToUTF8(str->value);
   Header* header = ass->CLIHeader;

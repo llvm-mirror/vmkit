@@ -21,6 +21,8 @@
 #include "llvm/Function.h"
 #include "llvm/Type.h"
 
+#include "N3MetaType.h"
+
 #include <cstdarg>
 
 namespace mvm {
@@ -224,12 +226,19 @@ public:
   bool canBeInlined;
 
   void* code;
-  
-  llvm::GenericValue operator()(...);
-  llvm::GenericValue operator()(va_list ap);
-  llvm::GenericValue operator()(VMObject* obj, va_list ap);
-  llvm::GenericValue operator()(std::vector<llvm::GenericValue>& args);
-  llvm::GenericValue run(...);
+
+	VMMethod *compileToNative(VMGenericMethod* genMethod=0);
+
+	llvm::GenericValue invokeGeneric(std::vector<llvm::GenericValue>& args);
+	llvm::GenericValue invokeGeneric(va_list ap);
+
+#define DEFINE_CALLER(name, type) \
+  type invoke##name(...);
+
+	ON_TYPES(DEFINE_CALLER, _F_NT)
+	ON_VOID(DEFINE_CALLER, _F_NT)
+
+#undef DEFINE_CALLER
   
   const llvm::FunctionType* getSignature(VMGenericMethod* genMethod);
   static const llvm::FunctionType* resolveSignature(
@@ -265,18 +274,13 @@ public:
   
   void initField(VMObject* obj);
 
-  llvm::GenericValue operator()(VMObject* obj = 0); 
-  void operator()(VMObject* obj, bool val);
-  void operator()(VMObject* obj, float val);
-  void operator()(VMObject* obj, double val);
-  void operator()(VMObject* obj, sint32 val);
-  void operator()(VMObject* obj, sint64 val);
-  void operator()(VMObject* obj, VMObject* val);
-  void operator()(bool val);
-  void operator()(float val);
-  void operator()(double val);
-  void operator()(sint32 val);
-  void operator()(sint64 val);
+#define DEF_VMFIELD_ASSESSORS(name, type)												 \
+	void  set##name(VMObject *obj, type value);										 \
+	type  get##name(VMObject *obj);
+
+	ON_TYPES(DEF_VMFIELD_ASSESSORS, _F_NT)
+
+#undef DEF_VMFIELD_ASSESSORS
 
   llvm::GlobalVariable* llvmVar();
   llvm::GlobalVariable* _llvmVar;

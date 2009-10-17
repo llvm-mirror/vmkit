@@ -39,7 +39,6 @@ using mvm::UTF8;
 using mvm::UTF8Map;
 
 class ArrayChar;
-class ArrayUInt8;
 class ArrayObject;
 class Assembly;
 class ClassNameMap;

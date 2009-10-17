@@ -790,6 +790,31 @@ bool VMCommonClass::isAssignableFrom(VMCommonClass* cl) {
   }
 }
 
+VMMethod *VMMethod::compileToNative(VMGenericMethod* genMethod) {
+	if(!code) {
+		if (classDef->status < ready)
+			classDef->resolveType(true, true, NULL);
+  
+		llvm::Function *methPtr = compiledPtr(genMethod);
+		void* res = 
+			mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(methPtr);
+		if (res == 0) {
+			classDef->aquire();
+			res = 
+				mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(methPtr);
+			if (res == 0) {
+				CLIJit::compile(classDef, this);
+				void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(methPtr);
+				code = res;
+				N3* vm = VMThread::get()->getVM();
+				vm->addMethodInFunctionMap(this, res);
+			}
+			classDef->release();
+			classDef->resolveStatic(true, NULL);
+		}
+	}
+	return this;
+}
 
 bool VMMethod::signatureEquals(std::vector<VMCommonClass*>& args) {
   bool stat = isStatic(flags);

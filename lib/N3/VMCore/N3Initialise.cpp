@@ -34,69 +34,60 @@ using namespace n3;
 N3* N3::bootstrapVM = 0;
 mvm::Lock* VMObject::globalLock = 0;
 
-VMCommonClass* VMClassArray::SuperArray = 0;
-std::vector<VMClass*> VMClassArray::InterfacesArray;
+VMCommonClass*         VMClassArray::SuperArray = 0;
+std::vector<VMClass*>  VMClassArray::InterfacesArray;
 std::vector<VMMethod*> VMClassArray::VirtualMethodsArray;
 std::vector<VMMethod*> VMClassArray::StaticMethodsArray;
-std::vector<VMField*> VMClassArray::VirtualFieldsArray;
-std::vector<VMField*> VMClassArray::StaticFieldsArray;
+std::vector<VMField*>  VMClassArray::VirtualFieldsArray;
+std::vector<VMField*>  VMClassArray::StaticFieldsArray;
 
-VMClass* MSCorlib::pVoid = 0;
-VMClass* MSCorlib::pBoolean= 0;
-VMClass* MSCorlib::pChar = 0;
-VMClass* MSCorlib::pSInt8 = 0;
-VMClass* MSCorlib::pUInt8 = 0;
-VMClass* MSCorlib::pSInt16 = 0;
-VMClass* MSCorlib::pUInt16 = 0;
-VMClass* MSCorlib::pSInt32 = 0;
-VMClass* MSCorlib::pUInt32 = 0;
-VMClass* MSCorlib::pSInt64 = 0;
-VMClass* MSCorlib::pUInt64 = 0;
-VMClass* MSCorlib::pFloat = 0;
-VMClass* MSCorlib::pDouble = 0;
-VMClass* MSCorlib::pIntPtr = 0;
-VMClass* MSCorlib::pUIntPtr = 0;
-VMClass* MSCorlib::pObject = 0;
-VMClass* MSCorlib::pString = 0;
+#define DEF_TYPE(name, type)										\
+	VMClass *MSCorlib::p##name = 0;
+
+#define DEF_ARRAY_LLVM_TYPE(name, type)					\
+	const llvm::Type* Array##name::llvmType = 0;
+
+#define DEF_ARRAY_AND_TYPE(name, type)					\
+	DEF_TYPE(name, type)													\
+	VMClassArray *MSCorlib::array##name = 0;			\
+	VMField* MSCorlib::ctor##name = 0;
+
+ON_TYPES(DEF_ARRAY_AND_TYPE, _F_NT)
+ON_TYPES(DEF_ARRAY_LLVM_TYPE, _F_NT)
+ON_STRING(DEF_ARRAY_AND_TYPE, _F_NT)
+ON_VOID(DEF_TYPE, _F_NT)
+
+#undef DEF_ARRAY_LLVM_TYPE
+#undef DEF_TYPE
+#undef DEF_ARRAY_AND_TYPE
+
 VMClass* MSCorlib::pValue = 0;
 VMClass* MSCorlib::pEnum = 0;
 VMClass* MSCorlib::pArray = 0;
 VMClass* MSCorlib::pDelegate = 0;
 VMClass* MSCorlib::pException = 0;
-VMClassArray* MSCorlib::arrayChar = 0;
-VMClassArray* MSCorlib::arrayString = 0;
-VMClassArray* MSCorlib::arrayObject = 0;
-VMClassArray* MSCorlib::arrayByte = 0;
+
+
+const llvm::Type* VMArray::llvmType;
+const llvm::Type* VMObject::llvmType;
+const llvm::Type* Enveloppe::llvmType;
+const llvm::Type* CacheNode::llvmType;
+
 VMMethod* MSCorlib::ctorPropertyType;
 VMMethod* MSCorlib::ctorMethodType;
 VMMethod* MSCorlib::ctorClrType;
-VMClass* MSCorlib::clrType;
-VMField* MSCorlib::typeClrType;
-VMField* MSCorlib::propertyPropertyType;
-VMField* MSCorlib::methodMethodType;
+VMClass*  MSCorlib::clrType;
+VMField*  MSCorlib::typeClrType;
+VMField*  MSCorlib::propertyPropertyType;
+VMField*  MSCorlib::methodMethodType;
 VMMethod* MSCorlib::ctorAssemblyReflection;
-VMClass* MSCorlib::assemblyReflection;
-VMClass* MSCorlib::typedReference;
-VMField* MSCorlib::assemblyAssemblyReflection;
-VMClass* MSCorlib::propertyType;
-VMClass* MSCorlib::methodType;
-VMClass* MSCorlib::resourceStreamType;
+VMClass*  MSCorlib::assemblyReflection;
+VMClass*  MSCorlib::typedReference;
+VMField*  MSCorlib::assemblyAssemblyReflection;
+VMClass*  MSCorlib::propertyType;
+VMClass*  MSCorlib::methodType;
+VMClass*  MSCorlib::resourceStreamType;
 VMMethod* MSCorlib::ctorResourceStreamType;
-
-VMField* MSCorlib::ctorBoolean;
-VMField* MSCorlib::ctorUInt8;
-VMField* MSCorlib::ctorSInt8;
-VMField* MSCorlib::ctorChar;
-VMField* MSCorlib::ctorSInt16;
-VMField* MSCorlib::ctorUInt16;
-VMField* MSCorlib::ctorSInt32;
-VMField* MSCorlib::ctorUInt32;
-VMField* MSCorlib::ctorSInt64;
-VMField* MSCorlib::ctorUInt64;
-VMField* MSCorlib::ctorIntPtr;
-VMField* MSCorlib::ctorUIntPtr;
-VMField* MSCorlib::ctorDouble;
-VMField* MSCorlib::ctorFloat;
 
 const UTF8* N3::clinitName = 0;
 const UTF8* N3::ctorName = 0;
@@ -115,11 +106,6 @@ const UTF8* N3::pow = 0;
 const UTF8* N3::floatName = 0;
 const UTF8* N3::doubleName = 0;
 const UTF8* N3::testInfinity = 0;
-
-const llvm::Type* VMArray::llvmType;
-const llvm::Type* VMObject::llvmType;
-const llvm::Type* Enveloppe::llvmType;
-const llvm::Type* CacheNode::llvmType;
 
 llvm::Function* CLIJit::printExecutionLLVM;
 llvm::Function* CLIJit::indexOutOfBoundsExceptionLLVM;
@@ -145,13 +131,6 @@ llvm::Function* CLIJit::instanceOfLLVM;
 llvm::Function* CLIJit::getCLIExceptionLLVM;
 llvm::Function* CLIJit::getCppExceptionLLVM;
 llvm::Function* CLIJit::newStringLLVM;
-
-#define DEFINE_ARRAY_LLVM_TYPE(name, elmt, size, printer, pre, sep, post)	\
-	const llvm::Type* Array##name::llvmType = 0;
-
-ON_ARRAY_CLASSES(DEFINE_ARRAY_LLVM_TYPE)
-
-#undef DEFINE_ARRAY_LLVM_TYPE
 
 static void initialiseVT() {
 }
@@ -187,27 +166,29 @@ static void initialiseStatics() {
     var->virtualType = type;  \
   }}
 
-  INIT(MSCorlib::pObject,   "System", "Object", VMObject::llvmType, false);
+	assert(VMObject::llvmType);
+ 
+  INIT(MSCorlib::pObject,   "System", "Object",    VMObject::llvmType, false);
   INIT(MSCorlib::pValue,    "System", "ValueType", 0, false);
-  INIT(MSCorlib::pVoid,     "System", "Void", llvm::Type::getVoidTy(getGlobalContext()), true);
-  INIT(MSCorlib::pBoolean,  "System", "Boolean", llvm::Type::getInt1Ty(getGlobalContext()), true);
-  INIT(MSCorlib::pUInt8,    "System", "Byte", llvm::Type::getInt8Ty(getGlobalContext()), true);
-  INIT(MSCorlib::pSInt8,    "System", "SByte", llvm::Type::getInt8Ty(getGlobalContext()), true);
-  INIT(MSCorlib::pChar,     "System", "Char", llvm::Type::getInt16Ty(getGlobalContext()), true);
-  INIT(MSCorlib::pSInt16,   "System", "Int16", llvm::Type::getInt16Ty(getGlobalContext()), true);
-  INIT(MSCorlib::pUInt16,   "System", "UInt16", llvm::Type::getInt16Ty(getGlobalContext()), true);
-  INIT(MSCorlib::pSInt32,   "System", "Int32", llvm::Type::getInt32Ty(getGlobalContext()), true);
-  INIT(MSCorlib::pUInt32,   "System", "UInt32", llvm::Type::getInt32Ty(getGlobalContext()), true);
-  INIT(MSCorlib::pSInt64,   "System", "Int64", llvm::Type::getInt64Ty(getGlobalContext()), true);
-  INIT(MSCorlib::pUInt64,   "System", "UInt64", llvm::Type::getInt64Ty(getGlobalContext()), true);
-  INIT(MSCorlib::pIntPtr,   "System", "IntPtr", llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(getGlobalContext())), true);
-  INIT(MSCorlib::pUIntPtr,  "System", "UIntPtr", llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(getGlobalContext())), true);
-  INIT(MSCorlib::pDouble,   "System", "Double", llvm::Type::getDoubleTy(getGlobalContext()), true);
-  INIT(MSCorlib::pFloat,    "System", "Single", llvm::Type::getFloatTy(getGlobalContext()), true);
-  INIT(MSCorlib::pEnum,     "System", "Enum", llvm::Type::getInt32Ty(getGlobalContext()), true);
-  INIT(MSCorlib::pArray,    "System", "Array", 0, true);
+  INIT(MSCorlib::pVoid,     "System", "Void",      llvm::Type::getVoidTy(getGlobalContext()), true);
+  INIT(MSCorlib::pBoolean,  "System", "Boolean",   llvm::Type::getInt1Ty(getGlobalContext()), true);
+  INIT(MSCorlib::pUInt8,    "System", "Byte",      llvm::Type::getInt8Ty(getGlobalContext()), true);
+  INIT(MSCorlib::pSInt8,    "System", "SByte",     llvm::Type::getInt8Ty(getGlobalContext()), true);
+  INIT(MSCorlib::pChar,     "System", "Char",      llvm::Type::getInt16Ty(getGlobalContext()), true);
+  INIT(MSCorlib::pSInt16,   "System", "Int16",     llvm::Type::getInt16Ty(getGlobalContext()), true);
+  INIT(MSCorlib::pUInt16,   "System", "UInt16",    llvm::Type::getInt16Ty(getGlobalContext()), true);
+  INIT(MSCorlib::pSInt32,   "System", "Int32",     llvm::Type::getInt32Ty(getGlobalContext()), true);
+  INIT(MSCorlib::pUInt32,   "System", "UInt32",    llvm::Type::getInt32Ty(getGlobalContext()), true);
+  INIT(MSCorlib::pSInt64,   "System", "Int64",     llvm::Type::getInt64Ty(getGlobalContext()), true);
+  INIT(MSCorlib::pUInt64,   "System", "UInt64",    llvm::Type::getInt64Ty(getGlobalContext()), true);
+  INIT(MSCorlib::pIntPtr,   "System", "IntPtr",    llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(getGlobalContext())), true);
+  INIT(MSCorlib::pUIntPtr,  "System", "UIntPtr",   llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(getGlobalContext())), true);
+  INIT(MSCorlib::pDouble,   "System", "Double",    llvm::Type::getDoubleTy(getGlobalContext()), true);
+  INIT(MSCorlib::pFloat,    "System", "Single",    llvm::Type::getFloatTy(getGlobalContext()), true);
+  INIT(MSCorlib::pEnum,     "System", "Enum",      llvm::Type::getInt32Ty(getGlobalContext()), true);
+  INIT(MSCorlib::pArray,    "System", "Array",     0, true);
   INIT(MSCorlib::pException,"System", "Exception", 0, false);
-  INIT(MSCorlib::pDelegate, "System", "Delegate", 0, false);
+  INIT(MSCorlib::pDelegate, "System", "Delegate",  0, false);
 
 #undef INIT
 
@@ -215,10 +196,11 @@ static void initialiseStatics() {
 
   MSCorlib::loadStringClass(vm);
 
-  MSCorlib::arrayChar   = ass->constructArray(MSCorlib::pChar,   1);
-  MSCorlib::arrayString = ass->constructArray(MSCorlib::pString, 1);
-  MSCorlib::arrayByte   = ass->constructArray(MSCorlib::pUInt8,  1);
-  MSCorlib::arrayObject = ass->constructArray(MSCorlib::pObject, 1);
+#define BUILD_ARRAY(name, type)																				\
+	MSCorlib::array##name = ass->constructArray(MSCorlib::p##name, 1);
+
+	ON_TYPES(BUILD_ARRAY, _F_NT);
+	ON_STRING(BUILD_ARRAY, _F_NT);
 
   N3::clinitName        = vm->asciizToUTF8(".cctor");
   N3::ctorName          = vm->asciizToUTF8(".ctor");

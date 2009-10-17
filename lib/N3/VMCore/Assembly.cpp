@@ -1293,7 +1293,7 @@ ArrayObject* Assembly::getCustomAttributes(uint32 token, VMCommonClass* cl) {
       args.push_back(llvm::GenericValue(obj));
       readCustomAttributes(blobOffset + attrArray[CONSTANT_CUSTOM_ATTRIBUTE_VALUE], args, cons);
 
-      (*cons)(args);
+      cons->compileToNative()->invokeGeneric(args);
       vec.push_back(obj);
     }
   }

@@ -12,6 +12,8 @@
 
 #include <vector>
 
+#include "N3MetaType.h"
+
 #include "llvm/Constants.h"
 #include "llvm/Type.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
@@ -98,14 +100,6 @@ public:
   #define verifyNull(obj) \
     if (obj == 0) VMThread::get()->getVM()->nullPointerException("");
 #endif
-  
-  llvm::GenericValue operator()(VMField* field);
-  void operator()(VMField* field, float val);
-  void operator()(VMField* field, double val);
-  void operator()(VMField* field, sint64 val);
-  void operator()(VMField* field, sint32 val);
-  void operator()(VMField* field, VMObject* val);
-  void operator()(VMField* field, bool val);
 
 };
 

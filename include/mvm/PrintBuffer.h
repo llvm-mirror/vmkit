@@ -103,6 +103,11 @@ public:
   }
 
   /// writeChar - Writes a char.
+  inline PrintBuffer *writeBool(bool v) {
+		return write(v ? "true" : "false");
+  }
+
+  /// writeChar - Writes a char.
   inline PrintBuffer *writeChar(char v) {
     char buf[32];
     sprintf(buf, "%c", v);

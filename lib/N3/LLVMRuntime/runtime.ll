@@ -2,18 +2,21 @@
 
 ;;; Types for CLI arrays. A size of 0 means an undefined size.
 %CLIArray = type { %CLIObject, i32 }
-%ArraySInt8  = type { %CLIObject, i32, [0 x i8] }
-%ArrayUInt8  = type { %CLIObject, i32, [0 x i8] }
-%ArrayChar   = type { %CLIObject, i32, [0 x i16] }
-%ArraySInt16 = type { %CLIObject, i32, [0 x i16] }
-%ArrayUInt16 = type { %CLIObject, i32, [0 x i16] }
-%ArraySInt32 = type { %CLIObject, i32, [0 x i32] }
-%ArrayUInt32 = type { %CLIObject, i32, [0 x i32] }
-%ArraySInt64 = type { %CLIObject, i32, [0 x i64] }
-%ArrayUInt64 = type { %CLIObject, i32, [0 x i64] }
-%ArrayFloat  = type { %CLIObject, i32, [0 x float] }
-%ArrayDouble = type { %CLIObject, i32, [0 x double] }
-%ArrayObject = type { %CLIObject, i32, [0 x %CLIObject*] }
+%ArrayBoolean = type { %CLIObject, i32, [0 x i8] }
+%ArrayUInt8   = type { %CLIObject, i32, [0 x i8] }
+%ArraySInt8   = type { %CLIObject, i32, [0 x i8] }
+%ArrayChar    = type { %CLIObject, i32, [0 x i16] }
+%ArraySInt16  = type { %CLIObject, i32, [0 x i16] }
+%ArrayUInt16  = type { %CLIObject, i32, [0 x i16] }
+%ArraySInt32  = type { %CLIObject, i32, [0 x i32] }
+%ArrayUInt32  = type { %CLIObject, i32, [0 x i32] }
+%ArraySInt64  = type { %CLIObject, i32, [0 x i64] }
+%ArrayUInt64  = type { %CLIObject, i32, [0 x i64] }
+%ArrayIntPtr  = type { %CLIObject, i32, [0 x i32*] }
+%ArrayUIntPtr = type { %CLIObject, i32, [0 x i32*] }
+%ArrayFloat   = type { %CLIObject, i32, [0 x float] }
+%ArrayDouble  = type { %CLIObject, i32, [0 x double] }
+%ArrayObject  = type { %CLIObject, i32, [0 x %CLIObject*] }
 
 %CacheNode = type {i8*, i8*, i8*, i8*, i8*, i1}
 

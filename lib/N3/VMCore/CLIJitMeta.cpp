@@ -33,163 +33,113 @@ VMObject* VMClass::operator()() {
   return doNew();
 }
 
-void VMField::operator()(VMObject* obj, float val) {
-  
-  if (classDef->status < ready) 
-    classDef->resolveType(true, true, NULL);
-  
-  bool stat = isStatic(flags);
-  if (stat) obj = classDef->staticInstance;
-  void* ptr = (void*)((uint64)obj + ptrOffset);
-  
-  if (signature->naturalType == Type::getFloatTy(getGlobalContext())) {
-    ((float*)ptr)[0] = val;
-  } else {
-    VMThread::get()->getVM()->unknownError("wrong type in field assignment");
-  }
+// TODO: MUST CHECK the type!
+//		if (llvm::isa<check>(signature->naturalType)) {									 
+//		if (signature->naturalType == Type::getFloatTy(getGlobalContext())) {
 
-  return;
+#define IMPLEMENTS_VMFIELD_ASSESSORS(name, type, do_root)								\
+	void VMField::set##name(VMObject* obj, type val) {										\
+		llvm_gcroot(obj, 0);																								\
+		do_root(val, 0);																										\
+																																				\
+		if (classDef->status < ready)																				\
+			classDef->resolveType(true, true, NULL);													\
+																																				\
+		*(type*)((char *)obj + ptrOffset) = val;														\
+																																				\
+		return;																															\
+	}																																			\
+																																				\
+	type VMField::get##name(VMObject* obj) {															\
+		llvm_gcroot(obj, 0);																								\
+		if (classDef->status < ready)																				\
+			classDef->resolveType(true, true, NULL);													\
+																																				\
+		type res;																														\
+		do_root(res, 0);																										\
+		res = *(type *)((char *)obj + ptrOffset);														\
+		return res;																													\
+	}
+
+ON_TYPES(IMPLEMENTS_VMFIELD_ASSESSORS, _F_NTR)
+
+#undef IMPLEMENTS_VMFIELD_ASSESSORS
+
+GenericValue VMMethod::invokeGeneric(std::vector<llvm::GenericValue>& args) {																		
+	assert(code);																												
+	return mvm::MvmModule::executionEngine->runFunction(methPtr, args);
 }
 
-void VMField::operator()(VMObject* obj, double val) {
-  
-  if (classDef->status < ready) 
-    classDef->resolveType(true, true, NULL);
-  
-  bool stat = isStatic(flags);
-  if (stat) obj = classDef->staticInstance;
-  void* ptr = (void*)((uint64)obj + ptrOffset);
-  
-  if (signature->naturalType == Type::getDoubleTy(getGlobalContext())) {
-    ((double*)ptr)[0] = val;
-  } else {
-    VMThread::get()->getVM()->unknownError("wrong type in field assignment");
-  }
-
-  return;
+GenericValue VMMethod::invokeGeneric(va_list ap) {																		
+	assert(code);																												
+	
+	Function* func = methPtr;																						
+	std::vector<GenericValue> args;																			
+	for (Function::arg_iterator i = func->arg_begin(), e = func->arg_end();	
+			 i != e; ++i) {																									
+		const Type* cur = i->getType();																		
+		if (cur == Type::getInt8Ty(getGlobalContext())) {									
+			GenericValue gv;																								
+			gv.IntVal = APInt(8, va_arg(ap, int));													
+			args.push_back(gv);																							
+		} else if (cur == Type::getInt16Ty(getGlobalContext())) {					
+			GenericValue gv;																								
+			gv.IntVal = APInt(16, va_arg(ap, int));													
+			args.push_back(gv);																							
+		} else if (cur == Type::getInt32Ty(getGlobalContext())) {					
+			GenericValue gv;																								
+			gv.IntVal = APInt(32, va_arg(ap, int));													
+			args.push_back(gv);																							
+		} else if (cur == Type::getInt64Ty(getGlobalContext())) {					
+			GenericValue gv1;																								
+			gv1.IntVal = APInt(64, va_arg(ap, uint64));											
+			args.push_back(gv1);																						
+		} else if (cur == Type::getDoubleTy(getGlobalContext())) {				
+			GenericValue gv1;																								
+			gv1.DoubleVal = va_arg(ap, double);															
+			args.push_back(gv1);																						
+		} else if (cur == Type::getFloatTy(getGlobalContext())) {					
+			GenericValue gv;																								
+			gv.FloatVal = (float)(va_arg(ap, double));											
+			args.push_back(gv);																							
+		} else {																													
+			GenericValue gv(va_arg(ap, VMObject*));													
+			args.push_back(gv);																							
+		}																																	
+	}																																		
+	
+	return invokeGeneric(args);
 }
 
-void VMField::operator()(VMObject* obj, sint64 val) {
-  
-  if (classDef->status < ready) 
-    classDef->resolveType(true, true, NULL);
-  
-  bool stat = isStatic(flags);
-  if (stat) obj = classDef->staticInstance;
-  void* ptr = (void*)((uint64)obj + ptrOffset);
-  
-  if (signature->naturalType == Type::getInt64Ty(getGlobalContext())) {
-    ((uint64*)ptr)[0] = val;
-  } else {
-    VMThread::get()->getVM()->unknownError("wrong type in field assignment");
-  }
-  
-  return;
-}
 
-void VMField::operator()(VMObject* obj, sint32 val) {
-  
-  if (classDef->status < ready) 
-    classDef->resolveType(true, true, NULL);
-  
-  bool stat = isStatic(flags);
-  if (stat) obj = classDef->staticInstance;
-  void* ptr = (void*)((uint64)obj + ptrOffset);
-  
-  if (signature->naturalType == Type::getInt32Ty(getGlobalContext())) {
-    ((uint32*)ptr)[0] = val;
-  } else {
-    VMThread::get()->getVM()->unknownError("wrong type in field assignment");
-  }
+#define DEFINE_INVOKE(name, type, extractor)														\
+	type VMMethod::invoke##name(...) {																		\
+		va_list ap;																													\
+		va_start(ap, this);																									\
+		GenericValue res = invokeGeneric(ap);																\
+		va_end(ap);																													\
+		return (type)res.extractor;																					\
+	}
 
-  return;
-}
+ON_TYPES(DEFINE_INVOKE, _F_NTE)
 
-void VMField::operator()(VMObject* obj, VMObject* val) {
-  
-  if (classDef->status < ready) 
-    classDef->resolveType(true, true, NULL);
-  
-  bool stat = isStatic(flags);
-  if (stat) obj = classDef->staticInstance;
-  void* ptr = (void*)((uint64)obj + ptrOffset);
-  
-  if (llvm::isa<PointerType>(signature->naturalType)) {
-    ((VMObject**)ptr)[0] = val;
-  } else {
-    VMThread::get()->getVM()->unknownError("wrong type in field assignment");
-  }
+#undef DEFINE_INVOKE
 
-  return;
-}
-void VMField::operator()(VMObject* obj, bool val) {
-  
-  if (classDef->status < ready) 
-    classDef->resolveType(true, true, NULL);
-  
-  bool stat = isStatic(flags);
-  if (stat) obj = classDef->staticInstance;
-  void* ptr = (void*)((uint64)obj + ptrOffset);
-  
-  if (signature->naturalType == Type::getInt1Ty(getGlobalContext())) {
-    ((bool*)ptr)[0] = val;
-  } else {
-    VMThread::get()->getVM()->unknownError("wrong type in field assignment");
-  }
+#define DEFINE_INVOKE_VOID(name, type, extractor)	\
+	type VMMethod::invoke##name(...) {																		\
+		va_list ap;																													\
+		va_start(ap, this);																									\
+		invokeGeneric(ap);																									\
+		va_end(ap);																													\
+	}
 
-  return;
-}
+ON_VOID(DEFINE_INVOKE_VOID, _F_NTE)
 
-GenericValue VMField::operator()(VMObject* obj) {
-  
-  if (classDef->status < ready) 
-    classDef->resolveType(true, true, NULL);
-  
-  bool stat = isStatic(flags);
-  if (stat) {
-    if (obj != 0) {
-      // Assignment to a static var
-      void* ptr = (void*)((uint64)(classDef->staticInstance) + ptrOffset);
-      ((VMObject**)ptr)[0] = obj;
-      return GenericValue(0);
-    } else {
-      // Get a static var
-      obj = classDef->staticInstance;
-    }
-  }
-  
-  void* ptr = (void*)((uint64)obj + ptrOffset);
-  const Type* type = signature->naturalType;
-  if (type == Type::getInt8Ty(getGlobalContext())) {
-    GenericValue gv;
-    gv.IntVal = APInt(8, ((uint8*)ptr)[0]);
-    return gv;
-  } else if (type == Type::getInt16Ty(getGlobalContext())) {
-    GenericValue gv;
-    gv.IntVal = APInt(16, ((uint16*)ptr)[0]);
-    return gv;
-  } else if (type == Type::getInt32Ty(getGlobalContext())) {
-    GenericValue gv;
-    gv.IntVal = APInt(32, ((uint32*)ptr)[0]);
-    return gv;
-  } else if (type == Type::getInt64Ty(getGlobalContext())) {
-    GenericValue gv;
-    gv.IntVal = APInt(64, ((uint64*)ptr)[0]);
-    return gv;
-  } else if (type == Type::getDoubleTy(getGlobalContext())) { 
-    GenericValue gv;
-    gv.DoubleVal = ((double*)ptr)[0];
-    return gv;
-  } else if (type == Type::getFloatTy(getGlobalContext())) {
-    GenericValue gv;
-    gv.FloatVal = ((float*)ptr)[0];
-    return gv;
-  } else {
-    GenericValue gv(((VMObject**)ptr)[0]);
-    return gv;
-  }
-}
+#undef DEFINE_INVOKE_VOID
 
+
+// mettre en param un Function *
+// materializeFunction avant
 GenericValue VMMethod::operator()(va_list ap) {
   
   if (classDef->status < ready) 
@@ -305,59 +255,6 @@ GenericValue VMMethod::operator()(std::vector<GenericValue>& args) {
   
   Function* func = compiledPtr(NULL);
   return mvm::MvmModule::executionEngine->runFunction(func, args);
-}
-
-GenericValue VMObject::operator()(VMField* field) {
-  return (*field)(this);
-}
-
-void VMObject::operator()(VMField* field, float val) {
-  return (*field)(this, val);
-}
-
-void VMObject::operator()(VMField* field, double val) {
-  return (*field)(this, val);
-}
-
-void VMObject::operator()(VMField* field, sint32 val) {
-  return (*field)(this, val);
-}
-
-void VMObject::operator()(VMField* field, sint64 val) {
-  return (*field)(this, val);
-}
-
-void VMObject::operator()(VMField* field, VMObject* val) {
-  return (*field)(this, val);
-}
-
-void VMObject::operator()(VMField* field, bool val) {
-  return (*field)(this, val);
-}
-
-void VMField::operator()(float val) {
-  VMField * field = this;
-  return (*field)(classDef->virtualInstance, val);
-}
-
-void VMField::operator()(double val) {
-  VMField * field = this;
-  return (*field)(classDef->virtualInstance, val);
-}
-
-void VMField::operator()(sint64 val) {
-  VMField * field = this;
-  return (*field)(classDef->virtualInstance, val);
-}
-
-void VMField::operator()(sint32 val) {
-  VMField * field = this;
-  return (*field)(classDef->virtualInstance, val);
-}
-
-void VMField::operator()(bool val) {
-  VMField * field = this;
-  return (*field)(classDef->virtualInstance, val);
 }
 
 GlobalVariable* VMCommonClass::llvmVar() {

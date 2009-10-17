@@ -135,7 +135,7 @@ VMObject* Property::getPropertyDelegatee() {
   if (!delegatee) {
     delegatee = (*MSCorlib::propertyType)();
     (*MSCorlib::ctorPropertyType)(delegatee);
-    (*MSCorlib::propertyPropertyType)(delegatee, (VMObject*)this);
+    MSCorlib::propertyPropertyType->setIntPtr(delegatee, (int*)this);
   }
   return delegatee;
 }
@@ -144,7 +144,7 @@ VMObject* VMMethod::getMethodDelegatee() {
   if (!delegatee) {
     delegatee = (*MSCorlib::methodType)();
     (*MSCorlib::ctorMethodType)(delegatee);
-    (*MSCorlib::methodMethodType)(delegatee, (VMObject*)this);
+    MSCorlib::methodMethodType->setIntPtr(delegatee, (int*)this);
   }
   return delegatee;
 }
@@ -155,7 +155,7 @@ VMObject* VMCommonClass::getClassDelegatee() {
   if (!delegatee) {
     ooo_delegatee = delegatee = (*MSCorlib::clrType)();
     (*MSCorlib::ctorClrType)(delegatee);
-    (*MSCorlib::typeClrType)(delegatee, (VMObject*)this);
+    MSCorlib::typeClrType->setIntPtr(delegatee, (int*)this);
   }
   return delegatee;
 }
@@ -166,7 +166,7 @@ VMObject* Assembly::getAssemblyDelegatee() {
   if (!delegatee) {
     ooo_delegatee = delegatee = (*MSCorlib::assemblyReflection)();
     (*MSCorlib::ctorAssemblyReflection)(delegatee);
-    (*MSCorlib::assemblyAssemblyReflection)(delegatee, (VMObject*)this);
+    MSCorlib::assemblyAssemblyReflection->setIntPtr(delegatee, (int*)this);
   }
   return delegatee;
 }

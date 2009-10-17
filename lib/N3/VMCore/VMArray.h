@@ -41,36 +41,18 @@ public:
   static llvm::Constant* elementsOffset();
 };
 
-#define ON_ARRAY_PRIMITIVE_CLASSES(_)													\
-	_(UInt8,  uint8,     1, writeS4,   "Array<", " ", ">") \
-	_(SInt8,  sint8,     1, writeS4,   "Array<", " ", ">") \
-	_(Char,   uint16,    2, writeChar, "",       "",  "")  \
-	_(UInt16, uint16,    2, writeS4,   "Array<", " ", ">") \
-	_(SInt16, sint16,    2, writeS4,   "Array<", " ", ">") \
-	_(UInt32, uint32,    4, writeS4,   "Array<", " ", ">") \
-	_(SInt32, sint32,    4, writeS4,   "Array<", " ", ">") \
-	_(UInt64, uint64,    8, writeS8,   "Array<", " ", ">") \
-	_(SInt64, sint64,    8, writeS8,   "Array<", " ", ">") \
-	_(Float,  float,     4, writeFP,   "Array<", " ", ">") \
-	_(Double, double,    8, writeFP,   "Array<", " ", ">")
-
-#define ON_ARRAY_CLASSES(_)																		\
-	ON_ARRAY_PRIMITIVE_CLASSES(_)																\
-	_(Object, VMObject*, 4, writeObj,  "Array<", " ", ">")
-
-
 	// never allocate a VMArray, it is just a C++ type to access N3 object
-#define DEFINE_ARRAY_CLASS(name, elmt, nbb, printer, pre, sep, post)		\
+#define DEFINE_ARRAY_CLASS(name, type)																	\
 	class Array##name : public VMObject {																	\
 		void *operator new(size_t n) { return VMObject::operator new(n, 0); } \
 	public:																																\
 		static const llvm::Type* llvmType;                                  \
 		sint32 size;                                                        \
-		elmt elements[1];                                                   \
+		type elements[1];                                                   \
 		static void do_print(const Array##name *self, mvm::PrintBuffer* buf); \
 	};
 
-ON_ARRAY_CLASSES(DEFINE_ARRAY_CLASS)
+ON_TYPES(DEFINE_ARRAY_CLASS, _F_NT)
 
 #undef DEFINE_ARRAY_CLASS
 

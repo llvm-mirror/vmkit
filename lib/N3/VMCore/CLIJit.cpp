@@ -21,6 +21,7 @@
 #include "VMCache.h"
 #include "VMClass.h"
 #include "VMThread.h"
+#include "N3MetaType.h"
 
 #include <llvm/CallingConv.h>
 #include <llvm/Constants.h>
@@ -239,12 +240,12 @@ N3VirtualTable* CLIJit::makeArrayVT(VMClassArray* cl) {
   cl->virtualTracer = func;
 #endif
 
-#define CASE_ARRAY(name, elmt, nbb, printer, pre, sep, post)						\
+#define CASE_ARRAY(name, type)																					\
 	if(cl->baseClass == MSCorlib::p##name) {															\
 		((void**)res)[VT_PRINT_OFFSET] = ((void **)(unsigned int)Array##name::do_print); \
   } else
 	
-	ON_ARRAY_CLASSES(CASE_ARRAY) {}
+	ON_TYPES(CASE_ARRAY, _F_NT) {}
 
 #undef CASE_ARRAY
 
@@ -1563,10 +1564,12 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   Enveloppe::llvmType = 
     PointerType::getUnqual(module->getTypeByName("Enveloppe"));
 
-#define GET_LLVM_ARRAY_TYPE(name, elmt, nbb, printer, pre, sep, post)	\
+#define GET_LLVM_ARRAY_TYPE(name, type)																\
 	Array##name::llvmType =																							\
-    PointerType::getUnqual(module->getTypeByName("Array"#name));
-	ON_ARRAY_CLASSES(GET_LLVM_ARRAY_TYPE)
+    PointerType::getUnqual(module->getTypeByName("Array"#name));			\
+
+	ON_TYPES(GET_LLVM_ARRAY_TYPE, _F_NT)
+
 #undef GET_LLVM_ARRAY_TYPE
 
 #ifdef WITH_TRACER
