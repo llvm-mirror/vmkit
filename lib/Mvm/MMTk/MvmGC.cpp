@@ -17,14 +17,15 @@ using namespace mvm;
 
 gc::MMTkAllocType gc::MMTkGCAllocator = 0;
 gc::MMTkPostAllocType gc::MMTkGCPostAllocator = 0;
+gc::MMTkCheckAllocatorType gc::MMTkCheckAllocator = 0;
 
   
 static std::set<gc*> Set;
 static mvm::SpinLock lock;
 
-extern "C" gc* internalMalloc(uintptr_t Mutator, uint32_t sz, uint32_t align,
-                              uint32_t offset, uint32_t allocator,
-                              uint32_t site) {
+extern "C" gc* internalMalloc(uintptr_t Mutator, int32_t sz, int32_t align,
+                              int32_t offset, int32_t allocator,
+                              int32_t site) {
   
   
   gc* res = (gc*)malloc(sz);
@@ -35,6 +36,11 @@ extern "C" gc* internalMalloc(uintptr_t Mutator, uint32_t sz, uint32_t align,
   lock.release();
   
   return res;
+}
+
+extern "C" int internalCheckAllocator(uintptr_t Mutator, int32_t sz,
+                                      int32_t align, int32_t alloc) {
+  return 0;
 }
 
 void* Collector::begOf(gc* obj) {
@@ -57,6 +63,7 @@ extern "C" void fakeInit(uintptr_t) {
 void Collector::initialise() {
   if (!gc::MMTkGCAllocator) {
     gc::MMTkGCAllocator = internalMalloc;
+    gc::MMTkCheckAllocator = internalCheckAllocator;
     MutatorThread::MMTkMutatorSize = 0;
     MutatorThread::MMTkCollectorSize = 0;
     MutatorThread::MutatorInit = fakeInit;

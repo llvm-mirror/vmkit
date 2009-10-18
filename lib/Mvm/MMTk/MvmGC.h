@@ -15,6 +15,9 @@
 #include "mvm/VirtualMachine.h"
 #include "mvm/GC/GC.h"
 
+#include "llvm/Support/MathExtras.h"
+
+
 #define gc_allocator std::allocator
 #define gc_new(Class)  __gc_new(Class::VT) Class
 #define __gc_new new
@@ -40,23 +43,31 @@ public:
     return 0;
   }
 
-  typedef gc* (*MMTkAllocType)(uintptr_t Mutator, uint32_t sz, uint32_t align,
-                               uint32_t offset, uint32_t allocator,
-                               uint32_t site);
+  typedef gc* (*MMTkAllocType)(uintptr_t Mutator, int32_t sz, int32_t align,
+                               int32_t offset, int32_t allocator,
+                               int32_t site);
   
   typedef gc* (*MMTkPostAllocType)(uintptr_t Mutator, uintptr_t ref,
-                                   uintptr_t typeref, uint32_t bytes,
-                                   uint32_t allocator);
+                                   uintptr_t typeref, int32_t bytes,
+                                   int32_t allocator);
+
+  typedef int (*MMTkCheckAllocatorType)(uintptr_t Mutator, int32_t bytes,
+                                        int32_t align, int32_t allocator);
 
   static MMTkAllocType MMTkGCAllocator;
   
   static MMTkPostAllocType MMTkGCPostAllocator;
+  
+  static MMTkCheckAllocatorType MMTkCheckAllocator;
 
 
   void* operator new(size_t sz, VirtualTable *VT) {
-    gc* res = (gc*)MMTkGCAllocator(mvm::MutatorThread::get()->MutatorContext,
-                                   sz, 0, 0, 0, 0);
+    sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
+    uintptr_t Mutator = mvm::MutatorThread::get()->MutatorContext;
+    int allocator = MMTkCheckAllocator(Mutator, sz, 0, 0);
+    gc* res = (gc*)MMTkGCAllocator(Mutator, sz, 0, 0, allocator, 0);
     res->setVirtualTable(VT);
+    MMTkGCPostAllocator(Mutator, (uintptr_t)res, (uintptr_t)VT, sz, allocator);
     
     if (VT->destructor) {
       mvm::Thread::get()->MyVM->addFinalizationCandidate(res);

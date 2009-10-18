@@ -158,6 +158,12 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     F = dyn_cast<Function>(GA->getAliasee());
     gc::MMTkGCPostAllocator = (gc::MMTkPostAllocType)
       (uintptr_t)executionEngine->getPointerToFunction(F);
+    
+    GA = dyn_cast<GlobalAlias>(globalModule->getNamedValue("MMTkCheckAllocator"));
+    assert(GA && "Could not find MMTkCheckAllocator alias");
+    F = dyn_cast<Function>(GA->getAliasee());
+    gc::MMTkCheckAllocator = (gc::MMTkCheckAllocatorType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
   }
 #endif
 }
