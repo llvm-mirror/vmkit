@@ -194,21 +194,28 @@ Constant* JavaAOTCompiler::getJavaClass(CommonClass* cl) {
   java_class_iterator End = javaClasses.end();
   java_class_iterator I = javaClasses.find(cl);
   if (I == End) {
-    Class* javaClass = cl->classLoader->bootstrapLoader->upcalls->newClass;
-    LLVMClassInfo* LCI = getClassInfo(javaClass);
-    const llvm::Type* Ty = LCI->getVirtualType();
-    Module& Mod = *getLLVMModule();
+    final_object_iterator End = finalObjects.end();
+    final_object_iterator I = finalObjects.find(cl->delegatee[0]);
+    if (I == End) {
     
-    GlobalVariable* varGV = 
-      new GlobalVariable(Mod, Ty->getContainedType(0), false,
-                         GlobalValue::InternalLinkage, 0, "");
+      Class* javaClass = cl->classLoader->bootstrapLoader->upcalls->newClass;
+      LLVMClassInfo* LCI = getClassInfo(javaClass);
+      const llvm::Type* Ty = LCI->getVirtualType();
+      Module& Mod = *getLLVMModule();
     
-    Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
-                                          JnjvmModule::JavaObjectType);
+      GlobalVariable* varGV = 
+        new GlobalVariable(Mod, Ty->getContainedType(0), false,
+                           GlobalValue::InternalLinkage, 0, "");
+    
+      Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
+                                            JnjvmModule::JavaObjectType);
   
-    javaClasses.insert(std::make_pair(cl, res));
-    varGV->setInitializer(CreateConstantFromJavaClass(cl));
-    return res;
+      javaClasses.insert(std::make_pair(cl, res));
+      varGV->setInitializer(CreateConstantFromJavaClass(cl));
+      return res;
+    } else {
+      return I->second;
+    }
   } else {
     return I->second;
   }
