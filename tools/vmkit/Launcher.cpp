@@ -14,6 +14,7 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/PassNameParser.h"
+#include "llvm/Support/PluginLoader.h"
 #include "llvm/Target/TargetData.h"
 
 
