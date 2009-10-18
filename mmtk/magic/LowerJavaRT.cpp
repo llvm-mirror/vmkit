@@ -41,11 +41,25 @@ bool LowerJavaRT::runOnModule(Module& M) {
   bool Changed = true;
 
   for (Module::iterator I = M.begin(), E = M.end(); I != E;) {
-    GlobalValue& GV = *I;
+    Function& GV = *I;
     ++I;
     if (!strncmp(GV.getName().data(), "JnJVM_java", 10) ||
         !strncmp(GV.getName().data(), "java", 4)) {
-      GV.replaceAllUsesWith(Constant::getNullValue(GV.getType()));
+      if (!strcmp(GV.getName().data(), "JnJVM_java_lang_String_charAt__I")) {
+  	Function* F = M.getFunction("MMTkCharAt");
+	if (!F) 
+          F = Function::Create(GV.getFunctionType(),
+                               GlobalValue::ExternalLinkage, "MMTkCharAt", &M);
+      	GV.replaceAllUsesWith(F);
+      } else if (!strcmp(GV.getName().data(), "JnJVM_java_lang_Object_getClass__")) {
+  	Function* F = M.getFunction("MMTkGetClass");
+	if (!F) 
+          F = Function::Create(GV.getFunctionType(),
+                               GlobalValue::ExternalLinkage, "MMTkGetClass", &M);
+      	GV.replaceAllUsesWith(F);
+      } else {
+        GV.replaceAllUsesWith(Constant::getNullValue(GV.getType()));
+      }
       GV.eraseFromParent();
     }
   }
@@ -95,8 +109,10 @@ bool LowerJavaRT::runOnModule(Module& M) {
 
   Function* Alloc = M.getFunction("JnJVM_org_mmtk_plan_MutatorContext_alloc__IIIII");
   Function* PostAlloc = M.getFunction("JnJVM_org_mmtk_plan_MutatorContext_postAlloc__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II");
+  Function* CheckAlloc = M.getFunction("JnJVM_org_mmtk_plan_MutatorContext_checkAllocator__III");
   uint32_t AllocIndex = 0;
   uint32_t PostAllocIndex = 0;
+  uint32_t CheckAllocIndex = 0;
   for (uint32_t i = 0; i < CA->getNumOperands(); ++i) {
     ConstantExpr* CE = dyn_cast<ConstantExpr>(CA->getOperand(i));
     if (CE) {
@@ -105,6 +121,8 @@ bool LowerJavaRT::runOnModule(Module& M) {
         AllocIndex = i;
       } else if (C == PostAlloc) {
         PostAllocIndex = i;
+      } else if (C == CheckAlloc) {
+        CheckAllocIndex = i;
       }
     }
   }
@@ -121,6 +139,12 @@ bool LowerJavaRT::runOnModule(Module& M) {
   C = C->getOperand(0);
   new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage, "MMTkPostAlloc",
                   C, &M);
+  
+  C = CA->getOperand(CheckAllocIndex);
+  C = C->getOperand(0);
+  new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage, "MMTkCheckAllocator",
+                  C, &M);
+   
    
   return Changed;
 }
