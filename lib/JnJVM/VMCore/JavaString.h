@@ -13,6 +13,7 @@
 #include "types.h"
 
 #include "JavaObject.h"
+#include "UTF8.h"
 
 namespace jnjvm {
 
