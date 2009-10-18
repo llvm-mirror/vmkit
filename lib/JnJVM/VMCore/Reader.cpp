@@ -35,7 +35,10 @@ ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, const char* path,
     fseek(fp, 0, SeekSet);
     UserClassArray* array = loader->upcalls->ArrayOfByte;
     res = (ArrayUInt8*)array->doNew((sint32)nbb, loader->allocator, temp);
-    fread(res->elements, nbb, 1, fp);
+    if (fread(res->elements, nbb, 1, fp) == 0) {
+      fprintf(stderr, "fread error\n");
+      abort();  
+    }
     fclose(fp);
   }
   return res;
