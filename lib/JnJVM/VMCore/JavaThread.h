@@ -29,7 +29,6 @@ class Class;
 class JavaMethod;
 class JavaObject;
 class Jnjvm;
-class LockObj;
 
 
 #define BEGIN_NATIVE_EXCEPTION(level) \
@@ -119,7 +118,7 @@ public:
 
   /// waitsOn - The monitor on which the thread is waiting on.
   ///
-  LockObj* waitsOn;
+  JavaLock* waitsOn;
 
   static const unsigned int StateRunning;
   static const unsigned int StateWaiting;

@@ -16,6 +16,7 @@
 
 #include "types.h"
 
+#include "JavaLocks.h"
 #include "JnjvmConfig.h"
 
 namespace jnjvm {
@@ -25,79 +26,6 @@ class JavaThread;
 class Jnjvm;
 class Typedef;
 class UserCommonClass;
-
-/// LockObj - This class represents a Java monitor.
-///
-class LockObj : public gc {
-  friend class JavaObject;
-private:
-
-
-  /// lock - The internal lock of this object lock.
-  ///
-  mvm::LockRecursive lock;
-
-  /// firstThread - The first thread doing a wait.
-  ///
-  JavaThread* firstThread;
-
-public:
-  /// allocate - Allocates a lock object. Only the internal lock is allocated.
-  ///
-  static LockObj* allocate(JavaObject*);
-  
-  /// acquire - Acquires the lock.
-  ///
-  void acquire() {
-    LockObj* self = this;
-    llvm_gcroot(self, 0);
-    self->lock.lock();
-  }
-  
-  /// tryAcquire - Tries to acquire the lock.
-  ///
-  int tryAcquire() {
-    return lock.tryLock();
-  }
-  
-  /// acquireAll - Acquires the lock nb times.
-  void acquireAll(uint32 nb) {
-    LockObj* self = this;
-    llvm_gcroot(self, 0);
-    self->lock.lockAll(nb);
-  }
-
-  /// release - Releases the lock.
-  ///
-  void release() {
-    lock.unlock();
-  }
-  
-  /// owner - Returns if the current thread owns this lock.
-  ///
-  bool owner() {
-    return lock.selfOwner();
-  }
- 
-  /// getOwner - Get the owner of this lock.
-  ///
-  mvm::Thread* getOwner() {
-    return lock.getOwner();
-  }
-  
-  /// VT - LockObj is GC-allocated, so we must make the VT explicit.
-  ///
-  static VirtualTable VT;
-
-  /// staticDestructor - The destructor of this LockObj, called by the GC.
-  ///
-  static void staticDestructor(LockObj* obj) {
-    obj->lock.~LockRecursive();
-  }
-
-  /// LockObj - Empty constructor.
-  LockObj() { firstThread = 0; }
-};
 
 /// JavaVirtualTable - This class is the virtual table of instances of
 /// Java classes. Besides holding function pointers for virtual calls,
@@ -270,7 +198,7 @@ public:
 
   /// lock - The monitor of this object. Most of the time null.
   ///
-  mvm::ThinLock<LockObj, JavaObject, mvm::FatLockWithGC> lock;
+  mvm::ThinLock<JavaLock, JavaObject, mvm::FatLockNoGC> lock;
 
   /// wait - Java wait. Makes the current thread waiting on a monitor.
   ///
@@ -327,7 +255,7 @@ public:
 #endif
   
   /// lockObj - Get the LockObj if the lock is a fat lock.
-  LockObj* lockObj() {
+  JavaLock* lockObj() {
     return lock.getFatLock();
   }
 
@@ -336,10 +264,6 @@ public:
   ///
   void decapsulePrimitive(Jnjvm* vm, uintptr_t &buf, const Typedef* signature);
 
-  void traceLock() {
-    LockObj* l = lockObj();
-    if (l) l->markAndTrace();
-  }
 };
 
 

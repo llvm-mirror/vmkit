@@ -1389,3 +1389,11 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   
   return 0; 
 }
+
+
+JavaLock* JavaLock::allocate(JavaObject* obj) {
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  JavaLock* res = new(vm->allocator, "Lock") JavaLock(0);
+  res->associatedObject = obj;
+  return res;
+}

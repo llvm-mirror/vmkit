@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG 0
+#define DEBUG 2
 #define JNJVM_COMPILE 0
-#define JNJVM_EXECUTE 0
+#define JNJVM_EXECUTE 2
 
 #include <cstring>
 

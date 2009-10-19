@@ -120,7 +120,7 @@ JavaObject* vmthread) {
   
   JavaThread* th = (JavaThread*)field->getObjectField(vmthread);
   th->interruptFlag = 1;
-  LockObj* lock = th->waitsOn;
+  JavaLock* lock = th->waitsOn;
 
   // If the thread is blocked on a wait. We also verify nextWaiting in case
   // the thread has been notified.

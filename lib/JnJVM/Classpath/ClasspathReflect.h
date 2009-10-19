@@ -35,7 +35,6 @@ public:
   }
 
   static void staticTracer(JavaObjectClass* obj) {
-    obj->traceLock();
     obj->pd->markAndTrace();
     obj->signers->markAndTrace();
     obj->constructor->markAndTrace();
@@ -56,7 +55,6 @@ private:
 public:
 
   static void staticTracer(JavaObjectField* obj) {
-    obj->traceLock();
     obj->name->markAndTrace();
     obj->declaringClass->markAndTrace();
   }
@@ -81,7 +79,6 @@ private:
 public:
   
   static void staticTracer(JavaObjectMethod* obj) {
-    obj->traceLock();
     obj->name->markAndTrace();
     obj->declaringClass->markAndTrace();
   }
@@ -104,7 +101,6 @@ private:
 
 public:
   static void staticTracer(JavaObjectConstructor* obj) {
-    obj->traceLock();
     obj->clazz->markAndTrace();
   }
   

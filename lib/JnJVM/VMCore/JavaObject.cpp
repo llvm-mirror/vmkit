@@ -18,27 +18,10 @@
 
 using namespace jnjvm;
 
-LockObj* LockObj::allocate(JavaObject* owner) {
-  llvm_gcroot(owner, 0);
-#ifdef USE_GC_BOEHM
-  LockObj* res = new LockObj();
-#else
-  LockObj* res = new(&VT) LockObj();
-  // Set the virtual table to change what C++ did: by using the new operator
-  // C++ after the allocation will set its own VT. Since we want to call
-  // the C++ constructor (because it initializes the native data structures
-  // such as LockRecursive), we have to change the VT of this object.
-  res->setVirtualTable(&VT);
-#endif
-  assert(!res->firstThread && "Error in constructor");
-  return res;
-}
-
 void JavaObject::waitIntern(struct timeval* info, bool timed) {
-  LockObj* l = 0;
+  JavaLock* l = 0;
   JavaObject* self = this;
   llvm_gcroot(self, 0);
-  llvm_gcroot(l, 0);
 
   if (owner()) {
     l = self->lock.changeToFatlock(self);
@@ -76,10 +59,10 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
 
       while (!thread->interruptFlag && thread->nextWaiting) {
         if (timed) {
-          timeout = varcondThread.timedWait(&l->lock, info);
+          timeout = varcondThread.timedWait(&l->internalLock, info);
           if (timeout) break;
         } else {
-          varcondThread.wait(&l->lock);
+          varcondThread.wait(&l->internalLock);
         }
       }
      
@@ -145,10 +128,9 @@ void JavaObject::timedWait(struct timeval& info) {
 }
 
 void JavaObject::notify() {
-  LockObj* l = 0;
+  JavaLock* l = 0;
   JavaObject* self = this;
   llvm_gcroot(self, 0);
-  llvm_gcroot(l, 0);
 
   if (owner()) {
     l = self->lock.getFatLock();
@@ -191,10 +173,9 @@ void JavaObject::notify() {
 }
 
 void JavaObject::notifyAll() {
-  LockObj* l = 0;
+  JavaLock* l = 0;
   JavaObject* self = this;
   llvm_gcroot(self, 0);
-  llvm_gcroot(l, 0);
   
   if (owner()) {
     l = self->lock.getFatLock();

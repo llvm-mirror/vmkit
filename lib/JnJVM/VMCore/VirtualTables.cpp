@@ -59,10 +59,6 @@ VirtualTable VMClassLoader::VT((uintptr_t)VMClassLoader::staticDestructor,
                                (uintptr_t)VMClassLoader::staticDestructor,
                                (uintptr_t)VMClassLoader::staticTracer);
 
-VirtualTable LockObj::VT((uintptr_t)LockObj::staticDestructor,
-                         (uintptr_t)LockObj::staticDestructor,
-                         (uintptr_t)VirtualTable::emptyTracer);
-
 //===----------------------------------------------------------------------===//
 // Empty tracer for static tracers of classes that do not declare static
 // variables.
@@ -85,8 +81,6 @@ extern "C" void EmptyTracer(void*) {}
 
 /// Method for scanning the root of an object.
 extern "C" void JavaObjectTracer(JavaObject* obj) {
-  obj->traceLock();
-  
   CommonClass* cl = obj->getClass();
   assert(cl && "No class");
   cl->classLoader->getJavaClassLoader()->markAndTrace();
@@ -95,8 +89,6 @@ extern "C" void JavaObjectTracer(JavaObject* obj) {
 /// Method for scanning an array whose elements are JavaObjects. This method is
 /// called by all non-native Java arrays.
 extern "C" void ArrayObjectTracer(ArrayObject* obj) {
-  obj->traceLock();
-  
   CommonClass* cl = obj->getClass();
   assert(cl && "No class");
   cl->classLoader->getJavaClassLoader()->markAndTrace();
@@ -111,13 +103,10 @@ extern "C" void ArrayObjectTracer(ArrayObject* obj) {
 /// the class is the bootstrap loader and therefore does not need to be
 /// scanned here.
 extern "C" void JavaArrayTracer(JavaArray* obj) {
-  obj->traceLock();
 }
 
 /// Method for scanning regular objects.
 extern "C" void RegularObjectTracer(JavaObject* obj) {
-  obj->traceLock();
-
   Class* cl = obj->getClass()->asClass();
   assert(cl && "Not a class in regular tracer");
   cl->classLoader->getJavaClassLoader()->markAndTrace();
@@ -222,9 +211,6 @@ void JnjvmClassLoader::tracer() {
     for (uint32 i = 0; i < end->length; ++i) {
       JavaObject* obj = end->strings[i];
       obj->markAndTrace(); 
-      // If the string was static allocated, we want to trace its lock.
-      LockObj* l = obj->lockObj();
-      if (l) l->markAndTrace();
     }
     end = end->prev;
   }
