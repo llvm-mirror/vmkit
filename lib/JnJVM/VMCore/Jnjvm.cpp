@@ -1397,30 +1397,45 @@ JavaLock* JavaLock::allocate(JavaObject* obj) {
   return res;
 }
 
+void JavaLock::deallocate() {
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  vm->lockSystem.deallocate(this);
+}
+
 JavaLock* LockSystem::allocate(JavaObject* obj) { 
   
-// Get an index.
+  JavaLock* res = 0;
   threadLock.lock();
+
+  // Try the freeLock list.
+  if (freeLock) {
+    res = freeLock;
+    freeLock = res->nextFreeLock;
+    res->nextFreeLock = 0;
+    threadLock.unlock();
+    res->associatedObject = obj;
+  } else { 
+    // Get an index.
+    uint32_t index = currentIndex++;
+    if (index == MaxLocks) {
+      fprintf(stderr, "Ran out of space for allocating locks");
+      abort();
+    }
   
-  uint32_t index = currentIndex++;
-  if (index == MaxLocks) {
-    fprintf(stderr, "Ran out of space for allocating locks");
-    abort();
-  }
+    JavaLock** tab = LockTable[index >> BitIndex];
   
-  JavaLock** tab = LockTable[index >> BitIndex];
-  
-  if (tab == NULL) 
-    tab = (JavaLock**)associatedVM->allocator.Allocate(IndexSize,
-                                                       "Index LockTable");
-  threadLock.unlock();
+    if (tab == NULL) 
+      tab = (JavaLock**)associatedVM->allocator.Allocate(IndexSize,
+                                                         "Index LockTable");
+    threadLock.unlock();
    
-  // Allocate the lock.
-  JavaLock* res = new(associatedVM->allocator, "Lock") JavaLock(index, obj);
+    // Allocate the lock.
+    res = new(associatedVM->allocator, "Lock") JavaLock(index, obj);
     
-  // Add the lock to the table.
-  uint32_t internalIndex = index & BitMask;
-  tab[internalIndex] = res;
+    // Add the lock to the table.
+    uint32_t internalIndex = index & BitMask;
+    tab[internalIndex] = res;
+  }
     
   // Return the lock.
   return res;

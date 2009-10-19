@@ -412,6 +412,10 @@ private:
     static FatLock* allocate(UserCommonClass* cl) {
       return new(cl->classLoader->allocator, "Class fat lock") FatLock();
     }
+    
+    void deallocate() {
+      // Too bad, I can't deallocate it because it is in permanent memory.
+    }
 
     void acquire() {
       lockVar.lock();

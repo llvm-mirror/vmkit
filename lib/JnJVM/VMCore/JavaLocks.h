@@ -26,6 +26,7 @@ class Jnjvm;
 class JavaLock : public mvm::PermanentObject {
 
 friend class JavaObject;
+friend class LockSystem;
 
 private:
   mvm::LockRecursive internalLock;
@@ -33,6 +34,7 @@ private:
   JavaThread* firstThread;
   JavaObject* associatedObject;
   uint32_t index;
+  JavaLock* nextFreeLock;
 
 public:
 
@@ -85,6 +87,7 @@ public:
   }
 
   static JavaLock* allocate(JavaObject*);
+  void deallocate();
   
 };
 
@@ -94,6 +97,8 @@ public:
 ///
 class LockSystem {
 public:
+  
+  // Fixed values. With these values, an index is on 18 bits.
   static const uint32_t GlobalSize = 128;
   static const uint32_t BitIndex = 11;
   static const uint32_t IndexSize = 1 << BitIndex;
@@ -110,7 +115,11 @@ public:
   /// never decremented.
   ///
   uint32_t currentIndex;
-  
+ 
+  /// freeLock - The list of locks that are allocated and available.
+  ///
+  JavaLock* freeLock;
+ 
   /// threadLock - Spin lock to protect the currentIndex field.
   ///
   mvm::SpinLock threadLock;
@@ -122,11 +131,26 @@ public:
   /// allocate - Allocate a JavaLock.
   ///
   JavaLock* allocate(JavaObject* obj); 
-  
+ 
+  /// deallocate - Put a lock in the free list lock.
+  ///
+  void deallocate(JavaLock* lock) {
+    lock->associatedObject = 0;
+    threadLock.lock();
+    lock->nextFreeLock = freeLock;
+    freeLock = lock;
+    threadLock.unlock();
+  }
+
   /// LockSystem - Default constructor. Initialize the table.
   ///
   LockSystem(Jnjvm* vm);
 
+  /// getLock - Get a lock from an index in the table.
+  ///
+  JavaLock* getLock(uint32_t index) {
+    return LockTable[index >> BitIndex][index & BitMask];
+  }
 };
 
 }
