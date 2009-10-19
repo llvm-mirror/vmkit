@@ -1269,7 +1269,7 @@ void Jnjvm::runApplication(int argc, char** argv) {
 }
 
 Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, JnjvmBootstrapLoader* loader) : 
-  VirtualMachine(Alloc) {
+  VirtualMachine(Alloc), lockSystem(this) {
 
   classpath = getenv("CLASSPATH");
   if (!classpath) classpath = ".";
@@ -1393,7 +1393,44 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
 
 JavaLock* JavaLock::allocate(JavaObject* obj) {
   Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaLock* res = new(vm->allocator, "Lock") JavaLock(0);
-  res->associatedObject = obj;
+  JavaLock* res = vm->lockSystem.allocate(obj);  
   return res;
+}
+
+JavaLock* LockSystem::allocate(JavaObject* obj) { 
+  
+// Get an index.
+  threadLock.lock();
+  
+  uint32_t index = currentIndex++;
+  if (index == MaxLocks) {
+    fprintf(stderr, "Ran out of space for allocating locks");
+    abort();
+  }
+  
+  JavaLock** tab = LockTable[index >> BitIndex];
+  
+  if (tab == NULL) 
+    tab = (JavaLock**)associatedVM->allocator.Allocate(IndexSize,
+                                                       "Index LockTable");
+  threadLock.unlock();
+   
+  // Allocate the lock.
+  JavaLock* res = new(associatedVM->allocator, "Lock") JavaLock(index, obj);
+    
+  // Add the lock to the table.
+  uint32_t internalIndex = index & BitMask;
+  tab[internalIndex] = res;
+    
+  // Return the lock.
+  return res;
+}
+  
+LockSystem::LockSystem(Jnjvm* vm) {
+  associatedVM = vm;
+  LockTable = (JavaLock* **)
+    vm->allocator.Allocate(GlobalSize, "Global LockTable");
+  LockTable[0] = (JavaLock**)
+    vm->allocator.Allocate(IndexSize, "Index LockTable");
+  currentIndex = 0;
 }

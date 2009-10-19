@@ -20,6 +20,7 @@
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 
+#include "JavaLocks.h"
 #include "JnjvmConfig.h"
 #include "JNIReferences.h"
 #include "LockedMap.h"
@@ -190,6 +191,10 @@ public:
   /// control the end of the JVM's execution.
   ///
   ThreadSystem threadSystem;
+  
+  /// lockSystem - The lock system to allocate and manage Java locks.
+  ///
+  LockSystem lockSystem;
   
   /// argumentsInfo - The command line arguments given to the vm
   ///

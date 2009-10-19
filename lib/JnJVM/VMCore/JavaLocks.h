@@ -21,6 +21,7 @@ namespace jnjvm {
 
 class JavaObject;
 class JavaThread;
+class Jnjvm;
 
 class JavaLock : public mvm::PermanentObject {
 
@@ -75,16 +76,57 @@ public:
     return internalLock.getOwner();
   }
   
-  /// JavaLock - Empty constructor.
-  JavaLock(uint32_t i) {
+  /// JavaLock - Default constructor.
+  JavaLock(uint32_t i, JavaObject* a) {
     firstThread = 0;
     index = i;
-    associatedObject = 0;
+    associatedObject = a;
     waitingThread = 0;
   }
 
   static JavaLock* allocate(JavaObject*);
   
+};
+
+/// LockSystem - This class manages all Java locks used by the applications.
+/// Each JVM must own an instance of this class and allocate Java locks
+/// with it.
+///
+class LockSystem {
+public:
+  static const uint32_t GlobalSize = 128;
+  static const uint32_t BitIndex = 11;
+  static const uint32_t IndexSize = 1 << BitIndex;
+  static const uint32_t BitMask = IndexSize - 1;
+  static const uint32_t MaxLocks = GlobalSize * IndexSize;
+
+  /// LockTable - The global table that will hold the locks. The table is
+  /// a two-dimensional array, and only one entry is created, so that
+  /// the lock system does not eat up all memory on startup.
+  ///  
+  JavaLock* ** LockTable;
+  
+  /// currentIndex - The current index in the tables. Always incremented,
+  /// never decremented.
+  ///
+  uint32_t currentIndex;
+  
+  /// threadLock - Spin lock to protect the currentIndex field.
+  ///
+  mvm::SpinLock threadLock;
+  
+  /// associatedVM - The JVM associated with this lock system.
+  ///
+  Jnjvm* associatedVM;  
+
+  /// allocate - Allocate a JavaLock.
+  ///
+  JavaLock* allocate(JavaObject* obj); 
+  
+  /// LockSystem - Default constructor. Initialize the table.
+  ///
+  LockSystem(Jnjvm* vm);
+
 };
 
 }
