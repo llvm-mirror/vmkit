@@ -280,9 +280,7 @@ public:
 loop:
           while (lock) {
             if (lock & FatMask) {
-#ifdef USE_GC_BOEHM
-              delete obj;
-#endif
+              obj->deallocate();
               goto end;
             }
             else mvm::Thread::yield();
