@@ -227,7 +227,7 @@ public:
     TFatLock* obj = TFatLock::allocate(O);
     IsGC::gcroot(obj, 0);
     obj->acquireAll(257);
-    lock = ((uintptr_t)obj >> 1) | FatMask;
+    lock = obj->getID();
   }
  
   /// initialise - Initialise the value of the lock to the thread ID that is
@@ -249,13 +249,12 @@ public:
     if (!(lock & FatMask)) {
       TFatLock* obj = TFatLock::allocate(O);
       IsGC::gcroot(obj, 0);
-      size_t val = (((size_t) obj) >> 1) | FatMask;
       uint32 count = lock & ThinCountMask;
       obj->acquireAll(count + 1);
-      lock = val;
+      lock = obj->getID();
       return obj;
     } else {
-      return (TFatLock*)(lock << 1);
+      return TFatLock::getFromID(lock);
     }
   }
 
@@ -276,7 +275,7 @@ public:
         } else {
           TFatLock* obj = TFatLock::allocate(O);
           IsGC::gcroot(obj, 0);
-          uintptr_t val = ((uintptr_t)obj >> 1) | FatMask;
+          uintptr_t val = obj->getID();
 loop:
           while (lock) {
             if (lock & FatMask) {
@@ -293,7 +292,7 @@ loop:
       } else {
 
 end:
-        TFatLock* obj = (TFatLock*)(lock << 1);
+        TFatLock* obj = TFatLock::getFromID(lock);
         obj->acquire();
       }
     }
@@ -308,7 +307,7 @@ end:
     if (lock == id) {
       lock = 0;
     } else if (lock & FatMask) {
-      TFatLock* obj = (TFatLock*)(lock << 1);
+      TFatLock* obj = TFatLock::getFromID(lock);
       IsGC::gcroot(obj, 0);
       obj->release();
     } else {
@@ -320,7 +319,7 @@ end:
   ///
   void broadcast() {
     if (lock & FatMask) {
-      TFatLock* obj = (TFatLock*)(lock << 1);
+      TFatLock* obj = TFatLock::getFromID(lock);
       IsGC::gcroot(obj, 0);
       obj->broadcast();
     }
@@ -329,7 +328,7 @@ end:
   /// signal - Wakes up one thread waiting for this lock.
   void signal() {
     if (lock & FatMask) {
-      TFatLock* obj = (TFatLock*)(lock << 1);
+      TFatLock* obj = TFatLock::getFromID(lock);
       IsGC::gcroot(obj, 0);
       obj->signal();
     }
@@ -342,7 +341,7 @@ end:
     if (id == lock) return true;
     if ((lock & ThinMask) == id) return true;
     if (lock & FatMask) {
-      TFatLock* obj = (TFatLock*)(lock << 1);
+      TFatLock* obj = TFatLock::getFromID(lock);
       IsGC::gcroot(obj, 0);
       return obj->owner();
     }
@@ -351,7 +350,7 @@ end:
 
   mvm::Thread* getOwner() {
     if (lock & FatMask) {
-      TFatLock* obj = (TFatLock*)(lock << 1);
+      TFatLock* obj = TFatLock::getFromID(lock);
       IsGC::gcroot(obj, 0);
       return obj->getOwner();
     } else {
@@ -362,7 +361,7 @@ end:
   /// getFatLock - Get the fat lock is the lock is a fat lock, 0 otherwise.
   TFatLock* getFatLock() {
     if (lock & FatMask) {
-      return (TFatLock*)(lock << 1);
+      return TFatLock::getFromID(lock);
     } else {
       return 0;
     }

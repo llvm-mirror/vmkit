@@ -412,6 +412,14 @@ private:
     static FatLock* allocate(UserCommonClass* cl) {
       return new(cl->classLoader->allocator, "Class fat lock") FatLock();
     }
+   
+    uintptr_t getID() {
+      return (((uintptr_t)this) >> 1) | mvm::FatMask;
+    }
+
+    static FatLock* getFromID(uintptr_t id) {
+      return (FatLock*)(id << 1);
+    }
     
     void deallocate() {
       // Too bad, I can't deallocate it because it is in permanent memory.

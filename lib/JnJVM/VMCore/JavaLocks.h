@@ -89,6 +89,8 @@ public:
   static JavaLock* allocate(JavaObject*);
   void deallocate();
   
+  uintptr_t getID();
+  static JavaLock* getFromID(uintptr_t val);
 };
 
 /// LockSystem - This class manages all Java locks used by the applications.
@@ -96,6 +98,7 @@ public:
 /// with it.
 ///
 class LockSystem {
+  friend class JavaLock;
 public:
   
   // Fixed values. With these values, an index is on 18 bits.

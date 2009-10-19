@@ -1449,3 +1449,13 @@ LockSystem::LockSystem(Jnjvm* vm) {
     vm->allocator.Allocate(IndexSize, "Index LockTable");
   currentIndex = 0;
 }
+
+uintptr_t JavaLock::getID() {
+  return index | mvm::FatMask;
+}
+
+JavaLock* JavaLock::getFromID(uintptr_t ID) {
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  JavaLock* res = vm->lockSystem.getLock(ID & ~mvm::FatMask);
+  return res;
+}
