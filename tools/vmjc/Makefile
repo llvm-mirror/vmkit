@@ -25,7 +25,7 @@ ifeq ($(WITH_LLVM_GCC), 1)
 
 else
 
-  USEDLIBS = JnJVM.a Classpath.a JnjvmCompiler.a Allocator.a CommonThread.a \
+  USEDLIBS = JnJVM.a Classpath.a JnJVM.a JnjvmCompiler.a Allocator.a CommonThread.a \
 	     Mvm.a MvmCompiler.a $(GCLIB).a
 endif
 

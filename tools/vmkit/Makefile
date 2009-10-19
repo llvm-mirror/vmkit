@@ -38,7 +38,7 @@ ifeq ($(WITH_LLVM_GCC), 1)
 else
 
   ifeq ($(WITH_JNJVM), 1)
-    USEDLIBS += JnJVM.a Classpath.a JnjvmCompiler.a
+    USEDLIBS += JnJVM.a Classpath.a JnJVM.a JnjvmCompiler.a
   endif
 
   ifeq ($(ISOLATE_SHARING_BUILD), 1) 
