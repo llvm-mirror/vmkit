@@ -73,13 +73,14 @@ LockSystem::LockSystem(Jnjvm* vm) {
 }
 
 uintptr_t JavaLock::getID() {
-  return index | mvm::FatMask;
+  return (index << LockSystem::BitGC) | mvm::FatMask;
 }
 
 JavaLock* JavaLock::getFromID(uintptr_t ID) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   if (ID & mvm::FatMask) {
-    JavaLock* res = vm->lockSystem.getLock(ID & ~mvm::FatMask);
+    uint32_t index = (ID & ~mvm::FatMask) >> LockSystem::BitGC;
+    JavaLock* res = vm->lockSystem.getLock(index);
     return res;
   } else {
     return 0;
