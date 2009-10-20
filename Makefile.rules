@@ -1,5 +1,6 @@
 ifdef VMKIT_RUNTIME
 
+
 .PRECIOUS: LLVMRuntime.inc
 
 # All of these files depend on tblgen and the .td files.
@@ -123,20 +124,23 @@ clean-local::
 endif
 endif
 
-ifeq ($(WITH_LLVM_GCC), 1)
 ifdef RUN_ANT
 ifdef ANT
 
+ifeq ($(WITH_LLVM_GCC), 1)
+ADDITIONAL_ARGS := -load-bc=$(LibDir)/MMTKRuntime.bc
+else
+ADDITIONAL_ARGS := -load=$(LibDir)/MMTKRuntime$(SHLIBEXT) 
+endif
 
 all::
 	$(Verb) $(ANT)
 	$(Echo) Building $(BuildMode) $(JARNAME).jar $(notdir $@)
-	$(Verb) $(VMJC) -std-compile-opts -load-bc=$(LibDir)/MMTKRuntime.bc -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -LowerMagic -verify $(JARNAME).jar -disable-exceptions -disable-cooperativegc -with-clinit=org/mmtk/vm/VM,org/mmtk/utility/*,org/mmtk/policy/*,org/j3/config/* -Dmmtk.hostjvm=org.j3.mmtk.Factory -o $(JARNAME).bc -Dmmtk.properties=vmkit.properties -disable-stubs -assume-compiled
+	$(Verb) $(VMJC) -std-compile-opts $(ADDITIONAL_ARGS) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -LowerMagic -verify $(JARNAME).jar -disable-exceptions -disable-cooperativegc -with-clinit=org/mmtk/vm/VM,org/mmtk/utility/*,org/mmtk/policy/*,org/j3/config/* -Dmmtk.hostjvm=org.j3.mmtk.Factory -o $(JARNAME).bc -Dmmtk.properties=vmkit.properties -disable-stubs -assume-compiled
 	$(Verb) $(LOPT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -std-compile-opts -LowerJavaRT -f $(JARNAME).bc -o $(JARNAME)-optimized.bc
 
     
 endif
 clean-local::
 	$(Verb) $(RM) -rf classes $(JARNAME).jar $(JARNAME).bc $(JARNAME)-optimized.bc
-endif
 endif
