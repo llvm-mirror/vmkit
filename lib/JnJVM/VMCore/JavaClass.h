@@ -747,7 +747,7 @@ public:
   /// release - Release this class lock.
   ///
   void release() {
-    lock.release(this); 
+    lock.release(this);
   }
 
   /// waitClass - Wait for the class to be loaded/initialized/resolved.
