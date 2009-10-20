@@ -43,6 +43,11 @@ extern "C" int internalCheckAllocator(uintptr_t Mutator, int32_t sz,
   return 0;
 }
 
+extern "C" void internalPostMalloc(uintptr_t Mutator, uintptr_t ref,
+                                   uintptr_t typeref, int32_t bytes,
+                                   int32_t allocator) {
+}
+
 void* Collector::begOf(gc* obj) {
   if (gc::MMTkGCAllocator == internalMalloc) {
     lock.acquire();
@@ -63,6 +68,7 @@ extern "C" void fakeInit(uintptr_t) {
 void Collector::initialise() {
   if (!gc::MMTkGCAllocator) {
     gc::MMTkGCAllocator = internalMalloc;
+    gc::MMTkGCPostAllocator = internalPostMalloc;
     gc::MMTkCheckAllocator = internalCheckAllocator;
     MutatorThread::MMTkMutatorSize = 0;
     MutatorThread::MMTkCollectorSize = 0;

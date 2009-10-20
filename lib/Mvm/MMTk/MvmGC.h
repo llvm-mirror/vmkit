@@ -47,9 +47,9 @@ public:
                                int32_t offset, int32_t allocator,
                                int32_t site);
   
-  typedef gc* (*MMTkPostAllocType)(uintptr_t Mutator, uintptr_t ref,
-                                   uintptr_t typeref, int32_t bytes,
-                                   int32_t allocator);
+  typedef void (*MMTkPostAllocType)(uintptr_t Mutator, uintptr_t ref,
+                                    uintptr_t typeref, int32_t bytes,
+                                    int32_t allocator);
 
   typedef int (*MMTkCheckAllocatorType)(uintptr_t Mutator, int32_t bytes,
                                         int32_t align, int32_t allocator);
