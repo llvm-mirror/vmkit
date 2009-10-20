@@ -761,7 +761,8 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
     ZipFile* file = archive.getFile(PATH_MANIFEST);
     if (file) {
       UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfByte;
-      ArrayUInt8* res = (ArrayUInt8*)array->doNew(file->ucsize, vm);
+      ArrayUInt8* res = (ArrayUInt8*)array->doNew(file->ucsize, vm->allocator,
+                                                  true);
       int ok = archive.readFile(res, file);
       if (ok) {
         char* mainClass = findInformation(vm, res, MAIN_CLASS,
@@ -777,6 +778,7 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
       } else {
         printf("Can't extract Manifest file from archive %s\n", jarFile);
       }
+      free(res);
     } else {
       printf("Can't find Manifest file in archive %s\n", jarFile);
     }
