@@ -425,15 +425,16 @@ private:
       // Too bad, I can't deallocate it because it is in permanent memory.
     }
 
-    void acquire() {
+    bool acquire(CommonClass* cl) {
       lockVar.lock();
+      return true;
     }
 
     void acquireAll(uint32 nb) {
       lockVar.lockAll(nb);
     }
 
-    void release() {
+    void release(CommonClass* cl) {
       lockVar.unlock();
     }
 
@@ -746,7 +747,7 @@ public:
   /// release - Release this class lock.
   ///
   void release() {
-    lock.release();  
+    lock.release(this); 
   }
 
   /// waitClass - Wait for the class to be loaded/initialized/resolved.

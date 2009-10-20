@@ -198,7 +198,7 @@ public:
 
   /// lock - The monitor of this object. Most of the time null.
   ///
-  mvm::ThinLock<JavaLock, JavaObject, mvm::FatLockNoGC> lock;
+  mvm::ThinLock<JavaLock, JavaObject, mvm::FatLockWithGC> lock;
 
   /// wait - Java wait. Makes the current thread waiting on a monitor.
   ///
@@ -233,12 +233,14 @@ public:
   void acquire() {
     JavaObject* self = this;
     llvm_gcroot(self, 0);
-    self->lock.acquire();
+    self->lock.acquire(self);
   }
 
   /// release - Release the lock on this object
   void release() {
-    lock.release();
+    JavaObject* self = this;
+    llvm_gcroot(self, 0);
+    lock.release(self);
   }
 
   /// owner - Returns true if the current thread is the owner of this object's

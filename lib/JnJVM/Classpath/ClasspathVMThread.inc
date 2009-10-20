@@ -140,7 +140,7 @@ JavaObject* vmthread) {
     th->varcond.signal();
 
     // Release the lock if we acquired it.
-    if (locked) lock->release();
+    if (locked) lock->release(lock->getAssociatedObject());
   }
 
   // Here we could also raise a signal for interrupting I/O

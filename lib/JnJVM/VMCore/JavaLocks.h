@@ -30,7 +30,9 @@ friend class LockSystem;
 
 private:
   mvm::LockRecursive internalLock;
-  mvm::Thread* waitingThread;
+  mvm::SpinLock spinLock;
+  uint32_t waitingThreads;
+  uint32_t lockingThreads;
   JavaThread* firstThread;
   JavaObject* associatedObject;
   uint32_t index;
@@ -38,12 +40,30 @@ private:
 
 public:
 
+  JavaObject* getAssociatedObject() {
+    return associatedObject;
+  }
+
   /// acquire - Acquires the internalLock.
   ///
-  void acquire() {
-    waitingThread = mvm::Thread::get();
+  bool acquire(JavaObject* obj) {
+    llvm_gcroot(obj, 0);
+    
+    spinLock.lock();
+    lockingThreads++;
+    spinLock.unlock();
+    
     internalLock.lock();
-    waitingThread = 0;
+    
+    spinLock.lock();
+    lockingThreads--;
+    spinLock.unlock();
+
+    if (associatedObject != obj) {
+      internalLock.unlock();
+      return false;
+    }
+    return true;
   }
  
   /// tryAcquire - Tries to acquire the lock.
@@ -55,16 +75,12 @@ public:
  
   /// acquireAll - Acquires the lock nb times.
   void acquireAll(uint32 nb) {
-    waitingThread = mvm::Thread::get();
     internalLock.lockAll(nb);
-    waitingThread = 0;
   }
 
   /// release - Releases the internalLock.
   ///
-  void release() {
-    internalLock.unlock();
-  }
+  void release(JavaObject* obj);
   
   /// owner - Returns if the current thread owns this internalLock.
   ///
@@ -80,10 +96,12 @@ public:
   
   /// JavaLock - Default constructor.
   JavaLock(uint32_t i, JavaObject* a) {
+    llvm_gcroot(a, 0);
     firstThread = 0;
     index = i;
     associatedObject = a;
-    waitingThread = 0;
+    waitingThreads = 0;
+    lockingThreads = 0;
   }
 
   static JavaLock* allocate(JavaObject*);

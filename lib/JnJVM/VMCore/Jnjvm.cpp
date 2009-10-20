@@ -1456,6 +1456,22 @@ uintptr_t JavaLock::getID() {
 
 JavaLock* JavaLock::getFromID(uintptr_t ID) {
   Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaLock* res = vm->lockSystem.getLock(ID & ~mvm::FatMask);
-  return res;
+  if (ID & mvm::FatMask) {
+    JavaLock* res = vm->lockSystem.getLock(ID & ~mvm::FatMask);
+    return res;
+  } else {
+    return 0;
+  }
+}
+
+void JavaLock::release(JavaObject* obj) {
+  assert(associatedObject == obj && "Mismatch object in lock");
+  llvm_gcroot(obj, 0);
+  if (!waitingThreads && !lockingThreads &&
+      internalLock.recursionCount() == 1) {
+    assert(associatedObject && "No associated object when releasing");
+    associatedObject->lock.initialise();
+    deallocate();
+  }
+  internalLock.unlock();
 }

@@ -215,17 +215,17 @@ extern "C" void __llvm_gcroot(const void**, void*) __attribute__((nothrow));
 ///
 template <class TFatLock, class Owner, class IsGC>
 class ThinLock {
+public:
   uintptr_t lock;
 
-public:
 
 
 
   /// overflowThinlock - Change the lock of this object to a fat lock because
   /// we have reached 0xFF locks.
   void overflowThinLock(Owner* O = 0) {
+    IsGC::gcroot(O, 0);
     TFatLock* obj = TFatLock::allocate(O);
-    IsGC::gcroot(obj, 0);
     obj->acquireAll(257);
     lock = obj->getID();
   }
@@ -246,20 +246,24 @@ public:
   /// changeToFatlock - Change the lock of this object to a fat lock. The lock
   /// may be in a thin lock or fat lock state.
   TFatLock* changeToFatlock(Owner* O) {
+    IsGC::gcroot(O, 0);
     if (!(lock & FatMask)) {
       TFatLock* obj = TFatLock::allocate(O);
-      IsGC::gcroot(obj, 0);
       uint32 count = lock & ThinCountMask;
       obj->acquireAll(count + 1);
       lock = obj->getID();
       return obj;
     } else {
-      return TFatLock::getFromID(lock);
+      TFatLock* res = TFatLock::getFromID(lock);
+      assert(res && "Lock deallocated while held.");
+      return res;
     }
   }
 
   /// acquire - Acquire the lock.
-  void acquire(Owner* O = 0) {
+  void acquire(Owner* O) {
+    IsGC::gcroot(O, 0);
+start:
     uint64_t id = mvm::Thread::get()->getThreadID();
     uintptr_t val = __sync_val_compare_and_swap(&lock, 0, id);
 
@@ -274,7 +278,6 @@ public:
           }
         } else {
           TFatLock* obj = TFatLock::allocate(O);
-          IsGC::gcroot(obj, 0);
           uintptr_t val = obj->getID();
 loop:
           while (lock) {
@@ -287,13 +290,17 @@ loop:
         
           uintptr_t test = __sync_val_compare_and_swap((uintptr_t*)&lock, 0, val);
           if (test) goto loop;
-          obj->acquire();
+          if (!obj->acquire(O)) goto start;
         }
       } else {
 
 end:
         TFatLock* obj = TFatLock::getFromID(lock);
-        obj->acquire();
+        if (obj) {
+          if (!obj->acquire(O)) goto start;
+        } else {
+          goto start;
+        }
       }
     }
 
@@ -301,15 +308,16 @@ end:
   }
 
   /// release - Release the lock.
-  void release() {
+  void release(Owner* O) {
+    IsGC::gcroot(O, 0);
     assert(owner() && "Not owner when entering release!");
     uint64 id = mvm::Thread::get()->getThreadID();
     if (lock == id) {
       lock = 0;
     } else if (lock & FatMask) {
       TFatLock* obj = TFatLock::getFromID(lock);
-      IsGC::gcroot(obj, 0);
-      obj->release();
+      assert(obj && "Lock deallocated while held.");
+      obj->release(O);
     } else {
       lock--;
     }
@@ -320,7 +328,7 @@ end:
   void broadcast() {
     if (lock & FatMask) {
       TFatLock* obj = TFatLock::getFromID(lock);
-      IsGC::gcroot(obj, 0);
+      assert(obj && "Lock deallocated while held.");
       obj->broadcast();
     }
   }
@@ -329,7 +337,7 @@ end:
   void signal() {
     if (lock & FatMask) {
       TFatLock* obj = TFatLock::getFromID(lock);
-      IsGC::gcroot(obj, 0);
+      assert(obj && "Lock deallocated while held.");
       obj->signal();
     }
   }
@@ -342,8 +350,7 @@ end:
     if ((lock & ThinMask) == id) return true;
     if (lock & FatMask) {
       TFatLock* obj = TFatLock::getFromID(lock);
-      IsGC::gcroot(obj, 0);
-      return obj->owner();
+      if (obj) return obj->owner();
     }
     return false;
   }
@@ -351,8 +358,8 @@ end:
   mvm::Thread* getOwner() {
     if (lock & FatMask) {
       TFatLock* obj = TFatLock::getFromID(lock);
-      IsGC::gcroot(obj, 0);
-      return obj->getOwner();
+      if (obj) return obj->getOwner();
+      return 0;
     } else {
       return (mvm::Thread*)(lock & ThinMask);
     }

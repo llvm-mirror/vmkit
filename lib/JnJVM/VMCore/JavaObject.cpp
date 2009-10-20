@@ -57,6 +57,10 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
       
       bool timeout = false;
 
+      l->spinLock.lock();
+      l->waitingThreads++;
+      l->spinLock.unlock();
+
       while (!thread->interruptFlag && thread->nextWaiting) {
         if (timed) {
           timeout = varcondThread.timedWait(&l->internalLock, info);
@@ -65,6 +69,10 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
           varcondThread.wait(&l->internalLock);
         }
       }
+      
+      l->spinLock.lock();
+      l->waitingThreads--;
+      l->spinLock.unlock();
      
       assert((!l->firstThread || (l->firstThread->prevWaiting && 
              l->firstThread->nextWaiting)) && "Inconsistent list");
@@ -112,6 +120,7 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
   } else {
     JavaThread::get()->getJVM()->illegalMonitorStateException(self);
   }
+  
   assert(owner() && "Not owner after wait");
 }
 
