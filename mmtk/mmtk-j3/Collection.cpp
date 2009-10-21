@@ -19,16 +19,16 @@ extern "C" void JnJVM_org_mmtk_plan_Plan_collectionComplete__();
 
 
 extern "C" bool Java_org_j3_mmtk_Collection_isEmergencyAllocation__ (JavaObject* C) {
-  abort();
+  // TODO: emergency when OOM.
+  return false;
 }
 
 extern "C" void Java_org_j3_mmtk_Collection_reportAllocationSuccess__ (JavaObject* C) {
-  abort();
+  // TODO: clear internal data.
 }
 
 
 extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (JavaObject* C, int why) {
-  abort();
   JnJVM_org_mmtk_plan_Plan_setCollectionTriggered__();
   JnJVM_org_j3_config_Selected_00024Collector_staticCollect__();
   JnJVM_org_mmtk_plan_Plan_collectionComplete__();
