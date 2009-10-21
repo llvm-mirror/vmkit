@@ -142,8 +142,62 @@ bool LowerJavaRT::runOnModule(Module& M) {
   
   C = CA->getOperand(CheckAllocIndex);
   C = C->getOperand(0);
-  new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage, "MMTkCheckAllocator",
+  new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage,
+                  "MMTkCheckAllocator", C, &M);
+  
+
+
+  GV = M.getGlobalVariable("org_mmtk_plan_Plan_VT", false);
+  CA = dyn_cast<ConstantArray>(GV->getInitializer());
+
+  Function* Boot = M.getFunction("JnJVM_org_mmtk_plan_Plan_boot__");
+  Function* PostBoot = M.getFunction("JnJVM_org_mmtk_plan_Plan_postBoot__");
+  Function* FullBoot = M.getFunction("JnJVM_org_mmtk_plan_Plan_fullyBooted__");
+  Function* Exit = M.getFunction("JnJVM_org_mmtk_plan_Plan_notifyExit__I");
+  uint32_t BootIndex = 0;
+  uint32_t PostBootIndex = 0;
+  uint32_t FullBootIndex = 0;
+  uint32_t ExitIndex = 0;
+  for (uint32_t i = 0; i < CA->getNumOperands(); ++i) {
+    ConstantExpr* CE = dyn_cast<ConstantExpr>(CA->getOperand(i));
+    if (CE) {
+      C = CE->getOperand(0);
+      if (C == Boot) {
+        BootIndex = i;
+      } else if (C == PostBoot) {
+        PostBootIndex = i;
+      } else if (C == FullBoot) {
+        FullBootIndex = i;
+      } else if (C == Exit) {
+        ExitIndex = i;
+      }
+    }
+  }
+
+  GV = M.getGlobalVariable("org_j3_config_Selected_4Plan_VT", false);
+  assert(GV && "No Plan");
+  CA = dyn_cast<ConstantArray>(GV->getInitializer());
+  
+  C = CA->getOperand(BootIndex);
+  C = C->getOperand(0);
+  new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage, "MMTkPlanBoot",
                   C, &M);
+  
+  C = CA->getOperand(PostBootIndex);
+  C = C->getOperand(0);
+  new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage,
+                  "MMTkPlanPostBoot", C, &M);
+  
+  C = CA->getOperand(FullBootIndex);
+  C = C->getOperand(0);
+  new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage,
+                  "MMTkPlanFullBoot", C, &M);
+  
+  C = CA->getOperand(ExitIndex);
+  C = C->getOperand(0);
+  new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage, "MMTkPlanExit",
+                  C, &M);
+   
    
    
   return Changed;

@@ -73,6 +73,8 @@ void MvmModule::loadBytecodeFile(const std::string& str) {
   }
 }
 
+typedef void (*BootType)(uintptr_t Plan);
+
 void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
                            TargetMachine* T) {
   mvm::linkVmkitGC();
@@ -164,6 +166,30 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     F = dyn_cast<Function>(GA->getAliasee());
     gc::MMTkCheckAllocator = (gc::MMTkCheckAllocatorType)
       (uintptr_t)executionEngine->getPointerToFunction(F);
+    
+    GV = globalModule->getGlobalVariable("org_j3_config_Selected_4Plan_static", false);
+    assert(GV && "No global plan.");
+    uintptr_t Plan = *((uintptr_t*)executionEngine->getPointerToGlobal(GV));
+    
+    GA = dyn_cast<GlobalAlias>(globalModule->getNamedValue("MMTkPlanBoot"));
+    assert(GA && "Could not find MMTkPlanBoot alias");
+    F = dyn_cast<Function>(GA->getAliasee());
+    BootType Boot = (BootType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+    Boot(Plan);
+    
+    GA = dyn_cast<GlobalAlias>(globalModule->getNamedValue("MMTkPlanPostBoot"));
+    assert(GA && "Could not find MMTkPlanPostBoot alias");
+    F = dyn_cast<Function>(GA->getAliasee());
+    Boot = (BootType)(uintptr_t)executionEngine->getPointerToFunction(F);
+    Boot(Plan);
+    
+    GA = dyn_cast<GlobalAlias>(globalModule->getNamedValue("MMTkPlanFullBoot"));
+    assert(GA && "Could not find MMTkPlanFullBoot alias");
+    F = dyn_cast<Function>(GA->getAliasee());
+    Boot = (BootType)(uintptr_t)executionEngine->getPointerToFunction(F);
+    Boot(Plan);
+
   }
 #endif
 }
