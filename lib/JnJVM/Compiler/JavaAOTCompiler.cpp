@@ -657,7 +657,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
         } else {
           JavaObject* val = field.getObjectField(obj);
           if (val) {
-            Constant* C = getFinalObject(field.getObjectField(obj));
+            Constant* C = getFinalObject(val);
             TempElts.push_back(C);
           } else {
             const llvm::Type* Ty = JnjvmModule::JavaObjectType;
