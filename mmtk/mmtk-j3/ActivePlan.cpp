@@ -32,7 +32,7 @@ extern "C" JavaObject* Java_org_j3_mmtk_ActivePlan_getNextMutator__ (ActivePlan*
 }
 
 extern "C" void Java_org_j3_mmtk_ActivePlan_resetMutatorIterator__ (ActivePlan* A) {
-  A->next = (mvm::MutatorThread*)JavaThread::get()->MyVM->mainThread;
+  A->next = 0;
 }
 
 extern "C" void Java_org_j3_mmtk_ActivePlan_collectorCount__ () { JavaThread::get()->printBacktrace(); abort(); }
