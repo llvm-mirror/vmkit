@@ -143,11 +143,19 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     assert(F && "Could not find <init> from Mutator");
     MutatorThread::MutatorInit = (MutatorThread::MMTkInitType)
       (uintptr_t)executionEngine->getPointerToFunction(F);
+    
+    GV = globalModule->getGlobalVariable("org_j3_config_Selected_4Mutator_VT", false);
+    assert(GV && "Could not find VT from Mutator");
+    MutatorThread::MutatorVT = (VirtualTable*)executionEngine->getPointerToGlobal(GV);
   
     F = globalModule->getFunction("JnJVM_org_j3_config_Selected_00024Collector__0003Cinit_0003E__");
     assert(F && "Could not find <init> from Collector");
     MutatorThread::CollectorInit = (MutatorThread::MMTkInitType)
       (uintptr_t)executionEngine->getPointerToFunction(F);
+    
+    GV = globalModule->getGlobalVariable("org_j3_config_Selected_4Collector_VT", false);
+    assert(GV && "Could not find VT from Collector");
+    MutatorThread::CollectorVT = (VirtualTable*)executionEngine->getPointerToGlobal(GV);
 
     GlobalAlias* GA = dyn_cast<GlobalAlias>(globalModule->getNamedValue("MMTkAlloc"));
     assert(GA && "Could not find MMTkAlloc alias");

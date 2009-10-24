@@ -34,14 +34,18 @@ public:
   static MMTkInitType MutatorInit;
   static MMTkInitType CollectorInit;
 
+  static VirtualTable* MutatorVT;
+  static VirtualTable* CollectorVT;
 
   static void init(Thread* _th) {
     MutatorThread* th = (MutatorThread*)_th;
     th->MutatorContext =
       (uintptr_t)th->Allocator.Allocate(MMTkMutatorSize, "Mutator");
+    ((VirtualTable**)th->MutatorContext)[0] = MutatorVT;
     MutatorInit(th->MutatorContext);
     th->CollectorContext = 
       (uintptr_t)th->Allocator.Allocate(MMTkCollectorSize, "Collector");
+    ((VirtualTable**)th->CollectorContext)[0] = CollectorVT;
     CollectorInit(th->CollectorContext);
     th->realRoutine(_th);
   }

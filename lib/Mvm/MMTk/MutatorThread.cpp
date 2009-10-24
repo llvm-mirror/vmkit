@@ -19,6 +19,9 @@ uint32_t MutatorThread::MMTkCollectorSize = 0;
 MutatorThread::MMTkInitType MutatorThread::MutatorInit = 0;
 MutatorThread::MMTkInitType MutatorThread::CollectorInit = 0;
 
+VirtualTable* MutatorThread::MutatorVT = 0;
+VirtualTable* MutatorThread::CollectorVT = 0;
+
 extern "C" void* MMTkMutatorAllocate(uint32_t size, VirtualTable* VT) {
   void* val = MutatorThread::get()->Allocator.Allocate(size, "MMTk");
   ((void**)val)[0] = VT;
