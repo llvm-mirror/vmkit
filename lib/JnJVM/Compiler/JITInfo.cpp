@@ -159,9 +159,16 @@ Function* LLVMMethodInfo::getMethod() {
         memcpy(buf, "JnJVM", 5);
       }
 
-      methodFunction = Function::Create(getFunctionType(), 
-                                        GlobalValue::GhostLinkage, buf,
-                                        Mod->getLLVMModule());
+      methodFunction = Mod->getLLVMModule()->getFunction(buf);
+      if (!methodFunction) {
+        methodFunction = Function::Create(getFunctionType(), 
+                                          GlobalValue::GhostLinkage, buf,
+                                          Mod->getLLVMModule());
+      } else {
+        if (methodFunction->isDeclaration()) {
+          methodFunction->setLinkage(GlobalValue::GhostLinkage);
+        }
+      }
 
     } else {
 
