@@ -44,6 +44,10 @@ public:
              "Method mismatch");
       Jnjvm* vm = JavaThread::get()->getJVM();
       vm->addMethodInFunctionMap(currentCompiledMethod, Code);
+    } else {
+      Jnjvm* vm = JavaThread::get()->getJVM();
+      vm->addInternalMethodInFunctionMap(F.getName().data(), Code,
+                                         (void*)((uintptr_t)Code + Size));
     }
   }
 
@@ -312,7 +316,7 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
 void* JavaJITCompiler::loadMethod(void* handle, const char* symbol) {
   Function* F = mvm::MvmModule::globalModule->getFunction(symbol);
   if (F) {
-    void* res = mvm::MvmModule::executionEngine->getPointerToFunction(F);
+    void* res = mvm::MvmModule::executionEngine->getPointerToFunctionOrStub(F);
     return res;
   }
 

@@ -397,13 +397,13 @@ public:
 
 protected:
 
-  /// JavaFunctionMap - Map of Java method to function pointers. This map is
-  /// used when walking the stack so that VMKit knows which Java method is
-  /// executing on the stack.
+  /// Functions - Map of applicative methods to function pointers. This map is
+  /// used when walking the stack so that VMKit knows which applicative method
+  /// is executing on the stack.
   ///
   std::map<void*, void*> Functions;
 
-  /// FunctionMapLock - Spin lock to protect the JavaFunctionMap.
+  /// FunctionMapLock - Spin lock to protect the Functions map.
   ///
   mvm::SpinLock FunctionMapLock;
 
@@ -442,6 +442,42 @@ public:
 
   mvm::StackScanner* getScanner() {
     return scanner;
+  }
+
+protected:
+
+  /// InternalFunctions - Map of internal methods to function pointers. This
+  /// map is used when walking the stack so that VMKit knows which
+  /// JIT-generated internal method is executing on the stack.
+  ///
+  std::map<void*, const char*> InternalFunctions;
+
+  /// FunctionMapLock - Spin lock to protect the Functions map.
+  ///
+  mvm::SpinLock InternalFunctionMapLock;
+
+public:
+  /// addMethodInFunctionMap - A new method pointer in the function map.
+  ///
+  void addInternalMethodInFunctionMap(const char* meth, void* start, void* end) {
+    InternalFunctionMapLock.acquire();
+    InternalFunctions.insert(std::make_pair(start, meth));
+    InternalFunctions.insert(std::make_pair(end, meth));
+    InternalFunctionMapLock.release();
+  }
+  
+  /// IPToJavaMethod - Map an instruction pointer to the Java method.
+  ///
+  const char* IPToInternalMethod(void* ip) {
+    InternalFunctionMapLock.acquire();
+    std::map<void*, const char*>::iterator I = InternalFunctions.upper_bound(ip);
+    const char* res = 0;
+    if (I != InternalFunctions.end() && I != InternalFunctions.begin()) {
+      res = I->second;
+      assert ((--I)->second == res && "Malformed map");
+    }
+    InternalFunctionMapLock.release();
+    return res;
   }
 
 #ifdef ISOLATE

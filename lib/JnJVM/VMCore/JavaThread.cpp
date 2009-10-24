@@ -280,13 +280,18 @@ void JavaThread::printJavaBacktrace() {
 
 #include <dlfcn.h>
 
-static void printFunctionInfo(void* ip) {
+static void printFunctionInfo(Jnjvm* vm, void* ip) {
   Dl_info info;
   int res = dladdr(ip, &info);
   if (res != 0) {
     fprintf(stderr, "; %p in %s\n",  ip, info.dli_sname);
   } else {
-    fprintf(stderr, "; %p in Native to Java Frame\n", ip);
+    const char* name = vm->IPToInternalMethod(ip);
+    if (name) {
+      fprintf(stderr, "; %p in %s LLVM method\n", ip, name);
+    } else {
+      fprintf(stderr, "; %p in Unknown method\n", ip);
+    }
   }
 }
 
@@ -304,7 +309,7 @@ void JavaThread::printBacktrace() {
     // Until we hit the last Java frame.
     do {
       void* ip = FRAME_IP(addr);
-      printFunctionInfo(ip);
+      printFunctionInfo(vm, ip);
       oldAddr = addr;
       addr = (void**)addr[0];
     } while (oldAddr != (void**)*it && addr != (void**)*it);
@@ -319,7 +324,7 @@ void JavaThread::printBacktrace() {
       --it;
       if (*it == 0) {
         void* ip = FRAME_IP(addr);
-        printFunctionInfo(ip);
+        printFunctionInfo(vm, ip);
         addr = (void**)addr[0];
         continue;
       }
@@ -345,7 +350,7 @@ void JavaThread::printBacktrace() {
 
   while (addr < baseSP && addr < addr[0]) {
     void* ip = FRAME_IP(addr);
-    printFunctionInfo(ip);
+    printFunctionInfo(vm, ip);
     addr = (void**)addr[0];
   }
 
