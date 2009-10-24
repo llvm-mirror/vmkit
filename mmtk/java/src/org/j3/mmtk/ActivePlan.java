@@ -22,6 +22,8 @@ import org.vmmagic.pragma.*;
 
 public final class ActivePlan extends org.mmtk.vm.ActivePlan {
 
+  Object currentThread = null;
+
   /** @return The active Plan instance. */
   @Inline
   public Plan global() {
