@@ -9,13 +9,14 @@
 //===----------------------------------------------------------------------===//
 
 #include "JavaObject.h"
+#include "JavaThread.h"
 
 using namespace jnjvm;
 
 extern "C" void Java_org_j3_mmtk_ReferenceProcessor_scan__Lorg_mmtk_plan_TraceLocal_2Z () {
-  abort();
+  JavaThread::get()->printBacktrace(); abort();
 }
 
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z () { abort(); }
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_clear__ () { abort(); }
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_countWaitingReferences__ () { abort(); }
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_clear__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_countWaitingReferences__ () { JavaThread::get()->printBacktrace(); abort(); }

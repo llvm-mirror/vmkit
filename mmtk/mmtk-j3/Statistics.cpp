@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "JavaObject.h"
+#include "JavaThread.h"
 
 using namespace jnjvm;
 
@@ -19,7 +20,7 @@ extern "C" int64_t Java_org_j3_mmtk_Statistics_cycles__ () {
   return 0;
 }
 
-extern "C" void Java_org_j3_mmtk_Statistics_getCollectionCount__ () { abort(); }
-extern "C" void Java_org_j3_mmtk_Statistics_nanoTime__ () { abort(); }
-extern "C" void Java_org_j3_mmtk_Statistics_perfCtrReadCycles__ () { abort(); }
-extern "C" void Java_org_j3_mmtk_Statistics_perfCtrReadMetric__ () { abort(); }
+extern "C" void Java_org_j3_mmtk_Statistics_getCollectionCount__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_Statistics_nanoTime__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_Statistics_perfCtrReadCycles__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_Statistics_perfCtrReadMetric__ () { JavaThread::get()->printBacktrace(); abort(); }

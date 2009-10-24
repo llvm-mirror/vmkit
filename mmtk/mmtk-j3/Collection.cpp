@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "JavaObject.h"
+#include "JavaThread.h"
 
 using namespace jnjvm;
 
@@ -35,23 +36,23 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (JavaObject* C,
 }
 
 extern "C" int Java_org_j3_mmtk_Collection_rendezvous__I (JavaObject* C, int where) {
-  abort();
+  return 1;
 }
 
 extern "C" int Java_org_j3_mmtk_Collection_maximumCollectionAttempt__ (JavaObject* C) {
-  abort();
+  return 0;
 }
 
 extern "C" void Java_org_j3_mmtk_Collection_prepareCollector__Lorg_mmtk_plan_CollectorContext_2 (JavaObject* C, JavaObject* CC) {
-  abort();
+  // Nothing to do.
 }
 
 
-extern "C" void Java_org_j3_mmtk_Collection_joinCollection__ () { abort(); }
-extern "C" void Java_org_j3_mmtk_Collection_reportPhysicalAllocationFailed__ () { abort(); }
-extern "C" void Java_org_j3_mmtk_Collection_triggerAsyncCollection__I () { abort(); }
-extern "C" void Java_org_j3_mmtk_Collection_noThreadsInGC__ () { abort(); }
-extern "C" void Java_org_j3_mmtk_Collection_prepareMutator__Lorg_mmtk_plan_MutatorContext_2 () { abort(); }
-extern "C" void Java_org_j3_mmtk_Collection_activeGCThreads__ () { abort(); }
-extern "C" void Java_org_j3_mmtk_Collection_activeGCThreadOrdinal__ () { abort(); }
-extern "C" void Java_org_j3_mmtk_Collection_requestMutatorFlush__ () { abort(); }
+extern "C" void Java_org_j3_mmtk_Collection_joinCollection__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_Collection_reportPhysicalAllocationFailed__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_Collection_triggerAsyncCollection__I () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_Collection_noThreadsInGC__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_Collection_prepareMutator__Lorg_mmtk_plan_MutatorContext_2 () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_Collection_activeGCThreads__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_Collection_activeGCThreadOrdinal__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_Collection_requestMutatorFlush__ () { JavaThread::get()->printBacktrace(); abort(); }

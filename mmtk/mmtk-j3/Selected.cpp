@@ -11,15 +11,14 @@
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
+#include "MutatorThread.h"
 
 using namespace jnjvm;
 
 extern "C" JavaObject* Java_org_j3_config_Selected_00024Collector_get__() {
-  abort();
-  return 0;
+  return (JavaObject*)mvm::MutatorThread::get()->CollectorContext;
 }
 
 extern "C" JavaObject* Java_org_j3_config_Selected_00024Mutator_get__() {
-  abort();
-  return 0;
+  return (JavaObject*)mvm::MutatorThread::get()->MutatorContext;
 }

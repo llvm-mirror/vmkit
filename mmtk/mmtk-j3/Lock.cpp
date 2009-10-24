@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "JavaObject.h"
+#include "JavaThread.h"
 #include "mvm/Threads/Locks.h"
 
 using namespace jnjvm;
@@ -21,7 +22,7 @@ struct Lock {
 extern "C" void Java_org_j3_mmtk_Lock_acquire__(Lock* l) {
   l->spin.acquire();
 }
-extern "C" void Java_org_j3_mmtk_Lock_check__I () { abort(); }
+extern "C" void Java_org_j3_mmtk_Lock_check__I () { JavaThread::get()->printBacktrace(); abort(); }
 
 extern "C" void Java_org_j3_mmtk_Lock_release__(Lock* l) {
   l->spin.release();

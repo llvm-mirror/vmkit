@@ -11,6 +11,7 @@
 
 
 #include "JavaObject.h"
+#include "JavaThread.h"
 
 using namespace jnjvm;
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapStartConstant__ () {
@@ -42,7 +43,7 @@ Java_org_j3_mmtk_Memory_dzmmap__Lorg_vmmagic_unboxed_Address_2I(JavaObject* M,
                         -1, 0);
   if (baseAddr == MAP_FAILED) {
     perror("mmap");
-    abort();
+    JavaThread::get()->printBacktrace(); abort();
   }
 
   return 0;
@@ -50,12 +51,12 @@ Java_org_j3_mmtk_Memory_dzmmap__Lorg_vmmagic_unboxed_Address_2I(JavaObject* M,
 
 extern "C" void
 Java_org_j3_mmtk_Memory_mprotect__Lorg_vmmagic_unboxed_Address_2I () {
-  abort();
+  JavaThread::get()->printBacktrace(); abort();
 }
 
 extern "C" void
 Java_org_j3_mmtk_Memory_munprotect__Lorg_vmmagic_unboxed_Address_2I () {
-  abort();
+  JavaThread::get()->printBacktrace(); abort();
 }
 
 extern "C" void
@@ -67,10 +68,10 @@ Java_org_j3_mmtk_Memory_zero__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed
 
 extern "C" void
 Java_org_j3_mmtk_Memory_zeroPages__Lorg_vmmagic_unboxed_Address_2I () {
-  abort();
+  JavaThread::get()->printBacktrace(); abort();
 }
 
 extern "C" void
 Java_org_j3_mmtk_Memory_dumpMemory__Lorg_vmmagic_unboxed_Address_2II () {
-  abort();
+  JavaThread::get()->printBacktrace(); abort();
 }

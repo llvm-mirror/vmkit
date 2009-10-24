@@ -9,9 +9,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "JavaObject.h"
+#include "JavaThread.h"
 
 using namespace jnjvm;
 
-extern "C" void Java_org_j3_mmtk_SynchronizedCounter_reset__ () { abort(); }
-extern "C" void Java_org_j3_mmtk_SynchronizedCounter_increment__ () { abort(); }
+extern "C" void Java_org_j3_mmtk_SynchronizedCounter_reset__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_SynchronizedCounter_increment__ () { JavaThread::get()->printBacktrace(); abort(); }
 

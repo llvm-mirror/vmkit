@@ -8,7 +8,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "JavaObject.h"
+#include "JavaThread.h"
 
 using namespace jnjvm;
 
-extern "C" void Java_org_j3_mmtk_Assert_dumpStack__ () { abort(); }
+extern "C" void Java_org_j3_mmtk_Assert_dumpStack__ () { JavaThread::get()->printBacktrace(); abort(); }
