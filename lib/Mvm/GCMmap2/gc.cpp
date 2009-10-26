@@ -7,13 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <csetjmp>
-#include <cstdlib>
-
 #include "mvm/GC/GC.h"
 #include "mvm/Threads/Thread.h"
 #include "MvmGC.h"
-#include "gcerror.h"
 
 using namespace mvm;
 
