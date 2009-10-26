@@ -27,8 +27,8 @@ ifeq ($(WITH_LLVM_GCC), 1)
 
 else
 
-USEDLIBS = JnJVM.a Classpath.a JnJVM.a JnjvmCompiler.a Allocator.a CommonThread.a \
-	   Mvm.a MvmCompiler.a $(GCLIB).a
+USEDLIBS = JnJVM.a Classpath.a JnJVM.a JnjvmCompiler.a Allocator.a \
+	   Mvm.a MvmCompiler.a $(GCLIB).a CommonThread.a
 
   ifeq ($(ISOLATE_SHARING_BUILD), 1) 
     USEDLIBS += Isolate

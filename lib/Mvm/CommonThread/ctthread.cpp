@@ -45,7 +45,7 @@ void Thread::yield(void) {
 }
 
 void Thread::joinCollection() {
-  Collector::traceStackThread();
+  MyVM->rendezvous.traceThreadStack(); 
 }
 
 void Thread::startNative(int level) {
@@ -150,6 +150,18 @@ StackThreadManager TheStackManager;
 
 extern void sigsegvHandler(int, siginfo_t*, void*);
 
+
+#if defined(__MACH__)
+# define SIGGC  SIGXCPU
+#else
+# define SIGGC  SIGPWR
+#endif
+
+static void siggcHandler(int) {
+  mvm::Thread* th = mvm::Thread::get();
+  th->MyVM->rendezvous.traceThreadStack();
+}
+
 /// internalThreadStart - The initial function called by a thread. Sets some
 /// thread specific data, registers the thread to the GC and calls the
 /// given routine of th.
@@ -172,6 +184,14 @@ void Thread::internalThreadStart(mvm::Thread* th) {
   sa.sa_mask = mask;
   sa.sa_sigaction = sigsegvHandler;
   sigaction(SIGSEGV, &sa, NULL);
+
+  // Set the SIGGC handler for uncooperative rendezvous.
+  sigaction(SIGGC, 0, &sa);
+  sigfillset(&mask);
+  sa.sa_mask = mask;
+  sa.sa_handler = siggcHandler;
+  sa.sa_flags |= SA_RESTART;
+  sigaction(SIGGC, &sa, NULL);
 
   assert(th->MyVM && "VM not set in a thread");
 #ifdef ISOLATE
@@ -222,4 +242,9 @@ void Thread::operator delete(void* th) {
   uintptr_t index = ((uintptr_t)Th->baseSP & Thread::IDMask);
   index = (index & ~TheStackManager.baseAddr) >> 20;
   TheStackManager.used[index] = 0;
+}
+
+void Thread::killForRendezvous() {
+  int res = kill(SIGGC);
+  assert(!res && "Error on kill");
 }

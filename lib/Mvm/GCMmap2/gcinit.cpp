@@ -7,40 +7,19 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <signal.h>
 #include "MvmGC.h"
 
 using namespace mvm;
 
-static const size_t  def_collect_freq_auto = 64*1024*1024;
+static const size_t def_collect_freq_auto = 64*1024*1024;
 static const size_t def_collect_freq_maybe = 64*1024*1024;
 
-#if defined(__MACH__)
-# define SIGGC  SIGXCPU
-#else
-# define SIGGC  SIGPWR
-#endif
-
-int Collector::siggc() {
-  return SIGGC;
-}
 
 void Collector::initialise() {
  
   used_nodes = new GCChunkNode();
   unused_nodes = new GCChunkNode();
-  threads = new GCThread();
-  
-  struct sigaction sa;
-  sigset_t mask;
-
-  sigaction(SIGGC, 0, &sa);
-  sigfillset(&mask);
-  sa.sa_mask = mask;
-  sa.sa_handler = siggc_handler;
-  sa.sa_flags |= SA_RESTART;
-  sigaction(SIGGC, &sa, 0);
-
+  threads = new GCThread(); 
   allocator = new GCAllocator();
    
   used_nodes->alone();

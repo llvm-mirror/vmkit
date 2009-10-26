@@ -46,7 +46,7 @@ void Collector::do_collect() {
   th->MyVM->startCollection();
   th->inGC = true;
 
-  threads->synchronize();
+  th->MyVM->rendezvous.synchronize();
 
   mvm::Thread* tcur = th;
 
@@ -92,7 +92,7 @@ void Collector::do_collect() {
   
   // Wake up all threads.
   th->MyVM->endCollection();
-  threads->collectionFinished();
+  th->MyVM->rendezvous.collectionFinished();
   th->MyVM->wakeUpFinalizers();
   th->MyVM->wakeUpEnqueue();
   

@@ -15,7 +15,7 @@ include $(LEVEL)/Makefile.config
 #
 DIRS := lib tools
 
-ifeq ($(WITH_LLVM_GCC), 1)
+ifeq ($(GC_MMTK), 1)
   DIRS += mmtk
 endif
 

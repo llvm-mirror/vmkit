@@ -16,6 +16,7 @@
 #define MVM_VIRTUALMACHINE_H
 
 #include "mvm/Allocator.h"
+#include "mvm/Threads/CollectionRV.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/GC/GC.h"
@@ -479,6 +480,10 @@ public:
     InternalFunctionMapLock.release();
     return res;
   }
+
+  /// rendezvous - The rendezvous implementation for garbage collection.
+  ///
+  CollectionRV rendezvous;
 
 #ifdef ISOLATE
   size_t IsolateID;

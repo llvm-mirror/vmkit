@@ -12,7 +12,7 @@
 
 using namespace jnjvm;
 
-extern "C" void Java_org_j3_mmtk_Scanning_computeThreadRoots__Lorg_mmtk_plan_TraceLocal_2 () {
+extern "C" void Java_org_j3_mmtk_Scanning_computeThreadRoots__Lorg_mmtk_plan_TraceLocal_2 (JavaObject* Scanning, JavaObject* TraceLocal) {
   JavaThread::get()->printBacktrace(); abort();
 }
 

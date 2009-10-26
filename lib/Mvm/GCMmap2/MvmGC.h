@@ -32,6 +32,7 @@ class Thread;
 
 class Collector {
   friend class GCThread;
+  friend class CollectionRV;
   static GCAllocator  *allocator;      /* The allocator */
 
 
@@ -50,7 +51,6 @@ class Collector {
   
   enum { stat_collect, stat_alloc, stat_broken };
 
-  static void  siggc_handler(int);
   static inline void  lock()   { threads->lock(); }
   static inline void  unlock() { threads->unlock(); }
   
@@ -68,12 +68,11 @@ class Collector {
     return n->nbb() - sizeof(gcRoot);
   }
   
-  static void traceForeignThreadStack(mvm::Thread* th);
 
 public:
-  static GCThread *threads;        /* le gestionnaire de thread et de synchro */
+  static GCThread *threads; 
   static void (*internMemoryError)(unsigned int);
-
+  
   static bool isLive(void* ptr) {
     GCChunkNode *node = o2node(ptr);
     
@@ -85,12 +84,6 @@ public:
 
   static void initialise();
   static void destroy();
-
-  static int siggc();
-
-  static void traceStackThread() {
-    siggc_handler(0);
-  }
 
   static inline void *allocate_unprotected(size_t sz) {
     return allocator->alloc(sz);

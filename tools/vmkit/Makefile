@@ -49,7 +49,7 @@ else
     USEDLIBS += N3.a PNetLib.a
   endif
 
-  USEDLIBS += Allocator.a CommonThread.a Mvm.a MvmCompiler.a $(GCLIB).a
+  USEDLIBS += Allocator.a Mvm.a MvmCompiler.a $(GCLIB).a CommonThread.a
 
 endif
 
