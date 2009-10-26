@@ -12,8 +12,7 @@
 using namespace mvm;
 
 GCAllocator   *Collector::allocator = 0;
-GCThread      *Collector::threads;
-
+SpinLock      Collector::_globalLock;
 
 int           Collector::status;
 

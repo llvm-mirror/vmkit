@@ -19,7 +19,6 @@ void Collector::initialise() {
  
   used_nodes = new GCChunkNode();
   unused_nodes = new GCChunkNode();
-  threads = new GCThread(); 
   allocator = new GCAllocator();
    
   used_nodes->alone();

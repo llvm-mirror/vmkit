@@ -11,11 +11,9 @@
 #ifndef MVM_MMAP_GC_H
 #define MVM_MMAP_GC_H
 
-#include <sys/types.h>
 #include "mvm/GC/GC.h"
 #include "types.h"
 #include "gcalloc.h"
-#include "gcthread.h"
 
 #define gc_allocator std::allocator
 #define gc_new(Class)  __gc_new(Class::VT) Class
@@ -34,7 +32,7 @@ class Collector {
   friend class GCThread;
   friend class CollectionRV;
   static GCAllocator  *allocator;      /* The allocator */
-
+  static SpinLock _globalLock;         /* Global lock for allocation */  
 
   static GCChunkNode  *used_nodes;     /* Used memory nodes */
   static GCChunkNode  *unused_nodes;   /* Unused memory nodes */
@@ -51,8 +49,8 @@ class Collector {
   
   enum { stat_collect, stat_alloc, stat_broken };
 
-  static inline void  lock()   { threads->lock(); }
-  static inline void  unlock() { threads->unlock(); }
+  static inline void  lock()   { _globalLock.lock(); }
+  static inline void  unlock() { _globalLock.unlock(); }
   
   /* Interface for collection, verifies enable_collect */
   static void collect_unprotect();    
@@ -70,7 +68,6 @@ class Collector {
   
 
 public:
-  static GCThread *threads; 
   static void (*internMemoryError)(unsigned int);
   
   static bool isLive(void* ptr) {
