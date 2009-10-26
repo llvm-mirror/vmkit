@@ -197,6 +197,18 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     F = dyn_cast<Function>(GA->getAliasee());
     Boot = (BootType)(uintptr_t)executionEngine->getPointerToFunction(F);
     Boot(Plan);
+    
+    
+    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_reportDelayedRootEdge__Lorg_vmmagic_unboxed_Address_2");
+    assert(F && "Could not find reportDelayedRootEdge from TraceLocal");
+    gc::MMTkDelayedRoot = (gc::MMTkDelayedRootType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+    
+    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_processEdge__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2");
+    assert(F && "Could not find processEdge from TraceLocal");
+    gc::MMTkProcessEdge = (gc::MMTkProcessEdgeType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+   
 
   }
 #endif
@@ -466,7 +478,7 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
         //char* spaddr = (char*)addr + CF->FrameSize + sizeof(void*);
         uintptr_t spaddr = (uintptr_t)addr[0];
         for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
-          Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+          Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]));
         }
       }
       
@@ -489,7 +501,7 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
           //char* spaddr = (char*)addr + CF->FrameSize + sizeof(void*);
           uintptr_t spaddr = (uintptr_t)addr[0];
           for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
-            Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+            Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]));
           }
         }
         addr = (void**)addr[0];
@@ -506,7 +518,7 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
         //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
         uintptr_t spaddr = (uintptr_t)addr[0];
         for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
-          Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+          Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]));
         }
       } else {
         llvm::GCFunctionInfo* GFI = IPToGCFunctionInfo(vm, ip);
@@ -521,7 +533,7 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
                KE = GFI->live_end(J); K != KE; ++K) {
             intptr_t obj = *(intptr_t*)(spaddr + K->StackOffset);
             // Verify that obj does not come from a JSR bytecode.
-            if (!(obj & 1)) Collector::scanObject((void*)obj);
+            if (!(obj & 1)) Collector::scanObject((void**)(spaddr + K->StackOffset));
           }
         }
       }
@@ -540,7 +552,7 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
       //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
       uintptr_t spaddr = (uintptr_t)addr[0];
       for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
-        Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+        Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]));
       }
     }
     addr = (void**)addr[0];

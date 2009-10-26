@@ -24,7 +24,6 @@ void CollectionRV::waitCollection() {
   }
 }
 
-
 void CollectionRV::waitStacks() {
   mvm::Thread* self = mvm::Thread::get();
   stackLock();

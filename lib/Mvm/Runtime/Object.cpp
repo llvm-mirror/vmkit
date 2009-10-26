@@ -277,7 +277,7 @@ void CamlStackScanner::scanStack(mvm::Thread* th) {
         //char* spaddr = (char*)addr + CF->FrameSize + sizeof(void*);
         uintptr_t spaddr = (uintptr_t)addr[0];
         for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
-          Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+          Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]));
         }
       }
       oldAddr = addr;
@@ -299,7 +299,7 @@ void CamlStackScanner::scanStack(mvm::Thread* th) {
           //char* spaddr = (char*)addr + CF->FrameSize + sizeof(void*);
           uintptr_t spaddr = (uintptr_t)addr[0];
           for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
-            Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+            Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]));
           }
         }
         addr = (void**)addr[0];
@@ -316,7 +316,7 @@ void CamlStackScanner::scanStack(mvm::Thread* th) {
         //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
         uintptr_t spaddr = (uintptr_t)addr[0];
         for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
-          Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+          Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]));
         }
       }
       
@@ -334,7 +334,7 @@ void CamlStackScanner::scanStack(mvm::Thread* th) {
       //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
       uintptr_t spaddr = (uintptr_t)addr[0];
       for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
-        Collector::scanObject(*(void**)(spaddr + CF->LiveOffsets[i]));
+        Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]));
       }
     }
     addr = (void**)addr[0];
@@ -346,12 +346,12 @@ void UnpreciseStackScanner::scanStack(mvm::Thread* th) {
   register unsigned int  **max = (unsigned int**)(void*)th->baseSP;
   if (mvm::Thread::get() != th) {
     register unsigned int  **cur = (unsigned int**)th->getLastSP();
-    for(; cur<max; cur++) Collector::scanObject(*cur);
+    for(; cur<max; cur++) Collector::scanObject((void**)cur);
   } else {
     jmp_buf buf;
     setjmp(buf);
     register unsigned int  **cur = (unsigned int**)&buf;
-    for(; cur<max; cur++) Collector::scanObject(*cur);
+    for(; cur<max; cur++) Collector::scanObject((void**)cur);
   }
 }
 

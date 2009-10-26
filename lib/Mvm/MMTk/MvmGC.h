@@ -54,11 +54,20 @@ public:
   typedef int (*MMTkCheckAllocatorType)(uintptr_t Mutator, int32_t bytes,
                                         int32_t align, int32_t allocator);
 
+  typedef void (*MMTkDelayedRootType)(uintptr_t TraceLocal, void** slot);
+  
+  typedef void (*MMTkProcessEdgeType)(uintptr_t TraceLocal, uintptr_t source,
+                                      void** slot);
+
   static MMTkAllocType MMTkGCAllocator;
   
   static MMTkPostAllocType MMTkGCPostAllocator;
   
   static MMTkCheckAllocatorType MMTkCheckAllocator;
+  
+  static MMTkDelayedRootType MMTkDelayedRoot;
+  
+  static MMTkProcessEdgeType MMTkProcessEdge;
 
 
   void* operator new(size_t sz, VirtualTable *VT) {
@@ -82,6 +91,8 @@ namespace mvm {
 class Collector {
 public:
 
+  static uintptr_t TraceLocal;
+
   static bool isLive(gc*) {
     abort();
   }
@@ -90,8 +101,10 @@ public:
     abort();
   }
   
-  static void scanObject(void*) {
-    abort();
+  static void scanObject(void** ptr) {
+    assert(gc::MMTkDelayedRoot && "scanning without a function");
+    assert(TraceLocal && "scanning without a trace local");
+    gc::MMTkDelayedRoot(TraceLocal, ptr);
   }
   
   static void collect() {

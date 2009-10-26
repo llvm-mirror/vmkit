@@ -18,6 +18,9 @@ using namespace mvm;
 gc::MMTkAllocType gc::MMTkGCAllocator = 0;
 gc::MMTkPostAllocType gc::MMTkGCPostAllocator = 0;
 gc::MMTkCheckAllocatorType gc::MMTkCheckAllocator = 0;
+gc::MMTkDelayedRootType gc::MMTkDelayedRoot = 0;
+
+uintptr_t Collector::TraceLocal = 0;
 
   
 static std::set<gc*> Set;

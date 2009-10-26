@@ -77,7 +77,7 @@ public:
     else return false;
   }
   
-  static void scanObject(void* obj);
+  static void scanObject(void** ptr);
 
   static void initialise();
   static void destroy();

@@ -31,7 +31,8 @@ extern "C" void conditionalSafePoint() {
   mvm::Thread::get()->endNative();
 }
 
-void Collector::scanObject(void* obj) {
+void Collector::scanObject(void** val) {
+  void* obj = *val;
   if (obj) {
     GCChunkNode *node = o2node(obj);
 
