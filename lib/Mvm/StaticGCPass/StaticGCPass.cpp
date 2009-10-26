@@ -18,7 +18,7 @@ using namespace llvm;
 
 namespace {
 
-  class VISIBILITY_HIDDEN StaticGCPass : public ModulePass {
+  class StaticGCPass : public ModulePass {
   public:
     static char ID;
     
