@@ -12,12 +12,29 @@
 
 using namespace jnjvm;
 
-extern "C" void Java_org_j3_mmtk_Scanning_computeThreadRoots__Lorg_mmtk_plan_TraceLocal_2 (JavaObject* Scanning, JavaObject* TraceLocal) {
-  JavaThread::get()->printBacktrace(); abort();
+extern "C" void Java_org_j3_mmtk_Scanning_computeThreadRoots__Lorg_mmtk_plan_TraceLocal_2 (JavaObject* Scanning, JavaObject* TL) {
+  mvm::Collector::TraceLocal = (uintptr_t)TL;
+  mvm::Thread* th = mvm::Thread::get();
+  th->inGC = true;
+  th->MyVM->startCollection();
+  th->MyVM->rendezvous.synchronize();
 }
 
-extern "C" void Java_org_j3_mmtk_Scanning_computeGlobalRoots__Lorg_mmtk_plan_TraceLocal_2 () {
-  JavaThread::get()->printBacktrace(); abort();
+extern "C" void Java_org_j3_mmtk_Scanning_computeGlobalRoots__Lorg_mmtk_plan_TraceLocal_2 (JavaObject* Scanning, JavaObject* TL) {
+  
+  assert(mvm::Collector::TraceLocal == (uintptr_t)TL && "Mismatch in trace local");
+  
+  mvm::Thread* th = mvm::Thread::get();
+  mvm::Thread* tcur = th;
+
+  // (1) Trace the VM.
+  th->MyVM->tracer();
+
+  // (2) Trace the threads.
+  do {
+    tcur->tracer();
+    tcur = (mvm::Thread*)tcur->next();
+  } while (tcur != th);
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_computeStaticRoots__Lorg_mmtk_plan_TraceLocal_2 () {

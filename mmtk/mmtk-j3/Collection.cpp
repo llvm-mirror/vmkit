@@ -47,12 +47,14 @@ extern "C" void Java_org_j3_mmtk_Collection_prepareCollector__Lorg_mmtk_plan_Col
   // Nothing to do.
 }
 
+extern "C" void Java_org_j3_mmtk_Collection_prepareMutator__Lorg_mmtk_plan_MutatorContext_2 (JavaObject* C, JavaObject* MC) {
+}
+
 
 extern "C" void Java_org_j3_mmtk_Collection_joinCollection__ () { JavaThread::get()->printBacktrace(); abort(); }
 extern "C" void Java_org_j3_mmtk_Collection_reportPhysicalAllocationFailed__ () { JavaThread::get()->printBacktrace(); abort(); }
 extern "C" void Java_org_j3_mmtk_Collection_triggerAsyncCollection__I () { JavaThread::get()->printBacktrace(); abort(); }
 extern "C" void Java_org_j3_mmtk_Collection_noThreadsInGC__ () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_Collection_prepareMutator__Lorg_mmtk_plan_MutatorContext_2 () { JavaThread::get()->printBacktrace(); abort(); }
 extern "C" void Java_org_j3_mmtk_Collection_activeGCThreads__ () { JavaThread::get()->printBacktrace(); abort(); }
 extern "C" void Java_org_j3_mmtk_Collection_activeGCThreadOrdinal__ () { JavaThread::get()->printBacktrace(); abort(); }
 extern "C" void Java_org_j3_mmtk_Collection_requestMutatorFlush__ () { JavaThread::get()->printBacktrace(); abort(); }
