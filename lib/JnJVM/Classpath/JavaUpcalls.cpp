@@ -505,6 +505,10 @@ extern "C" void nativeJavaObjectVMThreadDestructor(JavaObjectVMThread* obj) {
   JavaObjectVMThread::staticDestructor(obj);
 }
 
+extern "C" void nativeJavaObjectVMThreadTracer(JavaObjectVMThread* obj) {
+  JavaObjectVMThread::staticTracer(obj);
+}
+
 // Defined in Classpath/ClasspathVMClassLoader.cpp
 extern "C" ArrayObject* nativeGetBootPackages();
 
@@ -996,6 +1000,10 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
    newField->getVirtualVT()->setNativeTracer(
       (uintptr_t)nativeJavaObjectFieldTracer,
       "nativeJavaObjectFieldTracer"); 
+   
+   newVMThread->getVirtualVT()->setNativeTracer(
+      (uintptr_t)nativeJavaObjectVMThreadTracer,
+      "nativeJavaObjectVMThreadTracer");
  
    newVMThread->getVirtualVT()->setNativeDestructor(
       (uintptr_t)nativeJavaObjectVMThreadDestructor,

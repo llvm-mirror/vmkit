@@ -125,6 +125,10 @@ public:
     mvm::Thread* th = (mvm::Thread*)obj->vmdata;
     delete th;
   }
+  
+  static void staticTracer(JavaObjectVMThread* obj) {
+    mvm::Collector::markAndTrace(obj, &obj->thread);
+  }
 
 };
 
