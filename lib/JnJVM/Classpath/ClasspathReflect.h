@@ -161,7 +161,7 @@ public:
     queue = q;
   }
 
-  JavaObject** getReferent() { return &referent; }
+  JavaObject** getReferentPtr() { return &referent; }
   void setReferent(JavaObject* r) { referent = r; }
   
   static void staticTracer(JavaObjectReference* obj) {

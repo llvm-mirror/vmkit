@@ -359,7 +359,7 @@ public:
 #endif
 
   virtual void clearReferent(gc*);
-  virtual gc** getReferent(gc*);
+  virtual gc** getReferentPtr(gc*);
   virtual bool enqueueReference(gc*);
 
 protected:
