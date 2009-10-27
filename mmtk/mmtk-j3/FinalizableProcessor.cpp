@@ -23,6 +23,9 @@ Java_org_j3_mmtk_FinalizableProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z () {
 }
 
 extern "C" void
-Java_org_j3_mmtk_FinalizableProcessor_scan__Lorg_mmtk_plan_TraceLocal_2Z () {
-  JavaThread::get()->printBacktrace(); abort();
+Java_org_j3_mmtk_FinalizableProcessor_scan__Lorg_mmtk_plan_TraceLocal_2Z (JavaObject* FP, JavaObject* TL, uint8_t nursery) {
+  assert(mvm::Collector::TraceLocal == (uintptr_t)TL && "Mismatch in trace local");
+  
+  mvm::Thread* th = mvm::Thread::get();
+  th->MyVM->scanFinalizationQueue();
 }

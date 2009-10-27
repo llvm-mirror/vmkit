@@ -37,15 +37,19 @@ extern "C" void Java_org_j3_mmtk_Scanning_computeGlobalRoots__Lorg_mmtk_plan_Tra
   } while (tcur != th);
 }
 
-extern "C" void Java_org_j3_mmtk_Scanning_computeStaticRoots__Lorg_mmtk_plan_TraceLocal_2 () {
-  JavaThread::get()->printBacktrace(); abort();
+extern "C" void Java_org_j3_mmtk_Scanning_computeStaticRoots__Lorg_mmtk_plan_TraceLocal_2 (JavaObject* Scanning, JavaObject* TL) {
+  // Nothing to do.
 }
 
-extern "C" void Java_org_j3_mmtk_Scanning_resetThreadCounter__ () {
-  JavaThread::get()->printBacktrace(); abort();
+extern "C" void Java_org_j3_mmtk_Scanning_resetThreadCounter__ (JavaObject* Scanning) {
+  // Nothing to do.
+}
+
+extern "C" void Java_org_j3_mmtk_Scanning_specializedScanObject__ILorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* Scanning, uint32_t id, JavaObject* TC, JavaObject* obj) {
+  assert(mvm::Collector::TraceLocal == (uintptr_t)TC && "Mismatch in trace local");
+  obj->tracer();
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_scanObject__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_Scanning_specializedScanObject__ILorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
 extern "C" void Java_org_j3_mmtk_Scanning_precopyChildren__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
 extern "C" void Java_org_j3_mmtk_Scanning_preCopyGCInstances__Lorg_mmtk_plan_TraceLocal_2 () { JavaThread::get()->printBacktrace(); abort(); }

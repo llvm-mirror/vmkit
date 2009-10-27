@@ -34,9 +34,11 @@ public final class ReferenceProcessor extends org.mmtk.vm.ReferenceProcessor {
     new ReferenceProcessor(Semantics.PHANTOM);
   
   private final Semantics semantics;
+  private int SemanticsNum;
 
   private ReferenceProcessor(Semantics semantics) {
     this.semantics = semantics;
+    SemanticsNum = semantics.ordinal();
   }
   
   /** 
