@@ -183,8 +183,9 @@ public:
   static const uint64_t FatMask = 0x80000000;
 #endif
 
-  static const uint64_t ThinMask = 0x7FFFFF00;
-  static const uint64_t ThinCountMask = 0xFF;
+  static const uint64_t ThinCountMask = 0xFF000;
+  static const uint64_t ThinCountAdd = 0x1000;
+  static const uint64_t GCMask = 0x3;
 
 
 
@@ -251,7 +252,8 @@ public:
       TFatLock* obj = TFatLock::allocate(O);
       uint32 count = lock & ThinCountMask;
       obj->acquireAll(count + 1);
-      lock = obj->getID();
+      uintptr_t oldLock = lock;
+      lock = obj->getID() | (oldLock & GCMask);
       return obj;
     } else {
       TFatLock* res = TFatLock::getFromID(lock);
@@ -265,14 +267,17 @@ public:
     IsGC::gcroot(O, 0);
 start:
     uint64_t id = mvm::Thread::get()->getThreadID();
-    uintptr_t val = __sync_val_compare_and_swap(&lock, 0, id);
+    uintptr_t oldValue = lock;
+    uintptr_t newValue = id | (lock & GCMask);
+    uintptr_t val = __sync_val_compare_and_swap(&lock, oldValue & GCMask,
+                                                newValue);
 
-    if (val != 0) {
+    if (val != (oldValue & GCMask)) {
       //fat!
       if (!(val & FatMask)) {
-        if ((val & ThinMask) == id) {
+        if ((val & Thread::IDMask) == id) {
           if ((val & ThinCountMask) != ThinCountMask) {
-            lock++;
+            lock += ThinCountAdd;
           } else {
             overflowThinLock(O);
           }
@@ -288,8 +293,11 @@ loop:
             else mvm::Thread::yield();
           }
         
-          uintptr_t test = __sync_val_compare_and_swap((uintptr_t*)&lock, 0, val);
-          if (test) goto loop;
+          oldValue = lock;
+          newValue = val | (lock & GCMask);
+          uintptr_t test = __sync_val_compare_and_swap(&lock, oldValue & GCMask,
+                                                       newValue);
+          if (test != (oldValue & GCMask)) goto loop;
           if (!obj->acquire(O)) goto start;
         }
       } else {
@@ -312,14 +320,14 @@ end:
     IsGC::gcroot(O, 0);
     assert(owner() && "Not owner when entering release!");
     uint64 id = mvm::Thread::get()->getThreadID();
-    if (lock == id) {
-      lock = 0;
+    if ((lock & ~GCMask) == id) {
+      lock = lock & GCMask;
     } else if (lock & FatMask) {
       TFatLock* obj = TFatLock::getFromID(lock);
       assert(obj && "Lock deallocated while held.");
       obj->release(O);
     } else {
-      lock--;
+      lock -= ThinCountAdd;
     }
   }
 
@@ -345,12 +353,12 @@ end:
   /// owner - Returns true if the curren thread is the owner of this object's
   /// lock.
   bool owner() {
-    uint64 id = mvm::Thread::get()->getThreadID();
-    if (id == lock) return true;
-    if ((lock & ThinMask) == id) return true;
     if (lock & FatMask) {
       TFatLock* obj = TFatLock::getFromID(lock);
       if (obj) return obj->owner();
+    } else {
+      uint64 id = mvm::Thread::get()->getThreadID();
+      if ((lock & Thread::IDMask) == id) return true;
     }
     return false;
   }
@@ -361,7 +369,7 @@ end:
       if (obj) return obj->getOwner();
       return 0;
     } else {
-      return (mvm::Thread*)(lock & ThinMask);
+      return (mvm::Thread*)(lock & mvm::Thread::IDMask);
     }
   }
 

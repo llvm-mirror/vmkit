@@ -496,16 +496,25 @@ void JavaJIT::monitorEnter(Value* obj) {
   gep.push_back(module->JavaObjectLockOffsetConstant);
   Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
                                              currentBlock);
+  
+  Value* lock = new LoadInst(lockPtr, "", currentBlock);
+  lock = new PtrToIntInst(lock, module->pointerSizeType, "", currentBlock);
+  Value* GCMask = ConstantInt::get(module->pointerSizeType,
+                                   mvm::GCMask);
+
+  lock = BinaryOperator::CreateAnd(lock, GCMask, "", currentBlock);
+
   lockPtr = new BitCastInst(lockPtr, 
                             PointerType::getUnqual(module->pointerSizeType),
                             "", currentBlock);
   Value* threadId = getCurrentThread(module->MutatorThreadType);
   threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
                               currentBlock);
+  threadId = BinaryOperator::CreateOr(threadId, lock, "", currentBlock);
 
   std::vector<Value*> atomicArgs;
   atomicArgs.push_back(lockPtr);
-  atomicArgs.push_back(module->constantPtrZero);
+  atomicArgs.push_back(lock);
   atomicArgs.push_back(threadId);
 
   // Do the atomic compare and swap.
@@ -514,7 +523,7 @@ void JavaJIT::monitorEnter(Value* obj) {
                                    currentBlock);
   
   Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, atomic,
-                            module->constantPtrZero, "");
+                            lock, "");
   
   BasicBlock* OK = createBasicBlock("synchronize passed");
   BasicBlock* NotOK = createBasicBlock("synchronize did not pass");
@@ -535,8 +544,8 @@ void JavaJIT::monitorEnter(Value* obj) {
 
   // It's a thin lock. Look if we're the owner of this lock.
   currentBlock = ThinLockBB;
-  Value* idMask = ConstantInt::get(module->pointerSizeType, 0x7FFFFF00);
-  Value* cptMask = ConstantInt::get(module->pointerSizeType, 0xFF);
+  Value* idMask = ConstantInt::get(module->pointerSizeType, mvm::Thread::IDMask);
+  Value* cptMask = ConstantInt::get(module->pointerSizeType, mvm::ThinCountMask);
   Value* IdInLock = BinaryOperator::CreateAnd(atomic, idMask, "", currentBlock);
   Value* owner = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, threadId,
                               IdInLock, "");
@@ -557,8 +566,8 @@ void JavaJIT::monitorEnter(Value* obj) {
   currentBlock = IncCounterBB;
   
   // The counter will not overflow, increment it.
-  Value* Add = BinaryOperator::CreateAdd(module->constantPtrOne, atomic, "",
-                                         currentBlock);
+  Value* One = ConstantInt::get(module->pointerSizeType, mvm::ThinCountAdd);
+  Value* Add = BinaryOperator::CreateAdd(One, atomic, "", currentBlock);
   new StoreInst(Add, lockPtr, false, currentBlock);
   BranchInst::Create(OK, currentBlock);
 
@@ -623,8 +632,8 @@ void JavaJIT::monitorExit(Value* obj) {
   currentBlock = ThinLockBB;
 
   // Decrement the counter.
-  Value* Sub = BinaryOperator::CreateSub(lock, module->constantPtrOne, "",
-                                         currentBlock);
+  Value* One = ConstantInt::get(module->pointerSizeType, mvm::ThinCountAdd);
+  Value* Sub = BinaryOperator::CreateSub(lock, One, "", currentBlock);
   new StoreInst(Sub, lockPtr, false, currentBlock);
   BranchInst::Create(EndUnlock, currentBlock);
 
