@@ -208,6 +208,11 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     assert(F && "Could not find processEdge from TraceLocal");
     gc::MMTkProcessEdge = (gc::MMTkProcessEdgeType)
       (uintptr_t)executionEngine->getPointerToFunction(F);
+    
+    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_processRootEdge__Lorg_vmmagic_unboxed_Address_2Z");
+    assert(F && "Could not find processEdge from TraceLocal");
+    gc::MMTkProcessRootEdge = (gc::MMTkProcessRootEdgeType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
    
 
   }

@@ -51,8 +51,13 @@ public:
 
   typedef void (*MMTkDelayedRootType)(uintptr_t TraceLocal, void** slot);
   
-  typedef void (*MMTkProcessEdgeType)(uintptr_t TraceLocal, uintptr_t source,
-                                      void** slot);
+  typedef void (*MMTkProcessEdgeType)(uintptr_t TraceLocal, void* source,
+                                      void* slot);
+  
+  typedef void (*MMTkProcessRootEdgeType)(uintptr_t TraceLocal, void* slot,
+                                          uint8_t untraced);
+  
+  typedef void (*MMTkIsLiveType)(uintptr_t TraceLocal, void* obj);
 
   static MMTkAllocType MMTkGCAllocator;
   
@@ -63,6 +68,8 @@ public:
   static MMTkDelayedRootType MMTkDelayedRoot;
   
   static MMTkProcessEdgeType MMTkProcessEdge;
+  
+  static MMTkProcessRootEdgeType MMTkProcessRootEdge;
 
 
   void* operator new(size_t sz, VirtualTable *VT) {
@@ -103,11 +110,13 @@ public:
   }
  
   static void markAndTrace(void* source, void* ptr) {
-    abort();
+    assert(TraceLocal && "scanning without a trace local");
+    gc::MMTkProcessEdge(TraceLocal, source, ptr);
   }
   
   static void markAndTraceRoot(void* ptr) {
-    abort();
+    assert(TraceLocal && "scanning without a trace local");
+    gc::MMTkProcessRootEdge(TraceLocal, ptr, true);
   }
 
   static void collect() {
