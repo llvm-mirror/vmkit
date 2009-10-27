@@ -32,11 +32,6 @@
 class gc : public gcRoot {
 public:
 
-  void markAndTrace() const {
-    fprintf(stderr, "Implement mark and trace\n");
-    abort();
-  }
-
   size_t objectSize() const {
     fprintf(stderr, "Implement object size\n");
     abort();
@@ -106,7 +101,15 @@ public:
     assert(TraceLocal && "scanning without a trace local");
     gc::MMTkDelayedRoot(TraceLocal, ptr);
   }
+ 
+  static void markAndTrace(void* source, void* ptr) {
+    abort();
+  }
   
+  static void markAndTraceRoot(void* ptr) {
+    abort();
+  }
+
   static void collect() {
     abort();
   }

@@ -146,6 +146,13 @@ public:
     return javaLoader;
   }
   
+  /// getJavaClassLoaderPtr - Return a pointer to the Java representation of
+  /// this class loader.
+  ///
+  JavaObject** getJavaClassLoaderPtr() {
+    return &javaLoader;
+  }
+  
   /// loadName - Loads the class of the given name.
   ///
   UserClass* loadName(const UTF8* name, bool doResolve, bool doThrow,

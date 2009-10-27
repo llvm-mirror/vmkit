@@ -21,7 +21,6 @@
 
 
 #define TRACER tracer()
-#define MARK_AND_TRACE markAndTrace()
 #define CALL_TRACER tracer()
 
 namespace mvm {
@@ -276,8 +275,13 @@ public:
     o->tracer();
   }
 
-  static inline void markAndTrace(void *ptr) {
-    GCChunkNode *node = o2node(ptr);
+  static inline void markAndTrace(void* source, void *ptr) {
+    markAndTraceRoot(ptr);
+  }
+  
+  static inline void markAndTraceRoot(void *ptr) {
+    void* obj = *(void**)ptr;
+    GCChunkNode *node = o2node(obj);
 
     if(node && !isMarked(node)) {
       mark(node);
@@ -312,10 +316,6 @@ public:
 class gc : public gcRoot {
 public:
  
-  void markAndTrace() const {
-    mvm::Collector::markAndTrace((void*)this);
-  }
-
   size_t objectSize() const {
     return mvm::Collector::objectSize((void*)this);
   }

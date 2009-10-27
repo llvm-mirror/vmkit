@@ -15,7 +15,7 @@ using namespace mvm;
 
 
 extern "C" void MarkAndTrace(gc* gc) {
-  Collector::markAndTrace((void*)gc);
+  Collector::markAndTraceRoot(&gc);
 }
 
 extern "C" void* gcmalloc(size_t sz, VirtualTable* VT) {

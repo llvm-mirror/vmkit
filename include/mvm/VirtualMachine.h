@@ -388,7 +388,7 @@ public:
   /// getReferent - Get the referent of the reference. Should be overriden
   /// by the VM.
   //
-  virtual gc* getReferent(gc*) { return 0; }
+  virtual gc** getReferent(gc*) { return 0; }
 
   /// enqueueReference - Calls the enqueue method. Should be overriden
   /// by the VM.

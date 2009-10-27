@@ -1293,6 +1293,12 @@ public:
   ///
   Attribut* lookupAttribut(const UTF8* key);
 
+  JavaObject** getObjectFieldPtr(void* obj) {
+    assert(classDef->isResolved());
+    void* ptr = (void*)((uint64)obj + ptrOffset);
+    return (JavaObject**)ptr;
+  }
+
   /// getVritual*Field - Get a virtual field of an object.
   ///
   #define GETFIELD(TYPE, TYPE_NAME) \
