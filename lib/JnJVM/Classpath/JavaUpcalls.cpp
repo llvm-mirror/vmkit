@@ -1062,7 +1062,11 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 gc** Jnjvm::getReferentPtr(gc* _obj) {
   JavaObjectReference* obj = (JavaObjectReference*)_obj;
   return (gc**)obj->getReferentPtr();
- }
+}
+
+void Jnjvm::setReferent(gc* obj, gc* val) {
+  ((JavaObjectReference*)obj)->setReferent((JavaObject*)val);
+}
  
 void Jnjvm::clearReferent(gc* _obj) {
   JavaObjectReference* obj = (JavaObjectReference*)_obj;

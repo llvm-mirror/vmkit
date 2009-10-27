@@ -389,6 +389,10 @@ public:
   /// by the VM.
   //
   virtual gc** getReferentPtr(gc*) { return 0; }
+  
+  /// setReferent - Set the referent of the reference. Should be overriden
+  /// by the VM.
+  virtual void setReferent(gc* reference, gc* referent) { }
 
   /// enqueueReference - Calls the enqueue method. Should be overriden
   /// by the VM.

@@ -177,7 +177,7 @@ void VirtualMachine::scanFinalizationQueue() {
     gc* obj = FinalizationQueue[i];
 
     if (!Collector::isLive(obj)) {
-      Collector::markAndTraceRoot(FinalizationQueue + i);
+      obj = Collector::retainForFinalize(FinalizationQueue[i]);
       
       if (CurrentFinalizedIndex >= ToBeFinalizedLength)
         growToBeFinalizedQueue();
@@ -185,7 +185,7 @@ void VirtualMachine::scanFinalizationQueue() {
       /* Add to object table */
       ToBeFinalized[CurrentFinalizedIndex++] = obj;
     } else {
-      FinalizationQueue[NewIndex++] = obj;
+      FinalizationQueue[NewIndex++] = Collector::getForwardedFinalizable(obj);
     }
   }
   CurrentIndex = NewIndex;
@@ -201,21 +201,24 @@ gc* ReferenceQueue::processReference(gc* reference, VirtualMachine* vm) {
     return 0;
   }
 
-  gc** referent = vm->getReferentPtr(reference);
+  gc* referent = *(vm->getReferentPtr(reference));
 
   if (!referent) return 0;
 
   if (semantics == SOFT) {
     // TODO: are we are out of memory? Consider that we always are for now.
     if (false) {
-      Collector::markAndTrace(reference, referent);
+      Collector::retainReferent(referent);
     }
   } else if (semantics == PHANTOM) {
     // Nothing to do.
   }
 
-  if (Collector::isLive(*referent)) {
-    return reference;
+  if (Collector::isLive(referent)) {
+    gc* newReferent = mvm::Collector::getForwardedReference(referent);
+    gc* newReference = mvm::Collector::getForwardedReference(reference);
+    vm->setReferent(newReference, newReferent);
+    return newReference;
   } else {
     vm->clearReferent(reference);
     vm->addToEnqueue(reference);

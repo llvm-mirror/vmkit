@@ -308,6 +308,24 @@ public:
   void setMinMemory(size_t sz){
   }
 
+  static gc* retainForFinalize(gc* val) {
+    markAndTraceRoot(&val);
+    return val;
+  }
+  
+  static gc* retainReferent(gc* val) {
+    markAndTraceRoot(&val);
+    return val;
+  }
+
+  static gc* getForwardedReference(gc* val) {
+    return val;
+  }
+  
+  static gc* getForwardedFinalizable(gc* val) {
+    return val;
+  }
+
 };
 
 }

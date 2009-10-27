@@ -360,6 +360,7 @@ public:
 
   virtual void clearReferent(gc*);
   virtual gc** getReferentPtr(gc*);
+  virtual void setReferent(gc*, gc*);
   virtual bool enqueueReference(gc*);
 
 protected:
