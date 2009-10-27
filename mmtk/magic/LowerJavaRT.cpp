@@ -46,14 +46,15 @@ bool LowerJavaRT::runOnModule(Module& M) {
     if (!strncmp(GV.getName().data(), "JnJVM_java", 10) ||
         !strncmp(GV.getName().data(), "java", 4)) {
       if (!strcmp(GV.getName().data(), "JnJVM_java_lang_String_charAt__I")) {
-  	Function* F = M.getFunction("MMTkCharAt");
-	if (!F) 
+  	    Function* F = M.getFunction("MMTkCharAt");
+        if (!F) 
           F = Function::Create(GV.getFunctionType(),
                                GlobalValue::ExternalLinkage, "MMTkCharAt", &M);
-      	GV.replaceAllUsesWith(F);
+      	
+        GV.replaceAllUsesWith(F);
       } else if (!strcmp(GV.getName().data(), "JnJVM_java_lang_Object_getClass__")) {
-  	Function* F = M.getFunction("MMTkGetClass");
-	if (!F) 
+  	    Function* F = M.getFunction("MMTkGetClass");
+	      if (!F) 
           F = Function::Create(GV.getFunctionType(),
                                GlobalValue::ExternalLinkage, "MMTkGetClass", &M);
       	GV.replaceAllUsesWith(F);
