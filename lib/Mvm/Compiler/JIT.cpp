@@ -285,9 +285,7 @@ MvmModule::MvmModule(llvm::Module* module) {
   unwindResume = module->getFunction("_Unwind_Resume_or_Rethrow");
   
   llvmGetException = module->getFunction("llvm.eh.exception");
-  exceptionSelector = (module->getPointerSize() == Module::Pointer32 ?
-                module->getFunction("llvm.eh.selector.i32") : 
-                module->getFunction("llvm.eh.selector.i64"));
+  exceptionSelector = module->getFunction("llvm.eh.selector"); 
   
   personality = module->getFunction("__gxx_personality_v0");
   exceptionEndCatch = module->getFunction("__cxa_end_catch");
