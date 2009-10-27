@@ -40,13 +40,8 @@ using namespace jnjvm;
 // Having many GC classes gives more work to the GC for the scanning phase
 // and for the relocation phase (for copying collectors.
 //
-// In JnJVM, we identified two cases where we really need to declare GC
-// classes: the fat lock object and the class loader.
-//
-// For the fat lock there are many design decisions that we could make to
-// make it a non-GC class. We leave this as a TODO.
-//
-// For the class loader, we decided that this was the best solution because
+// In JnJVM, there is only one internal gc object, the class loader.
+// We decided that this was the best solution because
 // otherwise it would involve hacks on the java.lang.Classloader class.
 // Therefore, we create a new GC class with a finalize method that will
 // delete the internal class loader when the Java object class loader is
