@@ -510,12 +510,13 @@ void JavaJIT::monitorEnter(Value* obj) {
   Value* threadId = getCurrentThread(module->MutatorThreadType);
   threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
                               currentBlock);
-  threadId = BinaryOperator::CreateOr(threadId, lock, "", currentBlock);
+  Value* newValMask = BinaryOperator::CreateOr(threadId, lock, "",
+                                               currentBlock);
 
   std::vector<Value*> atomicArgs;
   atomicArgs.push_back(lockPtr);
   atomicArgs.push_back(lock);
-  atomicArgs.push_back(threadId);
+  atomicArgs.push_back(newValMask);
 
   // Do the atomic compare and swap.
   Value* atomic = CallInst::Create(module->llvm_atomic_lcs_ptr,
@@ -597,13 +598,16 @@ void JavaJIT::monitorExit(Value* obj) {
                             PointerType::getUnqual(module->pointerSizeType),
                             "", currentBlock);
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
+  Value* GCMask = ConstantInt::get(module->pointerSizeType, ~mvm::GCMask);
+
+  Value* lockedMask = BinaryOperator::CreateAnd(lock, GCMask, "", currentBlock);
   
   Value* threadId = getCurrentThread(module->MutatorThreadType);
   threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
                               currentBlock);
   
-  Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, lock, threadId,
-                            "");
+  Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, lockedMask,
+                            threadId, "");
   
   
   BasicBlock* EndUnlock = createBasicBlock("end unlock");
@@ -617,7 +621,9 @@ void JavaJIT::monitorExit(Value* obj) {
   
   // Locked once, set zero
   currentBlock = LockedOnceBB;
-  new StoreInst(module->constantPtrZero, lockPtr, false, currentBlock);
+  GCMask = ConstantInt::get(module->pointerSizeType, mvm::GCMask);
+  lockedMask = BinaryOperator::CreateAnd(lock, GCMask, "", currentBlock);
+  new StoreInst(lockedMask, lockPtr, false, currentBlock);
   BranchInst::Create(EndUnlock, currentBlock);
 
   currentBlock = NotLockedOnceBB;
