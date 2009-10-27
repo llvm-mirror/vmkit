@@ -215,7 +215,7 @@ gc* ReferenceQueue::processReference(gc* reference, VirtualMachine* vm) {
   }
 
   if (Collector::isLive(referent)) {
-    gc* newReferent = mvm::Collector::getForwardedReference(referent);
+    gc* newReferent = mvm::Collector::getForwardedReferent(referent);
     gc* newReference = mvm::Collector::getForwardedReference(reference);
     vm->setReferent(newReference, newReferent);
     return newReference;

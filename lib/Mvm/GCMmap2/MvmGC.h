@@ -322,6 +322,10 @@ public:
     return val;
   }
   
+  static gc* getForwardedReferent(gc* val) {
+    return val;
+  }
+  
   static gc* getForwardedFinalizable(gc* val) {
     return val;
   }
