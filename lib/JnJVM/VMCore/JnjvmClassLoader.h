@@ -21,6 +21,7 @@
 #include "mvm/Allocator.h"
 #include "mvm/Object.h"
 
+#include "JavaObject.h"
 #include "JnjvmConfig.h"
 
 namespace jnjvm {
@@ -422,7 +423,7 @@ public:
 /// have a JnjvmClassLoader non-GC object. Also the finalizer of this class
 /// will delete the internal class loader and we do not have to implement
 /// hacks in the java.lang.Classloader finalizer.
-class VMClassLoader : public gc {
+class VMClassLoader : public JavaObject {
 private:
   
   /// JCL - The internal class loader.
@@ -439,9 +440,11 @@ public:
   }
 
   /// VT - The VirtualTable for this GC-class.
+  ///
   static VirtualTable VT;
 
-  /// TRACER - Trace the internal class loader.
+  /// staticTracer - Trace the internal class loader.
+  ///
   static void staticTracer(VMClassLoader* obj) {
     if (obj->JCL) obj->JCL->tracer();
   }
