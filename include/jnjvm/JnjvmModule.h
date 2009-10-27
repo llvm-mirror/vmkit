@@ -35,6 +35,7 @@ namespace llvm {
 
 namespace jnjvm {
 
+class ArrayObject;
 class Attribut;
 class CacheNode;
 class CommonClass;
@@ -647,7 +648,12 @@ private:
   llvm::Constant* getUTF8(const UTF8* val);
   
   template<typename T>
-  llvm::Constant* CreateConstantFromArray(const T* val, const llvm::Type* Ty);
+  llvm::Constant* CreateConstantFromIntArray(const T* val, const llvm::Type* Ty);
+  
+  template<typename T>
+  llvm::Constant* CreateConstantFromFPArray(const T* val, const llvm::Type* Ty);
+
+  llvm::Constant* CreateConstantFromObjectArray(const ArrayObject* val);
   
   std::map<const CommonClass*, llvm::Constant*> nativeClasses;
   std::map<const ClassArray*, llvm::GlobalVariable*> arrayClasses;

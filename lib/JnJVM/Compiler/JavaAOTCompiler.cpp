@@ -576,35 +576,34 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
     CommonClass* subClass = cl->asArrayClass()->baseClass();
     if (subClass->isPrimitive()) {
       if (subClass == upcalls->OfBool) {
-        return CreateConstantFromArray<ArrayUInt8>((ArrayUInt8*)obj,
+        return CreateConstantFromIntArray<ArrayUInt8>((ArrayUInt8*)obj,
                                         Type::getInt8Ty(getGlobalContext()));
       } else if (subClass == upcalls->OfByte) {
-        return CreateConstantFromArray<ArraySInt8>((ArraySInt8*)obj,
+        return CreateConstantFromIntArray<ArraySInt8>((ArraySInt8*)obj,
                                         Type::getInt8Ty(getGlobalContext()));
       } else if (subClass == upcalls->OfShort) {
-        return CreateConstantFromArray<ArraySInt16>((ArraySInt16*)obj,
+        return CreateConstantFromIntArray<ArraySInt16>((ArraySInt16*)obj,
                                         Type::getInt16Ty(getGlobalContext()));
       } else if (subClass == upcalls->OfChar) {
-        return CreateConstantFromArray<ArrayUInt16>((ArrayUInt16*)obj,
+        return CreateConstantFromIntArray<ArrayUInt16>((ArrayUInt16*)obj,
                                         Type::getInt16Ty(getGlobalContext()));
       } else if (subClass == upcalls->OfInt) {
-        return CreateConstantFromArray<ArraySInt32>((ArraySInt32*)obj,
+        return CreateConstantFromIntArray<ArraySInt32>((ArraySInt32*)obj,
                                         Type::getInt32Ty(getGlobalContext()));
       } else if (subClass == upcalls->OfFloat) {
-        return CreateConstantFromArray<ArrayFloat>((ArrayFloat*)obj,
+        return CreateConstantFromFPArray<ArrayFloat>((ArrayFloat*)obj,
                                         Type::getFloatTy(getGlobalContext()));
       } else if (subClass == upcalls->OfLong) {
-        return CreateConstantFromArray<ArrayLong>((ArrayLong*)obj,
+        return CreateConstantFromIntArray<ArrayLong>((ArrayLong*)obj,
                                         Type::getInt64Ty(getGlobalContext()));
       } else if (subClass == upcalls->OfDouble) {
-        return CreateConstantFromArray<ArrayDouble>((ArrayDouble*)obj,
+        return CreateConstantFromFPArray<ArrayDouble>((ArrayDouble*)obj,
                                         Type::getDoubleTy(getGlobalContext()));
       } else {
         abort();
       }
     } else {
-      return CreateConstantFromArray<ArrayObject>((ArrayObject*)obj,
-                                                  JnjvmModule::JavaObjectType);
+      return CreateConstantFromObjectArray((ArrayObject*)obj);
     }
   } else {
     
@@ -682,8 +681,8 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
 
   Elmts.push_back(CreateConstantForBaseObject(cl));
 
-  Constant* Array =
-    CreateConstantFromArray<ArrayUInt16>(str->value, Type::getInt16Ty(getGlobalContext()));
+  Constant* Array = CreateConstantFromIntArray<ArrayUInt16>(str->value,
+                                        Type::getInt16Ty(getGlobalContext()));
   
 
   Module& Mod = *getLLVMModule();
@@ -1228,7 +1227,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
 }
 
 template<typename T>
-Constant* JavaAOTCompiler::CreateConstantFromArray(const T* val, const Type* Ty) {
+Constant* JavaAOTCompiler::CreateConstantFromIntArray(const T* val, const Type* Ty) {
   std::vector<const Type*> Elemts;
   const ArrayType* ATy = ArrayType::get(Ty, val->size);
   Elemts.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
@@ -1245,16 +1244,62 @@ Constant* JavaAOTCompiler::CreateConstantFromArray(const T* val, const Type* Ty)
   
   std::vector<Constant*> Vals;
   for (sint32 i = 0; i < val->size; ++i) {
-    if (Ty->isInteger()) {
-      Vals.push_back(ConstantInt::get(Ty, (uint64)val->elements[i]));
-    } else if (Ty->isFloatingPoint()) {
-      Vals.push_back(ConstantFP::get(Ty, (double)(size_t)val->elements[i]));
+    Vals.push_back(ConstantInt::get(Ty, (uint64)val->elements[i]));
+  }
+
+  Cts.push_back(ConstantArray::get(ATy, Vals));
+  
+  return ConstantStruct::get(STy, Cts);
+}
+
+template<typename T>
+Constant* JavaAOTCompiler::CreateConstantFromFPArray(const T* val, const Type* Ty) {
+  std::vector<const Type*> Elemts;
+  const ArrayType* ATy = ArrayType::get(Ty, val->size);
+  Elemts.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
+  Elemts.push_back(JnjvmModule::pointerSizeType);
+  
+
+  Elemts.push_back(ATy);
+
+  const StructType* STy = StructType::get(getLLVMModule()->getContext(), Elemts);
+  
+  std::vector<Constant*> Cts;
+  Cts.push_back(CreateConstantForBaseObject(val->getClass()));
+  Cts.push_back(ConstantInt::get(JnjvmModule::pointerSizeType, val->size));
+  
+  std::vector<Constant*> Vals;
+  for (sint32 i = 0; i < val->size; ++i) {
+    Vals.push_back(ConstantFP::get(Ty, (double)val->elements[i]));
+  }
+
+  Cts.push_back(ConstantArray::get(ATy, Vals));
+  
+  return ConstantStruct::get(STy, Cts);
+}
+
+Constant* JavaAOTCompiler::CreateConstantFromObjectArray(const ArrayObject* val) {
+  std::vector<const Type*> Elemts;
+  const llvm::Type* Ty = JnjvmModule::JavaObjectType;
+  const ArrayType* ATy = ArrayType::get(Ty, val->size);
+  Elemts.push_back(JnjvmModule::JavaObjectType->getContainedType(0));
+  Elemts.push_back(JnjvmModule::pointerSizeType);
+  
+
+  Elemts.push_back(ATy);
+
+  const StructType* STy = StructType::get(getLLVMModule()->getContext(), Elemts);
+  
+  std::vector<Constant*> Cts;
+  Cts.push_back(CreateConstantForBaseObject(val->getClass()));
+  Cts.push_back(ConstantInt::get(JnjvmModule::pointerSizeType, val->size));
+  
+  std::vector<Constant*> Vals;
+  for (sint32 i = 0; i < val->size; ++i) {
+    if (val->elements[i]) {
+      Vals.push_back(getFinalObject(val->elements[i]));
     } else {
-      if (val->elements[i]) {
-        Vals.push_back(getFinalObject((JavaObject*)(size_t)val->elements[i]));
-      } else {
-        Vals.push_back(Constant::getNullValue(JnjvmModule::JavaObjectType));
-      }
+      Vals.push_back(Constant::getNullValue(JnjvmModule::JavaObjectType));
     }
   }
 
