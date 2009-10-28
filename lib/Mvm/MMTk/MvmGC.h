@@ -57,7 +57,13 @@ public:
   typedef void (*MMTkProcessRootEdgeType)(uintptr_t TraceLocal, void* slot,
                                           uint8_t untraced);
   
-  typedef void (*MMTkIsLiveType)(uintptr_t TraceLocal, void* obj);
+  typedef uint8_t (*MMTkIsLiveType)(uintptr_t TraceLocal, void* obj);
+
+  typedef gc* (*MMTkRetainReferentType)(uintptr_t TraceLocal, void* obj);
+  typedef MMTkRetainReferentType MMTkRetainForFinalizeType;
+  typedef MMTkRetainReferentType MMTkGetForwardedReferenceType;
+  typedef MMTkRetainReferentType MMTkGetForwardedReferentType;
+  typedef MMTkRetainReferentType MMTkGetForwardedFinalizableType;
 
   static MMTkAllocType MMTkGCAllocator;
   
@@ -70,6 +76,14 @@ public:
   static MMTkProcessEdgeType MMTkProcessEdge;
   
   static MMTkProcessRootEdgeType MMTkProcessRootEdge;
+  
+  static MMTkIsLiveType MMTkIsLive;
+  
+  static MMTkRetainReferentType MMTkRetainReferent;
+  static MMTkRetainForFinalizeType MMTkRetainForFinalize;
+  static MMTkGetForwardedReferenceType MMTkGetForwardedReference;
+  static MMTkGetForwardedReferentType MMTkGetForwardedReferent;
+  static MMTkGetForwardedFinalizableType MMTkGetForwardedFinalizable;
 
 
   void* operator new(size_t sz, VirtualTable *VT) {
@@ -95,12 +109,8 @@ public:
 
   static uintptr_t TraceLocal;
 
-  static bool isLive(gc*) {
-    abort();
-  }
-  
-  static void traceStackThread() {
-    abort();
+  static bool isLive(gc* ptr) {
+    return gc::MMTkIsLive(TraceLocal, ptr);
   }
   
   static void scanObject(void** ptr) {
@@ -117,6 +127,31 @@ public:
   static void markAndTraceRoot(void* ptr) {
     assert(TraceLocal && "scanning without a trace local");
     gc::MMTkProcessRootEdge(TraceLocal, ptr, true);
+  }
+
+  static gc* retainForFinalize(gc* val) {
+    assert(TraceLocal && "scanning without a trace local");
+    return gc::MMTkRetainForFinalize(TraceLocal, val);
+  }
+  
+  static gc* retainReferent(gc* val) {
+    assert(TraceLocal && "scanning without a trace local");
+    return gc::MMTkRetainReferent(TraceLocal, val);
+  }
+  
+  static gc* getForwardedFinalizable(gc* val) {
+    assert(TraceLocal && "scanning without a trace local");
+    return gc::MMTkGetForwardedFinalizable(TraceLocal, val);
+  }
+  
+  static gc* getForwardedReference(gc* val) {
+    assert(TraceLocal && "scanning without a trace local");
+    return gc::MMTkGetForwardedReference(TraceLocal, val);
+  }
+  
+  static gc* getForwardedReferent(gc* val) {
+    assert(TraceLocal && "scanning without a trace local");
+    return gc::MMTkGetForwardedReferent(TraceLocal, val);
   }
 
   static void collect() {

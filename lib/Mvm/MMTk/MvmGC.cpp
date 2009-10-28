@@ -21,6 +21,13 @@ gc::MMTkCheckAllocatorType  gc::MMTkCheckAllocator = 0;
 gc::MMTkDelayedRootType     gc::MMTkDelayedRoot = 0;
 gc::MMTkProcessEdgeType     gc::MMTkProcessEdge = 0;
 gc::MMTkProcessRootEdgeType gc::MMTkProcessRootEdge = 0;
+gc::MMTkIsLiveType          gc::MMTkIsLive = 0;
+
+gc::MMTkRetainReferentType          gc::MMTkRetainReferent = 0;
+gc::MMTkRetainForFinalizeType       gc::MMTkRetainForFinalize = 0;
+gc::MMTkGetForwardedReferentType    gc::MMTkGetForwardedReferent = 0;
+gc::MMTkGetForwardedReferenceType   gc::MMTkGetForwardedReference = 0;
+gc::MMTkGetForwardedFinalizableType gc::MMTkGetForwardedFinalizable = 0;
 
 uintptr_t Collector::TraceLocal = 0;
 
@@ -84,7 +91,7 @@ void Collector::initialise() {
 
 extern "C" void conditionalSafePoint() {
   mvm::Thread::get()->startNative(1);
-  abort();
+  mvm::Thread::get()->MyVM->rendezvous.traceThreadStack();
   mvm::Thread::get()->endNative();
 }
 

@@ -74,6 +74,7 @@ void MvmModule::loadBytecodeFile(const std::string& str) {
 }
 
 typedef void (*BootType)(uintptr_t Plan);
+typedef void (*BootHeapType)(intptr_t initial, intptr_t max);
 
 void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
                            TargetMachine* T) {
@@ -174,6 +175,12 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     F = dyn_cast<Function>(GA->getAliasee());
     gc::MMTkCheckAllocator = (gc::MMTkCheckAllocatorType)
       (uintptr_t)executionEngine->getPointerToFunction(F);
+     
+    F = globalModule->getFunction("JnJVM_org_mmtk_utility_heap_HeapGrowthManager_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2");
+    assert(F && "Could not find boot from HeapGrowthManager");
+    BootHeapType BootHeap = (BootHeapType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+    BootHeap(50 * 1024 * 1024, 100 * 1024 * 1024);
     
     GV = globalModule->getGlobalVariable("org_j3_config_Selected_4Plan_static", false);
     assert(GV && "No global plan.");
@@ -214,6 +221,40 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     gc::MMTkProcessRootEdge = (gc::MMTkProcessRootEdgeType)
       (uintptr_t)executionEngine->getPointerToFunction(F);
    
+    
+    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_isLive__Lorg_vmmagic_unboxed_ObjectReference_2");
+    assert(F && "Could not find isLive from TraceLocal");
+    gc::MMTkIsLive = (gc::MMTkIsLiveType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+  
+    
+    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_retainForFinalize__Lorg_vmmagic_unboxed_ObjectReference_2");
+    assert(F && "Could not find isLive from TraceLocal");
+    gc::MMTkRetainForFinalize = (gc::MMTkRetainForFinalizeType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+    
+    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_retainReferent__Lorg_vmmagic_unboxed_ObjectReference_2");
+    assert(F && "Could not find isLive from TraceLocal");
+    gc::MMTkRetainReferent = (gc::MMTkRetainReferentType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+    
+    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_getForwardedReference__Lorg_vmmagic_unboxed_ObjectReference_2");
+    assert(F && "Could not find isLive from TraceLocal");
+    gc::MMTkGetForwardedReference = (gc::MMTkGetForwardedReferenceType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+    
+    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_getForwardedReferent__Lorg_vmmagic_unboxed_ObjectReference_2");
+    assert(F && "Could not find isLive from TraceLocal");
+    gc::MMTkGetForwardedReferent = (gc::MMTkGetForwardedReferentType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+    
+    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_getForwardedFinalizable__Lorg_vmmagic_unboxed_ObjectReference_2");
+    assert(F && "Could not find isLive from TraceLocal");
+    gc::MMTkGetForwardedFinalizable = (gc::MMTkGetForwardedFinalizableType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+    
+  
+  
 
   }
 #endif
