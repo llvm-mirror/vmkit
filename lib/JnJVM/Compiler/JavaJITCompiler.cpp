@@ -39,9 +39,8 @@ public:
   virtual void NotifyFunctionEmitted(const Function &F,
                                      void *Code, size_t Size,
                                      const EmittedFunctionDetails &Details) {
-    if (currentCompiledMethod) {
-      assert(JavaLLVMCompiler::getMethod(currentCompiledMethod) == &F &&
-             "Method mismatch");
+    if (currentCompiledMethod &&
+        JavaLLVMCompiler::getMethod(currentCompiledMethod) == &F) {
       Jnjvm* vm = JavaThread::get()->getJVM();
       vm->addMethodInFunctionMap(currentCompiledMethod, Code);
     } else {
