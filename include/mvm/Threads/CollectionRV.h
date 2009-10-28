@@ -93,9 +93,9 @@ public:
 
   void synchronize();
 
-  void traceForeignThreadStack(mvm::Thread* th);
-  void traceThreadStack();
+  void addForeignThread(mvm::Thread* th);
 
+  void join();
 };
 
 }

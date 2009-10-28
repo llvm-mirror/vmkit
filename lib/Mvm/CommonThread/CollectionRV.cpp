@@ -16,11 +16,10 @@ void CollectionRV::waitCollection() {
   mvm::Thread* th = mvm::Thread::get();
   unsigned cm = rendezvousNb;
 
-  if (th != currentCollector) {
-    collectorGo();
-    while (rendezvousNb == cm) {
-      collectionCond.wait(&_stackLock);
-    }
+  if (nbCollected == th->MyVM->NumberOfThreads) collectorGo();
+  
+  while (rendezvousNb == cm) {
+    collectionCond.wait(&_stackLock);
   }
 }
 
@@ -67,14 +66,15 @@ void CollectionRV::synchronize() {
       void* val = cur->getLastSP();
       // If val is null, this means that the thread woke up, and is
       // joining the collection. We are sure the thread will scan its stack.
-      if (val) traceForeignThreadStack(cur);
+      if (val) addForeignThread(cur);
     }
 
-    // Finally, scan my stack too!
-    traceThreadStack();
+    // Add myself.
+    another_mark();
 
     // And wait for other threads to finish.
     waitStacks();
+
   } else {
     mvm::Thread* self = mvm::Thread::get();
     self->stackScanned = false;
@@ -87,18 +87,21 @@ void CollectionRV::synchronize() {
       cur->stackScanned = false;
       cur->killForRendezvous();
     }
+    
+    // Add myself.
+    another_mark();
 
-    traceThreadStack();
-	
+    // And wait for other threads to finish.
     waitStacks();
   }
  
   self->MyVM->ThreadLock.unlock();
 }
 
-void CollectionRV::traceThreadStack() {
+void CollectionRV::join() {
   mvm::Thread* th = mvm::Thread::get();
   th->inGC = true;
+  bool changed = false;
  
   stackLock();
 
@@ -110,32 +113,32 @@ void CollectionRV::traceThreadStack() {
     return;
   }
  
-  // I woke up while a GC was happening, and no-one has collected my stack yet.
-  // Do it now.
+  // I woke up while a GC was happening, and no-one has listed me yet.
   if (!th->stackScanned) {
-    th->MyVM->getScanner()->scanStack(th);
     another_mark();
     th->stackScanned = true;
+    if (!th->getLastSP()) {
+      changed = true;
+      th->setLastSP(FRAME_PTR());
+    }
   }
 
   // Wait for the collection to finish.
   waitCollection();
   stackUnlock();
   
-  // If the current thread is not the collector thread, this means that the
-  // collection is finished. Set inGC to false.
-  if(th != getCurrentCollector())
-    th->inGC = false;
+  // The collection is finished. Set inGC to false.
+  th->inGC = false;
+  if (changed) th->setLastSP(0);
 }
 
-void CollectionRV::traceForeignThreadStack(mvm::Thread* th) {
+void CollectionRV::addForeignThread(mvm::Thread* th) {
   stackLock();
- 
-  // The thread may have waken up during this GC. In this case, it may also
-  // have collected its stack. Don't scan it then.
+
+  // The thread may have waken up during this GC. In this case, it may have
+  // put itself into the waiting list.
   if (!th->stackScanned) {
-    th->MyVM->getScanner()->scanStack(th);
-    th->MyVM->rendezvous.another_mark();
+    another_mark();
     th->stackScanned = true;
   }
 

@@ -42,6 +42,7 @@ void Collector::do_collect() {
   unused_nodes->attrape(used_nodes);
 
   mvm::Thread* th = mvm::Thread::get();
+  mvm::StackScanner* sc = th->MyVM->getScanner();
   th->MyVM->startCollection();
   th->inGC = true;
 
@@ -54,6 +55,7 @@ void Collector::do_collect() {
 
   // (2) Trace the threads.
   do {
+    sc->scanStack(tcur);
     tcur->tracer();
     tcur = (mvm::Thread*)tcur->next();
   } while (tcur != th);

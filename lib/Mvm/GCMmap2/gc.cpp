@@ -27,7 +27,7 @@ extern "C" void* gcmalloc(size_t sz, VirtualTable* VT) {
 
 extern "C" void conditionalSafePoint() {
   mvm::Thread::get()->startNative(1);
-  mvm::Thread::get()->MyVM->rendezvous.traceThreadStack();
+  mvm::Thread::get()->MyVM->rendezvous.join();
   mvm::Thread::get()->endNative();
 }
 

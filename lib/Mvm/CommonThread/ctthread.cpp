@@ -45,7 +45,7 @@ void Thread::yield(void) {
 }
 
 void Thread::joinCollection() {
-  MyVM->rendezvous.traceThreadStack(); 
+  MyVM->rendezvous.join(); 
 }
 
 void Thread::startNative(int level) {
@@ -159,7 +159,7 @@ extern void sigsegvHandler(int, siginfo_t*, void*);
 
 static void siggcHandler(int) {
   mvm::Thread* th = mvm::Thread::get();
-  th->MyVM->rendezvous.traceThreadStack();
+  th->MyVM->rendezvous.join();
 }
 
 /// internalThreadStart - The initial function called by a thread. Sets some
