@@ -18,6 +18,8 @@ extern "C" void JnJVM_org_j3_config_Selected_00024Collector_staticCollect__();
 
 extern "C" void JnJVM_org_mmtk_plan_Plan_collectionComplete__();
 
+extern "C" void JnJVM_org_mmtk_utility_heap_HeapGrowthManager_considerHeapSize__();
+
 
 extern "C" bool Java_org_j3_mmtk_Collection_isEmergencyAllocation__ (JavaObject* C) {
   // TODO: emergency when OOM.
@@ -30,9 +32,28 @@ extern "C" void Java_org_j3_mmtk_Collection_reportAllocationSuccess__ (JavaObjec
 
 
 extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (JavaObject* C, int why) {
+  mvm::Thread* th = mvm::Thread::get();
+ 
+  th->MyVM->startCollection();
+  th->MyVM->rendezvous.synchronize();
+  
   JnJVM_org_mmtk_plan_Plan_setCollectionTriggered__();
   JnJVM_org_j3_config_Selected_00024Collector_staticCollect__();
   JnJVM_org_mmtk_plan_Plan_collectionComplete__();
+
+  th->MyVM->rendezvous.finishRV();
+  
+  th->MyVM->endCollection();
+  
+  th->MyVM->wakeUpFinalizers();
+  th->MyVM->wakeUpEnqueue();
+
+}
+
+extern "C" void Java_org_j3_mmtk_Collection_joinCollection__ (JavaObject* C) {
+  mvm::Thread* th = mvm::Thread::get();
+  assert(th->inRV && "Joining collection without a rendezvous");
+  th->MyVM->rendezvous.join();
 }
 
 extern "C" int Java_org_j3_mmtk_Collection_rendezvous__I (JavaObject* C, int where) {
@@ -51,7 +72,6 @@ extern "C" void Java_org_j3_mmtk_Collection_prepareMutator__Lorg_mmtk_plan_Mutat
 }
 
 
-extern "C" void Java_org_j3_mmtk_Collection_joinCollection__ () { JavaThread::get()->printBacktrace(); abort(); }
 extern "C" void Java_org_j3_mmtk_Collection_reportPhysicalAllocationFailed__ () { JavaThread::get()->printBacktrace(); abort(); }
 extern "C" void Java_org_j3_mmtk_Collection_triggerAsyncCollection__I () { JavaThread::get()->printBacktrace(); abort(); }
 extern "C" void Java_org_j3_mmtk_Collection_noThreadsInGC__ () { JavaThread::get()->printBacktrace(); abort(); }
