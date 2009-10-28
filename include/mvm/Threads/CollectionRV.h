@@ -18,40 +18,37 @@ namespace mvm {
 
 class CollectionRV {
   
-  /// stackLock - Stack lock for synchronization.
-  LockNormal _stackLock;         
+  /// _lockRV - Lock for synchronization.
+  LockNormal _lockRV;         
   
-  /// stackCond - Condition for unlocking other tasks (write protect).
-  Cond stackCond;
+  /// condEndRV - Condition for unlocking other tasks (write protect).
+  Cond condEndRV;
 
-  /// collectionCond - Condition for unblocking the collector.
-  Cond collectionCond;
+  /// collectionCond - Condition for unblocking the initator.
+  Cond condInitiator;
 
-  /// nbCollected - Number of threads collected.
-  unsigned nbCollected;
+  /// nbJoined - Number of threads that joined the rendezvous.
+  unsigned nbJoined;
   
-  /// currentCollector - The initiating thread for collection. Don't
-  /// synchonize this one.
-  mvm::Thread* currentCollector;  
+  /// initiator - The initiating thread for rendezvous.
+  mvm::Thread* initiator;
   
   /// cooperative - Is the rendez-vous cooperative?
   bool cooperative;
 
-
   /// rendezvousNb - The identifier of the rendez-vous.
-  ///
   unsigned rendezvousNb;
   
 public:
  
-  mvm::Thread* getCurrentCollector() {
-    return currentCollector;
+  mvm::Thread* getInitiator() {
+    return initiator;
   }
 
   CollectionRV() {
     rendezvousNb = 0;
-    nbCollected = 0;
-    currentCollector = 0;
+    nbJoined = 0;
+    initiator = 0;
 #ifdef WITH_LLVM_GCC
     cooperative = true;
 #else
@@ -61,35 +58,35 @@ public:
  
   bool isCooperative() { return cooperative; }
 
-  void stackLock() { _stackLock.lock(); }
-  void stackUnlock() { _stackLock.unlock(); }
+  void lockRV() { _lockRV.lock(); }
+  void unlockRV() { _lockRV.unlock(); }
 
-  void waitStacks();
-  void waitCollection();
+  void waitEndOfRV();
+  void waitRV();
  
-  void collectionFinished() {
+  void finishRV() {
     if (cooperative) {
       // We lock here to make sure no threads previously blocked in native
       // will join the collection and never go back to running code.
-      stackLock();
-      mvm::Thread* cur = currentCollector;
+      lockRV();
+      mvm::Thread* cur = initiator;
       do {
         cur->doYield = false;
         cur = (mvm::Thread*)cur->next();
-      } while (cur != currentCollector);
+      } while (cur != initiator);
       rendezvousNb++;
-      collectionCond.broadcast();
-      stackUnlock();
+      condEndRV.broadcast();
+      unlockRV();
     } else {
       rendezvousNb++;
-      collectionCond.broadcast();
+      condEndRV.broadcast();
     }
-    currentCollector->inGC = false;
+    initiator->inRV = false;
   }
   
-  void collectorGo() { stackCond.broadcast(); }
+  void collectorGo() { condInitiator.broadcast(); }
 
-  void another_mark() { nbCollected++; }
+  void another_mark() { nbJoined++; }
 
   void synchronize();
 

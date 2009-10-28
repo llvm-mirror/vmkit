@@ -44,7 +44,6 @@ void Collector::do_collect() {
   mvm::Thread* th = mvm::Thread::get();
   mvm::StackScanner* sc = th->MyVM->getScanner();
   th->MyVM->startCollection();
-  th->inGC = true;
 
   th->MyVM->rendezvous.synchronize();
 
@@ -93,7 +92,7 @@ void Collector::do_collect() {
   
   // Wake up all threads.
   th->MyVM->endCollection();
-  th->MyVM->rendezvous.collectionFinished();
+  th->MyVM->rendezvous.finishRV();
   th->MyVM->wakeUpFinalizers();
   th->MyVM->wakeUpEnqueue();
   
@@ -103,8 +102,7 @@ void Collector::do_collect() {
     next = cur->next();
     allocator->reject_chunk(cur);
   }
-  th->inGC = false;
-
+  
 }
 
 void Collector::collect_unprotect() {

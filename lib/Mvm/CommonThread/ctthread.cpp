@@ -39,12 +39,12 @@ void Thread::exit(int value) {
 void Thread::yield(void) {
   Thread* th = mvm::Thread::get();
   if (th->isMvmThread()) {
-    if (th->doYield && !th->inGC) th->joinCollection();
+    if (th->doYield && !th->inRV) th->joinRV();
   }
   sched_yield();
 }
 
-void Thread::joinCollection() {
+void Thread::joinRV() {
   MyVM->rendezvous.join(); 
 }
 

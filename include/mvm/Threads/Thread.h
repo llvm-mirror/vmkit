@@ -147,14 +147,13 @@ public:
   ///
   bool doYield;
 
-  /// inGC - Flag to tell that the thread is being part of a GC.
+  /// inRV - Flag to tell that the thread is being part of a rendezvous.
   ///
-  bool inGC;
+  bool inRV;
 
-  /// stackScanned - Flag to tell that the thread's stack has already
-  /// been analyzed.
+  /// joinedRV - Flag to tell that the thread has joined a rendezvous.
   ///
-  bool stackScanned;
+  bool joinedRV;
 
   /// get - Get the thread specific data of the current thread.
   ///
@@ -183,9 +182,9 @@ private:
   ///
   virtual void internalClearException() {}
 
-  /// joinCollection - Join a collection.
+  /// joinRV - Join a rendezvous.
   ///
-  void joinCollection();
+  void joinRV();
 
 public:
  
@@ -203,13 +202,13 @@ public:
 
   void enterUncooperativeCode(unsigned level = 0) __attribute__ ((noinline)) {
     if (isMvmThread()) {
-      if (!inGC) {
+      if (!inRV) {
         assert(!lastSP && "SP already set when entering uncooperative code");
         ++level;
         void* temp = __builtin_frame_address(0);
         while (level--) temp = ((void**)temp)[0];
         lastSP = temp;
-        if (doYield) joinCollection();
+        if (doYield) joinRV();
         assert(lastSP && "No last SP when entering uncooperative code");
       }
     }
@@ -217,10 +216,10 @@ public:
   
   void enterUncooperativeCode(void* SP) {
     if (isMvmThread()) {
-      if (!inGC) {
+      if (!inRV) {
         assert(!lastSP && "SP already set when entering uncooperative code");
         lastSP = SP;
-        if (doYield) joinCollection();
+        if (doYield) joinRV();
         assert(lastSP && "No last SP when entering uncooperative code");
       }
     }
@@ -228,11 +227,11 @@ public:
 
   void leaveUncooperativeCode() {
     if (isMvmThread()) {
-      if (!inGC) {
+      if (!inRV) {
         assert(lastSP && "No last SP when leaving uncooperative code");
-        if (doYield) joinCollection();
+        if (doYield) joinRV();
         lastSP = 0;
-        if (doYield) joinCollection();
+        if (doYield) joinRV();
         assert(!lastSP && "SP has a value after leaving uncooperative code");
       }
     }
