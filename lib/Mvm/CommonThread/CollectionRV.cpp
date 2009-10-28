@@ -146,3 +146,10 @@ void CollectionRV::addForeignThread(mvm::Thread* th) {
 
   unlockRV();
 }
+
+extern "C" void conditionalSafePoint() {
+  mvm::Thread* th = mvm::Thread::get();
+  th->startNative(1);
+  th->MyVM->rendezvous.join();
+  th->endNative();
+}

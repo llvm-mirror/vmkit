@@ -89,12 +89,6 @@ void Collector::initialise() {
   }
 }
 
-extern "C" void conditionalSafePoint() {
-  mvm::Thread::get()->startNative(1);
-  mvm::Thread::get()->MyVM->rendezvous.traceThreadStack();
-  mvm::Thread::get()->endNative();
-}
-
 extern "C" void* gcmalloc(size_t sz, VirtualTable* VT) {
   mvm::Thread::get()->startNative(1);
   void* res = gc::operator new(sz, VT);
