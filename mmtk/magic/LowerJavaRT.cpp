@@ -93,14 +93,14 @@ bool LowerJavaRT::runOnModule(Module& M) {
   GlobalVariable* GV = M.getGlobalVariable("org_j3_config_Selected_4Collector",
                                            false);
   Constant* C = GV->getInitializer();
-  C = C->getOperand(1);
+  C = dyn_cast<Constant>(C->getOperand(1));
   new GlobalVariable(M, Ty, true, GlobalValue::ExternalLinkage,
                      C, "MMTkCollectorSize");
 
 
   GV = M.getGlobalVariable("org_j3_config_Selected_4Mutator", false);
   C = GV->getInitializer();
-  C = C->getOperand(1);
+  C = dyn_cast<Constant>(C->getOperand(1));
   new GlobalVariable(M, Ty, true, GlobalValue::ExternalLinkage,
                      C, "MMTkMutatorSize");
   
@@ -117,7 +117,7 @@ bool LowerJavaRT::runOnModule(Module& M) {
   for (uint32_t i = 0; i < CA->getNumOperands(); ++i) {
     ConstantExpr* CE = dyn_cast<ConstantExpr>(CA->getOperand(i));
     if (CE) {
-      C = CE->getOperand(0);
+      C = dyn_cast<Constant>(CE->getOperand(0));
       if (C == Alloc) {
         AllocIndex = i;
       } else if (C == PostAlloc) {
@@ -131,18 +131,18 @@ bool LowerJavaRT::runOnModule(Module& M) {
   GV = M.getGlobalVariable("org_j3_config_Selected_4Mutator_VT", false);
   CA = dyn_cast<ConstantArray>(GV->getInitializer());
 
-  C = CA->getOperand(AllocIndex);
-  C = C->getOperand(0);
+  C = dyn_cast<Constant>(CA->getOperand(AllocIndex));
+  C = dyn_cast<Constant>(C->getOperand(0));
   new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage, "MMTkAlloc",
                   C, &M);
 
-  C = CA->getOperand(PostAllocIndex);
-  C = C->getOperand(0);
+  C = dyn_cast<Constant>(CA->getOperand(PostAllocIndex));
+  C = dyn_cast<Constant>(C->getOperand(0));
   new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage, "MMTkPostAlloc",
                   C, &M);
   
-  C = CA->getOperand(CheckAllocIndex);
-  C = C->getOperand(0);
+  C = dyn_cast<Constant>(CA->getOperand(CheckAllocIndex));
+  C = dyn_cast<Constant>(C->getOperand(0));
   new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage,
                   "MMTkCheckAllocator", C, &M);
   
@@ -162,7 +162,7 @@ bool LowerJavaRT::runOnModule(Module& M) {
   for (uint32_t i = 0; i < CA->getNumOperands(); ++i) {
     ConstantExpr* CE = dyn_cast<ConstantExpr>(CA->getOperand(i));
     if (CE) {
-      C = CE->getOperand(0);
+      C = dyn_cast<Constant>(CE->getOperand(0));
       if (C == Boot) {
         BootIndex = i;
       } else if (C == PostBoot) {
@@ -180,22 +180,22 @@ bool LowerJavaRT::runOnModule(Module& M) {
   CA = dyn_cast<ConstantArray>(GV->getInitializer());
   
   C = CA->getOperand(BootIndex);
-  C = C->getOperand(0);
+  C = dyn_cast<Constant>(C->getOperand(0));
   new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage, "MMTkPlanBoot",
                   C, &M);
   
   C = CA->getOperand(PostBootIndex);
-  C = C->getOperand(0);
+  C = dyn_cast<Constant>(C->getOperand(0));
   new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage,
                   "MMTkPlanPostBoot", C, &M);
   
   C = CA->getOperand(FullBootIndex);
-  C = C->getOperand(0);
+  C = dyn_cast<Constant>(C->getOperand(0));
   new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage,
                   "MMTkPlanFullBoot", C, &M);
   
   C = CA->getOperand(ExitIndex);
-  C = C->getOperand(0);
+  C = dyn_cast<Constant>(C->getOperand(0));
   new GlobalAlias(C->getType(), GlobalValue::ExternalLinkage, "MMTkPlanExit",
                   C, &M);
    
