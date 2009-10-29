@@ -11,6 +11,7 @@
 #include "llvm/DerivedTypes.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
+#include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
 #include "llvm/CodeGen/GCStrategy.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
@@ -253,7 +254,7 @@ void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
   Function* func = getMethodInfo(meth)->getMethod();
   func->setName(name);
   assert(ptr && "No value given");
-  JnjvmModule::executionEngine->addGlobalMapping(func, ptr);
+  JnjvmModule::executionEngine->updateGlobalMapping(func, ptr);
   func->setLinkage(GlobalValue::ExternalLinkage);
 }
 
