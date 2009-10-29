@@ -200,6 +200,10 @@ extern "C" void __llvm_gcroot(const void**, void*) __attribute__((nothrow));
   public:
     static void gcroot(void* val, void* unused) 
       __attribute__ ((always_inline)) {}
+
+    static uintptr_t mask() {
+      return 0;
+    }
   };
   
   class FatLockWithGC {
@@ -207,6 +211,10 @@ extern "C" void __llvm_gcroot(const void**, void*) __attribute__((nothrow));
     static void gcroot(void* val, void* unused) 
       __attribute__ ((always_inline)) {
       llvm_gcroot(val, unused);
+    }
+    
+    static uintptr_t mask() {
+      return GCMask;
     }
   };
 
@@ -253,7 +261,7 @@ public:
       uint32 count = lock & ThinCountMask;
       obj->acquireAll(count + 1);
       uintptr_t oldLock = lock;
-      lock = obj->getID() | (oldLock & GCMask);
+      lock = obj->getID() | (oldLock & IsGC::mask());
       return obj;
     } else {
       TFatLock* res = TFatLock::getFromID(lock);
@@ -268,11 +276,11 @@ public:
 start:
     uint64_t id = mvm::Thread::get()->getThreadID();
     uintptr_t oldValue = lock;
-    uintptr_t newValue = id | (lock & GCMask);
-    uintptr_t val = __sync_val_compare_and_swap(&lock, oldValue & GCMask,
+    uintptr_t newValue = id | (lock & IsGC::mask());
+    uintptr_t val = __sync_val_compare_and_swap(&lock, oldValue & IsGC::mask(),
                                                 newValue);
 
-    if (val != (oldValue & GCMask)) {
+    if (val != (oldValue & IsGC::mask())) {
       //fat!
       if (!(val & FatMask)) {
         if ((val & Thread::IDMask) == id) {
@@ -285,7 +293,7 @@ start:
           TFatLock* obj = TFatLock::allocate(O);
           uintptr_t val = obj->getID();
 loop:
-          while (lock) {
+          while (lock & ~IsGC::mask()) {
             if (lock & FatMask) {
               obj->deallocate();
               goto end;
@@ -294,10 +302,11 @@ loop:
           }
         
           oldValue = lock;
-          newValue = val | (lock & GCMask);
-          uintptr_t test = __sync_val_compare_and_swap(&lock, oldValue & GCMask,
+          newValue = val | (lock & IsGC::mask());
+          uintptr_t test = __sync_val_compare_and_swap(&lock,
+                                                       oldValue & IsGC::mask(),
                                                        newValue);
-          if (test != (oldValue & GCMask)) goto loop;
+          if (test != (oldValue & IsGC::mask())) goto loop;
           if (!obj->acquire(O)) goto start;
         }
       } else {
@@ -320,8 +329,8 @@ end:
     IsGC::gcroot(O, 0);
     assert(owner() && "Not owner when entering release!");
     uint64 id = mvm::Thread::get()->getThreadID();
-    if ((lock & ~GCMask) == id) {
-      lock = lock & GCMask;
+    if ((lock & ~IsGC::mask()) == id) {
+      lock = lock & IsGC::mask();
     } else if (lock & FatMask) {
       TFatLock* obj = TFatLock::getFromID(lock);
       assert(obj && "Lock deallocated while held.");
