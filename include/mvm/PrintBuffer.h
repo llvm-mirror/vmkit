@@ -61,7 +61,7 @@ public:
 	}
 
 	virtual ~PrintBuffer() {
-		delete contents;
+		delete[] contents;
 	}
 	
 	char *cString() {
