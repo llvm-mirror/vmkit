@@ -165,6 +165,8 @@ Function* LLVMMethodInfo::getMethod() {
                                           GlobalValue::GhostLinkage, buf,
                                           Mod->getLLVMModule());
       } else {
+        assert(methodFunction->getFunctionType() == getFunctionType() &&
+               "Type mismatch");
         if (methodFunction->isDeclaration()) {
           methodFunction->setLinkage(GlobalValue::GhostLinkage);
         }
