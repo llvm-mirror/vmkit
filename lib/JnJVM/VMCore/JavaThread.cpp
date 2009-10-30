@@ -298,8 +298,14 @@ static void printFunctionInfo(Jnjvm* vm, void* ip) {
 void JavaThread::printBacktrace() {
   std::vector<void*>::iterator it = addresses.end();
   Jnjvm* vm = getJVM();
+  mvm::Thread* th = mvm::Thread::get();
 
-  void** addr = getLastSP() ? (void**)getLastSP() : (void**)FRAME_PTR();
+  assert((th == this || getLastSP()) && "No last sp on foreign thread");
+  
+  void** addr = mvm::Thread::get() == th ? 
+    (void**)FRAME_PTR() : (void**)th->getLastSP();
+  assert(addr && "No address to start with");
+
   void** oldAddr = addr;
 
   // Loop until we cross the first Java frame.
