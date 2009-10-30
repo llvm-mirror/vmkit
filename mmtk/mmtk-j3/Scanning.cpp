@@ -43,6 +43,8 @@ extern "C" void Java_org_j3_mmtk_Scanning_resetThreadCounter__ (JavaObject* Scan
 
 extern "C" void Java_org_j3_mmtk_Scanning_specializedScanObject__ILorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* Scanning, uint32_t id, JavaObject* TC, JavaObject* obj) {
   assert(mvm::Collector::TraceLocal == (uintptr_t)TC && "Mismatch in trace local");
+  assert(obj && "No object to trace");
+  assert(obj->getVirtualTable() && "No VT on object");
   obj->tracer();
 }
 
