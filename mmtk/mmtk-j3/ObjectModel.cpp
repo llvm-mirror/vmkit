@@ -38,17 +38,17 @@ extern "C" JavaObject* Java_org_j3_mmtk_ObjectModel_refToAddress__Lorg_vmmagic_u
 
 extern "C" uint8_t Java_org_j3_mmtk_ObjectModel_readAvailableByte__Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* OM, JavaObject* obj) {
 #if defined(__PPC__)
-  return ((uint8_t*)obj)[7];
+  return ((uint8_t*)obj)[7] & mvm::GCMask;
 #else
-  return ((uint8_t*)obj)[4];
+  return ((uint8_t*)obj)[4] & mvm::GCMask;
 #endif
 }
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_writeAvailableByte__Lorg_vmmagic_unboxed_ObjectReference_2B (JavaObject* OM, JavaObject* obj, uint8_t val) {
 #if defined(__PPC__)
-  ((uint8_t*)obj)[7] = val;
+  ((uint8_t*)obj)[7] |= val;
 #else
-  ((uint8_t*)obj)[4] = val;
+  ((uint8_t*)obj)[4] |= val;
 #endif
 }
 
@@ -63,7 +63,7 @@ extern "C" intptr_t Java_org_j3_mmtk_ObjectModel_prepareAvailableBits__Lorg_vmma
 extern "C" uint8_t
 Java_org_j3_mmtk_ObjectModel_attemptAvailableBits__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Word_2Lorg_vmmagic_unboxed_Word_2(
     JavaObject* OM, JavaObject* obj, intptr_t oldValue, intptr_t newValue) {
-
+  
   return __sync_bool_compare_and_swap(((intptr_t*)obj) + 1, oldValue, newValue);
 }
 
