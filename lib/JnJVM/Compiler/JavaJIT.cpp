@@ -291,6 +291,10 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   // Allocate oldCurrentLocalIndexNumber pointer
   Value* oldCLIN = new AllocaInst(PointerType::getUnqual(Type::getInt32Ty(getGlobalContext())), "",
                                   currentBlock);
+  
+  // Synchronize before saying we're entering native
+  if (isSynchro(compilingMethod->access))
+    beginSynchronize();
 
   Value* test = CallInst::Create(module->setjmpLLVM, newJB, "",
                                  currentBlock);
@@ -306,8 +310,6 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   }
 
   currentBlock = executeBlock;
-  if (isSynchro(compilingMethod->access))
-    beginSynchronize();
   
   
   uint32 nargs = func->arg_size() + 1 + (stat ? 1 : 0); 
@@ -471,12 +473,14 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
 
   currentBlock = endBlock; 
-  if (isSynchro(compilingMethod->access))
-    endSynchronize();
  
   Value* Args2[2] = { oldCLIN, oldJB };
 
   CallInst::Create(module->EndJNIFunction, Args2, Args2 + 2, "", currentBlock);
+  
+  // Synchronize after leaving native.
+  if (isSynchro(compilingMethod->access))
+    endSynchronize();
   
   if (returnType != Type::getVoidTy(getGlobalContext()))
     ReturnInst::Create(*llvmContext, endNode, currentBlock);
@@ -581,7 +585,6 @@ void JavaJIT::monitorEnter(Value* obj) {
   BranchInst::Create(OK, currentBlock);
   
   currentBlock = FatLockBB;
-
   // Either it's a fat lock or there is contention.
   CallInst::Create(module->AquireObjectFunction, obj, "", currentBlock);
   BranchInst::Create(OK, currentBlock);
