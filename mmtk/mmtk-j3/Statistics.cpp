@@ -39,6 +39,13 @@ extern "C" int64_t Java_org_j3_mmtk_Statistics_nanoTime__ () {
 }
 
 
-extern "C" void Java_org_j3_mmtk_Statistics_getCollectionCount__ () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_Statistics_perfCtrReadCycles__ () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_Statistics_perfCtrReadMetric__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" int32_t Java_org_j3_mmtk_Statistics_getCollectionCount__ (JavaObject* S) {
+  return 0;
+}
+
+extern "C" int64_t Java_org_j3_mmtk_Statistics_perfCtrReadCycles__ (JavaObject* S) {
+  return 0;
+}
+extern "C" int64_t Java_org_j3_mmtk_Statistics_perfCtrReadMetric__ (JavaObject* S) {
+  return 0;
+}
