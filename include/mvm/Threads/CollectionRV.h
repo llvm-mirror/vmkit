@@ -90,9 +90,9 @@ public:
 
   void synchronize();
 
-  void addForeignThread(mvm::Thread* th);
-
   void join();
+
+  unsigned getNumber() { return rendezvousNb; }
 };
 
 }

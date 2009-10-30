@@ -24,13 +24,13 @@ void CollectionRV::waitEndOfRV() {
 }
 
 void CollectionRV::waitRV() {
-  mvm::Thread* self = mvm::Thread::get();
-  lockRV();
-  
+  mvm::Thread* self = mvm::Thread::get(); 
+  // Add myself.
+  another_mark();
+
   while (nbJoined < self->MyVM->NumberOfThreads)
     condInitiator.wait(&_lockRV);
   
-  unlockRV();
 }
 
 void CollectionRV::synchronize() {
@@ -57,25 +57,20 @@ void CollectionRV::synchronize() {
       cur->doYield = true;
       cur = (mvm::Thread*)cur->next();
     } while (cur != self);
-    
-    // Unlock now. Each running thread will join the rendezvous.
-    unlockRV();
-
+   
     // Lookup currently blocked threads.
-    for (mvm::Thread* cur = (mvm::Thread*)self->next(); cur != self; 
+    for (cur = (mvm::Thread*)self->next(); cur != self; 
          cur = (mvm::Thread*)cur->next()) {
-      void* val = cur->getLastSP();
-      // If val is null, this means that the thread woke up, and is
-      // joining the rendezvous. We are sure the thread will join the
-      // rendezvous.
-      if (val) addForeignThread(cur);
+      if (cur->getLastSP()) {
+        another_mark();
+        cur->joinedRV = true;
+      }
     }
-
-    // Add myself.
-    another_mark();
-
+    
     // And wait for other threads to join.
     waitRV();
+
+    unlockRV();
 
   } else {
     mvm::Thread* self = mvm::Thread::get();
@@ -90,11 +85,10 @@ void CollectionRV::synchronize() {
       cur->killForRendezvous();
     }
     
-    // Add myself.
-    another_mark();
-
+    lockRV();
     // And wait for other threads to finish.
     waitRV();
+    unlockRV();
   }
  
   self->MyVM->ThreadLock.unlock();
@@ -125,26 +119,18 @@ void CollectionRV::join() {
     }
   }
 
+  assert(th->getLastSP() && "Joined without giving a SP");
   // Wait for the rendezvous to finish.
   waitEndOfRV();
-  unlockRV();
   
   // The rendezvous is finished. Set inRV to false.
   th->inRV = false;
   if (changed) th->setLastSP(0);
-}
-
-void CollectionRV::addForeignThread(mvm::Thread* th) {
-  lockRV();
-
-  // The thread may have waken up during this GC. In this case, it may have
-  // put itself into the waiting list.
-  if (!th->joinedRV) {
-    another_mark();
-    th->joinedRV = true;
-  }
-
+ 
+  // Unlock after modifying lastSP, because lastSP is also read by the
+  // rendezvous initiator.
   unlockRV();
+  
 }
 
 extern "C" void conditionalSafePoint() {
