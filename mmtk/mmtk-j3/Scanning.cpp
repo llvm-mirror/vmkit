@@ -22,7 +22,6 @@ extern "C" void Java_org_j3_mmtk_Scanning_computeThreadRoots__Lorg_mmtk_plan_Tra
   
   do {
     sc->scanStack(tcur);
-    tcur->tracer();
     tcur = (mvm::Thread*)tcur->next();
   } while (tcur != th);
 }
@@ -30,6 +29,14 @@ extern "C" void Java_org_j3_mmtk_Scanning_computeThreadRoots__Lorg_mmtk_plan_Tra
 extern "C" void Java_org_j3_mmtk_Scanning_computeGlobalRoots__Lorg_mmtk_plan_TraceLocal_2 (JavaObject* Scanning, JavaObject* TL) { 
   assert(mvm::Collector::TraceLocal == (uintptr_t)TL && "Mismatch in trace local");
   mvm::Thread::get()->MyVM->tracer();
+  
+	mvm::Thread* th = mvm::Thread::get();
+  mvm::Thread* tcur = th;
+  
+  do {
+    tcur->tracer();
+    tcur = (mvm::Thread*)tcur->next();
+  } while (tcur != th);
 
 }
 
