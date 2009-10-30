@@ -298,12 +298,12 @@ static void printFunctionInfo(Jnjvm* vm, void* ip) {
 void JavaThread::printBacktrace() {
   std::vector<void*>::iterator it = addresses.end();
   Jnjvm* vm = getJVM();
-  mvm::Thread* th = mvm::Thread::get();
 
-  assert((th == this || getLastSP()) && "No last sp on foreign thread");
+  assert((mvm::Thread::get() == this || getLastSP()) &&
+         "No last sp on foreign thread");
   
-  void** addr = mvm::Thread::get() == th ? 
-    (void**)FRAME_PTR() : (void**)th->getLastSP();
+  void** addr = mvm::Thread::get() == this ? (void**)FRAME_PTR() :
+                                             (void**)getLastSP();
   assert(addr && "No address to start with");
 
   void** oldAddr = addr;
