@@ -206,6 +206,7 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     Boot(Plan);
     
     
+    //===-------------------- TODO: make those virtual. -------------------===//
     F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_reportDelayedRootEdge__Lorg_vmmagic_unboxed_Address_2");
     assert(F && "Could not find reportDelayedRootEdge from TraceLocal");
     gc::MMTkDelayedRoot = (gc::MMTkDelayedRootType)
@@ -220,14 +221,12 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     assert(F && "Could not find processEdge from TraceLocal");
     gc::MMTkProcessRootEdge = (gc::MMTkProcessRootEdgeType)
       (uintptr_t)executionEngine->getPointerToFunction(F);
-   
     
-    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_isLive__Lorg_vmmagic_unboxed_ObjectReference_2");
+    F = globalModule->getFunction("JnJVM_org_mmtk_plan_marksweep_MSTraceLocal_isLive__Lorg_vmmagic_unboxed_ObjectReference_2");
     assert(F && "Could not find isLive from TraceLocal");
     gc::MMTkIsLive = (gc::MMTkIsLiveType)
       (uintptr_t)executionEngine->getPointerToFunction(F);
-  
-    
+   
     F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_retainForFinalize__Lorg_vmmagic_unboxed_ObjectReference_2");
     assert(F && "Could not find isLive from TraceLocal");
     gc::MMTkRetainForFinalize = (gc::MMTkRetainForFinalizeType)
@@ -506,6 +505,7 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
 
   void** addr = mvm::Thread::get() == th ? 
     (void**)FRAME_PTR() : (void**)th->getLastSP();
+  assert(addr && "No address to start with");
   void** oldAddr = addr;
   DEBUG(fprintf(stderr, "%p trace %p\n", (void*)mvm::Thread::get(), (void*)th));
   DEBUG(th->printBacktraceAfterSignal());
