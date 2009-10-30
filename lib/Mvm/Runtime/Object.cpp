@@ -189,7 +189,9 @@ void VirtualMachine::scanFinalizationQueue() {
     }
   }
   CurrentIndex = NewIndex;
+}
 
+void VirtualMachine::tracer() {
   for (uint32 i = 0; i < CurrentFinalizedIndex; ++i) {
     Collector::markAndTraceRoot(ToBeFinalized + i);
   }

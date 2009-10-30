@@ -182,7 +182,7 @@ public:
   }
 
 
-  virtual void tracer() {}
+  virtual void tracer();
 
   virtual ~VirtualMachine() {}
 

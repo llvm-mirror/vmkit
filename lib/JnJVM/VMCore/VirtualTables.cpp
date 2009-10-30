@@ -249,6 +249,8 @@ void JnjvmBootstrapLoader::tracer() {
 
 
 void Jnjvm::tracer() {
+  
+  VirtualMachine::tracer();
   bootstrapLoader->tracer();
   
   if (appClassLoader) 
