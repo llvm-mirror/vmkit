@@ -479,7 +479,7 @@ public:
     const char* res = 0;
     if (I != InternalFunctions.end() && I != InternalFunctions.begin()) {
       res = I->second;
-      assert ((--I)->second == res && "Malformed map");
+      if ((--I)->second != res) res = 0;
     }
     InternalFunctionMapLock.release();
     return res;
