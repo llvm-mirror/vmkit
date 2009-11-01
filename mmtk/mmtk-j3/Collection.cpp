@@ -18,7 +18,7 @@ extern "C" void JnJVM_org_j3_config_Selected_00024Collector_staticCollect__();
 
 extern "C" void JnJVM_org_mmtk_plan_Plan_collectionComplete__();
 
-extern "C" void JnJVM_org_mmtk_utility_heap_HeapGrowthManager_considerHeapSize__();
+extern "C" uint8_t JnJVM_org_mmtk_utility_heap_HeapGrowthManager_considerHeapSize__();
 
 
 extern "C" bool Java_org_j3_mmtk_Collection_isEmergencyAllocation__ (JavaObject* C) {
@@ -39,6 +39,7 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (JavaObject* C,
   
   JnJVM_org_mmtk_plan_Plan_setCollectionTriggered__();
   JnJVM_org_j3_config_Selected_00024Collector_staticCollect__();
+  JnJVM_org_mmtk_utility_heap_HeapGrowthManager_considerHeapSize__();
   JnJVM_org_mmtk_plan_Plan_collectionComplete__();
 
   th->MyVM->rendezvous.finishRV();
