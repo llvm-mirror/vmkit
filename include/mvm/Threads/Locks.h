@@ -184,6 +184,7 @@ public:
 #endif
 
   static const uint64_t ThinCountMask = 0xFF000;
+  static const uint64_t ThinCountShift = 12;
   static const uint64_t ThinCountAdd = 0x1000;
   static const uint64_t GCMask = 0x3;
 
@@ -232,11 +233,12 @@ public:
 
   /// overflowThinlock - Change the lock of this object to a fat lock because
   /// we have reached 0xFF locks.
-  void overflowThinLock(Owner* O = 0) {
+  void overflowThinLock(Owner* O) {
     IsGC::gcroot(O, 0);
     TFatLock* obj = TFatLock::allocate(O);
-    obj->acquireAll(257);
-    lock = obj->getID();
+    obj->acquireAll((ThinCountMask >> ThinCountShift) + 1);
+    uintptr_t oldLock = lock;
+    lock = obj->getID() | (oldLock & IsGC::mask());
   }
  
   /// initialise - Initialise the value of the lock.
@@ -257,7 +259,7 @@ public:
     IsGC::gcroot(O, 0);
     if (!(lock & FatMask)) {
       TFatLock* obj = TFatLock::allocate(O);
-      uint32 count = lock & ThinCountMask;
+      uint32 count = (lock & ThinCountMask) >> ThinCountShift;
       obj->acquireAll(count + 1);
       uintptr_t oldLock = lock;
       lock = obj->getID() | (oldLock & IsGC::mask());

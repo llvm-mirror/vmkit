@@ -222,7 +222,7 @@ public:
   /// overflowThinLock - Notify that the thin lock has overflowed.
   ///
   void overflowThinLock() {
-    lock.overflowThinLock();
+    lock.overflowThinLock(this);
   }
 
   /// instanceOf - Is this object's class of type the given class?
