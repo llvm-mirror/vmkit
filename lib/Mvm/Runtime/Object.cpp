@@ -266,7 +266,8 @@ StaticGCMap VirtualMachine::GCMap;
 void CamlStackScanner::scanStack(mvm::Thread* th) {
   std::vector<void*>::iterator it = th->addresses.end();
 
-  void** addr = mvm::Thread::get() == th ? (void**)FRAME_PTR() : (void**)th->getLastSP();
+  void** addr = mvm::Thread::get() == th ? (void**)FRAME_PTR() :
+                                           (void**)th->waitOnSP();
   void** oldAddr = addr;
 
   // Loop until we cross the first Java frame.
@@ -349,7 +350,7 @@ void CamlStackScanner::scanStack(mvm::Thread* th) {
 void UnpreciseStackScanner::scanStack(mvm::Thread* th) {
   register unsigned int  **max = (unsigned int**)(void*)th->baseSP;
   if (mvm::Thread::get() != th) {
-    register unsigned int  **cur = (unsigned int**)th->getLastSP();
+    register unsigned int  **cur = (unsigned int**)th->waitOnSP();
     for(; cur<max; cur++) Collector::scanObject((void**)cur);
   } else {
     jmp_buf buf;

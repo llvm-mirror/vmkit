@@ -229,12 +229,34 @@ public:
     if (isMvmThread()) {
       if (!inRV) {
         assert(lastSP && "No last SP when leaving uncooperative code");
+        // Check to see if a rendezvous has been set while being in native code.
         if (doYield) joinRV();
+        // Clear lastSP. If a rendezvous happens there, the thread will join it
+        // in the next iteration and set lastSP.
         lastSP = 0;
+        // A rendezvous has just been initiated, join it.
         if (doYield) joinRV();
         assert(!lastSP && "SP has a value after leaving uncooperative code");
       }
     }
+  }
+
+  void* waitOnSP() {
+    // First see if we can get lastSP directly.
+    void* sp = lastSP;
+    if (sp) return sp;
+    
+    // Then loop a fixed number of iterations to get lastSP.
+    for (uint32 count = 0; count < 1000; ++count) {
+      sp = lastSP;
+      if (sp) return sp;
+    }
+    
+    // Finally, yield until lastSP is not set.
+    while ((sp = lastSP) == NULL) mvm::Thread::yield();
+
+    assert(sp != NULL && "Still no sp");
+    return sp;
   }
 
 
