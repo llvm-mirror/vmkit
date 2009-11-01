@@ -239,11 +239,10 @@ public:
     lock = obj->getID();
   }
  
-  /// initialise - Initialise the value of the lock to the thread ID that is
-  /// creating this lock.
+  /// initialise - Initialise the value of the lock.
   ///
   void initialise() {
-    lock = 0;
+    lock = lock & IsGC::mask();
   }
   
   /// ThinLock - Calls initialize.
