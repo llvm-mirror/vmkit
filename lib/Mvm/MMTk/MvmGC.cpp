@@ -28,6 +28,7 @@ gc::MMTkRetainForFinalizeType       gc::MMTkRetainForFinalize = 0;
 gc::MMTkGetForwardedReferentType    gc::MMTkGetForwardedReferent = 0;
 gc::MMTkGetForwardedReferenceType   gc::MMTkGetForwardedReference = 0;
 gc::MMTkGetForwardedFinalizableType gc::MMTkGetForwardedFinalizable = 0;
+gc::MMTkCollectType                 gc::MMTkTriggerCollection = 0;
 
 uintptr_t Collector::TraceLocal = 0;
 

@@ -39,7 +39,9 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (JavaObject* C,
   
   JnJVM_org_mmtk_plan_Plan_setCollectionTriggered__();
   JnJVM_org_j3_config_Selected_00024Collector_staticCollect__();
-  JnJVM_org_mmtk_utility_heap_HeapGrowthManager_considerHeapSize__();
+  // 2 means called by System.gc();
+  if (why != 2)
+    JnJVM_org_mmtk_utility_heap_HeapGrowthManager_considerHeapSize__();
   JnJVM_org_mmtk_plan_Plan_collectionComplete__();
 
   th->MyVM->rendezvous.finishRV();

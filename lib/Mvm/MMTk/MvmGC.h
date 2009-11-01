@@ -64,6 +64,7 @@ public:
   typedef MMTkRetainReferentType MMTkGetForwardedReferenceType;
   typedef MMTkRetainReferentType MMTkGetForwardedReferentType;
   typedef MMTkRetainReferentType MMTkGetForwardedFinalizableType;
+  typedef void (*MMTkCollectType)(uintptr_t, int32_t);
 
   static MMTkAllocType MMTkGCAllocator;
   
@@ -85,6 +86,7 @@ public:
   static MMTkGetForwardedReferentType MMTkGetForwardedReferent;
   static MMTkGetForwardedFinalizableType MMTkGetForwardedFinalizable;
 
+  static MMTkCollectType MMTkTriggerCollection;
 
   void* operator new(size_t sz, VirtualTable *VT) {
     assert(VT->tracer && "VT without a tracer");
@@ -158,7 +160,7 @@ public:
   }
 
   static void collect() {
-    abort();
+    if (gc::MMTkTriggerCollection) gc::MMTkTriggerCollection(NULL, 2);
   }
   
   static void initialise();

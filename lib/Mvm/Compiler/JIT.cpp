@@ -263,8 +263,10 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     gc::MMTkGetForwardedFinalizable = (gc::MMTkGetForwardedFinalizableType)
       (uintptr_t)executionEngine->getPointerToFunction(F);
     
-  
-  
+    F = globalModule->getFunction("Java_org_j3_mmtk_Collection_triggerCollection__I");
+    assert(F && "Could not find external collect");
+    gc::MMTkTriggerCollection = (gc::MMTkCollectType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
 
   }
 #endif
