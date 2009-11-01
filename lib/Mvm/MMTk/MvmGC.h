@@ -87,10 +87,13 @@ public:
 
 
   void* operator new(size_t sz, VirtualTable *VT) {
+    assert(VT->tracer && "VT without a tracer");
     sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
     uintptr_t Mutator = mvm::MutatorThread::get()->MutatorContext;
     int allocator = MMTkCheckAllocator(Mutator, sz, 0, 0);
     gc* res = (gc*)MMTkGCAllocator(Mutator, sz, 0, 0, allocator, 0);
+    assert(res && "Allocation failed");
+    assert(res->getVirtualTable() == 0 && "Allocation not zeroed");
     res->setVirtualTable(VT);
     MMTkGCPostAllocator(Mutator, (uintptr_t)res, (uintptr_t)VT, sz, allocator);
     

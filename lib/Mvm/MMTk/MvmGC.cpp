@@ -77,6 +77,9 @@ void* Collector::begOf(gc* obj) {
 extern "C" void fakeInit(uintptr_t) {
 }
 
+extern "C" void fakeInitInt(uintptr_t, int32_t) {
+}
+
 void Collector::initialise() {
   if (!gc::MMTkGCAllocator) {
     gc::MMTkGCAllocator = internalMalloc;
@@ -86,6 +89,8 @@ void Collector::initialise() {
     MutatorThread::MMTkCollectorSize = 0;
     MutatorThread::MutatorInit = fakeInit;
     MutatorThread::CollectorInit = fakeInit;
+    MutatorThread::MutatorCallDeinit = fakeInit;
+    MutatorThread::MutatorCallInit = fakeInitInt;
   }
 }
 

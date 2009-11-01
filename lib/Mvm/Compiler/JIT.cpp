@@ -145,6 +145,17 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     MutatorThread::MutatorInit = (MutatorThread::MMTkInitType)
       (uintptr_t)executionEngine->getPointerToFunction(F);
     
+    F = globalModule->getFunction("JnJVM_org_mmtk_plan_MutatorContext_initMutator__I");
+    assert(F && "Could not find init from Mutator");
+    MutatorThread::MutatorCallInit = (MutatorThread::MMTkInitIntType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+    
+    F = globalModule->getFunction("JnJVM_org_mmtk_plan_MutatorContext_deinitMutator__");
+    assert(F && "Could not find deinit from Mutator");
+    MutatorThread::MutatorCallDeinit = (MutatorThread::MMTkInitType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+    
+    
     GV = globalModule->getGlobalVariable("org_j3_config_Selected_4Mutator_VT", false);
     assert(GV && "Could not find VT from Mutator");
     MutatorThread::MutatorVT = (VirtualTable*)executionEngine->getPointerToGlobal(GV);
@@ -504,7 +515,7 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
   VirtualMachine* vm = th->MyVM;
 
   void** addr = mvm::Thread::get() == th ? 
-    (void**)FRAME_PTR() : (void**)th->getLastSP();
+    (void**)FRAME_PTR() : (void**)th->waitOnSP();
   assert(addr && "No address to start with");
   void** oldAddr = addr;
   DEBUG(fprintf(stderr, "%p trace %p\n", (void*)mvm::Thread::get(), (void*)th));

@@ -31,8 +31,11 @@ public:
   static uint32_t MMTkCollectorSize;
 
   typedef void (*MMTkInitType)(uintptr_t);
-  static MMTkInitType MutatorInit;
-  static MMTkInitType CollectorInit;
+  typedef void (*MMTkInitIntType)(uintptr_t, int32_t);
+  static MMTkInitType    MutatorInit;
+  static MMTkInitIntType MutatorCallInit;
+  static MMTkInitType    MutatorCallDeinit;
+  static MMTkInitType    CollectorInit;
 
   static VirtualTable* MutatorVT;
   static VirtualTable* CollectorVT;
@@ -43,11 +46,13 @@ public:
       (uintptr_t)th->Allocator.Allocate(MMTkMutatorSize, "Mutator");
     ((VirtualTable**)th->MutatorContext)[0] = MutatorVT;
     MutatorInit(th->MutatorContext);
+    MutatorCallInit(th->MutatorContext, (int32_t)_th->getThreadID());
     th->CollectorContext = 
       (uintptr_t)th->Allocator.Allocate(MMTkCollectorSize, "Collector");
     ((VirtualTable**)th->CollectorContext)[0] = CollectorVT;
     CollectorInit(th->CollectorContext);
     th->realRoutine(_th);
+    MutatorCallDeinit(th->MutatorContext);
   }
 
   static MutatorThread* get() {
