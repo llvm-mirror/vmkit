@@ -113,10 +113,15 @@ void CollectionRV::join() {
   if (!th->joinedRV) {
     another_mark();
     th->joinedRV = true;
-    if (!th->getLastSP()) {
-      changed = true;
-      th->setLastSP(FRAME_PTR());
-    }
+  }
+    
+  // lastSP may not be set in two cases:
+  // (1) The thread was interrupted while executing regular code (ie cooperative
+  //     code).
+  // (2) The thread left uncooperative code and has just cleared lastSP.
+  if (!th->getLastSP()) {
+    changed = true;
+    th->setLastSP(FRAME_PTR());
   }
 
   assert(th->getLastSP() && "Joined without giving a SP");
