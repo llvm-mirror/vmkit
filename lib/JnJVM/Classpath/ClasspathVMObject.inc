@@ -35,7 +35,7 @@ JavaObject* src) {
 
   UserCommonClass* cl = src->getClass();
   Jnjvm* vm = JavaThread::get()->getJVM();
-  uint64 size = 0;
+  size_t size = 0;
   if (cl->isArray()) {
     UserClassArray* array = cl->asArrayClass();
     UserCommonClass* base = array->baseClass();
@@ -50,8 +50,9 @@ JavaObject* src) {
   }
   res = (JavaObject*)
     vm->gcAllocator.allocateManagedObject(size, src->getVirtualTable());
-  memcpy(res, src, size);
-  res->lock.initialise();
+  memcpy((void*)((uintptr_t)res + 2 * sizeof(void*)),
+         (void*)((uintptr_t)src + 2 * sizeof(void*)),
+         size - 2 * sizeof(void*));
 
   END_NATIVE_EXCEPTION
 
