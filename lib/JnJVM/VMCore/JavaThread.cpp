@@ -299,11 +299,11 @@ void JavaThread::printBacktrace() {
   std::vector<void*>::iterator it = addresses.end();
   Jnjvm* vm = getJVM();
 
-  assert((mvm::Thread::get() == this || getLastSP()) &&
+  assert((mvm::Thread::get() == this || waitOnSP()) &&
          "No last sp on foreign thread");
   
   void** addr = mvm::Thread::get() == this ? (void**)FRAME_PTR() :
-                                             (void**)getLastSP();
+                                             (void**)waitOnSP();
   assert(addr && "No address to start with");
 
   void** oldAddr = addr;
