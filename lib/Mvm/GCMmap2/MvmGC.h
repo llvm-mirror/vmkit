@@ -281,12 +281,19 @@ public:
   
   static inline void markAndTraceRoot(void *ptr) {
     void* obj = *(void**)ptr;
-    GCChunkNode *node = o2node(obj);
+    if (obj) {
+      GCChunkNode *node = o2node(obj);
+   
+#ifdef WITH_LLVM_GCC
+      assert(node && "No node in  precise mode");
+      assert(obj == begOf(obj) && "Interior pointer");
+#endif
 
-    if(node && !isMarked(node)) {
-      mark(node);
-      node->remove();
-      node->prepend(used_nodes);
+      if(node && !isMarked(node)) {
+        mark(node);
+        node->remove();
+        node->prepend(used_nodes);
+      }
     }
   }
 

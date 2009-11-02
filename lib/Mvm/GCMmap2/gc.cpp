@@ -31,6 +31,7 @@ void Collector::scanObject(void** val) {
     GCChunkNode *node = o2node(obj);
 
 #ifdef WITH_LLVM_GCC
+    assert(begOf(obj) == obj && "Interior pointer\n");
     assert(node && "No node in precise GC mode");
 #endif
   
