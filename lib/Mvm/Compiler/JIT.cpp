@@ -97,7 +97,8 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
 
     executionEngine = ExecutionEngine::createJIT(globalModuleProvider, 0,
                                                  0, level, false);
-  
+ 
+    executionEngine->DisableLazyCompilation(false); 
     std::string str = 
       executionEngine->getTargetData()->getStringRepresentation();
     globalModule->setDataLayout(str);
