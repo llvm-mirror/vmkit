@@ -176,6 +176,7 @@ public:
   void removeThread(mvm::Thread* th) {
     ThreadLock.lock();
     NumberOfThreads--;
+    if (mainThread == th) mainThread = (Thread*)th->next();
     th->remove();
     if (!NumberOfThreads) mainThread = 0;
     ThreadLock.unlock();
