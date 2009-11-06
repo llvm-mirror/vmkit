@@ -96,8 +96,10 @@ void Collector::initialise() {
 }
 
 extern "C" void* gcmalloc(size_t sz, VirtualTable* VT) {
+  gc* res = 0;
+  llvm_gcroot(res, 0);
   mvm::Thread::get()->startNative(1);
-  void* res = gc::operator new(sz, VT);
+  res = (gc*)gc::operator new(sz, VT);
   mvm::Thread::get()->endNative();
   return res;
 }
