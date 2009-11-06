@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "JavaObject.h"
+#include "JavaString.h"
 #include "JavaThread.h"
 #include "mvm/Threads/Locks.h"
 
@@ -16,6 +17,7 @@ using namespace jnjvm;
 struct Lock {
   JavaObject base;
   mvm::SpinLock spin;
+  JavaString* name;
 };
 
 
