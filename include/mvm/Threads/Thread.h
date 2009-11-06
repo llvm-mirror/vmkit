@@ -26,11 +26,11 @@ class VirtualMachine;
 class CircularBase {
   /// _next - The next object in the list.
   ///
-	CircularBase	*_next;
+  CircularBase  *_next;
 
   /// _prev - The previous object in the list.
   ///
-	CircularBase	*_prev;
+  CircularBase  *_prev;
 public:
   
   /// ~CircularBase - Give the class a home.
@@ -39,48 +39,48 @@ public:
 
   /// next - Get the next object in the list.
   ///
-	inline CircularBase *next() { return _next; }
+  inline CircularBase *next() { return _next; }
 
   /// prev - Get the previous object in the list.
   ///
-	inline CircularBase *prev() { return _prev; }
+  inline CircularBase *prev() { return _prev; }
 
   /// next - Set the next object in the list.
   ///
-	inline void next(CircularBase *n) { _next = n; }
+  inline void next(CircularBase *n) { _next = n; }
 
   /// prev - Set the previous object in the list.
   ///
-	inline void prev(CircularBase *p) { _prev = p; }
+  inline void prev(CircularBase *p) { _prev = p; }
 
   /// CricularBase - Creates the object as a single element in the list.
   ///
-	inline CircularBase() { alone(); }
+  inline CircularBase() { alone(); }
 
   /// CircularBase - Creates the object and place it in the given list.
   ///
-	inline explicit CircularBase(CircularBase *p) { append(p); }
+  inline explicit CircularBase(CircularBase *p) { append(p); }
 
   /// remove - Remove the object from its list.
   ///
-	inline void remove() {
-		_prev->_next = _next; 
-		_next->_prev = _prev;
-		alone();
-	}
+  inline void remove() {
+    _prev->_next = _next; 
+    _next->_prev = _prev;
+    alone();
+  }
 
   /// append - Add the object in the list.
   ///
-	inline void append(CircularBase *p) { 
-		_prev = p;
-		_next = p->_next;
-		_next->_prev = this;
-		_prev->_next = this;
-	}
+  inline void append(CircularBase *p) { 
+    _prev = p;
+    _next = p->_next;
+    _next->_prev = this;
+    _prev->_next = this;
+  }
 
   /// alone - Set the object as being part of a new empty list.
   ///
-	inline void alone() { _prev = _next = this; }
+  inline void alone() { _prev = _next = this; }
 
   /// print - Print the list for debug purposes.
   void print() {
