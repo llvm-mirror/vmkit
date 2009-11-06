@@ -15,10 +15,6 @@
 
 using namespace jnjvm;
 
-extern "C" JavaObject* Java_org_j3_config_Selected_00024Collector_get__() {
-  return (JavaObject*)mvm::MutatorThread::get()->CollectorContext;
-}
-
 extern "C" JavaObject* Java_org_j3_config_Selected_00024Mutator_get__() {
   return (JavaObject*)mvm::MutatorThread::get()->MutatorContext;
 }
