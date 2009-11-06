@@ -38,8 +38,9 @@ void CollectionRV::synchronize() {
   mvm::Thread* self = mvm::Thread::get();
   assert(self && "No thread local data for this thread");
   self->inRV = true;
-
-  // Lock thread lock, so that we can traverse the thread list safely.
+  
+  // Lock thread lock, so that we can traverse the thread list safely. This will
+  // be released on finishRV.
   self->MyVM->ThreadLock.lock();
 
   if (cooperative) {
@@ -75,8 +76,6 @@ void CollectionRV::synchronize() {
   
   // And wait for other threads to finish.
   waitRV();
- 
-  self->MyVM->ThreadLock.unlock();
 }
 
 void CollectionRV::join() {
@@ -128,4 +127,25 @@ extern "C" void conditionalSafePoint() {
   th->startNative(1);
   th->MyVM->rendezvous.join();
   th->endNative();
+}
+
+void CollectionRV::finishRV() {
+    
+  mvm::Thread* self = mvm::Thread::get();
+  if (cooperative) {
+    mvm::Thread* initiator = mvm::Thread::get();
+    mvm::Thread* cur = initiator;
+    do {
+      cur->doYield = false;
+      cur = (mvm::Thread*)cur->next();
+    } while (cur != initiator);
+  }
+
+  nbJoined = 0;
+  rendezvousNb++;
+  condEndRV.broadcast();
+  self->inRV = false;
+  self->MyVM->ThreadLock.unlock();
+  
+  unlockRV();
 }

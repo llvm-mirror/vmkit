@@ -32,6 +32,10 @@ class CircularBase {
   ///
 	CircularBase	*_prev;
 public:
+  
+  /// ~CircularBase - Give the class a home.
+  ///
+  virtual ~CircularBase() {}
 
   /// next - Get the next object in the list.
   ///
@@ -59,7 +63,7 @@ public:
 
   /// remove - Remove the object from its list.
   ///
-	inline void remove() { 
+	inline void remove() {
 		_prev->_next = _next; 
 		_next->_prev = _prev;
 		alone();
@@ -77,6 +81,16 @@ public:
   /// alone - Set the object as being part of a new empty list.
   ///
 	inline void alone() { _prev = _next = this; }
+
+  /// print - Print the list for debug purposes.
+  void print() {
+    CircularBase* temp = this;
+    do {
+      fprintf(stderr, "%p -> ", (void*)temp);
+      temp = temp->next();
+    } while (temp != this);
+    fprintf(stderr, "\n");
+  }
 };
 
 
@@ -188,10 +202,6 @@ private:
 
 public:
  
-  /// ~Thread - Give the class a home.
-  ///
-  virtual ~Thread() {}
-
   /// tracer - Does nothing. Used for child classes which may defined
   /// a tracer.
   ///

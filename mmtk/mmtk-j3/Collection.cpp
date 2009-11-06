@@ -41,7 +41,7 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (JavaObject* C,
   // Verify that another collection is not happening.
   th->MyVM->rendezvous.startRV();
   if (th->doYield) {
-    th->MyVM->rendezvous.unlockRV();
+    th->MyVM->rendezvous.cancelRV();
     th->MyVM->rendezvous.join();
     return;
   } else {
@@ -75,7 +75,6 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (JavaObject* C,
     
     th->MyVM->endCollection();
   }
-
 
 }
 

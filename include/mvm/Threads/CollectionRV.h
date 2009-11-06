@@ -60,24 +60,13 @@ public:
     mvm::Thread::get()->inRV = true;
     lockRV();
   }
- 
-  void finishRV() {
-    
-    if (cooperative) {
-      mvm::Thread* initiator = mvm::Thread::get();
-      mvm::Thread* cur = initiator;
-      do {
-        cur->doYield = false;
-        cur = (mvm::Thread*)cur->next();
-      } while (cur != initiator);
-    }
 
-    nbJoined = 0;
-    rendezvousNb++;
-    condEndRV.broadcast();
+  void cancelRV() {
     mvm::Thread::get()->inRV = false;
     unlockRV();
   }
+ 
+  void finishRV();
   
   void collectorGo() { condInitiator.broadcast(); }
 
