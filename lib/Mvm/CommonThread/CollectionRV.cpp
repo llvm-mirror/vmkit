@@ -46,11 +46,6 @@ void CollectionRV::synchronize() {
     initiator = self;
     nbJoined = 0;
  	 
-    // Lock. Changes on the doYield flag of threads must be protected, as
-    // threads may wake up after being blocked in native code and join the
-    // rendezvous.
-    lockRV();
-
     mvm::Thread* cur = self;
     do {
       cur->joinedRV = false;
@@ -67,11 +62,6 @@ void CollectionRV::synchronize() {
       }
     }
     
-    // And wait for other threads to join.
-    waitRV();
-
-    unlockRV();
-
   } else {
     mvm::Thread* self = mvm::Thread::get();
     self->joinedRV = false;
@@ -85,11 +75,10 @@ void CollectionRV::synchronize() {
       cur->killForRendezvous();
     }
     
-    lockRV();
-    // And wait for other threads to finish.
-    waitRV();
-    unlockRV();
   }
+  
+  // And wait for other threads to finish.
+  waitRV();
  
   self->MyVM->ThreadLock.unlock();
 }

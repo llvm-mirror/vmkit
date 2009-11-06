@@ -37,36 +37,45 @@ extern "C" void Java_org_j3_mmtk_Collection_reportAllocationSuccess__ (JavaObjec
 
 extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (JavaObject* C, int why) {
   mvm::Thread* th = mvm::Thread::get();
- 
-  th->MyVM->startCollection();
-  th->MyVM->rendezvous.synchronize();
+
+  // Verify that another collection is not happening.
+  th->MyVM->rendezvous.startRV();
+  if (th->doYield) {
+    th->MyVM->rendezvous.unlockRV();
+    th->MyVM->rendezvous.join();
+    return;
+  } else {
+    th->MyVM->startCollection();
+    th->MyVM->rendezvous.synchronize();
   
-  JnJVM_org_mmtk_plan_Plan_setCollectionTriggered__();
+    JnJVM_org_mmtk_plan_Plan_setCollectionTriggered__();
 
-  // Record the starting time
-  int64_t startTime = Java_org_j3_mmtk_Statistics_nanoTime__();
+    // Record the starting time
+    int64_t startTime = Java_org_j3_mmtk_Statistics_nanoTime__();
 
-  // Collect!
-  JnJVM_org_j3_config_Selected_00024Collector_staticCollect__();
+    // Collect!
+    JnJVM_org_j3_config_Selected_00024Collector_staticCollect__();
 
-  // Record the time to GC.
-  int64_t elapsedTime = Java_org_j3_mmtk_Statistics_nanoTime__() - startTime;
-  JnJVM_org_mmtk_utility_heap_HeapGrowthManager_recordGCTime__D(((double)elapsedTime) / 1000000);
+    // Record the time to GC.
+    int64_t elapsedTime = Java_org_j3_mmtk_Statistics_nanoTime__() - startTime;
+    JnJVM_org_mmtk_utility_heap_HeapGrowthManager_recordGCTime__D(((double)elapsedTime) / 1000000);
 
-  // 2 means called by System.gc();
-  if (why != 2)
-    JnJVM_org_mmtk_utility_heap_HeapGrowthManager_considerHeapSize__();
+    // 2 means called by System.gc();
+    if (why != 2)
+      JnJVM_org_mmtk_utility_heap_HeapGrowthManager_considerHeapSize__();
 
-  JnJVM_org_mmtk_utility_heap_HeapGrowthManager_reset__();
+    JnJVM_org_mmtk_utility_heap_HeapGrowthManager_reset__();
 
-  JnJVM_org_mmtk_plan_Plan_collectionComplete__();
+    JnJVM_org_mmtk_plan_Plan_collectionComplete__();
 
-  th->MyVM->rendezvous.finishRV();
+    th->MyVM->rendezvous.finishRV();
   
-  th->MyVM->endCollection();
-  
-  th->MyVM->wakeUpFinalizers();
-  th->MyVM->wakeUpEnqueue();
+    th->MyVM->wakeUpFinalizers();
+    th->MyVM->wakeUpEnqueue();
+    
+    th->MyVM->endCollection();
+  }
+
 
 }
 

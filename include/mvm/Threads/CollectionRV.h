@@ -63,25 +63,26 @@ public:
 
   void waitEndOfRV();
   void waitRV();
+  
+  void startRV() {
+    mvm::Thread::get()->inRV = true;
+    lockRV();
+  }
  
   void finishRV() {
+    
     if (cooperative) {
-      // We lock here to make sure no threads previously blocked in native
-      // will join the collection and never go back to running code.
-      lockRV();
       mvm::Thread* cur = initiator;
       do {
         cur->doYield = false;
         cur = (mvm::Thread*)cur->next();
       } while (cur != initiator);
-      rendezvousNb++;
-      condEndRV.broadcast();
-      unlockRV();
-    } else {
-      rendezvousNb++;
-      condEndRV.broadcast();
     }
+
+    rendezvousNb++;
+    condEndRV.broadcast();
     initiator->inRV = false;
+    unlockRV();
   }
   
   void collectorGo() { condInitiator.broadcast(); }

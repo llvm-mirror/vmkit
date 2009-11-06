@@ -43,6 +43,7 @@ void Collector::do_collect() {
 
   mvm::Thread* th = mvm::Thread::get();
   mvm::StackScanner* sc = th->MyVM->getScanner();
+  th->MyVM->rendezvous.startRV();
   th->MyVM->startCollection();
 
   th->MyVM->rendezvous.synchronize();
