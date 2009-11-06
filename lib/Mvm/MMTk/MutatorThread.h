@@ -20,7 +20,6 @@ class MutatorThread : public mvm::Thread {
 public:
   mvm::BumpPtrAllocator Allocator;
   uintptr_t MutatorContext;
-  uintptr_t CollectorContext;
   
   /// realRoutine - The function to invoke when the thread starts.
   ///
@@ -47,10 +46,6 @@ public:
     ((VirtualTable**)th->MutatorContext)[0] = MutatorVT;
     MutatorInit(th->MutatorContext);
     MutatorCallInit(th->MutatorContext, (int32_t)_th->getThreadID());
-    th->CollectorContext = 
-      (uintptr_t)th->Allocator.Allocate(MMTkCollectorSize, "Collector");
-    ((VirtualTable**)th->CollectorContext)[0] = CollectorVT;
-    CollectorInit(th->CollectorContext);
     th->realRoutine(_th);
     MutatorCallDeinit(th->MutatorContext);
   }

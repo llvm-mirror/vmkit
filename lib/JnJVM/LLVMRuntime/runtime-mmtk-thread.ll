@@ -18,5 +18,4 @@
 ;;; field 14: MutatorContext
 ;;; field 15: CollectorContext
 %MutatorThread = type { %VT*, %JavaThread*, %JavaThread*, i8*, i8*, i8*, i1, i1,
-                        i1, i8*, i8*, i8*, %Vector, %BumpPtrAllocator, i8*, i8*,
-                        i8* }
+                        i1, i8*, i8*, i8*, %Vector, %BumpPtrAllocator, i8*, i8*}

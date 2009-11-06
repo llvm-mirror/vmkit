@@ -44,14 +44,14 @@ public class Selected {
 
     public Collector() {}
     @Inline
-    public native static Collector get();
+    public static Collector get() {
+      return bootstrapCollector;
+    }
   }
 
   @Uninterruptible
   public static class Mutator extends org.mmtk.plan.marksweep.MSMutator
   {
-    private static final Mutator bootstrapThread = new Mutator();
-
     public Mutator() {}
 
     @Inline
