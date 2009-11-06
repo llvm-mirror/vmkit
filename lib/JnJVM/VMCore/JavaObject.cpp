@@ -57,9 +57,7 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
       
       bool timeout = false;
 
-      l->spinLock.lock();
       l->waitingThreads++;
-      l->spinLock.unlock();
 
       while (!thread->interruptFlag && thread->nextWaiting) {
         if (timed) {
@@ -70,9 +68,7 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
         }
       }
       
-      l->spinLock.lock();
       l->waitingThreads--;
-      l->spinLock.unlock();
      
       assert((!l->firstThread || (l->firstThread->prevWaiting && 
              l->firstThread->nextWaiting)) && "Inconsistent list");
