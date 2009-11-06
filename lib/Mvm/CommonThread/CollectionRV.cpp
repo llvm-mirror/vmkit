@@ -43,8 +43,6 @@ void CollectionRV::synchronize() {
   self->MyVM->ThreadLock.lock();
 
   if (cooperative) {
-    initiator = self;
-    nbJoined = 0;
  	 
     mvm::Thread* cur = self;
     do {
@@ -66,8 +64,6 @@ void CollectionRV::synchronize() {
     mvm::Thread* self = mvm::Thread::get();
     self->joinedRV = false;
     assert(self && "No thread local data for this thread");
-    initiator = self;
-    nbJoined = 0;
 
     for (mvm::Thread* cur = (mvm::Thread*)self->next(); cur != self; 
          cur = (mvm::Thread*)cur->next()) {

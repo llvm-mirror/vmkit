@@ -30,9 +30,6 @@ class CollectionRV {
   /// nbJoined - Number of threads that joined the rendezvous.
   unsigned nbJoined;
   
-  /// initiator - The initiating thread for rendezvous.
-  mvm::Thread* initiator;
-  
   /// cooperative - Is the rendez-vous cooperative?
   bool cooperative;
 
@@ -41,14 +38,9 @@ class CollectionRV {
   
 public:
  
-  mvm::Thread* getInitiator() {
-    return initiator;
-  }
-
   CollectionRV() {
     rendezvousNb = 0;
     nbJoined = 0;
-    initiator = 0;
 #ifdef WITH_LLVM_GCC
     cooperative = true;
 #else
@@ -72,6 +64,7 @@ public:
   void finishRV() {
     
     if (cooperative) {
+      mvm::Thread* initiator = mvm::Thread::get();
       mvm::Thread* cur = initiator;
       do {
         cur->doYield = false;
@@ -79,9 +72,10 @@ public:
       } while (cur != initiator);
     }
 
+    nbJoined = 0;
     rendezvousNb++;
     condEndRV.broadcast();
-    initiator->inRV = false;
+    mvm::Thread::get()->inRV = false;
     unlockRV();
   }
   
