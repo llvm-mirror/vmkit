@@ -21,11 +21,18 @@ extern "C" intptr_t Java_org_j3_mmtk_ObjectModel_GC_1HEADER_1OFFSET__ () {
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_readAvailableBitsWord__Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* OM, JavaObject* obj) {
-  return ((uintptr_t*)obj)[1];
+  return ((uintptr_t*)obj)[1] & mvm::GCMask;
 }
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_writeAvailableBitsWord__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Word_2 (JavaObject* OM, JavaObject* obj, uintptr_t val) {
-  ((uintptr_t*)obj)[1] = val;
+  assert((val & ~mvm::GCMask) == (((uintptr_t*)obj)[1] & ~mvm::GCMask) && "GC bits do not fit");
+#if defined(__PPC__)
+  ((uint8_t*)obj)[7] &= ~mvm::GCMask;
+  ((uint8_t*)obj)[7] |= val;
+#else
+  ((uint8_t*)obj)[4] &= ~mvm::GCMask;
+  ((uint8_t*)obj)[4] |= val;
+#endif
 }
 
 extern "C" JavaObject* Java_org_j3_mmtk_ObjectModel_objectStartRef__Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* OM, JavaObject* obj) {
