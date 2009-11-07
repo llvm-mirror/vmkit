@@ -48,6 +48,7 @@ class Jnjvm;
   th->leaveUncooperativeCode(); \
   th->addresses.push_back(0); \
   th->startNative(0); \
+  JNIFrame Frame(th->lastKnownFrame, th->addresses.back()); \
   try {
 
 #define END_JNI_EXCEPTION \
@@ -70,13 +71,20 @@ class Jnjvm;
   th->enterUncooperativeCode(SP); \
   return; } \
 
+
+class JNIFrame {
+public:
+  JNIFrame* previousFrame;
+  void* currentFP;
+
+  JNIFrame(JNIFrame* P, void* C) : previousFrame(P), currentFP(C) {}
+};
+
 /// JavaThread - This class is the internal representation of a Java thread.
 /// It maintains thread-specific information such as its state, the current
 /// exception if there is one, the layout of the stack, etc.
 ///
 class JavaThread : public mvm::MutatorThread {
-
-
 public:
   
   /// jniEnv - The JNI environment of the thread.
@@ -136,6 +144,10 @@ public:
   /// currentAddedReferences - Current number of added local references.
   ///
   uint32_t* currentAddedReferences;
+
+  /// lastKnownFrame - The last frame that we know of, before resuming to JNI.
+  ///
+  JNIFrame* lastKnownFrame;
 
   /// localJNIRefs - List of local JNI references.
   ///
@@ -249,6 +261,7 @@ public:
     // Pop the address after calling leaveUncooperativeCode
     // to let the thread's call stack coherent.
     addresses.pop_back();
+    lastKnownFrame = lastKnownFrame->previousFrame;
   }
 
   /// endJava - Record that we are leaving Java code.

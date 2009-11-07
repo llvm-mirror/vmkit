@@ -292,6 +292,9 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   Value* oldCLIN = new AllocaInst(PointerType::getUnqual(Type::getInt32Ty(getGlobalContext())), "",
                                   currentBlock);
   
+  Constant* sizeF = ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 2 * sizeof(void*));
+  Value* Frame = new AllocaInst(Type::getInt8Ty(getGlobalContext()), sizeF, "", currentBlock);
+  
   // Synchronize before saying we're entering native
   if (isSynchro(compilingMethod->access))
     beginSynchronize();
@@ -430,9 +433,9 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     nativeFunc = node;
   }
   
-  Value* Args4[4] = { temp, oldCLIN, newJB, oldJB };
+  Value* Args4[5] = { temp, oldCLIN, newJB, oldJB, Frame };
 
-  CallInst::Create(module->StartJNIFunction, Args4, Args4 + 4, "",
+  CallInst::Create(module->StartJNIFunction, Args4, Args4 + 5, "",
                    currentBlock);
   
 
