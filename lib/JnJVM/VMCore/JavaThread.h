@@ -48,7 +48,10 @@ class Jnjvm;
   th->leaveUncooperativeCode(); \
   th->addresses.push_back(0); \
   th->startNative(0); \
-  JNIFrame Frame(th->lastKnownFrame, th->addresses.back()); \
+  mvm::KnownFrame Frame; \
+  Frame.previousFrame = th->lastKnownFrame; \
+  Frame.currentFP = th->addresses.back(); \
+  th->lastKnownFrame = &Frame; \
   try {
 
 #define END_JNI_EXCEPTION \
@@ -71,14 +74,6 @@ class Jnjvm;
   th->enterUncooperativeCode(SP); \
   return; } \
 
-
-class JNIFrame {
-public:
-  JNIFrame* previousFrame;
-  void* currentFP;
-
-  JNIFrame(JNIFrame* P, void* C) : previousFrame(P), currentFP(C) {}
-};
 
 /// JavaThread - This class is the internal representation of a Java thread.
 /// It maintains thread-specific information such as its state, the current
@@ -144,10 +139,6 @@ public:
   /// currentAddedReferences - Current number of added local references.
   ///
   uint32_t* currentAddedReferences;
-
-  /// lastKnownFrame - The last frame that we know of, before resuming to JNI.
-  ///
-  JNIFrame* lastKnownFrame;
 
   /// localJNIRefs - List of local JNI references.
   ///
@@ -299,16 +290,6 @@ public:
   ///
   JavaObject* getNonNullClassLoader();
     
-  /// printBacktrace - Prints the backtrace of this thread.
-  ///
-  void printBacktrace() __attribute__ ((noinline));
-  
-  /// printBacktraceAfterSignal - Prints the backtrace of this thread while
-  /// in a signal handler.
-  ///
-  virtual void printBacktraceAfterSignal() __attribute__ ((noinline));
-  
-  
   /// printJavaBacktrace - Prints the backtrace of this thread. Only prints
   /// the Java methods on the stack.
   ///

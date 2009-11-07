@@ -83,7 +83,7 @@ typedef __jmp_buf_tag* jumpbuf_t;
 typedef int (*onLoad_t)(const void**, void*);
 extern "C" void  jnjvmEndJNI(uint32** old, void** oldBuf);
 extern "C" void  jnjvmStartJNI(uint32* num, uint32** old, void* newBuf,
-                               void** oldBuf, JNIFrame* Frame);
+                               void** oldBuf, mvm::KnownFrame* Frame);
 
 extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm)
   __attribute__ ((noinline));
@@ -99,7 +99,7 @@ extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
     uint32* old = 0;
     void* oldBuf = 0;
     jmp_buf buf;
-    JNIFrame Frame(0, 0);
+    mvm::KnownFrame Frame;
     
     if (setjmp((jumpbuf_t)buf) == 0) {
       // Push an unmeaningful value in the addresses field to let the

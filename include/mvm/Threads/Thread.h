@@ -111,6 +111,13 @@ public:
 #endif
 
 
+class KnownFrame {
+public:
+  KnownFrame* previousFrame;
+  void* currentFP;
+};
+
+
 /// Thread - This class is the base of custom virtual machines' Thread classes.
 /// It provides static functions to manage threads. An instance of this class
 /// contains all thread-specific informations.
@@ -329,10 +336,9 @@ public:
     return cpt;
   }
 
-  /// printBacktraceAfterSignal - Print the backtrace during a signal
-  /// handler.
+  /// printBacktrace - Print the backtrace.
   ///
-  virtual void printBacktraceAfterSignal() {}
+  void printBacktrace();
 
   /// addresses - The list of return addresses which represent native/app cross
   /// calls.
@@ -349,6 +355,10 @@ public:
     assert(!(addresses.size() % 2) && "Wrong stack");    
     addresses.pop_back();
   }
+
+  /// lastKnownFrame - The last frame that we know of, before resuming to JNI.
+  ///
+  KnownFrame* lastKnownFrame;
 
 };
 

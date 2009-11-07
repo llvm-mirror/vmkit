@@ -499,12 +499,6 @@ struct CallbackInfo {
 
 };
 
-class JavaJITStackScanner : public mvm::JITStackScanner {
-public:
-  virtual llvm::GCFunctionInfo* IPToGCFunctionInfo(mvm::VirtualMachine* vm,
-                                                   void* ip);
-};
-
 class JavaJITMethodInfo : public mvm::JITMethodInfo {
 protected:
   JavaMethod* meth;
@@ -580,7 +574,7 @@ public:
 #ifdef WITH_LLVM_GCC
   virtual mvm::StackScanner* createStackScanner() {
     if (useCooperativeGC())
-      return new JavaJITStackScanner();
+      return new mvm::PreciseStackScanner();
     
     return new mvm::UnpreciseStackScanner();
   }

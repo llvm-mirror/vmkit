@@ -67,7 +67,7 @@ public:
   virtual void scanStack(mvm::Thread* th);
 };
 
-class CamlStackScanner : public StackScanner {
+class PreciseStackScanner : public StackScanner {
 public:
   virtual void scanStack(mvm::Thread* th);
 };

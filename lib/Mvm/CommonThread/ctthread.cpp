@@ -61,6 +61,29 @@ void Thread::startNative(int level) {
   addresses.push_back(cur);
 }
 
+void Thread::printBacktrace() {
+  mvm::VirtualMachine* vm = MyVM;
+
+  void** addr = mvm::Thread::get() == this ? 
+    (void**)FRAME_PTR() : (void**)waitOnSP();
+  assert(addr && "No address to start with");
+
+  KnownFrame* currentKnownFrame = lastKnownFrame;
+
+  while (addr < baseSP && addr < addr[0]) {
+    
+    if (currentKnownFrame && addr == currentKnownFrame->currentFP) {
+      currentKnownFrame = currentKnownFrame->previousFrame;
+    }
+
+    void* ip = FRAME_IP(addr);
+    mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
+    MI->print(ip, addr);
+    addr = (void**)addr[0];
+  }
+}
+
+
 uintptr_t Thread::baseAddr = 0;
 
 // These could be set at runtime.

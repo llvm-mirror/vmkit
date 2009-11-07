@@ -1422,7 +1422,7 @@ class JavaStaticCompiler : public JavaCompiler {
 public:
 #ifdef WITH_LLVM_GCC
   virtual mvm::StackScanner* createStackScanner() {
-    return new mvm::CamlStackScanner();
+    return new mvm::PreciseStackScanner();
   }
 #endif
 };
