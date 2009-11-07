@@ -114,23 +114,16 @@ SharedStartFunctionMap::SharedStartFunctionMap() {
       if (!currentFrame->ReturnAddress) break;
       int res = dladdr(currentFrame->ReturnAddress, &info);
       if (res) {
-        if (previousPtr) {
-          if (info.dli_saddr == previousPtr) {
-            previousFrame = currentFrame;
-          } else {
-            StaticCamlMethodInfo* MI =
-              new(StaticAllocator, "StaticCamlMethodInfo")
-              StaticCamlMethodInfo(previousFrame, previousPtr, previousName);
-            previousName = info.dli_sname;
-            previousFrame = currentFrame;
-            previousPtr = info.dli_saddr;
-            addMethodInfo(MI, previousPtr);
-          }
-        } else {
-          previousName = info.dli_sname;
-          previousFrame = currentFrame;
+        if (previousPtr && info.dli_saddr != previousPtr) {
+          StaticCamlMethodInfo* MI =
+            new(StaticAllocator, "StaticCamlMethodInfo")
+            StaticCamlMethodInfo(previousFrame, previousPtr, previousName);
+          addMethodInfo(MI, previousPtr);
         }
-      }   
+        previousName = info.dli_sname;
+        previousFrame = currentFrame;
+        previousPtr = info.dli_saddr;
+      }
 
       currentFrame = (CamlFrame*) ((char*)currentFrame + 
         (currentFrame->NumLiveOffsets % 2) * sizeof(uint16_t) +
@@ -143,7 +136,7 @@ SharedStartFunctionMap::SharedStartFunctionMap() {
 CamlMethodInfo::CamlMethodInfo(CamlFrame* C, void* ip) {
   if (!C) {
     MethodInfo* MI = VirtualMachine::SharedStaticFunctions.IPToMethodInfo(ip);
-    if (MI) {
+    if (MI != &DefaultMethodInfo::DM) {
       C = ((CamlMethodInfo*)MI)->CF;
     }
   }
