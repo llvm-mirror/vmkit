@@ -306,26 +306,10 @@ void JavaThread::printJavaBacktrace() {
   for (std::vector<void*>::iterator i = vals.begin(), e = vals.end(); 
        i != e; ++i) {
     mvm::MethodInfo* MI = vm->IPToMethodInfo(*i);
-    JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
-    assert(meth && "Wrong stack");
-    fprintf(stderr, "; %p in %s.%s\n",  *i,
-            UTF8Buffer(meth->classDef->name).cString(),
-            UTF8Buffer(meth->name).cString());
+    MI->print(*i, 0);
   }
 }
 
-
-#include <dlfcn.h>
-
-static void printFunctionInfo(Jnjvm* vm, void* ip) {
-  Dl_info info;
-  int res = dladdr(ip, &info);
-  if (res != 0) {
-    fprintf(stderr, "; %p in %s\n",  ip, info.dli_sname);
-  } else {
-    fprintf(stderr, "; %p in Unknown method\n", ip);
-  }
-}
 
 void JavaThread::printBacktrace() {
   std::vector<void*>::iterator it = addresses.end();
@@ -347,7 +331,8 @@ void JavaThread::printBacktrace() {
     // Until we hit the last Java frame.
     do {
       void* ip = FRAME_IP(addr);
-      printFunctionInfo(vm, ip);
+      mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
+      MI->print(ip, addr);
       oldAddr = addr;
       addr = (void**)addr[0];
     } while (oldAddr != (void**)*it && addr != (void**)*it);
@@ -362,7 +347,8 @@ void JavaThread::printBacktrace() {
       --it;
       if (*it == 0) {
         void* ip = FRAME_IP(addr);
-        printFunctionInfo(vm, ip);
+        mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
+        MI->print(ip, addr);
         addr = (void**)addr[0];
         continue;
       }
@@ -372,14 +358,8 @@ void JavaThread::printBacktrace() {
       void* ip = FRAME_IP(addr);
       bool isStub = ((unsigned char*)ip)[0] == 0xCE;
       if (isStub) ip = addr[2];
-      mvm::MethodInfo* MI = getJVM()->IPToMethodInfo(ip);
-      JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
-      assert(meth && "Wrong stack");
-      fprintf(stderr, "; %p in %s.%s",  ip,
-              UTF8Buffer(meth->classDef->name).cString(),
-              UTF8Buffer(meth->name).cString());
-      if (isStub) fprintf(stderr, " (from stub)");
-      fprintf(stderr, "\n");
+      mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
+      MI->print(ip, addr);
       addr = (void**)addr[0];
       // End walking the stack when we cross a native -> Java call. Here
       // the iterator points to a native -> Java call. We dereference addr twice
@@ -389,7 +369,8 @@ void JavaThread::printBacktrace() {
 
   while (addr < baseSP && addr < addr[0]) {
     void* ip = FRAME_IP(addr);
-    printFunctionInfo(vm, ip);
+    mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
+    MI->print(ip, addr);
     addr = (void**)addr[0];
   }
 

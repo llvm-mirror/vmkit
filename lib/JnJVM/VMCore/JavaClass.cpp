@@ -335,7 +335,7 @@ void JavaMethod::setCompiledPtr(void* ptr, const char* name) {
     Jnjvm* vm = JavaThread::get()->getJVM();
     JavaStaticMethodInfo* MI =
       new (classDef->classLoader->allocator, "JavaStaticMethodInfo")
-        JavaStaticMethodInfo(0, this);
+        JavaStaticMethodInfo(0, code, this);
     vm->StaticFunctions.addMethodInfo(MI, code);
     classDef->classLoader->getCompiler()->setMethod(this, ptr, name);
   }

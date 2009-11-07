@@ -958,8 +958,8 @@ protected:
 public:
   virtual void print(void* ip, void* addr);
   
-  JavaStaticMethodInfo(CamlFrame* CF, JavaMethod* M) :
-    mvm::CamlMethodInfo(CF) {
+  JavaStaticMethodInfo(mvm::CamlFrame* CF, void* ip, JavaMethod* M) :
+    mvm::CamlMethodInfo(CF, ip) {
     meth = M;
   }
 

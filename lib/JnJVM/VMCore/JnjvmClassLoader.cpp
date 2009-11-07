@@ -1078,7 +1078,7 @@ void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
         JavaMethod& meth = C->virtualMethods[i];
         if (!isAbstract(meth.access) && meth.code) {
           JavaStaticMethodInfo* MI = new (allocator, "JavaStaticMethodInfo")
-            JavaStaticMethodInfo(0, &meth);
+            JavaStaticMethodInfo(0, meth.code, &meth);
           vm->StaticFunctions.addMethodInfo(MI, meth.code);
           M->setMethod(&meth, meth.code, "");
         }
@@ -1088,7 +1088,7 @@ void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
         JavaMethod& meth = C->staticMethods[i];
         if (!isAbstract(meth.access) && meth.code) {
           JavaStaticMethodInfo* MI = new (allocator, "JavaStaticMethodInfo")
-            JavaStaticMethodInfo(0, &meth);
+            JavaStaticMethodInfo(0, meth.code, &meth);
           vm->StaticFunctions.addMethodInfo(MI, meth.code);
           M->setMethod(&meth, meth.code, "");
         }

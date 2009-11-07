@@ -95,6 +95,13 @@ public:
  
 };
 
+class SharedStartFunctionMap : public StartFunctionMap {
+public: 
+  static BumpPtrAllocator StaticAllocator;
+  SharedStartFunctionMap();
+};
+
+
 
 // Same values than JikesRVM
 #define INITIAL_QUEUE_SIZE 256
@@ -263,8 +270,6 @@ public:
   static CompilationUnit* initialiseCLIVM();
   static VirtualMachine* createCLIVM(CompilationUnit* C = 0);
 
-  static StaticGCMap GCMap;
-    
 private:
   /// WeakReferencesQueue - The queue of weak references.
   ///
@@ -481,6 +486,7 @@ public:
   StartEndFunctionMap RuntimeFunctions;
   static StartEndFunctionMap SharedRuntimeFunctions;
   StartFunctionMap StaticFunctions;
+  static SharedStartFunctionMap SharedStaticFunctions;
 
   MethodInfo* IPToMethodInfo(void* ip);
 

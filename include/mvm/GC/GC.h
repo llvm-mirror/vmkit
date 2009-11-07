@@ -11,17 +11,8 @@
 #ifndef MVM_GC_H
 #define MVM_GC_H
 
-#include <dlfcn.h>
 #include <stdint.h>
 #include <map>
-
-
-#if defined(__MACH__)
-#define SELF_HANDLE RTLD_DEFAULT
-#else
-#define SELF_HANDLE 0
-#endif
-
 
 struct VirtualTable {
   uintptr_t destructor;
@@ -58,38 +49,6 @@ public:
   ///
   void setVirtualTable(VirtualTable* VT) {
     ((VirtualTable**)(this))[0] = VT;
-  }
-};
-
-class CamlFrame {
-public:
-  void* ReturnAddress;
-  uint16_t FrameSize;
-  uint16_t NumLiveOffsets;
-  int16_t LiveOffsets[1];
-};
-
-class StaticGCMap {
-public:
-  std::map<void*, void*> GCInfos;
-
-  StaticGCMap() {
-    CamlFrame* currentFrame =
-      (CamlFrame*)dlsym(SELF_HANDLE, "camlVmkitoptimized__frametable");
-    
-    if (currentFrame) {
-      while (true) {
-
-        if (!currentFrame->ReturnAddress) break; 
-        GCInfos.insert(std::make_pair(currentFrame->ReturnAddress,
-                                    currentFrame));
-    
-        currentFrame = (CamlFrame*) ((char*)currentFrame + 
-          (currentFrame->NumLiveOffsets % 2) * sizeof(uint16_t) +
-          currentFrame->NumLiveOffsets * sizeof(uint16_t) +
-          sizeof(void*) + sizeof(uint16_t) + sizeof(uint16_t));
-      }
-    }
   }
 };
 

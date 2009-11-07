@@ -32,18 +32,27 @@ public:
   }
 };
 
+class CamlFrame {
+public:
+  void* ReturnAddress;
+  uint16_t FrameSize;
+  uint16_t NumLiveOffsets;
+  int16_t LiveOffsets[1];
+};
+
 class CamlMethodInfo : public MethodInfo {
   CamlFrame* CF;
 public:
   virtual void scan(void* TL, void* ip, void* addr);
-  CamlMethodInfo(CamlFrame* C) : CF(C) {}
+  CamlMethodInfo(CamlFrame* C, void* ip);
 };
 
 class StaticCamlMethodInfo : public CamlMethodInfo {
   const char* name;
 public:
   virtual void print(void* ip, void* addr);
-  StaticCamlMethodInfo(CamlFrame* CF, const char* n) : CamlMethodInfo(CF) {
+  StaticCamlMethodInfo(CamlFrame* CF, void* ip, const char* n) :
+    CamlMethodInfo(CF, ip) {
     name = n;
   }
 };

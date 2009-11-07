@@ -261,9 +261,8 @@ void Allocator::freeTemporaryMemory(void* obj) {
   return free(obj); 
 }
 
-StaticGCMap VirtualMachine::GCMap;
-
 void CamlStackScanner::scanStack(mvm::Thread* th) {
+  VirtualMachine* vm = th->MyVM;
   std::vector<void*>::iterator it = th->addresses.end();
 
   void** addr = mvm::Thread::get() == th ? (void**)FRAME_PTR() :
@@ -277,14 +276,8 @@ void CamlStackScanner::scanStack(mvm::Thread* th) {
     // Until we hit the last Java frame.
     do {
       void* ip = FRAME_IP(addr);
-      CamlFrame* CF = (CamlFrame*)VirtualMachine::GCMap.GCInfos[ip];
-      if (CF) { 
-        //char* spaddr = (char*)addr + CF->FrameSize + sizeof(void*);
-        uintptr_t spaddr = (uintptr_t)addr[0];
-        for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
-          Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]));
-        }
-      }
+      mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
+      MI->scan(0, ip, addr);
       oldAddr = addr;
       addr = (void**)addr[0];
     } while (oldAddr != (void**)*it && addr != (void**)*it);
@@ -299,14 +292,8 @@ void CamlStackScanner::scanStack(mvm::Thread* th) {
       --it;
       if (*it == 0) {
         void* ip = FRAME_IP(addr);
-        CamlFrame* CF = (CamlFrame*)VirtualMachine::GCMap.GCInfos[ip];
-        if (CF) { 
-          //char* spaddr = (char*)addr + CF->FrameSize + sizeof(void*);
-          uintptr_t spaddr = (uintptr_t)addr[0];
-          for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
-            Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]));
-          }
-        }
+        mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
+        MI->scan(0, ip, addr);
         addr = (void**)addr[0];
         continue;
       }
@@ -316,14 +303,8 @@ void CamlStackScanner::scanStack(mvm::Thread* th) {
       void* ip = FRAME_IP(addr);
       bool isStub = ((unsigned char*)ip)[0] == 0xCE;
       if (isStub) ip = addr[2];
-      CamlFrame* CF = (CamlFrame*)VirtualMachine::GCMap.GCInfos[ip];
-      if (CF) {
-        //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
-        uintptr_t spaddr = (uintptr_t)addr[0];
-        for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
-          Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]));
-        }
-      }
+      mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
+      MI->scan(0, ip, addr);
       
       addr = (void**)addr[0];
       // End walking the stack when we cross a native -> Java call. Here
@@ -334,14 +315,8 @@ void CamlStackScanner::scanStack(mvm::Thread* th) {
 
   while (addr < th->baseSP && addr < addr[0]) {
     void* ip = FRAME_IP(addr);
-    CamlFrame* CF = (CamlFrame*)VirtualMachine::GCMap.GCInfos[ip];
-    if (CF) { 
-      //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
-      uintptr_t spaddr = (uintptr_t)addr[0];
-      for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
-        Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]));
-      }
-    }
+    mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
+    MI->scan(0, ip, addr);
     addr = (void**)addr[0];
   }
 }
@@ -359,5 +334,3 @@ void UnpreciseStackScanner::scanStack(mvm::Thread* th) {
     for(; cur<max; cur++) Collector::scanObject((void**)cur);
   }
 }
-
-StartEndFunctionMap VirtualMachine::SharedRuntimeFunctions;
