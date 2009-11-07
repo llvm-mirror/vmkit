@@ -14,6 +14,7 @@
 #include "types.h"
 
 #include "mvm/Allocator.h"
+#include "mvm/MethodInfo.h"
 #include "mvm/Object.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
@@ -949,6 +950,22 @@ public:
   ///
   static void initialiseVT(Class* javaLangObject);
   
+};
+
+class JavaStaticMethodInfo : public mvm::CamlMethodInfo {
+protected:
+  JavaMethod* meth;
+public:
+  virtual void print(void* ip, void* addr);
+  
+  JavaStaticMethodInfo(CamlFrame* CF, JavaMethod* M) :
+    mvm::CamlMethodInfo(CF) {
+    meth = M;
+  }
+
+  virtual void* getMetaInfo() {
+    return meth;
+  }
 };
 
 /// JavaMethod - This class represents Java methods.

@@ -16,6 +16,7 @@
 #define MVM_VIRTUALMACHINE_H
 
 #include "mvm/Allocator.h"
+#include "mvm/MethodInfo.h"
 #include "mvm/Threads/CollectionRV.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
@@ -32,6 +33,67 @@ namespace jnjvm {
 class gc;
 
 namespace mvm {
+
+class FunctionMap {
+public:
+  /// Functions - Map of applicative methods to function pointers. This map is
+  /// used when walking the stack so that VMKit knows which applicative method
+  /// is executing on the stack.
+  ///
+  std::map<void*, MethodInfo*> Functions;
+
+  /// FunctionMapLock - Spin lock to protect the Functions map.
+  ///
+  mvm::SpinLock FunctionMapLock;
+};
+
+/// StartEndFunctionMap - This map is for functions for which we have
+/// a start and end address.
+///
+class StartEndFunctionMap : public FunctionMap {
+public:
+  /// addMethodInFunctionMap - A new method pointer in the function map.
+  ///
+  void addMethodInfo(MethodInfo* meth, void* start, void* end) {
+    FunctionMapLock.acquire();
+    Functions.insert(std::make_pair(start, meth));
+    Functions.insert(std::make_pair(end, meth));
+    FunctionMapLock.release();
+  }
+  
+  /// IPToMethodInfo - Map an instruction pointer to the MethodInfo.
+  ///
+  MethodInfo* IPToMethodInfo(void* ip) {
+    FunctionMapLock.acquire();
+    std::map<void*, MethodInfo*>::iterator I = Functions.upper_bound(ip);
+    MethodInfo* res = 0;
+    if (I != Functions.end() && I != Functions.begin()) {
+      res = I->second;
+      if ((--I)->second != res) res = 0;
+    }
+    FunctionMapLock.release();
+    return res;
+  }
+};
+
+/// StartFunctionMap - This map is for static functions where getting an end
+/// address is cumbersome.
+///
+class StartFunctionMap : public FunctionMap {
+public: 
+  /// addMethodInFunctionMap - A new method pointer in the function map.
+  ///
+  void addMethodInfo(MethodInfo* meth, void* addr) {
+    FunctionMapLock.acquire();
+    Functions.insert(std::make_pair((void*)addr, meth));
+    FunctionMapLock.release();
+  }
+  
+  /// IPToMethodInfo - Map an instruction pointer to the MethodInfo.
+  ///
+  MethodInfo* IPToMethodInfo(void* ip);
+ 
+};
 
 
 // Same values than JikesRVM
@@ -401,94 +463,26 @@ public:
   virtual bool enqueueReference(gc*) { return false; }
 
 
-protected:
-
-  /// Functions - Map of applicative methods to function pointers. This map is
-  /// used when walking the stack so that VMKit knows which applicative method
-  /// is executing on the stack.
-  ///
-  std::map<void*, void*> Functions;
-
-  /// FunctionMapLock - Spin lock to protect the Functions map.
-  ///
-  mvm::SpinLock FunctionMapLock;
+public:
 
   /// scanner - Scanner of threads' stacks.
   ///
   mvm::StackScanner* scanner;
 
-public:
-  /// addMethodInFunctionMap - A new method pointer in the function map.
-  ///
-  template <typename T>
-  void addMethodInFunctionMap(T* meth, void* addr) {
-    FunctionMapLock.acquire();
-    Functions.insert(std::make_pair((void*)addr, meth));
-    FunctionMapLock.release();
-  }
-  
-  /// IPToJavaMethod - Map an instruction pointer to the Java method.
-  ///
-  template <typename T> T* IPToMethod(void* ip) {
-    FunctionMapLock.acquire();
-    std::map<void*, void*>::iterator I = Functions.upper_bound(ip);
-    assert(I != Functions.begin() && "Wrong value in function map");
-
-    // Decrement because we had the "greater than" value.
-    I--;
-    
-    T* res = (T*)I->second;
-    FunctionMapLock.release();
-    return res;
-  }
-
-  void setScanner(mvm::StackScanner* s) {
-    scanner = s;
-  }
-
   mvm::StackScanner* getScanner() {
     return scanner;
-  }
-
-protected:
-
-  /// InternalFunctions - Map of internal methods to function pointers. This
-  /// map is used when walking the stack so that VMKit knows which
-  /// JIT-generated internal method is executing on the stack.
-  ///
-  std::map<void*, const char*> InternalFunctions;
-
-  /// FunctionMapLock - Spin lock to protect the Functions map.
-  ///
-  mvm::SpinLock InternalFunctionMapLock;
-
-public:
-  /// addMethodInFunctionMap - A new method pointer in the function map.
-  ///
-  void addInternalMethodInFunctionMap(const char* meth, void* start, void* end) {
-    InternalFunctionMapLock.acquire();
-    InternalFunctions.insert(std::make_pair(start, meth));
-    InternalFunctions.insert(std::make_pair(end, meth));
-    InternalFunctionMapLock.release();
-  }
-  
-  /// IPToJavaMethod - Map an instruction pointer to the Java method.
-  ///
-  const char* IPToInternalMethod(void* ip) {
-    InternalFunctionMapLock.acquire();
-    std::map<void*, const char*>::iterator I = InternalFunctions.upper_bound(ip);
-    const char* res = 0;
-    if (I != InternalFunctions.end() && I != InternalFunctions.begin()) {
-      res = I->second;
-      if ((--I)->second != res) res = 0;
-    }
-    InternalFunctionMapLock.release();
-    return res;
   }
 
   /// rendezvous - The rendezvous implementation for garbage collection.
   ///
   CollectionRV rendezvous;
+
+
+  StartEndFunctionMap RuntimeFunctions;
+  static StartEndFunctionMap SharedRuntimeFunctions;
+  StartFunctionMap StaticFunctions;
+
+  MethodInfo* IPToMethodInfo(void* ip);
 
 #ifdef ISOLATE
   size_t IsolateID;

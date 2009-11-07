@@ -1391,22 +1391,28 @@ ArrayUInt16* Jnjvm::asciizToArray(const char* asciiz) {
   return tmp;
 }
 
-void Jnjvm::removeMethodsInFunctionMap(JnjvmClassLoader* loader) {
+void Jnjvm::internalRemoveMethods(JnjvmClassLoader* loader, mvm::FunctionMap& Map) {
   // Loop over all methods in the map to find which ones belong
   // to this class loader.
-  FunctionMapLock.acquire();
-  std::map<void*, void*>::iterator temp;
-  for (std::map<void*, void*>::iterator i = Functions.begin(), 
-       e = Functions.end(); i != e;) {
-    if (((JavaMethod*)i->second)->classDef->classLoader == loader) {
+  Map.FunctionMapLock.acquire();
+  std::map<void*, mvm::MethodInfo*>::iterator temp;
+  for (std::map<void*, mvm::MethodInfo*>::iterator i = Map.Functions.begin(), 
+       e = Map.Functions.end(); i != e;) {
+    JavaMethod* meth = (JavaMethod*)i->second->getMetaInfo();
+    if (meth->classDef->classLoader == loader) {
       temp = i;
       ++i;
-      Functions.erase(temp);
+      Map.Functions.erase(temp);
     } else {
       ++i;
     }
   }
-  FunctionMapLock.release();
+  Map.FunctionMapLock.release();
+}
+
+void Jnjvm::removeMethodsInFunctionMaps(JnjvmClassLoader* loader) {
+  internalRemoveMethods(loader, RuntimeFunctions);
+  internalRemoveMethods(loader, StaticFunctions);
 }
 
 

@@ -900,7 +900,7 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf,
 JnjvmClassLoader::~JnjvmClassLoader() {
 
   if (isolate)
-    isolate->removeMethodsInFunctionMap(this);
+    isolate->removeMethodsInFunctionMaps(this);
 
   if (classes) {
     classes->~ClassMap();
@@ -1077,7 +1077,9 @@ void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
       for (uint32 i = 0; i < C->nbVirtualMethods; ++i) {
         JavaMethod& meth = C->virtualMethods[i];
         if (!isAbstract(meth.access) && meth.code) {
-          vm->addMethodInFunctionMap(&meth, meth.code);
+          JavaStaticMethodInfo* MI = new (allocator, "JavaStaticMethodInfo")
+            JavaStaticMethodInfo(0, &meth);
+          vm->StaticFunctions.addMethodInfo(MI, meth.code);
           M->setMethod(&meth, meth.code, "");
         }
       }
@@ -1085,7 +1087,9 @@ void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
       for (uint32 i = 0; i < C->nbStaticMethods; ++i) {
         JavaMethod& meth = C->staticMethods[i];
         if (!isAbstract(meth.access) && meth.code) {
-          vm->addMethodInFunctionMap(&meth, meth.code);
+          JavaStaticMethodInfo* MI = new (allocator, "JavaStaticMethodInfo")
+            JavaStaticMethodInfo(0, &meth);
+          vm->StaticFunctions.addMethodInfo(MI, meth.code);
           M->setMethod(&meth, meth.code, "");
         }
       }

@@ -505,6 +505,23 @@ public:
                                                    void* ip);
 };
 
+class JavaJITMethodInfo : public mvm::JITMethodInfo {
+protected:
+  JavaMethod* meth;
+public:
+  virtual void print(void* ip, void* addr);
+  
+  JavaJITMethodInfo(llvm::GCFunctionInfo* GFI, JavaMethod* m) : 
+    mvm::JITMethodInfo(GFI) {
+    meth = m;
+  }
+  
+  virtual void* getMetaInfo() {
+    return meth;
+  }
+
+};
+
 class JavaJITCompiler : public JavaLLVMCompiler {
 public:
 

@@ -337,11 +337,18 @@ public:
   /// waitForExit - Waits that there are no more non-daemon threads in this JVM.
   ///
   virtual void waitForExit();
-  
-  /// removeMethodsInFunctionMap - Removes all methods compiled by this
+
+private:
+  /// internalRemoveMethodsInFunctionMap - Removes all methods compiled by this
   /// class loader from the function map.
   ///
-  void removeMethodsInFunctionMap(JnjvmClassLoader* loader);
+  void internalRemoveMethods(JnjvmClassLoader* loader, mvm::FunctionMap& Map);
+
+public:
+  /// removeMethodsInFunctionMaps - Removes all methods compiled by this
+  /// class loader from the function maps.
+  ///
+  void removeMethodsInFunctionMaps(JnjvmClassLoader* loader);
   
   /// loadBootstrap - Bootstraps the JVM, getting the class loader, initializing
   /// bootstrap classes (e.g. java/lang/Class, java/lang/*Exception) and

@@ -61,20 +61,21 @@ public:
   }
 };
 
-typedef struct {
+class CamlFrame {
+public:
   void* ReturnAddress;
   uint16_t FrameSize;
   uint16_t NumLiveOffsets;
   int16_t LiveOffsets[1];
-} camlframe;
+};
 
 class StaticGCMap {
 public:
   std::map<void*, void*> GCInfos;
 
   StaticGCMap() {
-    camlframe* currentFrame =
-      (camlframe*)dlsym(SELF_HANDLE, "camlVmkitoptimized__frametable");
+    CamlFrame* currentFrame =
+      (CamlFrame*)dlsym(SELF_HANDLE, "camlVmkitoptimized__frametable");
     
     if (currentFrame) {
       while (true) {
@@ -83,7 +84,7 @@ public:
         GCInfos.insert(std::make_pair(currentFrame->ReturnAddress,
                                     currentFrame));
     
-        currentFrame = (camlframe*) ((char*)currentFrame + 
+        currentFrame = (CamlFrame*) ((char*)currentFrame + 
           (currentFrame->NumLiveOffsets % 2) * sizeof(uint16_t) +
           currentFrame->NumLiveOffsets * sizeof(uint16_t) +
           sizeof(void*) + sizeof(uint16_t) + sizeof(uint16_t));

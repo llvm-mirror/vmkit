@@ -277,7 +277,7 @@ void CamlStackScanner::scanStack(mvm::Thread* th) {
     // Until we hit the last Java frame.
     do {
       void* ip = FRAME_IP(addr);
-      camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+      CamlFrame* CF = (CamlFrame*)VirtualMachine::GCMap.GCInfos[ip];
       if (CF) { 
         //char* spaddr = (char*)addr + CF->FrameSize + sizeof(void*);
         uintptr_t spaddr = (uintptr_t)addr[0];
@@ -299,7 +299,7 @@ void CamlStackScanner::scanStack(mvm::Thread* th) {
       --it;
       if (*it == 0) {
         void* ip = FRAME_IP(addr);
-        camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+        CamlFrame* CF = (CamlFrame*)VirtualMachine::GCMap.GCInfos[ip];
         if (CF) { 
           //char* spaddr = (char*)addr + CF->FrameSize + sizeof(void*);
           uintptr_t spaddr = (uintptr_t)addr[0];
@@ -316,7 +316,7 @@ void CamlStackScanner::scanStack(mvm::Thread* th) {
       void* ip = FRAME_IP(addr);
       bool isStub = ((unsigned char*)ip)[0] == 0xCE;
       if (isStub) ip = addr[2];
-      camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+      CamlFrame* CF = (CamlFrame*)VirtualMachine::GCMap.GCInfos[ip];
       if (CF) {
         //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
         uintptr_t spaddr = (uintptr_t)addr[0];
@@ -334,7 +334,7 @@ void CamlStackScanner::scanStack(mvm::Thread* th) {
 
   while (addr < th->baseSP && addr < addr[0]) {
     void* ip = FRAME_IP(addr);
-    camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+    CamlFrame* CF = (CamlFrame*)VirtualMachine::GCMap.GCInfos[ip];
     if (CF) { 
       //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
       uintptr_t spaddr = (uintptr_t)addr[0];
@@ -360,3 +360,4 @@ void UnpreciseStackScanner::scanStack(mvm::Thread* th) {
   }
 }
 
+StartEndFunctionMap VirtualMachine::SharedRuntimeFunctions;

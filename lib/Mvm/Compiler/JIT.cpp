@@ -24,6 +24,7 @@
 #include <llvm/CodeGen/GCStrategy.h>
 #include <llvm/Config/config.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include "llvm/ExecutionEngine/JITEventListener.h"
 #include "llvm/Support/CommandLine.h"
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/IRReader.h>
@@ -61,6 +62,34 @@ const char* MvmModule::getHostTriple() {
   return LLVM_HOSTTRIPLE;
 }
 
+class MvmJITListener : public llvm::JITEventListener {
+public:
+  virtual void NotifyFunctionEmitted(const Function &F,
+                                     void *Code, size_t Size,
+                                     const EmittedFunctionDetails &Details) {
+    
+    if (F.getParent() == MvmModule::globalModule) {
+      llvm::GCFunctionInfo* GFI = 0;
+      // We know the last GC info is for this method.
+      if (F.hasGC()) {
+        GCStrategy::iterator I = mvm::MvmModule::GC->end();
+        I--;
+        DEBUG(errs() << (*I)->getFunction().getName() << '\n');
+        DEBUG(errs() << F.getName() << '\n');
+        assert(&(*I)->getFunction() == &F &&
+           "GC Info and method do not correspond");
+        GFI = *I;
+      }
+      MethodInfo* MI =
+        new(MvmModule::Allocator, "MvmJITMethodInfo") MvmJITMethodInfo(GFI, &F);
+      VirtualMachine::SharedRuntimeFunctions.addMethodInfo(MI, Code,
+                                              (void*)((uintptr_t)Code + Size));
+    }
+  }
+};
+
+static MvmJITListener JITListener;
+
 void MvmModule::loadBytecodeFile(const std::string& str) {
   SMDiagnostic Err;
   Module* M = ParseIRFile(str, Err, getGlobalContext());
@@ -97,7 +126,8 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
 
     executionEngine = ExecutionEngine::createJIT(globalModuleProvider, 0,
                                                  0, level, false);
- 
+
+    executionEngine->RegisterJITEventListener(&JITListener);    
     executionEngine->DisableLazyCompilation(false); 
     std::string str = 
       executionEngine->getTargetData()->getStringRepresentation();
@@ -411,7 +441,7 @@ llvm::ExistingModuleProvider *MvmModule::globalModuleProvider;
 llvm::FunctionPassManager* MvmModule::globalFunctionPasses;
 llvm::ExecutionEngine* MvmModule::executionEngine;
 mvm::LockRecursive MvmModule::protectEngine;
-
+mvm::BumpPtrAllocator MvmModule::Allocator;
 
 uint64 MvmModule::getTypeSize(const llvm::Type* type) {
   return TheTargetData->getTypeAllocSize(type);
@@ -531,7 +561,7 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
     // Until we hit the last Java frame.
     do {
       void* ip = FRAME_IP(addr);
-      camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+      CamlFrame* CF = (CamlFrame*)VirtualMachine::GCMap.GCInfos[ip];
       if (CF) { 
         //char* spaddr = (char*)addr + CF->FrameSize + sizeof(void*);
         uintptr_t spaddr = (uintptr_t)addr[0];
@@ -554,7 +584,7 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
       --it;
       if (*it == 0) {
         void* ip = FRAME_IP(addr);
-        camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+        CamlFrame* CF = (CamlFrame*)VirtualMachine::GCMap.GCInfos[ip];
         if (CF) { 
           //char* spaddr = (char*)addr + CF->FrameSize + sizeof(void*);
           uintptr_t spaddr = (uintptr_t)addr[0];
@@ -571,7 +601,7 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
       void* ip = FRAME_IP(addr);
       bool isStub = ((unsigned char*)ip)[0] == 0xCE;
       if (isStub) ip = addr[2];
-      camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+      CamlFrame* CF = (CamlFrame*)VirtualMachine::GCMap.GCInfos[ip];
       if (CF) {
         //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
         uintptr_t spaddr = (uintptr_t)addr[0];
@@ -605,7 +635,7 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
 
   while (addr < th->baseSP && addr < addr[0]) {
     void* ip = FRAME_IP(addr);
-    camlframe* CF = (camlframe*)VirtualMachine::GCMap.GCInfos[ip];
+    CamlFrame* CF = (CamlFrame*)VirtualMachine::GCMap.GCInfos[ip];
     if (CF) { 
       //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
       uintptr_t spaddr = (uintptr_t)addr[0];
@@ -616,4 +646,24 @@ void JITStackScanner::scanStack(mvm::Thread* th) {
     addr = (void**)addr[0];
   }
 
+}
+
+void JITMethodInfo::scan(void* TL, void* ip, void* addr) {
+  if (GCInfo) {
+    DEBUG(llvm::errs() << GCInfo->getFunction().getName() << '\n');
+    // All safe points have the same informations currently in LLVM.
+    llvm::GCFunctionInfo::iterator J = GCInfo->begin();
+    //uintptr_t spaddr = (uintptr_t)addr + GFI->getFrameSize() + sizeof(void*);
+    uintptr_t spaddr = ((uintptr_t*)addr)[0];
+    for (llvm::GCFunctionInfo::live_iterator K = GCInfo->live_begin(J),
+         KE = GCInfo->live_end(J); K != KE; ++K) {
+      intptr_t obj = *(intptr_t*)(spaddr + K->StackOffset);
+      // Verify that obj does not come from a JSR bytecode.
+      if (!(obj & 1)) Collector::scanObject((void**)(spaddr + K->StackOffset));
+    }
+  }
+}
+
+void MvmJITMethodInfo::print(void* ip, void* addr) {
+  fprintf(stderr, "; %p in %s LLVM method\n", ip, Func->getName().data());
 }

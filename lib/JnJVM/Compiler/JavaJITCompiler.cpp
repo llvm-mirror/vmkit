@@ -43,10 +43,22 @@ public:
     if (currentCompiledMethod &&
         JavaLLVMCompiler::getMethod(currentCompiledMethod) == &F) {
       Jnjvm* vm = JavaThread::get()->getJVM();
-      vm->addMethodInFunctionMap(currentCompiledMethod, Code);
-    } else {
-      Jnjvm* vm = JavaThread::get()->getJVM();
-      vm->addInternalMethodInFunctionMap(F.getName().data(), Code,
+      mvm::BumpPtrAllocator& Alloc = 
+        currentCompiledMethod->classDef->classLoader->allocator;
+      llvm::GCFunctionInfo* GFI = 0;
+      // We know the last GC info is for this method.
+      if (F.hasGC()) {
+        GCStrategy::iterator I = mvm::MvmModule::GC->end();
+        I--;
+        DEBUG(errs() << (*I)->getFunction().getName() << '\n');
+        DEBUG(errs() << F.getName() << '\n');
+        assert(&(*I)->getFunction() == &F &&
+           "GC Info and method do not correspond");
+        GFI = *I;
+      }
+      JavaJITMethodInfo* MI = new(Alloc, "JavaJITMethodInfo")
+        JavaJITMethodInfo(GFI, currentCompiledMethod);
+      vm->RuntimeFunctions.addMethodInfo(MI, Code,
                                          (void*)((uintptr_t)Code + Size));
     }
   }
@@ -286,7 +298,8 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
 
 llvm::GCFunctionInfo*
 JavaJITStackScanner::IPToGCFunctionInfo(mvm::VirtualMachine* vm, void* ip) {
-  JavaMethod* method = vm->IPToMethod<JavaMethod>(ip);
+  mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
+  JavaMethod* method = (JavaMethod*)MI->getMetaInfo();
   return method->getInfo<LLVMMethodInfo>()->GCInfo;
 }
 

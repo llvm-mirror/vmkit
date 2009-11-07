@@ -136,7 +136,8 @@ JavaObject* vmthrow, JavaObject* throwable) {
   // remove the VMThrowable.fillInStackTrace method
   sint32 index = 1;;
   while (index != stack->size) {
-    JavaMethod* meth = vm->IPToMethod<JavaMethod>(stack->elements[index]);
+    mvm::MethodInfo* MI = vm->IPToMethodInfo(stack->elements[index]);
+    JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
     assert(meth && "Wrong stack trace");
     if (meth->classDef->isAssignableFrom(vm->upcalls->newThrowable)) {
       ++index;
@@ -147,7 +148,8 @@ JavaObject* vmthrow, JavaObject* throwable) {
     vm->upcalls->stackTraceArray->doNew(stack->size - index, vm);
   
   for (sint32 i = 0; i < result->size; ++i) {
-    JavaMethod* meth = vm->IPToMethod<JavaMethod>(stack->elements[i + index]);
+    mvm::MethodInfo* MI = vm->IPToMethodInfo(stack->elements[i + index]);
+    JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
     assert(meth && "Wrong stack trace");
     result->elements[i] = consStackElement(meth, stack->elements[i + index]);
   }

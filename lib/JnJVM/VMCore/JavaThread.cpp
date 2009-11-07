@@ -116,9 +116,9 @@ JavaMethod* JavaThread::getCallingMethod() {
   // Get the IP of the caller.
   void* ip = FRAME_IP(addr);
 
-  JavaMethod* meth = getJVM()->IPToMethod<JavaMethod>(ip);
+  mvm::MethodInfo* meth = getJVM()->IPToMethodInfo(ip);
 
-  return meth;
+  return (JavaMethod*)meth->getMetaInfo();
 }
 
 UserClass* JavaThread::getCallingClass(uint32 level) {
@@ -134,7 +134,8 @@ UserClass* JavaThread::getCallingClass(uint32 level) {
     addr = (void**)addr[0];
   void* ip = FRAME_IP(addr);
 
-  JavaMethod* meth = getJVM()->IPToMethod<JavaMethod>(ip);
+  mvm::MethodInfo* MI = getJVM()->IPToMethodInfo(ip);
+  JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
 
   return meth->classDef;
 }
@@ -165,7 +166,8 @@ UserClass* JavaThread::getCallingClassFromJNI() {
     void* ip = FRAME_IP(addr);
     bool isStub = ((unsigned char*)ip)[0] == 0xCE;
     if (isStub) ip = addr[2];
-    JavaMethod* meth = getJVM()->IPToMethod<JavaMethod>(ip);
+    mvm::MethodInfo* MI = getJVM()->IPToMethodInfo(ip);
+    JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
     return meth->classDef;
   }
   return 0;
@@ -236,7 +238,8 @@ UserClass* JavaThread::getCallingClassLevel(uint32 level) {
       bool isStub = ((unsigned char*)ip)[0] == 0xCE;
       if (isStub) ip = addr[2];
       if (index == level) {
-        JavaMethod* meth = getJVM()->IPToMethod<JavaMethod>(ip);
+        mvm::MethodInfo* MI = getJVM()->IPToMethodInfo(ip);
+        JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
         return meth->classDef;
       }
       addr = (void**)addr[0];
@@ -280,7 +283,8 @@ JavaObject* JavaThread::getNonNullClassLoader() {
       void* ip = FRAME_IP(addr);
       bool isStub = ((unsigned char*)ip)[0] == 0xCE;
       if (isStub) ip = addr[2];
-      JavaMethod* meth = getJVM()->IPToMethod<JavaMethod>(ip);
+      mvm::MethodInfo* MI = getJVM()->IPToMethodInfo(ip);
+      JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
       JnjvmClassLoader* loader = meth->classDef->classLoader;
       obj = loader->getJavaClassLoader();
       if (obj) return obj;
@@ -301,7 +305,8 @@ void JavaThread::printJavaBacktrace() {
   getJavaFrameContext(vals);
   for (std::vector<void*>::iterator i = vals.begin(), e = vals.end(); 
        i != e; ++i) {
-    JavaMethod* meth = vm->IPToMethod<JavaMethod>(*i);
+    mvm::MethodInfo* MI = vm->IPToMethodInfo(*i);
+    JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
     assert(meth && "Wrong stack");
     fprintf(stderr, "; %p in %s.%s\n",  *i,
             UTF8Buffer(meth->classDef->name).cString(),
@@ -318,12 +323,7 @@ static void printFunctionInfo(Jnjvm* vm, void* ip) {
   if (res != 0) {
     fprintf(stderr, "; %p in %s\n",  ip, info.dli_sname);
   } else {
-    const char* name = vm->IPToInternalMethod(ip);
-    if (name) {
-      fprintf(stderr, "; %p in %s LLVM method\n", ip, name);
-    } else {
-      fprintf(stderr, "; %p in Unknown method\n", ip);
-    }
+    fprintf(stderr, "; %p in Unknown method\n", ip);
   }
 }
 
@@ -372,7 +372,8 @@ void JavaThread::printBacktrace() {
       void* ip = FRAME_IP(addr);
       bool isStub = ((unsigned char*)ip)[0] == 0xCE;
       if (isStub) ip = addr[2];
-      JavaMethod* meth = vm->IPToMethod<JavaMethod>(ip);
+      mvm::MethodInfo* MI = getJVM()->IPToMethodInfo(ip);
+      JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
       assert(meth && "Wrong stack");
       fprintf(stderr, "; %p in %s.%s",  ip,
               UTF8Buffer(meth->classDef->name).cString(),

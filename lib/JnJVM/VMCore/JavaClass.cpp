@@ -319,12 +319,24 @@ void* JavaMethod::compiledPtr() {
   return code;
 }
 
+void JavaStaticMethodInfo::print(void* ip, void* addr) {
+  void* new_ip = mvm::MethodInfo::isStub(ip, addr);
+  fprintf(stderr, "; %p in %s.%s", new_ip,
+          UTF8Buffer(meth->classDef->name).cString(),
+          UTF8Buffer(meth->name).cString());
+  if (ip != new_ip) fprintf(stderr, " (from stub)");
+  fprintf(stderr, "\n");
+}
+
 void JavaMethod::setCompiledPtr(void* ptr, const char* name) {
   classDef->acquire();
   if (code == 0) {
     code = ptr;
     Jnjvm* vm = JavaThread::get()->getJVM();
-    vm->addMethodInFunctionMap(this, code);
+    JavaStaticMethodInfo* MI =
+      new (classDef->classLoader->allocator, "JavaStaticMethodInfo")
+        JavaStaticMethodInfo(0, this);
+    vm->StaticFunctions.addMethodInfo(MI, code);
     classDef->classLoader->getCompiler()->setMethod(this, ptr, name);
   }
   access |= ACC_NATIVE;

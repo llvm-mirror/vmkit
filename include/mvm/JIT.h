@@ -18,6 +18,7 @@
 
 #include "llvm/Target/TargetMachine.h"
 
+#include "mvm/MethodInfo.h"
 #include "mvm/GC/GC.h"
 
 namespace llvm {
@@ -180,7 +181,8 @@ public:
    static llvm::ExistingModuleProvider *globalModuleProvider;
    static llvm::FunctionPassManager* globalFunctionPasses;
    static const llvm::TargetData* TheTargetData;
-  
+   static mvm::BumpPtrAllocator Allocator;
+
    static uint64 getTypeSize(const llvm::Type* type);
    static void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
    static void initialise(llvm::CodeGenOpt::Level = llvm::CodeGenOpt::Default,
@@ -205,6 +207,23 @@ public:
   virtual void scanStack(mvm::Thread* th);
   virtual llvm::GCFunctionInfo* IPToGCFunctionInfo(VirtualMachine* vm,
                                                    void* ip) = 0;
+};
+
+class JITMethodInfo : public MethodInfo {
+  llvm::GCFunctionInfo* GCInfo;
+public:
+  virtual void scan(void* TL, void* ip, void* addr);
+  JITMethodInfo(llvm::GCFunctionInfo* GFI) : GCInfo(GFI) {}
+};
+
+class MvmJITMethodInfo : public JITMethodInfo {
+  const llvm::Function* Func;
+public:
+  virtual void print(void* ip, void* addr);
+  MvmJITMethodInfo(llvm::GCFunctionInfo* GFI, const llvm::Function* F) :
+    JITMethodInfo(GFI) {
+      Func = F;
+  }
 };
 
 

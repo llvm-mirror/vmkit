@@ -1,0 +1,60 @@
+//===---------- MethodInfo.h - Meta information for methods ---------------===//
+//
+//                            The VMKit project
+//
+// This file is distributed under the University of Pierre et Marie Curie 
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef MVM_METHODINFO_H
+#define MVM_METHODINFO_H
+
+#include "mvm/Allocator.h"
+#include "mvm/GC/GC.h"
+
+namespace mvm {
+
+class MethodInfo : public PermanentObject {
+public:
+  virtual void print(void* ip, void* addr) = 0;
+  virtual void scan(void* TL, void* ip, void* addr) = 0;
+
+  static void* isStub(void* ip, void* addr) {
+    bool isStub = ((unsigned char*)ip)[0] == 0xCE;
+    if (isStub) ip = ((void**)addr)[2];
+    return ip;
+  }
+  
+  virtual void* getMetaInfo() {
+    abort();
+    return NULL;
+  }
+};
+
+class CamlMethodInfo : public MethodInfo {
+  CamlFrame* CF;
+public:
+  virtual void scan(void* TL, void* ip, void* addr);
+  CamlMethodInfo(CamlFrame* C) : CF(C) {}
+};
+
+class StaticCamlMethodInfo : public CamlMethodInfo {
+  const char* name;
+public:
+  virtual void print(void* ip, void* addr);
+  StaticCamlMethodInfo(CamlFrame* CF, const char* n) : CamlMethodInfo(CF) {
+    name = n;
+  }
+};
+
+class DefaultMethodInfo : public MethodInfo {
+public:
+  virtual void print(void* ip, void* addr);
+  virtual void scan(void* TL, void* ip, void* addr);
+  static DefaultMethodInfo DM;
+};
+
+
+} // end namespace mvm
+#endif // MVM_METHODINFO_H
