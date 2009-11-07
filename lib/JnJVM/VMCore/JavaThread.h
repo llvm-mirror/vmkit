@@ -266,6 +266,11 @@ public:
   ///
   UserClass* getCallingClass(uint32 level);
   
+  /// getCallingClassFromJNI - Get the Java class that called the last Java
+  /// method that called the FindClass JNI function.
+  ///
+  UserClass* getCallingClassFromJNI();
+  
   /// getCallingMethod - Get the Java method that called the last Java
   /// method on the stack.
   ///
