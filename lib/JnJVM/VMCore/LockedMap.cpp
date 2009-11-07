@@ -21,5 +21,6 @@
 using namespace jnjvm;
 
 void StringMap::insert(JavaString* str) {
+  llvm_gcroot(str, 0);
   map.insert(std::make_pair(str->value, str));
 }

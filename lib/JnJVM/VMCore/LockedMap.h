@@ -55,7 +55,25 @@ struct ltarray16
   }
 };
 
-template<class Key, class Container, class Compare, class Meta, class TLock>
+  class MapNoGC {
+  public:
+    static void gcroot(void* val, void* unused) 
+      __attribute__ ((always_inline)) {}
+
+  };  
+  
+  class MapWithGC {
+  public:
+    static void gcroot(void* val, void* unused) 
+      __attribute__ ((always_inline)) {
+      llvm_gcroot(val, unused);
+    }   
+    
+  };  
+
+
+template<class Key, class Container, class Compare, class Meta, class TLock,
+         class IsGC>
 class LockedMap : public mvm::PermanentObject {
 public:
   typedef typename std::map<const Key, Container, Compare>::iterator iterator;
@@ -66,6 +84,8 @@ public:
            gc_allocator<std::pair<const Key, Container> > > map;
   
   inline Container lookupOrCreate(Key& V, Meta meta, funcCreate func) {
+    Container res = 0;
+    IsGC::gcroot(res, 0);
     lock.lock();
     iterator End = map.end();
     iterator I = map.find(V);
@@ -87,12 +107,14 @@ public:
   }
   
   inline void remove(Key V, Container C) {
+    IsGC::gcroot(C, 0);
     lock.lock();
     removeUnlocked(V, C); 
     lock.unlock();
   }
   
   inline void removeUnlocked(Key V, Container C) {
+    IsGC::gcroot(C, 0);
     iterator End = map.end();
     iterator I = map.find(V);
     
@@ -109,6 +131,7 @@ public:
   }
 
   inline void hash(Key k, Container c) {
+    IsGC::gcroot(c, 0);
     lock.lock();
     map.insert(std::make_pair(k, c));
     lock.unlock();
@@ -119,7 +142,7 @@ public:
 
 class ClassMap : 
   public LockedMap<const UTF8*, UserCommonClass*, ltutf8, JnjvmClassLoader*,
-                   mvm::LockRecursive > {
+                   mvm::LockRecursive, MapNoGC > {
 
 #ifdef USE_GC_BOEHM
 public:
@@ -131,7 +154,7 @@ public:
 
 class StringMap :
   public LockedMap<const ArrayUInt16*, JavaString*, ltarray16, Jnjvm*,
-                   mvm::LockNormal> {
+                   mvm::LockNormal, MapWithGC> {
 
 public:
   void insert(JavaString* str);
