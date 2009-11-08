@@ -168,11 +168,7 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
   init->invokeIntSpecial(vm, realCl, res, vm->asciizToStr(msg));
   th->pendingException = res;
   
-  th->endNative();
-  th->addresses.pop_back();
-  th->lastKnownFrame = th->lastKnownFrame->previousFrame;
-  th->enterUncooperativeCode(SP);
-  th->throwFromJNI();
+  th->throwFromJNI(SP);
   
   RETURN_FROM_JNI(1);
   

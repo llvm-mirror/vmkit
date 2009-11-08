@@ -332,26 +332,12 @@ public:
   ///
   void getFrameContext(std::vector<void*>& context);
 
-  /// addresses - The list of return addresses which represent native/app cross
-  /// calls.
-  ///
-  std::vector<void*> addresses;
-
-  /// startNative - Record that we are entering native code.
-  ///
-  void startNative(int level) __attribute__ ((noinline));
-
-  /// endNative - Record that we are leaving native code.
-  ///
-  void endNative() {
-    assert(!(addresses.size() % 2) && "Wrong stack");    
-    addresses.pop_back();
-  }
-
   /// lastKnownFrame - The last frame that we know of, before resuming to JNI.
   ///
   KnownFrame* lastKnownFrame;
 
+  void startKnownFrame(KnownFrame& F);
+  void endKnownFrame();
 };
 
 /// StackWalker - This class walks the stack of threads, returning a MethodInfo

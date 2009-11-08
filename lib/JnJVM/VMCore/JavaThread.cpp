@@ -83,33 +83,10 @@ void JavaThread::throwPendingException() {
 }
 
 void JavaThread::startJNI(int level) {
-  // Caller of this function.
-  void** cur = (void**)FRAME_PTR();
-  unsigned level2 = level;
-  
-  while (level--)
-    cur = (void**)cur[0];
-
-  // When entering, the number of addresses should be odd.
-  assert((addresses.size() % 2) && "Wrong stack");
-  
-  addresses.push_back(cur);
-  lastKnownFrame->currentFP = cur;
-
   // Start uncooperative mode.
-  enterUncooperativeCode(level2);
+  enterUncooperativeCode(level);
 }
 
-void JavaThread::startJava() {
-  // Caller of this function.
-  void** cur = (void**)FRAME_PTR();
-  cur = (void**)cur[0];
-  
-  assert(!(addresses.size() % 2) && "Wrong stack");
-  
-  addresses.push_back(cur);
-}
-  
 void JavaThread::getJavaFrameContext(std::vector<JavaMethod*>& context) {
   mvm::StackWalker Walker(this);
 

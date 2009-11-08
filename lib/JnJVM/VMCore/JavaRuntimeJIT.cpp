@@ -393,17 +393,17 @@ extern "C" void jnjvmEndJNI(uint32** oldLRN, void** oldBuffer) {
 
 }
 
-extern "C" void** jnjvmStartJNI(uint32* localReferencesNumber,
-                                uint32** oldLocalReferencesNumber,
-                                void* newBuffer, void** oldBuffer,
-                                mvm::KnownFrame* Frame) 
+extern "C" void* jnjvmStartJNI(uint32* localReferencesNumber,
+                               uint32** oldLocalReferencesNumber,
+                               void* newBuffer, void** oldBuffer,
+                               mvm::KnownFrame* Frame) 
   __attribute__((noinline));
 
 // Never throws. Does not call Java code. Can not yied a GC.
-extern "C" void** jnjvmStartJNI(uint32* localReferencesNumber,
-                                uint32** oldLocalReferencesNumber,
-                                void* newBuffer, void** oldBuffer,
-                                mvm::KnownFrame* Frame) {
+extern "C" void* jnjvmStartJNI(uint32* localReferencesNumber,
+                               uint32** oldLocalReferencesNumber,
+                               void* newBuffer, void** oldBuffer,
+                               mvm::KnownFrame* Frame) {
   
   JavaThread* th = JavaThread::get();
  
@@ -412,13 +412,11 @@ extern "C" void** jnjvmStartJNI(uint32* localReferencesNumber,
  
   *oldLocalReferencesNumber = th->currentAddedReferences;
   th->currentAddedReferences = localReferencesNumber;
-  Frame->previousFrame = th->lastKnownFrame;
-  th->lastKnownFrame = Frame;
+  th->startKnownFrame(*Frame);
 
   th->startJNI(1);
-  void** val = (void**)th->addresses.back();
 
-  return val;
+  return Frame->currentFP;
 }
 
 // Never throws.

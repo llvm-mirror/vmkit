@@ -77,15 +77,6 @@ Value* JavaJITCompiler::addCallback(Class* cl, uint16 index,
 bool JnjvmModuleProvider::materializeFunction(Function *F, 
                                               std::string *ErrInfo) {
   
-  // materializeFunction is called by the LLVM JIT, which does not know
-  // about the call stack of jnjvm. Update the call stack if this
-  // function was called by the LLVM JIT. The other place where
-  // materializeFunction is called is in the pass managers; in such
-  // a case, jnjvm has already settled the call stack.
-  JavaThread* th = JavaThread::get();
-  bool isNative = th->isInNative();
-  if (!isNative) th->startNative(5);
-
   // The caller of materializeFunction *must* always hold the JIT lock.
   // Because we are materializing a function here, we must release the
   // JIT lock and get the global vmkit lock to be thread-safe.
@@ -100,7 +91,6 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
     mvm::MvmModule::unprotectIR(); 
     // Reacquire and go back to the JIT function.
     mvm::MvmModule::executionEngine->lock.acquire();
-    if (!isNative) th->endNative();
     return false;
   }
 
@@ -108,7 +98,6 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
     mvm::MvmModule::unprotectIR(); 
     // Reacquire and go back to the JIT function.
     mvm::MvmModule::executionEngine->lock.acquire();
-    if (!isNative) th->endNative();
     return false;
   }
   
@@ -147,8 +136,6 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   if (F->isDeclaration())
     mvm::MvmModule::executionEngine->updateGlobalMapping(F, val);
   
-  if (!isNative) th->endNative();
-
   return false;
 }
 

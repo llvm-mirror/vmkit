@@ -19,9 +19,7 @@ extern "C" void MarkAndTrace(gc* gc) {
 }
 
 extern "C" void* gcmalloc(size_t sz, VirtualTable* VT) {
-  mvm::Thread::get()->startNative(1);
   void* res = Collector::gcmalloc(VT, sz);
-  mvm::Thread::get()->endNative();
   return res;
 }
 

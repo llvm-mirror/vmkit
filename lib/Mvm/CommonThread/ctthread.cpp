@@ -48,17 +48,15 @@ void Thread::joinRV() {
   MyVM->rendezvous.join(); 
 }
 
-void Thread::startNative(int level) {
-  // Caller of this function.
+void Thread::startKnownFrame(KnownFrame& F) {
   void** cur = (void**)FRAME_PTR();
-  
-  while (level--)
-    cur = (void**)cur[0];
+  F.previousFrame = lastKnownFrame;
+  F.currentFP = cur;
+  lastKnownFrame = &F;
+}
 
-  // When entering, the number of addresses should be odd.
-  assert((addresses.size() % 2) && "Wrong stack");
-  
-  addresses.push_back(cur);
+void Thread::endKnownFrame() {
+  lastKnownFrame = lastKnownFrame->previousFrame;
 }
 
 void Thread::printBacktrace() {

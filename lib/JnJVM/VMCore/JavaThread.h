@@ -33,47 +33,33 @@ class Jnjvm;
 
 #define BEGIN_NATIVE_EXCEPTION(level) \
   JavaThread* __th = JavaThread::get(); \
-  __th->startNative(level); \
   try {
 
 #define END_NATIVE_EXCEPTION \
   } catch(...) { \
     __th->throwFromNative(); \
   } \
-  __th->endNative();
 
 #define BEGIN_JNI_EXCEPTION \
   JavaThread* th = JavaThread::get(); \
   void* SP = th->getLastSP(); \
   th->leaveUncooperativeCode(); \
-  th->addresses.push_back(0); \
-  th->startNative(0); \
   mvm::KnownFrame Frame; \
-  Frame.previousFrame = th->lastKnownFrame; \
-  Frame.currentFP = th->addresses.back(); \
-  th->lastKnownFrame = &Frame; \
+  th->startKnownFrame(Frame); \
   try {
 
 #define END_JNI_EXCEPTION \
   } catch(...) { \
-    th->lastKnownFrame = th->lastKnownFrame->previousFrame; \
-    th->endNative(); \
-    th->addresses.pop_back(); \
-    th->enterUncooperativeCode(SP); \
-    th->throwFromJNI(); \
+    th->throwFromJNI(SP); \
   }
 
 #define RETURN_FROM_JNI(a) {\
-  th->lastKnownFrame = th->lastKnownFrame->previousFrame; \
-  th->endNative(); \
-  th->addresses.pop_back(); \
+  th->endKnownFrame(); \
   th->enterUncooperativeCode(SP); \
   return (a); } \
 
 #define RETURN_VOID_FROM_JNI {\
-  th->lastKnownFrame = th->lastKnownFrame->previousFrame; \
-  th->endNative(); \
-  th->addresses.pop_back(); \
+  th->endKnownFrame(); \
   th->enterUncooperativeCode(SP); \
   return; } \
 
@@ -210,8 +196,10 @@ public:
 
   /// throwFromJNI - Throw an exception after executing JNI code.
   ///
-  void throwFromJNI() {
+  void throwFromJNI(void* SP) {
     assert(currentSjljBuffer);
+    endKnownFrame();
+    enterUncooperativeCode(SP);
     internalPendingException = 0;
 #if defined(__MACH__)
     longjmp((int*)currentSjljBuffer, 1);
@@ -224,7 +212,6 @@ public:
   ///
   void throwFromNative() {
 #ifdef DWARF_EXCEPTIONS
-    addresses.pop_back();
     throwPendingException();
 #endif
   }
@@ -232,43 +219,28 @@ public:
   /// throwFromJava - Throw an exception after executing Java code.
   ///
   void throwFromJava() {
-    addresses.pop_back();
     throwPendingException();
   }
+
+  /// startJava - Interesting, but actually does nothing :)
+  void startJava() {}
   
+  /// endJava - Interesting, but actually does nothing :)
+  void endJava() {}
+
   /// startJNI - Record that we are entering native code.
   ///
   void startJNI(int level) __attribute__ ((noinline));
 
-  /// startJava - Record that we are entering Java code.
-  ///
-  void startJava() __attribute__ ((noinline));
-  
   void endJNI() {
-    assert(!(addresses.size() % 2) && "Wrong stack");    
-  
     localJNIRefs->removeJNIReferences(this, *currentAddedReferences);
    
     // Go back to cooperative mode.
     leaveUncooperativeCode();
    
-    // Pop the address after calling leaveUncooperativeCode
-    // to let the thread's call stack coherent.
-    addresses.pop_back();
-    lastKnownFrame = lastKnownFrame->previousFrame;
+    endKnownFrame();
   }
 
-  /// endJava - Record that we are leaving Java code.
-  ///
-  void endJava() {
-    assert((addresses.size() % 2) && "Wrong stack");    
-    addresses.pop_back();
-  }
-
-  bool isInNative() {
-    return !(addresses.size() % 2);
-  }
-  
   /// getCallingMethod - Get the Java method in the stack at the specified
   /// level.
   ///

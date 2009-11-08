@@ -124,9 +124,7 @@ void CollectionRV::join() {
 
 extern "C" void conditionalSafePoint() {
   mvm::Thread* th = mvm::Thread::get();
-  th->startNative(1);
   th->MyVM->rendezvous.join();
-  th->endNative();
 }
 
 void CollectionRV::finishRV() {

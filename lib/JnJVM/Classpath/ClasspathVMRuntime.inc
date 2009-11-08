@@ -92,7 +92,6 @@ extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm)
 extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
 
   onLoad_t onLoad = (onLoad_t)loader->loadInLib("JNI_OnLoad", res);
-  JavaThread* th = JavaThread::get();
   
   if (onLoad) {
     uint32 num = 0;
@@ -104,13 +103,11 @@ extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
     if (setjmp(buf) == 0) {
       // Push an unmeaningful value in the addresses field to let the
       // stack consistent with Java frames/native frames.
-      th->addresses.push_back(0);
       jnjvmStartJNI(&num, &old, (void*)&buf, &oldBuf, &Frame);
       onLoad(&vm->javavmEnv, res);
     }
 
     jnjvmEndJNI(&old, &oldBuf);
-    th->addresses.pop_back();
   }
 }
 
