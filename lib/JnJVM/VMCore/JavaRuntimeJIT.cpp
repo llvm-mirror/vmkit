@@ -627,7 +627,7 @@ extern "C" void jnjvmThrowExceptionFromJIT() {
   
   BEGIN_NATIVE_EXCEPTION(1)
 
-  JavaMethod* meth = th->getCallingMethod();
+  JavaMethod* meth = th->getCallingMethodLevel(0);
   exc = th->getJVM()->CreateUnsatisfiedLinkError(meth);
 
   END_NATIVE_EXCEPTION

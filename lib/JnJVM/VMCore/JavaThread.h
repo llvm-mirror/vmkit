@@ -268,20 +268,11 @@ public:
   bool isInNative() {
     return !(addresses.size() % 2);
   }
-  /// getCallingClass - Get the Java class that called the last Java
-  /// method that called the Java getCallingClass method.
-  ///
-  UserClass* getCallingClass(uint32 level);
   
-  /// getCallingClassFromJNI - Get the Java class that called the last Java
-  /// method that called the FindClass JNI function.
+  /// getCallingMethod - Get the Java method in the stack at the specified
+  /// level.
   ///
-  UserClass* getCallingClassFromJNI();
-  
-  /// getCallingMethod - Get the Java method that called the last Java
-  /// method on the stack.
-  ///
-  JavaMethod* getCallingMethod();
+  JavaMethod* getCallingMethodLevel(uint32 level);
   
   /// getCallingClassLevel - Get the Java method in the stack at the
   /// specified level.

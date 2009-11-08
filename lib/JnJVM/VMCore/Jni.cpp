@@ -67,7 +67,7 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   JnjvmClassLoader* loader = 0;
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  UserClass* currentClass = th->getCallingClassFromJNI();
+  UserClass* currentClass = th->getCallingClassLevel(0);
   if (currentClass) loader = currentClass->classLoader;
   else loader = vm->appClassLoader;
 

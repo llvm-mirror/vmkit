@@ -111,44 +111,7 @@ void JavaThread::startJava() {
 }
 
 
-UserClass* JavaThread::getCallingClass(uint32 level) {
-  // I'm a native function, so try to look at the last Java method.
-  // First take the getCallingClass address.
-  void** addr = (void**)addresses.back();
   
-  // Caller of getCallingClass.
-  addr = (void**)addr[0];
-
-  // Get the caller of the caller of the Java getCallingClass method.
-  if (level)
-    addr = (void**)addr[0];
-  void* ip = FRAME_IP(addr);
-
-  mvm::MethodInfo* MI = getJVM()->IPToMethodInfo(ip);
-  JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
-
-  return meth->classDef;
-}
-
-JavaMethod* JavaThread::getCallingMethod() {
-  mvm::StackWalker Walker(this);
-
-  while (mvm::MethodInfo* MI = Walker.get()) {
-    if (MI->MethodType == 1) {
-      JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
-      return meth;
-    }
-    ++Walker;
-  }
-  return 0;
-}
-  
-UserClass* JavaThread::getCallingClassFromJNI() {
-  JavaMethod* meth = getCallingMethod();
-  if (meth) return meth->classDef;
-  return 0;
-}
-
 void JavaThread::getJavaFrameContext(std::vector<void*>& context) {
   std::vector<void*>::iterator it = addresses.end();
 
@@ -185,20 +148,25 @@ void JavaThread::getJavaFrameContext(std::vector<void*>& context) {
   }
 }
 
-UserClass* JavaThread::getCallingClassLevel(uint32 level) {
+JavaMethod* JavaThread::getCallingMethodLevel(uint32 level) {
   mvm::StackWalker Walker(this);
   uint32 index = 0;
 
   while (mvm::MethodInfo* MI = Walker.get()) {
     if (MI->MethodType == 1) {
       if (index == level) {
-        JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
-        return meth->classDef;
+        return (JavaMethod*)MI->getMetaInfo();
       }
       ++index;
     }
     ++Walker;
   }
+  return 0;
+}
+
+UserClass* JavaThread::getCallingClassLevel(uint32 level) {
+  JavaMethod* meth = getCallingMethodLevel(level);
+  if (meth) return meth->classDef;
   return 0;
 }
 
