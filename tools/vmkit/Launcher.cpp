@@ -120,7 +120,9 @@ int found(char** argv, int argc, const char* name) {
 }
 
 int main(int argc, char** argv) {
-  llvm::llvm_shutdown_obj X;
+  // Disable the lcean shutdown, as deamon threads may still
+  // continue to execute and use LLVM things.
+  //llvm::llvm_shutdown_obj X;
   
   int pos = found(argv, argc, "-java");
   if (pos) {
