@@ -300,6 +300,16 @@ public:
   ///
   void getJavaFrameContext(std::vector<void*>& context);
 
+  /// printBacktrace - Prints the backtrace of this thread.
+  ///
+  void printBacktrace() __attribute__ ((noinline));
+
+  /// printBacktraceAfterSignal - Prints the backtrace of this thread while
+  /// in a signal handler.
+  ///
+  virtual void printBacktraceAfterSignal() __attribute__ ((noinline));
+
+
 private:
   /// internalClearException - Clear the C++ and Java exceptions
   /// currently pending.

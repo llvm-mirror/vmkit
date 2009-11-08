@@ -543,6 +543,70 @@ void MvmModule::copyDefinitions(Module* Dst, Module* Src) {
   }
 }
 
+void JITStackScanner::scanStack(mvm::Thread* th) {
+  std::vector<void*>::iterator it = th->addresses.end();
+  VirtualMachine* vm = th->MyVM;
+
+  void** addr = mvm::Thread::get() == th ? 
+    (void**)FRAME_PTR() : (void**)th->waitOnSP();
+  assert(addr && "No address to start with");
+  void** oldAddr = addr;
+  DEBUG(fprintf(stderr, "%p trace %p\n", (void*)mvm::Thread::get(), (void*)th));
+  DEBUG(th->printBacktraceAfterSignal());
+
+  // Loop until we cross the first Java frame.
+  while (it != th->addresses.begin()) {
+    
+    --it;
+    // Until we hit the last Java frame.
+    do {
+      void* ip = FRAME_IP(addr);
+      mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
+      MI->scan(0, ip, addr);
+      oldAddr = addr;
+      addr = (void**)addr[0];
+    } while (oldAddr != (void**)*it && addr != (void**)*it);
+    
+    // Set the iterator to the next native -> Java call.
+    --it;
+
+    // See if we're from JNI.
+    if (*it == 0) {
+      --it;
+      addr = (void**)*it;
+      --it;
+      if (*it == 0) {
+        void* ip = FRAME_IP(addr);
+        mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
+        MI->scan(0, ip, addr);
+        addr = (void**)addr[0];
+        continue;
+      }
+    }
+
+    do {
+      void* ip = FRAME_IP(addr);
+      bool isStub = ((unsigned char*)ip)[0] == 0xCE;
+      if (isStub) ip = addr[2];
+      mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
+      MI->scan(0, ip, addr);
+      
+      addr = (void**)addr[0];
+      // End walking the stack when we cross a native -> Java call. Here
+      // the iterator points to a native -> Java call. We dereference addr twice
+      // because a native -> Java call always contains the signature function.
+    } while (((void***)addr)[0][0] != *it);
+  }
+
+  while (addr < th->baseSP && addr < addr[0]) {
+    void* ip = FRAME_IP(addr);
+    mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
+    MI->scan(0, ip, addr);
+    addr = (void**)addr[0];
+  }
+
+}
+
 void JITMethodInfo::scan(void* TL, void* ip, void* addr) {
   if (GCInfo) {
     DEBUG(llvm::errs() << GCInfo->getFunction().getName() << '\n');

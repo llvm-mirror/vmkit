@@ -202,6 +202,13 @@ public:
    static const char* getHostTriple();
 };
 
+class JITStackScanner : public StackScanner {
+public:
+  virtual void scanStack(mvm::Thread* th);
+  virtual llvm::GCFunctionInfo* IPToGCFunctionInfo(VirtualMachine* vm,
+                                                   void* ip) = 0;
+};
+
 class JITMethodInfo : public MethodInfo {
   llvm::GCFunctionInfo* GCInfo;
 public:
