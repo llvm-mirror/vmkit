@@ -203,8 +203,6 @@ public:
   
   static llvm::Function* virtualLookupLLVM;
 
-  static void printBacktrace();
-  
   llvm::Instruction* lowerMathOps(VMMethod* meth, 
                                   std::vector<llvm::Value*>& args);
 
