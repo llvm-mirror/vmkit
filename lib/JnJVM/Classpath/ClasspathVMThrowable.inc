@@ -40,7 +40,7 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
   std::vector<void*> stack;
 
   // Get the frame context.
-  th->getJavaFrameContext(stack);
+  th->getFrameContext(stack);
   
   ClassArray* cl = sizeof(void*) == 4 ? vm->upcalls->ArrayOfInt : 
                                         vm->upcalls->ArrayOfLong;
@@ -137,21 +137,35 @@ JavaObject* vmthrow, JavaObject* throwable) {
   sint32 index = 1;;
   while (index != stack->size) {
     mvm::MethodInfo* MI = vm->IPToMethodInfo(stack->elements[index]);
-    JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
-    assert(meth && "Wrong stack trace");
-    if (meth->classDef->isAssignableFrom(vm->upcalls->newThrowable)) {
-      ++index;
-    } else break;
+    if (MI->MethodType != 1) ++index;
+    else {
+      JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
+      assert(meth && "Wrong stack trace");
+      if (meth->classDef->isAssignableFrom(vm->upcalls->newThrowable)) {
+        ++index;
+      } else break;
+    }
+  }
+  
+  sint32 size = 0;
+  sint32 cur = index;
+  while (cur < stack->size) {
+    mvm::MethodInfo* MI = vm->IPToMethodInfo(stack->elements[cur]);
+    ++cur;
+    if (MI->MethodType == 1) ++size;
   }
 
   result = (ArrayObject*)
-    vm->upcalls->stackTraceArray->doNew(stack->size - index, vm);
+    vm->upcalls->stackTraceArray->doNew(size, vm);
   
-  for (sint32 i = 0; i < result->size; ++i) {
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(stack->elements[i + index]);
-    JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
-    assert(meth && "Wrong stack trace");
-    result->elements[i] = consStackElement(meth, stack->elements[i + index]);
+  cur = 0;
+  for (sint32 i = index; i < stack->size; ++i) {
+    mvm::MethodInfo* MI = vm->IPToMethodInfo(stack->elements[i]);
+    if (MI->MethodType == 1) {
+      JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
+      result->elements[cur] = consStackElement(meth, stack->elements[i]);
+      cur++;
+    }
   }
   
   END_NATIVE_EXCEPTION

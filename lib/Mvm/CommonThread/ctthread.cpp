@@ -70,12 +70,29 @@ void Thread::printBacktrace() {
   }
 }
 
+void Thread::getFrameContext(std::vector<void*>& context) {
+  mvm::StackWalker Walker(this);
+
+  while (void* ip = *Walker) {
+    context.push_back(ip);
+    ++Walker;
+  }
+}
+
 MethodInfo* StackWalker::get() {
   if (addr == thread->baseSP) return 0;
   ip = FRAME_IP(addr);
   bool isStub = ((unsigned char*)ip)[0] == 0xCE;
   if (isStub) ip = addr[2];
   return thread->MyVM->IPToMethodInfo(ip);
+}
+
+void* StackWalker::operator*() {
+  if (addr == thread->baseSP) return 0;
+  ip = FRAME_IP(addr);
+  bool isStub = ((unsigned char*)ip)[0] == 0xCE;
+  if (isStub) ip = addr[2];
+  return ip;
 }
 
 void StackWalker::operator++() {

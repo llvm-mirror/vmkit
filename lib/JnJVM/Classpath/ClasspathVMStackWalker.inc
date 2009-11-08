@@ -37,19 +37,18 @@ jclass clazz,
 
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  std::vector<void*> stack;
+  std::vector<JavaMethod*> stack;
   
   th->getJavaFrameContext(stack);
   
   result = (ArrayObject*)
     vm->upcalls->stackTraceArray->doNew(stack.size(), vm);
 
-  std::vector<void*>::iterator i = stack.begin(), e = stack.end();
+  std::vector<JavaMethod*>::iterator i = stack.begin(), e = stack.end();
   uint32 index = 0;
  
   for (; i != e; ++i) {
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(*i);
-    JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
+    JavaMethod* meth = *i;
     assert(meth && "Wrong stack trace");
     result->elements[index++] = meth->classDef->getClassDelegatee(vm);
   }

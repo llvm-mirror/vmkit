@@ -289,11 +289,11 @@ public:
   ///
   void printJavaBacktrace();
 
-  /// getJavaFrameContext - Fill the vector with Java frames
-  /// currently on the stack.
+  /// getJavaFrameContext - Fill the vector with Java methods currently on
+  /// the stack.
   ///
-  void getJavaFrameContext(std::vector<void*>& context);
-
+  void getJavaFrameContext(std::vector<JavaMethod*>& context);
+  
 private:
   /// internalClearException - Clear the C++ and Java exceptions
   /// currently pending.

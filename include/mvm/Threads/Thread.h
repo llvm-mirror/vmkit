@@ -327,6 +327,10 @@ public:
   /// printBacktrace - Print the backtrace.
   ///
   void printBacktrace();
+ 
+  /// getFrameContext - Fill the vector with frames currently on the stack.
+  ///
+  void getFrameContext(std::vector<void*>& context);
 
   /// addresses - The list of return addresses which represent native/app cross
   /// calls.
@@ -369,6 +373,7 @@ public:
   }
 
   void operator++();
+  void* operator*();
 
   MethodInfo* get();
 
