@@ -110,18 +110,6 @@ void JavaThread::startJava() {
   addresses.push_back(cur);
 }
 
-JavaMethod* JavaThread::getCallingMethod() {
-  // I'm a native function, so try to look at the last Java method.
-  // First take the last caller.
-  void** addr = (void**)addresses.back();
-  
-  // Get the IP of the caller.
-  void* ip = FRAME_IP(addr);
-
-  mvm::MethodInfo* meth = getJVM()->IPToMethodInfo(ip);
-
-  return (JavaMethod*)meth->getMetaInfo();
-}
 
 UserClass* JavaThread::getCallingClass(uint32 level) {
   // I'm a native function, so try to look at the last Java method.
@@ -141,37 +129,23 @@ UserClass* JavaThread::getCallingClass(uint32 level) {
 
   return meth->classDef;
 }
+
+JavaMethod* JavaThread::getCallingMethod() {
+  mvm::StackWalker Walker(this);
+
+  while (mvm::MethodInfo* MI = Walker.get()) {
+    if (MI->MethodType == 1) {
+      JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
+      return meth;
+    }
+    ++Walker;
+  }
+  return 0;
+}
   
 UserClass* JavaThread::getCallingClassFromJNI() {
-  std::vector<void*>::iterator it = addresses.end();
-
-  // Loop until we cross the first Java frame.
-  while (it != addresses.begin()) {
-    
-    // Get the last Java frame.
-    void** addr = (void**)*(--it);
-    
-    // Set the iterator to the next native -> Java call.
-    --it;
-    
-    // See if we're from JNI.
-    if (*it == 0) {
-      --it;
-      addr = (void**)*it;
-      --it;
-      if (*it == 0) {
-        addr = (void**)addr[0];
-        continue;
-      }
-    }
-
-    void* ip = FRAME_IP(addr);
-    bool isStub = ((unsigned char*)ip)[0] == 0xCE;
-    if (isStub) ip = addr[2];
-    mvm::MethodInfo* MI = getJVM()->IPToMethodInfo(ip);
-    JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
-    return meth->classDef;
-  }
+  JavaMethod* meth = getCallingMethod();
+  if (meth) return meth->classDef;
   return 0;
 }
 
@@ -212,44 +186,18 @@ void JavaThread::getJavaFrameContext(std::vector<void*>& context) {
 }
 
 UserClass* JavaThread::getCallingClassLevel(uint32 level) {
-  std::vector<void*>::iterator it = addresses.end();
+  mvm::StackWalker Walker(this);
   uint32 index = 0;
 
-  // Loop until we cross the first Java frame.
-  while (it != addresses.begin()) {
-    
-    // Get the last Java frame.
-    void** addr = (void**)*(--it);
-    
-    // Set the iterator to the next native -> Java call.
-    --it;
-    
-    // See if we're from JNI.
-    if (*it == 0) {
-      --it;
-      addr = (void**)*it;
-      --it;
-      if (*it == 0) {
-        addr = (void**)addr[0];
-        continue;
-      }
-    }
-
-    do {
-      void* ip = FRAME_IP(addr);
-      bool isStub = ((unsigned char*)ip)[0] == 0xCE;
-      if (isStub) ip = addr[2];
+  while (mvm::MethodInfo* MI = Walker.get()) {
+    if (MI->MethodType == 1) {
       if (index == level) {
-        mvm::MethodInfo* MI = getJVM()->IPToMethodInfo(ip);
         JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
         return meth->classDef;
       }
-      addr = (void**)addr[0];
       ++index;
-      // We end walking the stack when we cross a native -> Java call. Here
-      // the iterator points to a native -> Java call. We dereference addr twice
-      // because a native -> Java call always contains the signature function.
-    } while (((void***)addr)[0][0] != *it);
+    }
+    ++Walker;
   }
   return 0;
 }
@@ -258,57 +206,29 @@ JavaObject* JavaThread::getNonNullClassLoader() {
   
   JavaObject* obj = 0;
   llvm_gcroot(obj, 0);
+  
+  mvm::StackWalker Walker(this);
 
-  std::vector<void*>::iterator it = addresses.end();
-
-  // Loop until we cross the first Java frame.
-  while (it != addresses.begin()) {
-    
-    // Get the last Java frame.
-    void** addr = (void**)*(--it);
-    
-    // Set the iterator to the next native -> Java call.
-    --it;
-    
-    // See if we're from JNI.
-    if (*it == 0) {
-      --it;
-      addr = (void**)*it;
-      --it;
-      if (*it == 0) {
-        addr = (void**)addr[0];
-        continue;
-      }
-    }
-
-    do {
-      void* ip = FRAME_IP(addr);
-      bool isStub = ((unsigned char*)ip)[0] == 0xCE;
-      if (isStub) ip = addr[2];
-      mvm::MethodInfo* MI = getJVM()->IPToMethodInfo(ip);
+  while (mvm::MethodInfo* MI = Walker.get()) {
+    if (MI->MethodType == 1) {
       JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
       JnjvmClassLoader* loader = meth->classDef->classLoader;
       obj = loader->getJavaClassLoader();
       if (obj) return obj;
-      addr = (void**)addr[0];
-      // We end walking the stack when we cross a native -> Java call. Here
-      // the iterator points to a native -> Java call. We dereference addr twice
-      // because a native -> Java call always contains the signature function.
-    } while (((void***)addr)[0][0] != *it);
+    }
+    ++Walker;
   }
-
   return 0;
 }
 
 
 void JavaThread::printJavaBacktrace() {
-  Jnjvm* vm = getJVM();
-  std::vector<void*> vals;
-  getJavaFrameContext(vals);
-  for (std::vector<void*>::iterator i = vals.begin(), e = vals.end(); 
-       i != e; ++i) {
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(*i);
-    MI->print(*i, 0);
+  mvm::StackWalker Walker(this);
+
+  while (mvm::MethodInfo* MI = Walker.get()) {
+    if (MI->MethodType == 1)
+      MI->print(Walker.ip, Walker.addr);
+    ++Walker;
   }
 }
 

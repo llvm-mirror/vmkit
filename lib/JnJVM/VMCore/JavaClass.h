@@ -961,6 +961,7 @@ public:
   JavaStaticMethodInfo(mvm::CamlFrame* CF, void* ip, JavaMethod* M) :
     mvm::CamlMethodInfo(CF, ip) {
     meth = M;
+    MethodType = 1;
   }
 
   virtual void* getMetaInfo() {

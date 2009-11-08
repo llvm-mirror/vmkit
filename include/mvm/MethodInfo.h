@@ -30,6 +30,9 @@ public:
     abort();
     return NULL;
   }
+
+  unsigned MethodType;
+
 };
 
 class CamlFrame {
@@ -54,6 +57,7 @@ public:
   StaticCamlMethodInfo(CamlFrame* CF, void* ip, const char* n) :
     CamlMethodInfo(CF, ip) {
     name = n;
+    MethodType = 0;
   }
 };
 
@@ -62,6 +66,10 @@ public:
   virtual void print(void* ip, void* addr);
   virtual void scan(void* TL, void* ip, void* addr);
   static DefaultMethodInfo DM;
+    
+  DefaultMethodInfo() {
+    MethodType = -1;
+  }
 };
 
 

@@ -216,6 +216,7 @@ public:
   MvmJITMethodInfo(llvm::GCFunctionInfo* GFI, const llvm::Function* F) :
     JITMethodInfo(GFI) {
       Func = F;
+      MethodType = 0;
   }
 };
 

@@ -508,6 +508,7 @@ public:
   JavaJITMethodInfo(llvm::GCFunctionInfo* GFI, JavaMethod* m) : 
     mvm::JITMethodInfo(GFI) {
     meth = m;
+    MethodType = 1;
   }
   
   virtual void* getMetaInfo() {
