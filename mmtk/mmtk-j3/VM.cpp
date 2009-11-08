@@ -39,20 +39,3 @@ extern "C" bool Java_org_j3_runtime_VM_buildForIA32__ () {
 extern "C" bool Java_org_j3_runtime_VM_verifyAssertions__ () {
   return true;
 }
-
-extern "C" void* gcmalloc(size_t sz, void* _VT) {
-  gc* res = 0;
-  llvm_gcroot(res, 0);
-  VirtualTable* VT = (VirtualTable*)_VT;
-  sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
-  uintptr_t Mutator = mvm::MutatorThread::get()->MutatorContext;
-  int allocator = gc::MMTkCheckAllocator(Mutator, sz, 0, 0);
-  res = (gc*)gc::MMTkGCAllocator(Mutator, sz, 0, 0, allocator, 0);
-  res->setVirtualTable(VT);
-  gc::MMTkGCPostAllocator(Mutator, (uintptr_t)res, (uintptr_t)VT, sz, allocator);
-    
-  if (VT->destructor) {
-    mvm::Thread::get()->MyVM->addFinalizationCandidate(res);
-  }
-  return res;
-}
