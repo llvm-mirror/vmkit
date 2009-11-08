@@ -2023,6 +2023,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* size =
           BinaryOperator::CreateAdd(module->JavaArraySizeConstant, mult,
                                     "", currentBlock);
+        TheVT = new BitCastInst(TheVT, module->ptrType, "", currentBlock);
         Value* res = invoke(module->AllocateFunction, size, TheVT, "",
                             currentBlock);
         Value* cast = new BitCastInst(res, module->JavaArrayType, "",

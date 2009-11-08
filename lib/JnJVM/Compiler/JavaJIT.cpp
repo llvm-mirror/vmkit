@@ -1869,7 +1869,8 @@ void JavaJIT::invokeNew(uint16 index) {
     Size = CallInst::Create(module->GetObjectSizeFromClassFunction, Cl,
                             "", currentBlock);
   }
-  
+ 
+  VT = new BitCastInst(VT, module->ptrType, "", currentBlock);
   Value* val = invoke(module->AllocateFunction, Size, VT, "",
                       currentBlock);
  

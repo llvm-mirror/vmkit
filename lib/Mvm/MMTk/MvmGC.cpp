@@ -95,10 +95,3 @@ void Collector::initialise() {
   }
 }
 
-extern "C" void* gcmalloc(size_t sz, VirtualTable* VT) {
-  gc* res = 0;
-  llvm_gcroot(res, 0);
-  res = (gc*)gc::operator new(sz, VT);
-  return res;
-}
-

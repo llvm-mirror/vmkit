@@ -426,6 +426,7 @@ MvmModule::MvmModule(llvm::Module* module) {
   unconditionalSafePoint = module->getFunction("unconditionalSafePoint");
   conditionalSafePoint = module->getFunction("conditionalSafePoint");
   AllocateFunction = module->getFunction("gcmalloc");
+  assert(AllocateFunction && "No allocate function");
 }
 
 
@@ -540,6 +541,17 @@ void MvmModule::copyDefinitions(Module* Dst, Module* Src) {
                                      GlobalValue::ExternalLinkage,
                                      SF->getName(), Dst);
       F->setAttributes(SF->getAttributes());
+    }
+  }
+  Function* SF = Src->getFunction("gcmalloc");
+  if (SF && !SF->isDeclaration()) {
+    Function* F = Function::Create(SF->getFunctionType(),
+                                   GlobalValue::ExternalLinkage,
+                                   SF->getName(), Dst);
+    F->setAttributes(SF->getAttributes());
+    if (executionEngine) {
+      void* ptr = executionEngine->getPointerToFunction(SF);
+      executionEngine->updateGlobalMapping(F, ptr);
     }
   }
 }
