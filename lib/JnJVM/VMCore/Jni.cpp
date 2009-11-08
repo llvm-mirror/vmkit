@@ -170,6 +170,7 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
   
   th->endNative();
   th->addresses.pop_back();
+  th->lastKnownFrame = th->lastKnownFrame->previousFrame;
   th->enterUncooperativeCode(SP);
   th->throwFromJNI();
   

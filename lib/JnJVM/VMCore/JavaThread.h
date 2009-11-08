@@ -56,6 +56,7 @@ class Jnjvm;
 
 #define END_JNI_EXCEPTION \
   } catch(...) { \
+    th->lastKnownFrame = th->lastKnownFrame->previousFrame; \
     th->endNative(); \
     th->addresses.pop_back(); \
     th->enterUncooperativeCode(SP); \
@@ -63,12 +64,14 @@ class Jnjvm;
   }
 
 #define RETURN_FROM_JNI(a) {\
+  th->lastKnownFrame = th->lastKnownFrame->previousFrame; \
   th->endNative(); \
   th->addresses.pop_back(); \
   th->enterUncooperativeCode(SP); \
   return (a); } \
 
 #define RETURN_VOID_FROM_JNI {\
+  th->lastKnownFrame = th->lastKnownFrame->previousFrame; \
   th->endNative(); \
   th->addresses.pop_back(); \
   th->enterUncooperativeCode(SP); \
@@ -299,16 +302,6 @@ public:
   /// currently on the stack.
   ///
   void getJavaFrameContext(std::vector<void*>& context);
-
-  /// printBacktrace - Prints the backtrace of this thread.
-  ///
-  void printBacktrace() __attribute__ ((noinline));
-
-  /// printBacktraceAfterSignal - Prints the backtrace of this thread while
-  /// in a signal handler.
-  ///
-  virtual void printBacktraceAfterSignal() __attribute__ ((noinline));
-
 
 private:
   /// internalClearException - Clear the C++ and Java exceptions

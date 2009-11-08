@@ -34,6 +34,7 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
   state = StateRunning;
   pendingException = 0;
   internalPendingException = 0;
+  lastKnownFrame = 0;
   jniEnv = isolate->jniEnv;
   localJNIRefs = new JNILocalReferences();
   currentAddedReferences = 0;
@@ -309,76 +310,6 @@ void JavaThread::printJavaBacktrace() {
     mvm::MethodInfo* MI = vm->IPToMethodInfo(*i);
     MI->print(*i, 0);
   }
-}
-
-
-void JavaThread::printBacktrace() {
-  std::vector<void*>::iterator it = addresses.end();
-  Jnjvm* vm = getJVM();
-
-  assert((mvm::Thread::get() == this || waitOnSP()) &&
-         "No last sp on foreign thread");
-  
-  void** addr = mvm::Thread::get() == this ? (void**)FRAME_PTR() :
-                                             (void**)waitOnSP();
-  assert(addr && "No address to start with");
-
-  void** oldAddr = addr;
-
-  // Loop until we cross the first Java frame.
-  while (it != addresses.begin()) {
-    
-    --it;
-    // Until we hit the last Java frame.
-    do {
-      void* ip = FRAME_IP(addr);
-      mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
-      MI->print(ip, addr);
-      oldAddr = addr;
-      addr = (void**)addr[0];
-    } while (oldAddr != (void**)*it && addr != (void**)*it);
-    
-    // Set the iterator to the next native -> Java call.
-    --it;
-
-    // See if we're from JNI.
-    if (*it == 0) {
-      --it;
-      addr = (void**)*it;
-      --it;
-      if (*it == 0) {
-        void* ip = FRAME_IP(addr);
-        mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
-        MI->print(ip, addr);
-        addr = (void**)addr[0];
-        continue;
-      }
-    }
-
-    do {
-      void* ip = FRAME_IP(addr);
-      bool isStub = ((unsigned char*)ip)[0] == 0xCE;
-      if (isStub) ip = addr[2];
-      mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
-      MI->print(ip, addr);
-      addr = (void**)addr[0];
-      // End walking the stack when we cross a native -> Java call. Here
-      // the iterator points to a native -> Java call. We dereference addr twice
-      // because a native -> Java call always contains the signature function.
-    } while (((void***)addr)[0][0] != *it);
-  }
-
-  while (addr < baseSP && addr < addr[0]) {
-    void* ip = FRAME_IP(addr);
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
-    MI->print(ip, addr);
-    addr = (void**)addr[0];
-  }
-
-}
-
-void JavaThread::printBacktraceAfterSignal() {
-  printBacktrace();
 }
 
 JavaObject** JNILocalReferences::addJNIReference(JavaThread* th,

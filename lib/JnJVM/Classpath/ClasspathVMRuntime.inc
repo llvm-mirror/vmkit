@@ -98,14 +98,14 @@ extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
     uint32 num = 0;
     uint32* old = 0;
     void* oldBuf = 0;
-    jmp_buf buf;
     mvm::KnownFrame Frame;
+    jmp_buf buf;
     
-    if (setjmp((jumpbuf_t)buf) == 0) {
+    if (setjmp(buf) == 0) {
       // Push an unmeaningful value in the addresses field to let the
       // stack consistent with Java frames/native frames.
       th->addresses.push_back(0);
-      jnjvmStartJNI(&num, &old, (void*)buf, &oldBuf, &Frame);
+      jnjvmStartJNI(&num, &old, (void*)&buf, &oldBuf, &Frame);
       onLoad(&vm->javavmEnv, res);
     }
 

@@ -336,10 +336,9 @@ public:
     return cpt;
   }
 
-  /// printBacktraceAfterSignal - Print the backtrace during a signal
-  /// handler.
+  /// printBacktrace - Print the backtrace.
   ///
-  virtual void printBacktraceAfterSignal() {}
+  void printBacktrace();
 
   /// addresses - The list of return addresses which represent native/app cross
   /// calls.
