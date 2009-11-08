@@ -18,6 +18,7 @@
 
 namespace mvm {
 
+class MethodInfo;
 class VirtualMachine;
 
 /// CircularBase - This class represents a circular list. Classes that extend
@@ -116,7 +117,6 @@ public:
   KnownFrame* previousFrame;
   void* currentFP;
 };
-
 
 /// Thread - This class is the base of custom virtual machines' Thread classes.
 /// It provides static functions to manage threads. An instance of this class
@@ -359,6 +359,30 @@ public:
   /// lastKnownFrame - The last frame that we know of, before resuming to JNI.
   ///
   KnownFrame* lastKnownFrame;
+
+};
+
+/// StackWalker - This class walks the stack of threads, returning a MethodInfo
+/// object at each iteration.
+///
+class StackWalker {
+public:
+  void** addr;
+  void*  ip;
+  KnownFrame* frame;
+  mvm::Thread* thread;
+
+  StackWalker(mvm::Thread* th) {
+    thread = th;
+    addr = mvm::Thread::get() == th ? (void**)FRAME_PTR() :
+                                      (void**)th->waitOnSP();
+    frame = th->lastKnownFrame;
+    assert(addr && "No address to start with");
+  }
+
+  void operator++();
+
+  MethodInfo* get();
 
 };
 

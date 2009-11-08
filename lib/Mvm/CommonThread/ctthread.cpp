@@ -62,26 +62,37 @@ void Thread::startNative(int level) {
 }
 
 void Thread::printBacktrace() {
-  VirtualMachine* vm = MyVM;
-  void** addr = mvm::Thread::get() == this ? (void**)FRAME_PTR() :
-                                             (void**)waitOnSP();
-  mvm::KnownFrame* currentKnownFrame = lastKnownFrame;
-  while (addr < baseSP && addr < addr[0]) {   
-    void* ip = FRAME_IP(addr);
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
-    MI->print(ip, addr);
-    
-    if (currentKnownFrame && addr == currentKnownFrame->currentFP) {
-      currentKnownFrame = currentKnownFrame->previousFrame;
-      if  (currentKnownFrame) {
-        addr = (void**)currentKnownFrame->currentFP;
-        currentKnownFrame = currentKnownFrame->previousFrame;
+  StackWalker Walker(this);
+
+  while (MethodInfo* MI = Walker.get()) {
+    MI->print(Walker.ip, Walker.addr);
+    ++Walker;
+  }
+}
+
+MethodInfo* StackWalker::get() {
+  if (addr == thread->baseSP) return 0;
+  ip = FRAME_IP(addr);
+  bool isStub = ((unsigned char*)ip)[0] == 0xCE;
+  if (isStub) ip = addr[2];
+  return thread->MyVM->IPToMethodInfo(ip);
+}
+
+void StackWalker::operator++() {
+  if (addr < thread->baseSP && addr < addr[0]) {
+    if (frame && addr == frame->currentFP) {
+      frame = frame->previousFrame;
+      if  (frame) {
+        addr = (void**)frame->currentFP;
+        frame = frame->previousFrame;
       } else {
         addr = (void**)addr[0];
       }
     } else {
       addr = (void**)addr[0];
     }
+  } else {
+    addr = (void**)thread->baseSP;
   }
 }
 

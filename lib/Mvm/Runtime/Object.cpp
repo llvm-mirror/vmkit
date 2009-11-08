@@ -262,32 +262,12 @@ void Allocator::freeTemporaryMemory(void* obj) {
 }
 
 void PreciseStackScanner::scanStack(mvm::Thread* th) {
-  VirtualMachine* vm = th->MyVM;
-  
-  void** addr = mvm::Thread::get() == th ? 
-    (void**)FRAME_PTR() : (void**)th->waitOnSP();
-  assert(addr && "No address to start with");
+  StackWalker Walker(th);
 
-  mvm::KnownFrame* currentKnownFrame = th->lastKnownFrame;
-  while (addr < th->baseSP && addr < addr[0]) {   
-    void* ip = FRAME_IP(addr);
-    bool isStub = ((unsigned char*)ip)[0] == 0xCE;
-    if (isStub) ip = addr[2];
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(ip);
-    MI->scan(0, ip, addr);
-    
-    if (currentKnownFrame && addr == currentKnownFrame->currentFP) {
-      currentKnownFrame = currentKnownFrame->previousFrame;
-      if  (currentKnownFrame) {
-        addr = (void**)currentKnownFrame->currentFP;
-        currentKnownFrame = currentKnownFrame->previousFrame;
-      } else {
-        addr = (void**)addr[0];
-      }
-    } else {
-      addr = (void**)addr[0];
-    }
-  }  
+  while (MethodInfo* MI = Walker.get()) {
+    MI->scan(0, Walker.ip, Walker.addr);
+    ++Walker;
+  }
 }
 
 
