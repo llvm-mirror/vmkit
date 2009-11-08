@@ -123,6 +123,7 @@ public:
 
   llvm::Function* conditionalSafePoint;
   llvm::Function* unconditionalSafePoint;
+  llvm::Function* AllocateFunction;
 
    llvm::Constant* constantInt8Zero;
    llvm::Constant* constantZero;

@@ -82,3 +82,4 @@ declare void @conditionalSafePoint() nounwind
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 declare void @llvm.gcroot(i8**, i8*)
+declare i8* @gcmalloc(i32, %VT*)

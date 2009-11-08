@@ -293,8 +293,6 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   ArrayStoreExceptionFunction = module->getFunction("jnjvmArrayStoreException");
   ArithmeticExceptionFunction = module->getFunction("jnjvmArithmeticException");
 
-  JavaObjectAllocateFunction = module->getFunction("gcmalloc");
-
   PrintExecutionFunction = module->getFunction("jnjvmPrintExecution");
   PrintMethodStartFunction = module->getFunction("jnjvmPrintMethodStart");
   PrintMethodEndFunction = module->getFunction("jnjvmPrintMethodEnd");

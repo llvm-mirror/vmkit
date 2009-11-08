@@ -1870,9 +1870,10 @@ void JavaJIT::invokeNew(uint16 index) {
                             "", currentBlock);
   }
   
-  Value* val = invoke(module->JavaObjectAllocateFunction, Size, VT, "",
+  Value* val = invoke(module->AllocateFunction, Size, VT, "",
                       currentBlock);
-  
+ 
+  val = new BitCastInst(val, module->JavaObjectType, "", currentBlock);
   push(val, false);
 }
 

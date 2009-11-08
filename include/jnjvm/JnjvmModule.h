@@ -301,7 +301,6 @@ public:
   llvm::Function* ArrayLengthFunction;
   llvm::Function* GetVTFunction;
   llvm::Function* GetClassFunction;
-  llvm::Function* JavaObjectAllocateFunction;
   llvm::Function* GetVTFromClassFunction;
   llvm::Function* GetVTFromClassArrayFunction;
   llvm::Function* GetVTFromCommonClassFunction;

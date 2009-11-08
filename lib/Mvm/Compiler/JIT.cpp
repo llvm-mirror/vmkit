@@ -425,6 +425,7 @@ MvmModule::MvmModule(llvm::Module* module) {
 
   unconditionalSafePoint = module->getFunction("unconditionalSafePoint");
   conditionalSafePoint = module->getFunction("conditionalSafePoint");
+  AllocateFunction = module->getFunction("gcmalloc");
 }
 
 

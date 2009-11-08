@@ -224,11 +224,3 @@ declare void @jnjvmStartJNI(i32*, i32**, i8*, i8**, i8*)
 declare void @jnjvmPrintExecution(i32, i32, %JavaMethod*)
 declare void @jnjvmPrintMethodStart(%JavaMethod*)
 declare void @jnjvmPrintMethodEnd(%JavaMethod*)
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GC methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-declare %JavaObject* @gcmalloc(i32, %VT*)

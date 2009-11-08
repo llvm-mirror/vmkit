@@ -146,7 +146,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           
           CallSite Ca = CallSite::get(Arg);
           Instruction* CI = Ca.getInstruction();
-          if (CI && Ca.getCalledValue() == module->JavaObjectAllocateFunction) {
+          if (CI && Ca.getCalledValue() == module->AllocateFunction) {
             Changed = true;
             Cmp->replaceAllUsesWith(ConstantInt::getFalse(*Context));
             Cmp->eraseFromParent();
