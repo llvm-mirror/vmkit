@@ -11,7 +11,12 @@ LEVEL = ../..
 
 include $(LEVEL)/Makefile.config
 
-LIBRARYNAME = MMTKFake
+ifeq ($(WITH_LLVM_GCC), 1)
+  MODULE_NAME = MMTKAlloc
+else
+  LIBRARYNAME = MMTKAlloc
+endif
+
 LOADABLE_MODULE = 1
 USEDLIBS =
 
