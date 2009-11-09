@@ -19,9 +19,28 @@ extern "C" void Java_org_j3_runtime_VM_sysWrite__I () { JavaThread::get()->print
 extern "C" void Java_org_j3_runtime_VM_sysWrite__Ljava_lang_String_2 () { JavaThread::get()->printBacktrace(); abort(); }
 extern "C" void Java_org_j3_runtime_VM_sysWriteln__ () { JavaThread::get()->printBacktrace(); abort(); }
 extern "C" void Java_org_j3_runtime_VM_sysWriteln__Ljava_lang_String_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_runtime_VM__1assert__ZLjava_lang_String_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_runtime_VM_sysExit__I () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_runtime_VM_sysFail__Ljava_lang_String_2 () { JavaThread::get()->printBacktrace(); abort(); }
+
+extern "C" void Java_org_j3_runtime_VM__1assert__ZLjava_lang_String_2 () {
+#ifdef DEBUG
+  JavaThread::get()->printBacktrace();
+#endif
+  abort();
+}
+
+extern "C" void Java_org_j3_runtime_VM_sysExit__I () {
+#ifdef DEBUG
+  JavaThread::get()->printBacktrace();
+#endif
+  abort();
+}
+
+
+extern "C" void Java_org_j3_runtime_VM_sysFail__Ljava_lang_String_2 () { 
+#ifdef DEBUG
+  JavaThread::get()->printBacktrace();
+#endif
+  abort();
+}
 
 extern "C" void Java_org_j3_runtime_VM__1assert__Z (bool cond) {
   

@@ -28,9 +28,17 @@ extern "C" void* gcmalloc(size_t sz, void* _VT) {
   sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
   res = internalMalloc(0, sz, 0, 0, 0, 0);
   res->setVirtualTable(VT);
-    
-  if (VT->destructor) {
-    mvm::Thread::get()->MyVM->addFinalizationCandidate(res);
-  }
   return res;
 }
+
+extern "C" void* gcmallocUnresolved(size_t sz, VirtualTable* VT) {
+  gc* res = (gc*)gcmalloc(sz, VT);
+  if (VT->destructor)
+    mvm::Thread::get()->MyVM->addFinalizationCandidate(res);
+  return res;
+}
+
+extern "C" void addFinalizationCandidate(gc* obj) {
+  mvm::Thread::get()->MyVM->addFinalizationCandidate(obj);
+}
+

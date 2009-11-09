@@ -124,6 +124,8 @@ public:
   llvm::Function* conditionalSafePoint;
   llvm::Function* unconditionalSafePoint;
   llvm::Function* AllocateFunction;
+  llvm::Function* AllocateUnresolvedFunction;
+  llvm::Function* AddFinalizationCandidate;
 
    llvm::Constant* constantInt8Zero;
    llvm::Constant* constantZero;

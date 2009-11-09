@@ -1896,9 +1896,14 @@ void JavaJIT::invokeNew(uint16 index) {
   }
  
   VT = new BitCastInst(VT, module->ptrType, "", currentBlock);
-  Value* val = invoke(module->AllocateFunction, Size, VT, "",
-                      currentBlock);
- 
+  Value* val = invoke(cl ? module->AllocateFunction :
+                           module->AllocateUnresolvedFunction,
+                      Size, VT, "", currentBlock);
+
+  if (cl && cl->virtualVT->destructor) {
+    CallInst::Create(module->AddFinalizationCandidate, val, "", currentBlock);
+  }
+
   val = new BitCastInst(val, module->JavaObjectType, "", currentBlock);
   push(val, false);
 }

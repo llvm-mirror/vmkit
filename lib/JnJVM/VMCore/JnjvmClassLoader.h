@@ -433,8 +433,10 @@ private:
 public:
 
   static VMClassLoader* allocate(JnjvmClassLoader* J) {
-    VMClassLoader* res = 
-      (VMClassLoader*)gc::operator new(sizeof(VMClassLoader), &VT);
+    VMClassLoader* res = 0;
+    llvm_gcroot(res, 0);
+    res = (VMClassLoader*)gc::operator new(sizeof(VMClassLoader), &VT);
+    mvm::Thread::get()->MyVM->addFinalizationCandidate(res);
     res->JCL = J;
     return res;
   }

@@ -427,6 +427,10 @@ MvmModule::MvmModule(llvm::Module* module) {
   conditionalSafePoint = module->getFunction("conditionalSafePoint");
   AllocateFunction = module->getFunction("gcmalloc");
   assert(AllocateFunction && "No allocate function");
+  AllocateUnresolvedFunction = module->getFunction("gcmallocUnresolved");
+  assert(AllocateUnresolvedFunction && "No allocateUnresolved function");
+  AddFinalizationCandidate = module->getFunction("addFinalizationCandidate");
+  assert(AddFinalizationCandidate && "No addFinalizationCandidate function");
 }
 
 
@@ -552,6 +556,7 @@ void MvmModule::copyDefinitions(Module* Dst, Module* Src) {
       F->setAttributes(SF->getAttributes());
     }
   }
+  
   Function* SF = Src->getFunction("gcmalloc");
   if (SF && !SF->isDeclaration()) {
     Function* F = Function::Create(SF->getFunctionType(),
@@ -563,6 +568,31 @@ void MvmModule::copyDefinitions(Module* Dst, Module* Src) {
       executionEngine->updateGlobalMapping(F, ptr);
     }
   }
+  
+  SF = Src->getFunction("gcmallocUnresolved");
+  if (SF && !SF->isDeclaration()) {
+    Function* F = Function::Create(SF->getFunctionType(),
+                                   GlobalValue::ExternalLinkage,
+                                   SF->getName(), Dst);
+    F->setAttributes(SF->getAttributes());
+    if (executionEngine) {
+      void* ptr = executionEngine->getPointerToFunction(SF);
+      executionEngine->updateGlobalMapping(F, ptr);
+    }
+  }
+  
+  SF = Src->getFunction("addFinalizationCandidate");
+  if (SF && !SF->isDeclaration()) {
+    Function* F = Function::Create(SF->getFunctionType(),
+                                   GlobalValue::ExternalLinkage,
+                                   SF->getName(), Dst);
+    F->setAttributes(SF->getAttributes());
+    if (executionEngine) {
+      void* ptr = executionEngine->getPointerToFunction(SF);
+      executionEngine->updateGlobalMapping(F, ptr);
+    }
+  }
+
 }
 
 void JITMethodInfo::scan(void* TL, void* ip, void* addr) {
