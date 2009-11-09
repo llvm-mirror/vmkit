@@ -465,6 +465,10 @@ static void addPass(FunctionPassManager *PM, Pass *P) {
   PM->add(P);
 }
 
+namespace mvm {
+  llvm::FunctionPass* createInlineMallocPass();
+}
+
 // This is equivalent to:
 // opt -simplifycfg -mem2reg -instcombine -jump-threading -simplifycfg
 //     -scalarrepl -instcombine -condprop -simplifycfg -predsimplify 
@@ -481,6 +485,11 @@ void MvmModule::AddStandardCompilePasses() {
   FunctionPassManager* PM = globalFunctionPasses;
   PM->add(new TargetData(*MvmModule::TheTargetData));
 
+#ifdef WITH_MMTK
+  addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
+  addPass(PM, createInlineMallocPass());
+#endif
+  
   addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
   addPass(PM, createPromoteMemoryToRegisterPass());// Kill useless allocas
   
