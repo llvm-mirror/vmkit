@@ -934,6 +934,7 @@ llvm::Function* JavaJIT::javaCompile() {
                     UTF8Buffer(compilingMethod->name).cString());
     abort();
   }
+  
 
   Reader reader(codeAtt, &(compilingClass->bytes));
   uint16 maxStack = reader.readU2();
@@ -1250,6 +1251,25 @@ llvm::Function* JavaJIT::javaCompile() {
   if (codeLen < 5 && !callsStackWalker && !TheCompiler->isStaticCompiling())
     compilingMethod->canBeInlined = true;
 #endif
+  
+  Attribut* annotationsAtt =
+    compilingMethod->lookupAttribut(Attribut::annotationsAttribut);
+  
+  if (annotationsAtt) {
+    Reader reader(annotationsAtt, &(compilingClass->bytes));
+    AnnotationReader AR(reader, compilingClass);
+    uint16 numAnnotations = reader.readU2();
+    for (uint16 i = 0; i < numAnnotations; ++i) {
+      AR.readAnnotation();
+      const UTF8* name =
+        compilingClass->ctpInfo->UTF8At(AR.AnnotationNameIndex);
+      if (name->equals(TheCompiler->InlinePragma)) {
+        llvmFunction->addFnAttr(Attribute::AlwaysInline);
+      } else if (name->equals(TheCompiler->NoInlinePragma)) {
+        llvmFunction->addFnAttr(Attribute::NoInline);
+      }
+    }
+  }
 
   return llvmFunction;
 }

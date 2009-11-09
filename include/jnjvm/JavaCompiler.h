@@ -17,6 +17,10 @@
 
 #include "mvm/GC/GC.h"
 
+namespace mvm {
+  class UTF8;
+}
+
 namespace jnjvm {
 
 class Class;
@@ -88,6 +92,9 @@ public:
   virtual void* loadMethod(void* handle, const char* symbol) {
     return dlsym(handle, symbol);
   }
+
+  static const mvm::UTF8* InlinePragma;
+  static const mvm::UTF8* NoInlinePragma;
 };
 
 }

@@ -55,6 +55,10 @@ using namespace jnjvm;
 
 typedef void (*static_init_t)(JnjvmClassLoader*);
 
+const UTF8* JavaCompiler::InlinePragma = 0;
+const UTF8* JavaCompiler::NoInlinePragma = 0;
+
+
 JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
                                            JavaCompiler* Comp, 
                                            bool dlLoad) : 
@@ -198,13 +202,20 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   // array classes.
   analyseClasspathEnv(bootClasspathEnv);
   
+  Attribut::annotationsAttribut =
+    asciizConstructUTF8("RuntimeVisibleAnnotations");
   Attribut::codeAttribut = asciizConstructUTF8("Code");
   Attribut::exceptionsAttribut = asciizConstructUTF8("Exceptions");
   Attribut::constantAttribut = asciizConstructUTF8("ConstantValue");
   Attribut::lineNumberTableAttribut = asciizConstructUTF8("LineNumberTable");
   Attribut::innerClassesAttribut = asciizConstructUTF8("InnerClasses");
   Attribut::sourceFileAttribut = asciizConstructUTF8("SourceFile");
-  
+ 
+  JavaCompiler::InlinePragma =
+    asciizConstructUTF8("Lorg/vmmagic/pragma/Inline;");
+  JavaCompiler::NoInlinePragma =
+    asciizConstructUTF8("Lorg/vmmagic/pragma/NoInline;");
+
   initName = asciizConstructUTF8("<init>");
   initExceptionSig = asciizConstructUTF8("(Ljava/lang/String;)V");
   clinitName = asciizConstructUTF8("<clinit>");
