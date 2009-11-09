@@ -28,7 +28,7 @@ extern "C" void* gcmallocUnresolved(size_t sz, VirtualTable* VT) {
   llvm_gcroot(res, 0);
   res = Collector::gcmalloc(VT, sz);
   if (VT->destructor)
-    mvm::Thread::get()->MyVM->addFinalizationCandidate(res);
+    mvm::Thread::get()->MyVM->addFinalizationCandidate((gc*)res);
   return res;
 }
 
