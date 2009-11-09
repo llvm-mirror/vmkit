@@ -637,6 +637,8 @@ public:
   
   virtual void* loadMethod(void* handle, const char* symbol);
 
+  virtual CommonClass* getUniqueBaseClass(CommonClass* cl);
+
 private:
 
   //--------------- Static compiler specific functions -----------------------//

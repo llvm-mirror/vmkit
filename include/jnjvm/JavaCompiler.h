@@ -24,6 +24,7 @@ namespace mvm {
 namespace jnjvm {
 
 class Class;
+class CommonClass;
 class JavaMethod;
 class JavaVirtualTable;
 class Signdef;
@@ -95,6 +96,10 @@ public:
 
   static const mvm::UTF8* InlinePragma;
   static const mvm::UTF8* NoInlinePragma;
+
+  virtual CommonClass* getUniqueBaseClass(CommonClass* cl) {
+    return 0;
+  }
 };
 
 }

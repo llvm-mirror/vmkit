@@ -33,23 +33,10 @@ gc::MMTkCollectType                 gc::MMTkTriggerCollection = 0;
 uintptr_t Collector::TraceLocal = 0;
 
   
-static std::set<gc*> Set;
 static mvm::SpinLock lock;
 
-extern "C" gc* internalMalloc(uintptr_t Mutator, int32_t sz, int32_t align,
-                              int32_t offset, int32_t allocator,
-                              int32_t site) {
-  
-  
-  gc* res = (gc*)malloc(sz);
-  memset(res, 0, sz);
-  
-  lock.acquire();
-  Set.insert(res);
-  lock.release();
-  
-  return res;
-}
+
+std::set<gc*> __InternalSet__;
 
 extern "C" int internalCheckAllocator(uintptr_t Mutator, int32_t sz,
                                       int32_t align, int32_t alloc) {
@@ -61,11 +48,27 @@ extern "C" void internalPostMalloc(uintptr_t Mutator, uintptr_t ref,
                                    int32_t allocator) {
 }
 
+extern "C" gc* internalMalloc(uintptr_t Mutator, int32_t sz, int32_t align,
+                              int32_t offset, int32_t allocator,
+                              int32_t site) {
+  
+  
+  gc* res = (gc*)malloc(sz);
+  memset(res, 0, sz);
+  
+  lock.acquire();
+  __InternalSet__.insert(res);
+  lock.release();
+  
+  return res;
+}
+
+
 void* Collector::begOf(gc* obj) {
   if (gc::MMTkGCAllocator == internalMalloc) {
     lock.acquire();
-    std::set<gc*>::iterator I = Set.find(obj);
-    std::set<gc*>::iterator E = Set.end();
+    std::set<gc*>::iterator I = __InternalSet__.find(obj);
+    std::set<gc*>::iterator E = __InternalSet__.end();
     lock.release();
     
     if (I != E) return obj;

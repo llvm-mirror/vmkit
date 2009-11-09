@@ -52,6 +52,12 @@ public class Selected {
   @Uninterruptible
   public static class Mutator extends org.mmtk.plan.marksweep.MSMutator
   {
+   
+    // Unused mutator used by the AOT compiler to know what instances
+    // will be alive during MMTk execution. This allows to inline
+    // virtual calls of singleton objects.
+    private static final Mutator unusedMutator = new Mutator();
+    
     public Mutator() {}
 
     @Inline

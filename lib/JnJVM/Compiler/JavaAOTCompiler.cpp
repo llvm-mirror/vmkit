@@ -2070,3 +2070,33 @@ void* JavaAOTCompiler::loadMethod(void* handle, const char* symbol) {
   return JavaCompiler::loadMethod(handle, symbol);
 }
 
+#ifdef WITH_MMTK
+
+#include <set>
+extern std::set<gc*> __InternalSet__;
+
+CommonClass* JavaAOTCompiler::getUniqueBaseClass(CommonClass* cl) {
+  std::set<gc*>::iterator I = __InternalSet__.begin();
+  std::set<gc*>::iterator E = __InternalSet__.end();
+  CommonClass* currentClass = 0;
+
+  for (; I != E; ++I) {
+    JavaObject* obj = (JavaObject*)(*I);
+    if (obj->instanceOf(cl)) {
+      if (currentClass) {
+        if (obj->getClass() != currentClass) {
+          return 0;
+        }
+      } else {
+        currentClass = obj->getClass();
+      }
+    }
+  }
+  return currentClass;
+}
+
+#else
+CommonClass* JavaAOTCompiler::getUniqueBaseClass(CommonClass* cl) {
+  return 0;
+}
+#endif

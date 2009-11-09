@@ -13,12 +13,13 @@
 #include "JavaThread.h"
 #include "MutatorThread.h"
 
+#include <set>
+
 using namespace jnjvm;
 
 extern "C" gc* internalMalloc(uintptr_t Mutator, int32_t sz, int32_t align,
                               int32_t offset, int32_t allocator,
                               int32_t site);
-  
 
 
 extern "C" void* gcmalloc(size_t sz, void* _VT) {

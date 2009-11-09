@@ -99,6 +99,11 @@ void JavaJIT::invokeVirtual(uint16 index) {
   if (source) {
     return invokeSpecial(index, source->getClass());
   }
+  
+  if (TheCompiler->isStaticCompiling()) {
+    CommonClass* unique = TheCompiler->getUniqueBaseClass(cl);
+    if (unique) return invokeSpecial(index, unique);
+  }
  
 #if !defined(WITHOUT_VTABLE)
   Typedef* retTypedef = signature->getReturnType();
