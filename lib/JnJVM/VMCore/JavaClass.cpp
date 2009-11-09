@@ -30,6 +30,7 @@
 
 using namespace jnjvm;
 
+const UTF8* Attribut::annotationsAttribut = 0;
 const UTF8* Attribut::codeAttribut = 0;
 const UTF8* Attribut::exceptionsAttribut = 0;
 const UTF8* Attribut::constantAttribut = 0;
@@ -1682,4 +1683,36 @@ JavaVirtualTable::JavaVirtualTable(ClassPrimitive* C) {
   display[0] = this;
   nbSecondaryTypes = 0;
   offset = getCacheIndex() + 1;
+}
+
+void AnnotationReader::readAnnotation() {
+  uint16 typeIndex = reader.readU2();
+  uint16 numPairs = reader.readU2();
+
+  for (uint16 j = 0; j < numPairs; ++j) {
+    uint16 nameIndex = reader.readU2();
+    readElementValue();
+  }
+  AnnotationNameIndex = typeIndex;
+}
+
+void AnnotationReader::readElementValue() {
+  uint8 tag = reader.readU1();
+  if ((tag == 'B') || (tag == 'C') || (tag == 'D') || (tag == 'F') ||
+      (tag == 'J') || (tag == 'S') || (tag == 'I') || (tag == 'Z') || 
+      (tag == 's')) {
+    uint16 constValue = reader.readU2();
+  } else if (tag == 'e') {
+    uint16 typeName = reader.readU2();
+    uint16 constName = reader.readU2();
+  } else if (tag == 'c') {
+    uint16 classInfoIndex = reader.readU2();
+  } else if (tag == '@') {
+    readAnnotation();
+  } else if (tag == '[') {
+    uint16 numValues = reader.readU2();
+    for (uint32 i = 0; i < numValues; ++i) {
+      readElementValue();
+    }
+  }
 }

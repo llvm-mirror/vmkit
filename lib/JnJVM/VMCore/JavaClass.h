@@ -58,6 +58,18 @@ class Typedef;
 #define erroneous 6    /// The class is in an erroneous state.
 
 
+class AnnotationReader {
+public:
+  Reader& reader;
+  Class* cl;
+  uint16 AnnotationNameIndex;
+
+  AnnotationReader(Reader& R, Class* C) : reader(R), cl(C),
+    AnnotationNameIndex(0) {}
+  void readAnnotation();
+  void readElementValue();
+};
+
 /// Attribut - This class represents JVM attributes to Java class, methods and
 /// fields located in the .class file.
 ///
@@ -86,6 +98,11 @@ public:
   /// finding the bytecode of a method in the .class file.
   //
   static const UTF8* codeAttribut;
+  
+  /// annotationsAttribut - The "RuntimeVisibleAnnotations" JVM attribut.
+  /// This is a method attribut for getting the runtime annotations.
+  //
+  static const UTF8* annotationsAttribut;
 
   /// exceptionsAttribut - The "Exceptions" attribut. This is a method
   /// attribut for finding the exception table of a method in the .class
