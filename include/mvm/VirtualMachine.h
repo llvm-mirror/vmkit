@@ -512,8 +512,6 @@ public:
   uint32 status; 
 #endif
 
-  mvm::Allocator gcAllocator;
-
 };
 
 

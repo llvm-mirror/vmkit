@@ -266,17 +266,17 @@ JavaArray* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
   else if (n > JavaArray::MaxArraySize)
     vm->outOfMemoryError();
 
-  return doNew(n, vm->gcAllocator);
+  return doNew(n);
 }
 
-JavaArray* UserClassArray::doNew(sint32 n, mvm::Allocator& allocator) {
+JavaArray* UserClassArray::doNew(sint32 n) {
   UserCommonClass* cl = baseClass();
 
   uint32 logSize = cl->isPrimitive() ? 
     cl->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2);
   VirtualTable* VT = virtualVT;
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + (n << logSize);
-  JavaArray* res = (JavaArray*)allocator.allocateManagedObject(size, VT);
+  JavaArray* res = (JavaArray*)gc::operator new(size, VT);
   res->size = n;
   return res;
 }
@@ -476,14 +476,15 @@ JavaField* Class::lookupField(const UTF8* name, const UTF8* type,
 }
 
 JavaObject* UserClass::doNew(Jnjvm* vm) {
+  JavaObject* res = 0;
+  llvm_gcroot(res, 0);
   assert(this && "No class when allocating.");
   assert((this->isInitializing() || 
           classLoader->getCompiler()->isStaticCompiling())
          && "Uninitialized class when allocating.");
   assert(getVirtualVT() && "No VT\n");
-  JavaObject* res = 
-    (JavaObject*)vm->gcAllocator.allocateManagedObject(getVirtualSize(),
-                                                       getVirtualVT());
+  res = (JavaObject*)gc::operator new(getVirtualSize(), getVirtualVT());
+
   return res;
 }
 

@@ -100,7 +100,9 @@ public:
     assert(res->getVirtualTable() == 0 && "Allocation not zeroed");
     res->setVirtualTable(VT);
     MMTkGCPostAllocator(Mutator, (uintptr_t)res, (uintptr_t)VT, sz, allocator);
-    
+ 
+    // operator new is called by C++ code, that does not call the
+    // addFinalizationCandidate, unlike application code. Call it here.
     if (VT->destructor) {
       mvm::Thread::get()->MyVM->addFinalizationCandidate(res);
     }

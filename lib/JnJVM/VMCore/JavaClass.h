@@ -933,7 +933,7 @@ public:
   ///
   JavaArray* doNew(sint32 n, mvm::BumpPtrAllocator& allocator,
                    bool temp = false);
-  JavaArray* doNew(sint32 n, mvm::Allocator& allocator);
+  JavaArray* doNew(sint32 n);
 
   /// _baseClass - The base class of the array.
   ///

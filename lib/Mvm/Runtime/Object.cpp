@@ -241,26 +241,6 @@ void ReferenceQueue::scan(VirtualMachine* vm) {
   CurrentIndex = NewIndex;
 }
 
-void* Allocator::allocateManagedObject(unsigned int sz, VirtualTable* VT) {
-  return gc::operator new(sz, VT);
-}
-  
-void* Allocator::allocatePermanentMemory(unsigned int sz) {
-  return malloc(sz); 
-}
-  
-void Allocator::freePermanentMemory(void* obj) {
-  return free(obj); 
-}
-  
-void* Allocator::allocateTemporaryMemory(unsigned int sz) {
-  return malloc(sz); 
-}
-  
-void Allocator::freeTemporaryMemory(void* obj) {
-  return free(obj); 
-}
-
 void PreciseStackScanner::scanStack(mvm::Thread* th) {
   StackWalker Walker(th);
 

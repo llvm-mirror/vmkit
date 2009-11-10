@@ -31,20 +31,6 @@ extern "C" void __llvm_gcroot(const void**, void*) __attribute__((nothrow));
 
 namespace mvm {
 
-class Allocator {
-public:
-  
-  void* allocateManagedObject(unsigned int sz, VirtualTable* VT);
-  
-  void* allocatePermanentMemory(unsigned int sz);
-  
-  void freePermanentMemory(void* obj);
-  
-  void* allocateTemporaryMemory(unsigned int sz);
-  
-  void freeTemporaryMemory(void* obj);
-};
-
 class BumpPtrAllocator {
 private:
   SpinLock TheLock;
