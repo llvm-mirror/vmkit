@@ -336,7 +336,7 @@ public:
   ///
   KnownFrame* lastKnownFrame;
 
-  void startKnownFrame(KnownFrame& F);
+  void startKnownFrame(KnownFrame& F) __attribute__ ((noinline));
   void endKnownFrame();
 };
 
