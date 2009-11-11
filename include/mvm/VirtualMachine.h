@@ -97,8 +97,13 @@ public:
 
 class SharedStartFunctionMap : public StartFunctionMap {
 public: 
-  static BumpPtrAllocator StaticAllocator;
-  SharedStartFunctionMap();
+  BumpPtrAllocator* StaticAllocator;
+  bool initialized;
+  SharedStartFunctionMap() {
+    initialized = false;
+  }
+
+  void initialize();
 };
 
 
@@ -200,6 +205,7 @@ protected:
     
     mainThread = 0;
     NumberOfThreads = 0;
+    if (!SharedStaticFunctions.initialized) SharedStaticFunctions.initialize();
   }
 public:
 
