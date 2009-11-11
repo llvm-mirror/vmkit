@@ -369,12 +369,13 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
       Instruction* temp = new AllocaInst(module->JavaObjectType, "",
                                          func->begin()->begin());
-      Value* GCArgs[2] = { 
-        new BitCastInst(temp, module->ptrPtrType, "", currentBlock),
-        module->constantPtrNull
-      };
       
       if (TheCompiler->useCooperativeGC()) {
+        Value* GCArgs[2] = { 
+          new BitCastInst(temp, module->ptrPtrType, "", currentBlock),
+          module->constantPtrNull
+        };
+        
         CallInst::Create(module->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
                          temp);
       }
@@ -396,17 +397,20 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   if (returnType == module->JavaObjectType) {
     ResultObject = new AllocaInst(module->JavaObjectType, "",
                                   func->begin()->begin());
-    Value* GCArgs[2] = { 
-      new BitCastInst(ResultObject, module->ptrPtrType, "", currentBlock),
-      module->constantPtrNull
-    };
-      
+    
     if (TheCompiler->useCooperativeGC()) {
+      
+      Value* GCArgs[2] = { 
+        new BitCastInst(ResultObject, module->ptrPtrType, "", currentBlock),
+        module->constantPtrNull
+      };
+      
       CallInst::Create(module->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
                        currentBlock);
+    } else {
+      new StoreInst(module->JavaObjectNullConstant, ResultObject, "",
+                    currentBlock);
     }
-    new StoreInst(module->JavaObjectNullConstant, ResultObject, "",
-                  currentBlock);
   }
   
   Value* nativeFunc = TheCompiler->getNativeFunction(compilingMethod,
@@ -802,12 +806,14 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
       new StoreInst(Constant::getNullValue(Type::getFloatTy(*llvmContext)), floatLocals.back(), false, firstInstruction);
       objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
                                           firstInstruction));
-      new StoreInst(Constant::getNullValue(module->JavaObjectType), objectLocals.back(), false, firstInstruction);
+     
+      // The GCStrategy will already initialize the value.
+      if (!TheCompiler->useCooperativeGC())
+        new StoreInst(Constant::getNullValue(module->JavaObjectType), objectLocals.back(), false, firstInstruction);
     }
     for (int i = 0; i < maxStack; i++) {
       objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
                                            firstInstruction));
-      new StoreInst(Constant::getNullValue(module->JavaObjectType), objectStack.back(), false, firstInstruction);
       intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", firstInstruction));
       doubleStack.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "",
                                            firstInstruction));
@@ -827,13 +833,14 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
       new StoreInst(Constant::getNullValue(Type::getFloatTy(*llvmContext)), floatLocals.back(), false, firstBB);
       objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
                                             firstBB));
-      new StoreInst(Constant::getNullValue(module->JavaObjectType), objectLocals.back(), false, firstBB);
+      // The GCStrategy will already initialize the value.
+      if (!TheCompiler->useCooperativeGC())
+        new StoreInst(Constant::getNullValue(module->JavaObjectType), objectLocals.back(), false, firstBB);
     }
     
     for (int i = 0; i < maxStack; i++) {
       objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
                                            firstBB));
-      new StoreInst(Constant::getNullValue(module->JavaObjectType), objectStack.back(), false, firstBB);
       intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", firstBB));
       doubleStack.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "", firstBB));
       longStack.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", firstBB));
@@ -986,13 +993,14 @@ llvm::Function* JavaJIT::javaCompile() {
     new StoreInst(Constant::getNullValue(Type::getFloatTy(*llvmContext)), floatLocals.back(), false, currentBlock);
     objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
                                           currentBlock));
-    new StoreInst(Constant::getNullValue(module->JavaObjectType), objectLocals.back(), false, currentBlock);
+    // The GCStrategy will already initialize the value.
+    if (!TheCompiler->useCooperativeGC())
+      new StoreInst(Constant::getNullValue(module->JavaObjectType), objectLocals.back(), false, currentBlock);
   }
   
   for (int i = 0; i < maxStack; i++) {
     objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
                                          currentBlock));
-    new StoreInst(Constant::getNullValue(module->JavaObjectType), objectStack.back(), false, currentBlock);
     intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", currentBlock));
     doubleStack.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "", currentBlock));
     longStack.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", currentBlock));
