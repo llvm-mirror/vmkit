@@ -184,7 +184,7 @@ public:
    static llvm::ExistingModuleProvider *globalModuleProvider;
    static llvm::FunctionPassManager* globalFunctionPasses;
    static const llvm::TargetData* TheTargetData;
-   static mvm::BumpPtrAllocator Allocator;
+   static mvm::BumpPtrAllocator* Allocator;
 
    static uint64 getTypeSize(const llvm::Type* type);
    static void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
