@@ -34,7 +34,6 @@ JavaObject* src) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   UserCommonClass* cl = src->getClass();
-  Jnjvm* vm = JavaThread::get()->getJVM();
   size_t size = 0;
   if (cl->isArray()) {
     UserClassArray* array = cl->asArrayClass();
