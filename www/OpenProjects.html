@@ -47,21 +47,6 @@ on what your interests are. This list is provided to generate ideas, it is not
 intended to be comprehensive. Please ask on llvm-dev for more specifics. </p>
 
 <ul>
-<li><b>Port MMTk to LLVM</b>:
-MMTk is JikesRVM's Garbage Collection framework (http://jikesrvm.org) and
-contains a number of GC implementations that should be independent of the VM.
-MMTk is written in Java, so it is not straightforward to link it with LLVM.
-Fortunately, VMKit recently started support of an ahead of time compiler for
-Java and should be able to compile MMTk to a .ll file and link with C/C++
-projects.
-</li>
-
-<li><b>Support copying collectors in VMKit</b>: 
-VMKit currently has support for conservative GCs (Boehm and Mmap2) which do not
-cooperate with the compiler and thus do not know if a value in the stack is a
-pointer or not. If we want to support copying collectors we need to use LLVM's
-API on garbage collection (http://llvm.org/docs/GarbageCollection.html) and
-modify VMKit's codebase to track uses of GC objects.</li>
 
 <li><b>Port VMKit's JVM to Harmony or OpenJDK</b>:
 VMKit currently uses GNU Classpath for the standard Java classes. Interfacing
