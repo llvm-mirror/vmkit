@@ -109,16 +109,22 @@ void CollectionRV::join() {
   }
 
   assert(th->getLastSP() && "Joined without giving a SP");
-  // Wait for the rendezvous to finish.
-  waitEndOfRV();
   
-  // The rendezvous is finished. Set inRV to false.
-  th->inRV = false;
+  do {
+    // Wait for the rendezvous to finish.
+    waitEndOfRV();
+    // If we wake up here and doYield is set, this means that a new GC is
+    // happening, so join it.
+  } while (th->doYield);
+  
   if (changed) th->setLastSP(0);
  
   // Unlock after modifying lastSP, because lastSP is also read by the
   // rendezvous initiator.
   unlockRV();
+  
+  // The rendezvous is finished. Set inRV to false.
+  th->inRV = false;
   
 }
 

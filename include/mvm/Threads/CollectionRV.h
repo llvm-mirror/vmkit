@@ -62,8 +62,8 @@ public:
   }
 
   void cancelRV() {
-    mvm::Thread::get()->inRV = false;
     unlockRV();
+    mvm::Thread::get()->inRV = false;
   }
  
   void finishRV();
