@@ -7,8 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <vector>
-
 #include "types.h"
 
 #include "Classpath.h"
@@ -35,22 +33,16 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
 
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  
-  // Allocate the temporary data.
-  std::vector<void*> stack;
+ 
+  uint32 length = th->getFrameContextLength();
 
-  // Get the frame context.
-  th->getFrameContext(stack);
-  
   ClassArray* cl = sizeof(void*) == 4 ? vm->upcalls->ArrayOfInt : 
                                         vm->upcalls->ArrayOfLong;
-  JavaArray* result = (JavaArray*) cl->doNew(stack.size(), vm);
+  JavaArray* result = (JavaArray*) cl->doNew(length, vm);
   void** tab = (void**)result->elements;
-  uint32 index = 0;
-  for (std::vector<void*>::iterator i = stack.begin(), e = stack.end();
-       i != e; ++i, ++index) {
-    tab[index] = *i;
-  }
+  
+  // Get the frame context.
+  th->getFrameContext(tab);
   
   // Set the tempory data in the new VMThrowable object.
   vmThrowable = vm->upcalls->newVMThrowable->doNew(vm);
@@ -133,8 +125,9 @@ JavaObject* vmthrow, JavaObject* throwable) {
   JavaField* field = vm->upcalls->vmDataVMThrowable;
   JavaArray* stack = (JavaArray*)field->getObjectField(vmthrow);
   
-  // remove the VMThrowable.fillInStackTrace method
-  sint32 index = 1;;
+  // remove the VMThrowable.fillInStackTrace method and the last method
+  // on the stack.
+  sint32 index = 2;;
   while (index != stack->size) {
     mvm::MethodInfo* MI = vm->IPToMethodInfo(stack->elements[index]);
     if (MI->MethodType != 1) ++index;

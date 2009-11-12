@@ -71,13 +71,25 @@ void Thread::printBacktrace() {
   }
 }
 
-void Thread::getFrameContext(std::vector<void*>& context) {
+void Thread::getFrameContext(void** buffer) {
   mvm::StackWalker Walker(this);
+  uint32_t i = 0;
 
   while (void* ip = *Walker) {
-    context.push_back(ip);
+    buffer[i++] = ip;
     ++Walker;
   }
+}
+
+uint32_t Thread::getFrameContextLength() {
+  mvm::StackWalker Walker(this);
+  uint32_t i = 0;
+
+  while (void* ip = *Walker) {
+    ++i;
+    ++Walker;
+  }
+  return i;
 }
 
 MethodInfo* StackWalker::get() {

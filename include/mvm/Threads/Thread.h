@@ -12,7 +12,6 @@
 
 #include <cassert>
 #include <stdlib.h>
-#include <vector>
 
 #include "types.h"
 
@@ -328,9 +327,13 @@ public:
   ///
   void printBacktrace();
  
-  /// getFrameContext - Fill the vector with frames currently on the stack.
+  /// getFrameContext - Fill the buffer with frames currently on the stack.
   ///
-  void getFrameContext(std::vector<void*>& context);
+  void getFrameContext(void** buffer);
+  
+  /// getFrameContextLength - Get the length of the frame context.
+  ///
+  uint32_t getFrameContextLength();
 
   /// lastKnownFrame - The last frame that we know of, before resuming to JNI.
   ///

@@ -87,16 +87,18 @@ void JavaThread::startJNI(int level) {
   enterUncooperativeCode(level);
 }
 
-void JavaThread::getJavaFrameContext(std::vector<JavaMethod*>& context) {
+uint32 JavaThread::getJavaFrameContext(void** buffer) {
   mvm::StackWalker Walker(this);
+  uint32 i = 0;
 
   while (mvm::MethodInfo* MI = Walker.get()) {
     if (MI->MethodType == 1) {
       JavaMethod* M = (JavaMethod*)MI->getMetaInfo();
-      context.push_back(M);
+      buffer[i++] = M;
     }
     ++Walker;
   }
+  return i;
 }
 
 JavaMethod* JavaThread::getCallingMethodLevel(uint32 level) {

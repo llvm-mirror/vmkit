@@ -11,7 +11,6 @@
 #define JNJVM_JAVA_THREAD_H
 
 #include <csetjmp>
-#include <vector>
 
 #include "mvm/Object.h"
 #include "mvm/Threads/Cond.h"
@@ -261,10 +260,10 @@ public:
   ///
   void printJavaBacktrace();
 
-  /// getJavaFrameContext - Fill the vector with Java methods currently on
+  /// getJavaFrameContext - Fill the buffer with Java methods currently on
   /// the stack.
   ///
-  void getJavaFrameContext(std::vector<JavaMethod*>& context);
+  uint32 getJavaFrameContext(void** buffer);
   
 private:
   /// internalClearException - Clear the C++ and Java exceptions

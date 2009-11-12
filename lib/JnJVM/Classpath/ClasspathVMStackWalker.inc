@@ -37,20 +37,19 @@ jclass clazz,
 
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  std::vector<JavaMethod*> stack;
+  uint32 length = th->getFrameContextLength();
   
-  th->getJavaFrameContext(stack);
+  void** buffer = (void**)alloca(length * sizeof(void*));
+  
+  uint32 finalSize = th->getJavaFrameContext(buffer);
   
   result = (ArrayObject*)
-    vm->upcalls->stackTraceArray->doNew(stack.size(), vm);
-
-  std::vector<JavaMethod*>::iterator i = stack.begin(), e = stack.end();
-  uint32 index = 0;
- 
-  for (; i != e; ++i) {
-    JavaMethod* meth = *i;
+    vm->upcalls->stackTraceArray->doNew(finalSize, vm);
+   
+  for (uint32 i = 0; i != finalSize; ++i) {
+    JavaMethod* meth = (JavaMethod*)buffer[i];
     assert(meth && "Wrong stack trace");
-    result->elements[index++] = meth->classDef->getClassDelegatee(vm);
+    result->elements[i] = meth->classDef->getClassDelegatee(vm);
   }
   
   END_NATIVE_EXCEPTION
