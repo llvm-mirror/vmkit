@@ -67,15 +67,14 @@ MethodInfo* StartFunctionMap::IPToMethodInfo(void* ip) {
         MI = &DefaultMethodInfo::DM;
       } else {
         MI = I->second;
-        // Add it to the map, so that we don't need to call dladdr again
-        // on something that belongs to our code.
-        Functions.insert(std::make_pair(ip, MI));
       }
     } else {
       // The method is jitted, and no-one has intercepted its compilation.
       // Just return the Default MethodInfo object.
       MI = &DefaultMethodInfo::DM;
     }
+    // Add it to the map, so that we don't need to call dladdr again.
+    Functions.insert(std::make_pair(ip, MI));
   } else {
     MI = I->second;
   }
