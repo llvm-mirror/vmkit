@@ -85,7 +85,7 @@ uint32_t Thread::getFrameContextLength() {
   mvm::StackWalker Walker(this);
   uint32_t i = 0;
 
-  while (void* ip = *Walker) {
+  while (*Walker) {
     ++i;
     ++Walker;
   }
