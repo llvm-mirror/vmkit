@@ -27,14 +27,11 @@ extern "C" void* gcmallocUnresolved(size_t sz, VirtualTable* VT) {
   void* res = 0;
   llvm_gcroot(res, 0);
   res = Collector::gcmalloc(VT, sz);
-  if (VT->destructor)
-    mvm::Thread::get()->MyVM->addFinalizationCandidate((gc*)res);
   return res;
 }
 
 extern "C" void addFinalizationCandidate(gc* obj) {
-  llvm_gcroot(obj, 0);
-  mvm::Thread::get()->MyVM->addFinalizationCandidate(obj);
+  // This is useless with GCmmap2, as the gcmalloc already did it.
 }
 
 void Collector::scanObject(void** val) {

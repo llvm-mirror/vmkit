@@ -177,6 +177,10 @@ public:
 
     unlock();
 
+    if (vt->destructor)
+      mvm::Thread::get()->MyVM->addFinalizationCandidate((gc*)p);
+
+
     return p;
 #endif
   }
