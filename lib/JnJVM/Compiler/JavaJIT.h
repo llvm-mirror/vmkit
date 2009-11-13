@@ -196,8 +196,6 @@ private:
   } StackTypeInfo;
 
 
-  std::map<llvm::BasicBlock*, std::vector<StackTypeInfo>* > StackBlockInfo;
-
   /// stack - The compiler stack.
   std::vector<StackTypeInfo> stack;
   uint32 currentStackIndex;
