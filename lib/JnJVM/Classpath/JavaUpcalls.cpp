@@ -212,6 +212,8 @@ ClassPrimitive* Classpath::OfFloat;
 ClassPrimitive* Classpath::OfDouble;
 ClassPrimitive* Classpath::OfVoid;
 
+Class* Classpath::OfObject;
+
 JavaField* Classpath::methodClass;
 JavaField* Classpath::fieldClass;
 JavaField* Classpath::constructorClass;
@@ -723,6 +725,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   Classpath::longClass =
     UPCALL_CLASS(loader, "java/lang/Long");
+  
+  Classpath::OfObject =
+    UPCALL_CLASS(loader, "java/lang/Object");
 
   vmStackWalker =
     UPCALL_CLASS(loader, "gnu/classpath/VMStackWalker");

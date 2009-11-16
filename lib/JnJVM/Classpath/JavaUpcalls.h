@@ -247,6 +247,8 @@ public:
   ISOLATE_STATIC UserClassPrimitive* OfFloat;
   ISOLATE_STATIC UserClassPrimitive* OfDouble;
   ISOLATE_STATIC UserClassPrimitive* OfVoid;
+
+  ISOLATE_STATIC UserClass* OfObject;
   
   ISOLATE_STATIC JavaField* methodClass;
   ISOLATE_STATIC JavaField* fieldClass;
