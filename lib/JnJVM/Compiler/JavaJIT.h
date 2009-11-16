@@ -23,6 +23,7 @@
 #include "types.h"
 
 #include "JavaClass.h"
+#include "JavaUpcalls.h"
 #include "jnjvm/JnjvmModule.h"
 
 namespace jnjvm {
@@ -51,6 +52,9 @@ struct Opinfo {
   ///
   bool handler;
 
+  /// stack - The stack at this location if there is a new block
+  ///
+  std::vector<CommonClass*> stack;
 };
 
 
@@ -65,6 +69,7 @@ public:
     nbEnveloppes = 0;
     compilingMethod = meth;
     compilingClass = meth->classDef;
+    upcalls = compilingClass->classLoader->bootstrapLoader->upcalls;
     TheCompiler = C;
     module = TheCompiler->getIntrinsics();
     llvmFunction = func;
@@ -88,6 +93,9 @@ private:
 
   /// compilingMethod - The method being compiled.
   JavaMethod* compilingMethod;
+
+  /// upcalls - Upcalls used tp type the stack and locals.
+  Classpath* upcalls;
 
   /// llvmFunction - The LLVM representation of the method.
   llvm::Function* llvmFunction;
@@ -187,17 +195,8 @@ private:
 
 //===------------------------- Stack manipulation -------------------------===//
 
-  typedef enum {
-    Int = 0,
-    Float,
-    Double,
-    Long,
-    Object
-  } StackTypeInfo;
-
-
   /// stack - The compiler stack.
-  std::vector<StackTypeInfo> stack;
+  std::vector<CommonClass*> stack;
   uint32 currentStackIndex;
   std::vector<llvm::AllocaInst*> objectStack;
   std::vector<llvm::AllocaInst*> intStack;
@@ -206,41 +205,41 @@ private:
   std::vector<llvm::AllocaInst*> doubleStack;
 
   /// push - Push a new value in the stack.
-  void push(llvm::Value* val, bool unsign) {
+  void push(llvm::Value* val, bool unsign, CommonClass* cl = 0) {
     const llvm::Type* type = val->getType();
     if (unsign) {
       val = new llvm::ZExtInst(val, llvm::Type::getInt32Ty(*llvmContext), "", currentBlock);
       new llvm::StoreInst(val, intStack[currentStackIndex++], false,
                           currentBlock);
-      stack.push_back(Int);
+      stack.push_back(upcalls->OfInt);
     } else if (type == llvm::Type::getInt8Ty(*llvmContext) ||
                type == llvm::Type::getInt16Ty(*llvmContext)) {
       val = new llvm::SExtInst(val, llvm::Type::getInt32Ty(*llvmContext), "",
                                currentBlock);
       new llvm::StoreInst(val, intStack[currentStackIndex++], false,
                           currentBlock);
-      stack.push_back(Int);
+      stack.push_back(upcalls->OfInt);
     } else if (type == llvm::Type::getInt32Ty(*llvmContext)) {
       new llvm::StoreInst(val, intStack[currentStackIndex++], false,
                           currentBlock);
-      stack.push_back(Int);
+      stack.push_back(upcalls->OfInt);
     } else if (type == llvm::Type::getInt64Ty(*llvmContext)) {
       new llvm::StoreInst(val, longStack[currentStackIndex++], false,
                           currentBlock);
-      stack.push_back(Long);
+      stack.push_back(upcalls->OfLong);
     } else if (type == llvm::Type::getFloatTy(*llvmContext)) {
       new llvm::StoreInst(val, floatStack[currentStackIndex++], false,
                           currentBlock);
-      stack.push_back(Float);
+      stack.push_back(upcalls->OfFloat);
     } else if (type == llvm::Type::getDoubleTy(*llvmContext)) {
       new llvm::StoreInst(val, doubleStack[currentStackIndex++], false,
                           currentBlock);
-      stack.push_back(Double);
+      stack.push_back(upcalls->OfDouble);
     } else {
       assert(type == module->JavaObjectType && "Can't handle this type");
       new llvm::StoreInst(val, objectStack[currentStackIndex++], false,
                           currentBlock);
-      stack.push_back(Object);
+      stack.push_back(cl ? cl : upcalls->OfObject);
     }
   }
 
@@ -254,32 +253,26 @@ private:
 
   /// top - Return the value on top of the stack.
   llvm::Value* top() {
-    StackTypeInfo STI = stack.back();
-    switch (STI) {
-      case Int:
-        return new llvm::LoadInst(intStack[currentStackIndex - 1], false,
-                                  currentBlock);
-      case Float:
-        return new llvm::LoadInst(floatStack[currentStackIndex - 1], false,
-                                  currentBlock);
-      case Double:
-        return new llvm::LoadInst(doubleStack[currentStackIndex - 1], false,
-                                  currentBlock);
-      case Long:
-        return new llvm::LoadInst(longStack[currentStackIndex - 1], false,
-                                  currentBlock);
-      case Object:
-        return new llvm::LoadInst(objectStack[currentStackIndex - 1], false,
-                                  currentBlock);
-      default:
-        assert(0 && "Can not be here");
-    }
-    abort();
-    return 0;
+    CommonClass* cl = stack.back();
+    if (cl == upcalls->OfInt)
+      return new llvm::LoadInst(intStack[currentStackIndex - 1], false,
+                                currentBlock);
+    if (cl == upcalls->OfFloat)
+      return new llvm::LoadInst(floatStack[currentStackIndex - 1], false,
+                                currentBlock);
+    if (cl == upcalls->OfDouble)
+      return new llvm::LoadInst(doubleStack[currentStackIndex - 1], false,
+                                currentBlock);
+    if (cl == upcalls->OfLong)
+      return new llvm::LoadInst(longStack[currentStackIndex - 1], false,
+                                currentBlock);
+    
+    return new llvm::LoadInst(objectStack[currentStackIndex - 1], false,
+                              currentBlock);
   }
   
   /// topTypeInfo - Return the type of the value on top of the stack.
-  StackTypeInfo topTypeInfo() {
+  CommonClass* topTypeInfo() {
     return stack.back();
   }
  
@@ -339,16 +332,20 @@ private:
  
   /// branch - Branch based on a boolean value. Update PHI nodes accordingly.
   void branch(llvm::Value* test, llvm::BasicBlock* ifTrue, 
-              llvm::BasicBlock* ifFalse, llvm::BasicBlock* insert) {
-    addFakePHINodes(ifTrue, insert);
-    addFakePHINodes(ifFalse, insert);
+              llvm::BasicBlock* ifFalse, llvm::BasicBlock* insert,
+              Opinfo& info) {
+    if (stackSize())
+      if (!info.stack.size())
+        info.stack = stack;
     llvm::BranchInst::Create(ifTrue, ifFalse, test, insert);
   }
 
   /// branch - Branch to a new block. Update PHI nodes accordingly.
-  void branch(llvm::BasicBlock* dest, llvm::BasicBlock* insert) {
-    addFakePHINodes(dest, insert);
-    llvm::BranchInst::Create(dest, insert);
+  void branch(Opinfo& info, llvm::BasicBlock* insert) {
+    if (stackSize())
+      if (!info.stack.size())
+        info.stack = stack;
+    llvm::BranchInst::Create(info.newBlock, insert);
   }
   
   /// testPHINodes - Update PHI nodes when branching to a new block.

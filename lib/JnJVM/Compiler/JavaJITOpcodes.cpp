@@ -138,41 +138,25 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
     
     if (opinfo->newBlock) {
       if (currentBlock->getTerminator() == 0) {
-        branch(opinfo->newBlock, currentBlock);
+        branch(*opinfo, currentBlock);
       }
       
       currentBlock = opinfo->newBlock;
       
       stack.clear();
-      currentStackIndex = 0;
-      for (BasicBlock::iterator i = opinfo->newBlock->begin(),
-           e = opinfo->newBlock->end(); i != e; ++i) {
-        if (!(isa<PHINode>(i))) {
-          break;
-        } else {
-          ++currentStackIndex;
-          const Type* Ty = i->getType();
-          if (Ty == Type::getInt32Ty(*llvmContext)) {
-            stack.push_back(Int);
-          } else if (Ty == Type::getInt64Ty(*llvmContext)) {
-            stack.push_back(Long);
-          } else if (Ty == Type::getFloatTy(*llvmContext)) {
-            stack.push_back(Float);
-          } else if (Ty == Type::getDoubleTy(*llvmContext)) {
-            stack.push_back(Double);
-          } else if (Ty == module->JavaObjectType) {
-            stack.push_back(Object);
-            if (opinfo->handler) {
-              // If it's a handler, put the exception object in the stack.
-              new StoreInst(i, objectStack[currentStackIndex - 1], "",
-                            currentBlock);
-            }
-          } else {
-            abort();
-          }
-        }
+      if (opinfo->handler) {
+        Instruction* I = opinfo->newBlock->begin();
+        assert(isa<PHINode>(I) && "Handler marlformed");
+        // If it's a handler, put the exception object in the stack.
+        new StoreInst(I, objectStack[0], "", currentBlock);
+        stack.push_back(upcalls->OfObject);
+        currentStackIndex = 1;
+      } else {
+        stack = opinfo->stack;
+        currentStackIndex = stack.size();
       }
     }
+
     currentExceptionBlock = opinfo->exceptionBlock;
     
     // To prevent a gcj bug with useless goto
@@ -1545,7 +1529,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case IFEQ : {
         uint32 tmp = i;
-        BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
 
         Value* op = pop();
         const Type* type = op->getType();
@@ -1553,14 +1538,15 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, op,
                                          val, "");
         BasicBlock* ifFalse = createBasicBlock("false IFEQ");
-        branch(test, ifTrue, ifFalse, currentBlock);
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
 
       case IFNE : {
         uint32 tmp = i;
-        BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
         
         Value* op = pop();
         const Type* type = op->getType();
@@ -1568,63 +1554,67 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, op,
                                          val, "");
         BasicBlock* ifFalse = createBasicBlock("false IFNE");
-        branch(test, ifTrue, ifFalse, currentBlock);
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
 
       case IFLT : {
         uint32 tmp = i;
-        BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
         Value* op = pop();
         const Type* type = op->getType();
         Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SLT, op,
                                          val, "");
         BasicBlock* ifFalse = createBasicBlock("false IFLT");
-        branch(test, ifTrue, ifFalse, currentBlock);
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
 
       case IFGE : {
         uint32 tmp = i;
-        BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
         Value* op = pop();
         const Type* type = op->getType();
         Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SGE, op,
                                          val, "");
         BasicBlock* ifFalse = createBasicBlock("false IFGE");
-        branch(test, ifTrue, ifFalse, currentBlock);
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
 
       case IFGT : {
         uint32 tmp = i;
-        BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
         Value* op = pop();
         const Type* type = op->getType();
         Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SGT, op,
                                          val, "");
         BasicBlock* ifFalse = createBasicBlock("false IFGT");
-        branch(test, ifTrue, ifFalse, currentBlock);
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
 
       case IFLE : {
         uint32 tmp = i;
-        BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
         Value* op = pop();
         const Type* type = op->getType();
         Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SLE, op,
                                          val, "");
         BasicBlock* ifFalse = createBasicBlock("false IFLE");
-        branch(test, ifTrue, ifFalse, currentBlock);
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
@@ -1633,11 +1623,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = popAsInt();
         Value *val1 = popAsInt();
         uint32 tmp = i;
-        BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val1,
                                          val2, "");
         BasicBlock* ifFalse = createBasicBlock("false IF_ICMPEQ");
-        branch(test, ifTrue, ifFalse, currentBlock);
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
@@ -1646,11 +1637,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = popAsInt();
         Value *val1 = popAsInt();
         uint32 tmp = i;
-        BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, val1,
                                          val2, "");
         BasicBlock* ifFalse = createBasicBlock("false IF_ICMPNE");
-        branch(test, ifTrue, ifFalse, currentBlock);
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
@@ -1659,11 +1651,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = popAsInt();
         Value *val1 = popAsInt();
         uint32 tmp = i;
-        BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SLT,
                                          val1, val2, "");
         BasicBlock* ifFalse = createBasicBlock("false IF_IFCMPLT");
-        branch(test, ifTrue, ifFalse, currentBlock);
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
@@ -1672,11 +1665,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = popAsInt();
         Value *val1 = popAsInt();
         uint32 tmp = i;
-        BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SGE,
                                          val1, val2, "");
         BasicBlock* ifFalse = createBasicBlock("false IF_ICMPGE");
-        branch(test, ifTrue, ifFalse, currentBlock);
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
@@ -1685,11 +1679,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = popAsInt();
         Value *val1 = popAsInt();
         uint32 tmp = i;
-        BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SGT,
                                          val1, val2, "");
         BasicBlock* ifFalse = createBasicBlock("false IF_ICMPGT");
-        branch(test, ifTrue, ifFalse, currentBlock);
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
@@ -1698,11 +1693,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = popAsInt();
         Value *val1 = popAsInt();
         uint32 tmp = i;
-        BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SLE,
                                          val1, val2, "");
         BasicBlock* ifFalse = createBasicBlock("false IF_ICMPLE");
-        branch(test, ifTrue, ifFalse, currentBlock);
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
@@ -1711,11 +1707,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = pop();
         Value *val1 = pop();
         uint32 tmp = i;
-        BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
                                          val1, val2, "");
         BasicBlock* ifFalse = createBasicBlock("false IF_ACMPEQ");
-        branch(test, ifTrue, ifFalse, currentBlock);
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
@@ -1724,18 +1721,19 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = pop();
         Value *val1 = pop();
         uint32 tmp = i;
-        BasicBlock* ifTrue = opcodeInfos[tmp + readS2(bytecodes, i)].newBlock;
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE,
                                          val1, val2, "");
         BasicBlock* ifFalse = createBasicBlock("false IF_ACMPNE");
-        branch(test, ifTrue, ifFalse, currentBlock);
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
 
       case GOTO : {
         uint32 tmp = i;
-        branch(opcodeInfos[tmp + readS2(bytecodes, i)].newBlock,
+        branch(opcodeInfos[tmp + readS2(bytecodes, i)],
                currentBlock);
         break;
       }
@@ -1749,7 +1747,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                                      uint64_t (index)),
                                     module->JavaObjectType);
         push(expr, false);
-        branch(opcodeInfos[tmp + readS2(bytecodes, i)].newBlock,
+        branch(opcodeInfos[tmp + readS2(bytecodes, i)],
                currentBlock);
         break;
       }
@@ -1775,7 +1773,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 reste = (i + 1) & 3;
         uint32 filled = reste ?  (4 - reste) : 0;
         i += filled;
-        BasicBlock* def = opcodeInfos[tmp + readU4(bytecodes, i)].newBlock;
+        Opinfo& def = opcodeInfos[tmp + readU4(bytecodes, i)];
 
         sint32 low = readS4(bytecodes, i);
         sint32 high = readS4(bytecodes, i) + 1;
@@ -1787,8 +1785,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
                                     ConstantInt::get(type, cur), index, "");
           BasicBlock* falseBlock = createBasicBlock("continue tableswitch");
-          branch(cmp, opcodeInfos[tmp + readU4(bytecodes, i)].newBlock,
-                 falseBlock, currentBlock);
+          Opinfo& info = opcodeInfos[tmp + readU4(bytecodes, i)];
+          branch(cmp, info.newBlock, falseBlock, currentBlock, info);
           currentBlock = falseBlock;
         }
        
@@ -1803,7 +1801,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 tmp = i;
         uint32 filled = (3 - i) & 3;
         i += filled;
-        BasicBlock* def = opcodeInfos[tmp + readU4(bytecodes, i)].newBlock;
+        Opinfo& def = opcodeInfos[tmp + readU4(bytecodes, i)];
         uint32 nbs = readU4(bytecodes, i);
         
         bool unsign = topIsUnsigned();
@@ -1819,8 +1817,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val, key,
                                     "");
           BasicBlock* falseBlock = createBasicBlock("continue lookupswitch");
-          branch(cmp, opcodeInfos[tmp + readU4(bytecodes, i)].newBlock,
-                 falseBlock, currentBlock);
+          Opinfo& info = opcodeInfos[tmp + readU4(bytecodes, i)];
+          branch(cmp, info.newBlock, falseBlock, currentBlock, info);
           currentBlock = falseBlock;
         }
         branch(def, currentBlock);
@@ -2202,8 +2200,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val,
                                          nil, "");
         BasicBlock* ifFalse = createBasicBlock("true IFNULL");
-        BasicBlock* ifTrue = opcodeInfos[readS2(bytecodes, i) + tmp].newBlock;
-        branch(test, ifTrue, ifFalse, currentBlock);
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }
@@ -2215,8 +2214,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, val,
                                          nil, "");
         BasicBlock* ifFalse = createBasicBlock("false IFNONNULL");
-        BasicBlock* ifTrue = opcodeInfos[readS2(bytecodes, i) + tmp].newBlock;
-        branch(test, ifTrue, ifFalse, currentBlock);
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        BasicBlock* ifTrue = ifTrueInfo.newBlock;
+        branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
         break;
       }

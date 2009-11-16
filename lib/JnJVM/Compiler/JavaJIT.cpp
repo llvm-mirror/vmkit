@@ -1453,37 +1453,25 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
 
 void JavaJIT::addFakePHINodes(BasicBlock* dest, BasicBlock* insert) {
   if(dest->empty()) {
-    for (std::vector<StackTypeInfo>::iterator i = stack.begin(),
+    for (std::vector<CommonClass*>::iterator i = stack.begin(),
          e = stack.end(); i!= e; ++i) {
-      switch (*i) {
-        case Int : {
-          PHINode* node = PHINode::Create(Type::getInt32Ty(getGlobalContext()), "", dest);
-          node->addIncoming(Constant::getNullValue(Type::getInt32Ty(getGlobalContext())), insert);
-          break;
-        }
-        case Float : {
-          PHINode* node = PHINode::Create(Type::getFloatTy(getGlobalContext()), "", dest);
-          node->addIncoming(Constant::getNullValue(Type::getFloatTy(getGlobalContext())), insert);
-          break;
-        }
-        case Double : {
-          PHINode* node = PHINode::Create(Type::getDoubleTy(getGlobalContext()), "", dest);
-          node->addIncoming(Constant::getNullValue(Type::getDoubleTy(getGlobalContext())), insert);
-          break;
-        }
-        case Long : {
-          PHINode* node = PHINode::Create(Type::getInt64Ty(getGlobalContext()), "", dest);
-          node->addIncoming(Constant::getNullValue(Type::getInt64Ty(getGlobalContext())), insert);
-          break;
-        }
-        case Object : {
-          PHINode* node = PHINode::Create(module->JavaObjectType, "", dest);
-          node->addIncoming(Constant::getNullValue(module->JavaObjectType),
-                            insert);
-          break;
-        }
-        default :
-          abort();
+      CommonClass* cl = *i;
+      if (cl == upcalls->OfInt) {
+        PHINode* node = PHINode::Create(Type::getInt32Ty(getGlobalContext()), "", dest);
+        node->addIncoming(Constant::getNullValue(Type::getInt32Ty(getGlobalContext())), insert);
+      } else if (cl == upcalls->OfFloat) {
+        PHINode* node = PHINode::Create(Type::getFloatTy(getGlobalContext()), "", dest);
+        node->addIncoming(Constant::getNullValue(Type::getFloatTy(getGlobalContext())), insert);
+      } else if (cl == upcalls->OfDouble) {
+        PHINode* node = PHINode::Create(Type::getDoubleTy(getGlobalContext()), "", dest);
+        node->addIncoming(Constant::getNullValue(Type::getDoubleTy(getGlobalContext())), insert);
+      } else if (cl == upcalls->OfLong) {
+        PHINode* node = PHINode::Create(Type::getInt64Ty(getGlobalContext()), "", dest);
+        node->addIncoming(Constant::getNullValue(Type::getInt64Ty(getGlobalContext())), insert);
+      } else {
+        PHINode* node = PHINode::Create(module->JavaObjectType, "", dest);
+        node->addIncoming(Constant::getNullValue(module->JavaObjectType),
+                          insert);
       }
     }
   } else {
