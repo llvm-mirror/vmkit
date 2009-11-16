@@ -24,6 +24,10 @@ UserCommonClass* ObjectTypedef::assocClass(JnjvmClassLoader* loader) const {
   return loader->loadName(pseudoAssocClassName, false, true);
 }
 
+UserCommonClass* ObjectTypedef::findAssocClass(JnjvmClassLoader* loader) const {
+  return loader->lookupClassOrArray(pseudoAssocClassName);
+}
+
 Signdef::Signdef(const UTF8* name, JnjvmClassLoader* loader,
                  std::vector<Typedef*>& args, Typedef* ret) {
   

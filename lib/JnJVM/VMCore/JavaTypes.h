@@ -67,6 +67,10 @@ public:
   /// Typedef.
   ///
   virtual UserCommonClass* assocClass(JnjvmClassLoader* loader) const = 0;
+  
+  virtual UserCommonClass* findAssocClass(JnjvmClassLoader* loader) const {
+    return assocClass(loader);
+  }
 
   /// trace - Does this type need to be traced by the GC?
   ///
@@ -241,6 +245,7 @@ public:
   }
   
   virtual UserCommonClass* assocClass(JnjvmClassLoader* loader) const;
+  virtual UserCommonClass* findAssocClass(JnjvmClassLoader* loader) const;
 
   ObjectTypedef(const UTF8*name, UTF8Map* map);
   
