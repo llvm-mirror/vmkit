@@ -17,6 +17,7 @@
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
 #include "llvm/LLVMContext.h"
+#include "llvm/Metadata.h"
 #include "llvm/Type.h"
 #include "llvm/Value.h"
 
@@ -237,10 +238,19 @@ private:
       stack.push_back(upcalls->OfDouble);
     } else {
       assert(type == module->JavaObjectType && "Can't handle this type");
-      new llvm::StoreInst(val, objectStack[currentStackIndex++], false,
-                          currentBlock);
+      llvm::Instruction* V = new 
+        llvm::StoreInst(val, objectStack[currentStackIndex++], false,
+                        currentBlock);
       stack.push_back(cl ? cl : upcalls->OfObject);
+      addHighLevelType(V, topTypeInfo());
     }
+  }
+
+  void addHighLevelType(llvm::Instruction* V, CommonClass* cl) {
+    llvm::Value* A[1] = 
+      { TheCompiler->getNativeClass(cl ? cl : upcalls->OfObject) };
+    llvm::MDNode* Node = llvm::MDNode::get(*llvmContext, A, 1);
+    llvmContext->getMetadata().addMD(module->MetadataTypeKind, Node, V);
   }
 
   /// pop - Pop a value from the stack and return it.
@@ -326,7 +336,7 @@ private:
     return llvm::BasicBlock::Create(*llvmContext, name, llvmFunction);
   }
  
-  /// branch - Branch based on a boolean value. Update PHI nodes accordingly.
+  /// branch - Branch based on a boolean value.
   void branch(llvm::Value* test, llvm::BasicBlock* ifTrue, 
               llvm::BasicBlock* ifFalse, llvm::BasicBlock* insert,
               Opinfo& info) {
@@ -336,16 +346,13 @@ private:
     llvm::BranchInst::Create(ifTrue, ifFalse, test, insert);
   }
 
-  /// branch - Branch to a new block. Update PHI nodes accordingly.
+  /// branch - Branch to a new block.
   void branch(Opinfo& info, llvm::BasicBlock* insert) {
     if (stackSize())
       if (!info.stack.size())
         info.stack = stack;
     llvm::BranchInst::Create(info.newBlock, insert);
   }
-  
-  /// testPHINodes - Update PHI nodes when branching to a new block.
-  void addFakePHINodes(llvm::BasicBlock* dest, llvm::BasicBlock* insert);
   
 //===-------------------------- Synchronization  --------------------------===//
   

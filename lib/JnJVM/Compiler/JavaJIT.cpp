@@ -205,7 +205,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   if (retType != Type::getVoidTy(getGlobalContext())) {
     if (retType == module->JavaObjectType) {
       JnjvmClassLoader* JCL = compilingClass->classLoader;
-      push(val, false, signature->getReturnType()->assocClass(JCL));
+      push(val, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
       push(val, retTypedef->isUnsigned());
       if (retType == Type::getDoubleTy(getGlobalContext()) || retType == Type::getInt64Ty(getGlobalContext())) {
@@ -867,7 +867,8 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   std::vector<Value*>::iterator i = args.begin(); 
 
   if (isVirtual(compilingMethod->access)) {
-    new StoreInst(*i, objectLocals[0], false, currentBlock);
+    Instruction* V = new StoreInst(*i, objectLocals[0], false, currentBlock);
+    addHighLevelType(V, compilingClass);
     ++i;
     ++index;
     ++count;
@@ -896,7 +897,8 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     } else if (curType == Type::getFloatTy(getGlobalContext())) {
       new StoreInst(*i, floatLocals[index], false, currentBlock);
     } else {
-      new StoreInst(*i, objectLocals[index], false, currentBlock);
+      Instruction* V = new StoreInst(*i, objectLocals[index], false, currentBlock);
+      addHighLevelType(V, cur->findAssocClass(compilingClass->classLoader));
     }
   }
   
@@ -1025,7 +1027,8 @@ llvm::Function* JavaJIT::javaCompile() {
   uint32 type = 0;
 
   if (isVirtual(compilingMethod->access)) {
-    new StoreInst(i, objectLocals[0], false, currentBlock);
+    Instruction* V = new StoreInst(i, objectLocals[0], false, currentBlock);
+    addHighLevelType(V, compilingClass);
     ++i;
     ++index;
     ++count;
@@ -1053,7 +1056,8 @@ llvm::Function* JavaJIT::javaCompile() {
     } else if (curType == Type::getFloatTy(getGlobalContext())) {
       new StoreInst(i, floatLocals[index], false, currentBlock);
     } else {
-      new StoreInst(i, objectLocals[index], false, currentBlock);
+      Instruction* V = new StoreInst(i, objectLocals[index], false, currentBlock);
+      addHighLevelType(V, cur->findAssocClass(compilingClass->classLoader));
     }
   }
 
@@ -1455,41 +1459,6 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
   
 }
 
-void JavaJIT::addFakePHINodes(BasicBlock* dest, BasicBlock* insert) {
-  if(dest->empty()) {
-    for (std::vector<CommonClass*>::iterator i = stack.begin(),
-         e = stack.end(); i!= e; ++i) {
-      CommonClass* cl = *i;
-      if (cl == upcalls->OfInt) {
-        PHINode* node = PHINode::Create(Type::getInt32Ty(getGlobalContext()), "", dest);
-        node->addIncoming(Constant::getNullValue(Type::getInt32Ty(getGlobalContext())), insert);
-      } else if (cl == upcalls->OfFloat) {
-        PHINode* node = PHINode::Create(Type::getFloatTy(getGlobalContext()), "", dest);
-        node->addIncoming(Constant::getNullValue(Type::getFloatTy(getGlobalContext())), insert);
-      } else if (cl == upcalls->OfDouble) {
-        PHINode* node = PHINode::Create(Type::getDoubleTy(getGlobalContext()), "", dest);
-        node->addIncoming(Constant::getNullValue(Type::getDoubleTy(getGlobalContext())), insert);
-      } else if (cl == upcalls->OfLong) {
-        PHINode* node = PHINode::Create(Type::getInt64Ty(getGlobalContext()), "", dest);
-        node->addIncoming(Constant::getNullValue(Type::getInt64Ty(getGlobalContext())), insert);
-      } else {
-        PHINode* node = PHINode::Create(module->JavaObjectType, "", dest);
-        node->addIncoming(Constant::getNullValue(module->JavaObjectType),
-                          insert);
-      }
-    }
-  } else {
-    for (BasicBlock::iterator i = dest->begin(), e = dest->end(); i != e; ++i) {
-      if (PHINode* node = dyn_cast<PHINode>(i)) {
-        node->addIncoming(Constant::getNullValue(node->getType()), insert);
-      } else {
-        break;
-      }
-    }
-  }
-}
-
-
 Instruction* JavaJIT::lowerMathOps(const UTF8* name, 
                                    std::vector<Value*>& args) {
   JnjvmBootstrapLoader* loader = compilingClass->classLoader->bootstrapLoader;
@@ -1695,7 +1664,7 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
   if (retType != Type::getVoidTy(getGlobalContext())) {
     if (retType == module->JavaObjectType) {
       JnjvmClassLoader* JCL = compilingClass->classLoader;
-      push(val, false, signature->getReturnType()->assocClass(JCL));
+      push(val, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
       push(val, signature->getReturnType()->isUnsigned());
       if (retType == Type::getDoubleTy(getGlobalContext()) || retType == Type::getInt64Ty(getGlobalContext())) {
@@ -1769,7 +1738,7 @@ void JavaJIT::invokeStatic(uint16 index) {
   if (retType != Type::getVoidTy(getGlobalContext())) {
     if (retType == module->JavaObjectType) {
       JnjvmClassLoader* JCL = compilingClass->classLoader;
-      push(val, false, signature->getReturnType()->assocClass(JCL));
+      push(val, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
       push(val, signature->getReturnType()->isUnsigned());
       if (retType == Type::getDoubleTy(getGlobalContext()) || retType == Type::getInt64Ty(getGlobalContext())) {
@@ -2083,7 +2052,7 @@ void JavaJIT::getStaticField(uint16 index) {
                                       "", currentBlock);
 
           JnjvmClassLoader* JCL = compilingClass->classLoader;
-          push(V, false, sign->assocClass(JCL));
+          push(V, false, sign->findAssocClass(JCL));
         } 
       }
     }
@@ -2092,7 +2061,7 @@ void JavaJIT::getStaticField(uint16 index) {
 
   if (!final) {
     JnjvmClassLoader* JCL = compilingClass->classLoader;
-    CommonClass* cl = sign->assocClass(JCL);
+    CommonClass* cl = sign->findAssocClass(JCL);
     push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned(), cl);
   }
   if (type == Type::getInt64Ty(getGlobalContext()) || type == Type::getDoubleTy(getGlobalContext())) {
@@ -2124,7 +2093,7 @@ void JavaJIT::setVirtualField(uint16 index) {
 void JavaJIT::getVirtualField(uint16 index) {
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
   JnjvmClassLoader* JCL = compilingClass->classLoader;
-  CommonClass* cl = sign->assocClass(JCL);
+  CommonClass* cl = sign->findAssocClass(JCL);
   
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
@@ -2283,7 +2252,7 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   if (node) {
     if (node->getType() == module->JavaObjectType) {
       JnjvmClassLoader* JCL = compilingClass->classLoader;
-      push(node, false, signature->getReturnType()->assocClass(JCL));
+      push(node, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
       push(node, signature->getReturnType()->isUnsigned());
       if (retType == Type::getDoubleTy(getGlobalContext()) ||
