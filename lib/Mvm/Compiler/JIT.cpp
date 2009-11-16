@@ -147,6 +147,7 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   mvm::llvm_runtime::makeLLVMModuleContents(globalModule);
   
   LLVMContext& Context = globalModule->getContext();
+  MetadataTypeKind = Context.getMetadata().registerMDKind("HighLevelType");
   // Type declaration
   ptrType = PointerType::getUnqual(Type::getInt8Ty(Context));
   ptr32Type = PointerType::getUnqual(Type::getInt32Ty(Context));
@@ -449,6 +450,7 @@ llvm::FunctionPassManager* MvmModule::globalFunctionPasses;
 llvm::ExecutionEngine* MvmModule::executionEngine;
 mvm::LockRecursive MvmModule::protectEngine;
 mvm::BumpPtrAllocator* MvmModule::Allocator;
+unsigned MvmModule::MetadataTypeKind;
 
 uint64 MvmModule::getTypeSize(const llvm::Type* type) {
   return TheTargetData->getTypeAllocSize(type);
