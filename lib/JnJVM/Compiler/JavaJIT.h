@@ -276,10 +276,6 @@ private:
     return stack.back();
   }
  
-  bool topIsUnsigned() {
-    return false;
-  }
-
   /// stackSize - Return the size of the stack.
   uint32 stackSize() {
     return stack.size();    

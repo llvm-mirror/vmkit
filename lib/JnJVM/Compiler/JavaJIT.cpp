@@ -1434,12 +1434,11 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
     if (it->get() == Type::getInt64Ty(getGlobalContext()) || it->get() == Type::getDoubleTy(getGlobalContext())) {
       pop();
     }
-    bool unsign = topIsUnsigned();
     Value* tmp = pop();
     
     const Type* type = it->get();
     if (tmp->getType() != type) { // int8 or int16
-      convertValue(tmp, type, currentBlock, unsign);
+      convertValue(tmp, type, currentBlock, false);
     }
     args[i] = tmp;
 
@@ -1996,7 +1995,6 @@ void JavaJIT::convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock
  
 
 void JavaJIT::setStaticField(uint16 index) {
-  bool unsign = topIsUnsigned();
   Value* val = pop(); 
   
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
@@ -2010,7 +2008,7 @@ void JavaJIT::setStaticField(uint16 index) {
   Value* ptr = ldResolved(index, true, 0, type, LAI.llvmTypePtr);
   
   if (type != val->getType()) { // int1, int8, int16
-    convertValue(val, type, currentBlock, unsign);
+    convertValue(val, type, currentBlock, false);
   }
   
   new StoreInst(val, ptr, false, currentBlock);
@@ -2083,7 +2081,6 @@ void JavaJIT::getStaticField(uint16 index) {
 }
 
 void JavaJIT::setVirtualField(uint16 index) {
-  bool unsign = topIsUnsigned();
   Value* val = pop();
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
@@ -2098,7 +2095,7 @@ void JavaJIT::setVirtualField(uint16 index) {
   Value* ptr = ldResolved(index, false, object, type, LAI.llvmTypePtr);
 
   if (type != val->getType()) { // int1, int8, int16
-    convertValue(val, type, currentBlock, unsign);
+    convertValue(val, type, currentBlock, false);
   }
 
   new StoreInst(val, ptr, false, currentBlock);

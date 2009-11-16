@@ -754,7 +754,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
 
       case DUP :
-        push(top(), topIsUnsigned());
+        push(top(), false);
         break;
 
       case DUP_X1 : {
@@ -1804,14 +1804,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Opinfo& def = opcodeInfos[tmp + readU4(bytecodes, i)];
         uint32 nbs = readU4(bytecodes, i);
         
-        bool unsign = topIsUnsigned();
         Value* key = pop();
-        const Type* type = key->getType();
-        if (unsign) {
-          key = new ZExtInst(key, Type::getInt32Ty(*llvmContext), "", currentBlock);
-        } else if (type == Type::getInt8Ty(*llvmContext) || type == Type::getInt16Ty(*llvmContext)) {
-          key = new SExtInst(key, Type::getInt32Ty(*llvmContext), "", currentBlock);
-        }
         for (uint32 cur = 0; cur < nbs; ++cur) {
           Value* val = ConstantInt::get(Type::getInt32Ty(*llvmContext), readU4(bytecodes, i));
           Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val, key,
@@ -1826,10 +1819,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
       }
       case IRETURN : {
-        bool unsign = topIsUnsigned();
         Value* val = pop();
         assert(val->getType()->isInteger());
-        convertValue(val, endNode->getType(), currentBlock, unsign);
+        convertValue(val, endNode->getType(), currentBlock, false);
         endNode->addIncoming(val, currentBlock);
         BranchInst::Create(endBlock, currentBlock);
         break;
