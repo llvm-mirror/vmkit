@@ -203,9 +203,14 @@ void JavaJIT::invokeVirtual(uint16 index) {
   }
 
   if (retType != Type::getVoidTy(getGlobalContext())) {
-    push(val, retTypedef->isUnsigned());
-    if (retType == Type::getDoubleTy(getGlobalContext()) || retType == Type::getInt64Ty(getGlobalContext())) {
-      push(module->constantZero, false);
+    if (retType == module->JavaObjectType) {
+      JnjvmClassLoader* JCL = compilingClass->classLoader;
+      push(val, false, signature->getReturnType()->assocClass(JCL));
+    } else {
+      push(val, retTypedef->isUnsigned());
+      if (retType == Type::getDoubleTy(getGlobalContext()) || retType == Type::getInt64Ty(getGlobalContext())) {
+        push(module->constantZero, false);
+      }
     }
   }
     
@@ -1316,20 +1321,20 @@ void JavaJIT::loadConstant(uint16 index) {
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
       JavaString* str = *(compilingClass->classLoader->UTF8ToStr(utf8));
       Value* val = TheCompiler->getString(str);
-      push(val, false);
+      push(val, false, upcalls->newString);
     } else {
       JavaString** str = (JavaString**)ctpInfo->ctpRes[index];
       if (str) {
         Value* val = TheCompiler->getStringPtr(str);
         val = new LoadInst(val, "", currentBlock);
-        push(val, false);
+        push(val, false, upcalls->newString);
       } else {
         // Lookup the constant pool cache
         const llvm::Type* Ty = PointerType::getUnqual(module->JavaObjectType);
         Value* val = getConstantPoolAt(index, module->StringLookupFunction,
                                        Ty, 0, false);
         val = new LoadInst(val, "", currentBlock);
-        push(val, false);
+        push(val, false, upcalls->newString);
       }
     }
 #endif   
@@ -1351,7 +1356,7 @@ void JavaJIT::loadConstant(uint16 index) {
 
     res = CallInst::Create(module->GetClassDelegateeFunction, res, "",
                            currentBlock);
-    push(res, false);
+    push(res, false, upcalls->newClass);
   } else {
     fprintf(stderr, "I haven't verified your class file and it's malformed:"
                     " unknown ldc %d in %s.%s!\n", type,
@@ -1688,9 +1693,14 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
   
   const llvm::Type* retType = virtualType->getReturnType();
   if (retType != Type::getVoidTy(getGlobalContext())) {
-    push(val, signature->getReturnType()->isUnsigned());
-    if (retType == Type::getDoubleTy(getGlobalContext()) || retType == Type::getInt64Ty(getGlobalContext())) {
-      push(module->constantZero, false);
+    if (retType == module->JavaObjectType) {
+      JnjvmClassLoader* JCL = compilingClass->classLoader;
+      push(val, false, signature->getReturnType()->assocClass(JCL));
+    } else {
+      push(val, signature->getReturnType()->isUnsigned());
+      if (retType == Type::getDoubleTy(getGlobalContext()) || retType == Type::getInt64Ty(getGlobalContext())) {
+        push(module->constantZero, false);
+      }
     }
   }
 
@@ -1757,9 +1767,14 @@ void JavaJIT::invokeStatic(uint16 index) {
 
   const llvm::Type* retType = staticType->getReturnType();
   if (retType != Type::getVoidTy(getGlobalContext())) {
-    push(val, signature->getReturnType()->isUnsigned());
-    if (retType == Type::getDoubleTy(getGlobalContext()) || retType == Type::getInt64Ty(getGlobalContext())) {
-      push(module->constantZero, false);
+    if (retType == module->JavaObjectType) {
+      JnjvmClassLoader* JCL = compilingClass->classLoader;
+      push(val, false, signature->getReturnType()->assocClass(JCL));
+    } else {
+      push(val, signature->getReturnType()->isUnsigned());
+      if (retType == Type::getDoubleTy(getGlobalContext()) || retType == Type::getInt64Ty(getGlobalContext())) {
+        push(module->constantZero, false);
+      }
     }
   }
 }
@@ -1900,7 +1915,7 @@ void JavaJIT::invokeNew(uint16 index) {
   }
 
   val = new BitCastInst(val, module->JavaObjectType, "", currentBlock);
-  push(val, false);
+  push(val, false, cl ? cl : upcalls->OfObject);
 }
 
 Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object, 
@@ -2062,19 +2077,24 @@ void JavaJIT::getStaticField(uint16 index) {
         if (TheCompiler->isStaticCompiling()) {
           JavaObject* val = field->getObjectField(Obj);
           Value* V = TheCompiler->getFinalObject(val);
-          push(V, false);
+          push(V, false, val->getClass());
         } else {
           Value* V = CallInst::Create(module->GetFinalObjectFieldFunction, ptr,
                                       "", currentBlock);
-          
-          push(V, false);
+
+          JnjvmClassLoader* JCL = compilingClass->classLoader;
+          push(V, false, sign->assocClass(JCL));
         } 
       }
     }
   }
 #endif
 
-  if (!final) push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned());
+  if (!final) {
+    JnjvmClassLoader* JCL = compilingClass->classLoader;
+    CommonClass* cl = sign->assocClass(JCL);
+    push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned(), cl);
+  }
   if (type == Type::getInt64Ty(getGlobalContext()) || type == Type::getDoubleTy(getGlobalContext())) {
     push(module->constantZero, false);
   }
@@ -2103,6 +2123,9 @@ void JavaJIT::setVirtualField(uint16 index) {
 
 void JavaJIT::getVirtualField(uint16 index) {
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
+  JnjvmClassLoader* JCL = compilingClass->classLoader;
+  CommonClass* cl = sign->assocClass(JCL);
+  
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
   Value* obj = pop();
@@ -2112,6 +2135,8 @@ void JavaJIT::getVirtualField(uint16 index) {
   
   JnjvmBootstrapLoader* JBL = compilingClass->classLoader->bootstrapLoader;
   bool final = false;
+  
+  // In init methods, the fields have not been set yet.
   if (!compilingMethod->name->equals(JBL->initName)) {
     JavaField* field = compilingClass->ctpInfo->lookupField(index, false);
     if (field) final = isFinal(field->access);
@@ -2141,12 +2166,13 @@ void JavaJIT::getVirtualField(uint16 index) {
       } else {
         F = module->GetFinalObjectFieldFunction;
       }
-      push(CallInst::Create(F, ptr, "", currentBlock), sign->isUnsigned());
+      push(CallInst::Create(F, ptr, "", currentBlock), sign->isUnsigned(), cl);
     }
   }
  
-  if (!final) push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned());
-  if (type == Type::getInt64Ty(getGlobalContext()) || type == Type::getDoubleTy(getGlobalContext())) {
+  if (!final) push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned(), cl);
+  if (type == Type::getInt64Ty(getGlobalContext()) ||
+      type == Type::getDoubleTy(getGlobalContext())) {
     push(module->constantZero, false);
   }
 }
@@ -2255,10 +2281,15 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
 
   currentBlock = endBlock;
   if (node) {
-    push(node, signature->getReturnType()->isUnsigned());
-    if (retType == Type::getDoubleTy(getGlobalContext()) ||
-        retType == Type::getInt64Ty(getGlobalContext())) {
-      push(module->constantZero, false);
+    if (node->getType() == module->JavaObjectType) {
+      JnjvmClassLoader* JCL = compilingClass->classLoader;
+      push(node, false, signature->getReturnType()->assocClass(JCL));
+    } else {
+      push(node, signature->getReturnType()->isUnsigned());
+      if (retType == Type::getDoubleTy(getGlobalContext()) ||
+          retType == Type::getInt64Ty(getGlobalContext())) {
+        push(module->constantZero, false);
+      }
     }
   }
 }

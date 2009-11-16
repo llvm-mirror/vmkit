@@ -441,10 +441,13 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case AALOAD : {
         Value* index = pop();
+        CommonClass* cl = topTypeInfo();
         Value* obj = pop();
         Value* ptr = verifyAndComputePtr(obj, index,
                                          module->JavaArrayObjectType);
-        push(new LoadInst(ptr, "", currentBlock), false);
+        
+        if (cl->isArray()) cl = cl->asArrayClass()->baseClass();
+        push(new LoadInst(ptr, "", currentBlock), false, cl);
         break;
       }
 
@@ -754,78 +757,95 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
 
       case DUP :
-        push(top(), false);
+        push(top(), false, topTypeInfo());
         break;
 
       case DUP_X1 : {
+        CommonClass* oneCl = topTypeInfo();
         Value* one = pop();
+        CommonClass* twoCl = topTypeInfo();
         Value* two = pop();
         
-        push(one, false);
-        push(two, false);
-        push(one, false);
+        push(one, false, oneCl);
+        push(two, false, twoCl);
+        push(one, false, oneCl);
         break;
       }
 
       case DUP_X2 : {
+        CommonClass* oneCl = topTypeInfo();
         Value* one = pop();
+        CommonClass* twoCl = topTypeInfo();
         Value* two = pop();
+        CommonClass* threeCl = topTypeInfo();
         Value* three = pop();
-        push(one, false);
-        push(three, false);
-        push(two, false);
-        push(one, false);
+
+        push(one, false, oneCl);
+        push(three, false, threeCl);
+        push(two, false, twoCl);
+        push(one, false, oneCl);
         break;
       }
 
       case DUP2 : {
+        CommonClass* oneCl = topTypeInfo();
         Value* one = pop();
+        CommonClass* twoCl = topTypeInfo();
         Value* two = pop();
         
-        push(two, false);
-        push(one, false);
-        push(two, false);
-        push(one, false);
+        push(two, false, twoCl);
+        push(one, false, oneCl);
+        push(two, false, twoCl);
+        push(one, false, oneCl);
         break;
       }
 
       case DUP2_X1 : {
+        CommonClass* oneCl = topTypeInfo();
         Value* one = pop();
+        CommonClass* twoCl = topTypeInfo();
         Value* two = pop();
+        CommonClass* threeCl = topTypeInfo();
         Value* three = pop();
 
-        push(two, false);
-        push(one, false);
+        push(two, false, twoCl);
+        push(one, false, oneCl);
 
-        push(three, false);
-        push(two, false);
-        push(one, false);
+        push(three, false, threeCl);
+        push(two, false, twoCl);
+        push(one, false, oneCl);
 
         break;
       }
 
       case DUP2_X2 : {
+        CommonClass* oneCl = topTypeInfo();
         Value* one = pop();
+        CommonClass* twoCl = topTypeInfo();
         Value* two = pop();
+        CommonClass* threeCl = topTypeInfo();
         Value* three = pop();
+        CommonClass* fourCl = topTypeInfo();
         Value* four = pop();
 
-        push(two, false);
-        push(one, false);
+        push(two, twoCl);
+        push(one, oneCl);
         
-        push(four, false);
-        push(three, false);
-        push(two, false);
-        push(one, false);
+        push(four, fourCl);
+        push(three, threeCl);
+        push(two, twoCl);
+        push(one, oneCl);
 
         break;
       }
 
       case SWAP : {
+        CommonClass* oneCl = topTypeInfo();
         Value* one = pop();
+        CommonClass* twoCl = topTypeInfo();
         Value* two = pop();
-        push(one, false);
-        push(two, false);
+        push(one, false, oneCl);
+        push(two, false, twoCl);
         break;
       }
 
@@ -1919,6 +1939,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Constant* sizeElement = 0;
         Value* TheVT = 0;
         Value* valCl = 0;
+        UserClassArray* dcl = 0;
 
         if (bytecodes[i] == NEWARRAY) {
           uint8 id = bytecodes[++i];
@@ -1926,7 +1947,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 #ifndef ISOLATE_SHARING
           JnjvmBootstrapLoader* loader = 
             compilingClass->classLoader->bootstrapLoader;
-          UserClassArray* dcl = loader->getArrayClass(id);
+          dcl = loader->getArrayClass(id);
           valCl = TheCompiler->getNativeClass(dcl);
 #else
           Value* args[2] = { isolateLocal,
@@ -1955,7 +1976,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             JnjvmClassLoader* JCL = cl->classLoader;
             const UTF8* arrayName = JCL->constructArrayName(1, cl->name);
           
-            UserClassArray* dcl = JCL->constructArray(arrayName);
+            dcl = JCL->constructArray(arrayName);
             valCl = TheCompiler->getNativeClass(dcl);
             
             // If we're static compiling and the class is not a class we
@@ -2029,7 +2050,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         new StoreInst(arg1, GEP, currentBlock);
        
         res = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
-        push(res, false);
+        push(res, false, dcl ? dcl : upcalls->ArrayOfObject);
 
         break;
       }
@@ -2163,8 +2184,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint16 index = readU2(bytecodes, i);
         uint8 dim = readU1(bytecodes, i);
         
-        
-        Value* valCl = getResolvedCommonClass(index, true, 0);
+        UserCommonClass* dcl = 0; 
+        Value* valCl = getResolvedCommonClass(index, true, &dcl);
         Value** args = (Value**)alloca(sizeof(Value*) * (dim + 2));
         args[0] = valCl;
         args[1] = ConstantInt::get(Type::getInt32Ty(*llvmContext), dim);
@@ -2177,7 +2198,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           Args.push_back(args[v]);
         }
         push(invoke(module->MultiCallNewFunction, Args, "", currentBlock),
-             false);
+             false, dcl ? dcl : upcalls->ArrayOfObject);
         break;
       }
 
