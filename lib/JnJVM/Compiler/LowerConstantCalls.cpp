@@ -154,6 +154,49 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           }
         }
       }
+     
+      // Remove useless Alloca's, usually used for stacks or temporary values.
+      // The optimizers may have rendered them useless.
+      if (AllocaInst* AI = dyn_cast<AllocaInst>(I)) {
+        bool ToDelete = true;
+        for (Value::use_iterator UI = AI->use_begin(), UE = AI->use_end();
+             UI != UE; ++UI) {
+          if (dyn_cast<StoreInst>(UI)) continue;
+          if (BitCastInst* BI = dyn_cast<BitCastInst>(UI)) {
+            if (BI->hasOneUse()) {
+              CallSite Call = CallSite::get(*(BI->use_begin()));
+              Instruction* CI = Call.getInstruction();
+              if (CI && Call.getCalledFunction() == module->llvm_gc_gcroot)
+                continue;
+            }
+          }
+          
+          ToDelete = false;
+          break;
+        }
+        
+        if (ToDelete) {
+          Changed = true;
+          for (Value::use_iterator UI = AI->use_begin(), UE = AI->use_end();
+               UI != UE;) {
+            Value* Temp = *UI;
+            ++UI;
+            if (StoreInst* SI = dyn_cast<StoreInst>(Temp)) {
+              if (dyn_cast<Instruction>(II) == SI) ++II;
+              SI->eraseFromParent();
+            }
+            if (BitCastInst* BI = dyn_cast<BitCastInst>(Temp)) {
+              CallSite Call = CallSite::get(*(BI->use_begin()));
+              Instruction* CI = Call.getInstruction();
+              if (dyn_cast<Instruction>(II) == CI) ++II;
+              CI->eraseFromParent();
+              if (dyn_cast<Instruction>(II) == BI) ++II;
+              BI->eraseFromParent();
+            }
+          }
+          AI->eraseFromParent();
+        }
+      }
 
       CallSite Call = CallSite::get(I);
       Instruction* CI = Call.getInstruction();
