@@ -243,6 +243,9 @@ private:
                         currentBlock);
       stack.push_back(cl ? cl : upcalls->OfObject);
       addHighLevelType(V, topTypeInfo());
+      if (llvm::Instruction* I = llvm::dyn_cast<llvm::Instruction>(val)) {
+        addHighLevelType(I, topTypeInfo());
+      }
     }
   }
 

@@ -508,11 +508,14 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                       false, currentBlock);
         break;
 
-      case ASTORE :
-        new StoreInst(pop(), objectLocals[WREAD_U1(bytecodes, false, i, wide)],
-                      false, currentBlock);
+      case ASTORE : {
+        CommonClass* cl = topTypeInfo();
+        Instruction* V =
+          new StoreInst(pop(), objectLocals[WREAD_U1(bytecodes, false, i, wide)],
+                        false, currentBlock);
+        addHighLevelType(V, cl);
         break;
-      
+      } 
       case ISTORE_0 : {
         Value* val = pop();
         if (val->getType() != Type::getInt32Ty(*llvmContext)) // int8 and int16
@@ -601,22 +604,38 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         new StoreInst(pop(), doubleLocals[3], false, currentBlock);
         break;
       
-      case ASTORE_0 :
-        new StoreInst(pop(), objectLocals[0], false, currentBlock);
+      case ASTORE_0 : {
+        CommonClass* cl = topTypeInfo();
+        Instruction* V = new StoreInst(pop(), objectLocals[0], false,
+                                       currentBlock);
+        addHighLevelType(V, cl);
         break;
+      }
       
-      case ASTORE_1 :
-        new StoreInst(pop(), objectLocals[1], false, currentBlock);
+      case ASTORE_1 : {
+        CommonClass* cl = topTypeInfo();
+        Instruction* V = new StoreInst(pop(), objectLocals[1], false,
+                                       currentBlock);
+        addHighLevelType(V, cl);
         break;
+      }
       
-      case ASTORE_2 :
-        new StoreInst(pop(), objectLocals[2], false, currentBlock);
+      case ASTORE_2 : {
+        CommonClass* cl = topTypeInfo();
+        Instruction* V = new StoreInst(pop(), objectLocals[2], false,
+                                       currentBlock);
+        addHighLevelType(V, cl);
         break;
+      }
       
-      case ASTORE_3 :
-        new StoreInst(pop(), objectLocals[3], false, currentBlock);
+      case ASTORE_3 : {
+        CommonClass* cl = topTypeInfo();
+        Instruction* V = new StoreInst(pop(), objectLocals[3], false,
+                                       currentBlock);
+        addHighLevelType(V, cl);
         break;
-
+      }
+      
       case IASTORE : {
         Value* val = popAsInt();
         Value* index = popAsInt();
@@ -2035,8 +2054,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           BinaryOperator::CreateAdd(module->JavaArraySizeConstant, mult,
                                     "", currentBlock);
         TheVT = new BitCastInst(TheVT, module->ptrType, "", currentBlock);
-        Value* res = invoke(module->AllocateFunction, size, TheVT, "",
-                            currentBlock);
+        Instruction* res = invoke(module->AllocateFunction, size, TheVT, "",
+                                  currentBlock);
         Value* cast = new BitCastInst(res, module->JavaArrayType, "",
                                       currentBlock);
 
@@ -2049,6 +2068,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         arg1 = new IntToPtrInst(arg1, module->ptrType, "", currentBlock);
         new StoreInst(arg1, GEP, currentBlock);
        
+        addHighLevelType(res, dcl ? dcl : upcalls->ArrayOfObject);
         res = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
         push(res, false, dcl ? dcl : upcalls->ArrayOfObject);
 

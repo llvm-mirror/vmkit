@@ -819,6 +819,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     for (int i = 0; i < maxStack; i++) {
       objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
                                            firstInstruction));
+      addHighLevelType(objectStack.back(), upcalls->OfObject);
       intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", firstInstruction));
       doubleStack.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "",
                                            firstInstruction));
@@ -846,6 +847,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     for (int i = 0; i < maxStack; i++) {
       objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
                                            firstBB));
+      addHighLevelType(objectStack.back(), upcalls->OfObject);
       intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", firstBB));
       doubleStack.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "", firstBB));
       longStack.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", firstBB));
@@ -1008,6 +1010,7 @@ llvm::Function* JavaJIT::javaCompile() {
   for (int i = 0; i < maxStack; i++) {
     objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
                                          currentBlock));
+    addHighLevelType(objectStack.back(), upcalls->OfObject);
     intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", currentBlock));
     doubleStack.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "", currentBlock));
     longStack.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", currentBlock));
@@ -1875,14 +1878,16 @@ void JavaJIT::invokeNew(uint16 index) {
   }
  
   VT = new BitCastInst(VT, module->ptrType, "", currentBlock);
-  Value* val = invoke(cl ? module->AllocateFunction :
+  Instruction* val = invoke(cl ? module->AllocateFunction :
                            module->AllocateUnresolvedFunction,
-                      Size, VT, "", currentBlock);
+                           Size, VT, "", currentBlock);
 
   if (cl && cl->virtualVT->destructor) {
     CallInst::Create(module->AddFinalizationCandidate, val, "", currentBlock);
   }
 
+
+  addHighLevelType(val, cl ? cl : upcalls->OfObject);
   val = new BitCastInst(val, module->JavaObjectType, "", currentBlock);
   push(val, false, cl ? cl : upcalls->OfObject);
 }
