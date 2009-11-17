@@ -364,7 +364,7 @@ JavaObject* Jnjvm::CreateStackOverflowError() {
 }
 
 JavaObject* Jnjvm::CreateArrayStoreException(JavaVirtualTable* VT) {
-  JavaString* str = JavaString::internalToJava(VT->cl->name, this);
+  JavaString* str = VT ? JavaString::internalToJava(VT->cl->name, this) : NULL;
   llvm_gcroot(str, 0);
   return CreateError(upcalls->ArrayStoreException,
                      upcalls->InitArrayStoreException, str);
@@ -1123,6 +1123,7 @@ void Jnjvm::loadBootstrap() {
   LOAD_CLASS(upcalls->ClassNotFoundException); 
   LOAD_CLASS(upcalls->ArithmeticException); 
   LOAD_CLASS(upcalls->InstantiationException);
+  LOAD_CLASS(upcalls->SystemClass);
 #undef LOAD_CLASS
 
   loadAppClassLoader();

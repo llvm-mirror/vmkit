@@ -187,6 +187,10 @@ JavaMethod* Classpath::InitObject;
 JavaMethod* Classpath::FinalizeObject;
 JavaMethod* Classpath::IntToString;
 
+JavaMethod* Classpath::SystemArraycopy;
+JavaMethod* Classpath::VMSystemArraycopy;
+Class*      Classpath::SystemClass;
+
 JavaMethod* Classpath::ErrorWithExcpNoClassDefFoundError;
 JavaMethod* Classpath::ErrorWithExcpExceptionInInitializerError;
 JavaMethod* Classpath::ErrorWithExcpInvocationTargetException;
@@ -825,6 +829,16 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   
   IntToString = UPCALL_METHOD(loader, "java/lang/Integer", "toString",
                               "(II)Ljava/lang/String;", ACC_STATIC);
+
+  SystemArraycopy = UPCALL_METHOD(loader, "java/lang/System", "arraycopy",
+                                  "(Ljava/lang/Object;ILjava/lang/Object;II)V",
+                                  ACC_STATIC);
+  
+  VMSystemArraycopy = UPCALL_METHOD(loader, "java/lang/VMSystem", "arraycopy",
+                                  "(Ljava/lang/Object;ILjava/lang/Object;II)V",
+                                  ACC_STATIC);
+  
+  SystemClass = UPCALL_CLASS(loader, "java/lang/System");
 
   newThread = 
     UPCALL_CLASS(loader, "java/lang/Thread");

@@ -1706,12 +1706,6 @@ void JavaJIT::invokeStatic(uint16 index) {
     JavaMethod* meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_STATIC,
                                                             signature);
     
-    Value* func = 0;
-    if (meth) {
-      func = TheCompiler->getMethod(meth);
-    } else {
-      func = TheCompiler->addCallback(compilingClass, index, signature, true);
-    }
 
 #if defined(ISOLATE_SHARING)
     Value* newCtpCache = getConstantPoolAt(index,
@@ -1727,6 +1721,18 @@ void JavaJIT::invokeStatic(uint16 index) {
     if (!meth || (cl && needsInitialisationCheck(cl, compilingClass))) {
       CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
                        currentBlock);
+    }
+    
+    Value* func = 0;
+    if (meth) {
+      if (meth == upcalls->SystemArraycopy ||
+          meth == upcalls->VMSystemArraycopy) {
+        lowerArraycopy(args);
+        return;
+      }
+      func = TheCompiler->getMethod(meth);
+    } else {
+      func = TheCompiler->addCallback(compilingClass, index, signature, true);
     }
 
     if (meth && canBeInlined(meth)) {
@@ -2266,6 +2272,205 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
       }
     }
   }
+}
+
+void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
+  Function* meth = TheCompiler->getMethod(upcalls->VMSystemArraycopy);
+
+  Value* ptr_src = args[0];
+  Value* int32_start = args[1];
+  Value* ptr_dst = args[2];
+  Value* int32_start2 = args[3];
+  Value* int32_length = args[4];
+
+
+  BasicBlock* label_entry = currentBlock;
+  BasicBlock* label_bb = createBasicBlock("bb");
+  BasicBlock* label_bb2 = createBasicBlock("bb2");
+  BasicBlock* label_bb4 = createBasicBlock("bb4");
+  BasicBlock* label_bb5 = createBasicBlock("bb5");
+  BasicBlock* label_bb12_preheader = createBasicBlock("bb12.preheader");
+  BasicBlock* label_bb7 = createBasicBlock("bb7");
+  BasicBlock* label_bb11 = createBasicBlock("bb11");
+  BasicBlock* label_return = createBasicBlock("return");
+  
+  BasicBlock* log_label_entry = createBasicBlock("log_entry");
+  BasicBlock* log_label_bb = createBasicBlock("log_bb");
+  BasicBlock* log_label_bb2 = createBasicBlock("log_bb2");
+    
+  // Block entry (label_entry)
+  CallInst* ptr_16 = CallInst::Create(module->GetVTFunction, ptr_src, "",
+                                      label_entry);
+  CallInst* ptr_17 = CallInst::Create(module->GetVTFunction, ptr_dst, "",
+                                      label_entry);
+  
+  ICmpInst* int1_18 = new ICmpInst(*label_entry, ICmpInst::ICMP_EQ, ptr_16,
+                                   ptr_17, "");
+  BranchInst::Create(label_bb, label_bb2, int1_18, label_entry);
+    
+  // Block bb (label_bb)
+  currentBlock = label_bb;
+  CallInst* ptr_20 = CallInst::Create(module->GetClassFunction, ptr_src, "",
+                                      label_bb);
+  std::vector<Value*> ptr_21_indices;
+  ptr_21_indices.push_back(module->constantZero);
+  ptr_21_indices.push_back(module->OffsetAccessInCommonClassConstant);
+  Instruction* ptr_21 =
+    GetElementPtrInst::Create(ptr_20, ptr_21_indices.begin(),
+                              ptr_21_indices.end(), "", label_bb);
+  LoadInst* int32_22 = new LoadInst(ptr_21, "", false, label_bb);
+  Value* cmp = BinaryOperator::CreateAnd(int32_22, module->IsArrayConstant, "",
+                                         label_bb);
+  Value* zero = ConstantInt::get(Type::getInt16Ty(getGlobalContext()), 0);
+  ICmpInst* int1_23 = new ICmpInst(*label_bb, ICmpInst::ICMP_NE, cmp, zero, "");
+  BranchInst::Create(label_bb4, label_bb2, int1_23, label_bb);
+   
+
+  // Block bb2 (label_bb2)
+  currentBlock = label_bb2;
+  invoke(meth, args, "", label_bb2);
+  BranchInst::Create(label_return, currentBlock);
+    
+    
+  // Block bb4 (label_bb4)
+  currentBlock = label_bb4;
+  BinaryOperator* int32_27 = BinaryOperator::Create(Instruction::Add,
+                                                    int32_length, int32_start,
+                                                    "", label_bb4);
+  Value* int32_28 = arraySize(ptr_src);
+    
+  ICmpInst* int1_29 = new ICmpInst(*label_bb4, ICmpInst::ICMP_ULE, int32_27,
+                                   int32_28, "");
+  BranchInst::Create(label_bb5, label_bb7, int1_29, label_bb4);
+    
+  // Block bb5 (label_bb5)
+  currentBlock = label_bb5;
+  BinaryOperator* int32_31 = BinaryOperator::Create(Instruction::Add,
+                                                    int32_length, int32_start2,
+                                                    "", label_bb5);
+  Value* int32_32 = arraySize(ptr_dst);
+    
+  ICmpInst* int1_33 = new ICmpInst(*label_bb5, ICmpInst::ICMP_ULE, int32_31,
+                                   int32_32, "");
+  BranchInst::Create(label_bb12_preheader, label_bb7, int1_33, label_bb5);
+    
+  // Block bb12.preheader (label_bb12_preheader)
+  currentBlock = label_bb12_preheader;
+  ICmpInst* int1_35 = new ICmpInst(*label_bb12_preheader, ICmpInst::ICMP_UGT,
+                                   int32_length, module->constantZero, "");
+  BranchInst::Create(log_label_entry, label_return, int1_35, label_bb12_preheader);
+    
+  // Block bb7 (label_bb7)
+  currentBlock = label_bb7;
+  Value* VTArgs[1] = { Constant::getNullValue(module->VTType) };
+  throwException(module->ArrayStoreExceptionFunction, VTArgs, 1);
+   
+
+  
+  PHINode* node = PHINode::Create(Type::getInt32Ty(getGlobalContext()), "",
+                                  log_label_bb2);
+  // Block entry (label_entry)
+  currentBlock = log_label_entry;
+  Value* ptr_10_indices[2] = { module->constantZero,
+                               module->OffsetBaseClassInArrayClassConstant };
+  Instruction* temp = new BitCastInst(ptr_20, module->JavaClassArrayType, "",
+                                      log_label_entry);
+  Instruction* ptr_10 = GetElementPtrInst::Create(temp, ptr_10_indices,
+                                                  ptr_10_indices + 2, "",
+                                                  log_label_entry);
+
+  LoadInst* ptr_11 = new LoadInst(ptr_10, "", false, log_label_entry);
+    
+  Value* ptr_12_indices[2] = { module->constantZero,
+                               module->OffsetAccessInCommonClassConstant };
+  Instruction* ptr_12 = GetElementPtrInst::Create(ptr_11, ptr_12_indices,
+                                                  ptr_12_indices + 2, "",
+                                                  log_label_entry);
+  LoadInst* int16_13 = new LoadInst(ptr_12, "", false, log_label_entry);
+
+  BinaryOperator* int32_15 = BinaryOperator::Create(Instruction::And, int16_13,
+                                                    module->IsPrimitiveConstant,
+                                                    "", log_label_entry);
+  ICmpInst* int1_16 = new ICmpInst(*log_label_entry, ICmpInst::ICMP_EQ,
+                                   int32_15, zero, "");
+  BranchInst::Create(log_label_bb2, log_label_bb, int1_16, log_label_entry);
+  node->addIncoming(module->constantPtrLogSize, log_label_entry);
+    
+  // Block bb (log_label_bb)
+  currentBlock = log_label_bb;
+  Value* ptr_11_indices[2] = { module->constantZero,
+                               module->OffsetLogSizeInPrimitiveClassConstant };
+  temp = new BitCastInst(ptr_11, module->JavaClassPrimitiveType, "",
+                         log_label_bb);
+  GetElementPtrInst* ptr_18 = GetElementPtrInst::Create(temp, ptr_11_indices,
+                                                        ptr_11_indices + 2, "",
+                                                        log_label_bb);
+  LoadInst* int32_20 = new LoadInst(ptr_18, "", false, log_label_bb);
+  node->addIncoming(int32_20, log_label_bb);
+  
+  BranchInst::Create(log_label_bb2, log_label_bb);
+   
+  int32_start = BinaryOperator::CreateShl(int32_start, node, "", log_label_bb2);
+  int32_start2 = BinaryOperator::CreateShl(int32_start2, node, "", log_label_bb2);
+  int32_length = BinaryOperator::CreateShl(int32_length, node, "", log_label_bb2);
+
+  ptr_src = new BitCastInst(ptr_src, module->JavaArrayUInt8Type, "",
+                            log_label_bb2);
+  
+  ptr_dst = new BitCastInst(ptr_dst, module->JavaArrayUInt8Type, "",
+                            log_label_bb2);
+  
+  Value* indexes[3] = { module->constantZero,
+                        module->JavaArrayElementsOffsetConstant,
+                        int32_start };
+  Instruction* ptr_42 = GetElementPtrInst::Create(ptr_src, indexes, indexes + 3,
+                                                  "", log_label_bb2);
+  
+  indexes[2] = int32_start2;
+  Instruction* ptr_44 = GetElementPtrInst::Create(ptr_dst, indexes, indexes + 3,
+                                                  "", log_label_bb2);
+ 
+  BranchInst::Create(label_bb11, log_label_bb2);
+
+
+  // Block bb11 (label_bb11)
+  currentBlock = label_bb11;
+  Argument* fwdref_39 = new Argument(Type::getInt32Ty(getGlobalContext()));
+  PHINode* int32_i_016 = PHINode::Create(Type::getInt32Ty(getGlobalContext()),
+                                         "i.016", label_bb11);
+  int32_i_016->reserveOperandSpace(2);
+  int32_i_016->addIncoming(fwdref_39, label_bb11);
+  int32_i_016->addIncoming(module->constantZero, log_label_bb2);
+  
+  PHINode* phi_dst_ptr = PHINode::Create(ptr_44->getType(), "", label_bb11);
+  PHINode* phi_src_ptr = PHINode::Create(ptr_44->getType(), "", label_bb11);
+  phi_dst_ptr->addIncoming(ptr_44, log_label_bb2);
+  phi_src_ptr->addIncoming(ptr_42, log_label_bb2);
+    
+  LoadInst* ptr_43 = new LoadInst(phi_src_ptr, "", false, label_bb11);
+  new StoreInst(ptr_43, phi_dst_ptr, false, label_bb11);
+
+
+  ptr_42 = GetElementPtrInst::Create(phi_src_ptr, module->constantOne, "",
+                                     label_bb11);
+  
+  ptr_44 = GetElementPtrInst::Create(phi_dst_ptr, module->constantOne, "",
+                                     label_bb11);
+  phi_dst_ptr->addIncoming(ptr_44, label_bb11);
+  phi_src_ptr->addIncoming(ptr_42, label_bb11);
+
+  BinaryOperator* int32_indvar_next =
+    BinaryOperator::Create(Instruction::Add, int32_i_016, module->constantOne,
+                           "indvar.next", label_bb11);
+  ICmpInst* int1_exitcond = new ICmpInst(*label_bb11, ICmpInst::ICMP_EQ,
+                                         int32_indvar_next, int32_length,
+                                         "exitcond");
+  BranchInst::Create(label_return, label_bb11, int1_exitcond, label_bb11);
+
+  // Resolve Forward References
+  fwdref_39->replaceAllUsesWith(int32_indvar_next); delete fwdref_39;
+
+  currentBlock = label_return;
 }
 
 

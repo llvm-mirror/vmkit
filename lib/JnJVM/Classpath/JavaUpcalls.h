@@ -216,6 +216,10 @@ public:
   ISOLATE_STATIC JavaMethod* InitClassNotFoundException;
   ISOLATE_STATIC JavaMethod* InitArithmeticException;
   
+  ISOLATE_STATIC JavaMethod* SystemArraycopy;
+  ISOLATE_STATIC JavaMethod* VMSystemArraycopy;
+  ISOLATE_STATIC Class*      SystemClass;
+  
   ISOLATE_STATIC JavaMethod* IntToString;
 
   ISOLATE_STATIC JavaMethod* InitObject;

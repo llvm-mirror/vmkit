@@ -447,6 +447,9 @@ private:
   /// lowerMathOps - Map Java Math operations to LLVM intrinsics.
   llvm::Instruction* lowerMathOps(const UTF8* name, 
                                   std::vector<llvm::Value*>& args);
+ 
+  /// lowerArraycopy - Create a fast path for System.arraycopy.
+  void lowerArraycopy(std::vector<llvm::Value*>& args);
 
   /// invoke - invoke the LLVM method of a Java method.
   llvm::Instruction* invoke(llvm::Value *F, std::vector<llvm::Value*>&args,

@@ -200,6 +200,16 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   OffsetBaseClassVTInVTConstant =
     ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 17);
   
+  OffsetAccessInCommonClassConstant = constantOne;
+  IsArrayConstant = ConstantInt::get(Type::getInt16Ty(getGlobalContext()),
+                                     JNJVM_ARRAY);
+  
+  IsPrimitiveConstant = ConstantInt::get(Type::getInt16Ty(getGlobalContext()),
+                                         JNJVM_PRIMITIVE);
+ 
+  OffsetBaseClassInArrayClassConstant = constantOne;
+  OffsetLogSizeInPrimitiveClassConstant = constantOne;
+
   OffsetObjectSizeInClassConstant = constantOne;
   OffsetVTInClassConstant =
     ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 7);

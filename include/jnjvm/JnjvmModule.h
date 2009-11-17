@@ -323,6 +323,9 @@ public:
   llvm::Constant* JavaObjectLockOffsetConstant;
   llvm::Constant* JavaObjectVTOffsetConstant;
 
+  llvm::Constant* OffsetAccessInCommonClassConstant;
+  llvm::Constant* IsArrayConstant;
+  llvm::Constant* IsPrimitiveConstant;
   llvm::Constant* OffsetObjectSizeInClassConstant;
   llvm::Constant* OffsetVTInClassConstant;
   llvm::Constant* OffsetTaskClassMirrorInClassConstant;
@@ -340,6 +343,9 @@ public:
   llvm::Constant* OffsetDepthInVTConstant;
   llvm::Constant* OffsetDisplayInVTConstant;
   llvm::Constant* OffsetBaseClassVTInVTConstant;
+  
+  llvm::Constant* OffsetBaseClassInArrayClassConstant;
+  llvm::Constant* OffsetLogSizeInPrimitiveClassConstant;
   
   llvm::Constant* ClassReadyConstant;
 
