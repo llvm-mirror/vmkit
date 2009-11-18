@@ -2284,6 +2284,8 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   Value* int32_start2 = args[3];
   Value* int32_length = args[4];
 
+  JITVerifyNull(ptr_src);
+  JITVerifyNull(ptr_dst);
 
   BasicBlock* label_entry = currentBlock;
   BasicBlock* label_bb = createBasicBlock("bb");
