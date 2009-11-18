@@ -2057,7 +2057,8 @@ void JavaJIT::getStaticField(uint16 index) {
         if (TheCompiler->isStaticCompiling()) {
           JavaObject* val = field->getObjectField(Obj);
           Value* V = TheCompiler->getFinalObject(val);
-          push(V, false, val->getClass());
+          CommonClass* cl = mvm::Collector::begOf(val) ? val->getClass() : NULL;
+          push(V, false, cl);
         } else {
           Value* V = CallInst::Create(module->GetFinalObjectFieldFunction, ptr,
                                       "", currentBlock);
