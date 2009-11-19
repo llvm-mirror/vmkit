@@ -444,7 +444,7 @@ public:
   static LLVMAssessorInfo& getTypedefInfo(const Typedef* type);
   
 
-  virtual llvm::Constant* getFinalObject(JavaObject* obj) = 0;
+  virtual llvm::Constant* getFinalObject(JavaObject* obj, CommonClass* cl) = 0;
   virtual JavaObject* getFinalObject(llvm::Value* C) = 0;
   virtual llvm::Constant* getNativeClass(CommonClass* cl) = 0;
   virtual llvm::Constant* getJavaClass(CommonClass* cl) = 0;
@@ -550,7 +550,7 @@ public:
   
   virtual void* materializeFunction(JavaMethod* meth);
   
-  virtual llvm::Constant* getFinalObject(JavaObject* obj);
+  virtual llvm::Constant* getFinalObject(JavaObject* obj, CommonClass* cl);
   virtual JavaObject* getFinalObject(llvm::Value* C);
   virtual llvm::Constant* getNativeClass(CommonClass* cl);
   virtual llvm::Constant* getJavaClass(CommonClass* cl);
@@ -616,8 +616,9 @@ public:
                                    bool stat);
   
   virtual void makeVT(Class* cl);
-  
-  virtual llvm::Constant* getFinalObject(JavaObject* obj);
+ 
+  llvm::Constant* HandleMagic(JavaObject* obj, CommonClass* cl);
+  virtual llvm::Constant* getFinalObject(JavaObject* obj, CommonClass* cl);
   virtual JavaObject* getFinalObject(llvm::Value* C);
   virtual llvm::Constant* getNativeClass(CommonClass* cl);
   virtual llvm::Constant* getJavaClass(CommonClass* cl);

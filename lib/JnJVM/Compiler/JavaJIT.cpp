@@ -2056,7 +2056,8 @@ void JavaJIT::getStaticField(uint16 index) {
       } else {
         if (TheCompiler->isStaticCompiling()) {
           JavaObject* val = field->getObjectField(Obj);
-          Value* V = TheCompiler->getFinalObject(val);
+          JnjvmClassLoader* JCL = field->classDef->classLoader;
+          Value* V = TheCompiler->getFinalObject(val, sign->assocClass(JCL));
           CommonClass* cl = mvm::Collector::begOf(val) ? val->getClass() : NULL;
           push(V, false, cl);
         } else {

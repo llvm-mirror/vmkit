@@ -16,8 +16,7 @@
 #include "llvm/Support/CallSite.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/Debug.h"
-
-#include <iostream>
+#include "llvm/Support/raw_ostream.h"
 
 using namespace llvm;
 
@@ -203,6 +202,38 @@ static const char* WordRshaMethod;
 static Function* CASPtr;
 static Function* CASInt;
 
+static const char* AddressArrayClass = "JnJVM_org_vmmagic_unboxed_AddressArray_";
+static const char* ExtentArrayClass = "JnJVM_org_vmmagic_unboxed_ExtentArray_";
+static const char* ObjectReferenceArrayClass = "JnJVM_org_vmmagic_unboxed_ObjectReferenceArray_";
+static const char* OffsetArrayClass = "JnJVM_org_vmmagic_unboxed_OffsetArray_";
+static const char* WordArrayClass = "JnJVM_org_vmmagic_unboxed_WordArray_";
+
+static const char* AddressArrayCreateMethod = "JnJVM_org_vmmagic_unboxed_AddressArray_create__I";
+static const char* ExtentArrayCreateMethod = "JnJVM_org_vmmagic_unboxed_ExtentArray_create__I";
+static const char* ObjectReferenceArrayCreateMethod = "JnJVM_org_vmmagic_unboxed_ObjectReferenceArray_create__I";
+static const char* OffsetArrayCreateMethod = "JnJVM_org_vmmagic_unboxed_OffsetArray_create__I";
+static const char* WordArrayCreateMethod = "JnJVM_org_vmmagic_unboxed_WordArray_create__I";
+
+static const char* AddressArrayGetMethod = "JnJVM_org_vmmagic_unboxed_AddressArray_get__I";
+static const char* ExtentArrayGetMethod = "JnJVM_org_vmmagic_unboxed_ExtentArray_get__I";
+static const char* ObjectReferenceArrayGetMethod = "JnJVM_org_vmmagic_unboxed_ObjectReferenceArray_get__I";
+static const char* OffsetArrayGetMethod = "JnJVM_org_vmmagic_unboxed_OffsetArray_get__I";
+static const char* WordArrayGetMethod = "JnJVM_org_vmmagic_unboxed_WordArray_get__I";
+
+static const char* AddressArraySetMethod = "JnJVM_org_vmmagic_unboxed_AddressArray_set__ILorg_vmmagic_unboxed_Address_2";
+static const char* ExtentArraySetMethod = "JnJVM_org_vmmagic_unboxed_ExtentArray_set__ILorg_vmmagic_unboxed_Extent_2";
+static const char* ObjectReferenceArraySetMethod = "JnJVM_org_vmmagic_unboxed_ObjectReferenceArray_set__ILorg_vmmagic_unboxed_ObjectReference_2";
+static const char* OffsetArraySetMethod = "JnJVM_org_vmmagic_unboxed_OffsetArray_set__ILorg_vmmagic_unboxed_Offset_2";
+static const char* WordArraySetMethod = "JnJVM_org_vmmagic_unboxed_WordArray_set__ILorg_vmmagic_unboxed_Word_2";
+
+static const char* AddressArrayLengthMethod = "JnJVM_org_vmmagic_unboxed_AddressArray_lenght__";
+static const char* ExtentArrayLengthMethod = "JnJVM_org_vmmagic_unboxed_ExtentArray_length__";
+static const char* ObjectReferenceArrayLengthMethod = "JnJVM_org_vmmagic_unboxed_ObjectReferenceArray_length__";
+static const char* OffsetArrayLengthMethod = "JnJVM_org_vmmagic_unboxed_OffsetArray_length__";
+static const char* WordArrayLengthMethod = "JnJVM_org_vmmagic_unboxed_WordArray_length__";
+
+
+
 static void initialiseFunctions(Module* M) {
   if (!AddressZeroMethod) {
     AddressZeroMethod = "JnJVM_org_vmmagic_unboxed_Address_zero__";
@@ -321,7 +352,6 @@ static void initialiseFunctions(Module* M) {
   }
 }
 
-#include <iostream>
 
 static bool removePotentialNullCheck(BasicBlock* Cur, Value* Obj) {
   BasicBlock* BB = Cur->getUniquePredecessor();
@@ -353,8 +383,29 @@ bool LowerMagic::runOnFunction(Function& F) {
   const llvm::Type* pointerSizeType = 
     globalModule->getPointerSize() == llvm::Module::Pointer32 ?
       Type::getInt32Ty(Context) : Type::getInt64Ty(Context);
-  
+ 
+   Constant* constantPtrLogSize = 
+    ConstantInt::get(Type::getInt32Ty(Context), sizeof(void*) == 8 ? 3 : 2);
+
+  const llvm::Type* ptrType = PointerType::getUnqual(Type::getInt8Ty(Context));
+  const llvm::Type* ptrSizeType = PointerType::getUnqual(pointerSizeType);
+
+
   initialiseFunctions(globalModule);
+
+  Function* MMalloc = globalModule->getFunction("AllocateMagicArray");
+  if (!MMalloc) {
+    std::vector<const Type*>FuncTyArgs;
+    FuncTyArgs.push_back(Type::getInt32Ty(Context));
+    FuncTyArgs.push_back(ptrType);
+    FunctionType* FuncTy = FunctionType::get(ptrType, FuncTyArgs, false);
+
+
+    MMalloc = Function::Create(FuncTy, GlobalValue::ExternalLinkage, "AllocateMagicArray",
+                               globalModule);
+  }
+
+
   if (!CASPtr || CASPtr->getParent() != globalModule) {
     if (pointerSizeType == Type::getInt32Ty(Context)) {
       CASPtr = globalModule->getFunction("llvm.atomic.cmp.swap.i32.p0i32");
@@ -1115,6 +1166,85 @@ bool LowerMagic::runOnFunction(Function& F) {
             } else {
               fprintf(stderr, "Implement me %s\n", name);
               abort();
+            }
+          } else if (
+              (len > strlen(AddressArrayClass) && 
+               !memcmp(AddressArrayClass, name, strlen(AddressArrayClass))) ||
+              (len > strlen(OffsetArrayClass) && 
+               !memcmp(OffsetArrayClass, name, strlen(OffsetArrayClass))) ||
+              (len > strlen(WordArrayClass) && 
+               !memcmp(WordArrayClass, name, strlen(WordArrayClass))) ||
+              (len > strlen(ObjectReferenceArrayClass) && 
+               !memcmp(ObjectReferenceArrayClass, name, strlen(ObjectReferenceArrayClass))) ||
+              (len > strlen(ExtentArrayClass) && 
+               !memcmp(ExtentArrayClass, name, strlen(ExtentArrayClass)))) {
+            Changed = true;
+            
+            if (!strcmp(FCur->getName().data(), AddressArrayCreateMethod) ||
+                !strcmp(FCur->getName().data(), OffsetArrayCreateMethod) ||
+                !strcmp(FCur->getName().data(), WordArrayCreateMethod) ||
+                !strcmp(FCur->getName().data(), ExtentArrayCreateMethod) ||
+                !strcmp(FCur->getName().data(), ObjectReferenceArrayCreateMethod)) {
+              Value* Val = Call.getArgument(0);
+              ConstantInt* One = ConstantInt::get(Type::getInt32Ty(Context), (uint64_t)1);
+              Value* Length = BinaryOperator::CreateAdd(Val, One, "", CI);
+              Length = BinaryOperator::CreateShl(Length, constantPtrLogSize, "", CI);
+              Val = new IntToPtrInst(Val, ptrType, "", CI);
+              Value* args[2] = { Length, Val };
+              Value* res = CallInst::Create(MMalloc, args, args + 2, "", CI);
+              res = new BitCastInst(res, FCur->getReturnType(), "", CI);
+              CI->replaceAllUsesWith(res);
+              CI->eraseFromParent();
+
+            } else if (!strcmp(FCur->getName().data(), AddressArrayGetMethod) ||
+                !strcmp(FCur->getName().data(), OffsetArrayGetMethod) ||
+                !strcmp(FCur->getName().data(), WordArrayGetMethod) ||
+                !strcmp(FCur->getName().data(), ExtentArrayGetMethod) ||
+                !strcmp(FCur->getName().data(), ObjectReferenceArrayGetMethod)) {
+              
+              Value* Array = Call.getArgument(0);
+              Value* Index = Call.getArgument(1);
+              ConstantInt* One = ConstantInt::get(Type::getInt32Ty(Context), (uint64_t)1);
+              Index = BinaryOperator::CreateAdd(Index, One, "", CI);
+              Array = new BitCastInst(Array, ptrSizeType, "", CI);
+              Value* res = GetElementPtrInst::Create(Array, Index, "", CI);
+              res = new LoadInst(res, "", CI);
+              res = new IntToPtrInst(res, FCur->getReturnType(), "", CI);
+              CI->replaceAllUsesWith(res);
+              CI->eraseFromParent(); 
+            
+            } else if (!strcmp(FCur->getName().data(), AddressArraySetMethod) ||
+                !strcmp(FCur->getName().data(), OffsetArraySetMethod) ||
+                !strcmp(FCur->getName().data(), WordArraySetMethod) ||
+                !strcmp(FCur->getName().data(), ExtentArraySetMethod) ||
+                !strcmp(FCur->getName().data(), ObjectReferenceArraySetMethod)) {
+              
+              Value* Array = Call.getArgument(0);
+              Value* Index = Call.getArgument(1);
+              Value* Element = Call.getArgument(2);
+              ConstantInt* One = ConstantInt::get(Type::getInt32Ty(Context), (uint64_t)1);
+              
+              Index = BinaryOperator::CreateAdd(Index, One, "", CI);
+              Array = new BitCastInst(Array, ptrSizeType, "", CI);
+              Value* ptr = GetElementPtrInst::Create(Array, Index, "", CI);
+              Element = new PtrToIntInst(Element, pointerSizeType, "", CI);
+              new StoreInst(Element, ptr, CI);
+              CI->eraseFromParent(); 
+            
+            } else if (!strcmp(FCur->getName().data(), AddressArrayLengthMethod) ||
+                !strcmp(FCur->getName().data(), OffsetArrayLengthMethod) ||
+                !strcmp(FCur->getName().data(), WordArrayLengthMethod) ||
+                !strcmp(FCur->getName().data(), ExtentArrayLengthMethod) ||
+                !strcmp(FCur->getName().data(), ObjectReferenceArrayLengthMethod)) {
+              
+              Value* Array = Call.getArgument(0);
+              Array = new BitCastInst(Array, ptrSizeType, "", CI);
+              Value* Length = new LoadInst(Array, "", CI);
+              if (Length->getType() != Type::getInt32Ty(Context)) {
+                Length = new TruncInst(Length, Type::getInt32Ty(Context), "", CI);
+              }
+              CI->replaceAllUsesWith(Length);
+              CI->eraseFromParent(); 
             }
           }
         }

@@ -146,7 +146,7 @@ JavaObject* JavaJITCompiler::getFinalObject(llvm::Value* obj) {
   return 0;
 }
 
-Constant* JavaJITCompiler::getFinalObject(JavaObject* obj) {
+Constant* JavaJITCompiler::getFinalObject(JavaObject* obj, CommonClass* cl) {
   Constant* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                   uint64(obj));
   return ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);

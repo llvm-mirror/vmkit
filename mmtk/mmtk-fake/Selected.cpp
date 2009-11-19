@@ -42,3 +42,9 @@ extern "C" void addFinalizationCandidate(gc* obj) {
   mvm::Thread::get()->MyVM->addFinalizationCandidate(obj);
 }
 
+extern "C" void* AllocateMagicArray(int32_t sz, void* length) {
+  gc* res = (gc*)malloc(sz);
+  memset(res, 0, sz);
+  ((void**)res)[0] = length;
+  return res;
+}

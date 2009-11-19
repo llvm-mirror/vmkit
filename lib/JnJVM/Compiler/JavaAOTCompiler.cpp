@@ -256,9 +256,52 @@ JavaObject* JavaAOTCompiler::getFinalObject(llvm::Value* obj) {
   return 0;
 }
 
+Constant* JavaAOTCompiler::HandleMagic(JavaObject* obj, CommonClass* objCl) {
+
+  static const UTF8* AddressArray = objCl->classLoader->asciizConstructUTF8("org/vmmagic/unboxed/AddressArray");
+  static const UTF8* WordArray = objCl->classLoader->asciizConstructUTF8("org/vmmagic/unboxed/WordArray");
+  static const UTF8* ExtentArray = objCl->classLoader->asciizConstructUTF8("org/vmmagic/unboxed/ExtentArray");
+  static const UTF8* ObjectReferenceArray = objCl->classLoader->asciizConstructUTF8("org/vmmagic/unboxed/ObjectReferenceArray");
+  static const UTF8* OffsetArray = objCl->classLoader->asciizConstructUTF8("org/vmmagic/unboxed/OffsetArray");
+  const UTF8* name = objCl->name;
+
+  if (name->equals(AddressArray) || name->equals(WordArray) ||
+      name->equals(ExtentArray) || name->equals(ObjectReferenceArray) || 
+      name->equals(OffsetArray)) {
+    
+    intptr_t* realObj = (intptr_t*)obj;
+    intptr_t size = realObj[0];
+
+    const ArrayType* ATy = ArrayType::get(JnjvmModule::JavaObjectType,
+                                          size + 1);
+  
+    std::vector<Constant*> Vals;
+    for (sint32 i = 0; i < size + 1; ++i) {
+      Constant* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+                                      uint64_t(realObj[i]));
+      CI = ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);
+      Vals.push_back(CI);
+    }
+
+    Constant* CA = ConstantArray::get(ATy, Vals);
+  
+    GlobalVariable* varGV = new GlobalVariable(*getLLVMModule(), CA->getType(),
+                                               false,
+                                               GlobalValue::InternalLinkage,
+                                               CA, "");
+ 
+    return ConstantExpr::getBitCast(varGV, JnjvmModule::JavaObjectType);
+
+  } else {
+    Constant* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+                                    uint64_t(obj));
+    CI = ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);
+    return CI;
+  }
+}
 
 
-Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj) {
+Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
   llvm::GlobalVariable* varGV = 0;
   final_object_iterator End = finalObjects.end();
   final_object_iterator I = finalObjects.find(obj);
@@ -320,9 +363,7 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj) {
       varGV->setInitializer(CreateConstantFromJavaObject(obj));
       return C;
     } else {
-      Constant* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
-                                      uint64_t(obj));
-      CI = ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);
+      Constant* CI = HandleMagic(obj, objCl);
       finalObjects.insert(std::make_pair(obj, CI));
       return CI;
     }
@@ -387,7 +428,9 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
         } else {
           JavaObject* val = field.getObjectField(obj);
           if (val) {
-            Constant* CO = getFinalObject(val);
+            JnjvmClassLoader* JCL = cl->classLoader;
+            CommonClass* FieldCl = field.getSignature()->assocClass(JCL);
+            Constant* CO = getFinalObject(val, FieldCl);
             Elts.push_back(CO);
           } else {
             Elts.push_back(Constant::getNullValue(Ty));
@@ -657,7 +700,9 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
         } else {
           JavaObject* val = field.getObjectField(obj);
           if (val) {
-            Constant* C = getFinalObject(val);
+            JnjvmClassLoader* JCL = cl->classLoader;
+            CommonClass* FieldCl = field.getSignature()->assocClass(JCL);
+            Constant* C = getFinalObject(val, FieldCl);
             TempElts.push_back(C);
           } else {
             const llvm::Type* Ty = JnjvmModule::JavaObjectType;
@@ -1298,7 +1343,8 @@ Constant* JavaAOTCompiler::CreateConstantFromObjectArray(const ArrayObject* val)
   std::vector<Constant*> Vals;
   for (sint32 i = 0; i < val->size; ++i) {
     if (val->elements[i]) {
-      Vals.push_back(getFinalObject(val->elements[i]));
+      Vals.push_back(getFinalObject(val->elements[i],
+                                val->getClass()->asArrayClass()->baseClass()));
     } else {
       Vals.push_back(Constant::getNullValue(JnjvmModule::JavaObjectType));
     }

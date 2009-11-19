@@ -78,6 +78,7 @@ bool LowerJavaRT::runOnModule(Module& M) {
  
   // Replace gcmalloc with the allocator of MMTk objects in VMKit
   Function* F = M.getFunction("gcmalloc");
+  Function* Ma = M.getFunction("AllocateMagicArray");
 
   Function* NewFunction = 
     Function::Create(F->getFunctionType(), GlobalValue::ExternalLinkage,
@@ -85,6 +86,9 @@ bool LowerJavaRT::runOnModule(Module& M) {
 
   F->replaceAllUsesWith(NewFunction);
   F->eraseFromParent();
+  
+  Ma->replaceAllUsesWith(NewFunction);
+  Ma->eraseFromParent();
 
   // Declare two global variables for allocating a MutatorContext object
   // and a CollectorContext object.
