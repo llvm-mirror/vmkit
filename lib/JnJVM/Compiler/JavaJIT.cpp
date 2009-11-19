@@ -2299,7 +2299,6 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   
   BasicBlock* log_label_entry = createBasicBlock("log_entry");
   BasicBlock* log_label_bb = createBasicBlock("log_bb");
-  BasicBlock* log_label_bb2 = createBasicBlock("log_bb2");
     
   // Block entry (label_entry)
   CallInst* ptr_16 = CallInst::Create(module->GetVTFunction, ptr_src, "",
@@ -2370,8 +2369,6 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
    
 
   
-  PHINode* node = PHINode::Create(Type::getInt32Ty(getGlobalContext()), "",
-                                  log_label_bb2);
   // Block entry (label_entry)
   currentBlock = log_label_entry;
   Value* ptr_10_indices[2] = { module->constantZero,
@@ -2396,8 +2393,7 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
                                                     "", log_label_entry);
   ICmpInst* int1_16 = new ICmpInst(*log_label_entry, ICmpInst::ICMP_EQ,
                                    int32_15, zero, "");
-  BranchInst::Create(log_label_bb2, log_label_bb, int1_16, log_label_entry);
-  node->addIncoming(module->constantPtrLogSize, log_label_entry);
+  BranchInst::Create(label_bb2, log_label_bb, int1_16, log_label_entry);
     
   // Block bb (log_label_bb)
   currentBlock = log_label_bb;
@@ -2409,31 +2405,31 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
                                                         ptr_11_indices + 2, "",
                                                         log_label_bb);
   LoadInst* int32_20 = new LoadInst(ptr_18, "", false, log_label_bb);
-  node->addIncoming(int32_20, log_label_bb);
-  
-  BranchInst::Create(log_label_bb2, log_label_bb);
    
-  int32_start = BinaryOperator::CreateShl(int32_start, node, "", log_label_bb2);
-  int32_start2 = BinaryOperator::CreateShl(int32_start2, node, "", log_label_bb2);
-  int32_length = BinaryOperator::CreateShl(int32_length, node, "", log_label_bb2);
+  int32_start = BinaryOperator::CreateShl(int32_start, int32_20, "",
+                                          log_label_bb);
+  int32_start2 = BinaryOperator::CreateShl(int32_start2, int32_20, "",
+                                           log_label_bb);
+  int32_length = BinaryOperator::CreateShl(int32_length, int32_20, "",
+                                           log_label_bb);
 
   ptr_src = new BitCastInst(ptr_src, module->JavaArrayUInt8Type, "",
-                            log_label_bb2);
+                            log_label_bb);
   
   ptr_dst = new BitCastInst(ptr_dst, module->JavaArrayUInt8Type, "",
-                            log_label_bb2);
+                            log_label_bb);
   
   Value* indexes[3] = { module->constantZero,
                         module->JavaArrayElementsOffsetConstant,
                         int32_start };
   Instruction* ptr_42 = GetElementPtrInst::Create(ptr_src, indexes, indexes + 3,
-                                                  "", log_label_bb2);
+                                                  "", log_label_bb);
   
   indexes[2] = int32_start2;
   Instruction* ptr_44 = GetElementPtrInst::Create(ptr_dst, indexes, indexes + 3,
-                                                  "", log_label_bb2);
+                                                  "", log_label_bb);
  
-  BranchInst::Create(label_bb11, log_label_bb2);
+  BranchInst::Create(label_bb11, log_label_bb);
 
 
   // Block bb11 (label_bb11)
@@ -2443,12 +2439,12 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
                                          "i.016", label_bb11);
   int32_i_016->reserveOperandSpace(2);
   int32_i_016->addIncoming(fwdref_39, label_bb11);
-  int32_i_016->addIncoming(module->constantZero, log_label_bb2);
+  int32_i_016->addIncoming(module->constantZero, log_label_bb);
   
   PHINode* phi_dst_ptr = PHINode::Create(ptr_44->getType(), "", label_bb11);
   PHINode* phi_src_ptr = PHINode::Create(ptr_44->getType(), "", label_bb11);
-  phi_dst_ptr->addIncoming(ptr_44, log_label_bb2);
-  phi_src_ptr->addIncoming(ptr_42, log_label_bb2);
+  phi_dst_ptr->addIncoming(ptr_44, log_label_bb);
+  phi_src_ptr->addIncoming(ptr_42, log_label_bb);
     
   LoadInst* ptr_43 = new LoadInst(phi_src_ptr, "", false, label_bb11);
   new StoreInst(ptr_43, phi_dst_ptr, false, label_bb11);
