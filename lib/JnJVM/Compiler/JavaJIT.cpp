@@ -788,7 +788,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   currentBlock = curBB;
   endExceptionBlock = endExBlock;
 
-  opcodeInfos = (Opinfo*)alloca(codeLen * sizeof(Opinfo));
+  opcodeInfos = new Opinfo[codeLen];
   memset(opcodeInfos, 0, codeLen * sizeof(Opinfo));
   for (uint32 i = 0; i < codeLen; ++i) {
     opcodeInfos[i].exceptionBlock = endExBlock;
@@ -936,6 +936,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   removeUnusedObjects(objectStack, module, TheCompiler->useCooperativeGC());
 
 
+  delete[] opcodeInfos;
   return endNode;
     
 }
@@ -974,7 +975,7 @@ llvm::Function* JavaJIT::javaCompile() {
   endExceptionBlock = createBasicBlock("endExceptionBlock");
   unifiedUnreachable = createBasicBlock("unifiedUnreachable"); 
 
-  opcodeInfos = (Opinfo*)alloca(codeLen * sizeof(Opinfo));
+  opcodeInfos = new Opinfo[codeLen];
   memset(opcodeInfos, 0, codeLen * sizeof(Opinfo));
   for (uint32 i = 0; i < codeLen; ++i) {
     opcodeInfos[i].exceptionBlock = endExceptionBlock;
@@ -1267,7 +1268,9 @@ llvm::Function* JavaJIT::javaCompile() {
   
   removeUnusedObjects(objectLocals, module, TheCompiler->useCooperativeGC());
   removeUnusedObjects(objectStack, module, TheCompiler->useCooperativeGC());
-  
+ 
+  delete[] opcodeInfos;
+
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "--> end compiling %s.%s\n",
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
