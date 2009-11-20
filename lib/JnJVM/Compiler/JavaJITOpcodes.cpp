@@ -847,13 +847,13 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         CommonClass* fourCl = topTypeInfo();
         Value* four = pop();
 
-        push(two, twoCl);
-        push(one, oneCl);
+        push(two, false, twoCl);
+        push(one, false, oneCl);
         
-        push(four, fourCl);
-        push(three, threeCl);
-        push(two, twoCl);
-        push(one, oneCl);
+        push(four, false, fourCl);
+        push(three, false, threeCl);
+        push(two, false, twoCl);
+        push(one, false, oneCl);
 
         break;
       }
