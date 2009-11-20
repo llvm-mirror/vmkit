@@ -11,6 +11,7 @@
 #define MVM_THREAD_H
 
 #include <cassert>
+#include <cstdio>
 #include <stdlib.h>
 
 #include "types.h"
