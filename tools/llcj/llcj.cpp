@@ -221,6 +221,8 @@ int main(int argc, char **argv) {
     gccArgv[gccArgc++] = "-lz";
     gccArgv[gccArgc++] = "-lJnJVM";
     gccArgv[gccArgc++] = "-lClasspath";
+    gccArgv[gccArgc++] = "-lJnJVM";
+    gccArgv[gccArgc++] = "-lClasspath";
     if (withJIT) {
       gccArgv[gccArgc++] = "-lJnJVMCompiler";
     }
