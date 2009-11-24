@@ -322,7 +322,7 @@ void* JavaMethod::compiledPtr() {
 
 void JavaStaticMethodInfo::print(void* ip, void* addr) {
   void* new_ip = NULL;
-  new_ip = mvm::MethodInfo::isStub(ip, addr);
+  if (ip) new_ip = mvm::MethodInfo::isStub(ip, addr);
   fprintf(stderr, "; %p in %s.%s", new_ip,
           UTF8Buffer(meth->classDef->name).cString(),
           UTF8Buffer(meth->name).cString());
