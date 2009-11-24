@@ -1,0 +1,55 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" href="http://llvm.org/llvm.css" type="text/css" media="screen" />
+  <title>I-JVM: a Java Virtual Machine for Component Isolation in OSGi</title>
+</head>
+<body>
+
+<div class="pub_title">
+  I-JVM: a Java Virtual Machine for Component Isolation in OSGi
+</div>
+<div class="pub_author">
+  Nicolas Geoffray, Gael Thomas, Gilles Muller, Pierre Parrend, Stephane Frenot, Bertil Folliot
+</div>
+
+<h2>Abstract:</h2>
+<blockquote>
+The OSGi framework is a Java-based, centralized, component oriented
+platform. It is being widely adopted as an execution environment for 
+the development of extensible applications. However, current Java
+Virtual Machines are unable to isolate components from each other.
+For instance, a malicious component can freeze the complete platform
+by allocating too much memory or alter the behavior of other components by
+modifying shared variables.
+
+This paper presents I-JVM, a Java Virtual Machine that provides a
+lightweight approach to isolation while preserving compatibility with
+legacy OSGi applications. Our evaluation of I-JVM shows that it solves
+the 8 known OSGi vulnerabilities that are due to the Java Virtual
+Machine and that the overhead of I-JVM compared to the JVM on which
+it is based is below 20%.
+</blockquote>
+
+<h2>Bibtex:</h2>
+<pre>
+@inproceedings{geoffray09ijvm,
+  author = {N. Geoffray and G. Thomas and G. Muller and P. Parrend and S. Fr\'enot and B. Folliot},
+  title = {{I-JVM: a Java Virtual Machine for Component Isolation in OSGi}},
+  booktitle = {International Conference on Dependable Systems and Networks (DSN 2009)},
+  publisher = {IEEE Computer Society},
+  pdf = {files/ijvm.pdf},
+  year = {2009},
+  month = {June},
+  address = {Estoril, Portugal}
+}
+</pre>
+
+<h2>Download:</h2>
+<ul>
+  <li><a href="http://pagesperso-systeme.lip6.fr/Nicolas.Geoffray/files/ijvm.pdf">I-JVM: a Java Virtual Machine for Component Isolation in OSGi</a> (PDF)</li>
+</ul>
+
+</body>
+</html>

@@ -17,37 +17,34 @@
   
   <p>The VMKit project is an implementation of a JVM and CLI virtual machine
   (.Net is an implementation of the CLI). It translates Java bytecode and
-  MSIL in the LLVM IR and uses the LLVM framework for optimizations and just
-  in time compilation. You can <a href="get_started.html">get and build</a> the
+  MSIL in the LLVM IR and uses the <a href="http://llvm.org">LLVM framework</a>
+  for optimizations and compilation. For garbage collection, it uses
+  <a href="http://jikesrvm.org/MMTk">MMTk</a>.
+  You can <a href="get_started.html">get and build</a> the
   source today.</p>
   
   <!--=====================================================================-->
-  <h2 id="goals">Features and Goals</h2>
+  <h2 id="goals">Features</h2>
   <!--=====================================================================-->
   
-  <p>Some of the goals for the project include the following:</p>
+  <p>VMkit provides the following features:</p>
   
-  <p><b>End-User Features</b>:</p>
-
+  <p><b>End-User Features</a></b>:</p>
+  
   <ul>
-  <li>Virtual machine interoperability</li>
-  <li>Experiment virtual machine technologies with a small code base</li>
-  <li>Very fast on CPU-intensive applications</li>
+  <li>Runs any Java and .Net applications on MacOSX and Unix-based systems.</li>
+  <li>Precise garbage collection.</li>
+  <li>Just-in-Time and Ahead-of-Time compilation.</li>
+  <li>Portable on many architectures (x86, x64, ppc32, ppc64, arm).</li>
   </ul>
 
-  <p><b>Utility and Applications</a></b>:</p>
+  <p><b>Developer Features</a></b>:</p>
 
   <ul>
-  <li>Infrastructure for virtual machine development</li>
-  <li>Use the LLVM 'BSD' License</li>
-  </ul>
-
-  <p><b>Internal Design and Implementation</b>:</p>
-
-  <ul>
-  <li>Real-world, production quality virtual machines (the JVM runs Tomcat)</li>
-  <li>A simple and hackable code base</li>
-  <li>Execute virtual machines in the same environment</li>
+    <li>Relatively small code base (~ 20k loc per VM)</li>
+    <li>Infrastructure for running multiple VM/applications in a single
+        process</li>
+    <li>Infrastructure for virtual machine research and development</li>
   </ul>
 
   <!--=====================================================================-->
@@ -61,28 +58,23 @@
      able to execute these VMs. VMKit is a proof of concept implementation
      towards that direction.</p>
      
+  <p>The PhD thesis that initiated VMKit:
+  <ul>
+    <li><a href="publications/thesis.html">Nicolas Geoffray's PhD thesis</a>
+    </li>
+  </ul>
+     
   <p>An introduction to VMKit can be found in the following video lectures:
   <ul>
+    <li><a href="http://llvm.org/devmtg/2009-10/Geoffray_GarbageCollectionVMKit-700kbps.mov">
+        Presentation of VMKit/MMTk at the 2009 LLVM Developer's Meeting</a>
+    </li>
     <li><a href="http://llvm.org/devmtg/2008-08/Geoffray_VMKitProject_Lo.3gp">
         Presentation of VMKit at the 2008 LLVM Developer's Meeting</a>
     </li>
-  </ul>
-  
+  </ul> 
   </p>
      
-  <p>A port of VMKit to use the Boehm GC can be found in the following paper:
-  <ul>
-    <li><a href="ladyvm.html">LadyVM as a port of VMKit to Boehm's GC</a>
-    </li>
-  </ul>
-  
-  <p>For an example of what kind of experimental technologies we can
-     implement in a timely fashion with VMKit:</p>
-  <ul>
-    <li><a href="osgi.html">Isolation in OSGi with VMKit</a>
-    </li>
-  </ul>
-  
   <!--=====================================================================-->
   <h2>Current Status</h2>
   <!--=====================================================================-->
@@ -93,7 +85,8 @@
      ready.</p>
 
   <p>VMKit currently has a decent implementation of the JVM. It executes
-     Apache projects (e.g. OSGi Felix and Tomcat) and the SPECJVM98 benchmark.
+     large projects (e.g. OSGi Felix, Tomcat, Eclipse) and the
+     <a href="http://dacapobench.org">DaCapo benchmarks</a>.
      The CLI implementation is still in its early stages, but can execute
      simple applications.</p>
      
@@ -113,7 +106,7 @@
   
   <p>Once you've done that, please consider <a href="get_involved.html">getting
      involved in the VMKit community</a>. Currently, VMKit is tightly
-     integrated into the llvm community. You can sign up for the llvm mailing
+     integrated into the LLVM community. You can sign up for the LLVM mailing
      list to ask and learn about how the project works.</p>
 </div>
 </body>

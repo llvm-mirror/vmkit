@@ -9,6 +9,7 @@
     <a href="/get_started.html">Get&nbsp;Started</a>
     <a href="/get_involved.html">Get&nbsp;Involved</a>
     <a href="/OpenProjects.html">Open&nbsp;Projects</a>
+    <a href="/pubs.html">Publications</a>
     <a href="/releases/index.html">Releases</a>
   </div>
   
@@ -17,12 +18,12 @@
     <a href="http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev">llvm-dev</a>
     <a href="http://lists.cs.uiuc.edu/mailman/listinfo/vmkit-commits">vmkit-commits</a>
     <a href="http://llvm.org/bugs/">Bug Reports</a>
-    <a href="http://llvm.org/svn/llvm-project/vmkit/trunk/">Browse Source</a>
+    <a href="http://llvm.org/viewvc/llvm-project/vmkit/trunk/">Browse Source</a>
   </div>
   
   <div class="submenu">
     <label>Events</label>
-    <a href="http://llvm.org/devmtg/">August 1, 2008 - LLVM/Clang Developer Meeting</a>
+    <a href="http://llvm.org/devmtg/">LLVM/Clang Developer Meetings</a>
   </div>
 
 </div>

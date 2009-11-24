@@ -1,6 +1,8 @@
+html { margin: 0px; } body { margin: 8px; }
+
 html, body {
-  padding:0px;	
-  font-size:12px; font-family:"Lucida Grande", "Lucida Sans Unicode", Arial, Verdana, Helvetica, sans-serif; background-color: #fff; color: #222;
+  padding:0px;
+  font-size:small; font-family:"Lucida Grande", "Lucida Sans Unicode", Arial, Verdana, Helvetica, sans-serif; background-color: #fff; color: #222;
   line-height:1.5;
 }
 
@@ -16,5 +18,10 @@ ul { padding-left:1.5em; }
 IMG.img_slide {
     display: block;
     margin-left: auto;
-    margin-right: auto 
+    margin-right: auto
 }
+
+.itemTitle { color:#2d58b7 }
+
+/* Tables */
+tr { vertical-align:top }
