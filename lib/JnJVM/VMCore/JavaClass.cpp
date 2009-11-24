@@ -934,9 +934,7 @@ void Class::resolveClass() {
   
   if (isErroneous()) {
     JavaThread* th = JavaThread::get();
-    JavaObject* exc = th->getJVM()->CreateLinkageError("");
-    th->throwException(exc);
-
+    th->getJVM()->noClassDefFoundError(name);
   }
   
   assert(virtualVT && "No virtual VT after resolution");
