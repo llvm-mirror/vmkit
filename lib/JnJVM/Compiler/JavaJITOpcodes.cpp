@@ -138,6 +138,14 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
     
     if (opinfo->newBlock) {
       if (currentBlock->getTerminator() == 0) {
+        // Load the exception object if we have branched to a handler.
+        if (opinfo->handler) {
+          Instruction* I = opinfo->newBlock->begin();
+          PHINode * node = dyn_cast<PHINode>(I);
+          assert(node && "Handler marlformed");
+          Value* obj = pop();
+          node->addIncoming(obj, currentBlock);
+        }
         branch(*opinfo, currentBlock);
       }
       
