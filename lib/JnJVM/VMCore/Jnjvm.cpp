@@ -1399,11 +1399,16 @@ void Jnjvm::internalRemoveMethods(JnjvmClassLoader* loader, mvm::FunctionMap& Ma
   std::map<void*, mvm::MethodInfo*>::iterator temp;
   for (std::map<void*, mvm::MethodInfo*>::iterator i = Map.Functions.begin(), 
        e = Map.Functions.end(); i != e;) {
-    JavaMethod* meth = (JavaMethod*)i->second->getMetaInfo();
-    if (meth->classDef->classLoader == loader) {
-      temp = i;
-      ++i;
-      Map.Functions.erase(temp);
+    mvm::MethodInfo* MI = i->second;
+    if (MI->MethodType == 1) {
+      JavaMethod* meth = (JavaMethod*)i->second->getMetaInfo();
+      if (meth->classDef->classLoader == loader) {
+        temp = i;
+        ++i;
+        Map.Functions.erase(temp);
+      } else {
+        ++i;
+      }
     } else {
       ++i;
     }
