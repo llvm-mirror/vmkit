@@ -1728,11 +1728,11 @@ void JavaJIT::invokeStatic(uint16 index) {
     
     Value* func = 0;
     if (meth) {
-      if (meth == upcalls->SystemArraycopy ||
+      /*if (meth == upcalls->SystemArraycopy ||
           meth == upcalls->VMSystemArraycopy) {
         lowerArraycopy(args);
         return;
-      }
+      }*/
       func = TheCompiler->getMethod(meth);
     } else {
       func = TheCompiler->addCallback(compilingClass, index, signature, true);
@@ -2299,6 +2299,8 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   BasicBlock* label_bb12_preheader = createBasicBlock("bb12.preheader");
   BasicBlock* label_bb7 = createBasicBlock("bb7");
   BasicBlock* label_bb11 = createBasicBlock("bb11");
+  BasicBlock* label_memmove = createBasicBlock("memmove");
+  BasicBlock* label_backward = createBasicBlock("backward");
   BasicBlock* label_return = createBasicBlock("return");
   
   BasicBlock* log_label_entry = createBasicBlock("log_entry");
@@ -2433,9 +2435,48 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   Instruction* ptr_44 = GetElementPtrInst::Create(ptr_dst, indexes, indexes + 3,
                                                   "", log_label_bb);
  
-  BranchInst::Create(label_bb11, log_label_bb);
+  BranchInst::Create(label_memmove, log_label_bb);
 
+  // Block memmove
+  currentBlock = label_memmove;
+  Value* src_int = new PtrToIntInst(ptr_42, module->pointerSizeType, "",
+                                    currentBlock);
+  
+  Value* dst_int = new PtrToIntInst(ptr_44, module->pointerSizeType, "",
+                                    currentBlock);
 
+  cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_ULT, dst_int, src_int, "");
+
+  Value* increment = SelectInst::Create(cmp, module->constantOne,
+                                        module->constantMinusOne, "",
+                                        currentBlock);
+  BranchInst::Create(label_bb11, label_backward, cmp, currentBlock);
+
+  PHINode* phi_dst_ptr = PHINode::Create(ptr_44->getType(), "", label_bb11);
+  PHINode* phi_src_ptr = PHINode::Create(ptr_44->getType(), "", label_bb11);
+  phi_dst_ptr->addIncoming(ptr_44, currentBlock);
+  phi_src_ptr->addIncoming(ptr_42, currentBlock);
+ 
+  // Block backward
+  currentBlock = label_backward;
+
+  ptr_42 = GetElementPtrInst::Create(ptr_42, int32_length, "",
+                                     currentBlock);
+  
+  ptr_44 = GetElementPtrInst::Create(ptr_44, int32_length, "",
+                                     currentBlock);
+  
+  ptr_42 = GetElementPtrInst::Create(ptr_42, module->constantMinusOne, "",
+                                     currentBlock);
+  
+  ptr_44 = GetElementPtrInst::Create(ptr_44, module->constantMinusOne, "",
+                                     currentBlock);
+  
+  phi_dst_ptr->addIncoming(ptr_44, currentBlock);
+  phi_src_ptr->addIncoming(ptr_42, currentBlock);
+
+  BranchInst::Create(label_bb11, currentBlock);
+  
   // Block bb11 (label_bb11)
   currentBlock = label_bb11;
   Argument* fwdref_39 = new Argument(Type::getInt32Ty(getGlobalContext()));
@@ -2444,20 +2485,15 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   int32_i_016->reserveOperandSpace(2);
   int32_i_016->addIncoming(fwdref_39, label_bb11);
   int32_i_016->addIncoming(module->constantZero, log_label_bb);
-  
-  PHINode* phi_dst_ptr = PHINode::Create(ptr_44->getType(), "", label_bb11);
-  PHINode* phi_src_ptr = PHINode::Create(ptr_44->getType(), "", label_bb11);
-  phi_dst_ptr->addIncoming(ptr_44, log_label_bb);
-  phi_src_ptr->addIncoming(ptr_42, log_label_bb);
-    
+   
   LoadInst* ptr_43 = new LoadInst(phi_src_ptr, "", false, label_bb11);
   new StoreInst(ptr_43, phi_dst_ptr, false, label_bb11);
 
 
-  ptr_42 = GetElementPtrInst::Create(phi_src_ptr, module->constantOne, "",
+  ptr_42 = GetElementPtrInst::Create(phi_src_ptr, increment, "",
                                      label_bb11);
   
-  ptr_44 = GetElementPtrInst::Create(phi_dst_ptr, module->constantOne, "",
+  ptr_44 = GetElementPtrInst::Create(phi_dst_ptr, increment, "",
                                      label_bb11);
   phi_dst_ptr->addIncoming(ptr_44, label_bb11);
   phi_src_ptr->addIncoming(ptr_42, label_bb11);
