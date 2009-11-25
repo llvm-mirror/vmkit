@@ -2,7 +2,7 @@ html { margin: 0px; } body { margin: 8px; }
 
 html, body {
   padding:0px;
-  font-size:small; font-family:"Lucida Grande", "Lucida Sans Unicode", Arial, Verdana, Helvetica, sans-serif; background-color: #fff; color: #222;
+  font-size:14px; font-family:"Lucida Grande", "Lucida Sans Unicode", Arial, Verdana, Helvetica, sans-serif; background-color: #fff; color: #222;
   line-height:1.5;
 }
 

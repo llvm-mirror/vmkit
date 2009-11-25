@@ -2,6 +2,14 @@
 /* page layout */
 /***************/
 
+html,body {
+    padding:0px;  
+    font-size:14px; font-family:"Lucida Grande", "Lucida Sans Unicode", Arial, Verdana, Helvetica, sans-serif; background-color: #fff; color: #222;
+    line-height:1.5;
+    margin-left: 10px;
+}
+
+
 [id=menu] {
 	position:fixed;
 	width:25ex;
