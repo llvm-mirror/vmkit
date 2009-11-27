@@ -17,6 +17,7 @@
 #include <signal.h>
 #include <cstdio>
 #include <ctime>
+#include <errno.h>
 #include <pthread.h>
 #include <sys/mman.h>
 #include <sched.h>
@@ -133,6 +134,13 @@ uintptr_t Thread::baseAddr = 0;
 #define STACK_SIZE 0x100000
 #define NR_THREADS 255
 
+#if (__WORDSIZE == 64)
+#define START_ADDR 0x110000000
+#define END_ADDR 0x170000000
+#else
+#define START_ADDR 0x110000000
+#define END_ADDR 0x70000000
+#endif
 
 /// StackThreadManager - This class allocates all stacks for threads. Because
 /// we want fast access to thread local data, and can not rely on platform
@@ -154,11 +162,11 @@ public:
 
   StackThreadManager() {
     baseAddr = 0;
-    uintptr_t ptr = 0x10000000;
+    uintptr_t ptr = START_ADDR;
 
     // Do an mmap at a fixed address. If the mmap fails for a given address
     // use the next one.
-    while (!baseAddr && ptr != 0x70000000) {
+    while (!baseAddr && ptr != END_ADDR) {
       ptr = ptr + 0x10000000;
 #if defined (__MACH__)
       uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
@@ -173,7 +181,7 @@ public:
       fprintf(stderr, "Can not allocate thread memory\n");
       abort();
     }
-    
+ 
     // Protect the page after the first page. The first page contains thread
     // specific data. The second page has no access rights to catch stack
     // overflows.
