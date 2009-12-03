@@ -138,7 +138,7 @@ uintptr_t Thread::baseAddr = 0;
 #define START_ADDR 0x110000000
 #define END_ADDR 0x170000000
 #else
-#define START_ADDR 0x110000000
+#define START_ADDR 0x10000000
 #define END_ADDR 0x70000000
 #endif
 
