@@ -18,6 +18,8 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <cstdio>
+
 using namespace llvm;
 
 namespace vmmagic {
