@@ -57,6 +57,13 @@ public:
   }
 
 	void print(PrintBuffer *pb) const;
+
+	static uint32_t readerHasher(const uint16* buf, sint32 size);
+	
+	uint32_t hash() const {
+		return readerHasher(elements, size);
+	}
+
 };
 
 

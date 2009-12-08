@@ -224,6 +224,17 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
+        } else if (V == module->GetIMTFunction) {
+          Changed = true;
+          Value* val = Call.getArgument(0); // get the VT
+          Value* indexes[2] = { module->constantZero,
+                                module->OffsetIMTInVTConstant };
+          Value* IMTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
+                                                    "", CI);
+          Value* IMT = new LoadInst(IMTPtr, "", CI);
+          IMT = new BitCastInst(IMT, CI->getType(), "", CI);
+          CI->replaceAllUsesWith(IMT);
+          CI->eraseFromParent();
         } else if (V == module->GetClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); // get the object

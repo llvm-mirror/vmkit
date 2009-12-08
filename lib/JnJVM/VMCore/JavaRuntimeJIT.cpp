@@ -25,6 +25,7 @@
 
 using namespace jnjvm;
 
+#if 0
 // Throws if the method is not found.
 extern "C" void* jnjvmInterfaceLookup(CacheNode* cache, JavaObject *obj) {
 
@@ -106,6 +107,40 @@ extern "C" void* jnjvmInterfaceLookup(CacheNode* cache, JavaObject *obj) {
   END_NATIVE_EXCEPTION
 
   return res; 
+}
+#endif
+
+extern "C" void* jnjvmInterfaceLookup(UserClass* caller, uint32 index) {
+
+  void* res = 0;
+
+  BEGIN_NATIVE_EXCEPTION(1)
+  
+  UserConstantPool* ctpInfo = caller->getConstantPool();
+  if (ctpInfo->ctpRes[index]) {
+    res = ctpInfo->ctpRes[index];
+  } else {
+    UserCommonClass* cl = 0;
+    const UTF8* utf8 = 0;
+    Signdef* sign = 0;
+  
+    ctpInfo->resolveMethod(index, cl, utf8, sign);
+    assert(cl->isClass() && isInterface(cl->access) && "Wrong type of method");
+    res = cl->asClass()->lookupInterfaceMethodDontThrow(utf8, sign->keyName);
+    
+    assert(res && "Can not found method");
+    ctpInfo->ctpRes[index] = (void*)res;
+  }
+  
+    
+  END_NATIVE_EXCEPTION
+
+  // Since the function is marked readnone, LLVM may move it after the
+  // exception check. Therefore, we trick LLVM to check the return value of the
+  // function.
+  JavaObject* obj = JavaThread::get()->pendingException;
+  if (obj) return (JavaMethod*)obj;
+  return res;
 }
 
 // Throws if the field is not found.

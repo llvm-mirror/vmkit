@@ -1502,8 +1502,10 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   } else {
     Elemts.push_back(Constant::getNullValue(PTy));
   }
-
-  
+    
+  // TODO: IMT
+  Elemts.push_back(Constant::getNullValue(PTy));
+ 
   // methods
   for (uint32 i = JavaVirtualTable::getFirstJavaMethodIndex(); i < size; ++i) {
     JavaMethod* meth = ((JavaMethod**)RealVT)[i];
@@ -1759,6 +1761,9 @@ void JavaAOTCompiler::makeVT(Class* cl) {
 
   if (!cl->super) VT->destructor = 0;
 
+}
+
+void JavaAOTCompiler::makeIMT(Class* cl) {
 }
 
 void JavaAOTCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {

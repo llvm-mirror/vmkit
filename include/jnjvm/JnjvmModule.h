@@ -300,6 +300,7 @@ public:
   llvm::Function* RuntimeDelegateeFunction;
   llvm::Function* ArrayLengthFunction;
   llvm::Function* GetVTFunction;
+  llvm::Function* GetIMTFunction;
   llvm::Function* GetClassFunction;
   llvm::Function* GetVTFromClassFunction;
   llvm::Function* GetVTFromClassArrayFunction;
@@ -343,6 +344,7 @@ public:
   llvm::Constant* OffsetDepthInVTConstant;
   llvm::Constant* OffsetDisplayInVTConstant;
   llvm::Constant* OffsetBaseClassVTInVTConstant;
+  llvm::Constant* OffsetIMTInVTConstant;
   
   llvm::Constant* OffsetBaseClassInArrayClassConstant;
   llvm::Constant* OffsetLogSizeInPrimitiveClassConstant;
@@ -391,6 +393,7 @@ private:
   bool cooperativeGC;
   
   virtual void makeVT(Class* cl) = 0;
+  virtual void makeIMT(Class* cl) = 0;
   
   std::map<llvm::Function*, JavaMethod*> functions;  
   typedef std::map<llvm::Function*, JavaMethod*>::iterator function_iterator;
@@ -543,6 +546,7 @@ public:
   }
 
   virtual void makeVT(Class* cl);
+  virtual void makeIMT(Class* cl);
   
   virtual JavaCompiler* Create(const std::string& ModuleID) {
     return new JavaJITCompiler(ModuleID);
@@ -616,6 +620,7 @@ public:
                                    bool stat);
   
   virtual void makeVT(Class* cl);
+  virtual void makeIMT(Class* cl);
  
   llvm::Constant* HandleMagic(JavaObject* obj, CommonClass* cl);
   virtual llvm::Constant* getFinalObject(JavaObject* obj, CommonClass* cl);

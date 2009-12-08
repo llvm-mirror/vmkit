@@ -199,6 +199,8 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   OffsetDisplayInVTConstant = constantSeven;
   OffsetBaseClassVTInVTConstant =
     ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 17);
+  OffsetIMTInVTConstant =
+    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 18);
   
   OffsetAccessInCommonClassConstant = constantOne;
   IsArrayConstant = ConstantInt::get(Type::getInt16Ty(getGlobalContext()),
@@ -264,6 +266,7 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   GetConstantPoolAtFunction = module->getFunction("getConstantPoolAt");
   ArrayLengthFunction = module->getFunction("arrayLength");
   GetVTFunction = module->getFunction("getVT");
+  GetIMTFunction = module->getFunction("getIMT");
   GetClassFunction = module->getFunction("getClass");
   ClassLookupFunction = module->getFunction("jnjvmClassLookup");
   GetVTFromClassFunction = module->getFunction("getVTFromClass");

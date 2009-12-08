@@ -915,6 +915,11 @@ public:
   ///
   bool needsInitialisationCheck();
 
+  /// fillIMT - Fill the vector with vectors of methods with the same IMT
+  /// index.
+  ///
+  void fillIMT(std::vector<JavaMethod*>* meths);
+
 private:
 
   /// makeVT - Create the virtual table of this class.

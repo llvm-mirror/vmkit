@@ -10,7 +10,9 @@
 #ifndef JNJVM_JAVA_OBJECT_H
 #define JNJVM_JAVA_OBJECT_H
 
+#include "mvm/Allocator.h"
 #include "mvm/Object.h"
+#include "mvm/UTF8.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
@@ -26,6 +28,16 @@ class JavaThread;
 class Jnjvm;
 class Typedef;
 class UserCommonClass;
+
+class InterfaceMethodTable : public mvm::PermanentObject {
+public:
+	static const uint32_t NumIndexes = 29;
+	uintptr_t contents[NumIndexes];
+
+  static uint32_t getIndex(const mvm::UTF8* name, const mvm::UTF8* type) {
+    return (name->hash() + type->hash()) % NumIndexes;
+  }
+};
 
 /// JavaVirtualTable - This class is the virtual table of instances of
 /// Java classes. Besides holding function pointers for virtual calls,
@@ -72,6 +84,10 @@ public:
   ///
   JavaVirtualTable* baseClassVT;
 
+  /// IMT - The interface method table.
+  ///
+  InterfaceMethodTable* IMT;
+
   /// Java methods for the virtual table functions.
   uintptr_t init;
   uintptr_t equals;
@@ -113,13 +129,13 @@ public:
   /// getFirstJavaMethodIndex - Get the word offset of the first Java method.
   ///
   static uint32_t getFirstJavaMethodIndex() {
-    return 18;
+    return 19;
   }
    
   /// getBaseSize - Get the size of the java.lang.Object virtual table.
   ///
   static uint32_t getBaseSize() {
-    return 29;
+    return 30;
   }
   
   /// getNumJavaMethods - Get the number of methods of the java.lang.Object

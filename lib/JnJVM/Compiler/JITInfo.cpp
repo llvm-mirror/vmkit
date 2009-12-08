@@ -84,6 +84,7 @@ const Type* LLVMClassInfo::getVirtualType() {
     virtualSizeConstant = ConstantInt::get(Type::getInt32Ty(context), size);
    
     Mod->makeVT(classDef);
+    Mod->makeIMT(classDef);
   }
 
   return virtualType;

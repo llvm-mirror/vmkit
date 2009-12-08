@@ -772,6 +772,22 @@ void Class::readFields(Reader& reader) {
   }
 }
 
+void Class::fillIMT(std::vector<JavaMethod*>* meths) {
+  for (uint32 i = 0; i < nbInterfaces; ++i) {
+    interfaces[i]->fillIMT(meths);
+  }
+
+  if (super) super->fillIMT(meths);
+
+  if (isInterface()) {
+    for (uint32 i = 0; i < nbVirtualMethods; ++i) {
+      JavaMethod& meth = virtualMethods[i];
+      uint32_t index = InterfaceMethodTable::getIndex(meth.name, meth.type);
+      meths[index].push_back(&meth);
+    }
+  }
+}
+
 void Class::makeVT() {
   
   for (uint32 i = 0; i < nbVirtualMethods; ++i) {
@@ -1377,6 +1393,10 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
     destructor = 0;
     operatorDelete = 0;
     
+    // Set IMT.
+    if (!isAbstract(C->access))
+      IMT = new (C->classLoader->allocator, "IMT") InterfaceMethodTable();
+    
     // Set the class of this VT.
     cl = C;
     
@@ -1439,7 +1459,7 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
     }
 
   } else {
-    // Set the tracer, destructor and delete
+    // Set the tracer, destructor and delete.
     tracer = (uintptr_t)JavaObjectTracer;
     destructor = 0;
     operatorDelete = 0;

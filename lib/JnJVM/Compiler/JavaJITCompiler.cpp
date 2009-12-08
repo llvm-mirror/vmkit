@@ -262,6 +262,48 @@ void JavaJITCompiler::makeVT(Class* cl) {
 
 }
 
+void JavaJITCompiler::makeIMT(Class* cl) {
+  InterfaceMethodTable* IMT = cl->virtualVT->IMT;
+  if (!IMT) return;
+ 
+  std::vector<JavaMethod*> contents[InterfaceMethodTable::NumIndexes];
+  cl->fillIMT(contents);
+  
+  ExecutionEngine* EE = mvm::MvmModule::executionEngine;
+  
+  for (uint32_t i = 0; i < InterfaceMethodTable::NumIndexes; ++i) {
+    std::vector<JavaMethod*>& atIndex = contents[i];
+    uint32_t size = atIndex.size();
+    if (size == 1) {
+      JavaMethod* meth = cl->lookupMethodDontThrow(atIndex[0]->name,
+                                                   atIndex[0]->type,
+                                                   false, true, 0);
+      LLVMMethodInfo* LMI = getMethodInfo(meth);
+      Function* func = LMI->getMethod();
+      uintptr_t res = (uintptr_t)EE->getPointerToFunctionOrStub(func);
+      IMT->contents[i] = res;
+    } else if (size > 1) {
+      uint32_t length = 2 * size * sizeof(uintptr_t);
+      
+      uintptr_t* table = (uintptr_t*)
+        cl->classLoader->allocator.Allocate(length, "IMT");
+      
+      IMT->contents[i] = (uintptr_t)table | 1;
+
+      for (uint32_t j = 0; j < size; ++j) {
+        JavaMethod* Imeth = atIndex[j];
+        JavaMethod* Cmeth = cl->lookupMethodDontThrow(Imeth->name, Imeth->type,
+                                                      false, true, 0);
+        LLVMMethodInfo* LMI = getMethodInfo(Cmeth);
+        Function* func = LMI->getMethod();
+        uintptr_t res = (uintptr_t)EE->getPointerToFunctionOrStub(func);
+        table[j << 1] = (uintptr_t)Imeth;
+        table[(j << 1) + 1] = res;
+      }
+    }
+  }
+}
+
 void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
   Function* func = getMethodInfo(meth)->getMethod();
   func->setName(name);

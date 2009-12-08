@@ -2180,14 +2180,18 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   makeArgs(it, index, args, signature->nbArguments + 1);
   
   const llvm::Type* retType = virtualType->getReturnType();
-  BasicBlock* endBlock = createBasicBlock("end virtual invoke");
+  BasicBlock* endBlock = createBasicBlock("end interface invoke");
   PHINode * node = 0;
   if (retType != Type::getVoidTy(getGlobalContext())) {
     node = PHINode::Create(retType, "", endBlock);
   }
   
   JITVerifyNull(args[0]);
-  
+ 
+
+#if 0
+
+
   Value* zero = module->constantZero;
   Value* one = module->constantOne;
 
@@ -2264,6 +2268,114 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
     node->addIncoming(ret, currentBlock);
   }
 
+#else
+
+  CommonClass* cl = 0;
+  JavaMethod* meth = 0;
+  ctpInfo->infoOfMethod(index, ACC_VIRTUAL, cl, meth);
+  Value* Meth = 0;
+
+  if (meth) {
+    Meth = TheCompiler->getMethodInClass(meth);
+  } else {
+    Meth = getConstantPoolAt(index, module->InterfaceLookupFunction,
+                             module->JavaMethodType, 0, false);
+  }
+
+  BasicBlock* label_bb = createBasicBlock("bb");
+  BasicBlock* label_bb4 = createBasicBlock("bb4");
+  BasicBlock* label_bb6 = createBasicBlock("bb6");
+  BasicBlock* label_bb7 = createBasicBlock("bb7");
+    
+  // Block entry (label_entry)
+  Value* VT = CallInst::Create(module->GetVTFunction, args[0], "",
+                               currentBlock);
+  Value* IMT = CallInst::Create(module->GetIMTFunction, VT, "",
+                                currentBlock);
+
+  uint32_t tableIndex = InterfaceMethodTable::getIndex(name, signature->keyName);
+  Constant* Index = ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
+                                     tableIndex);
+
+  Value* indices[2] = { module->constantZero, Index };
+  Instruction* ptr_18 = GetElementPtrInst::Create(IMT, indices, indices + 2, "",
+                                                  currentBlock);
+  Instruction* int32_19 = new LoadInst(ptr_18, "", false, currentBlock);
+  int32_19 = new PtrToIntInst(int32_19, module->pointerSizeType, "",
+                              currentBlock);
+  Value* one = ConstantInt::get(module->pointerSizeType, 1);
+  Value* zero = ConstantInt::get(module->pointerSizeType, 0);
+  BinaryOperator* int32_20 = BinaryOperator::Create(Instruction::And, int32_19,
+                                                    one, "", currentBlock);
+  ICmpInst* int1_toBool = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
+                                       int32_20, zero, "toBool");
+  BranchInst::Create(label_bb, label_bb4, int1_toBool, currentBlock);
+    
+  // Block bb (label_bb)
+  currentBlock = label_bb;
+  CastInst* ptr_22 = new IntToPtrInst(int32_19, virtualPtrType, "", currentBlock);
+  Value* ret = invoke(ptr_22, args, "", currentBlock);
+  if (node) node->addIncoming(ret, currentBlock);
+  BranchInst::Create(endBlock, currentBlock);
+    
+  // Block bb4 (label_bb4)
+  currentBlock = label_bb4;
+  Constant* MinusTwo = ConstantInt::get(module->pointerSizeType, -2);
+  BinaryOperator* int32_25 = BinaryOperator::Create(Instruction::And, int32_19,
+                                                    MinusTwo, "", currentBlock);
+  const PointerType* Ty = PointerType::getUnqual(module->JavaMethodType);
+  CastInst* ptr_26 = new IntToPtrInst(int32_25, Ty, "", currentBlock);
+  LoadInst* int32_27 = new LoadInst(ptr_26, "", false, currentBlock);
+  ICmpInst* int1_28 = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, int32_27,
+                                   Meth, "");
+  BranchInst::Create(label_bb6, label_bb7, int1_28, currentBlock);
+    
+  // Block bb6 (label_bb6)
+  currentBlock = label_bb6;
+  PHINode* ptr_table_0_lcssa = PHINode::Create(Ty, "table.0.lcssa",
+                                               currentBlock);
+  ptr_table_0_lcssa->reserveOperandSpace(2);
+  ptr_table_0_lcssa->addIncoming(ptr_26, label_bb4);
+   
+  GetElementPtrInst* ptr_31 = GetElementPtrInst::Create(ptr_table_0_lcssa,
+                                                        module->constantOne, "",
+                                                        currentBlock);
+
+  LoadInst* int32_32 = new LoadInst(ptr_31, "", false, currentBlock);
+  CastInst* ptr_33 = new BitCastInst(int32_32, virtualPtrType, "",
+                                     currentBlock);
+  ret = invoke(ptr_33, args, "", currentBlock);
+  if (node) node->addIncoming(ret, currentBlock);
+  BranchInst::Create(endBlock, currentBlock);
+    
+  // Block bb7 (label_bb7)
+  currentBlock = label_bb7;
+  PHINode* int32_indvar = PHINode::Create(Type::getInt32Ty(*llvmContext),
+                                          "indvar", currentBlock);
+  int32_indvar->reserveOperandSpace(2);
+  int32_indvar->addIncoming(module->constantZero, label_bb4);
+    
+  BinaryOperator* int32_table_010_rec =
+    BinaryOperator::Create(Instruction::Shl, int32_indvar, module->constantOne,
+                           "table.010.rec", currentBlock);
+
+  BinaryOperator* int32__rec =
+    BinaryOperator::Create(Instruction::Add, int32_table_010_rec,
+                           module->constantTwo, ".rec", currentBlock);
+  GetElementPtrInst* ptr_37 = GetElementPtrInst::Create(ptr_26, int32__rec, "",
+                                                        currentBlock);
+  LoadInst* int32_38 = new LoadInst(ptr_37, "", false, currentBlock);
+  ICmpInst* int1_39 = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, int32_38,
+                                   Meth, "");
+  BinaryOperator* int32_indvar_next =
+    BinaryOperator::Create(Instruction::Add, int32_indvar, module->constantOne,
+                           "indvar.next", currentBlock);
+  BranchInst::Create(label_bb6, label_bb7, int1_39, currentBlock);
+  
+  int32_indvar->addIncoming(int32_indvar_next, currentBlock);
+  ptr_table_0_lcssa->addIncoming(ptr_37, currentBlock);
+      
+#endif
   currentBlock = endBlock;
   if (node) {
     if (node->getType() == module->JavaObjectType) {

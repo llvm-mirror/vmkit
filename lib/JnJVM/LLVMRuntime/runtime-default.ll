@@ -64,6 +64,9 @@ declare i32 @arrayLength(%JavaObject*) readnone
 ;;; getVT - Get the VT of the object.
 declare %VT* @getVT(%JavaObject*) readnone 
 
+;;; getIMT - Get the IMT of the VT.
+declare %VT* @getIMT(%VT*) readnone 
+
 ;;; getClass - Get the class of an object.
 declare %JavaCommonClass* @getClass(%JavaObject*) readnone 
 
@@ -107,7 +110,7 @@ declare i8* @getStaticInstance(%JavaClass*) readnone
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; jnjvmInterfaceLookup - Used for interface calls.
-declare i8* @jnjvmInterfaceLookup(%CacheNode*, %JavaObject*)
+declare i8* @jnjvmInterfaceLookup(%JavaClass*, i32, ...)
 
 ;;; jnjvmMultiCallNew - Allocate multi-dimensional arrays. This will go to
 ;;; allocation specific methods.
