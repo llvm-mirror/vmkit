@@ -14,6 +14,7 @@
 #include "llvm/Module.h"
 #include "llvm/ModuleProvider.h"
 #include "llvm/PassManager.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include "mvm/Threads/Thread.h"
 
@@ -135,14 +136,32 @@ Constant* JavaAOTCompiler::getMethodInClass(JavaMethod* meth) {
   Class* cl = meth->classDef;
   Constant* MOffset = 0;
   Constant* Array = 0;
-  method_iterator SI = virtualMethods.find(cl);
+
   for (uint32 i = 0; i < cl->nbVirtualMethods + cl->nbStaticMethods; ++i) {
     if (&cl->virtualMethods[i] == meth) {
       MOffset = ConstantInt::get(Type::getInt32Ty(getGlobalContext()), i);
       break;
     }
   }
-  Array = SI->second; 
+  assert(MOffset && "No offset for method");
+
+  method_iterator SI = virtualMethods.find(cl);
+  if (SI != virtualMethods.end()) {
+    Array = SI->second; 
+    assert(Array && "No array in class");
+  } else {
+    std::string name(UTF8Buffer(cl->name).toCompileName()->cString());
+    name += "_VirtualMethods";
+    Module& Mod = *getLLVMModule();
+    const Type* ATy =
+      ArrayType::get(JnjvmModule::JavaMethodType->getContainedType(0),
+                     cl->nbVirtualMethods + cl->nbStaticMethods);
+
+    Array = new GlobalVariable(Mod, ATy, false, GlobalValue::ExternalLinkage,
+                               0, name);
+    virtualMethods.insert(std::make_pair(cl, Array));
+  }
+    
   Constant* GEPs[2] = { getIntrinsics()->constantZero, MOffset };
   return ConstantExpr::getGetElementPtr(Array, GEPs, 2);
 }
@@ -1162,9 +1181,11 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   if (cl->nbVirtualMethods + cl->nbStaticMethods) {
     methods = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
+    std::string name(UTF8Buffer(cl->name).toCompileName()->cString());
+    name += "_VirtualMethods";
     GlobalVariable* GV = new GlobalVariable(Mod, ATy, false,
-                                            GlobalValue::InternalLinkage,
-                                            methods, "");
+                                            GlobalValue::ExternalLinkage,
+                                            methods, name);
     virtualMethods.insert(std::make_pair(cl, GV));
     methods = ConstantExpr::getCast(Instruction::BitCast, GV,
                                     JnjvmModule::JavaMethodType);
@@ -1502,9 +1523,77 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   } else {
     Elemts.push_back(Constant::getNullValue(PTy));
   }
+   
+  // IMT
+  if (!VT->IMT) {
+    Elemts.push_back(Constant::getNullValue(PTy));
+  } else {
+    Class* cl = classDef->asClass();
+    assert(cl && "Not a class");
+    std::vector<JavaMethod*> contents[InterfaceMethodTable::NumIndexes];
+    classDef->asClass()->fillIMT(contents);
+  
+
+    const ArrayType* ATy = 
+      dyn_cast<ArrayType>(JnjvmModule::VTType->getContainedType(0));
+    const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
+    ATy = ArrayType::get(PTy, InterfaceMethodTable::NumIndexes);
+  
+    ConstantPointerNull* N = ConstantPointerNull::get(PTy);
+    std::vector<Constant*> IElemts;
+
+    for (uint32_t i = 0; i < InterfaceMethodTable::NumIndexes; ++i) {
+      std::vector<JavaMethod*>& atIndex = contents[i];
+      uint32_t size = atIndex.size();
+      if (size == 1) {
+        JavaMethod* meth = cl->lookupMethodDontThrow(atIndex[0]->name,
+                                                     atIndex[0]->type,
+                                                     false, true, 0);
+        LLVMMethodInfo* LMI = getMethodInfo(meth);
+        Function* func = LMI->getMethod();
+        IElemts.push_back(ConstantExpr::getBitCast(func, PTy));
+      } else if (size > 1) {
+        uint32_t length = 2 * size;
+        
+        const ArrayType* ATy = 
+          dyn_cast<ArrayType>(JnjvmModule::VTType->getContainedType(0));
+        ATy = ArrayType::get(PTy, length);
+        std::vector<Constant*> InternalElemts;
+     
+
+        for (uint32_t j = 0; j < size; ++j) {
+          JavaMethod* Imeth = atIndex[j];
+          JavaMethod* Cmeth = cl->lookupMethodDontThrow(Imeth->name,
+                                                        Imeth->type,
+                                                        false, true, 0);
+          LLVMMethodInfo* LMI = getMethodInfo(Cmeth);
+          Function* func = LMI->getMethod();
+          InternalElemts.push_back(
+            ConstantExpr::getBitCast(getMethodInClass(Imeth), PTy));
+          InternalElemts.push_back(ConstantExpr::getBitCast(func, PTy));
+        }
+        Constant* Array = ConstantArray::get(ATy, InternalElemts);
     
-  // TODO: IMT
-  Elemts.push_back(Constant::getNullValue(PTy));
+        GlobalVariable* GV = new GlobalVariable(*getLLVMModule(), ATy, false,
+                                                GlobalValue::InternalLinkage,
+                                              Array, "");
+     
+        Constant* CI =
+          ConstantExpr::getPtrToInt(GV, Type::getInt32Ty(getGlobalContext()));
+        CI = ConstantExpr::getOr(CI, JavaIntrinsics.constantOne);
+        CI = ConstantExpr::getIntToPtr(CI, PTy);
+        IElemts.push_back(CI);
+      } else {
+        IElemts.push_back(N);
+      }
+    }
+ 
+    Constant* Array = ConstantArray::get(ATy, IElemts);
+    GlobalVariable* GV = new GlobalVariable(*getLLVMModule(), ATy, false,
+                                            GlobalValue::InternalLinkage,
+                                            Array, "");
+    Elemts.push_back(ConstantExpr::getBitCast(GV, PTy));
+  }
  
   // methods
   for (uint32 i = JavaVirtualTable::getFirstJavaMethodIndex(); i < size; ++i) {
