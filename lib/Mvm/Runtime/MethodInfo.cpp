@@ -22,6 +22,13 @@
 using namespace mvm;
 
 void CamlMethodInfo::scan(void* TL, void* ip, void* addr) {
+  if (!CF && InstructionPointer) {
+    MethodInfo* MI = VirtualMachine::SharedStaticFunctions.IPToMethodInfo(ip);
+    if (MI != &DefaultMethodInfo::DM) {
+      CF = ((CamlMethodInfo*)MI)->CF;
+    }
+  }
+
   if (CF) {
     //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
     uintptr_t spaddr = ((uintptr_t*)addr)[0];
@@ -132,12 +139,7 @@ void SharedStartFunctionMap::initialize() {
 }
 
 CamlMethodInfo::CamlMethodInfo(CamlFrame* C, void* ip) {
-  if (!C) {
-    MethodInfo* MI = VirtualMachine::SharedStaticFunctions.IPToMethodInfo(ip);
-    if (MI != &DefaultMethodInfo::DM) {
-      C = ((CamlMethodInfo*)MI)->CF;
-    }
-  }
+  InstructionPointer = ip;
   CF = C;
 }
 

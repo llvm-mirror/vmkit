@@ -32,7 +32,7 @@ public:
   }
 
   unsigned MethodType;
-
+  void* InstructionPointer;
 };
 
 class CamlFrame {
