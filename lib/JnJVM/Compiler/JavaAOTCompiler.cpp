@@ -1580,7 +1580,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
      
         Constant* CI =
           ConstantExpr::getPtrToInt(GV, Type::getInt32Ty(getGlobalContext()));
-        CI = ConstantExpr::getOr(CI, JavaIntrinsics.constantOne);
+        CI = ConstantExpr::getAdd(CI, JavaIntrinsics.constantOne);
         CI = ConstantExpr::getIntToPtr(CI, PTy);
         IElemts.push_back(CI);
       } else {
