@@ -266,39 +266,67 @@ void JavaJITCompiler::makeIMT(Class* cl) {
   InterfaceMethodTable* IMT = cl->virtualVT->IMT;
   if (!IMT) return;
  
-  std::vector<JavaMethod*> contents[InterfaceMethodTable::NumIndexes];
+  std::set<JavaMethod*> contents[InterfaceMethodTable::NumIndexes];
   cl->fillIMT(contents);
   
   ExecutionEngine* EE = mvm::MvmModule::executionEngine;
   
   for (uint32_t i = 0; i < InterfaceMethodTable::NumIndexes; ++i) {
-    std::vector<JavaMethod*>& atIndex = contents[i];
+    std::set<JavaMethod*>& atIndex = contents[i];
     uint32_t size = atIndex.size();
     if (size == 1) {
-      JavaMethod* meth = cl->lookupMethodDontThrow(atIndex[0]->name,
-                                                   atIndex[0]->type,
+      JavaMethod* Imeth = *(atIndex.begin());
+      JavaMethod* meth = cl->lookupMethodDontThrow(Imeth->name,
+                                                   Imeth->type,
                                                    false, true, 0);
       LLVMMethodInfo* LMI = getMethodInfo(meth);
       Function* func = LMI->getMethod();
       uintptr_t res = (uintptr_t)EE->getPointerToFunctionOrStub(func);
       IMT->contents[i] = res;
     } else if (size > 1) {
-      uint32_t length = 2 * size * sizeof(uintptr_t);
+      std::vector<JavaMethod*> methods;
+      bool SameMethod = true;
+      JavaMethod* OldMethod = 0;
       
-      uintptr_t* table = (uintptr_t*)
-        cl->classLoader->allocator.Allocate(length, "IMT");
-      
-      IMT->contents[i] = (uintptr_t)table | 1;
-
-      for (uint32_t j = 0; j < size; ++j) {
-        JavaMethod* Imeth = atIndex[j];
+      for (std::set<JavaMethod*>::iterator it = atIndex.begin(),
+           et = atIndex.end(); it != et; ++it) {
+        JavaMethod* Imeth = *it;
         JavaMethod* Cmeth = cl->lookupMethodDontThrow(Imeth->name, Imeth->type,
                                                       false, true, 0);
-        LLVMMethodInfo* LMI = getMethodInfo(Cmeth);
+       
+        if (OldMethod && OldMethod != Cmeth) SameMethod = false;
+        else OldMethod = Cmeth;
+        
+        methods.push_back(Cmeth);
+      }
+
+      if (SameMethod) {
+        LLVMMethodInfo* LMI = getMethodInfo(methods[0]);
         Function* func = LMI->getMethod();
         uintptr_t res = (uintptr_t)EE->getPointerToFunctionOrStub(func);
-        table[j << 1] = (uintptr_t)Imeth;
-        table[(j << 1) + 1] = res;
+        IMT->contents[i] = res;
+      } else {
+
+        uint32_t length = 2 * size * sizeof(uintptr_t);
+      
+        uintptr_t* table = (uintptr_t*)
+          cl->classLoader->allocator.Allocate(length, "IMT");
+      
+        IMT->contents[i] = (uintptr_t)table | 1;
+
+        int j = 0;
+        std::set<JavaMethod*>::iterator Interf = atIndex.begin();
+        for (std::vector<JavaMethod*>::iterator it = methods.begin(),
+             et = methods.end(); it != et; ++it, j += 2, ++Interf) {
+          JavaMethod* Imeth = *Interf;
+          JavaMethod* Cmeth = *it;
+          
+          LLVMMethodInfo* LMI = getMethodInfo(Cmeth);
+          Function* func = LMI->getMethod();
+          uintptr_t res = (uintptr_t)EE->getPointerToFunctionOrStub(func);
+          table[j] = (uintptr_t)Imeth;
+          table[j + 1] = res;
+        }
       }
     }
   }

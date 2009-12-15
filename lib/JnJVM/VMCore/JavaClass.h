@@ -25,6 +25,7 @@
 #include "JnjvmConfig.h"
 
 #include <cassert>
+#include <set>
 
 namespace jnjvm {
 
@@ -918,7 +919,7 @@ public:
   /// fillIMT - Fill the vector with vectors of methods with the same IMT
   /// index.
   ///
-  void fillIMT(std::vector<JavaMethod*>* meths);
+  void fillIMT(std::set<JavaMethod*>* meths);
 
 private:
 

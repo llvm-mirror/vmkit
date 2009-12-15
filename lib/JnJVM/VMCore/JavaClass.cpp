@@ -772,7 +772,7 @@ void Class::readFields(Reader& reader) {
   }
 }
 
-void Class::fillIMT(std::vector<JavaMethod*>* meths) {
+void Class::fillIMT(std::set<JavaMethod*>* meths) {
   for (uint32 i = 0; i < nbInterfaces; ++i) {
     interfaces[i]->fillIMT(meths);
   }
@@ -783,7 +783,8 @@ void Class::fillIMT(std::vector<JavaMethod*>* meths) {
     for (uint32 i = 0; i < nbVirtualMethods; ++i) {
       JavaMethod& meth = virtualMethods[i];
       uint32_t index = InterfaceMethodTable::getIndex(meth.name, meth.type);
-      meths[index].push_back(&meth);
+      if (meths[index].find(&meth) == meths[index].end())
+        meths[index].insert(&meth);
     }
   }
 }
