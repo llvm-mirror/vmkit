@@ -21,13 +21,6 @@
 %ArrayUInt32 = type { %JavaObject, i8*, [0 x i32] }
 %ArrayUInt8 = type { %JavaObject, i8*, [0 x i8] }
 
-;;; The CacheNode type. The first field is the last called method.
-%CacheNode = type { i8*, %VT*, %CacheNode*, %Enveloppe* }
-
-;;; The Enveloppe type, which contains the first cache and all the info
-;;; to lookup in the constant pool.
-%Enveloppe = type { %CacheNode*, %UTF8*, %UTF8*, i32, %JavaClass*, %CacheNode }
-
 ;;; The task class mirror.
 ;;; Field 1: The class state
 ;;; Field 2: The initialization state
@@ -45,7 +38,7 @@
 %JavaField = type { i8*, i16, %UTF8*, %UTF8*, %Attribut*, i16, %JavaClass*, i32,
                     i16, i8* }
 
-%JavaMethod = type { i8*, i16, %Attribut*, i16, %Enveloppe*, i16, %JavaClass*,
+%JavaMethod = type { i8*, i16, %Attribut*, i16, %JavaClass*,
                      %UTF8*, %UTF8*, i8, i8*, i32, i8* }
 
 %JavaClassPrimitive = type { %JavaCommonClass, i32 }

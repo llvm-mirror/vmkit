@@ -67,7 +67,6 @@ public:
  
   /// JavaJIT - Default constructor.
   JavaJIT(JavaLLVMCompiler* C, JavaMethod* meth, llvm::Function* func) {
-    nbEnveloppes = 0;
     compilingMethod = meth;
     compilingClass = meth->classDef;
     upcalls = compilingClass->classLoader->bootstrapLoader->upcalls;
@@ -463,10 +462,6 @@ private:
   llvm::Instruction* invoke(llvm::Value *F, const char* Name,
                             llvm::BasicBlock *InsertAtEnd);
   
-  /// nbEnveloppes - Number of enveloppes (ie invokeinterface) in this
-  /// method.
-  uint32 nbEnveloppes;
-
 //===--------------------- Yield point support  ---------------------------===//
 
   void checkYieldPoint();

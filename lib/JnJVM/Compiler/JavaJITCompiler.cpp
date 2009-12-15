@@ -112,13 +112,6 @@ Constant* JavaJITCompiler::getStringPtr(JavaString** str) {
   return ConstantExpr::getIntToPtr(CI, Ty);
 }
 
-Constant* JavaJITCompiler::getEnveloppe(Enveloppe* enveloppe) {
-  assert(enveloppe && "No enveloppe given");
-  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
-                                     uint64(enveloppe));
-  return ConstantExpr::getIntToPtr(CI, JnjvmModule::EnveloppeType);
-}
-
 Constant* JavaJITCompiler::getJavaClass(CommonClass* cl) {
   JavaObject* obj = cl->getClassDelegatee(JavaThread::get()->getJVM());
   assert(obj && "Delegatee not created");

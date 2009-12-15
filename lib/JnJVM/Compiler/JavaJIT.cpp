@@ -26,7 +26,6 @@
 
 #include "debug.h"
 #include "JavaArray.h"
-#include "JavaCache.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
 #include "JavaObject.h"
@@ -907,7 +906,6 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   readExceptionTable(reader, codeLen);
 
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
-  nbEnveloppes = 0;
 
   if (returnType != Type::getVoidTy(getGlobalContext())) {
     endNode = PHINode::Create(returnType, "", endBlock);
@@ -1126,11 +1124,6 @@ llvm::Function* JavaJIT::javaCompile() {
   readExceptionTable(reader, codeLen);
   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
-  compilingMethod->enveloppes = 
-    new (compilingClass->classLoader->allocator, "Enveloppes")
-    Enveloppe[nbEnveloppes];
-  compilingMethod->nbEnveloppes = nbEnveloppes;
-  nbEnveloppes = 0;
  
   endBlock = createBasicBlock("end");
 
@@ -2188,88 +2181,6 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   
   JITVerifyNull(args[0]);
  
-
-#if 0
-
-
-  Value* zero = module->constantZero;
-  Value* one = module->constantOne;
-
-#ifndef ISOLATE_SHARING
-  // ok now the cache
-  Enveloppe& enveloppe = buggyVirtual ?
-    *(new (compilingClass->classLoader->allocator, "Enveloppe") Enveloppe()) :
-    compilingMethod->enveloppes[nbEnveloppes++];
-  if (!inlining)
-    enveloppe.initialise(compilingClass, name, signature->keyName);
-   
-  Value* llvmEnv = TheCompiler->getEnveloppe(&enveloppe);
-#else
-  Value* llvmEnv = getConstantPoolAt(index,
-                                     module->EnveloppeLookupFunction,
-                                     module->EnveloppeType, 0, false);
-#endif
-
-  Value* args1[2] = { zero, zero };
-  Value* cachePtr = GetElementPtrInst::Create(llvmEnv, args1, args1 + 2,
-                                              "", currentBlock);
-  Value* cache = new LoadInst(cachePtr, "", currentBlock);
-
-  Value* VT = CallInst::Create(module->GetVTFunction, args[0], "",
-                               currentBlock);
-  Value* args3[2] = { zero, one };
-  Value* lastCiblePtr = GetElementPtrInst::Create(cache, args3, args3 + 2, "",
-                                                  currentBlock);
-  Value* lastCible = new LoadInst(lastCiblePtr, "", currentBlock);
-
-  Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, VT, lastCible,
-                            "");
-  
-  BasicBlock* ifTrue = createBasicBlock("cache ok");
-  BasicBlock* ifFalse = createBasicBlock("cache not ok");
-  BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
-  
-  currentBlock = ifFalse;
-  Value* _meth = invoke(module->InterfaceLookupFunction, cache, args[0],
-                        "", ifFalse);
-  Value* meth = new BitCastInst(_meth, virtualPtrType, "", 
-                                currentBlock);
-#ifdef ISOLATE_SHARING
-  Value* cache2 = new LoadInst(cachePtr, "", currentBlock);
-  Value* newCtpCache = CallInst::Create(module->GetCtpCacheNodeFunction,
-                                        cache2, "", currentBlock);
-  args.push_back(newCtpCache);
-#endif
-  Value* ret = invoke(meth, args, "", currentBlock);
-  if (node) {
-    node->addIncoming(ret, currentBlock);
-  }
-  BranchInst::Create(endBlock, currentBlock);
-
-  currentBlock = ifTrue;
-
-  Value* methPtr = GetElementPtrInst::Create(cache, args1, args1 + 2,
-                                             "", currentBlock);
-
-  _meth = new LoadInst(methPtr, "", currentBlock);
-  meth = new BitCastInst(_meth, virtualPtrType, "", currentBlock);
-  
-#ifdef ISOLATE_SHARING
-  args.pop_back();
-  cache = new LoadInst(cachePtr, "", currentBlock);
-  newCtpCache = CallInst::Create(module->GetCtpCacheNodeFunction,
-                                 cache, "", currentBlock);
-  args.push_back(newCtpCache);
-#endif
-  ret = invoke(meth, args, "", currentBlock);
-  BranchInst::Create(endBlock, currentBlock);
-
-  if (node) {
-    node->addIncoming(ret, currentBlock);
-  }
-
-#else
-
   CommonClass* cl = 0;
   JavaMethod* meth = 0;
   ctpInfo->infoOfMethod(index, ACC_VIRTUAL, cl, meth);
@@ -2375,7 +2286,6 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   int32_indvar->addIncoming(int32_indvar_next, currentBlock);
   ptr_table_0_lcssa->addIncoming(ptr_37, currentBlock);
       
-#endif
   currentBlock = endBlock;
   if (node) {
     if (node->getType() == module->JavaObjectType) {

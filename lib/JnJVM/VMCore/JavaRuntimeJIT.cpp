@@ -11,7 +11,6 @@
 
 #include "ClasspathReflect.h"
 #include "JavaArray.h"
-#include "JavaCache.h"
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
 #include "JavaString.h"
@@ -24,91 +23,6 @@
 #include <cstdarg>
 
 using namespace jnjvm;
-
-#if 0
-// Throws if the method is not found.
-extern "C" void* jnjvmInterfaceLookup(CacheNode* cache, JavaObject *obj) {
-
-  llvm_gcroot(obj, 0);
-
-  void* res = 0;
-
-  BEGIN_NATIVE_EXCEPTION(1)
-
-  
-  Enveloppe* enveloppe = cache->enveloppe;
-  JavaVirtualTable* ovt = (JavaVirtualTable*)obj->getVirtualTable();
-  
-#ifndef SERVICE
-  assert((obj->getClass()->isClass() && 
-          obj->getClass()->asClass()->isInitializing()) &&
-         "Class not ready in a virtual lookup.");
-#endif
-
-  enveloppe->cacheLock.acquire();
-  CacheNode* rcache = 0;
-  CacheNode* tmp = enveloppe->firstCache;
-  CacheNode* last = tmp;
-
-  while (tmp) {
-    if (ovt == tmp->lastCible) {
-      rcache = tmp;
-      break;
-    } else {
-      last = tmp;
-      tmp = tmp->next;
-    }
-  }
-
-  if (!rcache) {
-    UserCommonClass* ocl = ovt->cl;
-    UserClass* methodCl = 0;
-    UserClass* lookup = ocl->isArray() ? ocl->super : ocl->asClass();
-    JavaMethod* dmeth = lookup->lookupMethodDontThrow(enveloppe->methodName,
-                                                      enveloppe->methodSign,
-                                                      false, true, &methodCl);
-
-    if (!dmeth) {
-      enveloppe->cacheLock.release();
-      JavaThread::get()->getJVM()->noSuchMethodError(lookup,
-                                                     enveloppe->methodName);
-    }
-
-#if !defined(ISOLATE_SHARING) && !defined(SERVICE)
-    assert(dmeth->classDef->isInitializing() &&
-           "Class not ready in a virtual lookup.");
-#endif
-
-    // Are we the first cache?
-    if (cache == &(enveloppe->bootCache) && cache->lastCible == 0) {
-      rcache = cache;
-    } else {
-      mvm::BumpPtrAllocator& alloc = 
-        enveloppe->classDef->classLoader->allocator;
-      rcache = new(alloc, "CacheNode") CacheNode(enveloppe);
-    }
-    
-    rcache->methPtr = dmeth->compiledPtr();
-    rcache->lastCible = ovt;
-    
-  }
-
-  if (enveloppe->firstCache != rcache) {
-    CacheNode *f = enveloppe->firstCache;
-    enveloppe->firstCache = rcache;
-    last->next = rcache->next;
-    rcache->next = f;
-  }
-  
-  enveloppe->cacheLock.release();
-  
-  res = rcache->methPtr;
-  
-  END_NATIVE_EXCEPTION
-
-  return res; 
-}
-#endif
 
 extern "C" void* jnjvmInterfaceLookup(UserClass* caller, uint32 index) {
 
@@ -730,14 +644,6 @@ extern "C" void jnjvmServiceCallStop(Jnjvm* OldService,
 
 
 #ifdef ISOLATE_SHARING
-extern "C" void* jnjvmEnveloppeLookup(UserClass* cl, uint32 index) {
-  UserConstantPool* ctpInfo = cl->getConstantPool();
-  mvm::Allocator* allocator = cl->classLoader->allocator;
-  Enveloppe* enveloppe = new(allocator) Enveloppe(ctpInfo, index);
-  ctpInfo->ctpRes[index] = enveloppe;
-  return (void*)enveloppe;
-}
-
 extern "C" void* jnjvmStaticCtpLookup(UserClass* cl, uint32 index) {
   UserConstantPool* ctpInfo = cl->getConstantPool();
   JavaConstantPool* shared = ctpInfo->getSharedPool();

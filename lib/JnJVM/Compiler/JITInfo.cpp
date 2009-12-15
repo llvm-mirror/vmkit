@@ -19,7 +19,6 @@
 
 #include "mvm/JIT.h"
 
-#include "JavaCache.h"
 #include "JavaConstantPool.h"
 #include "JavaJIT.h"
 #include "JavaString.h"

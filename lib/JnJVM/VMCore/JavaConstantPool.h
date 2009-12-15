@@ -11,8 +11,9 @@
 #define JNJVM_JAVA_CONSTANT_POOL_H
 
 #include "mvm/Allocator.h"
-
 #include "types.h"
+
+#include "UTF8.h"
 
 namespace jnjvm {
 
@@ -24,7 +25,6 @@ class JavaString;
 class Reader;
 class Signdef;
 class Typedef;
-
 
 /// JavaConstantPool - This class represents a Java constant pool, a place where
 /// a Java class makes external references such as classes and methods and

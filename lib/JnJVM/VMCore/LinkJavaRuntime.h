@@ -13,7 +13,6 @@
 
 
 namespace jnjvm {
-  class CacheNode;
   class JavaObject;
   class UserClass;
   class UserClassArray;
@@ -26,7 +25,7 @@ namespace jnjvm {
 
 using namespace jnjvm;
 
-extern "C" void* jnjvmInterfaceLookup(CacheNode* cache, JavaObject *obj);
+extern "C" void* jnjvmInterfaceLookup(UserClass* caller, uint32 index);
 extern "C" void* jnjvmVirtualFieldLookup(UserClass* caller, uint32 index);
 extern "C" void* jnjvmStaticFieldLookup(UserClass* caller, uint32 index);
 extern "C" void* jnjvmVirtualTableLookup(UserClass* caller, uint32 index, ...);
@@ -71,7 +70,6 @@ extern "C" void jnjvmServiceCallStop(Jnjvm* OldService,
 
 
 #ifdef ISOLATE_SHARING
-extern "C" void* jnjvmEnveloppeLookup(UserClass* cl, uint32 index);
 extern "C" void* jnjvmStaticCtpLookup(UserClass* cl, uint32 index);
 extern "C" UserConstantPool* jnjvmSpecialCtpLookup(UserConstantPool* ctpInfo,
                                                    uint32 index,
@@ -123,7 +121,6 @@ namespace {
 #endif
 
 #ifdef ISOLATE_SHARING
-      (void) jnjvmEnveloppeLookup(0, 0);
       (void) jnjvmStaticCtpLookup(0, 0);
       (void) jnjvmSpecialCtpLookup(0, 0, 0);
 #endif

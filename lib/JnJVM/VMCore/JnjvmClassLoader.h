@@ -16,13 +16,13 @@
 
 #include "types.h"
 
-#include "UTF8.h"
 
 #include "mvm/Allocator.h"
 #include "mvm/Object.h"
 
 #include "JavaObject.h"
 #include "JnjvmConfig.h"
+#include "UTF8.h"
 
 namespace jnjvm {
 

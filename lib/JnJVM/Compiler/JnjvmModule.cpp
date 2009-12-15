@@ -42,8 +42,6 @@ const llvm::Type* JnjvmModule::JavaArrayFloatType = 0;
 const llvm::Type* JnjvmModule::JavaArrayDoubleType = 0;
 const llvm::Type* JnjvmModule::JavaArrayLongType = 0;
 const llvm::Type* JnjvmModule::JavaArrayObjectType = 0;
-const llvm::Type* JnjvmModule::CacheNodeType = 0;
-const llvm::Type* JnjvmModule::EnveloppeType = 0;
 const llvm::Type* JnjvmModule::ConstantPoolType = 0;
 const llvm::Type* JnjvmModule::UTF8Type = 0;
 const llvm::Type* JnjvmModule::JavaFieldType = 0;
@@ -148,12 +146,6 @@ void JnjvmModule::initialise() {
   JavaArrayObjectType =
     PointerType::getUnqual(module->getTypeByName("ArrayObject"));
 
-  CacheNodeType =
-    PointerType::getUnqual(module->getTypeByName("CacheNode"));
-  
-  EnveloppeType =
-    PointerType::getUnqual(module->getTypeByName("Enveloppe"));
-  
   JavaFieldType =
     PointerType::getUnqual(module->getTypeByName("JavaField"));
   JavaMethodType =
@@ -254,8 +246,6 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   module->addTypeName("ArrayFloat", JavaArrayFloatType->getContainedType(0));
   module->addTypeName("ArrayDouble", JavaArrayDoubleType->getContainedType(0));
   module->addTypeName("ArrayObject", JavaArrayObjectType->getContainedType(0));
-  module->addTypeName("CacheNode", CacheNodeType->getContainedType(0)); 
-  module->addTypeName("Enveloppe", EnveloppeType->getContainedType(0));
    
   InterfaceLookupFunction = module->getFunction("jnjvmInterfaceLookup");
   MultiCallNewFunction = module->getFunction("jnjvmMultiCallNew");
@@ -325,8 +315,6 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   GetFinalObjectFieldFunction = module->getFunction("getFinalObjectField");
 
 #ifdef ISOLATE_SHARING
-  EnveloppeLookupFunction = module->getFunction("jnjvmEnveloppeLookup");
-  GetCtpCacheNodeFunction = module->getFunction("getCtpCacheNode");
   GetCtpClassFunction = module->getFunction("getCtpClass");
   GetJnjvmExceptionClassFunction = 
     module->getFunction("getJnjvmExceptionClass");

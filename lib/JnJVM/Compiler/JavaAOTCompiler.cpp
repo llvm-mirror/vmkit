@@ -21,7 +21,6 @@
 #include "jnjvm/JnjvmModule.h"
 
 #include "JavaArray.h"
-#include "JavaCache.h"
 #include "JavaConstantPool.h"
 #include "JavaString.h"
 #include "JavaThread.h"
@@ -191,23 +190,6 @@ Constant* JavaAOTCompiler::getString(JavaString* str) {
 Constant* JavaAOTCompiler::getStringPtr(JavaString** str) {
   fprintf(stderr, "Implement me");
   abort();
-}
-
-Constant* JavaAOTCompiler::getEnveloppe(Enveloppe* enveloppe) {
-  enveloppe_iterator SI = enveloppes.find(enveloppe);
-  if (SI != enveloppes.end()) {
-    return SI->second;
-  } else {
-    Module& Mod = *getLLVMModule();
-    GlobalVariable* varGV = 
-      new GlobalVariable(Mod, JnjvmModule::EnveloppeType->getContainedType(0),
-                         false, GlobalValue::InternalLinkage, 0, "");
-    enveloppes.insert(std::make_pair(enveloppe, varGV));
-    
-    Constant* C = CreateConstantFromEnveloppe(enveloppe);
-    varGV->setInitializer(C);
-    return varGV;
-  }
 }
 
 Constant* JavaAOTCompiler::getJavaClass(CommonClass* cl) {
@@ -769,43 +751,6 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
 }
 
 
-Constant* JavaAOTCompiler::CreateConstantFromCacheNode(CacheNode* CN) {
-  const StructType* STy = 
-    dyn_cast<StructType>(JnjvmModule::CacheNodeType->getContainedType(0));
-
-  std::vector<Constant*> Elmts;
-  Elmts.push_back(Constant::getNullValue(STy->getContainedType(0)));
-  Elmts.push_back(Constant::getNullValue(STy->getContainedType(1)));
-  Elmts.push_back(Constant::getNullValue(STy->getContainedType(2)));
-  Elmts.push_back(getEnveloppe(CN->enveloppe));
-  
-  return ConstantStruct::get(STy, Elmts);
-}
-
-Constant* JavaAOTCompiler::CreateConstantFromEnveloppe(Enveloppe* val) {
-  
-  const StructType* STy = 
-    dyn_cast<StructType>(JnjvmModule::EnveloppeType->getContainedType(0));
-  const StructType* CNTy = 
-    dyn_cast<StructType>(JnjvmModule::CacheNodeType->getContainedType(0));
-  
-  std::vector<Constant*> Elmts;
-  
-  Constant* firstCache = CreateConstantFromCacheNode(val->firstCache);
-  Elmts.push_back(new GlobalVariable(*getLLVMModule(), CNTy, false,
-                                     GlobalValue::InternalLinkage,
-                                     firstCache, ""));
-  Elmts.push_back(getUTF8(val->methodName));
-  Elmts.push_back(getUTF8(val->methodSign));
-
-  Elmts.push_back(Constant::getNullValue(Type::getInt32Ty(getGlobalContext())));
-  Elmts.push_back(getNativeClass(val->classDef));
-  Elmts.push_back(firstCache);
-
-  return ConstantStruct::get(STy, Elmts);
-  
-}
-
 Constant* JavaAOTCompiler::CreateConstantFromAttribut(Attribut& attribut) {
   const StructType* STy = 
     dyn_cast<StructType>(JnjvmModule::AttributType->getContainedType(0));
@@ -990,14 +935,6 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   
   // nbAttributs
   MethodElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), method.nbAttributs));
-  
-  // enveloppes
-  // already allocated by the JIT, don't reallocate them.
-  MethodElts.push_back(Constant::getNullValue(JnjvmModule::EnveloppeType));
-  
-  // nbEnveloppes
-  // 0 because we're not allocating here.
-  MethodElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), 0));
   
   // classDef
   MethodElts.push_back(getNativeClass(method.classDef));
@@ -1698,8 +1635,6 @@ void JavaAOTCompiler::printStats() {
           (unsigned long long int) constantPools.size());
   fprintf(stderr, "Number of strings                   : %llu\n", 
           (unsigned long long int) strings.size());
-  fprintf(stderr, "Number of enveloppes                : %llu\n", 
-          (unsigned long long int) enveloppes.size());
   fprintf(stderr, "Number of native functions          : %llu\n", 
           (unsigned long long int) nativeFunctions.size());
   fprintf(stderr, "----------------- Total size in .data ------------------\n");

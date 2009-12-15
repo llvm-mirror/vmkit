@@ -2561,7 +2561,6 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
         break;
       
       case INVOKEINTERFACE :
-        ++nbEnveloppes;
         i += 4;
         break;
 

@@ -14,7 +14,6 @@
 
 #include "ClasspathReflect.h"
 #include "JavaArray.h"
-#include "JavaCache.h"
 #include "JavaClass.h"
 #include "JavaCompiler.h"
 #include "JavaConstantPool.h"
@@ -145,11 +144,6 @@ JavaMethod::~JavaMethod() {
     classDef->classLoader->allocator.Deallocate(cur);
   }
   
-  for (uint32 i = 0; i < nbEnveloppes; ++i) {
-    Enveloppe* cur = &(enveloppes[i]);
-    cur->~Enveloppe();
-    classDef->classLoader->allocator.Deallocate(cur);
-  }
 }
 
 UserClassPrimitive* CommonClass::toPrimitive(Jnjvm* vm) const {
@@ -645,7 +639,6 @@ void JavaMethod::initialise(Class* cl, const UTF8* N, const UTF8* T, uint16 A) {
   canBeInlined = false;
   offset = 0;
   JInfo = 0;
-  enveloppes = 0;
 }
 
 void JavaField::initialise(Class* cl, const UTF8* N, const UTF8* T, uint16 A) {

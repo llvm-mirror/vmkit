@@ -32,7 +32,6 @@ namespace jnjvm {
 class ArrayObject;
 class ArrayUInt8;
 class ArrayUInt16;
-class Enveloppe;
 class Class;
 class ClassArray;
 class JavaArray;
@@ -1033,15 +1032,6 @@ public:
   ///
   uint16 nbAttributs;
 
-  /// enveloppes - List of caches in this method. For all invokeinterface
-  /// bytecode there is a corresponding cache.
-  ///
-  Enveloppe* enveloppes;
-
-  /// nbEnveloppes - The number of enveloppes.
-  ///
-  uint16 nbEnveloppes;
-  
   /// classDef - The Java class where the method is defined.
   ///
   Class* classDef;

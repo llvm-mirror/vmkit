@@ -755,15 +755,6 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == module->GetCtpCacheNodeFunction) {
-          Changed = true;
-          Value* val = Call.getArgument(0); 
-          Value* indexes[2] = { module->constantZero, module->constantFour };
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes,
-                                                   indexes + 2, "", CI);
-          Value* VT = new LoadInst(VTPtr, "", CI);
-          CI->replaceAllUsesWith(VT);
-          CI->eraseFromParent();
         } else if (V == module->GetJnjvmArrayClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 

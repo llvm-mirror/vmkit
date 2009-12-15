@@ -37,12 +37,10 @@ namespace jnjvm {
 
 class ArrayObject;
 class Attribut;
-class CacheNode;
 class CommonClass;
 class Class;
 class ClassArray;
 class ClassPrimitive;
-class Enveloppe;
 class JavaConstantPool;
 class JavaField;
 class JavaMethod;
@@ -232,8 +230,6 @@ public:
   static const llvm::Type* JavaClassArrayType;
   static const llvm::Type* JavaClassPrimitiveType;
   static const llvm::Type* JavaCacheType;
-  static const llvm::Type* EnveloppeType;
-  static const llvm::Type* CacheNodeType;
   static const llvm::Type* ConstantPoolType;
   static const llvm::Type* UTF8Type;
   static const llvm::Type* JavaMethodType;
@@ -282,9 +278,7 @@ public:
   llvm::Function* GetArrayClassFunction;
 
 #ifdef ISOLATE_SHARING
-  llvm::Function* GetCtpCacheNodeFunction;
   llvm::Function* GetCtpClassFunction;
-  llvm::Function* EnveloppeLookupFunction;
   llvm::Function* GetJnjvmExceptionClassFunction;
   llvm::Function* GetJnjvmArrayClassFunction;
   llvm::Function* StaticCtpLookupFunction;
@@ -457,7 +451,6 @@ public:
   virtual llvm::Constant* getVirtualTable(JavaVirtualTable*) = 0;
   virtual llvm::Constant* getMethodInClass(JavaMethod* meth) = 0;
   
-  virtual llvm::Constant* getEnveloppe(Enveloppe* enveloppe) = 0;
   virtual llvm::Constant* getString(JavaString* str) = 0;
   virtual llvm::Constant* getStringPtr(JavaString** str) = 0;
   virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp) = 0;
@@ -564,7 +557,6 @@ public:
   virtual llvm::Constant* getVirtualTable(JavaVirtualTable*);
   virtual llvm::Constant* getMethodInClass(JavaMethod* meth);
   
-  virtual llvm::Constant* getEnveloppe(Enveloppe* enveloppe);
   virtual llvm::Constant* getString(JavaString* str);
   virtual llvm::Constant* getStringPtr(JavaString** str);
   virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp);
@@ -633,7 +625,6 @@ public:
   virtual llvm::Constant* getVirtualTable(JavaVirtualTable*);
   virtual llvm::Constant* getMethodInClass(JavaMethod* meth);
   
-  virtual llvm::Constant* getEnveloppe(Enveloppe* enveloppe);
   virtual llvm::Constant* getString(JavaString* str);
   virtual llvm::Constant* getStringPtr(JavaString** str);
   virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp);
@@ -657,8 +648,6 @@ private:
   //--------------- Static compiler specific functions -----------------------//
   llvm::Constant* CreateConstantFromVT(JavaVirtualTable* VT);
   llvm::Constant* CreateConstantFromUTF8(const UTF8* val);
-  llvm::Constant* CreateConstantFromEnveloppe(Enveloppe* val);
-  llvm::Constant* CreateConstantFromCacheNode(CacheNode* CN);
   llvm::Constant* CreateConstantFromCommonClass(CommonClass* cl);
   llvm::Constant* CreateConstantFromClass(Class* cl);
   llvm::Constant* CreateConstantFromClassPrimitive(ClassPrimitive* cl);
@@ -688,7 +677,6 @@ private:
   std::map<const Class*, llvm::Constant*> staticInstances;
   std::map<const JavaConstantPool*, llvm::Constant*> constantPools;
   std::map<const JavaString*, llvm::Constant*> strings;
-  std::map<const Enveloppe*, llvm::Constant*> enveloppes;
   std::map<const JavaMethod*, llvm::Constant*> nativeFunctions;
   std::map<const UTF8*, llvm::Constant*> utf8s;
   std::map<const Class*, llvm::Constant*> virtualMethods;
@@ -724,9 +712,6 @@ private:
   
   typedef std::map<const JavaString*, llvm::Constant*>::iterator
     string_iterator;
-  
-  typedef std::map<const Enveloppe*, llvm::Constant*>::iterator
-    enveloppe_iterator;
   
   typedef std::map<const JavaMethod*, llvm::Constant*>::iterator
     native_function_iterator;
