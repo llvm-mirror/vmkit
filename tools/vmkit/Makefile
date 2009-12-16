@@ -1,6 +1,6 @@
-##===- tools/jnjvm/Makefile --------------------------------*- Makefile -*-===##
+##===- tools/vmkit/Makefile --------------------------------*- Makefile -*-===##
 # 
-#                     The vmkit project
+#                     The VMKit project
 #
 # This file is distributed under the University of Illinois Open Source
 # License. See LICENSE.TXT for details.
@@ -17,8 +17,8 @@ ifeq ($(WITH_LLVM_GCC), 1)
 
   MODULESNAME = vmkit
 
-  ifeq ($(WITH_JNJVM), 1)
-    USEDMODULES += JnJVM.bc Classpath.bc JnjvmCompiler.bc
+  ifeq ($(WITH_J3), 1)
+    USEDMODULES += J3.bc Classpath.bc JnjvmCompiler.bc
   endif
 
   ifeq ($(ISOLATE_SHARING_BUILD), 1) 
@@ -36,9 +36,11 @@ ifeq ($(WITH_LLVM_GCC), 1)
 
 
 else
+  
+  USEDLIBS += Allocator.a Mvm.a MvmCompiler.a $(GCLIB).a CommonThread.a
 
-  ifeq ($(WITH_JNJVM), 1)
-    USEDLIBS += JnJVM.a Classpath.a JnJVM.a JnjvmCompiler.a
+  ifeq ($(WITH_J3), 1)
+    USEDLIBS += J3.a Classpath.a J3.a J3Compiler.a
   endif
 
   ifeq ($(ISOLATE_SHARING_BUILD), 1) 
@@ -48,7 +50,7 @@ else
   ifeq ($(WITH_N3_PNETLIB), 1)
     USEDLIBS += N3.a PNetLib.a
   endif
-
+  
   USEDLIBS += Allocator.a Mvm.a MvmCompiler.a $(GCLIB).a CommonThread.a
 
 endif

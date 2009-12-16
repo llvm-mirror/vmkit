@@ -221,12 +221,12 @@ int main(int argc, char **argv) {
     gccArgv[gccArgc++] = "-lm";
     gccArgv[gccArgc++] = "-ldl";
     gccArgv[gccArgc++] = "-lz";
-    gccArgv[gccArgc++] = "-lJnJVM";
+    gccArgv[gccArgc++] = "-lJ3";
     gccArgv[gccArgc++] = "-lClasspath";
-    gccArgv[gccArgc++] = "-lJnJVM";
+    gccArgv[gccArgc++] = "-lJ3";
     gccArgv[gccArgc++] = "-lClasspath";
     if (withJIT) {
-      gccArgv[gccArgc++] = "-lJnJVMCompiler";
+      gccArgv[gccArgc++] = "-lJ3Compiler";
     }
     gccArgv[gccArgc++] = "-lAllocator";
     gccArgv[gccArgc++] = "-lCommonThread";

@@ -11,9 +11,9 @@ LEVEL = ../../..
 include $(LEVEL)/Makefile.config
 
 ifeq ($(WITH_LLVM_GCC), 1)
-  MODULE_NAME = JnjvmCompiler
+  MODULE_NAME = J3Compiler
 else
-  LIBRARYNAME = JnjvmCompiler
+  LIBRARYNAME = J3Compiler
 endif
 
 EXTRA_DIST = ExceptionsCheck.inc ExceptionsDwarf.inc

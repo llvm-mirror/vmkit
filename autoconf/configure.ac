@@ -331,32 +331,32 @@ AC_ARG_WITH(gnu-classpath-libs,
 
 AC_ARG_WITH(gnu-classpath-glibj,
        [AS_HELP_STRING(--with-gnu-classpath-glibj,
-           [Build JnJVM with GNU Classpath install (default is '/usr/share/classpath/glibj.zip')])],
+           [Build J3 with GNU Classpath install (default is '/usr/share/classpath/glibj.zip')])],
        [[classpathglibj=$withval]],
        [[classpathglibj=/usr/share/classpath/glibj.zip]]
 )
 
-AC_ARG_WITH(jnjvm,
-       [AS_HELP_STRING(--with-jnjvm=yes|no,
-        [Build JnJVM (default is yes)])],
-       [[WITH_JNJVM=$withval]],
-       [[WITH_JNJVM=yes]]
+AC_ARG_WITH(j3,
+       [AS_HELP_STRING(--with-j3=yes|no,
+        [Build J3 (default is yes)])],
+       [[WITH_J3=$withval]],
+       [[WITH_J3=yes]]
 )
 
 classpathinclude="-I${classpathlibs}/../include -I/usr/include/classpath";
 
-if test "x${WITH_JNJVM}" = "xyes"; then
-  WITH_JNJVM=1;
-  AC_DEFINE([WITH_JNJVM], [1], [With JNJVM])
+if test "x${WITH_J3}" = "xyes"; then
+  WITH_J3=1;
+  AC_DEFINE([WITH_J3], [1], [With J3])
 else
-  WITH_JNJVM=0;
+  WITH_J3=0;
 fi 
 
 AC_SUBST([classpathglibj])
 AC_SUBST([classpathlibs])
 AC_SUBST([classpathinclude])
 AC_SUBST([classpathversion])
-AC_SUBST([WITH_JNJVM])
+AC_SUBST([WITH_J3])
 
 dnl **************************************************************************
 dnl Local PNet directory
@@ -591,7 +591,7 @@ AC_CONFIG_SRCDIR(["Makefile.common.in"])
 dnl Configure a common Makefile
 AC_CONFIG_FILES(Makefile.common)
 AC_CONFIG_FILES(Makefile.config)
-AC_CONFIG_FILES([lib/JnJVM/Classpath/Classpath.h])
+AC_CONFIG_FILES([lib/J3/Classpath/Classpath.h])
 AC_CONFIG_FILES([lib/N3/PNetLib/PNetPath.inc])
 AC_CONFIG_FILES([lib/N3/Mono/MonoPath.inc])
 AC_CONFIG_FILES([tools/llcj/LinkPaths.h])

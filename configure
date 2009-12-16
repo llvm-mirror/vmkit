@@ -700,7 +700,7 @@ classpathglibj
 classpathlibs
 classpathinclude
 classpathversion
-WITH_JNJVM
+WITH_J3
 pnetlocalprefix
 WITH_N3_PNETLIB
 N3_LIB
@@ -1338,9 +1338,9 @@ Optional Packages:
                           GNU CLASSPATH libraries (default is
                           /usr/lib/classpath)
   --with-gnu-classpath-glibj
-                          Build JnJVM with GNU Classpath install (default is
+                          Build J3 with GNU Classpath install (default is
                           '/usr/share/classpath/glibj.zip')
-  --with-jnjvm=yes|no     Build JnJVM (default is yes)
+  --with-j3=yes|no        Build J3 (default is yes)
   --with-pnet-local-prefix=something
                           PNET local prefix (no default)
   --with-pnetlib=something
@@ -4091,26 +4091,26 @@ fi
 
 
 
-# Check whether --with-jnjvm was given.
-if test "${with_jnjvm+set}" = set; then
-  withval=$with_jnjvm; WITH_JNJVM=$withval
+# Check whether --with-j3 was given.
+if test "${with_j3+set}" = set; then
+  withval=$with_j3; WITH_J3=$withval
 else
-  WITH_JNJVM=yes
+  WITH_J3=yes
 
 fi
 
 
 classpathinclude="-I${classpathlibs}/../include -I/usr/include/classpath";
 
-if test "x${WITH_JNJVM}" = "xyes"; then
-  WITH_JNJVM=1;
+if test "x${WITH_J3}" = "xyes"; then
+  WITH_J3=1;
 
 cat >>confdefs.h <<\_ACEOF
-#define WITH_JNJVM 1
+#define WITH_J3 1
 _ACEOF
 
 else
-  WITH_JNJVM=0;
+  WITH_J3=0;
 fi
 
 
@@ -7228,7 +7228,7 @@ ac_config_files="$ac_config_files Makefile.common"
 
 ac_config_files="$ac_config_files Makefile.config"
 
-ac_config_files="$ac_config_files lib/JnJVM/Classpath/Classpath.h"
+ac_config_files="$ac_config_files lib/J3/Classpath/Classpath.h"
 
 ac_config_files="$ac_config_files lib/N3/PNetLib/PNetPath.inc"
 
@@ -7811,7 +7811,7 @@ do
     "include/mvm/Config/config.h") CONFIG_HEADERS="$CONFIG_HEADERS include/mvm/Config/config.h" ;;
     "Makefile.common") CONFIG_FILES="$CONFIG_FILES Makefile.common" ;;
     "Makefile.config") CONFIG_FILES="$CONFIG_FILES Makefile.config" ;;
-    "lib/JnJVM/Classpath/Classpath.h") CONFIG_FILES="$CONFIG_FILES lib/JnJVM/Classpath/Classpath.h" ;;
+    "lib/J3/Classpath/Classpath.h") CONFIG_FILES="$CONFIG_FILES lib/J3/Classpath/Classpath.h" ;;
     "lib/N3/PNetLib/PNetPath.inc") CONFIG_FILES="$CONFIG_FILES lib/N3/PNetLib/PNetPath.inc" ;;
     "lib/N3/Mono/MonoPath.inc") CONFIG_FILES="$CONFIG_FILES lib/N3/Mono/MonoPath.inc" ;;
     "tools/llcj/LinkPaths.h") CONFIG_FILES="$CONFIG_FILES tools/llcj/LinkPaths.h" ;;
@@ -7961,7 +7961,7 @@ classpathglibj!$classpathglibj$ac_delim
 classpathlibs!$classpathlibs$ac_delim
 classpathinclude!$classpathinclude$ac_delim
 classpathversion!$classpathversion$ac_delim
-WITH_JNJVM!$WITH_JNJVM$ac_delim
+WITH_J3!$WITH_J3$ac_delim
 pnetlocalprefix!$pnetlocalprefix$ac_delim
 WITH_N3_PNETLIB!$WITH_N3_PNETLIB$ac_delim
 N3_LIB!$N3_LIB$ac_delim

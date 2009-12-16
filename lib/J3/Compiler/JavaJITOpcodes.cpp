@@ -33,10 +33,10 @@
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 
-#include "jnjvm/JnjvmModule.h"
+#include "j3/JnjvmModule.h"
 
 #if DEBUG > 0 && (JNJVM_COMPILE > 0 || JNJVM_EXECUTE > 0)
-#include "jnjvm/OpcodeNames.def"
+#include "j3/OpcodeNames.def"
 #endif
 
 using namespace jnjvm;

@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "mvm/VirtualMachine.h"
-#include "jnjvm/JavaCompiler.h"
+#include "j3/JavaCompiler.h"
 
 #include "JavaArray.h"
 #include "JavaClass.h"

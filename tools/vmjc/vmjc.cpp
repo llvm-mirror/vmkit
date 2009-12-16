@@ -43,11 +43,11 @@
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Thread.h"
 
-#include "jnjvm/JnjvmModule.h"
-#include "jnjvm/JnjvmModuleProvider.h"
+#include "j3/JnjvmModule.h"
+#include "j3/JnjvmModuleProvider.h"
 
-#include "../../lib/JnJVM/VMCore/JnjvmClassLoader.h"
-#include "../../lib/JnJVM/VMCore/Jnjvm.h"
+#include "../../lib/J3/VMCore/JnjvmClassLoader.h"
+#include "../../lib/J3/VMCore/Jnjvm.h"
 
 #include <iostream>
 #include <fstream>

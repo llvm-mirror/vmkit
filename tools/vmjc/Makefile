@@ -17,7 +17,7 @@ TOOLNAME = vmjc
 
 ifeq ($(WITH_LLVM_GCC), 1)
   MODULESNAME = vmkit
-  USEDMODULES = JnJVM.bc Classpath.bc JnjvmCompiler.bc Allocator.bc \
+  USEDMODULES = J3.bc Classpath.bc J3Compiler.bc Allocator.bc \
 		CommonThread.bc Mvm.bc MvmCompiler.bc $(GCLIB).bc
 
   BUILT_SOURCES = vmkit.s
@@ -25,7 +25,7 @@ ifeq ($(WITH_LLVM_GCC), 1)
 
 else
 
-  USEDLIBS = JnJVM.a Classpath.a JnJVM.a JnjvmCompiler.a Allocator.a \
+  USEDLIBS = J3.a Classpath.a J3.a J3Compiler.a Allocator.a \
 	     Mvm.a MvmCompiler.a $(GCLIB).a CommonThread.a
 endif
 

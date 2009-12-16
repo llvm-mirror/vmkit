@@ -37,8 +37,8 @@
 #include "Jnjvm.h"
 #include "Reader.h"
 
-#include "jnjvm/JnjvmModule.h"
-#include "jnjvm/JnjvmModuleProvider.h"
+#include "j3/JnjvmModule.h"
+#include "j3/JnjvmModuleProvider.h"
 
 using namespace jnjvm;
 using namespace llvm;

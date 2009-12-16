@@ -25,7 +25,7 @@
 
 #include "JavaClass.h"
 #include "JavaUpcalls.h"
-#include "jnjvm/JnjvmModule.h"
+#include "j3/JnjvmModule.h"
 
 namespace jnjvm {
 

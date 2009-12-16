@@ -11,15 +11,15 @@ LEVEL = ../../..
 include $(LEVEL)/Makefile.config
 
 ifeq ($(WITH_LLVM_GCC), 1)
-  MODULE_NAME = JnJVM
+  MODULE_NAME = J3
 else
-  LIBRARYNAME = JnJVM
+  LIBRARYNAME = J3
 endif
 
 
 include $(LEVEL)/Makefile.common
 
-CXX.Flags += -I$(PROJ_OBJ_DIR)/../Classpath -I$(PROJ_OBJ_DIR)/../LLVMRuntime -I$(PROJ_SRC_DIR)/../Classpath $(CLASSPATH_FLAGS) -I$(PROJ_SRC_DIR)/../../../include/jnjvm
+CXX.Flags += -I$(PROJ_OBJ_DIR)/../Classpath -I$(PROJ_OBJ_DIR)/../LLVMRuntime -I$(PROJ_SRC_DIR)/../Classpath $(CLASSPATH_FLAGS) -I$(PROJ_SRC_DIR)/../../../include/j3
 
 ifeq ($(ISOLATE_BUILD), 1)
   CXX.Flags += -I$(PROJ_SRC_DIR)/../Isolate

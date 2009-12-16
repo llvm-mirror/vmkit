@@ -12,8 +12,8 @@ PARALLEL_DIRS = Mvm
 
 include $(LEVEL)/Makefile.config
 
-ifeq ($(WITH_JNJVM), 1)
-PARALLEL_DIRS += JnJVM
+ifeq ($(WITH_J3), 1)
+PARALLEL_DIRS += J3
 endif
 
 ifeq ($(WITH_N3), 1)

@@ -1,6 +1,6 @@
 //===--------- Launcher.cpp - Launch command line -------------------------===//
 //
-//                            JnJVM
+//                          The VMKit project
 //
 // This file is distributed under the University of Pierre et Marie Curie 
 // License. See LICENSE.TXT for details.
@@ -25,8 +25,8 @@
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Thread.h"
 
-#include "jnjvm/JnjvmModule.h"
-#include "jnjvm/JnjvmModuleProvider.h"
+#include "j3/JnjvmModule.h"
+#include "j3/JnjvmModuleProvider.h"
 
 #include "CommandLine.h"
 

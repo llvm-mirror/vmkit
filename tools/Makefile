@@ -12,8 +12,8 @@ PARALLEL_DIRS += vmkit
 
 include $(LEVEL)/Makefile.config
 
-ifeq ($(WITH_JNJVM), 1)
-  PARALLEL_DIRS += jnjvm
+ifeq ($(WITH_J3), 1)
+  PARALLEL_DIRS += j3
   PARALLEL_DIRS += vmjc
   PARALLEL_DIRS += llcj
 endif

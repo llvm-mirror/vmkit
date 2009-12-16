@@ -10,24 +10,24 @@ LEVEL = ../..
 
 include $(LEVEL)/Makefile.config
 
-TOOLNAME = jnjvm
+TOOLNAME = j3
 
 ifeq ($(WITH_LLVM_GCC), 1)
 
-  MODULESNAME = jnjvm
-  USEDMODULES = JnJVM.bc Classpath.bc JnjvmCompiler.bc Allocator.bc CommonThread.bc \
+  MODULESNAME = j3
+  USEDMODULES = J3.bc Classpath.bc J3Compiler.bc Allocator.bc CommonThread.bc \
 		Mvm.bc MvmCompiler.bc $(GCLIB).bc
 
   ifeq ($(ISOLATE_SHARING_BUILD), 1) 
     USEDMODULES += Isolate.bc
   endif
 
-  BUILT_SOURCES = jnjvm.s
-  SOURCES = jnjvm.s $(notdir $(wildcard $(PROJ_SRC_DIR)/*.cpp))
+  BUILT_SOURCES = j3.s
+  SOURCES = j3.s $(notdir $(wildcard $(PROJ_SRC_DIR)/*.cpp))
 
 else
 
-USEDLIBS = JnJVM.a Classpath.a JnJVM.a JnjvmCompiler.a Allocator.a \
+USEDLIBS = J3.a Classpath.a J3.a J3Compiler.a Allocator.a \
 	   Mvm.a MvmCompiler.a $(GCLIB).a CommonThread.a
 
   ifeq ($(ISOLATE_SHARING_BUILD), 1) 

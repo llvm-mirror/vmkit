@@ -18,7 +18,7 @@
 
 #include "mvm/Threads/Thread.h"
 
-#include "jnjvm/JnjvmModule.h"
+#include "j3/JnjvmModule.h"
 
 #include "JavaArray.h"
 #include "JavaConstantPool.h"

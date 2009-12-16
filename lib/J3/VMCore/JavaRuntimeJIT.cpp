@@ -18,7 +18,7 @@
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 
-#include "jnjvm/OpcodeNames.def"
+#include "j3/OpcodeNames.def"
 
 #include <cstdarg>
 

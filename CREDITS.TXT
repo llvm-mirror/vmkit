@@ -16,7 +16,7 @@ D: Provider of much wisdom
 N: Nicolas Geoffray
 E: nicolas.geoffray@lip6.fr
 W: http://www-src.lip6.fr/homepages/Nicolas.Geoffray/
-D: Port of JnJVM to LLVM
+D: Architect of J3, originally a port of JnJVM to LLVM
 D: Architect of N3
 
 N: Sylvain Marechal
