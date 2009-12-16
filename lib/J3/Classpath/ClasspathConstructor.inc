@@ -1,7 +1,7 @@
 //===- ClasspathConstructor.cpp -------------------------------------------===//
 //===----------- GNU classpath java/lang/reflect/Constructor --------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -21,7 +21,7 @@
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 extern "C" {
 

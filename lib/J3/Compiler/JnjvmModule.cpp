@@ -1,6 +1,6 @@
 //===--------- JnjvmModule.cpp - Definition of a Jnjvm module -------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -27,7 +27,7 @@
 #include "j3/JnjvmModule.h"
 #include "j3/JnjvmModuleProvider.h"
 
-using namespace jnjvm;
+using namespace j3;
 using namespace llvm;
 
 const llvm::Type* JnjvmModule::JavaObjectType = 0;
@@ -90,7 +90,7 @@ void JavaLLVMCompiler::resolveStaticClass(Class* cl) {
 }
 
 
-namespace jnjvm { 
+namespace j3 { 
   namespace llvm_runtime { 
     #include "LLVMRuntime.inc"
   }
@@ -100,7 +100,7 @@ void JnjvmModule::initialise() {
   Module* module = globalModule;
   
   if (!module->getTypeByName("JavaThread"))
-    jnjvm::llvm_runtime::makeLLVMModuleContents(module);
+    j3::llvm_runtime::makeLLVMModuleContents(module);
 
   VTType = PointerType::getUnqual(module->getTypeByName("VT"));
 
@@ -247,20 +247,20 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   module->addTypeName("ArrayDouble", JavaArrayDoubleType->getContainedType(0));
   module->addTypeName("ArrayObject", JavaArrayObjectType->getContainedType(0));
    
-  InterfaceLookupFunction = module->getFunction("jnjvmInterfaceLookup");
-  MultiCallNewFunction = module->getFunction("jnjvmMultiCallNew");
+  InterfaceLookupFunction = module->getFunction("j3InterfaceLookup");
+  MultiCallNewFunction = module->getFunction("j3MultiCallNew");
   ForceLoadedCheckFunction = module->getFunction("forceLoadedCheck");
   InitialisationCheckFunction = module->getFunction("initialisationCheck");
   ForceInitialisationCheckFunction = 
     module->getFunction("forceInitialisationCheck");
-  InitialiseClassFunction = module->getFunction("jnjvmRuntimeInitialiseClass");
+  InitialiseClassFunction = module->getFunction("j3RuntimeInitialiseClass");
   
   GetConstantPoolAtFunction = module->getFunction("getConstantPoolAt");
   ArrayLengthFunction = module->getFunction("arrayLength");
   GetVTFunction = module->getFunction("getVT");
   GetIMTFunction = module->getFunction("getIMT");
   GetClassFunction = module->getFunction("getClass");
-  ClassLookupFunction = module->getFunction("jnjvmClassLookup");
+  ClassLookupFunction = module->getFunction("j3ClassLookup");
   GetVTFromClassFunction = module->getFunction("getVTFromClass");
   GetVTFromClassArrayFunction = module->getFunction("getVTFromClassArray");
   GetVTFromCommonClassFunction = module->getFunction("getVTFromCommonClass");
@@ -269,42 +269,42 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
     module->getFunction("getObjectSizeFromClass");
  
   GetClassDelegateeFunction = module->getFunction("getClassDelegatee");
-  RuntimeDelegateeFunction = module->getFunction("jnjvmRuntimeDelegatee");
+  RuntimeDelegateeFunction = module->getFunction("j3RuntimeDelegatee");
   IsAssignableFromFunction = module->getFunction("isAssignableFrom");
   IsSecondaryClassFunction = module->getFunction("isSecondaryClass");
   GetDepthFunction = module->getFunction("getDepth");
   GetStaticInstanceFunction = module->getFunction("getStaticInstance");
   GetDisplayFunction = module->getFunction("getDisplay");
   GetVTInDisplayFunction = module->getFunction("getVTInDisplay");
-  AquireObjectFunction = module->getFunction("jnjvmJavaObjectAquire");
-  ReleaseObjectFunction = module->getFunction("jnjvmJavaObjectRelease");
-  OverflowThinLockFunction = module->getFunction("jnjvmOverflowThinLock");
+  AquireObjectFunction = module->getFunction("j3JavaObjectAquire");
+  ReleaseObjectFunction = module->getFunction("j3JavaObjectRelease");
+  OverflowThinLockFunction = module->getFunction("j3OverflowThinLock");
 
-  VirtualFieldLookupFunction = module->getFunction("jnjvmVirtualFieldLookup");
-  StaticFieldLookupFunction = module->getFunction("jnjvmStaticFieldLookup");
-  StringLookupFunction = module->getFunction("jnjvmStringLookup");
-  StartJNIFunction = module->getFunction("jnjvmStartJNI");
-  EndJNIFunction = module->getFunction("jnjvmEndJNI");
+  VirtualFieldLookupFunction = module->getFunction("j3VirtualFieldLookup");
+  StaticFieldLookupFunction = module->getFunction("j3StaticFieldLookup");
+  StringLookupFunction = module->getFunction("j3StringLookup");
+  StartJNIFunction = module->getFunction("j3StartJNI");
+  EndJNIFunction = module->getFunction("j3EndJNI");
   
   NullPointerExceptionFunction =
-    module->getFunction("jnjvmNullPointerException");
-  ClassCastExceptionFunction = module->getFunction("jnjvmClassCastException");
+    module->getFunction("j3NullPointerException");
+  ClassCastExceptionFunction = module->getFunction("j3ClassCastException");
   IndexOutOfBoundsExceptionFunction = 
-    module->getFunction("jnjvmIndexOutOfBoundsException");
+    module->getFunction("j3IndexOutOfBoundsException");
   NegativeArraySizeExceptionFunction = 
-    module->getFunction("jnjvmNegativeArraySizeException");
-  OutOfMemoryErrorFunction = module->getFunction("jnjvmOutOfMemoryError");
-  StackOverflowErrorFunction = module->getFunction("jnjvmStackOverflowError");
-  ArrayStoreExceptionFunction = module->getFunction("jnjvmArrayStoreException");
-  ArithmeticExceptionFunction = module->getFunction("jnjvmArithmeticException");
+    module->getFunction("j3NegativeArraySizeException");
+  OutOfMemoryErrorFunction = module->getFunction("j3OutOfMemoryError");
+  StackOverflowErrorFunction = module->getFunction("j3StackOverflowError");
+  ArrayStoreExceptionFunction = module->getFunction("j3ArrayStoreException");
+  ArithmeticExceptionFunction = module->getFunction("j3ArithmeticException");
 
-  PrintExecutionFunction = module->getFunction("jnjvmPrintExecution");
-  PrintMethodStartFunction = module->getFunction("jnjvmPrintMethodStart");
-  PrintMethodEndFunction = module->getFunction("jnjvmPrintMethodEnd");
+  PrintExecutionFunction = module->getFunction("j3PrintExecution");
+  PrintMethodStartFunction = module->getFunction("j3PrintMethodStart");
+  PrintMethodEndFunction = module->getFunction("j3PrintMethodEnd");
 
-  ThrowExceptionFunction = module->getFunction("jnjvmThrowException");
+  ThrowExceptionFunction = module->getFunction("j3ThrowException");
 
-  GetArrayClassFunction = module->getFunction("jnjvmGetArrayClass");
+  GetArrayClassFunction = module->getFunction("j3GetArrayClass");
  
   GetFinalInt8FieldFunction = module->getFunction("getFinalInt8Field");
   GetFinalInt16FieldFunction = module->getFunction("getFinalInt16Field");
@@ -319,13 +319,13 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   GetJnjvmExceptionClassFunction = 
     module->getFunction("getJnjvmExceptionClass");
   GetJnjvmArrayClassFunction = module->getFunction("getJnjvmArrayClass");
-  StaticCtpLookupFunction = module->getFunction("jnjvmStaticCtpLookup");
-  SpecialCtpLookupFunction = module->getFunction("jnjvmSpecialCtpLookup");
+  StaticCtpLookupFunction = module->getFunction("j3StaticCtpLookup");
+  SpecialCtpLookupFunction = module->getFunction("j3SpecialCtpLookup");
 #endif
  
 #ifdef SERVICE
-  ServiceCallStartFunction = module->getFunction("jnjvmServiceCallStart");
-  ServiceCallStopFunction = module->getFunction("jnjvmServiceCallStop");
+  ServiceCallStartFunction = module->getFunction("j3ServiceCallStart");
+  ServiceCallStopFunction = module->getFunction("j3ServiceCallStop");
 #endif
 
   JavaObjectTracerFunction = module->getFunction("JavaObjectTracer");
@@ -335,12 +335,12 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   RegularObjectTracerFunction = module->getFunction("RegularObjectTracer");
 
 #ifndef WITHOUT_VTABLE
-  VirtualLookupFunction = module->getFunction("jnjvmVirtualTableLookup");
+  VirtualLookupFunction = module->getFunction("j3VirtualTableLookup");
 #endif
 
   GetLockFunction = module->getFunction("getLock");
   ThrowExceptionFromJITFunction =
-    module->getFunction("jnjvmThrowExceptionFromJIT");
+    module->getFunction("j3ThrowExceptionFromJIT");
  
 }
 
@@ -385,7 +385,7 @@ namespace mvm {
   llvm::LoopPass* createLoopSafePointsPass();
 }
 
-namespace jnjvm {
+namespace j3 {
   llvm::FunctionPass* createLowerConstantCallsPass(JnjvmModule* M);
 }
 

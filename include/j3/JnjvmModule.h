@@ -1,6 +1,6 @@
-//===------- JnjvmModule.h - Definition of a Jnjvm module -----------------===//
+//===---------- JnjvmModule.h - Definition of a J3 module -----------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -33,7 +33,7 @@ namespace llvm {
   class Value;
 }
 
-namespace jnjvm {
+namespace j3 {
 
 class ArrayObject;
 class Attribut;

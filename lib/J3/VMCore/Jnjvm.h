@@ -1,6 +1,6 @@
 //===---------- Jnjvm.h - Java virtual machine description ---------------===//
 //
-//                              JnJVM
+//                          The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -25,7 +25,7 @@
 #include "JNIReferences.h"
 #include "LockedMap.h"
 
-namespace jnjvm {
+namespace j3 {
 
 class ArrayObject;
 class Classpath;
@@ -375,6 +375,6 @@ protected:
 
 };
 
-} // end namespace jnjvm
+} // end namespace j3
 
 #endif

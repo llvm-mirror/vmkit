@@ -1,6 +1,6 @@
 //===----------- JavaJIT.h - Java just in time compiler -------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -27,7 +27,7 @@
 #include "JavaUpcalls.h"
 #include "j3/JnjvmModule.h"
 
-namespace jnjvm {
+namespace j3 {
 
 class Class;
 class JavaMethod;
@@ -694,6 +694,6 @@ enum Opcode {
       IMPDEP2 = 0xFF
 };
 
-} // end namespace jnjvm
+} // end namespace j3
 
 #endif

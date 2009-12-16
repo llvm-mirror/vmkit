@@ -2,8 +2,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Service specific methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; jnjvmServiceCallStart - Mark the switching between services.
-declare void @jnjvmServiceCallStart(i8*, i8*)
+;;; j3ServiceCallStart - Mark the switching between services.
+declare void @j3ServiceCallStart(i8*, i8*)
 
-;;; jnjvmServiceCallStop - Mark the switching between services.
-declare void @jnjvmServiceCallStop(i8*, i8*)
+;;; j3ServiceCallStop - Mark the switching between services.
+declare void @j3ServiceCallStop(i8*, i8*)

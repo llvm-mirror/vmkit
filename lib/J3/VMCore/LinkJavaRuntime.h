@@ -1,7 +1,7 @@
 //===--------------------- LinkJavaRuntime.h ------------------------------===//
 //=== ------------- Reference all runtime functions -----------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -12,7 +12,7 @@
 #define JNJVM_LINK_JAVA_RUNTIME_H
 
 
-namespace jnjvm {
+namespace j3 {
   class JavaObject;
   class UserClass;
   class UserClassArray;
@@ -23,46 +23,46 @@ namespace jnjvm {
   class Jnjvm;
 }
 
-using namespace jnjvm;
+using namespace j3;
 
-extern "C" void* jnjvmInterfaceLookup(UserClass* caller, uint32 index);
-extern "C" void* jnjvmVirtualFieldLookup(UserClass* caller, uint32 index);
-extern "C" void* jnjvmStaticFieldLookup(UserClass* caller, uint32 index);
-extern "C" void* jnjvmVirtualTableLookup(UserClass* caller, uint32 index, ...);
-extern "C" void* jnjvmStringLookup(UserClass* cl, uint32 index);
-extern "C" void* jnjvmClassLookup(UserClass* caller, uint32 index);
-extern "C" UserCommonClass* jnjvmRuntimeInitialiseClass(UserClass* cl);
-extern "C" JavaObject* jnjvmRuntimeDelegatee(UserCommonClass* cl);
-extern "C" JavaArray* jnjvmMultiCallNew(UserClassArray* cl, uint32 len, ...);
-extern "C" UserClassArray* jnjvmGetArrayClass(UserCommonClass*,
+extern "C" void* j3InterfaceLookup(UserClass* caller, uint32 index);
+extern "C" void* j3VirtualFieldLookup(UserClass* caller, uint32 index);
+extern "C" void* j3StaticFieldLookup(UserClass* caller, uint32 index);
+extern "C" void* j3VirtualTableLookup(UserClass* caller, uint32 index, ...);
+extern "C" void* j3StringLookup(UserClass* cl, uint32 index);
+extern "C" void* j3ClassLookup(UserClass* caller, uint32 index);
+extern "C" UserCommonClass* j3RuntimeInitialiseClass(UserClass* cl);
+extern "C" JavaObject* j3RuntimeDelegatee(UserCommonClass* cl);
+extern "C" JavaArray* j3MultiCallNew(UserClassArray* cl, uint32 len, ...);
+extern "C" UserClassArray* j3GetArrayClass(UserCommonClass*,
                                               UserClassArray**);
-extern "C" void jnjvmEndJNI();
-extern "C" void* jnjvmStartJNI();
-extern "C" void jnjvmJavaObjectAquire(JavaObject* obj);
-extern "C" void jnjvmJavaObjectRelease(JavaObject* obj);
-extern "C" void jnjvmThrowException(JavaObject* obj);
-extern "C" void jnjvmOverflowThinLock(JavaObject* obj);
-extern "C" JavaObject* jnjvmNullPointerException();
-extern "C" JavaObject* jnjvmNegativeArraySizeException(sint32 val);
-extern "C" JavaObject* jnjvmOutOfMemoryError(sint32 val);
-extern "C" JavaObject* jnjvmStackOverflowError();
-extern "C" JavaObject* jnjvmArithmeticException();
-extern "C" JavaObject* jnjvmClassCastException(JavaObject* obj,
+extern "C" void j3EndJNI();
+extern "C" void* j3StartJNI();
+extern "C" void j3JavaObjectAquire(JavaObject* obj);
+extern "C" void j3JavaObjectRelease(JavaObject* obj);
+extern "C" void j3ThrowException(JavaObject* obj);
+extern "C" void j3OverflowThinLock(JavaObject* obj);
+extern "C" JavaObject* j3NullPointerException();
+extern "C" JavaObject* j3NegativeArraySizeException(sint32 val);
+extern "C" JavaObject* j3OutOfMemoryError(sint32 val);
+extern "C" JavaObject* j3StackOverflowError();
+extern "C" JavaObject* j3ArithmeticException();
+extern "C" JavaObject* j3ClassCastException(JavaObject* obj,
                                                UserCommonClass* cl);
-extern "C" JavaObject* jnjvmIndexOutOfBoundsException(JavaObject* obj,
+extern "C" JavaObject* j3IndexOutOfBoundsException(JavaObject* obj,
                                                       sint32 index);
-extern "C" JavaObject* jnjvmArrayStoreException(JavaVirtualTable* VT);
-extern "C" void jnjvmThrowExceptionFromJIT();
-extern "C" void jnjvmPrintMethodStart(JavaMethod* meth);
-extern "C" void jnjvmPrintMethodEnd(JavaMethod* meth);
-extern "C" void jnjvmPrintExecution(uint32 opcode, uint32 index,
+extern "C" JavaObject* j3ArrayStoreException(JavaVirtualTable* VT);
+extern "C" void j3ThrowExceptionFromJIT();
+extern "C" void j3PrintMethodStart(JavaMethod* meth);
+extern "C" void j3PrintMethodEnd(JavaMethod* meth);
+extern "C" void j3PrintExecution(uint32 opcode, uint32 index,
                                     JavaMethod* meth);
 
 
 #ifdef SERVICE
-extern "C" void jnjvmServiceCallStart(Jnjvm* OldService,
+extern "C" void j3ServiceCallStart(Jnjvm* OldService,
                                       Jnjvm* NewService);
-extern "C" void jnjvmServiceCallStop(Jnjvm* OldService,
+extern "C" void j3ServiceCallStop(Jnjvm* OldService,
                                      Jnjvm* NewService);
 #endif
 
@@ -70,8 +70,8 @@ extern "C" void jnjvmServiceCallStop(Jnjvm* OldService,
 
 
 #ifdef ISOLATE_SHARING
-extern "C" void* jnjvmStaticCtpLookup(UserClass* cl, uint32 index);
-extern "C" UserConstantPool* jnjvmSpecialCtpLookup(UserConstantPool* ctpInfo,
+extern "C" void* j3StaticCtpLookup(UserClass* cl, uint32 index);
+extern "C" UserConstantPool* j3SpecialCtpLookup(UserConstantPool* ctpInfo,
                                                    uint32 index,
                                                    UserConstantPool** res);
 #endif
@@ -87,42 +87,42 @@ namespace {
       if (std::getenv("bar") != (char*) -1) 
         return;
       
-      (void) jnjvmInterfaceLookup(0, 0);
-      (void) jnjvmVirtualFieldLookup(0, 0);
-      (void) jnjvmStaticFieldLookup(0, 0);
-      (void) jnjvmVirtualTableLookup(0, 0);
-      (void) jnjvmClassLookup(0, 0);
-      (void) jnjvmRuntimeInitialiseClass(0);
-      (void) jnjvmRuntimeDelegatee(0);
-      (void) jnjvmMultiCallNew(0, 0);
-      (void) jnjvmGetArrayClass(0, 0);
-      (void) jnjvmEndJNI();
-      (void) jnjvmStartJNI();
-      (void) jnjvmJavaObjectAquire(0);
-      (void) jnjvmJavaObjectRelease(0);
-      (void) jnjvmThrowException(0);
-      (void) jnjvmOverflowThinLock(0);
-      (void) jnjvmNullPointerException();
-      (void) jnjvmNegativeArraySizeException(0);
-      (void) jnjvmOutOfMemoryError(0);
-      (void) jnjvmStackOverflowError();
-      (void) jnjvmArithmeticException();
-      (void) jnjvmClassCastException(0, 0);
-      (void) jnjvmIndexOutOfBoundsException(0, 0);
-      (void) jnjvmArrayStoreException(0);
-      (void) jnjvmThrowExceptionFromJIT();
-      (void) jnjvmPrintMethodStart(0);
-      (void) jnjvmPrintMethodEnd(0);
-      (void) jnjvmPrintExecution(0, 0, 0);
-      (void) jnjvmStringLookup(0, 0);
+      (void) j3InterfaceLookup(0, 0);
+      (void) j3VirtualFieldLookup(0, 0);
+      (void) j3StaticFieldLookup(0, 0);
+      (void) j3VirtualTableLookup(0, 0);
+      (void) j3ClassLookup(0, 0);
+      (void) j3RuntimeInitialiseClass(0);
+      (void) j3RuntimeDelegatee(0);
+      (void) j3MultiCallNew(0, 0);
+      (void) j3GetArrayClass(0, 0);
+      (void) j3EndJNI();
+      (void) j3StartJNI();
+      (void) j3JavaObjectAquire(0);
+      (void) j3JavaObjectRelease(0);
+      (void) j3ThrowException(0);
+      (void) j3OverflowThinLock(0);
+      (void) j3NullPointerException();
+      (void) j3NegativeArraySizeException(0);
+      (void) j3OutOfMemoryError(0);
+      (void) j3StackOverflowError();
+      (void) j3ArithmeticException();
+      (void) j3ClassCastException(0, 0);
+      (void) j3IndexOutOfBoundsException(0, 0);
+      (void) j3ArrayStoreException(0);
+      (void) j3ThrowExceptionFromJIT();
+      (void) j3PrintMethodStart(0);
+      (void) j3PrintMethodEnd(0);
+      (void) j3PrintExecution(0, 0, 0);
+      (void) j3StringLookup(0, 0);
 #ifdef SERVICE
-      (void) jnjvmServiceCallStart(0, 0);
-      (void) jnjvmServiceCallStop(0, 0);
+      (void) j3ServiceCallStart(0, 0);
+      (void) j3ServiceCallStop(0, 0);
 #endif
 
 #ifdef ISOLATE_SHARING
-      (void) jnjvmStaticCtpLookup(0, 0);
-      (void) jnjvmSpecialCtpLookup(0, 0, 0);
+      (void) j3StaticCtpLookup(0, 0);
+      (void) j3SpecialCtpLookup(0, 0, 0);
 #endif
 
     }

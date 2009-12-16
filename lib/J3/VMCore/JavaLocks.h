@@ -17,7 +17,7 @@ namespace mvm {
   class Thread;
 }
 
-namespace jnjvm {
+namespace j3 {
 
 class JavaObject;
 class JavaThread;

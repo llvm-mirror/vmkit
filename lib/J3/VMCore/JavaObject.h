@@ -1,6 +1,6 @@
 //===----------- JavaObject.h - Java object definition -------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -21,7 +21,7 @@
 #include "JavaLocks.h"
 #include "JnjvmConfig.h"
 
-namespace jnjvm {
+namespace j3 {
 
 class JavaObject;
 class JavaThread;
@@ -285,6 +285,6 @@ public:
 };
 
 
-} // end namespace jnjvm
+} // end namespace j3
 
 #endif

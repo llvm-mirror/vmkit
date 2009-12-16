@@ -48,8 +48,8 @@
 ;;;;; Constant calls for Jnjvm runtime internal objects field accesses ;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; jnjvmRuntimeInitialiseClass - Initialises the class.
-declare %JavaClass* @jnjvmRuntimeInitialiseClass(%JavaClass*)
+;;; j3RuntimeInitialiseClass - Initialises the class.
+declare %JavaClass* @j3RuntimeInitialiseClass(%JavaClass*)
 
 ;;; arrayLength - Get the length of an array.
 declare i32 @arrayLength(%JavaObject*) readnone 
@@ -102,12 +102,12 @@ declare i8* @getStaticInstance(%JavaClass*) readnone
 ;;;;;;;;;;;;;;;;;;;;;;;; Generic Runtime methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; jnjvmInterfaceLookup - Used for interface calls.
-declare i8* @jnjvmInterfaceLookup(%JavaClass*, i32, ...)
+;;; j3InterfaceLookup - Used for interface calls.
+declare i8* @j3InterfaceLookup(%JavaClass*, i32, ...)
 
-;;; jnjvmMultiCallNew - Allocate multi-dimensional arrays. This will go to
+;;; j3MultiCallNew - Allocate multi-dimensional arrays. This will go to
 ;;; allocation specific methods.
-declare %JavaObject* @jnjvmMultiCallNew(%JavaCommonClass*, i32, ...)
+declare %JavaObject* @j3MultiCallNew(%JavaCommonClass*, i32, ...)
 
 ;;; initialisationCheck - Checks if the class has been initialized and 
 ;;; initializes if not. This is used for initialization barriers in an isolate
@@ -133,37 +133,37 @@ declare void @forceLoadedCheck(%JavaCommonClass*)
 declare i8* @getConstantPoolAt(i8* (%JavaClass*, i32, ...)*, i8**,
                                %JavaClass*, i32, ...) readnone
 
-;;; jnjvmVirtualTableLookup - Look up the offset in a virtual table of a
+;;; j3VirtualTableLookup - Look up the offset in a virtual table of a
 ;;; specific function. This function takes a class and an index to lookup in the
 ;;; constant pool and returns and stores it in the constant pool cache.
-declare i8* @jnjvmVirtualTableLookup(%JavaClass*, i32, ...)
+declare i8* @j3VirtualTableLookup(%JavaClass*, i32, ...)
 
-;;; jnjvmClassLookup - Look up a specific class. The function takes a class and
+;;; j3ClassLookup - Look up a specific class. The function takes a class and
 ;;; an index to lookup in the constant pool and returns and stores it in the
 ;;; constant pool cache.
-declare i8* @jnjvmClassLookup(%JavaClass*, i32, ...)
+declare i8* @j3ClassLookup(%JavaClass*, i32, ...)
 
-;;; jnjvmVirtualFieldLookup - Look up a specific virtual field.
-declare i8* @jnjvmVirtualFieldLookup(%JavaClass*, i32, ...)
+;;; j3VirtualFieldLookup - Look up a specific virtual field.
+declare i8* @j3VirtualFieldLookup(%JavaClass*, i32, ...)
 
-;;; jnjvmStaticFieldLookup - Look up a specific static field.
-declare i8* @jnjvmStaticFieldLookup(%JavaClass*, i32, ...)
+;;; j3StaticFieldLookup - Look up a specific static field.
+declare i8* @j3StaticFieldLookup(%JavaClass*, i32, ...)
 
-;;; jnjvmStringLookup - Find the isolate-specific string at the given offset in
+;;; j3StringLookup - Find the isolate-specific string at the given offset in
 ;;; the constant pool.
-declare i8* @jnjvmStringLookup(%JavaClass*, i32, ...) readnone
+declare i8* @j3StringLookup(%JavaClass*, i32, ...) readnone
 
-;;; jnjvmJavaObjectAquire - This function is called when starting a synchronized
+;;; j3JavaObjectAquire - This function is called when starting a synchronized
 ;;; block or method.
-declare void @jnjvmJavaObjectAquire(%JavaObject*)
+declare void @j3JavaObjectAquire(%JavaObject*)
 
-;;; jnjvmJavaObjectRelease - This function is called when leaving a synchronized
+;;; j3JavaObjectRelease - This function is called when leaving a synchronized
 ;;; block or method.
-declare void @jnjvmJavaObjectRelease(%JavaObject*)
+declare void @j3JavaObjectRelease(%JavaObject*)
 
-;;; jnjvmOverflowThinLock - Change a thin lock to a fat lock when the thin lock
+;;; j3OverflowThinLock - Change a thin lock to a fat lock when the thin lock
 ;;; overflows
-declare void @jnjvmOverflowThinLock(%JavaObject*)
+declare void @j3OverflowThinLock(%JavaObject*)
 
 ;;; isAssignableFrom - Returns if a type is a subtype of another type.
 declare i1 @isAssignableFrom(%VT*, %VT*) readnone
@@ -177,13 +177,13 @@ declare i1 @isSecondaryClass(%VT*, %VT*) readnone
 ;;; the common class.
 declare %JavaObject* @getClassDelegatee(%JavaCommonClass*) readnone 
 
-;;; jnjvmRuntimeDelegatee - Returns the java/lang/Class representation of the
+;;; j3RuntimeDelegatee - Returns the java/lang/Class representation of the
 ;;; class. This method is called if the class delegatee has not been created
 ;;; yet.
-declare %JavaObject* @jnjvmRuntimeDelegatee(%JavaCommonClass*) readnone 
+declare %JavaObject* @j3RuntimeDelegatee(%JavaCommonClass*) readnone 
 
-;;; jnjvmGetArrayClass - Get the array user class of the user class.
-declare %JavaClassArray* @jnjvmGetArrayClass(%JavaCommonClass*, 
+;;; j3GetArrayClass - Get the array user class of the user class.
+declare %JavaClassArray* @j3GetArrayClass(%JavaCommonClass*, 
                                              %JavaClassArray**) readnone
 
 declare i8 @getFinalInt8Field(i8*) readnone
@@ -198,25 +198,25 @@ declare %JavaObject* @getFinalObjectField(%JavaObject**) readnone
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Exception methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-declare %JavaObject* @jnjvmNullPointerException()
-declare %JavaObject* @jnjvmClassCastException(%JavaObject*, %JavaCommonClass*)
-declare %JavaObject* @jnjvmIndexOutOfBoundsException(%JavaObject*, i32)
-declare %JavaObject* @jnjvmNegativeArraySizeException(i32)
-declare %JavaObject* @jnjvmOutOfMemoryError(i32)
-declare %JavaObject* @jnjvmStackOverflowError()
-declare %JavaObject* @jnjvmArrayStoreException(%VT*)
-declare %JavaObject* @jnjvmArithmeticException()
-declare void @jnjvmThrowException(%JavaObject*)
-declare void @jnjvmThrowExceptionFromJIT()
+declare %JavaObject* @j3NullPointerException()
+declare %JavaObject* @j3ClassCastException(%JavaObject*, %JavaCommonClass*)
+declare %JavaObject* @j3IndexOutOfBoundsException(%JavaObject*, i32)
+declare %JavaObject* @j3NegativeArraySizeException(i32)
+declare %JavaObject* @j3OutOfMemoryError(i32)
+declare %JavaObject* @j3StackOverflowError()
+declare %JavaObject* @j3ArrayStoreException(%VT*)
+declare %JavaObject* @j3ArithmeticException()
+declare void @j3ThrowException(%JavaObject*)
+declare void @j3ThrowExceptionFromJIT()
 
-declare void @jnjvmEndJNI(i32**, i8**)
-declare void @jnjvmStartJNI(i32*, i32**, i8*, i8**, i8*)
+declare void @j3EndJNI(i32**, i8**)
+declare void @j3StartJNI(i32*, i32**, i8*, i8**, i8*)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Debugging methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-declare void @jnjvmPrintExecution(i32, i32, %JavaMethod*)
-declare void @jnjvmPrintMethodStart(%JavaMethod*)
-declare void @jnjvmPrintMethodEnd(%JavaMethod*)
+declare void @j3PrintExecution(i32, i32, %JavaMethod*)
+declare void @j3PrintMethodStart(%JavaMethod*)
+declare void @j3PrintMethodEnd(%JavaMethod*)

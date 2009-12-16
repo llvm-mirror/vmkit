@@ -1,3 +1,12 @@
+//===------------------- UTF8.h - Utilities for UTF8 ----------------------===//
+//
+//                            The VMKit project
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+
 #ifndef _JNJVM_UTF8_H_
 #define _JNJVM_UTF8_H_
 
@@ -6,7 +15,7 @@
 #include "mvm/UTF8.h"
 #include "mvm/PrintBuffer.h"
 
-namespace jnjvm {
+namespace j3 {
 	using mvm::UTF8;
 	using mvm::UTF8Map;
 

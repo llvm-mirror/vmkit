@@ -1,6 +1,6 @@
 //===----------- JavaAccess.h - Java access description -------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -15,7 +15,7 @@
 #ifndef JNJVM_JAVA_ACCESS_H
 #define JNJVM_JAVA_ACCESS_H
 
-namespace jnjvm {
+namespace j3 {
 
 #define ACC_PUBLIC       0x0001
 #define ACC_PRIVATE      0x0002
@@ -66,6 +66,6 @@ MK_VERIFIER(isArray,      JNJVM_ARRAY)
 
 #undef MK_VERIFIER
 
-} // end namespace jnjvm
+} // end namespace j3
 
 #endif

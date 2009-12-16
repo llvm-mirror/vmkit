@@ -1,6 +1,6 @@
 //===----------- JavaJIT.cpp - Java just in time compiler -----------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -40,7 +40,7 @@
 #include "j3/JnjvmModule.h"
 #include "j3/JnjvmModuleProvider.h"
 
-using namespace jnjvm;
+using namespace j3;
 using namespace llvm;
 
 static bool needsInitialisationCheck(Class* cl, Class* compilingClass) {
@@ -230,7 +230,7 @@ llvm::Value* JavaJIT::getCurrentThread(const llvm::Type* Ty) {
   return threadId;
 }
 
-extern "C" void jnjvmThrowExceptionFromJIT();
+extern "C" void j3ThrowExceptionFromJIT();
 
 llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
@@ -243,7 +243,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   const FunctionType *funcType = llvmFunction->getFunctionType();
   const llvm::Type* returnType = funcType->getReturnType();
   
-  bool jnjvm = false;
+  bool j3 = false;
   
   const UTF8* jniConsClName = compilingClass->name;
   const UTF8* jniConsName = compilingMethod->name;
@@ -256,7 +256,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
                             ((mnlen + clen + mtlen) << 3));
   
   if (!natPtr)
-    natPtr = compilingClass->classLoader->nativeLookup(compilingMethod, jnjvm,
+    natPtr = compilingClass->classLoader->nativeLookup(compilingMethod, j3,
                                                        functionName);
   
   if (!natPtr && !TheCompiler->isStaticCompiling()) {
@@ -276,7 +276,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   
   Function* func = llvmFunction;
-  if (jnjvm) {
+  if (j3) {
     compilingMethod->setCompiledPtr((void*)natPtr, functionName);
     llvmFunction->clearGC();
     return llvmFunction;

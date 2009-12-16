@@ -1,6 +1,6 @@
 //===-- ClasspathVMSystem.cpp - GNU classpath java/lang/VMSystem ----------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -16,7 +16,7 @@
 #include "JavaThread.h"
 #include "Jnjvm.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 extern "C" {
 
@@ -38,7 +38,7 @@ jint len) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  jnjvm::Jnjvm *vm = JavaThread::get()->getJVM();
+  j3::Jnjvm *vm = JavaThread::get()->getJVM();
 
   verifyNull(src);
   verifyNull(dst);

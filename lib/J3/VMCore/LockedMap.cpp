@@ -1,6 +1,6 @@
 //===------- LockedMap.cpp - Implementation of the UTF8 map ---------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -18,7 +18,7 @@
 
 #include <cstring>
 
-using namespace jnjvm;
+using namespace j3;
 
 void StringMap::insert(JavaString* str) {
   llvm_gcroot(str, 0);

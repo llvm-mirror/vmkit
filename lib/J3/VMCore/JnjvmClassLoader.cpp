@@ -1,6 +1,6 @@
 //===-- JnjvmClassLoader.cpp - Jnjvm representation of a class loader ------===//
 //
-//                              Jnjvm
+//                          The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -51,7 +51,7 @@
 #include "Zip.h"
 
 
-using namespace jnjvm;
+using namespace j3;
 
 typedef void (*static_init_t)(JnjvmClassLoader*);
 
@@ -1036,7 +1036,7 @@ const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
   return readerConstructUTF8(buf, n);
 }
 
-intptr_t JnjvmClassLoader::loadInLib(const char* buf, bool& jnjvm) {
+intptr_t JnjvmClassLoader::loadInLib(const char* buf, bool& j3) {
   uintptr_t res = (uintptr_t)TheCompiler->loadMethod(SELF_HANDLE, buf);
   
   if (!res) {
@@ -1046,11 +1046,11 @@ intptr_t JnjvmClassLoader::loadInLib(const char* buf, bool& jnjvm) {
       if (res) break;
     }
   } else {
-    jnjvm = true;
+    j3 = true;
   }
   
   if (!res && this != bootstrapLoader)
-    res = bootstrapLoader->loadInLib(buf, jnjvm);
+    res = bootstrapLoader->loadInLib(buf, j3);
 
   return (intptr_t)res;
 }
@@ -1065,14 +1065,14 @@ intptr_t JnjvmClassLoader::loadInLib(const char* name, void* handle) {
   return (intptr_t)TheCompiler->loadMethod(handle, name);
 }
 
-intptr_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& jnjvm,
+intptr_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& j3,
                                         char* buf) {
 
   meth->jniConsFromMeth(buf);
-  intptr_t res = loadInLib(buf, jnjvm);
+  intptr_t res = loadInLib(buf, j3);
   if (!res) {
     meth->jniConsFromMethOverloaded(buf);
-    res = loadInLib(buf, jnjvm);
+    res = loadInLib(buf, j3);
   }
   return res;
 }
@@ -1213,7 +1213,7 @@ extern "C" void vmjcAddString(JnjvmClassLoader* JCL, JavaString* val) {
 }
 
 extern "C" intptr_t vmjcNativeLoader(JavaMethod* meth) {
-  bool jnjvm = false;
+  bool j3 = false;
   const UTF8* jniConsClName = meth->classDef->name;
   const UTF8* jniConsName = meth->name;
   const UTF8* jniConsType = meth->type;
@@ -1223,7 +1223,7 @@ extern "C" intptr_t vmjcNativeLoader(JavaMethod* meth) {
 
   char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + 1 +
                             ((mnlen + clen + mtlen) << 3));
-  intptr_t res = meth->classDef->classLoader->nativeLookup(meth, jnjvm, buf);
+  intptr_t res = meth->classDef->classLoader->nativeLookup(meth, j3, buf);
   assert(res && "Could not find required native method");
   return res;
 }

@@ -54,7 +54,7 @@
 #include <memory>
 #include <string>
 
-using namespace jnjvm;
+using namespace j3;
 using namespace llvm;
 
 static cl::opt<std::string>

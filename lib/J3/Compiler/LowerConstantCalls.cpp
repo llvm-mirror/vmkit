@@ -1,6 +1,6 @@
 //===----- LowerConstantCalls.cpp - Changes arrayLength calls  --------------===//
 //
-//                               JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source 
 // License. See LICENSE.TXT for details.
@@ -21,7 +21,7 @@
 
 using namespace llvm;
 
-namespace jnjvm {
+namespace j3 {
 
   class VISIBILITY_HIDDEN LowerConstantCalls : public FunctionPass {
   public:

@@ -1,6 +1,6 @@
 //===------- LockedMap.h - A thread-safe map implementation ---------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -28,7 +28,7 @@
 
 #include "JavaArray.h" // for comparing UTF8s
 
-namespace jnjvm {
+namespace j3 {
 
 class JavaString;
 class Signdef;
@@ -198,6 +198,6 @@ public:
   
 };
 
-} // end namespace jnjvm
+} // end namespace j3
 
 #endif

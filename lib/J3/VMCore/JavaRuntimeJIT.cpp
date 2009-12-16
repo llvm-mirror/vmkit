@@ -1,7 +1,7 @@
 //===-------------------- JavaRuntimeJIT.cpp ------------------------------===//
 //=== ---- Runtime functions called by code compiled by the JIT -----------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -22,9 +22,9 @@
 
 #include <cstdarg>
 
-using namespace jnjvm;
+using namespace j3;
 
-extern "C" void* jnjvmInterfaceLookup(UserClass* caller, uint32 index) {
+extern "C" void* j3InterfaceLookup(UserClass* caller, uint32 index) {
 
   void* res = 0;
 
@@ -58,7 +58,7 @@ extern "C" void* jnjvmInterfaceLookup(UserClass* caller, uint32 index) {
 }
 
 // Throws if the field is not found.
-extern "C" void* jnjvmVirtualFieldLookup(UserClass* caller, uint32 index) {
+extern "C" void* j3VirtualFieldLookup(UserClass* caller, uint32 index) {
   
   void* res = 0;
   
@@ -94,7 +94,7 @@ extern "C" void* jnjvmVirtualFieldLookup(UserClass* caller, uint32 index) {
 }
 
 // Throws if the field or its class is not found.
-extern "C" void* jnjvmStaticFieldLookup(UserClass* caller, uint32 index) {
+extern "C" void* j3StaticFieldLookup(UserClass* caller, uint32 index) {
   
   void* res = 0;
   
@@ -140,7 +140,7 @@ extern "C" void* jnjvmStaticFieldLookup(UserClass* caller, uint32 index) {
 
 #ifndef WITHOUT_VTABLE
 // Throws if the method is not found.
-extern "C" void* jnjvmVirtualTableLookup(UserClass* caller, uint32 index, ...) {
+extern "C" void* j3VirtualTableLookup(UserClass* caller, uint32 index, ...) {
   
   void* res = 0;
   
@@ -190,7 +190,7 @@ extern "C" void* jnjvmVirtualTableLookup(UserClass* caller, uint32 index, ...) {
 #endif
 
 // Throws if the class is not found.
-extern "C" void* jnjvmClassLookup(UserClass* caller, uint32 index) { 
+extern "C" void* j3ClassLookup(UserClass* caller, uint32 index) { 
   
   void* res = 0;
   
@@ -217,7 +217,7 @@ extern "C" void* jnjvmClassLookup(UserClass* caller, uint32 index) {
 
 // Calls Java code.
 // Throws if initializing the class throws an exception.
-extern "C" UserCommonClass* jnjvmRuntimeInitialiseClass(UserClass* cl) {
+extern "C" UserCommonClass* j3RuntimeInitialiseClass(UserClass* cl) {
   BEGIN_NATIVE_EXCEPTION(1)
  
   cl->resolveClass();
@@ -234,7 +234,7 @@ extern "C" UserCommonClass* jnjvmRuntimeInitialiseClass(UserClass* cl) {
 }
 
 // Calls Java code.
-extern "C" JavaObject* jnjvmRuntimeDelegatee(UserCommonClass* cl) {
+extern "C" JavaObject* j3RuntimeDelegatee(UserCommonClass* cl) {
   JavaObject* res = 0;
   llvm_gcroot(res, 0);
 
@@ -282,7 +282,7 @@ static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
 }
 
 // Throws if one of the dimension is negative.
-extern "C" JavaArray* jnjvmMultiCallNew(UserClassArray* cl, uint32 len, ...) {
+extern "C" JavaArray* j3MultiCallNew(UserClassArray* cl, uint32 len, ...) {
   JavaArray* res = 0;
   llvm_gcroot(res, 0);
 
@@ -303,7 +303,7 @@ extern "C" JavaArray* jnjvmMultiCallNew(UserClassArray* cl, uint32 len, ...) {
 }
 
 // Throws if the class can not be resolved.
-extern "C" UserClassArray* jnjvmGetArrayClass(UserCommonClass* cl,
+extern "C" UserClassArray* j3GetArrayClass(UserCommonClass* cl,
                                               UserClassArray** dcl) {
   UserClassArray* res = 0;
 
@@ -327,7 +327,7 @@ extern "C" UserClassArray* jnjvmGetArrayClass(UserCommonClass* cl,
 }
 
 // Does not call Java code. Can not yield a GC.
-extern "C" void jnjvmEndJNI(uint32** oldLRN, void** oldBuffer) {
+extern "C" void j3EndJNI(uint32** oldLRN, void** oldBuffer) {
   JavaThread* th = JavaThread::get();
   
   // We're going back to Java
@@ -342,14 +342,14 @@ extern "C" void jnjvmEndJNI(uint32** oldLRN, void** oldBuffer) {
 
 }
 
-extern "C" void* jnjvmStartJNI(uint32* localReferencesNumber,
+extern "C" void* j3StartJNI(uint32* localReferencesNumber,
                                uint32** oldLocalReferencesNumber,
                                void* newBuffer, void** oldBuffer,
                                mvm::KnownFrame* Frame) 
   __attribute__((noinline));
 
 // Never throws. Does not call Java code. Can not yied a GC.
-extern "C" void* jnjvmStartJNI(uint32* localReferencesNumber,
+extern "C" void* j3StartJNI(uint32* localReferencesNumber,
                                uint32** oldLocalReferencesNumber,
                                void* newBuffer, void** oldBuffer,
                                mvm::KnownFrame* Frame) {
@@ -369,7 +369,7 @@ extern "C" void* jnjvmStartJNI(uint32* localReferencesNumber,
 }
 
 // Never throws.
-extern "C" void jnjvmJavaObjectAquire(JavaObject* obj) {
+extern "C" void j3JavaObjectAquire(JavaObject* obj) {
   BEGIN_NATIVE_EXCEPTION(1)
   
   llvm_gcroot(obj, 0);
@@ -379,7 +379,7 @@ extern "C" void jnjvmJavaObjectAquire(JavaObject* obj) {
 }
 
 // Never throws.
-extern "C" void jnjvmJavaObjectRelease(JavaObject* obj) {
+extern "C" void j3JavaObjectRelease(JavaObject* obj) {
   BEGIN_NATIVE_EXCEPTION(1)
   
   llvm_gcroot(obj, 0);
@@ -389,17 +389,17 @@ extern "C" void jnjvmJavaObjectRelease(JavaObject* obj) {
 }
 
 // Does not call any Java code. Can not yield a GC.
-extern "C" void jnjvmThrowException(JavaObject* obj) {
+extern "C" void j3ThrowException(JavaObject* obj) {
   return JavaThread::get()->throwException(obj);
 }
 
 // Never throws.
-extern "C" void jnjvmOverflowThinLock(JavaObject* obj) {
+extern "C" void j3OverflowThinLock(JavaObject* obj) {
   obj->overflowThinLock();
 }
 
 // Creates a Java object and then throws it.
-extern "C" JavaObject* jnjvmNullPointerException() {
+extern "C" JavaObject* j3NullPointerException() {
   
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
@@ -420,7 +420,7 @@ extern "C" JavaObject* jnjvmNullPointerException() {
 }
 
 // Creates a Java object and then throws it.
-extern "C" JavaObject* jnjvmNegativeArraySizeException(sint32 val) {
+extern "C" JavaObject* j3NegativeArraySizeException(sint32 val) {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 
@@ -440,7 +440,7 @@ extern "C" JavaObject* jnjvmNegativeArraySizeException(sint32 val) {
 }
 
 // Creates a Java object and then throws it.
-extern "C" JavaObject* jnjvmOutOfMemoryError(sint32 val) {
+extern "C" JavaObject* j3OutOfMemoryError(sint32 val) {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 
@@ -460,7 +460,7 @@ extern "C" JavaObject* jnjvmOutOfMemoryError(sint32 val) {
 }
 
 // Creates a Java object and then throws it.
-extern "C" JavaObject* jnjvmStackOverflowError() {
+extern "C" JavaObject* j3StackOverflowError() {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 
@@ -480,7 +480,7 @@ extern "C" JavaObject* jnjvmStackOverflowError() {
 }
 
 // Creates a Java object and then throws it.
-extern "C" JavaObject* jnjvmArithmeticException() {
+extern "C" JavaObject* j3ArithmeticException() {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 
@@ -500,7 +500,7 @@ extern "C" JavaObject* jnjvmArithmeticException() {
 }
 
 // Creates a Java object and then throws it.
-extern "C" JavaObject* jnjvmClassCastException(JavaObject* obj,
+extern "C" JavaObject* j3ClassCastException(JavaObject* obj,
                                                UserCommonClass* cl) {
   JavaObject *exc = 0;
   llvm_gcroot(obj, 0);
@@ -524,7 +524,7 @@ extern "C" JavaObject* jnjvmClassCastException(JavaObject* obj,
 }
 
 // Creates a Java object and then throws it.
-extern "C" JavaObject* jnjvmIndexOutOfBoundsException(JavaObject* obj,
+extern "C" JavaObject* j3IndexOutOfBoundsException(JavaObject* obj,
                                                       sint32 index) {
   JavaObject *exc = 0;
   llvm_gcroot(obj, 0);
@@ -548,7 +548,7 @@ extern "C" JavaObject* jnjvmIndexOutOfBoundsException(JavaObject* obj,
 }
 
 // Creates a Java object and then throws it.
-extern "C" JavaObject* jnjvmArrayStoreException(JavaVirtualTable* VT) {
+extern "C" JavaObject* j3ArrayStoreException(JavaVirtualTable* VT) {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 
@@ -568,7 +568,7 @@ extern "C" JavaObject* jnjvmArrayStoreException(JavaVirtualTable* VT) {
 }
 
 // Create an exception then throws it.
-extern "C" void jnjvmThrowExceptionFromJIT() {
+extern "C" void j3ThrowExceptionFromJIT() {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
   
@@ -587,7 +587,7 @@ extern "C" void jnjvmThrowExceptionFromJIT() {
   
 }
 
-extern "C" void* jnjvmStringLookup(UserClass* cl, uint32 index) {
+extern "C" void* j3StringLookup(UserClass* cl, uint32 index) {
   
   JavaString** str = 0;
   
@@ -605,19 +605,19 @@ extern "C" void* jnjvmStringLookup(UserClass* cl, uint32 index) {
   return (void*)str;
 }
 
-extern "C" void jnjvmPrintMethodStart(JavaMethod* meth) {
+extern "C" void j3PrintMethodStart(JavaMethod* meth) {
   fprintf(stderr, "[%p] executing %s.%s\n", (void*)mvm::Thread::get(),
           UTF8Buffer(meth->classDef->name).cString(),
           UTF8Buffer(meth->name).cString());
 }
 
-extern "C" void jnjvmPrintMethodEnd(JavaMethod* meth) {
+extern "C" void j3PrintMethodEnd(JavaMethod* meth) {
   fprintf(stderr, "[%p] return from %s.%s\n", (void*)mvm::Thread::get(),
           UTF8Buffer(meth->classDef->name).cString(),
           UTF8Buffer(meth->name).cString());
 }
 
-extern "C" void jnjvmPrintExecution(uint32 opcode, uint32 index,
+extern "C" void j3PrintExecution(uint32 opcode, uint32 index,
                                     JavaMethod* meth) {
   fprintf(stderr, "[%p] executing %s.%s %s at %d\n", (void*)mvm::Thread::get(),
          UTF8Buffer(meth->classDef->name).cString(),
@@ -627,7 +627,7 @@ extern "C" void jnjvmPrintExecution(uint32 opcode, uint32 index,
 
 #ifdef SERVICE
 
-extern "C" void jnjvmServiceCallStart(Jnjvm* OldService,
+extern "C" void j3ServiceCallStart(Jnjvm* OldService,
                                  Jnjvm* NewService) {
   fprintf(stderr, "I have switched from %d to %d\n", OldService->IsolateID,
           NewService->IsolateID);
@@ -635,7 +635,7 @@ extern "C" void jnjvmServiceCallStart(Jnjvm* OldService,
   fprintf(stderr, "Now the thread id is %d\n", mvm::Thread::get()->IsolateID);
 }
 
-extern "C" void jnjvmServiceCallStop(Jnjvm* OldService,
+extern "C" void j3ServiceCallStop(Jnjvm* OldService,
                                 Jnjvm* NewService) {
   fprintf(stderr, "End service call\n");
 }
@@ -644,7 +644,7 @@ extern "C" void jnjvmServiceCallStop(Jnjvm* OldService,
 
 
 #ifdef ISOLATE_SHARING
-extern "C" void* jnjvmStaticCtpLookup(UserClass* cl, uint32 index) {
+extern "C" void* j3StaticCtpLookup(UserClass* cl, uint32 index) {
   UserConstantPool* ctpInfo = cl->getConstantPool();
   JavaConstantPool* shared = ctpInfo->getSharedPool();
   uint32 clIndex = shared->getClassIndexFromMethod(index);
@@ -663,7 +663,7 @@ extern "C" void* jnjvmStaticCtpLookup(UserClass* cl, uint32 index) {
   return (void*)methodCl->getConstantPool();
 }
 
-extern "C" UserConstantPool* jnjvmSpecialCtpLookup(UserConstantPool* ctpInfo,
+extern "C" UserConstantPool* j3SpecialCtpLookup(UserConstantPool* ctpInfo,
                                                    uint32 index,
                                                    UserConstantPool** res) {
   JavaConstantPool* shared = ctpInfo->getSharedPool();

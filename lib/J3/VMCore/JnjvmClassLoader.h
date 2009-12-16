@@ -1,6 +1,6 @@
 //===-- JnjvmClassLoader.h - Jnjvm representation of a class loader -------===//
 //
-//                              Jnjvm
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -24,7 +24,7 @@
 #include "JnjvmConfig.h"
 #include "UTF8.h"
 
-namespace jnjvm {
+namespace j3 {
 
 class ArrayUInt8;
 class UserClass;
@@ -257,9 +257,9 @@ public:
 
   /// loadInLib - Loads a native function out of the native libraries loaded
   /// by this class loader. The last argument tells if the returned method
-  /// is defined in jnjvm.
+  /// is defined in j3.
   ///
-  intptr_t loadInLib(const char* buf, bool& jnjvm);
+  intptr_t loadInLib(const char* buf, bool& j3);
 
   /// loadInLib - Loads a native function out of the given native library.
   ///
@@ -270,10 +270,10 @@ public:
   void* loadLib(const char* buf);
 
   /// nativeLookup - Lookup in the class loader a function pointer for the
-  /// method. Also set in the jnjvm parameter is the function is defined in
+  /// method. Also set in the j3 parameter is the function is defined in
   /// JnJVM.
   ///
-  intptr_t nativeLookup(JavaMethod* meth, bool& jnjvm, char* buf);
+  intptr_t nativeLookup(JavaMethod* meth, bool& j3, char* buf);
 
   /// insertAllMethodsInVM - Insert all methods defined by this class loader
   /// in the VM.
@@ -502,6 +502,6 @@ public:
   }
 };
 
-} // end namespace jnjvm
+} // end namespace j3
 
 #endif // JNJVM_CLASSLOADER_H

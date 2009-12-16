@@ -1,4 +1,4 @@
-//===------- JavaCompiler.h - Jnjvm interface for the compiler ------------===//
+//===---------- JavaCompiler.h - J3 interface for the compiler ------------===//
 //
 //                           The VMKit project
 //
@@ -21,7 +21,7 @@ namespace mvm {
   class UTF8;
 }
 
-namespace jnjvm {
+namespace j3 {
 
 class Class;
 class CommonClass;

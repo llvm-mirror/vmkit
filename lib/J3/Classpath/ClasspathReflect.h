@@ -2,7 +2,7 @@
 // java/lang/Class, java/lang/reflect/Field, java/lang/reflect/Method and ----//
 // java/lang/reflect/Constructor as compiled by JnJVM. -----------------------//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -17,9 +17,9 @@
 #include <JavaClass.h>
 #include <JavaObject.h>
 
-extern "C" jnjvm::JavaObject* internalFillInStackTrace(jnjvm::JavaObject*);
+extern "C" j3::JavaObject* internalFillInStackTrace(j3::JavaObject*);
 
-namespace jnjvm {
+namespace j3 {
 
 class JavaObjectClass : public JavaObject {
 public:

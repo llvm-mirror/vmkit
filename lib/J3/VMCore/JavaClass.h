@@ -1,6 +1,6 @@
 //===-------- JavaClass.h - Java class representation -------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source 
 // License. See LICENSE.TXT for details.
@@ -27,7 +27,7 @@
 #include <cassert>
 #include <set>
 
-namespace jnjvm {
+namespace j3 {
 
 class ArrayObject;
 class ArrayUInt8;
@@ -220,25 +220,25 @@ public:
   /// isArray - Is the class an array class?
   ///
   bool isArray() const {
-    return jnjvm::isArray(access);
+    return j3::isArray(access);
   }
   
   /// isPrimitive - Is the class a primitive class?
   ///
   bool isPrimitive() const {
-    return jnjvm::isPrimitive(access);
+    return j3::isPrimitive(access);
   }
   
   /// isInterface - Is the class an interface?
   ///
   bool isInterface() const {
-    return jnjvm::isInterface(access);
+    return j3::isInterface(access);
   }
   
   /// isClass - Is the class a real, instantiable class?
   ///
   bool isClass() const {
-    return jnjvm::isClass(access);
+    return j3::isClass(access);
   }
 
   /// asClass - Returns the class as a user-defined class
@@ -1385,7 +1385,7 @@ public:
 };
 
 
-} // end namespace jnjvm
+} // end namespace j3
 
 
 #ifdef ISOLATE_SHARING

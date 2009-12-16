@@ -1,6 +1,6 @@
 //===--- JavaString.h - Internal correspondance with Java Strings ---------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -15,7 +15,7 @@
 #include "JavaObject.h"
 #include "UTF8.h"
 
-namespace jnjvm {
+namespace j3 {
 
 class ArrayUInt16;
 class Jnjvm;
@@ -48,6 +48,6 @@ public:
   static JavaVirtualTable* internStringVT;
 };
 
-} // end namespace jnjvm
+} // end namespace j3
 
 #endif

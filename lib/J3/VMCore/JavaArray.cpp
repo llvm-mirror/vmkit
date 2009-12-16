@@ -1,6 +1,6 @@
 //===----------------- JavaArray.cpp - Java arrays ------------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -20,7 +20,7 @@
 #include "LockedMap.h"
 
 
-using namespace jnjvm;
+using namespace j3;
 
 /// This value is the same value than IBM's JVM.
 const sint32 JavaArray::MaxArraySize = 268435455;

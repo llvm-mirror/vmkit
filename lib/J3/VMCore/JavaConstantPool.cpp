@@ -1,6 +1,6 @@
 //===--- JavaConstantPool.cpp - Java constant pool definition ---------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -26,7 +26,7 @@
 #include "LockedMap.h"
 #include "Reader.h"
  
-using namespace jnjvm;
+using namespace j3;
 
 const uint32 JavaConstantPool::ConstantUTF8 = 1;
 const uint32 JavaConstantPool::ConstantInteger = 3;

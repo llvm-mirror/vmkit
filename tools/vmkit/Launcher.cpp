@@ -30,7 +30,7 @@
 
 #include "CommandLine.h"
 
-using namespace jnjvm;
+using namespace j3;
 using namespace llvm;
 
 enum VMType {

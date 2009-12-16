@@ -1,6 +1,6 @@
-//===------------- Jni.cpp - Jni interface for JnJVM ----------------------===//
+//===---------------- Jni.cpp - Jni interface for J3 ----------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source 
 // License. See LICENSE.TXT for details.
@@ -20,7 +20,7 @@
 #include "Jnjvm.h"
 
 
-using namespace jnjvm;
+using namespace j3;
 
 static Jnjvm* myVM(JNIEnv* env) {
   return JavaThread::get()->getJVM();

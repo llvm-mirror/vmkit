@@ -1,6 +1,6 @@
-//===----- JnjvmModuleProvider.h - LLVM Module Provider for Jnjvm ---------===//
+//===-------- JnjvmModuleProvider.h - LLVM Module Provider for J3 ---------===//
 //
-//                              Jnjvm
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -12,7 +12,7 @@
 
 #include <llvm/ModuleProvider.h>
 
-namespace jnjvm {
+namespace j3 {
 
 class JavaJITCompiler;
 
@@ -31,6 +31,6 @@ public:
   }
 };
 
-} // End jnjvm namespace
+} // End j3 namespace
 
 #endif

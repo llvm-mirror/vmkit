@@ -25,7 +25,7 @@
 #include <cassert>
 #include <map>
 
-namespace jnjvm {
+namespace j3 {
   class JavaCompiler;
   class JnjvmClassLoader;
 }
@@ -269,9 +269,9 @@ public:
   /// waitForExit - Wait until the virtual machine stops its execution.
   virtual void waitForExit() = 0;
 
-  static jnjvm::JnjvmClassLoader* initialiseJVM(jnjvm::JavaCompiler* C,
+  static j3::JnjvmClassLoader* initialiseJVM(j3::JavaCompiler* C,
                                                 bool dlLoad = true);
-  static VirtualMachine* createJVM(jnjvm::JnjvmClassLoader* C = 0);
+  static VirtualMachine* createJVM(j3::JnjvmClassLoader* C = 0);
   
   static CompilationUnit* initialiseCLIVM();
   static VirtualMachine* createCLIVM(CompilationUnit* C = 0);

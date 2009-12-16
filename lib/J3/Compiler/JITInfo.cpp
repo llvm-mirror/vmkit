@@ -1,6 +1,6 @@
 //===--------- JnjvmModule.cpp - Definition of a Jnjvm module -------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -33,7 +33,7 @@
 
 #include <cstdio>
 
-using namespace jnjvm;
+using namespace j3;
 using namespace llvm;
 
 const Type* LLVMClassInfo::getVirtualType() {
@@ -148,13 +148,13 @@ Function* LLVMMethodInfo::getMethod() {
       char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + 1 +
                                 ((mnlen + clen + mtlen) << 3));
       
-      bool jnjvm = false;
+      bool j3 = false;
       if (isNative(methodDef->access)) {
         // Verify if it's defined by JnJVM
-        JCL->nativeLookup(methodDef, jnjvm, buf);
+        JCL->nativeLookup(methodDef, j3, buf);
       }
 
-      if (!jnjvm) {
+      if (!j3) {
         methodDef->jniConsFromMethOverloaded(buf + 1);
         memcpy(buf, "JnJVM", 5);
       }

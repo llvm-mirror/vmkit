@@ -1,6 +1,6 @@
 //===--------------- JavaTypes.h - Java primitives ------------------------===//
 //
-//                              JnJVM
+//                          The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -16,7 +16,7 @@
 
 #include "JnjvmClassLoader.h"
 
-namespace jnjvm {
+namespace j3 {
 
 class UserCommonClass;
 class JnjvmClassLoader;
@@ -413,6 +413,6 @@ private:
 };
 
 
-} // end namespace jnjvm
+} // end namespace j3
 
 #endif

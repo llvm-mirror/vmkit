@@ -1,6 +1,6 @@
 //===----------------- Zip.cpp - Interface with zlib ----------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -15,7 +15,7 @@
 #include "Reader.h"
 #include "Zip.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 ZipArchive::ZipArchive(ArrayUInt8* bytes, mvm::BumpPtrAllocator& A) : allocator(A) {
   this->bytes = bytes;

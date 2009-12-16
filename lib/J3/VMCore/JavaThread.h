@@ -1,6 +1,6 @@
 //===----------- JavaThread.h - Java thread description -------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -22,7 +22,7 @@
 #include "JavaObject.h"
 #include "JNIReferences.h"
 
-namespace jnjvm {
+namespace j3 {
 
 class Class;
 class JavaMethod;
@@ -294,6 +294,6 @@ public:
 
 };
 
-} // end namespace jnjvm
+} // end namespace j3
 
 #endif

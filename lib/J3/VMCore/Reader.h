@@ -1,6 +1,6 @@
 //===----------------- Reader.h - Open and read files ---------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -17,7 +17,7 @@
 #include "JavaArray.h"
 #include "JavaClass.h"
 
-namespace jnjvm {
+namespace j3 {
 
 class JnjvmBootstrapLoader;
 class ZipArchive;
@@ -138,6 +138,6 @@ public:
 
 };
 
-} // end namespace jnjvm
+} // end namespace j3
 
 #endif

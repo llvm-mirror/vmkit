@@ -1,6 +1,6 @@
 //===---------- JavaUpcalls.h - Upcalls to Java entities ------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -51,7 +51,7 @@
                                      loader->asciizConstructUTF8("(Ljava/lang/Throwable;)V"), \
                                      false, false, 0);
 
-namespace jnjvm {
+namespace j3 {
 
 class Jnjvm;
 class JavaField;
@@ -270,6 +270,6 @@ public:
 };
 
 
-} // end namespace jnjvm
+} // end namespace j3
 
 #endif

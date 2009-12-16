@@ -19,16 +19,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Isolate specific methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; jnjvmEnveloppeLookup - Find the enveloppe for the current user class.
-declare i8* @jnjvmEnveloppeLookup(%JavaClass*, i32, ...) readnone
+;;; j3EnveloppeLookup - Find the enveloppe for the current user class.
+declare i8* @j3EnveloppeLookup(%JavaClass*, i32, ...) readnone
 
-;;; jnjvmStaticCtpLookup - Find the user constant pool at the given offset in
+;;; j3StaticCtpLookup - Find the user constant pool at the given offset in
 ;;; the constant pool.
-declare i8* @jnjvmStaticCtpLookup(%JavaClass*, i32, ...) readnone
+declare i8* @j3StaticCtpLookup(%JavaClass*, i32, ...) readnone
 
-;;; jnjvmSpecialCtpLookup - Find the user constant pool at the given offset in
+;;; j3SpecialCtpLookup - Find the user constant pool at the given offset in
 ;;; the constant pool.
-declare i8** @jnjvmSpecialCtpLookup(i8**, i32, i8**) readnone
+declare i8** @j3SpecialCtpLookup(i8**, i32, i8**) readnone
 
 ;;; getCtpCacheNode - Get the constant pool cache of a cache node. This is a
 ;;; constant call because the cache node never changes.

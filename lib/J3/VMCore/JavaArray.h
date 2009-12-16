@@ -1,6 +1,6 @@
 //===----------------- JavaArray.h - Java arrays --------------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -22,7 +22,7 @@
 
 #include "UTF8.h"
 
-namespace jnjvm {
+namespace j3 {
 
 class ClassArray;
 class CommonClass;
@@ -86,6 +86,6 @@ ARRAYCLASS(ArrayObject, JavaObject*);
 
 #undef ARRAYCLASS
 
-} // end namespace jnjvm
+} // end namespace j3
 
 #endif

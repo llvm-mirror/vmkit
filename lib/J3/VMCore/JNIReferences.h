@@ -12,7 +12,7 @@
 
 #include "mvm/Allocator.h"
 
-namespace jnjvm {
+namespace j3 {
 
 class JavaObject;
 class JavaThread;

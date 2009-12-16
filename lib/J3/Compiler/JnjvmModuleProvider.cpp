@@ -1,6 +1,6 @@
 //===--- JnjvmModuleProvider.cpp - LLVM Module Provider for Jnjvm ---------===//
 //
-//                              Jnjvm
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -24,7 +24,7 @@
 #include "j3/JnjvmModuleProvider.h"
 
 using namespace llvm;
-using namespace jnjvm;
+using namespace j3;
 
 
 static JavaMethod* staticLookup(CallbackInfo& F) {

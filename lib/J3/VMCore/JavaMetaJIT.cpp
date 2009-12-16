@@ -1,6 +1,6 @@
 //===---- JavaMetaJIT.cpp - Functions for Java internal objects -----------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -19,7 +19,7 @@
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 #define readArgs(buf, signature, ap, jni) \
   Typedef* const* arguments = signature->getArgumentsType(); \

@@ -1,6 +1,6 @@
 //===-------- JavaUpcalls.cpp - Upcalls to Java entities ------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -28,7 +28,7 @@
   }
 
 
-using namespace jnjvm;
+using namespace j3;
 
 #ifndef ISOLATE_SHARING
 Class*      Classpath::newThread;

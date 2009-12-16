@@ -1,6 +1,6 @@
 //===---------- Jnjvm.cpp - Java virtual machine description --------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -36,7 +36,7 @@
 #include "Reader.h"
 #include "Zip.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 const char* Jnjvm::dirSeparator = "/";
 const char* Jnjvm::envSeparator = ":";

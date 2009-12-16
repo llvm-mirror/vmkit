@@ -1,6 +1,6 @@
 //===------------- JavaTypes.cpp - Java primitives ------------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -14,7 +14,7 @@
 #include "JavaCompiler.h"
 #include "JavaTypes.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 UserCommonClass* ArrayTypedef::assocClass(JnjvmClassLoader* loader) const {
   return loader->constructArray(keyName);

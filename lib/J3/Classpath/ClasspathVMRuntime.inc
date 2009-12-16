@@ -1,6 +1,6 @@
 //===------ ClasspathVMRuntime.cpp - GNU classpath java/lang/VMRuntime ----===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -25,7 +25,7 @@
 #include <cstring>
 #include <unistd.h>
 
-using namespace jnjvm;
+using namespace j3;
 
 extern "C" {
 
@@ -81,8 +81,8 @@ typedef __jmp_buf_tag* jumpbuf_t;
 #endif
 
 typedef int (*onLoad_t)(const void**, void*);
-extern "C" void  jnjvmEndJNI(uint32** old, void** oldBuf);
-extern "C" void  jnjvmStartJNI(uint32* num, uint32** old, void* newBuf,
+extern "C" void  j3EndJNI(uint32** old, void** oldBuf);
+extern "C" void  j3StartJNI(uint32* num, uint32** old, void* newBuf,
                                void** oldBuf, mvm::KnownFrame* Frame);
 
 extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm)
@@ -103,11 +103,11 @@ extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
     if (setjmp(buf) == 0) {
       // Push an unmeaningful value in the addresses field to let the
       // stack consistent with Java frames/native frames.
-      jnjvmStartJNI(&num, &old, (void*)&buf, &oldBuf, &Frame);
+      j3StartJNI(&num, &old, (void*)&buf, &oldBuf, &Frame);
       onLoad(&vm->javavmEnv, res);
     }
 
-    jnjvmEndJNI(&old, &oldBuf);
+    j3EndJNI(&old, &oldBuf);
   }
 }
 

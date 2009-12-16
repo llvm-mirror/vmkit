@@ -1,6 +1,6 @@
 //===- ClasspathVMThread.cpp - GNU classpath java/lang/VMThread -----------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -17,7 +17,7 @@
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 extern "C" {
 
@@ -43,9 +43,9 @@ static void start(JavaThread* thread) {
   // which is the JavaThread object.
   JavaField* field = vm->upcalls->vmdataVMThread;
   vmThread = thread->vmThread;
-  assert(vmThread && "Didn't fix the vmThread of a jnjvm thread");
+  assert(vmThread && "Didn't fix the vmThread of a j3 thread");
   JavaObject* javaThread = thread->javaThread;
-  assert(javaThread && "Didn't fix the javaThread of a jnjvm thread");
+  assert(javaThread && "Didn't fix the javaThread of a j3 thread");
   field->setObjectField(vmThread, (JavaObject*)(void*)thread);
   
   UserClass* vmthClass = (UserClass*)vmThread->getClass();

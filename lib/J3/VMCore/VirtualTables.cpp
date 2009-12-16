@@ -1,4 +1,4 @@
-//===--- VirtualTables.cpp - Virtual methods for JnJVM objects ------------===//
+//===------ VirtualTables.cpp - Virtual methods for J3 objects ------------===//
 //
 //                          The VMKit project
 //
@@ -30,7 +30,7 @@
 #include "JnjvmClassLoader.h"
 #include "LockedMap.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 //===----------------------------------------------------------------------===//
 // List of classes that will be GC-allocated. One should try to keep this

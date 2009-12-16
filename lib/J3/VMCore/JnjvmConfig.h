@@ -1,6 +1,6 @@
 //===---------- JnjvmConfig.h - Jnjvm configuration file ------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source 
 // License. See LICENSE.TXT for details.
@@ -15,7 +15,7 @@
 #define ISOLATE_STATIC
 #else
 
-namespace jnjvm {
+namespace j3 {
 
 class ClassArray;
 class ClassPrimitive;

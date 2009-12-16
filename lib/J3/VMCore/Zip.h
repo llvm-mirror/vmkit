@@ -1,6 +1,6 @@
 //===----------------- Zip.h - Interface with zlib ------------------------===//
 //
-//                              JnJVM
+//                          The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -14,7 +14,7 @@
 
 #include "mvm/Allocator.h"
 
-namespace jnjvm {
+namespace j3 {
 
 class ArrayUInt8;
 class JnjvmBootstrapLoader;
@@ -76,6 +76,6 @@ public:
 
 };
 
-} // end namespace jnjvm
+} // end namespace j3
 
 #endif

@@ -1,6 +1,6 @@
 //===----- JavaAOTCompiler.cpp - Support for Ahead of Time Compiler --------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -32,7 +32,7 @@
 
 #include <cstdio>
 
-using namespace jnjvm;
+using namespace j3;
 using namespace llvm;
 
 bool JavaAOTCompiler::isCompiling(const CommonClass* cl) const {
@@ -1578,7 +1578,7 @@ namespace mvm {
   llvm::FunctionPass* createEscapeAnalysisPass(llvm::Function*);
 }
 
-namespace jnjvm {
+namespace j3 {
   llvm::FunctionPass* createLowerConstantCallsPass();
 }
 

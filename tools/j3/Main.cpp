@@ -19,7 +19,7 @@
 #include "llvm/Support/ManagedStatic.h"
 
 
-using namespace jnjvm;
+using namespace j3;
 using namespace llvm;
 using namespace mvm;
 

@@ -1,6 +1,6 @@
 //===--------------- Reader.cpp - Open and read files ---------------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -19,7 +19,7 @@
 #include "Reader.h"
 #include "Zip.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 const int Reader::SeekSet = SEEK_SET;
 const int Reader::SeekCur = SEEK_CUR;

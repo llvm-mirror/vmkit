@@ -11,7 +11,7 @@
 #include "JavaThread.h"
 #include "Jnjvm.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 JavaLock* JavaLock::allocate(JavaObject* obj) {
   Jnjvm* vm = JavaThread::get()->getJVM();

@@ -1,6 +1,6 @@
 //===---- JavaJITOpcodes.cpp - Reads and compiles opcodes -----------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -39,7 +39,7 @@
 #include "j3/OpcodeNames.def"
 #endif
 
-using namespace jnjvm;
+using namespace j3;
 using namespace llvm;
 
 uint8 arrayType(JavaMethod* meth, unsigned int t) {

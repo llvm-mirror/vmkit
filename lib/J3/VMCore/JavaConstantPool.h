@@ -1,6 +1,6 @@
 //===--- JavaConstantPool.h - Java constant pool definition ---------------===//
 //
-//                              JnJVM
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -15,7 +15,7 @@
 
 #include "UTF8.h"
 
-namespace jnjvm {
+namespace j3 {
 
 class Class;
 class CommonClass;
@@ -259,6 +259,6 @@ public:
   ~JavaConstantPool() {}
 };
 
-} // end namespace jnjvm
+} // end namespace j3
 
 #endif
