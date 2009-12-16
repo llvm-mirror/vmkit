@@ -11,7 +11,7 @@
 #include "JavaClass.h"
 #include "JavaString.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 extern "C" uint16_t MMTkCharAt(JavaString* str, uint32_t index) {
   return str->value->elements[index];

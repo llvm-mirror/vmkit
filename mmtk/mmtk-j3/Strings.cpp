@@ -12,7 +12,7 @@
 #include "JavaString.h"
 #include "JavaThread.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 extern "C" void Java_org_j3_mmtk_Strings_write___3CI(JavaObject* str,
                                                      ArrayUInt16* msg,

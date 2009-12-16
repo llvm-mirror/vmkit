@@ -13,7 +13,7 @@
 #include "JavaThread.h"
 #include "MutatorThread.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 extern "C" JavaObject* Java_org_j3_config_Selected_00024Mutator_get__() {
   return (JavaObject*)mvm::MutatorThread::get()->MutatorContext;

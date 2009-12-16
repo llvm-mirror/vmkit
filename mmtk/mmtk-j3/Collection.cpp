@@ -10,7 +10,7 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 extern "C" void JnJVM_org_mmtk_plan_Plan_setCollectionTriggered__();
 

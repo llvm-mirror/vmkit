@@ -10,7 +10,7 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 extern "C" void Java_org_j3_mmtk_Scanning_computeThreadRoots__Lorg_mmtk_plan_TraceLocal_2 (JavaObject* Scanning, JavaObject* TL) {
   // When entering this function, all threads are waiting on the rendezvous to

@@ -15,7 +15,7 @@
 
 #include <set>
 
-using namespace jnjvm;
+using namespace j3;
 
 extern "C" gc* internalMalloc(uintptr_t Mutator, int32_t sz, int32_t align,
                               int32_t offset, int32_t allocator,

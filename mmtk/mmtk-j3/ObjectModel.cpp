@@ -10,7 +10,7 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 extern "C" intptr_t Java_org_j3_mmtk_ObjectModel_getArrayBaseOffset__ () {
   return sizeof(JavaObject) + sizeof(ssize_t);

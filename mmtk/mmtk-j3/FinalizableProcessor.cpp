@@ -11,7 +11,7 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 extern "C" void Java_org_j3_mmtk_FinalizableProcessor_clear__ () {
   JavaThread::get()->printBacktrace(); abort();

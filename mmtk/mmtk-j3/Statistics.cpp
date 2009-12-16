@@ -13,7 +13,7 @@
 #include <sys/time.h>
 #include <ctime>
 
-using namespace jnjvm;
+using namespace j3;
 
 extern "C" void Java_org_j3_mmtk_Statistics_perfCtrInit__I (JavaObject* S) {
   // Implement me

@@ -13,7 +13,7 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 
-using namespace jnjvm;
+using namespace j3;
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapStartConstant__ () {
   return (uintptr_t)0x30000000;
 }

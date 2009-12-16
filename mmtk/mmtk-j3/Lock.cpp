@@ -12,7 +12,7 @@
 #include "JavaThread.h"
 #include "mvm/Threads/Locks.h"
 
-using namespace jnjvm;
+using namespace j3;
 
 struct Lock {
   JavaObject base;
