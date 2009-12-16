@@ -224,7 +224,7 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     assert(F && "Could not find boot from HeapGrowthManager");
     BootHeapType BootHeap = (BootHeapType)
       (uintptr_t)executionEngine->getPointerToFunction(F);
-    BootHeap(50 * 1024 * 1024, 100 * 1024 * 1024);
+    BootHeap(128 * 1024 * 1024, 1024 * 1024 * 1024);
     
     GV = globalModule->getGlobalVariable("org_j3_config_Selected_4Plan_static", false);
     assert(GV && "No global plan.");

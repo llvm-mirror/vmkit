@@ -18,7 +18,7 @@ ifeq ($(WITH_LLVM_GCC), 1)
   MODULESNAME = vmkit
 
   ifeq ($(WITH_J3), 1)
-    USEDMODULES += J3.bc Classpath.bc JnjvmCompiler.bc
+    USEDMODULES += J3.bc Classpath.bc J3Compiler.bc
   endif
 
   ifeq ($(ISOLATE_SHARING_BUILD), 1) 
