@@ -88,7 +88,7 @@
 #undef WITH_N3
 
 /* Compiling JNJVM */
-#undef WITH_JNJVM
+#undef WITH_J3
 
 /* Define to `int' if <sys/types.h> does not define. */
 #undef pid_t

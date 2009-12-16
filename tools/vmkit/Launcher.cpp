@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
   mvm::Collector::initialise();
 
   if (VMToRun == RunJava) {
-#if WITH_JNJVM
+#if WITH_J3
     JavaJITCompiler* Comp = new JavaJITCompiler("JITModule");
     JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
     addCommandLinePass(argv);
@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
 #endif
   } else {
     mvm::CommandLine MyCl;
-#if WITH_JNJVM
+#if WITH_J3
     JavaJITCompiler* Comp = new JavaJITCompiler("JITModule");
     JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
     addCommandLinePass(argv);
