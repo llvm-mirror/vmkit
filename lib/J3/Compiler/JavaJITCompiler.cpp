@@ -255,6 +255,10 @@ void JavaJITCompiler::makeVT(Class* cl) {
 
 }
 
+extern "C" void ThrowUnfoundInterface() {
+  abort();
+}
+
 void JavaJITCompiler::makeIMT(Class* cl) {
   InterfaceMethodTable* IMT = cl->virtualVT->IMT;
   if (!IMT) return;
@@ -272,10 +276,14 @@ void JavaJITCompiler::makeIMT(Class* cl) {
       JavaMethod* meth = cl->lookupMethodDontThrow(Imeth->name,
                                                    Imeth->type,
                                                    false, true, 0);
-      LLVMMethodInfo* LMI = getMethodInfo(meth);
-      Function* func = LMI->getMethod();
-      uintptr_t res = (uintptr_t)EE->getPointerToFunctionOrStub(func);
-      IMT->contents[i] = res;
+      if (meth) {
+        LLVMMethodInfo* LMI = getMethodInfo(meth);
+        Function* func = LMI->getMethod();
+        uintptr_t res = (uintptr_t)EE->getPointerToFunctionOrStub(func);
+        IMT->contents[i] = res;
+      } else {
+        IMT->contents[i] = (uintptr_t)ThrowUnfoundInterface;
+      }
     } else if (size > 1) {
       std::vector<JavaMethod*> methods;
       bool SameMethod = true;
@@ -289,15 +297,19 @@ void JavaJITCompiler::makeIMT(Class* cl) {
        
         if (OldMethod && OldMethod != Cmeth) SameMethod = false;
         else OldMethod = Cmeth;
-        
-        methods.push_back(Cmeth);
+       
+        if (Cmeth) methods.push_back(Cmeth);
       }
 
       if (SameMethod) {
-        LLVMMethodInfo* LMI = getMethodInfo(methods[0]);
-        Function* func = LMI->getMethod();
-        uintptr_t res = (uintptr_t)EE->getPointerToFunctionOrStub(func);
-        IMT->contents[i] = res;
+        if (methods[0]) {
+          LLVMMethodInfo* LMI = getMethodInfo(methods[0]);
+          Function* func = LMI->getMethod();
+          uintptr_t res = (uintptr_t)EE->getPointerToFunctionOrStub(func);
+          IMT->contents[i] = res;
+        } else {
+          IMT->contents[i] = (uintptr_t)ThrowUnfoundInterface;
+        }
       } else {
 
         uint32_t length = 2 * size * sizeof(uintptr_t);
@@ -313,12 +325,16 @@ void JavaJITCompiler::makeIMT(Class* cl) {
              et = methods.end(); it != et; ++it, j += 2, ++Interf) {
           JavaMethod* Imeth = *Interf;
           JavaMethod* Cmeth = *it;
-          
-          LLVMMethodInfo* LMI = getMethodInfo(Cmeth);
-          Function* func = LMI->getMethod();
-          uintptr_t res = (uintptr_t)EE->getPointerToFunctionOrStub(func);
+         
           table[j] = (uintptr_t)Imeth;
-          table[j + 1] = res;
+          if (Cmeth) {
+            LLVMMethodInfo* LMI = getMethodInfo(Cmeth);
+            Function* func = LMI->getMethod();
+            uintptr_t res = (uintptr_t)EE->getPointerToFunctionOrStub(func);
+            table[j + 1] = res;
+          } else {
+            table[j + 1] = (uintptr_t)ThrowUnfoundInterface;
+          }
         }
       }
     }

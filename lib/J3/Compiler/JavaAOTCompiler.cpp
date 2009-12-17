@@ -1487,6 +1487,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
         JavaMethod* meth = cl->lookupMethodDontThrow(Imeth->name,
                                                      Imeth->type,
                                                      false, true, 0);
+        assert(meth && "No method found");
         LLVMMethodInfo* LMI = getMethodInfo(meth);
         Function* func = LMI->getMethod();
         IElemts.push_back(ConstantExpr::getBitCast(func, PTy));
@@ -1508,6 +1509,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
         }
 
         if (SameMethod) {
+          assert(methods[0] && "No method found");
           LLVMMethodInfo* LMI = getMethodInfo(methods[0]);
           Function* func = LMI->getMethod();
           IElemts.push_back(ConstantExpr::getBitCast(func, PTy));
@@ -1526,6 +1528,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
                et = methods.end(); it != et; ++it, ++Interf) {
             JavaMethod* Imeth = *Interf;
             JavaMethod* Cmeth = *it;
+            assert(Cmeth && "No method found");
 
             LLVMMethodInfo* LMI = getMethodInfo(Cmeth);
             Function* func = LMI->getMethod();
