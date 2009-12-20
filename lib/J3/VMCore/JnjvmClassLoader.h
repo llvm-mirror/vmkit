@@ -444,6 +444,12 @@ public:
   ///
   static VirtualTable VT;
 
+  /// Is the object a VMClassLoader object?
+  ///
+  static bool isVMClassLoader(JavaObject* obj) {
+    return obj->getVirtualTable() == &VT;
+  }
+
   /// staticTracer - Trace the internal class loader.
   ///
   static void staticTracer(VMClassLoader* obj) {
