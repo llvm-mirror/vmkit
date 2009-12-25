@@ -982,10 +982,31 @@ void CallVoidMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
 }
 
 
-void CallVoidMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
+void CallVoidMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
                      const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
+  BEGIN_JNI_EXCEPTION
+
+  verifyNull(_obj);
+
+  // Local object references.
+  JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
+
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
+  
+  Signdef* sign = meth->getSignature();
+  uintptr_t buf = (uintptr_t)alloca(sign->nbArguments * sizeof(uint64));
+  BufToBuf(args, buf, sign);
+  
+  meth->invokeIntVirtualBuf(vm, cl, obj, (void*)buf);
+
+  RETURN_VOID_FROM_JNI;
+
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
