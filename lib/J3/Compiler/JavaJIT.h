@@ -249,10 +249,13 @@ private:
   }
 
   void addHighLevelType(llvm::Instruction* V, CommonClass* cl) {
+    // Enable this when it will be actually used.
+#if 0
     llvm::Value* A[1] = 
       { TheCompiler->getNativeClass(cl ? cl : upcalls->OfObject) };
     llvm::MDNode* Node = llvm::MDNode::get(*llvmContext, A, 1);
-    llvmContext->getMetadata().addMD(module->MetadataTypeKind, Node, V);
+    V->setMetadata(module->MetadataTypeKind, Node);
+#endif
   }
 
   /// pop - Pop a value from the stack and return it.

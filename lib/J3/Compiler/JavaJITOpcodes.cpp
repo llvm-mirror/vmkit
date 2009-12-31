@@ -171,7 +171,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
     if (currentBlock->getTerminator() != 0) { 
       currentBlock = createBasicBlock("gcj bug");
     }
-#if JNJVM_EXECUTE > 1
+    if (compilingMethod->name->equals(compilingClass->classLoader->asciizConstructUTF8("of")))
     {
       Value* args[3] = {
         ConstantInt::get(Type::getInt32Ty(*llvmContext), (int64_t)bytecodes[i]),
@@ -183,7 +183,6 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       CallInst::Create(module->PrintExecutionFunction, args, args + 3, "",
                        currentBlock);
     }
-#endif
     
     switch (bytecodes[i]) {
       
