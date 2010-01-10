@@ -4,7 +4,7 @@ VMKit Release License
 University of Illinois/NCSA
 Open Source License
 
-Copyright (c) 2003-2008 University of Pierre et Marie Curie.
+Copyright (c) 2003-2010 University of Pierre et Marie Curie.
 All rights reserved.
 
 Developed by:
