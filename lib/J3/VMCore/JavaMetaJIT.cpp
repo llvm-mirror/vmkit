@@ -55,6 +55,18 @@ using namespace j3;
     }\
   }\
 }
+  
+#if defined(DWARF_EXCEPTIONS)
+
+#define DO_TRY try {
+#define DO_CATCH } catch(...) { th->throwFromJava(); } \
+
+#else
+
+#define DO_TRY
+#define DO_CATCH if (th->pendingException) { th->throwFromJava(); }
+
+#endif
 
 //===----------------------------------------------------------------------===//
 // We do not need to have special care on the GC-pointers in the buffer
@@ -62,276 +74,7 @@ using namespace j3;
 // addressed and never stored directly.
 //===----------------------------------------------------------------------===//
 
-#if defined(DWARF_EXCEPTIONS)
-
-#if 1//defined(__PPC__) && !defined(__MACH__)
-#define INVOKE(TYPE, TYPE_NAME, FUNC_TYPE_VIRTUAL_AP, FUNC_TYPE_STATIC_AP, FUNC_TYPE_VIRTUAL_BUF, FUNC_TYPE_STATIC_BUF) \
-\
-TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) { \
-  llvm_gcroot(obj, 0); \
-  verifyNull(obj); \
-  Signdef* sign = getSignature(); \
-  jvalue* buf = (jvalue*)alloca(sign->nbArguments * sizeof(jvalue)); \
-  readArgs(buf, sign, ap, jni); \
-  return invoke##TYPE_NAME##VirtualBuf(vm, cl, obj, buf); \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) {\
-  llvm_gcroot(obj, 0); \
-  verifyNull(obj); \
-  Signdef* sign = getSignature(); \
-  jvalue* buf = (jvalue*)alloca(sign->nbArguments * sizeof(jvalue)); \
-  readArgs(buf, sign, ap, jni); \
-  return invoke##TYPE_NAME##SpecialBuf(vm, cl, obj, buf); \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list ap) {\
-  Signdef* sign = getSignature(); \
-  jvalue* buf = (jvalue*)alloca(sign->nbArguments * sizeof(jvalue)); \
-  readArgs(buf, sign, ap, jni); \
-  return invoke##TYPE_NAME##StaticBuf(vm, cl, obj, buf); \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {\
-  llvm_gcroot(obj, 0); \
-  verifyNull(obj);\
-  Signdef* sign = getSignature(); \
-  UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
-  JavaMethod* meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
-  assert(meth && "No method found"); \
-  void* func = meth->compiledPtr(); \
-  FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf(); \
-  JavaThread* th = JavaThread::get(); \
-  th->startJava(); \
-  TYPE res = 0; \
-  try { \
-    res = call(cl->getConstantPool(), func, obj, buf);\
-  } catch (...) { \
-    th->throwFromJava(); \
-  } \
-  th->endJava(); \
-  return res; \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {\
-  verifyNull(obj);\
-  void* func = this->compiledPtr();\
-  Signdef* sign = getSignature(); \
-  FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf(); \
-  JavaThread* th = JavaThread::get(); \
-  th->startJava(); \
-  TYPE res = 0; \
-  try { \
-    res = call(cl->getConstantPool(), func, obj, buf);\
-  } catch (...) { \
-    th->throwFromJava(); \
-  } \
-  th->endJava(); \
-  return res; \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* buf) {\
-  if (!cl->isReady()) { \
-    cl->resolveClass(); \
-    cl->initialiseClass(vm); \
-  } \
-  \
-  void* func = this->compiledPtr();\
-  Signdef* sign = getSignature(); \
-  FUNC_TYPE_STATIC_BUF call = (FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf(); \
-  JavaThread* th = JavaThread::get(); \
-  th->startJava(); \
-  TYPE res = 0; \
-  try { \
-    res = call(cl->getConstantPool(), func, buf);\
-  } catch (...) { \
-    th->throwFromJava(); \
-  } \
-  th->endJava(); \
-  return res; \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##Virtual(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) { \
-  va_list ap;\
-  va_start(ap, obj);\
-  llvm_gcroot(obj, 0); \
-  TYPE res = invoke##TYPE_NAME##VirtualAP(vm, cl, obj, ap);\
-  va_end(ap); \
-  return res; \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##Special(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) {\
-  va_list ap;\
-  va_start(ap, obj);\
-  llvm_gcroot(obj, 0); \
-  TYPE res = invoke##TYPE_NAME##SpecialAP(vm, cl, obj, ap);\
-  va_end(ap); \
-  return res; \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##Static(Jnjvm* vm, UserClass* cl, ...) {\
-  va_list ap;\
-  va_start(ap, cl);\
-  TYPE res = invoke##TYPE_NAME##StaticAP(vm, cl, ap);\
-  va_end(ap); \
-  return res; \
-}\
-
-#else
-
-#define INVOKE(TYPE, TYPE_NAME, FUNC_TYPE_VIRTUAL_AP, FUNC_TYPE_STATIC_AP, FUNC_TYPE_VIRTUAL_BUF, FUNC_TYPE_STATIC_BUF) \
-\
-TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) { \
-  llvm_gcroot(obj, 0); \
-  verifyNull(obj); \
-  UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
-  JavaMethod* meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
-  assert(meth && "No method found"); \
-  void* func = meth->compiledPtr(); \
-  Signdef* sign = getSignature(); \
-  FUNC_TYPE_VIRTUAL_AP call = (FUNC_TYPE_VIRTUAL_AP)sign->getVirtualCallAP(); \
-  JavaThread* th = JavaThread::get(); \
-  th->startJava(); \
-  TYPE res = 0; \
-  try { \
-    res = call(cl->getConstantPool(), func, obj, ap);\
-  } catch (...) { \
-    th->throwFromJava(); \
-  } \
-  th->endJava(); \
-  return res; \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) {\
-  llvm_gcroot(obj, 0); \
-  verifyNull(obj);\
-  void* func = this->compiledPtr();\
-  Signdef* sign = getSignature(); \
-  FUNC_TYPE_VIRTUAL_AP call = (FUNC_TYPE_VIRTUAL_AP)sign->getVirtualCallAP(); \
-  JavaThread* th = JavaThread::get(); \
-  th->startJava(); \
-  TYPE res = 0; \
-  try { \
-    res = call(cl->getConstantPool(), func, obj, ap);\
-  } catch (...) { \
-    th->throwFromJava(); \
-  } \
-  th->endJava(); \
-  return res; \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list ap) {\
-  if (!cl->isReady()) { \
-    cl->resolveClass(); \
-    cl->initialiseClass(vm); \
-  } \
-  \
-  void* func = this->compiledPtr();\
-  Signdef* sign = getSignature(); \
-  FUNC_TYPE_STATIC_AP call = (FUNC_TYPE_STATIC_AP)sign->getStaticCallAP(); \
-  JavaThread* th = JavaThread::get(); \
-  th->startJava(); \
-  TYPE res = 0; \
-  try { \
-    res = call(cl->getConstantPool(), func, ap);\
-  } catch (...) { \
-    th->throwFromJava(); \
-  } \
-  th->endJava(); \
-  return res; \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {\
-  llvm_gcroot(obj, 0); \
-  verifyNull(obj);\
-  UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
-  JavaMethod* meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
-  assert(meth && "No method found"); \
-  void* func = meth->compiledPtr(); \
-  Signdef* sign = getSignature(); \
-  FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf(); \
-  JavaThread* th = JavaThread::get(); \
-  th->startJava(); \
-  TYPE res = 0; \
-  try { \
-    res = call(cl->getConstantPool(), func, obj, buf);\
-  } catch (...) { \
-    th->throwFromJava(); \
-  } \
-  th->endJava(); \
-  return res; \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {\
-  llvm_gcroot(obj, 0); \
-  verifyNull(obj);\
-  void* func = this->compiledPtr();\
-  Signdef* sign = getSignature(); \
-  FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf(); \
-  JavaThread* th = JavaThread::get(); \
-  th->startJava(); \
-  TYPE res = 0; \
-  try { \
-    res = call(cl->getConstantPool(), func, obj, buf);\
-  } catch (...) { \
-    th->throwFromJava(); \
-  } \
-  th->endJava(); \
-  return res; \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* buf) {\
-  if (!cl->isReady()) { \
-    cl->resolveClass(); \
-    cl->initialiseClass(vm); \
-  } \
-  \
-  void* func = this->compiledPtr();\
-  Signdef* sign = getSignature(); \
-  FUNC_TYPE_STATIC_BUF call = (FUNC_TYPE_STATIC_BUF)sign->getStaticCallBuf(); \
-  JavaThread* th = JavaThread::get(); \
-  th->startJava(); \
-  TYPE res = 0; \
-  try { \
-    res = call(cl->getConstantPool(), func, buf);\
-  } catch (...) { \
-    th->throwFromJava(); \
-  } \
-  th->endJava(); \
-  return res; \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##Virtual(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) { \
-  va_list ap;\
-  va_start(ap, obj);\
-  llvm_gcroot(obj, 0); \
-  TYPE res = invoke##TYPE_NAME##VirtualAP(vm, cl, obj, ap);\
-  va_end(ap); \
-  return res; \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##Special(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) {\
-  va_list ap;\
-  va_start(ap, obj);\
-  llvm_gcroot(obj, 0); \
-  TYPE res = invoke##TYPE_NAME##SpecialAP(vm, cl, obj, ap);\
-  va_end(ap); \
-  return res; \
-}\
-\
-TYPE JavaMethod::invoke##TYPE_NAME##Static(Jnjvm* vm, UserClass* cl, ...) {\
-  va_list ap;\
-  va_start(ap, cl);\
-  TYPE res = invoke##TYPE_NAME##StaticAP(vm, cl, ap);\
-  va_end(ap); \
-  return res; \
-}\
-
-#endif
-
-#else // DWARF_EXCEPTIONS
-
-#if 1//defined(__PPC__) && !defined(__MACH__)
+#if 1 // VA_ARGS do not work on all platforms for LLVM.
 #define INVOKE(TYPE, TYPE_NAME, FUNC_TYPE_VIRTUAL_AP, FUNC_TYPE_STATIC_AP, FUNC_TYPE_VIRTUAL_BUF, FUNC_TYPE_STATIC_BUF) \
 \
 TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) { \
@@ -371,10 +114,9 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObj
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
+  DO_TRY \
   res = call(cl->getConstantPool(), func, obj, buf);\
-  if (th->pendingException) { \
-    th->throwFromJava(); \
-  } \
+  DO_CATCH \
   th->endJava(); \
   return res; \
 }\
@@ -388,10 +130,9 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObj
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
+  DO_TRY \
   res = call(cl->getConstantPool(), func, obj, buf);\
-  if (th->pendingException) { \
-    th->throwFromJava(); \
-  } \
+  DO_CATCH \
   th->endJava(); \
   return res; \
 }\
@@ -408,10 +149,9 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* bu
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
+  DO_TRY \
   res = call(cl->getConstantPool(), func, buf);\
-  if (th->pendingException) { \
-    th->throwFromJava(); \
-  } \
+  DO_CATCH \
   th->endJava(); \
   return res; \
 }\
@@ -457,10 +197,9 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObje
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
+  DO_TRY \
   res = call(cl->getConstantPool(), func, obj, ap);\
-  if (th->pendingException) { \
-    th->throwFromJava(); \
-  } \
+  DO_CATCH \
   th->endJava(); \
   return res; \
 }\
@@ -474,10 +213,9 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObje
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
+  DO_TRY \
   res = call(cl->getConstantPool(), func, obj, ap);\
-  if (th->pendingException) { \
-    th->throwFromJava(); \
-  } \
+  DO_CATCH \
   th->endJava(); \
   return res; \
 }\
@@ -494,10 +232,9 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
+  DO_TRY \
   res = call(cl->getConstantPool(), func, ap);\
-  if (th->pendingException) { \
-    th->throwFromJava(); \
-  } \
+  DO_CATCH \
   th->endJava(); \
   return res; \
 }\
@@ -514,10 +251,9 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObj
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
+  DO_TRY \
   res = call(cl->getConstantPool(), func, obj, buf);\
-  if (th->pendingException) { \
-    th->throwFromJava(); \
-  } \
+  DO_CATCH \
   th->endJava(); \
   return res; \
 }\
@@ -531,10 +267,9 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObj
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
+  DO_TRY \
   res = call(cl->getConstantPool(), func, obj, buf);\
-  if (th->pendingException) { \
-    th->throwFromJava(); \
-  } \
+  DO_CATCH \
   th->endJava(); \
   return res; \
 }\
@@ -551,10 +286,9 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* bu
   JavaThread* th = JavaThread::get(); \
   th->startJava(); \
   TYPE res = 0; \
+  DO_TRY \
   res = call(cl->getConstantPool(), func, buf);\
-  if (th->pendingException) { \
-    th->throwFromJava(); \
-  } \
+  DO_CATCH \
   th->endJava(); \
   return res; \
 }\
@@ -585,7 +319,6 @@ TYPE JavaMethod::invoke##TYPE_NAME##Static(Jnjvm* vm, UserClass* cl, ...) {\
   return res; \
 }\
 
-#endif
 #endif
 
 typedef uint32 (*uint32_virtual_ap)(UserConstantPool*, void*, JavaObject*, va_list);
