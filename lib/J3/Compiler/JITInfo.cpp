@@ -426,6 +426,7 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   
   JavaLLVMCompiler* Mod = 
     (JavaLLVMCompiler*)signature->initialLoader->getCompiler();
+  JnjvmModule& Intrinsics = *Mod->getIntrinsics();
   std::string name;
   if (Mod->isStaticCompiling()) {
     name += UTF8Buffer(signature->keyName).cString();
@@ -459,7 +460,29 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   Typedef* const* arguments = signature->getArgumentsType();
   for (uint32 i = 0; i < signature->nbArguments; ++i) {
     LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(arguments[i]);
-    Args.push_back(new VAArgInst(ap, LAI.llvmType, "", currentBlock));
+    Value* arg = new VAArgInst(ap, LAI.llvmType, "", currentBlock);
+    if (arguments[i]->isReference()) {
+      arg = new IntToPtrInst(arg, Intrinsics.JavaObjectType, "", currentBlock);
+      Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
+                                Intrinsics.JavaObjectNullConstant,
+                                arg, "");
+      BasicBlock* endBlock = BasicBlock::Create(context, "end", res);
+      BasicBlock* loadBlock = BasicBlock::Create(context, "load", res);
+      PHINode* node = PHINode::Create(Intrinsics.JavaObjectType, "",
+                                      endBlock);
+      node->addIncoming(Intrinsics.JavaObjectNullConstant, currentBlock);
+      BranchInst::Create(endBlock, loadBlock, cmp, currentBlock);
+      currentBlock = loadBlock;
+      arg = new BitCastInst(arg,
+                            PointerType::getUnqual(Intrinsics.JavaObjectType),
+                            "", currentBlock);
+      arg = new LoadInst(arg, "", false, currentBlock);
+      node->addIncoming(arg, currentBlock);
+      BranchInst::Create(endBlock, currentBlock);
+      currentBlock = endBlock;
+      arg = node;
+    }
+    Args.push_back(arg);
   }
 
 #if defined(ISOLATE_SHARING)
