@@ -333,6 +333,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   JavaLLVMCompiler* Mod = 
     (JavaLLVMCompiler*)signature->initialLoader->getCompiler();
   LLVMContext& context = Mod->getLLVMModule()->getContext();
+  JnjvmModule& Intrinsics = *Mod->getIntrinsics();
   Function* res = 0;
   if (Mod->isStaticCompiling()) {
     const char* type = virt ? "virtual_buf" : "static_buf";
@@ -369,10 +370,41 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   for (uint32 i = 0; i < signature->nbArguments; ++i) {
   
     LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(arguments[i]);
-    Value* val = new BitCastInst(ptr, LAI.llvmTypePtr, "", currentBlock);
-    Value* arg = new LoadInst(val, "", currentBlock);
+    Value* arg = new LoadInst(ptr, "", currentBlock);
+    
+    if (arguments[i]->isReference()) {
+      arg = new IntToPtrInst(arg, Intrinsics.JavaObjectType, "", currentBlock);
+#if 0
+      Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
+                                Intrinsics.JavaObjectNullConstant,
+                                arg, "");
+      BasicBlock* endBlock = BasicBlock::Create(context, "end", res);
+      BasicBlock* loadBlock = BasicBlock::Create(context, "load", res);
+      PHINode* node = PHINode::Create(Intrinsics.JavaObjectType, "",
+                                      endBlock);
+      node->addIncoming(Intrinsics.JavaObjectNullConstant, currentBlock);
+      BranchInst::Create(endBlock, loadBlock, cmp, currentBlock);
+      currentBlock = loadBlock;
+      arg = new BitCastInst(arg,
+                            PointerType::getUnqual(Intrinsics.JavaObjectType),
+                            "", currentBlock);
+      arg = new LoadInst(arg, "", false, currentBlock);
+      node->addIncoming(arg, currentBlock);
+      BranchInst::Create(endBlock, currentBlock);
+      currentBlock = endBlock;
+      arg = node;
+#endif
+    } else if (arguments[i]->isFloat()) {
+      arg = new TruncInst(arg, LLVMAssessorInfo::AssessorInfo[I_INT].llvmType,
+                          "", currentBlock);
+      arg = new BitCastInst(arg, LAI.llvmType, "", currentBlock);
+    } else if (arguments[i]->isDouble()) {
+      arg = new BitCastInst(arg, LAI.llvmType, "", currentBlock);
+    } else if (!arguments[i]->isLong()){
+      arg = new TruncInst(arg, LAI.llvmType, "", currentBlock);
+    }
     Args.push_back(arg);
-    ptr = GetElementPtrInst::Create(ptr, Mod->getIntrinsics()->constantEight,"",
+    ptr = GetElementPtrInst::Create(ptr, Mod->getIntrinsics()->constantOne,"",
                                     currentBlock);
   }
 
@@ -472,14 +504,14 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
   if (!virtualBufType) {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR();
-    std::vector<const llvm::Type*> Args2;
-    Args2.push_back(JnjvmModule::ConstantPoolType); // ctp
-    Args2.push_back(getVirtualPtrType());
-    Args2.push_back(JnjvmModule::JavaObjectType);
-    Args2.push_back(JnjvmModule::ptrType);
+    std::vector<const llvm::Type*> Args;
+    Args.push_back(JnjvmModule::ConstantPoolType); // ctp
+    Args.push_back(getVirtualPtrType());
+    Args.push_back(JnjvmModule::JavaObjectType);
+    Args.push_back(LLVMAssessorInfo::AssessorInfo[I_LONG].llvmTypePtr);
     LLVMAssessorInfo& LAI = 
       JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
-    virtualBufType = FunctionType::get(LAI.llvmType, Args2, false);
+    virtualBufType = FunctionType::get(LAI.llvmType, Args, false);
     mvm::MvmModule::unprotectIR();
   }
   return virtualBufType;
@@ -492,7 +524,7 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
     std::vector<const llvm::Type*> Args;
     Args.push_back(JnjvmModule::ConstantPoolType); // ctp
     Args.push_back(getStaticPtrType());
-    Args.push_back(JnjvmModule::ptrType);
+    Args.push_back(LLVMAssessorInfo::AssessorInfo[I_LONG].llvmTypePtr);
     LLVMAssessorInfo& LAI = 
       JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
     staticBufType = FunctionType::get(LAI.llvmType, Args, false);

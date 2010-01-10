@@ -9,6 +9,7 @@
 
 #include <cstdarg>
 #include <cstring>
+#include <jni.h>
 
 #include "debug.h"
 
@@ -21,28 +22,30 @@
 
 using namespace j3;
 
-#define readArgs(buf, signature, ap, jni) \
+
+#define readArgs(buf, signature, ap, jni) { \
+  jvalue* buffer = (jvalue*)buf; \
   Typedef* const* arguments = signature->getArgumentsType(); \
   for (uint32 i = 0; i < signature->nbArguments; ++i) { \
     const Typedef* type = arguments[i];\
     if (type->isPrimitive()) {\
       const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;\
       if (prim->isLong()) {\
-        ((sint64*)buf)[0] = va_arg(ap, sint64);\
+        buffer[i].j = va_arg(ap, sint64);\
       } else if (prim->isInt()){ \
-        ((sint32*)buf)[0] = va_arg(ap, sint32);\
+        buffer[i].i = va_arg(ap, sint32);\
       } else if (prim->isChar()) { \
-        ((uint32*)buf)[0] = va_arg(ap, uint32);\
+        buffer[i].c = va_arg(ap, uint32);\
       } else if (prim->isShort()) { \
-        ((uint32*)buf)[0] = va_arg(ap, uint32);\
+        buffer[i].s = va_arg(ap, sint32);\
       } else if (prim->isByte()) { \
-        ((uint32*)buf)[0] = va_arg(ap, uint32);\
+        buffer[i].b = va_arg(ap, sint32);\
       } else if (prim->isBool()) { \
-        ((uint32*)buf)[0] = va_arg(ap, uint32);\
+        buffer[i].z = va_arg(ap, uint32);\
       } else if (prim->isFloat()) {\
-        ((float*)buf)[0] = (float)va_arg(ap, double);\
+        buffer[i].f = (float)va_arg(ap, double);\
       } else if (prim->isDouble()) {\
-        ((double*)buf)[0] = va_arg(ap, double);\
+        buffer[i].d = va_arg(ap, double);\
       } else {\
         fprintf(stderr, "Can't happen");\
         abort();\
@@ -51,16 +54,16 @@ using namespace j3;
       if (jni) { \
         JavaObject** obj = va_arg(ap, JavaObject**);\
         if (obj) {\
-          ((JavaObject**)buf)[0] = *obj;\
+          buffer[i].l = reinterpret_cast<jobject>(*obj);\
         } else {\
-          ((JavaObject**)buf)[0] = 0;\
+          buffer[i].l = reinterpret_cast<jobject>(NULL);\
         }\
       } else { \
-        ((JavaObject**)buf)[0] = va_arg(ap, JavaObject*);\
+        buffer[i].l = reinterpret_cast<jobject>(va_arg(ap, JavaObject**));\
       } \
     }\
-    buf += 8; \
   }\
+}
 
 //===----------------------------------------------------------------------===//
 // We do not need to have special care on the GC-pointers in the buffer
