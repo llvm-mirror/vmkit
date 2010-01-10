@@ -374,7 +374,6 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
     
     if (arguments[i]->isReference()) {
       arg = new IntToPtrInst(arg, Intrinsics.JavaObjectType, "", currentBlock);
-#if 0
       Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
                                 Intrinsics.JavaObjectNullConstant,
                                 arg, "");
@@ -393,7 +392,6 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
       BranchInst::Create(endBlock, currentBlock);
       currentBlock = endBlock;
       arg = node;
-#endif
     } else if (arguments[i]->isFloat()) {
       arg = new TruncInst(arg, LLVMAssessorInfo::AssessorInfo[I_INT].llvmType,
                           "", currentBlock);

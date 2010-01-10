@@ -26,13 +26,18 @@ extern "C" {
 
 static void setProperty(Jnjvm* vm, JavaObject* prop, const char* key,
                         const char* val) {
- 
+
+  JavaString* Val = 0; 
+  JavaString* Key = 0; 
   llvm_gcroot(prop, 0);
+  llvm_gcroot(Val, 0);
+  llvm_gcroot(Key, 0);
+
+  Val = vm->asciizToStr(val);
+  Key = vm->asciizToStr(key);
                         
   vm->upcalls->setProperty->invokeIntSpecial(vm, (UserClass*)prop->getClass(),
-                                             prop,
-                                             vm->asciizToStr(key),
-                                             vm->asciizToStr(val));
+                                             prop, &Key, &Val);
 }
 
 static void setUnameProp(Jnjvm* vm, JavaObject* prop) {

@@ -102,10 +102,10 @@ static JavaObject* consStackElement(JavaMethod* meth, void* ip) {
   UserClass* newS = vm->upcalls->newStackTraceElement;
   res = newS->doNew(vm);
   vm->upcalls->initStackTraceElement->invokeIntSpecial(vm, newS, res,
-                                                       sourceName,
+                                                       &sourceName,
                                                        0, // source line
-                                                       className,
-                                                       methodName, native);
+                                                       &className,
+                                                       &methodName, native);
   return res;
 }
 

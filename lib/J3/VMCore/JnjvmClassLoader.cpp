@@ -413,7 +413,7 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
       strName = JavaString::internalToJava(name, isolate);
     }
     obj = upcalls->loadInClassLoader->invokeJavaObjectVirtual(isolate, forCtp,
-                                              javaLoader, strName, doResolve);
+                                              javaLoader, &strName, doResolve);
     cl = (UserCommonClass*)((JavaObjectClass*)obj)->getClass();
   }
   

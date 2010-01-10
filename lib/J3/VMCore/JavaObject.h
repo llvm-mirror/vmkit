@@ -21,6 +21,8 @@
 #include "JavaLocks.h"
 #include "JnjvmConfig.h"
 
+union jvalue;
+
 namespace j3 {
 
 class JavaObject;
@@ -280,7 +282,7 @@ public:
   /// decapsulePrimitive - Based on the signature argument, decapsule
   /// obj as a primitive and put it in the buffer.
   ///
-  void decapsulePrimitive(Jnjvm* vm, uintptr_t &buf, const Typedef* signature);
+  void decapsulePrimitive(Jnjvm* vm, jvalue* buf, const Typedef* signature);
 
 };
 

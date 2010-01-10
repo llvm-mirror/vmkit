@@ -151,8 +151,10 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
   // Local object references.
   JavaObject* Cl = *(JavaObject**)_Cl;
   JavaObject* res = 0;
+  JavaString* str = 0;
   llvm_gcroot(Cl, 0);
   llvm_gcroot(res, 0);
+  llvm_gcroot(str, 0);
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   
@@ -165,7 +167,8 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
   JavaMethod* init = realCl->lookupMethod(vm->bootstrapLoader->initName,
                                           vm->bootstrapLoader->initExceptionSig,
                                           false, true, 0);
-  init->invokeIntSpecial(vm, realCl, res, vm->asciizToStr(msg));
+  str = vm->asciizToStr(msg);
+  init->invokeIntSpecial(vm, realCl, res, &str);
   th->pendingException = res;
   
   th->throwFromJNI(SP);
@@ -324,47 +327,6 @@ jobject NewObjectV(JNIEnv* env, jclass clazz, jmethodID methodID,
   return 0;
 }
 
-#define BufToBuf(_args, _buf, signature) \
-  Typedef* const* arguments = signature->getArgumentsType(); \
-  uintptr_t __buf = (uintptr_t)_buf; \
-  uintptr_t __args = (uintptr_t)_args;\
-  for (uint32 i = 0; i < signature->nbArguments; ++i) { \
-    const Typedef* type = arguments[i];\
-    if (type->isPrimitive()) {\
-      const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;\
-      if (prim->isLong()) {\
-        ((sint64*)__buf)[0] = ((sint64*)__args)[0];\
-      } else if (prim->isInt()){ \
-        ((sint32*)__buf)[0] = ((sint32*)__args)[0];\
-      } else if (prim->isChar()) { \
-        ((uint32*)__buf)[0] = ((uint32*)__args)[0];\
-      } else if (prim->isShort()) { \
-        ((uint32*)__buf)[0] = ((uint32*)__args)[0];\
-      } else if (prim->isByte()) { \
-        ((uint32*)__buf)[0] = ((uint32*)__args)[0];\
-      } else if (prim->isBool()) { \
-        ((uint32*)__buf)[0] = ((uint32*)__args)[0];\
-      } else if (prim->isFloat()) {\
-        ((float*)__buf)[0] = ((float*)__args)[0];\
-      } else if (prim->isDouble()) {\
-        ((double*)__buf)[0] = ((double*)__args)[0];\
-      } else {\
-        fprintf(stderr, "Can't happen");\
-        abort();\
-      }\
-    } else{\
-      JavaObject** obj = ((JavaObject***)__args)[0];\
-      if (obj) {\
-        ((JavaObject**)__buf)[0] = *obj;\
-      } else {\
-        ((JavaObject**)__buf)[0] = 0;\
-      }\
-    }\
-    __buf += 8; \
-    __args += 8; \
-  }\
-
-
 jobject NewObjectA(JNIEnv* env, jclass _clazz, jmethodID methodID,
                    const jvalue *args) {
   
@@ -379,17 +341,12 @@ jobject NewObjectA(JNIEnv* env, jclass _clazz, jmethodID methodID,
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   JavaMethod* meth = (JavaMethod*)methodID;
-
-  Signdef* sign = meth->getSignature();
-  uintptr_t buf = (uintptr_t)alloca(sign->nbArguments * sizeof(uint64));
-  BufToBuf(args, buf, sign);
-
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
   
   // Store local reference
   res = cl->asClass()->doNew(vm);
 
-  meth->invokeIntSpecialBuf(vm, cl->asClass(), res, (void*)buf);
+  meth->invokeIntSpecialBuf(vm, cl->asClass(), res, (void*)args);
 
   jobject ret = (jobject)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
@@ -996,11 +953,7 @@ void CallVoidMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = getClassFromVirtualMethod(vm, meth, obj->getClass());
   
-  Signdef* sign = meth->getSignature();
-  uintptr_t buf = (uintptr_t)alloca(sign->nbArguments * sizeof(uint64));
-  BufToBuf(args, buf, sign);
-  
-  meth->invokeIntVirtualBuf(vm, cl, obj, (void*)buf);
+  meth->invokeIntVirtualBuf(vm, cl, obj, (void*)args);
 
   RETURN_VOID_FROM_JNI;
 
@@ -3760,7 +3713,7 @@ jobject NewDirectByteBuffer(JNIEnv *env, void *address, jlong capacity) {
   myvm->upcalls->dataPointer64->setLongField(p, (jlong)address);
 #endif
 
-  myvm->upcalls->InitDirectByteBuffer->invokeIntSpecial(myvm, BB, res, 0, p,
+  myvm->upcalls->InitDirectByteBuffer->invokeIntSpecial(myvm, BB, res, 0, &p,
                                                         (uint32)capacity,
                                                         (uint32)capacity, 0);
 

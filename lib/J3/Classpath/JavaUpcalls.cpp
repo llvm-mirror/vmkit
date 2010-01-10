@@ -248,9 +248,9 @@ void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
   vmdataVMThread->setObjectField(vmth, (JavaObject*)myth);
   
   group->setObjectField(th, Group);
-  groupAddThread->invokeIntSpecial(vm, threadGroup, Group, th);
+  groupAddThread->invokeIntSpecial(vm, threadGroup, Group, &th);
   
-  finaliseCreateInitialThread->invokeIntStatic(vm, inheritableThreadLocal, th);
+  finaliseCreateInitialThread->invokeIntStatic(vm, inheritableThreadLocal, &th);
 }
 
 void Classpath::InitializeThreading(Jnjvm* vm) {

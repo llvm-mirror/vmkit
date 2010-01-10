@@ -115,10 +115,8 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
   Signdef* sign = meth->getSignature();
   sint32 size = sign->nbArguments;
 
-  uintptr_t buf = size ? (uintptr_t)alloca(size * sizeof(uint64)) : 0;
+  jvalue* buf = size ? (jvalue*)alloca(size * sizeof(jvalue)) : 0;
   
-
-  void* _buf = (void*)buf;
   if (nbArgs == size) {
     UserCommonClass* _cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
     UserClass* cl = (UserClass*)_cl;
@@ -144,7 +142,10 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
     JavaObject** ptr = (JavaObject**)(void*)(args->elements);
     Typedef* const* arguments = sign->getArgumentsType();
     for (sint32 i = 0; i < size; ++i) {
-      ptr[i]->decapsulePrimitive(vm, buf, arguments[i]);
+      ptr[i]->decapsulePrimitive(vm, &buf[i], arguments[i]);
+      if (buf[i].l == reinterpret_cast<jobject>(ptr[i])) {
+        buf[i].l = reinterpret_cast<jobject>(&ptr[i]);
+      }
     }
     
     JavaThread* th = JavaThread::get();
@@ -154,12 +155,12 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       if (isVirtual(meth->access)) { \
         if (isPublic(meth->access) && !isFinal(meth->access) && \
             !isFinal(meth->classDef->access)) { \
-          VAR = meth->invoke##TYPE##VirtualBuf(vm, cl, obj, _buf); \
+          VAR = meth->invoke##TYPE##VirtualBuf(vm, cl, obj, buf); \
         } else { \
-          VAR = meth->invoke##TYPE##SpecialBuf(vm, cl, obj, _buf); \
+          VAR = meth->invoke##TYPE##SpecialBuf(vm, cl, obj, buf); \
         } \
       } else { \
-        VAR = meth->invoke##TYPE##StaticBuf(vm, cl, _buf); \
+        VAR = meth->invoke##TYPE##StaticBuf(vm, cl, buf); \
       } \
     } catch(...) { \
       exc = th->getJavaException(); \

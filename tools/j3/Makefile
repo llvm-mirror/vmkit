@@ -36,6 +36,7 @@ USEDLIBS = J3.a Classpath.a J3.a J3Compiler.a Allocator.a \
 
 endif
 
+CXX.Flags += $(CLASSPATH_FLAGS)
 
 LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo bitreader asmparser linker
 

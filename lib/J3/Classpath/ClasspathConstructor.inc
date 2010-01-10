@@ -96,11 +96,7 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
   if (isAbstract(cl->access)) vm->instantiationException(cl);
 
   // Allocate a buffer to store the arguments.
-  uintptr_t buf = size ? (uintptr_t)alloca(size * sizeof(uint64)) : 0;
-  // Record the beginning of the buffer.
-  void* startBuf = (void*)buf;
-  
-  // Do it after alloca
+  jvalue* buf = size ? (jvalue*)alloca(size * sizeof(jvalue)) : 0;
 
   if (nbArgs == size) {
     UserCommonClass* _cl = UserCommonClass::resolvedImplClass(vm, Clazz, false);
@@ -113,12 +109,15 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
       Typedef* const* arguments = sign->getArgumentsType();
       // Store the arguments, unboxing primitives if necessary.
       for (sint32 i = 0; i < size; ++i) {
-        ptr[i]->decapsulePrimitive(vm, buf, arguments[i]);
+        ptr[i]->decapsulePrimitive(vm, &buf[i], arguments[i]);
+        if (buf[i].l == reinterpret_cast<jobject>(ptr[i])) {
+          buf[i].l = reinterpret_cast<jobject>(&ptr[i]);
+        }
       }
       
       JavaThread* th = JavaThread::get();
       try {
-        meth->invokeIntSpecialBuf(vm, cl, res, startBuf);
+        meth->invokeIntSpecialBuf(vm, cl, res, buf);
       } catch(...) {
         excp = th->getJavaException();
         if (excp->getClass()->isAssignableFrom(vm->upcalls->newException)) {

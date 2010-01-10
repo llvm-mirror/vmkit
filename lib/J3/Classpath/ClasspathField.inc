@@ -534,7 +534,7 @@ JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = Field->getClass();
   JavaField* field = Field->getInternalField();
-  uint64_t buf = 0;
+  jvalue buf;
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -546,30 +546,28 @@ JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
     verifyNull(obj);
   }
  
-  void* _buf = (void*)(&buf);
-  uintptr_t __buf = (uintptr_t)&buf;
   const Typedef* type = field->getSignature();
-  val->decapsulePrimitive(vm, __buf, type);
+  val->decapsulePrimitive(vm, &buf, type);
   
 
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
     if (prim->isBool())
-      field->setInt8Field(stat ? StatPtr : obj, ((uint8*)_buf)[0]);
+      field->setInt8Field(stat ? StatPtr : obj, buf.z);
     else if (prim->isByte())
-      field->setInt8Field(stat ? StatPtr : obj, ((sint8*)_buf)[0]);
+      field->setInt8Field(stat ? StatPtr : obj, buf.b);
     else if (prim->isChar())
-      field->setInt16Field(stat ? StatPtr : obj, ((uint16*)_buf)[0]);
+      field->setInt16Field(stat ? StatPtr : obj, buf.c);
     else if (prim->isShort())
-      field->setInt16Field(stat ? StatPtr : obj, ((sint16*)_buf)[0]);
+      field->setInt16Field(stat ? StatPtr : obj, buf.s);
     else if (prim->isInt())
-      field->setInt32Field(stat ? StatPtr : obj, ((sint32*)_buf)[0]);
+      field->setInt32Field(stat ? StatPtr : obj, buf.i);
     else if (prim->isLong())
-      field->setLongField(stat ? StatPtr : obj, ((sint64*)_buf)[0]);
+      field->setLongField(stat ? StatPtr : obj, buf.j);
     else if (prim->isFloat())
-      field->setFloatField(stat ? StatPtr : obj, ((float*)_buf)[0]);
+      field->setFloatField(stat ? StatPtr : obj, buf.f);
     else if (prim->isDouble())
-      field->setDoubleField(stat ? StatPtr : obj, ((double*)_buf)[0]);
+      field->setDoubleField(stat ? StatPtr : obj, buf.d);
   } else {
     field->setObjectField(stat ? StatPtr : obj, val);
   }

@@ -1,4 +1,4 @@
-//===---- JavaMetaJIT.cpp - Functions for Java internal objects -----------===//
+//===----- JavaMetaJIT.cpp - Caling Java methods from native code ---------===//
 //
 //                            The VMKit project
 //
@@ -51,33 +51,15 @@ using namespace j3;
         abort();\
       }\
     } else{\
-      if (jni) { \
-        JavaObject** obj = va_arg(ap, JavaObject**);\
-        if (obj) {\
-          buffer[i].l = reinterpret_cast<jobject>(*obj);\
-        } else {\
-          buffer[i].l = reinterpret_cast<jobject>(NULL);\
-        }\
-      } else { \
-        buffer[i].l = reinterpret_cast<jobject>(va_arg(ap, JavaObject**));\
-      } \
+      buffer[i].l = reinterpret_cast<jobject>(va_arg(ap, JavaObject**));\
     }\
   }\
 }
 
 //===----------------------------------------------------------------------===//
 // We do not need to have special care on the GC-pointers in the buffer
-// manipulated in these functions. Once the Java function is called, they
-// are never used (because the buffer is alloca'd and "this" is only used when
-// calling). TODO: Note that copying collectors will require to change
-// that strategy.
-//===----------------------------------------------------------------------===//
-
-//===----------------------------------------------------------------------===//
-// Also, virtual calls must not be used with stubs, because the thread manager
-// won't understand the frame layout of a CallBuf/CallAP calling
-// LLVM code (hence native code). Therefore, lookup the real JavaMethod,
-// compile it, and give it to the CallBuf/CallAP.
+// manipulated in these functions because the objects in the buffer are
+// addressed and never stored directly.
 //===----------------------------------------------------------------------===//
 
 #if defined(DWARF_EXCEPTIONS)

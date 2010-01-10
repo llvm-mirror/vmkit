@@ -122,7 +122,7 @@ jboolean publicOnly) {
           (!publicOnly || pub)) {
         UserClass* Cons = vm->upcalls->newConstructor;
         tmp = Cons->doNew(vm);
-        vm->upcalls->initConstructor->invokeIntSpecial(vm, Cons, tmp, Cl, i);
+        vm->upcalls->initConstructor->invokeIntSpecial(vm, Cons, tmp, &Cl, i);
         ret->elements[index++] = tmp;
       }
     }
@@ -186,7 +186,7 @@ jboolean publicOnly) {
         UserClass* Meth = vm->upcalls->newMethod;
         tmp = Meth->doNew(vm);
         str = vm->internalUTF8ToStr(meth->name);
-        upcalls->initMethod->invokeIntSpecial(vm, Meth, tmp, Cl, str, i);
+        upcalls->initMethod->invokeIntSpecial(vm, Meth, tmp, &Cl, &str, i);
         ret->elements[index++] = tmp;
       }
     }
@@ -456,7 +456,7 @@ JavaObject* Cl, jboolean publicOnly) {
         UserClass* Field = vm->upcalls->newField;
         tmp = Field->doNew(vm);
         name = vm->internalUTF8ToStr(field->name);
-        vm->upcalls->initField->invokeIntSpecial(vm, Field, tmp, Cl, name, i);
+        vm->upcalls->initField->invokeIntSpecial(vm, Field, tmp, &Cl, &name, i);
         ret->elements[index++] = tmp;
       }
     }

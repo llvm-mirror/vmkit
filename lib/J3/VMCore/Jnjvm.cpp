@@ -234,7 +234,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
         abort();
       }
       JavaMethod* init = upcalls->ErrorWithExcpExceptionInInitializerError;
-      init->invokeIntSpecial(vm, clExcp, obj, exc);
+      init->invokeIntSpecial(vm, clExcp, obj, &exc);
       exc = obj;
     } 
 
@@ -254,15 +254,19 @@ void Jnjvm::errorWithExcp(UserClass* cl, JavaMethod* init,
                           const JavaObject* excp) {
   JavaObject* obj = cl->doNew(this);
   llvm_gcroot(obj, 0);
-  init->invokeIntSpecial(this, cl, obj, excp);
+  init->invokeIntSpecial(this, cl, obj, &excp);
   JavaThread::get()->throwException(obj);
 }
 
 JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
-                               const char* str) {
+                               const char* asciiz) {
   JavaObject* obj = cl->doNew(this);
+  JavaString* str = 0;
   llvm_gcroot(obj, 0);
-  init->invokeIntSpecial(this, cl, obj, str ? asciizToStr(str) : 0);
+  llvm_gcroot(str, 0);
+  if (asciiz) str = asciizToStr(asciiz);
+
+  init->invokeIntSpecial(this, cl, obj, &str);
   return obj;
 }
 
@@ -272,7 +276,7 @@ JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
   llvm_gcroot(str, 0);
   llvm_gcroot(obj, 0);
   obj = cl->doNew(this);
-  init->invokeIntSpecial(this, cl, obj, str);
+  init->invokeIntSpecial(this, cl, obj, &str);
   return obj;
 }
 
@@ -1134,7 +1138,7 @@ void Jnjvm::loadBootstrap() {
   if (!IsolateID)
 #endif
   upcalls->setContextClassLoader->invokeIntSpecial(this, upcalls->newThread,
-                                                   obj, javaLoader);
+                                                   obj, &javaLoader);
   // load and initialise math since it is responsible for dlopen'ing 
   // libjavalang.so and we are optimizing some math operations
   UserCommonClass* math = 
@@ -1170,7 +1174,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
     const UTF8* funcName = appClassLoader->asciizConstructUTF8("main");
     JavaMethod* method = cl->lookupMethod(funcName, funcSign, true, true, 0);
   
-    method->invokeIntStatic(this, method->classDef, args);
+    method->invokeIntStatic(this, method->classDef, &args);
   }catch(...) {
   }
 
@@ -1182,7 +1186,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
     group = upcalls->group->getObjectField(obj);
     try{
       upcalls->uncaughtException->invokeIntSpecial(this, upcalls->threadGroup,
-                                                   group, obj, exc);
+                                                   group, &obj, &exc);
     }catch(...) {
       fprintf(stderr, "Exception in thread \"main\": "
                       "Can not print stack trace.\n");
@@ -1203,7 +1207,7 @@ void Jnjvm::executePremain(const char* className, JavaString* args,
     const UTF8* funcName = appClassLoader->asciizConstructUTF8("premain");
     JavaMethod* method = cl->lookupMethod(funcName, funcSign, true, true, 0);
   
-    method->invokeIntStatic(this, method->classDef, args, instrumenter);
+    method->invokeIntStatic(this, method->classDef, &args, &instrumenter);
   } catch(...) {
     JavaThread::get()->clearException();
   }
