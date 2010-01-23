@@ -125,7 +125,7 @@ public:
   static const uint32_t IndexSize = 1 << BitIndex;
   static const uint32_t BitMask = IndexSize - 1;
   static const uint32_t MaxLocks = GlobalSize * IndexSize;
-  static const uint32_t BitGC = 2;
+  static const uint32_t BitGC = 12;
 
   /// LockTable - The global table that will hold the locks. The table is
   /// a two-dimensional array, and only one entry is created, so that
