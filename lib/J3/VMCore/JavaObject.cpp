@@ -20,6 +20,8 @@
 
 using namespace j3;
 
+uint16_t JavaObject::hashCodeGenerator = 1;
+
 void JavaObject::waitIntern(struct timeval* info, bool timed) {
   JavaLock* l = 0;
   JavaObject* self = this;

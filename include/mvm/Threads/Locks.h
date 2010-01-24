@@ -187,6 +187,7 @@ public:
   static const uint64_t ThinCountShift = 12;
   static const uint64_t ThinCountAdd = 0x1000;
   static const uint64_t GCMask = 0xFFF;
+  static const uint64_t HashMask = 0xFFC;
 
 
 

@@ -109,7 +109,7 @@ jclass clazz,
 JavaObject* obj) {
 
   llvm_gcroot(obj, 0);
-  return (jint)(intptr_t)obj;
+  return obj->hashCode();
 }
 
 }
