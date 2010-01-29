@@ -11,6 +11,7 @@
 
 #include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/GlobalVariable.h"
+#include "llvm/LLVMContext.h"
 
 #include "types.h"
 

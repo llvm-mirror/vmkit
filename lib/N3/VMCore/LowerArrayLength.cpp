@@ -7,9 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/Pass.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
+#include "llvm/LLVMContext.h"
+#include "llvm/Pass.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/Debug.h"
 

@@ -88,7 +88,8 @@ extern "C" VMObject* System_Reflection_Assembly_GetCallingAssembly() {
  
   N3* vm = VMThread::get()->getVM();
 
-  VMMethod* meth = vm->IPToMethod<VMMethod>(FRAME_IP(cur));
+  abort();
+  VMMethod* meth = NULL; //vm->IPToMethod<VMMethod>(FRAME_IP(cur));
 
   assert(meth && "Wrong stack");
   
@@ -107,10 +108,9 @@ extern "C" VMObject* System_Reflection_Assembly_GetExecutingAssembly() {
   
   N3* vm = VMThread::get()->getVM();
 
-  VMMethod* meth = vm->IPToMethod<VMMethod>(FRAME_IP(cur));
-
+  abort();
+  VMMethod* meth = NULL; //vm->IPToMethod<VMMethod>(FRAME_IP(cur));
   assert(meth && "Wrong stack");
-  
   return meth->classDef->assembly->getAssemblyDelegatee();
 }
 

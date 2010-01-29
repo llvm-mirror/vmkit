@@ -29,6 +29,7 @@
 #include <llvm/Function.h>
 #include <llvm/Instructions.h>
 #include <llvm/LinkAllPasses.h>
+#include <llvm/LLVMContext.h>
 #include <llvm/Module.h>
 #include <llvm/Type.h>
 #include <llvm/Analysis/LoopPass.h>
@@ -1769,7 +1770,6 @@ void AddStandardCompilePasses(FunctionPassManager *PM) {
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
   addPass(PM, createScalarReplAggregatesPass()); // Break up aggregate allocas
   addPass(PM, createInstructionCombiningPass()); // Combine silly seq's
-  addPass(PM, createCondPropagationPass());      // Propagate conditionals
   
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
   addPass(PM, createReassociatePass());          // Reassociate expressions
@@ -1787,7 +1787,6 @@ void AddStandardCompilePasses(FunctionPassManager *PM) {
   // Run instcombine after redundancy elimination to exploit opportunities
   // opened up by them.
   addPass(PM, createInstructionCombiningPass());
-  addPass(PM, createCondPropagationPass());      // Propagate conditionals
 
   addPass(PM, createDeadStoreEliminationPass()); // Delete dead stores
   addPass(PM, createAggressiveDCEPass());        // Delete dead instructions

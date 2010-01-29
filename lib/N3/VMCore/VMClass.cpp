@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "llvm/DerivedTypes.h"
+#include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
 
 #include "N3Debug.h"
@@ -805,7 +806,7 @@ VMMethod *VMMethod::compileToNative(VMGenericMethod* genMethod) {
 				void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(methPtr);
 				code = res;
 				N3* vm = VMThread::get()->getVM();
-				vm->addMethodInFunctionMap(this, res);
+				// vm->addMethodInFunctionMap(this, res);
 			}
 			classDef->release();
 			classDef->resolveStatic(true, NULL);

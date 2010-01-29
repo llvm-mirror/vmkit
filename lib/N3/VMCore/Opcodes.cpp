@@ -13,6 +13,7 @@
 
 #include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
+#include <llvm/LLVMContext.h>
 #include <llvm/Module.h>
 #include <llvm/Type.h>
 #include <llvm/Function.h>

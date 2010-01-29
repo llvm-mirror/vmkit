@@ -10,6 +10,8 @@
 
 #include <vector>
 
+#include "llvm/LLVMContext.h"
+
 #include "mvm/CompilationUnit.h"
 #include "mvm/JIT.h"
 #include "mvm/Threads/Locks.h"
