@@ -490,7 +490,7 @@ Instruction* CLIJit::invokeInline(VMMethod* meth,
   jit->inlineMethods = inlineMethods;
   jit->inlineMethods[meth] = true;
   Instruction* ret = jit->inlineCompile(llvmFunction, currentBlock, 
-                                        currentExceptionBlock, args, dynamic_cast<VMGenericClass*>(jit->compilingClass), genMethod);
+                                        currentExceptionBlock, args, static_cast<VMGenericClass*>(jit->compilingClass), genMethod);
   inlineMethods[meth] = false;
 
 	delete a;
@@ -1480,14 +1480,14 @@ Function* CLIJit::compile(VMClass* cl, VMMethod* meth) {
   jit->compilingMethod = meth;
   jit->module = cl->vm->module;
   Function* func;
-  meth->getSignature(dynamic_cast<VMGenericMethod*>(meth));
+  meth->getSignature(static_cast<VMGenericMethod*>(meth));
   
   if (isInternal(meth->implFlags)) {
-    func = jit->compileNative(dynamic_cast<VMGenericMethod*>(meth));
+    func = jit->compileNative(static_cast<VMGenericMethod*>(meth));
   } else if (meth->offsetInTextSection == 0) {
     func = jit->compileIntern();
   } else {
-    func = jit->compileFatOrTiny(dynamic_cast<VMGenericClass*>(cl), dynamic_cast<VMGenericMethod*>(meth));
+    func = jit->compileFatOrTiny(static_cast<VMGenericClass*>(cl), static_cast<VMGenericMethod*>(meth));
   }
 
 	delete a;

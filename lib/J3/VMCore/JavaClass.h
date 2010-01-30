@@ -738,8 +738,6 @@ public:
       JInfo = new(classLoader->allocator, "Class JIT info") Ty(this);
     }   
 
-    assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
-           "Invalid concrete type or multiple inheritence for getInfo");
     return static_cast<Ty*>(JInfo);
   }
   
@@ -1234,8 +1232,6 @@ public:
       JInfo = new(classDef->classLoader->allocator, "Method JIT info") Ty(this);
     }   
 
-    assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
-           "Invalid concrete type or multiple inheritence for getInfo");
     return static_cast<Ty*>(JInfo);
   }
   
@@ -1367,8 +1363,6 @@ public:
       JInfo = new(classDef->classLoader->allocator, "Field JIT info") Ty(this);
     }   
 
-    assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
-           "Invalid concrete type or multiple inheritence for getInfo");
     return static_cast<Ty*>(JInfo);
   }
   

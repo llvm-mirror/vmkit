@@ -153,7 +153,7 @@ void addCommandLinePass(char** argv) {
       errs() << argv[0] << ": cannot create pass: "
            << PassInf->getPassName() << "\n";
     if (P) {
-        bool isModulePass = dynamic_cast<ModulePass*>(P) != 0;
+        bool isModulePass = (P->getPassKind() == PT_Module);
         if (isModulePass) 
           errs() << argv[0] << ": vmkit does not support module pass: "
              << PassInf->getPassName() << "\n";

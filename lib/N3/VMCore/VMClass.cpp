@@ -492,7 +492,7 @@ void VMCommonClass::resolveVT() {
 
 void VMCommonClass::resolveType(bool stat, bool clinit, VMGenericMethod* genMethod) {
 	//	printf("Resolve type: %s %d %d\n", mvm::PrintBuffer::objectToString(this), stat, clinit);
-  resolveVirtual(dynamic_cast<VMGenericClass*>(this), genMethod);
+  resolveVirtual(static_cast<VMGenericClass*>(this), genMethod);
   if (stat) resolveStatic(clinit, genMethod);
 }
 

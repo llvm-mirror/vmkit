@@ -381,8 +381,6 @@ public:
       JInfo = new(initialLoader->allocator, "Sign info") Ty(this);
     }   
 
-    assert((void*)dynamic_cast<Ty*>(JInfo) == (void*)JInfo &&
-           "Invalid concrete type or multiple inheritence for getInfo");
     return static_cast<Ty*>(JInfo);
   }
   
