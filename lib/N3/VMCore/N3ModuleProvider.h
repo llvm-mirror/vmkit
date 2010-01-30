@@ -10,7 +10,8 @@
 #ifndef N3_MODULE_PROVIDER_H
 #define N3_MODULE_PROVIDER_H
 
-#include <llvm/ModuleProvider.h>
+#include <llvm/GVMaterializer.h>
+#include <llvm/Module.h>
 
 #include "LockedMap.h"
 
@@ -18,17 +19,23 @@ using namespace llvm;
 
 namespace n3 {
 
-class N3ModuleProvider : public ModuleProvider {
+class N3ModuleProvider : public GVMaterializer {
 public:
   FunctionMap* functions;
+  Module* TheModule;
+
   N3ModuleProvider(Module *m, FunctionMap* f) {
     TheModule = m;
+    m->setMaterializer(this);
     functions = f;
   }
   
-  bool materializeFunction(Function *F, std::string *ErrInfo = 0);
-
-  Module* materializeModule(std::string *ErrInfo = 0) { return TheModule; }
+  bool Materialize(GlobalValue *GV, std::string *ErrInfo = 0);
+  virtual bool isMaterializable(const llvm::GlobalValue*) const;
+  virtual bool isDematerializable(const llvm::GlobalValue*) const {
+    return false;
+  }
+  virtual bool MaterializeModule(llvm::Module*, std::string*) { return true; }
 
   VMMethod* lookupFunction(Function* F) {
     return functions->lookup(F);

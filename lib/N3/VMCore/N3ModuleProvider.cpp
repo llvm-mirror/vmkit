@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <llvm/Module.h>
-#include <llvm/ModuleProvider.h>
+#include <llvm/GVMaterializer.h>
 
 #include "mvm/JIT.h"
 
@@ -23,7 +23,10 @@ using namespace llvm;
 using namespace n3;
 
 
-bool N3ModuleProvider::materializeFunction(Function *F, std::string *ErrInfo) {
+bool N3ModuleProvider::Materialize(GlobalValue *GV, std::string *ErrInfo) {
+  Function* F = dyn_cast<Function>(GV);
+  assert(F && "Not a function.");
+  if (F->getLinkage() == GlobalValue::ExternalLinkage) return false;
   if (!F->empty()) return false;
   VMMethod* meth = functions->lookup(F);
 
@@ -34,4 +37,8 @@ bool N3ModuleProvider::materializeFunction(Function *F, std::string *ErrInfo) {
 		meth->compileToNative();
     return false;
   }
+}
+
+bool N3ModuleProvider::isMaterializable(const llvm::GlobalValue* GV) const {
+  return GV->getLinkage() == GlobalValue::ExternalWeakLinkage;
 }

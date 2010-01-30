@@ -50,7 +50,7 @@ VMThread::VMThread(VMObject* appThread, N3* vm) {
   this->interruptFlag = 0;
   this->state = StateRunning;
   this->ooo_pendingException = 0;
-  this->perFunctionPasses = new llvm::FunctionPassManager(vm->TheModuleProvider);
+  this->perFunctionPasses = new llvm::FunctionPassManager(vm->getLLVMModule());
   this->perFunctionPasses->add(new llvm::TargetData(vm->getLLVMModule()));
   AddStandardCompilePasses(this->perFunctionPasses);
 }

@@ -1501,7 +1501,7 @@ llvm::Function *VMMethod::compiledPtr(VMGenericMethod* genMethod) {
   else {
     classDef->aquire();
     if (methPtr == 0) {
-      methPtr = Function::Create(getSignature(genMethod), GlobalValue::GhostLinkage,
+      methPtr = Function::Create(getSignature(genMethod), GlobalValue::ExternalWeakLinkage,
                                  mvm::PrintBuffer(this).cString(), classDef->vm->getLLVMModule());
       classDef->vm->functions->hash(methPtr, this);
     }
@@ -1536,7 +1536,7 @@ void CLIJit::initialise() {
 
 void CLIJit::initialiseAppDomain(N3* vm) {
   mvm::MvmModule::protectEngine.lock();
-  mvm::MvmModule::executionEngine->addModuleProvider(vm->TheModuleProvider);
+  mvm::MvmModule::executionEngine->addModule(vm->getLLVMModule());
   mvm::MvmModule::protectEngine.unlock();
 }
 
@@ -1551,7 +1551,7 @@ void CLIJit::initialiseBootstrapVM(N3* vm) {
   mvm::MvmModule* M = vm->module;
   Module* module = vm->getLLVMModule();
   M->protectEngine.lock();
-  M->executionEngine->addModuleProvider(vm->TheModuleProvider);
+  M->executionEngine->addModule(module);
   M->protectEngine.unlock();
     
   n3::llvm_runtime::makeLLVMModuleContents(module);
