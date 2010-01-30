@@ -65,7 +65,7 @@ Value* JavaJITCompiler::addCallback(Class* cl, uint16 index,
   const FunctionType* type = stat ? LSI->getStaticType() : 
                                     LSI->getVirtualType();
   
-  F = Function::Create(type, GlobalValue::GhostLinkage, key, TheModule);
+  F = Function::Create(type, GlobalValue::ExternalWeakLinkage, key, TheModule);
   
   CallbackInfo A(cl, index, stat);
   callbacks.insert(std::make_pair(F, A));
@@ -74,9 +74,13 @@ Value* JavaJITCompiler::addCallback(Class* cl, uint16 index,
 }
 
 
-bool JnjvmModuleProvider::materializeFunction(Function *F, 
-                                              std::string *ErrInfo) {
+bool JnjvmModuleProvider::Materialize(GlobalValue *GV,
+                                      std::string *ErrInfo) {
   
+  Function* F = dyn_cast<Function>(GV);
+  assert(F && "Not a function");
+  if (F->getLinkage() == GlobalValue::ExternalLinkage) return false;
+
   // The caller of materializeFunction *must* always hold the JIT lock.
   // Because we are materializing a function here, we must release the
   // JIT lock and get the global vmkit lock to be thread-safe.
@@ -101,7 +105,6 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
     return false;
   }
   
-
   JavaMethod* meth = Comp->getJavaMethod(F);
   
   if (!meth) {
@@ -139,17 +142,23 @@ bool JnjvmModuleProvider::materializeFunction(Function *F,
   return false;
 }
 
+bool JnjvmModuleProvider::isMaterializable(const llvm::GlobalValue* GV) const {
+  return GV->getLinkage() == GlobalValue::ExternalWeakLinkage;
+}
+
+
 JnjvmModuleProvider::JnjvmModuleProvider(llvm::Module* m,
                                          JavaJITCompiler* C) {
   Comp = C;
   TheModule = m;
+  m->setMaterializer(this);
   JnjvmModule::protectEngine.lock();
-  JnjvmModule::executionEngine->addModuleProvider(this);
+  JnjvmModule::executionEngine->addModule(TheModule);
   JnjvmModule::protectEngine.unlock();
 }
 
 JnjvmModuleProvider::~JnjvmModuleProvider() {
   JnjvmModule::protectEngine.lock();
-  JnjvmModule::executionEngine->removeModuleProvider(this);
+  JnjvmModule::executionEngine->removeModule(TheModule);
   JnjvmModule::protectEngine.unlock();
 }

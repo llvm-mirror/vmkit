@@ -12,7 +12,6 @@
 #include "llvm/Instructions.h"
 #include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
-#include "llvm/ModuleProvider.h"
 #include "llvm/PassManager.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -1617,7 +1616,6 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   ObjectPrinter = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                    "printJavaObject", getLLVMModule());
 
-  TheModuleProvider = new ExistingModuleProvider(TheModule);
   addJavaPasses();
       
 }

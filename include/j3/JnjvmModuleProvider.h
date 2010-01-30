@@ -10,25 +10,27 @@
 #ifndef JNJVM_MODULE_PROVIDER_H
 #define JNJVM_MODULE_PROVIDER_H
 
-#include <llvm/ModuleProvider.h>
+#include <llvm/GVMaterializer.h>
 
 namespace j3 {
 
 class JavaJITCompiler;
 
-class JnjvmModuleProvider : public llvm::ModuleProvider {
+class JnjvmModuleProvider : public llvm::GVMaterializer {
 public:
  
   JavaJITCompiler* Comp;
+  llvm::Module* TheModule;
 
   JnjvmModuleProvider(llvm::Module* M, JavaJITCompiler* C);
   ~JnjvmModuleProvider();
 
-  bool materializeFunction(llvm::Function *F, std::string *ErrInfo = 0);
-
-  llvm::Module* materializeModule(std::string *ErrInfo = 0) { 
-    return TheModule;
+  virtual bool Materialize(llvm::GlobalValue *GV, std::string *ErrInfo = 0);
+  virtual bool isMaterializable(const llvm::GlobalValue*) const;
+  virtual bool isDematerializable(const llvm::GlobalValue*) const {
+    return false;
   }
+  virtual bool MaterializeModule(llvm::Module*, std::string*) { return true; }
 };
 
 } // End j3 namespace

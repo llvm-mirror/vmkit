@@ -162,20 +162,20 @@ Function* LLVMMethodInfo::getMethod() {
       methodFunction = Mod->getLLVMModule()->getFunction(buf);
       if (!methodFunction) {
         methodFunction = Function::Create(getFunctionType(), 
-                                          GlobalValue::GhostLinkage, buf,
+                                          GlobalValue::ExternalWeakLinkage, buf,
                                           Mod->getLLVMModule());
       } else {
         assert(methodFunction->getFunctionType() == getFunctionType() &&
                "Type mismatch");
         if (methodFunction->isDeclaration()) {
-          methodFunction->setLinkage(GlobalValue::GhostLinkage);
+          methodFunction->setLinkage(GlobalValue::ExternalWeakLinkage);
         }
       }
 
     } else {
 
       methodFunction = Function::Create(getFunctionType(), 
-                                        GlobalValue::GhostLinkage,
+                                        GlobalValue::ExternalWeakLinkage,
                                         "", Mod->getLLVMModule());
 
     }

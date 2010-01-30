@@ -15,7 +15,6 @@
 #include <llvm/Linker.h>
 #include <llvm/LLVMContext.h>
 #include <llvm/Module.h>
-#include <llvm/ModuleProvider.h>
 #include <llvm/PassManager.h>
 #include <llvm/Type.h>
 #include <llvm/Analysis/LoopPass.h>
@@ -120,11 +119,10 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
 #endif
   if (!M) {
     globalModule = new Module("bootstrap module", getGlobalContext());
-    globalModuleProvider = new ExistingModuleProvider (globalModule);
 
     InitializeNativeTarget();
 
-    executionEngine = ExecutionEngine::createJIT(globalModuleProvider, 0,
+    executionEngine = ExecutionEngine::createJIT(globalModule, 0,
                                                  0, level, false);
 
     Allocator = new BumpPtrAllocator();
@@ -138,11 +136,10 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     TheTargetData = executionEngine->getTargetData();
   } else {
     globalModule = M;
-    globalModuleProvider = new ExistingModuleProvider (globalModule);
     TheTargetData = T->getTargetData();
   }
 
-  globalFunctionPasses = new FunctionPassManager(globalModuleProvider);
+  globalFunctionPasses = new FunctionPassManager(globalModule);
 
   mvm::llvm_runtime::makeLLVMModuleContents(globalModule);
   
@@ -445,7 +442,6 @@ const llvm::Type* MvmModule::arrayPtrType;
 const llvm::TargetData* MvmModule::TheTargetData;
 llvm::GCStrategy* MvmModule::GC;
 llvm::Module *MvmModule::globalModule;
-llvm::ExistingModuleProvider *MvmModule::globalModuleProvider;
 llvm::FunctionPassManager* MvmModule::globalFunctionPasses;
 llvm::ExecutionEngine* MvmModule::executionEngine;
 mvm::LockRecursive MvmModule::protectEngine;

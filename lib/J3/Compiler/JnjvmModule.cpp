@@ -350,7 +350,7 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
   
   // We are jitting. Take the lock.
   JnjvmModule::protectIR();
-  if (func->hasNotBeenReadFromBitcode()) {
+  if (func->getLinkage() == GlobalValue::ExternalWeakLinkage) {
     JavaJIT jit(this, meth, func);
     if (isNative(meth->access)) {
       jit.nativeCompile();
@@ -390,13 +390,13 @@ namespace j3 {
 }
 
 void JavaLLVMCompiler::addJavaPasses() {
-  JavaNativeFunctionPasses = new FunctionPassManager(TheModuleProvider);
+  JavaNativeFunctionPasses = new FunctionPassManager(TheModule);
   JavaNativeFunctionPasses->add(new TargetData(TheModule));
   // Lower constant calls to lower things like getClass used
   // on synchronized methods.
   JavaNativeFunctionPasses->add(createLowerConstantCallsPass(getIntrinsics()));
   
-  JavaFunctionPasses = new FunctionPassManager(TheModuleProvider);
+  JavaFunctionPasses = new FunctionPassManager(TheModule);
   JavaFunctionPasses->add(new TargetData(TheModule));
   if (cooperativeGC)
     JavaFunctionPasses->add(mvm::createLoopSafePointsPass());

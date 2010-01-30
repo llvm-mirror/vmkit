@@ -28,6 +28,7 @@ namespace llvm {
   class FunctionType;
   class GlobalVariable;
   class GCFunctionInfo;
+  class GVMaterializer;
   class Module;
   class Type;
   class Value;
@@ -376,7 +377,7 @@ class JavaLLVMCompiler : public JavaCompiler {
 protected:
 
   llvm::Module* TheModule;
-  llvm::ModuleProvider* TheModuleProvider;
+  llvm::GVMaterializer* TheModuleProvider;
   JnjvmModule JavaIntrinsics;
 
   void addJavaPasses();
