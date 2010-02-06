@@ -5,6 +5,11 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
   Instruction* res = CallInst::Create(F, args.begin(), args.end(), Name,
                                       InsertAtEnd);
   
+  DILocation Location =
+    module->DebugFactory->CreateLocation(currentLineNumber, currentCtpIndex,
+                                         DIScope(DbgSubprogram));
+  res->setMetadata("dbg", Location.getNode());
+  
   if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread(module->JavaThreadType);
     Value* geps[2] = { module->constantZero,
@@ -61,6 +66,10 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
                        BasicBlock *InsertAtEnd) {
 
   Instruction* res = CallInst::Create(F, arg1, Name, InsertAtEnd);
+  DILocation Location =
+    module->DebugFactory->CreateLocation(currentLineNumber, currentCtpIndex,
+                                         DIScope(DbgSubprogram));
+  res->setMetadata("dbg", Location.getNode());
   
   if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread(module->JavaThreadType);
@@ -112,6 +121,10 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
   Value* args[2] = { arg1, arg2 };
   
   Instruction* res = CallInst::Create(F, args, args + 2, Name, InsertAtEnd);
+  DILocation Location =
+    module->DebugFactory->CreateLocation(currentLineNumber, currentCtpIndex,
+                                         DIScope(DbgSubprogram));
+  res->setMetadata("dbg", Location.getNode());
   
   if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread(module->JavaThreadType);
@@ -160,6 +173,10 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
 Instruction* JavaJIT::invoke(Value *F, const char* Name,
                        BasicBlock *InsertAtEnd) {
   Instruction* res = llvm::CallInst::Create(F, Name, InsertAtEnd);
+  DILocation Location =
+    module->DebugFactory->CreateLocation(currentLineNumber, currentCtpIndex,
+                                         DIScope(DbgSubprogram));
+  res->setMetadata("dbg", Location.getNode());
   
   if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread(module->JavaThreadType);
@@ -206,7 +223,11 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
 }
 
 void JavaJIT::throwException(llvm::Function* F, Value* arg1) {
-  Value* obj = CallInst::Create(F, arg1, "", currentBlock);
+  Instruction* obj = CallInst::Create(F, arg1, "", currentBlock);
+  DILocation Location =
+    module->DebugFactory->CreateLocation(currentLineNumber, currentCtpIndex,
+                                         DIScope(DbgSubprogram));
+  obj->setMetadata("dbg", Location.getNode());
   if (currentExceptionBlock != endExceptionBlock) {
     Instruction* insn = currentExceptionBlock->begin();
     PHINode* node = dyn_cast<PHINode>(insn);
@@ -246,7 +267,11 @@ void JavaJIT::throwException(Value* obj) {
 
 void JavaJIT::throwException(llvm::Function* F, Value** args,
                              uint32 nbArgs) {
-  Value* obj = CallInst::Create(F, args, args + nbArgs, "", currentBlock);
+  Instruction* obj = CallInst::Create(F, args, args + nbArgs, "", currentBlock);
+  DILocation Location =
+    module->DebugFactory->CreateLocation(currentLineNumber, currentCtpIndex,
+                                         DIScope(DbgSubprogram));
+  obj->setMetadata("dbg", Location.getNode());
   if (currentExceptionBlock != endExceptionBlock) {
     Instruction* insn = currentExceptionBlock->begin();
     PHINode* node = dyn_cast<PHINode>(insn);

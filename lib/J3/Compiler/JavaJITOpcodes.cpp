@@ -167,6 +167,10 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
     currentExceptionBlock = opinfo->exceptionBlock;
     
+    // Update the line number information.
+    if (opinfo->lineNumber)
+      currentLineNumber = opinfo->lineNumber;
+    
     // To prevent a gcj bug with useless goto
     if (currentBlock->getTerminator() != 0) { 
       currentBlock = createBasicBlock("gcj bug");
@@ -1932,24 +1936,28 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case INVOKEVIRTUAL : {
         uint16 index = readU2(bytecodes, i);
+        currentCtpIndex = index;
         invokeVirtual(index);
         break;
       }
 
       case INVOKESPECIAL : {
         uint16 index = readU2(bytecodes, i);
+        currentCtpIndex = index;
         invokeSpecial(index);
         break;
       }
 
       case INVOKESTATIC : {
         uint16 index = readU2(bytecodes, i);
+        currentCtpIndex = index;
         invokeStatic(index);
         break;
       }
 
       case INVOKEINTERFACE : {
         uint16 index = readU2(bytecodes, i);
+        currentCtpIndex = index;
         invokeInterface(index);
         i += 2;
         break;

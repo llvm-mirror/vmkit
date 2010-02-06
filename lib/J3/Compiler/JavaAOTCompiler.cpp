@@ -956,11 +956,17 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
     MethodElts.push_back(ConstantExpr::getCast(Instruction::BitCast, func,
                                                JnjvmModule::ptrType));
   }
+  
+  // codeInfo
+  MethodElts.push_back(Constant::getNullValue(JnjvmModule::CodeLineInfoType));
+  
+  // codeInfoLength
+  MethodElts.push_back(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), 0));
 
   // offset
   MethodElts.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), method.offset));
 
-  //JInfo
+  // JInfo
   MethodElts.push_back(Constant::getNullValue(JnjvmModule::ptrType));
   
   return ConstantStruct::get(STy, MethodElts); 

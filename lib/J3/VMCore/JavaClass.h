@@ -989,6 +989,17 @@ public:
   }
 };
 
+class CodeLineInfo : public mvm::PermanentObject {
+public:
+  uintptr_t address;
+  uint16 lineNumber;
+  uint16 ctpIndex;
+  // TODO: Use these fields when inlining.
+  JavaMethod* executingMethod;
+  // The code where the inlined method starts.
+  CodeLineInfo* inlineLocation;
+};
+
 /// JavaMethod - This class represents Java methods.
 ///
 class JavaMethod : public mvm::PermanentObject {
@@ -1049,7 +1060,15 @@ public:
   /// code - Pointer to the compiled code of this method.
   ///
   void* code;
-  
+ 
+  /// codeInfo - Array of CodeLineInfo objects.
+  ///
+  CodeLineInfo* codeInfo;
+
+  /// codeInfoLength - Number of entries in the codeInfo field.
+  ///
+  uint16 codeInfoLength;
+
   /// offset - The index of the method in the virtual table.
   ///
   uint32 offset;
@@ -1058,6 +1077,11 @@ public:
   /// null if the attribut is not found.
   ///
   Attribut* lookupAttribut(const UTF8* key);
+
+  /// lookupLineNumber - Find the line number based on the given instruction
+  /// pointer.
+  ///
+  uint16 lookupLineNumber(uintptr_t ip);
 
   /// getSignature - Get the signature of thes method, resolving it if
   /// necessary.

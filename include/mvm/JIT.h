@@ -25,8 +25,8 @@ namespace llvm {
   class Constant;
   class ConstantFP;
   class ConstantInt;
+  class DIFactory;
   class ExecutionEngine;
-  class ExistingModuleProvider;
   class Function;
   class FunctionPassManager;
   class GCFunctionInfo;
@@ -171,6 +171,9 @@ public:
    llvm::Constant* constantFatMask;
    llvm::Constant* constantPtrOne;
    llvm::Constant* constantPtrZero;
+  
+   llvm::DIFactory* DebugFactory;
+
    static const llvm::PointerType* ptrType;
    static const llvm::PointerType* ptr32Type;
    static const llvm::PointerType* ptrPtrType;
@@ -181,7 +184,6 @@ public:
    static llvm::GCStrategy* GC;
    static mvm::LockRecursive protectEngine;
    static llvm::Module *globalModule;
-   static llvm::ExistingModuleProvider *globalModuleProvider;
    static llvm::FunctionPassManager* globalFunctionPasses;
    static const llvm::TargetData* TheTargetData;
    static mvm::BumpPtrAllocator* Allocator;

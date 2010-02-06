@@ -13,7 +13,9 @@
 #include "llvm/Instructions.h"
 #include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
+#include "llvm/Analysis/DebugInfo.h"
 #include "llvm/CodeGen/GCStrategy.h"
+#include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/JITEventListener.h"
 #include "llvm/Support/ManagedStatic.h"
@@ -60,6 +62,19 @@ public:
         JavaJITMethodInfo(GFI, currentCompiledMethod);
       vm->RuntimeFunctions.addMethodInfo(MI, Code,
                                          (void*)((uintptr_t)Code + Size));
+      uint32 infoLength = Details.LineStarts.size();
+      currentCompiledMethod->codeInfoLength = infoLength;
+      if (infoLength) {
+        currentCompiledMethod->codeInfo =
+          new(Alloc, "CodeLineInfo") CodeLineInfo[infoLength];
+        for (uint32 i = 0; i < infoLength; ++i) {
+          DILocation DLT = Details.MF->getDILocation(Details.LineStarts[i].Loc);
+          currentCompiledMethod->codeInfo[i].address =
+            Details.LineStarts[i].Address;
+          currentCompiledMethod->codeInfo[i].lineNumber = DLT.getLineNumber();
+          currentCompiledMethod->codeInfo[i].ctpIndex = DLT.getColumnNumber();
+        }
+      }
     }
   }
 

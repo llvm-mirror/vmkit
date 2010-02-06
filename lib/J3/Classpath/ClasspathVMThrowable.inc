@@ -98,12 +98,13 @@ static JavaObject* consStackElement(JavaMethod* meth, void* ip) {
   }
 
   bool native = isNative(meth->access);
+  uint16 lineNumber = meth->lookupLineNumber(reinterpret_cast<uintptr_t>(ip));
 
   UserClass* newS = vm->upcalls->newStackTraceElement;
   res = newS->doNew(vm);
   vm->upcalls->initStackTraceElement->invokeIntSpecial(vm, newS, res,
                                                        &sourceName,
-                                                       0, // source line
+                                                       lineNumber,
                                                        &className,
                                                        &methodName, native);
   return res;

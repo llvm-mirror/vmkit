@@ -29,6 +29,7 @@ namespace llvm {
   class GlobalVariable;
   class GCFunctionInfo;
   class GVMaterializer;
+  class MDNode;
   class Module;
   class Type;
   class Value;
@@ -110,6 +111,7 @@ private:
   llvm::Function* methodFunction;
   llvm::Constant* offsetConstant;
   const llvm::FunctionType* functionType;
+  llvm::MDNode* DbgSubprogram;
   
   
 public:
@@ -119,14 +121,17 @@ public:
   const llvm::FunctionType* getFunctionType();
     
   LLVMMethodInfo(JavaMethod* M) :  methodDef(M), methodFunction(0),
-    offsetConstant(0), functionType(0), GCInfo(0) {}
+    offsetConstant(0), functionType(0), DbgSubprogram(0), GCInfo(0) {}
  
+  void setDbgSubprogram(llvm::MDNode* node) { DbgSubprogram = node; }
+  llvm::MDNode* getDbgSubprogram() { return DbgSubprogram; }
 
   virtual void clear() {
     GCInfo = 0;
     methodFunction = 0;
     offsetConstant = 0;
     functionType = 0;
+    DbgSubprogram = 0;
   }
 };
 
@@ -230,8 +235,8 @@ public:
   static const llvm::Type* JavaClassType;
   static const llvm::Type* JavaClassArrayType;
   static const llvm::Type* JavaClassPrimitiveType;
-  static const llvm::Type* JavaCacheType;
   static const llvm::Type* ConstantPoolType;
+  static const llvm::Type* CodeLineInfoType;
   static const llvm::Type* UTF8Type;
   static const llvm::Type* JavaMethodType;
   static const llvm::Type* JavaFieldType;
@@ -375,16 +380,13 @@ class JavaLLVMCompiler : public JavaCompiler {
 
 
 protected:
-
   llvm::Module* TheModule;
   llvm::GVMaterializer* TheModuleProvider;
   JnjvmModule JavaIntrinsics;
 
   void addJavaPasses();
 
-private: 
-  
-  
+private:  
   bool enabledException;
   bool cooperativeGC;
   
@@ -393,9 +395,11 @@ private:
   
   std::map<llvm::Function*, JavaMethod*> functions;  
   typedef std::map<llvm::Function*, JavaMethod*>::iterator function_iterator;
-  
-public:
 
+  std::map<llvm::MDNode*, JavaMethod*> DbgInfos;
+  typedef std::map<llvm::MDNode*, JavaMethod*>::iterator dbg_iterator;
+
+public:
   JavaLLVMCompiler(const std::string &ModuleID);
   
   virtual bool isStaticCompiling() = 0;
@@ -424,13 +428,13 @@ public:
   void disableCooperativeGC() {
     cooperativeGC = false;
   }
-  
+ 
   virtual JavaCompiler* Create(const std::string& ModuleID) = 0;
   
   virtual ~JavaLLVMCompiler();
 
-
   JavaMethod* getJavaMethod(llvm::Function*);
+  llvm::MDNode* GetDbgSubprogram(JavaMethod* meth);
 
   void resolveVirtualClass(Class* cl);
   void resolveStaticClass(Class* cl);
@@ -442,7 +446,6 @@ public:
   static LLVMMethodInfo* getMethodInfo(JavaMethod* method);
   static LLVMAssessorInfo& getTypedefInfo(const Typedef* type);
   
-
   virtual llvm::Constant* getFinalObject(JavaObject* obj, CommonClass* cl) = 0;
   virtual JavaObject* getFinalObject(llvm::Value* C) = 0;
   virtual llvm::Constant* getNativeClass(CommonClass* cl) = 0;

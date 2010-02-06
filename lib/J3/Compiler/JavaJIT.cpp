@@ -755,6 +755,9 @@ static void removeUnusedObjects(std::vector<AllocaInst*>& objects,
 Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
                                     BasicBlock* endExBlock,
                                     std::vector<Value*>& args) {
+  
+  DbgSubprogram = TheCompiler->GetDbgSubprogram(compilingMethod);
+
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "inline compile %s.%s\n",
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
@@ -792,7 +795,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   for (uint32 i = 0; i < codeLen; ++i) {
     opcodeInfos[i].exceptionBlock = endExBlock;
   }
-
+  
   BasicBlock* firstBB = llvmFunction->begin();
   
   if (firstBB->begin() != firstBB->end()) {
@@ -904,7 +907,24 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   }
   
   readExceptionTable(reader, codeLen);
-
+  
+  // Lookup line number table attribute.
+  uint16 nba = reader.readU2();
+  for (uint16 i = 0; i < nba; ++i) {
+    const UTF8* attName = compilingClass->ctpInfo->UTF8At(reader.readU2());
+    uint32 attLen = reader.readU4();
+    if (attName->equals(Attribut::lineNumberTableAttribut)) {
+      uint16 lineLength = reader.readU2();
+      for (uint16 i = 0; i < lineLength; ++i) {
+        uint16 pc = reader.readU2();
+        uint16 ln = reader.readU2();
+        opcodeInfos[pc].lineNumber = ln;
+      }
+    } else {
+      reader.seek(attLen, Reader::SeekCur);      
+    }
+  }
+   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
 
   if (returnType != Type::getVoidTy(getGlobalContext())) {
@@ -944,17 +964,17 @@ llvm::Function* JavaJIT::javaCompile() {
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
 
-  
+  DbgSubprogram = TheCompiler->GetDbgSubprogram(compilingMethod);
+
   Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
   
   if (!codeAtt) {
     fprintf(stderr, "I haven't verified your class file and it's malformed:"
-                    " no code attribut found for %s.%s!\n",
+                    " no code attribute found for %s.%s!\n",
                     UTF8Buffer(compilingClass->name).cString(),
                     UTF8Buffer(compilingMethod->name).cString());
     abort();
-  }
-  
+  } 
 
   Reader reader(codeAtt, &(compilingClass->bytes));
   uint16 maxStack = reader.readU2();
@@ -971,14 +991,14 @@ llvm::Function* JavaJIT::javaCompile() {
 
   currentBlock = createBasicBlock("start");
   endExceptionBlock = createBasicBlock("endExceptionBlock");
-  unifiedUnreachable = createBasicBlock("unifiedUnreachable"); 
+  unifiedUnreachable = createBasicBlock("unifiedUnreachable");
 
   opcodeInfos = new Opinfo[codeLen];
   memset(opcodeInfos, 0, codeLen * sizeof(Opinfo));
   for (uint32 i = 0; i < codeLen; ++i) {
     opcodeInfos[i].exceptionBlock = endExceptionBlock;
   }
-    
+  
 #if JNJVM_EXECUTE > 0
     {
     Value* arg = TheCompiler->getMethodInClass(compilingMethod);
@@ -1122,6 +1142,23 @@ llvm::Function* JavaJIT::javaCompile() {
 #endif
 
   readExceptionTable(reader, codeLen);
+  
+  // Lookup line number table attribute.
+  uint16 nba = reader.readU2();
+  for (uint16 i = 0; i < nba; ++i) {
+    const UTF8* attName = compilingClass->ctpInfo->UTF8At(reader.readU2());
+    uint32 attLen = reader.readU4();
+    if (attName->equals(Attribut::lineNumberTableAttribut)) {
+      uint16 lineLength = reader.readU2();
+      for (uint16 i = 0; i < lineLength; ++i) {
+        uint16 pc = reader.readU2();
+        uint16 ln = reader.readU2();
+        opcodeInfos[pc].lineNumber = ln;
+      }
+    } else {
+      reader.seek(attLen, Reader::SeekCur);      
+    }
+  }
   
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
  

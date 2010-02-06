@@ -42,6 +42,7 @@ const llvm::Type* JnjvmModule::JavaArrayFloatType = 0;
 const llvm::Type* JnjvmModule::JavaArrayDoubleType = 0;
 const llvm::Type* JnjvmModule::JavaArrayLongType = 0;
 const llvm::Type* JnjvmModule::JavaArrayObjectType = 0;
+const llvm::Type* JnjvmModule::CodeLineInfoType = 0;
 const llvm::Type* JnjvmModule::ConstantPoolType = 0;
 const llvm::Type* JnjvmModule::UTF8Type = 0;
 const llvm::Type* JnjvmModule::JavaFieldType = 0;
@@ -158,6 +159,9 @@ void JnjvmModule::initialise() {
     PointerType::getUnqual(module->getTypeByName("JavaThread"));
   MutatorThreadType =
     PointerType::getUnqual(module->getTypeByName("MutatorThread"));
+  
+  CodeLineInfoType =
+    PointerType::getUnqual(module->getTypeByName("CodeLineInfo"));
  
   LLVMAssessorInfo::initialise();
 }
@@ -372,6 +376,19 @@ JavaMethod* JavaLLVMCompiler::getJavaMethod(llvm::Function* F) {
   function_iterator I = functions.find(F);
   if (I == E) return 0;
   return I->second;
+}
+
+MDNode* JavaLLVMCompiler::GetDbgSubprogram(JavaMethod* meth) {
+  if (getMethodInfo(meth)->getDbgSubprogram() == NULL) {
+    MDNode* node =
+      JavaIntrinsics.DebugFactory->CreateSubprogram(DIDescriptor(), "", "",
+                                                    "", DICompileUnit(), 0,
+                                                    DIType(), false,
+                                                    false).getNode();
+    DbgInfos.insert(std::make_pair(node, meth));
+    getMethodInfo(meth)->setDbgSubprogram(node);
+  }
+  return getMethodInfo(meth)->getDbgSubprogram();
 }
 
 JavaLLVMCompiler::~JavaLLVMCompiler() {

@@ -20,6 +20,7 @@
 #include "llvm/Metadata.h"
 #include "llvm/Type.h"
 #include "llvm/Value.h"
+#include "llvm/Analysis/DebugInfo.h"
 
 #include "types.h"
 
@@ -56,10 +57,13 @@ struct Opinfo {
   /// stack - The stack at this location if there is a new block
   ///
   std::vector<CommonClass*> stack;
+
+  /// lineNumber - The line number of this bytecode.
+  uint16 lineNumber;
 };
 
 
-/// JavaJIT - The compilation engine of VMKit. Parses the bycode and returns
+/// JavaJIT - The compilation engine of J3. Parses the bycode and returns
 /// its LLVM representation.
 ///
 class JavaJIT {
@@ -78,6 +82,8 @@ public:
     callsStackWalker = false;
     endNode = 0;
     currentStackIndex = 0;
+    currentLineNumber = 0;
+    currentCtpIndex = -1;
   }
 
   /// javaCompile - Compile the Java method.
@@ -135,6 +141,16 @@ private:
  
   /// getCurrentThread - Emit code to get the current thread.
   llvm::Value* getCurrentThread(const llvm::Type* Ty);
+
+//===------------------------- Debugging support --------------------------===//
+  
+  llvm::MDNode* DbgSubprogram;
+  
+  /// currentLineIndex - The current line being processed.
+  uint32 currentLineNumber;
+  
+  /// currentCtpIndex - The constant pool index being processed.
+  uint16 currentCtpIndex;
 
 //===--------------------------- Inline support ---------------------------===//
 
