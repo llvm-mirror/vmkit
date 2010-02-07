@@ -23,6 +23,10 @@ namespace j3 {
   class Jnjvm;
 }
 
+namespace mvm {
+  class KnownFrame;
+}
+
 using namespace j3;
 
 extern "C" void* j3InterfaceLookup(UserClass* caller, uint32 index);
@@ -36,8 +40,8 @@ extern "C" JavaObject* j3RuntimeDelegatee(UserCommonClass* cl);
 extern "C" JavaArray* j3MultiCallNew(UserClassArray* cl, uint32 len, ...);
 extern "C" UserClassArray* j3GetArrayClass(UserCommonClass*,
                                               UserClassArray**);
-extern "C" void j3EndJNI();
-extern "C" void* j3StartJNI();
+extern "C" void j3EndJNI(uint32**);
+extern "C" void* j3StartJNI(uint32*, uint32**, mvm::KnownFrame*);
 extern "C" void j3JavaObjectAquire(JavaObject* obj);
 extern "C" void j3JavaObjectRelease(JavaObject* obj);
 extern "C" void j3ThrowException(JavaObject* obj);
@@ -96,8 +100,8 @@ namespace {
       (void) j3RuntimeDelegatee(0);
       (void) j3MultiCallNew(0, 0);
       (void) j3GetArrayClass(0, 0);
-      (void) j3EndJNI();
-      (void) j3StartJNI();
+      (void) j3EndJNI(0);
+      (void) j3StartJNI(0, 0, 0);
       (void) j3JavaObjectAquire(0);
       (void) j3JavaObjectRelease(0);
       (void) j3ThrowException(0);
