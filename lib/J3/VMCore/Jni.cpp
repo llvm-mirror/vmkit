@@ -171,8 +171,6 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
   init->invokeIntSpecial(vm, realCl, res, &str);
   th->pendingException = res;
   
-  th->throwFromJNI(SP);
-  
   RETURN_FROM_JNI(1);
   
   END_JNI_EXCEPTION
@@ -187,6 +185,7 @@ jthrowable ExceptionOccurred(JNIEnv *env) {
 
   JavaObject* obj = JavaThread::get()->pendingException;
   llvm_gcroot(obj, 0);
+  if (obj == NULL) RETURN_FROM_JNI(NULL);
   jthrowable res = (jthrowable)th->pushJNIRef(obj);
   RETURN_FROM_JNI(res);
 

@@ -38,7 +38,6 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
   jniEnv = isolate->jniEnv;
   localJNIRefs = new JNILocalReferences();
   currentAddedReferences = 0;
-  currentSjljBuffer = 0;
 
 #ifdef SERVICE
   eipIndex = 0;

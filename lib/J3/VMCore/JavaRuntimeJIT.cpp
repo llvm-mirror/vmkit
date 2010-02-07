@@ -327,14 +327,11 @@ extern "C" UserClassArray* j3GetArrayClass(UserCommonClass* cl,
 }
 
 // Does not call Java code. Can not yield a GC.
-extern "C" void j3EndJNI(uint32** oldLRN, void** oldBuffer) {
+extern "C" void j3EndJNI(uint32** oldLRN) {
   JavaThread* th = JavaThread::get();
   
   // We're going back to Java
   th->endJNI();
-  
-  // Update the buffer.
-  th->currentSjljBuffer = *oldBuffer;
   
   // Update the number of references.
   th->currentAddedReferences = *oldLRN;
@@ -344,20 +341,15 @@ extern "C" void j3EndJNI(uint32** oldLRN, void** oldBuffer) {
 
 extern "C" void* j3StartJNI(uint32* localReferencesNumber,
                                uint32** oldLocalReferencesNumber,
-                               void* newBuffer, void** oldBuffer,
                                mvm::KnownFrame* Frame) 
   __attribute__((noinline));
 
 // Never throws. Does not call Java code. Can not yied a GC.
 extern "C" void* j3StartJNI(uint32* localReferencesNumber,
-                               uint32** oldLocalReferencesNumber,
-                               void* newBuffer, void** oldBuffer,
-                               mvm::KnownFrame* Frame) {
+                            uint32** oldLocalReferencesNumber,
+                            mvm::KnownFrame* Frame) {
   
   JavaThread* th = JavaThread::get();
- 
-  *oldBuffer = th->currentSjljBuffer;
-  th->currentSjljBuffer = newBuffer;
  
   *oldLocalReferencesNumber = th->currentAddedReferences;
   th->currentAddedReferences = localReferencesNumber;

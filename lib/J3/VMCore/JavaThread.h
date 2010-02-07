@@ -10,8 +10,6 @@
 #ifndef JNJVM_JAVA_THREAD_H
 #define JNJVM_JAVA_THREAD_H
 
-#include <csetjmp>
-
 #include "mvm/Object.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
@@ -118,12 +116,6 @@ public:
   /// state - The current state of this thread: Running, Waiting or Interrupted.
   uint32 state;
   
-  /// currentSjljBuffers - Current buffer pushed when entering a non-JVM native
-  /// function and popped when leaving the function. The buffer is used when
-  /// the native function throws an exception through a JNI throwException call.
-  ///
-  void* currentSjljBuffer;
-
   /// currentAddedReferences - Current number of added local references.
   ///
   uint32_t* currentAddedReferences;
@@ -196,15 +188,8 @@ public:
   /// throwFromJNI - Throw an exception after executing JNI code.
   ///
   void throwFromJNI(void* SP) {
-    assert(currentSjljBuffer);
     endKnownFrame();
     enterUncooperativeCode(SP);
-    internalPendingException = 0;
-#if defined(__MACH__)
-    longjmp((int*)currentSjljBuffer, 1);
-#else
-    longjmp((__jmp_buf_tag*)currentSjljBuffer, 1);
-#endif
   }
   
   /// throwFromNative - Throw an exception after executing Native code.

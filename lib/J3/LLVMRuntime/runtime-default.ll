@@ -211,8 +211,8 @@ declare %JavaObject* @j3ArithmeticException()
 declare void @j3ThrowException(%JavaObject*)
 declare void @j3ThrowExceptionFromJIT()
 
-declare void @j3EndJNI(i32**, i8**)
-declare void @j3StartJNI(i32*, i32**, i8*, i8**, i8*)
+declare void @j3EndJNI(i32**)
+declare void @j3StartJNI(i32*, i32**, i8*)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
