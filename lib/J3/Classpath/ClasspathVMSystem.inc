@@ -109,6 +109,7 @@ jclass clazz,
 JavaObject* obj) {
 
   llvm_gcroot(obj, 0);
+  if (obj == NULL) return 0;
   return obj->hashCode();
 }
 
