@@ -253,11 +253,8 @@ void JavaJITCompiler::makeVT(Class* cl) {
 
 
   // Fill the virtual table with function pointers.
-  ExecutionEngine* EE = mvm::MvmModule::executionEngine;
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
     JavaMethod& meth = cl->virtualMethods[i];
-    LLVMMethodInfo* LMI = getMethodInfo(&meth);
-    Function* func = LMI->getMethod();
 
     // Special handling for finalize method. Don't put a finalizer
     // if there is none, or if it is empty.
@@ -265,11 +262,11 @@ void JavaJITCompiler::makeVT(Class* cl) {
       if (!cl->super) {
         meth.canBeInlined = true;
       } else {
-        VT->destructor = (uintptr_t)EE->getPointerToFunctionOrStub(func);
+        VT->destructor = getPointerOrStub(meth, JavaMethod::Virtual);
       }
     } else {
-      VT->getFunctions()[meth.offset] = 
-        (uintptr_t)EE->getPointerToFunctionOrStub(func);
+      VT->getFunctions()[meth.offset] = getPointerOrStub(meth,
+                                                         JavaMethod::Virtual);
     }
   }
 
@@ -286,8 +283,6 @@ void JavaJITCompiler::makeIMT(Class* cl) {
   std::set<JavaMethod*> contents[InterfaceMethodTable::NumIndexes];
   cl->fillIMT(contents);
   
-  ExecutionEngine* EE = mvm::MvmModule::executionEngine;
-  
   for (uint32_t i = 0; i < InterfaceMethodTable::NumIndexes; ++i) {
     std::set<JavaMethod*>& atIndex = contents[i];
     uint32_t size = atIndex.size();
@@ -297,10 +292,7 @@ void JavaJITCompiler::makeIMT(Class* cl) {
                                                    Imeth->type,
                                                    false, true, 0);
       if (meth) {
-        LLVMMethodInfo* LMI = getMethodInfo(meth);
-        Function* func = LMI->getMethod();
-        uintptr_t res = (uintptr_t)EE->getPointerToFunctionOrStub(func);
-        IMT->contents[i] = res;
+        IMT->contents[i] = getPointerOrStub(*meth, JavaMethod::Interface);
       } else {
         IMT->contents[i] = (uintptr_t)ThrowUnfoundInterface;
       }
@@ -323,10 +315,8 @@ void JavaJITCompiler::makeIMT(Class* cl) {
 
       if (SameMethod) {
         if (methods[0]) {
-          LLVMMethodInfo* LMI = getMethodInfo(methods[0]);
-          Function* func = LMI->getMethod();
-          uintptr_t res = (uintptr_t)EE->getPointerToFunctionOrStub(func);
-          IMT->contents[i] = res;
+          IMT->contents[i] = getPointerOrStub(*(methods[0]),
+                                              JavaMethod::Interface);
         } else {
           IMT->contents[i] = (uintptr_t)ThrowUnfoundInterface;
         }
@@ -348,10 +338,7 @@ void JavaJITCompiler::makeIMT(Class* cl) {
          
           table[j] = (uintptr_t)Imeth;
           if (Cmeth) {
-            LLVMMethodInfo* LMI = getMethodInfo(Cmeth);
-            Function* func = LMI->getMethod();
-            uintptr_t res = (uintptr_t)EE->getPointerToFunctionOrStub(func);
-            table[j + 1] = res;
+             table[j + 1] = getPointerOrStub(*Cmeth, JavaMethod::Interface);
           } else {
             table[j + 1] = (uintptr_t)ThrowUnfoundInterface;
           }
@@ -428,3 +415,10 @@ void* JavaJITCompiler::loadMethod(void* handle, const char* symbol) {
   return JavaCompiler::loadMethod(handle, symbol);
 }
 
+uintptr_t JavaJITCompiler::getPointerOrStub(JavaMethod& meth,
+                                            int side) {
+  ExecutionEngine* EE = mvm::MvmModule::executionEngine;
+  LLVMMethodInfo* LMI = getMethodInfo(&meth);
+  Function* func = LMI->getMethod();
+  return (uintptr_t)EE->getPointerToFunctionOrStub(func);
+}

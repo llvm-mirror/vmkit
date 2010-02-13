@@ -472,6 +472,10 @@ public:
   llvm::FunctionPassManager* JavaFunctionPasses;
   llvm::FunctionPassManager* JavaNativeFunctionPasses;
   
+  virtual bool needsCallback(JavaMethod* meth, bool* needsInit) {
+    *needsInit = true;
+    return meth == NULL;
+  }
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
                                    bool stat) = 0;
   
@@ -577,6 +581,7 @@ public:
   
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
                                    bool stat);
+  virtual uintptr_t getPointerOrStub(JavaMethod& meth, int type);
 
 #ifdef WITH_LLVM_GCC
   virtual mvm::StackScanner* createStackScanner() {

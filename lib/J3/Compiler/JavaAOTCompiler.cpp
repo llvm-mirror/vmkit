@@ -1829,7 +1829,7 @@ void JavaAOTCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
 }
 
 Value* JavaAOTCompiler::addCallback(Class* cl, uint16 index,
-                                      Signdef* sign, bool stat) {
+                                    Signdef* sign, bool stat) {
  
   JavaConstantPool* ctpInfo = cl->ctpInfo;
   Signdef* signature = 0;

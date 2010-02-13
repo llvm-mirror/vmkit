@@ -1604,7 +1604,6 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
   std::vector<Value*> args;
   FunctionType::param_iterator it  = virtualType->param_end();
   makeArgs(it, index, args, signature->nbArguments + 1);
-  Value* func = 0;
 
   if (finalCl) {
     Class* lookup = finalCl->isArray() ? finalCl->super : finalCl->asClass();
@@ -1648,22 +1647,25 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
   args.push_back(node);
 #endif
 
-  if (!meth) {
-    // Make sure the class is loaded before materializing the method.
-    uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
-    UserCommonClass* cl = 0;
-    Value* Cl = getResolvedCommonClass(clIndex, false, &cl);
-    if (!cl) {
-      CallInst::Create(module->ForceLoadedCheckFunction, Cl, "", currentBlock);
-    }
-    func =  TheCompiler->addCallback(compilingClass, index, signature, false);
-  } else {
-    func = TheCompiler->getMethod(meth);
-  }
-
   if (meth && canBeInlined(meth)) {
     val = invokeInline(meth, args);
   } else {
+    Value* func = 0;
+    bool needsInit = false;
+    if (TheCompiler->needsCallback(meth, &needsInit)) {
+      if (needsInit) {
+        // Make sure the class is loaded before materializing the method.
+        uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
+        UserCommonClass* cl = 0;
+        Value* Cl = getResolvedCommonClass(clIndex, false, &cl);
+        if (!cl) {
+          CallInst::Create(module->ForceLoadedCheckFunction, Cl, "",currentBlock);
+        }
+      }
+      func = TheCompiler->addCallback(compilingClass, index, signature, false);
+    } else {
+      func = TheCompiler->getMethod(meth);
+    }
     val = invoke(func, args, "", currentBlock);
   }
   
@@ -1727,24 +1729,23 @@ void JavaJIT::invokeStatic(uint16 index) {
                        currentBlock);
     }
     
-    Value* func = 0;
-    if (meth) {
-      /*if (meth == upcalls->SystemArraycopy ||
-          meth == upcalls->VMSystemArraycopy) {
-        lowerArraycopy(args);
-        return;
-      }*/
-      func = TheCompiler->getMethod(meth);
-    } else {
-      func = TheCompiler->addCallback(compilingClass, index, signature, true);
-    }
-
     if (meth && canBeInlined(meth)) {
       val = invokeInline(meth, args);
     } else {
+      Value* func = 0;
+      bool needsInit = false;
+      if (TheCompiler->needsCallback(meth, &needsInit)) {
+        func = TheCompiler->addCallback(compilingClass, index, signature, true);
+      } else {
+        /*if (meth == upcalls->SystemArraycopy ||
+            meth == upcalls->VMSystemArraycopy) {
+          lowerArraycopy(args);
+          return;
+        }*/
+        func = TheCompiler->getMethod(meth);
+      }
       val = invoke(func, args, "", currentBlock);
     }
-
   }
 
   const llvm::Type* retType = staticType->getReturnType();
