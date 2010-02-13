@@ -31,7 +31,7 @@
 #include "Jnjvm.h"
 
 #include "j3/JnjvmModule.h"
-#include "j3/JnjvmModuleProvider.h"
+#include "j3/LLVMMaterializer.h"
 
 using namespace j3;
 using namespace llvm;
@@ -210,7 +210,12 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
 #else
   EmitFunctionName = false;
 #endif
-  TheModuleProvider = new JnjvmModuleProvider(TheModule, this);
+  TheModuleProvider = new LLVMMaterializer(TheModule, this);
+  
+  JnjvmModule::protectEngine.lock();
+  JnjvmModule::executionEngine->addModule(TheModule);
+  JnjvmModule::protectEngine.unlock();
+  
   addJavaPasses();
 
   if (!JITListener) {

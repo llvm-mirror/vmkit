@@ -1,4 +1,4 @@
-//===-------- JnjvmModuleProvider.h - LLVM Module Provider for J3 ---------===//
+//===---------- LLVMMaterializer.h - LLVM Materializer for J3 -------------===//
 //
 //                            The VMKit project
 //
@@ -16,14 +16,13 @@ namespace j3 {
 
 class JavaJITCompiler;
 
-class JnjvmModuleProvider : public llvm::GVMaterializer {
+class LLVMMaterializer : public llvm::GVMaterializer {
 public:
  
   JavaJITCompiler* Comp;
   llvm::Module* TheModule;
 
-  JnjvmModuleProvider(llvm::Module* M, JavaJITCompiler* C);
-  ~JnjvmModuleProvider();
+  LLVMMaterializer(llvm::Module* M, JavaJITCompiler* C);
 
   virtual bool Materialize(llvm::GlobalValue *GV, std::string *ErrInfo = 0);
   virtual bool isMaterializable(const llvm::GlobalValue*) const;

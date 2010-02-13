@@ -25,7 +25,7 @@
 #include "JavaTypes.h"
 
 #include "j3/JnjvmModule.h"
-#include "j3/JnjvmModuleProvider.h"
+#include "j3/LLVMMaterializer.h"
 
 using namespace j3;
 using namespace llvm;

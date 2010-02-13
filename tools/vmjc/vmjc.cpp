@@ -43,7 +43,6 @@
 #include "mvm/Threads/Thread.h"
 
 #include "j3/JnjvmModule.h"
-#include "j3/JnjvmModuleProvider.h"
 
 #include "../../lib/J3/VMCore/JnjvmClassLoader.h"
 #include "../../lib/J3/VMCore/Jnjvm.h"

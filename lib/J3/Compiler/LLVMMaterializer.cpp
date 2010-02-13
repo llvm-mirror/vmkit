@@ -1,4 +1,4 @@
-//===--- JnjvmModuleProvider.cpp - LLVM Module Provider for Jnjvm ---------===//
+//===-------- LLVMMaterializer.cpp - LLVM Materializer for J3 -------------===//
 //
 //                            The VMKit project
 //
@@ -21,7 +21,7 @@
 #include "Jnjvm.h"
 
 #include "j3/JnjvmModule.h"
-#include "j3/JnjvmModuleProvider.h"
+#include "j3/LLVMMaterializer.h"
 
 using namespace llvm;
 using namespace j3;
@@ -74,8 +74,7 @@ Value* JavaJITCompiler::addCallback(Class* cl, uint16 index,
 }
 
 
-bool JnjvmModuleProvider::Materialize(GlobalValue *GV,
-                                      std::string *ErrInfo) {
+bool LLVMMaterializer::Materialize(GlobalValue *GV, std::string *ErrInfo) {
   
   Function* F = dyn_cast<Function>(GV);
   assert(F && "Not a function");
@@ -142,23 +141,13 @@ bool JnjvmModuleProvider::Materialize(GlobalValue *GV,
   return false;
 }
 
-bool JnjvmModuleProvider::isMaterializable(const llvm::GlobalValue* GV) const {
+bool LLVMMaterializer::isMaterializable(const llvm::GlobalValue* GV) const {
   return GV->getLinkage() == GlobalValue::ExternalWeakLinkage;
 }
 
 
-JnjvmModuleProvider::JnjvmModuleProvider(llvm::Module* m,
-                                         JavaJITCompiler* C) {
+LLVMMaterializer::LLVMMaterializer(llvm::Module* m, JavaJITCompiler* C) {
   Comp = C;
   TheModule = m;
   m->setMaterializer(this);
-  JnjvmModule::protectEngine.lock();
-  JnjvmModule::executionEngine->addModule(TheModule);
-  JnjvmModule::protectEngine.unlock();
-}
-
-JnjvmModuleProvider::~JnjvmModuleProvider() {
-  JnjvmModule::protectEngine.lock();
-  JnjvmModule::executionEngine->removeModule(TheModule);
-  JnjvmModule::protectEngine.unlock();
 }

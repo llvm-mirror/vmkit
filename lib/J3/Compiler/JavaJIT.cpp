@@ -38,7 +38,6 @@
 #include "Reader.h"
 
 #include "j3/JnjvmModule.h"
-#include "j3/JnjvmModuleProvider.h"
 
 using namespace j3;
 using namespace llvm;

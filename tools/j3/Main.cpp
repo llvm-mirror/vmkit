@@ -14,7 +14,6 @@
 #include "mvm/Threads/Thread.h"
 
 #include "j3/JnjvmModule.h"
-#include "j3/JnjvmModuleProvider.h"
 
 #include "llvm/Support/ManagedStatic.h"
 

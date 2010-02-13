@@ -29,7 +29,6 @@
 #include "Reader.h"
 
 #include "j3/JnjvmModule.h"
-#include "j3/JnjvmModuleProvider.h"
 
 #include <cstdio>
 
