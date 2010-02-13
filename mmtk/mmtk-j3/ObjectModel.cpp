@@ -21,16 +21,16 @@ extern "C" intptr_t Java_org_j3_mmtk_ObjectModel_GC_1HEADER_1OFFSET__ () {
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_readAvailableBitsWord__Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* OM, JavaObject* obj) {
-  return ((uintptr_t*)obj)[1] & mvm::GCMask;
+  return ((uintptr_t*)obj)[1] & mvm::GCBitMask;
 }
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_writeAvailableBitsWord__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Word_2 (JavaObject* OM, JavaObject* obj, uintptr_t val) {
   assert((val & ~mvm::GCMask) == (((uintptr_t*)obj)[1] & ~mvm::GCMask) && "GC bits do not fit");
 #if defined(__PPC__)
-  ((uint8_t*)obj)[7] &= ~mvm::GCMask;
+  ((uint8_t*)obj)[7] &= ~mvm::GCBitMask;
   ((uint8_t*)obj)[7] |= val;
 #else
-  ((uint8_t*)obj)[4] &= ~mvm::GCMask;
+  ((uint8_t*)obj)[4] &= ~mvm::GCBitMask;
   ((uint8_t*)obj)[4] |= val;
 #endif
 }
@@ -45,19 +45,19 @@ extern "C" JavaObject* Java_org_j3_mmtk_ObjectModel_refToAddress__Lorg_vmmagic_u
 
 extern "C" uint8_t Java_org_j3_mmtk_ObjectModel_readAvailableByte__Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* OM, JavaObject* obj) {
 #if defined(__PPC__)
-  return ((uint8_t*)obj)[7] & mvm::GCMask;
+  return ((uint8_t*)obj)[7] & mvm::GCBitMask;
 #else
-  return ((uint8_t*)obj)[4] & mvm::GCMask;
+  return ((uint8_t*)obj)[4] & mvm::GCBitMask;
 #endif
 }
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_writeAvailableByte__Lorg_vmmagic_unboxed_ObjectReference_2B (JavaObject* OM, JavaObject* obj, uint8_t val) {
   assert((val & mvm::GCMask) == val && "GC bits do not fit");
 #if defined(__PPC__)
-  ((uint8_t*)obj)[7] &= ~mvm::GCMask;
+  ((uint8_t*)obj)[7] &= ~mvm::GCBitMask;
   ((uint8_t*)obj)[7] |= val;
 #else
-  ((uint8_t*)obj)[4] &= ~mvm::GCMask;
+  ((uint8_t*)obj)[4] &= ~mvm::GCBitMask;
   ((uint8_t*)obj)[4] |= val;
 #endif
 }
@@ -74,7 +74,7 @@ extern "C" uint8_t
 Java_org_j3_mmtk_ObjectModel_attemptAvailableBits__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Word_2Lorg_vmmagic_unboxed_Word_2(
     JavaObject* OM, JavaObject* obj, intptr_t oldValue, intptr_t newValue) {
   
-  assert(((oldValue & ~mvm::GCMask) == (newValue & ~mvm::GCMask)) &&
+  assert(((oldValue & ~mvm::GCBitMask) == (newValue & ~mvm::GCBitMask)) &&
          "GC bits do not fit");
   return __sync_bool_compare_and_swap(((intptr_t*)obj) + 1, oldValue, newValue);
 }

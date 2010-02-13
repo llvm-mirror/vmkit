@@ -186,8 +186,12 @@ public:
   static const uint64_t ThinCountMask = 0xFF000;
   static const uint64_t ThinCountShift = 12;
   static const uint64_t ThinCountAdd = 0x1000;
+  // Mask for all GC objects.
   static const uint64_t GCMask = 0xFFF;
+  // Mask for the hash code bits.
   static const uint64_t HashMask = 0xFFC;
+  // Mask for the GC bits.
+  static const uint64_t GCBitMask = 0x3;
 
 
 
