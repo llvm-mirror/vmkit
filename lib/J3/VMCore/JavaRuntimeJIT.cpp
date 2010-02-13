@@ -340,8 +340,8 @@ extern "C" void j3EndJNI(uint32** oldLRN) {
 }
 
 extern "C" void* j3StartJNI(uint32* localReferencesNumber,
-                               uint32** oldLocalReferencesNumber,
-                               mvm::KnownFrame* Frame) 
+                            uint32** oldLocalReferencesNumber,
+                            mvm::KnownFrame* Frame) 
   __attribute__((noinline));
 
 // Never throws. Does not call Java code. Can not yied a GC.

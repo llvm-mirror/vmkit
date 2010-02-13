@@ -81,9 +81,8 @@ typedef __jmp_buf_tag* jumpbuf_t;
 #endif
 
 typedef int (*onLoad_t)(const void**, void*);
-extern "C" void  j3EndJNI(uint32** old, void** oldBuf);
-extern "C" void  j3StartJNI(uint32* num, uint32** old, void* newBuf,
-                               void** oldBuf, mvm::KnownFrame* Frame);
+extern "C" void  j3EndJNI(uint32** old);
+extern "C" void  j3StartJNI(uint32* num, uint32** old, mvm::KnownFrame* Frame);
 
 extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm)
   __attribute__ ((noinline));
@@ -96,18 +95,11 @@ extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
   if (onLoad) {
     uint32 num = 0;
     uint32* old = 0;
-    void* oldBuf = 0;
     mvm::KnownFrame Frame;
-    jmp_buf buf;
     
-    if (setjmp(buf) == 0) {
-      // Push an unmeaningful value in the addresses field to let the
-      // stack consistent with Java frames/native frames.
-      j3StartJNI(&num, &old, (void*)&buf, &oldBuf, &Frame);
-      onLoad(&vm->javavmEnv, res);
-    }
-
-    j3EndJNI(&old, &oldBuf);
+    j3StartJNI(&num, &old, &Frame);
+    onLoad(&vm->javavmEnv, res);
+    j3EndJNI(&old);
   }
 }
 
