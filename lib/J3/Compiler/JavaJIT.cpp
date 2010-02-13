@@ -355,16 +355,17 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
       currentBlock = NotZero;
 
       Instruction* temp = new AllocaInst(module->JavaObjectType, "",
-                                         func->begin()->begin());
+                                         func->begin()->getTerminator());
       
       if (TheCompiler->useCooperativeGC()) {
         Value* GCArgs[2] = { 
-          new BitCastInst(temp, module->ptrPtrType, "", currentBlock),
+          new BitCastInst(temp, module->ptrPtrType, "",
+                          func->begin()->getTerminator()),
           module->constantPtrNull
         };
         
         CallInst::Create(module->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
-                         temp);
+                         func->begin()->getTerminator());
       }
       
       new StoreInst(i, temp, false, currentBlock);
@@ -434,19 +435,6 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   CallInst::Create(module->StartJNIFunction, Args4, Args4 + 3, "",
                    currentBlock);
   
-
-  // FIXME: Is this still needed?
-  //
-  // When calling a native method, it may do whatever it wants with the
-  // frame pointer. Therefore make sure it's on the stack. x86_64 has
-  // this problem because it passes first arguments in registers.
-  // Therefore, it was overwriting the frame pointer when entering the
-  // native method.
-  //Value* FrameAddr = CallInst::Create(module->llvm_frameaddress,
-  //                                   	module->constantZero, "", currentBlock);
-  //Value* Temp = new AllocaInst(module->ptrType, "", currentBlock);
-  //new StoreInst(FrameAddr, Temp, currentBlock);
-  
   Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs.begin(),
                                          nativeArgs.end(), "", currentBlock);
 
@@ -490,9 +478,10 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
   
-  
+ 
   return llvmFunction;
 }
+
 void JavaJIT::monitorEnter(Value* obj) {
   std::vector<Value*> gep;
   gep.push_back(module->constantZero);
