@@ -109,7 +109,7 @@ bool LLVMMaterializer::Materialize(GlobalValue *GV, std::string *ErrInfo) {
   
   if (!meth) {
     // It's a callback
-    JavaJITCompiler::callback_iterator I = Comp->callbacks.find(F);
+    JavaLLVMLazyJITCompiler::callback_iterator I = Comp->callbacks.find(F);
     assert(I != Comp->callbacks.end() && "No callbacks found");
     meth = staticLookup(I->second);
   }

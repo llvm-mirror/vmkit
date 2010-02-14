@@ -14,7 +14,40 @@
 
 namespace j3 {
 
-class JavaLLVMLazyJITCompiler;
+class LLVMMaterializer;
+
+struct CallbackInfo {
+  Class* cl;
+  uint16 index;
+  bool stat;
+
+  CallbackInfo(Class* c, uint32 i, bool s) :
+    cl(c), index(i), stat(s) {}
+
+};
+
+class JavaLLVMLazyJITCompiler : public JavaJITCompiler {
+private:
+  std::map<llvm::Function*, CallbackInfo> callbacks;
+  typedef std::map<llvm::Function*, CallbackInfo>::iterator callback_iterator;
+
+public:
+  llvm::GVMaterializer* TheMaterializer;
+  
+  virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
+                                   bool stat, llvm::BasicBlock* insert);
+  virtual uintptr_t getPointerOrStub(JavaMethod& meth, int side);
+  
+  virtual JavaCompiler* Create(const std::string& ModuleID) {
+    return new JavaLLVMLazyJITCompiler(ModuleID);
+  }
+
+  JavaLLVMLazyJITCompiler(const std::string& ModuleID);
+  
+  virtual ~JavaLLVMLazyJITCompiler();
+
+  friend class LLVMMaterializer;
+};
 
 class LLVMMaterializer : public llvm::GVMaterializer {
 public:

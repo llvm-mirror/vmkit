@@ -42,6 +42,7 @@
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Thread.h"
 
+#include "j3/JavaAOTCompiler.h"
 #include "j3/JnjvmModule.h"
 
 #include "../../lib/J3/VMCore/JnjvmClassLoader.h"
