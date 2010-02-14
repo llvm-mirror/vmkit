@@ -2578,7 +2578,7 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
 MDNode* JavaJIT::CreateLocation() {
   uint32_t first = currentLineNumber | (currentBytecodeIndex << 16);
   uint32_t second = currentCtpIndex | (callNumber << 16);
-  DILocation Location = intrinsics->DebugFactory->CreateLocation(
+  DILocation Location = TheCompiler->getDebugFactory()->CreateLocation(
       first, second, DIScope(DbgSubprogram));
   callNumber++;
   return Location.getNode();

@@ -64,6 +64,7 @@ const llvm::Type*   J3Intrinsics::VTType;
 
 JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
   TheModule(new llvm::Module(str, getGlobalContext())),
+  DebugFactory(new DIFactory(*TheModule)),
   JavaIntrinsics(TheModule) {
 
   enabledException = true;
@@ -384,11 +385,10 @@ JavaMethod* JavaLLVMCompiler::getJavaMethod(llvm::Function* F) {
 
 MDNode* JavaLLVMCompiler::GetDbgSubprogram(JavaMethod* meth) {
   if (getMethodInfo(meth)->getDbgSubprogram() == NULL) {
-    MDNode* node =
-      JavaIntrinsics.DebugFactory->CreateSubprogram(DIDescriptor(), "", "",
-                                                    "", DICompileUnit(), 0,
-                                                    DIType(), false,
-                                                    false).getNode();
+    MDNode* node = DebugFactory->CreateSubprogram(DIDescriptor(), "", "",
+                                                  "", DICompileUnit(), 0,
+                                                  DIType(), false,
+                                                  false).getNode();
     DbgInfos.insert(std::make_pair(node, meth));
     getMethodInfo(meth)->setDbgSubprogram(node);
   }

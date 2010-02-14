@@ -313,7 +313,6 @@ MvmModule::MvmModule(llvm::Module* module) {
   module->setDataLayout(globalModule->getDataLayout());
   module->setTargetTriple(globalModule->getTargetTriple());
   LLVMContext& Context = module->getContext();
-  DebugFactory = new DIFactory(*module);
   
   // Constant declaration
   constantLongMinusOne = ConstantInt::get(Type::getInt64Ty(Context), (uint64_t)-1);

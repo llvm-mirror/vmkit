@@ -25,15 +25,12 @@ namespace llvm {
   class Constant;
   class ConstantFP;
   class ConstantInt;
-  class DIFactory;
   class ExecutionEngine;
   class Function;
   class FunctionPassManager;
   class GCFunctionInfo;
   class GCStrategy;
-  class LLVMContext;
   class Module;
-  class ModuleProvider;
   class PointerType;
   class TargetData;
   class TargetMachine;
@@ -42,9 +39,7 @@ namespace llvm {
 
 namespace mvm {
 
-class LockNormal;
 class LockRecursive;
-class VirtualMachine;
 
 const double MaxDouble = +INFINITY; //1.0 / 0.0;
 const double MinDouble = -INFINITY;//-1.0 / 0.0;
@@ -172,8 +167,6 @@ public:
    llvm::Constant* constantPtrOne;
    llvm::Constant* constantPtrZero;
   
-   llvm::DIFactory* DebugFactory;
-
    static const llvm::PointerType* ptrType;
    static const llvm::PointerType* ptr32Type;
    static const llvm::PointerType* ptrPtrType;

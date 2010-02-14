@@ -16,6 +16,7 @@
 
 namespace llvm {
   class BasicBlock;
+  class DIFactory;
 }
 
 namespace j3 {
@@ -40,6 +41,7 @@ class JavaLLVMCompiler : public JavaCompiler {
 
 protected:
   llvm::Module* TheModule;
+  llvm::DIFactory* DebugFactory;  
   J3Intrinsics JavaIntrinsics;
 
   void addJavaPasses();
@@ -62,6 +64,10 @@ public:
   
   virtual bool isStaticCompiling() = 0;
   virtual bool emitFunctionName() = 0;
+  
+  llvm::DIFactory* getDebugFactory() {
+    return DebugFactory;
+  }
 
   llvm::Module* getLLVMModule() {
     return TheModule;
@@ -166,7 +172,6 @@ public:
   }
 
   llvm::Function* NativeLoader;
-
 };
 
 } // end namespace j3
