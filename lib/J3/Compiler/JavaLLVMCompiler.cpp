@@ -7,10 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/BasicBlock.h"
-#include "llvm/CallingConv.h"
-#include "llvm/Constants.h"
-#include "llvm/Instructions.h"
 #include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
 #include "llvm/PassManager.h"
@@ -19,13 +15,10 @@
 
 #include "mvm/JIT.h"
 
-#include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaJIT.h"
-#include "JavaTypes.h"
 
-#include "j3/J3Intrinsics.h"
-#include "j3/LLVMMaterializer.h"
+#include "j3/JavaLLVMCompiler.h"
 
 using namespace j3;
 using namespace llvm;
