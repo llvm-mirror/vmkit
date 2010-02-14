@@ -10,7 +10,7 @@
 #ifndef J3_AOT_COMPILER_H
 #define J3_AOT_COMPILER_H
 
-#include "j3/JnjvmModule.h"
+#include "j3/JavaLLVMCompiler.h"
 
 namespace j3 {
 

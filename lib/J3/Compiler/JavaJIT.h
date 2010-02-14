@@ -26,6 +26,7 @@
 
 #include "JavaClass.h"
 #include "JavaUpcalls.h"
+#include "j3/JavaLLVMCompiler.h"
 #include "j3/JnjvmModule.h"
 
 namespace j3 {

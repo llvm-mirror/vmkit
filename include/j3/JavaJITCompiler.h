@@ -10,7 +10,7 @@
 #ifndef J3_JIT_COMPILER_H
 #define J3_JIT_COMPILER_H
 
-#include "j3/JnjvmModule.h"
+#include "j3/JavaLLVMCompiler.h"
 
 namespace j3 {
 
@@ -68,7 +68,7 @@ public:
   }
 #endif
   
-  static  JavaJITCompiler* CreateCompiler(const std::string& ModuleID);
+  static JavaJITCompiler* CreateCompiler(const std::string& ModuleID);
 
 };
 
