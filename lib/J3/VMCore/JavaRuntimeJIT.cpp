@@ -384,8 +384,6 @@ extern "C" void j3OverflowThinLock(JavaObject* obj) {
 
 // Creates a Java object and then throws it.
 extern "C" JavaObject* j3NullPointerException() {
-  JavaThread::get()->printBacktrace();
-  abort();
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 
