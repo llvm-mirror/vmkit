@@ -10,9 +10,29 @@
 #ifndef J3_LLVM_COMPILER_H
 #define J3_LLVM_COMPILER_H
 
+#include "j3/JavaCompiler.h"
 #include "j3/JnjvmModule.h"
+#include "j3/LLVMInfo.h"
+
+namespace llvm {
+  class BasicBlock;
+}
 
 namespace j3 {
+
+class CommonClass;
+class Class;
+class ClassArray;
+class ClassPrimitive;
+class JavaConstantPool;
+class JavaField;
+class JavaMethod;
+class JavaObject;
+class JavaString;
+class JavaVirtualTable;
+class Jnjvm;
+class Typedef;
+class Signdef;
 
 class JavaLLVMCompiler : public JavaCompiler {
   friend class LLVMClassInfo;
@@ -148,8 +168,6 @@ public:
   llvm::Function* NativeLoader;
 
 };
-
-
 
 } // end namespace j3
 

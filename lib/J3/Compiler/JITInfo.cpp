@@ -28,7 +28,8 @@
 #include "Jnjvm.h"
 #include "Reader.h"
 
-#include "j3/JnjvmModule.h"
+#include "j3/JavaCompiler.h"
+#include "j3/LLVMInfo.h"
 
 #include <cstdio>
 
