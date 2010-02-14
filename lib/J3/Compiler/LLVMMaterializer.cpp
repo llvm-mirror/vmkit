@@ -48,9 +48,9 @@ static JavaMethod* staticLookup(CallbackInfo& F) {
 }
 
 
-Value* JavaJITCompiler::addCallback(Class* cl, uint16 index,
-                                    Signdef* sign, bool stat,
-                                    BasicBlock* insert) {
+Value* JavaLLVMLazyJITCompiler::addCallback(Class* cl, uint16 index,
+                                            Signdef* sign, bool stat,
+                                            BasicBlock* insert) {
   
   Function* F = 0;
   LLVMSignatureInfo* LSI = getSignatureInfo(sign);
@@ -147,7 +147,8 @@ bool LLVMMaterializer::isMaterializable(const llvm::GlobalValue* GV) const {
 }
 
 
-LLVMMaterializer::LLVMMaterializer(llvm::Module* m, JavaJITCompiler* C) {
+LLVMMaterializer::LLVMMaterializer(
+    llvm::Module* m, JavaLLVMLazyJITCompiler* C) {
   Comp = C;
   TheModule = m;
   m->setMaterializer(this);

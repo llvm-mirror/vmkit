@@ -133,7 +133,6 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
 
     Allocator = new BumpPtrAllocator();
     executionEngine->RegisterJITEventListener(&JITListener);    
-    executionEngine->DisableLazyCompilation(false); 
     std::string str = 
       executionEngine->getTargetData()->getStringRepresentation();
     globalModule->setDataLayout(str);

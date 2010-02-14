@@ -7,22 +7,22 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef JNJVM_MODULE_PROVIDER_H
-#define JNJVM_MODULE_PROVIDER_H
+#ifndef J3_LLVM_MATERIALIZER_H
+#define J3_LLVM_MATERIALIZER_H
 
 #include <llvm/GVMaterializer.h>
 
 namespace j3 {
 
-class JavaJITCompiler;
+class JavaLLVMLazyJITCompiler;
 
 class LLVMMaterializer : public llvm::GVMaterializer {
 public:
  
-  JavaJITCompiler* Comp;
+  JavaLLVMLazyJITCompiler* Comp;
   llvm::Module* TheModule;
 
-  LLVMMaterializer(llvm::Module* M, JavaJITCompiler* C);
+  LLVMMaterializer(llvm::Module* M, JavaLLVMLazyJITCompiler* C);
 
   virtual bool Materialize(llvm::GlobalValue *GV, std::string *ErrInfo = 0);
   virtual bool isMaterializable(const llvm::GlobalValue*) const;

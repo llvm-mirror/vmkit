@@ -398,7 +398,6 @@ MDNode* JavaLLVMCompiler::GetDbgSubprogram(JavaMethod* meth) {
 JavaLLVMCompiler::~JavaLLVMCompiler() {
   delete JavaFunctionPasses;
   delete JavaNativeFunctionPasses;
-  delete TheModuleProvider;
 }
 
 namespace mvm {

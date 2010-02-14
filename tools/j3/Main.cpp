@@ -28,7 +28,7 @@ int main(int argc, char **argv, char **envp) {
   MvmModule::initialise();
   Collector::initialise();
  
-  JavaJITCompiler* Comp = new JavaJITCompiler("JITModule");
+  JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
   mvm::MvmModule::AddStandardCompilePasses();
   JnjvmClassLoader* JCL = VirtualMachine::initialiseJVM(Comp);
   VirtualMachine* vm = VirtualMachine::createJVM(JCL);

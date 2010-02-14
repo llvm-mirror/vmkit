@@ -397,7 +397,6 @@ class JavaLLVMCompiler : public JavaCompiler {
 
 protected:
   llvm::Module* TheModule;
-  llvm::GVMaterializer* TheModuleProvider;
   JnjvmModule JavaIntrinsics;
 
   void addJavaPasses();
@@ -578,10 +577,6 @@ public:
   virtual void makeVT(Class* cl);
   virtual void makeIMT(Class* cl);
   
-  virtual JavaCompiler* Create(const std::string& ModuleID) {
-    return new JavaJITCompiler(ModuleID);
-  }
-  
   virtual void* materializeFunction(JavaMethod* meth);
   
   virtual llvm::Constant* getFinalObject(JavaObject* obj, CommonClass* cl);
@@ -604,12 +599,10 @@ public:
 #ifdef SERVICE
   virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
 #endif
-
-  virtual ~JavaJITCompiler() {}
-  
+ 
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
-                                   bool stat, llvm::BasicBlock* insert);
-  virtual uintptr_t getPointerOrStub(JavaMethod& meth, int type);
+                                   bool stat, llvm::BasicBlock* insert) = 0;
+  virtual uintptr_t getPointerOrStub(JavaMethod& meth, int type) = 0;
 
 #ifdef WITH_LLVM_GCC
   virtual mvm::StackScanner* createStackScanner() {
@@ -621,6 +614,8 @@ public:
 #endif
   
   virtual void* loadMethod(void* handle, const char* symbol);
+  
+  static  JavaJITCompiler* CreateCompiler(const std::string& ModuleID);
 
 };
 
@@ -635,8 +630,24 @@ public:
     return new JavaJ3LazyJITCompiler(ModuleID);
   }
 
-  JavaJ3LazyJITCompiler(const std::string& ModuleID)
-    : JavaJITCompiler(ModuleID) {}
+  JavaJ3LazyJITCompiler(const std::string& ModuleID);
+};
+
+class JavaLLVMLazyJITCompiler : public JavaJITCompiler {
+public:
+  llvm::GVMaterializer* TheMaterializer;
+  
+  virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
+                                   bool stat, llvm::BasicBlock* insert);
+  virtual uintptr_t getPointerOrStub(JavaMethod& meth, int side);
+  
+  virtual JavaCompiler* Create(const std::string& ModuleID) {
+    return new JavaLLVMLazyJITCompiler(ModuleID);
+  }
+
+  JavaLLVMLazyJITCompiler(const std::string& ModuleID);
+  
+  virtual ~JavaLLVMLazyJITCompiler();
 };
 
 class JavaAOTCompiler : public JavaLLVMCompiler {

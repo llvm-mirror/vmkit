@@ -18,6 +18,7 @@
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/JITEventListener.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
@@ -214,7 +215,6 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
 #else
   EmitFunctionName = false;
 #endif
-  TheModuleProvider = new LLVMMaterializer(TheModule, this);
   
   JnjvmModule::protectEngine.lock();
   JnjvmModule::executionEngine->addModule(TheModule);
@@ -398,7 +398,7 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   newArgv[0] = newArgv[1];
   newArgv[1] = mainClass;
 
-  JavaJITCompiler* Comp = new JavaJITCompiler("JITModule");
+  JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
   mvm::MvmModule::AddStandardCompilePasses();
   JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
   mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(JCL);
@@ -412,15 +412,15 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
 void* JavaJITCompiler::loadMethod(void* handle, const char* symbol) {
   Function* F = mvm::MvmModule::globalModule->getFunction(symbol);
   if (F) {
-    void* res = mvm::MvmModule::executionEngine->getPointerToFunctionOrStub(F);
+    void* res = mvm::MvmModule::executionEngine->getPointerToFunction(F);
     return res;
   }
 
   return JavaCompiler::loadMethod(handle, symbol);
 }
 
-uintptr_t JavaJITCompiler::getPointerOrStub(JavaMethod& meth,
-                                            int side) {
+uintptr_t JavaLLVMLazyJITCompiler::getPointerOrStub(JavaMethod& meth,
+                                                    int side) {
   ExecutionEngine* EE = mvm::MvmModule::executionEngine;
   LLVMMethodInfo* LMI = getMethodInfo(&meth);
   Function* func = LMI->getMethod();
@@ -457,4 +457,28 @@ Value* JavaJ3LazyJITCompiler::addCallback(Class* cl, uint16 index,
 bool JavaJ3LazyJITCompiler::needsCallback(JavaMethod* meth, bool* needsInit) {
   *needsInit = true;
   return (meth == NULL || meth->code == NULL);
+}
+
+JavaJ3LazyJITCompiler::JavaJ3LazyJITCompiler(const std::string& ModuleID)
+    : JavaJITCompiler(ModuleID) {}
+
+JavaLLVMLazyJITCompiler::JavaLLVMLazyJITCompiler(const std::string& ModuleID)
+    : JavaJITCompiler(ModuleID) {
+  TheMaterializer = new LLVMMaterializer(TheModule, this);      
+}
+
+JavaLLVMLazyJITCompiler::~JavaLLVMLazyJITCompiler() {
+  delete TheMaterializer;
+}
+
+static llvm::cl::opt<bool> LLVMLazy("llvm-lazy", 
+                     cl::desc("Use LLVM lazy stubs"),
+                     cl::init(false));
+
+JavaJITCompiler* JavaJITCompiler::CreateCompiler(const std::string& ModuleID) {
+  if (LLVMLazy) {
+    JnjvmModule::executionEngine->DisableLazyCompilation(false); 
+    return new JavaLLVMLazyJITCompiler(ModuleID);
+  }
+  return new JavaJ3LazyJITCompiler(ModuleID);
 }

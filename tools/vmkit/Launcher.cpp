@@ -56,7 +56,6 @@ static llvm::cl::opt<bool> Fast("fast",
                               "potentially sacrificing code quality"),
                      cl::init(false));
 
-
 static cl::opt<bool> 
 DisableOptimizations("disable-opt", 
                      cl::desc("Do not run any optimization passes"));
@@ -140,7 +139,7 @@ int main(int argc, char** argv) {
 
   if (VMToRun == RunJava) {
 #if WITH_J3
-    JavaJITCompiler* Comp = new JavaJITCompiler("JITModule");
+    JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
     JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
     addCommandLinePass(argv);
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(JCL);
@@ -157,7 +156,7 @@ int main(int argc, char** argv) {
   } else {
     mvm::CommandLine MyCl;
 #if WITH_J3
-    JavaJITCompiler* Comp = new JavaJITCompiler("JITModule");
+    JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
     JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
     addCommandLinePass(argv);
     MyCl.vmlets["java"] = (create_vm_t)(mvm::VirtualMachine::createJVM);
