@@ -33,7 +33,7 @@
 #include "Jnjvm.h"
 
 #include "j3/JavaJITCompiler.h"
-#include "j3/JnjvmModule.h"
+#include "j3/J3Intrinsics.h"
 #include "j3/LLVMMaterializer.h"
 
 using namespace j3;
@@ -127,8 +127,8 @@ public:
 static JavaJITListener* JITListener = 0;
 
 Constant* JavaJITCompiler::getNativeClass(CommonClass* classDef) {
-  const llvm::Type* Ty = classDef->isClass() ? JnjvmModule::JavaClassType :
-                                               JnjvmModule::JavaCommonClassType;
+  const llvm::Type* Ty = classDef->isClass() ? J3Intrinsics::JavaClassType :
+                                               J3Intrinsics::JavaCommonClassType;
   
   ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                      uint64_t(classDef));
@@ -140,25 +140,25 @@ Constant* JavaJITCompiler::getConstantPool(JavaConstantPool* ctp) {
   assert(ptr && "No constant pool found");
   ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                      uint64_t(ptr));
-  return ConstantExpr::getIntToPtr(CI, JnjvmModule::ConstantPoolType);
+  return ConstantExpr::getIntToPtr(CI, J3Intrinsics::ConstantPoolType);
 }
 
 Constant* JavaJITCompiler::getMethodInClass(JavaMethod* meth) {
   ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                      (int64_t)meth);
-  return ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaMethodType);
+  return ConstantExpr::getIntToPtr(CI, J3Intrinsics::JavaMethodType);
 }
 
 Constant* JavaJITCompiler::getString(JavaString* str) {
   assert(str && "No string given");
   ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                      uint64(str));
-  return ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);
+  return ConstantExpr::getIntToPtr(CI, J3Intrinsics::JavaObjectType);
 }
 
 Constant* JavaJITCompiler::getStringPtr(JavaString** str) {
   assert(str && "No string given");
-  const llvm::Type* Ty = PointerType::getUnqual(JnjvmModule::JavaObjectType);
+  const llvm::Type* Ty = PointerType::getUnqual(J3Intrinsics::JavaObjectType);
   ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                      uint64(str));
   return ConstantExpr::getIntToPtr(CI, Ty);
@@ -169,7 +169,7 @@ Constant* JavaJITCompiler::getJavaClass(CommonClass* cl) {
   assert(obj && "Delegatee not created");
   Constant* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                   uint64(obj));
-  return ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);
+  return ConstantExpr::getIntToPtr(CI, J3Intrinsics::JavaObjectType);
 }
 
 Constant* JavaJITCompiler::getJavaClassPtr(CommonClass* cl) {
@@ -178,7 +178,7 @@ Constant* JavaJITCompiler::getJavaClassPtr(CommonClass* cl) {
   assert(obj && "Delegatee not created");
   Constant* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                   uint64(obj));
-  const Type* Ty = PointerType::getUnqual(JnjvmModule::JavaObjectType);
+  const Type* Ty = PointerType::getUnqual(J3Intrinsics::JavaObjectType);
   return ConstantExpr::getIntToPtr(CI, Ty);
 }
 
@@ -194,7 +194,7 @@ JavaObject* JavaJITCompiler::getFinalObject(llvm::Value* obj) {
 Constant* JavaJITCompiler::getFinalObject(JavaObject* obj, CommonClass* cl) {
   Constant* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                   uint64(obj));
-  return ConstantExpr::getIntToPtr(CI, JnjvmModule::JavaObjectType);
+  return ConstantExpr::getIntToPtr(CI, J3Intrinsics::JavaObjectType);
 }
 
 Constant* JavaJITCompiler::getStaticInstance(Class* classDef) {
@@ -214,7 +214,7 @@ Constant* JavaJITCompiler::getStaticInstance(Class* classDef) {
   }
   Constant* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                   (uint64_t(obj)));
-  return ConstantExpr::getIntToPtr(CI, JnjvmModule::ptrType);
+  return ConstantExpr::getIntToPtr(CI, J3Intrinsics::ptrType);
 }
 
 Constant* JavaJITCompiler::getVirtualTable(JavaVirtualTable* VT) {
@@ -225,7 +225,7 @@ Constant* JavaJITCompiler::getVirtualTable(JavaVirtualTable* VT) {
   
   ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                      uint64_t(VT));
-  return ConstantExpr::getIntToPtr(CI, JnjvmModule::VTType);
+  return ConstantExpr::getIntToPtr(CI, J3Intrinsics::VTType);
 }
 
 Constant* JavaJITCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
@@ -248,9 +248,9 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   EmitFunctionName = false;
 #endif
   
-  JnjvmModule::protectEngine.lock();
-  JnjvmModule::executionEngine->addModule(TheModule);
-  JnjvmModule::protectEngine.unlock();
+  J3Intrinsics::protectEngine.lock();
+  J3Intrinsics::executionEngine->addModule(TheModule);
+  J3Intrinsics::protectEngine.unlock();
   
   addJavaPasses();
 
@@ -264,7 +264,7 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
 Value* JavaJITCompiler::getIsolate(Jnjvm* isolate, Value* Where) {
   ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
                                      uint64_t(isolate));
-  return ConstantExpr::getIntToPtr(CI, JnjvmModule::ptrType);
+  return ConstantExpr::getIntToPtr(CI, J3Intrinsics::ptrType);
 }
 #endif
 
@@ -388,7 +388,7 @@ void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
   Function* func = getMethodInfo(meth)->getMethod();
   func->setName(name);
   assert(ptr && "No value given");
-  JnjvmModule::executionEngine->updateGlobalMapping(func, ptr);
+  J3Intrinsics::executionEngine->updateGlobalMapping(func, ptr);
   func->setLinkage(GlobalValue::ExternalLinkage);
 }
 
@@ -494,7 +494,7 @@ static llvm::cl::opt<bool> LLVMLazy("llvm-lazy",
 
 JavaJITCompiler* JavaJITCompiler::CreateCompiler(const std::string& ModuleID) {
   if (LLVMLazy) {
-    JnjvmModule::executionEngine->DisableLazyCompilation(false); 
+    J3Intrinsics::executionEngine->DisableLazyCompilation(false); 
     return new JavaLLVMLazyJITCompiler(ModuleID);
   }
   return new JavaJ3LazyJITCompiler(ModuleID);

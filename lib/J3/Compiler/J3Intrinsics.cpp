@@ -1,4 +1,4 @@
-//===--------- JnjvmModule.cpp - Definition of a Jnjvm module -------------===//
+//===------------- J3Intrinsics.cpp - Intrinsics for J3 -------------------===//
 //
 //                            The VMKit project
 //
@@ -24,42 +24,42 @@
 #include "JavaJIT.h"
 #include "JavaTypes.h"
 
-#include "j3/JnjvmModule.h"
+#include "j3/J3Intrinsics.h"
 #include "j3/LLVMMaterializer.h"
 
 using namespace j3;
 using namespace llvm;
 
-const llvm::Type* JnjvmModule::JavaObjectType = 0;
-const llvm::Type* JnjvmModule::JavaArrayType = 0;
-const llvm::Type* JnjvmModule::JavaArrayUInt8Type = 0;
-const llvm::Type* JnjvmModule::JavaArraySInt8Type = 0;
-const llvm::Type* JnjvmModule::JavaArrayUInt16Type = 0;
-const llvm::Type* JnjvmModule::JavaArraySInt16Type = 0;
-const llvm::Type* JnjvmModule::JavaArrayUInt32Type = 0;
-const llvm::Type* JnjvmModule::JavaArraySInt32Type = 0;
-const llvm::Type* JnjvmModule::JavaArrayFloatType = 0;
-const llvm::Type* JnjvmModule::JavaArrayDoubleType = 0;
-const llvm::Type* JnjvmModule::JavaArrayLongType = 0;
-const llvm::Type* JnjvmModule::JavaArrayObjectType = 0;
-const llvm::Type* JnjvmModule::CodeLineInfoType = 0;
-const llvm::Type* JnjvmModule::ConstantPoolType = 0;
-const llvm::Type* JnjvmModule::UTF8Type = 0;
-const llvm::Type* JnjvmModule::JavaFieldType = 0;
-const llvm::Type* JnjvmModule::JavaMethodType = 0;
-const llvm::Type* JnjvmModule::AttributType = 0;
-const llvm::Type* JnjvmModule::JavaThreadType = 0;
-const llvm::Type* JnjvmModule::MutatorThreadType = 0;
+const llvm::Type* J3Intrinsics::JavaObjectType = 0;
+const llvm::Type* J3Intrinsics::JavaArrayType = 0;
+const llvm::Type* J3Intrinsics::JavaArrayUInt8Type = 0;
+const llvm::Type* J3Intrinsics::JavaArraySInt8Type = 0;
+const llvm::Type* J3Intrinsics::JavaArrayUInt16Type = 0;
+const llvm::Type* J3Intrinsics::JavaArraySInt16Type = 0;
+const llvm::Type* J3Intrinsics::JavaArrayUInt32Type = 0;
+const llvm::Type* J3Intrinsics::JavaArraySInt32Type = 0;
+const llvm::Type* J3Intrinsics::JavaArrayFloatType = 0;
+const llvm::Type* J3Intrinsics::JavaArrayDoubleType = 0;
+const llvm::Type* J3Intrinsics::JavaArrayLongType = 0;
+const llvm::Type* J3Intrinsics::JavaArrayObjectType = 0;
+const llvm::Type* J3Intrinsics::CodeLineInfoType = 0;
+const llvm::Type* J3Intrinsics::ConstantPoolType = 0;
+const llvm::Type* J3Intrinsics::UTF8Type = 0;
+const llvm::Type* J3Intrinsics::JavaFieldType = 0;
+const llvm::Type* J3Intrinsics::JavaMethodType = 0;
+const llvm::Type* J3Intrinsics::AttributType = 0;
+const llvm::Type* J3Intrinsics::JavaThreadType = 0;
+const llvm::Type* J3Intrinsics::MutatorThreadType = 0;
 
 #ifdef ISOLATE_SHARING
-const llvm::Type* JnjvmModule::JnjvmType = 0;
+const llvm::Type* J3Intrinsics::JnjvmType = 0;
 #endif
 
-const llvm::Type*   JnjvmModule::JavaClassType;
-const llvm::Type*   JnjvmModule::JavaClassPrimitiveType;
-const llvm::Type*   JnjvmModule::JavaClassArrayType;
-const llvm::Type*   JnjvmModule::JavaCommonClassType;
-const llvm::Type*   JnjvmModule::VTType;
+const llvm::Type*   J3Intrinsics::JavaClassType;
+const llvm::Type*   J3Intrinsics::JavaClassPrimitiveType;
+const llvm::Type*   J3Intrinsics::JavaClassArrayType;
+const llvm::Type*   J3Intrinsics::JavaCommonClassType;
+const llvm::Type*   J3Intrinsics::VTType;
 
 
 JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
@@ -97,7 +97,7 @@ namespace j3 {
   }
 }
 
-void JnjvmModule::initialise() {
+void J3Intrinsics::initialise() {
   Module* module = globalModule;
   
   if (!module->getTypeByName("JavaThread"))
@@ -170,7 +170,7 @@ Function* JavaLLVMCompiler::getMethod(JavaMethod* meth) {
   return getMethodInfo(meth)->getMethod();
 }
 
-JnjvmModule::JnjvmModule(llvm::Module* module) :
+J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   MvmModule(module) {
   
   if (!VTType) {
@@ -179,7 +179,7 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   }
   
   JavaObjectNullConstant =
-    Constant::getNullValue(JnjvmModule::JavaObjectType);
+    Constant::getNullValue(J3Intrinsics::JavaObjectType);
   MaxArraySizeConstant = ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
                                           JavaArray::MaxArraySize);
   JavaArraySizeConstant = ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
@@ -357,20 +357,20 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
   Function* func = LMI->getMethod();
   
   // We are jitting. Take the lock.
-  JnjvmModule::protectIR();
+  J3Intrinsics::protectIR();
   if (func->getLinkage() == GlobalValue::ExternalWeakLinkage) {
     JavaJIT jit(this, meth, func);
     if (isNative(meth->access)) {
       jit.nativeCompile();
-      JnjvmModule::runPasses(func, JavaNativeFunctionPasses);
+      J3Intrinsics::runPasses(func, JavaNativeFunctionPasses);
     } else {
       jit.javaCompile();
-      JnjvmModule::runPasses(func, JnjvmModule::globalFunctionPasses);
-      JnjvmModule::runPasses(func, JavaFunctionPasses);
+      J3Intrinsics::runPasses(func, J3Intrinsics::globalFunctionPasses);
+      J3Intrinsics::runPasses(func, JavaFunctionPasses);
     }
     func->setLinkage(GlobalValue::ExternalLinkage);
   }
-  JnjvmModule::unprotectIR();
+  J3Intrinsics::unprotectIR();
 
   return func;
 }
@@ -406,7 +406,7 @@ namespace mvm {
 }
 
 namespace j3 {
-  llvm::FunctionPass* createLowerConstantCallsPass(JnjvmModule* M);
+  llvm::FunctionPass* createLowerConstantCallsPass(J3Intrinsics* M);
 }
 
 void JavaLLVMCompiler::addJavaPasses() {

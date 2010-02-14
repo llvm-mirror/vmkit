@@ -38,7 +38,8 @@
 #include "Jnjvm.h"
 #include "Reader.h"
 
-#include "j3/JnjvmModule.h"
+#include "j3/JavaLLVMCompiler.h"
+#include "j3/J3Intrinsics.h"
 
 using namespace j3;
 using namespace llvm;
@@ -119,11 +120,11 @@ void JavaJIT::invokeVirtual(uint16 index) {
   PHINode* node = 0;
 #if 0
   if (meth && !isAbstract(meth->access)) {
-    Value* cl = CallInst::Create(module->GetClassFunction, args[0], "",
+    Value* cl = CallInst::Create(intrinsics->GetClassFunction, args[0], "",
                                   currentBlock);
-    Value* cl2 = module->getNativeClass(meth->classDef);
-    if (cl2->getType() != module->JavaCommonClassType) {
-      cl2 = new BitCastInst(cl2, module->JavaCommonClassType, "", currentBlock);
+    Value* cl2 = intrinsics->getNativeClass(meth->classDef);
+    if (cl2->getType() != intrinsics->JavaCommonClassType) {
+      cl2 = new BitCastInst(cl2, intrinsics->JavaCommonClassType, "", currentBlock);
     }
 
     Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, cl, cl2, "");
@@ -137,7 +138,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
     if (canBeInlined(meth)) {
       res = invokeInline(meth, args);
     } else {
-      Function* func = module->getMethod(meth);
+      Function* func = intrinsics->getMethod(meth);
       res = invoke(func, args, "", currentBlock);
     }
     BranchInst::Create(endBlock, currentBlock);
@@ -149,10 +150,10 @@ void JavaJIT::invokeVirtual(uint16 index) {
   }
 #endif
 
-  Value* VT = CallInst::Create(module->GetVTFunction, args[0], "",
+  Value* VT = CallInst::Create(intrinsics->GetVTFunction, args[0], "",
                                currentBlock);
   Value* indexes2[2];
-  indexes2[0] = module->constantZero;
+  indexes2[0] = intrinsics->constantZero;
 
 #ifdef ISOLATE_SHARING
   Value* indexesCtp; //[3];
@@ -171,7 +172,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
                                             Type::getInt32Ty(*llvmContext),
                                             false,
                                             GlobalValue::ExternalLinkage,
-                                            module->constantZero, "");
+                                            intrinsics->constantZero, "");
     
     BasicBlock* resolveVirtual = createBasicBlock("resolveVirtual");
     BasicBlock* endResolveVirtual = createBasicBlock("endResolveVirtual");
@@ -180,7 +181,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
 
     Value* load = new LoadInst(GV, "", false, currentBlock);
     Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, load,
-                               module->constantZero, "");
+                               intrinsics->constantZero, "");
     BranchInst::Create(resolveVirtual, endResolveVirtual, test, currentBlock);
     node->addIncoming(load, currentBlock);
     currentBlock = resolveVirtual;
@@ -189,14 +190,14 @@ void JavaJIT::invokeVirtual(uint16 index) {
     Args.push_back(ConstantInt::get(Type::getInt32Ty(*llvmContext), index));
     Args.push_back(GV);
     Args.push_back(args[0]);
-    load = invoke(module->VirtualLookupFunction, Args, "", currentBlock);
+    load = invoke(intrinsics->VirtualLookupFunction, Args, "", currentBlock);
     node->addIncoming(load, currentBlock);
     BranchInst::Create(endResolveVirtual, currentBlock);
     currentBlock = endResolveVirtual;
 
     indexes2[1] = node;
 #ifdef ISOLATE_SHARING
-    Value* mul = BinaryOperator::CreateMul(val, module->constantMinusOne,
+    Value* mul = BinaryOperator::CreateMul(val, intrinsics->constantMinusOne,
                                            "", currentBlock);
     indexesCtp = mul;
 #endif
@@ -212,7 +213,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   Value* CTP = GetElementPtrInst::Create(VT, indexesCtp, "", currentBlock);
     
   CTP = new LoadInst(CTP, "", currentBlock);
-  CTP = new BitCastInst(CTP, module->ConstantPoolType, "", currentBlock);
+  CTP = new BitCastInst(CTP, intrinsics->ConstantPoolType, "", currentBlock);
   args.push_back(CTP);
 #endif
   Value* val = invoke(Func, args, "", currentBlock);
@@ -227,13 +228,13 @@ void JavaJIT::invokeVirtual(uint16 index) {
   }
 
   if (retType != Type::getVoidTy(getGlobalContext())) {
-    if (retType == module->JavaObjectType) {
+    if (retType == intrinsics->JavaObjectType) {
       JnjvmClassLoader* JCL = compilingClass->classLoader;
       push(val, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
       push(val, retTypedef->isUnsigned());
       if (retType == Type::getDoubleTy(getGlobalContext()) || retType == Type::getInt64Ty(getGlobalContext())) {
-        push(module->constantZero, false);
+        push(intrinsics->constantZero, false);
       }
     }
   }
@@ -244,11 +245,11 @@ void JavaJIT::invokeVirtual(uint16 index) {
 }
 
 llvm::Value* JavaJIT::getCurrentThread(const llvm::Type* Ty) {
-  Value* FrameAddr = CallInst::Create(module->llvm_frameaddress,
-                                     	module->constantZero, "", currentBlock);
-  Value* threadId = new PtrToIntInst(FrameAddr, module->pointerSizeType, "",
+  Value* FrameAddr = CallInst::Create(intrinsics->llvm_frameaddress,
+                                     	intrinsics->constantZero, "", currentBlock);
+  Value* threadId = new PtrToIntInst(FrameAddr, intrinsics->pointerSizeType, "",
                               			 currentBlock);
-  threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+  threadId = BinaryOperator::CreateAnd(threadId, intrinsics->constantThreadIDMask,
                                        "", currentBlock);
   threadId = new IntToPtrInst(threadId, Ty, "", currentBlock);
 
@@ -286,7 +287,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   if (!natPtr && !TheCompiler->isStaticCompiling()) {
     currentBlock = createBasicBlock("start");
-    CallInst::Create(module->ThrowExceptionFromJITFunction, "", currentBlock);
+    CallInst::Create(intrinsics->ThrowExceptionFromJITFunction, "", currentBlock);
     if (returnType != Type::getVoidTy(getGlobalContext()))
       ReturnInst::Create(*llvmContext, Constant::getNullValue(returnType), currentBlock);
     else
@@ -319,7 +320,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   // Allocate currentLocalIndexNumber pointer
   Value* temp = new AllocaInst(Type::getInt32Ty(getGlobalContext()), "",
                                currentBlock);
-  new StoreInst(module->constantZero, temp, false, currentBlock);
+  new StoreInst(intrinsics->constantZero, temp, false, currentBlock);
   
   // Allocate oldCurrentLocalIndexNumber pointer
   Value* oldCLIN = new AllocaInst(PointerType::getUnqual(Type::getInt32Ty(getGlobalContext())), "",
@@ -336,15 +337,15 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   std::vector<Value*> nativeArgs;
   
   
-  Value* threadId = getCurrentThread(module->JavaThreadType);
+  Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
 
-  Value* geps[2] = { module->constantZero,
-                     module->OffsetJNIInThreadConstant };
+  Value* geps[2] = { intrinsics->constantZero,
+                     intrinsics->OffsetJNIInThreadConstant };
 
   Value* jniEnv = GetElementPtrInst::Create(threadId, geps, geps + 2, "",
                                             currentBlock);
  
-  jniEnv = new BitCastInst(jniEnv, module->ptrType, "", currentBlock);
+  jniEnv = new BitCastInst(jniEnv, intrinsics->ptrType, "", currentBlock);
 
   nativeArgs.push_back(jniEnv);
 
@@ -352,7 +353,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   if (stat) {
 #ifdef ISOLATE_SHARING
     Value* val = getClassCtp();
-    Value* cl = CallInst::Create(module->GetClassDelegateePtrFunction,
+    Value* cl = CallInst::Create(intrinsics->GetClassDelegateePtrFunction,
                                  val, "", currentBlock);
 #else
     Value* cl = TheCompiler->getJavaClassPtr(compilingClass);
@@ -365,31 +366,31 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   for (Function::arg_iterator i = func->arg_begin(); 
        index < nargs; ++i, ++index) {
     
-    if (i->getType() == module->JavaObjectType) {
+    if (i->getType() == intrinsics->JavaObjectType) {
       BasicBlock* BB = createBasicBlock("");
       BasicBlock* NotZero = createBasicBlock("");
-      const Type* Ty = PointerType::getUnqual(module->JavaObjectType);
+      const Type* Ty = PointerType::getUnqual(intrinsics->JavaObjectType);
       PHINode* node = PHINode::Create(Ty, "", BB);
 
       Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, i,
-                                 module->JavaObjectNullConstant, "");
+                                 intrinsics->JavaObjectNullConstant, "");
 
       node->addIncoming(Constant::getNullValue(Ty), currentBlock);
       BranchInst::Create(BB, NotZero, test, currentBlock);
 
       currentBlock = NotZero;
 
-      Instruction* temp = new AllocaInst(module->JavaObjectType, "",
+      Instruction* temp = new AllocaInst(intrinsics->JavaObjectType, "",
                                          func->begin()->getTerminator());
       
       if (TheCompiler->useCooperativeGC()) {
         Value* GCArgs[2] = { 
-          new BitCastInst(temp, module->ptrPtrType, "",
+          new BitCastInst(temp, intrinsics->ptrPtrType, "",
                           func->begin()->getTerminator()),
-          module->constantPtrNull
+          intrinsics->constantPtrNull
         };
         
-        CallInst::Create(module->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
+        CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
                          func->begin()->getTerminator());
       }
       
@@ -407,21 +408,21 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   
   Instruction* ResultObject = 0;
-  if (returnType == module->JavaObjectType) {
-    ResultObject = new AllocaInst(module->JavaObjectType, "",
+  if (returnType == intrinsics->JavaObjectType) {
+    ResultObject = new AllocaInst(intrinsics->JavaObjectType, "",
                                   func->begin()->begin());
     
     if (TheCompiler->useCooperativeGC()) {
       
       Value* GCArgs[2] = { 
-        new BitCastInst(ResultObject, module->ptrPtrType, "", currentBlock),
-        module->constantPtrNull
+        new BitCastInst(ResultObject, intrinsics->ptrPtrType, "", currentBlock),
+        intrinsics->constantPtrNull
       };
       
-      CallInst::Create(module->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
+      CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
                        currentBlock);
     } else {
-      new StoreInst(module->JavaObjectNullConstant, ResultObject, "",
+      new StoreInst(intrinsics->JavaObjectNullConstant, ResultObject, "",
                     currentBlock);
     }
   }
@@ -457,19 +458,19 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   Value* Args4[3] = { temp, oldCLIN, Frame };
 
-  CallInst::Create(module->StartJNIFunction, Args4, Args4 + 3, "",
+  CallInst::Create(intrinsics->StartJNIFunction, Args4, Args4 + 3, "",
                    currentBlock);
   
   Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs.begin(),
                                          nativeArgs.end(), "", currentBlock);
 
-  if (returnType == module->JavaObjectType) {
-    const Type* Ty = PointerType::getUnqual(module->JavaObjectType);
+  if (returnType == intrinsics->JavaObjectType) {
+    const Type* Ty = PointerType::getUnqual(intrinsics->JavaObjectType);
     Constant* C = Constant::getNullValue(Ty);
     Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, result, C, "");
     BasicBlock* loadBlock = createBasicBlock("");
 
-    endNode->addIncoming(module->JavaObjectNullConstant, currentBlock);
+    endNode->addIncoming(intrinsics->JavaObjectNullConstant, currentBlock);
     BranchInst::Create(endBlock, loadBlock, cmp, currentBlock);
 
     currentBlock = loadBlock;
@@ -488,7 +489,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
  
   Value* Args2[1] = { oldCLIN };
 
-  CallInst::Create(module->EndJNIFunction, Args2, Args2 + 1, "", currentBlock);
+  CallInst::Create(intrinsics->EndJNIFunction, Args2, Args2 + 1, "", currentBlock);
   
   // Synchronize after leaving native.
   if (isSynchro(compilingMethod->access))
@@ -509,23 +510,23 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
 void JavaJIT::monitorEnter(Value* obj) {
   std::vector<Value*> gep;
-  gep.push_back(module->constantZero);
-  gep.push_back(module->JavaObjectLockOffsetConstant);
+  gep.push_back(intrinsics->constantZero);
+  gep.push_back(intrinsics->JavaObjectLockOffsetConstant);
   Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
                                              currentBlock);
   
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
-  lock = new PtrToIntInst(lock, module->pointerSizeType, "", currentBlock);
-  Value* GCMask = ConstantInt::get(module->pointerSizeType,
+  lock = new PtrToIntInst(lock, intrinsics->pointerSizeType, "", currentBlock);
+  Value* GCMask = ConstantInt::get(intrinsics->pointerSizeType,
                                    mvm::GCMask);
 
   lock = BinaryOperator::CreateAnd(lock, GCMask, "", currentBlock);
 
   lockPtr = new BitCastInst(lockPtr, 
-                            PointerType::getUnqual(module->pointerSizeType),
+                            PointerType::getUnqual(intrinsics->pointerSizeType),
                             "", currentBlock);
-  Value* threadId = getCurrentThread(module->MutatorThreadType);
-  threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
+  Value* threadId = getCurrentThread(intrinsics->MutatorThreadType);
+  threadId = new PtrToIntInst(threadId, intrinsics->pointerSizeType, "",
                               currentBlock);
   Value* newValMask = BinaryOperator::CreateOr(threadId, lock, "",
                                                currentBlock);
@@ -536,7 +537,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   atomicArgs.push_back(newValMask);
 
   // Do the atomic compare and swap.
-  Value* atomic = CallInst::Create(module->llvm_atomic_lcs_ptr,
+  Value* atomic = CallInst::Create(intrinsics->llvm_atomic_lcs_ptr,
                                    atomicArgs.begin(), atomicArgs.end(), "",
                                    currentBlock);
   
@@ -553,17 +554,17 @@ void JavaJIT::monitorEnter(Value* obj) {
   currentBlock = NotOK;
   
   // The compare and swap did not pass, look if it's a thin lock
-  Value* isThin = BinaryOperator::CreateAnd(atomic, module->constantFatMask, "",
+  Value* isThin = BinaryOperator::CreateAnd(atomic, intrinsics->constantFatMask, "",
                                             currentBlock);
   cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, isThin,
-                     module->constantPtrZero, "");
+                     intrinsics->constantPtrZero, "");
   
   BranchInst::Create(ThinLockBB, FatLockBB, cmp, currentBlock);
 
   // It's a thin lock. Look if we're the owner of this lock.
   currentBlock = ThinLockBB;
-  Value* idMask = ConstantInt::get(module->pointerSizeType, mvm::Thread::IDMask);
-  Value* cptMask = ConstantInt::get(module->pointerSizeType, mvm::ThinCountMask);
+  Value* idMask = ConstantInt::get(intrinsics->pointerSizeType, mvm::Thread::IDMask);
+  Value* cptMask = ConstantInt::get(intrinsics->pointerSizeType, mvm::ThinCountMask);
   Value* IdInLock = BinaryOperator::CreateAnd(atomic, idMask, "", currentBlock);
   Value* owner = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, threadId,
                               IdInLock, "");
@@ -584,7 +585,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   currentBlock = IncCounterBB;
   
   // The counter will not overflow, increment it.
-  Value* One = ConstantInt::get(module->pointerSizeType, mvm::ThinCountAdd);
+  Value* One = ConstantInt::get(intrinsics->pointerSizeType, mvm::ThinCountAdd);
   Value* Add = BinaryOperator::CreateAdd(One, atomic, "", currentBlock);
   new StoreInst(Add, lockPtr, false, currentBlock);
   BranchInst::Create(OK, currentBlock);
@@ -593,33 +594,33 @@ void JavaJIT::monitorEnter(Value* obj) {
 
   // The counter will overflow, call this function to create a new lock,
   // lock it 0x101 times, and pass.
-  CallInst::Create(module->OverflowThinLockFunction, obj, "",
+  CallInst::Create(intrinsics->OverflowThinLockFunction, obj, "",
                    currentBlock);
   BranchInst::Create(OK, currentBlock);
   
   currentBlock = FatLockBB;
   // Either it's a fat lock or there is contention.
-  CallInst::Create(module->AquireObjectFunction, obj, "", currentBlock);
+  CallInst::Create(intrinsics->AquireObjectFunction, obj, "", currentBlock);
   BranchInst::Create(OK, currentBlock);
   currentBlock = OK;
 }
 
 void JavaJIT::monitorExit(Value* obj) {
   std::vector<Value*> gep;
-  gep.push_back(module->constantZero);
-  gep.push_back(module->JavaObjectLockOffsetConstant);
+  gep.push_back(intrinsics->constantZero);
+  gep.push_back(intrinsics->JavaObjectLockOffsetConstant);
   Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
                                              currentBlock);
   lockPtr = new BitCastInst(lockPtr, 
-                            PointerType::getUnqual(module->pointerSizeType),
+                            PointerType::getUnqual(intrinsics->pointerSizeType),
                             "", currentBlock);
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
-  Value* GCMask = ConstantInt::get(module->pointerSizeType, ~mvm::GCMask);
+  Value* GCMask = ConstantInt::get(intrinsics->pointerSizeType, ~mvm::GCMask);
 
   Value* lockedMask = BinaryOperator::CreateAnd(lock, GCMask, "", currentBlock);
   
-  Value* threadId = getCurrentThread(module->MutatorThreadType);
-  threadId = new PtrToIntInst(threadId, module->pointerSizeType, "",
+  Value* threadId = getCurrentThread(intrinsics->MutatorThreadType);
+  threadId = new PtrToIntInst(threadId, intrinsics->pointerSizeType, "",
                               currentBlock);
   
   Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, lockedMask,
@@ -637,24 +638,24 @@ void JavaJIT::monitorExit(Value* obj) {
   
   // Locked once, set zero
   currentBlock = LockedOnceBB;
-  GCMask = ConstantInt::get(module->pointerSizeType, mvm::GCMask);
+  GCMask = ConstantInt::get(intrinsics->pointerSizeType, mvm::GCMask);
   lockedMask = BinaryOperator::CreateAnd(lock, GCMask, "", currentBlock);
   new StoreInst(lockedMask, lockPtr, false, currentBlock);
   BranchInst::Create(EndUnlock, currentBlock);
 
   currentBlock = NotLockedOnceBB;
   // Look if the lock is thin.
-  Value* isThin = BinaryOperator::CreateAnd(lock, module->constantFatMask, "",
+  Value* isThin = BinaryOperator::CreateAnd(lock, intrinsics->constantFatMask, "",
                                             currentBlock);
   cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, isThin,
-                     module->constantPtrZero, "");
+                     intrinsics->constantPtrZero, "");
   
   BranchInst::Create(ThinLockBB, FatLockBB, cmp, currentBlock);
   
   currentBlock = ThinLockBB;
 
   // Decrement the counter.
-  Value* One = ConstantInt::get(module->pointerSizeType, mvm::ThinCountAdd);
+  Value* One = ConstantInt::get(intrinsics->pointerSizeType, mvm::ThinCountAdd);
   Value* Sub = BinaryOperator::CreateSub(lock, One, "", currentBlock);
   new StoreInst(Sub, lockPtr, false, currentBlock);
   BranchInst::Create(EndUnlock, currentBlock);
@@ -662,7 +663,7 @@ void JavaJIT::monitorExit(Value* obj) {
   currentBlock = FatLockBB;
 
   // Either it's a fat lock or there is contention.
-  CallInst::Create(module->ReleaseObjectFunction, obj, "", currentBlock);
+  CallInst::Create(intrinsics->ReleaseObjectFunction, obj, "", currentBlock);
   BranchInst::Create(EndUnlock, currentBlock);
   currentBlock = EndUnlock;
 }
@@ -672,7 +673,7 @@ void JavaJIT::monitorExit(Value* obj) {
 #ifdef ISOLATE_SHARING
 Value* JavaJIT::getStaticInstanceCtp() {
   Value* cl = getClassCtp();
-  Value* indexes[2] = { module->constantZero, module->constantSeven };
+  Value* indexes[2] = { intrinsics->constantZero, module->constantSeven };
   Value* arg1 = GetElementPtrInst::Create(cl, indexes, indexes + 2,
                                           "", currentBlock);
   arg1 = new LoadInst(arg1, "", false, currentBlock);
@@ -681,11 +682,11 @@ Value* JavaJIT::getStaticInstanceCtp() {
 }
 
 Value* JavaJIT::getClassCtp() {
-  Value* indexes = module->constantOne;
+  Value* indexes = intrinsics->constantOne;
   Value* arg1 = GetElementPtrInst::Create(ctpCache, indexes.begin(),
                                           indexes.end(),  "", currentBlock);
   arg1 = new LoadInst(arg1, "", false, currentBlock);
-  arg1 = new BitCastInst(arg1, module->JavaClassType, "", currentBlock);
+  arg1 = new BitCastInst(arg1, intrinsics->JavaClassType, "", currentBlock);
   return arg1;
 }
 #endif
@@ -726,7 +727,7 @@ static void removeUnusedLocals(std::vector<AllocaInst*>& locals) {
 }
   
 static void removeUnusedObjects(std::vector<AllocaInst*>& objects,
-                                JnjvmModule* module, bool coop) {
+                                J3Intrinsics* intrinsics, bool coop) {
   for (std::vector<AllocaInst*>::iterator i = objects.begin(),
        e = objects.end(); i != e; ++i) {
     AllocaInst* temp = *i;
@@ -738,10 +739,10 @@ static void removeUnusedObjects(std::vector<AllocaInst*>& objects,
       temp->eraseFromParent();
     } else {
       if (coop) {
-        Instruction* I = new BitCastInst(temp, module->ptrPtrType, "");
+        Instruction* I = new BitCastInst(temp, intrinsics->ptrPtrType, "");
         I->insertAfter(temp);
-        Value* GCArgs[2] = { I, module->constantPtrNull };
-        Instruction* C = CallInst::Create(module->llvm_gc_gcroot, GCArgs,
+        Value* GCArgs[2] = { I, intrinsics->constantPtrNull };
+        Instruction* C = CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs,
                                           GCArgs + 2, "");
         C->insertAfter(I);
       }
@@ -808,15 +809,15 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
       new StoreInst(Constant::getNullValue(Type::getInt64Ty(*llvmContext)), longLocals.back(), false, firstInstruction);
       floatLocals.push_back(new AllocaInst(Type::getFloatTy(getGlobalContext()), "", firstInstruction));
       new StoreInst(Constant::getNullValue(Type::getFloatTy(*llvmContext)), floatLocals.back(), false, firstInstruction);
-      objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
+      objectLocals.push_back(new AllocaInst(intrinsics->JavaObjectType, "",
                                           firstInstruction));
      
       // The GCStrategy will already initialize the value.
       if (!TheCompiler->useCooperativeGC())
-        new StoreInst(Constant::getNullValue(module->JavaObjectType), objectLocals.back(), false, firstInstruction);
+        new StoreInst(Constant::getNullValue(intrinsics->JavaObjectType), objectLocals.back(), false, firstInstruction);
     }
     for (int i = 0; i < maxStack; i++) {
-      objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
+      objectStack.push_back(new AllocaInst(intrinsics->JavaObjectType, "",
                                            firstInstruction));
       addHighLevelType(objectStack.back(), upcalls->OfObject);
       intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", firstInstruction));
@@ -836,15 +837,15 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
       new StoreInst(Constant::getNullValue(Type::getInt64Ty(*llvmContext)), longLocals.back(), false, firstBB);
       floatLocals.push_back(new AllocaInst(Type::getFloatTy(getGlobalContext()), "", firstBB));
       new StoreInst(Constant::getNullValue(Type::getFloatTy(*llvmContext)), floatLocals.back(), false, firstBB);
-      objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
+      objectLocals.push_back(new AllocaInst(intrinsics->JavaObjectType, "",
                                             firstBB));
       // The GCStrategy will already initialize the value.
       if (!TheCompiler->useCooperativeGC())
-        new StoreInst(Constant::getNullValue(module->JavaObjectType), objectLocals.back(), false, firstBB);
+        new StoreInst(Constant::getNullValue(intrinsics->JavaObjectType), objectLocals.back(), false, firstBB);
     }
     
     for (int i = 0; i < maxStack; i++) {
-      objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
+      objectStack.push_back(new AllocaInst(intrinsics->JavaObjectType, "",
                                            firstBB));
       addHighLevelType(objectStack.back(), upcalls->OfObject);
       intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", firstBB));
@@ -947,8 +948,8 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   removeUnusedLocals(floatStack);
   removeUnusedLocals(longStack);
   
-  removeUnusedObjects(objectLocals, module, TheCompiler->useCooperativeGC());
-  removeUnusedObjects(objectStack, module, TheCompiler->useCooperativeGC());
+  removeUnusedObjects(objectLocals, intrinsics, TheCompiler->useCooperativeGC());
+  removeUnusedObjects(objectStack, intrinsics, TheCompiler->useCooperativeGC());
 
 
   delete[] opcodeInfos;
@@ -1000,7 +1001,7 @@ llvm::Function* JavaJIT::javaCompile() {
     {
     Value* arg = TheCompiler->getMethodInClass(compilingMethod);
 
-    llvm::CallInst::Create(module->PrintMethodStartFunction, arg, "",
+    llvm::CallInst::Create(intrinsics->PrintMethodStartFunction, arg, "",
                            currentBlock);
     }
 #endif
@@ -1016,15 +1017,15 @@ llvm::Function* JavaJIT::javaCompile() {
     new StoreInst(Constant::getNullValue(Type::getInt64Ty(*llvmContext)), longLocals.back(), false, currentBlock);
     floatLocals.push_back(new AllocaInst(Type::getFloatTy(getGlobalContext()), "", currentBlock));
     new StoreInst(Constant::getNullValue(Type::getFloatTy(*llvmContext)), floatLocals.back(), false, currentBlock);
-    objectLocals.push_back(new AllocaInst(module->JavaObjectType, "",
+    objectLocals.push_back(new AllocaInst(intrinsics->JavaObjectType, "",
                                           currentBlock));
     // The GCStrategy will already initialize the value.
     if (!TheCompiler->useCooperativeGC())
-      new StoreInst(Constant::getNullValue(module->JavaObjectType), objectLocals.back(), false, currentBlock);
+      new StoreInst(Constant::getNullValue(intrinsics->JavaObjectType), objectLocals.back(), false, currentBlock);
   }
   
   for (int i = 0; i < maxStack; i++) {
-    objectStack.push_back(new AllocaInst(module->JavaObjectType, "",
+    objectStack.push_back(new AllocaInst(intrinsics->JavaObjectType, "",
                                          currentBlock));
     addHighLevelType(objectStack.back(), upcalls->OfObject);
     intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", currentBlock));
@@ -1082,7 +1083,7 @@ llvm::Function* JavaJIT::javaCompile() {
 
 #if defined(ISOLATE_SHARING)
   ctpCache = i;
-  Value* addrCtpCache = new AllocaInst(module->ConstantPoolType, "",
+  Value* addrCtpCache = new AllocaInst(intrinsics->ConstantPoolType, "",
                                        currentBlock);
   /// make it volatile to be sure it's on the stack
   new StoreInst(ctpCache, addrCtpCache, true, currentBlock);
@@ -1099,16 +1100,16 @@ llvm::Function* JavaJIT::javaCompile() {
   Value* NewIsolate = 0;
   Value* IsolatePtr = 0;
   if (loader != loader->bootstrapLoader && isPublic(compilingMethod->access)) {
-    threadId = getCurrentThread(module->MutatorThreadType);
+    threadId = getCurrentThread(intrinsics->MutatorThreadType);
      
-    IsolateIDPtr = GetElementPtrInst::Create(threadId, module->constantThree,
+    IsolateIDPtr = GetElementPtrInst::Create(threadId, intrinsics->constantThree,
                                              "", currentBlock);
-    const Type* realType = PointerType::getUnqual(module->pointerSizeType);
+    const Type* realType = PointerType::getUnqual(intrinsics->pointerSizeType);
     IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
                                    currentBlock);
     OldIsolateID = new LoadInst(IsolateIDPtr, "", currentBlock);
 
-    Value* MyID = ConstantInt::get(module->pointerSizeType,
+    Value* MyID = ConstantInt::get(intrinsics->pointerSizeType,
                                    loader->getIsolate()->IsolateID);
     Cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, OldIsolateID, MyID,
                        "");
@@ -1121,16 +1122,16 @@ llvm::Function* JavaJIT::javaCompile() {
     currentBlock = ServiceBB;
   
     new StoreInst(MyID, IsolateIDPtr, currentBlock);
-    IsolatePtr = GetElementPtrInst::Create(threadId, module->constantFour, "",
+    IsolatePtr = GetElementPtrInst::Create(threadId, intrinsics->constantFour, "",
                                            currentBlock);
      
     OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
-    NewIsolate = module->getIsolate(loader->getIsolate(), currentBlock);
+    NewIsolate = intrinsics->getIsolate(loader->getIsolate(), currentBlock);
     new StoreInst(NewIsolate, IsolatePtr, currentBlock);
 
 #if DEBUG
     Value* GEP[2] = { OldIsolate, NewIsolate };
-    CallInst::Create(module->ServiceCallStartFunction, GEP, GEP + 2,
+    CallInst::Create(intrinsics->ServiceCallStartFunction, GEP, GEP + 2,
                      "", currentBlock);
 #endif
     BranchInst::Create(EndBB, currentBlock);
@@ -1172,30 +1173,30 @@ llvm::Function* JavaJIT::javaCompile() {
     // Variables have been allocated and the lock has been taken. Do the stack
     // check now: if there is an exception, we will go to the lock release code.
     currentExceptionBlock = opcodeInfos[0].exceptionBlock;
-    Value* FrameAddr = CallInst::Create(module->llvm_frameaddress,
-                                       	module->constantZero, "", currentBlock);
-    FrameAddr = new PtrToIntInst(FrameAddr, module->pointerSizeType, "",
+    Value* FrameAddr = CallInst::Create(intrinsics->llvm_frameaddress,
+                                       	intrinsics->constantZero, "", currentBlock);
+    FrameAddr = new PtrToIntInst(FrameAddr, intrinsics->pointerSizeType, "",
                                  currentBlock);
     Value* stackCheck = 
-      BinaryOperator::CreateAnd(FrameAddr, module->constantStackOverflowMask,
+      BinaryOperator::CreateAnd(FrameAddr, intrinsics->constantStackOverflowMask,
                                 "", currentBlock);
 
     stackCheck = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, stackCheck,
-                              module->constantPtrZero, "");
+                              intrinsics->constantPtrZero, "");
     BasicBlock* stackOverflow = createBasicBlock("stack overflow");
     BasicBlock* noStackOverflow = createBasicBlock("no stack overflow");
     BranchInst::Create(stackOverflow, noStackOverflow, stackCheck,
                        currentBlock);
     currentBlock = stackOverflow;
-    throwException(module->StackOverflowErrorFunction, 0, 0);
+    throwException(intrinsics->StackOverflowErrorFunction, 0, 0);
     currentBlock = noStackOverflow;
   }
   
   if (TheCompiler->useCooperativeGC()) {
-    Value* threadId = getCurrentThread(module->MutatorThreadType);
+    Value* threadId = getCurrentThread(intrinsics->MutatorThreadType);
     
-    Value* GEP[2] = { module->constantZero, 
-                      module->OffsetDoYieldInThreadConstant };
+    Value* GEP[2] = { intrinsics->constantZero, 
+                      intrinsics->OffsetDoYieldInThreadConstant };
     
     Value* YieldPtr = GetElementPtrInst::Create(threadId, GEP, GEP + 2, "",
                                                 currentBlock);
@@ -1207,7 +1208,7 @@ llvm::Function* JavaJIT::javaCompile() {
     BranchInst::Create(yieldBlock, continueBlock, Yield, currentBlock);
 
     currentBlock = yieldBlock;
-    CallInst::Create(module->conditionalSafePoint, "", currentBlock);
+    CallInst::Create(intrinsics->conditionalSafePoint, "", currentBlock);
     BranchInst::Create(continueBlock, currentBlock);
 
     currentBlock = continueBlock;
@@ -1243,7 +1244,7 @@ llvm::Function* JavaJIT::javaCompile() {
 #if JNJVM_EXECUTE > 0
     {
     Value* arg = TheCompiler->getMethodInClass(compilingMethod); 
-    CallInst::Create(module->PrintMethodEndFunction, arg, "", currentBlock);
+    CallInst::Create(intrinsics->PrintMethodEndFunction, arg, "", currentBlock);
     }
 #endif
   
@@ -1261,7 +1262,7 @@ llvm::Function* JavaJIT::javaCompile() {
 
 #if DEBUG
     Value* GEP[2] = { OldIsolate, NewIsolate };
-    CallInst::Create(module->ServiceCallStopFunction, GEP, GEP + 2,
+    CallInst::Create(intrinsics->ServiceCallStopFunction, GEP, GEP + 2,
                      "", currentBlock);
 #endif
     BranchInst::Create(EndBB, currentBlock);
@@ -1293,8 +1294,8 @@ llvm::Function* JavaJIT::javaCompile() {
   removeUnusedLocals(floatStack);
   removeUnusedLocals(longStack);
   
-  removeUnusedObjects(objectLocals, module, TheCompiler->useCooperativeGC());
-  removeUnusedObjects(objectStack, module, TheCompiler->useCooperativeGC());
+  removeUnusedObjects(objectLocals, intrinsics, TheCompiler->useCooperativeGC());
+  removeUnusedObjects(objectStack, intrinsics, TheCompiler->useCooperativeGC());
  
   delete[] opcodeInfos;
 
@@ -1330,9 +1331,9 @@ llvm::Function* JavaJIT::javaCompile() {
 }
 
 void JavaJIT::compareFP(Value* val1, Value* val2, const Type* ty, bool l) {
-  Value* one = module->constantOne;
-  Value* zero = module->constantZero;
-  Value* minus = module->constantMinusOne;
+  Value* one = intrinsics->constantOne;
+  Value* zero = intrinsics->constantZero;
+  Value* minus = intrinsics->constantMinusOne;
 
   Value* c = new FCmpInst(*currentBlock, FCmpInst::FCMP_UGT, val1, val2, "");
   Value* r = llvm::SelectInst::Create(c, one, zero, "", currentBlock);
@@ -1367,8 +1368,8 @@ void JavaJIT::loadConstant(uint16 index) {
         push(val, false, upcalls->newString);
       } else {
         // Lookup the constant pool cache
-        const llvm::Type* Ty = PointerType::getUnqual(module->JavaObjectType);
-        Value* val = getConstantPoolAt(index, module->StringLookupFunction,
+        const llvm::Type* Ty = PointerType::getUnqual(intrinsics->JavaObjectType);
+        Value* val = getConstantPoolAt(index, intrinsics->StringLookupFunction,
                                        Ty, 0, false);
         val = new LoadInst(val, "", currentBlock);
         push(val, false, upcalls->newString);
@@ -1391,7 +1392,7 @@ void JavaJIT::loadConstant(uint16 index) {
     UserCommonClass* cl = 0;
     Value* res = getResolvedCommonClass(index, false, &cl);
 
-    res = CallInst::Create(module->GetClassDelegateeFunction, res, "",
+    res = CallInst::Create(intrinsics->GetClassDelegateeFunction, res, "",
                            currentBlock);
     push(res, false, upcalls->newClass);
   } else {
@@ -1406,7 +1407,7 @@ void JavaJIT::loadConstant(uint16 index) {
 void JavaJIT::JITVerifyNull(Value* obj) {
 
   if (TheCompiler->hasExceptionsEnabled()) {
-    Constant* zero = module->JavaObjectNullConstant;
+    Constant* zero = intrinsics->JavaObjectNullConstant;
     Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, obj, zero, "");
 
     BasicBlock* exit = createBasicBlock("verifyNullExit");
@@ -1414,7 +1415,7 @@ void JavaJIT::JITVerifyNull(Value* obj) {
 
     BranchInst::Create(exit, cont, test, currentBlock);
     currentBlock = exit;
-    throwException(module->NullPointerExceptionFunction, 0, 0);
+    throwException(intrinsics->NullPointerExceptionFunction, 0, 0);
     currentBlock = cont;
   }
  
@@ -1441,14 +1442,14 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
     
     currentBlock = ifFalse;
     Value* args[2] = { obj, index };
-    throwException(module->IndexOutOfBoundsExceptionFunction, args, 2);
+    throwException(intrinsics->IndexOutOfBoundsExceptionFunction, args, 2);
     currentBlock = ifTrue;
   }
   
-  Constant* zero = module->constantZero;
+  Constant* zero = intrinsics->constantZero;
   Value* val = new BitCastInst(obj, arrayType, "", currentBlock);
   
-  Value* indexes[3] = { zero, module->JavaArrayElementsOffsetConstant, index };
+  Value* indexes[3] = { zero, intrinsics->JavaArrayElementsOffsetConstant, index };
   Value* ptr = GetElementPtrInst::Create(val, indexes, indexes + 3, "",
                                          currentBlock);
 
@@ -1498,8 +1499,8 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
   if (name->equals(loader->abs)) {
     const Type* Ty = args[0]->getType();
     if (Ty == Type::getInt32Ty(getGlobalContext())) {
-      Constant* const_int32_9 = module->constantZero;
-      Constant* const_int32_10 = module->constantMinusOne;
+      Constant* const_int32_9 = intrinsics->constantZero;
+      Constant* const_int32_10 = intrinsics->constantMinusOne;
       BinaryOperator* int32_tmpneg = 
         BinaryOperator::Create(Instruction::Sub, const_int32_9, args[0],
                                "tmpneg", currentBlock);
@@ -1509,8 +1510,8 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
       return llvm::SelectInst::Create(int1_abscond, args[0], int32_tmpneg,
                                       "abs", currentBlock);
     } else if (Ty == Type::getInt64Ty(getGlobalContext())) {
-      Constant* const_int64_9 = module->constantLongZero;
-      Constant* const_int64_10 = module->constantLongMinusOne;
+      Constant* const_int64_9 = intrinsics->constantLongZero;
+      Constant* const_int64_10 = intrinsics->constantLongMinusOne;
       
       BinaryOperator* int64_tmpneg = 
         BinaryOperator::Create(Instruction::Sub, const_int64_9, args[0],
@@ -1522,78 +1523,78 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
       return llvm::SelectInst::Create(int1_abscond, args[0], int64_tmpneg,
                                       "abs", currentBlock);
     } else if (Ty == Type::getFloatTy(getGlobalContext())) {
-      return llvm::CallInst::Create(module->func_llvm_fabs_f32, args[0],
+      return llvm::CallInst::Create(intrinsics->func_llvm_fabs_f32, args[0],
                                     "tmp1", currentBlock);
     } else if (Ty == Type::getDoubleTy(getGlobalContext())) {
-      return llvm::CallInst::Create(module->func_llvm_fabs_f64, args[0],
+      return llvm::CallInst::Create(intrinsics->func_llvm_fabs_f64, args[0],
                                     "tmp1", currentBlock);
     }
   } else if (name->equals(loader->sqrt)) {
-    return llvm::CallInst::Create(module->func_llvm_sqrt_f64, args[0],
+    return llvm::CallInst::Create(intrinsics->func_llvm_sqrt_f64, args[0],
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->sin)) {
-    return llvm::CallInst::Create(module->func_llvm_sin_f64, args[0], 
+    return llvm::CallInst::Create(intrinsics->func_llvm_sin_f64, args[0], 
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->cos)) {
-    return llvm::CallInst::Create(module->func_llvm_cos_f64, args[0], 
+    return llvm::CallInst::Create(intrinsics->func_llvm_cos_f64, args[0], 
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->tan)) {
-    return llvm::CallInst::Create(module->func_llvm_tan_f64, args[0], 
+    return llvm::CallInst::Create(intrinsics->func_llvm_tan_f64, args[0], 
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->asin)) {
-    return llvm::CallInst::Create(module->func_llvm_asin_f64, args[0], 
+    return llvm::CallInst::Create(intrinsics->func_llvm_asin_f64, args[0], 
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->acos)) {
-    return llvm::CallInst::Create(module->func_llvm_acos_f64, args[0], 
+    return llvm::CallInst::Create(intrinsics->func_llvm_acos_f64, args[0], 
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->atan)) {
-    return llvm::CallInst::Create(module->func_llvm_atan_f64, args[0],
+    return llvm::CallInst::Create(intrinsics->func_llvm_atan_f64, args[0],
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->atan2)) {
-    return llvm::CallInst::Create(module->func_llvm_atan2_f64, 
+    return llvm::CallInst::Create(intrinsics->func_llvm_atan2_f64, 
                                   args.begin(), args.end(), "tmp1",
                                   currentBlock);
   } else if (name->equals(loader->exp)) {
-    return llvm::CallInst::Create(module->func_llvm_exp_f64, args[0],
+    return llvm::CallInst::Create(intrinsics->func_llvm_exp_f64, args[0],
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->log)) {
-    return llvm::CallInst::Create(module->func_llvm_log_f64, args[0],
+    return llvm::CallInst::Create(intrinsics->func_llvm_log_f64, args[0],
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->pow)) {
-    return llvm::CallInst::Create(module->func_llvm_pow_f64, args.begin(),
+    return llvm::CallInst::Create(intrinsics->func_llvm_pow_f64, args.begin(),
                                   args.end(), "tmp1", currentBlock);
   } else if (name->equals(loader->ceil)) {
-    return llvm::CallInst::Create(module->func_llvm_ceil_f64, args[0], "tmp1",
+    return llvm::CallInst::Create(intrinsics->func_llvm_ceil_f64, args[0], "tmp1",
                                   currentBlock);
   } else if (name->equals(loader->floor)) {
-    return llvm::CallInst::Create(module->func_llvm_floor_f64, args[0],
+    return llvm::CallInst::Create(intrinsics->func_llvm_floor_f64, args[0],
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->rint)) {
-    return llvm::CallInst::Create(module->func_llvm_rint_f64, args[0],
+    return llvm::CallInst::Create(intrinsics->func_llvm_rint_f64, args[0],
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->cbrt)) {
-    return llvm::CallInst::Create(module->func_llvm_cbrt_f64, args[0], "tmp1",
+    return llvm::CallInst::Create(intrinsics->func_llvm_cbrt_f64, args[0], "tmp1",
                                   currentBlock);
   } else if (name->equals(loader->cosh)) {
-    return llvm::CallInst::Create(module->func_llvm_cosh_f64, args[0], "tmp1",
+    return llvm::CallInst::Create(intrinsics->func_llvm_cosh_f64, args[0], "tmp1",
                                   currentBlock);
   } else if (name->equals(loader->expm1)) {
-    return llvm::CallInst::Create(module->func_llvm_expm1_f64, args[0],
+    return llvm::CallInst::Create(intrinsics->func_llvm_expm1_f64, args[0],
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->hypot)) {
-    return llvm::CallInst::Create(module->func_llvm_hypot_f64, args[0],
+    return llvm::CallInst::Create(intrinsics->func_llvm_hypot_f64, args[0],
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->log10)) {
-    return llvm::CallInst::Create(module->func_llvm_log10_f64, args[0],
+    return llvm::CallInst::Create(intrinsics->func_llvm_log10_f64, args[0],
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->log1p)) {
-    return llvm::CallInst::Create(module->func_llvm_log1p_f64, args[0],
+    return llvm::CallInst::Create(intrinsics->func_llvm_log1p_f64, args[0],
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->sinh)) {
-    return llvm::CallInst::Create(module->func_llvm_sinh_f64, args[0],
+    return llvm::CallInst::Create(intrinsics->func_llvm_sinh_f64, args[0],
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->tanh)) {
-    return llvm::CallInst::Create(module->func_llvm_tanh_f64, args[0],
+    return llvm::CallInst::Create(intrinsics->func_llvm_tanh_f64, args[0],
                                   "tmp1", currentBlock);
   }
   
@@ -1648,7 +1649,7 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
   JITVerifyNull(args[0]); 
 
 #if defined(ISOLATE_SHARING)
-  const Type* Ty = module->ConstantPoolType;
+  const Type* Ty = intrinsics->ConstantPoolType;
   Constant* Nil = Constant::getNullValue(Ty);
   GlobalVariable* GV = new GlobalVariable(*llvmFunction->getParent(),Ty, false,
                                           GlobalValue::ExternalLinkage, Nil,
@@ -1665,7 +1666,7 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
   Args.push_back(ctpCache);
   Args.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), index));
   Args.push_back(GV);
-  res = CallInst::Create(module->SpecialCtpLookupFunction, Args.begin(),
+  res = CallInst::Create(intrinsics->SpecialCtpLookupFunction, Args.begin(),
                          Args.end(), "", falseCl);
   node->addIncoming(res, falseCl);
   BranchInst::Create(trueCl, falseCl);
@@ -1685,7 +1686,7 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
         UserCommonClass* cl = 0;
         Value* Cl = getResolvedCommonClass(clIndex, false, &cl);
         if (!cl) {
-          CallInst::Create(module->ForceLoadedCheckFunction, Cl, "",
+          CallInst::Create(intrinsics->ForceLoadedCheckFunction, Cl, "",
                            currentBlock);
         }
       }
@@ -1699,14 +1700,14 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
   
   const llvm::Type* retType = virtualType->getReturnType();
   if (retType != Type::getVoidTy(getGlobalContext())) {
-    if (retType == module->JavaObjectType) {
+    if (retType == intrinsics->JavaObjectType) {
       JnjvmClassLoader* JCL = compilingClass->classLoader;
       push(val, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
       push(val, signature->getReturnType()->isUnsigned());
       if (retType == Type::getDoubleTy(getGlobalContext()) ||
           retType == Type::getInt64Ty(getGlobalContext())) {
-        push(module->constantZero, false);
+        push(intrinsics->constantZero, false);
       }
     }
   }
@@ -1744,8 +1745,8 @@ void JavaJIT::invokeStatic(uint16 index) {
 
 #if defined(ISOLATE_SHARING)
     Value* newCtpCache = getConstantPoolAt(index,
-                                           module->StaticCtpLookupFunction,
-                                           module->ConstantPoolType, 0,
+                                           intrinsics->StaticCtpLookupFunction,
+                                           intrinsics->ConstantPoolType, 0,
                                            false);
     args.push_back(newCtpCache);
 #endif
@@ -1754,7 +1755,7 @@ void JavaJIT::invokeStatic(uint16 index) {
     UserClass* cl = 0;
     Value* Cl = getResolvedClass(clIndex, true, true, &cl);
     if (!meth || (cl && needsInitialisationCheck(cl, compilingClass))) {
-      CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
+      CallInst::Create(intrinsics->ForceInitialisationCheckFunction, Cl, "",
                        currentBlock);
     }
     
@@ -1780,14 +1781,14 @@ void JavaJIT::invokeStatic(uint16 index) {
 
   const llvm::Type* retType = staticType->getReturnType();
   if (retType != Type::getVoidTy(getGlobalContext())) {
-    if (retType == module->JavaObjectType) {
+    if (retType == intrinsics->JavaObjectType) {
       JnjvmClassLoader* JCL = compilingClass->classLoader;
       push(val, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
       push(val, signature->getReturnType()->isUnsigned());
       if (retType == Type::getDoubleTy(getGlobalContext()) ||
           retType == Type::getInt64Ty(getGlobalContext())) {
-        push(module->constantZero, false);
+        push(intrinsics->constantZero, false);
       }
     }
   }
@@ -1801,7 +1802,7 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
 // number-wise. IMO, it's better to have this than Unswitch.
 #ifdef ISOLATE_SHARING
   Value* CTP = ctpCache;
-  Value* Cl = GetElementPtrInst::Create(CTP, module->ConstantOne, "",
+  Value* Cl = GetElementPtrInst::Create(CTP, intrinsics->ConstantOne, "",
                                         currentBlock);
   Cl = new LoadInst(Cl, "", currentBlock);
 #else
@@ -1819,15 +1820,15 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
 
   Value* res = 0;
   if (doThrow) {
-    res = invoke(module->GetConstantPoolAtFunction, Args, "",
+    res = invoke(intrinsics->GetConstantPoolAtFunction, Args, "",
                  currentBlock);
   } else {
-    res = CallInst::Create(module->GetConstantPoolAtFunction, Args.begin(),
+    res = CallInst::Create(intrinsics->GetConstantPoolAtFunction, Args.begin(),
                            Args.end(), "", currentBlock);
   }
   
   const Type* realType = 
-    module->GetConstantPoolAtFunction->getReturnType();
+    intrinsics->GetConstantPoolAtFunction->getReturnType();
   if (returnType == Type::getInt32Ty(getGlobalContext())) {
     return new PtrToIntInst(res, Type::getInt32Ty(getGlobalContext()), "", currentBlock);
   } else if (returnType != realType) {
@@ -1850,16 +1851,16 @@ Value* JavaJIT::getResolvedCommonClass(uint16 index, bool doThrow,
     // ony primitive arrays are already allocated, verify that the class
     // array is not external.
     if (TheCompiler->isStaticCompiling() && cl->isArray() && 
-        node->getType() != module->JavaClassArrayType) {
+        node->getType() != intrinsics->JavaClassArrayType) {
       node = new LoadInst(node, "", currentBlock);
     }
-    if (node->getType() != module->JavaCommonClassType) {
-      node = new BitCastInst(node, module->JavaCommonClassType, "",
+    if (node->getType() != intrinsics->JavaCommonClassType) {
+      node = new BitCastInst(node, intrinsics->JavaCommonClassType, "",
                              currentBlock);
     }
   } else {
-    node = getConstantPoolAt(index, module->ClassLookupFunction,
-                             module->JavaCommonClassType, 0, doThrow);
+    node = getConstantPoolAt(index, intrinsics->ClassLookupFunction,
+                             intrinsics->JavaCommonClassType, 0, doThrow);
   }
   
   return node;
@@ -1877,16 +1878,16 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow,
     node = TheCompiler->getNativeClass(cl);
     needsInit = needsInitialisationCheck(cl, compilingClass);
   } else {
-    node = getConstantPoolAt(index, module->ClassLookupFunction,
-                             module->JavaClassType, 0, doThrow);
+    node = getConstantPoolAt(index, intrinsics->ClassLookupFunction,
+                             intrinsics->JavaClassType, 0, doThrow);
   }
  
 
   if (clinit && needsInit) {
-    if (node->getType() != module->JavaClassType) {
-      node = new BitCastInst(node, module->JavaClassType, "", currentBlock);
+    if (node->getType() != intrinsics->JavaClassType) {
+      node = new BitCastInst(node, intrinsics->JavaClassType, "", currentBlock);
     }
-    return invoke(module->InitialisationCheckFunction, node, "",
+    return invoke(intrinsics->InitialisationCheckFunction, node, "",
                   currentBlock);
   } else {
     return node;
@@ -1908,29 +1909,29 @@ void JavaJIT::invokeNew(uint16 index) {
     
     bool needsCheck = needsInitialisationCheck(cl, compilingClass);
     if (needsCheck) {
-      Cl = invoke(module->ForceInitialisationCheckFunction, Cl, "",
+      Cl = invoke(intrinsics->ForceInitialisationCheckFunction, Cl, "",
                   currentBlock);
     }
 
   } else {
-    VT = CallInst::Create(module->GetVTFromClassFunction, Cl, "",
+    VT = CallInst::Create(intrinsics->GetVTFromClassFunction, Cl, "",
                           currentBlock);
-    Size = CallInst::Create(module->GetObjectSizeFromClassFunction, Cl,
+    Size = CallInst::Create(intrinsics->GetObjectSizeFromClassFunction, Cl,
                             "", currentBlock);
   }
  
-  VT = new BitCastInst(VT, module->ptrType, "", currentBlock);
-  Instruction* val = invoke(cl ? module->AllocateFunction :
-                           module->AllocateUnresolvedFunction,
+  VT = new BitCastInst(VT, intrinsics->ptrType, "", currentBlock);
+  Instruction* val = invoke(cl ? intrinsics->AllocateFunction :
+                           intrinsics->AllocateUnresolvedFunction,
                            Size, VT, "", currentBlock);
 
   if (cl && cl->virtualVT->destructor) {
-    CallInst::Create(module->AddFinalizationCandidate, val, "", currentBlock);
+    CallInst::Create(intrinsics->AddFinalizationCandidate, val, "", currentBlock);
   }
 
 
   addHighLevelType(val, cl ? cl : upcalls->OfObject);
-  val = new BitCastInst(val, module->JavaObjectType, "", currentBlock);
+  val = new BitCastInst(val, intrinsics->JavaObjectType, "", currentBlock);
   push(val, false, cl ? cl : upcalls->OfObject);
 }
 
@@ -1949,18 +1950,18 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
       bool needsCheck = needsInitialisationCheck(field->classDef,
                                                  compilingClass);
       if (needsCheck) {
-        Cl = invoke(module->InitialisationCheckFunction, Cl, "",
+        Cl = invoke(intrinsics->InitialisationCheckFunction, Cl, "",
                     currentBlock);
       }
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
       if (needsCheck) {
-        CallInst::Create(module->ForceInitialisationCheckFunction, Cl, "",
+        CallInst::Create(intrinsics->ForceInitialisationCheckFunction, Cl, "",
                          currentBlock);
       }
 
       object = TheCompiler->getStaticInstance(field->classDef);
 #else
-      object = CallInst::Create(module->GetStaticInstanceFunction, Cl, "",
+      object = CallInst::Create(intrinsics->GetStaticInstanceFunction, Cl, "",
                                 currentBlock); 
 #endif
     } else {
@@ -1969,22 +1970,22 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     
     Value* objectConvert = new BitCastInst(object, type, "", currentBlock);
 
-    Value* args[2] = { module->constantZero, LFI->getOffset() };
+    Value* args[2] = { intrinsics->constantZero, LFI->getOffset() };
     Value* ptr = llvm::GetElementPtrInst::Create(objectConvert,
                                                  args, args + 2, "",
                                                  currentBlock);
     return ptr;
   }
 
-  const Type* Pty = module->arrayPtrType;
-  Constant* zero = module->constantZero;
+  const Type* Pty = intrinsics->arrayPtrType;
+  Constant* zero = intrinsics->constantZero;
     
-  Function* func = stat ? module->StaticFieldLookupFunction :
-                          module->VirtualFieldLookupFunction;
+  Function* func = stat ? intrinsics->StaticFieldLookupFunction :
+                          intrinsics->VirtualFieldLookupFunction;
     
   const Type* returnType = 0;
   if (stat)
-    returnType = module->ptrType;
+    returnType = intrinsics->ptrType;
   else
     returnType = Type::getInt32Ty(getGlobalContext());
 
@@ -2097,7 +2098,7 @@ void JavaJIT::getStaticField(uint16 index) {
           CommonClass* cl = mvm::Collector::begOf(val) ? val->getClass() : NULL;
           push(V, false, cl);
         } else {
-          Value* V = CallInst::Create(module->GetFinalObjectFieldFunction, ptr,
+          Value* V = CallInst::Create(intrinsics->GetFinalObjectFieldFunction, ptr,
                                       "", currentBlock);
 
           JnjvmClassLoader* JCL = compilingClass->classLoader;
@@ -2114,7 +2115,7 @@ void JavaJIT::getStaticField(uint16 index) {
     push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned(), cl);
   }
   if (type == Type::getInt64Ty(getGlobalContext()) || type == Type::getDoubleTy(getGlobalContext())) {
-    push(module->constantZero, false);
+    push(intrinsics->constantZero, false);
   }
 }
 
@@ -2163,26 +2164,26 @@ void JavaJIT::getVirtualField(uint16 index) {
       if (sign->isPrimitive()) {
         const PrimitiveTypedef* prim = (PrimitiveTypedef*)sign;
         if (prim->isInt()) {
-          F = module->GetFinalInt32FieldFunction;
+          F = intrinsics->GetFinalInt32FieldFunction;
         } else if (prim->isByte()) {
-          F = module->GetFinalInt8FieldFunction;
+          F = intrinsics->GetFinalInt8FieldFunction;
         } else if (prim->isBool()) {
-          F = module->GetFinalInt8FieldFunction;
+          F = intrinsics->GetFinalInt8FieldFunction;
         } else if (prim->isShort()) {
-          F = module->GetFinalInt16FieldFunction;
+          F = intrinsics->GetFinalInt16FieldFunction;
         } else if (prim->isChar()) {
-          F = module->GetFinalInt16FieldFunction;
+          F = intrinsics->GetFinalInt16FieldFunction;
         } else if (prim->isLong()) {
-          F = module->GetFinalLongFieldFunction;
+          F = intrinsics->GetFinalLongFieldFunction;
         } else if (prim->isFloat()) {
-          F = module->GetFinalFloatFieldFunction;
+          F = intrinsics->GetFinalFloatFieldFunction;
         } else if (prim->isDouble()) {
-          F = module->GetFinalDoubleFieldFunction;
+          F = intrinsics->GetFinalDoubleFieldFunction;
         } else {
           abort();
         }
       } else {
-        F = module->GetFinalObjectFieldFunction;
+        F = intrinsics->GetFinalObjectFieldFunction;
       }
       push(CallInst::Create(F, ptr, "", currentBlock), sign->isUnsigned(), cl);
     }
@@ -2191,7 +2192,7 @@ void JavaJIT::getVirtualField(uint16 index) {
   if (!final) push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned(), cl);
   if (type == Type::getInt64Ty(getGlobalContext()) ||
       type == Type::getDoubleTy(getGlobalContext())) {
-    push(module->constantZero, false);
+    push(intrinsics->constantZero, false);
   }
 }
 
@@ -2229,8 +2230,8 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   if (meth) {
     Meth = TheCompiler->getMethodInClass(meth);
   } else {
-    Meth = getConstantPoolAt(index, module->InterfaceLookupFunction,
-                             module->JavaMethodType, 0, false);
+    Meth = getConstantPoolAt(index, intrinsics->InterfaceLookupFunction,
+                             intrinsics->JavaMethodType, 0, false);
   }
 
   BasicBlock* label_bb = createBasicBlock("bb");
@@ -2239,23 +2240,23 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   BasicBlock* label_bb7 = createBasicBlock("bb7");
     
   // Block entry (label_entry)
-  Value* VT = CallInst::Create(module->GetVTFunction, args[0], "",
+  Value* VT = CallInst::Create(intrinsics->GetVTFunction, args[0], "",
                                currentBlock);
-  Value* IMT = CallInst::Create(module->GetIMTFunction, VT, "",
+  Value* IMT = CallInst::Create(intrinsics->GetIMTFunction, VT, "",
                                 currentBlock);
 
   uint32_t tableIndex = InterfaceMethodTable::getIndex(name, signature->keyName);
   Constant* Index = ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
                                      tableIndex);
 
-  Value* indices[2] = { module->constantZero, Index };
+  Value* indices[2] = { intrinsics->constantZero, Index };
   Instruction* ptr_18 = GetElementPtrInst::Create(IMT, indices, indices + 2, "",
                                                   currentBlock);
   Instruction* int32_19 = new LoadInst(ptr_18, "", false, currentBlock);
-  int32_19 = new PtrToIntInst(int32_19, module->pointerSizeType, "",
+  int32_19 = new PtrToIntInst(int32_19, intrinsics->pointerSizeType, "",
                               currentBlock);
-  Value* one = ConstantInt::get(module->pointerSizeType, 1);
-  Value* zero = ConstantInt::get(module->pointerSizeType, 0);
+  Value* one = ConstantInt::get(intrinsics->pointerSizeType, 1);
+  Value* zero = ConstantInt::get(intrinsics->pointerSizeType, 0);
   BinaryOperator* int32_20 = BinaryOperator::Create(Instruction::And, int32_19,
                                                     one, "", currentBlock);
   ICmpInst* int1_toBool = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
@@ -2271,10 +2272,10 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
     
   // Block bb4 (label_bb4)
   currentBlock = label_bb4;
-  Constant* MinusTwo = ConstantInt::get(module->pointerSizeType, -2);
+  Constant* MinusTwo = ConstantInt::get(intrinsics->pointerSizeType, -2);
   BinaryOperator* int32_25 = BinaryOperator::Create(Instruction::And, int32_19,
                                                     MinusTwo, "", currentBlock);
-  const PointerType* Ty = PointerType::getUnqual(module->JavaMethodType);
+  const PointerType* Ty = PointerType::getUnqual(intrinsics->JavaMethodType);
   CastInst* ptr_26 = new IntToPtrInst(int32_25, Ty, "", currentBlock);
   LoadInst* int32_27 = new LoadInst(ptr_26, "", false, currentBlock);
   ICmpInst* int1_28 = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, int32_27,
@@ -2289,7 +2290,7 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   ptr_table_0_lcssa->addIncoming(ptr_26, label_bb4);
    
   GetElementPtrInst* ptr_31 = GetElementPtrInst::Create(ptr_table_0_lcssa,
-                                                        module->constantOne, "",
+                                                        intrinsics->constantOne, "",
                                                         currentBlock);
 
   LoadInst* int32_32 = new LoadInst(ptr_31, "", false, currentBlock);
@@ -2304,22 +2305,22 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   PHINode* int32_indvar = PHINode::Create(Type::getInt32Ty(*llvmContext),
                                           "indvar", currentBlock);
   int32_indvar->reserveOperandSpace(2);
-  int32_indvar->addIncoming(module->constantZero, label_bb4);
+  int32_indvar->addIncoming(intrinsics->constantZero, label_bb4);
     
   BinaryOperator* int32_table_010_rec =
-    BinaryOperator::Create(Instruction::Shl, int32_indvar, module->constantOne,
+    BinaryOperator::Create(Instruction::Shl, int32_indvar, intrinsics->constantOne,
                            "table.010.rec", currentBlock);
 
   BinaryOperator* int32__rec =
     BinaryOperator::Create(Instruction::Add, int32_table_010_rec,
-                           module->constantTwo, ".rec", currentBlock);
+                           intrinsics->constantTwo, ".rec", currentBlock);
   GetElementPtrInst* ptr_37 = GetElementPtrInst::Create(ptr_26, int32__rec, "",
                                                         currentBlock);
   LoadInst* int32_38 = new LoadInst(ptr_37, "", false, currentBlock);
   ICmpInst* int1_39 = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, int32_38,
                                    Meth, "");
   BinaryOperator* int32_indvar_next =
-    BinaryOperator::Create(Instruction::Add, int32_indvar, module->constantOne,
+    BinaryOperator::Create(Instruction::Add, int32_indvar, intrinsics->constantOne,
                            "indvar.next", currentBlock);
   BranchInst::Create(label_bb6, label_bb7, int1_39, currentBlock);
   
@@ -2328,14 +2329,14 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
       
   currentBlock = endBlock;
   if (node) {
-    if (node->getType() == module->JavaObjectType) {
+    if (node->getType() == intrinsics->JavaObjectType) {
       JnjvmClassLoader* JCL = compilingClass->classLoader;
       push(node, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
       push(node, signature->getReturnType()->isUnsigned());
       if (retType == Type::getDoubleTy(getGlobalContext()) ||
           retType == Type::getInt64Ty(getGlobalContext())) {
-        push(module->constantZero, false);
+        push(intrinsics->constantZero, false);
       }
     }
   }
@@ -2369,9 +2370,9 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   BasicBlock* log_label_bb = createBasicBlock("log_bb");
     
   // Block entry (label_entry)
-  CallInst* ptr_16 = CallInst::Create(module->GetVTFunction, ptr_src, "",
+  CallInst* ptr_16 = CallInst::Create(intrinsics->GetVTFunction, ptr_src, "",
                                       label_entry);
-  CallInst* ptr_17 = CallInst::Create(module->GetVTFunction, ptr_dst, "",
+  CallInst* ptr_17 = CallInst::Create(intrinsics->GetVTFunction, ptr_dst, "",
                                       label_entry);
   
   ICmpInst* int1_18 = new ICmpInst(*label_entry, ICmpInst::ICMP_EQ, ptr_16,
@@ -2380,16 +2381,16 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
     
   // Block bb (label_bb)
   currentBlock = label_bb;
-  CallInst* ptr_20 = CallInst::Create(module->GetClassFunction, ptr_src, "",
+  CallInst* ptr_20 = CallInst::Create(intrinsics->GetClassFunction, ptr_src, "",
                                       label_bb);
   std::vector<Value*> ptr_21_indices;
-  ptr_21_indices.push_back(module->constantZero);
-  ptr_21_indices.push_back(module->OffsetAccessInCommonClassConstant);
+  ptr_21_indices.push_back(intrinsics->constantZero);
+  ptr_21_indices.push_back(intrinsics->OffsetAccessInCommonClassConstant);
   Instruction* ptr_21 =
     GetElementPtrInst::Create(ptr_20, ptr_21_indices.begin(),
                               ptr_21_indices.end(), "", label_bb);
   LoadInst* int32_22 = new LoadInst(ptr_21, "", false, label_bb);
-  Value* cmp = BinaryOperator::CreateAnd(int32_22, module->IsArrayConstant, "",
+  Value* cmp = BinaryOperator::CreateAnd(int32_22, intrinsics->IsArrayConstant, "",
                                          label_bb);
   Value* zero = ConstantInt::get(Type::getInt16Ty(getGlobalContext()), 0);
   ICmpInst* int1_23 = new ICmpInst(*label_bb, ICmpInst::ICMP_NE, cmp, zero, "");
@@ -2427,21 +2428,21 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   // Block bb12.preheader (label_bb12_preheader)
   currentBlock = label_bb12_preheader;
   ICmpInst* int1_35 = new ICmpInst(*label_bb12_preheader, ICmpInst::ICMP_UGT,
-                                   int32_length, module->constantZero, "");
+                                   int32_length, intrinsics->constantZero, "");
   BranchInst::Create(log_label_entry, label_return, int1_35, label_bb12_preheader);
     
   // Block bb7 (label_bb7)
   currentBlock = label_bb7;
-  Value* VTArgs[1] = { Constant::getNullValue(module->VTType) };
-  throwException(module->ArrayStoreExceptionFunction, VTArgs, 1);
+  Value* VTArgs[1] = { Constant::getNullValue(intrinsics->VTType) };
+  throwException(intrinsics->ArrayStoreExceptionFunction, VTArgs, 1);
    
 
   
   // Block entry (label_entry)
   currentBlock = log_label_entry;
-  Value* ptr_10_indices[2] = { module->constantZero,
-                               module->OffsetBaseClassInArrayClassConstant };
-  Instruction* temp = new BitCastInst(ptr_20, module->JavaClassArrayType, "",
+  Value* ptr_10_indices[2] = { intrinsics->constantZero,
+                               intrinsics->OffsetBaseClassInArrayClassConstant };
+  Instruction* temp = new BitCastInst(ptr_20, intrinsics->JavaClassArrayType, "",
                                       log_label_entry);
   Instruction* ptr_10 = GetElementPtrInst::Create(temp, ptr_10_indices,
                                                   ptr_10_indices + 2, "",
@@ -2449,15 +2450,15 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
 
   LoadInst* ptr_11 = new LoadInst(ptr_10, "", false, log_label_entry);
     
-  Value* ptr_12_indices[2] = { module->constantZero,
-                               module->OffsetAccessInCommonClassConstant };
+  Value* ptr_12_indices[2] = { intrinsics->constantZero,
+                               intrinsics->OffsetAccessInCommonClassConstant };
   Instruction* ptr_12 = GetElementPtrInst::Create(ptr_11, ptr_12_indices,
                                                   ptr_12_indices + 2, "",
                                                   log_label_entry);
   LoadInst* int16_13 = new LoadInst(ptr_12, "", false, log_label_entry);
 
   BinaryOperator* int32_15 = BinaryOperator::Create(Instruction::And, int16_13,
-                                                    module->IsPrimitiveConstant,
+                                                    intrinsics->IsPrimitiveConstant,
                                                     "", log_label_entry);
   ICmpInst* int1_16 = new ICmpInst(*log_label_entry, ICmpInst::ICMP_EQ,
                                    int32_15, zero, "");
@@ -2465,9 +2466,9 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
     
   // Block bb (log_label_bb)
   currentBlock = log_label_bb;
-  Value* ptr_11_indices[2] = { module->constantZero,
-                               module->OffsetLogSizeInPrimitiveClassConstant };
-  temp = new BitCastInst(ptr_11, module->JavaClassPrimitiveType, "",
+  Value* ptr_11_indices[2] = { intrinsics->constantZero,
+                               intrinsics->OffsetLogSizeInPrimitiveClassConstant };
+  temp = new BitCastInst(ptr_11, intrinsics->JavaClassPrimitiveType, "",
                          log_label_bb);
   GetElementPtrInst* ptr_18 = GetElementPtrInst::Create(temp, ptr_11_indices,
                                                         ptr_11_indices + 2, "",
@@ -2481,14 +2482,14 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   int32_length = BinaryOperator::CreateShl(int32_length, int32_20, "",
                                            log_label_bb);
 
-  ptr_src = new BitCastInst(ptr_src, module->JavaArrayUInt8Type, "",
+  ptr_src = new BitCastInst(ptr_src, intrinsics->JavaArrayUInt8Type, "",
                             log_label_bb);
   
-  ptr_dst = new BitCastInst(ptr_dst, module->JavaArrayUInt8Type, "",
+  ptr_dst = new BitCastInst(ptr_dst, intrinsics->JavaArrayUInt8Type, "",
                             log_label_bb);
   
-  Value* indexes[3] = { module->constantZero,
-                        module->JavaArrayElementsOffsetConstant,
+  Value* indexes[3] = { intrinsics->constantZero,
+                        intrinsics->JavaArrayElementsOffsetConstant,
                         int32_start };
   Instruction* ptr_42 = GetElementPtrInst::Create(ptr_src, indexes, indexes + 3,
                                                   "", log_label_bb);
@@ -2501,16 +2502,16 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
 
   // Block memmove
   currentBlock = label_memmove;
-  Value* src_int = new PtrToIntInst(ptr_42, module->pointerSizeType, "",
+  Value* src_int = new PtrToIntInst(ptr_42, intrinsics->pointerSizeType, "",
                                     currentBlock);
   
-  Value* dst_int = new PtrToIntInst(ptr_44, module->pointerSizeType, "",
+  Value* dst_int = new PtrToIntInst(ptr_44, intrinsics->pointerSizeType, "",
                                     currentBlock);
 
   cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_ULT, dst_int, src_int, "");
 
-  Value* increment = SelectInst::Create(cmp, module->constantOne,
-                                        module->constantMinusOne, "",
+  Value* increment = SelectInst::Create(cmp, intrinsics->constantOne,
+                                        intrinsics->constantMinusOne, "",
                                         currentBlock);
   BranchInst::Create(label_bb11, label_backward, cmp, currentBlock);
 
@@ -2528,10 +2529,10 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   ptr_44 = GetElementPtrInst::Create(ptr_44, int32_length, "",
                                      currentBlock);
   
-  ptr_42 = GetElementPtrInst::Create(ptr_42, module->constantMinusOne, "",
+  ptr_42 = GetElementPtrInst::Create(ptr_42, intrinsics->constantMinusOne, "",
                                      currentBlock);
   
-  ptr_44 = GetElementPtrInst::Create(ptr_44, module->constantMinusOne, "",
+  ptr_44 = GetElementPtrInst::Create(ptr_44, intrinsics->constantMinusOne, "",
                                      currentBlock);
   
   phi_dst_ptr->addIncoming(ptr_44, currentBlock);
@@ -2546,7 +2547,7 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
                                          "i.016", label_bb11);
   int32_i_016->reserveOperandSpace(2);
   int32_i_016->addIncoming(fwdref_39, label_bb11);
-  int32_i_016->addIncoming(module->constantZero, log_label_bb);
+  int32_i_016->addIncoming(intrinsics->constantZero, log_label_bb);
    
   LoadInst* ptr_43 = new LoadInst(phi_src_ptr, "", false, label_bb11);
   new StoreInst(ptr_43, phi_dst_ptr, false, label_bb11);
@@ -2561,7 +2562,7 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   phi_src_ptr->addIncoming(ptr_42, label_bb11);
 
   BinaryOperator* int32_indvar_next =
-    BinaryOperator::Create(Instruction::Add, int32_i_016, module->constantOne,
+    BinaryOperator::Create(Instruction::Add, int32_i_016, intrinsics->constantOne,
                            "indvar.next", label_bb11);
   ICmpInst* int1_exitcond = new ICmpInst(*label_bb11, ICmpInst::ICMP_EQ,
                                          int32_indvar_next, int32_length,
@@ -2577,7 +2578,7 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
 MDNode* JavaJIT::CreateLocation() {
   uint32_t first = currentLineNumber | (currentBytecodeIndex << 16);
   uint32_t second = currentCtpIndex | (callNumber << 16);
-  DILocation Location = module->DebugFactory->CreateLocation(
+  DILocation Location = intrinsics->DebugFactory->CreateLocation(
       first, second, DIScope(DbgSubprogram));
   callNumber++;
   return Location.getNode();

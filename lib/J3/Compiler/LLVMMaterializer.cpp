@@ -20,7 +20,7 @@
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 
-#include "j3/JnjvmModule.h"
+#include "j3/J3Intrinsics.h"
 #include "j3/LLVMMaterializer.h"
 
 using namespace llvm;

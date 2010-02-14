@@ -26,7 +26,6 @@
 #include "mvm/Threads/Thread.h"
 
 #include "j3/JavaJITCompiler.h"
-#include "j3/JnjvmModule.h"
 
 #include "CommandLine.h"
 

@@ -1,4 +1,4 @@
-//===---------- JnjvmModule.h - Definition of a J3 module -----------------===//
+//===-------------- J3Intrinsics.h - Intrinsics of J3 ---------------------===//
 //
 //                            The VMKit project
 //
@@ -7,17 +7,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef JNJVM_MODULE_H
-#define JNJVM_MODULE_H
+#ifndef J3_INTRINSICS_H
+#define J3_INTRINSICS_H
 
 #include "mvm/JIT.h"
 
 namespace j3 {
 
-class JnjvmModule : public mvm::MvmModule {
+class J3Intrinsics : public mvm::MvmModule {
 
 public:
-
   static const llvm::Type* JavaArrayUInt8Type;
   static const llvm::Type* JavaArraySInt8Type;
   static const llvm::Type* JavaArrayUInt16Type;
@@ -174,7 +173,7 @@ public:
   llvm::Function* ThrowExceptionFromJITFunction;
   
 
-  JnjvmModule(llvm::Module*);
+  J3Intrinsics(llvm::Module*);
   
   static void initialise();
 

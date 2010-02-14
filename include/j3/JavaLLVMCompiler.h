@@ -11,7 +11,7 @@
 #define J3_LLVM_COMPILER_H
 
 #include "j3/JavaCompiler.h"
-#include "j3/JnjvmModule.h"
+#include "j3/J3Intrinsics.h"
 #include "j3/LLVMInfo.h"
 
 namespace llvm {
@@ -40,7 +40,7 @@ class JavaLLVMCompiler : public JavaCompiler {
 
 protected:
   llvm::Module* TheModule;
-  JnjvmModule JavaIntrinsics;
+  J3Intrinsics JavaIntrinsics;
 
   void addJavaPasses();
 
@@ -67,7 +67,7 @@ public:
     return TheModule;
   }
 
-  JnjvmModule* getIntrinsics() {
+  J3Intrinsics* getIntrinsics() {
     return &JavaIntrinsics;
   }
 

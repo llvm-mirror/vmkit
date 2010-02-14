@@ -17,7 +17,7 @@
 #include "llvm/Support/Debug.h"
 
 #include "JavaClass.h"
-#include "j3/JnjvmModule.h"
+#include "j3/J3Intrinsics.h"
 
 using namespace llvm;
 
@@ -26,9 +26,9 @@ namespace j3 {
   class VISIBILITY_HIDDEN LowerConstantCalls : public FunctionPass {
   public:
     static char ID;
-    JnjvmModule* module;
-    LowerConstantCalls(JnjvmModule* M) : FunctionPass((intptr_t)&ID),
-      module(M) { }
+    J3Intrinsics* intrinsics;
+    LowerConstantCalls(J3Intrinsics* I) : FunctionPass((intptr_t)&ID),
+      intrinsics(I) { }
 
     virtual bool runOnFunction(Function &F);
   private:
@@ -42,50 +42,50 @@ namespace j3 {
 
 
 #ifdef ISOLATE
-static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
-  Value* GEP[2] = { module->constantZero,
-                    module->OffsetTaskClassMirrorInClassConstant };
+static Value* getTCM(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI) {
+  Value* GEP[2] = { intrinsics->constantZero,
+                    intrinsics->OffsetTaskClassMirrorInClassConstant };
   Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
 
-  Value* threadId = CallInst::Create(module->llvm_frameaddress,
-                                     module->constantZero, "", CI);
-  threadId = new PtrToIntInst(threadId, module->pointerSizeType, "", CI);
-  threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+  Value* threadId = CallInst::Create(intrinsics->llvm_frameaddress,
+                                     intrinsics->constantZero, "", CI);
+  threadId = new PtrToIntInst(threadId, intrinsics->pointerSizeType, "", CI);
+  threadId = BinaryOperator::CreateAnd(threadId, intrinsics->constantThreadIDMask,
                                        "", CI);
   
-  threadId = new IntToPtrInst(threadId, module->ptr32Type, "", CI);
+  threadId = new IntToPtrInst(threadId, intrinsics->ptr32Type, "", CI);
   
   Value* IsolateID = GetElementPtrInst::Create(threadId,
-      module->OffsetIsolateInThreadConstant, "", CI);
+      intrinsics->OffsetIsolateInThreadConstant, "", CI);
 
   IsolateID = new LoadInst(IsolateID, "", CI);
 
-  Value* GEP2[2] = { module->constantZero, IsolateID };
+  Value* GEP2[2] = { intrinsics->constantZero, IsolateID };
 
   Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, GEP2 + 2, "",
                                          CI);
   return TCM;
 }
 
-static Value* getDelegatee(JnjvmModule* module, Value* Arg, Instruction* CI) {
-  Value* GEP[2] = { module->constantZero,
-                    module->constantTwo };
+static Value* getDelegatee(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI) {
+  Value* GEP[2] = { intrinsics->constantZero,
+                    intrinsics->constantTwo };
   Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
 
-  Value* threadId = CallInst::Create(module->llvm_frameaddress,
-                                     module->constantZero, "", CI);
-  threadId = new PtrToIntInst(threadId, module->pointerSizeType, "", CI);
-  threadId = BinaryOperator::CreateAnd(threadId, module->constantThreadIDMask,
+  Value* threadId = CallInst::Create(intrinsics->llvm_frameaddress,
+                                     intrinsics->constantZero, "", CI);
+  threadId = new PtrToIntInst(threadId, intrinsics->pointerSizeType, "", CI);
+  threadId = BinaryOperator::CreateAnd(threadId, intrinsics->constantThreadIDMask,
                                        "", CI);
   
-  threadId = new IntToPtrInst(threadId, module->ptr32Type, "", CI);
+  threadId = new IntToPtrInst(threadId, intrinsics->ptr32Type, "", CI);
   
   Value* IsolateID = GetElementPtrInst::Create(threadId, 
-      module->OffsetIsolateInThreadConstant, "", CI);
+      intrinsics->OffsetIsolateInThreadConstant, "", CI);
 
   IsolateID = new LoadInst(IsolateID, "", CI);
 
-  Value* GEP2[2] = { module->constantZero, IsolateID };
+  Value* GEP2[2] = { intrinsics->constantZero, IsolateID };
 
   Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, GEP2 + 2, "",
                                          CI);
@@ -94,12 +94,12 @@ static Value* getDelegatee(JnjvmModule* module, Value* Arg, Instruction* CI) {
 
 #else
 
-static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
-  Value* GEP[2] = { module->constantZero,
-                    module->OffsetTaskClassMirrorInClassConstant };
+static Value* getTCM(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI) {
+  Value* GEP[2] = { intrinsics->constantZero,
+                    intrinsics->OffsetTaskClassMirrorInClassConstant };
   Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
   
-  Value* GEP2[2] = { module->constantZero, module->constantZero };
+  Value* GEP2[2] = { intrinsics->constantZero, intrinsics->constantZero };
 
   Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, GEP2 + 2, "",
                                          CI);
@@ -107,12 +107,12 @@ static Value* getTCM(JnjvmModule* module, Value* Arg, Instruction* CI) {
 
 }
 
-static Value* getDelegatee(JnjvmModule* module, Value* Arg, Instruction* CI) {
-  Value* GEP[2] = { module->constantZero,
-                    module->constantZero };
+static Value* getDelegatee(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI) {
+  Value* GEP[2] = { intrinsics->constantZero,
+                    intrinsics->constantZero };
   Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
   
-  Value* GEP2[2] = { module->constantZero, module->constantZero };
+  Value* GEP2[2] = { intrinsics->constantZero, intrinsics->constantZero };
 
   Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, GEP2 + 2, "",
                                          CI);
@@ -131,7 +131,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
       II++;
 
       if (ICmpInst* Cmp = dyn_cast<ICmpInst>(I)) {
-        if (Cmp->getOperand(1) == module->JavaObjectNullConstant) {
+        if (Cmp->getOperand(1) == intrinsics->JavaObjectNullConstant) {
           Value* Arg = Cmp->getOperand(0);
       
 #if 0
@@ -146,7 +146,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           
           CallSite Ca = CallSite::get(Arg);
           Instruction* CI = Ca.getInstruction();
-          if (CI && Ca.getCalledValue() == module->AllocateFunction) {
+          if (CI && Ca.getCalledValue() == intrinsics->AllocateFunction) {
             Changed = true;
             Cmp->replaceAllUsesWith(ConstantInt::getFalse(*Context));
             Cmp->eraseFromParent();
@@ -166,7 +166,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             if (BI->hasOneUse()) {
               CallSite Call = CallSite::get(*(BI->use_begin()));
               Instruction* CI = Call.getInstruction();
-              if (CI && Call.getCalledFunction() == module->llvm_gc_gcroot)
+              if (CI && Call.getCalledFunction() == intrinsics->llvm_gc_gcroot)
                 continue;
             }
           }
@@ -202,138 +202,138 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
       Instruction* CI = Call.getInstruction();
       if (CI) {
         Value* V = Call.getCalledValue();
-        if (V == module->ArrayLengthFunction) {
+        if (V == intrinsics->ArrayLengthFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); // get the array
-          Value* array = new BitCastInst(val, module->JavaArrayType,
+          Value* array = new BitCastInst(val, intrinsics->JavaArrayType,
                                          "", CI);
-          Value* args[2] = { module->constantZero, 
-                             module->JavaArraySizeOffsetConstant };
+          Value* args[2] = { intrinsics->constantZero, 
+                             intrinsics->JavaArraySizeOffsetConstant };
           Value* ptr = GetElementPtrInst::Create(array, args, args + 2,
                                                  "", CI);
           Value* load = new LoadInst(ptr, "", CI);
           load = new PtrToIntInst(load, Type::getInt32Ty(*Context), "", CI);
           CI->replaceAllUsesWith(load);
           CI->eraseFromParent();
-        } else if (V == module->GetVTFunction) {
+        } else if (V == intrinsics->GetVTFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); // get the object
-          Value* indexes[2] = { module->constantZero, module->constantZero };
+          Value* indexes[2] = { intrinsics->constantZero, intrinsics->constantZero };
           Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
                                                    "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == module->GetIMTFunction) {
+        } else if (V == intrinsics->GetIMTFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); // get the VT
-          Value* indexes[2] = { module->constantZero,
-                                module->OffsetIMTInVTConstant };
+          Value* indexes[2] = { intrinsics->constantZero,
+                                intrinsics->OffsetIMTInVTConstant };
           Value* IMTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
                                                     "", CI);
           Value* IMT = new LoadInst(IMTPtr, "", CI);
           IMT = new BitCastInst(IMT, CI->getType(), "", CI);
           CI->replaceAllUsesWith(IMT);
           CI->eraseFromParent();
-        } else if (V == module->GetClassFunction) {
+        } else if (V == intrinsics->GetClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); // get the object
-          Value* args2[2] = { module->constantZero,
-                              module->JavaObjectVTOffsetConstant };
+          Value* args2[2] = { intrinsics->constantZero,
+                              intrinsics->JavaObjectVTOffsetConstant };
           Value* VTPtr = GetElementPtrInst::Create(val, args2, args2 + 2,
                                                    "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
-          Value* args3[2] = { module->constantZero,
-                              module->OffsetClassInVTConstant };
+          Value* args3[2] = { intrinsics->constantZero,
+                              intrinsics->OffsetClassInVTConstant };
 
           Value* clPtr = GetElementPtrInst::Create(VT, args3, args3 + 2,
                                                    "", CI);
           Value* cl = new LoadInst(clPtr, "", CI);
-          cl = new BitCastInst(cl, module->JavaCommonClassType, "", CI);
+          cl = new BitCastInst(cl, intrinsics->JavaCommonClassType, "", CI);
 
           CI->replaceAllUsesWith(cl);
           CI->eraseFromParent();
-        } else if (V == module->GetVTFromClassFunction) {
+        } else if (V == intrinsics->GetVTFromClassFunction) {
           Changed = true;
           
           Value* val = Call.getArgument(0);
-          Value* indexes[3] = { module->constantZero, 
-                                module->constantZero, 
-                                module->OffsetVTInClassConstant };
+          Value* indexes[3] = { intrinsics->constantZero, 
+                                intrinsics->constantZero, 
+                                intrinsics->OffsetVTInClassConstant };
           Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 3,
                                                    "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == module->GetVTFromCommonClassFunction) {
+        } else if (V == intrinsics->GetVTFromCommonClassFunction) {
           Changed = true;
           
           Value* val = Call.getArgument(0);
-          Value* indexes[2] = { module->constantZero, 
-                                module->OffsetVTInClassConstant };
+          Value* indexes[2] = { intrinsics->constantZero, 
+                                intrinsics->OffsetVTInClassConstant };
           Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
                                                    "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == module->GetVTFromClassArrayFunction) {
+        } else if (V == intrinsics->GetVTFromClassArrayFunction) {
           Changed = true;
           
           Value* val = Call.getArgument(0);
-          Value* indexes[3] = { module->constantZero,
-                                module->constantZero,
-                                module->OffsetVTInClassConstant };
+          Value* indexes[3] = { intrinsics->constantZero,
+                                intrinsics->constantZero,
+                                intrinsics->OffsetVTInClassConstant };
           Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 3,
                                                    "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == module->GetBaseClassVTFromVTFunction) {
+        } else if (V == intrinsics->GetBaseClassVTFromVTFunction) {
           Changed = true;
           
           Value* val = Call.getArgument(0);
-          Value* indexes[2] = { module->constantZero,
-                                module->OffsetBaseClassVTInVTConstant };
+          Value* indexes[2] = { intrinsics->constantZero,
+                                intrinsics->OffsetBaseClassVTInVTConstant };
           Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
                                                    "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
-          VT = new BitCastInst(VT, module->VTType, "", CI);
+          VT = new BitCastInst(VT, intrinsics->VTType, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == module->GetObjectSizeFromClassFunction) {
+        } else if (V == intrinsics->GetObjectSizeFromClassFunction) {
           Changed = true;
           
           Value* val = Call.getArgument(0); 
-          Value* indexes[2] = { module->constantZero, 
-                                module->OffsetObjectSizeInClassConstant };
+          Value* indexes[2] = { intrinsics->constantZero, 
+                                intrinsics->OffsetObjectSizeInClassConstant };
           Value* SizePtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
                                                      "", CI);
           Value* Size = new LoadInst(SizePtr, "", CI);
           CI->replaceAllUsesWith(Size);
           CI->eraseFromParent();
-        } else if (V == module->GetDepthFunction) {
+        } else if (V == intrinsics->GetDepthFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
-          Value* indexes[2] = { module->constantZero,
-                                module->OffsetDepthInVTConstant };
+          Value* indexes[2] = { intrinsics->constantZero,
+                                intrinsics->OffsetDepthInVTConstant };
           Value* DepthPtr = GetElementPtrInst::Create(val, indexes,
                                                       indexes + 2, "", CI);
           Value* Depth = new LoadInst(DepthPtr, "", CI);
           Depth = new PtrToIntInst(Depth, Type::getInt32Ty(*Context), "", CI);
           CI->replaceAllUsesWith(Depth);
           CI->eraseFromParent();
-        } else if (V == module->GetDisplayFunction) {
+        } else if (V == intrinsics->GetDisplayFunction) {
           Changed = true;
           Value* val = Call.getArgument(0);
-          Value* indexes[2] = { module->constantZero,
-                                module->OffsetDisplayInVTConstant };
+          Value* indexes[2] = { intrinsics->constantZero,
+                                intrinsics->OffsetDisplayInVTConstant };
           Value* DisplayPtr = GetElementPtrInst::Create(val, indexes,
                                                         indexes + 2, "", CI);
-          const llvm::Type* Ty = PointerType::getUnqual(module->VTType);
+          const llvm::Type* Ty = PointerType::getUnqual(intrinsics->VTType);
           DisplayPtr = new BitCastInst(DisplayPtr, Ty, "", CI);
           CI->replaceAllUsesWith(DisplayPtr);
           CI->eraseFromParent();
-        } else if (V == module->GetVTInDisplayFunction) {
+        } else if (V == intrinsics->GetVTInDisplayFunction) {
           Changed = true;
           Value* val = Call.getArgument(0);
           Value* depth = Call.getArgument(1);
@@ -342,32 +342,32 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->replaceAllUsesWith(Class);
           CI->eraseFromParent();
 #if defined(ISOLATE)
-        } else if (V == module->GetStaticInstanceFunction) {
+        } else if (V == intrinsics->GetStaticInstanceFunction) {
           Changed = true;
 
-          Value* TCM = getTCM(module, Call.getArgument(0), CI);
-          Constant* C = module->OffsetStaticInstanceInTaskClassMirrorConstant;
-          Value* GEP[2] = { module->constantZero, C };
+          Value* TCM = getTCM(intrinsics, Call.getArgument(0), CI);
+          Constant* C = intrinsics->OffsetStaticInstanceInTaskClassMirrorConstant;
+          Value* GEP[2] = { intrinsics->constantZero, C };
           Value* Replace = GetElementPtrInst::Create(TCM, GEP, GEP + 2, "", CI);
           Replace = new LoadInst(Replace, "", CI);
           CI->replaceAllUsesWith(Replace);
           CI->eraseFromParent();
 #endif
-        } else if (V == module->GetClassDelegateeFunction) {
+        } else if (V == intrinsics->GetClassDelegateeFunction) {
           Changed = true;
           BasicBlock* NBB = II->getParent()->splitBasicBlock(II);
           I->getParent()->getTerminator()->eraseFromParent();
-          Value* Del = getDelegatee(module, Call.getArgument(0), CI);
+          Value* Del = getDelegatee(intrinsics, Call.getArgument(0), CI);
           Value* cmp = new ICmpInst(CI, ICmpInst::ICMP_EQ, Del, 
-                                    module->JavaObjectNullConstant, "");
+                                    intrinsics->JavaObjectNullConstant, "");
           
           BasicBlock* NoDelegatee = BasicBlock::Create(*Context, "No delegatee", &F);
           BasicBlock* DelegateeOK = BasicBlock::Create(*Context, "Delegatee OK", &F);
           BranchInst::Create(NoDelegatee, DelegateeOK, cmp, CI);
-          PHINode* phi = PHINode::Create(module->JavaObjectType, "", DelegateeOK);
+          PHINode* phi = PHINode::Create(intrinsics->JavaObjectType, "", DelegateeOK);
           phi->addIncoming(Del, CI->getParent());
           
-          Value* Res = CallInst::Create(module->RuntimeDelegateeFunction,
+          Value* Res = CallInst::Create(intrinsics->RuntimeDelegateeFunction,
                                         Call.getArgument(0), "", NoDelegatee);
           BranchInst::Create(DelegateeOK, NoDelegatee);
           phi->addIncoming(Res, NoDelegatee);
@@ -377,7 +377,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           BranchInst::Create(NBB, DelegateeOK);
           break;
          
-        } else if (V == module->InitialisationCheckFunction) {
+        } else if (V == intrinsics->InitialisationCheckFunction) {
           Changed = true;
           
           BasicBlock* NBB = 0;
@@ -391,10 +391,10 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           }
          
           Value* Cl = Call.getArgument(0); 
-          Value* TCM = getTCM(module, Call.getArgument(0), CI);
+          Value* TCM = getTCM(intrinsics, Call.getArgument(0), CI);
           Value* GEP[2] = 
-            { module->constantZero,
-              module->OffsetInitializedInTaskClassMirrorConstant };
+            { intrinsics->constantZero,
+              intrinsics->OffsetInitializedInTaskClassMirrorConstant };
           Value* StatusPtr = GetElementPtrInst::Create(TCM, GEP, GEP + 2, "",
                                                        CI);
           
@@ -402,7 +402,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           
           BasicBlock* trueCl = BasicBlock::Create(*Context, "Initialized", &F);
           BasicBlock* falseCl = BasicBlock::Create(*Context, "Uninitialized", &F);
-          PHINode* node = llvm::PHINode::Create(JnjvmModule::JavaClassType, "", trueCl);
+          PHINode* node = llvm::PHINode::Create(J3Intrinsics::JavaClassType, "", trueCl);
           node->addIncoming(Cl, CI->getParent());
           BranchInst::Create(trueCl, falseCl, test, CI);
   
@@ -412,7 +412,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             Value* Args[1] = { Cl };
             BasicBlock* UI = Invoke->getUnwindDest();
 
-            res = InvokeInst::Create(module->InitialiseClassFunction,
+            res = InvokeInst::Create(intrinsics->InitialiseClassFunction,
                                      trueCl, UI, Args, Args + 1,
                                      "", falseCl);
 
@@ -437,7 +437,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             }
 
           } else {
-            res = CallInst::Create(module->InitialiseClassFunction,
+            res = CallInst::Create(intrinsics->InitialiseClassFunction,
                                    Cl, "", falseCl);
             BranchInst::Create(trueCl, falseCl);
           }
@@ -449,7 +449,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
           BranchInst::Create(NBB, trueCl);
           break;
-        } else if (V == module->GetConstantPoolAtFunction) {
+        } else if (V == intrinsics->GetConstantPoolAtFunction) {
           Function* resolver = dyn_cast<Function>(Call.getArgument(0));
           assert(resolver && "Wrong use of GetConstantPoolAt");
           const Type* returnType = resolver->getReturnType();
@@ -477,7 +477,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* arg1 = GetElementPtrInst::Create(CTP, indexes, "", CI);
           arg1 = new LoadInst(arg1, "", false, CI);
           Value* test = new ICmpInst(CI, ICmpInst::ICMP_EQ, arg1,
-                                     module->constantPtrNull, "");
+                                     intrinsics->constantPtrNull, "");
  
           BasicBlock* trueCl = BasicBlock::Create(*Context, "Ctp OK", &F);
           BasicBlock* falseCl = BasicBlock::Create(*Context, "Ctp Not OK", &F);
@@ -530,18 +530,18 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CI->eraseFromParent();
           BranchInst::Create(NBB, trueCl);
           break;
-        } else if (V == module->GetArrayClassFunction) {
+        } else if (V == intrinsics->GetArrayClassFunction) {
           const llvm::Type* Ty = 
-            PointerType::getUnqual(module->JavaCommonClassType);
+            PointerType::getUnqual(intrinsics->JavaCommonClassType);
           Constant* nullValue = Constant::getNullValue(Ty);
           // Check if we have already proceed this call.
           if (Call.getArgument(1) == nullValue) { 
             BasicBlock* NBB = II->getParent()->splitBasicBlock(II);
             I->getParent()->getTerminator()->eraseFromParent();
 
-            Constant* init = Constant::getNullValue(module->JavaClassArrayType);
+            Constant* init = Constant::getNullValue(intrinsics->JavaClassArrayType);
             GlobalVariable* GV = 
-              new GlobalVariable(*(F.getParent()), module->JavaClassArrayType,
+              new GlobalVariable(*(F.getParent()), intrinsics->JavaClassArrayType,
                                  false, GlobalValue::ExternalLinkage,
                                  init, "");
 
@@ -551,14 +551,14 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 
             BasicBlock* OKBlock = BasicBlock::Create(*Context, "", &F);
             BasicBlock* NotOKBlock = BasicBlock::Create(*Context, "", &F);
-            PHINode* node = PHINode::Create(module->JavaClassArrayType, "",
+            PHINode* node = PHINode::Create(intrinsics->JavaClassArrayType, "",
                                             OKBlock);
             node->addIncoming(LoadedGV, CI->getParent());
 
             BranchInst::Create(NotOKBlock, OKBlock, cmp, CI);
 
             Value* args[2] = { Call.getArgument(0), GV };
-            Value* res = CallInst::Create(module->GetArrayClassFunction, args,
+            Value* res = CallInst::Create(intrinsics->GetArrayClassFunction, args,
                                           args + 2, "", NotOKBlock);
             BranchInst::Create(OKBlock, NotOKBlock);
             node->addIncoming(res, NotOKBlock);
@@ -568,23 +568,23 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             BranchInst::Create(NBB, OKBlock);
             break;
           }
-        } else if (V == module->ForceInitialisationCheckFunction ||
-                   V == module->ForceLoadedCheckFunction ) {
+        } else if (V == intrinsics->ForceInitialisationCheckFunction ||
+                   V == intrinsics->ForceLoadedCheckFunction ) {
           Changed = true;
           CI->eraseFromParent();
-        } else if (V == module->GetFinalInt8FieldFunction ||
-                   V == module->GetFinalInt16FieldFunction ||
-                   V == module->GetFinalInt32FieldFunction ||
-                   V == module->GetFinalLongFieldFunction ||
-                   V == module->GetFinalFloatFieldFunction ||
-                   V == module->GetFinalDoubleFieldFunction ||
-                   V == module->GetFinalObjectFieldFunction) {
+        } else if (V == intrinsics->GetFinalInt8FieldFunction ||
+                   V == intrinsics->GetFinalInt16FieldFunction ||
+                   V == intrinsics->GetFinalInt32FieldFunction ||
+                   V == intrinsics->GetFinalLongFieldFunction ||
+                   V == intrinsics->GetFinalFloatFieldFunction ||
+                   V == intrinsics->GetFinalDoubleFieldFunction ||
+                   V == intrinsics->GetFinalObjectFieldFunction) {
           Changed = true;
           Value* val = Call.getArgument(0);
           Value* res = new LoadInst(val, "", CI);
           CI->replaceAllUsesWith(res);
           CI->eraseFromParent();
-        } else if (V == module->IsAssignableFromFunction) {
+        } else if (V == intrinsics->IsAssignableFromFunction) {
           Changed = true;
           Value* VT1 = Call.getArgument(0);
           Value* VT2 = Call.getArgument(1);
@@ -598,7 +598,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 
           ConstantInt* CC = ConstantInt::get(Type::getInt32Ty(*Context),
               JavaVirtualTable::getOffsetIndex());
-          Value* indices[2] = { module->constantZero, CC };
+          Value* indices[2] = { intrinsics->constantZero, CC };
           Value* Offset = GetElementPtrInst::Create(VT2, indices, indices + 2,
                                                     "", CI);
           Offset = new LoadInst(Offset, "", false, CI);
@@ -607,7 +607,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* CurVT = GetElementPtrInst::Create(VT1, indices, indices + 2,
                                                    "", CI);
           CurVT = new LoadInst(CurVT, "", false, CI);
-          CurVT = new BitCastInst(CurVT, module->VTType, "", CI);
+          CurVT = new BitCastInst(CurVT, intrinsics->VTType, "", CI);
              
           Value* res = new ICmpInst(CI, ICmpInst::ICMP_EQ, CurVT, VT2, "");
 
@@ -615,7 +615,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           BranchInst::Create(CurEndBlock, FailedBlock, res, CI);
 
           Value* Args[2] = { VT1, VT2 };
-          res = CallInst::Create(module->IsSecondaryClassFunction, Args,
+          res = CallInst::Create(intrinsics->IsSecondaryClassFunction, Args,
                                  Args + 2, "", FailedBlock);
          
           node->addIncoming(res, FailedBlock);
@@ -631,7 +631,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           // Reanalyse the current block.
           break;
 
-        } else if (V == module->IsSecondaryClassFunction) {
+        } else if (V == intrinsics->IsSecondaryClassFunction) {
           Changed = true;
           Value* VT1 = Call.getArgument(0);
           Value* VT2 = Call.getArgument(1);
@@ -646,7 +646,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           BasicBlock* BB6 = BasicBlock::Create(*Context, "BB6", &F);
           BasicBlock* BB7 = BasicBlock::Create(*Context, "BB7", &F);
           BasicBlock* BB9 = BasicBlock::Create(*Context, "BB9", &F);
-          const Type* Ty = PointerType::getUnqual(module->VTType);
+          const Type* Ty = PointerType::getUnqual(intrinsics->VTType);
           
           PHINode* resFwd = PHINode::Create(Type::getInt32Ty(*Context), "", BB7);
    
@@ -655,7 +655,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           //    else goto headerLoop;
           ConstantInt* cacheIndex = 
             ConstantInt::get(Type::getInt32Ty(*Context), JavaVirtualTable::getCacheIndex());
-          Value* indices[2] = { module->constantZero, cacheIndex };
+          Value* indices[2] = { intrinsics->constantZero, cacheIndex };
           Instruction* CachePtr = 
             GetElementPtrInst::Create(VT1, indices, indices + 2, "", CI);
           CachePtr = new BitCastInst(CachePtr, Ty, "", CI);
@@ -706,7 +706,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           //    ++i;
           //    goto endLoopTest;
           BinaryOperator* IndVar = 
-            BinaryOperator::CreateAdd(resFwd, module->constantOne, "", BB6);
+            BinaryOperator::CreateAdd(resFwd, intrinsics->constantOne, "", BB6);
           BranchInst::Create(BB7, BB6);
     
           // Verify that we haven't reached the end of the loop:
@@ -714,7 +714,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           //    if (i < size) goto test
           //    else goto end with false
           resFwd->reserveOperandSpace(2);
-          resFwd->addIncoming(module->constantZero, Preheader);
+          resFwd->addIncoming(intrinsics->constantZero, Preheader);
           resFwd->addIncoming(IndVar, BB6);
     
           cmp1 = new ICmpInst(*BB7, ICmpInst::ICMP_SGT, Size, resFwd, "");
@@ -745,31 +745,31 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           break;
         }
 #ifdef ISOLATE_SHARING
-        else if (V == module->GetCtpClassFunction) {
+        else if (V == intrinsics->GetCtpClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
-          Value* indexes[2] = { module->constantZero, 
-                                module->OffsetCtpInClassConstant };
+          Value* indexes[2] = { intrinsics->constantZero, 
+                                intrinsics->OffsetCtpInClassConstant };
           Value* VTPtr = GetElementPtrInst::Create(val, indexes,
                                                    indexes + 2, "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == module->GetJnjvmArrayClassFunction) {
+        } else if (V == intrinsics->GetJnjvmArrayClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); 
           Value* index = Call.getArgument(1); 
-          Value* indexes[3] = { module->constantZero, module->constantTwo,
+          Value* indexes[3] = { intrinsics->constantZero, intrinsics->constantTwo,
                                 index };
           Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 3,
                                                    "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
-        } else if (V == module->GetJnjvmExceptionClassFunction) {
+        } else if (V == intrinsics->GetJnjvmExceptionClassFunction) {
           Changed = true;
           Value* val = Call.getArgument(0);
-          Value* indexes[2] = { module->constantZero, module->constantOne };
+          Value* indexes[2] = { intrinsics->constantZero, intrinsics->constantOne };
           Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
                                                    "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
@@ -785,7 +785,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 }
 
 
-FunctionPass* createLowerConstantCallsPass(JnjvmModule* M) {
+FunctionPass* createLowerConstantCallsPass(J3Intrinsics* M) {
   return new LowerConstantCalls(M);
 }
 

@@ -8,9 +8,9 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
   res->setMetadata("dbg", CreateLocation());
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* threadId = getCurrentThread(module->JavaThreadType);
-    Value* geps[2] = { module->constantZero,
-                       module->OffsetJavaExceptionInThreadConstant };
+    Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
+    Value* geps[2] = { intrinsics->constantZero,
+                       intrinsics->OffsetJavaExceptionInThreadConstant };
 
     Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
                                                         geps + 2, "",
@@ -22,20 +22,20 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
     BasicBlock* ifNormal = createBasicBlock("no exception block");
   
     Value* test = 0;
-    Constant* zero = module->JavaObjectNullConstant;
+    Constant* zero = intrinsics->JavaObjectNullConstant;
 
     // If F is a runtime intrinsic that does not access memory, use a hack
     // that will prevent LLVM from moving the exception check: runtime
     // intrinsics return the exception if an exception was raised.
-    if (F == module->InitialisationCheckFunction || 
-        F == module->GetConstantPoolAtFunction ||
-        F == module->GetArrayClassFunction ||
-        F == module->GetClassDelegateeFunction) {
+    if (F == intrinsics->InitialisationCheckFunction || 
+        F == intrinsics->GetConstantPoolAtFunction ||
+        F == intrinsics->GetArrayClassFunction ||
+        F == intrinsics->GetClassDelegateeFunction) {
       // Make the load volatile to force the instruction after the call.
       // Otherwise, LLVM will merge the load with a previous load because
       // the function is readnone.
       obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
-      test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
+      test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
@@ -66,9 +66,9 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
   res->setMetadata("dbg", CreateLocation());
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* threadId = getCurrentThread(module->JavaThreadType);
-    Value* geps[2] = { module->constantZero,
-                       module->OffsetJavaExceptionInThreadConstant };
+    Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
+    Value* geps[2] = { intrinsics->constantZero,
+                       intrinsics->OffsetJavaExceptionInThreadConstant };
 
     Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
                                                         geps + 2, "",
@@ -80,13 +80,13 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
     BasicBlock* ifNormal = createBasicBlock("no exception block");
   
     Value* test = 0;
-    Constant* zero = module->JavaObjectNullConstant;
-    if (F == module->InitialisationCheckFunction || 
-        F == module->GetConstantPoolAtFunction ||
-        F == module->GetArrayClassFunction ||
-        F == module->GetClassDelegateeFunction) {
+    Constant* zero = intrinsics->JavaObjectNullConstant;
+    if (F == intrinsics->InitialisationCheckFunction || 
+        F == intrinsics->GetConstantPoolAtFunction ||
+        F == intrinsics->GetArrayClassFunction ||
+        F == intrinsics->GetClassDelegateeFunction) {
       obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
-      test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
+      test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
@@ -118,9 +118,9 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
   res->setMetadata("dbg", CreateLocation());
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* threadId = getCurrentThread(module->JavaThreadType);
-    Value* geps[2] = { module->constantZero,
-                       module->OffsetJavaExceptionInThreadConstant };
+    Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
+    Value* geps[2] = { intrinsics->constantZero,
+                       intrinsics->OffsetJavaExceptionInThreadConstant };
 
     Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
                                                         geps + 2, "",
@@ -132,13 +132,13 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
     BasicBlock* ifNormal = createBasicBlock("no exception block");
     
     Value* test = 0;
-    Constant* zero = module->JavaObjectNullConstant;
-    if (F == module->InitialisationCheckFunction || 
-        F == module->GetConstantPoolAtFunction ||
-        F == module->GetArrayClassFunction ||
-        F == module->GetClassDelegateeFunction) {
+    Constant* zero = intrinsics->JavaObjectNullConstant;
+    if (F == intrinsics->InitialisationCheckFunction || 
+        F == intrinsics->GetConstantPoolAtFunction ||
+        F == intrinsics->GetArrayClassFunction ||
+        F == intrinsics->GetClassDelegateeFunction) {
       obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
-      test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
+      test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
@@ -167,9 +167,9 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
   res->setMetadata("dbg", CreateLocation());
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* threadId = getCurrentThread(module->JavaThreadType);
-    Value* geps[2] = { module->constantZero,
-                       module->OffsetJavaExceptionInThreadConstant };
+    Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
+    Value* geps[2] = { intrinsics->constantZero,
+                       intrinsics->OffsetJavaExceptionInThreadConstant };
 
     Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
                                                         geps + 2, "",
@@ -181,13 +181,13 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
     BasicBlock* ifNormal = createBasicBlock("no exception block");
   
     Value* test = 0;
-    Constant* zero = module->JavaObjectNullConstant;
-    if (F == module->InitialisationCheckFunction || 
-        F == module->GetConstantPoolAtFunction ||
-        F == module->GetArrayClassFunction ||
-        F == module->GetClassDelegateeFunction) {
+    Constant* zero = intrinsics->JavaObjectNullConstant;
+    if (F == intrinsics->InitialisationCheckFunction || 
+        F == intrinsics->GetConstantPoolAtFunction ||
+        F == intrinsics->GetArrayClassFunction ||
+        F == intrinsics->GetClassDelegateeFunction) {
       obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
-      test = new BitCastInst(res, module->JavaObjectType, "", currentBlock);
+      test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
@@ -229,9 +229,9 @@ void JavaJIT::throwException(llvm::Function* F, Value* arg1) {
 }
 
 void JavaJIT::throwException(Value* obj) {
-  Value* threadId = getCurrentThread(module->JavaThreadType);
-  Value* geps[2] = { module->constantZero,
-                     module->OffsetJavaExceptionInThreadConstant };
+  Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
+  Value* geps[2] = { intrinsics->constantZero,
+                     intrinsics->OffsetJavaExceptionInThreadConstant };
 
   Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
                                                       geps + 2, "",
@@ -343,7 +343,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     ex->tester = createBasicBlock("testException");
     
     // PHI Node for the exception object
-    PHINode::Create(JnjvmModule::JavaObjectType, "", ex->tester);
+    PHINode::Create(J3Intrinsics::JavaObjectType, "", ex->tester);
     
     // Set the unwind destination of the instructions in the range of this
     // handler to the test block of the handler. If an instruction already has
@@ -365,7 +365,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     opcodeInfos[ex->handlerpc].handler = true;
     
     if (ex->javaHandler->empty()) {
-      PHINode::Create(JnjvmModule::JavaObjectType, "", ex->javaHandler);
+      PHINode::Create(J3Intrinsics::JavaObjectType, "", ex->javaHandler);
     }
 
   }
@@ -409,20 +409,20 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     // catch the exception but resume unwinding.
     JnjvmClassLoader* loader = compilingClass->classLoader;;
     if (loader != loader->bootstrapLoader) {
-      Value* threadId = getCurrentThread(module->MutatorThreadType);
+      Value* threadId = getCurrentThread(intrinsics->MutatorThreadType);
       Value* Isolate = GetElementPtrInst::Create(threadId,
-                                                 module->constantFour, "",
+                                                 intrinsics->constantFour, "",
                                                  currentBlock);
      
       Isolate = new LoadInst(Isolate, "", currentBlock);
-      Isolate = new BitCastInst(Isolate, module->ptrPtrType, "", currentBlock);
-      Value* Status = GetElementPtrInst::Create(Isolate, module->constantOne, "",
+      Isolate = new BitCastInst(Isolate, intrinsics->ptrPtrType, "", currentBlock);
+      Value* Status = GetElementPtrInst::Create(Isolate, intrinsics->constantOne, "",
                                                 currentBlock);
       Status = new LoadInst(Status, "", currentBlock);
       Status = new PtrToIntInst(Status, Type::Int32Ty, "", currentBlock);
   
       Value* stopping = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, Status,
-                                     module->constantOne, "");
+                                     intrinsics->constantOne, "");
 
       BasicBlock* raiseBlock = createBasicBlock("raiseBlock");
       BasicBlock* continueBlock = createBasicBlock("continueBlock");
@@ -437,7 +437,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     // Get the Java exception.
     Value* obj = currentBlock->begin();
     
-    Value* objVT = CallInst::Create(module->GetVTFunction, obj, "",
+    Value* objVT = CallInst::Create(intrinsics->GetVTFunction, obj, "",
                                     currentBlock);
 
     uint32 depth = cur->catchClass->virtualVT->depth;
@@ -447,17 +447,17 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     if (depth >= JavaVirtualTable::getDisplayLength()) {
       Value* classArgs[2] = { objVT, VTVar };
           
-      cmp = CallInst::Create(module->IsSecondaryClassFunction,
+      cmp = CallInst::Create(intrinsics->IsSecondaryClassFunction,
                              classArgs, classArgs + 2, "",
                              currentBlock);
 
     } else {
      
-      Value* inDisplay = CallInst::Create(module->GetDisplayFunction,
+      Value* inDisplay = CallInst::Create(intrinsics->GetDisplayFunction,
                                           objVT, "", currentBlock);
             
       Value* displayArgs[2] = { inDisplay, depthCl };
-      Value* VTInDisplay = CallInst::Create(module->GetVTInDisplayFunction,
+      Value* VTInDisplay = CallInst::Create(intrinsics->GetVTInDisplayFunction,
                                             displayArgs, displayArgs + 2, "",
                                             currentBlock);
              
@@ -482,15 +482,15 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     currentBlock = cur->javaHandler;
 
     // First thing in the handler: clear the exception.
-    Value* geps[2] = { module->constantZero,
-                       module->OffsetJavaExceptionInThreadConstant };
-    Value* threadId = getCurrentThread(module->JavaThreadType);
+    Value* geps[2] = { intrinsics->constantZero,
+                       intrinsics->OffsetJavaExceptionInThreadConstant };
+    Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
     Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
                                                         geps + 2, "",
                                                         currentBlock);
     
     // Clear exceptions.
-    new StoreInst(module->JavaObjectNullConstant, javaExceptionPtr,
+    new StoreInst(intrinsics->JavaObjectNullConstant, javaExceptionPtr,
                   currentBlock);
 
 #if defined(SERVICE)
@@ -505,24 +505,24 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     Value* IsolatePtr = 0;
     currentBlock = cur->javaHandler;
     if (loader != loader->bootstrapLoader) {
-      threadId = getCurrentThread(module->MutatorThreadType);
+      threadId = getCurrentThread(intrinsics->MutatorThreadType);
      
-      IsolateIDPtr = GetElementPtrInst::Create(threadId, module->constantThree,
+      IsolateIDPtr = GetElementPtrInst::Create(threadId, intrinsics->constantThree,
                                                "", cur->javaHandler);
-      const Type* realType = PointerType::getUnqual(module->pointerSizeType);
+      const Type* realType = PointerType::getUnqual(intrinsics->pointerSizeType);
       IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
                                      cur->javaHandler);
       OldIsolateID = new LoadInst(IsolateIDPtr, "", cur->javaHandler);
 
-      Value* MyID = ConstantInt::get(module->pointerSizeType,
+      Value* MyID = ConstantInt::get(intrinsics->pointerSizeType,
                                      loader->getIsolate()->IsolateID);
 
       new StoreInst(MyID, IsolateIDPtr, cur->javaHandler);
-      IsolatePtr = GetElementPtrInst::Create(threadId, module->constantFour, "",
+      IsolatePtr = GetElementPtrInst::Create(threadId, intrinsics->constantFour, "",
                                              cur->javaHandler);
      
       OldIsolate = new LoadInst(IsolatePtr, "", cur->javaHandler);
-      NewIsolate = module->getIsolate(loader->getIsolate(), currentBlock);
+      NewIsolate = intrinsics->getIsolate(loader->getIsolate(), currentBlock);
       new StoreInst(NewIsolate, IsolatePtr, cur->javaHandler);
 
     }

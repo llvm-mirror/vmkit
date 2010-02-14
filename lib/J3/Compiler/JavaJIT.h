@@ -24,16 +24,15 @@
 
 #include "types.h"
 
+#include "j3/JavaLLVMCompiler.h"
+
 #include "JavaClass.h"
 #include "JavaUpcalls.h"
-#include "j3/JavaLLVMCompiler.h"
-#include "j3/JnjvmModule.h"
 
 namespace j3 {
 
 class Class;
 class JavaMethod;
-class JnjvmModule;
 class Reader;
 
 /// Opinfo - This class gives for each opcode if it starts a new block and
@@ -76,7 +75,7 @@ public:
     compilingClass = meth->classDef;
     upcalls = compilingClass->classLoader->bootstrapLoader->upcalls;
     TheCompiler = C;
-    module = TheCompiler->getIntrinsics();
+    intrinsics = TheCompiler->getIntrinsics();
     llvmFunction = func;
     llvmContext = &func->getContext();
     inlining = false;
@@ -112,8 +111,8 @@ private:
   /// llvmContext - The current LLVM context of compilation.
   llvm::LLVMContext* llvmContext;
   
-  /// module - The LLVM module where lives the compiling LLVM function.
-  JnjvmModule* module;
+  /// intrinsics - The LLVM intrinsics where lives the compiling LLVM function.
+  J3Intrinsics* intrinsics;
 
   /// TheCompiler - The LLVM Java compiler.
   ///
@@ -134,7 +133,7 @@ private:
   
   /// arraySize - Get the size of the array.
   llvm::Value* arraySize(llvm::Value* obj) {
-    return llvm::CallInst::Create(module->ArrayLengthFunction, obj, "",
+    return llvm::CallInst::Create(intrinsics->ArrayLengthFunction, obj, "",
                                   currentBlock);
   }
   
@@ -264,7 +263,7 @@ private:
                           currentBlock);
       stack.push_back(upcalls->OfDouble);
     } else {
-      assert(type == module->JavaObjectType && "Can't handle this type");
+      assert(type == intrinsics->JavaObjectType && "Can't handle this type");
       llvm::Instruction* V = new 
         llvm::StoreInst(val, objectStack[currentStackIndex++], false,
                         currentBlock);
@@ -282,7 +281,7 @@ private:
     llvm::Value* A[1] = 
       { TheCompiler->getNativeClass(cl ? cl : upcalls->OfObject) };
     llvm::MDNode* Node = llvm::MDNode::get(*llvmContext, A, 1);
-    V->setMetadata(module->MetadataTypeKind, Node);
+    V->setMetadata(intrinsics->MetadataTypeKind, Node);
 #endif
   }
 
