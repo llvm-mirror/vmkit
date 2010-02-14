@@ -597,9 +597,7 @@ public:
     return new mvm::UnpreciseStackScanner();
   }
 #endif
-  
-  virtual void* loadMethod(void* handle, const char* symbol);
-  
+   
   static  JavaJITCompiler* CreateCompiler(const std::string& ModuleID);
 
 };

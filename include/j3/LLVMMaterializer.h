@@ -45,6 +45,8 @@ public:
   JavaLLVMLazyJITCompiler(const std::string& ModuleID);
   
   virtual ~JavaLLVMLazyJITCompiler();
+  
+  virtual void* loadMethod(void* handle, const char* symbol);
 
   friend class LLVMMaterializer;
 };

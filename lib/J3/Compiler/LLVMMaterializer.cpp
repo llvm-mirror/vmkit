@@ -36,6 +36,16 @@ JavaLLVMLazyJITCompiler::~JavaLLVMLazyJITCompiler() {
   delete TheMaterializer;
 }
 
+void* JavaLLVMLazyJITCompiler::loadMethod(void* handle, const char* symbol) {
+  Function* F = mvm::MvmModule::globalModule->getFunction(symbol);
+  if (F) {
+    void* res = mvm::MvmModule::executionEngine->getPointerToFunctionOrStub(F);
+    return res;
+  }
+
+  return JavaCompiler::loadMethod(handle, symbol);
+}
+
 uintptr_t JavaLLVMLazyJITCompiler::getPointerOrStub(JavaMethod& meth,
                                                     int side) {
   ExecutionEngine* EE = mvm::MvmModule::executionEngine;
