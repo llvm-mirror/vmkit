@@ -208,17 +208,6 @@ public:
   JITMethodInfo(llvm::GCFunctionInfo* GFI) : GCInfo(GFI) {}
 };
 
-class MvmJITMethodInfo : public JITMethodInfo {
-  const llvm::Function* Func;
-public:
-  virtual void print(void* ip, void* addr);
-  MvmJITMethodInfo(llvm::GCFunctionInfo* GFI, const llvm::Function* F) :
-    JITMethodInfo(GFI) {
-      Func = F;
-      MethodType = 0;
-  }
-};
-
 
 } // end namespace mvm
 

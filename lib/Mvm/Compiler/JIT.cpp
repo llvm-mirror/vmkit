@@ -62,6 +62,21 @@ const char* MvmModule::getHostTriple() {
   return LLVM_HOSTTRIPLE;
 }
 
+class MvmJITMethodInfo : public JITMethodInfo {
+  const llvm::Function* Func;
+public:
+  virtual void print(void* ip, void* addr);
+  MvmJITMethodInfo(llvm::GCFunctionInfo* GFI, const llvm::Function* F) :
+    JITMethodInfo(GFI) {
+      Func = F;
+      MethodType = 0;
+  }
+};
+
+void MvmJITMethodInfo::print(void* ip, void* addr) {
+  fprintf(stderr, "; %p in %s LLVM method\n", ip, Func->getName().data());
+}
+
 class MvmJITListener : public llvm::JITEventListener {
 public:
   virtual void NotifyFunctionEmitted(const Function &F,
@@ -616,6 +631,3 @@ void JITMethodInfo::scan(void* TL, void* ip, void* addr) {
   }
 }
 
-void MvmJITMethodInfo::print(void* ip, void* addr) {
-  fprintf(stderr, "; %p in %s LLVM method\n", ip, Func->getName().data());
-}
