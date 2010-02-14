@@ -419,15 +419,6 @@ void* JavaJITCompiler::loadMethod(void* handle, const char* symbol) {
   return JavaCompiler::loadMethod(handle, symbol);
 }
 
-uintptr_t JavaLLVMLazyJITCompiler::getPointerOrStub(JavaMethod& meth,
-                                                    int side) {
-  ExecutionEngine* EE = mvm::MvmModule::executionEngine;
-  LLVMMethodInfo* LMI = getMethodInfo(&meth);
-  Function* func = LMI->getMethod();
-  return (uintptr_t)EE->getPointerToFunctionOrStub(func);
-}
-
-
 uintptr_t JavaJ3LazyJITCompiler::getPointerOrStub(JavaMethod& meth,
                                                   int side) {
   return meth.getSignature()->getVirtualCallStub();
@@ -439,8 +430,20 @@ Value* JavaJ3LazyJITCompiler::addCallback(Class* cl, uint16 index,
   LLVMSignatureInfo* LSI = getSignatureInfo(sign);
   // Set the stub in the constant pool.
   JavaConstantPool* ctpInfo = cl->ctpInfo;
-  intptr_t stub = stat ? sign->getStaticCallStub() : sign->getSpecialCallStub();
-  __sync_val_compare_and_swap(&(ctpInfo->ctpRes[index]), NULL, stub);
+  uintptr_t stub = stat ? sign->getStaticCallStub() : sign->getSpecialCallStub();
+  if (!ctpInfo->ctpRes[index]) {
+    // Do a compare and swap, so that we do not overwrtie what a stub might
+    // have just updated.
+    uintptr_t val =
+      __sync_val_compare_and_swap(&(ctpInfo->ctpRes[index]), NULL, stub);
+    // If there is something in the the constant pool that is not NULL nor
+    // the stub, then it's the method.
+    if (val != 0 && val != stub) {
+      return ConstantExpr::getIntToPtr(
+          ConstantInt::get(Type::getInt64Ty(insert->getContext()), val),
+          stat ? LSI->getStaticPtrType() : LSI->getVirtualPtrType());
+    }
+  }
   // Load the constant pool.
   Value* CTP = getConstantPool(ctpInfo);
   Value* Index = ConstantInt::get(Type::getInt32Ty(insert->getContext()),
@@ -461,15 +464,6 @@ bool JavaJ3LazyJITCompiler::needsCallback(JavaMethod* meth, bool* needsInit) {
 
 JavaJ3LazyJITCompiler::JavaJ3LazyJITCompiler(const std::string& ModuleID)
     : JavaJITCompiler(ModuleID) {}
-
-JavaLLVMLazyJITCompiler::JavaLLVMLazyJITCompiler(const std::string& ModuleID)
-    : JavaJITCompiler(ModuleID) {
-  TheMaterializer = new LLVMMaterializer(TheModule, this);      
-}
-
-JavaLLVMLazyJITCompiler::~JavaLLVMLazyJITCompiler() {
-  delete TheMaterializer;
-}
 
 static llvm::cl::opt<bool> LLVMLazy("llvm-lazy", 
                      cl::desc("Use LLVM lazy stubs"),

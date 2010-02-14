@@ -27,6 +27,23 @@ using namespace llvm;
 using namespace j3;
 
 
+JavaLLVMLazyJITCompiler::JavaLLVMLazyJITCompiler(const std::string& ModuleID)
+    : JavaJITCompiler(ModuleID) {
+  TheMaterializer = new LLVMMaterializer(TheModule, this);      
+}
+
+JavaLLVMLazyJITCompiler::~JavaLLVMLazyJITCompiler() {
+  delete TheMaterializer;
+}
+
+uintptr_t JavaLLVMLazyJITCompiler::getPointerOrStub(JavaMethod& meth,
+                                                    int side) {
+  ExecutionEngine* EE = mvm::MvmModule::executionEngine;
+  LLVMMethodInfo* LMI = getMethodInfo(&meth);
+  Function* func = LMI->getMethod();
+  return (uintptr_t)EE->getPointerToFunctionOrStub(func);
+}
+
 static JavaMethod* staticLookup(CallbackInfo& F) {
   Class* caller = F.cl;
   uint16 index = F.index; 
