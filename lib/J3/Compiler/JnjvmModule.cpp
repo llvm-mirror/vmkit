@@ -426,14 +426,3 @@ void JavaLLVMCompiler::addJavaPasses() {
   //JavaFunctionPasses->add(mvm::createEscapeAnalysisPass());
   JavaFunctionPasses->add(createLowerConstantCallsPass(getIntrinsics()));
 }
-
-void JavaJITMethodInfo::print(void* ip, void* addr) {
-  void* new_ip = NULL;
-  if (ip) new_ip = isStub(ip, addr);
-  uint16 line = meth->lookupLineNumber((uintptr_t)ip);
-  fprintf(stderr, "; %p in %s.%s (line %d)", new_ip,
-          UTF8Buffer(meth->classDef->name).cString(),
-          UTF8Buffer(meth->name).cString(), line);
-  if (ip != new_ip) fprintf(stderr, " (from stub)");
-  fprintf(stderr, "\n");
-}

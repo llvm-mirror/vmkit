@@ -32,11 +32,43 @@
 #include "JavaTypes.h"
 #include "Jnjvm.h"
 
+#include "j3/JavaJITCompiler.h"
 #include "j3/JnjvmModule.h"
 #include "j3/LLVMMaterializer.h"
 
 using namespace j3;
 using namespace llvm;
+
+
+class JavaJITMethodInfo : public mvm::JITMethodInfo {
+protected:
+  JavaMethod* meth;
+public:
+  virtual void print(void* ip, void* addr);
+  
+  JavaJITMethodInfo(llvm::GCFunctionInfo* GFI, JavaMethod* m) : 
+    mvm::JITMethodInfo(GFI) {
+    meth = m;
+    MethodType = 1;
+  }
+  
+  virtual void* getMetaInfo() {
+    return meth;
+  }
+
+};
+
+void JavaJITMethodInfo::print(void* ip, void* addr) {
+  void* new_ip = NULL;
+  if (ip) new_ip = isStub(ip, addr);
+  uint16 line = meth->lookupLineNumber((uintptr_t)ip);
+  fprintf(stderr, "; %p in %s.%s (line %d)", new_ip,
+          UTF8Buffer(meth->classDef->name).cString(),
+          UTF8Buffer(meth->name).cString(), line);
+  if (ip != new_ip) fprintf(stderr, " (from stub)");
+  fprintf(stderr, "\n");
+}
+
 
 class JavaJITListener : public llvm::JITEventListener {
   JavaMethod* currentCompiledMethod;
@@ -454,6 +486,7 @@ bool JavaJ3LazyJITCompiler::needsCallback(JavaMethod* meth, bool* needsInit) {
 
 JavaJ3LazyJITCompiler::JavaJ3LazyJITCompiler(const std::string& ModuleID)
     : JavaJITCompiler(ModuleID) {}
+
 
 static llvm::cl::opt<bool> LLVMLazy("llvm-lazy", 
                      cl::desc("Use LLVM lazy stubs"),

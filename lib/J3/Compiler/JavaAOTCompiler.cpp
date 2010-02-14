@@ -19,6 +19,7 @@
 
 #include "j3/JnjvmModule.h"
 #include "j3/JavaAOTCompiler.h"
+#include "j3/JavaJITCompiler.h"
 
 #include "JavaArray.h"
 #include "JavaConstantPool.h"
