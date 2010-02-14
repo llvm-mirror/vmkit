@@ -1,4 +1,4 @@
-//===--------- JnjvmModule.cpp - Definition of a Jnjvm module -------------===//
+//===--- LLVMInfo.cpp - Implementation of LLVM info objects for J3---------===//
 //
 //                            The VMKit project
 //
