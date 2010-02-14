@@ -83,7 +83,9 @@ public:
     endNode = 0;
     currentStackIndex = 0;
     currentLineNumber = 0;
+    currentBytecodeIndex = 0;
     currentCtpIndex = -1;
+    callNumber = 0;
   }
 
   /// javaCompile - Compile the Java method.
@@ -147,10 +149,19 @@ private:
   llvm::MDNode* DbgSubprogram;
   
   /// currentLineIndex - The current line being processed.
-  uint32 currentLineNumber;
+  uint16 currentLineNumber;
+
+  /// currentBytecodeIndex - The current bytecode being processed.
+  uint16 currentBytecodeIndex;
   
   /// currentCtpIndex - The constant pool index being processed.
   uint16 currentCtpIndex;
+  
+  /// callNumber - The number of a call for a single opcode. 
+  uint16 callNumber;
+
+  /// CreateLocation - Create debug information for a call.
+  llvm::MDNode* CreateLocation();
 
 //===--------------------------- Inline support ---------------------------===//
 

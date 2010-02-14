@@ -140,9 +140,10 @@ extern "C" void* j3StaticFieldLookup(UserClass* caller, uint32 index) {
 
 #ifndef WITHOUT_VTABLE
 // Throws if the method is not found.
-extern "C" void* j3VirtualTableLookup(UserClass* caller, uint32 index, ...) {
-  
-  void* res = 0;
+extern "C" uint32 j3VirtualTableLookup(UserClass* caller, uint32 index,
+                                       uint32* offset, JavaObject* obj) {
+  llvm_gcroot(obj, 0);
+  uint32 res = 0;
   
   BEGIN_NATIVE_EXCEPTION(1)
     
@@ -155,10 +156,6 @@ extern "C" void* j3VirtualTableLookup(UserClass* caller, uint32 index, ...) {
   JavaMethod* dmeth = lookup->lookupMethodDontThrow(utf8, sign->keyName, false,
                                                     true, 0);
   if (!dmeth) {
-    va_list ap;
-    va_start(ap, index);
-    JavaObject* obj = va_arg(ap, JavaObject*);
-    va_end(ap);
     assert((obj->getClass()->isClass() && 
             obj->getClass()->asClass()->isInitializing()) &&
            "Class not ready in a virtual lookup.");
@@ -168,7 +165,7 @@ extern "C" void* j3VirtualTableLookup(UserClass* caller, uint32 index, ...) {
                                        obj->getClass()->asClass();
     dmeth = lookup->lookupMethod(utf8, sign->keyName, false, true, 0);
   } else {
-    caller->getConstantPool()->ctpRes[index] = (void*)dmeth->offset;
+    *offset = dmeth->offset;
   }
 
 #if !defined(ISOLATE_SHARING) && !defined(SERVICE)
@@ -176,15 +173,10 @@ extern "C" void* j3VirtualTableLookup(UserClass* caller, uint32 index, ...) {
          "Class not ready in a virtual lookup.");
 #endif
 
-  res = (void*)dmeth->offset;
+  res = dmeth->offset;
 
   END_NATIVE_EXCEPTION
 
-  // Since the function is marked readnone, LLVM may move it after the
-  // exception check. Therefore, we trick LLVM to check the return value of the
-  // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return (void*)obj;
   return res;
 }
 #endif
@@ -392,7 +384,8 @@ extern "C" void j3OverflowThinLock(JavaObject* obj) {
 
 // Creates a Java object and then throws it.
 extern "C" JavaObject* j3NullPointerException() {
-  
+  JavaThread::get()->printBacktrace();
+  abort();
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 
@@ -595,6 +588,146 @@ extern "C" void* j3StringLookup(UserClass* cl, uint32 index) {
   END_NATIVE_EXCEPTION
 
   return (void*)str;
+}
+
+extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
+  llvm_gcroot(obj, 0);
+  JavaThread *th = JavaThread::get();
+  UserCommonClass* cl = obj->getClass();
+  void* result = NULL;
+  
+  BEGIN_NATIVE_EXCEPTION(1)
+
+  // Lookup the caller of this class.
+  mvm::StackWalker Walker(th);
+  ++Walker;
+  mvm::MethodInfo* MI = Walker.get();
+  assert(MI->MethodType == 1 && "Wrong call to stub");
+  JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
+  void* ip = *Walker;
+
+  // Lookup the method info in the constant pool of the caller.
+  uint16 ctpIndex = meth->lookupCtpIndex(reinterpret_cast<uintptr_t>(ip));
+  assert(ctpIndex && "No constant pool index");
+  JavaConstantPool* ctpInfo = meth->classDef->getConstantPool();
+  CommonClass* ctpCl = 0;
+  const UTF8* utf8 = 0;
+  Signdef* sign = 0;
+
+  ctpInfo->resolveMethod(ctpIndex, ctpCl, utf8, sign);
+  assert(cl->isAssignableFrom(ctpCl) && "Wrong call object");
+  UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
+  JavaMethod* Virt = lookup->lookupMethod(utf8, sign->keyName, false, true, 0);
+
+  // Compile the found method.
+  result = Virt->compiledPtr();
+
+  // Update the virtual table.
+  assert(lookup->isResolved() && "Class not resolved");
+#if !defined(ISOLATE_SHARING) && !defined(SERVICE)
+  assert(lookup->isInitializing() && "Class not ready");
+#endif
+  assert(lookup->virtualVT && "Class has no VT");
+  assert(lookup->virtualTableSize > Virt->offset && 
+         "The method's offset is greater than the virtual table size");
+  ((void**)obj->getVirtualTable())[Virt->offset] = result;
+  
+  if (ctpCl->isInterface()) {
+    InterfaceMethodTable* IMT = cl->virtualVT->IMT;
+    uint32_t index = InterfaceMethodTable::getIndex(Virt->name, Virt->type);
+    if ((IMT->contents[index] & 1) == 0) {
+      IMT->contents[index] = (uintptr_t)result;
+    } else {
+      
+      JavaMethod* Imeth = 
+        ctpCl->asClass()->lookupInterfaceMethodDontThrow(utf8, sign->keyName);
+      assert(Imeth && "Method not in hierarchy?");
+      uintptr_t* table = (uintptr_t*)(IMT->contents[index] & ~1);
+      uint32 i = 0;
+      while (table[i] != (uintptr_t)Imeth) { i += 2; }
+      table[i + 1] = (uintptr_t)result;
+    }
+  }
+
+  END_NATIVE_EXCEPTION
+
+  return result;
+}
+
+extern "C" void* j3ResolveStaticStub() {
+  JavaThread *th = JavaThread::get();
+  void* result = NULL;
+  
+  BEGIN_NATIVE_EXCEPTION(1)
+
+  // Lookup the caller of this class.
+  mvm::StackWalker Walker(th);
+  ++Walker;
+  mvm::MethodInfo* MI = Walker.get();
+  assert(MI->MethodType == 1 && "Wrong call to stub");
+  JavaMethod* caller = (JavaMethod*)MI->getMetaInfo();
+  void* ip = *Walker;
+
+  // Lookup the method info in the constant pool of the caller.
+  uint16 ctpIndex = caller->lookupCtpIndex(reinterpret_cast<uintptr_t>(ip));
+  assert(ctpIndex && "No constant pool index");
+  JavaConstantPool* ctpInfo = caller->classDef->getConstantPool();
+  CommonClass* cl = 0;
+  const UTF8* utf8 = 0;
+  Signdef* sign = 0;
+
+  ctpInfo->resolveMethod(ctpIndex, cl, utf8, sign);
+  UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
+  assert(lookup->isInitializing() && "Class not ready");
+  JavaMethod* callee = lookup->lookupMethod(utf8, sign->keyName, true, true, 0);
+
+  // Compile the found method.
+  result = callee->compiledPtr();
+    
+  // Update the entry in the constant pool.
+  ctpInfo->ctpRes[ctpIndex] = result;
+
+  END_NATIVE_EXCEPTION
+
+  return result;
+}
+
+extern "C" void* j3ResolveSpecialStub() {
+  JavaThread *th = JavaThread::get();
+  void* result = NULL;
+  
+  BEGIN_NATIVE_EXCEPTION(1)
+
+  // Lookup the caller of this class.
+  mvm::StackWalker Walker(th);
+  ++Walker;
+  mvm::MethodInfo* MI = Walker.get();
+  assert(MI->MethodType == 1 && "Wrong call to stub");
+  JavaMethod* caller = (JavaMethod*)MI->getMetaInfo();
+  void* ip = *Walker;
+
+  // Lookup the method info in the constant pool of the caller.
+  uint16 ctpIndex = caller->lookupCtpIndex(reinterpret_cast<uintptr_t>(ip));
+  assert(ctpIndex && "No constant pool index");
+  JavaConstantPool* ctpInfo = caller->classDef->getConstantPool();
+  CommonClass* cl = 0;
+  const UTF8* utf8 = 0;
+  Signdef* sign = 0;
+
+  ctpInfo->resolveMethod(ctpIndex, cl, utf8, sign);
+  UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
+  assert(lookup->isInitializing() && "Class not ready");
+  JavaMethod* callee = lookup->lookupMethod(utf8, sign->keyName, false, true,0);
+
+  // Compile the found method.
+  result = callee->compiledPtr();
+    
+  // Update the entry in the constant pool.
+  ctpInfo->ctpRes[ctpIndex] = result;
+
+  END_NATIVE_EXCEPTION
+
+  return result;
 }
 
 extern "C" void j3PrintMethodStart(JavaMethod* meth) {

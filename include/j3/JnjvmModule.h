@@ -172,13 +172,17 @@ private:
   llvm::Function* staticBufFunction;
   llvm::Function* staticAPFunction;
   
+  llvm::Function* staticStubFunction;
+  llvm::Function* specialStubFunction;
+  llvm::Function* virtualStubFunction;
+  
   Signdef* signature;
 
   llvm::Function* createFunctionCallBuf(bool virt);
   llvm::Function* createFunctionCallAP(bool virt);
+  llvm::Function* createFunctionStub(bool special, bool virt);
    
   
-
 public:
   const llvm::FunctionType* getVirtualType();
   const llvm::FunctionType* getStaticType();
@@ -196,6 +200,10 @@ public:
   llvm::Function* getStaticBuf();
   llvm::Function* getStaticAP();
   
+  llvm::Function* getStaticStub();
+  llvm::Function* getSpecialStub();
+  llvm::Function* getVirtualStub();
+  
   LLVMSignatureInfo(Signdef* sign) : 
     staticType(0),
     virtualType(0),
@@ -209,6 +217,9 @@ public:
     virtualAPFunction(0),
     staticBufFunction(0),
     staticAPFunction(0),
+    staticStubFunction(0),
+    specialStubFunction(0),
+    virtualStubFunction(0),
     signature(sign) {}
 
 };
@@ -268,6 +279,11 @@ public:
   llvm::Function* ForceLoadedCheckFunction;
   llvm::Function* ClassLookupFunction;
   llvm::Function* StringLookupFunction;
+  
+  llvm::Function* ResolveVirtualStubFunction;
+  llvm::Function* ResolveSpecialStubFunction;
+  llvm::Function* ResolveStaticStubFunction;
+
 #ifndef WITHOUT_VTABLE
   llvm::Function* VirtualLookupFunction;
 #endif
@@ -477,7 +493,7 @@ public:
     return meth == NULL;
   }
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
-                                   bool stat) = 0;
+                                   bool stat, llvm::BasicBlock* insert) = 0;
   
   virtual void staticCallBuf(Signdef* sign) {
     getSignatureInfo(sign)->getStaticBuf();
@@ -493,6 +509,18 @@ public:
 
   virtual void virtualCallAP(Signdef* sign) {
     getSignatureInfo(sign)->getVirtualAP();
+  }
+  
+  virtual void virtualCallStub(Signdef* sign) {
+    getSignatureInfo(sign)->getVirtualStub();
+  }
+  
+  virtual void specialCallStub(Signdef* sign) {
+    getSignatureInfo(sign)->getSpecialStub();
+  }
+  
+  virtual void staticCallStub(Signdef* sign) {
+    getSignatureInfo(sign)->getStaticStub();
   }
 
   llvm::Function* NativeLoader;
@@ -580,7 +608,7 @@ public:
   virtual ~JavaJITCompiler() {}
   
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
-                                   bool stat);
+                                   bool stat, llvm::BasicBlock* insert);
   virtual uintptr_t getPointerOrStub(JavaMethod& meth, int type);
 
 #ifdef WITH_LLVM_GCC
@@ -594,6 +622,21 @@ public:
   
   virtual void* loadMethod(void* handle, const char* symbol);
 
+};
+
+class JavaJ3LazyJITCompiler : public JavaJITCompiler {
+public:
+  virtual bool needsCallback(JavaMethod* meth, bool* needsInit);
+  virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
+                                   bool stat, llvm::BasicBlock* insert);
+  virtual uintptr_t getPointerOrStub(JavaMethod& meth, int side);
+  
+  virtual JavaCompiler* Create(const std::string& ModuleID) {
+    return new JavaJ3LazyJITCompiler(ModuleID);
+  }
+
+  JavaJ3LazyJITCompiler(const std::string& ModuleID)
+    : JavaJITCompiler(ModuleID) {}
 };
 
 class JavaAOTCompiler : public JavaLLVMCompiler {
@@ -619,7 +662,7 @@ public:
   }
   
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
-                                   bool stat);
+                                   bool stat, llvm::BasicBlock* insert);
   
   virtual void makeVT(Class* cl);
   virtual void makeIMT(Class* cl);

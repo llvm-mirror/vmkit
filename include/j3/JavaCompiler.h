@@ -84,6 +84,21 @@ public:
     abort();
   }
   
+  virtual void virtualCallStub(Signdef* sign) {
+    fprintf(stderr, "Asking for a callback in an empty compiler");
+    abort();
+  }
+  
+  virtual void specialCallStub(Signdef* sign) {
+    fprintf(stderr, "Asking for a callback in an empty compiler");
+    abort();
+  }
+  
+  virtual void staticCallStub(Signdef* sign) {
+    fprintf(stderr, "Asking for a callback in an empty compiler");
+    abort();
+  }
+
   virtual ~JavaCompiler() {}
 
   virtual mvm::StackScanner* createStackScanner() {

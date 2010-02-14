@@ -136,9 +136,8 @@ declare i8* @getConstantPoolAt(i8* (%JavaClass*, i32, ...)*, i8**,
                                %JavaClass*, i32, ...) readnone
 
 ;;; j3VirtualTableLookup - Look up the offset in a virtual table of a
-;;; specific function. This function takes a class and an index to lookup in the
-;;; constant pool and returns and stores it in the constant pool cache.
-declare i8* @j3VirtualTableLookup(%JavaClass*, i32, ...)
+;;; specific function.
+declare i32 @j3VirtualTableLookup(%JavaClass*, i32, i32*, %JavaObject*)
 
 ;;; j3ClassLookup - Look up a specific class. The function takes a class and
 ;;; an index to lookup in the constant pool and returns and stores it in the
@@ -195,6 +194,10 @@ declare i64 @getFinalLongField(i64*) readnone
 declare double @getFinalDoubleField(double*) readnone
 declare float @getFinalFloatField(float*) readnone
 declare %JavaObject* @getFinalObjectField(%JavaObject**) readnone
+
+declare i8* @j3ResolveVirtualStub(%JavaObject*)
+declare i8* @j3ResolveSpecialStub()
+declare i8* @j3ResolveStaticStub()
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Exception methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -498,6 +498,87 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   return res;
 }
 
+Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
+  
+  std::vector<Value*> Args;
+  std::vector<Value*> FunctionArgs;
+  
+  JavaLLVMCompiler* Mod = 
+    (JavaLLVMCompiler*)signature->initialLoader->getCompiler();
+  JnjvmModule& Intrinsics = *Mod->getIntrinsics();
+  std::string name;
+  if (Mod->isStaticCompiling()) {
+    name += UTF8Buffer(signature->keyName).cString();
+    name += virt ? "virtual_stub" : special ? "special_stub" : "static_stub";
+  } else {
+    name = "";
+  }
+
+  Function* stub = Function::Create((virt || special) ? getVirtualType() :
+                                                        getStaticType(),
+                                   GlobalValue::InternalLinkage, name,
+                                   Mod->getLLVMModule());
+  LLVMContext& context = Mod->getLLVMModule()->getContext();
+  
+  BasicBlock* currentBlock = BasicBlock::Create(context, "enter", stub);
+  BasicBlock* endBlock = BasicBlock::Create(context, "end", stub);
+  BasicBlock* callBlock = BasicBlock::Create(context, "call", stub);
+  PHINode* node = NULL;
+  if (!signature->getReturnType()->isVoid()) {
+    node = PHINode::Create(stub->getReturnType(), "", endBlock);
+  }
+    
+  Function::arg_iterator arg = stub->arg_begin();
+  Value *obj = NULL;
+  if (virt) {
+    obj = arg;
+    Args.push_back(obj);
+  }
+
+  for (; arg != stub->arg_end() ; ++arg) {
+    FunctionArgs.push_back(arg);
+    if (Mod->useCooperativeGC()) {
+      if (arg->getType() == Intrinsics.JavaObjectType) {
+        Value* GCArgs[2] = { 
+          new BitCastInst(arg, Intrinsics.ptrPtrType, "", currentBlock),
+          Intrinsics.constantPtrNull
+        };
+        
+        CallInst::Create(Intrinsics.llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
+                         currentBlock);
+      }
+    }
+  }
+
+  Value* val = CallInst::Create(virt ? Intrinsics.ResolveVirtualStubFunction :
+                                special ? Intrinsics.ResolveSpecialStubFunction:
+                                          Intrinsics.ResolveStaticStubFunction,
+                                Args.begin(), Args.end(), "", currentBlock);
+  
+  Constant* nullValue = Constant::getNullValue(val->getType());
+  Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
+                            nullValue, val, "");
+  BranchInst::Create(endBlock, callBlock, cmp, currentBlock);
+  if (node) node->addIncoming(Constant::getNullValue(node->getType()),
+                              currentBlock);
+
+  currentBlock = callBlock;
+  Value* Func = new BitCastInst(val, stub->getType(), "", currentBlock);
+  Value* res = CallInst::Create(Func, FunctionArgs.begin(), FunctionArgs.end(),
+                                "", currentBlock);
+  if (node) node->addIncoming(res, currentBlock);
+  BranchInst::Create(endBlock, currentBlock);
+
+  currentBlock = endBlock;
+  if (node) {
+    ReturnInst::Create(context, node, currentBlock);
+  } else {
+    ReturnInst::Create(context, currentBlock);
+  }
+  
+  return stub;
+}
+
 const PointerType* LLVMSignatureInfo::getStaticPtrType() {
   if (!staticPtrType) {
     staticPtrType = PointerType::getUnqual(getStaticType());
@@ -619,6 +700,57 @@ Function* LLVMSignatureInfo::getStaticAP() {
   }
   mvm::MvmModule::unprotectIR();
   return staticAPFunction;
+}
+
+Function* LLVMSignatureInfo::getStaticStub() {
+  // Lock here because we are called by arbitrary code. Also put that here
+  // because we are waiting on staticStubFunction to have an address.
+  mvm::MvmModule::protectIR();
+  if (!staticStubFunction) {
+    staticStubFunction = createFunctionStub(false, false);
+    if (!signature->initialLoader->getCompiler()->isStaticCompiling()) {
+      signature->setStaticCallStub((intptr_t)
+        mvm::MvmModule::executionEngine->getPointerToGlobal(staticStubFunction));
+      // Now that it's compiled, we don't need the IR anymore
+      staticStubFunction->deleteBody();
+    }
+  }
+  mvm::MvmModule::unprotectIR();
+  return staticStubFunction;
+}
+
+Function* LLVMSignatureInfo::getSpecialStub() {
+  // Lock here because we are called by arbitrary code. Also put that here
+  // because we are waiting on specialStubFunction to have an address.
+  mvm::MvmModule::protectIR();
+  if (!specialStubFunction) {
+    specialStubFunction = createFunctionStub(true, false);
+    if (!signature->initialLoader->getCompiler()->isStaticCompiling()) {
+      signature->setSpecialCallStub((intptr_t)
+        mvm::MvmModule::executionEngine->getPointerToGlobal(specialStubFunction));
+      // Now that it's compiled, we don't need the IR anymore
+      specialStubFunction->deleteBody();
+    }
+  }
+  mvm::MvmModule::unprotectIR();
+  return specialStubFunction;
+}
+
+Function* LLVMSignatureInfo::getVirtualStub() {
+  // Lock here because we are called by arbitrary code. Also put that here
+  // because we are waiting on virtualStubFunction to have an address.
+  mvm::MvmModule::protectIR();
+  if (!virtualStubFunction) {
+    virtualStubFunction = createFunctionStub(false, true);
+    if (!signature->initialLoader->getCompiler()->isStaticCompiling()) {
+      signature->setVirtualCallStub((intptr_t)
+        mvm::MvmModule::executionEngine->getPointerToGlobal(virtualStubFunction));
+      // Now that it's compiled, we don't need the IR anymore
+      virtualStubFunction->deleteBody();
+    }
+  }
+  mvm::MvmModule::unprotectIR();
+  return virtualStubFunction;
 }
 
 void LLVMAssessorInfo::initialise() {

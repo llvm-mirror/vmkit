@@ -118,6 +118,11 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
 #else
   llvm::DwarfExceptionHandling = false;
 #endif
+  
+  // Disable branch fold for accurate line numbers.
+  char* commands[2] = { (char*)"vmkit", (char*)"-disable-branch-fold" };
+  llvm::cl::ParseCommandLineOptions(2, commands);
+
   if (!M) {
     globalModule = new Module("bootstrap module", getGlobalContext());
 

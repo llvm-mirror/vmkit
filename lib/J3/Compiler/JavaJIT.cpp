@@ -20,6 +20,7 @@
 #include <llvm/Instructions.h>
 #include <llvm/Module.h>
 #include <llvm/Type.h>
+#include <llvm/Analysis/DebugInfo.h>
 #include <llvm/Support/CFG.h>
 
 #include "mvm/JIT.h"
@@ -161,21 +162,46 @@ void JavaJIT::invokeVirtual(uint16 index) {
     Constant* Offset = LMI->getOffset();
     indexes2[1] = Offset;
 #ifdef ISOLATE_SHARING
-    indexesCtp = ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
+    indexesCtp = ConstantInt::get(Type::getInt32Ty(*llvmContext),
                                   Offset->getZExtValue() * -1);
 #endif
   } else {
+   
+    GlobalVariable* GV = new GlobalVariable(*llvmFunction->getParent(),
+                                            Type::getInt32Ty(*llvmContext),
+                                            false,
+                                            GlobalValue::ExternalLinkage,
+                                            module->constantZero, "");
     
-    Value* val = getConstantPoolAt(index, module->VirtualLookupFunction,
-                                   Type::getInt32Ty(getGlobalContext()), args[0], true);
-    indexes2[1] = val;
+    BasicBlock* resolveVirtual = createBasicBlock("resolveVirtual");
+    BasicBlock* endResolveVirtual = createBasicBlock("endResolveVirtual");
+    PHINode* node = PHINode::Create(Type::getInt32Ty(*llvmContext), "",
+                                    endResolveVirtual);
+
+    Value* load = new LoadInst(GV, "", false, currentBlock);
+    Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, load,
+                               module->constantZero, "");
+    BranchInst::Create(resolveVirtual, endResolveVirtual, test, currentBlock);
+    node->addIncoming(load, currentBlock);
+    currentBlock = resolveVirtual;
+    std::vector<Value*> Args;
+    Args.push_back(TheCompiler->getNativeClass(compilingClass));
+    Args.push_back(ConstantInt::get(Type::getInt32Ty(*llvmContext), index));
+    Args.push_back(GV);
+    Args.push_back(args[0]);
+    load = invoke(module->VirtualLookupFunction, Args, "", currentBlock);
+    node->addIncoming(load, currentBlock);
+    BranchInst::Create(endResolveVirtual, currentBlock);
+    currentBlock = endResolveVirtual;
+
+    indexes2[1] = node;
 #ifdef ISOLATE_SHARING
     Value* mul = BinaryOperator::CreateMul(val, module->constantMinusOne,
                                            "", currentBlock);
     indexesCtp = mul;
 #endif
   }
-  
+ 
   Value* FuncPtr = GetElementPtrInst::Create(VT, indexes2, indexes2 + 2, "",
                                              currentBlock);
     
@@ -1624,9 +1650,9 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
 #if defined(ISOLATE_SHARING)
   const Type* Ty = module->ConstantPoolType;
   Constant* Nil = Constant::getNullValue(Ty);
-  GlobalVariable* GV = new GlobalVariable(Ty, false,
+  GlobalVariable* GV = new GlobalVariable(*llvmFunction->getParent(),Ty, false,
                                           GlobalValue::ExternalLinkage, Nil,
-                                          "", module);
+                                          "");
   Value* res = new LoadInst(GV, "", false, currentBlock);
   Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, res, Nil, "");
  
@@ -1659,10 +1685,12 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
         UserCommonClass* cl = 0;
         Value* Cl = getResolvedCommonClass(clIndex, false, &cl);
         if (!cl) {
-          CallInst::Create(module->ForceLoadedCheckFunction, Cl, "",currentBlock);
+          CallInst::Create(module->ForceLoadedCheckFunction, Cl, "",
+                           currentBlock);
         }
       }
-      func = TheCompiler->addCallback(compilingClass, index, signature, false);
+      func = TheCompiler->addCallback(compilingClass, index, signature, false,
+                                      currentBlock);
     } else {
       func = TheCompiler->getMethod(meth);
     }
@@ -1676,7 +1704,8 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
       push(val, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
       push(val, signature->getReturnType()->isUnsigned());
-      if (retType == Type::getDoubleTy(getGlobalContext()) || retType == Type::getInt64Ty(getGlobalContext())) {
+      if (retType == Type::getDoubleTy(getGlobalContext()) ||
+          retType == Type::getInt64Ty(getGlobalContext())) {
         push(module->constantZero, false);
       }
     }
@@ -1735,7 +1764,8 @@ void JavaJIT::invokeStatic(uint16 index) {
       Value* func = 0;
       bool needsInit = false;
       if (TheCompiler->needsCallback(meth, &needsInit)) {
-        func = TheCompiler->addCallback(compilingClass, index, signature, true);
+        func = TheCompiler->addCallback(compilingClass, index, signature,
+                                        true, currentBlock);
       } else {
         /*if (meth == upcalls->SystemArraycopy ||
             meth == upcalls->VMSystemArraycopy) {
@@ -1755,7 +1785,8 @@ void JavaJIT::invokeStatic(uint16 index) {
       push(val, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
       push(val, signature->getReturnType()->isUnsigned());
-      if (retType == Type::getDoubleTy(getGlobalContext()) || retType == Type::getInt64Ty(getGlobalContext())) {
+      if (retType == Type::getDoubleTy(getGlobalContext()) ||
+          retType == Type::getInt64Ty(getGlobalContext())) {
         push(module->constantZero, false);
       }
     }
@@ -2543,6 +2574,14 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   currentBlock = label_return;
 }
 
+MDNode* JavaJIT::CreateLocation() {
+  uint32_t first = currentLineNumber | (currentBytecodeIndex << 16);
+  uint32_t second = currentCtpIndex | (callNumber << 16);
+  DILocation Location = module->DebugFactory->CreateLocation(
+      first, second, DIScope(DbgSubprogram));
+  callNumber++;
+  return Location.getNode();
+}
 
 #ifdef DWARF_EXCEPTIONS
 #include "ExceptionsDwarf.inc"

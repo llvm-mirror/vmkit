@@ -170,7 +170,11 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
     // Update the line number information.
     if (opinfo->lineNumber)
       currentLineNumber = opinfo->lineNumber;
-    
+   
+    currentCtpIndex = -1;
+    currentBytecodeIndex = i;
+    callNumber = 0;
+
     // To prevent a gcj bug with useless goto
     if (currentBlock->getTerminator() != 0) { 
       currentBlock = createBasicBlock("gcj bug");

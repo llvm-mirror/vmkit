@@ -290,6 +290,10 @@ JnjvmModule::JnjvmModule(llvm::Module* module) :
   StartJNIFunction = module->getFunction("j3StartJNI");
   EndJNIFunction = module->getFunction("j3EndJNI");
   
+  ResolveVirtualStubFunction = module->getFunction("j3ResolveVirtualStub");
+  ResolveStaticStubFunction = module->getFunction("j3ResolveStaticStub");
+  ResolveSpecialStubFunction = module->getFunction("j3ResolveSpecialStub");
+  
   NullPointerExceptionFunction =
     module->getFunction("j3NullPointerException");
   ClassCastExceptionFunction = module->getFunction("j3ClassCastException");
@@ -427,9 +431,10 @@ void JavaLLVMCompiler::addJavaPasses() {
 void JavaJITMethodInfo::print(void* ip, void* addr) {
   void* new_ip = NULL;
   if (ip) new_ip = isStub(ip, addr);
-  fprintf(stderr, "; %p in %s.%s", new_ip,
+  uint16 line = meth->lookupLineNumber((uintptr_t)ip);
+  fprintf(stderr, "; %p in %s.%s (line %d)", new_ip,
           UTF8Buffer(meth->classDef->name).cString(),
-          UTF8Buffer(meth->name).cString());
+          UTF8Buffer(meth->name).cString(), line);
   if (ip != new_ip) fprintf(stderr, " (from stub)");
   fprintf(stderr, "\n");
 }

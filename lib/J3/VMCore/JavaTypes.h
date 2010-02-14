@@ -291,6 +291,15 @@ private:
   intptr_t _virtualCallAP; 
   intptr_t virtualCallAP();
   
+  intptr_t _virtualCallStub; 
+  intptr_t virtualCallStub();
+  
+  intptr_t _specialCallStub;
+  intptr_t specialCallStub();
+  
+  intptr_t _staticCallStub; 
+  intptr_t staticCallStub();
+  
 public:
 
   /// initialLoader - The loader that first loaded this signdef.
@@ -347,6 +356,21 @@ public:
     return _virtualCallAP;
   }
   
+  intptr_t getVirtualCallStub() {
+    if (!_virtualCallStub) return virtualCallStub();
+    return _virtualCallStub;
+  }
+  
+  intptr_t getSpecialCallStub() {
+    if (!_specialCallStub) return specialCallStub();
+    return _specialCallStub;
+  }
+  
+  intptr_t getStaticCallStub() {
+    if (!_staticCallStub) return staticCallStub();
+    return _staticCallStub;
+  }
+  
   void setStaticCallBuf(intptr_t code) {
     _staticCallBuf = code;
   }
@@ -361,6 +385,18 @@ public:
 
   void setVirtualCallAP(intptr_t code) {
     _virtualCallAP = code;
+  }
+  
+  void setVirtualCallStub(intptr_t code) {
+    _virtualCallStub = code;
+  }
+  
+  void setSpecialCallStub(intptr_t code) {
+    _specialCallStub = code;
+  }
+  
+  void setStaticCallStub(intptr_t code) {
+    _staticCallStub = code;
   }
 
 //===----------------------------------------------------------------------===//

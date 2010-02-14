@@ -1741,3 +1741,14 @@ uint16 JavaMethod::lookupLineNumber(uintptr_t ip) {
   if (codeInfoLength) return codeInfo[codeInfoLength - 1].lineNumber;
   return 0;
 }
+
+uint16 JavaMethod::lookupCtpIndex(uintptr_t ip) {
+  for(uint16 i = 0; i < codeInfoLength; ++i) {
+    if (codeInfo[i].address > ip) {
+      assert(i > 0 && "Wrong ip address for method");
+      return codeInfo[i - 1].ctpIndex;
+    }
+  }
+  if (codeInfoLength) return codeInfo[codeInfoLength - 1].ctpIndex;
+  return 0;
+}

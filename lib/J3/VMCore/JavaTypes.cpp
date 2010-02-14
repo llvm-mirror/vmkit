@@ -114,6 +114,50 @@ intptr_t Signdef::virtualCallAP() {
   return _virtualCallAP;
 }
 
+intptr_t Signdef::virtualCallStub() {
+  if (!_virtualCallAP) {
+    char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
+    nativeName(buf, "virtual_stub");
+    bool unused = false;
+    intptr_t res = initialLoader->loadInLib(buf, unused);
+    if (res) {
+      _virtualCallStub = res;
+    } else {
+      initialLoader->getCompiler()->virtualCallStub(this);
+    }
+  }
+  return _virtualCallStub;
+}
+
+intptr_t Signdef::specialCallStub() {
+  if (!_specialCallStub) {
+    char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
+    nativeName(buf, "special_stub");
+    bool unused = false;
+    intptr_t res = initialLoader->loadInLib(buf, unused);
+    if (res) {
+      _specialCallStub = res;
+    } else {
+      initialLoader->getCompiler()->specialCallStub(this);
+    }
+  }
+  return _specialCallStub;
+}
+
+intptr_t Signdef::staticCallStub() {
+  if (!_staticCallStub) {
+    char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
+    nativeName(buf, "static_stub");
+    bool unused = false;
+    intptr_t res = initialLoader->loadInLib(buf, unused);
+    if (res) {
+      _staticCallStub = res;
+    } else {
+      initialLoader->getCompiler()->staticCallStub(this);
+    }
+  }
+  return _staticCallStub;
+}
 
 void Signdef::nativeName(char* ptr, const char* ext) const {
   sint32 i = 0;

@@ -994,6 +994,7 @@ public:
   uintptr_t address;
   uint16 lineNumber;
   uint16 ctpIndex;
+  uint16 bytecodeIndex;
   // TODO: Use these fields when inlining.
   JavaMethod* executingMethod;
   // The code where the inlined method starts.
@@ -1089,6 +1090,11 @@ public:
   /// pointer.
   ///
   uint16 lookupLineNumber(uintptr_t ip);
+  
+  /// lookupCtpIndex - Lookup the constant pool index pointed by the opcode
+  /// related to the given instruction pointer.
+  ///
+  uint16 lookupCtpIndex(uintptr_t ip);
 
   /// getSignature - Get the signature of thes method, resolving it if
   /// necessary.

@@ -28,6 +28,7 @@
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
 #include "JavaThread.h"
+#include "JavaTypes.h"
 #include "Jnjvm.h"
 
 #include "j3/JnjvmModule.h"
@@ -69,10 +70,13 @@ public:
           new(Alloc, "CodeLineInfo") CodeLineInfo[infoLength];
         for (uint32 i = 0; i < infoLength; ++i) {
           DILocation DLT = Details.MF->getDILocation(Details.LineStarts[i].Loc);
+          uint32_t first = DLT.getLineNumber();
+          uint32_t second = DLT.getColumnNumber();
           currentCompiledMethod->codeInfo[i].address =
             Details.LineStarts[i].Address;
-          currentCompiledMethod->codeInfo[i].lineNumber = DLT.getLineNumber();
-          currentCompiledMethod->codeInfo[i].ctpIndex = DLT.getColumnNumber();
+          currentCompiledMethod->codeInfo[i].lineNumber = first & 0xFFFF;
+          currentCompiledMethod->codeInfo[i].bytecodeIndex = first >> 16;
+          currentCompiledMethod->codeInfo[i].ctpIndex = second & 0xFFFF;
         }
       }
     }
@@ -421,4 +425,36 @@ uintptr_t JavaJITCompiler::getPointerOrStub(JavaMethod& meth,
   LLVMMethodInfo* LMI = getMethodInfo(&meth);
   Function* func = LMI->getMethod();
   return (uintptr_t)EE->getPointerToFunctionOrStub(func);
+}
+
+
+uintptr_t JavaJ3LazyJITCompiler::getPointerOrStub(JavaMethod& meth,
+                                                  int side) {
+  return meth.getSignature()->getVirtualCallStub();
+}
+
+Value* JavaJ3LazyJITCompiler::addCallback(Class* cl, uint16 index,
+                                          Signdef* sign, bool stat,
+                                          llvm::BasicBlock* insert) {
+  LLVMSignatureInfo* LSI = getSignatureInfo(sign);
+  // Set the stub in the constant pool.
+  JavaConstantPool* ctpInfo = cl->ctpInfo;
+  intptr_t stub = stat ? sign->getStaticCallStub() : sign->getSpecialCallStub();
+  __sync_val_compare_and_swap(&(ctpInfo->ctpRes[index]), NULL, stub);
+  // Load the constant pool.
+  Value* CTP = getConstantPool(ctpInfo);
+  Value* Index = ConstantInt::get(Type::getInt32Ty(insert->getContext()),
+                                  index);
+  Value* func = GetElementPtrInst::Create(CTP, Index, "", insert);
+  func = new LoadInst(func, "", false, insert);
+  // Bitcast it to the LLVM function.
+  func = new BitCastInst(func, stat ? LSI->getStaticPtrType() :
+                                      LSI->getVirtualPtrType(),
+                         "", insert);
+  return func;
+}
+
+bool JavaJ3LazyJITCompiler::needsCallback(JavaMethod* meth, bool* needsInit) {
+  *needsInit = true;
+  return (meth == NULL || meth->code == NULL);
 }
