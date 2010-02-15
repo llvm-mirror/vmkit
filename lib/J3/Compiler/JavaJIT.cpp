@@ -2003,7 +2003,7 @@ void JavaJIT::convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock
                            bool usign) {
   const Type* t2 = val->getType();
   if (t1 != t2) {
-    if (t1->isInteger() && t2->isInteger()) {
+    if (t1->isIntegerTy() && t2->isIntegerTy()) {
       if (t2->getPrimitiveSizeInBits() < t1->getPrimitiveSizeInBits()) {
         if (usign) {
           val = new ZExtInst(val, t1, "", currentBlock);
@@ -2013,7 +2013,7 @@ void JavaJIT::convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock
       } else {
         val = new TruncInst(val, t1, "", currentBlock);
       }    
-    } else if (t1->isFloatingPoint() && t2->isFloatingPoint()) {
+    } else if (t1->isFloatTy() && t2->isFloatTy()) {
       if (t2->getPrimitiveSizeInBits() < t1->getPrimitiveSizeInBits()) {
         val = new FPExtInst(val, t1, "", currentBlock);
       } else {

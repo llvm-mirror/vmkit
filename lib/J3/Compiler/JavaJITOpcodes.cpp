@@ -1876,7 +1876,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
       case IRETURN : {
         Value* val = pop();
-        assert(val->getType()->isInteger());
+        assert(val->getType()->isIntegerTy());
         convertValue(val, endNode->getType(), currentBlock, false);
         endNode->addIncoming(val, currentBlock);
         BranchInst::Create(endBlock, currentBlock);
