@@ -598,9 +598,8 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
 
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
-  ++Walker;
+  while (Walker.get()->MethodType != 1) ++Walker;
   mvm::MethodInfo* MI = Walker.get();
-  assert(MI->MethodType == 1 && "Wrong call to stub");
   JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
   void* ip = *Walker;
 
@@ -660,7 +659,7 @@ extern "C" void* j3ResolveStaticStub() {
 
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
-  ++Walker;
+  while (Walker.get()->MethodType != 1) ++Walker;
   mvm::MethodInfo* MI = Walker.get();
   assert(MI->MethodType == 1 && "Wrong call to stub");
   JavaMethod* caller = (JavaMethod*)MI->getMetaInfo();
@@ -698,7 +697,7 @@ extern "C" void* j3ResolveSpecialStub() {
 
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
-  ++Walker;
+  while (Walker.get()->MethodType != 1) ++Walker;
   mvm::MethodInfo* MI = Walker.get();
   assert(MI->MethodType == 1 && "Wrong call to stub");
   JavaMethod* caller = (JavaMethod*)MI->getMetaInfo();
