@@ -797,11 +797,8 @@ static char* findInformation(Jnjvm* vm, ArrayUInt8* manifest, const char* entry,
 void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv, 
                                           int i) {
   jarFile = argv[i];
-  uint32 size = 2 + strlen(vm->classpath) + strlen(jarFile);
-  char* temp = (char*)vm->allocator.Allocate(size, "jar file");
 
-  sprintf(temp, "%s:%s", vm->classpath, jarFile);
-  vm->setClasspath(temp);
+  vm->setClasspath(jarFile);
   
   ArrayUInt8* bytes = Reader::openFile(vm->bootstrapLoader, jarFile, true);
 
