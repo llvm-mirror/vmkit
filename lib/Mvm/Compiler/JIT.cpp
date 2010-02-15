@@ -128,6 +128,7 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   
   llvm::NoFramePointerElim = true;
   llvm::DisablePrettyStackTrace = true;
+  llvm::JITEmitDebugInfo = false;
 #if DWARF_EXCEPTIONS
   llvm::DwarfExceptionHandling = true;
 #else
