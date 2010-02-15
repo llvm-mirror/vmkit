@@ -184,8 +184,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             if (StoreInst* SI = dyn_cast<StoreInst>(Temp)) {
               if (dyn_cast<Instruction>(II) == SI) ++II;
               SI->eraseFromParent();
-            }
-            if (BitCastInst* BI = dyn_cast<BitCastInst>(Temp)) {
+            } else if (BitCastInst* BI = dyn_cast<BitCastInst>(Temp)) {
               CallSite Call = CallSite::get(*(BI->use_begin()));
               Instruction* CI = Call.getInstruction();
               if (dyn_cast<Instruction>(II) == CI) ++II;
@@ -196,6 +195,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           }
           AI->eraseFromParent();
         }
+        continue;
       }
 
       CallSite Call = CallSite::get(I);
