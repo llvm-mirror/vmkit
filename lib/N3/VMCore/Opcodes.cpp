@@ -112,13 +112,13 @@ static void verifyType(Value*& val1, Value*& val2, BasicBlock* currentBlock) {
   const Type* t1 = val1->getType();
   const Type* t2 = val2->getType();
   if (t1 != t2) {
-    if (t1->isInteger() && t2->isInteger()) {
+    if (t1->isIntegerTy() && t2->isIntegerTy()) {
       if (t1->getPrimitiveSizeInBits() < t2->getPrimitiveSizeInBits()) {
         val1 = new SExtInst(val1, t2, "", currentBlock);
       } else {
         val2 = new SExtInst(val2, t1, "", currentBlock);
       }
-    } else if (t1->isFloatingPoint()) {
+    } else if (t1->isFloatTy()) {
       if (t1->getPrimitiveSizeInBits() < t2->getPrimitiveSizeInBits()) {
         val1 = new FPExtInst(val1, t2, "", currentBlock);
       } else {
@@ -127,10 +127,10 @@ static void verifyType(Value*& val1, Value*& val2, BasicBlock* currentBlock) {
     } else if (isa<PointerType>(t1) && isa<PointerType>(t2)) {
       val1 = new BitCastInst(val1, VMObject::llvmType, "", currentBlock);
       val2 = new BitCastInst(val2, VMObject::llvmType, "", currentBlock);
-    } else if (t1->isInteger() && t2 == PointerType::getUnqual(Type::getInt8Ty(getGlobalContext()))) {
+    } else if (t1->isIntegerTy() && t2 == PointerType::getUnqual(Type::getInt8Ty(getGlobalContext()))) {
       // CLI says that this is fine for some operation
       val2 = new PtrToIntInst(val2, t1, "", currentBlock);
-    } else if (t2->isInteger() && t1 == PointerType::getUnqual(Type::getInt8Ty(getGlobalContext()))) {
+    } else if (t2->isIntegerTy() && t1 == PointerType::getUnqual(Type::getInt8Ty(getGlobalContext()))) {
       // CLI says that this is fine for some operation
       val1 = new PtrToIntInst(val1, t2, "", currentBlock);
     }
@@ -140,13 +140,13 @@ static void verifyType(Value*& val1, Value*& val2, BasicBlock* currentBlock) {
 void convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock) {
   const Type* t2 = val->getType();
   if (t1 != t2) {
-    if (t1->isInteger() && t2->isInteger()) {
+    if (t1->isIntegerTy() && t2->isIntegerTy()) {
       if (t2->getPrimitiveSizeInBits() < t1->getPrimitiveSizeInBits()) {
         val = new SExtInst(val, t1, "", currentBlock);
       } else {
         val = new TruncInst(val, t1, "", currentBlock);
       }
-    } else if (t1->isFloatingPoint() && t2->isFloatingPoint()) {
+    } else if (t1->isFloatTy() && t2->isFloatTy()) {
       if (t2->getPrimitiveSizeInBits() < t1->getPrimitiveSizeInBits()) {
         val = new FPExtInst(val, t1, "", currentBlock);
       } else {
@@ -280,7 +280,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         BasicBlock* ifTrue = opcodeInfos[tmp + offset + read(bytecodes, i)].newBlock; \
         Value* test = 0; \
         verifyType(val1, val2, currentBlock); \
-        if (val1->getType()->isFloatingPoint()) { \
+        if (val1->getType()->isFloatTy()) { \
           test = new FCmpInst(*currentBlock, FCmpInst::cmpf, val1, val2, ""); \
         } else {  \
           test = new ICmpInst(*currentBlock, ICmpInst::cmpi, val1, val2, ""); \
@@ -341,7 +341,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val1 = Constant::getNullValue(val2->getType());  \
         BasicBlock* ifTrue = opcodeInfos[tmp + offset + read(bytecodes, i)].newBlock; \
         Value* test = 0; \
-        if (val1->getType()->isFloatingPoint()) { \
+        if (val1->getType()->isFloatTy()) { \
           test = new FCmpInst(*currentBlock, FCmpInst::cmpf, val1, val2, ""); \
         } else {  \
           test = new ICmpInst(*currentBlock, ICmpInst::cmpi, val1, val2, ""); \
@@ -378,7 +378,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case CONV_I1 : {
         Value* val = pop();
         const Type* type = val->getType();
-        if (type->isFloatingPoint()) {
+        if (type->isFloatTy()) {
           push(new FPToSIInst(val, Type::getInt8Ty(getGlobalContext()), "", currentBlock));
         } else if (type == Type::getInt16Ty(getGlobalContext()) || type == Type::getInt32Ty(getGlobalContext()) || 
                    type == Type::getInt64Ty(getGlobalContext())) {
@@ -392,7 +392,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case CONV_I2 : {
         Value* val = pop();
         const Type* type = val->getType();
-        if (type->isFloatingPoint()) {
+        if (type->isFloatTy()) {
           push(new FPToSIInst(val, Type::getInt16Ty(getGlobalContext()), "", currentBlock));
         } else if (type == Type::getInt32Ty(getGlobalContext()) || type == Type::getInt64Ty(getGlobalContext())) {
           push(new TruncInst(val, Type::getInt16Ty(getGlobalContext()), "", currentBlock));
@@ -407,7 +407,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case CONV_I4 : {
         Value* val = pop();
         const Type* type = val->getType();
-        if (type->isFloatingPoint()) {
+        if (type->isFloatTy()) {
           push(new FPToSIInst(val, Type::getInt32Ty(getGlobalContext()), "", currentBlock));
         } else if (type == Type::getInt64Ty(getGlobalContext())) {
           push(new TruncInst(val, Type::getInt32Ty(getGlobalContext()), "", currentBlock));
@@ -424,7 +424,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case CONV_I8 : {
         Value* val = pop();
         const Type* type = val->getType();
-        if (type->isFloatingPoint()) {
+        if (type->isFloatTy()) {
           push(new FPToSIInst(val, Type::getInt64Ty(getGlobalContext()), "", currentBlock));
         } else if (type == Type::getInt8Ty(getGlobalContext()) || type == Type::getInt16Ty(getGlobalContext()) || 
                    type == Type::getInt32Ty(getGlobalContext())) {
@@ -440,7 +440,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         const Type* type = val->getType();
         if (type == Type::getDoubleTy(getGlobalContext())) {
           push(new FPTruncInst(val, Type::getFloatTy(getGlobalContext()), "", currentBlock));
-        } else if (type->isInteger()) {
+        } else if (type->isIntegerTy()) {
           push(new SIToFPInst(val, Type::getFloatTy(getGlobalContext()), "", currentBlock));
         } else {
           VMThread::get()->getVM()->unknownError("implement me");
@@ -453,7 +453,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         const Type* type = val->getType();
         if (type == Type::getFloatTy(getGlobalContext())) {
           push(new FPExtInst(val, Type::getDoubleTy(getGlobalContext()), "", currentBlock));
-        } else if (type->isInteger()) {
+        } else if (type->isIntegerTy()) {
           push(new SIToFPInst(val, Type::getDoubleTy(getGlobalContext()), "", currentBlock));
         } else if (type == Type::getDoubleTy(getGlobalContext())) {
           push(val);
@@ -466,7 +466,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case CONV_U1 : {
         Value* val = pop();
         const Type* type = val->getType();
-        if (type->isFloatingPoint()) {
+        if (type->isFloatTy()) {
           push(new FPToUIInst(val, Type::getInt8Ty(getGlobalContext()), "", currentBlock));
         } else if (type == Type::getInt16Ty(getGlobalContext()) || type == Type::getInt32Ty(getGlobalContext()) || 
                    type == Type::getInt64Ty(getGlobalContext())) {
@@ -480,7 +480,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case CONV_U2 : {
         Value* val = pop();
         const Type* type = val->getType();
-        if (type->isFloatingPoint()) {
+        if (type->isFloatTy()) {
           push(new FPToUIInst(val, Type::getInt16Ty(getGlobalContext()), "", currentBlock));
         } else if (type == Type::getInt32Ty(getGlobalContext()) || type == Type::getInt64Ty(getGlobalContext())) {
           push(new TruncInst(val, Type::getInt8Ty(getGlobalContext()), "", currentBlock));
@@ -495,7 +495,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case CONV_U4 : {
         Value* val = pop();
         const Type* type = val->getType();
-        if (type->isFloatingPoint()) {
+        if (type->isFloatTy()) {
           push(new FPToUIInst(val, Type::getInt32Ty(getGlobalContext()), "", currentBlock));
         } else if (type == Type::getInt64Ty(getGlobalContext())) {
           push(new TruncInst(val, Type::getInt8Ty(getGlobalContext()), "", currentBlock));
@@ -510,7 +510,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case CONV_U8 : {
         Value* val = pop();
         const Type* type = val->getType();
-        if (type->isFloatingPoint()) {
+        if (type->isFloatTy()) {
           push(new FPToUIInst(val, Type::getInt64Ty(getGlobalContext()), "", currentBlock));
         } else if (type == Type::getInt8Ty(getGlobalContext()) || type == Type::getInt16Ty(getGlobalContext()) || 
                    type == Type::getInt32Ty(getGlobalContext())) {
@@ -525,12 +525,12 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* val = pop();
         Value* res = 0;
         
-        if (val->getType()->isInteger()) {
+        if (val->getType()->isIntegerTy()) {
           if (val->getType() != Type::getInt64Ty(getGlobalContext())) {
             val = new ZExtInst(val, Type::getInt64Ty(getGlobalContext()), "", currentBlock);
           }
           res = new IntToPtrInst(val, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock);
-        } else if (!val->getType()->isFloatingPoint()) {
+        } else if (!val->getType()->isFloatTy()) {
           res = new BitCastInst(val, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock);
         } else {
           VMThread::get()->getVM()->unknownError("implement me");
@@ -550,7 +550,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         const Type* type = val->getType();
         if (type == Type::getFloatTy(getGlobalContext())) {
           push(new FPExtInst(val, Type::getDoubleTy(getGlobalContext()), "", currentBlock));
-        } else if (type->isInteger()) {
+        } else if (type->isIntegerTy()) {
           push(new UIToFPInst(val, Type::getDoubleTy(getGlobalContext()), "", currentBlock));
         } else if (type == Type::getDoubleTy(getGlobalContext())) {
           push(val);
@@ -623,7 +623,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case CONV_OVF_I4_UN : {
         Value* val = pop();
         const Type* type = val->getType();
-        if (type->isFloatingPoint()) {
+        if (type->isFloatTy()) {
           push(new FPToUIInst(val, Type::getInt32Ty(getGlobalContext()), "", currentBlock));
         } else if (type == Type::getInt64Ty(getGlobalContext())) {
           push(new TruncInst(val, Type::getInt8Ty(getGlobalContext()), "", currentBlock));
@@ -666,7 +666,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case DIV: {
         Value* two = pop();
         Value* one = pop();
-        if (one->getType()->isFloatingPoint()) {
+        if (one->getType()->isFloatTy()) {
           convertValue(one, two->getType(), currentBlock); 
           push(BinaryOperator::CreateFDiv(one, two, "", currentBlock));
         } else {
@@ -678,7 +678,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case DIV_UN: {
         Value* two = pop();
         Value* one = pop();
-        if (one->getType()->isFloatingPoint()) {
+        if (one->getType()->isFloatTy()) {
           push(BinaryOperator::CreateFDiv(one, two, "", currentBlock));
         } else {
           push(BinaryOperator::CreateUDiv(one, two, "", currentBlock));
@@ -839,7 +839,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case LDIND_U4 :
       case LDIND_I4 : {
         Value* val = pop();
-        if (val->getType()->isInteger()) {
+        if (val->getType()->isIntegerTy()) {
           val = new IntToPtrInst(val, PointerType::getUnqual(Type::getInt32Ty(getGlobalContext())), "", currentBlock);
         } else {
           val = new BitCastInst(val, PointerType::getUnqual(Type::getInt32Ty(getGlobalContext())), "", currentBlock);
@@ -1044,7 +1044,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case REM : {
         Value* two = pop();
         Value* one = pop();
-        if (one->getType()->isFloatingPoint()) {
+        if (one->getType()->isFloatTy()) {
           push(BinaryOperator::CreateFRem(one, two, "", currentBlock));
         } else {
           push(BinaryOperator::CreateSRem(one, two, "", currentBlock));
@@ -1055,7 +1055,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
       case REM_UN : {
         Value* two = pop();
         Value* one = pop();
-        if (one->getType()->isFloatingPoint()) {
+        if (one->getType()->isFloatTy()) {
           push(BinaryOperator::CreateFRem(one, two, "", currentBlock));
         } else {
           push(BinaryOperator::CreateURem(one, two, "", currentBlock));
@@ -1835,7 +1835,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
           Value* val2 = pop(); \
           Value* val1 = pop(); \
           Value* test = 0; \
-          if (val1->getType()->isFloatingPoint()) { \
+          if (val1->getType()->isFloatTy()) { \
             test = new FCmpInst(*currentBlock, FCmpInst::cmpf, val1, val2, ""); \
           } else { \
             convertValue(val2, val1->getType(), currentBlock); \

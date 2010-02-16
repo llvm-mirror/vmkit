@@ -401,7 +401,7 @@ void CLIJit::push(Value* val) {
 
 Value* CLIJit::changeType(Value* val, const Type* type) {
   const Type* valType = val->getType();
-  if (type->isInteger()) {
+  if (type->isIntegerTy()) {
     if (valType == PointerType::getUnqual(type)) {
       // in cast it's a struct
       val = new LoadInst(val, "", currentBlock);
