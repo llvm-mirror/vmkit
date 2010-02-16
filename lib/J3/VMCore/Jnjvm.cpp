@@ -1361,6 +1361,7 @@ Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, JnjvmBootstrapLoader* loader) :
   IsolateLock.unlock();
 #endif
 
+  scanner = loader->getCompiler()->createStackScanner();
 }
 
 Jnjvm::~Jnjvm() {

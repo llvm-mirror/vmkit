@@ -260,7 +260,9 @@ public:
 
   virtual void tracer();
 
-  virtual ~VirtualMachine() {}
+  virtual ~VirtualMachine() {
+    if (scanner) delete scanner;
+  }
 
   /// runApplication - Run an application. The application name is in
   /// the arguments, hence it is the virtual machine's job to parse them.

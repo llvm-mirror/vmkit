@@ -50,7 +50,6 @@ mvm::VirtualMachine::initialiseJVM(JavaCompiler* Comp, bool dlLoad) {
 mvm::VirtualMachine* mvm::VirtualMachine::createJVM(JnjvmClassLoader* C) {
   mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();
   Jnjvm* vm = new(*A, "VM") Jnjvm(*A, (JnjvmBootstrapLoader*)C);
-  vm->scanner = C->getCompiler()->createStackScanner();
   return vm;
 }
 
