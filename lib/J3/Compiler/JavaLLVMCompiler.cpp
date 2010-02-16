@@ -99,6 +99,8 @@ MDNode* JavaLLVMCompiler::GetDbgSubprogram(JavaMethod* meth) {
 }
 
 JavaLLVMCompiler::~JavaLLVMCompiler() {
+  delete TheModule;
+  delete DebugFactory;
   delete JavaFunctionPasses;
   delete JavaNativeFunctionPasses;
 }

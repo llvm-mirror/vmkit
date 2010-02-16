@@ -138,6 +138,10 @@ public:
     CurrentIndex = 0;
     semantics = s;
   }
+
+  ~ReferenceQueue() {
+    delete[] References;
+  }
  
   void addReference(gc* ref) {
     QueueLock.acquire();
@@ -262,6 +266,9 @@ public:
 
   virtual ~VirtualMachine() {
     if (scanner) delete scanner;
+    delete[] FinalizationQueue;
+    delete[] ToBeFinalized;
+    delete[] ToEnqueue;
   }
 
   /// runApplication - Run an application. The application name is in
