@@ -363,24 +363,11 @@ JavaMethod* Class::lookupInterfaceMethodDontThrow(const UTF8* name,
   return cur;
 }
 
-JavaMethod* Class::lookupSpecialMethodDontThrow(const UTF8* name,
-                                                const UTF8* type,
-                                                Class* current) {
-  JavaMethod* meth = lookupMethodDontThrow(name, type, false, true, NULL);
-
-  if (isSuper(current->access) &&
-      current != meth->classDef &&
-      meth->classDef->isAssignableFrom(current) &&
-      !name->equals(classLoader->bootstrapLoader->initName)) {
-    meth = current->super->lookupMethodDontThrow(name, type, false, true, NULL);
-  }
-
-  return meth;
-}
-
-JavaMethod* Class::lookupMethodDontThrow(const UTF8* name, const UTF8* type,
-                                         bool isStatic, bool recurse,
-                                         Class** methodCl) {
+JavaMethod* Class::lookupMethodDontThrow(const UTF8* name,
+                                               const UTF8* type,
+                                               bool isStatic,
+                                               bool recurse,
+                                               Class** methodCl) {
   
   JavaMethod* methods = 0;
   uint32 nb = 0;

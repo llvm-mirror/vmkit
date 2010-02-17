@@ -714,12 +714,7 @@ extern "C" void* j3ResolveSpecialStub() {
   ctpInfo->resolveMethod(ctpIndex, cl, utf8, sign);
   UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
   assert(lookup->isInitializing() && "Class not ready");
-  JavaMethod* callee =
-    lookup->lookupSpecialMethodDontThrow(utf8, sign->keyName, caller->classDef);
-  
-  if (!callee) {
-    th->getJVM()->abstractMethodError(lookup, utf8);
-  }
+  JavaMethod* callee = lookup->lookupMethod(utf8, sign->keyName, false, true,0);
 
   // Compile the found method.
   result = callee->compiledPtr();

@@ -526,13 +526,6 @@ void Jnjvm::noSuchMethodError(CommonClass* cl, const UTF8* name) {
         upcalls->InitNoSuchMethodError, str);
 }
 
-void Jnjvm::abstractMethodError(CommonClass* cl, const UTF8* name) {
-  JavaString* str = CreateNoSuchMsg(cl, name, this);
-  llvm_gcroot(str, 0);
-  error(upcalls->AbstractMethodError,
-        upcalls->InitAbstractMethodError, str);
-}
-
 static JavaString* CreateUnableToLoad(const UTF8* name, Jnjvm* vm) {
   ArrayUInt16* msg = (ArrayUInt16*)
     vm->upcalls->ArrayOfChar->doNew(15 + name->size, vm);
