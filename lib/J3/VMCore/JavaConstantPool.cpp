@@ -433,8 +433,13 @@ JavaMethod* JavaConstantPool::infoOfStaticOrSpecialMethod(uint32 index,
     Class* lookup = cl->isArray() ? cl->super : cl->asClass();
     if (lookup->isResolved()) {
       // lookup the method
-      meth = lookup->lookupMethodDontThrow(utf8, sign->keyName,
-                                           isStatic(access), true, 0);
+      if (isStatic(access)) {
+        meth = lookup->lookupMethodDontThrow(utf8, sign->keyName,
+                                             true, true, 0);
+      } else {
+        meth = lookup->lookupSpecialMethodDontThrow(utf8, sign->keyName,
+                                                    classDef);
+      }
     }
   }
   
