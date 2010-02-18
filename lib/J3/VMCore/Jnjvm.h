@@ -267,6 +267,7 @@ public:
   void classCastException(JavaObject* obj, UserCommonClass* cl);
   void noSuchFieldError(CommonClass* cl, const UTF8* name);
   void noSuchMethodError(CommonClass* cl, const UTF8* name); 
+  void abstractMethodError(CommonClass* cl, const UTF8* name); 
   void noClassDefFoundError(const UTF8* name);
   void classNotFoundException(JavaString* str);
 

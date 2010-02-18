@@ -618,6 +618,14 @@ public:
   JavaMethod* lookupInterfaceMethodDontThrow(const UTF8* name,
                                              const UTF8* type);
   
+  /// lookupSpecialMethodDontThrow - Lookup a method following the
+  /// invokespecial specification.
+  /// Do not throw if the method is not found.
+  ///
+  JavaMethod* lookupSpecialMethodDontThrow(const UTF8* name,
+                                           const UTF8* type,
+                                           Class* current);
+  
   /// lookupMethod - Lookup a method and throw an exception if not found.
   ///
   JavaMethod* lookupMethod(const UTF8* name, const UTF8* type, bool isStatic,
