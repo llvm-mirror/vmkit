@@ -79,10 +79,12 @@ void JavaJIT::invokeVirtual(uint16 index) {
   CommonClass* cl = 0;
   JavaMethod* meth = 0;
   ctpInfo->infoOfMethod(index, ACC_VIRTUAL, cl, meth);
+  bool canBeDirect = false;
+  Value* val = NULL;  // The return from the method.
  
   if ((cl && isFinal(cl->access)) || 
       (meth && (isFinal(meth->access) || isPrivate(meth->access)))) {
-    return invokeSpecial(index);
+    canBeDirect = true;
   }
 
   // If the method is in fact a method defined in an interface,
@@ -97,12 +99,22 @@ void JavaJIT::invokeVirtual(uint16 index) {
   Value* obj = objectStack[stack.size() - signature->nbArguments - 1];
   JavaObject* source = TheCompiler->getFinalObject(obj);
   if (source) {
-    return invokeSpecial(index, source->getClass());
+    canBeDirect = true;
+    CommonClass* sourceClass = source->getClass();
+    Class* lookup = sourceClass->isArray() ? sourceClass->super :
+                                             sourceClass->asClass();
+    meth = lookup->lookupMethodDontThrow(name, signature->keyName, false,
+                                         true, 0);
   }
   
   if (TheCompiler->isStaticCompiling()) {
     CommonClass* unique = TheCompiler->getUniqueBaseClass(cl);
-    if (unique) return invokeSpecial(index, unique);
+    if (unique) {
+      canBeDirect = true;
+      Class* lookup = unique->isArray() ? unique->super : unique->asClass();
+      meth = lookup->lookupMethodDontThrow(name, signature->keyName, false,
+                                           true, 0);
+    }
   }
  
 #if !defined(WITHOUT_VTABLE)
@@ -116,115 +128,122 @@ void JavaJIT::invokeVirtual(uint16 index) {
    
   JITVerifyNull(args[0]);
 
-  BasicBlock* endBlock = 0;
-  PHINode* node = 0;
-#if 0
-  if (meth && !isAbstract(meth->access)) {
-    Value* cl = CallInst::Create(intrinsics->GetClassFunction, args[0], "",
-                                  currentBlock);
-    Value* cl2 = intrinsics->getNativeClass(meth->classDef);
-    if (cl2->getType() != intrinsics->JavaCommonClassType) {
-      cl2 = new BitCastInst(cl2, intrinsics->JavaCommonClassType, "", currentBlock);
-    }
-
-    Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, cl, cl2, "");
-
-    BasicBlock* trueBlock = createBasicBlock("true virtual invoke");
-    BasicBlock* falseBlock = createBasicBlock("false virtual invoke");
-    endBlock = createBasicBlock("end virtual invoke");
-    BranchInst::Create(trueBlock, falseBlock, test, currentBlock);
-    currentBlock = trueBlock;
-    Value* res = 0;
-    if (canBeInlined(meth)) {
-      res = invokeInline(meth, args);
-    } else {
-      Function* func = intrinsics->getMethod(meth);
-      res = invoke(func, args, "", currentBlock);
-    }
-    BranchInst::Create(endBlock, currentBlock);
-    if (retType != Type::getVoidTy(getGlobalContext())) {
-      node = PHINode::Create(virtualType->getReturnType(), "", endBlock);
-      node->addIncoming(res, currentBlock);
-    }
-    currentBlock = falseBlock;
-  }
-#endif
-
-  Value* VT = CallInst::Create(intrinsics->GetVTFunction, args[0], "",
-                               currentBlock);
-  Value* indexes2[2];
-  indexes2[0] = intrinsics->constantZero;
-
-#ifdef ISOLATE_SHARING
-  Value* indexesCtp; //[3];
-#endif
-  if (meth) {
-    LLVMMethodInfo* LMI = TheCompiler->getMethodInfo(meth);
-    Constant* Offset = LMI->getOffset();
-    indexes2[1] = Offset;
-#ifdef ISOLATE_SHARING
-    indexesCtp = ConstantInt::get(Type::getInt32Ty(*llvmContext),
-                                  Offset->getZExtValue() * -1);
-#endif
+  bool needsInit = false;
+  if (canBeDirect && meth && !TheCompiler->needsCallback(meth, &needsInit)) {
+    val = invoke(TheCompiler->getMethod(meth), args, "", currentBlock);
   } else {
-   
-    GlobalVariable* GV = new GlobalVariable(*llvmFunction->getParent(),
-                                            Type::getInt32Ty(*llvmContext),
-                                            false,
-                                            GlobalValue::ExternalLinkage,
-                                            intrinsics->constantZero, "");
-    
-    BasicBlock* resolveVirtual = createBasicBlock("resolveVirtual");
-    BasicBlock* endResolveVirtual = createBasicBlock("endResolveVirtual");
-    PHINode* node = PHINode::Create(Type::getInt32Ty(*llvmContext), "",
-                                    endResolveVirtual);
 
-    Value* load = new LoadInst(GV, "", false, currentBlock);
-    Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, load,
-                               intrinsics->constantZero, "");
-    BranchInst::Create(resolveVirtual, endResolveVirtual, test, currentBlock);
-    node->addIncoming(load, currentBlock);
-    currentBlock = resolveVirtual;
-    std::vector<Value*> Args;
-    Args.push_back(TheCompiler->getNativeClass(compilingClass));
-    Args.push_back(ConstantInt::get(Type::getInt32Ty(*llvmContext), index));
-    Args.push_back(GV);
-    Args.push_back(args[0]);
-    load = invoke(intrinsics->VirtualLookupFunction, Args, "", currentBlock);
-    node->addIncoming(load, currentBlock);
-    BranchInst::Create(endResolveVirtual, currentBlock);
-    currentBlock = endResolveVirtual;
+    BasicBlock* endBlock = 0;
+    PHINode* node = 0;
+#if 0
+    // TODO: enable this only when inlining?
+    if (meth && !isAbstract(meth->access)) {
+      Value* cl = CallInst::Create(intrinsics->GetClassFunction, args[0], "",
+                                   currentBlock);
+      Value* cl2 = intrinsics->getNativeClass(meth->classDef);
+      if (cl2->getType() != intrinsics->JavaCommonClassType) {
+        cl2 = new BitCastInst(cl2, intrinsics->JavaCommonClassType, "", currentBlock);
+      }
 
-    indexes2[1] = node;
-#ifdef ISOLATE_SHARING
-    Value* mul = BinaryOperator::CreateMul(val, intrinsics->constantMinusOne,
-                                           "", currentBlock);
-    indexesCtp = mul;
-#endif
-  }
- 
-  Value* FuncPtr = GetElementPtrInst::Create(VT, indexes2, indexes2 + 2, "",
-                                             currentBlock);
-    
-  Value* Func = new LoadInst(FuncPtr, "", currentBlock);
-  
-  Func = new BitCastInst(Func, LSI->getVirtualPtrType(), "", currentBlock);
-#ifdef ISOLATE_SHARING
-  Value* CTP = GetElementPtrInst::Create(VT, indexesCtp, "", currentBlock);
-    
-  CTP = new LoadInst(CTP, "", currentBlock);
-  CTP = new BitCastInst(CTP, intrinsics->ConstantPoolType, "", currentBlock);
-  args.push_back(CTP);
-#endif
-  Value* val = invoke(Func, args, "", currentBlock);
-  
-  if (endBlock) {
-    if (node) {
-      node->addIncoming(val, currentBlock);
-      val = node;
+      Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, cl, cl2, "");
+
+      BasicBlock* trueBlock = createBasicBlock("true virtual invoke");
+      BasicBlock* falseBlock = createBasicBlock("false virtual invoke");
+      endBlock = createBasicBlock("end virtual invoke");
+      BranchInst::Create(trueBlock, falseBlock, test, currentBlock);
+      currentBlock = trueBlock;
+      Value* res = 0;
+      if (canBeInlined(meth)) {
+        res = invokeInline(meth, args);
+      } else {
+        Function* func = intrinsics->getMethod(meth);
+        res = invoke(func, args, "", currentBlock);
+      }
+      BranchInst::Create(endBlock, currentBlock);
+      if (retType != Type::getVoidTy(getGlobalContext())) {
+        node = PHINode::Create(virtualType->getReturnType(), "", endBlock);
+        node->addIncoming(res, currentBlock);
+      }
+      currentBlock = falseBlock;
     }
-    BranchInst::Create(endBlock, currentBlock);
-    currentBlock = endBlock;
+#endif
+
+    Value* VT = CallInst::Create(intrinsics->GetVTFunction, args[0], "",
+                                 currentBlock);
+    Value* indexes2[2];
+    indexes2[0] = intrinsics->constantZero;
+
+#ifdef ISOLATE_SHARING
+    Value* indexesCtp; //[3];
+#endif
+    if (meth) {
+      LLVMMethodInfo* LMI = TheCompiler->getMethodInfo(meth);
+      Constant* Offset = LMI->getOffset();
+      indexes2[1] = Offset;
+#ifdef ISOLATE_SHARING
+      indexesCtp = ConstantInt::get(Type::getInt32Ty(*llvmContext),
+                                    Offset->getZExtValue() * -1);
+#endif
+    } else {
+   
+      GlobalVariable* GV = new GlobalVariable(*llvmFunction->getParent(),
+                                              Type::getInt32Ty(*llvmContext),
+                                              false,
+                                              GlobalValue::ExternalLinkage,
+                                              intrinsics->constantZero, "");
+    
+      BasicBlock* resolveVirtual = createBasicBlock("resolveVirtual");
+      BasicBlock* endResolveVirtual = createBasicBlock("endResolveVirtual");
+      PHINode* node = PHINode::Create(Type::getInt32Ty(*llvmContext), "",
+                                      endResolveVirtual);
+
+      Value* load = new LoadInst(GV, "", false, currentBlock);
+      Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, load,
+                                 intrinsics->constantZero, "");
+      BranchInst::Create(resolveVirtual, endResolveVirtual, test, currentBlock);
+      node->addIncoming(load, currentBlock);
+      currentBlock = resolveVirtual;
+      std::vector<Value*> Args;
+      Args.push_back(TheCompiler->getNativeClass(compilingClass));
+      Args.push_back(ConstantInt::get(Type::getInt32Ty(*llvmContext), index));
+      Args.push_back(GV);
+      Args.push_back(args[0]);
+      load = invoke(intrinsics->VirtualLookupFunction, Args, "", currentBlock);
+      node->addIncoming(load, currentBlock);
+      BranchInst::Create(endResolveVirtual, currentBlock);
+      currentBlock = endResolveVirtual;
+
+      indexes2[1] = node;
+#ifdef ISOLATE_SHARING
+      Value* mul = BinaryOperator::CreateMul(val, intrinsics->constantMinusOne,
+                                             "", currentBlock);
+      indexesCtp = mul;
+#endif
+    }
+ 
+    Value* FuncPtr = GetElementPtrInst::Create(VT, indexes2, indexes2 + 2, "",
+                                               currentBlock);
+    
+    Value* Func = new LoadInst(FuncPtr, "", currentBlock);
+  
+    Func = new BitCastInst(Func, LSI->getVirtualPtrType(), "", currentBlock);
+#ifdef ISOLATE_SHARING
+    Value* CTP = GetElementPtrInst::Create(VT, indexesCtp, "", currentBlock);
+    
+    CTP = new LoadInst(CTP, "", currentBlock);
+    CTP = new BitCastInst(CTP, intrinsics->ConstantPoolType, "", currentBlock);
+    args.push_back(CTP);
+#endif
+    val = invoke(Func, args, "", currentBlock);
+  
+    if (endBlock) {
+      if (node) {
+        node->addIncoming(val, currentBlock);
+        val = node;
+      }
+      BranchInst::Create(endBlock, currentBlock);
+      currentBlock = endBlock;
+    }
   }
 
   if (retType != Type::getVoidTy(getGlobalContext())) {
@@ -1616,7 +1635,7 @@ Instruction* JavaJIT::invokeInline(JavaMethod* meth,
   return ret;
 }
 
-void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
+void JavaJIT::invokeSpecial(uint16 index) {
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   JavaMethod* meth = 0;
   Signdef* signature = 0;
@@ -1632,13 +1651,6 @@ void JavaJIT::invokeSpecial(uint16 index, CommonClass* finalCl) {
   FunctionType::param_iterator it  = virtualType->param_end();
   makeArgs(it, index, args, signature->nbArguments + 1);
 
-  if (finalCl) {
-    Class* lookup = finalCl->isArray() ? finalCl->super : finalCl->asClass();
-
-    meth = lookup->lookupMethodDontThrow(name, signature->keyName, false, true,
-                                         0);
-  }
-  
   if (!meth) {
     meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL, signature);
   }

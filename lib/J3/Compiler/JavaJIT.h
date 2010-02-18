@@ -461,7 +461,7 @@ private:
   void invokeInterface(uint16 index, bool buggyVirtual = false);
 
   /// invokeSpecial - Invoke an instance Java method directly.
-  void invokeSpecial(uint16 index, CommonClass* finalCl = 0);
+  void invokeSpecial(uint16 index);
 
   /// invokeStatic - Invoke a static Java method.
   void invokeStatic(uint16 index);
