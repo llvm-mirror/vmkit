@@ -82,12 +82,14 @@ public:
   virtual void NotifyFunctionEmitted(const Function &F,
                                      void *Code, size_t Size,
                                      const EmittedFunctionDetails &Details) {
-    
+    // Functions compiled in the global module are MMTk functions and the
+    // interfaces with VMKit.
     if (F.getParent() == MvmModule::globalModule) {
       llvm::GCFunctionInfo* GFI = 0;
       // We know the last GC info is for this method.
       if (F.hasGC()) {
-        GCStrategy::iterator I = mvm::MvmModule::GC->end();
+        // Only the interface functions have GC informations.
+        GCStrategy::iterator I = mvm::MvmModule::TheGCStrategy->end();
         I--;
         DEBUG(errs() << (*I)->getFunction().getName() << '\n');
         DEBUG(errs() << F.getName() << '\n');
@@ -267,7 +269,11 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     Boot = (BootType)(uintptr_t)executionEngine->getPointerToFunction(F);
     Boot(Plan);
     
-    
+    F = globalModule->getFunction("Java_org_j3_mmtk_Collection_triggerCollection__I");
+    assert(F && "Could not find external collect");
+    gc::MMTkTriggerCollection = (gc::MMTkCollectType)
+      (uintptr_t)executionEngine->getPointerToFunction(F);
+
     //===-------------------- TODO: make those virtual. -------------------===//
     F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_reportDelayedRootEdge__Lorg_vmmagic_unboxed_Address_2");
     assert(F && "Could not find reportDelayedRootEdge from TraceLocal");
@@ -314,11 +320,6 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     gc::MMTkGetForwardedFinalizable = (gc::MMTkGetForwardedFinalizableType)
       (uintptr_t)executionEngine->getPointerToFunction(F);
     
-    F = globalModule->getFunction("Java_org_j3_mmtk_Collection_triggerCollection__I");
-    assert(F && "Could not find external collect");
-    gc::MMTkTriggerCollection = (gc::MMTkCollectType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-
   }
 #endif
 }
@@ -461,7 +462,7 @@ const llvm::Type* MvmModule::pointerSizeType;
 const llvm::Type* MvmModule::arrayPtrType;
 
 const llvm::TargetData* MvmModule::TheTargetData;
-llvm::GCStrategy* MvmModule::GC;
+llvm::GCStrategy* MvmModule::TheGCStrategy;
 llvm::Module *MvmModule::globalModule;
 llvm::FunctionPassManager* MvmModule::globalFunctionPasses;
 llvm::ExecutionEngine* MvmModule::executionEngine;

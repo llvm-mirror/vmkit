@@ -32,5 +32,5 @@ X("vmkit", "VMKit GC for JIT-generated functions");
 
 VmkitGC::VmkitGC() {
   NeededSafePoints = 1 << GC::PostCall;
-  mvm::MvmModule::GC = this;
+  mvm::MvmModule::TheGCStrategy = this;
 }

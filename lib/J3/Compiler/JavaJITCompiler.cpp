@@ -84,7 +84,7 @@ public:
       llvm::GCFunctionInfo* GFI = 0;
       // We know the last GC info is for this method.
       if (F.hasGC()) {
-        GCStrategy::iterator I = mvm::MvmModule::GC->end();
+        GCStrategy::iterator I = mvm::MvmModule::TheGCStrategy->end();
         I--;
         DEBUG(errs() << (*I)->getFunction().getName() << '\n');
         DEBUG(errs() << F.getName() << '\n');
@@ -399,20 +399,6 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
   JITListener->setCurrentCompiledMethod(0);
   func->deleteBody();
-
-  // Update the GC info.
-  LLVMMethodInfo* LMI = getMethodInfo(meth);
-  // If it's not, we know the last GC info is for this method.
-  if (func->hasGC() && !LMI->GCInfo) {
-    GCStrategy::iterator I = mvm::MvmModule::GC->end();
-    I--;
-    DEBUG(errs() << (*I)->getFunction().getName() << '\n');
-    DEBUG(errs() << LMI->getMethod()->getName() << '\n');
-    assert(&(*I)->getFunction() == LMI->getMethod() &&
-           "GC Info and method do not correspond");
-    LMI->GCInfo = *I;
-  }
-
   mvm::MvmModule::unprotectIR();
 
   return res;

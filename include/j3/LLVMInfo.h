@@ -85,19 +85,17 @@ private:
   
   
 public:
-  llvm::GCFunctionInfo* GCInfo;
   llvm::Function* getMethod();
   llvm::Constant* getOffset();
   const llvm::FunctionType* getFunctionType();
     
   LLVMMethodInfo(JavaMethod* M) :  methodDef(M), methodFunction(0),
-    offsetConstant(0), functionType(0), DbgSubprogram(0), GCInfo(0) {}
+    offsetConstant(0), functionType(0), DbgSubprogram(0) {}
  
   void setDbgSubprogram(llvm::MDNode* node) { DbgSubprogram = node; }
   llvm::MDNode* getDbgSubprogram() { return DbgSubprogram; }
 
   virtual void clear() {
-    GCInfo = 0;
     methodFunction = 0;
     offsetConstant = 0;
     functionType = 0;

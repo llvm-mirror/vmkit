@@ -174,7 +174,7 @@ public:
    static const llvm::Type* pointerSizeType;
 
    static llvm::ExecutionEngine* executionEngine;
-   static llvm::GCStrategy* GC;
+   static llvm::GCStrategy* TheGCStrategy;
    static mvm::LockRecursive protectEngine;
    static llvm::Module *globalModule;
    static llvm::FunctionPassManager* globalFunctionPasses;
