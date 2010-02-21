@@ -402,7 +402,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           
           BasicBlock* trueCl = BasicBlock::Create(*Context, "Initialized", &F);
           BasicBlock* falseCl = BasicBlock::Create(*Context, "Uninitialized", &F);
-          PHINode* node = llvm::PHINode::Create(J3Intrinsics::JavaClassType, "", trueCl);
+          PHINode* node = llvm::PHINode::Create(intrinsics->JavaClassType, "", trueCl);
           node->addIncoming(Cl, CI->getParent());
           BranchInst::Create(trueCl, falseCl, test, CI);
   

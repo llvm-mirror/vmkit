@@ -65,7 +65,8 @@ const Type* LLVMClassInfo::getVirtualType() {
       sl = targetData->getStructLayout(structType);
     
     } else {
-      virtualType = J3Intrinsics::JavaObjectType;
+      virtualType = Mod->getIntrinsics()->JavaObjectType;
+      assert(virtualType && "intrinsics not iniitalized");
       structType = dyn_cast<const StructType>(virtualType->getContainedType(0));
       sl = targetData->getStructLayout(structType);
       
@@ -240,8 +241,10 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
     std::vector<const llvm::Type*> llvmArgs;
     uint32 size = signature->nbArguments;
     Typedef* const* arguments = signature->getArgumentsType();
+    JavaLLVMCompiler* Mod = 
+      (JavaLLVMCompiler*)signature->initialLoader->getCompiler();
 
-    llvmArgs.push_back(J3Intrinsics::JavaObjectType);
+    llvmArgs.push_back(Mod->getIntrinsics()->JavaObjectType);
 
     for (uint32 i = 0; i < size; ++i) {
       Typedef* type = arguments[i];
@@ -276,7 +279,8 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
     }
 
 #if defined(ISOLATE_SHARING)
-    llvmArgs.push_back(J3Intrinsics::ConstantPoolType); // cached constant pool
+    // cached constant pool
+    llvmArgs.push_back(Mod->getIntrinsics()->ConstantPoolType);
 #endif
 
     LLVMAssessorInfo& LAI = 
@@ -294,17 +298,20 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
     std::vector<const llvm::Type*> llvmArgs;
     uint32 size = signature->nbArguments;
     Typedef* const* arguments = signature->getArgumentsType();
+    JavaLLVMCompiler* Mod = 
+      (JavaLLVMCompiler*)signature->initialLoader->getCompiler();
    
-    const llvm::Type* Ty = PointerType::getUnqual(J3Intrinsics::JavaObjectType);
+    const llvm::Type* Ty =
+      PointerType::getUnqual(Mod->getIntrinsics()->JavaObjectType);
 
-    llvmArgs.push_back(J3Intrinsics::ptrType); // JNIEnv
+    llvmArgs.push_back(Mod->getIntrinsics()->ptrType); // JNIEnv
     llvmArgs.push_back(Ty); // Class
 
     for (uint32 i = 0; i < size; ++i) {
       Typedef* type = arguments[i];
       LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(type);
       const llvm::Type* Ty = LAI.llvmType;
-      if (Ty == J3Intrinsics::JavaObjectType) {
+      if (Ty == Mod->getIntrinsics()->JavaObjectType) {
         llvmArgs.push_back(LAI.llvmTypePtr);
       } else {
         llvmArgs.push_back(LAI.llvmType);
@@ -312,13 +319,15 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
     }
 
 #if defined(ISOLATE_SHARING)
-    llvmArgs.push_back(J3Intrinsics::ConstantPoolType); // cached constant pool
+    // cached constant pool
+    llvmArgs.push_back(Mod->getIntrinsics()->ConstantPoolType);
 #endif
 
     LLVMAssessorInfo& LAI = 
       JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
-    const llvm::Type* RetType = LAI.llvmType == J3Intrinsics::JavaObjectType ?
-      LAI.llvmTypePtr : LAI.llvmType;
+    const llvm::Type* RetType =
+      LAI.llvmType == Mod->getIntrinsics()->JavaObjectType ?
+        LAI.llvmTypePtr : LAI.llvmType;
     nativeType = FunctionType::get(RetType, llvmArgs, false);
     mvm::MvmModule::unprotectIR();
   }
@@ -607,9 +616,11 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR();
     std::vector<const llvm::Type*> Args;
-    Args.push_back(J3Intrinsics::ConstantPoolType); // ctp
+    JavaLLVMCompiler* Mod = 
+      (JavaLLVMCompiler*)signature->initialLoader->getCompiler();
+    Args.push_back(Mod->getIntrinsics()->ConstantPoolType); // ctp
     Args.push_back(getVirtualPtrType());
-    Args.push_back(J3Intrinsics::JavaObjectType);
+    Args.push_back(Mod->getIntrinsics()->JavaObjectType);
     Args.push_back(LLVMAssessorInfo::AssessorInfo[I_LONG].llvmTypePtr);
     LLVMAssessorInfo& LAI = 
       JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
@@ -623,8 +634,10 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
   if (!staticBufType) {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR();
+    JavaLLVMCompiler* Mod = 
+      (JavaLLVMCompiler*)signature->initialLoader->getCompiler();
     std::vector<const llvm::Type*> Args;
-    Args.push_back(J3Intrinsics::ConstantPoolType); // ctp
+    Args.push_back(Mod->getIntrinsics()->ConstantPoolType); // ctp
     Args.push_back(getStaticPtrType());
     Args.push_back(LLVMAssessorInfo::AssessorInfo[I_LONG].llvmTypePtr);
     LLVMAssessorInfo& LAI = 
@@ -799,14 +812,14 @@ void LLVMAssessorInfo::initialise() {
     PointerType::getUnqual(Type::getDoubleTy(getGlobalContext()));
   AssessorInfo[I_DOUBLE].logSizeInBytesConstant = 3;
   
-  AssessorInfo[I_TAB].llvmType = J3Intrinsics::JavaObjectType;
+  AssessorInfo[I_TAB].llvmType = PointerType::getUnqual(
+      mvm::MvmModule::globalModule->getTypeByName("JavaObject"));
   AssessorInfo[I_TAB].llvmTypePtr =
-    PointerType::getUnqual(J3Intrinsics::JavaObjectType);
+    PointerType::getUnqual(AssessorInfo[I_TAB].llvmType);
   AssessorInfo[I_TAB].logSizeInBytesConstant = sizeof(JavaObject*) == 8 ? 3 : 2;
   
-  AssessorInfo[I_REF].llvmType = J3Intrinsics::JavaObjectType;
-  AssessorInfo[I_REF].llvmTypePtr =
-    PointerType::getUnqual(J3Intrinsics::JavaObjectType);
+  AssessorInfo[I_REF].llvmType = AssessorInfo[I_TAB].llvmType;
+  AssessorInfo[I_REF].llvmTypePtr = AssessorInfo[I_TAB].llvmTypePtr;
   AssessorInfo[I_REF].logSizeInBytesConstant = sizeof(JavaObject*) == 8 ? 3 : 2;
 }
 

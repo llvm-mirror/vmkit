@@ -325,14 +325,12 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   module->setTargetTriple(MvmModule::globalModule->getTargetTriple());
   LLVMContext& Context = module->getContext();
   
-  if (!ptrType) {
-    // Type declaration
-    ptrType = PointerType::getUnqual(Type::getInt8Ty(Context));
-    ptr32Type = PointerType::getUnqual(Type::getInt32Ty(Context));
-    ptrPtrType = PointerType::getUnqual(ptrType);
-    pointerSizeType = module->getPointerSize() == Module::Pointer32 ?
-      Type::getInt32Ty(Context) : Type::getInt64Ty(Context);
-  }
+  // Type declaration
+  ptrType = PointerType::getUnqual(Type::getInt8Ty(Context));
+  ptr32Type = PointerType::getUnqual(Type::getInt32Ty(Context));
+  ptrPtrType = PointerType::getUnqual(ptrType);
+  pointerSizeType = module->getPointerSize() == Module::Pointer32 ?
+    Type::getInt32Ty(Context) : Type::getInt64Ty(Context);
   
   // Constant declaration
   constantLongMinusOne = ConstantInt::get(Type::getInt64Ty(Context), (uint64_t)-1);
@@ -456,13 +454,6 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   AddFinalizationCandidate = module->getFunction("addFinalizationCandidate");
   assert(AddFinalizationCandidate && "No addFinalizationCandidate function");
 }
-
-
-const llvm::PointerType* BaseIntrinsics::ptrType;
-const llvm::PointerType* BaseIntrinsics::ptr32Type;
-const llvm::PointerType* BaseIntrinsics::ptrPtrType;
-const llvm::Type* BaseIntrinsics::pointerSizeType;
-const llvm::Type* BaseIntrinsics::arrayPtrType;
 
 const llvm::TargetData* MvmModule::TheTargetData;
 llvm::GCStrategy* MvmModule::TheGCStrategy;

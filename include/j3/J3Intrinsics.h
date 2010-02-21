@@ -17,35 +17,35 @@ namespace j3 {
 class J3Intrinsics : public mvm::BaseIntrinsics {
 
 public:
-  static const llvm::Type* JavaArrayUInt8Type;
-  static const llvm::Type* JavaArraySInt8Type;
-  static const llvm::Type* JavaArrayUInt16Type;
-  static const llvm::Type* JavaArraySInt16Type;
-  static const llvm::Type* JavaArrayUInt32Type;
-  static const llvm::Type* JavaArraySInt32Type;
-  static const llvm::Type* JavaArrayLongType;
-  static const llvm::Type* JavaArrayFloatType;
-  static const llvm::Type* JavaArrayDoubleType;
-  static const llvm::Type* JavaArrayObjectType;
+  const llvm::Type* JavaArrayUInt8Type;
+  const llvm::Type* JavaArraySInt8Type;
+  const llvm::Type* JavaArrayUInt16Type;
+  const llvm::Type* JavaArraySInt16Type;
+  const llvm::Type* JavaArrayUInt32Type;
+  const llvm::Type* JavaArraySInt32Type;
+  const llvm::Type* JavaArrayLongType;
+  const llvm::Type* JavaArrayFloatType;
+  const llvm::Type* JavaArrayDoubleType;
+  const llvm::Type* JavaArrayObjectType;
   
-  static const llvm::Type* VTType;
-  static const llvm::Type* JavaObjectType;
-  static const llvm::Type* JavaArrayType;
-  static const llvm::Type* JavaCommonClassType;
-  static const llvm::Type* JavaClassType;
-  static const llvm::Type* JavaClassArrayType;
-  static const llvm::Type* JavaClassPrimitiveType;
-  static const llvm::Type* ConstantPoolType;
-  static const llvm::Type* CodeLineInfoType;
-  static const llvm::Type* UTF8Type;
-  static const llvm::Type* JavaMethodType;
-  static const llvm::Type* JavaFieldType;
-  static const llvm::Type* AttributType;
-  static const llvm::Type* JavaThreadType;
-  static const llvm::Type* MutatorThreadType;
+  const llvm::Type* VTType;
+  const llvm::Type* JavaObjectType;
+  const llvm::Type* JavaArrayType;
+  const llvm::Type* JavaCommonClassType;
+  const llvm::Type* JavaClassType;
+  const llvm::Type* JavaClassArrayType;
+  const llvm::Type* JavaClassPrimitiveType;
+  const llvm::Type* ConstantPoolType;
+  const llvm::Type* CodeLineInfoType;
+  const llvm::Type* UTF8Type;
+  const llvm::Type* JavaMethodType;
+  const llvm::Type* JavaFieldType;
+  const llvm::Type* AttributType;
+  const llvm::Type* JavaThreadType;
+  const llvm::Type* MutatorThreadType;
   
 #ifdef ISOLATE_SHARING
-  static const llvm::Type* JnjvmType;
+  const llvm::Type* JnjvmType;
 #endif
   
   llvm::Function* EmptyTracerFunction;
