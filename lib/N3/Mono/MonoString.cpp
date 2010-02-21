@@ -44,7 +44,7 @@ GlobalVariable* CLIString::llvmVar(CLIString *self) {
   if (!str->_llvmVar) {
     N3* vm = VMThread::get()->getVM();
     if (!str->_llvmVar) {
-      const Type* pty = mvm::MvmModule::ptrType;
+      const Type* pty = mvm::BaseIntrinsics::ptrType;
       Module* Mod = vm->getLLVMModule();
       Constant* cons = 
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), uint64_t (self)),

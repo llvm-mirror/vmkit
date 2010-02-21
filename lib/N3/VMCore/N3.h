@@ -96,7 +96,7 @@ public:
   mvm::Lock*               protectModule;
   FunctionMap*             functions;
 
-  mvm::MvmModule*          module;
+  mvm::BaseIntrinsics*     module;
   llvm::Module*            LLVMModule;
   N3ModuleProvider*        TheModuleProvider;
 

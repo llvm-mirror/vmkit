@@ -159,7 +159,7 @@ void convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock) {
 }
 
 static void store(Value* val, Value* local, bool vol, 
-                  BasicBlock* currentBlock, mvm::MvmModule* module) {
+                  BasicBlock* currentBlock, mvm::BaseIntrinsics* module) {
   const Type* contained = local->getType()->getContainedType(0);
   if (contained->isSingleValueType()) {
     if (val->getType() != contained) {
@@ -167,7 +167,7 @@ static void store(Value* val, Value* local, bool vol,
     }
     new StoreInst(val, local, vol, currentBlock);
   } else if (isa<PointerType>(val->getType())) {
-    uint64 size = module->getTypeSize(contained);
+    uint64 size = mvm::MvmModule::getTypeSize(contained);
         
     std::vector<Value*> params;
     params.push_back(new BitCastInst(local, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
@@ -180,12 +180,12 @@ static void store(Value* val, Value* local, bool vol,
   }
 }
 
-static Value* load(Value* val, const char* name, BasicBlock* currentBlock, mvm::MvmModule* module) {
+static Value* load(Value* val, const char* name, BasicBlock* currentBlock, mvm::BaseIntrinsics* module) {
   const Type* contained = val->getType()->getContainedType(0);
   if (contained->isSingleValueType()) {
     return new LoadInst(val, name, currentBlock);
   } else {
-    uint64 size = module->getTypeSize(contained);
+    uint64 size = mvm::MvmModule::getTypeSize(contained);
     Value* ret = new AllocaInst(contained, "", currentBlock); 
     std::vector<Value*> params;
     params.push_back(new BitCastInst(ret, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
@@ -1303,7 +1303,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         }
         
         
-        uint64 size = module->getTypeSize(type->naturalType);
+        uint64 size = mvm::MvmModule::getTypeSize(type->naturalType);
         
         std::vector<Value*> params;
         params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
@@ -1803,7 +1803,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
         Value* ptr = GetElementPtrInst::Create(obj, ptrs.begin(), ptrs.end(), "", 
                                            currentBlock);
 
-        uint64 size = module->getTypeSize(type->naturalType);
+        uint64 size = mvm::MvmModule::getTypeSize(type->naturalType);
         
         std::vector<Value*> params;
         params.push_back(new BitCastInst(val, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
@@ -1953,7 +1953,7 @@ void CLIJit::compileOpcodes(uint8* bytecodes, uint32 codeLength, VMGenericClass*
             VMCommonClass* type = assembly->loadType(vm, token, true, false, false,
                                                      true, genClass, genMethod);
             if (type->super == MSCorlib::pValue) {
-              uint64 size = module->getTypeSize(type->naturalType);
+              uint64 size = mvm::MvmModule::getTypeSize(type->naturalType);
         
               std::vector<Value*> params;
               params.push_back(new BitCastInst(pop(), module->ptrType, "",

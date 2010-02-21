@@ -39,7 +39,7 @@ using namespace llvm;
 const Type* LLVMClassInfo::getVirtualType() {
   if (!virtualType) {
     std::vector<const llvm::Type*> fields;
-    const TargetData* targetData = J3Intrinsics::TheTargetData;
+    const TargetData* targetData = mvm::MvmModule::TheTargetData;
     const StructLayout* sl = 0;
     const StructType* structType = 0;
     JavaLLVMCompiler* Mod = 
@@ -77,7 +77,7 @@ const Type* LLVMClassInfo::getVirtualType() {
       field.ptrOffset = sl->getElementOffset(i + 1);
     }
     
-    uint64 size = J3Intrinsics::getTypeSize(structType);
+    uint64 size = mvm::MvmModule::getTypeSize(structType);
     classDef->virtualSize = (uint32)size;
     classDef->alignment = sl->getAlignment();
     virtualSizeConstant = ConstantInt::get(Type::getInt32Ty(context), size);
@@ -109,7 +109,7 @@ const Type* LLVMClassInfo::getStaticType() {
   
     StructType* structType = StructType::get(context, fields, false);
     staticType = PointerType::getUnqual(structType);
-    const TargetData* targetData = J3Intrinsics::TheTargetData;
+    const TargetData* targetData = mvm::MvmModule::TheTargetData;
     const StructLayout* sl = targetData->getStructLayout(structType);
     
     for (uint32 i = 0; i < classDef->nbStaticFields; ++i) {
@@ -117,7 +117,7 @@ const Type* LLVMClassInfo::getStaticType() {
       field.ptrOffset = sl->getElementOffset(i);
     }
     
-    uint64 size = J3Intrinsics::getTypeSize(structType);
+    uint64 size = mvm::MvmModule::getTypeSize(structType);
     cl->staticSize = size;
   }
   return staticType;
@@ -297,7 +297,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
    
     const llvm::Type* Ty = PointerType::getUnqual(J3Intrinsics::JavaObjectType);
 
-    llvmArgs.push_back(mvm::MvmModule::ptrType); // JNIEnv
+    llvmArgs.push_back(J3Intrinsics::ptrType); // JNIEnv
     llvmArgs.push_back(Ty); // Class
 
     for (uint32 i = 0; i < size; ++i) {

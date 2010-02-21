@@ -63,7 +63,7 @@ namespace j3 {
 }
 
 void J3Intrinsics::initialise() {
-  Module* module = globalModule;
+  Module* module = mvm::MvmModule::globalModule;
   
   if (!module->getTypeByName("JavaThread"))
     j3::llvm_runtime::makeLLVMModuleContents(module);
@@ -132,11 +132,11 @@ void J3Intrinsics::initialise() {
 }
 
 J3Intrinsics::J3Intrinsics(llvm::Module* module) :
-  MvmModule(module) {
+  BaseIntrinsics(module) {
   
   if (!VTType) {
     initialise();
-    copyDefinitions(module, globalModule);
+    mvm::MvmModule::copyDefinitions(module, mvm::MvmModule::globalModule);
   }
   
   JavaObjectNullConstant =

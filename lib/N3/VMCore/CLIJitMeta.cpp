@@ -264,7 +264,7 @@ GlobalVariable* VMCommonClass::llvmVar() {
     aquire();
     if (!_llvmVar) {
       Module* Mod = vm->getLLVMModule();
-      const Type* pty = mvm::MvmModule::ptrType;
+      const Type* pty = mvm::BaseIntrinsics::ptrType;
       Constant* cons = 
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), uint64_t (this)),
                                     pty);
@@ -283,7 +283,7 @@ GlobalVariable* VMField::llvmVar() {
   if (!_llvmVar) {
     classDef->aquire();
     if (!_llvmVar) {
-      const Type* pty = mvm::MvmModule::ptrType;
+      const Type* pty = mvm::BaseIntrinsics::ptrType;
       Module* Mod = classDef->vm->getLLVMModule();
       Constant* cons = 
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), uint64_t (this)),
@@ -303,7 +303,7 @@ GlobalVariable* VMMethod::llvmVar() {
     classDef->aquire();
     if (!_llvmVar) {
       Module* Mod = classDef->vm->getLLVMModule();
-      const Type* pty = mvm::MvmModule::ptrType;
+      const Type* pty = mvm::BaseIntrinsics::ptrType;
       Constant* cons = 
         ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), uint64_t (this)),
                                   pty);

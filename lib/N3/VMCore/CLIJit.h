@@ -91,7 +91,7 @@ public:
   llvm::Function* llvmFunction;
   VMMethod* compilingMethod;
   VMClass* compilingClass;
-  mvm::MvmModule* module;
+  mvm::BaseIntrinsics* module;
 
   std::vector<llvm::Value*> arguments;
   std::vector<llvm::Value*> locals;

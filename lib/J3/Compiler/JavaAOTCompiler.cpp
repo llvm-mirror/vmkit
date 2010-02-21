@@ -1651,7 +1651,7 @@ void JavaAOTCompiler::printStats() {
   Module* Mod = getLLVMModule();
   for (Module::const_global_iterator i = Mod->global_begin(),
        e = Mod->global_end(); i != e; ++i) {
-    size += J3Intrinsics::getTypeSize(i->getType());
+    size += mvm::MvmModule::getTypeSize(i->getType());
   }
   fprintf(stderr, "%lluB\n", (unsigned long long int)size);
 }

@@ -166,14 +166,8 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
 
   mvm::llvm_runtime::makeLLVMModuleContents(globalModule);
   
-  LLVMContext& Context = globalModule->getContext();
+  //LLVMContext& Context = globalModule->getContext();
   //MetadataTypeKind = Context.getMDKindID("HighLevelType");
-  // Type declaration
-  ptrType = PointerType::getUnqual(Type::getInt8Ty(Context));
-  ptr32Type = PointerType::getUnqual(Type::getInt32Ty(Context));
-  ptrPtrType = PointerType::getUnqual(ptrType);
-  pointerSizeType = globalModule->getPointerSize() == Module::Pointer32 ?
-    Type::getInt32Ty(Context) : Type::getInt64Ty(Context);
  
   for (std::vector<std::string>::iterator i = LoadBytecodeFiles.begin(),
        e = LoadBytecodeFiles.end(); i != e; ++i) {
@@ -325,11 +319,20 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
 }
 
 
-MvmModule::MvmModule(llvm::Module* module) {
+BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
 
-  module->setDataLayout(globalModule->getDataLayout());
-  module->setTargetTriple(globalModule->getTargetTriple());
+  module->setDataLayout(MvmModule::globalModule->getDataLayout());
+  module->setTargetTriple(MvmModule::globalModule->getTargetTriple());
   LLVMContext& Context = module->getContext();
+  
+  if (!ptrType) {
+    // Type declaration
+    ptrType = PointerType::getUnqual(Type::getInt8Ty(Context));
+    ptr32Type = PointerType::getUnqual(Type::getInt32Ty(Context));
+    ptrPtrType = PointerType::getUnqual(ptrType);
+    pointerSizeType = module->getPointerSize() == Module::Pointer32 ?
+      Type::getInt32Ty(Context) : Type::getInt64Ty(Context);
+  }
   
   // Constant declaration
   constantLongMinusOne = ConstantInt::get(Type::getInt64Ty(Context), (uint64_t)-1);
@@ -384,7 +387,7 @@ MvmModule::MvmModule(llvm::Module* module) {
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::getInt8Ty(Context), 0));
 
 
-  copyDefinitions(module, globalModule); 
+  MvmModule::copyDefinitions(module, MvmModule::globalModule); 
     
   printFloatLLVM = module->getFunction("printFloat");
   printDoubleLLVM = module->getFunction("printDouble");
@@ -455,11 +458,11 @@ MvmModule::MvmModule(llvm::Module* module) {
 }
 
 
-const llvm::PointerType* MvmModule::ptrType;
-const llvm::PointerType* MvmModule::ptr32Type;
-const llvm::PointerType* MvmModule::ptrPtrType;
-const llvm::Type* MvmModule::pointerSizeType;
-const llvm::Type* MvmModule::arrayPtrType;
+const llvm::PointerType* BaseIntrinsics::ptrType;
+const llvm::PointerType* BaseIntrinsics::ptr32Type;
+const llvm::PointerType* BaseIntrinsics::ptrPtrType;
+const llvm::Type* BaseIntrinsics::pointerSizeType;
+const llvm::Type* BaseIntrinsics::arrayPtrType;
 
 const llvm::TargetData* MvmModule::TheTargetData;
 llvm::GCStrategy* MvmModule::TheGCStrategy;

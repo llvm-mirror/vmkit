@@ -61,20 +61,20 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
   Function* func = LMI->getMethod();
   
   // We are jitting. Take the lock.
-  J3Intrinsics::protectIR();
+  mvm::MvmModule::protectIR();
   if (func->getLinkage() == GlobalValue::ExternalWeakLinkage) {
     JavaJIT jit(this, meth, func);
     if (isNative(meth->access)) {
       jit.nativeCompile();
-      J3Intrinsics::runPasses(func, JavaNativeFunctionPasses);
+      mvm::MvmModule::runPasses(func, JavaNativeFunctionPasses);
     } else {
       jit.javaCompile();
-      J3Intrinsics::runPasses(func, J3Intrinsics::globalFunctionPasses);
-      J3Intrinsics::runPasses(func, JavaFunctionPasses);
+      mvm::MvmModule::runPasses(func, mvm::MvmModule::globalFunctionPasses);
+      mvm::MvmModule::runPasses(func, JavaFunctionPasses);
     }
     func->setLinkage(GlobalValue::ExternalLinkage);
   }
-  J3Intrinsics::unprotectIR();
+  mvm::MvmModule::unprotectIR();
 
   return func;
 }

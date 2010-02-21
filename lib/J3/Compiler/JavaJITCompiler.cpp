@@ -248,9 +248,9 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   EmitFunctionName = false;
 #endif
   
-  J3Intrinsics::protectEngine.lock();
-  J3Intrinsics::executionEngine->addModule(TheModule);
-  J3Intrinsics::protectEngine.unlock();
+  mvm::MvmModule::protectEngine.lock();
+  mvm::MvmModule::executionEngine->addModule(TheModule);
+  mvm::MvmModule::protectEngine.unlock();
   
   addJavaPasses();
 
@@ -388,7 +388,7 @@ void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
   Function* func = getMethodInfo(meth)->getMethod();
   func->setName(name);
   assert(ptr && "No value given");
-  J3Intrinsics::executionEngine->updateGlobalMapping(func, ptr);
+  mvm::MvmModule::executionEngine->updateGlobalMapping(func, ptr);
   func->setLinkage(GlobalValue::ExternalLinkage);
 }
 
@@ -480,7 +480,7 @@ static llvm::cl::opt<bool> LLVMLazy("llvm-lazy",
 
 JavaJITCompiler* JavaJITCompiler::CreateCompiler(const std::string& ModuleID) {
   if (LLVMLazy) {
-    J3Intrinsics::executionEngine->DisableLazyCompilation(false); 
+    mvm::MvmModule::executionEngine->DisableLazyCompilation(false); 
     return new JavaLLVMLazyJITCompiler(ModuleID);
   }
   return new JavaJ3LazyJITCompiler(ModuleID);

@@ -101,7 +101,7 @@ N3::N3(mvm::BumpPtrAllocator &allocator, const char *name) : mvm::VirtualMachine
 
   this->scanner =           new mvm::UnpreciseStackScanner(); 
   this->LLVMModule =        new llvm::Module(name, llvm::getGlobalContext());
-  this->module =            new mvm::MvmModule(this->LLVMModule);
+  this->module =            new mvm::BaseIntrinsics(this->LLVMModule);
 
   this->LLVMModule->setDataLayout(mvm::MvmModule::executionEngine->getTargetData()->getStringRepresentation());
   this->protectModule =     new mvm::LockNormal();

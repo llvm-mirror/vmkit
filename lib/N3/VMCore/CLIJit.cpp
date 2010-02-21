@@ -652,7 +652,7 @@ void CLIJit::invokeNew(uint32 value, VMGenericClass* genClass, VMGenericMethod* 
 
   } else if (type->super == MSCorlib::pValue || type->super == MSCorlib::pEnum) {
     obj = new AllocaInst(type->naturalType, "", currentBlock);
-    uint64 size = module->getTypeSize(type->naturalType);
+    uint64 size = mvm::MvmModule::getTypeSize(type->naturalType);
         
     std::vector<Value*> params;
     params.push_back(new BitCastInst(obj, module->ptrType, "", currentBlock));
@@ -759,7 +759,7 @@ void CLIJit::setVirtualField(uint32 value, bool isVolatile, VMGenericClass* genC
   
   if (field->signature->super == MSCorlib::pValue &&
       field->signature->virtualFields.size() > 1) {
-    uint64 size = module->getTypeSize(field->signature->naturalType);
+    uint64 size = mvm::MvmModule::getTypeSize(field->signature->naturalType);
         
     std::vector<Value*> params;
     params.push_back(new BitCastInst(ptr, PointerType::getUnqual(Type::getInt8Ty(getGlobalContext())), "", currentBlock));
@@ -1255,7 +1255,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
         new StoreInst(Constant::getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
       } else {
-        uint64 size = module->getTypeSize(cl->naturalType);
+        uint64 size = mvm::MvmModule::getTypeSize(cl->naturalType);
         
         std::vector<Value*> params;
         params.push_back(new BitCastInst(alloc, module->ptrType, "",
@@ -1302,7 +1302,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
     } else if (compilingMethod->structReturn) {
       const Type* lastType = 
         funcType->getContainedType(funcType->getNumContainedTypes() - 1);
-      uint64 size = module->getTypeSize(lastType->getContainedType(0));
+      uint64 size = mvm::MvmModule::getTypeSize(lastType->getContainedType(0));
       Value* obj = --llvmFunction->arg_end();
       std::vector<Value*> params;
       params.push_back(new BitCastInst(obj, module->ptrType, "",
@@ -1338,7 +1338,7 @@ Function* CLIJit::compileFatOrTiny(VMGenericClass* genClass, VMGenericMethod* ge
     new UnreachableInst(getGlobalContext(), unifiedUnreachable);
   }
   
-  module->runPasses(llvmFunction, VMThread::get()->perFunctionPasses);
+  mvm::MvmModule::runPasses(llvmFunction, VMThread::get()->perFunctionPasses);
   
   if (nbe == 0 && codeLen < 50) {
     PRINT_DEBUG(N3_COMPILE, 1, COLOR_NORMAL, "%s can be inlined\n",
@@ -1432,7 +1432,7 @@ Instruction* CLIJit::inlineCompile(Function* parentFunction, BasicBlock*& curBB,
         new StoreInst(Constant::getNullValue(cl->naturalType), alloc, false,
                       currentBlock);
       } else {
-        uint64 size = module->getTypeSize(cl->naturalType);
+        uint64 size = mvm::MvmModule::getTypeSize(cl->naturalType);
         
         std::vector<Value*> params;
         params.push_back(new BitCastInst(alloc, module->ptrType, "",
@@ -1548,11 +1548,10 @@ namespace n3 {
 
 
 void CLIJit::initialiseBootstrapVM(N3* vm) {
-  mvm::MvmModule* M = vm->module;
   Module* module = vm->getLLVMModule();
-  M->protectEngine.lock();
-  M->executionEngine->addModule(module);
-  M->protectEngine.unlock();
+  mvm::MvmModule::protectEngine.lock();
+  mvm::MvmModule::executionEngine->addModule(module);
+  mvm::MvmModule::protectEngine.unlock();
     
   n3::llvm_runtime::makeLLVMModuleContents(module);
 

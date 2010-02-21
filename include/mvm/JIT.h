@@ -60,11 +60,11 @@ const float MinIntFloat = (float)-2147483648.0;
 const float NaNFloat = NAN; //(float)(((float)0.0) / (float)0.0);
 const double NaNDouble = NAN; //0.0 / 0.0;
 
-class MvmModule {
+class BaseIntrinsics {
 
 public:
   
-  explicit MvmModule(llvm::Module*);
+  explicit BaseIntrinsics(llvm::Module*);
  
   llvm::Function* exceptionEndCatch;
   llvm::Function* exceptionBeginCatch;
@@ -172,7 +172,11 @@ public:
    static const llvm::PointerType* ptrPtrType;
    static const llvm::Type* arrayPtrType;
    static const llvm::Type* pointerSizeType;
+};
 
+
+class MvmModule {
+public:
    static llvm::ExecutionEngine* executionEngine;
    static llvm::GCStrategy* TheGCStrategy;
    static mvm::LockRecursive protectEngine;
