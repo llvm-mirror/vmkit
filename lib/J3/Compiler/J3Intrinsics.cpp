@@ -38,8 +38,9 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
 
   if (!globalModule->getTypeByName("JavaThread")) {
     j3::llvm_runtime::makeLLVMModuleContents(globalModule);
-    mvm::MvmModule::copyDefinitions(module, mvm::MvmModule::globalModule);
+    mvm::MvmModule::copyDefinitions(module, globalModule);   
   }
+  
 
   if (!(LLVMAssessorInfo::AssessorInfo[I_VOID].llvmType)) {
     LLVMAssessorInfo::initialise();
@@ -178,103 +179,103 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   globalModule->addTypeName("ArrayDouble", JavaArrayDoubleType->getContainedType(0));
   globalModule->addTypeName("ArrayObject", JavaArrayObjectType->getContainedType(0));
    
-  InterfaceLookupFunction = globalModule->getFunction("j3InterfaceLookup");
-  MultiCallNewFunction = globalModule->getFunction("j3MultiCallNew");
-  ForceLoadedCheckFunction = globalModule->getFunction("forceLoadedCheck");
-  InitialisationCheckFunction = globalModule->getFunction("initialisationCheck");
+  InterfaceLookupFunction = module->getFunction("j3InterfaceLookup");
+  MultiCallNewFunction = module->getFunction("j3MultiCallNew");
+  ForceLoadedCheckFunction = module->getFunction("forceLoadedCheck");
+  InitialisationCheckFunction = module->getFunction("initialisationCheck");
   ForceInitialisationCheckFunction = 
-    globalModule->getFunction("forceInitialisationCheck");
-  InitialiseClassFunction = globalModule->getFunction("j3RuntimeInitialiseClass");
+    module->getFunction("forceInitialisationCheck");
+  InitialiseClassFunction = module->getFunction("j3RuntimeInitialiseClass");
   
-  GetConstantPoolAtFunction = globalModule->getFunction("getConstantPoolAt");
-  ArrayLengthFunction = globalModule->getFunction("arrayLength");
-  GetVTFunction = globalModule->getFunction("getVT");
-  GetIMTFunction = globalModule->getFunction("getIMT");
-  GetClassFunction = globalModule->getFunction("getClass");
-  ClassLookupFunction = globalModule->getFunction("j3ClassLookup");
-  GetVTFromClassFunction = globalModule->getFunction("getVTFromClass");
-  GetVTFromClassArrayFunction = globalModule->getFunction("getVTFromClassArray");
-  GetVTFromCommonClassFunction = globalModule->getFunction("getVTFromCommonClass");
-  GetBaseClassVTFromVTFunction = globalModule->getFunction("getBaseClassVTFromVT");
+  GetConstantPoolAtFunction = module->getFunction("getConstantPoolAt");
+  ArrayLengthFunction = module->getFunction("arrayLength");
+  GetVTFunction = module->getFunction("getVT");
+  GetIMTFunction = module->getFunction("getIMT");
+  GetClassFunction = module->getFunction("getClass");
+  ClassLookupFunction = module->getFunction("j3ClassLookup");
+  GetVTFromClassFunction = module->getFunction("getVTFromClass");
+  GetVTFromClassArrayFunction = module->getFunction("getVTFromClassArray");
+  GetVTFromCommonClassFunction = module->getFunction("getVTFromCommonClass");
+  GetBaseClassVTFromVTFunction = module->getFunction("getBaseClassVTFromVT");
   GetObjectSizeFromClassFunction = 
-    globalModule->getFunction("getObjectSizeFromClass");
+    module->getFunction("getObjectSizeFromClass");
  
-  GetClassDelegateeFunction = globalModule->getFunction("getClassDelegatee");
-  RuntimeDelegateeFunction = globalModule->getFunction("j3RuntimeDelegatee");
-  IsAssignableFromFunction = globalModule->getFunction("isAssignableFrom");
-  IsSecondaryClassFunction = globalModule->getFunction("isSecondaryClass");
-  GetDepthFunction = globalModule->getFunction("getDepth");
-  GetStaticInstanceFunction = globalModule->getFunction("getStaticInstance");
-  GetDisplayFunction = globalModule->getFunction("getDisplay");
-  GetVTInDisplayFunction = globalModule->getFunction("getVTInDisplay");
-  AquireObjectFunction = globalModule->getFunction("j3JavaObjectAquire");
-  ReleaseObjectFunction = globalModule->getFunction("j3JavaObjectRelease");
-  OverflowThinLockFunction = globalModule->getFunction("j3OverflowThinLock");
+  GetClassDelegateeFunction = module->getFunction("getClassDelegatee");
+  RuntimeDelegateeFunction = module->getFunction("j3RuntimeDelegatee");
+  IsAssignableFromFunction = module->getFunction("isAssignableFrom");
+  IsSecondaryClassFunction = module->getFunction("isSecondaryClass");
+  GetDepthFunction = module->getFunction("getDepth");
+  GetStaticInstanceFunction = module->getFunction("getStaticInstance");
+  GetDisplayFunction = module->getFunction("getDisplay");
+  GetVTInDisplayFunction = module->getFunction("getVTInDisplay");
+  AquireObjectFunction = module->getFunction("j3JavaObjectAquire");
+  ReleaseObjectFunction = module->getFunction("j3JavaObjectRelease");
+  OverflowThinLockFunction = module->getFunction("j3OverflowThinLock");
 
-  VirtualFieldLookupFunction = globalModule->getFunction("j3VirtualFieldLookup");
-  StaticFieldLookupFunction = globalModule->getFunction("j3StaticFieldLookup");
-  StringLookupFunction = globalModule->getFunction("j3StringLookup");
-  StartJNIFunction = globalModule->getFunction("j3StartJNI");
-  EndJNIFunction = globalModule->getFunction("j3EndJNI");
+  VirtualFieldLookupFunction = module->getFunction("j3VirtualFieldLookup");
+  StaticFieldLookupFunction = module->getFunction("j3StaticFieldLookup");
+  StringLookupFunction = module->getFunction("j3StringLookup");
+  StartJNIFunction = module->getFunction("j3StartJNI");
+  EndJNIFunction = module->getFunction("j3EndJNI");
   
-  ResolveVirtualStubFunction = globalModule->getFunction("j3ResolveVirtualStub");
-  ResolveStaticStubFunction = globalModule->getFunction("j3ResolveStaticStub");
-  ResolveSpecialStubFunction = globalModule->getFunction("j3ResolveSpecialStub");
+  ResolveVirtualStubFunction = module->getFunction("j3ResolveVirtualStub");
+  ResolveStaticStubFunction = module->getFunction("j3ResolveStaticStub");
+  ResolveSpecialStubFunction = module->getFunction("j3ResolveSpecialStub");
   
   NullPointerExceptionFunction =
-    globalModule->getFunction("j3NullPointerException");
-  ClassCastExceptionFunction = globalModule->getFunction("j3ClassCastException");
+    module->getFunction("j3NullPointerException");
+  ClassCastExceptionFunction = module->getFunction("j3ClassCastException");
   IndexOutOfBoundsExceptionFunction = 
-    globalModule->getFunction("j3IndexOutOfBoundsException");
+    module->getFunction("j3IndexOutOfBoundsException");
   NegativeArraySizeExceptionFunction = 
-    globalModule->getFunction("j3NegativeArraySizeException");
-  OutOfMemoryErrorFunction = globalModule->getFunction("j3OutOfMemoryError");
-  StackOverflowErrorFunction = globalModule->getFunction("j3StackOverflowError");
-  ArrayStoreExceptionFunction = globalModule->getFunction("j3ArrayStoreException");
-  ArithmeticExceptionFunction = globalModule->getFunction("j3ArithmeticException");
+    module->getFunction("j3NegativeArraySizeException");
+  OutOfMemoryErrorFunction = module->getFunction("j3OutOfMemoryError");
+  StackOverflowErrorFunction = module->getFunction("j3StackOverflowError");
+  ArrayStoreExceptionFunction = module->getFunction("j3ArrayStoreException");
+  ArithmeticExceptionFunction = module->getFunction("j3ArithmeticException");
 
-  PrintExecutionFunction = globalModule->getFunction("j3PrintExecution");
-  PrintMethodStartFunction = globalModule->getFunction("j3PrintMethodStart");
-  PrintMethodEndFunction = globalModule->getFunction("j3PrintMethodEnd");
+  PrintExecutionFunction = module->getFunction("j3PrintExecution");
+  PrintMethodStartFunction = module->getFunction("j3PrintMethodStart");
+  PrintMethodEndFunction = module->getFunction("j3PrintMethodEnd");
 
-  ThrowExceptionFunction = globalModule->getFunction("j3ThrowException");
+  ThrowExceptionFunction = module->getFunction("j3ThrowException");
 
-  GetArrayClassFunction = globalModule->getFunction("j3GetArrayClass");
+  GetArrayClassFunction = module->getFunction("j3GetArrayClass");
  
-  GetFinalInt8FieldFunction = globalModule->getFunction("getFinalInt8Field");
-  GetFinalInt16FieldFunction = globalModule->getFunction("getFinalInt16Field");
-  GetFinalInt32FieldFunction = globalModule->getFunction("getFinalInt32Field");
-  GetFinalLongFieldFunction = globalModule->getFunction("getFinalLongField");
-  GetFinalFloatFieldFunction = globalModule->getFunction("getFinalFloatField");
-  GetFinalDoubleFieldFunction = globalModule->getFunction("getFinalDoubleField");
-  GetFinalObjectFieldFunction = globalModule->getFunction("getFinalObjectField");
+  GetFinalInt8FieldFunction = module->getFunction("getFinalInt8Field");
+  GetFinalInt16FieldFunction = module->getFunction("getFinalInt16Field");
+  GetFinalInt32FieldFunction = module->getFunction("getFinalInt32Field");
+  GetFinalLongFieldFunction = module->getFunction("getFinalLongField");
+  GetFinalFloatFieldFunction = module->getFunction("getFinalFloatField");
+  GetFinalDoubleFieldFunction = module->getFunction("getFinalDoubleField");
+  GetFinalObjectFieldFunction = module->getFunction("getFinalObjectField");
 
 #ifdef ISOLATE_SHARING
-  GetCtpClassFunction = globalModule->getFunction("getCtpClass");
+  GetCtpClassFunction = module->getFunction("getCtpClass");
   GetJnjvmExceptionClassFunction = 
-    globalModule->getFunction("getJnjvmExceptionClass");
-  GetJnjvmArrayClassFunction = globalModule->getFunction("getJnjvmArrayClass");
-  StaticCtpLookupFunction = globalModule->getFunction("j3StaticCtpLookup");
-  SpecialCtpLookupFunction = globalModule->getFunction("j3SpecialCtpLookup");
+    module->getFunction("getJnjvmExceptionClass");
+  GetJnjvmArrayClassFunction = module->getFunction("getJnjvmArrayClass");
+  StaticCtpLookupFunction = module->getFunction("j3StaticCtpLookup");
+  SpecialCtpLookupFunction = module->getFunction("j3SpecialCtpLookup");
 #endif
  
 #ifdef SERVICE
-  ServiceCallStartFunction = globalModule->getFunction("j3ServiceCallStart");
-  ServiceCallStopFunction = globalModule->getFunction("j3ServiceCallStop");
+  ServiceCallStartFunction = module->getFunction("j3ServiceCallStart");
+  ServiceCallStopFunction = module->getFunction("j3ServiceCallStop");
 #endif
 
-  JavaObjectTracerFunction = globalModule->getFunction("JavaObjectTracer");
-  EmptyTracerFunction = globalModule->getFunction("EmptyTracer");
-  JavaArrayTracerFunction = globalModule->getFunction("JavaArrayTracer");
-  ArrayObjectTracerFunction = globalModule->getFunction("ArrayObjectTracer");
-  RegularObjectTracerFunction = globalModule->getFunction("RegularObjectTracer");
+  JavaObjectTracerFunction = module->getFunction("JavaObjectTracer");
+  EmptyTracerFunction = module->getFunction("EmptyTracer");
+  JavaArrayTracerFunction = module->getFunction("JavaArrayTracer");
+  ArrayObjectTracerFunction = module->getFunction("ArrayObjectTracer");
+  RegularObjectTracerFunction = module->getFunction("RegularObjectTracer");
 
 #ifndef WITHOUT_VTABLE
-  VirtualLookupFunction = globalModule->getFunction("j3VirtualTableLookup");
+  VirtualLookupFunction = module->getFunction("j3VirtualTableLookup");
 #endif
 
-  GetLockFunction = globalModule->getFunction("getLock");
+  GetLockFunction = module->getFunction("getLock");
   ThrowExceptionFromJITFunction =
-    globalModule->getFunction("j3ThrowExceptionFromJIT");
+    module->getFunction("j3ThrowExceptionFromJIT");
  
 }

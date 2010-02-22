@@ -325,6 +325,8 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   module->setTargetTriple(MvmModule::globalModule->getTargetTriple());
   LLVMContext& Context = module->getContext();
   
+  MvmModule::copyDefinitions(module, MvmModule::globalModule); 
+  
   // Type declaration
   ptrType = PointerType::getUnqual(Type::getInt8Ty(Context));
   ptr32Type = PointerType::getUnqual(Type::getInt32Ty(Context));
@@ -385,7 +387,6 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::getInt8Ty(Context), 0));
 
 
-  MvmModule::copyDefinitions(module, MvmModule::globalModule); 
     
   printFloatLLVM = module->getFunction("printFloat");
   printDoubleLLVM = module->getFunction("printDouble");
