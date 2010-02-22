@@ -1996,7 +1996,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                    args, args + 2, "", currentBlock);
 #endif
 
-          LLVMAssessorInfo& LAI = LLVMAssessorInfo::AssessorInfo[charId];
+          LLVMAssessorInfo& LAI = TheCompiler->AssessorInfo[charId];
           sizeElement = ConstantInt::get(Type::getInt32Ty(*llvmContext),
                                                     LAI.logSizeInBytesConstant);
           if (TheCompiler->isStaticCompiling() &&

@@ -14,6 +14,9 @@
 #include "j3/J3Intrinsics.h"
 #include "j3/LLVMInfo.h"
 
+#include "llvm/LLVMContext.h"
+#include "llvm/Module.h"
+
 namespace llvm {
   class BasicBlock;
   class DIFactory;
@@ -72,6 +75,10 @@ public:
   llvm::Module* getLLVMModule() {
     return TheModule;
   }
+  
+  llvm::LLVMContext& getLLVMContext() {
+    return TheModule->getContext();
+  }
 
   J3Intrinsics* getIntrinsics() {
     return &JavaIntrinsics;
@@ -104,11 +111,14 @@ public:
   void resolveStaticClass(Class* cl);
   static llvm::Function* getMethod(JavaMethod* meth);
 
+  void initialiseAssessorInfo();
+  std::map<const char, LLVMAssessorInfo> AssessorInfo;
+  LLVMAssessorInfo& getTypedefInfo(const Typedef* type);
+
   static LLVMSignatureInfo* getSignatureInfo(Signdef* sign);
   static LLVMClassInfo* getClassInfo(Class* cl);
   static LLVMFieldInfo* getFieldInfo(JavaField* field);
   static LLVMMethodInfo* getMethodInfo(JavaMethod* method);
-  static LLVMAssessorInfo& getTypedefInfo(const Typedef* type);
   
   virtual llvm::Constant* getFinalObject(JavaObject* obj, CommonClass* cl) = 0;
   virtual JavaObject* getFinalObject(llvm::Value* C) = 0;

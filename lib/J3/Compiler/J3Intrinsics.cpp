@@ -41,12 +41,8 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
     mvm::MvmModule::copyDefinitions(module, globalModule);   
   }
   
-
-  if (!(LLVMAssessorInfo::AssessorInfo[I_VOID].llvmType)) {
-    LLVMAssessorInfo::initialise();
-  }
-  
   VTType = PointerType::getUnqual(globalModule->getTypeByName("VT"));
+  LLVMContext& Context = module->getContext();
 
 #ifdef ISOLATE_SHARING
   JnjvmType = 
@@ -108,9 +104,9 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   
   JavaObjectNullConstant =
     Constant::getNullValue(J3Intrinsics::JavaObjectType);
-  MaxArraySizeConstant = ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
+  MaxArraySizeConstant = ConstantInt::get(Type::getInt32Ty(Context),
                                           JavaArray::MaxArraySize);
-  JavaArraySizeConstant = ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
+  JavaArraySizeConstant = ConstantInt::get(Type::getInt32Ty(Context),
                                           sizeof(JavaObject) + sizeof(ssize_t));
   
   
@@ -122,43 +118,39 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   OffsetDepthInVTConstant = constantFour;
   OffsetDisplayInVTConstant = constantSeven;
   OffsetBaseClassVTInVTConstant =
-    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 17);
-  OffsetIMTInVTConstant =
-    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 18);
+    ConstantInt::get(Type::getInt32Ty(Context), 17);
+  OffsetIMTInVTConstant = ConstantInt::get(Type::getInt32Ty(Context), 18);
   
   OffsetAccessInCommonClassConstant = constantOne;
-  IsArrayConstant = ConstantInt::get(Type::getInt16Ty(getGlobalContext()),
+  IsArrayConstant = ConstantInt::get(Type::getInt16Ty(Context),
                                      JNJVM_ARRAY);
   
-  IsPrimitiveConstant = ConstantInt::get(Type::getInt16Ty(getGlobalContext()),
+  IsPrimitiveConstant = ConstantInt::get(Type::getInt16Ty(Context),
                                          JNJVM_PRIMITIVE);
  
   OffsetBaseClassInArrayClassConstant = constantOne;
   OffsetLogSizeInPrimitiveClassConstant = constantOne;
 
   OffsetObjectSizeInClassConstant = constantOne;
-  OffsetVTInClassConstant =
-    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 7);
+  OffsetVTInClassConstant = ConstantInt::get(Type::getInt32Ty(Context), 7);
   OffsetTaskClassMirrorInClassConstant = constantThree;
   OffsetVirtualMethodsInClassConstant =
-    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 9);
+    ConstantInt::get(Type::getInt32Ty(Context), 9);
   OffsetStaticInstanceInTaskClassMirrorConstant = constantThree;
   OffsetStatusInTaskClassMirrorConstant = constantZero;
   OffsetInitializedInTaskClassMirrorConstant = constantOne;
   
   OffsetIsolateInThreadConstant =
-    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 3);
+    ConstantInt::get(Type::getInt32Ty(Context), 3);
   OffsetDoYieldInThreadConstant =
-    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 6);
-  OffsetJNIInThreadConstant =
-    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 1);
+    ConstantInt::get(Type::getInt32Ty(Context), 6);
+  OffsetJNIInThreadConstant = ConstantInt::get(Type::getInt32Ty(Context), 1);
   OffsetJavaExceptionInThreadConstant =
-    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 2);
+    ConstantInt::get(Type::getInt32Ty(Context), 2);
   OffsetCXXExceptionInThreadConstant =
-    ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 3);
+    ConstantInt::get(Type::getInt32Ty(Context), 3);
   
-  ClassReadyConstant =
-    ConstantInt::get(Type::getInt8Ty(getGlobalContext()), ready);
+  ClassReadyConstant = ConstantInt::get(Type::getInt8Ty(Context), ready);
   
   globalModule->addTypeName("JavaObject", JavaObjectType->getContainedType(0));
   globalModule->addTypeName("JavaArray", JavaArrayType->getContainedType(0));

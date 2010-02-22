@@ -33,10 +33,6 @@ public:
   const llvm::Type* llvmType;
   const llvm::Type* llvmTypePtr;
   uint8_t logSizeInBytesConstant;
-  
-  static void initialise();
-  static std::map<const char, LLVMAssessorInfo> AssessorInfo;
-
 };
 
 class LLVMClassInfo : public mvm::JITInfo {

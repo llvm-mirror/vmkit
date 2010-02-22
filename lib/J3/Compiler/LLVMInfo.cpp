@@ -55,7 +55,7 @@ const Type* LLVMClassInfo::getVirtualType() {
         JavaField& field = classDef->virtualFields[i];
         field.num = i + 1;
         Typedef* type = field.getSignature();
-        LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(type);
+        LLVMAssessorInfo& LAI = Mod->getTypedefInfo(type);
         fields.push_back(LAI.llvmType);
       }
     
@@ -104,7 +104,7 @@ const Type* LLVMClassInfo::getStaticType() {
       JavaField& field = classDef->staticFields[i];
       field.num = i;
       Typedef* type = field.getSignature();
-      LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(type);
+      LLVMAssessorInfo& LAI = Mod->getTypedefInfo(type);
       fields.push_back(LAI.llvmType);
     }
   
@@ -248,16 +248,15 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
 
     for (uint32 i = 0; i < size; ++i) {
       Typedef* type = arguments[i];
-      LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(type);
+      LLVMAssessorInfo& LAI = Mod->getTypedefInfo(type);
       llvmArgs.push_back(LAI.llvmType);
     }
 
 #if defined(ISOLATE_SHARING)
-    llvmArgs.push_back(J3Intrinsics::ConstantPoolType); // cached constant pool
+    llvmArgs.push_back(Mod->getIntrinsics()->ConstantPoolType);
 #endif
 
-    LLVMAssessorInfo& LAI = 
-      JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
+    LLVMAssessorInfo& LAI = Mod->getTypedefInfo(signature->getReturnType());
     virtualType = FunctionType::get(LAI.llvmType, llvmArgs, false);
     mvm::MvmModule::unprotectIR();
   }
@@ -271,10 +270,12 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
     std::vector<const llvm::Type*> llvmArgs;
     uint32 size = signature->nbArguments;
     Typedef* const* arguments = signature->getArgumentsType();
+    JavaLLVMCompiler* Mod = 
+      (JavaLLVMCompiler*)signature->initialLoader->getCompiler();
 
     for (uint32 i = 0; i < size; ++i) {
       Typedef* type = arguments[i];
-      LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(type);
+      LLVMAssessorInfo& LAI = Mod->getTypedefInfo(type);
       llvmArgs.push_back(LAI.llvmType);
     }
 
@@ -283,8 +284,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
     llvmArgs.push_back(Mod->getIntrinsics()->ConstantPoolType);
 #endif
 
-    LLVMAssessorInfo& LAI = 
-      JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
+    LLVMAssessorInfo& LAI = Mod->getTypedefInfo(signature->getReturnType());
     staticType = FunctionType::get(LAI.llvmType, llvmArgs, false);
     mvm::MvmModule::unprotectIR();
   }
@@ -309,7 +309,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
 
     for (uint32 i = 0; i < size; ++i) {
       Typedef* type = arguments[i];
-      LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(type);
+      LLVMAssessorInfo& LAI = Mod->getTypedefInfo(type);
       const llvm::Type* Ty = LAI.llvmType;
       if (Ty == Mod->getIntrinsics()->JavaObjectType) {
         llvmArgs.push_back(LAI.llvmTypePtr);
@@ -323,8 +323,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
     llvmArgs.push_back(Mod->getIntrinsics()->ConstantPoolType);
 #endif
 
-    LLVMAssessorInfo& LAI = 
-      JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
+    LLVMAssessorInfo& LAI = Mod->getTypedefInfo(signature->getReturnType());
     const llvm::Type* RetType =
       LAI.llvmType == Mod->getIntrinsics()->JavaObjectType ?
         LAI.llvmTypePtr : LAI.llvmType;
@@ -378,7 +377,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   Typedef* const* arguments = signature->getArgumentsType();
   for (uint32 i = 0; i < signature->nbArguments; ++i) {
   
-    LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(arguments[i]);
+    LLVMAssessorInfo& LAI = Mod->getTypedefInfo(arguments[i]);
     Value* arg = new LoadInst(ptr, "", currentBlock);
     
     if (arguments[i]->isReference()) {
@@ -402,7 +401,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
       currentBlock = endBlock;
       arg = node;
     } else if (arguments[i]->isFloat()) {
-      arg = new TruncInst(arg, LLVMAssessorInfo::AssessorInfo[I_INT].llvmType,
+      arg = new TruncInst(arg, Mod->AssessorInfo[I_INT].llvmType,
                           "", currentBlock);
       arg = new BitCastInst(arg, LAI.llvmType, "", currentBlock);
     } else if (arguments[i]->isDouble()) {
@@ -468,7 +467,7 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
 
   Typedef* const* arguments = signature->getArgumentsType();
   for (uint32 i = 0; i < signature->nbArguments; ++i) {
-    LLVMAssessorInfo& LAI = JavaLLVMCompiler::getTypedefInfo(arguments[i]);
+    LLVMAssessorInfo& LAI = Mod->getTypedefInfo(arguments[i]);
     Value* arg = new VAArgInst(ap, LAI.llvmType, "", currentBlock);
     if (arguments[i]->isReference()) {
       arg = new IntToPtrInst(arg, Intrinsics.JavaObjectType, "", currentBlock);
@@ -621,9 +620,8 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
     Args.push_back(Mod->getIntrinsics()->ConstantPoolType); // ctp
     Args.push_back(getVirtualPtrType());
     Args.push_back(Mod->getIntrinsics()->JavaObjectType);
-    Args.push_back(LLVMAssessorInfo::AssessorInfo[I_LONG].llvmTypePtr);
-    LLVMAssessorInfo& LAI = 
-      JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
+    Args.push_back(Mod->AssessorInfo[I_LONG].llvmTypePtr);
+    LLVMAssessorInfo& LAI = Mod->getTypedefInfo(signature->getReturnType());
     virtualBufType = FunctionType::get(LAI.llvmType, Args, false);
     mvm::MvmModule::unprotectIR();
   }
@@ -639,9 +637,8 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
     std::vector<const llvm::Type*> Args;
     Args.push_back(Mod->getIntrinsics()->ConstantPoolType); // ctp
     Args.push_back(getStaticPtrType());
-    Args.push_back(LLVMAssessorInfo::AssessorInfo[I_LONG].llvmTypePtr);
-    LLVMAssessorInfo& LAI = 
-      JavaLLVMCompiler::getTypedefInfo(signature->getReturnType());
+    Args.push_back(Mod->AssessorInfo[I_LONG].llvmTypePtr);
+    LLVMAssessorInfo& LAI = Mod->getTypedefInfo(signature->getReturnType());
     staticBufType = FunctionType::get(LAI.llvmType, Args, false);
     mvm::MvmModule::unprotectIR();
   }
@@ -767,49 +764,49 @@ Function* LLVMSignatureInfo::getVirtualStub() {
   return virtualStubFunction;
 }
 
-void LLVMAssessorInfo::initialise() {
-  AssessorInfo[I_VOID].llvmType = Type::getVoidTy(getGlobalContext());
+void JavaLLVMCompiler::initialiseAssessorInfo() {
+  AssessorInfo[I_VOID].llvmType = Type::getVoidTy(getLLVMContext());
   AssessorInfo[I_VOID].llvmTypePtr = 0;
   AssessorInfo[I_VOID].logSizeInBytesConstant = 0;
   
-  AssessorInfo[I_BOOL].llvmType = Type::getInt8Ty(getGlobalContext());
+  AssessorInfo[I_BOOL].llvmType = Type::getInt8Ty(getLLVMContext());
   AssessorInfo[I_BOOL].llvmTypePtr =
-    PointerType::getUnqual(Type::getInt8Ty(getGlobalContext()));
+    PointerType::getUnqual(Type::getInt8Ty(getLLVMContext()));
   AssessorInfo[I_BOOL].logSizeInBytesConstant = 0;
   
-  AssessorInfo[I_BYTE].llvmType = Type::getInt8Ty(getGlobalContext());
+  AssessorInfo[I_BYTE].llvmType = Type::getInt8Ty(getLLVMContext());
   AssessorInfo[I_BYTE].llvmTypePtr =
-    PointerType::getUnqual(Type::getInt8Ty(getGlobalContext()));
+    PointerType::getUnqual(Type::getInt8Ty(getLLVMContext()));
   AssessorInfo[I_BYTE].logSizeInBytesConstant = 0;
   
-  AssessorInfo[I_SHORT].llvmType = Type::getInt16Ty(getGlobalContext());
+  AssessorInfo[I_SHORT].llvmType = Type::getInt16Ty(getLLVMContext());
   AssessorInfo[I_SHORT].llvmTypePtr =
-    PointerType::getUnqual(Type::getInt16Ty(getGlobalContext()));
+    PointerType::getUnqual(Type::getInt16Ty(getLLVMContext()));
   AssessorInfo[I_SHORT].logSizeInBytesConstant = 1;
   
-  AssessorInfo[I_CHAR].llvmType = Type::getInt16Ty(getGlobalContext());
+  AssessorInfo[I_CHAR].llvmType = Type::getInt16Ty(getLLVMContext());
   AssessorInfo[I_CHAR].llvmTypePtr =
-    PointerType::getUnqual(Type::getInt16Ty(getGlobalContext()));
+    PointerType::getUnqual(Type::getInt16Ty(getLLVMContext()));
   AssessorInfo[I_CHAR].logSizeInBytesConstant = 1;
   
-  AssessorInfo[I_INT].llvmType = Type::getInt32Ty(getGlobalContext());
+  AssessorInfo[I_INT].llvmType = Type::getInt32Ty(getLLVMContext());
   AssessorInfo[I_INT].llvmTypePtr =
-    PointerType::getUnqual(Type::getInt32Ty(getGlobalContext()));
+    PointerType::getUnqual(Type::getInt32Ty(getLLVMContext()));
   AssessorInfo[I_INT].logSizeInBytesConstant = 2;
   
-  AssessorInfo[I_FLOAT].llvmType = Type::getFloatTy(getGlobalContext());
+  AssessorInfo[I_FLOAT].llvmType = Type::getFloatTy(getLLVMContext());
   AssessorInfo[I_FLOAT].llvmTypePtr =
-    PointerType::getUnqual(Type::getFloatTy(getGlobalContext()));
+    PointerType::getUnqual(Type::getFloatTy(getLLVMContext()));
   AssessorInfo[I_FLOAT].logSizeInBytesConstant = 2;
   
-  AssessorInfo[I_LONG].llvmType = Type::getInt64Ty(getGlobalContext());
+  AssessorInfo[I_LONG].llvmType = Type::getInt64Ty(getLLVMContext());
   AssessorInfo[I_LONG].llvmTypePtr =
-    PointerType::getUnqual(Type::getInt64Ty(getGlobalContext()));
+    PointerType::getUnqual(Type::getInt64Ty(getLLVMContext()));
   AssessorInfo[I_LONG].logSizeInBytesConstant = 3;
   
-  AssessorInfo[I_DOUBLE].llvmType = Type::getDoubleTy(getGlobalContext());
+  AssessorInfo[I_DOUBLE].llvmType = Type::getDoubleTy(getLLVMContext());
   AssessorInfo[I_DOUBLE].llvmTypePtr =
-    PointerType::getUnqual(Type::getDoubleTy(getGlobalContext()));
+    PointerType::getUnqual(Type::getDoubleTy(getLLVMContext()));
   AssessorInfo[I_DOUBLE].logSizeInBytesConstant = 3;
   
   AssessorInfo[I_TAB].llvmType = PointerType::getUnqual(
@@ -823,10 +820,8 @@ void LLVMAssessorInfo::initialise() {
   AssessorInfo[I_REF].logSizeInBytesConstant = sizeof(JavaObject*) == 8 ? 3 : 2;
 }
 
-std::map<const char, LLVMAssessorInfo> LLVMAssessorInfo::AssessorInfo;
-
 LLVMAssessorInfo& JavaLLVMCompiler::getTypedefInfo(const Typedef* type) {
-  return LLVMAssessorInfo::AssessorInfo[type->getKey()->elements[0]];
+  return AssessorInfo[type->getKey()->elements[0]];
 }
 
 LLVMSignatureInfo* JavaLLVMCompiler::getSignatureInfo(Signdef* sign) {

@@ -160,7 +160,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
         res = invoke(func, args, "", currentBlock);
       }
       BranchInst::Create(endBlock, currentBlock);
-      if (retType != Type::getVoidTy(getGlobalContext())) {
+      if (retType != Type::getVoidTy(*llvmContext)) {
         node = PHINode::Create(virtualType->getReturnType(), "", endBlock);
         node->addIncoming(res, currentBlock);
       }
@@ -246,13 +246,13 @@ void JavaJIT::invokeVirtual(uint16 index) {
     }
   }
 
-  if (retType != Type::getVoidTy(getGlobalContext())) {
+  if (retType != Type::getVoidTy(*llvmContext)) {
     if (retType == intrinsics->JavaObjectType) {
       JnjvmClassLoader* JCL = compilingClass->classLoader;
       push(val, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
       push(val, retTypedef->isUnsigned());
-      if (retType == Type::getDoubleTy(getGlobalContext()) || retType == Type::getInt64Ty(getGlobalContext())) {
+      if (retType == Type::getDoubleTy(*llvmContext) || retType == Type::getInt64Ty(*llvmContext)) {
         push(intrinsics->constantZero, false);
       }
     }
@@ -307,7 +307,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   if (!natPtr && !TheCompiler->isStaticCompiling()) {
     currentBlock = createBasicBlock("start");
     CallInst::Create(intrinsics->ThrowExceptionFromJITFunction, "", currentBlock);
-    if (returnType != Type::getVoidTy(getGlobalContext()))
+    if (returnType != Type::getVoidTy(*llvmContext))
       ReturnInst::Create(*llvmContext, Constant::getNullValue(returnType), currentBlock);
     else
       ReturnInst::Create(*llvmContext, currentBlock);
@@ -332,21 +332,21 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   currentBlock = createBasicBlock("start");
   endBlock = createBasicBlock("end block");
   
-  if (returnType != Type::getVoidTy(getGlobalContext())) {
+  if (returnType != Type::getVoidTy(*llvmContext)) {
     endNode = PHINode::Create(returnType, "", endBlock);
   }
   
   // Allocate currentLocalIndexNumber pointer
-  Value* temp = new AllocaInst(Type::getInt32Ty(getGlobalContext()), "",
+  Value* temp = new AllocaInst(Type::getInt32Ty(*llvmContext), "",
                                currentBlock);
   new StoreInst(intrinsics->constantZero, temp, false, currentBlock);
   
   // Allocate oldCurrentLocalIndexNumber pointer
-  Value* oldCLIN = new AllocaInst(PointerType::getUnqual(Type::getInt32Ty(getGlobalContext())), "",
+  Value* oldCLIN = new AllocaInst(PointerType::getUnqual(Type::getInt32Ty(*llvmContext)), "",
                                   currentBlock);
   
-  Constant* sizeF = ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 2 * sizeof(void*));
-  Value* Frame = new AllocaInst(Type::getInt8Ty(getGlobalContext()), sizeF, "", currentBlock);
+  Constant* sizeF = ConstantInt::get(Type::getInt32Ty(*llvmContext), 2 * sizeof(void*));
+  Value* Frame = new AllocaInst(Type::getInt8Ty(*llvmContext), sizeF, "", currentBlock);
   
   // Synchronize before saying we're entering native
   if (isSynchro(compilingMethod->access))
@@ -497,7 +497,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     new StoreInst(result, ResultObject, "", currentBlock);
     endNode->addIncoming(result, currentBlock);
 
-  } else if (returnType != Type::getVoidTy(getGlobalContext())) {
+  } else if (returnType != Type::getVoidTy(*llvmContext)) {
     endNode->addIncoming(result, currentBlock);
   }
   
@@ -514,7 +514,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   if (isSynchro(compilingMethod->access))
     endSynchronize();
   
-  if (returnType != Type::getVoidTy(getGlobalContext()))
+  if (returnType != Type::getVoidTy(*llvmContext))
     ReturnInst::Create(*llvmContext, endNode, currentBlock);
   else
     ReturnInst::Create(*llvmContext, currentBlock);
@@ -819,14 +819,14 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     Instruction* firstInstruction = firstBB->begin();
 
     for (int i = 0; i < maxLocals; i++) {
-      intLocals.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", firstInstruction));
+      intLocals.push_back(new AllocaInst(Type::getInt32Ty(*llvmContext), "", firstInstruction));
       new StoreInst(Constant::getNullValue(Type::getInt32Ty(*llvmContext)), intLocals.back(), false, firstInstruction);
-      doubleLocals.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "",
+      doubleLocals.push_back(new AllocaInst(Type::getDoubleTy(*llvmContext), "",
                                             firstInstruction));
       new StoreInst(Constant::getNullValue(Type::getDoubleTy(*llvmContext)), doubleLocals.back(), false, firstInstruction);
-      longLocals.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", firstInstruction));
+      longLocals.push_back(new AllocaInst(Type::getInt64Ty(*llvmContext), "", firstInstruction));
       new StoreInst(Constant::getNullValue(Type::getInt64Ty(*llvmContext)), longLocals.back(), false, firstInstruction);
-      floatLocals.push_back(new AllocaInst(Type::getFloatTy(getGlobalContext()), "", firstInstruction));
+      floatLocals.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), "", firstInstruction));
       new StoreInst(Constant::getNullValue(Type::getFloatTy(*llvmContext)), floatLocals.back(), false, firstInstruction);
       objectLocals.push_back(new AllocaInst(intrinsics->JavaObjectType, "",
                                           firstInstruction));
@@ -839,22 +839,22 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
       objectStack.push_back(new AllocaInst(intrinsics->JavaObjectType, "",
                                            firstInstruction));
       addHighLevelType(objectStack.back(), upcalls->OfObject);
-      intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", firstInstruction));
-      doubleStack.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "",
+      intStack.push_back(new AllocaInst(Type::getInt32Ty(*llvmContext), "", firstInstruction));
+      doubleStack.push_back(new AllocaInst(Type::getDoubleTy(*llvmContext), "",
                                            firstInstruction));
-      longStack.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", firstInstruction));
-      floatStack.push_back(new AllocaInst(Type::getFloatTy(getGlobalContext()), "", firstInstruction));
+      longStack.push_back(new AllocaInst(Type::getInt64Ty(*llvmContext), "", firstInstruction));
+      floatStack.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), "", firstInstruction));
     }
 
   } else {
     for (int i = 0; i < maxLocals; i++) {
-      intLocals.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", firstBB));
+      intLocals.push_back(new AllocaInst(Type::getInt32Ty(*llvmContext), "", firstBB));
       new StoreInst(Constant::getNullValue(Type::getInt32Ty(*llvmContext)), intLocals.back(), false, firstBB);
-      doubleLocals.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "", firstBB));
+      doubleLocals.push_back(new AllocaInst(Type::getDoubleTy(*llvmContext), "", firstBB));
       new StoreInst(Constant::getNullValue(Type::getDoubleTy(*llvmContext)), doubleLocals.back(), false, firstBB);
-      longLocals.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", firstBB));
+      longLocals.push_back(new AllocaInst(Type::getInt64Ty(*llvmContext), "", firstBB));
       new StoreInst(Constant::getNullValue(Type::getInt64Ty(*llvmContext)), longLocals.back(), false, firstBB);
-      floatLocals.push_back(new AllocaInst(Type::getFloatTy(getGlobalContext()), "", firstBB));
+      floatLocals.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), "", firstBB));
       new StoreInst(Constant::getNullValue(Type::getFloatTy(*llvmContext)), floatLocals.back(), false, firstBB);
       objectLocals.push_back(new AllocaInst(intrinsics->JavaObjectType, "",
                                             firstBB));
@@ -867,10 +867,10 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
       objectStack.push_back(new AllocaInst(intrinsics->JavaObjectType, "",
                                            firstBB));
       addHighLevelType(objectStack.back(), upcalls->OfObject);
-      intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", firstBB));
-      doubleStack.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "", firstBB));
-      longStack.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", firstBB));
-      floatStack.push_back(new AllocaInst(Type::getFloatTy(getGlobalContext()), "", firstBB));
+      intStack.push_back(new AllocaInst(Type::getInt32Ty(*llvmContext), "", firstBB));
+      doubleStack.push_back(new AllocaInst(Type::getDoubleTy(*llvmContext), "", firstBB));
+      longStack.push_back(new AllocaInst(Type::getInt64Ty(*llvmContext), "", firstBB));
+      floatStack.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), "", firstBB));
     }
   }
       
@@ -901,21 +901,21 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     const Typedef* cur = arguments[type];
     const Type* curType = (*i)->getType();
 
-    if (curType == Type::getInt64Ty(getGlobalContext())){
+    if (curType == Type::getInt64Ty(*llvmContext)){
       new StoreInst(*i, longLocals[index], false, currentBlock);
       ++index;
     } else if (cur->isUnsigned()) {
-      new StoreInst(new ZExtInst(*i, Type::getInt32Ty(getGlobalContext()), "", currentBlock),
+      new StoreInst(new ZExtInst(*i, Type::getInt32Ty(*llvmContext), "", currentBlock),
                     intLocals[index], false, currentBlock);
-    } else if (curType == Type::getInt8Ty(getGlobalContext()) || curType == Type::getInt16Ty(getGlobalContext())) {
-      new StoreInst(new SExtInst(*i, Type::getInt32Ty(getGlobalContext()), "", currentBlock),
+    } else if (curType == Type::getInt8Ty(*llvmContext) || curType == Type::getInt16Ty(*llvmContext)) {
+      new StoreInst(new SExtInst(*i, Type::getInt32Ty(*llvmContext), "", currentBlock),
                     intLocals[index], false, currentBlock);
-    } else if (curType == Type::getInt32Ty(getGlobalContext())) {
+    } else if (curType == Type::getInt32Ty(*llvmContext)) {
       new StoreInst(*i, intLocals[index], false, currentBlock);
-    } else if (curType == Type::getDoubleTy(getGlobalContext())) {
+    } else if (curType == Type::getDoubleTy(*llvmContext)) {
       new StoreInst(*i, doubleLocals[index], false, currentBlock);
       ++index;
-    } else if (curType == Type::getFloatTy(getGlobalContext())) {
+    } else if (curType == Type::getFloatTy(*llvmContext)) {
       new StoreInst(*i, floatLocals[index], false, currentBlock);
     } else {
       Instruction* V = new StoreInst(*i, objectLocals[index], false, currentBlock);
@@ -944,7 +944,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
    
   exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
 
-  if (returnType != Type::getVoidTy(getGlobalContext())) {
+  if (returnType != Type::getVoidTy(*llvmContext)) {
     endNode = PHINode::Create(returnType, "", endBlock);
   }
 
@@ -1028,13 +1028,13 @@ llvm::Function* JavaJIT::javaCompile() {
   
 
   for (int i = 0; i < maxLocals; i++) {
-    intLocals.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", currentBlock));
+    intLocals.push_back(new AllocaInst(Type::getInt32Ty(*llvmContext), "", currentBlock));
     new StoreInst(Constant::getNullValue(Type::getInt32Ty(*llvmContext)), intLocals.back(), false, currentBlock);
-    doubleLocals.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "", currentBlock));
+    doubleLocals.push_back(new AllocaInst(Type::getDoubleTy(*llvmContext), "", currentBlock));
     new StoreInst(Constant::getNullValue(Type::getDoubleTy(*llvmContext)), doubleLocals.back(), false, currentBlock);
-    longLocals.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", currentBlock));
+    longLocals.push_back(new AllocaInst(Type::getInt64Ty(*llvmContext), "", currentBlock));
     new StoreInst(Constant::getNullValue(Type::getInt64Ty(*llvmContext)), longLocals.back(), false, currentBlock);
-    floatLocals.push_back(new AllocaInst(Type::getFloatTy(getGlobalContext()), "", currentBlock));
+    floatLocals.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), "", currentBlock));
     new StoreInst(Constant::getNullValue(Type::getFloatTy(*llvmContext)), floatLocals.back(), false, currentBlock);
     objectLocals.push_back(new AllocaInst(intrinsics->JavaObjectType, "",
                                           currentBlock));
@@ -1047,10 +1047,10 @@ llvm::Function* JavaJIT::javaCompile() {
     objectStack.push_back(new AllocaInst(intrinsics->JavaObjectType, "",
                                          currentBlock));
     addHighLevelType(objectStack.back(), upcalls->OfObject);
-    intStack.push_back(new AllocaInst(Type::getInt32Ty(getGlobalContext()), "", currentBlock));
-    doubleStack.push_back(new AllocaInst(Type::getDoubleTy(getGlobalContext()), "", currentBlock));
-    longStack.push_back(new AllocaInst(Type::getInt64Ty(getGlobalContext()), "", currentBlock));
-    floatStack.push_back(new AllocaInst(Type::getFloatTy(getGlobalContext()), "", currentBlock));
+    intStack.push_back(new AllocaInst(Type::getInt32Ty(*llvmContext), "", currentBlock));
+    doubleStack.push_back(new AllocaInst(Type::getDoubleTy(*llvmContext), "", currentBlock));
+    longStack.push_back(new AllocaInst(Type::getInt64Ty(*llvmContext), "", currentBlock));
+    floatStack.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), "", currentBlock));
   }
   
   uint32 index = 0;
@@ -1078,21 +1078,21 @@ llvm::Function* JavaJIT::javaCompile() {
     const Typedef* cur = arguments[type];
     const llvm::Type* curType = i->getType();
 
-    if (curType == Type::getInt64Ty(getGlobalContext())){
+    if (curType == Type::getInt64Ty(*llvmContext)){
       new StoreInst(i, longLocals[index], false, currentBlock);
       ++index;
     } else if (cur->isUnsigned()) {
-      new StoreInst(new ZExtInst(i, Type::getInt32Ty(getGlobalContext()), "", currentBlock),
+      new StoreInst(new ZExtInst(i, Type::getInt32Ty(*llvmContext), "", currentBlock),
                     intLocals[index], false, currentBlock);
-    } else if (curType == Type::getInt8Ty(getGlobalContext()) || curType == Type::getInt16Ty(getGlobalContext())) {
-      new StoreInst(new SExtInst(i, Type::getInt32Ty(getGlobalContext()), "", currentBlock),
+    } else if (curType == Type::getInt8Ty(*llvmContext) || curType == Type::getInt16Ty(*llvmContext)) {
+      new StoreInst(new SExtInst(i, Type::getInt32Ty(*llvmContext), "", currentBlock),
                     intLocals[index], false, currentBlock);
-    } else if (curType == Type::getInt32Ty(getGlobalContext())) {
+    } else if (curType == Type::getInt32Ty(*llvmContext)) {
       new StoreInst(i, intLocals[index], false, currentBlock);
-    } else if (curType == Type::getDoubleTy(getGlobalContext())) {
+    } else if (curType == Type::getDoubleTy(*llvmContext)) {
       new StoreInst(i, doubleLocals[index], false, currentBlock);
       ++index;
-    } else if (curType == Type::getFloatTy(getGlobalContext())) {
+    } else if (curType == Type::getFloatTy(*llvmContext)) {
       new StoreInst(i, floatLocals[index], false, currentBlock);
     } else {
       Instruction* V = new StoreInst(i, objectLocals[index], false, currentBlock);
@@ -1181,7 +1181,7 @@ llvm::Function* JavaJIT::javaCompile() {
  
   endBlock = createBasicBlock("end");
 
-  if (returnType != Type::getVoidTy(getGlobalContext())) {
+  if (returnType != Type::getVoidTy(*llvmContext)) {
     endNode = llvm::PHINode::Create(returnType, "", endBlock);
   }
   
@@ -1240,7 +1240,7 @@ llvm::Function* JavaJIT::javaCompile() {
   // not return.
   pred_iterator PI = pred_begin(endBlock);
   pred_iterator PE = pred_end(endBlock);
-  if (PI == PE && returnType != Type::getVoidTy(getGlobalContext())) {
+  if (PI == PE && returnType != Type::getVoidTy(*llvmContext)) {
     Instruction* I = currentBlock->getTerminator();
     
     if (isa<UnreachableInst>(I)) {
@@ -1294,7 +1294,7 @@ llvm::Function* JavaJIT::javaCompile() {
   if (PI == PE) {
     currentBlock->eraseFromParent();
   } else {
-    if (returnType != Type::getVoidTy(getGlobalContext()))
+    if (returnType != Type::getVoidTy(*llvmContext))
       ReturnInst::Create(*llvmContext, endNode, currentBlock);
     else
       ReturnInst::Create(*llvmContext, currentBlock);
@@ -1396,16 +1396,16 @@ void JavaJIT::loadConstant(uint16 index) {
     }
 #endif   
   } else if (type == JavaConstantPool::ConstantLong) {
-    push(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), ctpInfo->LongAt(index)),
+    push(ConstantInt::get(Type::getInt64Ty(*llvmContext), ctpInfo->LongAt(index)),
          false);
   } else if (type == JavaConstantPool::ConstantDouble) {
-    push(ConstantFP::get(Type::getDoubleTy(getGlobalContext()), ctpInfo->DoubleAt(index)),
+    push(ConstantFP::get(Type::getDoubleTy(*llvmContext), ctpInfo->DoubleAt(index)),
          false);
   } else if (type == JavaConstantPool::ConstantInteger) {
-    push(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), ctpInfo->IntegerAt(index)),
+    push(ConstantInt::get(Type::getInt32Ty(*llvmContext), ctpInfo->IntegerAt(index)),
          false);
   } else if (type == JavaConstantPool::ConstantFloat) {
-    push(ConstantFP::get(Type::getFloatTy(getGlobalContext()), ctpInfo->FloatAt(index)),
+    push(ConstantFP::get(Type::getFloatTy(*llvmContext), ctpInfo->FloatAt(index)),
          false);
   } else if (type == JavaConstantPool::ConstantClass) {
     UserCommonClass* cl = 0;
@@ -1444,8 +1444,8 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
                                     const Type* arrayType, bool verif) {
   JITVerifyNull(obj);
   
-  if (index->getType() != Type::getInt32Ty(getGlobalContext())) {
-    index = new SExtInst(index, Type::getInt32Ty(getGlobalContext()), "", currentBlock);
+  if (index->getType() != Type::getInt32Ty(*llvmContext)) {
+    index = new SExtInst(index, Type::getInt32Ty(*llvmContext), "", currentBlock);
   }
   
   if (TheCompiler->hasExceptionsEnabled()) {
@@ -1493,7 +1493,7 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
 #endif
   for (sint32 i = start; i >= 0; --i) {
     it--;
-    if (it->get() == Type::getInt64Ty(getGlobalContext()) || it->get() == Type::getDoubleTy(getGlobalContext())) {
+    if (it->get() == Type::getInt64Ty(*llvmContext) || it->get() == Type::getDoubleTy(*llvmContext)) {
       pop();
     }
     Value* tmp = pop();
@@ -1517,7 +1517,7 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
   JnjvmBootstrapLoader* loader = compilingClass->classLoader->bootstrapLoader;
   if (name->equals(loader->abs)) {
     const Type* Ty = args[0]->getType();
-    if (Ty == Type::getInt32Ty(getGlobalContext())) {
+    if (Ty == Type::getInt32Ty(*llvmContext)) {
       Constant* const_int32_9 = intrinsics->constantZero;
       Constant* const_int32_10 = intrinsics->constantMinusOne;
       BinaryOperator* int32_tmpneg = 
@@ -1528,7 +1528,7 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
                      "abscond");
       return llvm::SelectInst::Create(int1_abscond, args[0], int32_tmpneg,
                                       "abs", currentBlock);
-    } else if (Ty == Type::getInt64Ty(getGlobalContext())) {
+    } else if (Ty == Type::getInt64Ty(*llvmContext)) {
       Constant* const_int64_9 = intrinsics->constantLongZero;
       Constant* const_int64_10 = intrinsics->constantLongMinusOne;
       
@@ -1541,10 +1541,10 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
       
       return llvm::SelectInst::Create(int1_abscond, args[0], int64_tmpneg,
                                       "abs", currentBlock);
-    } else if (Ty == Type::getFloatTy(getGlobalContext())) {
+    } else if (Ty == Type::getFloatTy(*llvmContext)) {
       return llvm::CallInst::Create(intrinsics->func_llvm_fabs_f32, args[0],
                                     "tmp1", currentBlock);
-    } else if (Ty == Type::getDoubleTy(getGlobalContext())) {
+    } else if (Ty == Type::getDoubleTy(*llvmContext)) {
       return llvm::CallInst::Create(intrinsics->func_llvm_fabs_f64, args[0],
                                     "tmp1", currentBlock);
     }
@@ -1676,7 +1676,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
   BranchInst::Create(falseCl, trueCl, test, currentBlock);
   std::vector<Value*> Args;
   Args.push_back(ctpCache);
-  Args.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), index));
+  Args.push_back(ConstantInt::get(Type::getInt32Ty(*llvmContext), index));
   Args.push_back(GV);
   res = CallInst::Create(intrinsics->SpecialCtpLookupFunction, Args.begin(),
                          Args.end(), "", falseCl);
@@ -1711,14 +1711,14 @@ void JavaJIT::invokeSpecial(uint16 index) {
   }
   
   const llvm::Type* retType = virtualType->getReturnType();
-  if (retType != Type::getVoidTy(getGlobalContext())) {
+  if (retType != Type::getVoidTy(*llvmContext)) {
     if (retType == intrinsics->JavaObjectType) {
       JnjvmClassLoader* JCL = compilingClass->classLoader;
       push(val, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
       push(val, signature->getReturnType()->isUnsigned());
-      if (retType == Type::getDoubleTy(getGlobalContext()) ||
-          retType == Type::getInt64Ty(getGlobalContext())) {
+      if (retType == Type::getDoubleTy(*llvmContext) ||
+          retType == Type::getInt64Ty(*llvmContext)) {
         push(intrinsics->constantZero, false);
       }
     }
@@ -1792,14 +1792,14 @@ void JavaJIT::invokeStatic(uint16 index) {
   }
 
   const llvm::Type* retType = staticType->getReturnType();
-  if (retType != Type::getVoidTy(getGlobalContext())) {
+  if (retType != Type::getVoidTy(*llvmContext)) {
     if (retType == intrinsics->JavaObjectType) {
       JnjvmClassLoader* JCL = compilingClass->classLoader;
       push(val, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
       push(val, signature->getReturnType()->isUnsigned());
-      if (retType == Type::getDoubleTy(getGlobalContext()) ||
-          retType == Type::getInt64Ty(getGlobalContext())) {
+      if (retType == Type::getDoubleTy(*llvmContext) ||
+          retType == Type::getInt64Ty(*llvmContext)) {
         push(intrinsics->constantZero, false);
       }
     }
@@ -1827,7 +1827,7 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   Args.push_back(resolver);
   Args.push_back(CTP);
   Args.push_back(Cl);
-  Args.push_back(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), index));
+  Args.push_back(ConstantInt::get(Type::getInt32Ty(*llvmContext), index));
   if (additionalArg) Args.push_back(additionalArg);
 
   Value* res = 0;
@@ -1841,8 +1841,8 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
   
   const Type* realType = 
     intrinsics->GetConstantPoolAtFunction->getReturnType();
-  if (returnType == Type::getInt32Ty(getGlobalContext())) {
-    return new PtrToIntInst(res, Type::getInt32Ty(getGlobalContext()), "", currentBlock);
+  if (returnType == Type::getInt32Ty(*llvmContext)) {
+    return new PtrToIntInst(res, Type::getInt32Ty(*llvmContext), "", currentBlock);
   } else if (returnType != realType) {
     return new BitCastInst(res, returnType, "", currentBlock);
   } 
@@ -1999,7 +1999,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
   if (stat)
     returnType = intrinsics->ptrType;
   else
-    returnType = Type::getInt32Ty(getGlobalContext());
+    returnType = Type::getInt32Ty(*llvmContext);
 
   Value* ptr = getConstantPoolAt(index, func, returnType, 0, true);
   if (!stat) {
@@ -2045,7 +2045,7 @@ void JavaJIT::setStaticField(uint16 index) {
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
   
-  if (type == Type::getInt64Ty(getGlobalContext()) || type == Type::getDoubleTy(getGlobalContext())) {
+  if (type == Type::getInt64Ty(*llvmContext) || type == Type::getDoubleTy(*llvmContext)) {
     val = pop();
   }
   
@@ -2077,28 +2077,28 @@ void JavaJIT::getStaticField(uint16 index) {
         const PrimitiveTypedef* prim = (PrimitiveTypedef*)sign;
         if (prim->isInt()) {
           sint32 val = field->getInt32Field(Obj);
-          push(ConstantInt::get(Type::getInt32Ty(getGlobalContext()), val), false);
+          push(ConstantInt::get(Type::getInt32Ty(*llvmContext), val), false);
         } else if (prim->isByte()) {
           sint8 val = (sint8)field->getInt8Field(Obj);
-          push(ConstantInt::get(Type::getInt8Ty(getGlobalContext()), val), false);
+          push(ConstantInt::get(Type::getInt8Ty(*llvmContext), val), false);
         } else if (prim->isBool()) {
           uint8 val = (uint8)field->getInt8Field(Obj);
-          push(ConstantInt::get(Type::getInt8Ty(getGlobalContext()), val), true);
+          push(ConstantInt::get(Type::getInt8Ty(*llvmContext), val), true);
         } else if (prim->isShort()) {
           sint16 val = (sint16)field->getInt16Field(Obj);
-          push(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), val), false);
+          push(ConstantInt::get(Type::getInt16Ty(*llvmContext), val), false);
         } else if (prim->isChar()) {
           uint16 val = (uint16)field->getInt16Field(Obj);
-          push(ConstantInt::get(Type::getInt16Ty(getGlobalContext()), val), true);
+          push(ConstantInt::get(Type::getInt16Ty(*llvmContext), val), true);
         } else if (prim->isLong()) {
           sint64 val = (sint64)field->getLongField(Obj);
-          push(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), val), false);
+          push(ConstantInt::get(Type::getInt64Ty(*llvmContext), val), false);
         } else if (prim->isFloat()) {
           float val = (float)field->getFloatField(Obj);
-          push(ConstantFP::get(Type::getFloatTy(getGlobalContext()), val), false);
+          push(ConstantFP::get(Type::getFloatTy(*llvmContext), val), false);
         } else if (prim->isDouble()) {
           double val = (double)field->getDoubleField(Obj);
-          push(ConstantFP::get(Type::getDoubleTy(getGlobalContext()), val), false);
+          push(ConstantFP::get(Type::getDoubleTy(*llvmContext), val), false);
         } else {
           abort();
         }
@@ -2126,7 +2126,8 @@ void JavaJIT::getStaticField(uint16 index) {
     CommonClass* cl = sign->findAssocClass(JCL);
     push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned(), cl);
   }
-  if (type == Type::getInt64Ty(getGlobalContext()) || type == Type::getDoubleTy(getGlobalContext())) {
+  if (type == Type::getInt64Ty(*llvmContext) ||
+      type == Type::getDoubleTy(*llvmContext)) {
     push(intrinsics->constantZero, false);
   }
 }
@@ -2137,7 +2138,8 @@ void JavaJIT::setVirtualField(uint16 index) {
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
   
-  if (type == Type::getInt64Ty(getGlobalContext()) || type == Type::getDoubleTy(getGlobalContext())) {
+  if (type == Type::getInt64Ty(*llvmContext) ||
+      type == Type::getDoubleTy(*llvmContext)) {
     val = pop();
   }
   
@@ -2202,8 +2204,8 @@ void JavaJIT::getVirtualField(uint16 index) {
   }
  
   if (!final) push(new LoadInst(ptr, "", currentBlock), sign->isUnsigned(), cl);
-  if (type == Type::getInt64Ty(getGlobalContext()) ||
-      type == Type::getDoubleTy(getGlobalContext())) {
+  if (type == Type::getInt64Ty(*llvmContext) ||
+      type == Type::getDoubleTy(*llvmContext)) {
     push(intrinsics->constantZero, false);
   }
 }
@@ -2228,7 +2230,7 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   const llvm::Type* retType = virtualType->getReturnType();
   BasicBlock* endBlock = createBasicBlock("end interface invoke");
   PHINode * node = 0;
-  if (retType != Type::getVoidTy(getGlobalContext())) {
+  if (retType != Type::getVoidTy(*llvmContext)) {
     node = PHINode::Create(retType, "", endBlock);
   }
   
@@ -2258,7 +2260,7 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
                                 currentBlock);
 
   uint32_t tableIndex = InterfaceMethodTable::getIndex(name, signature->keyName);
-  Constant* Index = ConstantInt::get(Type::getInt32Ty(getGlobalContext()),
+  Constant* Index = ConstantInt::get(Type::getInt32Ty(*llvmContext),
                                      tableIndex);
 
   Value* indices[2] = { intrinsics->constantZero, Index };
@@ -2346,8 +2348,8 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
       push(node, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
       push(node, signature->getReturnType()->isUnsigned());
-      if (retType == Type::getDoubleTy(getGlobalContext()) ||
-          retType == Type::getInt64Ty(getGlobalContext())) {
+      if (retType == Type::getDoubleTy(*llvmContext) ||
+          retType == Type::getInt64Ty(*llvmContext)) {
         push(intrinsics->constantZero, false);
       }
     }
@@ -2404,7 +2406,7 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   LoadInst* int32_22 = new LoadInst(ptr_21, "", false, label_bb);
   Value* cmp = BinaryOperator::CreateAnd(int32_22, intrinsics->IsArrayConstant, "",
                                          label_bb);
-  Value* zero = ConstantInt::get(Type::getInt16Ty(getGlobalContext()), 0);
+  Value* zero = ConstantInt::get(Type::getInt16Ty(*llvmContext), 0);
   ICmpInst* int1_23 = new ICmpInst(*label_bb, ICmpInst::ICMP_NE, cmp, zero, "");
   BranchInst::Create(label_bb4, label_bb2, int1_23, label_bb);
    
@@ -2554,8 +2556,8 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   
   // Block bb11 (label_bb11)
   currentBlock = label_bb11;
-  Argument* fwdref_39 = new Argument(Type::getInt32Ty(getGlobalContext()));
-  PHINode* int32_i_016 = PHINode::Create(Type::getInt32Ty(getGlobalContext()),
+  Argument* fwdref_39 = new Argument(Type::getInt32Ty(*llvmContext));
+  PHINode* int32_i_016 = PHINode::Create(Type::getInt32Ty(*llvmContext),
                                          "i.016", label_bb11);
   int32_i_016->reserveOperandSpace(2);
   int32_i_016->addIncoming(fwdref_39, label_bb11);

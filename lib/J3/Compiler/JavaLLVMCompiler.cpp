@@ -34,6 +34,7 @@ JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
 #else
   cooperativeGC = false;
 #endif
+  initialiseAssessorInfo();
 }
   
 void JavaLLVMCompiler::resolveVirtualClass(Class* cl) {

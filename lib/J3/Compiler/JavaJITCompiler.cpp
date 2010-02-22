@@ -130,7 +130,7 @@ Constant* JavaJITCompiler::getNativeClass(CommonClass* classDef) {
   const llvm::Type* Ty = classDef->isClass() ? JavaIntrinsics.JavaClassType :
                                                JavaIntrinsics.JavaCommonClassType;
   
-  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                      uint64_t(classDef));
   return ConstantExpr::getIntToPtr(CI, Ty);
 }
@@ -138,20 +138,20 @@ Constant* JavaJITCompiler::getNativeClass(CommonClass* classDef) {
 Constant* JavaJITCompiler::getConstantPool(JavaConstantPool* ctp) {
   void* ptr = ctp->ctpRes;
   assert(ptr && "No constant pool found");
-  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                      uint64_t(ptr));
   return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.ConstantPoolType);
 }
 
 Constant* JavaJITCompiler::getMethodInClass(JavaMethod* meth) {
-  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                      (int64_t)meth);
   return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.JavaMethodType);
 }
 
 Constant* JavaJITCompiler::getString(JavaString* str) {
   assert(str && "No string given");
-  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                      uint64(str));
   return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.JavaObjectType);
 }
@@ -159,7 +159,7 @@ Constant* JavaJITCompiler::getString(JavaString* str) {
 Constant* JavaJITCompiler::getStringPtr(JavaString** str) {
   assert(str && "No string given");
   const llvm::Type* Ty = PointerType::getUnqual(JavaIntrinsics.JavaObjectType);
-  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                      uint64(str));
   return ConstantExpr::getIntToPtr(CI, Ty);
 }
@@ -167,7 +167,7 @@ Constant* JavaJITCompiler::getStringPtr(JavaString** str) {
 Constant* JavaJITCompiler::getJavaClass(CommonClass* cl) {
   JavaObject* obj = cl->getClassDelegatee(JavaThread::get()->getJVM());
   assert(obj && "Delegatee not created");
-  Constant* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+  Constant* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                   uint64(obj));
   return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.JavaObjectType);
 }
@@ -176,7 +176,7 @@ Constant* JavaJITCompiler::getJavaClassPtr(CommonClass* cl) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* const* obj = cl->getClassDelegateePtr(vm);
   assert(obj && "Delegatee not created");
-  Constant* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+  Constant* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                   uint64(obj));
   const Type* Ty = PointerType::getUnqual(JavaIntrinsics.JavaObjectType);
   return ConstantExpr::getIntToPtr(CI, Ty);
@@ -192,7 +192,7 @@ JavaObject* JavaJITCompiler::getFinalObject(llvm::Value* obj) {
 }
 
 Constant* JavaJITCompiler::getFinalObject(JavaObject* obj, CommonClass* cl) {
-  Constant* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+  Constant* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                   uint64(obj));
   return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.JavaObjectType);
 }
@@ -212,7 +212,7 @@ Constant* JavaJITCompiler::getStaticInstance(Class* classDef) {
     }
     classDef->release();
   }
-  Constant* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+  Constant* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                   (uint64_t(obj)));
   return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.ptrType);
 }
@@ -223,7 +223,7 @@ Constant* JavaJITCompiler::getVirtualTable(JavaVirtualTable* VT) {
     LCI->getVirtualType();
   }
   
-  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                      uint64_t(VT));
   return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.VTType);
 }
@@ -234,7 +234,7 @@ Constant* JavaJITCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
   
   assert(ptr && "No native function given");
 
-  Constant* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+  Constant* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                   uint64_t(ptr));
   return ConstantExpr::getIntToPtr(CI, valPtrType);
 }
@@ -262,7 +262,7 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
 
 #ifdef SERVICE
 Value* JavaJITCompiler::getIsolate(Jnjvm* isolate, Value* Where) {
-  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getGlobalContext()),
+  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                      uint64_t(isolate));
   return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.ptrType);
 }
