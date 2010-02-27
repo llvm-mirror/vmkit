@@ -16,6 +16,7 @@
 #include <dlfcn.h>
 
 #include "mvm/GC/GC.h"
+#include "mvm/Allocator.h"
 
 namespace mvm {
   class UTF8;
@@ -27,11 +28,14 @@ class Class;
 class CommonClass;
 class JavaMethod;
 class JavaVirtualTable;
+class JnjvmClassLoader;
 class Signdef;
 
 class JavaCompiler {
 public:
   
+  mvm::BumpPtrAllocator allocator;
+
   virtual JavaCompiler* Create(const std::string&) {
     return this;
   }

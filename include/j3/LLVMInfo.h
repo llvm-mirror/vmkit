@@ -25,6 +25,7 @@ namespace j3 {
 
 class Class;
 class JavaField;
+class JavaLLVMCompiler;
 class JavaMethod;
 class Signdef;
 
@@ -40,24 +41,28 @@ class LLVMClassInfo : public mvm::JITInfo {
   friend class JavaJITCompiler;
   friend class JavaLLVMCompiler;
 private:
+  /// Compiler - The compiler for this class info.
+  JavaLLVMCompiler* Compiler;
+  
   Class* classDef;
+  
   /// virtualSizeLLVM - The LLVM constant size of instances of this class.
-  ///
   llvm::Constant* virtualSizeConstant;
+
   /// virtualType - The LLVM type of instance of this class.
-  ///
   const llvm::Type * virtualType;
 
   /// staticType - The LLVM type of the static instance of this class.
-  ///
   const llvm::Type * staticType;
+
 public:
   
   llvm::Value* getVirtualSize();
   const llvm::Type* getVirtualType();
   const llvm::Type* getStaticType();
   
-  LLVMClassInfo(Class* cl) :
+  LLVMClassInfo(Class* cl, JavaLLVMCompiler* comp) :
+    Compiler(comp),
     classDef(cl),
     virtualSizeConstant(0),
     virtualType(0),
@@ -72,6 +77,9 @@ public:
 
 class LLVMMethodInfo : public mvm::JITInfo {
 private:
+  /// Compiler - The compiler for this method info.
+  JavaLLVMCompiler* Compiler;
+
   JavaMethod* methodDef;
 
   llvm::Function* methodFunction;
@@ -79,14 +87,14 @@ private:
   const llvm::FunctionType* functionType;
   llvm::MDNode* DbgSubprogram;
   
-  
 public:
   llvm::Function* getMethod();
   llvm::Constant* getOffset();
   const llvm::FunctionType* getFunctionType();
     
-  LLVMMethodInfo(JavaMethod* M) :  methodDef(M), methodFunction(0),
-    offsetConstant(0), functionType(0), DbgSubprogram(0) {}
+  LLVMMethodInfo(JavaMethod* M, JavaLLVMCompiler* comp) :  Compiler(comp),
+    methodDef(M), methodFunction(0), offsetConstant(0), functionType(0),
+    DbgSubprogram(0) {}
  
   void setDbgSubprogram(llvm::MDNode* node) { DbgSubprogram = node; }
   llvm::MDNode* getDbgSubprogram() { return DbgSubprogram; }
@@ -102,6 +110,9 @@ public:
 
 class LLVMFieldInfo : public mvm::JITInfo {
 private:
+  /// Compiler - The compiler for this field info.
+  JavaLLVMCompiler* Compiler;
+  
   JavaField* fieldDef;
   
   llvm::Constant* offsetConstant;
@@ -109,7 +120,8 @@ private:
 public:
   llvm::Constant* getOffset();
 
-  LLVMFieldInfo(JavaField* F) : 
+  LLVMFieldInfo(JavaField* F, JavaLLVMCompiler* comp) :
+    Compiler(comp),
     fieldDef(F), 
     offsetConstant(0) {}
 
@@ -120,6 +132,9 @@ public:
 
 class LLVMSignatureInfo : public mvm::JITInfo {
 private:
+  /// Compiler - The compiler for this signature info.
+  JavaLLVMCompiler* Compiler;
+  
   const llvm::FunctionType* staticType;
   const llvm::FunctionType* virtualType;
   const llvm::FunctionType* nativeType;
@@ -168,7 +183,8 @@ public:
   llvm::Function* getSpecialStub();
   llvm::Function* getVirtualStub();
   
-  LLVMSignatureInfo(Signdef* sign) : 
+  LLVMSignatureInfo(Signdef* sign, JavaLLVMCompiler* comp) :
+    Compiler(comp),
     staticType(0),
     virtualType(0),
     nativeType(0),

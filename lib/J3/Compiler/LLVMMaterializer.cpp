@@ -144,7 +144,7 @@ bool LLVMMaterializer::Materialize(GlobalValue *GV, std::string *ErrInfo) {
   void* val = meth->compiledPtr();
 
   if (isVirtual(meth->access)) {
-    LLVMMethodInfo* LMI = JavaLLVMCompiler::getMethodInfo(meth);
+    LLVMMethodInfo* LMI = Comp->getMethodInfo(meth);
     uint64_t offset = dyn_cast<ConstantInt>(LMI->getOffset())->getZExtValue();
     assert(meth->classDef->isResolved() && "Class not resolved");
 #if !defined(ISOLATE_SHARING) && !defined(SERVICE)

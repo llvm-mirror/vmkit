@@ -56,8 +56,20 @@ private:
   virtual void makeVT(Class* cl) = 0;
   virtual void makeIMT(Class* cl) = 0;
   
-  std::map<llvm::Function*, JavaMethod*> functions;  
+  std::map<llvm::Function*, JavaMethod*> functions;
   typedef std::map<llvm::Function*, JavaMethod*>::iterator function_iterator;
+  
+  std::map<JavaMethod*, LLVMMethodInfo*> method_infos;
+  typedef std::map<JavaMethod*, LLVMMethodInfo*>::iterator method_info_iterator;
+  
+  std::map<JavaField*, LLVMFieldInfo*> field_infos;
+  typedef std::map<JavaField*, LLVMFieldInfo*>::iterator field_info_iterator;
+  
+  std::map<Signdef*, LLVMSignatureInfo*> signature_infos;
+  typedef std::map<Signdef*, LLVMSignatureInfo*>::iterator signature_info_iterator;
+  
+  std::map<Class*, LLVMClassInfo*> class_infos;
+  typedef std::map<Class*, LLVMClassInfo*>::iterator class_info_iterator;
 
   std::map<llvm::MDNode*, JavaMethod*> DbgInfos;
   typedef std::map<llvm::MDNode*, JavaMethod*>::iterator dbg_iterator;
@@ -109,16 +121,63 @@ public:
 
   void resolveVirtualClass(Class* cl);
   void resolveStaticClass(Class* cl);
-  static llvm::Function* getMethod(JavaMethod* meth);
+  llvm::Function* getMethod(JavaMethod* meth);
 
   void initialiseAssessorInfo();
   std::map<const char, LLVMAssessorInfo> AssessorInfo;
   LLVMAssessorInfo& getTypedefInfo(const Typedef* type);
 
-  static LLVMSignatureInfo* getSignatureInfo(Signdef* sign);
-  static LLVMClassInfo* getClassInfo(Class* cl);
-  static LLVMFieldInfo* getFieldInfo(JavaField* field);
-  static LLVMMethodInfo* getMethodInfo(JavaMethod* method);
+  LLVMSignatureInfo* getSignatureInfo(Signdef* sign) {
+    signature_info_iterator E = signature_infos.end();
+    signature_info_iterator I = signature_infos.find(sign);
+    if (I == E) {
+      LLVMSignatureInfo* signInfo =
+        new(allocator, "LLVMSignatureInfo") LLVMSignatureInfo(sign, this);
+      signature_infos.insert(std::make_pair(sign, signInfo));
+      return signInfo;
+    } else {
+      return I->second;
+    }
+  }
+  
+  LLVMFieldInfo* getFieldInfo(JavaField* field) {
+    field_info_iterator E = field_infos.end();
+    field_info_iterator I = field_infos.find(field);
+    if (I == E) {
+      LLVMFieldInfo* fieldInfo =
+        new(allocator, "LLVMFieldInfo") LLVMFieldInfo(field, this);
+      field_infos.insert(std::make_pair(field, fieldInfo));
+      return fieldInfo;
+    } else {
+      return I->second;
+    }
+  }
+  
+  LLVMClassInfo* getClassInfo(Class* klass) {
+    class_info_iterator E = class_infos.end();
+    class_info_iterator I = class_infos.find(klass);
+    if (I == E) {
+      LLVMClassInfo* classInfo =
+        new(allocator, "LLVMClassInfo") LLVMClassInfo(klass, this);
+      class_infos.insert(std::make_pair(klass, classInfo));
+      return classInfo;
+    } else {
+      return I->second;
+    }
+  }
+  
+  LLVMMethodInfo* getMethodInfo(JavaMethod* method) {
+    method_info_iterator E = method_infos.end();
+    method_info_iterator I = method_infos.find(method);
+    if (I == E) {
+      LLVMMethodInfo* methodInfo =
+        new(allocator, "LLVMMethodInfo") LLVMMethodInfo(method, this);
+      method_infos.insert(std::make_pair(method, methodInfo));
+      return methodInfo;
+    } else {
+      return I->second;
+    }
+  }
   
   virtual llvm::Constant* getFinalObject(JavaObject* obj, CommonClass* cl) = 0;
   virtual JavaObject* getFinalObject(llvm::Value* C) = 0;

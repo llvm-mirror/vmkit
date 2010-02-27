@@ -496,14 +496,11 @@ namespace mvm {
 //     -instcombine -gvn -sccp -simplifycfg -instcombine -condprop -dse -adce 
 //     -simplifycfg
 //
-void MvmModule::AddStandardCompilePasses() {
-  // TODO: enable this when
-  // - each module will have its declaration of external functions
-  // 
-  //PM->add(llvm::createVerifierPass());        // Verify that input is correct
- 
+void MvmModule::AddStandardCompilePasses() { 
   FunctionPassManager* PM = globalFunctionPasses;
   PM->add(new TargetData(*MvmModule::TheTargetData));
+  
+  addPass(PM, createVerifierPass());        // Verify that input is correct
 
 #ifdef WITH_MMTK
   addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code

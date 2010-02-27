@@ -72,12 +72,12 @@ void JavaJITMethodInfo::print(void* ip, void* addr) {
 
 class JavaJITListener : public llvm::JITEventListener {
   JavaMethod* currentCompiledMethod;
+  llvm::Function* currentCompiledFunction;
 public:
   virtual void NotifyFunctionEmitted(const Function &F,
                                      void *Code, size_t Size,
                                      const EmittedFunctionDetails &Details) {
-    if (currentCompiledMethod &&
-        JavaLLVMCompiler::getMethod(currentCompiledMethod) == &F) {
+    if (currentCompiledMethod && currentCompiledFunction == &F) {
       Jnjvm* vm = JavaThread::get()->getJVM();
       mvm::BumpPtrAllocator& Alloc = 
         currentCompiledMethod->classDef->classLoader->allocator;
@@ -115,12 +115,19 @@ public:
     }
   }
 
-  void setCurrentCompiledMethod(JavaMethod* meth) {
+  void setCurrentCompiledMethod(JavaMethod* meth, llvm::Function* func) {
     currentCompiledMethod = meth;
+    currentCompiledFunction = func;
+  }
+  
+  void clearCurrentCompiledMethod() {
+    currentCompiledMethod = NULL;
+    currentCompiledFunction = NULL;
   }
 
   JavaJITListener() {
-    currentCompiledMethod = 0;
+    currentCompiledMethod = NULL;
+    currentCompiledFunction = NULL;
   }
 };
 
@@ -395,9 +402,9 @@ void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
 void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   mvm::MvmModule::protectIR();
   Function* func = parseFunction(meth);
-  JITListener->setCurrentCompiledMethod(meth);
+  JITListener->setCurrentCompiledMethod(meth, func);
   void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
-  JITListener->setCurrentCompiledMethod(0);
+  JITListener->clearCurrentCompiledMethod();
   func->deleteBody();
   mvm::MvmModule::unprotectIR();
 

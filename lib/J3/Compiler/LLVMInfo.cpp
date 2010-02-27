@@ -47,7 +47,7 @@ const Type* LLVMClassInfo::getVirtualType() {
     LLVMContext& context = Mod->getLLVMModule()->getContext();
 
     if (classDef->super) {
-      LLVMClassInfo* CLI = JavaLLVMCompiler::getClassInfo(classDef->super);
+      LLVMClassInfo* CLI = Compiler->getClassInfo(classDef->super);
       const llvm::Type* Ty = CLI->getVirtualType()->getContainedType(0);
       fields.push_back(Ty);
     
@@ -136,9 +136,7 @@ Value* LLVMClassInfo::getVirtualSize() {
 Function* LLVMMethodInfo::getMethod() {
   if (!methodFunction) {
     JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
-    JavaLLVMCompiler* Mod = (JavaLLVMCompiler*)JCL->getCompiler();
-    if (Mod->emitFunctionName()) {
-
+    if (Compiler->emitFunctionName()) {
       const UTF8* jniConsClName = methodDef->classDef->name;
       const UTF8* jniConsName = methodDef->name;
       const UTF8* jniConsType = methodDef->type;
@@ -160,11 +158,11 @@ Function* LLVMMethodInfo::getMethod() {
         memcpy(buf, "JnJVM", 5);
       }
 
-      methodFunction = Mod->getLLVMModule()->getFunction(buf);
+      methodFunction = Compiler->getLLVMModule()->getFunction(buf);
       if (!methodFunction) {
         methodFunction = Function::Create(getFunctionType(), 
                                           GlobalValue::ExternalWeakLinkage, buf,
-                                          Mod->getLLVMModule());
+                                          Compiler->getLLVMModule());
       } else {
         assert(methodFunction->getFunctionType() == getFunctionType() &&
                "Type mismatch");
@@ -177,15 +175,24 @@ Function* LLVMMethodInfo::getMethod() {
 
       methodFunction = Function::Create(getFunctionType(), 
                                         GlobalValue::ExternalWeakLinkage,
-                                        "", Mod->getLLVMModule());
+                                        "", Compiler->getLLVMModule());
 
     }
     
-    if (Mod->useCooperativeGC()) {
+    if (Compiler->useCooperativeGC()) {
       methodFunction->setGC("vmkit");
     }
     
-    Mod->functions.insert(std::make_pair(methodFunction, methodDef));
+    Compiler->functions.insert(std::make_pair(methodFunction, methodDef));
+    if (Compiler != JCL->getCompiler()) {
+      if (mvm::MvmModule::executionEngine &&
+          !mvm::MvmModule::executionEngine->isCompilingLazily()) {
+        assert(methodDef->code && "getting a not compiled method from another "
+                                 "module");
+        mvm::MvmModule::executionEngine->updateGlobalMapping(methodFunction,
+                                                             methodDef->code);
+      }
+    }
   }
   return methodFunction;
 }
@@ -193,7 +200,7 @@ Function* LLVMMethodInfo::getMethod() {
 const FunctionType* LLVMMethodInfo::getFunctionType() {
   if (!functionType) {
     Signdef* sign = methodDef->getSignature();
-    LLVMSignatureInfo* LSI = JavaLLVMCompiler::getSignatureInfo(sign);
+    LLVMSignatureInfo* LSI = Compiler->getSignatureInfo(sign);
     assert(LSI);
     if (isStatic(methodDef->access)) {
       functionType = LSI->getStaticType();
@@ -822,20 +829,4 @@ void JavaLLVMCompiler::initialiseAssessorInfo() {
 
 LLVMAssessorInfo& JavaLLVMCompiler::getTypedefInfo(const Typedef* type) {
   return AssessorInfo[type->getKey()->elements[0]];
-}
-
-LLVMSignatureInfo* JavaLLVMCompiler::getSignatureInfo(Signdef* sign) {
-  return sign->getInfo<LLVMSignatureInfo>();
-}
-  
-LLVMClassInfo* JavaLLVMCompiler::getClassInfo(Class* cl) {
-  return cl->getInfo<LLVMClassInfo>();
-}
-
-LLVMFieldInfo* JavaLLVMCompiler::getFieldInfo(JavaField* field) {
-  return field->getInfo<LLVMFieldInfo>();
-}
-  
-LLVMMethodInfo* JavaLLVMCompiler::getMethodInfo(JavaMethod* method) {
-  return method->getInfo<LLVMMethodInfo>();
 }

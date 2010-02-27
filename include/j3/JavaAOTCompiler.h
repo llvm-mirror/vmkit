@@ -174,7 +174,7 @@ public:
   
   void CreateStaticInitializer();
   
-  static void setNoInline(Class* cl);
+  void setNoInline(Class* cl);
   
   void printStats();
   
