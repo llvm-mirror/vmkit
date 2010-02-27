@@ -223,7 +223,6 @@ Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) :
   bytes = B;
   super = 0;
   ctpInfo = 0;
-  JInfo = 0;
   outerClass = 0;
   innerOuterResolved = false;
   nbInnerClasses = 0;
@@ -651,7 +650,6 @@ void JavaMethod::initialise(Class* cl, const UTF8* N, const UTF8* T, uint16 A) {
   access = A;
   canBeInlined = false;
   offset = 0;
-  JInfo = 0;
 }
 
 void JavaField::initialise(Class* cl, const UTF8* N, const UTF8* T, uint16 A) {
@@ -661,7 +659,6 @@ void JavaField::initialise(Class* cl, const UTF8* N, const UTF8* T, uint16 A) {
   _signature = 0;
   ptrOffset = 0;
   access = A;
-  JInfo = 0;
 }
 
 void Class::readParents(Reader& reader) {

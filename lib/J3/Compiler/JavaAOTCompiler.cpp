@@ -893,9 +893,6 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaField(JavaField& field) {
   // num
   FieldElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), field.num));
 
-  //JInfo
-  FieldElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
-  
   return ConstantStruct::get(STy, FieldElts); 
 }
 
@@ -968,9 +965,6 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   // offset
   MethodElts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), method.offset));
 
-  // JInfo
-  MethodElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
-  
   return ConstantStruct::get(STy, MethodElts); 
 }
 
@@ -1230,9 +1224,6 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   
   // staticSize
   ClassElts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), cl->staticSize));
-
-  // JInfo
-  ClassElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
 
   return ConstantStruct::get(STy, ClassElts);
 }

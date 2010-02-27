@@ -569,10 +569,6 @@ public:
   ///
   uint32 staticSize;
   
-  /// JInfo - JIT specific information.
-  ///
-  mvm::JITInfo* JInfo;
-  
   /// getVirtualSize - Get the virtual size of instances of this class.
   ///
   uint32 getVirtualSize() const { return virtualSize; }
@@ -737,22 +733,6 @@ public:
   ///
   void resolveInnerOuterClasses();
 
-  /// getInfo - Get the JIT specific information, allocating one if it
-  /// does not exist.
-  ///
-  template<typename Ty> 
-  Ty *getInfo() {
-    if (!JInfo) {
-      JInfo = new(classLoader->allocator, "Class JIT info") Ty(this);
-    }   
-
-    return static_cast<Ty*>(JInfo);
-  }
-  
-  void clearInfo() {
-    if (JInfo) JInfo->clear();
-  }
-  
   /// resolveClass - If the class has not been resolved yet, resolve it.
   ///
   void resolveClass();
@@ -1270,20 +1250,6 @@ public:
   JavaObject* invokeJavaObjectStatic(Jnjvm* vm, UserClass*, ...)
     __attribute__ ((noinline));
   
-  mvm::JITInfo* JInfo;
-  template<typename Ty> 
-  Ty *getInfo() {
-    if (!JInfo) {
-      JInfo = new(classDef->classLoader->allocator, "Method JIT info") Ty(this);
-    }   
-
-    return static_cast<Ty*>(JInfo);
-  }
-  
-  void clearInfo() {
-    if (JInfo) JInfo->clear();
-  }
-  
   #define JNI_NAME_PRE "Java_"
   #define JNI_NAME_PRE_LEN 5
   
@@ -1401,21 +1367,6 @@ public:
   MK_ASSESSORS(uint32, Int32);
   MK_ASSESSORS(sint64, Long);
   
-  mvm::JITInfo* JInfo;
-  template<typename Ty> 
-  Ty *getInfo() {
-    if (!JInfo) {
-      JInfo = new(classDef->classLoader->allocator, "Field JIT info") Ty(this);
-    }   
-
-    return static_cast<Ty*>(JInfo);
-  }
-  
-  void clearInfo() {
-    if (JInfo) JInfo->clear();
-  }
-
-
   bool isReference() {
     uint16 val = type->elements[0];
     return (val == '[' || val == 'L');

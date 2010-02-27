@@ -185,10 +185,8 @@ Function* LLVMMethodInfo::getMethod() {
     
     Compiler->functions.insert(std::make_pair(methodFunction, methodDef));
     if (Compiler != JCL->getCompiler()) {
-      if (mvm::MvmModule::executionEngine &&
-          !mvm::MvmModule::executionEngine->isCompilingLazily()) {
-        assert(methodDef->code && "getting a not compiled method from another "
-                                 "module");
+      if (mvm::MvmModule::executionEngine && methodDef->code) {
+        methodFunction->setLinkage(GlobalValue::ExternalLinkage);
         mvm::MvmModule::executionEngine->updateGlobalMapping(methodFunction,
                                                              methodDef->code);
       }

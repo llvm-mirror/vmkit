@@ -405,21 +405,6 @@ public:
 //
 //===----------------------------------------------------------------------===//
     
-  /// JInfo - Holds info useful for the JIT.
-  ///
-  mvm::JITInfo* JInfo;
-
-  /// getInfo - Get the JIT info of this signature. The info is created lazely.
-  ///
-  template<typename Ty> 
-  Ty *getInfo() {
-    if (!JInfo) {
-      JInfo = new(initialLoader->allocator, "Sign info") Ty(this);
-    }   
-
-    return static_cast<Ty*>(JInfo);
-  }
-  
   /// nbArguments - The number of arguments in the signature. 
   ///
   uint32 nbArguments;

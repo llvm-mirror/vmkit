@@ -41,7 +41,6 @@ Signdef::Signdef(const UTF8* name, JnjvmClassLoader* loader,
   }
   initialLoader = loader;
   keyName = name;
-  JInfo = 0;
   _virtualCallBuf = 0;
   _staticCallBuf = 0;
   _virtualCallAP = 0;
