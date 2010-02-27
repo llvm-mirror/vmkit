@@ -107,7 +107,7 @@ ProjLibsPaths   := $(addprefix $(LibDir)/,$(USEDMODULES))
 
 $(MODULESNAME).bc : $(ProjLibsPaths)
 	$(Echo) Building $(BuildMode) Bytecode Module $(notdir $@)
-	$(Verb) $(LLVMLD) -L$(CFERuntimeLibDir) -r -o $@ $(ProjLibsPaths)
+	$(Verb) $(LLVMLD) -link-as-library -o $@ $(ProjLibsPaths)
 
 $(MODULESNAME).s : $(MODULESNAME).bc
 	$(Echo) Building $(BuildMode) Assembly file $(notdir $@)
