@@ -33,74 +33,68 @@ namespace j3 {
 
 J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   BaseIntrinsics(module) {
+  j3::llvm_runtime::makeLLVMModuleContents(module);
   
-  llvm::Module* globalModule = mvm::MvmModule::globalModule;
-
-  if (!globalModule->getTypeByName("JavaThread")) {
-    j3::llvm_runtime::makeLLVMModuleContents(globalModule);
-    mvm::MvmModule::copyDefinitions(module, globalModule);   
-  }
-  
-  VTType = PointerType::getUnqual(globalModule->getTypeByName("VT"));
+  VTType = PointerType::getUnqual(module->getTypeByName("VT"));
   LLVMContext& Context = module->getContext();
 
 #ifdef ISOLATE_SHARING
   JnjvmType = 
-    PointerType::getUnqual(globalModule->getTypeByName("Jnjvm"));
+    PointerType::getUnqual(module->getTypeByName("Jnjvm"));
 #endif
   ConstantPoolType = ptrPtrType;
   
   JavaObjectType = 
-    PointerType::getUnqual(globalModule->getTypeByName("JavaObject"));
+    PointerType::getUnqual(module->getTypeByName("JavaObject"));
 
   JavaArrayType =
-    PointerType::getUnqual(globalModule->getTypeByName("JavaArray"));
+    PointerType::getUnqual(module->getTypeByName("JavaArray"));
   
   JavaCommonClassType =
-    PointerType::getUnqual(globalModule->getTypeByName("JavaCommonClass"));
+    PointerType::getUnqual(module->getTypeByName("JavaCommonClass"));
   JavaClassPrimitiveType =
-    PointerType::getUnqual(globalModule->getTypeByName("JavaClassPrimitive"));
+    PointerType::getUnqual(module->getTypeByName("JavaClassPrimitive"));
   JavaClassArrayType =
-    PointerType::getUnqual(globalModule->getTypeByName("JavaClassArray"));
+    PointerType::getUnqual(module->getTypeByName("JavaClassArray"));
   JavaClassType =
-    PointerType::getUnqual(globalModule->getTypeByName("JavaClass"));
+    PointerType::getUnqual(module->getTypeByName("JavaClass"));
   
   JavaArrayUInt8Type =
-    PointerType::getUnqual(globalModule->getTypeByName("ArrayUInt8"));
+    PointerType::getUnqual(module->getTypeByName("ArrayUInt8"));
   JavaArraySInt8Type =
-    PointerType::getUnqual(globalModule->getTypeByName("ArraySInt8"));
+    PointerType::getUnqual(module->getTypeByName("ArraySInt8"));
   JavaArrayUInt16Type =
-    PointerType::getUnqual(globalModule->getTypeByName("ArrayUInt16"));
+    PointerType::getUnqual(module->getTypeByName("ArrayUInt16"));
   JavaArraySInt16Type =
-    PointerType::getUnqual(globalModule->getTypeByName("ArraySInt16"));
+    PointerType::getUnqual(module->getTypeByName("ArraySInt16"));
   JavaArrayUInt32Type =
-    PointerType::getUnqual(globalModule->getTypeByName("ArrayUInt32"));
+    PointerType::getUnqual(module->getTypeByName("ArrayUInt32"));
   JavaArraySInt32Type =
-    PointerType::getUnqual(globalModule->getTypeByName("ArraySInt32"));
+    PointerType::getUnqual(module->getTypeByName("ArraySInt32"));
   JavaArrayLongType =
-    PointerType::getUnqual(globalModule->getTypeByName("ArrayLong"));
+    PointerType::getUnqual(module->getTypeByName("ArrayLong"));
   JavaArrayFloatType =
-    PointerType::getUnqual(globalModule->getTypeByName("ArrayFloat"));
+    PointerType::getUnqual(module->getTypeByName("ArrayFloat"));
   JavaArrayDoubleType =
-    PointerType::getUnqual(globalModule->getTypeByName("ArrayDouble"));
+    PointerType::getUnqual(module->getTypeByName("ArrayDouble"));
   JavaArrayObjectType =
-    PointerType::getUnqual(globalModule->getTypeByName("ArrayObject"));
+    PointerType::getUnqual(module->getTypeByName("ArrayObject"));
 
   JavaFieldType =
-    PointerType::getUnqual(globalModule->getTypeByName("JavaField"));
+    PointerType::getUnqual(module->getTypeByName("JavaField"));
   JavaMethodType =
-    PointerType::getUnqual(globalModule->getTypeByName("JavaMethod"));
+    PointerType::getUnqual(module->getTypeByName("JavaMethod"));
   UTF8Type =
-    PointerType::getUnqual(globalModule->getTypeByName("UTF8"));
+    PointerType::getUnqual(module->getTypeByName("UTF8"));
   AttributType =
-    PointerType::getUnqual(globalModule->getTypeByName("Attribut"));
+    PointerType::getUnqual(module->getTypeByName("Attribut"));
   JavaThreadType =
-    PointerType::getUnqual(globalModule->getTypeByName("JavaThread"));
+    PointerType::getUnqual(module->getTypeByName("JavaThread"));
   MutatorThreadType =
-    PointerType::getUnqual(globalModule->getTypeByName("MutatorThread"));
+    PointerType::getUnqual(module->getTypeByName("MutatorThread"));
   
   CodeLineInfoType =
-    PointerType::getUnqual(globalModule->getTypeByName("CodeLineInfo"));
+    PointerType::getUnqual(module->getTypeByName("CodeLineInfo"));
   
   JavaObjectNullConstant =
     Constant::getNullValue(J3Intrinsics::JavaObjectType);
@@ -152,25 +146,6 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   
   ClassReadyConstant = ConstantInt::get(Type::getInt8Ty(Context), ready);
   
-  globalModule->addTypeName("JavaObject", JavaObjectType->getContainedType(0));
-  globalModule->addTypeName("JavaArray", JavaArrayType->getContainedType(0));
-  globalModule->addTypeName("JavaCommonClass",
-                      JavaCommonClassType->getContainedType(0));
-  globalModule->addTypeName("JavaClass", JavaClassType->getContainedType(0));
-  globalModule->addTypeName("JavaClassPrimitive",
-                      JavaClassPrimitiveType->getContainedType(0));
-  globalModule->addTypeName("JavaClassArray",
-                      JavaClassArrayType->getContainedType(0));
-  globalModule->addTypeName("ArrayUInt8", JavaArrayUInt8Type->getContainedType(0));
-  globalModule->addTypeName("ArraySInt8", JavaArraySInt8Type->getContainedType(0));
-  globalModule->addTypeName("ArrayUInt16", JavaArrayUInt16Type->getContainedType(0));
-  globalModule->addTypeName("ArraySInt16", JavaArraySInt16Type->getContainedType(0));
-  globalModule->addTypeName("ArraySInt32", JavaArraySInt32Type->getContainedType(0));
-  globalModule->addTypeName("ArrayLong", JavaArrayLongType->getContainedType(0));
-  globalModule->addTypeName("ArrayFloat", JavaArrayFloatType->getContainedType(0));
-  globalModule->addTypeName("ArrayDouble", JavaArrayDoubleType->getContainedType(0));
-  globalModule->addTypeName("ArrayObject", JavaArrayObjectType->getContainedType(0));
-   
   InterfaceLookupFunction = module->getFunction("j3InterfaceLookup");
   MultiCallNewFunction = module->getFunction("j3MultiCallNew");
   ForceLoadedCheckFunction = module->getFunction("forceLoadedCheck");

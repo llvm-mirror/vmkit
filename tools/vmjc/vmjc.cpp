@@ -74,22 +74,6 @@ WithJIT("with-jit", cl::desc("Generate main function with JIT support"));
 static cl::opt<bool>
 DisableOutput("disable-output", cl::desc("Disable output"), cl::init(false));
 
-
-// The OptimizationList is automatically populated with registered Passes by the
-// PassNameParser.
-//
-static llvm::cl::list<const llvm::PassInfo*, bool, llvm::PassNameParser>
-PassList(llvm::cl::desc("Optimizations available:"));
-
-
-static cl::opt<bool> 
-DisableOptimizations("disable-opt", 
-                     cl::desc("Do not run any optimization passes"));
-
-static cl::opt<bool>
-StandardCompileOpts("std-compile-opts", 
-                   cl::desc("Include the standard compile time optimizations"));
-
 static cl::opt<std::string>
 TargetTriple("mtriple", cl::desc("Override target triple for module"));
 
@@ -121,53 +105,6 @@ Properties("D", cl::desc("Set a property"), cl::Prefix, cl::ZeroOrMore);
 static cl::list<std::string> 
 WithClinit("with-clinit", cl::desc("Classes to clinit"), cl::ZeroOrMore,
            cl::CommaSeparated);
-
-
-inline void addPass(FunctionPassManager *PM, Pass *P) {
-  // Add the pass to the pass manager...
-  PM->add(P);
-}
-
-
-void addCommandLinePass(char** argv) {
-  FunctionPassManager* Passes = mvm::MvmModule::globalFunctionPasses;
-  Passes->add(new TargetData(*mvm::MvmModule::TheTargetData));
-
-  // Create a new optimization pass for each one specified on the command line
-  for (unsigned i = 0; i < PassList.size(); ++i) {
-    // Check to see if -std-compile-opts was specified before this option.  If
-    // so, handle it.
-    if (StandardCompileOpts && 
-        StandardCompileOpts.getPosition() < PassList.getPosition(i)) {
-      if (!DisableOptimizations) mvm::MvmModule::AddStandardCompilePasses();
-      StandardCompileOpts = false;
-    }
-      
-    const PassInfo *PassInf = PassList[i];
-    Pass *P = 0;
-    if (PassInf->getNormalCtor())
-      P = PassInf->getNormalCtor()();
-    else
-      errs() << argv[0] << ": cannot create pass: "
-           << PassInf->getPassName() << "\n";
-    if (P) {
-        bool isModulePass = (P->getPassKind() == PT_Module);
-        if (isModulePass) 
-          errs() << argv[0] << ": vmkit does not support module pass: "
-             << PassInf->getPassName() << "\n";
-        else addPass(Passes, P);
-
-    }
-  }
-    
-  // If -std-compile-opts was specified at the end of the pass list, add them.
-  if (StandardCompileOpts) {
-    mvm::MvmModule::AddStandardCompilePasses();
-  }
-
-  Passes->doInitialization();
-}
-
 
 int main(int argc, char **argv) {
   llvm_shutdown_obj X;  // Call llvm_shutdown() on exit.
@@ -243,7 +180,6 @@ int main(int argc, char **argv) {
     mvm::Collector::initialise();
 
     JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp, false);
-    addCommandLinePass(argv);
 
     if (DisableExceptions) Comp->disableExceptions();
     if (DisableStubs) Comp->generateStubs = false;

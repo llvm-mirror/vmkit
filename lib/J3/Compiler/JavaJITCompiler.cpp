@@ -424,7 +424,6 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   newArgv[1] = mainClass;
 
   JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
-  mvm::MvmModule::AddStandardCompilePasses();
   JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
   mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(JCL);
   vm->runApplication(argc + 1, newArgv);

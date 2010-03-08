@@ -354,7 +354,7 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
 
       Module& Mod = *getLLVMModule();
       varGV = new GlobalVariable(Mod, Ty, false, GlobalValue::InternalLinkage,
-                                 0, "");
+                                 0, "final object");
 
       Constant* C = ConstantExpr::getBitCast(varGV,
                                              JavaIntrinsics.JavaObjectType);
@@ -1592,7 +1592,8 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
 
   std::vector<const llvm::Type*> llvmArgs;
   llvmArgs.push_back(JavaIntrinsics.ptrType); // class loader.
-  const FunctionType* FTy = FunctionType::get(Type::getVoidTy(getLLVMContext()), llvmArgs, false);
+  const FunctionType* FTy = FunctionType::get(Type::getVoidTy(getLLVMContext()),
+                                              llvmArgs, false);
 
   StaticInitializer = Function::Create(FTy, GlobalValue::InternalLinkage,
                                        "Init", getLLVMModule());
@@ -1616,7 +1617,6 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
                                    "printJavaObject", getLLVMModule());
 
   addJavaPasses();
-      
 }
 
 void JavaAOTCompiler::printStats() {

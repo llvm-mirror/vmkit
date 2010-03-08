@@ -29,7 +29,8 @@
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/IRReader.h>
 #include <llvm/Support/MutexGuard.h>
-#include "llvm/Support/SourceMgr.h"
+#include <llvm/Support/PassNameParser.h>
+#include <llvm/Support/SourceMgr.h>
 #include <llvm/Target/TargetData.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
@@ -54,6 +55,10 @@ LoadBytecodeFiles("load-bc", cl::desc("Load bytecode file"), cl::ZeroOrMore,
 namespace mvm {
   namespace llvm_runtime {
     #include "LLVMRuntime.inc"
+  }
+  
+  namespace mmtk_runtime {
+    #include "MMTkInline.inc"
   }
   void linkVmkitGC();
 }
@@ -109,7 +114,7 @@ static MvmJITListener JITListener;
 
 void MvmModule::loadBytecodeFile(const std::string& str) {
   SMDiagnostic Err;
-  Module* M = ParseIRFile(str, Err, getGlobalContext());
+  Module* M = ParseIRFile(str, Err, globalModule->getContext());
   if (M) {
     M->setTargetTriple(getHostTriple());
     Linker::LinkModules(globalModule, M, 0);
@@ -164,7 +169,6 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
 
   globalFunctionPasses = new FunctionPassManager(globalModule);
 
-  mvm::llvm_runtime::makeLLVMModuleContents(globalModule);
   
   //LLVMContext& Context = globalModule->getContext();
   //MetadataTypeKind = Context.getMDKindID("HighLevelType");
@@ -325,7 +329,35 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   module->setTargetTriple(MvmModule::globalModule->getTargetTriple());
   LLVMContext& Context = module->getContext();
   
-  MvmModule::copyDefinitions(module, MvmModule::globalModule); 
+  if (MutatorThread::MMTkCollectorSize) {
+    // If we have found MMTk, read the gcmalloc function and set the address of
+    // global variables and functions used by gcmalloc.
+    mvm::mmtk_runtime::makeLLVMFunction(module);
+    if (MvmModule::executionEngine) {
+      for (Module::global_iterator i = module->global_begin(),
+           e = module->global_end(); i != e; ++i) {
+        if (i->isDeclaration()) {
+          GlobalVariable* GV =
+            MvmModule::globalModule->getGlobalVariable(i->getName(), true);
+          assert(GV && "GV can not be found");
+          void* ptr = MvmModule::executionEngine->getPointerToGlobal(GV);
+          MvmModule::executionEngine->updateGlobalMapping(i, ptr);
+        }
+      }
+      for (Module::iterator i = module->begin(), e = module->end();
+           i != e; ++i) {
+        if (i->isDeclaration() && !i->isIntrinsic()) {
+          Function* F =
+            MvmModule::globalModule->getFunction(i->getName());
+          assert(F && "Function can not be found");
+          void* ptr = MvmModule::executionEngine->getPointerToFunction(F);
+          MvmModule::executionEngine->updateGlobalMapping(i, ptr);
+        }
+      }
+    }
+  }
+  mvm::llvm_runtime::makeLLVMModuleContents(module);
+  
   
   // Type declaration
   ptrType = PointerType::getUnqual(Type::getInt8Ty(Context));
@@ -454,6 +486,8 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   assert(AllocateUnresolvedFunction && "No allocateUnresolved function");
   AddFinalizationCandidate = module->getFunction("addFinalizationCandidate");
   assert(AddFinalizationCandidate && "No addFinalizationCandidate function");
+  
+  MvmModule::copyDefinitions(module, MvmModule::globalModule); 
 }
 
 const llvm::TargetData* MvmModule::TheTargetData;
@@ -485,10 +519,6 @@ static void addPass(FunctionPassManager *PM, Pass *P) {
   PM->add(P);
 }
 
-namespace mvm {
-  llvm::FunctionPass* createInlineMallocPass();
-}
-
 // This is equivalent to:
 // opt -simplifycfg -mem2reg -instcombine -jump-threading -simplifycfg
 //     -scalarrepl -instcombine -condprop -simplifycfg -predsimplify 
@@ -496,17 +526,8 @@ namespace mvm {
 //     -instcombine -gvn -sccp -simplifycfg -instcombine -condprop -dse -adce 
 //     -simplifycfg
 //
-void MvmModule::AddStandardCompilePasses() { 
-  FunctionPassManager* PM = globalFunctionPasses;
-  PM->add(new TargetData(*MvmModule::TheTargetData));
-  
-  addPass(PM, createVerifierPass());        // Verify that input is correct
-
-#ifdef WITH_MMTK
-  addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
-  addPass(PM, createInlineMallocPass());
-#endif
-  
+static void AddStandardCompilePasses(FunctionPassManager* PM) { 
+   
   addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
   addPass(PM, createPromoteMemoryToRegisterPass());// Kill useless allocas
   
@@ -538,10 +559,68 @@ void MvmModule::AddStandardCompilePasses() {
   addPass(PM, createDeadStoreEliminationPass());  // Delete dead stores
   addPass(PM, createAggressiveDCEPass());         // Delete dead instructions
   addPass(PM, createCFGSimplificationPass());     // Merge & remove BBs
+}
 
+static cl::opt<bool> 
+DisableOptimizations("disable-opt", 
+                     cl::desc("Do not run any optimization passes"));
 
-  PM->doInitialization();
+cl::opt<bool>
+StandardCompileOpts("std-compile-opts", 
+                   cl::desc("Include the standard compile time optimizations"));
+
+// The OptimizationList is automatically populated with registered Passes by the
+// PassNameParser.
+//
+static llvm::cl::list<const llvm::PassInfo*, bool, llvm::PassNameParser>
+PassList(llvm::cl::desc("Optimizations available:"));
+
+namespace mvm {
+  llvm::FunctionPass* createInlineMallocPass();
+}
+
+void MvmModule::addCommandLinePasses(FunctionPassManager* PM) {
+  addPass(PM, new TargetData(*MvmModule::TheTargetData));
+
+  addPass(PM, createVerifierPass());        // Verify that input is correct
+
+#ifdef WITH_MMTK
+  addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
+  addPass(PM, createInlineMallocPass());
+#endif
   
+  // Create a new optimization pass for each one specified on the command line
+  for (unsigned i = 0; i < PassList.size(); ++i) {
+    // Check to see if -std-compile-opts was specified before this option.  If
+    // so, handle it.
+    if (StandardCompileOpts && 
+        StandardCompileOpts.getPosition() < PassList.getPosition(i)) {
+      if (!DisableOptimizations) AddStandardCompilePasses(PM);
+      StandardCompileOpts = false;
+    }
+      
+    const PassInfo *PassInf = PassList[i];
+    Pass *P = 0;
+    if (PassInf->getNormalCtor())
+      P = PassInf->getNormalCtor()();
+    else
+      errs() << "cannot create pass: "
+           << PassInf->getPassName() << "\n";
+    if (P) {
+        bool isModulePass = (P->getPassKind() == PT_Module);
+        if (isModulePass) 
+          errs() << "vmkit does not support module pass: "
+             << PassInf->getPassName() << "\n";
+        else addPass(PM, P);
+
+    }
+  }
+    
+  // If -std-compile-opts was specified at the end of the pass list, add them.
+  if (StandardCompileOpts) {
+    AddStandardCompilePasses(PM);
+  }
+  PM->doInitialization();
 }
 
 // We protect the creation of IR with the executionEngine lock because
@@ -560,53 +639,26 @@ void MvmModule::unprotectIR() {
 
 
 void MvmModule::copyDefinitions(Module* Dst, Module* Src) {
-  // Loop over all of the functions in the src module, mapping them over
-  for (Module::const_iterator I = Src->begin(), E = Src->end(); I != E; ++I) {
-    const Function *SF = I;   // SrcFunction
-    if (SF->isDeclaration()) {
-      Function* F = Function::Create(SF->getFunctionType(),
-                                     GlobalValue::ExternalLinkage,
-                                     SF->getName(), Dst);
-      F->setAttributes(SF->getAttributes());
-    }
-  }
-  
   Function* SF = Src->getFunction("gcmalloc");
-  if (SF && !SF->isDeclaration()) {
-    Function* F = Function::Create(SF->getFunctionType(),
-                                   GlobalValue::ExternalLinkage,
-                                   SF->getName(), Dst);
-    F->setAttributes(SF->getAttributes());
-    if (executionEngine) {
-      void* ptr = executionEngine->getPointerToFunction(SF);
-      executionEngine->updateGlobalMapping(F, ptr);
-    }
+  Function* DF = Dst->getFunction("gcmalloc");
+  if (SF && DF && executionEngine && !SF->isDeclaration()) {
+    void* ptr = executionEngine->getPointerToFunction(SF);
+    executionEngine->updateGlobalMapping(DF, ptr);
   }
   
   SF = Src->getFunction("gcmallocUnresolved");
-  if (SF && !SF->isDeclaration()) {
-    Function* F = Function::Create(SF->getFunctionType(),
-                                   GlobalValue::ExternalLinkage,
-                                   SF->getName(), Dst);
-    F->setAttributes(SF->getAttributes());
-    if (executionEngine) {
-      void* ptr = executionEngine->getPointerToFunction(SF);
-      executionEngine->updateGlobalMapping(F, ptr);
-    }
+  DF = Dst->getFunction("gcmallocUnresolved");
+  if (SF && DF && executionEngine && !SF->isDeclaration()) {
+    void* ptr = executionEngine->getPointerToFunction(SF);
+    executionEngine->updateGlobalMapping(DF, ptr);
   }
   
   SF = Src->getFunction("addFinalizationCandidate");
-  if (SF && !SF->isDeclaration()) {
-    Function* F = Function::Create(SF->getFunctionType(),
-                                   GlobalValue::ExternalLinkage,
-                                   SF->getName(), Dst);
-    F->setAttributes(SF->getAttributes());
-    if (executionEngine) {
-      void* ptr = executionEngine->getPointerToFunction(SF);
-      executionEngine->updateGlobalMapping(F, ptr);
-    }
+  DF = Dst->getFunction("addFinalizationCandidate");
+  if (SF && DF && executionEngine && !SF->isDeclaration()) {
+    void* ptr = executionEngine->getPointerToFunction(SF);
+    executionEngine->updateGlobalMapping(DF, ptr);
   }
-
 }
 
 void JITMethodInfo::scan(void* TL, void* ip, void* addr) {

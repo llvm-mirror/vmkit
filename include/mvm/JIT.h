@@ -200,7 +200,7 @@ public:
 
    static void copyDefinitions(llvm::Module* Dst, llvm::Module* Src);
 
-   static void AddStandardCompilePasses();
+   static void addCommandLinePasses(llvm::FunctionPassManager* PM);
 
    static const char* getHostTriple();
 };

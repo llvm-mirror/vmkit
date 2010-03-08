@@ -137,6 +137,7 @@ all::
 	$(Verb) $(LOPT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -std-compile-opts -LowerJavaRT -f $(JARNAME).bc -o $(JARNAME)-optimized.bc
 	$(Verb) $(LLVMLD) -r -o $(LibDir)/FinalMMTk.bc $(LibDir)/MMTKAlloc.bc $(JARNAME)-optimized.bc $(LibDir)/MMTKRuntime.bc
 	$(Verb) $(LOPT) -std-compile-opts $(LibDir)/FinalMMTk.bc -o $(LibDir)/FinalMMTk.bc
+	#$(Verb) $(LLC) -march=cpp -cppgen=function -cppfor=gcmalloc $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/lib/Mvm/Compiler/MMTkInline.inc
 
     
 endif

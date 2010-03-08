@@ -17,8 +17,10 @@
 #include "../../lib/J3/VMCore/JnjvmClassLoader.h"
 #include "../../lib/J3/VMCore/Jnjvm.h"
 
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
 
+extern llvm::cl::opt<bool> StandardCompileOpts;
 
 using namespace j3;
 using namespace mvm;
@@ -31,7 +33,7 @@ int main(int argc, char **argv, char **envp) {
   Collector::initialise();
   
   // Tell the compiler to run all optimizations.
-  MvmModule::AddStandardCompilePasses();
+  StandardCompileOpts = true;
  
   // Create the allocator that will allocate the bootstrap loader and the JVM.
   mvm::BumpPtrAllocator Allocator;

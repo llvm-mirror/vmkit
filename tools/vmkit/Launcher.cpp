@@ -36,14 +36,6 @@ enum VMType {
   Interactive, RunJava, RunNet
 };
 
-// The OptimizationList is automatically populated with registered Passes by the
-// PassNameParser.
-//
-static llvm::cl::list<const llvm::PassInfo*, bool, llvm::PassNameParser>
-PassList(llvm::cl::desc("Optimizations available:"));
-
-
-
 static llvm::cl::opt<VMType> VMToRun(llvm::cl::desc("Choose VM to run:"),
   llvm::cl::values(
     clEnumValN(Interactive , "i", "Run in interactive mode"),
@@ -55,59 +47,6 @@ static llvm::cl::opt<bool> Fast("fast",
                      cl::desc("Generate code quickly, "
                               "potentially sacrificing code quality"),
                      cl::init(false));
-
-static cl::opt<bool> 
-DisableOptimizations("disable-opt", 
-                     cl::desc("Do not run any optimization passes"));
-
-static cl::opt<bool>
-StandardCompileOpts("std-compile-opts", 
-                   cl::desc("Include the standard compile time optimizations"));
-
-inline void addPass(FunctionPassManager *PM, Pass *P) {
-  // Add the pass to the pass manager...
-  PM->add(P);
-}
-
-
-void addCommandLinePass(char** argv) {
-  FunctionPassManager* Passes = mvm::MvmModule::globalFunctionPasses;
-
-  Passes->add(new TargetData(*mvm::MvmModule::TheTargetData));
-  // Create a new optimization pass for each one specified on the command line
-  for (unsigned i = 0; i < PassList.size(); ++i) {
-    // Check to see if -std-compile-opts was specified before this option.  If
-    // so, handle it.
-    if (StandardCompileOpts && 
-        StandardCompileOpts.getPosition() < PassList.getPosition(i)) {
-      if (!DisableOptimizations) mvm::MvmModule::AddStandardCompilePasses();
-      StandardCompileOpts = false;
-    }
-      
-    const PassInfo *PassInf = PassList[i];
-    Pass *P = 0;
-    if (PassInf->getNormalCtor())
-      P = PassInf->getNormalCtor()();
-    else
-      errs() << argv[0] << ": cannot create pass: "
-           << PassInf->getPassName() << "\n";
-    if (P) {
-        bool isModulePass = (P->getPassKind() == PT_Module);
-        if (isModulePass) 
-          errs() << argv[0] << ": vmkit does not support module pass: "
-             << PassInf->getPassName() << "\n";
-        else addPass(Passes, P);
-
-    }
-  }
-    
-  // If -std-compile-opts was specified at the end of the pass list, add them.
-  if (StandardCompileOpts) {
-    mvm::MvmModule::AddStandardCompilePasses();
-  }
-  Passes->doInitialization();
-
-}
 
 int found(char** argv, int argc, const char* name) {
   int i = 1;
@@ -141,7 +80,6 @@ int main(int argc, char** argv) {
 #if WITH_J3
     JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
     JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
-    addCommandLinePass(argv);
     mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(JCL);
     vm->runApplication(argc, argv);
     vm->waitForExit();
@@ -158,7 +96,6 @@ int main(int argc, char** argv) {
 #if WITH_J3
     JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
     JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
-    addCommandLinePass(argv);
     MyCl.vmlets["java"] = (create_vm_t)(mvm::VirtualMachine::createJVM);
     MyCl.compilers["java"] = (mvm::Object*)JCL;
 #endif

@@ -41,8 +41,8 @@ namespace mvm {
 
 
 bool InlineMalloc::runOnFunction(Function& F) {
-  Function* Malloc = mvm::MvmModule::globalModule->getFunction("gcmalloc");
-  if (Malloc->isDeclaration()) return false;
+  Function* Malloc = F.getParent()->getFunction("gcmalloc");
+  if (!Malloc || Malloc->isDeclaration()) return false;
   bool Changed = false;
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
@@ -53,9 +53,8 @@ bool InlineMalloc::runOnFunction(Function& F) {
       Instruction* CI = Call.getInstruction();
       if (CI) {
         Function* F = Call.getCalledFunction();
-        if (F && F->getName() == "gcmalloc") {
+        if (F == Malloc) {
           if (dyn_cast<Constant>(Call.getArgument(0))) {
-            Call.setCalledFunction(mvm::MvmModule::globalModule->getFunction("gcmalloc"));
             Changed |= InlineFunction(Call, 0, mvm::MvmModule::TheTargetData);
             break;
           }

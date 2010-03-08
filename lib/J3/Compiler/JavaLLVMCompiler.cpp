@@ -24,7 +24,7 @@ using namespace j3;
 using namespace llvm;
 
 JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
-  TheModule(new llvm::Module(str, getGlobalContext())),
+  TheModule(new llvm::Module(str, *(new LLVMContext()))),
   DebugFactory(new DIFactory(*TheModule)),
   JavaIntrinsics(TheModule) {
 
@@ -70,7 +70,6 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
       mvm::MvmModule::runPasses(func, JavaNativeFunctionPasses);
     } else {
       jit.javaCompile();
-      mvm::MvmModule::runPasses(func, mvm::MvmModule::globalFunctionPasses);
       mvm::MvmModule::runPasses(func, JavaFunctionPasses);
     }
     func->setLinkage(GlobalValue::ExternalLinkage);
@@ -123,7 +122,7 @@ void JavaLLVMCompiler::addJavaPasses() {
   JavaNativeFunctionPasses->add(createLowerConstantCallsPass(getIntrinsics()));
   
   JavaFunctionPasses = new FunctionPassManager(TheModule);
-  JavaFunctionPasses->add(new TargetData(TheModule));
+  mvm::MvmModule::addCommandLinePasses(JavaFunctionPasses);
   if (cooperativeGC)
     JavaFunctionPasses->add(mvm::createLoopSafePointsPass());
 
