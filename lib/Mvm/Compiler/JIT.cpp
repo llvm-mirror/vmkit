@@ -329,6 +329,7 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   module->setTargetTriple(MvmModule::globalModule->getTargetTriple());
   LLVMContext& Context = module->getContext();
   
+#ifdef WITH_MMTK
   if (MutatorThread::MMTkCollectorSize) {
     // If we have found MMTk, read the gcmalloc function and set the address of
     // global variables and functions used by gcmalloc.
@@ -356,6 +357,7 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
       }
     }
   }
+#endif
   mvm::llvm_runtime::makeLLVMModuleContents(module);
   
   
