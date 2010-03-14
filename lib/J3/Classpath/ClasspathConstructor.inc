@@ -97,6 +97,7 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
 
   // Allocate a buffer to store the arguments.
   jvalue* buf = size ? (jvalue*)alloca(size * sizeof(jvalue)) : 0;
+  if (size) memset(buf, 0, size * sizeof(jvalue));
 
   if (nbArgs == size) {
     UserCommonClass* _cl = UserCommonClass::resolvedImplClass(vm, Clazz, false);

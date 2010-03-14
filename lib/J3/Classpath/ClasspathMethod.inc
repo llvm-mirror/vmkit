@@ -116,6 +116,7 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
   sint32 size = sign->nbArguments;
 
   jvalue* buf = size ? (jvalue*)alloca(size * sizeof(jvalue)) : 0;
+  if (size) memset(buf, 0, size * sizeof(jvalue));
   
   if (nbArgs == size) {
     UserCommonClass* _cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
