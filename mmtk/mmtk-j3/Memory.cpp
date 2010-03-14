@@ -34,18 +34,7 @@ extern "C" sint32
 Java_org_j3_mmtk_Memory_dzmmap__Lorg_vmmagic_unboxed_Address_2I(JavaObject* M,
                                                                 void* start,
                                                                 sint32 size) {
-#if defined (__MACH__)
-  uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
-#else
-  uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
-#endif
-  void* baseAddr = mmap((void*)start, size, PROT_READ | PROT_WRITE, flags,
-                        -1, 0);
-  if (baseAddr == MAP_FAILED) {
-    perror("mmap");
-    JavaThread::get()->printBacktrace(); abort();
-  }
-
+  // Already mmapped during initialization.
   return 0;
 }
 

@@ -44,6 +44,8 @@
 #include "MutatorThread.h"
 #include "MvmGC.h"
 
+#include <sys/mman.h>
+
 using namespace mvm;
 using namespace llvm;
 
@@ -181,6 +183,20 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
 #ifdef WITH_MMTK
   llvm::GlobalVariable* GV = globalModule->getGlobalVariable("MMTkCollectorSize", false);
   if (GV && executionEngine) {
+    // Allocate the memory for MMTk right now, to avoid conflicts with
+    // other allocators.
+#if defined (__MACH__)
+    uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
+#else
+    uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
+#endif
+    void* baseAddr = mmap((void*)0x30000000, 0x50000000, PROT_READ | PROT_WRITE,
+                          flags, -1, 0);
+    if (baseAddr == MAP_FAILED) {
+      perror("mmap");
+      abort();
+    }
+
     ConstantInt* C = dyn_cast<ConstantInt>(GV->getInitializer());
     uint64_t val = C->getZExtValue();
     MutatorThread::MMTkCollectorSize = val;
