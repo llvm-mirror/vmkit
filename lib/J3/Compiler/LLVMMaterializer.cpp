@@ -33,7 +33,7 @@ JavaLLVMLazyJITCompiler::JavaLLVMLazyJITCompiler(const std::string& ModuleID)
 }
 
 JavaLLVMLazyJITCompiler::~JavaLLVMLazyJITCompiler() {
-  delete TheMaterializer;
+  // The module already destroys the materializer.
 }
 
 void* JavaLLVMLazyJITCompiler::loadMethod(void* handle, const char* symbol) {
