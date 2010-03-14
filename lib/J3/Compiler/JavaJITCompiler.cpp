@@ -82,12 +82,14 @@ public:
       mvm::BumpPtrAllocator& Alloc = 
         currentCompiledMethod->classDef->classLoader->allocator;
       llvm::GCFunctionInfo* GFI = 0;
-      // We know the last GC info is for this method.
       if (F.hasGC()) {
         GCStrategy::iterator I = mvm::MvmModule::TheGCStrategy->end();
         I--;
-        DEBUG(errs() << (*I)->getFunction().getName() << '\n');
-        DEBUG(errs() << F.getName() << '\n');
+        // TODO: see why this is not true in a non- LLVM lazy mode.
+        while (&(*I)->getFunction() != &F) {
+          assert(I != mvm::MvmModule::TheGCStrategy->begin() && "No GC info");
+          I--;
+        }
         assert(&(*I)->getFunction() == &F &&
            "GC Info and method do not correspond");
         GFI = *I;
@@ -116,6 +118,7 @@ public:
   }
 
   void setCurrentCompiledMethod(JavaMethod* meth, llvm::Function* func) {
+    assert(currentCompiledMethod == NULL && "Recursive compilation detected");
     currentCompiledMethod = meth;
     currentCompiledFunction = func;
   }
