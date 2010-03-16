@@ -99,10 +99,12 @@ MDNode* JavaLLVMCompiler::GetDbgSubprogram(JavaMethod* meth) {
 }
 
 JavaLLVMCompiler::~JavaLLVMCompiler() {
+  LLVMContext* Context = &(TheModule->getContext());
   delete TheModule;
   delete DebugFactory;
   delete JavaFunctionPasses;
   delete JavaNativeFunctionPasses;
+  delete Context;
 }
 
 namespace mvm {
