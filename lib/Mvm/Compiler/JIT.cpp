@@ -190,7 +190,7 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
 #else
     uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
 #endif
-    void* baseAddr = mmap((void*)0x30000000, 0x50000000, PROT_READ | PROT_WRITE,
+    void* baseAddr = mmap((void*)0x30000000, 0x40000000, PROT_READ | PROT_WRITE,
                           flags, -1, 0);
     if (baseAddr == MAP_FAILED) {
       perror("mmap");
