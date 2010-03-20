@@ -62,7 +62,7 @@ const Type* LLVMClassInfo::getVirtualType() {
     
     } else {
       virtualType = Compiler->getIntrinsics()->JavaObjectType;
-      assert(virtualType && "intrinsics not iniitalized");
+      assert(virtualType && "intrinsics not initalized");
       structType = dyn_cast<const StructType>(virtualType->getContainedType(0));
       sl = targetData->getStructLayout(structType);
       
@@ -409,7 +409,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
     ReturnInst::Create(context, val, currentBlock);
   else
     ReturnInst::Create(context, currentBlock);
-  
+
   return res;
 }
 
@@ -487,6 +487,10 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   else
     ReturnInst::Create(context, currentBlock);
   
+  if (Compiler->useCooperativeGC()) {
+    res->setGC("vmkit");
+  }
+  
   return res;
 }
 
@@ -494,6 +498,7 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
   
   std::vector<Value*> Args;
   std::vector<Value*> FunctionArgs;
+  std::vector<Value*> TempArgs;
   
   J3Intrinsics& Intrinsics = *Compiler->getIntrinsics();
   std::string name;
@@ -518,26 +523,28 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
     node = PHINode::Create(stub->getReturnType(), "", endBlock);
   }
     
-  Function::arg_iterator arg = stub->arg_begin();
-  Value *obj = NULL;
-  if (virt) {
-    obj = arg;
-    Args.push_back(obj);
+
+  for (Function::arg_iterator arg = stub->arg_begin();
+       arg != stub->arg_end(); ++arg) {
+    Value* temp = arg;
+    if (Compiler->useCooperativeGC() &&
+        arg->getType() == Intrinsics.JavaObjectType) {
+      temp = new AllocaInst(Intrinsics.JavaObjectType, "", currentBlock);
+      new StoreInst(arg, temp, "", currentBlock);
+      Value* GCArgs[2] = {
+        new BitCastInst(temp, Intrinsics.ptrPtrType, "", currentBlock),
+        Intrinsics.constantPtrNull
+      };
+        
+      CallInst::Create(Intrinsics.llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
+                       currentBlock);
+    }
+    
+    TempArgs.push_back(temp);
   }
 
-  for (; arg != stub->arg_end() ; ++arg) {
-    FunctionArgs.push_back(arg);
-    if (Compiler->useCooperativeGC()) {
-      if (arg->getType() == Intrinsics.JavaObjectType) {
-        Value* GCArgs[2] = { 
-          new BitCastInst(arg, Intrinsics.ptrPtrType, "", currentBlock),
-          Intrinsics.constantPtrNull
-        };
-        
-        CallInst::Create(Intrinsics.llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
-                         currentBlock);
-      }
-    }
+  if (virt && Compiler->useCooperativeGC()) {
+    Args.push_back(new LoadInst(TempArgs[0], "", false, currentBlock));
   }
 
   Value* val = CallInst::Create(virt ? Intrinsics.ResolveVirtualStubFunction :
@@ -554,6 +561,17 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
 
   currentBlock = callBlock;
   Value* Func = new BitCastInst(val, stub->getType(), "", currentBlock);
+  
+  int i = 0;
+  for (Function::arg_iterator arg = stub->arg_begin();
+       arg != stub->arg_end(); ++arg, ++i) {
+    Value* temp = arg;
+    if (Compiler->useCooperativeGC() &&
+        arg->getType() == Intrinsics.JavaObjectType) {
+      temp = new LoadInst(TempArgs[i], "", false, currentBlock);
+    }
+    FunctionArgs.push_back(temp);
+  }
   Value* res = CallInst::Create(Func, FunctionArgs.begin(), FunctionArgs.end(),
                                 "", currentBlock);
   if (node) node->addIncoming(res, currentBlock);
@@ -564,6 +582,10 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
     ReturnInst::Create(context, node, currentBlock);
   } else {
     ReturnInst::Create(context, currentBlock);
+  }
+  
+  if (Compiler->useCooperativeGC()) {
+    stub->setGC("vmkit");
   }
   
   return stub;
