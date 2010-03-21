@@ -1714,7 +1714,7 @@ void AnnotationReader::readAnnotation() {
   uint16 numPairs = reader.readU2();
 
   for (uint16 j = 0; j < numPairs; ++j) {
-    uint16 nameIndex = reader.readU2();
+    /* uint16 nameIndex = */ reader.readU2();
     readElementValue();
   }
   AnnotationNameIndex = typeIndex;
@@ -1725,12 +1725,12 @@ void AnnotationReader::readElementValue() {
   if ((tag == 'B') || (tag == 'C') || (tag == 'D') || (tag == 'F') ||
       (tag == 'J') || (tag == 'S') || (tag == 'I') || (tag == 'Z') || 
       (tag == 's')) {
-    uint16 constValue = reader.readU2();
+    /* uint16 constValue = */ reader.readU2();
   } else if (tag == 'e') {
-    uint16 typeName = reader.readU2();
-    uint16 constName = reader.readU2();
+    /* uint16 typeName = */ reader.readU2();
+    /* uint16 constName = */ reader.readU2();
   } else if (tag == 'c') {
-    uint16 classInfoIndex = reader.readU2();
+    /* uint16 classInfoIndex = */ reader.readU2();
   } else if (tag == '@') {
     readAnnotation();
   } else if (tag == '[') {

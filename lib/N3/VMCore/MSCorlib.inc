@@ -85,9 +85,8 @@ extern "C" VMObject* System_Reflection_Assembly_GetCallingAssembly() {
   
   // The caller of the CLI function;
   cur = (void**)cur[0];
- 
-  N3* vm = VMThread::get()->getVM();
 
+  // TODO: implement me 
   abort();
   VMMethod* meth = NULL; //vm->IPToMethod<VMMethod>(FRAME_IP(cur));
 
@@ -106,8 +105,7 @@ extern "C" VMObject* System_Reflection_Assembly_GetExecutingAssembly() {
   // The CLI function.
   cur = (void**)cur[0];
   
-  N3* vm = VMThread::get()->getVM();
-
+  // TODO: implement me 
   abort();
   VMMethod* meth = NULL; //vm->IPToMethod<VMMethod>(FRAME_IP(cur));
   assert(meth && "Wrong stack");

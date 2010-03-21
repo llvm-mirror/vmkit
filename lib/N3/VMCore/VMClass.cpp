@@ -805,7 +805,7 @@ VMMethod *VMMethod::compileToNative(VMGenericMethod* genMethod) {
 				CLIJit::compile(classDef, this);
 				void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(methPtr);
 				code = res;
-				N3* vm = VMThread::get()->getVM();
+				// N3* vm = VMThread::get()->getVM();
 				// vm->addMethodInFunctionMap(this, res);
 			}
 			classDef->release();
