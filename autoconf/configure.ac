@@ -31,12 +31,12 @@ dnl===
 dnl===-----------------------------------------------------------------------===
 dnl Initialize autoconf and define the package name, version number and
 dnl email address for reporting bugs.
-AC_INIT([vmkit],[0.27svn],[nicolas.geoffray@lip6.fr])
+AC_INIT([vmkit],[0.28svn],[nicolas.geoffray@gmail.com])
 
 dnl Provide a copyright substitution and ensure the copyright notice is included
 dnl in the output of --version option of the generated configure script.
-AC_SUBST(VMKIT_COPYRIGHT,["Copyright (c) 2003-2009 Universite Pierre et Marie Curie."])
-AC_COPYRIGHT([Copyright (c) 2003-2009 Universite Pierre et Marie Curie.])
+AC_SUBST(VMKIT_COPYRIGHT,["Copyright (c) 2003-2010 Universite Pierre et Marie Curie."])
+AC_COPYRIGHT([Copyright (c) 2003-2010 Universite Pierre et Marie Curie.])
 
 dnl Indicate that we require autoconf 2.59 or later. Ths is needed because we
 dnl use some autoconf macros only available in 2.59.
@@ -213,7 +213,7 @@ dnl GC type
 dnl **************************************************************************
 AC_ARG_WITH(gc,
        [AS_HELP_STRING(--with-gc=something,
-           [GC type ('single-mmap' 'multi-mmap' or 'boehm')])],
+           [GC type ('mmtk' (requires llvm-gcc) 'single-mmap' 'multi-mmap' or 'boehm')])],
        [[gc=$withval]],
        [[ echo Using mmap2 as vvm gc type.
                 gc=single-mmap
