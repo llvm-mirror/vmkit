@@ -20,5 +20,6 @@ ifeq ($(WITH_N3_PNETLIB), 1)
     DIRS += PNetLib
 endif
 
+EXTRA_DIST = Mono PNetLib
 
 include $(LEVEL)/Makefile.common
