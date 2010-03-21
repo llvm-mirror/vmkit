@@ -543,8 +543,12 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
     TempArgs.push_back(temp);
   }
 
-  if (virt && Compiler->useCooperativeGC()) {
-    Args.push_back(new LoadInst(TempArgs[0], "", false, currentBlock));
+  if (virt) {
+    if (Compiler->useCooperativeGC()) {
+      Args.push_back(new LoadInst(TempArgs[0], "", false, currentBlock));
+    }else {
+      Args.push_back(TempArgs[0]);
+    }
   }
 
   Value* val = CallInst::Create(virt ? Intrinsics.ResolveVirtualStubFunction :
