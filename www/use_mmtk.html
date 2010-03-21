@@ -25,7 +25,6 @@ Sweep Garbage Collector.</p>
     and build LLVM-GCC</a> from SVN head.</li>
   <li> Update PATH to include the <tt>llvm-gcc</tt> binary. </li>
   <li> Re-configure LLVM. </li>
-  <li> Make sure to build LLVM with REQUIRES_FRAME_POINTER=1.</li>
   <li> Configure VMKit with two additional options: <tt>--with-gc=mmtk</tt> and <tt>--with-llvmgcc</tt>. </li>
   <li> Clean and make VMKit (do that each time you change the source code of VMKit):</li>
 
@@ -36,8 +35,7 @@ Sweep Garbage Collector.</p>
   
   <li>Run VMKit with MMTk:</li>
    <ul>
-     <li><tt>Release/bin/vmkit -std-compile-opts --load-bc=Release/lib/FinalMMTk.bc
-             -load-bc=lib/J3/LLVMRuntime/LLVMRuntime.gen.ll -java Foo </tt></li>
+     <li><tt>Release/bin/vmkit -std-compile-opts --load-bc=Release/lib/FinalMMTk.bc -java Foo </tt></li>
    </ul>
 
 </ol>
