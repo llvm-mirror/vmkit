@@ -1,0 +1,62 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" href="http://llvm.org/llvm.css" type="text/css" media="screen" />
+  <title>VMKit: a Substrate for Managed Runtime Enviroments</title>
+</head>
+<body>
+
+<div class="pub_title">
+  VMKit: a Substrate for Managed Runtime Environments
+</div>
+<div class="pub_author">
+  Nicolas Geoffray
+</div>
+
+<h2>Abstract:</h2>
+<blockquote>
+Managed Runtime Environments (MREs), such as the JVM and the CLI, form an
+attractive environment for program execution, by providing portability and 
+safety, via the use of a bytecode language and automatic memory management,
+as well as good performance, via just-in-time (JIT) compilation.
+Nevertheless, developing a fully featured MRE, including e.g.
+a garbage collector and JIT compiler, is a herculean
+task.  As a result, new languages cannot easily take advantage of the 
+benefits of MREs, and it is difficult to experiment with
+extensions of existing MRE based languages.
+
+This paper describes and evaluates VMKit, a first attempt to build a common
+substrate that eases the development of high-level MREs.  We have successfully
+used VMKit to build two MREs: a Java Virtual Machine and a Common
+Language Runtime.  We provide an extensive study of the lessons learned in
+developing this infrastructure, and assess the ease of implementing new 
+MREs or MRE extensions and the resulting performance.  In  
+particular, it took one of the authors only one month to develop a Common
+Language Runtime using VMKit. VMKit furthermore has performance comparable
+to the well established open source MREs Cacao, Apache Harmony and Mono, and is
+1.2 to 3 times slower than JikesRVM on most of the DaCapo
+benchmarks.
+
+</blockquote>
+
+<h2>Bibtex:</h2>
+<pre>
+@inproceedings{geoffray10vmkit,
+  author = {N. Geoffray and G. Thomas and J.Lawall and G. Muller and B. Folliot},
+  title = {{VMKit: a Substrate for Managed Runtime Environments}},
+  booktitle = {Virtual Execution Environment Conference (VEE 2010)},
+  publisher = {ACM Press},
+  year = {2010},
+  month = {March},
+  address = {Pittsburgh, USA}
+}
+</pre>
+
+<h2>Download:</h2>
+<ul>
+  <li><a href="http://http://llvm.org/pubs/2010-03-VEE-VMKit.pdf">VMKit: a Substrate for Managed Runtime Environments</a> (PDF)</li>
+</ul>
+
+</body>
+</html>
