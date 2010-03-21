@@ -20,7 +20,7 @@ endif
 LOADABLE_MODULE = 1
 USEDLIBS =
 
-CXX.Flags += -I$(PROJ_OBJ_DIR)/../../lib/J3/VMCore
+CXX.Flags += -I$(PROJ_SRC_DIR)/../../lib/J3/VMCore
 
 include $(LEVEL)/Makefile.common
 
