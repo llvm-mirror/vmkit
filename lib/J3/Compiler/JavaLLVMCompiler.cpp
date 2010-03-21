@@ -89,7 +89,7 @@ JavaMethod* JavaLLVMCompiler::getJavaMethod(llvm::Function* F) {
 MDNode* JavaLLVMCompiler::GetDbgSubprogram(JavaMethod* meth) {
   if (getMethodInfo(meth)->getDbgSubprogram() == NULL) {
     MDNode* node = DebugFactory->CreateSubprogram(DIDescriptor(), "", "",
-                                                  "", DICompileUnit(), 0,
+                                                  "", DIFile(), 0,
                                                   DIType(), false,
                                                   false).getNode();
     DbgInfos.insert(std::make_pair(node, meth));

@@ -119,16 +119,18 @@ bool LLVMMaterializer::Materialize(GlobalValue *GV, std::string *ErrInfo) {
   // by the pass manager, and we don't want another thread to JIT the
   // function while all passes have not been run.
   if (!(F->isDeclaration())) {
-    mvm::MvmModule::unprotectIR(); 
+    mvm::MvmModule::unprotectIR();
+    // TODO: Is this still valid?
     // Reacquire and go back to the JIT function.
-    mvm::MvmModule::executionEngine->lock.acquire();
+    // mvm::MvmModule::executionEngine->lock.acquire();
     return false;
   }
 
   if (mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(F)) {
     mvm::MvmModule::unprotectIR(); 
+    // TODO: Is this still valid?
     // Reacquire and go back to the JIT function.
-    mvm::MvmModule::executionEngine->lock.acquire();
+    // mvm::MvmModule::executionEngine->lock.acquire();
     return false;
   }
   
@@ -160,8 +162,9 @@ bool LLVMMaterializer::Materialize(GlobalValue *GV, std::string *ErrInfo) {
 
   mvm::MvmModule::unprotectIR();
   
+  // TODO: Is this still valid?
   // Reacquire to go back to the JIT function.
-  mvm::MvmModule::executionEngine->lock.acquire();
+  // mvm::MvmModule::executionEngine->lock.acquire();
   
   if (F->isDeclaration())
     mvm::MvmModule::executionEngine->updateGlobalMapping(F, val);
