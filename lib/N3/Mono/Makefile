@@ -16,6 +16,7 @@ else
   LIBRARYNAME = Mono
 endif
 
+EXTRA_DIST = MonoPath.inc.in
 include $(LEVEL)/Makefile.common
 CXX.Flags += -I$(PROJ_SRC_DIR)/../VMCore
 

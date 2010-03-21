@@ -9,6 +9,7 @@
 
 #include "llvm/DerivedTypes.h"
 #include "llvm/GlobalVariable.h"
+#include "llvm/LLVMContext.h"
 
 #include "mvm/JIT.h"
 
