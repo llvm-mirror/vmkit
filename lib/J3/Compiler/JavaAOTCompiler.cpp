@@ -353,8 +353,9 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
       }
 
       Module& Mod = *getLLVMModule();
-      varGV = new GlobalVariable(Mod, Ty, false, GlobalValue::InternalLinkage,
-                                 0, "final object");
+      // Set as External, so that inlining MMTk code works.
+      varGV = new GlobalVariable(Mod, Ty, false, GlobalValue::ExternalLinkage,
+                                 0, "finalObject");
 
       Constant* C = ConstantExpr::getBitCast(varGV,
                                              JavaIntrinsics.JavaObjectType);

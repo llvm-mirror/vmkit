@@ -181,7 +181,6 @@ public:
    static llvm::GCStrategy* TheGCStrategy;
    static mvm::LockRecursive protectEngine;
    static llvm::Module *globalModule;
-   static llvm::FunctionPassManager* globalFunctionPasses;
    static const llvm::TargetData* TheTargetData;
    static mvm::BumpPtrAllocator* Allocator;
    //static unsigned MetadataTypeKind;

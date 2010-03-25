@@ -44,7 +44,14 @@
 #include "MutatorThread.h"
 #include "MvmGC.h"
 
+#include <dlfcn.h>
 #include <sys/mman.h>
+
+#if defined(__MACH__)
+#define SELF_HANDLE RTLD_DEFAULT
+#else
+#define SELF_HANDLE 0
+#endif
 
 using namespace mvm;
 using namespace llvm;
@@ -169,9 +176,6 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
     TheTargetData = T->getTargetData();
   }
 
-  globalFunctionPasses = new FunctionPassManager(globalModule);
-
-  
   //LLVMContext& Context = globalModule->getContext();
   //MetadataTypeKind = Context.getMDKindID("HighLevelType");
  
@@ -179,163 +183,6 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
        e = LoadBytecodeFiles.end(); i != e; ++i) {
     loadBytecodeFile(*i); 
   }
-
-#ifdef WITH_MMTK
-  llvm::GlobalVariable* GV = globalModule->getGlobalVariable("MMTkCollectorSize", false);
-  if (GV && executionEngine) {
-    // Allocate the memory for MMTk right now, to avoid conflicts with
-    // other allocators.
-#if defined (__MACH__)
-    uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
-#else
-    uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
-#endif
-    void* baseAddr = mmap((void*)0x30000000, 0x40000000, PROT_READ | PROT_WRITE,
-                          flags, -1, 0);
-    if (baseAddr == MAP_FAILED) {
-      perror("mmap");
-      abort();
-    }
-
-    ConstantInt* C = dyn_cast<ConstantInt>(GV->getInitializer());
-    uint64_t val = C->getZExtValue();
-    MutatorThread::MMTkCollectorSize = val;
-  
-    GV = globalModule->getGlobalVariable("MMTkMutatorSize", false);
-    assert(GV && "Could not find MMTkMutatorSize");
-    C = dyn_cast<ConstantInt>(GV->getInitializer());
-    val = C->getZExtValue();
-    MutatorThread::MMTkMutatorSize = val;
-
-    Function* F = globalModule->getFunction("JnJVM_org_j3_config_Selected_00024Mutator__0003Cinit_0003E__");
-    assert(F && "Could not find <init> from Mutator");
-    MutatorThread::MutatorInit = (MutatorThread::MMTkInitType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    
-    F = globalModule->getFunction("JnJVM_org_mmtk_plan_MutatorContext_initMutator__I");
-    assert(F && "Could not find init from Mutator");
-    MutatorThread::MutatorCallInit = (MutatorThread::MMTkInitIntType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    
-    F = globalModule->getFunction("JnJVM_org_mmtk_plan_MutatorContext_deinitMutator__");
-    assert(F && "Could not find deinit from Mutator");
-    MutatorThread::MutatorCallDeinit = (MutatorThread::MMTkInitType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    
-    
-    GV = globalModule->getGlobalVariable("org_j3_config_Selected_4Mutator_VT", false);
-    assert(GV && "Could not find VT from Mutator");
-    MutatorThread::MutatorVT = (VirtualTable*)executionEngine->getPointerToGlobal(GV);
-  
-    F = globalModule->getFunction("JnJVM_org_j3_config_Selected_00024Collector__0003Cinit_0003E__");
-    assert(F && "Could not find <init> from Collector");
-    MutatorThread::CollectorInit = (MutatorThread::MMTkInitType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    
-    GV = globalModule->getGlobalVariable("org_j3_config_Selected_4Collector_VT", false);
-    assert(GV && "Could not find VT from Collector");
-    MutatorThread::CollectorVT = (VirtualTable*)executionEngine->getPointerToGlobal(GV);
-
-    GlobalAlias* GA = dyn_cast<GlobalAlias>(globalModule->getNamedValue("MMTkAlloc"));
-    assert(GA && "Could not find MMTkAlloc alias");
-    F = dyn_cast<Function>(GA->getAliasee());
-    gc::MMTkGCAllocator = (gc::MMTkAllocType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-  
-    GA = dyn_cast<GlobalAlias>(globalModule->getNamedValue("MMTkPostAlloc"));
-    assert(GA && "Could not find MMTkPostAlloc alias");
-    F = dyn_cast<Function>(GA->getAliasee());
-    gc::MMTkGCPostAllocator = (gc::MMTkPostAllocType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    
-    GA = dyn_cast<GlobalAlias>(globalModule->getNamedValue("MMTkCheckAllocator"));
-    assert(GA && "Could not find MMTkCheckAllocator alias");
-    F = dyn_cast<Function>(GA->getAliasee());
-    gc::MMTkCheckAllocator = (gc::MMTkCheckAllocatorType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-     
-    F = globalModule->getFunction("JnJVM_org_mmtk_utility_heap_HeapGrowthManager_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2");
-    assert(F && "Could not find boot from HeapGrowthManager");
-    BootHeapType BootHeap = (BootHeapType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    BootHeap(128 * 1024 * 1024, 1024 * 1024 * 1024);
-    
-    GV = globalModule->getGlobalVariable("org_j3_config_Selected_4Plan_static", false);
-    assert(GV && "No global plan.");
-    uintptr_t Plan = *((uintptr_t*)executionEngine->getPointerToGlobal(GV));
-    
-    GA = dyn_cast<GlobalAlias>(globalModule->getNamedValue("MMTkPlanBoot"));
-    assert(GA && "Could not find MMTkPlanBoot alias");
-    F = dyn_cast<Function>(GA->getAliasee());
-    BootType Boot = (BootType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    Boot(Plan);
-    
-    GA = dyn_cast<GlobalAlias>(globalModule->getNamedValue("MMTkPlanPostBoot"));
-    assert(GA && "Could not find MMTkPlanPostBoot alias");
-    F = dyn_cast<Function>(GA->getAliasee());
-    Boot = (BootType)(uintptr_t)executionEngine->getPointerToFunction(F);
-    Boot(Plan);
-    
-    GA = dyn_cast<GlobalAlias>(globalModule->getNamedValue("MMTkPlanFullBoot"));
-    assert(GA && "Could not find MMTkPlanFullBoot alias");
-    F = dyn_cast<Function>(GA->getAliasee());
-    Boot = (BootType)(uintptr_t)executionEngine->getPointerToFunction(F);
-    Boot(Plan);
-    
-    F = globalModule->getFunction("Java_org_j3_mmtk_Collection_triggerCollection__I");
-    assert(F && "Could not find external collect");
-    gc::MMTkTriggerCollection = (gc::MMTkCollectType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-
-    //===-------------------- TODO: make those virtual. -------------------===//
-    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_reportDelayedRootEdge__Lorg_vmmagic_unboxed_Address_2");
-    assert(F && "Could not find reportDelayedRootEdge from TraceLocal");
-    gc::MMTkDelayedRoot = (gc::MMTkDelayedRootType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    
-    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_processEdge__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2");
-    assert(F && "Could not find processEdge from TraceLocal");
-    gc::MMTkProcessEdge = (gc::MMTkProcessEdgeType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    
-    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_processRootEdge__Lorg_vmmagic_unboxed_Address_2Z");
-    assert(F && "Could not find processEdge from TraceLocal");
-    gc::MMTkProcessRootEdge = (gc::MMTkProcessRootEdgeType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    
-    F = globalModule->getFunction("JnJVM_org_mmtk_plan_marksweep_MSTraceLocal_isLive__Lorg_vmmagic_unboxed_ObjectReference_2");
-    assert(F && "Could not find isLive from TraceLocal");
-    gc::MMTkIsLive = (gc::MMTkIsLiveType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-   
-    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_retainForFinalize__Lorg_vmmagic_unboxed_ObjectReference_2");
-    assert(F && "Could not find isLive from TraceLocal");
-    gc::MMTkRetainForFinalize = (gc::MMTkRetainForFinalizeType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    
-    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_retainReferent__Lorg_vmmagic_unboxed_ObjectReference_2");
-    assert(F && "Could not find isLive from TraceLocal");
-    gc::MMTkRetainReferent = (gc::MMTkRetainReferentType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    
-    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_getForwardedReference__Lorg_vmmagic_unboxed_ObjectReference_2");
-    assert(F && "Could not find isLive from TraceLocal");
-    gc::MMTkGetForwardedReference = (gc::MMTkGetForwardedReferenceType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    
-    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_getForwardedReferent__Lorg_vmmagic_unboxed_ObjectReference_2");
-    assert(F && "Could not find isLive from TraceLocal");
-    gc::MMTkGetForwardedReferent = (gc::MMTkGetForwardedReferentType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    
-    F = globalModule->getFunction("JnJVM_org_mmtk_plan_TraceLocal_getForwardedFinalizable__Lorg_vmmagic_unboxed_ObjectReference_2");
-    assert(F && "Could not find isLive from TraceLocal");
-    gc::MMTkGetForwardedFinalizable = (gc::MMTkGetForwardedFinalizableType)
-      (uintptr_t)executionEngine->getPointerToFunction(F);
-    
-  }
-#endif
 }
 
 
@@ -345,35 +192,10 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   module->setTargetTriple(MvmModule::globalModule->getTargetTriple());
   LLVMContext& Context = module->getContext();
   
-#ifdef WITH_MMTK
-  if (MutatorThread::MMTkCollectorSize) {
-    // If we have found MMTk, read the gcmalloc function and set the address of
-    // global variables and functions used by gcmalloc.
+  if (dlsym(SELF_HANDLE, "MMTkPlanBoot")) {
+    // If we have found MMTk, read the gcmalloc function.
     mvm::mmtk_runtime::makeLLVMFunction(module);
-    if (MvmModule::executionEngine) {
-      for (Module::global_iterator i = module->global_begin(),
-           e = module->global_end(); i != e; ++i) {
-        if (i->isDeclaration()) {
-          GlobalVariable* GV =
-            MvmModule::globalModule->getGlobalVariable(i->getName(), true);
-          assert(GV && "GV can not be found");
-          void* ptr = MvmModule::executionEngine->getPointerToGlobal(GV);
-          MvmModule::executionEngine->updateGlobalMapping(i, ptr);
-        }
-      }
-      for (Module::iterator i = module->begin(), e = module->end();
-           i != e; ++i) {
-        if (i->isDeclaration() && !i->isIntrinsic()) {
-          Function* F =
-            MvmModule::globalModule->getFunction(i->getName());
-          assert(F && "Function can not be found");
-          void* ptr = MvmModule::executionEngine->getPointerToFunction(F);
-          MvmModule::executionEngine->updateGlobalMapping(i, ptr);
-        }
-      }
-    }
   }
-#endif
   mvm::llvm_runtime::makeLLVMModuleContents(module);
   
   
@@ -511,7 +333,6 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
 const llvm::TargetData* MvmModule::TheTargetData;
 llvm::GCStrategy* MvmModule::TheGCStrategy;
 llvm::Module *MvmModule::globalModule;
-llvm::FunctionPassManager* MvmModule::globalFunctionPasses;
 llvm::ExecutionEngine* MvmModule::executionEngine;
 mvm::LockRecursive MvmModule::protectEngine;
 mvm::BumpPtrAllocator* MvmModule::Allocator;
@@ -694,4 +515,3 @@ void JITMethodInfo::scan(void* TL, void* ip, void* addr) {
     }
   }
 }
-
