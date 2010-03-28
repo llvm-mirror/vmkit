@@ -16,7 +16,7 @@ using namespace mvm;
 static mvm::SpinLock lock;
 std::set<gc*> __InternalSet__;
 
-extern "C" void* gcmalloc(size_t sz, void* _VT) {
+extern "C" void* gcmalloc(uint32_t sz, void* _VT) {
   gc* res = 0;
   VirtualTable* VT = (VirtualTable*)_VT;
   sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
@@ -31,7 +31,7 @@ extern "C" void* gcmalloc(size_t sz, void* _VT) {
   return res;
 }
 
-extern "C" void* gcmallocUnresolved(size_t sz, VirtualTable* VT) {
+extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
   gc* res = (gc*)gcmalloc(sz, VT);
   if (VT->destructor)
     mvm::Thread::get()->MyVM->addFinalizationCandidate(res);
