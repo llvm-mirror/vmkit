@@ -16,7 +16,13 @@ ifeq ($(WITH_LLVM_GCC), 1)
 
   MODULESNAME = j3
   USEDMODULES = J3.bc Classpath.bc J3Compiler.bc Allocator.bc CommonThread.bc \
-		Mvm.bc MvmCompiler.bc $(GCLIB).bc
+		Mvm.bc MvmCompiler.bc
+
+  ifeq ($(GC_MMTK), 1)
+    USEDMODULES += FinalMMTk.bc
+  else
+    USEDMODULES += $(GCLIB).bc
+  endif
 
   ifeq ($(ISOLATE_SHARING_BUILD), 1) 
     USEDMODULES += Isolate.bc

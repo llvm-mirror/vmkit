@@ -67,7 +67,9 @@ bool LowerJavaRT::runOnModule(Module& M) {
     GlobalValue& GV = *I;
     ++I;
     if (!strncmp(GV.getName().data(), "JnJVM_java", 10) ||
-        !strncmp(GV.getName().data(), "java", 4)) {
+        !strncmp(GV.getName().data(), "java", 4) ||
+        !strncmp(GV.getName().data(), "JnJVM_gnu", 9) ||
+        !strncmp(GV.getName().data(), "gnu", 3)) {
       GV.replaceAllUsesWith(Constant::getNullValue(GV.getType()));
       GV.eraseFromParent();
     }

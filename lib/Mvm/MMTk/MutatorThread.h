@@ -24,31 +24,8 @@ public:
   /// realRoutine - The function to invoke when the thread starts.
   ///
   void (*realRoutine)(mvm::Thread*);
- 
 
-  static uint32_t MMTkMutatorSize;
-  static uint32_t MMTkCollectorSize;
-
-  typedef void (*MMTkInitType)(uintptr_t);
-  typedef void (*MMTkInitIntType)(uintptr_t, int32_t);
-  static MMTkInitType    MutatorInit;
-  static MMTkInitIntType MutatorCallInit;
-  static MMTkInitType    MutatorCallDeinit;
-  static MMTkInitType    CollectorInit;
-
-  static VirtualTable* MutatorVT;
-  static VirtualTable* CollectorVT;
-
-  static void init(Thread* _th) {
-    MutatorThread* th = (MutatorThread*)_th;
-    th->MutatorContext =
-      (uintptr_t)th->Allocator.Allocate(MMTkMutatorSize, "Mutator");
-    ((VirtualTable**)th->MutatorContext)[0] = MutatorVT;
-    MutatorInit(th->MutatorContext);
-    MutatorCallInit(th->MutatorContext, (int32_t)_th->getThreadID());
-    th->realRoutine(_th);
-    MutatorCallDeinit(th->MutatorContext);
-  }
+  static void init(Thread* _th);
 
   static MutatorThread* get() {
     return (MutatorThread*)mvm::Thread::get();

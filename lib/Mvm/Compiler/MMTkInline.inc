@@ -582,21 +582,21 @@ GlobalVariable* gvar_struct_final_object67 = new GlobalVariable(/*Module=*/ *mod
 /*isConstant=*/false,
 /*Linkage=*/GlobalValue::InternalLinkage,
 /*Initializer=*/0, // has initializer, specified below
-/*Name=*/"final object67");
+/*Name=*/"finalObject67");
 
 GlobalVariable* gvar_struct_final_object2 = new GlobalVariable(/*Module=*/ *mod, 
 /*Type=*/StructTy_40,
 /*isConstant=*/false,
 /*Linkage=*/GlobalValue::InternalLinkage,
 /*Initializer=*/0, // has initializer, specified below
-/*Name=*/"final object2");
+/*Name=*/"finalObject2");
 
 GlobalVariable* gvar_struct_final_object32 = new GlobalVariable(/*Module=*/ *mod, 
 /*Type=*/StructTy_42,
 /*isConstant=*/false,
 /*Linkage=*/GlobalValue::InternalLinkage,
 /*Initializer=*/0, // has initializer, specified below
-/*Name=*/"final object32");
+/*Name=*/"finalObject32");
 
 GlobalVariable* gvar_struct_org_mmtk_utility_DoublyLinkedList_static = new GlobalVariable(/*Module=*/ *mod, 
 /*Type=*/StructTy_45,
@@ -610,21 +610,21 @@ GlobalVariable* gvar_struct_final_object85 = new GlobalVariable(/*Module=*/ *mod
 /*isConstant=*/false,
 /*Linkage=*/GlobalValue::InternalLinkage,
 /*Initializer=*/0, // has initializer, specified below
-/*Name=*/"final object85");
+/*Name=*/"finalObject85");
 
 GlobalVariable* gvar_struct_final_object101 = new GlobalVariable(/*Module=*/ *mod, 
 /*Type=*/StructTy_42,
 /*isConstant=*/false,
 /*Linkage=*/GlobalValue::InternalLinkage,
 /*Initializer=*/0, // has initializer, specified below
-/*Name=*/"final object101");
+/*Name=*/"finalObject101");
 
 GlobalVariable* gvar_struct_final_object122 = new GlobalVariable(/*Module=*/ *mod, 
 /*Type=*/StructTy_36,
 /*isConstant=*/false,
 /*Linkage=*/GlobalValue::InternalLinkage,
 /*Initializer=*/0, // has initializer, specified below
-/*Name=*/"final object122");
+/*Name=*/"finalObject122");
 
 // Constant Definitions
 ConstantInt* const_int32_50 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("1"), 10));

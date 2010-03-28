@@ -7,94 +7,108 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 #include "MvmGC.h"
-#include "MutatorThread.h"
 
 #include <set>
 
 using namespace mvm;
 
-gc::MMTkAllocType           gc::MMTkGCAllocator = 0;
-gc::MMTkPostAllocType       gc::MMTkGCPostAllocator = 0;
-gc::MMTkCheckAllocatorType  gc::MMTkCheckAllocator = 0;
-gc::MMTkDelayedRootType     gc::MMTkDelayedRoot = 0;
-gc::MMTkProcessEdgeType     gc::MMTkProcessEdge = 0;
-gc::MMTkProcessRootEdgeType gc::MMTkProcessRootEdge = 0;
-gc::MMTkIsLiveType          gc::MMTkIsLive = 0;
-
-gc::MMTkRetainReferentType          gc::MMTkRetainReferent = 0;
-gc::MMTkRetainForFinalizeType       gc::MMTkRetainForFinalize = 0;
-gc::MMTkGetForwardedReferentType    gc::MMTkGetForwardedReferent = 0;
-gc::MMTkGetForwardedReferenceType   gc::MMTkGetForwardedReference = 0;
-gc::MMTkGetForwardedFinalizableType gc::MMTkGetForwardedFinalizable = 0;
-gc::MMTkCollectType                 gc::MMTkTriggerCollection = 0;
-
-uintptr_t Collector::TraceLocal = 0;
-
-  
 static mvm::SpinLock lock;
-
-
 std::set<gc*> __InternalSet__;
 
-extern "C" int internalCheckAllocator(uintptr_t Mutator, int32_t sz,
-                                      int32_t align, int32_t alloc) {
-  return 0;
-}
-
-extern "C" void internalPostMalloc(uintptr_t Mutator, uintptr_t ref,
-                                   uintptr_t typeref, int32_t bytes,
-                                   int32_t allocator) {
-}
-
-extern "C" gc* internalMalloc(uintptr_t Mutator, int32_t sz, int32_t align,
-                              int32_t offset, int32_t allocator,
-                              int32_t site) {
-  
-  
-  gc* res = (gc*)malloc(sz);
+extern "C" void* gcmalloc(size_t sz, void* _VT) {
+  gc* res = 0;
+  VirtualTable* VT = (VirtualTable*)_VT;
+  sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
+  res = (gc*)malloc(sz);
   memset(res, 0, sz);
   
   lock.acquire();
   __InternalSet__.insert(res);
   lock.release();
   
+  res->setVirtualTable(VT);
   return res;
 }
 
+extern "C" void* gcmallocUnresolved(size_t sz, VirtualTable* VT) {
+  gc* res = (gc*)gcmalloc(sz, VT);
+  if (VT->destructor)
+    mvm::Thread::get()->MyVM->addFinalizationCandidate(res);
+  return res;
+}
+
+extern "C" void addFinalizationCandidate(gc* obj) {
+  mvm::Thread::get()->MyVM->addFinalizationCandidate(obj);
+}
+
+extern "C" void* AllocateMagicArray(int32_t sz, void* length) {
+  gc* res = (gc*)malloc(sz);
+  memset(res, 0, sz);
+  ((void**)res)[0] = length;
+  return res;
+}
 
 void* Collector::begOf(gc* obj) {
-  if (gc::MMTkGCAllocator == internalMalloc) {
-    lock.acquire();
-    std::set<gc*>::iterator I = __InternalSet__.find(obj);
-    std::set<gc*>::iterator E = __InternalSet__.end();
-    lock.release();
+  lock.acquire();
+  std::set<gc*>::iterator I = __InternalSet__.find(obj);
+  std::set<gc*>::iterator E = __InternalSet__.end();
+  lock.release();
     
-    if (I != E) return obj;
-    return 0;
-  } else {
-    abort();
-  }
+  if (I != E) return obj;
+  return 0;
 }
 
-extern "C" void fakeInit(uintptr_t) {
+void MutatorThread::init(Thread* _th) {
+  MutatorThread* th = (MutatorThread*)_th;
+  th->realRoutine(_th);
 }
 
-extern "C" void fakeInitInt(uintptr_t, int32_t) {
+bool Collector::isLive(gc* ptr) {
+  abort();
+  return false;
+}
+
+void Collector::scanObject(void** ptr) {
+  abort();
+}
+ 
+void Collector::markAndTrace(void* source, void* ptr) {
+  abort();
+}
+  
+void Collector::markAndTraceRoot(void* ptr) {
+  abort();
+}
+
+gc* Collector::retainForFinalize(gc* val) {
+  abort();
+  return NULL;
+}
+  
+gc* Collector::retainReferent(gc* val) {
+  abort();
+  return NULL;
+}
+  
+gc* Collector::getForwardedFinalizable(gc* val) {
+  abort();
+  return NULL;
+}
+  
+gc* Collector::getForwardedReference(gc* val) {
+  abort();
+  return NULL;
+}
+  
+gc* Collector::getForwardedReferent(gc* val) {
+  abort();
+  return NULL;
+}
+
+void Collector::collect() {
+  // Do nothing.
 }
 
 void Collector::initialise() {
-  if (!gc::MMTkGCAllocator) {
-    gc::MMTkGCAllocator = internalMalloc;
-    gc::MMTkGCPostAllocator = internalPostMalloc;
-    gc::MMTkCheckAllocator = internalCheckAllocator;
-    MutatorThread::MMTkMutatorSize = 0;
-    MutatorThread::MMTkCollectorSize = 0;
-    MutatorThread::MutatorInit = fakeInit;
-    MutatorThread::CollectorInit = fakeInit;
-    MutatorThread::MutatorCallDeinit = fakeInit;
-    MutatorThread::MutatorCallInit = fakeInitInt;
-  }
 }
-

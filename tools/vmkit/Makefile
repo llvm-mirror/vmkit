@@ -29,7 +29,13 @@ ifeq ($(WITH_LLVM_GCC), 1)
     USEDMODULES += N3.bc PNetLib.bc
   endif
 
-  USEDMODULES += Allocator.bc CommonThread.bc Mvm.bc MvmCompiler.bc $(GCLIB).bc
+  USEDMODULES += Allocator.bc CommonThread.bc Mvm.bc MvmCompiler.bc
+
+  ifeq ($(GC_MMTK), 1)
+    USEDMODULES += FinalMMTk.bc
+  else
+    USEDMODULES += $(GCLIB).bc
+  endif
 
   BUILT_SOURCES = vmkit.s
   SOURCES = vmkit.s $(notdir $(wildcard $(PROJ_SRC_DIR)/*.cpp))

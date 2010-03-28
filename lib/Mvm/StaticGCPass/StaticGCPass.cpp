@@ -40,24 +40,27 @@ namespace {
 bool StaticGCPass::runOnModule(Module& M) {
 
   Function* F = M.getFunction("__llvm_gcroot");
-  if (F) {
-    Function *gcrootFun = Intrinsic::getDeclaration(&M, Intrinsic::gcroot);
+  Function *gcrootFun = Intrinsic::getDeclaration(&M, Intrinsic::gcroot);
 
+  if (F) {
     F->replaceAllUsesWith(gcrootFun);
     F->eraseFromParent();
-
-    for (Value::use_iterator I = gcrootFun->use_begin(),
-         E = gcrootFun->use_end(); I != E; ++I) {
-      if (Instruction* II = dyn_cast<Instruction>(I)) {
-        Function* F = II->getParent()->getParent();
-        if (!F->hasGC()) F->setGC("ocaml");
-      }
-    }
-
-    return true;
   }
 
-  return false;
+  for (Value::use_iterator I = gcrootFun->use_begin(),
+       E = gcrootFun->use_end(); I != E; ++I) {
+    if (Instruction* II = dyn_cast<Instruction>(I)) {
+      Function* F = II->getParent()->getParent();
+      if (F->hasGC()) F->clearGC();
+      F->setGC("ocaml");
+    }
+  }
+
+  for (Module::iterator I = M.begin(), E = M.end(); I != E; ++I) {
+    if (I->hasGC() && !strcmp(I->getGC(), "vmkit")) I->setGC("ocaml");
+  }
+
+  return true;
 }
 
 }
