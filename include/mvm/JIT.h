@@ -197,8 +197,6 @@ public:
    static void protectIR();
    static void unprotectIR();
 
-   static void copyDefinitions(llvm::Module* Dst, llvm::Module* Src);
-
    static void addCommandLinePasses(llvm::FunctionPassManager* PM);
 
    static const char* getHostTriple();
