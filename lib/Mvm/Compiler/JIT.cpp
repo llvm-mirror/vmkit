@@ -156,7 +156,7 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   llvm::cl::ParseCommandLineOptions(2, commands);
 
   if (!M) {
-    globalModule = new Module("bootstrap module", getGlobalContext());
+    globalModule = new Module("bootstrap module", *(new LLVMContext()));
 
     InitializeNativeTarget();
 
@@ -326,8 +326,6 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   assert(AllocateUnresolvedFunction && "No allocateUnresolved function");
   AddFinalizationCandidate = module->getFunction("addFinalizationCandidate");
   assert(AddFinalizationCandidate && "No addFinalizationCandidate function");
-  
-  MvmModule::copyDefinitions(module, MvmModule::globalModule); 
 }
 
 const llvm::TargetData* MvmModule::TheTargetData;
@@ -473,30 +471,6 @@ void MvmModule::protectIR() {
 void MvmModule::unprotectIR() {
   if (executionEngine) {
     protectEngine.unlock();
-  }
-}
-
-
-void MvmModule::copyDefinitions(Module* Dst, Module* Src) {
-  Function* SF = Src->getFunction("gcmalloc");
-  Function* DF = Dst->getFunction("gcmalloc");
-  if (SF && DF && executionEngine && !SF->isDeclaration()) {
-    void* ptr = executionEngine->getPointerToFunction(SF);
-    executionEngine->updateGlobalMapping(DF, ptr);
-  }
-  
-  SF = Src->getFunction("gcmallocUnresolved");
-  DF = Dst->getFunction("gcmallocUnresolved");
-  if (SF && DF && executionEngine && !SF->isDeclaration()) {
-    void* ptr = executionEngine->getPointerToFunction(SF);
-    executionEngine->updateGlobalMapping(DF, ptr);
-  }
-  
-  SF = Src->getFunction("addFinalizationCandidate");
-  DF = Dst->getFunction("addFinalizationCandidate");
-  if (SF && DF && executionEngine && !SF->isDeclaration()) {
-    void* ptr = executionEngine->getPointerToFunction(SF);
-    executionEngine->updateGlobalMapping(DF, ptr);
   }
 }
 
