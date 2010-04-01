@@ -28,7 +28,7 @@
 #define CALL_TRACER tracer()
 
 
-extern "C" void* gcmallocUnresolved(size_t sz, VirtualTable* VT);
+extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT);
 
 class gc : public gcRoot {
 public:
