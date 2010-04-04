@@ -63,6 +63,12 @@ struct Opinfo {
 };
 
 
+struct LineInfo {
+  uint16 lineNumber;
+  uint16 ctpIndex;
+  uint16 bytecodeIndex;
+};
+
 /// JavaJIT - The compilation engine of J3. Parses the bycode and returns
 /// its LLVM representation.
 ///
@@ -162,6 +168,9 @@ private:
 
   /// CreateLocation - Create debug information for a call.
   llvm::MDNode* CreateLocation();
+
+  // codeInfo - List of LineInfo for this method.
+  std::vector<LineInfo> codeInfo;
 
 //===--------------------------- Inline support ---------------------------===//
 

@@ -523,6 +523,16 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
   
+  if (codeInfo.size()) { 
+    mvm::BumpPtrAllocator& Alloc = compilingClass->classLoader->allocator;
+    compilingMethod->codeInfo =
+      new(Alloc, "CodeLineInfo") CodeLineInfo[codeInfo.size()];
+    for (uint32 i = 0; i < codeInfo.size(); i++) {
+      compilingMethod->codeInfo[i].lineNumber = codeInfo[i].lineNumber;
+      compilingMethod->codeInfo[i].ctpIndex = codeInfo[i].ctpIndex;
+      compilingMethod->codeInfo[i].bytecodeIndex = codeInfo[i].bytecodeIndex;
+    }
+  }
  
   return llvmFunction;
 }
@@ -1324,7 +1334,7 @@ llvm::Function* JavaJIT::javaCompile() {
   
 #ifndef DWARF_EXCEPTIONS
   if (codeLen < 5 && !callsStackWalker && !TheCompiler->isStaticCompiling())
-    compilingMethod->canBeInlined = true;
+    compilingMethod->canBeInlined = false;
 #endif
   
   Attribut* annotationsAtt =
@@ -1343,6 +1353,15 @@ llvm::Function* JavaJIT::javaCompile() {
       } else if (name->equals(TheCompiler->NoInlinePragma)) {
         llvmFunction->addFnAttr(Attribute::NoInline);
       }
+    }
+  }
+ 
+  if (codeInfo.size()) { 
+    compilingMethod->codeInfo = new CodeLineInfo[codeInfo.size()];
+    for (uint32 i = 0; i < codeInfo.size(); i++) {
+      compilingMethod->codeInfo[i].lineNumber = codeInfo[i].lineNumber;
+      compilingMethod->codeInfo[i].ctpIndex = codeInfo[i].ctpIndex;
+      compilingMethod->codeInfo[i].bytecodeIndex = codeInfo[i].bytecodeIndex;
     }
   }
 
@@ -2590,10 +2609,10 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
 }
 
 MDNode* JavaJIT::CreateLocation() {
-  uint32_t first = currentLineNumber | (currentBytecodeIndex << 16);
-  uint32_t second = currentCtpIndex | (callNumber << 16);
+  LineInfo LI = { currentLineNumber, currentCtpIndex, currentBytecodeIndex };
+  codeInfo.push_back(LI);
   DILocation Location = TheCompiler->getDebugFactory()->CreateLocation(
-      first, second, DIScope(DbgSubprogram));
+      callNumber, 0, DIScope(DbgSubprogram));
   callNumber++;
   return Location.getNode();
 }

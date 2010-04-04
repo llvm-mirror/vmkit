@@ -101,17 +101,26 @@ public:
       uint32 infoLength = Details.LineStarts.size();
       currentCompiledMethod->codeInfoLength = infoLength;
       if (infoLength) {
-        currentCompiledMethod->codeInfo =
+        CodeLineInfo* infoTable =
           new(Alloc, "CodeLineInfo") CodeLineInfo[infoLength];
         for (uint32 i = 0; i < infoLength; ++i) {
-          DILocation DLT = Details.MF->getDILocation(Details.LineStarts[i].Loc);
-          uint32_t first = DLT.getLineNumber();
-          uint32_t second = DLT.getColumnNumber();
-          currentCompiledMethod->codeInfo[i].address =
-            Details.LineStarts[i].Address;
-          currentCompiledMethod->codeInfo[i].lineNumber = first & 0xFFFF;
-          currentCompiledMethod->codeInfo[i].bytecodeIndex = first >> 16;
-          currentCompiledMethod->codeInfo[i].ctpIndex = second & 0xFFFF;
+          DebugLoc DL = Details.LineStarts[i].Loc;
+          uint32_t first = DL.getLine();
+          uint32_t second = DL.getCol();
+          assert(second == 0 && "Wrong column number");
+          infoTable[i].address = Details.LineStarts[i].Address;
+          infoTable[i].lineNumber =
+            currentCompiledMethod->codeInfo[first].lineNumber;
+          infoTable[i].bytecodeIndex =
+            currentCompiledMethod->codeInfo[first].bytecodeIndex;
+          infoTable[i].ctpIndex =
+            currentCompiledMethod->codeInfo[first].ctpIndex;
+        }
+        delete[] currentCompiledMethod->codeInfo;
+        currentCompiledMethod->codeInfo = infoTable;
+      } else {
+        if (currentCompiledMethod->codeInfo) {
+          delete[] currentCompiledMethod->codeInfo;
         }
       }
     }

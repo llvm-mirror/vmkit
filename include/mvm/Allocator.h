@@ -58,7 +58,7 @@ public:
                      const char* name) {
     return allocator.Allocate(sz, name);
   }
-
+  
   void operator delete(void* ptr) {
     free(ptr);
   }
@@ -66,6 +66,14 @@ public:
   void* operator new [](size_t sz, BumpPtrAllocator& allocator,
                         const char* name) {
     return allocator.Allocate(sz, name);
+  }
+  
+  void* operator new[](size_t sz) {
+    return malloc(sz);
+  }
+  
+  void operator delete[](void* ptr) {
+    return free(ptr);
   }
 };
 
