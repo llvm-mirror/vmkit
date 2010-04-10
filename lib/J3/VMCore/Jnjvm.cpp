@@ -1252,8 +1252,7 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
   }
 
   if (exc != NULL) {
-    assert(exc && "No Java exception");
-    fprintf(stderr, "Exception %s while bootstraping VM",
+    fprintf(stderr, "Exception %s while bootstrapping VM.",
         UTF8Buffer(exc->getClass()->name).cString());
   } else {
 #ifdef SERVICE
