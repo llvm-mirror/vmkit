@@ -1235,41 +1235,51 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
   JavaString* str = 0;
   JavaObject* instrumenter = 0;
   ArrayObject* args = 0;
+  JavaObject* exc = 0;
 
   llvm_gcroot(str, 0);
   llvm_gcroot(instrumenter, 0);
   llvm_gcroot(args, 0);
+  llvm_gcroot(exc, 0);
 
   Jnjvm* vm = thread->getJVM();
   vm->mainThread = thread;
 
-  vm->loadBootstrap();
+  try {
+    vm->loadBootstrap();
+  } catch (...) {
+    exc = JavaThread::get()->pendingException;
+  }
 
+  if (exc != NULL) {
+    assert(exc && "No Java exception");
+    fprintf(stderr, "Exception %s while bootstraping VM",
+        UTF8Buffer(exc->getClass()->name).cString());
+  } else {
 #ifdef SERVICE
-  thread->ServiceException = vm->upcalls->newThrowable->doNew(vm);
+    thread->ServiceException = vm->upcalls->newThrowable->doNew(vm);
 #endif
 
-  ClArgumentsInfo& info = vm->argumentsInfo;
+    ClArgumentsInfo& info = vm->argumentsInfo;
   
-  if (info.agents.size()) {
-    assert(0 && "implement me");
-    instrumenter = 0;//createInstrumenter();
-    for (std::vector< std::pair<char*, char*> >::iterator i = 
-                                                info.agents.begin(),
-            e = info.agents.end(); i!= e; ++i) {
-      str = vm->asciizToStr(i->second);
-      vm->executePremain(i->first, str, instrumenter);
+    if (info.agents.size()) {
+      assert(0 && "implement me");
+      instrumenter = 0;//createInstrumenter();
+      for (std::vector< std::pair<char*, char*> >::iterator i = 
+           info.agents.begin(), e = info.agents.end(); i!= e; ++i) {
+        str = vm->asciizToStr(i->second);
+        vm->executePremain(i->first, str, instrumenter);
+      }
     }
-  }
     
-  UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfString;
-  args = (ArrayObject*)array->doNew(info.argc - 2, vm);
-  for (int i = 2; i < info.argc; ++i) {
-    args->elements[i - 2] = (JavaObject*)vm->asciizToStr(info.argv[i]);
-  }
+    UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfString;
+    args = (ArrayObject*)array->doNew(info.argc - 2, vm);
+    for (int i = 2; i < info.argc; ++i) {
+      args->elements[i - 2] = (JavaObject*)vm->asciizToStr(info.argv[i]);
+    }
 
-  vm->executeClass(info.className, args);
-  
+    vm->executeClass(info.className, args);
+  }
   vm->threadSystem.nonDaemonLock.lock();
   --(vm->threadSystem.nonDaemonThreads);
   if (vm->threadSystem.nonDaemonThreads == 0)
