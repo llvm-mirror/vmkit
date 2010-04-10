@@ -65,14 +65,28 @@ VM, you can skip the GNU Classpath part):</p>
     <li><tt>cd classpath-0.97.2</tt></li>
     <li><tt>./configure --disable-plugin --disable-examples --disable-Werror; make</tt></li>
     <li><tt>cd lib</li></tt>
-    <li><tt>ln -s ../native/jni/gtk-peer/.libs/libgtkpeer.so;</li></tt>
-    <li><tt>ln -s ../native/jni/gconf-peer/.libs/libgconfpeer.so;</li></tt>
-    <li><tt>ln -s ../native/jni/java-io/.libs/libjavaio.so;</li></tt>
-    <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalangreflect.so;</li></tt>
-    <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalang.so;</li></tt>
-    <li><tt>ln -s ../native/jni/java-net/.libs/libjavanet.so;</li></tt>
-    <li><tt>ln -s ../native/jni/java-nio/.libs/libjavanio.so;</li></tt>
-    <li><tt>ln -s ../native/jni/java-util/.libs/libjavautil.so;</li></tt>
+    <li><tt>If you are running on Linux:</li></tt>
+    <ul>
+      <li><tt>ln -s ../native/jni/gtk-peer/.libs/libgtkpeer.so;</li></tt>
+      <li><tt>ln -s ../native/jni/gconf-peer/.libs/libgconfpeer.so;</li></tt>
+      <li><tt>ln -s ../native/jni/java-io/.libs/libjavaio.so;</li></tt>
+      <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalangreflect.so;</li></tt>
+      <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalang.so;</li></tt>
+      <li><tt>ln -s ../native/jni/java-net/.libs/libjavanet.so;</li></tt>
+      <li><tt>ln -s ../native/jni/java-nio/.libs/libjavanio.so;</li></tt>
+      <li><tt>ln -s ../native/jni/java-util/.libs/libjavautil.so;</li></tt>
+    </ul>
+    <li><tt>If you are running on MacOS:</li></tt>
+    <ul>
+      <li><tt>ln -s ../native/jni/gtk-peer/.libs/libgtkpeer.dylib;</li></tt>
+      <li><tt>ln -s ../native/jni/gconf-peer/.libs/libgconfpeer.dylib;</li></tt>
+      <li><tt>ln -s ../native/jni/java-io/.libs/libjavaio.dylib;</li></tt>
+      <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalangreflect.dylib;</li></tt>
+      <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalang.dylib;</li></tt>
+      <li><tt>ln -s ../native/jni/java-net/.libs/libjavanet.dylib;</li></tt>
+      <li><tt>ln -s ../native/jni/java-nio/.libs/libjavanio.dylib;</li></tt>
+      <li><tt>ln -s ../native/jni/java-util/.libs/libjavautil.dylib;</li></tt>
+    </ul>
   </ul>
   
   <li><a href="http://download.savannah.gnu.org/releases/dotgnu-pnet/pnet-0.8.0.tar.gz">Download
