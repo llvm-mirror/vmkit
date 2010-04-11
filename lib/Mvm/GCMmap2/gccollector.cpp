@@ -29,6 +29,8 @@ bool Collector::_enable_auto;
 bool Collector::_enable_maybe;
 bool Collector::_enable_collection;
 
+int Collector::verbose = 0;
+
 void Collector::do_collect() {
   GCChunkNode  *cur;
 #ifdef SERVICE

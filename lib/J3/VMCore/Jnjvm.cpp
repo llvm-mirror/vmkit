@@ -851,19 +851,14 @@ void ClArgumentsInfo::nyi() {
 }
 
 void ClArgumentsInfo::printVersion() {
-  fprintf(stdout, "JnJVM for Java 1.1 -- 1.5\n");
+  fprintf(stdout, "J3 for Java 1.1 -- 1.5\n");
 }
 
 void ClArgumentsInfo::printInformation() {
   fprintf(stdout, 
-  "Usage: java [-options] class [args...] (to execute a class)\n"
-   "or  java [-options] -jar jarfile [args...]\n"
+  "Usage: j3 [-options] class [args...] (to execute a class)\n"
+   "or  j3 [-options] -jar jarfile [args...]\n"
            "(to execute a jar file) where options include:\n"
-    "-client       to select the \"client\" VM\n"
-    "-server       to select the \"server\" VM\n"
-    "-hotspot      is a synonym for the \"client\" VM  [deprecated]\n"
-    "              The default VM is client.\n"
-    "\n"
     "-cp <class search path of directories and zip/jar files>\n"
     "-classpath <class search path of directories and zip/jar files>\n"
     "              A : separated list of directories, JAR archives,\n"
@@ -906,11 +901,7 @@ void ClArgumentsInfo::readArgs(Jnjvm* vm) {
   if (i == argc) printInformation();
   while (i < argc) {
     char* cur = argv[i];
-    if (!(strcmp(cur, "-client"))) {
-      nyi();
-    } else if (!(strcmp(cur, "-server"))) {
-      nyi();
-    } else if (!(strcmp(cur, "-classpath"))) {
+    if (!(strcmp(cur, "-classpath"))) {
       ++i;
       if (i == argc) printInformation();
       else vm->setClasspath(argv[i]);
@@ -918,8 +909,6 @@ void ClArgumentsInfo::readArgs(Jnjvm* vm) {
       ++i;
       if (i == argc) printInformation();
       else vm->setClasspath(argv[i]);
-    } else if (!(strcmp(cur, "-debug"))) {
-      nyi();
     } else if (!(strncmp(cur, "-D", 2))) {
       uint32 len = strlen(cur);
       if (len == 2) {
@@ -987,7 +976,7 @@ void ClArgumentsInfo::readArgs(Jnjvm* vm) {
     } else if (!(strcmp(cur, "-verbosegc"))) {
       nyi();
     } else if (!(strcmp(cur, "-verbose:gc"))) {
-      nyi();
+      mvm::Collector::verbose = 1;
     } else if (!(strcmp(cur, "-verbose:jni"))) {
       nyi();
     } else if (!(strcmp(cur, "-version"))) {

@@ -66,7 +66,7 @@ class Collector {
   static bool _enable_maybe;           /* Collection in maybeCollect()? */
   static bool _enable_collection;      /* collection authorized? */
   static int  status;
-  
+ 
   
   enum { stat_collect, stat_alloc, stat_broken };
 
@@ -90,6 +90,8 @@ class Collector {
 
 public:
   static void (*internMemoryError)(unsigned int);
+
+  static int verbose; 
   
   static bool isLive(void* ptr) {
     GCChunkNode *node = o2node(ptr);

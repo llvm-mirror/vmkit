@@ -65,6 +65,7 @@ namespace mvm {
   
 class Collector {
 public:
+  static int verbose;
 
   static uintptr_t TraceLocal;
 

@@ -60,6 +60,7 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (JavaObject* C,
 
     // Record the time to GC.
     int64_t elapsedTime = Java_org_j3_mmtk_Statistics_nanoTime__() - startTime;
+
     JnJVM_org_mmtk_utility_heap_HeapGrowthManager_recordGCTime__D(((double)elapsedTime) / 1000000);
 
     // 2 means called by System.gc();
@@ -69,6 +70,13 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (JavaObject* C,
     JnJVM_org_mmtk_utility_heap_HeapGrowthManager_reset__();
 
     JnJVM_org_mmtk_plan_Plan_collectionComplete__();
+    
+    if (mvm::Collector::verbose > 0) {
+      static int collectionNum = 1;
+      if (why == 2) fprintf(stderr, "[Forced] ");
+      fprintf(stderr, "Collection %d finished in %lld ms.\n", collectionNum++,
+              elapsedTime / 1000000);
+    }
 
     th->MyVM->rendezvous.finishRV();
   

@@ -18,6 +18,7 @@
 using namespace mvm;
 
 uintptr_t Collector::TraceLocal = 0;
+int Collector::verbose = 0;
 
 extern "C" void* JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII(uintptr_t Mutator, int32_t sz, int32_t align, int32_t offset, int32_t allocator, int32_t site) __attribute__((always_inline));
 extern "C" int32_t JnJVM_org_mmtk_plan_MutatorContext_checkAllocator__III(uintptr_t Mutator, int32_t bytes, int32_t align, int32_t allocator) __attribute__((always_inline));

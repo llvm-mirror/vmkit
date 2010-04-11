@@ -17,6 +17,7 @@ using namespace mvm;
 
 static mvm::SpinLock lock;
 std::set<gc*> __InternalSet__;
+int Collector::verbose = 0;
 
 extern "C" void* gcmalloc(uint32_t sz, void* _VT) {
   gc* res = 0;
