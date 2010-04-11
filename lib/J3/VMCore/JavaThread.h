@@ -30,10 +30,10 @@ class Jnjvm;
 
 #define BEGIN_NATIVE_EXCEPTION(level) \
   JavaThread* __th = JavaThread::get(); \
-  try {
+  TRY {
 
 #define END_NATIVE_EXCEPTION \
-  } catch(...) { \
+  } CATCH { \
     __th->throwFromNative(); \
   } \
 
@@ -43,10 +43,10 @@ class Jnjvm;
   th->leaveUncooperativeCode(); \
   mvm::KnownFrame Frame; \
   th->startKnownFrame(Frame); \
-  try {
+  TRY {
 
 #define END_JNI_EXCEPTION \
-  } catch(...) { \
+  } CATCH { \
     th->throwFromJNI(SP); \
   }
 

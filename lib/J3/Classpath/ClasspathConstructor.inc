@@ -117,9 +117,9 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
       }
       
       JavaThread* th = JavaThread::get();
-      try {
+      TRY {
         meth->invokeIntSpecialBuf(vm, cl, res, buf);
-      } catch(...) {
+      } CATCH {
         excp = th->getJavaException();
         if (excp->getClass()->isAssignableFrom(vm->upcalls->newException)) {
           th->clearException();
@@ -130,6 +130,7 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
           // If it's an error, throw it again.
           th->throwPendingException();
         }
+        return NULL;
       }
     
     } else {

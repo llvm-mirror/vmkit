@@ -145,15 +145,16 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //    the initializing the superclass.
     UserClass* super = getSuper();
     if (super) {
-      try {
+      TRY {
         super->initialiseClass(vm);
-      } catch(...) {
+      } CATCH {
         acquire();
         setErroneous();
         setOwnerClass(0);
         broadcastClass();
         release();
         self->throwPendingException();
+        return;
       }
     }
  
@@ -192,9 +193,9 @@ void UserClass::initialiseClass(Jnjvm* vm) {
                                              true, false, 0);
 
     if (meth) {
-      try{
+      TRY {
         meth->invokeIntStatic(vm, cl);
-      } catch(...) {
+      } CATCH {
         exc = self->getJavaException();
         assert(exc && "no exception?");
         self->clearException();
@@ -247,6 +248,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     broadcastClass();
     release();
     self->throwException(exc);
+    return;
   }
 }
       
@@ -1149,8 +1151,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
   llvm_gcroot(obj, 0);
   llvm_gcroot(group, 0);
 
-  try {
-    
+  TRY {
     // First try to see if we are a self-contained executable.
     UserClass* cl = appClassLoader->loadClassFromSelf(this, className);
     
@@ -1168,7 +1169,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
     JavaMethod* method = cl->lookupMethod(funcName, funcSign, true, true, 0);
   
     method->invokeIntStatic(this, method->classDef, &args);
-  }catch(...) {
+  } CATCH {
   }
 
   exc = JavaThread::get()->pendingException;
@@ -1177,10 +1178,10 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
     th->clearException();
     obj = th->currentThread();
     group = upcalls->group->getObjectField(obj);
-    try{
+    TRY {
       upcalls->uncaughtException->invokeIntSpecial(this, upcalls->threadGroup,
                                                    group, &obj, &exc);
-    }catch(...) {
+    } CATCH {
       fprintf(stderr, "Exception in thread \"main\": "
                       "Can not print stack trace.\n");
     }
@@ -1190,7 +1191,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
 void Jnjvm::executePremain(const char* className, JavaString* args,
                              JavaObject* instrumenter) {
   llvm_gcroot(instrumenter, 0);
-  try {
+  TRY {
     const UTF8* name = appClassLoader->asciizConstructUTF8(className);
     UserClass* cl = (UserClass*)appClassLoader->loadName(name, true, true);
     cl->initialiseClass(this);
@@ -1201,9 +1202,7 @@ void Jnjvm::executePremain(const char* className, JavaString* args,
     JavaMethod* method = cl->lookupMethod(funcName, funcSign, true, true, 0);
   
     method->invokeIntStatic(this, method->classDef, &args, &instrumenter);
-  } catch(...) {
-    JavaThread::get()->clearException();
-  }
+  } IGNORE;
 }
 
 void Jnjvm::waitForExit() { 
@@ -1234,9 +1233,9 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
   Jnjvm* vm = thread->getJVM();
   vm->mainThread = thread;
 
-  try {
+  TRY {
     vm->loadBootstrap();
-  } catch (...) {
+  } CATCH {
     exc = JavaThread::get()->pendingException;
   }
 

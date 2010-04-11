@@ -82,7 +82,7 @@ void VirtualMachine::finalizerStart(mvm::Thread* th) {
       vm->FinalizationQueueLock.release();
       if (!res) break;
 
-      try {
+      TRY {
         VirtualTable* VT = res->getVirtualTable();
         if (VT->operatorDelete) {
           destructor_t dest = (destructor_t)VT->destructor;
@@ -90,8 +90,7 @@ void VirtualMachine::finalizerStart(mvm::Thread* th) {
         } else {
           vm->invokeFinalizer(res);
         }
-      } catch(...) {
-      }
+      } IGNORE;
       res = 0;
       th->clearException();
     }
@@ -118,10 +117,9 @@ void VirtualMachine::enqueueStart(mvm::Thread* th) {
       vm->ToEnqueueLock.release();
       if (!res) break;
 
-      try {
+      TRY {
         vm->enqueueReference(res);
-      } catch(...) {
-      }
+      } IGNORE;
       res = 0;
       th->clearException();
     }

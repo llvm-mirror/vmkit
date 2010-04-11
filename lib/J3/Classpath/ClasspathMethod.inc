@@ -152,7 +152,7 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
     JavaThread* th = JavaThread::get();
 
 #define RUN_METH(TYPE, VAR) \
-    try{ \
+    TRY { \
       if (isVirtual(meth->access)) { \
         if (isPublic(meth->access) && !isFinal(meth->access) && \
             !isFinal(meth->classDef->access)) { \
@@ -163,7 +163,7 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       } else { \
         VAR = meth->invoke##TYPE##StaticBuf(vm, cl, buf); \
       } \
-    } catch(...) { \
+    } CATCH { \
       exc = th->getJavaException(); \
       if (exc->getClass()->isAssignableFrom(vm->upcalls->newException)) { \
         th->clearException(); \
@@ -171,6 +171,7 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       } else { \
         th->throwPendingException(); \
       } \
+      return NULL; \
     } \
     
     Typedef* retType = sign->getReturnType();
@@ -225,7 +226,8 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       RUN_METH(JavaObject, res);
     } 
   } else {
-    vm->illegalArgumentException("wrong number of arguments"); 
+    vm->illegalArgumentException("wrong number of arguments");
+    return NULL;
   }
 
   return res;

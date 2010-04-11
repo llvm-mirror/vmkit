@@ -16,6 +16,10 @@
 
 #include "types.h"
 
+#define TRY try
+#define CATCH catch(...)
+#define IGNORE catch(...) { mvm::Thread::get()->clearException(); }
+
 namespace mvm {
 
 class MethodInfo;

@@ -893,9 +893,9 @@ void Class::resolveClass() {
       setOwnerClass(JavaThread::get());
       
       JavaObject* exc = 0;
-      try {
+      TRY {
         readClass();
-      } catch (...) {
+      } CATCH {
         exc = JavaThread::get()->pendingException;
         JavaThread::get()->clearException();
       }
@@ -910,9 +910,9 @@ void Class::resolveClass() {
  
       release();
 
-      try {
+      TRY {
         loadParents();
-      } catch (...) {
+      } CATCH {
         setInitializationState(loaded);
         exc = JavaThread::get()->pendingException;
         JavaThread::get()->clearException();
