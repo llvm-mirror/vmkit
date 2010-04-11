@@ -108,12 +108,22 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   JavaArraySizeOffsetConstant = constantOne;
   JavaObjectLockOffsetConstant = constantOne;
   JavaObjectVTOffsetConstant = constantZero;
-  OffsetClassInVTConstant = constantThree;
-  OffsetDepthInVTConstant = constantFour;
-  OffsetDisplayInVTConstant = constantSeven;
+
+  OffsetClassInVTConstant =
+    ConstantInt::get(Type::getInt32Ty(Context),
+                     JavaVirtualTable::getClassIndex());
+  OffsetDepthInVTConstant =
+    ConstantInt::get(Type::getInt32Ty(Context),
+                     JavaVirtualTable::getDepthIndex());
+  OffsetDisplayInVTConstant =
+    ConstantInt::get(Type::getInt32Ty(Context),
+                     JavaVirtualTable::getDisplayIndex());
   OffsetBaseClassVTInVTConstant =
-    ConstantInt::get(Type::getInt32Ty(Context), 17);
-  OffsetIMTInVTConstant = ConstantInt::get(Type::getInt32Ty(Context), 18);
+    ConstantInt::get(Type::getInt32Ty(Context),
+                     JavaVirtualTable::getBaseClassIndex());
+  OffsetIMTInVTConstant =
+    ConstantInt::get(Type::getInt32Ty(Context),
+                     JavaVirtualTable::getIMTIndex());
   
   OffsetAccessInCommonClassConstant = constantOne;
   IsArrayConstant = ConstantInt::get(Type::getInt16Ty(Context),

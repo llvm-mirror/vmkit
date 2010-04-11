@@ -95,10 +95,10 @@ public:
     lock->unlock();
   }
 
-  virtual void TRACER {
+  virtual void tracer() {
     //lock->MARK_AND_TRACE;
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      i->second->CALL_TRACER;
+      i->second->tracer();
     }
   }
 

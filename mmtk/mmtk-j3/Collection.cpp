@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "mvm/VirtualMachine.h"
+
 #include "JavaObject.h"
 #include "JavaThread.h"
 

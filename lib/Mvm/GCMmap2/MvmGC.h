@@ -16,12 +16,34 @@
 #include "gcalloc.h"
 
 #define gc_allocator std::allocator
-#define gc_new(Class)  __gc_new(Class::VT) Class
-#define __gc_new new
 
+struct VirtualTable {
+  uintptr_t destructor;
+  uintptr_t operatorDelete;
+  uintptr_t tracer;
+  
+  static uint32_t numberOfBaseFunctions() {
+    return 3;
+  }
+  
+  static uint32_t numberOfSpecializedTracers() {
+    return 0;
+  }
 
-#define TRACER tracer()
-#define CALL_TRACER tracer()
+  uintptr_t* getFunctions() {
+    return &destructor;
+  }
+
+  VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) {
+    destructor = d;
+    operatorDelete = o;
+    tracer = t;
+  }
+
+  VirtualTable() {}
+
+  static void emptyTracer(void*) {}
+};
 
 namespace mvm {
 

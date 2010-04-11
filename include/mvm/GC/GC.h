@@ -12,27 +12,8 @@
 #define MVM_GC_H
 
 #include <stdint.h>
-#include <map>
 
-struct VirtualTable {
-  uintptr_t destructor;
-  uintptr_t operatorDelete;
-  uintptr_t tracer;
-
-  uintptr_t* getFunctions() {
-    return &destructor;
-  }
-
-  VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) {
-    destructor = d;
-    operatorDelete = o;
-    tracer = t;
-  }
-
-  VirtualTable() {}
-
-  static void emptyTracer(void*) {}
-};
+struct VirtualTable;
 
 class gcRoot {
 public:

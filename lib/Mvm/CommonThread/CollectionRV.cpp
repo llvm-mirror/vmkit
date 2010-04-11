@@ -9,6 +9,8 @@
 
 #include <cassert>
 #include "MvmGC.h"
+#include "mvm/VirtualMachine.h"
+#include "mvm/Threads/CollectionRV.h"
 
 using namespace mvm;
 

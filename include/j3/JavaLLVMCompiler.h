@@ -17,6 +17,8 @@
 #include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
 
+#include <map>
+
 namespace llvm {
   class BasicBlock;
   class DIFactory;

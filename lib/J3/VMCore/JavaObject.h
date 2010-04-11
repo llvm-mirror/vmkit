@@ -131,13 +131,13 @@ public:
   /// getFirstJavaMethodIndex - Get the word offset of the first Java method.
   ///
   static uint32_t getFirstJavaMethodIndex() {
-    return 19;
+    return numberOfBaseFunctions() + 16;
   }
    
   /// getBaseSize - Get the size of the java.lang.Object virtual table.
   ///
   static uint32_t getBaseSize() {
-    return 30;
+    return numberOfBaseFunctions() + 27;
   }
   
   /// getNumJavaMethods - Get the number of methods of the java.lang.Object
@@ -153,32 +153,62 @@ public:
     return 8;
   }
   
-  /// getCacheIndex - Get the word offset of the type cache.
+  /// getClassIndex - Get the word offset of the class.
   ///
-  static uint32_t getCacheIndex() {
-    return 6;
+  static uint32_t getClassIndex() {
+    return numberOfBaseFunctions();
+  }
+  
+  /// getDepthIndex - Get the word offset of the depth.
+  ///
+  static uint32_t getDepthIndex() {
+    return numberOfBaseFunctions() + 1;
   }
   
   /// getOffsetIndex - Get the word offset of the type cache.
   ///
   static uint32_t getOffsetIndex() {
-    return 5;
+    return numberOfBaseFunctions() + 2;
   }
   
-  /// getSecondaryTypesIndex - Get the word offset of the secondary types
-  /// list.
+  /// getCacheIndex - Get the word offset of the type cache.
   ///
-  static uint32_t getSecondaryTypesIndex() {
-    return 16;
+  static uint32_t getCacheIndex() {
+    return numberOfBaseFunctions() + 3;
+  }
+  
+  /// getDisplayIndex - Get the word offset of the display.
+  ///
+  static uint32_t getDisplayIndex() {
+    return numberOfBaseFunctions() + 4;
   }
   
   /// getNumSecondaryTypesIndex - Get the word offset of the number of
   /// secondary types.
   ///
   static uint32_t getNumSecondaryTypesIndex() {
-    return 15;
+    return numberOfBaseFunctions() + 12;
   }
-
+  
+  /// getSecondaryTypesIndex - Get the word offset of the secondary types
+  /// list.
+  ///
+  static uint32_t getSecondaryTypesIndex() {
+    return numberOfBaseFunctions() + 13;
+  }
+  
+  /// getBaseClassIndex - Get the word offset of the base class.
+  ///
+  static uint32_t getBaseClassIndex() {
+    return numberOfBaseFunctions() + 14;
+  }
+   
+  /// getIMTIndex - Get the word offset of the IMT.
+  ///
+  static uint32_t getIMTIndex() {
+    return numberOfBaseFunctions() + 15;
+  }
+   
   /// isSubtypeOf - Returns true if the given VT is a subtype of the this
   /// VT.
   ///

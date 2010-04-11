@@ -9,9 +9,11 @@
 
 #include "mvm/Allocator.h"
 #include "mvm/MethodInfo.h"
+#include "mvm/VirtualMachine.h"
 #include "MvmGC.h"
 
 #include <dlfcn.h>
+#include <map>
 
 #if defined(__MACH__)
 #define SELF_HANDLE RTLD_DEFAULT

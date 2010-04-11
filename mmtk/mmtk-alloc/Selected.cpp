@@ -10,6 +10,8 @@
 #include "MutatorThread.h"
 #include "MvmGC.h"
 
+#include "mvm/VirtualMachine.h"
+
 #include <sys/mman.h>
 #include <set>
 

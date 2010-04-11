@@ -11,22 +11,39 @@
 #ifndef MVM_MMTK_GC_H
 #define MVM_MMTK_GC_H
 
-#include "MutatorThread.h"
-#include "mvm/VirtualMachine.h"
 #include "mvm/GC/GC.h"
-
-#include "llvm/Support/MathExtras.h"
-
+#include <cstdlib>
 
 #define gc_allocator std::allocator
-#define gc_new(Class)  __gc_new(Class::VT) Class
-#define __gc_new new
 
+struct VirtualTable {
+  uintptr_t destructor;
+  uintptr_t operatorDelete;
+  uintptr_t tracer;
+  uintptr_t specializedTracers[1];
+  
+  static uint32_t numberOfBaseFunctions() {
+    return 4;
+  }
 
-#define TRACER tracer()
-#define MARK_AND_TRACE markAndTrace()
-#define CALL_TRACER tracer()
+  static uint32_t numberOfSpecializedTracers() {
+    return 1;
+  }
 
+  uintptr_t* getFunctions() {
+    return &destructor;
+  }
+
+  VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) {
+    destructor = d;
+    operatorDelete = o;
+    tracer = t;
+  }
+
+  VirtualTable() {}
+
+  static void emptyTracer(void*) {}
+};
 
 extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT);
 
@@ -34,7 +51,6 @@ class gc : public gcRoot {
 public:
 
   size_t objectSize() const {
-    fprintf(stderr, "Implement object size\n");
     abort();
     return 0;
   }
