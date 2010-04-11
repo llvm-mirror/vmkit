@@ -69,23 +69,23 @@ public:
 
   static uintptr_t TraceLocal;
 
-  static bool isLive(gc* ptr);
+  static bool isLive(gc* ptr) __attribute__ ((always_inline));
   
-  static void scanObject(void** ptr);
+  static void scanObject(void** ptr) __attribute__ ((always_inline));
  
-  static void markAndTrace(void* source, void* ptr);
+  static void markAndTrace(void* source, void* ptr) __attribute__ ((always_inline));
   
-  static void markAndTraceRoot(void* ptr);
+  static void markAndTraceRoot(void* ptr) __attribute__ ((always_inline));
 
-  static gc* retainForFinalize(gc* val);
+  static gc* retainForFinalize(gc* val) __attribute__ ((always_inline));
   
-  static gc* retainReferent(gc* val);
+  static gc* retainReferent(gc* val) __attribute__ ((always_inline));
   
-  static gc* getForwardedFinalizable(gc* val);
+  static gc* getForwardedFinalizable(gc* val) __attribute__ ((always_inline));
   
-  static gc* getForwardedReference(gc* val);
+  static gc* getForwardedReference(gc* val) __attribute__ ((always_inline));
   
-  static gc* getForwardedReferent(gc* val);
+  static gc* getForwardedReferent(gc* val) __attribute__ ((always_inline));
 
   static void collect();
   
