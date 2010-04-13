@@ -892,36 +892,43 @@ void Class::resolveClass() {
     } else if (!isResolving()) {
       setOwnerClass(JavaThread::get());
       
-      JavaObject* exc = 0;
-      TRY {
-        readClass();
-      } CATCH {
-        exc = JavaThread::get()->pendingException;
-        JavaThread::get()->clearException();
-      }
+      {
+        JavaObject* exc = 0;
+        llvm_gcroot(exc, 0);
+        TRY {
+          readClass();
+        } CATCH {
+          exc = JavaThread::get()->pendingException;
+          JavaThread::get()->clearException();
+        } END_CATCH;
 
-      if (exc) {
-        setErroneous();        
-        setOwnerClass(0);
-        broadcastClass();
-        release();
-        JavaThread::get()->throwException(exc);
+        if (exc) {
+          setErroneous();        
+          setOwnerClass(0);
+          broadcastClass();
+          release();
+          JavaThread::get()->throwException(exc);
+        }
       }
  
       release();
-
-      TRY {
-        loadParents();
-      } CATCH {
-        setInitializationState(loaded);
-        exc = JavaThread::get()->pendingException;
-        JavaThread::get()->clearException();
-      }
       
-      if (exc) {
-        setErroneous();        
-        setOwnerClass(0);
-        JavaThread::get()->throwException(exc);
+      {
+        JavaObject* exc = 0;
+        llvm_gcroot(exc, 0);
+        TRY {
+          loadParents();
+        } CATCH {
+          setInitializationState(loaded);
+          exc = JavaThread::get()->pendingException;
+          JavaThread::get()->clearException();
+        } END_CATCH;
+      
+        if (exc) {
+          setErroneous();        
+          setOwnerClass(0);
+          JavaThread::get()->throwException(exc);
+        }
       }
       
       makeVT();

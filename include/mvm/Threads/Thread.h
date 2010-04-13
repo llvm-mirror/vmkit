@@ -1,6 +1,6 @@
 //===---------------- Threads.h - Micro-vm threads ------------------------===//
 //
-//                     The Micro Virtual Machine
+//                        The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -16,9 +16,18 @@
 
 #include "types.h"
 
+#ifdef RUNTIME_DWARF_EXCEPTIONS
 #define TRY try
 #define CATCH catch(...)
 #define IGNORE catch(...) { mvm::Thread::get()->clearException(); }
+#define END_CATCH
+#else
+#include <csetjmp>
+#define TRY { mvm::ExceptionBuffer __buffer__; if (!setjmp(__buffer__.buffer))
+#define CATCH else
+#define IGNORE else { mvm::Thread::get()->clearException(); }}
+#define END_CATCH }
+#endif
 
 namespace mvm {
 
@@ -122,12 +131,23 @@ public:
   void* currentFP;
 };
 
+
+class ExceptionBuffer;
+
 /// Thread - This class is the base of custom virtual machines' Thread classes.
 /// It provides static functions to manage threads. An instance of this class
 /// contains all thread-specific informations.
 class Thread : public CircularBase {
 public:
-  
+  Thread() {
+#ifdef RUNTIME_DWARF_EXCEPTIONS
+  internalPendingException = 0;
+#else
+  lastExceptionBuffer = 0;
+#endif
+  lastKnownFrame = 0;
+  }
+
   /// yield - Yield the processor to another thread.
   ///
   static void yield(void);
@@ -283,6 +303,9 @@ public:
 
   /// clearException - Clear any pending exception of the current thread.
   void clearException() {
+#ifdef RUNTIME_DWARF_EXCEPTIONS
+    internalPendingException = 0;
+#endif
     internalClearException();
   }
 
@@ -346,10 +369,39 @@ public:
   /// lastKnownFrame - The last frame that we know of, before resuming to JNI.
   ///
   KnownFrame* lastKnownFrame;
+  
+#ifdef RUNTIME_DWARF_EXCEPTIONS
+  void* internalPendingException;
+#else
+  /// lastExceptionBuffer - The last exception buffer on this thread's stack.
+  ///
+  ExceptionBuffer* lastExceptionBuffer;
+#endif
+
+  void internalThrowException();
 
   void startKnownFrame(KnownFrame& F) __attribute__ ((noinline));
   void endKnownFrame();
 };
+
+#ifndef RUNTIME_DWARF_EXCEPTIONS
+class ExceptionBuffer {
+public:
+  ExceptionBuffer() {
+    Thread* th = Thread::get();
+    previousBuffer = th->lastExceptionBuffer;
+    th->lastExceptionBuffer = this;
+  }
+
+  ~ExceptionBuffer() {
+    Thread* th = Thread::get();
+    assert(th->lastExceptionBuffer == this && "Wrong exception buffer");
+    th->lastExceptionBuffer = previousBuffer;
+  }
+  ExceptionBuffer* previousBuffer;
+  jmp_buf buffer;
+};
+#endif
 
 /// StackWalker - This class walks the stack of threads, returning a MethodInfo
 /// object at each iteration.

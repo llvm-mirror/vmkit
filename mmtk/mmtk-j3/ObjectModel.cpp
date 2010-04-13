@@ -25,7 +25,8 @@ extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_readAvailableBitsWord__Lorg_vm
 }
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_writeAvailableBitsWord__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Word_2 (JavaObject* OM, JavaObject* obj, uintptr_t val) {
-  assert((val & ~mvm::GCMask) == (((uintptr_t*)obj)[1] & ~mvm::GCMask) && "GC bits do not fit");
+  // Comment the assert, it prevents MMTkInline.inc to be self-contained.
+  // assert((val & ~mvm::GCMask) == (((uintptr_t*)obj)[1] & ~mvm::GCMask) && "GC bits do not fit");
 #if defined(__PPC__)
   ((uint8_t*)obj)[7] &= ~mvm::GCBitMask;
   ((uint8_t*)obj)[7] |= val;

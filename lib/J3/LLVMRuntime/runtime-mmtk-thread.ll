@@ -13,8 +13,9 @@
 ;;; Field 10: internalThreadID
 ;;; field 11: routine
 ;;; field 12: lastKnownFrame
-;;; field 13: allocator
-;;; field 14: MutatorContext
-;;; field 15: realRoutine
+;;; field 13: lastKnownBufer
+;;; field 14: allocator
+;;; field 15: MutatorContext
+;;; field 16: realRoutine
 %MutatorThread = type { %VT*, %JavaThread*, %JavaThread*, i8*, i8*, i8*, i1, i1,
-                        i1, i8*, i8*, i8*, i8*, %BumpPtrAllocator, i8*, i8* }
+                        i1, i8*, i8*, i8*, i8*, i8*, %BumpPtrAllocator, i8*, i8* }

@@ -16,6 +16,8 @@
 namespace mvm {
 
 class MutatorThread : public mvm::Thread {
+public:
+  MutatorThread() : mvm::Thread() {}
 };
 
 }

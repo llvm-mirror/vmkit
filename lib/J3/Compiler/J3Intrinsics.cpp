@@ -152,7 +152,7 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   OffsetJavaExceptionInThreadConstant =
     ConstantInt::get(Type::getInt32Ty(Context), 2);
   OffsetCXXExceptionInThreadConstant =
-    ConstantInt::get(Type::getInt32Ty(Context), 3);
+    ConstantInt::get(Type::getInt32Ty(Context), 13);
   
   ClassReadyConstant = ConstantInt::get(Type::getInt8Ty(Context), ready);
   

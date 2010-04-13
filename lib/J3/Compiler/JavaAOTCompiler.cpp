@@ -1922,8 +1922,6 @@ void mainCompilerStart(JavaThread* th) {
   JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
   JavaAOTCompiler* M = (JavaAOTCompiler*)bootstrapLoader->getCompiler();
   JavaJITCompiler* Comp = 0;
-  try {
-    
     if (!M->clinits->empty()) {
       Comp = JavaJITCompiler::CreateCompiler("JIT");
       Comp->EmitFunctionName = true;
@@ -1982,13 +1980,13 @@ void mainCompilerStart(JavaThread* th) {
               Class* cl = *ii;
               if (!strncmp(UTF8Buffer(cl->name).cString(), i->c_str(),
                            i->length() - 1)) {
-                try {
+                TRY {
                   cl->asClass()->initialiseClass(vm);
-                } catch (...) {
+                } CATCH {
                   fprintf(stderr, "Error when initializing %s\n",
                           UTF8Buffer(cl->name).cString());
                   abort();
-                }
+                } END_CATCH;
               }
             }
           } else {
@@ -1996,13 +1994,13 @@ void mainCompilerStart(JavaThread* th) {
             const UTF8* name = bootstrapLoader->asciizConstructUTF8(i->c_str());
             CommonClass* cl = bootstrapLoader->lookupClass(name);
             if (cl && cl->isClass()) {
-              try {
+              TRY {
                 cl->asClass()->initialiseClass(vm);
-              } catch (...) {
+              } CATCH {
                 fprintf(stderr, "Error when initializing %s\n",
                         UTF8Buffer(cl->name).cString());
                 abort();
-              }
+              } END_CATCH;
             } else {
               fprintf(stderr, "Class %s does not exist or is an array class.\n",
                       i->c_str());
@@ -2085,10 +2083,6 @@ void mainCompilerStart(JavaThread* th) {
 
     M->CreateStaticInitializer();
 
-  } catch(std::string str) {
-    fprintf(stderr, "Error : %s\n", str.c_str());
-  }
-  
 end:
 
   vm->threadSystem.nonDaemonLock.lock();

@@ -23,7 +23,8 @@ const unsigned int JavaThread::StateRunning = 0;
 const unsigned int JavaThread::StateWaiting = 1;
 const unsigned int JavaThread::StateInterrupted = 2;
 
-JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
+JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate)
+    : MutatorThread() {
   llvm_gcroot(thread, 0);
   llvm_gcroot(vmth, 0);
   
@@ -33,8 +34,6 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
   interruptFlag = 0;
   state = StateRunning;
   pendingException = 0;
-  internalPendingException = 0;
-  lastKnownFrame = 0;
   jniEnv = isolate->jniEnv;
   localJNIRefs = new JNILocalReferences();
   currentAddedReferences = 0;
@@ -55,30 +54,18 @@ JavaThread::~JavaThread() {
 #endif
 }
 
-// We define these here because gcc compiles the 'throw' keyword
-// differently, whether these are defined in a file or not. Since many
-// cpp files import JavaThread.h, they couldn't use the keyword.
-
-extern "C" void* __cxa_allocate_exception(unsigned);
-extern "C" void __cxa_throw(void*, void*, void*);
-
 void JavaThread::throwException(JavaObject* obj) {
   llvm_gcroot(obj, 0);
   JavaThread* th = JavaThread::get();
   assert(th->pendingException == 0 && "pending exception already there?");
   th->pendingException = obj;
-  void* exc = __cxa_allocate_exception(0);
-  // 32 = sizeof(_Unwind_Exception) in libgcc...  
-  th->internalPendingException = (void*)((uintptr_t)exc - 32);
-  __cxa_throw(exc, 0, 0);
+  th->internalThrowException();
 }
 
 void JavaThread::throwPendingException() {
   JavaThread* th = JavaThread::get();
   assert(th->pendingException);
-  void* exc = __cxa_allocate_exception(0);
-  th->internalPendingException = (void*)((uintptr_t)exc - 32);
-  __cxa_throw(exc, 0, 0);
+  th->internalThrowException();
 }
 
 void JavaThread::startJNI(int level) {

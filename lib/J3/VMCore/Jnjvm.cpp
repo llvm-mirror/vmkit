@@ -122,15 +122,12 @@ void UserClass::initialiseClass(Jnjvm* vm) {
 #if defined(ISOLATE) || defined(ISOLATE_SHARING)
     // Isolate environments allocate the static instance on their own, not when
     // the class is being resolved.
-    void* val = cl->allocateStaticInstance(vm);
+    cl->allocateStaticInstance(vm);
 #else
     // Single environment allocates the static instance during resolution, so
     // that compiled code can access it directly (with an initialization
     // check just before the access)
-    void* val = cl->getStaticInstance();
-    if (!val) {
-      val = cl->allocateStaticInstance(vm);
-    }
+    if (!cl->getStaticInstance()) cl->allocateStaticInstance(vm);
 #endif
     release();
   
@@ -155,7 +152,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
         release();
         self->throwPendingException();
         return;
-      }
+      } END_CATCH;
     }
  
     JavaObject* exc = 0;
@@ -181,6 +178,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
 
     if (!vmjced) {
       JavaField* fields = cl->getStaticFields();
+      void* val = cl->getStaticInstance();
       for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
         fields[i].initField(val, vm);
       }
@@ -199,7 +197,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
         exc = self->getJavaException();
         assert(exc && "no exception?");
         self->clearException();
-      }
+      } END_CATCH;
     }
 #ifdef SERVICE
     }
@@ -1170,7 +1168,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
   
     method->invokeIntStatic(this, method->classDef, &args);
   } CATCH {
-  }
+  } END_CATCH;
 
   exc = JavaThread::get()->pendingException;
   if (exc) {
@@ -1184,7 +1182,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
     } CATCH {
       fprintf(stderr, "Exception in thread \"main\": "
                       "Can not print stack trace.\n");
-    }
+    } END_CATCH;
   }
 }
 
@@ -1237,7 +1235,7 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
     vm->loadBootstrap();
   } CATCH {
     exc = JavaThread::get()->pendingException;
-  }
+  } END_CATCH;
 
   if (exc != NULL) {
     fprintf(stderr, "Exception %s while bootstrapping VM.",

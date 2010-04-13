@@ -1,6 +1,6 @@
-//===-------------- ctthread.cc - Mvm common threads ----------------------===//
+//===---------- ctthread.cc - Thread implementation for VMKit -------------===//
 //
-//                              Mvm
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -17,6 +17,7 @@
 #include <signal.h>
 #include <cstdio>
 #include <ctime>
+#include <dlfcn.h>
 #include <errno.h>
 #include <pthread.h>
 #include <sys/mman.h>
@@ -61,6 +62,36 @@ void Thread::startKnownFrame(KnownFrame& F) {
 
 void Thread::endKnownFrame() {
   lastKnownFrame = lastKnownFrame->previousFrame;
+}
+
+#if defined(__MACH__)
+#define SELF_HANDLE RTLD_DEFAULT
+#else
+#define SELF_HANDLE 0
+#endif
+
+void Thread::internalThrowException() {
+#ifdef RUNTIME_DWARF_EXCEPTIONS
+  // Use dlsym instead of getting the functions statically with extern "C"
+  // because gcc compiles exceptions differently.
+  typedef void* (*cxa_allocate_exception_type)(unsigned);
+  typedef void  (*cxa_throw_type)(void*, void*, void*);
+  
+  static cxa_allocate_exception_type cxa_allocate_exception =
+    (cxa_allocate_exception_type)(uintptr_t)
+    dlsym(SELF_HANDLE, "__cxa_allocate_exception");
+  
+  static cxa_throw_type cxa_throw =
+    (cxa_throw_type)(uintptr_t)
+    dlsym(SELF_HANDLE, "__cxa_throw");
+  
+  void* exc = cxa_allocate_exception(0);
+  // 32 = sizeof(_Unwind_Exception) in libgcc...  
+  internalPendingException = (void*)((uintptr_t)exc - 32);
+  cxa_throw(exc, 0, 0);
+#else
+  longjmp(lastExceptionBuffer->buffer, 1);
+#endif
 }
 
 void Thread::printBacktrace() {

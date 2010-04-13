@@ -472,11 +472,12 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     // Get the Java exception.
     Value* exc = new LoadInst(javaExceptionPtr, "", currentBlock);
     
-    Value* geps2[2] = { module->constantZero,
+    Value* geps2[3] = { module->constantZero,
+                        module->constantZero,
                         module->OffsetCXXExceptionInThreadConstant };
     
     Value* cxxExceptionPtr = GetElementPtrInst::Create(threadId, geps2,
-                                                       geps2 + 2, "",
+                                                       geps2 + 3, "",
                                                        currentBlock);
 
     // Clear exceptions.
@@ -559,11 +560,12 @@ void JavaJIT::finishExceptions() {
     endExceptionBlock->eraseFromParent();
   } else {
     Value* threadId = getCurrentThread(module->JavaThreadType);
-    Value* geps2[2] = { module->constantZero,
+    Value* geps2[3] = { module->constantZero,
+                        module->constantZero,
                         module->OffsetCXXExceptionInThreadConstant };
     
     Value* cxxExceptionPtr = GetElementPtrInst::Create(threadId, geps2,
-                                                       geps2 + 2, "",
+                                                       geps2 + 3, "",
                                                        currentBlock);
     cxxExceptionPtr = new LoadInst(cxxExceptionPtr, "", currentBlock);
     llvm::CallInst::Create(module->unwindResume, cxxExceptionPtr, "",

@@ -131,7 +131,7 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
           th->throwPendingException();
         }
         return NULL;
-      }
+      } END_CATCH;
     
     } else {
       vm->illegalArgumentException("class is not a regular class");

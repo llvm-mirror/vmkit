@@ -72,6 +72,7 @@ jint len) {
   }
   
   jint i = sstart;
+  jint length = len;
   bool doThrow = false;
   if (!(dstType->isPrimitive())) {
     while (i < sstart + len && !doThrow) {
@@ -79,7 +80,7 @@ jint len) {
       if (cur) {
         if (!(cur->getClass()->isAssignableFrom(dstType))) {
           doThrow = true;
-          len = i;
+          length = i;
         }
       }
       ++i;
@@ -91,14 +92,12 @@ jint len) {
 
   void* ptrDst = (void*)((int64_t)(dst->elements) + (dstart << logSize));
   void* ptrSrc = (void*)((int64_t)(src->elements) + (sstart << logSize));
-  memmove(ptrDst, ptrSrc, len << logSize);
+  memmove(ptrDst, ptrSrc, length << logSize);
 
   if (doThrow)
     vm->arrayStoreException();
-  
-  
-  END_NATIVE_EXCEPTION
 
+  END_NATIVE_EXCEPTION
 }
 
 JNIEXPORT jint JNICALL Java_java_lang_VMSystem_identityHashCode(

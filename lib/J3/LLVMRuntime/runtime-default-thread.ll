@@ -11,5 +11,6 @@
 ;;; Field 10: internalThreadID
 ;;; field 11: routine
 ;;; field 12: lastKnownFrame
+;;; field 13: lastExceptionBuffer
 %MutatorThread = type { %VT*, %JavaThread*, %JavaThread*, i8*, i8*, i8*, i1, i1,
-                        i1, i8*, i8*, i8*, i8*}
+                        i1, i8*, i8*, i8*, i8*, i8*}

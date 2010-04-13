@@ -172,7 +172,7 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
         th->throwPendingException(); \
       } \
       return NULL; \
-    } \
+    } END_CATCH; \
     
     Typedef* retType = sign->getReturnType();
     if (retType->isPrimitive()) {

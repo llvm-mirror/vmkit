@@ -167,11 +167,7 @@ void CommandLine::executeInstr() {
       Thread::start(&tid, (int (*)(void *))startApp, thread_arg);
 #else
       VirtualMachine* VM = func(CU);
-      try {
-        VM->runApplication(argc, argv);
-      } catch(...) {
-        printf("Caught exception when running the VM");
-      }
+      VM->runApplication(argc, argv);
 #endif
     }
   }

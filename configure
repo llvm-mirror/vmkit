@@ -723,6 +723,7 @@ with_finalizer
 with_gc
 with_vm_type
 with_exception_type
+with_runtime_exception_type
 with_gnu_classpath_libs
 with_gnu_classpath_glibj
 with_j3
@@ -1367,7 +1368,9 @@ Optional Packages:
                           VM type ('single' 'isolate' 'isolate-sharing' or
                           'service')
   --with-exception-type=something
-                          VM type ('check' or 'dwarf')
+                          Exception type ('check' or 'dwarf')
+  --with-runtime-exception-type=something
+                          Runtime exception type ('setjmp' or 'dwarf')
   --with-gnu-classpath-libs=something
                           GNU CLASSPATH libraries (default is
                           /usr/lib/classpath)
@@ -3932,8 +3935,30 @@ else
 fi
 
 
+
+# Check whether --with-runtime-exception-type was given.
+if test "${with_runtime_exception_type+set}" = set; then :
+  withval=$with_runtime_exception_type; runtimeexceptiontype=$withval
+else
+   echo Using setjmp as exception type.
+                exceptiontype=setjmp
+
+
+fi
+
+
 if test "x$exceptiontype" = "xdwarf";  then
-  EXCEPTION_FLAGS="-DDWARF_EXCEPTIONS"
+  EXCEPTION_FLAGS="-DDWARF_EXCEPTIONS -fexceptions"
+fi
+
+if test "x$runtimeexceptiontype" = "xdwarf";  then
+  EXCEPTION_FLAGS+="-DRUNTIME_DWARF_EXCEPTIONS -fexceptions"
+fi
+
+if test "x$runtimeexceptiontype" != "xdwarf"; then
+  if test "x$exceptiontype" != "xdwarf"; then
+    EXCEPTION_FLAGS="-fno-exceptions -Wno-uninitialized"
+  fi
 fi
 
 

@@ -35,7 +35,7 @@ class Jnjvm;
 #define END_NATIVE_EXCEPTION \
   } CATCH { \
     __th->throwFromNative(); \
-  } \
+  } END_CATCH;
 
 #define BEGIN_JNI_EXCEPTION \
   JavaThread* th = JavaThread::get(); \
@@ -48,7 +48,7 @@ class Jnjvm;
 #define END_JNI_EXCEPTION \
   } CATCH { \
     th->throwFromJNI(SP); \
-  }
+  } END_CATCH;
 
 #define RETURN_FROM_JNI(a) {\
   th->endKnownFrame(); \
@@ -75,10 +75,6 @@ public:
   /// pendingException - The Java exception currently pending.
   ///
   JavaObject* pendingException;
-
-  /// internalPendingException - The C++ exception currencty pending.
-  ///
-  void* internalPendingException;
 
   /// javaThread - The Java representation of this thread.
   ///
@@ -256,7 +252,6 @@ private:
   ///
   virtual void internalClearException() {
     pendingException = 0;
-    internalPendingException = 0;
   }
 
 public:
