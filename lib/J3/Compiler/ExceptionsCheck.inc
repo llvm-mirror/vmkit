@@ -4,8 +4,8 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
   
   Instruction* res = CallInst::Create(F, args.begin(), args.end(), Name,
                                       InsertAtEnd);
-  
-  res->setMetadata("dbg", CreateLocation());
+  DebugLoc DL = CreateLocation();
+  res->setDebugLoc(DL);
   
   if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
@@ -63,7 +63,8 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
                        BasicBlock *InsertAtEnd) {
 
   Instruction* res = CallInst::Create(F, arg1, Name, InsertAtEnd);
-  res->setMetadata("dbg", CreateLocation());
+  DebugLoc DL = CreateLocation();
+  res->setDebugLoc(DL);
   
   if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
@@ -115,7 +116,8 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
   Value* args[2] = { arg1, arg2 };
   
   Instruction* res = CallInst::Create(F, args, args + 2, Name, InsertAtEnd);
-  res->setMetadata("dbg", CreateLocation());
+  DebugLoc DL = CreateLocation();
+  res->setDebugLoc(DL);
   
   if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
@@ -164,7 +166,8 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
 Instruction* JavaJIT::invoke(Value *F, const char* Name,
                        BasicBlock *InsertAtEnd) {
   Instruction* res = llvm::CallInst::Create(F, Name, InsertAtEnd);
-  res->setMetadata("dbg", CreateLocation());
+  DebugLoc DL = CreateLocation();
+  res->setDebugLoc(DL);
   
   if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
@@ -212,7 +215,8 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
 
 void JavaJIT::throwException(llvm::Function* F, Value* arg1) {
   Instruction* obj = CallInst::Create(F, arg1, "", currentBlock);
-  obj->setMetadata("dbg", CreateLocation());
+  DebugLoc DL = CreateLocation();
+  obj->setDebugLoc(DL);
 
   if (currentExceptionBlock != endExceptionBlock) {
     Instruction* insn = currentExceptionBlock->begin();
@@ -254,7 +258,8 @@ void JavaJIT::throwException(Value* obj) {
 void JavaJIT::throwException(llvm::Function* F, Value** args,
                              uint32 nbArgs) {
   Instruction* obj = CallInst::Create(F, args, args + nbArgs, "", currentBlock);
-  obj->setMetadata("dbg", CreateLocation());
+  DebugLoc DL = CreateLocation();
+  obj->setDebugLoc(DL);
 
   if (currentExceptionBlock != endExceptionBlock) {
     Instruction* insn = currentExceptionBlock->begin();

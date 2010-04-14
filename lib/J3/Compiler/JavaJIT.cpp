@@ -782,7 +782,6 @@ static void removeUnusedObjects(std::vector<AllocaInst*>& objects,
 Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
                                     BasicBlock* endExBlock,
                                     std::vector<Value*>& args) {
-  
   DbgSubprogram = TheCompiler->GetDbgSubprogram(compilingMethod);
 
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "inline compile %s.%s\n",
@@ -2608,13 +2607,11 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   currentBlock = label_return;
 }
 
-MDNode* JavaJIT::CreateLocation() {
+DebugLoc JavaJIT::CreateLocation() {
   LineInfo LI = { currentLineNumber, currentCtpIndex, currentBytecodeIndex };
   codeInfo.push_back(LI);
-  DILocation Location = TheCompiler->getDebugFactory()->CreateLocation(
-      callNumber, 0, DIScope(DbgSubprogram));
-  callNumber++;
-  return Location.getNode();
+  DebugLoc DL = DebugLoc::get(callNumber++, 0, DbgSubprogram);
+  return DL;
 }
 
 #ifdef DWARF_EXCEPTIONS

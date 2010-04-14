@@ -20,6 +20,7 @@
 #include "llvm/Metadata.h"
 #include "llvm/Type.h"
 #include "llvm/Value.h"
+#include "llvm/Support/DebugLoc.h"
 #include "llvm/Analysis/DebugInfo.h"
 
 #include "types.h"
@@ -167,7 +168,7 @@ private:
   uint16 callNumber;
 
   /// CreateLocation - Create debug information for a call.
-  llvm::MDNode* CreateLocation();
+  llvm::DebugLoc CreateLocation();
 
   // codeInfo - List of LineInfo for this method.
   std::vector<LineInfo> codeInfo;
