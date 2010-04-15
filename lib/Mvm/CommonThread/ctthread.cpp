@@ -90,7 +90,11 @@ void Thread::internalThrowException() {
   internalPendingException = (void*)((uintptr_t)exc - 32);
   cxa_throw(exc, 0, 0);
 #else
+#if defined(__MACH__)
+  _longjmp(lastExceptionBuffer->buffer, 1);
+#else
   longjmp(lastExceptionBuffer->buffer, 1);
+#endif
 #endif
 }
 

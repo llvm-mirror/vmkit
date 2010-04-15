@@ -17,16 +17,20 @@
 #include "types.h"
 
 #ifdef RUNTIME_DWARF_EXCEPTIONS
-#define TRY try
-#define CATCH catch(...)
-#define IGNORE catch(...) { mvm::Thread::get()->clearException(); }
-#define END_CATCH
+  #define TRY try
+  #define CATCH catch(...)
+  #define IGNORE catch(...) { mvm::Thread::get()->clearException(); }
+  #define END_CATCH
 #else
-#include <csetjmp>
-#define TRY { mvm::ExceptionBuffer __buffer__; if (!setjmp(__buffer__.buffer))
-#define CATCH else
-#define IGNORE else { mvm::Thread::get()->clearException(); }}
-#define END_CATCH }
+  #include <csetjmp>
+  #if defined(__MACH__)
+    #define TRY { mvm::ExceptionBuffer __buffer__; if (!_setjmp(__buffer__.buffer))
+  #else
+    #define TRY { mvm::ExceptionBuffer __buffer__; if (!setjmp(__buffer__.buffer))
+  #endif
+  #define CATCH else
+  #define IGNORE else { mvm::Thread::get()->clearException(); }}
+  #define END_CATCH }
 #endif
 
 namespace mvm {
