@@ -612,6 +612,8 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
   CommonClass* ctpCl = 0;
   const UTF8* utf8 = 0;
   Signdef* sign = 0;
+  JavaMethod* origMeth = 0;
+  ctpInfo->infoOfMethod(ctpIndex, ACC_VIRTUAL, ctpCl, origMeth);
 
   ctpInfo->resolveMethod(ctpIndex, ctpCl, utf8, sign);
   assert(cl->isAssignableFrom(ctpCl) && "Wrong call object");
@@ -631,7 +633,7 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
          "The method's offset is greater than the virtual table size");
   ((void**)obj->getVirtualTable())[Virt->offset] = result;
   
-  if (CLInfo->bytecode == 0xB9) { // INVOKEINTERFACE
+  if (isInterface(origMeth->classDef->access)) {
     InterfaceMethodTable* IMT = cl->virtualVT->IMT;
     uint32_t index = InterfaceMethodTable::getIndex(Virt->name, Virt->type);
     if ((IMT->contents[index] & 1) == 0) {
