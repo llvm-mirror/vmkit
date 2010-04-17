@@ -115,6 +115,8 @@ public:
             currentCompiledMethod->codeInfo[first].bytecodeIndex;
           infoTable[i].ctpIndex =
             currentCompiledMethod->codeInfo[first].ctpIndex;
+          infoTable[i].bytecode =
+            currentCompiledMethod->codeInfo[first].bytecode;
         }
         delete[] currentCompiledMethod->codeInfo;
         currentCompiledMethod->codeInfo = infoTable;

@@ -173,6 +173,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
    
     currentCtpIndex = -1;
     currentBytecodeIndex = i;
+    currentBytecode = bytecodes[i];
 
     // To prevent a gcj bug with useless goto
     if (currentBlock->getTerminator() != 0) { 

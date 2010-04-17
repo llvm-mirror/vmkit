@@ -604,7 +604,9 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
   void* ip = *Walker;
 
   // Lookup the method info in the constant pool of the caller.
-  uint16 ctpIndex = meth->lookupCtpIndex(reinterpret_cast<uintptr_t>(ip));
+  CodeLineInfo* CLInfo =
+    meth->lookupCodeLineInfo(reinterpret_cast<uintptr_t>(ip));
+  uint16 ctpIndex = CLInfo->ctpIndex;
   assert(ctpIndex && "No constant pool index");
   JavaConstantPool* ctpInfo = meth->classDef->getConstantPool();
   CommonClass* ctpCl = 0;
@@ -629,7 +631,7 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
          "The method's offset is greater than the virtual table size");
   ((void**)obj->getVirtualTable())[Virt->offset] = result;
   
-  if (ctpCl->isInterface()) {
+  if (CLInfo->bytecode == 0xB9) { // INVOKEINTERFACE
     InterfaceMethodTable* IMT = cl->virtualVT->IMT;
     uint32_t index = InterfaceMethodTable::getIndex(Virt->name, Virt->type);
     if ((IMT->contents[index] & 1) == 0) {

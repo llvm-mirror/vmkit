@@ -524,13 +524,12 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
               UTF8Buffer(compilingMethod->name).cString());
   
   if (codeInfo.size()) { 
-    mvm::BumpPtrAllocator& Alloc = compilingClass->classLoader->allocator;
-    compilingMethod->codeInfo =
-      new(Alloc, "CodeLineInfo") CodeLineInfo[codeInfo.size()];
+    compilingMethod->codeInfo = new CodeLineInfo[codeInfo.size()];
     for (uint32 i = 0; i < codeInfo.size(); i++) {
       compilingMethod->codeInfo[i].lineNumber = codeInfo[i].lineNumber;
       compilingMethod->codeInfo[i].ctpIndex = codeInfo[i].ctpIndex;
       compilingMethod->codeInfo[i].bytecodeIndex = codeInfo[i].bytecodeIndex;
+      compilingMethod->codeInfo[i].bytecode = codeInfo[i].bytecode;
     }
   }
  
@@ -1361,6 +1360,7 @@ llvm::Function* JavaJIT::javaCompile() {
       compilingMethod->codeInfo[i].lineNumber = codeInfo[i].lineNumber;
       compilingMethod->codeInfo[i].ctpIndex = codeInfo[i].ctpIndex;
       compilingMethod->codeInfo[i].bytecodeIndex = codeInfo[i].bytecodeIndex;
+      compilingMethod->codeInfo[i].bytecode = codeInfo[i].bytecode;
     }
   }
 
@@ -2608,7 +2608,8 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
 }
 
 DebugLoc JavaJIT::CreateLocation() {
-  LineInfo LI = { currentLineNumber, currentCtpIndex, currentBytecodeIndex };
+  LineInfo LI = { currentLineNumber, currentCtpIndex, currentBytecodeIndex,
+                  currentBytecode };
   codeInfo.push_back(LI);
   DebugLoc DL = DebugLoc::get(callNumber++, 0, DbgSubprogram);
   return DL;

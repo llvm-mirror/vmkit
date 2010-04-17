@@ -68,6 +68,7 @@ struct LineInfo {
   uint16 lineNumber;
   uint16 ctpIndex;
   uint16 bytecodeIndex;
+  uint16 bytecode;
 };
 
 /// JavaJIT - The compilation engine of J3. Parses the bycode and returns
@@ -92,6 +93,7 @@ public:
     currentLineNumber = 0;
     currentBytecodeIndex = 0;
     currentCtpIndex = -1;
+    currentBytecode = -1;
     callNumber = 0;
   }
 
@@ -163,6 +165,9 @@ private:
   
   /// currentCtpIndex - The constant pool index being processed.
   uint16 currentCtpIndex;
+  
+  /// currentBytecode - The bytecode being processed.
+  uint16 currentBytecode;
   
   /// callNumber - The number of a call for a single opcode. 
   uint16 callNumber;
