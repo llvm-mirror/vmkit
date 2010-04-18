@@ -376,12 +376,16 @@ extern "C" JavaString* nativeInternString(JavaString* obj) {
   llvm_gcroot(obj, 0);
   llvm_gcroot(array, 0);
   llvm_gcroot(res, 0);
+  // If the string is already interned, just return.
+  if (obj->getVirtualTable() == JavaString::internStringVT) return obj;
   
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   array = obj->strToArray(vm);
   res = vm->constructString(array);
+  assert(res->getVirtualTable() == JavaString::internStringVT &&
+         "Wrong VT after interning a string");
   
   END_NATIVE_EXCEPTION
 
