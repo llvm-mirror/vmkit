@@ -109,7 +109,11 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObje
   llvm_gcroot(obj, 0); \
   verifyNull(obj); \
   UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
-  JavaMethod* meth = (objCl == classDef) ? this : objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
+  if (objCl == classDef || isFinal(access)) { \
+    meth = this; \
+  } else { \
+    meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
+  } \
   assert(meth && "No method found"); \
   void* func = meth->compiledPtr(); \
   Signdef* sign = getSignature(); \
@@ -167,7 +171,12 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObj
   verifyNull(obj);\
   Signdef* sign = getSignature(); \
   UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
-  JavaMethod* meth = (objCl == classDef) ? this : objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
+  JavaMethod* meth = NULL; \
+  if (objCl == classDef || isFinal(access)) { \
+    meth = this; \
+  } else { \
+    meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
+  } \
   assert(meth && "No method found"); \
   void* func = meth->compiledPtr(); \
   FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf(); \
