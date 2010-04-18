@@ -238,6 +238,10 @@ public:
   /// loadClass - The user class that defines the loadClass method.
   ///
   UserClass* loadClass;
+
+  /// loadClassMethod - The loadClass defined by this class loader.
+  ///
+  JavaMethod* loadClassMethod;
  
   /// constructArrayName - Construct an array name based on a class name
   /// and the number of dimensions.

@@ -280,8 +280,9 @@ JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
   isolate = I;
 
   JavaMethod* meth = bootstrapLoader->upcalls->loadInClassLoader;
-  loader->getClass()->asClass()->lookupMethodDontThrow(meth->name, meth->type,
-                                                       false, true, &loadClass);
+  loadClassMethod = 
+    loader->getClass()->asClass()->lookupMethodDontThrow(
+        meth->name, meth->type, false, true, &loadClass);
   assert(loadClass && "Loader does not have a loadClass function");
 
 #if defined(SERVICE)
@@ -386,8 +387,8 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
     if (!strName) {
       strName = JavaString::internalToJava(name, isolate);
     }
-    obj = upcalls->loadInClassLoader->invokeJavaObjectVirtual(isolate, forCtp,
-                                              javaLoader, &strName, doResolve);
+    obj = loadClassMethod->invokeJavaObjectVirtual(isolate, forCtp, javaLoader,
+                                                   &strName, doResolve);
     cl = (UserCommonClass*)((JavaObjectClass*)obj)->getClass();
   }
   
