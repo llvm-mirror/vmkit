@@ -382,7 +382,6 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
   UserCommonClass* cl = lookupClass(name);
   
   if (!cl) {
-    Classpath* upcalls = bootstrapLoader->upcalls;
     UserClass* forCtp = loadClass;
     if (!strName) {
       strName = JavaString::internalToJava(name, isolate);
