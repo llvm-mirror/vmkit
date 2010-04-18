@@ -354,22 +354,14 @@ extern "C" void* j3StartJNI(uint32* localReferencesNumber,
 
 // Never throws.
 extern "C" void j3JavaObjectAquire(JavaObject* obj) {
-  BEGIN_NATIVE_EXCEPTION(1)
-  
   llvm_gcroot(obj, 0);
   obj->acquire();
-
-  END_NATIVE_EXCEPTION
 }
 
 // Never throws.
 extern "C" void j3JavaObjectRelease(JavaObject* obj) {
-  BEGIN_NATIVE_EXCEPTION(1)
-  
   llvm_gcroot(obj, 0);
   obj->release();
-  
-  END_NATIVE_EXCEPTION
 }
 
 // Does not call any Java code. Can not yield a GC.
@@ -484,7 +476,7 @@ extern "C" JavaObject* j3ArithmeticException() {
 
 // Creates a Java object and then throws it.
 extern "C" JavaObject* j3ClassCastException(JavaObject* obj,
-                                               UserCommonClass* cl) {
+                                            UserCommonClass* cl) {
   JavaObject *exc = 0;
   llvm_gcroot(obj, 0);
   llvm_gcroot(exc, 0);
@@ -508,7 +500,7 @@ extern "C" JavaObject* j3ClassCastException(JavaObject* obj,
 
 // Creates a Java object and then throws it.
 extern "C" JavaObject* j3IndexOutOfBoundsException(JavaObject* obj,
-                                                      sint32 index) {
+                                                   sint32 index) {
   JavaObject *exc = 0;
   llvm_gcroot(obj, 0);
   llvm_gcroot(exc, 0);
