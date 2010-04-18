@@ -189,13 +189,21 @@ extern "C" void* j3ClassLookup(UserClass* caller, uint32 index) {
   BEGIN_NATIVE_EXCEPTION(1)
    
   UserConstantPool* ctpInfo = caller->getConstantPool();
-  UserClass* cl = (UserClass*)ctpInfo->loadClass(index);
+  UserCommonClass* cl = ctpInfo->loadClass(index);
   // We can not initialize here, because bytecodes such as CHECKCAST
   // or classes used in catch clauses do not trigger class initialization.
   // This is really sad, because we need to insert class initialization checks
   // in the LLVM code.
   assert(cl && "No cl after class lookup");
   res = (void*)cl;
+ 
+  // Create the array class, in case we come from a ANEWARRAY.
+  if (cl->isClass() && !cl->virtualVT->baseClassVT) { 
+    const UTF8* arrayName =
+      cl->classLoader->constructArrayName(1, cl->getName());
+    cl->virtualVT->baseClassVT =
+      cl->classLoader->constructArray(arrayName)->virtualVT;
+  }
 
   END_NATIVE_EXCEPTION
   
@@ -295,18 +303,22 @@ extern "C" JavaArray* j3MultiCallNew(UserClassArray* cl, uint32 len, ...) {
 }
 
 // Throws if the class can not be resolved.
-extern "C" UserClassArray* j3GetArrayClass(UserCommonClass* cl,
-                                              UserClassArray** dcl) {
-  UserClassArray* res = 0;
-
+extern "C" JavaVirtualTable* j3GetArrayClass(UserClass* caller,
+                                             uint32 index,
+                                             JavaVirtualTable** VT) {
+  JavaVirtualTable* res = 0;
+  assert(VT && "Incorrect call to j3GetArrayClass");
   BEGIN_NATIVE_EXCEPTION(1)
+  
+  UserConstantPool* ctpInfo = caller->getConstantPool();
+  UserCommonClass* cl = ctpInfo->loadClass(index);
   
   JnjvmClassLoader* JCL = cl->classLoader;
   if (cl->asClass()) cl->asClass()->resolveClass();
   const UTF8* arrayName = JCL->constructArrayName(1, cl->getName());
   
-  res = JCL->constructArray(arrayName);
-  if (dcl) *dcl = res;
+  res = JCL->constructArray(arrayName)->virtualVT;
+  *VT = res;
 
   END_NATIVE_EXCEPTION
 
@@ -314,7 +326,7 @@ extern "C" UserClassArray* j3GetArrayClass(UserCommonClass* cl,
   // exception check. Therefore, we trick LLVM to check the return value of the
   // function.
   JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return (UserClassArray*)obj;
+  if (obj) return (JavaVirtualTable*)obj;
   return res;
 }
 
@@ -523,12 +535,12 @@ extern "C" JavaObject* j3IndexOutOfBoundsException(JavaObject* obj,
 }
 
 // Creates a Java object and then throws it.
-extern "C" JavaObject* j3ArrayStoreException(JavaVirtualTable* VT) {
+extern "C" JavaObject* j3ArrayStoreException(JavaVirtualTable* VT,
+                                             JavaVirtualTable* VT2) {
   JavaObject *exc = 0;
   JavaThread *th = JavaThread::get();
 
   BEGIN_NATIVE_EXCEPTION(1)
-  
   exc = th->getJVM()->CreateArrayStoreException(VT);
 
   END_NATIVE_EXCEPTION

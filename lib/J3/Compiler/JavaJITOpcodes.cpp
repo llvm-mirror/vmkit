@@ -730,7 +730,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           BranchInst::Create(endBlock, exceptionBlock, res, currentBlock);
           
           currentBlock = exceptionBlock;
-          throwException(intrinsics->ArrayStoreExceptionFunction, VTArgs, 1);
+          throwException(intrinsics->ArrayStoreExceptionFunction, VTArgs, 2);
 
           currentBlock = endBlock;
         }
@@ -2009,10 +2009,10 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           }
         } else {
           uint16 index = readU2(bytecodes, i);
-          CommonClass* cl = 0;
-          valCl = getResolvedCommonClass(index, true, &cl);
+          CommonClass* cl =
+            compilingClass->ctpInfo->getMethodClassIfLoaded(index); 
 
-          if (cl) {
+          if (cl && (!cl->isClass() || cl->asClass()->isResolved())) {
             JnjvmClassLoader* JCL = cl->classLoader;
             const UTF8* arrayName = JCL->constructArrayName(1, cl->name);
           
@@ -2033,12 +2033,12 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
           } else {
             const llvm::Type* Ty = 
-              PointerType::getUnqual(intrinsics->JavaClassArrayType);
-            Value* args[2]= { valCl, Constant::getNullValue(Ty) };
-            valCl = CallInst::Create(intrinsics->GetArrayClassFunction, args,
-                                     args + 2, "", currentBlock);
-            TheVT = CallInst::Create(intrinsics->GetVTFromClassArrayFunction, valCl, "",
-                                     currentBlock);
+              PointerType::getUnqual(intrinsics->VTType);
+            Value* args[3]= { TheCompiler->getNativeClass(compilingClass),
+                              ConstantInt::get(Type::getInt32Ty(*llvmContext), index),
+                              Constant::getNullValue(Ty) };
+            TheVT = CallInst::Create(intrinsics->GetArrayClassFunction, args,
+                                     args + 3, "", currentBlock);
           }
 
           sizeElement = intrinsics->constantPtrLogSize;

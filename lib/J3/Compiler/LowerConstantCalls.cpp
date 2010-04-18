@@ -531,17 +531,16 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           BranchInst::Create(NBB, trueCl);
           break;
         } else if (V == intrinsics->GetArrayClassFunction) {
-          const llvm::Type* Ty = 
-            PointerType::getUnqual(intrinsics->JavaCommonClassType);
+          const llvm::Type* Ty = PointerType::getUnqual(intrinsics->VTType);
           Constant* nullValue = Constant::getNullValue(Ty);
           // Check if we have already proceed this call.
-          if (Call.getArgument(1) == nullValue) { 
+          if (Call.getArgument(2) == nullValue) { 
             BasicBlock* NBB = II->getParent()->splitBasicBlock(II);
             I->getParent()->getTerminator()->eraseFromParent();
 
-            Constant* init = Constant::getNullValue(intrinsics->JavaClassArrayType);
+            Constant* init = Constant::getNullValue(intrinsics->VTType);
             GlobalVariable* GV = 
-              new GlobalVariable(*(F.getParent()), intrinsics->JavaClassArrayType,
+              new GlobalVariable(*(F.getParent()), intrinsics->VTType,
                                  false, GlobalValue::ExternalLinkage,
                                  init, "");
 
@@ -551,21 +550,22 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 
             BasicBlock* OKBlock = BasicBlock::Create(*Context, "", &F);
             BasicBlock* NotOKBlock = BasicBlock::Create(*Context, "", &F);
-            PHINode* node = PHINode::Create(intrinsics->JavaClassArrayType, "",
+            PHINode* node = PHINode::Create(intrinsics->VTType, "",
                                             OKBlock);
             node->addIncoming(LoadedGV, CI->getParent());
 
             BranchInst::Create(NotOKBlock, OKBlock, cmp, CI);
 
-            Value* args[2] = { Call.getArgument(0), GV };
+            Value* args[3] = { Call.getArgument(0), Call.getArgument(1), GV };
             Value* res = CallInst::Create(intrinsics->GetArrayClassFunction, args,
-                                          args + 2, "", NotOKBlock);
+                                          args + 3, "", NotOKBlock);
             BranchInst::Create(OKBlock, NotOKBlock);
             node->addIncoming(res, NotOKBlock);
             
             CI->replaceAllUsesWith(node);
             CI->eraseFromParent();
             BranchInst::Create(NBB, OKBlock);
+            Changed = true;
             break;
           }
         } else if (V == intrinsics->ForceInitialisationCheckFunction ||

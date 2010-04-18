@@ -288,10 +288,8 @@ CommonClass* JavaConstantPool::loadClass(uint32 index, bool resolve) {
     if (name->elements[0] == I_TAB) {
       temp = loader->constructArray(name);
     } else {
-      // Put into ctpRes because there is only one representation of the class
       temp = loader->loadName(name, resolve, false);
-    }
-    
+    } 
     ctpRes[index] = temp;
   }
 #endif

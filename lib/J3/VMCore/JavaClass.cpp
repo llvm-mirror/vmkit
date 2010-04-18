@@ -1486,8 +1486,6 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
     destructor = 0;
     nbSecondaryTypes = 0;
   }
-    
-
 }
   
 JavaVirtualTable::JavaVirtualTable(ClassArray* C) {

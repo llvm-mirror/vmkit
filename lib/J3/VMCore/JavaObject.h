@@ -81,8 +81,8 @@ public:
   ///
   JavaVirtualTable** secondaryTypes;
 
-  /// baseClass - Holds the base class VT of an array, or the array class VT
-  /// of a regular class. Used for AASTORE checks.
+  /// baseClassVT - Holds the base class VT of an array. Used for AASTORE
+  /// checks.
   ///
   JavaVirtualTable* baseClassVT;
 

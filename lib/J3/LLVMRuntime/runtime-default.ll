@@ -184,8 +184,7 @@ declare %JavaObject* @getClassDelegatee(%JavaCommonClass*) readnone
 declare %JavaObject* @j3RuntimeDelegatee(%JavaCommonClass*) readnone 
 
 ;;; j3GetArrayClass - Get the array user class of the user class.
-declare %JavaClassArray* @j3GetArrayClass(%JavaCommonClass*, 
-                                             %JavaClassArray**) readnone
+declare %VT* @j3GetArrayClass(%JavaClass*, i32, %VT**) readnone
 
 declare i8 @getFinalInt8Field(i8*) readnone
 declare i16 @getFinalInt16Field(i16*) readnone
@@ -209,7 +208,7 @@ declare %JavaObject* @j3IndexOutOfBoundsException(%JavaObject*, i32)
 declare %JavaObject* @j3NegativeArraySizeException(i32)
 declare %JavaObject* @j3OutOfMemoryError(i32)
 declare %JavaObject* @j3StackOverflowError()
-declare %JavaObject* @j3ArrayStoreException(%VT*)
+declare %JavaObject* @j3ArrayStoreException(%VT*, %VT*)
 declare %JavaObject* @j3ArithmeticException()
 declare void @j3ThrowException(%JavaObject*)
 declare void @j3ThrowExceptionFromJIT()
