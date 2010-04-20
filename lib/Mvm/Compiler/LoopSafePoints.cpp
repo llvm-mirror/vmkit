@@ -99,31 +99,6 @@ bool LoopSafePoints::runOnLoop(Loop* L, LPPassManager& LPM) {
 
   if (!YieldPtr) return false;
 
-  TerminatorInst* TI = Header->getTerminator();
-  
-  // Insert the check after the entry block if the entry block does the
-  // loop exit.
-  if (BranchInst* BI = dyn_cast<BranchInst>(TI)) {
-    if (BI->isConditional()) {
-
-      BasicBlock* First = BI->getSuccessor(0);
-      BasicBlock* Second = BI->getSuccessor(1);
-
-      bool containsFirst = L->contains(First);
-      bool containsSecond = L->contains(Second);
-
-      if (!containsFirst) {
-        insertSafePoint(Second, SafeFunction, YieldPtr, L, LI);
-        return true;
-      }
-      
-      if (!containsSecond) {
-        insertSafePoint(First, SafeFunction, YieldPtr, L, LI);
-        return true;
-      }
-    }
-  }
-  
   insertSafePoint(Header, SafeFunction, YieldPtr, L, LI);
   return true;
 }

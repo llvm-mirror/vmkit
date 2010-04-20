@@ -113,7 +113,7 @@ namespace mvm {
 }
 
 namespace j3 {
-  llvm::FunctionPass* createLowerConstantCallsPass(J3Intrinsics* I);
+  llvm::FunctionPass* createLowerConstantCallsPass(JavaLLVMCompiler* I);
 }
 
 void JavaLLVMCompiler::addJavaPasses() {
@@ -121,15 +121,17 @@ void JavaLLVMCompiler::addJavaPasses() {
   JavaNativeFunctionPasses->add(new TargetData(TheModule));
   // Lower constant calls to lower things like getClass used
   // on synchronized methods.
-  JavaNativeFunctionPasses->add(createLowerConstantCallsPass(getIntrinsics()));
+  JavaNativeFunctionPasses->add(createLowerConstantCallsPass(this));
   
   JavaFunctionPasses = new FunctionPassManager(TheModule);
-  mvm::MvmModule::addCommandLinePasses(JavaFunctionPasses);
   if (cooperativeGC)
     JavaFunctionPasses->add(mvm::createLoopSafePointsPass());
+  // Add other passes after the loop pass, because safepoints may move objects.
+  // Moving objects disable many optimizations.
+  mvm::MvmModule::addCommandLinePasses(JavaFunctionPasses);
 
   // Re-enable this when the pointers in stack-allocated objects can
   // be given to the GC.
   //JavaFunctionPasses->add(mvm::createEscapeAnalysisPass());
-  JavaFunctionPasses->add(createLowerConstantCallsPass(getIntrinsics()));
+  JavaFunctionPasses->add(createLowerConstantCallsPass(this));
 }

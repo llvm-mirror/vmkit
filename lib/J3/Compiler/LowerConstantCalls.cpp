@@ -17,6 +17,7 @@
 #include "llvm/Support/Debug.h"
 
 #include "JavaClass.h"
+#include "j3/JavaLLVMCompiler.h"
 #include "j3/J3Intrinsics.h"
 
 using namespace llvm;
@@ -26,9 +27,9 @@ namespace j3 {
   class VISIBILITY_HIDDEN LowerConstantCalls : public FunctionPass {
   public:
     static char ID;
-    J3Intrinsics* intrinsics;
-    LowerConstantCalls(J3Intrinsics* I) : FunctionPass((intptr_t)&ID),
-      intrinsics(I) { }
+    JavaLLVMCompiler* TheCompiler;
+    LowerConstantCalls(JavaLLVMCompiler* Compiler) : FunctionPass((intptr_t)&ID),
+      TheCompiler(Compiler) { }
 
     virtual bool runOnFunction(Function &F);
   private:
@@ -124,6 +125,9 @@ static Value* getDelegatee(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI
 bool LowerConstantCalls::runOnFunction(Function& F) {
   LLVMContext* Context = &F.getContext();
   bool Changed = false;
+  J3Intrinsics* intrinsics = TheCompiler->getIntrinsics();
+  JavaMethod* meth = TheCompiler->getJavaMethod(&F);
+  assert(meth && "Method not registered");
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
     for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
@@ -133,16 +137,12 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
       if (ICmpInst* Cmp = dyn_cast<ICmpInst>(I)) {
         if (Cmp->getOperand(1) == intrinsics->JavaObjectNullConstant) {
           Value* Arg = Cmp->getOperand(0);
-      
-#if 0
-          // Re-enable this once we can get access of the JavaMethod again.
           if (isVirtual(meth->access) && Arg == F.arg_begin()) {
             Changed = true;
             Cmp->replaceAllUsesWith(ConstantInt::getFalse(*Context));
             Cmp->eraseFromParent();
             break;
           }
-#endif
           
           CallSite Ca = CallSite::get(Arg);
           Instruction* CI = Ca.getInstruction();
@@ -785,8 +785,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 }
 
 
-FunctionPass* createLowerConstantCallsPass(J3Intrinsics* M) {
-  return new LowerConstantCalls(M);
+FunctionPass* createLowerConstantCallsPass(JavaLLVMCompiler* Compiler) {
+  return new LowerConstantCalls(Compiler);
 }
 
 }
