@@ -16,6 +16,13 @@
 
 #include "mvm/Threads/Thread.h"
 
+#ifdef WITH_LLVM_GCC
+extern "C" void __llvm_gcroot(void**, void*) __attribute__((nothrow));
+#define llvm_gcroot(a, b) __llvm_gcroot((void**)&a, b)
+#else
+#define llvm_gcroot(a, b)
+#endif
+
 namespace mvm {
 
 extern "C" uint8  llvm_atomic_cmp_swap_i8(uint8* ptr,  uint8 cmp,
@@ -192,15 +199,6 @@ public:
   static const uint64_t HashMask = 0xFFC;
   // Mask for the GC bits.
   static const uint64_t GCBitMask = 0x3;
-
-
-
-#ifdef WITH_LLVM_GCC
-extern "C" void __llvm_gcroot(const void**, void*) __attribute__((nothrow));
-#define llvm_gcroot(a, b) __llvm_gcroot((const void**)&a, b)
-#else
-#define llvm_gcroot(a, b)
-#endif
 
   class FatLockNoGC {
   public:

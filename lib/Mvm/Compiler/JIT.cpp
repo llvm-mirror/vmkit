@@ -152,8 +152,8 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
 #endif
   
   // Disable branch fold for accurate line numbers.
-  char* commands[2] = { (char*)"vmkit", (char*)"-disable-branch-fold" };
-  llvm::cl::ParseCommandLineOptions(2, commands);
+  const char* commands[2] = { "vmkit", "-disable-branch-fold" };
+  llvm::cl::ParseCommandLineOptions(2, const_cast<char**>(commands));
 
   if (!M) {
     globalModule = new Module("bootstrap module", *(new LLVMContext()));

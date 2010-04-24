@@ -394,7 +394,7 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
       void* obj = cl->getStaticInstance();
       if (obj) {
         if (type->isPrimitive()) {
-          const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+          const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
           if (prim->isBool() || prim->isByte()) {
             ConstantInt* CI = ConstantInt::get(
                 Type::getInt8Ty(getLLVMContext()),
@@ -672,7 +672,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
         JavaField& field = curCl->virtualFields[i];
         const Typedef* type = field.getSignature();
         if (type->isPrimitive()) {
-          const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+          const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
           if (prim->isBool() || prim->isByte()) {
             ConstantInt* CI = ConstantInt::get(Type::getInt8Ty(getLLVMContext()),
                                                field.getInt8Field(obj));

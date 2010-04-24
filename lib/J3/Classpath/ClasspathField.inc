@@ -92,7 +92,7 @@ JavaObjectField* Field, JavaObject* obj) {
   }
   
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
 
     if (prim->isInt())
       res = (sint32)field->getInt32Field(stat ? StatPtr : obj);
@@ -142,7 +142,7 @@ JavaObjectField* Field, JavaObject* obj) {
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     
     if (prim->isInt())
       res = (sint64)field->getInt32Field(stat ? StatPtr : obj);
@@ -193,7 +193,7 @@ JavaObjectField* Field, JavaObject* obj) {
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isBool())  
       res = (uint8)field->getInt8Field(stat ? StatPtr : obj);
     else
@@ -235,7 +235,7 @@ JavaObjectField* Field, JavaObject* obj) {
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isByte())
       res = (jfloat)field->getInt8Field(stat ? StatPtr : obj);
     else if (prim->isInt())
@@ -287,7 +287,7 @@ JavaObjectField* Field, JavaObject* obj) {
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isByte())
       res = (sint8)field->getInt8Field(stat ? StatPtr : obj);
     else
@@ -328,7 +328,7 @@ JavaObjectField* Field, JavaObject* obj) {
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isChar())
       res = (uint16)field->getInt16Field(stat ? StatPtr : obj);
     else
@@ -371,7 +371,7 @@ JavaObjectField* Field, JavaObject* obj) {
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isShort())
       res = (sint16)field->getInt16Field(stat ? StatPtr : obj);
     else if (prim->isByte())
@@ -414,7 +414,7 @@ JavaObjectField* Field, JavaObject* obj) {
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isByte())
       res = (jdouble)(sint64)field->getInt8Field(stat ? StatPtr : obj);
     else if (prim->isInt())
@@ -469,7 +469,7 @@ JavaObjectField* Field, JavaObject* obj) {
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isBool()) {
       uint8 val = field->getInt8Field(stat ? StatPtr : obj);
       res = vm->upcalls->boolClass->doNew(vm);
@@ -551,7 +551,7 @@ JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
   
 
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isBool())
       field->setInt8Field(stat ? StatPtr : obj, buf.z);
     else if (prim->isByte())
@@ -601,7 +601,7 @@ JavaObjectField* Field, JavaObject* obj, jboolean val) {
  
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isBool())
       field->setInt8Field(stat ? StatPtr : obj, (uint8)val);
     else
@@ -640,7 +640,7 @@ JavaObjectField* Field, JavaObject* obj, jbyte val) {
 
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isByte())
       field->setInt8Field(stat ? StatPtr : obj, (sint8)val);
     else if (prim->isShort())
@@ -687,7 +687,7 @@ JavaObjectField* Field, JavaObject* obj, jchar val) {
   }
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isChar())
       field->setInt16Field(stat ? StatPtr : obj, (uint16)val);
     else if (prim->isInt())
@@ -733,7 +733,7 @@ JavaObjectField* Field, JavaObject* obj, jshort val) {
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isShort())
       field->setInt16Field(stat ? StatPtr : obj, (sint16)val);
     else if (prim->isInt())
@@ -779,7 +779,7 @@ JavaObjectField* Field, JavaObject* obj, jint val) {
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isInt())
       field->setInt32Field(stat ? StatPtr : obj, (sint32)val);
     else if (prim->isLong())
@@ -823,7 +823,7 @@ JavaObjectField* Field, JavaObject* obj, jlong val) {
 
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isLong())
       field->setLongField(stat ? StatPtr : obj, (sint64)val);
     else if (prim->isFloat())
@@ -865,7 +865,7 @@ JavaObjectField* Field, JavaObject* obj, jfloat val) {
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isFloat())
       field->setFloatField(stat ? StatPtr : obj, (float)val);
     else if (prim->isDouble())
@@ -905,7 +905,7 @@ JavaObjectField* Field, JavaObject* obj, jdouble val) {
   
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
-    const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isDouble())
       field->setDoubleField(stat ? StatPtr : obj, (double)val);
     else

@@ -20,13 +20,6 @@
 
 class VirtualTable;
 
-#ifdef WITH_LLVM_GCC
-extern "C" void __llvm_gcroot(const void**, void*) __attribute__((nothrow));
-#define llvm_gcroot(a, b) __llvm_gcroot((const void**)&a, b)
-#else
-#define llvm_gcroot(a, b)
-#endif
-
 #define declare_gcroot(type, name) type name; llvm_gcroot(name, 0); name
 
 namespace mvm {

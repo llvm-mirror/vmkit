@@ -225,7 +225,7 @@ void JavaObject::decapsulePrimitive(Jnjvm *vm, jvalue* buf,
   } else {
     UserCommonClass* cl = obj->getClass();
     UserClassPrimitive* value = cl->toPrimitive(vm);
-    PrimitiveTypedef* prim = (PrimitiveTypedef*)signature;
+    const PrimitiveTypedef* prim = (const PrimitiveTypedef*)signature;
 
     if (value == 0) {
       vm->illegalArgumentException("");

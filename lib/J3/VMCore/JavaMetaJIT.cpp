@@ -29,7 +29,7 @@ using namespace j3;
   for (uint32 i = 0; i < signature->nbArguments; ++i) { \
     const Typedef* type = arguments[i];\
     if (type->isPrimitive()) {\
-      const PrimitiveTypedef* prim = (PrimitiveTypedef*)type;\
+      const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;\
       if (prim->isLong()) {\
         buffer[i].j = va_arg(ap, sint64);\
       } else if (prim->isInt()){ \

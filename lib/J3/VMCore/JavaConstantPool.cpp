@@ -219,7 +219,7 @@ const UTF8* JavaConstantPool::UTF8At(uint32 entry) {
   
     JnjvmClassLoader* loader = classDef->classLoader;
     const UTF8* utf8 = loader->hashUTF8->lookupOrCreateReader(buf, n);
-    ctpRes[entry] = (UTF8*)utf8;
+    ctpRes[entry] = const_cast<UTF8*>(utf8);
   
     PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <utf8>\t\t\"%s\"\n",
                 entry, UTF8Buffer(utf8)->cString());

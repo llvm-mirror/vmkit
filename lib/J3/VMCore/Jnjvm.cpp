@@ -698,7 +698,7 @@ JavaString* Jnjvm::internalUTF8ToStr(const UTF8* utf8) {
     buf[i] = utf8->elements[i];
   }
   
-  return hashStr.lookupOrCreate((const ArrayUInt16*&)tmp, this,
+  return hashStr.lookupOrCreate(const_cast<const ArrayUInt16*&>(tmp), this,
                                 JavaString::stringDup);
 }
 
