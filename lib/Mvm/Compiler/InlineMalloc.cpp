@@ -55,7 +55,8 @@ bool InlineMalloc::runOnFunction(Function& F) {
         Function* F = Call.getCalledFunction();
         if (F == Malloc) {
           if (dyn_cast<Constant>(Call.getArgument(0))) {
-            Changed |= InlineFunction(Call, 0, mvm::MvmModule::TheTargetData);
+            InlineFunctionInfo IFI(NULL, mvm::MvmModule::TheTargetData);
+            Changed |= InlineFunction(Call, IFI);
             break;
           }
         }
