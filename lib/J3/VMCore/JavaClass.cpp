@@ -352,12 +352,15 @@ void JavaVirtualTable::setNativeDestructor(uintptr_t ptr, const char* name) {
 JavaMethod* Class::lookupInterfaceMethodDontThrow(const UTF8* name,
                                                   const UTF8* type) {
   JavaMethod* cur = lookupMethodDontThrow(name, type, false, false, 0);
-  if (!cur) {
+  if (cur == NULL) {
     for (uint16 i = 0; i < nbInterfaces; ++i) {
       Class* I = interfaces[i];
       cur = I->lookupInterfaceMethodDontThrow(name, type);
       if (cur) return cur;
     }
+  }
+  if (cur == NULL && super != NULL) {
+    cur = super->lookupInterfaceMethodDontThrow(name, type);
   }
   return cur;
 }
