@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     } else if (!strcmp(argv[i], "-O1") || !strcmp(argv[i], "-O2") ||
                !strcmp(argv[i], "-O3")) {
       opt = argv[i];
-      vmjcArgv[vmjcArgc++] = (char*)"-std-compile-opts";
+      vmjcArgv[vmjcArgc++] = (const char*)"-std-compile-opts";
     } else if (argv[i][0] == '-' && argv[i][1] == 'S') {
       runGCC = false;
     } else if (argv[i][0] == '-' && argv[i][1] == 'c') {
