@@ -273,7 +273,11 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   mvm::MvmModule::executionEngine->addModule(TheModule);
   mvm::MvmModule::protectEngine.unlock();
   
-  addJavaPasses();
+
+  // The first JIT Compiler initialises JITListener and is trusted wrt.
+  // safe points.
+  bool trusted = (JITListener == NULL);
+  addJavaPasses(trusted);
 
   if (!JITListener) {
     JITListener = new JavaJITListener();
@@ -294,7 +298,7 @@ void JavaJITCompiler::makeVT(Class* cl) {
   assert(VT && "No VT was allocated!");
     
   if (VT->init) {
-    // The VT hash already been filled by the AOT compiler so there
+    // The VT has already been filled by the AOT compiler so there
     // is nothing left to do!
     return;
   }

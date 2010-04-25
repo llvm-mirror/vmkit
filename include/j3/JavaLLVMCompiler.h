@@ -49,7 +49,7 @@ protected:
   llvm::DIFactory* DebugFactory;  
   J3Intrinsics JavaIntrinsics;
 
-  void addJavaPasses();
+  void addJavaPasses(bool trusted = false);
 
 private:  
   bool enabledException;
