@@ -226,6 +226,7 @@ public:
   }
 
   virtual UserCommonClass* assocClass(JnjvmClassLoader* loader) const;
+  virtual UserCommonClass* findAssocClass(JnjvmClassLoader* loader) const;
 
   ArrayTypedef(const UTF8* name) {
     keyName = name;
