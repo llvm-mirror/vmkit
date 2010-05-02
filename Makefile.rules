@@ -11,7 +11,7 @@ LLVMRuntime.gen.ll : $(VMKIT_RUNTIME)
 
 LLVMRuntime.inc : LLVMRuntime.gen.ll
 	$(Echo) "Building LLVM runtime with $(VMKIT_RUNTIME)"
-	$(Verb) $(LLVMAS) -f $(<F) -o - | $(LLC) -march=cpp -cppgen=contents -f -o $@
+	$(Verb) $(LLVMAS) -f $(<F) -o - | $(LLC) -march=cpp -cppgen=contents -o $@
 
 
 clean-local::
@@ -30,7 +30,7 @@ LLVMAssembly.gen.ll : $(VMKIT_ASSEMBLY)
 
 LLVMAssembly.s : LLVMAssembly.gen.ll
 	$(Echo) "Building LLVM assembly with $(VMKIT_ASSEMBLY)"
-	$(Verb) $(LLVMAS) -f $(<F) -o - | $(LLC) -f -o $@
+	$(Verb) $(LLVMAS) -f $(<F) -o - | $(LLC) -o $@
 
 $(ObjDir)/%.lo $(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
 	$(Echo) "Compiling $*.s for $(BuildMode) build " $(PIC_FLAG)
@@ -67,7 +67,7 @@ glibj-optimized.zip.bc : glibj.zip.bc
 
 glibj.zip.s : glibj-optimized.zip.bc
 	$(Echo) "Compiling glibj.zip.bc to native"
-	$(Verb) $(LLC) -relocation-model=pic -disable-fp-elim -f glibj-optimized.zip.bc -o glibj.zip.s
+	$(Verb) $(LLC) -relocation-model=pic -disable-fp-elim glibj-optimized.zip.bc -o glibj.zip.s
 
 $(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
 	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
@@ -112,7 +112,7 @@ $(MODULESNAME).bc : $(ProjLibsPaths)
 $(MODULESNAME).s : $(MODULESNAME).bc
 	$(Echo) Building $(BuildMode) Assembly file $(notdir $@)
 	$(Verb) $(LOPT) -load=$(LibDir)/StaticGCPass$(SHLIBEXT) -std-compile-opts -StaticGCPass -f $(MODULESNAME).bc -o vmkitoptimized.bc
-	$(Verb) $(LLC) -disable-fp-elim -f vmkitoptimized.bc -o $(MODULESNAME).s
+	$(Verb) $(LLC) -disable-fp-elim vmkitoptimized.bc -o $(MODULESNAME).s
 
 $(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
 	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
