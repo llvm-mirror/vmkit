@@ -142,7 +142,7 @@ void Cond::broadcast() {
 }
 
 void Cond::wait(Lock* l) {
-
+  assert(l->selfOwner());
   int n = l->unsafeUnlock();
 
   Thread* th = Thread::get();
@@ -159,15 +159,19 @@ void Cond::signal() {
   pthread_cond_signal((pthread_cond_t*)&internalCond);
 }
 
-int Cond::timedWait(Lock* l, struct timeval *ref) {
-  
+#define BILLION 1000000000
+int Cond::timedWait(Lock* l, struct timeval *ref) { 
   struct timespec timeout; 
-  struct timeval now; 
-  struct timezone tz; 
-  gettimeofday(&now, &tz); 
+  struct timeval now;
+  gettimeofday(&now, NULL); 
   timeout.tv_sec = now.tv_sec + ref->tv_sec; 
-  timeout.tv_nsec = now.tv_usec + ref->tv_usec;
+  timeout.tv_nsec = (now.tv_usec + ref->tv_usec) * 1000;
+  if (timeout.tv_nsec > BILLION) {
+    timeout.tv_sec++;
+    timeout.tv_nsec -= BILLION;
+  }
   
+  assert(l->selfOwner());
   int n = l->unsafeUnlock();
   
   Thread* th = Thread::get();
