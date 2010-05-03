@@ -87,11 +87,8 @@ void JavaJIT::invokeVirtual(uint16 index) {
     canBeDirect = true;
   }
 
-  // If the method is in fact a method defined in an interface,
-  // call invokeInterface instead.
-  if (meth && isInterface(meth->classDef->access)) {
-    return invokeInterface(index, true);
-  }
+  assert((!meth || !isInterface(meth->classDef->access)) &&
+          "invokevirtual on an interface");
  
   const UTF8* name = 0;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);

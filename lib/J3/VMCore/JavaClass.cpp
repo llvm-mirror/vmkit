@@ -827,10 +827,29 @@ void Class::makeVT() {
   virtualVT = new(allocator, virtualTableSize) JavaVirtualTable(this);
 }
 
+static void computeMirandaMethods(Class* current,
+    Class* baseClass, std::vector<JavaMethod*>& mirandaMethods) {
+  for (uint32 i = 0; i < current->nbInterfaces; i++) {
+    Class* I = current->interfaces[i];
+    for (uint32 j = 0; j < I->nbVirtualMethods; j++) {
+      JavaMethod& orig = I->virtualMethods[j];
+      JavaMethod* meth = baseClass->lookupMethodDontThrow(orig.name, orig.type,
+                                                          false, true, 0);
+      if (meth == NULL) {
+        mirandaMethods.push_back(&orig);
+      }
+    }
+    computeMirandaMethods(I, baseClass, mirandaMethods);
+  }
+}
 
 void Class::readMethods(Reader& reader) {
   uint16 nbMethods = reader.readU2();
-  virtualMethods = new(classLoader->allocator, "Methods") JavaMethod[nbMethods];
+  if (isAbstract(access)) {
+    virtualMethods = new JavaMethod[nbMethods];
+  } else {
+    virtualMethods = new(classLoader->allocator, "Methods") JavaMethod[nbMethods];
+  }
   staticMethods = virtualMethods + nbMethods;
   for (int i = 0; i < nbMethods; i++) {
     uint16 access = reader.readU2();
@@ -848,6 +867,29 @@ void Class::readMethods(Reader& reader) {
       ++nbVirtualMethods;
     }
     meth->attributs = readAttributs(reader, meth->nbAttributs);
+  }
+
+  if (isAbstract(access)) {
+    std::vector<JavaMethod*> mirandaMethods;
+    computeMirandaMethods(this, this, mirandaMethods);
+    uint32 size = mirandaMethods.size();
+    nbMethods += size;
+    JavaMethod* realMethods =
+      new(classLoader->allocator, "Methods") JavaMethod[nbMethods];
+    memcpy(realMethods + size, virtualMethods,
+           sizeof(JavaMethod) * (nbMethods - size));
+    nbVirtualMethods += size;
+    staticMethods = realMethods + nbVirtualMethods;
+    if (size != 0) {
+      int j = 0;
+      for (std::vector<JavaMethod*>::iterator i = mirandaMethods.begin(),
+           e = mirandaMethods.end(); i != e; i++) {
+        JavaMethod* cur = *i;
+        realMethods[j++].initialise(this, cur->name, cur->type, cur->access);
+      }
+    }
+    delete[] virtualMethods;
+    virtualMethods = realMethods;
   }
 }
 
