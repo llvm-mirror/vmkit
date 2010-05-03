@@ -92,9 +92,9 @@ JavaObject* prop) {
   setProperty(vm, prop, "java.class.path", vm->classpath);
   setProperty(vm, prop, "java.boot.class.path", JCL->bootClasspathEnv);
   setProperty(vm, prop, "sun.boot.class.path", JCL->bootClasspathEnv);
-  setProperty(vm, prop, "java.vm.version", "2.0");
-  setProperty(vm, prop, "java.vm.vendor", "VVM Project");
-  setProperty(vm, prop, "java.vm.name", "JnJVM");
+  setProperty(vm, prop, "java.vm.version", "0.27");
+  setProperty(vm, prop, "java.vm.vendor", "The VMKit Project");
+  setProperty(vm, prop, "java.vm.name", "J3");
   setProperty(vm, prop, "java.specification.version", "1.5");
   setProperty(vm, prop, "java.io.tmpdir", "/tmp");
   
