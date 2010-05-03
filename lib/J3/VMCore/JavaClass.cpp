@@ -1475,12 +1475,8 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
       offset = getCacheIndex() + depth + 1;
     } else {
       offset = getCacheIndex();
-      // Add the super in the list of secondary types only if it is
-      // out of depth.
-      if (depth > getDisplayLength()) {
-        ++nbSecondaryTypes;
-        outOfDepth = 1;
-      }
+      ++nbSecondaryTypes;
+      outOfDepth = 1;
     }
 
     mvm::BumpPtrAllocator& allocator = C->classLoader->allocator;
