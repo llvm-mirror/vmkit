@@ -233,6 +233,7 @@ void JavaJIT::throwException(llvm::Function* F, Value* arg1) {
 }
 
 void JavaJIT::throwException(Value* obj) {
+  JITVerifyNull(obj);
   Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
   Value* geps[2] = { intrinsics->constantZero,
                      intrinsics->OffsetJavaExceptionInThreadConstant };
