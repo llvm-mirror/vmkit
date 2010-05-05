@@ -1010,10 +1010,27 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
           currentBlock = ifTrue;
           throwException(intrinsics->ArithmeticExceptionFunction, 0, 0);
-          currentBlock = ifFalse;
+          currentBlock = ifFalse;  
         }
-        push(BinaryOperator::CreateSDiv(val1, val2, "", currentBlock),
-             false);
+        Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val2,
+                                  intrinsics->constantMinusOne, "");
+        BasicBlock* ifFalse = createBasicBlock("non -1 div");
+        BasicBlock* ifTrue = createBasicBlock("-1 div");
+        BasicBlock* endBlock = createBasicBlock("End division");
+        PHINode* node = PHINode::Create(val1->getType(), "", endBlock);
+        BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
+        currentBlock = ifTrue;
+        node->addIncoming(BinaryOperator::CreateSub(intrinsics->constantZero,
+                                                    val1, "", currentBlock),
+                          currentBlock);
+        BranchInst::Create(endBlock, currentBlock);
+        currentBlock = ifFalse;
+        node->addIncoming(
+            BinaryOperator::CreateSDiv(val1, val2, "", currentBlock),
+            currentBlock);
+        BranchInst::Create(endBlock, currentBlock);
+        currentBlock = endBlock;
+        push(node, false);
         break;
       }
 
@@ -1061,8 +1078,31 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IREM : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
-        push(BinaryOperator::CreateSRem(val1, val2, "", currentBlock),
-             false);
+        if (TheCompiler->hasExceptionsEnabled()) {
+          Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val2,
+                                    intrinsics->constantZero, "");
+          BasicBlock* ifFalse = createBasicBlock("non null rem");
+          BasicBlock* ifTrue = createBasicBlock("null rem");
+
+          BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
+          currentBlock = ifTrue;
+          throwException(intrinsics->ArithmeticExceptionFunction, 0, 0);
+          currentBlock = ifFalse;
+        }
+        Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val2,
+                                  intrinsics->constantMinusOne, "");
+        BasicBlock* ifFalse = createBasicBlock("non -1 rem");
+        BasicBlock* endBlock = createBasicBlock("end block");
+        PHINode* node = PHINode::Create(val1->getType(), "", endBlock);
+        node->addIncoming(intrinsics->constantZero, currentBlock);
+        BranchInst::Create(endBlock, ifFalse, cmp, currentBlock);
+        currentBlock = ifFalse;
+        node->addIncoming(
+            BinaryOperator::CreateSRem(val1, val2, "", currentBlock),
+            currentBlock);
+        BranchInst::Create(endBlock, currentBlock);
+        currentBlock = endBlock;
+        push(node, false);
         break;
       }
 
@@ -1071,6 +1111,17 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* val2 = pop();
         pop();
         llvm::Value* val1 = pop();
+        if (TheCompiler->hasExceptionsEnabled()) {
+          Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val2,
+                                    intrinsics->constantLongZero, "");
+          BasicBlock* ifFalse = createBasicBlock("non null div");
+          BasicBlock* ifTrue = createBasicBlock("null div");
+
+          BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
+          currentBlock = ifTrue;
+          throwException(intrinsics->ArithmeticExceptionFunction, 0, 0);
+          currentBlock = ifFalse;
+        }
         push(BinaryOperator::CreateSRem(val1, val2, "", currentBlock),
              false);
         push(intrinsics->constantZero, false);
