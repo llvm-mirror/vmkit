@@ -80,7 +80,7 @@ class Collector {
 
   static inline GCChunkNode *o2node(const void *p) {
     if (!p) return 0;
-    return GCHash::get((void*)p)->o2node((void*)p, GCChunkNode::maskCollectable);
+    return GCHash::get(const_cast<void*>(p))->o2node(const_cast<void*>(p), GCChunkNode::maskCollectable);
   }
 
   static inline size_t real_nbb(GCChunkNode *n) { 
