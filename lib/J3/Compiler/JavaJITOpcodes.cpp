@@ -1164,14 +1164,14 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case FNEG :
-        push(BinaryOperator::CreateSub(
+        push(BinaryOperator::CreateFSub(
                               intrinsics->constantFloatMinusZero,
                               pop(), "", currentBlock), false);
         break;
       
       case DNEG : {
         pop();
-        push(BinaryOperator::CreateSub(
+        push(BinaryOperator::CreateFSub(
                               intrinsics->constantDoubleMinusZero,
                               pop(), "", currentBlock), false);
         push(intrinsics->constantZero, false);
