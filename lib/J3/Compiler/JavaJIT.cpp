@@ -87,8 +87,11 @@ void JavaJIT::invokeVirtual(uint16 index) {
     canBeDirect = true;
   }
 
-  assert((!meth || !isInterface(meth->classDef->access)) &&
-          "invokevirtual on an interface");
+  if (meth && isInterface(meth->classDef->access)) {
+    // This can happen because we compute miranda methods before resolving
+    // interfaces.
+		return invokeInterface(index);
+	}
  
   const UTF8* name = 0;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);

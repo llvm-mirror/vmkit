@@ -831,6 +831,8 @@ static void computeMirandaMethods(Class* current,
     Class* baseClass, std::vector<JavaMethod*>& mirandaMethods) {
   for (uint32 i = 0; i < current->nbInterfaces; i++) {
     Class* I = current->interfaces[i];
+		// TODO: At this point, the interface may have not been read, so there
+		// is no methods yet.
     for (uint32 j = 0; j < I->nbVirtualMethods; j++) {
       JavaMethod& orig = I->virtualMethods[j];
       JavaMethod* meth = baseClass->lookupMethodDontThrow(orig.name, orig.type,
