@@ -671,7 +671,8 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
   if (I == End) {
     const UTF8* internalName = readerConstructUTF8(name->elements, name->size);
     res = new(allocator, "Class") UserClass(this, internalName, bytes);
-    classes->map.insert(std::make_pair(internalName, res));
+    bool success = classes->map.insert(std::make_pair(internalName, res)).second;
+    assert(success && "Could not add class in map");
   } else {
     res = ((UserClass*)(I->second));
   }
@@ -988,7 +989,7 @@ const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
   uint32 pos = steps;
   bool isTab = (className->elements[0] == I_TAB ? true : false);
   uint32 n = steps + len + (isTab ? 0 : 2);
-  uint16* buf = (uint16*)alloca(n * sizeof(uint16));
+  uint16* buf = new uint16[n];
     
   for (uint32 i = 0; i < steps; i++) {
     buf[i] = I_TAB;
@@ -1007,7 +1008,9 @@ const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
     buf[n - 1] = I_END_REF;
   }
 
-  return readerConstructUTF8(buf, n);
+  const UTF8* res = readerConstructUTF8(buf, n);
+  delete[] buf;
+  return res;
 }
 
 intptr_t JnjvmClassLoader::loadInLib(const char* buf, bool& j3) {
