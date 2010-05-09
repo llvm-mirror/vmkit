@@ -370,7 +370,8 @@ JavaMethod* Class::lookupSpecialMethodDontThrow(const UTF8* name,
                                                 Class* current) {
   JavaMethod* meth = lookupMethodDontThrow(name, type, false, true, NULL);
 
-  if (isSuper(current->access) &&
+  if (meth &&
+      isSuper(current->access) &&
       current != meth->classDef &&
       meth->classDef->isAssignableFrom(current) &&
       !name->equals(classLoader->bootstrapLoader->initName)) {
@@ -426,6 +427,15 @@ JavaMethod* Class::lookupMethod(const UTF8* name, const UTF8* type,
                                       Class** methodCl) {
   JavaMethod* res = lookupMethodDontThrow(name, type, isStatic, recurse,
                                           methodCl);
+  if (!res) {
+    JavaThread::get()->getJVM()->noSuchMethodError(this, name);
+  }
+  return res;
+}
+
+JavaMethod* Class::lookupInterfaceMethod(const UTF8* name, const UTF8* type) {
+  JavaMethod* res = lookupInterfaceMethodDontThrow(name, type);
+
   if (!res) {
     JavaThread::get()->getJVM()->noSuchMethodError(this, name);
   }

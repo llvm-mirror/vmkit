@@ -2263,7 +2263,7 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
     Meth = TheCompiler->getMethodInClass(meth);
   } else {
     Meth = getConstantPoolAt(index, intrinsics->InterfaceLookupFunction,
-                             intrinsics->JavaMethodType, 0, false);
+                             intrinsics->JavaMethodType, 0, true);
   }
 
   BasicBlock* label_bb = createBasicBlock("bb");

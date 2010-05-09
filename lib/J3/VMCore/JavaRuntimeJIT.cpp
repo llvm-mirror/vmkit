@@ -40,9 +40,8 @@ extern "C" void* j3InterfaceLookup(UserClass* caller, uint32 index) {
   
     ctpInfo->resolveMethod(index, cl, utf8, sign);
     assert(cl->isClass() && isInterface(cl->access) && "Wrong type of method");
-    res = cl->asClass()->lookupInterfaceMethodDontThrow(utf8, sign->keyName);
+    res = cl->asClass()->lookupInterfaceMethod(utf8, sign->keyName);
     
-    assert(res && "Can not found method");
     ctpInfo->ctpRes[index] = (void*)res;
   }
   
@@ -726,7 +725,7 @@ extern "C" void* j3ResolveSpecialStub() {
     lookup->lookupSpecialMethodDontThrow(utf8, sign->keyName, caller->classDef);
   
   if (!callee) {
-    th->getJVM()->abstractMethodError(lookup, utf8);
+    th->getJVM()->noSuchMethodError(lookup, utf8);
   }
 
   // Compile the found method.
