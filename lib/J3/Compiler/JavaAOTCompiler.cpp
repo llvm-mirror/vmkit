@@ -1120,12 +1120,19 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   if (cl->nbVirtualMethods + cl->nbStaticMethods) {
     methods = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
-    std::string name(UTF8Buffer(cl->name).toCompileName()->cString());
-    name += "_VirtualMethods";
-    GlobalVariable* GV = new GlobalVariable(Mod, ATy, false,
-                                            GlobalValue::ExternalLinkage,
-                                            methods, name);
-    virtualMethods.insert(std::make_pair(cl, GV));
+
+    GlobalVariable* GV = NULL;
+    method_iterator SI = virtualMethods.find(cl);
+    if (SI != virtualMethods.end()) {
+      GV = dyn_cast<GlobalVariable>(SI->second);
+      GV->setInitializer(methods);
+    } else {
+      std::string name(UTF8Buffer(cl->name).toCompileName()->cString());
+      name += "_VirtualMethods";
+      GV = new GlobalVariable(Mod, ATy, false, GlobalValue::ExternalLinkage,
+                              methods, name);
+      virtualMethods.insert(std::make_pair(cl, GV));
+    }
     methods = ConstantExpr::getCast(Instruction::BitCast, GV,
                                     JavaIntrinsics.JavaMethodType);
   } else {
