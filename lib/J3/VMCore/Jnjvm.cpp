@@ -1167,8 +1167,11 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
       appClassLoader->asciizConstructUTF8("([Ljava/lang/String;)V");
     const UTF8* funcName = appClassLoader->asciizConstructUTF8("main");
     JavaMethod* method = cl->lookupMethod(funcName, funcSign, true, true, 0);
-  
-    method->invokeIntStatic(this, method->classDef, &args);
+    if (isPublic(method->access)) { 
+      method->invokeIntStatic(this, method->classDef, &args);
+    } else {
+      fprintf(stderr, "Main method not public.\n");
+    }
   } CATCH {
   } END_CATCH;
 
