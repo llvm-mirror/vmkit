@@ -151,28 +151,30 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
     
     JavaThread* th = JavaThread::get();
 
-#define RUN_METH(TYPE, VAR) \
-    TRY { \
-      if (isVirtual(meth->access)) { \
-        if (isPublic(meth->access) && !isFinal(meth->access) && \
-            !isFinal(meth->classDef->access)) { \
-          VAR = meth->invoke##TYPE##VirtualBuf(vm, cl, obj, buf); \
-        } else { \
-          VAR = meth->invoke##TYPE##SpecialBuf(vm, cl, obj, buf); \
-        } \
-      } else { \
-        VAR = meth->invoke##TYPE##StaticBuf(vm, cl, buf); \
-      } \
-    } CATCH { \
-      exc = th->getJavaException(); \
-      if (exc->getClass()->isAssignableFrom(vm->upcalls->newException)) { \
-        th->clearException(); \
-        th->getJVM()->invocationTargetException(exc); \
-      } else { \
-        th->throwPendingException(); \
-      } \
-      return NULL; \
-    } END_CATCH; \
+#define RUN_METH(TYPE, VAR)                                                    \
+    TRY {                                                                      \
+      if (isVirtual(meth->access)) {                                           \
+        if (isPublic(meth->access) && !isFinal(meth->access) &&                \
+            !isFinal(meth->classDef->access)) {                                \
+          VAR = meth->invoke##TYPE##VirtualBuf(vm, cl, obj, buf);              \
+        } else {                                                               \
+          VAR = meth->invoke##TYPE##SpecialBuf(vm, cl, obj, buf);              \
+        }                                                                      \
+      } else {                                                                 \
+        VAR = meth->invoke##TYPE##StaticBuf(vm, cl, buf);                      \
+      }                                                                        \
+    } CATCH {                                                                  \
+      exc = th->getJavaException();                                            \
+    } END_CATCH;                                                               \
+    if (exc) {                                                                 \
+      if (exc->getClass()->isAssignableFrom(vm->upcalls->newException)) {      \
+        th->clearException();                                                  \
+        th->getJVM()->invocationTargetException(exc);                          \
+      } else {                                                                 \
+        th->throwPendingException();                                           \
+      }                                                                        \
+      return NULL;                                                             \
+    }
     
     Typedef* retType = sign->getReturnType();
     if (retType->isPrimitive()) {

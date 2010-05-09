@@ -150,9 +150,11 @@ void UserClass::initialiseClass(Jnjvm* vm) {
         setOwnerClass(0);
         broadcastClass();
         release();
+      } END_CATCH;
+      if (self->pendingException != NULL) {
         self->throwPendingException();
         return;
-      } END_CATCH;
+      }
     }
  
     JavaObject* exc = 0;

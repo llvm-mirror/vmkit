@@ -121,6 +121,8 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
         meth->invokeIntSpecialBuf(vm, cl, res, buf);
       } CATCH {
         excp = th->getJavaException();
+      } END_CATCH;
+      if (excp) {
         if (excp->getClass()->isAssignableFrom(vm->upcalls->newException)) {
           th->clearException();
           // If it's an exception, we encapsule it in an
@@ -131,8 +133,7 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
           th->throwPendingException();
         }
         return NULL;
-      } END_CATCH;
-    
+      }
     } else {
       vm->illegalArgumentException("class is not a regular class");
     }
