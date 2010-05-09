@@ -339,6 +339,12 @@ public:
   ///
   static const uint64_t StackOverflowMask = 0xC0000;
 
+  /// stackOverflow - Returns if there is a stack overflow in Java land.
+  ///
+  bool stackOverflow() {
+    return ((uintptr_t)__builtin_frame_address(0) & StackOverflowMask) == 0;
+  }
+
   /// operator new - Allocate the Thread object as well as the stack for this
   /// Thread. The thread object is inlined in the stack.
   ///
