@@ -17,7 +17,7 @@ using namespace llvm;
 
 namespace {
 
-  class VISIBILITY_HIDDEN LoopSafePoints : public LoopPass {
+  class LoopSafePoints : public LoopPass {
   public:
     static char ID;
     

@@ -17,7 +17,7 @@
 using namespace llvm;
 
 namespace {
-  class VISIBILITY_HIDDEN VmkitGC : public GCStrategy {
+  class VmkitGC : public GCStrategy {
   public:
     VmkitGC();
   };

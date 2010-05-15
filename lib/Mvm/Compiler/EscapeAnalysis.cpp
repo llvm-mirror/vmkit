@@ -29,7 +29,7 @@ using namespace llvm;
 
 namespace {
 
-  class VISIBILITY_HIDDEN EscapeAnalysis : public FunctionPass {
+  class EscapeAnalysis : public FunctionPass {
   public:
     static char ID;
     uint64_t pageSize;

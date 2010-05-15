@@ -24,7 +24,7 @@ using namespace llvm;
 
 namespace j3 {
 
-  class VISIBILITY_HIDDEN LowerConstantCalls : public FunctionPass {
+  class LowerConstantCalls : public FunctionPass {
   public:
     static char ID;
     JavaLLVMCompiler* TheCompiler;
