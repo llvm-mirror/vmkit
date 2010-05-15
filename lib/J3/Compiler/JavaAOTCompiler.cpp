@@ -559,7 +559,7 @@ Constant* JavaAOTCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
     const llvm::Type* valPtrType = LSI->getNativePtrType();
     
     Module& Mod = *getLLVMModule();
-    varGV = new GlobalVariable(Mod, valPtrType, true,
+    varGV = new GlobalVariable(Mod, valPtrType, false,
                                GlobalValue::InternalLinkage,
                                Constant::getNullValue(valPtrType), "");
   
