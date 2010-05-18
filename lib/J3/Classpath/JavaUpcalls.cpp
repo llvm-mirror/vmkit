@@ -384,8 +384,6 @@ extern "C" JavaString* nativeInternString(JavaString* obj) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   array = obj->strToArray(vm);
   res = vm->constructString(array);
-  assert(res->getVirtualTable() == JavaString::internStringVT &&
-         "Wrong VT after interning a string");
   
   END_NATIVE_EXCEPTION
 
