@@ -621,7 +621,7 @@ void Jnjvm::classNotFoundException(JavaString* name) {
         upcalls->InitClassNotFoundException, str);
 }
 
-void Jnjvm::classFormatError(UserClass* cl, const UTF8* name) {
+void Jnjvm::noClassDefFoundError(UserClass* cl, const UTF8* name) {
   uint32 size = 35 + name->size + cl->name->size;
   ArrayUInt16* msg = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
   JavaString* str = 0;
@@ -680,7 +680,7 @@ void Jnjvm::classFormatError(UserClass* cl, const UTF8* name) {
   assert(i == size && "Array overflow");
 
   str = constructString(msg);
-  error(upcalls->ClassFormatError, upcalls->InitClassFormatError, str);
+  error(upcalls->NoClassDefFoundError, upcalls->InitNoClassDefFoundError, str);
 }
 
 

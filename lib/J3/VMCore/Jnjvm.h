@@ -270,8 +270,7 @@ public:
   void abstractMethodError(CommonClass* cl, const UTF8* name); 
   void noClassDefFoundError(const UTF8* name);
   void classNotFoundException(JavaString* str);
-
-  void classFormatError(UserClass* cl, const UTF8* name);
+  void noClassDefFoundError(UserClass* cl, const UTF8* name);
   void classFormatError(const char* str);
   
   /// asciizToStr - Constructs a java/lang/String object from the given asciiz.

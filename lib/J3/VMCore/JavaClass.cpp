@@ -930,7 +930,7 @@ void Class::readClass() {
     ctpInfo->resolveClassName(reader.readU2());
   
   if (!(thisClassName->equals(name))) {
-    JavaThread::get()->getJVM()->classFormatError(this, thisClassName);
+    JavaThread::get()->getJVM()->noClassDefFoundError(this, thisClassName);
   }
 
   readParents(reader);
