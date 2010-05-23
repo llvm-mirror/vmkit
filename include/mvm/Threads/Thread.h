@@ -349,10 +349,11 @@ public:
   /// Thread. The thread object is inlined in the stack.
   ///
   void* operator new(size_t sz);
+  void operator delete(void* th) {}
   
-  /// operator delete - Free the stack so that another thread can use it.
+  /// releaseThread - Free the stack so that another thread can use it.
   ///
-  void operator delete(void* obj);
+  static void releaseThread(void* th);
 
   /// routine - The function to invoke when the thread starts.
   ///

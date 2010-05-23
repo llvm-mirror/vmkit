@@ -309,7 +309,7 @@ void Thread::internalThreadStart(mvm::Thread* th) {
   th->MyVM->addThread(th); 
   th->routine(th);
   th->MyVM->removeThread(th);
-
+  delete th;
 }
 
 
@@ -344,11 +344,10 @@ void* Thread::operator new(size_t sz) {
   return res;
 }
 
-/// operator delete - Remove the stack of the thread from the list of stacks
+/// releaseThread - Remove the stack of the thread from the list of stacks
 /// in use.
-void Thread::operator delete(void* th) {
-  Thread* Th = (Thread*)th;
-  uintptr_t index = ((uintptr_t)Th->baseSP & Thread::IDMask);
+void Thread::releaseThread(void* th) {
+  uintptr_t index = ((uintptr_t)th & Thread::IDMask);
   index = (index & ~TheStackManager.baseAddr) >> 20;
   TheStackManager.used[index] = 0;
 }
