@@ -24,7 +24,7 @@ using namespace llvm;
 
 namespace vmmagic {
 
-  class VISIBILITY_HIDDEN LowerMagic : public FunctionPass {
+  class LowerMagic : public FunctionPass {
   public:
     static char ID;
     LowerMagic() : FunctionPass((intptr_t)&ID) { }

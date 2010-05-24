@@ -22,7 +22,7 @@ using namespace llvm;
 
 namespace {
 
-  class VISIBILITY_HIDDEN LowerJavaRT : public ModulePass {
+  class LowerJavaRT : public ModulePass {
   public:
     static char ID;
     LowerJavaRT() : ModulePass((intptr_t)&ID) { }
