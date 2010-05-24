@@ -79,9 +79,9 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
   return func;
 }
 
-JavaMethod* JavaLLVMCompiler::getJavaMethod(llvm::Function* F) {
+JavaMethod* JavaLLVMCompiler::getJavaMethod(const llvm::Function& F) {
   function_iterator E = functions.end();
-  function_iterator I = functions.find(F);
+  function_iterator I = functions.find(&F);
   if (I == E) return 0;
   return I->second;
 }

@@ -17,7 +17,6 @@
 #include "llvm/CodeGen/GCStrategy.h"
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/JITEventListener.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/Debug.h"
@@ -70,82 +69,75 @@ void JavaJITMethodInfo::print(void* ip, void* addr) {
 }
 
 
-class JavaJITListener : public llvm::JITEventListener {
-  JavaMethod* currentCompiledMethod;
-  llvm::Function* currentCompiledFunction;
-public:
-  virtual void NotifyFunctionEmitted(const Function &F,
+void JavaJITListener::NotifyFunctionEmitted(const Function &F,
                                      void *Code, size_t Size,
                                      const EmittedFunctionDetails &Details) {
-    if (currentCompiledMethod && currentCompiledFunction == &F) {
-      Jnjvm* vm = JavaThread::get()->getJVM();
-      mvm::BumpPtrAllocator& Alloc = 
-        currentCompiledMethod->classDef->classLoader->allocator;
-      llvm::GCFunctionInfo* GFI = 0;
-      if (F.hasGC()) {
-        GCStrategy::iterator I = mvm::MvmModule::TheGCStrategy->end();
-        I--;
-        // TODO: see why this is not true in a non- LLVM lazy mode.
-        while (&(*I)->getFunction() != &F) {
-          assert(I != mvm::MvmModule::TheGCStrategy->begin() && "No GC info");
-          I--;
-        }
-        assert(&(*I)->getFunction() == &F &&
-           "GC Info and method do not correspond");
-        GFI = *I;
+
+  // The following could be changed to an assert when -load-bc supports
+  // the verifier.
+  if (F.getParent() != TheCompiler->getLLVMModule()) return;
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  mvm::BumpPtrAllocator& Alloc = TheCompiler->allocator;
+  llvm::GCFunctionInfo* GFI = 0;
+
+  if (F.hasGC()) {
+    if (TheCompiler->TheGCStrategy == NULL) {
+      assert(mvm::MvmModule::TheGCStrategy != NULL && "No GC strategy");
+      TheCompiler->TheGCStrategy = mvm::MvmModule::TheGCStrategy;
+      mvm::MvmModule::TheGCStrategy = NULL;
+    }
+    GCStrategy::iterator I = TheCompiler->TheGCStrategy->end();
+    I--;
+    while (&(*I)->getFunction() != &F) {
+      // This happens when the compilation of a function was post-poned.
+      assert(I != TheCompiler->TheGCStrategy->begin() && "No GC info");
+      I--;
+    }
+    assert(&(*I)->getFunction() == &F &&
+        "GC Info and method do not correspond");
+    GFI = *I;
+  }
+
+  JavaMethod* meth = TheCompiler->getJavaMethod(F);
+  if (meth == NULL) {
+    // This is a stub.
+    mvm::MvmJITMethodInfo* MI = new(Alloc, "JITMethodInfo")
+      mvm::MvmJITMethodInfo(GFI, &F);
+    vm->RuntimeFunctions.addMethodInfo(MI, Code,
+                                       (void*)((uintptr_t)Code + Size));
+  } else {
+    JavaJITMethodInfo* MI = new(Alloc, "JavaJITMethodInfo")
+      JavaJITMethodInfo(GFI, meth);
+    vm->RuntimeFunctions.addMethodInfo(MI, Code,
+                                       (void*)((uintptr_t)Code + Size));
+    uint32 infoLength = Details.LineStarts.size();
+    meth->codeInfoLength = infoLength;
+    if (infoLength > 0) {
+      mvm::BumpPtrAllocator& JavaAlloc = meth->classDef->classLoader->allocator;
+      CodeLineInfo* infoTable =
+        new(JavaAlloc, "CodeLineInfo") CodeLineInfo[infoLength];
+      for (uint32 i = 0; i < infoLength; ++i) {
+        DebugLoc DL = Details.LineStarts[i].Loc;
+        uint32_t first = DL.getLine();
+        uint32_t second = DL.getCol();
+        assert(second == 0 && "Wrong column number");
+        infoTable[i].address = Details.LineStarts[i].Address;
+        infoTable[i].lineNumber = meth->codeInfo[first].lineNumber;
+        infoTable[i].bytecodeIndex = meth->codeInfo[first].bytecodeIndex;
+        infoTable[i].ctpIndex = meth->codeInfo[first].ctpIndex;
+        infoTable[i].bytecode = meth->codeInfo[first].bytecode;
       }
-      JavaJITMethodInfo* MI = new(Alloc, "JavaJITMethodInfo")
-        JavaJITMethodInfo(GFI, currentCompiledMethod);
-      vm->RuntimeFunctions.addMethodInfo(MI, Code,
-                                         (void*)((uintptr_t)Code + Size));
-      uint32 infoLength = Details.LineStarts.size();
-      currentCompiledMethod->codeInfoLength = infoLength;
-      if (infoLength) {
-        CodeLineInfo* infoTable =
-          new(Alloc, "CodeLineInfo") CodeLineInfo[infoLength];
-        for (uint32 i = 0; i < infoLength; ++i) {
-          DebugLoc DL = Details.LineStarts[i].Loc;
-          uint32_t first = DL.getLine();
-          uint32_t second = DL.getCol();
-          assert(second == 0 && "Wrong column number");
-          infoTable[i].address = Details.LineStarts[i].Address;
-          infoTable[i].lineNumber =
-            currentCompiledMethod->codeInfo[first].lineNumber;
-          infoTable[i].bytecodeIndex =
-            currentCompiledMethod->codeInfo[first].bytecodeIndex;
-          infoTable[i].ctpIndex =
-            currentCompiledMethod->codeInfo[first].ctpIndex;
-          infoTable[i].bytecode =
-            currentCompiledMethod->codeInfo[first].bytecode;
-        }
-        delete[] currentCompiledMethod->codeInfo;
-        currentCompiledMethod->codeInfo = infoTable;
-      } else {
-        if (currentCompiledMethod->codeInfo) {
-          delete[] currentCompiledMethod->codeInfo;
-        }
+      delete[] meth->codeInfo;
+      meth->codeInfo = infoTable;
+    } else {
+      if (meth->codeInfo != NULL) {
+        delete[] meth->codeInfo;
+        meth->codeInfo = NULL;
       }
     }
   }
-
-  void setCurrentCompiledMethod(JavaMethod* meth, llvm::Function* func) {
-    assert(currentCompiledMethod == NULL && "Recursive compilation detected");
-    currentCompiledMethod = meth;
-    currentCompiledFunction = func;
-  }
-  
-  void clearCurrentCompiledMethod() {
-    currentCompiledMethod = NULL;
-    currentCompiledFunction = NULL;
-  }
-
-  JavaJITListener() {
-    currentCompiledMethod = NULL;
-    currentCompiledFunction = NULL;
-  }
-};
-
-static JavaJITListener* JITListener = 0;
+}
 
 Constant* JavaJITCompiler::getNativeClass(CommonClass* classDef) {
   const llvm::Type* Ty = classDef->isClass() ? JavaIntrinsics.JavaClassType :
@@ -260,29 +252,32 @@ Constant* JavaJITCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
   return ConstantExpr::getIntToPtr(CI, valPtrType);
 }
 
-JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
-  JavaLLVMCompiler(ModuleID) {
+JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID, bool trusted) :
+  JavaLLVMCompiler(ModuleID), listener(this) {
 
 #if DEBUG
   EmitFunctionName = true;
 #else
   EmitFunctionName = false;
 #endif
-  
-  mvm::MvmModule::protectEngine.lock();
-  mvm::MvmModule::executionEngine->addModule(TheModule);
-  mvm::MvmModule::protectEngine.unlock();
-  
 
-  // The first JIT Compiler initialises JITListener and is trusted wrt.
-  // safe points.
-  bool trusted = (JITListener == NULL);
+  // Protect IR for the GC.
+  mvm::MvmModule::protectIR();
+  executionEngine = ExecutionEngine::createJIT(TheModule, 0,
+                                               0, llvm::CodeGenOpt::Default, false);
+  TheGCStrategy = mvm::MvmModule::TheGCStrategy;
+  mvm::MvmModule::TheGCStrategy = NULL;
+  mvm::MvmModule::unprotectIR();
+ 
+  executionEngine->RegisterJITEventListener(&listener);
+
   addJavaPasses(trusted);
+}
 
-  if (!JITListener) {
-    JITListener = new JavaJITListener();
-    mvm::MvmModule::executionEngine->RegisterJITEventListener(JITListener);
-  }
+JavaJITCompiler::~JavaJITCompiler() {
+  executionEngine->removeModule(TheModule);
+  delete executionEngine;
+  // ~JavaLLVMCompiler will delete the module.
 }
 
 #ifdef SERVICE
@@ -413,19 +408,26 @@ void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
   Function* func = getMethodInfo(meth)->getMethod();
   func->setName(name);
   assert(ptr && "No value given");
-  mvm::MvmModule::executionEngine->updateGlobalMapping(func, ptr);
+  executionEngine->updateGlobalMapping(func, ptr);
   func->setLinkage(GlobalValue::ExternalLinkage);
 }
 
 void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   mvm::MvmModule::protectIR();
   Function* func = parseFunction(meth);
-  JITListener->setCurrentCompiledMethod(meth, func);
-  void* res = mvm::MvmModule::executionEngine->getPointerToGlobal(func);
-  JITListener->clearCurrentCompiledMethod();
+  void* res = executionEngine->getPointerToGlobal(func);
+  // Now that it's compiled, we don't need the IR anymore
   func->deleteBody();
   mvm::MvmModule::unprotectIR();
+  return res;
+}
 
+void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
+  mvm::MvmModule::protectIR();
+  void* res = executionEngine->getPointerToGlobal(F);
+  // Now that it's compiled, we don't need the IR anymore
+  F->deleteBody();
+  mvm::MvmModule::unprotectIR();
   return res;
 }
 
@@ -494,8 +496,9 @@ bool JavaJ3LazyJITCompiler::needsCallback(JavaMethod* meth, bool* needsInit) {
   return (meth == NULL || meth->code == NULL);
 }
 
-JavaJ3LazyJITCompiler::JavaJ3LazyJITCompiler(const std::string& ModuleID)
-    : JavaJITCompiler(ModuleID) {}
+JavaJ3LazyJITCompiler::JavaJ3LazyJITCompiler(const std::string& ModuleID,
+                                             bool trusted)
+    : JavaJITCompiler(ModuleID, trusted) {}
 
 
 static llvm::cl::opt<bool> LLVMLazy("llvm-lazy", 
@@ -503,9 +506,9 @@ static llvm::cl::opt<bool> LLVMLazy("llvm-lazy",
                      cl::init(false));
 
 JavaJITCompiler* JavaJITCompiler::CreateCompiler(const std::string& ModuleID) {
+  // This is called for the first compiler.
   if (LLVMLazy) {
-    mvm::MvmModule::executionEngine->DisableLazyCompilation(false); 
-    return new JavaLLVMLazyJITCompiler(ModuleID);
+    return new JavaLLVMLazyJITCompiler(ModuleID, true);
   }
-  return new JavaJ3LazyJITCompiler(ModuleID);
+  return new JavaJ3LazyJITCompiler(ModuleID, true);
 }

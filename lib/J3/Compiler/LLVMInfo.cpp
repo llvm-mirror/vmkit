@@ -12,7 +12,6 @@
 #include "llvm/Constants.h"
 #include "llvm/Instructions.h"
 #include "llvm/Module.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/Support/MutexGuard.h"
 #include "llvm/Target/TargetData.h"
 
@@ -137,7 +136,7 @@ Value* LLVMClassInfo::getVirtualSize() {
 Function* LLVMMethodInfo::getMethod() {
   if (!methodFunction) {
     JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
-    if (Compiler->emitFunctionName()) {
+    if (true) {//Compiler->emitFunctionName()) {
       const UTF8* jniConsClName = methodDef->classDef->name;
       const UTF8* jniConsName = methodDef->name;
       const UTF8* jniConsType = methodDef->type;
@@ -173,12 +172,8 @@ Function* LLVMMethodInfo::getMethod() {
     }
     
     Compiler->functions.insert(std::make_pair(methodFunction, methodDef));
-    if (Compiler != JCL->getCompiler()) {
-      if (mvm::MvmModule::executionEngine && methodDef->code) {
-        methodFunction->setLinkage(GlobalValue::ExternalLinkage);
-        mvm::MvmModule::executionEngine->updateGlobalMapping(methodFunction,
-                                                             methodDef->code);
-      }
+    if (Compiler != JCL->getCompiler() && methodDef->code) {
+      Compiler->setMethod(methodDef, methodDef->code, methodFunction->getName().data());
     }
   }
   return methodFunction;
@@ -656,12 +651,7 @@ Function* LLVMSignatureInfo::getVirtualBuf() {
   mvm::MvmModule::protectIR();
   if (!virtualBufFunction) {
     virtualBufFunction = createFunctionCallBuf(true);
-    if (!Compiler->isStaticCompiling()) {
-      signature->setVirtualCallBuf((intptr_t)
-        mvm::MvmModule::executionEngine->getPointerToGlobal(virtualBufFunction));
-      // Now that it's compiled, we don't need the IR anymore
-      virtualBufFunction->deleteBody();
-    }
+    signature->setVirtualCallBuf(Compiler->GenerateStub(virtualBufFunction));
   }
   mvm::MvmModule::unprotectIR();
   return virtualBufFunction;
@@ -673,12 +663,7 @@ Function* LLVMSignatureInfo::getVirtualAP() {
   mvm::MvmModule::protectIR();
   if (!virtualAPFunction) {
     virtualAPFunction = createFunctionCallAP(true);
-    if (!Compiler->isStaticCompiling()) {
-      signature->setVirtualCallAP((intptr_t)
-        mvm::MvmModule::executionEngine->getPointerToGlobal(virtualAPFunction));
-      // Now that it's compiled, we don't need the IR anymore
-      virtualAPFunction->deleteBody();
-    }
+    signature->setVirtualCallAP(Compiler->GenerateStub(virtualAPFunction));
   }
   mvm::MvmModule::unprotectIR();
   return virtualAPFunction;
@@ -690,12 +675,7 @@ Function* LLVMSignatureInfo::getStaticBuf() {
   mvm::MvmModule::protectIR();
   if (!staticBufFunction) {
     staticBufFunction = createFunctionCallBuf(false);
-    if (!Compiler->isStaticCompiling()) {
-      signature->setStaticCallBuf((intptr_t)
-        mvm::MvmModule::executionEngine->getPointerToGlobal(staticBufFunction));
-      // Now that it's compiled, we don't need the IR anymore
-      staticBufFunction->deleteBody();
-    }
+    signature->setStaticCallBuf(Compiler->GenerateStub(staticBufFunction));
   }
   mvm::MvmModule::unprotectIR();
   return staticBufFunction;
@@ -707,12 +687,7 @@ Function* LLVMSignatureInfo::getStaticAP() {
   mvm::MvmModule::protectIR();
   if (!staticAPFunction) {
     staticAPFunction = createFunctionCallAP(false);
-    if (!Compiler->isStaticCompiling()) {
-      signature->setStaticCallAP((intptr_t)
-        mvm::MvmModule::executionEngine->getPointerToGlobal(staticAPFunction));
-      // Now that it's compiled, we don't need the IR anymore
-      staticAPFunction->deleteBody();
-    }
+    signature->setStaticCallAP(Compiler->GenerateStub(staticAPFunction));
   }
   mvm::MvmModule::unprotectIR();
   return staticAPFunction;
@@ -724,12 +699,7 @@ Function* LLVMSignatureInfo::getStaticStub() {
   mvm::MvmModule::protectIR();
   if (!staticStubFunction) {
     staticStubFunction = createFunctionStub(false, false);
-    if (!Compiler->isStaticCompiling()) {
-      signature->setStaticCallStub((intptr_t)
-        mvm::MvmModule::executionEngine->getPointerToGlobal(staticStubFunction));
-      // Now that it's compiled, we don't need the IR anymore
-      staticStubFunction->deleteBody();
-    }
+    signature->setStaticCallStub(Compiler->GenerateStub(staticStubFunction));
   }
   mvm::MvmModule::unprotectIR();
   return staticStubFunction;
@@ -741,12 +711,7 @@ Function* LLVMSignatureInfo::getSpecialStub() {
   mvm::MvmModule::protectIR();
   if (!specialStubFunction) {
     specialStubFunction = createFunctionStub(true, false);
-    if (!Compiler->isStaticCompiling()) {
-      signature->setSpecialCallStub((intptr_t)
-        mvm::MvmModule::executionEngine->getPointerToGlobal(specialStubFunction));
-      // Now that it's compiled, we don't need the IR anymore
-      specialStubFunction->deleteBody();
-    }
+    signature->setSpecialCallStub(Compiler->GenerateStub(specialStubFunction));
   }
   mvm::MvmModule::unprotectIR();
   return specialStubFunction;
@@ -758,12 +723,7 @@ Function* LLVMSignatureInfo::getVirtualStub() {
   mvm::MvmModule::protectIR();
   if (!virtualStubFunction) {
     virtualStubFunction = createFunctionStub(false, true);
-    if (!Compiler->isStaticCompiling()) {
-      signature->setVirtualCallStub((intptr_t)
-        mvm::MvmModule::executionEngine->getPointerToGlobal(virtualStubFunction));
-      // Now that it's compiled, we don't need the IR anymore
-      virtualStubFunction->deleteBody();
-    }
+    signature->setVirtualCallStub(Compiler->GenerateStub(virtualStubFunction));
   }
   mvm::MvmModule::unprotectIR();
   return virtualStubFunction;

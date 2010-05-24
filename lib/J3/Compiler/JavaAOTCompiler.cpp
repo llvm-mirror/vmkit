@@ -1629,7 +1629,6 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   ObjectPrinter = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                    "printJavaObject", getLLVMModule());
 
-  addJavaPasses();
 }
 
 void JavaAOTCompiler::printStats() {
@@ -1953,6 +1952,8 @@ void mainCompilerStart(JavaThread* th) {
       }
 
       extractFiles(bytes, M, bootstrapLoader, classes);
+      // Now that we know if we can trust this compiler, add the Java passes.
+      M->addJavaPasses(M->compileRT);
 
 
       // First resolve everyone so that there can not be unknown references in

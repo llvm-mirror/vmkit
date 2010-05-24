@@ -49,8 +49,6 @@ protected:
   llvm::DIFactory* DebugFactory;  
   J3Intrinsics JavaIntrinsics;
 
-  void addJavaPasses(bool trusted = false);
-
 private:  
   bool enabledException;
   bool cooperativeGC;
@@ -58,8 +56,8 @@ private:
   virtual void makeVT(Class* cl) = 0;
   virtual void makeIMT(Class* cl) = 0;
   
-  std::map<llvm::Function*, JavaMethod*> functions;
-  typedef std::map<llvm::Function*, JavaMethod*>::iterator function_iterator;
+  std::map<const llvm::Function*, JavaMethod*> functions;
+  typedef std::map<const llvm::Function*, JavaMethod*>::iterator function_iterator;
   
   std::map<JavaMethod*, LLVMMethodInfo*> method_infos;
   typedef std::map<JavaMethod*, LLVMMethodInfo*>::iterator method_info_iterator;
@@ -81,6 +79,8 @@ public:
   
   virtual bool isStaticCompiling() = 0;
   virtual bool emitFunctionName() = 0;
+  virtual void* GenerateStub(llvm::Function* F) = 0;
+  void addJavaPasses(bool trusted);
   
   llvm::DIFactory* getDebugFactory() {
     return DebugFactory;
@@ -118,7 +118,7 @@ public:
   
   virtual ~JavaLLVMCompiler();
 
-  JavaMethod* getJavaMethod(llvm::Function*);
+  JavaMethod* getJavaMethod(const llvm::Function&);
   llvm::MDNode* GetDbgSubprogram(JavaMethod* meth);
 
   void resolveVirtualClass(Class* cl);

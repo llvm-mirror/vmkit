@@ -372,32 +372,32 @@ public:
     return _staticCallStub;
   }
   
-  void setStaticCallBuf(intptr_t code) {
-    _staticCallBuf = code;
+  void setStaticCallBuf(void* code) {
+    _staticCallBuf = (intptr_t)code;
   }
 
-  void setVirtualCallBuf(intptr_t code) {
-    _virtualCallBuf = code;
+  void setVirtualCallBuf(void* code) {
+    _virtualCallBuf = (intptr_t)code;
   }
   
-  void setStaticCallAP(intptr_t code) {
-    _staticCallAP = code;
+  void setStaticCallAP(void* code) {
+    _staticCallAP = (intptr_t)code;
   }
 
-  void setVirtualCallAP(intptr_t code) {
-    _virtualCallAP = code;
+  void setVirtualCallAP(void* code) {
+    _virtualCallAP = (intptr_t)code;
   }
   
-  void setVirtualCallStub(intptr_t code) {
-    _virtualCallStub = code;
+  void setVirtualCallStub(void* code) {
+    _virtualCallStub = (intptr_t)code;
   }
   
-  void setSpecialCallStub(intptr_t code) {
-    _specialCallStub = code;
+  void setSpecialCallStub(void* code) {
+    _specialCallStub = (intptr_t)code;
   }
   
-  void setStaticCallStub(intptr_t code) {
-    _staticCallStub = code;
+  void setStaticCallStub(void* code) {
+    _staticCallStub = (intptr_t)code;
   }
 
 //===----------------------------------------------------------------------===//

@@ -76,17 +76,6 @@ const char* MvmModule::getHostTriple() {
   return LLVM_HOSTTRIPLE;
 }
 
-class MvmJITMethodInfo : public JITMethodInfo {
-  const llvm::Function* Func;
-public:
-  virtual void print(void* ip, void* addr);
-  MvmJITMethodInfo(llvm::GCFunctionInfo* GFI, const llvm::Function* F) :
-    JITMethodInfo(GFI) {
-      Func = F;
-      MethodType = 0;
-  }
-};
-
 void MvmJITMethodInfo::print(void* ip, void* addr) {
   fprintf(stderr, "; %p in %s LLVM method\n", ip, Func->getName().data());
 }
@@ -96,26 +85,22 @@ public:
   virtual void NotifyFunctionEmitted(const Function &F,
                                      void *Code, size_t Size,
                                      const EmittedFunctionDetails &Details) {
-    // Functions compiled in the global module are MMTk functions and the
-    // interfaces with VMKit.
-    if (F.getParent() == MvmModule::globalModule) {
-      llvm::GCFunctionInfo* GFI = 0;
-      // We know the last GC info is for this method.
-      if (F.hasGC()) {
-        // Only the interface functions have GC informations.
-        GCStrategy::iterator I = mvm::MvmModule::TheGCStrategy->end();
-        I--;
-        DEBUG(errs() << (*I)->getFunction().getName() << '\n');
-        DEBUG(errs() << F.getName() << '\n');
-        assert(&(*I)->getFunction() == &F &&
-           "GC Info and method do not correspond");
-        GFI = *I;
-      }
-      MethodInfo* MI =
-        new(*MvmModule::Allocator, "MvmJITMethodInfo") MvmJITMethodInfo(GFI, &F);
-      VirtualMachine::SharedRuntimeFunctions.addMethodInfo(MI, Code,
-                                              (void*)((uintptr_t)Code + Size));
+    assert(F.getParent() == MvmModule::globalModule);
+    llvm::GCFunctionInfo* GFI = 0;
+    // We know the last GC info is for this method.
+    if (F.hasGC()) {
+      GCStrategy::iterator I = mvm::MvmModule::TheGCStrategy->end();
+      I--;
+      DEBUG(errs() << (*I)->getFunction().getName() << '\n');
+      DEBUG(errs() << F.getName() << '\n');
+      assert(&(*I)->getFunction() == &F &&
+        "GC Info and method do not correspond");
+      GFI = *I;
     }
+    MethodInfo* MI =
+      new(*MvmModule::Allocator, "MvmJITMethodInfo") MvmJITMethodInfo(GFI, &F);
+    VirtualMachine::SharedRuntimeFunctions.addMethodInfo(MI, Code,
+                                            (void*)((uintptr_t)Code + Size));
   }
 };
 
@@ -346,9 +331,7 @@ void MvmModule::runPasses(llvm::Function* func,
   // Our implementation of materializeFunction requires that the lock is held
   // by the caller. This is due to LLVM's JIT subsystem where the call to
   // materializeFunction is guarded.
-  if (executionEngine) executionEngine->lock.acquire();
   pm->run(*func);
-  if (executionEngine) executionEngine->lock.release();
 }
 
 static void addPass(FunctionPassManager *PM, Pass *P) {
@@ -463,15 +446,11 @@ void MvmModule::addCommandLinePasses(FunctionPassManager* PM) {
 // We protect the creation of IR with the executionEngine lock because
 // codegen'ing a function may also create IR objects.
 void MvmModule::protectIR() {
-  if (executionEngine) {
-    protectEngine.lock();
-  }
+  protectEngine.lock();
 }
 
 void MvmModule::unprotectIR() {
-  if (executionEngine) {
-    protectEngine.unlock();
-  }
+  protectEngine.unlock();
 }
 
 void JITMethodInfo::scan(void* TL, void* ip, void* addr) {

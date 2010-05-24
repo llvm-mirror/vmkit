@@ -176,8 +176,10 @@ public:
 
 
 class MvmModule {
-public:
+private:
    static llvm::ExecutionEngine* executionEngine;
+
+public:
    static llvm::GCStrategy* TheGCStrategy;
    static mvm::LockRecursive protectEngine;
    static llvm::Module *globalModule;
@@ -209,6 +211,16 @@ public:
   JITMethodInfo(llvm::GCFunctionInfo* GFI) : GCInfo(GFI) {}
 };
 
+class MvmJITMethodInfo : public JITMethodInfo {
+  const llvm::Function* Func;
+public:
+  virtual void print(void* ip, void* addr);
+  MvmJITMethodInfo(llvm::GCFunctionInfo* GFI, const llvm::Function* F) :
+    JITMethodInfo(GFI) {
+      Func = F;
+      MethodType = 0;
+  }
+};
 
 } // end namespace mvm
 

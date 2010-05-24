@@ -126,7 +126,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
   LLVMContext* Context = &F.getContext();
   bool Changed = false;
   J3Intrinsics* intrinsics = TheCompiler->getIntrinsics();
-  JavaMethod* meth = TheCompiler->getJavaMethod(&F);
+  JavaMethod* meth = TheCompiler->getJavaMethod(F);
   assert(meth && "Method not registered");
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 

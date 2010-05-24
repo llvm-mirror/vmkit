@@ -40,6 +40,11 @@ public:
     fprintf(stderr, "Can not materiale a function in AOT mode.");
     abort();
   }
+
+  virtual void* GenerateStub(llvm::Function* F) {
+    // Do nothing in case of AOT.
+    return NULL;
+  }
   
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
                                    bool stat, llvm::BasicBlock* insert);

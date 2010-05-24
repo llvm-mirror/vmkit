@@ -77,7 +77,8 @@ void VirtualMachine::finalizerStart(mvm::Thread* th) {
     while (true) {
       vm->FinalizationQueueLock.acquire();
       if (vm->CurrentFinalizedIndex != 0) {
-        res = vm->ToBeFinalized[--vm->CurrentFinalizedIndex];
+        res = vm->ToBeFinalized[vm->CurrentFinalizedIndex - 1];
+        --vm->CurrentFinalizedIndex;
       }
       vm->FinalizationQueueLock.release();
       if (!res) break;
@@ -112,7 +113,8 @@ void VirtualMachine::enqueueStart(mvm::Thread* th) {
     while (true) {
       vm->ToEnqueueLock.acquire();
       if (vm->ToEnqueueIndex != 0) {
-        res = vm->ToEnqueue[--vm->ToEnqueueIndex];
+        res = vm->ToEnqueue[vm->ToEnqueueIndex - 1];
+        --vm->ToEnqueueIndex;
       }
       vm->ToEnqueueLock.release();
       if (!res) break;

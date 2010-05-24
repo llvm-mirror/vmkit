@@ -1811,9 +1811,8 @@ CodeLineInfo* JavaMethod::lookupCodeLineInfo(uintptr_t ip) {
 }
 
 uint16 JavaMethod::lookupLineNumber(uintptr_t ip) {
-  for(uint16 i = 0; i < codeInfoLength; ++i) {
+  for(uint16 i = 1; i < codeInfoLength; ++i) {
     if (codeInfo[i].address > ip) {
-      assert(i > 0 && "Wrong ip address for method");
       return codeInfo[i - 1].lineNumber;
     }
   }
@@ -1822,9 +1821,8 @@ uint16 JavaMethod::lookupLineNumber(uintptr_t ip) {
 }
 
 uint16 JavaMethod::lookupCtpIndex(uintptr_t ip) {
-  for(uint16 i = 0; i < codeInfoLength; ++i) {
+  for(uint16 i = 1; i < codeInfoLength; ++i) {
     if (codeInfo[i].address > ip) {
-      assert(i > 0 && "Wrong ip address for method");
       return codeInfo[i - 1].ctpIndex;
     }
   }

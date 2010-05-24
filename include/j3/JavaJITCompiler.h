@@ -10,20 +10,44 @@
 #ifndef J3_JIT_COMPILER_H
 #define J3_JIT_COMPILER_H
 
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/JITEventListener.h"
 #include "j3/JavaLLVMCompiler.h"
 
 namespace j3 {
+
+class JavaJITCompiler;
+
+class JavaJITListener : public llvm::JITEventListener {
+  JavaJITCompiler* TheCompiler;
+public:
+  JavaJITListener(JavaJITCompiler* Compiler) {
+    TheCompiler = Compiler;
+  }
+
+  virtual void NotifyFunctionEmitted(
+      const llvm::Function &F,
+      void *Code,
+      size_t Size,
+      const llvm::JITEventListener::EmittedFunctionDetails &Details);
+};
 
 class JavaJITCompiler : public JavaLLVMCompiler {
 public:
 
   bool EmitFunctionName;
+  JavaJITListener listener;
+  llvm::ExecutionEngine* executionEngine;
+  llvm::GCStrategy* TheGCStrategy;
 
-  JavaJITCompiler(const std::string &ModuleID);
+  JavaJITCompiler(const std::string &ModuleID, bool trusted = false);
+  ~JavaJITCompiler();
   
   virtual bool isStaticCompiling() {
     return false;
   }
+
+  virtual void* GenerateStub(llvm::Function* F);  
  
   virtual bool emitFunctionName() {
     return EmitFunctionName;
@@ -80,10 +104,10 @@ public:
   virtual uintptr_t getPointerOrStub(JavaMethod& meth, int side);
   
   virtual JavaCompiler* Create(const std::string& ModuleID) {
-    return new JavaJ3LazyJITCompiler(ModuleID);
+    return new JavaJ3LazyJITCompiler(ModuleID, false);
   }
 
-  JavaJ3LazyJITCompiler(const std::string& ModuleID);
+  JavaJ3LazyJITCompiler(const std::string& ModuleID, bool trusted);
 };
 
 } // end namespace j3

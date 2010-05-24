@@ -27,9 +27,11 @@ using namespace llvm;
 using namespace j3;
 
 
-JavaLLVMLazyJITCompiler::JavaLLVMLazyJITCompiler(const std::string& ModuleID)
-    : JavaJITCompiler(ModuleID) {
-  TheMaterializer = new LLVMMaterializer(TheModule, this);      
+JavaLLVMLazyJITCompiler::JavaLLVMLazyJITCompiler(const std::string& ModuleID,
+                                                 bool trusted)
+    : JavaJITCompiler(ModuleID, trusted) {
+  TheMaterializer = new LLVMMaterializer(TheModule, this);
+  executionEngine->DisableLazyCompilation(false);   
 }
 
 JavaLLVMLazyJITCompiler::~JavaLLVMLazyJITCompiler() {
@@ -39,7 +41,7 @@ JavaLLVMLazyJITCompiler::~JavaLLVMLazyJITCompiler() {
 void* JavaLLVMLazyJITCompiler::loadMethod(void* handle, const char* symbol) {
   Function* F = mvm::MvmModule::globalModule->getFunction(symbol);
   if (F) {
-    void* res = mvm::MvmModule::executionEngine->getPointerToFunctionOrStub(F);
+    void* res = executionEngine->getPointerToFunctionOrStub(F);
     return res;
   }
 
@@ -48,10 +50,9 @@ void* JavaLLVMLazyJITCompiler::loadMethod(void* handle, const char* symbol) {
 
 uintptr_t JavaLLVMLazyJITCompiler::getPointerOrStub(JavaMethod& meth,
                                                     int side) {
-  ExecutionEngine* EE = mvm::MvmModule::executionEngine;
   LLVMMethodInfo* LMI = getMethodInfo(&meth);
   Function* func = LMI->getMethod();
-  return (uintptr_t)EE->getPointerToFunctionOrStub(func);
+  return (uintptr_t)executionEngine->getPointerToFunctionOrStub(func);
 }
 
 static JavaMethod* staticLookup(CallbackInfo& F) {
@@ -112,7 +113,7 @@ bool LLVMMaterializer::Materialize(GlobalValue *GV, std::string *ErrInfo) {
   // Because we are materializing a function here, we must release the
   // JIT lock and get the global vmkit lock to be thread-safe.
   // This prevents jitting the function while someone else is doing it.
-  mvm::MvmModule::executionEngine->lock.release(); 
+  Comp->executionEngine->lock.release(); 
   mvm::MvmModule::protectIR();
 
   // Don't use hasNotBeenReadFromBitcode: materializeFunction is called
@@ -126,7 +127,7 @@ bool LLVMMaterializer::Materialize(GlobalValue *GV, std::string *ErrInfo) {
     return false;
   }
 
-  if (mvm::MvmModule::executionEngine->getPointerToGlobalIfAvailable(F)) {
+  if (Comp->executionEngine->getPointerToGlobalIfAvailable(F)) {
     mvm::MvmModule::unprotectIR(); 
     // TODO: Is this still valid?
     // Reacquire and go back to the JIT function.
@@ -134,7 +135,7 @@ bool LLVMMaterializer::Materialize(GlobalValue *GV, std::string *ErrInfo) {
     return false;
   }
   
-  JavaMethod* meth = Comp->getJavaMethod(F);
+  JavaMethod* meth = Comp->getJavaMethod(*F);
   
   if (!meth) {
     // It's a callback
@@ -167,7 +168,7 @@ bool LLVMMaterializer::Materialize(GlobalValue *GV, std::string *ErrInfo) {
   // mvm::MvmModule::executionEngine->lock.acquire();
   
   if (F->isDeclaration())
-    mvm::MvmModule::executionEngine->updateGlobalMapping(F, val);
+    Comp->executionEngine->updateGlobalMapping(F, val);
   
   return false;
 }
