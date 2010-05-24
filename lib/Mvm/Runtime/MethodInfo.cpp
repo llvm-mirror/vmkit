@@ -105,22 +105,25 @@ MethodInfo* VirtualMachine::IPToMethodInfo(void* ip) {
   return MI;
 }
 
+struct CamlFrames {
+  uint16_t NumDescriptors;
+  CamlFrame frames[1];
+};
 
 void SharedStartFunctionMap::initialize() {
-  CamlFrame* currentFrame =
-    (CamlFrame*)dlsym(SELF_HANDLE, "camlVmkitoptimized__frametable");
-
+  CamlFrames* frames =
+    (CamlFrames*)dlsym(SELF_HANDLE, "camlVmkitoptimized__frametable");
   Dl_info info;
   void* previousPtr = 0;
   const char* previousName = 0;
-  CamlFrame* previousFrame = currentFrame;
   StaticAllocator = new BumpPtrAllocator();
 
-  if (currentFrame) {
-    while (true) {
-      if (!currentFrame->ReturnAddress) break;
+  if (frames != NULL) {
+    CamlFrame* currentFrame = &(frames->frames[0]);
+    CamlFrame* previousFrame = currentFrame;
+    for (uint16_t i = 0; i < frames->NumDescriptors; i++) {
       int res = dladdr(currentFrame->ReturnAddress, &info);
-      if (res) {
+      if (res != 0) {
         if (previousPtr && info.dli_saddr != previousPtr) {
           StaticCamlMethodInfo* MI =
             new(*StaticAllocator, "StaticCamlMethodInfo")
@@ -136,7 +139,7 @@ void SharedStartFunctionMap::initialize() {
         (currentFrame->NumLiveOffsets % 2) * sizeof(uint16_t) +
         currentFrame->NumLiveOffsets * sizeof(uint16_t) +
         sizeof(void*) + sizeof(uint16_t) + sizeof(uint16_t));
-    }   
+    }
   }
 }
 
