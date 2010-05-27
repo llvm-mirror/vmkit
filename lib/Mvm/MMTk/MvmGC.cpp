@@ -67,44 +67,44 @@ void MutatorThread::init(Thread* _th) {
   th->realRoutine(_th);
 }
 
-bool Collector::isLive(gc* ptr) {
+bool Collector::isLive(gc* ptr, uintptr_t closure) {
   abort();
   return false;
 }
 
-void Collector::scanObject(void** ptr) {
+void Collector::scanObject(void** ptr, uintptr_t closure) {
   abort();
 }
  
-void Collector::markAndTrace(void* source, void* ptr) {
+void Collector::markAndTrace(void* source, void* ptr, uintptr_t closure) {
   abort();
 }
   
-void Collector::markAndTraceRoot(void* ptr) {
+void Collector::markAndTraceRoot(void* ptr, uintptr_t closure) {
   abort();
 }
 
-gc* Collector::retainForFinalize(gc* val) {
+gc* Collector::retainForFinalize(gc* val, uintptr_t closure) {
   abort();
   return NULL;
 }
   
-gc* Collector::retainReferent(gc* val) {
+gc* Collector::retainReferent(gc* val, uintptr_t closure) {
   abort();
   return NULL;
 }
   
-gc* Collector::getForwardedFinalizable(gc* val) {
+gc* Collector::getForwardedFinalizable(gc* val, uintptr_t closure) {
   abort();
   return NULL;
 }
   
-gc* Collector::getForwardedReference(gc* val) {
+gc* Collector::getForwardedReference(gc* val, uintptr_t closure) {
   abort();
   return NULL;
 }
   
-gc* Collector::getForwardedReferent(gc* val) {
+gc* Collector::getForwardedReferent(gc* val, uintptr_t closure) {
   abort();
   return NULL;
 }

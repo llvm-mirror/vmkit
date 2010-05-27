@@ -453,7 +453,7 @@ void MvmModule::unprotectIR() {
   protectEngine.unlock();
 }
 
-void JITMethodInfo::scan(void* TL, void* ip, void* addr) {
+void JITMethodInfo::scan(uintptr_t closure, void* ip, void* addr) {
   if (GCInfo) {
     DEBUG(llvm::errs() << GCInfo->getFunction().getName() << '\n');
     // All safe points have the same informations currently in LLVM.
@@ -464,7 +464,9 @@ void JITMethodInfo::scan(void* TL, void* ip, void* addr) {
          KE = GCInfo->live_end(J); K != KE; ++K) {
       intptr_t obj = *(intptr_t*)(spaddr + K->StackOffset);
       // Verify that obj does not come from a JSR bytecode.
-      if (!(obj & 1)) Collector::scanObject((void**)(spaddr + K->StackOffset));
+      if (!(obj & 1)) {
+        Collector::scanObject((void**)(spaddr + K->StackOffset), closure);
+      }
     }
   }
 }

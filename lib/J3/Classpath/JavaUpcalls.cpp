@@ -489,32 +489,38 @@ extern "C" JavaObject* nativeGetDeclaredAnnotations() {
 extern "C" void nativePropertiesPostInit(JavaObject* prop);
 
 
-extern "C" void nativeJavaObjectClassTracer(JavaObjectClass* obj) {
-  JavaObjectClass::staticTracer(obj);
+extern "C" void nativeJavaObjectClassTracer(
+    JavaObjectClass* obj, uintptr_t closure) {
+  JavaObjectClass::staticTracer(obj, closure);
 }
 
-extern "C" void nativeJavaObjectFieldTracer(JavaObjectField* obj) {
-  JavaObjectField::staticTracer(obj);
+extern "C" void nativeJavaObjectFieldTracer(
+    JavaObjectField* obj, uintptr_t closure) {
+  JavaObjectField::staticTracer(obj, closure);
 }
 
-extern "C" void nativeJavaObjectMethodTracer(JavaObjectMethod* obj) {
-  JavaObjectMethod::staticTracer(obj);
+extern "C" void nativeJavaObjectMethodTracer(
+    JavaObjectMethod* obj, uintptr_t closure) {
+  JavaObjectMethod::staticTracer(obj, closure);
 }
 
-extern "C" void nativeJavaObjectConstructorTracer(JavaObjectConstructor* obj) {
-  JavaObjectConstructor::staticTracer(obj);
+extern "C" void nativeJavaObjectConstructorTracer(
+    JavaObjectConstructor* obj, uintptr_t closure) {
+  JavaObjectConstructor::staticTracer(obj, closure);
 }
 
-extern "C" void nativeJavaObjectReferenceTracer(JavaObjectReference* obj) {
-  JavaObjectReference::staticTracer(obj);
+extern "C" void nativeJavaObjectReferenceTracer(
+    JavaObjectReference* obj, uintptr_t closure) {
+  JavaObjectReference::staticTracer(obj, closure);
+}
+
+extern "C" void nativeJavaObjectVMThreadTracer(
+    JavaObjectVMThread* obj, uintptr_t closure) {
+  JavaObjectVMThread::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectVMThreadDestructor(JavaObjectVMThread* obj) {
   JavaObjectVMThread::staticDestructor(obj);
-}
-
-extern "C" void nativeJavaObjectVMThreadTracer(JavaObjectVMThread* obj) {
-  JavaObjectVMThread::staticTracer(obj);
 }
 
 // Defined in Classpath/ClasspathVMClassLoader.cpp

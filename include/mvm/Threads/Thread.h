@@ -240,7 +240,7 @@ public:
   /// tracer - Does nothing. Used for child classes which may defined
   /// a tracer.
   ///
-  virtual void tracer() {}
+  virtual void tracer(uintptr_t closure) {}
   
   void* getLastSP() { return lastSP; }
   void  setLastSP(void* V) { lastSP = V; }

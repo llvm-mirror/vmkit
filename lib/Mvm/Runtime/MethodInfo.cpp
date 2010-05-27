@@ -23,7 +23,7 @@
 
 using namespace mvm;
 
-void CamlMethodInfo::scan(void* TL, void* ip, void* addr) {
+void CamlMethodInfo::scan(uintptr_t closure, void* ip, void* addr) {
   if (!CF && InstructionPointer) {
     MethodInfo* MI = VirtualMachine::SharedStaticFunctions.IPToMethodInfo(ip);
     if (MI != &DefaultMethodInfo::DM) {
@@ -35,7 +35,7 @@ void CamlMethodInfo::scan(void* TL, void* ip, void* addr) {
     //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
     uintptr_t spaddr = ((uintptr_t*)addr)[0];
     for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
-      Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]));
+      Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]), closure);
     }
   }
 }
@@ -56,7 +56,7 @@ void DefaultMethodInfo::print(void* ip, void* addr) {
 
 DefaultMethodInfo DefaultMethodInfo::DM;
 
-void DefaultMethodInfo::scan(void* TL, void* ip, void* addr) {
+void DefaultMethodInfo::scan(uintptr_t closure, void* ip, void* addr) {
 }
 
 

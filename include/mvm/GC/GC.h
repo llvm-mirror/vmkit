@@ -18,7 +18,7 @@ struct VirtualTable;
 class gcRoot {
 public:
   virtual           ~gcRoot() {}
-  virtual void      tracer(void) {}
+  virtual void      tracer(uintptr_t closure) {}
   
   /// getVirtualTable - Returns the virtual table of this object.
   ///
@@ -39,18 +39,18 @@ class Thread;
 
 class StackScanner {
 public:
-  virtual void scanStack(mvm::Thread* th) = 0;
+  virtual void scanStack(mvm::Thread* th, uintptr_t closure) = 0;
   virtual ~StackScanner() {}
 };
 
 class UnpreciseStackScanner : public StackScanner {
 public:
-  virtual void scanStack(mvm::Thread* th);
+  virtual void scanStack(mvm::Thread* th, uintptr_t closure);
 };
 
 class PreciseStackScanner : public StackScanner {
 public:
-  virtual void scanStack(mvm::Thread* th);
+  virtual void scanStack(mvm::Thread* th, uintptr_t closure);
 };
 
 }

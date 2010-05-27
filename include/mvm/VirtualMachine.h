@@ -123,7 +123,7 @@ private:
   mvm::SpinLock QueueLock;
   uint8_t semantics;
 
-  gc* processReference(gc*, VirtualMachine*);
+  gc* processReference(gc*, VirtualMachine*, uintptr_t closure);
 public:
 
   static const uint8_t WEAK = 1;
@@ -169,7 +169,7 @@ public:
     QueueLock.release();
   }
 
-  void scan(VirtualMachine* vm);
+  void scan(VirtualMachine* vm, uintptr_t closure);
 };
 
 
@@ -262,7 +262,7 @@ public:
   }
 
 
-  virtual void tracer();
+  virtual void tracer(uintptr_t closure);
 
   virtual ~VirtualMachine() {
     if (scanner) delete scanner;
@@ -398,7 +398,7 @@ public:
   /// scanFinalizationQueue - Scan objets with a finalized method and schedule
   /// them for finalization if they are not live.
   ///
-  void scanFinalizationQueue();
+  void scanFinalizationQueue(uintptr_t closure);
 
   /// wakeUpFinalizers - Wake the finalizers.
   ///
@@ -427,22 +427,22 @@ public:
   /// scanWeakReferencesQueue - Scan all weak references. Called by the GC
   /// before scanning the finalization queue.
   /// 
-  void scanWeakReferencesQueue() {
-    WeakReferencesQueue.scan(this);
+  void scanWeakReferencesQueue(uintptr_t closure) {
+    WeakReferencesQueue.scan(this, closure);
   }
   
   /// scanSoftReferencesQueue - Scan all soft references. Called by the GC
   /// before scanning the finalization queue.
   ///
-  void scanSoftReferencesQueue() {
-    SoftReferencesQueue.scan(this);
+  void scanSoftReferencesQueue(uintptr_t closure) {
+    SoftReferencesQueue.scan(this, closure);
   }
   
   /// scanPhantomReferencesQueue - Scan all phantom references. Called by the GC
   /// after the finalization queue.
   ///
-  void scanPhantomReferencesQueue() {
-    PhantomReferencesQueue.scan(this);
+  void scanPhantomReferencesQueue(uintptr_t closure) {
+    PhantomReferencesQueue.scan(this, closure);
   }
   
   /// addWeakReference - Add a weak reference to the queue.

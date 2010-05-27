@@ -67,25 +67,15 @@ class Collector {
 public:
   static int verbose;
 
-  static uintptr_t TraceLocal;
-
-  static bool isLive(gc* ptr) __attribute__ ((always_inline));
-  
-  static void scanObject(void** ptr) __attribute__ ((always_inline));
- 
-  static void markAndTrace(void* source, void* ptr) __attribute__ ((always_inline));
-  
-  static void markAndTraceRoot(void* ptr) __attribute__ ((always_inline));
-
-  static gc* retainForFinalize(gc* val) __attribute__ ((always_inline));
-  
-  static gc* retainReferent(gc* val) __attribute__ ((always_inline));
-  
-  static gc* getForwardedFinalizable(gc* val) __attribute__ ((always_inline));
-  
-  static gc* getForwardedReference(gc* val) __attribute__ ((always_inline));
-  
-  static gc* getForwardedReferent(gc* val) __attribute__ ((always_inline));
+  static bool isLive(gc* ptr, uintptr_t closure) __attribute__ ((always_inline)); 
+  static void scanObject(void** ptr, uintptr_t closure) __attribute__ ((always_inline));
+  static void markAndTrace(void* source, void* ptr, uintptr_t closure) __attribute__ ((always_inline));
+  static void markAndTraceRoot(void* ptr, uintptr_t closure) __attribute__ ((always_inline));
+  static gc* retainForFinalize(gc* val, uintptr_t closure) __attribute__ ((always_inline));
+  static gc* retainReferent(gc* val, uintptr_t closure) __attribute__ ((always_inline));
+  static gc* getForwardedFinalizable(gc* val, uintptr_t closure) __attribute__ ((always_inline));
+  static gc* getForwardedReference(gc* val, uintptr_t closure) __attribute__ ((always_inline));
+  static gc* getForwardedReferent(gc* val, uintptr_t closure) __attribute__ ((always_inline));
 
   static void collect();
   

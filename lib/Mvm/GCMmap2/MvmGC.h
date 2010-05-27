@@ -93,14 +93,14 @@ public:
 
   static int verbose; 
   
-  static bool isLive(void* ptr) {
+  static bool isLive(void* ptr, uintptr_t closure) {
     GCChunkNode *node = o2node(ptr);
     
     if(node && isMarked(node)) return true;
     else return false;
   }
   
-  static void scanObject(void** ptr);
+  static void scanObject(void** ptr, uintptr_t closure);
 
   static void initialise();
   static void destroy();
@@ -294,14 +294,14 @@ public:
 
   static inline void trace(GCChunkNode *node) {
     gcRoot *o = node->chunk();
-    o->tracer();
+    o->tracer(0);
   }
 
-  static inline void markAndTrace(void* source, void *ptr) {
-    markAndTraceRoot(ptr);
+  static inline void markAndTrace(void* source, void *ptr, uintptr_t closure) {
+    markAndTraceRoot(ptr, closure);
   }
   
-  static inline void markAndTraceRoot(void *ptr) {
+  static inline void markAndTraceRoot(void *ptr, uintptr_t closure) {
     void* obj = *(void**)ptr;
     if (obj) {
       GCChunkNode *node = o2node(obj);
@@ -337,25 +337,25 @@ public:
   void setMinMemory(size_t sz){
   }
 
-  static gc* retainForFinalize(gc* val) {
-    markAndTraceRoot(&val);
+  static gc* retainForFinalize(gc* val, uintptr_t closure) {
+    markAndTraceRoot(&val, closure);
     return val;
   }
   
-  static gc* retainReferent(gc* val) {
-    markAndTraceRoot(&val);
+  static gc* retainReferent(gc* val, uintptr_t closure) {
+    markAndTraceRoot(&val, closure);
     return val;
   }
 
-  static gc* getForwardedReference(gc* val) {
+  static gc* getForwardedReference(gc* val, uintptr_t closure) {
     return val;
   }
   
-  static gc* getForwardedReferent(gc* val) {
+  static gc* getForwardedReferent(gc* val, uintptr_t closure) {
     return val;
   }
   
-  static gc* getForwardedFinalizable(gc* val) {
+  static gc* getForwardedFinalizable(gc* val, uintptr_t closure) {
     return val;
   }
 

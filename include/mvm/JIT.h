@@ -207,7 +207,7 @@ public:
 class JITMethodInfo : public MethodInfo {
   llvm::GCFunctionInfo* GCInfo;
 public:
-  virtual void scan(void* TL, void* ip, void* addr);
+  virtual void scan(uintptr_t closure, void* ip, void* addr);
   JITMethodInfo(llvm::GCFunctionInfo* GFI) : GCInfo(GFI) {}
 };
 

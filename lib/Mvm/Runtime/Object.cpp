@@ -171,13 +171,13 @@ void VirtualMachine::addFinalizationCandidate(gc* obj) {
 }
   
 
-void VirtualMachine::scanFinalizationQueue() {
+void VirtualMachine::scanFinalizationQueue(uintptr_t closure) {
   uint32 NewIndex = 0;
   for (uint32 i = 0; i < CurrentIndex; ++i) {
     gc* obj = FinalizationQueue[i];
 
-    if (!Collector::isLive(obj)) {
-      obj = Collector::retainForFinalize(FinalizationQueue[i]);
+    if (!Collector::isLive(obj, closure)) {
+      obj = Collector::retainForFinalize(FinalizationQueue[i], closure);
       
       if (CurrentFinalizedIndex >= ToBeFinalizedLength)
         growToBeFinalizedQueue();
@@ -185,20 +185,22 @@ void VirtualMachine::scanFinalizationQueue() {
       /* Add to object table */
       ToBeFinalized[CurrentFinalizedIndex++] = obj;
     } else {
-      FinalizationQueue[NewIndex++] = Collector::getForwardedFinalizable(obj);
+      FinalizationQueue[NewIndex++] =
+        Collector::getForwardedFinalizable(obj, closure);
     }
   }
   CurrentIndex = NewIndex;
 }
 
-void VirtualMachine::tracer() {
+void VirtualMachine::tracer(uintptr_t closure) {
   for (uint32 i = 0; i < CurrentFinalizedIndex; ++i) {
-    Collector::markAndTraceRoot(ToBeFinalized + i);
+    Collector::markAndTraceRoot(ToBeFinalized + i, closure);
   }
 }
 
-gc* ReferenceQueue::processReference(gc* reference, VirtualMachine* vm) {
-  if (!Collector::isLive(reference)) {
+gc* ReferenceQueue::processReference(
+    gc* reference, VirtualMachine* vm, uintptr_t closure) {
+  if (!Collector::isLive(reference, closure)) {
     vm->clearReferent(reference);
     return 0;
   }
@@ -210,15 +212,16 @@ gc* ReferenceQueue::processReference(gc* reference, VirtualMachine* vm) {
   if (semantics == SOFT) {
     // TODO: are we are out of memory? Consider that we always are for now.
     if (false) {
-      Collector::retainReferent(referent);
+      Collector::retainReferent(referent, closure);
     }
   } else if (semantics == PHANTOM) {
     // Nothing to do.
   }
 
-  if (Collector::isLive(referent)) {
-    gc* newReferent = mvm::Collector::getForwardedReferent(referent);
-    gc* newReference = mvm::Collector::getForwardedReference(reference);
+  if (Collector::isLive(referent, closure)) {
+    gc* newReferent = mvm::Collector::getForwardedReferent(referent, closure);
+    gc* newReference =
+      mvm::Collector::getForwardedReference(reference, closure);
     vm->setReferent(newReference, newReferent);
     return newReference;
   } else {
@@ -229,37 +232,37 @@ gc* ReferenceQueue::processReference(gc* reference, VirtualMachine* vm) {
 }
 
 
-void ReferenceQueue::scan(VirtualMachine* vm) {
+void ReferenceQueue::scan(VirtualMachine* vm, uintptr_t closure) {
   uint32 NewIndex = 0;
 
   for (uint32 i = 0; i < CurrentIndex; ++i) {
     gc* obj = References[i];
-    gc* res = processReference(obj, vm);
+    gc* res = processReference(obj, vm, closure);
     if (res) References[NewIndex++] = res;
   }
 
   CurrentIndex = NewIndex;
 }
 
-void PreciseStackScanner::scanStack(mvm::Thread* th) {
+void PreciseStackScanner::scanStack(mvm::Thread* th, uintptr_t closure) {
   StackWalker Walker(th);
 
   while (MethodInfo* MI = Walker.get()) {
-    MI->scan(0, Walker.ip, Walker.addr);
+    MI->scan(closure, Walker.ip, Walker.addr);
     ++Walker;
   }
 }
 
 
-void UnpreciseStackScanner::scanStack(mvm::Thread* th) {
+void UnpreciseStackScanner::scanStack(mvm::Thread* th, uintptr_t closure) {
   register unsigned int  **max = (unsigned int**)(void*)th->baseSP;
   if (mvm::Thread::get() != th) {
     register unsigned int  **cur = (unsigned int**)th->waitOnSP();
-    for(; cur<max; cur++) Collector::scanObject((void**)cur);
+    for(; cur<max; cur++) Collector::scanObject((void**)cur, closure);
   } else {
     jmp_buf buf;
     setjmp(buf);
     register unsigned int  **cur = (unsigned int**)&buf;
-    for(; cur<max; cur++) Collector::scanObject((void**)cur);
+    for(; cur<max; cur++) Collector::scanObject((void**)cur, closure);
   }
 }

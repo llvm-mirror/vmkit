@@ -14,8 +14,8 @@
 using namespace mvm;
 
 
-extern "C" void MarkAndTrace(gc* gc) {
-  Collector::markAndTraceRoot(&gc);
+extern "C" void MarkAndTrace(gc* gc, uintptr_t closure) {
+  Collector::markAndTraceRoot(&gc, closure);
 }
 
 extern "C" void* gcmalloc(size_t sz, VirtualTable* VT) {
@@ -34,7 +34,7 @@ extern "C" void addFinalizationCandidate(gc* obj) {
   // This is useless with GCmmap2, as the gcmalloc already did it.
 }
 
-void Collector::scanObject(void** val) {
+void Collector::scanObject(void** val, uintptr_t closure) {
   void* obj = *val;
   if (obj) {
     GCChunkNode *node = o2node(obj);

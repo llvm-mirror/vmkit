@@ -17,26 +17,24 @@ using namespace j3;
 extern "C" void Java_org_j3_mmtk_Scanning_computeThreadRoots__Lorg_mmtk_plan_TraceLocal_2 (JavaObject* Scanning, JavaObject* TL) {
   // When entering this function, all threads are waiting on the rendezvous to
   // finish.
-  mvm::Collector::TraceLocal = (uintptr_t)TL;
   mvm::Thread* th = mvm::Thread::get();
   mvm::StackScanner* sc = th->MyVM->getScanner();  
   mvm::Thread* tcur = th;
   
   do {
-    sc->scanStack(tcur);
+    sc->scanStack(tcur, reinterpret_cast<uintptr_t>(TL));
     tcur = (mvm::Thread*)tcur->next();
   } while (tcur != th);
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_computeGlobalRoots__Lorg_mmtk_plan_TraceLocal_2 (JavaObject* Scanning, JavaObject* TL) { 
-  assert(mvm::Collector::TraceLocal == (uintptr_t)TL && "Mismatch in trace local");
-  mvm::Thread::get()->MyVM->tracer();
+  mvm::Thread::get()->MyVM->tracer(reinterpret_cast<uintptr_t>(TL));
   
 	mvm::Thread* th = mvm::Thread::get();
   mvm::Thread* tcur = th;
   
   do {
-    tcur->tracer();
+    tcur->tracer(reinterpret_cast<uintptr_t>(TL));
     tcur = (mvm::Thread*)tcur->next();
   } while (tcur != th);
 
@@ -53,11 +51,10 @@ extern "C" void Java_org_j3_mmtk_Scanning_resetThreadCounter__ (JavaObject* Scan
 extern "C" void Java_org_j3_mmtk_Scanning_specializedScanObject__ILorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* Scanning, uint32_t id, JavaObject* TC, JavaObject* obj) __attribute__ ((always_inline));
 
 extern "C" void Java_org_j3_mmtk_Scanning_specializedScanObject__ILorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* Scanning, uint32_t id, JavaObject* TC, JavaObject* obj) {
-  assert(mvm::Collector::TraceLocal == (uintptr_t)TC && "Mismatch in trace local");
   assert(obj && "No object to trace");
   if (obj->getVirtualTable()) {
     assert(obj->getVirtualTable()->tracer && "No tracer in VT");
-    obj->tracer();
+    obj->tracer(reinterpret_cast<uintptr_t>(TC));
   }
 }
 

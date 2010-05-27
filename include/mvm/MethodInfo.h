@@ -18,7 +18,7 @@ namespace mvm {
 class MethodInfo : public PermanentObject {
 public:
   virtual void print(void* ip, void* addr) = 0;
-  virtual void scan(void* TL, void* ip, void* addr) = 0;
+  virtual void scan(uintptr_t closure, void* ip, void* addr) = 0;
 
   static void* isStub(void* ip, void* addr) {
     bool isStub = ((unsigned char*)ip)[0] == 0xCE;
@@ -46,7 +46,7 @@ public:
 class CamlMethodInfo : public MethodInfo {
   CamlFrame* CF;
 public:
-  virtual void scan(void* TL, void* ip, void* addr);
+  virtual void scan(uintptr_t closure, void* ip, void* addr);
   CamlMethodInfo(CamlFrame* C, void* ip);
 };
 
@@ -64,7 +64,7 @@ public:
 class DefaultMethodInfo : public MethodInfo {
 public:
   virtual void print(void* ip, void* addr);
-  virtual void scan(void* TL, void* ip, void* addr);
+  virtual void scan(uintptr_t closure, void* ip, void* addr);
   static DefaultMethodInfo DM;
     
   DefaultMethodInfo() {

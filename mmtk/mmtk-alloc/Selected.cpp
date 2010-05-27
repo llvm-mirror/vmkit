@@ -17,7 +17,6 @@
 
 using namespace mvm;
 
-uintptr_t Collector::TraceLocal = 0;
 int Collector::verbose = 0;
 
 extern "C" void* JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII(uintptr_t Mutator, int32_t sz, int32_t align, int32_t offset, int32_t allocator, int32_t site) __attribute__((always_inline));
@@ -97,47 +96,40 @@ void MutatorThread::init(Thread* _th) {
   JnJVM_org_mmtk_plan_MutatorContext_deinitMutator__(th->MutatorContext);
 }
 
-bool Collector::isLive(gc* ptr) {
-  return JnJVM_org_mmtk_plan_marksweep_MSTraceLocal_isLive__Lorg_vmmagic_unboxed_ObjectReference_2(TraceLocal, ptr);
+bool Collector::isLive(gc* ptr, uintptr_t closure) {
+  return JnJVM_org_mmtk_plan_marksweep_MSTraceLocal_isLive__Lorg_vmmagic_unboxed_ObjectReference_2(closure, ptr);
 }
 
-void Collector::scanObject(void** ptr) {
-  JnJVM_org_mmtk_plan_TraceLocal_reportDelayedRootEdge__Lorg_vmmagic_unboxed_Address_2(TraceLocal, ptr);
+void Collector::scanObject(void** ptr, uintptr_t closure) {
+  JnJVM_org_mmtk_plan_TraceLocal_reportDelayedRootEdge__Lorg_vmmagic_unboxed_Address_2(closure, ptr);
 }
  
-void Collector::markAndTrace(void* source, void* ptr) {
-  assert(TraceLocal && "scanning without a trace local");
-  JnJVM_org_mmtk_plan_TraceLocal_processEdge__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(TraceLocal, source, ptr);
+void Collector::markAndTrace(void* source, void* ptr, uintptr_t closure) {
+  JnJVM_org_mmtk_plan_TraceLocal_processEdge__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(closure, source, ptr);
 }
   
-void Collector::markAndTraceRoot(void* ptr) {
-  assert(TraceLocal && "scanning without a trace local");
-  JnJVM_org_mmtk_plan_TraceLocal_processRootEdge__Lorg_vmmagic_unboxed_Address_2Z(TraceLocal, ptr, true);
+void Collector::markAndTraceRoot(void* ptr, uintptr_t closure) {
+  JnJVM_org_mmtk_plan_TraceLocal_processRootEdge__Lorg_vmmagic_unboxed_Address_2Z(closure, ptr, true);
 }
 
-gc* Collector::retainForFinalize(gc* val) {
-  assert(TraceLocal && "scanning without a trace local");
-  return JnJVM_org_mmtk_plan_TraceLocal_retainForFinalize__Lorg_vmmagic_unboxed_ObjectReference_2(TraceLocal, val);
+gc* Collector::retainForFinalize(gc* val, uintptr_t closure) {
+  return JnJVM_org_mmtk_plan_TraceLocal_retainForFinalize__Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
-gc* Collector::retainReferent(gc* val) {
-  assert(TraceLocal && "scanning without a trace local");
-  return JnJVM_org_mmtk_plan_TraceLocal_retainReferent__Lorg_vmmagic_unboxed_ObjectReference_2(TraceLocal, val);
+gc* Collector::retainReferent(gc* val, uintptr_t closure) {
+  return JnJVM_org_mmtk_plan_TraceLocal_retainReferent__Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
-gc* Collector::getForwardedFinalizable(gc* val) {
-  assert(TraceLocal && "scanning without a trace local");
-  return JnJVM_org_mmtk_plan_TraceLocal_getForwardedFinalizable__Lorg_vmmagic_unboxed_ObjectReference_2(TraceLocal, val);
+gc* Collector::getForwardedFinalizable(gc* val, uintptr_t closure) {
+  return JnJVM_org_mmtk_plan_TraceLocal_getForwardedFinalizable__Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
-gc* Collector::getForwardedReference(gc* val) {
-  assert(TraceLocal && "scanning without a trace local");
-  return JnJVM_org_mmtk_plan_TraceLocal_getForwardedReference__Lorg_vmmagic_unboxed_ObjectReference_2(TraceLocal, val);
+gc* Collector::getForwardedReference(gc* val, uintptr_t closure) {
+  return JnJVM_org_mmtk_plan_TraceLocal_getForwardedReference__Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
-gc* Collector::getForwardedReferent(gc* val) {
-  assert(TraceLocal && "scanning without a trace local");
-  return JnJVM_org_mmtk_plan_TraceLocal_getForwardedReferent__Lorg_vmmagic_unboxed_ObjectReference_2(TraceLocal, val);
+gc* Collector::getForwardedReferent(gc* val, uintptr_t closure) {
+  return JnJVM_org_mmtk_plan_TraceLocal_getForwardedReferent__Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
 
 void Collector::collect() {

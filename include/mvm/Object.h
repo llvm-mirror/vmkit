@@ -32,13 +32,13 @@ class PrintBuffer;
 ///
 class Object : public gc {
 public:
-	static void     default_tracer(gc *o)                    {}
+	static void     default_tracer(gc *o, uintptr_t closure) {}
 	static intptr_t default_hashCode(const gc *o)            { return (intptr_t)o; }
 	static void     default_print(const gc *o, PrintBuffer *buf);
 
   /// tracer - Default implementation of tracer. Does nothing.
   ///
-  virtual void tracer() { default_tracer(this); }
+  virtual void tracer(uintptr_t closure) { default_tracer(this, closure); }
 
   /// print - Default implementation of print.
   ///

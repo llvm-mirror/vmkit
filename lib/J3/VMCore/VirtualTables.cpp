@@ -59,7 +59,7 @@ VirtualTable VMClassLoader::VT((uintptr_t)VMClassLoader::staticDestructor,
 // variables.
 //===----------------------------------------------------------------------===//
 
-extern "C" void EmptyTracer(void*) {}
+extern "C" void EmptyTracer(void*, uintptr_t) {}
 
 //===----------------------------------------------------------------------===//
 // Trace methods for Java objects. There are four types of objects:
@@ -75,23 +75,25 @@ extern "C" void EmptyTracer(void*) {}
 
 
 /// Method for scanning the root of an object.
-extern "C" void JavaObjectTracer(JavaObject* obj) {
+extern "C" void JavaObjectTracer(JavaObject* obj, uintptr_t closure) {
   CommonClass* cl = obj->getClass();
   assert(cl && "No class");
-  mvm::Collector::markAndTraceRoot(cl->classLoader->getJavaClassLoaderPtr());
+  mvm::Collector::markAndTraceRoot(
+      cl->classLoader->getJavaClassLoaderPtr(), closure);
 }
 
 /// Method for scanning an array whose elements are JavaObjects. This method is
 /// called by all non-native Java arrays.
-extern "C" void ArrayObjectTracer(ArrayObject* obj) {
+extern "C" void ArrayObjectTracer(ArrayObject* obj, uintptr_t closure) {
   CommonClass* cl = obj->getClass();
   assert(cl && "No class");
-  mvm::Collector::markAndTraceRoot(cl->classLoader->getJavaClassLoaderPtr());
+  mvm::Collector::markAndTraceRoot(
+      cl->classLoader->getJavaClassLoaderPtr(), closure);
   
 
   for (sint32 i = 0; i < obj->size; i++) {
     if (obj->elements[i]) {
-      mvm::Collector::markAndTrace(obj, obj->elements + i);
+      mvm::Collector::markAndTrace(obj, obj->elements + i, closure);
     }
   } 
 }
@@ -99,21 +101,22 @@ extern "C" void ArrayObjectTracer(ArrayObject* obj) {
 /// Method for scanning a native array. Only scan the lock. The classloader of
 /// the class is the bootstrap loader and therefore does not need to be
 /// scanned here.
-extern "C" void JavaArrayTracer(JavaArray* obj) {
+extern "C" void JavaArrayTracer(JavaArray* obj, uintptr_t closure) {
 }
 
 /// Method for scanning regular objects.
-extern "C" void RegularObjectTracer(JavaObject* obj) {
+extern "C" void RegularObjectTracer(JavaObject* obj, uintptr_t closure) {
   Class* cl = obj->getClass()->asClass();
   assert(cl && "Not a class in regular tracer");
-  mvm::Collector::markAndTraceRoot(cl->classLoader->getJavaClassLoaderPtr());
+  mvm::Collector::markAndTraceRoot(
+      cl->classLoader->getJavaClassLoaderPtr(), closure);
 
   while (cl->super != 0) {
     for (uint32 i = 0; i < cl->nbVirtualFields; ++i) {
       JavaField& field = cl->virtualFields[i];
       if (field.isReference()) {
         JavaObject** ptr = field.getObjectFieldPtr(obj);
-        mvm::Collector::markAndTrace(obj, ptr);
+        mvm::Collector::markAndTrace(obj, ptr, closure);
       }
     }
     cl = cl->super;
@@ -134,45 +137,47 @@ extern "C" void RegularObjectTracer(JavaObject* obj) {
 //===----------------------------------------------------------------------===//
 
 
-void CommonClass::tracer() {
+void CommonClass::tracer(uintptr_t closure) {
   
   if (super && super->classLoader) {
     JavaObject** Obj = super->classLoader->getJavaClassLoaderPtr();
-    if (*Obj) mvm::Collector::markAndTraceRoot(Obj);
+    if (*Obj) mvm::Collector::markAndTraceRoot(Obj, closure);
   
     for (uint32 i = 0; i < nbInterfaces; ++i) {
       if (interfaces[i]->classLoader) {
         JavaObject** Obj = interfaces[i]->classLoader->getJavaClassLoaderPtr();
-        if (*Obj) mvm::Collector::markAndTraceRoot(Obj);
+        if (*Obj) mvm::Collector::markAndTraceRoot(Obj, closure);
       }
     }
   }
 
   if (classLoader)
-    mvm::Collector::markAndTraceRoot(classLoader->getJavaClassLoaderPtr());
+    mvm::Collector::markAndTraceRoot(
+        classLoader->getJavaClassLoaderPtr(), closure);
 
   for (uint32 i = 0; i < NR_ISOLATES; ++i) {
     // If the delegatee was static allocated, we want to trace its fields.
     if (delegatee[i]) {
-      delegatee[i]->tracer();
-      mvm::Collector::markAndTraceRoot(delegatee + i);
+      delegatee[i]->tracer(closure);
+      mvm::Collector::markAndTraceRoot(delegatee + i, closure);
     }
   }
 }
 
-void Class::tracer() {
-  CommonClass::tracer();
-  if (classLoader != classLoader->bootstrapLoader)
-    mvm::Collector::markAndTraceRoot(&bytes);
+void Class::tracer(uintptr_t closure) {
+  CommonClass::tracer(closure);
+  if (classLoader != classLoader->bootstrapLoader) {
+    mvm::Collector::markAndTraceRoot(&bytes, closure);
+  }
   
-  for (uint32 i =0; i < NR_ISOLATES; ++i) {
+  for (uint32 i = 0; i < NR_ISOLATES; ++i) {
     TaskClassMirror &M = IsolateInfo[i];
     if (M.staticInstance) {
       for (uint32 i = 0; i < nbStaticFields; ++i) {
         JavaField& field = staticFields[i];
         if (field.isReference()) {
           JavaObject** ptr = field.getObjectFieldPtr(M.staticInstance);
-          mvm::Collector::markAndTraceRoot(ptr);
+          mvm::Collector::markAndTraceRoot(ptr, closure);
         }
       }
     }
@@ -196,31 +201,31 @@ void Class::tracer() {
 //     referenced by the delegatees.
 //===----------------------------------------------------------------------===//
 
-void JnjvmClassLoader::tracer() {
+void JnjvmClassLoader::tracer(uintptr_t closure) {
   
   for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
        i!= e; ++i) {
     CommonClass* cl = i->second;
-    if (cl->isClass()) cl->asClass()->tracer();
-    else cl->tracer();
+    if (cl->isClass()) cl->asClass()->tracer(closure);
+    else cl->tracer(closure);
   }
   
   StringList* end = strings;
   while (end) {
     for (uint32 i = 0; i < end->length; ++i) {
       JavaString** obj = end->strings + i;
-      mvm::Collector::markAndTraceRoot(obj);
+      mvm::Collector::markAndTraceRoot(obj, closure);
     }
     end = end->prev;
   }
 }
 
-void JnjvmBootstrapLoader::tracer() {
+void JnjvmBootstrapLoader::tracer(uintptr_t closure) {
  
-  JnjvmClassLoader::tracer();
+  JnjvmClassLoader::tracer(closure);
 
 #define TRACE_DELEGATEE(prim) \
-  prim->tracer();
+  prim->tracer(closure);
 
   TRACE_DELEGATEE(upcalls->OfVoid);
   TRACE_DELEGATEE(upcalls->OfBool);
@@ -248,19 +253,21 @@ void JnjvmBootstrapLoader::tracer() {
 //===----------------------------------------------------------------------===//
 
 
-void Jnjvm::tracer() {
+void Jnjvm::tracer(uintptr_t closure) {
   
-  VirtualMachine::tracer();
-  bootstrapLoader->tracer();
+  VirtualMachine::tracer(closure);
+  bootstrapLoader->tracer(closure);
   
-  if (appClassLoader) 
-    mvm::Collector::markAndTraceRoot(appClassLoader->getJavaClassLoaderPtr());
+  if (appClassLoader) {
+    mvm::Collector::markAndTraceRoot(
+        appClassLoader->getJavaClassLoaderPtr(), closure);
+  }
   
   JNIGlobalReferences* start = &globalRefs;
   while (start) {
     for (uint32 i = 0; i < start->length; ++i) {
       JavaObject** obj = start->globalReferences + i;
-      mvm::Collector::markAndTraceRoot(obj);
+      mvm::Collector::markAndTraceRoot(obj, closure);
     }
     start = start->next;
   }
@@ -268,30 +275,32 @@ void Jnjvm::tracer() {
   for (StringMap::iterator i = hashStr.map.begin(), e = hashStr.map.end();
        i!= e; ++i) {
     JavaString** str = &(i->second);
-    mvm::Collector::markAndTraceRoot(str);
+    mvm::Collector::markAndTraceRoot(str, closure);
   }
 
 #if defined(ISOLATE_SHARING)
-  mvm::Collector::markAndTraceRoot(&JnjvmSharedLoader::sharedLoader);
+  mvm::Collector::markAndTraceRoot(&JnjvmSharedLoader::sharedLoader, closure);
 #endif
   
 #ifdef SERVICE
-  parent->tracer();
+  parent->tracer(closure);
 #endif
 }
 
-void JavaThread::tracer() {
-  if (pendingException) mvm::Collector::markAndTraceRoot(&pendingException);
-  mvm::Collector::markAndTraceRoot(&javaThread);
+void JavaThread::tracer(uintptr_t closure) {
+  if (pendingException) {
+    mvm::Collector::markAndTraceRoot(&pendingException, closure);
+  }
+  mvm::Collector::markAndTraceRoot(&javaThread, closure);
 #ifdef SERVICE
-  mvm::Collector::markAndTraceRoot(&ServiceException);
+  mvm::Collector::markAndTraceRoot(&ServiceException, closure);
 #endif
   
   JNILocalReferences* end = localJNIRefs;
   while (end) {
     for (uint32 i = 0; i < end->length; ++i) {
       JavaObject** obj = end->localReferences + i;
-      mvm::Collector::markAndTraceRoot(obj);
+      mvm::Collector::markAndTraceRoot(obj, closure);
     }
     end = end->prev;
   }

@@ -22,17 +22,17 @@ struct ReferenceProcessor {
 };
 
 extern "C" void Java_org_j3_mmtk_ReferenceProcessor_scan__Lorg_mmtk_plan_TraceLocal_2Z (ReferenceProcessor* RP, JavaObject* TL, uint8_t nursery) {
-  assert(mvm::Collector::TraceLocal == (uintptr_t)TL && "Mismatch in trace local");
-  
   mvm::Thread* th = mvm::Thread::get();
   uint32_t val = RP->ordinal;
 
-  if (val == 0)
-    th->MyVM->scanSoftReferencesQueue();
-  else if (val == 1)
-    th->MyVM->scanWeakReferencesQueue();
-  else if (val == 2)
-    th->MyVM->scanPhantomReferencesQueue();
+  if (val == 0) {
+    th->MyVM->scanSoftReferencesQueue(reinterpret_cast<uintptr_t>(TL));
+  } else if (val == 1) {
+    th->MyVM->scanWeakReferencesQueue(reinterpret_cast<uintptr_t>(TL));
+  } else {
+    assert(val == 2);
+    th->MyVM->scanPhantomReferencesQueue(reinterpret_cast<uintptr_t>(TL));
+  }
 
 }
 

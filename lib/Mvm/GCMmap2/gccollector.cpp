@@ -53,12 +53,12 @@ void Collector::do_collect() {
   mvm::Thread* tcur = th;
 
   // (1) Trace the VM.
-  th->MyVM->tracer();
+  th->MyVM->tracer(0);
 
   // (2) Trace the threads.
   do {
-    sc->scanStack(tcur);
-    tcur->tracer();
+    sc->scanStack(tcur, 0);
+    tcur->tracer(0);
     tcur = (mvm::Thread*)tcur->next();
   } while (tcur != th);
 
@@ -70,16 +70,16 @@ void Collector::do_collect() {
   cur = cur->prev();
 
   // (4) Trace the weak reference queue.
-  th->MyVM->scanWeakReferencesQueue();
+  th->MyVM->scanWeakReferencesQueue(0);
 
   // (5) Trace the soft reference queue.
-  th->MyVM->scanSoftReferencesQueue();
+  th->MyVM->scanSoftReferencesQueue(0);
   
   // (6) Trace the finalization queue.
-  th->MyVM->scanFinalizationQueue();
+  th->MyVM->scanFinalizationQueue(0);
 
   // (7) Trace the phantom reference queue.
-  th->MyVM->scanPhantomReferencesQueue();
+  th->MyVM->scanPhantomReferencesQueue(0);
 
   // (8) Trace the new objects added by queues.
   for(cur = cur->next(); cur != used_nodes; cur = cur->next())

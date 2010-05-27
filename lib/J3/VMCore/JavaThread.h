@@ -131,7 +131,7 @@ public:
 
   /// tracer - Traces GC-objects pointed by this thread object.
   ///
-  virtual void tracer();
+  virtual void tracer(uintptr_t closure);
 
   /// JavaThread - Empty constructor, used to get the VT.
   ///

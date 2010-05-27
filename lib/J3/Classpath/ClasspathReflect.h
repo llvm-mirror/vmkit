@@ -34,13 +34,13 @@ public:
     return vmdata;
   }
 
-  static void staticTracer(JavaObjectClass* obj) {
-    mvm::Collector::markAndTrace(obj, &obj->pd);
-    mvm::Collector::markAndTrace(obj, &obj->signers);
-    mvm::Collector::markAndTrace(obj, &obj->constructor);
+  static void staticTracer(JavaObjectClass* obj, uintptr_t closure) {
+    mvm::Collector::markAndTrace(obj, &obj->pd, closure);
+    mvm::Collector::markAndTrace(obj, &obj->signers, closure);
+    mvm::Collector::markAndTrace(obj, &obj->constructor, closure);
     if (obj->vmdata) {
       JavaObject** Obj = obj->vmdata->classLoader->getJavaClassLoaderPtr();
-      if (*Obj) mvm::Collector::markAndTraceRoot(Obj);
+      if (*Obj) mvm::Collector::markAndTraceRoot(Obj, closure);
     }
   }
 };
@@ -54,9 +54,9 @@ private:
 
 public:
 
-  static void staticTracer(JavaObjectField* obj) {
-    mvm::Collector::markAndTrace(obj, &obj->name);
-    mvm::Collector::markAndTrace(obj, &obj->declaringClass);
+  static void staticTracer(JavaObjectField* obj, uintptr_t closure) {
+    mvm::Collector::markAndTrace(obj, &obj->name, closure);
+    mvm::Collector::markAndTrace(obj, &obj->declaringClass, closure);
   }
 
   JavaField* getInternalField() {
@@ -78,9 +78,9 @@ private:
 
 public:
   
-  static void staticTracer(JavaObjectMethod* obj) {
-    mvm::Collector::markAndTrace(obj, &obj->name);
-    mvm::Collector::markAndTrace(obj, &obj->declaringClass);
+  static void staticTracer(JavaObjectMethod* obj, uintptr_t closure) {
+    mvm::Collector::markAndTrace(obj, &obj->name, closure);
+    mvm::Collector::markAndTrace(obj, &obj->declaringClass, closure);
   }
   
   JavaMethod* getInternalMethod() {
@@ -100,8 +100,8 @@ private:
   uint32 slot;
 
 public:
-  static void staticTracer(JavaObjectConstructor* obj) {
-    mvm::Collector::markAndTrace(obj, &obj->clazz);
+  static void staticTracer(JavaObjectConstructor* obj, uintptr_t closure) {
+    mvm::Collector::markAndTrace(obj, &obj->clazz, closure);
   }
   
   JavaMethod* getInternalMethod() {
@@ -125,8 +125,8 @@ public:
     mvm::Thread::releaseThread(obj->vmdata);
   }
   
-  static void staticTracer(JavaObjectVMThread* obj) {
-    mvm::Collector::markAndTrace(obj, &obj->thread);
+  static void staticTracer(JavaObjectVMThread* obj, uintptr_t closure) {
+    mvm::Collector::markAndTrace(obj, &obj->thread, closure);
   }
 
 };
@@ -167,9 +167,9 @@ public:
   JavaObject** getReferentPtr() { return &referent; }
   void setReferent(JavaObject* r) { referent = r; }
   
-  static void staticTracer(JavaObjectReference* obj) {
-    mvm::Collector::markAndTrace(obj, &obj->queue);
-    mvm::Collector::markAndTrace(obj, &obj->nextOnQueue);
+  static void staticTracer(JavaObjectReference* obj, uintptr_t closure) {
+    mvm::Collector::markAndTrace(obj, &obj->queue, closure);
+    mvm::Collector::markAndTrace(obj, &obj->nextOnQueue, closure);
   }
 };
 

@@ -163,7 +163,7 @@ public:
   
   /// tracer - Traces instances of this class.
   ///
-  virtual void tracer();
+  virtual void tracer(uintptr_t closure);
   
   /// dirSeparator - Directory separator for file paths, e.g. '\' for windows,
   /// '/' for Unix.
