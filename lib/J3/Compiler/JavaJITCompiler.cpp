@@ -255,11 +255,7 @@ Constant* JavaJITCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
 JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID, bool trusted) :
   JavaLLVMCompiler(ModuleID), listener(this) {
 
-#if DEBUG
-  EmitFunctionName = true;
-#else
   EmitFunctionName = false;
-#endif
 
   // Protect IR for the GC.
   mvm::MvmModule::protectIR();

@@ -61,6 +61,10 @@ static cl::list<std::string>
 LoadBytecodeFiles("load-bc", cl::desc("Load bytecode file"), cl::ZeroOrMore,
                   cl::CommaSeparated);
 
+cl::opt<bool> EmitDebugInfo("emit-debug-info", 
+                  cl::desc("Emit debugging information"),
+                  cl::init(false));
+
 namespace mvm {
   namespace llvm_runtime {
     #include "LLVMRuntime.inc"
@@ -129,7 +133,7 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   
   llvm::NoFramePointerElim = true;
   llvm::DisablePrettyStackTrace = true;
-  llvm::JITEmitDebugInfo = false;
+  llvm::JITEmitDebugInfo = EmitDebugInfo;
 #if DWARF_EXCEPTIONS
   llvm::JITExceptionHandling = true;
 #else
@@ -170,6 +174,9 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   }
 }
 
+static const char* MMTkSymbol =
+  "JnJVM_org_j3_bindings_Bindings_gcmalloc__"
+  "ILorg_vmmagic_unboxed_ObjectReference_2";
 
 BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
 
@@ -177,7 +184,7 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   module->setTargetTriple(MvmModule::globalModule->getTargetTriple());
   LLVMContext& Context = module->getContext();
   
-  if (dlsym(SELF_HANDLE, "MMTkPlanBoot")) {
+  if (dlsym(SELF_HANDLE, MMTkSymbol)) {
     // If we have found MMTk, read the gcmalloc function.
     mvm::mmtk_runtime::makeLLVMFunction(module);
   }

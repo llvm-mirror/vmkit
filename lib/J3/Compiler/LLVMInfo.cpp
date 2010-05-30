@@ -12,6 +12,7 @@
 #include "llvm/Constants.h"
 #include "llvm/Instructions.h"
 #include "llvm/Module.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MutexGuard.h"
 #include "llvm/Target/TargetData.h"
 
@@ -133,10 +134,12 @@ Value* LLVMClassInfo::getVirtualSize() {
   return virtualSizeConstant;
 }
 
+extern llvm::cl::opt<bool> EmitDebugInfo;
+
 Function* LLVMMethodInfo::getMethod() {
   if (!methodFunction) {
     JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
-    if (true) {//Compiler->emitFunctionName()) {
+    if (Compiler->emitFunctionName() || EmitDebugInfo) {
       const UTF8* jniConsClName = methodDef->classDef->name;
       const UTF8* jniConsName = methodDef->name;
       const UTF8* jniConsType = methodDef->type;

@@ -18,56 +18,42 @@
 using namespace mvm;
 
 int Collector::verbose = 0;
+extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I(
+    uintptr_t, int32_t) __attribute__ ((always_inline));
 
-extern "C" void* JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII(uintptr_t Mutator, int32_t sz, int32_t align, int32_t offset, int32_t allocator, int32_t site) __attribute__((always_inline));
-extern "C" int32_t JnJVM_org_mmtk_plan_MutatorContext_checkAllocator__III(uintptr_t Mutator, int32_t bytes, int32_t align, int32_t allocator) __attribute__((always_inline));
-extern "C" void JnJVM_org_mmtk_plan_marksweep_MSMutator_postAlloc__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(uintptr_t Mutator, uintptr_t ref, uintptr_t typeref,
-    int32_t bytes, int32_t allocator) __attribute__((always_inline));
+extern "C" intptr_t JnJVM_org_j3_bindings_Bindings_allocateMutator__I(
+    int32_t) __attribute__ ((always_inline));
+extern "C" void JnJVM_org_j3_bindings_Bindings_freeMutator__Lorg_mmtk_plan_MutatorContext_2(
+    intptr_t) __attribute__ ((always_inline));
+extern "C" void JnJVM_org_j3_bindings_Bindings_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2(
+    intptr_t, intptr_t) __attribute__ ((always_inline));
 
-extern "C" uint32_t MMTkMutatorSize;
-extern "C" void JnJVM_org_j3_config_Selected_00024Mutator__0003Cinit_0003E__(uintptr_t);
-extern "C" VirtualTable* org_j3_config_Selected_4Mutator_VT;
-extern "C" void JnJVM_org_mmtk_plan_MutatorContext_initMutator__I(uintptr_t, int32_t);
-extern "C" void JnJVM_org_mmtk_plan_MutatorContext_deinitMutator__(uintptr_t);
-  
-extern "C" void JnJVM_org_j3_config_Selected_00024Collector__0003Cinit_0003E__(uintptr_t);
-extern "C" VirtualTable* org_j3_config_Selected_4Collector_VT;
-extern "C" uint32_t MMTkCollectorSize;
+extern "C" void JnJVM_org_j3_bindings_Bindings_processEdge__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(
+    uintptr_t closure, void* source, void* slot) __attribute__ ((always_inline));
 
-extern "C" void JnJVM_org_mmtk_utility_heap_HeapGrowthManager_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2(intptr_t, intptr_t);
-extern "C" uintptr_t* org_j3_config_Selected_4Plan_static;
-extern "C" void MMTkPlanBoot(uintptr_t);
-extern "C" void MMTkPlanPostBoot(uintptr_t);
-extern "C" void MMTkPlanFullBoot(uintptr_t);
-  
-extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I(uintptr_t, int32_t);
-//===-------------------- TODO: make those virtual. -------------------===//
-extern "C" void JnJVM_org_mmtk_plan_TraceLocal_reportDelayedRootEdge__Lorg_vmmagic_unboxed_Address_2(uintptr_t TraceLocal, void** slot);
-extern "C" void JnJVM_org_mmtk_plan_TraceLocal_processEdge__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(
-    uintptr_t TraceLocal, void* source, void* slot);
-extern "C" void JnJVM_org_mmtk_plan_TraceLocal_processRootEdge__Lorg_vmmagic_unboxed_Address_2Z(
-    uintptr_t TraceLocal, void* slot, uint8_t untraced);
+extern "C" void JnJVM_org_j3_bindings_Bindings_reportDelayedRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2(
+    uintptr_t TraceLocal, void** slot) __attribute__ ((always_inline));
+extern "C" void JnJVM_org_j3_bindings_Bindings_processRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2Z(
+    uintptr_t TraceLocal, void* slot, uint8_t untraced) __attribute__ ((always_inline));
+extern "C" gc* JnJVM_org_j3_bindings_Bindings_retainForFinalize__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
+    uintptr_t TraceLocal, void* obj) __attribute__ ((always_inline));
+extern "C" gc* JnJVM_org_j3_bindings_Bindings_retainReferent__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
+    uintptr_t TraceLocal, void* obj) __attribute__ ((always_inline));
+extern "C" gc* JnJVM_org_j3_bindings_Bindings_getForwardedReference__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
+    uintptr_t TraceLocal, void* obj) __attribute__ ((always_inline));
+extern "C" gc* JnJVM_org_j3_bindings_Bindings_getForwardedReferent__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
+    uintptr_t TraceLocal, void* obj) __attribute__ ((always_inline));
+extern "C" gc* JnJVM_org_j3_bindings_Bindings_getForwardedFinalizable__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
+    uintptr_t TraceLocal, void* obj) __attribute__ ((always_inline));
+extern "C" uint8_t JnJVM_org_j3_bindings_Bindings_isLive__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
+    uintptr_t TraceLocal, void* obj) __attribute__ ((always_inline));
 
-extern "C" gc* JnJVM_org_mmtk_plan_TraceLocal_retainForFinalize__Lorg_vmmagic_unboxed_ObjectReference_2(uintptr_t TraceLocal, void* obj);
-extern "C" gc* JnJVM_org_mmtk_plan_TraceLocal_retainReferent__Lorg_vmmagic_unboxed_ObjectReference_2(uintptr_t TraceLocal, void* obj);
-extern "C" gc* JnJVM_org_mmtk_plan_TraceLocal_getForwardedReference__Lorg_vmmagic_unboxed_ObjectReference_2(uintptr_t TraceLocal, void* obj);
-extern "C" gc* JnJVM_org_mmtk_plan_TraceLocal_getForwardedReferent__Lorg_vmmagic_unboxed_ObjectReference_2(uintptr_t TraceLocal, void* obj);
-extern "C" gc* JnJVM_org_mmtk_plan_TraceLocal_getForwardedFinalizable__Lorg_vmmagic_unboxed_ObjectReference_2(uintptr_t TraceLocal, void* obj);
-  
-extern "C" uint8_t JnJVM_org_mmtk_plan_marksweep_MSTraceLocal_isLive__Lorg_vmmagic_unboxed_ObjectReference_2(uintptr_t TraceLocal, void* obj);
+extern "C" void* JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2(
+    int sz, void* VT) __attribute__ ((always_inline));
 
-
-extern "C" void* gcmalloc(uint32_t sz, void* _VT) {
-  gc* res = 0;
-  llvm_gcroot(res, 0);
-  VirtualTable* VT = (VirtualTable*)_VT;
+extern "C" void* gcmalloc(uint32_t sz, void* VT) {
   sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
-  uintptr_t Mutator = mvm::MutatorThread::get()->MutatorContext;
-  int allocator = JnJVM_org_mmtk_plan_MutatorContext_checkAllocator__III(Mutator, sz, 0, 0);
-  res = (gc*)JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII(Mutator, sz, 0, 0, allocator, 0);
-  res->setVirtualTable(VT);
-  JnJVM_org_mmtk_plan_marksweep_MSMutator_postAlloc__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(Mutator, (uintptr_t)res, (uintptr_t)VT, sz, allocator);
-  return res;
+  return JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2(sz, VT);
 }
 
 extern "C" void addFinalizationCandidate(void* obj) __attribute__((always_inline));
@@ -88,48 +74,45 @@ extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
 void MutatorThread::init(Thread* _th) {
   MutatorThread* th = (MutatorThread*)_th;
   th->MutatorContext =
-    (uintptr_t)th->Allocator.Allocate(MMTkMutatorSize, "Mutator");
-  ((VirtualTable**)th->MutatorContext)[0] = org_j3_config_Selected_4Mutator_VT;
-  JnJVM_org_j3_config_Selected_00024Mutator__0003Cinit_0003E__(th->MutatorContext);
-  JnJVM_org_mmtk_plan_MutatorContext_initMutator__I(th->MutatorContext, (int32_t)_th->getThreadID());
+    JnJVM_org_j3_bindings_Bindings_allocateMutator__I((int32_t)_th->getThreadID());
   th->realRoutine(_th);
-  JnJVM_org_mmtk_plan_MutatorContext_deinitMutator__(th->MutatorContext);
+  JnJVM_org_j3_bindings_Bindings_freeMutator__Lorg_mmtk_plan_MutatorContext_2(th->MutatorContext);
 }
 
 bool Collector::isLive(gc* ptr, uintptr_t closure) {
-  return JnJVM_org_mmtk_plan_marksweep_MSTraceLocal_isLive__Lorg_vmmagic_unboxed_ObjectReference_2(closure, ptr);
+  return JnJVM_org_j3_bindings_Bindings_isLive__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, ptr);
 }
 
 void Collector::scanObject(void** ptr, uintptr_t closure) {
-  JnJVM_org_mmtk_plan_TraceLocal_reportDelayedRootEdge__Lorg_vmmagic_unboxed_Address_2(closure, ptr);
+  JnJVM_org_j3_bindings_Bindings_reportDelayedRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2(closure, ptr);
 }
  
 void Collector::markAndTrace(void* source, void* ptr, uintptr_t closure) {
-  JnJVM_org_mmtk_plan_TraceLocal_processEdge__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(closure, source, ptr);
+  JnJVM_org_j3_bindings_Bindings_processEdge__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(closure, source, ptr);
 }
   
 void Collector::markAndTraceRoot(void* ptr, uintptr_t closure) {
-  JnJVM_org_mmtk_plan_TraceLocal_processRootEdge__Lorg_vmmagic_unboxed_Address_2Z(closure, ptr, true);
+  JnJVM_org_j3_bindings_Bindings_processRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2Z(closure, ptr, true);
 }
 
 gc* Collector::retainForFinalize(gc* val, uintptr_t closure) {
-  return JnJVM_org_mmtk_plan_TraceLocal_retainForFinalize__Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
+  return JnJVM_org_j3_bindings_Bindings_retainForFinalize__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
 gc* Collector::retainReferent(gc* val, uintptr_t closure) {
-  return JnJVM_org_mmtk_plan_TraceLocal_retainReferent__Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
+  return JnJVM_org_j3_bindings_Bindings_retainReferent__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
 gc* Collector::getForwardedFinalizable(gc* val, uintptr_t closure) {
-  return JnJVM_org_mmtk_plan_TraceLocal_getForwardedFinalizable__Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
+  return JnJVM_org_j3_bindings_Bindings_getForwardedFinalizable__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
 gc* Collector::getForwardedReference(gc* val, uintptr_t closure) {
-  return JnJVM_org_mmtk_plan_TraceLocal_getForwardedReference__Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
+  return JnJVM_org_j3_bindings_Bindings_getForwardedReference__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
 gc* Collector::getForwardedReferent(gc* val, uintptr_t closure) {
-  return JnJVM_org_mmtk_plan_TraceLocal_getForwardedReferent__Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
+  return JnJVM_org_j3_bindings_Bindings_getForwardedReferent__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
 
 void Collector::collect() {
@@ -151,12 +134,7 @@ void Collector::initialise() {
     abort();
   }
   
-  JnJVM_org_mmtk_utility_heap_HeapGrowthManager_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2(128 * 1024 * 1024, 1024 * 1024 * 1024);
-  
-  uintptr_t Plan = *org_j3_config_Selected_4Plan_static;
-  MMTkPlanBoot(Plan);
-  MMTkPlanPostBoot(Plan);  
-  MMTkPlanFullBoot(Plan);  
+  JnJVM_org_j3_bindings_Bindings_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2(128 * 1024 * 1024, 1024 * 1024 * 1024);
 }
 
 extern "C" void* MMTkMutatorAllocate(uint32_t size, VirtualTable* VT) {
