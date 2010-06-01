@@ -35,7 +35,7 @@ JavaObjectClass* klass) {
 
   llvm_gcroot(klass, 0);
 
-  UserCommonClass* cl = klass->getClass();
+  UserCommonClass* cl = JavaObjectClass::getClass(klass);
 
   return cl->isArray();
   

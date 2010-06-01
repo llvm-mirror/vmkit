@@ -31,7 +31,7 @@ JavaObjectField* Field) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  JavaField* field = Field->getInternalField();
+  JavaField* field = JavaObjectField::getInternalField(Field);
   res = field->access;
 
   END_NATIVE_EXCEPTION
@@ -53,8 +53,8 @@ JavaObjectField* Field) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   JnjvmClassLoader* loader = cl->classLoader;
   UserCommonClass* fieldCl = field->getSignature()->assocClass(loader);
   res = fieldCl->getClassDelegatee(vm);
@@ -78,8 +78,8 @@ JavaObjectField* Field, JavaObject* obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   const Typedef* type = field->getSignature();
   bool stat =  isStatic(field->access);
   void* StatPtr = 0;
@@ -128,8 +128,8 @@ JavaObjectField* Field, JavaObject* obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat =  isStatic(field->access);
   void* StatPtr = 0;
   
@@ -179,8 +179,8 @@ JavaObjectField* Field, JavaObject* obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat =  isStatic(field->access);
   void* StatPtr = 0;
    
@@ -221,8 +221,8 @@ JavaObjectField* Field, JavaObject* obj) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -273,8 +273,8 @@ JavaObjectField* Field, JavaObject* obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -314,8 +314,8 @@ JavaObjectField* Field, JavaObject* obj) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -357,8 +357,8 @@ JavaObjectField* Field, JavaObject* obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -400,8 +400,8 @@ JavaObjectField* Field, JavaObject* obj) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -455,8 +455,8 @@ JavaObjectField* Field, JavaObject* obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -532,8 +532,8 @@ JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   jvalue buf;
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
@@ -587,8 +587,8 @@ JavaObjectField* Field, JavaObject* obj, jboolean val) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -626,8 +626,8 @@ JavaObjectField* Field, JavaObject* obj, jbyte val) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -674,8 +674,8 @@ JavaObjectField* Field, JavaObject* obj, jchar val) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -719,8 +719,8 @@ JavaObjectField* Field, JavaObject* obj, jshort val) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -765,8 +765,8 @@ JavaObjectField* Field, JavaObject* obj, jint val) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -809,8 +809,8 @@ JavaObjectField* Field, JavaObject* obj, jlong val) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -851,8 +851,8 @@ JavaObjectField* Field, JavaObject* obj, jfloat val) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -891,8 +891,8 @@ JavaObjectField* Field, JavaObject* obj, jdouble val) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = Field->getClass();
-  JavaField* field = Field->getInternalField();
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   void* StatPtr = 0;
   
@@ -927,7 +927,7 @@ JavaObject* Unsafe, JavaObjectField* Field) {
   llvm_gcroot(Field, 0);
   llvm_gcroot(Unsafe, 0);
 
-  JavaField* field = Field->getInternalField();
+  JavaField* field = JavaObjectField::getInternalField(Field);
   return (jlong)field->ptrOffset;
 }
 

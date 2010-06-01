@@ -365,7 +365,7 @@ JavaObject* Jnjvm::CreateStackOverflowError() {
   // Don't call init, or else we'll get a new stack overflow error.
   JavaObject* obj = upcalls->StackOverflowError->doNew(this);
   llvm_gcroot(obj, 0);
-  ((JavaObjectThrowable*)obj)->fillInStackTrace();
+  JavaObjectThrowable::fillInStackTrace((JavaObjectThrowable*)obj);
   return obj;
 }
 
@@ -733,13 +733,14 @@ JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
   if (!getDelegatee()) {
     UserClass* cl = vm->upcalls->newClass;
     delegatee = (JavaObjectClass*)cl->doNew(vm);
-    delegatee->vmdata = this;
+    JavaObjectClass::setClass(delegatee, this);
     if (!pd && isArray()) {
       base = (JavaObjectClass*)
         asArrayClass()->baseClass()->getClassDelegatee(vm, pd);
-      delegatee->pd = base->pd;
+      JavaObjectClass::setProtectionDomain(
+        delegatee, JavaObjectClass::getProtectionDomain(base));
     } else {
-      delegatee->pd = pd;
+      JavaObjectClass::setProtectionDomain(delegatee, pd);
     }
     setDelegatee(delegatee);
   }

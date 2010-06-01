@@ -36,7 +36,7 @@ JavaObjectMethod* Meth) {
 
   BEGIN_NATIVE_EXCEPTION(0)
   
-  JavaMethod* meth = Meth->getInternalMethod(); 
+  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth); 
   res = meth->access;
 
   END_NATIVE_EXCEPTION
@@ -56,8 +56,8 @@ JavaObjectMethod* Meth) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  UserClass* cl = Meth->getClass();
-  JavaMethod* meth = Meth->getInternalMethod(); 
+  UserClass* cl = JavaObjectMethod::getClass(Meth);
+  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth); 
   JnjvmClassLoader* loader = cl->classLoader;
   res = meth->getReturnType(loader);
 
@@ -79,8 +79,8 @@ JavaObjectMethod* Meth) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  UserClass* cl = Meth->getClass();
-  JavaMethod* meth = Meth->getInternalMethod();
+  UserClass* cl = JavaObjectMethod::getClass(Meth);
+  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
   JnjvmClassLoader* loader = cl->classLoader;
   
   res = (meth->getParameterTypes(loader));
@@ -109,7 +109,7 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
 
   Jnjvm* vm = JavaThread::get()->getJVM();
 
-  JavaMethod* meth = Meth->getInternalMethod();
+  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
   
   sint32 nbArgs = args ? args->size : 0;
   Signdef* sign = meth->getSignature();
@@ -274,8 +274,8 @@ JavaObjectMethod* Meth) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   verifyNull(Meth);
-  UserClass* cl = Meth->getClass();
-  JavaMethod* meth = Meth->getInternalMethod();
+  UserClass* cl = JavaObjectMethod::getClass(Meth);
+  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
   JnjvmClassLoader* loader = cl->classLoader;
   res = meth->getExceptionTypes(loader);
 
@@ -297,7 +297,7 @@ JavaObjectMethod* Meth) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   verifyNull(Meth);
-  JavaMethod* meth = Meth->getInternalMethod();
+  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
   Jnjvm* vm = JavaThread::get()->getJVM();
   result = vm->internalUTF8ToStr(meth->type);
   

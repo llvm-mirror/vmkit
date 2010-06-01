@@ -302,7 +302,7 @@ extern "C" void nativeInitWeakReference(JavaObjectReference* reference,
 
   BEGIN_NATIVE_EXCEPTION(0)
   
-  reference->init(referent, 0);
+  JavaObjectReference::init(reference, referent, 0);
   JavaThread::get()->getJVM()->addWeakReference(reference);
 
   END_NATIVE_EXCEPTION
@@ -318,7 +318,7 @@ extern "C" void nativeInitWeakReferenceQ(JavaObjectReference* reference,
   
   BEGIN_NATIVE_EXCEPTION(0)
   
-  reference->init(referent, queue);
+  JavaObjectReference::init(reference, referent, queue);
   JavaThread::get()->getJVM()->addWeakReference(reference);
   
   END_NATIVE_EXCEPTION
@@ -332,7 +332,7 @@ extern "C" void nativeInitSoftReference(JavaObjectReference* reference,
   
   BEGIN_NATIVE_EXCEPTION(0)
   
-  reference->init(referent, 0);
+  JavaObjectReference::init(reference, referent, 0);
   JavaThread::get()->getJVM()->addSoftReference(reference);
   
   END_NATIVE_EXCEPTION
@@ -348,7 +348,7 @@ extern "C" void nativeInitSoftReferenceQ(JavaObjectReference* reference,
  
   BEGIN_NATIVE_EXCEPTION(0)
 
-  reference->init(referent, queue);
+  JavaObjectReference::init(reference, referent, queue);
   JavaThread::get()->getJVM()->addSoftReference(reference);
   
   END_NATIVE_EXCEPTION
@@ -364,7 +364,7 @@ extern "C" void nativeInitPhantomReferenceQ(JavaObjectReference* reference,
   
   BEGIN_NATIVE_EXCEPTION(0)
   
-  reference->init(referent, queue);
+  JavaObjectReference::init(reference, referent, queue);
   JavaThread::get()->getJVM()->addPhantomReference(reference);
 
   END_NATIVE_EXCEPTION
@@ -396,7 +396,7 @@ extern "C" uint8 nativeIsArray(JavaObjectClass* klass) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  cl = klass->getClass();  
+  cl = JavaObjectClass::getClass(klass);
   
   END_NATIVE_EXCEPTION
   
@@ -412,7 +412,7 @@ extern "C" JavaObject* nativeGetCallingClass() {
 
   JavaThread* th = JavaThread::get();
   UserClass* cl = th->getCallingClassLevel(2);
-  if (cl) res = cl->getClassDelegatee(th->getJVM());
+  if (cl != NULL) res = cl->getClassDelegatee(th->getJVM());
   
   END_NATIVE_EXCEPTION
 
@@ -1088,16 +1088,21 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
 gc** Jnjvm::getReferentPtr(gc* _obj) {
   JavaObjectReference* obj = (JavaObjectReference*)_obj;
-  return (gc**)obj->getReferentPtr();
+  llvm_gcroot(obj, 0);
+  return (gc**)JavaObjectReference::getReferentPtr(obj);
 }
 
-void Jnjvm::setReferent(gc* obj, gc* val) {
-  ((JavaObjectReference*)obj)->setReferent((JavaObject*)val);
+void Jnjvm::setReferent(gc* _obj, gc* val) {
+  JavaObjectReference* obj = (JavaObjectReference*)_obj;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(val, 0);
+  JavaObjectReference::setReferent(obj, (JavaObject*)val);
 }
  
 void Jnjvm::clearReferent(gc* _obj) {
   JavaObjectReference* obj = (JavaObjectReference*)_obj;
-  obj->setReferent(0);
+  llvm_gcroot(obj, 0);
+  JavaObjectReference::setReferent(obj, NULL);
 }
 
 #include "ClasspathConstructor.inc"

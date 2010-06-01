@@ -1165,7 +1165,7 @@ UserCommonClass* UserCommonClass::resolvedImplClass(Jnjvm* vm,
 
   llvm_gcroot(clazz, 0);
 
-  UserCommonClass* cl = ((JavaObjectClass*)clazz)->getClass();
+  UserCommonClass* cl = JavaObjectClass::getClass((JavaObjectClass*)clazz);
   assert(cl && "No class in Class object");
   if (cl->isClass()) {
     cl->asClass()->resolveClass();

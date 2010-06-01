@@ -22,7 +22,7 @@ extern "C" j3::JavaObject* internalFillInStackTrace(j3::JavaObject*);
 namespace j3 {
 
 class JavaObjectClass : public JavaObject {
-public:
+private:
   JavaObject* signers;
   JavaObject* pd;
   UserCommonClass* vmdata;
@@ -30,8 +30,25 @@ public:
 
 public:
   
-  UserCommonClass* getClass() {
-    return vmdata;
+  static UserCommonClass* getClass(JavaObjectClass* cl) {
+    llvm_gcroot(cl, 0);
+    return cl->vmdata;
+  }
+
+  static void setClass(JavaObjectClass* cl, UserCommonClass* vmdata) {
+    llvm_gcroot(cl, 0);
+    cl->vmdata = vmdata;
+  }
+
+  static void setProtectionDomain(JavaObjectClass* cl, JavaObject* pd) {
+    llvm_gcroot(cl, 0);
+    llvm_gcroot(pd, 0);
+    cl->pd = pd;
+  }
+  
+  static JavaObject* getProtectionDomain(JavaObjectClass* cl) {
+    llvm_gcroot(cl, 0);
+    return cl->pd;
   }
 
   static void staticTracer(JavaObjectClass* obj, uintptr_t closure) {
@@ -59,12 +76,16 @@ public:
     mvm::Collector::markAndTrace(obj, &obj->declaringClass, closure);
   }
 
-  JavaField* getInternalField() {
-    return &(((UserClass*)declaringClass->vmdata)->virtualFields[slot]);
+  static JavaField* getInternalField(JavaObjectField* self) {
+    llvm_gcroot(self, 0);
+    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass); 
+    return &(cls->asClass()->virtualFields[self->slot]);
   }
 
-  UserClass* getClass() {
-    return declaringClass->vmdata->asClass();
+  static UserClass* getClass(JavaObjectField* self) {
+    llvm_gcroot(self, 0);
+    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass); 
+    return cls->asClass();
   }
 
 };
@@ -83,12 +104,16 @@ public:
     mvm::Collector::markAndTrace(obj, &obj->declaringClass, closure);
   }
   
-  JavaMethod* getInternalMethod() {
-    return &(((UserClass*)declaringClass->vmdata)->virtualMethods[slot]);
+  static JavaMethod* getInternalMethod(JavaObjectMethod* self) {
+    llvm_gcroot(self, 0);
+    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass); 
+    return &(cls->asClass()->virtualMethods[self->slot]);
   }
   
-  UserClass* getClass() {
-    return declaringClass->vmdata->asClass();
+  static UserClass* getClass(JavaObjectMethod* self) {
+    llvm_gcroot(self, 0);
+    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass); 
+    return cls->asClass();
   }
 
 };
@@ -96,20 +121,24 @@ public:
 class JavaObjectConstructor : public JavaObject {
 private:
   uint8 flag;
-  JavaObjectClass* clazz;
+  JavaObjectClass* declaringClass;
   uint32 slot;
 
 public:
   static void staticTracer(JavaObjectConstructor* obj, uintptr_t closure) {
-    mvm::Collector::markAndTrace(obj, &obj->clazz, closure);
+    mvm::Collector::markAndTrace(obj, &obj->declaringClass, closure);
   }
   
-  JavaMethod* getInternalMethod() {
-    return &(((UserClass*)clazz->vmdata)->virtualMethods[slot]);
+  static JavaMethod* getInternalMethod(JavaObjectConstructor* self) {
+    llvm_gcroot(self, 0);
+    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass); 
+    return &(cls->asClass()->virtualMethods[self->slot]);
   }
   
-  UserClass* getClass() {
-    return clazz->vmdata->asClass();
+  static UserClass* getClass(JavaObjectConstructor* self) {
+    llvm_gcroot(self, 0);
+    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass); 
+    return cls->asClass();
   }
 
 };
@@ -141,14 +170,17 @@ private:
 
 public:
 
-  void setDetailedMessage(JavaObject* obj) {
-    detailedMessage = obj;
+  static void setDetailedMessage(JavaObjectThrowable* self, JavaObject* obj) {
+    llvm_gcroot(self, 0);
+    llvm_gcroot(obj, 0);
+    self->detailedMessage = obj;
   }
 
-  void fillInStackTrace() {
-    cause = this;
-    vmState = internalFillInStackTrace(this);
-    stackTrace = 0;
+  static void fillInStackTrace(JavaObjectThrowable* self) {
+    llvm_gcroot(self, 0);
+    self->cause = self;
+    self->vmState = internalFillInStackTrace(self);
+    self->stackTrace = NULL;
   }
 };
 
@@ -159,13 +191,23 @@ private:
   JavaObject* nextOnQueue;
 
 public:
-  void init(JavaObject* r, JavaObject* q) {
-    referent = r;
-    queue = q;
+  static void init(JavaObjectReference* self, JavaObject* r, JavaObject* q) {
+    llvm_gcroot(self, 0);
+    llvm_gcroot(r, 0);
+    llvm_gcroot(q, 0);
+    self->referent = r;
+    self->queue = q;
   }
 
-  JavaObject** getReferentPtr() { return &referent; }
-  void setReferent(JavaObject* r) { referent = r; }
+  static JavaObject** getReferentPtr(JavaObjectReference* self) {
+    llvm_gcroot(self, 0);
+    return &(self->referent);
+  }
+  static void setReferent(JavaObjectReference* self, JavaObject* r) {
+    llvm_gcroot(self, 0);
+    llvm_gcroot(r, 0);
+    self->referent = r;
+  }
   
   static void staticTracer(JavaObjectReference* obj, uintptr_t closure) {
     mvm::Collector::markAndTrace(obj, &obj->queue, closure);
